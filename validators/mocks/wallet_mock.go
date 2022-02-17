@@ -34,6 +34,20 @@ func (m *MockWallet) EXPECT() *MockWalletMockRecorder {
 	return m.recorder
 }
 
+// Algo mocks base method.
+func (m *MockWallet) Algo() string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Algo")
+	ret0, _ := ret[0].(string)
+	return ret0
+}
+
+// Algo indicates an expected call of Algo.
+func (mr *MockWalletMockRecorder) Algo() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Algo", reflect.TypeOf((*MockWallet)(nil).Algo))
+}
+
 // ID mocks base method.
 func (m *MockWallet) ID() crypto.PublicKey {
 	m.ctrl.T.Helper()
@@ -60,4 +74,19 @@ func (m *MockWallet) PubKey() crypto.PublicKey {
 func (mr *MockWalletMockRecorder) PubKey() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PubKey", reflect.TypeOf((*MockWallet)(nil).PubKey))
+}
+
+// Sign mocks base method.
+func (m *MockWallet) Sign(arg0 []byte) ([]byte, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Sign", arg0)
+	ret0, _ := ret[0].([]byte)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Sign indicates an expected call of Sign.
+func (mr *MockWalletMockRecorder) Sign(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Sign", reflect.TypeOf((*MockWallet)(nil).Sign), arg0)
 }

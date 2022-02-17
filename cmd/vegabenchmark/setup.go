@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"code.vegaprotocol.io/vega/rewards"
+	"code.vegaprotocol.io/vega/integration/stubs"
 	"code.vegaprotocol.io/vega/statevar"
 
 	ptypes "code.vegaprotocol.io/protos/vega"
@@ -119,6 +119,7 @@ func setupVega() (*processor.App, processor.Stats, error) {
 		validators.WrapNodeWallets(nw),
 		broker,
 		true,
+		stubs.NewCommanderStub(),
 	)
 
 	witness := validators.NewWitness(
@@ -191,7 +192,6 @@ func setupVega() (*processor.App, processor.Stats, error) {
 		Watcher: delegationEngine.OnMinAmountChanged,
 	})
 
-	rewardEngine := rewards.New(log, rewards.NewDefaultConfig(), broker, delegationEngine, epochService, collateral, timeService, topology, feesTracker, marketTracker)
 	limits := mocks.NewMockLimits(ctrl)
 	limits.EXPECT().CanTrade().AnyTimes().Return(true)
 	limits.EXPECT().CanProposeMarket().AnyTimes().Return(true)
@@ -235,7 +235,6 @@ func setupVega() (*processor.App, processor.Stats, error) {
 		cp,
 		spamEngine,
 		nil,
-		rewardEngine,
 		snapshot,
 		stateVarEngine,
 		nil,

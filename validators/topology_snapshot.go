@@ -3,8 +3,8 @@ package validators
 import (
 	"context"
 	"sort"
+	"time"
 
-	v1 "code.vegaprotocol.io/protos/vega/commands/v1"
 	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
 	snapshot "code.vegaprotocol.io/protos/vega/snapshot/v1"
 	"code.vegaprotocol.io/vega/events"
@@ -36,26 +36,39 @@ func (t *Topology) Keys() []string {
 	return topHashKeys
 }
 
-func (t *Topology) serialiseNodes() []*eventspb.ValidatorUpdate {
-	nodes := make([]*eventspb.ValidatorUpdate, 0, len(t.validators))
-
+func (t *Topology) serialiseNodes() []*snapshot.ValidatorState {
+	nodes := make([]*snapshot.ValidatorState, 0, len(t.validators))
 	for _, node := range t.validators {
 		nodes = append(nodes,
-			&eventspb.ValidatorUpdate{
-				NodeId:          node.ID,
-				VegaPubKey:      node.VegaPubKey,
-				VegaPubKeyIndex: node.VegaPubKeyIndex,
-				EthereumAddress: node.EthereumAddress,
-				TmPubKey:        node.TmPubKey,
-				InfoUrl:         node.InfoURL,
-				Country:         node.Country,
-				Name:            node.Name,
-				AvatarUrl:       node.AvatarURL,
+			&snapshot.ValidatorState{
+				ValidatorUpdate: &eventspb.ValidatorUpdate{
+					NodeId:          node.data.ID,
+					VegaPubKey:      node.data.VegaPubKey,
+					VegaPubKeyIndex: node.data.VegaPubKeyIndex,
+					EthereumAddress: node.data.EthereumAddress,
+					TmPubKey:        node.data.TmPubKey,
+					InfoUrl:         node.data.InfoURL,
+					Country:         node.data.Country,
+					Name:            node.data.Name,
+					AvatarUrl:       node.data.AvatarURL,
+					FromEpoch:       node.data.FromEpoch,
+				},
+				BlockAdded:                   uint64(node.blockAdded),
+				Status:                       int32(node.status),
+				StatusChangeBlock:            uint64(node.statusChangeBlock),
+				LastBlockWithPositiveRanking: uint64(node.lastBlockWithPositiveRanking),
+				EthEventsForwarded:           node.numberOfEthereumEventsForwarded,
+				HeartbeatTracker: &snapshot.HeartbeatTracker{
+					BlockSigs:             node.heartbeatTracker.blockSigs[:],
+					BlockIndex:            int32(node.heartbeatTracker.blockIndex),
+					ExpectedNextHash:      node.heartbeatTracker.expectedNextHash,
+					ExpectedNextHashSince: node.heartbeatTracker.expectedNexthashSince.UnixNano(),
+				},
 			},
 		)
 	}
 
-	sort.SliceStable(nodes, func(i, j int) bool { return nodes[i].NodeId < nodes[j].NodeId })
+	sort.SliceStable(nodes, func(i, j int) bool { return nodes[i].ValidatorUpdate.NodeId < nodes[j].ValidatorUpdate.NodeId })
 	return nodes
 }
 
@@ -91,7 +104,7 @@ func (t *Topology) serialise() ([]byte, error) {
 				ChainValidators:        t.chainValidators[:],
 				ValidatorData:          t.serialiseNodes(),
 				PendingPubKeyRotations: t.serialisePendingKeyRotation(),
-				ValidatorPerformance:   t.validatorPerformance.serialize(),
+				ValidatorPerformance:   t.validatorPerformance.Serialize(),
 			},
 		},
 	}
@@ -158,7 +171,7 @@ func (t *Topology) restorePendingKeyRotations(ctx context.Context, pkrs []*snaps
 			newKeyIndex: pkr.NewPubKeyIndex,
 		}
 		data := t.validators[pkr.NodeId]
-		t.broker.Send(events.NewKeyRotationEvent(ctx, pkr.NodeId, data.VegaPubKey, pkr.NewPubKey, pkr.BlockHeight))
+		t.broker.Send(events.NewKeyRotationEvent(ctx, pkr.NodeId, data.data.VegaPubKey, pkr.NewPubKey, pkr.BlockHeight))
 	}
 }
 
@@ -166,43 +179,52 @@ func (t *Topology) restore(ctx context.Context, topology *types.Topology) error 
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
+	t.validators = map[string]*valState{}
+
 	for _, node := range topology.ValidatorData {
-		t.validators[node.NodeId] = ValidatorData{
-			ID:              node.NodeId,
-			VegaPubKey:      node.VegaPubKey,
-			VegaPubKeyIndex: node.VegaPubKeyIndex,
-			EthereumAddress: node.EthereumAddress,
-			TmPubKey:        node.TmPubKey,
-			InfoURL:         node.InfoUrl,
-			Country:         node.Country,
-			Name:            node.Name,
-			AvatarURL:       node.AvatarUrl,
+		vs := &valState{
+			data: ValidatorData{
+				ID:              node.ValidatorUpdate.NodeId,
+				VegaPubKey:      node.ValidatorUpdate.VegaPubKey,
+				VegaPubKeyIndex: node.ValidatorUpdate.VegaPubKeyIndex,
+				EthereumAddress: node.ValidatorUpdate.EthereumAddress,
+				TmPubKey:        node.ValidatorUpdate.TmPubKey,
+				InfoURL:         node.ValidatorUpdate.InfoUrl,
+				Country:         node.ValidatorUpdate.Country,
+				Name:            node.ValidatorUpdate.Name,
+				AvatarURL:       node.ValidatorUpdate.AvatarUrl,
+				FromEpoch:       node.ValidatorUpdate.FromEpoch,
+			},
+			blockAdded:                      int64(node.BlockAdded),
+			status:                          ValidatorStatus(node.Status),
+			statusChangeBlock:               int64(node.StatusChangeBlock),
+			lastBlockWithPositiveRanking:    int64(node.LastBlockWithPositiveRanking),
+			numberOfEthereumEventsForwarded: node.EthEventsForwarded,
+			heartbeatTracker: &validatorHeartbeatTracker{
+				blockIndex:            int(node.HeartbeatTracker.BlockIndex),
+				expectedNextHash:      node.HeartbeatTracker.ExpectedNextHash,
+				expectedNexthashSince: time.Unix(0, node.HeartbeatTracker.ExpectedNextHashSince),
+			},
 		}
+		for i := 0; i < 10; i++ {
+			vs.heartbeatTracker.blockSigs[i] = node.HeartbeatTracker.BlockSigs[i]
+		}
+		t.validators[node.ValidatorUpdate.NodeId] = vs
+
+		t.sendValidatorUpdateEvent(ctx, vs.data, true)
 
 		// this node is started and expect to be a validator
 		// but so far we haven't seen ourselve as validators for
 		// this network.
 		if t.isValidatorSetup && !t.isValidator {
-			t.checkValidatorDataWithSelfWallets(t.validators[node.NodeId])
+			t.checkValidatorDataWithSelfWallets(vs.data)
 		}
 
-		t.sendValidatorUpdateEvent(ctx,
-			&v1.NodeRegistration{
-				VegaPubKey:      node.VegaPubKey,
-				EthereumAddress: node.EthereumAddress,
-				ChainPubKey:     node.TmPubKey,
-				InfoUrl:         node.InfoUrl,
-				Country:         node.Country,
-				Id:              node.NodeId,
-				Name:            node.Name,
-				AvatarUrl:       node.AvatarUrl,
-				VegaPubKeyIndex: node.VegaPubKeyIndex,
-			},
-		)
 	}
+
 	t.chainValidators = topology.ChainValidators[:]
 	t.restorePendingKeyRotations(ctx, topology.PendingPubKeyRotations)
-	t.validatorPerformance.deserialize(topology.ValidatorPerformance)
+	t.validatorPerformance.Deserialize(topology.ValidatorPerformance)
 	t.tss.changed = true
 	return nil
 }

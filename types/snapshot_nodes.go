@@ -187,7 +187,7 @@ type PayloadTopology struct {
 }
 
 type Topology struct {
-	ValidatorData          []*eventspb.ValidatorUpdate
+	ValidatorData          []*snapshot.ValidatorState
 	ChainValidators        []string
 	PendingPubKeyRotations []*snapshot.PendingKeyRotation
 	ValidatorPerformance   *snapshot.ValidatorPerformance

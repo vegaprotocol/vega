@@ -168,6 +168,13 @@ func (b *BrokerStub) ClearAllEvents() {
 	b.mu.Unlock()
 }
 
+func (b *BrokerStub) ClearTransferResponseEvents() {
+	b.mu.Lock()
+	cs := make([]events.Event, 0, len(b.data[events.TransferResponses]))
+	b.data[events.TransferResponses] = cs
+	b.mu.Unlock()
+}
+
 func (b *BrokerStub) GetBookDepth(market string) (sell map[string]uint64, buy map[string]uint64) {
 	batch := b.GetImmBatch(events.OrderEvent)
 	if len(batch) == 0 {
@@ -206,6 +213,47 @@ func (b *BrokerStub) GetBookDepth(market string) (sell map[string]uint64, buy ma
 			continue
 		}
 		sell[v.Price] = sell[v.Price] + v.Remaining
+	}
+
+	return sell, buy
+}
+
+func (b *BrokerStub) GetActiveOrderDepth(marketID string) (sell []*types.Order, buy []*types.Order) {
+	batch := b.GetImmBatch(events.OrderEvent)
+	if len(batch) == 0 {
+		return nil, nil
+	}
+	active := make(map[string]*types.Order, len(batch))
+	for _, e := range batch {
+		var ord *types.Order
+		switch et := e.(type) {
+		case *events.Order:
+			ord = et.Order()
+		case events.Order:
+			ord = et.Order()
+		default:
+			continue
+		}
+		if ord.MarketId != marketID {
+			continue
+		}
+		if ord.Status == types.Order_STATUS_ACTIVE {
+			active[ord.Id] = ord
+		} else {
+			delete(active, ord.Id)
+		}
+	}
+	c := len(active) / 2
+	if len(active)%2 == 1 {
+		c++
+	}
+	sell, buy = make([]*types.Order, 0, c), make([]*types.Order, 0, c)
+	for _, ord := range active {
+		if ord.Side == types.Side_SIDE_BUY {
+			buy = append(buy, ord)
+			continue
+		}
+		sell = append(sell, ord)
 	}
 
 	return sell, buy
@@ -392,11 +440,11 @@ func (b *BrokerStub) GetValidatorScores(epochSeq string) map[string]events.Valid
 	for _, e := range batch {
 		switch et := e.(type) {
 		case events.ValidatorScore:
-			if et.EpochSeq == epochSeq {
+			if et.EpochSeq == epochSeq && et.ValidatorStatus == "tendermint" {
 				scores[et.NodeID] = et
 			}
 		case *events.ValidatorScore:
-			if (*et).EpochSeq == epochSeq {
+			if (*et).EpochSeq == epochSeq && et.ValidatorStatus == "tendermint" {
 				scores[et.NodeID] = *et
 			}
 		}

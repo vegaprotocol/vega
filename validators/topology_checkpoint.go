@@ -2,32 +2,70 @@ package validators
 
 import (
 	"context"
+	"encoding/base64"
 	"sort"
+	"time"
 
 	checkpoint "code.vegaprotocol.io/protos/vega/checkpoint/v1"
+	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
 	"code.vegaprotocol.io/vega/types"
 
 	"github.com/golang/protobuf/proto"
+	tmtypes "github.com/tendermint/tendermint/abci/types"
 )
 
 func (e *Topology) Name() types.CheckpointName {
-	return types.KeyRotationsCheckpoint
+	return types.ValidatorsCheckpoint
 }
 
 func (t *Topology) Checkpoint() ([]byte, error) {
-	if len(t.pendingPubKeyRotations) == 0 {
-		return nil, nil
-	}
-	snap := &checkpoint.KeyRotations{
+	snap := &checkpoint.Validators{
+		ValidatorState:      t.getValidatorStateCheckpoint(),
 		PendingKeyRotations: t.getCheckpointPendingKeyRotations(),
 	}
 	return proto.Marshal(snap)
 }
 
-func (t *Topology) Load(_ context.Context, data []byte) error {
-	ckp := &checkpoint.KeyRotations{}
+func (t *Topology) Load(ctx context.Context, data []byte) error {
+	ckp := &checkpoint.Validators{}
 	if err := proto.Unmarshal(data, ckp); err != nil {
 		return err
+	}
+
+	votingPower := make(map[string]int64, len(t.validators))
+	for k := range t.validators {
+		votingPower[k] = 0
+	}
+
+	t.validators = make(map[string]*valState, len(ckp.ValidatorState))
+	for _, node := range ckp.ValidatorState {
+		t.validators[node.ValidatorUpdate.NodeId] = &valState{
+			data: ValidatorData{
+				ID:              node.ValidatorUpdate.NodeId,
+				VegaPubKey:      node.ValidatorUpdate.VegaPubKey,
+				VegaPubKeyIndex: node.ValidatorUpdate.VegaPubKeyIndex,
+				EthereumAddress: node.ValidatorUpdate.EthereumAddress,
+				TmPubKey:        node.ValidatorUpdate.TmPubKey,
+				InfoURL:         node.ValidatorUpdate.InfoUrl,
+				Country:         node.ValidatorUpdate.Country,
+				Name:            node.ValidatorUpdate.Name,
+				AvatarURL:       node.ValidatorUpdate.AvatarUrl,
+				FromEpoch:       node.ValidatorUpdate.FromEpoch,
+			},
+			blockAdded:                      int64(t.currentBlockHeight),
+			status:                          ValidatorStatus(node.Status),
+			statusChangeBlock:               int64(t.currentBlockHeight),
+			lastBlockWithPositiveRanking:    int64(t.currentBlockHeight - 1),
+			numberOfEthereumEventsForwarded: node.EthEventsForwarded,
+			heartbeatTracker: &validatorHeartbeatTracker{
+				blockIndex:            0,
+				expectedNextHash:      "",
+				expectedNexthashSince: time.Time{},
+			},
+			validatorPower: node.ValidatorPower,
+		}
+		votingPower[node.ValidatorUpdate.NodeId] = node.ValidatorPower
+		t.sendValidatorUpdateEvent(ctx, t.validators[node.ValidatorUpdate.NodeId].data, true)
 	}
 
 	for _, pr := range ckp.PendingKeyRotations {
@@ -48,6 +86,29 @@ func (t *Topology) Load(_ context.Context, data []byte) error {
 		}
 	}
 
+	nextValidators := make([]string, 0, len(votingPower))
+	for k := range votingPower {
+		nextValidators = append(nextValidators, k)
+	}
+
+	sort.Strings(nextValidators)
+
+	// generate the tendermint updates from the voting power so that in end of the block the validator powers are pushed to tentermint
+	vUpdates := make([]tmtypes.ValidatorUpdate, 0, len(nextValidators))
+	for _, v := range nextValidators {
+		vd := t.validators[v]
+		pubkey, err := base64.StdEncoding.DecodeString(vd.data.TmPubKey)
+		if err != nil {
+			continue
+		}
+		vd.validatorPower = votingPower[v]
+		update := tmtypes.UpdateValidator(pubkey, votingPower[v], "")
+		vUpdates = append(vUpdates, update)
+	}
+
+	// setting this to true so that at the end of the block
+	t.validatorPowerUpdates = vUpdates
+	t.newEpochStarted = true
 	return nil
 }
 
@@ -88,4 +149,35 @@ func (t *Topology) getCheckpointPendingKeyRotations() []*checkpoint.PendingKeyRo
 		}
 	}
 	return rotations
+}
+
+func (t *Topology) getValidatorStateCheckpoint() []*checkpoint.ValidatorState {
+	vsSlice := make([]*checkpoint.ValidatorState, 0, len(t.validators))
+
+	keys := make([]string, 0, len(t.validators))
+	for k := range t.validators {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	for _, v := range keys {
+		node := t.validators[v]
+		vsSlice = append(vsSlice, &checkpoint.ValidatorState{
+			ValidatorUpdate: &eventspb.ValidatorUpdate{
+				NodeId:          node.data.ID,
+				VegaPubKey:      node.data.VegaPubKey,
+				VegaPubKeyIndex: node.data.VegaPubKeyIndex,
+				EthereumAddress: node.data.EthereumAddress,
+				TmPubKey:        node.data.TmPubKey,
+				InfoUrl:         node.data.InfoURL,
+				Country:         node.data.Country,
+				Name:            node.data.Name,
+				AvatarUrl:       node.data.AvatarURL,
+				FromEpoch:       node.data.FromEpoch,
+			},
+			Status:             int32(node.status),
+			EthEventsForwarded: node.numberOfEthereumEventsForwarded,
+			ValidatorPower:     node.validatorPower,
+		})
+	}
+	return vsSlice
 }

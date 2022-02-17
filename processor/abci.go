@@ -3,7 +3,6 @@ package processor
 import (
 	"bytes"
 	"context"
-	"encoding/base64"
 	"encoding/hex"
 	"errors"
 	"fmt"
@@ -22,7 +21,6 @@ import (
 	"code.vegaprotocol.io/vega/genesis"
 	vgcontext "code.vegaprotocol.io/vega/libs/context"
 	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
-	vgtm "code.vegaprotocol.io/vega/libs/tm"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/processor/ratelimit"
 	"code.vegaprotocol.io/vega/txn"
@@ -119,7 +117,6 @@ type App struct {
 	netp            NetworkParameters
 	oracles         *Oracle
 	delegation      DelegationEngine
-	rewards         RewardEngine
 	limits          Limits
 	stake           StakeVerifier
 	stakingAccounts StakingAccounts
@@ -157,7 +154,6 @@ func NewApp(
 	checkpoint Checkpoint,
 	spam SpamEngine,
 	stakingAccounts StakingAccounts,
-	rewards RewardEngine,
 	snapshot Snapshot,
 	stateVarEngine StateVarEngine,
 	blockchainClient BlockchainClient,
@@ -199,7 +195,6 @@ func NewApp(
 		spam:             spam,
 		stakingAccounts:  stakingAccounts,
 		epoch:            epoch,
-		rewards:          rewards,
 		snapshot:         snapshot,
 		stateVar:         stateVarEngine,
 		version:          version,
@@ -228,9 +223,14 @@ func NewApp(
 		HandleCheckTx(txn.ChainEventCommand, app.RequireValidatorPubKey).
 		HandleCheckTx(txn.SubmitOracleDataCommand, app.CheckSubmitOracleData).
 		HandleCheckTx(txn.KeyRotateSubmissionCommand, app.RequireValidatorMasterPubKey).
-		HandleCheckTx(txn.StateVariableProposalCommand, app.RequireValidatorPubKey)
+		HandleCheckTx(txn.StateVariableProposalCommand, app.RequireValidatorPubKey).
+		HandleCheckTx(txn.ValidatorHeartbeatCommand, app.RequireValidatorPubKey)
 
 	app.abci.
+		HandleDeliverTx(txn.AnnounceNodeCommand,
+			app.SendEventOnError(app.DeliverAnnounceNode)).
+		HandleDeliverTx(txn.ValidatorHeartbeatCommand,
+			app.SendEventOnError(app.DeliverValidatorHeartbeat)).
 		HandleDeliverTx(txn.TransferFundsCommand,
 			app.SendEventOnError(addDeterministicID(app.DeliverTransferFunds))).
 		HandleDeliverTx(txn.CancelTransferFundsCommand,
@@ -505,15 +505,6 @@ func (app *App) OnInitChain(req tmtypes.RequestInitChain) tmtypes.ResponseInitCh
 		app.log.Fatal("couldn't start snapshot engine", logging.Error(err))
 	}
 
-	vators := make([]string, 0, len(req.Validators))
-	// get just the pubkeys out of the validator list
-	for _, v := range req.Validators {
-		if len(v.PubKey.GetEd25519()) > 0 {
-			vators = append(vators, vgtm.PubKeyToString(v.PubKey))
-		}
-	}
-
-	app.top.UpdateValidatorSet(vators)
 	if err := app.ghandler.OnGenesis(ctx, req.Time, req.AppStateBytes); err != nil {
 		app.cancel()
 		app.log.Fatal("couldn't initialise vega with the genesis block", logging.Error(err))
@@ -539,23 +530,10 @@ func (app *App) OnEndBlock(req tmtypes.RequestEndBlock) (ctx context.Context, re
 		app.spam.EndOfBlock(uint64(req.Height))
 	}
 
-	// check if we need to update the voting power of the validators
-	if validatorUpdates := app.rewards.EndOfBlock(req.Height); validatorUpdates != nil {
-		vUpdates := make([]tmtypes.ValidatorUpdate, 0, len(validatorUpdates))
-		for _, v := range validatorUpdates {
-			// using the default for key type which is ed25519 which seems fine for now because all validators in genesis use this key type
-			// TODO use the proper key type of the validators
-			pubkey, err := base64.StdEncoding.DecodeString(v.TmPubKey)
-			if err != nil {
-				continue
-			}
-			update := tmtypes.UpdateValidator(pubkey, v.VotingPower, "")
-			vUpdates = append(vUpdates, update)
-			app.log.Info("Updated voting power of validator", logging.String("tmKey", v.TmPubKey), logging.Int64("votingPower", v.VotingPower))
-		}
-
+	powerUpdates := app.top.GetValidatorPowerUpdates()
+	if len(powerUpdates) > 0 {
 		resp = tmtypes.ResponseEndBlock{
-			ValidatorUpdates: vUpdates,
+			ValidatorUpdates: powerUpdates,
 		}
 	}
 	return ctx, resp
@@ -602,12 +580,16 @@ func (app *App) OnBeginBlock(req tmtypes.RequestBeginBlock) (ctx context.Context
 	}
 
 	// read the state of validator set from the previous end of block
-	var vd []*tmtypesint.Validator
-	if req.Header.Height > 0 {
+	if app.blockchainClient != nil && req.Header.Height > 1 {
 		h := req.Header.Height - 1
-		vd, _ = app.blockchainClient.Validators(&h)
+		app.log.Info("requested validator state at height", logging.Int64("height", h))
+		vd, err := app.blockchainClient.Validators(&h)
+		if err != nil {
+			app.log.Error("failed to get validators state from tendermint for height", logging.Int64("height", h), logging.Error(err))
+		} else {
+			app.top.BeginBlock(ctx, req, vd)
+		}
 	}
-	app.top.BeginBlock(ctx, req, vd)
 
 	return ctx, resp
 }
@@ -876,6 +858,24 @@ func (app *App) RequireValidatorMasterPubKey(ctx context.Context, tx abci.Tx) er
 		return ErrNodeSignatureWithNonValidatorMasterKey
 	}
 	return nil
+}
+
+func (app *App) DeliverAnnounceNode(ctx context.Context, tx abci.Tx) error {
+	an := &commandspb.AnnounceNode{}
+	if err := tx.Unmarshal(an); err != nil {
+		return err
+	}
+
+	return app.top.ProcessAnnounceNode(ctx, an)
+}
+
+func (app *App) DeliverValidatorHeartbeat(ctx context.Context, tx abci.Tx) error {
+	an := &commandspb.ValidatorHeartbeat{}
+	if err := tx.Unmarshal(an); err != nil {
+		return err
+	}
+
+	return app.top.ProcessValidatorHeartbeat(ctx, an, vgcrypto.VerifyVegaSignature, vgcrypto.VerifyEthereumSignature)
 }
 
 func (app *App) DeliverTransferFunds(ctx context.Context, tx abci.Tx, id string) error {
