@@ -391,16 +391,16 @@ Feature: Staking & Delegation - scenarios focusing on initial epoch
     # node4 score = (14000 - 0 - 0)/ 1746000 = 0.00802 
     # node5 score = (15000 - 0 - 0)/ 1746000 = 0.00859
     # node6 score = (16000 - 0 - 0)/ 1746000 = 0.00916
-    # node7 score = (444000 - 296,261.5384615385 - 0)/ 1746000 = 0.08462
+    # node7 score = 0 (self stake less than min stake)
     Then the validators should have the following val scores for epoch 1:
       | node id | validator score  | normalised score |
-      |  node1  |      0.08462     |     0.32765      |    
-      |  node2  |      0.05580     |     0.21608      |
-      |  node3  |      0.00745     |     0.02883      | 
-      |  node4  |      0.00802     |     0.03105      | 
-      |  node5  |      0.00859     |     0.03327      | 
-      |  node6  |      0.00916     |     0.03548      | 
-      |  node7  |      0.08462     |     0.32765      | 
+      |  node1  |      0.08462     |     0.48731      |    
+      |  node2  |      0.05580     |     0.32137      |
+      |  node3  |      0.00745     |     0.04288      | 
+      |  node4  |      0.00802     |     0.04618      | 
+      |  node5  |      0.00859     |     0.04948      | 
+      |  node6  |      0.00916     |     0.05278      | 
+      |  node7  |      0.00000     |     0.00000      | 
       |  node8  |      0.00000     |     0.00000      | 
       |  node9  |      0.00000     |     0.00000      | 
       |  node10 |      0.00000     |     0.00000      | 
@@ -410,15 +410,15 @@ Feature: Staking & Delegation - scenarios focusing on initial epoch
   
     And the parties receive the following reward for epoch 1:
       | party  | asset | amount |
-      | party1 | VEGA  | 3528   | 
-      | party2 | VEGA  | 4958   | 
-      | party3 | VEGA  | 8486   | 
-      | node1  | VEGA  | 2266   | 
-      | node2  | VEGA  | 1409   | 
-      | node3  | VEGA  | 1441   |  
-      | node4  | VEGA  | 1552   | 
-      | node5  | VEGA  | 1663   | 
-      | node6  | VEGA  | 1774   | 
+      | party1 | VEGA  | 5248   | 
+      | party2 | VEGA  | 1996   | 
+      | party3 | VEGA  | 7243   | 
+      | node1  | VEGA  | 3370   | 
+      | node2  | VEGA  | 2095   | 
+      | node3  | VEGA  | 2144   |  
+      | node4  | VEGA  | 2308   | 
+      | node5  | VEGA  | 2473   | 
+      | node6  | VEGA  | 2638   | 
       | node7  | VEGA  | 0      | 
       | node8  | VEGA  | 0      | 
       | node10 | VEGA  | 0      | 
@@ -504,14 +504,14 @@ Feature: Staking & Delegation - scenarios focusing on initial epoch
     # node8 score = (110 - 0 - 0)/ 392340 = 0.00028
       Then the validators should have the following val scores for epoch 1:
         | node id | validator score  | normalised score |
-        |  node1  |      0.08462     |     0.40725      |    
-        |  node2  |      0.00000     |     0.00000      |
-        |  node3  |      0.00008     |     0.00037      | 
-        |  node4  |      0.03568     |     0.17174      | 
-        |  node5  |      0.03823     |     0.18401      | 
-        |  node6  |      0.04078     |     0.19628      | 
-        |  node7  |      0.00811     |     0.03901      | 
-        |  node8  |      0.00028     |     0.00135      | 
+        |  node1  |      0.08462     |     0.42394      |    
+        |  node2  |      0.00000     |     0.00000      | #no self stake
+        |  node3  |      0.00000     |     0.00000      | #no self stake
+        |  node4  |      0.03568     |     0.17878      | 
+        |  node5  |      0.03823     |     0.19155      | 
+        |  node6  |      0.04078     |     0.20432      | 
+        |  node7  |      0.00000     |     0.00000      | ֱֱ#no self stake
+        |  node8  |      0.00028     |     0.00140      | 
         |  node9  |      0.00000     |     0.00000      | 
         |  node10 |      0.00000     |     0.00000      | 
         |  node11 |      0.00000     |     0.00000      | 
@@ -520,16 +520,16 @@ Feature: Staking & Delegation - scenarios focusing on initial epoch
 
       And the parties receive the following reward for epoch 1:
         | party  | asset | amount |
-        | party1 | VEGA  | 16358  | 
+        | party1 | VEGA  | 17029  | 
         | party2 | VEGA  | 0      | 
-        | node1  | VEGA  | 4003   | 
-        | node2  | VEGA  | 97     | 
-        | node3  | VEGA  | 1624   |  
-        | node4  | VEGA  | 8587   | 
-        | node5  | VEGA  | 9200   | 
-        | node6  | VEGA  | 9813   | 
+        | node1  | VEGA  | 4167   | 
+        | node2  | VEGA  | 0      | 
+        | node3  | VEGA  | 0      |  
+        | node4  | VEGA  | 8939   | 
+        | node5  | VEGA  | 9577   | 
+        | node6  | VEGA  | 10216  | 
         | node7  | VEGA  | 0      | 
-        | node8  | VEGA  | 67     | 
+        | node8  | VEGA  | 70     | 
         | node10 | VEGA  | 0      | 
         | node11 | VEGA  | 0      | 
         | node12 | VEGA  | 0      | 

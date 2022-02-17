@@ -2,6 +2,7 @@ package validators
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/hex"
 	"strings"
 
@@ -9,6 +10,7 @@ import (
 	"code.vegaprotocol.io/vega/types/num"
 
 	abcitypes "github.com/tendermint/tendermint/abci/types"
+	"github.com/tendermint/tendermint/crypto/sr25519"
 	tmtypes "github.com/tendermint/tendermint/types"
 )
 
@@ -49,19 +51,34 @@ func newPerformance() *performanceStats {
 	}
 }
 
+func tmPubKeyToAddress(tmPubKey string) string {
+	if len(tmPubKey) == 0 {
+		return ""
+	}
+	pubkey, err := base64.StdEncoding.DecodeString(tmPubKey)
+	if err != nil {
+		return ""
+	}
+	pke := sr25519.PubKey(pubkey)
+	address := hex.EncodeToString(pke.Address().Bytes())
+	return strings.ToLower(address)
+}
+
 // ValidatorPerformanceScore returns the validator's performance score.
 // in case the validator was never elected - they get a performance score of 1.
-func (vp *validatorPerformance) ValidatorPerformanceScore(address string) num.Decimal {
-	// the addresses of validators in the map are the result of encoding hex so are lower case apparently
-	// so to make sure we find them given the key may be upper case first convert to lower case
-	if _, ok := vp.performance[strings.ToLower(address)]; !ok {
+func (vp *validatorPerformance) ValidatorPerformanceScore(tmPubKey string) num.Decimal {
+	// convert from tendermint public key key to address
+	address := tmPubKeyToAddress(tmPubKey)
+	if _, ok := vp.performance[address]; !ok {
 		return decimalOne
 	}
-	perf := vp.performance[strings.ToLower(address)]
+	perf := vp.performance[address]
 	if perf.elected == 0 {
 		return decimalOne
 	}
-	return num.MaxD(minPerfScore, num.DecimalFromInt64(int64(perf.proposed)).Div(num.DecimalFromInt64(int64(perf.elected))))
+	score := num.MaxD(minPerfScore, num.DecimalFromInt64(int64(perf.proposed)).Div(num.DecimalFromInt64(int64(perf.elected))))
+	vp.log.Info("loooking up performance for", logging.String("address", address), logging.String("perf-score", score.String()))
+	return score
 }
 
 // BeginBlock is called when a new block begins. it calculates who should have been the proposer and updates the counters with the expected and actual proposers and voters.
@@ -84,9 +101,7 @@ func (vp *validatorPerformance) BeginBlock(ctx context.Context, r abcitypes.Requ
 	vp.performance[proposer].proposed++
 	vp.performance[proposer].lastHeightProposed = r.Header.Height
 
-	if vp.log.GetLevel() <= logging.DebugLevel {
-		vp.log.Debug("validatorPerformance", logging.String("expected-proposer", expectedProposer), logging.String("actual-proposer", proposer))
-	}
+	vp.log.Info("validatorPerformance", logging.String("expected-proposer", expectedProposer), logging.String("actual-proposer", proposer))
 
 	for _, vote := range r.LastCommitInfo.Votes {
 		voter := hex.EncodeToString(vote.Validator.Address)

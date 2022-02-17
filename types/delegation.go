@@ -110,3 +110,9 @@ type ValidatorVotingPower struct {
 	TmPubKey    string
 	VotingPower int64
 }
+
+type StakeScoreParams struct {
+	MinVal                 num.Decimal
+	CompLevel              num.Decimal
+	OptimalStakeMultiplier num.Decimal
+}

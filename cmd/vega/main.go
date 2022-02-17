@@ -72,6 +72,7 @@ func Main(ctx context.Context) error {
 		paths.Paths,
 		UnsafeResetAll,
 		SnapshotList,
+		AnnounceNode,
 	); err != nil {
 		_, _ = fmt.Fprintln(os.Stderr, err)
 		return err
