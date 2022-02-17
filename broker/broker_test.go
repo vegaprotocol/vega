@@ -650,7 +650,7 @@ func testStreamsOverSocket(t *testing.T) {
 	var receivedEvent eventspb.BusEvent
 	err = proto.Unmarshal(receivedBytes, &receivedEvent)
 	assert.NoError(t, err)
-	assert.Equal(t, *sentEvent.StreamMessage(), receivedEvent)
+	assert.True(t, proto.Equal(sentEvent.StreamMessage(), &receivedEvent))
 }
 
 func testStopsProcessOnStreamError(t *testing.T) {
