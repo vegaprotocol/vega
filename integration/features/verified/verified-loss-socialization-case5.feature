@@ -8,22 +8,26 @@ Feature: Test loss socialization case 5
       | name                           | value |
       | market.auction.minimumDuration | 1     |
 
-  Scenario: case 5 from https://docs.google.com/spreadsheets/d/1CIPH0aQmIKj6YeFW9ApP_l-jwB4OcsNQ/edit#gid=1555964910
+
+Scenario: Case 5: multiple traders have insufficient MTM & multiple traders socialise the losses (insurance pool fully covers the losses)
+   Description: case 5 from https://docs.google.com/spreadsheets/d/1CIPH0aQmIKj6YeFW9ApP_l-jwB4OcsNQ/edit#gid=1555964910
+
 # setup accounts
     Given the initial insurance pool balance is "3000" for the markets:
     Given the parties deposit on asset's general account the following amount:
-      | party           | asset | amount    |
+      | party            | asset | amount    |
       | sellSideProvider | BTC   | 100000000 |
       | buySideProvider  | BTC   | 100000000 |
-      | party1          | BTC   | 2000      |
-      | party2          | BTC   | 10000     |
-      | party3          | BTC   | 3000      |
-      | party4          | BTC   | 10000     |
+      | party1           | BTC   | 2000      |
+      | party2           | BTC   | 10000     |
+      | party3           | BTC   | 3000      |
+      | party4           | BTC   | 10000     |
       | aux1             | BTC   | 100000000 |
       | aux2             | BTC   | 100000000 |
+
 # setup orderbook
     When the parties place the following orders:
-      | party           | market id | side | volume | price | resulting trades | type       | tif     | reference       |
+      | party            | market id | side | volume | price | resulting trades | type       | tif     | reference       |
       | sellSideProvider | ETH/DEC19 | sell | 1000   | 120   | 0                | TYPE_LIMIT | TIF_GTC | sell-provider-1 |
       | buySideProvider  | ETH/DEC19 | buy  | 1000   | 80    | 0                | TYPE_LIMIT | TIF_GTC | buy-provider-1  |
       | aux1             | ETH/DEC19 | sell | 1      | 120   | 0                | TYPE_LIMIT | TIF_GTC | aux-s-1         |
@@ -33,6 +37,7 @@ Feature: Test loss socialization case 5
     Then the opening auction period ends for market "ETH/DEC19"
     And the mark price should be "100" for the market "ETH/DEC19"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
+
 # trade 1 occur
     When the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
@@ -51,17 +56,17 @@ Feature: Test loss socialization case 5
 
 # order book volume change
     Then the parties cancel the following orders:
-      | party           | reference       |
+      | party            | reference       |
       | sellSideProvider | sell-provider-1 |
       | buySideProvider  | buy-provider-1  |
     When the parties place the following orders:
-      | party           | market id | side | volume | price | resulting trades | type       | tif     | reference       |
+      | party            | market id | side | volume | price | resulting trades | type       | tif     | reference       |
       | sellSideProvider | ETH/DEC19 | sell | 1000   | 300   | 0                | TYPE_LIMIT | TIF_GTC | sell-provider-2 |
       | buySideProvider  | ETH/DEC19 | buy  | 1000   | 80    | 0                | TYPE_LIMIT | TIF_GTC | buy-provider-2  |
     Then the parties cancel the following orders:
       | party | reference |
-      | aux1   | aux-s-1   |
-      | aux2   | aux-b-1   |
+      | aux1  | aux-s-1   |
+      | aux2  | aux-b-1   |
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
 
 # trade 4 occur

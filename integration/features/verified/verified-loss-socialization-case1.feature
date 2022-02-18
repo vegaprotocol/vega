@@ -8,15 +8,17 @@ Feature: Test loss socialization case 1
       | name                           | value |
       | market.auction.minimumDuration | 1     |
 
-  Scenario: case 1 from https://docs.google.com/spreadsheets/d/1CIPH0aQmIKj6YeFW9ApP_l-jwB4OcsNQ/edit#gid=1555964910
+Scenario: Case 1: trader1 has insufficient MTM & only trader2 socialises the losses
+  Description : Case 1 from https://docs.google.com/spreadsheets/d/1CIPH0aQmIKj6YeFW9ApP_l-jwB4OcsNQ/edit#gid=1555964910
+
 # setup accounts
     Given the parties deposit on asset's general account the following amount:
-      | party           | asset | amount    |
+      | party            | asset | amount    |
       | sellSideProvider | BTC   | 100000000 |
       | buySideProvider  | BTC   | 100000000 |
-      | party1          | BTC   | 5000      |
-      | party2          | BTC   | 50000     |
-      | party3          | BTC   | 50000     |
+      | party1           | BTC   | 5000      |
+      | party2           | BTC   | 50000     |
+      | party3           | BTC   | 50000     |
       | aux1             | BTC   | 100000000 |
       | aux2             | BTC   | 100000000 |
 # setup order book
@@ -43,18 +45,18 @@ Feature: Test loss socialization case 1
     Then the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
 # then we change the volume in the book
     Then the parties cancel the following orders:
-      | party           | reference       |
+      | party            | reference       |
       | sellSideProvider | sell-provider-1 |
       | buySideProvider  | buy-provider-1  |
     Then the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
     When the parties place the following orders:
-      | party           | market id | side | volume | price | resulting trades | type       | tif     | reference       |
+      | party            | market id | side | volume | price | resulting trades | type       | tif     | reference       |
       | sellSideProvider | ETH/DEC19 | sell | 1000   | 200   | 0                | TYPE_LIMIT | TIF_GTC | sell-provider-2 |
       | buySideProvider  | ETH/DEC19 | buy  | 1000   | 80    | 0                | TYPE_LIMIT | TIF_GTC | buy-provider-2  |
     Then the parties cancel the following orders:
       | party | reference |
-      | aux1   | aux-s-1   |
-      | aux2   | aux-b-1   |
+      | aux1  | aux-s-1   |
+      | aux2  | aux-b-1   |
     Then the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
     When the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
