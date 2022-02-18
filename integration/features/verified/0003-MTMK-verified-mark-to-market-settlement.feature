@@ -8,7 +8,7 @@ Feature: MTM settlement tests
       | id        | quote name | asset | risk model                  | margin calculator         | auction duration | fees         | price monitoring | oracle config          |
       | ETH/DEC19 | BTC        | BTC   | default-simple-risk-model-2 | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future |
 
-  Scenario: case 1 - LONG - MORE LONG - one trade
+  Scenario: case 1 - LONG - MORE LONG - one trade (0003-MTMK-007)
     # setup accounts
     Given the parties deposit on asset's general account the following amount:
       | party  | asset | amount   |
@@ -55,7 +55,7 @@ Feature: MTM settlement tests
 
    # MTM win transfers
     Then the following transfers should happen:
-      | from   | to      | from account            | to account          | market id | amount | asset |
+      | from   | to     | from account            | to account          | market id | amount | asset |
       | market | party1 | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN | ETH/DEC19 | 200    | BTC   |
 
    # place trade for 1@111 to set new mark price
@@ -71,7 +71,7 @@ Feature: MTM settlement tests
       | from   | to     | from account            | to account          | market id | amount | asset |
       | market | party1 | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN | ETH/DEC19 | 30     | BTC   |
 
-  Scenario: case 2 - LONG - MORE LONG - multiple trades
+  Scenario: case 2 - LONG - MORE LONG - multiple trades (0003-MTMK-007)
     # setup accounts
     Given the parties deposit on asset's general account the following amount:
       | party  | asset | amount   |
@@ -126,7 +126,7 @@ Feature: MTM settlement tests
 
    # MTM win transfers
     Then the following transfers should happen:
-      | from   | to      | from account            | to account          | market id | amount | asset |
+      | from   | to     | from account            | to account          | market id | amount | asset |
       | market | party1 | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN | ETH/DEC19 | 200    | BTC   |
       | market | party1 | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN | ETH/DEC19 | 90     | BTC   |
 
@@ -144,7 +144,7 @@ Feature: MTM settlement tests
       | from   | to     | from account        | to account              | market id | amount | asset |
       | party1 | market | ACCOUNT_TYPE_MARGIN | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC19 | 64     | BTC   |
 
-  Scenario: case 3 - LONG - LESS LONG - one trade
+  Scenario: case 3 - LONG - LESS LONG - one trade (0003-MTMK-007)
    # setup accounts
     Given the parties deposit on asset's general account the following amount:
       | party  | asset | amount   |
@@ -172,8 +172,8 @@ Feature: MTM settlement tests
     And the mark price should be "100" for the market "ETH/DEC19"
     Then the parties cancel the following orders:
       | party  | reference |
-      | party4 | party4-1 |
-      | party5 | party5-1 |
+      | party4 | party4-1  |
+      | party5 | party5-1  |
 
    # setup previous volume at 20
     When the parties place the following orders:
@@ -207,7 +207,7 @@ Feature: MTM settlement tests
       | from   | to     | from account            | to account          | market id | amount | asset |
       | market | party1 | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN | ETH/DEC19 | 15     | BTC   |
 
-  Scenario: case 4 - LONG - LESS LONG - multiple trades
+  Scenario: case 4 - LONG - LESS LONG - multiple trades ((0003-MTMK-001, 0003-MTMK-007)
     # setup accounts
     Given the parties deposit on asset's general account the following amount:
       | party  | asset | amount   |
@@ -279,7 +279,7 @@ Feature: MTM settlement tests
       | from   | to     | from account        | to account              | market id | amount | asset |
       | party1 | market | ACCOUNT_TYPE_MARGIN | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC19 | 16     | BTC   |
 
-  Scenario: case 5 - LONG - ZERO - one trade
+  Scenario: case 5 - LONG - ZERO - one trade (0003-MTMK-007)
     # setup accounts
     Given the parties deposit on asset's general account the following amount:
       | party  | asset | amount   |
@@ -328,7 +328,7 @@ Feature: MTM settlement tests
       | from   | to     | from account            | to account          | market id | amount | asset |
       | market | party1 | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN | ETH/DEC19 | 200    | BTC   |
 
-  Scenario: case 6 - LONG - ZERO - multiple trades
+  Scenario: case 6 - LONG - ZERO - multiple trades (0003-MTMK-007)
    # setup accounts
     Given the parties deposit on asset's general account the following amount:
       | party  | asset | amount   |
@@ -386,7 +386,7 @@ Feature: MTM settlement tests
       | market | party1 | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN | ETH/DEC19 | 200    | BTC   |
       | market | party1 | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN | ETH/DEC19 | 40     | BTC   |
 
-  Scenario: case 7 - LONG - SHORT - one trade
+  Scenario: case 7 - LONG - SHORT - one trade (0003-MTMK-007)
     # setup accounts
     Given the parties deposit on asset's general account the following amount:
       | party  | asset | amount   |
@@ -413,8 +413,8 @@ Feature: MTM settlement tests
     And the mark price should be "100" for the market "ETH/DEC19"
     Then the parties cancel the following orders:
       | party  | reference |
-      | party4 | party4-1 |
-      | party5 | party5-1 |
+      | party4 | party4-1  |
+      | party5 | party5-1  |
 
     # setup previous volume at 20
     When the parties place the following orders:
@@ -432,10 +432,10 @@ Feature: MTM settlement tests
 
     # MTM win transfers
     Then the following transfers should happen:
-      | from   | to      | from account            | to account          | market id | amount | asset |
+      | from   | to     | from account            | to account          | market id | amount | asset |
       | market | party1 | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN | ETH/DEC19 | 200    | BTC   |
 
-  Scenario: case 8 - LONG - SHORT - multiple trades
+  Scenario: case 8 - LONG - SHORT - multiple trades (0003-MTMK-007)
     # setup accounts
     Given the parties deposit on asset's general account the following amount:
       | party  | asset | amount   |
@@ -507,7 +507,7 @@ Feature: MTM settlement tests
       | from   | to     | from account            | to account          | market id | amount | asset |
       | market | party1 | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN | ETH/DEC19 | 15     | BTC   |
 
-  Scenario: case 9 - LONG - SAME AMOUNT - multiple trades
+  Scenario: case 9 - LONG - SAME AMOUNT - multiple trades ((0003-MTMK-001, 0003-MTMK-007)
     # setup accounts
     Given the parties deposit on asset's general account the following amount:
       | party  | asset | amount   |
@@ -562,7 +562,7 @@ Feature: MTM settlement tests
 
    # MTM win transfers
     Then the following transfers should happen:
-      | from   | to      | from account            | to account          | market id | amount | asset |
+      | from   | to     | from account            | to account          | market id | amount | asset |
       | market | party1 | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN | ETH/DEC19 | 200    | BTC   |
       | market | party1 | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN | ETH/DEC19 | 120    | BTC   |
 
@@ -576,5 +576,5 @@ Feature: MTM settlement tests
 
     # MTM win transfers: 200+120-60=260 as per spreadsheet
     Then the following transfers should happen:
-      | from    | to    | from account        | to account              | market id | amount | asset |
+      | from   | to    | from account         | to account              | market id | amount | asset |
       | party1 | market | ACCOUNT_TYPE_MARGIN | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC19 | 60     | BTC   |
