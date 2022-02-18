@@ -9,6 +9,7 @@ import (
 	reflect "reflect"
 
 	vega "code.vegaprotocol.io/protos/vega"
+	v1 "code.vegaprotocol.io/protos/vega/events/v1"
 	gomock "github.com/golang/mock/gomock"
 )
 
@@ -33,6 +34,20 @@ func NewMockTransferResponseService(ctrl *gomock.Controller) *MockTransferRespon
 // EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockTransferResponseService) EXPECT() *MockTransferResponseServiceMockRecorder {
 	return m.recorder
+}
+
+// GetAllTransfers mocks base method.
+func (m *MockTransferResponseService) GetAllTransfers(arg0 context.Context, arg1 string, arg2, arg3 bool) []*v1.Transfer {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetAllTransfers", arg0, arg1, arg2, arg3)
+	ret0, _ := ret[0].([]*v1.Transfer)
+	return ret0
+}
+
+// GetAllTransfers indicates an expected call of GetAllTransfers.
+func (mr *MockTransferResponseServiceMockRecorder) GetAllTransfers(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllTransfers", reflect.TypeOf((*MockTransferResponseService)(nil).GetAllTransfers), arg0, arg1, arg2, arg3)
 }
 
 // ObserveTransferResponses mocks base method.

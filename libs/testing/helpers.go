@@ -7,7 +7,6 @@ import (
 
 	vgrand "code.vegaprotocol.io/shared/libs/rand"
 	"code.vegaprotocol.io/shared/paths"
-	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/protobuf/proto"
 )
@@ -22,15 +21,15 @@ func NewVegaPaths() (paths.Paths, func()) {
 }
 
 // ProtosEq is a gomock matcher for comparing messages for equality
-func ProtosEq(message proto.Message) gomock.Matcher {
-	return protoMatcher{message}
+func ProtosEq(message proto.Message) ProtoMatcher {
+	return ProtoMatcher{message}
 }
 
-type protoMatcher struct {
+type ProtoMatcher struct {
 	expected proto.Message
 }
 
-func (m protoMatcher) Matches(x interface{}) bool {
+func (m ProtoMatcher) Matches(x interface{}) bool {
 	msg, ok := x.(proto.Message)
 	if !ok {
 		return false
@@ -38,7 +37,7 @@ func (m protoMatcher) Matches(x interface{}) bool {
 	return proto.Equal(msg, m.expected)
 }
 
-func (m protoMatcher) String() string {
+func (m ProtoMatcher) String() string {
 	return fmt.Sprintf("is equal to %v (%T)", m.expected, m.expected)
 }
 

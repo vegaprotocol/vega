@@ -6,6 +6,9 @@ model:
   filename: models.go
 
 models:
+  String:
+    model:
+      - github.com/99designs/gqlgen/graphql.ID
   Order:
     model: code.vegaprotocol.io/protos/vega.Order
   Trade:
@@ -192,3 +195,14 @@ models:
     model: code.vegaprotocol.io/protos/vega/events/v1.RecurringTransfer
   Statistics:
     model: code.vegaprotocol.io/protos/vega/api/v1.Statistics
+  AccountType:
+    model:
+      - code.vegaprotocol.io/data-node/gateway/graphql/marshallers.AccountType
+  AccountField:
+    model: code.vegaprotocol.io/data-node/gateway/graphql/marshallers.AccountField
+  AccountFilter:
+    model: code.vegaprotocol.io/protos/data-node/api/v2.AccountFilter
+  AggregatedBalance:
+    model: code.vegaprotocol.io/protos/data-node/api/v2.AggregatedBalance
+  Timestamp:
+    model: code.vegaprotocol.io/data-node/gateway/graphql/marshallers.Timestamp

@@ -31,6 +31,7 @@ import (
 	"code.vegaprotocol.io/data-node/parties"
 	"code.vegaprotocol.io/data-node/plugins"
 	"code.vegaprotocol.io/data-node/risk"
+	"code.vegaprotocol.io/data-node/sqlstore"
 	"code.vegaprotocol.io/data-node/staking"
 	"code.vegaprotocol.io/data-node/storage"
 	"code.vegaprotocol.io/data-node/subscribers"
@@ -264,6 +265,9 @@ func getTestGRPCServer(
 
 	stakingService := staking.NewService(ctx, logger)
 
+	sqlStore := sqlstore.SQLStore{}
+	sqlBalanceStore := sqlstore.NewBalances(&sqlStore)
+
 	g := api.NewGRPCServer(
 		logger,
 		conf.API,
@@ -294,6 +298,7 @@ func getTestGRPCServer(
 		rewardsService,
 		stakingService,
 		checkpointSvc,
+		sqlBalanceStore,
 	)
 	if g == nil {
 		err = fmt.Errorf("failed to create gRPC server")

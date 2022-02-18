@@ -5,13 +5,7 @@ all: build
 
 .PHONY: lint
 lint: ## Lint the files
-	@t="$$(mktemp)" ; \
-	go list ./... | xargs golint | grep -vE '(and that stutters|blank import should be|should have comment|which can be annoying to use)' | tee "$$t" ; \
-	code=0 ; test "$$(wc -l <"$$t" | awk '{print $$1}')" -gt 0 && code=1 ; \
-	rm -f "$$t" ; \
-	golangci-lint run -v --config .golangci.toml
-
-	exit "$$code"
+	golangci-lint run --config .golangci.toml
 
 .PHONY: retest
 retest: ## Re-run all unit tests
@@ -127,6 +121,13 @@ spellcheck: ## Run markdown spellcheck container
 			--report \
 			'*.md' \
 			'docs/**/*.md'
+
+.PHONY: yamllint
+yamllint:
+	git ls-files '*.yml' '*.yaml' | xargs yamllint -s -d '{extends: default, rules: {line-length: {max: 160}}}'
+
+# Do a bunch of the checks the CI does, to help you catch them before commit
+ci_check: spellcheck yamllint lint test
 
 # The integration directory is special, and contains a package called core_test.
 .PHONY: staticcheck

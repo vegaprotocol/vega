@@ -12,7 +12,7 @@ import (
 )
 
 var (
-	testStore       *sqlstore.SqlStore
+	testStore       *sqlstore.SQLStore
 	sqlTestsEnabled bool = false
 )
 

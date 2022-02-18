@@ -40,16 +40,16 @@ func NewAsset(ctx context.Context, store AssetStore, blockStore BlockStore, log 
 	}
 }
 
-func (a *Asset) Types() []events.Type {
+func (as *Asset) Types() []events.Type {
 	return []events.Type{
 		events.AssetEvent,
 	}
 }
 
-func (a *Asset) Push(evts ...events.Event) {
+func (as *Asset) Push(evts ...events.Event) {
 	for _, e := range evts {
 		if ae, ok := e.(AssetEvent); ok {
-			a.consume(ae)
+			as.consume(ae)
 		}
 	}
 }
@@ -72,7 +72,7 @@ func (as *Asset) consume(ae AssetEvent) {
 }
 
 func (as *Asset) addAsset(va types.Asset, vegaTime time.Time) error {
-	id := entities.MakeAssetId(va.Id)
+	id := entities.MakeAssetID(va.Id)
 
 	totalSupply, err := decimal.NewFromString(va.Details.TotalSupply)
 	if err != nil {

@@ -246,6 +246,13 @@ type TransactionSubmitted {
   success: Boolean!
 }
 
+input AccountFilter {
+  assetId: ID
+  partyIds: [ID!]
+  marketIds: [ID!]
+  accountTypes: [AccountType!]
+}
+
 "Queries allow a caller to read data and filter data via GraphQL."
 type Query {
   "One or more instruments that are trading on the VEGA network"
@@ -414,6 +421,11 @@ type Query {
 
   "get statistics about the vega node"
   statistics: Statistics!
+
+  historicBalances(
+    filter: AccountFilter,
+    groupBy: [AccountField])
+    : [AggregatedBalance!]!
 }
 
 enum TransferStatus {
@@ -2165,8 +2177,10 @@ enum AccountType {
   General
   "Infrastructure fee account - the account where all infrastructure fees are collected"
   FeeInfrastructure
-  "Liquidity fee account - the account where all infrastructure fees are collected"
+  "Liquidity fee account - the account contains fees earned by providing liquidity"
   FeeLiquidity
+  "Market maker fee account - holds fees paid to the passive side when a trade matches"
+  FeeMaker
   "LockWithdraw - and account use for party in the process of withdrawing funds"
   LockWithdraw
   "Bond - an account use to maintain MM commitments"
@@ -2783,3 +2797,32 @@ type RewardPerAssetDetail {
   "The total amount of rewards received for this asset."
   totalAmount: String!
 }
+
+scalar Timestamp
+
+type AggregatedBalance {
+  "RFC3339Nano time from at which this balance was relevant"
+  timestamp: Timestamp!
+  "Net balance of the accounts specified in the filter at this time"
+  balance: String!
+  "Account identifier, if query was grouped by account - else null"
+  accountId: String
+  "Party identifier, if query was grouped by party - else null"
+  partyId: String
+  "Asset identifier, if query was grouped by asset - else null"
+  assetId: String
+  "Market identifier, if query was grouped by market - else null"
+  marketId: String
+  "Account type, if query was grouped by account type - else null"
+  accountType: AccountType
+}
+
+enum AccountField {
+  AccountId
+  PartyId
+  AssetId
+  MarketId
+  AccountType
+}
+
+

@@ -98,12 +98,13 @@ type NodeCommand struct {
 	chainInfoStore        *storage.ChainInfo
 	transferStore         *storage.Transfers
 
-	sqlStore        *sqlstore.SqlStore
-	assetStoreSql   *sqlstore.Assets
-	blockStoreSql   *sqlstore.Blocks
-	accountStoreSql *sqlstore.Accounts
-	ledgerSql       *sqlstore.Ledger
-	partyStoreSql   *sqlstore.Parties
+	sqlStore        *sqlstore.SQLStore
+	assetStoreSQL   *sqlstore.Assets
+	blockStoreSQL   *sqlstore.Blocks
+	accountStoreSQL *sqlstore.Accounts
+	balanceStoreSQL *sqlstore.Balances
+	ledgerSQL       *sqlstore.Ledger
+	partyStoreSQL   *sqlstore.Parties
 
 	vegaCoreServiceClient vegaprotoapi.CoreServiceClient
 
@@ -132,9 +133,9 @@ type NodeCommand struct {
 	checkpointSub        *subscribers.CheckpointSub
 	transferSub          *subscribers.TransferSub
 
-	assetSubSql            *sqlsubscribers.Asset
-	timeSubSql             *sqlsubscribers.Time
-	transferResponseSubSql *sqlsubscribers.TransferResponse
+	assetSubSQL            *sqlsubscribers.Asset
+	timeSubSQL             *sqlsubscribers.Time
+	transferResponseSubSQL *sqlsubscribers.TransferResponse
 
 	candleService     *candles.Svc
 	tradeService      *trades.Svc
@@ -233,6 +234,7 @@ func (l *NodeCommand) runNode(args []string) error {
 		l.rewardsSub,
 		l.stakingService,
 		l.checkpointSvc,
+		l.balanceStoreSQL,
 	)
 
 	// watch configs

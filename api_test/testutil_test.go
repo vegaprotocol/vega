@@ -11,6 +11,7 @@ import (
 	"time"
 
 	vgtesting "code.vegaprotocol.io/data-node/libs/testing"
+	"code.vegaprotocol.io/data-node/sqlstore"
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/stretchr/testify/require"
 
@@ -207,6 +208,9 @@ func NewTestServer(t testing.TB, ctx context.Context, blocking bool) *TestServer
 		t.Fatalf("failed to create chain info store: %v", err)
 	}
 
+	sqlStore := sqlstore.SQLStore{}
+	sqlBalanceStore := sqlstore.NewBalances(&sqlStore)
+
 	eventBroker, err = broker.New(ctx, logger, conf.Broker, chainInfoStore)
 	if err != nil {
 		t.Fatalf("failed to create broker: %v", err)
@@ -258,6 +262,7 @@ func NewTestServer(t testing.TB, ctx context.Context, blocking bool) *TestServer
 		rewardsService,
 		stakingService,
 		checkpointSvc,
+		sqlBalanceStore,
 	)
 	if srv == nil {
 		t.Fatal("failed to create gRPC server")

@@ -33,6 +33,7 @@
 - [331](https://github.com/vegaprotocol/data-node/pull/331) - Add support for running an embedded version of `Postgresql`
 - [336](https://github.com/vegaprotocol/data-node/pull/336) - Remove trading mode and future maturity
 - [338](https://github.com/vegaprotocol/data-node/pull/336) - Add `grpcui` web user interface
+- [327](https://github.com/vegaprotocol/data-node/pull/327) - Add balances `sql` store and upgrade `gqlgen`
 - [338](https://github.com/vegaprotocol/data-node/pull/338) - Fix compatibility with new `protoc-gen-xxx` tools used in `protos` repository
 
 ### 🐛 Fixes

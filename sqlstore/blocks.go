@@ -18,15 +18,15 @@ var (
 )
 
 type Blocks struct {
-	*SqlStore
+	*SQLStore
 	lastBlock        *entities.Block
 	lastBlockChanged chan struct{}
 	mu               sync.Mutex
 }
 
-func NewBlocks(sqlStore *SqlStore) *Blocks {
+func NewBlocks(sqlStore *SQLStore) *Blocks {
 	b := &Blocks{
-		SqlStore:         sqlStore,
+		SQLStore:         sqlStore,
 		lastBlockChanged: make(chan struct{}),
 	}
 	return b
@@ -71,6 +71,7 @@ func (bs *Blocks) GetAtHeight(height int64) (entities.Block, error) {
 	return block, err
 }
 
+// WaitForBlockHeight will block until we have received an TimeUpdate message for this block
 // This is a bit fiddly; because we can't control much about which order messages are sent or
 // received on the event bus, sometimes we process events before the corresponding TimeUpdate
 // message for that block has been processed. This is a  problem because we want to store the
