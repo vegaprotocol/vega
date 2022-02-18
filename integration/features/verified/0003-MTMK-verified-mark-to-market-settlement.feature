@@ -4,6 +4,7 @@ Feature: MTM settlement tests
    # Reference spreadsheet: https://drive.google.com/open?id=1q5gE2yBA1SnA2V4Yu6XwQo3ytBzhk61M
    # Both the above sheets are the same though 
 
+  Background:
     Given the markets:
       | id        | quote name | asset | risk model                  | margin calculator         | auction duration | fees         | price monitoring | oracle config          |
       | ETH/DEC19 | BTC        | BTC   | default-simple-risk-model-2 | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future |
