@@ -9,7 +9,7 @@ Feature: Test loss socialization case 5
       | market.auction.minimumDuration | 1     |
 
 
-Scenario: Case 5: multiple traders have insufficient MTM & multiple traders socialise the losses (insurance pool fully covers the losses)
+Scenario: Case 5: multiple traders have insufficient MTM & multiple traders socialise the losses (insurance pool fully covers the losses) (0002-STTL-008)
    Description: case 5 from https://docs.google.com/spreadsheets/d/1CIPH0aQmIKj6YeFW9ApP_l-jwB4OcsNQ/edit#gid=1555964910
 
 # setup accounts

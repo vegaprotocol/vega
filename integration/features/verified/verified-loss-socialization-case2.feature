@@ -9,7 +9,7 @@ Feature: Test loss socialization case 2
       | name                           | value |
       | market.auction.minimumDuration | 1     |
 
-Scenario: Case 2: trader1 has insufficient MTM & multiple traders socialise the losses
+Scenario: Case 2: trader1 has insufficient MTM & multiple traders socialise the losses (0002-STTL-009)
   Description: Case 2 from https://docs.google.com/spreadsheets/d/1CIPH0aQmIKj6YeFW9ApP_l-jwB4OcsNQ/edit#gid=1555964910
 
 # setup accounts
