@@ -121,6 +121,7 @@ const (
 
 	TransferFeeFactor                  = "transfer.fee.factor"
 	TransferMinTransferQuantumMultiple = "transfer.minTransferQuantumMultiple"
+	TransferMaxCommandsPerEpoch        = "spam.protection.maxUserTransfersPerEpoch"
 )
 
 var AllKeys = map[string]struct{}{
@@ -214,4 +215,5 @@ var AllKeys = map[string]struct{}{
 	MultipleOfTendermintValidatorsForEtsatzSet:            {},
 	MinimumEthereumEventsForNewValidator:                  {},
 	TransferMinTransferQuantumMultiple:                    {},
+	TransferMaxCommandsPerEpoch:                           {},
 }

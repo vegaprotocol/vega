@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"sync"
 
+	proto "code.vegaprotocol.io/protos/vega"
 	types "code.vegaprotocol.io/protos/vega"
 	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
 	"code.vegaprotocol.io/vega/broker"
@@ -582,6 +583,22 @@ func (b *BrokerStub) GetPartyGeneralAccount(party, asset string) (ga types.Accou
 	for _, e := range batch {
 		v := e.Account()
 		if v.Owner == party && v.Type == types.AccountType_ACCOUNT_TYPE_GENERAL && v.Asset == asset {
+			ga = v
+			err = nil
+		}
+	}
+
+	return
+}
+
+// GetRewardAccountBalance returns the latest event WRT the reward accounts with the given type for the asset.
+func (b *BrokerStub) GetRewardAccountBalance(accountType, asset string) (ga types.Account, err error) {
+	batch := b.GetAccountEvents()
+	at := types.AccountType(proto.AccountType_value[accountType])
+	err = errors.New("account does not exist")
+	for _, e := range batch {
+		v := e.Account()
+		if v.Owner == "*" && v.Type == at && v.Asset == asset {
 			ga = v
 			err = nil
 		}

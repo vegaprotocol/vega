@@ -147,6 +147,7 @@ func (t *Topology) OnEpochEvent(_ context.Context, epoch types.Epoch) {
 	t.epochSeq = epoch.Seq
 	if epoch.Action == proto.EpochAction_EPOCH_ACTION_START {
 		t.newEpochStarted = true
+		t.rng = rand.New(rand.NewSource(epoch.StartTime.Unix()))
 	}
 }
 

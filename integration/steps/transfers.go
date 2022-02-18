@@ -165,7 +165,7 @@ func PartiesCancelTransfers(
 				actual = err.Error()
 			}
 			if expected != actual {
-				errs = append(errs, errors.New(r.MustStr("id")+" expected "+expected+" but got "+actual))
+				errs = append(errs, errors.New(r.MustStr("transfer_id")+" expected "+expected+" but got "+actual))
 			}
 		}
 	}
