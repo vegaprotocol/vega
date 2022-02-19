@@ -569,17 +569,7 @@ func (app *App) OnBeginBlock(req tmtypes.RequestBeginBlock) (ctx context.Context
 		app.cpt = nil
 	}
 
-	// read the state of validator set from the previous end of block
-	if app.blockchainClient != nil && req.Header.Height > 1 {
-		h := req.Header.Height - 1
-		app.log.Info("requested validator state at height", logging.Int64("height", h))
-		vd, err := app.blockchainClient.Validators(&h)
-		if err != nil {
-			app.log.Error("failed to get validators state from tendermint for height", logging.Int64("height", h), logging.Error(err))
-		} else {
-			app.top.BeginBlock(ctx, req, vd)
-		}
-	}
+	app.top.BeginBlock(ctx, req)
 
 	return ctx, resp
 }

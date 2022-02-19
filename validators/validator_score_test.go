@@ -13,8 +13,6 @@ import (
 	"code.vegaprotocol.io/vega/types/num"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
-	abcitypes "github.com/tendermint/tendermint/abci/types"
-	tmtypes "github.com/tendermint/tendermint/types"
 )
 
 type TestMultisigTopology struct {
@@ -974,7 +972,7 @@ func TestAddressMapping(t *testing.T) {
 
 type MockPerformanceScore struct{}
 
-func (*MockPerformanceScore) ValidatorPerformanceScore(tmPubKey string) num.Decimal {
+func (*MockPerformanceScore) ValidatorPerformanceScore(tmPubKey string, power, totalPower int64) num.Decimal {
 	if tmPubKey == "key6" || tmPubKey == "key8" {
 		return num.DecimalFromFloat(0.3)
 	}
@@ -987,10 +985,12 @@ func (*MockPerformanceScore) ValidatorPerformanceScore(tmPubKey string) num.Deci
 	return num.DecimalFromFloat(0.8)
 }
 
-func (*MockPerformanceScore) BeginBlock(ctx context.Context, r abcitypes.RequestBeginBlock, vd []*tmtypes.Validator) {
+func (*MockPerformanceScore) BeginBlock(ctx context.Context, proposer string) {
 }
 
 func (*MockPerformanceScore) Serialize() *v1.ValidatorPerformance {
 	return nil
 }
 func (*MockPerformanceScore) Deserialize(*v1.ValidatorPerformance) {}
+
+func (*MockPerformanceScore) Reset() {}

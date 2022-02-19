@@ -228,11 +228,15 @@ func (e *Engine) calculateRewardPayouts(ctx context.Context, epoch types.Epoch) 
 	delegationState := e.delegation.ProcessEpochDelegations(ctx, epoch)
 
 	stakeScoreParams := types.StakeScoreParams{MinVal: e.global.minValidators, CompLevel: e.global.compLevel, OptimalStakeMultiplier: e.global.optimalStakeMultiplier}
-	// let the topology process the changes in delegation set and calculate changes to tendermint/ersatz validator sets
-	e.topology.RecalcValidatorSet(ctx, num.NewUint(epoch.Seq+1).String(), e.delegation.GetValidatorData(), stakeScoreParams)
 
+	// NB: performance scores for rewards are calculated with the current values of the voting power
 	tmValidatorsScores, ersatzValidatorsScores := e.topology.GetRewardsScores(ctx, e.epochSeq, delegationState, stakeScoreParams)
 	tmValidatorsDelegation, ersatzValidatorsDelegation := e.splitDelegationByStatus(delegationState, tmValidatorsScores, ersatzValidatorsScores)
+
+	// let the topology process the changes in delegation set and calculate changes to tendermint/ersatz validator sets
+	// again, performance scores for ranking is based on the current voting powers.
+	// performance data will be erased in the next block which is the first block of the new epoch
+	e.topology.RecalcValidatorSet(ctx, num.NewUint(epoch.Seq+1).String(), e.delegation.GetValidatorData(), stakeScoreParams)
 
 	s_p := calcTotalDelegation(tmValidatorsDelegation)
 	s_e := calcTotalDelegation(ersatzValidatorsDelegation).Mul(e.ersatzRewardFactor)
