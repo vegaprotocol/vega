@@ -17,8 +17,8 @@ const (
 	ProposeCommand Command = 0x45
 	// VoteCommand ...
 	VoteCommand Command = 0x46
-	// RegisterNodeCommand ...
-	RegisterNodeCommand Command = 0x47
+	// AnnounceNodeCommand ...
+	AnnounceNodeCommand Command = 0x47
 	// NodeVoteCommand ...
 	NodeVoteCommand Command = 0x48
 	// NodeSignatureCommand ...
@@ -47,6 +47,8 @@ const (
 	TransferFundsCommand Command = 0x54
 	// CancelTransferFundsCommand ...
 	CancelTransferFundsCommand Command = 0x55
+	// ValidatorHeartbeat ...
+	ValidatorHeartbeatCommand Command = 0x56
 )
 
 var commandName = map[Command]string{
@@ -56,7 +58,7 @@ var commandName = map[Command]string{
 	WithdrawCommand:                 "Withdraw",
 	ProposeCommand:                  "Proposal",
 	VoteCommand:                     "Vote on Proposal",
-	RegisterNodeCommand:             "Register new Node",
+	AnnounceNodeCommand:             "Register new Node",
 	NodeVoteCommand:                 "Node Vote",
 	NodeSignatureCommand:            "Node Signature",
 	LiquidityProvisionCommand:       "Liquidity Provision Order",
@@ -71,11 +73,12 @@ var commandName = map[Command]string{
 	StateVariableProposalCommand:    "State Variable Proposal",
 	TransferFundsCommand:            "Transfer Funds",
 	CancelTransferFundsCommand:      "Cancel Transfer Funds",
+	ValidatorHeartbeatCommand:       "Validator Heartbeat",
 }
 
 func (cmd Command) IsValidatorCommand() bool {
 	switch cmd {
-	case CheckpointRestoreCommand, NodeSignatureCommand, ChainEventCommand, NodeVoteCommand, RegisterNodeCommand, KeyRotateSubmissionCommand, StateVariableProposalCommand:
+	case CheckpointRestoreCommand, NodeSignatureCommand, ChainEventCommand, NodeVoteCommand, ValidatorHeartbeatCommand, KeyRotateSubmissionCommand, StateVariableProposalCommand:
 		return true
 	default:
 		return false

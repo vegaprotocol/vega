@@ -27,6 +27,7 @@ func TestSnapshot(t *testing.T) {
 		require.Nil(t, err)
 
 		erc.top.EXPECT().IsValidator().AnyTimes().Return(true)
+
 		res := testRes{"resource-id-1", func() error {
 			return nil
 		}}

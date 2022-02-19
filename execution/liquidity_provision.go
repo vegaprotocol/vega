@@ -721,7 +721,7 @@ func (m *Market) adjustPriceRange(po *types.PeggedOrder, side types.Side, price 
 	maxP := maxPrice.Representation()
 	// now we have to ensure that the min price is ceil'ed, and max price is floored
 	// if the market decimal places != asset decimals (indicated by priceFactor == 1)
-	if m.priceFactor.NEQ(m.one) {
+	if m.priceFactor.NEQ(one) {
 		// if min == 0, don't add 1
 		if !minP.IsZero() {
 			minP.Div(minP, m.priceFactor)

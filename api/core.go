@@ -35,6 +35,7 @@ var (
 )
 
 type coreService struct {
+	protoapi.UnimplementedCoreServiceServer
 	log  *logging.Logger
 	conf Config
 

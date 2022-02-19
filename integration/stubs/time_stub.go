@@ -28,6 +28,10 @@ func (t *TimeStub) GetTimeNow() time.Time {
 	return t.now
 }
 
+func (t *TimeStub) SetTimeNow(_ context.Context, newNow time.Time) {
+	t.SetTime(newNow)
+}
+
 func (t *TimeStub) SetTime(newNow time.Time) {
 	t.now = newNow
 	ctx := vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())

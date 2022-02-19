@@ -5,6 +5,8 @@ import (
 	"testing"
 
 	"code.vegaprotocol.io/protos/vega"
+	"code.vegaprotocol.io/vega/assets"
+	"code.vegaprotocol.io/vega/banking"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
@@ -16,6 +18,103 @@ func TestRecurringTransfers(t *testing.T) {
 	t.Run("recurring invalid transfers", testRecurringTransferInvalidTransfers)
 	t.Run("valid recurring transfers", testValidRecurringTransfer)
 	t.Run("valid forever transfers, cancelled not enough funds", testForeverTransferCancelledNotEnoughFunds)
+	t.Run("invalid recurring transfers, duplicates", testInvalidRecurringTransfersDuplicates)
+	t.Run("invalid recurring transfers, bad amount", testInvalidRecurringTransfersBadAmount)
+}
+
+func testInvalidRecurringTransfersBadAmount(t *testing.T) {
+	e := getTestEngine(t)
+	defer e.ctrl.Finish()
+
+	ctx := context.Background()
+	transfer := &types.TransferFunds{
+		Kind: types.TransferCommandKindRecurring,
+		Recurring: &types.RecurringTransfer{
+			TransferBase: &types.TransferBase{
+				ID:              "TRANSFERID",
+				From:            "from",
+				FromAccountType: types.AccountTypeGeneral,
+				To:              "to",
+				ToAccountType:   types.AccountTypeGlobalReward,
+				Asset:           "eth",
+				Amount:          num.NewUint(10),
+				Reference:       "someref",
+			},
+			StartEpoch: 10,
+			Factor:     num.MustDecimalFromString("0.9"),
+		},
+	}
+
+	e.OnMinTransferQuantumMultiple(context.Background(), num.DecimalFromFloat(1))
+	// asset exists
+	e.assets.EXPECT().Get(gomock.Any()).Times(1).Return(assets.NewAsset(&mockAsset{num.NewUint(100)}), nil)
+	e.broker.EXPECT().Send(gomock.Any()).Times(1)
+
+	assert.EqualError(t,
+		e.TransferFunds(ctx, transfer),
+		"could not transfer funds, less than minimal amount requested to transfer",
+	)
+}
+
+func testInvalidRecurringTransfersDuplicates(t *testing.T) {
+	e := getTestEngine(t)
+	defer e.ctrl.Finish()
+
+	// let's do a massive fee, easy to test
+	e.OnTransferFeeFactorUpdate(context.Background(), num.NewDecimalFromFloat(0.5))
+	e.OnEpoch(context.Background(), types.Epoch{Seq: 7, Action: vega.EpochAction_EPOCH_ACTION_START})
+	e.OnEpoch(context.Background(), types.Epoch{Seq: 7, Action: vega.EpochAction_EPOCH_ACTION_END})
+
+	var endEpoch13 uint64 = 11
+	ctx := context.Background()
+	transfer := &types.TransferFunds{
+		Kind: types.TransferCommandKindRecurring,
+		Recurring: &types.RecurringTransfer{
+			TransferBase: &types.TransferBase{
+				ID:              "TRANSFERID",
+				From:            "from",
+				FromAccountType: types.AccountTypeGeneral,
+				To:              "to",
+				ToAccountType:   types.AccountTypeGlobalReward,
+				Asset:           "eth",
+				Amount:          num.NewUint(100),
+				Reference:       "someref",
+			},
+			StartEpoch: 10,
+			EndEpoch:   &endEpoch13,
+			Factor:     num.MustDecimalFromString("0.9"),
+		},
+	}
+
+	e.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(assets.NewAsset(&mockAsset{quantum: num.NewUint(10)}), nil)
+	e.broker.EXPECT().Send(gomock.Any()).Times(1)
+	assert.NoError(t, e.TransferFunds(ctx, transfer))
+
+	// now all should be fine, let's try to start another same transfer
+
+	transfer2 := &types.TransferFunds{
+		Kind: types.TransferCommandKindRecurring,
+		Recurring: &types.RecurringTransfer{
+			TransferBase: &types.TransferBase{
+				ID:              "TRANSFERID2",
+				From:            "from",
+				FromAccountType: types.AccountTypeGeneral,
+				To:              "to",
+				ToAccountType:   types.AccountTypeGlobalReward,
+				Asset:           "eth",
+				Amount:          num.NewUint(50),
+				Reference:       "someotherref",
+			},
+			StartEpoch: 15,
+			Factor:     num.MustDecimalFromString("0.9"),
+		},
+	}
+
+	e.broker.EXPECT().Send(gomock.Any()).Times(1)
+	assert.EqualError(t,
+		e.TransferFunds(ctx, transfer2),
+		banking.ErrCannotSubmitDuplicateRecurringTransferWithSameFromAndTo.Error(),
+	)
 }
 
 func testForeverTransferCancelledNotEnoughFunds(t *testing.T) {
@@ -47,7 +146,7 @@ func testForeverTransferCancelledNotEnoughFunds(t *testing.T) {
 		},
 	}
 
-	e.assets.EXPECT().Get(gomock.Any()).Times(1).Return(nil, nil)
+	e.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(assets.NewAsset(&mockAsset{quantum: num.NewUint(10)}), nil)
 	e.broker.EXPECT().Send(gomock.Any()).Times(1)
 	assert.NoError(t, e.TransferFunds(ctx, transfer))
 
@@ -162,7 +261,7 @@ func testValidRecurringTransfer(t *testing.T) {
 		},
 	}
 
-	e.assets.EXPECT().Get(gomock.Any()).Times(1).Return(nil, nil)
+	e.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(assets.NewAsset(&mockAsset{quantum: num.NewUint(10)}), nil)
 	e.broker.EXPECT().Send(gomock.Any()).Times(1)
 	assert.NoError(t, e.TransferFunds(ctx, transfer))
 
@@ -297,7 +396,7 @@ func testRecurringTransferInvalidTransfers(t *testing.T) {
 	}
 
 	// asset exists
-	e.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(nil, nil)
+	e.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(assets.NewAsset(&mockAsset{num.NewUint(1)}), nil)
 
 	var baseCpy types.TransferBase
 

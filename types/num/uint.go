@@ -15,6 +15,7 @@ var (
 	// initialise max variable.
 	maxUint = setMaxUint()
 	zero    = NewUint(0)
+	one     = NewUint(1)
 )
 
 // Uint A wrapper for a big unsigned int.
@@ -26,6 +27,10 @@ type Uint struct {
 // uint64 passed as a parameter.
 func NewUint(val uint64) *Uint {
 	return &Uint{*uint256.NewInt(val)}
+}
+
+func One() *Uint {
+	return one.Clone()
 }
 
 func Zero() *Uint {

@@ -114,9 +114,7 @@ func (c *Client) Health(ctx context.Context) (*tmctypes.ResultHealth, error) {
 }
 
 func (c *Client) Validators(ctx context.Context, height *int64) ([]*tmtypes.Validator, error) {
-	page := 0
-	perPage := 500
-	res, err := c.tmclt.Validators(ctx, height, &page, &perPage)
+	res, err := c.tmclt.Validators(ctx, height, nil, nil)
 	if err != nil {
 		return nil, err
 	}

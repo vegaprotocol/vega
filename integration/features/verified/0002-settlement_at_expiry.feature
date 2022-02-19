@@ -39,7 +39,7 @@ Feature: Test settlement at expiry
       | ETH/DEC19 | ETH        | ETH   | 2019-12-31T23:59:59Z | default-simple-risk-model-3 | default-margin-calculator | 1                | default-none  | default-none       | ethDec20Oracle |
       | ETH/DEC21 | ETH        | ETH   | 2021-12-31T23:59:59Z | simple-risk-model-1         | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | ethDec21Oracle |
      
-  Scenario: Order cannot be placed once the market is expired
+  Scenario: Order cannot be placed once the market is expired (0002-STTL-001)
     Given the parties deposit on asset's general account the following amount:
       | party  | asset | amount |
       | party1 | ETH   | 10000  |
@@ -69,7 +69,7 @@ Feature: Test settlement at expiry
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference | error                         |
       | party1 | ETH/DEC19 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC | ref-7     | OrderError: Invalid Market ID |
 
-  Scenario: Settlement happened when market is being closed - no loss socialisation needed - no insurance taken
+  Scenario: Settlement happened when market is being closed - no loss socialisation needed - no insurance taken (0002-STTL-002, 0002-STTL-007)
     Given the initial insurance pool balance is "10000" for the markets:
     Given the parties deposit on asset's general account the following amount:
       | party    | asset | amount    |
@@ -118,7 +118,6 @@ Feature: Test settlement at expiry
     
     And the network moves ahead "2" blocks
 
-    
     Then the market state should be "STATE_ACTIVE" for the market "ETH/DEC19"
 
     When the parties place the following orders:
@@ -192,7 +191,7 @@ Feature: Test settlement at expiry
     And the network treasury balance should be "20000" for the asset "ETH"
     And the insurance pool balance should be "0" for the market "ETH/DEC21"
 
-  Scenario: Same as above, but the other market already terminated before the end of scenario, expecting 0 balances in per market insurance pools - all should go to per asset insurance pool
+  Scenario: Same as above, but the other market already terminated before the end of scenario, expecting 0 balances in per market insurance pools - all should go to per asset insurance pool (0002-STTL-additional-tests)
   
     Given the initial insurance pool balance is "10000" for the markets:
     Given the parties deposit on asset's general account the following amount:
@@ -300,17 +299,17 @@ Feature: Test settlement at expiry
       | party1 | ETH/DEC19 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC | ref-1     | OrderError: Invalid Market ID |
 
     And the parties should have the following account balances:
-      | party    | asset | market id | margin | general   |
-      | party1   | ETH   | ETH/DEC19 | 0      | 11916    |
-      | party2   | ETH   | ETH/DEC19 | 0      | 42        |
-      | party3   | ETH   | ETH/DEC19 | 0      | 4042      |
+      | party    | asset | market id | margin | general |
+      | party1   | ETH   | ETH/DEC19 | 0      | 11916   |
+      | party2   | ETH   | ETH/DEC19 | 0      | 42      |
+      | party3   | ETH   | ETH/DEC19 | 0      | 4042    |
 
     And the cumulated balance for all accounts should be worth "100236000"
     And the insurance pool balance should be "0" for the market "ETH/DEC19"
     And the insurance pool balance should be "0" for the market "ETH/DEC21"
     And the network treasury balance should be "20000" for the asset "ETH"
 
-  Scenario: Settlement happened when market is being closed - no loss socialisation needed - insurance covers losses
+  Scenario: Settlement happened when market is being closed - no loss socialisation needed - insurance covers losses (0002-STTL-008)
     Given the initial insurance pool balance is "1000" for the markets:
     Given the parties deposit on asset's general account the following amount:
       | party    | asset | amount    |
@@ -375,7 +374,7 @@ Feature: Test settlement at expiry
     And the network treasury balance should be "42" for the asset "ETH"
     And the insurance pool balance should be "1042" for the market "ETH/DEC21"
 
-  Scenario: Settlement happened when market is being closed - loss socialisation in action - insurance doesn't cover all losses
+  Scenario: Settlement happened when market is being closed - loss socialisation in action - insurance doesn't cover all losses (0002-STTL-009)
      Given the initial insurance pool balance is "500" for the markets:
      Given the parties deposit on asset's general account the following amount:
       | party    | asset | amount    |
@@ -436,7 +435,7 @@ Feature: Test settlement at expiry
     And the network treasury balance should be "0" for the asset "ETH"
     And the insurance pool balance should be "500" for the market "ETH/DEC21"
   
-  Scenario: Settlement happened when market is being closed whilst being suspended (due to protective auction) - loss socialisation in action - insurance doesn't covers all losses
+  Scenario: Settlement happened when market is being closed whilst being suspended (due to protective auction) - loss socialisation in action - insurance doesn't covers all losses (0002-STTL-004, 0002-STTL-009)
 
     Given the initial insurance pool balance is "500" for the markets:
     Given the parties deposit on asset's general account the following amount:

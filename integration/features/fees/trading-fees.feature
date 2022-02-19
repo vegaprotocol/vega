@@ -1615,15 +1615,16 @@ Scenario: WIP - Testing fees in continuous trading with two pegged trades and on
     Then the parties place the following orders:
       | party    | market id | side | volume | price | resulting trades | type       | tif     |
       | trader3a | ETH/DEC21 | buy  | 10     | 990   | 0                | TYPE_LIMIT | TIF_GTC |
-      | trader4  | ETH/DEC21 | sell | 30     | 990   | 1                | TYPE_LIMIT | TIF_GTC |
+      | trader4  | ETH/DEC21 | sell | 30     | 990   | 2                | TYPE_LIMIT | TIF_GTC |
       
      Then the parties should have the following account balances:
       | party    | asset | market id | margin | general |
       | trader3a | ETH   | ETH/DEC21 | 3216   | 96834   |
-      | trader4  | ETH   | ETH/DEC21 | 3600   | 96320   |
+      | trader4  | ETH   | ETH/DEC21 | 5580   | 94875   |
+
     
     And the liquidity fee factor should "0.001" for the market "ETH/DEC21"
-    And the accumulated liquidity fees should be "10" for the market "ETH/DEC21"
+    And the accumulated liquidity fees should be "31" for the market "ETH/DEC21"
 
     Then the following trades should be executed:
       # | buyer    | price | size | seller  | maker   | taker   | buyer_fee | seller_fee | maker_fee |
@@ -1654,23 +1655,23 @@ Scenario: WIP - Testing fees in continuous trading with two pegged trades and on
     And the following transfers should happen:
       | from    | to       | from account            | to account                       | market id | amount | asset |
       | trader4 | market   | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_MAKER          | ETH/DEC21 | 50     | ETH   |
-      | trader4 |          | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_INFRASTRUCTURE |           | 20     | ETH   |
-      | trader4 | market   | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_LIQUIDITY      | ETH/DEC21 | 10     | ETH   |
+      | trader4 |          | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_INFRASTRUCTURE |           | 61     | ETH   |
+      | trader4 | market   | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_LIQUIDITY      | ETH/DEC21 | 31     | ETH   |
       | market  | trader3a | ACCOUNT_TYPE_FEES_MAKER | ACCOUNT_TYPE_GENERAL             | ETH/DEC21 | 50     | ETH   |  
 
     Then the parties should have the following account balances:
       | party      | asset | market id | margin | general |
-      | trader3a    | ETH   | ETH/DEC21 | 3216    | 96834    | 
-      | trader4     | ETH   | ETH/DEC21 | 3600    | 96320    |
+      | trader3a   | ETH   | ETH/DEC21 | 3216   | 96834   |
+      | trader4    | ETH   | ETH/DEC21 | 5580   | 94875   |
 
     # And the accumulated infrastructure fee should be "20" for the market "ETH/DEC21"
-    And the accumulated liquidity fees should be "10" for the market "ETH/DEC21"
+    And the accumulated liquidity fees should be "31" for the market "ETH/DEC21"
 
     When the network moves ahead "11" blocks
     
     And the following transfers should happen:
       | from   | to   | from account                | to account           | market id | amount | asset |
-      | market | aux1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/DEC21 | 10     | ETH   |
+      | market | aux1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/DEC21 | 31     | ETH   |
 
 Scenario: Testing fees when network parameters are changed (in continuous trading with one trade and no liquidity providers) 
  Description : Changing net params does change the fees being collected appropriately even if the market is already running

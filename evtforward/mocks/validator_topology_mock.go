@@ -33,6 +33,18 @@ func (m *MockValidatorTopology) EXPECT() *MockValidatorTopologyMockRecorder {
 	return m.recorder
 }
 
+// AddForwarder mocks base method.
+func (m *MockValidatorTopology) AddForwarder(arg0 string) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "AddForwarder", arg0)
+}
+
+// AddForwarder indicates an expected call of AddForwarder.
+func (mr *MockValidatorTopologyMockRecorder) AddForwarder(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddForwarder", reflect.TypeOf((*MockValidatorTopology)(nil).AddForwarder), arg0)
+}
+
 // AllNodeIDs mocks base method.
 func (m *MockValidatorTopology) AllNodeIDs() []string {
 	m.ctrl.T.Helper()

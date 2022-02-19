@@ -85,7 +85,7 @@ func (n *NodeCommand) startServices(_ []string) (err error) {
 	n.eventService = subscribers.NewService(n.broker)
 
 	now := n.timeService.GetTimeNow()
-	n.assets = assets.New(n.Log, n.conf.Assets, n.nodeWallets, n.ethClient, n.timeService, n.conf.IsValidator())
+	n.assets = assets.New(n.Log, n.conf.Assets, n.nodeWallets, n.ethClient, n.timeService, n.conf.HaveEthClient())
 	n.collateral = collateral.New(n.Log, n.conf.Collateral, n.broker, now)
 	n.oracle = oracles.NewEngine(n.Log, n.conf.Oracles, now, n.broker, n.timeService)
 	n.builtinOracle = oracles.NewBuiltinOracle(n.oracle, n.timeService)
@@ -105,9 +105,9 @@ func (n *NodeCommand) startServices(_ []string) (err error) {
 
 	if n.conf.IsValidator() {
 		n.topology = validators.NewTopology(
-			n.Log, n.conf.Validators, validators.WrapNodeWallets(n.nodeWallets), n.broker, n.conf.IsValidator())
+			n.Log, n.conf.Validators, validators.WrapNodeWallets(n.nodeWallets), n.broker, n.conf.IsValidator(), n.commander)
 	} else {
-		n.topology = validators.NewTopology(n.Log, n.conf.Validators, nil, n.broker, n.conf.IsValidator())
+		n.topology = validators.NewTopology(n.Log, n.conf.Validators, nil, n.broker, n.conf.IsValidator(), nil)
 	}
 
 	n.witness = validators.NewWitness(n.Log, n.conf.Validators, n.topology, n.commander, n.timeService)
@@ -115,16 +115,17 @@ func (n *NodeCommand) startServices(_ []string) (err error) {
 	n.timeService.NotifyOnTick(n.netParams.OnChainTimeUpdate)
 	n.eventForwarder = evtforward.New(n.Log, n.conf.EvtForward, n.commander, n.timeService, n.topology)
 
-	if n.conf.IsValidator() {
+	if n.conf.HaveEthClient() {
 		n.eventForwarderEngine = evtforward.NewEngine(n.Log, n.conf.EvtForward)
 	} else {
 		n.eventForwarderEngine = evtforward.NewNoopEngine(n.Log, n.conf.EvtForward)
 	}
 
 	n.stakingAccounts, n.stakeVerifier = staking.New(
-		n.Log, n.conf.Staking, n.broker, n.timeService, n.witness, n.ethClient, n.netParams, n.eventForwarder, n.conf.IsValidator(),
+		n.Log, n.conf.Staking, n.broker, n.timeService, n.witness, n.ethClient, n.netParams, n.eventForwarder, n.conf.HaveEthClient(),
 	)
 	n.epochService = epochtime.NewService(n.Log, n.conf.Epoch, n.timeService, n.broker)
+	n.epochService.NotifyOnEpoch(n.topology.OnEpochEvent)
 
 	n.statevar = statevar.New(n.Log, n.conf.StateVar, n.broker, n.topology, n.commander, n.timeService)
 	n.feesTracker = execution.NewFeesTracker(n.epochService)
@@ -145,7 +146,7 @@ func (n *NodeCommand) startServices(_ []string) (err error) {
 		n.delegation = delegation.New(n.Log, delegation.NewDefaultConfig(), n.broker, n.topology, n.stakingAccounts, n.epochService, n.timeService)
 	}
 
-	n.rewards = rewards.New(n.Log, n.conf.Rewards, n.broker, n.delegation, n.epochService, n.collateral, n.timeService, n.topology, n.feesTracker, marketTracker)
+	n.rewards = rewards.New(n.Log, n.conf.Rewards, n.broker, n.delegation, n.epochService, n.collateral, n.timeService, n.feesTracker, marketTracker, n.topology)
 
 	n.notary = notary.NewWithSnapshot(n.Log, n.conf.Notary, n.topology, n.broker, n.commander, n.timeService)
 	n.banking = banking.New(n.Log, n.conf.Banking, n.collateral, n.witness, n.timeService, n.assets, n.notary, n.broker, n.topology, n.epochService)
@@ -251,7 +252,6 @@ func (n *NodeCommand) startBlockchain() (*processor.App, error) {
 		n.checkpoint,
 		n.spam,
 		n.stakingAccounts,
-		n.rewards,
 		n.snapshot,
 		n.statevar,
 		n.blockchainClient,
@@ -310,6 +310,30 @@ func (n *NodeCommand) setupNetParameters() error {
 
 	// now add some watcher for our netparams
 	return n.netParams.Watch(
+		netparams.WatchParam{
+			Param:   netparams.NumberOfTendermintValidators,
+			Watcher: n.topology.UpdateNumberOfTendermintValidators,
+		},
+		netparams.WatchParam{
+			Param:   netparams.ValidatorIncumbentBonus,
+			Watcher: n.topology.UpdateValidatorIncumbentBonusFactor,
+		},
+		netparams.WatchParam{
+			Param:   netparams.NumberEthMultisigSigners,
+			Watcher: n.topology.UpdateNumberEthMultisigSigners,
+		},
+		netparams.WatchParam{
+			Param:   netparams.MultipleOfTendermintValidatorsForEtsatzSet,
+			Watcher: n.topology.UpdateErsatzValidatorsFactor,
+		},
+		netparams.WatchParam{
+			Param:   netparams.MinimumEthereumEventsForNewValidator,
+			Watcher: n.topology.UpdateMinimumEthereumEventsForNewValidator,
+		},
+		netparams.WatchParam{
+			Param:   netparams.StakingAndDelegationRewardMinimumValidatorStake,
+			Watcher: n.topology.UpdateMinimumRequireSelfStake,
+		},
 		netparams.WatchParam{
 			Param:   netparams.DelegationMinAmount,
 			Watcher: n.delegation.OnMinAmountChanged,
@@ -430,6 +454,10 @@ func (n *NodeCommand) setupNetParameters() error {
 			Watcher: n.rewards.UpdateOptimalStakeMultiplierStakingRewardScheme,
 		},
 		netparams.WatchParam{
+			Param:   netparams.ErsatzvalidatorsRewardFactor,
+			Watcher: n.rewards.UpdateErsatzRewardFactor,
+		},
+		netparams.WatchParam{
 			Param:   netparams.ValidatorsVoteRequired,
 			Watcher: n.witness.OnDefaultValidatorsVoteRequiredUpdate,
 		},
@@ -444,6 +472,10 @@ func (n *NodeCommand) setupNetParameters() error {
 		netparams.WatchParam{
 			Param:   netparams.SpamProtectionMaxVotes,
 			Watcher: n.spam.OnMaxVotesChanged,
+		},
+		netparams.WatchParam{
+			Param:   netparams.StakingAndDelegationRewardMinimumValidatorStake,
+			Watcher: n.spam.OnMinValidatorTokensChanged,
 		},
 		netparams.WatchParam{
 			Param:   netparams.SpamProtectionMaxProposals,
@@ -470,6 +502,10 @@ func (n *NodeCommand) setupNetParameters() error {
 			Watcher: n.snapshot.OnSnapshotIntervalUpdate,
 		},
 		netparams.WatchParam{
+			Param:   netparams.TransferMaxCommandsPerEpoch,
+			Watcher: n.spam.OnMaxTransfersChanged,
+		},
+		netparams.WatchParam{
 			Param:   netparams.ValidatorsVoteRequired,
 			Watcher: n.statevar.OnDefaultValidatorsVoteRequiredUpdate,
 		},
@@ -480,6 +516,10 @@ func (n *NodeCommand) setupNetParameters() error {
 		netparams.WatchParam{
 			Param:   netparams.TransferFeeFactor,
 			Watcher: n.banking.OnTransferFeeFactorUpdate,
+		},
+		netparams.WatchParam{
+			Param:   netparams.TransferMinTransferQuantumMultiple,
+			Watcher: n.banking.OnMinTransferQuantumMultiple,
 		},
 	)
 }

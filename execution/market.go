@@ -90,6 +90,8 @@ var (
 	ErrCannotStartOpeningAuctionForMarketNotInProposedState = errors.New("cannot start the opening auction for a market not in proposed state")
 	// ErrCannotRepriceDuringAuction.
 	ErrCannotRepriceDuringAuction = errors.New("cannot reprice during auction")
+
+	one = num.One()
 )
 
 // PriceMonitor interface to handle price monitoring/auction triggers
@@ -199,7 +201,6 @@ type Market struct {
 
 	markPrice   *num.Uint
 	priceFactor *num.Uint
-	one         *num.Uint
 
 	// own engines
 	matching           *matching.CachedOrderBook
@@ -248,6 +249,7 @@ type Market struct {
 	stateVarEngine StateVarEngine
 	stateChanged   bool
 	feesTracker    *FeesTracker
+	marketTracker  *MarketTracker
 }
 
 // SetMarketID assigns a deterministic pseudo-random ID to a Market.
@@ -293,6 +295,7 @@ func NewMarket(
 	stateVarEngine StateVarEngine,
 	feesTracker *FeesTracker,
 	assetDetails *assets.Asset,
+	marketTracker *MarketTracker,
 ) (*Market, error) {
 	if len(mkt.ID) == 0 {
 		return nil, ErrEmptyMarketID
@@ -412,8 +415,8 @@ func NewMarket(
 		stateVarEngine:            stateVarEngine,
 		feesTracker:               feesTracker,
 		priceFactor:               priceFactor,
-		one:                       num.NewUint(1), // this is just some optimisation when checking price factor == 1
 		minLPStakeQuantumMultiple: num.MustDecimalFromString("1"),
+		marketTracker:             marketTracker,
 	}
 
 	liqEngine.SetGetStaticPricesFunc(market.getBestStaticPrices)
@@ -503,8 +506,8 @@ func (m *Market) GetMarketData() types.MarketData {
 	for _, b := range bounds {
 		m.priceToMarketPrecision(b.MaxValidPrice) // effictively floors this
 		m.priceToMarketPrecision(b.MinValidPrice)
-		if m.priceFactor.NEQ(m.one) {
-			b.MinValidPrice.AddSum(m.one) // ceil
+		if m.priceFactor.NEQ(one) {
+			b.MinValidPrice.AddSum(one) // ceil
 		}
 	}
 
@@ -675,6 +678,7 @@ func (m *Market) OnChainTimeUpdate(ctx context.Context, t time.Time) bool {
 	// distribute liquidity fees each `m.lpFeeDistributionTimeStep`
 	if t.Sub(m.lastEquityShareDistributed) > m.lpFeeDistributionTimeStep {
 		m.lastEquityShareDistributed = t
+		m.stateChanged = true
 
 		if err := m.distributeLiquidityFees(ctx); err != nil {
 			m.log.Panic("liquidity fee distribution error", logging.Error(err))
@@ -1543,9 +1547,9 @@ func (m *Market) handleConfirmation(ctx context.Context, conf *types.OrderConfir
 			}
 			// add trade to settlement engine for correct MTM settlement of individual trades
 			m.settlement.AddTrade(trade)
-			m.feeSplitter.AddTradeValue(num.Zero().Mul(
-				num.NewUint(trade.Size), trade.Price,
-			))
+			tradeValue := num.Zero().Mul(num.NewUint(trade.Size), trade.Price)
+			m.feeSplitter.AddTradeValue(tradeValue)
+			m.marketTracker.AddValueTraded(m.mkt.ID, tradeValue)
 		}
 		m.broker.SendBatch(tradeEvts)
 
@@ -2908,22 +2912,6 @@ func (m *Market) removePeggedOrder(order *types.Order) {
 	m.peggedOrders.Remove(order)
 }
 
-// getOrdersByID returns orders based on given IDs. Returns NO error if order not found.
-// TODO implement this more efficiently - pre compute?
-func (m *Market) getOrdersByID(ids []string) []*types.Order {
-	orders := make([]*types.Order, 0, len(ids))
-
-	for _, id := range ids {
-		o, _, err := m.getOrderByID(id)
-		if err != nil {
-			continue
-		}
-		orders = append(orders, o.Clone())
-	}
-
-	return orders
-}
-
 // getOrderBy looks for the order in the order book and in the list
 // of pegged orders in the market. Returns the order if found, a bool
 // representing if the order was found on the order book and any error code.
@@ -3036,6 +3024,7 @@ func (m *Market) tradingTerminated(ctx context.Context, tt bool) {
 	if sp != nil {
 		m.settlementPriceWithLock(ctx, sp)
 	}
+	m.stateChanged = true
 }
 
 func (m *Market) settlementPrice(ctx context.Context, settlementPrice *num.Uint) {

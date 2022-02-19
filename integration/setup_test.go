@@ -5,12 +5,15 @@ import (
 	"fmt"
 	"os"
 
+	"code.vegaprotocol.io/vega/banking"
 	"code.vegaprotocol.io/vega/collateral"
 	"code.vegaprotocol.io/vega/delegation"
 	"code.vegaprotocol.io/vega/epochtime"
 	"code.vegaprotocol.io/vega/execution"
+	"code.vegaprotocol.io/vega/notary"
 	"code.vegaprotocol.io/vega/rewards"
 	"code.vegaprotocol.io/vega/types/num"
+	"code.vegaprotocol.io/vega/validators"
 
 	"code.vegaprotocol.io/vega/integration/helpers"
 	"code.vegaprotocol.io/vega/integration/steps/market"
@@ -62,6 +65,7 @@ type executionTestSetup struct {
 	stakingAccount   *stubs.StakingAccountStub
 	rewardsEngine    *rewards.Engine
 	assetsEngine     *stubs.AssetStub
+	banking          *banking.Engine
 
 	// save party accounts state
 	markets []types.Market
@@ -102,7 +106,7 @@ func newExecutionTestSetup() *executionTestSetup {
 	execsetup.collateralEngine.EnableAsset(context.Background(), vegaAsset)
 
 	execsetup.epochEngine = epochtime.NewService(execsetup.log, epochtime.NewDefaultConfig(), execsetup.timeService, execsetup.broker)
-	execsetup.topology = stubs.NewTopologyStub("nodeID")
+	execsetup.topology = stubs.NewTopologyStub("nodeID", execsetup.broker)
 
 	execsetup.stakingAccount = stubs.NewStakingAccountStub()
 	execsetup.epochEngine.NotifyOnEpoch(execsetup.stakingAccount.OnEpochEvent)
@@ -111,7 +115,7 @@ func newExecutionTestSetup() *executionTestSetup {
 
 	execsetup.delegationEngine = delegation.New(execsetup.log, delegation.NewDefaultConfig(), execsetup.broker, execsetup.topology, execsetup.stakingAccount, execsetup.epochEngine, execsetup.timeService)
 	marketTracker := execution.NewMarketTracker()
-	execsetup.rewardsEngine = rewards.New(execsetup.log, rewards.NewDefaultConfig(), execsetup.broker, execsetup.delegationEngine, execsetup.epochEngine, execsetup.collateralEngine, execsetup.timeService, execsetup.topology, feesTracker, marketTracker)
+	execsetup.rewardsEngine = rewards.New(execsetup.log, rewards.NewDefaultConfig(), execsetup.broker, execsetup.delegationEngine, execsetup.epochEngine, execsetup.collateralEngine, execsetup.timeService, feesTracker, marketTracker, execsetup.topology)
 	execsetup.oracleEngine = oracles.NewEngine(
 		execsetup.log, oracles.NewDefaultConfig(), currentTime, execsetup.broker, execsetup.timeService,
 	)
@@ -148,20 +152,35 @@ func newExecutionTestSetup() *executionTestSetup {
 		panic(err)
 	}
 
+	commander := stubs.NewCommanderStub()
+	execsetup.netDeposits = num.Zero()
+	witness := validators.NewWitness(execsetup.log, validators.NewDefaultConfig(), execsetup.topology, commander, execsetup.timeService)
+	ntry := notary.NewWithSnapshot(execsetup.log, notary.NewDefaultConfig(), execsetup.topology, execsetup.broker, commander, execsetup.timeService)
+	execsetup.banking = banking.New(execsetup.log, banking.NewDefaultConfig(), execsetup.collateralEngine, witness, execsetup.timeService, execsetup.assetsEngine, ntry, execsetup.broker, execsetup.topology, execsetup.epochEngine)
+
 	execsetup.netParams.Watch(
 		netparams.WatchParam{
 			Param:   netparams.FloatingPointUpdatesDuration,
 			Watcher: stateVarEngine.OnFloatingPointUpdatesDurationUpdate,
 		},
+		netparams.WatchParam{
+			Param:   netparams.TransferFeeFactor,
+			Watcher: execsetup.banking.OnTransferFeeFactorUpdate,
+		},
+		netparams.WatchParam{
+			Param:   netparams.TransferMinTransferQuantumMultiple,
+			Watcher: execsetup.banking.OnMinTransferQuantumMultiple,
+		},
 	)
-
-	execsetup.netDeposits = num.Zero()
-
 	return execsetup
 }
 
 func (e *executionTestSetup) registerNetParamsCallbacks() error {
 	return e.netParams.Watch(
+		netparams.WatchParam{
+			Param:   netparams.StakingAndDelegationRewardMinimumValidatorStake,
+			Watcher: e.topology.OnMinDelegationUpdated,
+		},
 		netparams.WatchParam{
 			Param:   netparams.MarketMarginScalingFactors,
 			Watcher: e.executionEngine.OnMarketMarginScalingFactorsUpdate,

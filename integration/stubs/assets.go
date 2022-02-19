@@ -6,6 +6,7 @@ import (
 	"code.vegaprotocol.io/vega/assets"
 	"code.vegaprotocol.io/vega/assets/common"
 	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/types/num"
 )
 
 type AssetStub struct {
@@ -49,6 +50,10 @@ func (a *AssetStub) SetStrict() {
 	a.permissive = false
 }
 
+func (AssetStub) Enable(assetID string) error {
+	return nil
+}
+
 type isAssetStub struct {
 	ID            string
 	DecimalPlaces uint64
@@ -66,23 +71,24 @@ func (a isAssetStub) Type() *types.Asset {
 		ID: a.ID,
 		Details: &types.AssetDetails{
 			Decimals: a.DecimalPlaces,
+			Quantum:  num.NewUint(5000),
 		},
 	}
 }
 
-func (_ isAssetStub) GetAssetClass() common.AssetClass {
+func (isAssetStub) GetAssetClass() common.AssetClass {
 	return common.Builtin
 }
 
-func (_ isAssetStub) IsValid() bool {
+func (isAssetStub) IsValid() bool {
 	return true
 }
 
-func (_ isAssetStub) Validate() error {
+func (isAssetStub) Validate() error {
 	return nil
 }
 
-func (_ isAssetStub) SetValidNonValidator() {}
+func (isAssetStub) SetValidNonValidator() {}
 
 func (a isAssetStub) String() string {
 	return a.ID

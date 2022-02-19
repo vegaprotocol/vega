@@ -34,6 +34,7 @@ type NodeWallets struct {
 	vega             validators.Wallet
 	tendermintPubkey string
 	ethereumAddress  string
+	ethereum         validators.Signer
 }
 
 func (n *NodeWallets) GetVega() validators.Wallet {
@@ -46,6 +47,10 @@ func (n *NodeWallets) GetTendermintPubkey() string {
 
 func (n *NodeWallets) GetEthereumAddress() string {
 	return n.ethereumAddress
+}
+
+func (n *NodeWallets) GetEthereum() validators.Signer {
+	return n.ethereum
 }
 
 type testTop struct {
@@ -63,7 +68,9 @@ func getTestTopologyWithNodeWallet(
 	broker := brokerMocks.NewMockBroker(ctrl)
 	broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
-	top := validators.NewTopology(logging.NewTestLogger(), validators.NewDefaultConfig(), nw, broker, true)
+	commander := mocks.NewMockCommander(gomock.NewController(t))
+
+	top := validators.NewTopology(logging.NewTestLogger(), validators.NewDefaultConfig(), nw, broker, true, commander)
 	return &testTop{
 		Topology: top,
 		ctrl:     ctrl,
@@ -100,7 +107,6 @@ func getTestTopWithDefaultValidator(t *testing.T) *testTop {
 
 	defaultTmPubKey := "default-tm-public-key"
 	defaultTmPubKeyBase64 := base64.StdEncoding.EncodeToString([]byte(defaultTmPubKey))
-	top.UpdateValidatorSet([]string{defaultTmPubKeyBase64})
 
 	state := struct {
 		Validators map[string]validators.ValidatorData
@@ -154,13 +160,6 @@ func loadGenesisValidators(
 	t *testing.T, top *testTop, data ...validators.ValidatorData,
 ) error {
 	t.Helper()
-	// Add Tendermints public key to validator set
-	validatorSet := []string{}
-	for _, v := range data {
-		validatorSet = append(validatorSet, v.TmPubKey)
-	}
-	top.UpdateValidatorSet(validatorSet)
-
 	state := struct {
 		Validators map[string]validators.ValidatorData
 	}{
@@ -180,9 +179,9 @@ func loadGenesisValidators(
 }
 
 func TestValidatorTopology(t *testing.T) {
-	t.Run("add node registration - success", testAddNodeRegistrationSuccess)
-	t.Run("add node registration - failure", testAddNodeRegistrationFailure)
-	t.Run("test add node registration send event to broker", testAddNodeRegistrationSendsValidatorUpdateEventToBroker)
+	t.Run("add node registration - success", testAddNewNodeSuccess)
+	t.Run("add node registration - failure", testAddNewNodeFailure)
+	t.Run("test add node registration send event to broker", testAddNewNodeSendsValidatorUpdateEventToBroker)
 	t.Run("topology validators length is equal to number of added validators", testGetLen)
 	t.Run("added validator exists in topology", testExists)
 	t.Run("test get by key", testGetByKey)
@@ -288,64 +287,61 @@ func testValidatorsValidation(t *testing.T) {
 	}
 }
 
-func testAddNodeRegistrationSuccess(t *testing.T) {
+func testAddNewNodeSuccess(t *testing.T) {
 	top := getTestTopWithDefaultValidator(t)
 	defer top.ctrl.Finish()
-	top.UpdateValidatorSet([]string{tmPubKey})
 
-	nr := commandspb.NodeRegistration{
+	nr := commandspb.AnnounceNode{
 		Id:              "vega-master-pubkey",
 		ChainPubKey:     tmPubKey,
 		VegaPubKey:      "vega-key",
 		EthereumAddress: "eth-address",
 	}
 	ctx := context.Background()
-	err := top.AddNodeRegistration(ctx, &nr)
+	err := top.AddNewNode(ctx, &nr)
 	assert.NoError(t, err)
 }
 
-func testAddNodeRegistrationFailure(t *testing.T) {
+func testAddNewNodeFailure(t *testing.T) {
 	top := getTestTopWithDefaultValidator(t)
 	defer top.ctrl.Finish()
-	top.UpdateValidatorSet([]string{"tm-pub-key-1", "tm-pub-key-2"})
 
-	nr := commandspb.NodeRegistration{
+	nr := commandspb.AnnounceNode{
 		Id:              "vega-master-pubkey",
 		ChainPubKey:     "tm-pub-key-1",
 		VegaPubKey:      "vega-key",
 		EthereumAddress: "eth-address",
 	}
 	ctx := context.Background()
-	err := top.AddNodeRegistration(ctx, &nr)
+	err := top.AddNewNode(ctx, &nr)
 	assert.NoError(t, err)
 
 	// Add node with existing VegaPubKey
-	nr = commandspb.NodeRegistration{
+	nr = commandspb.AnnounceNode{
 		Id:              "vega-master-pubkey",
 		ChainPubKey:     "tm-pub-key-2",
 		VegaPubKey:      "vega-key",
 		EthereumAddress: "eth-address-2",
 	}
-	err = top.AddNodeRegistration(ctx, &nr)
+	err = top.AddNewNode(ctx, &nr)
 	assert.Error(t, err)
 }
 
 func testGetLen(t *testing.T) {
 	top := getTestTopWithDefaultValidator(t)
 	defer top.ctrl.Finish()
-	top.UpdateValidatorSet([]string{tmPubKey})
 
 	// first the len is 1 since the default validator loaded from genenesis
 	assert.Equal(t, 1, top.Len())
 
-	nr := commandspb.NodeRegistration{
+	nr := commandspb.AnnounceNode{
 		Id:              "vega-master-pubkey",
 		ChainPubKey:     tmPubKey,
 		VegaPubKey:      "vega-key",
 		EthereumAddress: "eth-address",
 	}
 	ctx := context.Background()
-	err := top.AddNodeRegistration(ctx, &nr)
+	err := top.AddNewNode(ctx, &nr)
 	assert.NoError(t, err)
 
 	assert.Equal(t, 2, top.Len())
@@ -354,19 +350,18 @@ func testGetLen(t *testing.T) {
 func testExists(t *testing.T) {
 	top := getTestTopWithDefaultValidator(t)
 	defer top.ctrl.Finish()
-	top.UpdateValidatorSet([]string{tmPubKey})
 
 	assert.False(t, top.IsValidatorVegaPubKey("vega-key"))
 	assert.False(t, top.IsValidatorNodeID("vega-master-pubkey"))
 
-	nr := commandspb.NodeRegistration{
+	nr := commandspb.AnnounceNode{
 		Id:              "vega-master-pubkey",
 		ChainPubKey:     tmPubKey,
 		VegaPubKey:      "vega-key",
 		EthereumAddress: "eth-address",
 	}
 	ctx := context.Background()
-	err := top.AddNodeRegistration(ctx, &nr)
+	err := top.AddNewNode(ctx, &nr)
 	assert.NoError(t, err)
 
 	assert.True(t, top.IsValidatorVegaPubKey("vega-key"))
@@ -376,12 +371,11 @@ func testExists(t *testing.T) {
 func testGetByKey(t *testing.T) {
 	top := getTestTopWithDefaultValidator(t)
 	defer top.ctrl.Finish()
-	top.UpdateValidatorSet([]string{tmPubKey})
 
 	assert.False(t, top.IsValidatorVegaPubKey("vega-key"))
 	assert.False(t, top.IsValidatorNodeID("vega-master-pubkey"))
 
-	nr := commandspb.NodeRegistration{
+	nr := commandspb.AnnounceNode{
 		Id:              "vega-master-pubkey",
 		ChainPubKey:     tmPubKey,
 		VegaPubKey:      "vega-key",
@@ -390,7 +384,7 @@ func testGetByKey(t *testing.T) {
 		Country:         "CZ",
 	}
 	ctx := context.Background()
-	err := top.AddNodeRegistration(ctx, &nr)
+	err := top.AddNewNode(ctx, &nr)
 	assert.NoError(t, err)
 
 	expectedData := &validators.ValidatorData{
@@ -408,7 +402,7 @@ func testGetByKey(t *testing.T) {
 	assert.Equal(t, expectedData, actualData)
 }
 
-func testAddNodeRegistrationSendsValidatorUpdateEventToBroker(t *testing.T) {
+func testAddNewNodeSendsValidatorUpdateEventToBroker(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
@@ -424,11 +418,11 @@ func testAddNodeRegistrationSendsValidatorUpdateEventToBroker(t *testing.T) {
 	}
 
 	broker := brokerMocks.NewMockBroker(ctrl)
-	top := validators.NewTopology(logging.NewTestLogger(), validators.NewDefaultConfig(), nw, broker, true)
-	top.UpdateValidatorSet([]string{tmPubKey})
+	commander := mocks.NewMockCommander(gomock.NewController(t))
+	top := validators.NewTopology(logging.NewTestLogger(), validators.NewDefaultConfig(), nw, broker, true, commander)
 
 	ctx := context.Background()
-	nr := commandspb.NodeRegistration{
+	nr := commandspb.AnnounceNode{
 		Id:              "vega-master-pubkey",
 		ChainPubKey:     tmPubKey,
 		VegaPubKey:      "vega-key",
@@ -450,11 +444,13 @@ func testAddNodeRegistrationSendsValidatorUpdateEventToBroker(t *testing.T) {
 		nr.Country,
 		nr.Name,
 		nr.AvatarUrl,
+		nr.FromEpoch,
+		true,
 	)
 
 	broker.EXPECT().Send(updateEvent).Times(1)
 
-	assert.NoError(t, top.AddNodeRegistration(ctx, &nr))
+	assert.NoError(t, top.AddNewNode(ctx, &nr))
 }
 
 func TestValidatorTopologyKeyRotate(t *testing.T) {
@@ -471,20 +467,19 @@ func TestValidatorTopologyKeyRotate(t *testing.T) {
 func testAddKeyRotateSuccess(t *testing.T) {
 	top := getTestTopWithDefaultValidator(t)
 	defer top.ctrl.Finish()
-	top.UpdateValidatorSet([]string{tmPubKey})
 
 	id := "vega-master-pubkey"
 	vegaPubKey := "vega-key"
 	newVegaPubKey := fmt.Sprintf("new-%s", vegaPubKey)
 
-	nr := commandspb.NodeRegistration{
+	nr := commandspb.AnnounceNode{
 		Id:              id,
 		ChainPubKey:     tmPubKey,
 		VegaPubKey:      vegaPubKey,
 		EthereumAddress: "eth-address",
 	}
 	ctx := context.TODO()
-	err := top.AddNodeRegistration(ctx, &nr)
+	err := top.AddNewNode(ctx, &nr)
 	assert.NoError(t, err)
 
 	kr := &commandspb.KeyRotateSubmission{
@@ -501,7 +496,6 @@ func testAddKeyRotateSuccess(t *testing.T) {
 func testAddKeyRotateSuccessFailsOnNonExistingNode(t *testing.T) {
 	top := getTestTopWithDefaultValidator(t)
 	defer top.ctrl.Finish()
-	top.UpdateValidatorSet([]string{tmPubKey})
 
 	id := "vega-master-pubkey"
 	newVegaPubKey := "new-ega-key"
@@ -516,20 +510,19 @@ func testAddKeyRotateSuccessFailsOnNonExistingNode(t *testing.T) {
 func testAddKeyRotateSuccessFailsWhenTargetBlockHeightIsLessThenCurrentBlockHeight(t *testing.T) {
 	top := getTestTopWithDefaultValidator(t)
 	defer top.ctrl.Finish()
-	top.UpdateValidatorSet([]string{tmPubKey})
 
 	id := "vega-master-pubkey"
 	vegaPubKey := "vega-key"
 	newVegaPubKey := fmt.Sprintf("new-%s", vegaPubKey)
 
-	nr := commandspb.NodeRegistration{
+	nr := commandspb.AnnounceNode{
 		Id:              id,
 		ChainPubKey:     tmPubKey,
 		VegaPubKey:      vegaPubKey,
 		EthereumAddress: "eth-address",
 	}
 	ctx := context.TODO()
-	err := top.AddNodeRegistration(ctx, &nr)
+	err := top.AddNewNode(ctx, &nr)
 	assert.NoError(t, err)
 
 	err = top.AddKeyRotate(ctx, id, 15, newKeyRotationSubmission(vegaPubKey, newVegaPubKey, 1, 10))
@@ -539,13 +532,12 @@ func testAddKeyRotateSuccessFailsWhenTargetBlockHeightIsLessThenCurrentBlockHeig
 func testAddKeyRotateSuccessFailsWhenNewKeyIndexIsLessThenCurrentKeyIndex(t *testing.T) {
 	top := getTestTopWithDefaultValidator(t)
 	defer top.ctrl.Finish()
-	top.UpdateValidatorSet([]string{tmPubKey})
 
 	id := "vega-master-pubkey"
 	vegaPubKey := "vega-key"
 	newVegaPubKey := fmt.Sprintf("new-%s", vegaPubKey)
 
-	nr := commandspb.NodeRegistration{
+	nr := commandspb.AnnounceNode{
 		Id:              id,
 		ChainPubKey:     tmPubKey,
 		VegaPubKey:      vegaPubKey,
@@ -553,7 +545,7 @@ func testAddKeyRotateSuccessFailsWhenNewKeyIndexIsLessThenCurrentKeyIndex(t *tes
 		VegaPubKeyIndex: 2,
 	}
 	ctx := context.TODO()
-	err := top.AddNodeRegistration(ctx, &nr)
+	err := top.AddNewNode(ctx, &nr)
 	assert.NoError(t, err)
 
 	// test less then
@@ -564,13 +556,12 @@ func testAddKeyRotateSuccessFailsWhenNewKeyIndexIsLessThenCurrentKeyIndex(t *tes
 func testAddKeyRotateSuccessFailsWhenKeyRotationForNodeAlreadyExists(t *testing.T) {
 	top := getTestTopWithDefaultValidator(t)
 	defer top.ctrl.Finish()
-	top.UpdateValidatorSet([]string{tmPubKey})
 
 	id := "vega-master-pubkey"
 	vegaPubKey := "vega-key"
 	newVegaPubKey := fmt.Sprintf("new-%s", vegaPubKey)
 
-	nr := commandspb.NodeRegistration{
+	nr := commandspb.AnnounceNode{
 		Id:              id,
 		ChainPubKey:     tmPubKey,
 		VegaPubKey:      vegaPubKey,
@@ -578,7 +569,7 @@ func testAddKeyRotateSuccessFailsWhenKeyRotationForNodeAlreadyExists(t *testing.
 		VegaPubKeyIndex: 1,
 	}
 	ctx := context.TODO()
-	err := top.AddNodeRegistration(ctx, &nr)
+	err := top.AddNewNode(ctx, &nr)
 	assert.NoError(t, err)
 
 	// add first
@@ -593,13 +584,12 @@ func testAddKeyRotateSuccessFailsWhenKeyRotationForNodeAlreadyExists(t *testing.
 func testAddKeyRotateSuccessFailsWhenCurrentPubKeyHashDoesNotMatch(t *testing.T) {
 	top := getTestTopWithDefaultValidator(t)
 	defer top.ctrl.Finish()
-	top.UpdateValidatorSet([]string{tmPubKey})
 
 	id := "vega-master-pubkey"
 	vegaPubKey := "vega-key"
 	newVegaPubKey := fmt.Sprintf("new-%s", vegaPubKey)
 
-	nr := commandspb.NodeRegistration{
+	nr := commandspb.AnnounceNode{
 		Id:              id,
 		ChainPubKey:     tmPubKey,
 		VegaPubKey:      vegaPubKey,
@@ -607,7 +597,7 @@ func testAddKeyRotateSuccessFailsWhenCurrentPubKeyHashDoesNotMatch(t *testing.T)
 		VegaPubKeyIndex: 1,
 	}
 	ctx := context.TODO()
-	err := top.AddNodeRegistration(ctx, &nr)
+	err := top.AddNewNode(ctx, &nr)
 	assert.NoError(t, err)
 
 	err = top.AddKeyRotate(ctx, id, 10, newKeyRotationSubmission("random-key", newVegaPubKey, 2, 12))
@@ -632,20 +622,19 @@ func testBeginBlockSuccess(t *testing.T) {
 	defer top.ctrl.Finish()
 
 	chainValidators := []string{"tm-pubkey-1", "tm-pubkey-2", "tm-pubkey-3", "tm-pubkey-4"}
-	top.UpdateValidatorSet(chainValidators)
 
 	ctx := context.TODO()
 	for i := 0; i < len(chainValidators); i++ {
 		j := i + 1
 		id := fmt.Sprintf("vega-master-pubkey-%d", j)
-		nr := commandspb.NodeRegistration{
+		nr := commandspb.AnnounceNode{
 			Id:              id,
 			ChainPubKey:     chainValidators[i],
 			VegaPubKey:      fmt.Sprintf("vega-key-%d", j),
 			EthereumAddress: fmt.Sprintf("eth-address-%d", j),
 		}
 
-		err := top.AddNodeRegistration(ctx, &nr)
+		err := top.AddNewNode(ctx, &nr)
 		assert.NoErrorf(t, err, "failed to add node registation %s", id)
 	}
 
@@ -705,20 +694,19 @@ func testBeginBlockNotifyKeyChange(t *testing.T) {
 	defer top.ctrl.Finish()
 
 	chainValidators := []string{"tm-pubkey-1", "tm-pubkey-2"}
-	top.UpdateValidatorSet(chainValidators)
 
 	ctx := context.TODO()
 	for i := 0; i < len(chainValidators); i++ {
 		j := i + 1
 		id := fmt.Sprintf("vega-master-pubkey-%d", j)
-		nr := commandspb.NodeRegistration{
+		nr := commandspb.AnnounceNode{
 			Id:              id,
 			ChainPubKey:     chainValidators[i],
 			VegaPubKey:      fmt.Sprintf("vega-key-%d", j),
 			EthereumAddress: fmt.Sprintf("eth-address-%d", j),
 		}
 
-		err := top.AddNodeRegistration(ctx, &nr)
+		err := top.AddNewNode(ctx, &nr)
 		assert.NoErrorf(t, err, "failed to add node registation %s", id)
 	}
 
