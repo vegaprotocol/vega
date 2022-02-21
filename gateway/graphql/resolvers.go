@@ -15,6 +15,7 @@ import (
 	"code.vegaprotocol.io/data-node/logging"
 	"code.vegaprotocol.io/data-node/vegatime"
 	protoapi "code.vegaprotocol.io/protos/data-node/api/v1"
+	v2 "code.vegaprotocol.io/protos/data-node/api/v2"
 	types "code.vegaprotocol.io/protos/vega"
 	vegaprotoapi "code.vegaprotocol.io/protos/vega/api/v1"
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
@@ -45,14 +46,20 @@ type TradingDataServiceClient interface {
 	protoapi.TradingDataServiceClient
 }
 
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/trading_data_service_client_v2_mock.go -package mocks code.vegaprotocol.io/data-node/gateway/graphql TradingDataServiceClientV2
+type TradingDataServiceClientV2 interface {
+	v2.TradingDataServiceClient
+}
+
 // VegaResolverRoot is the root resolver for all graphql types
 type VegaResolverRoot struct {
 	gateway.Config
 
-	log                *logging.Logger
-	tradingProxyClient CoreProxyServiceClient
-	tradingDataClient  TradingDataServiceClient
-	r                  allResolver
+	log                 *logging.Logger
+	tradingProxyClient  CoreProxyServiceClient
+	tradingDataClient   TradingDataServiceClient
+	tradingDataClientV2 TradingDataServiceClientV2
+	r                   allResolver
 }
 
 // NewResolverRoot instantiate a graphql root resolver
@@ -61,14 +68,16 @@ func NewResolverRoot(
 	config gateway.Config,
 	tradingClient CoreProxyServiceClient,
 	tradingDataClient TradingDataServiceClient,
+	tradingDataClientV2 TradingDataServiceClientV2,
 ) *VegaResolverRoot {
 
 	return &VegaResolverRoot{
-		log:                log,
-		Config:             config,
-		tradingProxyClient: tradingClient,
-		tradingDataClient:  tradingDataClient,
-		r:                  allResolver{log, tradingDataClient},
+		log:                 log,
+		Config:              config,
+		tradingProxyClient:  tradingClient,
+		tradingDataClient:   tradingDataClient,
+		tradingDataClientV2: tradingDataClientV2,
+		r:                   allResolver{log, tradingDataClient},
 	}
 }
 
@@ -861,6 +870,25 @@ func (r *myQueryResolver) Statistics(ctx context.Context) (*vegaprotoapi.Statist
 	return resp.GetStatistics(), nil
 }
 
+func (r *myQueryResolver) HistoricBalances(ctx context.Context, filter *v2.AccountFilter, groupBy []*v2.AccountField) ([]*v2.AggregatedBalance, error) {
+	gb := make([]v2.AccountField, len(groupBy))
+	for i, g := range groupBy {
+		if g == nil {
+			return nil, fmt.Errorf("Nil group by")
+		}
+		gb[i] = *g
+	}
+	req := &v2.QueryBalanceHistoryRequest{}
+	req.GroupBy = gb
+	req.Filter = filter
+
+	resp, err := r.tradingDataClientV2.QueryBalanceHistory(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	return resp.GetBalances(), nil
+}
+
 // END: Root Resolver
 
 type myNodeSignatureResolver VegaResolverRoot
@@ -1089,7 +1117,7 @@ func (r *myPartyResolver) Positions(ctx context.Context, party *types.Party) ([]
 }
 
 func (r *myPartyResolver) Accounts(ctx context.Context, party *types.Party,
-	marketID *string, asset *string, accType *AccountType) ([]*types.Account, error) {
+	marketID *string, asset *string, accType *types.AccountType) ([]*types.Account, error) {
 	if party == nil {
 		return nil, errors.New("a party must be specified when querying accounts")
 	}
@@ -1107,7 +1135,7 @@ func (r *myPartyResolver) Accounts(ctx context.Context, party *types.Party,
 		asst = *asset
 	}
 	if accType != nil {
-		accTy, err = convertAccountTypeToProto(*accType)
+		accTy = *accType
 		if err != nil ||
 			(accTy != types.AccountType_ACCOUNT_TYPE_GENERAL &&
 				accTy != types.AccountType_ACCOUNT_TYPE_MARGIN &&
@@ -1978,7 +2006,7 @@ func (r *mySubscriptionResolver) MarketData(ctx context.Context, marketID *strin
 	return ch, nil
 }
 
-func (r *mySubscriptionResolver) Accounts(ctx context.Context, marketID *string, partyID *string, asset *string, typeArg *AccountType) (<-chan *types.Account, error) {
+func (r *mySubscriptionResolver) Accounts(ctx context.Context, marketID *string, partyID *string, asset *string, typeArg *types.AccountType) (<-chan *types.Account, error) {
 	var (
 		mkt, pty string
 		ty       types.AccountType
@@ -1995,7 +2023,7 @@ func (r *mySubscriptionResolver) Accounts(ctx context.Context, marketID *string,
 		pty = *partyID
 	}
 	if typeArg != nil {
-		ty = typeArg.IntoProto()
+		ty = *typeArg
 	}
 
 	req := &protoapi.AccountsSubscribeRequest{
@@ -2487,10 +2515,6 @@ func (r *myAccountResolver) Market(ctx context.Context, acc *types.Account) (*ty
 		return r.r.getMarketByID(ctx, acc.MarketId)
 	}
 	return nil, nil
-}
-
-func (r *myAccountResolver) Type(ctx context.Context, obj *types.Account) (AccountType, error) {
-	return convertAccountTypeFromProto(obj.Type)
 }
 
 func (r *myAccountResolver) Asset(ctx context.Context, obj *types.Account) (*types.Asset, error) {

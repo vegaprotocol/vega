@@ -147,12 +147,6 @@ func ProposalVoteFromProto(v *types.Vote) *ProposalVote {
 	}
 }
 
-// IntoProto ...
-func (a AccountType) IntoProto() types.AccountType {
-	at, _ := convertAccountTypeToProto(a)
-	return at
-}
-
 func busEventFromProto(events ...*eventspb.BusEvent) []*BusEvent {
 	r := make([]*BusEvent, 0, len(events))
 	for _, e := range events {

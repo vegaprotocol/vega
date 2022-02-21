@@ -240,11 +240,13 @@ func buildTestResolverRoot(t *testing.T) *testResolver {
 	conf := gateway.NewDefaultConfig()
 	coreProxyClient := mocks.NewMockCoreProxyServiceClient(ctrl)
 	tradingDataClient := mocks.NewMockTradingDataServiceClient(ctrl)
+	tradingDataClientV2 := mocks.NewMockTradingDataServiceClientV2(ctrl)
 	resolver := gql.NewResolverRoot(
 		log,
 		conf,
 		coreProxyClient,
 		tradingDataClient,
+		tradingDataClientV2,
 	)
 	return &testResolver{
 		resolverRoot:      resolver,

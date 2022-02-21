@@ -69,7 +69,7 @@ func (as *Asset) consume(ae AssetEvent) {
 }
 
 func (as *Asset) addAsset(va types.Asset, vegaTime time.Time) error {
-	id := entities.MakeAssetId(va.Id)
+	id := entities.MakeAssetID(va.Id)
 
 	totalSupply, err := decimal.NewFromString(va.Details.TotalSupply)
 	if err != nil {

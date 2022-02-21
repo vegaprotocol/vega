@@ -21,7 +21,11 @@ type AccountStore interface {
 	Obtain(a *entities.Account) error
 }
 
-type PartyStore interface{}
+type BalanceStore interface {
+	Add(b entities.Balance) error
+}
+type PartyStore interface {
+}
 
 type TransferResponseEvent interface {
 	events.Event
@@ -35,6 +39,7 @@ type TransferResponse struct {
 	parties  PartyStore
 	blocks   BlockStore
 	vegaTime time.Time
+	balances BalanceStore
 	log      *logging.Logger
 }
 
@@ -42,6 +47,7 @@ func NewTransferResponse(
 	ctx context.Context,
 	ledger Ledger,
 	accounts AccountStore,
+	balances BalanceStore,
 	parties PartyStore,
 	blocks BlockStore,
 	log *logging.Logger,
@@ -50,6 +56,7 @@ func NewTransferResponse(
 		Base:     subscribers.NewBase(ctx, 0, true),
 		ledger:   ledger,
 		accounts: accounts,
+		balances: balances,
 		parties:  parties,
 		blocks:   blocks,
 		log:      log,
@@ -83,16 +90,46 @@ func (t *TransferResponse) consume(e TransferResponseEvent) {
 					logging.Reflect("ledgerEntry", vle))
 			}
 		}
+		for _, vb := range tr.Balances {
+			if err := t.addBalance(vb, t.vegaTime); err != nil {
+				t.log.Error("couldn't add balance",
+					logging.Error(err),
+					logging.Reflect("balance", vb))
+			}
+		}
 	}
 }
 
+func (t *TransferResponse) addBalance(vb *vega.TransferBalance, vegaTime time.Time) error {
+	acc, err := t.obtainAccountWithProto(vb.Account, vegaTime)
+	if err != nil {
+		return fmt.Errorf("obtaining account: %w", err)
+	}
+
+	balance, err := decimal.NewFromString(vb.Balance)
+	if err != nil {
+		return fmt.Errorf("parsing account balance: %w", err)
+	}
+
+	b := entities.Balance{
+		AccountID: acc.ID,
+		Balance:   balance,
+		VegaTime:  vegaTime}
+
+	err = t.balances.Add(b)
+	if err != nil {
+		return fmt.Errorf("adding balance to store: %w", err)
+	}
+	return nil
+}
+
 func (t *TransferResponse) addLedgerEntry(vle *vega.LedgerEntry, vegaTime time.Time) error {
-	accFrom, err := t.obtainAccount(vle.FromAccount, vegaTime)
+	accFrom, err := t.obtainAccountWithID(vle.FromAccount, vegaTime)
 	if err != nil {
 		return fmt.Errorf("obtaining 'from' account: %w", err)
 	}
 
-	accTo, err := t.obtainAccount(vle.ToAccount, vegaTime)
+	accTo, err := t.obtainAccountWithID(vle.ToAccount, vegaTime)
 	if err != nil {
 		return fmt.Errorf("obtaining 'to' account: %w", err)
 	}
@@ -120,11 +157,25 @@ func (t *TransferResponse) addLedgerEntry(vle *vega.LedgerEntry, vegaTime time.T
 }
 
 // Parse the vega account ID; if that account already exists in the db, fetch it; else create it.
-func (t *TransferResponse) obtainAccount(id string, vegaTime time.Time) (entities.Account, error) {
+func (t *TransferResponse) obtainAccountWithID(id string, vegaTime time.Time) (entities.Account, error) {
 	a, err := entities.AccountFromAccountID(id)
 	if err != nil {
 		return entities.Account{}, fmt.Errorf("parsing account id: %w", err)
 	}
+	a.VegaTime = vegaTime
+	err = t.accounts.Obtain(&a)
+	if err != nil {
+		return entities.Account{}, fmt.Errorf("obtaining account: %w", err)
+	}
+	return a, nil
+}
+
+func (t *TransferResponse) obtainAccountWithProto(va *vega.Account, vegaTime time.Time) (entities.Account, error) {
+	a, err := entities.AccountFromProto(*va)
+	if err != nil {
+		return entities.Account{}, fmt.Errorf("obtaining account for balance: %w", err)
+	}
+
 	a.VegaTime = vegaTime
 	err = t.accounts.Obtain(&a)
 	if err != nil {

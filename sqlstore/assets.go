@@ -9,12 +9,12 @@ import (
 )
 
 type Assets struct {
-	*SqlStore
+	*SQLStore
 }
 
-func NewAssets(sqlStore *SqlStore) *Assets {
+func NewAssets(sqlStore *SQLStore) *Assets {
 	a := &Assets{
-		SqlStore: sqlStore,
+		SQLStore: sqlStore,
 	}
 	return a
 }

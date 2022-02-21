@@ -9,14 +9,14 @@ import (
 
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
-	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 )
 
 // JSONPb is a runtime.Marshaler which marshals/unmarshals into/from
 type JSONPb jsonpb.Marshaler
 
 // ContentType always returns "application/json".
-func (*JSONPb) ContentType() string {
+func (*JSONPb) ContentType(interface{}) string {
 	return "application/json"
 }
 

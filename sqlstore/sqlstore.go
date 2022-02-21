@@ -25,14 +25,14 @@ var (
 //go:embed migrations/*.sql
 var embedMigrations embed.FS
 
-type SqlStore struct {
+type SQLStore struct {
 	conf Config
 	pool *pgxpool.Pool
 	log  *logging.Logger
 	db   *embeddedpostgres.EmbeddedPostgres
 }
 
-func (s *SqlStore) makeConnectionString() string {
+func (s *SQLStore) makeConnectionString() string {
 	return fmt.Sprintf("postgresql://%s:%s@%s:%d/%s",
 		s.conf.Username,
 		s.conf.Password,
@@ -41,7 +41,7 @@ func (s *SqlStore) makeConnectionString() string {
 		s.conf.Database)
 }
 
-func (s *SqlStore) makePoolConfig() (*pgxpool.Config, error) {
+func (s *SQLStore) makePoolConfig() (*pgxpool.Config, error) {
 	cfg, err := pgxpool.ParseConfig(s.makeConnectionString())
 	if err != nil {
 		return nil, err
@@ -50,7 +50,7 @@ func (s *SqlStore) makePoolConfig() (*pgxpool.Config, error) {
 	return cfg, nil
 }
 
-func (s *SqlStore) migrateToLatestSchema() error {
+func (s *SQLStore) migrateToLatestSchema() error {
 	goose.SetBaseFS(embedMigrations)
 	goose.SetLogger(s.log.Named("db migration").GooseLogger())
 
@@ -85,8 +85,8 @@ func registerNumericType(poolConfig *pgxpool.Config) {
 	}
 }
 
-func InitialiseStorage(log *logging.Logger, config Config, paths paths.Paths) (*SqlStore, error) {
-	s := SqlStore{
+func InitialiseStorage(log *logging.Logger, config Config, paths paths.Paths) (*SQLStore, error) {
+	s := SQLStore{
 		conf: config,
 		log:  log.Named("sql_store"),
 	}
@@ -115,7 +115,7 @@ func InitialiseStorage(log *logging.Logger, config Config, paths paths.Paths) (*
 	return &s, nil
 }
 
-func (s *SqlStore) DeleteEverything() error {
+func (s *SQLStore) DeleteEverything() error {
 	for _, table := range tableNames {
 		if _, err := s.pool.Exec(context.Background(), "truncate table "+table+" CASCADE"); err != nil {
 			return fmt.Errorf("error truncating table: %s %w", table, err)
@@ -124,7 +124,7 @@ func (s *SqlStore) DeleteEverything() error {
 	return nil
 }
 
-func (s *SqlStore) initializeEmbeddedPostgres(vegapaths paths.Paths) error {
+func (s *SQLStore) initializeEmbeddedPostgres(vegapaths paths.Paths) error {
 	embeddedPostgresRuntimePath := paths.JoinStatePath(paths.StatePath(vegapaths.StatePathFor(paths.DataNodeStorageHome)), "sqlstore")
 	embeddedPostgresDataPath := paths.JoinStatePath(paths.StatePath(vegapaths.StatePathFor(paths.DataNodeStorageHome)), "node-data")
 
@@ -141,7 +141,7 @@ func (s *SqlStore) initializeEmbeddedPostgres(vegapaths paths.Paths) error {
 	return s.db.Start()
 }
 
-func (s *SqlStore) Stop() error {
+func (s *SQLStore) Stop() error {
 	if !s.conf.Enabled || !s.conf.UseEmbedded || s.db == nil {
 		return nil
 	}

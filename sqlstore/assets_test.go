@@ -55,7 +55,7 @@ func TestAsset(t *testing.T) {
 	assert.Error(t, err)
 
 	// Query and check we've got back an asset the same as the one we put in
-	fetchedAsset, err := as.GetByID(asset.HexId())
+	fetchedAsset, err := as.GetByID(asset.HexID())
 	assert.NoError(t, err)
 	assert.Equal(t, asset, fetchedAsset)
 

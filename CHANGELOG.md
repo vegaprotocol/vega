@@ -34,12 +34,14 @@
 - [336](https://github.com/vegaprotocol/data-node/pull/336) - Remove trading mode and future maturity
 - [338](https://github.com/vegaprotocol/data-node/pull/336) - Add `grpcui` web user interface
 - [340](https://github.com/vegaprotocol/data-node/pull/340) - Add brokers for the new data stores to support sequential and concurrent event processing 
+- [327](https://github.com/vegaprotocol/data-node/pull/327) - Add balances `sql` store and upgrade `gqlgen`
 
 ### 🐛 Fixes
 - [277](https://github.com/vegaprotocol/data-node/pull/277) - Now returns not-found error instead of internal error when proposal not found 
 - [274](https://github.com/vegaprotocol/data-node/issues/274) - Bug fix for proposal NO vote showing incorrect weight and tokens
 - [288](https://github.com/vegaprotocol/data-node/pull/288) - Add back `assetId` GraphQL resolver for `RewardPerAssetDetail`, change `RiskFactor` fields to strings.
 - [317](https://github.com/vegaprotocol/data-node/pull/317) - Fix `graphql` support for free-form governance proposals
+- [345](https://github.com/vegaprotocol/data-node/issues/345) - Add the missing events conversion to data node
 
 ## 0.47.1
 *`2021-12-20`*

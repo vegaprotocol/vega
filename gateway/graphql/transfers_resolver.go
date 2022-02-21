@@ -13,14 +13,6 @@ var ErrUnsupportedTransferKind = errors.New("unsupported transfer kind")
 
 type transferResolver VegaResolverRoot
 
-func (r *transferResolver) FromAccountType(ctx context.Context, obj *eventspb.Transfer) (AccountType, error) {
-	return convertAccountTypeFromProto(obj.FromAccountType)
-}
-
-func (r *transferResolver) ToAccountType(ctx context.Context, obj *eventspb.Transfer) (AccountType, error) {
-	return convertAccountTypeFromProto(obj.ToAccountType)
-}
-
 func (r *transferResolver) Asset(ctx context.Context, obj *eventspb.Transfer) (*vega.Asset, error) {
 	return r.r.getAssetByID(ctx, obj.Asset)
 }

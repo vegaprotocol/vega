@@ -18,15 +18,15 @@ var (
 )
 
 type Blocks struct {
-	*SqlStore
+	*SQLStore
 	lastBlock        *entities.Block
 	lastBlockChanged chan struct{}
 	mu               sync.Mutex
 }
 
-func NewBlocks(sqlStore *SqlStore) *Blocks {
+func NewBlocks(sqlStore *SQLStore) *Blocks {
 	b := &Blocks{
-		SqlStore:         sqlStore,
+		SQLStore:         sqlStore,
 		lastBlockChanged: make(chan struct{}),
 	}
 	return b

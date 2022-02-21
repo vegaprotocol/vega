@@ -9,12 +9,12 @@ import (
 )
 
 type Parties struct {
-	*SqlStore
+	*SQLStore
 }
 
-func NewParties(sqlStore *SqlStore) *Parties {
+func NewParties(sqlStore *SQLStore) *Parties {
 	a := &Parties{
-		SqlStore: sqlStore,
+		SQLStore: sqlStore,
 	}
 	return a
 }

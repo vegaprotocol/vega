@@ -19,17 +19,19 @@ type Asset struct {
 	VegaTime      time.Time
 }
 
-// Some assets have IDs that are not hex strings; this will be fixed but in the mean time
-// if they are not hex strings store the name as-is with a prefix so we can identify them.
-func MakeAssetId(stringId string) []byte {
-	id, err := hex.DecodeString(stringId)
+// MakeAssetID converts a string into a set if bytes. Normally this takes a hex encoded
+// SHA256 string, which gets encoded into the corresponding binary representation.
+// However some assets have IDs that are not hex strings; this will be fixed but
+// in the mean time in that case, store the name as-is with a prefix.
+func MakeAssetID(stringID string) []byte {
+	id, err := hex.DecodeString(stringID)
 	if err != nil {
-		id = []byte("bad_asset_" + stringId)
+		id = []byte("bad_asset_" + stringID)
 	}
 	return id
 }
 
-func (a Asset) HexId() string {
+func (a Asset) HexID() string {
 	if string(a.ID[:10]) == "bad_asset_" {
 		return string(a.ID[10:])
 	}

@@ -31,6 +31,7 @@ import (
 	"code.vegaprotocol.io/data-node/parties"
 	"code.vegaprotocol.io/data-node/plugins"
 	"code.vegaprotocol.io/data-node/risk"
+	"code.vegaprotocol.io/data-node/sqlstore"
 	"code.vegaprotocol.io/data-node/staking"
 	"code.vegaprotocol.io/data-node/storage"
 	"code.vegaprotocol.io/data-node/subscribers"
@@ -269,6 +270,9 @@ func getTestGRPCServer(
 
 	stakingService := staking.NewService(ctx, logger)
 
+	sqlStore := sqlstore.SQLStore{}
+	sqlBalanceStore := sqlstore.NewBalances(&sqlStore)
+
 	g := api.NewGRPCServer(
 		logger,
 		conf.API,
@@ -299,6 +303,7 @@ func getTestGRPCServer(
 		rewardsService,
 		stakingService,
 		checkpointSvc,
+		sqlBalanceStore,
 	)
 	if g == nil {
 		err = fmt.Errorf("failed to create gRPC server")
@@ -368,7 +373,7 @@ func TestSubmitTransaction(t *testing.T) {
 		}
 
 		mockTradingServiceClient.EXPECT().
-			SubmitTransaction(gomock.Any(), vegaReq).
+			SubmitTransaction(gomock.Any(), vgtesting.ProtosEq(vegaReq)).
 			Return(&vegaprotoapi.SubmitTransactionResponse{Success: true}, nil).Times(1)
 
 		proxyClient := vegaprotoapi.NewCoreServiceClient(conn)
@@ -376,7 +381,7 @@ func TestSubmitTransaction(t *testing.T) {
 
 		actualResp, err := proxyClient.SubmitTransaction(ctx, req)
 		assert.NoError(t, err)
-		assert.Equal(t, expectedRes, actualResp)
+		vgtesting.AssertProtoEqual(t, expectedRes, actualResp)
 	})
 
 	t.Run("proxy propagates an error", func(t *testing.T) {
@@ -414,7 +419,7 @@ func TestSubmitTransaction(t *testing.T) {
 		}
 
 		mockTradingServiceClient.EXPECT().
-			SubmitTransaction(gomock.Any(), vegaReq).
+			SubmitTransaction(gomock.Any(), vgtesting.ProtosEq(vegaReq)).
 			Return(nil, errors.New("Critical error"))
 
 		proxyClient := vegaprotoapi.NewCoreServiceClient(conn)
@@ -463,7 +468,7 @@ func TestSubmitRawTransaction(t *testing.T) {
 		}
 
 		mockTradingServiceClient.EXPECT().
-			SubmitRawTransaction(gomock.Any(), vegaReq).
+			SubmitRawTransaction(gomock.Any(), vgtesting.ProtosEq(vegaReq)).
 			Return(&vegaprotoapi.SubmitRawTransactionResponse{Success: true}, nil).Times(1)
 
 		proxyClient := vegaprotoapi.NewCoreServiceClient(conn)
@@ -471,7 +476,7 @@ func TestSubmitRawTransaction(t *testing.T) {
 
 		actualResp, err := proxyClient.SubmitRawTransaction(ctx, req)
 		assert.NoError(t, err)
-		assert.Equal(t, expectedRes, actualResp)
+		vgtesting.AssertProtoEqual(t, expectedRes, actualResp)
 	})
 
 	t.Run("proxy propagates an error", func(t *testing.T) {
@@ -506,7 +511,7 @@ func TestSubmitRawTransaction(t *testing.T) {
 		}
 
 		mockTradingServiceClient.EXPECT().
-			SubmitRawTransaction(gomock.Any(), vegaReq).
+			SubmitRawTransaction(gomock.Any(), vgtesting.ProtosEq(vegaReq)).
 			Return(nil, errors.New("Critical error"))
 
 		proxyClient := vegaprotoapi.NewCoreServiceClient(conn)
@@ -536,7 +541,7 @@ func TestLastBlockHeight(t *testing.T) {
 		vegaReq := &vegaprotoapi.LastBlockHeightRequest{}
 
 		mockTradingServiceClient.EXPECT().
-			LastBlockHeight(gomock.Any(), vegaReq).
+			LastBlockHeight(gomock.Any(), vgtesting.ProtosEq(vegaReq)).
 			Return(&vegaprotoapi.LastBlockHeightResponse{Height: 20}, nil).Times(1)
 
 		proxyClient := vegaprotoapi.NewCoreServiceClient(conn)
@@ -544,7 +549,7 @@ func TestLastBlockHeight(t *testing.T) {
 
 		actualResp, err := proxyClient.LastBlockHeight(ctx, req)
 		assert.NoError(t, err)
-		assert.Equal(t, expectedRes, actualResp)
+		vgtesting.AssertProtoEqual(t, expectedRes, actualResp)
 	})
 
 	t.Run("proxy propagates an error", func(t *testing.T) {
@@ -558,7 +563,7 @@ func TestLastBlockHeight(t *testing.T) {
 		vegaReq := &vegaprotoapi.LastBlockHeightRequest{}
 
 		mockTradingServiceClient.EXPECT().
-			LastBlockHeight(gomock.Any(), vegaReq).
+			LastBlockHeight(gomock.Any(), vgtesting.ProtosEq(vegaReq)).
 			Return(nil, fmt.Errorf("Critical error")).Times(1)
 
 		proxyClient := vegaprotoapi.NewCoreServiceClient(conn)
