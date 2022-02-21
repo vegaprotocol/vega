@@ -90,6 +90,8 @@ var (
 	ErrCannotStartOpeningAuctionForMarketNotInProposedState = errors.New("cannot start the opening auction for a market not in proposed state")
 	// ErrCannotRepriceDuringAuction.
 	ErrCannotRepriceDuringAuction = errors.New("cannot reprice during auction")
+
+	one = num.One()
 )
 
 // PriceMonitor interface to handle price monitoring/auction triggers
@@ -199,7 +201,6 @@ type Market struct {
 
 	markPrice   *num.Uint
 	priceFactor *num.Uint
-	one         *num.Uint
 
 	// own engines
 	matching           *matching.CachedOrderBook
@@ -248,6 +249,7 @@ type Market struct {
 	stateVarEngine StateVarEngine
 	stateChanged   bool
 	feesTracker    *FeesTracker
+	marketTracker  *MarketTracker
 }
 
 // SetMarketID assigns a deterministic pseudo-random ID to a Market.
@@ -293,6 +295,7 @@ func NewMarket(
 	stateVarEngine StateVarEngine,
 	feesTracker *FeesTracker,
 	assetDetails *assets.Asset,
+	marketTracker *MarketTracker,
 ) (*Market, error) {
 	if len(mkt.ID) == 0 {
 		return nil, ErrEmptyMarketID
@@ -412,8 +415,8 @@ func NewMarket(
 		stateVarEngine:            stateVarEngine,
 		feesTracker:               feesTracker,
 		priceFactor:               priceFactor,
-		one:                       num.NewUint(1), // this is just some optimisation when checking price factor == 1
 		minLPStakeQuantumMultiple: num.MustDecimalFromString("1"),
+		marketTracker:             marketTracker,
 	}
 
 	liqEngine.SetGetStaticPricesFunc(market.getBestStaticPrices)
@@ -503,8 +506,8 @@ func (m *Market) GetMarketData() types.MarketData {
 	for _, b := range bounds {
 		m.priceToMarketPrecision(b.MaxValidPrice) // effictively floors this
 		m.priceToMarketPrecision(b.MinValidPrice)
-		if m.priceFactor.NEQ(m.one) {
-			b.MinValidPrice.AddSum(m.one) // ceil
+		if m.priceFactor.NEQ(one) {
+			b.MinValidPrice.AddSum(one) // ceil
 		}
 	}
 
@@ -1544,9 +1547,9 @@ func (m *Market) handleConfirmation(ctx context.Context, conf *types.OrderConfir
 			}
 			// add trade to settlement engine for correct MTM settlement of individual trades
 			m.settlement.AddTrade(trade)
-			m.feeSplitter.AddTradeValue(num.Zero().Mul(
-				num.NewUint(trade.Size), trade.Price,
-			))
+			tradeValue := num.Zero().Mul(num.NewUint(trade.Size), trade.Price)
+			m.feeSplitter.AddTradeValue(tradeValue)
+			m.marketTracker.AddValueTraded(m.mkt.ID, tradeValue)
 		}
 		m.broker.SendBatch(tradeEvts)
 
@@ -1772,6 +1775,7 @@ func (m *Market) resolveClosedOutParties(ctx context.Context, distressedMarginEv
 		Reference:   fmt.Sprintf("LS-%s", o.ID), // liquidity sourcing, reference the order which caused the problem
 		TimeInForce: types.OrderTimeInForceFOK,  // this is an all-or-nothing order, so TIME_IN_FORCE == FOK
 		Type:        types.OrderTypeNetwork,
+		Price:       num.Zero(),
 	}
 	no.Size = no.Remaining
 
