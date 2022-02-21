@@ -174,8 +174,8 @@ func (e *Engine) restoreActiveProposals(ctx context.Context, active *types.Gover
 		e.log.Debug("proposals",
 			logging.String("id", pp.ID),
 			logging.Int("yes", len(pp.yes)),
-			logging.Int("no", len(pp.yes)),
-			logging.Int("invalid", len(pp.yes)),
+			logging.Int("no", len(pp.no)),
+			logging.Int("invalid", len(pp.invalidVotes)),
 		)
 		e.activeProposals = append(e.activeProposals, pp)
 		evts = append(evts, events.NewProposalEvent(ctx, *pp.Proposal))
