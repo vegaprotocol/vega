@@ -68,7 +68,7 @@ type Broker struct {
 
 	config       Config
 	socketClient SocketClient
-	canStream    bool // whether not we shold send events to the socketClient
+	canStream    bool // whether not we should send events to the socketClient
 }
 
 // New creates a new base broker.
