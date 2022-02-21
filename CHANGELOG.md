@@ -81,6 +81,7 @@
 - [4784](https://github.com/vegaprotocol/vega/issues/4784) - Moving feature tests from specs internal to verified folder
 - [4797](https://github.com/vegaprotocol/vega/issues/4784) - Update `CODEOWNERS` for research to review verified feature files
 - [4801](https://github.com/vegaprotocol/vega/issues/4801) - added acceptance criteria codes to feature tests for Settlement at expiry spec 
+- [4823](https://github.com/vegaprotocol/vega/issues/4823) - simplified performance score
 
 ### 🐛 Fixes
 - [4798](https://github.com/vegaprotocol/vega/pull/4798) - Fix panic in loading topology from snapshot

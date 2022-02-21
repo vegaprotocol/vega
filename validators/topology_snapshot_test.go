@@ -9,7 +9,6 @@ import (
 
 	abcitypes "github.com/tendermint/tendermint/abci/types"
 	types1 "github.com/tendermint/tendermint/proto/tendermint/types"
-	tmtypes "github.com/tendermint/tendermint/types"
 
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	snapshot "code.vegaprotocol.io/protos/vega/snapshot/v1"
@@ -55,7 +54,7 @@ func TestTopologySnapshot(t *testing.T) {
 		VegaPubKey:      "vega-key",
 		EthereumAddress: "eth-address",
 	}
-	err = top.AddNewNode(ctx, &nr1)
+	err = top.AddNewNode(ctx, &nr1, validators.ValidatorStatusTendermint)
 	assert.NoError(t, err)
 
 	nr2 := commandspb.AnnounceNode{
@@ -64,7 +63,7 @@ func TestTopologySnapshot(t *testing.T) {
 		VegaPubKey:      "vega-key-2",
 		EthereumAddress: "eth-address-2",
 	}
-	err = top.AddNewNode(ctx, &nr2)
+	err = top.AddNewNode(ctx, &nr2, validators.ValidatorStatusTendermint)
 	assert.NoError(t, err)
 
 	kr1 := &commandspb.KeyRotateSubmission{
@@ -111,41 +110,14 @@ func TestTopologySnapshot(t *testing.T) {
 	assert.Equal(t, top.IsValidator(), snapTop.IsValidator())
 	assert.Equal(t, top.GetPendingKeyRotation(kr1.TargetBlock, kr1.NewPubKey), snapTop.GetPendingKeyRotation(kr1.TargetBlock, kr1.NewPubKey))
 	assert.Equal(t, top.GetPendingKeyRotation(kr2.TargetBlock, kr2.NewPubKey), snapTop.GetPendingKeyRotation(kr2.TargetBlock, kr2.NewPubKey))
-
-	require.Equal(t, "0.5", snapTop.ValidatorPerformanceScore(tmkey1).String())
-	require.Equal(t, "1", snapTop.ValidatorPerformanceScore(tmkey2).String())
-	require.Equal(t, "1", snapTop.ValidatorPerformanceScore(tmkey3).String())
-	require.Equal(t, "1", snapTop.ValidatorPerformanceScore(tmkey4).String())
-	require.Equal(t, "1", snapTop.ValidatorPerformanceScore(tmkey5).String())
 }
 
 func updateValidatorPerformanceToNonDefaultState(t *testing.T, top *validators.Topology) {
 	t.Helper()
-	vd1 := []*tmtypes.Validator{
-		{Address: address1, VotingPower: 3715, ProposerPriority: 5249},
-		{Address: address2, VotingPower: 3351, ProposerPriority: 796},
-		{Address: address3, VotingPower: 2793, ProposerPriority: -797},
-		{Address: address4, VotingPower: 139, ProposerPriority: 1016},
-		{Address: address5, VotingPower: 1, ProposerPriority: -6264},
-	}
 	req1 := abcitypes.RequestBeginBlock{Header: types1.Header{ProposerAddress: address1, Height: int64(1)}}
-	top.BeginBlock(context.Background(), req1, vd1)
-
-	vd2 := []*tmtypes.Validator{
-		{Address: address1, VotingPower: 3715, ProposerPriority: 6433},
-		{Address: address2, VotingPower: 3351, ProposerPriority: -1853},
-		{Address: address3, VotingPower: 2793, ProposerPriority: 5347},
-		{Address: address4, VotingPower: 139, ProposerPriority: -3701},
-		{Address: address5, VotingPower: 1, ProposerPriority: -6226},
-	}
+	top.BeginBlock(context.Background(), req1)
 
 	// expecting address1 to propose but got address3
 	req2 := abcitypes.RequestBeginBlock{Header: types1.Header{ProposerAddress: address3, Height: int64(1)}}
-	top.BeginBlock(context.Background(), req2, vd2)
-
-	require.Equal(t, "0.5", top.ValidatorPerformanceScore(tmkey1).String())
-	require.Equal(t, "1", top.ValidatorPerformanceScore(tmkey2).String())
-	require.Equal(t, "1", top.ValidatorPerformanceScore(tmkey3).String())
-	require.Equal(t, "1", top.ValidatorPerformanceScore(tmkey4).String())
-	require.Equal(t, "1", top.ValidatorPerformanceScore(tmkey5).String())
+	top.BeginBlock(context.Background(), req2)
 }

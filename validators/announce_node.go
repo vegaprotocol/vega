@@ -19,7 +19,7 @@ func (t *Topology) ProcessAnnounceNode(
 		return err
 	}
 
-	t.AddNewNode(ctx, an)
+	t.AddNewNode(ctx, an, ValidatorStatusPending)
 	return nil
 }
 
