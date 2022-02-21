@@ -185,7 +185,6 @@ func (_Bridge *BridgeTransactorRaw) Transact(opts *bind.TransactOpts, method str
 func (_Bridge *BridgeCaller) GetAssetSource(opts *bind.CallOpts, vega_asset_id [32]byte) (common.Address, error) {
 	var out []interface{}
 	err := _Bridge.contract.Call(opts, &out, "get_asset_source", vega_asset_id)
-
 	if err != nil {
 		return *new(common.Address), err
 	}
@@ -193,7 +192,6 @@ func (_Bridge *BridgeCaller) GetAssetSource(opts *bind.CallOpts, vega_asset_id [
 	out0 := *abi.ConvertType(out[0], new(common.Address)).(*common.Address)
 
 	return out0, err
-
 }
 
 // GetAssetSource is a free data retrieval call binding the contract method 0x786b0bc0.
@@ -216,7 +214,6 @@ func (_Bridge *BridgeCallerSession) GetAssetSource(vega_asset_id [32]byte) (comm
 func (_Bridge *BridgeCaller) GetDepositMaximum(opts *bind.CallOpts, asset_source common.Address) (*big.Int, error) {
 	var out []interface{}
 	err := _Bridge.contract.Call(opts, &out, "get_deposit_maximum", asset_source)
-
 	if err != nil {
 		return *new(*big.Int), err
 	}
@@ -224,7 +221,6 @@ func (_Bridge *BridgeCaller) GetDepositMaximum(opts *bind.CallOpts, asset_source
 	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
 
 	return out0, err
-
 }
 
 // GetDepositMaximum is a free data retrieval call binding the contract method 0x1d501b5d.
@@ -247,7 +243,6 @@ func (_Bridge *BridgeCallerSession) GetDepositMaximum(asset_source common.Addres
 func (_Bridge *BridgeCaller) GetDepositMinimum(opts *bind.CallOpts, asset_source common.Address) (*big.Int, error) {
 	var out []interface{}
 	err := _Bridge.contract.Call(opts, &out, "get_deposit_minimum", asset_source)
-
 	if err != nil {
 		return *new(*big.Int), err
 	}
@@ -255,7 +250,6 @@ func (_Bridge *BridgeCaller) GetDepositMinimum(opts *bind.CallOpts, asset_source
 	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
 
 	return out0, err
-
 }
 
 // GetDepositMinimum is a free data retrieval call binding the contract method 0x4322b1f2.
@@ -278,7 +272,6 @@ func (_Bridge *BridgeCallerSession) GetDepositMinimum(asset_source common.Addres
 func (_Bridge *BridgeCaller) GetMultisigControlAddress(opts *bind.CallOpts) (common.Address, error) {
 	var out []interface{}
 	err := _Bridge.contract.Call(opts, &out, "get_multisig_control_address")
-
 	if err != nil {
 		return *new(common.Address), err
 	}
@@ -286,7 +279,6 @@ func (_Bridge *BridgeCaller) GetMultisigControlAddress(opts *bind.CallOpts) (com
 	out0 := *abi.ConvertType(out[0], new(common.Address)).(*common.Address)
 
 	return out0, err
-
 }
 
 // GetMultisigControlAddress is a free data retrieval call binding the contract method 0xc58dc3b9.
@@ -309,7 +301,6 @@ func (_Bridge *BridgeCallerSession) GetMultisigControlAddress() (common.Address,
 func (_Bridge *BridgeCaller) GetVegaAssetId(opts *bind.CallOpts, asset_source common.Address) ([32]byte, error) {
 	var out []interface{}
 	err := _Bridge.contract.Call(opts, &out, "get_vega_asset_id", asset_source)
-
 	if err != nil {
 		return *new([32]byte), err
 	}
@@ -317,7 +308,6 @@ func (_Bridge *BridgeCaller) GetVegaAssetId(opts *bind.CallOpts, asset_source co
 	out0 := *abi.ConvertType(out[0], new([32]byte)).(*[32]byte)
 
 	return out0, err
-
 }
 
 // GetVegaAssetId is a free data retrieval call binding the contract method 0xa06b5d39.
@@ -340,7 +330,6 @@ func (_Bridge *BridgeCallerSession) GetVegaAssetId(asset_source common.Address) 
 func (_Bridge *BridgeCaller) IsAssetListed(opts *bind.CallOpts, asset_source common.Address) (bool, error) {
 	var out []interface{}
 	err := _Bridge.contract.Call(opts, &out, "is_asset_listed", asset_source)
-
 	if err != nil {
 		return *new(bool), err
 	}
@@ -348,7 +337,6 @@ func (_Bridge *BridgeCaller) IsAssetListed(opts *bind.CallOpts, asset_source com
 	out0 := *abi.ConvertType(out[0], new(bool)).(*bool)
 
 	return out0, err
-
 }
 
 // IsAssetListed is a free data retrieval call binding the contract method 0x7fd27b7f.
@@ -570,7 +558,6 @@ type BridgeAssetDepositMaximumSet struct {
 //
 // Solidity: event Asset_Deposit_Maximum_Set(address indexed asset_source, uint256 new_maximum, uint256 nonce)
 func (_Bridge *BridgeFilterer) FilterAssetDepositMaximumSet(opts *bind.FilterOpts, asset_source []common.Address) (*BridgeAssetDepositMaximumSetIterator, error) {
-
 	var asset_sourceRule []interface{}
 	for _, asset_sourceItem := range asset_source {
 		asset_sourceRule = append(asset_sourceRule, asset_sourceItem)
@@ -587,7 +574,6 @@ func (_Bridge *BridgeFilterer) FilterAssetDepositMaximumSet(opts *bind.FilterOpt
 //
 // Solidity: event Asset_Deposit_Maximum_Set(address indexed asset_source, uint256 new_maximum, uint256 nonce)
 func (_Bridge *BridgeFilterer) WatchAssetDepositMaximumSet(opts *bind.WatchOpts, sink chan<- *BridgeAssetDepositMaximumSet, asset_source []common.Address) (event.Subscription, error) {
-
 	var asset_sourceRule []interface{}
 	for _, asset_sourceItem := range asset_source {
 		asset_sourceRule = append(asset_sourceRule, asset_sourceItem)
@@ -716,7 +702,6 @@ type BridgeAssetDepositMinimumSet struct {
 //
 // Solidity: event Asset_Deposit_Minimum_Set(address indexed asset_source, uint256 new_minimum, uint256 nonce)
 func (_Bridge *BridgeFilterer) FilterAssetDepositMinimumSet(opts *bind.FilterOpts, asset_source []common.Address) (*BridgeAssetDepositMinimumSetIterator, error) {
-
 	var asset_sourceRule []interface{}
 	for _, asset_sourceItem := range asset_source {
 		asset_sourceRule = append(asset_sourceRule, asset_sourceItem)
@@ -733,7 +718,6 @@ func (_Bridge *BridgeFilterer) FilterAssetDepositMinimumSet(opts *bind.FilterOpt
 //
 // Solidity: event Asset_Deposit_Minimum_Set(address indexed asset_source, uint256 new_minimum, uint256 nonce)
 func (_Bridge *BridgeFilterer) WatchAssetDepositMinimumSet(opts *bind.WatchOpts, sink chan<- *BridgeAssetDepositMinimumSet, asset_source []common.Address) (event.Subscription, error) {
-
 	var asset_sourceRule []interface{}
 	for _, asset_sourceItem := range asset_source {
 		asset_sourceRule = append(asset_sourceRule, asset_sourceItem)
@@ -863,7 +847,6 @@ type BridgeAssetDeposited struct {
 //
 // Solidity: event Asset_Deposited(address indexed user_address, address indexed asset_source, uint256 amount, bytes32 vega_public_key)
 func (_Bridge *BridgeFilterer) FilterAssetDeposited(opts *bind.FilterOpts, user_address []common.Address, asset_source []common.Address) (*BridgeAssetDepositedIterator, error) {
-
 	var user_addressRule []interface{}
 	for _, user_addressItem := range user_address {
 		user_addressRule = append(user_addressRule, user_addressItem)
@@ -884,7 +867,6 @@ func (_Bridge *BridgeFilterer) FilterAssetDeposited(opts *bind.FilterOpts, user_
 //
 // Solidity: event Asset_Deposited(address indexed user_address, address indexed asset_source, uint256 amount, bytes32 vega_public_key)
 func (_Bridge *BridgeFilterer) WatchAssetDeposited(opts *bind.WatchOpts, sink chan<- *BridgeAssetDeposited, user_address []common.Address, asset_source []common.Address) (event.Subscription, error) {
-
 	var user_addressRule []interface{}
 	for _, user_addressItem := range user_address {
 		user_addressRule = append(user_addressRule, user_addressItem)
@@ -1017,7 +999,6 @@ type BridgeAssetListed struct {
 //
 // Solidity: event Asset_Listed(address indexed asset_source, bytes32 indexed vega_asset_id, uint256 nonce)
 func (_Bridge *BridgeFilterer) FilterAssetListed(opts *bind.FilterOpts, asset_source []common.Address, vega_asset_id [][32]byte) (*BridgeAssetListedIterator, error) {
-
 	var asset_sourceRule []interface{}
 	for _, asset_sourceItem := range asset_source {
 		asset_sourceRule = append(asset_sourceRule, asset_sourceItem)
@@ -1038,7 +1019,6 @@ func (_Bridge *BridgeFilterer) FilterAssetListed(opts *bind.FilterOpts, asset_so
 //
 // Solidity: event Asset_Listed(address indexed asset_source, bytes32 indexed vega_asset_id, uint256 nonce)
 func (_Bridge *BridgeFilterer) WatchAssetListed(opts *bind.WatchOpts, sink chan<- *BridgeAssetListed, asset_source []common.Address, vega_asset_id [][32]byte) (event.Subscription, error) {
-
 	var asset_sourceRule []interface{}
 	for _, asset_sourceItem := range asset_source {
 		asset_sourceRule = append(asset_sourceRule, asset_sourceItem)
@@ -1170,7 +1150,6 @@ type BridgeAssetRemoved struct {
 //
 // Solidity: event Asset_Removed(address indexed asset_source, uint256 nonce)
 func (_Bridge *BridgeFilterer) FilterAssetRemoved(opts *bind.FilterOpts, asset_source []common.Address) (*BridgeAssetRemovedIterator, error) {
-
 	var asset_sourceRule []interface{}
 	for _, asset_sourceItem := range asset_source {
 		asset_sourceRule = append(asset_sourceRule, asset_sourceItem)
@@ -1187,7 +1166,6 @@ func (_Bridge *BridgeFilterer) FilterAssetRemoved(opts *bind.FilterOpts, asset_s
 //
 // Solidity: event Asset_Removed(address indexed asset_source, uint256 nonce)
 func (_Bridge *BridgeFilterer) WatchAssetRemoved(opts *bind.WatchOpts, sink chan<- *BridgeAssetRemoved, asset_source []common.Address) (event.Subscription, error) {
-
 	var asset_sourceRule []interface{}
 	for _, asset_sourceItem := range asset_source {
 		asset_sourceRule = append(asset_sourceRule, asset_sourceItem)
@@ -1317,7 +1295,6 @@ type BridgeAssetWithdrawn struct {
 //
 // Solidity: event Asset_Withdrawn(address indexed user_address, address indexed asset_source, uint256 amount, uint256 nonce)
 func (_Bridge *BridgeFilterer) FilterAssetWithdrawn(opts *bind.FilterOpts, user_address []common.Address, asset_source []common.Address) (*BridgeAssetWithdrawnIterator, error) {
-
 	var user_addressRule []interface{}
 	for _, user_addressItem := range user_address {
 		user_addressRule = append(user_addressRule, user_addressItem)
@@ -1338,7 +1315,6 @@ func (_Bridge *BridgeFilterer) FilterAssetWithdrawn(opts *bind.FilterOpts, user_
 //
 // Solidity: event Asset_Withdrawn(address indexed user_address, address indexed asset_source, uint256 amount, uint256 nonce)
 func (_Bridge *BridgeFilterer) WatchAssetWithdrawn(opts *bind.WatchOpts, sink chan<- *BridgeAssetWithdrawn, user_address []common.Address, asset_source []common.Address) (event.Subscription, error) {
-
 	var user_addressRule []interface{}
 	for _, user_addressItem := range user_address {
 		user_addressRule = append(user_addressRule, user_addressItem)

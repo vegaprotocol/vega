@@ -185,7 +185,6 @@ func (_Staking *StakingTransactorRaw) Transact(opts *bind.TransactOpts, method s
 func (_Staking *StakingCaller) StakeBalance(opts *bind.CallOpts, target common.Address, vega_public_key [32]byte) (*big.Int, error) {
 	var out []interface{}
 	err := _Staking.contract.Call(opts, &out, "stake_balance", target, vega_public_key)
-
 	if err != nil {
 		return *new(*big.Int), err
 	}
@@ -193,7 +192,6 @@ func (_Staking *StakingCaller) StakeBalance(opts *bind.CallOpts, target common.A
 	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
 
 	return out0, err
-
 }
 
 // StakeBalance is a free data retrieval call binding the contract method 0x274abf34.
@@ -216,7 +214,6 @@ func (_Staking *StakingCallerSession) StakeBalance(target common.Address, vega_p
 func (_Staking *StakingCaller) StakingToken(opts *bind.CallOpts) (common.Address, error) {
 	var out []interface{}
 	err := _Staking.contract.Call(opts, &out, "staking_token")
-
 	if err != nil {
 		return *new(common.Address), err
 	}
@@ -224,7 +221,6 @@ func (_Staking *StakingCaller) StakingToken(opts *bind.CallOpts) (common.Address
 	out0 := *abi.ConvertType(out[0], new(common.Address)).(*common.Address)
 
 	return out0, err
-
 }
 
 // StakingToken is a free data retrieval call binding the contract method 0x2dc7d74c.
@@ -247,7 +243,6 @@ func (_Staking *StakingCallerSession) StakingToken() (common.Address, error) {
 func (_Staking *StakingCaller) TotalStaked(opts *bind.CallOpts) (*big.Int, error) {
 	var out []interface{}
 	err := _Staking.contract.Call(opts, &out, "total_staked")
-
 	if err != nil {
 		return *new(*big.Int), err
 	}
@@ -255,7 +250,6 @@ func (_Staking *StakingCaller) TotalStaked(opts *bind.CallOpts) (*big.Int, error
 	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
 
 	return out0, err
-
 }
 
 // TotalStaked is a free data retrieval call binding the contract method 0xaf7568dd.
@@ -351,7 +345,6 @@ type StakingStakeDeposited struct {
 //
 // Solidity: event Stake_Deposited(address indexed user, uint256 amount, bytes32 indexed vega_public_key)
 func (_Staking *StakingFilterer) FilterStakeDeposited(opts *bind.FilterOpts, user []common.Address, vega_public_key [][32]byte) (*StakingStakeDepositedIterator, error) {
-
 	var userRule []interface{}
 	for _, userItem := range user {
 		userRule = append(userRule, userItem)
@@ -373,7 +366,6 @@ func (_Staking *StakingFilterer) FilterStakeDeposited(opts *bind.FilterOpts, use
 //
 // Solidity: event Stake_Deposited(address indexed user, uint256 amount, bytes32 indexed vega_public_key)
 func (_Staking *StakingFilterer) WatchStakeDeposited(opts *bind.WatchOpts, sink chan<- *StakingStakeDeposited, user []common.Address, vega_public_key [][32]byte) (event.Subscription, error) {
-
 	var userRule []interface{}
 	for _, userItem := range user {
 		userRule = append(userRule, userItem)
@@ -507,7 +499,6 @@ type StakingStakeRemoved struct {
 //
 // Solidity: event Stake_Removed(address indexed user, uint256 amount, bytes32 indexed vega_public_key)
 func (_Staking *StakingFilterer) FilterStakeRemoved(opts *bind.FilterOpts, user []common.Address, vega_public_key [][32]byte) (*StakingStakeRemovedIterator, error) {
-
 	var userRule []interface{}
 	for _, userItem := range user {
 		userRule = append(userRule, userItem)
@@ -529,7 +520,6 @@ func (_Staking *StakingFilterer) FilterStakeRemoved(opts *bind.FilterOpts, user 
 //
 // Solidity: event Stake_Removed(address indexed user, uint256 amount, bytes32 indexed vega_public_key)
 func (_Staking *StakingFilterer) WatchStakeRemoved(opts *bind.WatchOpts, sink chan<- *StakingStakeRemoved, user []common.Address, vega_public_key [][32]byte) (event.Subscription, error) {
-
 	var userRule []interface{}
 	for _, userItem := range user {
 		userRule = append(userRule, userItem)
@@ -664,7 +654,6 @@ type StakingStakeTransferred struct {
 //
 // Solidity: event Stake_Transferred(address indexed from, uint256 amount, address indexed to, bytes32 indexed vega_public_key)
 func (_Staking *StakingFilterer) FilterStakeTransferred(opts *bind.FilterOpts, from []common.Address, to []common.Address, vega_public_key [][32]byte) (*StakingStakeTransferredIterator, error) {
-
 	var fromRule []interface{}
 	for _, fromItem := range from {
 		fromRule = append(fromRule, fromItem)
@@ -690,7 +679,6 @@ func (_Staking *StakingFilterer) FilterStakeTransferred(opts *bind.FilterOpts, f
 //
 // Solidity: event Stake_Transferred(address indexed from, uint256 amount, address indexed to, bytes32 indexed vega_public_key)
 func (_Staking *StakingFilterer) WatchStakeTransferred(opts *bind.WatchOpts, sink chan<- *StakingStakeTransferred, from []common.Address, to []common.Address, vega_public_key [][32]byte) (event.Subscription, error) {
-
 	var fromRule []interface{}
 	for _, fromItem := range from {
 		fromRule = append(fromRule, fromItem)

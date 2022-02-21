@@ -8,38 +8,29 @@ import (
 
 func (vp *validatorPerformance) Deserialize(proto *v1.ValidatorPerformance) {
 	if proto != nil {
+		tot := int64(0)
 		for _, stats := range proto.ValidatorPerfStats {
-			vp.performance[stats.ValidatorAddress] = &performanceStats{
-				proposed:           stats.Proposed,
-				elected:            stats.Elected,
-				voted:              stats.Voted,
-				lastHeightVoted:    stats.LastHeightVoted,
-				lastHeightProposed: stats.LastHeightProposed,
-				lastHeightElected:  stats.LastHeightElected,
-			}
+			tot += int64(stats.Proposed)
+			vp.proposals[stats.ValidatorAddress] = int64(stats.Proposed)
 		}
+		vp.total = tot
 	}
 }
 
 func (vp *validatorPerformance) Serialize() *v1.ValidatorPerformance {
-	keys := make([]string, 0, len(vp.performance))
-	for k := range vp.performance {
+	keys := make([]string, 0, len(vp.proposals))
+	for k := range vp.proposals {
 		keys = append(keys, k)
 	}
 
 	sort.Strings(keys)
 
-	stats := make([]*v1.PerformanceStats, 0, len(vp.performance))
+	stats := make([]*v1.PerformanceStats, 0, len(vp.proposals))
 	for _, addr := range keys {
-		stat := vp.performance[addr]
+		stat := vp.proposals[addr]
 		stats = append(stats, &v1.PerformanceStats{
-			ValidatorAddress:   addr,
-			Proposed:           stat.proposed,
-			Elected:            stat.elected,
-			Voted:              stat.voted,
-			LastHeightVoted:    stat.lastHeightVoted,
-			LastHeightProposed: stat.lastHeightProposed,
-			LastHeightElected:  stat.lastHeightElected,
+			ValidatorAddress: addr,
+			Proposed:         uint64(stat),
 		})
 	}
 

@@ -25,7 +25,6 @@ import (
 	"github.com/stretchr/testify/require"
 	abcitypes "github.com/tendermint/tendermint/abci/types"
 	types1 "github.com/tendermint/tendermint/proto/tendermint/types"
-	tmtypes "github.com/tendermint/tendermint/types"
 )
 
 var tmPubKey = "tm-pub-key"
@@ -298,7 +297,7 @@ func testAddNewNodeSuccess(t *testing.T) {
 		EthereumAddress: "eth-address",
 	}
 	ctx := context.Background()
-	err := top.AddNewNode(ctx, &nr)
+	err := top.AddNewNode(ctx, &nr, validators.ValidatorStatusTendermint)
 	assert.NoError(t, err)
 }
 
@@ -313,7 +312,7 @@ func testAddNewNodeFailure(t *testing.T) {
 		EthereumAddress: "eth-address",
 	}
 	ctx := context.Background()
-	err := top.AddNewNode(ctx, &nr)
+	err := top.AddNewNode(ctx, &nr, validators.ValidatorStatusTendermint)
 	assert.NoError(t, err)
 
 	// Add node with existing VegaPubKey
@@ -323,7 +322,7 @@ func testAddNewNodeFailure(t *testing.T) {
 		VegaPubKey:      "vega-key",
 		EthereumAddress: "eth-address-2",
 	}
-	err = top.AddNewNode(ctx, &nr)
+	err = top.AddNewNode(ctx, &nr, validators.ValidatorStatusTendermint)
 	assert.Error(t, err)
 }
 
@@ -341,7 +340,7 @@ func testGetLen(t *testing.T) {
 		EthereumAddress: "eth-address",
 	}
 	ctx := context.Background()
-	err := top.AddNewNode(ctx, &nr)
+	err := top.AddNewNode(ctx, &nr, validators.ValidatorStatusTendermint)
 	assert.NoError(t, err)
 
 	assert.Equal(t, 2, top.Len())
@@ -361,7 +360,7 @@ func testExists(t *testing.T) {
 		EthereumAddress: "eth-address",
 	}
 	ctx := context.Background()
-	err := top.AddNewNode(ctx, &nr)
+	err := top.AddNewNode(ctx, &nr, validators.ValidatorStatusTendermint)
 	assert.NoError(t, err)
 
 	assert.True(t, top.IsValidatorVegaPubKey("vega-key"))
@@ -384,7 +383,7 @@ func testGetByKey(t *testing.T) {
 		Country:         "CZ",
 	}
 	ctx := context.Background()
-	err := top.AddNewNode(ctx, &nr)
+	err := top.AddNewNode(ctx, &nr, validators.ValidatorStatusTendermint)
 	assert.NoError(t, err)
 
 	expectedData := &validators.ValidatorData{
@@ -450,7 +449,7 @@ func testAddNewNodeSendsValidatorUpdateEventToBroker(t *testing.T) {
 
 	broker.EXPECT().Send(updateEvent).Times(1)
 
-	assert.NoError(t, top.AddNewNode(ctx, &nr))
+	assert.NoError(t, top.AddNewNode(ctx, &nr, validators.ValidatorStatusTendermint))
 }
 
 func TestValidatorTopologyKeyRotate(t *testing.T) {
@@ -479,7 +478,7 @@ func testAddKeyRotateSuccess(t *testing.T) {
 		EthereumAddress: "eth-address",
 	}
 	ctx := context.TODO()
-	err := top.AddNewNode(ctx, &nr)
+	err := top.AddNewNode(ctx, &nr, validators.ValidatorStatusTendermint)
 	assert.NoError(t, err)
 
 	kr := &commandspb.KeyRotateSubmission{
@@ -522,7 +521,7 @@ func testAddKeyRotateSuccessFailsWhenTargetBlockHeightIsLessThenCurrentBlockHeig
 		EthereumAddress: "eth-address",
 	}
 	ctx := context.TODO()
-	err := top.AddNewNode(ctx, &nr)
+	err := top.AddNewNode(ctx, &nr, validators.ValidatorStatusTendermint)
 	assert.NoError(t, err)
 
 	err = top.AddKeyRotate(ctx, id, 15, newKeyRotationSubmission(vegaPubKey, newVegaPubKey, 1, 10))
@@ -545,7 +544,7 @@ func testAddKeyRotateSuccessFailsWhenNewKeyIndexIsLessThenCurrentKeyIndex(t *tes
 		VegaPubKeyIndex: 2,
 	}
 	ctx := context.TODO()
-	err := top.AddNewNode(ctx, &nr)
+	err := top.AddNewNode(ctx, &nr, validators.ValidatorStatusTendermint)
 	assert.NoError(t, err)
 
 	// test less then
@@ -569,7 +568,7 @@ func testAddKeyRotateSuccessFailsWhenKeyRotationForNodeAlreadyExists(t *testing.
 		VegaPubKeyIndex: 1,
 	}
 	ctx := context.TODO()
-	err := top.AddNewNode(ctx, &nr)
+	err := top.AddNewNode(ctx, &nr, validators.ValidatorStatusTendermint)
 	assert.NoError(t, err)
 
 	// add first
@@ -597,7 +596,7 @@ func testAddKeyRotateSuccessFailsWhenCurrentPubKeyHashDoesNotMatch(t *testing.T)
 		VegaPubKeyIndex: 1,
 	}
 	ctx := context.TODO()
-	err := top.AddNewNode(ctx, &nr)
+	err := top.AddNewNode(ctx, &nr, validators.ValidatorStatusTendermint)
 	assert.NoError(t, err)
 
 	err = top.AddKeyRotate(ctx, id, 10, newKeyRotationSubmission("random-key", newVegaPubKey, 2, 12))
@@ -634,7 +633,7 @@ func testBeginBlockSuccess(t *testing.T) {
 			EthereumAddress: fmt.Sprintf("eth-address-%d", j),
 		}
 
-		err := top.AddNewNode(ctx, &nr)
+		err := top.AddNewNode(ctx, &nr, validators.ValidatorStatusTendermint)
 		assert.NoErrorf(t, err, "failed to add node registation %s", id)
 	}
 
@@ -649,7 +648,7 @@ func testBeginBlockSuccess(t *testing.T) {
 	assert.NoError(t, err)
 
 	// when
-	top.BeginBlock(ctx, abcitypes.RequestBeginBlock{Header: types1.Header{Height: 11}}, []*tmtypes.Validator{})
+	top.BeginBlock(ctx, abcitypes.RequestBeginBlock{Header: types1.Header{Height: 11}})
 	// then
 	data1 := top.Get("vega-master-pubkey-1")
 	assert.NotNil(t, data1)
@@ -665,7 +664,7 @@ func testBeginBlockSuccess(t *testing.T) {
 	assert.Equal(t, "vega-key-4", data4.VegaPubKey)
 
 	// when
-	top.BeginBlock(ctx, abcitypes.RequestBeginBlock{Header: types1.Header{Height: 13}}, []*tmtypes.Validator{})
+	top.BeginBlock(ctx, abcitypes.RequestBeginBlock{Header: types1.Header{Height: 13}})
 	// then
 	data3 = top.Get("vega-master-pubkey-3")
 	assert.NotNil(t, data3)
@@ -706,7 +705,7 @@ func testBeginBlockNotifyKeyChange(t *testing.T) {
 			EthereumAddress: fmt.Sprintf("eth-address-%d", j),
 		}
 
-		err := top.AddNewNode(ctx, &nr)
+		err := top.AddNewNode(ctx, &nr, validators.ValidatorStatusTendermint)
 		assert.NoErrorf(t, err, "failed to add node registation %s", id)
 	}
 
@@ -722,7 +721,7 @@ func testBeginBlockNotifyKeyChange(t *testing.T) {
 	top.NotifyOnKeyChange(c1.Call, c2.Call)
 
 	// when
-	top.BeginBlock(ctx, abcitypes.RequestBeginBlock{Header: types1.Header{Height: 11}}, []*tmtypes.Validator{})
+	top.BeginBlock(ctx, abcitypes.RequestBeginBlock{Header: types1.Header{Height: 11}})
 
 	// then
 	c1.AssertExpectations(t)
