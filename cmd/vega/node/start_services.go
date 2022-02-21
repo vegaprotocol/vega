@@ -258,19 +258,6 @@ func (n *NodeCommand) startBlockchain() (*processor.App, error) {
 		n.Version,
 	)
 
-	// Load from a snapshot if that has been requested
-	// This has to happen after creating the application since that is where we add the
-	// replay-protector to the provider list
-	if n.conf.Snapshot.StartHeight != 0 {
-		err := n.snapshot.LoadHeight(n.ctx, n.conf.Snapshot.StartHeight)
-		if err != nil {
-			return nil, err
-		}
-
-		// Replace the restore replay-protector, the tolerance value here doesn't matter so is set to zero
-		app.Abci().ReplaceReplayProtector(0)
-	}
-
 	switch n.conf.Blockchain.ChainProvider {
 	case blockchain.ProviderTendermint:
 		srv, err := n.startABCI(n.ctx, app)

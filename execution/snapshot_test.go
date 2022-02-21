@@ -90,6 +90,7 @@ func TestLoadTerminatedMarketFromSnapshot(t *testing.T) {
 	now := time.Now()
 	exec := getEngine(t, now)
 	ctx := vgcontext.WithTraceID(vgcontext.WithBlockHeight(context.Background(), 100), "0xDEADBEEF")
+	ctx = vgcontext.WithChainID(ctx, "chainid")
 
 	pubKeys := []string{"0xDEADBEEF", "0xDEADBEFF", "0xDEADBFFF"}
 	marketIDs := []string{"market1", "market2", "market3"}
@@ -112,7 +113,8 @@ func TestLoadTerminatedMarketFromSnapshot(t *testing.T) {
 
 	// we now have 3 terminated markets in the execution engine
 	// let's take a snapshot
-	exec.snapshotEngine.Snapshot(ctx)
+	_, err := exec.snapshotEngine.Snapshot(ctx)
+	require.NoError(t, err)
 	snaps, err := exec.snapshotEngine.List()
 	require.NoError(t, err)
 	snap1 := snaps[0]
@@ -121,6 +123,7 @@ func TestLoadTerminatedMarketFromSnapshot(t *testing.T) {
 	exec2 := getEngine(t, now)
 	exec2.snapshotEngine.ReceiveSnapshot(snap1)
 	exec2.snapshotEngine.ApplySnapshot(ctx)
+	exec2.snapshotEngine.Loaded()
 
 	// progress time to trigger any side effect on time ticks
 	exec.timeService.SetTime(now.Add(2 * time.Second))

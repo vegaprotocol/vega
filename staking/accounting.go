@@ -29,6 +29,7 @@ var (
 // Broker - the event bus.
 type Broker interface {
 	Send(events.Event)
+	SendBatch([]events.Event)
 }
 
 type EthereumClientCaller interface {
@@ -115,8 +116,9 @@ func (a *Accounting) Hash() []byte {
 		copy(output[i:], bal[:])
 		i += 32
 	}
-
-	return vgcrypto.Hash(output)
+	h := vgcrypto.Hash(output)
+	a.log.Debug("stakeccounts state hash", logging.String("hash", hex.EncodeToString(h)))
+	return h
 }
 
 func (a *Accounting) AddEvent(ctx context.Context, evt *types.StakeLinking) {

@@ -6,8 +6,10 @@ import (
 	"sort"
 
 	"code.vegaprotocol.io/vega/events"
+	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
+	"github.com/ethereum/go-ethereum/log"
 )
 
 type valScore struct {
@@ -43,6 +45,12 @@ func getStakeScore(delegationState []*types.ValidatorData, minimumStake *num.Uin
 // if the node is not tm node - their score is based on the number of times out of the last 10 that they signed every 1000 blocks.
 func (t *Topology) getPerformanceScore(delegationState []*types.ValidatorData) map[string]num.Decimal {
 	scores := make(map[string]num.Decimal, len(delegationState))
+
+	totalTmPower := int64(0)
+	for _, vs := range t.validators {
+		totalTmPower += vs.validatorPower
+	}
+
 	for _, ds := range delegationState {
 		vd := t.validators[ds.NodeID]
 		performanceScore := num.DecimalZero()
@@ -51,7 +59,7 @@ func (t *Topology) getPerformanceScore(delegationState []*types.ValidatorData) m
 			continue
 		}
 		if vd.status == ValidatorStatusTendermint {
-			scores[ds.NodeID] = t.validatorPerformance.ValidatorPerformanceScore(vd.data.TmPubKey)
+			scores[ds.NodeID] = t.validatorPerformance.ValidatorPerformanceScore(vd.data.TmPubKey, vd.validatorPower, totalTmPower)
 			continue
 		}
 
@@ -351,5 +359,10 @@ func (t *Topology) calculateTMScores(delegationState []*types.ValidatorData, sta
 
 	sort.Strings(tmNodeIDs)
 	tmScores.NodeIDSlice = tmNodeIDs
+
+	for _, k := range tmNodeIDs {
+		log.Info("reward scores for", logging.String("node-id", k), logging.String("stake-score", tmScores.RawValScores[k].String()), logging.String("performance-score", tmScores.PerformanceScores[k].String()), logging.String("multisig-score", tmScores.MultisigScores[k].String()), logging.String("validator-score", tmScores.ValScores[k].String()), logging.String("normalised-score", tmScores.NormalisedScores[k].String()))
+	}
+
 	return tmScores
 }
