@@ -2,6 +2,7 @@ package delegation
 
 import (
 	"context"
+	"encoding/hex"
 	"errors"
 	"sort"
 	"time"
@@ -141,7 +142,9 @@ func (e *Engine) Hash() []byte {
 	if err != nil {
 		e.log.Panic("could not create checkpoint", logging.Error(err))
 	}
-	return crypto.Hash(buf)
+	h := crypto.Hash(buf)
+	e.log.Debug("delegations state hash", logging.String("hash", hex.EncodeToString(h)))
+	return h
 }
 
 // OnMinAmountChanged updates the network parameter for minDelegationAmount.

@@ -71,6 +71,7 @@ type Snapshot interface {
 	LoadSnapshotChunk(height uint64, format, chunk uint32) (*types.RawChunk, error)
 	AddProviders(provs ...types.StateProvider)
 	Snapshot(ctx context.Context) ([]byte, error)
+	Loaded() (bool, error)
 }
 
 type StateVarEngine interface {
@@ -346,19 +347,28 @@ func (app *App) cancel() {
 }
 
 func (app *App) Info(_ tmtypes.RequestInfo) tmtypes.ResponseInfo {
-	hash, height := app.snapshot.Info()
-	app.log.Debug("ABCI service INFO requested", logging.Int64("height", height), logging.String("hash", hex.EncodeToString(hash)))
+	// returns whether or not we have loaded from a snapshot (and may even do the loading)
+	old := app.broker.SetStreaming(false)
+	defer app.broker.SetStreaming(old)
+	loaded, err := app.snapshot.Loaded()
+	if err != nil {
+		app.log.Panic("failed to load from snapshot", logging.Error(err))
+	}
 
-	// if we've restore from a snapshot replace the protector since we will have restored it
-	if height != 0 {
+	resp := tmtypes.ResponseInfo{
+		AppVersion: 0, // application protocol version TBD.
+		Version:    app.version,
+	}
+
+	if loaded {
 		app.Abci().ReplaceReplayProtector(0)
+		hash, height := app.snapshot.Info()
+		resp.LastBlockHeight = height
+		resp.LastBlockAppHash = hash
 	}
-	return tmtypes.ResponseInfo{
-		AppVersion:       0, // application protocol version TBD.
-		Version:          app.version,
-		LastBlockHeight:  height,
-		LastBlockAppHash: hash,
-	}
+
+	app.log.Debug("ABCI service INFO requested", logging.Int64("height", resp.LastBlockHeight), logging.String("hash", hex.EncodeToString(resp.LastBlockAppHash)))
+	return resp
 }
 
 func (app *App) ListSnapshots(_ tmtypes.RequestListSnapshots) tmtypes.ResponseListSnapshots {
@@ -599,6 +609,7 @@ func (app *App) OnCommit() (resp tmtypes.ResponseCommit) {
 			// only append to commit hash if we aren't using the snapshot hash
 			// otherwise restoring a checkpoint would restore an incomplete/wrong hash
 			resp.Data = append(resp.Data, cpt.Hash...)
+			app.log.Debug("checkpoint hash", logging.String("response-data", hex.EncodeToString(cpt.Hash)))
 		}
 		_ = app.handleCheckpoint(cpt)
 	}
@@ -1247,7 +1258,8 @@ func (app *App) onTick(ctx context.Context, t time.Time) {
 			prop.State = types.ProposalStateFailed
 			app.log.Error("unknown proposal cannot be enacted", logging.ProposalID(prop.ID))
 		}
-		app.broker.Send(events.NewProposalEvent(ctx, *prop))
+
+		app.gov.FinaliseEnactment(ctx, prop)
 	}
 }
 

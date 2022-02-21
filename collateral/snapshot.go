@@ -4,7 +4,9 @@ import (
 	"context"
 	"sort"
 
+	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/libs/crypto"
+	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
 
 	"github.com/golang/protobuf/proto"
@@ -63,6 +65,10 @@ func (e *Engine) LoadState(ctx context.Context, p *types.Payload) ([]types.State
 }
 
 func (e *Engine) restoreAccounts(ctx context.Context, accs *types.CollateralAccounts) error {
+	e.log.Debug("restoring accounts snapshot", logging.Int("n_accounts", len(accs.Accounts)))
+
+	evts := []events.Event{}
+	pevts := []events.Event{}
 	e.accs = make(map[string]*types.Account, len(accs.Accounts))
 	e.partiesAccs = map[string]map[string]*types.Account{}
 	e.hashableAccs = make([]*types.Account, 0, len(accs.Accounts))
@@ -76,17 +82,26 @@ func (e *Engine) restoreAccounts(ctx context.Context, accs *types.CollateralAcco
 			e.hashableAccs = append(e.hashableAccs, acc)
 			e.addAccountToHashableSlice(acc)
 		}
+		evts = append(evts, events.NewAccountEvent(ctx, *acc))
+
+		if acc.Owner != systemOwner {
+			pevts = append(pevts, events.NewPartyEvent(ctx, types.Party{Id: acc.Owner}))
+		}
 	}
 	e.state.updateAccs(e.hashableAccs)
+	e.broker.SendBatch(evts)
+	e.broker.SendBatch(pevts)
 	return nil
 }
 
 func (e *Engine) restoreAssets(ctx context.Context, assets *types.CollateralAssets) error {
 	// @TODO the ID and name might not be the same, perhaps we need
 	// to wrap the asset details to preserve that data
+	e.log.Debug("restoring assets snapshot", logging.Int("n_assets", len(assets.Assets)))
 	e.enabledAssets = make(map[string]types.Asset, len(assets.Assets))
 	e.state.assetIDs = make([]string, 0, len(assets.Assets))
 	e.state.assets = make(map[string]types.Asset, len(assets.Assets))
+	evts := []events.Event{}
 	for _, a := range assets.Assets {
 		ast := types.Asset{
 			ID:      a.ID,
@@ -94,7 +109,9 @@ func (e *Engine) restoreAssets(ctx context.Context, assets *types.CollateralAsse
 		}
 		e.enabledAssets[a.ID] = ast
 		e.state.enableAsset(ast)
+		evts = append(evts, events.NewAssetEvent(ctx, *a))
 	}
+	e.broker.SendBatch(evts)
 	return nil
 }
 
@@ -118,7 +135,7 @@ func newAccState() *accState {
 	}
 	for _, k := range state.hashKeys {
 		state.hashes[k] = nil
-		state.updates[k] = false
+		state.updates[k] = true
 		state.serialised[k] = nil
 	}
 	return state
