@@ -203,8 +203,8 @@ func getBaseTxEvents(tx Tx) []types.Event {
 			Type: "tx",
 			Attributes: []types.EventAttribute{
 				{
-					Key:   "submitter",
-					Value: tx.PubKeyHex(),
+					Key:   []byte("submitter"),
+					Value: []byte(tx.PubKeyHex()),
 					Index: true,
 				},
 			},
@@ -213,8 +213,8 @@ func getBaseTxEvents(tx Tx) []types.Event {
 			Type: "command",
 			Attributes: []types.EventAttribute{
 				{
-					Key:   "type",
-					Value: tx.Command().String(),
+					Key:   []byte("type"),
+					Value: []byte(tx.Command().String()),
 					Index: true,
 				},
 			},

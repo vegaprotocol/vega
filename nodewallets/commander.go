@@ -88,8 +88,7 @@ func (c *Commander) command(_ context.Context, cmd txn.Command, payload proto.Me
 		}
 
 		tx := commands.NewTransaction(c.wallet.PubKey().Hex(), marshalledData, signature)
-		_, err = c.bc.SubmitTransaction(
-			ctx, tx, api.SubmitTransactionRequest_TYPE_SYNC)
+		_, err = c.bc.SubmitTransaction(ctx, tx, ty)
 		if err != nil {
 			// this can happen as network dependent
 			c.log.Error("could not send transaction to tendermint",

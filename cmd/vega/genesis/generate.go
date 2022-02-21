@@ -13,8 +13,8 @@ import (
 	"code.vegaprotocol.io/vega/validators"
 
 	"github.com/jessevdk/go-flags"
-	tmtime "github.com/tendermint/tendermint/libs/time"
 	tmtypes "github.com/tendermint/tendermint/types"
+	tmtime "github.com/tendermint/tendermint/types/time"
 )
 
 type generateCmd struct {
