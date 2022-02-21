@@ -425,7 +425,7 @@ func (e *Engine) RejectProposal(
 	return nil
 }
 
-// FinaliseEnactment receives the enact proposal and updates the state in out enactedProposal
+// FinaliseEnactment receives the enact proposal and updates the state in our enactedProposal
 // list to have the current state of the proposals. This is entirely so that when we restore
 // from a snapshot we can propagate the proposal with the latest state back into the apiservice.
 func (e *Engine) FinaliseEnactment(ctx context.Context, prop *types.Proposal) {
