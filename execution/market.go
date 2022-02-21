@@ -947,6 +947,7 @@ func (m *Market) leaveAuction(ctx context.Context, now time.Time) {
 	cmp := m.getCurrentMarkPrice()
 	mcmp := num.Zero().Div(cmp, m.priceFactor) // create the market representation of the price
 	m.confirmMTM(ctx, &types.Order{
+		ID:            m.idgen.NextID(),
 		Price:         cmp,
 		OriginalPrice: mcmp,
 	})
