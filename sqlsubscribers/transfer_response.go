@@ -37,7 +37,6 @@ type TransferResponse struct {
 	ledger   Ledger
 	accounts AccountStore
 	parties  PartyStore
-	blocks   BlockStore
 	vegaTime time.Time
 	balances BalanceStore
 	log      *logging.Logger
@@ -49,7 +48,6 @@ func NewTransferResponse(
 	accounts AccountStore,
 	balances BalanceStore,
 	parties PartyStore,
-	blocks BlockStore,
 	log *logging.Logger,
 ) *TransferResponse {
 	return &TransferResponse{
@@ -58,7 +56,6 @@ func NewTransferResponse(
 		accounts: accounts,
 		balances: balances,
 		parties:  parties,
-		blocks:   blocks,
 		log:      log,
 	}
 }

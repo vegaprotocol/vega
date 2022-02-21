@@ -123,9 +123,9 @@ func (l *NodeCommand) setupSQLSubscribers() {
 		return
 	}
 
-	l.assetSubSQL = sqlsubscribers.NewAsset(l.ctx, l.assetStoreSQL, l.blockStoreSQL, l.Log)
+	l.assetSubSQL = sqlsubscribers.NewAsset(l.ctx, l.assetStoreSQL, l.Log)
 	l.timeSubSQL = sqlsubscribers.NewTimeSub(l.ctx, l.blockStoreSQL, l.Log)
-	l.transferResponseSubSQL = sqlsubscribers.NewTransferResponse(l.ctx, l.ledgerSQL, l.accountStoreSQL, l.balanceStoreSQL, l.partyStoreSQL, l.blockStoreSQL, l.Log)
+	l.transferResponseSubSQL = sqlsubscribers.NewTransferResponse(l.ctx, l.ledgerSQL, l.accountStoreSQL, l.balanceStoreSQL, l.partyStoreSQL, l.Log)
 }
 
 func (l *NodeCommand) setupStorages() error {

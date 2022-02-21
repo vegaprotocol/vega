@@ -26,18 +26,16 @@ type AssetStore interface {
 
 type Asset struct {
 	*subscribers.Base
-	store      AssetStore
-	log        *logging.Logger
-	blockStore BlockStore
-	vegaTime   time.Time
+	store    AssetStore
+	log      *logging.Logger
+	vegaTime time.Time
 }
 
-func NewAsset(ctx context.Context, store AssetStore, blockStore BlockStore, log *logging.Logger) *Asset {
+func NewAsset(ctx context.Context, store AssetStore, log *logging.Logger) *Asset {
 	return &Asset{
-		Base:       subscribers.NewBase(ctx, 0, true),
-		store:      store,
-		blockStore: blockStore,
-		log:        log,
+		Base:  subscribers.NewBase(ctx, 0, true),
+		store: store,
+		log:   log,
 	}
 }
 
