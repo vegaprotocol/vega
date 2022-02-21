@@ -3,7 +3,6 @@ package broker
 import (
 	"context"
 	"fmt"
-	"path/filepath"
 	"sync"
 	"time"
 
@@ -38,7 +37,7 @@ type BrokerI interface {
 }
 
 type eventSource interface {
-	listen() error
+	Listen() error
 	Receive(ctx context.Context) (<-chan events.Event, <-chan error)
 }
 
@@ -72,33 +71,10 @@ type Broker struct {
 }
 
 // New creates a new base broker
-func New(ctx context.Context, log *logging.Logger, config Config, chainInfo ChainInfoI) (*Broker, error) {
+func New(ctx context.Context, log *logging.Logger, config Config, chainInfo ChainInfoI,
+	eventsource eventSource) (*Broker, error) {
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
-
-	var eventsource eventSource
-	var err error
-	if config.UseEventFile {
-
-		absPath, err := filepath.Abs(config.FileEventSourceConfig.File)
-		if err != nil {
-			return nil, fmt.Errorf("unable to determine absolute path of file %s: %w", config.FileEventSourceConfig.File, err)
-		}
-
-		log.Infof("using file event source, event file: %s", absPath)
-		eventsource, err = NewFileEventSource(absPath, config.FileEventSourceConfig.TimeBetweenBlocks.Duration,
-			config.FileEventSourceConfig.SendChannelBufferSize)
-
-		if err != nil {
-			return nil, fmt.Errorf("failed to create file event source:%w", err)
-		}
-
-	} else {
-		eventsource, err = newSocketServer(log, &config.SocketConfig)
-		if err != nil {
-			return nil, fmt.Errorf("failed to initialise underlying socket receiver: %w", err)
-		}
-	}
 
 	b := &Broker{
 		ctx:         ctx,
@@ -346,34 +322,15 @@ func (b *Broker) rmSubs(keys ...int) {
 	}
 }
 
-func (b *Broker) checkChainID(chainID string) error {
-	ourChainID, err := b.chainInfo.GetChainID()
-	if err != nil {
-		return fmt.Errorf("Unable to get expected chain ID %w", err)
-	}
-
-	// An empty chain ID indicates this is our first run
-	if ourChainID == "" {
-		b.chainInfo.SetChainID(chainID)
-		return nil
-	}
-
-	if chainID != ourChainID {
-		return fmt.Errorf("mismatched chain id received: %s, want %s", chainID, ourChainID)
-	}
-
-	return nil
-}
-
 func (b *Broker) Receive(ctx context.Context) error {
-	if err := b.eventSource.listen(); err != nil {
+	if err := b.eventSource.Listen(); err != nil {
 		return err
 	}
 
 	receiveCh, errCh := b.eventSource.Receive(ctx)
 
 	for e := range receiveCh {
-		if err := b.checkChainID(e.ChainID()); err != nil {
+		if err := checkChainID(b.chainInfo, e.ChainID()); err != nil {
 			return err
 		}
 		b.Send(e)
@@ -385,4 +342,23 @@ func (b *Broker) Receive(ctx context.Context) error {
 	default:
 		return nil
 	}
+}
+
+func checkChainID(expectedChainInfo ChainInfoI, chainID string) error {
+	ourChainID, err := expectedChainInfo.GetChainID()
+	if err != nil {
+		return fmt.Errorf("Unable to get expected chain ID %w", err)
+	}
+
+	// An empty chain ID indicates this is our first run
+	if ourChainID == "" {
+		expectedChainInfo.SetChainID(chainID)
+		return nil
+	}
+
+	if chainID != ourChainID {
+		return fmt.Errorf("mismatched chain id received: %s, want %s", chainID, ourChainID)
+	}
+
+	return nil
 }

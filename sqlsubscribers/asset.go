@@ -26,31 +26,32 @@ type AssetStore interface {
 
 type Asset struct {
 	*subscribers.Base
-	store      AssetStore
-	log        *logging.Logger
-	blockStore BlockStore
+	store    AssetStore
+	log      *logging.Logger
+	vegaTime time.Time
 }
 
-func NewAsset(ctx context.Context, store AssetStore, blockStore BlockStore, log *logging.Logger) *Asset {
+func NewAsset(ctx context.Context, store AssetStore, log *logging.Logger) *Asset {
 	return &Asset{
-		Base:       subscribers.NewBase(ctx, 0, true),
-		store:      store,
-		blockStore: blockStore,
-		log:        log,
+		Base:  subscribers.NewBase(ctx, 0, true),
+		store: store,
+		log:   log,
 	}
 }
 
-func (as *Asset) Types() []events.Type {
-	return []events.Type{
-		events.AssetEvent,
-	}
+func (a *Asset) Type() events.Type {
+	return events.AssetEvent
 }
 
-func (as *Asset) Push(evts ...events.Event) {
-	for _, e := range evts {
-		if ae, ok := e.(AssetEvent); ok {
-			as.consume(ae)
-		}
+func (as *Asset) Push(evt events.Event) {
+	switch e := evt.(type) {
+	case TimeUpdateEvent:
+		as.vegaTime = e.Time()
+	case AssetEvent:
+		as.consume(e)
+	default:
+		as.log.Panic("Unknown event type in transfer response subscriber",
+			logging.String("Type", e.Type().String()))
 	}
 }
 
@@ -59,13 +60,7 @@ func (as *Asset) consume(ae AssetEvent) {
 		logging.Int64("block", ae.BlockNr()),
 		logging.String("assetId", ae.Asset().Id))
 
-	block, err := as.blockStore.WaitForBlockHeight(ae.BlockNr())
-	if err != nil {
-		as.log.Error("can't add asset because we don't have block")
-		return
-	}
-
-	err = as.addAsset(ae.Asset(), block.VegaTime)
+	err := as.addAsset(ae.Asset(), as.vegaTime)
 	if err != nil {
 		as.log.Error("adding asset", logging.Error(err))
 	}

@@ -71,27 +71,6 @@ func (bs *Blocks) GetAtHeight(height int64) (entities.Block, error) {
 	return block, err
 }
 
-// WaitForBlockHeight will block until we have received an TimeUpdate message for this block
-// This is a bit fiddly; because we can't control much about which order messages are sent or
-// received on the event bus, sometimes we process events before the corresponding TimeUpdate
-// message for that block has been processed. This is a  problem because we want to store the
-// timestamp of the block on each row in the database. This function will block until we have
-// the block time information for the specified block height, or fail after BlockWaitTimeout.
-func (bs *Blocks) WaitForBlockHeight(height int64) (entities.Block, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), BlockWaitTimeout)
-	defer cancel()
-	for {
-		if block, err := bs.GetAtHeight(height); err == nil {
-			return block, nil
-		}
-		select {
-		case <-bs.lastBlockChanged:
-		case <-ctx.Done():
-			return entities.Block{}, ErrBlockWaitTimedout
-		}
-	}
-}
-
 func (bs *Blocks) getLastBlock() (entities.Block, error) {
 	bs.mu.Lock()
 	defer bs.mu.Unlock()

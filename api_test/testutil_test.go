@@ -211,7 +211,14 @@ func NewTestServer(t testing.TB, ctx context.Context, blocking bool) *TestServer
 	sqlStore := sqlstore.SQLStore{}
 	sqlBalanceStore := sqlstore.NewBalances(&sqlStore)
 
-	eventBroker, err = broker.New(ctx, logger, conf.Broker, chainInfoStore)
+	eventSource, err := broker.NewEventSource(conf.Broker, logger)
+
+	if err != nil {
+		t.Fatalf("failed to create event source: %v", err)
+	}
+
+	eventBroker, err = broker.New(ctx, logger, conf.Broker, chainInfoStore, eventSource)
+
 	if err != nil {
 		t.Fatalf("failed to create broker: %v", err)
 	}

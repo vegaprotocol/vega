@@ -11,10 +11,11 @@ const namedLogger = "broker"
 
 // Config represents the configuration of the broker.
 type Config struct {
-	Level                 encoding.LogLevel     `long:"log-level"`
-	SocketConfig          SocketConfig          `group:"Socket" namespace:"socket"`
-	FileEventSourceConfig FileEventSourceConfig `group:"FileEventSourceConfig" namespace:"fileeventsource"`
-	UseEventFile          encoding.Bool         `long:"use-event-file" description:"set to true to source events from a file"`
+	Level                       encoding.LogLevel     `long:"log-level"`
+	SocketConfig                SocketConfig          `group:"Socket" namespace:"socket"`
+	FileEventSourceConfig       FileEventSourceConfig `group:"FileEventSourceConfig" namespace:"fileeventsource"`
+	UseEventFile                encoding.Bool         `long:"use-event-file" description:"set to true to source events from a file"`
+	UseSequentialSqlStoreBroker encoding.Bool         `long:"use-sequential-sql-store-broker"`
 }
 
 // NewDefaultConfig creates an instance of config with default values.
@@ -32,7 +33,8 @@ func NewDefaultConfig() Config {
 			TimeBetweenBlocks:     encoding.Duration{Duration: 1 * time.Second},
 			SendChannelBufferSize: 1000,
 		},
-		UseEventFile: false,
+		UseEventFile:                false,
+		UseSequentialSqlStoreBroker: true,
 	}
 }
 

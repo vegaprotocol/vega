@@ -237,7 +237,12 @@ func getTestGRPCServer(
 		t.Fatalf("failed to create chain info store: %v", err)
 	}
 
-	broker, err := broker.New(ctx, logger, conf.Broker, chainInfoStore)
+	eventSource, err := broker.NewEventSource(conf.Broker, logger)
+	if err != nil {
+		t.Fatalf("failed to create event source: %v", err)
+	}
+
+	broker, err := broker.New(ctx, logger, conf.Broker, chainInfoStore, eventSource)
 	if err != nil {
 		err = errors.Wrap(err, "failed to create broker")
 		return

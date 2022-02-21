@@ -37,7 +37,7 @@ type TransferResponse struct {
 	ledger   Ledger
 	accounts AccountStore
 	parties  PartyStore
-	blocks   BlockStore
+	vegaTime time.Time
 	balances BalanceStore
 	log      *logging.Logger
 }
@@ -48,7 +48,6 @@ func NewTransferResponse(
 	accounts AccountStore,
 	balances BalanceStore,
 	parties PartyStore,
-	blocks BlockStore,
 	log *logging.Logger,
 ) *TransferResponse {
 	return &TransferResponse{
@@ -57,45 +56,39 @@ func NewTransferResponse(
 		accounts: accounts,
 		balances: balances,
 		parties:  parties,
-		blocks:   blocks,
 		log:      log,
 	}
 }
 
-func (t *TransferResponse) Types() []events.Type {
-	return []events.Type{
-		events.TransferResponses,
-	}
+func (t *TransferResponse) Type() events.Type {
+	return events.TransferResponses
 }
 
-func (t *TransferResponse) Push(evts ...events.Event) {
-	for _, e := range evts {
-		if tre, ok := e.(TransferResponseEvent); ok {
-			t.consume(tre)
-		}
+func (t *TransferResponse) Push(evt events.Event) {
+	switch e := evt.(type) {
+	case TimeUpdateEvent:
+		t.vegaTime = e.Time()
+	case TransferResponseEvent:
+		t.consume(e)
+	default:
+		t.log.Panic("Unknown event type in transfer response subscriber",
+			logging.String("Type", e.Type().String()))
 	}
 }
 
 func (t *TransferResponse) consume(e TransferResponseEvent) {
 	t.log.Debug("TransferResponseEvent: ", logging.Int64("block", e.BlockNr()))
 
-	var err error
-	block, err := t.blocks.WaitForBlockHeight(e.BlockNr())
-	if err != nil {
-		t.log.Error("can't ingest transfer response because we don't have block")
-		return
-	}
-
 	for _, tr := range e.TransferResponses() {
 		for _, vle := range tr.Transfers {
-			if err := t.addLedgerEntry(vle, block.VegaTime); err != nil {
+			if err := t.addLedgerEntry(vle, t.vegaTime); err != nil {
 				t.log.Error("couldn't add ledger entry",
 					logging.Error(err),
 					logging.Reflect("ledgerEntry", vle))
 			}
 		}
 		for _, vb := range tr.Balances {
-			if err := t.addBalance(vb, block.VegaTime); err != nil {
+			if err := t.addBalance(vb, t.vegaTime); err != nil {
 				t.log.Error("couldn't add balance",
 					logging.Error(err),
 					logging.Reflect("balance", vb))

@@ -55,7 +55,7 @@ func newSocketServer(log *logging.Logger, config *SocketConfig) (*socketServer, 
 	}, nil
 }
 
-func (s socketServer) listen() error {
+func (s socketServer) Listen() error {
 	addr := fmt.Sprintf(
 		"%s://%s",
 		strings.ToLower(s.config.TransportType),

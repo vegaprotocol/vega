@@ -123,9 +123,9 @@ func (l *NodeCommand) setupSQLSubscribers() {
 		return
 	}
 
-	l.assetSubSQL = sqlsubscribers.NewAsset(l.ctx, l.assetStoreSQL, l.blockStoreSQL, l.Log)
+	l.assetSubSQL = sqlsubscribers.NewAsset(l.ctx, l.assetStoreSQL, l.Log)
 	l.timeSubSQL = sqlsubscribers.NewTimeSub(l.ctx, l.blockStoreSQL, l.Log)
-	l.transferResponseSubSQL = sqlsubscribers.NewTransferResponse(l.ctx, l.ledgerSQL, l.accountStoreSQL, l.balanceStoreSQL, l.partyStoreSQL, l.blockStoreSQL, l.Log)
+	l.transferResponseSubSQL = sqlsubscribers.NewTransferResponse(l.ctx, l.ledgerSQL, l.accountStoreSQL, l.balanceStoreSQL, l.partyStoreSQL, l.Log)
 }
 
 func (l *NodeCommand) setupStorages() error {
@@ -215,7 +215,20 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 		}
 	}()
 
-	l.broker, err = broker.New(l.ctx, l.Log, l.conf.Broker, l.chainInfoStore)
+	eventSource, err := broker.NewEventSource(l.conf.Broker, l.Log)
+	if err != nil {
+		l.Log.Error("unable to initialise event source", logging.Error(err))
+		return err
+	}
+
+	if l.conf.SQLStore.Enabled {
+		eventSource = broker.NewFanOutEventSource(eventSource, l.conf.SQLStore.FanOutBufferSize, 2)
+
+		l.sqlBroker = broker.NewSqlStoreBroker(l.Log, l.conf.Broker, l.chainInfoStore, eventSource,
+			l.conf.SQLStore.SqlEventBrokerBufferSize, l.timeSubSQL, l.assetSubSQL, l.transferResponseSubSQL)
+	}
+
+	l.broker, err = broker.New(l.ctx, l.Log, l.conf.Broker, l.chainInfoStore, eventSource)
 	if err != nil {
 		l.Log.Error("unable to initialise broker", logging.Error(err))
 		return err
@@ -260,10 +273,6 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 		l.nodesSub, l.delegationBalanceSub, l.epochUpdateSub, l.rewardsSub,
 		l.stakingService, l.checkpointSub, l.transferSub,
 	)
-
-	if l.conf.SQLStore.Enabled {
-		l.broker.SubscribeBatch(l.timeSubSQL, l.assetSubSQL, l.transferResponseSubSQL)
-	}
 
 	nodeAddr := fmt.Sprintf("%v:%v", l.conf.API.CoreNodeIP, l.conf.API.CoreNodeGRPCPort)
 	conn, err := grpc.Dial(nodeAddr, grpc.WithInsecure())
