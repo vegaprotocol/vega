@@ -436,9 +436,6 @@ func getDummyData() *types.Chunk {
 						CurrentMarkPrice: num.NewUint(10),
 					},
 				},
-				Batches:   0,
-				Orders:    2,
-				Proposals: 2,
 			},
 		},
 	}, &types.Payload{

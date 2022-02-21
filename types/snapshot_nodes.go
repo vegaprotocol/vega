@@ -266,10 +266,7 @@ type MatchingBook struct {
 }
 
 type ExecutionMarkets struct {
-	Markets   []*ExecMarket
-	Batches   uint64
-	Orders    uint64
-	Proposals uint64
+	Markets []*ExecMarket
 }
 
 type ExecMarket struct {
@@ -2642,10 +2639,7 @@ func ExecutionMarketsFromProto(em *snapshot.ExecutionMarkets) *ExecutionMarkets 
 		mkts = append(mkts, ExecMarketFromProto(m))
 	}
 	return &ExecutionMarkets{
-		Markets:   mkts,
-		Batches:   em.Batches,
-		Orders:    em.Orders,
-		Proposals: em.Proposals,
+		Markets: mkts,
 	}
 }
 
@@ -2655,10 +2649,7 @@ func (e ExecutionMarkets) IntoProto() *snapshot.ExecutionMarkets {
 		mkts = append(mkts, m.IntoProto())
 	}
 	return &snapshot.ExecutionMarkets{
-		Markets:   mkts,
-		Batches:   e.Batches,
-		Orders:    e.Orders,
-		Proposals: e.Proposals,
+		Markets: mkts,
 	}
 }
 
