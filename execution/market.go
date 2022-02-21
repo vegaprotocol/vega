@@ -1775,6 +1775,7 @@ func (m *Market) resolveClosedOutParties(ctx context.Context, distressedMarginEv
 		Reference:   fmt.Sprintf("LS-%s", o.ID), // liquidity sourcing, reference the order which caused the problem
 		TimeInForce: types.OrderTimeInForceFOK,  // this is an all-or-nothing order, so TIME_IN_FORCE == FOK
 		Type:        types.OrderTypeNetwork,
+		Price:       num.Zero(),
 	}
 	no.Size = no.Remaining
 
