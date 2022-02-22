@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"code.vegaprotocol.io/vega/events"
+	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/positions"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
@@ -82,6 +83,31 @@ func (m *Market) calcMargins(ctx context.Context, pos *positions.MarketPosition,
 		return m.marginsAuction(ctx, order)
 	}
 	return m.margins(ctx, pos, order)
+}
+
+func (m *Market) updateMargin(ctx context.Context, pos []events.MarketPosition) ([]events.Risk, error) {
+	price := m.getCurrentMarkPrice()
+	asset, _ := m.mkt.GetAsset()
+	mID := m.GetID()
+	margins := make([]events.Margin, 0, len(pos))
+	for _, p := range pos {
+		e, err := m.collateral.GetPartyMargin(p, asset, mID)
+		if err != nil {
+			m.log.Error("Failed to get margin event for party position",
+				logging.String("party", p.Party()),
+				logging.Error(err),
+			)
+			continue
+		}
+		// add the required margin event
+		margins = append(margins, e)
+	}
+	// we should get any and all risk events we need here
+	risk := m.risk.UpdateMarginsOnSettlement(ctx, margins, price)
+	if len(risk) == 0 {
+		return nil, nil
+	}
+	return risk, nil
 }
 
 func (m *Market) marginsAuction(ctx context.Context, order *types.Order) ([]events.Risk, []events.MarketPosition, error) {
