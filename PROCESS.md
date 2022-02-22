@@ -1,6 +1,6 @@
 # Process
 
-This document is to describe the internal process that the Ionic team uses for issue management, project planning and the development workflow.
+This document is to describe the internal process that the Vega Core project team for issue / pull request management and development workflow.
 
 ## Table of contents
  * [Project Boards](#project-boards)
