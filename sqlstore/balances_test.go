@@ -77,7 +77,8 @@ func TestBalances(t *testing.T) {
 	// Try just for our first account/party
 	filter := entities.AccountFilter{
 		Asset:   asset,
-		Parties: []entities.Party{parties[0]}}
+		Parties: []entities.Party{parties[0]},
+	}
 	bals, err = balanceStore.Query(filter, []entities.AccountField{})
 	require.NoError(t, err)
 

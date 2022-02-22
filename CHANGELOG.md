@@ -35,6 +35,7 @@
 - [338](https://github.com/vegaprotocol/data-node/pull/336) - Add `grpcui` web user interface
 - [340](https://github.com/vegaprotocol/data-node/pull/340) - Add brokers for the new data stores to support sequential and concurrent event processing 
 - [327](https://github.com/vegaprotocol/data-node/pull/327) - Add balances `sql` store and upgrade `gqlgen`
+- [355](https://github.com/vegaprotocol/data-node/pull/355) - Persist trade data to postgres backed store 
 
 ### 🐛 Fixes
 - [277](https://github.com/vegaprotocol/data-node/pull/277) - Now returns not-found error instead of internal error when proposal not found 

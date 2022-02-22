@@ -58,6 +58,32 @@ create table ledger
     type            TEXT
 );
 
+create table trades
+(
+    vega_time       TIMESTAMP WITH TIME ZONE NOT NULL REFERENCES blocks(vega_time),
+    sequence_num    INT,
+    id     BYTEA,
+    market_id BYTEA,
+    price     NUMERIC(32, 0),
+    size      NUMERIC(32, 0),
+    buyer     BYTEA,
+    seller    BYTEA,
+    aggressor SMALLINT,
+    buy_order BYTEA,
+    sell_order BYTEA,
+    type       SMALLINT,
+    buyer_maker_fee NUMERIC(32, 0),
+    buyer_infrastructure_fee NUMERIC(32, 0),
+    buyer_liquidity_fee NUMERIC(32, 0),
+    seller_maker_fee NUMERIC(32, 0),
+    seller_infrastructure_fee NUMERIC(32, 0),
+    seller_liquidity_fee NUMERIC(32, 0),
+    buyer_auction_batch BIGINT,
+    seller_auction_batch BIGINT
+);
+
+SELECT create_hypertable('trades', 'vega_time', chunk_time_interval => INTERVAL '1 day');
+
 
 -- Create a function that always returns the first non-NULL value:
 CREATE OR REPLACE FUNCTION public.first_agg (anyelement, anyelement)
@@ -96,4 +122,5 @@ drop table balances;
 drop table accounts;
 drop table parties;
 drop table assets;
+drop table trades;
 drop table blocks;

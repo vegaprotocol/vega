@@ -105,6 +105,7 @@ type NodeCommand struct {
 	balanceStoreSQL *sqlstore.Balances
 	ledgerSQL       *sqlstore.Ledger
 	partyStoreSQL   *sqlstore.Parties
+	tradeStoreSQL   *sqlstore.Trades
 
 	vegaCoreServiceClient vegaprotoapi.CoreServiceClient
 
@@ -137,6 +138,7 @@ type NodeCommand struct {
 	assetSubSQL            *sqlsubscribers.Asset
 	timeSubSQL             *sqlsubscribers.Time
 	transferResponseSubSQL *sqlsubscribers.TransferResponse
+	tradesSubSQL           *sqlsubscribers.TradeSubscriber
 
 	candleService     *candles.Svc
 	tradeService      *trades.Svc

@@ -37,7 +37,6 @@ func (bs *Blocks) Add(b entities.Block) error {
 	_, err := bs.pool.Exec(ctx,
 		`insert into blocks(vega_time, height, hash) values ($1, $2, $3)`,
 		b.VegaTime, b.Height, b.Hash)
-
 	if err != nil {
 		return fmt.Errorf("adding block: %w", err)
 	}

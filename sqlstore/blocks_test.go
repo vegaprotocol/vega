@@ -11,15 +11,20 @@ import (
 )
 
 func addTestBlock(t *testing.T, bs *sqlstore.Blocks) entities.Block {
+	return addTestBlockForTime(t, bs, time.Now())
+}
+
+func addTestBlockForTime(t *testing.T, bs *sqlstore.Blocks, vegaTime time.Time) entities.Block {
 	// Make a block
 	hash, err := hex.DecodeString("deadbeef")
 	assert.NoError(t, err)
 
 	// Postgres only stores timestamps in microsecond resolution
 	block1 := entities.Block{
-		VegaTime: time.Now().Truncate(time.Microsecond),
+		VegaTime: vegaTime.Truncate(time.Microsecond),
 		Height:   2,
-		Hash:     hash}
+		Hash:     hash,
+	}
 
 	// Add it to the database
 	err = bs.Add(block1)
@@ -47,5 +52,4 @@ func TestBlock(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Len(t, blocks, blocks_len+1)
 	assert.Equal(t, blocks[0], block1)
-
 }

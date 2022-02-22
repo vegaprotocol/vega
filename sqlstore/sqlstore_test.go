@@ -2,6 +2,7 @@ package sqlstore_test
 
 import (
 	"crypto/sha256"
+	"encoding/hex"
 	"strconv"
 	"testing"
 	"time"
@@ -13,7 +14,7 @@ import (
 
 var (
 	testStore       *sqlstore.SQLStore
-	sqlTestsEnabled bool = false
+	sqlTestsEnabled bool = true
 )
 
 func TestMain(m *testing.M) {
@@ -39,4 +40,8 @@ func generateID() []byte {
 	currentTimeString := strconv.FormatInt(currentTime, 10)
 	hash := sha256.Sum256([]byte(currentTimeString))
 	return hash[:]
+}
+
+func generateStringID() string {
+	return hex.EncodeToString(generateID())
 }
