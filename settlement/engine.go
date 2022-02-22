@@ -245,7 +245,7 @@ func (e *Engine) SettleMTM(ctx context.Context, markPrice *num.Uint, positions [
 		current.price = markPrice
 		// we don't want to accidentally MTM a party who closed out completely when they open
 		// a new position at a later point, so remove if size == 0
-		if current.size == 0 {
+		if current.size == 0 && current.Buy() == 0 && current.Sell() == 0 {
 			// broke this up into its own func for symmetry
 			e.rmPosition(party)
 		}
@@ -355,6 +355,10 @@ func (e *Engine) getCurrentPosition(party string, evt events.MarketPosition) *po
 		e.pos[party] = p
 	}
 	return p
+}
+
+func (e *Engine) AddPosition(party string, evt events.MarketPosition) {
+	_ = e.getCurrentPosition(party, evt)
 }
 
 func (e *Engine) rmPosition(party string) {
