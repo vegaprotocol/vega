@@ -89,7 +89,7 @@ func (s *coreService) SubmitTransaction(ctx context.Context, req *protoapi.Submi
 		return nil, apiError(codes.InvalidArgument, ErrMalformedRequest)
 	}
 
-	txHash, err := s.blockchain.SubmitTransaction(ctx, req.Tx, protoapi.SubmitTransactionRequest_TYPE_ASYNC)
+	txHash, err := s.blockchain.SubmitTransaction(ctx, req.Tx)
 	if err != nil {
 		// This is Tendermint's specific error signature
 		if _, ok := err.(interface {
@@ -101,6 +101,36 @@ func (s *coreService) SubmitTransaction(ctx context.Context, req *protoapi.Submi
 			return nil, apiError(codes.InvalidArgument, err)
 		}
 		s.log.Debug("unable to submit transaction", logging.Error(err))
+
+		return nil, apiError(codes.Internal, err)
+	}
+
+	return &protoapi.SubmitTransactionResponse{
+		Success: true,
+		TxHash:  txHash,
+	}, nil
+}
+
+func (s *coreService) CheckTransaction(ctx context.Context, req *protoapi.SubmitTransactionRequest) (*protoapi.SubmitTransactionResponse, error) {
+	startTime := time.Now()
+	defer metrics.APIRequestAndTimeGRPC("CheckTransaction", startTime)
+
+	if req == nil {
+		return nil, apiError(codes.InvalidArgument, ErrMalformedRequest)
+	}
+
+	txHash, err := s.blockchain.CheckTransaction(ctx, req.Tx, protoapi.SubmitTransactionRequest_TYPE_ASYNC)
+	if err != nil {
+		// This is Tendermint's specific error signature
+		if _, ok := err.(interface {
+			Code() uint32
+			Details() string
+			Error() string
+		}); ok {
+			s.log.Debug("unable to check transaction", logging.Error(err))
+			return nil, apiError(codes.InvalidArgument, err)
+		}
+		s.log.Debug("unable to check transaction", logging.Error(err))
 
 		return nil, apiError(codes.Internal, err)
 	}
