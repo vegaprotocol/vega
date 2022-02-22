@@ -9,7 +9,7 @@ Feature: Position resolution case 1
       | name                           | value |
       | market.auction.minimumDuration | 1     |
 
-  Scenario: https://docs.google.com/spreadsheets/d/1D433fpt7FUCk04dZ9FHDVy-4hA6Bw_a2/edit#gid=956988479
+  Scenario: https://drive.google.com/file/d/1bYWbNJvG7E-tcqsK26JMu2uGwaqXqm0L/view
 # setup accounts
     Given the parties deposit on asset's general account the following amount:
       | party           | asset | amount        |
@@ -40,6 +40,14 @@ Feature: Position resolution case 1
     When the parties place the following orders:
       | party           | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | designatedLooser | ETH/DEC19 | buy  | 290    | 150   | 1                | TYPE_LIMIT | TIF_GTC | ref-1     |
+
+    Then the parties should have the following account balances:
+      | party            | asset | market id | margin  | general |
+      | designatedLooser | BTC   | ETH/DEC19 | 11600   | 0       |
+
+    Then the parties should have the following margin levels:
+      | party            | market id | maintenance | search  | initial  | release |
+      | designatedLooser | ETH/DEC19 | 39730       | 127136  | 158920   | 198650   |
 
 # insurance pool generation - modify order book
     Then the parties cancel the following orders:
