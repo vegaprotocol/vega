@@ -22,6 +22,7 @@
 ### 🗑️ Deprecation
 
 ### 🛠 Improvements
+- [4844](https://github.com/vegaprotocol/vega/issues/4844) - Add endpoints for CheckTx and CheckRawTx
 - [4793](https://github.com/vegaprotocol/vega/issues/4793) - Add specific insurance pool balance test
 - [4633](https://github.com/vegaprotocol/vega/pull/4633) - Add possibility to list snapshots from the vega command line
 - [4640](https://github.com/vegaprotocol/vega/pull/4640) - Update feature tests related to liquidity provision following integration of probability of trading with floating point consensus
