@@ -19,7 +19,9 @@ jobs:
         uses: webiny/action-conventional-commits@v1.0.3
 
   verify-linked-issue:
-    if: ((startsWith(github.head_ref, 'renovate/') != true) && (contains(github.event.*.name, 'labeled') || contains(github.event.*.name, 'unlabeled') || !contains(github.event.pull_request.labels.*.name, 'no-changelog') == true))
+    if: |
+      ((startsWith(github.head_ref, 'renovate/') != true) && (contains(github.event.*.name, 'labeled') 
+      || contains(github.event.*.name, 'unlabeled') || !contains(github.event.pull_request.labels.*.name, 'no-changelog') == true))
     runs-on: ubuntu-latest
     name: Verify Linked Issue
     steps:
@@ -29,7 +31,10 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   verify-changelog-updated:
-    if: ((startsWith(github.head_ref, 'renovate/') != true) && (contains(github.event.*.name, 'labeled') || contains(github.event.*.name, 'unlabeled') || !contains(github.event.pull_request.labels.*.name, 'no-changelog') == true) && (github.event.pull_request.draft != true))
+    if: |
+      ((startsWith(github.head_ref, 'renovate/') != true) && (contains(github.event.*.name, 'labeled') 
+      || contains(github.event.*.name, 'unlabeled') || !contains(github.event.pull_request.labels.*.name, 'no-changelog') == true) 
+      && (github.event.pull_request.draft != true))
     name: Verify CHANGELOG Updated
     runs-on: ubuntu-latest
     steps:
@@ -46,7 +51,10 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   skip-changelog-and-issue-checks:
-    if: ((startsWith(github.head_ref, 'renovate/') != true) && (contains(github.event.*.name, 'labeled') || contains(github.event.*.name, 'unlabeled') || contains(github.event.pull_request.labels.*.name, 'no-changelog') == true) && (github.event.pull_request.draft != true))
+    if: |
+      ((startsWith(github.head_ref, 'renovate/') != true) && (contains(github.event.*.name, 'labeled') 
+      || contains(github.event.*.name, 'unlabeled') || contains(github.event.pull_request.labels.*.name, 'no-changelog') == true) 
+      && (github.event.pull_request.draft != true))
     name: Skip Changelog And Issue Checks
     runs-on: ubuntu-latest
     steps:
