@@ -111,7 +111,7 @@ func (s *coreService) SubmitTransaction(ctx context.Context, req *protoapi.Submi
 	}, nil
 }
 
-func (s *coreService) CheckTransaction(ctx context.Context, req *protoapi.SubmitTransactionRequest) (*protoapi.SubmitTransactionResponse, error) {
+func (s *coreService) CheckTransaction(ctx context.Context, req *protoapi.SubmitTransactionRequest) (*protoapi.CheckTransactionResponse, error) {
 	startTime := time.Now()
 	defer metrics.APIRequestAndTimeGRPC("CheckTransaction", startTime)
 
@@ -119,7 +119,7 @@ func (s *coreService) CheckTransaction(ctx context.Context, req *protoapi.Submit
 		return nil, apiError(codes.InvalidArgument, ErrMalformedRequest)
 	}
 
-	txHash, err := s.blockchain.CheckTransaction(ctx, req.Tx, protoapi.SubmitTransactionRequest_TYPE_ASYNC)
+	checkResult, err := s.blockchain.CheckTransaction(ctx, req.Tx)
 	if err != nil {
 		// This is Tendermint's specific error signature
 		if _, ok := err.(interface {
@@ -135,9 +135,11 @@ func (s *coreService) CheckTransaction(ctx context.Context, req *protoapi.Submit
 		return nil, apiError(codes.Internal, err)
 	}
 
-	return &protoapi.SubmitTransactionResponse{
-		Success: true,
-		TxHash:  txHash,
+	return &protoapi.CheckTransactionResponse{
+		Code:      checkResult.Code,
+		Success:   true,
+		GasWanted: checkResult.GasWanted,
+		GasUsed:   checkResult.GasUsed,
 	}, nil
 }
 
