@@ -1895,11 +1895,12 @@ func (m *Market) resolveClosedOutParties(ctx context.Context, distressedMarginEv
 	// send transfer to buffer
 	m.broker.Send(events.NewTransferResponse(ctx, responses))
 	// lastly, recalculate margins for the non-distressed parties
-	// if err == nil {
-	if err = m.recheckMargin(ctx, evt); err != nil {
-		m.log.Error("Failed to recheck margins for changed positions", logging.Error(err))
+	if err == nil {
+		// Only check margins if MTM was successful.
+		if err = m.recheckMargin(ctx, evt); err != nil {
+			m.log.Error("Failed to recheck margins for changed positions", logging.Error(err))
+		}
 	}
-	// }
 
 	return orderUpdates, err
 }
