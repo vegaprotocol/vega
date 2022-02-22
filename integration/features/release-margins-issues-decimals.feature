@@ -173,7 +173,7 @@ Feature: Test margin release on order cancel
 
     Then the parties should have the following account balances:
       | party    | asset | market id | margin | general |
-      | partyGuy | ETH   | ETH/DEC19 | 120000 | 0       |
+      | partyGuy | ETH   | ETH/DEC19 | 60000  | 60000   |
 
   Scenario: a party place a new order in the system, party is closing position via closeout of other parties
     Given the parties deposit on asset's general account the following amount:
@@ -248,4 +248,3 @@ Feature: Test margin release on order cancel
     Then the parties should have the following profit and loss:
       | party        | volume | unrealised pnl | realised pnl |
       | partyGuyGood | 0      | 0              | 9000000      |
-

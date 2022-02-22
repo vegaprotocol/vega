@@ -947,6 +947,7 @@ func (m *Market) leaveAuction(ctx context.Context, now time.Time) {
 	cmp := m.getCurrentMarkPrice()
 	mcmp := num.Zero().Div(cmp, m.priceFactor) // create the market representation of the price
 	m.confirmMTM(ctx, &types.Order{
+		ID:            m.idgen.NextID(),
 		Price:         cmp,
 		OriginalPrice: mcmp,
 	})
@@ -1555,6 +1556,13 @@ func (m *Market) handleConfirmation(ctx context.Context, conf *types.OrderConfir
 
 		if !end {
 			orderUpdates = m.confirmMTM(ctx, conf.Order)
+		}
+	} else {
+		// we had no trade, but still want to register this position in the settlement
+		// engine I guess
+		party := conf.Order.Party
+		if pos, ok := m.position.GetPositionByPartyID(party); ok {
+			m.settlement.AddPosition(party, pos)
 		}
 	}
 
