@@ -45,7 +45,7 @@ Scenario: S001,Testing fees in continuous trading with one trade and no liquidit
       | party   | asset | market id | margin | general  |
       | trader3 | ETH   | ETH/DEC21 | 720    |  9280    |
 
-    # And the accumulated maker fees should be "0" for the asset "ETH"
+    # And the accumulated maker fee should be "0" for the asset "ETH"
     And the accumulated infrastructure fees should be "0" for the asset "ETH"
     And the accumulated liquidity fees should be "0" for the market "ETH/DEC21"
 
@@ -85,7 +85,7 @@ Scenario: S001,Testing fees in continuous trading with one trade and no liquidit
     And the accumulated infrastructure fees should be "7" for the asset "ETH"
     And the accumulated liquidity fees should be "0" for the market "ETH/DEC21"
 
-Scenario: S002, Testing fees in continuous trading with two trades and no liquidity providers,0029-FEES-001
+Scenario: S002, Testing fees in continuous trading with two trades and no liquidity providers,0029-FEES-001, 0029-FEES-006
     
     Given the fees configuration named "fees-config-1":
       | maker fee | infrastructure fee |
@@ -389,11 +389,6 @@ Scenario: S005, Testing fees get collected when amended order trades, 0029-FEEs-
       | 1002       | TRADING_MODE_CONTINUOUS |
 
     Then the following trades should be executed:
-    
-
-      # | buyer   | price | size | seller  | maker   | taker   |
-      # | trader3 | 1002  | 3    | trader4 | trader3 | trader4 |
-      # TODO to be implemented by Core Team
       | buyer    | price | size | seller  |
       | trader3a | 1002  | 2    | trader4 |
       | trader3b | 1002  | 1    | trader4 |
@@ -423,16 +418,15 @@ Scenario: S005, Testing fees get collected when amended order trades, 0029-FEEs-
     # Trader3b margin + general account balance = 10000 + 6 ( Maker fees) = 10006
     # Trader4  margin + general account balance = 10000 - (11+6) ( Maker fees) - 8 (Infra fee) = 99975
 
-    # TODO: Check why margin doesn't go up after the trade WHEN the liquidity provision order gets included (seems to work fine without LP orders) (expecting first commented out values) but getting second value in other cases
     Then the parties should have the following account balances:
-      | party      | asset | market id | margin | general |
+      | party       | asset | market id | margin | general |
       | trader3a    | ETH   | ETH/DEC21 | 678    | 9333    | 
       | trader3b    | ETH   | ETH/DEC21 | 339    | 9667    |
       | trader4     | ETH   | ETH/DEC21 | 621    | 604     |
    
    # Placing second set of orders
     When the parties place the following orders:
-      | party   | market id | side | volume | price | resulting trades | type       | tif     | reference      |
+      | party    | market id | side | volume | price | resulting trades | type       | tif     | reference      |
       | trader3a | ETH/DEC21 | buy  | 2      | 1001  | 0                | TYPE_LIMIT | TIF_GTC | trader3a-buy-1 |
       | trader4  | ETH/DEC21 | sell | 4      | 1003  | 0                | TYPE_LIMIT | TIF_GTC | trader4-sell-2 |
 
@@ -443,14 +437,11 @@ Scenario: S005, Testing fees get collected when amended order trades, 0029-FEEs-
 
       # reducing size
       And the parties amend the following orders:
-      | party  | reference      | price | size delta | tif     |
+      | party   | reference      | price | size delta | tif     |
       | trader4 | trader4-sell-2 | 1002  | 0          | TIF_GTC |
 
     # matching the order now
     Then the following trades should be executed:
-      # | buyer   | price | size | seller  | maker   | taker   |
-      # | trader3 | 1002  | 3    | trader4 | trader3 | trader4 |
-      # TODO to be implemented by Core Team
       | buyer    | price | size | seller  |
       | trader3a | 1002  | 2    | trader4 |
       
@@ -460,7 +451,7 @@ Scenario: S005, Testing fees get collected when amended order trades, 0029-FEEs-
       | 1002       | TRADING_MODE_CONTINUOUS |
 
      Then the parties should have the following account balances:
-      | party      | asset | market id | margin | general |
+      | party       | asset | market id | margin | general |
       | trader3a    | ETH   | ETH/DEC21 | 1159   | 8852    |
       | trader4     | ETH   | ETH/DEC21 | 1102   |  123    |
 
@@ -483,7 +474,7 @@ Scenario: S006, Testing fees in continuous trading with insufficient balance in 
 
     # setup accounts
     Given the parties deposit on asset's general account the following amount:
-      | party   | asset | amount     |
+      | party    | asset | amount     |
       | aux1     | ETH   | 100000000  |
       | aux2     | ETH   | 100000000  |
       | trader3  | ETH   | 10000000   |
@@ -506,7 +497,6 @@ Scenario: S006, Testing fees in continuous trading with insufficient balance in 
       | trader3 | ETH/DEC21 | buy  | 100    | 1002  | 0                | TYPE_LIMIT | TIF_GTC |
       | trader4 | ETH/DEC21 | sell | 100    | 1002  | 1                | TYPE_LIMIT | TIF_GTC |
 
-
     Then the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            |  
       | 1002       | TRADING_MODE_CONTINUOUS |
@@ -521,7 +511,7 @@ Scenario: S006, Testing fees in continuous trading with insufficient balance in 
       | trader4 | ETH   | ETH/DEC21 | 21384  | 0       |
 
     Then the parties should have the following margin levels:
-      | party  | market id | maintenance | search | initial | release |
+      | party   | market id | maintenance | search | initial | release |
       | trader4 | ETH/DEC21 | 17820       | 19602  | 21384   | 24948   |
    
     When the parties place the following orders:
@@ -539,12 +529,13 @@ Scenario: S006, Testing fees in continuous trading with insufficient balance in 
       | party   | market id | maintenance | search | initial | release |
       | trader4 | ETH/DEC21 | 17999       | 19798  | 21598   | 25198   |
 
+    #trader4 paid 6+3=9 ETH from the margin account for maker fee and infrastructure fee
     Then the parties should have the following account balances:
       | party   | asset | market id | margin | general |
       | trader3 | ETH   | ETH/DEC21 | 34129  | 9966378 |
       | trader4 | ETH   | ETH/DEC21 | 21375  | 0       |
 
-Scenario: S007, Testing fees to confirm fees are collected first and then margin, 0029-ALL-FEES-002
+Scenario: S007, Testing fees to confirm fees are collected first and then margin, 0029-ALL-FEES-002, 0029-ALL-FEES-008
     
     Given the fees configuration named "fees-config-1":
       | maker fee | infrastructure fee |
@@ -662,6 +653,14 @@ Scenario: S008, WIP - Testing fees in continuous trading when insufficient balan
       | trader3 | ETH/DEC21 | buy  | 1      | 1002  | 0                | TYPE_LIMIT | TIF_GTC | trader3-buy-1  |
       | trader4 | ETH/DEC21 | sell | 1      | 1002  | 1                | TYPE_LIMIT | TIF_GTC | trader4-sell-2 |
 
+   #what's causing the order book change at price 1080, from vol 10 (line 646 to line 659)????
+    And the order book should have the following volumes for market "ETH/DEC21":
+      | side | price | volume |
+      | sell | 1080  | 9      |
+      | buy  | 920   | 10     |
+      | buy  | 910   | 119    |
+      | sell | 1090  | 184    |
+
    Then the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            | 
       | 1002       | TRADING_MODE_CONTINUOUS | 
@@ -758,7 +757,7 @@ Scenario: S009, Testing fees in auctions session with each side of a trade debit
       | trader3a | ETH   | ETH/DEC21 | 843    | 9157    |
       | trader4  | ETH   | ETH/DEC21 | 1318   | 8682    |
       
-    Scenario: S010, Triggering Liquidity auction, 0029-FEEs-008
+    Scenario: S010, Triggering Liquidity auction, 0029-FEEs-006
 
     Given the fees configuration named "fees-config-1":
       | maker fee | infrastructure fee |
@@ -797,13 +796,8 @@ Scenario: S009, Testing fees in auctions session with each side of a trade debit
     
     Given the parties submit the following liquidity provision:
       | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | aux1  | ETH/DEC21 | 100000            | 0.1 | buy  | BID              | 1          |  10    | submission |
-      | lp1 | aux1  | ETH/DEC21 | 100000            | 0.1 | sell | ASK              | 1          |  10    | amendment  |
-
-    Then the order book should have the following volumes for market "ETH/DEC19":
-      | side | price    | volume |
-      | buy  | 992      | 1    |
-      | sell | 992      | 1    |
+      | lp1 | aux1  | ETH/DEC21 | 100000            | 0.1   | buy  | BID              | 1          |  10    | submission |
+      | lp1 | aux1  | ETH/DEC21 | 100000            | 0.1   | sell | ASK              | 1          |  10    | amendment  |
 
     When the network moves ahead "1" blocks
 
@@ -827,7 +821,6 @@ Scenario: S009, Testing fees in auctions session with each side of a trade debit
     #trader4 got closed out
 
     And the insurance pool balance should be "0" for the market "ETH/DEC21"
-
     Then the parties should have the following profit and loss:
       | party    | volume | unrealised pnl | realised pnl |
       | trader3a | 1      | 0              | 0            |
@@ -848,7 +841,7 @@ Scenario: S009, Testing fees in auctions session with each side of a trade debit
       | trader3a | ETH/DEC21  | buy   | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC |
 
     Then the market data for the market "ETH/DEC21" should be:
-      | trading mode                    | auction trigger       |
+      | trading mode                    | auction trigger           |
       | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY |
 
     Then the network moves ahead "301" blocks
@@ -857,7 +850,7 @@ Scenario: S009, Testing fees in auctions session with each side of a trade debit
     And the accumulated liquidity fees should be "0" for the market "ETH/DEC21"
    
 
-Scenario: S011, Testing fees in Liquidity auction session trading with insufficient balance in their general account but margin covers the fees, 0029-FEEs-011
+Scenario: S011, Testing fees in Liquidity auction session trading with insufficient balance in their general account but margin covers the fees, 0029-FEEs-006
     
     Given the following network parameters are set:
       | name                                                | value |
@@ -888,7 +881,7 @@ Scenario: S011, Testing fees in Liquidity auction session trading with insuffici
 
     # setup accounts
     When the parties deposit on asset's general account the following amount:
-      | party   | asset | amount     |
+      | party    | asset | amount     |
       | aux1     | ETH   | 100000000  |
       | aux2     | ETH   | 100000000  |
       | trader3a | ETH   | 5000       |
@@ -908,7 +901,7 @@ Scenario: S011, Testing fees in Liquidity auction session trading with insuffici
    
     Then the opening auction period ends for market "ETH/DEC21"
 
-    #Scenario: Triggering Liquidity auction, 0029-FEEs-012
+   # Scenario: S012, Triggering Liquidity auction, 0029-FEEs-006
 
     Then the parties place the following orders:
       | party   | market id | side | volume | price | resulting trades | type       | tif     |
@@ -960,7 +953,7 @@ Scenario: S011, Testing fees in Liquidity auction session trading with insuffici
       | trading mode            | auction trigger             |
       | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED |
 
-Scenario: Testing fees in Price auction session trading with insufficient balance in their general account but margin covers the fees, 0029-FEEs-013
+Scenario: S013, Testing fees in Price auction session trading with insufficient balance in their general account but margin covers the fees, 0029-FEEs-008
     
   Given the following network parameters are set:
       | name                                                | value |
@@ -1062,7 +1055,7 @@ Scenario: Testing fees in Price auction session trading with insufficient balanc
       | trading mode            | auction trigger             |
       | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED |
 
-Scenario: Testing fees in Liquidity auction session trading with insufficient balance in their general and margin account, then the trade still goes ahead, 0029-ALL-FEES-014
+Scenario: S014, Testing fees in Liquidity auction session trading with insufficient balance in their general and margin account, then the trade still goes ahead, 0029-ALL-FEES-008
 
     Given the following network parameters are set:
       | name                                                | value |
@@ -1113,7 +1106,7 @@ Scenario: Testing fees in Liquidity auction session trading with insufficient ba
    
     Then the opening auction period ends for market "ETH/DEC21"
 
-    #Scenario: Triggering Liquidity auction:0029-ALL-FEES-015
+    #Scenario: S015, Triggering Liquidity auction:0029-ALL-FEES-008
 
     Then the parties place the following orders:
       | party   | market id | side | volume | price | resulting trades | type       | tif     |
@@ -1165,7 +1158,7 @@ Scenario: Testing fees in Liquidity auction session trading with insufficient ba
       | trading mode            | auction trigger             |
       | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED |
 
-Scenario: Testing fees in Price auction session trading with insufficient balance in their general and margin account, then the trade still goes ahead, 0029-ALL-FEES-016
+Scenario:S016,  Testing fees in Price auction session trading with insufficient balance in their general and margin account, then the trade still goes ahead, 0029-ALL-FEES-008
     
   Given the following network parameters are set:
       | name                                                | value |
@@ -1221,7 +1214,6 @@ Scenario: Testing fees in Price auction session trading with insufficient balanc
       | lp1 | aux1  | ETH/DEC21 | 10000             | 0.001 | buy  | BID              | 1          |  10    | amendment |
       | lp1 | aux1  | ETH/DEC21 | 10000             | 0.001 | sell | ASK              | 1          |  10    | amendment |
 
-    #TODO: Raise a bug: mark price is not being checked, any value results in a pass.
     And the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
       | 1002       | TRADING_MODE_CONTINUOUS | 1       | 903       | 1101      | 200          | 10000          | 1             |
@@ -1267,7 +1259,7 @@ Scenario: Testing fees in Price auction session trading with insufficient balanc
       | trading mode            | auction trigger             |
       | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED |
 
-Scenario: WIP - Testing fees in Price auction session trading with insufficient balance in their general and margin account, then the trade does not go ahead,0029-ALL-FEES-017
+Scenario:S017, Testing fees in Price auction session trading with insufficient balance in their general and margin account, then the trade does not go ahead,0029-ALL-FEES-008, 
  # <PC> - Just need to confirm if the trades doesn't go through, then general and margin account balances are expected to be 0.
  # <PC> - Also need to confirm if all 4 internal levels of margin should be non-zero , as in another case where the trade shouldn't be going through it's 0
  # Reducing account balances somehow lowers the margin requirement so the fees again gets covered by the deficient created.
@@ -1328,7 +1320,6 @@ Scenario: WIP - Testing fees in Price auction session trading with insufficient 
       | lp1 | aux1  | ETH/DEC21 | 10000             | 0.001 | buy  | BID              | 1          |  10    | amendment |
       | lp1 | aux1  | ETH/DEC21 | 10000             | 0.001 | sell | ASK              | 1          |  10    | amendment |
 
-    #TODO: Raise a bug: mark price is not being checked, any value results in a pass.
     And the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
       | 1002       | TRADING_MODE_CONTINUOUS | 1       | 903       | 1101      | 200          | 10000          | 1             |
@@ -1374,7 +1365,7 @@ Scenario: WIP - Testing fees in Price auction session trading with insufficient 
       | trading mode            | auction trigger             |
       | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED |
 
-Scenario: Testing fees in continuous trading during position resolution, 0029-ALL-FEES-018
+Scenario: S018, Testing fees in continuous trading during position resolution, 0029-ALL-FEES-001
 
   Given the fees configuration named "fees-config-1":
       | maker fee | infrastructure fee |
@@ -1470,7 +1461,7 @@ Scenario: Testing fees in continuous trading during position resolution, 0029-AL
 
   And the insurance pool balance should be "0" for the market "ETH/DEC21"
 
-Scenario: WIP - Testing fees in continuous trading during position resolution with insufficient balance in their general and margin account, partial or full fees does not get paid, 0029-ALL-FEES-019
+Scenario: S019, Testing fees in continuous trading during position resolution with insufficient balance in their general and margin account, partial or full fees does not get paid, 0029-ALL-FEES-008,
 
  # Fees calculations during Position Resolution when insufficient balance in their general and margin account, then the fees gets paid in order - Maker, IP and then LP else don't get paid
  # <PC> - Even after reducing trader's balance and increasing the fees factors, the fees are being taken fully and thereby reducing the realised PnL.
@@ -1572,7 +1563,7 @@ Scenario: WIP - Testing fees in continuous trading during position resolution wi
 
   And the insurance pool balance should be "0" for the market "ETH/DEC21"
 
-Scenario: WIP - Testing fees in continuous trading with two pegged trades and one liquidity providers, 0029-ALL-FEES-020
+Scenario: S020, Testing fees in continuous trading with two pegged trades and one liquidity providers, 0029-ALL-FEES-002
   # <PC> - Somehow the trades for party aux1 with size = 20 at price = 990 are getting cancelled and new trades of size = 21 at price = 965 are getting placed; but fees look ok
 
     When the following network parameters are set:
@@ -1687,7 +1678,7 @@ Scenario: WIP - Testing fees in continuous trading with two pegged trades and on
       | from   | to   | from account                | to account           | market id | amount | asset |
       | market | aux1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/DEC21 | 10     | ETH   |
 
-Scenario: Testing fees when network parameters are changed (in continuous trading with one trade and no liquidity providers), 0029-ALL-FEES-021
+Scenario: S021, Testing fees when network parameters are changed (in continuous trading with one trade and no liquidity providers), 0029-ALL-FEES-002
  Description : Changing net params does change the fees being collected appropriately even if the market is already running
     
     Given the fees configuration named "fees-config-1":
