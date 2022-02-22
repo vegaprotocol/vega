@@ -74,6 +74,7 @@ jobs:
           echo 'INPROG_OPTION_ID='$(jq '.data.organization.projectNext.fields.nodes[] | select(.name== "Status") |.settings | fromjson.options[] | select(.name=="Waiting Review") |.id' project_data.json) >> $GITHUB_ENV
           echo 'ITER_FIELD_ID='$(jq '.data.organization.projectNext.fields.nodes[] | select(.name== "Sprint") | .id' project_data.json) >> $GITHUB_ENV
           echo 'ITER_OPTION_ID='$(jq '.data.organization.projectNext.fields.nodes[] | select(.name== "Sprint") |.settings | fromjson.configuration.iterations[0] | .id' project_data.json) >> $GITHUB_ENV
+      
       - name: Add pr to project
         env:
           GITHUB_TOKEN: ${{ secrets.GH_NEW_CARD_TO_PROJECT }}
