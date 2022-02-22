@@ -9,7 +9,7 @@ This document is to describe the internal process that the Vega project core pro
 
 ## Project Boards
 
-Work is primarily driven by the ~3-month [milestone planning](https://github.com/vegaprotocol/specs-internal/tree/master/milestones) and split into 2-week sprints for the team have short term delivery focus. The Core Protocol [Kanban Board](https://github.com/vegaprotocol/vega/projects?type=beta) uses two GitHub Actions to automate some of the project management:
+Work is primarily driven by the ~3 month [milestone planning](https://github.com/vegaprotocol/specs-internal/tree/master/milestones) and split into 2 week sprints for the team have short term delivery focus. The Core Protocol [Kanban Board](https://github.com/vegaprotocol/vega/projects?type=beta) uses two GitHub Actions to automate some of the project management:
 
 ### [Add Issues To Project Board](https://github.com/vegaprotocol/vega/tree/develop/.github/workflows/add_issue_to_project.yml) GitHub Action
 
@@ -43,16 +43,16 @@ This job will run on all **non-draft** pull requests that are not created by the
 * **adding** the `no-changelog` label will **stop this job from running**
 * **removing** the `no-changelog` label will **start running this job**
 
-A [third party GitHub action](https://github.com/Zomzog/changelog-checker) makes sure all PRs that meet the above criteria have a change to the changelog in the files changed.
+A [third party GitHub action](https://github.com/Zomzog/changelog-checker) makes sure all pull requests that meet the above criteria have a change to the changelog in the files changed.
 
-> Note: For further details on good practice for CHANGELOG entries see the [keepachangelog docs](https://keepachangelog.com/en/1.0.0/)
+> Note: For further details on good practice for CHANGELOG entries see the [`keepachangelog` docs](https://keepachangelog.com/en/1.0.0/)
 
 #### Update Issue When PR Linked
 
 This job will only run if the [Verify Linked Issue](# Verify-Linked-Issue-Job) job has run successfully. It has a number of steps that use GitHub GraphQL queries to retrieve and update data:
 
 1. **Get the project data**: gets variables such as the current sprint and specific kanban board column names.
-1. **Get linked issue nodeid**: gets the nodeID of the **most recent** issue that has been linked to the pull request.
+1. **Get linked issue `nodeid`**: gets the `nodeID` of the **most recent** issue that has been linked to the pull request.
 1. **Add issue to project**: adds the linked issue to the project board, if not already present.
 1. **Set issue project status fields**: updates the issue fields; sets the status to `In Progress` and sprint to `@current`.
 
@@ -66,8 +66,8 @@ This job will run on all **non-draft** pull requests that are not created by the
 This job has a number of steps that use GitHub GraphQL queries to retrieve and update data:
 
 1. **Get the project data**: gets variables such as the current sprint and specific kanban board column names.
-1. **Add pr to project**: adds the pull request to the project board so the team knows it exists.
-1. **Set pr project status fields**: updates the issue fields; sets the status to `Waiting Review` and sprint to `@current`.
+1. **Add `pr` to project**: adds the pull request to the project board so the team knows it exists.
+1. **Set `pr` project status fields**: updates the issue fields; sets the status to `Waiting Review` and sprint to `@current`.
 
 
 
