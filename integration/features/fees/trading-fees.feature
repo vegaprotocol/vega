@@ -653,7 +653,12 @@ Scenario: S008, WIP - Testing fees in continuous trading when insufficient balan
       | trader3 | ETH/DEC21 | buy  | 1      | 1002  | 0                | TYPE_LIMIT | TIF_GTC | trader3-buy-1  |
       | trader4 | ETH/DEC21 | sell | 1      | 1002  | 1                | TYPE_LIMIT | TIF_GTC | trader4-sell-2 |
 
-   #what's causing the order book change at price 1080, from vol 10 (line 646 to line 659)????
+      #party4 is closeout 
+    Then the parties should have the following margin levels:
+      | party   | market id | maintenance | search | initial | release |
+      | trader4 | ETH/DEC21 |    0        |   0    |   0     |   0     |
+
+    #trader4 is closedout, and aux2 takes over, so sell vol changed from 10 to 9 at price 1080
     And the order book should have the following volumes for market "ETH/DEC21":
       | side | price | volume |
       | sell | 1080  | 9      |
@@ -676,10 +681,6 @@ Scenario: S008, WIP - Testing fees in continuous trading when insufficient balan
       | trader4 | market   | ACCOUNT_TYPE_GENERAL     | ACCOUNT_TYPE_FEES_LIQUIDITY      | ETH/DEC21 | 2      | ETH   |
       | trader4 | market   | ACCOUNT_TYPE_MARGIN      | ACCOUNT_TYPE_FEES_LIQUIDITY      | ETH/DEC21 | 2      | ETH   |
       | market  | trader3  | ACCOUNT_TYPE_FEES_MAKER  | ACCOUNT_TYPE_GENERAL             | ETH/DEC21 | 6      | ETH   |  
-    
-    Then the parties should have the following margin levels:
-      | party   | market id | maintenance | search | initial | release |
-      | trader4 | ETH/DEC21 |    0        |   0    |   0     |   0     |
 
     Then the parties should have the following account balances:
       | party   | asset | market id | margin | general |
@@ -831,7 +832,6 @@ Scenario: S009, Testing fees in auctions session with each side of a trade debit
       | trader3a | ETH   | ETH/DEC21 | 843    | 9999157 |
       | trader4  | ETH   | ETH/DEC21 | 0      | 0       |
 
-    #TODO: Raise a bug: mark price is not being checked, any value results in a pass.------this is fixed (JJ checked)
     And the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode                    | horizon | min bound | max bound | target stake | supplied stake | open interest |
       | 1002       | TRADING_MODE_MONITORING_AUCTION | 1       | 903       | 1101      | 2004          | 100000          | 1             |
