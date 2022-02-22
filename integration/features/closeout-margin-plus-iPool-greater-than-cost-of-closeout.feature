@@ -412,20 +412,3 @@ Scenario: case 2 using lognomal risk model
     When the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference | error |
       | party1 | ETH/DEC19 | sell | 400    | 100   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     | margin check failed |
-
-    # # all general acc balance goes to margin account for the order, 'party1' should have 100*100*3
-    # #in the margin account as its Position*Markprice*Initialfactor
-    # And the parties should have the following account balances:
-    #   | party  | asset | market id | margin   | general   |
-    #   | party1 | USD   | ETH/DEC19 | 30000    |  0    |
-    # Then the parties should have the following margin levels:
-    #   | party  | market id | maintenance | search | initial | release  |
-    #   | party1 | ETH/DEC19 | 29273       | 35127  | 43909   | 58546    |
-
-    #  # then party2 places an order, this trades with party1 and we calculate the margins again
-    #  When the parties place the following orders:
-    #    | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
-    #    | party2 | ETH/DEC19 | buy  | 500    | 100   | 1                | TYPE_LIMIT | TIF_GTC | ref-1     |
-
-    # And the mark price should be "100" for the market "ETH/DEC19"
-    # And the insurance pool balance should be "23500" for the market "ETH/DEC19"
