@@ -5,6 +5,7 @@ import (
 
 	"code.vegaprotocol.io/protos/vega"
 	checkpoint "code.vegaprotocol.io/protos/vega/checkpoint/v1"
+	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/types"
 
 	"github.com/golang/protobuf/proto"
@@ -24,22 +25,27 @@ func (e *Engine) Checkpoint() ([]byte, error) {
 	return proto.Marshal(snap)
 }
 
-func (e *Engine) Load(_ context.Context, data []byte) error {
+func (e *Engine) Load(ctx context.Context, data []byte) error {
 	snap := &checkpoint.Proposals{}
 	if err := proto.Unmarshal(data, snap); err != nil {
 		return err
 	}
 
 	e.activeProposals = make([]*proposal, 0, len(snap.Proposals))
+	evts := make([]events.Event, 0, len(snap.Proposals))
 	for _, p := range snap.Proposals {
 		if p.Terms.ClosingTimestamp < e.currentTime.Unix() {
 			// the proposal in question has expired, ignore it
 			continue
 		}
+		prop := types.ProposalFromProto(p)
+		evts = append(evts, events.NewProposalEvent(ctx, *prop))
 		e.activeProposals = append(e.activeProposals, &proposal{
-			Proposal: types.ProposalFromProto(p),
+			Proposal: prop,
 		})
 	}
+	// sned events for restored proposals
+	e.broker.SendBatch(evts)
 	// @TODO ensure OnChainTimeUpdate is called
 	return nil
 }
