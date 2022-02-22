@@ -49,6 +49,17 @@ func (c *Client) SendTransactionAsync(ctx context.Context, bytes []byte) (string
 	return res.Hash.String(), nil
 }
 
+func (c *Client) CheckTransaction(ctx context.Context, bytes []byte) (*tmctypes.ResultCheckTx, error) {
+	res, err := c.tmclt.CheckTx(ctx, bytes)
+	if err != nil {
+		return nil, err
+	} else if !res.IsOK() {
+		return nil, newUserInputError(res.Code, string(res.Data))
+	}
+
+	return res, nil
+}
+
 func (c *Client) SendTransactionSync(ctx context.Context, bytes []byte) (string, error) {
 	// Fire off the transaction for consensus
 	r, err := c.tmclt.BroadcastTxSync(ctx, bytes)

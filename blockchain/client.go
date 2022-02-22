@@ -23,6 +23,7 @@ type ChainClientImpl interface {
 	Health(context.Context) (*tmctypes.ResultHealth, error)
 	SendTransactionAsync(context.Context, []byte) (string, error)
 	SendTransactionSync(context.Context, []byte) (string, error)
+	CheckTransaction(context.Context, []byte) (*tmctypes.ResultCheckTx, error)
 	SendTransactionCommit(context.Context, []byte) (string, error)
 	GenesisValidators(context.Context) ([]*tmtypes.Validator, error)
 	Validators(context.Context, *int64) ([]*tmtypes.Validator, error)
@@ -41,6 +42,23 @@ func NewClient(clt ChainClientImpl) *Client {
 	return &Client{
 		clt: clt,
 	}
+}
+
+func (c *Client) CheckTransaction(ctx context.Context, tx *commandspb.Transaction) (*tmctypes.ResultCheckTx, error) {
+	_, err := commands.CheckTransaction(tx)
+	if err != nil {
+		return nil, err
+	}
+
+	marshalledTx, err := proto.Marshal(tx)
+	if err != nil {
+		return nil, err
+	}
+
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+
+	return c.clt.CheckTransaction(ctx, marshalledTx)
 }
 
 func (c *Client) SubmitTransaction(ctx context.Context, tx *commandspb.Transaction, ty api.SubmitTransactionRequest_Type) (string, error) {
