@@ -1,6 +1,6 @@
 # Process
 
-This document is to describe the internal process that the Vega Core project team for issue / pull request management and development workflow.
+This document is to describe the internal process that the Vega project core protocol team uses for issue and pull request management and the development workflow.
 
 ## Table of contents
  * [Project Boards](#project-boards)
@@ -9,7 +9,7 @@ This document is to describe the internal process that the Vega Core project tea
 
 ## Project Boards
 
-The Core Protocol [Kanban Board](https://github.com/vegaprotocol/vega/projects?type=beta) uses two GitHub Actions to automate some of the project management.
+Work is primarily driven by the ~3-month [milestone planning](https://github.com/vegaprotocol/specs-internal/tree/master/milestones) and split into 2-week sprints for the team have short term delivery focus. The Core Protocol [Kanban Board](https://github.com/vegaprotocol/vega/projects?type=beta) uses two GitHub Actions to automate some of the project management:
 
 ### [Add Issues To Project Board](https://github.com/vegaprotocol/vega/tree/develop/.github/workflows/add_issue_to_project.yml) GitHub Action
 
@@ -49,7 +49,7 @@ A [third party GitHub action](https://github.com/Zomzog/changelog-checker) makes
 
 #### Update Issue When PR Linked
 
-This job will only run if the [Verify Linked Issue](# Verify-Linked-Issue-Job) job has run sucessfully. It has a number of steps that use GitHub GraphQL queries to retrieve and update data:
+This job will only run if the [Verify Linked Issue](# Verify-Linked-Issue-Job) job has run successfully. It has a number of steps that use GitHub GraphQL queries to retrieve and update data:
 
 1. **Get the project data**: gets variables such as the current sprint and specific kanban board column names.
 1. **Get linked issue nodeid**: gets the nodeID of the **most recent** issue that has been linked to the pull request.
