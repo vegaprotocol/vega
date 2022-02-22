@@ -1,8 +1,10 @@
-name: Manage Project Board 
+---
+
+name: Manage Project Board
 
 "on":
   pull_request:
-    branches: [ develop, master ]
+    branches: [develop, master]
     types: [edited, synchronize, opened, reopened, labeled, unlabeled, ready_for_review, review_requested]
 
 jobs:
@@ -74,7 +76,7 @@ jobs:
           echo 'INPROG_OPTION_ID='$(jq '.data.organization.projectNext.fields.nodes[] | select(.name== "Status") |.settings | fromjson.options[] | select(.name=="Waiting Review") |.id' project_data.json) >> $GITHUB_ENV
           echo 'ITER_FIELD_ID='$(jq '.data.organization.projectNext.fields.nodes[] | select(.name== "Sprint") | .id' project_data.json) >> $GITHUB_ENV
           echo 'ITER_OPTION_ID='$(jq '.data.organization.projectNext.fields.nodes[] | select(.name== "Sprint") |.settings | fromjson.configuration.iterations[0] | .id' project_data.json) >> $GITHUB_ENV
-      
+
       - name: Add pr to project
         env:
           GITHUB_TOKEN: ${{ secrets.GH_NEW_CARD_TO_PROJECT }}
@@ -89,7 +91,7 @@ jobs:
               }
             }' -f project=$PROJECT_ID -f pr=$PR_ID --jq '.data.addProjectNextItem.projectNextItem.id')"
           echo 'ITEM_ID='$item_id >> $GITHUB_ENV
-          
+
       - name: Set pr project status fields
         env:
           GITHUB_TOKEN: ${{ secrets.GH_NEW_CARD_TO_PROJECT }}
@@ -164,7 +166,7 @@ jobs:
           echo 'INPROG_OPTION_ID='$(jq '.data.organization.projectNext.fields.nodes[] | select(.name== "Status") |.settings | fromjson.options[] | select(.name=="In Progress") |.id' project_data1.json) >> $GITHUB_ENV
           echo 'ITER_FIELD_ID='$(jq '.data.organization.projectNext.fields.nodes[] | select(.name== "Sprint") | .id' project_data1.json) >> $GITHUB_ENV
           echo 'ITER_OPTION_ID='$(jq '.data.organization.projectNext.fields.nodes[] | select(.name== "Sprint") |.settings | fromjson.configuration.iterations[0] | .id' project_data1.json) >> $GITHUB_ENV
-      
+
       - name: Get linked issue nodeid
         env:
           GITHUB_TOKEN: ${{ secrets.GH_NEW_CARD_TO_PROJECT }}
@@ -184,7 +186,7 @@ jobs:
               }
             }'  -f pr_url=$PR_URL > linked_issue_data.json
             echo 'LINKED_ISSUE='$(jq -r '.data.resource.closingIssuesReferences.nodes[] | .id' linked_issue_data.json) >> $GITHUB_ENV
-      
+
       - name: Add issue to the project
         env:
           GITHUB_TOKEN: ${{ secrets.GH_NEW_CARD_TO_PROJECT }}
@@ -198,7 +200,7 @@ jobs:
               }
             }' -f project=$PROJECT_ID -f issue=$LINKED_ISSUE --jq '.data.addProjectNextItem.projectNextItem.id')"
           echo 'ITEM_ID='$item_id >> $GITHUB_ENV
-      
+
       - name: Set issue project status fields
         env:
           GITHUB_TOKEN: ${{ secrets.GH_NEW_CARD_TO_PROJECT }}

@@ -51,7 +51,7 @@ A [third party GitHub action](https://github.com/Zomzog/changelog-checker) makes
 
 This job will only run if the [Verify Linked Issue](# Verify-Linked-Issue-Job) job has run successfully. It has a number of steps that use GitHub GraphQL queries to retrieve and update data:
 
-1. **Get the project data**: gets variables such as the current sprint and specific kanban board column names.
+1. **Get the project data**: gets variables such as the current sprint and specific Kanban board column names.
 1. **Get linked issue `nodeid`**: gets the `nodeID` of the **most recent** issue that has been linked to the pull request.
 1. **Add issue to project**: adds the linked issue to the project board, if not already present.
 1. **Set issue project status fields**: updates the issue fields; sets the status to `In Progress` and sprint to `@current`.
@@ -65,7 +65,7 @@ This job will run on all **non-draft** pull requests that are not created by the
 
 This job has a number of steps that use GitHub GraphQL queries to retrieve and update data:
 
-1. **Get the project data**: gets variables such as the current sprint and specific kanban board column names.
+1. **Get the project data**: gets variables such as the current sprint and specific Kanban board column names.
 1. **Add `pr` to project**: adds the pull request to the project board so the team knows it exists.
 1. **Set `pr` project status fields**: updates the issue fields; sets the status to `Waiting Review` and sprint to `@current`.
 
