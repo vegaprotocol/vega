@@ -115,6 +115,7 @@ func testCheckpointSuccess(t *testing.T) {
 	eng2 := getTestEngine(t)
 	defer eng2.ctrl.Finish()
 
+	eng2.broker.EXPECT().SendBatch(gomock.Any()).Times(1)
 	// Load checkpoint
 	require.NoError(t, eng2.Load(ctx, data))
 
