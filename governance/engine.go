@@ -787,6 +787,13 @@ func (p *proposal) Close(params *ProposalParameters, accounts StakingAccounts) t
 	totalStakeDec := num.DecimalFromUint(totalStake)
 	participationThreshold := totalStakeDec.Mul(params.RequiredParticipation)
 
+	fmt.Printf("START DEBUG PROPOSAL HERE\n")
+	fmt.Printf("MAJORITY THRESHOLD: %s\n", majorityThreshold.String())
+	fmt.Printf("PARTICIPATION THRESHOLD: %s\n", participationThreshold.String())
+	fmt.Printf("TOTAL STAKE: %s\n", totalStake.String())
+	fmt.Printf("TOTAL VOTE: %s\n", totalStake.String())
+	fmt.Printf("END DEBUG PROPOSAL HERE\n")
+
 	if yesDec.GreaterThan(majorityThreshold) && totalVotesDec.GreaterThanOrEqual(participationThreshold) {
 		p.State = proto.Proposal_STATE_PASSED
 	} else {
@@ -801,9 +808,11 @@ func (p *proposal) Close(params *ProposalParameters, accounts StakingAccounts) t
 }
 
 func (p *proposal) countVotes(votes map[string]*types.Vote, accounts StakingAccounts) *num.Uint {
+	fmt.Printf("START COUNT VOTE\n")
 	tally := num.Zero()
 	for k, v := range votes {
 		v.TotalGovernanceTokenBalance = getTokensBalance(accounts, v.PartyID)
+		fmt.Printf("VOTE: %v -> %v\n", v.PartyID, v.TotalGovernanceTokenBalance.String())
 		// the user may have withdrawn their governance token
 		// before the end of the vote. We will then remove them from the map if it's the case.
 		if v.TotalGovernanceTokenBalance.IsZero() {
@@ -814,6 +823,7 @@ func (p *proposal) countVotes(votes map[string]*types.Vote, accounts StakingAcco
 		tally.AddSum(v.TotalGovernanceTokenBalance)
 	}
 
+	fmt.Printf("END COUNT VOTE\n")
 	return tally
 }
 
