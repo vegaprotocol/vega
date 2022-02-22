@@ -143,6 +143,37 @@ func (s *coreService) CheckTransaction(ctx context.Context, req *protoapi.Submit
 	}, nil
 }
 
+func (s *coreService) CheckRawTransaction(ctx context.Context, req *protoapi.CheckRawTransactionRequest) (*protoapi.CheckTransactionResponse, error) {
+	startTime := time.Now()
+	defer metrics.APIRequestAndTimeGRPC("CheckRawTransaction", startTime)
+
+	if req == nil {
+		return nil, apiError(codes.InvalidArgument, ErrMalformedRequest)
+	}
+
+	checkResult, err := s.blockchain.CheckRawTransaction(ctx, req.Tx, req.Type)
+	if err != nil {
+		if _, ok := err.(interface {
+			Code() uint32
+			Details() string
+			Error() string
+		}); ok {
+			s.log.Debug("unable to check raw transaction", logging.Error(err))
+			return nil, apiError(codes.InvalidArgument, err)
+		}
+		s.log.Debug("unable to check raw transaction", logging.Error(err))
+
+		return nil, apiError(codes.Internal, err)
+	}
+
+	return &protoapi.CheckTransactionResponse{
+		Code:      checkResult.Code,
+		Success:   true,
+		GasWanted: checkResult.GasWanted,
+		GasUsed:   checkResult.GasUsed,
+	}, nil
+}
+
 func (s *coreService) PropagateChainEvent(ctx context.Context, req *protoapi.PropagateChainEventRequest) (*protoapi.PropagateChainEventResponse, error) {
 	if req.Event == nil {
 		return nil, apiError(codes.InvalidArgument, ErrMalformedRequest)

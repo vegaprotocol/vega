@@ -44,6 +44,13 @@ func NewClient(clt ChainClientImpl) *Client {
 	}
 }
 
+func (c *Client) CheckRawTransaction(ctx context.Context, tx []byte) (*tmctypes.ResultCheckTx, error) {
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+
+	return c.clt.CheckTransaction(ctx, tx)
+}
+
 func (c *Client) CheckTransaction(ctx context.Context, tx *commandspb.Transaction) (*tmctypes.ResultCheckTx, error) {
 	_, err := commands.CheckTransaction(tx)
 	if err != nil {

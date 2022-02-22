@@ -45,6 +45,7 @@ type EvtForwarder interface {
 type Blockchain interface {
 	SubmitTransaction(ctx context.Context, tx *commandspb.Transaction) (string, error)
 	CheckTransaction(ctx context.Context, tx *commandspb.Transaction) (*tmctypes.ResultCheckTx, error)
+	CheckRawTransaction(ctx context.Context, tx []byte) (*tmctypes.ResultCheckTx, error)
 	GetGenesisTime(ctx context.Context) (genesisTime time.Time, err error)
 	GetChainID(ctx context.Context) (chainID string, err error)
 	GetNetworkInfo(ctx context.Context) (netInfo *tmctypes.ResultNetInfo, err error)
