@@ -773,7 +773,7 @@ Scenario: S009, Testing fees in auctions session with each side of a trade debit
 
     And the markets:
       | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring | oracle config          | maturity date        |
-      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 2                | fees-config-1 | price-monitoring | default-eth-for-future | 2019-12-31T23:59:59Z |
+      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 2                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 2019-12-31T23:59:59Z |
 
     # setup accounts
     Given the parties deposit on asset's general account the following amount:
@@ -797,8 +797,13 @@ Scenario: S009, Testing fees in auctions session with each side of a trade debit
     
     Given the parties submit the following liquidity provision:
       | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | aux1  | ETH/DEC21 | 10000             | 0.001 | buy  | BID              | 1          |  10    | submission |
-      | lp1 | aux1  | ETH/DEC21 | 10000             | 0.001 | sell | ASK              | 1          |  10    | amendment  |
+      | lp1 | aux1  | ETH/DEC21 | 100000            | 0.1 | buy  | BID              | 1          |  10    | submission |
+      | lp1 | aux1  | ETH/DEC21 | 100000            | 0.1 | sell | ASK              | 1          |  10    | amendment  |
+
+    Then the order book should have the following volumes for market "ETH/DEC19":
+      | side | price    | volume |
+      | buy  | 992      | 1    |
+      | sell | 992      | 1    |
 
     When the network moves ahead "1" blocks
 
@@ -810,10 +815,8 @@ Scenario: S009, Testing fees in auctions session with each side of a trade debit
       | buyer    | price | size | seller  |
       | trader3a | 1002  | 1    | trader4 |
 
-    And the market data for the market "ETH/DEC21" should be:
-      | mark price | trading mode                    |  
-      | 1002       | TRADING_MODE_MONITORING_AUCTION |
-
+    And the liquidity fee factor should "0.1" for the market "ETH/DEC21"
+    And the accumulated liquidity fees should be "0" for the market "ETH/DEC21"
 
     # For trader3a & 4- Sharing IF and LP
     # trade_value_for_fee_purposes for trader3a = size_of_trade * price_of_trade = 1 * 1002= 1002
@@ -821,70 +824,40 @@ Scenario: S009, Testing fees in auctions session with each side of a trade debit
     # maker_fee =  0 in auction
     # liquidity_fee = fee_factor[liquidity] * trade_value_for_fee_purposes = 0.001 * 1002 = 1.002 = 1 (rounded up)
 
-    # And the following transfers should happen:
-    #   | from     | to       | from account            | to account                       | market id | amount | asset |
-    #   | trader4  |          | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_INFRASTRUCTURE |           |  2     | ETH   |
-    #   | trader4  | market   | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_LIQUIDITY      | ETH/DEC21 |  1     | ETH   |
-    #   | trader3a |          | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_INFRASTRUCTURE |           |  2     | ETH   |
-    #   | trader3a | market   | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_LIQUIDITY      | ETH/DEC21 |  1     | ETH   |
-
     #trader4 got closed out
 
     And the insurance pool balance should be "0" for the market "ETH/DEC21"
 
     Then the parties should have the following profit and loss:
-      | party  | volume | unrealised pnl | realised pnl |
-      | party3a | 0      | 0              | -2000        |
-      | party4 | 100    | 7200           | -2455        |
+      | party    | volume | unrealised pnl | realised pnl |
+      | trader3a | 1      | 0              | 0            |
+      | trader4  | 0      | 0              | -214         |
 
      Then the parties should have the following account balances:
-      | party   | asset | market id | margin | general |
-      | trader3a | ETH   | ETH/DEC21 | 843   | 9999157    |
-      | trader4  | ETH   | ETH/DEC21 | 0     | 0    |
+      | party    | asset | market id | margin | general |
+      | trader3a | ETH   | ETH/DEC21 | 843    | 9999157 |
+      | trader4  | ETH   | ETH/DEC21 | 0      | 0       |
 
     #TODO: Raise a bug: mark price is not being checked, any value results in a pass.------this is fixed (JJ checked)
     And the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode                    | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 1002       | TRADING_MODE_MONITORING_AUCTION | 1       | 903       | 1101      | 2004          | 10000          | 1             |
+      | 1002       | TRADING_MODE_MONITORING_AUCTION | 1       | 903       | 1101      | 2004          | 100000          | 1             |
 
     Then the parties place the following orders:
-      | party   | market id  | side  | volume | price | resulting trades | type       | tif     |
+      | party    | market id  | side  | volume | price | resulting trades | type       | tif     |
       | trader3a | ETH/DEC21  | buy   | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC |
-      | trader4  | ETH/DEC21  | sell  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC |
 
     Then the market data for the market "ETH/DEC21" should be:
       | trading mode                    | auction trigger       |
-      | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_PRICE |
+      | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY |
 
     Then the network moves ahead "301" blocks
 
-    Then the following trades should be executed:
-      | buyer    | price | size | seller  |
-      | trader3a | 900   | 1    | trader4 |
+    And the liquidity fee factor should "0.1" for the market "ETH/DEC21"
+    And the accumulated liquidity fees should be "0" for the market "ETH/DEC21"
+   
 
-    # For trader3a & 4- Sharing IF and LP
-    # trade_value_for_fee_purposes for trader3a = size_of_trade * price_of_trade = 1 * 900 = 900
-    # infrastructure_fee = fee_factor[infrastructure] * trade_value_for_fee_purposes = 0.002 * 900 = 1.800 = 2(rounded up)
-    # maker_fee =  0 in auction
-    # liquidity_fee = fee_factor[liquidity] * trade_value_for_fee_purposes = 0.001 * 900 = 0.900 = 1 (rounded up)
-
-    And the following transfers should happen:
-      | from     | to       | from account            | to account                       | market id | amount | asset |
-      | trader4  |          | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_INFRASTRUCTURE |           |  1     | ETH   |
-      | trader4  | market   | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_LIQUIDITY      | ETH/DEC21 |  1     | ETH   |
-      | trader3a |          | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_INFRASTRUCTURE |           |  1     | ETH   |
-      | trader3a | market   | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_LIQUIDITY      | ETH/DEC21 |  1     | ETH   |
-
-     Then the parties should have the following account balances:
-      | party    | asset | market id | margin | general |
-      | trader3a | ETH   | ETH/DEC21 | 3204   | 6380    |
-      | trader4  | ETH   | ETH/DEC21 | 7140   | 3260    |
-
-    Then the market data for the market "ETH/DEC21" should be:
-      | trading mode            | auction trigger             |
-      | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED |
-
-Scenario: Testing fees in Liquidity auction session trading with insufficient balance in their general account but margin covers the fees, 0029-FEEs-011
+Scenario: S011, Testing fees in Liquidity auction session trading with insufficient balance in their general account but margin covers the fees, 0029-FEEs-011
     
     Given the following network parameters are set:
       | name                                                | value |
