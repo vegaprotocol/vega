@@ -158,7 +158,7 @@ func (m *Market) SubmitLiquidityProvision(
 			// now we can setup our party stake to calculate equities
 			m.equityShares.SetPartyStake(party, sub.CommitmentAmount.Clone())
 			// force update of shares so they are updated for all
-			_ = m.equityShares.Shares(m.liquidity.GetInactiveParties())
+			_ = m.equityShares.SharesExcept(m.liquidity.GetInactiveParties())
 
 			m.checkLiquidity(ctx, nil)
 			m.commandLiquidityAuction(ctx)
@@ -477,7 +477,7 @@ func (m *Market) updateAndCreateLPOrders(
 
 	if updateShares {
 		// force update of shares so they are updated for all
-		_ = m.equityShares.Shares(m.liquidity.GetInactiveParties())
+		_ = m.equityShares.SharesExcept(m.liquidity.GetInactiveParties())
 	}
 
 	// if we are in an option, there's nothing to be done with these
@@ -945,7 +945,7 @@ func (m *Market) cancelLiquidityProvision(
 	// and remove the party from the equity share like calculation
 	m.equityShares.SetPartyStake(party, num.Zero())
 	// force update of shares so they are updated for all
-	_ = m.equityShares.Shares(m.liquidity.GetInactiveParties())
+	_ = m.equityShares.SharesExcept(m.liquidity.GetInactiveParties())
 
 	m.checkForReferenceMoves(ctx, []*types.Order{}, true)
 	m.checkLiquidity(ctx, nil)
@@ -1109,7 +1109,7 @@ func (m *Market) finalizeLiquidityProvisionAmendmentAuction(
 	// now we can setup our party stake to calculate equities
 	m.equityShares.SetPartyStake(party, sub.CommitmentAmount.Clone())
 	// force update of shares so they are updated for all
-	_ = m.equityShares.Shares(m.liquidity.GetInactiveParties())
+	_ = m.equityShares.SharesExcept(m.liquidity.GetInactiveParties())
 
 	m.checkLiquidity(ctx, nil)
 	m.commandLiquidityAuction(ctx)
@@ -1206,7 +1206,7 @@ func (m *Market) finalizeLiquidityProvisionAmendmentContinuous(
 		// now we can setup our party stake to calculate equities
 		m.equityShares.SetPartyStake(party, sub.CommitmentAmount)
 		// force update of shares so they are updated for all
-		_ = m.equityShares.Shares(m.liquidity.GetInactiveParties())
+		_ = m.equityShares.SharesExcept(m.liquidity.GetInactiveParties())
 	}()
 
 	// this workd but we definitely trigger some recursive loop which

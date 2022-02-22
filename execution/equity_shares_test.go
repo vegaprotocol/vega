@@ -22,7 +22,7 @@ import (
 
 func TestEquityShares(t *testing.T) {
 	t.Run("AverageEntryValuation", testAverageEntryValuation)
-	t.Run("Shares", testShares)
+	t.Run("SharesExcept", testShares)
 	t.Run("WithinMarket", testWithinMarket)
 }
 
@@ -67,14 +67,14 @@ func testShares(t *testing.T) {
 	// Set LP1
 	es.SetPartyStake("LP1", num.NewUint(100))
 	t.Run("LP1", func(t *testing.T) {
-		s := es.Shares(map[string]struct{}{})
+		s := es.SharesExcept(map[string]struct{}{})
 		assert.True(t, one.Equal(s["LP1"]))
 	})
 
 	// Set LP2
 	es.SetPartyStake("LP2", num.NewUint(200))
 	t.Run("LP2", func(t *testing.T) {
-		s := es.Shares(map[string]struct{}{})
+		s := es.SharesExcept(map[string]struct{}{})
 		lp1, lp2 := s["LP1"], s["LP2"]
 
 		assert.Equal(t, oneThird, lp1)
@@ -85,7 +85,7 @@ func testShares(t *testing.T) {
 	// Set LP3
 	es.SetPartyStake("LP3", num.NewUint(300))
 	t.Run("LP3", func(t *testing.T) {
-		s := es.Shares(map[string]struct{}{})
+		s := es.SharesExcept(map[string]struct{}{})
 
 		lp1, lp2, lp3 := s["LP1"], s["LP2"], s["LP3"]
 
@@ -98,7 +98,7 @@ func testShares(t *testing.T) {
 	// LP2 is undeployed
 	t.Run("LP3", func(t *testing.T) {
 		// pass LP as undeployed
-		s := es.Shares(map[string]struct{}{"LP2": {}})
+		s := es.SharesExcept(map[string]struct{}{"LP2": {}})
 
 		lp1, lp3 := s["LP1"], s["LP3"]
 		_, ok := s["LP2"]

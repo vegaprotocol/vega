@@ -12,6 +12,7 @@
 - [4895](https://github.com/vegaprotocol/vega/issues/4895) - Emit validators signature when a validator is added or remove from the set
 - [4901](https://github.com/vegaprotocol/vega/issues/4901) - Update the decimal library
 - [4906](https://github.com/vegaprotocol/vega/issues/4906) - Get rid of unnecessary `ToDecimal` conversions (no functional change)
+- [4838](https://github.com/vegaprotocol/vega/issues/4838) - Implement governance vote based on equity-like share for market update
 
 ### 🐛 Fixes
 - [4877](https://github.com/vegaprotocol/vega/issues/4877) - Fix topology and `erc20` topology snapshots

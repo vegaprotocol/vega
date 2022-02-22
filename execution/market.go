@@ -1284,7 +1284,7 @@ func (m *Market) submitValidatedOrder(ctx context.Context, order *types.Order) (
 			err := m.repricePeggedOrder(order)
 			if err != nil {
 				m.broker.Send(events.NewOrderEvent(ctx, order))
-				return &types.OrderConfirmation{Order: order}, nil, nil //nolint
+				return &types.OrderConfirmation{Order: order}, nil, nil // nolint
 			}
 		}
 	}
@@ -3177,7 +3177,7 @@ func (m *Market) distributeLiquidityFees(ctx context.Context) error {
 		return nil
 	}
 
-	shares := m.equityShares.Shares(m.liquidity.GetInactiveParties())
+	shares := m.equityShares.SharesExcept(m.liquidity.GetInactiveParties())
 	if len(shares) == 0 {
 		return nil
 	}
