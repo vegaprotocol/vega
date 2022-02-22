@@ -63,6 +63,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GH_NEW_CARD_TO_PROJECT }}
           ORGANIZATION: vegaprotocol
           PROJECT_NUMBER: 106
+          # yamllint disable rule:line-length
         run: |
           gh api graphql -f query='
             query($org: String!, $number: Int!) {
@@ -84,6 +85,7 @@ jobs:
           echo 'INPROG_OPTION_ID='$(jq '.data.organization.projectNext.fields.nodes[] | select(.name== "Status") |.settings | fromjson.options[] | select(.name=="Waiting Review") |.id' project_data.json) >> $GITHUB_ENV
           echo 'ITER_FIELD_ID='$(jq '.data.organization.projectNext.fields.nodes[] | select(.name== "Sprint") | .id' project_data.json) >> $GITHUB_ENV
           echo 'ITER_OPTION_ID='$(jq '.data.organization.projectNext.fields.nodes[] | select(.name== "Sprint") |.settings | fromjson.configuration.iterations[0] | .id' project_data.json) >> $GITHUB_ENV
+# yamllint enable rule:line-length
 
       - name: Add pr to project
         env:
@@ -133,7 +135,12 @@ jobs:
                   id
                 }
               }
-            }' -f project=$PROJECT_ID -f item=$ITEM_ID -f status_field=$STATUS_FIELD_ID -f status_value=${{ env.INPROG_OPTION_ID }} -f iteration_field=$ITER_FIELD_ID -f iteration_value=${{ env.ITER_OPTION_ID }}
+            }' -f project=$PROJECT_ID \
+              -f item=$ITEM_ID \
+              -f status_field=$STATUS_FIELD_ID \
+              -f status_value=${{ env.INPROG_OPTION_ID }} \
+              -f iteration_field=$ITER_FIELD_ID \
+              -f iteration_value=${{ env.ITER_OPTION_ID }}
 
   update-issues-when-pr-linked:
     needs: verify-linked-issue
@@ -153,6 +160,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GH_NEW_CARD_TO_PROJECT }}
           ORGANIZATION: vegaprotocol
           PROJECT_NUMBER: 106
+          # yamllint disable rule:line-length
         run: |
           gh api graphql -f query='
             query($org: String!, $number: Int!) {
@@ -171,10 +179,12 @@ jobs:
             }' -f org=$ORGANIZATION -F number=$PROJECT_NUMBER > project_data1.json
           echo 'PROJECT_ID='$(jq '.data.organization.projectNext.id' project_data1.json) >> $GITHUB_ENV
           echo 'STATUS_FIELD_ID='$(jq '.data.organization.projectNext.fields.nodes[] | select(.name== "Status") | .id' project_data1.json) >> $GITHUB_ENV
+          # yamllint disable-line rule:line-length
           echo 'INPROG_OPTION_ID='$(jq '.data.organization.projectNext.fields.nodes[] | select(.name== "Status") |.settings | fromjson.options[] | select(.name=="In Progress") |.id' project_data1.json) >> $GITHUB_ENV
           echo 'ITER_FIELD_ID='$(jq '.data.organization.projectNext.fields.nodes[] | select(.name== "Sprint") | .id' project_data1.json) >> $GITHUB_ENV
+          # yamllint disable-line rule:line-length
           echo 'ITER_OPTION_ID='$(jq '.data.organization.projectNext.fields.nodes[] | select(.name== "Sprint") |.settings | fromjson.configuration.iterations[0] | .id' project_data1.json) >> $GITHUB_ENV
-
+# yamllint enable rule:line-length
       - name: Get linked issue nodeid
         env:
           GITHUB_TOKEN: ${{ secrets.GH_NEW_CARD_TO_PROJECT }}
@@ -242,4 +252,9 @@ jobs:
                   id
                 }
               }
-            }' -f project=$PROJECT_ID -f item=$ITEM_ID -f status_field=$STATUS_FIELD_ID -f status_value=${{ env.INPROG_OPTION_ID }} -f iteration_field=$ITER_FIELD_ID -f iteration_value=${{ env.ITER_OPTION_ID }}
+            }' -f project=$PROJECT_ID \
+              -f item=$ITEM_ID \
+              -f status_field=$STATUS_FIELD_ID \
+              -f status_value=${{ env.INPROG_OPTION_ID }} \
+              -f iteration_field=$ITER_FIELD_ID \
+              -f iteration_value=${{ env.ITER_OPTION_ID }}
