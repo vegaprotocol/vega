@@ -143,7 +143,7 @@ func (s *coreService) CheckTransaction(ctx context.Context, req *protoapi.Submit
 	}, nil
 }
 
-func (s *coreService) CheckRawTransaction(ctx context.Context, req *protoapi.CheckRawTransactionRequest) (*protoapi.CheckTransactionResponse, error) {
+func (s *coreService) CheckRawTransaction(ctx context.Context, req *protoapi.CheckRawTransactionRequest) (*protoapi.CheckRawTransactionResponse, error) {
 	startTime := time.Now()
 	defer metrics.APIRequestAndTimeGRPC("CheckRawTransaction", startTime)
 
@@ -151,7 +151,7 @@ func (s *coreService) CheckRawTransaction(ctx context.Context, req *protoapi.Che
 		return nil, apiError(codes.InvalidArgument, ErrMalformedRequest)
 	}
 
-	checkResult, err := s.blockchain.CheckRawTransaction(ctx, req.Tx, req.Type)
+	checkResult, err := s.blockchain.CheckRawTransaction(ctx, req.Tx)
 	if err != nil {
 		if _, ok := err.(interface {
 			Code() uint32
@@ -166,7 +166,7 @@ func (s *coreService) CheckRawTransaction(ctx context.Context, req *protoapi.Che
 		return nil, apiError(codes.Internal, err)
 	}
 
-	return &protoapi.CheckTransactionResponse{
+	return &protoapi.CheckRawTransactionResponse{
 		Code:      checkResult.Code,
 		Success:   true,
 		GasWanted: checkResult.GasWanted,
