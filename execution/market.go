@@ -2751,41 +2751,32 @@ func (m *Market) applyOrderAmendment(
 func (m *Market) orderCancelReplace(ctx context.Context, existingOrder, newOrder *types.Order) (conf *types.OrderConfirmation, err error) {
 	timer := metrics.NewTimeCounter(m.mkt.ID, "market", "orderCancelReplace")
 
-	cancellation, err := m.matching.CancelOrder(existingOrder)
-	if cancellation == nil {
-		if err != nil {
-			if m.log.GetLevel() == logging.DebugLevel {
-				m.log.Panic("Failed to cancel order from matching engine during CancelReplace",
-					logging.OrderWithTag(*existingOrder, "existing-order"),
-					logging.OrderWithTag(*newOrder, "new-order"),
-					logging.Error(err))
-			}
-		} else {
-			err = fmt.Errorf("order cancellation failed (no error given)")
-		}
-	} else {
-		// first we call the order book to evaluate auction triggers and get the list of trades
-		trades, err := m.checkPriceAndGetTrades(ctx, newOrder)
-		if err != nil {
-			return nil, m.unregisterAndReject(ctx, newOrder, err)
-		}
-
-		// try to apply fees on the trade
-		if err := m.applyFees(ctx, newOrder, trades); err != nil {
-			return nil, m.unregisterAndReject(ctx, newOrder, err)
-		}
-
-		// Because other collections might be pointing at the original order
-		// use it's memory when inserting the new version
-		*existingOrder = *newOrder
-		conf, err = m.matching.SubmitOrder(existingOrder)
-		if err != nil {
-			m.log.Panic("unable to submit order", logging.Error(err))
-		}
-		// replace the trades in the confirmation to have
-		// the ones with the fees embedded
-		conf.Trades = trades
+	// make sure the order is on the book, this was done by canceling the order initially, but that could
+	// trigger an auction in some cases.
+	if o, err := m.matching.GetOrderByID(existingOrder.ID); err != nil || o == nil {
+		m.log.Panic("Can't CancelReplace, the original order was not found",
+			logging.OrderWithTag(*existingOrder, "existing-order"),
+			logging.Error(err))
 	}
+	// first we call the order book to evaluate auction triggers and get the list of trades
+	trades, err := m.checkPriceAndGetTrades(ctx, newOrder)
+	if err != nil {
+		return nil, m.unregisterAndReject(ctx, newOrder, err)
+	}
+
+	// try to apply fees on the trade
+	if err := m.applyFees(ctx, newOrder, trades); err != nil {
+		return nil, m.unregisterAndReject(ctx, newOrder, err)
+	}
+
+	// "hot-swap" of the orders
+	conf, err = m.matching.ReplaceOrder(existingOrder, newOrder)
+	if err != nil {
+		m.log.Panic("unable to submit order", logging.Error(err))
+	}
+	// replace the trades in the confirmation to have
+	// the ones with the fees embedded
+	conf.Trades = trades
 
 	timer.EngineTimeCounterAdd()
 
