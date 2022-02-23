@@ -4,6 +4,7 @@ import (
 	"errors"
 	"time"
 
+	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
 )
 
@@ -16,6 +17,21 @@ type FeeSplitter struct {
 func NewFeeSplitter() *FeeSplitter {
 	return &FeeSplitter{
 		tradeValue: num.Zero(),
+	}
+}
+
+func (fs *FeeSplitter) GetState() *types.FeeSplitter {
+	return &types.FeeSplitter{
+		TimeWindowStart: fs.timeWindowStart,
+		TradeValue:      fs.tradeValue,
+	}
+}
+
+func NewFeeSplitterFromSnapshot(fs *types.FeeSplitter, now time.Time) *FeeSplitter {
+	return &FeeSplitter{
+		timeWindowStart: fs.TimeWindowStart,
+		currentTime:     now,
+		tradeValue:      fs.TradeValue,
 	}
 }
 

@@ -43,6 +43,7 @@ func (m *MarketTracker) MarketProposed(marketID, proposer string) {
 		proposersPaid: false,
 		volumeTraded:  num.Zero(),
 	}
+	m.ss.changed = true
 }
 
 func (m *MarketTracker) AddValueTraded(marketID string, value *num.Uint) {
@@ -50,6 +51,7 @@ func (m *MarketTracker) AddValueTraded(marketID string, value *num.Uint) {
 		return
 	}
 	m.marketIDMarketTracker[marketID].volumeTraded.AddSum(value)
+	m.ss.changed = true
 }
 
 func (m *MarketTracker) GetAndResetEligibleProposers() []string {
@@ -58,6 +60,7 @@ func (m *MarketTracker) GetAndResetEligibleProposers() []string {
 		if !t.proposersPaid && m.eligibilityChecker.IsEligibleForProposerBonus(ID, t.volumeTraded) {
 			eligibleProposers = append(eligibleProposers, t.proposer)
 			t.proposersPaid = true
+			m.ss.changed = true
 		}
 	}
 	sort.Strings(eligibleProposers)
@@ -66,4 +69,5 @@ func (m *MarketTracker) GetAndResetEligibleProposers() []string {
 
 func (m *MarketTracker) removeMarket(marketID string) {
 	delete(m.marketIDMarketTracker, marketID)
+	m.ss.changed = true
 }
