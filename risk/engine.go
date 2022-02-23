@@ -294,6 +294,37 @@ func (e *Engine) UpdateMarginsOnSettlement(
 	// this will keep going until we've closed this channel
 	// this can be the result of an error, or being "finished"
 	for _, evt := range evts {
+		// before we do anything, see if the position is 0 now, but the margin balance is still set
+		// in which case the only response is to release the margin balance.
+		if evt.Size() == 0 && evt.Buy() == 0 && evt.Sell() == 0 && !evt.MarginBalance().IsZero() {
+			amt := evt.MarginBalance()
+			trnsfr := &types.Transfer{
+				Owner: evt.Party(),
+				Type:  types.TransferTypeMarginHigh,
+				Amount: &types.FinancialAmount{
+					Asset:  evt.Asset(),
+					Amount: amt,
+				},
+				MinAmount: amt.Clone(),
+			}
+			margins := types.MarginLevels{
+				MaintenanceMargin:      num.Zero(),
+				SearchLevel:            num.Zero(),
+				InitialMargin:          num.Zero(),
+				CollateralReleaseLevel: num.Zero(),
+				Party:                  evt.Party(),
+				MarketID:               evt.MarketID(),
+				Asset:                  evt.Asset(),
+				Timestamp:              e.currTime,
+			}
+			e.broker.Send(events.NewMarginLevelsEvent(ctx, margins))
+			ret = append(ret, &marginChange{
+				Margin:   evt,
+				transfer: trnsfr,
+				margins:  &margins,
+			})
+			continue
+		}
 		// channel is closed, and we've got a nil interface
 		var margins *types.MarginLevels
 		if !e.as.InAuction() || e.as.CanLeave() {

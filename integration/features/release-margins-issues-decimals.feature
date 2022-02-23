@@ -12,6 +12,7 @@ Feature: Test margin release on order cancel
       | name             | value |
       | prices.ETH.value | 42    |
 
+  @MarginRelease
   Scenario: a party place a new order in the system, margin are updated, the order is closed, margin is 0ed
     Given the parties deposit on asset's general account the following amount:
       | party    | asset | amount          |
@@ -59,6 +60,7 @@ Feature: Test margin release on order cancel
       | partyGuy | ETH   | ETH/DEC19 |      0 | 10000000 |
 
 
+  @MarginRelease
   Scenario: a party place a new market order in the system, order, trade, party margin is updated, then place an GTC order which will trade, margin is 0ed
     Given the parties deposit on asset's general account the following amount:
       | party    | asset | amount          |
@@ -125,6 +127,7 @@ Feature: Test margin release on order cancel
       | partyGuy | ETH   | ETH/DEC19 | 0      | 9985000 |
 
 
+  @MarginRelease
   Scenario: a party place a new order in the system, party is closed out with only potential position, margin is 0ed
     Given the parties deposit on asset's general account the following amount:
       | party    | asset | amount          |
@@ -175,6 +178,7 @@ Feature: Test margin release on order cancel
       | party    | asset | market id | margin | general |
       | partyGuy | ETH   | ETH/DEC19 | 60000  | 60000   |
 
+  @MarginRelease
   Scenario: a party place a new order in the system, party is closing position via closeout of other parties
     Given the parties deposit on asset's general account the following amount:
       | party        | asset | amount          |
@@ -235,11 +239,9 @@ Feature: Test margin release on order cancel
     # now the margins should be back to 0, but it's actually
     # not being released when the party is used in the distressed flow
     Then the parties should have the following account balances:
-      | party        | asset | market id | margin   | general   |
-      | partyGuy     | ETH   | ETH/DEC19 |  0       | 0         |
-      | partyGuyGood | ETH   | ETH/DEC19 | 13307668 | 995692332 |
-      # TODO: SHOULD BE THIS
-      # | partyGuyGood | ETH   | ETH/DEC19 | 0      | 1009000000 |
+      | party        | asset | market id | margin   | general    |
+      | partyGuy     | ETH   | ETH/DEC19 |  0       | 0          |
+      | partyGuyGood | ETH   | ETH/DEC19 | 0        | 1009000000 |
 
     # TODO: FIX THIS
     # partyGuyGood should have a margin of 0 here.
