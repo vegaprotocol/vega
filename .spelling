@@ -58,6 +58,7 @@ int
 init
 istake
 Jenkinsfile
+Kanban
 lifecycle
 linters
 MacOSX
