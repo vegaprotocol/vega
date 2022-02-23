@@ -5,20 +5,18 @@ import (
 	"log"
 
 	"code.vegaprotocol.io/vega/libs/crypto"
+	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
 	"github.com/golang/protobuf/proto"
 )
 
-func (b *OrderBook) Keys() []string {
-	return []string{b.snapshot.Key()}
+func (b *OrderBook) StopSnapshots() {
+	b.log.Debug("market has been cleared, stopping snapshot production", logging.String("marketid", b.marketID))
+	b.stopped = true
 }
 
-func (b *OrderBook) Snapshot() (map[string][]byte, error) {
-	payload, _, err := b.GetState(b.snapshot.Key())
-	if err != nil {
-		return nil, err
-	}
-	return map[string][]byte{b.snapshot.Key(): payload}, nil
+func (b *OrderBook) Keys() []string {
+	return []string{b.snapshot.Key()}
 }
 
 func (b OrderBook) Namespace() types.SnapshotNamespace {
@@ -41,6 +39,10 @@ func (b *OrderBook) GetHash(key string) ([]byte, error) {
 func (b *OrderBook) GetState(key string) ([]byte, []types.StateProvider, error) {
 	if key != b.snapshot.Key() {
 		return nil, nil, types.ErrSnapshotKeyDoesNotExist
+	}
+
+	if b.stopped {
+		return nil, nil, types.ErrSnapshotProviderStopped
 	}
 
 	// Copy all the state into a domain object

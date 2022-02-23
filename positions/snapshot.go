@@ -19,6 +19,7 @@ type SnapshotEngine struct {
 	hash    []byte
 	data    []byte
 	changed bool
+	stopped bool
 	buf     *proto.Buffer
 }
 
@@ -31,11 +32,19 @@ func NewSnapshotEngine(
 		pl:      types.Payload{},
 		changed: true,
 		buf:     buf,
+		stopped: false,
 	}
 }
 
 func (e *SnapshotEngine) Changed() bool {
 	return e.changed
+}
+
+// StopSnapshots is called when the engines respective market no longer exists. We need to stop
+// taking snapshots and communicate to the snapshot engine to remove us as a provider.
+func (e *SnapshotEngine) StopSnapshots() {
+	e.log.Debug("market has been cleared, stopping snapshot production", logging.String("marketid", e.marketID))
+	e.stopped = true
 }
 
 func (e *SnapshotEngine) RegisterOrder(order *types.Order) *MarketPosition {
@@ -136,6 +145,10 @@ func (e *SnapshotEngine) LoadState(_ context.Context, payload *types.Payload) ([
 // serialise marshal the snapshot state, populating the data and hash fields
 // with updated values.
 func (e *SnapshotEngine) serialise() ([]byte, []byte, error) {
+	if e.stopped {
+		return nil, nil, types.ErrSnapshotProviderStopped
+	}
+
 	if !e.changed {
 		return e.data, e.hash, nil // we already have what we need
 	}

@@ -65,3 +65,17 @@ func TestSaveAndLoadSnapshot(t *testing.T) {
 	a.NoError(err)
 	a.Equal(h1, h2)
 }
+
+func TestStopSnapshotTaking(t *testing.T) {
+	marketID := "market-1"
+	key := fmt.Sprintf("target:%s", marketID)
+	se := newSnapshotEngine(marketID)
+
+	// signal to kill the engine's snapshots
+	se.StopSnapshots()
+
+	_, _, err := se.GetState(key)
+	assert.ErrorIs(t, err, types.ErrSnapshotProviderStopped)
+	_, err = se.GetHash(key)
+	assert.ErrorIs(t, err, types.ErrSnapshotProviderStopped)
+}

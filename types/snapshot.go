@@ -101,6 +101,7 @@ var (
 	ErrInvalidSnapshotStorageMethod = errors.New("invalid snapshot storage method")
 	ErrMissingAppstateNode          = errors.New("appstate missing from tree")
 	ErrMissingPayload               = errors.New("payload missing from exported tree")
+	ErrSnapshotProviderStopped      = errors.New("snapshot provider is no longer producing snapshots")
 )
 
 type SnapshotFormat = snapshot.Format

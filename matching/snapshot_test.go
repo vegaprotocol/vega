@@ -29,9 +29,9 @@ type orderdata struct {
 func TestEmpty(t *testing.T) {
 	ob := getTestOrderBook(t, market)
 
-	payloads, err := ob.ob.Snapshot()
+	payload, _, err := ob.ob.GetState(key)
 	assert.NoError(t, err)
-	assert.Equal(t, 1, len(payloads))
+	assert.NotNil(t, payload)
 
 	hash, err := ob.ob.GetHash(key)
 	assert.NoError(t, err)
@@ -159,7 +159,7 @@ func TestSaveAndLoadSnapshot(t *testing.T) {
 	addOrders(t, ob.ob, orders)
 
 	// Create a snapshot and hash
-	payloadMap, err := ob.ob.Snapshot()
+	payload, _, err := ob.ob.GetState(key)
 	assert.NoError(t, err)
 
 	beforeHash, err := ob.ob.GetHash(key)
@@ -176,7 +176,7 @@ func TestSaveAndLoadSnapshot(t *testing.T) {
 	// Load the snapshot back in
 	ob2 := getTestOrderBook(t, market)
 	snap := &snapshot.Payload{}
-	err = proto.Unmarshal(payloadMap[market], snap)
+	err = proto.Unmarshal(payload, snap)
 	assert.NoError(t, err)
 	ob2.ob.LoadState(context.TODO(), types.PayloadFromProto(snap))
 
@@ -185,4 +185,21 @@ func TestSaveAndLoadSnapshot(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, beforeHash, afterHash)
 	assert.NotEqual(t, beforeHash, differentHash)
+}
+
+func TestStopSnapshotTaking(t *testing.T) {
+	ob := getTestOrderBook(t, market)
+
+	_, _, err := ob.ob.GetState(key)
+	assert.NoError(t, err)
+	_, err = ob.ob.GetHash(key)
+	assert.NoError(t, err)
+
+	// signal to kill the engine's snapshots
+	ob.ob.StopSnapshots()
+
+	_, _, err = ob.ob.GetState(key)
+	assert.ErrorIs(t, err, types.ErrSnapshotProviderStopped)
+	_, err = ob.ob.GetHash(key)
+	assert.ErrorIs(t, err, types.ErrSnapshotProviderStopped)
 }

@@ -149,12 +149,18 @@ func (e *Engine) getSerialiseSnapshotAndHash() (snapshot, hash []byte, providers
 
 	e.snapshotSerialised = s
 	e.snapshotHash = h
+	e.stateChanged = false
 
 	return s, h, pvds, nil
 }
 
 func (e *Engine) changed() bool {
 	if len(e.snapshotSerialised) == 0 {
+		return true
+	}
+
+	if e.stateChanged {
+		e.log.Debug("state-changed in execution engine itself")
 		return true
 	}
 	for _, m := range e.markets {
