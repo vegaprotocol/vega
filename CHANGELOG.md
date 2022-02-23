@@ -22,7 +22,7 @@
 ### 🗑️ Deprecation
 
 ### 🛠 Improvements
-- [4793](https://github.com/vegaprotocol/vega/issues/4793) - Add specific insurance pool balance test 
+- [4793](https://github.com/vegaprotocol/vega/issues/4793) - Add specific insurance pool balance test
 - [4633](https://github.com/vegaprotocol/vega/pull/4633) - Add possibility to list snapshots from the vega command line
 - [4640](https://github.com/vegaprotocol/vega/pull/4640) - Update feature tests related to liquidity provision following integration of probability of trading with floating point consensus
 - [4558](https://github.com/vegaprotocol/vega/pull/4558) - Add MacOS install steps and information required to use `dockerisedvega.sh` script with private docker repository
@@ -56,7 +56,8 @@
 - [4639](https://github.com/vegaprotocol/vega/pull/4639) - Add cancel transfer command
 - [4750](https://github.com/vegaprotocol/vega/pull/4750) - Fix null blockchain by forcing it to always be a non-validator node
 - [4754](https://github.com/vegaprotocol/vega/pull/4754) - Fix null blockchain properly this time
-- [4823](https://github.com/vegaprotocol/vega/pull/4283) - Reward refactoring for network treasury
+- [4754](https://github.com/vegaprotocol/vega/pull/4754) - Remove old id generator fields from execution engine's snapshot
+- [4830](https://github.com/vegaprotocol/vega/pull/4830) - Reward refactoring for network treasury
 - [4647](https://github.com/vegaprotocol/vega/pull/4647) - Added endpoint `SubmitRawTransaction` to provide support for different transaction request message versions
 - [4653](https://github.com/vegaprotocol/vega/issues/4653) - Replace asset insurance pool with network treasury
 - [4638](https://github.com/vegaprotocol/vega/pull/4638) - CI add option to specify connected changes in other repos
@@ -80,8 +81,12 @@
 - [4785](https://github.com/vegaprotocol/vega/issues/4785) - Implement feature tests given the acceptance criteria for transfers
 - [4784](https://github.com/vegaprotocol/vega/issues/4784) - Moving feature tests from specs internal to verified folder
 - [4797](https://github.com/vegaprotocol/vega/issues/4784) - Update `CODEOWNERS` for research to review verified feature files
-- [4801](https://github.com/vegaprotocol/vega/issues/4801) - added acceptance criteria codes to feature tests for Settlement at expiry spec 
-- [4826](https://github.com/vegaprotocol/vega/issues/4826) - Tidying up feature tests in verified folder
+- [4801](https://github.com/vegaprotocol/vega/issues/4801) - added acceptance criteria codes to feature tests for Settlement at expiry spec
+- [4823](https://github.com/vegaprotocol/vega/issues/4823) - simplified performance score
+- [4805](https://github.com/vegaprotocol/vega/issues/4805) - Add command line tool to sign for the asset pool method `set_bridge_address`
+- [4839](https://github.com/vegaprotocol/vega/issues/4839) - Send governance events when restoring proposals on checkpoint reload.
+- [4829](https://github.com/vegaprotocol/vega/issues/4829) - Fix margins calculations for positions with a size of 0 but with a non zero potential sell or buy
+
 
 ### 🐛 Fixes
 - [4798](https://github.com/vegaprotocol/vega/pull/4798) - Fix panic in loading topology from snapshot
@@ -93,6 +98,7 @@
 - [4515](https://github.com/vegaprotocol/vega/pull/4515) - Set log level in snapshot engine
 - [4721](https://github.com/vegaprotocol/vega/pull/4721) - Save checkpoint with `UnixNano` when taking a snapshot
 - [4728](https://github.com/vegaprotocol/vega/pull/4728) - Fix restoring markets from snapshot by handling generated providers properly
+- [4742](https://github.com/vegaprotocol/vega/pull/4742) - `corestate` endpoints are now populated after a snapshot restore
 - [4782](https://github.com/vegaprotocol/vega/pull/4782) - Fix restoring markets from snapshot in an auction with orders
 - [4522](https://github.com/vegaprotocol/vega/pull/4522) - Set transfer responses event when paying rewards
 - [4566](https://github.com/vegaprotocol/vega/pull/4566) - Withdrawal fails should return a status rejected rather than cancelled
@@ -113,10 +119,13 @@
 - [4700](https://github.com/vegaprotocol/vega/pull/4700) - Ensure verification of type between oracle spec binding and oracle spec
 - [4738](https://github.com/vegaprotocol/vega/pull/4738) - Add vesting contract as part of the Ethereum event forwarder
 - [4747](https://github.com/vegaprotocol/vega/pull/4747) - Dispatch network parameter updates at the same block when loaded from checkpoint
+- [4732](https://github.com/vegaprotocol/vega/pull/4732) - Revert tendermint to version 0.34.14
 - [4756](https://github.com/vegaprotocol/vega/pull/4756) - Fix for markets loaded from snapshot not terminated by their oracle
 - [4776](https://github.com/vegaprotocol/vega/pull/4776) - Add testing for auction state changes and remove unnecessary market state change
 - [4590](https://github.com/vegaprotocol/vega/pull/4590) - Added verification of uint market data in integration test
 - [4749](https://github.com/vegaprotocol/vega/pull/4794) - Fixed issue where LP orders did not get redeployed
+- [4820](https://github.com/vegaprotocol/vega/pull/4820) - Snapshot fixes for market + update market tracker on trades
+- [3919](https://github.com/vegaprotocol/vega/pull/3919) - Fixed panic in `maybeInvalidateDuringAuction`
 
 ## 0.47.6
 *2022-02-01*

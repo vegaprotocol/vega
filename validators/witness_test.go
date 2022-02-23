@@ -226,7 +226,7 @@ func testOnChainTimeUpdate(t *testing.T) {
 	<-ch
 
 	// first on chain time update, we send our own vote
-	erc.cmd.EXPECT().CommandSync(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(1)
+	erc.cmd.EXPECT().Command(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(1)
 	newNow := erc.startTime.Add(1 * time.Second)
 	erc.OnTick(context.Background(), newNow)
 
@@ -271,7 +271,7 @@ func testOnChainTimeUpdateNonValidator(t *testing.T) {
 	assert.NoError(t, err)
 
 	// first on chain time update, we send our own vote
-	erc.cmd.EXPECT().CommandSync(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
+	erc.cmd.EXPECT().Command(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
 	newNow := erc.startTime.Add(1 * time.Second)
 	erc.OnTick(context.Background(), newNow)
 

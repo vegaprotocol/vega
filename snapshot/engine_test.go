@@ -33,6 +33,7 @@ type tstEngine struct {
 func getTestEngine(t *testing.T) *tstEngine {
 	t.Helper()
 	ctx, cfunc := context.WithCancel(context.Background())
+	ctx = vegactx.WithChainID(ctx, "chain-id")
 	ctrl := gomock.NewController(t)
 	time := mocks.NewMockTimeService(ctrl)
 	stats := mocks.NewMockStatsService(ctrl)
@@ -315,6 +316,10 @@ func testReloadSnapshot(t *testing.T) {
 
 	// OK, our snapshot is ready to load
 	require.NoError(t, eng2.ApplySnapshot(eng2.ctx))
+
+	loaded, err := eng2.Loaded()
+	require.NoError(t, err)
+	require.True(t, loaded)
 }
 
 func testReloadReplayProtectors(t *testing.T) {
@@ -391,6 +396,9 @@ func testReloadReplayProtectors(t *testing.T) {
 	require.True(t, ready)
 	// OK, snapshot is ready to be applied
 	require.NoError(t, e2.ApplySnapshot(e.ctx))
+	loaded, err := e2.Loaded()
+	require.NoError(t, err)
+	require.True(t, loaded)
 	// so now we can check if taking a snapshot calls the methods on the replacement provider
 
 	rpl.EXPECT().GetHash(payload.Key()).Times(1).Return(hash, nil)
@@ -473,6 +481,9 @@ func testReloadRestore(t *testing.T) {
 
 	// OK, our snapshot is ready to load
 	require.NoError(t, eng2.ApplySnapshot(eng2.ctx))
+	loaded, err := eng2.Loaded()
+	require.NoError(t, err)
+	require.True(t, loaded)
 }
 
 func (t *tstEngine) getNewProviderMock() *tmocks.MockStateProvider {

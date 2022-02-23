@@ -4,7 +4,9 @@ import (
 	"context"
 	"sort"
 
+	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/libs/crypto"
+	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
 
 	"github.com/golang/protobuf/proto"
@@ -30,9 +32,9 @@ type governanceSnapshotState struct {
 
 // serialiseActiveProposals returns the engine's active proposals as marshalled bytes.
 func (e *Engine) serialiseActiveProposals() ([]byte, error) {
-	pending := make([]*types.PendingProposal, 0, len(e.activeProposals))
+	pending := make([]*types.ProposalData, 0, len(e.activeProposals))
 	for _, p := range e.activeProposals {
-		pp := &types.PendingProposal{
+		pp := &types.ProposalData{
 			Proposal: p.Proposal,
 			Yes:      votesAsSlice(p.yes),
 			No:       votesAsSlice(p.no),
@@ -54,10 +56,21 @@ func (e *Engine) serialiseActiveProposals() ([]byte, error) {
 
 // serialiseEnactedProposals returns the engine's enacted proposals as marshalled bytes.
 func (e *Engine) serialiseEnactedProposals() ([]byte, error) {
+	enacted := make([]*types.ProposalData, 0, len(e.activeProposals))
+	for _, p := range e.enactedProposals {
+		pp := &types.ProposalData{
+			Proposal: p.Proposal,
+			Yes:      votesAsSlice(p.yes),
+			No:       votesAsSlice(p.no),
+			Invalid:  votesAsSlice(p.invalidVotes),
+		}
+		enacted = append(enacted, pp)
+	}
+
 	pl := types.Payload{
 		Data: &types.PayloadGovernanceEnacted{
 			GovernanceEnacted: &types.GovernanceEnacted{
-				Proposals: e.enactedProposals,
+				Proposals: enacted,
 			},
 		},
 	}
@@ -136,18 +149,21 @@ func (e *Engine) LoadState(ctx context.Context, payload *types.Payload) ([]types
 
 	switch pl := payload.Data.(type) {
 	case *types.PayloadGovernanceActive:
-		return nil, e.restoreActiveProposals(pl.GovernanceActive)
+		return nil, e.restoreActiveProposals(ctx, pl.GovernanceActive)
 	case *types.PayloadGovernanceEnacted:
-		return nil, e.restoreEnactedProposals(pl.GovernanceEnacted)
+		return nil, e.restoreEnactedProposals(ctx, pl.GovernanceEnacted)
 	case *types.PayloadGovernanceNode:
-		return nil, e.restoreNodeProposals(pl.GovernanceNode)
+		return nil, e.restoreNodeProposals(ctx, pl.GovernanceNode)
 	default:
 		return nil, types.ErrUnknownSnapshotType
 	}
 }
 
-func (e *Engine) restoreActiveProposals(active *types.GovernanceActive) error {
+func (e *Engine) restoreActiveProposals(ctx context.Context, active *types.GovernanceActive) error {
 	e.activeProposals = make([]*proposal, 0, len(active.Proposals))
+	evts := []events.Event{}
+	vevts := []events.Event{}
+	e.log.Debug("restoring active proposals snapshot", logging.Int("nproposals", len(active.Proposals)))
 	for _, p := range active.Proposals {
 		pp := &proposal{
 			Proposal:     p.Proposal,
@@ -155,23 +171,74 @@ func (e *Engine) restoreActiveProposals(active *types.GovernanceActive) error {
 			no:           votesAsMap(p.No),
 			invalidVotes: votesAsMap(p.Invalid),
 		}
-
+		e.log.Debug("proposals",
+			logging.String("id", pp.ID),
+			logging.Int("yes", len(pp.yes)),
+			logging.Int("no", len(pp.no)),
+			logging.Int("invalid", len(pp.invalidVotes)),
+		)
 		e.activeProposals = append(e.activeProposals, pp)
+		evts = append(evts, events.NewProposalEvent(ctx, *pp.Proposal))
+
+		for _, v := range pp.yes {
+			vevts = append(vevts, events.NewVoteEvent(ctx, *v))
+		}
+		for _, v := range pp.no {
+			vevts = append(vevts, events.NewVoteEvent(ctx, *v))
+		}
+
+		for _, v := range pp.invalidVotes {
+			vevts = append(vevts, events.NewVoteEvent(ctx, *v))
+		}
 	}
 
 	e.gss.changed[activeKey] = true
+	e.broker.SendBatch(evts)
+	e.broker.SendBatch(vevts)
 	return nil
 }
 
-func (e *Engine) restoreEnactedProposals(enacted *types.GovernanceEnacted) error {
-	e.enactedProposals = enacted.Proposals[:]
+func (e *Engine) restoreEnactedProposals(ctx context.Context, enacted *types.GovernanceEnacted) error {
+	evts := []events.Event{}
+	vevts := []events.Event{}
+	e.log.Debug("restoring enacted proposals snapshot", logging.Int("nproposals", len(enacted.Proposals)))
+	for _, p := range enacted.Proposals {
+		pp := &proposal{
+			Proposal:     p.Proposal,
+			yes:          votesAsMap(p.Yes),
+			no:           votesAsMap(p.No),
+			invalidVotes: votesAsMap(p.Invalid),
+		}
+		e.log.Debug("proposals",
+			logging.String("id", pp.ID),
+			logging.Int("yes", len(pp.yes)),
+			logging.Int("no", len(pp.no)),
+			logging.Int("invalid", len(pp.invalidVotes)),
+		)
+		e.enactedProposals = append(e.enactedProposals, pp)
+		evts = append(evts, events.NewProposalEvent(ctx, *pp.Proposal))
+
+		for _, v := range pp.yes {
+			vevts = append(vevts, events.NewVoteEvent(ctx, *v))
+		}
+		for _, v := range pp.no {
+			vevts = append(vevts, events.NewVoteEvent(ctx, *v))
+		}
+
+		for _, v := range pp.invalidVotes {
+			vevts = append(vevts, events.NewVoteEvent(ctx, *v))
+		}
+	}
 	e.gss.changed[enactedKey] = true
+	e.broker.SendBatch(evts)
+	e.broker.SendBatch(vevts)
 	return nil
 }
 
-func (e *Engine) restoreNodeProposals(node *types.GovernanceNode) error {
+func (e *Engine) restoreNodeProposals(ctx context.Context, node *types.GovernanceNode) error {
 	for _, p := range node.Proposals {
 		e.nodeProposalValidation.restore(p)
+		e.broker.Send(events.NewProposalEvent(ctx, *p))
 	}
 	e.gss.changed[nodeValidationKey] = true
 	return nil

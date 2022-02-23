@@ -187,7 +187,7 @@ func (tm *testMarket) Run(ctx context.Context, mktCfg types.Market) *testMarket 
 	feeTracker := execution.NewFeesTracker(epochEngine)
 	mktEngine, err := execution.NewMarket(ctx,
 		tm.log, riskConfig, positionConfig, settlementConfig, matchingConfig,
-		feeConfig, liquidityConfig, collateralEngine, oracleEngine, &mktCfg, tm.now, tm.broker, mas, statevarEngine, feeTracker, cfgAsset,
+		feeConfig, liquidityConfig, collateralEngine, oracleEngine, &mktCfg, tm.now, tm.broker, mas, statevarEngine, feeTracker, cfgAsset, execution.NewMarketTracker(),
 	)
 	require.NoError(tm.t, err)
 
@@ -384,7 +384,7 @@ func getTestMarket2WithDP(
 
 	mktEngine, err := execution.NewMarket(context.Background(),
 		log, riskConfig, positionConfig, settlementConfig, matchingConfig,
-		feeConfig, liquidityConfig, collateralEngine, oracleEngine, mktCfg, now, broker, mas, statevar, feeTracker, cfgAsset)
+		feeConfig, liquidityConfig, collateralEngine, oracleEngine, mktCfg, now, broker, mas, statevar, feeTracker, cfgAsset, execution.NewMarketTracker())
 	assert.NoError(t, err)
 	mktEngine.UpdateRiskFactorsForTest()
 

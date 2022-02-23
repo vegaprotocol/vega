@@ -39,6 +39,8 @@ func NewMarketFromSnapshot(
 	broker Broker,
 	stateVarEngine StateVarEngine,
 	assetDetails *assets.Asset,
+	feesTracker *FeesTracker,
+	marketTracker *MarketTracker,
 ) (*Market, error) {
 	mkt := em.Market
 
@@ -142,11 +144,14 @@ func NewMarketFromSnapshot(
 		priceFactor:                priceFactor,
 		lastMarketValueProxy:       em.LastMarketValueProxy,
 		lastEquityShareDistributed: time.Unix(0, em.LastEquityShareDistributed),
+		feesTracker:                feesTracker,
+		marketTracker:              marketTracker,
 	}
 
 	market.tradableInstrument.Instrument.Product.NotifyOnTradingTerminated(market.tradingTerminated)
 	market.tradableInstrument.Instrument.Product.NotifyOnSettlementPrice(market.settlementPrice)
 	liqEngine.SetGetStaticPricesFunc(market.getBestStaticPrices)
+
 	return market, nil
 }
 

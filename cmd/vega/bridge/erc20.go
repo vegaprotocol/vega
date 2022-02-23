@@ -26,6 +26,7 @@ type ERC20Cmd struct {
 	WithdrawAsset     ERC20WithdrawAssetCmd     `command:"withdraw_asset" description:"Withdraw ERC20 from the bridge"`
 	SetDepositMinimum ERC20SetDepositMinimumCmd `command:"set_deposit_minimum" description:"Set the minimum allowed deposit for an ERC20 token on the bridge"`
 	SetDepositMaximum ERC20SetDepositMaximumCmd `command:"set_deposit_maximum" description:"Set the maximum allowed deposit for an ERC20 token on the bridge"`
+	SetBridgeAddress  ERC20SetBridgeAddressCmd  `command:"set_bridge_address" description:"Update the bridge address use by the asset pool"`
 }
 
 var erc20Cmd *ERC20Cmd
@@ -355,6 +356,39 @@ func (opts *ERC20SetThresholdCmd) Execute(_ []string) error {
 	multiSigControl := bridges.NewERC20MultiSigControl(w)
 	bundle, err := multiSigControl.SetThreshold(
 		opts.NewThreshold, opts.Submitter, nonce,
+	)
+	if err != nil {
+		return fmt.Errorf("unable to generate signature: %w", err)
+	}
+
+	fmt.Printf("0x%v\n", bundle.Signature.Hex())
+	return nil
+}
+
+type ERC20SetBridgeAddressCmd struct {
+	NewAddress       string `long:"new-address" required:"true" description:"The Ethereum address of the bridge"`
+	AssetPoolAddress string `long:"asset-pool-address" required:"true" description:"The address of the vega asset pool this transaction will be submitted to"`
+	Nonce            string `long:"nonce" required:"true" description:"A nonce for this signature"`
+}
+
+func (opts *ERC20SetBridgeAddressCmd) Execute(_ []string) error {
+	if _, err := flags.NewParser(opts, flags.Default|flags.IgnoreUnknown).Parse(); err != nil {
+		return err
+	}
+
+	w, err := erc20Cmd.GetSigner()
+	if err != nil {
+		return err
+	}
+
+	nonce, overflowed := num.UintFromString(opts.Nonce, 10)
+	if overflowed {
+		return errors.New("invalid nonce, needs to be base 10")
+	}
+
+	erc20Logic := bridges.NewERC20AssetPool(w, opts.AssetPoolAddress)
+	bundle, err := erc20Logic.SetBridgeAddress(
+		opts.NewAddress, nonce,
 	)
 	if err != nil {
 		return fmt.Errorf("unable to generate signature: %w", err)

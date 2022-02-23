@@ -3,7 +3,9 @@ package staking
 import (
 	"context"
 
+	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/libs/crypto"
+	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
 
 	"github.com/golang/protobuf/proto"
@@ -111,8 +113,9 @@ func (s *StakeVerifier) LoadState(ctx context.Context, payload *types.Payload) (
 }
 
 func (s *StakeVerifier) restorePendingSD(ctx context.Context, deposited []*types.StakeDeposited) error {
+	s.log.Debug("restoring pendingSDs snapshot", logging.Int("n_pending", len(deposited)))
 	s.pendingSDs = make([]*pendingSD, 0, len(deposited))
-
+	evts := []events.Event{}
 	for _, d := range deposited {
 		// this populates the id/hash structs
 		if !s.ensureNotDuplicate(d.ID, d.Hash()) {
@@ -126,14 +129,17 @@ func (s *StakeVerifier) restorePendingSD(ctx context.Context, deposited []*types
 
 		s.pendingSDs = append(s.pendingSDs, pending)
 		s.witness.RestoreResource(pending, s.onEventVerified)
+		evts = append(evts, events.NewStakeLinking(ctx, *pending.IntoStakeLinking()))
 	}
 	s.svss.changed[depositedKey] = true
+	s.broker.SendBatch(evts)
 	return nil
 }
 
 func (s *StakeVerifier) restorePendingSR(ctx context.Context, removed []*types.StakeRemoved) error {
+	s.log.Debug("restoring pendingSRs snapshot", logging.Int("n_pending", len(removed)))
 	s.pendingSRs = make([]*pendingSR, 0, len(removed))
-
+	evts := []events.Event{}
 	for _, r := range removed {
 		// this populates the id/hash structs
 		if !s.ensureNotDuplicate(r.ID, r.Hash()) {
@@ -147,8 +153,10 @@ func (s *StakeVerifier) restorePendingSR(ctx context.Context, removed []*types.S
 
 		s.pendingSRs = append(s.pendingSRs, pending)
 		s.witness.RestoreResource(pending, s.onEventVerified)
+		evts = append(evts, events.NewStakeLinking(ctx, *pending.IntoStakeLinking()))
 	}
 
 	s.svss.changed[removedKey] = true
+	s.broker.SendBatch(evts)
 	return nil
 }

@@ -15,7 +15,6 @@ import (
 
 	"github.com/pkg/errors"
 	abcitypes "github.com/tendermint/tendermint/abci/types"
-	tmtypes "github.com/tendermint/tendermint/types"
 )
 
 var (
@@ -72,6 +71,7 @@ type ExecutionEngine interface {
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/governance_engine_mock.go -package mocks code.vegaprotocol.io/vega/processor GovernanceEngine
 type GovernanceEngine interface {
 	SubmitProposal(context.Context, types.ProposalSubmission, string, string) (*governance.ToSubmit, error)
+	FinaliseEnactment(ctx context.Context, prop *types.Proposal)
 	AddVote(context.Context, types.VoteSubmission, string) error
 	OnChainTimeUpdate(context.Context, time.Time) ([]*governance.ToEnact, []*governance.VoteClosed)
 	RejectProposal(context.Context, *types.Proposal, types.ProposalError, error) error
@@ -125,7 +125,7 @@ type ValidatorTopology interface {
 	AllVegaPubKeys() []string
 	IsValidator() bool
 	AddKeyRotate(ctx context.Context, nodeID string, currentBlockHeight uint64, kr *commandspb.KeyRotateSubmission) error
-	BeginBlock(ctx context.Context, req abcitypes.RequestBeginBlock, vd []*tmtypes.Validator)
+	BeginBlock(ctx context.Context, req abcitypes.RequestBeginBlock)
 	GetValidatorPowerUpdates() []abcitypes.ValidatorUpdate
 	ProcessAnnounceNode(ctx context.Context, nr *commandspb.AnnounceNode) error
 	ProcessValidatorHeartbeat(context.Context, *commandspb.ValidatorHeartbeat, func(message, signature, pubkey []byte) error, func(message, signature []byte, hexAddress string) error) error
@@ -135,6 +135,7 @@ type ValidatorTopology interface {
 // Broker - the event bus.
 type Broker interface {
 	Send(e events.Event)
+	SetStreaming(on bool) bool
 }
 
 // Notary ...

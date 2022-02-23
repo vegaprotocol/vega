@@ -74,7 +74,7 @@ func setupVega() (*processor.App, processor.Stats, error) {
 	governance := mocks.NewMockGovernanceEngine(ctrl)
 	governance.EXPECT().OnChainTimeUpdate(gomock.Any(), gomock.Any()).AnyTimes()
 
-	broker := mocks.NewMockBroker(ctrl)
+	broker := mocks.NewMockBrokerI(ctrl)
 	broker.EXPECT().Send(gomock.Any()).AnyTimes()
 	broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
 

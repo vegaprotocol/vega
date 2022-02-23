@@ -242,7 +242,7 @@ func getDummyData() *types.Chunk {
 	}, &types.Payload{
 		Data: &types.PayloadGovernanceActive{
 			GovernanceActive: &types.GovernanceActive{
-				Proposals: []*types.PendingProposal{
+				Proposals: []*types.ProposalData{
 					{
 						Proposal: &types.Proposal{
 							ID:        "prop1",
@@ -295,24 +295,26 @@ func getDummyData() *types.Chunk {
 	}, &types.Payload{
 		Data: &types.PayloadGovernanceEnacted{
 			GovernanceEnacted: &types.GovernanceEnacted{
-				Proposals: []*types.Proposal{
+				Proposals: []*types.ProposalData{
 					{
-						ID:        "propA",
-						Reference: "foo",
-						Party:     "party_animal",
-						State:     types.ProposalStateEnacted,
-						Terms: &types.ProposalTerms{
-							Change: &types.ProposalTerms_NewAsset{
-								NewAsset: &types.NewAsset{
-									Changes: &types.AssetDetails{
-										Name:        "foocoin",
-										Symbol:      "FOO",
-										TotalSupply: num.NewUint(1000000),
-										Decimals:    5,
-										Quantum:     num.NewUint(10),
-										Source: &types.AssetDetailsBuiltinAsset{
-											BuiltinAsset: &types.BuiltinAsset{
-												MaxFaucetAmountMint: num.NewUint(1),
+						Proposal: &types.Proposal{
+							ID:        "propA",
+							Reference: "foo",
+							Party:     "party_animal",
+							State:     types.ProposalStateEnacted,
+							Terms: &types.ProposalTerms{
+								Change: &types.ProposalTerms_NewAsset{
+									NewAsset: &types.NewAsset{
+										Changes: &types.AssetDetails{
+											Name:        "foocoin",
+											Symbol:      "FOO",
+											TotalSupply: num.NewUint(1000000),
+											Decimals:    5,
+											Quantum:     num.NewUint(10),
+											Source: &types.AssetDetailsBuiltinAsset{
+												BuiltinAsset: &types.BuiltinAsset{
+													MaxFaucetAmountMint: num.NewUint(1),
+												},
 											},
 										},
 									},
@@ -434,9 +436,6 @@ func getDummyData() *types.Chunk {
 						CurrentMarkPrice: num.NewUint(10),
 					},
 				},
-				Batches:   0,
-				Orders:    2,
-				Proposals: 2,
 			},
 		},
 	}, &types.Payload{

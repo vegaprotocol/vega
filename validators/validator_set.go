@@ -11,6 +11,7 @@ import (
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
 	tmtypes "github.com/tendermint/tendermint/abci/types"
+	"github.com/tendermint/tendermint/crypto/encoding"
 )
 
 var (
@@ -121,6 +122,10 @@ func (t *Topology) RecalcValidatorSet(ctx context.Context, epochSeq string, dele
 	// apply promotion logic - returns the tendermint updates with voting power changes (including removals and additions)
 	vpu, nextVotingPower := t.applyPromotion(perfScore, rankingScore, delegationState, stakeScoreParams)
 	t.validatorPowerUpdates = vpu
+	for _, vu := range t.validatorPowerUpdates {
+		cPubKey, _ := encoding.PubKeyFromProto(vu.PubKey)
+		t.log.Info("setting voting power to", logging.String(("address"), cPubKey.Address().String()), logging.Uint64("power", uint64(vu.Power)))
+	}
 
 	// prepare and send the events
 	evts := make([]events.Event, 0, len(currentState))
@@ -281,7 +286,7 @@ func (t *Topology) applyPromotion(performanceScore, rankingScore map[string]num.
 	}
 
 	for _, vu := range vUpdates {
-		t.log.Info("voting power update", logging.Int64("power", vu.Power))
+		t.log.Info("voting power update", logging.String("pubKey", vu.PubKey.String()), logging.Int64("power", vu.Power))
 	}
 
 	return vUpdates, nextValidatorsVotingPower

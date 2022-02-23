@@ -145,7 +145,7 @@ func (opts *importCmd) Execute(_ []string) error {
 func getLocalTendermintPubkey(tendermintHome string) (string, error) {
 	tmConfig := tmconfig.DefaultConfig()
 	tmConfig.SetRoot(tendermintHome)
-	genesisFilePath := tmConfig.PrivValidator.KeyFile()
+	genesisFilePath := tmConfig.PrivValidatorKeyFile()
 
 	data, err := vgfs.ReadFile(genesisFilePath)
 	if err != nil {

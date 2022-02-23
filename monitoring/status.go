@@ -10,7 +10,7 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/metrics"
 
-	tmctypes "github.com/tendermint/tendermint/rpc/coretypes"
+	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
 )
 
 // BlockchainClient ...

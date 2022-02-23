@@ -20,7 +20,6 @@ import (
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
 	abcitypes "github.com/tendermint/tendermint/abci/types"
-	tmtypes "github.com/tendermint/tendermint/types"
 )
 
 var (
@@ -58,10 +57,11 @@ func (*DummyMultiSigTopology) ExcessSigners(addresses []string) bool {
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/val_performance_mock.go -package mocks code.vegaprotocol.io/vega/validators ValidatorPerformance
 type ValidatorPerformance interface {
-	ValidatorPerformanceScore(address string) num.Decimal
-	BeginBlock(ctx context.Context, r abcitypes.RequestBeginBlock, vd []*tmtypes.Validator)
+	ValidatorPerformanceScore(address string, votingPower, totalPower int64) num.Decimal
+	BeginBlock(ctx context.Context, proposer string)
 	Serialize() *v1.ValidatorPerformance
 	Deserialize(*v1.ValidatorPerformance)
+	Reset()
 }
 
 type ValidatorData struct {
@@ -148,6 +148,7 @@ func (t *Topology) OnEpochEvent(_ context.Context, epoch types.Epoch) {
 	if epoch.Action == proto.EpochAction_EPOCH_ACTION_START {
 		t.newEpochStarted = true
 		t.rng = rand.New(rand.NewSource(epoch.StartTime.Unix()))
+		t.validatorPerformance.Reset()
 	}
 }
 
@@ -284,7 +285,7 @@ func (t *Topology) IsValidatorVegaPubKey(pubkey string) (ok bool) {
 	return false
 }
 
-func (t *Topology) BeginBlock(ctx context.Context, req abcitypes.RequestBeginBlock, vd []*tmtypes.Validator) {
+func (t *Topology) BeginBlock(ctx context.Context, req abcitypes.RequestBeginBlock) {
 	// we're not adding or removing nodes only potentially changing their state so should be safe
 	t.mu.RLock()
 	defer t.mu.RUnlock()
@@ -295,13 +296,13 @@ func (t *Topology) BeginBlock(ctx context.Context, req abcitypes.RequestBeginBlo
 	t.rng = rand.New(rand.NewSource(req.Header.Time.Unix()))
 
 	t.checkHeartbeat(ctx)
-	t.validatorPerformance.BeginBlock(ctx, req, vd)
+	t.validatorPerformance.BeginBlock(ctx, hex.EncodeToString(req.Header.ProposerAddress))
 	blockHeight := uint64(req.Header.Height)
 	t.currentBlockHeight = blockHeight
 	t.keyRotationBeginBlockLocked(ctx)
 }
 
-func (t *Topology) AddNewNode(ctx context.Context, nr *commandspb.AnnounceNode) error {
+func (t *Topology) AddNewNode(ctx context.Context, nr *commandspb.AnnounceNode, status ValidatorStatus) error {
 	// write lock!
 	t.mu.Lock()
 	defer t.mu.Unlock()
@@ -326,12 +327,16 @@ func (t *Topology) AddNewNode(ctx context.Context, nr *commandspb.AnnounceNode) 
 	// then add it to the topology
 	t.validators[nr.Id] = &valState{
 		data:                            data,
-		status:                          ValidatorStatusTendermint,
+		status:                          status,
 		blockAdded:                      0,
 		statusChangeBlock:               0,
 		lastBlockWithPositiveRanking:    -1,
 		numberOfEthereumEventsForwarded: 0,
 		heartbeatTracker:                &validatorHeartbeatTracker{},
+	}
+
+	if status == ValidatorStatusTendermint {
+		t.validators[nr.Id].validatorPower = 10
 	}
 
 	t.tss.changed = true
@@ -402,7 +407,7 @@ func (t *Topology) LoadValidatorsOnGenesis(ctx context.Context, rawstate []byte)
 			Name:            data.Name,
 			AvatarUrl:       data.AvatarURL,
 		}
-		if err := t.AddNewNode(ctx, nr); err != nil {
+		if err := t.AddNewNode(ctx, nr, ValidatorStatusTendermint); err != nil {
 			return err
 		}
 	}
@@ -444,8 +449,4 @@ func (t *Topology) checkValidatorDataWithSelfWallets(data ValidatorData) {
 	}
 
 	t.isValidator = true
-}
-
-func (t *Topology) ValidatorPerformanceScore(address string) num.Decimal {
-	return t.validatorPerformance.ValidatorPerformanceScore(address)
 }
