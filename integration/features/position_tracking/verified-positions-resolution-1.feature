@@ -11,7 +11,9 @@ Feature: Position resolution case 1
 
       #default-simple-risk-model-2: "factorLong": 0; "factorShort": 0; "maxMoveUp": 0;  "minMoveDown": 0.016; "probabilityOfTrading": 0.2
 
-  Scenario: https://drive.google.com/file/d/1bYWbNJvG7E-tcqsK26JMu2uGwaqXqm0L/view
+  Scenario: we let "designatedLooser" closeout
+   #"designatedLooser" entered into a positioin of vol 290, price 150, and margin level is listed on line 54. However, its not clear how 
+   # what "exit price" is used here for calculating margin level as there is not enough orders on the book to cover designatedLooser's position.
 # setup accounts
     Given the parties deposit on asset's general account the following amount:
       | party           | asset | amount        |
@@ -52,24 +54,28 @@ Feature: Position resolution case 1
       | party            | market id | maintenance | search  | initial  | release |
       | designatedLooser | ETH/DEC19 | 39730       | 127136  | 158920   | 198650   |
 
+ # "slippage per unit" used in the margin calculation is 137, which is not correct
+ # report a bug
+ # need to confirm with David how to calculate "slippage per unit" when there is not enough order to cover the position 
+
 # insurance pool generation - modify order book
     Then the parties cancel the following orders:
       | party           | reference      |
       | buySideProvider | buy-provider-1 |
     When the parties place the following orders:
-      | party          | market id | side | volume | price | resulting trades | type       | tif     | reference      |
+      | party           | market id | side | volume   | price | resulting trades | type       | tif     | reference      |
       | buySideProvider | ETH/DEC19 | buy  | 290      | 20    | 0                | TYPE_LIMIT | TIF_GTC | buy-provider-2 |
 
 # insurance pool generation - set new mark price (and trigger closeout)
     When the parties place the following orders:
-      | party           | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | party            | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | sellSideProvider | ETH/DEC19 | sell | 1      | 140   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | buySideProvider  | ETH/DEC19 | buy  | 1      | 140   | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
 # check positions
     Then the parties should have the following profit and loss:
       | party            | volume | unrealised pnl | realised pnl |
-      | designatedLooser | 0      | 0              | -11600           |
+      | designatedLooser | 0      | 0              | -11600       |
 
 # check margin levels
     Then the parties should have the following margin levels:
