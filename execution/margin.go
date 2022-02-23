@@ -104,9 +104,6 @@ func (m *Market) updateMargin(ctx context.Context, pos []events.MarketPosition) 
 	}
 	// we should get any and all risk events we need here
 	risk := m.risk.UpdateMarginsOnSettlement(ctx, margins, price)
-	if len(risk) == 0 {
-		return nil, nil
-	}
 	return risk, nil
 }
 

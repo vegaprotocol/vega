@@ -5,6 +5,7 @@ import (
 	"errors"
 
 	"code.vegaprotocol.io/vega/events"
+	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
 )
@@ -85,7 +86,10 @@ func (m *Market) transferRecheckMargins(ctx context.Context, risk []events.Risk)
 			if !m.liquidity.IsPending(closed.Party()) {
 				resp, err := m.bondSlashing(ctx, closed)
 				if err != nil {
-					return err
+					m.log.Panic("Bond slashing for non-distressed LP failed",
+						logging.String("party", closed.Party()),
+						logging.Error(err),
+					)
 				}
 				responses = append(responses, resp...)
 			}
