@@ -87,7 +87,7 @@ Feature: Closeout-cascades
     # check that trader3 is closed-out but trader2 is not
     And the parties should have the following margin levels:
       | party   | market id | maintenance | search | initial | release |
-      | trader2 | ETH/DEC19 | 500          | 750     | 1000     | 1500     |
+      | trader2 | ETH/DEC19 | 5250        | 7875   | 10500   | 15750   |
       | trader3 | ETH/DEC19 | 0           | 0      | 0       | 0       |
      Then the parties should have the following profit and loss:
       | party   | volume | unrealised pnl | realised pnl |
