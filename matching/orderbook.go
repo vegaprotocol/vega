@@ -669,6 +669,16 @@ func (b *OrderBook) GetTrades(order *types.Order) ([]*types.Trade, error) {
 	return trades, nil
 }
 
+func (b *OrderBook) ReplaceOrder(rm, rpl *types.Order) (*types.OrderConfirmation, error) {
+	if _, err := b.CancelOrder(rm); err != nil {
+		return nil, err
+	}
+	// Because other collections might be pointing at the original order
+	// use it's memory when inserting the new version
+	*rm = *rpl
+	return b.SubmitOrder(rm)
+}
+
 // SubmitOrder Add an order and attempt to uncross the book, returns a TradeSet protobuf message object.
 func (b *OrderBook) SubmitOrder(order *types.Order) (*types.OrderConfirmation, error) {
 	if err := b.validateOrder(order); err != nil {
