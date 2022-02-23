@@ -2754,15 +2754,9 @@ func (m *Market) orderCancelReplace(ctx context.Context, existingOrder, newOrder
 	// make sure the order is on the book, this was done by canceling the order initially, but that could
 	// trigger an auction in some cases.
 	if o, err := m.matching.GetOrderByID(existingOrder.ID); err != nil || o == nil {
-		if err != nil {
-			if m.log.GetLevel() == logging.DebugLevel {
-				m.log.Panic("Failed to cancel order from matching engine during CancelReplace",
-					logging.OrderWithTag(*existingOrder, "existing-order"),
-					logging.OrderWithTag(*newOrder, "new-order"),
-					logging.Error(err))
-			}
-		}
-		return nil, fmt.Errorf("order cancellation failed (no error given)")
+		m.log.Panic("Can't CancelReplace, the original order was not found",
+			logging.OrderWithTag(*existingOrder, "existing-order"),
+			logging.Error(err))
 	}
 	// first we call the order book to evaluate auction triggers and get the list of trades
 	trades, err := m.checkPriceAndGetTrades(ctx, newOrder)
