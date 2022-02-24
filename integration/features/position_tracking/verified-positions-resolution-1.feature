@@ -9,11 +9,10 @@ Feature: Position resolution case 1
       | name                           | value |
       | market.auction.minimumDuration | 1     |
 
-      #default-simple-risk-model-2: "factorLong": 0; "factorShort": 0; "maxMoveUp": 0;  "minMoveDown": 0.016; "probabilityOfTrading": 0.2
+    #default-simple-risk-model-2: "factorLong": 0; "factorShort": 0; "maxMoveUp": 0;  "minMoveDown": 0.016; "probabilityOfTrading": 0.2
 
-  Scenario: we let "designatedLooser" closeout
-   #"designatedLooser" entered into a positioin of vol 290, price 150, and margin level is listed on line 54. However, its not clear how 
-   # what "exit price" is used here for calculating margin level as there is not enough orders on the book to cover designatedLooser's position.
+  Scenario: set "designatedLooser" closeout while the position of "designatedLooser" is not fully covered by orders on the order book
+
 # setup accounts
     Given the parties deposit on asset's general account the following amount:
       | party           | asset | amount        |
@@ -49,14 +48,18 @@ Feature: Position resolution case 1
       | party            | asset | market id | margin  | general |
       | designatedLooser | BTC   | ETH/DEC19 | 11600   | 0       |
 
-#designatedLooser has position of vol 290; price 150; RiskFactor is 0; slippage per unit is 
+    Then the order book should have the following volumes for market "ETH/DEC19":   
+      | side | price  | volume |
+      | buy  | 1      | 10     |
+      | buy  | 140    | 1      |
+
+  #designatedLooser has position of vol 290; price 150; RiskFactor is 0; 
+  #what's on the order book to cover the position is shown above, which makes the exit price 13 =(1*10+140*1)/11, slippage per unit is 150-13=137
+  #margin level is PositionVol*SlippagePerUnit = 290*137=39730
+
     Then the parties should have the following margin levels:
       | party            | market id | maintenance | search  | initial  | release |
       | designatedLooser | ETH/DEC19 | 39730       | 127136  | 158920   | 198650   |
-
- # "slippage per unit" used in the margin calculation is 137, which is not correct
- # report a bug
- # need to confirm with David how to calculate "slippage per unit" when there is not enough order to cover the position 
 
 # insurance pool generation - modify order book
     Then the parties cancel the following orders:
@@ -89,9 +92,5 @@ Feature: Position resolution case 1
 # then we make sure the insurance pool collected the funds
     And the insurance pool balance should be "0" for the market "ETH/DEC19"
 
-# now we check what's left in the order book
-# we expect 1 order at price of 40 to be left there on the buy side
-# we sell a first time 1 to consume the book
-# then try to sell 1 again with low price -> result in no trades -> buy side empty
-# We expect no orders on the sell side: try to buy 1 for high price -> no trades -> sell side empty
+
 
