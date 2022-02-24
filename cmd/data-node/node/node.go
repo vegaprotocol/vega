@@ -105,6 +105,7 @@ type NodeCommand struct {
 	balanceStoreSQL *sqlstore.Balances
 	ledgerSQL       *sqlstore.Ledger
 	partyStoreSQL   *sqlstore.Parties
+	orderStoreSQL   *sqlstore.Orders
 
 	vegaCoreServiceClient vegaprotoapi.CoreServiceClient
 
@@ -137,6 +138,7 @@ type NodeCommand struct {
 	assetSubSQL            *sqlsubscribers.Asset
 	timeSubSQL             *sqlsubscribers.Time
 	transferResponseSubSQL *sqlsubscribers.TransferResponse
+	orderSubSQL            *sqlsubscribers.Order
 
 	candleService     *candles.Svc
 	tradeService      *trades.Svc
@@ -236,6 +238,7 @@ func (l *NodeCommand) runNode(args []string) error {
 		l.stakingService,
 		l.checkpointSvc,
 		l.balanceStoreSQL,
+		l.orderStoreSQL,
 	)
 
 	// watch configs

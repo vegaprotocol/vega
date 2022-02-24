@@ -38,7 +38,7 @@ func TestParty(t *testing.T) {
 	assert.Error(t, err)
 
 	// Query and check we've got back a party the same as the one we put in
-	fetchedParty, err := ps.GetByID(party.HexId())
+	fetchedParty, err := ps.GetByID(party.HexID())
 	assert.NoError(t, err)
 	assert.Equal(t, party, fetchedParty)
 

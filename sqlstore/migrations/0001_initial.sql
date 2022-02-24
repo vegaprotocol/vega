@@ -58,6 +58,44 @@ create table ledger
     type            TEXT
 );
 
+CREATE TABLE orders (
+    id                BYTEA                     NOT NULL,
+    market_id         BYTEA                     NOT NULL,
+    party_id          BYTEA                     NOT NULL, -- at some point add REFERENCES parties(id),
+    side              SMALLINT                  NOT NULL,
+    price             BIGINT                    NOT NULL,
+    size              BIGINT                    NOT NULL,
+    remaining         BIGINT                    NOT NULL,
+    time_in_force     SMALLINT                  NOT NULL,
+    type              SMALLINT                  NOT NULL,
+    status            SMALLINT                  NOT NULL,
+    reference         TEXT,
+    reason            SMALLINT,
+    version           INT                       NOT NULL,
+    batch_id          INT                       NOT NULL,
+    pegged_offset     INT,
+    pegged_reference  SMALLINT,
+    lp_id             BYTEA,
+    created_at        TIMESTAMP WITH TIME ZONE NOT NULL,
+    updated_at        TIMESTAMP WITH TIME ZONE,
+    expires_at        TIMESTAMP WITH TIME ZONE,
+    vega_time         TIMESTAMP WITH TIME ZONE NOT NULL,
+    PRIMARY key(vega_time, id, version)
+);
+
+-- Orders contains all the historical changes to each order (as of the end of the block),
+-- this view contains the *current* state of the latest version each order
+--  (e.g. it's unique on order ID)
+CREATE VIEW orders_current AS (
+  SELECT DISTINCT ON (id) * FROM orders ORDER BY id, version DESC, vega_time DESC
+);
+
+-- Manual updates to the order (e.g. user changing price level) increment the 'version'
+-- this view contains the current state of each *version* of the order (e.g. it is
+-- unique on (order ID, version)
+CREATE VIEW orders_current_versions AS (
+  SELECT DISTINCT ON (id, version) * FROM orders ORDER BY id, version DESC, vega_time DESC
+);
 
 -- Create a function that always returns the first non-NULL value:
 CREATE OR REPLACE FUNCTION public.first_agg (anyelement, anyelement)
@@ -86,14 +124,24 @@ CREATE AGGREGATE public.last (anyelement) (
 );
 
 -- +goose Down
-DROP AGGREGATE public.first(anyelement);
-DROP AGGREGATE public.last(anyelement);
-DROP FUNCTION public.first_agg(anyelement, anyelement);
-DROP FUNCTION public.last_agg(anyelement, anyelement);
+DROP AGGREGATE IF EXISTS public.first(anyelement);
+DROP AGGREGATE IF EXISTS public.last(anyelement);
+DROP FUNCTION IF EXISTS public.first_agg(anyelement, anyelement);
+DROP FUNCTION IF EXISTS public.last_agg(anyelement, anyelement);
 
-drop table ledger;
-drop table balances;
-drop table accounts;
-drop table parties;
-drop table assets;
-drop table blocks;
+DROP VIEW IF EXISTS orders_current;
+DROP VIEW IF EXISTS orders_current_versions;
+
+DROP TABLE IF EXISTS orders;
+DROP TYPE IF EXISTS order_time_in_force;
+DROP TYPE IF EXISTS order_status;
+DROP TYPE IF EXISTS order_side;
+DROP TYPE IF EXISTS order_type;
+DROP TYPE IF EXISTS order_pegged_reference;
+
+DROP TABLE IF EXISTS ledger;
+DROP TABLE IF EXISTS balances;
+DROP TABLE IF EXISTS accounts;
+DROP TABLE IF EXISTS parties;
+DROP TABLE IF EXISTS assets;
+DROP TABLE IF EXISTS blocks;
