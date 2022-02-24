@@ -111,7 +111,7 @@ Once you have successfully installed `V E G A` with `tendermint` these are the s
 
 ## Vim
 
-Prerequisites: Vim version >= 8.0 and the [vim-go](https://github.com/fatih/vim-go) plugin.
+Prerequisites: Vim version >= 8.0 and the [vim-go](https://github.com/fatih/vim-go) plug-in.
 
 ### Build a debug binary for delve
 
@@ -163,7 +163,7 @@ Once in our editor, just enter the  command `:GoDebugConnect 127.0.0.1:9876`
 Debugger buffers will load as you've configured (default is the call stack top left, call stack, arguments, and registers bottom left, runtime and routine info bottom buffer). Open any file, jump to any line where you want to set a breakpoint, and run the `:GoDebugBreakpoint` (or `:GoDebugBr`) command.
 
 To start executing the code, run `:GoDebugContinue`, and the test binary will run until a breakpoint is encountered. From that point on, you can use standard debugger commands (like `:GoDebugStep`, `:GoDebugStepOut`, and of course `:GoDebugContinue`). A full list of commands, what they do can be found by running `:h :GoDebug`.
-The `vim-go` plugin documentation also contains a list of default bindings (e.g. F9 for toggling a breakpoint, F5 for `:GoDebugContinue`), and detailed instructions on how to create your own bindings, how to customise your setup (`:h go-debug-settings`).
+The `vim-go` plug-in documentation also contains a list of default bindings (e.g. F9 for toggling a breakpoint, F5 for `:GoDebugContinue`), and detailed instructions on how to create your own bindings, how to customise your setup (`:h go-debug-settings`).
 
 To stop debugging, run `:GoDebugStop`. This will close the debug buffers, and the dlv process will return.
 
