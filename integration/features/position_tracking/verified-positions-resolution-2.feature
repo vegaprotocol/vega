@@ -101,11 +101,6 @@ Feature: Position resolution case 2
       | party            | volume | unrealised pnl | realised pnl |
       | designatedLooser | 290    | -8700          | 0            |
 
-# checking margins
-    Then the parties should have the following account balances:
-      | party           | asset | market id | margin | general |
-      | designatedLooser | BTC   | ETH/DEC19 | 3300   | 0       |
-
 # then we make sure the insurance pool collected the funds
     And the insurance pool balance should be "0" for the market "ETH/DEC19"
 
