@@ -72,6 +72,7 @@
 - [4689](https://github.com/vegaprotocol/vega/issues/4689) - Validators joining and leaving the network
 - [4680](https://github.com/vegaprotocol/vega/issues/4680) - Add `totalTokenSupplyStake` to the snapshots
 - [4645](https://github.com/vegaprotocol/vega/pull/4645) - Add transfers snapshots
+- [4707](https://github.com/vegaprotocol/vega/pull/4707) - Serialize timestamp in time update message as number of nano seconds instead of seconds
 - [4595](https://github.com/vegaprotocol/vega/pull/4595) - Add internal oracle supplying vega time data for time-triggered events
 - [4737](https://github.com/vegaprotocol/vega/pull/4737) - Use a deterministic generator for order ids, set new order ids to the transaction hash of the Submit transaction
 - [4741](https://github.com/vegaprotocol/vega/pull/4741) - Hash again list of hash from engines
@@ -86,6 +87,8 @@
 - [4805](https://github.com/vegaprotocol/vega/issues/4805) - Add command line tool to sign for the asset pool method `set_bridge_address`
 - [4839](https://github.com/vegaprotocol/vega/issues/4839) - Send governance events when restoring proposals on checkpoint reload.
 - [4829](https://github.com/vegaprotocol/vega/issues/4829) - Fix margins calculations for positions with a size of 0 but with a non zero potential sell or buy
+
+
 
 
 ### 🐛 Fixes
