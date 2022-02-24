@@ -43,7 +43,12 @@ type EvtForwarder interface {
 // Blockchain ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/blockchain_mock.go -package mocks code.vegaprotocol.io/vega/api  Blockchain
 type Blockchain interface {
-	SubmitTransaction(ctx context.Context, tx *commandspb.Transaction) (string, error)
+	SubmitTransactionSync(ctx context.Context, tx *commandspb.Transaction) (*tmctypes.ResultBroadcastTx, error)
+	SubmitTransactionAsync(ctx context.Context, tx *commandspb.Transaction) (*tmctypes.ResultBroadcastTx, error)
+	SubmitTransactionCommit(ctx context.Context, tx *commandspb.Transaction) (*tmctypes.ResultBroadcastTxCommit, error)
+	SubmitRawTransactionSync(ctx context.Context, tx []byte) (*tmctypes.ResultBroadcastTx, error)
+	SubmitRawTransactionAsync(ctx context.Context, tx []byte) (*tmctypes.ResultBroadcastTx, error)
+	SubmitRawTransactionCommit(ctx context.Context, tx []byte) (*tmctypes.ResultBroadcastTxCommit, error)
 	CheckTransaction(ctx context.Context, tx *commandspb.Transaction) (*tmctypes.ResultCheckTx, error)
 	CheckRawTransaction(ctx context.Context, tx []byte) (*tmctypes.ResultCheckTx, error)
 	GetGenesisTime(ctx context.Context) (genesisTime time.Time, err error)
@@ -52,7 +57,6 @@ type Blockchain interface {
 	GetStatus(ctx context.Context) (status *tmctypes.ResultStatus, err error)
 	GetUnconfirmedTxCount(ctx context.Context) (count int, err error)
 	Health() (*tmctypes.ResultHealth, error)
-	SubmitRawTransaction(ctx context.Context, tx []byte, ty protoapi.SubmitRawTransactionRequest_Type) (string, error)
 }
 
 // GRPCServer represent the grpc api provided by the vega node.

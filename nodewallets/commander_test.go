@@ -18,6 +18,7 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
+	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
 )
 
 type testCommander struct {
@@ -86,8 +87,8 @@ func testSignedCommandSuccess(t *testing.T) {
 	ctx := context.Background()
 
 	commander.bstats.EXPECT().Height().Times(1).Return(uint64(42))
-	commander.chain.EXPECT().SubmitTransaction(
-		gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return("", nil)
+	commander.chain.EXPECT().SubmitTransactionAsync(
+		gomock.Any(), gomock.Any()).Times(1).Return(&tmctypes.ResultBroadcastTx{}, nil)
 
 	ok := make(chan error)
 	commander.Command(ctx, cmd, payload, func(err error) {
@@ -108,8 +109,8 @@ func testSignedCommandFailure(t *testing.T) {
 	ctx := context.Background()
 
 	commander.bstats.EXPECT().Height().Times(1).Return(uint64(42))
-	commander.chain.EXPECT().SubmitTransaction(
-		gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return("", errors.New("bad bad"))
+	commander.chain.EXPECT().SubmitTransactionAsync(
+		gomock.Any(), gomock.Any()).Times(1).Return(&tmctypes.ResultBroadcastTx{}, errors.New("bad bad"))
 
 	ok := make(chan error)
 	commander.Command(ctx, cmd, payload, func(err error) {

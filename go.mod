@@ -4,7 +4,7 @@ go 1.17
 
 require (
 	code.vegaprotocol.io/oracles-relay v0.0.0-20210201140234-f047e1bf6df3
-	code.vegaprotocol.io/protos v0.48.1-0.20220221113328-2bef6ffb4ee6
+	code.vegaprotocol.io/protos v0.48.1-0.20220224102102-4bec8cbe313f
 	code.vegaprotocol.io/quant v0.2.5
 	code.vegaprotocol.io/shared v0.0.0-20220202150846-b6aba31dcdb0
 	github.com/blang/semver v3.5.1+incompatible

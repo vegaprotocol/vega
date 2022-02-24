@@ -2,11 +2,9 @@ package blockchain
 
 import (
 	"context"
-	"errors"
 	"time"
 
 	"code.vegaprotocol.io/protos/commands"
-	api "code.vegaprotocol.io/protos/vega/api/v1"
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	"github.com/golang/protobuf/proto"
 
@@ -21,10 +19,10 @@ type ChainClientImpl interface {
 	GetNetworkInfo(context.Context) (*tmctypes.ResultNetInfo, error)
 	GetUnconfirmedTxCount(context.Context) (int, error)
 	Health(context.Context) (*tmctypes.ResultHealth, error)
-	SendTransactionAsync(context.Context, []byte) (string, error)
-	SendTransactionSync(context.Context, []byte) (string, error)
+	SendTransactionAsync(context.Context, []byte) (*tmctypes.ResultBroadcastTx, error)
+	SendTransactionSync(context.Context, []byte) (*tmctypes.ResultBroadcastTx, error)
 	CheckTransaction(context.Context, []byte) (*tmctypes.ResultCheckTx, error)
-	SendTransactionCommit(context.Context, []byte) (string, error)
+	SendTransactionCommit(context.Context, []byte) (*tmctypes.ResultBroadcastTxCommit, error)
 	GenesisValidators(context.Context) ([]*tmtypes.Validator, error)
 	Validators(context.Context, *int64) ([]*tmtypes.Validator, error)
 	Subscribe(context.Context, func(tmctypes.ResultEvent) error, ...string) error
@@ -68,54 +66,82 @@ func (c *Client) CheckTransaction(ctx context.Context, tx *commandspb.Transactio
 	return c.clt.CheckTransaction(ctx, marshalledTx)
 }
 
-func (c *Client) SubmitTransaction(ctx context.Context, tx *commandspb.Transaction, ty api.SubmitTransactionRequest_Type) (string, error) {
+func (c *Client) SubmitTransactionSync(ctx context.Context, tx *commandspb.Transaction) (*tmctypes.ResultBroadcastTx, error) {
 	_, err := commands.CheckTransaction(tx)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	marshalledTx, err := proto.Marshal(tx)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 
-	return c.sendTx(ctx, marshalledTx, ty)
+	t, err := c.clt.SendTransactionSync(ctx, marshalledTx)
+
+	return t, err
 }
 
-func (c *Client) SubmitRawTransaction(ctx context.Context, tx []byte, ty api.SubmitRawTransactionRequest_Type) (string, error) {
+func (c *Client) SubmitTransactionCommit(ctx context.Context, tx *commandspb.Transaction) (*tmctypes.ResultBroadcastTxCommit, error) {
+	_, err := commands.CheckTransaction(tx)
+	if err != nil {
+		return nil, err
+	}
+
+	marshalledTx, err := proto.Marshal(tx)
+	if err != nil {
+		return nil, err
+	}
+
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+
+	t, err := c.clt.SendTransactionCommit(ctx, marshalledTx)
+
+	return t, err
+}
+
+func (c *Client) SubmitTransactionAsync(ctx context.Context, tx *commandspb.Transaction) (*tmctypes.ResultBroadcastTx, error) {
+	_, err := commands.CheckTransaction(tx)
+	if err != nil {
+		return nil, err
+	}
+
+	marshalledTx, err := proto.Marshal(tx)
+	if err != nil {
+		return nil, err
+	}
+
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+
+	t, err := c.clt.SendTransactionAsync(ctx, marshalledTx)
+
+	return t, err
+}
+
+func (c *Client) SubmitRawTransactionSync(ctx context.Context, tx []byte) (*tmctypes.ResultBroadcastTx, error) {
 	timeoutCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 
-	return c.sendRawTx(timeoutCtx, tx, ty)
+	return c.clt.SendTransactionSync(timeoutCtx, tx)
 }
 
-func (c *Client) sendTx(ctx context.Context, msg []byte, ty api.SubmitTransactionRequest_Type) (string, error) {
-	switch ty {
-	case api.SubmitTransactionRequest_TYPE_ASYNC:
-		return c.clt.SendTransactionAsync(ctx, msg)
-	case api.SubmitTransactionRequest_TYPE_SYNC:
-		return c.clt.SendTransactionSync(ctx, msg)
-	case api.SubmitTransactionRequest_TYPE_COMMIT:
-		return c.clt.SendTransactionCommit(ctx, msg)
-	default:
-		return "", errors.New("invalid submit transaction request type")
-	}
+func (c *Client) SubmitRawTransactionAsync(ctx context.Context, tx []byte) (*tmctypes.ResultBroadcastTx, error) {
+	timeoutCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+
+	return c.clt.SendTransactionAsync(timeoutCtx, tx)
 }
 
-func (c *Client) sendRawTx(ctx context.Context, msg []byte, ty api.SubmitRawTransactionRequest_Type) (string, error) {
-	switch ty {
-	case api.SubmitRawTransactionRequest_TYPE_ASYNC:
-		return c.clt.SendTransactionAsync(ctx, msg)
-	case api.SubmitRawTransactionRequest_TYPE_SYNC:
-		return c.clt.SendTransactionSync(ctx, msg)
-	case api.SubmitRawTransactionRequest_TYPE_COMMIT:
-		return c.clt.SendTransactionCommit(ctx, msg)
-	default:
-		return "", errors.New("invalid submit transaction request type")
-	}
+func (c *Client) SubmitRawTransactionCommit(ctx context.Context, tx []byte) (*tmctypes.ResultBroadcastTxCommit, error) {
+	timeoutCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+
+	return c.clt.SendTransactionCommit(timeoutCtx, tx)
 }
 
 // GetGenesisTime retrieves the genesis time from the blockchain.

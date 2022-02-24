@@ -89,7 +89,7 @@ func (s *coreService) SubmitTransaction(ctx context.Context, req *protoapi.Submi
 		return nil, apiError(codes.InvalidArgument, ErrMalformedRequest)
 	}
 
-	txHash, err := s.blockchain.SubmitTransaction(ctx, req.Tx)
+	txResult, err := s.blockchain.SubmitTransactionAsync(ctx, req.Tx)
 	if err != nil {
 		// This is Tendermint's specific error signature
 		if _, ok := err.(interface {
@@ -98,7 +98,19 @@ func (s *coreService) SubmitTransaction(ctx context.Context, req *protoapi.Submi
 			Error() string
 		}); ok {
 			s.log.Debug("unable to submit transaction", logging.Error(err))
-			return nil, apiError(codes.InvalidArgument, err)
+			fullError := apiError(codes.InvalidArgument, err)
+			if txResult != nil {
+				return &protoapi.SubmitTransactionResponse{
+					Success: false,
+					Code:    txResult.Code,
+					Data:    txResult.Data.String(),
+					Log:     txResult.Log,
+					Height:  0,
+					TxHash:  txResult.Hash.String(),
+				}, fullError
+			}
+			return nil, fullError
+
 		}
 		s.log.Debug("unable to submit transaction", logging.Error(err))
 
@@ -107,11 +119,15 @@ func (s *coreService) SubmitTransaction(ctx context.Context, req *protoapi.Submi
 
 	return &protoapi.SubmitTransactionResponse{
 		Success: true,
-		TxHash:  txHash,
+		Code:    txResult.Code,
+		Data:    txResult.Data.String(),
+		Log:     txResult.Log,
+		Height:  0,
+		TxHash:  txResult.Hash.String(),
 	}, nil
 }
 
-func (s *coreService) CheckTransaction(ctx context.Context, req *protoapi.SubmitTransactionRequest) (*protoapi.CheckTransactionResponse, error) {
+func (s *coreService) CheckTransaction(ctx context.Context, req *protoapi.CheckTransactionRequest) (*protoapi.CheckTransactionResponse, error) {
 	startTime := time.Now()
 	defer metrics.APIRequestAndTimeGRPC("CheckTransaction", startTime)
 
@@ -128,7 +144,17 @@ func (s *coreService) CheckTransaction(ctx context.Context, req *protoapi.Submit
 			Error() string
 		}); ok {
 			s.log.Debug("unable to check transaction", logging.Error(err))
-			return nil, apiError(codes.InvalidArgument, err)
+			fullError := apiError(codes.InvalidArgument, err)
+			if checkResult != nil {
+				return &protoapi.CheckTransactionResponse{
+					Code:      checkResult.Code,
+					Success:   false,
+					GasWanted: checkResult.GasWanted,
+					GasUsed:   checkResult.GasUsed,
+				}, fullError
+			}
+			return nil, fullError
+
 		}
 		s.log.Debug("unable to check transaction", logging.Error(err))
 
@@ -159,7 +185,16 @@ func (s *coreService) CheckRawTransaction(ctx context.Context, req *protoapi.Che
 			Error() string
 		}); ok {
 			s.log.Debug("unable to check raw transaction", logging.Error(err))
-			return nil, apiError(codes.InvalidArgument, err)
+			fullError := apiError(codes.InvalidArgument, err)
+			if checkResult != nil {
+				return &protoapi.CheckRawTransactionResponse{
+					Code:      checkResult.Code,
+					Success:   false,
+					GasWanted: checkResult.GasWanted,
+					GasUsed:   checkResult.GasUsed,
+				}, fullError
+			}
+			return nil, fullError
 		}
 		s.log.Debug("unable to check raw transaction", logging.Error(err))
 
@@ -531,6 +566,21 @@ func (s *coreService) observeEventsWithAck(
 	}
 }
 
+func (s *coreService) handleTMError(err error) error {
+	// This is Tendermint's specific error signature
+	if _, ok := err.(interface {
+		Code() uint32
+		Details() string
+		Error() string
+	}); ok {
+		s.log.Debug("unable to submit raw transaction", logging.Error(err))
+		return apiError(codes.InvalidArgument, err)
+	}
+	s.log.Debug("unable to submit raw transaction", logging.Error(err))
+
+	return apiError(codes.Internal, err)
+}
+
 func (s *coreService) SubmitRawTransaction(ctx context.Context, req *protoapi.SubmitRawTransactionRequest) (*protoapi.SubmitRawTransactionResponse, error) {
 	startTime := time.Now()
 	defer metrics.APIRequestAndTimeGRPC("SubmitTransaction", startTime)
@@ -539,24 +589,67 @@ func (s *coreService) SubmitRawTransaction(ctx context.Context, req *protoapi.Su
 		return nil, apiError(codes.InvalidArgument, ErrMalformedRequest)
 	}
 
-	txHash, err := s.blockchain.SubmitRawTransaction(ctx, req.Tx, req.Type)
-	if err != nil {
-		// This is Tendermint's specific error signature
-		if _, ok := err.(interface {
-			Code() uint32
-			Details() string
-			Error() string
-		}); ok {
-			s.log.Debug("unable to submit raw transaction", logging.Error(err))
-			return nil, apiError(codes.InvalidArgument, err)
+	successResponse := &protoapi.SubmitRawTransactionResponse{Success: true}
+	switch req.Type {
+	case protoapi.SubmitRawTransactionRequest_TYPE_ASYNC:
+		txResult, err := s.blockchain.SubmitRawTransactionAsync(ctx, req.Tx)
+		if err != nil {
+			if txResult != nil {
+				return &protoapi.SubmitRawTransactionResponse{
+					Success: false,
+					Code:    txResult.Code,
+					Data:    txResult.Data.String(),
+					Log:     txResult.Log,
+				}, s.handleTMError(err)
+			}
+			return nil, s.handleTMError(err)
 		}
-		s.log.Debug("unable to submit raw transaction", logging.Error(err))
+		successResponse.TxHash = txResult.Hash.String()
+		successResponse.Code = txResult.Code
+		successResponse.Data = txResult.Data.String()
+		successResponse.Log = txResult.Log
 
-		return nil, apiError(codes.Internal, err)
+	case protoapi.SubmitRawTransactionRequest_TYPE_SYNC:
+		txResult, err := s.blockchain.SubmitRawTransactionSync(ctx, req.Tx)
+		if err != nil {
+			if txResult != nil {
+				return &protoapi.SubmitRawTransactionResponse{
+					Success: false,
+					Code:    txResult.Code,
+					Data:    txResult.Data.String(),
+					Log:     txResult.Log,
+				}, s.handleTMError(err)
+			}
+			return nil, s.handleTMError(err)
+		}
+		successResponse.TxHash = txResult.Hash.String()
+		successResponse.Code = txResult.Code
+		successResponse.Data = txResult.Data.String()
+		successResponse.Log = txResult.Log
+
+	case protoapi.SubmitRawTransactionRequest_TYPE_COMMIT:
+		txResult, err := s.blockchain.SubmitRawTransactionCommit(ctx, req.Tx)
+		if err != nil {
+			if txResult != nil {
+				return &protoapi.SubmitRawTransactionResponse{
+					Success: false,
+					Code:    txResult.DeliverTx.Code,
+					Data:    string(txResult.DeliverTx.Data),
+					Log:     txResult.DeliverTx.Log,
+				}, s.handleTMError(err)
+			}
+			return nil, s.handleTMError(err)
+		}
+		successResponse.TxHash = txResult.Hash.String()
+		successResponse.Code = txResult.DeliverTx.Code
+		successResponse.Height = txResult.Height
+		successResponse.Data = string(txResult.CheckTx.Data)
+		successResponse.Log = txResult.CheckTx.Log
+
+	default:
+		return nil, apiError(codes.InvalidArgument, errors.New("Invalid TX Type"))
 	}
 
-	return &protoapi.SubmitRawTransactionResponse{
-		Success: true,
-		TxHash:  txHash,
-	}, nil
+	return successResponse, nil
+
 }
