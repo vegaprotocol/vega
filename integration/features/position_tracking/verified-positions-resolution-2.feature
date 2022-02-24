@@ -89,9 +89,8 @@ Feature: Position resolution case 2
       | party            | market id | maintenance | search  | initial  | release |
       | designatedLooser | ETH/DEC19 | 29000       | 92800   | 116000   | 145000  |
 
- #margin account got MTM (since the change of mark price from 150 to 120), hence margin account = 12000 - 290*30 = 3300
- # ??????should "designatedLooser" be closeout at this point??????? new mark price is on line 79, and margin account is much lower than maintence level
-
+ # margin account got MTM (since the change of mark price from 150 to 120), hence margin account = 12000 - 290*30 = 3300
+ # "designatedLooser" can not be closed out here since there is not enough vol on the order book to take over 
     Then the parties should have the following account balances:
       | party            | asset | market id | margin | general |  
       | designatedLooser | BTC   | ETH/DEC19 | 3300   | 0       |
