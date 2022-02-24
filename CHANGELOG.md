@@ -127,6 +127,7 @@
 - [4590](https://github.com/vegaprotocol/vega/pull/4590) - Added verification of uint market data in integration test
 - [4749](https://github.com/vegaprotocol/vega/pull/4794) - Fixed issue where LP orders did not get redeployed
 - [4820](https://github.com/vegaprotocol/vega/pull/4820) - Snapshot fixes for market + update market tracker on trades
+- [4854](https://github.com/vegaprotocol/vega/pull/4854) - Snapshot fixes for the `statevar` engine
 - [3919](https://github.com/vegaprotocol/vega/pull/3919) - Fixed panic in `maybeInvalidateDuringAuction`
 - [4849](https://github.com/vegaprotocol/vega/pull/4849) - Fixed liquidity auction trigger for certain cancel & replace amends.
 

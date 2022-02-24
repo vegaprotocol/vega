@@ -8,6 +8,7 @@ import (
 
 	snapshot "code.vegaprotocol.io/protos/vega/snapshot/v1"
 	"code.vegaprotocol.io/vega/libs/crypto"
+	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
 
 	"github.com/golang/protobuf/proto"
@@ -34,6 +35,7 @@ func (e *Engine) Keys() []string {
 }
 
 func (e *Engine) serialiseNextTimeTrigger() []*snapshot.NextTimeTrigger {
+	e.log.Debug("serialising statevar snapshot", logging.Int("n_triggers", len(e.stateVarToNextCalc)))
 	timeTriggers := make([]*snapshot.NextTimeTrigger, 0, len(e.stateVarToNextCalc))
 
 	ids := make([]string, 0, len(e.stateVarToNextCalc))
@@ -112,9 +114,11 @@ func (e *Engine) LoadState(ctx context.Context, p *types.Payload) ([]types.State
 }
 
 func (e *Engine) restore(ctx context.Context, nextTimeTrigger []*snapshot.NextTimeTrigger) error {
+	e.log.Debug("restoring statevar snapshot", logging.Int("n_triggers", len(nextTimeTrigger)))
 	for _, data := range nextTimeTrigger {
 		e.readyForTimeTrigger[data.Asset+data.Market] = struct{}{}
 		e.stateVarToNextCalc[data.Id] = time.Unix(0, data.NextTrigger)
+		e.log.Debug("restoring", logging.String("id", data.Id), logging.Time("time", time.Unix(0, data.NextTrigger)))
 	}
 	e.ss.changed = true
 	return nil

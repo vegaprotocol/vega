@@ -52,3 +52,20 @@ func TestSnapshot(t *testing.T) {
 	require.NoError(t, err)
 	require.True(t, bytes.Equal(state1, state2))
 }
+
+func TestSnapshotChangeFlagSet(t *testing.T) {
+	key := (&gtypes.PayloadFloatingPointConsensus{}).Key()
+	engine1 := getTestEngine(t, now).engine
+
+	engine1.RegisterStateVariable("asset1", "market1", "var1", converter{}, defaultStartCalc(), []types.StateVarEventType{types.StateVarEventTypeMarketEnactment, types.StateVarEventTypeTimeTrigger}, defaultResultBack())
+
+	hash1, err := engine1.GetHash(key)
+	require.NoError(t, err)
+
+	// this should hit the change flag causing us to reserialise at the next hash
+	engine1.ReadyForTimeTrigger("asset1", "market1")
+
+	hash2, err := engine1.GetHash(key)
+	require.NoError(t, err)
+	require.NotEqual(t, hash1, hash2)
+}
