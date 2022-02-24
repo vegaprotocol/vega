@@ -3,6 +3,7 @@
 ## Unreleased (0.49.0)
 
 ### 🚨 Breaking changes
+- [4844](https://github.com/vegaprotocol/vega/issues/4844) - Add endpoints for checking transactions raw transactions
 - [4515](https://github.com/vegaprotocol/vega/issues/4615) - Add snapshot options description and check provided storage method
 - [4581](https://github.com/vegaprotocol/vega/issues/4561) - Separate endpoints for liquidity provision submissions, amendment and cancellation
 - [4390](https://github.com/vegaprotocol/vega/pull/4390) - Introduce node mode, `vega init` now require a mode: full or validator
@@ -22,7 +23,6 @@
 ### 🗑️ Deprecation
 
 ### 🛠 Improvements
-- [4844](https://github.com/vegaprotocol/vega/issues/4844) - Add endpoints for CheckTx and CheckRawTx
 - [4793](https://github.com/vegaprotocol/vega/issues/4793) - Add specific insurance pool balance test
 - [4633](https://github.com/vegaprotocol/vega/pull/4633) - Add possibility to list snapshots from the vega command line
 - [4640](https://github.com/vegaprotocol/vega/pull/4640) - Update feature tests related to liquidity provision following integration of probability of trading with floating point consensus

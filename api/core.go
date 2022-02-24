@@ -564,7 +564,7 @@ func (s *coreService) observeEventsWithAck(
 	}
 }
 
-func (s *coreService) handleTMError(err error) error {
+func (s *coreService) handleSubmitRawTxTMError(err error) error {
 	// This is Tendermint's specific error signature
 	if _, ok := err.(interface {
 		Code() uint32
@@ -598,9 +598,9 @@ func (s *coreService) SubmitRawTransaction(ctx context.Context, req *protoapi.Su
 					Code:    txResult.Code,
 					Data:    txResult.Data.String(),
 					Log:     txResult.Log,
-				}, s.handleTMError(err)
+				}, s.handleSubmitRawTxTMError(err)
 			}
-			return nil, s.handleTMError(err)
+			return nil, s.handleSubmitRawTxTMError(err)
 		}
 		successResponse.TxHash = txResult.Hash.String()
 		successResponse.Code = txResult.Code
@@ -616,9 +616,9 @@ func (s *coreService) SubmitRawTransaction(ctx context.Context, req *protoapi.Su
 					Code:    txResult.Code,
 					Data:    txResult.Data.String(),
 					Log:     txResult.Log,
-				}, s.handleTMError(err)
+				}, s.handleSubmitRawTxTMError(err)
 			}
-			return nil, s.handleTMError(err)
+			return nil, s.handleSubmitRawTxTMError(err)
 		}
 		successResponse.TxHash = txResult.Hash.String()
 		successResponse.Code = txResult.Code
@@ -634,9 +634,9 @@ func (s *coreService) SubmitRawTransaction(ctx context.Context, req *protoapi.Su
 					Code:    txResult.DeliverTx.Code,
 					Data:    string(txResult.DeliverTx.Data),
 					Log:     txResult.DeliverTx.Log,
-				}, s.handleTMError(err)
+				}, s.handleSubmitRawTxTMError(err)
 			}
-			return nil, s.handleTMError(err)
+			return nil, s.handleSubmitRawTxTMError(err)
 		}
 		successResponse.TxHash = txResult.Hash.String()
 		successResponse.Code = txResult.DeliverTx.Code
