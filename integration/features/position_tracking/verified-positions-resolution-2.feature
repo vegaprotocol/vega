@@ -78,6 +78,11 @@ Feature: Position resolution case 2
       | sellSideProvider | ETH/DEC19 | sell | 1      | 120   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | buySideProvider  | ETH/DEC19 | buy  | 1      | 120   | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
+    Then the order book should have the following volumes for market "ETH/DEC19":   
+      | side | price  | volume |
+      | buy  | 1      | 1      |
+      | buy  | 40     | 1      |
+
 # change of mark price triggered recalculation of margin level of "designatedLooser" 
 # since the change of order before the change of mark price, the slippage is recalculated as well: 120-(1*1+1*40)/2 = 100, hence margin level is 100*290 = 29000
     Then the parties should have the following margin levels:
