@@ -23,7 +23,7 @@ type ChainVersion struct {
 	Max semver.Version
 }
 
-// Check validate that they chain respect the minimal version required.
+// Check validate that they chain respect the minimal and maximum versions required.
 func (c ChainVersion) Check(vstr string) error {
 	vstr = stripVPrefix(vstr)
 
@@ -33,10 +33,10 @@ func (c ChainVersion) Check(vstr string) error {
 	}
 
 	if v.LT(c.Min) {
-		return fmt.Errorf("expected version greater than %v but got %v", c.Min, v)
+		return fmt.Errorf("expected version greater than or equal to %v but got %v", c.Min, v)
 	}
 
-	if v.GE(c.Max) {
+	if v.GTE(c.Max) {
 		return fmt.Errorf("expected version less than %v but got %v", c.Max, v)
 	}
 

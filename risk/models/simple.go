@@ -1,8 +1,6 @@
 package models
 
 import (
-	"time"
-
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
 )
@@ -27,33 +25,17 @@ func NewSimple(ps *types.SimpleRiskModel, asset string) (*Simple, error) {
 	}, nil
 }
 
-// CalculationInterval return the calculation interval for the simple/dummy risk model.
-func (f *Simple) CalculationInterval() time.Duration {
-	return time.Duration(0)
-}
-
 // CalculateRiskFactors returns the fixed risk factors for the simple risk model.
-func (f *Simple) CalculateRiskFactors(current *types.RiskResult) (bool, *types.RiskResult) {
-	rf := &types.RiskResult{
-		RiskFactors: map[string]*types.RiskFactor{
-			f.asset: {
-				Long:  f.factorLong,
-				Short: f.factorShort,
-			},
-		},
-		PredictedNextRiskFactors: map[string]*types.RiskFactor{
-			f.asset: {
-				Long:  f.factorLong,
-				Short: f.factorShort,
-			},
-		},
+func (f *Simple) CalculateRiskFactors() *types.RiskFactor {
+	return &types.RiskFactor{
+		Long:  f.factorLong,
+		Short: f.factorShort,
 	}
-	return true, rf
 }
 
 // PriceRange returns the minimum and maximum price as implied by the model's maxMoveUp/minMoveDown parameters and the current price.
 func (f *Simple) PriceRange(currentP, _, _ num.Decimal) (num.Decimal, num.Decimal) {
-	return currentP.Sub(f.minMoveDown), currentP.Add(f.maxMoveUp)
+	return num.MaxD(currentP.Sub(f.minMoveDown), num.DecimalZero()), currentP.Add(f.maxMoveUp)
 }
 
 // ProbabilityOfTrading of trading returns the probability of trading given current mark price, projection horizon expressed as year fraction, order price and side (isBid).
@@ -71,4 +53,11 @@ func (f *Simple) ProbabilityOfTrading(currentP, orderP *num.Uint, minP, maxP, yF
 // GetProjectionHorizon returns 0 and the simple model doesn't rely on any proabilistic calculations.
 func (f *Simple) GetProjectionHorizon() num.Decimal {
 	return num.DecimalZero()
+}
+
+func (f *Simple) DefaultRiskFactors() *types.RiskFactor {
+	return &types.RiskFactor{
+		Long:  f.factorLong,
+		Short: f.factorShort,
+	}
 }

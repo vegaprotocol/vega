@@ -2,14 +2,15 @@ package products
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"time"
 
+	oraclespb "code.vegaprotocol.io/protos/vega/oracles/v1"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/oracles"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
-
 	"github.com/pkg/errors"
 )
 
@@ -29,8 +30,8 @@ type Future struct {
 	QuoteName                  string
 	Maturity                   time.Time
 	oracle                     oracle
-	tradingTerminationlistener func(context.Context, bool)
-	settlementPricelistener    func(context.Context, *num.Uint)
+	tradingTerminationListener func(context.Context, bool)
+	settlementPriceListener    func(context.Context, *num.Uint)
 }
 
 type oracle struct {
@@ -63,11 +64,11 @@ type oracleBinding struct {
 }
 
 func (f *Future) NotifyOnSettlementPrice(listener func(context.Context, *num.Uint)) {
-	f.settlementPricelistener = listener
+	f.settlementPriceListener = listener
 }
 
 func (f *Future) NotifyOnTradingTerminated(listener func(context.Context, bool)) {
-	f.tradingTerminationlistener = listener
+	f.tradingTerminationListener = listener
 }
 
 func (f *Future) SettlementPrice() (*num.Uint, error) {
@@ -115,18 +116,40 @@ func (f *Future) updateTradingTerminated(ctx context.Context, data oracles.Oracl
 	if f.log.GetLevel() == logging.DebugLevel {
 		f.log.Debug("new oracle data received", data.Debug()...)
 	}
+
 	tradingTerminated, err := data.GetBoolean(f.oracle.binding.tradingTerminationProperty)
-	if err != nil {
+
+	return f.setTradingTerminated(ctx, tradingTerminated, err)
+}
+
+func (f *Future) updateTradingTerminatedByTimestamp(ctx context.Context, data oracles.OracleData) error {
+	if f.log.GetLevel() == logging.DebugLevel {
+		f.log.Debug("new oracle data received", data.Debug()...)
+	}
+
+	var tradingTerminated bool
+	var err error
+
+	if _, err = data.GetTimestamp(oracles.BuiltinOracleTimestamp); err == nil {
+		// we have received a trading termination timestamp from the internal vega time oracle
+		tradingTerminated = true
+	}
+
+	return f.setTradingTerminated(ctx, tradingTerminated, err)
+}
+
+func (f *Future) setTradingTerminated(ctx context.Context, tradingTerminated bool, dataErr error) error {
+	if dataErr != nil {
 		f.log.Error(
 			"could not parse the property acting as trading Terminated",
-			logging.Error(err),
+			logging.Error(dataErr),
 		)
-		return err
+		return dataErr
 	}
 
 	f.oracle.data.tradingTerminated = tradingTerminated
-	if f.tradingTerminationlistener != nil {
-		f.tradingTerminationlistener(ctx, tradingTerminated)
+	if f.tradingTerminationListener != nil {
+		f.tradingTerminationListener(ctx, tradingTerminated)
 	}
 	return nil
 }
@@ -146,8 +169,8 @@ func (f *Future) updateSettlementPrice(ctx context.Context, data oracles.OracleD
 	}
 
 	f.oracle.data.settlementPrice = settlementPrice
-	if f.settlementPricelistener != nil {
-		f.settlementPricelistener(ctx, settlementPrice)
+	if f.settlementPriceListener != nil {
+		f.settlementPriceListener(ctx, settlementPrice)
 	}
 
 	if f.log.GetLevel() == logging.DebugLevel {
@@ -161,11 +184,6 @@ func (f *Future) updateSettlementPrice(ctx context.Context, data oracles.OracleD
 }
 
 func newFuture(ctx context.Context, log *logging.Logger, f *types.Future, oe OracleEngine) (*Future, error) {
-	maturity, err := time.Parse(time.RFC3339, f.Maturity)
-	if err != nil {
-		return nil, errors.Wrap(err, "invalid maturity time format")
-	}
-
 	if f.OracleSpecForSettlementPrice == nil || f.OracleSpecForTradingTermination == nil || f.OracleSpecBinding == nil {
 		return nil, ErrOracleSpecAndBindingAreRequired
 	}
@@ -175,44 +193,63 @@ func newFuture(ctx context.Context, log *logging.Logger, f *types.Future, oe Ora
 		return nil, err
 	}
 
-	oracleSpecForSettlementPrice, err := oracles.NewOracleSpec(*f.OracleSpecForSettlementPrice)
-	if err != nil {
-		return nil, err
-	}
-
-	if !oracleSpecForSettlementPrice.CanBindProperty(oracleBinding.settlementPriceProperty) {
-		return nil, errors.New("bound settlement price property is not filtered by oracle spec")
-	}
-
-	oracleSpecForTerminatedMarket, err := oracles.NewOracleSpec(*f.OracleSpecForTradingTermination)
-	if err != nil {
-		return nil, err
-	}
-
-	if !oracleSpecForTerminatedMarket.CanBindProperty(oracleBinding.tradingTerminationProperty) {
-		return nil, errors.New("bound trading termination property is not filtered by oracle spec")
-	}
-
 	future := &Future{
 		log:             log,
 		SettlementAsset: f.SettlementAsset,
 		QuoteName:       f.QuoteName,
-		Maturity:        maturity,
 		oracle: oracle{
 			binding: oracleBinding,
 		},
 	}
 
-	future.oracle.settlementPriceSubscriptionID = oe.Subscribe(ctx, *oracleSpecForSettlementPrice, future.updateSettlementPrice)
-	future.oracle.tradingTerminatedSubscriptionID = oe.Subscribe(ctx, *oracleSpecForTerminatedMarket, future.updateTradingTerminated)
+	// Oracle spec for settlement price.
+	oracleSpecForSettlementPrice, err := oracles.NewOracleSpec(*f.OracleSpecForSettlementPrice)
+	if err != nil {
+		return nil, err
+	}
 
-	if log.GetLevel() == logging.DebugLevel {
-		log.Debug(
-			"future subscribed to oracle engine for settlement price",
+	if err := oracleSpecForSettlementPrice.EnsureBoundableProperty(
+		oracleBinding.settlementPriceProperty,
+		oraclespb.PropertyKey_TYPE_INTEGER,
+	); err != nil {
+		return nil, fmt.Errorf("invalid oracle spec binding for settlement price: %w", err)
+	}
+
+	future.oracle.settlementPriceSubscriptionID = oe.Subscribe(ctx, *oracleSpecForSettlementPrice, future.updateSettlementPrice)
+
+	if log.IsDebug() {
+		log.Debug("future subscribed to oracle engine for settlement price",
 			logging.Uint64("subscription ID", uint64(future.oracle.settlementPriceSubscriptionID)),
 		)
-		log.Debug(
-			"future subscribed to oracle engine for market termination event",
+	}
+
+	// Oracle spec for trading termination.
+	oracleSpecForTerminatedMarket, err := oracles.NewOracleSpec(*f.OracleSpecForTradingTermination)
+	if err != nil {
+		return nil, err
+	}
+
+	var tradingTerminationPropType oraclespb.PropertyKey_Type
+	var tradingTerminationCb oracles.OnMatchedOracleData
+	if oracleBinding.tradingTerminationProperty == oracles.BuiltinOracleTimestamp {
+		tradingTerminationPropType = oraclespb.PropertyKey_TYPE_TIMESTAMP
+		tradingTerminationCb = future.updateTradingTerminatedByTimestamp
+	} else {
+		tradingTerminationPropType = oraclespb.PropertyKey_TYPE_BOOLEAN
+		tradingTerminationCb = future.updateTradingTerminated
+	}
+
+	if err = oracleSpecForTerminatedMarket.EnsureBoundableProperty(
+		oracleBinding.tradingTerminationProperty,
+		tradingTerminationPropType,
+	); err != nil {
+		return nil, fmt.Errorf("invalid oracle spec binding for trading termination: %w", err)
+	}
+
+	future.oracle.tradingTerminatedSubscriptionID = oe.Subscribe(ctx, *oracleSpecForTerminatedMarket, tradingTerminationCb)
+
+	if log.IsDebug() {
+		log.Debug("future subscribed to oracle engine for market termination event",
 			logging.Uint64("subscription ID", uint64(future.oracle.tradingTerminatedSubscriptionID)),
 		)
 	}

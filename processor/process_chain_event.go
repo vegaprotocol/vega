@@ -37,6 +37,9 @@ func (app *App) processChainEvent(
 		return ErrChainEventFromNonValidator
 	}
 
+	// let the topology know who was the validator that forwarded the event
+	app.top.AddForwarder(pubkey)
+
 	// ack the new event then
 	if !app.evtfwd.Ack(ce) {
 		// there was an error, or this was already acked
@@ -51,6 +54,12 @@ func (app *App) processChainEvent(
 		blockNumber := c.StakingEvent.Block
 		logIndex := c.StakingEvent.Index
 		switch evt := c.StakingEvent.Action.(type) {
+		case *vgproto.StakingEvent_TotalSupply:
+			stakeTotalSupply, err := types.StakeTotalSupplyFromProto(evt.TotalSupply)
+			if err != nil {
+				return err
+			}
+			return app.stakingAccounts.ProcessStakeTotalSupply(ctx, stakeTotalSupply)
 		case *vgproto.StakingEvent_StakeDeposited:
 			stakeDeposited, err := types.StakeDepositedFromProto(
 				evt.StakeDeposited, blockNumber, logIndex, ce.TxId, id)

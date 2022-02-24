@@ -3,12 +3,10 @@ package staking
 import (
 	"context"
 	"encoding/hex"
-	"fmt"
 	"strings"
 	"sync"
 	"time"
 
-	vgproto "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
 
@@ -25,9 +23,8 @@ type OnChainVerifier struct {
 	ethClient        EthereumClient
 	ethConfirmations EthConfirmations
 
-	mu                sync.RWMutex
-	ethCfg            vgproto.EthereumConfig
-	contractAddresses []ethcmn.Address
+	mu                     sync.RWMutex
+	stakingBridgeAddresses []ethcmn.Address
 }
 
 func NewOnChainVerifier(
@@ -36,8 +33,9 @@ func NewOnChainVerifier(
 	ethClient EthereumClient,
 	ethConfirmations EthConfirmations,
 ) *OnChainVerifier {
-	log = log.Named(namedLogger)
+	log = log.Named("on-chain-verifier")
 	log.SetLevel(cfg.Level.Get())
+
 	return &OnChainVerifier{
 		log:              log,
 		ethClient:        ethClient,
@@ -45,34 +43,20 @@ func NewOnChainVerifier(
 	}
 }
 
-func (o *OnChainVerifier) OnEthereumConfigUpdate(_ context.Context, rawcfg interface{}) error {
-	cfg, ok := rawcfg.(*vgproto.EthereumConfig)
-	if !ok {
-		o.log.Error("invalid ethereum config",
-			logging.String("parameter", fmt.Sprintf("%#v", rawcfg)))
-		return ErrNotAnEthereumConfig
-	}
-
+func (o *OnChainVerifier) UpdateStakingBridgeAddresses(stakingBridgeAddresses []ethcmn.Address) {
 	o.mu.Lock()
 	defer o.mu.Unlock()
 
-	o.ethCfg = *cfg
-	o.contractAddresses = nil
-	for _, address := range o.ethCfg.StakingBridgeAddresses {
-		o.contractAddresses = append(
-			o.contractAddresses, ethcmn.HexToAddress(address))
-	}
+	o.stakingBridgeAddresses = stakingBridgeAddresses
 
 	if o.log.GetLevel() <= logging.DebugLevel {
-		addresses := []string{}
-		for _, v := range o.contractAddresses {
+		var addresses []string
+		for _, v := range o.stakingBridgeAddresses {
 			addresses = append(addresses, v.Hex())
 		}
 		o.log.Debug("staking bridge addresses updated",
 			logging.Strings("addresses", addresses))
 	}
-
-	return nil
 }
 
 func (o *OnChainVerifier) CheckStakeDeposited(
@@ -94,15 +78,14 @@ func (o *OnChainVerifier) CheckStakeDeposited(
 	var decodedPubKey [32]byte
 	copy(decodedPubKey[:], decodedPubKeySlice[0:32])
 
-	for _, address := range o.contractAddresses {
+	for _, address := range o.stakingBridgeAddresses {
 		if o.log.GetLevel() <= logging.DebugLevel {
 			o.log.Debug("checking stake deposited event on chain",
 				logging.String("bridge-address", address.Hex()),
 				logging.String("event", event.String()),
 			)
 		}
-		filterer, err := NewStakingFilterer(
-			address, o.ethClient)
+		filterer, err := NewStakingFilterer(address, o.ethClient)
 		if err != nil {
 			o.log.Error("could not instantiate staking bridge filterer",
 				logging.String("address", address.Hex()))
@@ -113,7 +96,8 @@ func (o *OnChainVerifier) CheckStakeDeposited(
 		defer cancel()
 		iter, err := filterer.FilterStakeDeposited(
 			&bind.FilterOpts{
-				Start:   event.BlockNumber - 1,
+				Start:   event.BlockNumber,
+				End:     &event.BlockNumber,
 				Context: ctx,
 			},
 			// user
@@ -121,8 +105,7 @@ func (o *OnChainVerifier) CheckStakeDeposited(
 			// vega_public_key
 			[][32]byte{decodedPubKey})
 		if err != nil {
-			o.log.Error("could not start stake deposited filter",
-				logging.Error(err))
+			o.log.Error("Couldn't start filtering on stake deposited event", logging.Error(err))
 			continue
 		}
 		defer iter.Close()
@@ -171,15 +154,14 @@ func (o *OnChainVerifier) CheckStakeRemoved(event *types.StakeRemoved) error {
 	var decodedPubKey [32]byte
 	copy(decodedPubKey[:], decodedPubKeySlice[0:32])
 
-	for _, address := range o.contractAddresses {
+	for _, address := range o.stakingBridgeAddresses {
 		if o.log.GetLevel() <= logging.DebugLevel {
 			o.log.Debug("checking stake removed event on chain",
 				logging.String("bridge-address", address.Hex()),
 				logging.String("event", event.String()),
 			)
 		}
-		filterer, err := NewStakingFilterer(
-			address, o.ethClient)
+		filterer, err := NewStakingFilterer(address, o.ethClient)
 		if err != nil {
 			o.log.Error("could not instantiate staking bridge filterer",
 				logging.String("address", address.Hex()))
@@ -188,9 +170,11 @@ func (o *OnChainVerifier) CheckStakeRemoved(event *types.StakeRemoved) error {
 
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
+
 		iter, err := filterer.FilterStakeRemoved(
 			&bind.FilterOpts{
-				Start:   event.BlockNumber - 1,
+				Start:   event.BlockNumber,
+				End:     &event.BlockNumber,
 				Context: ctx,
 			},
 			// user

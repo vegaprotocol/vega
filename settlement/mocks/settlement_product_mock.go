@@ -5,36 +5,37 @@
 package mocks
 
 import (
+	reflect "reflect"
+
 	types "code.vegaprotocol.io/vega/types"
 	num "code.vegaprotocol.io/vega/types/num"
 	gomock "github.com/golang/mock/gomock"
-	reflect "reflect"
 )
 
-// MockProduct is a mock of Product interface
+// MockProduct is a mock of Product interface.
 type MockProduct struct {
 	ctrl     *gomock.Controller
 	recorder *MockProductMockRecorder
 }
 
-// MockProductMockRecorder is the mock recorder for MockProduct
+// MockProductMockRecorder is the mock recorder for MockProduct.
 type MockProductMockRecorder struct {
 	mock *MockProduct
 }
 
-// NewMockProduct creates a new mock instance
+// NewMockProduct creates a new mock instance.
 func NewMockProduct(ctrl *gomock.Controller) *MockProduct {
 	mock := &MockProduct{ctrl: ctrl}
 	mock.recorder = &MockProductMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockProduct) EXPECT() *MockProductMockRecorder {
 	return m.recorder
 }
 
-// GetAsset mocks base method
+// GetAsset mocks base method.
 func (m *MockProduct) GetAsset() string {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAsset")
@@ -42,13 +43,13 @@ func (m *MockProduct) GetAsset() string {
 	return ret0
 }
 
-// GetAsset indicates an expected call of GetAsset
+// GetAsset indicates an expected call of GetAsset.
 func (mr *MockProductMockRecorder) GetAsset() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAsset", reflect.TypeOf((*MockProduct)(nil).GetAsset))
 }
 
-// Settle mocks base method
+// Settle mocks base method.
 func (m *MockProduct) Settle(arg0 *num.Uint, arg1 int64) (*types.FinancialAmount, bool, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Settle", arg0, arg1)
@@ -58,13 +59,13 @@ func (m *MockProduct) Settle(arg0 *num.Uint, arg1 int64) (*types.FinancialAmount
 	return ret0, ret1, ret2
 }
 
-// Settle indicates an expected call of Settle
+// Settle indicates an expected call of Settle.
 func (mr *MockProductMockRecorder) Settle(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Settle", reflect.TypeOf((*MockProduct)(nil).Settle), arg0, arg1)
 }
 
-// SettlementPrice mocks base method
+// SettlementPrice mocks base method.
 func (m *MockProduct) SettlementPrice() (*num.Uint, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SettlementPrice")
@@ -73,7 +74,7 @@ func (m *MockProduct) SettlementPrice() (*num.Uint, error) {
 	return ret0, ret1
 }
 
-// SettlementPrice indicates an expected call of SettlementPrice
+// SettlementPrice indicates an expected call of SettlementPrice.
 func (mr *MockProductMockRecorder) SettlementPrice() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SettlementPrice", reflect.TypeOf((*MockProduct)(nil).SettlementPrice))

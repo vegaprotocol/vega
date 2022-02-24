@@ -18,20 +18,20 @@ func (e *Engine) marketsStates() ([]*types.ExecMarket, []types.StateProvider, er
 		return nil, nil, nil
 	}
 	mks := make([]*types.ExecMarket, 0, mkts)
-	if prev := len(e.previouslySnapshottedMarkets); prev < mkts {
+	if prev := len(e.generatedProviders); prev < mkts {
 		mkts -= prev
 	}
-	e.marketsStateProviders = make([]types.StateProvider, 0, mkts*4)
+	e.newGeneratedProviders = make([]types.StateProvider, 0, mkts*4)
 	for _, m := range e.marketsCpy {
 		mks = append(mks, m.getState())
 
-		if _, ok := e.previouslySnapshottedMarkets[m.GetID()]; !ok {
-			e.marketsStateProviders = append(e.marketsStateProviders, m.position, m.matching, m.tsCalc, m.liquidity)
-			e.previouslySnapshottedMarkets[m.GetID()] = struct{}{}
+		if _, ok := e.generatedProviders[m.GetID()]; !ok {
+			e.newGeneratedProviders = append(e.newGeneratedProviders, m.position, m.matching, m.tsCalc, m.liquidity)
+			e.generatedProviders[m.GetID()] = struct{}{}
 		}
 	}
 
-	return mks, e.marketsStateProviders, nil
+	return mks, e.newGeneratedProviders, nil
 }
 
 func (e *Engine) restoreMarket(ctx context.Context, em *types.ExecMarket) (*Market, error) {
@@ -54,6 +54,15 @@ func (e *Engine) restoreMarket(ctx context.Context, em *types.ExecMarket) (*Mark
 			asset,
 		)
 	}
+	ad, err := e.assets.Get(asset)
+	if err != nil {
+		e.log.Error("Failed to restore a market, unknown asset",
+			logging.MarketID(marketConfig.ID),
+			logging.String("asset-id", asset),
+			logging.Error(err),
+		)
+		return nil, err
+	}
 
 	// create market auction state
 	mkt, err := NewMarketFromSnapshot(
@@ -70,7 +79,10 @@ func (e *Engine) restoreMarket(ctx context.Context, em *types.ExecMarket) (*Mark
 		e.oracle,
 		now,
 		e.broker,
-		e.idgen,
+		e.stateVarEngine,
+		ad,
+		e.feesTracker,
+		e.marketTracker,
 	)
 	if err != nil {
 		e.log.Error("failed to instantiate market",
@@ -87,6 +99,7 @@ func (e *Engine) restoreMarket(ctx context.Context, em *types.ExecMarket) (*Mark
 		return nil, err
 	}
 
+	e.publishMarketInfos(ctx, mkt)
 	return mkt, nil
 }
 
@@ -101,6 +114,9 @@ func (e *Engine) restoreMarketsStates(ctx context.Context, ems []*types.ExecMark
 		}
 
 		pvds = append(pvds, m.position, m.matching, m.tsCalc, m.liquidity)
+
+		// so that we don't return them again the next state change
+		e.generatedProviders[m.GetID()] = struct{}{}
 	}
 
 	return pvds, nil
@@ -108,7 +124,7 @@ func (e *Engine) restoreMarketsStates(ctx context.Context, ems []*types.ExecMark
 
 func (e *Engine) getSerialiseSnapshotAndHash() (snapshot, hash []byte, providers []types.StateProvider, err error) {
 	if !e.changed() {
-		return e.snapshotSerialised, e.snapshotHash, e.marketsStateProviders, nil
+		return e.snapshotSerialised, e.snapshotHash, e.newGeneratedProviders, nil
 	}
 
 	mkts, pvds, err := e.marketsStates()
@@ -119,10 +135,7 @@ func (e *Engine) getSerialiseSnapshotAndHash() (snapshot, hash []byte, providers
 	pl := types.Payload{
 		Data: &types.PayloadExecutionMarkets{
 			ExecutionMarkets: &types.ExecutionMarkets{
-				Markets:   mkts,
-				Batches:   e.idgen.batches,
-				Orders:    e.idgen.orders,
-				Proposals: e.idgen.proposals,
+				Markets: mkts,
 			},
 		},
 	}
@@ -132,7 +145,6 @@ func (e *Engine) getSerialiseSnapshotAndHash() (snapshot, hash []byte, providers
 		return nil, nil, nil, err
 	}
 
-	e.idgen.SnapshotCreated()
 	h := crypto.Hash(s)
 
 	e.snapshotSerialised = s
@@ -151,7 +163,7 @@ func (e *Engine) changed() bool {
 		}
 	}
 
-	return e.idgen.Changed()
+	return false
 }
 
 func (e *Engine) Namespace() types.SnapshotNamespace {
@@ -180,18 +192,9 @@ func (e *Engine) GetState(_ string) ([]byte, []types.StateProvider, error) {
 	return serialised, providers, nil
 }
 
-func (e *Engine) restoreIDGenerator(em *types.ExecutionMarkets) {
-	e.idgen.batches = em.Batches
-	e.idgen.proposals = em.Proposals
-	e.idgen.orders = em.Orders
-}
-
 func (e *Engine) LoadState(ctx context.Context, payload *types.Payload) ([]types.StateProvider, error) {
 	switch pl := payload.Data.(type) {
 	case *types.PayloadExecutionMarkets:
-
-		e.restoreIDGenerator(pl.ExecutionMarkets)
-
 		providers, err := e.restoreMarketsStates(ctx, pl.ExecutionMarkets.Markets)
 		if err != nil {
 			return nil, fmt.Errorf("failed to restore markets states: %w", err)

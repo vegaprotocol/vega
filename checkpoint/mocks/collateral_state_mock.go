@@ -5,36 +5,37 @@
 package mocks
 
 import (
-	types "code.vegaprotocol.io/vega/types"
 	context "context"
-	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
+
+	types "code.vegaprotocol.io/vega/types"
+	gomock "github.com/golang/mock/gomock"
 )
 
-// MockCollateralState is a mock of CollateralState interface
+// MockCollateralState is a mock of CollateralState interface.
 type MockCollateralState struct {
 	ctrl     *gomock.Controller
 	recorder *MockCollateralStateMockRecorder
 }
 
-// MockCollateralStateMockRecorder is the mock recorder for MockCollateralState
+// MockCollateralStateMockRecorder is the mock recorder for MockCollateralState.
 type MockCollateralStateMockRecorder struct {
 	mock *MockCollateralState
 }
 
-// NewMockCollateralState creates a new mock instance
+// NewMockCollateralState creates a new mock instance.
 func NewMockCollateralState(ctrl *gomock.Controller) *MockCollateralState {
 	mock := &MockCollateralState{ctrl: ctrl}
 	mock.recorder = &MockCollateralStateMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockCollateralState) EXPECT() *MockCollateralStateMockRecorder {
 	return m.recorder
 }
 
-// Checkpoint mocks base method
+// Checkpoint mocks base method.
 func (m *MockCollateralState) Checkpoint() ([]byte, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Checkpoint")
@@ -43,13 +44,13 @@ func (m *MockCollateralState) Checkpoint() ([]byte, error) {
 	return ret0, ret1
 }
 
-// Checkpoint indicates an expected call of Checkpoint
+// Checkpoint indicates an expected call of Checkpoint.
 func (mr *MockCollateralStateMockRecorder) Checkpoint() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Checkpoint", reflect.TypeOf((*MockCollateralState)(nil).Checkpoint))
 }
 
-// EnableAsset mocks base method
+// EnableAsset mocks base method.
 func (m *MockCollateralState) EnableAsset(arg0 context.Context, arg1 types.Asset) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "EnableAsset", arg0, arg1)
@@ -57,13 +58,13 @@ func (m *MockCollateralState) EnableAsset(arg0 context.Context, arg1 types.Asset
 	return ret0
 }
 
-// EnableAsset indicates an expected call of EnableAsset
+// EnableAsset indicates an expected call of EnableAsset.
 func (mr *MockCollateralStateMockRecorder) EnableAsset(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EnableAsset", reflect.TypeOf((*MockCollateralState)(nil).EnableAsset), arg0, arg1)
 }
 
-// Load mocks base method
+// Load mocks base method.
 func (m *MockCollateralState) Load(arg0 context.Context, arg1 []byte) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Load", arg0, arg1)
@@ -71,13 +72,13 @@ func (m *MockCollateralState) Load(arg0 context.Context, arg1 []byte) error {
 	return ret0
 }
 
-// Load indicates an expected call of Load
+// Load indicates an expected call of Load.
 func (mr *MockCollateralStateMockRecorder) Load(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Load", reflect.TypeOf((*MockCollateralState)(nil).Load), arg0, arg1)
 }
 
-// Name mocks base method
+// Name mocks base method.
 func (m *MockCollateralState) Name() types.CheckpointName {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Name")
@@ -85,7 +86,7 @@ func (m *MockCollateralState) Name() types.CheckpointName {
 	return ret0
 }
 
-// Name indicates an expected call of Name
+// Name indicates an expected call of Name.
 func (mr *MockCollateralStateMockRecorder) Name() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Name", reflect.TypeOf((*MockCollateralState)(nil).Name))

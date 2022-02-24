@@ -5,35 +5,36 @@
 package mocks
 
 import (
+	reflect "reflect"
+
 	gomock "github.com/golang/mock/gomock"
 	types "github.com/tendermint/tendermint/abci/types"
-	reflect "reflect"
 )
 
-// MockABCIApp is a mock of ABCIApp interface
+// MockABCIApp is a mock of ABCIApp interface.
 type MockABCIApp struct {
 	ctrl     *gomock.Controller
 	recorder *MockABCIAppMockRecorder
 }
 
-// MockABCIAppMockRecorder is the mock recorder for MockABCIApp
+// MockABCIAppMockRecorder is the mock recorder for MockABCIApp.
 type MockABCIAppMockRecorder struct {
 	mock *MockABCIApp
 }
 
-// NewMockABCIApp creates a new mock instance
+// NewMockABCIApp creates a new mock instance.
 func NewMockABCIApp(ctrl *gomock.Controller) *MockABCIApp {
 	mock := &MockABCIApp{ctrl: ctrl}
 	mock.recorder = &MockABCIAppMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockABCIApp) EXPECT() *MockABCIAppMockRecorder {
 	return m.recorder
 }
 
-// BeginBlock mocks base method
+// BeginBlock mocks base method.
 func (m *MockABCIApp) BeginBlock(arg0 types.RequestBeginBlock) types.ResponseBeginBlock {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "BeginBlock", arg0)
@@ -41,13 +42,13 @@ func (m *MockABCIApp) BeginBlock(arg0 types.RequestBeginBlock) types.ResponseBeg
 	return ret0
 }
 
-// BeginBlock indicates an expected call of BeginBlock
+// BeginBlock indicates an expected call of BeginBlock.
 func (mr *MockABCIAppMockRecorder) BeginBlock(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BeginBlock", reflect.TypeOf((*MockABCIApp)(nil).BeginBlock), arg0)
 }
 
-// DeliverTx mocks base method
+// DeliverTx mocks base method.
 func (m *MockABCIApp) DeliverTx(arg0 types.RequestDeliverTx) types.ResponseDeliverTx {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "DeliverTx", arg0)
@@ -55,13 +56,13 @@ func (m *MockABCIApp) DeliverTx(arg0 types.RequestDeliverTx) types.ResponseDeliv
 	return ret0
 }
 
-// DeliverTx indicates an expected call of DeliverTx
+// DeliverTx indicates an expected call of DeliverTx.
 func (mr *MockABCIAppMockRecorder) DeliverTx(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeliverTx", reflect.TypeOf((*MockABCIApp)(nil).DeliverTx), arg0)
 }
 
-// InitChain mocks base method
+// InitChain mocks base method.
 func (m *MockABCIApp) InitChain(arg0 types.RequestInitChain) types.ResponseInitChain {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "InitChain", arg0)
@@ -69,7 +70,7 @@ func (m *MockABCIApp) InitChain(arg0 types.RequestInitChain) types.ResponseInitC
 	return ret0
 }
 
-// InitChain indicates an expected call of InitChain
+// InitChain indicates an expected call of InitChain.
 func (mr *MockABCIAppMockRecorder) InitChain(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InitChain", reflect.TypeOf((*MockABCIApp)(nil).InitChain), arg0)

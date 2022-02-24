@@ -8,15 +8,19 @@ import (
 )
 
 type isAsset interface {
-	// ProtoAsset get information about the asset itself
+	// Type get information about the asset itself
 	Type() *types.Asset
 	// GetAssetClass get the internal asset class
 	GetAssetClass() common.AssetClass
 	// IsValid is the order valid / validated with the target chain?
 	IsValid() bool
-	// Validate this is used to validate that the asset
-	// exist on the target chain
+	// Validate this is used to check if the assets
+	// are present on the target chain
 	Validate() error
+	// SetValidNonValidator will set an asset as valid
+	// without running actual validation, this is used in the
+	// context of a non-validator node.
+	SetValidNonValidator()
 	String() string
 }
 
@@ -50,4 +54,8 @@ func (a *Asset) BuiltinAsset() (*builtin.Builtin, bool) {
 
 func (a *Asset) ToAssetType() *types.Asset {
 	return a.Type()
+}
+
+func (a *Asset) DecimalPlaces() uint64 {
+	return a.ToAssetType().Details.Decimals
 }

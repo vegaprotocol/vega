@@ -3,7 +3,7 @@ Feature: Test liquidity provider reward distribution
 # Spec file: ../spec/0042-setting-fees-and-rewarding-lps.md
 
   Background:
-    Given the simple risk model named "simple-risk-model-1":
+    Given the simple risk model named "simple-risk-model-1": 
       | long | short | max move up | min move down | probability of trading |
       | 0.1  | 0.1   | 500         | 500           | 0.1                    |
     And the fees configuration named "fees-config-1":
@@ -24,6 +24,7 @@ Feature: Test liquidity provider reward distribution
       | market.liquidity.targetstake.triggering.ratio       | 0     |
       | market.liquidity.providers.fee.distributionTimeStep | 10m   |
 
+  Given the average block duration is "2"
 
   Scenario: 1 LP joining at start, checking liquidity rewards over 3 periods, 1 period with no trades
     # setup accounts
@@ -34,11 +35,11 @@ Feature: Test liquidity provider reward distribution
       | party2 | ETH   | 100000000  |
 
     And the parties submit the following liquidity provision:
-      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset |
-      | lp1 | lp1   | ETH/DEC21 | 10000             | 0.001 | buy  | BID              | 1          | -2     |
-      | lp1 | lp1   | ETH/DEC21 | 10000             | 0.001 | buy  | MID              | 2          | -1     |
-      | lp1 | lp1   | ETH/DEC21 | 10000             | 0.001 | sell | ASK              | 1          | 2      |
-      | lp1 | lp1   | ETH/DEC21 | 10000             | 0.001 | sell | MID              | 2          | 1      |
+      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type |
+      | lp1 | lp1   | ETH/DEC21 | 10000             | 0.001 | buy  | BID              | 1          | 2      | submission |
+      | lp1 | lp1   | ETH/DEC21 | 10000             | 0.001 | buy  | MID              | 2          | 1      | amendment |
+      | lp1 | lp1   | ETH/DEC21 | 10000             | 0.001 | sell | ASK              | 1          | 2      | amendment |
+      | lp1 | lp1   | ETH/DEC21 | 10000             | 0.001 | sell | MID              | 2          | 1      | amendment |
 
     Then the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
@@ -63,9 +64,11 @@ Feature: Test liquidity provider reward distribution
       | party | equity like share | average entry valuation |
       | lp1   | 1                 | 10000                   |
 
+    Then the network moves ahead "1" blocks
+
     And the price monitoring bounds for the market "ETH/DEC21" should be:
       | min bound | max bound |
-      | 500       | 1500      |
+      | 500       | 1500      | 
 
     And the liquidity fee factor should "0.001" for the market "ETH/DEC21"
 
@@ -126,17 +129,17 @@ Feature: Test liquidity provider reward distribution
       | party2 | ETH   | 100000000  |
 
     And the parties submit the following liquidity provision:
-      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset |
-      | lp1 | lp1   | ETH/DEC21 | 5000              | 0.001 | buy  | BID              | 1          | -2     |
-      | lp1 | lp1   | ETH/DEC21 | 5000              | 0.001 | buy  | MID              | 2          | -1     |
-      | lp1 | lp1   | ETH/DEC21 | 5000              | 0.001 | sell | ASK              | 1          | 2      |
-      | lp1 | lp1   | ETH/DEC21 | 5000              | 0.001 | sell | MID              | 2          | 1      |
+      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type |
+      | lp1 | lp1   | ETH/DEC21 | 5000              | 0.001 | buy  | BID              | 1          | 2      | submission |
+      | lp1 | lp1   | ETH/DEC21 | 5000              | 0.001 | buy  | MID              | 2          | 1      | amendment |
+      | lp1 | lp1   | ETH/DEC21 | 5000              | 0.001 | sell | ASK              | 1          | 2      | amendment |
+      | lp1 | lp1   | ETH/DEC21 | 5000              | 0.001 | sell | MID              | 2          | 1      | amendment |
     And the parties submit the following liquidity provision:
-      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset |
-      | lp2 | lp2   | ETH/DEC21 | 5000              | 0.002 | buy  | BID              | 1          | -2     |
-      | lp2 | lp2   | ETH/DEC21 | 5000              | 0.002 | buy  | MID              | 2          | -1     |
-      | lp2 | lp2   | ETH/DEC21 | 5000              | 0.002 | sell | ASK              | 1          | 2      |
-      | lp2 | lp2   | ETH/DEC21 | 5000              | 0.002 | sell | MID              | 2          | 1      |
+      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type |
+      | lp2 | lp2   | ETH/DEC21 | 5000              | 0.002 | buy  | BID              | 1          | 2      | submission |
+      | lp2 | lp2   | ETH/DEC21 | 5000              | 0.002 | buy  | MID              | 2          | 1      | amendment |
+      | lp2 | lp2   | ETH/DEC21 | 5000              | 0.002 | sell | ASK              | 1          | 2      | amendment |
+      | lp2 | lp2   | ETH/DEC21 | 5000              | 0.002 | sell | MID              | 2          | 1      | amendment |
 
     Then the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
@@ -225,17 +228,17 @@ Feature: Test liquidity provider reward distribution
       | party2 | ETH   | 100000000  |
 
     And the parties submit the following liquidity provision:
-      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset |
-      | lp1 | lp1   | ETH/DEC21 | 8000              | 0.001 | buy  | BID              | 1          | -2     |
-      | lp1 | lp1   | ETH/DEC21 | 8000              | 0.001 | buy  | MID              | 2          | -1     |
-      | lp1 | lp1   | ETH/DEC21 | 8000              | 0.001 | sell | ASK              | 1          | 2      |
-      | lp1 | lp1   | ETH/DEC21 | 8000              | 0.001 | sell | MID              | 2          | 1      |
+      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type |
+      | lp1 | lp1   | ETH/DEC21 | 8000              | 0.001 | buy  | BID              | 1          | 2      | submission |
+      | lp1 | lp1   | ETH/DEC21 | 8000              | 0.001 | buy  | MID              | 2          | 1      | amendment |
+      | lp1 | lp1   | ETH/DEC21 | 8000              | 0.001 | sell | ASK              | 1          | 2      | amendment |
+      | lp1 | lp1   | ETH/DEC21 | 8000              | 0.001 | sell | MID              | 2          | 1      | amendment |
     And the parties submit the following liquidity provision:
-      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset |
-      | lp2 | lp2   | ETH/DEC21 | 2000              | 0.002 | buy  | BID              | 1          | -2     |
-      | lp2 | lp2   | ETH/DEC21 | 2000              | 0.002 | buy  | MID              | 2          | -1     |
-      | lp2 | lp2   | ETH/DEC21 | 2000              | 0.002 | sell | ASK              | 1          | 2      |
-      | lp2 | lp2   | ETH/DEC21 | 2000              | 0.002 | sell | MID              | 2          | 1      |
+      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type |
+      | lp2 | lp2   | ETH/DEC21 | 2000              | 0.002 | buy  | BID              | 1          | 2      | submission |
+      | lp2 | lp2   | ETH/DEC21 | 2000              | 0.002 | buy  | MID              | 2          | 1      | amendment |
+      | lp2 | lp2   | ETH/DEC21 | 2000              | 0.002 | sell | ASK              | 1          | 2      | amendment |
+      | lp2 | lp2   | ETH/DEC21 | 2000              | 0.002 | sell | MID              | 2          | 1      | amendment |
 
     Then the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
@@ -273,14 +276,15 @@ Feature: Test liquidity provider reward distribution
     Then the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference    |
       | party1 | ETH/DEC21 | sell | 20     | 1000  | 0                | TYPE_LIMIT | TIF_GTC | party1-sell |
-      | party2 | ETH/DEC21 | buy  | 20     | 1000  | 2                | TYPE_LIMIT | TIF_GTC | party2-buy  |
+      | party2 | ETH/DEC21 | buy  | 20     | 1000  | 3                | TYPE_LIMIT | TIF_GTC | party2-buy  |
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC21"
 
     And the following trades should be executed:
-      | buyer   | price | size | seller  |
+      | buyer  | price | size | seller  |
       | party2 | 951   | 12   | lp1     |
-      | party2 | 1000  | 8    | party1 |
+      | party2 | 951   | 3    | lp2     |
+      | party2 | 1000  | 5    | party1 |
 
     And the accumulated liquidity fees should be "20" for the market "ETH/DEC21"
 
@@ -330,17 +334,17 @@ Feature: Test liquidity provider reward distribution
       | party2 | ETH   | 100000000  |
 
     And the parties submit the following liquidity provision:
-      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset |
-      | lp1 | lp1   | ETH/DEC21 | 8000              | 0.001 | buy  | BID              | 1          | -2     |
-      | lp1 | lp1   | ETH/DEC21 | 8000              | 0.001 | buy  | MID              | 2          | -1     |
-      | lp1 | lp1   | ETH/DEC21 | 8000              | 0.001 | sell | ASK              | 1          | 2      |
-      | lp1 | lp1   | ETH/DEC21 | 8000              | 0.001 | sell | MID              | 2          | 1      |
+      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type |
+      | lp1 | lp1   | ETH/DEC21 | 8000              | 0.001 | buy  | BID              | 1          | 2      | submission |
+      | lp1 | lp1   | ETH/DEC21 | 8000              | 0.001 | buy  | MID              | 2          | 1      | amendment |
+      | lp1 | lp1   | ETH/DEC21 | 8000              | 0.001 | sell | ASK              | 1          | 2      | amendment |
+      | lp1 | lp1   | ETH/DEC21 | 8000              | 0.001 | sell | MID              | 2          | 1      | amendment |
     And the parties submit the following liquidity provision:
-      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset |
-      | lp2 | lp2   | ETH/DEC21 | 2000              | 0.002 | buy  | BID              | 1          | -2     |
-      | lp2 | lp2   | ETH/DEC21 | 2000              | 0.002 | buy  | MID              | 2          | -1     |
-      | lp2 | lp2   | ETH/DEC21 | 2000              | 0.002 | sell | ASK              | 1          | 2      |
-      | lp2 | lp2   | ETH/DEC21 | 2000              | 0.002 | sell | MID              | 2          | 1      |
+      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type |
+      | lp2 | lp2   | ETH/DEC21 | 2000              | 0.002 | buy  | BID              | 1          | 2      | submission |
+      | lp2 | lp2   | ETH/DEC21 | 2000              | 0.002 | buy  | MID              | 2          | 1      | amendment |
+      | lp2 | lp2   | ETH/DEC21 | 2000              | 0.002 | sell | ASK              | 1          | 2      | amendment |
+      | lp2 | lp2   | ETH/DEC21 | 2000              | 0.002 | sell | MID              | 2          | 1      | amendment |
 
     Then the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
@@ -379,12 +383,13 @@ Feature: Test liquidity provider reward distribution
     Then the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference    |
       | party1 | ETH/DEC21 | sell | 20     | 1000  | 0                | TYPE_LIMIT | TIF_GTC | party1-sell |
-      | party2 | ETH/DEC21 | buy  | 20     | 1000  | 2                | TYPE_LIMIT | TIF_GTC | party2-buy  |
+      | party2 | ETH/DEC21 | buy  | 20     | 1000  | 3                | TYPE_LIMIT | TIF_GTC | party2-buy  |
 
     And the following trades should be executed:
-      | buyer   | price | size | seller  |
-      | party2 | 951   | 12   | lp1     |
-      | party2 | 1000  | 8    | party1 |
+      | buyer  | price | size | seller |
+      | party2 | 951   | 12   | lp1    |
+      | party2 | 951   | 3    | lp2    |
+      | party2 | 1000  | 5    | party1 |
 
     And the accumulated liquidity fees should be "20" for the market "ETH/DEC21"
 
@@ -400,17 +405,17 @@ Feature: Test liquidity provider reward distribution
     And the accumulated liquidity fees should be "0" for the market "ETH/DEC21"
 
     And the parties submit the following liquidity provision:
-      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset |
-      | lp3 | lp3   | ETH/DEC21 | 10000             | 0.001 | buy  | BID              | 1          | -2     |
-      | lp3 | lp3   | ETH/DEC21 | 10000             | 0.001 | buy  | MID              | 2          | -1     |
-      | lp3 | lp3   | ETH/DEC21 | 10000             | 0.001 | sell | ASK              | 1          | 2      |
-      | lp3 | lp3   | ETH/DEC21 | 10000             | 0.001 | sell | MID              | 2          | 1      |
+      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type |
+      | lp3 | lp3   | ETH/DEC21 | 10000             | 0.001 | buy  | BID              | 1          | 2      | submission|
+      | lp3 | lp3   | ETH/DEC21 | 10000             | 0.001 | buy  | MID              | 2          | 1      | amendment |
+      | lp3 | lp3   | ETH/DEC21 | 10000             | 0.001 | sell | ASK              | 1          | 2      | amendment |
+      | lp3 | lp3   | ETH/DEC21 | 10000             | 0.001 | sell | MID              | 2          | 1      | amendment |
 
     And the liquidity provider fee shares for the market "ETH/DEC21" should be:
-      | party | equity like share | average entry valuation |
-      | lp1   | 0.7366            | 10000                   |
-      | lp2   | 0.1841            | 10000                   |
-      | lp3   | 0.0791            | 116278                  |
+      | party | equity like share  | average entry valuation |
+      | lp1   | 0.7362029616262406 | 10000                   |
+      | lp2   | 0.1840507404065602 | 10000                   |
+      | lp3   | 0.0797462979671992 | 115397.670549084859473  |
 
     Then the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |

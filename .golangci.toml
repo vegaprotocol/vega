@@ -12,14 +12,14 @@ enable-all = true
 disable = [
     "promlinter",
     "wrapcheck",
-    "tagliatelle", 
+    "tagliatelle",
     "paralleltest",
-    "nlreturn", 
+    "nlreturn",
     "gomnd",
-    "goerr113", 
+    "goerr113",
     "tparallel",
     "testpackage",
-    "gochecknoglobals", 
+    "gochecknoglobals",
     "forcetypeassert",
     "exhaustivestruct",
     "exhaustive",
@@ -57,6 +57,10 @@ linters = ["staticcheck"]
 text = "SA1019:"
 
 [[issues.exclude-rules]]
+linters = ["staticcheck"]
+text = "SA5008:"
+
+[[issues.exclude-rules]]
 path = "_test\\.go"
 linters = ["forbidigo"]
 
@@ -74,3 +78,10 @@ linters = ["forbidigo"]
 
 [linters-settings.forbidigo]
 forbid = ["fmt\\.Print.*"]
+
+# protoc doesn't want us copying protobuf messages because they can have some internal state
+# that shouldn't be copied; but we do it a lot. see below for details
+# https://stackoverflow.com/questions/64183794/why-do-the-go-generated-protobuf-files-contain-mutex-locks
+[[issues.exclude-rules]]
+linters = ["govet"]
+text = "impl.MessageState contains sync.Mutex"

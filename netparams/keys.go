@@ -20,6 +20,7 @@ const (
 	MarketPriceMonitoringDefaultParameters          = "market.monitor.price.defaultParameters"
 	MarketPriceMonitoringUpdateFrequency            = "market.monitor.price.updateFrequency"
 	MarketLiquidityProvisionShapesMaxSize           = "market.liquidityProvision.shapes.maxSize"
+	MarketMinLpStakeQuantumMultiple                 = "market.liquidityProvision.minLpStakeQuantumMultiple"
 
 	RewardAsset = "reward.asset"
 
@@ -107,6 +108,20 @@ const (
 
 	// snapshot parameters.
 	SnapshotIntervalLength = "snapshot.interval.length"
+
+	FloatingPointUpdatesDuration = "network.floatingPointUpdates.delay"
+
+	// validators by stake.
+	NumberOfTendermintValidators               = "network.validators.tendermint.number"
+	ValidatorIncumbentBonus                    = "network.validators.incumbentBonus"
+	NumberEthMultisigSigners                   = "network.validators.multisig.numberOfSigners"
+	ErsatzvalidatorsRewardFactor               = "network.validators.ersatz.rewardFactor"
+	MultipleOfTendermintValidatorsForEtsatzSet = "network.validators.ersatz.multipleOfTendermintValidators"
+	MinimumEthereumEventsForNewValidator       = "network.validators.minimumEthereumEventsForNewValidator"
+
+	TransferFeeFactor                  = "transfer.fee.factor"
+	TransferMinTransferQuantumMultiple = "transfer.minTransferQuantumMultiple"
+	TransferMaxCommandsPerEpoch        = "spam.protection.maxUserTransfersPerEpoch"
 )
 
 var AllKeys = map[string]struct{}{
@@ -124,6 +139,7 @@ var AllKeys = map[string]struct{}{
 	MarketTargetStakeScalingFactor:                        {},
 	MarketPriceMonitoringDefaultParameters:                {},
 	MarketPriceMonitoringUpdateFrequency:                  {},
+	MarketMinLpStakeQuantumMultiple:                       {},
 	RewardAsset:                                           {},
 	GovernanceProposalMarketMinClose:                      {},
 	GovernanceProposalMarketMaxClose:                      {},
@@ -190,4 +206,14 @@ var AllKeys = map[string]struct{}{
 	StakingAndDelegationRewardsMinValidators:              {},
 	StakingAndDelegationRewardOptimalStakeMultiplier:      {},
 	SnapshotIntervalLength:                                {},
+	FloatingPointUpdatesDuration:                          {},
+	TransferFeeFactor:                                     {},
+	NumberOfTendermintValidators:                          {},
+	ValidatorIncumbentBonus:                               {},
+	NumberEthMultisigSigners:                              {},
+	ErsatzvalidatorsRewardFactor:                          {},
+	MultipleOfTendermintValidatorsForEtsatzSet:            {},
+	MinimumEthereumEventsForNewValidator:                  {},
+	TransferMinTransferQuantumMultiple:                    {},
+	TransferMaxCommandsPerEpoch:                           {},
 }

@@ -145,17 +145,6 @@ func InitializeScenario(s *godog.ScenarioContext) {
 		}
 		return nil
 	})
-	s.Step(`^the initial insurance pool balance is "([^"]*)" for the asset:$`, func(amountstr string) error {
-		amount, _ := num.UintFromString(amountstr, 10)
-		for _, mkt := range execsetup.markets {
-			asset, _ := mkt.GetAsset()
-			assetInsuranceAccount, _ := execsetup.collateralEngine.GetAssetInsurancePoolAccount(asset)
-			if err := execsetup.collateralEngine.IncrementBalance(context.Background(), assetInsuranceAccount.ID, amount); err != nil {
-				return err
-			}
-		}
-		return nil
-	})
 
 	s.Step(`^the market state should be "([^"]*)" for the market "([^"]*)"$`, func(marketState, marketID string) error {
 		return steps.TheMarketStateShouldBeForMarket(execsetup.executionEngine, marketID, marketState)
@@ -198,7 +187,15 @@ func InitializeScenario(s *godog.ScenarioContext) {
 	s.Step(`^the parties submit the following liquidity provision:$`, func(table *godog.Table) error {
 		return steps.PartiesSubmitLiquidityProvision(execsetup.executionEngine, table)
 	})
-
+	s.Step(`^the parties submit the following one off transfers:$`, func(table *godog.Table) error {
+		return steps.PartiesSubmitTransfers(execsetup.banking, table)
+	})
+	s.Step(`^the parties submit the following recurring transfers:$`, func(table *godog.Table) error {
+		return steps.PartiesSubmitRecurringTransfers(execsetup.banking, table)
+	})
+	s.Step(`^the parties submit the following transfer cancellations:$`, func(table *godog.Table) error {
+		return steps.PartiesCancelTransfers(execsetup.banking, table)
+	})
 	s.Step(`^the parties submit the following delegations:$`, func(table *godog.Table) error {
 		return steps.PartiesDelegateTheFollowingStake(execsetup.delegationEngine, table)
 	})
@@ -262,6 +259,9 @@ func InitializeScenario(s *godog.ScenarioContext) {
 	s.Step(`^"([^"]*)" should have general account balance of "([^"]*)" for asset "([^"]*)"$`, func(party, balance, asset string) error {
 		return steps.PartyShouldHaveGeneralAccountBalanceForAsset(execsetup.broker, party, asset, balance)
 	})
+	s.Step(`^the reward account of type "([^"]*)" should have balance of "([^"]*)" for asset "([^"]*)"$`, func(accountType, balance, asset string) error {
+		return steps.RewardAccountBalanceForAssetShouldMatch(execsetup.broker, accountType, asset, balance)
+	})
 	s.Step(`^"([^"]*)" should have one account per asset$`, func(owner string) error {
 		return steps.PartyShouldHaveOneAccountPerAsset(execsetup.broker, owner)
 	})
@@ -286,8 +286,8 @@ func InitializeScenario(s *godog.ScenarioContext) {
 	s.Step(`^the insurance pool balance should be "([^"]*)" for the market "([^"]*)"$`, func(rawAmount, marketID string) error {
 		return steps.TheInsurancePoolBalanceShouldBeForTheMarket(execsetup.broker, rawAmount, marketID)
 	})
-	s.Step(`^the insurance pool balance should be "([^"]*)" for the asset "([^"]*)"$`, func(rawAmount, asset string) error {
-		return steps.TheInsurancePoolBalanceShouldBeForTheAsset(execsetup.broker, rawAmount, asset)
+	s.Step(`^the network treasury balance should be "([^"]*)" for the asset "([^"]*)"$`, func(rawAmount, asset string) error {
+		return steps.TheNetworkTreasuryBalanceShouldBeForTheAsset(execsetup.broker, rawAmount, asset)
 	})
 	s.Step(`^the following transfers should happen:$`, func(table *godog.Table) error {
 		return steps.TheFollowingTransfersShouldHappen(execsetup.broker, table)
@@ -366,10 +366,24 @@ func InitializeScenario(s *godog.ScenarioContext) {
 		steps.DebugLPs(execsetup.broker, execsetup.log)
 		return nil
 	})
+	s.Step(`^debug detailed liquidity provision events$`, func() error {
+		steps.DebugLPDetail(execsetup.log, execsetup.broker)
+		return nil
+	})
+	s.Step(`^debug orderbook volumes for market "([^"]*)"$`, func(mkt string) error {
+		return steps.DebugVolumesForMarket(execsetup.log, execsetup.broker, mkt)
+	})
+	s.Step(`^debug detailed orderbook volumes for market "([^"]*)"$`, func(mkt string) error {
+		return steps.DebugVolumesForMarketDetail(execsetup.log, execsetup.broker, mkt)
+	})
 
 	// Event steps
 	s.Step(`^clear all events$`, func() error {
 		steps.ClearAllEvents(execsetup.broker)
+		return nil
+	})
+	s.Step(`^clear transfer response events$`, func() error {
+		steps.ClearTransferResponseEvents(execsetup.broker)
 		return nil
 	})
 	s.Step(`^the following events should be emitted"$`, func(table *godog.Table) error {
@@ -377,5 +391,18 @@ func InitializeScenario(s *godog.ScenarioContext) {
 	})
 	s.Step(`^a total of "([0-9]+)" events should be emitted"$`, func(eventCounter int) error {
 		return steps.TotalOfEventsShouldBeEmitted(execsetup.broker, eventCounter)
+	})
+
+	// Decimal places steps
+	s.Step(`^the following assets are registered:$`, func(table *godog.Table) error {
+		return steps.RegisterAsset(table, execsetup.assetsEngine)
+	})
+	s.Step(`^set assets to strict$`, func() error {
+		execsetup.assetsEngine.SetStrict()
+		return nil
+	})
+	s.Step(`^set assets to permissive$`, func() error {
+		execsetup.assetsEngine.SetPermissive()
+		return nil
 	})
 }

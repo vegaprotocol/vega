@@ -8,7 +8,6 @@ import (
 	proto "code.vegaprotocol.io/protos/vega"
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	"code.vegaprotocol.io/vega/types/num"
-	"google.golang.org/protobuf/types/known/wrapperspb"
 )
 
 type PriceLevel struct {
@@ -54,14 +53,14 @@ type OrderAmendment struct {
 	SizeDelta       int64
 	ExpiresAt       *int64 // timestamp
 	TimeInForce     OrderTimeInForce
-	PeggedOffset    *int64 // *wrappers.Int64Value
+	PeggedOffset    *num.Uint
 	PeggedReference PeggedReference
 }
 
 func NewOrderAmendmentFromProto(p *commandspb.OrderAmendment) (*OrderAmendment, error) {
 	var (
-		price             *num.Uint
-		exp, peggedOffset *int64
+		price, peggedOffset *num.Uint
+		exp                 *int64
 	)
 	if p.Price != nil {
 		if len(p.Price.Value) > 0 {
@@ -76,9 +75,12 @@ func NewOrderAmendmentFromProto(p *commandspb.OrderAmendment) (*OrderAmendment, 
 		e := p.ExpiresAt.Value
 		exp = &e
 	}
-	if p.PeggedOffset != nil {
-		po := p.PeggedOffset.Value
-		peggedOffset = &po
+	if p.PeggedOffset != "" {
+		var overflowed bool
+		peggedOffset, overflowed = num.UintFromString(p.PeggedOffset, 10)
+		if overflowed {
+			return nil, errors.New("invalid offset")
+		}
 	}
 	return &OrderAmendment{
 		OrderID:         p.OrderId,
@@ -111,9 +113,7 @@ func (o OrderAmendment) IntoProto() *commandspb.OrderAmendment {
 		}
 	}
 	if o.PeggedOffset != nil {
-		r.PeggedOffset = &wrapperspb.Int64Value{
-			Value: *o.PeggedOffset,
-		}
+		r.PeggedOffset = o.PeggedOffset.String()
 	}
 	return r
 }

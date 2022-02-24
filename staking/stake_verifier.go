@@ -20,8 +20,7 @@ const (
 var (
 	ErrNoStakeDepositedEventFound    = errors.New("no stake deposited event found")
 	ErrNoStakeRemovedEventFound      = errors.New("no stake removed event found")
-	ErrNotAnEthereumConfig           = errors.New("not an ethereum config")
-	ErrMissingConfirmations          = errors.New("missing confirmations")
+	ErrMissingConfirmations          = errors.New("not enough confirmations")
 	ErrInvalidStakeRemovedEventID    = errors.New("invalid stake removed event ID")
 	ErrInvalidStakeDepositedEventID  = errors.New("invalid stake deposited event ID")
 	ErrDuplicatedStakeDepositedEvent = errors.New("duplicated stake deposited event")
@@ -105,7 +104,7 @@ func NewStakeVerifier(
 	defer func() {
 		tt.NotifyOnTick(sv.onTick)
 	}()
-
+	log = log.Named("stake-verifier")
 	s := &StakeVerifier{
 		log:     log,
 		cfg:     cfg,

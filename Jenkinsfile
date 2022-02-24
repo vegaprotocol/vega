@@ -27,9 +27,6 @@ pipeline {
         string( name: 'VEGAWALLET_BRANCH', defaultValue: '',
                 description: '''Git branch, tag or hash of the vegaprotocol/vegawallet repository.
                     e.g. "develop", "v0.9.0" or commit hash. Default empty: use latest published version.''')
-        string( name: 'ETHEREUM_EVENT_FORWARDER_BRANCH', defaultValue: '',
-                description: '''Git branch, tag or hash of the vegaprotocol/ethereum-event-forwarder repository.
-                    e.g. "main", "v0.44.0" or commit hash. Default empty: use latest published version.''')
         string( name: 'DEVOPS_INFRA_BRANCH', defaultValue: 'master',
                 description: 'Git branch, tag or hash of the vegaprotocol/devops-infra repository')
         string( name: 'VEGATOOLS_BRANCH', defaultValue: 'develop',
@@ -38,13 +35,12 @@ pipeline {
                 description: 'Git branch, tag or hash of the vegaprotocol/system-tests repository')
         string( name: 'PROTOS_BRANCH', defaultValue: 'develop',
                 description: 'Git branch, tag or hash of the vegaprotocol/protos repository')
-        string(name: 'SPECS_INTERNAL_BRANCH', defaultValue: 'master', description: 'Git branch name of the vegaprotocol/specs-internal repository')
     }
     environment {
         CGO_ENABLED = 0
         GO111MODULE = 'on'
         DOCKER_IMAGE_TAG_LOCAL = "v-${ env.JOB_BASE_NAME.replaceAll('[^A-Za-z0-9\\._]','-') }-${BUILD_NUMBER}-${EXECUTOR_NUMBER}"
-        DOCKER_IMAGE_VEGA_CORE_LOCAL = "docker.pkg.github.com/vegaprotocol/vega/vega:${DOCKER_IMAGE_TAG_LOCAL}"
+        DOCKER_IMAGE_VEGA_CORE_LOCAL = "ghcr.io/vegaprotocol/vega/vega:${DOCKER_IMAGE_TAG_LOCAL}"
     }
 
     stages {
@@ -54,33 +50,25 @@ pipeline {
                 sh 'printenv'
                 echo "params=${params}"
                 echo "isPRBuild=${isPRBuild()}"
+                script {
+                    params = pr.injectPRParams()
+                }
+                echo "params (after injection)=${params}"
             }
         }
 
         stage('Git clone') {
-            parallel {
-                stage('vega core') {
-                    options { retry(3) }
-                    steps {
-                        dir('vega') {
-                            script {
-                                scmVars = checkout(scm)
-                                versionHash = sh (returnStdout: true, script: "echo \"${scmVars.GIT_COMMIT}\"|cut -b1-8").trim()
-                                version = sh (returnStdout: true, script: "git describe --tags 2>/dev/null || echo ${versionHash}").trim()
-                                commitHash = getCommitHash()
-                            }
-                            echo "scmVars=${scmVars}"
-                            echo "commitHash=${commitHash}"
-                        }
+            options { retry(3) }
+            steps {
+                dir('vega') {
+                    script {
+                        scmVars = checkout(scm)
+                        versionHash = sh (returnStdout: true, script: "echo \"${scmVars.GIT_COMMIT}\"|cut -b1-8").trim()
+                        version = sh (returnStdout: true, script: "git describe --tags 2>/dev/null || echo ${versionHash}").trim()
+                        commitHash = getCommitHash()
                     }
-                }
-                stage('specs-internal') {
-                    options { retry(3) }
-                    steps {
-                        dir('specs-internal') {
-                            git branch: "${params.SPECS_INTERNAL_BRANCH}", credentialsId: 'vega-ci-bot', url: 'git@github.com:vegaprotocol/specs-internal.git'
-                        }
-                    }
+                    echo "scmVars=${scmVars}"
+                    echo "commitHash=${commitHash}"
                 }
             }
         }
@@ -170,7 +158,7 @@ pipeline {
                         cp -a "${LINUX_BINARY}" "docker/bin/vega"
                     '''
                     // Note: This docker image is used by publish stage
-                    withDockerRegistry([credentialsId: 'github-vega-ci-bot-artifacts', url: "https://docker.pkg.github.com"]) {
+                    withDockerRegistry([credentialsId: 'github-vega-ci-bot-artifacts', url: "https://ghcr.io"]) {
                         sh label: 'Build docker image', script: '''
                             docker build -t "${DOCKER_IMAGE_VEGA_CORE_LOCAL}" docker/
                         '''
@@ -269,24 +257,15 @@ pipeline {
                         }
                     }
                 }
-                stage('specs-internal qa-scenarios') {
-                    options { retry(3) }
-                    steps {
-                        dir('vega/integration') {
-                            sh 'godog build -o qa_integration.test && ./qa_integration.test --format=junit:specs-internal-qa-scenarios-report.xml ../../specs-internal/qa-scenarios/'
-                            junit checksName: 'Specs Tests (specs-internal)', testResults: 'specs-internal-qa-scenarios-report.xml'
-                        }
-                    }
-                }
                 stage('System Tests') {
                     steps {
                         script {
                             systemTests ignoreFailure: !isPRBuild(),
                                 timeout: 30,
+                                vegaBuildTags: 'qa',
                                 vegaCore: commitHash,
                                 dataNode: params.DATA_NODE_BRANCH,
                                 vegawallet: params.VEGAWALLET_BRANCH,
-                                ethereumEventForwarder: params.ETHEREUM_EVENT_FORWARDER_BRANCH,
                                 devopsInfra: params.DEVOPS_INFRA_BRANCH,
                                 vegatools: params.VEGATOOLS_BRANCH,
                                 systemTests: params.SYSTEM_TESTS_BRANCH,
@@ -302,7 +281,6 @@ pipeline {
                                 vegaCore: commitHash,
                                 dataNode: params.DATA_NODE_BRANCH,
                                 vegawallet: params.VEGAWALLET_BRANCH,
-                                ethereumEventForwarder: params.ETHEREUM_EVENT_FORWARDER_BRANCH,
                                 devopsInfra: params.DEVOPS_INFRA_BRANCH,
                                 vegatools: params.VEGATOOLS_BRANCH,
                                 systemTests: params.SYSTEM_TESTS_BRANCH,
@@ -327,9 +305,9 @@ pipeline {
                     }
                     environment {
                         DOCKER_IMAGE_TAG_VERSIONED = "${ env.TAG_NAME ? env.TAG_NAME : env.BRANCH_NAME }"
-                        DOCKER_IMAGE_VEGA_CORE_VERSIONED = "docker.pkg.github.com/vegaprotocol/vega/vega:${DOCKER_IMAGE_TAG_VERSIONED}"
+                        DOCKER_IMAGE_VEGA_CORE_VERSIONED = "ghcr.io/vegaprotocol/vega/vega:${DOCKER_IMAGE_TAG_VERSIONED}"
                         DOCKER_IMAGE_TAG_ALIAS = "${ env.TAG_NAME ? 'latest' : 'edge' }"
-                        DOCKER_IMAGE_VEGA_CORE_ALIAS = "docker.pkg.github.com/vegaprotocol/vega/vega:${DOCKER_IMAGE_TAG_ALIAS}"
+                        DOCKER_IMAGE_VEGA_CORE_ALIAS = "ghcr.io/vegaprotocol/vega/vega:${DOCKER_IMAGE_TAG_ALIAS}"
                     }
                     options { retry(3) }
                     steps {
@@ -339,7 +317,7 @@ pipeline {
                                 docker image tag "${DOCKER_IMAGE_VEGA_CORE_LOCAL}" "${DOCKER_IMAGE_VEGA_CORE_ALIAS}"
                             '''
 
-                            withDockerRegistry([credentialsId: 'github-vega-ci-bot-artifacts', url: "https://docker.pkg.github.com"]) {
+                            withDockerRegistry([credentialsId: 'github-vega-ci-bot-artifacts', url: "https://ghcr.io"]) {
                                 sh label: 'Push docker images', script: '''
                                     docker push "${DOCKER_IMAGE_VEGA_CORE_VERSIONED}"
                                     docker push "${DOCKER_IMAGE_VEGA_CORE_ALIAS}"
@@ -364,33 +342,19 @@ pipeline {
                     options { retry(3) }
                     steps {
                         dir('vega') {
-                            withCredentials([usernamePassword(credentialsId: 'github-vega-ci-bot-artifacts', passwordVariable: 'TOKEN', usernameVariable:'USER')]) {
-                                // Workaround for user input:
-                                //  - global configuration: 'gh config set prompt disabled'
-                                sh label: 'Log in to a Gihub with CI', script: '''
-                                    echo ${TOKEN} | gh auth login --with-token -h github.com
-                                '''
+                            script {
+                                withGHCLI('credentialsId': 'github-vega-ci-bot-artifacts') {
+                                    sh label: 'Upload artifacts', script: '''#!/bin/bash -e
+                                        [[ $TAG_NAME =~ '-pre' ]] && prerelease='--prerelease' || prerelease=''
+                                        gh release create $TAG_NAME $prerelease ./cmd/vega/vega-*
+                                    '''
+                                }
                             }
-                            sh label: 'Upload artifacts', script: '''#!/bin/bash -e
-                                [[ $TAG_NAME =~ '-pre' ]] && prerelease='--prerelease' || prerelease=''
-                                gh release create $TAG_NAME $prerelease ./cmd/vega/vega-*
-                            '''
                             slackSend(
                                 channel: "#tradingcore-notify",
                                 color: "good",
                                 message: ":rocket: Vega Core » Published new version to GitHub <${RELEASE_URL}|${TAG_NAME}>",
                             )
-                        }
-                    }
-                    post {
-                        always  {
-                            retry(3) {
-                                script {
-                                    sh label: 'Log out from Github', script: '''
-                                        gh auth logout -h github.com
-                                    '''
-                                }
-                            }
                         }
                     }
                 }
@@ -399,9 +363,9 @@ pipeline {
                     when {
                         branch 'develop'
                     }
-                    options { retry(3) }
                     steps {
-                        devnetDeploy vegaCore: commitHash
+                        devnetDeploy vegaCore: commitHash,
+                            wait: false
                     }
                 }
             }

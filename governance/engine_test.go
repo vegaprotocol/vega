@@ -98,11 +98,10 @@ func testValidateProposalCommitment(t *testing.T) {
 	eng := getTestEngine(t)
 	defer eng.ctrl.Finish()
 
-	party := eng.newValidPartyTimes("a-valid-party", 1, 10)
+	party := eng.newValidPartyTimes("a-valid-party", 1, 8)
 
 	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
-	eng.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(nil, nil)
-	eng.assets.EXPECT().IsEnabled(gomock.Any()).AnyTimes().Return(true)
+	eng.expectAnyAsset()
 
 	now := time.Now()
 	prop := eng.newOpenProposal(party.Id, now)
@@ -149,22 +148,10 @@ func testValidateProposalCommitment(t *testing.T) {
 
 	// Then invalid shapes
 	prop.Terms.GetNewMarket().LiquidityCommitment = newMarketLiquidityCommitment()
-	prop.Terms.GetNewMarket().LiquidityCommitment.Buys[0].Offset = 100
-	_, err = eng.SubmitProposal(context.Background(), *types.ProposalSubmissionFromProposal(&prop), "proposal-id", party.Id)
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "order in buy side shape offset must be <= 0")
-
-	prop.Terms.GetNewMarket().LiquidityCommitment = newMarketLiquidityCommitment()
 	prop.Terms.GetNewMarket().LiquidityCommitment.Buys[0].Reference = proto.PeggedReference_PEGGED_REFERENCE_BEST_ASK
 	_, err = eng.SubmitProposal(context.Background(), *types.ProposalSubmissionFromProposal(&prop), "proposal-id", party.Id)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "order in buy side shape with best ask price reference")
-
-	prop.Terms.GetNewMarket().LiquidityCommitment = newMarketLiquidityCommitment()
-	prop.Terms.GetNewMarket().LiquidityCommitment.Sells[0].Offset = -100
-	_, err = eng.SubmitProposal(context.Background(), *types.ProposalSubmissionFromProposal(&prop), "proposal-id", party.Id)
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "order in sell shape offset must be >= 0")
 
 	prop.Terms.GetNewMarket().LiquidityCommitment = newMarketLiquidityCommitment()
 	prop.Terms.GetNewMarket().LiquidityCommitment.Sells[0].Reference = proto.PeggedReference_PEGGED_REFERENCE_BEST_BID
@@ -1375,9 +1362,11 @@ func testInvalidFreeformProposal(t *testing.T) {
 			ValidationTimestamp: now.Add(1 * time.Hour).Unix(),
 			Change: &types.ProposalTerms_NewFreeform{
 				NewFreeform: &types.NewFreeform{
-					URL:         "https://example.com",
-					Description: d + d + d,
-					Hash:        "2fb572edea4af9154edeff680e23689ed076d08934c60f8a4c1f5743a614954e",
+					Changes: &types.NewFreeformDetails{
+						URL:         "https://example.com",
+						Description: d + d + d,
+						Hash:        "2fb572edea4af9154edeff680e23689ed076d08934c60f8a4c1f5743a614954e",
+					},
 				},
 			},
 		},
@@ -1426,9 +1415,11 @@ func getTestEngine(t *testing.T) *tstEngine {
 func newValidFreeformTerms() *types.ProposalTerms_NewFreeform {
 	return &types.ProposalTerms_NewFreeform{
 		NewFreeform: &types.NewFreeform{
-			URL:         "https://example.com",
-			Description: "Test my freeform proposal",
-			Hash:        "2fb572edea4af9154edeff680e23689ed076d08934c60f8a4c1f5743a614954e",
+			Changes: &types.NewFreeformDetails{
+				URL:         "https://example.com",
+				Description: "Test my freeform proposal",
+				Hash:        "2fb572edea4af9154edeff680e23689ed076d08934c60f8a4c1f5743a614954e",
+			},
 		},
 	}
 }
@@ -1441,7 +1432,7 @@ func newValidAssetTerms() *types.ProposalTerms_NewAsset {
 				Symbol:      "TKN",
 				TotalSupply: num.NewUint(10000),
 				Decimals:    18,
-				MinLpStake:  num.NewUint(1),
+				Quantum:     num.NewUint(1),
 				Source: &types.AssetDetailsBuiltinAsset{
 					BuiltinAsset: &types.BuiltinAsset{
 						MaxFaucetAmountMint: num.NewUint(1),
@@ -1461,7 +1452,6 @@ func newValidMarketTerms() *types.ProposalTerms_NewMarket {
 					Code: "CRYPTO:GBPVUSD/JUN20",
 					Product: &types.InstrumentConfiguration_Future{
 						Future: &types.FutureProduct{
-							Maturity:        "2030-06-30T22:59:59Z",
 							SettlementAsset: "VUSD",
 							QuoteName:       "VUSD",
 							OracleSpecForSettlementPrice: &oraclesv1.OracleSpecConfiguration{
@@ -1507,12 +1497,7 @@ func newValidMarketTerms() *types.ProposalTerms_NewMarket {
 					},
 				},
 				Metadata:      []string{"asset_class:fx/crypto", "product:futures"},
-				DecimalPlaces: 5,
-				TradingMode: &types.NewMarketConfiguration_Continuous{
-					Continuous: &types.ContinuousTrading{
-						TickSize: "0.1",
-					},
-				},
+				DecimalPlaces: 0,
 			},
 			LiquidityCommitment: newMarketLiquidityCommitment(),
 		},
@@ -1524,10 +1509,10 @@ func newMarketLiquidityCommitment() *types.NewMarketCommitment {
 		CommitmentAmount: num.NewUint(1000),
 		Fee:              num.DecimalFromFloat(0.5),
 		Sells: []*types.LiquidityOrder{
-			{Reference: proto.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Proportion: 1, Offset: 10},
+			{Reference: proto.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Proportion: 1, Offset: num.NewUint(10)},
 		},
 		Buys: []*types.LiquidityOrder{
-			{Reference: proto.PeggedReference_PEGGED_REFERENCE_BEST_BID, Proportion: 1, Offset: -10},
+			{Reference: proto.PeggedReference_PEGGED_REFERENCE_BEST_BID, Proportion: 1, Offset: num.NewUint(10)},
 		},
 	}
 }
@@ -1600,12 +1585,20 @@ func (e *tstEngine) newOpenFreeformProposal(partyID string, now time.Time) types
 }
 
 func (e *tstEngine) expectAnyAsset() {
-	e.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(nil, nil)
+	details := newValidAssetTerms()
+	e.assets.EXPECT().Get(gomock.Any()).AnyTimes().DoAndReturn(func(id string) (*assets.Asset, error) {
+		ret := assets.NewAsset(builtin.New(id, details.NewAsset.Changes))
+		return ret, nil
+	})
 	e.assets.EXPECT().IsEnabled(gomock.Any()).AnyTimes().Return(true)
 }
 
 func (e *tstEngine) expectAnyAssetTimes(times int) {
-	e.assets.EXPECT().Get(gomock.Any()).Times(times).Return(nil, nil)
+	details := newValidAssetTerms()
+	e.assets.EXPECT().Get(gomock.Any()).Times(times).DoAndReturn(func(id string) (*assets.Asset, error) {
+		ret := assets.NewAsset(builtin.New(id, details.NewAsset.Changes))
+		return ret, nil
+	})
 	e.assets.EXPECT().IsEnabled(gomock.Any()).Times(times).Return(true)
 }
 

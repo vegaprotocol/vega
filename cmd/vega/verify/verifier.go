@@ -2,6 +2,7 @@ package verify
 
 import (
 	"bytes"
+	"encoding/base64"
 	"encoding/hex"
 	"errors"
 	"fmt"
@@ -33,7 +34,7 @@ func verifier(params []string, f func(*reporter, []byte) string) error {
 		}
 	}
 	if rprter.HasError() {
-		return errors.New("error: one or more file are ill formated or invalid")
+		return errors.New("error: one or more files are malformed or invalid")
 	}
 	return nil
 }
@@ -81,25 +82,17 @@ func isValidParty(party string) bool {
 		return false
 	}
 
-	if _, err := hex.DecodeString(party); err != nil {
-		return false
-	}
-
-	return true
+	_, err := hex.DecodeString(party)
+	return err == nil
 }
 
-// TODO: uncomment in a follow up PR.
-// func isValidTMKey(key string) bool {
-// 	if keybytes, err := base64.StdEncoding.DecodeString(key); err != nil {
-// 		return false
-// 	} else {
-// 		if len(keybytes) != 32 {
-// 			return false
-// 		}
-// 	}
-
-// 	return true
-// }
+func isValidTMKey(key string) bool {
+	keybytes, err := base64.StdEncoding.DecodeString(key)
+	if err != nil {
+		return false
+	}
+	return len(keybytes) == 32
+}
 
 func isValidEthereumAddress(v string) bool {
 	re := regexp.MustCompile("^0x[0-9a-fA-F]{40}$")

@@ -52,7 +52,7 @@ func testVersionLesser(t *testing.T) {
 	koVersion := "0.1.1"
 	err := c.Check(koVersion)
 	assert.NotNil(t, err)
-	assert.Equal(t, "expected version greater than 0.1.2 but got 0.1.1", err.Error())
+	assert.Equal(t, "expected version greater than or equal to 0.1.2 but got 0.1.1", err.Error())
 }
 
 func testVersionGreater(t *testing.T) {

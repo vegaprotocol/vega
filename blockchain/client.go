@@ -25,7 +25,7 @@ type ChainClientImpl interface {
 	SendTransactionSync(context.Context, []byte) (string, error)
 	SendTransactionCommit(context.Context, []byte) (string, error)
 	GenesisValidators(context.Context) ([]*tmtypes.Validator, error)
-	Validators(context.Context) ([]*tmtypes.Validator, error)
+	Validators(context.Context, *int64) ([]*tmtypes.Validator, error)
 	Subscribe(context.Context, func(tmctypes.ResultEvent) error, ...string) error
 	Start() error
 }
@@ -43,7 +43,7 @@ func NewClient(clt ChainClientImpl) *Client {
 	}
 }
 
-func (c *Client) SubmitTransactionV2(ctx context.Context, tx *commandspb.Transaction, ty api.SubmitTransactionRequest_Type) (string, error) {
+func (c *Client) SubmitTransaction(ctx context.Context, tx *commandspb.Transaction, ty api.SubmitTransactionRequest_Type) (string, error) {
 	_, err := commands.CheckTransaction(tx)
 	if err != nil {
 		return "", err
@@ -57,16 +57,36 @@ func (c *Client) SubmitTransactionV2(ctx context.Context, tx *commandspb.Transac
 	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 
-	return c.sendTxV2(ctx, marshalledTx, ty)
+	return c.sendTx(ctx, marshalledTx, ty)
 }
 
-func (c *Client) sendTxV2(ctx context.Context, msg []byte, ty api.SubmitTransactionRequest_Type) (string, error) {
+func (c *Client) SubmitRawTransaction(ctx context.Context, tx []byte, ty api.SubmitRawTransactionRequest_Type) (string, error) {
+	timeoutCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+
+	return c.sendRawTx(timeoutCtx, tx, ty)
+}
+
+func (c *Client) sendTx(ctx context.Context, msg []byte, ty api.SubmitTransactionRequest_Type) (string, error) {
 	switch ty {
 	case api.SubmitTransactionRequest_TYPE_ASYNC:
 		return c.clt.SendTransactionAsync(ctx, msg)
 	case api.SubmitTransactionRequest_TYPE_SYNC:
 		return c.clt.SendTransactionSync(ctx, msg)
 	case api.SubmitTransactionRequest_TYPE_COMMIT:
+		return c.clt.SendTransactionCommit(ctx, msg)
+	default:
+		return "", errors.New("invalid submit transaction request type")
+	}
+}
+
+func (c *Client) sendRawTx(ctx context.Context, msg []byte, ty api.SubmitRawTransactionRequest_Type) (string, error) {
+	switch ty {
+	case api.SubmitRawTransactionRequest_TYPE_ASYNC:
+		return c.clt.SendTransactionAsync(ctx, msg)
+	case api.SubmitRawTransactionRequest_TYPE_SYNC:
+		return c.clt.SendTransactionSync(ctx, msg)
+	case api.SubmitRawTransactionRequest_TYPE_COMMIT:
 		return c.clt.SendTransactionCommit(ctx, msg)
 	default:
 		return "", errors.New("invalid submit transaction request type")
@@ -127,11 +147,11 @@ func (c *Client) GenesisValidators() ([]*tmtypes.Validator, error) {
 	return c.clt.GenesisValidators(ctx)
 }
 
-func (c *Client) Validators() ([]*tmtypes.Validator, error) {
+func (c *Client) Validators(height *int64) ([]*tmtypes.Validator, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	return c.clt.Validators(ctx)
+	return c.clt.Validators(ctx, height)
 }
 
 func (c *Client) Subscribe(ctx context.Context, fn func(tmctypes.ResultEvent) error, queries ...string) error {

@@ -2,7 +2,6 @@ package notary
 
 import (
 	"context"
-	"math"
 	"strings"
 	"sync"
 	"time"
@@ -11,14 +10,16 @@ import (
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/txn"
+	"code.vegaprotocol.io/vega/types/num"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/pkg/errors"
 )
 
-const (
+var (
 	// by default all validators needs to sign.
-	defaultValidatorsVoteRequired = 1.0
+	defaultValidatorsVoteRequired = num.MustDecimalFromString("1.0")
+	oneDec                        = num.MustDecimalFromString("1")
 )
 
 var (
@@ -42,9 +43,10 @@ type Broker interface {
 	SendBatch(events []events.Event)
 }
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/commander_mock.go -package mocks code.vegaprotocol.io/vega/processor Commander
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/commander_mock.go -package mocks code.vegaprotocol.io/vega/notary Commander
 type Commander interface {
 	Command(ctx context.Context, cmd txn.Command, payload proto.Message, f func(error))
+	CommandSync(ctx context.Context, cmd txn.Command, payload proto.Message, f func(error))
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/time_ticker_mock.go -package mocks code.vegaprotocol.io/vega/notary TimeTicker
@@ -66,7 +68,7 @@ type Notary struct {
 	cmd     Commander
 	broker  Broker
 
-	validatorVotesRequired float64
+	validatorVotesRequired num.Decimal
 }
 
 type idKind struct {
@@ -105,8 +107,8 @@ func New(
 	}
 }
 
-func (n *Notary) OnDefaultValidatorsVoteRequiredUpdate(ctx context.Context, f float64) error {
-	n.validatorVotesRequired = f
+func (n *Notary) OnDefaultValidatorsVoteRequiredUpdate(ctx context.Context, d num.Decimal) error {
+	n.validatorVotesRequired = d
 	return nil
 }
 
@@ -244,7 +246,10 @@ func (n *Notary) send(id string, kind commandspb.NodeSignatureKind, signature []
 }
 
 func (n *Notary) votePassed(votesCount, topLen int) bool {
-	return math.Min((float64(topLen)*n.validatorVotesRequired)+1, float64(topLen)) <= float64(votesCount)
+	topLenDec := num.DecimalFromInt64(int64(topLen))
+	return num.MinD(
+		(topLenDec.Mul(n.validatorVotesRequired)).Add(oneDec), topLenDec,
+	).LessThanOrEqual(num.DecimalFromInt64(int64(votesCount)))
 }
 
 func (n *Notary) sendSignatureEvents(ctx context.Context, signatures []commandspb.NodeSignature) {

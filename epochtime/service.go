@@ -34,10 +34,12 @@ type Svc struct {
 	readyToEndEpoch      bool
 
 	// Snapshot state
-	state *types.EpochState
-	pl    types.Payload
-	data  []byte
-	hash  []byte
+	state            *types.EpochState
+	pl               types.Payload
+	data             []byte
+	hash             []byte
+	currentTime      time.Time
+	needsFastForward bool
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/time_mock.go -package mocks code.vegaprotocol.io/vega/epochtime VegaTime
@@ -94,6 +96,13 @@ func (s *Svc) onTick(ctx context.Context, t time.Time) {
 		return
 	}
 
+	if s.needsFastForward {
+		s.needsFastForward = false
+		s.fastForward(ctx)
+	}
+
+	s.currentTime = t
+
 	if s.epoch.StartTime.IsZero() {
 		// First block so let's create our first epoch
 		s.epoch.Seq = 0
@@ -147,17 +156,34 @@ func (s *Svc) Checkpoint() ([]byte, error) {
 	return proto.Marshal(s.epoch.IntoProto())
 }
 
-func (s *Svc) Load(_ context.Context, data []byte) error {
+func (s *Svc) Load(ctx context.Context, data []byte) error {
 	pb := &eventspb.EpochEvent{}
 	if err := proto.Unmarshal(data, pb); err != nil {
 		return err
 	}
 	e := types.NewEpochFromProto(pb)
 	s.epoch = *e
-	if e.Action == vega.EpochAction_EPOCH_ACTION_START {
-		s.readyToStartNewEpoch = true
-	}
+
+	// let the time end the epoch organically
+	s.readyToStartNewEpoch = false
+	s.readyToEndEpoch = false
+	s.notify(ctx, s.epoch)
+	s.needsFastForward = true
 	return nil
+}
+
+// fastForward advances time and expires/starts any epoch that would have expired/started during the time period. It would trigger the epoch events naturally
+// so will have a side effect of delegations getting promoted and rewards getting calculated and potentially paid.
+func (s *Svc) fastForward(ctx context.Context) {
+	tt := s.currentTime
+	for {
+		if !s.epoch.ExpireTime.Before(tt) {
+			break
+		}
+		s.OnBlockEnd(ctx)
+		s.onTick(ctx, s.epoch.ExpireTime.Add(1*time.Second))
+	}
+	s.onTick(ctx, tt)
 }
 
 // NotifyOnEpoch allows other services to register a callback function

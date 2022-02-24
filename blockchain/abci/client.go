@@ -40,32 +40,6 @@ func NewClient(addr string) (*Client, error) {
 	}, nil
 }
 
-func NewClientCustom(addr string) (*Client, error) {
-	if len(addr) <= 0 {
-		return nil, ErrEmptyClientAddr
-	}
-
-	hClient, err := defaultHTTPClient(addr)
-	if err != nil {
-		return nil, err
-	}
-
-	clt, err := tmclihttp.NewWithClient(addr, "/websocket", hClient)
-	if err != nil {
-		return nil, err
-	}
-
-	// log errors only
-	clt.Logger = tmlog.NewFilter(
-		tmlog.NewTMLogger(os.Stdout),
-		tmlog.AllowError(),
-	)
-
-	return &Client{
-		tmclt: clt,
-	}, nil
-}
-
 func (c *Client) SendTransactionAsync(ctx context.Context, bytes []byte) (string, error) {
 	// Fire off the transaction for consensus
 	res, err := c.tmclt.BroadcastTxAsync(ctx, bytes)
@@ -139,10 +113,8 @@ func (c *Client) Health(ctx context.Context) (*tmctypes.ResultHealth, error) {
 	return c.tmclt.Health(ctx)
 }
 
-func (c *Client) Validators(ctx context.Context) ([]*tmtypes.Validator, error) {
-	page := 0
-	perPage := 100
-	res, err := c.tmclt.Validators(ctx, nil, &page, &perPage)
+func (c *Client) Validators(ctx context.Context, height *int64) ([]*tmtypes.Validator, error) {
+	res, err := c.tmclt.Validators(ctx, height, nil, nil)
 	if err != nil {
 		return nil, err
 	}

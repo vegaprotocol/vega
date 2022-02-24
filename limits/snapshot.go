@@ -82,20 +82,20 @@ func (e *Engine) GetState(k string) ([]byte, []types.StateProvider, error) {
 	return data, nil, err
 }
 
-func (e *Engine) LoadState(_ context.Context, payload *types.Payload) ([]types.StateProvider, error) {
+func (e *Engine) LoadState(ctx context.Context, payload *types.Payload) ([]types.StateProvider, error) {
 	if e.Namespace() != payload.Data.Namespace() {
 		return nil, types.ErrInvalidSnapshotNamespace
 	}
 
 	switch pl := payload.Data.(type) {
 	case *types.PayloadLimitState:
-		return nil, e.restoreLimits(pl.LimitState)
+		return nil, e.restoreLimits(ctx, pl.LimitState)
 	default:
 		return nil, types.ErrUnknownSnapshotType
 	}
 }
 
-func (e *Engine) restoreLimits(l *types.LimitState) error {
+func (e *Engine) restoreLimits(ctx context.Context, l *types.LimitState) error {
 	e.blockCount = uint16(l.BlockCount)
 	e.canProposeAsset = l.CanProposeAsset
 	e.canProposeMarket = l.CanProposeMarket
@@ -109,6 +109,7 @@ func (e *Engine) restoreLimits(l *types.LimitState) error {
 		e.bootstrapFinished = true
 	}
 
+	e.sendEvent(ctx)
 	e.lss.changed = true
 	return nil
 }

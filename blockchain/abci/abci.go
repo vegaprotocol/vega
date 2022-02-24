@@ -1,7 +1,10 @@
 package abci
 
 import (
+	"encoding/hex"
 	"errors"
+
+	vgcontext "code.vegaprotocol.io/vega/libs/context"
 
 	"github.com/tendermint/tendermint/abci/types"
 )
@@ -83,14 +86,16 @@ func (app *App) CheckTx(req types.RequestCheckTx) (resp types.ResponseCheckTx) {
 	}
 
 	if err := app.replayProtector.CheckTx(tx); err != nil {
-		return NewResponseCheckTxError(AbciTxnValidationFailure, err)
+		return AddCommonCheckTxEvents(
+			NewResponseCheckTxError(AbciTxnValidationFailure, err), tx,
+		)
 	}
 
 	ctx := app.ctx
 	if fn := app.OnCheckTx; fn != nil {
 		ctx, resp = fn(ctx, req, tx)
 		if resp.IsErr() {
-			return resp
+			return AddCommonCheckTxEvents(resp, tx)
 		}
 	}
 
@@ -107,7 +112,7 @@ func (app *App) CheckTx(req types.RequestCheckTx) (resp types.ResponseCheckTx) {
 		app.cacheTx(req.Tx, tx)
 	}
 
-	return resp
+	return AddCommonCheckTxEvents(resp, tx)
 }
 
 func (app *App) DeliverTx(req types.RequestDeliverTx) (resp types.ResponseDeliverTx) {
@@ -118,7 +123,9 @@ func (app *App) DeliverTx(req types.RequestDeliverTx) (resp types.ResponseDelive
 	app.removeTxFromCache(req.GetTx())
 
 	if err := app.replayProtector.DeliverTx(tx); err != nil {
-		return NewResponseDeliverTxError(AbciTxnValidationFailure, err)
+		return AddCommonDeliverTxEvents(
+			NewResponseDeliverTxError(AbciTxnValidationFailure, err), tx,
+		)
 	}
 
 	// It's been validated by CheckTx so we can skip the validation here
@@ -126,21 +133,30 @@ func (app *App) DeliverTx(req types.RequestDeliverTx) (resp types.ResponseDelive
 	if fn := app.OnDeliverTx; fn != nil {
 		ctx, resp = fn(ctx, req, tx)
 		if resp.IsErr() {
-			return resp
+			return AddCommonDeliverTxEvents(resp, tx)
 		}
 	}
 
 	// Lookup for deliver tx, fail if not found
 	fn := app.deliverTxs[tx.Command()]
 	if fn == nil {
-		return NewResponseDeliverTxError(AbciUnknownCommandError, errors.New("invalid vega command"))
+		return AddCommonDeliverTxEvents(
+			NewResponseDeliverTxError(AbciUnknownCommandError, errors.New("invalid vega command")), tx,
+		)
 	}
+
+	txHash := hex.EncodeToString(tx.Hash())
+	ctx = vgcontext.WithTxHash(ctx, txHash)
 
 	if err := fn(ctx, tx); err != nil {
-		return NewResponseDeliverTxError(AbciTxnInternalError, err)
+		return AddCommonDeliverTxEvents(
+			NewResponseDeliverTxError(AbciTxnInternalError, err), tx,
+		)
 	}
 
-	return NewResponseDeliverTx(types.CodeTypeOK, "")
+	return AddCommonDeliverTxEvents(
+		NewResponseDeliverTx(types.CodeTypeOK, ""), tx,
+	)
 }
 
 func (app *App) ListSnapshots(req types.RequestListSnapshots) (resp types.ResponseListSnapshots) {
@@ -169,4 +185,39 @@ func (app *App) ApplySnapshotChunk(req types.RequestApplySnapshotChunk) (resp ty
 		resp = app.OnApplySnapshotChunk(app.ctx, req)
 	}
 	return
+}
+
+func AddCommonCheckTxEvents(resp types.ResponseCheckTx, tx Tx) types.ResponseCheckTx {
+	resp.Events = getBaseTxEvents(tx)
+	return resp
+}
+
+func AddCommonDeliverTxEvents(resp types.ResponseDeliverTx, tx Tx) types.ResponseDeliverTx {
+	resp.Events = getBaseTxEvents(tx)
+	return resp
+}
+
+func getBaseTxEvents(tx Tx) []types.Event {
+	return []types.Event{
+		{
+			Type: "tx",
+			Attributes: []types.EventAttribute{
+				{
+					Key:   []byte("submitter"),
+					Value: []byte(tx.PubKeyHex()),
+					Index: true,
+				},
+			},
+		},
+		{
+			Type: "command",
+			Attributes: []types.EventAttribute{
+				{
+					Key:   []byte("type"),
+					Value: []byte(tx.Command().String()),
+					Index: true,
+				},
+			},
+		},
+	}
 }

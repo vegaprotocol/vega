@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/libs/crypto"
+	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/monitor/price"
 	"code.vegaprotocol.io/vega/monitor/price/mocks"
 	"code.vegaprotocol.io/vega/types"
@@ -20,8 +21,10 @@ func createPriceMonitor(t *testing.T, ctrl *gomock.Controller) *price.Engine {
 	t.Helper()
 
 	riskModel, settings := createPriceMonitorDeps(t, ctrl)
+	statevar := mocks.NewMockStateVarEngine(ctrl)
+	statevar.EXPECT().RegisterStateVariable(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any())
 
-	pm, err := price.NewMonitor(riskModel, settings)
+	pm, err := price.NewMonitor("asset", "market", riskModel, settings, statevar, logging.NewTestLogger())
 	require.NoError(t, err)
 	require.NotNil(t, pm)
 
@@ -66,7 +69,7 @@ func TestEmpty(t *testing.T) {
 
 	// Create a new market and restore into it
 	riskModel, settings := createPriceMonitorDeps(t, ctrl)
-	pm2, err := price.NewMonitorFromSnapshot(state1, settings, riskModel)
+	pm2, err := price.NewMonitorFromSnapshot(state1, settings, riskModel, logging.NewTestLogger())
 	require.NoError(t, err)
 	require.NotNil(t, pm2)
 
@@ -110,7 +113,7 @@ func TestChangedState(t *testing.T) {
 	state := pm1.GetState()
 
 	riskModel, settings := createPriceMonitorDeps(t, ctrl)
-	pm2, err := price.NewMonitorFromSnapshot(state, settings, riskModel)
+	pm2, err := price.NewMonitorFromSnapshot(state, settings, riskModel, logging.NewTestLogger())
 	require.NoError(t, err)
 	require.NotNil(t, pm2)
 

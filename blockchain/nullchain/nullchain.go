@@ -62,7 +62,6 @@ type NullBlockchain struct {
 func NewClient(
 	log *logging.Logger,
 	cfg blockchain.NullChainConfig,
-	app ApplicationService,
 ) *NullBlockchain {
 	// setup logger
 	log = log.Named(namedLogger)
@@ -71,7 +70,6 @@ func NewClient(
 	now := time.Now()
 	n := &NullBlockchain{
 		log:                  log,
-		app:                  app,
 		srvAddress:           net.JoinHostPort(cfg.IP, strconv.Itoa(cfg.Port)),
 		chainID:              vgrand.RandomStr(12),
 		transactionsPerBlock: cfg.TransactionsPerBlock,
@@ -84,6 +82,10 @@ func NewClient(
 	}
 
 	return n
+}
+
+func (n *NullBlockchain) SetABCIApp(app ApplicationService) {
+	n.app = app
 }
 
 // ReloadConf update the internal configuration.
@@ -326,9 +328,10 @@ func (n *NullBlockchain) SendTransactionCommit(ctx context.Context, tx []byte) (
 	return "", ErrNotImplemented
 }
 
-func (n *NullBlockchain) Validators(_ context.Context) ([]*tmtypes.Validator, error) {
-	n.log.Error("not implemented")
-	return nil, ErrNotImplemented
+func (n *NullBlockchain) Validators(_ context.Context, _ *int64) ([]*tmtypes.Validator, error) {
+	// TODO: if we are feeling brave we, could pretend to have a validator set and open
+	// up the nullblockchain to more code paths
+	return []*tmtypes.Validator{}, nil
 }
 
 func (n *NullBlockchain) GenesisValidators(_ context.Context) ([]*tmtypes.Validator, error) {

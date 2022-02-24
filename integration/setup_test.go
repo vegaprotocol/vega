@@ -5,12 +5,15 @@ import (
 	"fmt"
 	"os"
 
+	"code.vegaprotocol.io/vega/banking"
 	"code.vegaprotocol.io/vega/collateral"
 	"code.vegaprotocol.io/vega/delegation"
 	"code.vegaprotocol.io/vega/epochtime"
 	"code.vegaprotocol.io/vega/execution"
+	"code.vegaprotocol.io/vega/notary"
 	"code.vegaprotocol.io/vega/rewards"
 	"code.vegaprotocol.io/vega/types/num"
+	"code.vegaprotocol.io/vega/validators"
 
 	"code.vegaprotocol.io/vega/integration/helpers"
 	"code.vegaprotocol.io/vega/integration/steps/market"
@@ -54,12 +57,15 @@ type executionTestSetup struct {
 	executionEngine  *exEng
 	collateralEngine *collateral.Engine
 	oracleEngine     *oracles.Engine
+	builtinOracle    *oracles.Builtin
 	epochEngine      *epochtime.Svc
 	delegationEngine *delegation.Engine
 	positionPlugin   *plugins.Positions
 	topology         *stubs.TopologyStub
 	stakingAccount   *stubs.StakingAccountStub
 	rewardsEngine    *rewards.Engine
+	assetsEngine     *stubs.AssetStub
+	banking          *banking.Engine
 
 	// save party accounts state
 	markets []types.Market
@@ -100,16 +106,26 @@ func newExecutionTestSetup() *executionTestSetup {
 	execsetup.collateralEngine.EnableAsset(context.Background(), vegaAsset)
 
 	execsetup.epochEngine = epochtime.NewService(execsetup.log, epochtime.NewDefaultConfig(), execsetup.timeService, execsetup.broker)
-	execsetup.topology = stubs.NewTopologyStub()
+	execsetup.topology = stubs.NewTopologyStub("nodeID", execsetup.broker)
 
 	execsetup.stakingAccount = stubs.NewStakingAccountStub()
 	execsetup.epochEngine.NotifyOnEpoch(execsetup.stakingAccount.OnEpochEvent)
 
+	feesTracker := execution.NewFeesTracker(execsetup.epochEngine)
+
 	execsetup.delegationEngine = delegation.New(execsetup.log, delegation.NewDefaultConfig(), execsetup.broker, execsetup.topology, execsetup.stakingAccount, execsetup.epochEngine, execsetup.timeService)
-	execsetup.rewardsEngine = rewards.New(execsetup.log, rewards.NewDefaultConfig(), execsetup.broker, execsetup.delegationEngine, execsetup.epochEngine, execsetup.collateralEngine, execsetup.timeService)
+	marketTracker := execution.NewMarketTracker()
+	execsetup.rewardsEngine = rewards.New(execsetup.log, rewards.NewDefaultConfig(), execsetup.broker, execsetup.delegationEngine, execsetup.epochEngine, execsetup.collateralEngine, execsetup.timeService, feesTracker, marketTracker, execsetup.topology)
 	execsetup.oracleEngine = oracles.NewEngine(
 		execsetup.log, oracles.NewDefaultConfig(), currentTime, execsetup.broker, execsetup.timeService,
 	)
+	execsetup.assetsEngine = stubs.NewAssetStub()
+	execsetup.builtinOracle = oracles.NewBuiltinOracle(execsetup.oracleEngine, execsetup.timeService)
+
+	stateVarEngine := stubs.NewStateVar()
+	execsetup.timeService.NotifyOnTick(stateVarEngine.OnTimeTick)
+	// @TODO stub assets engine and pass it in
+
 	execsetup.executionEngine = newExEng(
 		execution.NewEngine(
 			execsetup.log,
@@ -118,6 +134,10 @@ func newExecutionTestSetup() *executionTestSetup {
 			execsetup.collateralEngine,
 			execsetup.oracleEngine,
 			execsetup.broker,
+			stateVarEngine,
+			feesTracker,
+			marketTracker,
+			execsetup.assetsEngine, // assets
 		),
 		execsetup.broker,
 	)
@@ -132,13 +152,35 @@ func newExecutionTestSetup() *executionTestSetup {
 		panic(err)
 	}
 
+	commander := stubs.NewCommanderStub()
 	execsetup.netDeposits = num.Zero()
+	witness := validators.NewWitness(execsetup.log, validators.NewDefaultConfig(), execsetup.topology, commander, execsetup.timeService)
+	ntry := notary.NewWithSnapshot(execsetup.log, notary.NewDefaultConfig(), execsetup.topology, execsetup.broker, commander, execsetup.timeService)
+	execsetup.banking = banking.New(execsetup.log, banking.NewDefaultConfig(), execsetup.collateralEngine, witness, execsetup.timeService, execsetup.assetsEngine, ntry, execsetup.broker, execsetup.topology, execsetup.epochEngine)
 
+	execsetup.netParams.Watch(
+		netparams.WatchParam{
+			Param:   netparams.FloatingPointUpdatesDuration,
+			Watcher: stateVarEngine.OnFloatingPointUpdatesDurationUpdate,
+		},
+		netparams.WatchParam{
+			Param:   netparams.TransferFeeFactor,
+			Watcher: execsetup.banking.OnTransferFeeFactorUpdate,
+		},
+		netparams.WatchParam{
+			Param:   netparams.TransferMinTransferQuantumMultiple,
+			Watcher: execsetup.banking.OnMinTransferQuantumMultiple,
+		},
+	)
 	return execsetup
 }
 
 func (e *executionTestSetup) registerNetParamsCallbacks() error {
 	return e.netParams.Watch(
+		netparams.WatchParam{
+			Param:   netparams.StakingAndDelegationRewardMinimumValidatorStake,
+			Watcher: e.topology.OnMinDelegationUpdated,
+		},
 		netparams.WatchParam{
 			Param:   netparams.MarketMarginScalingFactors,
 			Watcher: e.executionEngine.OnMarketMarginScalingFactorsUpdate,
@@ -199,19 +241,6 @@ func (e *executionTestSetup) registerNetParamsCallbacks() error {
 			Param:   netparams.DelegationMinAmount,
 			Watcher: e.delegationEngine.OnMinAmountChanged,
 		},
-
-		netparams.WatchParam{
-			Param:   netparams.RewardAsset,
-			Watcher: e.rewardsEngine.UpdateAssetForStakingAndDelegationRewardScheme,
-		},
-		netparams.WatchParam{
-			Param:   netparams.StakingAndDelegationRewardPayoutFraction,
-			Watcher: e.rewardsEngine.UpdatePayoutFractionForStakingRewardScheme,
-		},
-		netparams.WatchParam{
-			Param:   netparams.StakingAndDelegationRewardPayoutDelay,
-			Watcher: e.rewardsEngine.UpdatePayoutDelayForStakingRewardScheme,
-		},
 		netparams.WatchParam{
 			Param:   netparams.StakingAndDelegationRewardMaxPayoutPerParticipant,
 			Watcher: e.rewardsEngine.UpdateMaxPayoutPerParticipantForStakingRewardScheme,
@@ -225,8 +254,8 @@ func (e *executionTestSetup) registerNetParamsCallbacks() error {
 			Watcher: e.rewardsEngine.UpdateMinimumValidatorStakeForStakingRewardScheme,
 		},
 		netparams.WatchParam{
-			Param:   netparams.StakingAndDelegationRewardMaxPayoutPerEpoch,
-			Watcher: e.rewardsEngine.UpdateMaxPayoutPerEpochStakeForStakingRewardScheme,
+			Param:   netparams.RewardAsset,
+			Watcher: e.rewardsEngine.UpdateAssetForStakingAndDelegation,
 		},
 		netparams.WatchParam{
 			Param:   netparams.StakingAndDelegationRewardCompetitionLevel,
@@ -243,6 +272,10 @@ func (e *executionTestSetup) registerNetParamsCallbacks() error {
 		netparams.WatchParam{
 			Param:   netparams.ValidatorsEpochLength,
 			Watcher: e.epochEngine.OnEpochLengthUpdate,
+		},
+		netparams.WatchParam{
+			Param:   netparams.MarketMinLpStakeQuantumMultiple,
+			Watcher: e.executionEngine.OnMinLpStakeQuantumMultipleUpdate,
 		},
 	)
 }

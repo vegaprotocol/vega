@@ -349,7 +349,7 @@ func (b *OrderBook) GetIndicativePriceAndVolume() (retprice *num.Uint, retvol ui
 	prices := make([]*num.Uint, 0, len(cumulativeVolumes))
 	for _, value := range cumulativeVolumes {
 		if value.maxTradableAmount == maxTradableAmount {
-			prices = append(prices, value.price.Clone())
+			prices = append(prices, value.price)
 		}
 	}
 
@@ -398,7 +398,7 @@ func (b *OrderBook) GetIndicativePrice() (retprice *num.Uint) {
 	prices := make([]*num.Uint, 0, len(cumulativeVolumes))
 	for _, value := range cumulativeVolumes {
 		if value.maxTradableAmount == maxTradableAmount {
-			prices = append(prices, value.price.Clone())
+			prices = append(prices, value.price)
 		}
 	}
 
@@ -667,6 +667,16 @@ func (b *OrderBook) GetTrades(order *types.Order) ([]*types.Trade, error) {
 
 	// no error uncrossing, in all other cases, return trades (could be empty) without an error
 	return trades, nil
+}
+
+func (b *OrderBook) ReplaceOrder(rm, rpl *types.Order) (*types.OrderConfirmation, error) {
+	if _, err := b.CancelOrder(rm); err != nil {
+		return nil, err
+	}
+	// Because other collections might be pointing at the original order
+	// use it's memory when inserting the new version
+	*rm = *rpl
+	return b.SubmitOrder(rm)
 }
 
 // SubmitOrder Add an order and attempt to uncross the book, returns a TradeSet protobuf message object.

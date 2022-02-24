@@ -156,6 +156,7 @@ func testNodeVoteOK(t *testing.T) {
 	defer erc.Stop()
 
 	erc.top.EXPECT().IsValidator().AnyTimes().Return(true)
+
 	res := testRes{"resource-id-1", func() error {
 		return nil
 	}}

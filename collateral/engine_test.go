@@ -144,11 +144,10 @@ func testTransferRewardsSuccess(t *testing.T) {
 	eng := getTestEngine(t, "test-market")
 	defer eng.Finish()
 
-	eng.broker.EXPECT().Send(gomock.Any()).Times(1)
-	rewardAccID, _ := eng.CreateOrGetAssetRewardPoolAccount(context.Background(), "ETH")
+	rewardAcc, _ := eng.GetGlobalRewardAccount("ETH")
 
 	eng.broker.EXPECT().Send(gomock.Any()).Times(1)
-	eng.Engine.IncrementBalance(context.Background(), rewardAccID, num.NewUint(1000))
+	eng.Engine.IncrementBalance(context.Background(), rewardAcc.ID, num.NewUint(1000))
 
 	eng.broker.EXPECT().Send(gomock.Any()).Times(3)
 	partyAccountID, _ := eng.CreatePartyGeneralAccount(context.Background(), "party1", "ETH")
@@ -166,7 +165,7 @@ func testTransferRewardsSuccess(t *testing.T) {
 	}
 
 	eng.broker.EXPECT().Send(gomock.Any()).Times(1)
-	_, err := eng.Engine.TransferRewards(context.Background(), rewardAccID, transfers)
+	_, err := eng.Engine.TransferRewards(context.Background(), rewardAcc.ID, transfers)
 	require.Nil(t, err)
 	partyAccount, _ := eng.Engine.GetAccountByID(partyAccountID)
 	require.Equal(t, num.NewUint(1000), partyAccount.Balance)
@@ -591,11 +590,11 @@ func testEnableAssetSuccess(t *testing.T) {
 			Symbol: "MYASSET",
 		},
 	}
-	eng.broker.EXPECT().Send(gomock.Any()).Times(3)
+	eng.broker.EXPECT().Send(gomock.Any()).Times(8)
 	err := eng.EnableAsset(context.Background(), asset)
 	assert.NoError(t, err)
 
-	assetInsuranceAcc, _ := eng.Engine.GetAssetInsurancePoolAccount(asset.ID)
+	assetInsuranceAcc, _ := eng.Engine.GetGlobalRewardAccount(asset.ID)
 	assert.True(t, assetInsuranceAcc.Balance.IsZero())
 }
 
@@ -608,7 +607,7 @@ func testEnableAssetFailureDuplicate(t *testing.T) {
 			Symbol: "MYASSET",
 		},
 	}
-	eng.broker.EXPECT().Send(gomock.Any()).Times(3)
+	eng.broker.EXPECT().Send(gomock.Any()).Times(8)
 	err := eng.EnableAsset(context.Background(), asset)
 	assert.NoError(t, err)
 
@@ -2156,10 +2155,6 @@ func TestClearMarket(t *testing.T) {
 
 	assert.Nil(t, err)
 	assert.Equal(t, 2, len(responses))
-
-	// as there's only one market and it's being cleared we expect all the balance to go to the global account
-	assetInsuranceAcc, _ := eng.Engine.GetAssetInsurancePoolAccount(testMarketAsset)
-	assert.Equal(t, num.NewUint(1000), assetInsuranceAcc.Balance)
 }
 
 func TestClearMarketNoMargin(t *testing.T) {
@@ -2214,10 +2209,6 @@ func TestNonRewardDepositOK(t *testing.T) {
 	// Attempt to deposit collateral that should go into the global asset reward account
 	_, err := eng.Engine.Deposit(ctx, "OtherParty", testMarketAsset, num.NewUint(100))
 	assert.NoError(t, err)
-
-	rewardAcct, err := eng.Engine.GetGlobalRewardAccount(testMarketAsset)
-	assert.Nil(t, rewardAcct)
-	assert.Error(t, err)
 }
 
 func TestRewardDepositBadAssetOK(t *testing.T) {
@@ -2393,7 +2384,7 @@ func enableGovernanceAsset(t *testing.T, eng *collateral.Engine) {
 			Symbol:      "VOTE",
 			Decimals:    5,
 			TotalSupply: num.NewUint(1000),
-			MinLpStake:  num.Zero(),
+			Quantum:     num.Zero(),
 			Source: &types.AssetDetailsBuiltinAsset{
 				BuiltinAsset: &types.BuiltinAsset{
 					MaxFaucetAmountMint: num.Zero(),
@@ -2402,8 +2393,6 @@ func enableGovernanceAsset(t *testing.T, eng *collateral.Engine) {
 		},
 	}
 	err := eng.EnableAsset(context.Background(), tokAsset)
-	assert.NoError(t, err)
-	eng.CreateOrGetAssetRewardPoolAccount(context.Background(), "VOTE")
 	assert.NoError(t, err)
 }
 
@@ -2417,8 +2406,9 @@ func getTestEngine(t *testing.T, market string) *testEngine {
 	// 2 markets accounts
 	// 2 new assets
 	// 3 asset insurance accounts
-	// 1 reward account
-	broker.EXPECT().Send(gomock.Any()).Times(14)
+	// 1 global reward account
+	// 4 reward accounts for the various reward types
+	broker.EXPECT().Send(gomock.Any()).Times(28)
 	// system accounts created
 
 	eng := collateral.New(logging.NewTestLogger(), conf, broker, time.Now())
@@ -2433,7 +2423,7 @@ func getTestEngine(t *testing.T, market string) *testEngine {
 			Name:        testMarketAsset,
 			Decimals:    0,
 			TotalSupply: num.NewUint(10000),
-			MinLpStake:  num.Zero(),
+			Quantum:     num.Zero(),
 			Source: &types.AssetDetailsBuiltinAsset{
 				BuiltinAsset: &types.BuiltinAsset{
 					MaxFaucetAmountMint: num.Zero(),
@@ -2451,7 +2441,7 @@ func getTestEngine(t *testing.T, market string) *testEngine {
 			Name:        "ETH",
 			Decimals:    18,
 			TotalSupply: num.NewUint(1000000000),
-			MinLpStake:  num.Zero(),
+			Quantum:     num.Zero(),
 			Source: &types.AssetDetailsBuiltinAsset{
 				BuiltinAsset: &types.BuiltinAsset{
 					MaxFaucetAmountMint: num.Zero(),
@@ -2574,27 +2564,27 @@ func TestHash(t *testing.T) {
 
 	// Create the accounts
 	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
-	id1, err := eng.Engine.CreatePartyGeneralAccount(context.Background(), "t1", testMarketAsset)
+	id1, err := eng.CreatePartyGeneralAccount(context.Background(), "t1", testMarketAsset)
 	require.NoError(t, err)
 
-	id2, err := eng.Engine.CreatePartyGeneralAccount(context.Background(), "t2", testMarketAsset)
+	id2, err := eng.CreatePartyGeneralAccount(context.Background(), "t2", testMarketAsset)
 	require.NoError(t, err)
 
-	_, err = eng.Engine.CreatePartyMarginAccount(context.Background(), "t1", testMarketID, testMarketAsset)
+	_, err = eng.CreatePartyMarginAccount(context.Background(), "t1", testMarketID, testMarketAsset)
 	require.NoError(t, err)
 
 	// Add balances
 	require.NoError(t,
-		eng.Engine.UpdateBalance(context.Background(), id1, num.NewUint(100)),
+		eng.UpdateBalance(context.Background(), id1, num.NewUint(100)),
 	)
 
 	require.NoError(t,
-		eng.Engine.UpdateBalance(context.Background(), id2, num.NewUint(500)),
+		eng.UpdateBalance(context.Background(), id2, num.NewUint(500)),
 	)
 
 	hash := eng.Hash()
 	require.Equal(t,
-		"f98893cf460f1401f25b606be0740dde890c7913b4d98966964335bcfd1390b8",
+		"8135b8f8b04a8e7d8e8043cd06a0d47c26fccd8cde01982fbfdc2e0310488712",
 		hex.EncodeToString(hash),
 		"It should match against the known hash",
 	)

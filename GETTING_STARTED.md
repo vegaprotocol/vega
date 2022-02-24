@@ -42,6 +42,42 @@ git config --global url."git@github.com:vegaprotocol".insteadOf "https://github.
 
 This is necessary since some of the repos that `vega` depends on in `vegaprotocol` are private repositories. The git setting ensure that `go get` now knows to use `ssh` too.
 
+
+## MacOS Requirements
+
+In order to get the required tools for MacOS make sure to install the following packages:
+### `bash`
+```bash
+$ brew install bash
+# now make sure you are using bash, not zsh (this can be tricky to modify)
+```
+
+### `jq`
+```bash
+$ brew install jq
+```
+
+### `gnu-sed`
+```bash
+$ brew install gnu-sed
+# read the stdout, cos it asks you to modify `.profile` or `.bash_profile`
+# e.g. add export PATH="/usr/local/Cellar/gnu-sed/4.8/libexec/gnubin:$PATH"
+```
+
+### `coreutils`
+```bash
+$ brew install coreutils
+# again read the stdout - similar changes required to modify `.profile` or `.bash_profile`
+# e.g export PATH="/usr/local/Cellar/coreutils/9.0/libexec/gnubin:$PATH" 
+```
+
+### `findutils`
+```bash
+$ brew install findutils
+# again read the stdout to modify `.profile` or `.bash_profile`
+# e.g. export PATH="/usr/local/Cellar/findutils/4.8.0_1/libexec/gnubin:$PATH"
+```
+
 ## Building and Testing Vega
 
 Go makes building easy:
@@ -69,9 +105,39 @@ There is also a `Makefile` which contain the above commands and also some other 
 
 With vega built it is technically possible to run the node locally, but it is a bit cumbersome. The steps are here if you are feeling brave: https://github.com/vegaprotocol/networks
 
-An alternative is to use `dockerizedvega` (DV) which will trivially spin up a working system for you. The script and some detailed information can be found here: https://github.com/vegaprotocol/devops-infra/blob/master/scripts/dockerisedvega.sh
+An alternative is to use `dockerisedvega` (DV) which will trivially spin up a working system for you. The script and some detailed information can be found here: https://github.com/vegaprotocol/devops-infra/blob/master/scripts/dockerisedvega.sh
 
-In summary you just need to do the following (Note that if you are on MacOS and probably also Windows you may need to increase the allocated memory to 4GB using the Docker Desktop UI):
+### Accessing Docker Registry
+
+To use the `dockerisedvega.sh` script, you will need to pull images from the Vega private docker registry on GitHub. To do this, you need to generate a personal access token and use it to log into the registry via the `docker-cli`.
+
+To generate a personal access token, log into GitHub and navigate to the `Personal access tokens` page in your profile settings [https://github.com/settings/tokens](https://github.com/settings/tokens).
+
+- Click on `Generate new token` button to generate a new token
+- Under note, give the token a descriptive name so you know what the token is for
+- Change the expiration to the desired duration.
+- Under `Select scopes` choose the following options:
+  - `repo` Full control of private repositories
+  - `read:packages` Download packages from GitHub Package Registry
+- Click on the `Generate token` button to generate a token
+
+Once the token has been generated, you can use it to log into the GitHub Docker Registry. **Make sure you make a note of the Personal Access Token as it will only be shown the once after it has been generated**
+
+- Open a terminal
+- Enter the command `docker login ghcr.io --username <your-github-username>`
+- When prompted for the password, enter the personal access token code that was generated
+
+You should see a `Login successful` message once you have logged into the docker registry. Now you can use the `dockerisedvega.sh` script.
+
+If you have installed docker on Linux for the first time, you might need to update the user groups on your machine to prevent the need for using `sudo` in front of each command.
+
+```
+ sudo groupadd docker
+ sudo usermod -aG docker $USER
+ ```
+Then you will need to logout and back in again for the permissions to be updated
+
+You can now run the following commands to get DV running locally. (Note that if you are on MacOS and probably also Windows you may need to increase the allocated memory to 4GB using the Docker Desktop UI):
 
 ```
 dockerisedvega.sh --vega-loglevel DEBUG --prefix mydvbits --portbase 1000 --validators 2 --nonvalidators 1 start
@@ -94,9 +160,9 @@ mkdir -p docker/bin
 cp -a cmd/vega/vega-dbg-lin64 docker/bin/vega
 
 # remove any existing image with that tag
-docker rmi docker.pkg.github.com/vegaprotocol/vega/vega:local -f
+docker rmi ghcr.io/vegaprotocol/vega/vega:local -f
 
-docker build -t "docker.pkg.github.com/vegaprotocol/vega/vega:local
+docker build -t "ghcr.io/vegaprotocol/vega/vega:local
 ```
 
 with this you can then run the DV start line again with the addition of the option `--vega-version local`.

@@ -51,16 +51,13 @@ func (m MarketCreated) MarketProto() eventspb.MarketEvent {
 
 func (m MarketCreated) StreamMessage() *eventspb.BusEvent {
 	market := m.Proto()
-	return &eventspb.BusEvent{
-		Version: eventspb.Version,
-		Id:      m.eventID(),
-		Block:   m.TraceID(),
-		ChainId: m.ChainID(),
-		Type:    m.et.ToProto(),
-		Event: &eventspb.BusEvent_MarketCreated{
-			MarketCreated: &market,
-		},
+
+	busEvent := newBusEventFromBase(m.Base)
+	busEvent.Event = &eventspb.BusEvent_MarketCreated{
+		MarketCreated: &market,
 	}
+
+	return busEvent
 }
 
 func (m MarketCreated) StreamMarketMessage() *eventspb.BusEvent {
@@ -70,7 +67,7 @@ func (m MarketCreated) StreamMarketMessage() *eventspb.BusEvent {
 func MarketCreatedEventFromStream(ctx context.Context, be *eventspb.BusEvent) *MarketCreated {
 	m := be.GetMarketCreated()
 	return &MarketCreated{
-		Base: newBaseFromStream(ctx, MarketCreatedEvent, be),
+		Base: newBaseFromBusEvent(ctx, MarketCreatedEvent, be),
 		m:    types.Market{ID: m.Id},
 		pm:   *m,
 	}

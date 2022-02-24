@@ -12,6 +12,7 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
+	"code.vegaprotocol.io/vega/types/statevar"
 )
 
 var (
@@ -32,7 +33,6 @@ type Broker interface {
 // RiskModel allows calculation of min/max price range and a probability of trading.
 type RiskModel interface {
 	ProbabilityOfTrading(currentPrice, orderPrice *num.Uint, minPrice, maxPrice num.Decimal, yFrac num.Decimal, isBid, applyMinMax bool) num.Decimal
-
 	GetProjectionHorizon() num.Decimal
 }
 
@@ -44,7 +44,11 @@ type PriceMonitor interface {
 
 // IDGen is an id generator for orders.
 type IDGen interface {
-	SetID(*types.Order)
+	NextID() string
+}
+
+type StateVarEngine interface {
+	RegisterStateVariable(asset, market, name string, converter statevar.Converter, startCalculation func(string, statevar.FinaliseCalculation), trigger []statevar.StateVarEventType, result func(context.Context, statevar.StateVariableResult) error) error
 }
 
 // RepricePeggedOrder reprices a pegged order.
@@ -58,7 +62,6 @@ type Engine struct {
 	marketID       string
 	log            *logging.Logger
 	broker         Broker
-	idGen          IDGen
 	suppliedEngine *supplied.Engine
 
 	currentTime             time.Time
@@ -91,19 +94,20 @@ type Engine struct {
 func NewEngine(config Config,
 	log *logging.Logger,
 	broker Broker,
-	idGen IDGen,
 	riskModel RiskModel,
 	priceMonitor PriceMonitor,
+	asset string,
 	marketID string,
+	stateVarEngine StateVarEngine,
+	tickSize *num.Uint,
 ) *Engine {
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
-	return &Engine{
+	e := &Engine{
 		marketID:       marketID,
 		log:            log,
 		broker:         broker,
-		idGen:          idGen,
-		suppliedEngine: supplied.NewEngine(riskModel, priceMonitor, marketID),
+		suppliedEngine: supplied.NewEngine(riskModel, priceMonitor, asset, marketID, stateVarEngine, tickSize, log),
 
 		// parameters
 		stakeToObligationFactor: num.DecimalFromInt64(1),
@@ -116,6 +120,12 @@ func NewEngine(config Config,
 		orders:          newSnapshotablePartiesOrders(),
 		liquidityOrders: newSnapshotablePartiesOrders(),
 	}
+
+	return e
+}
+
+func (e *Engine) SetGetStaticPricesFunc(f func() (*num.Uint, *num.Uint, error)) {
+	e.suppliedEngine.SetGetStaticPricesFunc(f)
 }
 
 // OnChainTimeUpdate updates the internal engine current time.
@@ -289,6 +299,31 @@ func (e *Engine) ValidateLiquidityProvisionSubmission(
 	return validateShape(lp.Sells, types.SideSell, e.maxShapesSize)
 }
 
+func (e *Engine) ValidateLiquidityProvisionAmendment(lp *types.LiquidityProvisionAmendment) (err error) {
+	if lp.Fee.IsZero() && !lp.ContainsOrders() && (lp.CommitmentAmount == nil || lp.CommitmentAmount.IsZero()) {
+		return errors.New("empty liquidity provision amendment content")
+	}
+
+	// If orders fee is provided, we need it to be valid
+	if lp.Fee.IsNegative() || lp.Fee.GreaterThan(e.maxFee) {
+		return errors.New("invalid liquidity provision fee")
+	}
+
+	// If orders shapes are provided, we need them to be valid
+	if len(lp.Buys) > 0 {
+		if err := validateShape(lp.Buys, types.SideBuy, e.maxShapesSize); err != nil {
+			return err
+		}
+	}
+	if len(lp.Sells) > 0 {
+		if err := validateShape(lp.Sells, types.SideSell, e.maxShapesSize); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 func (e *Engine) rejectLiquidityProvisionSubmission(ctx context.Context, lps *types.LiquidityProvisionSubmission, party, id string) {
 	// here we just build a liquidityProvision and set its
 	// status to rejected before sending it through the bus
@@ -325,9 +360,14 @@ func (e *Engine) rejectLiquidityProvisionSubmission(ctx context.Context, lps *ty
 // The LiquidityProvision is created if submitted for the first time, updated if a
 // previous one was created for the same PartyId or deleted (if exists) when
 // the CommitmentAmount is set to 0.
-func (e *Engine) SubmitLiquidityProvision(ctx context.Context, lps *types.LiquidityProvisionSubmission, party, id string) error {
+func (e *Engine) SubmitLiquidityProvision(
+	ctx context.Context,
+	lps *types.LiquidityProvisionSubmission,
+	party string,
+	idgen IDGen,
+) error {
 	if err := e.ValidateLiquidityProvisionSubmission(lps, false); err != nil {
-		e.rejectLiquidityProvisionSubmission(ctx, lps, party, id)
+		e.rejectLiquidityProvisionSubmission(ctx, lps, party, idgen.NextID())
 		return err
 	}
 
@@ -338,7 +378,7 @@ func (e *Engine) SubmitLiquidityProvision(ctx context.Context, lps *types.Liquid
 	var (
 		now = e.currentTime.UnixNano()
 		lp  = &types.LiquidityProvision{
-			ID:        id,
+			ID:        idgen.NextID(),
 			MarketID:  lps.MarketID,
 			Party:     party,
 			CreatedAt: now,
@@ -362,30 +402,32 @@ func (e *Engine) SubmitLiquidityProvision(ctx context.Context, lps *types.Liquid
 	lp.CommitmentAmount = lps.CommitmentAmount
 	lp.Status = types.LiquidityProvisionStatusPending
 
-	e.buildLiquidityProvisionShapesReferences(lp, lps)
+	e.setShapesReferencesOnLiquidityProvision(lp, lps.Buys, lps.Sells, idgen)
 
 	return nil
 }
 
-func (e *Engine) buildLiquidityProvisionShapesReferences(
+func (e *Engine) setShapesReferencesOnLiquidityProvision(
 	lp *types.LiquidityProvision,
-	lps *types.LiquidityProvisionSubmission,
+	buys []*types.LiquidityOrder,
+	sells []*types.LiquidityOrder,
+	idGen IDGen,
 ) {
 	// this order is just a stub to send to the id generator,
 	// and get an ID assigned per references in the shapes
 	order := &types.Order{}
-	lp.Buys = make([]*types.LiquidityOrderReference, 0, len(lps.Buys))
-	for _, buy := range lps.Buys {
-		e.idGen.SetID(order)
+	lp.Buys = make([]*types.LiquidityOrderReference, 0, len(buys))
+	for _, buy := range buys {
+		order.ID = idGen.NextID()
 		lp.Buys = append(lp.Buys, &types.LiquidityOrderReference{
 			OrderID:        order.ID,
 			LiquidityOrder: buy,
 		})
 	}
 
-	lp.Sells = make([]*types.LiquidityOrderReference, 0, len(lps.Sells))
-	for _, sell := range lps.Sells {
-		e.idGen.SetID(order)
+	lp.Sells = make([]*types.LiquidityOrderReference, 0, len(sells))
+	for _, sell := range sells {
+		order.ID = idGen.NextID()
 		lp.Sells = append(lp.Sells, &types.LiquidityOrderReference{
 			OrderID:        order.ID,
 			LiquidityOrder: sell,
@@ -715,7 +757,7 @@ func (e *Engine) createOrdersFromShape(
 			// we check if the order was not nil, which mean we already had a deployed order
 			// if the order as not traded, and the size haven't changed, then we have nothing
 			// to do about it. If the size has changed, then we will want to recreate one.
-			(order != nil && (!order.HasTraded() && order.Size == o.LiquidityImpliedVolume)) ||
+			(order != nil && (!order.HasTraded() && order.Size == o.LiquidityImpliedVolume && order.Price.EQ(o.Price))) ||
 			// we check o.Price == 0 just to make sure we are able to price
 			// the order, in which case the size will have been calculated
 			// properly by the engine.
@@ -747,6 +789,7 @@ func validateShape(sh []*types.LiquidityOrder, side types.Side, maxSize int64) e
 	if len(sh) > int(maxSize) {
 		return fmt.Errorf("%v shape size exceed max (%v)", side, maxSize)
 	}
+
 	for _, lo := range sh {
 		if lo.Reference == types.PeggedReferenceUnspecified {
 			// We must specify a valid reference
@@ -761,28 +804,26 @@ func validateShape(sh []*types.LiquidityOrder, side types.Side, maxSize int64) e
 			case types.PeggedReferenceBestAsk:
 				return errors.New("order in buy side shape with best ask price reference")
 			case types.PeggedReferenceBestBid:
-				if lo.Offset > 0 {
-					return errors.New("order in buy side shape offset must be <= 0")
-				}
 			case types.PeggedReferenceMid:
-				if lo.Offset >= 0 {
-					return errors.New("order in buy side shape offset must be < 0")
+				if lo.Offset.IsZero() {
+					return errors.New("order in buy side shape offset must be > 0")
 				}
 			}
 		} else {
 			switch lo.Reference {
 			case types.PeggedReferenceBestAsk:
-				if lo.Offset < 0 {
-					return errors.New("order in sell shape offset must be >= 0")
-				}
 			case types.PeggedReferenceBestBid:
 				return errors.New("order in buy side shape with best ask price reference")
 			case types.PeggedReferenceMid:
-				if lo.Offset <= 0 {
+				if lo.Offset.IsZero() {
 					return errors.New("order in sell shape offset must be > 0")
 				}
 			}
 		}
 	}
 	return nil
+}
+
+func (e *Engine) IsPoTInitialised() bool {
+	return e.suppliedEngine.IsPoTInitialised()
 }

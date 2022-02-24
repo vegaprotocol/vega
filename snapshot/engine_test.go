@@ -13,9 +13,12 @@ import (
 	"code.vegaprotocol.io/vega/types"
 	tmocks "code.vegaprotocol.io/vega/types/mocks"
 
+	"github.com/cosmos/iavl"
 	"github.com/golang/mock/gomock"
 	"github.com/golang/protobuf/proto"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	db "github.com/tendermint/tm-db"
 )
 
 type tstEngine struct {
@@ -24,14 +27,18 @@ type tstEngine struct {
 	cfunc context.CancelFunc
 	ctrl  *gomock.Controller
 	time  *mocks.MockTimeService
+	stats *mocks.MockStatsService
 }
 
 func getTestEngine(t *testing.T) *tstEngine {
 	t.Helper()
 	ctx, cfunc := context.WithCancel(context.Background())
+	ctx = vegactx.WithChainID(ctx, "chain-id")
 	ctrl := gomock.NewController(t)
 	time := mocks.NewMockTimeService(ctrl)
-	eng, err := snapshot.New(context.Background(), nil, snapshot.NewTestConfig(), logging.NewTestLogger(), time)
+	stats := mocks.NewMockStatsService(ctrl)
+	eng, err := snapshot.New(context.Background(), nil, snapshot.NewTestConfig(), logging.NewTestLogger(), time, stats)
+	eng.Start()
 	require.NoError(t, err)
 	ctx = vegactx.WithTraceID(vegactx.WithBlockHeight(ctx, 1), "0xDEADBEEF")
 	return &tstEngine{
@@ -40,7 +47,58 @@ func getTestEngine(t *testing.T) *tstEngine {
 		Engine: eng,
 		ctrl:   ctrl,
 		time:   time,
+		stats:  stats,
 	}
+}
+
+// returns an avl tree populated with some payloads.
+func getPopulatedTree(t *testing.T) *iavl.MutableTree {
+	t.Helper()
+	testPayloads := []types.Payload{
+		{
+			Data: &types.PayloadAppState{
+				AppState: &types.AppState{
+					Height: 64,
+				},
+			},
+		},
+		{
+			Data: &types.PayloadGovernanceActive{
+				GovernanceActive: &types.GovernanceActive{},
+			},
+		},
+		{
+			Data: &types.PayloadGovernanceEnacted{
+				GovernanceEnacted: &types.GovernanceEnacted{},
+			},
+		},
+		{
+			Data: &types.PayloadDelegationActive{
+				DelegationActive: &types.DelegationActive{},
+			},
+		},
+		{
+			Data: &types.PayloadEpoch{
+				EpochState: &types.EpochState{
+					Seq:                  7,
+					ReadyToStartNewEpoch: true,
+				},
+			},
+		},
+	}
+
+	tree, err := iavl.NewMutableTree(db.NewMemDB(), 0)
+	tree.Load()
+	require.NoError(t, err)
+
+	for _, p := range testPayloads {
+		v, _ := proto.Marshal(p.IntoProto())
+		tree.Set([]byte(p.GetTreeKey()), v)
+	}
+
+	// Save it
+	tree.SaveVersion()
+	return tree
 }
 
 // basic engine functionality tests.
@@ -48,12 +106,50 @@ func TestEngine(t *testing.T) {
 	t.Run("Adding a provider calls what we expect on the state provider", testAddProviders)
 	t.Run("Adding provider with duplicate key in same namespace: first come, first serve", testAddProvidersDuplicateKeys)
 	t.Run("Create a snapshot, if nothing changes, we don't get the data and the hash remains unchanged", testTakeSnapshot)
+	t.Run("Rejecting a snapshot should return a Snapshot Retry Limit error if rejected too many times", testRejectSnapshot)
 }
 
 func TestRestore(t *testing.T) {
 	t.Run("Restoring a snapshot from chain works as expected", testReloadSnapshot)
 	t.Run("Restoring replay protectors replaces the provider as expected", testReloadReplayProtectors)
 	t.Run("Restoring a snapshot calls the post-restore callback if available", testReloadRestore)
+}
+
+func TestTreeToSnapshot(t *testing.T) {
+	t.Run("A tree can be exported serialised and then imported", testTreeExportImport)
+}
+
+func testTreeExportImport(t *testing.T) {
+	// get a avl tree with some payloads in it
+	tree := getPopulatedTree(t)
+
+	// export the tree into snapshot data
+	snap, err := types.SnapshotFromTree(tree.ImmutableTree)
+	require.NoError(t, err)
+	require.Equal(t, snap.Hash, tree.Hash())
+	require.Equal(t, snap.Meta.Version, tree.Version())
+	require.Equal(t, len(snap.Nodes), int(tree.Size()))
+	// We expect more nodehashes than nodes since nodes only contain the leaf nodes
+	// with payloads whereas nodehashes contain the payload-less subtree-roots
+	require.Greater(t, len(snap.Meta.NodeHashes), len(snap.Nodes))
+
+	// Note IRL it would be now that snapshot is serialised and sent
+	// via TM to the node restoring from a snapshot
+
+	// Make a new tree waiting to import the snapshot
+	importedTree, err := iavl.NewMutableTree(db.NewMemDB(), 0)
+	importedTree.Load()
+	require.NoError(t, err)
+
+	// import the snapshot data into a new avl tree
+	err = snap.TreeFromSnapshot(importedTree)
+	require.NoError(t, err)
+
+	// The new tree should be identical to the previous
+	assert.Equal(t, tree.Hash(), importedTree.Hash())
+	assert.Equal(t, tree.Size(), importedTree.Size())
+	assert.Equal(t, tree.Height(), importedTree.Height())
+	assert.Equal(t, tree.Version(), importedTree.Version())
 }
 
 func testAddProviders(t *testing.T) {
@@ -200,6 +296,7 @@ func testReloadSnapshot(t *testing.T) {
 	eng2.time.EXPECT().SetTimeNow(gomock.Any(), gomock.Any()).Times(1).Do(func(_ context.Context, newT time.Time) {
 		require.Equal(t, newT.Unix(), now.Unix())
 	})
+	eng2.stats.EXPECT().SetHeight(uint64(1)).Times(1)
 	// ensure we're passing the right state
 	p2.EXPECT().LoadState(gomock.Any(), gomock.Any()).Times(1).Return(nil, nil).Do(func(_ context.Context, pl *types.Payload) {
 		require.EqualValues(t, pl.Data, state[keys[0]].Data)
@@ -219,6 +316,10 @@ func testReloadSnapshot(t *testing.T) {
 
 	// OK, our snapshot is ready to load
 	require.NoError(t, eng2.ApplySnapshot(eng2.ctx))
+
+	loaded, err := eng2.Loaded()
+	require.NoError(t, err)
+	require.True(t, loaded)
 }
 
 func testReloadReplayProtectors(t *testing.T) {
@@ -282,6 +383,7 @@ func testReloadReplayProtectors(t *testing.T) {
 	e2.time.EXPECT().SetTimeNow(gomock.Any(), gomock.Any()).Times(1).Do(func(_ context.Context, newT time.Time) {
 		require.Equal(t, newT.Unix(), now.Unix())
 	})
+	e2.stats.EXPECT().SetHeight(uint64(1)).Times(1)
 	e2.AddProviders(old)
 	require.NoError(t, e2.ReceiveSnapshot(snap))
 	ready := false
@@ -294,6 +396,9 @@ func testReloadReplayProtectors(t *testing.T) {
 	require.True(t, ready)
 	// OK, snapshot is ready to be applied
 	require.NoError(t, e2.ApplySnapshot(e.ctx))
+	loaded, err := e2.Loaded()
+	require.NoError(t, err)
+	require.True(t, loaded)
 	// so now we can check if taking a snapshot calls the methods on the replacement provider
 
 	rpl.EXPECT().GetHash(payload.Key()).Times(1).Return(hash, nil)
@@ -355,6 +460,7 @@ func testReloadRestore(t *testing.T) {
 	eng2.time.EXPECT().SetTimeNow(gomock.Any(), gomock.Any()).Times(1).Do(func(_ context.Context, newT time.Time) {
 		require.Equal(t, newT.Unix(), now.Unix())
 	})
+	eng2.stats.EXPECT().SetHeight(uint64(1)).Times(1)
 	// ensure we're passing the right state
 	p2.EXPECT().LoadState(gomock.Any(), gomock.Any()).Times(1).Return(nil, nil).Do(func(_ context.Context, pl *types.Payload) {
 		require.EqualValues(t, pl.Data, state[keys[0]].Data)
@@ -375,6 +481,9 @@ func testReloadRestore(t *testing.T) {
 
 	// OK, our snapshot is ready to load
 	require.NoError(t, eng2.ApplySnapshot(eng2.ctx))
+	loaded, err := eng2.Loaded()
+	require.NoError(t, err)
+	require.True(t, loaded)
 }
 
 func (t *tstEngine) getNewProviderMock() *tmocks.MockStateProvider {
@@ -388,4 +497,17 @@ func (t *tstEngine) getRestoreMock() *tmocks.MockPostRestore {
 func (t *tstEngine) Finish() {
 	t.cfunc()
 	t.ctrl.Finish()
+}
+
+func testRejectSnapshot(t *testing.T) {
+	engine := getTestEngine(t)
+	defer engine.Finish()
+
+	for i := 0; i < engine.RetryLimit; i++ {
+		err := engine.RejectSnapshot()
+		assert.ErrorIs(t, types.ErrUnknownSnapshot, err)
+	}
+
+	err := engine.RejectSnapshot()
+	assert.ErrorIs(t, types.ErrSnapshotRetryLimit, err)
 }

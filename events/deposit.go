@@ -36,21 +36,16 @@ func (d Deposit) Proto() proto.Deposit {
 
 func (d Deposit) StreamMessage() *eventspb.BusEvent {
 	dep := d.d
-	return &eventspb.BusEvent{
-		Version: eventspb.Version,
-		Id:      d.eventID(),
-		Block:   d.TraceID(),
-		ChainId: d.ChainID(),
-		Type:    d.et.ToProto(),
-		Event: &eventspb.BusEvent_Deposit{
-			Deposit: &dep,
-		},
+	busEvent := newBusEventFromBase(d.Base)
+	busEvent.Event = &eventspb.BusEvent_Deposit{
+		Deposit: &dep,
 	}
+	return busEvent
 }
 
 func DepositEventFromStream(ctx context.Context, be *eventspb.BusEvent) *Deposit {
 	return &Deposit{
-		Base: newBaseFromStream(ctx, DepositEvent, be),
+		Base: newBaseFromBusEvent(ctx, DepositEvent, be),
 		d:    *be.GetDeposit(),
 	}
 }

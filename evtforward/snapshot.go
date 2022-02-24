@@ -2,14 +2,13 @@ package evtforward
 
 import (
 	"context"
-	"errors"
 	"sort"
 
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
-	"github.com/golang/protobuf/proto"
-
 	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/types"
+
+	"github.com/golang/protobuf/proto"
 )
 
 var (
@@ -18,8 +17,6 @@ var (
 	hashKeys = []string{
 		key,
 	}
-
-	ErrSnapshotKeyDoesNotExist = errors.New("unknown key for event forwarder snapshot")
 )
 
 type efSnapshotState struct {
@@ -28,25 +25,25 @@ type efSnapshotState struct {
 	serialised []byte
 }
 
-func (e *EvtForwarder) Namespace() types.SnapshotNamespace {
+func (f *Forwarder) Namespace() types.SnapshotNamespace {
 	return types.EventForwarderSnapshot
 }
 
-func (e *EvtForwarder) Keys() []string {
+func (f *Forwarder) Keys() []string {
 	return hashKeys
 }
 
-func (e *EvtForwarder) serialise() ([]byte, error) {
+func (f *Forwarder) serialise() ([]byte, error) {
 	// this is done without the lock because nothing can be acked during the commit phase which is when the snapshot is taken
-	keys := make([]string, 0, len(e.ackedEvts))
-	events := make([]*commandspb.ChainEvent, 0, len(e.ackedEvts))
-	for key := range e.ackedEvts {
+	keys := make([]string, 0, len(f.ackedEvts))
+	events := make([]*commandspb.ChainEvent, 0, len(f.ackedEvts))
+	for key := range f.ackedEvts {
 		keys = append(keys, key)
 	}
 	sort.Strings(keys)
 
 	for _, key := range keys {
-		events = append(events, e.ackedEvts[key])
+		events = append(events, f.ackedEvts[key])
 	}
 
 	payload := types.Payload{
@@ -54,65 +51,61 @@ func (e *EvtForwarder) serialise() ([]byte, error) {
 			Events: events,
 		},
 	}
-	x := payload.IntoProto()
-	return proto.Marshal(x)
+	return proto.Marshal(payload.IntoProto())
 }
 
 // get the serialised form and hash of the given key.
-func (e *EvtForwarder) getSerialisedAndHash(k string) ([]byte, []byte, error) {
+func (f *Forwarder) getSerialisedAndHash(k string) (data []byte, hash []byte, err error) {
 	if k != key {
-		return nil, nil, ErrSnapshotKeyDoesNotExist
+		return nil, nil, types.ErrSnapshotKeyDoesNotExist
 	}
 
-	if !e.efss.changed {
-		return e.efss.serialised, e.efss.hash, nil
+	if !f.efss.changed {
+		return f.efss.serialised, f.efss.hash, nil
 	}
 
-	data, err := e.serialise()
+	f.efss.serialised, err = f.serialise()
 	if err != nil {
 		return nil, nil, err
 	}
 
-	hash := crypto.Hash(data)
-	e.efss.serialised = data
-	e.efss.hash = hash
-	e.efss.changed = false
-	return data, hash, nil
+	f.efss.hash = crypto.Hash(f.efss.serialised)
+	f.efss.changed = false
+	return f.efss.serialised, f.efss.hash, nil
 }
 
-func (e *EvtForwarder) GetHash(k string) ([]byte, error) {
-	_, hash, err := e.getSerialisedAndHash(k)
+func (f *Forwarder) GetHash(k string) ([]byte, error) {
+	_, hash, err := f.getSerialisedAndHash(k)
 	return hash, err
 }
 
-func (e *EvtForwarder) GetState(k string) ([]byte, []types.StateProvider, error) {
-	state, _, err := e.getSerialisedAndHash(k)
+func (f *Forwarder) GetState(k string) ([]byte, []types.StateProvider, error) {
+	state, _, err := f.getSerialisedAndHash(k)
 	return state, nil, err
 }
 
-func (e *EvtForwarder) LoadState(ctx context.Context, p *types.Payload) ([]types.StateProvider, error) {
-	if e.Namespace() != p.Data.Namespace() {
+func (f *Forwarder) LoadState(ctx context.Context, p *types.Payload) ([]types.StateProvider, error) {
+	if f.Namespace() != p.Data.Namespace() {
 		return nil, types.ErrInvalidSnapshotNamespace
 	}
 	// see what we're reloading
-	switch pl := p.Data.(type) {
-	case *types.PayloadEventForwarder:
-		return nil, e.restore(ctx, pl.Events)
-	default:
-		return nil, types.ErrUnknownSnapshotType
+	if pl, ok := p.Data.(*types.PayloadEventForwarder); ok {
+		return nil, f.restore(ctx, pl.Events)
 	}
+
+	return nil, types.ErrUnknownSnapshotType
 }
 
-func (e *EvtForwarder) restore(ctx context.Context, events []*commandspb.ChainEvent) error {
-	e.ackedEvts = map[string]*commandspb.ChainEvent{}
+func (f *Forwarder) restore(ctx context.Context, events []*commandspb.ChainEvent) error {
+	f.ackedEvts = map[string]*commandspb.ChainEvent{}
 	for _, event := range events {
-		key, err := e.getEvtKey(event)
+		key, err := f.getEvtKey(event)
 		if err != nil {
 			return err
 		}
-		e.ackedEvts[key] = event
+		f.ackedEvts[key] = event
 	}
 
-	e.efss.changed = true
+	f.efss.changed = true
 	return nil
 }

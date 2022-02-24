@@ -6,6 +6,7 @@ import (
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	"code.vegaprotocol.io/vega/crypto"
 	"code.vegaprotocol.io/vega/oracles"
+	"code.vegaprotocol.io/vega/oracles/validation"
 )
 
 // ErrUnknownOracleSource is used when the input data is originated from an
@@ -42,5 +43,14 @@ func (a *Adaptors) Normalise(txPubKey crypto.PublicKey, data commandspb.OracleDa
 		return nil, ErrUnknownOracleSource
 	}
 
-	return adaptor.Normalise(txPubKey, data.Payload)
+	oracleData, err := adaptor.Normalise(txPubKey, data.Payload)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = validation.CheckForInternalOracle(oracleData.Data); err != nil {
+		return nil, err
+	}
+
+	return oracleData, err
 }

@@ -2,7 +2,6 @@ package risk
 
 import (
 	"errors"
-	"time"
 
 	"code.vegaprotocol.io/vega/risk/models"
 	"code.vegaprotocol.io/vega/types/num"
@@ -20,8 +19,8 @@ var (
 // Model represents a risk model interface
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/risk_model_mock.go -package mocks code.vegaprotocol.io/vega/risk Model
 type Model interface {
-	CalculationInterval() time.Duration
-	CalculateRiskFactors(current *types.RiskResult) (bool, *types.RiskResult)
+	CalculateRiskFactors() *types.RiskFactor
+	DefaultRiskFactors() *types.RiskFactor
 	PriceRange(price, yearFraction, probability num.Decimal) (minPrice, maxPrice num.Decimal)
 	ProbabilityOfTrading(currentP, orderP *num.Uint, minP, maxP, yFrac num.Decimal, isBid, applyMinMax bool) num.Decimal
 	GetProjectionHorizon() num.Decimal

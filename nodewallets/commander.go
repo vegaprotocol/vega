@@ -22,7 +22,7 @@ const (
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/chain_mock.go -package mocks code.vegaprotocol.io/vega/nodewallets Chain
 type Chain interface {
-	SubmitTransactionV2(ctx context.Context, tx *commandspb.Transaction, ty api.SubmitTransactionRequest_Type) (string, error)
+	SubmitTransaction(ctx context.Context, tx *commandspb.Transaction, ty api.SubmitTransactionRequest_Type) (string, error)
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/blockchain_stats_mock.go -package mocks code.vegaprotocol.io/vega/nodewallets BlockchainStats
@@ -68,7 +68,7 @@ func (c *Commander) CommandSync(ctx context.Context, cmd txn.Command, payload pr
 
 func (c *Commander) command(_ context.Context, cmd txn.Command, payload proto.Message, done func(error), ty api.SubmitTransactionRequest_Type) {
 	if c.bc == nil {
-		panic("commander was instantiating without chain")
+		panic("commander was instantiated without a chain")
 	}
 	go func() {
 		ctx, cfunc := context.WithTimeout(context.Background(), 5*time.Second)
@@ -88,10 +88,10 @@ func (c *Commander) command(_ context.Context, cmd txn.Command, payload proto.Me
 		}
 
 		tx := commands.NewTransaction(c.wallet.PubKey().Hex(), marshalledData, signature)
-		_, err = c.bc.SubmitTransactionV2(ctx, tx, ty)
+		_, err = c.bc.SubmitTransaction(ctx, tx, ty)
 		if err != nil {
 			// this can happen as network dependent
-			c.log.Debug("could not send transaction to tendermint",
+			c.log.Error("could not send transaction to tendermint",
 				logging.Error(err),
 				logging.String("tx", payload.String()))
 		}
@@ -115,13 +115,21 @@ func wrapPayloadIntoInputData(data *commandspb.InputData, cmd txn.Command, paylo
 	switch cmd {
 	case txn.SubmitOrderCommand, txn.CancelOrderCommand, txn.AmendOrderCommand, txn.VoteCommand, txn.WithdrawCommand, txn.LiquidityProvisionCommand, txn.ProposeCommand, txn.SubmitOracleDataCommand:
 		panic("command is not supported to be sent by a node.")
-	case txn.RegisterNodeCommand:
-		if underlyingCmd, ok := payload.(*commandspb.NodeRegistration); ok {
-			data.Command = &commandspb.InputData_NodeRegistration{
-				NodeRegistration: underlyingCmd,
+	case txn.AnnounceNodeCommand:
+		if underlyingCmd, ok := payload.(*commandspb.AnnounceNode); ok {
+			data.Command = &commandspb.InputData_AnnounceNode{
+				AnnounceNode: underlyingCmd,
 			}
 		} else {
-			panic("failed to wrap to NodeRegistration")
+			panic("failed to wrap to AnnounceNode")
+		}
+	case txn.ValidatorHeartbeatCommand:
+		if underlyingCmd, ok := payload.(*commandspb.ValidatorHeartbeat); ok {
+			data.Command = &commandspb.InputData_ValidatorHeartbeat{
+				ValidatorHeartbeat: underlyingCmd,
+			}
+		} else {
+			panic("failed to wrap to ValidatorHeartbeat")
 		}
 	case txn.NodeVoteCommand:
 		if underlyingCmd, ok := payload.(*commandspb.NodeVote); ok {
@@ -154,6 +162,14 @@ func wrapPayloadIntoInputData(data *commandspb.InputData, cmd txn.Command, paylo
 			}
 		} else {
 			panic("failed to wrap RestoreSnapshot")
+		}
+	case txn.StateVariableProposalCommand:
+		if underlyingCmd, ok := payload.(*commandspb.StateVariableProposal); ok {
+			data.Command = &commandspb.InputData_StateVariableProposal{
+				StateVariableProposal: underlyingCmd,
+			}
+		} else {
+			panic("failed to wrap StateVariableProposal")
 		}
 	default:
 		panic(fmt.Errorf("command %v is not supported", cmd))

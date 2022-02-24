@@ -41,10 +41,16 @@ func TestCheckpoint(t *testing.T) {
 	err = eng.Engine.UpdateBalance(ctx, mktInsAcc.ID, insBal)
 	assert.Nil(t, err)
 
+	pendingTransfersAcc := eng.GetPendingTransfersAccount(testMarketAsset)
+	assert.NoError(t, eng.UpdateBalance(ctx, pendingTransfersAcc.ID, num.NewUint(1789)))
+
+	pendingTransfersAcc = eng.GetPendingTransfersAccount(testMarketAsset)
+	assert.NoError(t, eng.UpdateBalance(ctx, pendingTransfersAcc.ID, num.NewUint(1789)))
+
 	// topup the global reward account
-	rewardAccount, err := eng.CreateOrGetAssetRewardPoolAccount(ctx, "VOTE")
+	rewardAccount, err := eng.GetGlobalRewardAccount("VOTE")
 	assert.Nil(t, err)
-	err = eng.Engine.UpdateBalance(ctx, rewardAccount, num.NewUint(10000))
+	err = eng.Engine.UpdateBalance(ctx, rewardAccount.ID, num.NewUint(10000))
 	assert.Nil(t, err)
 
 	// topup the infra fee account for the test asset
@@ -56,9 +62,9 @@ func TestCheckpoint(t *testing.T) {
 		}
 	}
 
-	snapshot, err := eng.Checkpoint()
+	checkpoint, err := eng.Checkpoint()
 	require.NoError(t, err)
-	require.NotEmpty(t, snapshot)
+	require.NotEmpty(t, checkpoint)
 
 	conf := collateral.NewDefaultConfig()
 	conf.Level = encoding.LogLevel{Level: logging.DebugLevel}
@@ -76,19 +82,21 @@ func TestCheckpoint(t *testing.T) {
 	loadEng.EnableAsset(ctx, asset)
 	require.NoError(t, err)
 
-	err = loadEng.Load(ctx, snapshot)
+	err = loadEng.Load(ctx, checkpoint)
 	require.NoError(t, err)
 	loadedPartyAcc, err := loadEng.GetPartyGeneralAccount(party, testMarketAsset)
 	require.NoError(t, err)
 	require.Equal(t, bal, loadedPartyAcc.Balance)
 
-	loadedGlobInsPool, err := loadEng.GetAssetInsurancePoolAccount(testMarketAsset)
+	loadedGlobRewardPool, err := loadEng.GetGlobalRewardAccount(testMarketAsset)
 	require.NoError(t, err)
-	require.Equal(t, insBal, loadedGlobInsPool.Balance)
-
+	require.Equal(t, insBal, loadedGlobRewardPool.Balance)
 	loadedReward, err := loadEng.GetGlobalRewardAccount("VOTE")
 	require.NoError(t, err)
 	require.Equal(t, num.NewUint(10000), loadedReward.Balance)
+
+	loadedPendingTransfers := loadEng.GetPendingTransfersAccount(testMarketAsset)
+	require.Equal(t, num.NewUint(1789), loadedPendingTransfers.Balance)
 
 	for _, feeAcc := range loadEng.GetInfraFeeAccountIDs() {
 		if strings.Contains(feeAcc, testMarketAsset) {
@@ -114,7 +122,7 @@ func testSnapshotConsistentHash(t *testing.T) {
 			Symbol:      "FOO",
 			TotalSupply: num.NewUint(100000000),
 			Decimals:    5,
-			MinLpStake:  num.NewUint(1),
+			Quantum:     num.NewUint(1),
 			Source: types.AssetDetailsBuiltinAsset{
 				BuiltinAsset: &types.BuiltinAsset{
 					MaxFaucetAmountMint: num.NewUint(100000000),
@@ -225,7 +233,7 @@ func testSnapshotRestore(t *testing.T) {
 			Symbol:      "FOO",
 			TotalSupply: num.NewUint(100000000),
 			Decimals:    5,
-			MinLpStake:  num.NewUint(1),
+			Quantum:     num.NewUint(1),
 			Source:      erc20,
 		},
 	}
@@ -296,6 +304,9 @@ func testSnapshotRestore(t *testing.T) {
 	newEng := getTestEngine(t, mkt)
 	defer newEng.ctrl.Finish()
 	// we expect 2 batches of events to be sent
+
+	newEng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+	newEng.broker.EXPECT().SendBatch(gomock.Any()).Times(3)
 	for k, pl := range payloads {
 		state := data[k]
 		ptype := pl.IntoProto()
@@ -323,7 +334,6 @@ func testSnapshotRestore(t *testing.T) {
 		}
 	}
 	require.Equal(t, 1, diff)
-	newEng.broker.EXPECT().Send(gomock.Any()).Times(1)
 	require.NoError(t, newEng.IncrementBalance(ctx, last, inc))
 	// now the state should match up once again
 	for k := range hashes {

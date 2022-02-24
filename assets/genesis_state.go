@@ -12,7 +12,7 @@ type AssetDetails struct {
 	Symbol      string  `json:"symbol"`
 	TotalSupply string  `json:"total_supply"`
 	Decimals    uint64  `json:"decimals"`
-	MinLpStake  string  `json:"min_lp_stake"`
+	Quantum     string  `json:"quantum"`
 	Source      *Source `json:"source"`
 }
 
@@ -43,7 +43,7 @@ func (a *AssetDetails) IntoProto() (*types.AssetDetails, error) {
 		Symbol:      a.Symbol,
 		TotalSupply: a.TotalSupply,
 		Decimals:    a.Decimals,
-		MinLpStake:  a.MinLpStake,
+		Quantum:     a.Quantum,
 	}
 
 	if a.Source.BuiltinAsset != nil {
@@ -67,46 +67,18 @@ func (a *AssetDetails) IntoProto() (*types.AssetDetails, error) {
 
 type GenesisState map[string]AssetDetails
 
-var (
-	governanceAsset = AssetDetails{
-		Name:        "VOTE",
-		Symbol:      "VOTE",
-		TotalSupply: "0",
-		Decimals:    5,
-		MinLpStake:  "1",
-		Source: &Source{
-			BuiltinAsset: &BuiltinAsset{
-				MaxFaucetAmountMint: "10000",
-			},
+var governanceAsset = AssetDetails{
+	Name:        "VOTE",
+	Symbol:      "VOTE",
+	TotalSupply: "0",
+	Decimals:    5,
+	Quantum:     "1",
+	Source: &Source{
+		BuiltinAsset: &BuiltinAsset{
+			MaxFaucetAmountMint: "10000",
 		},
-	}
-
-	VegaTokenMainNet = AssetDetails{
-		Name:        "VEGA",
-		Symbol:      "VEGA",
-		TotalSupply: "64999723000000000000000000",
-		Decimals:    18,
-		MinLpStake:  "1",
-		Source: &Source{
-			Erc20: &Erc20{
-				ContractAddress: "0xcB84d72e61e383767C4DFEb2d8ff7f4FB89abc6e",
-			},
-		},
-	}
-
-	VegaTokenTestNet = AssetDetails{
-		Name:        "VEGA (V2 Test)",
-		Symbol:      "VEGA",
-		TotalSupply: "6499972300000",
-		Decimals:    5,
-		MinLpStake:  "1",
-		Source: &Source{
-			Erc20: &Erc20{
-				ContractAddress: "0xFa521aDcc11925266A518CdE33386FcD9cF2A4A6",
-			},
-		},
-	}
-)
+	},
+}
 
 func DefaultGenesisState() GenesisState {
 	assets := map[string]AssetDetails{

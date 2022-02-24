@@ -10,7 +10,9 @@ import (
 	"sync/atomic"
 	"time"
 
+	proto "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/assets"
+	"code.vegaprotocol.io/vega/broker"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
@@ -33,6 +35,8 @@ var (
 	ErrInvalidWithdrawalState                     = errors.New("invalid withdrawal state")
 	ErrNotMatchingWithdrawalForReference          = errors.New("invalid reference for withdrawal chain event")
 	ErrWithdrawalNotReady                         = errors.New("withdrawal not ready")
+	ErrNoGeneralAccountForAsset                   = errors.New("no general account for asset")
+	ErrNotEnoughFundsToTransfer                   = errors.New("not enough funds to transfer")
 )
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/assets_mock.go -package mocks code.vegaprotocol.io/vega/banking Assets
@@ -56,6 +60,13 @@ type Collateral interface {
 	Withdraw(ctx context.Context, party, asset string, amount *num.Uint) (*types.TransferResponse, error)
 	EnableAsset(ctx context.Context, asset types.Asset) error
 	GetPartyGeneralAccount(party, asset string) (*types.Account, error)
+	TransferFunds(ctx context.Context,
+		transfers []*types.Transfer,
+		accountTypes []types.AccountType,
+		references []string,
+		feeTransfers []*types.Transfer,
+		feeTransfersAccountTypes []types.AccountType,
+	) ([]*types.TransferResponse, error)
 }
 
 // Witness provide foreign chain resources validations
@@ -71,15 +82,16 @@ type TimeService interface {
 	NotifyOnTick(func(context.Context, time.Time))
 }
 
+// Epochervice ...
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/epoch_service_mock.go -package mocks code.vegaprotocol.io/vega/banking EpochService
+type EpochService interface {
+	NotifyOnEpoch(f func(context.Context, types.Epoch))
+}
+
 // Topology ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/topology_mock.go -package mocks code.vegaprotocol.io/vega/banking Topology
 type Topology interface {
 	IsValidator() bool
-}
-
-// Broker - the event bus.
-type Broker interface {
-	Send(e events.Event)
 }
 
 const (
@@ -93,7 +105,7 @@ var defaultValidationDuration = 2 * time.Hour
 type Engine struct {
 	cfg     Config
 	log     *logging.Logger
-	broker  Broker
+	broker  broker.BrokerI
 	col     Collateral
 	witness Witness
 	notary  Notary
@@ -106,10 +118,19 @@ type Engine struct {
 	withdrawalCnt *big.Int
 	deposits      map[string]*types.Deposit
 
+	currentEpoch    uint64
 	currentTime     time.Time
 	mu              sync.RWMutex
 	bss             *bankingSnapshotState
 	keyToSerialiser map[string]func() ([]byte, error)
+
+	// transfer fee related stuff
+	scheduledTransfers         map[time.Time][]scheduledTransfer
+	transferFeeFactor          num.Decimal
+	minTransferQuantumMultiple num.Decimal
+	// recurring transfers
+	// transfer id to recurringTransfers
+	recurringTransfers map[string]*types.RecurringTransfer
 }
 
 type withdrawalRef struct {
@@ -125,10 +146,14 @@ func New(
 	tsvc TimeService,
 	assets Assets,
 	notary Notary,
-	broker Broker,
+	broker broker.BrokerI,
 	top Topology,
+	epoch EpochService,
 ) (e *Engine) {
-	defer func() { tsvc.NotifyOnTick(e.OnTick) }()
+	defer func() {
+		tsvc.NotifyOnTick(e.OnTick)
+		epoch.NotifyOnEpoch(e.OnEpoch)
+	}()
 	log = log.Named(namedLogger)
 	log.SetLevel(cfg.Level.Get())
 
@@ -151,13 +176,19 @@ func New(
 			hash:       map[string][]byte{},
 			serialised: map[string][]byte{},
 		},
-		keyToSerialiser: map[string]func() ([]byte, error){},
+		keyToSerialiser:            map[string]func() ([]byte, error){},
+		scheduledTransfers:         map[time.Time][]scheduledTransfer{},
+		recurringTransfers:         map[string]*types.RecurringTransfer{},
+		transferFeeFactor:          num.DecimalZero(),
+		minTransferQuantumMultiple: num.DecimalZero(),
 	}
 
 	e.keyToSerialiser[withdrawalsKey] = e.serialiseWithdrawals
 	e.keyToSerialiser[depositsKey] = e.serialiseDeposits
 	e.keyToSerialiser[seenKey] = e.serialiseSeen
 	e.keyToSerialiser[assetActionsKey] = e.serialiseAssetActions
+	e.keyToSerialiser[recurringTransfersKey] = e.serialiseRecurringTransfers
+	e.keyToSerialiser[scheduledTransfersKey] = e.serialiseScheduledTransfers
 	return e
 }
 
@@ -173,6 +204,19 @@ func (e *Engine) ReloadConf(cfg Config) {
 	}
 
 	e.cfg = cfg
+}
+
+func (e *Engine) OnEpoch(ctx context.Context, ep types.Epoch) {
+	switch ep.Action {
+	case proto.EpochAction_EPOCH_ACTION_START:
+		e.currentEpoch = ep.Seq
+	case proto.EpochAction_EPOCH_ACTION_END:
+		if err := e.distributeRecurringTransfers(ctx, e.currentEpoch); err != nil {
+			e.log.Error("could not distribute recurring transfers", logging.Error(err))
+		}
+	default:
+		e.log.Panic("epoch action should never be UNSPECIFIED", logging.String("epoch", ep.String()))
+	}
 }
 
 func (e *Engine) OnTick(ctx context.Context, t time.Time) {
@@ -238,6 +282,13 @@ func (e *Engine) OnTick(ctx context.Context, t time.Time) {
 	// this will be restarting the signatures aggregates
 	e.notary.OfferSignatures(
 		types.NodeSignatureKindAssetWithdrawal, e.offerERC20NotarySignatures)
+
+	// then process all scheduledTransfers
+	if err := e.distributeScheduledTransfers(ctx); err != nil {
+		e.log.Error("could not process scheduled transfers",
+			logging.Error(err),
+		)
+	}
 }
 
 func (e *Engine) onCheckDone(i interface{}, valid bool) {
@@ -259,6 +310,7 @@ func (e *Engine) getWithdrawalFromRef(ref *big.Int) (*types.Withdrawal, error) {
 	for k := range e.withdrawals {
 		withdrawalsK = append(withdrawalsK, k)
 	}
+	sort.Strings(withdrawalsK)
 
 	for _, k := range withdrawalsK {
 		v := e.withdrawals[k]
@@ -303,7 +355,11 @@ func (e *Engine) finalizeAssetList(ctx context.Context, assetID string) error {
 }
 
 func (e *Engine) finalizeDeposit(ctx context.Context, d *types.Deposit) error {
-	defer func() { e.broker.Send(events.NewDepositEvent(ctx, *d)) }()
+	defer func() {
+		e.broker.Send(events.NewDepositEvent(ctx, *d))
+		// whatever happens, the deposit is in its final state (cancelled or finalized)
+		delete(e.deposits, d.ID)
+	}()
 	res, err := e.col.Deposit(ctx, d.PartyID, d.Asset, d.Amount)
 	if err != nil {
 		d.Status = types.DepositStatusCancelled
@@ -319,12 +375,15 @@ func (e *Engine) finalizeDeposit(ctx context.Context, d *types.Deposit) error {
 
 func (e *Engine) finalizeWithdraw(
 	ctx context.Context, w *types.Withdrawal) error {
-	// always send the withdrawal event
-	defer func() { e.broker.Send(events.NewWithdrawalEvent(ctx, *w)) }()
+	// always send the withdrawal event, don't delete it from the map because we
+	// may still receive events
+	defer func() {
+		e.broker.Send(events.NewWithdrawalEvent(ctx, *w))
+	}()
 
 	res, err := e.col.Withdraw(ctx, w.PartyID, w.Asset, w.Amount.Clone())
 	if err != nil {
-		w.Status = types.WithdrawalStatusCancelled
+		w.Status = types.WithdrawalStatusRejected
 		return err
 	}
 

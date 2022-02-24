@@ -1,7 +1,7 @@
 Feature: Verify the order size is correctly cumulated.
 
   Background:
-    And the log normal risk model named "my-log-normal-risk-model":
+    Given the log normal risk model named "my-log-normal-risk-model":
       | risk aversion | tau                    | mu | r     | sigma |
       | 0.001         | 0.00000190128526884174 | 0  | 0.016 | 2.5   |
     And the markets:
@@ -28,17 +28,17 @@ Feature: Verify the order size is correctly cumulated.
     And the mark price should be "12000000" for the market "ETH/DEC19"
 
     When the parties submit the following liquidity provision:
-      | id  | party       | market id | commitment amount | fee | side | pegged reference | proportion | offset | reference |
-      | lp1 | party-lp-1 | ETH/DEC19 | 1000000000        | 0.1 | buy  | BID              | 1          | -9     | lp-1-ref  |
-      | lp1 | party-lp-1 | ETH/DEC19 | 1000000000        | 0.1 | sell | ASK              | 1          | 9      | lp-1-ref  |
+      | id  | party       | market id | commitment amount | fee | side | pegged reference | proportion | offset | reference | lp type |
+      | lp1 | party-lp-1 | ETH/DEC19 | 1000000000        | 0.1 | buy  | BID              | 1          | 9      | lp-1-ref  | submission |
+      | lp1 | party-lp-1 | ETH/DEC19 | 1000000000        | 0.1 | sell | ASK              | 1          | 9      | lp-1-ref  | amendment |
     Then the liquidity provisions should have the following states:
       | id  | party       | market    | commitment amount | status        |
       | lp1 | party-lp-1 | ETH/DEC19 | 1000000000        | STATUS_ACTIVE |
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
     And the orders should have the following states:
       | party      | market id | side | volume | price    | status        |
-      | party-lp-1 | ETH/DEC19 | buy  | 167    | 11999990 | STATUS_ACTIVE |
-      | party-lp-1 | ETH/DEC19 | sell | 167    | 12000010 | STATUS_ACTIVE |
+      | party-lp-1 | ETH/DEC19 | buy  | 170    | 11999990 | STATUS_ACTIVE |
+      | party-lp-1 | ETH/DEC19 | sell | 170    | 12000010 | STATUS_ACTIVE |
 
     When the parties place the following orders:
       | party  | market id | side | volume | price    | resulting trades | type       | tif     | reference |
@@ -47,5 +47,5 @@ Feature: Verify the order size is correctly cumulated.
 
     Then the order book should have the following volumes for market "ETH/DEC19":
       | side | price    | volume |
-      | buy  | 11999990 | 334    |
-      | sell | 12000010 | 334    |
+      | buy  | 11999990 | 337    |
+      | sell | 12000010 | 337    |

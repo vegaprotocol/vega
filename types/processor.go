@@ -12,7 +12,7 @@ import (
 
 type (
 	OracleDataSubmission = commandspb.OracleDataSubmission
-	NodeRegistration     = commandspb.NodeRegistration
+	AnnounceNode         = commandspb.AnnounceNode
 	NodeVote             = commandspb.NodeVote
 	ChainEvent           = commandspb.ChainEvent
 )
@@ -92,6 +92,12 @@ func NewOrderSubmissionFromProto(p *commandspb.OrderSubmission) (*OrderSubmissio
 			return nil, errors.New("invalid price")
 		}
 	}
+
+	peggedOrder, err := NewPeggedOrderFromProto(p.PeggedOrder)
+	if err != nil {
+		return nil, err
+	}
+
 	return &OrderSubmission{
 		MarketId: p.MarketId,
 		// Need to update protobuf to use string TODO UINT
@@ -102,7 +108,7 @@ func NewOrderSubmissionFromProto(p *commandspb.OrderSubmission) (*OrderSubmissio
 		ExpiresAt:   p.ExpiresAt,
 		Type:        p.Type,
 		Reference:   p.Reference,
-		PeggedOrder: NewPeggedOrderFromProto(p.PeggedOrder),
+		PeggedOrder: peggedOrder,
 	}, nil
 }
 

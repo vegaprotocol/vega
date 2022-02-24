@@ -64,7 +64,6 @@ func (s *StakingAccount) AddEvent(evt *types.StakeLinking) error {
 	if err := s.validateEvent(evt); err != nil {
 		return err
 	}
-
 	// save the new events
 	s.insertSorted(evt)
 

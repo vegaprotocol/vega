@@ -6,9 +6,12 @@ import (
 	"testing"
 	"time"
 
+	tsmock "code.vegaprotocol.io/vega/netparams/mocks"
+
 	"code.vegaprotocol.io/vega/broker/mocks"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/netparams"
+	"code.vegaprotocol.io/vega/types/num"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
@@ -44,7 +47,7 @@ func TestNetParams(t *testing.T) {
 	t.Run("test update - validation failed", testUpdateValidationFailed)
 	t.Run("test exists - success", testExistsSuccess)
 	t.Run("test exists - failure", testExistsFailure)
-	t.Run("get float", testGetFloat)
+	t.Run("get decimal", testGetDecimal)
 	t.Run("get duration", testGetDuration)
 	t.Run("dispatch after update", testDispatchAfterUpdate)
 	t.Run("register dispatch function - failure", testRegisterDispatchFunctionFailure)
@@ -54,6 +57,7 @@ func TestCheckpoint(t *testing.T) {
 	t.Run("test get snapshot not empty", testNonEmptyCheckpoint)
 	t.Run("test get snapshot not empty with overwrite", testNonEmptyCheckpointWithOverWrite)
 	t.Run("test get snapshot invalid", testInvalidCheckpoint)
+	t.Run("test notification is sent after checkpoint load", testCheckpointNotificationsDelivered)
 }
 
 func testRegisterDispatchFunctionFailure(t *testing.T) {
@@ -67,7 +71,7 @@ func testRegisterDispatchFunctionFailure(t *testing.T) {
 		},
 	)
 
-	assert.EqualError(t, err, "invalid type, expected func(context.Context, time.Duration) error")
+	assert.EqualError(t, err, "governance.proposal.asset.maxClose: invalid type, expected func(context.Context, time.Duration) error")
 }
 
 func testDispatchAfterUpdate(t *testing.T) {
@@ -181,14 +185,14 @@ func testExistsFailure(t *testing.T) {
 	assert.False(t, ok)
 }
 
-func testGetFloat(t *testing.T) {
+func testGetDecimal(t *testing.T) {
 	netp := getTestNetParams(t)
 	defer netp.ctrl.Finish()
 
-	_, err := netp.GetFloat(netparams.GovernanceProposalUpdateNetParamRequiredMajority)
+	_, err := netp.GetDecimal(netparams.GovernanceProposalUpdateNetParamRequiredMajority)
 	assert.NoError(t, err)
-	_, err = netp.GetFloat(netparams.GovernanceProposalAssetMaxClose)
-	assert.EqualError(t, err, "not a float value")
+	_, err = netp.GetInt(netparams.GovernanceProposalAssetMaxClose)
+	assert.EqualError(t, err, "not an int value")
 }
 
 func testGetDuration(t *testing.T) {
@@ -264,6 +268,68 @@ func testInvalidCheckpoint(t *testing.T) {
 
 	data = append(data, []byte("foobar")...) // corrupt the data
 	require.Error(t, netp.Load(ctx, data))
+}
+
+func testCheckpointNotificationsDelivered(t *testing.T) {
+	netp := getTestNetParams(t)
+	defer netp.ctrl.Finish()
+	ctx := context.Background()
+	netp.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+	tm := tsmock.NewMockVegaTime(netp.ctrl)
+	var netpCb func(context.Context, time.Time)
+	tm.EXPECT().NotifyOnTick(gomock.Any()).Times(1).Do(func(cb func(context.Context, time.Time)) {
+		netpCb = cb
+	})
+	tm.NotifyOnTick(netp.OnChainTimeUpdate)
+
+	counter := 0
+	countNotificationsFunc := func(_ context.Context, minAmount num.Decimal) error {
+		counter++
+		return nil
+	}
+
+	netp.Watch(
+		netparams.WatchParam{
+			Param:   netparams.DelegationMinAmount,
+			Watcher: countNotificationsFunc,
+		},
+	)
+
+	err := netp.Update(ctx, netparams.DelegationMinAmount, "2.0")
+	assert.NoError(t, err)
+
+	netpCb(ctx, time.Now())
+	require.Equal(t, 1, counter)
+
+	cp, err := netp.Checkpoint()
+	require.NoError(t, err)
+
+	loadNp := getTestNetParams(t)
+	defer loadNp.ctrl.Finish()
+	loadNp.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+	loadNp.broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
+
+	loadTm := tsmock.NewMockVegaTime(netp.ctrl)
+	var loadNetpCb func(context.Context, time.Time)
+	loadTm.EXPECT().NotifyOnTick(gomock.Any()).Times(1).Do(func(cb func(context.Context, time.Time)) {
+		loadNetpCb = cb
+	})
+	loadTm.NotifyOnTick(loadNp.OnChainTimeUpdate)
+
+	var loadMinAmount num.Decimal
+	loadCountNotificationsFunc := func(_ context.Context, minAmount num.Decimal) error {
+		loadMinAmount = minAmount
+		return nil
+	}
+	loadNp.Watch(
+		netparams.WatchParam{
+			Param:   netparams.DelegationMinAmount,
+			Watcher: loadCountNotificationsFunc,
+		},
+	)
+	loadNp.Load(ctx, cp)
+	loadNetpCb(ctx, time.Now())
+	require.Equal(t, "2", loadMinAmount.String())
 }
 
 func testNonEmptyCheckpointWithOverWrite(t *testing.T) {

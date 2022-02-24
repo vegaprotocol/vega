@@ -10,7 +10,7 @@ import (
 	"code.vegaprotocol.io/vega/api"
 	"code.vegaprotocol.io/vega/logging"
 
-	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/rs/cors"
 	"go.elastic.co/apm/module/apmhttp"
 	"google.golang.org/grpc"
@@ -78,7 +78,6 @@ func (s *ProxyServer) Start() {
 
 	mux := runtime.NewServeMux(
 		runtime.WithMarshalerOption(runtime.MIMEWildcard, jsonPB),
-		runtime.WithProtoErrorHandler(runtime.DefaultHTTPProtoErrorHandler),
 	)
 
 	opts := []grpc.DialOption{grpc.WithInsecure()}

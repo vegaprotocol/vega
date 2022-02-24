@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"sync"
 
+	proto "code.vegaprotocol.io/protos/vega"
 	types "code.vegaprotocol.io/protos/vega"
 	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
 	"code.vegaprotocol.io/vega/broker"
@@ -31,7 +32,7 @@ func NewBrokerStub() *BrokerStub {
 	}
 }
 
-func (b *BrokerStub) Subscribe(sub broker.Subscriber) {
+func (b *BrokerStub) Subscribe(sub broker.Subscriber) int {
 	b.mu.Lock()
 	ty := sub.Types()
 	for _, t := range ty {
@@ -41,7 +42,10 @@ func (b *BrokerStub) Subscribe(sub broker.Subscriber) {
 		b.subT[t] = append(b.subT[t], sub)
 	}
 	b.mu.Unlock()
+	return 0
 }
+
+func (b *BrokerStub) SetStreaming(v bool) bool { return false }
 
 func (b *BrokerStub) SendBatch(evts []events.Event) {
 	if len(evts) == 0 {
@@ -165,6 +169,13 @@ func (b *BrokerStub) ClearAllEvents() {
 	b.mu.Unlock()
 }
 
+func (b *BrokerStub) ClearTransferResponseEvents() {
+	b.mu.Lock()
+	cs := make([]events.Event, 0, len(b.data[events.TransferResponses]))
+	b.data[events.TransferResponses] = cs
+	b.mu.Unlock()
+}
+
 func (b *BrokerStub) GetBookDepth(market string) (sell map[string]uint64, buy map[string]uint64) {
 	batch := b.GetImmBatch(events.OrderEvent)
 	if len(batch) == 0 {
@@ -203,6 +214,47 @@ func (b *BrokerStub) GetBookDepth(market string) (sell map[string]uint64, buy ma
 			continue
 		}
 		sell[v.Price] = sell[v.Price] + v.Remaining
+	}
+
+	return sell, buy
+}
+
+func (b *BrokerStub) GetActiveOrderDepth(marketID string) (sell []*types.Order, buy []*types.Order) {
+	batch := b.GetImmBatch(events.OrderEvent)
+	if len(batch) == 0 {
+		return nil, nil
+	}
+	active := make(map[string]*types.Order, len(batch))
+	for _, e := range batch {
+		var ord *types.Order
+		switch et := e.(type) {
+		case *events.Order:
+			ord = et.Order()
+		case events.Order:
+			ord = et.Order()
+		default:
+			continue
+		}
+		if ord.MarketId != marketID {
+			continue
+		}
+		if ord.Status == types.Order_STATUS_ACTIVE {
+			active[ord.Id] = ord
+		} else {
+			delete(active, ord.Id)
+		}
+	}
+	c := len(active) / 2
+	if len(active)%2 == 1 {
+		c++
+	}
+	sell, buy = make([]*types.Order, 0, c), make([]*types.Order, 0, c)
+	for _, ord := range active {
+		if ord.Side == types.Side_SIDE_BUY {
+			buy = append(buy, ord)
+			continue
+		}
+		sell = append(sell, ord)
 	}
 
 	return sell, buy
@@ -389,11 +441,11 @@ func (b *BrokerStub) GetValidatorScores(epochSeq string) map[string]events.Valid
 	for _, e := range batch {
 		switch et := e.(type) {
 		case events.ValidatorScore:
-			if et.EpochSeq == epochSeq {
+			if et.EpochSeq == epochSeq && et.ValidatorStatus == "tendermint" {
 				scores[et.NodeID] = et
 			}
 		case *events.ValidatorScore:
-			if (*et).EpochSeq == epochSeq {
+			if (*et).EpochSeq == epochSeq && et.ValidatorStatus == "tendermint" {
 				scores[et.NodeID] = *et
 			}
 		}
@@ -469,11 +521,11 @@ func (b *BrokerStub) GetMarketInsurancePoolAccount(market string) (types.Account
 	return types.Account{}, errors.New("account does not exist")
 }
 
-func (b *BrokerStub) GetAssetInsurancePoolAccount(asset string) (types.Account, error) {
+func (b *BrokerStub) GetAssetNetworkTreasuryAccount(asset string) (types.Account, error) {
 	batch := b.GetAccountEvents()
 	for _, e := range batch {
 		v := e.Account()
-		if v.Owner == "*" && v.Asset == asset && v.Type == types.AccountType_ACCOUNT_TYPE_GLOBAL_INSURANCE {
+		if v.Owner == "*" && v.Asset == asset && v.Type == types.AccountType_ACCOUNT_TYPE_GLOBAL_REWARD {
 			return v, nil
 		}
 	}
@@ -531,6 +583,22 @@ func (b *BrokerStub) GetPartyGeneralAccount(party, asset string) (ga types.Accou
 	for _, e := range batch {
 		v := e.Account()
 		if v.Owner == party && v.Type == types.AccountType_ACCOUNT_TYPE_GENERAL && v.Asset == asset {
+			ga = v
+			err = nil
+		}
+	}
+
+	return
+}
+
+// GetRewardAccountBalance returns the latest event WRT the reward accounts with the given type for the asset.
+func (b *BrokerStub) GetRewardAccountBalance(accountType, asset string) (ga types.Account, err error) {
+	batch := b.GetAccountEvents()
+	at := types.AccountType(proto.AccountType_value[accountType])
+	err = errors.New("account does not exist")
+	for _, e := range batch {
+		v := e.Account()
+		if v.Owner == "*" && v.Type == at && v.Asset == asset {
 			ga = v
 			err = nil
 		}
@@ -686,3 +754,7 @@ func derefTxErr(e events.Event) events.TxErr {
 	}
 	return dub
 }
+
+func (b *BrokerStub) SubscribeBatch(subs ...broker.Subscriber) {}
+
+func (b *BrokerStub) Unsubscribe(k int) {}

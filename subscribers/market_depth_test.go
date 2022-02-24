@@ -18,17 +18,25 @@ func getTestMDB(t *testing.T, ctx context.Context, ack bool) *subscribers.Market
 
 func buildOrder(id string, side types.Side, orderType types.OrderType, price uint64, size uint64, remaining uint64) *types.Order {
 	order := &types.Order{
-		ID:          id,
-		Side:        side,
-		Type:        orderType,
-		Price:       num.NewUint(price),
-		Size:        size,
-		Remaining:   remaining,
-		TimeInForce: types.OrderTimeInForceGTC,
-		Status:      types.OrderStatusActive,
-		MarketID:    "M",
+		ID:            id,
+		Side:          side,
+		Type:          orderType,
+		Price:         num.NewUint(price),
+		OriginalPrice: num.NewUint(price),
+		Size:          size,
+		Remaining:     remaining,
+		TimeInForce:   types.OrderTimeInForceGTC,
+		Status:        types.OrderStatusActive,
+		MarketID:      "M",
 	}
 	return order
+}
+
+func newPeggedOrder(reference types.PeggedReference, offset uint64) *types.PeggedOrder {
+	return &types.PeggedOrder{
+		Reference: reference,
+		Offset:    num.NewUint(offset),
+	}
 }
 
 func TestBuyPriceLevels(t *testing.T) {
@@ -199,6 +207,7 @@ func TestAmendOrderPrice(t *testing.T) {
 	// Amend the price to force a change in price level
 	amendorder := *order
 	amendorder.Price = num.NewUint(90)
+	amendorder.OriginalPrice = num.NewUint(90)
 	event3 := events.NewOrderEvent(ctx, &amendorder)
 	mdb.Push(event3)
 
@@ -537,13 +546,13 @@ func TestParkingOrder(t *testing.T) {
 
 	// Create a valid and live pegged order
 	order1 := buildOrder("Order1", types.SideBuy, types.OrderTypeLimit, 101, 10, 10)
-	order1.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReferenceBestBid, Offset: -1}
+	order1.PeggedOrder = newPeggedOrder(types.PeggedReferenceBestBid, 1)
 	event1 := events.NewOrderEvent(ctx, order1)
 	mdb.Push(event1)
 
 	// Park it
 	order2 := buildOrder("Order1", types.SideBuy, types.OrderTypeLimit, 0, 10, 10)
-	order2.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReferenceBestBid, Offset: -1}
+	order2.PeggedOrder = newPeggedOrder(types.PeggedReferenceBestBid, 1)
 	order2.Status = types.OrderStatusParked
 	event2 := events.NewOrderEvent(ctx, order2)
 	mdb.Push(event2)
@@ -558,7 +567,7 @@ func TestParkingOrder(t *testing.T) {
 
 	// Unpark it
 	order3 := buildOrder("Order1", types.SideBuy, types.OrderTypeLimit, 101, 10, 10)
-	order3.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReferenceBestBid, Offset: -1}
+	order3.PeggedOrder = newPeggedOrder(types.PeggedReferenceBestBid, 1)
 	order3.Status = types.OrderStatusActive
 	event3 := events.NewOrderEvent(ctx, order3)
 	mdb.Push(event3)
@@ -578,7 +587,7 @@ func TestParkedOrder(t *testing.T) {
 
 	// Create a parked pegged order which should not go on the depth book
 	order1 := buildOrder("Order1", types.SideBuy, types.OrderTypeLimit, 101, 10, 10)
-	order1.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReferenceBestBid, Offset: -1}
+	order1.PeggedOrder = newPeggedOrder(types.PeggedReferenceBestBid, 1)
 	order1.Status = types.OrderStatusParked
 	event1 := events.NewOrderEvent(ctx, order1)
 	mdb.Push(event1)
@@ -598,7 +607,7 @@ func TestParkedOrder2(t *testing.T) {
 
 	// Create parked pegged order
 	order1 := buildOrder("Pegged1", types.SideBuy, types.OrderTypeLimit, 0, 10, 10)
-	order1.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReferenceBestBid, Offset: -1}
+	order1.PeggedOrder = newPeggedOrder(types.PeggedReferenceBestBid, 1)
 	order1.Status = types.OrderStatusParked
 	event1 := events.NewOrderEvent(ctx, order1)
 	mdb.Push(event1)
@@ -610,7 +619,7 @@ func TestParkedOrder2(t *testing.T) {
 
 	// Unpark pegged order
 	order3 := buildOrder("Pegged1", types.SideBuy, types.OrderTypeLimit, 99, 10, 10)
-	order3.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReferenceBestBid, Offset: -1}
+	order3.PeggedOrder = newPeggedOrder(types.PeggedReferenceBestBid, 1)
 	order3.Status = types.OrderStatusActive
 	event3 := events.NewOrderEvent(ctx, order3)
 	mdb.Push(event3)
@@ -623,7 +632,7 @@ func TestParkedOrder2(t *testing.T) {
 
 	// Park pegged order
 	order5 := buildOrder("Pegged1", types.SideBuy, types.OrderTypeLimit, 99, 10, 10)
-	order5.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReferenceBestBid, Offset: -1}
+	order5.PeggedOrder = newPeggedOrder(types.PeggedReferenceBestBid, 1)
 	order5.Status = types.OrderStatusParked
 	event5 := events.NewOrderEvent(ctx, order5)
 	mdb.Push(event5)
@@ -635,7 +644,7 @@ func TestParkedOrder2(t *testing.T) {
 
 	// Unpark pegged order
 	order7 := buildOrder("Pegged1", types.SideBuy, types.OrderTypeLimit, 99, 10, 10)
-	order7.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReferenceBestBid, Offset: -1}
+	order7.PeggedOrder = newPeggedOrder(types.PeggedReferenceBestBid, 1)
 	order7.Status = types.OrderStatusActive
 	event7 := events.NewOrderEvent(ctx, order7)
 	mdb.Push(event7)
@@ -654,7 +663,7 @@ func TestParkedOrder2(t *testing.T) {
 
 	// Park pegged order
 	order10 := buildOrder("Pegged1", types.SideBuy, types.OrderTypeLimit, 99, 10, 10)
-	order10.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReferenceBestBid, Offset: -1}
+	order10.PeggedOrder = newPeggedOrder(types.PeggedReferenceBestBid, 1)
 	order10.Status = types.OrderStatusParked
 	event10 := events.NewOrderEvent(ctx, order10)
 	mdb.Push(event10)

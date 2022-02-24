@@ -5,6 +5,11 @@ import (
 	"context"
 	"testing"
 
+	"code.vegaprotocol.io/vega/validators"
+
+	abcitypes "github.com/tendermint/tendermint/abci/types"
+	types1 "github.com/tendermint/tendermint/proto/tendermint/types"
+
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	snapshot "code.vegaprotocol.io/protos/vega/snapshot/v1"
 	"code.vegaprotocol.io/vega/types"
@@ -34,35 +39,31 @@ func TestEmptySnapshot(t *testing.T) {
 
 func TestTopologySnapshot(t *testing.T) {
 	top := getTestTopWithDefaultValidator(t)
+	updateValidatorPerformanceToNonDefaultState(t, top.Topology)
 	defer top.ctrl.Finish()
 
 	h1, err := top.GetHash(topKey)
 	require.Nil(t, err)
 
 	tmPubKeys := []string{"tm-pubkey-1", "tm-pubkey-2"}
-	top.UpdateValidatorSet(tmPubKeys)
-
-	h2, err := top.GetHash(topKey)
-	require.Nil(t, err)
-
 	ctx := context.Background()
 
-	nr1 := commandspb.NodeRegistration{
+	nr1 := commandspb.AnnounceNode{
 		Id:              "vega-master-pubkey",
 		ChainPubKey:     tmPubKeys[0],
 		VegaPubKey:      "vega-key",
 		EthereumAddress: "eth-address",
 	}
-	err = top.AddNodeRegistration(ctx, &nr1)
+	err = top.AddNewNode(ctx, &nr1, validators.ValidatorStatusTendermint)
 	assert.NoError(t, err)
 
-	nr2 := commandspb.NodeRegistration{
+	nr2 := commandspb.AnnounceNode{
 		Id:              "vega-master-pubkey-2",
 		ChainPubKey:     tmPubKeys[1],
 		VegaPubKey:      "vega-key-2",
 		EthereumAddress: "eth-address-2",
 	}
-	err = top.AddNodeRegistration(ctx, &nr2)
+	err = top.AddNewNode(ctx, &nr2, validators.ValidatorStatusTendermint)
 	assert.NoError(t, err)
 
 	kr1 := &commandspb.KeyRotateSubmission{
@@ -86,8 +87,6 @@ func TestTopologySnapshot(t *testing.T) {
 	// Check the hashes have changed after each state change
 	h3, err := top.GetHash(topKey)
 	require.Nil(t, err)
-	require.False(t, bytes.Equal(h1, h2))
-	require.False(t, bytes.Equal(h2, h3))
 	require.False(t, bytes.Equal(h1, h3))
 
 	// Get the state ready to load into a new instance of the engine
@@ -111,4 +110,14 @@ func TestTopologySnapshot(t *testing.T) {
 	assert.Equal(t, top.IsValidator(), snapTop.IsValidator())
 	assert.Equal(t, top.GetPendingKeyRotation(kr1.TargetBlock, kr1.NewPubKey), snapTop.GetPendingKeyRotation(kr1.TargetBlock, kr1.NewPubKey))
 	assert.Equal(t, top.GetPendingKeyRotation(kr2.TargetBlock, kr2.NewPubKey), snapTop.GetPendingKeyRotation(kr2.TargetBlock, kr2.NewPubKey))
+}
+
+func updateValidatorPerformanceToNonDefaultState(t *testing.T, top *validators.Topology) {
+	t.Helper()
+	req1 := abcitypes.RequestBeginBlock{Header: types1.Header{ProposerAddress: address1, Height: int64(1)}}
+	top.BeginBlock(context.Background(), req1)
+
+	// expecting address1 to propose but got address3
+	req2 := abcitypes.RequestBeginBlock{Header: types1.Header{ProposerAddress: address3, Height: int64(1)}}
+	top.BeginBlock(context.Background(), req2)
 }

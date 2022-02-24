@@ -22,7 +22,7 @@ func testAssets(t *testing.T) *assets.Service {
 	ctrl := gomock.NewController(t)
 	ts := mocks.NewMockTimeService(ctrl)
 	ts.EXPECT().NotifyOnTick(gomock.Any()).Times(1)
-	as := assets.New(logger, conf, nil, nil, ts)
+	as := assets.New(logger, conf, nil, nil, ts, true)
 	return as
 }
 

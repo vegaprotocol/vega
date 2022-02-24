@@ -5,7 +5,6 @@ import (
 
 	"code.vegaprotocol.io/vega/netparams"
 	"code.vegaprotocol.io/vega/types"
-	"code.vegaprotocol.io/vega/types/num"
 )
 
 var (
@@ -74,10 +73,8 @@ func (e *Engine) getProposalParametersFromNetParams(
 	pp.MaxClose, _ = e.netp.GetDuration(maxCloseKey)
 	pp.MinEnact, _ = e.netp.GetDuration(minEnactKey)
 	pp.MaxEnact, _ = e.netp.GetDuration(maxEnactKey)
-	rp, _ := e.netp.GetFloat(requiredParticipationKey)
-	pp.RequiredParticipation = num.DecimalFromFloat(rp)
-	rm, _ := e.netp.GetFloat(requiredMajorityKey)
-	pp.RequiredMajority = num.DecimalFromFloat(rm)
+	pp.RequiredParticipation, _ = e.netp.GetDecimal(requiredParticipationKey)
+	pp.RequiredMajority, _ = e.netp.GetDecimal(requiredMajorityKey)
 	mpb, _ := e.netp.GetUint(minProposerBalanceKey)
 	pp.MinProposerBalance = mpb
 	mvb, _ := e.netp.GetUint(minVoterBalanceKey)

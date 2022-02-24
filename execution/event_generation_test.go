@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/subscribers"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
@@ -56,7 +57,7 @@ func startMarketInAuction(t *testing.T, ctx context.Context, now *time.Time) *te
 func leaveAuction(tm *testMarket, ctx context.Context, now *time.Time) {
 	// Leave auction to force the order to be removed
 	*now = now.Add(time.Second * 20)
-	tm.market.LeaveAuction(ctx, *now)
+	tm.market.LeaveAuctionWithIdGen(ctx, *now, newTestIdGenerator())
 }
 
 func processEventsWithCounter(t *testing.T, tm *testMarket, mdb *subscribers.MarketDepthBuilder, i int) {
@@ -166,7 +167,7 @@ func TestEvents_EnteringAuctionCancelsGFNOrders(t *testing.T) {
 	ctx := context.Background()
 	mdb := subscribers.NewMarketDepthBuilder(ctx, nil, true)
 	tm := startMarketInAuction(t, ctx, &now)
-	tm.market.OnMarketLiquidityTargetStakeTriggeringRatio(ctx, 0)
+	tm.market.OnMarketLiquidityTargetStakeTriggeringRatio(ctx, num.DecimalFromFloat(0))
 
 	auxParty := "aux"
 	addAccount(tm, auxParty)
@@ -214,14 +215,12 @@ func TestEvents_EnteringAuctionCancelsGFNOrders(t *testing.T) {
 	assert.Equal(t, types.AuctionTriggerPrice, tm.market.GetMarketData().Trigger)
 
 	// Check we have the right amount of events
-	// assert.Equal(t, uint64(8), tm.orderEventCount)
-	assert.Equal(t, uint64(7), tm.orderEventCount)
-	// assert.Equal(t, int64(4), tm.market.GetOrdersOnBookCount())
-	assert.Equal(t, int64(5), tm.market.GetOrdersOnBookCount())
+	assert.Equal(t, uint64(8), tm.orderEventCount)
+
+	assert.Equal(t, int64(4), tm.market.GetOrdersOnBookCount())
 
 	processEvents(t, tm, mdb)
-	// assert.Equal(t, int64(4), mdb.GetOrderCount(tm.market.GetID()))
-	assert.Equal(t, int64(5), mdb.GetOrderCount(tm.market.GetID()))
+	assert.Equal(t, int64(4), mdb.GetOrderCount(tm.market.GetID()))
 }
 
 func TestEvents_CloseOutParty(t *testing.T) {
@@ -231,7 +230,7 @@ func TestEvents_CloseOutParty(t *testing.T) {
 	mdb := subscribers.NewMarketDepthBuilder(ctx, nil, true)
 	tm := startMarketInAuction(t, ctx, &now)
 
-	tm.market.OnMarketLiquidityTargetStakeTriggeringRatio(ctx, 0)
+	tm.market.OnMarketLiquidityTargetStakeTriggeringRatio(ctx, num.DecimalFromFloat(0))
 
 	auxParty := "aux"
 	addAccount(tm, auxParty)
@@ -277,7 +276,7 @@ func TestEvents_CloseOutParty(t *testing.T) {
 	// assert.Equal(t, int64(3), tm.market.GetOrdersOnBookCount())
 	assert.Equal(t, int64(4), tm.market.GetOrdersOnBookCount())
 
-	// Move price high to force a close out
+	// Move price high to force a closed out
 	o2 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "Order02", types.SideBuy, "party-B", 1, 100)
 	o2conf, err := tm.market.SubmitOrder(ctx, o2)
 	require.NotNil(t, o2conf)
@@ -311,7 +310,7 @@ func TestEvents_CloseOutPartyWithPeggedOrder(t *testing.T) {
 	mdb := subscribers.NewMarketDepthBuilder(ctx, nil, true)
 	tm := startMarketInAuction(t, ctx, &now)
 
-	tm.market.OnMarketLiquidityTargetStakeTriggeringRatio(ctx, 0)
+	tm.market.OnMarketLiquidityTargetStakeTriggeringRatio(ctx, num.DecimalFromFloat(0))
 
 	auxParty := "aux"
 	addAccount(tm, auxParty)
@@ -356,13 +355,13 @@ func TestEvents_CloseOutPartyWithPeggedOrder(t *testing.T) {
 
 	// Place the pegged order
 	o5 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "Order05", types.SideBuy, "party-A", 1, 0)
-	o5.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReferenceBestBid, Offset: -1}
+	o5.PeggedOrder = newPeggedOrder(types.PeggedReferenceBestBid, 1)
 	o5conf, err := tm.market.SubmitOrder(ctx, o5)
 	require.NotNil(t, o5conf)
 	require.NoError(t, err)
 
 	o7 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "Order07", types.SideBuy, "party-A", 1, 0)
-	o7.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReferenceBestBid, Offset: -110}
+	o7.PeggedOrder = newPeggedOrder(types.PeggedReferenceBestBid, 1)
 	o7conf, err := tm.market.SubmitOrder(ctx, o7)
 	require.NotNil(t, o7conf)
 	require.NoError(t, err)
@@ -408,7 +407,7 @@ func TestEvents_PeggedOrderNotAbleToRepriceDueToMargin(t *testing.T) {
 
 	// Place the pegged order
 	o5 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "Order05", types.SideBuy, "party-A", 50, 0)
-	o5.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReferenceBestBid, Offset: -1}
+	o5.PeggedOrder = newPeggedOrder(types.PeggedReferenceBestBid, 1)
 	o5conf, err := tm.market.SubmitOrder(ctx, o5)
 	require.NotNil(t, o5conf)
 	require.NoError(t, err)
@@ -438,7 +437,7 @@ func TestEvents_EnteringAuctionParksAllPegs(t *testing.T) {
 	ctx := context.Background()
 	mdb := subscribers.NewMarketDepthBuilder(ctx, nil, true)
 	tm := startMarketInAuction(t, ctx, &now)
-	tm.market.OnMarketLiquidityTargetStakeTriggeringRatio(ctx, 0)
+	tm.market.OnMarketLiquidityTargetStakeTriggeringRatio(ctx, num.DecimalFromFloat(0))
 
 	auxParty := "aux"
 	addAccount(tm, auxParty)
@@ -470,7 +469,7 @@ func TestEvents_EnteringAuctionParksAllPegs(t *testing.T) {
 	require.NoError(t, err)
 
 	o4 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "Order04", types.SideBuy, "party-B", 1, 0)
-	o4.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReferenceBestBid, Offset: -1}
+	o4.PeggedOrder = newPeggedOrder(types.PeggedReferenceBestBid, 1)
 	o4conf, err := tm.market.SubmitOrder(ctx, o4)
 	require.NotNil(t, o4conf)
 	require.NoError(t, err)
@@ -505,7 +504,7 @@ func TestEvents_SelfTrading(t *testing.T) {
 	mdb := subscribers.NewMarketDepthBuilder(ctx, nil, true)
 	tm := startMarketInAuction(t, ctx, &now)
 
-	tm.market.OnMarketLiquidityTargetStakeTriggeringRatio(ctx, 0)
+	tm.market.OnMarketLiquidityTargetStakeTriggeringRatio(ctx, num.DecimalFromFloat(0))
 
 	auxParty := "aux"
 	addAccount(tm, auxParty)
@@ -563,29 +562,29 @@ func TestEvents_Amending(t *testing.T) {
 		Price:    num.NewUint(11),
 	}
 
-	amendConf, err := tm.market.AmendOrder(ctx, amendment, o1.Party)
+	amendConf, err := tm.market.AmendOrder(ctx, amendment, o1.Party, vgcrypto.RandomHash())
 	assert.NotNil(t, amendConf)
 	assert.NoError(t, err)
 
 	amendment.Price = num.NewUint(9)
-	amendConf, err = tm.market.AmendOrder(ctx, amendment, o1.Party)
+	amendConf, err = tm.market.AmendOrder(ctx, amendment, o1.Party, vgcrypto.RandomHash())
 	assert.NotNil(t, amendConf)
 	assert.NoError(t, err)
 
 	amendment.Price = nil
 	amendment.SizeDelta = 3
-	amendConf, err = tm.market.AmendOrder(ctx, amendment, o1.Party)
+	amendConf, err = tm.market.AmendOrder(ctx, amendment, o1.Party, vgcrypto.RandomHash())
 	assert.NotNil(t, amendConf)
 	assert.NoError(t, err)
 
 	amendment.SizeDelta = -2
-	amendConf, err = tm.market.AmendOrder(ctx, amendment, o1.Party)
+	amendConf, err = tm.market.AmendOrder(ctx, amendment, o1.Party, vgcrypto.RandomHash())
 	assert.NotNil(t, amendConf)
 	assert.NoError(t, err)
 
 	amendment.SizeDelta = 1
 	amendment.Price = num.NewUint(10)
-	amendConf, err = tm.market.AmendOrder(ctx, amendment, o1.Party)
+	amendConf, err = tm.market.AmendOrder(ctx, amendment, o1.Party, vgcrypto.RandomHash())
 	assert.NotNil(t, amendConf)
 	assert.NoError(t, err)
 
@@ -605,7 +604,7 @@ func TestEvents_MovingPegsAround(t *testing.T) {
 	mdb := subscribers.NewMarketDepthBuilder(ctx, nil, true)
 	tm := startMarketInAuction(t, ctx, &now)
 
-	tm.market.OnMarketLiquidityTargetStakeTriggeringRatio(ctx, 0)
+	tm.market.OnMarketLiquidityTargetStakeTriggeringRatio(ctx, num.DecimalFromFloat(0))
 
 	auxParty := "aux"
 	addAccount(tm, auxParty)
@@ -632,7 +631,7 @@ func TestEvents_MovingPegsAround(t *testing.T) {
 	require.NoError(t, err)
 
 	o3 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "Order03", types.SideBuy, "party-A", 1, 0)
-	o3.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReferenceBestBid, Offset: -1}
+	o3.PeggedOrder = newPeggedOrder(types.PeggedReferenceBestBid, 1)
 	o3conf, err := tm.market.SubmitOrder(ctx, o3)
 	require.NotNil(t, o3conf)
 	require.NoError(t, err)
@@ -643,17 +642,17 @@ func TestEvents_MovingPegsAround(t *testing.T) {
 		Price:    num.NewUint(8),
 	}
 
-	amendConf, err := tm.market.AmendOrder(ctx, amendment, o2.Party)
+	amendConf, err := tm.market.AmendOrder(ctx, amendment, o2.Party, vgcrypto.RandomHash())
 	assert.NotNil(t, amendConf)
 	assert.NoError(t, err)
 
 	amendment.Price = num.NewUint(18)
-	amendConf, err = tm.market.AmendOrder(ctx, amendment, o2.Party)
+	amendConf, err = tm.market.AmendOrder(ctx, amendment, o2.Party, vgcrypto.RandomHash())
 	assert.NotNil(t, amendConf)
 	assert.NoError(t, err)
 
 	amendment.Price = num.NewUint(22)
-	amendConf, err = tm.market.AmendOrder(ctx, amendment, o2.Party)
+	amendConf, err = tm.market.AmendOrder(ctx, amendment, o2.Party, vgcrypto.RandomHash())
 	assert.NotNil(t, amendConf)
 	assert.NoError(t, err)
 
@@ -673,7 +672,7 @@ func TestEvents_MovingPegsAround2(t *testing.T) {
 	mdb := subscribers.NewMarketDepthBuilder(ctx, nil, true)
 	tm := startMarketInAuction(t, ctx, &now)
 
-	tm.market.OnMarketLiquidityTargetStakeTriggeringRatio(ctx, 0)
+	tm.market.OnMarketLiquidityTargetStakeTriggeringRatio(ctx, num.DecimalFromFloat(0))
 
 	auxParty := "aux"
 	addAccount(tm, auxParty)
@@ -700,7 +699,7 @@ func TestEvents_MovingPegsAround2(t *testing.T) {
 	require.NoError(t, err)
 
 	o3 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "Order03", types.SideBuy, "party-A", 1, 0)
-	o3.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReferenceBestBid, Offset: -1}
+	o3.PeggedOrder = newPeggedOrder(types.PeggedReferenceBestBid, 1)
 	o3conf, err := tm.market.SubmitOrder(ctx, o3)
 	require.NotNil(t, o3conf)
 	require.NoError(t, err)
@@ -711,7 +710,7 @@ func TestEvents_MovingPegsAround2(t *testing.T) {
 		Price:    num.NewUint(9),
 	}
 
-	amendConf, err := tm.market.AmendOrder(ctx, amendment, o1.Party)
+	amendConf, err := tm.market.AmendOrder(ctx, amendment, o1.Party, vgcrypto.RandomHash())
 	assert.NotNil(t, amendConf)
 	assert.NoError(t, err)
 
@@ -731,7 +730,7 @@ func TestEvents_AmendOrderToSelfTrade(t *testing.T) {
 	mdb := subscribers.NewMarketDepthBuilder(ctx, nil, true)
 	tm := startMarketInAuction(t, ctx, &now)
 
-	tm.market.OnMarketLiquidityTargetStakeTriggeringRatio(ctx, 0)
+	tm.market.OnMarketLiquidityTargetStakeTriggeringRatio(ctx, num.DecimalFromFloat(0))
 
 	auxParty := "aux"
 	addAccount(tm, auxParty)
@@ -768,7 +767,7 @@ func TestEvents_AmendOrderToSelfTrade(t *testing.T) {
 		Price:    num.NewUint(10),
 	}
 
-	amendConf, err := tm.market.AmendOrder(ctx, amendment, o3.Party)
+	amendConf, err := tm.market.AmendOrder(ctx, amendment, o3.Party, vgcrypto.RandomHash())
 	assert.NotNil(t, amendConf)
 	assert.NoError(t, err)
 
@@ -788,7 +787,7 @@ func TestEvents_AmendOrderToIncreaseSizeAndPartiallyFill(t *testing.T) {
 	mdb := subscribers.NewMarketDepthBuilder(ctx, nil, true)
 	tm := startMarketInAuction(t, ctx, &now)
 
-	tm.market.OnMarketLiquidityTargetStakeTriggeringRatio(ctx, 0)
+	tm.market.OnMarketLiquidityTargetStakeTriggeringRatio(ctx, num.DecimalFromFloat(0))
 
 	auxParty := "aux"
 	addAccount(tm, auxParty)
@@ -826,7 +825,7 @@ func TestEvents_AmendOrderToIncreaseSizeAndPartiallyFill(t *testing.T) {
 		SizeDelta: 5,
 	}
 
-	amendConf, err := tm.market.AmendOrder(ctx, amendment, o3.Party)
+	amendConf, err := tm.market.AmendOrder(ctx, amendment, o3.Party, vgcrypto.RandomHash())
 	assert.NotNil(t, amendConf)
 	assert.NoError(t, err)
 
@@ -889,7 +888,7 @@ func TestEvents_CloseOutPartyWithNotEnoughLiquidity(t *testing.T) {
 
 	// Place the pegged order
 	o5 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "Order05", types.SideBuy, "party-A", 1, 0)
-	o5.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReferenceBestBid, Offset: -1}
+	o5.PeggedOrder = newPeggedOrder(types.PeggedReferenceBestBid, 1)
 	o5conf, err := tm.market.SubmitOrder(ctx, o5)
 	require.NotNil(t, o5conf)
 	require.NoError(t, err)
@@ -934,10 +933,10 @@ func TestEvents_LPOrderRecalculationDueToFill(t *testing.T) {
 	require.NoError(t, err)
 
 	buys := []*types.LiquidityOrder{
-		{Reference: types.PeggedReferenceBestBid, Offset: -1, Proportion: 50},
+		newLiquidityOrder(types.PeggedReferenceBestBid, 1, 50),
 	}
 	sells := []*types.LiquidityOrder{
-		{Reference: types.PeggedReferenceBestAsk, Offset: 1, Proportion: 50},
+		newLiquidityOrder(types.PeggedReferenceBestAsk, 1, 50),
 	}
 
 	lps := &types.LiquidityProvisionSubmission{
@@ -948,7 +947,7 @@ func TestEvents_LPOrderRecalculationDueToFill(t *testing.T) {
 		Sells:            sells,
 	}
 
-	err = tm.market.SubmitLiquidityProvision(ctx, lps, "party-A", "LPOrder01")
+	err = tm.market.SubmitLiquidityProvision(ctx, lps, "party-A", vgcrypto.RandomHash())
 	require.NoError(t, err)
 	assert.Equal(t, 1, tm.market.GetLPSCount())
 
@@ -1016,13 +1015,13 @@ func TestEvents_PeggedOrders(t *testing.T) {
 
 	// Place the pegged order
 	o5 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "Order05", types.SideBuy, "party-A", 1, 0)
-	o5.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReferenceBestBid, Offset: -1}
+	o5.PeggedOrder = newPeggedOrder(types.PeggedReferenceBestBid, 1)
 	o5conf, err := tm.market.SubmitOrder(ctx, o5)
 	require.NotNil(t, o5conf)
 	require.NoError(t, err)
 
 	o7 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "Order07", types.SideBuy, "party-A", 1, 0)
-	o7.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReferenceBestBid, Offset: -99}
+	o7.PeggedOrder = newPeggedOrder(types.PeggedReferenceBestBid, 99)
 	o7conf, err := tm.market.SubmitOrder(ctx, o7)
 	require.NotNil(t, o7conf)
 	require.NoError(t, err)

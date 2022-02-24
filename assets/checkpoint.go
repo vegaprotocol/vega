@@ -39,8 +39,12 @@ func (s *Service) Load(_ context.Context, cp []byte) error {
 			return err
 		}
 		pa, _ := s.Get(a.Id)
-		if err := pa.Validate(); err != nil {
-			return err
+		if s.isValidator {
+			if err := pa.Validate(); err != nil {
+				return err
+			}
+		} else {
+			pa.SetValidNonValidator()
 		}
 		if err := s.Enable(id); err != nil {
 			return err

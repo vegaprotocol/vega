@@ -2,9 +2,13 @@ package liquidity_test
 
 import (
 	"context"
-	"fmt"
 	"testing"
 	"time"
+
+	"code.vegaprotocol.io/vega/idgeneration"
+	"code.vegaprotocol.io/vega/libs/crypto"
+
+	"code.vegaprotocol.io/vega/integration/stubs"
 
 	proto "code.vegaprotocol.io/protos/vega"
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
@@ -46,10 +50,9 @@ type testEngine struct {
 	riskModel    *mocks.MockRiskModel
 	priceMonitor *mocks.MockPriceMonitor
 	engine       *liquidity.SnapshotEngine
-	idGen        *idGenStub
 }
 
-func newTestEngineWithIDGen(t *testing.T, now time.Time, idGen *idGenStub) *testEngine {
+func newTestEngine(t *testing.T, now time.Time) *testEngine {
 	t.Helper()
 	ctrl := gomock.NewController(t)
 
@@ -58,12 +61,13 @@ func newTestEngineWithIDGen(t *testing.T, now time.Time, idGen *idGenStub) *test
 	risk := mocks.NewMockRiskModel(ctrl)
 	monitor := mocks.NewMockPriceMonitor(ctrl)
 	market := "market-id"
+	asset := "asset-id"
 	liquidityConfig := liquidity.NewDefaultConfig()
-
+	stateVarEngine := stubs.NewStateVar()
 	risk.EXPECT().GetProjectionHorizon().AnyTimes()
 
 	engine := liquidity.NewSnapshotEngine(liquidityConfig,
-		log, broker, idGen, risk, monitor, market,
+		log, broker, risk, monitor, asset, market, stateVarEngine, num.NewUint(100000),
 	)
 	engine.OnChainTimeUpdate(context.Background(), now)
 
@@ -71,17 +75,10 @@ func newTestEngineWithIDGen(t *testing.T, now time.Time, idGen *idGenStub) *test
 		ctrl:         ctrl,
 		marketID:     market,
 		broker:       broker,
-		idGen:        idGen,
 		riskModel:    risk,
 		priceMonitor: monitor,
 		engine:       engine,
 	}
-}
-
-func newTestEngine(t *testing.T, now time.Time) *testEngine {
-	t.Helper()
-	idGen := &idGenStub{}
-	return newTestEngineWithIDGen(t, now, idGen)
 }
 
 func TestSubmissions(t *testing.T) {
@@ -104,14 +101,14 @@ func testSubmissionCRUD(t *testing.T) {
 	buyShape := []*types.LiquidityOrder{
 		{
 			Reference:  types.PeggedReferenceMid,
-			Offset:     -1,
+			Offset:     num.NewUint(1),
 			Proportion: 1,
 		},
 	}
 	sellShape := []*types.LiquidityOrder{
 		{
 			Reference:  types.PeggedReferenceMid,
-			Offset:     1,
+			Offset:     num.NewUint(1),
 			Proportion: 1,
 		},
 	}
@@ -132,8 +129,17 @@ func testSubmissionCRUD(t *testing.T) {
 	lps, err := types.LiquidityProvisionSubmissionFromProto(lps1)
 	require.NoError(t, err)
 
+	determisticId := crypto.RandomHash()
+	idGen := idgeneration.New(determisticId)
+
+	lpID := idGen.NextID()
+	order1 := &types.Order{}
+	order2 := &types.Order{}
+	order1.ID = idGen.NextID()
+	order2.ID = idGen.NextID()
+
 	expected := &types.LiquidityProvision{
-		ID:               "some-id-1",
+		ID:               lpID,
 		MarketID:         tng.marketID,
 		Party:            party,
 		Fee:              num.DecimalFromFloat(0.5),
@@ -142,20 +148,21 @@ func testSubmissionCRUD(t *testing.T) {
 		UpdatedAt:        now.UnixNano(),
 		Status:           types.LiquidityProvisionStatusPending,
 		Buys: []*types.LiquidityOrderReference{
-			{LiquidityOrder: buyShape[0], OrderID: "liquidity-order-1"},
+			{LiquidityOrder: buyShape[0], OrderID: order1.ID},
 		},
 
 		Sells: []*types.LiquidityOrderReference{
-			{LiquidityOrder: sellShape[0], OrderID: "liquidity-order-2"},
+			{LiquidityOrder: sellShape[0], OrderID: order2.ID},
 		},
 	}
 	// Create a submission should fire an event
 	tng.broker.EXPECT().Send(
 		events.NewLiquidityProvisionEvent(ctx, expected),
 	).Times(1)
+
+	idgen := idgeneration.New(determisticId)
 	require.NoError(t,
-		tng.engine.SubmitLiquidityProvision(ctx, lps, party, "some-id-1"),
-	)
+		tng.engine.SubmitLiquidityProvision(ctx, lps, party, idgen))
 	got := tng.engine.LiquidityProvisionByPartyID(party)
 	require.Equal(t, expected, got)
 
@@ -187,18 +194,19 @@ func TestInitialDeployFailsWorksLater(t *testing.T) {
 	lpspb := &commandspb.LiquidityProvisionSubmission{
 		MarketId: tng.marketID, CommitmentAmount: "100", Fee: "0.5",
 		Buys: []*proto.LiquidityOrder{
-			{Reference: types.PeggedReferenceMid, Proportion: 20, Offset: -1},
-			{Reference: types.PeggedReferenceMid, Proportion: 10, Offset: -2},
+			{Reference: types.PeggedReferenceMid, Proportion: 20, Offset: "1"},
+			{Reference: types.PeggedReferenceMid, Proportion: 10, Offset: "2"},
 		},
 		Sells: []*proto.LiquidityOrder{
-			{Reference: types.PeggedReferenceMid, Proportion: 1, Offset: 1},
+			{Reference: types.PeggedReferenceMid, Proportion: 1, Offset: "1"},
 		},
 	}
 	lps, err := types.LiquidityProvisionSubmissionFromProto(lpspb)
 	require.NoError(t, err)
 
+	idgen := idgeneration.New(crypto.RandomHash())
 	require.NoError(t,
-		tng.engine.SubmitLiquidityProvision(ctx, lps, party, "some-id"),
+		tng.engine.SubmitLiquidityProvision(ctx, lps, party, idgen),
 	)
 
 	require.True(t, tng.engine.IsLiquidityProvider(party))
@@ -206,12 +214,12 @@ func TestInitialDeployFailsWorksLater(t *testing.T) {
 	markPrice := num.NewUint(10)
 
 	// Now repriceFn works as expected, so initial orders should get created now
-	fn := func(order *types.PeggedOrder, _ types.Side) (*num.Uint, *types.PeggedOrder, error) {
+	fn := func(order *types.PeggedOrder, side types.Side) (*num.Uint, *types.PeggedOrder, error) {
 		retPrice := markPrice.Clone()
-		if order.Offset > 0 {
-			return retPrice.Add(retPrice, num.NewUint(uint64(order.Offset))), order, nil
+		if side == types.SideSell {
+			return retPrice.Add(retPrice, order.Offset), order, nil
 		}
-		return retPrice.Sub(retPrice, num.NewUint(uint64(-order.Offset))), order, nil
+		return retPrice.Sub(retPrice, order.Offset), order, nil
 	}
 
 	// Expectations
@@ -243,7 +251,6 @@ func testCancelNonExistingSubmission(t *testing.T) {
 func testSubmissionFailWithoutBothShapes(t *testing.T) {
 	var (
 		party = "party-1"
-		id    = "some-id"
 		ctx   = context.Background()
 		now   = time.Now()
 		tng   = newTestEngine(t, now)
@@ -258,7 +265,7 @@ func testSubmissionFailWithoutBothShapes(t *testing.T) {
 		Buys: []*proto.LiquidityOrder{
 			{
 				Reference:  types.PeggedReferenceMid,
-				Offset:     -1,
+				Offset:     "1",
 				Proportion: 1,
 			},
 		},
@@ -266,8 +273,9 @@ func testSubmissionFailWithoutBothShapes(t *testing.T) {
 	lps, err := types.LiquidityProvisionSubmissionFromProto(lpspb)
 	require.NoError(t, err)
 
+	lpID := crypto.RandomHash()
 	expected := events.NewLiquidityProvisionEvent(ctx, &types.LiquidityProvision{
-		ID:               id,
+		ID:               lpID,
 		MarketID:         tng.marketID,
 		Party:            party,
 		CreatedAt:        now.UnixNano(),
@@ -279,7 +287,7 @@ func testSubmissionFailWithoutBothShapes(t *testing.T) {
 			{
 				LiquidityOrder: &types.LiquidityOrder{
 					Reference:  types.PeggedReferenceMid,
-					Offset:     -1,
+					Offset:     num.NewUint(1),
 					Proportion: 1,
 				},
 			},
@@ -288,8 +296,9 @@ func testSubmissionFailWithoutBothShapes(t *testing.T) {
 
 	tng.broker.EXPECT().Send(eq(t, expected)).Times(1)
 
+	idgen := idgeneration.New(lpID)
 	require.Error(t,
-		tng.engine.SubmitLiquidityProvision(ctx, lps, party, id),
+		tng.engine.SubmitLiquidityProvision(ctx, lps, party, idgen),
 	)
 
 	lpspb = &commandspb.LiquidityProvisionSubmission{
@@ -299,7 +308,7 @@ func testSubmissionFailWithoutBothShapes(t *testing.T) {
 		Sells: []*proto.LiquidityOrder{
 			{
 				Reference:  types.PeggedReferenceMid,
-				Offset:     -1,
+				Offset:     "1",
 				Proportion: 1,
 			},
 		},
@@ -308,7 +317,7 @@ func testSubmissionFailWithoutBothShapes(t *testing.T) {
 	require.NoError(t, err)
 
 	expected = events.NewLiquidityProvisionEvent(ctx, &types.LiquidityProvision{
-		ID:               id,
+		ID:               lpID,
 		Fee:              num.DecimalFromFloat(0.2),
 		MarketID:         tng.marketID,
 		Party:            party,
@@ -320,7 +329,7 @@ func testSubmissionFailWithoutBothShapes(t *testing.T) {
 			{
 				LiquidityOrder: &types.LiquidityOrder{
 					Reference:  types.PeggedReferenceMid,
-					Offset:     -1,
+					Offset:     num.NewUint(1),
 					Proportion: 1,
 				},
 			},
@@ -329,8 +338,9 @@ func testSubmissionFailWithoutBothShapes(t *testing.T) {
 
 	tng.broker.EXPECT().Send(eq(t, expected)).Times(1)
 
+	idgen = idgeneration.New(lpID)
 	require.Error(t,
-		tng.engine.SubmitLiquidityProvision(ctx, lps, party, id),
+		tng.engine.SubmitLiquidityProvision(ctx, lps, party, idgen),
 	)
 
 	lpspb = &commandspb.LiquidityProvisionSubmission{
@@ -341,7 +351,7 @@ func testSubmissionFailWithoutBothShapes(t *testing.T) {
 	lps, _ = types.LiquidityProvisionSubmissionFromProto(lpspb)
 
 	expected = events.NewLiquidityProvisionEvent(ctx, &types.LiquidityProvision{
-		ID:               id,
+		ID:               lpID,
 		MarketID:         tng.marketID,
 		Fee:              num.DecimalFromFloat(0.3),
 		Party:            party,
@@ -354,8 +364,9 @@ func testSubmissionFailWithoutBothShapes(t *testing.T) {
 
 	tng.broker.EXPECT().Send(eq(t, expected)).Times(1)
 
+	idgen = idgeneration.New(lpID)
 	require.Error(t,
-		tng.engine.SubmitLiquidityProvision(ctx, lps, party, id),
+		tng.engine.SubmitLiquidityProvision(ctx, lps, party, idgen),
 	)
 }
 
@@ -376,28 +387,29 @@ func TestUpdate(t *testing.T) {
 	lpspb := &commandspb.LiquidityProvisionSubmission{
 		MarketId: tng.marketID, CommitmentAmount: "100", Fee: "0.5",
 		Buys: []*proto.LiquidityOrder{
-			{Reference: types.PeggedReferenceMid, Proportion: 20, Offset: -1},
-			{Reference: types.PeggedReferenceMid, Proportion: 10, Offset: -2},
+			{Reference: types.PeggedReferenceMid, Proportion: 20, Offset: "1"},
+			{Reference: types.PeggedReferenceMid, Proportion: 10, Offset: "2"},
 		},
 		Sells: []*proto.LiquidityOrder{
-			{Reference: types.PeggedReferenceMid, Proportion: 1, Offset: 1},
+			{Reference: types.PeggedReferenceMid, Proportion: 1, Offset: "1"},
 		},
 	}
 	lps, err := types.LiquidityProvisionSubmissionFromProto(lpspb)
 	require.NoError(t, err)
 
+	idgen := idgeneration.New(crypto.RandomHash())
 	require.NoError(t,
-		tng.engine.SubmitLiquidityProvision(ctx, lps, party, "some-id"),
+		tng.engine.SubmitLiquidityProvision(ctx, lps, party, idgen),
 	)
 
 	markPrice := num.NewUint(10)
 
-	fn := func(order *types.PeggedOrder, _ types.Side) (*num.Uint, *types.PeggedOrder, error) {
+	fn := func(order *types.PeggedOrder, side types.Side) (*num.Uint, *types.PeggedOrder, error) {
 		retPrice := markPrice.Clone()
-		if order.Offset > 0 {
-			retPrice.Add(retPrice, num.NewUint(uint64(order.Offset)))
+		if side == types.SideSell {
+			retPrice.Add(retPrice, order.Offset)
 		} else {
-			retPrice.Sub(retPrice, num.NewUint(uint64(-order.Offset)))
+			retPrice.Sub(retPrice, order.Offset)
 		}
 		return retPrice, order, nil
 	}
@@ -451,18 +463,19 @@ func TestCalculateSuppliedStake(t *testing.T) {
 	lp1pb := &commandspb.LiquidityProvisionSubmission{
 		MarketId: tng.marketID, CommitmentAmount: "100", Fee: "0.5",
 		Buys: []*proto.LiquidityOrder{
-			{Reference: types.PeggedReferenceMid, Proportion: 20, Offset: -1},
-			{Reference: types.PeggedReferenceMid, Proportion: 10, Offset: -2},
+			{Reference: types.PeggedReferenceMid, Proportion: 20, Offset: "1"},
+			{Reference: types.PeggedReferenceMid, Proportion: 10, Offset: "2"},
 		},
 		Sells: []*proto.LiquidityOrder{
-			{Reference: types.PeggedReferenceMid, Proportion: 1, Offset: 1},
+			{Reference: types.PeggedReferenceMid, Proportion: 1, Offset: "1"},
 		},
 	}
 	lp1, err := types.LiquidityProvisionSubmissionFromProto(lp1pb)
 	require.NoError(t, err)
 
+	idgen := idgeneration.New(crypto.RandomHash())
 	require.NoError(t,
-		tng.engine.SubmitLiquidityProvision(ctx, lp1, party1, "some-id1"),
+		tng.engine.SubmitLiquidityProvision(ctx, lp1, party1, idgen),
 	)
 	suppliedStake := tng.engine.CalculateSuppliedStake()
 	require.Equal(t, lp1.CommitmentAmount, suppliedStake)
@@ -470,17 +483,18 @@ func TestCalculateSuppliedStake(t *testing.T) {
 	lp2pb := &commandspb.LiquidityProvisionSubmission{
 		MarketId: tng.marketID, CommitmentAmount: "500", Fee: "0.5",
 		Buys: []*proto.LiquidityOrder{
-			{Reference: types.PeggedReferenceMid, Proportion: 1, Offset: -3},
+			{Reference: types.PeggedReferenceMid, Proportion: 1, Offset: "3"},
 		},
 		Sells: []*proto.LiquidityOrder{
-			{Reference: types.PeggedReferenceMid, Proportion: 1, Offset: 3},
+			{Reference: types.PeggedReferenceMid, Proportion: 1, Offset: "3"},
 		},
 	}
 	lp2, err := types.LiquidityProvisionSubmissionFromProto(lp2pb)
 	require.NoError(t, err)
 
+	idgen = idgeneration.New(crypto.RandomHash())
 	require.NoError(t,
-		tng.engine.SubmitLiquidityProvision(ctx, lp2, party2, "some-id2"),
+		tng.engine.SubmitLiquidityProvision(ctx, lp2, party2, idgen),
 	)
 	suppliedStake = tng.engine.CalculateSuppliedStake()
 	require.Equal(t, num.Sum(lp1.CommitmentAmount, lp2.CommitmentAmount), suppliedStake)
@@ -488,18 +502,19 @@ func TestCalculateSuppliedStake(t *testing.T) {
 	lp3pb := &commandspb.LiquidityProvisionSubmission{
 		MarketId: tng.marketID, CommitmentAmount: "962", Fee: "0.5",
 		Buys: []*proto.LiquidityOrder{
-			{Reference: types.PeggedReferenceMid, Proportion: 1, Offset: -5},
+			{Reference: types.PeggedReferenceMid, Proportion: 1, Offset: "5"},
 		},
 		Sells: []*proto.LiquidityOrder{
-			{Reference: types.PeggedReferenceMid, Proportion: 1, Offset: 1},
-			{Reference: types.PeggedReferenceMid, Proportion: 1, Offset: 10},
+			{Reference: types.PeggedReferenceMid, Proportion: 1, Offset: "1"},
+			{Reference: types.PeggedReferenceMid, Proportion: 1, Offset: "10"},
 		},
 	}
 	lp3, err := types.LiquidityProvisionSubmissionFromProto(lp3pb)
 	require.NoError(t, err)
 
+	idgen = idgeneration.New(crypto.RandomHash())
 	require.NoError(t,
-		tng.engine.SubmitLiquidityProvision(ctx, lp3, party3, "some-id3"),
+		tng.engine.SubmitLiquidityProvision(ctx, lp3, party3, idgen),
 	)
 	suppliedStake = tng.engine.CalculateSuppliedStake()
 	require.Equal(t, num.Sum(lp1.CommitmentAmount, lp2.CommitmentAmount, lp3.CommitmentAmount), suppliedStake)
@@ -508,13 +523,4 @@ func TestCalculateSuppliedStake(t *testing.T) {
 	require.NoError(t, err)
 	suppliedStake = tng.engine.CalculateSuppliedStake()
 	require.Equal(t, num.Sum(lp2.CommitmentAmount, lp3.CommitmentAmount), suppliedStake)
-}
-
-type idGenStub struct {
-	id uint64
-}
-
-func (i *idGenStub) SetID(o *types.Order) {
-	i.id++
-	o.ID = fmt.Sprintf("liquidity-order-%d", i.id)
 }

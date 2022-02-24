@@ -5,38 +5,40 @@
 package mocks
 
 import (
-	netparams "code.vegaprotocol.io/vega/netparams"
-	num "code.vegaprotocol.io/vega/types/num"
 	context "context"
-	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
 	time "time"
+
+	netparams "code.vegaprotocol.io/vega/netparams"
+	num "code.vegaprotocol.io/vega/types/num"
+	gomock "github.com/golang/mock/gomock"
+	decimal "github.com/shopspring/decimal"
 )
 
-// MockNetParams is a mock of NetParams interface
+// MockNetParams is a mock of NetParams interface.
 type MockNetParams struct {
 	ctrl     *gomock.Controller
 	recorder *MockNetParamsMockRecorder
 }
 
-// MockNetParamsMockRecorder is the mock recorder for MockNetParams
+// MockNetParamsMockRecorder is the mock recorder for MockNetParams.
 type MockNetParamsMockRecorder struct {
 	mock *MockNetParams
 }
 
-// NewMockNetParams creates a new mock instance
+// NewMockNetParams creates a new mock instance.
 func NewMockNetParams(ctrl *gomock.Controller) *MockNetParams {
 	mock := &MockNetParams{ctrl: ctrl}
 	mock.recorder = &MockNetParamsMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockNetParams) EXPECT() *MockNetParamsMockRecorder {
 	return m.recorder
 }
 
-// Get mocks base method
+// Get mocks base method.
 func (m *MockNetParams) Get(arg0 string) (string, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Get", arg0)
@@ -45,13 +47,28 @@ func (m *MockNetParams) Get(arg0 string) (string, error) {
 	return ret0, ret1
 }
 
-// Get indicates an expected call of Get
+// Get indicates an expected call of Get.
 func (mr *MockNetParamsMockRecorder) Get(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockNetParams)(nil).Get), arg0)
 }
 
-// GetDuration mocks base method
+// GetDecimal mocks base method.
+func (m *MockNetParams) GetDecimal(arg0 string) (decimal.Decimal, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetDecimal", arg0)
+	ret0, _ := ret[0].(decimal.Decimal)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetDecimal indicates an expected call of GetDecimal.
+func (mr *MockNetParamsMockRecorder) GetDecimal(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDecimal", reflect.TypeOf((*MockNetParams)(nil).GetDecimal), arg0)
+}
+
+// GetDuration mocks base method.
 func (m *MockNetParams) GetDuration(arg0 string) (time.Duration, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetDuration", arg0)
@@ -60,28 +77,13 @@ func (m *MockNetParams) GetDuration(arg0 string) (time.Duration, error) {
 	return ret0, ret1
 }
 
-// GetDuration indicates an expected call of GetDuration
+// GetDuration indicates an expected call of GetDuration.
 func (mr *MockNetParamsMockRecorder) GetDuration(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDuration", reflect.TypeOf((*MockNetParams)(nil).GetDuration), arg0)
 }
 
-// GetFloat mocks base method
-func (m *MockNetParams) GetFloat(arg0 string) (float64, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetFloat", arg0)
-	ret0, _ := ret[0].(float64)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetFloat indicates an expected call of GetFloat
-func (mr *MockNetParamsMockRecorder) GetFloat(arg0 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetFloat", reflect.TypeOf((*MockNetParams)(nil).GetFloat), arg0)
-}
-
-// GetInt mocks base method
+// GetInt mocks base method.
 func (m *MockNetParams) GetInt(arg0 string) (int64, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetInt", arg0)
@@ -90,13 +92,13 @@ func (m *MockNetParams) GetInt(arg0 string) (int64, error) {
 	return ret0, ret1
 }
 
-// GetInt indicates an expected call of GetInt
+// GetInt indicates an expected call of GetInt.
 func (mr *MockNetParamsMockRecorder) GetInt(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetInt", reflect.TypeOf((*MockNetParams)(nil).GetInt), arg0)
 }
 
-// GetJSONStruct mocks base method
+// GetJSONStruct mocks base method.
 func (m *MockNetParams) GetJSONStruct(arg0 string, arg1 netparams.Reset) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetJSONStruct", arg0, arg1)
@@ -104,13 +106,13 @@ func (m *MockNetParams) GetJSONStruct(arg0 string, arg1 netparams.Reset) error {
 	return ret0
 }
 
-// GetJSONStruct indicates an expected call of GetJSONStruct
+// GetJSONStruct indicates an expected call of GetJSONStruct.
 func (mr *MockNetParamsMockRecorder) GetJSONStruct(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetJSONStruct", reflect.TypeOf((*MockNetParams)(nil).GetJSONStruct), arg0, arg1)
 }
 
-// GetUint mocks base method
+// GetUint mocks base method.
 func (m *MockNetParams) GetUint(arg0 string) (*num.Uint, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetUint", arg0)
@@ -119,13 +121,13 @@ func (m *MockNetParams) GetUint(arg0 string) (*num.Uint, error) {
 	return ret0, ret1
 }
 
-// GetUint indicates an expected call of GetUint
+// GetUint indicates an expected call of GetUint.
 func (mr *MockNetParamsMockRecorder) GetUint(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUint", reflect.TypeOf((*MockNetParams)(nil).GetUint), arg0)
 }
 
-// Update mocks base method
+// Update mocks base method.
 func (m *MockNetParams) Update(arg0 context.Context, arg1, arg2 string) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Update", arg0, arg1, arg2)
@@ -133,13 +135,13 @@ func (m *MockNetParams) Update(arg0 context.Context, arg1, arg2 string) error {
 	return ret0
 }
 
-// Update indicates an expected call of Update
+// Update indicates an expected call of Update.
 func (mr *MockNetParamsMockRecorder) Update(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Update", reflect.TypeOf((*MockNetParams)(nil).Update), arg0, arg1, arg2)
 }
 
-// Validate mocks base method
+// Validate mocks base method.
 func (m *MockNetParams) Validate(arg0, arg1 string) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Validate", arg0, arg1)
@@ -147,7 +149,7 @@ func (m *MockNetParams) Validate(arg0, arg1 string) error {
 	return ret0
 }
 
-// Validate indicates an expected call of Validate
+// Validate indicates an expected call of Validate.
 func (mr *MockNetParamsMockRecorder) Validate(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Validate", reflect.TypeOf((*MockNetParams)(nil).Validate), arg0, arg1)

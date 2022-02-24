@@ -7,6 +7,7 @@ import (
 	"sync"
 	"time"
 
+	"code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/logging"
@@ -207,7 +208,7 @@ func (e *Engine) EnableAsset(ctx context.Context, asset types.Asset) error {
 	e.state.enableAsset(asset)
 	// then creat a new infrastructure fee account for the asset
 	// these are fee related account only
-	infraFeeID := e.accountID("", "", asset.ID, types.AccountTypeFeesInfrastructure)
+	infraFeeID := e.accountID(noMarket, systemOwner, asset.ID, types.AccountTypeFeesInfrastructure)
 	_, ok := e.accs[infraFeeID]
 	if !ok {
 		infraFeeAcc := &types.Account{
@@ -233,23 +234,42 @@ func (e *Engine) EnableAsset(ctx context.Context, asset types.Asset) error {
 			Type:     types.AccountTypeExternal,
 		}
 		e.accs[externalID] = externalAcc
-		// e.addAccountToHashableSlice(externalAcc)
 	}
 
-	// when an asset is enabled a global insurance account is created for it
-	globalInsuranceID := e.accountID(noMarket, systemOwner, asset.ID, types.AccountTypeGlobalInsurance)
-	if _, ok := e.accs[globalInsuranceID]; !ok {
-		insuranceAcc := &types.Account{
-			ID:       globalInsuranceID,
+	// when an asset is enabled a global reward account (aka network treasury) is created for it along with the other 4 types of rewards
+	rewardAccountTypes := []vega.AccountType{types.AccountTypeGlobalReward, types.AccountTypeMakerFeeReward, types.AccountTypeTakerFeeReward, types.AccountTypeMarketProposerReward, types.AccountTypeLPFeeReward}
+	for _, rewardAccountType := range rewardAccountTypes {
+		rewardID := e.accountID(noMarket, systemOwner, asset.ID, rewardAccountType)
+		if _, ok := e.accs[rewardID]; !ok {
+			rewardAcc := &types.Account{
+				ID:       rewardID,
+				Asset:    asset.ID,
+				Owner:    systemOwner,
+				Balance:  num.Zero(),
+				MarketID: noMarket,
+				Type:     rewardAccountType,
+			}
+			e.accs[rewardID] = rewardAcc
+			e.addAccountToHashableSlice(rewardAcc)
+			e.broker.Send(events.NewAccountEvent(ctx, *rewardAcc))
+		}
+	}
+
+	// pending transfers account
+	pendingTransfersID := e.accountID(noMarket, systemOwner, asset.ID, types.AccountTypePendingTransfers)
+	if _, ok := e.accs[pendingTransfersID]; !ok {
+		pendingTransfersAcc := &types.Account{
+			ID:       pendingTransfersID,
 			Asset:    asset.ID,
 			Owner:    systemOwner,
 			Balance:  num.Zero(),
 			MarketID: noMarket,
-			Type:     types.AccountTypeGlobalInsurance,
+			Type:     types.AccountTypePendingTransfers,
 		}
-		e.accs[globalInsuranceID] = insuranceAcc
-		e.addAccountToHashableSlice(insuranceAcc)
-		e.broker.Send(events.NewAccountEvent(ctx, *insuranceAcc))
+
+		e.accs[pendingTransfersID] = pendingTransfersAcc
+		e.addAccountToHashableSlice(pendingTransfersAcc)
+		e.broker.Send(events.NewAccountEvent(ctx, *pendingTransfersAcc))
 	}
 
 	e.log.Info("new asset added successfully",
@@ -443,7 +463,20 @@ func (e *Engine) GetInfraFeeAccountIDs() []string {
 	for asset := range e.enabledAssets {
 		accountIDs = append(accountIDs, e.accountID(noMarket, systemOwner, asset, types.AccountTypeFeesInfrastructure))
 	}
+	sort.Strings(accountIDs)
 	return accountIDs
+}
+
+// GetPendingTransferAccount return the pending transfers account for the asset.
+func (e *Engine) GetPendingTransfersAccount(asset string) *types.Account {
+	acc, err := e.GetAccountByID(e.accountID(noMarket, systemOwner, asset, types.AccountTypePendingTransfers))
+	if err != nil {
+		e.log.Panic("no pending transfers account for asset, this should never happen",
+			logging.AssetID(asset),
+		)
+	}
+
+	return acc
 }
 
 // this func uses named returns because it makes body of the func look clearer.
@@ -943,7 +976,7 @@ func (e *Engine) MarkToMarket(ctx context.Context, marketID string, transfers []
 
 // GetPartyMargin will return the current margin for a given party.
 func (e *Engine) GetPartyMargin(pos events.MarketPosition, asset, marketID string) (events.Margin, error) {
-	genID := e.accountID("", pos.Party(), asset, types.AccountTypeGeneral)
+	genID := e.accountID(noMarket, pos.Party(), asset, types.AccountTypeGeneral)
 	marginID := e.accountID(marketID, pos.Party(), asset, types.AccountTypeMargin)
 	bondID := e.accountID(marketID, pos.Party(), asset, types.AccountTypeBond)
 	genAcc, err := e.GetAccountByID(genID)
@@ -1105,6 +1138,79 @@ func (e *Engine) RollbackMarginUpdateOnOrder(ctx context.Context, marketID strin
 	}
 
 	return res, nil
+}
+
+func (e *Engine) TransferFunds(
+	ctx context.Context,
+	transfers []*types.Transfer,
+	accountTypes []types.AccountType,
+	references []string,
+	feeTransfers []*types.Transfer,
+	feeTransfersAccountType []types.AccountType,
+) ([]*types.TransferResponse, error) {
+	if len(transfers) != len(accountTypes) || len(transfers) != len(references) {
+		e.log.Panic("not the same amount of transfers, accounts types and references to process",
+			logging.Int("transfers", len(transfers)),
+			logging.Int("accounts-types", len(accountTypes)),
+			logging.Int("reference", len(references)),
+		)
+	}
+	if len(feeTransfers) != len(feeTransfersAccountType) {
+		e.log.Panic("not the same amount of fee transfers and accounts types to process",
+			logging.Int("fee-transfers", len(feeTransfers)),
+			logging.Int("fee-accounts-types", len(feeTransfersAccountType)),
+		)
+	}
+
+	var (
+		resps           = make([]*types.TransferResponse, 0, len(transfers)+len(feeTransfers))
+		err             error
+		req             *types.TransferRequest
+		allTransfers    = append(transfers, feeTransfers...)
+		allAccountTypes = append(accountTypes, feeTransfersAccountType...)
+	)
+
+	for i := range allTransfers {
+		transfer, accType := allTransfers[i], allAccountTypes[i]
+		switch allTransfers[i].Type {
+		case types.TransferTypeInfrastructureFeePay:
+			req, err = e.getTransferFundsFeesTransferRequest(ctx, transfer, accType)
+
+		case types.TransferTypeTransferFundsDistribute,
+			types.TransferTypeTransferFundsSend:
+			req, err = e.getTransferFundsTransferRequest(
+				ctx, transfer, accType, references[i])
+
+		default:
+			e.log.Panic("unsupported transfer type",
+				logging.String("types", accType.String()))
+		}
+
+		if err != nil {
+			return nil, err
+		}
+
+		res, err := e.getLedgerEntries(ctx, req)
+		if err != nil {
+			return nil, err
+		}
+
+		for _, v := range res.Transfers {
+			// increment the to account
+			if err := e.IncrementBalance(ctx, v.ToAccount, v.Amount); err != nil {
+				e.log.Error(
+					"Failed to increment balance for account",
+					logging.String("account-id", v.ToAccount),
+					logging.BigUint("amount", v.Amount),
+					logging.Error(err),
+				)
+			}
+		}
+
+		resps = append(resps, res)
+	}
+
+	return resps, nil
 }
 
 // BondUpdate is to be used for any bond account transfers.
@@ -1349,6 +1455,139 @@ func (e *Engine) getBondTransferRequest(t *types.Transfer, market string) (*type
 	}
 }
 
+func (e *Engine) getTransferFundsTransferRequest(
+	ctx context.Context,
+	t *types.Transfer,
+	accountType types.AccountType,
+	reference string,
+) (*types.TransferRequest, error) {
+	var (
+		fromAcc, toAcc *types.Account
+		err            error
+	)
+	switch t.Type {
+	case types.TransferTypeTransferFundsSend:
+		// as of now only general account are supported.
+		// soon we'll have some kind of staking account lock as well.
+		switch accountType {
+		case types.AccountTypeGeneral:
+			fromAcc, err = e.GetPartyGeneralAccount(t.Owner, t.Amount.Asset)
+			if err != nil {
+				return nil, fmt.Errorf("account does not exists: %v, %v, %v",
+					accountType, t.Owner, t.Amount.Asset,
+				)
+			}
+
+			// we always pay onto the pending transfers accounts
+			toAcc = e.GetPendingTransfersAccount(t.Amount.Asset)
+
+		default:
+			return nil, fmt.Errorf("unsupported from account for TransferFunds: %v", accountType.String())
+		}
+
+	case types.TransferTypeTransferFundsDistribute:
+		// as of now we support only another general account or a reward
+		// pool
+		switch accountType {
+		// this account could not exists, we would need to create it then
+		case types.AccountTypeGeneral:
+			toAcc, err = e.GetPartyGeneralAccount(t.Owner, t.Amount.Asset)
+			if err != nil {
+				// account does not exists, let's just create it
+				id, err := e.CreatePartyGeneralAccount(ctx, t.Owner, t.Amount.Asset)
+				if err != nil {
+					return nil, err
+				}
+				toAcc, err = e.GetAccountByID(id)
+				if err != nil {
+					// shouldn't happen, we just created it...
+					return nil, err
+				}
+			}
+
+		// this could not exists as well, let's just create in this case
+		case types.AccountTypeGlobalReward, types.AccountTypeLPFeeReward, types.AccountTypeMakerFeeReward, types.AccountTypeTakerFeeReward, types.AccountTypeMarketProposerReward:
+			toAcc, err = e.GetRewardAccount(t.Amount.Asset, accountType)
+			if err != nil {
+				// shouldn't happen, we just created it...
+				return nil, err
+			}
+
+		default:
+			return nil, fmt.Errorf("unsupported to account for TransferFunds: %v", accountType.String())
+		}
+
+		// from account will always be the pending for transfers
+		fromAcc = e.GetPendingTransfersAccount(t.Amount.Asset)
+
+	default:
+		return nil, fmt.Errorf("unsupported transfer type for TransferFund: %v", t.Type.String())
+	}
+
+	// now we got all relevant accounts, we can build our request
+
+	return &types.TransferRequest{
+		FromAccount: []*types.Account{fromAcc},
+		ToAccount:   []*types.Account{toAcc},
+		Amount:      t.Amount.Amount.Clone(),
+		MinAmount:   t.Amount.Amount.Clone(),
+		Asset:       t.Amount.Asset,
+		Reference:   reference,
+	}, nil
+}
+
+func (e *Engine) getTransferFundsFeesTransferRequest(
+	ctx context.Context,
+	t *types.Transfer,
+	accountType types.AccountType,
+) (*types.TransferRequest, error) {
+	// only type supported here
+	if t.Type != types.TransferTypeInfrastructureFeePay {
+		return nil, errors.New("only infrastructure fee distribute type supported")
+	}
+
+	var (
+		fromAcc, infra *types.Account
+		err            error
+	)
+
+	switch accountType {
+	case types.AccountTypeGeneral:
+		// as of now only general account are supported.
+		// soon we'll have some kind of staking account lock as well.
+		fromAcc, err = e.GetPartyGeneralAccount(t.Owner, t.Amount.Asset)
+		if err != nil {
+			return nil, fmt.Errorf("account does not exists: %v, %v, %v",
+				accountType, t.Owner, t.Amount.Asset,
+			)
+		}
+
+	default:
+		return nil, fmt.Errorf("unsupported from account for TransferFunds: %v", accountType.String())
+	}
+
+	infraID := e.accountID(noMarket, systemOwner, t.Amount.Asset, types.AccountTypeFeesInfrastructure)
+	if infra, err = e.GetAccountByID(infraID); err != nil {
+		// tha should never happened, if we got there, the
+		// asset exists and the infra fee therefore MUST exists
+		e.log.Panic("missing fee account",
+			logging.String("asset", t.Amount.Asset),
+			logging.String("id", infraID),
+			logging.Error(err),
+		)
+	}
+
+	// now we got all relevant accounts, we can build our request
+	return &types.TransferRequest{
+		FromAccount: []*types.Account{fromAcc},
+		ToAccount:   []*types.Account{infra},
+		Amount:      t.Amount.Amount.Clone(),
+		MinAmount:   t.Amount.Amount.Clone(),
+		Asset:       t.Amount.Asset,
+		Reference:   t.Type.String(),
+	}, nil
+}
+
 // getTransferRequest builds the request, and sets the required accounts based on the type of the Transfer argument.
 func (e *Engine) getTransferRequest(ctx context.Context, p *types.Transfer, settle, insurance *types.Account, mEvt *marginUpdate) (*types.TransferRequest, error) {
 	var (
@@ -1486,12 +1725,7 @@ func (e *Engine) getTransferRequest(ctx context.Context, p *types.Transfer, sett
 
 		// Look for the special case where we are topping up the reward account
 		if p.Owner == rewardPartyID {
-			rewardAcctID, err := e.CreateOrGetAssetRewardPoolAccount(ctx, asset)
-			if err != nil {
-				return nil, errors.New("unable to get the global reward account")
-			}
-			rewardAcct, _ := e.GetAccountByID(rewardAcctID)
-
+			rewardAcct, _ := e.GetGlobalRewardAccount(p.Amount.Asset)
 			req.ToAccount = []*types.Account{
 				rewardAcct,
 			}
@@ -1672,7 +1906,7 @@ func (e *Engine) ClearMarket(ctx context.Context, mktID, asset string, parties [
 	resps := make([]*types.TransferResponse, 0, len(parties))
 
 	for _, v := range parties {
-		generalAcc, err := e.GetAccountByID(e.accountID("", v, asset, types.AccountTypeGeneral))
+		generalAcc, err := e.GetAccountByID(e.accountID(noMarket, v, asset, types.AccountTypeGeneral))
 		if err != nil {
 			e.log.Debug(
 				"Failed to get the general account",
@@ -1765,11 +1999,9 @@ func (e *Engine) ClearMarket(ctx context.Context, mktID, asset string, parties [
 		}
 	}
 
-	// add the global account
-	// can't fail at this point, if the market exists, the asset exists,
-	// so this exists too
-	globalInsurancePool, _ := e.GetAssetInsurancePoolAccount(asset)
-	insuranceAccounts = append(insuranceAccounts, globalInsurancePool)
+	// add the network treasury, if it doesn't exist yet, create it
+	globalRewardPool, _ := e.GetGlobalRewardAccount(asset)
+	insuranceAccounts = append(insuranceAccounts, globalRewardPool)
 
 	// redistribute market insurance funds between the global and other markets equally
 	req.FromAccount[0] = marketInsuranceAcc
@@ -2145,7 +2377,7 @@ func (e *Engine) CreateMarketAccounts(ctx context.Context, marketID, asset strin
 
 func (e *Engine) HasGeneralAccount(party, asset string) bool {
 	_, err := e.GetAccountByID(
-		e.accountID("", party, asset, types.AccountTypeGeneral))
+		e.accountID(noMarket, party, asset, types.AccountTypeGeneral))
 	return err == nil
 }
 
@@ -2155,7 +2387,7 @@ func (e *Engine) Withdraw(ctx context.Context, partyID, asset string, amount *nu
 	if !e.AssetExists(asset) {
 		return nil, ErrInvalidAssetID
 	}
-	acc, err := e.GetAccountByID(e.accountID("", partyID, asset, types.AccountTypeGeneral))
+	acc, err := e.GetAccountByID(e.accountID(noMarket, partyID, asset, types.AccountTypeGeneral))
 	if err != nil {
 		return nil, ErrAccountDoesNotExist
 	}
@@ -2203,10 +2435,11 @@ func (e *Engine) Deposit(ctx context.Context, partyID, asset string, amount *num
 	var err error
 	// Look for the special reward party
 	if partyID == rewardPartyID {
-		accID, err = e.CreateOrGetAssetRewardPoolAccount(ctx, asset)
+		acc, err := e.GetGlobalRewardAccount(asset)
 		if err != nil {
 			return nil, err
 		}
+		accID = acc.ID
 	} else {
 		// this will get or create the account basically
 		accID, err = e.CreatePartyGeneralAccount(ctx, partyID, asset)
@@ -2257,6 +2490,7 @@ func (e *Engine) UpdateBalance(ctx context.Context, id string, balance *num.Uint
 		e.state.updateAccs(e.hashableAccs)
 		e.broker.Send(events.NewAccountEvent(ctx, *acc))
 	}
+
 	return nil
 }
 
@@ -2272,6 +2506,7 @@ func (e *Engine) IncrementBalance(ctx context.Context, id string, inc *num.Uint)
 		e.state.updateAccs(e.hashableAccs)
 		e.broker.Send(events.NewAccountEvent(ctx, *acc))
 	}
+
 	return nil
 }
 
@@ -2297,6 +2532,16 @@ func (e *Engine) GetAccountByID(id string) (*types.Account, error) {
 		return nil, fmt.Errorf("account does not exist: %s", id)
 	}
 	return acc.Clone(), nil
+}
+
+// GetEnabledAssets returns the asset IDs of all enabled assets.
+func (e *Engine) GetEnabledAssets() []string {
+	assets := make([]string, 0, len(e.enabledAssets))
+	for _, asset := range e.enabledAssets {
+		assets = append(assets, asset.ID)
+	}
+	sort.Strings(assets)
+	return assets
 }
 
 // GetAssetTotalSupply - return the total supply of the asset if it's known
@@ -2348,35 +2593,20 @@ func (e *Engine) GetMarketInsurancePoolAccount(market, asset string) (*types.Acc
 	return e.GetAccountByID(insuranceAccID)
 }
 
-// GetAssetInsurancePoolAccount returns the global insurance account for the asset.
-func (e *Engine) GetAssetInsurancePoolAccount(asset string) (*types.Account, error) {
-	globalInsuranceID := e.accountID(noMarket, systemOwner, asset, types.AccountTypeGlobalInsurance)
-	return e.GetAccountByID(globalInsuranceID)
-}
-
-func (e *Engine) CreateOrGetAssetRewardPoolAccount(ctx context.Context, asset string) (string, error) {
-	if !e.AssetExists(asset) {
-		return "", ErrInvalidAssetID
-	}
-
-	accountID := e.accountID(noMarket, systemOwner, asset, types.AccountTypeGlobalReward)
-	if _, ok := e.accs[accountID]; !ok {
-		acc := types.Account{
-			ID:       accountID,
-			Asset:    asset,
-			MarketID: noMarket,
-			Balance:  num.Zero(),
-			Owner:    systemOwner,
-			Type:     types.AccountTypeGlobalReward,
-		}
-		e.accs[accountID] = &acc
-		e.addAccountToHashableSlice(&acc)
-		e.broker.Send(events.NewAccountEvent(ctx, acc))
-	}
-	return accountID, nil
-}
-
 func (e *Engine) GetGlobalRewardAccount(asset string) (*types.Account, error) {
 	rewardAccID := e.accountID(noMarket, systemOwner, asset, types.AccountTypeGlobalReward)
 	return e.GetAccountByID(rewardAccID)
+}
+
+// GetRewardAccount returns a reward accound by asset and type.
+func (e *Engine) GetRewardAccount(asset string, rewardAcccountType types.AccountType) (*types.Account, error) {
+	rewardAccID := e.accountID(noMarket, systemOwner, asset, rewardAcccountType)
+	return e.GetAccountByID(rewardAccID)
+}
+
+func (e *Engine) GetAssetQuantum(asset string) (*num.Uint, error) {
+	if !e.AssetExists(asset) {
+		return num.Zero(), ErrInvalidAssetID
+	}
+	return e.enabledAssets[asset].Details.Quantum, nil
 }

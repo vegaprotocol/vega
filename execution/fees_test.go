@@ -58,3 +58,33 @@ func TestFeeSplitter(t *testing.T) {
 		})
 	}
 }
+
+func TestFeeSplitterSnapshot(t *testing.T) {
+	fs := execution.NewFeeSplitter()
+	require.True(t, fs.Changed())
+
+	// reset changed flags
+	fs.GetState()
+	require.False(t, fs.Changed())
+
+	// add a trade value to cause a change
+	fs.AddTradeValue(num.NewUint(12))
+	require.True(t, fs.Changed())
+
+	// reset changed flag
+	fs.GetState()
+	require.False(t, fs.Changed())
+
+	// set time window to cause a change
+	fs.TimeWindowStart(time.Now())
+	require.True(t, fs.Changed())
+
+	currentTime := time.Now().Add(time.Minute)
+	err := fs.SetCurrentTime(currentTime)
+	require.NoError(t, err)
+
+	// load state and check its the same
+	snap := execution.NewFeeSplitterFromSnapshot(fs.GetState(), currentTime)
+	require.Equal(t, fs.Elapsed(), snap.Elapsed())
+	require.Equal(t, fs.MarketValueProxy(3*time.Second, num.NewUint(5)), snap.MarketValueProxy(3*time.Second, num.NewUint(5)))
+}

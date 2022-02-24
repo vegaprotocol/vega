@@ -51,8 +51,8 @@ Feature: test bugfix 614 for margin calculations
     Then the parties should have the following account balances:
       | party  | asset | market id | margin | general |
       | tamlyn  | ETH   | ETH/DEC19 | 3952   | 6104    |
-      | chris   | ETH   | ETH/DEC19 | 3760   | 6240    |
+      | chris   | ETH   | ETH/DEC19 | 5600   | 4400    |
       | edd     | ETH   | ETH/DEC19 | 5456   | 4544    |
       | barney  | ETH   | ETH/DEC19 | 992    | 8952    |
-      | rebecca | ETH   | ETH/DEC19 | 3760   | 6240    |
+      | rebecca | ETH   | ETH/DEC19 | 5600   | 4400    |
     And the cumulated balance for all accounts should be worth "2051000"

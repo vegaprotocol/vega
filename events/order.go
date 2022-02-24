@@ -6,6 +6,7 @@ import (
 	ptypes "code.vegaprotocol.io/protos/vega"
 	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
 	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/types/num"
 )
 
 type Order struct {
@@ -18,6 +19,8 @@ func NewOrderEvent(ctx context.Context, o *types.Order) *Order {
 		Base: newBase(ctx, OrderEvent),
 		o:    o.IntoProto(),
 	}
+	// set to original order price
+	order.o.Price = num.UintToString(o.OriginalPrice)
 	return order
 }
 
@@ -42,21 +45,17 @@ func (o Order) Proto() ptypes.Order {
 }
 
 func (o Order) StreamMessage() *eventspb.BusEvent {
-	return &eventspb.BusEvent{
-		Version: eventspb.Version,
-		Id:      o.eventID(),
-		Block:   o.TraceID(),
-		ChainId: o.ChainID(),
-		Type:    o.et.ToProto(),
-		Event: &eventspb.BusEvent_Order{
-			Order: o.o,
-		},
+	busEvent := newBusEventFromBase(o.Base)
+	busEvent.Event = &eventspb.BusEvent_Order{
+		Order: o.o,
 	}
+
+	return busEvent
 }
 
 func OrderEventFromStream(ctx context.Context, be *eventspb.BusEvent) *Order {
 	order := &Order{
-		Base: newBaseFromStream(ctx, OrderEvent, be),
+		Base: newBaseFromBusEvent(ctx, OrderEvent, be),
 		o:    be.GetOrder(),
 	}
 	return order

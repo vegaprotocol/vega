@@ -28,7 +28,8 @@ const (
 	EpochCheckpoint          CheckpointName = "epoch"
 	BlockCheckpoint          CheckpointName = "block" // pseudo-checkpoint, really...
 	PendingRewardsCheckpoint CheckpointName = "rewards"
-	KeyRotationsCheckpoint   CheckpointName = "key-rotations"
+	BankingCheckpoint        CheckpointName = "banking"
+	ValidatorsCheckpoint     CheckpointName = "validators"
 )
 
 type Block struct {
@@ -49,7 +50,8 @@ type Checkpoint struct {
 	Epoch             []byte
 	Block             []byte
 	Rewards           []byte
-	KeyRotations      []byte
+	Validators        []byte
+	Banking           []byte
 }
 
 type DelegationEntry struct {
@@ -144,7 +146,8 @@ func NewCheckpointFromProto(pc *checkpoint.Checkpoint) *Checkpoint {
 		Epoch:             pc.Epoch,
 		Block:             pc.Block,
 		Rewards:           pc.Rewards,
-		KeyRotations:      pc.KeyRotations,
+		Validators:        pc.Validators,
+		Banking:           pc.Banking,
 	}
 }
 
@@ -158,7 +161,8 @@ func (c Checkpoint) IntoProto() *checkpoint.Checkpoint {
 		Epoch:             c.Epoch,
 		Block:             c.Block,
 		Rewards:           c.Rewards,
-		KeyRotations:      c.KeyRotations,
+		Validators:        c.Validators,
+		Banking:           c.Banking,
 	}
 }
 
@@ -177,7 +181,7 @@ func (c *Checkpoint) SetBlockHeight(height int64) error {
 // HashBytes returns the data contained in the checkpoint as a []byte for hashing
 // the order in which the data is added to the slice matters.
 func (c Checkpoint) HashBytes() []byte {
-	ret := make([]byte, 0, len(c.Governance)+len(c.Assets)+len(c.Collateral)+len(c.NetworkParameters)+len(c.Delegation)+len(c.Epoch)+len(c.Block)+len(c.KeyRotations))
+	ret := make([]byte, 0, len(c.Governance)+len(c.Assets)+len(c.Collateral)+len(c.NetworkParameters)+len(c.Delegation)+len(c.Epoch)+len(c.Block)+len(c.Rewards)+len(c.Validators)+len(c.Banking))
 	// the order in which we append is quite important
 	ret = append(ret, c.NetworkParameters...)
 	ret = append(ret, c.Assets...)
@@ -187,7 +191,8 @@ func (c Checkpoint) HashBytes() []byte {
 	ret = append(ret, c.Block...)
 	ret = append(ret, c.Governance...)
 	ret = append(ret, c.Rewards...)
-	return append(ret, c.KeyRotations...)
+	ret = append(ret, c.Banking...)
+	return append(ret, c.Validators...)
 }
 
 // Set set a specific checkpoint value using the name the engine returns.
@@ -209,8 +214,10 @@ func (c *Checkpoint) Set(name CheckpointName, val []byte) {
 		c.Block = val
 	case PendingRewardsCheckpoint:
 		c.Rewards = val
-	case KeyRotationsCheckpoint:
-		c.KeyRotations = val
+	case ValidatorsCheckpoint:
+		c.Validators = val
+	case BankingCheckpoint:
+		c.Banking = val
 	}
 }
 
@@ -233,8 +240,10 @@ func (c Checkpoint) Get(name CheckpointName) []byte {
 		return c.Block
 	case PendingRewardsCheckpoint:
 		return c.Rewards
-	case KeyRotationsCheckpoint:
-		return c.KeyRotations
+	case ValidatorsCheckpoint:
+		return c.Validators
+	case BankingCheckpoint:
+		return c.Banking
 	}
 	return nil
 }

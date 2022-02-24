@@ -6,6 +6,9 @@ import (
 	"testing"
 	"time"
 
+	vegacontext "code.vegaprotocol.io/vega/libs/context"
+	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
+
 	"github.com/golang/protobuf/proto"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -204,7 +207,7 @@ func (esm *equityShareMarket) PartyMarginAccount(party string) *types.Account {
 
 func testWithinMarket(t *testing.T) {
 	var (
-		ctx = context.Background()
+		ctx = vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
 		// as we will split fees in 1/3 and 2/3
 		// we use 900000 cause we need this number to be divisible by 3
 		matchingPrice = uint64(900000)
@@ -219,19 +222,19 @@ func testWithinMarket(t *testing.T) {
 		// party1 (commitment: 2000) should get 2/3 of the fee
 		WithSubmittedLiquidityProvision("party1", "lp-id-1", 2000, "0.5",
 			[]*types.LiquidityOrder{
-				{Reference: types.PeggedReferenceBestBid, Proportion: 1, Offset: -11},
+				newLiquidityOrder(types.PeggedReferenceBestBid, 11, 1),
 			},
 			[]*types.LiquidityOrder{
-				{Reference: types.PeggedReferenceBestAsk, Proportion: 1, Offset: 10},
+				newLiquidityOrder(types.PeggedReferenceBestAsk, 10, 1),
 			},
 		).
 		// party2 (commitment: 1000) should get 1/3 of the fee
 		WithSubmittedLiquidityProvision("party2", "lp-id-2", 1000, "0.5",
 			[]*types.LiquidityOrder{
-				{Reference: types.PeggedReferenceBestBid, Proportion: 1, Offset: -10},
+				newLiquidityOrder(types.PeggedReferenceBestBid, 10, 1),
 			},
 			[]*types.LiquidityOrder{
-				{Reference: types.PeggedReferenceBestAsk, Proportion: 1, Offset: 11},
+				newLiquidityOrder(types.PeggedReferenceBestAsk, 11, 1),
 			},
 		)
 

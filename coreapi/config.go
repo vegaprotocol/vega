@@ -14,6 +14,7 @@ type Config struct {
 	Accounts          bool
 	Assets            bool
 	NetworkParameters bool
+	NetworkLimits     bool
 	Parties           bool
 	Validators        bool
 	Proposals         bool
@@ -30,6 +31,7 @@ func NewDefaultConfig() Config {
 		Accounts:          true,
 		Assets:            true,
 		NetworkParameters: true,
+		NetworkLimits:     true,
 		Parties:           true,
 		Validators:        true,
 		Markets:           true,

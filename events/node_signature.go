@@ -30,21 +30,17 @@ func (n NodeSignature) Proto() commandspb.NodeSignature {
 }
 
 func (n NodeSignature) StreamMessage() *eventspb.BusEvent {
-	return &eventspb.BusEvent{
-		Version: eventspb.Version,
-		Id:      n.eventID(),
-		Block:   n.TraceID(),
-		ChainId: n.ChainID(),
-		Type:    n.et.ToProto(),
-		Event: &eventspb.BusEvent_NodeSignature{
-			NodeSignature: &n.e,
-		},
+	busEvent := newBusEventFromBase(n.Base)
+	busEvent.Event = &eventspb.BusEvent_NodeSignature{
+		NodeSignature: &n.e,
 	}
+
+	return busEvent
 }
 
 func NodeSignatureEventFromStream(ctx context.Context, be *eventspb.BusEvent) *NodeSignature {
 	return &NodeSignature{
-		Base: newBaseFromStream(ctx, NodeSignatureEvent, be),
+		Base: newBaseFromBusEvent(ctx, NodeSignatureEvent, be),
 		e:    *be.GetNodeSignature(),
 	}
 }

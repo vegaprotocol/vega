@@ -18,6 +18,8 @@ type ValidatorUpdate struct {
 	country         string
 	name            string
 	avatarURL       string
+	fromEpoch       uint64
+	added           bool
 }
 
 func NewValidatorUpdateEvent(
@@ -31,6 +33,8 @@ func NewValidatorUpdateEvent(
 	country string,
 	name string,
 	avatarURL string,
+	fromEpoch uint64,
+	added bool,
 ) *ValidatorUpdate {
 	return &ValidatorUpdate{
 		Base:            newBase(ctx, ValidatorUpdateEvent),
@@ -43,6 +47,8 @@ func NewValidatorUpdateEvent(
 		country:         country,
 		name:            name,
 		avatarURL:       avatarURL,
+		fromEpoch:       fromEpoch,
+		added:           added,
 	}
 }
 
@@ -106,22 +112,20 @@ func (vu ValidatorUpdate) Proto() eventspb.ValidatorUpdate {
 		Country:         vu.country,
 		Name:            vu.name,
 		AvatarUrl:       vu.avatarURL,
+		FromEpoch:       vu.fromEpoch,
+		Added:           vu.added,
 	}
 }
 
 func (vu ValidatorUpdate) StreamMessage() *eventspb.BusEvent {
 	vuproto := vu.Proto()
 
-	return &eventspb.BusEvent{
-		Version: eventspb.Version,
-		Id:      vu.eventID(),
-		Block:   vu.TraceID(),
-		ChainId: vu.ChainID(),
-		Type:    vu.et.ToProto(),
-		Event: &eventspb.BusEvent_ValidatorUpdate{
-			ValidatorUpdate: &vuproto,
-		},
+	busEvent := newBusEventFromBase(vu.Base)
+	busEvent.Event = &eventspb.BusEvent_ValidatorUpdate{
+		ValidatorUpdate: &vuproto,
 	}
+
+	return busEvent
 }
 
 func ValidatorUpdateEventFromStream(ctx context.Context, be *eventspb.BusEvent) *ValidatorUpdate {
@@ -131,7 +135,7 @@ func ValidatorUpdateEventFromStream(ctx context.Context, be *eventspb.BusEvent) 
 	}
 
 	return &ValidatorUpdate{
-		Base:            newBaseFromStream(ctx, ValidatorUpdateEvent, be),
+		Base:            newBaseFromBusEvent(ctx, ValidatorUpdateEvent, be),
 		nodeID:          event.GetNodeId(),
 		vegaPubKey:      event.GetVegaPubKey(),
 		vegaPubKeyIndex: event.GetVegaPubKeyIndex(),
@@ -141,5 +145,7 @@ func ValidatorUpdateEventFromStream(ctx context.Context, be *eventspb.BusEvent) 
 		country:         event.GetCountry(),
 		name:            event.GetName(),
 		avatarURL:       event.GetAvatarUrl(),
+		fromEpoch:       event.FromEpoch,
+		added:           event.Added,
 	}
 }

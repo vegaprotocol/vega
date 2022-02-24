@@ -2,11 +2,13 @@ package staking
 
 import (
 	"context"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"time"
 
 	vgproto "code.vegaprotocol.io/protos/vega"
+	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	"code.vegaprotocol.io/vega/assets/erc20"
 	"code.vegaprotocol.io/vega/events"
 	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
@@ -18,16 +20,27 @@ import (
 	ethcmn "github.com/ethereum/go-ethereum/common"
 )
 
+var (
+	ErrNoBalanceForParty                = errors.New("no balance for party")
+	ErrStakeTotalSupplyAlreadyProcessed = errors.New("stake total supply already processed")
+	ErrStakeTotalSupplyBeingProcessed   = errors.New("stake total supply being processed")
+)
+
 // Broker - the event bus.
 type Broker interface {
 	Send(events.Event)
+	SendBatch([]events.Event)
 }
 
 type EthereumClientCaller interface {
 	bind.ContractCaller
 }
 
-var ErrNoBalanceForParty = errors.New("no balance for party")
+// EvtForwarder forwarder information to the tendermint chain to be agreed on by validators
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/evt_forwarder_mock.go -package mocks code.vegaprotocol.io/vega/staking EvtForwarder
+type EvtForwarder interface {
+	ForwardFromSelf(evt *commandspb.ChainEvent)
+}
 
 type Accounting struct {
 	log              *logging.Logger
@@ -36,22 +49,46 @@ type Accounting struct {
 	broker           Broker
 	accounts         map[string]*StakingAccount
 	hashableAccounts []*StakingAccount
+	isValidator      bool
 
 	stakingAssetTotalSupply *num.Uint
-	ethCfg                  vgproto.EthereumConfig
+	stakingBridgeAddress    ethcmn.Address
 
 	// snapshot bits
 	accState accountingSnapshotState
+
+	// these two are used in order to propagate
+	// the staking asset total supply at genesis.
+	evtFwd                  EvtForwarder
+	witness                 Witness
+	pendingStakeTotalSupply *pendingStakeTotalSupply
+	currentTime             time.Time
 }
+
+type pendingStakeTotalSupply struct {
+	sts   *types.StakeTotalSupply
+	check func() error
+}
+
+func (p pendingStakeTotalSupply) GetID() string {
+	return hex.EncodeToString(vgcrypto.Hash([]byte(p.sts.String())))
+}
+func (p *pendingStakeTotalSupply) Check() error { return p.check() }
 
 func NewAccounting(
 	log *logging.Logger,
 	cfg Config,
 	broker Broker,
 	ethClient EthereumClientCaller,
-) *Accounting {
-	log = log.Named(namedLogger)
-	log.SetLevel(cfg.Level.Get())
+	evtForward EvtForwarder,
+	witness Witness,
+	tt TimeTicker,
+	isValidator bool,
+) (acc *Accounting) {
+	defer func() {
+		tt.NotifyOnTick(acc.onTick)
+	}()
+	log = log.Named("accounting")
 
 	return &Accounting{
 		log:                     log,
@@ -61,7 +98,14 @@ func NewAccounting(
 		accounts:                map[string]*StakingAccount{},
 		stakingAssetTotalSupply: num.Zero(),
 		accState:                accountingSnapshotState{changed: true},
+		evtFwd:                  evtForward,
+		witness:                 witness,
+		isValidator:             isValidator,
 	}
+}
+
+func (a *Accounting) onTick(_ context.Context, t time.Time) {
+	a.currentTime = t
 }
 
 func (a *Accounting) Hash() []byte {
@@ -72,8 +116,9 @@ func (a *Accounting) Hash() []byte {
 		copy(output[i:], bal[:])
 		i += 32
 	}
-
-	return vgcrypto.Hash(output)
+	h := vgcrypto.Hash(output)
+	a.log.Debug("stakeccounts state hash", logging.String("hash", hex.EncodeToString(h)))
+	return h
 }
 
 func (a *Accounting) AddEvent(ctx context.Context, evt *types.StakeLinking) {
@@ -111,57 +156,122 @@ func (a *Accounting) GetAllAvailableBalances() map[string]*num.Uint {
 	return balances
 }
 
-func (a *Accounting) OnEthereumConfigUpdate(_ context.Context, rawcfg interface{}) error {
-	cfg, ok := rawcfg.(*vgproto.EthereumConfig)
-	if !ok {
-		return ErrNotAnEthereumConfig
-	}
+func (a *Accounting) UpdateStakingBridgeAddress(stakingBridgeAddress ethcmn.Address) error {
+	a.stakingBridgeAddress = stakingBridgeAddress
 
-	a.ethCfg = *cfg
-
-	if err := a.updateStakingAssetTotalSupply(); err != nil {
-		return fmt.Errorf("failed to update staking asset total supply: %w", err)
+	if !a.accState.isRestoring {
+		if err := a.updateStakingAssetTotalSupply(); err != nil {
+			return fmt.Errorf("couldn't update the total supply of the staking asset: %w", err)
+		}
 	}
 
 	return nil
 }
 
+func (a *Accounting) ProcessStakeTotalSupply(_ context.Context, evt *types.StakeTotalSupply) error {
+	if a.stakingAssetTotalSupply.NEQ(num.Zero()) {
+		return ErrStakeTotalSupplyAlreadyProcessed
+	}
+
+	if a.pendingStakeTotalSupply != nil {
+		return ErrStakeTotalSupplyBeingProcessed
+	}
+
+	expectedSupply := evt.TotalSupply.Clone()
+
+	a.pendingStakeTotalSupply = &pendingStakeTotalSupply{
+		sts: evt,
+		check: func() error {
+			totalSupply, err := a.getStakeAssetTotalSupply(a.stakingBridgeAddress)
+			if err != nil {
+				return err
+			}
+
+			if totalSupply.NEQ(expectedSupply) {
+				return fmt.Errorf(
+					"invalid stake asset total supply, expected %s got %s",
+					expectedSupply.String(), totalSupply.String(),
+				)
+			}
+
+			return nil
+		},
+	}
+
+	a.log.Info("stake total supply event received, starting validation",
+		logging.String("event", evt.String()))
+
+	return a.witness.StartCheck(
+		a.pendingStakeTotalSupply,
+		a.onStakeTotalSupplyVerified,
+		a.currentTime.Add(timeTilCancel),
+	)
+}
+
+func (a *Accounting) onStakeTotalSupplyVerified(event interface{}, ok bool) {
+	if ok {
+		a.accState.changed = true
+		a.stakingAssetTotalSupply = a.pendingStakeTotalSupply.sts.TotalSupply
+		a.log.Info("stake total supply finalized",
+			logging.BigUint("total-supply", a.stakingAssetTotalSupply))
+	}
+	a.pendingStakeTotalSupply = nil
+}
+
 func (a *Accounting) updateStakingAssetTotalSupply() error {
-	if len(a.ethCfg.StakingBridgeAddresses) <= 0 {
-		a.log.Error("no staking bridge address setup",
-			logging.String("eth-cfg", a.ethCfg.String()),
-		)
+	if !a.isValidator {
+		// nothing to do here if we are not a validator
 		return nil
 	}
 
-	addr := ethcmn.HexToAddress(a.ethCfg.StakingBridgeAddresses[0])
-
-	sc, err := NewStakingCaller(addr, a.ethClient)
+	totalSupply, err := a.getStakeAssetTotalSupply(a.stakingBridgeAddress)
 	if err != nil {
 		return err
+	}
+
+	// send the event to be forwarded
+	a.evtFwd.ForwardFromSelf(&commandspb.ChainEvent{
+		TxId: "internal",
+		Event: &commandspb.ChainEvent_StakingEvent{
+			StakingEvent: &vgproto.StakingEvent{
+				Action: &vgproto.StakingEvent_TotalSupply{
+					TotalSupply: &vgproto.StakeTotalSupply{
+						TokenAddress: a.stakingBridgeAddress.Hex(),
+						TotalSupply:  totalSupply.String(),
+					},
+				},
+			},
+		},
+	})
+
+	return nil
+}
+
+func (a *Accounting) getStakeAssetTotalSupply(address ethcmn.Address) (*num.Uint, error) {
+	sc, err := NewStakingCaller(address, a.ethClient)
+	if err != nil {
+		return nil, err
 	}
 
 	st, err := sc.StakingToken(&bind.CallOpts{})
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	tc, err := erc20.NewErc20Caller(st, a.ethClient)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	ts, err := tc.TotalSupply(&bind.CallOpts{})
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	totalSupply, overflowed := num.UintFromBig(ts)
 	if overflowed {
-		return fmt.Errorf("failed to convert big.Int to num.Uint: %s", ts.String())
+		return nil, fmt.Errorf("failed to convert big.Int to num.Uint: %s", ts.String())
 	}
-
-	a.stakingAssetTotalSupply = totalSupply
 
 	symbol, _ := tc.Symbol(&bind.CallOpts{})
 	decimals, _ := tc.Decimals(&bind.CallOpts{})
@@ -172,7 +282,7 @@ func (a *Accounting) updateStakingAssetTotalSupply() error {
 		logging.String("total-supply", ts.String()),
 	)
 
-	return nil
+	return totalSupply, nil
 }
 
 func (a *Accounting) GetAvailableBalance(party string) (*num.Uint, error) {

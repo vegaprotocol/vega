@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"code.vegaprotocol.io/vega/events"
+	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
 	"github.com/stretchr/testify/assert"
@@ -45,15 +46,16 @@ func testFOKStopped(t *testing.T) {
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 	order := types.Order{
-		Status:      types.OrderStatusActive,
-		MarketID:    market,
-		Party:       partyID,
-		Side:        types.SideSell,
-		Price:       num.NewUint(100),
-		Size:        1,
-		Remaining:   1,
-		TimeInForce: types.OrderTimeInForceFOK,
-		Type:        types.OrderTypeLimit,
+		Status:        types.OrderStatusActive,
+		MarketID:      market,
+		Party:         partyID,
+		Side:          types.SideSell,
+		Price:         num.NewUint(100),
+		OriginalPrice: num.NewUint(100),
+		Size:          1,
+		Remaining:     1,
+		TimeInForce:   types.OrderTimeInForceFOK,
+		Type:          types.OrderTypeLimit,
 	}
 	confirm, err := book.ob.SubmitOrder(&order)
 	assert.NoError(t, err)
@@ -71,32 +73,34 @@ func testFOKFilled(t *testing.T) {
 
 	// place a first order to sit in the book
 	order1 := types.Order{
-		ID:          "V0000000032-0000000009",
-		Status:      types.OrderStatusActive,
-		MarketID:    market,
-		Party:       partyID1,
-		Side:        types.SideSell,
-		Price:       num.NewUint(100),
-		Size:        1,
-		Remaining:   1,
-		TimeInForce: types.OrderTimeInForceGTC,
-		Type:        types.OrderTypeLimit,
+		ID:            "V0000000032-0000000009",
+		Status:        types.OrderStatusActive,
+		MarketID:      market,
+		Party:         partyID1,
+		Side:          types.SideSell,
+		Price:         num.NewUint(100),
+		OriginalPrice: num.NewUint(100),
+		Size:          1,
+		Remaining:     1,
+		TimeInForce:   types.OrderTimeInForceGTC,
+		Type:          types.OrderTypeLimit,
 	}
 	_, err := book.ob.SubmitOrder(&order1)
 	assert.NoError(t, err)
 
 	// now place our fok order to be filled
 	order := types.Order{
-		ID:          "V0000000032-0000000010",
-		Status:      types.OrderStatusActive,
-		MarketID:    market,
-		Party:       partyID2,
-		Side:        types.SideBuy,
-		Price:       num.NewUint(100),
-		Size:        1,
-		Remaining:   1,
-		TimeInForce: types.OrderTimeInForceFOK,
-		Type:        types.OrderTypeLimit,
+		ID:            "V0000000032-0000000010",
+		Status:        types.OrderStatusActive,
+		MarketID:      market,
+		Party:         partyID2,
+		Side:          types.SideBuy,
+		Price:         num.NewUint(100),
+		OriginalPrice: num.NewUint(100),
+		Size:          1,
+		Remaining:     1,
+		TimeInForce:   types.OrderTimeInForceFOK,
+		Type:          types.OrderTypeLimit,
 	}
 	confirm, err := book.ob.SubmitOrder(&order)
 	assert.NoError(t, err)
@@ -110,15 +114,16 @@ func testIOCStopped(t *testing.T) {
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 	order := types.Order{
-		Status:      types.OrderStatusActive,
-		MarketID:    market,
-		Party:       partyID,
-		Side:        types.SideSell,
-		Price:       num.NewUint(100),
-		Size:        1,
-		Remaining:   1,
-		TimeInForce: types.OrderTimeInForceIOC,
-		Type:        types.OrderTypeLimit,
+		Status:        types.OrderStatusActive,
+		MarketID:      market,
+		Party:         partyID,
+		Side:          types.SideSell,
+		Price:         num.NewUint(100),
+		OriginalPrice: num.NewUint(100),
+		Size:          1,
+		Remaining:     1,
+		TimeInForce:   types.OrderTimeInForceIOC,
+		Type:          types.OrderTypeLimit,
 	}
 	confirm, err := book.ob.SubmitOrder(&order)
 	assert.NoError(t, err)
@@ -136,32 +141,34 @@ func testIOCPartiallyFilled(t *testing.T) {
 
 	// place a first order to sit in the book
 	order1 := types.Order{
-		ID:          "V0000000032-0000000009",
-		Status:      types.OrderStatusActive,
-		MarketID:    market,
-		Party:       partyID1,
-		Side:        types.SideSell,
-		Price:       num.NewUint(100),
-		Size:        1,
-		Remaining:   1,
-		TimeInForce: types.OrderTimeInForceGTC,
-		Type:        types.OrderTypeLimit,
+		ID:            "V0000000032-0000000009",
+		Status:        types.OrderStatusActive,
+		MarketID:      market,
+		Party:         partyID1,
+		Side:          types.SideSell,
+		Price:         num.NewUint(100),
+		OriginalPrice: num.NewUint(100),
+		Size:          1,
+		Remaining:     1,
+		TimeInForce:   types.OrderTimeInForceGTC,
+		Type:          types.OrderTypeLimit,
 	}
 	_, err := book.ob.SubmitOrder(&order1)
 	assert.NoError(t, err)
 
 	// now place our IOC order to be filled
 	order := types.Order{
-		ID:          "V0000000032-0000000010",
-		Status:      types.OrderStatusActive,
-		MarketID:    market,
-		Party:       partyID2,
-		Side:        types.SideBuy,
-		Price:       num.NewUint(100),
-		Size:        2,
-		Remaining:   2,
-		TimeInForce: types.OrderTimeInForceIOC,
-		Type:        types.OrderTypeLimit,
+		ID:            "V0000000032-0000000010",
+		Status:        types.OrderStatusActive,
+		MarketID:      market,
+		Party:         partyID2,
+		Side:          types.SideBuy,
+		Price:         num.NewUint(100),
+		OriginalPrice: num.NewUint(100),
+		Size:          2,
+		Remaining:     2,
+		TimeInForce:   types.OrderTimeInForceIOC,
+		Type:          types.OrderTypeLimit,
 	}
 	confirm, err := book.ob.SubmitOrder(&order)
 	assert.NoError(t, err)
@@ -179,32 +186,34 @@ func testIOCFilled(t *testing.T) {
 
 	// place a first order to sit in the book
 	order1 := types.Order{
-		ID:          "V0000000032-0000000009",
-		Status:      types.OrderStatusActive,
-		MarketID:    market,
-		Party:       partyID1,
-		Side:        types.SideSell,
-		Price:       num.NewUint(100),
-		Size:        1,
-		Remaining:   1,
-		TimeInForce: types.OrderTimeInForceGTC,
-		Type:        types.OrderTypeLimit,
+		ID:            "V0000000032-0000000009",
+		Status:        types.OrderStatusActive,
+		MarketID:      market,
+		Party:         partyID1,
+		Side:          types.SideSell,
+		Price:         num.NewUint(100),
+		OriginalPrice: num.NewUint(100),
+		Size:          1,
+		Remaining:     1,
+		TimeInForce:   types.OrderTimeInForceGTC,
+		Type:          types.OrderTypeLimit,
 	}
 	_, err := book.ob.SubmitOrder(&order1)
 	assert.NoError(t, err)
 
 	// now place our fok order to be filled
 	order := types.Order{
-		ID:          "V0000000032-0000000010",
-		Status:      types.OrderStatusActive,
-		MarketID:    market,
-		Party:       partyID2,
-		Side:        types.SideBuy,
-		Price:       num.NewUint(100),
-		Size:        1,
-		Remaining:   1,
-		TimeInForce: types.OrderTimeInForceIOC,
-		Type:        types.OrderTypeLimit,
+		ID:            "V0000000032-0000000010",
+		Status:        types.OrderStatusActive,
+		MarketID:      market,
+		Party:         partyID2,
+		Side:          types.SideBuy,
+		Price:         num.NewUint(100),
+		OriginalPrice: num.NewUint(100),
+		Size:          1,
+		Remaining:     1,
+		TimeInForce:   types.OrderTimeInForceIOC,
+		Type:          types.OrderTypeLimit,
 	}
 	confirm, err := book.ob.SubmitOrder(&order)
 	assert.NoError(t, err)
@@ -221,16 +230,17 @@ func testGTCActive(t *testing.T) {
 	defer book.Finish()
 
 	order1 := types.Order{
-		Status:      types.OrderStatusActive,
-		ID:          orderID,
-		MarketID:    market,
-		Party:       partyID1,
-		Side:        types.SideSell,
-		Price:       num.NewUint(100),
-		Size:        10,
-		Remaining:   10,
-		TimeInForce: types.OrderTimeInForceGTC,
-		Type:        types.OrderTypeLimit,
+		Status:        types.OrderStatusActive,
+		ID:            orderID,
+		MarketID:      market,
+		Party:         partyID1,
+		Side:          types.SideSell,
+		Price:         num.NewUint(100),
+		OriginalPrice: num.NewUint(100),
+		Size:          10,
+		Remaining:     10,
+		TimeInForce:   types.OrderTimeInForceGTC,
+		Type:          types.OrderTypeLimit,
 	}
 	_, err := book.ob.SubmitOrder(&order1)
 	assert.NoError(t, err)
@@ -240,22 +250,23 @@ func testGTCActive(t *testing.T) {
 func testGTCStoppedNotFilled(t *testing.T) {
 	market := "testMarket"
 	partyID1 := "p1"
-	orderID := "v0000000000000-0000001"
+	orderID := vgcrypto.RandomHash()
 
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 
 	order1 := types.Order{
-		Status:      types.OrderStatusActive,
-		ID:          orderID,
-		MarketID:    market,
-		Party:       partyID1,
-		Side:        types.SideSell,
-		Price:       num.NewUint(100),
-		Size:        10,
-		Remaining:   10,
-		TimeInForce: types.OrderTimeInForceGTC,
-		Type:        types.OrderTypeLimit,
+		Status:        types.OrderStatusActive,
+		ID:            orderID,
+		MarketID:      market,
+		Party:         partyID1,
+		Side:          types.SideSell,
+		Price:         num.NewUint(100),
+		OriginalPrice: num.NewUint(100),
+		Size:          10,
+		Remaining:     10,
+		TimeInForce:   types.OrderTimeInForceGTC,
+		Type:          types.OrderTypeLimit,
 	}
 	_, err := book.ob.SubmitOrder(&order1)
 	assert.NoError(t, err)
@@ -270,22 +281,23 @@ func testGTCStoppedNotFilled(t *testing.T) {
 func testGTCCancelledNotFilled(t *testing.T) {
 	market := "testMarket"
 	partyID1 := "p1"
-	orderID := "v0000000000000-0000001"
+	orderID := vgcrypto.RandomHash()
 
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 
 	order1 := types.Order{
-		Status:      types.OrderStatusActive,
-		ID:          orderID,
-		MarketID:    market,
-		Party:       partyID1,
-		Side:        types.SideSell,
-		Price:       num.NewUint(100),
-		Size:        10,
-		Remaining:   10,
-		TimeInForce: types.OrderTimeInForceGTC,
-		Type:        types.OrderTypeLimit,
+		Status:        types.OrderStatusActive,
+		ID:            orderID,
+		MarketID:      market,
+		Party:         partyID1,
+		Side:          types.SideSell,
+		Price:         num.NewUint(100),
+		OriginalPrice: num.NewUint(100),
+		Size:          10,
+		Remaining:     10,
+		TimeInForce:   types.OrderTimeInForceGTC,
+		Type:          types.OrderTypeLimit,
 	}
 	_, err := book.ob.SubmitOrder(&order1)
 	assert.NoError(t, err)
@@ -300,39 +312,41 @@ func testGTCActivePartiallyFilled(t *testing.T) {
 	market := "testMarket"
 	partyID1 := "p1"
 	partyID2 := "p2"
-	orderID := "v0000000000000-0000001"
+	orderID := vgcrypto.RandomHash()
 
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 
 	// place a first order to sit in the book, be partially filled, and stopped
 	order1 := types.Order{
-		Status:      types.OrderStatusActive,
-		ID:          orderID,
-		MarketID:    market,
-		Party:       partyID1,
-		Side:        types.SideSell,
-		Price:       num.NewUint(100),
-		Size:        10,
-		Remaining:   10,
-		TimeInForce: types.OrderTimeInForceGTC,
-		Type:        types.OrderTypeLimit,
+		Status:        types.OrderStatusActive,
+		ID:            orderID,
+		MarketID:      market,
+		Party:         partyID1,
+		Side:          types.SideSell,
+		Price:         num.NewUint(100),
+		OriginalPrice: num.NewUint(100),
+		Size:          10,
+		Remaining:     10,
+		TimeInForce:   types.OrderTimeInForceGTC,
+		Type:          types.OrderTypeLimit,
 	}
 	_, err := book.ob.SubmitOrder(&order1)
 	assert.NoError(t, err)
 
 	// now place our order which will consume some of the first order
 	order := types.Order{
-		ID:          "V0000000032-0000000010",
-		Status:      types.OrderStatusActive,
-		MarketID:    market,
-		Party:       partyID2,
-		Side:        types.SideBuy,
-		Price:       num.NewUint(100),
-		Size:        1,
-		Remaining:   1,
-		TimeInForce: types.OrderTimeInForceGTC,
-		Type:        types.OrderTypeLimit,
+		ID:            vgcrypto.RandomHash(),
+		Status:        types.OrderStatusActive,
+		MarketID:      market,
+		Party:         partyID2,
+		Side:          types.SideBuy,
+		Price:         num.NewUint(100),
+		OriginalPrice: num.NewUint(100),
+		Size:          1,
+		Remaining:     1,
+		TimeInForce:   types.OrderTimeInForceGTC,
+		Type:          types.OrderTypeLimit,
 	}
 	confirm, err := book.ob.SubmitOrder(&order)
 	assert.NoError(t, err)
@@ -344,38 +358,40 @@ func testGTCCancelledPartiallyFilled(t *testing.T) {
 	market := "testMarket"
 	partyID1 := "p1"
 	partyID2 := "p2"
-	orderID := "v0000000000000-0000001"
+	orderID := vgcrypto.RandomHash()
 
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 
 	// place a first order to sit in the book, be partially filled, and stopped
 	order1 := types.Order{
-		Status:      types.OrderStatusActive,
-		ID:          orderID,
-		MarketID:    market,
-		Party:       partyID1,
-		Side:        types.SideSell,
-		Price:       num.NewUint(100),
-		Size:        10,
-		Remaining:   10,
-		TimeInForce: types.OrderTimeInForceGTC,
-		Type:        types.OrderTypeLimit,
+		Status:        types.OrderStatusActive,
+		ID:            orderID,
+		MarketID:      market,
+		Party:         partyID1,
+		Side:          types.SideSell,
+		Price:         num.NewUint(100),
+		OriginalPrice: num.NewUint(100),
+		Size:          10,
+		Remaining:     10,
+		TimeInForce:   types.OrderTimeInForceGTC,
+		Type:          types.OrderTypeLimit,
 	}
 	_, err := book.ob.SubmitOrder(&order1)
 	assert.NoError(t, err)
 
 	// now place our order which will consume some of the first order
 	order := types.Order{
-		Status:      types.OrderStatusActive,
-		MarketID:    market,
-		Party:       partyID2,
-		Side:        types.SideBuy,
-		Price:       num.NewUint(100),
-		Size:        1,
-		Remaining:   1,
-		TimeInForce: types.OrderTimeInForceGTC,
-		Type:        types.OrderTypeLimit,
+		Status:        types.OrderStatusActive,
+		MarketID:      market,
+		Party:         partyID2,
+		Side:          types.SideBuy,
+		Price:         num.NewUint(100),
+		OriginalPrice: num.NewUint(100),
+		Size:          1,
+		Remaining:     1,
+		TimeInForce:   types.OrderTimeInForceGTC,
+		Type:          types.OrderTypeLimit,
 	}
 	_, err = book.ob.SubmitOrder(&order)
 	assert.NoError(t, err)
@@ -391,38 +407,40 @@ func testGTCStoppedPartiallyFilled(t *testing.T) {
 	market := "testMarket"
 	partyID1 := "p1"
 	partyID2 := "p2"
-	orderID := "v0000000000000-0000001"
+	orderID := vgcrypto.RandomHash()
 
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 
 	// place a first order to sit in the book, be partially filled, and stopped
 	order1 := types.Order{
-		Status:      types.OrderStatusActive,
-		ID:          orderID,
-		MarketID:    market,
-		Party:       partyID1,
-		Side:        types.SideSell,
-		Price:       num.NewUint(100),
-		Size:        10,
-		Remaining:   10,
-		TimeInForce: types.OrderTimeInForceGTC,
-		Type:        types.OrderTypeLimit,
+		Status:        types.OrderStatusActive,
+		ID:            orderID,
+		MarketID:      market,
+		Party:         partyID1,
+		Side:          types.SideSell,
+		Price:         num.NewUint(100),
+		OriginalPrice: num.NewUint(100),
+		Size:          10,
+		Remaining:     10,
+		TimeInForce:   types.OrderTimeInForceGTC,
+		Type:          types.OrderTypeLimit,
 	}
 	_, err := book.ob.SubmitOrder(&order1)
 	assert.NoError(t, err)
 
 	// now place our order which will consume some of the first order
 	order := types.Order{
-		Status:      types.OrderStatusActive,
-		MarketID:    market,
-		Party:       partyID2,
-		Side:        types.SideBuy,
-		Price:       num.NewUint(100),
-		Size:        1,
-		Remaining:   1,
-		TimeInForce: types.OrderTimeInForceGTC,
-		Type:        types.OrderTypeLimit,
+		Status:        types.OrderStatusActive,
+		MarketID:      market,
+		Party:         partyID2,
+		Side:          types.SideBuy,
+		Price:         num.NewUint(100),
+		OriginalPrice: num.NewUint(100),
+		Size:          1,
+		Remaining:     1,
+		TimeInForce:   types.OrderTimeInForceGTC,
+		Type:          types.OrderTypeLimit,
 	}
 	_, err = book.ob.SubmitOrder(&order)
 	assert.NoError(t, err)
@@ -444,32 +462,34 @@ func testGTCFilled(t *testing.T) {
 
 	// place a first order to sit in the book
 	order1 := types.Order{
-		ID:          "V0000000032-0000000009",
-		Status:      types.OrderStatusActive,
-		MarketID:    market,
-		Party:       partyID1,
-		Side:        types.SideSell,
-		Price:       num.NewUint(100),
-		Size:        1,
-		Remaining:   1,
-		TimeInForce: types.OrderTimeInForceGTC,
-		Type:        types.OrderTypeLimit,
+		ID:            vgcrypto.RandomHash(),
+		Status:        types.OrderStatusActive,
+		MarketID:      market,
+		Party:         partyID1,
+		Side:          types.SideSell,
+		Price:         num.NewUint(100),
+		OriginalPrice: num.NewUint(100),
+		Size:          1,
+		Remaining:     1,
+		TimeInForce:   types.OrderTimeInForceGTC,
+		Type:          types.OrderTypeLimit,
 	}
 	_, err := book.ob.SubmitOrder(&order1)
 	assert.NoError(t, err)
 
 	// now place our GTC order to be filled
 	order := types.Order{
-		ID:          "V0000000032-0000000010",
-		Status:      types.OrderStatusActive,
-		MarketID:    market,
-		Party:       partyID2,
-		Side:        types.SideBuy,
-		Price:       num.NewUint(100),
-		Size:        1,
-		Remaining:   1,
-		TimeInForce: types.OrderTimeInForceGTC,
-		Type:        types.OrderTypeLimit,
+		ID:            vgcrypto.RandomHash(),
+		Status:        types.OrderStatusActive,
+		MarketID:      market,
+		Party:         partyID2,
+		Side:          types.SideBuy,
+		Price:         num.NewUint(100),
+		OriginalPrice: num.NewUint(100),
+		Size:          1,
+		Remaining:     1,
+		TimeInForce:   types.OrderTimeInForceGTC,
+		Type:          types.OrderTypeLimit,
 	}
 	confirm, err := book.ob.SubmitOrder(&order)
 	assert.NoError(t, err)
@@ -480,23 +500,24 @@ func testGTCFilled(t *testing.T) {
 func testGTTActive(t *testing.T) {
 	market := "testMarket"
 	partyID1 := "p1"
-	orderID := "v0000000000000-0000001"
+	orderID := vgcrypto.RandomHash()
 
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 
 	order1 := types.Order{
-		Status:      types.OrderStatusActive,
-		ID:          orderID,
-		MarketID:    market,
-		Party:       partyID1,
-		Side:        types.SideSell,
-		Price:       num.NewUint(100),
-		Size:        10,
-		Remaining:   10,
-		TimeInForce: types.OrderTimeInForceGTT,
-		Type:        types.OrderTypeLimit,
-		ExpiresAt:   10,
+		Status:        types.OrderStatusActive,
+		ID:            orderID,
+		MarketID:      market,
+		Party:         partyID1,
+		Side:          types.SideSell,
+		Price:         num.NewUint(100),
+		OriginalPrice: num.NewUint(100),
+		Size:          10,
+		Remaining:     10,
+		TimeInForce:   types.OrderTimeInForceGTT,
+		Type:          types.OrderTypeLimit,
+		ExpiresAt:     10,
 	}
 	_, err := book.ob.SubmitOrder(&order1)
 	assert.NoError(t, err)
@@ -506,23 +527,24 @@ func testGTTActive(t *testing.T) {
 func testGTTStoppedNotFilled(t *testing.T) {
 	market := "testMarket"
 	partyID1 := "p1"
-	orderID := "v0000000000000-0000001"
+	orderID := vgcrypto.RandomHash()
 
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 
 	order1 := types.Order{
-		Status:      types.OrderStatusActive,
-		ID:          orderID,
-		MarketID:    market,
-		Party:       partyID1,
-		Side:        types.SideSell,
-		Price:       num.NewUint(100),
-		Size:        10,
-		Remaining:   10,
-		TimeInForce: types.OrderTimeInForceGTT,
-		Type:        types.OrderTypeLimit,
-		ExpiresAt:   10,
+		Status:        types.OrderStatusActive,
+		ID:            orderID,
+		MarketID:      market,
+		Party:         partyID1,
+		Side:          types.SideSell,
+		Price:         num.NewUint(100),
+		OriginalPrice: num.NewUint(100),
+		Size:          10,
+		Remaining:     10,
+		TimeInForce:   types.OrderTimeInForceGTT,
+		Type:          types.OrderTypeLimit,
+		ExpiresAt:     10,
 	}
 	_, err := book.ob.SubmitOrder(&order1)
 	assert.NoError(t, err)
@@ -537,23 +559,24 @@ func testGTTStoppedNotFilled(t *testing.T) {
 func testGTTCancelledNotFilled(t *testing.T) {
 	market := "testMarket"
 	partyID1 := "p1"
-	orderID := "v0000000000000-0000001"
+	orderID := vgcrypto.RandomHash()
 
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 
 	order1 := types.Order{
-		Status:      types.OrderStatusActive,
-		ID:          orderID,
-		MarketID:    market,
-		Party:       partyID1,
-		Side:        types.SideSell,
-		Price:       num.NewUint(100),
-		Size:        10,
-		Remaining:   10,
-		TimeInForce: types.OrderTimeInForceGTT,
-		Type:        types.OrderTypeLimit,
-		ExpiresAt:   10,
+		Status:        types.OrderStatusActive,
+		ID:            orderID,
+		MarketID:      market,
+		Party:         partyID1,
+		Side:          types.SideSell,
+		Price:         num.NewUint(100),
+		OriginalPrice: num.NewUint(100),
+		Size:          10,
+		Remaining:     10,
+		TimeInForce:   types.OrderTimeInForceGTT,
+		Type:          types.OrderTypeLimit,
+		ExpiresAt:     10,
 	}
 	_, err := book.ob.SubmitOrder(&order1)
 	assert.NoError(t, err)
@@ -568,41 +591,43 @@ func testGTTActivePartiallyFilled(t *testing.T) {
 	market := "testMarket"
 	partyID1 := "p1"
 	partyID2 := "p2"
-	orderID := "v0000000000000-0000001"
+	orderID := vgcrypto.RandomHash()
 
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 
 	// place a first order to sit in the book, be partially filled
 	order1 := types.Order{
-		Status:      types.OrderStatusActive,
-		ID:          orderID,
-		MarketID:    market,
-		Party:       partyID1,
-		Side:        types.SideSell,
-		Price:       num.NewUint(100),
-		Size:        10,
-		Remaining:   10,
-		TimeInForce: types.OrderTimeInForceGTT,
-		Type:        types.OrderTypeLimit,
-		ExpiresAt:   10,
+		Status:        types.OrderStatusActive,
+		ID:            orderID,
+		MarketID:      market,
+		Party:         partyID1,
+		Side:          types.SideSell,
+		Price:         num.NewUint(100),
+		OriginalPrice: num.NewUint(100),
+		Size:          10,
+		Remaining:     10,
+		TimeInForce:   types.OrderTimeInForceGTT,
+		Type:          types.OrderTypeLimit,
+		ExpiresAt:     10,
 	}
 	_, err := book.ob.SubmitOrder(&order1)
 	assert.NoError(t, err)
 
 	// now place our order which will consume some of the first order
 	order := types.Order{
-		ID:          "V0000000032-0000000009",
-		Status:      types.OrderStatusActive,
-		MarketID:    market,
-		Party:       partyID2,
-		Side:        types.SideBuy,
-		Price:       num.NewUint(100),
-		Size:        1,
-		Remaining:   1,
-		TimeInForce: types.OrderTimeInForceGTT,
-		Type:        types.OrderTypeLimit,
-		ExpiresAt:   10,
+		ID:            vgcrypto.RandomHash(),
+		Status:        types.OrderStatusActive,
+		MarketID:      market,
+		Party:         partyID2,
+		Side:          types.SideBuy,
+		Price:         num.NewUint(100),
+		OriginalPrice: num.NewUint(100),
+		Size:          1,
+		Remaining:     1,
+		TimeInForce:   types.OrderTimeInForceGTT,
+		Type:          types.OrderTypeLimit,
+		ExpiresAt:     10,
 	}
 	confirm, err := book.ob.SubmitOrder(&order)
 	assert.NoError(t, err)
@@ -614,41 +639,43 @@ func testGTTCancelledPartiallyFilled(t *testing.T) {
 	market := "testMarket"
 	partyID1 := "p1"
 	partyID2 := "p2"
-	orderID := "v0000000000000-0000001"
+	orderID := vgcrypto.RandomHash()
 
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 
 	// place a first order to sit in the book, be partially filled, and cancelled
 	order1 := types.Order{
-		Status:      types.OrderStatusActive,
-		ID:          orderID,
-		MarketID:    market,
-		Party:       partyID1,
-		Side:        types.SideSell,
-		Price:       num.NewUint(100),
-		Size:        10,
-		Remaining:   10,
-		TimeInForce: types.OrderTimeInForceGTT,
-		Type:        types.OrderTypeLimit,
-		ExpiresAt:   10,
+		Status:        types.OrderStatusActive,
+		ID:            orderID,
+		MarketID:      market,
+		Party:         partyID1,
+		Side:          types.SideSell,
+		Price:         num.NewUint(100),
+		OriginalPrice: num.NewUint(100),
+		Size:          10,
+		Remaining:     10,
+		TimeInForce:   types.OrderTimeInForceGTT,
+		Type:          types.OrderTypeLimit,
+		ExpiresAt:     10,
 	}
 	_, err := book.ob.SubmitOrder(&order1)
 	assert.NoError(t, err)
 
 	// now place our order which will consume some of the first order
 	order := types.Order{
-		ID:          "V0000000032-0000000009",
-		Status:      types.OrderStatusActive,
-		MarketID:    market,
-		Party:       partyID2,
-		Side:        types.SideBuy,
-		Price:       num.NewUint(100),
-		Size:        1,
-		Remaining:   1,
-		TimeInForce: types.OrderTimeInForceGTT,
-		Type:        types.OrderTypeLimit,
-		ExpiresAt:   10,
+		ID:            vgcrypto.RandomHash(),
+		Status:        types.OrderStatusActive,
+		MarketID:      market,
+		Party:         partyID2,
+		Side:          types.SideBuy,
+		Price:         num.NewUint(100),
+		OriginalPrice: num.NewUint(100),
+		Size:          1,
+		Remaining:     1,
+		TimeInForce:   types.OrderTimeInForceGTT,
+		Type:          types.OrderTypeLimit,
+		ExpiresAt:     10,
 	}
 	_, err = book.ob.SubmitOrder(&order)
 	assert.NoError(t, err)
@@ -664,41 +691,43 @@ func testGTTStoppedPartiallyFilled(t *testing.T) {
 	market := "testMarket"
 	partyID1 := "p1"
 	partyID2 := "p2"
-	orderID := "v0000000000000-0000001"
+	orderID := vgcrypto.RandomHash()
 
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 
 	// place a first order to sit in the book, be partially filled, and stopped
 	order1 := types.Order{
-		Status:      types.OrderStatusActive,
-		ID:          orderID,
-		MarketID:    market,
-		Party:       partyID1,
-		Side:        types.SideSell,
-		Price:       num.NewUint(100),
-		Size:        10,
-		Remaining:   10,
-		TimeInForce: types.OrderTimeInForceGTT,
-		Type:        types.OrderTypeLimit,
-		ExpiresAt:   10,
+		Status:        types.OrderStatusActive,
+		ID:            orderID,
+		MarketID:      market,
+		Party:         partyID1,
+		Side:          types.SideSell,
+		Price:         num.NewUint(100),
+		OriginalPrice: num.NewUint(100),
+		Size:          10,
+		Remaining:     10,
+		TimeInForce:   types.OrderTimeInForceGTT,
+		Type:          types.OrderTypeLimit,
+		ExpiresAt:     10,
 	}
 	_, err := book.ob.SubmitOrder(&order1)
 	assert.NoError(t, err)
 
 	// now place our order which will consume some of the first order
 	order := types.Order{
-		ID:          "V0000000032-0000000009",
-		Status:      types.OrderStatusActive,
-		MarketID:    market,
-		Party:       partyID2,
-		Side:        types.SideBuy,
-		Price:       num.NewUint(100),
-		Size:        1,
-		Remaining:   1,
-		TimeInForce: types.OrderTimeInForceGTT,
-		Type:        types.OrderTypeLimit,
-		ExpiresAt:   10,
+		ID:            vgcrypto.RandomHash(),
+		Status:        types.OrderStatusActive,
+		MarketID:      market,
+		Party:         partyID2,
+		Side:          types.SideBuy,
+		Price:         num.NewUint(100),
+		OriginalPrice: num.NewUint(100),
+		Size:          1,
+		Remaining:     1,
+		TimeInForce:   types.OrderTimeInForceGTT,
+		Type:          types.OrderTypeLimit,
+		ExpiresAt:     10,
 	}
 	_, err = book.ob.SubmitOrder(&order)
 	assert.NoError(t, err)
@@ -720,34 +749,36 @@ func testGTTFilled(t *testing.T) {
 
 	// place a first order to sit in the book
 	order1 := types.Order{
-		ID:          "V0000000032-0000000009",
-		Status:      types.OrderStatusActive,
-		MarketID:    market,
-		Party:       partyID1,
-		Side:        types.SideSell,
-		Price:       num.NewUint(100),
-		Size:        1,
-		Remaining:   1,
-		TimeInForce: types.OrderTimeInForceGTT,
-		Type:        types.OrderTypeLimit,
-		ExpiresAt:   10,
+		ID:            vgcrypto.RandomHash(),
+		Status:        types.OrderStatusActive,
+		MarketID:      market,
+		Party:         partyID1,
+		Side:          types.SideSell,
+		Price:         num.NewUint(100),
+		OriginalPrice: num.NewUint(100),
+		Size:          1,
+		Remaining:     1,
+		TimeInForce:   types.OrderTimeInForceGTT,
+		Type:          types.OrderTypeLimit,
+		ExpiresAt:     10,
 	}
 	_, err := book.ob.SubmitOrder(&order1)
 	assert.NoError(t, err)
 
 	// now place our GTT order to be filled
 	order := types.Order{
-		ID:          "V0000000032-0000000010",
-		Status:      types.OrderStatusActive,
-		MarketID:    market,
-		Party:       partyID2,
-		Side:        types.SideBuy,
-		Price:       num.NewUint(100),
-		Size:        1,
-		Remaining:   1,
-		TimeInForce: types.OrderTimeInForceGTT,
-		Type:        types.OrderTypeLimit,
-		ExpiresAt:   10,
+		ID:            vgcrypto.RandomHash(),
+		Status:        types.OrderStatusActive,
+		MarketID:      market,
+		Party:         partyID2,
+		Side:          types.SideBuy,
+		Price:         num.NewUint(100),
+		OriginalPrice: num.NewUint(100),
+		Size:          1,
+		Remaining:     1,
+		TimeInForce:   types.OrderTimeInForceGTT,
+		Type:          types.OrderTypeLimit,
+		ExpiresAt:     10,
 	}
 	confirm, err := book.ob.SubmitOrder(&order)
 	assert.NoError(t, err)

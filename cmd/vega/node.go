@@ -4,11 +4,11 @@ import (
 	"context"
 
 	"code.vegaprotocol.io/shared/paths"
-	"github.com/jessevdk/go-flags"
-
 	"code.vegaprotocol.io/vega/cmd/vega/node"
 	"code.vegaprotocol.io/vega/config"
 	"code.vegaprotocol.io/vega/logging"
+
+	"github.com/jessevdk/go-flags"
 )
 
 type NodeCmd struct {
@@ -26,11 +26,6 @@ func (cmd *NodeCmd) Execute(args []string) error {
 	)
 	defer log.AtExit()
 
-	pass, err := cmd.Passphrase.Get("node wallet", false)
-	if err != nil {
-		return err
-	}
-
 	// we define this option to parse the cli args each time the config is
 	// loaded. So that we can respect the cli flag precedence.
 	parseFlagOpt := func(cfg *config.Config) error {
@@ -43,6 +38,16 @@ func (cmd *NodeCmd) Execute(args []string) error {
 	confWatcher, err := config.NewWatcher(context.Background(), log, vegaPaths, config.Use(parseFlagOpt))
 	if err != nil {
 		return err
+	}
+
+	// only try to get the passphrase if the node is started
+	// as a validator
+	var pass string
+	if confWatcher.Get().IsValidator() {
+		pass, err = cmd.Get("node wallet", false)
+		if err != nil {
+			return err
+		}
 	}
 
 	return (&node.NodeCommand{

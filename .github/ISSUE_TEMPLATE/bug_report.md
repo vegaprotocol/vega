@@ -8,7 +8,7 @@ assignees: ''
 ---
 
 # Problem encountered
-A clear and concise description of what the bug is.
+A clear and concise description of what the bug is. Adjust the bug labels to identify assumed severity.
 
 # Observed behaviour
 A clear and concise description of how the system is behaving.
@@ -31,10 +31,6 @@ Steps to reproduce the behaviour manually:
 ## Automation
 Link to automation and explanation on how to run it to reproduce the problem/bug
 
-https://github.com/vegaprotocol/system-tests/tree/master/....
-
-`Add the necessary file(s) needed to reproduce the problem`
-
 # Evidence
 
 ## Logs
@@ -42,3 +38,21 @@ If applicable, add logs and/or screenshots to help explain your problem.
 
 ## Additional context
 Add any other context about the problem here including; system version numbers, components affected.
+
+# Definition of Done
+>ℹ️ Not every issue will need every item checked, however, every item on this list should be properly considered and actioned to meet the [DoD](https://github.com/vegaprotocol/vega/blob/develop/DEFINITION_OF_DONE.md).
+
+**Before Merging**
+- [ ] Code refactored to meet SOLID and other code design principles
+- [ ] Code is compilation error, warning, and hint free
+- [ ] Carry out a basic happy path end-to-end check of the new code
+- [ ] All APIs are documented so auto-generated documentation is created
+- [ ] All bug recreation steps can be followed without presenting the original error/bug
+- [ ] All Unit, Integration and BVT tests are passing
+- [ ] Implementation is peer reviewed (coding standards, meeting acceptance criteria, code/design quality)
+- [ ] Create [front end](https://github.com/vegaprotocol/token-frontend/issues) or [console](https://github.com/vegaprotocol/console/issues) tickets with feature labels (should be done when starting the work if dependencies known i.e. API changes)
+
+**After Merging**
+- [ ] Move development ticket to `Done` if there is **NO** requirement for new [system-tests](https://github.com/vegaprotocol/system-tests/issues)
+- [ ] Resolve any issues with broken system-tests
+- [ ] Create [documentation](https://github.com/vegaprotocol/documentation/issues) tickets with feature labels if functionality has changed, or is a new feature

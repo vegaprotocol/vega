@@ -2,6 +2,7 @@ package delegation
 
 import (
 	"context"
+	"encoding/hex"
 	"errors"
 	"sort"
 	"time"
@@ -141,7 +142,9 @@ func (e *Engine) Hash() []byte {
 	if err != nil {
 		e.log.Panic("could not create checkpoint", logging.Error(err))
 	}
-	return crypto.Hash(buf)
+	h := crypto.Hash(buf)
+	e.log.Debug("delegations state hash", logging.String("hash", hex.EncodeToString(h)))
+	return h
 }
 
 // OnMinAmountChanged updates the network parameter for minDelegationAmount.
@@ -455,7 +458,8 @@ func (e *Engine) ProcessEpochDelegations(ctx context.Context, epoch types.Epoch)
 	e.nextPartyDelegationState = next
 
 	// process auto delegations
-	e.processAutoDelegation(ctx, e.eligiblePartiesForAutoDelegtion(excludeFromAutoDelegation), epoch.Seq)
+	// this is updating the state for the epoch that's about to begin therefore it needs to have incremented sequence
+	e.processAutoDelegation(ctx, e.eligiblePartiesForAutoDelegtion(excludeFromAutoDelegation), epoch.Seq+1)
 
 	for p, state := range e.partyDelegationState {
 		if _, ok := e.autoDelegationMode[p]; !ok {
@@ -479,7 +483,7 @@ func (e *Engine) sendDelegatedBalanceEvent(ctx context.Context, party, nodeID st
 	if amt == nil {
 		e.broker.Send(events.NewDelegationBalance(ctx, party, nodeID, num.Zero(), num.NewUint(seq).String()))
 	} else {
-		e.broker.Send(events.NewDelegationBalance(ctx, party, nodeID, amt, num.NewUint(seq).String()))
+		e.broker.Send(events.NewDelegationBalance(ctx, party, nodeID, amt.Clone(), num.NewUint(seq).String()))
 	}
 }
 
