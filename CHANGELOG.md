@@ -87,7 +87,7 @@
 - [4805](https://github.com/vegaprotocol/vega/issues/4805) - Add command line tool to sign for the asset pool method `set_bridge_address`
 - [4839](https://github.com/vegaprotocol/vega/issues/4839) - Send governance events when restoring proposals on checkpoint reload.
 - [4829](https://github.com/vegaprotocol/vega/issues/4829) - Fix margins calculations for positions with a size of 0 but with a non zero potential sell or buy
-
+- [4826](https://github.com/vegaprotocol/vega/issues/4826) - Tidying up feature tests in verified folder
 
 
 

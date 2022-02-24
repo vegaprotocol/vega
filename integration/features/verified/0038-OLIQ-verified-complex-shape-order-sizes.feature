@@ -1,5 +1,7 @@
 Feature: Verify the order size is correctly cumulated.
 
+# Numbers come from 0038-liquidity-provision-order-type.xlsx
+
   Background:
     And the log normal risk model named "my-log-normal-risk-model":
       | risk aversion | tau                    | mu | r     | sigma |
@@ -8,7 +10,7 @@ Feature: Verify the order size is correctly cumulated.
       | id        | quote name | asset | risk model               | margin calculator         | auction duration | fees         | price monitoring | oracle config          |
       | ETH/DEC19 | ETH        | ETH   | my-log-normal-risk-model | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future |
 
-  Scenario: Order from liquidity provision and from normal order submission are correctly cumulated in order book's total size.
+  Scenario: Order from liquidity provision and from normal order submission are correctly cumulated in order book's total size (0038-OLIQ-001)
 
     Given the parties deposit on asset's general account the following amount:
       | party      | asset | amount       |
@@ -30,8 +32,9 @@ Feature: Verify the order size is correctly cumulated.
     When the parties place the following orders:
       | party      | market id | side | volume | price    | resulting trades | type       | tif     | reference |
       | party-lp-1 | ETH/DEC19 | sell | 50     | 12000013 | 0                | TYPE_LIMIT | TIF_GTC | party2-1 |
+
     And the parties submit the following liquidity provision:
-      | id  | party       | market id | commitment amount | fee | side | pegged reference | proportion | offset | reference | lp type |
+      | id  | party      | market id | commitment amount | fee | side | pegged reference | proportion | offset | reference | lp type |
       | lp1 | party-lp-1 | ETH/DEC19 | 1000000000        | 0.1 | buy  | MID              | 1          | 10     | lp-1-ref  | submission |
       | lp1 | party-lp-1 | ETH/DEC19 | 1000000000        | 0.1 | buy  | MID              | 1          | 9      | lp-1-ref  | amendment |
       | lp1 | party-lp-1 | ETH/DEC19 | 1000000000        | 0.1 | buy  | MID              | 1          | 8      | lp-1-ref  | amendment |
@@ -50,7 +53,7 @@ Feature: Verify the order size is correctly cumulated.
       | lp1 | party-lp-1 | ETH/DEC19 | 1000000000        | 0.1 | sell | MID              | 1          | 10     | lp-1-ref  | amendment |
 
     Then the liquidity provisions should have the following states:
-      | id  | party       | market    | commitment amount | status        |
+      | id  | party      | market    | commitment amount | status        |
       | lp1 | party-lp-1 | ETH/DEC19 | 1000000000        | STATUS_ACTIVE |
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
