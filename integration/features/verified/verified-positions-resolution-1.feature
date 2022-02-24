@@ -9,8 +9,7 @@ Feature: Position resolution case 1
       | name                           | value |
       | market.auction.minimumDuration | 1     |
 
-  Scenario: https://docs.google.com/spreadsheets/d/1D433fpt7FUCk04dZ9FHDVy-4hA6Bw_a2/edit#gid=956988479
-  # Case 1 from Reference spreadsheet: https://drive.google.com/open?id=1aenM_1mqruGDmU9coBxF49_zbHTlEWrj
+  Scenario: close out when there is not enough orders on the orderbook to cover the position 
   # setup accounts
     Given the parties deposit on asset's general account the following amount:
       | party            | asset | amount        |
@@ -42,6 +41,16 @@ Feature: Position resolution case 1
       | party            | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | designatedLooser | ETH/DEC19 | buy  | 290    | 150   | 1                | TYPE_LIMIT | TIF_GTC | ref-1     |
 
+    # margin level: vol* slippage = vol * (MarkPrice-ExitPrice) =290 * (150-(1*10+140*1)/11) = 290*137 = 39700
+
+    Then the parties should have the following account balances:
+      | party            | asset | market id | margin    | general  |
+      | designatedLooser | BTC   | ETH/DEC19 | 11600     | 0        |
+
+    And the parties should have the following margin levels:
+      | party            | market id | maintenance | search    | initial   | release |
+      | designatedLooser | ETH/DEC19 | 39730       | 127136    | 158920    | 198650  |
+
 # insurance pool generation - modify order book
     Then the parties cancel the following orders:
       | party           | reference      |
@@ -56,6 +65,15 @@ Feature: Position resolution case 1
       | sellSideProvider | ETH/DEC19 | sell | 1      | 120   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | buySideProvider  | ETH/DEC19 | buy  | 1      | 120   | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
+# margin level: vol* slippage = vol * (MarkPrice-ExitPrice) =290 * (120-(1*10+40*1)/11) = 290*116 = 33640
+
+    Then the parties should have the following account balances:
+      | party            | asset | market id | margin    | general  |
+      | designatedLooser | BTC   | ETH/DEC19 | 2900      | 0        |
+
+    And the parties should have the following margin levels:
+      | party            | market id | maintenance | search    | initial   | release |
+      | designatedLooser | ETH/DEC19 | 33640       | 107648    | 134560    | 168200  |
 # check positions
     Then the parties should have the following profit and loss:
       | party            | volume | unrealised pnl | realised pnl |
@@ -69,13 +87,3 @@ Feature: Position resolution case 1
 # then we make sure the insurance pool collected the funds
     And the insurance pool balance should be "0" for the market "ETH/DEC19"
 
-# now we check what's left in the order book
-# we expect 1 order at price of 40 to be left there on the buy side
-# we sell a first time 1 to consume the book
-# then try to sell 1 again with low price -> result in no trades -> buy side empty
-# We expect no orders on the sell side: try to buy 1 for high price -> no trades -> sell side empty
-    When the parties place the following orders:
-      | party            | market id | side | volume | price | resulting trades | type       | tif     | reference |
-      | sellSideProvider | ETH/DEC19 | sell | 1      | 40    | 1                | TYPE_LIMIT | TIF_FOK | ref-1     |
-      | sellSideProvider | ETH/DEC19 | sell | 1      | 2     | 0                | TYPE_LIMIT | TIF_FOK | ref-2     |
-      | buySideProvider  | ETH/DEC19 | buy  | 1      | 1000  | 0                | TYPE_LIMIT | TIF_FOK | ref-3     |
