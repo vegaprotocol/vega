@@ -1,4 +1,4 @@
-package staking_test
+package eth_test
 
 import (
 	"math/big"

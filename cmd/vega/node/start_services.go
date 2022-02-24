@@ -122,7 +122,7 @@ func (n *NodeCommand) startServices(_ []string) (err error) {
 	}
 
 	n.stakingAccounts, n.stakeVerifier = staking.New(
-		n.Log, n.conf.Staking, n.broker, n.timeService, n.witness, n.ethClient, n.netParams, n.eventForwarder, n.conf.HaveEthClient(),
+		n.Log, n.conf.Staking, n.broker, n.timeService, n.witness, n.ethClient, n.netParams, n.eventForwarder, n.conf.HaveEthClient(), n.ethConfirmations,
 	)
 	n.epochService = epochtime.NewService(n.Log, n.conf.Epoch, n.timeService, n.broker)
 	n.epochService.NotifyOnEpoch(n.topology.OnEpochEvent)
@@ -508,7 +508,18 @@ func (n *NodeCommand) setupNetParameters() error {
 			Param:   netparams.TransferMinTransferQuantumMultiple,
 			Watcher: n.banking.OnMinTransferQuantumMultiple,
 		},
-	)
+		netparams.WatchParam{
+			Param: netparams.BlockchainsEthereumConfig,
+			Watcher: func(_ context.Context, cfg interface{}) error {
+				ethCfg, err := types.EthereumConfigFromUntypedProto(cfg)
+				if err != nil {
+					return fmt.Errorf("invalid ethereum configuration: %w", err)
+				}
+
+				n.ethConfirmations.UpdateConfirmations(ethCfg.Confirmations())
+				return nil
+			},
+		})
 }
 
 func (n *NodeCommand) setupConfigWatchers() {

@@ -110,9 +110,10 @@ type NodeCommand struct {
 	depositPlugin    *plugins.Deposit
 
 	// staking
-	ethClient       *ethclient.Client
-	stakingAccounts *staking.Accounting
-	stakeVerifier   *staking.StakeVerifier
+	ethClient        *ethclient.Client
+	ethConfirmations *ethclient.EthereumConfirmations
+	stakingAccounts  *staking.Accounting
+	stakeVerifier    *staking.StakeVerifier
 
 	commander *nodewallets.Commander
 

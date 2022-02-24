@@ -1,12 +1,17 @@
-package staking
+package eth
 
 import (
 	"context"
+	"errors"
 	"math/big"
 	"sync"
 	"time"
 
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
+)
+
+var (
+	ErrMissingConfirmations = errors.New("not enough confirmations")
 )
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/ethereum_client_confirmations_mock.go -package mocks code.vegaprotocol.io/vega/staking EthereumClientConfirmations
