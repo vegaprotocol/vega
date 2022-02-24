@@ -61,10 +61,11 @@ type Engine struct {
 	tickSize            *num.Uint
 	getBestStaticPrices func() (*num.Uint, *num.Uint, error)
 	log                 *logging.Logger
+	positionFactor      num.Decimal
 }
 
 // NewEngine returns a reference to a new supplied liquidity calculation engine.
-func NewEngine(riskModel RiskModel, priceMonitor PriceMonitor, asset, marketID string, stateVarEngine StateVarEngine, tickSize *num.Uint, log *logging.Logger) *Engine {
+func NewEngine(riskModel RiskModel, priceMonitor PriceMonitor, asset, marketID string, stateVarEngine StateVarEngine, tickSize *num.Uint, log *logging.Logger, positionFactor num.Decimal) *Engine {
 	e := &Engine{
 		rm:                             riskModel,
 		pm:                             priceMonitor,
@@ -77,6 +78,7 @@ func NewEngine(riskModel RiskModel, priceMonitor PriceMonitor, asset, marketID s
 		potInitialised:                 false,
 		tickSize:                       tickSize,
 		log:                            log,
+		positionFactor:                 positionFactor,
 	}
 
 	stateVarEngine.RegisterStateVariable(asset, marketID, "probability_of_trading", probabilityOfTradingConverter{}, e.startCalcProbOfTrading, []statevar.StateVarEventType{statevar.StateVarEventTypeTimeTrigger, statevar.StateVarEventTypeAuctionEnded, statevar.StateVarEventTypeOpeningAuctionFirstUncrossingPrice}, e.updateProbabilities)
@@ -168,8 +170,10 @@ func (e *Engine) calculateBuySellLiquidityWithMinMax(
 			sLiq = sLiq.Add(d)
 		}
 	}
-	bl, _ := num.UintFromDecimal(bLiq)
-	sl, _ := num.UintFromDecimal(sLiq)
+
+	// descale provided liquidity by 10^pdp
+	bl, _ := num.UintFromDecimal(bLiq.Div(e.positionFactor))
+	sl, _ := num.UintFromDecimal(sLiq.Div(e.positionFactor))
 	return bl, sl
 }
 
@@ -225,7 +229,8 @@ func (e *Engine) updateSizes(
 		// uint64(math.Ceil(liquidityObligation * scaling / float64(o.Price.Uint64())))
 		d := num.DecimalFromUint(liquidityObligation)
 		d = d.Mul(scaling)
-		liv, _ := num.UintFromDecimal(d.Div(num.DecimalFromUint(o.Price)).Ceil())
+		// scale the volume by 10^pdp
+		liv, _ := num.UintFromDecimal(d.Div(num.DecimalFromUint(o.Price)).Ceil().Mul(e.positionFactor))
 		o.LiquidityImpliedVolume = liv.Uint64()
 	}
 	return nil

@@ -36,7 +36,7 @@ func TestPositionSpecSuite(t *testing.T) {
 					size:  25,
 					price: num.NewUint(100),
 				},
-			}, 1),
+			}, 1, num.DecimalFromFloat(1)),
 			expect: expect{
 				AverageEntryPrice: num.NewUint(60),
 				OpenVolume:        125,
@@ -55,7 +55,7 @@ func TestPositionSpecSuite(t *testing.T) {
 					size:  -25,
 					price: num.NewUint(100),
 				},
-			}, 1),
+			}, 1, num.DecimalFromFloat(1)),
 			expect: expect{
 				AverageEntryPrice: num.NewUint(50),
 				OpenVolume:        75,
@@ -74,7 +74,7 @@ func TestPositionSpecSuite(t *testing.T) {
 					size:  -100,
 					price: num.NewUint(100),
 				},
-			}, 1),
+			}, 1, num.DecimalFromFloat(1)),
 			expect: expect{
 				OpenVolume:        0,
 				AverageEntryPrice: num.Zero(),
@@ -93,7 +93,7 @@ func TestPositionSpecSuite(t *testing.T) {
 					size:  -125,
 					price: num.NewUint(100),
 				},
-			}, 1),
+			}, 1, num.DecimalFromFloat(1)),
 			expect: expect{
 				OpenVolume:        -25,
 				AverageEntryPrice: num.NewUint(100),
@@ -112,7 +112,7 @@ func TestPositionSpecSuite(t *testing.T) {
 					size:  -25,
 					price: num.NewUint(100),
 				},
-			}, 1),
+			}, 1, num.DecimalFromFloat(1)),
 			expect: expect{
 				OpenVolume:        -125,
 				AverageEntryPrice: num.NewUint(60),
@@ -131,7 +131,7 @@ func TestPositionSpecSuite(t *testing.T) {
 					size:  25,
 					price: num.NewUint(100),
 				},
-			}, 1),
+			}, 1, num.DecimalFromFloat(1)),
 			expect: expect{
 				OpenVolume:        -75,
 				AverageEntryPrice: num.NewUint(50),
@@ -150,7 +150,7 @@ func TestPositionSpecSuite(t *testing.T) {
 					size:  100,
 					price: num.NewUint(100),
 				},
-			}, 1),
+			}, 1, num.DecimalFromFloat(1)),
 			expect: expect{
 				OpenVolume:        0,
 				AverageEntryPrice: num.Zero(),
@@ -169,7 +169,7 @@ func TestPositionSpecSuite(t *testing.T) {
 					size:  125,
 					price: num.NewUint(100),
 				},
-			}, 1),
+			}, 1, num.DecimalFromFloat(1)),
 			expect: expect{
 				OpenVolume:        25,
 				AverageEntryPrice: num.NewUint(100),
@@ -196,7 +196,7 @@ func TestPositionSpecSuite(t *testing.T) {
 					size:  -100,
 					price: num.NewUint(75),
 				},
-			}, 1),
+			}, 1, num.DecimalFromFloat(1)),
 			expect: expect{
 				OpenVolume:        25,
 				AverageEntryPrice: num.NewUint(80),
@@ -219,7 +219,7 @@ func TestPositionSpecSuite(t *testing.T) {
 					size:  50,
 					price: num.NewUint(25),
 				},
-			}, 1),
+			}, 1, num.DecimalFromFloat(1)),
 			expect: expect{
 				OpenVolume:        0,
 				AverageEntryPrice: num.Zero(),
@@ -242,7 +242,7 @@ func TestPositionSpecSuite(t *testing.T) {
 					size:  -50,
 					price: num.NewUint(50),
 				},
-			}, 1),
+			}, 1, num.DecimalFromFloat(1)),
 			expect: expect{
 				OpenVolume:        0,
 				AverageEntryPrice: num.Zero(),
@@ -265,7 +265,7 @@ func TestPositionSpecSuite(t *testing.T) {
 					size:  50,
 					price: num.NewUint(250),
 				},
-			}, 1),
+			}, 1, num.DecimalFromFloat(1)),
 			expect: expect{
 				OpenVolume:        0,
 				AverageEntryPrice: num.Zero(),
@@ -288,7 +288,7 @@ func TestPositionSpecSuite(t *testing.T) {
 					size:  -50,
 					price: num.NewUint(25),
 				},
-			}, 1),
+			}, 1, num.DecimalFromFloat(1)),
 			expect: expect{
 				OpenVolume:        0,
 				AverageEntryPrice: num.Zero(),
@@ -343,7 +343,7 @@ func TestPositionSpecSuite(t *testing.T) {
 					size:  6,
 					price: num.NewUint(1010),
 				},
-			}, 1),
+			}, 1, num.DecimalFromFloat(1)),
 			expect: expect{
 				OpenVolume:        2,
 				AverageEntryPrice: num.NewUint(1010),
@@ -410,7 +410,7 @@ func TestPositionSpecSuite(t *testing.T) {
 					size:  -2,
 					price: num.NewUint(1926),
 				},
-			}, 1),
+			}, 1, num.DecimalFromFloat(1)),
 			expect: expect{
 				OpenVolume:        0,
 				AverageEntryPrice: num.Zero(),

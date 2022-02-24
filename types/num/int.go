@@ -21,6 +21,13 @@ func IntFromUint(u *Uint, s bool) *Int {
 	}
 }
 
+func IntToString(u *Int) string {
+	if u != nil {
+		return u.String()
+	}
+	return "0"
+}
+
 // IntFromString creates a new Int from a string
 // interpreted using the give base.
 // A big.Int is used to read the string, so

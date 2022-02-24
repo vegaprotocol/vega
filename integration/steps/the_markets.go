@@ -126,11 +126,12 @@ func newMarket(config *market.Config, row marketRow) types.Market {
 	}
 
 	m := types.Market{
-		TradingMode:   types.MarketTradingModeContinuous,
-		State:         types.MarketStateActive,
-		ID:            row.id(),
-		DecimalPlaces: row.decimalPlaces(),
-		Fees:          types.FeesFromProto(fees),
+		TradingMode:           types.MarketTradingModeContinuous,
+		State:                 types.MarketStateActive,
+		ID:                    row.id(),
+		DecimalPlaces:         row.decimalPlaces(),
+		PositionDecimalPlaces: row.positionDecimalPlaces(),
+		Fees:                  types.FeesFromProto(fees),
 		TradableInstrument: &types.TradableInstrument{
 			Instrument: &types.Instrument{
 				ID:   fmt.Sprintf("Crypto/%s/Futures", row.id()),
@@ -201,6 +202,7 @@ func parseMarketsTable(table *godog.Table) []RowWrapper {
 	}, []string{
 		"maturity date",
 		"decimal places",
+		"position decimal places",
 	})
 }
 
@@ -217,6 +219,13 @@ func (r marketRow) decimalPlaces() uint64 {
 		return 0
 	}
 	return r.row.MustU64("decimal places")
+}
+
+func (r marketRow) positionDecimalPlaces() uint64 {
+	if !r.row.HasColumn("position decimal places") {
+		return 0
+	}
+	return r.row.MustU64("position decimal places")
 }
 
 func (r marketRow) quoteName() string {

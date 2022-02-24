@@ -40,7 +40,7 @@ func TestMultipleTradesOfSameSize(t *testing.T) {
 			size:  -1,
 			price: num.NewUint(1000),
 		},
-	}, 1)
+	}, 1, num.DecimalFromFloat(1))
 	position.Push(ps)
 	pp, err := position.GetPositionsByMarket(market)
 	assert.NoError(t, err)
@@ -62,7 +62,7 @@ func TestMultipleTradesAndLossSocializationPartyNoOpenVolume(t *testing.T) {
 			size:  -2,
 			price: num.NewUint(1500),
 		},
-	}, 1)
+	}, 1, num.DecimalFromFloat(1))
 	position.Push(ps)
 	pp, err := position.GetPositionsByMarket(market)
 	assert.NoError(t, err)
@@ -95,7 +95,7 @@ func TestDistressedPartyUpdate(t *testing.T) {
 			size:  3,
 			price: num.NewUint(1200),
 		},
-	}, 1)
+	}, 1, num.DecimalFromFloat(1))
 	position.Push(ps)
 	pp, err := position.GetPositionsByMarket(market)
 	assert.NoError(t, err)
@@ -137,7 +137,7 @@ func TestMultipleTradesAndLossSocializationPartyWithOpenVolume(t *testing.T) {
 			size:  3,
 			price: num.NewUint(1200),
 		},
-	}, 1)
+	}, 1, num.DecimalFromFloat(1))
 	position.Push(ps)
 	pp, err := position.GetPositionsByMarket(market)
 	assert.NoError(t, err)
