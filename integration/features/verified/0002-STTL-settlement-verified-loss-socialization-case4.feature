@@ -8,11 +8,14 @@ Feature: Test loss socialization case 4
       | name                           | value |
       | market.auction.minimumDuration | 1     |
 
-  Scenario: case 4 from https://docs.google.com/spreadsheets/d/1CIPH0aQmIKj6YeFW9ApP_l-jwB4OcsNQ/edit#gid=1555964910
+
+Scenario: Case 4: multiple traders have insufficient MTM & multiple traders socialise the losses (insurance pool partially covers the losses) (0002-STTL-009)
+  Description: Case 4 from https://docs.google.com/spreadsheets/d/1CIPH0aQmIKj6YeFW9ApP_l-jwB4OcsNQ/edit#gid=1555964910
+
 # setup accounts
     Given the initial insurance pool balance is "2900" for the markets:
     Given the parties deposit on asset's general account the following amount:
-      | party           | asset | amount    |
+      | party            | asset | amount    |
       | sellSideProvider | BTC   | 100000000 |
       | buySideProvider  | BTC   | 100000000 |
       | party1           | BTC   | 2000      |
@@ -27,16 +30,16 @@ Feature: Test loss socialization case 4
     # Trigger an auction to set the mark price
     When the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
-      | aux1    | ETH/DEC19 | buy  | 1      | 10    | 0                | TYPE_LIMIT | TIF_GTC | party5-1 |
-      | aux2    | ETH/DEC19 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC | party6-1 |
-      | party5 | ETH/DEC19 | buy  | 1      | 100   | 0                | TYPE_LIMIT | TIF_GFA | party5-2 |
-      | party6 | ETH/DEC19 | sell | 1      | 100   | 0                | TYPE_LIMIT | TIF_GFA | party6-2 |
+      | aux1   | ETH/DEC19 | buy  | 1      | 10    | 0                | TYPE_LIMIT | TIF_GTC | party5-1  |
+      | aux2   | ETH/DEC19 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC | party6-1  |
+      | party5 | ETH/DEC19 | buy  | 1      | 100   | 0                | TYPE_LIMIT | TIF_GFA | party5-2  |
+      | party6 | ETH/DEC19 | sell | 1      | 100   | 0                | TYPE_LIMIT | TIF_GFA | party6-2  |
     Then the opening auction period ends for market "ETH/DEC19"
     And the mark price should be "100" for the market "ETH/DEC19"
 
 # setup orderbook
     When the parties place the following orders:
-      | party           | market id | side | volume | price | resulting trades | type       | tif     | reference       |
+      | party            | market id | side | volume | price | resulting trades | type       | tif     | reference       |
       | sellSideProvider | ETH/DEC19 | sell | 1000   | 120   | 0                | TYPE_LIMIT | TIF_GTC | sell-provider-1 |
       | buySideProvider  | ETH/DEC19 | buy  | 1000   | 80    | 0                | TYPE_LIMIT | TIF_GTC | buy-provider-1  |
 # trade 1 occur
@@ -57,11 +60,11 @@ Feature: Test loss socialization case 4
 
 # order book volume change
     Then the parties cancel the following orders:
-      | party           | reference       |
+      | party            | reference       |
       | sellSideProvider | sell-provider-1 |
       | buySideProvider  | buy-provider-1  |
     When the parties place the following orders:
-      | party           | market id | side | volume | price | resulting trades | type       | tif     | reference       |
+      | party            | market id | side | volume | price | resulting trades | type       | tif     | reference       |
       | sellSideProvider | ETH/DEC19 | sell | 1000   | 300   | 0                | TYPE_LIMIT | TIF_GTC | sell-provider-2 |
       | buySideProvider  | ETH/DEC19 | buy  | 1000   | 80    | 0                | TYPE_LIMIT | TIF_GTC | buy-provider-2  |
     Then the parties cancel the following orders:

@@ -5,6 +5,7 @@ import (
 	"errors"
 
 	"code.vegaprotocol.io/vega/events"
+	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
 )
@@ -61,6 +62,39 @@ func (m *Market) transferMarginsAuction(ctx context.Context, risk []events.Risk,
 		evts = append(evts, events.NewOrderEvent(ctx, o))
 		// remove order from positions
 		_ = m.position.UnregisterOrder(o)
+	}
+	m.broker.SendBatch(evts)
+	return nil
+}
+
+func (m *Market) transferRecheckMargins(ctx context.Context, risk []events.Risk) error {
+	if len(risk) == 0 {
+		return nil
+	}
+	mID := m.GetID()
+	evts := make([]events.Event, 0, len(risk))
+	for _, r := range risk {
+		responses := make([]*types.TransferResponse, 0, 1)
+		tr, closed, err := m.collateral.MarginUpdateOnOrder(ctx, mID, r)
+		if err != nil {
+			return err
+		}
+		if tr != nil {
+			responses = append(responses, tr)
+		}
+		if closed != nil && !closed.MarginShortFall().IsZero() {
+			if !m.liquidity.IsPending(closed.Party()) {
+				resp, err := m.bondSlashing(ctx, closed)
+				if err != nil {
+					m.log.Panic("Bond slashing for non-distressed LP failed",
+						logging.String("party", closed.Party()),
+						logging.Error(err),
+					)
+				}
+				responses = append(responses, resp...)
+			}
+		}
+		evts = append(evts, events.NewTransferResponse(ctx, responses))
 	}
 	m.broker.SendBatch(evts)
 	return nil

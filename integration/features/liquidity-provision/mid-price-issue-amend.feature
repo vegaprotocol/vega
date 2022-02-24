@@ -121,3 +121,58 @@ Feature: Replicate unexpected margin issues - no mid price pegs
       | buy  | 810000000  | 1      |
     And the mark price should be "3500000000" for the market "DAI/DEC22"
 
+
+
+  @MidPrice @LPAmend
+  Scenario: Changing orders copying the script
+    Given the parties deposit on asset's general account the following amount:
+      | party           | asset | amount       |
+      | party1          | DAI   | 110000000000 |
+      | party2          | DAI   | 110000000000 |
+
+    And the parties submit the following liquidity provision:
+      | id  | party  | market id | commitment amount | fee  | side | pegged reference | proportion | offset   | reference | lp type    |
+      | lp1 | party1 | DAI/DEC22 | 10000000000       | 0.01 | buy  | MID              | 1          | 10000000 | lp-1      | submission |
+      | lp1 | party1 | DAI/DEC22 | 10000000000       | 0.01 | sell | MID              | 1          | 10000000 | lp-1      | submission |
+
+    When the parties place the following orders:
+      | party  | market id | side | volume | price      | resulting trades | type       | tif     | reference |
+      | party2 | DAI/DEC22 | buy  | 1      | 800000000  | 0                | TYPE_LIMIT | TIF_GTC | party2-1  |
+      | party2 | DAI/DEC22 | buy  | 1      | 3500000000 | 0                | TYPE_LIMIT | TIF_GTC | party2-2  |
+      | party1 | DAI/DEC22 | sell | 1      | 3500000000 | 0                | TYPE_LIMIT | TIF_GTC | party3-1  |
+      | party1 | DAI/DEC22 | sell | 1      | 8200000000 | 0                | TYPE_LIMIT | TIF_GTC | party3-2  |
+
+    And the opening auction period ends for market "DAI/DEC22"
+    Then the following trades should be executed:
+      | buyer  | price      | size | seller |
+      | party2 | 3500000000 | 1    | party1 |
+    And the mark price should be "3500000000" for the market "DAI/DEC22"
+    And the order book should have the following volumes for market "DAI/DEC22":
+      | side | price      | volume |
+      | sell | 4510000000 | 5      |
+      | sell | 8200000000 | 1      |
+      | buy  | 4490000000 | 5      |
+      | buy  | 800000000  | 1      |
+
+    When the parties amend the following orders:
+      | party  | reference | price     | size delta | tif     |
+      | party2 | party2-1  | 810000000 | 0          | TIF_GTC |
+    Then the order book should have the following volumes for market "DAI/DEC22":
+      | side | price      | volume |
+      | sell | 4515000000 | 5      |
+      | sell | 8200000000 | 1      |
+      | buy  | 4495000000 | 5      |
+      | buy  | 810000000  | 1      |
+    And the mark price should be "3500000000" for the market "DAI/DEC22"
+
+    When the parties amend the following orders:
+      | party  | reference | price      | size delta | tif     |
+      | party1 | party3-2  | 8190000000 | 0          | TIF_GTC |
+    Then the order book should have the following volumes for market "DAI/DEC22":
+      | side | price      | volume |
+      | sell | 4510000000 | 5      |
+      | sell | 8190000000 | 1      |
+      | buy  | 4490000000 | 5      |
+      | buy  | 810000000  | 1      |
+    And the mark price should be "3500000000" for the market "DAI/DEC22"
+

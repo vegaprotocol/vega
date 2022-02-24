@@ -1,6 +1,6 @@
 ---
 
-name: Auto Assign Issue to New Project
+name: Add Issues To Project Board
 
 "on":
   issues:
@@ -10,7 +10,7 @@ jobs:
   add_issue:
     runs-on: ubuntu-latest
     steps:
-      - name: Add Issue to New Core Project Board
+      - name: Add issue project board
         env:
           GITHUB_TOKEN: ${{ secrets.GH_NEW_CARD_TO_PROJECT }}
           PROJECT_ID: ${{ secrets.CORE_PROJECT_ID }}

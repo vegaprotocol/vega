@@ -48,10 +48,12 @@ require (
 	google.golang.org/protobuf v1.27.1
 )
 
-require github.com/grpc-ecosystem/grpc-gateway/v2 v2.7.3
+require (
+	code.vegaprotocol.io/vegawallet v0.12.1-0.20220217130931-e2d76ed75667
+	github.com/grpc-ecosystem/grpc-gateway/v2 v2.7.3
+)
 
 require (
-	code.vegaprotocol.io/vegawallet v0.12.1-0.20220217130931-e2d76ed75667 // indirect
 	github.com/BurntSushi/toml v1.0.0 // indirect
 	github.com/ChainSafe/go-schnorrkel v0.0.0-20200405005733-88cbf1b4c40d // indirect
 	github.com/DataDog/zstd v1.4.1 // indirect

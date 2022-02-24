@@ -98,7 +98,7 @@ func NewMarketFromSnapshot(
 
 	tsCalc := target.NewSnapshotEngine(*mkt.LiquidityMonitoringParameters.TargetStakeParameters, positionEngine, mkt.ID)
 
-	pMonitor, err := price.NewMonitorFromSnapshot(em.PriceMonitor, mkt.PriceMonitoringSettings, tradableInstrument.RiskModel)
+	pMonitor, err := price.NewMonitorFromSnapshot(mkt.ID, asset, em.PriceMonitor, mkt.PriceMonitoringSettings, tradableInstrument.RiskModel, stateVarEngine, log)
 	if err != nil {
 		return nil, fmt.Errorf("unable to instantiate price monitoring engine: %w", err)
 	}
@@ -129,7 +129,7 @@ func NewMarketFromSnapshot(
 		parties:                    map[string]struct{}{}, // parties will be restored on chain time update
 		lMonitor:                   lMonitor,
 		tsCalc:                     tsCalc,
-		feeSplitter:                NewFeeSplitter(),
+		feeSplitter:                NewFeeSplitterFromSnapshot(em.FeeSplitter, now),
 		as:                         as,
 		pMonitor:                   pMonitor,
 		peggedOrders:               NewPeggedOrdersFromSnapshot(em.PeggedOrders),
@@ -161,7 +161,8 @@ func (m *Market) changed() bool {
 		m.as.Changed() ||
 		m.peggedOrders.Changed() ||
 		m.expiringOrders.Changed() ||
-		m.equityShares.Changed())
+		m.equityShares.Changed() ||
+		m.feeSplitter.Changed())
 }
 
 func (m *Market) getState() *types.ExecMarket {
@@ -183,6 +184,7 @@ func (m *Market) getState() *types.ExecMarket {
 		RiskFactorConsensusReached: m.risk.IsRiskFactorInitialised(),
 		ShortRiskFactor:            rf.Short,
 		LongRiskFactor:             rf.Long,
+		FeeSplitter:                m.feeSplitter.GetState(),
 	}
 
 	m.stateChanged = false
