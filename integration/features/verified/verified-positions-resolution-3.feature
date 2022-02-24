@@ -9,8 +9,7 @@ Feature: Position resolution case 3
       | name                           | value |
       | market.auction.minimumDuration | 1     |
 
-  Scenario: https://docs.google.com/spreadsheets/d/1D433fpt7FUCk04dZ9FHDVy-4hA6Bw_a2
-  # Case 3 from Reference spreadsheet: https://drive.google.com/open?id=1aenM_1mqruGDmU9coBxF49_zbHTlEWrj
+  Scenario: close out when there is enough orders on the orderbook to cover the position 
 # setup accounts
     Given the parties deposit on asset's general account the following amount:
       | party            | asset | amount        |
@@ -36,6 +35,12 @@ Feature: Position resolution case 3
     When the parties place the following orders:
       | party            | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | designatedLooser | ETH/DEC19 | buy  | 290    | 150   | 1                | TYPE_LIMIT | TIF_GTC | ref-1     |
+
+# margin level: vol* slippage = vol * (MarkPrice-ExitPrice) =290 * (150-(140*1+140*1)/2) = 290*10 = 2900
+
+    Then the parties should have the following account balances:
+      | party            | asset | market id | margin    | general  |
+      | designatedLooser | BTC   | ETH/DEC19 | 11600     | 400      |
 
     Then the parties should have the following margin levels:
       | party            | market id | maintenance | search | initial | release |
@@ -74,19 +79,3 @@ Feature: Position resolution case 3
     And the insurance pool balance should be "0" for the market "ETH/DEC19"
 
 
-     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
-    Then the parties place the following orders:
-      | party | market id | side | volume | price | resulting trades | type       | tif     |
-      | aux   | ETH/DEC19 | buy  | 1      | 1     | 0                | TYPE_LIMIT | TIF_GTC |
-      | aux   | ETH/DEC19 | sell | 1      | 1001  | 0                | TYPE_LIMIT | TIF_GTC |
-
-# now we check what's left in the orderbook
-# we expect 10 orders at price of 40 to be left there on the buy side
-# we sell a first time 10 to consume the book
-# then try to sell 1 again with low price -> result in no trades -> buy side empty
-# We expect no orders on the sell side: try to buy 1 for high price -> no trades -> sell side empty
-    When the parties place the following orders:
-      | party            | market id | side | volume | price | resulting trades | type       | tif     | reference |
-      | sellSideProvider | ETH/DEC19 | sell | 10     | 40    | 2                | TYPE_LIMIT | TIF_FOK | ref-1     |
-      | sellSideProvider | ETH/DEC19 | sell | 1      | 2     | 1                | TYPE_LIMIT | TIF_FOK | ref-2     |
-      | buySideProvider  | ETH/DEC19 | buy  | 1      | 1000  | 1                | TYPE_LIMIT | TIF_FOK | ref-3     |
