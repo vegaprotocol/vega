@@ -22,6 +22,7 @@
 ### 🗑️ Deprecation
 
 ### 🛠 Improvements
+- [4850](https://github.com/vegaprotocol/vega/issues/4850) - Removed use of Float64 from margin calculator
 - [4793](https://github.com/vegaprotocol/vega/issues/4793) - Add specific insurance pool balance test
 - [4718](https://github.com/vegaprotocol/vega/issues/4718) - Tidied up position tracing feature test, and added corresponding calculation for each margin level calculation;
 - [4633](https://github.com/vegaprotocol/vega/pull/4633) - Add possibility to list snapshots from the vega command line
