@@ -13,10 +13,12 @@ jobs:
     name: Verify Conventional Commits
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Check out
         uses: actions/checkout@v2
-      - name: Check conventional commits
-        uses: webiny/action-conventional-commits@v1.0.3
+        with:
+          fetch-depth: 0
+      - name: Commitsar conventional commits check
+        uses: aevea/commitsar@v0.18.0
 
   verify-linked-issue:
     if: |
