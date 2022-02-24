@@ -104,13 +104,3 @@ Feature: Position resolution case 2
 # then we make sure the insurance pool collected the funds
     And the insurance pool balance should be "0" for the market "ETH/DEC19"
 
-# now we check what's left in the orderbook
-# we expect 1 order at price of 40 to be left there on the buy side
-# we sell a first time 1 to consume the book
-# then try to sell 1 again with low price -> result in no trades -> buy side empty
-# We expect no orders on the sell side: try to buy 1 for high price -> no trades -> sell side empty
-    When the parties place the following orders:
-      | party           | market id | side | volume | price | resulting trades | type       | tif     | reference |
-      | sellSideProvider | ETH/DEC19 | sell | 1      | 40    | 1                | TYPE_LIMIT | TIF_FOK | ref-1     |
-      | sellSideProvider | ETH/DEC19 | sell | 1      | 2     | 0                | TYPE_LIMIT | TIF_FOK | ref-2     |
-      | buySideProvider  | ETH/DEC19 | buy  | 1      | 150   | 0                | TYPE_LIMIT | TIF_FOK | ref-3     |
