@@ -23,12 +23,14 @@ Feature: Position resolution case 5 lognormal risk model
       | name                           | value |
       | market.auction.minimumDuration | 1     |
 
+    Scenario: using lognormal risk model, set "designatedLooser" closeout while the position of "designatedLooser" is not fully covered by orders on the order book
+
 # setup accounts
      Given the parties deposit on asset's general account the following amount:
       | party           | asset | amount        |
       | sellSideProvider | USD   | 1000000000000 |
       | buySideProvider  | USD   | 1000000000000 |
-      | designatedLooser | USD   | 11600         |
+      | designatedLooser | USD   | 21600         |
       | aux              | USD   | 1000000000000 |
       | aux2             | USD   | 1000000000000 |
 
@@ -56,20 +58,20 @@ Feature: Position resolution case 5 lognormal risk model
 
     Then the parties should have the following account balances:
       | party            | asset | market id | margin  | general |
-      | designatedLooser | USD   | ETH/DEC19 | 11600   | 0       |
+      | designatedLooser | USD   | ETH/DEC19 | 21600   | 0       |
 
     Then the order book should have the following volumes for market "ETH/DEC19":   
       | side | price  | volume |
       | buy  | 1      | 10     |
       | buy  | 140    | 1      |
 
-  #designatedLooser has position of vol 290; price 150; RiskFactor is 0; 
+  #designatedLooser has position of vol 290; price 150; calculated risk factor long: 0.336895684; risk factor short: 0.4878731
   #what's on the order book to cover the position is shown above, which makes the exit price 13 =(1*10+140*1)/11, slippage per unit is 150-13=137
-  #margin level is PositionVol*SlippagePerUnit = 290*137=39730
+  #margin level is PositionVol*(markPrice*RiskFactor+SlippagePerUnit) = 290*(150*0.336895684+137)=54384
 
     Then the parties should have the following margin levels:
       | party            | market id | maintenance | search  | initial  | release |
-      | designatedLooser | ETH/DEC19 | 39730       | 127136  | 158920   | 198650   |
+      | designatedLooser | ETH/DEC19 | 54384       | 65260  | 81576   | 108768   |
 
 # insurance pool generation - modify order book
     Then the parties cancel the following orders:
@@ -88,7 +90,7 @@ Feature: Position resolution case 5 lognormal risk model
 # check positions
     Then the parties should have the following profit and loss:
       | party            | volume | unrealised pnl | realised pnl |
-      | designatedLooser | 0      | 0              | -11600       |
+      | designatedLooser | 0      | 0              | -21600       |
 
 # check margin levels
     Then the parties should have the following margin levels:
