@@ -6,12 +6,16 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
+	"code.vegaprotocol.io/vega/types/statevar"
 )
 
 func NewMonitorFromSnapshot(
+	marketID string,
+	asset string,
 	pm *types.PriceMonitor,
 	settings *types.PriceMonitoringSettings,
 	riskModel RangeProvider,
+	stateVarEngine StateVarEngine,
 	log *logging.Logger,
 ) (*Engine, error) {
 	if riskModel == nil {
@@ -38,6 +42,7 @@ func NewMonitorFromSnapshot(
 		stateChanged:        true,
 	}
 	e.boundFactorsInitialised = pm.PriceBoundsConsensusReached
+	stateVarEngine.RegisterStateVariable(asset, marketID, "bound-factors", boundFactorsConverter{}, e.startCalcPriceRanges, []statevar.StateVarEventType{statevar.StateVarEventTypeTimeTrigger, statevar.StateVarEventTypeAuctionEnded, statevar.StateVarEventTypeOpeningAuctionFirstUncrossingPrice}, e.updatePriceBounds)
 	return e, nil
 }
 
