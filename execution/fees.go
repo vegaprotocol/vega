@@ -12,26 +12,13 @@ type FeeSplitter struct {
 	timeWindowStart time.Time
 	currentTime     time.Time
 	tradeValue      *num.Uint
+	changed         bool
 }
 
 func NewFeeSplitter() *FeeSplitter {
 	return &FeeSplitter{
 		tradeValue: num.Zero(),
-	}
-}
-
-func (fs *FeeSplitter) GetState() *types.FeeSplitter {
-	return &types.FeeSplitter{
-		TimeWindowStart: fs.timeWindowStart,
-		TradeValue:      fs.tradeValue,
-	}
-}
-
-func NewFeeSplitterFromSnapshot(fs *types.FeeSplitter, now time.Time) *FeeSplitter {
-	return &FeeSplitter{
-		timeWindowStart: fs.TimeWindowStart,
-		currentTime:     now,
-		tradeValue:      fs.TradeValue,
+		changed:    true,
 	}
 }
 
@@ -52,6 +39,7 @@ func (fs *FeeSplitter) TimeWindowStart(t time.Time) {
 	// reset both timers
 	fs.timeWindowStart = t
 	fs.SetCurrentTime(t)
+	fs.changed = true
 }
 
 // Elapsed returns the distance (in duration) from TimeWindowStart and
@@ -89,4 +77,26 @@ func (fs *FeeSplitter) MarketValueProxy(mvwl time.Duration, totalStakeU *num.Uin
 
 func (fs *FeeSplitter) AddTradeValue(v *num.Uint) {
 	fs.tradeValue.AddSum(v)
+	fs.changed = true
+}
+
+func NewFeeSplitterFromSnapshot(fs *types.FeeSplitter, now time.Time) *FeeSplitter {
+	return &FeeSplitter{
+		timeWindowStart: fs.TimeWindowStart,
+		currentTime:     now,
+		tradeValue:      fs.TradeValue,
+		changed:         true,
+	}
+}
+
+func (fs *FeeSplitter) GetState() *types.FeeSplitter {
+	fs.changed = false
+	return &types.FeeSplitter{
+		TimeWindowStart: fs.timeWindowStart,
+		TradeValue:      fs.tradeValue,
+	}
+}
+
+func (fs *FeeSplitter) Changed() bool {
+	return fs.changed
 }
