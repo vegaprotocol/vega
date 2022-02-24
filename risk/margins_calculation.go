@@ -109,7 +109,7 @@ func (e *Engine) calculateMargins(m events.Margin, markPrice *num.Uint, rf types
 			} else {
 				svol := slippageVolume.Abs()
 				if !svol.IsInteger() {
-					e.log.Debug("slippage volume should be decimal but isn't",
+					e.log.Debug("slippage volume should be integer but isn't",
 						logging.Error(err))
 				}
 				exitPrice, err = e.ob.GetCloseoutPrice(uint64(svol.IntPart()), types.SideBuy)
@@ -154,7 +154,7 @@ func (e *Engine) calculateMargins(m events.Margin, markPrice *num.Uint, rf types
 			} else {
 				svol := slippageVolume.Abs()
 				if !svol.IsInteger() {
-					e.log.Debug("slippage volume should be decimal but isn't",
+					e.log.Debug("slippage volume should be integer but isn't",
 						logging.Error(err))
 				}
 				exitPrice, err = e.ob.GetCloseoutPrice(uint64(svol.IntPart()), types.SideSell)
