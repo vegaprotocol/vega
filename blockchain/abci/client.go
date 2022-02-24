@@ -54,7 +54,7 @@ func (c *Client) CheckTransaction(ctx context.Context, bytes []byte) (*tmctypes.
 	if err != nil {
 		return nil, err
 	} else if !res.IsOK() {
-		return nil, newUserInputError(res.Code, string(res.Data))
+		return res, newUserInputError(res.Code, string(res.Data))
 	}
 
 	return res, nil
