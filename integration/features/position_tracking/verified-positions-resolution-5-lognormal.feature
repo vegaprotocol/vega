@@ -1,26 +1,36 @@
-Feature: Position resolution case 5
+Feature: Position resolution case 5 lognormal risk model
 
-  Background:
+    Background:
+
+    And the log normal risk model named "lognormal-risk-model-fish":
+      | risk aversion | tau  | mu | r     | sigma |
+      | 0.001         | 0.01 | 0  | 0.0   | 1.2   |
+      #calculated risk factor long: 0.336895684; risk factor short: 0.4878731
+
+    And the price monitoring updated every "1" seconds named "price-monitoring-1":
+      | horizon | probability | auction extension |
+      | 1       | 0.99999999  | 300               |
+
+    And the margin calculator named "margin-calculator-1":
+      | search factor | initial factor | release factor |
+      | 1.2           | 1.5            | 2              |
 
     And the markets:
-      | id        | quote name | asset | risk model                  | margin calculator                  | auction duration | fees         | price monitoring | oracle config          |
-      | ETH/DEC19 | BTC        | BTC   | default-simple-risk-model-2 | default-overkill-margin-calculator | 1                | default-none | default-none     | default-eth-for-future |
+      | id        | quote name | asset | risk model                | margin calculator   | auction duration | fees         | price monitoring  | oracle config          |
+      | ETH/DEC19 | ETH        | USD   | lognormal-risk-model-fish | margin-calculator-1 | 1                | default-none | default-none | default-eth-for-future |
+
     And the following network parameters are set:
       | name                           | value |
       | market.auction.minimumDuration | 1     |
 
-    #default-simple-risk-model-2: "factorLong": 0; "factorShort": 0; "maxMoveUp": 0;  "minMoveDown": 0.016; "probabilityOfTrading": 0.2
-
-  Scenario: using lognormoal risk model, set "designatedLooser" closeout while the position of "designatedLooser" is not fully covered by orders on the order book
-
 # setup accounts
-    Given the parties deposit on asset's general account the following amount:
+     Given the parties deposit on asset's general account the following amount:
       | party           | asset | amount        |
-      | sellSideProvider | BTC   | 1000000000000 |
-      | buySideProvider  | BTC   | 1000000000000 |
-      | designatedLooser | BTC   | 11600         |
-      | aux              | BTC   | 1000000000000 |
-      | aux2             | BTC   | 1000000000000 |
+      | sellSideProvider | USD   | 1000000000000 |
+      | buySideProvider  | USD   | 1000000000000 |
+      | designatedLooser | USD   | 11600         |
+      | aux              | USD   | 1000000000000 |
+      | aux2             | USD   | 1000000000000 |
 
 # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     Then the parties place the following orders:
@@ -46,7 +56,7 @@ Feature: Position resolution case 5
 
     Then the parties should have the following account balances:
       | party            | asset | market id | margin  | general |
-      | designatedLooser | BTC   | ETH/DEC19 | 11600   | 0       |
+      | designatedLooser | USD   | ETH/DEC19 | 11600   | 0       |
 
     Then the order book should have the following volumes for market "ETH/DEC19":   
       | side | price  | volume |
@@ -87,10 +97,7 @@ Feature: Position resolution case 5
 # checking margins
     Then the parties should have the following account balances:
       | party            | asset | market id | margin | general |
-      | designatedLooser | BTC   | ETH/DEC19 | 0      | 0       |
+      | designatedLooser | USD   | ETH/DEC19 | 0      | 0       |
 
 # then we make sure the insurance pool collected the funds
     And the insurance pool balance should be "0" for the market "ETH/DEC19"
-
-
-
