@@ -67,3 +67,27 @@ func TestMarketTracker(t *testing.T) {
 	require.NoError(t, err)
 	require.True(t, bytes.Equal(state1, state2))
 }
+
+func TestMarketTrackerStateChange(t *testing.T) {
+	key := (&types.PayloadMarketTracker{}).Key()
+
+	tracker := execution.NewMarketTracker()
+	tracker.SetEligibilityChecker(&EligibilityChecker{})
+
+	hash1, err := tracker.GetHash(key)
+	require.NoError(t, err)
+
+	tracker.MarketProposed("market1", "me")
+	tracker.MarketProposed("market2", "me2")
+
+	hash2, err := tracker.GetHash(key)
+	require.NoError(t, err)
+	require.NotEqual(t, hash1, hash2)
+
+	tracker.AddValueTraded("market1", num.NewUint(1000))
+	require.Equal(t, 0, len(tracker.GetAndResetEligibleProposers()))
+
+	hash3, err := tracker.GetHash(key)
+	require.NoError(t, err)
+	require.NotEqual(t, hash2, hash3)
+}
