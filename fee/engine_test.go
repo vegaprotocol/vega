@@ -35,6 +35,7 @@ func getTestFee(t *testing.T) *testFee {
 		fee.NewDefaultConfig(),
 		testFees,
 		testAsset,
+		num.DecimalFromInt64(1),
 	)
 	assert.NoError(t, err)
 	return &testFee{eng}

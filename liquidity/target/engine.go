@@ -34,6 +34,7 @@ type Engine struct {
 	current           []uint64
 	previous          []timestampedOI
 	max               timestampedOI
+	positionFactor    num.Decimal
 }
 
 type timestampedOI struct {
@@ -47,14 +48,15 @@ type OpenInterestCalculator interface {
 }
 
 // NewEngine returns a new instance of target stake calculation Engine.
-func NewEngine(parameters types.TargetStakeParameters, oiCalc OpenInterestCalculator, marketID string) *Engine {
+func NewEngine(parameters types.TargetStakeParameters, oiCalc OpenInterestCalculator, marketID string, positionFactor num.Decimal) *Engine {
 	factor, _ := num.UintFromDecimal(parameters.ScalingFactor.Mul(expDec))
 
 	return &Engine{
-		marketID: marketID,
-		tWindow:  time.Duration(parameters.TimeWindow) * time.Second,
-		sFactor:  factor,
-		oiCalc:   oiCalc,
+		marketID:       marketID,
+		tWindow:        time.Duration(parameters.TimeWindow) * time.Second,
+		sFactor:        factor,
+		oiCalc:         oiCalc,
+		positionFactor: positionFactor,
 	}
 }
 
@@ -116,13 +118,8 @@ func (e *Engine) GetTargetStake(rf types.RiskFactor, now time.Time, markPrice *n
 	}
 	factorUint, _ := num.UintFromDecimal(factor.Mul(expDec))
 
-	return num.Zero().Div(
-		num.Zero().Mul(
-			markPrice.Mul(markPrice, num.NewUint(e.max.OI)),
-			factorUint.Mul(factorUint, e.sFactor),
-		),
-		exp2,
-	), changed
+	value, _ := num.UintFromDecimal(markPrice.ToDecimal().Mul(num.DecimalFromInt64(int64(e.max.OI))).Div(e.positionFactor))
+	return num.Zero().Div(num.Zero().Mul(value, factorUint.Mul(factorUint, e.sFactor)), exp2), changed
 }
 
 // GetTheoreticalTargetStake returns target stake based current time, risk factors
@@ -145,14 +142,8 @@ func (e *Engine) GetTheoreticalTargetStake(rf types.RiskFactor, now time.Time, m
 	}
 
 	factorUint, _ := num.UintFromDecimal(factor.Mul(expDec))
-
-	return num.Zero().Div(
-		num.Zero().Mul(
-			num.Zero().Mul(markPrice, num.NewUint(maxOI)),
-			factorUint.Mul(factorUint, e.sFactor),
-		),
-		exp2,
-	), changed
+	value, _ := num.UintFromDecimal(markPrice.ToDecimal().Mul(num.DecimalFromInt64(int64(maxOI))).Div(e.positionFactor))
+	return num.Zero().Div(num.Zero().Mul(value, factorUint.Mul(factorUint, e.sFactor)), exp2), changed
 }
 
 func (e *Engine) getMaxFromCurrent() timestampedOI {

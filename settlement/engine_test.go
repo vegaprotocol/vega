@@ -102,23 +102,21 @@ func testSettleExpiredSuccess(t *testing.T) {
 		},
 	} // }}}
 	oraclePrice := num.NewUint(1100)
-	settleF := func(price *num.Uint, size int64) (*types.FinancialAmount, bool, error) {
+	settleF := func(price *num.Uint, size num.Decimal) (*types.FinancialAmount, bool, error) {
 		amt, neg := num.Zero().Delta(oraclePrice, price)
-		if size < 0 {
-			size *= -1
+		if size.IsNegative() {
+			size = size.Neg()
 			neg = !neg
 		}
 
-		amt = amt.Mul(amt, num.NewUint(uint64(size)))
+		amt, _ = num.UintFromDecimal(amt.ToDecimal().Mul(size))
 		return &types.FinancialAmount{
 			Amount: amt,
 		}, neg, nil
 	}
 	positions := engine.getExpiryPositions(data...)
-	for _, d := range data {
-		// we expect settle calls for each position
-		engine.prod.EXPECT().Settle(d.price, d.size).Times(1).DoAndReturn(settleF)
-	}
+	// we expect settle calls for each position
+	engine.prod.EXPECT().Settle(gomock.Any(), gomock.Any()).DoAndReturn(settleF).AnyTimes()
 	// ensure positions are set
 	engine.Update(positions)
 	// now settle:
@@ -145,7 +143,7 @@ func testSettleExpiryFail(t *testing.T) {
 	}
 	errExp := errors.New("product.Settle error")
 	positions := engine.getExpiryPositions(data...)
-	engine.prod.EXPECT().Settle(data[0].price, data[0].size).Times(1).Return(nil, false, errExp)
+	engine.prod.EXPECT().Settle(gomock.Any(), gomock.Any()).Times(1).Return(nil, false, errExp)
 	engine.Update(positions)
 	empty, err := engine.Settle(time.Now())
 	assert.Empty(t, empty)
@@ -488,7 +486,7 @@ func TestConcurrent(t *testing.T) {
 
 	engine := getTestEngine(t)
 	defer engine.Finish()
-	engine.prod.EXPECT().Settle(gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(func(price *num.Uint, size int64) (*types.FinancialAmount, bool, error) {
+	engine.prod.EXPECT().Settle(gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(func(price *num.Uint, size num.Decimal) (*types.FinancialAmount, bool, error) {
 		return &types.FinancialAmount{Amount: num.Zero()}, false, nil
 	})
 
@@ -602,7 +600,7 @@ func getTestEngine(t *testing.T) *testEngine {
 	market := "BTC/DEC19"
 	prod.EXPECT().GetAsset().AnyTimes().Do(func() string { return "BTC" })
 	return &testEngine{
-		Engine:    settlement.New(logging.NewTestLogger(), conf, prod, market, broker),
+		Engine:    settlement.New(logging.NewTestLogger(), conf, prod, market, broker, num.DecimalFromInt64(1)),
 		ctrl:      ctrl,
 		prod:      prod,
 		broker:    broker,
