@@ -73,8 +73,7 @@ Feature: Position resolution case 3
       | party           | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | sellSideProvider | ETH/DEC19 | sell | 1      | 120   | 1                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | buySideProvider  | ETH/DEC19 | buy  | 1      | 120   | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
-
-Then debug transfers
+      
 #"designatedLooser" is closed out since there is enough order on the book to cover "designatedLooser"'s position which is 290
 # check positions
     Then the parties should have the following profit and loss:
