@@ -3,6 +3,7 @@ package price
 import (
 	"sort"
 
+	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
 )
@@ -11,6 +12,7 @@ func NewMonitorFromSnapshot(
 	pm *types.PriceMonitor,
 	settings *types.PriceMonitoringSettings,
 	riskModel RangeProvider,
+	log *logging.Logger,
 ) (*Engine, error) {
 	if riskModel == nil {
 		return nil, ErrNilRangeProvider
@@ -20,6 +22,7 @@ func NewMonitorFromSnapshot(
 	}
 
 	e := &Engine{
+		log:                 log,
 		riskModel:           riskModel,
 		initialised:         pm.Initialised,
 		fpHorizons:          keyDecimalPairToMap(pm.FPHorizons),

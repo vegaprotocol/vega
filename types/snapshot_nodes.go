@@ -286,6 +286,7 @@ type ExecMarket struct {
 	ShortRiskFactor            num.Decimal
 	LongRiskFactor             num.Decimal
 	RiskFactorConsensusReached bool
+	FeeSplitter                *FeeSplitter
 }
 
 type PriceMonitor struct {
@@ -345,6 +346,11 @@ type AuctionState struct {
 	Start       bool
 	Stop        bool
 	Extension   AuctionTrigger
+}
+
+type FeeSplitter struct {
+	TimeWindowStart time.Time
+	TradeValue      *num.Uint
 }
 
 type EpochState struct {
@@ -2559,6 +2565,25 @@ func (p PriceMonitor) IntoProto() *snapshot.PriceMonitor {
 	return &ret
 }
 
+func FeeSplitterFromProto(fs *snapshot.FeeSplitter) *FeeSplitter {
+	tv, _ := num.UintFromString(fs.TradeValue, 10)
+	ret := FeeSplitter{
+		TimeWindowStart: time.Unix(0, fs.TimeWindowStart),
+		TradeValue:      tv,
+	}
+
+	return &ret
+}
+
+func (f FeeSplitter) IntoProto() *snapshot.FeeSplitter {
+	ret := snapshot.FeeSplitter{
+		TimeWindowStart: f.TimeWindowStart.UnixNano(),
+		TradeValue:      f.TradeValue.String(),
+	}
+
+	return &ret
+}
+
 func ExecMarketFromProto(em *snapshot.Market) *ExecMarket {
 	var (
 		lastBB, lastBA, lastMB, lastMA, markPrice *num.Uint
@@ -2593,6 +2618,7 @@ func ExecMarketFromProto(em *snapshot.Market) *ExecMarket {
 		ShortRiskFactor:            shortRF,
 		LongRiskFactor:             longRF,
 		RiskFactorConsensusReached: em.RiskFactorConsensusReached,
+		FeeSplitter:                FeeSplitterFromProto(em.FeeSplitter),
 	}
 	for _, o := range em.PeggedOrders {
 		or, _ := OrderFromProto(o)
@@ -2623,6 +2649,7 @@ func (e ExecMarket) IntoProto() *snapshot.Market {
 		RiskFactorShort:            e.ShortRiskFactor.String(),
 		RiskFactorLong:             e.LongRiskFactor.String(),
 		RiskFactorConsensusReached: e.RiskFactorConsensusReached,
+		FeeSplitter:                e.FeeSplitter.IntoProto(),
 	}
 	for _, o := range e.PeggedOrders {
 		ret.PeggedOrders = append(ret.PeggedOrders, o.IntoProto())

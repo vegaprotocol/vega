@@ -103,6 +103,7 @@
 - [4721](https://github.com/vegaprotocol/vega/pull/4721) - Save checkpoint with `UnixNano` when taking a snapshot
 - [4728](https://github.com/vegaprotocol/vega/pull/4728) - Fix restoring markets from snapshot by handling generated providers properly
 - [4742](https://github.com/vegaprotocol/vega/pull/4742) - `corestate` endpoints are now populated after a snapshot restore
+- [4847](https://github.com/vegaprotocol/vega/pull/4847) - save state of the `feesplitter` in the execution snapshot
 - [4782](https://github.com/vegaprotocol/vega/pull/4782) - Fix restoring markets from snapshot in an auction with orders
 - [4522](https://github.com/vegaprotocol/vega/pull/4522) - Set transfer responses event when paying rewards
 - [4566](https://github.com/vegaprotocol/vega/pull/4566) - Withdrawal fails should return a status rejected rather than cancelled
