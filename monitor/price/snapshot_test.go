@@ -69,7 +69,7 @@ func TestEmpty(t *testing.T) {
 
 	// Create a new market and restore into it
 	riskModel, settings := createPriceMonitorDeps(t, ctrl)
-	pm2, err := price.NewMonitorFromSnapshot(state1, settings, riskModel)
+	pm2, err := price.NewMonitorFromSnapshot(state1, settings, riskModel, logging.NewTestLogger())
 	require.NoError(t, err)
 	require.NotNil(t, pm2)
 
@@ -113,7 +113,7 @@ func TestChangedState(t *testing.T) {
 	state := pm1.GetState()
 
 	riskModel, settings := createPriceMonitorDeps(t, ctrl)
-	pm2, err := price.NewMonitorFromSnapshot(state, settings, riskModel)
+	pm2, err := price.NewMonitorFromSnapshot(state, settings, riskModel, logging.NewTestLogger())
 	require.NoError(t, err)
 	require.NotNil(t, pm2)
 
