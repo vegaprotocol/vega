@@ -44,7 +44,7 @@ Feature: Position resolution case 2
     Then the order book should have the following volumes for market "ETH/DEC19":   
       | side | price  | volume |
       | buy  | 1      | 1      |
-      | buy  | 141    | 1      |
+      | buy  | 140    | 1      |
 
   #designatedLooser has position of vol 290; price 150; RiskFactor is 0; 
   #what's on the order book to cover the position is shown above, which makes the exit price 70 =(1*1+141*1)/2, slippage per unit is 150-70=80
