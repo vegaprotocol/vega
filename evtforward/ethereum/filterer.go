@@ -117,7 +117,7 @@ func NewLogFilterer(
 		return nil, fmt.Errorf("couldn't create log filterer for multisig control: %w", err)
 	}
 
-	multiSigControlABI, err := ethabi.JSON(strings.NewReader(multisig.MultiSigControlABI))
+	multiSigControlABI, err := ethabi.JSON(strings.NewReader(multisig.MultiSigControlMetaData.ABI))
 	if err != nil {
 		return nil, fmt.Errorf("couldn't load multisig control ABI: %w", err)
 	}
@@ -134,6 +134,7 @@ func NewLogFilterer(
 		vestingBridgeFilterer:    vestingBridgeFilterer,
 		vestingBridge:            vestingBridge,
 		assets:                   assets,
+		multiSigControl:          multiSigControl,
 		multiSigControlFilterer:  multiSigControlFilterer,
 		multiSigControlABI:       multiSigControlABI,
 	}, nil
@@ -602,11 +603,11 @@ func (f *LogFilterer) debugSignerAdded(event *multisig.MultiSigControlSignerAdde
 func toSignerAdded(event *multisig.MultiSigControlSignerAdded, blockTime uint64) *commandspb.ChainEvent {
 	return &commandspb.ChainEvent{
 		TxId: event.Raw.TxHash.Hex(),
-		Event: &commandspb.ChainEvent_Erc20{
-			Erc20: &vgproto.ERC20Event{
+		Event: &commandspb.ChainEvent_Erc20Multisig{
+			Erc20Multisig: &vgproto.ERC20MultiSigEvent{
 				Index: uint64(event.Raw.Index),
 				Block: event.Raw.BlockNumber,
-				Action: &vgproto.ERC20Event_SignerAdded{
+				Action: &vgproto.ERC20MultiSigEvent_SignerAdded{
 					SignerAdded: &vgproto.ERC20SignerAdded{
 						NewSigner: event.NewSigner.Hex(),
 						Nonce:     event.Nonce.String(),
@@ -631,11 +632,11 @@ func (f *LogFilterer) debugSignerRemoved(event *multisig.MultiSigControlSignerRe
 func toSignerRemoved(event *multisig.MultiSigControlSignerRemoved, blockTime uint64) *commandspb.ChainEvent {
 	return &commandspb.ChainEvent{
 		TxId: event.Raw.TxHash.Hex(),
-		Event: &commandspb.ChainEvent_Erc20{
-			Erc20: &vgproto.ERC20Event{
+		Event: &commandspb.ChainEvent_Erc20Multisig{
+			Erc20Multisig: &vgproto.ERC20MultiSigEvent{
 				Index: uint64(event.Raw.Index),
 				Block: event.Raw.BlockNumber,
-				Action: &vgproto.ERC20Event_SignerRemoved{
+				Action: &vgproto.ERC20MultiSigEvent_SignerRemoved{
 					SignerRemoved: &vgproto.ERC20SignerRemoved{
 						OldSigner: event.OldSigner.Hex(),
 						Nonce:     event.Nonce.String(),
@@ -660,11 +661,11 @@ func (f *LogFilterer) debugThresholdSet(event *multisig.MultiSigControlThreshold
 func toThresholdSet(event *multisig.MultiSigControlThresholdSet, blockTime uint64) *commandspb.ChainEvent {
 	return &commandspb.ChainEvent{
 		TxId: event.Raw.TxHash.Hex(),
-		Event: &commandspb.ChainEvent_Erc20{
-			Erc20: &vgproto.ERC20Event{
+		Event: &commandspb.ChainEvent_Erc20Multisig{
+			Erc20Multisig: &vgproto.ERC20MultiSigEvent{
 				Index: uint64(event.Raw.Index),
 				Block: event.Raw.BlockNumber,
-				Action: &vgproto.ERC20Event_ThresholdSet{
+				Action: &vgproto.ERC20MultiSigEvent_ThresholdSet{
 					ThresholdSet: &vgproto.ERC20ThresholdSet{
 						NewThreshold: uint32(event.NewThreshold),
 						Nonce:        event.Nonce.String(),

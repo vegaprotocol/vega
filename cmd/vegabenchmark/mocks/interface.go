@@ -80,6 +80,7 @@ type Commander interface {
 
 //go:generate go run github.com/golang/mock/mockgen -destination governance_engine_mock.go -package mocks code.vegaprotocol.io/vega/cmd/vegabenchmark/mocks GovernanceEngine
 type GovernanceEngine interface {
+	FinaliseEnactment(ctx context.Context, prop *types.Proposal)
 	SubmitProposal(context.Context, types.ProposalSubmission, string, string) (*governance.ToSubmit, error)
 	AddVote(context.Context, types.VoteSubmission, string) error
 	OnChainTimeUpdate(context.Context, time.Time) ([]*governance.ToEnact, []*governance.VoteClosed)

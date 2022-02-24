@@ -25,21 +25,22 @@ var (
 )
 
 // Witness provide foreign chain resources validations
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/witness_mock.go -package mocks code.vegaprotocol.io/vega/validators/erc20 Witness
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/witness_mock.go -package mocks code.vegaprotocol.io/vega/validators/erc20multisig Witness
 type Witness interface {
 	StartCheck(validators.Resource, func(interface{}, bool), time.Time) error
 }
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/multisig_on_chain_verifier_mock.go -package mocks code.vegaprotocol.io/vega/validators/erc20 MultiSigOnChainVerifier
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/multisig_on_chain_verifier_mock.go -package mocks code.vegaprotocol.io/vega/validators/erc20multisig MultiSigOnChainVerifier
 type MultiSigOnChainVerifier interface {
 	CheckSignerEvent(*types.SignerEvent) error
 	CheckThresholdSetEvent(*types.SignerThresholdSetEvent) error
 }
 
 // Topology keeps track of all the validators
-// registerd in the erc20 bridge
+// registered in the erc20 bridge.
 type Topology struct {
-	log *logging.Logger
+	config Config
+	log    *logging.Logger
 
 	currentTime time.Time
 
@@ -56,12 +57,12 @@ type Topology struct {
 	// order by block time.
 	eventsPerAddress map[string][]*types.SignerEvent
 	// a map of all pending events waiting to be processed
-	pendingEvents map[string]*types.SignerEvent
+	pendingEvents map[string]*pendingSigner
 
 	// the signer required treshold
 	// last one is always kept
 	threshold         *types.SignerThresholdSetEvent
-	pendingThresholds map[string]*types.SignerThresholdSetEvent
+	pendingThresholds map[string]*pendingThresholdSet
 
 	// a map of all seen events
 	seen map[string]struct{}
@@ -87,24 +88,47 @@ func (p pendingThresholdSet) GetID() string { return p.ID }
 func (p *pendingThresholdSet) Check() error { return p.check() }
 
 func NewTopology(
+	config Config,
 	log *logging.Logger,
 	witness Witness,
 	ocv MultiSigOnChainVerifier,
 	broker broker.BrokerI,
 ) *Topology {
+	log = log.Named(namedLogger + ".topology")
+	log.SetLevel(config.Level.Get())
 	return &Topology{
+		config:              config,
 		log:                 log,
 		witness:             witness,
 		ocv:                 ocv,
 		broker:              broker,
 		signers:             map[string]struct{}{},
 		eventsPerAddress:    map[string][]*types.SignerEvent{},
-		pendingEvents:       map[string]*types.SignerEvent{},
-		pendingThresholds:   map[string]*types.SignerThresholdSetEvent{},
+		pendingEvents:       map[string]*pendingSigner{},
+		pendingThresholds:   map[string]*pendingThresholdSet{},
 		seen:                map[string]struct{}{},
 		witnessedThresholds: map[string]bool{},
 		witnessedSigners:    map[string]bool{},
 	}
+}
+
+func (t *Topology) SetWitness(w Witness) {
+	t.witness = w
+}
+
+func (t *Topology) ExcessSigners(addresses []string) bool {
+	addressesMap := map[string]struct{}{}
+	for _, v := range addresses {
+		addressesMap[v] = struct{}{}
+	}
+
+	for k := range t.signers {
+		if _, ok := addressesMap[k]; !ok {
+			return true
+		}
+	}
+
+	return false
 }
 
 func (t *Topology) GetSigners() []string {
@@ -147,6 +171,7 @@ func (t *Topology) ProcessSignerEvent(event *types.SignerEvent) error {
 		SignerEvent: event,
 		check:       func() error { return t.ocv.CheckSignerEvent(event) },
 	}
+	t.pendingEvents[event.ID] = pending
 	// s.svss.changed[removedKey] = true
 
 	t.log.Info("signer event received, starting validation",
@@ -167,6 +192,7 @@ func (t *Topology) ProcessThresholdEvent(event *types.SignerThresholdSetEvent) e
 		SignerThresholdSetEvent: event,
 		check:                   func() error { return t.ocv.CheckThresholdSetEvent(event) },
 	}
+	t.pendingThresholds[event.ID] = pending
 	// s.svss.changed[removedKey] = true
 
 	t.log.Info("signer threshold set event received, starting validation",
@@ -200,7 +226,7 @@ func (t *Topology) onEventVerified(event interface{}, ok bool) {
 	}
 }
 
-func (t *Topology) onTick(ctx context.Context, ct time.Time) {
+func (t *Topology) OnTick(ctx context.Context, ct time.Time) {
 	t.currentTime = ct
 	t.updateThreshold(ctx)
 	t.updateSigners(ctx)
@@ -225,6 +251,7 @@ func (t *Topology) updateThreshold(ctx context.Context) {
 			// just deleting invalid ones
 			delete(t.pendingThresholds, k)
 		}
+		delete(t.witnessedThresholds, k)
 	}
 	sort.Strings(ids)
 
@@ -233,14 +260,19 @@ func (t *Topology) updateThreshold(ctx context.Context) {
 	// block time.
 	for _, v := range ids {
 		event := t.pendingThresholds[v]
-		if event.BlockTime > t.threshold.BlockTime {
+
+		// if it's out first time here
+		if t.threshold == nil {
+			t.threshold = event.SignerThresholdSetEvent
+			continue
+		} else if event.BlockTime > t.threshold.BlockTime {
 			// this event is more recent, we can replace our internal
 			// event for treshold
-			t.threshold = event
+			t.threshold = event.SignerThresholdSetEvent
 		}
 
 		// send the event anyway so APIs can be aware of past thresholds
-		t.broker.Send(events.NewERC20MultiSigThresholdSet(ctx, *event))
+		t.broker.Send(events.NewERC20MultiSigThresholdSet(ctx, *event.SignerThresholdSetEvent))
 
 		delete(t.pendingThresholds, v)
 	}
@@ -264,6 +296,7 @@ func (t *Topology) updateSigners(ctx context.Context) {
 		} else {
 			delete(t.pendingEvents, k)
 		}
+		delete(t.witnessedSigners, k)
 	}
 	sort.Strings(ids)
 
@@ -271,15 +304,13 @@ func (t *Topology) updateSigners(ctx context.Context) {
 	for _, id := range ids {
 		// get the event
 		event := t.pendingEvents[id]
-		delete(t.pendingEvents, id)
-
 		epa, ok := t.eventsPerAddress[event.Address]
 		if !ok {
 			epa = []*types.SignerEvent{}
 		}
 
 		// now add the event to the list for this address
-		epa = append(epa, event)
+		epa = append(epa, event.SignerEvent)
 		// sort them in arrival order
 		sort.Slice(epa, func(i, j int) bool {
 			return epa[i].BlockTime < epa[j].BlockTime
@@ -297,6 +328,8 @@ func (t *Topology) updateSigners(ctx context.Context) {
 		}
 
 		// send the event anyway so APIs can be aware of past thresholds
-		t.broker.Send(events.NewERC20MultiSigSigner(ctx, *event))
+		t.broker.Send(events.NewERC20MultiSigSigner(ctx, *event.SignerEvent))
+		// delete from pending then
+		delete(t.pendingEvents, id)
 	}
 }

@@ -48,6 +48,7 @@ import (
 	"code.vegaprotocol.io/vega/stats"
 	"code.vegaprotocol.io/vega/subscribers"
 	"code.vegaprotocol.io/vega/validators"
+	"code.vegaprotocol.io/vega/validators/erc20multisig"
 	"code.vegaprotocol.io/vega/vegatime"
 
 	"google.golang.org/grpc"
@@ -110,10 +111,11 @@ type NodeCommand struct {
 	depositPlugin    *plugins.Deposit
 
 	// staking
-	ethClient        *ethclient.Client
-	ethConfirmations *ethclient.EthereumConfirmations
-	stakingAccounts  *staking.Accounting
-	stakeVerifier    *staking.StakeVerifier
+	ethClient             *ethclient.Client
+	ethConfirmations      *ethclient.EthereumConfirmations
+	stakingAccounts       *staking.Accounting
+	stakeVerifier         *staking.StakeVerifier
+	erc20MultiSigTopology *erc20multisig.Topology
 
 	commander *nodewallets.Commander
 

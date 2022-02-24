@@ -102,30 +102,31 @@ type App struct {
 	rates     *ratelimit.Rates
 
 	// service injection
-	assets          Assets
-	banking         Banking
-	broker          Broker
-	witness         Witness
-	evtfwd          EvtForwarder
-	exec            ExecutionEngine
-	ghandler        *genesis.Handler
-	gov             GovernanceEngine
-	notary          Notary
-	stats           Stats
-	time            TimeService
-	top             ValidatorTopology
-	netp            NetworkParameters
-	oracles         *Oracle
-	delegation      DelegationEngine
-	limits          Limits
-	stake           StakeVerifier
-	stakingAccounts StakingAccounts
-	checkpoint      Checkpoint
-	spam            SpamEngine
-	epoch           EpochService
-	snapshot        Snapshot
-	stateVar        StateVarEngine
-	cpt             abci.Tx
+	assets                Assets
+	banking               Banking
+	broker                Broker
+	witness               Witness
+	evtfwd                EvtForwarder
+	exec                  ExecutionEngine
+	ghandler              *genesis.Handler
+	gov                   GovernanceEngine
+	notary                Notary
+	stats                 Stats
+	time                  TimeService
+	top                   ValidatorTopology
+	netp                  NetworkParameters
+	oracles               *Oracle
+	delegation            DelegationEngine
+	limits                Limits
+	stake                 StakeVerifier
+	stakingAccounts       StakingAccounts
+	checkpoint            Checkpoint
+	spam                  SpamEngine
+	epoch                 EpochService
+	snapshot              Snapshot
+	stateVar              StateVarEngine
+	cpt                   abci.Tx
+	erc20MultiSigTopology ERC20MultiSigTopology
 }
 
 func NewApp(
@@ -157,6 +158,7 @@ func NewApp(
 	snapshot Snapshot,
 	stateVarEngine StateVarEngine,
 	blockchainClient BlockchainClient,
+	erc20MultiSigTopology ERC20MultiSigTopology,
 	version string, // we need the version for snapshot reload
 ) *App {
 	log = log.Named(namedLogger)
@@ -173,32 +175,33 @@ func NewApp(
 			config.Ratelimit.Requests,
 			config.Ratelimit.PerNBlocks,
 		),
-		reloadCP:         checkpoint.AwaitingRestore(),
-		assets:           assets,
-		banking:          banking,
-		broker:           broker,
-		witness:          witness,
-		evtfwd:           evtfwd,
-		exec:             exec,
-		ghandler:         ghandler,
-		gov:              gov,
-		notary:           notary,
-		stats:            stats,
-		time:             time,
-		top:              top,
-		netp:             netp,
-		oracles:          oracles,
-		delegation:       delegation,
-		limits:           limits,
-		stake:            stake,
-		checkpoint:       checkpoint,
-		spam:             spam,
-		stakingAccounts:  stakingAccounts,
-		epoch:            epoch,
-		snapshot:         snapshot,
-		stateVar:         stateVarEngine,
-		version:          version,
-		blockchainClient: blockchainClient,
+		reloadCP:              checkpoint.AwaitingRestore(),
+		assets:                assets,
+		banking:               banking,
+		broker:                broker,
+		witness:               witness,
+		evtfwd:                evtfwd,
+		exec:                  exec,
+		ghandler:              ghandler,
+		gov:                   gov,
+		notary:                notary,
+		stats:                 stats,
+		time:                  time,
+		top:                   top,
+		netp:                  netp,
+		oracles:               oracles,
+		delegation:            delegation,
+		limits:                limits,
+		stake:                 stake,
+		checkpoint:            checkpoint,
+		spam:                  spam,
+		stakingAccounts:       stakingAccounts,
+		epoch:                 epoch,
+		snapshot:              snapshot,
+		stateVar:              stateVarEngine,
+		version:               version,
+		blockchainClient:      blockchainClient,
+		erc20MultiSigTopology: erc20MultiSigTopology,
 	}
 
 	// register replay protection if needed:

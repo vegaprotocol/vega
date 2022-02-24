@@ -25,12 +25,13 @@ type EthereumClient interface {
 	bind.ContractFilterer
 }
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/eth_confirmations_mock.go -package mocks code.vegaprotocol.io/vega/staking EthConfirmations
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/eth_confirmations_mock.go -package mocks code.vegaprotocol.io/vega/validators/erc20multisig EthConfirmations
 type EthConfirmations interface {
 	Check(uint64) error
 }
 
 type OnChainVerifier struct {
+	config           Config
 	log              *logging.Logger
 	ethClient        EthereumClient
 	ethConfirmations EthConfirmations
@@ -40,13 +41,16 @@ type OnChainVerifier struct {
 }
 
 func NewOnChainVerifier(
+	config Config,
 	log *logging.Logger,
 	ethClient EthereumClient,
 	ethConfirmations EthConfirmations,
 ) *OnChainVerifier {
-	log = log.Named("erc20multisig.on-chain-verifier")
+	log = log.Named(namedLogger + ".on-chain-verifier")
+	log.SetLevel(config.Level.Get())
 
 	return &OnChainVerifier{
+		config:           config,
 		log:              log,
 		ethClient:        ethClient,
 		ethConfirmations: ethConfirmations,
@@ -71,6 +75,7 @@ func (o *OnChainVerifier) CheckSignerEvent(event *types.SignerEvent) error {
 
 	if o.log.GetLevel() <= logging.DebugLevel {
 		o.log.Debug("checking signer event on chain",
+			logging.String("contract-address", o.multiSigAddress.Hex()),
 			logging.String("event", event.String()),
 		)
 	}
@@ -90,9 +95,9 @@ func (o *OnChainVerifier) CheckSignerEvent(event *types.SignerEvent) error {
 
 	switch event.Kind {
 	case types.SignerEventKindAdded:
-		return o.filterSignerRemoved(ctx, filterer, event)
-	case types.SignerEventKindRemoved:
 		return o.filterSignerAdded(ctx, filterer, event)
+	case types.SignerEventKindRemoved:
+		return o.filterSignerRemoved(ctx, filterer, event)
 	default:
 		return ErrUnsupportedSignerEvent
 	}
@@ -105,6 +110,7 @@ func (o *OnChainVerifier) CheckThresholdSetEvent(
 
 	if o.log.GetLevel() <= logging.DebugLevel {
 		o.log.Debug("checking threshold set event on chain",
+			logging.String("contract-address", o.multiSigAddress.Hex()),
 			logging.String("event", event.String()),
 		)
 	}
@@ -178,7 +184,7 @@ func (o *OnChainVerifier) filterSignerAdded(
 
 	for iter.Next() {
 		if o.log.GetLevel() <= logging.DebugLevel {
-			o.log.Debug("found signer event on chain",
+			o.log.Debug("found signer added event on chain",
 				logging.String("new-signer", iter.Event.NewSigner.Hex()),
 			)
 		}
@@ -210,7 +216,7 @@ func (o *OnChainVerifier) filterSignerRemoved(
 		},
 	)
 	if err != nil {
-		o.log.Error("Couldn't start filtering on signer added event",
+		o.log.Error("Couldn't start filtering on signer removed event",
 			logging.Error(err))
 		return err
 	}
@@ -218,7 +224,7 @@ func (o *OnChainVerifier) filterSignerRemoved(
 
 	for iter.Next() {
 		if o.log.GetLevel() <= logging.DebugLevel {
-			o.log.Debug("found signer event on chain",
+			o.log.Debug("found signer removed event on chain",
 				logging.String("old-signer", iter.Event.OldSigner.Hex()),
 			)
 		}

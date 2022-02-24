@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"code.vegaprotocol.io/vega/client/eth"
 	"code.vegaprotocol.io/vega/staking"
 	"code.vegaprotocol.io/vega/staking/mocks"
 
@@ -17,7 +18,7 @@ func TestEthereumConfirmations(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	ethClient := mocks.NewMockEthereumClientConfirmations(ctrl)
 	tim := mocks.NewMockTime(ctrl)
-	ethCfns := staking.NewEthereumConfirmations(ethClient, tim)
+	ethCfns := eth.NewEthereumConfirmations(ethClient, tim)
 	defer ctrl.Finish()
 
 	ethCfns.UpdateConfirmations(30)

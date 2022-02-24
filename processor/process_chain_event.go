@@ -91,6 +91,34 @@ func (app *App) processChainEvent(
 			return err
 		}
 		return app.processChainEventERC20(ctx, ceErc, id, ce.TxId)
+	case *commandspb.ChainEvent_Erc20Multisig:
+		blockNumber := c.Erc20Multisig.Block
+		logIndex := c.Erc20Multisig.Index
+		switch pevt := c.Erc20Multisig.Action.(type) {
+		case *vgproto.ERC20MultiSigEvent_SignerAdded:
+			evt, err := types.SignerEventFromSignerAddedProto(
+				pevt.SignerAdded, blockNumber, logIndex, ce.TxId, id)
+			if err != nil {
+				return err
+			}
+			return app.erc20MultiSigTopology.ProcessSignerEvent(evt)
+		case *vgproto.ERC20MultiSigEvent_SignerRemoved:
+			evt, err := types.SignerEventFromSignerRemovedProto(
+				pevt.SignerRemoved, blockNumber, logIndex, ce.TxId, id)
+			if err != nil {
+				return err
+			}
+			return app.erc20MultiSigTopology.ProcessSignerEvent(evt)
+		case *vgproto.ERC20MultiSigEvent_ThresholdSet:
+			evt, err := types.SignerThresholdSetEventFromProto(
+				pevt.ThresholdSet, blockNumber, logIndex, ce.TxId, id)
+			if err != nil {
+				return err
+			}
+			return app.erc20MultiSigTopology.ProcessThresholdEvent(evt)
+		default:
+			return errors.New("unsupported erc20 multisig event")
+		}
 	default:
 		return ErrUnsupportedChainEvent
 	}

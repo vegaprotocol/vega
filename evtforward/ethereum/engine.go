@@ -110,39 +110,37 @@ func (e *Engine) Start() {
 func (e *Engine) gatherEvents(ctx context.Context) {
 	currentHeight := e.filterer.CurrentHeight(ctx)
 
-	// Ensure we are not issuing a filtering request for non-existing block.
-	if e.nextCollateralBlockNumber <= currentHeight {
-		e.filterer.FilterCollateralEvents(ctx, e.nextCollateralBlockNumber, currentHeight, func(event *commandspb.ChainEvent) {
-			e.forwarder.ForwardFromSelf(event)
-		})
-		e.nextCollateralBlockNumber = currentHeight + 1
-	}
+	// // Ensure we are not issuing a filtering request for non-existing block.
+	// if e.nextCollateralBlockNumber <= currentHeight {
+	// 	e.filterer.FilterCollateralEvents(ctx, e.nextCollateralBlockNumber, currentHeight, func(event *commandspb.ChainEvent) {
+	// 		e.forwarder.ForwardFromSelf(event)
+	// 	})
+	// 	e.nextCollateralBlockNumber = currentHeight + 1
+	// }
+
+	// // Ensure we are not issuing a filtering request for non-existing block.
+	// if e.shouldFilterStakingBridge && e.nextStakingBlockNumber <= currentHeight {
+	// 	e.filterer.FilterStakingEvents(ctx, e.nextStakingBlockNumber, currentHeight, func(event *commandspb.ChainEvent) {
+	// 		e.forwarder.ForwardFromSelf(event)
+	// 	})
+	// 	e.nextStakingBlockNumber = currentHeight + 1
+	// }
+
+	// // Ensure we are not issuing a filtering request for non-existing block.
+	// if e.shouldFilterVestingBridge && e.nextVestingBlockNumber <= currentHeight {
+	// 	e.filterer.FilterVestingEvents(ctx, e.nextVestingBlockNumber, currentHeight, func(event *commandspb.ChainEvent) {
+	// 		e.forwarder.ForwardFromSelf(event)
+	// 	})
+	// 	e.nextVestingBlockNumber = currentHeight + 1
+	// }
 
 	// Ensure we are not issuing a filtering request for non-existing block.
-	if e.shouldFilterStakingBridge && e.nextStakingBlockNumber <= currentHeight {
-		e.filterer.FilterStakingEvents(ctx, e.nextStakingBlockNumber, currentHeight, func(event *commandspb.ChainEvent) {
+	if e.nextMultiSigControlBlockNumber <= currentHeight {
+		e.filterer.FilterMultiSigControlEvents(ctx, e.nextMultiSigControlBlockNumber, currentHeight, func(event *commandspb.ChainEvent) {
 			e.forwarder.ForwardFromSelf(event)
 		})
-		e.nextStakingBlockNumber = currentHeight + 1
+		e.nextMultiSigControlBlockNumber = currentHeight + 1
 	}
-
-	// Ensure we are not issuing a filtering request for non-existing block.
-	if e.shouldFilterVestingBridge && e.nextVestingBlockNumber <= currentHeight {
-		e.filterer.FilterVestingEvents(ctx, e.nextVestingBlockNumber, currentHeight, func(event *commandspb.ChainEvent) {
-			e.forwarder.ForwardFromSelf(event)
-		})
-		e.nextVestingBlockNumber = currentHeight + 1
-	}
-
-	// Ensure we are not issuing request for non-existing block.
-	if e.nextMultiSigControlBlockNumber > currentHeight {
-		e.nextMultiSigControlBlockNumber = currentHeight
-	}
-
-	e.filterer.FilterMultiSigControlEvents(ctx, e.nextMultiSigControlBlockNumber, currentHeight, func(event *commandspb.ChainEvent) {
-		e.forwarder.ForwardFromSelf(event)
-	})
-	e.nextMultiSigControlBlockNumber = currentHeight + 1
 }
 
 // Stop stops the engine, its polling and event forwarding.

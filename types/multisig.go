@@ -89,6 +89,7 @@ func SignerEventFromSignerRemovedProto(
 		Address:     s.OldSigner,
 		Nonce:       s.Nonce,
 		Kind:        SignerEventKindRemoved,
+		BlockTime:   s.BlockTime,
 	}, nil
 }
 

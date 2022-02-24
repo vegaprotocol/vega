@@ -41,6 +41,7 @@ import (
 	"code.vegaprotocol.io/vega/subscribers"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/validators"
+	"code.vegaprotocol.io/vega/validators/erc20multisig"
 	"code.vegaprotocol.io/vega/vegatime"
 	"github.com/spf13/afero"
 	tmtypes "github.com/tendermint/tendermint/abci/types"
@@ -102,16 +103,26 @@ func (n *NodeCommand) startServices(_ []string) (err error) {
 
 	n.limits = limits.New(n.Log, n.conf.Limits, n.broker)
 	n.timeService.NotifyOnTick(n.limits.OnTick)
+	n.netParams = netparams.New(n.Log, n.conf.NetworkParameters, n.broker)
+
+	n.erc20MultiSigTopology = erc20multisig.NewERC20MultisigTopology(
+		n.conf.ERC20MultiSig, n.Log, nil, n.broker, n.ethClient, n.ethConfirmations, n.netParams,
+	)
 
 	if n.conf.IsValidator() {
 		n.topology = validators.NewTopology(
-			n.Log, n.conf.Validators, validators.WrapNodeWallets(n.nodeWallets), n.broker, n.conf.IsValidator(), n.commander)
+			n.Log, n.conf.Validators, validators.WrapNodeWallets(n.nodeWallets), n.broker, n.conf.IsValidator(), n.commander, n.erc20MultiSigTopology)
 	} else {
-		n.topology = validators.NewTopology(n.Log, n.conf.Validators, nil, n.broker, n.conf.IsValidator(), nil)
+		n.topology = validators.NewTopology(n.Log, n.conf.Validators, nil, n.broker, n.conf.IsValidator(), nil, n.erc20MultiSigTopology)
 	}
 
 	n.witness = validators.NewWitness(n.Log, n.conf.Validators, n.topology, n.commander, n.timeService)
-	n.netParams = netparams.New(n.Log, n.conf.NetworkParameters, n.broker)
+
+	// this id done to go around circular deps...
+	n.erc20MultiSigTopology.SetWitness(n.witness)
+
+	n.timeService.NotifyOnTick(n.erc20MultiSigTopology.OnTick)
+
 	n.timeService.NotifyOnTick(n.netParams.OnChainTimeUpdate)
 	n.eventForwarder = evtforward.New(n.Log, n.conf.EvtForward, n.commander, n.timeService, n.topology)
 
@@ -255,6 +266,7 @@ func (n *NodeCommand) startBlockchain() (*processor.App, error) {
 		n.snapshot,
 		n.statevar,
 		n.blockchainClient,
+		n.erc20MultiSigTopology,
 		n.Version,
 	)
 
