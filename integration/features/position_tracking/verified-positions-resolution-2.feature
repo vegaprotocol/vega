@@ -9,7 +9,7 @@ Feature: Position resolution case 2
       | name                           | value |
       | market.auction.minimumDuration | 1     |
 
-  Scenario: https://docs.google.com/spreadsheets/d/1D433fpt7FUCk04dZ9FHDVy-4hA6Bw_a2/edit#gid=1011478143
+  Scenario: set "designatedLooser" can not be closed out since there is not enough vol on the order book to take over 
 # setup accounts
     Given the parties deposit on asset's general account the following amount:
       | party            | asset | amount        |
