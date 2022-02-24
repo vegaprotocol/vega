@@ -110,7 +110,6 @@ func (s *coreService) SubmitTransaction(ctx context.Context, req *protoapi.Submi
 				}, fullError
 			}
 			return nil, fullError
-
 		}
 		s.log.Debug("unable to submit transaction", logging.Error(err))
 
@@ -154,7 +153,6 @@ func (s *coreService) CheckTransaction(ctx context.Context, req *protoapi.CheckT
 				}, fullError
 			}
 			return nil, fullError
-
 		}
 		s.log.Debug("unable to check transaction", logging.Error(err))
 
@@ -651,5 +649,4 @@ func (s *coreService) SubmitRawTransaction(ctx context.Context, req *protoapi.Su
 	}
 
 	return successResponse, nil
-
 }
