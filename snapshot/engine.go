@@ -437,8 +437,8 @@ func (e *Engine) applySnap(ctx context.Context) error {
 		return types.ErrUnknownSnapshot
 	}
 	// this is the current version
-	e.version = e.snapshot.Meta.Version
-	loaded, err := e.avl.LoadVersionForOverwriting(e.version)
+	version := e.snapshot.Meta.Version
+	loaded, err := e.avl.LoadVersionForOverwriting(version)
 	if err != nil {
 		e.log.Error("Failed to load target version",
 			logging.Error(err),
@@ -446,7 +446,7 @@ func (e *Engine) applySnap(ctx context.Context) error {
 		)
 	}
 	// we need the versions of the snapshot to match, regardless of the version we actually loaded
-	e.avl.SetInitialVersion(uint64(e.snapshot.Meta.Version))
+	e.avl.SetInitialVersion(uint64(version))
 	// now let's clear the versions slice and pretend the more recent versions don't exist yet
 	for i := 0; i < len(e.versions); i++ {
 		if e.versions[i] >= loaded {
