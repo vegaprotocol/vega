@@ -928,7 +928,6 @@ func (app *App) DeliverSubmitOrder(ctx context.Context, tx abci.Tx, deterministi
 
 	// Submit the create order request to the execution engine
 	conf, err := app.exec.SubmitOrder(ctx, os, tx.Party(), deterministicId)
-
 	if err != nil {
 		app.log.Info("DeliverSubmitOrder-submitOrder-fail", logging.String("deterministicId", deterministicId), logging.String("tx", hex.EncodeToString(tx.Hash())), logging.String("party", tx.Party()), logging.Uint64("block-height", tx.BlockHeight()), logging.String("command", tx.Command().String()), logging.String("error", err.Error()))
 	}
