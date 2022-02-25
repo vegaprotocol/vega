@@ -249,6 +249,31 @@ func (e *Engine) Start() error {
 	return e.initialiseTree()
 }
 
+// this function loads snapshots in local store as though they were generated at runtime.
+// The result is that, whenever we create a new snapshot, the old one gets cleaned up.
+func (e *Engine) loadLocalVersions(versions []int) {
+	// is in ascending order already, so let's just iterate
+	if len(versions) == 0 {
+		versions = e.avl.AvailableVersions()
+	}
+	vc := cap(e.versions)
+	for _, v := range versions {
+		if len(e.versions) >= vc {
+			if err := e.avl.DeleteVersion(e.versions[0]); err != nil {
+				e.log.Warn("Could not delete an old version",
+					logging.Int64("old-version", e.versions[0]),
+					logging.Error(err),
+				)
+			}
+			// still, we should drop this from the slice
+			copy(e.versions[0:], e.versions[1:])
+			e.versions[len(e.versions)-1] = int64(v)
+		} else {
+			e.versions = append(e.versions, int64(v))
+		}
+	}
+}
+
 // Loaded will return whether we have loaded from a snapshot. If we have loaded
 // via stat-sync we will already know, if we are loading from local store then we do that
 // node.
@@ -256,6 +281,8 @@ func (e *Engine) Loaded() (bool, error) {
 	// if the avl has been initialised we must have loaded it earlier via using state-sync
 	// we can go straight into loading the state into the providers
 	if e.avl != nil {
+		// OK, but let's make the engine aware of its local store versions
+		e.loadLocalVersions(nil)
 		return true, e.applySnap(e.ctx)
 	}
 
@@ -274,6 +301,7 @@ func (e *Engine) Loaded() (bool, error) {
 
 	height := uint64(startHeight)
 	versions := e.avl.AvailableVersions()
+	e.loadLocalVersions(versions)
 	// descending order, because that makes most sense
 	var last, first uint64
 	for i := len(versions) - 1; i > -1; i-- {
@@ -407,6 +435,15 @@ func (e *Engine) ApplySnapshot(ctx context.Context) error {
 func (e *Engine) applySnap(ctx context.Context) error {
 	if e.snapshot == nil {
 		return types.ErrUnknownSnapshot
+	}
+	// this is the current version
+	e.version = e.snapshot.Meta.Version
+	// now let's clear the versions slice and pretend the more recent versions don't exist yet
+	for i := 0; i < len(e.versions); i++ {
+		if e.versions[i] >= e.version {
+			e.versions = append(e.versions[0:0], e.versions[:i]...)
+			break
+		}
 	}
 	// we need the versions of the snapshot to match
 	e.avl.SetInitialVersion(uint64(e.snapshot.Meta.Version))
