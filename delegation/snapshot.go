@@ -32,6 +32,10 @@ func (e *Engine) Keys() []string {
 	return hashKeys
 }
 
+func (e *Engine) Stopped() bool {
+	return false
+}
+
 func (e *Engine) serialiseLastReconTime() ([]byte, error) {
 	payload := types.Payload{
 		Data: &types.PayloadDelegationLastReconTime{

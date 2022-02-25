@@ -137,6 +137,10 @@ func (rp *replayProtectorNoop) Keys() []string {
 	return hashKeys
 }
 
+func (rp *replayProtectorNoop) Stopped() bool {
+	return false
+}
+
 func (rp *replayProtectorNoop) GetHash(_ string) ([]byte, error) {
 	return nil, nil
 }

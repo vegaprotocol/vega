@@ -123,6 +123,7 @@ type TargetStakeCalculator interface {
 	UpdateScalingFactor(sFactor num.Decimal) error
 	UpdateTimeWindow(tWindow time.Duration)
 	Changed() bool
+	StopSnapshots()
 }
 
 type MarketCollateral interface {
@@ -3112,6 +3113,11 @@ func (m *Market) cleanupOnReject(ctx context.Context) {
 			logging.Error(err))
 		return
 	}
+
+	m.matching.StopSnapshots()
+	m.position.StopSnapshots()
+	m.liquidity.StopSnapshots()
+	m.tsCalc.StopSnapshots()
 
 	// then send the responses
 	m.broker.Send(events.NewTransferResponse(ctx, tresps))

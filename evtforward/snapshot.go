@@ -33,6 +33,10 @@ func (f *Forwarder) Keys() []string {
 	return hashKeys
 }
 
+func (f *Forwarder) Stopped() bool {
+	return false
+}
+
 func (f *Forwarder) serialise() ([]byte, error) {
 	// this is done without the lock because nothing can be acked during the commit phase which is when the snapshot is taken
 	keys := make([]string, 0, len(f.ackedEvts))

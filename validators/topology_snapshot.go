@@ -36,6 +36,10 @@ func (t *Topology) Keys() []string {
 	return topHashKeys
 }
 
+func (t *Topology) Stopped() bool {
+	return false
+}
+
 func (t *Topology) serialiseNodes() []*snapshot.ValidatorState {
 	nodes := make([]*snapshot.ValidatorState, 0, len(t.validators))
 	for _, node := range t.validators {

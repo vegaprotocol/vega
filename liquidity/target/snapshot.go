@@ -29,6 +29,7 @@ type SnapshotEngine struct {
 	*Engine
 	hash    []byte
 	data    []byte
+	stopped bool
 	changed bool
 	buf     *proto.Buffer
 	key     string
@@ -55,6 +56,10 @@ func NewSnapshotEngine(
 		key:     key,
 		keys:    []string{key},
 	}
+}
+
+func (e *SnapshotEngine) StopSnapshots() {
+	e.stopped = true
 }
 
 func (e *SnapshotEngine) Changed() bool {
@@ -92,6 +97,10 @@ func (e *SnapshotEngine) Namespace() types.SnapshotNamespace {
 
 func (e *SnapshotEngine) Keys() []string {
 	return e.keys
+}
+
+func (e *SnapshotEngine) Stopped() bool {
+	return e.stopped
 }
 
 func (e *SnapshotEngine) GetHash(k string) ([]byte, error) {
@@ -154,6 +163,10 @@ func (e *SnapshotEngine) serialisePrevious() []*snapshot.TimestampedOpenInterest
 // serialise marshal the snapshot state, populating the data and hash fields
 // with updated values.
 func (e *SnapshotEngine) serialise() ([]byte, []byte, error) {
+	if e.stopped {
+		return nil, nil, nil
+	}
+
 	if !e.changed {
 		return e.data, e.hash, nil // we already have what we need
 	}

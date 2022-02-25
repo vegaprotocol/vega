@@ -35,6 +35,10 @@ func (rp *ReplayProtector) Keys() []string {
 	return hashKeys
 }
 
+func (rp *ReplayProtector) Stopped() bool {
+	return false
+}
+
 func (rp *ReplayProtector) serialiseReplayProtection() ([]byte, error) {
 	blocks := []*types.ReplayBlockTransactions{}
 	for _, block := range rp.txs {
