@@ -28,7 +28,7 @@ func (t Time) Time() time.Time {
 
 func (t Time) Proto() eventspb.TimeUpdate {
 	return eventspb.TimeUpdate{
-		Timestamp: t.blockTime.UTC().Unix(),
+		Timestamp: t.blockTime.UnixNano(),
 	}
 }
 
@@ -45,6 +45,6 @@ func (t Time) StreamMessage() *eventspb.BusEvent {
 func TimeEventFromStream(ctx context.Context, be *eventspb.BusEvent) *Time {
 	return &Time{
 		Base:      newBaseFromBusEvent(ctx, TimeUpdate, be),
-		blockTime: time.Unix(be.GetTimeUpdate().Timestamp, 0).UTC(),
+		blockTime: time.Unix(0, be.GetTimeUpdate().Timestamp),
 	}
 }
