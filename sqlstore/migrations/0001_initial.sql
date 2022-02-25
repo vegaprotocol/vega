@@ -79,7 +79,7 @@ CREATE TABLE orders (
     created_at        TIMESTAMP WITH TIME ZONE NOT NULL,
     updated_at        TIMESTAMP WITH TIME ZONE,
     expires_at        TIMESTAMP WITH TIME ZONE,
-    vega_time         TIMESTAMP WITH TIME ZONE NOT NULL,
+    vega_time         TIMESTAMP WITH TIME ZONE NOT NULL REFERENCES blocks(vega_time),
     PRIMARY key(vega_time, id, version)
 );
 
@@ -95,6 +95,19 @@ CREATE VIEW orders_current AS (
 -- unique on (order ID, version)
 CREATE VIEW orders_current_versions AS (
   SELECT DISTINCT ON (id, version) * FROM orders ORDER BY id, version DESC, vega_time DESC
+);
+
+CREATE TABLE network_limits (
+  vega_time                   TIMESTAMP WITH TIME ZONE NOT NULL PRIMARY KEY REFERENCES blocks(vega_time),
+  can_propose_market          BOOLEAN NOT NULL,
+  can_propose_asset           BOOLEAN NOT NULL,
+  bootstrap_finished          BOOLEAN NOT NULL,
+  propose_market_enabled      BOOLEAN NOT NULL,
+  propose_asset_enabled       BOOLEAN NOT NULL,
+  bootstrap_block_count       INTEGER,
+  genesis_loaded              BOOLEAN NOT NULL,
+  propose_market_enabled_from TIMESTAMP WITH TIME ZONE NOT NULL,
+  propose_asset_enabled_from  TIMESTAMP WITH TIME ZONE NOT NULL
 );
 
 -- Create a function that always returns the first non-NULL value:
@@ -129,6 +142,7 @@ DROP AGGREGATE IF EXISTS public.last(anyelement);
 DROP FUNCTION IF EXISTS public.first_agg(anyelement, anyelement);
 DROP FUNCTION IF EXISTS public.last_agg(anyelement, anyelement);
 
+DROP TABLE IF EXISTS network_limits;
 DROP VIEW IF EXISTS orders_current;
 DROP VIEW IF EXISTS orders_current_versions;
 

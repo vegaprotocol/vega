@@ -29,10 +29,11 @@ func TestMain(m *testing.M) {
 			config,
 			&paths.DefaultPaths{},
 		)
-		defer testStore.Stop()
+
 		if err != nil {
 			panic(err)
 		}
+		defer testStore.Stop()
 
 		m.Run()
 	}

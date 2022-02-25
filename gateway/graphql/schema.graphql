@@ -426,6 +426,9 @@ type Query {
     filter: AccountFilter,
     groupBy: [AccountField])
     : [AggregatedBalance!]!
+
+  "Current network limits"
+  networkLimits: NetworkLimits
 }
 
 enum TransferStatus {
@@ -2825,4 +2828,24 @@ enum AccountField {
   AccountType
 }
 
-
+"Information about whether proposals are enabled, if we are still bootstrapping etc.."
+type NetworkLimits {
+    "Are market proposals allowed at this point in time"
+		canProposeMarket: Boolean!
+    "Are asset proposals allowed at this point in time"
+		canProposeAsset: Boolean!
+    "True once block count > bootstrapBlockCount"
+		bootstrapFinished: Boolean!
+    "Are market proposals enabled on this chain"
+		proposeMarketEnabled: Boolean!
+    "Are asset proposals enabled on this chain"
+		proposeAssetEnabled: Boolean!
+    "How many blocks before the chain comes out of bootstrap mode"
+		bootstrapBlockCount: Int!
+    "True once the genesis file is loaded"
+		genesisLoaded: Boolean!
+    "The date/timestamp in unix nanoseconds at which market proposals will be enabled (0 indicates not set)"
+		proposeMarketEnabledFrom: Timestamp!
+    "The date/timestamp in unix nanoseconds at which asset proposals will be enabled (0 indicates not set)"
+		proposeAssetEnabledFrom: Timestamp!
+}

@@ -39,7 +39,8 @@
 - [340](https://github.com/vegaprotocol/data-node/pull/340) - Add brokers for the new data stores to support sequential and concurrent event processing 
 - [327](https://github.com/vegaprotocol/data-node/pull/327) - Add balances `sql` store and upgrade `gqlgen`
 - [329](https://github.com/vegaprotocol/data-node/pull/327) - Add orders `sql` store
-
+- [354](https://github.com/vegaprotocol/data-node/pull/354) - Add network limits store and API
+354
 ### 🐛 Fixes
 - [277](https://github.com/vegaprotocol/data-node/pull/277) - Now returns not-found error instead of internal error when proposal not found 
 - [274](https://github.com/vegaprotocol/data-node/issues/274) - Bug fix for proposal NO vote showing incorrect weight and tokens

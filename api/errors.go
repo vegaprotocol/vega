@@ -102,6 +102,8 @@ var (
 	ErrMissingOracleSpecID = errors.New("missing oracle spec ID")
 	// ErrMissingDepositID is returned when the ID is missing from the request
 	ErrMissingDepositID = errors.New("missing deposit ID")
+	// Network Limits...
+	ErrGetNetworkLimits = errors.New("failed to get network limits")
 )
 
 // errorMap contains a mapping between errors and Vega numeric error codes.
@@ -159,6 +161,8 @@ var errorMap = map[string]int32{
 	ErrBlockchainBacklogLength.Error(): 90001,
 	ErrBlockchainNetworkInfo.Error():   90002,
 	ErrBlockchainGenesisTime.Error():   90003,
+	// Network limits
+	ErrGetNetworkLimits.Error(): 100001,
 	// End of mapping
 }
 

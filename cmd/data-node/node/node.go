@@ -98,14 +98,15 @@ type NodeCommand struct {
 	chainInfoStore        *storage.ChainInfo
 	transferStore         *storage.Transfers
 
-	sqlStore        *sqlstore.SQLStore
-	assetStoreSQL   *sqlstore.Assets
-	blockStoreSQL   *sqlstore.Blocks
-	accountStoreSQL *sqlstore.Accounts
-	balanceStoreSQL *sqlstore.Balances
-	ledgerSQL       *sqlstore.Ledger
-	partyStoreSQL   *sqlstore.Parties
-	orderStoreSQL   *sqlstore.Orders
+	sqlStore              *sqlstore.SQLStore
+	assetStoreSQL         *sqlstore.Assets
+	blockStoreSQL         *sqlstore.Blocks
+	accountStoreSQL       *sqlstore.Accounts
+	balanceStoreSQL       *sqlstore.Balances
+	ledgerSQL             *sqlstore.Ledger
+	partyStoreSQL         *sqlstore.Parties
+	orderStoreSQL         *sqlstore.Orders
+	networkLimitsStoreSQL *sqlstore.NetworkLimits
 
 	vegaCoreServiceClient vegaprotoapi.CoreServiceClient
 
@@ -139,6 +140,7 @@ type NodeCommand struct {
 	timeSubSQL             *sqlsubscribers.Time
 	transferResponseSubSQL *sqlsubscribers.TransferResponse
 	orderSubSQL            *sqlsubscribers.Order
+	networkLimitsSubSQL    *sqlsubscribers.NetworkLimits
 
 	candleService     *candles.Svc
 	tradeService      *trades.Svc
@@ -239,6 +241,7 @@ func (l *NodeCommand) runNode(args []string) error {
 		l.checkpointSvc,
 		l.balanceStoreSQL,
 		l.orderStoreSQL,
+		l.networkLimitsStoreSQL,
 	)
 
 	// watch configs
