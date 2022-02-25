@@ -3,7 +3,6 @@ package abci
 import (
 	"encoding/hex"
 	"errors"
-	"fmt"
 
 	vgcontext "code.vegaprotocol.io/vega/libs/context"
 
@@ -83,19 +82,19 @@ func (app *App) Commit() (resp types.ResponseCommit) {
 func (app *App) CheckTx(req types.RequestCheckTx) (resp types.ResponseCheckTx) {
 	tx, code, err := app.getTx(req.GetTx())
 	if err != nil {
-		fmt.Println("CheckTx-begin-decode-error", err.Error())
+		println("CheckTx-begin-decode-error", err.Error())
 		return NewResponseCheckTxError(code, err)
 	}
 
-	fmt.Println("CheckTx-decode-success", "transaction-id", hex.EncodeToString(tx.Hash()), "party", tx.Party(), "block-height", tx.BlockHeight(), "command", tx.Command().String())
+	println("CheckTx-decode-success", "transaction-id", hex.EncodeToString(tx.Hash()), "party", tx.Party(), "block-height", tx.BlockHeight(), "command", tx.Command().String())
 
 	if err := app.replayProtector.CheckTx(tx); err != nil {
-		fmt.Println("CheckTx-replay-error", err.Error())
+		println("CheckTx-replay-error", err.Error())
 		return AddCommonCheckTxEvents(
 			NewResponseCheckTxError(AbciTxnValidationFailure, err), tx,
 		)
 	}
-	fmt.Println("CheckTx-replay-success", "transaction-id", hex.EncodeToString(tx.Hash()), "party", tx.Party(), "block-height", tx.BlockHeight(), "command", tx.Command().String())
+	println("CheckTx-replay-success", "transaction-id", hex.EncodeToString(tx.Hash()), "party", tx.Party(), "block-height", tx.BlockHeight(), "command", tx.Command().String())
 
 	ctx := app.ctx
 	if fn := app.OnCheckTx; fn != nil {
@@ -105,15 +104,15 @@ func (app *App) CheckTx(req types.RequestCheckTx) (resp types.ResponseCheckTx) {
 		}
 	}
 
-	fmt.Println("CheckTx-app-checktx-success", "transaction-id", hex.EncodeToString(tx.Hash()), "party", tx.Party(), "block-height", tx.BlockHeight(), "command", tx.Command().String())
+	println("CheckTx-app-checktx-success", "transaction-id", hex.EncodeToString(tx.Hash()), "party", tx.Party(), "block-height", tx.BlockHeight(), "command", tx.Command().String())
 
 	// Lookup for check tx, skip if not found
 	if fn, ok := app.checkTxs[tx.Command()]; ok {
 		if err := fn(ctx, tx); err != nil {
 			resp.Code = AbciTxnInternalError
-			fmt.Println("CheckTx-command-checktx-failed", "transaction-id", hex.EncodeToString(tx.Hash()), "party", tx.Party(), "block-height", tx.BlockHeight(), "command", tx.Command().String())
+			println("CheckTx-command-checktx-failed", "transaction-id", hex.EncodeToString(tx.Hash()), "party", tx.Party(), "block-height", tx.BlockHeight(), "command", tx.Command().String())
 		} else {
-			fmt.Println("CheckTx-command-checktx-success", "transaction-id", hex.EncodeToString(tx.Hash()), "party", tx.Party(), "block-height", tx.BlockHeight(), "command", tx.Command().String())
+			println("CheckTx-command-checktx-success", "transaction-id", hex.EncodeToString(tx.Hash()), "party", tx.Party(), "block-height", tx.BlockHeight(), "command", tx.Command().String())
 		}
 	}
 
@@ -129,28 +128,28 @@ func (app *App) CheckTx(req types.RequestCheckTx) (resp types.ResponseCheckTx) {
 func (app *App) DeliverTx(req types.RequestDeliverTx) (resp types.ResponseDeliverTx) {
 	tx, code, err := app.getTx(req.GetTx())
 	if err != nil {
-		fmt.Println("DeliverTx-begin-decode-error", err.Error())
+		println("DeliverTx-begin-decode-error", err.Error())
 		return NewResponseDeliverTxError(code, err)
 	}
 	app.removeTxFromCache(req.GetTx())
-	fmt.Println("DeliverTx-decode-success", "transaction-id", hex.EncodeToString(tx.Hash()), "party", tx.Party(), "block-height", tx.BlockHeight(), "command", tx.Command().String())
+	println("DeliverTx-decode-success", "transaction-id", hex.EncodeToString(tx.Hash()), "party", tx.Party(), "block-height", tx.BlockHeight(), "command", tx.Command().String())
 
 	if err := app.replayProtector.DeliverTx(tx); err != nil {
-		fmt.Println("DeliverTx-replay-error", "transaction-id", hex.EncodeToString(tx.Hash()), "party", tx.Party(), "block-height", tx.BlockHeight(), "command", tx.Command().String(), err.Error())
+		println("DeliverTx-replay-error", "transaction-id", hex.EncodeToString(tx.Hash()), "party", tx.Party(), "block-height", tx.BlockHeight(), "command", tx.Command().String(), err.Error())
 
 		return AddCommonDeliverTxEvents(
 			NewResponseDeliverTxError(AbciTxnValidationFailure, err), tx,
 		)
 	}
 
-	fmt.Println("DeliverTx-replay-success", "transaction-id", hex.EncodeToString(tx.Hash()), "party", tx.Party(), "block-height", tx.BlockHeight(), "command", tx.Command().String())
+	println("DeliverTx-replay-success", "transaction-id", hex.EncodeToString(tx.Hash()), "party", tx.Party(), "block-height", tx.BlockHeight(), "command", tx.Command().String())
 
 	// It's been validated by CheckTx so we can skip the validation here
 	ctx := app.ctx
 	if fn := app.OnDeliverTx; fn != nil {
 		ctx, resp = fn(ctx, req, tx)
 		if resp.IsErr() {
-			fmt.Println("DeliverTx-app-deliverTx-error", "transaction-id", hex.EncodeToString(tx.Hash()), "party", tx.Party(), "block-height", tx.BlockHeight(), "command", tx.Command().String(), "error code", resp.Code)
+			println("DeliverTx-app-deliverTx-error", "transaction-id", hex.EncodeToString(tx.Hash()), "party", tx.Party(), "block-height", tx.BlockHeight(), "command", tx.Command().String(), "error code", resp.Code)
 			return AddCommonDeliverTxEvents(resp, tx)
 		}
 	}
@@ -158,19 +157,19 @@ func (app *App) DeliverTx(req types.RequestDeliverTx) (resp types.ResponseDelive
 	// Lookup for deliver tx, fail if not found
 	fn := app.deliverTxs[tx.Command()]
 	if fn == nil {
-		fmt.Println("DeliverTx-app-unknown-command", "transaction-id", hex.EncodeToString(tx.Hash()), "party", tx.Party(), "block-height", tx.BlockHeight(), "command", tx.Command().String())
+		println("DeliverTx-app-unknown-command", "transaction-id", hex.EncodeToString(tx.Hash()), "party", tx.Party(), "block-height", tx.BlockHeight(), "command", tx.Command().String())
 		return AddCommonDeliverTxEvents(
 			NewResponseDeliverTxError(AbciUnknownCommandError, errors.New("invalid vega command")), tx,
 		)
 	}
 
-	fmt.Println("DeliverTx-app-success", "transaction-id", hex.EncodeToString(tx.Hash()), "party", tx.Party(), "block-height", tx.BlockHeight(), "command", tx.Command().String())
+	println("DeliverTx-app-success", "transaction-id", hex.EncodeToString(tx.Hash()), "party", tx.Party(), "block-height", tx.BlockHeight(), "command", tx.Command().String())
 
 	txHash := hex.EncodeToString(tx.Hash())
 	ctx = vgcontext.WithTxHash(ctx, txHash)
 
 	if err := fn(ctx, tx); err != nil {
-		fmt.Println("DeliverTx-command-deliverTx-error", "transaction-id", hex.EncodeToString(tx.Hash()), "party", tx.Party(), "block-height", tx.BlockHeight(), "command", tx.Command().String(), "error", err.Error())
+		println("DeliverTx-command-deliverTx-error", "transaction-id", hex.EncodeToString(tx.Hash()), "party", tx.Party(), "block-height", tx.BlockHeight(), "command", tx.Command().String(), "error", err.Error())
 		return AddCommonDeliverTxEvents(
 			NewResponseDeliverTxError(AbciTxnInternalError, err), tx,
 		)
