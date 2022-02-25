@@ -124,6 +124,7 @@
 - [4686](https://github.com/vegaprotocol/vega/pull/4686) - Fix commit hash problem when checkpoint and snapshot overlap. Ensure the snapshot contains the correct checkpoint state.
 - [4691](https://github.com/vegaprotocol/vega/pull/4691) - Handle undelegate stake with no balances gracefully
 - [4716](https://github.com/vegaprotocol/vega/pull/4716) - Fix protobuf conversion in orders
+- [4861](https://github.com/vegaprotocol/vega/pull/4861) - Set a protocol version and properly send it to `Tendermint` in all cases
 - [4732](https://github.com/vegaprotocol/vega/pull/4732) - `TimeUpdate` is now first event sent
 - [4714](https://github.com/vegaprotocol/vega/pull/4714) - Ensure EEF doesn't process the current block multiple times
 - [4700](https://github.com/vegaprotocol/vega/pull/4700) - Ensure verification of type between oracle spec binding and oracle spec
