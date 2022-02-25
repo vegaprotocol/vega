@@ -136,7 +136,7 @@ func toProtoTrades(trades []entities.Trade) []*vega.Trade {
 
 func (os *Trades) queryTrades(ctx context.Context, query string, args []interface{}, p *entities.Pagination) ([]entities.Trade, error) {
 	if p != nil {
-		query, args = paginateOrderQuery(query, args, *p)
+		query, args = paginateTradeQuery(query, args, *p)
 	}
 
 	trades := []entities.Trade{}
@@ -147,7 +147,7 @@ func (os *Trades) queryTrades(ctx context.Context, query string, args []interfac
 	return trades, nil
 }
 
-func paginateOrderQuery(query string, args []interface{}, p entities.Pagination) (string, []interface{}) {
+func paginateTradeQuery(query string, args []interface{}, p entities.Pagination) (string, []interface{}) {
 	dir := "ASC"
 	if p.Descending {
 		dir = "DESC"

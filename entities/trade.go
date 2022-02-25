@@ -35,12 +35,6 @@ type Trade struct {
 	SellerAuctionBatch      uint64
 }
 
-type Pagination struct {
-	Skip       uint64
-	Limit      uint64
-	Descending bool
-}
-
 func TradeToProto(t *Trade) *vega.Trade {
 	return &vega.Trade{
 		Id:        hex.EncodeToString(t.ID),

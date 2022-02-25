@@ -9,6 +9,7 @@
 
 ### 🛠  Improvements
 - [322](https://github.com/vegaprotocol/data-node/pull/322) - Update the definition of done and issue templates
+- [351](https://github.com/vegaprotocol/data-node/pull/351) - Update to latest Vega and downgrade to Tendermint `v.34.15`
 
 ### 🐛 Fixes
 
@@ -35,6 +36,7 @@
 - [338](https://github.com/vegaprotocol/data-node/pull/336) - Add `grpcui` web user interface
 - [340](https://github.com/vegaprotocol/data-node/pull/340) - Add brokers for the new data stores to support sequential and concurrent event processing 
 - [327](https://github.com/vegaprotocol/data-node/pull/327) - Add balances `sql` store and upgrade `gqlgen`
+- [329](https://github.com/vegaprotocol/data-node/pull/327) - Add orders `sql` store
 - [355](https://github.com/vegaprotocol/data-node/pull/355) - Persist trade data to postgres backed store 
 
 ### 🐛 Fixes
