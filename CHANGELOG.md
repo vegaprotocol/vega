@@ -10,6 +10,7 @@
 ### 🛠  Improvements
 - [322](https://github.com/vegaprotocol/data-node/pull/322) - Update the definition of done and issue templates
 - [351](https://github.com/vegaprotocol/data-node/pull/351) - Update to latest Vega and downgrade to Tendermint `v.34.15`
+- [356](https://github.com/vegaprotocol/data-node/pull/356) - Added support for fractional positions
 
 ### 🐛 Fixes
 

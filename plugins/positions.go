@@ -4,8 +4,8 @@ import (
 	"context"
 	"sync"
 
-	"code.vegaprotocol.io/data-node/subscribers"
 	"code.vegaprotocol.io/vega/events"
+	"code.vegaprotocol.io/vega/subscribers"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
 
@@ -14,7 +14,7 @@ import (
 
 var ErrMarketNotFound = errors.New("could not find market")
 
-// SE SettleEvent - common denominator between SPE & SDE
+// SE SettleEvent - common denominator between SPE & SDE.
 type SE interface {
 	events.Event
 	PartyID() string
@@ -23,21 +23,22 @@ type SE interface {
 	Timestamp() int64
 }
 
-// SPE SettlePositionEvent
+// SPE SettlePositionEvent.
 type SPE interface {
 	SE
+	PositionFactor() num.Decimal
 	Trades() []events.TradeSettlement
 	Timestamp() int64
 }
 
-// SDE SettleDistressedEvent
+// SDE SettleDistressedEvent.
 type SDE interface {
 	SE
 	Margin() *num.Uint
 	Timestamp() int64
 }
 
-// LSE LossSocializationEvent
+// LSE LossSocializationEvent.
 type LSE interface {
 	events.Event
 	PartyID() string
@@ -46,7 +47,7 @@ type LSE interface {
 	Timestamp() int64
 }
 
-// Positions plugin taking settlement data to build positions API data
+// Positions plugin taking settlement data to build positions API data.
 type Positions struct {
 	*subscribers.Base
 	mu   *sync.RWMutex
@@ -139,7 +140,7 @@ func (p *Positions) updateSettleDestressed(e SDE) {
 	p.data[mID][tID] = calc
 }
 
-// GetPositionsByMarketAndParty get the position of a single trader in a given market
+// GetPositionsByMarketAndParty get the position of a single party in a given market.
 func (p *Positions) GetPositionsByMarketAndParty(market, party string) (*types.Position, error) {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
@@ -154,14 +155,14 @@ func (p *Positions) GetPositionsByMarketAndParty(market, party string) (*types.P
 	return &pos.Position, nil
 }
 
-// GetPositionsByParty get all positions for a given trader
+// GetPositionsByParty get all positions for a given party.
 func (p *Positions) GetPositionsByParty(party string) ([]*types.Position, error) {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
-	// at most, trader is active in all markets
+	// at most, party is active in all markets
 	positions := make([]*types.Position, 0, len(p.data))
-	for _, traders := range p.data {
-		if pos, ok := traders[party]; ok {
+	for _, parties := range p.data {
+		if pos, ok := parties[party]; ok {
 			positions = append(positions, &pos.Position)
 		}
 	}
@@ -172,25 +173,26 @@ func (p *Positions) GetPositionsByParty(party string) ([]*types.Position, error)
 	return positions, nil
 }
 
-// GetAllPositions returns all positions, across markets
+// GetAllPositions returns all positions, across markets.
 func (p *Positions) GetAllPositions() ([]*types.Position, error) {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
 	var pos []*types.Position
 	for k := range p.data {
-		// guesstimate what the slice cap ought to be: number of markets * number of traders in 1 market
+		// guesstimate what the slice cap ought to be: number of markets * number of parties in 1 market
 		pos = make([]*types.Position, 0, len(p.data)*len(p.data[k]))
 		break
 	}
-	for _, traders := range p.data {
-		for _, tp := range traders {
+	for _, parties := range p.data {
+		for _, tp := range parties {
+			tp := tp
 			pos = append(pos, &tp.Position)
 		}
 	}
 	return pos, nil
 }
 
-// GetPositionsByMarket get all trader positions in a given market
+// GetPositionsByMarket get all party positions in a given market.
 func (p *Positions) GetPositionsByMarket(market string) ([]*types.Position, error) {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
@@ -200,6 +202,7 @@ func (p *Positions) GetPositionsByMarket(market string) ([]*types.Position, erro
 	}
 	s := make([]*types.Position, 0, len(mp))
 	for _, tp := range mp {
+		tp := tp
 		s = append(s, &tp.Position)
 	}
 	return s, nil
@@ -218,11 +221,11 @@ func calculateOpenClosedVolume(currentOpenVolume, tradedVolume int64) (int64, in
 	return tradedVolume, 0
 }
 
-func closeV(p *Position, closedVolume int64, tradedPrice *num.Uint) num.Decimal {
+func closeV(p *Position, closedVolume int64, tradedPrice *num.Uint, positionFactor num.Decimal) num.Decimal {
 	if closedVolume == 0 {
 		return num.DecimalZero()
 	}
-	realisedPnlDelta := num.DecimalFromUint(tradedPrice).Sub(p.AverageEntryPriceFP).Mul(num.DecimalFromInt64(closedVolume))
+	realisedPnlDelta := num.DecimalFromUint(tradedPrice).Sub(p.AverageEntryPriceFP).Mul(num.DecimalFromInt64(closedVolume)).Div(positionFactor)
 	p.RealisedPnlFP = p.RealisedPnlFP.Add(realisedPnlDelta)
 	p.OpenVolume -= closedVolume
 	return realisedPnlDelta
@@ -247,7 +250,7 @@ func openV(p *Position, openedVolume int64, tradedPrice *num.Uint) {
 	p.OpenVolume += openedVolume
 }
 
-func mtm(p *Position, markPrice *num.Uint) {
+func mtm(p *Position, markPrice *num.Uint, positionFactor num.Decimal) {
 	if p.OpenVolume == 0 {
 		p.UnrealisedPnlFP = num.DecimalZero()
 		p.UnrealisedPnl = num.DecimalZero()
@@ -257,20 +260,20 @@ func mtm(p *Position, markPrice *num.Uint) {
 	openVolumeDec := num.DecimalFromInt64(p.OpenVolume)
 
 	//	p.UnrealisedPnlFP = float64(p.OpenVolume) * (float64(markPrice) - p.AverageEntryPriceFP)
-	p.UnrealisedPnlFP = openVolumeDec.Mul(markPriceDec.Sub(p.AverageEntryPriceFP))
+	p.UnrealisedPnlFP = openVolumeDec.Mul(markPriceDec.Sub(p.AverageEntryPriceFP)).Div(positionFactor)
 }
 
 func updateSettlePosition(p *Position, e SPE) {
 	for _, t := range e.Trades() {
 		pr := t.Price()
 		openedVolume, closedVolume := calculateOpenClosedVolume(p.OpenVolume, t.Size())
-		_ = closeV(p, closedVolume, pr)
+		_ = closeV(p, closedVolume, pr, e.PositionFactor())
 		openV(p, openedVolume, pr)
 		p.AverageEntryPrice, _ = num.UintFromDecimal(p.AverageEntryPriceFP.Round(0))
 
 		p.RealisedPnl = p.RealisedPnlFP.Round(0)
 	}
-	mtm(p, e.Price())
+	mtm(p, e.Price(), e.PositionFactor())
 	p.UnrealisedPnl = p.UnrealisedPnlFP.Round(0)
 }
 
