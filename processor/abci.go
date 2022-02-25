@@ -541,6 +541,8 @@ func (app *App) OnEndBlock(req tmtypes.RequestEndBlock) (ctx context.Context, re
 
 // OnBeginBlock updates the internal lastBlockTime value with each new block.
 func (app *App) OnBeginBlock(req tmtypes.RequestBeginBlock) (ctx context.Context, resp tmtypes.ResponseBeginBlock) {
+	app.log.Info("begin block", logging.Int64("height", req.Header.Height))
+
 	app.log.Debug("entering begin block", logging.Time("at", time.Now()))
 	defer func() { app.log.Debug("leaving begin block", logging.Time("at", time.Now())) }()
 

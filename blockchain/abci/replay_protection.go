@@ -48,6 +48,8 @@ func (r *ReplayProtector) GetReplacement() *ReplayProtector {
 func (rp *ReplayProtector) SetHeight(h uint64) {
 	rp.height = h
 
+	println("replay protection height set to", h)
+
 	if l := uint64(len(rp.txs)); h >= l {
 		rp.txs[h%l] = map[string]struct{}{}
 		rp.rss.changed = true

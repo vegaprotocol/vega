@@ -55,7 +55,9 @@ func (app *App) InitChain(req types.RequestInitChain) (resp types.ResponseInitCh
 
 func (app *App) BeginBlock(req types.RequestBeginBlock) (resp types.ResponseBeginBlock) {
 	height := uint64(req.Header.Height)
+	println("app-begin-block", "height", height)
 	if app.replayProtector != nil {
+		println("app-update-replay-protection", "height", height)
 		app.replayProtector.SetHeight(height)
 	}
 
@@ -89,7 +91,7 @@ func (app *App) CheckTx(req types.RequestCheckTx) (resp types.ResponseCheckTx) {
 	println("CheckTx-decode-success", "transaction-id", hex.EncodeToString(tx.Hash()), "party", tx.Party(), "block-height", tx.BlockHeight(), "command", tx.Command().String())
 
 	if err := app.replayProtector.CheckTx(tx); err != nil {
-		println("CheckTx-replay-error", err.Error())
+		println("CheckTx-replay-error", "transaction-id", hex.EncodeToString(tx.Hash()), "party", tx.Party(), "block-height", tx.BlockHeight(), "command", tx.Command().String(), "error", err.Error())
 		return AddCommonCheckTxEvents(
 			NewResponseCheckTxError(AbciTxnValidationFailure, err), tx,
 		)
