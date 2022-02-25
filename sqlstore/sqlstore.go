@@ -86,36 +86,63 @@ func registerNumericType(poolConfig *pgxpool.Config) {
 	}
 }
 
-func InitialiseStorage(log *logging.Logger, config Config, paths paths.Paths) (*SQLStore, error) {
+func InitialiseStorage(log *logging.Logger, config Config, vegapaths paths.Paths) (*SQLStore, error) {
 	s := SQLStore{
 		conf: config,
 		log:  log.Named("sql_store"),
 	}
 
-	poolConfig, err := s.makePoolConfig()
-	if err != nil {
-		return nil, fmt.Errorf("error configuring database: %w", err)
-	}
-
 	if s.conf.UseEmbedded {
-		if err := s.initializeEmbeddedPostgres(paths); err != nil {
+		embeddedPostgresRuntimePath := paths.JoinStatePath(paths.StatePath(vegapaths.StatePathFor(paths.DataNodeStorageHome)), "sqlstore")
+		embeddedPostgresDataPath := paths.JoinStatePath(paths.StatePath(vegapaths.StatePathFor(paths.DataNodeStorageHome)), "node-data")
+
+		if err := s.initializeEmbeddedPostgres(embeddedPostgresRuntimePath, embeddedPostgresDataPath); err != nil {
 			return nil, fmt.Errorf("use embedded database was true, but failed to start: %w", err)
 		}
 	}
 
+	return setupStorage(&s)
+}
+
+func InitialiseTestStorage(log *logging.Logger, config Config, vegapaths paths.Paths) (*SQLStore, error) {
+	s := SQLStore{
+		conf: config,
+		log:  log.Named("sql_store_test"),
+	}
+
+	if s.conf.UseEmbedded {
+		// These will be deleted when the tests are completed by embedded postgres
+		embeddedPostgresRuntimePath := paths.JoinStatePath(paths.StatePath(vegapaths.StatePathFor(paths.DataNodeStorageHome)), "testing")
+		embeddedPostgresDataPath := paths.JoinStatePath(paths.StatePath(vegapaths.StatePathFor(paths.DataNodeStorageHome)), "testing", "node-data")
+
+		if err := s.initializeEmbeddedPostgres(embeddedPostgresRuntimePath, embeddedPostgresDataPath); err != nil {
+			return nil, fmt.Errorf("use embedded database was true, but failed to start: %w", err)
+		}
+	}
+
+	return setupStorage(&s)
+
+}
+
+func setupStorage(store *SQLStore) (*SQLStore, error) {
+	poolConfig, err := store.makePoolConfig()
+	if err != nil {
+		return nil, fmt.Errorf("error configuring database: %w", err)
+	}
+
 	registerNumericType(poolConfig)
 
-	if s.pool, err = pgxpool.ConnectConfig(context.Background(), poolConfig); err != nil {
-		s.Stop()
+	if store.pool, err = pgxpool.ConnectConfig(context.Background(), poolConfig); err != nil {
+		store.Stop()
 		return nil, fmt.Errorf("error connecting to database: %w", err)
 	}
 
-	if err = s.migrateToLatestSchema(); err != nil {
-		s.Stop()
+	if err = store.migrateToLatestSchema(); err != nil {
+		store.Stop()
 		return nil, fmt.Errorf("error migrating schema: %w", err)
 	}
 
-	return &s, nil
+	return store, nil
 }
 
 func (s *SQLStore) DeleteEverything() error {
@@ -127,14 +154,12 @@ func (s *SQLStore) DeleteEverything() error {
 	return nil
 }
 
-func (s *SQLStore) initializeEmbeddedPostgres(vegapaths paths.Paths) error {
-	embeddedPostgresRuntimePath := paths.JoinStatePath(paths.StatePath(vegapaths.StatePathFor(paths.DataNodeStorageHome)), "sqlstore")
-	embeddedPostgresDataPath := paths.JoinStatePath(paths.StatePath(vegapaths.StatePathFor(paths.DataNodeStorageHome)), "node-data")
+func (s *SQLStore) initializeEmbeddedPostgres(runtimePath paths.StatePath, dataPath paths.StatePath) error {
 
 	dbConfig := embeddedpostgres.DefaultConfig().
-		RuntimePath(embeddedPostgresRuntimePath.String()).
-		DataPath(embeddedPostgresDataPath.String()).
-		BinariesPath(embeddedPostgresRuntimePath.String()).
+		RuntimePath(runtimePath.String()).
+		DataPath(dataPath.String()).
+		BinariesPath(runtimePath.String()).
 		Username(s.conf.Username).
 		Password(s.conf.Password).
 		Database(s.conf.Database).

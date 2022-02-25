@@ -40,7 +40,9 @@
 - [327](https://github.com/vegaprotocol/data-node/pull/327) - Add balances `sql` store and upgrade `gqlgen`
 - [329](https://github.com/vegaprotocol/data-node/pull/327) - Add orders `sql` store
 - [354](https://github.com/vegaprotocol/data-node/pull/354) - Add network limits store and API
-354
+- [338](https://github.com/vegaprotocol/data-node/pull/338) - Fix compatibility with new `protoc-gen-xxx` tools used in `protos` repository
+- [330](https://github.com/vegaprotocol/data-node/pull/330) - Add support for storing market data events in the SQL store
+ 
 ### 🐛 Fixes
 - [277](https://github.com/vegaprotocol/data-node/pull/277) - Now returns not-found error instead of internal error when proposal not found 
 - [274](https://github.com/vegaprotocol/data-node/issues/274) - Bug fix for proposal NO vote showing incorrect weight and tokens

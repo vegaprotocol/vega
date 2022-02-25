@@ -14,19 +14,17 @@ import (
 var (
 	testStore       *sqlstore.SQLStore
 	sqlTestsEnabled bool = true
+	testDBPort           = 38233
 )
 
 func TestMain(m *testing.M) {
 	var err error
-	// TODO: Launch a test database instance; tests disabled for now
+
+	sqlConfig := NewTestConfig(testDBPort)
 	if sqlTestsEnabled {
-		config := sqlstore.NewDefaultConfig()
-		config.Port = 38233
-		config.UseEmbedded = true
-		config.Enabled = true
-		testStore, err = sqlstore.InitialiseStorage(
+		testStore, err = sqlstore.InitialiseTestStorage(
 			logging.NewTestLogger(),
-			config,
+			sqlConfig,
 			&paths.DefaultPaths{},
 		)
 
@@ -45,4 +43,13 @@ func generateID() []byte {
 	currentTimeString := strconv.FormatInt(currentTime, 10)
 	hash := sha256.Sum256([]byte(currentTimeString))
 	return hash[:]
+}
+
+func NewTestConfig(port int) sqlstore.Config {
+	sqlConfig := sqlstore.NewDefaultConfig()
+	sqlConfig.Enabled = true
+	sqlConfig.UseEmbedded = true
+	sqlConfig.Port = port
+
+	return sqlConfig
 }
