@@ -23,6 +23,7 @@ type replayProtector interface {
 	DeliverTx(Tx) error
 	CheckTx(Tx) error
 	GetReplacement() *ReplayProtector
+	Stopped() bool
 }
 
 type App struct {

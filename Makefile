@@ -13,7 +13,7 @@ retest: ## Re-run all unit tests
 
 .PHONY: test
 test: ## Run unit tests
-	go test -v ./...
+	go test -v -failfast ./...
 
 .PHONY: integrationtest
 integrationtest: ## run integration tests, showing ledger movements and full scenario output

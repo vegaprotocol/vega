@@ -41,6 +41,7 @@ type OrderBook struct {
 	batchID                  uint64
 	indicativePriceAndVolume *IndicativePriceAndVolume
 	snapshot                 *types.PayloadMatchingBook
+	stopped                  bool // if true then we should stop creating snapshots
 }
 
 // CumulativeVolumeLevel represents the cumulative volume at a price level for both bid and ask.
