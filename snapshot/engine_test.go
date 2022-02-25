@@ -550,14 +550,16 @@ func testRemovingMutlipleKeysSingleNamespace(t *testing.T) {
 	require.Equal(t, b1, b2)
 
 	// Now the only change is we signal remove of a single provider, check the snapshot changes
-	prov.EXPECT().GetHash(gomock.Any()).Times(1).Return(nil, types.ErrSnapshotProviderStopped)
+	prov.EXPECT().GetHash(gomock.Any()).Times(1).Return(nil, nil)
+	prov.EXPECT().Stopped().Times(1).Return(true)
 	b3, err := engine.Snapshot(engine.ctx)
 	require.NoError(t, err)
 	require.NotNil(t, b3)
 	require.NotEqual(t, b1, b3)
 
 	// remove the second provider
-	prov2.EXPECT().GetHash(gomock.Any()).Times(1).Return(nil, types.ErrSnapshotProviderStopped)
+	prov2.EXPECT().GetHash(gomock.Any()).Times(1).Return(nil, nil)
+	prov2.EXPECT().Stopped().Times(1).Return(true)
 	b4, err := engine.Snapshot(engine.ctx)
 	require.NoError(t, err)
 	require.NotNil(t, b4)

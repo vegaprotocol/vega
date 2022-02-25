@@ -668,20 +668,21 @@ func (e *Engine) update(ns types.SnapshotNamespace) (bool, error) {
 		lastHash := e.keyHashes[treeKeyStr]
 		providerKey := e.treeKeyProvider[treeKeyStr]
 		currentHash, err := p.GetHash(providerKey)
+		if err != nil {
+			return update, err
+		}
 
-		if err == types.ErrSnapshotProviderStopped {
+		// nothing has changed (or both values were nil)
+		if bytes.Equal(lastHash, currentHash) {
+			continue
+		}
+
+		if len(currentHash) == 0 && p.Stopped() {
 			// this signals the removal of this key
 			toRemove = append(toRemove, i)
 			continue
 		}
 
-		if err != nil {
-			return update, err
-		}
-		// nothing has changed (or both values were nil)
-		if bytes.Equal(lastHash, currentHash) {
-			continue
-		}
 		// hashes were different, we need to update
 		v, generatedProviders, err := p.GetState(providerKey)
 		if err != nil {
@@ -724,11 +725,9 @@ func (e *Engine) update(ns types.SnapshotNamespace) (bool, error) {
 		return update, nil
 	}
 
-	toRemoveMap := map[int]struct{}{}
 	for i := range toRemove {
 		treeKey := treeKeys[i]
 		treeKeyStr := string(treeKey)
-		toRemoveMap[i] = struct{}{}
 
 		// delete everything we've got stored
 		e.log.Debug("State to be removed", logging.String("node-key", treeKeyStr))
@@ -746,15 +745,10 @@ func (e *Engine) update(ns types.SnapshotNamespace) (bool, error) {
 		}
 	}
 
-	// now purge from the tree keys themselves
-	newTreeKeys := make([][]byte, 0, len(treeKeys)-len(toRemove))
-	for i, tk := range treeKeys {
-		if _, ok := toRemoveMap[i]; !ok {
-			newTreeKeys = append(newTreeKeys, tk)
-		}
+	for i := len(toRemove) - 1; i >= 0; i-- {
+		e.nsTreeKeys[ns] = append(e.nsTreeKeys[ns][:i], e.nsTreeKeys[ns][i+1:]...)
 	}
 
-	e.nsTreeKeys[ns] = newTreeKeys
 	return true, nil
 }
 

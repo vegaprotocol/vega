@@ -19,6 +19,10 @@ func (b *OrderBook) Keys() []string {
 	return []string{b.snapshot.Key()}
 }
 
+func (b *OrderBook) Stopped() bool {
+	return b.stopped
+}
+
 func (b OrderBook) Namespace() types.SnapshotNamespace {
 	return types.MatchingSnapshot
 }
@@ -26,6 +30,10 @@ func (b OrderBook) Namespace() types.SnapshotNamespace {
 func (b *OrderBook) GetHash(key string) ([]byte, error) {
 	if key != b.snapshot.Key() {
 		return nil, types.ErrSnapshotKeyDoesNotExist
+	}
+
+	if b.stopped {
+		return nil, nil
 	}
 
 	payload, _, e := b.GetState(key)
@@ -42,7 +50,7 @@ func (b *OrderBook) GetState(key string) ([]byte, []types.StateProvider, error) 
 	}
 
 	if b.stopped {
-		return nil, nil, types.ErrSnapshotProviderStopped
+		return nil, nil, nil
 	}
 
 	// Copy all the state into a domain object

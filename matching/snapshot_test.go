@@ -198,8 +198,11 @@ func TestStopSnapshotTaking(t *testing.T) {
 	// signal to kill the engine's snapshots
 	ob.ob.StopSnapshots()
 
-	_, _, err = ob.ob.GetState(key)
-	assert.ErrorIs(t, err, types.ErrSnapshotProviderStopped)
-	_, err = ob.ob.GetHash(key)
-	assert.ErrorIs(t, err, types.ErrSnapshotProviderStopped)
+	s, _, err := ob.ob.GetState(key)
+	assert.NoError(t, err)
+	assert.Nil(t, s)
+	h, err := ob.ob.GetHash(key)
+	assert.NoError(t, err)
+	assert.Nil(t, h)
+	assert.True(t, ob.ob.Stopped())
 }

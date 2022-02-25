@@ -92,6 +92,10 @@ func (e *SnapshotEngine) Keys() []string {
 	return e.hashKeys
 }
 
+func (e *SnapshotEngine) Stopped() bool {
+	return e.stopped
+}
+
 func (e *SnapshotEngine) OnSuppliedStakeToObligationFactorUpdate(v num.Decimal) {
 	e.parametersChanged = true
 	e.Engine.OnSuppliedStakeToObligationFactorUpdate(v)
@@ -261,7 +265,7 @@ func (e *SnapshotEngine) serialise(k string) ([]byte, []byte, error) {
 	}
 
 	if e.stopped {
-		return nil, nil, types.ErrSnapshotProviderStopped
+		return nil, nil, nil
 	}
 
 	if !changed {

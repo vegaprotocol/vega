@@ -90,6 +90,10 @@ func (e *SnapshotEngine) Keys() []string {
 	return []string{e.marketID}
 }
 
+func (e *SnapshotEngine) Stopped() bool {
+	return e.stopped
+}
+
 func (e *SnapshotEngine) GetHash(k string) ([]byte, error) {
 	if k != e.marketID {
 		return nil, types.ErrSnapshotKeyDoesNotExist
@@ -146,7 +150,7 @@ func (e *SnapshotEngine) LoadState(_ context.Context, payload *types.Payload) ([
 // with updated values.
 func (e *SnapshotEngine) serialise() ([]byte, []byte, error) {
 	if e.stopped {
-		return nil, nil, types.ErrSnapshotProviderStopped
+		return nil, nil, nil
 	}
 
 	if !e.changed {

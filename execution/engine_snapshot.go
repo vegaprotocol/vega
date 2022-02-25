@@ -180,6 +180,10 @@ func (e *Engine) Keys() []string {
 	return []string{marketsKey}
 }
 
+func (e *Engine) Stopped() bool {
+	return false
+}
+
 func (e *Engine) GetHash(_ string) ([]byte, error) {
 	_, hash, _, err := e.getSerialiseSnapshotAndHash()
 	if err != nil {

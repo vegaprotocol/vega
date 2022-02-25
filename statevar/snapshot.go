@@ -34,6 +34,10 @@ func (e *Engine) Keys() []string {
 	return hashKeys
 }
 
+func (e *Engine) Stopped() bool {
+	return false
+}
+
 func (e *Engine) serialiseNextTimeTrigger() []*snapshot.NextTimeTrigger {
 	e.log.Debug("serialising statevar snapshot", logging.Int("n_triggers", len(e.stateVarToNextCalc)))
 	timeTriggers := make([]*snapshot.NextTimeTrigger, 0, len(e.stateVarToNextCalc))

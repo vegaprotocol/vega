@@ -33,6 +33,10 @@ func (f *FeesTracker) Keys() []string {
 	return hashKeys
 }
 
+func (f *FeesTracker) Stopped() bool {
+	return false
+}
+
 func assetFeesToProto(partyFees map[string]*num.Uint) []*snapshot.PartyFees {
 	parties := make([]string, 0, len(partyFees))
 	for k := range partyFees {

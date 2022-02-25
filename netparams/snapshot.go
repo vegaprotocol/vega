@@ -120,6 +120,10 @@ func (s *Store) Keys() []string {
 	return s.state.Keys()
 }
 
+func (s *Store) Stopped() bool {
+	return false
+}
+
 func (s *Store) GetHash(k string) ([]byte, error) {
 	return s.state.GetHash(k)
 }

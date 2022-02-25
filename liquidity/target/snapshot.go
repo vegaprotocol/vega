@@ -99,6 +99,10 @@ func (e *SnapshotEngine) Keys() []string {
 	return e.keys
 }
 
+func (e *SnapshotEngine) Stopped() bool {
+	return e.stopped
+}
+
 func (e *SnapshotEngine) GetHash(k string) ([]byte, error) {
 	if k != e.key {
 		return nil, types.ErrSnapshotKeyDoesNotExist
@@ -160,7 +164,7 @@ func (e *SnapshotEngine) serialisePrevious() []*snapshot.TimestampedOpenInterest
 // with updated values.
 func (e *SnapshotEngine) serialise() ([]byte, []byte, error) {
 	if e.stopped {
-		return nil, nil, types.ErrSnapshotProviderStopped
+		return nil, nil, nil
 	}
 
 	if !e.changed {
