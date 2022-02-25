@@ -47,9 +47,10 @@ func NewSnapshotEngine(config Config,
 	market string,
 	stateVarEngine StateVarEngine,
 	tickSize *num.Uint,
+	positionFactor num.Decimal,
 ) *SnapshotEngine {
 	se := &SnapshotEngine{
-		Engine: NewEngine(config, log, broker, riskModel, priceMonitor, asset, market, stateVarEngine, tickSize),
+		Engine: NewEngine(config, log, broker, riskModel, priceMonitor, asset, market, stateVarEngine, tickSize, positionFactor),
 		pl:     types.Payload{},
 		market: market,
 

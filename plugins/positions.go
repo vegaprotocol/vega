@@ -26,6 +26,7 @@ type SE interface {
 // SPE SettlePositionEvent.
 type SPE interface {
 	SE
+	PositionFactor() num.Decimal
 	Trades() []events.TradeSettlement
 	Timestamp() int64
 }
@@ -220,11 +221,11 @@ func calculateOpenClosedVolume(currentOpenVolume, tradedVolume int64) (int64, in
 	return tradedVolume, 0
 }
 
-func closeV(p *Position, closedVolume int64, tradedPrice *num.Uint) num.Decimal {
+func closeV(p *Position, closedVolume int64, tradedPrice *num.Uint, positionFactor num.Decimal) num.Decimal {
 	if closedVolume == 0 {
 		return num.DecimalZero()
 	}
-	realisedPnlDelta := num.DecimalFromUint(tradedPrice).Sub(p.AverageEntryPriceFP).Mul(num.DecimalFromInt64(closedVolume))
+	realisedPnlDelta := num.DecimalFromUint(tradedPrice).Sub(p.AverageEntryPriceFP).Mul(num.DecimalFromInt64(closedVolume)).Div(positionFactor)
 	p.RealisedPnlFP = p.RealisedPnlFP.Add(realisedPnlDelta)
 	p.OpenVolume -= closedVolume
 	return realisedPnlDelta
@@ -249,7 +250,7 @@ func openV(p *Position, openedVolume int64, tradedPrice *num.Uint) {
 	p.OpenVolume += openedVolume
 }
 
-func mtm(p *Position, markPrice *num.Uint) {
+func mtm(p *Position, markPrice *num.Uint, positionFactor num.Decimal) {
 	if p.OpenVolume == 0 {
 		p.UnrealisedPnlFP = num.DecimalZero()
 		p.UnrealisedPnl = num.DecimalZero()
@@ -259,20 +260,20 @@ func mtm(p *Position, markPrice *num.Uint) {
 	openVolumeDec := num.DecimalFromInt64(p.OpenVolume)
 
 	//	p.UnrealisedPnlFP = float64(p.OpenVolume) * (float64(markPrice) - p.AverageEntryPriceFP)
-	p.UnrealisedPnlFP = openVolumeDec.Mul(markPriceDec.Sub(p.AverageEntryPriceFP))
+	p.UnrealisedPnlFP = openVolumeDec.Mul(markPriceDec.Sub(p.AverageEntryPriceFP)).Div(positionFactor)
 }
 
 func updateSettlePosition(p *Position, e SPE) {
 	for _, t := range e.Trades() {
 		pr := t.Price()
 		openedVolume, closedVolume := calculateOpenClosedVolume(p.OpenVolume, t.Size())
-		_ = closeV(p, closedVolume, pr)
+		_ = closeV(p, closedVolume, pr, e.PositionFactor())
 		openV(p, openedVolume, pr)
 		p.AverageEntryPrice, _ = num.UintFromDecimal(p.AverageEntryPriceFP.Round(0))
 
 		p.RealisedPnl = p.RealisedPnlFP.Round(0)
 	}
-	mtm(p, e.Price())
+	mtm(p, e.Price(), e.PositionFactor())
 	p.UnrealisedPnl = p.UnrealisedPnlFP.Round(0)
 }
 

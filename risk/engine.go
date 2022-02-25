@@ -69,6 +69,7 @@ type Engine struct {
 	currTime               int64
 	mktID                  string
 	asset                  string
+	positionFactor         num.Decimal
 }
 
 // NewEngine instantiate a new risk engine.
@@ -86,6 +87,7 @@ func NewEngine(
 	stateVarEngine StateVarEngine,
 	factors *types.RiskFactor,
 	riskFactorsInitialised bool,
+	positionFactor num.Decimal,
 ) *Engine {
 	// setup logger
 	log = log.Named(namedLogger)
@@ -107,6 +109,7 @@ func NewEngine(
 		mktID:                  mktID,
 		asset:                  asset,
 		riskFactorsInitialised: riskFactorsInitialised,
+		positionFactor:         positionFactor,
 	}
 
 	stateVarEngine.RegisterStateVariable(asset, mktID, RiskFactorStateVarName, RiskFactorConverter{}, e.startRiskFactorsCalculation, []statevar.StateVarEventType{statevar.StateVarEventTypeMarketEnactment}, e.updateRiskFactor)

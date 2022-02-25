@@ -19,9 +19,10 @@ type Engine struct {
 	log *logging.Logger
 	cfg Config
 
-	asset  string
-	feeCfg types.Fees
-	f      factors
+	asset          string
+	feeCfg         types.Fees
+	f              factors
+	positionFactor num.Decimal
 }
 
 type factors struct {
@@ -30,15 +31,16 @@ type factors struct {
 	liquidityFee      num.Decimal
 }
 
-func New(log *logging.Logger, cfg Config, feeCfg types.Fees, asset string) (*Engine, error) {
+func New(log *logging.Logger, cfg Config, feeCfg types.Fees, asset string, positionFactor num.Decimal) (*Engine, error) {
 	log = log.Named(namedLogger)
 	log.SetLevel(cfg.Level.Get())
 
 	e := &Engine{
-		log:    log,
-		feeCfg: feeCfg,
-		cfg:    cfg,
-		asset:  asset,
+		log:            log,
+		feeCfg:         feeCfg,
+		cfg:            cfg,
+		asset:          asset,
+		positionFactor: positionFactor,
 	}
 	return e, e.UpdateFeeFactors(e.feeCfg)
 }
@@ -491,7 +493,7 @@ func (e *Engine) getAuctionModeFeesAndTransfers(t *types.Trade) (*types.Fee, []*
 func (e *Engine) calculateContinuousModeFees(trade *types.Trade) *types.Fee {
 	size := num.NewUint(trade.Size)
 	// multiply by size
-	total := size.Mul(trade.Price, size).ToDecimal()
+	total := size.Mul(trade.Price, size).ToDecimal().Div(e.positionFactor)
 	mf, _ := num.UintFromDecimal(total.Mul(e.f.makerFee).Ceil())
 	inf, _ := num.UintFromDecimal(total.Mul(e.f.infrastructureFee).Ceil())
 	lf, _ := num.UintFromDecimal(total.Mul(e.f.liquidityFee).Ceil())

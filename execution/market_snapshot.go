@@ -43,7 +43,7 @@ func NewMarketFromSnapshot(
 	marketTracker *MarketTracker,
 ) (*Market, error) {
 	mkt := em.Market
-
+	positionFactor := num.DecimalFromFloat(10).Pow(num.DecimalFromInt64(int64(mkt.PositionDecimalPlaces)))
 	if len(em.Market.ID) == 0 {
 		return nil, ErrEmptyMarketID
 	}
@@ -80,6 +80,7 @@ func NewMarketFromSnapshot(
 			Long:   em.LongRiskFactor,
 		},
 		em.RiskFactorConsensusReached,
+		positionFactor,
 	)
 
 	settleEngine := settlement.New(
@@ -88,15 +89,16 @@ func NewMarketFromSnapshot(
 		tradableInstrument.Instrument.Product,
 		mkt.ID,
 		broker,
+		positionFactor,
 	)
 	positionEngine := positions.NewSnapshotEngine(log, positionConfig, mkt.ID)
 
-	feeEngine, err := fee.New(log, feeConfig, *mkt.Fees, asset)
+	feeEngine, err := fee.New(log, feeConfig, *mkt.Fees, asset, positionFactor)
 	if err != nil {
 		return nil, fmt.Errorf("unable to instantiate fee engine: %w", err)
 	}
 
-	tsCalc := target.NewSnapshotEngine(*mkt.LiquidityMonitoringParameters.TargetStakeParameters, positionEngine, mkt.ID)
+	tsCalc := target.NewSnapshotEngine(*mkt.LiquidityMonitoringParameters.TargetStakeParameters, positionEngine, mkt.ID, positionFactor)
 
 	pMonitor, err := price.NewMonitorFromSnapshot(mkt.ID, asset, em.PriceMonitor, mkt.PriceMonitoringSettings, tradableInstrument.RiskModel, stateVarEngine, log)
 	if err != nil {
@@ -107,7 +109,7 @@ func NewMarketFromSnapshot(
 	priceFactor := num.Zero().Exp(num.NewUint(10), num.NewUint(exp))
 	lMonitor := lmon.NewMonitor(tsCalc, mkt.LiquidityMonitoringParameters)
 
-	liqEngine := liquidity.NewSnapshotEngine(liquidityConfig, log, broker, tradableInstrument.RiskModel, pMonitor, asset, mkt.ID, stateVarEngine, mkt.TickSize())
+	liqEngine := liquidity.NewSnapshotEngine(liquidityConfig, log, broker, tradableInstrument.RiskModel, pMonitor, asset, mkt.ID, stateVarEngine, mkt.TickSize(), positionFactor)
 	// call on chain time update straight away, so
 	// the time in the engine is being updatedat creation
 	liqEngine.OnChainTimeUpdate(ctx, now)
@@ -146,6 +148,7 @@ func NewMarketFromSnapshot(
 		lastEquityShareDistributed: time.Unix(0, em.LastEquityShareDistributed),
 		feesTracker:                feesTracker,
 		marketTracker:              marketTracker,
+		positionFactor:             positionFactor,
 	}
 
 	market.tradableInstrument.Instrument.Product.NotifyOnTradingTerminated(market.tradingTerminated)

@@ -250,6 +250,7 @@ type Market struct {
 	stateChanged   bool
 	feesTracker    *FeesTracker
 	marketTracker  *MarketTracker
+	positionFactor num.Decimal // 10^pdp
 }
 
 // SetMarketID assigns a deterministic pseudo-random ID to a Market.
@@ -301,6 +302,8 @@ func NewMarket(
 		return nil, ErrEmptyMarketID
 	}
 
+	positionFactor := num.DecimalFromFloat(10).Pow(num.DecimalFromInt64(int64(mkt.PositionDecimalPlaces)))
+
 	tradableInstrument, err := markets.NewTradableInstrument(ctx, log, mkt.TradableInstrument, oracleEngine)
 	if err != nil {
 		return nil, fmt.Errorf("unable to instantiate a new market: %w", err)
@@ -330,6 +333,7 @@ func NewMarket(
 		stateVarEngine,
 		tradableInstrument.RiskModel.DefaultRiskFactors(),
 		false,
+		positionFactor,
 	)
 
 	settleEngine := settlement.New(
@@ -338,15 +342,16 @@ func NewMarket(
 		tradableInstrument.Instrument.Product,
 		mkt.ID,
 		broker,
+		positionFactor,
 	)
 	positionEngine := positions.NewSnapshotEngine(log, positionConfig, mkt.ID)
 
-	feeEngine, err := fee.New(log, feeConfig, *mkt.Fees, asset)
+	feeEngine, err := fee.New(log, feeConfig, *mkt.Fees, asset, positionFactor)
 	if err != nil {
 		return nil, fmt.Errorf("unable to instantiate fee engine: %w", err)
 	}
 
-	tsCalc := liquiditytarget.NewSnapshotEngine(*mkt.LiquidityMonitoringParameters.TargetStakeParameters, positionEngine, mkt.ID)
+	tsCalc := liquiditytarget.NewSnapshotEngine(*mkt.LiquidityMonitoringParameters.TargetStakeParameters, positionEngine, mkt.ID, positionFactor)
 
 	pMonitor, err := price.NewMonitor(asset, mkt.ID, tradableInstrument.RiskModel, mkt.PriceMonitoringSettings, stateVarEngine, log)
 	if err != nil {
@@ -360,7 +365,7 @@ func NewMarket(
 	lMonitor := lmon.NewMonitor(tsCalc, mkt.LiquidityMonitoringParameters)
 
 	liqEngine := liquidity.NewSnapshotEngine(
-		liquidityConfig, log, broker, tradableInstrument.RiskModel, pMonitor, asset, mkt.ID, stateVarEngine, mkt.TickSize())
+		liquidityConfig, log, broker, tradableInstrument.RiskModel, pMonitor, asset, mkt.ID, stateVarEngine, mkt.TickSize(), positionFactor)
 	// call on chain time update straight away, so
 	// the time in the engine is being updatedat creation
 	liqEngine.OnChainTimeUpdate(ctx, now)
@@ -417,6 +422,7 @@ func NewMarket(
 		priceFactor:               priceFactor,
 		minLPStakeQuantumMultiple: num.MustDecimalFromString("1"),
 		marketTracker:             marketTracker,
+		positionFactor:            positionFactor,
 	}
 
 	liqEngine.SetGetStaticPricesFunc(market.getBestStaticPrices)
@@ -1548,7 +1554,7 @@ func (m *Market) handleConfirmation(ctx context.Context, conf *types.OrderConfir
 			}
 			// add trade to settlement engine for correct MTM settlement of individual trades
 			m.settlement.AddTrade(trade)
-			tradeValue := num.Zero().Mul(num.NewUint(trade.Size), trade.Price)
+			tradeValue, _ := num.UintFromDecimal(num.DecimalFromInt64(int64(trade.Size)).Mul(trade.Price.ToDecimal()).Div(m.positionFactor))
 			m.feeSplitter.AddTradeValue(tradeValue)
 			m.marketTracker.AddValueTraded(m.mkt.ID, tradeValue)
 		}
@@ -1863,9 +1869,9 @@ func (m *Market) resolveClosedOutParties(ctx context.Context, distressedMarginEv
 			}
 
 			m.settlement.AddTrade(trade)
-			m.feeSplitter.AddTradeValue(num.Zero().Mul(
-				num.NewUint(trade.Size), trade.Price,
-			))
+			tradeValue, _ := num.UintFromDecimal(num.DecimalFromInt64(int64(trade.Size)).Mul(trade.Price.ToDecimal()).Div(m.positionFactor))
+			m.feeSplitter.AddTradeValue(tradeValue)
+			m.marketTracker.AddValueTraded(m.mkt.ID, tradeValue)
 		}
 		m.broker.SendBatch(tradeEvts)
 	}
@@ -2712,7 +2718,12 @@ func (m *Market) applyOrderAmendment(
 
 	// apply size changes
 	if amendment.SizeDelta != 0 {
-		order.Size += uint64(amendment.SizeDelta)
+		if amendment.SizeDelta > 0 {
+			order.Size += uint64(amendment.SizeDelta)
+		} else {
+			order.Size -= uint64(-amendment.SizeDelta)
+		}
+
 		newRemaining := int64(existingOrder.Remaining) + amendment.SizeDelta
 		if newRemaining <= 0 {
 			newRemaining = 0

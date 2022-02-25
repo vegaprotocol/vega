@@ -22,7 +22,7 @@ func newSnapshotEngine(marketID string) *target.SnapshotEngine {
 	}
 	var oiCalc target.OpenInterestCalculator
 
-	return target.NewSnapshotEngine(params, oiCalc, marketID)
+	return target.NewSnapshotEngine(params, oiCalc, marketID, num.DecimalFromFloat(1))
 }
 
 func TestSaveAndLoadSnapshot(t *testing.T) {
