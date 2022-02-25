@@ -251,7 +251,7 @@ func (e *Engine) Start() error {
 
 // this function loads snapshots in local store as though they were generated at runtime.
 // The result is that, whenever we create a new snapshot, the old one gets cleaned up.
-func (e *Engine) loadLocalVersions(versions []int) {
+func (e *Engine) populateLocalVersions(versions []int) {
 	// is in ascending order already, so let's just iterate
 	if len(versions) == 0 {
 		versions = e.avl.AvailableVersions()
@@ -282,7 +282,7 @@ func (e *Engine) Loaded() (bool, error) {
 	// we can go straight into loading the state into the providers
 	if e.avl != nil {
 		// OK, but let's make the engine aware of its local store versions
-		e.loadLocalVersions(nil)
+		e.populateLocalVersions(nil)
 		return true, e.applySnap(e.ctx)
 	}
 
@@ -301,7 +301,7 @@ func (e *Engine) Loaded() (bool, error) {
 
 	height := uint64(startHeight)
 	versions := e.avl.AvailableVersions()
-	e.loadLocalVersions(versions)
+	e.populateLocalVersions(versions)
 	// descending order, because that makes most sense
 	var last, first uint64
 	for i := len(versions) - 1; i > -1; i-- {
@@ -438,15 +438,22 @@ func (e *Engine) applySnap(ctx context.Context) error {
 	}
 	// this is the current version
 	e.version = e.snapshot.Meta.Version
+	loaded, err := e.avl.LoadVersionForOverwriting(e.version)
+	if err != nil {
+		e.log.Error("Failed to load target version",
+			logging.Error(err),
+			logging.Int64("loaded-version", loaded),
+		)
+	}
+	// we need the versions of the snapshot to match, regardless of the version we actually loaded
+	e.avl.SetInitialVersion(uint64(e.snapshot.Meta.Version))
 	// now let's clear the versions slice and pretend the more recent versions don't exist yet
 	for i := 0; i < len(e.versions); i++ {
-		if e.versions[i] >= e.version {
+		if e.versions[i] >= loaded {
 			e.versions = append(e.versions[0:0], e.versions[:i]...)
 			break
 		}
 	}
-	// we need the versions of the snapshot to match
-	e.avl.SetInitialVersion(uint64(e.snapshot.Meta.Version))
 	// iterate over all payloads, add them to the tree
 	ordered := make(map[types.SnapshotNamespace][]*types.Payload, len(nodeOrder))
 	// positions and matching are linked to the market, work out how many payloads those will be:
