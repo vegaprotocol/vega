@@ -581,13 +581,12 @@ func (s *coreService) handleSubmitRawTxTMError(err error) error {
 }
 
 func setResponseBasisContent(response *protoapi.SubmitRawTransactionResponse, code uint32, log string, data, hash bytes.HexBytes) {
-
 	response.TxHash = hash.String()
 	response.Code = code
 	response.Data = data.String()
 	response.Log = log
-
 }
+
 func (s *coreService) SubmitRawTransaction(ctx context.Context, req *protoapi.SubmitRawTransactionRequest) (*protoapi.SubmitRawTransactionResponse, error) {
 	startTime := time.Now()
 	defer metrics.APIRequestAndTimeGRPC("SubmitTransaction", startTime)
