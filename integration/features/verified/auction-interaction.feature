@@ -397,7 +397,7 @@ Feature: Test interactions between different auction types
       | 1020       | TRADING_MODE_CONTINUOUS | 1       | 1010      | 1030      | 4080         | 5100           | 40            |
 
 
-     # Below scenarios are taken from .mock files and needs to be implemented
+     # Below scenarios are taken from .mock feature files from specs internal  qa scenarios and needs to be implemented
 
       #Scenario: Once market is in continuous trading mode: enter price monitoring auction -> extend with liquidity monitoring auction -> leave auction mode
       #    Given the following network parameters are set:
