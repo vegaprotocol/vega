@@ -33,21 +33,21 @@ Feature: Target stake
 # this is now out of the time window.
     And time is updated to "2021-03-08T00:00:00Z"
 
-  Scenario: Max open interest changes over time
+  Scenario: Max open interest changes over time (0041-TSTK-additional-tests)
     # setup accounts
     Given the parties deposit on asset's general account the following amount:
       | party | asset | amount    |
-      | tt_0   | BTC   | 100000000 |
-      | tt_1   | BTC   | 100000000 |
-      | tt_2   | BTC   | 100000000 |
-      | tt_3   | BTC   | 100000000 |
+      | tt_0  | BTC   | 100000000 |
+      | tt_1  | BTC   | 100000000 |
+      | tt_2  | BTC   | 100000000 |
+      | tt_3  | BTC   | 100000000 |
 
     # put some volume on the book so that others can increase their
     # positions and close out if needed too
     When the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
-      | tt_0   | ETH/DEC21 | buy  | 1000   | 90    | 0                | TYPE_LIMIT | TIF_GTC | tt_0_0    |
-      | tt_0   | ETH/DEC21 | sell | 1000   | 110   | 0                | TYPE_LIMIT | TIF_GTC | tt_0_1    |
+      | tt_0  | ETH/DEC21 | buy  | 1000   | 90    | 0                | TYPE_LIMIT | TIF_GTC | tt_0_0    |
+      | tt_0  | ETH/DEC21 | sell | 1000   | 110   | 0                | TYPE_LIMIT | TIF_GTC | tt_0_1    |
 
     # nothing should have traded, we have mark price set apriori or
     # due to auction closing.
