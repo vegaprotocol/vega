@@ -21,6 +21,9 @@ func NewOrderEvent(ctx context.Context, o *types.Order) *Order {
 	}
 	// set to original order price
 	order.o.Price = num.UintToString(o.OriginalPrice)
+
+	println("sending a new order event", o.ID, o.MarketID, o.Party, o.Reference)
+
 	return order
 }
 
