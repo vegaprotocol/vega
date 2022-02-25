@@ -52,7 +52,7 @@ func (e *Engine) calculateAuctionMargins(m events.Margin, markPrice *num.Uint, r
 	// calculate margins without order positions
 	ml := e.calculateMargins(m, markPrice, rf, true, true)
 	// now add the margin levels for orders
-	long, short := num.DecimalFromInt64(m.Buy()), num.DecimalFromInt64(m.Sell())
+	long, short := num.DecimalFromInt64(m.Buy()).Div(e.positionFactor), num.DecimalFromInt64(m.Sell()).Div(e.positionFactor)
 	var lMargin, sMargin num.Decimal
 	if long.IsPositive() {
 		lMargin = long.Mul(rf.Long.Mul(m.VWBuy().ToDecimal()))
@@ -79,23 +79,24 @@ func (e *Engine) calculateMargins(m events.Margin, markPrice *num.Uint, rf types
 		marginMaintenanceLng num.Decimal
 		marginMaintenanceSht num.Decimal
 	)
-	openVolume := m.Size()
+	// convert volumn to a decimal number from a * 10^pdp
+	openVolume := num.DecimalFromInt64(m.Size()).Div(e.positionFactor)
 	var (
 		riskiestLng = openVolume
 		riskiestSht = openVolume
 	)
 	if withPotentialBuyAndSell {
 		// calculate both long and short riskiest positions
-		riskiestLng += m.Buy()
-		riskiestSht -= m.Sell()
+		riskiestLng = riskiestLng.Add(num.DecimalFromInt64(m.Buy()).Div(e.positionFactor))
+		riskiestSht = riskiestSht.Sub(num.DecimalFromInt64(m.Sell()).Div(e.positionFactor))
 	}
 
 	mPriceDec := markPrice.ToDecimal()
 	// calculate margin maintenance long only if riskiest is > 0
 	// marginMaintenanceLng will be 0 by default
-	if riskiestLng > 0 {
+	if riskiestLng.IsPositive() {
 		var (
-			slippageVolume  = num.DecimalFromInt64(max(openVolume, 0))
+			slippageVolume  = num.MaxD(openVolume, num.DecimalZero())
 			slippagePerUnit = num.Zero()
 			negSlippage     bool
 		)
@@ -107,8 +108,8 @@ func (e *Engine) calculateMargins(m events.Margin, markPrice *num.Uint, rf types
 			if auction {
 				exitPrice = e.ob.GetIndicativePrice()
 			} else {
-				svol, _ := slippageVolume.Float64()
-				exitPrice, err = e.ob.GetCloseoutPrice(uint64(svol), types.SideBuy)
+				svol, _ := num.UintFromDecimal(slippageVolume.Abs().Mul(e.positionFactor))
+				exitPrice, err = e.ob.GetCloseoutPrice(svol.Uint64(), types.SideBuy)
 				if err != nil && e.log.GetLevel() == logging.DebugLevel {
 					e.log.Debug("got non critical error from GetCloseoutPrice for Buy side",
 						logging.Error(err))
@@ -117,7 +118,7 @@ func (e *Engine) calculateMargins(m events.Margin, markPrice *num.Uint, rf types
 			slippagePerUnit, negSlippage = num.Zero().Delta(markPrice, exitPrice)
 		}
 
-		bDec := num.DecimalFromInt64(m.Buy())
+		bDec := num.DecimalFromInt64(m.Buy()).Div(e.positionFactor)
 		if auction {
 			marginMaintenanceLng = slippageVolume.Mul(rf.Long.Mul(mPriceDec)).Add(bDec.Mul(rf.Long).Mul(mPriceDec))
 			// marginMaintenanceLng = float64(slippageVolume)*(rf.Long*float64(markPrice)) + (float64(m.Buy()) * rf.Long * float64(markPrice))
@@ -134,9 +135,9 @@ func (e *Engine) calculateMargins(m events.Margin, markPrice *num.Uint, rf types
 	}
 	// calculate margin maintenance short only if riskiest is < 0
 	// marginMaintenanceSht will be 0 by default
-	if riskiestSht < 0 {
+	if riskiestSht.IsNegative() {
 		var (
-			slippageVolume  = num.DecimalFromInt64(min(openVolume, 0))
+			slippageVolume  = num.MinD(openVolume, num.DecimalZero())
 			slippagePerUnit = num.Zero()
 		)
 		// slippageVolume would be negative we abs it in the next phase
@@ -148,8 +149,9 @@ func (e *Engine) calculateMargins(m events.Margin, markPrice *num.Uint, rf types
 			if auction {
 				exitPrice = e.ob.GetIndicativePrice()
 			} else {
-				svol, _ := slippageVolume.Abs().Float64()
-				exitPrice, err = e.ob.GetCloseoutPrice(uint64(svol), types.SideSell)
+				// convert back into vol * 10^pdp
+				svol, _ := num.UintFromDecimal(slippageVolume.Abs().Mul(e.positionFactor))
+				exitPrice, err = e.ob.GetCloseoutPrice(svol.Uint64(), types.SideSell)
 				if err != nil && e.log.GetLevel() == logging.DebugLevel {
 					e.log.Debug("got non critical error from GetCloseoutPrice for Sell side",
 						logging.Error(err))
@@ -160,7 +162,7 @@ func (e *Engine) calculateMargins(m events.Margin, markPrice *num.Uint, rf types
 			// slippagePerUnit = -1 * (markPrice - int64(exitPrice))
 		}
 
-		sDec := num.DecimalFromInt64(m.Sell())
+		sDec := num.DecimalFromInt64(m.Sell()).Div(e.positionFactor)
 		if auction {
 			marginMaintenanceSht = slippageVolume.Abs().Mul(rf.Short.Mul(mPriceDec)).Add(sDec.Mul(rf.Short).Mul(mPriceDec))
 		} else {
@@ -182,18 +184,4 @@ func (e *Engine) calculateMargins(m events.Margin, markPrice *num.Uint, rf types
 		InitialMargin:          num.Zero(),
 		CollateralReleaseLevel: num.Zero(),
 	}
-}
-
-func max(a, b int64) int64 {
-	if a > b {
-		return a
-	}
-	return b
-}
-
-func min(a, b int64) int64 {
-	if a < b {
-		return a
-	}
-	return b
 }

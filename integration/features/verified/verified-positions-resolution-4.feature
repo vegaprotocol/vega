@@ -9,8 +9,7 @@ Feature: Position resolution case 4
       | name                           | value |
       | market.auction.minimumDuration | 1     |
 
-  Scenario: https://drive.google.com/file/d/1bYWbNJvG7E-tcqsK26JMu2uGwaqXqm0L/view
-  # Case 4 from Reference spreadsheet: https://drive.google.com/open?id=1aenM_1mqruGDmU9coBxF49_zbHTlEWrj
+  Scenario: close out when there is enough orders on the orderbook to cover the position 
 # setup accounts
     Given the parties deposit on asset's general account the following amount:
       | party            | asset | amount        |
@@ -42,6 +41,19 @@ Feature: Position resolution case 4
     When the parties place the following orders:
       | party            | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | designatedLooser | ETH/DEC19 | sell | 100    | 180   | 2                | TYPE_LIMIT | TIF_GTC | ref-1     |
+
+    And the mark price should be "180" for the market "ETH/DEC19"
+
+    Then the order book should have the following volumes for market "ETH/DEC19":
+      | side | price    | volume |
+      | sell | 1000     | 1      |
+      | sell | 200      | 150    |
+
+  # margin level: vol* slippage = vol * (MarkPrice-ExitPrice) =100 * (200-180) = 100*20 = 2000
+
+    Then the parties should have the following account balances:
+      | party            | asset | market id | margin    | general  |
+      | designatedLooser | BTC   | ETH/DEC19 | 8000      | 2500     |
 
     Then the parties should have the following margin levels:
       | party            | market id | maintenance | search | initial | release |

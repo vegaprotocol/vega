@@ -10,6 +10,7 @@ import (
 	types "code.vegaprotocol.io/vega/types"
 	num "code.vegaprotocol.io/vega/types/num"
 	gomock "github.com/golang/mock/gomock"
+	decimal "github.com/shopspring/decimal"
 )
 
 // MockProduct is a mock of Product interface.
@@ -50,7 +51,7 @@ func (mr *MockProductMockRecorder) GetAsset() *gomock.Call {
 }
 
 // Settle mocks base method.
-func (m *MockProduct) Settle(arg0 *num.Uint, arg1 int64) (*types.FinancialAmount, bool, error) {
+func (m *MockProduct) Settle(arg0 *num.Uint, arg1 decimal.Decimal) (*types.FinancialAmount, bool, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Settle", arg0, arg1)
 	ret0, _ := ret[0].(*types.FinancialAmount)

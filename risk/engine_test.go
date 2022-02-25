@@ -337,7 +337,7 @@ func testMarginWithOrderInBook(t *testing.T) {
 	statevar := mocks.NewMockStateVarEngine(ctrl)
 	statevar.EXPECT().RegisterStateVariable(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any())
 	statevar.EXPECT().NewEvent(gomock.Any(), gomock.Any(), gomock.Any())
-	testE := risk.NewEngine(log, conf.Execution.Risk, mc, model, book, as, broker, 0, "mktid", "ETH", statevar, model.DefaultRiskFactors(), false)
+	testE := risk.NewEngine(log, conf.Execution.Risk, mc, model, book, as, broker, 0, "mktid", "ETH", statevar, model.DefaultRiskFactors(), false, num.DecimalFromInt64(1))
 	evt := testMargin{
 		party:   "tx",
 		size:    10,
@@ -438,7 +438,7 @@ func testMarginWithOrderInBook2(t *testing.T) {
 	statevar := mocks.NewMockStateVarEngine(ctrl)
 	statevar.EXPECT().RegisterStateVariable(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any())
 	statevar.EXPECT().NewEvent(gomock.Any(), gomock.Any(), gomock.Any())
-	testE := risk.NewEngine(log, conf.Execution.Risk, mc, model, book, as, broker, 0, "mktid", "ETH", statevar, model.DefaultRiskFactors(), false)
+	testE := risk.NewEngine(log, conf.Execution.Risk, mc, model, book, as, broker, 0, "mktid", "ETH", statevar, model.DefaultRiskFactors(), false, num.DecimalFromInt64(1))
 	evt := testMargin{
 		party:   "tx",
 		size:    13,
@@ -500,6 +500,7 @@ func getTestEngine(t *testing.T, initialRisk *types.RiskFactor) *testEngine {
 		statevar,
 		model.DefaultRiskFactors(),
 		false,
+		num.DecimalFromInt64(1),
 	)
 	return &testEngine{
 		Engine:    engine,

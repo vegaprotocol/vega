@@ -29,7 +29,7 @@ type MarketPosition interface {
 // Product ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/settlement_product_mock.go -package mocks code.vegaprotocol.io/vega/settlement Product
 type Product interface {
-	Settle(entryPrice *num.Uint, netPosition int64) (amt *types.FinancialAmount, neg bool, err error)
+	Settle(entryPrice *num.Uint, netFractionalPosition num.Decimal) (amt *types.FinancialAmount, neg bool, err error)
 	GetAsset() string
 	SettlementPrice() (*num.Uint, error)
 }
@@ -44,13 +44,14 @@ type Engine struct {
 	Config
 	log *logging.Logger
 
-	market      string
-	product     Product
-	pos         map[string]*pos
-	mu          *sync.Mutex
-	trades      map[string][]*pos
-	broker      Broker
-	currentTime time.Time
+	market         string
+	product        Product
+	pos            map[string]*pos
+	mu             *sync.Mutex
+	trades         map[string][]*pos
+	broker         Broker
+	currentTime    time.Time
+	positionFactor num.Decimal
 }
 
 func (e *Engine) OnTick(t time.Time) {
@@ -58,20 +59,21 @@ func (e *Engine) OnTick(t time.Time) {
 }
 
 // New instantiates a new instance of the settlement engine.
-func New(log *logging.Logger, conf Config, product Product, market string, broker Broker) *Engine {
+func New(log *logging.Logger, conf Config, product Product, market string, broker Broker, positionFactor num.Decimal) *Engine {
 	// setup logger
 	log = log.Named(namedLogger)
 	log.SetLevel(conf.Level.Get())
 
 	return &Engine{
-		Config:  conf,
-		log:     log,
-		market:  market,
-		product: product,
-		pos:     map[string]*pos{},
-		mu:      &sync.Mutex{},
-		trades:  map[string][]*pos{},
-		broker:  broker,
+		Config:         conf,
+		log:            log,
+		market:         market,
+		product:        product,
+		pos:            map[string]*pos{},
+		mu:             &sync.Mutex{},
+		trades:         map[string][]*pos{},
+		broker:         broker,
+		positionFactor: positionFactor,
 	}
 }
 
@@ -202,7 +204,7 @@ func (e *Engine) SettleMTM(ctx context.Context, markPrice *num.Uint, positions [
 	if hasTraded {
 		// don't create an event for the network. Its position is irrelevant
 
-		mtmShare, neg := calcMTM(markPrice, markPrice, 0, traded)
+		mtmShare, neg := calcMTM(markPrice, markPrice, 0, traded, e.positionFactor)
 		// MarketPosition stub for network
 		netMPos := &npos{
 			price: markPrice.Clone(),
@@ -228,7 +230,7 @@ func (e *Engine) SettleMTM(ctx context.Context, markPrice *num.Uint, positions [
 			tradeset = append(tradeset, t)
 		}
 		// create (and add position to buffer)
-		evts = append(evts, events.NewSettlePositionEvent(ctx, party, e.market, evt.Price(), tradeset, e.currentTime.UnixNano()))
+		evts = append(evts, events.NewSettlePositionEvent(ctx, party, e.market, evt.Price(), tradeset, e.currentTime.UnixNano(), e.positionFactor))
 		// no changes in position, and the MTM price hasn't changed, we don't need to do anything
 		if !hasTraded && current.price.EQ(markPrice) {
 			// no changes in position and markPrice hasn't changed -> nothing needs to be marked
@@ -239,7 +241,7 @@ func (e *Engine) SettleMTM(ctx context.Context, markPrice *num.Uint, positions [
 		// and the old mark price at which the party held the position
 		// the trades slice contains all trade positions (position changes for the party)
 		// at their exact trade price, so we can MTM that volume correctly, too
-		mtmShare, neg := calcMTM(markPrice, current.price, current.size, traded)
+		mtmShare, neg := calcMTM(markPrice, current.price, current.size, traded, e.positionFactor)
 		// we've marked this party to market, their position can now reflect this
 		_ = current.update(evt)
 		current.price = markPrice
@@ -310,7 +312,7 @@ func (e *Engine) settleAll() ([]*types.Transfer, error) {
 		e.log.Debug("Settling position for party", logging.String("party-id", party))
 		// @TODO - there was something here... the final amount had to be oracle - market or something
 		// check with Tamlyn why that was, because we're only handling open positions here...
-		amt, neg, err := settleProd.Settle(pos.price, pos.size)
+		amt, neg, err := settleProd.Settle(pos.price, num.DecimalFromInt64(pos.size).Div(e.positionFactor))
 		// for now, product.Settle returns the total value, we need to only settle the delta between a parties current position
 		// and the final price coming from the oracle, so oracle_price - mark_price * volume (check with Tamlyn whether this should be absolute or not)
 		if err != nil {
@@ -381,7 +383,7 @@ func (e *Engine) transferCap(evts []events.MarketPosition) int {
 // amount =  prev_vol * (current_price - prev_mark_price) + SUM(new_trade := range trades)( new_trade(i).volume(party)*(current_price - new_trade(i).price )
 // given that the new trades price will equal new mark price,  the sum(trades) bit will probably == 0 for nicenet
 // the size here is the _new_ position size, the price is the OLD price!!
-func calcMTM(markPrice, price *num.Uint, size int64, trades []*pos) (*num.Uint, bool) {
+func calcMTM(markPrice, price *num.Uint, size int64, trades []*pos, positionFactor num.Decimal) (*num.Uint, bool) {
 	delta, sign := num.Zero().Delta(markPrice, price)
 	// this shouldn't be possible I don't think, but just in case
 	if size < 0 {
@@ -414,5 +416,8 @@ func calcMTM(markPrice, price *num.Uint, size int64, trades []*pos) (*num.Uint, 
 			sign = neg
 		}
 	}
-	return mtmShare, sign
+
+	// as mtmShare was calculated with the volumes as integers (not decimals in pdp space) we need to divide by position factor
+	res, _ := num.UintFromDecimal(mtmShare.ToDecimal().Div(positionFactor))
+	return res, sign
 }

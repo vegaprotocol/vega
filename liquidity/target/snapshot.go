@@ -39,6 +39,7 @@ func NewSnapshotEngine(
 	parameters types.TargetStakeParameters,
 	oiCalc OpenInterestCalculator,
 	marketID string,
+	positionFactor num.Decimal,
 ) *SnapshotEngine {
 	buf := proto.NewBuffer(nil)
 	buf.SetDeterministic(true)
@@ -48,7 +49,7 @@ func NewSnapshotEngine(
 	}).Key()
 
 	return &SnapshotEngine{
-		Engine:  NewEngine(parameters, oiCalc, marketID),
+		Engine:  NewEngine(parameters, oiCalc, marketID, positionFactor),
 		changed: true,
 		buf:     buf,
 		key:     key,

@@ -20,14 +20,14 @@ var (
 
 func TestConstructor(t *testing.T) {
 	params := types.TargetStakeParameters{TimeWindow: 3600, ScalingFactor: num.DecimalFromFloat(10)}
-	engine := target.NewEngine(params, nil, marketID)
+	engine := target.NewEngine(params, nil, marketID, num.DecimalFromFloat(1))
 
 	require.NotNil(t, engine)
 }
 
 func TestRecordOpenInterest(t *testing.T) {
 	params := types.TargetStakeParameters{TimeWindow: 3600, ScalingFactor: num.DecimalFromFloat(10)}
-	engine := target.NewEngine(params, nil, marketID)
+	engine := target.NewEngine(params, nil, marketID, num.DecimalFromFloat(1))
 	err := engine.RecordOpenInterest(9, now)
 	require.NoError(t, err)
 	err = engine.RecordOpenInterest(0, now)
@@ -42,7 +42,7 @@ func TestRecordOpenInterest(t *testing.T) {
 
 func TestGetTargetStake_NoRecordedOpenInterest(t *testing.T) {
 	params := types.TargetStakeParameters{TimeWindow: 3600, ScalingFactor: num.DecimalFromFloat(10)}
-	engine := target.NewEngine(params, nil, marketID)
+	engine := target.NewEngine(params, nil, marketID, num.DecimalFromFloat(1))
 	rf := types.RiskFactor{
 		Long:  num.DecimalFromFloat(0.3),
 		Short: num.DecimalFromFloat(0.1),
@@ -71,7 +71,7 @@ func TestGetTargetStake_VerifyFormula(t *testing.T) {
 	}
 	expectedTargetStake = expectedTargetStake.Mul(factor.Mul(scalingFactor))
 
-	engine := target.NewEngine(params, nil, marketID)
+	engine := target.NewEngine(params, nil, marketID, num.DecimalFromFloat(1))
 	rf := types.RiskFactor{
 		Long:  rfLong,
 		Short: rfShort,
@@ -111,7 +111,7 @@ func TestGetTargetStake_VerifyMaxOI(t *testing.T) {
 		return ump
 	}
 
-	engine := target.NewEngine(params, nil, marketID)
+	engine := target.NewEngine(params, nil, marketID, num.DecimalFromFloat(1))
 	rf := types.RiskFactor{
 		Long:  rfLong,
 		Short: rfShort,
@@ -179,7 +179,7 @@ func TestGetTheoreticalTargetStake(t *testing.T) {
 
 	ctrl := gomock.NewController(t)
 	oiCalc := mocks.NewMockOpenInterestCalculator(ctrl)
-	engine := target.NewEngine(params, oiCalc, marketID)
+	engine := target.NewEngine(params, oiCalc, marketID, num.DecimalFromFloat(1))
 	rf := types.RiskFactor{
 		Long:  rfLong,
 		Short: rfShort,
