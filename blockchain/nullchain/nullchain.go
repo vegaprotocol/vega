@@ -317,7 +317,6 @@ func (n *NullBlockchain) SendTransactionAsync(ctx context.Context, tx []byte) (*
 }
 
 func (n *NullBlockchain) CheckTransaction(ctx context.Context, tx []byte) (*tmctypes.ResultCheckTx, error) {
-	n.handleTransaction(tx)
 	return &tmctypes.ResultCheckTx{}, nil
 }
 
