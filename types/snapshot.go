@@ -23,6 +23,7 @@ type StateProvider interface {
 	GetHash(key string) ([]byte, error)
 	GetState(key string) ([]byte, []StateProvider, error)
 	LoadState(ctx context.Context, pl *Payload) ([]StateProvider, error)
+	Stopped() bool
 }
 
 // PostRestore is basically a StateProvider which, after the full core state is restored, expects a callback to finalise the state restore

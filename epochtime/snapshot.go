@@ -35,6 +35,10 @@ func (s *Svc) Keys() []string {
 	return []string{s.pl.Key()}
 }
 
+func (s *Svc) Stopped() bool {
+	return false
+}
+
 func (s *Svc) GetHash(k string) ([]byte, error) {
 	if k != s.pl.Key() {
 		return nil, types.ErrSnapshotKeyDoesNotExist

@@ -122,3 +122,17 @@ func (mr *MockPostRestoreMockRecorder) OnStateLoaded(arg0 interface{}) *gomock.C
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OnStateLoaded", reflect.TypeOf((*MockPostRestore)(nil).OnStateLoaded), arg0)
 }
+
+// Stopped mocks base method.
+func (m *MockPostRestore) Stopped() bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Stopped")
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// Stopped indicates an expected call of Stopped.
+func (mr *MockPostRestoreMockRecorder) Stopped() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Stopped", reflect.TypeOf((*MockPostRestore)(nil).Stopped))
+}

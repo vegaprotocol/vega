@@ -101,6 +101,10 @@ func (n *SnapshotNotary) Keys() []string {
 	return hashKeys
 }
 
+func (n *SnapshotNotary) Stopped() bool {
+	return false
+}
+
 func (n *SnapshotNotary) GetHash(k string) ([]byte, error) {
 	_, hash, err := n.getSerialisedAndHash(k)
 	return hash, err

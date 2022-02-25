@@ -83,6 +83,10 @@ func (a *Accounting) Keys() []string {
 	return []string{accountsKey}
 }
 
+func (a *Accounting) Stopped() bool {
+	return false
+}
+
 func (a *Accounting) GetHash(k string) ([]byte, error) {
 	_, hash, err := a.getSerialisedAndHash(k)
 	return hash, err

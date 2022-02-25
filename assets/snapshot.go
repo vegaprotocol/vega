@@ -36,6 +36,10 @@ func (s *Service) Keys() []string {
 	return hashKeys
 }
 
+func (s *Service) Stopped() bool {
+	return false
+}
+
 func (s *Service) serialiseActive() ([]byte, error) {
 	enabled := s.GetEnabledAssets()
 	sort.SliceStable(enabled, func(i, j int) bool { return enabled[i].ID < enabled[j].ID })

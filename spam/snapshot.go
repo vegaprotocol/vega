@@ -15,6 +15,10 @@ func (e *Engine) Keys() []string {
 	return e.hashKeys
 }
 
+func (e *Engine) Stopped() bool {
+	return false
+}
+
 // get the serialised form and hash of the given key.
 func (e *Engine) getSerialisedAndHash(k string) ([]byte, []byte, error) {
 	if _, ok := e.policyNameToPolicy[k]; !ok {
