@@ -36,6 +36,46 @@ func (m *MockTradingDataServiceClientV2) EXPECT() *MockTradingDataServiceClientV
 	return m.recorder
 }
 
+// GetMarketDataHistoryByID mocks base method.
+func (m *MockTradingDataServiceClientV2) GetMarketDataHistoryByID(arg0 context.Context, arg1 *v2.GetMarketDataHistoryByIDRequest, arg2 ...grpc.CallOption) (*v2.GetMarketDataHistoryByIDResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "GetMarketDataHistoryByID", varargs...)
+	ret0, _ := ret[0].(*v2.GetMarketDataHistoryByIDResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetMarketDataHistoryByID indicates an expected call of GetMarketDataHistoryByID.
+func (mr *MockTradingDataServiceClientV2MockRecorder) GetMarketDataHistoryByID(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMarketDataHistoryByID", reflect.TypeOf((*MockTradingDataServiceClientV2)(nil).GetMarketDataHistoryByID), varargs...)
+}
+
+// GetNetworkLimits mocks base method.
+func (m *MockTradingDataServiceClientV2) GetNetworkLimits(arg0 context.Context, arg1 *v2.GetNetworkLimitsRequest, arg2 ...grpc.CallOption) (*v2.GetNetworkLimitsResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "GetNetworkLimits", varargs...)
+	ret0, _ := ret[0].(*v2.GetNetworkLimitsResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetNetworkLimits indicates an expected call of GetNetworkLimits.
+func (mr *MockTradingDataServiceClientV2MockRecorder) GetNetworkLimits(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNetworkLimits", reflect.TypeOf((*MockTradingDataServiceClientV2)(nil).GetNetworkLimits), varargs...)
+}
+
 // OrderByID mocks base method.
 func (m *MockTradingDataServiceClientV2) OrderByID(arg0 context.Context, arg1 *v2.OrderByIDRequest, arg2 ...grpc.CallOption) (*v2.OrderByIDResponse, error) {
 	m.ctrl.T.Helper()
