@@ -211,6 +211,7 @@ func NewTestServer(t testing.TB, ctx context.Context, blocking bool) *TestServer
 	sqlStore := sqlstore.SQLStore{}
 	sqlBalanceStore := sqlstore.NewBalances(&sqlStore)
 	sqlOrderStore := sqlstore.NewOrders(&sqlStore)
+	sqlNetworkLimitsStore := sqlstore.NewNetworkLimits(&sqlStore)
 	eventSource, err := broker.NewEventSource(conf.Broker, logger)
 
 	if err != nil {
@@ -271,6 +272,7 @@ func NewTestServer(t testing.TB, ctx context.Context, blocking bool) *TestServer
 		checkpointSvc,
 		sqlBalanceStore,
 		sqlOrderStore,
+		sqlNetworkLimitsStore,
 	)
 	if srv == nil {
 		t.Fatal("failed to create gRPC server")

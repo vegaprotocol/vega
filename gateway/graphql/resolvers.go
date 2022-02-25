@@ -889,6 +889,15 @@ func (r *myQueryResolver) HistoricBalances(ctx context.Context, filter *v2.Accou
 	return resp.GetBalances(), nil
 }
 
+func (r *myQueryResolver) NetworkLimits(ctx context.Context) (*types.NetworkLimits, error) {
+	req := &v2.GetNetworkLimitsRequest{}
+	resp, err := r.tradingDataClientV2.GetNetworkLimits(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	return resp.GetLimits(), nil
+}
+
 // END: Root Resolver
 
 type myNodeSignatureResolver VegaResolverRoot

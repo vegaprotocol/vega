@@ -19,8 +19,9 @@ var defaultPaginationV2 = entities.Pagination{
 
 type tradingDataServiceV2 struct {
 	v2.UnimplementedTradingDataServiceServer
-	balanceStore *sqlstore.Balances
-	orderStore   *sqlstore.Orders
+	balanceStore       *sqlstore.Balances
+	orderStore         *sqlstore.Orders
+	networkLimitsStore *sqlstore.NetworkLimits
 }
 
 func (t *tradingDataServiceV2) QueryBalanceHistory(ctx context.Context, req *v2.QueryBalanceHistoryRequest) (*v2.QueryBalanceHistoryResponse, error) {
@@ -141,4 +142,13 @@ func (t *tradingDataServiceV2) OrdersByMarket(ctx context.Context, req *v2.Order
 	return &v2.OrdersByMarketResponse{
 		Orders: pbOrders,
 	}, nil
+}
+
+func (t *tradingDataServiceV2) GetNetworkLimits(ctx context.Context, req *v2.GetNetworkLimitsRequest) (*v2.GetNetworkLimitsResponse, error) {
+	limits, err := t.networkLimitsStore.GetLatest(ctx)
+	if err != nil {
+		return nil, apiError(codes.Unknown, ErrGetNetworkLimits, err)
+	}
+
+	return &v2.GetNetworkLimitsResponse{Limits: limits.ToProto()}, nil
 }

@@ -127,6 +127,7 @@ func (l *NodeCommand) setupSQLSubscribers() {
 	l.timeSubSQL = sqlsubscribers.NewTimeSub(l.blockStoreSQL, l.Log)
 	l.transferResponseSubSQL = sqlsubscribers.NewTransferResponse(l.ledgerSQL, l.accountStoreSQL, l.balanceStoreSQL, l.partyStoreSQL, l.Log)
 	l.orderSubSQL = sqlsubscribers.NewOrder(l.ctx, l.orderStoreSQL, l.blockStoreSQL, l.Log)
+	l.networkLimitsSubSQL = sqlsubscribers.NewNetworkLimitSub(l.ctx, l.networkLimitsStoreSQL, l.Log)
 	l.tradesSubSQL = sqlsubscribers.NewTradesSubscriber(l.tradeStoreSQL, l.Log)
 }
 
@@ -160,6 +161,7 @@ func (l *NodeCommand) setupStorages() error {
 		l.balanceStoreSQL = sqlstore.NewBalances(sqlStore)
 		l.ledgerSQL = sqlstore.NewLedger(sqlStore)
 		l.orderStoreSQL = sqlstore.NewOrders(sqlStore)
+		l.networkLimitsStoreSQL = sqlstore.NewNetworkLimits(sqlStore)
 		l.tradeStoreSQL = sqlstore.NewTrades(sqlStore)
 		l.sqlStore = sqlStore
 	}
@@ -229,7 +231,13 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 		eventSource = broker.NewFanOutEventSource(eventSource, l.conf.SQLStore.FanOutBufferSize, 2)
 
 		l.sqlBroker = broker.NewSqlStoreBroker(l.Log, l.conf.Broker, l.chainInfoStore, eventSource,
-			l.conf.SQLStore.SqlEventBrokerBufferSize, l.timeSubSQL, l.assetSubSQL, l.transferResponseSubSQL, l.orderSubSQL, l.tradesSubSQL)
+			l.conf.SQLStore.SqlEventBrokerBufferSize,
+			l.timeSubSQL,
+			l.assetSubSQL,
+			l.transferResponseSubSQL,
+			l.orderSubSQL,
+			l.networkLimitsSubSQL,
+			l.tradesSubSQL)
 	}
 
 	l.broker, err = broker.New(l.ctx, l.Log, l.conf.Broker, l.chainInfoStore, eventSource)

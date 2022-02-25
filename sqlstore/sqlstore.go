@@ -5,6 +5,7 @@ import (
 	"embed"
 	"errors"
 	"fmt"
+	"io"
 
 	"code.vegaprotocol.io/data-node/logging"
 	"code.vegaprotocol.io/shared/paths"
@@ -105,10 +106,12 @@ func InitialiseStorage(log *logging.Logger, config Config, paths paths.Paths) (*
 	registerNumericType(poolConfig)
 
 	if s.pool, err = pgxpool.ConnectConfig(context.Background(), poolConfig); err != nil {
+		s.Stop()
 		return nil, fmt.Errorf("error connecting to database: %w", err)
 	}
 
 	if err = s.migrateToLatestSchema(); err != nil {
+		s.Stop()
 		return nil, fmt.Errorf("error migrating schema: %w", err)
 	}
 
@@ -135,7 +138,8 @@ func (s *SQLStore) initializeEmbeddedPostgres(vegapaths paths.Paths) error {
 		Username(s.conf.Username).
 		Password(s.conf.Password).
 		Database(s.conf.Database).
-		Port(uint32(s.conf.Port))
+		Port(uint32(s.conf.Port)).
+		Logger(io.Discard)
 
 	s.db = embeddedpostgres.NewDatabase(dbConfig)
 	return s.db.Start()

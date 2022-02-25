@@ -9,6 +9,12 @@ models:
   String:
     model:
       - github.com/99designs/gqlgen/graphql.ID
+  Int:
+    model:
+      - github.com/99designs/gqlgen/graphql.Int
+      - github.com/99designs/gqlgen/graphql.Int64
+      - github.com/99designs/gqlgen/graphql.Int32
+      - code.vegaprotocol.io/data-node/gateway/graphql/marshallers.Uint32
   Order:
     model: code.vegaprotocol.io/protos/vega.Order
   Trade:
@@ -206,3 +212,5 @@ models:
     model: code.vegaprotocol.io/protos/data-node/api/v2.AggregatedBalance
   Timestamp:
     model: code.vegaprotocol.io/data-node/gateway/graphql/marshallers.Timestamp
+  NetworkLimits:
+    model: code.vegaprotocol.io/protos/vega.NetworkLimits
