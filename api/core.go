@@ -24,6 +24,7 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	"github.com/pkg/errors"
+	"github.com/tendermint/tendermint/libs/bytes"
 	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
 	"google.golang.org/grpc/codes"
 )
@@ -579,6 +580,14 @@ func (s *coreService) handleSubmitRawTxTMError(err error) error {
 	return apiError(codes.Internal, err)
 }
 
+func setResponseBasisContent(response *protoapi.SubmitRawTransactionResponse, code uint32, log string, data, hash bytes.HexBytes) {
+
+	response.TxHash = hash.String()
+	response.Code = code
+	response.Data = data.String()
+	response.Log = log
+
+}
 func (s *coreService) SubmitRawTransaction(ctx context.Context, req *protoapi.SubmitRawTransactionRequest) (*protoapi.SubmitRawTransactionResponse, error) {
 	startTime := time.Now()
 	defer metrics.APIRequestAndTimeGRPC("SubmitTransaction", startTime)
@@ -602,10 +611,7 @@ func (s *coreService) SubmitRawTransaction(ctx context.Context, req *protoapi.Su
 			}
 			return nil, s.handleSubmitRawTxTMError(err)
 		}
-		successResponse.TxHash = txResult.Hash.String()
-		successResponse.Code = txResult.Code
-		successResponse.Data = txResult.Data.String()
-		successResponse.Log = txResult.Log
+		setResponseBasisContent(successResponse, txResult.Code, txResult.Log, txResult.Data, txResult.Hash)
 
 	case protoapi.SubmitRawTransactionRequest_TYPE_SYNC:
 		txResult, err := s.blockchain.SubmitRawTransactionSync(ctx, req.Tx)
@@ -620,10 +626,7 @@ func (s *coreService) SubmitRawTransaction(ctx context.Context, req *protoapi.Su
 			}
 			return nil, s.handleSubmitRawTxTMError(err)
 		}
-		successResponse.TxHash = txResult.Hash.String()
-		successResponse.Code = txResult.Code
-		successResponse.Data = txResult.Data.String()
-		successResponse.Log = txResult.Log
+		setResponseBasisContent(successResponse, txResult.Code, txResult.Log, txResult.Data, txResult.Hash)
 
 	case protoapi.SubmitRawTransactionRequest_TYPE_COMMIT:
 		txResult, err := s.blockchain.SubmitRawTransactionCommit(ctx, req.Tx)
@@ -638,11 +641,8 @@ func (s *coreService) SubmitRawTransaction(ctx context.Context, req *protoapi.Su
 			}
 			return nil, s.handleSubmitRawTxTMError(err)
 		}
-		successResponse.TxHash = txResult.Hash.String()
-		successResponse.Code = txResult.DeliverTx.Code
+		setResponseBasisContent(successResponse, txResult.DeliverTx.Code, txResult.DeliverTx.Log, txResult.DeliverTx.Data, txResult.Hash)
 		successResponse.Height = txResult.Height
-		successResponse.Data = string(txResult.CheckTx.Data)
-		successResponse.Log = txResult.CheckTx.Log
 
 	default:
 		return nil, apiError(codes.InvalidArgument, errors.New("Invalid TX Type"))
