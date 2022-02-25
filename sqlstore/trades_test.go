@@ -240,7 +240,6 @@ func insertTestData(t *testing.T, tradeStore *sqlstore.Trades) {
 		SellOrder: orderAId,
 	}
 
-	// Add protos
 	protos := []types.Trade{*trade1, *trade2, *trade3, *trade4, *trade5, *trade6}
 
 	seqNum := 0

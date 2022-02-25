@@ -109,7 +109,7 @@ func TestTradeFromProto(t *testing.T) {
 	}
 
 	assert.Equal(t, testVegaTime, trade.VegaTime)
-	assert.Equal(t, 5, trade.SequenceNum)
+	assert.Equal(t, 5, trade.SeqNum)
 
 	idBytes, _ := hex.DecodeString(tradeEventProto.Id)
 	assert.Equal(t, idBytes, trade.ID)

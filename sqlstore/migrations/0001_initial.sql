@@ -61,7 +61,7 @@ create table ledger
 create table trades
 (
     vega_time       TIMESTAMP WITH TIME ZONE NOT NULL REFERENCES blocks(vega_time),
-    sequence_num    INT,
+    seq_num    INT NOT NULL,
     id     BYTEA,
     market_id BYTEA,
     price     NUMERIC(32, 0),
@@ -83,6 +83,7 @@ create table trades
 );
 
 SELECT create_hypertable('trades', 'vega_time', chunk_time_interval => INTERVAL '1 day');
+CREATE INDEX ON trades (market_id, vega_time DESC);
 
 CREATE TABLE orders (
     id                BYTEA                     NOT NULL,

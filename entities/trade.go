@@ -14,7 +14,7 @@ import (
 
 type Trade struct {
 	VegaTime                time.Time
-	SequenceNum             int
+	SeqNum                  int
 	ID                      []byte
 	MarketID                []byte
 	Price                   decimal.Decimal
@@ -142,7 +142,7 @@ func TradeFromProto(t *vega.Trade, vegaTime time.Time, sequenceNumber int) (*Tra
 
 	trade := Trade{
 		VegaTime:                vegaTime,
-		SequenceNum:             sequenceNumber,
+		SeqNum:                  sequenceNumber,
 		ID:                      id,
 		MarketID:                marketId,
 		Price:                   price,

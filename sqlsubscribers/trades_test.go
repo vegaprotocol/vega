@@ -32,14 +32,14 @@ func TestSubscriberSequenceNumber(t *testing.T) {
 	sub.Push(events.NewTradeEvent(context.Background(), newTrade()))
 
 	assert.Equal(t, now, ts.trades[0].VegaTime)
-	assert.Equal(t, 0, ts.trades[0].SequenceNum)
+	assert.Equal(t, 0, ts.trades[0].SeqNum)
 	assert.Equal(t, now, ts.trades[1].VegaTime)
-	assert.Equal(t, 1, ts.trades[1].SequenceNum)
+	assert.Equal(t, 1, ts.trades[1].SeqNum)
 
 	assert.Equal(t, nowPlusOne, ts.trades[2].VegaTime)
-	assert.Equal(t, 0, ts.trades[2].SequenceNum)
+	assert.Equal(t, 0, ts.trades[2].SeqNum)
 	assert.Equal(t, nowPlusOne, ts.trades[3].VegaTime)
-	assert.Equal(t, 1, ts.trades[3].SequenceNum)
+	assert.Equal(t, 1, ts.trades[3].SeqNum)
 }
 
 type testStore struct {

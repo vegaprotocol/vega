@@ -22,7 +22,7 @@ func NewTrades(sqlStore *SQLStore) *Trades {
 	return t
 }
 
-const sqlColumns = `vega_time, sequence_num, id, market_id, price, size, buyer, seller, aggressor, buy_order, sell_order,
+const sqlColumns = `vega_time, seq_num, id, market_id, price, size, buyer, seller, aggressor, buy_order, sell_order,
 				type, buyer_maker_fee, buyer_infrastructure_fee, buyer_liquidity_fee, 
                 seller_maker_fee, seller_infrastructure_fee, seller_liquidity_fee,
                 buyer_auction_batch, seller_auction_batch`
@@ -35,7 +35,7 @@ func (ts *Trades) Add(t *entities.Trade) error {
 		`INSERT INTO trades(`+sqlColumns+`)
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)`,
 		t.VegaTime,
-		t.SequenceNum,
+		t.SeqNum,
 		t.ID,
 		t.MarketID,
 		t.Price,
