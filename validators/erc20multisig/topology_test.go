@@ -26,6 +26,7 @@ type testTopology struct {
 }
 
 func getTestTopology(t *testing.T) *testTopology {
+	t.Helper()
 	ctrl := gomock.NewController(t)
 	witness := mocks.NewMockWitness(ctrl)
 	ocv := mocks.NewMockMultiSigOnChainVerifier(ctrl)
@@ -118,7 +119,6 @@ func testValidThresholdEvent(t *testing.T) {
 	top.broker.EXPECT().Send(gomock.Any()).Times(1)
 	top.OnTick(context.Background(), time.Unix(11, 0))
 	assert.Equal(t, top.GetThreshold(), uint32(900))
-
 }
 
 func testInvalidThresholdEvent(t *testing.T) {
@@ -282,7 +282,6 @@ func testValidSignerEvents(t *testing.T) {
 		signers := top.GetSigners()
 		assert.Len(t, signers, 0)
 	})
-
 }
 
 func testErrorOnDuplicteSignerEvent(t *testing.T) {

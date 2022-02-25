@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/client/eth"
-	"code.vegaprotocol.io/vega/staking"
 	"code.vegaprotocol.io/vega/staking/mocks"
 
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
@@ -29,14 +28,14 @@ func TestEthereumConfirmations(t *testing.T) {
 		Return(&ethtypes.Header{Number: big.NewInt(10)}, nil)
 
 	// block 10, request 50, we are in the past, return err
-	assert.ErrorIs(t, ethCfns.Check(50), staking.ErrMissingConfirmations)
+	assert.ErrorIs(t, ethCfns.Check(50), eth.ErrMissingConfirmations)
 
 	// request again but before buf size
 	// no request to eth
 	tim.EXPECT().Now().Times(1).Return(time.Unix(15, 0))
 
 	// block 10, request 50, we are in the past, return err
-	assert.ErrorIs(t, ethCfns.Check(50), staking.ErrMissingConfirmations)
+	assert.ErrorIs(t, ethCfns.Check(50), eth.ErrMissingConfirmations)
 
 	// request again but before buf size
 	// no request to eth
@@ -46,7 +45,7 @@ func TestEthereumConfirmations(t *testing.T) {
 		Return(&ethtypes.Header{Number: big.NewInt(50)}, nil)
 
 	// block 10, request 50, we are in the past, return err
-	assert.ErrorIs(t, ethCfns.Check(50), staking.ErrMissingConfirmations)
+	assert.ErrorIs(t, ethCfns.Check(50), eth.ErrMissingConfirmations)
 
 	// request again but before buf size
 	// no request to eth
@@ -56,7 +55,7 @@ func TestEthereumConfirmations(t *testing.T) {
 		Return(&ethtypes.Header{Number: big.NewInt(79)}, nil)
 
 	// block 10, request 50, we are in the past, return err
-	assert.ErrorIs(t, ethCfns.Check(50), staking.ErrMissingConfirmations)
+	assert.ErrorIs(t, ethCfns.Check(50), eth.ErrMissingConfirmations)
 
 	// request again but before buf size
 	// no request to eth
