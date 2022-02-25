@@ -651,21 +651,28 @@ func (app *App) handleCheckpoint(cpt *types.CheckpointState) error {
 
 // OnCheckTx performs soft validations.
 func (app *App) OnCheckTx(ctx context.Context, _ tmtypes.RequestCheckTx, tx abci.Tx) (context.Context, tmtypes.ResponseCheckTx) {
+	app.log.Info("CheckTx-app-begin", logging.String("tx", hex.EncodeToString(tx.Hash())), logging.String("party", tx.Party()), logging.Uint64("block-height", tx.BlockHeight()), logging.String("command", tx.Command().String()))
+
 	resp := tmtypes.ResponseCheckTx{}
 	if app.spam != nil {
 		if _, err := app.spam.PreBlockAccept(tx); err != nil {
 			app.log.Error(err.Error())
 			resp.Code = abci.AbciSpamError
 			resp.Data = []byte(err.Error())
+			app.log.Info("CheckTx-app-spam-failed", logging.String("tx", hex.EncodeToString(tx.Hash())), logging.String("party", tx.Party()), logging.Uint64("block-height", tx.BlockHeight()), logging.String("command", tx.Command().String()))
 			return ctx, resp
 		}
 	}
 
+	app.log.Info("CheckTx-app-spam-passed", logging.String("tx", hex.EncodeToString(tx.Hash())), logging.String("party", tx.Party()), logging.Uint64("block-height", tx.BlockHeight()), logging.String("command", tx.Command().String()))
+
 	if err := app.canSubmitTx(tx); err != nil {
 		resp.Code = abci.AbciTxnValidationFailure
 		resp.Data = []byte(err.Error())
+		app.log.Info("CheckTx-app-canSubmitTx-failed", logging.String("tx", hex.EncodeToString(tx.Hash())), logging.String("party", tx.Party()), logging.Uint64("block-height", tx.BlockHeight()), logging.String("command", tx.Command().String()), logging.String("error", err.Error()))
 		return ctx, resp
 	}
+	app.log.Info("CheckTx-app-canSubmitTx-passed", logging.String("tx", hex.EncodeToString(tx.Hash())), logging.String("party", tx.Party()), logging.Uint64("block-height", tx.BlockHeight()), logging.String("command", tx.Command().String()))
 
 	// Check ratelimits
 	// FIXME(): temporary disable all rate limiting
@@ -674,6 +681,7 @@ func (app *App) OnCheckTx(ctx context.Context, _ tmtypes.RequestCheckTx, tx abci
 		return ctx, resp
 	}
 
+	app.log.Info("CheckTx-app-passed", logging.String("tx", hex.EncodeToString(tx.Hash())), logging.String("party", tx.Party()), logging.Uint64("block-height", tx.BlockHeight()), logging.String("command", tx.Command().String()))
 	return ctx, resp
 }
 
@@ -813,12 +821,14 @@ func (app *App) canSubmitTx(tx abci.Tx) (err error) {
 
 // OnDeliverTx increments the internal tx counter and decorates the context with tracing information.
 func (app *App) OnDeliverTx(ctx context.Context, req tmtypes.RequestDeliverTx, tx abci.Tx) (context.Context, tmtypes.ResponseDeliverTx) {
+	app.log.Info("DeliverTx-app-begin", logging.String("tx", hex.EncodeToString(tx.Hash())), logging.String("party", tx.Party()), logging.Uint64("block-height", tx.BlockHeight()), logging.String("command", tx.Command().String()))
 	app.setTxStats(len(req.Tx))
 
 	var resp tmtypes.ResponseDeliverTx
 
 	if app.spam != nil {
 		if _, err := app.spam.PostBlockAccept(tx); err != nil {
+			app.log.Info("DeliverTx-spam-failed", logging.String("tx", hex.EncodeToString(tx.Hash())), logging.String("party", tx.Party()), logging.Uint64("block-height", tx.BlockHeight()), logging.String("command", tx.Command().String()), logging.String("error", err.Error()))
 			app.log.Error(err.Error())
 			resp.Code = abci.AbciSpamError
 			resp.Data = []byte(err.Error())
@@ -826,9 +836,13 @@ func (app *App) OnDeliverTx(ctx context.Context, req tmtypes.RequestDeliverTx, t
 		}
 	}
 
+	app.log.Info("DeliverTx-spam-passed", logging.String("tx", hex.EncodeToString(tx.Hash())), logging.String("party", tx.Party()), logging.Uint64("block-height", tx.BlockHeight()), logging.String("command", tx.Command().String()))
 	if err := app.canSubmitTx(tx); err != nil {
+		app.log.Info("DeliverTx-canSubmit-failed", logging.String("tx", hex.EncodeToString(tx.Hash())), logging.String("party", tx.Party()), logging.Uint64("block-height", tx.BlockHeight()), logging.String("command", tx.Command().String()), logging.String("error", err.Error()))
 		resp.Code = abci.AbciTxnValidationFailure
 		resp.Data = []byte(err.Error())
+	} else {
+		app.log.Info("DeliverTx-canSubmit-passed", logging.String("tx", hex.EncodeToString(tx.Hash())), logging.String("party", tx.Party()), logging.Uint64("block-height", tx.BlockHeight()), logging.String("command", tx.Command().String()))
 	}
 
 	// we don't need to set trace ID on context, it's been handled with OnBeginBlock
@@ -893,28 +907,40 @@ func (app *App) DeliverCancelTransferFunds(ctx context.Context, tx abci.Tx) erro
 }
 
 func (app *App) DeliverSubmitOrder(ctx context.Context, tx abci.Tx, deterministicId string) error {
+	app.log.Info("DeliverSubmitOrder-begin", logging.String("deterministicId", deterministicId), logging.String("tx", hex.EncodeToString(tx.Hash())), logging.String("party", tx.Party()), logging.Uint64("block-height", tx.BlockHeight()), logging.String("command", tx.Command().String()))
 	s := &commandspb.OrderSubmission{}
 	if err := tx.Unmarshal(s); err != nil {
+		app.log.Info("DeliverSubmitOrder-unmarhsal-error", logging.String("deterministicId", deterministicId), logging.String("tx", hex.EncodeToString(tx.Hash())), logging.String("party", tx.Party()), logging.Uint64("block-height", tx.BlockHeight()), logging.String("command", tx.Command().String()), logging.String("error", err.Error()))
+
 		return err
 	}
 
 	app.stats.IncTotalCreateOrder()
 
+	app.log.Info("DeliverSubmitOrder-unmarshal-success", logging.String("deterministicId", deterministicId), logging.String("tx", hex.EncodeToString(tx.Hash())), logging.String("party", tx.Party()), logging.Uint64("block-height", tx.BlockHeight()), logging.String("command", tx.Command().String()))
 	// Convert from proto to domain type
 	os, err := types.NewOrderSubmissionFromProto(s)
 	if err != nil {
+		app.log.Info("DeliverSubmitOrder-fromproto-fail", logging.String("deterministicId", deterministicId), logging.String("tx", hex.EncodeToString(tx.Hash())), logging.String("party", tx.Party()), logging.Uint64("block-height", tx.BlockHeight()), logging.String("command", tx.Command().String()), logging.String("error", err.Error()))
 		return err
 	}
+	app.log.Info("DeliverSubmitOrder-proto-success", logging.String("deterministicId", deterministicId), logging.String("tx", hex.EncodeToString(tx.Hash())), logging.String("party", tx.Party()), logging.Uint64("block-height", tx.BlockHeight()), logging.String("command", tx.Command().String()))
+
 	// Submit the create order request to the execution engine
 	conf, err := app.exec.SubmitOrder(ctx, os, tx.Party(), deterministicId)
+
+	if err != nil {
+		app.log.Info("DeliverSubmitOrder-submitOrder-fail", logging.String("deterministicId", deterministicId), logging.String("tx", hex.EncodeToString(tx.Hash())), logging.String("party", tx.Party()), logging.Uint64("block-height", tx.BlockHeight()), logging.String("command", tx.Command().String()), logging.String("error", err.Error()))
+	}
+
 	if conf != nil {
-		if app.log.GetLevel() <= logging.DebugLevel {
-			app.log.Debug("Order confirmed",
-				logging.OrderSubmission(os),
-				logging.OrderWithTag(*conf.Order, "aggressive-order"),
-				logging.String("passive-trades", fmt.Sprintf("%+v", conf.Trades)),
-				logging.String("passive-orders", fmt.Sprintf("%+v", conf.PassiveOrdersAffected)))
-		}
+		// if app.log.GetLevel() <= logging.DebugLevel {
+		app.log.Info("Order confirmed",
+			logging.OrderSubmission(os),
+			logging.OrderWithTag(*conf.Order, "aggressive-order"),
+			logging.String("passive-trades", fmt.Sprintf("%+v", conf.Trades)),
+			logging.String("passive-orders", fmt.Sprintf("%+v", conf.PassiveOrdersAffected)))
+		// }
 
 		app.stats.AddCurrentTradesInBatch(uint64(len(conf.Trades)))
 		app.stats.AddTotalTrades(uint64(len(conf.Trades)))
