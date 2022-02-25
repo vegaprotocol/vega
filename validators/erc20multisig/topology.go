@@ -28,6 +28,7 @@ var (
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/witness_mock.go -package mocks code.vegaprotocol.io/vega/validators/erc20multisig Witness
 type Witness interface {
 	StartCheck(validators.Resource, func(interface{}, bool), time.Time) error
+	RestoreResource(validators.Resource, func(interface{}, bool)) error
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/multisig_on_chain_verifier_mock.go -package mocks code.vegaprotocol.io/vega/validators/erc20multisig MultiSigOnChainVerifier
@@ -57,7 +58,7 @@ type Topology struct {
 	// order by block time.
 	eventsPerAddress map[string][]*types.SignerEvent
 	// a map of all pending events waiting to be processed
-	pendingEvents map[string]*pendingSigner
+	pendingSigners map[string]*pendingSigner
 
 	// the signer required treshold
 	// last one is always kept
@@ -67,8 +68,12 @@ type Topology struct {
 	// a map of all seen events
 	seen map[string]struct{}
 
-	witnessedThresholds map[string]bool
-	witnessedSigners    map[string]bool
+	witnessedThresholds map[string]struct{}
+	witnessedSigners    map[string]struct{}
+
+	// snapshot state
+	tss             *topologySnapshotState
+	keyToSerialiser map[string]func() ([]byte, error)
 }
 
 type pendingSigner struct {
@@ -96,7 +101,7 @@ func NewTopology(
 ) *Topology {
 	log = log.Named(namedLogger + ".topology")
 	log.SetLevel(config.Level.Get())
-	return &Topology{
+	t := &Topology{
 		config:              config,
 		log:                 log,
 		witness:             witness,
@@ -104,12 +109,24 @@ func NewTopology(
 		broker:              broker,
 		signers:             map[string]struct{}{},
 		eventsPerAddress:    map[string][]*types.SignerEvent{},
-		pendingEvents:       map[string]*pendingSigner{},
+		pendingSigners:      map[string]*pendingSigner{},
 		pendingThresholds:   map[string]*pendingThresholdSet{},
 		seen:                map[string]struct{}{},
-		witnessedThresholds: map[string]bool{},
-		witnessedSigners:    map[string]bool{},
+		witnessedThresholds: map[string]struct{}{},
+		witnessedSigners:    map[string]struct{}{},
+		tss: &topologySnapshotState{
+			hash:       map[string][]byte{},
+			serialised: map[string][]byte{},
+			changed:    map[string]bool{},
+		},
 	}
+
+	t.keyToSerialiser = map[string]func() ([]byte, error){
+		verifiedStateKey: t.serialiseVerifiedState,
+		pendingStateKey:  t.serialisePendingState,
+	}
+
+	return t
 }
 
 func (t *Topology) SetWitness(w Witness) {
@@ -171,8 +188,8 @@ func (t *Topology) ProcessSignerEvent(event *types.SignerEvent) error {
 		SignerEvent: event,
 		check:       func() error { return t.ocv.CheckSignerEvent(event) },
 	}
-	t.pendingEvents[event.ID] = pending
-	// s.svss.changed[removedKey] = true
+	t.pendingSigners[event.ID] = pending
+	t.tss.changed[pendingStateKey] = true
 
 	t.log.Info("signer event received, starting validation",
 		logging.String("event", event.String()))
@@ -193,7 +210,7 @@ func (t *Topology) ProcessThresholdEvent(event *types.SignerThresholdSetEvent) e
 		check:                   func() error { return t.ocv.CheckThresholdSetEvent(event) },
 	}
 	t.pendingThresholds[event.ID] = pending
-	// s.svss.changed[removedKey] = true
+	t.tss.changed[pendingStateKey] = true
 
 	t.log.Info("signer threshold set event received, starting validation",
 		logging.String("event", event.String()))
@@ -210,6 +227,7 @@ func (t *Topology) ensureNotDuplicate(h string) bool {
 		return false
 	}
 	t.seen[h] = struct{}{}
+	t.tss.changed[verifiedStateKey] = true
 
 	return true
 }
@@ -217,9 +235,19 @@ func (t *Topology) ensureNotDuplicate(h string) bool {
 func (t *Topology) onEventVerified(event interface{}, ok bool) {
 	switch e := event.(type) {
 	case *pendingSigner:
-		t.witnessedSigners[e.ID] = ok
+		if !ok {
+			// invalid, just delete from the map
+			delete(t.pendingSigners, e.ID)
+			return
+		}
+		t.witnessedSigners[e.ID] = struct{}{}
 	case *pendingThresholdSet:
-		t.witnessedThresholds[e.ID] = ok
+		if !ok {
+			// invalid, just delete from the map
+			delete(t.pendingThresholds, e.ID)
+			return
+		}
+		t.witnessedThresholds[e.ID] = struct{}{}
 	default:
 		t.log.Error("stake verifier received invalid event")
 		return
@@ -240,17 +268,13 @@ func (t *Topology) updateThreshold(ctx context.Context) {
 		return
 	}
 
+	// from here we assume state have changed
+	t.tss.changed[verifiedStateKey] = true
+
 	// sort all IDs to access pendings events in order
 	ids := []string{}
-	for k, v := range t.witnessedThresholds {
-		// only account for events which were validated
-		// by the network, meaning v == true
-		if v {
-			ids = append(ids, k)
-		} else {
-			// just deleting invalid ones
-			delete(t.pendingThresholds, k)
-		}
+	for k := range t.witnessedThresholds {
+		ids = append(ids, k)
 		delete(t.witnessedThresholds, k)
 	}
 	sort.Strings(ids)
@@ -286,16 +310,13 @@ func (t *Topology) updateSigners(ctx context.Context) {
 		return
 	}
 
+	// from here we assume state have changed
+	t.tss.changed[verifiedStateKey] = true
+
 	// sort all IDs to access pendings events in order
 	ids := []string{}
-	for k, v := range t.witnessedSigners {
-		// only account for events which were validated
-		// by the network, meaning v == true
-		if v {
-			ids = append(ids, k)
-		} else {
-			delete(t.pendingEvents, k)
-		}
+	for k := range t.witnessedSigners {
+		ids = append(ids, k)
 		delete(t.witnessedSigners, k)
 	}
 	sort.Strings(ids)
@@ -303,7 +324,7 @@ func (t *Topology) updateSigners(ctx context.Context) {
 	// first add all events to the map of events per addresses
 	for _, id := range ids {
 		// get the event
-		event := t.pendingEvents[id]
+		event := t.pendingSigners[id]
 		epa, ok := t.eventsPerAddress[event.Address]
 		if !ok {
 			epa = []*types.SignerEvent{}
@@ -330,6 +351,6 @@ func (t *Topology) updateSigners(ctx context.Context) {
 		// send the event anyway so APIs can be aware of past thresholds
 		t.broker.Send(events.NewERC20MultiSigSigner(ctx, *event.SignerEvent))
 		// delete from pending then
-		delete(t.pendingEvents, id)
+		delete(t.pendingSigners, id)
 	}
 }

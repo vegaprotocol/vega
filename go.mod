@@ -4,7 +4,7 @@ go 1.17
 
 require (
 	code.vegaprotocol.io/oracles-relay v0.0.0-20210201140234-f047e1bf6df3
-	code.vegaprotocol.io/protos v0.48.1-0.20220224155953-85a0723fb621
+	code.vegaprotocol.io/protos v0.48.1-0.20220225122252-f3437415a6d3
 	code.vegaprotocol.io/quant v0.2.5
 	code.vegaprotocol.io/shared v0.0.0-20220202150846-b6aba31dcdb0
 	code.vegaprotocol.io/vegawallet v0.12.1-0.20220217130931-e2d76ed75667
@@ -49,10 +49,7 @@ require (
 	google.golang.org/protobuf v1.27.1
 )
 
-require (
-	code.vegaprotocol.io/vegawallet v0.12.1-0.20220217130931-e2d76ed75667
-	github.com/grpc-ecosystem/grpc-gateway/v2 v2.7.3
-)
+require github.com/grpc-ecosystem/grpc-gateway/v2 v2.7.3
 
 require (
 	github.com/BurntSushi/toml v1.0.0 // indirect
