@@ -137,7 +137,6 @@ func (s *coreService) CheckTransaction(ctx context.Context, req *protoapi.CheckT
 
 	checkResult, err := s.blockchain.CheckTransaction(ctx, req.Tx)
 	if err != nil {
-		// This is Tendermint's specific error signature
 		if _, ok := err.(interface {
 			Code() uint32
 			Details() string
