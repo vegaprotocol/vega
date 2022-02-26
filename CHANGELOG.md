@@ -90,6 +90,7 @@
 - [4829](https://github.com/vegaprotocol/vega/issues/4829) - Fix margins calculations for positions with a size of 0 but with a non zero potential sell or buy
 - [4826](https://github.com/vegaprotocol/vega/issues/4826) - Tidying up feature tests in verified folder
 - [4843](https://github.com/vegaprotocol/vega/issues/4843) - Make snapshot engine aware of local storage old versions, and manage them accordingly to stop growing disk usage.
+- [4863](https://github.com/vegaprotocol/vega/issues/4863) - Improve replay protection
 
 
 ### 🐛 Fixes
