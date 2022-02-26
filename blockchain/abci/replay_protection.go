@@ -9,7 +9,7 @@ import (
 
 var (
 	ErrTxAlreadyInCache   = errors.New("reply protection: tx already in the cache")
-	ErrTxStaled           = errors.New("reply protection: staled")
+	ErrTxStaled           = errors.New("reply protection: stale")
 	ErrTxReferFutureBlock = errors.New("reply protection: tx refer future block")
 )
 
@@ -113,10 +113,9 @@ func (rp *ReplayProtector) CheckTx(tx Tx) error {
 
 	// Then we verify the block distance:
 
-	// If the tx is on a future block, we reject.
-	// if tx.BlockHeight() > rp.height {
-	// 	return ErrTxReferFutureBlock
-	// }
+	if tx.BlockHeight() > rp.height {
+		return nil
+	}
 
 	// Calculate the distance
 	tolerance := len(rp.txs)
