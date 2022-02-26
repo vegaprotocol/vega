@@ -113,10 +113,10 @@ func (rp *ReplayProtector) CheckTx(tx Tx) error {
 
 	// Then we verify the block distance:
 
-	// If the tx is on a future block, we accept.
-	if tx.BlockHeight() > rp.height {
-		return ErrTxReferFutureBlock
-	}
+	// If the tx is on a future block, we reject.
+	// if tx.BlockHeight() > rp.height {
+	// 	return ErrTxReferFutureBlock
+	// }
 
 	// Calculate the distance
 	tolerance := len(rp.txs)
