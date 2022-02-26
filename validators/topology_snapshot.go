@@ -68,6 +68,7 @@ func (t *Topology) serialiseNodes() []*snapshot.ValidatorState {
 					ExpectedNextHash:      node.heartbeatTracker.expectedNextHash,
 					ExpectedNextHashSince: node.heartbeatTracker.expectedNexthashSince.UnixNano(),
 				},
+				ValidatorPower: node.validatorPower,
 			},
 		)
 	}
@@ -209,6 +210,7 @@ func (t *Topology) restore(ctx context.Context, topology *types.Topology) error 
 				expectedNextHash:      node.HeartbeatTracker.ExpectedNextHash,
 				expectedNexthashSince: time.Unix(0, node.HeartbeatTracker.ExpectedNextHashSince),
 			},
+			validatorPower: node.ValidatorPower,
 		}
 		for i := 0; i < 10; i++ {
 			vs.heartbeatTracker.blockSigs[i] = node.HeartbeatTracker.BlockSigs[i]
