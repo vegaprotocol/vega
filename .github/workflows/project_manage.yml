@@ -84,7 +84,7 @@ jobs:
             }' -f org=$ORGANIZATION -F number=$PROJECT_NUMBER > project_data.json
           echo 'PROJECT_ID='$(jq '.data.organization.projectNext.id' project_data.json) >> $GITHUB_ENV
           echo 'STATUS_FIELD_ID='$(jq '.data.organization.projectNext.fields.nodes[] | select(.name== "Status") | .id' project_data.json) >> $GITHUB_ENV
-          echo 'INPROG_OPTION_ID='$(jq '.data.organization.projectNext.fields.nodes[] | select(.name== "Status") |.settings | fromjson.options[] | select(.name=="Waiting Review") |.id' project_data.json) >> $GITHUB_ENV
+          echo 'PR_REVIEW_OPTION_ID='$(jq '.data.organization.projectNext.fields.nodes[] | select(.name== "Status") |.settings | fromjson.options[] | select(.name=="Waiting Review") |.id' project_data.json) >> $GITHUB_ENV
           echo 'ITER_FIELD_ID='$(jq '.data.organization.projectNext.fields.nodes[] | select(.name== "Sprint") | .id' project_data.json) >> $GITHUB_ENV
           echo 'ITER_OPTION_ID='$(jq '.data.organization.projectNext.fields.nodes[] | select(.name== "Sprint") |.settings | fromjson.configuration.iterations[0] | .id' project_data.json) >> $GITHUB_ENV
 # yamllint enable rule:line-length
@@ -140,7 +140,7 @@ jobs:
             }' -f project=$PROJECT_ID \
               -f item=$ITEM_ID \
               -f status_field=$STATUS_FIELD_ID \
-              -f status_value=${{ env.INPROG_OPTION_ID }} \
+              -f status_value=${{ env.PR_REVIEW_OPTION_ID }} \
               -f iteration_field=$ITER_FIELD_ID \
               -f iteration_value=${{ env.ITER_OPTION_ID }}
 
@@ -183,10 +183,12 @@ jobs:
           echo 'STATUS_FIELD_ID='$(jq '.data.organization.projectNext.fields.nodes[] | select(.name== "Status") | .id' project_data1.json) >> $GITHUB_ENV
           # yamllint disable-line rule:line-length
           echo 'INPROG_OPTION_ID='$(jq '.data.organization.projectNext.fields.nodes[] | select(.name== "Status") |.settings | fromjson.options[] | select(.name=="In Progress") |.id' project_data1.json) >> $GITHUB_ENV
+          echo 'REVIEW_OPTION_ID='$(jq '.data.organization.projectNext.fields.nodes[] | select(.name== "Status") |.settings | fromjson.options[] | select(.name=="Waiting Review") |.id' project_data1.json) >> $GITHUB_ENV
           echo 'ITER_FIELD_ID='$(jq '.data.organization.projectNext.fields.nodes[] | select(.name== "Sprint") | .id' project_data1.json) >> $GITHUB_ENV
           # yamllint disable-line rule:line-length
           echo 'ITER_OPTION_ID='$(jq '.data.organization.projectNext.fields.nodes[] | select(.name== "Sprint") |.settings | fromjson.configuration.iterations[0] | .id' project_data1.json) >> $GITHUB_ENV
 # yamllint enable rule:line-length
+
       - name: Get linked issue nodeid
         env:
           GITHUB_TOKEN: ${{ secrets.GH_NEW_CARD_TO_PROJECT }}
@@ -200,12 +202,46 @@ jobs:
                     nodes {
                       id
                       number
+                      projectNextItems(first: 5) {
+                        edges {
+                          node {
+                            id
+                            project {
+                              id
+                              number
+                            }
+                          }
+                        }
+                      }
                     }
                   }
                 }
               }
             }'  -f pr_url=$PR_URL > linked_issue_data.json
             echo 'LINKED_ISSUE='$(jq -r '.data.resource.closingIssuesReferences.nodes[] | .id' linked_issue_data.json) >> $GITHUB_ENV
+            echo 'ISSUES_PROJ_ID='$(jq '.data.resource.closingIssuesReferences.nodes[] | .projectNextItems.edges[].node |select(.project.number == 106) | .id' linked_issue_data.json) >> $GITHUB_ENV
+
+      - name: Get issues current status
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_NEW_CARD_TO_PROJECT }}
+        run: |
+          gh api graphql -f query='
+            query ($issue_proj_id: ID!) {
+              node(id: $issue_proj_id) {
+                ... on ProjectNextItem {
+                  fieldValues(first: 10) {
+                    nodes {
+                      value
+                      projectField {
+                        name
+                      }
+                    }
+                  }
+                }
+              }
+            }' -f issue_proj_id=$ISSUES_PROJ_ID > current_col.json
+            echo 'CURRENT_COL='$(jq '.data.node.fieldValues.nodes[] | select(.projectField.name == "Status") | .value' current_col.json) >> $GITHUB_ENV
+            echo 'CURRENT_ITER='$(jq '.data.node.fieldValues.nodes[] | select(.projectField.name == "Sprint") | .value' current_col.json) >> $GITHUB_ENV
 
       - name: Add issue to the project
         env:
@@ -221,7 +257,8 @@ jobs:
             }' -f project=$PROJECT_ID -f issue=$LINKED_ISSUE --jq '.data.addProjectNextItem.projectNextItem.id')"
           echo 'ITEM_ID='$item_id >> $GITHUB_ENV
 
-      - name: Set issue project status fields
+      - name: Set wip issue project status fields
+        if: (env.CURRENT_COL != env.REVIEW_OPTION_ID)
         env:
           GITHUB_TOKEN: ${{ secrets.GH_NEW_CARD_TO_PROJECT }}
         run: |
@@ -258,5 +295,46 @@ jobs:
               -f item=$ITEM_ID \
               -f status_field=$STATUS_FIELD_ID \
               -f status_value=${{ env.INPROG_OPTION_ID }} \
+              -f iteration_field=$ITER_FIELD_ID \
+              -f iteration_value=${{ env.ITER_OPTION_ID }}
+
+      - name: Set in review issue project status fields
+        if: (env.CURRENT_COL == env.REVIEW_OPTION_ID)
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_NEW_CARD_TO_PROJECT }}
+        run: |
+          gh api graphql -f query='
+            mutation (
+              $project: ID!
+              $item: ID!
+              $status_field: ID!
+              $status_value: String!
+              $iteration_field: ID!
+              $iteration_value: String!
+            ) {
+              set_status: updateProjectNextItemField(input: {
+                projectId: $project
+                itemId: $item
+                fieldId: $status_field
+                value: $status_value
+              }) {
+                projectNextItem {
+                  id
+                  }
+              }
+              set_iteration: updateProjectNextItemField(input: {
+                projectId: $project
+                itemId: $item
+                fieldId: $iteration_field
+                value: $iteration_value
+              }) {
+                projectNextItem {
+                  id
+                }
+              }
+            }' -f project=$PROJECT_ID \
+              -f item=$ITEM_ID \
+              -f status_field=$STATUS_FIELD_ID \
+              -f status_value=${{ env.REVIEW_OPTION_ID }} \
               -f iteration_field=$ITER_FIELD_ID \
               -f iteration_value=${{ env.ITER_OPTION_ID }}

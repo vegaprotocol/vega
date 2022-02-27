@@ -54,7 +54,7 @@ This job will only run if the [Verify Linked Issue](# Verify-Linked-Issue-Job) j
 1. **Get the project data**: gets variables such as the current sprint and specific Kanban board column names.
 1. **Get linked issue `nodeid`**: gets the `nodeID` of the **most recent** issue that has been linked to the pull request.
 1. **Add issue to project**: adds the linked issue to the project board, if not already present.
-1. **Set issue project status fields**: updates the issue fields; sets the status to `In Progress` and sprint to `@current`.
+1. **Set issue project status fields**: updates the issue fields; sets the status to `In Progress` and sprint to `@current`. If the issue is already in `Waiting Review` the issue will remain with this status.
 
 #### Skip Changelog And Issue Checks
 
