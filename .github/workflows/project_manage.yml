@@ -193,6 +193,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GH_NEW_CARD_TO_PROJECT }}
           PR_URL: ${{ github.event.pull_request.html_url }}
+          # yamllint disable rule:line-length
         run: |
           gh api graphql -f query='
             query($pr_url: URI!) {
@@ -220,6 +221,7 @@ jobs:
             }'  -f pr_url=$PR_URL > linked_issue_data.json
             echo 'LINKED_ISSUE='$(jq -r '.data.resource.closingIssuesReferences.nodes[] | .id' linked_issue_data.json) >> $GITHUB_ENV
             echo 'ISSUES_PROJ_ID='$(jq '.data.resource.closingIssuesReferences.nodes[] | .projectNextItems.edges[].node |select(.project.number == 106) | .id' linked_issue_data.json) >> $GITHUB_ENV
+# yamllint enable rule:line-length
 
       - name: Get issues current status
         env:
