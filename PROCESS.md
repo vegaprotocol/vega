@@ -23,7 +23,7 @@ For any pull request to be merged into develop or main/master matching a pull re
 
 #### Verify Conventional Commits Job
 
-This job will run on all pull requests that are not created by the Renovate Bot. A simple [third party GitHub Action](https://github.com/webiny/action-conventional-commits) checks sure all commit messages adhere to the [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0-beta.2/) specification.
+This job will run on all pull requests that are not created by the Renovate Bot. A [third party GitHub Action](https://commitsar.aevea.ee/usage/github/) checks sure all commit messages adhere to the [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0-beta.2/) specification.
 
 #### Verify Linked Issue Job
 
