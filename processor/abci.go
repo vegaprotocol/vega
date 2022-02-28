@@ -356,7 +356,7 @@ func (app *App) Info(_ tmtypes.RequestInfo) tmtypes.ResponseInfo {
 	}
 
 	resp := tmtypes.ResponseInfo{
-		AppVersion: 0, // application protocol version TBD.
+		AppVersion: 1,
 		Version:    app.version,
 	}
 
@@ -367,7 +367,12 @@ func (app *App) Info(_ tmtypes.RequestInfo) tmtypes.ResponseInfo {
 		resp.LastBlockAppHash = hash
 	}
 
-	app.log.Debug("ABCI service INFO requested", logging.Int64("height", resp.LastBlockHeight), logging.String("hash", hex.EncodeToString(resp.LastBlockAppHash)))
+	app.log.Info("ABCI service INFO requested",
+		logging.String("version", resp.Version),
+		logging.Uint64("app-vesion", resp.AppVersion),
+		logging.Int64("height", resp.LastBlockHeight),
+		logging.String("hash", hex.EncodeToString(resp.LastBlockAppHash)),
+	)
 	return resp
 }
 
