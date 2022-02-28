@@ -185,26 +185,26 @@ func TestERC20TopologySnapshot(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t,
 		hex.EncodeToString(tHashVerified),
-		"3ff2fe15ffe72d5c84880fbaa1d231717e44a7346364e13082b1952af5b1aad0",
+		"0bde25caa61289dc7e20c6857cd3b6bb9991b07f0f0386e6dc66d8a281d47b32",
 	)
 	tHashPending, err := top.GetHash((&types.PayloadERC20MultiSigTopologyPending{}).Key())
 	assert.NoError(t, err)
 	assert.Equal(t,
 		hex.EncodeToString(tHashPending),
-		"3f01b16df940d0b75ce2a40294790389f2c2073989b48f1f26609505b1808b30",
+		"f96537ca1555b1667b277c0d2694e08f2cb84e31160a3d240a7c107cc2c18be3",
 	)
 
 	t2HashVerified, err := top2.GetHash((&types.PayloadERC20MultiSigTopologyVerified{}).Key())
 	assert.NoError(t, err)
 	assert.Equal(t,
 		hex.EncodeToString(t2HashVerified),
-		"3ff2fe15ffe72d5c84880fbaa1d231717e44a7346364e13082b1952af5b1aad0",
+		"0bde25caa61289dc7e20c6857cd3b6bb9991b07f0f0386e6dc66d8a281d47b32",
 	)
 	t2HashPending, err := top2.GetHash((&types.PayloadERC20MultiSigTopologyPending{}).Key())
 	assert.NoError(t, err)
 	assert.Equal(t,
 		hex.EncodeToString(t2HashPending),
-		"3f01b16df940d0b75ce2a40294790389f2c2073989b48f1f26609505b1808b30",
+		"f96537ca1555b1667b277c0d2694e08f2cb84e31160a3d240a7c107cc2c18be3",
 	)
 
 	assert.Equal(t, top2.GetThreshold(), uint32(666))
@@ -231,7 +231,7 @@ func TestERC20TopologySnapshot(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t,
 		hex.EncodeToString(t2HashVerifiedLast),
-		"2faa3c6880e0316ef66c96a32c0c074099e988a81dde1c2207166f71beda92c0",
+		"99080a781530de82878e93a47967d0e4aed17db838834be9412d3646682a0b98",
 	)
 	t2HashPendingLast, err := top2.GetHash((&types.PayloadERC20MultiSigTopologyPending{}).Key())
 	assert.NoError(t, err)
