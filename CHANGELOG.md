@@ -94,6 +94,7 @@
 - [4863](https://github.com/vegaprotocol/vega/issues/4863) - Improve replay protection
 - [4867](https://github.com/vegaprotocol/vega/issues/4867) - Optimise replay protection
 - [4865](https://github.com/vegaprotocol/vega/issues/4865) - Fix: issue with project board automation action and update commit checker action
+- [4674](https://github.com/vegaprotocol/vega/issues/4674) - Add Ethereum events reconciliation for `multisig control`
 
 ### 🐛 Fixes
 - [4842](https://github.com/vegaprotocol/vega/pull/4842) - Fix margin balance not being released after close-out.
