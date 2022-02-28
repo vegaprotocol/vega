@@ -1,11 +1,9 @@
 package broker
 
 import (
-	"context"
-	"fmt"
-
 	"code.vegaprotocol.io/data-node/logging"
 	"code.vegaprotocol.io/vega/events"
+	"context"
 )
 
 type SqlBrokerSubscriber interface {
@@ -166,9 +164,7 @@ func (b *sequentialSqlStoreBroker) Receive(ctx context.Context) error {
 		if err := checkChainID(b.chainInfo, e.ChainID()); err != nil {
 			return err
 		}
-
-		fmt.Printf("EVENT:%s", e.StreamMessage())
-
+		
 		// If the event is a time event send it to all subscribers, this indicates a new block start (for now)
 		if e.Type() == events.TimeUpdate {
 			for _, subs := range b.typeToSubs {

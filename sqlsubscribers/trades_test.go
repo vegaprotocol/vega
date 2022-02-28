@@ -23,23 +23,39 @@ func TestSubscriberSequenceNumber(t *testing.T) {
 	now := time.Now()
 	nowPlusOne := time.Now().Add(time.Second)
 
-	sub.Push(events.NewTime(context.Background(), now))
-	sub.Push(events.NewTradeEvent(context.Background(), newTrade()))
-	sub.Push(events.NewTradeEvent(context.Background(), newTrade()))
+	timeEvent := events.NewTime(context.Background(), now)
+	timeEvent.SetSequenceID(0)
+	sub.Push(timeEvent)
 
-	sub.Push(events.NewTime(context.Background(), nowPlusOne))
-	sub.Push(events.NewTradeEvent(context.Background(), newTrade()))
-	sub.Push(events.NewTradeEvent(context.Background(), newTrade()))
+	tradeEvent := events.NewTradeEvent(context.Background(), newTrade())
+	tradeEvent.SetSequenceID(1)
+	sub.Push(tradeEvent)
+
+	tradeEvent = events.NewTradeEvent(context.Background(), newTrade())
+	tradeEvent.SetSequenceID(2)
+	sub.Push(tradeEvent)
+
+	timeEvent = events.NewTime(context.Background(), nowPlusOne)
+	timeEvent.SetSequenceID(0)
+	sub.Push(timeEvent)
+
+	tradeEvent = events.NewTradeEvent(context.Background(), newTrade())
+	tradeEvent.SetSequenceID(1)
+	sub.Push(tradeEvent)
+
+	tradeEvent = events.NewTradeEvent(context.Background(), newTrade())
+	tradeEvent.SetSequenceID(2)
+	sub.Push(tradeEvent)
 
 	assert.Equal(t, now, ts.trades[0].VegaTime)
-	assert.Equal(t, 0, ts.trades[0].SeqNum)
+	assert.Equal(t, uint64(1), ts.trades[0].SeqNum)
 	assert.Equal(t, now, ts.trades[1].VegaTime)
-	assert.Equal(t, 1, ts.trades[1].SeqNum)
+	assert.Equal(t, uint64(2), ts.trades[1].SeqNum)
 
 	assert.Equal(t, nowPlusOne, ts.trades[2].VegaTime)
-	assert.Equal(t, 0, ts.trades[2].SeqNum)
+	assert.Equal(t, uint64(1), ts.trades[2].SeqNum)
 	assert.Equal(t, nowPlusOne, ts.trades[3].VegaTime)
-	assert.Equal(t, 1, ts.trades[3].SeqNum)
+	assert.Equal(t, uint64(2), ts.trades[3].SeqNum)
 }
 
 type testStore struct {

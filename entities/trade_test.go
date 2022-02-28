@@ -56,7 +56,7 @@ func TestProtoFromTrade(t *testing.T) {
 		SellerAuctionBatch:      4,
 	}
 
-	p := entities.TradeToProto(&trade)
+	p := trade.ToProto()
 
 	assert.Equal(t, vegaTime.UnixNano(), p.Timestamp)
 	assert.Equal(t, idString, p.Id)
@@ -109,7 +109,7 @@ func TestTradeFromProto(t *testing.T) {
 	}
 
 	assert.Equal(t, testVegaTime, trade.VegaTime)
-	assert.Equal(t, 5, trade.SeqNum)
+	assert.Equal(t, uint64(5), trade.SeqNum)
 
 	idBytes, _ := hex.DecodeString(tradeEventProto.Id)
 	assert.Equal(t, idBytes, trade.ID)

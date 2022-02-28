@@ -60,33 +60,6 @@ create table ledger
     type            TEXT
 );
 
-create table trades
-(
-    vega_time       TIMESTAMP WITH TIME ZONE NOT NULL REFERENCES blocks(vega_time),
-    seq_num    INT NOT NULL,
-    id     BYTEA,
-    market_id BYTEA,
-    price     NUMERIC(32, 0),
-    size      NUMERIC(32, 0),
-    buyer     BYTEA,
-    seller    BYTEA,
-    aggressor SMALLINT,
-    buy_order BYTEA,
-    sell_order BYTEA,
-    type       SMALLINT,
-    buyer_maker_fee NUMERIC(32, 0),
-    buyer_infrastructure_fee NUMERIC(32, 0),
-    buyer_liquidity_fee NUMERIC(32, 0),
-    seller_maker_fee NUMERIC(32, 0),
-    seller_infrastructure_fee NUMERIC(32, 0),
-    seller_liquidity_fee NUMERIC(32, 0),
-    buyer_auction_batch BIGINT,
-    seller_auction_batch BIGINT
-);
-
-SELECT create_hypertable('trades', 'vega_time', chunk_time_interval => INTERVAL '1 day');
-CREATE INDEX ON trades (market_id, vega_time DESC);
-
 CREATE TABLE orders (
     id                BYTEA                     NOT NULL,
     market_id         BYTEA                     NOT NULL,
@@ -125,6 +98,34 @@ CREATE VIEW orders_current AS (
 CREATE VIEW orders_current_versions AS (
   SELECT DISTINCT ON (id, version) * FROM orders ORDER BY id, version DESC, vega_time DESC
 );
+
+create table trades
+(
+    vega_time       TIMESTAMP WITH TIME ZONE NOT NULL REFERENCES blocks(vega_time),
+    seq_num    BIGINT NOT NULL,
+    id     BYTEA NOT NULL,
+    market_id BYTEA NOT NULL,
+    price     NUMERIC(32, 0),
+    size      NUMERIC(32, 0),
+    buyer     BYTEA NOT NULL,
+    seller    BYTEA NOT NULL,
+    aggressor SMALLINT,
+    buy_order BYTEA NOT NULL,
+    sell_order BYTEA NOT NULL,
+    type       SMALLINT NOT NULL,
+    buyer_maker_fee NUMERIC(32, 0),
+    buyer_infrastructure_fee NUMERIC(32, 0),
+    buyer_liquidity_fee NUMERIC(32, 0),
+    seller_maker_fee NUMERIC(32, 0),
+    seller_infrastructure_fee NUMERIC(32, 0),
+    seller_liquidity_fee NUMERIC(32, 0),
+    buyer_auction_batch BIGINT,
+    seller_auction_batch BIGINT
+);
+
+SELECT create_hypertable('trades', 'vega_time', chunk_time_interval => INTERVAL '1 day');
+CREATE INDEX ON trades (market_id, vega_time DESC);
+
 
 CREATE TABLE network_limits (
   vega_time                   TIMESTAMP WITH TIME ZONE NOT NULL PRIMARY KEY REFERENCES blocks(vega_time),
@@ -174,7 +175,7 @@ create type market_trading_mode_type as enum('TRADING_MODE_UNSPECIFIED', 'TRADIN
 create table market_data (
     market bytea not null,
     vega_time timestamp with time zone not null references blocks(vega_time),
-    seq_num int not null,
+    seq_num bigint not null,
     mark_price numeric(32),
     best_bid_price numeric(32),
     best_bid_volume bigint,

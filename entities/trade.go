@@ -14,7 +14,7 @@ import (
 
 type Trade struct {
 	VegaTime                time.Time
-	SeqNum                  int
+	SeqNum                  uint64
 	ID                      []byte
 	MarketID                []byte
 	Price                   decimal.Decimal
@@ -35,7 +35,7 @@ type Trade struct {
 	SellerAuctionBatch      uint64
 }
 
-func TradeToProto(t *Trade) *vega.Trade {
+func (t *Trade) ToProto() *vega.Trade {
 	return &vega.Trade{
 		Id:        hex.EncodeToString(t.ID),
 		MarketId:  hex.EncodeToString(t.MarketID),
@@ -63,7 +63,7 @@ func TradeToProto(t *Trade) *vega.Trade {
 	}
 }
 
-func TradeFromProto(t *vega.Trade, vegaTime time.Time, sequenceNumber int) (*Trade, error) {
+func TradeFromProto(t *vega.Trade, vegaTime time.Time, sequenceNumber uint64) (*Trade, error) {
 	id, err := hex.DecodeString(t.Id)
 	if err != nil {
 		return nil, fmt.Errorf("failed to decode trade id:%w", err)

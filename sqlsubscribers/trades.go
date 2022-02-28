@@ -23,7 +23,7 @@ type TradeSubscriber struct {
 	store       TradesStore
 	log         *logging.Logger
 	vegaTime    time.Time
-	sequenceNum int
+	sequenceNum uint64
 }
 
 func NewTradesSubscriber(store TradesStore, log *logging.Logger) *TradeSubscriber {
@@ -38,13 +38,14 @@ func (ts *TradeSubscriber) Type() events.Type {
 }
 
 func (ts *TradeSubscriber) Push(evt events.Event) {
+
 	switch e := evt.(type) {
 	case TimeUpdateEvent:
-		ts.sequenceNum = 0
+		ts.sequenceNum = evt.Sequence()
 		ts.vegaTime = e.Time()
 	case TradeEvent:
+		ts.sequenceNum = evt.Sequence()
 		ts.consume(e)
-		ts.sequenceNum++
 	default:
 		ts.log.Panic("Unknown event type in trade subscriber",
 			logging.String("Type", e.Type().String()))
@@ -63,7 +64,7 @@ func (ts *TradeSubscriber) consume(ae TradeEvent) {
 	}
 }
 
-func (ts *TradeSubscriber) addTrade(t *types.Trade, vegaTime time.Time, blockSeqNumber int) error {
+func (ts *TradeSubscriber) addTrade(t *types.Trade, vegaTime time.Time, blockSeqNumber uint64) error {
 	trade, err := entities.TradeFromProto(t, vegaTime, blockSeqNumber)
 	if err != nil {
 		return fmt.Errorf("converting event to trade:%w", err)

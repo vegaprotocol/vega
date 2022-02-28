@@ -6,8 +6,6 @@ import (
 	"fmt"
 
 	"code.vegaprotocol.io/data-node/entities"
-	"code.vegaprotocol.io/protos/vega"
-
 	"github.com/georgysavva/scany/pgxscan"
 )
 
@@ -56,12 +54,7 @@ func (ts *Trades) Add(t *entities.Trade) error {
 	return err
 }
 
-func (ts *Trades) GetByMarket(ctx context.Context, market string, skip, limit uint64, descending bool) ([]*vega.Trade, error) {
-	p := entities.Pagination{
-		Skip:       skip,
-		Limit:      limit,
-		Descending: descending,
-	}
+func (ts *Trades) GetByMarket(ctx context.Context, market string, p entities.Pagination) ([]entities.Trade, error) {
 
 	marketId, err := hex.DecodeString(market)
 	if err != nil {
@@ -75,34 +68,32 @@ func (ts *Trades) GetByMarket(ctx context.Context, market string, skip, limit ui
 		return nil, fmt.Errorf("failed to get trade by market:%w", err)
 	}
 
-	return toProtoTrades(trades), nil
+	return trades, nil
 }
 
-func (ts *Trades) GetByParty(ctx context.Context, party string, skip, limit uint64, descending bool, market *string) ([]*vega.Trade, error) {
-	query := `SELECT * from trades WHERE buyer=$1 or seller=$1`
+func (ts *Trades) GetByParty(ctx context.Context, party string, market *string, pagination entities.Pagination) ([]entities.Trade, error) {
 
-	return ts.queryTradesWithMarketFilter(ctx, party, skip, limit, descending, market, query)
-}
-
-func (ts *Trades) GetByOrderID(ctx context.Context, order string, skip, limit uint64, descending bool, market *string) ([]*vega.Trade, error) {
-	query := `SELECT * from trades WHERE buy_order=$1 or sell_order=$1`
-
-	return ts.queryTradesWithMarketFilter(ctx, order, skip, limit, descending, market, query)
-}
-
-func (ts *Trades) queryTradesWithMarketFilter(ctx context.Context, idString string, skip uint64, limit uint64, descending bool, market *string, query string) ([]*vega.Trade, error) {
-	p := entities.Pagination{
-		Skip:       skip,
-		Limit:      limit,
-		Descending: descending,
-	}
-
-	id, err := hex.DecodeString(idString)
+	partyId, err := hex.DecodeString(party)
 	if err != nil {
 		return nil, err
 	}
+	args := []interface{}{partyId}
+	query := `SELECT * from trades WHERE buyer=$1 or seller=$1`
 
-	args := []interface{}{id}
+	return ts.queryTradesWithMarketFilter(ctx, query, args, market, pagination)
+}
+
+func (ts *Trades) GetByOrderID(ctx context.Context, order string, market *string, pagination entities.Pagination) ([]entities.Trade, error) {
+	orderId, err := hex.DecodeString(order)
+	if err != nil {
+		return nil, err
+	}
+	args := []interface{}{orderId}
+	query := `SELECT * from trades WHERE buy_order=$1 or sell_order=$1`
+	return ts.queryTradesWithMarketFilter(ctx, query, args, market, pagination)
+}
+
+func (ts *Trades) queryTradesWithMarketFilter(ctx context.Context, query string, args []interface{}, market *string, p entities.Pagination) ([]entities.Trade, error) {
 
 	if market != nil && *market != "" {
 
@@ -110,9 +101,8 @@ func (ts *Trades) queryTradesWithMarketFilter(ctx context.Context, idString stri
 		if err != nil {
 			return nil, err
 		}
-
-		query += ` AND market_id=$2`
-		args = append(args, marketId)
+		position := nextBindVar(&args, marketId)
+		query += ` AND market_id=` + position
 	}
 
 	trades, err := ts.queryTrades(ctx, query, args, &p)
@@ -120,16 +110,7 @@ func (ts *Trades) queryTradesWithMarketFilter(ctx context.Context, idString stri
 		return nil, fmt.Errorf("failed to query trades:%w", err)
 	}
 
-	return toProtoTrades(trades), nil
-}
-
-func toProtoTrades(trades []entities.Trade) []*vega.Trade {
-	var protos []*vega.Trade
-	for _, t := range trades {
-		protos = append(protos, entities.TradeToProto(&t))
-	}
-
-	return protos
+	return trades, nil
 }
 
 func (os *Trades) queryTrades(ctx context.Context, query string, args []interface{}, p *entities.Pagination) ([]entities.Trade, error) {
