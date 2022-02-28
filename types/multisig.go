@@ -78,12 +78,14 @@ func SignerEventFromEventProto(
 
 func (s *SignerEvent) IntoProto() *eventspb.ERC20MultiSigSignerEvent {
 	return &eventspb.ERC20MultiSigSignerEvent{
-		Id:        s.ID,
-		Type:      s.Kind,
-		Nonce:     s.Nonce,
-		Signer:    s.Address,
-		BlockTime: s.BlockTime,
-		TxHash:    s.TxHash,
+		Id:          s.ID,
+		Type:        s.Kind,
+		Nonce:       s.Nonce,
+		Signer:      s.Address,
+		BlockTime:   s.BlockTime,
+		TxHash:      s.TxHash,
+		BlockNumber: s.BlockNumber,
+		LogIndex:    s.LogIndex,
 	}
 }
 
@@ -164,6 +166,8 @@ func (s *SignerThresholdSetEvent) IntoProto() *eventspb.ERC20MultiSigThresholdSe
 		Nonce:        s.Nonce,
 		BlockTime:    s.BlockTime,
 		TxHash:       s.TxHash,
+		BlockNumber:  s.BlockNumber,
+		LogIndex:     s.LogIndex,
 	}
 }
 
