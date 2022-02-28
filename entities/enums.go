@@ -13,6 +13,21 @@ const (
 	SideSell Side = vega.Side_SIDE_SELL
 )
 
+type TradeType = vega.Trade_Type
+
+const (
+	// Default value, always invalid.
+	TradeTypeUnspecified TradeType = vega.Trade_TYPE_UNSPECIFIED
+	// Normal trading between two parties.
+	TradeTypeDefault TradeType = vega.Trade_TYPE_DEFAULT
+	// Trading initiated by the network with another party on the book,
+	// which helps to zero-out the positions of one or more distressed parties.
+	TradeTypeNetworkCloseOutGood TradeType = vega.Trade_TYPE_NETWORK_CLOSE_OUT_GOOD
+	// Trading initiated by the network with another party off the book,
+	// with a distressed party in order to zero-out the position of the party.
+	TradeTypeNetworkCloseOutBad TradeType = vega.Trade_TYPE_NETWORK_CLOSE_OUT_BAD
+)
+
 type PeggedReference = vega.PeggedReference
 
 const (

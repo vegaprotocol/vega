@@ -106,6 +106,7 @@ type NodeCommand struct {
 	ledgerSQL             *sqlstore.Ledger
 	partyStoreSQL         *sqlstore.Parties
 	orderStoreSQL         *sqlstore.Orders
+	tradeStoreSQL         *sqlstore.Trades
 	networkLimitsStoreSQL *sqlstore.NetworkLimits
 	marketDataStoreSQL    *sqlstore.MarketData
 
@@ -143,6 +144,7 @@ type NodeCommand struct {
 	orderSubSQL            *sqlsubscribers.Order
 	networkLimitsSubSQL    *sqlsubscribers.NetworkLimits
 	marketDataSubSQL       *sqlsubscribers.MarketData
+	tradesSubSQL           *sqlsubscribers.TradeSubscriber
 
 	candleService     *candles.Svc
 	tradeService      *trades.Svc

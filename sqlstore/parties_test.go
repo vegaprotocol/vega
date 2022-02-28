@@ -19,6 +19,7 @@ func addTestParty(t *testing.T, ps *sqlstore.Parties, block entities.Block) enti
 	require.NoError(t, err)
 	return party
 }
+
 func TestParty(t *testing.T) {
 	defer testStore.DeleteEverything()
 	ps := sqlstore.NewParties(testStore)

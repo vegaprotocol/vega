@@ -1,14 +1,12 @@
 package sqlsubscribers
 
 import (
-	"context"
 	"fmt"
 	"strconv"
 	"time"
 
 	"code.vegaprotocol.io/data-node/entities"
 	"code.vegaprotocol.io/data-node/logging"
-	"code.vegaprotocol.io/data-node/subscribers"
 	types "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/events"
 
@@ -25,15 +23,13 @@ type AssetStore interface {
 }
 
 type Asset struct {
-	*subscribers.Base
 	store    AssetStore
 	log      *logging.Logger
 	vegaTime time.Time
 }
 
-func NewAsset(ctx context.Context, store AssetStore, log *logging.Logger) *Asset {
+func NewAsset(store AssetStore, log *logging.Logger) *Asset {
 	return &Asset{
-		Base:  subscribers.NewBase(ctx, 0, true),
 		store: store,
 		log:   log,
 	}

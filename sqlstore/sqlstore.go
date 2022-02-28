@@ -117,7 +117,6 @@ func InitialiseTestStorage(log *logging.Logger, config Config) (*SQLStore, error
 	}
 
 	return setupStorage(&s)
-
 }
 
 func setupStorage(store *SQLStore) (*SQLStore, error) {
@@ -151,7 +150,6 @@ func (s *SQLStore) DeleteEverything() error {
 }
 
 func (s *SQLStore) initializeEmbeddedPostgres(runtimePath *paths.StatePath, dataPath *paths.StatePath) error {
-
 	dbConfig := embeddedpostgres.DefaultConfig().
 		Username(s.conf.Username).
 		Password(s.conf.Password).

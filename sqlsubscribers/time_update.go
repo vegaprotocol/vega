@@ -1,13 +1,11 @@
 package sqlsubscribers
 
 import (
-	"context"
 	"encoding/hex"
 	"time"
 
 	"code.vegaprotocol.io/data-node/entities"
 	"code.vegaprotocol.io/data-node/logging"
-	"code.vegaprotocol.io/data-node/subscribers"
 	"code.vegaprotocol.io/vega/events"
 )
 
@@ -22,18 +20,15 @@ type BlockStore interface {
 }
 
 type Time struct {
-	*subscribers.Base
 	store BlockStore
 	log   *logging.Logger
 }
 
 func NewTimeSub(
-	ctx context.Context,
 	store BlockStore,
 	log *logging.Logger,
 ) *Time {
 	t := &Time{
-		Base:  subscribers.NewBase(ctx, 1, true),
 		store: store,
 		log:   log,
 	}

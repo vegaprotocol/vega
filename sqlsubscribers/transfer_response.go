@@ -1,13 +1,11 @@
 package sqlsubscribers
 
 import (
-	"context"
 	"fmt"
 	"time"
 
 	"code.vegaprotocol.io/data-node/entities"
 	"code.vegaprotocol.io/data-node/logging"
-	"code.vegaprotocol.io/data-node/subscribers"
 	"code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/events"
 	"github.com/shopspring/decimal"
@@ -24,8 +22,8 @@ type AccountStore interface {
 type BalanceStore interface {
 	Add(b entities.Balance) error
 }
-type PartyStore interface {
-}
+
+type PartyStore interface{}
 
 type TransferResponseEvent interface {
 	events.Event
@@ -33,7 +31,6 @@ type TransferResponseEvent interface {
 }
 
 type TransferResponse struct {
-	*subscribers.Base
 	ledger   Ledger
 	accounts AccountStore
 	parties  PartyStore
@@ -43,7 +40,6 @@ type TransferResponse struct {
 }
 
 func NewTransferResponse(
-	ctx context.Context,
 	ledger Ledger,
 	accounts AccountStore,
 	balances BalanceStore,
@@ -51,7 +47,6 @@ func NewTransferResponse(
 	log *logging.Logger,
 ) *TransferResponse {
 	return &TransferResponse{
-		Base:     subscribers.NewBase(ctx, 0, true),
 		ledger:   ledger,
 		accounts: accounts,
 		balances: balances,
@@ -111,7 +106,8 @@ func (t *TransferResponse) addBalance(vb *vega.TransferBalance, vegaTime time.Ti
 	b := entities.Balance{
 		AccountID: acc.ID,
 		Balance:   balance,
-		VegaTime:  vegaTime}
+		VegaTime:  vegaTime,
+	}
 
 	err = t.balances.Add(b)
 	if err != nil {
