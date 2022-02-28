@@ -6,7 +6,6 @@ import (
 	"testing"
 	"time"
 
-	vgproto "code.vegaprotocol.io/protos/vega"
 	snapshot "code.vegaprotocol.io/protos/vega/snapshot/v1"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/types"
@@ -48,7 +47,7 @@ func TestGovernanceSnapshotProposalReject(t *testing.T) {
 
 	// Reject proposal
 	eng.broker.EXPECT().Send(gomock.Any()).Times(1)
-	err = eng.RejectProposal(context.Background(), toSubmit.Proposal(), vgproto.ProposalError_PROPOSAL_ERROR_COULD_NOT_INSTANTIATE_MARKET, errors.New("failure"))
+	err = eng.RejectProposal(context.Background(), toSubmit.Proposal(), types.ProposalErrorCouldNotInstantiateMarket, errors.New("failure"))
 	assert.NoError(t, err)
 
 	// Check its changed now proposal has been rejected
@@ -86,7 +85,7 @@ func TestGovernanceSnapshotProposalEnacted(t *testing.T) {
 	// vote for it
 	eng.expectSendVoteEvent(t, voter1, proposal)
 	err = eng.AddVote(context.Background(),
-		types.VoteSubmission{Value: vgproto.Vote_VALUE_YES, ProposalID: proposal.ID}, voter1.Id)
+		types.VoteSubmission{Value: types.VoteValueYes, ProposalID: proposal.ID}, voter1.Id)
 	assert.NoError(t, err)
 
 	// chain update
@@ -94,7 +93,7 @@ func TestGovernanceSnapshotProposalEnacted(t *testing.T) {
 		pe, ok := evt.(*events.Proposal)
 		assert.True(t, ok)
 		p := pe.Proposal()
-		assert.Equal(t, vgproto.Proposal_STATE_PASSED, p.State)
+		assert.Equal(t, types.ProposalStatePassed, p.State)
 		assert.Equal(t, proposal.ID, p.Id)
 	})
 	eng.broker.EXPECT().SendBatch(gomock.Any()).Times(1).Do(func(evts []events.Event) {

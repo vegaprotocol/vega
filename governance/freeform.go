@@ -1,7 +1,6 @@
 package governance
 
 import (
-	proto "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/types"
 	"github.com/pkg/errors"
 )
@@ -13,11 +12,11 @@ var (
 
 func validateNewFreeform(f *types.NewFreeform) (types.ProposalError, error) {
 	if len(f.Changes.URL) == 0 || len(f.Changes.Hash) == 0 {
-		return types.ProposalError_PROPOSAL_ERROR_INVALID_FREEFORM, ErrFreeformParameterEmpty
+		return types.ProposalErrorInvalidFreeform, ErrFreeformParameterEmpty
 	}
 
 	if len(f.Changes.Description) > 255 {
-		return types.ProposalError_PROPOSAL_ERROR_INVALID_FREEFORM, ErrFreeformDescriptionTooLong
+		return types.ProposalErrorInvalidFreeform, ErrFreeformDescriptionTooLong
 	}
-	return proto.ProposalError_PROPOSAL_ERROR_UNSPECIFIED, nil
+	return types.ProposalErrorUnspecified, nil
 }

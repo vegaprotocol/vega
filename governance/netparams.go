@@ -85,21 +85,21 @@ func (e *Engine) getProposalParametersFromNetParams(
 func validateNetworkParameterUpdate(
 	netp NetParams, np *types.NetworkParameter) (types.ProposalError, error) {
 	if len(np.Key) <= 0 {
-		return types.ProposalError_PROPOSAL_ERROR_NETWORK_PARAMETER_INVALID_KEY, ErrEmptyNetParamKey
+		return types.ProposalErrorNetworkParameterInvalidKey, ErrEmptyNetParamKey
 	}
 
 	if len(np.Value) <= 0 {
-		return types.ProposalError_PROPOSAL_ERROR_NETWORK_PARAMETER_INVALID_VALUE, ErrEmptyNetParamValue
+		return types.ProposalErrorNetworkParameterInvalidValue, ErrEmptyNetParamValue
 	}
 
 	// so we seems to just need to call on validate in here.
 	// no need to know what's the parameter really or anything else
 	var (
-		perr = types.ProposalError_PROPOSAL_ERROR_UNSPECIFIED
+		perr = types.ProposalErrorUnspecified
 		err  = netp.Validate(np.Key, np.Value)
 	)
 	if err != nil {
-		perr = types.ProposalError_PROPOSAL_ERROR_NETWORK_PARAMETER_VALIDATION_FAILED
+		perr = types.ProposalErrorNetworkParameterValidationFailed
 	}
 
 	return perr, err
