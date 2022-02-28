@@ -806,11 +806,11 @@ func (app *App) canSubmitTx(tx abci.Tx) (err error) {
 			return errors.New("invalid proposal submission")
 		}
 		switch p.Terms.Change.GetTermType() {
-		case types.ProposalTerms_NEW_MARKET:
+		case types.ProposalTermsTypeNewMarket:
 			if !app.limits.CanProposeMarket() {
 				return ErrMarketProposalDisabled
 			}
-		case types.ProposalTerms_NEW_ASSET:
+		case types.ProposalTermsTypeNewAsset:
 			if !app.limits.CanProposeAsset() {
 				return ErrAssetProposalDisabled
 			}
@@ -1055,7 +1055,7 @@ func (app *App) DeliverPropose(ctx context.Context, tx abci.Tx, deterministicId 
 				logging.Error(err))
 			// an error happened when submitting the market + liquidity
 			// we should cancel this proposal now
-			if err := app.gov.RejectProposal(ctx, toSubmit.Proposal(), types.ProposalError_PROPOSAL_ERROR_COULD_NOT_INSTANTIATE_MARKET, err); err != nil {
+			if err := app.gov.RejectProposal(ctx, toSubmit.Proposal(), types.ProposalErrorCouldNotInstantiateMarket, err); err != nil {
 				// this should never happen
 				app.log.Panic("tried to reject an non-existing proposal",
 					logging.String("proposal-id", toSubmit.Proposal().ID),

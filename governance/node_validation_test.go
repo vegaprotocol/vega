@@ -52,7 +52,7 @@ func testNodeValidationRequiredTrue(t *testing.T) {
 
 	p := &types.Proposal{
 		Terms: &types.ProposalTerms{
-			Change: &types.ProposalTerms_NewAsset{},
+			Change: &types.ProposalTermsNewAsset{},
 		},
 	}
 
@@ -65,7 +65,7 @@ func testNodeValidationRequiredFalse(t *testing.T) {
 
 	p := &types.Proposal{
 		Terms: &types.ProposalTerms{
-			Change: &types.ProposalTerms_NewMarket{},
+			Change: &types.ProposalTermsNewMarket{},
 		},
 	}
 
@@ -78,7 +78,7 @@ func testStartErrorNoNodeValidationRequired(t *testing.T) {
 
 	p := &types.Proposal{
 		Terms: &types.ProposalTerms{
-			Change: &types.ProposalTerms_NewMarket{},
+			Change: &types.ProposalTermsNewMarket{},
 		},
 	}
 
@@ -95,7 +95,7 @@ func testStartErrorCheckProposalFailed(t *testing.T) {
 		Terms: &types.ProposalTerms{
 			ClosingTimestamp:    1,
 			ValidationTimestamp: 2,
-			Change:              &types.ProposalTerms_NewAsset{},
+			Change:              &types.ProposalTermsNewAsset{},
 		},
 	}
 
