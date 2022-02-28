@@ -16,5 +16,7 @@ const (
 	// Represents a signature for a new asset allow-listing.
 	NodeSignatureKindAssetNew NodeSignatureKind = commandspb.NodeSignatureKind_NODE_SIGNATURE_KIND_ASSET_NEW
 	// Represents a signature for an asset withdrawal.
-	NodeSignatureKindAssetWithdrawal NodeSignatureKind = commandspb.NodeSignatureKind_NODE_SIGNATURE_KIND_ASSET_WITHDRAWAL
+	NodeSignatureKindAssetWithdrawal            NodeSignatureKind = commandspb.NodeSignatureKind_NODE_SIGNATURE_KIND_ASSET_WITHDRAWAL
+	NodeSignatureKindERC20MultiSigSignerAdded   NodeSignatureKind = commandspb.NodeSignatureKind_NODE_SIGNATURE_KIND_ERC20_MULTISIG_SIGNER_ADDED
+	NodeSignatureKindERC20MultiSigSignerRemoved NodeSignatureKind = commandspb.NodeSignatureKind_NODE_SIGNATURE_KIND_ERC20_MULTISIG_SIGNER_REMOVED
 )

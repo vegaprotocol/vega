@@ -105,9 +105,12 @@ func (t *Topology) RecalcValidatorSet(ctx context.Context, epochSeq string, dele
 	t.mu.Lock()
 	defer t.mu.Unlock()
 	// first we record the current status of validators before the promotion/demotion so we can capture in an event.
-	currentState := make(map[string]ValidatorStatus, len(t.validators))
+	currentState := make(map[string]statusAddress, len(t.validators))
 	for k, vs := range t.validators {
-		currentState[k] = vs.status
+		currentState[k] = statusAddress{
+			status:     vs.status,
+			ethAddress: vs.data.EthereumAddress,
+		}
 	}
 
 	keys := make([]string, 0, len(currentState))
@@ -125,7 +128,18 @@ func (t *Topology) RecalcValidatorSet(ctx context.Context, epochSeq string, dele
 	for _, vu := range t.validatorPowerUpdates {
 		cPubKey, _ := encoding.PubKeyFromProto(vu.PubKey)
 		t.log.Info("setting voting power to", logging.String(("address"), cPubKey.Address().String()), logging.Uint64("power", uint64(vu.Power)))
+
 	}
+
+	newState := make(map[string]statusAddress, len(t.validators))
+	for k, vs := range t.validators {
+		newState[k] = statusAddress{
+			status:     vs.status,
+			ethAddress: vs.data.EthereumAddress,
+		}
+	}
+
+	t.signatures.EmitPromotionsSignatures(t.currentTime, currentState, newState)
 
 	// prepare and send the events
 	evts := make([]events.Event, 0, len(currentState))
@@ -140,7 +154,8 @@ func (t *Topology) RecalcValidatorSet(ctx context.Context, epochSeq string, dele
 			vp = 0
 		}
 
-		evts = append(evts, events.NewValidatorRanking(ctx, epochSeq, nodeID, stakeScore[nodeID].String(), perfScore[nodeID].String(), rankingScore[nodeID].String(), ValidatorStatusToName[currentState[nodeID]], status, int(vp)))
+		evts = append(evts, events.NewValidatorRanking(ctx, epochSeq, nodeID, stakeScore[nodeID].String(), perfScore[nodeID].String(), rankingScore[nodeID].String(), ValidatorStatusToName[currentState[nodeID].status], status, int(vp)))
+
 	}
 	t.broker.SendBatch(evts)
 
