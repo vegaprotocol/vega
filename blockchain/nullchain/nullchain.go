@@ -308,24 +308,31 @@ func (n *NullBlockchain) Health(_ context.Context) (*tmctypes.ResultHealth, erro
 	return &tmctypes.ResultHealth{}, nil
 }
 
-func (n *NullBlockchain) SendTransactionAsync(ctx context.Context, tx []byte) (string, error) {
+func (n *NullBlockchain) SendTransactionAsync(ctx context.Context, tx []byte) (*tmctypes.ResultBroadcastTx, error) {
 	go func() {
 		n.handleTransaction(tx)
 	}()
-	return vgrand.RandomStr(64), nil
+	randHash := []byte(vgrand.RandomStr(64))
+	return &tmctypes.ResultBroadcastTx{Hash: randHash}, nil
 }
 
-func (n *NullBlockchain) SendTransactionSync(ctx context.Context, tx []byte) (string, error) {
+func (n *NullBlockchain) CheckTransaction(ctx context.Context, tx []byte) (*tmctypes.ResultCheckTx, error) {
+	return &tmctypes.ResultCheckTx{}, nil
+}
+
+func (n *NullBlockchain) SendTransactionSync(ctx context.Context, tx []byte) (*tmctypes.ResultBroadcastTx, error) {
 	n.handleTransaction(tx)
-	return vgrand.RandomStr(64), nil
+	randHash := []byte(vgrand.RandomStr(64))
+	return &tmctypes.ResultBroadcastTx{Hash: randHash}, nil
 }
 
-func (n *NullBlockchain) SendTransactionCommit(ctx context.Context, tx []byte) (string, error) {
+func (n *NullBlockchain) SendTransactionCommit(ctx context.Context, tx []byte) (*tmctypes.ResultBroadcastTxCommit, error) {
 	// I think its worth only implementing this if needed. With time-forwarding we already have
 	// control over when a block ends and gets committed, so I don't think its worth adding the
 	// the complexity of trying to keep track of tx deliveries here.
 	n.log.Error("not implemented")
-	return "", ErrNotImplemented
+	randHash := []byte(vgrand.RandomStr(64))
+	return &tmctypes.ResultBroadcastTxCommit{Hash: randHash}, ErrNotImplemented
 }
 
 func (n *NullBlockchain) Validators(_ context.Context, _ *int64) ([]*tmtypes.Validator, error) {

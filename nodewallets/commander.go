@@ -14,6 +14,7 @@ import (
 	"code.vegaprotocol.io/vega/txn"
 
 	"github.com/golang/protobuf/proto"
+	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
 )
 
 const (
@@ -22,7 +23,7 @@ const (
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/chain_mock.go -package mocks code.vegaprotocol.io/vega/nodewallets Chain
 type Chain interface {
-	SubmitTransaction(ctx context.Context, tx *commandspb.Transaction, ty api.SubmitTransactionRequest_Type) (string, error)
+	SubmitTransactionAsync(ctx context.Context, tx *commandspb.Transaction) (*tmctypes.ResultBroadcastTx, error)
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/blockchain_stats_mock.go -package mocks code.vegaprotocol.io/vega/nodewallets BlockchainStats
@@ -88,7 +89,7 @@ func (c *Commander) command(_ context.Context, cmd txn.Command, payload proto.Me
 		}
 
 		tx := commands.NewTransaction(c.wallet.PubKey().Hex(), marshalledData, signature)
-		_, err = c.bc.SubmitTransaction(ctx, tx, ty)
+		_, err = c.bc.SubmitTransactionAsync(ctx, tx)
 		if err != nil {
 			// this can happen as network dependent
 			c.log.Error("could not send transaction to tendermint",
