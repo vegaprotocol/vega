@@ -169,17 +169,25 @@ func TestReplayProtectionByDistance(t *testing.T) {
 		command:     testCommandA,
 	})
 
+	// the transaction is at height 100, ring bugger size is 2 * 10
+	// forward tolernace = 10
+	// backward tolernace = 10
 	tests := []struct {
 		name        string
 		height      int
 		expectError bool
 	}{
-		{"within distance: low", 91, true},
+		// 10 in the future >= forwrad tolerance => reject
+		{"too far in the future", 90, true},
+		// 9 to the future, within the 10 tolerance => accept
+		{"within distance: low", 91, false},
+		// 9 in the past < 10 back tolerance => accept
 		{"within distance: high", 109, false},
-
+		// same hight => accept
 		{"same heights", 100, false},
-
+		// 10 in the past >= 10 back tolerance => reject
 		{"higher distance - short", 110, true},
+		// 100 in the past >= 10 back tolerance => reject
 		{"higher distance - long", 200, true},
 	}
 
@@ -200,6 +208,7 @@ func TestReplayProtectionByDistance(t *testing.T) {
 		// perform the request (all of them uses blockHeight 100)
 		req := types.RequestDeliverTx{Tx: tx}
 		resp := app.DeliverTx(req)
+
 		t.Run(test.name, func(t *testing.T) {
 			if test.expectError {
 				require.True(t, resp.IsErr(), resp)
@@ -239,9 +248,9 @@ func TestReplayProtectionByCache(t *testing.T) {
 	require.True(t, resp2.IsErr())
 	require.Equal(t, abci.ErrTxAlreadyInCache.Error(), resp2.Info)
 
-	beginBlockN(app, 1)
-	beginBlockN(app, 2)
 	beginBlockN(app, 3)
+	beginBlockN(app, 4)
+	beginBlockN(app, 6) // the tx was added to the cache at block 2, the total size of the ring buffer is 2 * 2 = 4 => at block 6 it's too old
 	resp3 := app.DeliverTx(req)
 	require.True(t, resp3.IsErr())
 	require.Equal(t, abci.ErrTxStaled.Error(), resp3.Info)
