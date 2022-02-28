@@ -21,13 +21,13 @@ func TestReplayProtector(t *testing.T) {
 }
 
 func testOnDuplicatedKeyOnTheSameblock(t *testing.T) {
-	rp := abci.NewReplayProtector(1)
+	rp := abci.NewReplayProtector(1, 0)
 	require.True(t, rp.Add("k1"))
 	require.False(t, rp.Add("k1"))
 }
 
 func testOnDuplicatedKeyOnTheDifferentblock(t *testing.T) {
-	rp := abci.NewReplayProtector(2)
+	rp := abci.NewReplayProtector(2, 0)
 	rp.SetHeight(0)
 	require.True(t, rp.Add("k1"))
 
@@ -36,19 +36,19 @@ func testOnDuplicatedKeyOnTheDifferentblock(t *testing.T) {
 }
 
 func testCacheEviction(t *testing.T) {
-	rp := abci.NewReplayProtector(2)
+	rp := abci.NewReplayProtector(2, 0)
 	rp.SetHeight(0)
 	require.True(t, rp.Add("k1"))
 
 	rp.SetHeight(1)
 	require.False(t, rp.Add("k1"))
 
-	rp.SetHeight(4)
+	rp.SetHeight(1000)
 	require.True(t, rp.Add("k1"))
 }
 
 func TestSnapshot(t *testing.T) {
-	rp := abci.NewReplayProtector(2)
+	rp := abci.NewReplayProtector(2, 0)
 	snap1, err := rp.Snapshot()
 	require.Nil(t, err)
 	require.Equal(t, 1, len(snap1))
@@ -72,7 +72,7 @@ func TestSnapshot(t *testing.T) {
 }
 
 func TestSnapshotRoundTrip(t *testing.T) {
-	rp := abci.NewReplayProtector(2)
+	rp := abci.NewReplayProtector(2, 0)
 	rp.SetHeight(0)
 	require.True(t, rp.Add("k11"))
 	require.True(t, rp.Add("k12"))
@@ -103,7 +103,7 @@ func TestSnapshotRoundTrip(t *testing.T) {
 // newPopulatedRP will create a ReplayProtector with `nBlocks`
 // block capacity and `nKeys` per block.
 func newPopulatedRP(nBlocks, nKeys int) *abci.ReplayProtector {
-	rp := abci.NewReplayProtector(uint(nBlocks))
+	rp := abci.NewReplayProtector(uint64(nBlocks), 0)
 	for i := 0; i < nBlocks; i++ {
 		rp.SetHeight(uint64(i))
 
@@ -124,7 +124,7 @@ func benchmarkReplayProtector(b *testing.B, size int) {
 }
 
 func TestCheckTx(t *testing.T) {
-	rp := abci.NewReplayProtector(150)
+	rp := abci.NewReplayProtector(150, 150)
 	rp.SetHeight(100)
 	// current block 100, forward tolerance 150, tx block 250 => reject
 	require.Error(t, abci.ErrTxReferFutureBlock, rp.CheckTx(FakeTx{block: 250, hash: "shouldberejected"}))
@@ -139,7 +139,7 @@ func TestCheckTx(t *testing.T) {
 }
 
 func TestDeliverTx(t *testing.T) {
-	rp := abci.NewReplayProtector(150)
+	rp := abci.NewReplayProtector(150, 150)
 	rp.SetHeight(100)
 	// current block 100, forward tolerance 150, tx block 250 => reject
 	require.Error(t, abci.ErrTxReferFutureBlock, rp.DeliverTx(FakeTx{block: 250, hash: "shouldberejected"}))
@@ -154,7 +154,7 @@ func TestDeliverTx(t *testing.T) {
 }
 
 func TestReplayAttempts(t *testing.T) {
-	rp := abci.NewReplayProtector(150)
+	rp := abci.NewReplayProtector(150, 150)
 	rp.SetHeight(200)
 
 	// add a transaction with height 349

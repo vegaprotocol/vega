@@ -217,11 +217,9 @@ type Resource struct {
 }
 
 type PayloadReplayProtection struct {
-	Blocks []*ReplayBlockTransactions
-}
-
-type ReplayBlockTransactions struct {
-	Transactions []string
+	Transactions []*snapshot.TransactionAtHeight
+	BackTol      uint64
+	ForwardTol   uint64
 }
 
 type PayloadEventForwarder struct {
@@ -3324,24 +3322,19 @@ func (*PayloadStakeVerifierDeposited) Namespace() SnapshotNamespace {
 }
 
 func PayloadReplayProtectionFromProto(rp *snapshot.Payload_ReplayProtection) *PayloadReplayProtection {
-	blocks := make([]*ReplayBlockTransactions, 0, len(rp.ReplayProtection.RecentBlocksTransactions))
-	for _, block := range rp.ReplayProtection.RecentBlocksTransactions {
-		blocks = append(blocks, &ReplayBlockTransactions{Transactions: block.Tx[:]})
-	}
 	return &PayloadReplayProtection{
-		Blocks: blocks,
+		Transactions: rp.ReplayProtection.Transactions,
+		BackTol:      rp.ReplayProtection.BackTol,
+		ForwardTol:   rp.ReplayProtection.ForwardTol,
 	}
 }
 
 func (p PayloadReplayProtection) IntoProto() *snapshot.Payload_ReplayProtection {
-	recentBlocks := make([]*snapshot.RecentBlocksTransactions, 0, len(p.Blocks))
-
-	for _, block := range p.Blocks {
-		recentBlocks = append(recentBlocks, &snapshot.RecentBlocksTransactions{Tx: block.Transactions[:]})
-	}
 	return &snapshot.Payload_ReplayProtection{
 		ReplayProtection: &snapshot.ReplayProtection{
-			RecentBlocksTransactions: recentBlocks,
+			Transactions: p.Transactions,
+			BackTol:      p.BackTol,
+			ForwardTol:   p.ForwardTol,
 		},
 	}
 }

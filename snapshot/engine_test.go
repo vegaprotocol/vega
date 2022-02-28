@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	pbsnapshot "code.vegaprotocol.io/protos/vega/snapshot/v1"
 	vegactx "code.vegaprotocol.io/vega/libs/context"
 	"code.vegaprotocol.io/vega/libs/crypto"
 	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
@@ -328,10 +329,11 @@ func testReloadReplayProtectors(t *testing.T) {
 	e := getTestEngine(t)
 	defer e.Finish()
 	rpPl := types.PayloadReplayProtection{
-		Blocks: []*types.ReplayBlockTransactions{
-			{
-				Transactions: []string{"foo", "bar"},
-			},
+		BackTol:    100,
+		ForwardTol: 200,
+		Transactions: []*pbsnapshot.TransactionAtHeight{
+			{Tx: "foo", Height: 1},
+			{Tx: "bar", Height: 2},
 		},
 	}
 	payload := types.Payload{
@@ -352,8 +354,9 @@ func testReloadReplayProtectors(t *testing.T) {
 	old.EXPECT().LoadState(gomock.Any(), gomock.Any()).Times(1).DoAndReturn(func(_ context.Context, pl *types.Payload) ([]types.StateProvider, error) {
 		switch dt := pl.Data.(type) {
 		case *types.PayloadReplayProtection:
-			require.Equal(t, len(dt.Blocks), len(rpPl.Blocks))
-			require.EqualValues(t, dt.Blocks[0], rpPl.Blocks[0])
+			require.Equal(t, dt.BackTol, rpPl.BackTol)
+			require.Equal(t, dt.ForwardTol, rpPl.ForwardTol)
+			require.Equal(t, len(dt.Transactions), len(rpPl.Transactions))
 		default:
 			t.Fatal("Incorrect payload type passed")
 		}
