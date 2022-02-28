@@ -523,6 +523,10 @@ func (n *NodeCommand) setupNetParameters() error {
 		netparams.WatchParam{
 			Param: netparams.BlockchainsEthereumConfig,
 			Watcher: func(_ context.Context, cfg interface{}) error {
+				// nothing to do if not a validator
+				if !n.conf.IsValidator() {
+					return nil
+				}
 				ethCfg, err := types.EthereumConfigFromUntypedProto(cfg)
 				if err != nil {
 					return fmt.Errorf("invalid ethereum configuration: %w", err)
