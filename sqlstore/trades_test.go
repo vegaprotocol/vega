@@ -44,7 +44,6 @@ func setupTradeIdBytes() {
 	tradeid4Bytes, _ = hex.DecodeString(tradeId4)
 	tradeid5Bytes, _ = hex.DecodeString(tradeId5)
 	tradeid6Bytes, _ = hex.DecodeString(tradeId6)
-
 }
 
 func TestStorage_GetTradesByOrderId(t *testing.T) {

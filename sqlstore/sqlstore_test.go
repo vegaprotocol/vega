@@ -2,7 +2,6 @@ package sqlstore_test
 
 import (
 	"crypto/sha256"
-	"encoding/hex"
 	"fmt"
 	"math/rand"
 	"net"
@@ -59,7 +58,6 @@ func NewTestConfig(port int) sqlstore.Config {
 	return sqlConfig
 }
 
-
 func getNextPort() int {
 	rand.Seed(time.Now().UnixNano())
 	for {
@@ -75,8 +73,3 @@ func getNextPort() int {
 		}
 	}
 }
-
-func generateStringID() string {
-	return hex.EncodeToString(generateID())
-}
-

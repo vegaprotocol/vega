@@ -98,15 +98,15 @@ type NodeCommand struct {
 	chainInfoStore        *storage.ChainInfo
 	transferStore         *storage.Transfers
 
-	sqlStore        *sqlstore.SQLStore
-	assetStoreSQL   *sqlstore.Assets
-	blockStoreSQL   *sqlstore.Blocks
-	accountStoreSQL *sqlstore.Accounts
-	balanceStoreSQL *sqlstore.Balances
-	ledgerSQL       *sqlstore.Ledger
-	partyStoreSQL   *sqlstore.Parties
-	orderStoreSQL   *sqlstore.Orders
-	tradeStoreSQL   *sqlstore.Trades
+	sqlStore              *sqlstore.SQLStore
+	assetStoreSQL         *sqlstore.Assets
+	blockStoreSQL         *sqlstore.Blocks
+	accountStoreSQL       *sqlstore.Accounts
+	balanceStoreSQL       *sqlstore.Balances
+	ledgerSQL             *sqlstore.Ledger
+	partyStoreSQL         *sqlstore.Parties
+	orderStoreSQL         *sqlstore.Orders
+	tradeStoreSQL         *sqlstore.Trades
 	networkLimitsStoreSQL *sqlstore.NetworkLimits
 	marketDataStoreSQL    *sqlstore.MarketData
 

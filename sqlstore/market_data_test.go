@@ -215,7 +215,7 @@ func getAllForMarketBetweenDates(t *testing.T) {
 	market := "8cc0e020c0bc2f9eba77749d81ecec8283283b85941722c2cb88318aaf8b8cd8"
 
 	startDate := time.Date(2022, 2, 11, 10, 5, 30, 0, time.UTC)
-	endDate := time.Date(2022, 2, 11, 10, 06, 0, 0, time.UTC)
+	endDate := time.Date(2022, 2, 11, 10, 6, 0, 0, time.UTC)
 
 	pagination := entities.Pagination{}
 
@@ -301,7 +301,6 @@ func setupMarketData(t *testing.T) (*sqlstore.MarketData, error) {
 	require.NoError(t, err)
 
 	f, err := os.Open(filepath.Join("testdata", "marketdata.csv"))
-
 	if err != nil {
 		return nil, err
 	}
@@ -378,7 +377,6 @@ func mustParsePriceMonitoringBounds(t *testing.T, value string) []*entities.Pric
 	var bounds []*entities.PriceMonitoringBound
 
 	err := json.Unmarshal([]byte(value), &bounds)
-
 	if err != nil {
 		t.Fatalf("could not parse Price Monitoring Bounds: %s", err)
 	}
@@ -394,7 +392,6 @@ func mustParseLiquidity(t *testing.T, value string) []*entities.LiquidityProvide
 	var liquidity []*entities.LiquidityProviderFeeShare
 
 	err := json.Unmarshal([]byte(value), &liquidity)
-
 	if err != nil {
 		t.Fatalf("could not parse Liquidity Provider Fee Share: %s", err)
 	}

@@ -55,7 +55,6 @@ func (ts *Trades) Add(t *entities.Trade) error {
 }
 
 func (ts *Trades) GetByMarket(ctx context.Context, market string, p entities.Pagination) ([]entities.Trade, error) {
-
 	marketId, err := hex.DecodeString(market)
 	if err != nil {
 		return nil, err
@@ -72,7 +71,6 @@ func (ts *Trades) GetByMarket(ctx context.Context, market string, p entities.Pag
 }
 
 func (ts *Trades) GetByParty(ctx context.Context, party string, market *string, pagination entities.Pagination) ([]entities.Trade, error) {
-
 	partyId, err := hex.DecodeString(party)
 	if err != nil {
 		return nil, err
@@ -94,7 +92,6 @@ func (ts *Trades) GetByOrderID(ctx context.Context, order string, market *string
 }
 
 func (ts *Trades) queryTradesWithMarketFilter(ctx context.Context, query string, args []interface{}, market *string, p entities.Pagination) ([]entities.Trade, error) {
-
 	if market != nil && *market != "" {
 
 		marketId, err := hex.DecodeString(*market)

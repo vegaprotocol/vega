@@ -64,7 +64,6 @@ func (md *MarketData) Add(data *entities.MarketData) error {
 
 func (md *MarketData) GetByID(ctx context.Context, marketID string) (entities.MarketData, error) {
 	market, err := hex.DecodeString(marketID)
-
 	if err != nil {
 		return entities.MarketData{}, fmt.Errorf("bad ID (must be a hex string): %w", err)
 	}
