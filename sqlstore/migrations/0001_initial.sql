@@ -1,4 +1,6 @@
 -- +goose Up
+create extension if not exists timescaledb;
+
 create table blocks
 (
     vega_time     TIMESTAMP WITH TIME ZONE NOT NULL PRIMARY KEY,
@@ -163,6 +165,64 @@ CREATE AGGREGATE public.last (anyelement) (
 , PARALLEL = safe
 );
 
+drop type if exists auction_trigger_type;
+create type auction_trigger_type as enum('AUCTION_TRIGGER_UNSPECIFIED', 'AUCTION_TRIGGER_BATCH', 'AUCTION_TRIGGER_OPENING', 'AUCTION_TRIGGER_PRICE', 'AUCTION_TRIGGER_LIQUIDITY');
+
+drop type if exists market_trading_mode_type;
+create type market_trading_mode_type as enum('TRADING_MODE_UNSPECIFIED', 'TRADING_MODE_CONTINUOUS', 'TRADING_MODE_BATCH_AUCTION', 'TRADING_MODE_OPENING_AUCTION', 'TRADING_MODE_MONITORING_AUCTION');
+
+create table market_data (
+    market bytea not null,
+    vega_time timestamp with time zone not null references blocks(vega_time),
+    seq_num int not null,
+    mark_price numeric(32),
+    best_bid_price numeric(32),
+    best_bid_volume bigint,
+    best_offer_price numeric(32),
+    best_offer_volume bigint,
+    best_static_bid_price numeric(32),
+    best_static_bid_volume bigint,
+    best_static_offer_price numeric(32),
+    best_static_offer_volume bigint,
+    mid_price numeric(32),
+    static_mid_price numeric(32),
+    open_interest bigint,
+    auction_end bigint,
+    auction_start bigint,
+    indicative_price numeric(32),
+    indicative_volume bigint,
+    market_trading_mode market_trading_mode_type,
+    auction_trigger auction_trigger_type,
+    extension_trigger auction_trigger_type,
+    target_stake numeric(32),
+    supplied_stake numeric(32),
+    price_monitoring_bounds jsonb,
+    market_value_proxy text,
+    liquidity_provider_fee_shares jsonb
+);
+
+select create_hypertable('market_data', 'vega_time', chunk_time_interval => INTERVAL '1 day');
+
+create index on market_data (market, vega_time);
+
+create or replace view market_data_snapshot as
+with cte_market_data_latest(market, vega_time) as (
+    select market, max(vega_time)
+    from market_data
+    group by market
+)
+select md.market, md.vega_time, seq_num, mark_price, best_bid_price, best_bid_volume, best_offer_price, best_offer_volume,
+       best_static_bid_price, best_static_bid_volume, best_static_offer_price, best_static_offer_volume,
+       mid_price, static_mid_price, open_interest, auction_end, auction_start, indicative_price, indicative_volume,
+       market_trading_mode, auction_trigger, extension_trigger, target_stake, supplied_stake, price_monitoring_bounds,
+       market_value_proxy, liquidity_provider_fee_shares
+from market_data md
+join cte_market_data_latest mx
+on md.market = mx.market
+and md.vega_time = mx.vega_time
+;
+
+
 -- +goose Down
 DROP AGGREGATE IF EXISTS public.first(anyelement);
 DROP AGGREGATE IF EXISTS public.last(anyelement);
@@ -180,6 +240,11 @@ DROP TYPE IF EXISTS order_side;
 DROP TYPE IF EXISTS order_type;
 DROP TYPE IF EXISTS order_pegged_reference;
 
+DROP VIEW IF EXISTS market_data_snapshot;
+DROP TABLE IF EXISTS market_data;
+DROP TYPE IF EXISTS market_trading_mode_type;
+DROP TYPE IF EXISTS auction_trigger_type;
+
 DROP TABLE IF EXISTS ledger;
 DROP TABLE IF EXISTS balances;
 DROP TABLE IF EXISTS accounts;
@@ -187,3 +252,4 @@ DROP TABLE IF EXISTS parties;
 DROP TABLE IF EXISTS assets;
 DROP TABLE IF EXISTS trades;
 DROP TABLE IF EXISTS blocks;
+DROP EXTENSION IF EXISTS timescaledb;

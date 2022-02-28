@@ -1,6 +1,8 @@
 package sqlstore
 
 import (
+	"time"
+
 	"code.vegaprotocol.io/data-node/config/encoding"
 	"code.vegaprotocol.io/data-node/logging"
 )
@@ -17,6 +19,7 @@ type Config struct {
 	UseEmbedded              encoding.Bool     `long:"use-embedded" description:"Use an embedded version of Postgresql for the SQL data store"`
 	FanOutBufferSize         int               `long:"fan-out-buffer-size" description:"buffer size used by the fan out event source"`
 	SqlEventBrokerBufferSize int               `long:"sql-broker-buffer-size" description:"the per type buffer size in the sql event broker"`
+	Timeout                  encoding.Duration `long:"db-timeout" description:"Duration to wait before database requests should time out (e.g. 10s, 60s etc.)"`
 }
 
 func NewDefaultConfig() Config {
@@ -32,5 +35,6 @@ func NewDefaultConfig() Config {
 		UseEmbedded:              false,
 		FanOutBufferSize:         1000,
 		SqlEventBrokerBufferSize: 100,
+		Timeout:                  encoding.Duration{Duration: time.Second},
 	}
 }

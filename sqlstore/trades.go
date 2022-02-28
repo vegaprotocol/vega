@@ -22,18 +22,16 @@ func NewTrades(sqlStore *SQLStore) *Trades {
 	return t
 }
 
-const sqlColumns = `vega_time, seq_num, id, market_id, price, size, buyer, seller, aggressor, buy_order, sell_order,
-				type, buyer_maker_fee, buyer_infrastructure_fee, buyer_liquidity_fee, 
-                seller_maker_fee, seller_infrastructure_fee, seller_liquidity_fee,
-                buyer_auction_batch, seller_auction_batch`
-
 // Add inserts a row to the trades table.
 func (ts *Trades) Add(t *entities.Trade) error {
 	ctx := context.Background()
 
 	_, err := ts.pool.Exec(ctx,
-		`INSERT INTO trades(`+sqlColumns+`)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)`,
+		`INSERT INTO trades(vega_time, seq_num, id, market_id, price, size, buyer, seller, aggressor, buy_order, 
+				sell_order, type, buyer_maker_fee, buyer_infrastructure_fee, buyer_liquidity_fee, 
+                seller_maker_fee, seller_infrastructure_fee, seller_liquidity_fee,
+				buyer_auction_batch, seller_auction_batch)
+         		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)`,
 		t.VegaTime,
 		t.SeqNum,
 		t.ID,
@@ -139,7 +137,7 @@ func (os *Trades) queryTrades(ctx context.Context, query string, args []interfac
 		query, args = paginateTradeQuery(query, args, *p)
 	}
 
-	trades := []entities.Trade{}
+	var trades []entities.Trade
 	err := pgxscan.Select(ctx, os.pool, &trades, query, args...)
 	if err != nil {
 		return nil, fmt.Errorf("querying trades: %w", err)
@@ -158,7 +156,7 @@ func paginateTradeQuery(query string, args []interface{}, p entities.Pagination)
 		limit = p.Limit
 	}
 
-	query = fmt.Sprintf(" %s ORDER BY vega_time %s, sequence_num %s LIMIT %s OFFSET %s",
+	query = fmt.Sprintf(" %s ORDER BY vega_time %s, seq_num %s LIMIT %s OFFSET %s",
 		query, dir, dir, nextBindVar(&args, limit), nextBindVar(&args, p.Skip))
 
 	return query, args

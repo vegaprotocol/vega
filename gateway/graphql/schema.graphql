@@ -429,6 +429,28 @@ type Query {
 
   "Current network limits"
   networkLimits: NetworkLimits
+
+  "get market data history for a specific market. If no dates are given, the latest snapshot will be returned. If only the start date is provided all history from the given date will be provided, and if only the end date is provided, all history from the start upto and including the end date will be provided."
+  getMarketDataHistoryByID(
+    id: String!,
+    """
+    Optional start date time for the historic data query.
+    If both the start and end date is not provided, only the latest snapshot will be returned.
+    If only the start date is provided, all market data for the market from the start date forward will be returned.
+    """
+    start: Int,
+    """
+    Optional end date time for the historic data query.
+    If both the start and end date is not provided, only the latest snapshot will be returned.
+    If only the end date is provided, all market data for the market up to and including the end date will be returned.
+    """
+    end: Int,
+    "Pagination skip"
+    skip: Int,
+    "Pagination first element"
+    first: Int,
+    "Pagination last element"
+    last: Int): [MarketData]
 }
 
 enum TransferStatus {

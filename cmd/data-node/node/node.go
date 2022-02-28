@@ -108,6 +108,7 @@ type NodeCommand struct {
 	orderStoreSQL   *sqlstore.Orders
 	tradeStoreSQL   *sqlstore.Trades
 	networkLimitsStoreSQL *sqlstore.NetworkLimits
+	marketDataStoreSQL    *sqlstore.MarketData
 
 	vegaCoreServiceClient vegaprotoapi.CoreServiceClient
 
@@ -142,6 +143,7 @@ type NodeCommand struct {
 	transferResponseSubSQL *sqlsubscribers.TransferResponse
 	orderSubSQL            *sqlsubscribers.Order
 	networkLimitsSubSQL    *sqlsubscribers.NetworkLimits
+	marketDataSubSQL       *sqlsubscribers.MarketData
 	tradesSubSQL           *sqlsubscribers.TradeSubscriber
 
 	candleService     *candles.Svc
@@ -244,6 +246,7 @@ func (l *NodeCommand) runNode(args []string) error {
 		l.balanceStoreSQL,
 		l.orderStoreSQL,
 		l.networkLimitsStoreSQL,
+		l.marketDataStoreSQL,
 	)
 
 	// watch configs

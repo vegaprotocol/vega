@@ -14,6 +14,7 @@ type TimeUpdateEvent interface {
 	Time() time.Time
 }
 
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/time_update_mock.go -package mocks code.vegaprotocol.io/data-node/sqlsubscribers BlockStore
 type BlockStore interface {
 	Add(entities.Block) error
 }

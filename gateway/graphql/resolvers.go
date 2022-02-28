@@ -940,6 +940,27 @@ func makePagination(skip, first, last *int) *protoapi.Pagination {
 	}
 }
 
+func makeApiV2Pagination(skip, first, last *int) *v2.Pagination {
+	var (
+		offset, limit uint64
+		descending    bool
+	)
+	if skip != nil {
+		offset = uint64(*skip)
+	}
+	if last != nil {
+		limit = uint64(*last)
+		descending = true
+	} else if first != nil {
+		limit = uint64(*first)
+	}
+	return &v2.Pagination{
+		Skip:       offset,
+		Limit:      limit,
+		Descending: descending,
+	}
+}
+
 // TODO: RewardDetails have been depricated, remove once front end catches up
 func (r *myPartyResolver) RewardDetails(
 	ctx context.Context,
@@ -2542,4 +2563,91 @@ func getParty(ctx context.Context, log *logging.Logger, client TradingDataServic
 		return nil, customErrorFromStatus(err)
 	}
 	return res.Party, nil
+}
+
+// Market Data Resolvers
+
+// GetMarketDataHistoryByID returns all the market data information for a given market between the dates specified.
+func (r *myQueryResolver) GetMarketDataHistoryByID(ctx context.Context, id string, start, end, skip, first, last *int) ([]*types.MarketData, error) {
+	var startTime, endTime int64
+
+	if start != nil {
+		startTime = int64(*start)
+	}
+
+	if end != nil {
+		endTime = int64(*end)
+	}
+
+	pagination := makeApiV2Pagination(skip, first, last)
+
+	if startTime > 0 && endTime > 0 {
+		return r.getMarketDataHistoryByID(ctx, id, startTime, endTime, pagination)
+	}
+
+	if startTime > 0 {
+		return r.getMarketDataHistoryFromDateByID(ctx, id, startTime, pagination)
+	}
+
+	if endTime > 0 {
+		return r.getMarketDataHistoryToDateByID(ctx, id, endTime, pagination)
+	}
+
+	return r.getMarketDataByID(ctx, id)
+}
+
+func (r *myQueryResolver) getMarketData(ctx context.Context, req *v2.GetMarketDataHistoryByIDRequest) ([]*types.MarketData, error) {
+	resp, err := r.tradingDataClientV2.GetMarketDataHistoryByID(ctx, req)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.GetMarketData(), nil
+}
+
+func (r *myQueryResolver) getMarketDataByID(ctx context.Context, id string) ([]*types.MarketData, error) {
+	req := v2.GetMarketDataHistoryByIDRequest{
+		MarketId: id,
+	}
+
+	return r.getMarketData(ctx, &req)
+}
+
+func (r *myQueryResolver) getMarketDataHistoryByID(ctx context.Context, id string, start, end int64, pagination *v2.Pagination) ([]*types.MarketData, error) {
+	startTime := time.Unix(start, 0).UnixNano()
+	endTime := time.Unix(end, 0).UnixNano()
+
+	req := v2.GetMarketDataHistoryByIDRequest{
+		MarketId:       id,
+		StartTimestamp: &startTime,
+		EndTimestamp:   &endTime,
+		Pagination:     pagination,
+	}
+
+	return r.getMarketData(ctx, &req)
+}
+
+func (r *myQueryResolver) getMarketDataHistoryFromDateByID(ctx context.Context, id string, start int64, pagination *v2.Pagination) ([]*types.MarketData, error) {
+	startTime := time.Unix(start, 0).UnixNano()
+
+	req := v2.GetMarketDataHistoryByIDRequest{
+		MarketId:       id,
+		StartTimestamp: &startTime,
+		Pagination:     pagination,
+	}
+
+	return r.getMarketData(ctx, &req)
+}
+
+func (r *myQueryResolver) getMarketDataHistoryToDateByID(ctx context.Context, id string, end int64, pagination *v2.Pagination) ([]*types.MarketData, error) {
+	endTime := time.Unix(end, 0).UnixNano()
+
+	req := v2.GetMarketDataHistoryByIDRequest{
+		MarketId:     id,
+		EndTimestamp: &endTime,
+		Pagination:   pagination,
+	}
+
+	return r.getMarketData(ctx, &req)
 }

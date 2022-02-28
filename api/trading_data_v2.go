@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"code.vegaprotocol.io/data-node/entities"
 	"code.vegaprotocol.io/data-node/sqlstore"
@@ -22,6 +23,7 @@ type tradingDataServiceV2 struct {
 	balanceStore       *sqlstore.Balances
 	orderStore         *sqlstore.Orders
 	networkLimitsStore *sqlstore.NetworkLimits
+	marketDataStore    *sqlstore.MarketData
 }
 
 func (t *tradingDataServiceV2) QueryBalanceHistory(ctx context.Context, req *v2.QueryBalanceHistoryRequest) (*v2.QueryBalanceHistoryResponse, error) {
@@ -142,6 +144,102 @@ func (t *tradingDataServiceV2) OrdersByMarket(ctx context.Context, req *v2.Order
 	return &v2.OrdersByMarketResponse{
 		Orders: pbOrders,
 	}, nil
+}
+
+func entityMarketDataListToProtoList(list []entities.MarketData) []*vega.MarketData {
+	if len(list) == 0 {
+		return nil
+	}
+
+	results := make([]*vega.MarketData, 0, len(list))
+
+	for _, item := range list {
+		results = append(results, item.ToProto())
+	}
+
+	return results
+}
+
+func (bs *tradingDataServiceV2) GetMarketDataHistoryByID(ctx context.Context, req *v2.GetMarketDataHistoryByIDRequest) (*v2.GetMarketDataHistoryByIDResponse, error) {
+	var startTime, endTime time.Time
+
+	if req.StartTimestamp != nil {
+		startTime = time.Unix(0, *req.StartTimestamp)
+	}
+
+	if req.EndTimestamp != nil {
+		endTime = time.Unix(0, *req.EndTimestamp)
+	}
+
+	pagination := entities.Pagination{}
+
+	if req.Pagination != nil {
+		pagination.Skip = req.Pagination.Skip
+		pagination.Limit = req.Pagination.Limit
+		pagination.Descending = req.Pagination.Descending
+	}
+
+	if req.StartTimestamp != nil && req.EndTimestamp != nil {
+		return bs.getMarketDataHistoryByID(ctx, req.MarketId, startTime, endTime, pagination)
+	}
+
+	if req.StartTimestamp != nil {
+		return bs.getMarketDataHistoryFromDateByID(ctx, req.MarketId, startTime, pagination)
+	}
+
+	if req.EndTimestamp != nil {
+		return bs.getMarketDataHistoryToDateByID(ctx, req.MarketId, endTime, pagination)
+	}
+
+	return bs.getMarketDataByID(ctx, req.MarketId)
+}
+
+func parseMarketDataResults(results []entities.MarketData) (*v2.GetMarketDataHistoryByIDResponse, error) {
+	response := v2.GetMarketDataHistoryByIDResponse{
+		MarketData: entityMarketDataListToProtoList(results),
+	}
+
+	return &response, nil
+}
+
+func (bs *tradingDataServiceV2) getMarketDataHistoryByID(ctx context.Context, id string, start, end time.Time, pagination entities.Pagination) (*v2.GetMarketDataHistoryByIDResponse, error) {
+	results, err := bs.marketDataStore.GetBetweenDatesByID(ctx, id, start, end, pagination)
+
+	if err != nil {
+		return nil, fmt.Errorf("could not retrieve market data history for market id: %w", err)
+	}
+
+	return parseMarketDataResults(results)
+}
+
+func (bs *tradingDataServiceV2) getMarketDataByID(ctx context.Context, id string) (*v2.GetMarketDataHistoryByIDResponse, error) {
+	results, err := bs.marketDataStore.GetByID(ctx, id)
+
+	if err != nil {
+		return nil, fmt.Errorf("could not retrieve market data history for market id: %w", err)
+	}
+
+	return parseMarketDataResults([]entities.MarketData{results})
+}
+
+func (bs *tradingDataServiceV2) getMarketDataHistoryFromDateByID(ctx context.Context, id string, start time.Time, pagination entities.Pagination) (*v2.GetMarketDataHistoryByIDResponse, error) {
+	results, err := bs.marketDataStore.GetFromDateByID(ctx, id, start, pagination)
+
+	if err != nil {
+		return nil, fmt.Errorf("could not retrieve market data history for market id: %w", err)
+	}
+
+	return parseMarketDataResults(results)
+}
+
+func (bs *tradingDataServiceV2) getMarketDataHistoryToDateByID(ctx context.Context, id string, end time.Time, pagination entities.Pagination) (*v2.GetMarketDataHistoryByIDResponse, error) {
+	results, err := bs.marketDataStore.GetToDateByID(ctx, id, end, pagination)
+
+	if err != nil {
+		return nil, fmt.Errorf("could not retrieve market data history for market id: %w", err)
+	}
+
+	return parseMarketDataResults(results)
 }
 
 func (t *tradingDataServiceV2) GetNetworkLimits(ctx context.Context, req *v2.GetNetworkLimitsRequest) (*v2.GetNetworkLimitsResponse, error) {
