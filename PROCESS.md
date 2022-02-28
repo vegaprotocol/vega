@@ -23,7 +23,7 @@ For any pull request to be merged into develop or main/master matching a pull re
 
 #### Verify Conventional Commits Job
 
-This job will run on all pull requests that are not created by the Renovate Bot. A simple [third party GitHub Action](https://github.com/webiny/action-conventional-commits) checks sure all commit messages adhere to the [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0-beta.2/) specification.
+This job will run on all pull requests that are not created by the Renovate Bot. A [third party GitHub Action](https://commitsar.aevea.ee/usage/github/) checks sure all commit messages adhere to the [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0-beta.2/) specification.
 
 #### Verify Linked Issue Job
 
@@ -54,7 +54,7 @@ This job will only run if the [Verify Linked Issue](# Verify-Linked-Issue-Job) j
 1. **Get the project data**: gets variables such as the current sprint and specific Kanban board column names.
 1. **Get linked issue `nodeid`**: gets the `nodeID` of the **most recent** issue that has been linked to the pull request.
 1. **Add issue to project**: adds the linked issue to the project board, if not already present.
-1. **Set issue project status fields**: updates the issue fields; sets the status to `In Progress` and sprint to `@current`.
+1. **Set issue project status fields**: updates the issue fields; sets the status to `In Progress` and sprint to `@current`. If the issue is already in `Waiting Review` the issue will remain with this status.
 
 #### Skip Changelog And Issue Checks
 
