@@ -38,6 +38,10 @@ func (e *Engine) Keys() []string {
 	return e.state.hashKeys
 }
 
+func (e *Engine) Stopped() bool {
+	return false
+}
+
 func (e *Engine) GetHash(k string) ([]byte, error) {
 	return e.state.getHash(k)
 }

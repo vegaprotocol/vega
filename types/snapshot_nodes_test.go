@@ -252,7 +252,7 @@ func getDummyData() *types.Chunk {
 							Terms: &types.ProposalTerms{
 								ClosingTimestamp:   10000000000,
 								EnactmentTimestamp: 10000000002,
-								Change: &types.ProposalTerms_NewAsset{
+								Change: &types.ProposalTermsNewAsset{
 									NewAsset: &types.NewAsset{
 										Changes: &types.AssetDetails{
 											Name:        "foocoin2",
@@ -303,7 +303,7 @@ func getDummyData() *types.Chunk {
 							Party:     "party_animal",
 							State:     types.ProposalStateEnacted,
 							Terms: &types.ProposalTerms{
-								Change: &types.ProposalTerms_NewAsset{
+								Change: &types.ProposalTermsNewAsset{
 									NewAsset: &types.NewAsset{
 										Changes: &types.AssetDetails{
 											Name:        "foocoin",

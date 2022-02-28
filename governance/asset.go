@@ -1,7 +1,6 @@
 package governance
 
 import (
-	proto "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/types"
 )
 
@@ -10,36 +9,36 @@ func validateNewAsset(ad *types.AssetDetails) (types.ProposalError, error) {
 		return perr, err
 	}
 	if ad.Source == nil {
-		return types.ProposalError_PROPOSAL_ERROR_UNSPECIFIED, nil
+		return types.ProposalErrorUnspecified, nil
 	}
 	return ad.Source.ValidateAssetSource()
 }
 
-func validateCommonAssetDetails(ad *types.AssetDetails) (proto.ProposalError, error) {
+func validateCommonAssetDetails(ad *types.AssetDetails) (types.ProposalError, error) {
 	if len(ad.Name) <= 0 {
-		return proto.ProposalError_PROPOSAL_ERROR_INVALID_ASSET_DETAILS,
+		return types.ProposalErrorInvalidAssetDetails,
 			types.ErrInvalidAssetNameEmpty
 	}
 
 	if len(ad.Symbol) <= 0 {
-		return proto.ProposalError_PROPOSAL_ERROR_INVALID_ASSET_DETAILS,
+		return types.ProposalErrorInvalidAssetDetails,
 			types.ErrInvalidAssetSymbolEmpty
 	}
 
 	if ad.Decimals == 0 {
-		return proto.ProposalError_PROPOSAL_ERROR_INVALID_ASSET_DETAILS,
+		return types.ProposalErrorInvalidAssetDetails,
 			types.ErrInvalidAssetDecimalPlacesZero
 	}
 
 	if ad.TotalSupply.IsZero() {
-		return proto.ProposalError_PROPOSAL_ERROR_INVALID_ASSET_DETAILS,
+		return types.ProposalErrorInvalidAssetDetails,
 			types.ErrInvalidAssetTotalSupplyZero
 	}
 
 	if ad.Quantum.IsZero() {
-		return proto.ProposalError_PROPOSAL_ERROR_INVALID_ASSET_DETAILS,
+		return types.ProposalErrorInvalidAssetDetails,
 			types.ErrInvalidAssetQuantumZero
 	}
 
-	return proto.ProposalError_PROPOSAL_ERROR_UNSPECIFIED, nil
+	return types.ProposalErrorUnspecified, nil
 }

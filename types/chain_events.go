@@ -15,8 +15,6 @@ type (
 	WithdrawExt                  = proto.WithdrawExt
 	WithdrawExt_Erc20            = proto.WithdrawExt_Erc20
 	Erc20WithdrawExt             = proto.Erc20WithdrawExt
-	ChainEvent_Btc               = commandspb.ChainEvent_Btc
-	ChainEvent_Validator         = commandspb.ChainEvent_Validator
 	BuiltinAssetEvent_Deposit    = proto.BuiltinAssetEvent_Deposit
 	BuiltinAssetEvent_Withdrawal = proto.BuiltinAssetEvent_Withdrawal
 )

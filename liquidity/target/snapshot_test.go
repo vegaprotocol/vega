@@ -22,7 +22,7 @@ func newSnapshotEngine(marketID string) *target.SnapshotEngine {
 	}
 	var oiCalc target.OpenInterestCalculator
 
-	return target.NewSnapshotEngine(params, oiCalc, marketID)
+	return target.NewSnapshotEngine(params, oiCalc, marketID, num.DecimalFromFloat(1))
 }
 
 func TestSaveAndLoadSnapshot(t *testing.T) {
@@ -64,4 +64,22 @@ func TestSaveAndLoadSnapshot(t *testing.T) {
 	h2, err := se2.GetHash(key)
 	a.NoError(err)
 	a.Equal(h1, h2)
+}
+
+func TestStopSnapshotTaking(t *testing.T) {
+	marketID := "market-1"
+	key := fmt.Sprintf("target:%s", marketID)
+	se := newSnapshotEngine(marketID)
+
+	// signal to kill the engine's snapshots
+	se.StopSnapshots()
+
+	s, _, err := se.GetState(key)
+	assert.NoError(t, err)
+	assert.Nil(t, s)
+
+	h, err := se.GetHash(key)
+	assert.NoError(t, err)
+	assert.Nil(t, h)
+	assert.True(t, se.Stopped())
 }

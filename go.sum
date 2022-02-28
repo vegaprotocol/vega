@@ -56,15 +56,14 @@ cloud.google.com/go/storage v1.10.0/go.mod h1:FLPqc6j+Ki4BU591ie1oL6qBQGu2Bl/tZ9
 cloud.google.com/go/storage v1.14.0/go.mod h1:GrKmX003DSIwi9o29oFT7YDnHYwZoctc3fOKtUw0Xmo=
 code.vegaprotocol.io/oracles-relay v0.0.0-20210201140234-f047e1bf6df3 h1:/A09Q3EEiJF+/WiJfKiqzp1zvcWphiYR8lf2N/JSJBU=
 code.vegaprotocol.io/oracles-relay v0.0.0-20210201140234-f047e1bf6df3/go.mod h1:1Gwg5D0PbFEE92Vip8EU0/+n80Kx3GwlGvP850S0op8=
-code.vegaprotocol.io/protos v0.48.1-0.20220217115305-b24b47ff9ff0/go.mod h1:sGGn35s31oBNLNCC5tFiKtfNEPiKm3UghOKNaO+bq58=
-code.vegaprotocol.io/protos v0.48.1-0.20220224100803-b3f7bccc42cb h1:Pp7XE5fbeMDd9rj30N3uTvPY6/QIKRSsn2Efew0yROQ=
-code.vegaprotocol.io/protos v0.48.1-0.20220224100803-b3f7bccc42cb/go.mod h1:sGGn35s31oBNLNCC5tFiKtfNEPiKm3UghOKNaO+bq58=
+code.vegaprotocol.io/protos v0.49.0 h1:91jqZtO2AYnYuEN4DAs7xtvDUhhcBs2CkCpo51Uy8cE=
+code.vegaprotocol.io/protos v0.49.0/go.mod h1:sGGn35s31oBNLNCC5tFiKtfNEPiKm3UghOKNaO+bq58=
 code.vegaprotocol.io/quant v0.2.5 h1:8h+TTHdz1LCO4oGXt8mbowXszd8CQP1MHlJOkthUp1E=
 code.vegaprotocol.io/quant v0.2.5/go.mod h1:HEzOoPKj8OIP49r9AZYeo5281M5ygeGWxopwvt8k6Es=
 code.vegaprotocol.io/shared v0.0.0-20220202150846-b6aba31dcdb0 h1:vDjKTd508FwIwoSdZBEvtEfmBeaYdodgLM96v253zKI=
 code.vegaprotocol.io/shared v0.0.0-20220202150846-b6aba31dcdb0/go.mod h1:pNHKwqRDkotUN0s6jErl7Eb2EpZa2HAf03lyPMTCUT0=
-code.vegaprotocol.io/vegawallet v0.12.1-0.20220217130931-e2d76ed75667 h1:e63TaeSaVFFyZ25w/zN9YFvA16YY6gKs/w4kusaqoJ4=
-code.vegaprotocol.io/vegawallet v0.12.1-0.20220217130931-e2d76ed75667/go.mod h1:rsWI0Juk/XhLkZpgesA9B9/gDRqcJANbKclA9F3Y9Lk=
+code.vegaprotocol.io/vegawallet v0.13.0 h1:qt70OIgADNXmpncCbUKzRYZjvYSjhS9pmq9ymyBxO2E=
+code.vegaprotocol.io/vegawallet v0.13.0/go.mod h1:htdYQ390TN32yovxsPOPfd3EaDkZAgNcxnN2RIYJa2U=
 collectd.org v0.3.0/go.mod h1:A/8DzQBkF6abtvrT2j/AU/4tiBgJWYyh0y/oB/4MlWE=
 dmitri.shuralyov.com/gpu/mtl v0.0.0-20190408044501-666a987793e9/go.mod h1:H6x//7gZCb22OMCxBHrMx7a5I7Hp++hsVxbQ4BYO7hU=
 gioui.org v0.0.0-20210308172011-57750fc8a0a6/go.mod h1:RSH6KIUZ0p2xy5zHDxgAM4zumjgTw83q2ge/PI+yyw8=
@@ -1695,7 +1694,6 @@ google.golang.org/grpc v1.39.0/go.mod h1:PImNr+rS9TWYb2O4/emRugxiyHZ5JyHW5F+RPnD
 google.golang.org/grpc v1.39.1/go.mod h1:PImNr+rS9TWYb2O4/emRugxiyHZ5JyHW5F+RPnDzfrE=
 google.golang.org/grpc v1.40.0/go.mod h1:ogyxbiOoUXAkP+4+xa6PZSE9DZgIHtSpzjDTB9KAK34=
 google.golang.org/grpc v1.40.1/go.mod h1:ogyxbiOoUXAkP+4+xa6PZSE9DZgIHtSpzjDTB9KAK34=
-google.golang.org/grpc v1.42.0/go.mod h1:k+4IHHFw41K8+bbowsex27ge2rCb65oeWqe4jJ590SU=
 google.golang.org/grpc v1.42.0/go.mod h1:k+4IHHFw41K8+bbowsex27ge2rCb65oeWqe4jJ590SU=
 google.golang.org/grpc v1.43.0/go.mod h1:k+4IHHFw41K8+bbowsex27ge2rCb65oeWqe4jJ590SU=
 google.golang.org/grpc v1.44.0 h1:weqSxi/TMs1SqFRMHCtBgXRs8k3X39QIDEZ0pRcttUg=

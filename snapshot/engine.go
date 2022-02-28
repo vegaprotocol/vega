@@ -66,36 +66,33 @@ type StatsService interface {
 // Engine the snapshot engine.
 type Engine struct {
 	Config
+	log *logging.Logger
 
-	ctx        context.Context
-	cfunc      context.CancelFunc
-	time       TimeService
-	stats      StatsService
-	db         db.DB
-	dbPath     string
-	log        *logging.Logger
-	avl        *iavl.MutableTree
-	namespaces []types.SnapshotNamespace
-	nsKeys     map[types.SnapshotNamespace][]string
-	nsTreeKeys map[types.SnapshotNamespace][][]byte
-	keyNoNS    map[string]string // full key => key used by provider
-	hashes     map[string][]byte
-	versions   []int64
-	interval   int64
-	current    int64
+	ctx          context.Context
+	cfunc        context.CancelFunc
+	timeService  TimeService
+	statsService StatsService
+	db           db.DB
+	dbPath       string
+
+	avl             *iavl.MutableTree
+	namespaces      []types.SnapshotNamespace
+	nsKeys          map[types.SnapshotNamespace][]string // takes us from a namespace to the provider keys in that namespace e.g governance => {active, enacted}
+	nsTreeKeys      map[types.SnapshotNamespace][][]byte // takes us from a namespace to the AVL tree keys in that namespace e.g governanec => {governance.active, governance.enacted}
+	treeKeyProvider map[string]string                    // takes us from the key of the AVL tree node, to the provider key e.g checkpoint.all => all
+	keyHashes       map[string][]byte                    // takes us from the key of the AVL tree, to the last known hash of that node
+	versions        []int64
+	interval        int64
+	current         int64
 
 	providers          map[string]types.StateProvider
 	restoreProvs       []types.PostRestore
 	beforeRestoreProvs []types.PreRestore
 	providersNS        map[types.SnapshotNamespace][]types.StateProvider
-	providerTS         map[string]StateProviderT
-	pollCtx            context.Context
-	pollCfunc          context.CancelFunc
 
-	last          *iavl.ImmutableTree
-	hash          []byte
-	version       int64
-	versionHeight map[uint64]int64
+	last             *iavl.ImmutableTree
+	lastSnapshotHash []byte // the root hash of the last snapshot that was taken
+	versionHeight    map[uint64]int64
 
 	snapshot  *types.Snapshot
 	snapRetry int
@@ -103,6 +100,11 @@ type Engine struct {
 	// the general snapshot info this engine is responsible for
 	wrap *types.PayloadAppState
 	app  *types.AppState
+
+	// unused bit related to experiemental channel based snapshot update stuff?
+	providerTS map[string]StateProviderT
+	pollCtx    context.Context
+	pollCfunc  context.CancelFunc
 }
 
 // order in which snapshots are to be restored.
@@ -134,6 +136,7 @@ var nodeOrder = []types.SnapshotNamespace{
 	types.EventForwarderSnapshot,
 	types.FeeTrackerSnapshot,
 	types.MarketTrackerSnapshot,
+	types.ERC20MultiSigTopologySnapshot,
 }
 
 // New returns a new snapshot engine.
@@ -157,14 +160,14 @@ func New(ctx context.Context, vegapath paths.Paths, conf Config, log *logging.Lo
 	}
 	app := appPL.Namespace()
 	eng := &Engine{
-		Config:     conf,
-		ctx:        sctx,
-		cfunc:      cfunc,
-		time:       tm,
-		stats:      stats,
-		dbPath:     dbPath,
-		log:        log,
-		namespaces: []types.SnapshotNamespace{},
+		Config:       conf,
+		log:          log,
+		ctx:          sctx,
+		cfunc:        cfunc,
+		timeService:  tm,
+		statsService: stats,
+		dbPath:       dbPath,
+		namespaces:   []types.SnapshotNamespace{},
 		nsKeys: map[types.SnapshotNamespace][]string{
 			app: {appPL.Key()},
 		},
@@ -173,16 +176,16 @@ func New(ctx context.Context, vegapath paths.Paths, conf Config, log *logging.Lo
 				[]byte(types.KeyFromPayload(appPL)),
 			},
 		},
-		keyNoNS:       map[string]string{},
-		hashes:        map[string][]byte{},
-		providers:     map[string]types.StateProvider{},
-		providersNS:   map[types.SnapshotNamespace][]types.StateProvider{},
-		versions:      make([]int64, 0, conf.KeepRecent), // cap determines how many versions we keep
-		versionHeight: map[uint64]int64{},
-		wrap:          appPL,
-		app:           appPL.AppState,
-		interval:      1, // default to every block
-		current:       1,
+		treeKeyProvider: map[string]string{},
+		keyHashes:       map[string][]byte{},
+		providers:       map[string]types.StateProvider{},
+		providersNS:     map[types.SnapshotNamespace][]types.StateProvider{},
+		versions:        make([]int64, 0, conf.KeepRecent), // cap determines how many versions we keep
+		versionHeight:   map[uint64]int64{},
+		wrap:            appPL,
+		app:             appPL.AppState,
+		interval:        1, // default to every block
+		current:         1,
 	}
 	return eng, nil
 }
@@ -247,6 +250,31 @@ func (e *Engine) Start() error {
 	return e.initialiseTree()
 }
 
+// this function loads snapshots in local store as though they were generated at runtime.
+// The result is that, whenever we create a new snapshot, the old one gets cleaned up.
+func (e *Engine) populateLocalVersions(versions []int) {
+	// is in ascending order already, so let's just iterate
+	if len(versions) == 0 {
+		versions = e.avl.AvailableVersions()
+	}
+	vc := cap(e.versions)
+	for _, v := range versions {
+		if len(e.versions) >= vc {
+			if err := e.avl.DeleteVersion(e.versions[0]); err != nil {
+				e.log.Warn("Could not delete an old version",
+					logging.Int64("old-version", e.versions[0]),
+					logging.Error(err),
+				)
+			}
+			// still, we should drop this from the slice
+			copy(e.versions[0:], e.versions[1:])
+			e.versions[len(e.versions)-1] = int64(v)
+		} else {
+			e.versions = append(e.versions, int64(v))
+		}
+	}
+}
+
 // Loaded will return whether we have loaded from a snapshot. If we have loaded
 // via stat-sync we will already know, if we are loading from local store then we do that
 // node.
@@ -254,6 +282,8 @@ func (e *Engine) Loaded() (bool, error) {
 	// if the avl has been initialised we must have loaded it earlier via using state-sync
 	// we can go straight into loading the state into the providers
 	if e.avl != nil {
+		// OK, but let's make the engine aware of its local store versions
+		e.populateLocalVersions(nil)
 		return true, e.applySnap(e.ctx)
 	}
 
@@ -272,6 +302,7 @@ func (e *Engine) Loaded() (bool, error) {
 
 	height := uint64(startHeight)
 	versions := e.avl.AvailableVersions()
+	e.populateLocalVersions(versions)
 	// descending order, because that makes most sense
 	var last, first uint64
 	for i := len(versions) - 1; i > -1; i-- {
@@ -288,7 +319,6 @@ func (e *Engine) Loaded() (bool, error) {
 			continue
 		}
 		if app.AppState.Height == height {
-			e.version = version
 			e.last = e.avl.ImmutableTree
 			return true, e.load(e.ctx)
 		}
@@ -343,11 +373,9 @@ func (e *Engine) initialiseTree() error {
 }
 
 func (e *Engine) loadTree() error {
-	v, err := e.avl.Load()
-	if err != nil {
+	if _, err := e.avl.Load(); err != nil {
 		return err
 	}
-	e.version = v
 	e.last = e.avl.ImmutableTree
 	return nil
 }
@@ -409,8 +437,24 @@ func (e *Engine) applySnap(ctx context.Context) error {
 	if e.snapshot == nil {
 		return types.ErrUnknownSnapshot
 	}
-	// we need the versions of the snapshot to match
-	e.avl.SetInitialVersion(uint64(e.snapshot.Meta.Version))
+	// this is the current version
+	version := e.snapshot.Meta.Version
+	loaded, err := e.avl.LoadVersionForOverwriting(version)
+	if err != nil {
+		e.log.Error("Failed to load target version",
+			logging.Error(err),
+			logging.Int64("loaded-version", loaded),
+		)
+	}
+	// we need the versions of the snapshot to match, regardless of the version we actually loaded
+	e.avl.SetInitialVersion(uint64(version))
+	// now let's clear the versions slice and pretend the more recent versions don't exist yet
+	for i := 0; i < len(e.versions); i++ {
+		if e.versions[i] >= loaded {
+			e.versions = append(e.versions[0:0], e.versions[:i]...)
+			break
+		}
+	}
 	// iterate over all payloads, add them to the tree
 	ordered := make(map[types.SnapshotNamespace][]*types.Payload, len(nodeOrder))
 	// positions and matching are linked to the market, work out how many payloads those will be:
@@ -445,8 +489,8 @@ func (e *Engine) applySnap(ctx context.Context) error {
 	// we're done restoring, now save the snapshot locally, so we can provide it moving forwards
 	now := time.Unix(e.app.Time, 0)
 	// restore app state
-	e.time.SetTimeNow(ctx, now)
-	e.stats.SetHeight(e.app.Height)
+	e.timeService.SetTimeNow(ctx, now)
+	e.statsService.SetHeight(e.app.Height)
 
 	// before we starts restoring the providers
 	for _, pp := range e.beforeRestoreProvs {
@@ -477,9 +521,9 @@ func (e *Engine) applySnap(ctx context.Context) error {
 		}
 	}
 
-	e.current = e.interval   // set the snapshot counter to the interval so that we do not create a duplicate snapshot on commit
-	e.hash = e.snapshot.Hash // set the engine's "last snapshot hash" field to the hash of the snapshot we've just loaded
-	e.snapshot = nil         // we're done, we can clear the snapshot state
+	e.current = e.interval               // set the snapshot counter to the interval so that we do not create a duplicate snapshot on commit
+	e.lastSnapshotHash = e.snapshot.Hash // set the engine's "last snapshot hash" field to the hash of the snapshot we've just loaded
+	e.snapshot = nil                     // we're done, we can clear the snapshot state
 
 	return nil
 }
@@ -494,7 +538,7 @@ func (e *Engine) setTreeNode(i int, p *types.Payload) error {
 	// hash the node and save it into our cache of node hashes for comparison at the next snapshot
 	hash := crypto.Hash(data)
 	key := p.GetTreeKey()
-	e.hashes[key] = hash
+	e.keyHashes[key] = hash
 
 	return nil
 }
@@ -557,7 +601,7 @@ func (e *Engine) GetMissingChunks() []uint32 {
 // Info simply returns the current snapshot hash
 // Can be used for the TM info call.
 func (e *Engine) Info() ([]byte, int64) {
-	return e.hash, int64(e.app.Height)
+	return e.lastSnapshotHash, int64(e.app.Height)
 }
 
 func (e *Engine) Snapshot(ctx context.Context) (b []byte, errlol error) {
@@ -571,6 +615,7 @@ func (e *Engine) Snapshot(ctx context.Context) (b []byte, errlol error) {
 	defer metrics.StartSnapshot("all")()
 	// always iterate over slices, so loops are deterministic
 	updated := false
+
 	for _, ns := range e.namespaces {
 		u, err := e.update(ns)
 		if err != nil {
@@ -600,7 +645,7 @@ func (e *Engine) Snapshot(ctx context.Context) (b []byte, errlol error) {
 		appUpdate = true
 		e.app.Block = block
 	}
-	vNow := e.time.GetTimeNow().Unix()
+	vNow := e.timeService.GetTimeNow().Unix()
 	if e.app.Time != vNow {
 		e.app.Time = vNow
 		appUpdate = true
@@ -622,7 +667,7 @@ func (e *Engine) Snapshot(ctx context.Context) (b []byte, errlol error) {
 		updated = true
 	}
 	if !updated {
-		return e.hash, nil
+		return e.lastSnapshotHash, nil
 	}
 	return e.saveCurrentTree()
 }
@@ -632,8 +677,7 @@ func (e *Engine) saveCurrentTree() ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	e.hash = h
-	e.version = v
+	e.lastSnapshotHash = h
 	if len(e.versions) >= cap(e.versions) {
 		if err := e.avl.DeleteVersion(e.versions[0]); err != nil {
 			// this is not a fatal error, but still we should be paying attention.
@@ -662,44 +706,55 @@ func (e *Engine) update(ns types.SnapshotNamespace) (bool, error) {
 		return false, nil
 	}
 	update := false
-	for _, tk := range treeKeys {
-		k := string(tk)
-		p := e.providers[k] // get the specific provider for this key
-		ch := e.hashes[k]
-		kNNS := e.keyNoNS[k]
-		h, err := p.GetHash(kNNS)
+	toRemove := []int{}
+	for i, treeKey := range treeKeys {
+		treeKeyStr := string(treeKey)
+		p := e.providers[treeKeyStr] // get the specific provider for this key
+		lastHash := e.keyHashes[treeKeyStr]
+		providerKey := e.treeKeyProvider[treeKeyStr]
+		currentHash, err := p.GetHash(providerKey)
 		if err != nil {
 			return update, err
 		}
+
 		// nothing has changed (or both values were nil)
-		if bytes.Equal(ch, h) {
+		if bytes.Equal(lastHash, currentHash) {
 			continue
 		}
+
+		if len(currentHash) == 0 && p.Stopped() {
+			// this signals the removal of this key
+			toRemove = append(toRemove, i)
+			continue
+		}
+
 		// hashes were different, we need to update
-		v, nsps, err := p.GetState(kNNS)
+		v, generatedProviders, err := p.GetState(providerKey)
 		if err != nil {
 			return update, err
 		}
-		if len(nsps) > 0 {
+		if len(generatedProviders) > 0 {
 			// The provider has generated new providers, register them with the engine
 			// add them to the AVL tree
-			e.AddProviders(nsps...)
-			for _, n := range nsps {
+			e.AddProviders(generatedProviders...)
+			for _, n := range generatedProviders {
 				e.log.Debug("Provider generated",
 					logging.String("namespace", n.Namespace().String()),
 				)
-				e.update(n.Namespace())
+				if _, err = e.update(n.Namespace()); err != nil {
+					return false, err
+				}
 			}
 		}
 		e.log.Debug("State updated",
-			logging.String("node-key", k),
-			logging.String("state-hash", hex.EncodeToString(h)),
+			logging.String("node-key", treeKeyStr),
+			logging.String("state-hash", hex.EncodeToString(currentHash)),
 		)
-		e.hashes[k] = h
-		if len(v) == 0 && len(h) == 0 {
+		e.keyHashes[treeKeyStr] = currentHash
+		if len(v) == 0 && len(currentHash) == 0 {
 			// empty state -> remove data from snapshot
-			if e.avl.Has(tk) {
-				_, _ = e.avl.Remove(tk)
+			if e.avl.Has(treeKey) {
+				_, _ = e.avl.Remove(treeKey)
 				update = true
 				continue
 			}
@@ -707,10 +762,39 @@ func (e *Engine) update(ns types.SnapshotNamespace) (bool, error) {
 			continue
 		}
 		// new value needs to be set
-		_ = e.avl.Set(tk, v)
+		_ = e.avl.Set(treeKey, v)
 		update = true
 	}
-	return update, nil
+
+	if len(toRemove) == 0 {
+		return update, nil
+	}
+
+	for i := range toRemove {
+		treeKey := treeKeys[i]
+		treeKeyStr := string(treeKey)
+
+		// delete everything we've got stored
+		e.log.Debug("State to be removed", logging.String("node-key", treeKeyStr))
+		delete(e.providers, treeKeyStr)
+		delete(e.keyHashes, treeKeyStr)
+		delete(e.treeKeyProvider, treeKeyStr)
+
+		if !e.avl.Has(treeKey) {
+			e.log.Panic("trying to remove non-existent payload from tree", logging.String("key", treeKeyStr))
+			continue
+		}
+
+		if _, removed := e.avl.Remove(treeKey); !removed {
+			e.log.Panic("failed to remove node from AVL tree", logging.String("key", treeKeyStr))
+		}
+	}
+
+	for i := len(toRemove) - 1; i >= 0; i-- {
+		e.nsTreeKeys[ns] = append(e.nsTreeKeys[ns][:i], e.nsTreeKeys[ns][i+1:]...)
+	}
+
+	return true, nil
 }
 
 func (e *Engine) updateAppState() error {
@@ -735,26 +819,26 @@ func (e *Engine) updateAppState() error {
 }
 
 func (e *Engine) Hash(ctx context.Context) ([]byte, error) {
-	if len(e.hash) != 0 {
-		return e.hash, nil
+	if len(e.lastSnapshotHash) != 0 {
+		return e.lastSnapshotHash, nil
 	}
 	return e.Snapshot(ctx)
 }
 
 func (e *Engine) AddProviders(provs ...types.StateProvider) {
 	for _, p := range provs {
-		ks := p.Keys()
+		keys := p.Keys()
 		ns := p.Namespace()
 		haveKeys, ok := e.nsKeys[ns]
 		if !ok {
 			e.providersNS[ns] = []types.StateProvider{
 				p,
 			}
-			e.nsTreeKeys[ns] = make([][]byte, 0, len(ks))
+			e.nsTreeKeys[ns] = make([][]byte, 0, len(keys))
 			e.namespaces = append(e.namespaces, ns)
-			for _, k := range ks {
+			for _, k := range keys {
 				fullKey := types.GetNodeKey(ns, k)
-				e.keyNoNS[fullKey] = k
+				e.treeKeyProvider[fullKey] = k
 				e.providers[fullKey] = p
 				e.nsTreeKeys[ns] = append(e.nsTreeKeys[ns], []byte(fullKey))
 			}
@@ -764,12 +848,12 @@ func (e *Engine) AddProviders(provs ...types.StateProvider) {
 			if pp, ok := p.(types.PreRestore); ok {
 				e.beforeRestoreProvs = append(e.beforeRestoreProvs, pp)
 			}
-			e.nsKeys[ns] = ks
+			e.nsKeys[ns] = keys
 			continue
 		}
 		// in this case, we are replacing the provider
 		if ns == types.ReplayProtectionSnapshot {
-			for _, k := range ks {
+			for _, k := range keys {
 				fullKey := types.GetNodeKey(ns, k)
 				// replace the old provider with the replacement
 				e.providers[fullKey] = p
@@ -778,7 +862,7 @@ func (e *Engine) AddProviders(provs ...types.StateProvider) {
 			// replace provider reference in the NS map, too
 			for i, oldP := range e.providersNS[ns] {
 				// both in same namespace, have same keys -> replace
-				if strings.StringSliceEqual(ks, oldP.Keys()) {
+				if strings.StringSliceEqual(keys, oldP.Keys()) {
 					e.providersNS[ns][i] = p
 					rpl = true
 					break
@@ -790,7 +874,7 @@ func (e *Engine) AddProviders(provs ...types.StateProvider) {
 			}
 			// no exact match was found, so we'll have to de-duplicate
 		}
-		dedup := uniqueSubset(haveKeys, ks)
+		dedup := uniqueSubset(haveKeys, keys)
 		// note that the replay protection provider can replace itself (Noop -> actual protector)
 		if len(dedup) == 0 && ns != types.ReplayProtectionSnapshot {
 			continue // no new keys were added
@@ -800,7 +884,7 @@ func (e *Engine) AddProviders(provs ...types.StateProvider) {
 		e.providersNS[ns] = append(e.providersNS[ns], p)
 		for _, k := range dedup {
 			fullKey := types.GetNodeKey(ns, k)
-			e.keyNoNS[fullKey] = k
+			e.treeKeyProvider[fullKey] = k
 			e.providers[fullKey] = p
 			e.nsTreeKeys[ns] = append(e.nsTreeKeys[ns], []byte(fullKey))
 		}

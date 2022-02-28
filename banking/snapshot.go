@@ -49,6 +49,10 @@ func (e *Engine) Keys() []string {
 	return hashKeys
 }
 
+func (e *Engine) Stopped() bool {
+	return false
+}
+
 func (e *Engine) serialiseRecurringTransfers() ([]byte, error) {
 	payload := types.Payload{
 		Data: &types.PayloadBankingRecurringTransfers{

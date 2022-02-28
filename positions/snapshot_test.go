@@ -13,6 +13,7 @@ import (
 	"code.vegaprotocol.io/vega/types/num"
 
 	"github.com/golang/protobuf/proto"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -242,4 +243,20 @@ func TestSnapshotHashNoPositions(t *testing.T) {
 	h1, err := engine.GetHash(keys[0])
 	require.Nil(t, err)
 	require.Equal(t, "278f2eff5adc1ea5b8365bd04c6e534ef64ca43df737c22ee61db46a8dac5870", hex.EncodeToString(h1))
+}
+
+func TestStopSnapshotTaking(t *testing.T) {
+	engine := getTestEngine(t)
+	keys := engine.Keys()
+
+	// signal to kill the engine's snapshots
+	engine.StopSnapshots()
+
+	s, _, err := engine.GetState(keys[0])
+	assert.NoError(t, err)
+	assert.Nil(t, s)
+	h, err := engine.GetHash(keys[0])
+	assert.NoError(t, err)
+	assert.Nil(t, h)
+	assert.True(t, engine.Stopped())
 }

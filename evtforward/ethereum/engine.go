@@ -24,6 +24,7 @@ type Filterer interface {
 	FilterCollateralEvents(ctx context.Context, startAt, stopAt uint64, cb OnEventFound)
 	FilterStakingEvents(ctx context.Context, startAt, stopAt uint64, cb OnEventFound)
 	FilterVestingEvents(ctx context.Context, startAt, stopAt uint64, cb OnEventFound)
+	FilterMultiSigControlEvents(ctx context.Context, startAt, stopAt uint64, cb OnEventFound)
 	CurrentHeight(context.Context) uint64
 }
 
@@ -34,13 +35,13 @@ type Engine struct {
 	filterer  Filterer
 	forwarder Forwarder
 
-	nextCollateralBlockNumber uint64
-
-	shouldFilterStakingBridge bool
-	nextStakingBlockNumber    uint64
+	nextCollateralBlockNumber      uint64
+	nextMultiSigControlBlockNumber uint64
+	nextStakingBlockNumber         uint64
+	nextVestingBlockNumber         uint64
 
 	shouldFilterVestingBridge bool
-	nextVestingBlockNumber    uint64
+	shouldFilterStakingBridge bool
 
 	cancelEthereumQueries context.CancelFunc
 }
@@ -51,20 +52,20 @@ func NewEngine(
 	forwarder Forwarder,
 	stakingDeployment types.EthereumContract,
 	vestingDeployment types.EthereumContract,
+	multiSigDeployment types.EthereumContract,
 ) *Engine {
 	l := log.Named(engineLogger)
 
 	return &Engine{
-		log:       l,
-		poller:    newPoller(),
-		filterer:  filterer,
-		forwarder: forwarder,
-
-		shouldFilterStakingBridge: stakingDeployment.HasAddress(),
-		nextStakingBlockNumber:    stakingDeployment.DeploymentBlockHeight(),
-
-		shouldFilterVestingBridge: vestingDeployment.HasAddress(),
-		nextVestingBlockNumber:    vestingDeployment.DeploymentBlockHeight(),
+		log:                            l,
+		poller:                         newPoller(),
+		filterer:                       filterer,
+		forwarder:                      forwarder,
+		shouldFilterStakingBridge:      stakingDeployment.HasAddress(),
+		nextStakingBlockNumber:         stakingDeployment.DeploymentBlockHeight(),
+		shouldFilterVestingBridge:      vestingDeployment.HasAddress(),
+		nextVestingBlockNumber:         vestingDeployment.DeploymentBlockHeight(),
+		nextMultiSigControlBlockNumber: multiSigDeployment.DeploymentBlockHeight(),
 	}
 }
 
@@ -98,6 +99,7 @@ func (e *Engine) Start() {
 		if e.log.IsDebug() {
 			e.log.Debug("Clock is ticking, gathering Ethereum events",
 				logging.Uint64("next-collateral-block-number", e.nextCollateralBlockNumber),
+				logging.Uint64("next-multisig-control-block-number", e.nextMultiSigControlBlockNumber),
 				logging.Uint64("next-staking-block-number", e.nextStakingBlockNumber),
 			)
 		}
@@ -130,6 +132,14 @@ func (e *Engine) gatherEvents(ctx context.Context) {
 			e.forwarder.ForwardFromSelf(event)
 		})
 		e.nextVestingBlockNumber = currentHeight + 1
+	}
+
+	// Ensure we are not issuing a filtering request for non-existing block.
+	if e.nextMultiSigControlBlockNumber <= currentHeight {
+		e.filterer.FilterMultiSigControlEvents(ctx, e.nextMultiSigControlBlockNumber, currentHeight, func(event *commandspb.ChainEvent) {
+			e.forwarder.ForwardFromSelf(event)
+		})
+		e.nextMultiSigControlBlockNumber = currentHeight + 1
 	}
 }
 

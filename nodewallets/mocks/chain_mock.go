@@ -8,8 +8,9 @@ import (
 	context "context"
 	reflect "reflect"
 
-	v1 "code.vegaprotocol.io/protos/vega/api/v1"
 	v10 "code.vegaprotocol.io/protos/vega/commands/v1"
+
+	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
 	gomock "github.com/golang/mock/gomock"
 )
 
@@ -37,16 +38,16 @@ func (m *MockChain) EXPECT() *MockChainMockRecorder {
 }
 
 // SubmitTransaction mocks base method.
-func (m *MockChain) SubmitTransaction(arg0 context.Context, arg1 *v10.Transaction, arg2 v1.SubmitTransactionRequest_Type) (string, error) {
+func (m *MockChain) SubmitTransactionAsync(arg0 context.Context, arg1 *v10.Transaction) (*tmctypes.ResultBroadcastTx, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SubmitTransaction", arg0, arg1, arg2)
+	ret := m.ctrl.Call(m, "SubmitTransactionAsync", arg0, arg1)
 	ret0, _ := ret[0].(string)
 	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	return &tmctypes.ResultBroadcastTx{Hash: []byte(ret0) }, ret1
 }
 
 // SubmitTransaction indicates an expected call of SubmitTransaction.
-func (mr *MockChainMockRecorder) SubmitTransaction(arg0, arg1, arg2 interface{}) *gomock.Call {
+func (mr *MockChainMockRecorder) SubmitTransactionAsync(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubmitTransaction", reflect.TypeOf((*MockChain)(nil).SubmitTransaction), arg0, arg1, arg2)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubmitTransactionAsync", reflect.TypeOf((*MockChain)(nil).SubmitTransactionAsync), arg0, arg1)
 }

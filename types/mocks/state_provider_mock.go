@@ -108,3 +108,17 @@ func (mr *MockStateProviderMockRecorder) Namespace() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Namespace", reflect.TypeOf((*MockStateProvider)(nil).Namespace))
 }
+
+// Stopped mocks base method.
+func (m *MockStateProvider) Stopped() bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Stopped")
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// Stopped indicates an expected call of Stopped.
+func (mr *MockStateProviderMockRecorder) Stopped() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Stopped", reflect.TypeOf((*MockStateProvider)(nil).Stopped))
+}

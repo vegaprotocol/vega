@@ -217,15 +217,21 @@ type Resource struct {
 }
 
 type PayloadReplayProtection struct {
-	Blocks []*ReplayBlockTransactions
-}
-
-type ReplayBlockTransactions struct {
-	Transactions []string
+	Transactions []*snapshot.TransactionAtHeight
+	BackTol      uint64
+	ForwardTol   uint64
 }
 
 type PayloadEventForwarder struct {
 	Events []*commandspb.ChainEvent
+}
+
+type PayloadERC20MultiSigTopologyVerified struct {
+	Verified *snapshot.ERC20MultiSigTopologyVerified
+}
+
+type PayloadERC20MultiSigTopologyPending struct {
+	Pending *snapshot.ERC20MultiSigTopologyPending
 }
 
 type PayloadLiquidityParameters struct {
@@ -717,6 +723,10 @@ func PayloadFromProto(p *snapshot.Payload) *Payload {
 		ret.Data = PayloadBankingRecurringTransfersFromProto(dt)
 	case *snapshot.Payload_BankingScheduledTransfers:
 		ret.Data = PayloadBankingScheduledTransfersFromProto(dt)
+	case *snapshot.Payload_Erc20MultisigTopologyPending:
+		ret.Data = PayloadERC20MultiSigTopologyPendingFromProto(dt)
+	case *snapshot.Payload_Erc20MultisigTopologyVerified:
+		ret.Data = PayloadERC20MultiSigTopologyVerifiedFromProto(dt)
 	}
 
 	return ret
@@ -844,6 +854,10 @@ func (p Payload) IntoProto() *snapshot.Payload {
 		ret.Data = dt
 	case *snapshot.Payload_BankingScheduledTransfers:
 		ret.Data = dt
+	case *snapshot.Payload_Erc20MultisigTopologyPending:
+		ret.Data = dt
+	case *snapshot.Payload_Erc20MultisigTopologyVerified:
+		ret.Data = dt
 	}
 	return &ret
 }
@@ -854,6 +868,52 @@ func (p Payload) GetAppState() *PayloadAppState {
 		return pas
 	}
 	return nil
+}
+
+func PayloadERC20MultiSigTopologyVerifiedFromProto(
+	s *snapshot.Payload_Erc20MultisigTopologyVerified) *PayloadERC20MultiSigTopologyVerified {
+	return &PayloadERC20MultiSigTopologyVerified{
+		Verified: s.Erc20MultisigTopologyVerified,
+	}
+}
+
+func (*PayloadERC20MultiSigTopologyVerified) isPayload() {}
+
+func (p *PayloadERC20MultiSigTopologyVerified) plToProto() interface{} {
+	return &snapshot.Payload_Erc20MultisigTopologyVerified{
+		Erc20MultisigTopologyVerified: p.Verified,
+	}
+}
+
+func (*PayloadERC20MultiSigTopologyVerified) Namespace() SnapshotNamespace {
+	return ERC20MultiSigTopologySnapshot
+}
+
+func (p *PayloadERC20MultiSigTopologyVerified) Key() string {
+	return "verified"
+}
+
+func PayloadERC20MultiSigTopologyPendingFromProto(
+	s *snapshot.Payload_Erc20MultisigTopologyPending) *PayloadERC20MultiSigTopologyPending {
+	return &PayloadERC20MultiSigTopologyPending{
+		Pending: s.Erc20MultisigTopologyPending,
+	}
+}
+
+func (*PayloadERC20MultiSigTopologyPending) isPayload() {}
+
+func (p *PayloadERC20MultiSigTopologyPending) plToProto() interface{} {
+	return &snapshot.Payload_Erc20MultisigTopologyPending{
+		Erc20MultisigTopologyPending: p.Pending,
+	}
+}
+
+func (*PayloadERC20MultiSigTopologyPending) Namespace() SnapshotNamespace {
+	return ERC20MultiSigTopologySnapshot
+}
+
+func (p *PayloadERC20MultiSigTopologyPending) Key() string {
+	return "pending"
 }
 
 func PayloadLiquidityParametersFromProto(s *snapshot.Payload_LiquidityParameters) *PayloadLiquidityParameters {
@@ -3324,24 +3384,19 @@ func (*PayloadStakeVerifierDeposited) Namespace() SnapshotNamespace {
 }
 
 func PayloadReplayProtectionFromProto(rp *snapshot.Payload_ReplayProtection) *PayloadReplayProtection {
-	blocks := make([]*ReplayBlockTransactions, 0, len(rp.ReplayProtection.RecentBlocksTransactions))
-	for _, block := range rp.ReplayProtection.RecentBlocksTransactions {
-		blocks = append(blocks, &ReplayBlockTransactions{Transactions: block.Tx[:]})
-	}
 	return &PayloadReplayProtection{
-		Blocks: blocks,
+		Transactions: rp.ReplayProtection.Transactions,
+		BackTol:      rp.ReplayProtection.BackTol,
+		ForwardTol:   rp.ReplayProtection.ForwardTol,
 	}
 }
 
 func (p PayloadReplayProtection) IntoProto() *snapshot.Payload_ReplayProtection {
-	recentBlocks := make([]*snapshot.RecentBlocksTransactions, 0, len(p.Blocks))
-
-	for _, block := range p.Blocks {
-		recentBlocks = append(recentBlocks, &snapshot.RecentBlocksTransactions{Tx: block.Transactions[:]})
-	}
 	return &snapshot.Payload_ReplayProtection{
 		ReplayProtection: &snapshot.ReplayProtection{
-			RecentBlocksTransactions: recentBlocks,
+			Transactions: p.Transactions,
+			BackTol:      p.BackTol,
+			ForwardTol:   p.ForwardTol,
 		},
 	}
 }

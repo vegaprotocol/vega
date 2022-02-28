@@ -52,6 +52,16 @@ func (n *NodeWallets) GetEthereum() validators.Signer {
 	return n.ethereum
 }
 
+type DummyMultiSigTopology struct{}
+
+func (*DummyMultiSigTopology) IsSigner(address string) bool {
+	return true
+}
+
+func (*DummyMultiSigTopology) ExcessSigners(addresses []string) bool {
+	return false
+}
+
 type testTop struct {
 	*validators.Topology
 	ctrl   *gomock.Controller
@@ -69,7 +79,7 @@ func getTestTopologyWithNodeWallet(
 
 	commander := mocks.NewMockCommander(gomock.NewController(t))
 
-	top := validators.NewTopology(logging.NewTestLogger(), validators.NewDefaultConfig(), nw, broker, true, commander)
+	top := validators.NewTopology(logging.NewTestLogger(), validators.NewDefaultConfig(), nw, broker, true, commander, &DummyMultiSigTopology{})
 	return &testTop{
 		Topology: top,
 		ctrl:     ctrl,
@@ -418,7 +428,7 @@ func testAddNewNodeSendsValidatorUpdateEventToBroker(t *testing.T) {
 
 	broker := brokerMocks.NewMockBroker(ctrl)
 	commander := mocks.NewMockCommander(gomock.NewController(t))
-	top := validators.NewTopology(logging.NewTestLogger(), validators.NewDefaultConfig(), nw, broker, true, commander)
+	top := validators.NewTopology(logging.NewTestLogger(), validators.NewDefaultConfig(), nw, broker, true, commander, &DummyMultiSigTopology{})
 
 	ctx := context.Background()
 	nr := commandspb.AnnounceNode{

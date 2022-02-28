@@ -546,6 +546,7 @@ type Market struct {
 	ID                            string
 	TradableInstrument            *TradableInstrument
 	DecimalPlaces                 uint64
+	PositionDecimalPlaces         uint64
 	Fees                          *Fees
 	OpeningAuction                *AuctionDuration
 	TradingModeConfig             istmc
@@ -564,6 +565,7 @@ func MarketFromProto(mkt *proto.Market) *Market {
 		ID:                            mkt.Id,
 		TradableInstrument:            TradableInstrumentFromProto(mkt.TradableInstrument),
 		DecimalPlaces:                 mkt.DecimalPlaces,
+		PositionDecimalPlaces:         mkt.PositionDecimalPlaces,
 		Fees:                          FeesFromProto(mkt.Fees),
 		OpeningAuction:                AuctionDurationFromProto(mkt.OpeningAuction),
 		PriceMonitoringSettings:       PriceMonitoringSettingsFromProto(mkt.PriceMonitoringSettings),
@@ -615,6 +617,7 @@ func (m Market) IntoProto() *proto.Market {
 		Id:                            m.ID,
 		TradableInstrument:            ti,
 		DecimalPlaces:                 m.DecimalPlaces,
+		PositionDecimalPlaces:         m.PositionDecimalPlaces,
 		Fees:                          fees,
 		OpeningAuction:                openAuct,
 		PriceMonitoringSettings:       pms,
@@ -661,13 +664,14 @@ func (m Market) String() string {
 
 func (m Market) DeepClone() *Market {
 	cpy := &Market{
-		ID:                m.ID,
-		DecimalPlaces:     m.DecimalPlaces,
-		TradingModeConfig: m.TradingModeConfig,
-		TradingMode:       m.TradingMode,
-		State:             m.State,
-		tmc:               m.tmc,
-		asset:             m.asset,
+		ID:                    m.ID,
+		DecimalPlaces:         m.DecimalPlaces,
+		PositionDecimalPlaces: m.PositionDecimalPlaces,
+		TradingModeConfig:     m.TradingModeConfig,
+		TradingMode:           m.TradingMode,
+		State:                 m.State,
+		tmc:                   m.tmc,
+		asset:                 m.asset,
 	}
 
 	if m.TradableInstrument != nil {

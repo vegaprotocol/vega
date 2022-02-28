@@ -150,6 +150,7 @@ func (e *Engine) NewEvent(asset, market string, eventType statevar.StateVarEvent
 		// if the sv is time triggered - reset the next run to be now + frequency
 		if _, ok := e.stateVarToNextCalc[sv.ID]; ok {
 			e.stateVarToNextCalc[sv.ID] = e.currentTime.Add(e.updateFrequency)
+			e.ss.changed = true
 		}
 	}
 }
@@ -188,6 +189,7 @@ func (e *Engine) OnTimeTick(ctx context.Context, t time.Time) {
 		}
 		sv.eventTriggered(eventID)
 		e.stateVarToNextCalc[ID] = t.Add(e.updateFrequency)
+		e.ss.changed = true
 	}
 }
 
@@ -200,6 +202,7 @@ func (e *Engine) ReadyForTimeTrigger(asset, mktID string) {
 		for _, sv := range e.eventTypeToStateVar[statevar.StateVarEventTypeTimeTrigger] {
 			if sv.asset == asset && sv.market == mktID {
 				e.stateVarToNextCalc[sv.ID] = e.currentTime.Add(e.updateFrequency)
+				e.ss.changed = true
 			}
 		}
 	}

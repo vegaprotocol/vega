@@ -87,6 +87,10 @@ func (s *StakeVerifier) Keys() []string {
 	return hashKeys
 }
 
+func (s *StakeVerifier) Stopped() bool {
+	return false
+}
+
 func (s *StakeVerifier) GetHash(k string) ([]byte, error) {
 	_, hash, err := s.getSerialisedAndHash(k)
 	return hash, err

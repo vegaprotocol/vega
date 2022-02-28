@@ -23,6 +23,7 @@ type replayProtector interface {
 	DeliverTx(Tx) error
 	CheckTx(Tx) error
 	GetReplacement() *ReplayProtector
+	Stopped() bool
 }
 
 type App struct {
@@ -76,7 +77,8 @@ func (app *App) ReplaceReplayProtector(tolerance uint) {
 	if rpl == nil {
 		// no replacement to consider since we haven't loaded from a snapshot
 		// tolerance comes directly from the appstate in this instance
-		app.replayProtector = NewReplayProtector(tolerance)
+		// for now lets have forward and backward tolerance equal.
+		app.replayProtector = NewReplayProtector(uint64(tolerance), uint64(tolerance))
 		return
 	}
 

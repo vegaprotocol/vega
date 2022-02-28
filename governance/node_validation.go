@@ -160,7 +160,7 @@ func (n *NodeValidation) OnChainTimeUpdate(t time.Time) (accepted []*proposal, r
 // IsNodeValidationRequired returns true if the given proposal require validation from a node.
 func (n *NodeValidation) IsNodeValidationRequired(p *types.Proposal) bool {
 	switch p.Terms.Change.(type) {
-	case *types.ProposalTerms_NewAsset:
+	case *types.ProposalTermsNewAsset:
 		return true
 	default:
 		return false
@@ -224,7 +224,7 @@ func (n *NodeValidation) restore(p *types.Proposal) error {
 
 func (n *NodeValidation) getChecker(p *types.Proposal) (func() error, error) {
 	switch change := p.Terms.Change.(type) {
-	case *types.ProposalTerms_NewAsset:
+	case *types.ProposalTermsNewAsset:
 		assetID, err := n.assets.NewAsset(p.ID,
 			change.NewAsset.GetChanges())
 		if err != nil {

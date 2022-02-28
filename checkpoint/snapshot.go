@@ -21,6 +21,10 @@ func (e *Engine) Keys() []string {
 	}
 }
 
+func (e *Engine) Stopped() bool {
+	return false
+}
+
 func (e *Engine) setNextCP(t time.Time) {
 	e.nextCP = t
 	e.state.Checkpoint.NextCp = t.UnixNano()

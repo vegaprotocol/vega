@@ -33,6 +33,10 @@ func (m *MarketTracker) Keys() []string {
 	return marketTrackerHashKeys
 }
 
+func (m *MarketTracker) Stopped() bool {
+	return false
+}
+
 func (m *MarketTracker) serialiseMarketTracker() []*snapshot.MarketVolumeTracker {
 	markets := make([]string, 0, len(m.marketIDMarketTracker))
 	for k := range m.marketIDMarketTracker {
