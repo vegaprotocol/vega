@@ -118,7 +118,7 @@ func (n *NodeCommand) startServices(_ []string) (err error) {
 
 	n.witness = validators.NewWitness(n.Log, n.conf.Validators, n.topology, n.commander, n.timeService)
 
-	// this id done to go around circular deps...
+	// this is done to go around circular deps...
 	n.erc20MultiSigTopology.SetWitness(n.witness)
 
 	n.timeService.NotifyOnTick(n.erc20MultiSigTopology.OnTick)
@@ -524,7 +524,7 @@ func (n *NodeCommand) setupNetParameters() error {
 			Param: netparams.BlockchainsEthereumConfig,
 			Watcher: func(_ context.Context, cfg interface{}) error {
 				// nothing to do if not a validator
-				if !n.conf.IsValidator() {
+				if !n.conf.HaveEthClient() {
 					return nil
 				}
 				ethCfg, err := types.EthereumConfigFromUntypedProto(cfg)
