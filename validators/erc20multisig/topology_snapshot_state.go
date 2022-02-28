@@ -46,6 +46,10 @@ func (s *Topology) GetState(k string) ([]byte, []types.StateProvider, error) {
 	return data, nil, err
 }
 
+func (s *Topology) Stopped() bool {
+	return false
+}
+
 func (s *Topology) LoadState(ctx context.Context, payload *types.Payload) ([]types.StateProvider, error) {
 	if s.Namespace() != payload.Data.Namespace() {
 		return nil, types.ErrInvalidSnapshotNamespace
