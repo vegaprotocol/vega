@@ -14,6 +14,7 @@
 - [356](https://github.com/vegaprotocol/data-node/pull/356) - Added support for fractional positions
 
 ### 🐛 Fixes
+- [360](https://github.com/vegaprotocol/data-node/pull/360) - Market data record should be using the sequence number from the event
 
 ## 0.48.0
 
