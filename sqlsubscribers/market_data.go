@@ -24,16 +24,15 @@ type MarketData struct {
 	store     MarketDataStore
 	dbTimeout time.Duration
 	vegaTime  time.Time
-	seqNum    int
+	seqNum    uint64
 }
 
 func (md *MarketData) Push(evt events.Event) {
 	switch e := evt.(type) {
 	case TimeUpdateEvent:
-		md.seqNum = 0
 		md.vegaTime = e.Time()
 	case MarketDataEvent:
-		md.seqNum++
+		md.seqNum = e.Sequence()
 		md.consume(e)
 	default:
 		md.log.Error("Unknown event type in transfer response subscriber",

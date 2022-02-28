@@ -96,7 +96,7 @@ func InitialiseStorage(log *logging.Logger, config Config, vegapaths paths.Paths
 		embeddedPostgresRuntimePath := paths.JoinStatePath(paths.StatePath(vegapaths.StatePathFor(paths.DataNodeStorageHome)), "sqlstore")
 		embeddedPostgresDataPath := paths.JoinStatePath(paths.StatePath(vegapaths.StatePathFor(paths.DataNodeStorageHome)), "node-data")
 
-		if err := s.initializeEmbeddedPostgres(embeddedPostgresRuntimePath, embeddedPostgresDataPath); err != nil {
+		if err := s.initializeEmbeddedPostgres(&embeddedPostgresRuntimePath, &embeddedPostgresDataPath); err != nil {
 			return nil, fmt.Errorf("use embedded database was true, but failed to start: %w", err)
 		}
 	}
@@ -104,18 +104,14 @@ func InitialiseStorage(log *logging.Logger, config Config, vegapaths paths.Paths
 	return setupStorage(&s)
 }
 
-func InitialiseTestStorage(log *logging.Logger, config Config, vegapaths paths.Paths) (*SQLStore, error) {
+func InitialiseTestStorage(log *logging.Logger, config Config) (*SQLStore, error) {
 	s := SQLStore{
 		conf: config,
 		log:  log.Named("sql_store_test"),
 	}
 
 	if s.conf.UseEmbedded {
-		// These will be deleted when the tests are completed by embedded postgres
-		embeddedPostgresRuntimePath := paths.JoinStatePath(paths.StatePath(vegapaths.StatePathFor(paths.DataNodeStorageHome)), "testing")
-		embeddedPostgresDataPath := paths.JoinStatePath(paths.StatePath(vegapaths.StatePathFor(paths.DataNodeStorageHome)), "testing", "node-data")
-
-		if err := s.initializeEmbeddedPostgres(embeddedPostgresRuntimePath, embeddedPostgresDataPath); err != nil {
+		if err := s.initializeEmbeddedPostgres(nil, nil); err != nil {
 			return nil, fmt.Errorf("use embedded database was true, but failed to start: %w", err)
 		}
 	}
@@ -154,17 +150,22 @@ func (s *SQLStore) DeleteEverything() error {
 	return nil
 }
 
-func (s *SQLStore) initializeEmbeddedPostgres(runtimePath paths.StatePath, dataPath paths.StatePath) error {
+func (s *SQLStore) initializeEmbeddedPostgres(runtimePath *paths.StatePath, dataPath *paths.StatePath) error {
 
 	dbConfig := embeddedpostgres.DefaultConfig().
-		RuntimePath(runtimePath.String()).
-		DataPath(dataPath.String()).
-		BinariesPath(runtimePath.String()).
 		Username(s.conf.Username).
 		Password(s.conf.Password).
 		Database(s.conf.Database).
 		Port(uint32(s.conf.Port)).
 		Logger(io.Discard)
+
+	if runtimePath != nil {
+		dbConfig = dbConfig.RuntimePath(runtimePath.String()).BinariesPath(runtimePath.String())
+	}
+
+	if dataPath != nil {
+		dbConfig = dbConfig.DataPath(dataPath.String())
+	}
 
 	s.db = embeddedpostgres.NewDatabase(dbConfig)
 	return s.db.Start()
