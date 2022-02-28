@@ -3,16 +3,24 @@ package staking
 import (
 	"context"
 	"fmt"
+	"math/big"
 
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/netparams"
 	"code.vegaprotocol.io/vega/types"
+
+	ethtypes "github.com/ethereum/go-ethereum/core/types"
 )
 
 type AllEthereumClient interface {
 	EthereumClient
 	EthereumClientConfirmations
 	EthereumClientCaller
+}
+
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/ethereum_client_confirmations_mock.go -package mocks code.vegaprotocol.io/vega/staking EthereumClientConfirmations
+type EthereumClientConfirmations interface {
+	HeaderByNumber(context.Context, *big.Int) (*ethtypes.Header, error)
 }
 
 func New(
@@ -25,11 +33,11 @@ func New(
 	netp *netparams.Store,
 	evtFwd EvtForwarder,
 	isValidator bool,
+	ethCfns EthConfirmations,
 ) (*Accounting, *StakeVerifier) {
 	log = log.Named(namedLogger)
 	log.SetLevel(cfg.Level.Get())
 	accs := NewAccounting(log, cfg, broker, ethClient, evtFwd, witness, tt, isValidator)
-	ethCfns := NewEthereumConfirmations(ethClient, nil)
 	ocv := NewOnChainVerifier(cfg, log, ethClient, ethCfns)
 	stakeV := NewStakeVerifier(log, cfg, accs, tt, witness, broker, ocv)
 
@@ -41,7 +49,6 @@ func New(
 				return fmt.Errorf("staking didn't receive a valid Ethereum configuration: %w", err)
 			}
 
-			ethCfns.UpdateConfirmations(ethCfg.Confirmations())
 			ocv.UpdateStakingBridgeAddresses(ethCfg.StakingBridgeAddresses())
 
 			// We just need one of the staking bridges.

@@ -213,3 +213,9 @@ type StakingAccounts interface {
 	Hash() []byte
 	ProcessStakeTotalSupply(ctx context.Context, event *types.StakeTotalSupply) error
 }
+
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/erc20_multisig_topology_mock.go -package mocks code.vegaprotocol.io/vega/processor ERC20MultiSigTopology
+type ERC20MultiSigTopology interface {
+	ProcessSignerEvent(event *types.SignerEvent) error
+	ProcessThresholdEvent(event *types.SignerThresholdSetEvent) error
+}

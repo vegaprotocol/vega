@@ -14,6 +14,7 @@ var (
 	ErrMissingNetworkID                                   = errors.New("missing network ID in Ethereum config")
 	ErrMissingChainID                                     = errors.New("missing chain ID in Ethereum config")
 	ErrMissingCollateralBridgeAddress                     = errors.New("missing collateral bridge contract address in Ethereum config")
+	ErrMissingMultiSigControlAddress                      = errors.New("missing multisig control contract address in Ethereum config")
 	ErrUnsupportedCollateralBridgeDeploymentBlockHeight   = errors.New("setting collateral bridge contract deployment block height in Ethereum config is not supported")
 	ErrAtLeastOneOfStakingOrVestingBridgeAddressMustBeSet = errors.New("at least one of the stacking bridge or token vesting contract addresses must be specified")
 	ErrConfirmationsMustBeHigherThan0                     = errors.New("confirmation must be > 0 in Ethereum config")
@@ -24,6 +25,7 @@ type EthereumConfig struct {
 	networkID        string
 	confirmations    uint64
 	collateralBridge EthereumContract
+	multiSigControl  EthereumContract
 	stakingBridge    EthereumContract
 	vestingBridge    EthereumContract
 }
@@ -53,6 +55,10 @@ func EthereumConfigFromProto(cfgProto *proto.EthereumConfig) (*EthereumConfig, e
 		confirmations: uint64(cfgProto.Confirmations),
 		collateralBridge: EthereumContract{
 			address: cfgProto.CollateralBridgeContract.Address,
+		},
+		multiSigControl: EthereumContract{
+			address:               cfgProto.MultisigControlContract.Address,
+			deploymentBlockHeight: cfgProto.MultisigControlContract.DeploymentBlockHeight,
 		},
 	}
 
@@ -87,6 +93,10 @@ func (c *EthereumConfig) Confirmations() uint64 {
 
 func (c *EthereumConfig) CollateralBridge() EthereumContract {
 	return c.collateralBridge
+}
+
+func (c *EthereumConfig) MultiSigControl() EthereumContract {
+	return c.multiSigControl
 }
 
 func (c *EthereumConfig) StakingBridge() EthereumContract {
@@ -158,6 +168,11 @@ func CheckEthereumConfig(cfgProto *proto.EthereumConfig) error {
 
 	if cfgProto.Confirmations == 0 {
 		return ErrConfirmationsMustBeHigherThan0
+	}
+
+	noMultiSigControlSetUp := cfgProto.MultisigControlContract == nil || len(cfgProto.MultisigControlContract.Address) == 0
+	if noMultiSigControlSetUp {
+		return ErrMissingMultiSigControlAddress
 	}
 
 	noCollateralBridgeSetUp := cfgProto.CollateralBridgeContract == nil || len(cfgProto.CollateralBridgeContract.Address) == 0

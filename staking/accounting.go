@@ -117,7 +117,7 @@ func (a *Accounting) Hash() []byte {
 		i += 32
 	}
 	h := vgcrypto.Hash(output)
-	a.log.Debug("stakeccounts state hash", logging.String("hash", hex.EncodeToString(h)))
+	a.log.Debug("stake accounts state hash", logging.String("hash", hex.EncodeToString(h)))
 	return h
 }
 

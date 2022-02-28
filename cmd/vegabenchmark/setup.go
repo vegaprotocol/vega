@@ -6,14 +6,12 @@ import (
 	"strings"
 	"time"
 
-	"code.vegaprotocol.io/vega/integration/stubs"
-	"code.vegaprotocol.io/vega/statevar"
-
 	ptypes "code.vegaprotocol.io/protos/vega"
 	vgrand "code.vegaprotocol.io/shared/libs/rand"
 	"code.vegaprotocol.io/shared/paths"
 	"code.vegaprotocol.io/vega/assets"
 	"code.vegaprotocol.io/vega/banking"
+	bmocks "code.vegaprotocol.io/vega/broker/mocks"
 	"code.vegaprotocol.io/vega/checkpoint"
 	ethclient "code.vegaprotocol.io/vega/client/eth"
 	"code.vegaprotocol.io/vega/cmd/vegabenchmark/mocks"
@@ -22,6 +20,7 @@ import (
 	"code.vegaprotocol.io/vega/epochtime"
 	"code.vegaprotocol.io/vega/execution"
 	"code.vegaprotocol.io/vega/genesis"
+	"code.vegaprotocol.io/vega/integration/stubs"
 	vgtesting "code.vegaprotocol.io/vega/libs/testing"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/netparams"
@@ -33,9 +32,11 @@ import (
 	"code.vegaprotocol.io/vega/snapshot"
 	"code.vegaprotocol.io/vega/spam"
 	"code.vegaprotocol.io/vega/staking"
+	"code.vegaprotocol.io/vega/statevar"
 	"code.vegaprotocol.io/vega/stats"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/validators"
+	"code.vegaprotocol.io/vega/validators/erc20multisig"
 	"code.vegaprotocol.io/vega/vegatime"
 	"github.com/cenkalti/backoff"
 	"github.com/golang/mock/gomock"
@@ -74,7 +75,7 @@ func setupVega() (*processor.App, processor.Stats, error) {
 	governance := mocks.NewMockGovernanceEngine(ctrl)
 	governance.EXPECT().OnChainTimeUpdate(gomock.Any(), gomock.Any()).AnyTimes()
 
-	broker := mocks.NewMockBrokerI(ctrl)
+	broker := bmocks.NewMockBrokerI(ctrl)
 	broker.EXPECT().Send(gomock.Any()).AnyTimes()
 	broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
 
@@ -113,6 +114,24 @@ func setupVega() (*processor.App, processor.Stats, error) {
 	if err != nil {
 		return nil, nil, err
 	}
+
+	netp := netparams.New(
+		log,
+		netparams.NewDefaultConfig(),
+		broker,
+	)
+	timeService.NotifyOnTick(netp.OnChainTimeUpdate)
+
+	erc20Topology := erc20multisig.NewERC20MultisigTopology(
+		erc20multisig.NewDefaultConfig(),
+		log,
+		nil,
+		broker,
+		ethClient,
+		ethclient.NewEthereumConfirmations(ethClient, nil),
+		netp,
+	)
+
 	topology := validators.NewTopology(
 		log,
 		validators.NewDefaultConfig(),
@@ -120,6 +139,7 @@ func setupVega() (*processor.App, processor.Stats, error) {
 		broker,
 		true,
 		stubs.NewCommanderStub(),
+		erc20Topology,
 	)
 
 	witness := validators.NewWitness(
@@ -129,6 +149,8 @@ func setupVega() (*processor.App, processor.Stats, error) {
 		commander,
 		timeService,
 	)
+
+	erc20Topology.SetWitness(witness)
 
 	epochService := epochtime.NewService(log, epochtime.NewDefaultConfig(), timeService, broker)
 
@@ -147,12 +169,6 @@ func setupVega() (*processor.App, processor.Stats, error) {
 
 	genesisHandler := genesis.New(log, genesis.NewDefaultConfig())
 
-	netp := netparams.New(
-		log,
-		netparams.NewDefaultConfig(),
-		broker,
-	)
-	timeService.NotifyOnTick(netp.OnChainTimeUpdate)
 	bstats := stats.NewBlockchain()
 
 	feesTracker := execution.NewFeesTracker(epochService)
@@ -183,7 +199,7 @@ func setupVega() (*processor.App, processor.Stats, error) {
 	netParams := netparams.New(log, netparams.NewDefaultConfig(), broker)
 
 	stakingAccounts, _ := staking.New(
-		log, staking.NewDefaultConfig(), broker, timeService, witness, ethClient, netParams, evtfwd, true,
+		log, staking.NewDefaultConfig(), broker, timeService, witness, ethClient, netParams, evtfwd, true, ethclient.NewEthereumConfirmations(ethClient, nil),
 	)
 
 	delegationEngine := delegation.New(log, delegation.NewDefaultConfig(), broker, topology, stakingAccounts, epochService, timeService)
@@ -238,6 +254,7 @@ func setupVega() (*processor.App, processor.Stats, error) {
 		snapshot,
 		stateVarEngine,
 		nil,
+		erc20Topology,
 		"benchmark",
 	)
 	err = registerExecutionCallbacks(log, netp, exec, assets, collateral)
