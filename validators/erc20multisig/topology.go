@@ -270,6 +270,7 @@ func (t *Topology) updateThreshold(ctx context.Context) {
 
 	// from here we assume state have changed
 	t.tss.changed[verifiedStateKey] = true
+	t.tss.changed[pendingStateKey] = true
 
 	// sort all IDs to access pendings events in order
 	ids := []string{}
@@ -311,6 +312,7 @@ func (t *Topology) updateSigners(ctx context.Context) {
 
 	// from here we assume state have changed
 	t.tss.changed[verifiedStateKey] = true
+	t.tss.changed[pendingStateKey] = true
 
 	// sort all IDs to access pendings events in order
 	ids := []string{}

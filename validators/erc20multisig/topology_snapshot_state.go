@@ -9,7 +9,7 @@ import (
 	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/types"
 
-	"google.golang.org/protobuf/proto"
+	"github.com/golang/protobuf/proto"
 )
 
 var (
@@ -78,6 +78,8 @@ func (t *Topology) restoreVerifiedState(
 		t.eventsPerAddress[v.Address] = events
 	}
 
+	t.tss.changed[verifiedStateKey] = true
+
 	return nil
 }
 
@@ -115,6 +117,8 @@ func (t *Topology) restorePendingState(
 			t.witness.RestoreResource(pending, t.onEventVerified)
 		}
 	}
+
+	t.tss.changed[pendingStateKey] = true
 
 	return nil
 }
@@ -159,7 +163,11 @@ func (t *Topology) serialiseVerifiedState() ([]byte, error) {
 	// finally do the current threshold
 	out.Threshold = t.threshold.IntoProto()
 
-	return proto.Marshal(out)
+	return proto.Marshal(types.Payload{
+		Data: &types.PayloadERC20MultiSigTopologyVerified{
+			Verified: out,
+		},
+	}.IntoProto())
 }
 
 func (t *Topology) serialisePendingState() ([]byte, error) {
@@ -192,7 +200,11 @@ func (t *Topology) serialisePendingState() ([]byte, error) {
 		return out.PendingThresholdSet[i].Id < out.PendingThresholdSet[j].Id
 	})
 
-	return proto.Marshal(out)
+	return proto.Marshal(types.Payload{
+		Data: &types.PayloadERC20MultiSigTopologyPending{
+			Pending: out,
+		},
+	}.IntoProto())
 }
 
 // get the serialised form and hash of the given key.
