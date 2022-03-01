@@ -2,7 +2,7 @@
 name: Bug report
 about: Create a report to help us improve
 title: ''
-labels: "bug 🐞Low, bug 🐞Medium, bug 🐞Critical"
+labels: "bug, Low, Medium, Critical, Crasher"
 assignees: ''
 
 ---
