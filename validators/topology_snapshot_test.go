@@ -61,7 +61,7 @@ func TestTopologySnapshot(t *testing.T) {
 	h1, err := top.GetHash(topKey)
 	require.Nil(t, err)
 
-	tmPubKeys := []string{"tm-pubkey-1", "tm-pubkey-2"}
+	tmPubKeys := []string{"2w5hxsVqWFTV6/f0swyNVqOhY1vWI42MrfO0xkUqsiA=", "67g7+123M0kfMR35U7LLq09eEU1dVr6jHBEgEtPzkrs="}
 	ctx := context.Background()
 
 	nr1 := commandspb.AnnounceNode{
