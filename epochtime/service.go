@@ -39,6 +39,7 @@ type Svc struct {
 	data             []byte
 	hash             []byte
 	currentTime      time.Time
+	restoreListeners []func(context.Context, types.Epoch)
 	needsFastForward bool
 }
 

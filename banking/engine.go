@@ -214,6 +214,9 @@ func (e *Engine) OnEpoch(ctx context.Context, ep types.Epoch) {
 		if err := e.distributeRecurringTransfers(ctx, e.currentEpoch); err != nil {
 			e.log.Error("could not distribute recurring transfers", logging.Error(err))
 		}
+	case proto.EpochAction_EPOCH_ACTION_RESTORED:
+		e.log.Debug("epoch restoration notification received", logging.String("epoch", ep.String()))
+		e.currentEpoch = ep.Seq
 	default:
 		e.log.Panic("epoch action should never be UNSPECIFIED", logging.String("epoch", ep.String()))
 	}

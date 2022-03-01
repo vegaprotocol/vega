@@ -4,6 +4,7 @@ import (
 	"context"
 	"sync"
 
+	"code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/netparams"
 
 	"code.vegaprotocol.io/vega/blockchain/abci"
@@ -152,6 +153,13 @@ func (e *Engine) OnMinValidatorTokensChanged(_ context.Context, minTokens num.De
 // OnEpochEvent is a callback for epoch events.
 func (e *Engine) OnEpochEvent(ctx context.Context, epoch types.Epoch) {
 	e.log.Info("Spam protection OnEpochEvent called", logging.Uint64("epoch", epoch.Seq))
+
+	if epoch.Action == vega.EpochAction_EPOCH_ACTION_RESTORED {
+		e.log.Debug("epoch restoration notification received", logging.String("epoch", epoch.String()))
+		e.currentEpoch = &epoch
+		return
+	}
+
 	if e.currentEpoch == nil || e.currentEpoch.Seq != epoch.Seq {
 		if e.log.GetLevel() <= logging.DebugLevel {
 			e.log.Debug("Spam protection new epoch started", logging.Uint64("epochSeq", epoch.Seq))

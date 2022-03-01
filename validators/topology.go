@@ -135,10 +135,16 @@ type Topology struct {
 
 func (t *Topology) OnEpochEvent(_ context.Context, epoch types.Epoch) {
 	t.epochSeq = epoch.Seq
-	if epoch.Action == proto.EpochAction_EPOCH_ACTION_START {
+	switch epoch.Action {
+	case proto.EpochAction_EPOCH_ACTION_START:
 		t.newEpochStarted = true
 		t.rng = rand.New(rand.NewSource(epoch.StartTime.Unix()))
 		t.validatorPerformance.Reset()
+	case proto.EpochAction_EPOCH_ACTION_RESTORED:
+		t.log.Debug("epoch restoration notification received", logging.String("epoch", epoch.String()))
+		t.newEpochStarted = true
+		t.rng = rand.New(rand.NewSource(epoch.StartTime.Unix()))
+		// we don't want to reset the peformance here, we're mid epoch
 	}
 }
 

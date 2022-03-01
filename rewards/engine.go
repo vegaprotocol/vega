@@ -6,6 +6,7 @@ import (
 	"sort"
 	"time"
 
+	"code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/types/num"
 
 	"code.vegaprotocol.io/vega/events"
@@ -189,8 +190,12 @@ func (e *Engine) onChainTimeUpdate(ctx context.Context, t time.Time) {
 func (e *Engine) OnEpochEvent(ctx context.Context, epoch types.Epoch) {
 	e.log.Debug("OnEpochEvent")
 
+	if epoch.Action == vega.EpochAction_EPOCH_ACTION_RESTORED {
+		e.log.Debug("epoch restoration notification received", logging.String("epoch", epoch.String()))
+	}
+
 	// on new epoch update the epoch seq and update the epoch started flag
-	if (epoch.EndTime == time.Time{}) {
+	if (epoch.EndTime == time.Time{} || epoch.Action == vega.EpochAction_EPOCH_ACTION_RESTORED) {
 		e.epochSeq = num.NewUint(epoch.Seq).String()
 		e.newEpochStarted = true
 		return
