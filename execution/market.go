@@ -3184,6 +3184,7 @@ func (m *Market) distributeLiquidityFees(ctx context.Context) error {
 		return nil
 	}
 
+	m.feesTracker.UpdateFeesFromTransfers(feeTransfer.Transfers())
 	resp, err := m.collateral.TransferFees(ctx, m.GetID(), asset, feeTransfer)
 	if err != nil {
 		return fmt.Errorf("failed to transfer fees: %w", err)
