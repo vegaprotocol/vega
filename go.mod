@@ -3,10 +3,10 @@ module code.vegaprotocol.io/data-node
 go 1.17
 
 require (
-	code.vegaprotocol.io/protos v0.48.1-0.20220224164132-64e9088af71e
+	code.vegaprotocol.io/protos v0.49.0
 	code.vegaprotocol.io/quant v0.2.5
 	code.vegaprotocol.io/shared v0.0.0-20220202150846-b6aba31dcdb0
-	code.vegaprotocol.io/vega v0.48.0-pre4.0.20220225100308-564dcaac7ac0
+	code.vegaprotocol.io/vega v0.49.0
 	github.com/99designs/gqlgen v0.16.0
 	github.com/dgraph-io/badger/v2 v2.2007.3
 	github.com/fergusstrange/embedded-postgres v0.0.0-00010101000000-000000000000
@@ -17,6 +17,7 @@ require (
 	github.com/golang/protobuf v1.5.2
 	github.com/gorilla/websocket v1.4.2
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.7.3
+	github.com/holiman/uint256 v1.2.0
 	github.com/jackc/pgtype v1.9.1
 	github.com/jackc/pgx/v4 v4.14.1
 	github.com/jessevdk/go-flags v1.4.0
@@ -39,7 +40,7 @@ require (
 )
 
 require (
-	code.vegaprotocol.io/vegawallet v0.12.1-0.20220217130931-e2d76ed75667 // indirect
+	code.vegaprotocol.io/vegawallet v0.13.0 // indirect
 	github.com/BurntSushi/toml v1.0.0 // indirect
 	github.com/DataDog/zstd v1.4.1 // indirect
 	github.com/adrg/xdg v0.3.3 // indirect
@@ -67,7 +68,6 @@ require (
 	github.com/google/btree v1.0.0 // indirect
 	github.com/grpc-ecosystem/grpc-gateway v1.16.0 // indirect
 	github.com/hashicorp/golang-lru v0.5.5-0.20210104140557-80c98217689d // indirect
-	github.com/holiman/uint256 v1.2.0 // indirect
 	github.com/jackc/chunkreader/v2 v2.0.1 // indirect
 	github.com/jackc/pgconn v1.10.1 // indirect
 	github.com/jackc/pgio v1.0.0 // indirect
