@@ -16,6 +16,39 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestERC20TopologySnapshotEmpty(t *testing.T) {
+	top := getTestTopology(t)
+	defer top.ctrl.Finish()
+
+	top.OnTick(context.Background(), time.Unix(10, 0))
+	// first set the threshold and 1 validator
+
+	// Let's create threshold
+	// first assert we have no threshold
+	assert.Equal(t, top.GetThreshold(), uint32(0))
+
+	hash, err := top.GetHash((&types.PayloadERC20MultiSigTopologyVerified{}).Key())
+	assert.NoError(t, err)
+	assert.NotNil(t, hash)
+
+	stateVerified, _, err := top.GetState((&types.PayloadERC20MultiSigTopologyVerified{}).Key())
+	assert.NoError(t, err)
+	assert.NotNil(t, stateVerified)
+
+	snap := &snapshotpb.Payload{}
+	err = proto.Unmarshal(stateVerified, snap)
+	require.Nil(t, err)
+
+	snapTop := getTestTopology(t)
+	defer snapTop.ctrl.Finish()
+
+	snapTop.LoadState(context.Background(), types.PayloadFromProto(snap))
+	hash2, err := snapTop.GetHash((&types.PayloadERC20MultiSigTopologyVerified{}).Key())
+	assert.NoError(t, err)
+	assert.NotNil(t, hash2)
+	assert.Equal(t, hash, hash2)
+}
+
 func TestERC20TopologySnapshot(t *testing.T) {
 	top := getTestTopology(t)
 	defer top.ctrl.Finish()
