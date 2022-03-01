@@ -12,7 +12,7 @@
 - [](https://github.com/vegaprotocol/data-node/pull/xxx) -
 
 ### 🐛 Fixes
-- [](https://github.com/vegaprotocol/data-node/pull/xxx) -
+- [387](https://github.com/vegaprotocol/data-node/pull/387) - Fixes incorrect data types in the `MarketData` proto message.
 
 
 ## 0.49.0

@@ -10,6 +10,7 @@ import (
 	"time"
 
 	types "code.vegaprotocol.io/protos/vega"
+	"code.vegaprotocol.io/vega/types/num"
 	"github.com/shopspring/decimal"
 )
 
@@ -78,9 +79,9 @@ type MarketData struct {
 }
 
 type PriceMonitoringTrigger struct {
-	Horizon          uint64 `json:"horizon"`
-	Probability      uint64 `json:"probability"`
-	AuctionExtension uint64 `json:"auctionExtension"`
+	Horizon          uint64      `json:"horizon"`
+	Probability      num.Decimal `json:"probability"`
+	AuctionExtension uint64      `json:"auctionExtension"`
 }
 
 func (trigger PriceMonitoringTrigger) Equals(other PriceMonitoringTrigger) bool {
@@ -245,11 +246,13 @@ func priceMonitoringBoundsFromProto(bounds *types.PriceMonitoringBounds) *PriceM
 	minValidPrice, _ := strconv.ParseUint(bounds.MinValidPrice, 10, 64)
 	maxValidPrice, _ := strconv.ParseUint(bounds.MaxValidPrice, 10, 64)
 
+	referencePrice, _ := strconv.ParseUint(bounds.ReferencePrice, 10, 64)
+
 	return &PriceMonitoringBound{
 		MinValidPrice:  minValidPrice,
 		MaxValidPrice:  maxValidPrice,
 		Trigger:        priceMonitoringTriggerFromProto(bounds.Trigger),
-		ReferencePrice: uint64(bounds.ReferencePrice),
+		ReferencePrice: referencePrice,
 	}
 }
 
@@ -258,9 +261,11 @@ func priceMonitoringTriggerFromProto(trigger *types.PriceMonitoringTrigger) Pric
 		return PriceMonitoringTrigger{}
 	}
 
+	probability, _ := num.DecimalFromString(trigger.Probability)
+
 	return PriceMonitoringTrigger{
 		Horizon:          uint64(trigger.Horizon),
-		Probability:      uint64(trigger.Probability),
+		Probability:      probability,
 		AuctionExtension: uint64(trigger.AuctionExtension),
 	}
 }
@@ -381,7 +386,7 @@ func priceMonitoringBoundsToProto(bounds []*PriceMonitoringBound) []*types.Price
 			MinValidPrice:  fmt.Sprintf("%d", bound.MinValidPrice),
 			MaxValidPrice:  fmt.Sprintf("%d", bound.MaxValidPrice),
 			Trigger:        priceMonitoringTriggerToProto(bound.Trigger),
-			ReferencePrice: float64(bound.ReferencePrice),
+			ReferencePrice: fmt.Sprintf("%d", bound.ReferencePrice),
 		}
 
 		results = append(results, &protoBound)
@@ -413,7 +418,7 @@ func liquidityProviderFeeSharesToProto(feeShares []*LiquidityProviderFeeShare) [
 func priceMonitoringTriggerToProto(trigger PriceMonitoringTrigger) *types.PriceMonitoringTrigger {
 	return &types.PriceMonitoringTrigger{
 		Horizon:          int64(trigger.Horizon),
-		Probability:      float64(trigger.Probability),
+		Probability:      trigger.Probability.String(),
 		AuctionExtension: int64(trigger.AuctionExtension),
 	}
 }

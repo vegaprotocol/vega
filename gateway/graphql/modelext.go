@@ -3,6 +3,7 @@ package gql
 import (
 	"errors"
 	"fmt"
+	"strconv"
 
 	protoapi "code.vegaprotocol.io/protos/data-node/api/v1"
 	types "code.vegaprotocol.io/protos/vega"
@@ -41,12 +42,18 @@ type MarketLogEvent interface {
 	GetPayload() string
 }
 
-func PriceMonitoringTriggerFromProto(ppmt *types.PriceMonitoringTrigger) *PriceMonitoringTrigger {
+func PriceMonitoringTriggerFromProto(ppmt *types.PriceMonitoringTrigger) (*PriceMonitoringTrigger, error) {
+	probability, err := strconv.ParseFloat(ppmt.Probability, 64)
+
+	if err != nil {
+		return nil, err
+	}
+
 	return &PriceMonitoringTrigger{
 		HorizonSecs:          int(ppmt.Horizon),
-		Probability:          ppmt.Probability,
+		Probability:          probability,
 		AuctionExtensionSecs: int(ppmt.AuctionExtension),
-	}
+	}, nil
 }
 
 func PriceMonitoringParametersFromProto(ppmp *types.PriceMonitoringParameters) (*PriceMonitoringParameters, error) {
@@ -56,7 +63,11 @@ func PriceMonitoringParametersFromProto(ppmp *types.PriceMonitoringParameters) (
 
 	triggers := make([]*PriceMonitoringTrigger, 0, len(ppmp.Triggers))
 	for _, v := range ppmp.Triggers {
-		triggers = append(triggers, PriceMonitoringTriggerFromProto(v))
+		trigger, err := PriceMonitoringTriggerFromProto(v)
+		if err != nil {
+			return nil, err
+		}
+		triggers = append(triggers, trigger)
 	}
 
 	return &PriceMonitoringParameters{

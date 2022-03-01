@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/ioutil"
 
 	"code.vegaprotocol.io/data-node/logging"
 	"code.vegaprotocol.io/shared/paths"
@@ -16,6 +17,7 @@ import (
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/jackc/pgx/v4/stdlib"
 	"github.com/pressly/goose/v3"
+	uuid "github.com/satori/go.uuid"
 )
 
 var (
@@ -111,7 +113,18 @@ func InitialiseTestStorage(log *logging.Logger, config Config) (*SQLStore, error
 	}
 
 	if s.conf.UseEmbedded {
-		if err := s.initializeEmbeddedPostgres(nil, nil); err != nil {
+		testID := uuid.NewV4().String()
+
+		tempDir, err := ioutil.TempDir("", testID)
+
+		if err != nil {
+			return nil, err
+		}
+
+		embeddedPostgresRuntimePath := paths.JoinStatePath(paths.StatePath(tempDir), "sqlstore")
+		embeddedPostgresDataPath := paths.JoinStatePath(paths.StatePath(tempDir), "sqlstore", "node-data")
+
+		if err := s.initializeEmbeddedPostgres(&embeddedPostgresRuntimePath, &embeddedPostgresDataPath); err != nil {
 			return nil, fmt.Errorf("use embedded database was true, but failed to start: %w", err)
 		}
 	}
