@@ -290,6 +290,9 @@ func (t *Topology) BeginBlock(ctx context.Context, req abcitypes.RequestBeginBlo
 	blockHeight := uint64(req.Header.Height)
 	t.currentBlockHeight = blockHeight
 	t.keyRotationBeginBlockLocked(ctx)
+
+	// validator performance will have updated
+	t.tss.changed = true
 }
 
 func (t *Topology) AddNewNode(ctx context.Context, nr *commandspb.AnnounceNode, status ValidatorStatus) error {
