@@ -9,6 +9,7 @@ import (
 	snapshot "code.vegaprotocol.io/protos/vega/snapshot/v1"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/libs/crypto"
+	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
 
 	"github.com/golang/protobuf/proto"
@@ -183,10 +184,11 @@ func (t *Topology) restorePendingKeyRotations(ctx context.Context, pkrs []*snaps
 func (t *Topology) restore(ctx context.Context, topology *types.Topology) error {
 	t.mu.Lock()
 	defer t.mu.Unlock()
-
+	t.log.Debug("restoring topology snapshot")
 	t.validators = map[string]*valState{}
 
 	for _, node := range topology.ValidatorData {
+		t.log.Debug("restoring validator data snapshot", logging.String("nodeid", node.ValidatorUpdate.NodeId))
 		vs := &valState{
 			data: ValidatorData{
 				ID:              node.ValidatorUpdate.NodeId,

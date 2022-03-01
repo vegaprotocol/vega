@@ -37,6 +37,22 @@ func TestEmptySnapshot(t *testing.T) {
 	assert.Equal(t, 1, len(top.Keys()))
 }
 
+func TestChangeOnValidatorPerfUpdate(t *testing.T) {
+	top := getTestTopology(t)
+	defer top.ctrl.Finish()
+
+	h, err := top.GetHash(topKey)
+	assert.Nil(t, err)
+	assert.NotEmpty(t, h)
+
+	updateValidatorPerformanceToNonDefaultState(t, top.Topology)
+
+	h2, err := top.GetHash(topKey)
+	assert.Nil(t, err)
+	assert.NotEmpty(t, h2)
+	require.NotEqual(t, h, h2)
+}
+
 func TestTopologySnapshot(t *testing.T) {
 	top := getTestTopWithDefaultValidator(t)
 	updateValidatorPerformanceToNonDefaultState(t, top.Topology)
