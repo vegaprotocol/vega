@@ -140,7 +140,7 @@ func TestMarketDeepClone(t *testing.T) {
 				Triggers: []*proto.PriceMonitoringTrigger{
 					{
 						Horizon:          1000,
-						Probability:      123.45,
+						Probability:      "123.45",
 						AuctionExtension: 2000,
 					},
 				},

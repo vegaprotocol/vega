@@ -13,6 +13,8 @@
 
 ### 🐛 Fixes
 - [4877](https://github.com/vegaprotocol/vega/issues/4877) - Fix topology and `erc20` topology snapshots
+- [4879](https://github.com/vegaprotocol/vega/issues/4879) - Fixes for invalid data types in the `MarketData` proto message.
+
 
 
 ## 0.49.0
