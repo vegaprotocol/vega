@@ -479,8 +479,7 @@ Feature: Test interactions between different auction types
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
       | 1000       | TRADING_MODE_CONTINUOUS | 1       | 990       | 1010      | 1000         | 1000           | 10            |
 
-    # If the order traded there'd be insufficient liquidity for the market to operate, hence the order doesn't trade
-    # and the market enters a liquidity monitoring auction
+    # Triggering liquidity monitoring auction
     When the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference   |
       | party1 | ETH/DEC21 | buy  | 10     | 1010  | 0                | TYPE_LIMIT | TIF_GTC | cancel-me-1 |
