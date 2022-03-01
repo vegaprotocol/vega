@@ -543,7 +543,7 @@ func (m *Market) GetMarketData() types.MarketData {
 		TargetStake:               targetStake,
 		SuppliedStake:             m.getSuppliedStake().String(),
 		PriceMonitoringBounds:     bounds,
-		MarketValueProxy:          fmt.Sprintf("%d", m.lastMarketValueProxy.IntPart()),
+		MarketValueProxy:          m.lastMarketValueProxy.BigInt().String(),
 		LiquidityProviderFeeShare: lpsToLiquidityProviderFeeShare(m.equityShares.lps),
 	}
 }

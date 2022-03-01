@@ -105,7 +105,7 @@ func (p PriceMonitoringBounds) IntoProto() *proto.PriceMonitoringBounds {
 		MinValidPrice:  num.UintToString(p.MinValidPrice),
 		MaxValidPrice:  num.UintToString(p.MaxValidPrice),
 		Trigger:        trigger,
-		ReferencePrice: fmt.Sprintf("%d", p.ReferencePrice.IntPart()),
+		ReferencePrice: p.ReferencePrice.BigInt().String(),
 	}
 }
 
