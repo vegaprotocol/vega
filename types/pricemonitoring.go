@@ -2,6 +2,7 @@ package types
 
 import (
 	"errors"
+	"fmt"
 
 	proto "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/types/num"
@@ -96,7 +97,6 @@ func (p *PriceMonitoringParameters) Reset() {
 }
 
 func (p PriceMonitoringBounds) IntoProto() *proto.PriceMonitoringBounds {
-	ref, _ := p.ReferencePrice.Float64()
 	var trigger *proto.PriceMonitoringTrigger
 	if p.Trigger != nil {
 		trigger = p.Trigger.IntoProto()
@@ -105,7 +105,7 @@ func (p PriceMonitoringBounds) IntoProto() *proto.PriceMonitoringBounds {
 		MinValidPrice:  num.UintToString(p.MinValidPrice),
 		MaxValidPrice:  num.UintToString(p.MaxValidPrice),
 		Trigger:        trigger,
-		ReferencePrice: ref,
+		ReferencePrice: p.ReferencePrice.String(),
 	}
 }
 
@@ -118,10 +118,14 @@ func PriceMonitoringBoundsFromProto(pr *proto.PriceMonitoringBounds) (*PriceMoni
 	if overflowed {
 		return nil, errors.New("invalid max valid price")
 	}
+	refPrice, err := num.DecimalFromString(pr.ReferencePrice)
+	if err != nil {
+		return nil, fmt.Errorf("invalid reference price: %w", err)
+	}
 	p := PriceMonitoringBounds{
 		MinValidPrice:  minValid,
 		MaxValidPrice:  maxValid,
-		ReferencePrice: num.DecimalFromFloat(pr.ReferencePrice),
+		ReferencePrice: refPrice,
 	}
 	if pr.Trigger != nil {
 		p.Trigger = PriceMonitoringTriggerFromProto(pr.Trigger)
@@ -141,20 +145,23 @@ func (p PriceMonitoringBounds) DeepClone() *PriceMonitoringBounds {
 }
 
 func PriceMonitoringTriggerFromProto(p *proto.PriceMonitoringTrigger) *PriceMonitoringTrigger {
+	probability, err := num.DecimalFromString(p.Probability)
+	if err != nil {
+		probability = num.DecimalZero()
+	}
 	return &PriceMonitoringTrigger{
 		Horizon:          p.Horizon,
 		HorizonDec:       num.DecimalFromInt64(p.Horizon),
-		Probability:      num.DecimalFromFloat(p.Probability),
+		Probability:      probability,
 		AuctionExtension: p.AuctionExtension,
 	}
 }
 
 // IntoProto return proto version of the PriceMonitoringTrigger.
 func (p PriceMonitoringTrigger) IntoProto() *proto.PriceMonitoringTrigger {
-	prob, _ := p.Probability.Float64()
 	return &proto.PriceMonitoringTrigger{
 		Horizon:          p.Horizon,
-		Probability:      prob,
+		Probability:      p.Probability.String(),
 		AuctionExtension: p.AuctionExtension,
 	}
 }
