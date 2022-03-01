@@ -151,10 +151,10 @@ func (n *NodeCommand) startServices(_ []string) (err error) {
 		// Use staking-loop to pretend a dummy builtin asssets deposited with the faucet was staked
 		stakingLoop := nullchain.NewStakingLoop(n.collateral, n.assets)
 		n.governance = governance.NewEngine(n.Log, n.conf.Governance, stakingLoop, n.broker, n.assets, n.witness, n.netParams, now)
-		n.delegation = delegation.New(n.Log, delegation.NewDefaultConfig(), n.broker, n.topology, stakingLoop, n.epochService, n.timeService)
+		n.delegation = delegation.New(n.Log, n.conf.Delegation, n.broker, n.topology, stakingLoop, n.epochService, n.timeService)
 	} else {
 		n.governance = governance.NewEngine(n.Log, n.conf.Governance, n.stakingAccounts, n.broker, n.assets, n.witness, n.netParams, now)
-		n.delegation = delegation.New(n.Log, delegation.NewDefaultConfig(), n.broker, n.topology, n.stakingAccounts, n.epochService, n.timeService)
+		n.delegation = delegation.New(n.Log, n.conf.Delegation, n.broker, n.topology, n.stakingAccounts, n.epochService, n.timeService)
 	}
 
 	n.rewards = rewards.New(n.Log, n.conf.Rewards, n.broker, n.delegation, n.epochService, n.collateral, n.timeService, n.feesTracker, marketTracker, n.topology)
