@@ -215,3 +215,20 @@ func TestSnapshotRoundTrip(t *testing.T) {
 		assert.Equalf(t, expectedHashes2[key], hex.EncodeToString(h), "hashes for key %q does not match", key)
 	}
 }
+
+func TestStopSnapshotTaking(t *testing.T) {
+	te := newTestEngine(t, initialTime)
+	keys := te.engine.Keys()
+
+	// signal to kill the engine's snapshots
+	te.engine.StopSnapshots()
+
+	s, _, err := te.engine.GetState(keys[0])
+	assert.NoError(t, err)
+	assert.Nil(t, s)
+
+	h, err := te.engine.GetHash(keys[0])
+	assert.NoError(t, err)
+	assert.Nil(t, h)
+	assert.True(t, te.engine.Stopped())
+}

@@ -2,6 +2,7 @@ package validators
 
 import (
 	"context"
+	"encoding/base64"
 	"sort"
 	"time"
 
@@ -9,9 +10,11 @@ import (
 	snapshot "code.vegaprotocol.io/protos/vega/snapshot/v1"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/libs/crypto"
+	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
 
 	"github.com/golang/protobuf/proto"
+	tmtypes "github.com/tendermint/tendermint/abci/types"
 )
 
 var (
@@ -34,6 +37,10 @@ func (t *Topology) Namespace() types.SnapshotNamespace {
 
 func (t *Topology) Keys() []string {
 	return topHashKeys
+}
+
+func (t *Topology) Stopped() bool {
+	return false
 }
 
 func (t *Topology) serialiseNodes() []*snapshot.ValidatorState {
@@ -64,6 +71,7 @@ func (t *Topology) serialiseNodes() []*snapshot.ValidatorState {
 					ExpectedNextHash:      node.heartbeatTracker.expectedNextHash,
 					ExpectedNextHashSince: node.heartbeatTracker.expectedNexthashSince.UnixNano(),
 				},
+				ValidatorPower: node.validatorPower,
 			},
 		)
 	}
@@ -178,10 +186,13 @@ func (t *Topology) restorePendingKeyRotations(ctx context.Context, pkrs []*snaps
 func (t *Topology) restore(ctx context.Context, topology *types.Topology) error {
 	t.mu.Lock()
 	defer t.mu.Unlock()
-
+	t.log.Debug("restoring topology snapshot")
 	t.validators = map[string]*valState{}
 
+	vUpdates := []tmtypes.ValidatorUpdate{}
+
 	for _, node := range topology.ValidatorData {
+		t.log.Debug("restoring validator data snapshot", logging.String("nodeid", node.ValidatorUpdate.NodeId))
 		vs := &valState{
 			data: ValidatorData{
 				ID:              node.ValidatorUpdate.NodeId,
@@ -205,6 +216,7 @@ func (t *Topology) restore(ctx context.Context, topology *types.Topology) error 
 				expectedNextHash:      node.HeartbeatTracker.ExpectedNextHash,
 				expectedNexthashSince: time.Unix(0, node.HeartbeatTracker.ExpectedNextHashSince),
 			},
+			validatorPower: node.ValidatorPower,
 		}
 		for i := 0; i < 10; i++ {
 			vs.heartbeatTracker.blockSigs[i] = node.HeartbeatTracker.BlockSigs[i]
@@ -219,8 +231,18 @@ func (t *Topology) restore(ctx context.Context, topology *types.Topology) error 
 		if t.isValidatorSetup && !t.isValidator {
 			t.checkValidatorDataWithSelfWallets(vs.data)
 		}
+
+		if node.Status == ValidatorStatusTendermint {
+			pubkey, err := base64.StdEncoding.DecodeString(node.ValidatorUpdate.TmPubKey)
+			if err != nil {
+				t.log.Panic("failed to decode tendermint public key", logging.String("tm-pub-key", node.ValidatorUpdate.TmPubKey))
+			}
+			vUpdates = append(vUpdates, tmtypes.UpdateValidator(pubkey, node.ValidatorPower, ""))
+		}
 	}
 
+	t.validatorPowerUpdates = vUpdates
+	t.newEpochStarted = true
 	t.chainValidators = topology.ChainValidators[:]
 	t.restorePendingKeyRotations(ctx, topology.PendingPubKeyRotations)
 	t.validatorPerformance.Deserialize(topology.ValidatorPerformance)

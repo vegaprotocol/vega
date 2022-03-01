@@ -23,6 +23,7 @@ type SnapshotEngine struct {
 
 	// liquidity types
 	parametersChanged bool
+	stopped           bool
 	hashes            map[string][]byte
 	serialised        map[string][]byte
 	serialisers       map[string]*proto.Buffer
@@ -55,6 +56,7 @@ func NewSnapshotEngine(config Config,
 		market: market,
 
 		parametersChanged: true,
+		stopped:           false,
 		// empty so default to nil to force update
 		hashes:      map[string][]byte{},
 		serialised:  map[string][]byte{},
@@ -73,6 +75,11 @@ func NewSnapshotEngine(config Config,
 	return se
 }
 
+func (e *SnapshotEngine) StopSnapshots() {
+	e.log.Debug("market has been cleared, stopping snapshot production", logging.String("marketid", e.marketID))
+	e.stopped = true
+}
+
 func (e *SnapshotEngine) Changed() bool {
 	return e.parametersChanged
 }
@@ -83,6 +90,10 @@ func (e *SnapshotEngine) Namespace() types.SnapshotNamespace {
 
 func (e *SnapshotEngine) Keys() []string {
 	return e.hashKeys
+}
+
+func (e *SnapshotEngine) Stopped() bool {
+	return e.stopped
 }
 
 func (e *SnapshotEngine) OnSuppliedStakeToObligationFactorUpdate(v num.Decimal) {
@@ -251,6 +262,10 @@ func (e *SnapshotEngine) serialise(k string) ([]byte, []byte, error) {
 
 	if err != nil {
 		return nil, nil, err
+	}
+
+	if e.stopped {
+		return nil, nil, nil
 	}
 
 	if !changed {

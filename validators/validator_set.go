@@ -270,6 +270,13 @@ func (t *Topology) applyPromotion(performanceScore, rankingScore map[string]num.
 
 	// generate the tendermint updates from the voting power
 	vUpdates := make([]tmtypes.ValidatorUpdate, 0, len(nextValidators))
+
+	// make sure we update the validator power to all nodes, so first reset all to 0
+	for _, vd := range t.validators {
+		vd.validatorPower = 0
+	}
+
+	// now update the validator power for the ones that go to tendermint
 	for _, v := range nextValidators {
 		vd := t.validators[v]
 		pubkey, err := base64.StdEncoding.DecodeString(vd.data.TmPubKey)

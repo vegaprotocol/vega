@@ -5,8 +5,10 @@ import (
 	"testing"
 	"time"
 
+	pbsnapshot "code.vegaprotocol.io/protos/vega/snapshot/v1"
 	vegactx "code.vegaprotocol.io/vega/libs/context"
 	"code.vegaprotocol.io/vega/libs/crypto"
+	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/snapshot"
 	"code.vegaprotocol.io/vega/snapshot/mocks"
@@ -107,6 +109,7 @@ func TestEngine(t *testing.T) {
 	t.Run("Adding provider with duplicate key in same namespace: first come, first serve", testAddProvidersDuplicateKeys)
 	t.Run("Create a snapshot, if nothing changes, we don't get the data and the hash remains unchanged", testTakeSnapshot)
 	t.Run("Rejecting a snapshot should return a Snapshot Retry Limit error if rejected too many times", testRejectSnapshot)
+	t.Run("Removing multiple keys within a single namespace", testRemovingMutlipleKeysSingleNamespace)
 }
 
 func TestRestore(t *testing.T) {
@@ -326,10 +329,11 @@ func testReloadReplayProtectors(t *testing.T) {
 	e := getTestEngine(t)
 	defer e.Finish()
 	rpPl := types.PayloadReplayProtection{
-		Blocks: []*types.ReplayBlockTransactions{
-			{
-				Transactions: []string{"foo", "bar"},
-			},
+		BackTol:    100,
+		ForwardTol: 200,
+		Transactions: []*pbsnapshot.TransactionAtHeight{
+			{Tx: "foo", Height: 1},
+			{Tx: "bar", Height: 2},
 		},
 	}
 	payload := types.Payload{
@@ -350,8 +354,9 @@ func testReloadReplayProtectors(t *testing.T) {
 	old.EXPECT().LoadState(gomock.Any(), gomock.Any()).Times(1).DoAndReturn(func(_ context.Context, pl *types.Payload) ([]types.StateProvider, error) {
 		switch dt := pl.Data.(type) {
 		case *types.PayloadReplayProtection:
-			require.Equal(t, len(dt.Blocks), len(rpPl.Blocks))
-			require.EqualValues(t, dt.Blocks[0], rpPl.Blocks[0])
+			require.Equal(t, dt.BackTol, rpPl.BackTol)
+			require.Equal(t, dt.ForwardTol, rpPl.ForwardTol)
+			require.Equal(t, len(dt.Transactions), len(rpPl.Transactions))
 		default:
 			t.Fatal("Incorrect payload type passed")
 		}
@@ -510,4 +515,62 @@ func testRejectSnapshot(t *testing.T) {
 
 	err := engine.RejectSnapshot()
 	assert.ErrorIs(t, types.ErrSnapshotRetryLimit, err)
+}
+
+func testRemovingMutlipleKeysSingleNamespace(t *testing.T) {
+	someState := []byte("hello-i-am-state")
+	someHash := vgcrypto.Hash(someState)
+	engine := getTestEngine(t)
+	defer engine.Finish()
+
+	engine.time.EXPECT().GetTimeNow().Times(5).Return(time.Now())
+
+	// first provider
+	prov := engine.getNewProviderMock()
+	prov.EXPECT().Keys().AnyTimes().Return([]string{"key1"})
+	prov.EXPECT().Namespace().AnyTimes().Return(types.PositionsSnapshot)
+	prov.EXPECT().GetHash(gomock.Any()).Times(2).Return(someHash, nil) // called twice, first to store and second to change for no change
+	prov.EXPECT().GetState(gomock.Any()).Times(1).Return(someState, nil, nil)
+	engine.AddProviders(prov)
+
+	// second provider in the same namespace but with a different key i.e two positions engines, in the same namespace but keyed to difference markets
+	prov2 := engine.getNewProviderMock()
+	prov2.EXPECT().Keys().AnyTimes().Return([]string{"key2"})
+	prov2.EXPECT().Namespace().AnyTimes().Return(types.PositionsSnapshot)
+	prov2.EXPECT().GetHash(gomock.Any()).Times(3).Return(someHash, nil)
+	prov2.EXPECT().GetState(gomock.Any()).Times(1).Return(someState, nil, nil)
+	engine.AddProviders(prov2)
+
+	// initial snapshot
+	b1, err := engine.Snapshot(engine.ctx)
+	require.NoError(t, err)
+	require.NotNil(t, b1)
+
+	// call again to confirm no state changes
+	b2, err := engine.Snapshot(engine.ctx)
+	require.NoError(t, err)
+	require.NotNil(t, b2)
+	require.Equal(t, b1, b2)
+
+	// Now the only change is we signal remove of a single provider, check the snapshot changes
+	prov.EXPECT().GetHash(gomock.Any()).Times(1).Return(nil, nil)
+	prov.EXPECT().Stopped().Times(1).Return(true)
+	b3, err := engine.Snapshot(engine.ctx)
+	require.NoError(t, err)
+	require.NotNil(t, b3)
+	require.NotEqual(t, b1, b3)
+
+	// remove the second provider
+	prov2.EXPECT().GetHash(gomock.Any()).Times(1).Return(nil, nil)
+	prov2.EXPECT().Stopped().Times(1).Return(true)
+	b4, err := engine.Snapshot(engine.ctx)
+	require.NoError(t, err)
+	require.NotNil(t, b4)
+	require.NotEqual(t, b3, b4)
+
+	// give it another blast now its empty to make sure we don't try to call things again, and that the hash remains the same
+	b5, err := engine.Snapshot(engine.ctx)
+	require.NoError(t, err)
+	require.NotNil(t, b5)
+	require.Equal(t, b4, b5)
 }

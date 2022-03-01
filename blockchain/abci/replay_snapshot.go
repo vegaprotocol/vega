@@ -6,6 +6,7 @@ import (
 	"errors"
 	"sort"
 
+	snapshot "code.vegaprotocol.io/protos/vega/snapshot/v1"
 	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/types"
 	"github.com/golang/protobuf/proto"
@@ -35,22 +36,27 @@ func (rp *ReplayProtector) Keys() []string {
 	return hashKeys
 }
 
+func (rp *ReplayProtector) Stopped() bool {
+	return false
+}
+
 func (rp *ReplayProtector) serialiseReplayProtection() ([]byte, error) {
-	blocks := []*types.ReplayBlockTransactions{}
-	for _, block := range rp.txs {
-		txs := make([]string, 0, len(block))
-		for tx := range block {
-			// tx is []byte cast to string, can contain invalid UTF-8 characters.
-			// we need to encode this properly for proto marshalling to work.
-			txs = append(txs, hex.EncodeToString([]byte(tx)))
-		}
-		sort.Strings(txs)
-		blocks = append(blocks, &types.ReplayBlockTransactions{Transactions: txs})
+	txs := make([]*snapshot.TransactionAtHeight, 0, len(rp.txs))
+	for k, v := range rp.txs {
+		txs = append(txs, &snapshot.TransactionAtHeight{
+			Tx:     hex.EncodeToString([]byte(k)),
+			Height: v,
+		})
 	}
+	sort.SliceStable(txs, func(i, j int) bool {
+		return txs[i].Tx < txs[j].Tx
+	})
 
 	payload := types.Payload{
 		Data: &types.PayloadReplayProtection{
-			Blocks: blocks,
+			Transactions: txs,
+			BackTol:      rp.backwardTol,
+			ForwardTol:   rp.forwardTol,
 		},
 	}
 	return proto.Marshal(payload.IntoProto())
@@ -107,26 +113,27 @@ func (rp *ReplayProtector) LoadState(ctx context.Context, p *types.Payload) ([]t
 	// see what we're reloading
 	switch pl := p.Data.(type) {
 	case *types.PayloadReplayProtection:
-		return nil, rp.restoreReplayState(ctx, pl.Blocks)
+		return nil, rp.restoreReplayState(ctx, pl)
 	default:
 		return nil, types.ErrUnknownSnapshotType
 	}
 }
 
-func (rp *ReplayProtector) restoreReplayState(ctx context.Context, blockTransactions []*types.ReplayBlockTransactions) error {
-	for i, block := range blockTransactions {
-		rp.txs[i] = make(map[string]struct{}, len(block.Transactions))
-		for _, tx := range block.Transactions {
-			// convert to byte slice that was cast to string
-			bs, err := hex.DecodeString(tx)
-			if err != nil {
-				return err
-			}
-			// cast bytes as string, this can contain invalid UTF-8 characters,
-			// which is why we need the hex.EncodeToString stuff.
-			tx = string(bs)
-			rp.txs[i][tx] = struct{}{}
+func (rp *ReplayProtector) restoreReplayState(ctx context.Context, pl *types.PayloadReplayProtection) error {
+	rp.backwardTol = pl.BackTol
+	rp.forwardTol = pl.ForwardTol
+	rp.txs = make(map[string]uint64, len(pl.Transactions))
+
+	for _, tx := range pl.Transactions {
+		// convert to byte slice that was cast to string
+		// cast bytes as string, this can contain invalid UTF-8 characters,
+		// which is why we need the hex.EncodeToString stuff.
+		bs, err := hex.DecodeString(tx.Tx)
+		if err != nil {
+			return err
 		}
+
+		rp.txs[string(bs)] = tx.Height
 	}
 
 	rp.rss.changed = true

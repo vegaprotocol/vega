@@ -17,13 +17,13 @@ func TestAssetProposalNewAssetDeepClone(t *testing.T) {
 		ID:        "Id",
 		Reference: "Reference",
 		Party:     "PartyId",
-		State:     proto.Proposal_STATE_DECLINED,
+		State:     types.ProposalStateDeclined,
 		Timestamp: 100000,
 		Terms: &types.ProposalTerms{
 			ClosingTimestamp:    2000000,
 			EnactmentTimestamp:  3000000,
 			ValidationTimestamp: 4000000,
-			Change: &types.ProposalTerms_NewAsset{
+			Change: &types.ProposalTermsNewAsset{
 				NewAsset: &types.NewAsset{
 					Changes: &types.AssetDetails{
 						Source: &types.AssetDetailsErc20{
@@ -44,13 +44,13 @@ func TestAssetProposalNewAssetDeepClone(t *testing.T) {
 	p.ID = "Changed"
 	p.Reference = "Changed"
 	p.Party = "Changed"
-	p.State = proto.Proposal_STATE_ENACTED
+	p.State = types.ProposalStateEnacted
 	p.Timestamp = 999
 	p.Terms.ClosingTimestamp = 999
 	p.Terms.EnactmentTimestamp = 888
 	p.Terms.ValidationTimestamp = 777
 
-	na := p.Terms.Change.(*types.ProposalTerms_NewAsset)
+	na := p.Terms.Change.(*types.ProposalTermsNewAsset)
 	erc := na.NewAsset.Changes.Source.(*types.AssetDetailsErc20)
 	erc.Erc20.ContractAddress = "Changed"
 

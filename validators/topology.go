@@ -45,16 +45,6 @@ type MultiSigTopology interface {
 	ExcessSigners(addresses []string) bool
 }
 
-type DummyMultiSigTopology struct{}
-
-func (*DummyMultiSigTopology) IsSigner(address string) bool {
-	return true
-}
-
-func (*DummyMultiSigTopology) ExcessSigners(addresses []string) bool {
-	return false
-}
-
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/val_performance_mock.go -package mocks code.vegaprotocol.io/vega/validators ValidatorPerformance
 type ValidatorPerformance interface {
 	ValidatorPerformanceScore(address string, votingPower, totalPower int64) num.Decimal
@@ -153,7 +143,7 @@ func (t *Topology) OnEpochEvent(_ context.Context, epoch types.Epoch) {
 }
 
 func NewTopology(
-	log *logging.Logger, cfg Config, wallets NodeWallets, broker Broker, isValidatorSetup bool, cmd Commander,
+	log *logging.Logger, cfg Config, wallets NodeWallets, broker Broker, isValidatorSetup bool, cmd Commander, msTopology MultiSigTopology,
 ) *Topology {
 	log = log.Named(namedLogger)
 	log.SetLevel(cfg.Level.Get())
@@ -171,7 +161,7 @@ func NewTopology(
 		validatorPerformance:          NewValidatorPerformance(log),
 		validatorIncumbentBonusFactor: num.DecimalZero(),
 		ersatzValidatorsFactor:        num.DecimalZero(),
-		multiSigTopology:              &DummyMultiSigTopology{}, // TODO replace with real implementation
+		multiSigTopology:              msTopology,
 		cmd:                           cmd,
 	}
 
@@ -300,6 +290,9 @@ func (t *Topology) BeginBlock(ctx context.Context, req abcitypes.RequestBeginBlo
 	blockHeight := uint64(req.Header.Height)
 	t.currentBlockHeight = blockHeight
 	t.keyRotationBeginBlockLocked(ctx)
+
+	// validator performance will have updated
+	t.tss.changed = true
 }
 
 func (t *Topology) AddNewNode(ctx context.Context, nr *commandspb.AnnounceNode, status ValidatorStatus) error {

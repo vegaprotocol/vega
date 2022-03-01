@@ -4,7 +4,8 @@ import (
 	"errors"
 	"strings"
 
-	config "code.vegaprotocol.io/vega/examples/nullchain/config"
+	"code.vegaprotocol.io/vega/examples/nullchain/config"
+	"code.vegaprotocol.io/vega/types"
 
 	"code.vegaprotocol.io/protos/vega"
 )
@@ -30,7 +31,7 @@ func CreateMarketAny(w *Wallet, conn *Connection, proposer *Party, voters ...*Pa
 		return nil, err
 	}
 
-	txn = VoteTxn(proposal.Id, vega.Vote_VALUE_YES)
+	txn = VoteTxn(proposal.Id, types.VoteValueYes)
 	for _, voter := range voters {
 		w.SubmitTransaction(conn, voter, txn)
 	}

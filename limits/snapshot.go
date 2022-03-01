@@ -72,6 +72,10 @@ func (e *Engine) Keys() []string {
 	return hashKeys
 }
 
+func (e *Engine) Stopped() bool {
+	return false
+}
+
 func (e *Engine) GetHash(k string) ([]byte, error) {
 	_, hash, err := e.getSerialisedAndHash(k)
 	return hash, err

@@ -82,6 +82,7 @@ func (n *NodeCommand) startBlockchainConnections(_ []string) error {
 		if err != nil {
 			return fmt.Errorf("could not instantiate ethereum client: %w", err)
 		}
+		n.ethConfirmations = ethclient.NewEthereumConfirmations(n.ethClient, nil)
 	}
 
 	return nil

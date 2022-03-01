@@ -1,123 +1,126 @@
-//lint:file-ignore ST1003 Ignore underscores in names, this is straigh copied from the proto package to ease introducing the domain types
-
 package types
 
 import (
 	"errors"
 
-	proto "code.vegaprotocol.io/protos/vega"
+	vegapb "code.vegaprotocol.io/protos/vega"
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
-	v1 "code.vegaprotocol.io/protos/vega/oracles/v1"
+	oraclespb "code.vegaprotocol.io/protos/vega/oracles/v1"
+
 	"code.vegaprotocol.io/vega/types/num"
 )
 
-type GovernanceData = proto.GovernanceData
+type GovernanceData = vegapb.GovernanceData
 
-type VoteValue = proto.Vote_Value
+type VoteValue = vegapb.Vote_Value
 
 const (
-	// Default value, always invalid.
-	VoteValueUnspecified VoteValue = proto.Vote_VALUE_UNSPECIFIED
-	// A vote against the proposal.
-	VoteValueNo VoteValue = proto.Vote_VALUE_NO
-	// A vote in favour of the proposal.
-	VoteValueYes VoteValue = proto.Vote_VALUE_YES
+	// VoteValueUnspecified Default value, always invalid.
+	VoteValueUnspecified VoteValue = vegapb.Vote_VALUE_UNSPECIFIED
+	// VoteValueNo represents a vote against the proposal.
+	VoteValueNo VoteValue = vegapb.Vote_VALUE_NO
+	// VoteValueYes represents a vote in favour of the proposal.
+	VoteValueYes VoteValue = vegapb.Vote_VALUE_YES
 )
 
-type ProposalError = proto.ProposalError
+type ProposalError = vegapb.ProposalError
 
 const (
-	// Default value.
-	ProposalError_PROPOSAL_ERROR_UNSPECIFIED ProposalError = 0
-	// The specified close time is too early base on network parameters.
-	ProposalError_PROPOSAL_ERROR_CLOSE_TIME_TOO_SOON ProposalError = 1
-	// The specified close time is too late based on network parameters.
-	ProposalError_PROPOSAL_ERROR_CLOSE_TIME_TOO_LATE ProposalError = 2
-	// The specified enact time is too early based on network parameters.
-	ProposalError_PROPOSAL_ERROR_ENACT_TIME_TOO_SOON ProposalError = 3
-	// The specified enact time is too late based on network parameters.
-	ProposalError_PROPOSAL_ERROR_ENACT_TIME_TOO_LATE ProposalError = 4
-	// The proposer for this proposal as insufficient tokens.
-	ProposalError_PROPOSAL_ERROR_INSUFFICIENT_TOKENS ProposalError = 5
-	// The instrument quote name and base name were the same.
-	ProposalError_PROPOSAL_ERROR_INVALID_INSTRUMENT_SECURITY ProposalError = 6
-	// The proposal has no product.
-	ProposalError_PROPOSAL_ERROR_NO_PRODUCT ProposalError = 7
-	// The specified product is not supported.
-	ProposalError_PROPOSAL_ERROR_UNSUPPORTED_PRODUCT ProposalError = 8
-	// Invalid future maturity timestamp (expect RFC3339).
-	ProposalError_PROPOSAL_ERROR_INVALID_FUTURE_PRODUCT_TIMESTAMP ProposalError = 9
-	// The product maturity is past.
-	ProposalError_PROPOSAL_ERROR_PRODUCT_MATURITY_IS_PASSED ProposalError = 10
-	// The proposal has no trading mode.
-	ProposalError_PROPOSAL_ERROR_NO_TRADING_MODE ProposalError = 11
-	// The proposal has an unsupported trading mode.
-	ProposalError_PROPOSAL_ERROR_UNSUPPORTED_TRADING_MODE ProposalError = 12
-	// The proposal failed node validation.
-	ProposalError_PROPOSAL_ERROR_NODE_VALIDATION_FAILED ProposalError = 13
-	// A field is missing in a builtin asset source.
-	ProposalError_PROPOSAL_ERROR_MISSING_BUILTIN_ASSET_FIELD ProposalError = 14
-	// The contract address is missing in the ERC20 asset source.
-	ProposalError_PROPOSAL_ERROR_MISSING_ERC20_CONTRACT_ADDRESS ProposalError = 15
-	// The asset identifier is invalid or does not exist on the Vega network.
-	ProposalError_PROPOSAL_ERROR_INVALID_ASSET ProposalError = 16
-	// Proposal terms timestamps are not compatible (Validation < Closing < Enactment).
-	ProposalError_PROPOSAL_ERROR_INCOMPATIBLE_TIMESTAMPS ProposalError = 17
-	// No risk parameters were specified.
-	ProposalError_PROPOSAL_ERROR_NO_RISK_PARAMETERS ProposalError = 18
-	// Invalid key in update network parameter proposal.
-	ProposalError_PROPOSAL_ERROR_NETWORK_PARAMETER_INVALID_KEY ProposalError = 19
-	// Invalid valid in update network parameter proposal.
-	ProposalError_PROPOSAL_ERROR_NETWORK_PARAMETER_INVALID_VALUE ProposalError = 20
-	// Validation failed for network parameter proposal.
-	ProposalError_PROPOSAL_ERROR_NETWORK_PARAMETER_VALIDATION_FAILED ProposalError = 21
-	// Opening auction duration is less than the network minimum opening auction time.
-	ProposalError_PROPOSAL_ERROR_OPENING_AUCTION_DURATION_TOO_SMALL ProposalError = 22
-	// Opening auction duration is more than the network minimum opening auction time.
-	ProposalError_PROPOSAL_ERROR_OPENING_AUCTION_DURATION_TOO_LARGE ProposalError = 23
-	// Market proposal is missing a liquidity commitment.
-	ProposalError_PROPOSAL_ERROR_MARKET_MISSING_LIQUIDITY_COMMITMENT ProposalError = 24
-	// Market proposal market could not be instantiate in execution.
-	ProposalError_PROPOSAL_ERROR_COULD_NOT_INSTANTIATE_MARKET ProposalError = 25
-	// Market proposal market contained invalid product definition.
-	ProposalError_PROPOSAL_ERROR_INVALID_FUTURE_PRODUCT ProposalError = 26
-	// Proposal is an unknown type.
-	ProposalError_PROPOSAL_ERROR_UNKNOWN_TYPE ProposalError = 27
-	// Proposal has an unknown risk parameter type.
-	ProposalError_PROPOSAL_ERROR_UNKNOWN_RISK_PARAMETER_TYPE ProposalError = 28
-	// Validation failed for freeform proposal.
-	ProposalError_PROPOSAL_ERROR_INVALID_FREEFORM ProposalError = 29
+	// ProposalErrorUnspecified Default value, always invalid.
+	ProposalErrorUnspecified ProposalError = vegapb.ProposalError_PROPOSAL_ERROR_UNSPECIFIED
+	// ProposalErrorCloseTimeTooSoon The specified close time is too early base on network parameters.
+	ProposalErrorCloseTimeTooSoon ProposalError = vegapb.ProposalError_PROPOSAL_ERROR_CLOSE_TIME_TOO_SOON
+	// ProposalErrorCloseTimeTooLate The specified close time is too late based on network parameters.
+	ProposalErrorCloseTimeTooLate ProposalError = vegapb.ProposalError_PROPOSAL_ERROR_CLOSE_TIME_TOO_LATE
+	// ProposalErrorEnactTimeTooSoon The specified enact time is too early based on network parameters.
+	ProposalErrorEnactTimeTooSoon ProposalError = vegapb.ProposalError_PROPOSAL_ERROR_ENACT_TIME_TOO_SOON
+	// ProposalErrorEnactTimeTooLate The specified enact time is too late based on network parameters.
+	ProposalErrorEnactTimeTooLate ProposalError = vegapb.ProposalError_PROPOSAL_ERROR_ENACT_TIME_TOO_LATE
+	// ProposalErrorInsufficientTokens The proposer for this proposal as insufficient tokens.
+	ProposalErrorInsufficientTokens ProposalError = vegapb.ProposalError_PROPOSAL_ERROR_INSUFFICIENT_TOKENS
+	// ProposalErrorNoProduct The proposal has no product.
+	ProposalErrorNoProduct ProposalError = vegapb.ProposalError_PROPOSAL_ERROR_NO_PRODUCT
+	// ProposalErrorUnsupportedProduct The specified product is not supported.
+	ProposalErrorUnsupportedProduct ProposalError = vegapb.ProposalError_PROPOSAL_ERROR_UNSUPPORTED_PRODUCT
+	// ProposalErrorNodeValidationFailed The proposal failed node validation.
+	ProposalErrorNodeValidationFailed ProposalError = vegapb.ProposalError_PROPOSAL_ERROR_NODE_VALIDATION_FAILED
+	// ProposalErrorMissingBuiltinAssetField A field is missing in a builtin asset source.
+	ProposalErrorMissingBuiltinAssetField ProposalError = vegapb.ProposalError_PROPOSAL_ERROR_MISSING_BUILTIN_ASSET_FIELD
+	// ProposalErrorMissingErc20ContractAddress The contract address is missing in the ERC20 asset source.
+	ProposalErrorMissingErc20ContractAddress ProposalError = vegapb.ProposalError_PROPOSAL_ERROR_MISSING_ERC20_CONTRACT_ADDRESS
+	// ProposalErrorInvalidAsset The asset identifier is invalid or does not exist on the Vega network.
+	ProposalErrorInvalidAsset ProposalError = vegapb.ProposalError_PROPOSAL_ERROR_INVALID_ASSET
+	// ProposalErrorIncompatibleTimestamps Proposal terms timestamps are not compatible (Validation < Closing < Enactment).
+	ProposalErrorIncompatibleTimestamps ProposalError = vegapb.ProposalError_PROPOSAL_ERROR_INCOMPATIBLE_TIMESTAMPS
+	// ProposalErrorNoRiskParameters No risk parameters were specified.
+	ProposalErrorNoRiskParameters ProposalError = vegapb.ProposalError_PROPOSAL_ERROR_NO_RISK_PARAMETERS
+	// ProposalErrorNetworkParameterInvalidKey Invalid key in update network parameter proposal.
+	ProposalErrorNetworkParameterInvalidKey ProposalError = vegapb.ProposalError_PROPOSAL_ERROR_NETWORK_PARAMETER_INVALID_KEY
+	// ProposalErrorNetworkParameterInvalidValue Invalid valid in update network parameter proposal.
+	ProposalErrorNetworkParameterInvalidValue ProposalError = vegapb.ProposalError_PROPOSAL_ERROR_NETWORK_PARAMETER_INVALID_VALUE
+	// ProposalErrorNetworkParameterValidationFailed Validation failed for network parameter proposal.
+	ProposalErrorNetworkParameterValidationFailed ProposalError = vegapb.ProposalError_PROPOSAL_ERROR_NETWORK_PARAMETER_VALIDATION_FAILED
+	// ProposalErrorOpeningAuctionDurationTooSmall Opening auction duration is less than the network minimum opening auction time.
+	ProposalErrorOpeningAuctionDurationTooSmall ProposalError = vegapb.ProposalError_PROPOSAL_ERROR_OPENING_AUCTION_DURATION_TOO_SMALL
+	// ProposalErrorOpeningAuctionDurationTooLarge Opening auction duration is more than the network minimum opening auction time.
+	ProposalErrorOpeningAuctionDurationTooLarge ProposalError = vegapb.ProposalError_PROPOSAL_ERROR_OPENING_AUCTION_DURATION_TOO_LARGE
+	// ProposalErrorMarketMissingLiquidityCommitment Market proposal is missing a liquidity commitment.
+	ProposalErrorMarketMissingLiquidityCommitment ProposalError = vegapb.ProposalError_PROPOSAL_ERROR_MARKET_MISSING_LIQUIDITY_COMMITMENT
+	// ProposalErrorCouldNotInstantiateMarket Market proposal market could not be instantiated during execution.
+	ProposalErrorCouldNotInstantiateMarket ProposalError = vegapb.ProposalError_PROPOSAL_ERROR_COULD_NOT_INSTANTIATE_MARKET
+	// ProposalErrorInvalidFutureProduct Market proposal market contained invalid product definition.
+	ProposalErrorInvalidFutureProduct ProposalError = vegapb.ProposalError_PROPOSAL_ERROR_INVALID_FUTURE_PRODUCT
+	// ProposalErrorMissingCommitmentAmount Market proposal is missing commitment amount.
+	ProposalErrorMissingCommitmentAmount ProposalError = vegapb.ProposalError_PROPOSAL_ERROR_MISSING_COMMITMENT_AMOUNT
+	// ProposalErrorInvalidFeeAmount Market proposal have invalid fee.
+	ProposalErrorInvalidFeeAmount ProposalError = vegapb.ProposalError_PROPOSAL_ERROR_INVALID_FEE_AMOUNT
+	// ProposalErrorInvalidShape Market proposal have invalid shape.
+	ProposalErrorInvalidShape ProposalError = vegapb.ProposalError_PROPOSAL_ERROR_INVALID_SHAPE
+	// ProposalErrorInvalidRiskParameter Market proposal invalid risk parameter.
+	ProposalErrorInvalidRiskParameter ProposalError = vegapb.ProposalError_PROPOSAL_ERROR_INVALID_RISK_PARAMETER
+	// ProposalErrorMajorityThresholdNotReached Proposal was declined because vote didn't reach the majority threshold required.
+	ProposalErrorMajorityThresholdNotReached ProposalError = vegapb.ProposalError_PROPOSAL_ERROR_MAJORITY_THRESHOLD_NOT_REACHED
+	// ProposalErrorParticipationThresholdNotReached Proposal declined because the participation threshold was not reached.
+	ProposalErrorParticipationThresholdNotReached ProposalError = vegapb.ProposalError_PROPOSAL_ERROR_PARTICIPATION_THRESHOLD_NOT_REACHED
+	// ProposalErrorInvalidAssetDetails Asset proposal invalid asset details.
+	ProposalErrorInvalidAssetDetails ProposalError = vegapb.ProposalError_PROPOSAL_ERROR_INVALID_ASSET_DETAILS
+	// ProposalErrorUnknownType Proposal is an unknown type.
+	ProposalErrorUnknownType ProposalError = vegapb.ProposalError_PROPOSAL_ERROR_UNKNOWN_TYPE
+	// ProposalErrorUnknownRiskParameterType Proposal has an unknown risk parameter type.
+	ProposalErrorUnknownRiskParameterType ProposalError = vegapb.ProposalError_PROPOSAL_ERROR_UNKNOWN_RISK_PARAMETER_TYPE
+	// ProposalErrorInvalidFreeform Validation failed for freeform proposal.
+	ProposalErrorInvalidFreeform ProposalError = vegapb.ProposalError_PROPOSAL_ERROR_INVALID_FREEFORM
 )
 
-type ProposalState = proto.Proposal_State
+type ProposalState = vegapb.Proposal_State
 
 const (
-	// Default value, always invalid.
-	ProposalStateUnspecified ProposalState = proto.Proposal_STATE_UNSPECIFIED
-	// Proposal enactment has failed - even though proposal has passed, its execution could not be performed.
-	ProposalStateFailed ProposalState = proto.Proposal_STATE_FAILED
-	// Proposal is open for voting.
-	ProposalStateOpen ProposalState = proto.Proposal_STATE_OPEN
-	// Proposal has gained enough support to be executed.
-	ProposalStatePassed ProposalState = proto.Proposal_STATE_PASSED
-	// Proposal wasn't accepted (proposal terms failed validation due to wrong configuration or failing to meet network requirements).
-	ProposalStateRejected ProposalState = proto.Proposal_STATE_REJECTED
-	// Proposal didn't get enough votes (either failing to gain required participation or majority level).
-	ProposalStateDeclined ProposalState = proto.Proposal_STATE_DECLINED
-	// Proposal enacted.
-	ProposalStateEnacted ProposalState = proto.Proposal_STATE_ENACTED
-	// Waiting for node validation of the proposal.
-	ProposalStateWaitingForNodeVote ProposalState = proto.Proposal_STATE_WAITING_FOR_NODE_VOTE
+	// ProposalStateUnspecified Default value, always invalid.
+	ProposalStateUnspecified ProposalState = vegapb.Proposal_STATE_UNSPECIFIED
+	// ProposalStateFailed Proposal enactment has failed - even though proposal has passed, its execution could not be performed.
+	ProposalStateFailed ProposalState = vegapb.Proposal_STATE_FAILED
+	// ProposalStateOpen Proposal is open for voting.
+	ProposalStateOpen ProposalState = vegapb.Proposal_STATE_OPEN
+	// ProposalStatePassed Proposal has gained enough support to be executed.
+	ProposalStatePassed ProposalState = vegapb.Proposal_STATE_PASSED
+	// ProposalStateRejected Proposal wasn't accepted (proposal terms failed validation due to wrong configuration or failing to meet network requirements).
+	ProposalStateRejected ProposalState = vegapb.Proposal_STATE_REJECTED
+	// ProposalStateDeclined Proposal didn't get enough votes (either failing to gain required participation or majority level).
+	ProposalStateDeclined ProposalState = vegapb.Proposal_STATE_DECLINED
+	// ProposalStateEnacted Proposal enacted.
+	ProposalStateEnacted ProposalState = vegapb.Proposal_STATE_ENACTED
+	// ProposalStateWaitingForNodeVote Waiting for node validation of the proposal.
+	ProposalStateWaitingForNodeVote ProposalState = vegapb.Proposal_STATE_WAITING_FOR_NODE_VOTE
 )
 
-type Proposal_Terms_TYPE int
+type ProposalTermsType int
 
 const (
-	ProposalTerms_UPDATE_MARKET Proposal_Terms_TYPE = iota
-	ProposalTerms_NEW_MARKET
-	ProposalTerms_UPDATE_NETWORK_PARAMETER
-	ProposalTerms_NEW_ASSET
-	ProposalTerms_NEW_FREEFORM
+	ProposalTermsTypeUpdateMarket ProposalTermsType = iota
+	ProposalTermsTypeNewMarket
+	ProposalTermsTypeUpdateNetworkParameter
+	ProposalTermsTypeNewAsset
+	ProposalTermsTypeNewFreeform
 )
 
 // Vote represents a governance vote casted by a party for a given proposal.
@@ -190,7 +193,7 @@ func NewProposalSubmissionFromProto(p *commandspb.ProposalSubmission) *ProposalS
 }
 
 func (p ProposalSubmission) IntoProto() *commandspb.ProposalSubmission {
-	var terms *proto.ProposalTerms
+	var terms *vegapb.ProposalTerms
 	if p.Terms != nil {
 		terms = p.Terms.IntoProto()
 	}
@@ -219,7 +222,7 @@ func (p Proposal) DeepClone() *Proposal {
 	return &cpy
 }
 
-func ProposalFromProto(pp *proto.Proposal) *Proposal {
+func ProposalFromProto(pp *vegapb.Proposal) *Proposal {
 	return &Proposal{
 		ID:           pp.Id,
 		Reference:    pp.Reference,
@@ -232,12 +235,12 @@ func ProposalFromProto(pp *proto.Proposal) *Proposal {
 	}
 }
 
-func (p Proposal) IntoProto() *proto.Proposal {
-	var terms *proto.ProposalTerms
+func (p Proposal) IntoProto() *vegapb.Proposal {
+	var terms *vegapb.ProposalTerms
 	if p.Terms != nil {
 		terms = p.Terms.IntoProto()
 	}
-	return &proto.Proposal{
+	return &vegapb.Proposal{
 		Id:           p.ID,
 		Reference:    p.Reference,
 		PartyId:      p.Party,
@@ -249,8 +252,8 @@ func (p Proposal) IntoProto() *proto.Proposal {
 	}
 }
 
-func (v Vote) IntoProto() *proto.Vote {
-	return &proto.Vote{
+func (v Vote) IntoProto() *vegapb.Vote {
+	return &vegapb.Vote{
 		PartyId:                     v.PartyID,
 		Value:                       v.Value,
 		ProposalId:                  v.ProposalID,
@@ -260,7 +263,7 @@ func (v Vote) IntoProto() *proto.Vote {
 	}
 }
 
-func VoteFromProto(v *proto.Vote) (*Vote, error) {
+func VoteFromProto(v *vegapb.Vote) (*Vote, error) {
 	ret := Vote{
 		PartyID:    v.PartyId,
 		Value:      v.Value,
@@ -288,7 +291,7 @@ type NewMarketCommitment struct {
 	Reference        string
 }
 
-func NewMarketCommitmentFromProto(p *proto.NewMarketCommitment) (*NewMarketCommitment, error) {
+func NewMarketCommitmentFromProto(p *vegapb.NewMarketCommitment) (*NewMarketCommitment, error) {
 	fee, err := num.DecimalFromString(p.Fee)
 	if err != nil {
 		return nil, err
@@ -352,11 +355,11 @@ type ProposalTerms struct {
 	ClosingTimestamp    int64
 	EnactmentTimestamp  int64
 	ValidationTimestamp int64
-	// *ProposalTerms_UpdateMarket
-	// *ProposalTerms_NewMarket
-	// *ProposalTerms_UpdateNetworkParameter
-	// *ProposalTerms_NewAsset
-	Change pterms
+	// *ProposalTermsUpdateMarket
+	// *ProposalTermsNewMarket
+	// *ProposalTermsUpdateNetworkParameter
+	// *ProposalTermsNewAsset
+	Change proposalTerm
 }
 
 type NewMarket struct {
@@ -375,8 +378,8 @@ type NewMarketConfiguration struct {
 	// New market risk model parameters
 	//
 	// Types that are valid to be assigned to RiskParameters:
-	//	*NewMarketConfiguration_Simple
-	//	*NewMarketConfiguration_LogNormal
+	//	*NewMarketConfigurationSimple
+	//	*NewMarketConfigurationLogNormal
 	// RiskParameters isNewMarketConfiguration_RiskParameters
 	// Trading mode for the new market
 	//
@@ -398,22 +401,21 @@ type tradingMode interface {
 	DeepClone() tradingMode
 }
 
-type ProposalTerms_NewMarket struct {
+type ProposalTermsNewMarket struct {
 	NewMarket *NewMarket
 }
 
-type (
-	UpdateMarket               = proto.UpdateMarket
-	ProposalTerms_UpdateMarket struct {
-		UpdateMarket *UpdateMarket
-	}
-)
+type UpdateMarket = vegapb.UpdateMarket
+
+type ProposalTermsUpdateMarket struct {
+	UpdateMarket *UpdateMarket
+}
 
 type UpdateNetworkParameter struct {
 	Changes *NetworkParameter
 }
 
-type ProposalTerms_UpdateNetworkParameter struct {
+type ProposalTermsUpdateNetworkParameter struct {
 	UpdateNetworkParameter *UpdateNetworkParameter
 }
 
@@ -421,7 +423,7 @@ type NewAsset struct {
 	Changes *AssetDetails
 }
 
-type ProposalTerms_NewAsset struct {
+type ProposalTermsNewAsset struct {
 	NewAsset *NewAsset
 }
 
@@ -439,11 +441,11 @@ type ProposalTerms_NewFreeform struct {
 	NewFreeform *NewFreeform
 }
 
-type pterms interface {
+type proposalTerm interface {
 	isPTerm()
 	oneOfProto() interface{} // calls IntoProto
-	DeepClone() pterms
-	GetTermType() Proposal_Terms_TYPE
+	DeepClone() proposalTerm
+	GetTermType() ProposalTermsType
 }
 
 func (n *NewAsset) GetChanges() *AssetDetails {
@@ -453,16 +455,16 @@ func (n *NewAsset) GetChanges() *AssetDetails {
 	return nil
 }
 
-func (n NewMarket) IntoProto() *proto.NewMarket {
-	var changes *proto.NewMarketConfiguration
+func (n NewMarket) IntoProto() *vegapb.NewMarket {
+	var changes *vegapb.NewMarketConfiguration
 	if n.Changes != nil {
 		changes = n.Changes.IntoProto()
 	}
-	var commitment *proto.NewMarketCommitment
+	var commitment *vegapb.NewMarketCommitment
 	if n.LiquidityCommitment != nil {
 		commitment = n.LiquidityCommitment.IntoProto()
 	}
-	return &proto.NewMarket{
+	return &vegapb.NewMarket{
 		Changes:             changes,
 		LiquidityCommitment: commitment,
 	}
@@ -479,25 +481,25 @@ func (n NewMarket) DeepClone() *NewMarket {
 	return &cpy
 }
 
-func (n NewMarketConfiguration) IntoProto() *proto.NewMarketConfiguration {
+func (n NewMarketConfiguration) IntoProto() *vegapb.NewMarketConfiguration {
 	riskParams := n.RiskParameters.rpIntoProto()
 	md := make([]string, 0, len(n.Metadata))
 	md = append(md, n.Metadata...)
 
-	var instrument *proto.InstrumentConfiguration
+	var instrument *vegapb.InstrumentConfiguration
 	if n.Instrument != nil {
 		instrument = n.Instrument.IntoProto()
 	}
-	var priceMonitoring *proto.PriceMonitoringParameters
+	var priceMonitoring *vegapb.PriceMonitoringParameters
 	if n.PriceMonitoringParameters != nil {
 		priceMonitoring = n.PriceMonitoringParameters.IntoProto()
 	}
-	var liquidityMonitoring *proto.LiquidityMonitoringParameters
+	var liquidityMonitoring *vegapb.LiquidityMonitoringParameters
 	if n.LiquidityMonitoringParameters != nil {
 		liquidityMonitoring = n.LiquidityMonitoringParameters.IntoProto()
 	}
 
-	r := &proto.NewMarketConfiguration{
+	r := &vegapb.NewMarketConfiguration{
 		Instrument:                    instrument,
 		DecimalPlaces:                 n.DecimalPlaces,
 		Metadata:                      md,
@@ -505,9 +507,9 @@ func (n NewMarketConfiguration) IntoProto() *proto.NewMarketConfiguration {
 		LiquidityMonitoringParameters: liquidityMonitoring,
 	}
 	switch rp := riskParams.(type) {
-	case *proto.NewMarketConfiguration_Simple:
+	case *vegapb.NewMarketConfiguration_Simple:
 		r.RiskParameters = rp
-	case *proto.NewMarketConfiguration_LogNormal:
+	case *vegapb.NewMarketConfiguration_LogNormal:
 		r.RiskParameters = rp
 	}
 	return r
@@ -537,7 +539,7 @@ func (n NewMarketConfiguration) DeepClone() *NewMarketConfiguration {
 	return cpy
 }
 
-func NewMarketConfigurationFromProto(p *proto.NewMarketConfiguration) *NewMarketConfiguration {
+func NewMarketConfigurationFromProto(p *vegapb.NewMarketConfiguration) *NewMarketConfiguration {
 	md := make([]string, 0, len(p.Metadata))
 	md = append(md, p.Metadata...)
 
@@ -564,28 +566,28 @@ func NewMarketConfigurationFromProto(p *proto.NewMarketConfiguration) *NewMarket
 	}
 	if p.RiskParameters != nil {
 		switch rp := p.RiskParameters.(type) {
-		case *proto.NewMarketConfiguration_Simple:
-			r.RiskParameters = NewMarketConfiguration_SimpleFromProto(rp)
-		case *proto.NewMarketConfiguration_LogNormal:
-			r.RiskParameters = NewMarketConfiguration_LogNormalFromProto(rp)
+		case *vegapb.NewMarketConfiguration_Simple:
+			r.RiskParameters = NewMarketConfigurationSimpleFromProto(rp)
+		case *vegapb.NewMarketConfiguration_LogNormal:
+			r.RiskParameters = NewMarketConfigurationLogNormalFromProto(rp)
 		}
 	}
 	return r
 }
 
-func ProposalTermsFromProto(p *proto.ProposalTerms) *ProposalTerms {
-	var change pterms
+func ProposalTermsFromProto(p *vegapb.ProposalTerms) *ProposalTerms {
+	var change proposalTerm
 	if p.Change != nil {
 		switch ch := p.Change.(type) {
-		case *proto.ProposalTerms_NewMarket:
+		case *vegapb.ProposalTerms_NewMarket:
 			change = NewNewMarketFromProto(ch)
-		case *proto.ProposalTerms_UpdateMarket:
+		case *vegapb.ProposalTerms_UpdateMarket:
 			change = NewUpdateMarketFromProto(ch)
-		case *proto.ProposalTerms_UpdateNetworkParameter:
+		case *vegapb.ProposalTerms_UpdateNetworkParameter:
 			change = NewUpdateNetworkParameterFromProto(ch)
-		case *proto.ProposalTerms_NewAsset:
+		case *vegapb.ProposalTerms_NewAsset:
 			change = NewNewAssetFromProto(ch)
-		case *proto.ProposalTerms_NewFreeform:
+		case *vegapb.ProposalTerms_NewFreeform:
 			change = NewNewFreeformFromProto(ch)
 		}
 	}
@@ -598,7 +600,7 @@ func ProposalTermsFromProto(p *proto.ProposalTerms) *ProposalTerms {
 	}
 }
 
-func NewNewMarketFromProto(p *proto.ProposalTerms_NewMarket) *ProposalTerms_NewMarket {
+func NewNewMarketFromProto(p *vegapb.ProposalTerms_NewMarket) *ProposalTermsNewMarket {
 	var newMarket *NewMarket
 	if p.NewMarket != nil {
 		newMarket = &NewMarket{}
@@ -611,18 +613,18 @@ func NewNewMarketFromProto(p *proto.ProposalTerms_NewMarket) *ProposalTerms_NewM
 		}
 	}
 
-	return &ProposalTerms_NewMarket{
+	return &ProposalTermsNewMarket{
 		NewMarket: newMarket,
 	}
 }
 
-func NewUpdateMarketFromProto(p *proto.ProposalTerms_UpdateMarket) *ProposalTerms_UpdateMarket {
+func NewUpdateMarketFromProto(p *vegapb.ProposalTerms_UpdateMarket) *ProposalTermsUpdateMarket {
 	panic("unimplemented")
 }
 
 func NewUpdateNetworkParameterFromProto(
-	p *proto.ProposalTerms_UpdateNetworkParameter,
-) *ProposalTerms_UpdateNetworkParameter {
+	p *vegapb.ProposalTerms_UpdateNetworkParameter,
+) *ProposalTermsUpdateNetworkParameter {
 	var updateNP *UpdateNetworkParameter
 	if p.UpdateNetworkParameter != nil {
 		updateNP = &UpdateNetworkParameter{}
@@ -632,12 +634,12 @@ func NewUpdateNetworkParameterFromProto(
 		}
 	}
 
-	return &ProposalTerms_UpdateNetworkParameter{
+	return &ProposalTermsUpdateNetworkParameter{
 		UpdateNetworkParameter: updateNP,
 	}
 }
 
-func NewNewAssetFromProto(p *proto.ProposalTerms_NewAsset) *ProposalTerms_NewAsset {
+func NewNewAssetFromProto(p *vegapb.ProposalTerms_NewAsset) *ProposalTermsNewAsset {
 	var newAsset *NewAsset
 	if p.NewAsset != nil {
 		newAsset = &NewAsset{}
@@ -647,12 +649,12 @@ func NewNewAssetFromProto(p *proto.ProposalTerms_NewAsset) *ProposalTerms_NewAss
 		}
 	}
 
-	return &ProposalTerms_NewAsset{
+	return &ProposalTermsNewAsset{
 		NewAsset: newAsset,
 	}
 }
 
-func NewNewFreeformFromProto(p *proto.ProposalTerms_NewFreeform) *ProposalTerms_NewFreeform {
+func NewNewFreeformFromProto(p *vegapb.ProposalTerms_NewFreeform) *ProposalTerms_NewFreeform {
 	var newFreeform *NewFreeform
 	if p.NewFreeform != nil && p.NewFreeform.Changes != nil {
 		newFreeform = &NewFreeform{
@@ -669,23 +671,23 @@ func NewNewFreeformFromProto(p *proto.ProposalTerms_NewFreeform) *ProposalTerms_
 	}
 }
 
-func (p ProposalTerms) IntoProto() *proto.ProposalTerms {
+func (p ProposalTerms) IntoProto() *vegapb.ProposalTerms {
 	change := p.Change.oneOfProto()
-	r := &proto.ProposalTerms{
+	r := &vegapb.ProposalTerms{
 		ClosingTimestamp:    p.ClosingTimestamp,
 		EnactmentTimestamp:  p.EnactmentTimestamp,
 		ValidationTimestamp: p.ValidationTimestamp,
 	}
 	switch ch := change.(type) {
-	case *proto.ProposalTerms_NewMarket:
+	case *vegapb.ProposalTerms_NewMarket:
 		r.Change = ch
-	case *proto.ProposalTerms_UpdateMarket:
+	case *vegapb.ProposalTerms_UpdateMarket:
 		r.Change = ch
-	case *proto.ProposalTerms_UpdateNetworkParameter:
+	case *vegapb.ProposalTerms_UpdateNetworkParameter:
 		r.Change = ch
-	case *proto.ProposalTerms_NewAsset:
+	case *vegapb.ProposalTerms_NewAsset:
 		r.Change = ch
-	case *proto.ProposalTerms_NewFreeform:
+	case *vegapb.ProposalTerms_NewFreeform:
 		r.Change = ch
 	}
 	return r
@@ -703,7 +705,7 @@ func (p ProposalTerms) String() string {
 
 func (p *ProposalTerms) GetNewAsset() *NewAsset {
 	switch c := p.Change.(type) {
-	case *ProposalTerms_NewAsset:
+	case *ProposalTermsNewAsset:
 		return c.NewAsset
 	default:
 		return nil
@@ -712,7 +714,7 @@ func (p *ProposalTerms) GetNewAsset() *NewAsset {
 
 func (p *ProposalTerms) GetNewMarket() *NewMarket {
 	switch c := p.Change.(type) {
-	case *ProposalTerms_NewMarket:
+	case *ProposalTermsNewMarket:
 		return c.NewMarket
 	default:
 		return nil
@@ -721,7 +723,7 @@ func (p *ProposalTerms) GetNewMarket() *NewMarket {
 
 func (p *ProposalTerms) GetUpdateNetworkParameter() *UpdateNetworkParameter {
 	switch c := p.Change.(type) {
-	case *ProposalTerms_UpdateNetworkParameter:
+	case *ProposalTermsUpdateNetworkParameter:
 		return c.UpdateNetworkParameter
 	default:
 		return nil
@@ -737,80 +739,80 @@ func (p *ProposalTerms) GetNewFreeform() *NewFreeform {
 	}
 }
 
-func (a ProposalTerms_NewMarket) IntoProto() *proto.ProposalTerms_NewMarket {
-	return &proto.ProposalTerms_NewMarket{
+func (a ProposalTermsNewMarket) IntoProto() *vegapb.ProposalTerms_NewMarket {
+	return &vegapb.ProposalTerms_NewMarket{
 		NewMarket: a.NewMarket.IntoProto(),
 	}
 }
 
-func (a ProposalTerms_NewMarket) isPTerm() {}
-func (a ProposalTerms_NewMarket) oneOfProto() interface{} {
+func (a ProposalTermsNewMarket) isPTerm() {}
+func (a ProposalTermsNewMarket) oneOfProto() interface{} {
 	return a.IntoProto()
 }
 
-func (a ProposalTerms_NewMarket) GetTermType() Proposal_Terms_TYPE {
-	return ProposalTerms_NEW_MARKET
+func (a ProposalTermsNewMarket) GetTermType() ProposalTermsType {
+	return ProposalTermsTypeNewMarket
 }
 
-func (a ProposalTerms_NewMarket) DeepClone() pterms {
+func (a ProposalTermsNewMarket) DeepClone() proposalTerm {
 	if a.NewMarket == nil {
-		return &ProposalTerms_NewMarket{}
+		return &ProposalTermsNewMarket{}
 	}
-	return &ProposalTerms_NewMarket{
+	return &ProposalTermsNewMarket{
 		NewMarket: a.NewMarket.DeepClone(),
 	}
 }
 
-func (a ProposalTerms_UpdateMarket) IntoProto() *proto.ProposalTerms_UpdateMarket {
-	return &proto.ProposalTerms_UpdateMarket{
+func (a ProposalTermsUpdateMarket) IntoProto() *vegapb.ProposalTerms_UpdateMarket {
+	return &vegapb.ProposalTerms_UpdateMarket{
 		UpdateMarket: a.UpdateMarket,
 	}
 }
 
-func (a ProposalTerms_UpdateMarket) isPTerm() {}
-func (a ProposalTerms_UpdateMarket) oneOfProto() interface{} {
+func (a ProposalTermsUpdateMarket) isPTerm() {}
+func (a ProposalTermsUpdateMarket) oneOfProto() interface{} {
 	return a.IntoProto()
 }
 
-func (a ProposalTerms_UpdateMarket) GetTermType() Proposal_Terms_TYPE {
-	return ProposalTerms_UPDATE_MARKET
+func (a ProposalTermsUpdateMarket) GetTermType() ProposalTermsType {
+	return ProposalTermsTypeUpdateMarket
 }
 
-func (a ProposalTerms_UpdateMarket) DeepClone() pterms {
+func (a ProposalTermsUpdateMarket) DeepClone() proposalTerm {
 	if a.UpdateMarket == nil {
-		return &ProposalTerms_UpdateMarket{}
+		return &ProposalTermsUpdateMarket{}
 	}
-	return &ProposalTerms_UpdateMarket{
+	return &ProposalTermsUpdateMarket{
 		UpdateMarket: a.UpdateMarket.DeepClone(),
 	}
 }
 
-func (a ProposalTerms_UpdateNetworkParameter) IntoProto() *proto.ProposalTerms_UpdateNetworkParameter {
-	return &proto.ProposalTerms_UpdateNetworkParameter{
+func (a ProposalTermsUpdateNetworkParameter) IntoProto() *vegapb.ProposalTerms_UpdateNetworkParameter {
+	return &vegapb.ProposalTerms_UpdateNetworkParameter{
 		UpdateNetworkParameter: a.UpdateNetworkParameter.IntoProto(),
 	}
 }
 
-func (a ProposalTerms_UpdateNetworkParameter) isPTerm() {}
-func (a ProposalTerms_UpdateNetworkParameter) oneOfProto() interface{} {
+func (a ProposalTermsUpdateNetworkParameter) isPTerm() {}
+func (a ProposalTermsUpdateNetworkParameter) oneOfProto() interface{} {
 	return a.IntoProto()
 }
 
-func (a ProposalTerms_UpdateNetworkParameter) GetTermType() Proposal_Terms_TYPE {
-	return ProposalTerms_UPDATE_NETWORK_PARAMETER
+func (a ProposalTermsUpdateNetworkParameter) GetTermType() ProposalTermsType {
+	return ProposalTermsTypeUpdateNetworkParameter
 }
 
-func (a ProposalTerms_UpdateNetworkParameter) DeepClone() pterms {
+func (a ProposalTermsUpdateNetworkParameter) DeepClone() proposalTerm {
 	if a.UpdateNetworkParameter == nil {
-		return &ProposalTerms_UpdateNetworkParameter{}
+		return &ProposalTermsUpdateNetworkParameter{}
 	}
-	return &ProposalTerms_UpdateNetworkParameter{
+	return &ProposalTermsUpdateNetworkParameter{
 		UpdateNetworkParameter: a.UpdateNetworkParameter.DeepClone(),
 	}
 }
 
-func (n UpdateNetworkParameter) IntoProto() *proto.UpdateNetworkParameter {
-	return &proto.UpdateNetworkParameter{
+func (n UpdateNetworkParameter) IntoProto() *vegapb.UpdateNetworkParameter {
+	return &vegapb.UpdateNetworkParameter{
 		Changes: n.Changes.IntoProto(),
 	}
 }
@@ -828,40 +830,40 @@ func (n UpdateNetworkParameter) DeepClone() *UpdateNetworkParameter {
 	}
 }
 
-func (a ProposalTerms_NewAsset) IntoProto() *proto.ProposalTerms_NewAsset {
-	var newAsset *proto.NewAsset
+func (a ProposalTermsNewAsset) IntoProto() *vegapb.ProposalTerms_NewAsset {
+	var newAsset *vegapb.NewAsset
 	if a.NewAsset != nil {
 		newAsset = a.NewAsset.IntoProto()
 	}
-	return &proto.ProposalTerms_NewAsset{
+	return &vegapb.ProposalTerms_NewAsset{
 		NewAsset: newAsset,
 	}
 }
 
-func (a ProposalTerms_NewAsset) isPTerm() {}
-func (a ProposalTerms_NewAsset) oneOfProto() interface{} {
+func (a ProposalTermsNewAsset) isPTerm() {}
+func (a ProposalTermsNewAsset) oneOfProto() interface{} {
 	return a.IntoProto()
 }
 
-func (a ProposalTerms_NewAsset) GetTermType() Proposal_Terms_TYPE {
-	return ProposalTerms_NEW_ASSET
+func (a ProposalTermsNewAsset) GetTermType() ProposalTermsType {
+	return ProposalTermsTypeNewAsset
 }
 
-func (a ProposalTerms_NewAsset) DeepClone() pterms {
+func (a ProposalTermsNewAsset) DeepClone() proposalTerm {
 	if a.NewAsset == nil {
-		return &ProposalTerms_NewAsset{}
+		return &ProposalTermsNewAsset{}
 	}
-	return &ProposalTerms_NewAsset{
+	return &ProposalTermsNewAsset{
 		NewAsset: a.NewAsset.DeepClone(),
 	}
 }
 
-func (n NewAsset) IntoProto() *proto.NewAsset {
-	var changes *proto.AssetDetails
+func (n NewAsset) IntoProto() *vegapb.NewAsset {
+	var changes *vegapb.AssetDetails
 	if n.Changes != nil {
 		changes = n.Changes.IntoProto()
 	}
-	return &proto.NewAsset{
+	return &vegapb.NewAsset{
 		Changes: changes,
 	}
 }
@@ -879,12 +881,12 @@ func (n NewAsset) DeepClone() *NewAsset {
 	}
 }
 
-func (n NewMarketCommitment) IntoProto() *proto.NewMarketCommitment {
-	r := &proto.NewMarketCommitment{
+func (n NewMarketCommitment) IntoProto() *vegapb.NewMarketCommitment {
+	r := &vegapb.NewMarketCommitment{
 		CommitmentAmount: num.UintToString(n.CommitmentAmount),
 		Fee:              n.Fee.String(),
-		Sells:            make([]*proto.LiquidityOrder, 0, len(n.Sells)),
-		Buys:             make([]*proto.LiquidityOrder, 0, len(n.Buys)),
+		Sells:            make([]*vegapb.LiquidityOrder, 0, len(n.Sells)),
+		Buys:             make([]*vegapb.LiquidityOrder, 0, len(n.Buys)),
 		Reference:        n.Reference,
 	}
 	for _, s := range n.Sells {
@@ -900,22 +902,22 @@ func (n NewMarketCommitment) String() string {
 	return n.IntoProto().String()
 }
 
-type NewMarketConfiguration_LogNormal struct {
+type NewMarketConfigurationLogNormal struct {
 	LogNormal *LogNormalRiskModel
 }
 
-type NewMarketConfiguration_Simple struct {
+type NewMarketConfigurationSimple struct {
 	Simple *SimpleModelParams
 }
 
-func (n NewMarketConfiguration_LogNormal) IntoProto() *proto.NewMarketConfiguration_LogNormal {
-	return &proto.NewMarketConfiguration_LogNormal{
+func (n NewMarketConfigurationLogNormal) IntoProto() *vegapb.NewMarketConfiguration_LogNormal {
+	return &vegapb.NewMarketConfiguration_LogNormal{
 		LogNormal: n.LogNormal.IntoProto(),
 	}
 }
 
-func NewMarketConfiguration_LogNormalFromProto(p *proto.NewMarketConfiguration_LogNormal) *NewMarketConfiguration_LogNormal {
-	return &NewMarketConfiguration_LogNormal{
+func NewMarketConfigurationLogNormalFromProto(p *vegapb.NewMarketConfiguration_LogNormal) *NewMarketConfigurationLogNormal {
+	return &NewMarketConfigurationLogNormal{
 		LogNormal: &LogNormalRiskModel{
 			RiskAversionParameter: num.DecimalFromFloat(p.LogNormal.RiskAversionParameter),
 			Tau:                   num.DecimalFromFloat(p.LogNormal.Tau),
@@ -924,84 +926,84 @@ func NewMarketConfiguration_LogNormalFromProto(p *proto.NewMarketConfiguration_L
 	}
 }
 
-func (n NewMarketConfiguration_LogNormal) DeepClone() riskParams {
+func (n NewMarketConfigurationLogNormal) DeepClone() riskParams {
 	if n.LogNormal == nil {
-		return &NewMarketConfiguration_LogNormal{}
+		return &NewMarketConfigurationLogNormal{}
 	}
-	return &NewMarketConfiguration_LogNormal{
+	return &NewMarketConfigurationLogNormal{
 		LogNormal: n.LogNormal.DeepClone(),
 	}
 }
 
-func (*NewMarketConfiguration_LogNormal) isNMCRP() {}
+func (*NewMarketConfigurationLogNormal) isNMCRP() {}
 
-func (n NewMarketConfiguration_LogNormal) rpIntoProto() interface{} {
+func (n NewMarketConfigurationLogNormal) rpIntoProto() interface{} {
 	return n.IntoProto()
 }
 
-func (n NewMarketConfiguration_Simple) IntoProto() *proto.NewMarketConfiguration_Simple {
-	return &proto.NewMarketConfiguration_Simple{
+func (n NewMarketConfigurationSimple) IntoProto() *vegapb.NewMarketConfiguration_Simple {
+	return &vegapb.NewMarketConfiguration_Simple{
 		Simple: n.Simple.IntoProto(),
 	}
 }
 
-func NewMarketConfiguration_SimpleFromProto(p *proto.NewMarketConfiguration_Simple) *NewMarketConfiguration_Simple {
-	return &NewMarketConfiguration_Simple{
+func NewMarketConfigurationSimpleFromProto(p *vegapb.NewMarketConfiguration_Simple) *NewMarketConfigurationSimple {
+	return &NewMarketConfigurationSimple{
 		Simple: SimpleModelParamsFromProto(p.Simple),
 	}
 }
 
-func (*NewMarketConfiguration_Simple) isNMCRP() {}
+func (*NewMarketConfigurationSimple) isNMCRP() {}
 
-func (n NewMarketConfiguration_Simple) DeepClone() riskParams {
+func (n NewMarketConfigurationSimple) DeepClone() riskParams {
 	if n.Simple == nil {
-		return &NewMarketConfiguration_Simple{}
+		return &NewMarketConfigurationSimple{}
 	}
-	return &NewMarketConfiguration_Simple{
+	return &NewMarketConfigurationSimple{
 		Simple: n.Simple.DeepClone(),
 	}
 }
 
-func (n NewMarketConfiguration_Simple) rpIntoProto() interface{} {
+func (n NewMarketConfigurationSimple) rpIntoProto() interface{} {
 	return n.IntoProto()
 }
 
 type InstrumentConfiguration struct {
 	Name string
 	Code string
-	// *InstrumentConfiguration_Future
-	Product icProd
+	// *InstrumentConfigurationFuture
+	Product instrumentConfigurationProduct
 }
 
-type icProd interface {
-	isInstrumentConfiguration_Product()
+type instrumentConfigurationProduct interface {
+	isInstrumentConfigurationProduct()
 	icpIntoProto() interface{}
 	Asset() string
-	DeepClone() icProd
+	DeepClone() instrumentConfigurationProduct
 }
 
-type InstrumentConfiguration_Future struct {
+type InstrumentConfigurationFuture struct {
 	Future *FutureProduct
 }
 
 type FutureProduct struct {
 	SettlementAsset                 string
 	QuoteName                       string
-	OracleSpecForSettlementPrice    *v1.OracleSpecConfiguration
-	OracleSpecForTradingTermination *v1.OracleSpecConfiguration
+	OracleSpecForSettlementPrice    *oraclespb.OracleSpecConfiguration
+	OracleSpecForTradingTermination *oraclespb.OracleSpecConfiguration
 	OracleSpecBinding               *OracleSpecToFutureBinding
 }
 
-func (i InstrumentConfiguration_Future) DeepClone() icProd {
+func (i InstrumentConfigurationFuture) DeepClone() instrumentConfigurationProduct {
 	if i.Future == nil {
-		return &InstrumentConfiguration_Future{}
+		return &InstrumentConfigurationFuture{}
 	}
-	return &InstrumentConfiguration_Future{
+	return &InstrumentConfigurationFuture{
 		Future: i.Future.DeepClone(),
 	}
 }
 
-func (i InstrumentConfiguration_Future) Asset() string {
+func (i InstrumentConfigurationFuture) Asset() string {
 	return i.Future.SettlementAsset
 }
 
@@ -1016,21 +1018,21 @@ func (i InstrumentConfiguration) DeepClone() *InstrumentConfiguration {
 	return &cpy
 }
 
-func (i InstrumentConfiguration) IntoProto() *proto.InstrumentConfiguration {
+func (i InstrumentConfiguration) IntoProto() *vegapb.InstrumentConfiguration {
 	p := i.Product.icpIntoProto()
-	r := &proto.InstrumentConfiguration{
+	r := &vegapb.InstrumentConfiguration{
 		Name: i.Name,
 		Code: i.Code,
 	}
 	switch pr := p.(type) {
-	case *proto.InstrumentConfiguration_Future:
+	case *vegapb.InstrumentConfiguration_Future:
 		r.Product = pr
 	}
 	return r
 }
 
 func InstrumentConfigurationFromProto(
-	p *proto.InstrumentConfiguration,
+	p *vegapb.InstrumentConfiguration,
 ) *InstrumentConfiguration {
 	r := &InstrumentConfiguration{
 		Name: p.Name,
@@ -1038,8 +1040,8 @@ func InstrumentConfigurationFromProto(
 	}
 
 	switch pr := p.Product.(type) {
-	case *proto.InstrumentConfiguration_Future:
-		r.Product = &InstrumentConfiguration_Future{
+	case *vegapb.InstrumentConfiguration_Future:
+		r.Product = &InstrumentConfigurationFuture{
 			Future: &FutureProduct{
 				SettlementAsset:                 pr.Future.SettlementAsset,
 				QuoteName:                       pr.Future.QuoteName,
@@ -1053,20 +1055,20 @@ func InstrumentConfigurationFromProto(
 	return r
 }
 
-func (i InstrumentConfiguration_Future) IntoProto() *proto.InstrumentConfiguration_Future {
-	return &proto.InstrumentConfiguration_Future{
+func (i InstrumentConfigurationFuture) IntoProto() *vegapb.InstrumentConfiguration_Future {
+	return &vegapb.InstrumentConfiguration_Future{
 		Future: i.Future.IntoProto(),
 	}
 }
 
-func (i InstrumentConfiguration_Future) icpIntoProto() interface{} {
+func (i InstrumentConfigurationFuture) icpIntoProto() interface{} {
 	return i.IntoProto()
 }
 
-func (InstrumentConfiguration_Future) isInstrumentConfiguration_Product() {}
+func (InstrumentConfigurationFuture) isInstrumentConfigurationProduct() {}
 
-func (f FutureProduct) IntoProto() *proto.FutureProduct {
-	return &proto.FutureProduct{
+func (f FutureProduct) IntoProto() *vegapb.FutureProduct {
+	return &vegapb.FutureProduct{
 		SettlementAsset:                 f.SettlementAsset,
 		QuoteName:                       f.QuoteName,
 		OracleSpecForSettlementPrice:    f.OracleSpecForSettlementPrice.DeepClone(),
@@ -1094,12 +1096,12 @@ func (f FutureProduct) Asset() string {
 	return f.SettlementAsset
 }
 
-func (f ProposalTerms_NewFreeform) IntoProto() *proto.ProposalTerms_NewFreeform {
-	var newFreeform *proto.NewFreeform
+func (f ProposalTerms_NewFreeform) IntoProto() *vegapb.ProposalTerms_NewFreeform {
+	var newFreeform *vegapb.NewFreeform
 	if f.NewFreeform != nil {
 		newFreeform = f.NewFreeform.IntoProto()
 	}
-	return &proto.ProposalTerms_NewFreeform{
+	return &vegapb.ProposalTerms_NewFreeform{
 		NewFreeform: newFreeform,
 	}
 }
@@ -1109,11 +1111,11 @@ func (f ProposalTerms_NewFreeform) oneOfProto() interface{} {
 	return f.IntoProto()
 }
 
-func (f ProposalTerms_NewFreeform) GetTermType() Proposal_Terms_TYPE {
-	return ProposalTerms_NEW_FREEFORM
+func (f ProposalTerms_NewFreeform) GetTermType() ProposalTermsType {
+	return ProposalTermsTypeNewFreeform
 }
 
-func (f ProposalTerms_NewFreeform) DeepClone() pterms {
+func (f ProposalTerms_NewFreeform) DeepClone() proposalTerm {
 	if f.NewFreeform == nil {
 		return &ProposalTerms_NewFreeform{}
 	}
@@ -1122,9 +1124,9 @@ func (f ProposalTerms_NewFreeform) DeepClone() pterms {
 	}
 }
 
-func (n NewFreeform) IntoProto() *proto.NewFreeform {
-	return &proto.NewFreeform{
-		Changes: &proto.NewFreeformDetails{
+func (n NewFreeform) IntoProto() *vegapb.NewFreeform {
+	return &vegapb.NewFreeform{
+		Changes: &vegapb.NewFreeformDetails{
 			Url:         n.Changes.URL,
 			Description: n.Changes.Description,
 			Hash:        n.Changes.Hash,

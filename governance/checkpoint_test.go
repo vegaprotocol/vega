@@ -5,7 +5,6 @@ import (
 	"testing"
 	"time"
 
-	proto "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/governance"
 	"code.vegaprotocol.io/vega/types"
@@ -47,7 +46,7 @@ func testCheckpointSuccess(t *testing.T) {
 
 	// then
 	err = eng.AddVote(ctx, types.VoteSubmission{
-		Value:      proto.Vote_VALUE_YES,
+		Value:      types.VoteValueYes,
 		ProposalID: proposal.ID,
 	}, voter1.Id)
 
@@ -62,7 +61,7 @@ func testCheckpointSuccess(t *testing.T) {
 		pe, ok := evt.(*events.Proposal)
 		assert.True(t, ok)
 		p := pe.Proposal()
-		assert.Equal(t, proto.Proposal_STATE_PASSED, p.State)
+		assert.Equal(t, types.ProposalStatePassed, p.State)
 		assert.Equal(t, proposal.ID, p.Id)
 	})
 	eng.broker.EXPECT().SendBatch(gomock.Any()).Times(1).Do(func(evts []events.Event) {
@@ -87,7 +86,7 @@ func testCheckpointSuccess(t *testing.T) {
 
 	// when
 	err = eng.AddVote(ctx, types.VoteSubmission{
-		Value:      proto.Vote_VALUE_NO,
+		Value:      types.VoteValueNo,
 		ProposalID: proposal.ID,
 	}, voter2.Id)
 

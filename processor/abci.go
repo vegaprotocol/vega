@@ -102,30 +102,31 @@ type App struct {
 	rates     *ratelimit.Rates
 
 	// service injection
-	assets          Assets
-	banking         Banking
-	broker          Broker
-	witness         Witness
-	evtfwd          EvtForwarder
-	exec            ExecutionEngine
-	ghandler        *genesis.Handler
-	gov             GovernanceEngine
-	notary          Notary
-	stats           Stats
-	time            TimeService
-	top             ValidatorTopology
-	netp            NetworkParameters
-	oracles         *Oracle
-	delegation      DelegationEngine
-	limits          Limits
-	stake           StakeVerifier
-	stakingAccounts StakingAccounts
-	checkpoint      Checkpoint
-	spam            SpamEngine
-	epoch           EpochService
-	snapshot        Snapshot
-	stateVar        StateVarEngine
-	cpt             abci.Tx
+	assets                Assets
+	banking               Banking
+	broker                Broker
+	witness               Witness
+	evtfwd                EvtForwarder
+	exec                  ExecutionEngine
+	ghandler              *genesis.Handler
+	gov                   GovernanceEngine
+	notary                Notary
+	stats                 Stats
+	time                  TimeService
+	top                   ValidatorTopology
+	netp                  NetworkParameters
+	oracles               *Oracle
+	delegation            DelegationEngine
+	limits                Limits
+	stake                 StakeVerifier
+	stakingAccounts       StakingAccounts
+	checkpoint            Checkpoint
+	spam                  SpamEngine
+	epoch                 EpochService
+	snapshot              Snapshot
+	stateVar              StateVarEngine
+	cpt                   abci.Tx
+	erc20MultiSigTopology ERC20MultiSigTopology
 }
 
 func NewApp(
@@ -157,6 +158,7 @@ func NewApp(
 	snapshot Snapshot,
 	stateVarEngine StateVarEngine,
 	blockchainClient BlockchainClient,
+	erc20MultiSigTopology ERC20MultiSigTopology,
 	version string, // we need the version for snapshot reload
 ) *App {
 	log = log.Named(namedLogger)
@@ -173,32 +175,33 @@ func NewApp(
 			config.Ratelimit.Requests,
 			config.Ratelimit.PerNBlocks,
 		),
-		reloadCP:         checkpoint.AwaitingRestore(),
-		assets:           assets,
-		banking:          banking,
-		broker:           broker,
-		witness:          witness,
-		evtfwd:           evtfwd,
-		exec:             exec,
-		ghandler:         ghandler,
-		gov:              gov,
-		notary:           notary,
-		stats:            stats,
-		time:             time,
-		top:              top,
-		netp:             netp,
-		oracles:          oracles,
-		delegation:       delegation,
-		limits:           limits,
-		stake:            stake,
-		checkpoint:       checkpoint,
-		spam:             spam,
-		stakingAccounts:  stakingAccounts,
-		epoch:            epoch,
-		snapshot:         snapshot,
-		stateVar:         stateVarEngine,
-		version:          version,
-		blockchainClient: blockchainClient,
+		reloadCP:              checkpoint.AwaitingRestore(),
+		assets:                assets,
+		banking:               banking,
+		broker:                broker,
+		witness:               witness,
+		evtfwd:                evtfwd,
+		exec:                  exec,
+		ghandler:              ghandler,
+		gov:                   gov,
+		notary:                notary,
+		stats:                 stats,
+		time:                  time,
+		top:                   top,
+		netp:                  netp,
+		oracles:               oracles,
+		delegation:            delegation,
+		limits:                limits,
+		stake:                 stake,
+		checkpoint:            checkpoint,
+		spam:                  spam,
+		stakingAccounts:       stakingAccounts,
+		epoch:                 epoch,
+		snapshot:              snapshot,
+		stateVar:              stateVarEngine,
+		version:               version,
+		blockchainClient:      blockchainClient,
+		erc20MultiSigTopology: erc20MultiSigTopology,
 	}
 
 	// register replay protection if needed:
@@ -356,7 +359,7 @@ func (app *App) Info(_ tmtypes.RequestInfo) tmtypes.ResponseInfo {
 	}
 
 	resp := tmtypes.ResponseInfo{
-		AppVersion: 0, // application protocol version TBD.
+		AppVersion: 1,
 		Version:    app.version,
 	}
 
@@ -367,7 +370,12 @@ func (app *App) Info(_ tmtypes.RequestInfo) tmtypes.ResponseInfo {
 		resp.LastBlockAppHash = hash
 	}
 
-	app.log.Debug("ABCI service INFO requested", logging.Int64("height", resp.LastBlockHeight), logging.String("hash", hex.EncodeToString(resp.LastBlockAppHash)))
+	app.log.Info("ABCI service INFO requested",
+		logging.String("version", resp.Version),
+		logging.Uint64("app-vesion", resp.AppVersion),
+		logging.Int64("height", resp.LastBlockHeight),
+		logging.String("hash", hex.EncodeToString(resp.LastBlockAppHash)),
+	)
 	return resp
 }
 
@@ -798,11 +806,11 @@ func (app *App) canSubmitTx(tx abci.Tx) (err error) {
 			return errors.New("invalid proposal submission")
 		}
 		switch p.Terms.Change.GetTermType() {
-		case types.ProposalTerms_NEW_MARKET:
+		case types.ProposalTermsTypeNewMarket:
 			if !app.limits.CanProposeMarket() {
 				return ErrMarketProposalDisabled
 			}
-		case types.ProposalTerms_NEW_ASSET:
+		case types.ProposalTermsTypeNewAsset:
 			if !app.limits.CanProposeAsset() {
 				return ErrAssetProposalDisabled
 			}
@@ -1047,7 +1055,7 @@ func (app *App) DeliverPropose(ctx context.Context, tx abci.Tx, deterministicId 
 				logging.Error(err))
 			// an error happened when submitting the market + liquidity
 			// we should cancel this proposal now
-			if err := app.gov.RejectProposal(ctx, toSubmit.Proposal(), types.ProposalError_PROPOSAL_ERROR_COULD_NOT_INSTANTIATE_MARKET, err); err != nil {
+			if err := app.gov.RejectProposal(ctx, toSubmit.Proposal(), types.ProposalErrorCouldNotInstantiateMarket, err); err != nil {
 				// this should never happen
 				app.log.Panic("tried to reject an non-existing proposal",
 					logging.String("proposal-id", toSubmit.Proposal().ID),

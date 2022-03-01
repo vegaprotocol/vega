@@ -11,7 +11,6 @@ import (
 	v1 "code.vegaprotocol.io/protos/vega/commands/v1"
 	gomock "github.com/golang/mock/gomock"
 	types "github.com/tendermint/tendermint/abci/types"
-	types0 "github.com/tendermint/tendermint/types"
 )
 
 // MockValidatorTopology is a mock of ValidatorTopology interface.
@@ -37,6 +36,18 @@ func (m *MockValidatorTopology) EXPECT() *MockValidatorTopologyMockRecorder {
 	return m.recorder
 }
 
+// AddForwarder mocks base method.
+func (m *MockValidatorTopology) AddForwarder(arg0 string) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "AddForwarder", arg0)
+}
+
+// AddForwarder indicates an expected call of AddForwarder.
+func (mr *MockValidatorTopologyMockRecorder) AddForwarder(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddForwarder", reflect.TypeOf((*MockValidatorTopology)(nil).AddForwarder), arg0)
+}
+
 // AddKeyRotate mocks base method.
 func (m *MockValidatorTopology) AddKeyRotate(arg0 context.Context, arg1 string, arg2 uint64, arg3 *v1.KeyRotateSubmission) error {
 	m.ctrl.T.Helper()
@@ -50,8 +61,6 @@ func (mr *MockValidatorTopologyMockRecorder) AddKeyRotate(arg0, arg1, arg2, arg3
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddKeyRotate", reflect.TypeOf((*MockValidatorTopology)(nil).AddKeyRotate), arg0, arg1, arg2, arg3)
 }
-
-
 
 // AllVegaPubKeys mocks base method.
 func (m *MockValidatorTopology) AllVegaPubKeys() []string {
@@ -67,44 +76,30 @@ func (mr *MockValidatorTopologyMockRecorder) AllVegaPubKeys() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AllVegaPubKeys", reflect.TypeOf((*MockValidatorTopology)(nil).AllVegaPubKeys))
 }
 
-// ProcessAnnounceNode mocks base method.
-func (m *MockValidatorTopology) ProcessAnnounceNode(arg0 context.Context, arg1 *v1.AnnounceNode) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ProcessAnnounceNode", arg0, arg1)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// ProcessAnnounceNode indicates an expected call of ProcessAnnounceNode.
-func (mr *MockValidatorTopologyMockRecorder) ProcessAnnounceNode(arg0, arg1 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessAnnounceNode", reflect.TypeOf((*MockValidatorTopology)(nil).ProcessAnnounceNode), arg0, arg1)
-}
-
-// ProcessValidatorHeartbeat mocks base method.
-func (m *MockValidatorTopology) ProcessValidatorHeartbeat(arg0 context.Context, arg1 *v1.ValidatorHeartbeat) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ProcessValidatorHeartbeat", arg0, arg1)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// ProcessValidatorHeartbeat indicates an expected call of ProcessValidatorHeartbeat.
-func (mr *MockValidatorTopologyMockRecorder) ProcessValidatorHeartbeat(arg0, arg1 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessValidatorHeartbeat", reflect.TypeOf((*MockValidatorTopology)(nil).ProcessValidatorHeartbeat), arg0, arg1)
-}
-
 // BeginBlock mocks base method.
-func (m *MockValidatorTopology) BeginBlock(arg0 context.Context, arg1 types.RequestBeginBlock, arg2 []*types0.Validator) {
+func (m *MockValidatorTopology) BeginBlock(arg0 context.Context, arg1 types.RequestBeginBlock) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "BeginBlock", arg0, arg1, arg2)
+	m.ctrl.Call(m, "BeginBlock", arg0, arg1)
 }
 
 // BeginBlock indicates an expected call of BeginBlock.
-func (mr *MockValidatorTopologyMockRecorder) BeginBlock(arg0, arg1, arg2 interface{}) *gomock.Call {
+func (mr *MockValidatorTopologyMockRecorder) BeginBlock(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BeginBlock", reflect.TypeOf((*MockValidatorTopology)(nil).BeginBlock), arg0, arg1, arg2)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BeginBlock", reflect.TypeOf((*MockValidatorTopology)(nil).BeginBlock), arg0, arg1)
+}
+
+// GetValidatorPowerUpdates mocks base method.
+func (m *MockValidatorTopology) GetValidatorPowerUpdates() []types.ValidatorUpdate {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetValidatorPowerUpdates")
+	ret0, _ := ret[0].([]types.ValidatorUpdate)
+	return ret0
+}
+
+// GetValidatorPowerUpdates indicates an expected call of GetValidatorPowerUpdates.
+func (mr *MockValidatorTopologyMockRecorder) GetValidatorPowerUpdates() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetValidatorPowerUpdates", reflect.TypeOf((*MockValidatorTopology)(nil).GetValidatorPowerUpdates))
 }
 
 // IsValidator mocks base method.
@@ -163,14 +158,30 @@ func (mr *MockValidatorTopologyMockRecorder) Len() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Len", reflect.TypeOf((*MockValidatorTopology)(nil).Len))
 }
 
-// UpdateValidatorSet mocks base method.
-func (m *MockValidatorTopology) UpdateValidatorSet(arg0 []string) {
+// ProcessAnnounceNode mocks base method.
+func (m *MockValidatorTopology) ProcessAnnounceNode(arg0 context.Context, arg1 *v1.AnnounceNode) error {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "UpdateValidatorSet", arg0)
+	ret := m.ctrl.Call(m, "ProcessAnnounceNode", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
 }
 
-// UpdateValidatorSet indicates an expected call of UpdateValidatorSet.
-func (mr *MockValidatorTopologyMockRecorder) UpdateValidatorSet(arg0 interface{}) *gomock.Call {
+// ProcessAnnounceNode indicates an expected call of ProcessAnnounceNode.
+func (mr *MockValidatorTopologyMockRecorder) ProcessAnnounceNode(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateValidatorSet", reflect.TypeOf((*MockValidatorTopology)(nil).UpdateValidatorSet), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessAnnounceNode", reflect.TypeOf((*MockValidatorTopology)(nil).ProcessAnnounceNode), arg0, arg1)
+}
+
+// ProcessValidatorHeartbeat mocks base method.
+func (m *MockValidatorTopology) ProcessValidatorHeartbeat(arg0 context.Context, arg1 *v1.ValidatorHeartbeat, arg2 func([]byte, []byte, []byte) error, arg3 func([]byte, []byte, string) error) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ProcessValidatorHeartbeat", arg0, arg1, arg2, arg3)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ProcessValidatorHeartbeat indicates an expected call of ProcessValidatorHeartbeat.
+func (mr *MockValidatorTopologyMockRecorder) ProcessValidatorHeartbeat(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessValidatorHeartbeat", reflect.TypeOf((*MockValidatorTopology)(nil).ProcessValidatorHeartbeat), arg0, arg1, arg2, arg3)
 }

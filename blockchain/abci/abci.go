@@ -28,11 +28,7 @@ const (
 
 func (app *App) Info(req types.RequestInfo) types.ResponseInfo {
 	if fn := app.OnInfo; fn != nil {
-		resp := fn(req)
-		// only return this if we actually reloaded a snapshot
-		if resp.LastBlockHeight != 0 {
-			return resp
-		}
+		return fn(req)
 	}
 	return app.BaseApplication.Info(req)
 }

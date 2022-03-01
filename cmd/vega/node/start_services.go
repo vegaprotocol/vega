@@ -41,6 +41,7 @@ import (
 	"code.vegaprotocol.io/vega/subscribers"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/validators"
+	"code.vegaprotocol.io/vega/validators/erc20multisig"
 	"code.vegaprotocol.io/vega/vegatime"
 	"github.com/spf13/afero"
 	tmtypes "github.com/tendermint/tendermint/abci/types"
@@ -102,16 +103,26 @@ func (n *NodeCommand) startServices(_ []string) (err error) {
 
 	n.limits = limits.New(n.Log, n.conf.Limits, n.broker)
 	n.timeService.NotifyOnTick(n.limits.OnTick)
+	n.netParams = netparams.New(n.Log, n.conf.NetworkParameters, n.broker)
+
+	n.erc20MultiSigTopology = erc20multisig.NewERC20MultisigTopology(
+		n.conf.ERC20MultiSig, n.Log, nil, n.broker, n.ethClient, n.ethConfirmations, n.netParams,
+	)
 
 	if n.conf.IsValidator() {
 		n.topology = validators.NewTopology(
-			n.Log, n.conf.Validators, validators.WrapNodeWallets(n.nodeWallets), n.broker, n.conf.IsValidator(), n.commander)
+			n.Log, n.conf.Validators, validators.WrapNodeWallets(n.nodeWallets), n.broker, n.conf.IsValidator(), n.commander, n.erc20MultiSigTopology)
 	} else {
-		n.topology = validators.NewTopology(n.Log, n.conf.Validators, nil, n.broker, n.conf.IsValidator(), nil)
+		n.topology = validators.NewTopology(n.Log, n.conf.Validators, nil, n.broker, n.conf.IsValidator(), nil, n.erc20MultiSigTopology)
 	}
 
 	n.witness = validators.NewWitness(n.Log, n.conf.Validators, n.topology, n.commander, n.timeService)
-	n.netParams = netparams.New(n.Log, n.conf.NetworkParameters, n.broker)
+
+	// this is done to go around circular deps...
+	n.erc20MultiSigTopology.SetWitness(n.witness)
+
+	n.timeService.NotifyOnTick(n.erc20MultiSigTopology.OnTick)
+
 	n.timeService.NotifyOnTick(n.netParams.OnChainTimeUpdate)
 	n.eventForwarder = evtforward.New(n.Log, n.conf.EvtForward, n.commander, n.timeService, n.topology)
 
@@ -122,7 +133,7 @@ func (n *NodeCommand) startServices(_ []string) (err error) {
 	}
 
 	n.stakingAccounts, n.stakeVerifier = staking.New(
-		n.Log, n.conf.Staking, n.broker, n.timeService, n.witness, n.ethClient, n.netParams, n.eventForwarder, n.conf.HaveEthClient(),
+		n.Log, n.conf.Staking, n.broker, n.timeService, n.witness, n.ethClient, n.netParams, n.eventForwarder, n.conf.HaveEthClient(), n.ethConfirmations,
 	)
 	n.epochService = epochtime.NewService(n.Log, n.conf.Epoch, n.timeService, n.broker)
 	n.epochService.NotifyOnEpoch(n.topology.OnEpochEvent)
@@ -140,10 +151,10 @@ func (n *NodeCommand) startServices(_ []string) (err error) {
 		// Use staking-loop to pretend a dummy builtin asssets deposited with the faucet was staked
 		stakingLoop := nullchain.NewStakingLoop(n.collateral, n.assets)
 		n.governance = governance.NewEngine(n.Log, n.conf.Governance, stakingLoop, n.broker, n.assets, n.witness, n.netParams, now)
-		n.delegation = delegation.New(n.Log, delegation.NewDefaultConfig(), n.broker, n.topology, stakingLoop, n.epochService, n.timeService)
+		n.delegation = delegation.New(n.Log, n.conf.Delegation, n.broker, n.topology, stakingLoop, n.epochService, n.timeService)
 	} else {
 		n.governance = governance.NewEngine(n.Log, n.conf.Governance, n.stakingAccounts, n.broker, n.assets, n.witness, n.netParams, now)
-		n.delegation = delegation.New(n.Log, delegation.NewDefaultConfig(), n.broker, n.topology, n.stakingAccounts, n.epochService, n.timeService)
+		n.delegation = delegation.New(n.Log, n.conf.Delegation, n.broker, n.topology, n.stakingAccounts, n.epochService, n.timeService)
 	}
 
 	n.rewards = rewards.New(n.Log, n.conf.Rewards, n.broker, n.delegation, n.epochService, n.collateral, n.timeService, n.feesTracker, marketTracker, n.topology)
@@ -182,7 +193,7 @@ func (n *NodeCommand) startServices(_ []string) (err error) {
 	n.topology.NotifyOnKeyChange(n.delegation.ValidatorKeyChanged, n.stakingAccounts.ValidatorKeyChanged, n.governance.ValidatorKeyChanged)
 
 	n.snapshot.AddProviders(n.checkpoint, n.collateral, n.governance, n.delegation, n.netParams, n.epochService, n.assets, n.banking,
-		n.notary, n.spam, n.stakingAccounts, n.stakeVerifier, n.limits, n.topology, n.eventForwarder, n.executionEngine, n.feesTracker, marketTracker, n.statevar)
+		n.notary, n.spam, n.stakingAccounts, n.stakeVerifier, n.limits, n.topology, n.eventForwarder, n.executionEngine, n.feesTracker, marketTracker, n.statevar, n.erc20MultiSigTopology)
 
 	// setup config reloads for all engines / services /etc
 	n.setupConfigWatchers()
@@ -255,6 +266,7 @@ func (n *NodeCommand) startBlockchain() (*processor.App, error) {
 		n.snapshot,
 		n.statevar,
 		n.blockchainClient,
+		n.erc20MultiSigTopology,
 		n.Version,
 	)
 
@@ -508,7 +520,22 @@ func (n *NodeCommand) setupNetParameters() error {
 			Param:   netparams.TransferMinTransferQuantumMultiple,
 			Watcher: n.banking.OnMinTransferQuantumMultiple,
 		},
-	)
+		netparams.WatchParam{
+			Param: netparams.BlockchainsEthereumConfig,
+			Watcher: func(_ context.Context, cfg interface{}) error {
+				// nothing to do if not a validator
+				if !n.conf.HaveEthClient() {
+					return nil
+				}
+				ethCfg, err := types.EthereumConfigFromUntypedProto(cfg)
+				if err != nil {
+					return fmt.Errorf("invalid ethereum configuration: %w", err)
+				}
+
+				n.ethConfirmations.UpdateConfirmations(ethCfg.Confirmations())
+				return nil
+			},
+		})
 }
 
 func (n *NodeCommand) setupConfigWatchers() {

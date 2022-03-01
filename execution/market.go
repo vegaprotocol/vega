@@ -123,6 +123,7 @@ type TargetStakeCalculator interface {
 	UpdateScalingFactor(sFactor num.Decimal) error
 	UpdateTimeWindow(tWindow time.Duration)
 	Changed() bool
+	StopSnapshots()
 }
 
 type MarketCollateral interface {
@@ -542,7 +543,7 @@ func (m *Market) GetMarketData() types.MarketData {
 		TargetStake:               targetStake,
 		SuppliedStake:             m.getSuppliedStake().String(),
 		PriceMonitoringBounds:     bounds,
-		MarketValueProxy:          m.lastMarketValueProxy.String(),
+		MarketValueProxy:          m.lastMarketValueProxy.BigInt().String(),
 		LiquidityProviderFeeShare: lpsToLiquidityProviderFeeShare(m.equityShares.lps),
 	}
 }
@@ -3113,6 +3114,11 @@ func (m *Market) cleanupOnReject(ctx context.Context) {
 		return
 	}
 
+	m.matching.StopSnapshots()
+	m.position.StopSnapshots()
+	m.liquidity.StopSnapshots()
+	m.tsCalc.StopSnapshots()
+
 	// then send the responses
 	m.broker.Send(events.NewTransferResponse(ctx, tresps))
 }
@@ -3178,6 +3184,7 @@ func (m *Market) distributeLiquidityFees(ctx context.Context) error {
 		return nil
 	}
 
+	m.feesTracker.UpdateFeesFromTransfers(feeTransfer.Transfers())
 	resp, err := m.collateral.TransferFees(ctx, m.GetID(), asset, feeTransfer)
 	if err != nil {
 		return fmt.Errorf("failed to transfer fees: %w", err)

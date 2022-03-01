@@ -74,6 +74,7 @@ func (e *Engine) StartEthereumEngine(
 		ethCfg.CollateralBridge(),
 		ethCfg.StakingBridge(),
 		ethCfg.VestingBridge(),
+		ethCfg.MultiSigControl(),
 		assets,
 	)
 	if err != nil {
@@ -86,6 +87,7 @@ func (e *Engine) StartEthereumEngine(
 		forwarder,
 		ethCfg.StakingBridge(),
 		ethCfg.VestingBridge(),
+		ethCfg.MultiSigControl(),
 	)
 
 	go func() {

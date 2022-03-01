@@ -184,9 +184,9 @@ func (a AssetDetailsErc20) IntoProto() *proto.AssetDetails_Erc20 {
 
 func (a AssetDetailsBuiltinAsset) ValidateAssetSource() (ProposalError, error) {
 	if a.BuiltinAsset.MaxFaucetAmountMint.IsZero() {
-		return ProposalError_PROPOSAL_ERROR_MISSING_BUILTIN_ASSET_FIELD, ErrMissingBuiltinAssetField
+		return ProposalErrorMissingBuiltinAssetField, ErrMissingBuiltinAssetField
 	}
-	return ProposalError_PROPOSAL_ERROR_UNSPECIFIED, nil
+	return ProposalErrorUnspecified, nil
 }
 
 func AssetDetailsERC20FromProto(p *proto.AssetDetails_Erc20) *AssetDetailsErc20 {
@@ -214,9 +214,9 @@ func (a AssetDetailsErc20) DeepClone() isAssetDetails {
 
 func (a AssetDetailsErc20) ValidateAssetSource() (ProposalError, error) {
 	if len(a.Erc20.ContractAddress) <= 0 {
-		return ProposalError_PROPOSAL_ERROR_MISSING_ERC20_CONTRACT_ADDRESS, ErrMissingERC20ContractAddress
+		return ProposalErrorMissingErc20ContractAddress, ErrMissingERC20ContractAddress
 	}
-	return ProposalError_PROPOSAL_ERROR_UNSPECIFIED, nil
+	return ProposalErrorUnspecified, nil
 }
 
 // DeepClone returns a deep clone of a.

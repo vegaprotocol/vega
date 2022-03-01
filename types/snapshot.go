@@ -23,6 +23,7 @@ type StateProvider interface {
 	GetHash(key string) ([]byte, error)
 	GetState(key string) ([]byte, []StateProvider, error)
 	LoadState(ctx context.Context, pl *Payload) ([]StateProvider, error)
+	Stopped() bool
 }
 
 // PostRestore is basically a StateProvider which, after the full core state is restored, expects a callback to finalise the state restore
@@ -72,6 +73,7 @@ const (
 	FloatingPointConsensusSnapshot SnapshotNamespace = "floatingpoint"
 	FeeTrackerSnapshot             SnapshotNamespace = "feestracker"
 	MarketTrackerSnapshot          SnapshotNamespace = "markettracker"
+	ERC20MultiSigTopologySnapshot  SnapshotNamespace = "erc20multisigtopology"
 
 	MaxChunkSize   = 16 * 1000 * 1000 // technically 16 * 1024 * 1024, but you know
 	IdealChunkSize = 10 * 1000 * 1000 // aim for 10MB

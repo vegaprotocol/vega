@@ -48,9 +48,6 @@ Feature: Replicate LP getting distressed during continuous trading, and after le
       | party2 | ETH/DEC21 | sell | 1      | 1100  | 0                | TYPE_LIMIT | TIF_GTC | sell-ref-2 |
       | party2 | ETH/DEC21 | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC | sell-ref-3 |
 
-    # this is a bit pointless, we're still in auction, price bounds aren't checked
-    # And the price monitoring bounds are []
-
     When the opening auction period ends for market "ETH/DEC21"
     Then the auction ends with a traded volume of "10" at a price of "1000"
     # target_stake = mark_price x max_oi x target_stake_scaling_factor x rf = 1000 x 10 x 1 x 0.1
@@ -89,33 +86,6 @@ Feature: Replicate LP getting distressed during continuous trading, and after le
       | party0 | ETH   | ETH/DEC21 | 0      | 0       | 0    |
     And the insurance pool balance should be "6250" for the market "ETH/DEC21"
 
-    # Then the parties should have the following account balances:
-    #   | party  | asset | market id | margin | general | bond |
-    #   | party0 | ETH   | ETH/DEC21 | 1789   | 0       | 0    |
-    # And the insurance pool balance should be "4646" for the market "ETH/DEC21"
-    # Then the market data for the market "ETH/DEC21" should be:
-    #   | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-    #   | 1010       | TRADING_MODE_CONTINUOUS | 1       | 993       | 1012      | 2323         | 5000           | 23            |
-    # # getting closer to distressed LP, still in continuous trading
-    # And the parties should have the following account balances:
-    #   | party  | asset | market id | margin | general | bond |
-    #   | party0 | ETH   | ETH/DEC21 | 1789   | 0       | 0    |
-
-    # When the network moves ahead "2" blocks
-    # And the parties place the following orders:
-    #   | party  | market id | side | volume | price | resulting trades | type       | tif     | reference      |
-    #   | party3 | ETH/DEC21 | buy  | 3      | 1012  | 0                | TYPE_LIMIT | TIF_GTC | party3-buy-3  |
-    #   | party2 | ETH/DEC21 | sell | 5      | 1012  | 2                | TYPE_LIMIT | TIF_GTC | party2-sell-3 |
-    # Then the market data for the market "ETH/DEC21" should be:
-    #   | mark price | trading mode                    | horizon | min bound | max bound | target stake | supplied stake | open interest |
-    #   | 1012       | TRADING_MODE_MONITORING_AUCTION | 1       | 1000      | 1020      | 2834         | 0              | 28            |
-    # And the parties should have the following account balances:
-    #   | party  | asset | market id | margin | general | bond |
-    #   | party0 | ETH   | ETH/DEC21 | 1787   | 0       | 0    |
-    # # make sure bond slashing moved money to insurance pool
-    # And the insurance pool balance should be "4646" for the market "ETH/DEC21"
-
-
   Scenario: LP gets distressed after auction
 
     Given the parties submit the following liquidity provision:
@@ -133,9 +103,6 @@ Feature: Replicate LP getting distressed during continuous trading, and after le
       | party2 | ETH/DEC21 | sell | 1      | 1010  | 0                | TYPE_LIMIT | TIF_GTC | sell-ref-1 |
       | party2 | ETH/DEC21 | sell | 1      | 1100  | 0                | TYPE_LIMIT | TIF_GTC | sell-ref-2 |
       | party2 | ETH/DEC21 | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC | sell-ref-3 |
-
-    # this is a bit pointless, we're still in auction, price bounds aren't checked
-    # And the price monitoring bounds are []
 
     When the opening auction period ends for market "ETH/DEC21"
     Then the auction ends with a traded volume of "10" at a price of "1000"
@@ -198,7 +165,5 @@ Feature: Replicate LP getting distressed during continuous trading, and after le
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general | bond |
       | party0 | ETH   | ETH/DEC21 | 928    | 1573    | 0    |
-      # count balances did not match for party(party0)
-      # values before uint stuff
-      # | party0 | ETH   | ETH/DEC21 | 253    | 1419    | 0    |
+
     And the insurance pool balance should be "3616" for the market "ETH/DEC21"
