@@ -15,10 +15,11 @@ import (
 	"code.vegaprotocol.io/data-node/logging"
 	"code.vegaprotocol.io/data-node/vegatime"
 	protoapi "code.vegaprotocol.io/protos/data-node/api/v1"
-	"code.vegaprotocol.io/protos/vega"
+	v2 "code.vegaprotocol.io/protos/data-node/api/v2"
 	types "code.vegaprotocol.io/protos/vega"
 	vegaprotoapi "code.vegaprotocol.io/protos/vega/api/v1"
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
+	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
 	oraclespb "code.vegaprotocol.io/protos/vega/oracles/v1"
 )
 
@@ -45,14 +46,20 @@ type TradingDataServiceClient interface {
 	protoapi.TradingDataServiceClient
 }
 
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/trading_data_service_client_v2_mock.go -package mocks code.vegaprotocol.io/data-node/gateway/graphql TradingDataServiceClientV2
+type TradingDataServiceClientV2 interface {
+	v2.TradingDataServiceClient
+}
+
 // VegaResolverRoot is the root resolver for all graphql types
 type VegaResolverRoot struct {
 	gateway.Config
 
-	log                *logging.Logger
-	tradingProxyClient CoreProxyServiceClient
-	tradingDataClient  TradingDataServiceClient
-	r                  allResolver
+	log                 *logging.Logger
+	tradingProxyClient  CoreProxyServiceClient
+	tradingDataClient   TradingDataServiceClient
+	tradingDataClientV2 TradingDataServiceClientV2
+	r                   allResolver
 }
 
 // NewResolverRoot instantiate a graphql root resolver
@@ -61,14 +68,16 @@ func NewResolverRoot(
 	config gateway.Config,
 	tradingClient CoreProxyServiceClient,
 	tradingDataClient TradingDataServiceClient,
+	tradingDataClientV2 TradingDataServiceClientV2,
 ) *VegaResolverRoot {
 
 	return &VegaResolverRoot{
-		log:                log,
-		Config:             config,
-		tradingProxyClient: tradingClient,
-		tradingDataClient:  tradingDataClient,
-		r:                  allResolver{log, tradingDataClient},
+		log:                 log,
+		Config:              config,
+		tradingProxyClient:  tradingClient,
+		tradingDataClient:   tradingDataClient,
+		tradingDataClientV2: tradingDataClientV2,
+		r:                   allResolver{log, tradingDataClient},
 	}
 }
 
@@ -219,6 +228,10 @@ func (r *VegaResolverRoot) UpdateNetworkParameter() UpdateNetworkParameterResolv
 	return (*updateNetworkParameterResolver)(r)
 }
 
+func (r *VegaResolverRoot) NewFreeform() NewFreeformResolver {
+	return (*newFreeformResolver)(r)
+}
+
 func (r *VegaResolverRoot) PeggedOrder() PeggedOrderResolver {
 	return (*myPeggedOrderResolver)(r)
 }
@@ -271,8 +284,17 @@ func (r *VegaResolverRoot) EpochTimestamps() EpochTimestampsResolver {
 	return (*epochTimestampsResolver)(r)
 }
 
+// TODO: RewardPerAssetDetail is deprecated, remove once front end has caught up
 func (r *VegaResolverRoot) RewardPerAssetDetail() RewardPerAssetDetailResolver {
 	return (*rewardPerAssetDetailResolver)(r)
+}
+
+func (r *VegaResolverRoot) Reward() RewardResolver {
+	return (*rewardResolver)(r)
+}
+
+func (r *VegaResolverRoot) RewardSummary() RewardSummaryResolver {
+	return (*rewardSummaryResolver)(r)
 }
 
 func (r *VegaResolverRoot) StakeLinking() StakeLinkingResolver {
@@ -283,8 +305,19 @@ func (r *VegaResolverRoot) PartyStake() PartyStakeResolver {
 	return (*partyStakeResolver)(r)
 }
 
-func (r *VegaResolverRoot) Reward() RewardResolver {
-	return (*rewardResolver)(r)
+func (r *VegaResolverRoot) Statistics() StatisticsResolver {
+	return (*statisticsResolver)(r)
+}
+
+func (r *VegaResolverRoot) Transfer() TransferResolver {
+	return (*transferResolver)(r)
+}
+
+func (r *VegaResolverRoot) OneOffTransfer() OneOffTransferResolver {
+	return (*oneoffTransferResolver)(r)
+}
+func (r *VegaResolverRoot) RecurringTransfer() RecurringTransferResolver {
+	return (*recurringTransferResolver)(r)
 }
 
 // LiquidityOrder resolver
@@ -380,6 +413,12 @@ func (r *myDepositResolver) Status(ctx context.Context, obj *types.Deposit) (Dep
 // BEGIN: Query Resolver
 
 type myQueryResolver VegaResolverRoot
+
+func (r *myQueryResolver) Transfers(
+	ctx context.Context, pubkey string, isFrom *bool, isTo *bool,
+) ([]*eventspb.Transfer, error) {
+	return nil, nil
+}
 
 func (r *myQueryResolver) LastBlockHeight(ctx context.Context) (string, error) {
 	resp, err := r.tradingProxyClient.LastBlockHeight(ctx, &vegaprotoapi.LastBlockHeightRequest{})
@@ -749,6 +788,20 @@ func (r *myQueryResolver) NewAssetProposals(ctx context.Context, inState *Propos
 	return resp.Data, nil
 }
 
+func (r *myQueryResolver) NewFreeformProposals(ctx context.Context, inState *ProposalState) ([]*types.GovernanceData, error) {
+	filter, err := inState.ToOptionalProposalState()
+	if err != nil {
+		return nil, err
+	}
+	resp, err := r.tradingDataClient.GetNewFreeformProposals(ctx, &protoapi.GetNewFreeformProposalsRequest{
+		SelectInState: filter,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return resp.Data, nil
+}
+
 func (r *myQueryResolver) NodeData(ctx context.Context) (*types.NodeData, error) {
 	resp, err := r.tradingDataClient.GetNodeData(ctx, &protoapi.GetNodeDataRequest{})
 	if err != nil {
@@ -808,12 +861,41 @@ func (r *myQueryResolver) Epoch(ctx context.Context, id *string) (*types.Epoch, 
 	return resp.Epoch, nil
 }
 
-func (r *myQueryResolver) RewardDetails(ctx context.Context, partyID string) ([]*types.RewardPerAssetDetail, error) {
-	req := &protoapi.GetRewardDetailsRequest{
-		PartyId: partyID,
+func (r *myQueryResolver) Statistics(ctx context.Context) (*vegaprotoapi.Statistics, error) {
+	req := &vegaprotoapi.StatisticsRequest{}
+	resp, err := r.tradingProxyClient.Statistics(ctx, req)
+	if err != nil {
+		return nil, err
 	}
-	resp, _ := r.tradingDataClient.GetRewardDetails(ctx, req)
-	return resp.RewardDetails, nil
+	return resp.GetStatistics(), nil
+}
+
+func (r *myQueryResolver) HistoricBalances(ctx context.Context, filter *v2.AccountFilter, groupBy []*v2.AccountField) ([]*v2.AggregatedBalance, error) {
+	gb := make([]v2.AccountField, len(groupBy))
+	for i, g := range groupBy {
+		if g == nil {
+			return nil, fmt.Errorf("Nil group by")
+		}
+		gb[i] = *g
+	}
+	req := &v2.QueryBalanceHistoryRequest{}
+	req.GroupBy = gb
+	req.Filter = filter
+
+	resp, err := r.tradingDataClientV2.QueryBalanceHistory(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	return resp.GetBalances(), nil
+}
+
+func (r *myQueryResolver) NetworkLimits(ctx context.Context) (*types.NetworkLimits, error) {
+	req := &v2.GetNetworkLimitsRequest{}
+	resp, err := r.tradingDataClientV2.GetNetworkLimits(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	return resp.GetLimits(), nil
 }
 
 // END: Root Resolver
@@ -858,20 +940,79 @@ func makePagination(skip, first, last *int) *protoapi.Pagination {
 	}
 }
 
+func makeApiV2Pagination(skip, first, last *int) *v2.Pagination {
+	var (
+		offset, limit uint64
+		descending    bool
+	)
+	if skip != nil {
+		offset = uint64(*skip)
+	}
+	if last != nil {
+		limit = uint64(*last)
+		descending = true
+	} else if first != nil {
+		limit = uint64(*first)
+	}
+	return &v2.Pagination{
+		Skip:       offset,
+		Limit:      limit,
+		Descending: descending,
+	}
+}
+
+// TODO: RewardDetails have been depricated, remove once front end catches up
 func (r *myPartyResolver) RewardDetails(
 	ctx context.Context,
 	party *types.Party,
-) ([]*types.RewardPerAssetDetail, error) {
-	req := &protoapi.GetRewardDetailsRequest{
+) ([]*types.RewardSummary, error) {
+	req := &protoapi.GetRewardSummariesRequest{
 		PartyId: party.Id,
 	}
-	resp, err := r.tradingDataClient.GetRewardDetails(ctx, req)
-	if err != nil {
-		// not returning an error here, as it's we just don't have any rewards
-		// for the given party
-		return nil, nil
+	resp, err := r.tradingDataClient.GetRewardSummaries(ctx, req)
+	return resp.Summaries, err
+}
+
+func (r *myPartyResolver) Rewards(
+	ctx context.Context,
+	party *types.Party,
+	asset *string,
+	skip, first, last *int,
+) ([]*types.Reward, error) {
+
+	var assetID string
+	if asset != nil {
+		assetID = *asset
 	}
-	return resp.RewardDetails, nil
+
+	p := makePagination(skip, first, last)
+
+	req := &protoapi.GetRewardsRequest{
+		PartyId:    party.Id,
+		AssetId:    assetID,
+		Pagination: p,
+	}
+	resp, err := r.tradingDataClient.GetRewards(ctx, req)
+	return resp.Rewards, err
+}
+
+func (r *myPartyResolver) RewardSummaries(
+	ctx context.Context,
+	party *types.Party,
+	asset *string) ([]*types.RewardSummary, error) {
+
+	var assetID string
+	if asset != nil {
+		assetID = *asset
+	}
+
+	req := &protoapi.GetRewardSummariesRequest{
+		PartyId: party.Id,
+		AssetId: assetID,
+	}
+
+	resp, err := r.tradingDataClient.GetRewardSummaries(ctx, req)
+	return resp.Summaries, err
 }
 
 func (r *myPartyResolver) Stake(
@@ -1006,7 +1147,7 @@ func (r *myPartyResolver) Positions(ctx context.Context, party *types.Party) ([]
 }
 
 func (r *myPartyResolver) Accounts(ctx context.Context, party *types.Party,
-	marketID *string, asset *string, accType *AccountType) ([]*types.Account, error) {
+	marketID *string, asset *string, accType *types.AccountType) ([]*types.Account, error) {
 	if party == nil {
 		return nil, errors.New("a party must be specified when querying accounts")
 	}
@@ -1024,7 +1165,7 @@ func (r *myPartyResolver) Accounts(ctx context.Context, party *types.Party,
 		asst = *asset
 	}
 	if accType != nil {
-		accTy, err = convertAccountTypeToProto(*accType)
+		accTy = *accType
 		if err != nil ||
 			(accTy != types.AccountType_ACCOUNT_TYPE_GENERAL &&
 				accTy != types.AccountType_ACCOUNT_TYPE_MARGIN &&
@@ -1108,9 +1249,16 @@ func (r *myPartyResolver) Votes(ctx context.Context, party *types.Party) ([]*Pro
 	return result, nil
 }
 
-func (r *myPartyResolver) Delegations(ctx context.Context, obj *types.Party, nodeID *string) ([]*types.Delegation, error) {
+func (r *myPartyResolver) Delegations(
+	ctx context.Context,
+	obj *types.Party,
+	nodeID *string,
+	skip, first, last *int,
+) ([]*types.Delegation, error) {
+
 	req := &protoapi.DelegationsRequest{
-		Party: obj.Id,
+		Party:      obj.Id,
+		Pagination: makePagination(skip, first, last),
 	}
 
 	if nodeID != nil {
@@ -1669,10 +1817,6 @@ func (r *myPeggedOrderResolver) Reference(ctx context.Context, obj *types.Pegged
 	return convertPeggedReferenceFromProto(obj.Reference)
 }
 
-func (r *myPeggedOrderResolver) Offset(ctx context.Context, obj *types.PeggedOrder) (string, error) {
-	return strconv.FormatInt(obj.Offset, 10), nil
-}
-
 // END: PeggedOrder Resolver
 
 // BEGIN: Position Resolver
@@ -1778,7 +1922,7 @@ func (r *mySubscriptionResolver) Delegations(ctx context.Context, party, nodeID 
 	return ch, nil
 }
 
-func (r *mySubscriptionResolver) RewardDetails(ctx context.Context, assetID, party *string) (<-chan *vega.RewardDetails, error) {
+func (r *mySubscriptionResolver) Rewards(ctx context.Context, assetID, party *string) (<-chan *types.Reward, error) {
 	var a, p string
 	if assetID != nil {
 		a = *assetID
@@ -1787,16 +1931,16 @@ func (r *mySubscriptionResolver) RewardDetails(ctx context.Context, assetID, par
 		p = *party
 	}
 
-	req := &protoapi.ObserveRewardDetailsRequest{
+	req := &protoapi.ObserveRewardsRequest{
 		AssetId: a,
 		Party:   p,
 	}
-	stream, err := r.tradingDataClient.ObserveRewardDetails(ctx, req)
+	stream, err := r.tradingDataClient.ObserveRewards(ctx, req)
 	if err != nil {
 		return nil, customErrorFromStatus(err)
 	}
 
-	ch := make(chan *vega.RewardDetails)
+	ch := make(chan *types.Reward)
 	go func() {
 		defer func() {
 			stream.CloseSend()
@@ -1812,7 +1956,7 @@ func (r *mySubscriptionResolver) RewardDetails(ctx context.Context, assetID, par
 				r.log.Error("reward details: stream closed", logging.Error(err))
 				break
 			}
-			ch <- rd.RewardDetails
+			ch <- rd.Reward
 		}
 	}()
 
@@ -1892,7 +2036,7 @@ func (r *mySubscriptionResolver) MarketData(ctx context.Context, marketID *strin
 	return ch, nil
 }
 
-func (r *mySubscriptionResolver) Accounts(ctx context.Context, marketID *string, partyID *string, asset *string, typeArg *AccountType) (<-chan *types.Account, error) {
+func (r *mySubscriptionResolver) Accounts(ctx context.Context, marketID *string, partyID *string, asset *string, typeArg *types.AccountType) (<-chan *types.Account, error) {
 	var (
 		mkt, pty string
 		ty       types.AccountType
@@ -1909,7 +2053,7 @@ func (r *mySubscriptionResolver) Accounts(ctx context.Context, marketID *string,
 		pty = *partyID
 	}
 	if typeArg != nil {
-		ty = typeArg.IntoProto()
+		ty = *typeArg
 	}
 
 	req := &protoapi.AccountsSubscribeRequest{
@@ -2309,7 +2453,7 @@ func (r *mySubscriptionResolver) BusEvents(ctx context.Context, types []BusEvent
 	// about 10MB message size allowed
 	msgSize := grpc.MaxCallRecvMsgSize(mb * 10e6)
 
-	// build the bidirectionnal stream connection
+	// build the bidirectional stream connection
 	stream, err := r.tradingDataClient.ObserveEventBus(ctx, msgSize)
 	if err != nil {
 		return nil, customErrorFromStatus(err)
@@ -2403,10 +2547,6 @@ func (r *myAccountResolver) Market(ctx context.Context, acc *types.Account) (*ty
 	return nil, nil
 }
 
-func (r *myAccountResolver) Type(ctx context.Context, obj *types.Account) (AccountType, error) {
-	return convertAccountTypeFromProto(obj.Type)
-}
-
 func (r *myAccountResolver) Asset(ctx context.Context, obj *types.Account) (*types.Asset, error) {
 	return r.r.getAssetByID(ctx, obj.Asset)
 }
@@ -2423,4 +2563,91 @@ func getParty(ctx context.Context, log *logging.Logger, client TradingDataServic
 		return nil, customErrorFromStatus(err)
 	}
 	return res.Party, nil
+}
+
+// Market Data Resolvers
+
+// GetMarketDataHistoryByID returns all the market data information for a given market between the dates specified.
+func (r *myQueryResolver) GetMarketDataHistoryByID(ctx context.Context, id string, start, end, skip, first, last *int) ([]*types.MarketData, error) {
+	var startTime, endTime int64
+
+	if start != nil {
+		startTime = int64(*start)
+	}
+
+	if end != nil {
+		endTime = int64(*end)
+	}
+
+	pagination := makeApiV2Pagination(skip, first, last)
+
+	if startTime > 0 && endTime > 0 {
+		return r.getMarketDataHistoryByID(ctx, id, startTime, endTime, pagination)
+	}
+
+	if startTime > 0 {
+		return r.getMarketDataHistoryFromDateByID(ctx, id, startTime, pagination)
+	}
+
+	if endTime > 0 {
+		return r.getMarketDataHistoryToDateByID(ctx, id, endTime, pagination)
+	}
+
+	return r.getMarketDataByID(ctx, id)
+}
+
+func (r *myQueryResolver) getMarketData(ctx context.Context, req *v2.GetMarketDataHistoryByIDRequest) ([]*types.MarketData, error) {
+	resp, err := r.tradingDataClientV2.GetMarketDataHistoryByID(ctx, req)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.GetMarketData(), nil
+}
+
+func (r *myQueryResolver) getMarketDataByID(ctx context.Context, id string) ([]*types.MarketData, error) {
+	req := v2.GetMarketDataHistoryByIDRequest{
+		MarketId: id,
+	}
+
+	return r.getMarketData(ctx, &req)
+}
+
+func (r *myQueryResolver) getMarketDataHistoryByID(ctx context.Context, id string, start, end int64, pagination *v2.Pagination) ([]*types.MarketData, error) {
+	startTime := time.Unix(start, 0).UnixNano()
+	endTime := time.Unix(end, 0).UnixNano()
+
+	req := v2.GetMarketDataHistoryByIDRequest{
+		MarketId:       id,
+		StartTimestamp: &startTime,
+		EndTimestamp:   &endTime,
+		Pagination:     pagination,
+	}
+
+	return r.getMarketData(ctx, &req)
+}
+
+func (r *myQueryResolver) getMarketDataHistoryFromDateByID(ctx context.Context, id string, start int64, pagination *v2.Pagination) ([]*types.MarketData, error) {
+	startTime := time.Unix(start, 0).UnixNano()
+
+	req := v2.GetMarketDataHistoryByIDRequest{
+		MarketId:       id,
+		StartTimestamp: &startTime,
+		Pagination:     pagination,
+	}
+
+	return r.getMarketData(ctx, &req)
+}
+
+func (r *myQueryResolver) getMarketDataHistoryToDateByID(ctx context.Context, id string, end int64, pagination *v2.Pagination) ([]*types.MarketData, error) {
+	endTime := time.Unix(end, 0).UnixNano()
+
+	req := v2.GetMarketDataHistoryByIDRequest{
+		MarketId:     id,
+		EndTimestamp: &endTime,
+		Pagination:   pagination,
+	}
+
+	return r.getMarketData(ctx, &req)
 }

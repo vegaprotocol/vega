@@ -5,35 +5,36 @@
 package mocks
 
 import (
+	reflect "reflect"
+
 	v1 "code.vegaprotocol.io/protos/vega/oracles/v1"
 	gomock "github.com/golang/mock/gomock"
-	reflect "reflect"
 )
 
-// MockOracleService is a mock of OracleService interface
+// MockOracleService is a mock of OracleService interface.
 type MockOracleService struct {
 	ctrl     *gomock.Controller
 	recorder *MockOracleServiceMockRecorder
 }
 
-// MockOracleServiceMockRecorder is the mock recorder for MockOracleService
+// MockOracleServiceMockRecorder is the mock recorder for MockOracleService.
 type MockOracleServiceMockRecorder struct {
 	mock *MockOracleService
 }
 
-// NewMockOracleService creates a new mock instance
+// NewMockOracleService creates a new mock instance.
 func NewMockOracleService(ctrl *gomock.Controller) *MockOracleService {
 	mock := &MockOracleService{ctrl: ctrl}
 	mock.recorder = &MockOracleServiceMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockOracleService) EXPECT() *MockOracleServiceMockRecorder {
 	return m.recorder
 }
 
-// GetOracleDataBySpecID mocks base method
+// GetOracleDataBySpecID mocks base method.
 func (m *MockOracleService) GetOracleDataBySpecID(arg0 string) ([]v1.OracleData, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetOracleDataBySpecID", arg0)
@@ -42,13 +43,13 @@ func (m *MockOracleService) GetOracleDataBySpecID(arg0 string) ([]v1.OracleData,
 	return ret0, ret1
 }
 
-// GetOracleDataBySpecID indicates an expected call of GetOracleDataBySpecID
+// GetOracleDataBySpecID indicates an expected call of GetOracleDataBySpecID.
 func (mr *MockOracleServiceMockRecorder) GetOracleDataBySpecID(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOracleDataBySpecID", reflect.TypeOf((*MockOracleService)(nil).GetOracleDataBySpecID), arg0)
 }
 
-// GetSpecByID mocks base method
+// GetSpecByID mocks base method.
 func (m *MockOracleService) GetSpecByID(arg0 string) (v1.OracleSpec, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetSpecByID", arg0)
@@ -57,13 +58,13 @@ func (m *MockOracleService) GetSpecByID(arg0 string) (v1.OracleSpec, error) {
 	return ret0, ret1
 }
 
-// GetSpecByID indicates an expected call of GetSpecByID
+// GetSpecByID indicates an expected call of GetSpecByID.
 func (mr *MockOracleServiceMockRecorder) GetSpecByID(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSpecByID", reflect.TypeOf((*MockOracleService)(nil).GetSpecByID), arg0)
 }
 
-// GetSpecs mocks base method
+// GetSpecs mocks base method.
 func (m *MockOracleService) GetSpecs() []v1.OracleSpec {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetSpecs")
@@ -71,7 +72,7 @@ func (m *MockOracleService) GetSpecs() []v1.OracleSpec {
 	return ret0
 }
 
-// GetSpecs indicates an expected call of GetSpecs
+// GetSpecs indicates an expected call of GetSpecs.
 func (mr *MockOracleServiceMockRecorder) GetSpecs() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSpecs", reflect.TypeOf((*MockOracleService)(nil).GetSpecs))

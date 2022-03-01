@@ -5,35 +5,36 @@
 package mocks
 
 import (
+	reflect "reflect"
+
 	v1 "code.vegaprotocol.io/protos/vega/commands/v1"
 	gomock "github.com/golang/mock/gomock"
-	reflect "reflect"
 )
 
-// MockNotaryService is a mock of NotaryService interface
+// MockNotaryService is a mock of NotaryService interface.
 type MockNotaryService struct {
 	ctrl     *gomock.Controller
 	recorder *MockNotaryServiceMockRecorder
 }
 
-// MockNotaryServiceMockRecorder is the mock recorder for MockNotaryService
+// MockNotaryServiceMockRecorder is the mock recorder for MockNotaryService.
 type MockNotaryServiceMockRecorder struct {
 	mock *MockNotaryService
 }
 
-// NewMockNotaryService creates a new mock instance
+// NewMockNotaryService creates a new mock instance.
 func NewMockNotaryService(ctrl *gomock.Controller) *MockNotaryService {
 	mock := &MockNotaryService{ctrl: ctrl}
 	mock.recorder = &MockNotaryServiceMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockNotaryService) EXPECT() *MockNotaryServiceMockRecorder {
 	return m.recorder
 }
 
-// GetByID mocks base method
+// GetByID mocks base method.
 func (m *MockNotaryService) GetByID(arg0 string) ([]v1.NodeSignature, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetByID", arg0)
@@ -42,7 +43,7 @@ func (m *MockNotaryService) GetByID(arg0 string) ([]v1.NodeSignature, error) {
 	return ret0, ret1
 }
 
-// GetByID indicates an expected call of GetByID
+// GetByID indicates an expected call of GetByID.
 func (mr *MockNotaryServiceMockRecorder) GetByID(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByID", reflect.TypeOf((*MockNotaryService)(nil).GetByID), arg0)

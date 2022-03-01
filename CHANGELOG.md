@@ -1,18 +1,66 @@
 # Changelog
 
-## Unreleased (0.48.0)
+## Unreleased (0.50.0)
 
 ### 🚨 Breaking changes
-- [](https://github.com/vegaprotocol/data-node/pull/) -
+- [](https://github.com/vegaprotocol/data-node/pull/xxx) -
 
 ### 🗑️  Deprecation
-- [](https://github.com/vegaprotocol/data-node/pull/) -
+- [](https://github.com/vegaprotocol/data-node/pull/xxx) -
 
 ### 🛠  Improvements
-- [](https://github.com/vegaprotocol/data-node/pull/) -
+- [](https://github.com/vegaprotocol/data-node/pull/xxx) -
 
 ### 🐛 Fixes
-- [](https://github.com/vegaprotocol/data-node/pull/) -
+- [](https://github.com/vegaprotocol/data-node/pull/xxx) -
+
+
+## 0.49.0
+
+### 🛠  Improvements
+- [322](https://github.com/vegaprotocol/data-node/pull/322) - Update the definition of done and issue templates
+- [351](https://github.com/vegaprotocol/data-node/pull/351) - Update to latest Vega and downgrade to Tendermint `v.34.15`
+- [352](https://github.com/vegaprotocol/data-node/pull/352) - Update to latest Vega
+- [356](https://github.com/vegaprotocol/data-node/pull/356) - Added support for fractional positions
+- [251](https://github.com/vegaprotocol/data-node/pull/251) - Updated proto and core and added support for the new events (state var and network limits)
+- [285](https://github.com/vegaprotocol/data-node/pull/285) - Update changelog for `47.1`
+- [244](https://github.com/vegaprotocol/data-node/pull/244) - Constrain the number of epochs for which we keep delegations in memory
+- [250](https://github.com/vegaprotocol/data-node/pull/250) - Update go requirement to 1.17
+- [251](https://github.com/vegaprotocol/data-node/pull/251) - Updated proto and core and added support for the new events (state var and network limits)
+- [289](https://github.com/vegaprotocol/data-node/pull/289) - Add support for pagination of delegations
+- [254](https://github.com/vegaprotocol/data-node/pull/254) - Move to `ghcr.io` container registry
+- [290](https://github.com/vegaprotocol/data-node/pull/290) - Update pegged orders offset
+- [296](https://github.com/vegaprotocol/data-node/pull/296) - Expose validator performance score attributes on Node object
+- [298](https://github.com/vegaprotocol/data-node/pull/298) - Remove creation of vendor directory
+- [304](https://github.com/vegaprotocol/data-node/pull/304) - Added endpoint to support multiple versions of transaction request
+- [316](https://github.com/vegaprotocol/data-node/pull/316) - Add basic framework for connecting to `postgres` database
+- [323](https://github.com/vegaprotocol/data-node/pull/323) - Add initial `sql` storage package
+- [324](https://github.com/vegaprotocol/data-node/pull/324) - Embed the facility to run a file based event store into the datanode
+- [326](https://github.com/vegaprotocol/data-node/pull/326) - Add `BlockNr()` methods to implementers of event interface
+- [331](https://github.com/vegaprotocol/data-node/pull/331) - Add support for running an embedded version of `Postgresql`
+- [336](https://github.com/vegaprotocol/data-node/pull/336) - Remove trading mode and future maturity
+- [338](https://github.com/vegaprotocol/data-node/pull/336) - Add `grpcui` web user interface
+- [340](https://github.com/vegaprotocol/data-node/pull/340) - Add brokers for the new data stores to support sequential and concurrent event processing
+- [327](https://github.com/vegaprotocol/data-node/pull/327) - Add balances `sql` store and upgrade `gqlgen`
+- [329](https://github.com/vegaprotocol/data-node/pull/327) - Add orders `sql` store
+- [354](https://github.com/vegaprotocol/data-node/pull/354) - Add network limits store and API
+- [338](https://github.com/vegaprotocol/data-node/pull/338) - Fix compatibility with new `protoc-gen-xxx` tools used in `protos` repository
+- [330](https://github.com/vegaprotocol/data-node/pull/330) - Add support for storing market data events in the SQL store
+- [355](https://github.com/vegaprotocol/data-node/pull/355) - Persist trade data to SQL store
+
+### 🐛 Fixes
+- [277](https://github.com/vegaprotocol/data-node/pull/277) - Now returns not-found error instead of internal error when proposal not found
+- [274](https://github.com/vegaprotocol/data-node/issues/274) - Bug fix for proposal NO vote showing incorrect weight and tokens
+- [288](https://github.com/vegaprotocol/data-node/pull/288) - Add back `assetId` GraphQL resolver for `RewardPerAssetDetail`, change `RiskFactor` fields to strings.
+- [317](https://github.com/vegaprotocol/data-node/pull/317) - Fix `graphql` support for free-form governance proposals
+- [345](https://github.com/vegaprotocol/data-node/issues/345) - Add the missing events conversion to data node
+- [360](https://github.com/vegaprotocol/data-node/pull/360) - Market data record should be using the sequence number from the event
+
+## 0.47.1
+*`2021-12-20`*
+
+### 🐛 Fixes
+- [244](https://github.com/vegaprotocol/data-node/pull/244) - Constrain the number of epochs for which we keep delegations in memory
 
 
 ## 0.47.0
@@ -21,6 +69,7 @@
 ### 🛠 Improvements
 - [232](https://github.com/vegaprotocol/data-node/pull/232) - Tidy up repo to align with team processes and workflows
 - [235](https://github.com/vegaprotocol/data-node/pull/235) - Add key rotation support
+- [246](https://github.com/vegaprotocol/data-node/pull/246) - Add statistics to GraphQL API
 
 ### 🐛 Fixes
 - [233](https://github.com/vegaprotocol/data-node/pull/233) - Don't return API error when no rewards for party
@@ -32,6 +81,7 @@
 *`2021-11-22`*
 
 ### 🛠 Improvements
+- [238](https://github.com/vegaprotocol/data-node/pull/230) - Add filtering/pagination GraphQL schema for rewards
 - [230](https://github.com/vegaprotocol/data-node/pull/230) - Release Version `0.46.0`
 - [229](https://github.com/vegaprotocol/data-node/pull/229) - Add handling for checking/storing Chain ID
 - [226](https://github.com/vegaprotocol/data-node/pull/226) - Added subscriptions for delegations & rewards

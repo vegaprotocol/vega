@@ -11,9 +11,7 @@ import (
 	proto "code.vegaprotocol.io/protos/vega"
 )
 
-var (
-	ErrProposalNotFound = errors.New("proposal not found")
-)
+var ErrProposalNotFound = errors.New("proposal not found")
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/event_bus_mock.go -package mocks code.vegaprotocol.io/data-node/governance EventBus
 type EventBus interface {
@@ -313,6 +311,17 @@ func (s *Svc) GetNetworkParametersProposals(inState *proto.Proposal_State) []*pr
 func (s *Svc) GetNewAssetProposals(inState *proto.Proposal_State) []*proto.GovernanceData {
 	filters := []subscribers.ProposalFilter{
 		subscribers.ProposalByChange(subscribers.NewAssetPropopsal),
+	}
+	if inState != nil {
+		filters = append(filters, subscribers.ProposalByState(*inState))
+	}
+	return s.gov.Filter(true, filters...)
+}
+
+// GetNewFreeformProposals returns proposals aiming to create a new freeform proposal
+func (s *Svc) GetNewFreeformProposals(inState *proto.Proposal_State) []*proto.GovernanceData {
+	filters := []subscribers.ProposalFilter{
+		subscribers.ProposalByChange(subscribers.NewFreeformProposal),
 	}
 	if inState != nil {
 		filters = append(filters, subscribers.ProposalByState(*inState))

@@ -81,6 +81,15 @@ func toEvent(ctx context.Context, be *eventspb.BusEvent) events.Event {
 		return events.CheckpointEventFromStream(ctx, be)
 	case eventspb.BusEventType_BUS_EVENT_TYPE_KEY_ROTATION:
 		return events.KeyRotationEventFromStream(ctx, be)
+	case eventspb.BusEventType_BUS_EVENT_TYPE_STATE_VAR:
+		return events.StateVarEventFromStream(ctx, be)
+	case eventspb.BusEventType_BUS_EVENT_TYPE_NETWORK_LIMITS:
+		return events.NetworkLimitsEventFromStream(ctx, be)
+	case eventspb.BusEventType_BUS_EVENT_TYPE_TRANSFER:
+		return events.TransferFundsEventFromStream(ctx, be)
+	case eventspb.BusEventType_BUS_EVENT_TYPE_VALIDATOR_RANKING:
+		return events.ValidatorRankingEventFromStream(ctx, be)
 	}
+
 	return nil
 }

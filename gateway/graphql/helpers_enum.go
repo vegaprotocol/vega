@@ -9,6 +9,24 @@ import (
 	oraclesv1 "code.vegaprotocol.io/protos/vega/oracles/v1"
 )
 
+func convertTransferStatusFromProto(x eventspb.Transfer_Status) (TransferStatus, error) {
+	switch x {
+	case eventspb.Transfer_STATUS_PENDING:
+		return TransferStatusPending, nil
+	case eventspb.Transfer_STATUS_DONE:
+		return TransferStatusDone, nil
+	case eventspb.Transfer_STATUS_STOPPED:
+		return TransferStatusStopped, nil
+	case eventspb.Transfer_STATUS_REJECTED:
+		return TransferStatusRejected, nil
+	case eventspb.Transfer_STATUS_CANCELLED:
+		return TransferStatusCancelled, nil
+	default:
+		err := fmt.Errorf("failed to convert TransferStatus from GraphQL to Proto: %v", x)
+		return TransferStatusDone, err
+	}
+}
+
 func convertStakeLinkingTypeFromProto(
 	s eventspb.StakeLinking_Type) (StakeLinkingType, error) {
 	switch s {
@@ -125,8 +143,8 @@ func convertWithdrawalStatusFromProto(x types.Withdrawal_Status) (WithdrawalStat
 	switch x {
 	case types.Withdrawal_STATUS_OPEN:
 		return WithdrawalStatusOpen, nil
-	case types.Withdrawal_STATUS_CANCELLED:
-		return WithdrawalStatusCancelled, nil
+	case types.Withdrawal_STATUS_REJECTED:
+		return WithdrawalStatusRejected, nil
 	case types.Withdrawal_STATUS_FINALIZED:
 		return WithdrawalStatusFinalized, nil
 	default:
@@ -144,56 +162,6 @@ func convertNodeSignatureKindFromProto(x commandspb.NodeSignatureKind) (NodeSign
 	default:
 		err := fmt.Errorf("failed to convert NodeSignatureKind from proto to graphql: %v", x)
 		return NodeSignatureKindAssetNew, err
-	}
-}
-
-// convertAccountTypeToProto converts a GraphQL enum to a Proto enum
-func convertAccountTypeToProto(x AccountType) (types.AccountType, error) {
-	switch x {
-	case AccountTypeGeneral:
-		return types.AccountType_ACCOUNT_TYPE_GENERAL, nil
-	case AccountTypeInsurance:
-		return types.AccountType_ACCOUNT_TYPE_INSURANCE, nil
-	case AccountTypeMargin:
-		return types.AccountType_ACCOUNT_TYPE_MARGIN, nil
-	case AccountTypeSettlement:
-		return types.AccountType_ACCOUNT_TYPE_SETTLEMENT, nil
-	case AccountTypeFeeInfrastructure:
-		return types.AccountType_ACCOUNT_TYPE_FEES_INFRASTRUCTURE, nil
-	case AccountTypeFeeLiquidity:
-		return types.AccountType_ACCOUNT_TYPE_FEES_LIQUIDITY, nil
-	case AccountTypeLockWithdraw:
-		return types.AccountType_ACCOUNT_TYPE_LOCK_WITHDRAW, nil
-	case AccountTypeBond:
-		return types.AccountType_ACCOUNT_TYPE_BOND, nil
-	default:
-		err := fmt.Errorf("failed to convert AccountType from GraphQL to Proto: %v", x)
-		return types.AccountType_ACCOUNT_TYPE_UNSPECIFIED, err
-	}
-}
-
-// convertAccountTypeFromProto converts a Proto enum to a GraphQL enum
-func convertAccountTypeFromProto(x types.AccountType) (AccountType, error) {
-	switch x {
-	case types.AccountType_ACCOUNT_TYPE_GENERAL:
-		return AccountTypeGeneral, nil
-	case types.AccountType_ACCOUNT_TYPE_INSURANCE:
-		return AccountTypeInsurance, nil
-	case types.AccountType_ACCOUNT_TYPE_MARGIN:
-		return AccountTypeMargin, nil
-	case types.AccountType_ACCOUNT_TYPE_SETTLEMENT:
-		return AccountTypeSettlement, nil
-	case types.AccountType_ACCOUNT_TYPE_FEES_INFRASTRUCTURE:
-		return AccountTypeFeeInfrastructure, nil
-	case types.AccountType_ACCOUNT_TYPE_FEES_LIQUIDITY:
-		return AccountTypeFeeLiquidity, nil
-	case types.AccountType_ACCOUNT_TYPE_LOCK_WITHDRAW:
-		return AccountTypeLockWithdraw, nil
-	case types.AccountType_ACCOUNT_TYPE_BOND:
-		return AccountTypeBond, nil
-	default:
-		err := fmt.Errorf("failed to convert AccountType from Proto to GraphQL: %v", x)
-		return AccountTypeGeneral, err
 	}
 }
 
@@ -445,10 +413,6 @@ func convertProposalRejectionReasonFromProto(x types.ProposalError) (ProposalRej
 		return ProposalRejectionReasonNoProduct, nil
 	case types.ProposalError_PROPOSAL_ERROR_UNSUPPORTED_PRODUCT:
 		return ProposalRejectionReasonUnsupportedProduct, nil
-	case types.ProposalError_PROPOSAL_ERROR_INVALID_FUTURE_PRODUCT_TIMESTAMP:
-		return ProposalRejectionReasonInvalidFutureMaturityTimestamp, nil
-	case types.ProposalError_PROPOSAL_ERROR_PRODUCT_MATURITY_IS_PASSED:
-		return ProposalRejectionReasonProductMaturityIsPassed, nil
 	case types.ProposalError_PROPOSAL_ERROR_NO_TRADING_MODE:
 		return ProposalRejectionReasonNoTradingMode, nil
 	case types.ProposalError_PROPOSAL_ERROR_UNSUPPORTED_TRADING_MODE:
@@ -568,10 +532,6 @@ func convertOrderRejectionReasonFromProto(x types.OrderError) (OrderRejectionRea
 		return OrderRejectionReasonPeggedOrderWithoutReferencePrice, nil
 	case types.OrderError_ORDER_ERROR_BUY_CANNOT_REFERENCE_BEST_ASK_PRICE:
 		return OrderRejectionReasonPeggedOrderBuyCannotReferenceBestAskPrice, nil
-	case types.OrderError_ORDER_ERROR_OFFSET_MUST_BE_LESS_OR_EQUAL_TO_ZERO:
-		return OrderRejectionReasonPeggedOrderOffsetMustBeLessOrEqualToZero, nil
-	case types.OrderError_ORDER_ERROR_OFFSET_MUST_BE_LESS_THAN_ZERO:
-		return OrderRejectionReasonPeggedOrderOffsetMustBeLessThanZero, nil
 	case types.OrderError_ORDER_ERROR_OFFSET_MUST_BE_GREATER_OR_EQUAL_TO_ZERO:
 		return OrderRejectionReasonPeggedOrderOffsetMustBeGreaterOrEqualToZero, nil
 	case types.OrderError_ORDER_ERROR_SELL_CANNOT_REFERENCE_BEST_BID_PRICE:

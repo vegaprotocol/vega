@@ -5,36 +5,37 @@
 package mocks
 
 import (
-	vega "code.vegaprotocol.io/protos/vega"
 	context "context"
-	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
+
+	vega "code.vegaprotocol.io/protos/vega"
+	gomock "github.com/golang/mock/gomock"
 )
 
-// MockPartyService is a mock of PartyService interface
+// MockPartyService is a mock of PartyService interface.
 type MockPartyService struct {
 	ctrl     *gomock.Controller
 	recorder *MockPartyServiceMockRecorder
 }
 
-// MockPartyServiceMockRecorder is the mock recorder for MockPartyService
+// MockPartyServiceMockRecorder is the mock recorder for MockPartyService.
 type MockPartyServiceMockRecorder struct {
 	mock *MockPartyService
 }
 
-// NewMockPartyService creates a new mock instance
+// NewMockPartyService creates a new mock instance.
 func NewMockPartyService(ctrl *gomock.Controller) *MockPartyService {
 	mock := &MockPartyService{ctrl: ctrl}
 	mock.recorder = &MockPartyServiceMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockPartyService) EXPECT() *MockPartyServiceMockRecorder {
 	return m.recorder
 }
 
-// GetAll mocks base method
+// GetAll mocks base method.
 func (m *MockPartyService) GetAll(arg0 context.Context) ([]*vega.Party, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAll", arg0)
@@ -43,13 +44,13 @@ func (m *MockPartyService) GetAll(arg0 context.Context) ([]*vega.Party, error) {
 	return ret0, ret1
 }
 
-// GetAll indicates an expected call of GetAll
+// GetAll indicates an expected call of GetAll.
 func (mr *MockPartyServiceMockRecorder) GetAll(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAll", reflect.TypeOf((*MockPartyService)(nil).GetAll), arg0)
 }
 
-// GetByID mocks base method
+// GetByID mocks base method.
 func (m *MockPartyService) GetByID(arg0 context.Context, arg1 string) (*vega.Party, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetByID", arg0, arg1)
@@ -58,7 +59,7 @@ func (m *MockPartyService) GetByID(arg0 context.Context, arg1 string) (*vega.Par
 	return ret0, ret1
 }
 
-// GetByID indicates an expected call of GetByID
+// GetByID indicates an expected call of GetByID.
 func (mr *MockPartyServiceMockRecorder) GetByID(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByID", reflect.TypeOf((*MockPartyService)(nil).GetByID), arg0, arg1)

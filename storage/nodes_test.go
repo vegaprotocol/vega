@@ -3,7 +3,10 @@ package storage_test
 import (
 	"errors"
 	"sort"
+	"strconv"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 
 	"code.vegaprotocol.io/data-node/logging"
 	"code.vegaprotocol.io/data-node/storage"
@@ -24,6 +27,81 @@ func (o ByXY) Less(i, j int) bool {
 	}
 
 	return o[i].Amount < o[j].Amount
+}
+
+func TestCleanupOldEpochsFromNodes(t *testing.T) {
+	nodeStore := storage.NewNode(logging.NewTestLogger(), storage.NewDefaultConfig())
+	testNode1 := pb.Node{
+		Id:               "pub_key_1",
+		PubKey:           "pub_key_1",
+		TmPubKey:         "tm_pub_key_1",
+		EthereumAdddress: "eth_pub_key_1",
+		InfoUrl:          "http://info-node-1.vega",
+		Location:         "UK",
+		Status:           pb.NodeStatus_NODE_STATUS_VALIDATOR,
+	}
+	testNode2 := pb.Node{
+		Id:               "pub_key_2",
+		PubKey:           "pub_key_2",
+		TmPubKey:         "tm_pub_key_2",
+		EthereumAdddress: "eth_pub_key_2",
+		InfoUrl:          "http://info-node-2.vega",
+		Location:         "UK",
+		Status:           pb.NodeStatus_NODE_STATUS_VALIDATOR,
+	}
+	nodeStore.AddNode(testNode1)
+	nodeStore.AddNode(testNode2)
+	for i := 0; i < 30; i++ {
+		nodeStore.AddDelegation(pb.Delegation{
+			Party:    "party1",
+			NodeId:   "pub_key_1",
+			EpochSeq: strconv.Itoa(i),
+			Amount:   "100",
+		})
+		nodeStore.AddDelegation(pb.Delegation{
+			Party:    "party1",
+			NodeId:   "pub_key_2",
+			EpochSeq: strconv.Itoa(i),
+			Amount:   "200",
+		})
+		epochSeq := strconv.Itoa(i)
+		node1, _ := nodeStore.GetByID("pub_key_1", epochSeq)
+		require.Equal(t, "100", node1.StakedByDelegates)
+
+		node2, _ := nodeStore.GetByID("pub_key_2", epochSeq)
+		require.Equal(t, "200", node2.StakedByDelegates)
+	}
+	for i := 30; i < 40; i++ {
+		nodeStore.AddDelegation(pb.Delegation{
+			Party:    "party1",
+			NodeId:   "pub_key_1",
+			EpochSeq: strconv.Itoa(i),
+			Amount:   "100",
+		})
+		nodeStore.AddDelegation(pb.Delegation{
+			Party:    "party1",
+			NodeId:   "pub_key_2",
+			EpochSeq: strconv.Itoa(i),
+			Amount:   "200",
+		})
+		// we don't have delegations for the 31st past epoch
+		epochSeqMinus30 := strconv.Itoa(i - 30)
+		node1, _ := nodeStore.GetByID("pub_key_1", epochSeqMinus30)
+		require.Equal(t, "0", node1.StakedByDelegates)
+
+		node2, _ := nodeStore.GetByID("pub_key_2", epochSeqMinus30)
+		require.Equal(t, "0", node2.StakedByDelegates)
+
+		// we have delegation for the past 30 epochs
+		for j := 0; j < 30; j++ {
+			epochSeq := strconv.Itoa(i - j)
+			node1, _ := nodeStore.GetByID("pub_key_1", epochSeq)
+			require.Equal(t, "100", node1.StakedByDelegates)
+
+			node2, _ := nodeStore.GetByID("pub_key_2", epochSeq)
+			require.Equal(t, "200", node2.StakedByDelegates)
+		}
+	}
 }
 
 func TestNodes(t *testing.T) {
@@ -92,7 +170,7 @@ func TestNodes(t *testing.T) {
 
 	actualNode, err = nodeStore.GetByID("pub_key_1", "1")
 	a.NoError(err)
-	assertNode(a, actualNode, delegations, "10", "25", "35", "", "")
+	assertNode(a, actualNode, delegations, "10", "25", "35", "", "", "", "")
 
 	nodeStore.AddNode(pb.Node{
 		Id:               "pub_key_2",
@@ -104,8 +182,8 @@ func TestNodes(t *testing.T) {
 		Status:           pb.NodeStatus_NODE_STATUS_VALIDATOR,
 	})
 
-	nodeStore.AddNodeScore("pub_key_2", "1", "20", "0.89")
-	nodeStore.AddNodeScore("pub_key_2", "2", "30", "0.9")
+	nodeStore.AddNodeScore("pub_key_2", "1", "20", "0.89", "25", "0.8")
+	nodeStore.AddNodeScore("pub_key_2", "2", "30", "0.9", "40", "0.75")
 
 	delegations = []*pb.Delegation{
 		{
@@ -146,12 +224,12 @@ func TestNodes(t *testing.T) {
 	// Get node in first epoch
 	node, err := nodeStore.GetByID("pub_key_2", "1")
 	a.NoError(err)
-	assertNode(a, node, delegations[0:2], "0", "70", "70", "20", "0.89")
+	assertNode(a, node, delegations[0:2], "0", "70", "70", "20", "0.89", "25", "0.8")
 
 	// Get node in second epoch
 	node, err = nodeStore.GetByID("pub_key_2", "2")
 	a.NoError(err)
-	assertNode(a, node, delegations[2:], "0", "60", "60", "30", "0.9")
+	assertNode(a, node, delegations[2:], "0", "60", "60", "30", "0.9", "40", "0.75")
 
 	nodes := nodeStore.GetAll("1")
 	a.Equal(2, len(nodes))
@@ -188,13 +266,15 @@ func assertNode(
 	node *pb.Node,
 	delegations []*pb.Delegation,
 	stakedByOperator, stakedByDelegates, stakedTotal string,
-	score, normalisedScore string,
+	score, normalisedScore, rawScore, performance string,
 ) {
 	a.Equal(stakedByOperator, node.StakedByOperator)
 	a.Equal(stakedByDelegates, node.StakedByDelegates)
 	a.Equal(stakedTotal, node.StakedTotal)
 	a.Equal(score, node.Score)
 	a.Equal(normalisedScore, node.NormalisedScore)
+	a.Equal(rawScore, node.RawScore)
+	a.Equal(performance, node.Performance)
 
 	sort.Sort(ByXY(delegations))
 	sort.Sort(ByXY(node.Delegations))

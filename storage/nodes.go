@@ -2,6 +2,7 @@ package storage
 
 import (
 	"fmt"
+	"math"
 	"strconv"
 	"sync"
 
@@ -14,6 +15,8 @@ import (
 type nodeScore struct {
 	score           string
 	normalisedScore string
+	rawScore        string
+	performance     string
 }
 
 type node struct {
@@ -21,6 +24,7 @@ type node struct {
 
 	delegationsPerEpochPerParty map[string]map[string]pb.Delegation
 	scoresPerEpoch              map[string]nodeScore
+	minEpoch                    *uint64
 }
 
 type keyRotation struct {
@@ -36,8 +40,7 @@ type Node struct {
 	nodes                  map[string]node
 	pubKeyrotationsPerNode map[string][]keyRotation
 	mut                    sync.RWMutex
-
-	log *logging.Logger
+	log                    *logging.Logger
 }
 
 func NewNode(log *logging.Logger, c Config) *Node {
@@ -71,14 +74,17 @@ func (ns *Node) AddNode(n pb.Node) {
 	ns.mut.Lock()
 	defer ns.mut.Unlock()
 
-	ns.nodes[n.GetId()] = node{
+	nd := node{
 		n:                           n,
 		scoresPerEpoch:              map[string]nodeScore{},
 		delegationsPerEpochPerParty: map[string]map[string]pb.Delegation{},
+		minEpoch:                    new(uint64),
 	}
+	*nd.minEpoch = math.MaxUint64
+	ns.nodes[n.GetId()] = nd
 }
 
-func (ns *Node) AddNodeScore(nodeID, epochID, score, normalisedScore string) {
+func (ns *Node) AddNodeScore(nodeID, epochID, score, normalisedScore, rawScore, performance string) {
 	ns.mut.Lock()
 	defer ns.mut.Unlock()
 
@@ -91,6 +97,8 @@ func (ns *Node) AddNodeScore(nodeID, epochID, score, normalisedScore string) {
 	node.scoresPerEpoch[epochID] = nodeScore{
 		score:           score,
 		normalisedScore: normalisedScore,
+		rawScore:        rawScore,
+		performance:     performance,
 	}
 }
 
@@ -105,6 +113,7 @@ func (ns *Node) AddDelegation(de pb.Delegation) {
 	}
 
 	if _, ok := node.delegationsPerEpochPerParty[de.GetEpochSeq()]; !ok {
+		clearOldEpochsDelegations(de.GetEpochSeq(), node.minEpoch, func(epochSeq string) { delete(node.delegationsPerEpochPerParty, epochSeq) })
 		node.delegationsPerEpochPerParty[de.GetEpochSeq()] = map[string]pb.Delegation{}
 	}
 
@@ -351,6 +360,8 @@ func (ns *Node) nodeProtoFromInternal(n node, epochID string) *pb.Node {
 	if sc, ok := n.scoresPerEpoch[epochID]; ok {
 		node.Score = sc.score
 		node.NormalisedScore = sc.normalisedScore
+		node.RawScore = sc.rawScore
+		node.Performance = sc.performance
 	}
 
 	return node

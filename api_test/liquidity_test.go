@@ -29,13 +29,15 @@ func TestLiquidity_Get(t *testing.T) {
 
 		var sells []*types.LiquidityOrderReference
 		for _, v := range lp.Sells {
-			s := types.LiquidityOrderReferenceFromProto(v)
+			s, err := types.LiquidityOrderReferenceFromProto(v)
+			require.NoError(t, err)
 			sells = append(sells, s)
 		}
 
 		var buys []*types.LiquidityOrderReference
 		for _, v := range lp.Buys {
-			b := types.LiquidityOrderReferenceFromProto(v)
+			b, err := types.LiquidityOrderReferenceFromProto(v)
+			require.NoError(t, err)
 			sells = append(buys, b)
 		}
 		commitmentAmount, _ := num.UintFromString(lp.CommitmentAmount, 10)

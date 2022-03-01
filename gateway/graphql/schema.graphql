@@ -92,7 +92,7 @@ type Subscription {
     partyId: ID
   ): Proposal!
 
-  "Subscribe to votes, either by proposal id or pary id"
+  "Subscribe to votes, either by proposal id or party id"
   votes(
     "Optional proposal id which votes are to be streamed"
     proposalId: ID
@@ -117,11 +117,11 @@ type Subscription {
     "the party to subscribe for, empty if all"
     party: ID
     "the node to subscribe for, empty if all"
-    nodeID: ID 
+    nodeID: ID
   ): Delegation!
 
   "Subscribe to reward details data"
-  rewardDetails(
+  rewards(
     "the asset to subscribe for, empty if all"
     assetId: ID
     "the party to subscribe for, empty if all"
@@ -158,7 +158,7 @@ type MarginLevels {
 type MarketData {
   "market id of the associated mark price"
   market: Market!
-  "the mark price (actually an unsgined int)"
+  "the mark price (actually an unsigned int)"
   markPrice: String!
   "the highest price level on an order book for buy orders."
   bestBidPrice: String!
@@ -180,7 +180,7 @@ type MarketData {
   midPrice: String!
   "the arithmetic average of the best static bid price and best static offer price"
   staticMidPrice: String!
-  "RFC3339Nano time at which this market price was releavant"
+  "RFC3339Nano time at which this market price was relevant"
   timestamp: String!
   "the sum of the size of all positions greater than 0."
   openInterest: String!
@@ -230,7 +230,7 @@ type LiquidityProviderFeeShare {
   party: Party!
   "The share own by this liquidity provider (float)"
   equityLikeShare: String!
-  "the average entry valuation of the liqidity provider for the market"
+  "the average entry valuation of the liquidity provider for the market"
   averageEntryValuation: String!
 }
 
@@ -244,6 +244,13 @@ type MarketDataCommitments {
 
 type TransactionSubmitted {
   success: Boolean!
+}
+
+input AccountFilter {
+  assetId: ID
+  partyIds: [ID!]
+  marketIds: [ID!]
+  accountTypes: [AccountType!]
 }
 
 "Queries allow a caller to read data and filter data via GraphQL."
@@ -337,6 +344,12 @@ type Query {
     inState: ProposalState
   ): [Proposal!]
 
+  "Governance proposals that aim to create new assets in Vega"
+  newFreeformProposals(
+    "Returns only proposals in the specified state. Leave out to get all proposals"
+    inState: ProposalState
+  ): [Proposal!]
+
   "Return a list of aggregated node signature for a given resource ID"
   nodeSignatures(resourceId: ID!): [NodeSignature!]
 
@@ -393,8 +406,120 @@ type Query {
   "query for historic key rotations"
   keyRotations(id: String): [KeyRotation!]
 
-  "get data for a specific epoch, if id omitted it gets the current epoch"
+  "get data for a specific epoch, if id omitted it gets the current epoch. If the string is 'next', fetch the next epoch"
   epoch(id: String): Epoch!
+
+  "get a list of all transfers for a pubkey"
+  transfers(
+    "the pubkey to look for"
+    pubkey: String!
+    "is the pubkey on the sending part of the transfer"
+    isFrom: Boolean
+    "is the pubkey in the receiving part of the transfer"
+    isTo: Boolean
+  ): [Transfer!]
+
+  "get statistics about the vega node"
+  statistics: Statistics!
+
+  historicBalances(
+    filter: AccountFilter,
+    groupBy: [AccountField])
+    : [AggregatedBalance!]!
+
+  "Current network limits"
+  networkLimits: NetworkLimits
+
+  "get market data history for a specific market. If no dates are given, the latest snapshot will be returned. If only the start date is provided all history from the given date will be provided, and if only the end date is provided, all history from the start upto and including the end date will be provided."
+  getMarketDataHistoryByID(
+    id: String!,
+    """
+    Optional start date time for the historic data query.
+    If both the start and end date is not provided, only the latest snapshot will be returned.
+    If only the start date is provided, all market data for the market from the start date forward will be returned.
+    """
+    start: Int,
+    """
+    Optional end date time for the historic data query.
+    If both the start and end date is not provided, only the latest snapshot will be returned.
+    If only the end date is provided, all market data for the market up to and including the end date will be returned.
+    """
+    end: Int,
+    "Pagination skip"
+    skip: Int,
+    "Pagination first element"
+    first: Int,
+    "Pagination last element"
+    last: Int): [MarketData]
+}
+
+enum TransferStatus {
+  "Indicate a transfer still being processed"
+  Pending
+  "Indicate of an transfer accepted by the vega network"
+  Done
+  "Indicate of an transfer rejected by the vega network"
+  Rejected
+  """
+  Indicate of a transfer stopped by the vega network
+  e.g: no funds left to cover the transfer
+  """
+  Stopped
+  "Indicate of a transfer cancel by the user"
+  Cancelled
+}
+
+"A user initiated transfer"
+type Transfer {
+  "Identified of this transfer"
+  id: ID!
+
+  "The public key of the sender in this transfer"
+  from: String!
+
+  "The account type from which funds have been sent from"
+  fromAccountType: AccountType!
+
+  "The public key of the received of the funds"
+  to: String!
+
+  "The account type which has received the funds"
+  toAccountType: AccountType!
+
+  "The asset"
+  asset: Asset
+
+  "The amount sent"
+  amount: String!
+
+  "An optional reference"
+  reference: String
+
+  "The status of this transfer"
+  status: TransferStatus!
+
+  "The time at which the transfer was submitted"
+  timestamp: String!
+
+  kind: TransferKind!
+}
+
+union TransferKind = OneOffTransfer | RecurringTransfer
+
+"The specific details for a one off transfer"
+type OneOffTransfer {
+  "An optional time at which the transfer should be delivered"
+  deliverOn: String
+}
+
+"The specific details for a recurring transfer"
+type RecurringTransfer {
+  "The epoch at which this recurring transfer will start"
+  startEpoch: Int!
+  "An optional epoch at whihc this transfer will stop"
+  endEpoch: Int
+  "The factor of the initial amount to be distributed"
+  factor: String!
 }
 
 enum NodeStatus {
@@ -442,7 +567,17 @@ type Epoch {
   "Validators that participated in this epoch"
   validators: [Node!]!
 
-  delegations: [Delegation!]!
+  delegations(
+    # Optional party id to filter on
+    partyId: String,
+    # Optional node id to filter on
+    nodeId: String,
+    "Pagination skip"
+    skip: Int
+    "Pagination first element"
+    first: Int
+    "Pagination last element"
+    last: Int): [Delegation!]!
 }
 
 type NodeData {
@@ -529,11 +664,23 @@ type Node {
   status: NodeStatus!
 
   # All delegation for a node by a given party if specified, or all delegations.
-  delegations(partyId: String): [Delegation!]
+  delegations(partyId: String,
+    "Pagination skip"
+    skip: Int
+    "Pagination first element"
+    first: Int
+    "Pagination last element"
+    last: Int): [Delegation!]
 
   score: String!
 
   normalisedScore: String!
+
+  # The score prior to being adjusted to account for the performance
+  rawScore: String!
+
+  # Expressed as a fraction between 0 and 1, 1 being the best performance possible
+  performance: String!
 
   # The name of the node
   name: String!
@@ -573,8 +720,8 @@ type Asset {
   "The precision of the asset"
   decimals: Int!
 
-  "The min stake to become an lp for any market using this asset for settlement"
-  minLpStake: String!
+  "The minimum economically meaningful amount in the asset"
+  quantum: String!
 
   "The origin source of the asset (e.g: an erc20 asset)"
   source: AssetSource!
@@ -625,13 +772,13 @@ enum NodeSignatureKind {
 "Statistics about the node"
 type Statistics {
   "Current block number"
-  blockHeight: Int!
+  blockHeight: String!
 
   "Number of items in the backlog"
-  backlogLength: Int!
+  backlogLength: String!
 
   "Total number of peers on the vega network"
-  totalPeers: Int!
+  totalPeers: String!
 
   "RFC3339Nano genesis time of the chain"
   genesisTime: String!
@@ -649,37 +796,37 @@ type Statistics {
   status: String!
 
   "Number of transaction processed per block"
-  txPerBlock: Int!
+  txPerBlock: String!
 
   "Average size of the transactions"
-  averageTxBytes: Int!
+  averageTxBytes: String!
 
   "Average number of orders added per blocks"
-  averageOrdersPerBlock: Int!
+  averageOrdersPerBlock: String!
 
   "Number of the trades per seconds"
-  tradesPerSecond: Int!
+  tradesPerSecond: String!
 
   "Number of orders per seconds"
-  ordersPerSecond: Int!
+  ordersPerSecond: String!
 
   "Total number of markets"
-  totalMarkets: Int!
+  totalMarkets: String!
 
   "Total number of amended orders"
-  totalAmendOrder: Int!
+  totalAmendOrder: String!
 
   "Total number of cancelled orders"
-  totalCancelOrder: Int!
+  totalCancelOrder: String!
 
   "Total number of orders created"
-  totalCreateOrder: Int!
+  totalCreateOrder: String!
 
   "Total number of orders"
-  totalOrders: Int!
+  totalOrders: String!
 
   "Total number of trades"
-  totalTrades: Int!
+  totalTrades: String!
 
   "Version commit hash of the vega node"
   appVersionHash: String!
@@ -691,25 +838,11 @@ type Statistics {
   chainVersion: String!
 
   "Duration of the last block, in nanoseconds"
-  blockDuration: Int!
+  blockDuration: String!
 
-  "Number of orders subscriptions"
-  orderSubscriptions: Int!
+  "Current chain id"
+  chainId: String!
 
-  "Number of trades subscriptions"
-  tradeSubscriptions: Int!
-
-  "Number of candles subscriptions"
-  candleSubscriptions: Int!
-
-  "Number of market depth subscriptions"
-  marketDepthSubscriptions: Int!
-
-  "Number of market depth update subscriptions"
-  marketDepthUpdateSubscriptions: Int!
-
-  "Number of positions subscriptions"
-  positionsSubscriptions: Int!
 }
 
 "A mode where Vega tries to execute orders as soon as they are received"
@@ -726,7 +859,6 @@ type DiscreteTrading {
   tickSize: String!
 }
 
-union TradingMode = ContinuousTrading | DiscreteTrading
 
 "Parameters for the log normal risk model"
 type LogNormalModelParams {
@@ -783,9 +915,6 @@ union Oracle = EthereumEvent
 
 "A Future product"
 type Future {
-  "RFC3339Nano maturity date of the product"
-  maturity: String!
-
   "The name of the asset (string)"
   settlementAsset: Asset!
 
@@ -941,7 +1070,7 @@ union Product = Future
 
 "Describe something that can be traded on Vega"
 type Instrument {
-  "Uniquely identify an instrument accrods all instruments available on Vega (string)"
+  "Uniquely identify an instrument across all instruments available on Vega (string)"
   id: String!
 
   "A short non necessarily unique code used to easily describe the instrument (e.g: FX:BTCUSD/DEC18) (string)"
@@ -1041,7 +1170,7 @@ type PriceMonitoringTrigger {
   auctionExtensionSecs: Int!
 }
 
-"Configuration of a market price monitorings auctions triggers"
+"Configuration of a market price monitoring auctions triggers"
 type PriceMonitoringSettings {
   "Specified a set of PriceMonitoringParameters to be use for price monitoring purposes"
   parameters: PriceMonitoringParameters
@@ -1092,8 +1221,6 @@ type Market {
   "An instance of or reference to a tradable instrument."
   tradableInstrument: TradableInstrument!
 
-  "Definitions and required configuration for the trading mode"
-  tradingModeConfig: TradingMode!
 
   """
   decimalPlaces indicates the number of decimal places that an integer must be shifted by in order to get a correct
@@ -1160,7 +1287,7 @@ type Market {
     last: Int
   ): [Trade!]
 
-  "Current depth on the orderbook for this market"
+  "Current depth on the order book for this market"
   depth(
     "Maximum market order book depth (returns whole order book if omitted)"
     maxDepth: Int
@@ -1333,17 +1460,43 @@ type Party {
   ): [LiquidityProvision!]
 
   # All delegations for a party to a given node if node is specified, or all delegations if not
-  delegations(nodeId: String): [Delegation!]
+  delegations (
+    "Optional node"
+    nodeId: String
+    "Pagination skip"
+    skip: Int
+    "Pagination first element"
+    first: Int
+    "Pagination last element"
+    last: Int): [Delegation!]
 
-  "The staking informations for this Party"
+  "The staking information for this Party"
   stake: PartyStake!
 
+  "return individual reward information"
+  rewards(
+    "An optional asset"
+    asset: String
+    "Pagination skip element"
+    skip: Int
+    "Pagination first element"
+    first: Int
+    "Pagination last element"
+    last: Int
+  ): [Reward]
+
+  "return net reward information"
+  rewardSummaries(
+    "An optional asset"
+    asset: String
+  ): [RewardSummary]
+
   "return reward information"
-  rewardDetails: [RewardPerAssetDetail]
+  rewardDetails: [RewardPerAssetDetail] @deprecated(reason: "Use rewardSummaries or rewards instead.")
 }
 
 """
-All staking informations related to a Party.
+All staking information related to a Party.
 Contains the current recognised balance by the network and
 all the StakeLink/Unlink seen by the network
 """
@@ -1606,7 +1759,7 @@ type Erc20WithdrawalApproval {
 type Withdrawal {
   "The Vega internal id of the withdrawal"
   id: ID!
-  "The PartyID initiating the witndrawal"
+  "The PartyID initiating the withdrawal"
   party: Party!
   "The amount to be withdrawn"
   amount: String!
@@ -1614,7 +1767,7 @@ type Withdrawal {
   asset: Asset!
   "The current status of the withdrawal"
   status: WithdrawalStatus!
-  "A reference the foreign chain can use to refere to when processing the withdrawal"
+  "A reference the foreign chain can use to refer to when processing the withdrawal"
   ref: String!
   "RFC3339Nano time until the withdrawal will be invalid"
   expiry: String!
@@ -1641,7 +1794,7 @@ enum WithdrawalStatus {
   "The withdrawal is open and being processed by the network"
   Open
   "The withdrawal have been cancelled by the network, either because it expired, or something went wrong with the foreign chain"
-  Cancelled
+  Rejected
   "The withdrawal was finalized, it was first valid, the foreign chain have executed it and the network updated all accounts"
   Finalized
 }
@@ -1923,12 +2076,6 @@ enum OrderRejectionReason {
   "Buy pegged order cannot reference best ask price"
   PeggedOrderBuyCannotReferenceBestAskPrice
 
-  "Pegged order offset must be <= 0"
-  PeggedOrderOffsetMustBeLessOrEqualToZero
-
-  "Pegged order offset must be < 0"
-  PeggedOrderOffsetMustBeLessThanZero
-
   "Pegged order offset must be >= 0"
   PeggedOrderOffsetMustBeGreaterOrEqualToZero
 
@@ -1962,7 +2109,7 @@ enum OrderType {
   Limit
 
   """
-  Used for distressed partys, an order placed by the network to close out distressed partys
+  Used for distressed parties, an order placed by the network to close out distressed parties
   similar to Market order, only no party is attached to the order.
   """
   Network
@@ -2049,23 +2196,37 @@ enum AccountType {
   GlobalInsurance
   "Settlement - only for 'system' party"
   Settlement
-  "Margin - The leverage account for partys"
+  "Margin - The leverage account for parties"
   Margin
-  "General account - the account containing 'unused' collateral for partys"
+  "General account - the account containing 'unused' collateral for parties"
   General
   "Infrastructure fee account - the account where all infrastructure fees are collected"
   FeeInfrastructure
-  "Liquidity fee account - the account where all infrastructure fees are collected"
+  "Liquidity fee account - the account contains fees earned by providing liquidity"
   FeeLiquidity
+  "Market maker fee account - holds fees paid to the passive side when a trade matches"
+  FeeMaker
   "LockWithdraw - and account use for party in the process of withdrawing funds"
   LockWithdraw
   "Bond - an account use to maintain MM commitments"
   Bond
+  "External - an account use to refer to external account"
+  External
+  "GlobalReward - an global account for the reward pool"
+  GlobalReward
+  "PendingTransfers - an global account for the pending transfers pool"
+  PendingTransfers
+  "RewardTakerPaidFees - an account holding rewards for taker paid fees"
+  RewardTakerPaidFees
+  "RewardMakerReceivedFees - an account holding rewards for maker received fees"
+  RewardMakerReceivedFees
+  "RewardLpReceivedFees - an account holding rewards for LP received fees"
+  RewardLpReceivedFees
+  "RewardMarketProposers - an account holding rewards for market proposers"
+  RewardMarketProposers
 }
 
 type FutureProduct {
-  "RFC3339Nano time when the future products matures"
-  maturity: String!
   "Product asset ID"
   settlementAsset: Asset!
   "String representing the quote (e.g. BTCUSD -> USD is quote)"
@@ -2121,15 +2282,13 @@ type NewMarket {
   riskParameters: RiskModel!
   "Metadata for this instrument, tags"
   metadata: [String!]
-  "Trading mode"
-  tradingMode: TradingMode!
   "The liquidity commitment submitted with the new market"
   commitment: NewMarketCommitment
 }
 
 "A commitment of liquidity to be made by the party which proposes a market"
 type NewMarketCommitment {
-  "Specified as a unitless number that represents the amount of settlement asset of the market"
+  "Specified as a unit-less number that represents the amount of settlement asset of the market"
   commitmentAmount: String!
   """
   Nominated liquidity fee factor, which is an input to the calculation of
@@ -2173,6 +2332,18 @@ type NewAsset {
   source: AssetSource!
 }
 
+"A new freeform proposal change"
+type NewFreeform {
+  "The URL containing content that describes the proposal"
+  url: String!
+
+  "A short description of what is being proposed"
+  description: String!
+
+  "The hash on the content of the URL"
+  hash: String!
+}
+
 "Allows submitting a proposal for changing network parameters"
 type UpdateNetworkParameter {
   networkParameter: NetworkParameter!
@@ -2191,6 +2362,7 @@ union ProposalChange =
   | UpdateMarket
   | UpdateNetworkParameter
   | NewAsset
+  | NewFreeform
 # there are no unions for input types as of today, see: https://github.com/graphql/graphql-spec/issues/488
 
 type ProposalTerms {
@@ -2356,11 +2528,11 @@ type TransferResponses {
 type PositionResolution {
   "the market ID where position resolution happened"
   marketId: ID!
-  "number of distressed partys on market"
+  "number of distressed parties on market"
   distressed: Int!
-  "number of partys closed out"
+  "number of parties closed out"
   closed: Int!
-  "the mark price at which partys were distressed/closed out"
+  "the mark price at which parties were distressed/closed out"
   markPrice: String!
 }
 
@@ -2538,19 +2710,19 @@ type RiskFactor {
   "market the risk factor was emitted for"
   market: String!
   "short factor"
-  short: Float!
+  short: String!
   "long factor"
-  long: Float!
+  long: String!
 }
 
 "A special order type for liquidity providers"
 type LiquidityOrder {
   "The value to which this order is tied"
   reference: PeggedReference!
-  "The proportion of the commitment allocted to this order"
+  "The proportion of the commitment allocated to this order"
   proportion: Int!
   "Offset from the pegged reference"
-  offset: Int!
+  offset: String!
 }
 
 "Status of a liquidity provision order"
@@ -2592,7 +2764,7 @@ type LiquidityProvision {
   updatedAt: String
   "Market identifier for the order"
   market: Market!
-  "Specified as a unitless number that represents the amount of settlement asset of the market."
+  "Specified as a unit-less number that represents the amount of settlement asset of the market."
   commitmentAmount: String!
   "nominated liquidity fee factor, which is an input to the calculation of taker fees on the market, as per setting fees and rewarding liquidity providers."
   fee: String!
@@ -2624,12 +2796,78 @@ type Reward {
   receivedAt: String!
 }
 
-"Reward information for a given asset"
+type RewardSummary {
+  "The asset for which these rewards are associated"
+  asset: Asset!
+  "Total quantity of rewards awarded in this asset"
+  amount: String!
+  "List of individual reward payouts, ordered by epoch"
+  rewards (
+    "Pagination skip"
+    skip: Int
+    "Pagination first element"
+    first: Int
+    "Pagination last element"
+    last: Int): [Reward]
+}
+
+"RewardPerAssetDetail is depricated, use RewardSummmary instead "
 type RewardPerAssetDetail {
   "Asset in which the reward was paid"
   asset: Asset!
+  "Id of asset in which the reward was paid"
+  assetId: String! @deprecated(reason: "Use asset{id} instead")
   "A list of rewards received for this asset"
   rewards: [Reward]
   "The total amount of rewards received for this asset."
   totalAmount: String!
+}
+
+scalar Timestamp
+
+type AggregatedBalance {
+  "RFC3339Nano time from at which this balance was relevant"
+  timestamp: Timestamp!
+  "Net balance of the accounts specified in the filter at this time"
+  balance: String!
+  "Account identifier, if query was grouped by account - else null"
+  accountId: String
+  "Party identifier, if query was grouped by party - else null"
+  partyId: String
+  "Asset identifier, if query was grouped by asset - else null"
+  assetId: String
+  "Market identifier, if query was grouped by market - else null"
+  marketId: String
+  "Account type, if query was grouped by account type - else null"
+  accountType: AccountType
+}
+
+enum AccountField {
+  AccountId
+  PartyId
+  AssetId
+  MarketId
+  AccountType
+}
+
+"Information about whether proposals are enabled, if we are still bootstrapping etc.."
+type NetworkLimits {
+    "Are market proposals allowed at this point in time"
+		canProposeMarket: Boolean!
+    "Are asset proposals allowed at this point in time"
+		canProposeAsset: Boolean!
+    "True once block count > bootstrapBlockCount"
+		bootstrapFinished: Boolean!
+    "Are market proposals enabled on this chain"
+		proposeMarketEnabled: Boolean!
+    "Are asset proposals enabled on this chain"
+		proposeAssetEnabled: Boolean!
+    "How many blocks before the chain comes out of bootstrap mode"
+		bootstrapBlockCount: Int!
+    "True once the genesis file is loaded"
+		genesisLoaded: Boolean!
+    "The date/timestamp in unix nanoseconds at which market proposals will be enabled (0 indicates not set)"
+		proposeMarketEnabledFrom: Timestamp!
+    "The date/timestamp in unix nanoseconds at which asset proposals will be enabled (0 indicates not set)"
+		proposeAssetEnabledFrom: Timestamp!
 }

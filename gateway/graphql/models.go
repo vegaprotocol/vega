@@ -36,8 +36,8 @@ type RiskModel interface {
 	IsRiskModel()
 }
 
-type TradingMode interface {
-	IsTradingMode()
+type TransferKind interface {
+	IsTransferKind()
 }
 
 type WithdrawalDetails interface {
@@ -83,8 +83,6 @@ type ContinuousTrading struct {
 	TickSize string `json:"tickSize"`
 }
 
-func (ContinuousTrading) IsTradingMode() {}
-
 // Frequent batch auctions trading mode
 type DiscreteTrading struct {
 	// Duration of the discrete trading batch in nanoseconds. Maximum 1 month.
@@ -92,8 +90,6 @@ type DiscreteTrading struct {
 	// Size of an increment in price in terms of the quote currency
 	TickSize string `json:"tickSize"`
 }
-
-func (DiscreteTrading) IsTradingMode() {}
 
 // An asset originated from an Ethereum ERC20 Token
 type Erc20 struct {
@@ -176,7 +172,7 @@ type LiquidityProviderFeeShare struct {
 	Party *vega.Party `json:"party"`
 	// The share own by this liquidity provider (float)
 	EquityLikeShare string `json:"equityLikeShare"`
-	// the average entry valuation of the liqidity provider for the market
+	// the average entry valuation of the liquidity provider for the market
 	AverageEntryValuation string `json:"averageEntryValuation"`
 }
 
@@ -230,11 +226,11 @@ type OrderEstimate struct {
 type PositionResolution struct {
 	// the market ID where position resolution happened
 	MarketID string `json:"marketId"`
-	// number of distressed partys on market
+	// number of distressed parties on market
 	Distressed int `json:"distressed"`
-	// number of partys closed out
+	// number of parties closed out
 	Closed int `json:"closed"`
-	// the mark price at which partys were distressed/closed out
+	// the mark price at which parties were distressed/closed out
 	MarkPrice string `json:"markPrice"`
 }
 
@@ -258,7 +254,7 @@ type PriceMonitoringParameters struct {
 	Triggers []*PriceMonitoringTrigger `json:"triggers"`
 }
 
-// Configuration of a market price monitorings auctions triggers
+// Configuration of a market price monitoring auctions triggers
 type PriceMonitoringSettings struct {
 	// Specified a set of PriceMonitoringParameters to be use for price monitoring purposes
 	Parameters *PriceMonitoringParameters `json:"parameters"`
@@ -329,68 +325,6 @@ type SettlePosition struct {
 
 func (SettlePosition) IsEvent() {}
 
-// Statistics about the node
-type Statistics struct {
-	// Current block number
-	BlockHeight int `json:"blockHeight"`
-	// Number of items in the backlog
-	BacklogLength int `json:"backlogLength"`
-	// Total number of peers on the vega network
-	TotalPeers int `json:"totalPeers"`
-	// RFC3339Nano genesis time of the chain
-	GenesisTime string `json:"genesisTime"`
-	// RFC3339Nano current time (real)
-	CurrentTime string `json:"currentTime"`
-	// RFC3339Nano uptime of the node
-	UpTime string `json:"upTime"`
-	// RFC3339Nano current time of the chain (decided through consensus)
-	VegaTime string `json:"vegaTime"`
-	// Status of the vega application connection with the chain
-	Status string `json:"status"`
-	// Number of transaction processed per block
-	TxPerBlock int `json:"txPerBlock"`
-	// Average size of the transactions
-	AverageTxBytes int `json:"averageTxBytes"`
-	// Average number of orders added per blocks
-	AverageOrdersPerBlock int `json:"averageOrdersPerBlock"`
-	// Number of the trades per seconds
-	TradesPerSecond int `json:"tradesPerSecond"`
-	// Number of orders per seconds
-	OrdersPerSecond int `json:"ordersPerSecond"`
-	// Total number of markets
-	TotalMarkets int `json:"totalMarkets"`
-	// Total number of amended orders
-	TotalAmendOrder int `json:"totalAmendOrder"`
-	// Total number of cancelled orders
-	TotalCancelOrder int `json:"totalCancelOrder"`
-	// Total number of orders created
-	TotalCreateOrder int `json:"totalCreateOrder"`
-	// Total number of orders
-	TotalOrders int `json:"totalOrders"`
-	// Total number of trades
-	TotalTrades int `json:"totalTrades"`
-	// Version commit hash of the vega node
-	AppVersionHash string `json:"appVersionHash"`
-	// Version of the vega node (semver)
-	AppVersion string `json:"appVersion"`
-	// Version of the chain (semver)
-	ChainVersion string `json:"chainVersion"`
-	// Duration of the last block, in nanoseconds
-	BlockDuration int `json:"blockDuration"`
-	// Number of orders subscriptions
-	OrderSubscriptions int `json:"orderSubscriptions"`
-	// Number of trades subscriptions
-	TradeSubscriptions int `json:"tradeSubscriptions"`
-	// Number of candles subscriptions
-	CandleSubscriptions int `json:"candleSubscriptions"`
-	// Number of market depth subscriptions
-	MarketDepthSubscriptions int `json:"marketDepthSubscriptions"`
-	// Number of market depth update subscriptions
-	MarketDepthUpdateSubscriptions int `json:"marketDepthUpdateSubscriptions"`
-	// Number of positions subscriptions
-	PositionsSubscriptions int `json:"positionsSubscriptions"`
-}
-
 // TargetStakeParameters contains parameters used in target stake calculation
 type TargetStakeParameters struct {
 	// Specifies length of time window expressed in seconds for target stake calculation
@@ -447,71 +381,6 @@ type TransferResponses struct {
 }
 
 func (TransferResponses) IsEvent() {}
-
-// The various account types we have (used by collateral)
-type AccountType string
-
-const (
-	// Insurance pool account - only for 'system' party
-	AccountTypeInsurance AccountType = "Insurance"
-	// Global insurance pool account for an asset
-	AccountTypeGlobalInsurance AccountType = "GlobalInsurance"
-	// Settlement - only for 'system' party
-	AccountTypeSettlement AccountType = "Settlement"
-	// Margin - The leverage account for partys
-	AccountTypeMargin AccountType = "Margin"
-	// General account - the account containing 'unused' collateral for partys
-	AccountTypeGeneral AccountType = "General"
-	// Infrastructure fee account - the account where all infrastructure fees are collected
-	AccountTypeFeeInfrastructure AccountType = "FeeInfrastructure"
-	// Liquidity fee account - the account where all infrastructure fees are collected
-	AccountTypeFeeLiquidity AccountType = "FeeLiquidity"
-	// LockWithdraw - and account use for party in the process of withdrawing funds
-	AccountTypeLockWithdraw AccountType = "LockWithdraw"
-	// Bond - an account use to maintain MM commitments
-	AccountTypeBond AccountType = "Bond"
-)
-
-var AllAccountType = []AccountType{
-	AccountTypeInsurance,
-	AccountTypeGlobalInsurance,
-	AccountTypeSettlement,
-	AccountTypeMargin,
-	AccountTypeGeneral,
-	AccountTypeFeeInfrastructure,
-	AccountTypeFeeLiquidity,
-	AccountTypeLockWithdraw,
-	AccountTypeBond,
-}
-
-func (e AccountType) IsValid() bool {
-	switch e {
-	case AccountTypeInsurance, AccountTypeGlobalInsurance, AccountTypeSettlement, AccountTypeMargin, AccountTypeGeneral, AccountTypeFeeInfrastructure, AccountTypeFeeLiquidity, AccountTypeLockWithdraw, AccountTypeBond:
-		return true
-	}
-	return false
-}
-
-func (e AccountType) String() string {
-	return string(e)
-}
-
-func (e *AccountType) UnmarshalGQL(v interface{}) error {
-	str, ok := v.(string)
-	if !ok {
-		return fmt.Errorf("enums must be strings")
-	}
-
-	*e = AccountType(str)
-	if !e.IsValid() {
-		return fmt.Errorf("%s is not a valid AccountType", str)
-	}
-	return nil
-}
-
-func (e AccountType) MarshalGQL(w io.Writer) {
-	fmt.Fprint(w, strconv.Quote(e.String()))
-}
 
 type AuctionTrigger string
 
@@ -1223,10 +1092,6 @@ const (
 	OrderRejectionReasonPeggedOrderWithoutReferencePrice OrderRejectionReason = "PeggedOrderWithoutReferencePrice"
 	// Buy pegged order cannot reference best ask price
 	OrderRejectionReasonPeggedOrderBuyCannotReferenceBestAskPrice OrderRejectionReason = "PeggedOrderBuyCannotReferenceBestAskPrice"
-	// Pegged order offset must be <= 0
-	OrderRejectionReasonPeggedOrderOffsetMustBeLessOrEqualToZero OrderRejectionReason = "PeggedOrderOffsetMustBeLessOrEqualToZero"
-	// Pegged order offset must be < 0
-	OrderRejectionReasonPeggedOrderOffsetMustBeLessThanZero OrderRejectionReason = "PeggedOrderOffsetMustBeLessThanZero"
 	// Pegged order offset must be >= 0
 	OrderRejectionReasonPeggedOrderOffsetMustBeGreaterOrEqualToZero OrderRejectionReason = "PeggedOrderOffsetMustBeGreaterOrEqualToZero"
 	// Sell pegged order cannot reference best bid price
@@ -1283,8 +1148,6 @@ var AllOrderRejectionReason = []OrderRejectionReason{
 	OrderRejectionReasonPeggedOrderMustBeGTTOrGtc,
 	OrderRejectionReasonPeggedOrderWithoutReferencePrice,
 	OrderRejectionReasonPeggedOrderBuyCannotReferenceBestAskPrice,
-	OrderRejectionReasonPeggedOrderOffsetMustBeLessOrEqualToZero,
-	OrderRejectionReasonPeggedOrderOffsetMustBeLessThanZero,
 	OrderRejectionReasonPeggedOrderOffsetMustBeGreaterOrEqualToZero,
 	OrderRejectionReasonPeggedOrderSellCannotReferenceBestBidPrice,
 	OrderRejectionReasonPeggedOrderOffsetMustBeGreaterThanZero,
@@ -1297,7 +1160,7 @@ var AllOrderRejectionReason = []OrderRejectionReason{
 
 func (e OrderRejectionReason) IsValid() bool {
 	switch e {
-	case OrderRejectionReasonInvalidMarketID, OrderRejectionReasonInvalidOrderID, OrderRejectionReasonOrderOutOfSequence, OrderRejectionReasonInvalidRemainingSize, OrderRejectionReasonTimeFailure, OrderRejectionReasonOrderRemovalFailure, OrderRejectionReasonInvalidExpirationTime, OrderRejectionReasonInvalidOrderReference, OrderRejectionReasonEditNotAllowed, OrderRejectionReasonOrderAmendFailure, OrderRejectionReasonOrderNotFound, OrderRejectionReasonInvalidPartyID, OrderRejectionReasonMarketClosed, OrderRejectionReasonMarginCheckFailed, OrderRejectionReasonMissingGeneralAccount, OrderRejectionReasonInternalError, OrderRejectionReasonInvalidSize, OrderRejectionReasonInvalidPersistence, OrderRejectionReasonInvalidType, OrderRejectionReasonSelfTrading, OrderRejectionReasonInsufficientFundsToPayFees, OrderRejectionReasonInvalidTimeInForce, OrderRejectionReasonAmendToGTTWithoutExpiryAt, OrderRejectionReasonExpiryAtBeforeCreatedAt, OrderRejectionReasonGTCWithExpiryAtNotValid, OrderRejectionReasonCannotAmendToFOKOrIoc, OrderRejectionReasonCannotAmendToGFAOrGfn, OrderRejectionReasonCannotAmendFromGFAOrGfn, OrderRejectionReasonInvalidMarketType, OrderRejectionReasonGFNOrderDuringAuction, OrderRejectionReasonGFAOrderDuringContinuousTrading, OrderRejectionReasonIOCOrderDuringAuction, OrderRejectionReasonFOKOrderDuringAuction, OrderRejectionReasonPeggedOrderMustBeLimitOrder, OrderRejectionReasonPeggedOrderMustBeGTTOrGtc, OrderRejectionReasonPeggedOrderWithoutReferencePrice, OrderRejectionReasonPeggedOrderBuyCannotReferenceBestAskPrice, OrderRejectionReasonPeggedOrderOffsetMustBeLessOrEqualToZero, OrderRejectionReasonPeggedOrderOffsetMustBeLessThanZero, OrderRejectionReasonPeggedOrderOffsetMustBeGreaterOrEqualToZero, OrderRejectionReasonPeggedOrderSellCannotReferenceBestBidPrice, OrderRejectionReasonPeggedOrderOffsetMustBeGreaterThanZero, OrderRejectionReasonInsufficientAssetBalance, OrderRejectionReasonCannotAmendPeggedOrderDetailsOnNonPeggedOrder, OrderRejectionReasonUnableToRepricePeggedOrder, OrderRejectionReasonUnableToAmendPeggedOrderPrice, OrderRejectionReasonNonPersistentOrderExceedsPriceBounds:
+	case OrderRejectionReasonInvalidMarketID, OrderRejectionReasonInvalidOrderID, OrderRejectionReasonOrderOutOfSequence, OrderRejectionReasonInvalidRemainingSize, OrderRejectionReasonTimeFailure, OrderRejectionReasonOrderRemovalFailure, OrderRejectionReasonInvalidExpirationTime, OrderRejectionReasonInvalidOrderReference, OrderRejectionReasonEditNotAllowed, OrderRejectionReasonOrderAmendFailure, OrderRejectionReasonOrderNotFound, OrderRejectionReasonInvalidPartyID, OrderRejectionReasonMarketClosed, OrderRejectionReasonMarginCheckFailed, OrderRejectionReasonMissingGeneralAccount, OrderRejectionReasonInternalError, OrderRejectionReasonInvalidSize, OrderRejectionReasonInvalidPersistence, OrderRejectionReasonInvalidType, OrderRejectionReasonSelfTrading, OrderRejectionReasonInsufficientFundsToPayFees, OrderRejectionReasonInvalidTimeInForce, OrderRejectionReasonAmendToGTTWithoutExpiryAt, OrderRejectionReasonExpiryAtBeforeCreatedAt, OrderRejectionReasonGTCWithExpiryAtNotValid, OrderRejectionReasonCannotAmendToFOKOrIoc, OrderRejectionReasonCannotAmendToGFAOrGfn, OrderRejectionReasonCannotAmendFromGFAOrGfn, OrderRejectionReasonInvalidMarketType, OrderRejectionReasonGFNOrderDuringAuction, OrderRejectionReasonGFAOrderDuringContinuousTrading, OrderRejectionReasonIOCOrderDuringAuction, OrderRejectionReasonFOKOrderDuringAuction, OrderRejectionReasonPeggedOrderMustBeLimitOrder, OrderRejectionReasonPeggedOrderMustBeGTTOrGtc, OrderRejectionReasonPeggedOrderWithoutReferencePrice, OrderRejectionReasonPeggedOrderBuyCannotReferenceBestAskPrice, OrderRejectionReasonPeggedOrderOffsetMustBeGreaterOrEqualToZero, OrderRejectionReasonPeggedOrderSellCannotReferenceBestBidPrice, OrderRejectionReasonPeggedOrderOffsetMustBeGreaterThanZero, OrderRejectionReasonInsufficientAssetBalance, OrderRejectionReasonCannotAmendPeggedOrderDetailsOnNonPeggedOrder, OrderRejectionReasonUnableToRepricePeggedOrder, OrderRejectionReasonUnableToAmendPeggedOrderPrice, OrderRejectionReasonNonPersistentOrderExceedsPriceBounds:
 		return true
 	}
 	return false
@@ -1451,7 +1314,7 @@ const (
 	OrderTypeMarket OrderType = "Market"
 	// mentioned in ticket, but as yet unused order type
 	OrderTypeLimit OrderType = "Limit"
-	// Used for distressed partys, an order placed by the network to close out distressed partys
+	// Used for distressed parties, an order placed by the network to close out distressed parties
 	// similar to Market order, only no party is attached to the order.
 	OrderTypeNetwork OrderType = "Network"
 )
@@ -1979,6 +1842,59 @@ func (e TradeType) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
+type TransferStatus string
+
+const (
+	// Indicate a transfer still being processed
+	TransferStatusPending TransferStatus = "Pending"
+	// Indicate of an transfer accepted by the vega network
+	TransferStatusDone TransferStatus = "Done"
+	// Indicate of an transfer rejected by the vega network
+	TransferStatusRejected TransferStatus = "Rejected"
+	// Indicate of a transfer stopped by the vega network
+	// e.g: no funds left to cover the transfer
+	TransferStatusStopped TransferStatus = "Stopped"
+	// Indicate of a transfer cancel by the user
+	TransferStatusCancelled TransferStatus = "Cancelled"
+)
+
+var AllTransferStatus = []TransferStatus{
+	TransferStatusPending,
+	TransferStatusDone,
+	TransferStatusRejected,
+	TransferStatusStopped,
+	TransferStatusCancelled,
+}
+
+func (e TransferStatus) IsValid() bool {
+	switch e {
+	case TransferStatusPending, TransferStatusDone, TransferStatusRejected, TransferStatusStopped, TransferStatusCancelled:
+		return true
+	}
+	return false
+}
+
+func (e TransferStatus) String() string {
+	return string(e)
+}
+
+func (e *TransferStatus) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = TransferStatus(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid TransferStatus", str)
+	}
+	return nil
+}
+
+func (e TransferStatus) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
 type VoteValue string
 
 const (
@@ -2029,20 +1945,20 @@ const (
 	// The withdrawal is open and being processed by the network
 	WithdrawalStatusOpen WithdrawalStatus = "Open"
 	// The withdrawal have been cancelled by the network, either because it expired, or something went wrong with the foreign chain
-	WithdrawalStatusCancelled WithdrawalStatus = "Cancelled"
+	WithdrawalStatusRejected WithdrawalStatus = "Rejected"
 	// The withdrawal was finalized, it was first valid, the foreign chain have executed it and the network updated all accounts
 	WithdrawalStatusFinalized WithdrawalStatus = "Finalized"
 )
 
 var AllWithdrawalStatus = []WithdrawalStatus{
 	WithdrawalStatusOpen,
-	WithdrawalStatusCancelled,
+	WithdrawalStatusRejected,
 	WithdrawalStatusFinalized,
 }
 
 func (e WithdrawalStatus) IsValid() bool {
 	switch e {
-	case WithdrawalStatusOpen, WithdrawalStatusCancelled, WithdrawalStatusFinalized:
+	case WithdrawalStatusOpen, WithdrawalStatusRejected, WithdrawalStatusFinalized:
 		return true
 	}
 	return false

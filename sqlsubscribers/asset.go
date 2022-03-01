@@ -1,0 +1,92 @@
+package sqlsubscribers
+
+import (
+	"fmt"
+	"strconv"
+	"time"
+
+	"code.vegaprotocol.io/data-node/entities"
+	"code.vegaprotocol.io/data-node/logging"
+	types "code.vegaprotocol.io/protos/vega"
+	"code.vegaprotocol.io/vega/events"
+
+	"github.com/shopspring/decimal"
+)
+
+type AssetEvent interface {
+	events.Event
+	Asset() types.Asset
+}
+
+type AssetStore interface {
+	Add(entities.Asset) error
+}
+
+type Asset struct {
+	store    AssetStore
+	log      *logging.Logger
+	vegaTime time.Time
+}
+
+func NewAsset(store AssetStore, log *logging.Logger) *Asset {
+	return &Asset{
+		store: store,
+		log:   log,
+	}
+}
+
+func (a *Asset) Type() events.Type {
+	return events.AssetEvent
+}
+
+func (as *Asset) Push(evt events.Event) {
+	switch e := evt.(type) {
+	case TimeUpdateEvent:
+		as.vegaTime = e.Time()
+	case AssetEvent:
+		as.consume(e)
+	default:
+		as.log.Panic("Unknown event type in transfer response subscriber",
+			logging.String("Type", e.Type().String()))
+	}
+}
+
+func (as *Asset) consume(ae AssetEvent) {
+	as.log.Debug("AssetEvent: ",
+		logging.Int64("block", ae.BlockNr()),
+		logging.String("assetId", ae.Asset().Id))
+
+	err := as.addAsset(ae.Asset(), as.vegaTime)
+	if err != nil {
+		as.log.Error("adding asset", logging.Error(err))
+	}
+}
+
+func (as *Asset) addAsset(va types.Asset, vegaTime time.Time) error {
+	id := entities.MakeAssetID(va.Id)
+
+	totalSupply, err := decimal.NewFromString(va.Details.TotalSupply)
+	if err != nil {
+		return fmt.Errorf("bad total supply '%v'", va.Details.TotalSupply)
+	}
+
+	quantum, err := strconv.Atoi(va.Details.Quantum)
+	if err != nil {
+		return fmt.Errorf("bad quantum '%v'", va.Details.Quantum)
+	}
+
+	asset := entities.Asset{
+		ID:          id,
+		Name:        va.Details.Name,
+		Symbol:      va.Details.Symbol,
+		TotalSupply: totalSupply,
+		Quantum:     quantum,
+		VegaTime:    vegaTime,
+	}
+
+	err = as.store.Add(asset)
+	if err != nil {
+		return fmt.Errorf("adding asset to store: %w", err)
+	}
+	return nil
+}

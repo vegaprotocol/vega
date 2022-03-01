@@ -55,8 +55,8 @@ func testMarginEstimateSuccess(t *testing.T) {
 
 	svc.store.EXPECT().GetMarketRiskFactors(gomock.Any()).Times(1).Return(
 		ptypes.RiskFactor{
-			Long:  0.5,
-			Short: 0.5,
+			Long:  "0.5",
+			Short: "0.5",
 		},
 		nil,
 	)
@@ -122,8 +122,8 @@ func testMarginEstimateErrors(t *testing.T) {
 
 	svc.store.EXPECT().GetMarketRiskFactors(gomock.Any()).Times(1).Return(
 		ptypes.RiskFactor{
-			Long:  0.5,
-			Short: 0.5,
+			Long:  "0.5",
+			Short: "0.5",
 		},
 		nil,
 	)
@@ -140,8 +140,8 @@ func testMarginEstimateErrors(t *testing.T) {
 
 	svc.store.EXPECT().GetMarketRiskFactors(gomock.Any()).Times(1).Return(
 		ptypes.RiskFactor{
-			Long:  0.5,
-			Short: 0.5,
+			Long:  "0.5",
+			Short: "0.5",
 		},
 		nil,
 	)
@@ -173,8 +173,8 @@ func testMarginEstimateErrors(t *testing.T) {
 
 	svc.store.EXPECT().GetMarketRiskFactors(gomock.Any()).Times(1).Return(
 		ptypes.RiskFactor{
-			Long:  0.5,
-			Short: 0.5,
+			Long:  "0.5",
+			Short: "0.5",
 		},
 		nil,
 	)

@@ -11,6 +11,7 @@ import (
 	"time"
 
 	vgtesting "code.vegaprotocol.io/data-node/libs/testing"
+	"code.vegaprotocol.io/data-node/sqlstore"
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/stretchr/testify/require"
 
@@ -149,7 +150,7 @@ func NewTestServer(t testing.TB, ctx context.Context, blocking bool) *TestServer
 	if err != nil {
 		t.Fatalf("failed to create risk store: %v", err)
 	}
-	transferResponseService := transfers.NewService(logger, conf.Transfers, transferResponseStore)
+	transferResponseService := transfers.NewService(logger, conf.Transfers, transferResponseStore, nil)
 	if err != nil {
 		t.Fatalf("failed to create trade service: %v", err)
 	}
@@ -207,7 +208,20 @@ func NewTestServer(t testing.TB, ctx context.Context, blocking bool) *TestServer
 		t.Fatalf("failed to create chain info store: %v", err)
 	}
 
-	eventBroker, err = broker.New(ctx, logger, conf.Broker, chainInfoStore)
+	sqlStore := sqlstore.SQLStore{}
+	sqlBalanceStore := sqlstore.NewBalances(&sqlStore)
+	sqlMarketDataStore := sqlstore.NewMarketData(&sqlStore)
+
+	sqlOrderStore := sqlstore.NewOrders(&sqlStore)
+	sqlNetworkLimitsStore := sqlstore.NewNetworkLimits(&sqlStore)
+	eventSource, err := broker.NewEventSource(conf.Broker, logger)
+
+	if err != nil {
+		t.Fatalf("failed to create event source: %v", err)
+	}
+
+	eventBroker, err = broker.New(ctx, logger, conf.Broker, chainInfoStore, eventSource)
+
 	if err != nil {
 		t.Fatalf("failed to create broker: %v", err)
 	}
@@ -258,6 +272,10 @@ func NewTestServer(t testing.TB, ctx context.Context, blocking bool) *TestServer
 		rewardsService,
 		stakingService,
 		checkpointSvc,
+		sqlBalanceStore,
+		sqlOrderStore,
+		sqlNetworkLimitsStore,
+		sqlMarketDataStore,
 	)
 	if srv == nil {
 		t.Fatal("failed to create gRPC server")

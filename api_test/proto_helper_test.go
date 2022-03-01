@@ -32,6 +32,7 @@ func TradeFromProto(t *proto.Trade) *types.Trade {
 	return &types.Trade{
 		ID:                 t.Id,
 		MarketID:           t.MarketId,
+		MarketPrice:        mustUintFromString(t.Price),
 		Price:              mustUintFromString(t.Price),
 		Size:               t.Size,
 		Buyer:              t.Buyer,

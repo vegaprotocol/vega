@@ -29,5 +29,5 @@ func (r *newAssetResolver) Decimals(ctx context.Context, obj *types.NewAsset) (i
 }
 
 func (r *newAssetResolver) MinLpStake(ctx context.Context, obj *types.NewAsset) (string, error) {
-	return obj.Changes.MinLpStake, nil
+	return obj.Changes.Quantum, nil
 }

@@ -5,35 +5,36 @@
 package mocks
 
 import (
+	reflect "reflect"
+
 	vega "code.vegaprotocol.io/protos/vega"
 	gomock "github.com/golang/mock/gomock"
-	reflect "reflect"
 )
 
-// MockRiskStore is a mock of RiskStore interface
+// MockRiskStore is a mock of RiskStore interface.
 type MockRiskStore struct {
 	ctrl     *gomock.Controller
 	recorder *MockRiskStoreMockRecorder
 }
 
-// MockRiskStoreMockRecorder is the mock recorder for MockRiskStore
+// MockRiskStoreMockRecorder is the mock recorder for MockRiskStore.
 type MockRiskStoreMockRecorder struct {
 	mock *MockRiskStore
 }
 
-// NewMockRiskStore creates a new mock instance
+// NewMockRiskStore creates a new mock instance.
 func NewMockRiskStore(ctrl *gomock.Controller) *MockRiskStore {
 	mock := &MockRiskStore{ctrl: ctrl}
 	mock.recorder = &MockRiskStoreMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockRiskStore) EXPECT() *MockRiskStoreMockRecorder {
 	return m.recorder
 }
 
-// GetMarginLevelsByID mocks base method
+// GetMarginLevelsByID mocks base method.
 func (m *MockRiskStore) GetMarginLevelsByID(arg0, arg1 string) ([]vega.MarginLevels, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetMarginLevelsByID", arg0, arg1)
@@ -42,13 +43,13 @@ func (m *MockRiskStore) GetMarginLevelsByID(arg0, arg1 string) ([]vega.MarginLev
 	return ret0, ret1
 }
 
-// GetMarginLevelsByID indicates an expected call of GetMarginLevelsByID
+// GetMarginLevelsByID indicates an expected call of GetMarginLevelsByID.
 func (mr *MockRiskStoreMockRecorder) GetMarginLevelsByID(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMarginLevelsByID", reflect.TypeOf((*MockRiskStore)(nil).GetMarginLevelsByID), arg0, arg1)
 }
 
-// GetMarketRiskFactors mocks base method
+// GetMarketRiskFactors mocks base method.
 func (m *MockRiskStore) GetMarketRiskFactors(arg0 string) (vega.RiskFactor, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetMarketRiskFactors", arg0)
@@ -57,13 +58,13 @@ func (m *MockRiskStore) GetMarketRiskFactors(arg0 string) (vega.RiskFactor, erro
 	return ret0, ret1
 }
 
-// GetMarketRiskFactors indicates an expected call of GetMarketRiskFactors
+// GetMarketRiskFactors indicates an expected call of GetMarketRiskFactors.
 func (mr *MockRiskStoreMockRecorder) GetMarketRiskFactors(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMarketRiskFactors", reflect.TypeOf((*MockRiskStore)(nil).GetMarketRiskFactors), arg0)
 }
 
-// Subscribe mocks base method
+// Subscribe mocks base method.
 func (m *MockRiskStore) Subscribe(arg0 chan []vega.MarginLevels) uint64 {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Subscribe", arg0)
@@ -71,13 +72,13 @@ func (m *MockRiskStore) Subscribe(arg0 chan []vega.MarginLevels) uint64 {
 	return ret0
 }
 
-// Subscribe indicates an expected call of Subscribe
+// Subscribe indicates an expected call of Subscribe.
 func (mr *MockRiskStoreMockRecorder) Subscribe(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Subscribe", reflect.TypeOf((*MockRiskStore)(nil).Subscribe), arg0)
 }
 
-// Unsubscribe mocks base method
+// Unsubscribe mocks base method.
 func (m *MockRiskStore) Unsubscribe(arg0 uint64) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Unsubscribe", arg0)
@@ -85,7 +86,7 @@ func (m *MockRiskStore) Unsubscribe(arg0 uint64) error {
 	return ret0
 }
 
-// Unsubscribe indicates an expected call of Unsubscribe
+// Unsubscribe indicates an expected call of Unsubscribe.
 func (mr *MockRiskStoreMockRecorder) Unsubscribe(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Unsubscribe", reflect.TypeOf((*MockRiskStore)(nil).Unsubscribe), arg0)

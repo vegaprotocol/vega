@@ -171,6 +171,10 @@ func (t timeStub) TraceID() string {
 	return "test-trace-id"
 }
 
+func (t timeStub) TxHash() string {
+	return "test-tx-hash"
+}
+
 func (t timeStub) Type() events.Type {
 	return events.TimeUpdate
 }
@@ -187,6 +191,10 @@ func (t trStub) TraceID() string {
 	return "test-trace-id"
 }
 
+func (t trStub) TxHash() string {
+	return "test-tx-hash"
+}
+
 func (t trStub) TransferResponses() []*types.TransferResponse {
 	return t.r
 }
@@ -198,10 +206,12 @@ func (t trStub) StreamMessage() *eventspb.BusEvent {
 func (t trStub) SetSequenceID(s uint64) {}
 func (t trStub) Sequence() uint64       { return 0 }
 func (t trStub) ChainID() string        { return "testchain" }
+func (t trStub) BlockNr() int64         { return 0 }
 
 func (t timeStub) SetSequenceID(s uint64) {}
 func (t timeStub) Sequence() uint64       { return 0 }
 func (t timeStub) ChainID() string        { return "testchain" }
+func (t timeStub) BlockNr() int64         { return 0 }
 
 func (t timeStub) StreamMessage() *eventspb.BusEvent {
 	return &eventspb.BusEvent{}

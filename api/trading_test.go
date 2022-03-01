@@ -31,12 +31,14 @@ import (
 	"code.vegaprotocol.io/data-node/parties"
 	"code.vegaprotocol.io/data-node/plugins"
 	"code.vegaprotocol.io/data-node/risk"
+	"code.vegaprotocol.io/data-node/sqlstore"
 	"code.vegaprotocol.io/data-node/staking"
 	"code.vegaprotocol.io/data-node/storage"
 	"code.vegaprotocol.io/data-node/subscribers"
 	"code.vegaprotocol.io/data-node/trades"
 	"code.vegaprotocol.io/data-node/transfers"
 	"code.vegaprotocol.io/data-node/vegatime"
+	"github.com/golang/protobuf/proto"
 	"github.com/stretchr/testify/require"
 
 	protoapi "code.vegaprotocol.io/protos/data-node/api/v1"
@@ -214,7 +216,7 @@ func getTestGRPCServer(
 	tradeService := trades.NewService(logger, conf.Trades, tradeStore, nil)
 
 	// TransferResponse Service
-	transferResponseService := transfers.NewService(logger, conf.Transfers, transferResponseStore)
+	transferResponseService := transfers.NewService(logger, conf.Transfers, transferResponseStore, nil)
 	if err != nil {
 		err = errors.Wrap(err, "failed to create trade service")
 		return
@@ -235,7 +237,12 @@ func getTestGRPCServer(
 		t.Fatalf("failed to create chain info store: %v", err)
 	}
 
-	broker, err := broker.New(ctx, logger, conf.Broker, chainInfoStore)
+	eventSource, err := broker.NewEventSource(conf.Broker, logger)
+	if err != nil {
+		t.Fatalf("failed to create event source: %v", err)
+	}
+
+	broker, err := broker.New(ctx, logger, conf.Broker, chainInfoStore, eventSource)
 	if err != nil {
 		err = errors.Wrap(err, "failed to create broker")
 		return
@@ -262,6 +269,12 @@ func getTestGRPCServer(
 	delegationService := delegations.NewService(logger, conf.Delegations, delegationStore)
 
 	stakingService := staking.NewService(ctx, logger)
+
+	sqlStore := sqlstore.SQLStore{}
+	sqlBalanceStore := sqlstore.NewBalances(&sqlStore)
+	sqlOrderStore := sqlstore.NewOrders(&sqlStore)
+	sqlNetworkLimitsStore := sqlstore.NewNetworkLimits(&sqlStore)
+	sqlMarketDataStore := sqlstore.NewMarketData(&sqlStore)
 
 	g := api.NewGRPCServer(
 		logger,
@@ -293,6 +306,10 @@ func getTestGRPCServer(
 		rewardsService,
 		stakingService,
 		checkpointSvc,
+		sqlBalanceStore,
+		sqlOrderStore,
+		sqlNetworkLimitsStore,
+		sqlMarketDataStore,
 	)
 	if g == nil {
 		err = fmt.Errorf("failed to create gRPC server")
@@ -362,7 +379,7 @@ func TestSubmitTransaction(t *testing.T) {
 		}
 
 		mockTradingServiceClient.EXPECT().
-			SubmitTransaction(gomock.Any(), vegaReq).
+			SubmitTransaction(gomock.Any(), vgtesting.ProtosEq(vegaReq)).
 			Return(&vegaprotoapi.SubmitTransactionResponse{Success: true}, nil).Times(1)
 
 		proxyClient := vegaprotoapi.NewCoreServiceClient(conn)
@@ -370,7 +387,7 @@ func TestSubmitTransaction(t *testing.T) {
 
 		actualResp, err := proxyClient.SubmitTransaction(ctx, req)
 		assert.NoError(t, err)
-		assert.Equal(t, expectedRes, actualResp)
+		vgtesting.AssertProtoEqual(t, expectedRes, actualResp)
 	})
 
 	t.Run("proxy propagates an error", func(t *testing.T) {
@@ -408,13 +425,105 @@ func TestSubmitTransaction(t *testing.T) {
 		}
 
 		mockTradingServiceClient.EXPECT().
-			SubmitTransaction(gomock.Any(), vegaReq).
+			SubmitTransaction(gomock.Any(), vgtesting.ProtosEq(vegaReq)).
 			Return(nil, errors.New("Critical error"))
 
 		proxyClient := vegaprotoapi.NewCoreServiceClient(conn)
 		assert.NotNil(t, proxyClient)
 
 		actualResp, err := proxyClient.SubmitTransaction(ctx, req)
+		assert.Error(t, err)
+		assert.Nil(t, actualResp)
+		assert.Contains(t, err.Error(), "Critical error")
+	})
+}
+
+func TestSubmitRawTransaction(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	t.Run("proxy call is successful", func(t *testing.T) {
+		tidy, conn, mockTradingServiceClient, err := getTestGRPCServer(t, ctx, 64201, true)
+		if err != nil {
+			t.Fatalf("Failed to get test gRPC server: %s", err.Error())
+		}
+		defer tidy()
+
+		tx := &commandspb.Transaction{
+			InputData: []byte("input data"),
+			Signature: &commandspb.Signature{
+				Value:   "value",
+				Algo:    "algo",
+				Version: 1,
+			},
+		}
+
+		bs, err := proto.Marshal(tx)
+		assert.NoError(t, err)
+
+		req := &vegaprotoapi.SubmitRawTransactionRequest{
+			Type: vegaprotoapi.SubmitRawTransactionRequest_TYPE_UNSPECIFIED,
+			Tx:   bs,
+		}
+
+		expectedRes := &vegaprotoapi.SubmitRawTransactionResponse{Success: true}
+
+		vegaReq := &vegaprotoapi.SubmitRawTransactionRequest{
+			Type: vegaprotoapi.SubmitRawTransactionRequest_TYPE_UNSPECIFIED,
+			Tx:   bs,
+		}
+
+		mockTradingServiceClient.EXPECT().
+			SubmitRawTransaction(gomock.Any(), vgtesting.ProtosEq(vegaReq)).
+			Return(&vegaprotoapi.SubmitRawTransactionResponse{Success: true}, nil).Times(1)
+
+		proxyClient := vegaprotoapi.NewCoreServiceClient(conn)
+		assert.NotNil(t, proxyClient)
+
+		actualResp, err := proxyClient.SubmitRawTransaction(ctx, req)
+		assert.NoError(t, err)
+		vgtesting.AssertProtoEqual(t, expectedRes, actualResp)
+	})
+
+	t.Run("proxy propagates an error", func(t *testing.T) {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+
+		tidy, conn, mockTradingServiceClient, err := getTestGRPCServer(t, ctx, 64201, true)
+		if err != nil {
+			t.Fatalf("Failed to get test gRPC server: %s", err.Error())
+		}
+		defer tidy()
+		tx := &commandspb.Transaction{
+			InputData: []byte("input data"),
+			Signature: &commandspb.Signature{
+				Value:   "value",
+				Algo:    "algo",
+				Version: 1,
+			},
+		}
+
+		bs, err := proto.Marshal(tx)
+		assert.NoError(t, err)
+
+		req := &vegaprotoapi.SubmitRawTransactionRequest{
+			Type: vegaprotoapi.SubmitRawTransactionRequest_TYPE_COMMIT,
+			Tx:   bs,
+		}
+
+		vegaReq := &vegaprotoapi.SubmitRawTransactionRequest{
+			Type: vegaprotoapi.SubmitRawTransactionRequest_TYPE_COMMIT,
+			Tx:   bs,
+		}
+
+		mockTradingServiceClient.EXPECT().
+			SubmitRawTransaction(gomock.Any(), vgtesting.ProtosEq(vegaReq)).
+			Return(nil, errors.New("Critical error"))
+
+		proxyClient := vegaprotoapi.NewCoreServiceClient(conn)
+		assert.NotNil(t, proxyClient)
+
+		actualResp, err := proxyClient.SubmitRawTransaction(ctx, req)
 		assert.Error(t, err)
 		assert.Nil(t, actualResp)
 		assert.Contains(t, err.Error(), "Critical error")
@@ -438,7 +547,7 @@ func TestLastBlockHeight(t *testing.T) {
 		vegaReq := &vegaprotoapi.LastBlockHeightRequest{}
 
 		mockTradingServiceClient.EXPECT().
-			LastBlockHeight(gomock.Any(), vegaReq).
+			LastBlockHeight(gomock.Any(), vgtesting.ProtosEq(vegaReq)).
 			Return(&vegaprotoapi.LastBlockHeightResponse{Height: 20}, nil).Times(1)
 
 		proxyClient := vegaprotoapi.NewCoreServiceClient(conn)
@@ -446,7 +555,7 @@ func TestLastBlockHeight(t *testing.T) {
 
 		actualResp, err := proxyClient.LastBlockHeight(ctx, req)
 		assert.NoError(t, err)
-		assert.Equal(t, expectedRes, actualResp)
+		vgtesting.AssertProtoEqual(t, expectedRes, actualResp)
 	})
 
 	t.Run("proxy propagates an error", func(t *testing.T) {
@@ -460,7 +569,7 @@ func TestLastBlockHeight(t *testing.T) {
 		vegaReq := &vegaprotoapi.LastBlockHeightRequest{}
 
 		mockTradingServiceClient.EXPECT().
-			LastBlockHeight(gomock.Any(), vegaReq).
+			LastBlockHeight(gomock.Any(), vgtesting.ProtosEq(vegaReq)).
 			Return(nil, fmt.Errorf("Critical error")).Times(1)
 
 		proxyClient := vegaprotoapi.NewCoreServiceClient(conn)

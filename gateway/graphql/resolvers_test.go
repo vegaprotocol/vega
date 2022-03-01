@@ -12,6 +12,7 @@ import (
 	protoapi "code.vegaprotocol.io/protos/data-node/api/v1"
 	types "code.vegaprotocol.io/protos/vega"
 	oraclesv1 "code.vegaprotocol.io/protos/vega/oracles/v1"
+	"google.golang.org/grpc"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
@@ -78,7 +79,6 @@ func getTestMarket() *types.Market {
 				},
 				Product: &types.Instrument_Future{
 					Future: &types.Future{
-						Maturity:        "2019-12-31",
 						SettlementAsset: "Ethereum/Ether",
 						OracleSpecForSettlementPrice: &oraclesv1.OracleSpec{
 							PubKeys: []string{"0xDEADBEEF"},
@@ -130,9 +130,6 @@ func getTestMarket() *types.Market {
 				},
 			},
 		},
-		TradingModeConfig: &types.Market_Continuous{
-			Continuous: &types.ContinuousTrading{},
-		},
 	}
 }
 
@@ -149,7 +146,7 @@ func TestNewResolverRoot_Resolver(t *testing.T) {
 
 	root.tradingDataClient.EXPECT().AssetByID(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().Return(&protoapi.AssetByIDResponse{Asset: &types.Asset{}}, nil)
 
-	root.tradingDataClient.EXPECT().MarketByID(gomock.Any(), gomock.Any()).Times(len(markets)).DoAndReturn(func(_ context.Context, req *protoapi.MarketByIDRequest) (*protoapi.MarketByIDResponse, error) {
+	root.tradingDataClient.EXPECT().MarketByID(gomock.Any(), gomock.Any()).Times(len(markets)).DoAndReturn(func(_ context.Context, req *protoapi.MarketByIDRequest, _ ...grpc.CallOption) (*protoapi.MarketByIDResponse, error) {
 		m, ok := markets[req.MarketId]
 		assert.True(t, ok)
 		if m == nil {
@@ -243,11 +240,13 @@ func buildTestResolverRoot(t *testing.T) *testResolver {
 	conf := gateway.NewDefaultConfig()
 	coreProxyClient := mocks.NewMockCoreProxyServiceClient(ctrl)
 	tradingDataClient := mocks.NewMockTradingDataServiceClient(ctrl)
+	tradingDataClientV2 := mocks.NewMockTradingDataServiceClientV2(ctrl)
 	resolver := gql.NewResolverRoot(
 		log,
 		conf,
 		coreProxyClient,
 		tradingDataClient,
+		tradingDataClientV2,
 	)
 	return &testResolver{
 		resolverRoot:      resolver,

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	protoapi "code.vegaprotocol.io/protos/data-node/api/v1"
 	proto "code.vegaprotocol.io/protos/vega"
 )
 
@@ -13,20 +14,28 @@ func (r *nodeResolver) Status(ctx context.Context, obj *proto.Node) (NodeStatus,
 	return nodeStatusFromProto(obj.Status)
 }
 
-func (r *nodeResolver) Delegations(ctx context.Context, obj *proto.Node, partyID *string) ([]*proto.Delegation, error) {
-	if partyID == nil || *partyID == "" {
-		return obj.Delegations, nil
+func (r *nodeResolver) Delegations(
+	ctx context.Context,
+	obj *proto.Node,
+	partyID *string,
+	skip, first, last *int,
+) ([]*proto.Delegation, error) {
+
+	req := &protoapi.DelegationsRequest{
+		NodeId:     obj.Id,
+		Pagination: makePagination(skip, first, last),
 	}
 
-	partyDelegations := []*proto.Delegation{}
-
-	for _, d := range obj.Delegations {
-		if d.Party == *partyID {
-			partyDelegations = append(partyDelegations, d)
-		}
+	if partyID != nil && *partyID != "" {
+		req.Party = *partyID
 	}
 
-	return partyDelegations, nil
+	resp, err := r.tradingDataClient.Delegations(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.Delegations, nil
 }
 
 func nodeStatusFromProto(s proto.NodeStatus) (NodeStatus, error) {

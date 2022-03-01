@@ -33,6 +33,8 @@ import (
 	"code.vegaprotocol.io/data-node/plugins"
 	"code.vegaprotocol.io/data-node/pprof"
 	"code.vegaprotocol.io/data-node/risk"
+	"code.vegaprotocol.io/data-node/sqlstore"
+	"code.vegaprotocol.io/data-node/sqlsubscribers"
 	"code.vegaprotocol.io/data-node/staking"
 	"code.vegaprotocol.io/data-node/storage"
 	"code.vegaprotocol.io/data-node/subscribers"
@@ -94,12 +96,26 @@ type NodeCommand struct {
 	delegationStore       *storage.Delegations
 	checkpointStore       *storage.Checkpoints
 	chainInfoStore        *storage.ChainInfo
+	transferStore         *storage.Transfers
+
+	sqlStore              *sqlstore.SQLStore
+	assetStoreSQL         *sqlstore.Assets
+	blockStoreSQL         *sqlstore.Blocks
+	accountStoreSQL       *sqlstore.Accounts
+	balanceStoreSQL       *sqlstore.Balances
+	ledgerSQL             *sqlstore.Ledger
+	partyStoreSQL         *sqlstore.Parties
+	orderStoreSQL         *sqlstore.Orders
+	tradeStoreSQL         *sqlstore.Trades
+	networkLimitsStoreSQL *sqlstore.NetworkLimits
+	marketDataStoreSQL    *sqlstore.MarketData
 
 	vegaCoreServiceClient vegaprotoapi.CoreServiceClient
 
-	broker *broker.Broker
+	broker    *broker.Broker
+	sqlBroker broker.SqlStoreEventBroker
 
-	transferSub          *subscribers.TransferResponse
+	transferRespSub      *subscribers.TransferResponse
 	marketEventSub       *subscribers.MarketEvent
 	orderSub             *subscribers.OrderEvent
 	accountSub           *subscribers.AccountSub
@@ -120,6 +136,15 @@ type NodeCommand struct {
 	timeUpdateSub        *subscribers.Time
 	rewardsSub           *subscribers.RewardCounters
 	checkpointSub        *subscribers.CheckpointSub
+	transferSub          *subscribers.TransferSub
+
+	assetSubSQL            *sqlsubscribers.Asset
+	timeSubSQL             *sqlsubscribers.Time
+	transferResponseSubSQL *sqlsubscribers.TransferResponse
+	orderSubSQL            *sqlsubscribers.Order
+	networkLimitsSubSQL    *sqlsubscribers.NetworkLimits
+	marketDataSubSQL       *sqlsubscribers.MarketData
+	tradesSubSQL           *sqlsubscribers.TradeSubscriber
 
 	candleService     *candles.Svc
 	tradeService      *trades.Svc
@@ -218,6 +243,10 @@ func (l *NodeCommand) runNode(args []string) error {
 		l.rewardsSub,
 		l.stakingService,
 		l.checkpointSvc,
+		l.balanceStoreSQL,
+		l.orderStoreSQL,
+		l.networkLimitsStoreSQL,
+		l.marketDataStoreSQL,
 	)
 
 	// watch configs
@@ -242,9 +271,15 @@ func (l *NodeCommand) runNode(args []string) error {
 		return l.broker.Receive(ctx)
 	})
 
+	if l.conf.SQLStore.Enabled {
+		eg.Go(func() error {
+			return l.sqlBroker.Receive(ctx)
+		})
+	}
+
 	// waitSig will wait for a sigterm or sigint interrupt.
 	eg.Go(func() error {
-		var gracefulStop = make(chan os.Signal, 1)
+		gracefulStop := make(chan os.Signal, 1)
 		signal.Notify(gracefulStop, syscall.SIGTERM, syscall.SIGINT)
 
 		select {

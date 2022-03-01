@@ -194,10 +194,6 @@ func (r *myMarketResolver) PriceMonitoringSettings(ctx context.Context, obj *typ
 	return PriceMonitoringSettingsFromProto(obj.PriceMonitoringSettings)
 }
 
-func (r *myMarketResolver) TradingModeConfig(ctx context.Context, obj *types.Market) (TradingMode, error) {
-	return TradingModeConfigFromProto(obj.TradingModeConfig)
-}
-
 func (r *myMarketResolver) LiquidityMonitoringParameters(ctx context.Context, obj *types.Market) (*LiquidityMonitoringParameters, error) {
 	return &LiquidityMonitoringParameters{
 		TargetStakeParameters: &TargetStakeParameters{

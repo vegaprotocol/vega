@@ -5,36 +5,37 @@
 package mocks
 
 import (
+	reflect "reflect"
+
 	v1 "code.vegaprotocol.io/protos/vega/events/v1"
 	num "code.vegaprotocol.io/vega/types/num"
 	gomock "github.com/golang/mock/gomock"
-	reflect "reflect"
 )
 
-// MockStakingService is a mock of StakingService interface
+// MockStakingService is a mock of StakingService interface.
 type MockStakingService struct {
 	ctrl     *gomock.Controller
 	recorder *MockStakingServiceMockRecorder
 }
 
-// MockStakingServiceMockRecorder is the mock recorder for MockStakingService
+// MockStakingServiceMockRecorder is the mock recorder for MockStakingService.
 type MockStakingServiceMockRecorder struct {
 	mock *MockStakingService
 }
 
-// NewMockStakingService creates a new mock instance
+// NewMockStakingService creates a new mock instance.
 func NewMockStakingService(ctrl *gomock.Controller) *MockStakingService {
 	mock := &MockStakingService{ctrl: ctrl}
 	mock.recorder = &MockStakingServiceMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockStakingService) EXPECT() *MockStakingServiceMockRecorder {
 	return m.recorder
 }
 
-// GetStake mocks base method
+// GetStake mocks base method.
 func (m *MockStakingService) GetStake(arg0 string) (*num.Uint, []v1.StakeLinking) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetStake", arg0)
@@ -43,7 +44,7 @@ func (m *MockStakingService) GetStake(arg0 string) (*num.Uint, []v1.StakeLinking
 	return ret0, ret1
 }
 
-// GetStake indicates an expected call of GetStake
+// GetStake indicates an expected call of GetStake.
 func (mr *MockStakingServiceMockRecorder) GetStake(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetStake", reflect.TypeOf((*MockStakingService)(nil).GetStake), arg0)

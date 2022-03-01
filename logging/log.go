@@ -377,3 +377,25 @@ func (log *Logger) Debugf(s string, args ...interface{}) {
 		log.Logger.WithOptions(zap.AddCallerSkip(2)).Sugar().Debugf(strings.TrimSpace(s), args...)
 	}
 }
+
+type gooseLogger struct {
+	zap.SugaredLogger
+}
+
+func (l *gooseLogger) Print(v ...interface{}) {
+	l.Info(v...)
+}
+
+func (l *gooseLogger) Println(v ...interface{}) {
+	l.Info(v...)
+}
+
+func (l *gooseLogger) Printf(format string, v ...interface{}) {
+	//l.Logger.WithOptions(zap.AddCallerSkip(2))
+	l.Infof(strings.TrimSpace(format), v...)
+}
+
+func (log *Logger) GooseLogger() *gooseLogger {
+	gl := log.Logger.WithOptions(zap.AddCallerSkip(2)).Sugar()
+	return &gooseLogger{SugaredLogger: *gl}
+}

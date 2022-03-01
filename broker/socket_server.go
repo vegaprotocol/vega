@@ -55,7 +55,7 @@ func newSocketServer(log *logging.Logger, config *SocketConfig) (*socketServer, 
 	}, nil
 }
 
-func (s socketServer) listen() error {
+func (s socketServer) Listen() error {
 	addr := fmt.Sprintf(
 		"%s://%s",
 		strings.ToLower(s.config.TransportType),
@@ -80,7 +80,7 @@ func (s socketServer) listen() error {
 	return nil
 }
 
-func (s socketServer) receive(ctx context.Context) (<-chan events.Event, <-chan error) {
+func (s socketServer) Receive(ctx context.Context) (<-chan events.Event, <-chan error) {
 	receiveCh := make(chan events.Event, defaultEventChannelBufferSize)
 	errCh := make(chan error, 1)
 
@@ -114,7 +114,7 @@ func (s socketServer) receive(ctx context.Context) (<-chan events.Event, <-chan 
 				case mangosErr.ErrClosed:
 					return nil
 				default:
-					s.log.Error("Failed to receive message", logging.Error(err))
+					s.log.Error("Failed to Receive message", logging.Error(err))
 					continue
 				}
 			}

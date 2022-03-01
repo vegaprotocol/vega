@@ -3,6 +3,7 @@ package storage_test
 import (
 	"fmt"
 	"sort"
+	"strconv"
 	"testing"
 	"time"
 
@@ -10,7 +11,51 @@ import (
 	"code.vegaprotocol.io/data-node/storage"
 	pb "code.vegaprotocol.io/protos/vega"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
+
+func TestCleanupOldEpochsFromEpoch(t *testing.T) {
+	log := logging.NewTestLogger()
+	c := storage.NewDefaultConfig()
+	startTime := time.Date(2020, time.December, 25, 12, 0, 0, 0, time.UTC)
+	expiryTime := time.Date(2020, time.December, 25, 12, 23, 59, 30, time.UTC)
+	endTime := startTime.Add(24 * time.Hour)
+
+	nodeStore := storage.NewNode(log, c)
+	epochStore := storage.NewEpoch(log, nodeStore, c)
+	for i := 0; i < 30; i++ {
+		epochStore.AddEpoch(uint64(i), startTime.UnixNano(), expiryTime.UnixNano(), endTime.UnixNano())
+
+		epochStore.AddDelegation(pb.Delegation{
+			Party:    "party1",
+			NodeId:   "pub_key_1",
+			EpochSeq: strconv.Itoa(i),
+			Amount:   "100",
+		})
+	}
+
+	for i := 30; i < 40; i++ {
+		epochStore.AddEpoch(uint64(i), startTime.UnixNano(), expiryTime.UnixNano(), endTime.UnixNano())
+		epochStore.AddDelegation(pb.Delegation{
+			Party:    "party1",
+			NodeId:   "pub_key_1",
+			EpochSeq: strconv.Itoa(i),
+			Amount:   "100",
+		})
+
+		// we don't have delegations for the 31st past epoch
+		epochSeqMinus30 := strconv.Itoa(i - 30)
+		epoch, _ := epochStore.GetEpochByID(epochSeqMinus30)
+		require.Equal(t, 0, len(epoch.Delegations))
+
+		// we have delegation for the past 30 epochs
+		for j := 0; j < 30; j++ {
+			epochSeq := strconv.Itoa(i - j)
+			epoch, _ := epochStore.GetEpochByID(epochSeq)
+			require.Equal(t, "100", epoch.Delegations[0].Amount)
+		}
+	}
+}
 
 func TestEpochs(t *testing.T) {
 	a := assert.New(t)

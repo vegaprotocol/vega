@@ -33,42 +33,31 @@ func (f *Simple) CalculationInterval() time.Duration {
 }
 
 // CalculateRiskFactors returns the fixed risk factors for the simple risk model.
-func (f *Simple) CalculateRiskFactors(current *types.RiskResult) (bool, *types.RiskResult) {
-	rf := &types.RiskResult{
-		RiskFactors: map[string]*types.RiskFactor{
-			f.asset: {
-				Long:  f.factorLong,
-				Short: f.factorShort,
-			},
-		},
-		PredictedNextRiskFactors: map[string]*types.RiskFactor{
-			f.asset: {
-				Long:  f.factorLong,
-				Short: f.factorShort,
-			},
-		},
+func (f *Simple) CalculateRiskFactors() *types.RiskFactor {
+	return &types.RiskFactor{
+		Long:  f.factorLong,
+		Short: f.factorShort,
 	}
-	return true, rf
 }
 
-// PriceRange returns the minimum and maximum price as implied by the model's maxMoveUp/minMoveDown parameters and the current price
+// PriceRange returns the minimum and maximum price as implied by the model's maxMoveUp/minMoveDown parameters and the current price.
 func (f *Simple) PriceRange(currentP, _, _ num.Decimal) (num.Decimal, num.Decimal) {
 	return currentP.Sub(f.minMoveDown), currentP.Add(f.maxMoveUp)
 }
 
 // ProbabilityOfTrading of trading returns the probability of trading given current mark price, projection horizon expressed as year fraction, order price and side (isBid).
 // Additional arguments control optional truncation of probability density outside the [minPrice,maxPrice] range.
-func (f *Simple) ProbabilityOfTrading(currentP, orderP, minP, maxP *num.Uint, yFrac num.Decimal, isBid, applyMinMax bool) num.Decimal {
-	if !applyMinMax {
-		return f.prob
-	}
-	if orderP.LT(minP) || orderP.GT(maxP) {
-		return num.DecimalZero()
+func (f *Simple) ProbabilityOfTrading(currentP, orderP *num.Uint, minP, maxP, yFrac num.Decimal, isBid, applyMinMax bool) num.Decimal {
+	if applyMinMax {
+		p := orderP.ToDecimal()
+		if p.LessThan(minP) || p.GreaterThan(maxP) {
+			return num.DecimalZero()
+		}
 	}
 	return f.prob
 }
 
-// GetProjectionHorizon returns 0 and the simple model doesn't rely on any proabilistic calculations
+// GetProjectionHorizon returns 0 and the simple model doesn't rely on any proabilistic calculations.
 func (f *Simple) GetProjectionHorizon() num.Decimal {
 	return num.DecimalZero()
 }

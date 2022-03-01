@@ -28,7 +28,7 @@ type NodeStore interface {
 	AddNode(types.Node)
 	AddDelegation(types.Delegation)
 	GetAllIDs() []string
-	AddNodeScore(nodeID, epochID, score, normalisedScore string)
+	AddNodeScore(nodeID, epochID, score, normalisedScore, rawScore, performance string)
 	PublickKeyChanged(nodeID, oldPubKey string, newPubKey string, blockHeight uint64)
 }
 
@@ -96,6 +96,8 @@ func (ns *NodesSub) Push(evts ...events.Event) {
 				vse.GetEpochSeq(),
 				vse.GetValidatorScore(),
 				vse.GetNormalisedScore(),
+				vse.GetRawValidatorScore(),
+				vse.GetValidatorPerformance(),
 			)
 		case KeyRotationEvent:
 			kre := et.Proto()

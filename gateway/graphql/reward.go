@@ -9,7 +9,7 @@ import (
 
 type rewardResolver VegaResolverRoot
 
-func (r *rewardResolver) Asset(ctx context.Context, obj *vega.RewardDetails) (*vega.Asset, error) {
+func (r *rewardResolver) Asset(ctx context.Context, obj *vega.Reward) (*vega.Asset, error) {
 	asset, err := r.r.getAssetByID(ctx, obj.AssetId)
 	if err != nil {
 		return nil, err
@@ -18,15 +18,15 @@ func (r *rewardResolver) Asset(ctx context.Context, obj *vega.RewardDetails) (*v
 	return asset, nil
 }
 
-func (r *rewardResolver) Party(ctx context.Context, obj *vega.RewardDetails) (*vega.Party, error) {
+func (r *rewardResolver) Party(ctx context.Context, obj *vega.Reward) (*vega.Party, error) {
 	return &vega.Party{Id: obj.PartyId}, nil
 }
 
-func (r *rewardResolver) ReceivedAt(ctx context.Context, obj *vega.RewardDetails) (string, error) {
+func (r *rewardResolver) ReceivedAt(ctx context.Context, obj *vega.Reward) (string, error) {
 	return vegatime.Format(vegatime.UnixNano(obj.ReceivedAt)), nil
 }
 
-func (r *rewardResolver) Epoch(ctx context.Context, obj *vega.RewardDetails) (*vega.Epoch, error) {
+func (r *rewardResolver) Epoch(ctx context.Context, obj *vega.Reward) (*vega.Epoch, error) {
 	epoch, err := r.r.getEpochByID(ctx, obj.Epoch)
 	if err != nil {
 		return nil, err
