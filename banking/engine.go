@@ -85,8 +85,7 @@ type TimeService interface {
 // Epochervice ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/epoch_service_mock.go -package mocks code.vegaprotocol.io/vega/banking EpochService
 type EpochService interface {
-	NotifyOnEpoch(f func(context.Context, types.Epoch))
-	NotifyOnEpochRestore(f func(context.Context, types.Epoch))
+	NotifyOnEpoch(f func(context.Context, types.Epoch), r func(context.Context, types.Epoch))
 }
 
 // Topology ...
@@ -153,8 +152,7 @@ func New(
 ) (e *Engine) {
 	defer func() {
 		tsvc.NotifyOnTick(e.OnTick)
-		epoch.NotifyOnEpoch(e.OnEpoch)
-		epoch.NotifyOnEpochRestore(e.OnEpochRestore)
+		epoch.NotifyOnEpoch(e.OnEpoch, e.OnEpochRestore)
 	}()
 	log = log.Named(namedLogger)
 	log.SetLevel(cfg.Level.Get())

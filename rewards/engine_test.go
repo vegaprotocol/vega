@@ -369,10 +369,7 @@ type TestEpochEngine struct {
 	restore   []func(context.Context, types.Epoch)
 }
 
-func (e *TestEpochEngine) NotifyOnEpoch(f func(context.Context, types.Epoch)) {
+func (e *TestEpochEngine) NotifyOnEpoch(f func(context.Context, types.Epoch), r func(context.Context, types.Epoch)) {
 	e.callbacks = append(e.callbacks, f)
-}
-
-func (e *TestEpochEngine) NotifyOnEpochRestore(f func(context.Context, types.Epoch)) {
-	e.restore = append(e.restore, f)
+	e.restore = append(e.callbacks, r)
 }

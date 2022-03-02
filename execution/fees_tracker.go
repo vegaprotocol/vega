@@ -11,7 +11,7 @@ import (
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/epoch_service_mock.go -package mocks code.vegaprotocol.io/vega/execution EpochEngine
 type EpochEngine interface {
-	NotifyOnEpoch(f func(context.Context, types.Epoch))
+	NotifyOnEpoch(f func(context.Context, types.Epoch), r func(context.Context, types.Epoch))
 }
 
 // assetFeesTracker tracks the amount of fees paid/received by different parties in the asset.
@@ -54,7 +54,7 @@ func NewFeesTracker(epochEngine EpochEngine) *FeesTracker {
 		assetToTracker: map[string]*assetFeesTracker{},
 		ss:             &snapshotState{changed: true},
 	}
-	epochEngine.NotifyOnEpoch(ft.onEpochEvent)
+	epochEngine.NotifyOnEpoch(ft.onEpochEvent, ft.onEpochRestore)
 	return ft
 }
 

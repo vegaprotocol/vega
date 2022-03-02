@@ -27,8 +27,7 @@ type StakingAccounts interface {
 }
 
 type EpochEngine interface {
-	NotifyOnEpoch(f func(context.Context, types.Epoch))
-	NotifyOnEpochRestore(f func(context.Context, types.Epoch))
+	NotifyOnEpoch(f func(context.Context, types.Epoch), r func(context.Context, types.Epoch))
 }
 
 type Engine struct {
@@ -100,8 +99,7 @@ func New(log *logging.Logger, config Config, epochEngine EpochEngine, accounting
 	e.transactionTypeToPolicy[txn.AnnounceNodeCommand] = valJoinPolicy
 
 	// register for epoch end notifications
-	epochEngine.NotifyOnEpoch(e.OnEpochEvent)
-	epochEngine.NotifyOnEpochRestore(e.OnEpochRestore)
+	epochEngine.NotifyOnEpoch(e.OnEpochEvent, e.OnEpochRestore)
 	e.log.Info("Spam protection started")
 
 	return e

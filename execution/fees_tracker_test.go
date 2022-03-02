@@ -17,7 +17,7 @@ type TestEpochEngine struct {
 	target func(context.Context, types.Epoch)
 }
 
-func (e *TestEpochEngine) NotifyOnEpoch(f func(context.Context, types.Epoch)) {
+func (e *TestEpochEngine) NotifyOnEpoch(f func(context.Context, types.Epoch), _ func(context.Context, types.Epoch)) {
 	e.target = f
 }
 

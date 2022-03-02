@@ -43,7 +43,7 @@ func createEngine(t *testing.T) (*execution.Engine, *gomock.Controller) {
 	statevar.EXPECT().NewEvent(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 
 	epochEngine := mocks.NewMockEpochEngine(ctrl)
-	epochEngine.EXPECT().NotifyOnEpoch(gomock.Any()).Times(1)
+	epochEngine.EXPECT().NotifyOnEpoch(gomock.Any(), gomock.Any()).Times(1)
 	asset := mocks.NewMockAssets(ctrl)
 	asset.EXPECT().Get(gomock.Any()).AnyTimes().DoAndReturn(func(a string) (*assets.Asset, error) {
 		as := NewAssetStub(a, 0)

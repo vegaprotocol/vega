@@ -82,13 +82,6 @@ func (s *Svc) LoadState(ctx context.Context, payload *types.Payload) ([]types.St
 	}
 }
 
-// NotifyOnRestore allows other services to register a callback function
-// to handle the case where the engine has restored from a snapshot and
-// the other engines need to know about it.
-func (s *Svc) NotifyOnEpochRestore(f func(context.Context, types.Epoch)) {
-	s.restoreListeners = append(s.restoreListeners, f)
-}
-
 func (s *Svc) notifyRestore(ctx context.Context, e types.Epoch) {
 	for _, f := range s.restoreListeners {
 		f(ctx, e)

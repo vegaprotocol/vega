@@ -1919,8 +1919,8 @@ func getEngine(t *testing.T) *testEngine {
 
 type TestEpochEngine struct{}
 
-func (t *TestEpochEngine) NotifyOnEpoch(f func(context.Context, types.Epoch))        {}
-func (t *TestEpochEngine) NotifyOnEpochRestore(f func(context.Context, types.Epoch)) {}
+func (t *TestEpochEngine) NotifyOnEpoch(f func(context.Context, types.Epoch), r func(context.Context, types.Epoch)) {
+}
 
 type TestStakingAccount struct {
 	partyToStake         map[string]*num.Uint

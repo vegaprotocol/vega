@@ -36,8 +36,7 @@ type MarketTracker interface {
 
 // EpochEngine notifies the reward engine at the end of an epoch.
 type EpochEngine interface {
-	NotifyOnEpoch(f func(context.Context, types.Epoch))
-	NotifyOnEpochRestore(f func(context.Context, types.Epoch))
+	NotifyOnEpoch(f func(context.Context, types.Epoch), r func(context.Context, types.Epoch))
 }
 
 //Delegation engine for getting validation data
@@ -124,8 +123,7 @@ func New(log *logging.Logger, config Config, broker Broker, delegation Delegatio
 	}
 
 	// register for epoch end notifications
-	epochEngine.NotifyOnEpoch(e.OnEpochEvent)
-	epochEngine.NotifyOnEpochRestore(e.OnEpochRestore)
+	epochEngine.NotifyOnEpoch(e.OnEpochEvent, e.OnEpochRestore)
 
 	// register for time tick updates
 	ts.NotifyOnTick(e.onChainTimeUpdate)
