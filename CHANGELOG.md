@@ -9,7 +9,7 @@
 - [](https://github.com/vegaprotocol/data-node/pull/xxx) -
 
 ### 🛠  Improvements
-- [](https://github.com/vegaprotocol/data-node/pull/xxx) -
+- [362](https://github.com/vegaprotocol/data-node/pull/362) - Added support using TLS for `GraphQL` connections
 
 ### 🐛 Fixes
 - [387](https://github.com/vegaprotocol/data-node/pull/387) - Fixes incorrect data types in the `MarketData` proto message.

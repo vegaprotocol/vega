@@ -66,7 +66,7 @@ func (opts *gatewayCmd) Execute(_ []string) error {
 	})
 
 	eg.Go(func() error {
-		srv := server.New(opts.Config, log)
+		srv := server.New(opts.Config, log, vegaPaths)
 		if err := srv.Start(ctx); err != nil {
 			return err
 		}

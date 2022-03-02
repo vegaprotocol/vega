@@ -75,6 +75,45 @@ The GraphQL API is defined by a [schema](gateway/graphql/schema.graphql). Extern
 
 Queries can be tested using the GraphQL playground app which is bundled with a node. The default port (configurable) for the playground app is `3008` accessing this in a web browser will show a web app for testing custom queries, mutations and subscriptions.
 
+#### GraphQL SSL
+
+**GraphQL subscriptions do not work properly unless the HTTPS is enabled**.
+
+To enable TLS on the GraphQL port, set
+```toml
+  [Gateway.GraphQL]
+    HTTPSEnabled = true
+```
+
+You will need your data node to be reachable over the internet with a proper fully qualified domain name, and a matching certificate. If you already have a certificate and corresponding private key file, you can specify them as follows:
+```toml
+  [Gateway.GraphQL]
+    CertificateFile = "/path/to/certificate/file"
+    KeyFile = "/path/to/key/file"
+```
+
+If you prefer, the data node can manage this for you by automatically generating a certificate and using `LetsEncrypt` to sign it for you.
+
+```toml
+  [Gateway.GraphQL]
+    HTTPSEnabled = true
+    AutoCertDomain = "my.lovely.domain.com"
+```
+
+However, it is a requirement of the `LetsEncrypt` validation process that the the server answering its challenge is running on the standard HTTPS port (443). This means you must either
+- Forward port 443 on your machine to the GraphQL port (3008 by default) using `iptables` or similar
+- Directly use port 443 for the GraphQL server in data-node by specifying
+```toml
+  [Gateway.GraphQL]
+    Port = 443
+```
+Note that Linux systems generally require processes listening on ports under 1024 to either
+  - run as root, or
+  - be specifically granted permission, e.g. by launching with
+  ```
+  setcap cap_net_bind_service=ep data-node run
+  ```
+
 ### REST
 
 REST provides a standard between computer systems on the web, making it easier for systems to communicate with each other. It is arguably simpler to work with than gRPC and GraphQL. In Vega the REST API is a reverse proxy to the gRPC API, however it does not support streaming.

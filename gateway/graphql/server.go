@@ -2,6 +2,7 @@ package gql
 
 import (
 	"context"
+	"crypto/tls"
 	"errors"
 	"fmt"
 	"net"
@@ -16,6 +17,8 @@ import (
 	protoapi "code.vegaprotocol.io/protos/data-node/api/v1"
 	v2 "code.vegaprotocol.io/protos/data-node/api/v2"
 	vegaprotoapi "code.vegaprotocol.io/protos/vega/api/v1"
+	"code.vegaprotocol.io/shared/paths"
+	"golang.org/x/crypto/acme/autocert"
 	"google.golang.org/grpc"
 
 	"github.com/99designs/gqlgen/graphql"
@@ -33,7 +36,9 @@ const (
 type GraphServer struct {
 	gateway.Config
 
-	log                 *logging.Logger
+	log       *logging.Logger
+	vegaPaths paths.Paths
+
 	coreProxyClient     vegaprotoapi.CoreServiceClient
 	tradingDataClient   protoapi.TradingDataServiceClient
 	tradingDataClientV2 v2.TradingDataServiceClient
@@ -44,6 +49,7 @@ type GraphServer struct {
 func New(
 	log *logging.Logger,
 	config gateway.Config,
+	vegaPaths paths.Paths,
 ) (*GraphServer, error) {
 	// setup logger
 	log = log.Named(namedLogger)
@@ -67,6 +73,7 @@ func New(
 	return &GraphServer{
 		log:                 log,
 		Config:              config,
+		vegaPaths:           vegaPaths,
 		coreProxyClient:     tradingClient,
 		tradingDataClient:   tradingDataClient,
 		tradingDataClientV2: tradingDataClientV2,
@@ -151,12 +158,48 @@ func (g *GraphServer) Start() error {
 		handler.GraphQL(NewExecutableSchema(config), options...),
 	)))
 
-	g.srv = &http.Server{
-		Addr:    addr,
-		Handler: handlr,
+	// Set up https if we are using it
+	var tlsConfig *tls.Config
+
+	var cert, key string
+	if g.GraphQL.HTTPSEnabled {
+		if g.GraphQL.CertificateFile != "" {
+			cert = g.GraphQL.CertificateFile
+		}
+		if g.GraphQL.KeyFile != "" {
+			key = g.GraphQL.KeyFile
+		}
+
+		if g.GraphQL.AutoCertDomain != "" {
+			dataNodeHome := paths.StatePath(g.vegaPaths.StatePathFor(paths.DataNodeStateHome))
+			certDir := paths.JoinStatePath(dataNodeHome, "graphql_https_certificates")
+
+			certManager := autocert.Manager{
+				Prompt:     autocert.AcceptTOS,
+				HostPolicy: autocert.HostWhitelist(g.GraphQL.AutoCertDomain),
+				Cache:      autocert.DirCache(certDir),
+			}
+			tlsConfig = &tls.Config{
+				GetCertificate: certManager.GetCertificate,
+				NextProtos:     []string{"http/1.1", "acme-tls/1"},
+			}
+		}
+	} else {
+		g.log.Warn("GraphQL server is not configured to use HTTPS, which is required for subscriptions to work. Please see README.md for help configuring")
 	}
 
-	err := g.srv.ListenAndServe()
+	g.srv = &http.Server{
+		Addr:      addr,
+		Handler:   handlr,
+		TLSConfig: tlsConfig,
+	}
+
+	var err error
+	if g.GraphQL.HTTPSEnabled {
+		err = g.srv.ListenAndServeTLS(cert, key)
+	} else {
+		err = g.srv.ListenAndServe()
+	}
 	if err != nil && err != http.ErrServerClosed {
 		return fmt.Errorf("failed to listen and serve on graphQL server: %w", err)
 	}
