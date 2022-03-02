@@ -10,7 +10,7 @@
 
 ### 🛠  Improvements
 - [362](https://github.com/vegaprotocol/data-node/pull/362) - Added support using TLS for `GraphQL` connections
-- [393](https://github.com/vegaprotocol/data-node/pull/393) - Datastore migration 
+- [393](https://github.com/vegaprotocol/data-node/pull/393) - Data store migration 
 
 ### 🐛 Fixes
 - [387](https://github.com/vegaprotocol/data-node/pull/387) - Fixes incorrect data types in the `MarketData` proto message
