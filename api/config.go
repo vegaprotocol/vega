@@ -13,16 +13,18 @@ const namedLogger = "api.grpc"
 
 // Config represents the configuration of the api package
 type Config struct {
-	Level            encoding.LogLevel `long:"log-level"`
-	Timeout          encoding.Duration `long:"timeout"`
-	Port             int               `long:"port"`
-	WebUIPort        int               `long:"web-ui-port"`
-	WebUIEnabled     encoding.Bool     `long:"web-ui-enabled"`
-	Reflection       encoding.Bool     `long:"reflection"`
-	IP               string            `long:"ip"`
-	StreamRetries    int               `long:"stream-retries"`
-	CoreNodeIP       string            `long:"core-node-ip"`
-	CoreNodeGRPCPort int               `long:"core-node-grpc-port"`
+	Level               encoding.LogLevel `long:"log-level"`
+	Timeout             encoding.Duration `long:"timeout"`
+	Port                int               `long:"port"`
+	WebUIPort           int               `long:"web-ui-port"`
+	WebUIEnabled        encoding.Bool     `long:"web-ui-enabled"`
+	Reflection          encoding.Bool     `long:"reflection"`
+	IP                  string            `long:"ip"`
+	StreamRetries       int               `long:"stream-retries"`
+	CoreNodeIP          string            `long:"core-node-ip"`
+	CoreNodeGRPCPort    int               `long:"core-node-grpc-port"`
+	ExposeLegacyAPI     encoding.Bool     `long:"expose-legacy-api" description:"Set to true to run an api at a given port offset that uses the legacy stores"`
+	LegacyAPIPortOffset int               `long:"legacy-api-port-offset"`
 }
 
 // NewDefaultConfig creates an instance of the package specific configuration, given a
@@ -32,13 +34,15 @@ func NewDefaultConfig() Config {
 		Level:   encoding.LogLevel{Level: logging.InfoLevel},
 		Timeout: encoding.Duration{Duration: 5000 * time.Millisecond},
 
-		IP:               "0.0.0.0",
-		Port:             3007,
-		WebUIPort:        3006,
-		WebUIEnabled:     false,
-		Reflection:       false,
-		StreamRetries:    3,
-		CoreNodeIP:       "127.0.0.1",
-		CoreNodeGRPCPort: 3002,
+		IP:                  "0.0.0.0",
+		Port:                3007,
+		WebUIPort:           3006,
+		WebUIEnabled:        false,
+		Reflection:          false,
+		StreamRetries:       3,
+		CoreNodeIP:          "127.0.0.1",
+		CoreNodeGRPCPort:    3002,
+		ExposeLegacyAPI:     false,
+		LegacyAPIPortOffset: 100,
 	}
 }
