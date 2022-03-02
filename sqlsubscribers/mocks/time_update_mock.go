@@ -47,18 +47,3 @@ func (mr *MockBlockStoreMockRecorder) Add(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Add", reflect.TypeOf((*MockBlockStore)(nil).Add), arg0)
 }
-
-// WaitForBlockHeight mocks base method.
-func (m *MockBlockStore) WaitForBlockHeight(arg0 int64) (entities.Block, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "WaitForBlockHeight", arg0)
-	ret0, _ := ret[0].(entities.Block)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// WaitForBlockHeight indicates an expected call of WaitForBlockHeight.
-func (mr *MockBlockStoreMockRecorder) WaitForBlockHeight(arg0 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WaitForBlockHeight", reflect.TypeOf((*MockBlockStore)(nil).WaitForBlockHeight), arg0)
-}

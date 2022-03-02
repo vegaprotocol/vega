@@ -8,8 +8,9 @@ import (
 	"os/signal"
 	"syscall"
 
-	"code.vegaprotocol.io/data-node/accounts"
 	"code.vegaprotocol.io/data-node/api"
+
+	"code.vegaprotocol.io/data-node/accounts"
 	"code.vegaprotocol.io/data-node/assets"
 	"code.vegaprotocol.io/data-node/broker"
 	"code.vegaprotocol.io/data-node/candles"
@@ -212,59 +213,49 @@ func (l *NodeCommand) Run(cfgwatchr *config.Watcher, vegaPaths paths.Paths, args
 func (l *NodeCommand) runNode(args []string) error {
 	defer l.cancel()
 
+	ctx, cancel := context.WithCancel(l.ctx)
+	eg, ctx := errgroup.WithContext(ctx)
+
 	// gRPC server
-	grpcServer := api.NewGRPCServer(
-		l.Log,
-		l.conf.API,
-		l.vegaCoreServiceClient,
-		l.timeService,
-		l.marketService,
-		l.partyService,
-		l.orderService,
-		l.liquidityService,
-		l.tradeService,
-		l.candleService,
-		l.accountsService,
-		l.transfersService,
-		l.riskService,
-		l.governanceService,
-		l.notaryService,
-		l.assetService,
-		l.feeService,
-		l.eventService,
-		l.oracleService,
-		l.withdrawalPlugin,
-		l.depositPlugin,
-		l.marketDepthSub,
-		l.netParamsService,
-		l.nodeService,
-		l.epochService,
-		l.delegationService,
-		l.rewardsSub,
-		l.stakingService,
-		l.checkpointSvc,
-		l.balanceStoreSQL,
-		l.orderStoreSQL,
-		l.networkLimitsStoreSQL,
-		l.marketDataStoreSQL,
-	)
+	grpcServer := l.createGRPCServer(l.conf.API, bool(l.conf.SQLStore.Enabled))
 
 	// watch configs
 	l.configWatcher.OnConfigUpdate(
 		func(cfg config.Config) { grpcServer.ReloadConf(cfg.API) },
 	)
 
-	ctx, cancel := context.WithCancel(l.ctx)
-	eg, ctx := errgroup.WithContext(ctx)
-
 	// start the grpc server
 	eg.Go(func() error { return grpcServer.Start(ctx, nil) })
+
+	if l.conf.SQLStore.Enabled && l.conf.API.ExposeLegacyAPI {
+		l.Log.Info("Running legacy APIs", logging.Int("port offset", l.conf.API.LegacyAPIPortOffset))
+
+		apiConfig := addLegacyPortOffsetToAPIPorts(l.conf.API, l.conf.API.LegacyAPIPortOffset)
+		legacyGRPCServer := l.createGRPCServer(apiConfig, false)
+
+		l.configWatcher.OnConfigUpdate(
+			func(cfg config.Config) {
+				legacyGRPCServer.ReloadConf(addLegacyPortOffsetToAPIPorts(cfg.API, l.conf.API.LegacyAPIPortOffset))
+			},
+		)
+
+		eg.Go(func() error { return legacyGRPCServer.Start(ctx, nil) })
+	}
 
 	// start gateway
 	if l.conf.GatewayEnabled {
 		gty := server.New(l.conf.Gateway, l.Log, l.vegaPaths)
 
 		eg.Go(func() error { return gty.Start(ctx) })
+
+		if l.conf.SQLStore.Enabled && l.conf.API.ExposeLegacyAPI {
+			legacyAPIGatewayConf := l.conf.Gateway
+			legacyAPIGatewayConf.Node.Port = legacyAPIGatewayConf.Node.Port + l.conf.API.LegacyAPIPortOffset
+			legacyAPIGatewayConf.GraphQL.Port = legacyAPIGatewayConf.GraphQL.Port + l.conf.API.LegacyAPIPortOffset
+			legacyAPIGatewayConf.REST.Port = legacyAPIGatewayConf.REST.Port + l.conf.API.LegacyAPIPortOffset
+			legacyGty := server.New(legacyAPIGatewayConf, l.Log, l.vegaPaths)
+			eg.Go(func() error { return legacyGty.Start(ctx) })
+		}
 	}
 
 	eg.Go(func() error {
@@ -303,4 +294,52 @@ func (l *NodeCommand) runNode(args []string) error {
 	}
 
 	return err
+}
+
+func (l *NodeCommand) createGRPCServer(config api.Config, useSQLStores bool) *api.GRPCServer {
+	grpcServer := api.NewGRPCServer(
+		l.Log,
+		config,
+		useSQLStores,
+		l.vegaCoreServiceClient,
+		l.timeService,
+		l.marketService,
+		l.partyService,
+		l.orderService,
+		l.liquidityService,
+		l.tradeService,
+		l.candleService,
+		l.accountsService,
+		l.transfersService,
+		l.riskService,
+		l.governanceService,
+		l.notaryService,
+		l.assetService,
+		l.feeService,
+		l.eventService,
+		l.oracleService,
+		l.withdrawalPlugin,
+		l.depositPlugin,
+		l.marketDepthSub,
+		l.netParamsService,
+		l.nodeService,
+		l.epochService,
+		l.delegationService,
+		l.rewardsSub,
+		l.stakingService,
+		l.checkpointSvc,
+		l.balanceStoreSQL,
+		l.orderStoreSQL,
+		l.networkLimitsStoreSQL,
+		l.marketDataStoreSQL,
+		l.tradeStoreSQL,
+	)
+	return grpcServer
+}
+
+func addLegacyPortOffsetToAPIPorts(original api.Config, portOffset int) api.Config {
+	apiConfig := original
+	apiConfig.WebUIPort = apiConfig.WebUIPort + portOffset
+	apiConfig.Port = apiConfig.Port + portOffset
+	return apiConfig
 }
