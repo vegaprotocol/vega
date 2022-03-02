@@ -185,7 +185,10 @@ func NewTopology(
 // anyway we may want to extract the code requiring the notary somewhere
 // else or have different pattern somehow...
 func (t *Topology) SetNotary(notary Notary) {
-	t.signatures = NewSignatures(t.log, notary, t.wallets.GetEthereum(), t.broker)
+	// if we are not even setup as a validator, no need for this.
+	if t.isValidatorSetup {
+		t.signatures = NewSignatures(t.log, notary, t.wallets.GetEthereum(), t.broker)
+	}
 	t.notary = notary
 }
 
