@@ -153,5 +153,6 @@ func (s *Store) LoadState(ctx context.Context, pl *types.Payload) ([]types.State
 		}
 	}
 
+	s.paramUpdates = map[string]struct{}{}
 	return nil, nil
 }
