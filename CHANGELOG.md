@@ -12,8 +12,8 @@
 - [362](https://github.com/vegaprotocol/data-node/pull/362) - Added support using TLS for `GraphQL` connections
 
 ### 🐛 Fixes
-- [387](https://github.com/vegaprotocol/data-node/pull/387) - Fixes incorrect data types in the `MarketData` proto message.
-
+- [387](https://github.com/vegaprotocol/data-node/pull/387) - Fixes incorrect data types in the `MarketData` proto message
+- [390](https://github.com/vegaprotocol/data-node/pull/390) - Cache `ChainInfo` data
 
 ## 0.49.0
 
