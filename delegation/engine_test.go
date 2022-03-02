@@ -185,7 +185,7 @@ func testActiveSnapshotRoundTrip(t *testing.T) {
 
 	testEngine.engine.ProcessEpochDelegations(context.Background(), types.Epoch{Seq: 0})
 
-	// Move ahead a bit futher
+	// Move ahead a bit further
 	testEngine.engine.onEpochEvent(context.Background(), types.Epoch{Seq: 2, StartTime: time.Now()})
 
 	// get the has and serialised state

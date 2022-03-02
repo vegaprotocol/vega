@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/libs/crypto"
+	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
 
 	"github.com/golang/protobuf/proto"
@@ -207,5 +208,6 @@ func (e *Engine) restoreAuto(delegations *types.DelegationAuto) error {
 }
 
 func (e *Engine) onEpochRestore(ctx context.Context, epoch types.Epoch) {
+	e.log.Debug("epoch restoration notification received", logging.String("epoch", epoch.String()))
 	e.currentEpoch = epoch
 }

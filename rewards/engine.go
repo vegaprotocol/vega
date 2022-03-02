@@ -203,6 +203,7 @@ func (e *Engine) OnEpochEvent(ctx context.Context, epoch types.Epoch) {
 }
 
 func (e *Engine) OnEpochRestore(ctx context.Context, epoch types.Epoch) {
+	e.log.Debug("epoch restoration notification received", logging.String("epoch", epoch.String()))
 	e.epochSeq = num.NewUint(epoch.Seq).String()
 	e.newEpochStarted = true
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"code.vegaprotocol.io/vega/libs/crypto"
+	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
 )
 
@@ -58,5 +59,6 @@ func (e *Engine) LoadState(ctx context.Context, p *types.Payload) ([]types.State
 
 // OnEpochEvent is a callback for epoch events.
 func (e *Engine) OnEpochRestore(ctx context.Context, epoch types.Epoch) {
+	e.log.Debug("epoch restoration notification received", logging.String("epoch", epoch.String()))
 	e.currentEpoch = &epoch
 }

@@ -316,5 +316,6 @@ func (e *Engine) restoreAssetActions(ctx context.Context, aa *types.BankingAsset
 }
 
 func (e *Engine) OnEpochRestore(ctx context.Context, ep types.Epoch) {
+	e.log.Debug("epoch restoration notification received", logging.String("epoch", ep.String()))
 	e.currentEpoch = ep.Seq
 }

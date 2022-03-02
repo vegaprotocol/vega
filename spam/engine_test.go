@@ -105,46 +105,57 @@ func testEngineReset(t *testing.T) {
 		require.NoError(t, err)
 		snap[k] = data
 	}
+
+	snapEngine := getEngine(t, map[string]*num.Uint{"party1": sufficientPropTokens})
 	for _, bytes := range snap {
 		var p snapshot.Payload
 		proto.Unmarshal(bytes, &p)
 		payload := types.PayloadFromProto(&p)
-		engine.LoadState(context.Background(), payload)
+		snapEngine.engine.LoadState(context.Background(), payload)
 	}
 
-	proposalHash2, err := engine.GetHash("proposal")
+	// restore the epoch we were on
+	snapEngine.engine.OnEpochRestore(context.Background(), types.Epoch{Seq: 0})
+
+	proposalHash2, err := snapEngine.engine.GetHash("proposal")
 	require.Nil(t, err)
 	require.True(t, bytes.Equal(proposalHash, proposalHash2))
 
-	voteHash2, err := engine.GetHash((&types.PayloadVoteSpamPolicy{}).Key())
+	voteHash2, err := snapEngine.engine.GetHash((&types.PayloadVoteSpamPolicy{}).Key())
 	require.Nil(t, err)
 	require.True(t, bytes.Equal(voteHash, voteHash2))
 
-	accept, err := engine.PreBlockAccept(tx1)
+	accept, err := snapEngine.engine.PreBlockAccept(tx1)
 	require.Equal(t, false, accept)
 	require.Equal(t, errors.New("party has already proposed the maximum number of proposal requests per epoch"), err)
 
-	accept, err = engine.PreBlockAccept(tx2)
+	accept, err = snapEngine.engine.PreBlockAccept(tx2)
 	require.Equal(t, false, accept)
 	require.Equal(t, spam.ErrTooManyVotes, err)
 
+	// Notify an epoch event for the *same* epoch and a reset should not happen
+	snapEngine.engine.OnEpochEvent(context.Background(), types.Epoch{Seq: 0})
+	proposalHashNoReset, err := snapEngine.engine.GetHash("proposal")
+	require.Nil(t, err)
+	require.True(t, bytes.Equal(proposalHashNoReset, proposalHash2))
+
 	// move to next epoch
-	engine.OnEpochEvent(context.Background(), types.Epoch{Seq: 1})
+	snapEngine.engine.OnEpochEvent(context.Background(), types.Epoch{Seq: 1})
 
 	// expect to be able to submit 3 more votes/proposals successfully
 	for i := 0; i < 3; i++ {
-		accept, _ := engine.PreBlockAccept(tx1)
+		accept, _ := snapEngine.engine.PreBlockAccept(tx1)
 		require.Equal(t, true, accept)
 
-		accept, _ = engine.PreBlockAccept(tx2)
+		accept, _ = snapEngine.engine.PreBlockAccept(tx2)
 		require.Equal(t, true, accept)
 	}
 
-	proposalHash3, err := engine.GetHash("proposal")
+	proposalHash3, err := snapEngine.engine.GetHash("proposal")
 	require.Nil(t, err)
 	require.False(t, bytes.Equal(proposalHash3, proposalHash2))
 
-	voteHash3, err := engine.GetHash((&types.PayloadVoteSpamPolicy{}).Key())
+	voteHash3, err := snapEngine.engine.GetHash((&types.PayloadVoteSpamPolicy{}).Key())
 	require.Nil(t, err)
 	require.False(t, bytes.Equal(voteHash3, voteHash2))
 }
