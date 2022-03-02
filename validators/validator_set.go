@@ -128,7 +128,6 @@ func (t *Topology) RecalcValidatorSet(ctx context.Context, epochSeq string, dele
 	for _, vu := range t.validatorPowerUpdates {
 		cPubKey, _ := encoding.PubKeyFromProto(vu.PubKey)
 		t.log.Info("setting voting power to", logging.String(("address"), cPubKey.Address().String()), logging.Uint64("power", uint64(vu.Power)))
-
 	}
 
 	newState := make(map[string]statusAddress, len(t.validators))
@@ -139,7 +138,7 @@ func (t *Topology) RecalcValidatorSet(ctx context.Context, epochSeq string, dele
 		}
 	}
 
-	t.signatures.EmitPromotionsSignatures(t.currentTime, currentState, newState)
+	t.signatures.EmitPromotionsSignatures(ctx, t.currentTime, currentState, newState)
 
 	// prepare and send the events
 	evts := make([]events.Event, 0, len(currentState))
@@ -155,7 +154,6 @@ func (t *Topology) RecalcValidatorSet(ctx context.Context, epochSeq string, dele
 		}
 
 		evts = append(evts, events.NewValidatorRanking(ctx, epochSeq, nodeID, stakeScore[nodeID].String(), perfScore[nodeID].String(), rankingScore[nodeID].String(), ValidatorStatusToName[currentState[nodeID].status], status, int(vp)))
-
 	}
 	t.broker.SendBatch(evts)
 

@@ -185,7 +185,7 @@ func NewTopology(
 // anyway we may want to extract the code requiring the notary somewhere
 // else or have different pattern somehow...
 func (t *Topology) SetNotary(notary Notary) {
-	t.signatures = NewSignatures(t.log, notary, t.wallets.GetEthereum())
+	t.signatures = NewSignatures(t.log, notary, t.wallets.GetEthereum(), t.broker)
 	t.notary = notary
 }
 
