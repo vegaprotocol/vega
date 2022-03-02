@@ -1,13 +1,14 @@
 package node
 
 import (
-	"code.vegaprotocol.io/data-node/api"
 	"context"
 	"errors"
 	"fmt"
 	"os"
 	"os/signal"
 	"syscall"
+
+	"code.vegaprotocol.io/data-node/api"
 
 	"code.vegaprotocol.io/data-node/accounts"
 	"code.vegaprotocol.io/data-node/assets"
@@ -337,7 +338,6 @@ func (l *NodeCommand) createGRPCServer(config api.Config, useSQLStores bool) *ap
 }
 
 func addLegacyPortOffsetToAPIPorts(original api.Config, portOffset int) api.Config {
-
 	apiConfig := original
 	apiConfig.WebUIPort = apiConfig.WebUIPort + portOffset
 	apiConfig.Port = apiConfig.Port + portOffset
