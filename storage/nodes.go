@@ -8,22 +8,17 @@ import (
 
 	"code.vegaprotocol.io/data-node/logging"
 	protoapi "code.vegaprotocol.io/protos/data-node/api/v1"
+	"code.vegaprotocol.io/protos/vega"
 	pb "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/types/num"
 )
-
-type nodeScore struct {
-	score           string
-	normalisedScore string
-	rawScore        string
-	performance     string
-}
 
 type node struct {
 	n pb.Node
 
 	delegationsPerEpochPerParty map[string]map[string]pb.Delegation
-	scoresPerEpoch              map[string]nodeScore
+	rewardScoresPerEpoch        map[string]pb.RewardScore
+	rankingPerEpoch             map[string]pb.RankingScore
 	minEpoch                    *uint64
 }
 
@@ -76,7 +71,8 @@ func (ns *Node) AddNode(n pb.Node) {
 
 	nd := node{
 		n:                           n,
-		scoresPerEpoch:              map[string]nodeScore{},
+		rewardScoresPerEpoch:        map[string]vega.RewardScore{},
+		rankingPerEpoch:             map[string]vega.RankingScore{},
 		delegationsPerEpochPerParty: map[string]map[string]pb.Delegation{},
 		minEpoch:                    new(uint64),
 	}
@@ -84,7 +80,7 @@ func (ns *Node) AddNode(n pb.Node) {
 	ns.nodes[n.GetId()] = nd
 }
 
-func (ns *Node) AddNodeScore(nodeID, epochID, score, normalisedScore, rawScore, performance string) {
+func (ns *Node) AddNodeRewardScore(nodeID, epochID string, scoreData vega.RewardScore) {
 	ns.mut.Lock()
 	defer ns.mut.Unlock()
 
@@ -94,12 +90,20 @@ func (ns *Node) AddNodeScore(nodeID, epochID, score, normalisedScore, rawScore, 
 		return
 	}
 
-	node.scoresPerEpoch[epochID] = nodeScore{
-		score:           score,
-		normalisedScore: normalisedScore,
-		rawScore:        rawScore,
-		performance:     performance,
+	node.rewardScoresPerEpoch[epochID] = scoreData
+}
+
+func (ns *Node) AddNodeRankingScore(nodeID, epochID string, scoreData vega.RankingScore) {
+	ns.mut.Lock()
+	defer ns.mut.Unlock()
+
+	node, ok := ns.nodes[nodeID]
+	if !ok {
+		ns.log.Error("Received node ranking for non existing node", logging.String("node_id", nodeID))
+		return
 	}
+
+	node.rankingPerEpoch[epochID] = scoreData
 }
 
 func (ns *Node) AddDelegation(de pb.Delegation) {
@@ -357,11 +361,11 @@ func (ns *Node) nodeProtoFromInternal(n node, epochID string) *pb.Node {
 		Delegations:       delegations,
 	}
 
-	if sc, ok := n.scoresPerEpoch[epochID]; ok {
-		node.Score = sc.score
-		node.NormalisedScore = sc.normalisedScore
-		node.RawScore = sc.rawScore
-		node.Performance = sc.performance
+	if sc, ok := n.rewardScoresPerEpoch[epochID]; ok {
+		node.RewardScore = &sc
+	}
+	if sc, ok := n.rankingPerEpoch[epochID]; ok {
+		node.RankingScore = &sc
 	}
 
 	return node

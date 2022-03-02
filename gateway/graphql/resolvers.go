@@ -268,6 +268,14 @@ func (r *VegaResolverRoot) Node() NodeResolver {
 	return (*nodeResolver)(r)
 }
 
+func (r *VegaResolverRoot) RankingScore() RankingScoreResolver {
+	return (*rankingScoreResolver)(r)
+}
+
+func (r *VegaResolverRoot) RewardScore() RewardScoreResolver {
+	return (*rewardScoreResolver)(r)
+}
+
 func (r *VegaResolverRoot) KeyRotation() KeyRotationResolver {
 	return (*keyRotationResolver)(r)
 }

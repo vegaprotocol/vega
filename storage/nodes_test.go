@@ -169,8 +169,9 @@ func TestNodes(t *testing.T) {
 	nodeStore.AddDelegation(*delegations[2])
 
 	actualNode, err = nodeStore.GetByID("pub_key_1", "1")
+
 	a.NoError(err)
-	assertNode(a, actualNode, delegations, "10", "25", "35", "", "", "", "")
+	assertNode(a, actualNode, delegations, "10", "25", "35", nil)
 
 	nodeStore.AddNode(pb.Node{
 		Id:               "pub_key_2",
@@ -182,8 +183,23 @@ func TestNodes(t *testing.T) {
 		Status:           pb.NodeStatus_NODE_STATUS_VALIDATOR,
 	})
 
-	nodeStore.AddNodeScore("pub_key_2", "1", "20", "0.89", "25", "0.8")
-	nodeStore.AddNodeScore("pub_key_2", "2", "30", "0.9", "40", "0.75")
+	rs1 := pb.RewardScore{
+		RawValidatorScore: "20",
+		PerformanceScore:  "0.89",
+		MultisigScore:     "1",
+		ValidatorScore:    "25",
+		NormalisedScore:   "0.8",
+		ValidatorStatus:   pb.ValidatorNodeStatus_VALIDATOR_NODE_STATUS_TENDERMINT}
+
+	nodeStore.AddNodeRewardScore("pub_key_2", "1", rs1)
+
+	rs2 := pb.RewardScore{
+		RawValidatorScore: "30",
+		PerformanceScore:  "0.9",
+		ValidatorScore:    "40",
+		MultisigScore:     "1",
+		ValidatorStatus:   pb.ValidatorNodeStatus_VALIDATOR_NODE_STATUS_ERSATZ}
+	nodeStore.AddNodeRewardScore("pub_key_2", "2", rs2)
 
 	delegations = []*pb.Delegation{
 		{
@@ -224,12 +240,12 @@ func TestNodes(t *testing.T) {
 	// Get node in first epoch
 	node, err := nodeStore.GetByID("pub_key_2", "1")
 	a.NoError(err)
-	assertNode(a, node, delegations[0:2], "0", "70", "70", "20", "0.89", "25", "0.8")
+	assertNode(a, node, delegations[0:2], "0", "70", "70", &rs1)
 
 	// Get node in second epoch
 	node, err = nodeStore.GetByID("pub_key_2", "2")
 	a.NoError(err)
-	assertNode(a, node, delegations[2:], "0", "60", "60", "30", "0.9", "40", "0.75")
+	assertNode(a, node, delegations[2:], "0", "60", "60", &rs2)
 
 	nodes := nodeStore.GetAll("1")
 	a.Equal(2, len(nodes))
@@ -266,16 +282,21 @@ func assertNode(
 	node *pb.Node,
 	delegations []*pb.Delegation,
 	stakedByOperator, stakedByDelegates, stakedTotal string,
-	score, normalisedScore, rawScore, performance string,
+	rewardScore *pb.RewardScore,
 ) {
 	a.Equal(stakedByOperator, node.StakedByOperator)
 	a.Equal(stakedByDelegates, node.StakedByDelegates)
 	a.Equal(stakedTotal, node.StakedTotal)
-	a.Equal(score, node.Score)
-	a.Equal(normalisedScore, node.NormalisedScore)
-	a.Equal(rawScore, node.RawScore)
-	a.Equal(performance, node.Performance)
-
+	if rewardScore == nil {
+		a.Nil(node.RewardScore)
+	} else {
+		a.Equal(rewardScore.ValidatorScore, node.RewardScore.ValidatorScore)
+		a.Equal(rewardScore.NormalisedScore, node.RewardScore.NormalisedScore)
+		a.Equal(rewardScore.MultisigScore, node.RewardScore.MultisigScore)
+		a.Equal(rewardScore.PerformanceScore, node.RewardScore.PerformanceScore)
+		a.Equal(rewardScore.ValidatorStatus, node.RewardScore.ValidatorStatus)
+		a.Equal(rewardScore.RawValidatorScore, node.RewardScore.RawValidatorScore)
+	}
 	sort.Sort(ByXY(delegations))
 	sort.Sort(ByXY(node.Delegations))
 

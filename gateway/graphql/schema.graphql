@@ -672,21 +672,46 @@ type Node {
     "Pagination last element"
     last: Int): [Delegation!]
 
-  score: String!
+  "Reward scores for the current epoch for the validator"
+  rewardScore: RewardScore
 
-  normalisedScore: String!
-
-  # The score prior to being adjusted to account for the performance
-  rawScore: String!
-
-  # Expressed as a fraction between 0 and 1, 1 being the best performance possible
-  performance: String!
-
+  "Ranking scores and status for the validator for the current epoch"
+  rankingScore: RankingScore!
   # The name of the node
   name: String!
 
   # An url to an avatar
   avatarUrl: String
+}
+
+type RewardScore {
+  "The stake based validator score with anti-whaling"
+  rawValidatorScore: String!
+  "The performance score of the validator"
+  performanceScore: String!
+  "The multisig score of the validator"
+  multisigScore: String!
+  "The composite score of the validator"
+  validatorScore: String!
+  "The normalised score of the validator"
+  normalisedScore: String!
+  "The status of the validator for this score"
+  validatorStatus: String!
+}
+
+type RankingScore {
+  "The current validation status of the validator"
+  status: String!
+  "The former validation status of teh validator"
+  previousStatus: String!
+  "The ranking score of the validator"
+  rankingScore: String! 
+  "The stake based score of the validator (no anti-whaling)"
+  stakeScore: String!
+  "The performance score of the validator"
+  performanceScore: String! 
+  "The tendermint voting power of the validator (uint32)"
+  votingPower: String!
 }
 
 type Delegation {
