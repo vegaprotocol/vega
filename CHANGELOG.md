@@ -13,6 +13,7 @@
 
 ### 🐛 Fixes
 - [4877](https://github.com/vegaprotocol/vega/issues/4877) - Fix topology and `erc20` topology snapshots
+- [4890](https://github.com/vegaprotocol/vega/issues/4890) - epoch service now notifies other engines when it has restored from a snapshot
 - [4879](https://github.com/vegaprotocol/vega/issues/4879) - Fixes for invalid data types in the `MarketData` proto message.
 - [4881](https://github.com/vegaprotocol/vega/issues/4881) - Set tendermint validators' voting power when loading from snapshot
 - [4882](https://github.com/vegaprotocol/vega/issues/4882) - Fixed tracking of liquidity fee received and added feature tests for the fee based rewards

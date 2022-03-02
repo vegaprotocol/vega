@@ -109,7 +109,7 @@ func newExecutionTestSetup() *executionTestSetup {
 	execsetup.topology = stubs.NewTopologyStub("nodeID", execsetup.broker)
 
 	execsetup.stakingAccount = stubs.NewStakingAccountStub()
-	execsetup.epochEngine.NotifyOnEpoch(execsetup.stakingAccount.OnEpochEvent)
+	execsetup.epochEngine.NotifyOnEpoch(execsetup.stakingAccount.OnEpochEvent, execsetup.stakingAccount.OnEpochRestore)
 
 	feesTracker := execution.NewFeesTracker(execsetup.epochEngine)
 
