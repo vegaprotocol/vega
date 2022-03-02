@@ -55,3 +55,8 @@ func (e *Engine) LoadState(ctx context.Context, p *types.Payload) ([]types.State
 
 	return nil, e.policyNameToPolicy[p.Key()].Deserialise(p)
 }
+
+// OnEpochEvent is a callback for epoch events.
+func (e *Engine) OnEpochRestore(ctx context.Context, epoch types.Epoch) {
+	e.currentEpoch = &epoch
+}

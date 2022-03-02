@@ -74,23 +74,23 @@ func (s *Svc) LoadState(ctx context.Context, payload *types.Payload) ([]types.St
 		s.readyToEndEpoch = snap.ReadyToEndEpoch
 		s.length = s.epoch.ExpireTime.Sub(s.epoch.StartTime)
 
-		// notify everyone of the restored epoch, this will always be mid epoch since onTick only
-		// happens at the start of a block and an epoch boundary is handle instantaneously. So even at
-		// and epoch boundary the order of events will be
-		// onEndBlock -> snapshot -> OnCommit -> onBeginBlock -> epoch-end + epoch-start events -> notify-new-epoch
-		// and so we can never take a snapshot between an epoch ending and a new one starting.
-		s.notify(ctx, types.Epoch{
-			Seq:        snap.Seq,
-			StartTime:  snap.StartTime,
-			ExpireTime: snap.ExpireTime,
-			Action:     vega.EpochAction_EPOCH_ACTION_RESTORED,
-		})
+		// notify all the engines that store epoch data about the current restored epoch
+		s.notifyRestore(ctx, s.epoch)
 		return nil, s.serialise()
 	default:
 		return nil, types.ErrUnknownSnapshotType
 	}
 }
 
-func (s *Svc) NotifyOnRestore(f func(context.Context, types.Epoch)) {
-	s.restoreListeners = append(s.listeners, f)
+// NotifyOnRestore allows other services to register a callback function
+// to handle the case where the engine has restored from a snapshot and
+// the other engines need to know about it
+func (s *Svc) NotifyOnEpochRestore(f func(context.Context, types.Epoch)) {
+	s.restoreListeners = append(s.restoreListeners, f)
+}
+
+func (s *Svc) notifyRestore(ctx context.Context, e types.Epoch) {
+	for _, f := range s.restoreListeners {
+		f(ctx, e)
+	}
 }

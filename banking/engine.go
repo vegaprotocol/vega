@@ -86,6 +86,7 @@ type TimeService interface {
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/epoch_service_mock.go -package mocks code.vegaprotocol.io/vega/banking EpochService
 type EpochService interface {
 	NotifyOnEpoch(f func(context.Context, types.Epoch))
+	NotifyOnEpochRestore(f func(context.Context, types.Epoch))
 }
 
 // Topology ...
@@ -153,6 +154,7 @@ func New(
 	defer func() {
 		tsvc.NotifyOnTick(e.OnTick)
 		epoch.NotifyOnEpoch(e.OnEpoch)
+		epoch.NotifyOnEpochRestore(e.OnEpochRestore)
 	}()
 	log = log.Named(namedLogger)
 	log.SetLevel(cfg.Level.Get())
@@ -214,9 +216,6 @@ func (e *Engine) OnEpoch(ctx context.Context, ep types.Epoch) {
 		if err := e.distributeRecurringTransfers(ctx, e.currentEpoch); err != nil {
 			e.log.Error("could not distribute recurring transfers", logging.Error(err))
 		}
-	case proto.EpochAction_EPOCH_ACTION_RESTORED:
-		e.log.Debug("epoch restoration notification received", logging.String("epoch", ep.String()))
-		e.currentEpoch = ep.Seq
 	default:
 		e.log.Panic("epoch action should never be UNSPECIFIED", logging.String("epoch", ep.String()))
 	}

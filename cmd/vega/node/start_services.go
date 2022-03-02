@@ -137,6 +137,7 @@ func (n *NodeCommand) startServices(_ []string) (err error) {
 	)
 	n.epochService = epochtime.NewService(n.Log, n.conf.Epoch, n.timeService, n.broker)
 	n.epochService.NotifyOnEpoch(n.topology.OnEpochEvent)
+	n.epochService.NotifyOnEpochRestore(n.topology.OnEpochRestore)
 
 	n.statevar = statevar.New(n.Log, n.conf.StateVar, n.broker, n.topology, n.commander, n.timeService)
 	n.feesTracker = execution.NewFeesTracker(n.epochService)

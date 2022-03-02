@@ -6,7 +6,6 @@ import (
 	"sort"
 	"time"
 
-	"code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/types/num"
 
 	"code.vegaprotocol.io/vega/events"
@@ -38,6 +37,7 @@ type MarketTracker interface {
 // EpochEngine notifies the reward engine at the end of an epoch.
 type EpochEngine interface {
 	NotifyOnEpoch(f func(context.Context, types.Epoch))
+	NotifyOnEpochRestore(f func(context.Context, types.Epoch))
 }
 
 //Delegation engine for getting validation data
@@ -125,6 +125,7 @@ func New(log *logging.Logger, config Config, broker Broker, delegation Delegatio
 
 	// register for epoch end notifications
 	epochEngine.NotifyOnEpoch(e.OnEpochEvent)
+	epochEngine.NotifyOnEpochRestore(e.OnEpochRestore)
 
 	// register for time tick updates
 	ts.NotifyOnTick(e.onChainTimeUpdate)
@@ -190,12 +191,8 @@ func (e *Engine) onChainTimeUpdate(ctx context.Context, t time.Time) {
 func (e *Engine) OnEpochEvent(ctx context.Context, epoch types.Epoch) {
 	e.log.Debug("OnEpochEvent")
 
-	if epoch.Action == vega.EpochAction_EPOCH_ACTION_RESTORED {
-		e.log.Debug("epoch restoration notification received", logging.String("epoch", epoch.String()))
-	}
-
 	// on new epoch update the epoch seq and update the epoch started flag
-	if (epoch.EndTime == time.Time{} || epoch.Action == vega.EpochAction_EPOCH_ACTION_RESTORED) {
+	if (epoch.EndTime == time.Time{}) {
 		e.epochSeq = num.NewUint(epoch.Seq).String()
 		e.newEpochStarted = true
 		return
@@ -203,6 +200,11 @@ func (e *Engine) OnEpochEvent(ctx context.Context, epoch types.Epoch) {
 
 	// we're at the end of the epoch - process rewards
 	e.calculateRewardPayouts(ctx, epoch)
+}
+
+func (e *Engine) OnEpochRestore(ctx context.Context, epoch types.Epoch) {
+	e.epochSeq = num.NewUint(epoch.Seq).String()
+	e.newEpochStarted = true
 }
 
 // splitDelegationByStatus splits the delegation data for an epoch into tendermint and ersatz validator sets.

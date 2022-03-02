@@ -24,7 +24,8 @@ type Svc struct {
 	length time.Duration
 	epoch  types.Epoch
 
-	listeners []func(context.Context, types.Epoch)
+	listeners        []func(context.Context, types.Epoch) // for when the epoch state changes
+	restoreListeners []func(context.Context, types.Epoch) // for when the epoch has been restored from a snapshot
 
 	log *logging.Logger
 
@@ -39,7 +40,6 @@ type Svc struct {
 	data             []byte
 	hash             []byte
 	currentTime      time.Time
-	restoreListeners []func(context.Context, types.Epoch)
 	needsFastForward bool
 }
 

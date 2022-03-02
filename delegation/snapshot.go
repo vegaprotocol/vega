@@ -205,3 +205,7 @@ func (e *Engine) restoreAuto(delegations *types.DelegationAuto) error {
 	e.dss.changed[autoKey] = true
 	return nil
 }
+
+func (e *Engine) onEpochRestore(ctx context.Context, epoch types.Epoch) {
+	e.currentEpoch = epoch
+}

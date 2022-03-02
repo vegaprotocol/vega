@@ -3,6 +3,7 @@ package validators
 import (
 	"context"
 	"encoding/base64"
+	"math/rand"
 	"sort"
 	"time"
 
@@ -248,4 +249,12 @@ func (t *Topology) restore(ctx context.Context, topology *types.Topology) error 
 	t.validatorPerformance.Deserialize(topology.ValidatorPerformance)
 	t.tss.changed = true
 	return nil
+}
+
+// OnEpochRestore is the epochtime service telling us the restored epoch data
+func (t *Topology) OnEpochRestore(_ context.Context, epoch types.Epoch) {
+	t.log.Debug("epoch restoration notification received", logging.String("epoch", epoch.String()))
+	t.epochSeq = epoch.Seq
+	t.newEpochStarted = true
+	t.rng = rand.New(rand.NewSource(epoch.StartTime.Unix()))
 }

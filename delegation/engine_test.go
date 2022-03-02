@@ -179,10 +179,14 @@ func testLastReconTimeRoundTrip(t *testing.T) {
 
 // test round trip of active snapshot hash and serialisation.
 func testActiveSnapshotRoundTrip(t *testing.T) {
+	ctx := context.Background()
 	testEngine := getEngine(t)
 	setupDefaultDelegationState(testEngine, 14, 7)
 
 	testEngine.engine.ProcessEpochDelegations(context.Background(), types.Epoch{Seq: 0})
+
+	// Move ahead a bit futher
+	testEngine.engine.onEpochEvent(context.Background(), types.Epoch{Seq: 2, StartTime: time.Now()})
 
 	// get the has and serialised state
 	hash, err := testEngine.engine.GetHash(activeKey)
@@ -203,13 +207,20 @@ func testActiveSnapshotRoundTrip(t *testing.T) {
 	var active snapshot.Payload
 	proto.Unmarshal(state, &active)
 	payload := types.PayloadFromProto(&active)
-	testEngine.broker.EXPECT().SendBatch(gomock.Any()).Times(1)
-	testEngine.engine.LoadState(context.Background(), payload)
+
+	// make a fresh engine
+	snapEngine := getEngine(t)
+	setupDefaultDelegationState(snapEngine, 14, 7)
+	snapEngine.broker.EXPECT().SendBatch(gomock.Any()).Times(1)
+	snapEngine.engine.LoadState(ctx, payload)
+
+	// signal loading of the epoch
+	snapEngine.engine.onEpochRestore(ctx, types.Epoch{Seq: 2})
 
 	// verify hash and state match
-	hashPostReload, _ := testEngine.engine.GetHash(activeKey)
+	hashPostReload, _ := snapEngine.engine.GetHash(activeKey)
 	require.True(t, bytes.Equal(hash, hashPostReload))
-	statePostReload, _, _ := testEngine.engine.GetState(activeKey)
+	statePostReload, _, _ := snapEngine.engine.GetState(activeKey)
 	require.True(t, bytes.Equal(state, statePostReload))
 }
 
@@ -1908,7 +1919,8 @@ func getEngine(t *testing.T) *testEngine {
 
 type TestEpochEngine struct{}
 
-func (t *TestEpochEngine) NotifyOnEpoch(f func(context.Context, types.Epoch)) {}
+func (t *TestEpochEngine) NotifyOnEpoch(f func(context.Context, types.Epoch))        {}
+func (t *TestEpochEngine) NotifyOnEpochRestore(f func(context.Context, types.Epoch)) {}
 
 type TestStakingAccount struct {
 	partyToStake         map[string]*num.Uint

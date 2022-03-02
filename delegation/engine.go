@@ -7,7 +7,6 @@ import (
 	"sort"
 	"time"
 
-	"code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/logging"
@@ -69,6 +68,7 @@ type StakingAccounts interface {
 
 type EpochEngine interface {
 	NotifyOnEpoch(f func(context.Context, types.Epoch))
+	NotifyOnEpochRestore(f func(context.Context, types.Epoch))
 }
 
 // party delegation state - how much is delegated by the party to each validator and in total.
@@ -131,6 +131,7 @@ func New(log *logging.Logger, config Config, broker Broker, topology ValidatorTo
 
 	// register for epoch notifications
 	epochEngine.NotifyOnEpoch(e.onEpochEvent)
+	epochEngine.NotifyOnEpochRestore(e.onEpochRestore)
 
 	// register for time tick updates
 	ts.NotifyOnTick(e.onChainTimeUpdate)
@@ -166,12 +167,6 @@ func (e *Engine) onChainTimeUpdate(ctx context.Context, t time.Time) {
 // update the current epoch at which current pending delegations are recorded
 // regardless if the event is start or stop of the epoch. the sequence is what identifies the epoch.
 func (e *Engine) onEpochEvent(ctx context.Context, epoch types.Epoch) {
-	if epoch.Action == vega.EpochAction_EPOCH_ACTION_RESTORED {
-		e.log.Debug("epoch restoration notification received", logging.String("epoch", epoch.String()))
-		e.currentEpoch = epoch
-		return
-	}
-
 	if (e.lastReconciliation == time.Time{}) {
 		e.lastReconciliation = epoch.StartTime
 		e.dss.changed[lastReconKey] = true

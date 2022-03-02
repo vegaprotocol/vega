@@ -243,7 +243,10 @@ func getEngine(t *testing.T, balances map[string]*num.Uint) *testEngine {
 	t.Helper()
 	conf := spam.NewDefaultConfig()
 	logger := logging.NewTestLogger()
-	epochEngine := &TestEpochEngine{callbacks: []func(context.Context, types.Epoch){}}
+	epochEngine := &TestEpochEngine{
+		callbacks: []func(context.Context, types.Epoch){},
+		restore:   []func(context.Context, types.Epoch){},
+	}
 	accounts := &testAccounts{balances: balances}
 
 	engine := spam.New(logger, conf, epochEngine, accounts)
@@ -264,8 +267,13 @@ func getEngine(t *testing.T, balances map[string]*num.Uint) *testEngine {
 
 type TestEpochEngine struct {
 	callbacks []func(context.Context, types.Epoch)
+	restore   []func(context.Context, types.Epoch)
 }
 
 func (e *TestEpochEngine) NotifyOnEpoch(f func(context.Context, types.Epoch)) {
 	e.callbacks = append(e.callbacks, f)
+}
+
+func (e *TestEpochEngine) NotifyOnEpochRestore(f func(context.Context, types.Epoch)) {
+	e.restore = append(e.restore, f)
 }
