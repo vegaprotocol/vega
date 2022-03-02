@@ -29,6 +29,8 @@ func (t *StakingAccountStub) OnEpochEvent(ctx context.Context, epoch types.Epoch
 	}
 }
 
+func (t *StakingAccountStub) OnEpochRestore(_ context.Context, _ types.Epoch) {}
+
 func (t *StakingAccountStub) IncrementBalance(party string, amount *num.Uint) error {
 	if _, ok := t.partyToStake[party]; !ok {
 		t.partyToStake[party] = num.Zero()

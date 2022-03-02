@@ -287,7 +287,10 @@ func getEngine(t *testing.T) *testEngine {
 	broker := bmock.NewMockBroker(ctrl)
 	logger := logging.NewTestLogger()
 	delegation := mocks.NewMockDelegation(ctrl)
-	epochEngine := &TestEpochEngine{callbacks: []func(context.Context, types.Epoch){}}
+	epochEngine := &TestEpochEngine{
+		callbacks: []func(context.Context, types.Epoch){},
+		restore:   []func(context.Context, types.Epoch){},
+	}
 	ts := mocks.NewMockTimeService(ctrl)
 
 	ts.EXPECT().GetTimeNow().AnyTimes()
@@ -363,8 +366,10 @@ func getEngine(t *testing.T) *testEngine {
 
 type TestEpochEngine struct {
 	callbacks []func(context.Context, types.Epoch)
+	restore   []func(context.Context, types.Epoch)
 }
 
-func (e *TestEpochEngine) NotifyOnEpoch(f func(context.Context, types.Epoch)) {
+func (e *TestEpochEngine) NotifyOnEpoch(f func(context.Context, types.Epoch), r func(context.Context, types.Epoch)) {
 	e.callbacks = append(e.callbacks, f)
+	e.restore = append(e.callbacks, r)
 }
