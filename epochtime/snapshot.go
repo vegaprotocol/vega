@@ -74,8 +74,16 @@ func (s *Svc) LoadState(ctx context.Context, payload *types.Payload) ([]types.St
 		s.readyToEndEpoch = snap.ReadyToEndEpoch
 		s.length = s.epoch.ExpireTime.Sub(s.epoch.StartTime)
 
+		// notify all the engines that store epoch data about the current restored epoch
+		s.notifyRestore(ctx, s.epoch)
 		return nil, s.serialise()
 	default:
 		return nil, types.ErrUnknownSnapshotType
+	}
+}
+
+func (s *Svc) notifyRestore(ctx context.Context, e types.Epoch) {
+	for _, f := range s.restoreListeners {
+		f(ctx, e)
 	}
 }

@@ -16,7 +16,10 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var epochs []types.Epoch
+var (
+	epochs   []types.Epoch
+	restored []types.Epoch
+)
 
 type tstSvc struct {
 	*epochtime.Svc
@@ -56,6 +59,10 @@ func onEpoch(ctx context.Context, e types.Epoch) {
 	epochs = append(epochs, e)
 }
 
+func onEpochRestore(ctx context.Context, e types.Epoch) {
+	restored = append(epochs, e)
+}
+
 func TestEpochService(t *testing.T) {
 	now := time.Unix(0, 0).UTC()
 
@@ -68,7 +75,7 @@ func TestEpochService(t *testing.T) {
 	// Subscribe to epoch updates
 	// Reset global used in callback so that is doesn't pick up state from another test
 	epochs = []types.Epoch{}
-	service.NotifyOnEpoch(onEpoch)
+	service.NotifyOnEpoch(onEpoch, onEpochRestore)
 
 	// Move time forward to generate first epoch
 	service.cb(ctx, now)
@@ -138,7 +145,7 @@ func TestEpochServiceCheckpointLoading(t *testing.T) {
 	onLoadEpoch := func(ctx context.Context, e types.Epoch) {
 		loadEpochs = append(loadEpochs, e)
 	}
-	loadService.NotifyOnEpoch(onLoadEpoch)
+	loadService.NotifyOnEpoch(onLoadEpoch, onEpochRestore)
 
 	// we're loading the checkpoint 4 hours after the time it was taken but we're still within the same epoch for another few good hours
 	now = now.Add((time.Hour * 4))
@@ -193,7 +200,7 @@ func TestEpochServiceCheckpointFastForward(t *testing.T) {
 	onLoadEpoch := func(ctx context.Context, e types.Epoch) {
 		loadEpochs = append(loadEpochs, e)
 	}
-	loadService.NotifyOnEpoch(onLoadEpoch)
+	loadService.NotifyOnEpoch(onLoadEpoch, onEpochRestore)
 
 	// we're loading the checkpoint 4 hours after the time it was taken - so we expect the first epoch (1) to have been finished, as well as epoch 2 and 3 and epoch 4 started
 	// 72h means:

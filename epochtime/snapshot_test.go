@@ -38,6 +38,9 @@ func TestEpochSnapshotFunctionallyAfterReload(t *testing.T) {
 	err = proto.Unmarshal(data, snap)
 	require.Nil(t, err)
 
+	service.NotifyOnEpoch(onEpoch, onEpochRestore)
+	snapService.NotifyOnEpoch(onEpoch, onEpochRestore)
+
 	_, err = snapService.LoadState(
 		ctx,
 		types.PayloadFromProto(snap),
@@ -47,8 +50,6 @@ func TestEpochSnapshotFunctionallyAfterReload(t *testing.T) {
 	// Check functional equivalence by stepping forward in time/blocks
 	// Reset global used in callback so that is doesn't pick up state from another test
 	epochs = []types.Epoch{}
-	service.NotifyOnEpoch(onEpoch)
-	snapService.NotifyOnEpoch(onEpoch)
 
 	// Move time forward in time a small amount that should cause no change
 	nt := now.Add(time.Hour)
