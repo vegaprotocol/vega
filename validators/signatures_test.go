@@ -27,6 +27,7 @@ type testSignatures struct {
 }
 
 func getTestSignatures(t *testing.T) *testSignatures {
+	t.Helper()
 	ctrl := gomock.NewController(t)
 	notary := mocks.NewMockNotary(ctrl)
 	broker := bmocks.NewMockBroker(ctrl)
@@ -92,7 +93,7 @@ func TestPromotionSignatures(t *testing.T) {
 
 	currentTime := time.Unix(10, 0)
 
-	// just agregate all events
+	// just aggregate all events
 	// we'll verify their content after
 	evts := []events.Event{}
 	signatures.broker.EXPECT().SendBatch(gomock.Any()).Times(2).DoAndReturn(func(newEvts []events.Event) {

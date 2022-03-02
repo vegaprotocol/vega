@@ -9,7 +9,6 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
-	"github.com/ethereum/go-ethereum/log"
 )
 
 type valScore struct {
@@ -172,14 +171,18 @@ func getValScore(inScores ...map[string]num.Decimal) map[string]num.Decimal {
 // if the val_score = raw_score x performance_score  is in the top <numberEthMultisigSigners> and the validator is on the multisig contract => 1
 // else 0
 // that means a validator in tendermint set only gets a reward if it is in the top <numberEthMultisigSigners> and their registered with the multisig contract.
-func getMultisigScore(rawScores map[string]num.Decimal, perfScore map[string]num.Decimal, multiSigTopology MultiSigTopology, numberEthMultisigSigners int) map[string]num.Decimal {
-	keys := make([]string, 0, len(rawScores))
+func getMultisigScore(log *logging.Logger, rawScores map[string]num.Decimal, perfScore map[string]num.Decimal, multiSigTopology MultiSigTopology, numberEthMultisigSigners int, nodeIDToEthAddress map[string]string) map[string]num.Decimal {
+	ethAddresses := make([]string, 0, len(rawScores))
 	for k := range rawScores {
-		keys = append(keys, k)
+		if eth, ok := nodeIDToEthAddress[k]; !ok {
+			log.Panic("missing eth address in mapping", logging.String("node-id", k))
+		} else {
+			ethAddresses = append(ethAddresses, eth)
+		}
 	}
-	sort.Strings(keys)
+	sort.Strings(ethAddresses)
 
-	if multiSigTopology.ExcessSigners(keys) {
+	if multiSigTopology.ExcessSigners(ethAddresses) {
 		res := make(map[string]num.Decimal, len(rawScores))
 		for rs := range rawScores {
 			res[rs] = num.DecimalZero()
@@ -202,8 +205,12 @@ func getMultisigScore(rawScores map[string]num.Decimal, perfScore map[string]num
 	res := make(map[string]num.Decimal, len(valScores))
 	for i, vs := range valScores {
 		if i < numberEthMultisigSigners {
-			if multiSigTopology.IsSigner(vs.ID) {
-				res[vs.ID] = decimalOne
+			if eth, ok := nodeIDToEthAddress[vs.ID]; !ok {
+				log.Panic("missing eth address in mapping", logging.String("node-id", vs.ID))
+			} else {
+				if multiSigTopology.IsSigner(eth) {
+					res[vs.ID] = decimalOne
+				}
 			}
 		}
 	}
@@ -327,10 +334,12 @@ func (t *Topology) calculateTMScores(delegationState []*types.ValidatorData, sta
 
 	// identify tendermint validators for epoch
 	tmValidators := map[string]struct{}{}
+	nodeIDToEthAddress := map[string]string{}
 	for k, d := range t.validators {
 		if d.status == ValidatorStatusTendermint {
 			tmValidators[k] = struct{}{}
 		}
+		nodeIDToEthAddress[d.data.ID] = d.data.EthereumAddress
 	}
 
 	// calculate the delegation and anti-whaling score for the tendermint validators
@@ -343,7 +352,7 @@ func (t *Topology) calculateTMScores(delegationState []*types.ValidatorData, sta
 	tmScores.PerformanceScores = t.getPerformanceScore(tmDelegation)
 
 	// calculate multisig score for the tm validators
-	tmScores.MultisigScores = getMultisigScore(tmScores.RawValScores, tmScores.PerformanceScores, t.multiSigTopology, t.numberEthMultisigSigners)
+	tmScores.MultisigScores = getMultisigScore(t.log, tmScores.RawValScores, tmScores.PerformanceScores, t.multiSigTopology, t.numberEthMultisigSigners, nodeIDToEthAddress)
 
 	// calculate the final score
 	tmScores.ValScores = getValScore(tmScores.RawValScores, tmScores.PerformanceScores, tmScores.MultisigScores)
@@ -361,7 +370,7 @@ func (t *Topology) calculateTMScores(delegationState []*types.ValidatorData, sta
 	tmScores.NodeIDSlice = tmNodeIDs
 
 	for _, k := range tmNodeIDs {
-		log.Info("reward scores for", logging.String("node-id", k), logging.String("stake-score", tmScores.RawValScores[k].String()), logging.String("performance-score", tmScores.PerformanceScores[k].String()), logging.String("multisig-score", tmScores.MultisigScores[k].String()), logging.String("validator-score", tmScores.ValScores[k].String()), logging.String("normalised-score", tmScores.NormalisedScores[k].String()))
+		t.log.Info("reward scores for", logging.String("node-id", k), logging.String("stake-score", tmScores.RawValScores[k].String()), logging.String("performance-score", tmScores.PerformanceScores[k].String()), logging.String("multisig-score", tmScores.MultisigScores[k].String()), logging.String("validator-score", tmScores.ValScores[k].String()), logging.String("normalised-score", tmScores.NormalisedScores[k].String()))
 	}
 
 	return tmScores
