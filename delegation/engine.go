@@ -67,7 +67,7 @@ type StakingAccounts interface {
 }
 
 type EpochEngine interface {
-	NotifyOnEpoch(f func(context.Context, types.Epoch))
+	NotifyOnEpoch(f func(context.Context, types.Epoch), r func(context.Context, types.Epoch))
 }
 
 // party delegation state - how much is delegated by the party to each validator and in total.
@@ -129,7 +129,7 @@ func New(log *logging.Logger, config Config, broker Broker, topology ValidatorTo
 	e.keyToSerialiser[lastReconKey] = e.serialiseLastReconTime
 
 	// register for epoch notifications
-	epochEngine.NotifyOnEpoch(e.onEpochEvent)
+	epochEngine.NotifyOnEpoch(e.onEpochEvent, e.onEpochRestore)
 
 	// register for time tick updates
 	ts.NotifyOnTick(e.onChainTimeUpdate)

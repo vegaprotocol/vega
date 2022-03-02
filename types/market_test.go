@@ -94,12 +94,12 @@ func TestMarketFromIntoProto(t *testing.T) {
 				Triggers: []*proto.PriceMonitoringTrigger{
 					{
 						Horizon:          5,
-						Probability:      .99,
+						Probability:      "0.99",
 						AuctionExtension: 4,
 					},
 					{
 						Horizon:          10,
-						Probability:      .95,
+						Probability:      "0.95",
 						AuctionExtension: 6,
 					},
 				},

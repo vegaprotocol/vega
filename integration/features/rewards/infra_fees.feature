@@ -13,7 +13,6 @@ Background:
       | reward.staking.delegation.minValidators           |  5                       |
       | reward.staking.delegation.optimalStakeMultiplier  |  5.0                     |
 
-
     Given time is updated to "2021-08-26T00:00:00Z"
     Given the average block duration is "2"
 

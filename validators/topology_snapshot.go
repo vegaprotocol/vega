@@ -2,6 +2,8 @@ package validators
 
 import (
 	"context"
+	"encoding/base64"
+	"math/rand"
 	"sort"
 	"time"
 
@@ -13,6 +15,7 @@ import (
 	"code.vegaprotocol.io/vega/types"
 
 	"github.com/golang/protobuf/proto"
+	tmtypes "github.com/tendermint/tendermint/abci/types"
 )
 
 var (
@@ -187,6 +190,8 @@ func (t *Topology) restore(ctx context.Context, topology *types.Topology) error 
 	t.log.Debug("restoring topology snapshot")
 	t.validators = map[string]*valState{}
 
+	vUpdates := []tmtypes.ValidatorUpdate{}
+
 	for _, node := range topology.ValidatorData {
 		t.log.Debug("restoring validator data snapshot", logging.String("nodeid", node.ValidatorUpdate.NodeId))
 		vs := &valState{
@@ -227,11 +232,29 @@ func (t *Topology) restore(ctx context.Context, topology *types.Topology) error 
 		if t.isValidatorSetup && !t.isValidator {
 			t.checkValidatorDataWithSelfWallets(vs.data)
 		}
+
+		if node.Status == ValidatorStatusTendermint {
+			pubkey, err := base64.StdEncoding.DecodeString(node.ValidatorUpdate.TmPubKey)
+			if err != nil {
+				t.log.Panic("failed to decode tendermint public key", logging.String("tm-pub-key", node.ValidatorUpdate.TmPubKey))
+			}
+			vUpdates = append(vUpdates, tmtypes.UpdateValidator(pubkey, node.ValidatorPower, ""))
+		}
 	}
 
+	t.validatorPowerUpdates = vUpdates
+	t.newEpochStarted = true
 	t.chainValidators = topology.ChainValidators[:]
 	t.restorePendingKeyRotations(ctx, topology.PendingPubKeyRotations)
 	t.validatorPerformance.Deserialize(topology.ValidatorPerformance)
 	t.tss.changed = true
 	return nil
+}
+
+// OnEpochRestore is the epochtime service telling us the restored epoch data.
+func (t *Topology) OnEpochRestore(_ context.Context, epoch types.Epoch) {
+	t.log.Debug("epoch restoration notification received", logging.String("epoch", epoch.String()))
+	t.epochSeq = epoch.Seq
+	t.newEpochStarted = true
+	t.rng = rand.New(rand.NewSource(epoch.StartTime.Unix()))
 }
