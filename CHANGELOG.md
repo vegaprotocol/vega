@@ -115,6 +115,7 @@
 - [4674](https://github.com/vegaprotocol/vega/issues/4674) - Add Ethereum events reconciliation for `multisig control`
 - [4886](https://github.com/vegaprotocol/vega/pull/4886) - Add more integration tests around order amends and fees.
 - [4885](https://github.com/vegaprotocol/vega/pull/4885) - Update amend orders scenario to have fees transfers in int tests
+- [4902](https://github.com/vegaprotocol/vega/issues/4902) - Moving Lp Tests from qa scenario to verified folder in Vega repo
 
 
 ### 🐛 Fixes
