@@ -116,6 +116,7 @@
 - [4886](https://github.com/vegaprotocol/vega/pull/4886) - Add more integration tests around order amends and fees.
 - [4885](https://github.com/vegaprotocol/vega/pull/4885) - Update amend orders scenario to have fees transfers in int tests
 
+
 ### 🐛 Fixes
 - [4842](https://github.com/vegaprotocol/vega/pull/4842) - Fix margin balance not being released after close-out.
 - [4798](https://github.com/vegaprotocol/vega/pull/4798) - Fix panic in loading topology from snapshot
@@ -160,6 +161,7 @@
 - [4854](https://github.com/vegaprotocol/vega/pull/4854) - Snapshot fixes for the `statevar` engine
 - [3919](https://github.com/vegaprotocol/vega/pull/3919) - Fixed panic in `maybeInvalidateDuringAuction`
 - [4849](https://github.com/vegaprotocol/vega/pull/4849) - Fixed liquidity auction trigger for certain cancel & replace amends.
+- [4902](https://github.com/vegaprotocol/vega/issues/4902) - move lp fees test from qa-scenarios to VEGA verified folder
 
 ## 0.47.6
 *2022-02-01*
