@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"math/rand"
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -138,17 +139,38 @@ type Topology struct {
 	epochSeq              uint64
 	newEpochStarted       bool
 
-	cmd        Commander
-	notary     Notary
-	signatures Signatures
+	cmd              Commander
+	checkpointLoaded bool
+	notary           Notary
+	signatures       Signatures
 }
 
-func (t *Topology) OnEpochEvent(_ context.Context, epoch types.Epoch) {
+func (t *Topology) OnEpochEvent(ctx context.Context, epoch types.Epoch) {
 	t.epochSeq = epoch.Seq
 	if epoch.Action == proto.EpochAction_EPOCH_ACTION_START {
 		t.newEpochStarted = true
 		t.rng = rand.New(rand.NewSource(epoch.StartTime.Unix()))
 		t.validatorPerformance.Reset()
+	}
+	// this is a workaround to the topology loaded from checkpoint before the epoch.
+	if t.checkpointLoaded {
+		evts := make([]events.Event, 0, len(t.validators))
+		seq := num.NewUint(t.epochSeq).String()
+		t.checkpointLoaded = false
+		nodeIDs := make([]string, 0, len(t.validators))
+		for k := range t.validators {
+			nodeIDs = append(nodeIDs, k)
+		}
+		sort.Strings(nodeIDs)
+		for _, nid := range nodeIDs {
+			node := t.validators[nid]
+			if node.rankingScore == nil {
+				continue
+			}
+			evts = append(evts, events.NewValidatorRanking(ctx, seq, node.data.ID, node.rankingScore.StakeScore, node.rankingScore.PerformanceScore, node.rankingScore.RankingScore, protoStatusToString(node.rankingScore.PreviousStatus), protoStatusToString(node.rankingScore.Status), int(node.rankingScore.VotingPower)))
+		}
+		// send ranking events for all loaded validators so data node knows the current ranking
+		t.broker.SendBatch(evts)
 	}
 }
 
@@ -356,11 +378,23 @@ func (t *Topology) AddNewNode(ctx context.Context, nr *commandspb.AnnounceNode, 
 		t.validators[nr.Id].validatorPower = 10
 	}
 
+	rankingScoreStatus := statusToProtoStatus(ValidatorStatusToName[status])
+	t.validators[nr.Id].rankingScore = &proto.RankingScore{
+		StakeScore:       "0",
+		PerformanceScore: "0",
+		RankingScore:     "0",
+		Status:           rankingScoreStatus,
+		PreviousStatus:   statusToProtoStatus("pending"),
+		VotingPower:      uint32(t.validators[nr.Id].validatorPower),
+	}
+
 	t.tss.changed = true
 
 	// Send event to notify core about new validator
 	t.sendValidatorUpdateEvent(ctx, data, true)
-
+	// Send an event to notify the new validator ranking
+	epochSeq := num.NewUint(t.epochSeq).String()
+	t.broker.Send(events.NewValidatorRanking(ctx, epochSeq, nr.Id, "0", "0", "0", "pending", ValidatorStatusToName[status], int(t.validators[nr.Id].validatorPower)))
 	t.log.Info("new node registration successful",
 		logging.String("id", nr.Id),
 		logging.String("vega-key", nr.VegaPubKey),

@@ -19,6 +19,7 @@
 - [4879](https://github.com/vegaprotocol/vega/issues/4879) - Fixes for invalid data types in the `MarketData` proto message.
 - [4881](https://github.com/vegaprotocol/vega/issues/4881) - Set tendermint validators' voting power when loading from snapshot
 - [4882](https://github.com/vegaprotocol/vega/issues/4882) - Fixed tracking of liquidity fee received and added feature tests for the fee based rewards
+- [4898](https://github.com/vegaprotocol/vega/issues/4898) - Add ranking score information to checkpoint and snapshot and emit an event when loaded
 
 ## 0.49.0
 
