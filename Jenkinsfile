@@ -261,7 +261,6 @@ pipeline {
                     steps {
                         script {
                             systemTests ignoreFailure: !isPRBuild(),
-                                timeout: 30,
                                 vegaBuildTags: 'qa',
                                 vegaCore: commitHash,
                                 dataNode: params.DATA_NODE_BRANCH,
@@ -277,7 +276,6 @@ pipeline {
                     steps {
                         script {
                             systemTestsLNL ignoreFailure: true,
-                                timeout: 30,
                                 vegaCore: commitHash,
                                 dataNode: params.DATA_NODE_BRANCH,
                                 vegawallet: params.VEGAWALLET_BRANCH,
