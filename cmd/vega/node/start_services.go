@@ -160,6 +160,9 @@ func (n *NodeCommand) startServices(_ []string) (err error) {
 	n.rewards = rewards.New(n.Log, n.conf.Rewards, n.broker, n.delegation, n.epochService, n.collateral, n.timeService, n.feesTracker, marketTracker, n.topology)
 
 	n.notary = notary.NewWithSnapshot(n.Log, n.conf.Notary, n.topology, n.broker, n.commander, n.timeService)
+	// TODO(): this is not pretty
+	n.topology.SetNotary(n.notary)
+
 	n.banking = banking.New(n.Log, n.conf.Banking, n.collateral, n.witness, n.timeService, n.assets, n.notary, n.broker, n.topology, n.epochService)
 
 	// checkpoint engine
