@@ -156,3 +156,8 @@ func (f *FeesTracker) restore(ctx context.Context, data *snapshot.FeesTracker) e
 	f.ss.changed = true
 	return nil
 }
+
+// onEpochEvent is called when the state of the epoch changes, we only care about new epochs starting.
+func (f *FeesTracker) onEpochRestore(_ context.Context, epoch types.Epoch) {
+	f.currentEpoch = epoch.Seq
+}

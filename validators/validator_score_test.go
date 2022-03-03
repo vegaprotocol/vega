@@ -427,20 +427,38 @@ func testGetMultisigScore(t *testing.T) {
 	}
 
 	multisigValidators := map[string]struct{}{
-		"node1":  {},
-		"node2":  {},
-		"node5":  {},
-		"node7":  {},
-		"node8":  {},
-		"node9":  {},
-		"node10": {},
+		"node1eth":  {},
+		"node2eth":  {},
+		"node5eth":  {},
+		"node7eth":  {},
+		"node8eth":  {},
+		"node9eth":  {},
+		"node10eth": {},
+	}
+
+	nodeIDToEthAddress := map[string]string{
+		"node1":  "node1eth",
+		"node2":  "node2eth",
+		"node3":  "node3eth",
+		"node4":  "node4eth",
+		"node5":  "node5eth",
+		"node6":  "node6eth",
+		"node7":  "node7eth",
+		"node8":  "node8eth",
+		"node9":  "node9eth",
+		"node10": "node10eth",
 	}
 
 	multisigTopology := &TestMultisigTopology{
 		validators: multisigValidators,
 	}
 
-	multisigScore := getMultisigScore(stakeScore, perfScore, multisigTopology, 5)
+	log := logging.NewTestLogger()
+	multisigScore := getMultisigScore(
+		log,
+		stakeScore, perfScore, multisigTopology, 5,
+		nodeIDToEthAddress,
+	)
 
 	// sorted by the score = stake x performance node 10 is the top and node 1 is the bottom.
 	// looking at the top 5 that gives node10 - node6
@@ -459,8 +477,9 @@ func testGetMultisigScore(t *testing.T) {
 	require.Equal(t, "1", multisigScore["node10"].String())
 
 	multisigValidators["node100"] = struct{}{}
+	nodeIDToEthAddress["node100"] = "node100eth"
 
-	multisigScore = getMultisigScore(stakeScore, perfScore, multisigTopology, 5)
+	multisigScore = getMultisigScore(log, stakeScore, perfScore, multisigTopology, 5, nodeIDToEthAddress)
 	require.Equal(t, "0", multisigScore["node1"].String())
 	require.Equal(t, "0", multisigScore["node2"].String())
 	require.Equal(t, "0", multisigScore["node3"].String())
@@ -482,8 +501,9 @@ func testCalculateTMScores(t *testing.T) {
 		index := num.NewUint(uint64(i) + 1).String()
 		topology.validators["node"+index] = &valState{
 			data: ValidatorData{
-				ID:       "node" + index,
-				TmPubKey: "key" + index,
+				ID:              "node" + index,
+				TmPubKey:        "key" + index,
+				EthereumAddress: "node" + index + "eth",
 			},
 			status:           ValidatorStatusTendermint,
 			heartbeatTracker: &validatorHeartbeatTracker{},
@@ -491,14 +511,16 @@ func testCalculateTMScores(t *testing.T) {
 	}
 	topology.validators["node11"] = &valState{
 		data: ValidatorData{
-			ID: "node11",
+			ID:              "node11",
+			EthereumAddress: "node11eth",
 		},
 		status:           ValidatorStatusErsatz,
 		heartbeatTracker: &validatorHeartbeatTracker{},
 	}
 	topology.validators["node12"] = &valState{
 		data: ValidatorData{
-			ID: "node12",
+			ID:              "node12",
+			EthereumAddress: "node12eth",
 		},
 		status:           ValidatorStatusErsatz,
 		heartbeatTracker: &validatorHeartbeatTracker{},
@@ -511,12 +533,12 @@ func testCalculateTMScores(t *testing.T) {
 
 	multisigTopology := &TestMultisigTopology{}
 	multisigTopology.validators = map[string]struct{}{
-		"node1": {},
-		"node2": {},
-		"node3": {},
-		"node5": {},
-		"node7": {},
-		"node9": {},
+		"node1eth": {},
+		"node2eth": {},
+		"node3eth": {},
+		"node5eth": {},
+		"node7eth": {},
+		"node9eth": {},
 	}
 	topology.multiSigTopology = multisigTopology
 
@@ -650,7 +672,8 @@ func testCalculateErsatzScores(t *testing.T) {
 		index := num.NewUint(uint64(i) + 1).String()
 		topology.validators["node"+index] = &valState{
 			data: ValidatorData{
-				ID: "node" + index,
+				ID:              "node" + index,
+				EthereumAddress: "node" + index + "eth",
 			},
 			status:                          ValidatorStatusErsatz,
 			heartbeatTracker:                &validatorHeartbeatTracker{},
@@ -662,14 +685,16 @@ func testCalculateErsatzScores(t *testing.T) {
 	}
 	topology.validators["node11"] = &valState{
 		data: ValidatorData{
-			ID: "node11",
+			ID:              "node11",
+			EthereumAddress: "node11eth",
 		},
 		status:           ValidatorStatusTendermint,
 		heartbeatTracker: &validatorHeartbeatTracker{},
 	}
 	topology.validators["node12"] = &valState{
 		data: ValidatorData{
-			ID: "node12",
+			ID:              "node12",
+			EthereumAddress: "node12eth",
 		},
 		status:           ValidatorStatusTendermint,
 		heartbeatTracker: &validatorHeartbeatTracker{},
@@ -681,12 +706,12 @@ func testCalculateErsatzScores(t *testing.T) {
 	topology.numberEthMultisigSigners = 7
 	topology.multiSigTopology = &TestMultisigTopology{
 		validators: map[string]struct{}{
-			"node1": {},
-			"node2": {},
-			"node3": {},
-			"node5": {},
-			"node7": {},
-			"node9": {},
+			"node1eth": {},
+			"node2eth": {},
+			"node3eth": {},
+			"node5eth": {},
+			"node7eth": {},
+			"node9eth": {},
 		},
 	}
 
@@ -834,12 +859,12 @@ func testGetRewardsScores(t *testing.T) {
 	topology.numberEthMultisigSigners = 7
 	topology.multiSigTopology = &TestMultisigTopology{
 		validators: map[string]struct{}{
-			"node1": {},
-			"node2": {},
-			"node3": {},
-			"node5": {},
-			"node7": {},
-			"node9": {},
+			"node1eth": {},
+			"node2eth": {},
+			"node3eth": {},
+			"node5eth": {},
+			"node7eth": {},
+			"node9eth": {},
 		},
 	}
 
@@ -847,8 +872,9 @@ func testGetRewardsScores(t *testing.T) {
 		index := num.NewUint(uint64(i) + 1).String()
 		topology.validators["node"+index] = &valState{
 			data: ValidatorData{
-				ID:       "node" + index,
-				TmPubKey: "key" + index,
+				ID:              "node" + index,
+				TmPubKey:        "key" + index,
+				EthereumAddress: "node" + index + "eth",
 			},
 			status:           ValidatorStatusTendermint,
 			heartbeatTracker: &validatorHeartbeatTracker{},

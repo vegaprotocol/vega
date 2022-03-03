@@ -543,7 +543,7 @@ func (m *Market) GetMarketData() types.MarketData {
 		TargetStake:               targetStake,
 		SuppliedStake:             m.getSuppliedStake().String(),
 		PriceMonitoringBounds:     bounds,
-		MarketValueProxy:          m.lastMarketValueProxy.String(),
+		MarketValueProxy:          m.lastMarketValueProxy.BigInt().String(),
 		LiquidityProviderFeeShare: lpsToLiquidityProviderFeeShare(m.equityShares.lps),
 	}
 }
@@ -3184,6 +3184,7 @@ func (m *Market) distributeLiquidityFees(ctx context.Context) error {
 		return nil
 	}
 
+	m.feesTracker.UpdateFeesFromTransfers(feeTransfer.Transfers())
 	resp, err := m.collateral.TransferFees(ctx, m.GetID(), asset, feeTransfer)
 	if err != nil {
 		return fmt.Errorf("failed to transfer fees: %w", err)

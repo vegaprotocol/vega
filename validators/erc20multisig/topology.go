@@ -117,7 +117,10 @@ func NewTopology(
 		tss: &topologySnapshotState{
 			hash:       map[string][]byte{},
 			serialised: map[string][]byte{},
-			changed:    map[string]bool{},
+			changed: map[string]bool{
+				verifiedStateKey: true,
+				pendingStateKey:  true,
+			},
 		},
 	}
 

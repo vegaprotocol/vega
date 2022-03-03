@@ -158,6 +158,17 @@ func (u *Uint) Add(x, y *Uint) *Uint {
 	return u
 }
 
+// AddUint64 will add x and y then store the result
+// into u
+// this is equivalent to:
+// `u = x + y`
+// u is returned for convenience, no
+// new variable is created.
+func (u *Uint) AddUint64(x *Uint, y uint64) *Uint {
+	u.u.AddUint64(&x.u, y)
+	return u
+}
+
 // AddSum adds multiple values at the same time to a given uint
 // so x.AddSum(y, z) is equivalent to x + y + z.
 func (u *Uint) AddSum(vals ...*Uint) *Uint {

@@ -431,8 +431,8 @@ Scenario: Testing fees get collected when amended order trades
    # Placing second set of orders
     When the parties place the following orders:
       | party   | market id | side | volume | price | resulting trades | type       | tif     | reference      |
-      | trader3a | ETH/DEC21 | buy  | 2      | 1001  | 0                | TYPE_LIMIT | TIF_GTC | trader3a-buy-1 |
-      | trader4  | ETH/DEC21 | sell | 4      | 1003  | 0                | TYPE_LIMIT | TIF_GTC | trader4-sell-2 |
+      | trader3a | ETH/DEC21 | buy  | 2      | 1000  | 0                | TYPE_LIMIT | TIF_GTC | trader3a-buy-1 |
+      | trader4  | ETH/DEC21 | sell | 4      | 1002  | 0                | TYPE_LIMIT | TIF_GTC | trader4-sell-2 |
 
     Then the parties should have the following account balances:
       | party   | asset | market id | margin | general |
@@ -442,7 +442,7 @@ Scenario: Testing fees get collected when amended order trades
       # reducing size
       And the parties amend the following orders:
       | party  | reference      | price | size delta | tif     |
-      | trader4 | trader4-sell-2 | 1002  | 0          | TIF_GTC |
+      | trader4 | trader4-sell-2 | 1000  | 0          | TIF_GTC |
 
     # matching the order now
     Then the following trades should be executed:
@@ -450,17 +450,23 @@ Scenario: Testing fees get collected when amended order trades
       # | trader3 | 1002  | 3    | trader4 | trader3 | trader4 |
       # TODO to be implemented by Core Team
       | buyer    | price | size | seller  |
-      | trader3a | 1002  | 2    | trader4 |
+      | trader3a | 1000  | 2    | trader4 |
       
       # checking if continuous mode still exists
     Then the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            |  
-      | 1002       | TRADING_MODE_CONTINUOUS |
+      | 1000       | TRADING_MODE_CONTINUOUS |
+
+    And the following transfers should happen:
+      | from    | to       | from account            | to account                       | market id | amount | asset |
+      | trader4 | market   | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_MAKER          | ETH/DEC21 | 10     | ETH   |
+      | trader4 |          | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_INFRASTRUCTURE |           |  4     | ETH   |
+      | market  | trader3a | ACCOUNT_TYPE_FEES_MAKER | ACCOUNT_TYPE_GENERAL             | ETH/DEC21 | 10     | ETH   |  
 
      Then the parties should have the following account balances:
-      | party      | asset | market id | margin | general |
-      | trader3a    | ETH   | ETH/DEC21 | 1159   | 8852    |
-      | trader4     | ETH   | ETH/DEC21 | 1102   |  123    |
+      | party    | asset | market id | margin | general |
+      | trader3a | ETH   | ETH/DEC21 | 1344   | 8673    |
+      | trader4  | ETH   | ETH/DEC21 | 1108   |  109    |
 
 Scenario: Testing fees in continuous trading with insufficient balance in their general account but margin covers the fees
     

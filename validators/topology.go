@@ -54,6 +54,14 @@ type ValidatorPerformance interface {
 	Reset()
 }
 
+// Notary ...
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/notary_mock.go -package mocks code.vegaprotocol.io/vega/validators Notary
+type Notary interface {
+	StartAggregate(resID string, kind types.NodeSignatureKind, signature []byte)
+	IsSigned(ctx context.Context, id string, kind types.NodeSignatureKind) ([]types.NodeSignature, bool)
+	OfferSignatures(kind types.NodeSignatureKind, f func(resources string) []byte)
+}
+
 type ValidatorData struct {
 	ID              string `json:"id"`
 	VegaPubKey      string `json:"vega_pub_key"`
@@ -130,7 +138,9 @@ type Topology struct {
 	epochSeq              uint64
 	newEpochStarted       bool
 
-	cmd Commander
+	cmd        Commander
+	notary     Notary
+	signatures Signatures
 }
 
 func (t *Topology) OnEpochEvent(_ context.Context, epoch types.Epoch) {
@@ -163,9 +173,23 @@ func NewTopology(
 		ersatzValidatorsFactor:        num.DecimalZero(),
 		multiSigTopology:              msTopology,
 		cmd:                           cmd,
+		signatures:                    &noopSignatures{log},
 	}
 
 	return t
+}
+
+// SetNotary this is not good, the topology depends on the notary
+// which in return also depends on the topology... Luckily they
+// do not require recursive calls as for each calls are one offs...
+// anyway we may want to extract the code requiring the notary somewhere
+// else or have different pattern somehow...
+func (t *Topology) SetNotary(notary Notary) {
+	// if we are not even setup as a validator, no need for this.
+	if t.isValidatorSetup {
+		t.signatures = NewSignatures(t.log, notary, t.wallets.GetEthereum(), t.broker)
+	}
+	t.notary = notary
 }
 
 // ReloadConf updates the internal configuration.
@@ -290,6 +314,9 @@ func (t *Topology) BeginBlock(ctx context.Context, req abcitypes.RequestBeginBlo
 	blockHeight := uint64(req.Header.Height)
 	t.currentBlockHeight = blockHeight
 	t.keyRotationBeginBlockLocked(ctx)
+
+	// validator performance will have updated
+	t.tss.changed = true
 }
 
 func (t *Topology) AddNewNode(ctx context.Context, nr *commandspb.AnnounceNode, status ValidatorStatus) error {

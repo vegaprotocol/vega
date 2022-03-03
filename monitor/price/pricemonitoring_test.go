@@ -54,8 +54,8 @@ func TestEmptyParametersList(t *testing.T) {
 }
 
 func TestErrorWithNilRiskModel(t *testing.T) {
-	t1 := proto.PriceMonitoringTrigger{Horizon: 7200, Probability: 0.95, AuctionExtension: 300}
-	t2 := proto.PriceMonitoringTrigger{Horizon: 3600, Probability: 0.99, AuctionExtension: 60}
+	t1 := proto.PriceMonitoringTrigger{Horizon: 7200, Probability: "0.95", AuctionExtension: 300}
+	t2 := proto.PriceMonitoringTrigger{Horizon: 3600, Probability: "0.99", AuctionExtension: 60}
 
 	pSet := &proto.PriceMonitoringSettings{
 		Parameters: &proto.PriceMonitoringParameters{
@@ -75,8 +75,8 @@ func TestErrorWithNilRiskModel(t *testing.T) {
 func TestGetHorizonYearFractions(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	riskModel := mocks.NewMockRangeProvider(ctrl)
-	t1 := proto.PriceMonitoringTrigger{Horizon: 7200, Probability: 0.95, AuctionExtension: 300}
-	t2 := proto.PriceMonitoringTrigger{Horizon: 3600, Probability: 0.99, AuctionExtension: 60}
+	t1 := proto.PriceMonitoringTrigger{Horizon: 7200, Probability: "0.95", AuctionExtension: 300}
+	t2 := proto.PriceMonitoringTrigger{Horizon: 3600, Probability: "0.99", AuctionExtension: 60}
 
 	pSet := &proto.PriceMonitoringSettings{
 		Parameters: &proto.PriceMonitoringParameters{
@@ -104,8 +104,8 @@ func TestRecordPriceChange(t *testing.T) {
 	auctionStateMock := mocks.NewMockAuctionState(ctrl)
 	currentPrice := num.NewUint(123)
 	now := time.Date(1993, 2, 2, 6, 0, 0, 1, time.UTC)
-	t1 := proto.PriceMonitoringTrigger{Horizon: 7200, Probability: 0.95, AuctionExtension: 300}
-	t2 := proto.PriceMonitoringTrigger{Horizon: 3600, Probability: 0.99, AuctionExtension: 60}
+	t1 := proto.PriceMonitoringTrigger{Horizon: 7200, Probability: "0.95", AuctionExtension: 300}
+	t2 := proto.PriceMonitoringTrigger{Horizon: 3600, Probability: "0.99", AuctionExtension: 60}
 
 	pSet := &proto.PriceMonitoringSettings{
 		Parameters: &proto.PriceMonitoringParameters{
@@ -145,8 +145,8 @@ func TestCheckBoundViolationsWithinCurrentTimeWith2HorizonProbabilityPairs(t *te
 	currentPrice := num.NewUint(123)
 	now := time.Date(1993, 2, 2, 6, 0, 0, 1, time.UTC)
 	t1Time, t2Time := int64(60), int64(300)
-	t1 := proto.PriceMonitoringTrigger{Horizon: 3600, Probability: 0.99, AuctionExtension: t1Time}
-	t2 := proto.PriceMonitoringTrigger{Horizon: 7200, Probability: 0.95, AuctionExtension: t2Time}
+	t1 := proto.PriceMonitoringTrigger{Horizon: 3600, Probability: "0.99", AuctionExtension: t1Time}
+	t2 := proto.PriceMonitoringTrigger{Horizon: 7200, Probability: "0.95", AuctionExtension: t2Time}
 	pSet := &proto.PriceMonitoringSettings{
 		Parameters: &proto.PriceMonitoringParameters{
 			Triggers: []*proto.PriceMonitoringTrigger{&t1, &t2},
@@ -506,8 +506,8 @@ func TestAuctionStartedAndEndendBy1Trigger(t *testing.T) {
 	price1 := num.NewUint(123)
 	ctx := context.Background()
 	now := time.Date(1993, 2, 2, 6, 0, 0, 1, time.UTC)
-	t1 := proto.PriceMonitoringTrigger{Horizon: 600, Probability: 0.95, AuctionExtension: 60}
-	t2 := proto.PriceMonitoringTrigger{Horizon: 600, Probability: 0.99, AuctionExtension: 120}
+	t1 := proto.PriceMonitoringTrigger{Horizon: 600, Probability: "0.95", AuctionExtension: 60}
+	t2 := proto.PriceMonitoringTrigger{Horizon: 600, Probability: "0.99", AuctionExtension: 120}
 	var boundUpdateFrequency int64 = 120
 	pSet := &proto.PriceMonitoringSettings{
 		Parameters: &proto.PriceMonitoringParameters{
@@ -571,8 +571,8 @@ func TestAuctionStartedAndEndendBy2Triggers(t *testing.T) {
 	price1 := num.NewUint(123)
 	ctx := context.Background()
 	now := time.Date(1993, 2, 2, 6, 0, 0, 1, time.UTC)
-	t1 := proto.PriceMonitoringTrigger{Horizon: 600, Probability: 0.95, AuctionExtension: 60}
-	t2 := proto.PriceMonitoringTrigger{Horizon: 600, Probability: 0.99, AuctionExtension: 120}
+	t1 := proto.PriceMonitoringTrigger{Horizon: 600, Probability: "0.95", AuctionExtension: 60}
+	t2 := proto.PriceMonitoringTrigger{Horizon: 600, Probability: "0.99", AuctionExtension: 120}
 	var boundUpdateFrequency int64 = 120
 	pSet := &proto.PriceMonitoringSettings{
 		Parameters: &proto.PriceMonitoringParameters{
@@ -630,8 +630,8 @@ func TestAuctionStartedAndEndendBy1TriggerAndExtendedBy2nd(t *testing.T) {
 	auctionStateMock := mocks.NewMockAuctionState(ctrl)
 	price1 := num.NewUint(123)
 	now := time.Date(1993, 2, 2, 6, 0, 0, 1, time.UTC)
-	t1 := proto.PriceMonitoringTrigger{Horizon: 600, Probability: 0.95, AuctionExtension: 60}
-	t2 := proto.PriceMonitoringTrigger{Horizon: 600, Probability: 0.99, AuctionExtension: 120}
+	t1 := proto.PriceMonitoringTrigger{Horizon: 600, Probability: "0.95", AuctionExtension: 60}
+	t2 := proto.PriceMonitoringTrigger{Horizon: 600, Probability: "0.99", AuctionExtension: 120}
 	var boundUpdateFrequency int64 = 120
 	pSet := &proto.PriceMonitoringSettings{
 		Parameters: &proto.PriceMonitoringParameters{
@@ -747,7 +747,7 @@ func TestMarketInOpeningAuction(t *testing.T) {
 	riskModel := mocks.NewMockRangeProvider(ctrl)
 	auctionStateMock := mocks.NewMockAuctionState(ctrl)
 	currentPrice := num.NewUint(123)
-	t1 := proto.PriceMonitoringTrigger{Horizon: 7200, Probability: 0.95, AuctionExtension: 300}
+	t1 := proto.PriceMonitoringTrigger{Horizon: 7200, Probability: "0.95", AuctionExtension: 300}
 	now := time.Date(1993, 2, 2, 6, 0, 0, 1, time.UTC)
 	pSet := &proto.PriceMonitoringSettings{
 		Parameters: &proto.PriceMonitoringParameters{
@@ -779,7 +779,7 @@ func TestMarketInGenericAuction(t *testing.T) {
 	riskModel := mocks.NewMockRangeProvider(ctrl)
 	auctionStateMock := mocks.NewMockAuctionState(ctrl)
 	currentPrice := num.NewUint(123)
-	t1 := proto.PriceMonitoringTrigger{Horizon: 7200, Probability: 0.95, AuctionExtension: 300}
+	t1 := proto.PriceMonitoringTrigger{Horizon: 7200, Probability: "0.95", AuctionExtension: 300}
 	now := time.Date(1993, 2, 2, 6, 0, 0, 1, time.UTC)
 
 	pSet := &proto.PriceMonitoringSettings{
@@ -879,8 +879,8 @@ func TestGetValidPriceRange_2triggers(t *testing.T) {
 	now := time.Date(1993, 2, 2, 6, 0, 0, 1, time.UTC)
 	var t1Time int64 = 60
 	var t2Time int64 = 300
-	t1 := proto.PriceMonitoringTrigger{Horizon: 3600, Probability: 0.99, AuctionExtension: t1Time}
-	t2 := proto.PriceMonitoringTrigger{Horizon: 7200, Probability: 0.95, AuctionExtension: t2Time}
+	t1 := proto.PriceMonitoringTrigger{Horizon: 3600, Probability: "0.99", AuctionExtension: t1Time}
+	t2 := proto.PriceMonitoringTrigger{Horizon: 7200, Probability: "0.95", AuctionExtension: t2Time}
 	pSet := &proto.PriceMonitoringSettings{
 		Parameters: &proto.PriceMonitoringParameters{
 			Triggers: []*proto.PriceMonitoringTrigger{&t1, &t2},

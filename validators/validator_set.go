@@ -105,9 +105,12 @@ func (t *Topology) RecalcValidatorSet(ctx context.Context, epochSeq string, dele
 	t.mu.Lock()
 	defer t.mu.Unlock()
 	// first we record the current status of validators before the promotion/demotion so we can capture in an event.
-	currentState := make(map[string]ValidatorStatus, len(t.validators))
+	currentState := make(map[string]StatusAddress, len(t.validators))
 	for k, vs := range t.validators {
-		currentState[k] = vs.status
+		currentState[k] = StatusAddress{
+			Status:     vs.status,
+			EthAddress: vs.data.EthereumAddress,
+		}
 	}
 
 	keys := make([]string, 0, len(currentState))
@@ -127,6 +130,20 @@ func (t *Topology) RecalcValidatorSet(ctx context.Context, epochSeq string, dele
 		t.log.Info("setting voting power to", logging.String(("address"), cPubKey.Address().String()), logging.Uint64("power", uint64(vu.Power)))
 	}
 
+	newState := make(map[string]StatusAddress, len(t.validators))
+	for k, vs := range t.validators {
+		newState[k] = StatusAddress{
+			Status:     vs.status,
+			EthAddress: vs.data.EthereumAddress,
+		}
+	}
+
+	// do this only if we are a validator, not need otherwise
+	if t.IsValidator() {
+		t.signatures.EmitPromotionsSignatures(
+			ctx, t.currentTime, currentState, newState)
+	}
+
 	// prepare and send the events
 	evts := make([]events.Event, 0, len(currentState))
 	for _, nodeID := range keys {
@@ -140,7 +157,7 @@ func (t *Topology) RecalcValidatorSet(ctx context.Context, epochSeq string, dele
 			vp = 0
 		}
 
-		evts = append(evts, events.NewValidatorRanking(ctx, epochSeq, nodeID, stakeScore[nodeID].String(), perfScore[nodeID].String(), rankingScore[nodeID].String(), ValidatorStatusToName[currentState[nodeID]], status, int(vp)))
+		evts = append(evts, events.NewValidatorRanking(ctx, epochSeq, nodeID, stakeScore[nodeID].String(), perfScore[nodeID].String(), rankingScore[nodeID].String(), ValidatorStatusToName[currentState[nodeID].Status], status, int(vp)))
 	}
 	t.broker.SendBatch(evts)
 
@@ -270,6 +287,13 @@ func (t *Topology) applyPromotion(performanceScore, rankingScore map[string]num.
 
 	// generate the tendermint updates from the voting power
 	vUpdates := make([]tmtypes.ValidatorUpdate, 0, len(nextValidators))
+
+	// make sure we update the validator power to all nodes, so first reset all to 0
+	for _, vd := range t.validators {
+		vd.validatorPower = 0
+	}
+
+	// now update the validator power for the ones that go to tendermint
 	for _, v := range nextValidators {
 		vd := t.validators[v]
 		pubkey, err := base64.StdEncoding.DecodeString(vd.data.TmPubKey)

@@ -1,6 +1,8 @@
 package steps
 
 import (
+	"fmt"
+
 	"github.com/cucumber/godog"
 
 	types "code.vegaprotocol.io/protos/vega"
@@ -19,7 +21,7 @@ func ThePriceMonitoring(config *market.Config, name string, rawUpdateFrequency s
 		row := priceMonitoringRow{row: r}
 		p := &types.PriceMonitoringTrigger{
 			Horizon:          row.horizon(),
-			Probability:      row.probability(),
+			Probability:      fmt.Sprintf("%0.16f", row.probability()),
 			AuctionExtension: row.auctionExtension(),
 		}
 		triggers = append(triggers, p)

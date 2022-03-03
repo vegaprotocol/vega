@@ -51,7 +51,7 @@ func getTestEngine(t *testing.T) *testEngine {
 
 	notary.EXPECT().OfferSignatures(gomock.Any(), gomock.Any()).AnyTimes()
 	tsvc.EXPECT().NotifyOnTick(gomock.Any()).Times(1)
-	epoch.EXPECT().NotifyOnEpoch(gomock.Any()).Times(1)
+	epoch.EXPECT().NotifyOnEpoch(gomock.Any(), gomock.Any()).Times(1)
 	eng := banking.New(logging.NewTestLogger(), banking.NewDefaultConfig(), col, erc, tsvc, assets, notary, broker, top, epoch)
 
 	return &testEngine{
