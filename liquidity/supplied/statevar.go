@@ -63,16 +63,16 @@ func (e *Engine) startCalcProbOfTrading(eventID string, endOfCalcCallback statev
 	}
 
 	// calculate how far from the best we want to calculate
-	distanceFromBest := e.tickSize.ToDecimal().Mul(numberOfPricePoints.ToDecimal())
+	distanceFromBest := e.tickSizeD.Mul(numberOfPricePoints.ToDecimal())
 
 	// we're calculating between the best ask up to ask+distanceFromBest
-	askTo, _ := num.UintFromDecimal(bestAsk.ToDecimal().Add(distanceFromBest))
+	askTo := bestAsk.Add(distanceFromBest)
 	// we're calculating between the best bid down to the max(0, bid-distanceFromBest)
-	bidTo, _ := num.UintFromDecimal(num.MaxD(num.DecimalZero(), bestBid.ToDecimal().Sub(distanceFromBest)))
+	bidTo := num.MaxD(num.DecimalZero(), bestBid.Sub(distanceFromBest))
 
 	// calculate offsets and probabilities for the range
-	bidOffsets, bidProbabilities := calculateBidRange(bestBid, bidTo, e.tickSize, tauScaled, e.rm.ProbabilityOfTrading)
-	askOffsets, askProbabilities := calculateAskRange(bestAsk, askTo, e.tickSize, tauScaled, e.rm.ProbabilityOfTrading)
+	bidOffsets, bidProbabilities := calculateBidRange(bestBid, bidTo, e.tickSizeD, tauScaled, e.rm.ProbabilityOfTrading)
+	askOffsets, askProbabilities := calculateAskRange(bestAsk, askTo, e.tickSizeD, tauScaled, e.rm.ProbabilityOfTrading)
 
 	res := &probabilityOfTrading{
 		bidOffset:      bidOffsets,
@@ -90,29 +90,26 @@ func (e *Engine) startCalcProbOfTrading(eventID string, endOfCalcCallback statev
 // whereas the last entry in offset equals to the maximum distance from bid for which
 // probability is calculated, and the last entry in probabilities corresponds to
 // the probability of trading at the price implied by this offset from best bid.
-func calculateBidRange(bestBid, minBid, tickSize *num.Uint, tauScaled num.Decimal, probabilityFunc func(*num.Uint, *num.Uint, num.Decimal, num.Decimal, num.Decimal, bool, bool) num.Decimal) ([]num.Decimal, []num.Decimal) {
-	bbDecimal := bestBid.ToDecimal()
-	mbDecimal := minBid.ToDecimal()
-
+func calculateBidRange(bestBid, minBid, tickSize, tauScaled num.Decimal, probabilityFunc func(num.Decimal, num.Decimal, num.Decimal, num.Decimal, num.Decimal, bool, bool) num.Decimal) ([]num.Decimal, []num.Decimal) {
 	offsets := make([]num.Decimal, 0, int(numberOfPricePoints.Uint64()))
 	probabilities := make([]num.Decimal, 0, int(numberOfPricePoints.Uint64()))
 
-	p := bestBid.Clone()
-	offset := num.Zero()
-	for p.GT(minBid) && !p.IsNegative() {
-		offsets = append(offsets, offset.ToDecimal())
-		prob := probabilityFunc(bestBid, p, mbDecimal, bbDecimal, tauScaled, true, true)
+	p := bestBid
+	offset := num.DecimalZero()
+	for p.GreaterThan(minBid) && !p.IsNegative() {
+		offsets = append(offsets, offset)
+		prob := probabilityFunc(bestBid, p, minBid, bestBid, tauScaled, true, true)
 		probabilities = append(probabilities, prob)
-		if p.EQ(minBid) {
+		if p.Equal(minBid) {
 			break
 		}
-		offset.AddSum(tickSize)
-		p = p.Sub(p, tickSize)
+		offset = offset.Add(tickSize)
+		p = p.Sub(tickSize)
 	}
-	if p.LTE(minBid) || p.IsNegative() {
+	if p.LessThanOrEqual(minBid) || p.IsNegative() {
 		p = minBid
-		offsets = append(offsets, offset.ToDecimal())
-		prob := probabilityFunc(bestBid, p, mbDecimal, bbDecimal, tauScaled, true, true)
+		offsets = append(offsets, offset)
+		prob := probabilityFunc(bestBid, p, minBid, bestBid, tauScaled, true, true)
 		probabilities = append(probabilities, prob)
 	}
 	return offsets, probabilities
@@ -125,29 +122,26 @@ func calculateBidRange(bestBid, minBid, tickSize *num.Uint, tauScaled num.Decima
 // whereas the last entry in offset equals to the maximum distance from ask for which
 // probability is calculated, and the last entry in probabilities corresponds to probability of trading
 // at the price implied by this offset from best ask.
-func calculateAskRange(bestAsk, maxAsk, tickSize *num.Uint, tauScaled num.Decimal, probabilityFunc func(*num.Uint, *num.Uint, num.Decimal, num.Decimal, num.Decimal, bool, bool) num.Decimal) ([]num.Decimal, []num.Decimal) {
-	baDecimal := bestAsk.ToDecimal()
-	maDecimal := maxAsk.ToDecimal()
-
+func calculateAskRange(bestAsk, maxAsk, tickSize, tauScaled num.Decimal, probabilityFunc func(num.Decimal, num.Decimal, num.Decimal, num.Decimal, num.Decimal, bool, bool) num.Decimal) ([]num.Decimal, []num.Decimal) {
 	offsets := make([]num.Decimal, 0, int(numberOfPricePoints.Uint64()))
 	probabilities := make([]num.Decimal, 0, int(numberOfPricePoints.Uint64()))
 
-	p := bestAsk.Clone()
-	offset := num.Zero()
-	for p.LT(maxAsk) {
-		offsets = append(offsets, offset.ToDecimal())
-		prob := probabilityFunc(bestAsk, p, baDecimal, maDecimal, tauScaled, false, true)
+	p := bestAsk
+	offset := num.DecimalZero()
+	for p.LessThan(maxAsk) {
+		offsets = append(offsets, offset)
+		prob := probabilityFunc(bestAsk, p, bestAsk, maxAsk, tauScaled, false, true)
 		probabilities = append(probabilities, prob)
-		if p.EQ(maxAsk) {
+		if p.Equal(maxAsk) {
 			break
 		}
-		offset.AddSum(tickSize)
-		p.AddSum(tickSize)
+		offset = offset.Add(tickSize)
+		p = p.Add(tickSize)
 	}
-	if p.GTE(maxAsk) {
+	if p.GreaterThanOrEqual(maxAsk) {
 		p = maxAsk
-		offsets = append(offsets, offset.ToDecimal())
-		prob := probabilityFunc(bestAsk, p, baDecimal, maDecimal, tauScaled, false, true)
+		offsets = append(offsets, offset)
+		prob := probabilityFunc(bestAsk, p, bestAsk, maxAsk, tauScaled, false, true)
 		probabilities = append(probabilities, prob)
 	}
 	return offsets, probabilities

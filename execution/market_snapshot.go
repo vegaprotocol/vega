@@ -153,7 +153,7 @@ func NewMarketFromSnapshot(
 
 	market.tradableInstrument.Instrument.Product.NotifyOnTradingTerminated(market.tradingTerminated)
 	market.tradableInstrument.Instrument.Product.NotifyOnSettlementPrice(market.settlementPrice)
-	liqEngine.SetGetStaticPricesFunc(market.getBestStaticPrices)
+	liqEngine.SetGetStaticPricesFunc(market.getBestStaticPricesDecimal)
 
 	return market, nil
 }

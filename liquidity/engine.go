@@ -32,7 +32,7 @@ type Broker interface {
 
 // RiskModel allows calculation of min/max price range and a probability of trading.
 type RiskModel interface {
-	ProbabilityOfTrading(currentPrice, orderPrice *num.Uint, minPrice, maxPrice num.Decimal, yFrac num.Decimal, isBid, applyMinMax bool) num.Decimal
+	ProbabilityOfTrading(currentPrice, orderPrice num.Decimal, minPrice, maxPrice num.Decimal, yFrac num.Decimal, isBid, applyMinMax bool) num.Decimal
 	GetProjectionHorizon() num.Decimal
 }
 
@@ -125,7 +125,7 @@ func NewEngine(config Config,
 	return e
 }
 
-func (e *Engine) SetGetStaticPricesFunc(f func() (*num.Uint, *num.Uint, error)) {
+func (e *Engine) SetGetStaticPricesFunc(f func() (num.Decimal, num.Decimal, error)) {
 	e.suppliedEngine.SetGetStaticPricesFunc(f)
 }
 
@@ -484,7 +484,7 @@ func (e *Engine) IsLiquidityOrder(party, order string) bool {
 // created and the other for orders to be updated.
 func (e *Engine) CreateInitialOrders(
 	ctx context.Context,
-	bestBidPrice, bestAskPrice *num.Uint,
+	bestBidPrice, bestAskPrice num.Decimal,
 	party string,
 	orders []*types.Order,
 	repriceFn RepricePeggedOrder,
@@ -502,7 +502,7 @@ func (e *Engine) CreateInitialOrders(
 // It keeps track of all LP orders.
 func (e *Engine) Update(
 	ctx context.Context,
-	bestBidPrice, bestAskPrice *num.Uint,
+	bestBidPrice, bestAskPrice num.Decimal,
 	repriceFn RepricePeggedOrder,
 	orders []*types.Order,
 ) ([]*types.Order, []*ToCancel, error) {
@@ -522,7 +522,7 @@ func (e *Engine) Update(
 	}
 
 	for _, lp := range e.provisions.Slice() {
-		creates, cancels, err := e.createOrUpdateForParty(ctx, bestBidPrice.Clone(), bestAskPrice.Clone(), lp.Party, repriceFn)
+		creates, cancels, err := e.createOrUpdateForParty(ctx, bestBidPrice, bestAskPrice, lp.Party, repriceFn)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -545,7 +545,7 @@ func (e *Engine) CalculateSuppliedStake() *num.Uint {
 
 func (e *Engine) createOrUpdateForParty(
 	ctx context.Context,
-	bestBidPrice, bestAskPrice *num.Uint,
+	bestBidPrice, bestAskPrice num.Decimal,
 	party string,
 	repriceFn RepricePeggedOrder,
 ) (ordres []*types.Order, _ *ToCancel, errr error) {
