@@ -50,7 +50,7 @@ func TestCancelTransfer(t *testing.T) {
 	}
 
 	e.assets.EXPECT().Get(gomock.Any()).Times(2).Return(
-		assets.NewAsset(&mockAsset{num.NewUint(1)}), nil)
+		assets.NewAsset(&mockAsset{num.DecimalFromFloat(1)}), nil)
 	e.broker.EXPECT().Send(gomock.Any()).Times(1)
 	assert.NoError(t, e.TransferFunds(ctx, transfer))
 
@@ -140,7 +140,7 @@ func TestCancelTransfer(t *testing.T) {
 }
 
 type mockAsset struct {
-	quantum *num.Uint
+	quantum num.Decimal
 }
 
 func (m *mockAsset) Type() *types.Asset {

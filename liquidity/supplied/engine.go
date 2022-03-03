@@ -31,7 +31,7 @@ type LiquidityOrder struct {
 // RiskModel allows calculation of min/max price range and a probability of trading.
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/risk_model_mock.go -package mocks code.vegaprotocol.io/vega/liquidity/supplied RiskModel
 type RiskModel interface {
-	ProbabilityOfTrading(currentPrice, orderPrice *num.Uint, minPrice, maxPrice num.Decimal, yearFraction num.Decimal, isBid, applyMinMax bool) num.Decimal
+	ProbabilityOfTrading(currentPrice, orderPrice, minPrice, maxPrice num.Decimal, yearFraction num.Decimal, isBid, applyMinMax bool) num.Decimal
 	GetProjectionHorizon() num.Decimal
 }
 
@@ -58,8 +58,9 @@ type Engine struct {
 
 	pot                 *probabilityOfTrading
 	potInitialised      bool
+	tickSizeD           num.Decimal
 	tickSize            *num.Uint
-	getBestStaticPrices func() (*num.Uint, *num.Uint, error)
+	getBestStaticPrices func() (num.Decimal, num.Decimal, error)
 	log                 *logging.Logger
 	positionFactor      num.Decimal
 }
@@ -76,6 +77,7 @@ func NewEngine(riskModel RiskModel, priceMonitor PriceMonitor, asset, marketID s
 		changed:                        true,
 		pot:                            &probabilityOfTrading{},
 		potInitialised:                 false,
+		tickSizeD:                      tickSize.ToDecimal(),
 		tickSize:                       tickSize,
 		log:                            log,
 		positionFactor:                 positionFactor,
@@ -85,7 +87,7 @@ func NewEngine(riskModel RiskModel, priceMonitor PriceMonitor, asset, marketID s
 	return e
 }
 
-func (e *Engine) SetGetStaticPricesFunc(f func() (*num.Uint, *num.Uint, error)) {
+func (e *Engine) SetGetStaticPricesFunc(f func() (num.Decimal, num.Decimal, error)) {
 	e.getBestStaticPrices = f
 }
 
@@ -99,10 +101,9 @@ func (e *Engine) OnProbabilityOfTradingTauScalingUpdate(v num.Decimal) {
 
 // CalculateSuppliedLiquidity returns the current supplied liquidity per specified current mark price and order set.
 func (e *Engine) CalculateSuppliedLiquidity(
-	bestBidPrice, bestAskPrice *num.Uint,
+	bestBidPrice, bestAskPrice num.Decimal,
 	orders []*types.Order,
 ) *num.Uint {
-	// Update this to return *Uint as part of monitor refactor TODO UINT
 	minPrice, maxPrice := e.pm.GetValidPriceRange()
 	bLiq, sLiq := e.calculateBuySellLiquidityWithMinMax(bestBidPrice, bestAskPrice, orders, minPrice, maxPrice)
 
@@ -113,7 +114,7 @@ func (e *Engine) CalculateSuppliedLiquidity(
 // Current market price, liquidity obligation, and orders must be specified.
 // Note that due to integer order size the actual liquidity provided will be more than or equal to the commitment amount.
 func (e *Engine) CalculateLiquidityImpliedVolumes(
-	bestBidPrice, bestAskPrice *num.Uint,
+	bestBidPrice, bestAskPrice num.Decimal,
 	liquidityObligation *num.Uint,
 	orders []*types.Order,
 	buyShapes, sellShapes []*LiquidityOrder,
@@ -126,13 +127,13 @@ func (e *Engine) CalculateLiquidityImpliedVolumes(
 
 	buyRemaining := liquidityObligation.Clone()
 	buyRemaining.Sub(buyRemaining, buySupplied)
-	if err := e.updateSizes(buyRemaining, bestBidPrice.Clone(), bestAskPrice.Clone(), buyShapes, true, minPrice, maxPrice); err != nil {
+	if err := e.updateSizes(buyRemaining, bestBidPrice, bestAskPrice, buyShapes, true, minPrice, maxPrice); err != nil {
 		return err
 	}
 
 	sellRemaining := liquidityObligation.Clone()
 	sellRemaining.Sub(sellRemaining, sellSupplied)
-	if err := e.updateSizes(sellRemaining, bestBidPrice.Clone(), bestAskPrice.Clone(), sellShapes, false, minPrice, maxPrice); err != nil {
+	if err := e.updateSizes(sellRemaining, bestBidPrice, bestAskPrice, sellShapes, false, minPrice, maxPrice); err != nil {
 		return err
 	}
 
@@ -141,7 +142,7 @@ func (e *Engine) CalculateLiquidityImpliedVolumes(
 
 // calculateBuySellLiquidityWithMinMax returns the current supplied liquidity per market specified in the constructor.
 func (e *Engine) calculateBuySellLiquidityWithMinMax(
-	bestBidPrice, bestAskPrice *num.Uint,
+	bestBidPrice, bestAskPrice num.Decimal,
 	orders []*types.Order,
 	minPrice, maxPrice num.WrappedDecimal,
 ) (*num.Uint, *num.Uint) {
@@ -151,7 +152,7 @@ func (e *Engine) calculateBuySellLiquidityWithMinMax(
 	for _, o := range orders {
 		if o.Side == types.SideBuy {
 			// float64(o.Price.Uint64()) * float64(o.Remaining) * prob
-			prob := getProbabilityOfTrading(bestBidPrice.ToDecimal(), bestAskPrice.ToDecimal(), min.Original(), max.Original(), e.pot, o.Price.ToDecimal(), true, e.minProbabilityOfTrading, e.tickSize.ToDecimal())
+			prob := getProbabilityOfTrading(bestBidPrice, bestAskPrice, min.Original(), max.Original(), e.pot, o.Price.ToDecimal(), true, e.minProbabilityOfTrading, e.tickSizeD)
 			if e.log.GetLevel() <= logging.DebugLevel {
 				e.log.Debug("probability of trading", logging.Decimal("order-price", o.Price.ToDecimal()), logging.Decimal("prob", prob))
 			}
@@ -161,7 +162,7 @@ func (e *Engine) calculateBuySellLiquidityWithMinMax(
 		}
 		if o.Side == types.SideSell {
 			// float64(o.Price.Uint64()) * float64(o.Remaining) * prob
-			prob := getProbabilityOfTrading(bestBidPrice.ToDecimal(), bestAskPrice.ToDecimal(), min.Original(), max.Original(), e.pot, o.Price.ToDecimal(), false, e.minProbabilityOfTrading, e.tickSize.ToDecimal())
+			prob := getProbabilityOfTrading(bestBidPrice, bestAskPrice, min.Original(), max.Original(), e.pot, o.Price.ToDecimal(), false, e.minProbabilityOfTrading, e.tickSizeD)
 			if e.log.GetLevel() <= logging.DebugLevel {
 				e.log.Debug("probability of trading", logging.Decimal("order-price", o.Price.ToDecimal()), logging.Decimal("prob", prob))
 			}
@@ -179,7 +180,7 @@ func (e *Engine) calculateBuySellLiquidityWithMinMax(
 
 func (e *Engine) updateSizes(
 	liquidityObligation *num.Uint,
-	bestBidPrice, bestAskprice *num.Uint,
+	bestBidPrice, bestAskprice num.Decimal,
 	orders []*LiquidityOrder,
 	isBid bool,
 	minPrice, maxPrice num.WrappedDecimal,
@@ -192,10 +193,11 @@ func (e *Engine) updateSizes(
 	sum := num.DecimalZero()
 	probs := make([]num.Decimal, 0, len(orders))
 	validatedProportions := make([]num.Decimal, 0, len(orders))
+
 	for _, o := range orders {
 		proportion := num.DecimalFromUint(num.NewUint(o.Proportion))
 
-		prob := getProbabilityOfTrading(bestBidPrice.ToDecimal(), bestAskprice.ToDecimal(), min.Original(), max.Original(), e.pot, o.Price.ToDecimal(), isBid, e.minProbabilityOfTrading, e.tickSize.ToDecimal())
+		prob := getProbabilityOfTrading(bestBidPrice, bestAskprice, min.Original(), max.Original(), e.pot, o.Price.ToDecimal(), isBid, e.minProbabilityOfTrading, e.tickSizeD)
 
 		if e.log.GetLevel() <= logging.DebugLevel {
 			e.log.Debug("$probability of trading$",

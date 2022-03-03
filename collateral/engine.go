@@ -2604,9 +2604,9 @@ func (e *Engine) GetRewardAccount(asset string, rewardAcccountType types.Account
 	return e.GetAccountByID(rewardAccID)
 }
 
-func (e *Engine) GetAssetQuantum(asset string) (*num.Uint, error) {
+func (e *Engine) GetAssetQuantum(asset string) (num.Decimal, error) {
 	if !e.AssetExists(asset) {
-		return num.Zero(), ErrInvalidAssetID
+		return num.DecimalZero(), ErrInvalidAssetID
 	}
 	return e.enabledAssets[asset].Details.Quantum, nil
 }

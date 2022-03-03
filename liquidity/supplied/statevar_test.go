@@ -16,7 +16,7 @@ var (
 )
 
 func TestBidRange(t *testing.T) {
-	offsets, prob := calculateBidRange(num.NewUint(100), num.NewUint(0), num.NewUint(1), num.DecimalFromInt64(1), pOfT)
+	offsets, prob := calculateBidRange(num.DecimalFromFloat(100), num.DecimalFromFloat(0), num.DecimalFromFloat(1), num.DecimalFromInt64(1), pOfT)
 	require.Equal(t, 101, len(offsets))
 	require.Equal(t, 101, len(prob))
 	for i, o := range offsets {
@@ -24,7 +24,7 @@ func TestBidRange(t *testing.T) {
 		require.Equal(t, num.DecimalFromFloat(1.0).Sub(num.DecimalFromInt64(int64(i)).Div(num.DecimalFromFloat(100))).String(), prob[i].String())
 	}
 
-	offsets2, prob2 := calculateBidRange(num.NewUint(200), num.NewUint(0), num.NewUint(2), num.DecimalFromInt64(1), pOfT)
+	offsets2, prob2 := calculateBidRange(num.DecimalFromFloat(200), num.DecimalFromFloat(0), num.DecimalFromFloat(2), num.DecimalFromInt64(1), pOfT)
 	require.Equal(t, 101, len(offsets2))
 	require.Equal(t, 101, len(prob2))
 	for i, o := range offsets2 {
@@ -44,7 +44,7 @@ func TestBidRangeAtTheEdge(t *testing.T) {
 	}
 	risk, _ := models.NewBuiltinFutures(params, "asset")
 
-	o, p := calculateBidRange(num.NewUint(900), num.Zero(), num.NewUint(10000), num.DecimalFromFloat(0.00012345), risk.ProbabilityOfTrading)
+	o, p := calculateBidRange(num.DecimalFromFloat(900), num.DecimalZero(), num.DecimalFromFloat(10000), num.DecimalFromFloat(0.00012345), risk.ProbabilityOfTrading)
 
 	require.Equal(t, 2, len(o))
 	require.Equal(t, 2, len(p))
@@ -64,7 +64,7 @@ func TestBidRangeAtTheEdge(t *testing.T) {
 }
 
 func TestAskRange(t *testing.T) {
-	offsets, prob := calculateAskRange(num.NewUint(100), num.NewUint(200), num.NewUint(1), num.DecimalFromInt64(1), pOfT)
+	offsets, prob := calculateAskRange(num.DecimalFromFloat(100), num.DecimalFromFloat(200), num.DecimalFromFloat(1), num.DecimalFromInt64(1), pOfT)
 	require.Equal(t, 101, len(offsets))
 	require.Equal(t, 101, len(prob))
 	for i, o := range offsets {
@@ -72,7 +72,7 @@ func TestAskRange(t *testing.T) {
 		require.Equal(t, num.DecimalFromFloat(1.0).Sub(num.DecimalFromInt64(int64(i)).Div(num.DecimalFromFloat(100))).String(), prob[i].String())
 	}
 
-	offsets2, prob2 := calculateAskRange(num.NewUint(100), num.NewUint(300), num.NewUint(2), num.DecimalFromInt64(1), pOfT)
+	offsets2, prob2 := calculateAskRange(num.DecimalFromFloat(100), num.DecimalFromFloat(300), num.DecimalFromFloat(2), num.DecimalFromInt64(1), pOfT)
 	require.Equal(t, 101, len(offsets2))
 	require.Equal(t, 101, len(prob2))
 	for i, o := range offsets2 {
@@ -81,8 +81,8 @@ func TestAskRange(t *testing.T) {
 	}
 }
 
-func pOfT(best, p *num.Uint, min, max, tauScaled num.Decimal, isBid bool, applyMinMax bool) num.Decimal {
-	return num.DecimalFromFloat(1).Sub(best.ToDecimal().Sub(p.ToDecimal()).Abs().Div(max.Sub(min)))
+func pOfT(best, p, min, max, tauScaled num.Decimal, isBid bool, applyMinMax bool) num.Decimal {
+	return num.DecimalFromFloat(1).Sub(best.Sub(p).Abs().Div(max.Sub(min)))
 }
 
 func TestGetProbability(t *testing.T) {
@@ -104,8 +104,8 @@ func TestGetProbability(t *testing.T) {
 	require.Equal(t, defaultInRangeProbabilityOfTrading, getProbabilityOfTrading(num.DecimalFromFloat(120), num.DecimalFromFloat(220), min, max, &probabilityOfTrading{}, num.DecimalFromInt64(220), false, minProb, num.DecimalZero()))
 	require.Equal(t, defaultInRangeProbabilityOfTrading, getProbabilityOfTrading(num.DecimalFromFloat(120), num.DecimalFromFloat(220), min, max, &probabilityOfTrading{}, num.DecimalFromInt64(219), false, minProb, num.DecimalZero()))
 
-	bOffsets, bProb := calculateBidRange(num.NewUint(400), num.NewUint(0), num.NewUint(1), num.DecimalFromInt64(1), pOfT)
-	aOffsets, aProb := calculateAskRange(num.NewUint(600), num.NewUint(1000), num.NewUint(1), num.DecimalFromInt64(1), pOfT)
+	bOffsets, bProb := calculateBidRange(num.DecimalFromFloat(400), num.DecimalFromFloat(0), num.DecimalFromFloat(1), num.DecimalFromInt64(1), pOfT)
+	aOffsets, aProb := calculateAskRange(num.DecimalFromFloat(600), num.DecimalFromFloat(1000), num.DecimalFromFloat(1), num.DecimalFromInt64(1), pOfT)
 
 	pot := &probabilityOfTrading{
 		bidOffset:      bOffsets,

@@ -31,7 +31,7 @@ type AssetDetails struct {
 	Symbol      string
 	TotalSupply *num.Uint
 	Decimals    uint64
-	Quantum     *num.Uint
+	Quantum     num.Decimal
 	//	*AssetDetailsBuiltinAsset
 	//	*AssetDetailsErc20
 	Source isAssetDetails
@@ -94,7 +94,7 @@ func (a AssetDetails) IntoProto() *proto.AssetDetails {
 		Symbol:      a.Symbol,
 		TotalSupply: num.UintToString(a.TotalSupply),
 		Decimals:    a.Decimals,
-		Quantum:     num.UintToString(a.Quantum),
+		Quantum:     a.Quantum.String(),
 	}
 	if a.Source == nil {
 		return r
@@ -118,12 +118,12 @@ func AssetDetailsFromProto(p *proto.AssetDetails) *AssetDetails {
 		src = AssetDetailsBuiltinFromProto(st)
 	}
 	total := num.Zero()
-	min := num.Zero()
+	min := num.DecimalZero()
 	if len(p.TotalSupply) > 0 {
 		total, _ = num.UintFromString(p.TotalSupply, 10)
 	}
 	if len(p.Quantum) > 0 {
-		min, _ = num.UintFromString(p.Quantum, 10)
+		min, _ = num.DecimalFromString(p.Quantum)
 	}
 	return &AssetDetails{
 		Name:        p.Name,
@@ -228,9 +228,7 @@ func (a Asset) DeepClone() *Asset {
 	if a.Details.TotalSupply != nil {
 		cpy.Details.TotalSupply = a.Details.TotalSupply.Clone()
 	}
-	if a.Details.Quantum != nil {
-		cpy.Details.Quantum = a.Details.Quantum.Clone()
-	}
+	cpy.Details.Quantum = a.Details.Quantum
 	if a.Details.Source != nil {
 		cpy.Details.Source = a.Details.Source.DeepClone()
 	}
@@ -269,11 +267,7 @@ func (a AssetDetails) DeepClone() *AssetDetails {
 	} else {
 		cpy.TotalSupply = num.Zero()
 	}
-	if a.Quantum != nil {
-		cpy.Quantum = a.Quantum.Clone()
-	} else {
-		cpy.Quantum = num.Zero()
-	}
+	cpy.Quantum = a.Quantum
 	return cpy
 }
 

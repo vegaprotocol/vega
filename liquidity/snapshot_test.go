@@ -176,7 +176,7 @@ func TestSnapshotRoundTrip(t *testing.T) {
 		Return(num.NewWrappedDecimal(num.Zero(), num.DecimalZero()), num.NewWrappedDecimal(num.NewUint(90), num.DecimalFromInt64(110))).
 		AnyTimes()
 
-	_, _, err := e2.engine.Update(ctx, num.NewUint(99), num.NewUint(101),
+	_, _, err := e2.engine.Update(ctx, num.DecimalFromFloat(99), num.DecimalFromFloat(101),
 		repriceFN, []*types.Order{
 			{
 				ID:        "order-id-1",
