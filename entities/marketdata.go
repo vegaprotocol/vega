@@ -10,7 +10,6 @@ import (
 	"time"
 
 	types "code.vegaprotocol.io/protos/vega"
-	"code.vegaprotocol.io/vega/types/num"
 	"github.com/shopspring/decimal"
 )
 
@@ -79,9 +78,9 @@ type MarketData struct {
 }
 
 type PriceMonitoringTrigger struct {
-	Horizon          uint64      `json:"horizon"`
-	Probability      num.Decimal `json:"probability"`
-	AuctionExtension uint64      `json:"auctionExtension"`
+	Horizon          uint64          `json:"horizon"`
+	Probability      decimal.Decimal `json:"probability"`
+	AuctionExtension uint64          `json:"auctionExtension"`
 }
 
 func (trigger PriceMonitoringTrigger) Equals(other PriceMonitoringTrigger) bool {
@@ -261,7 +260,7 @@ func priceMonitoringTriggerFromProto(trigger *types.PriceMonitoringTrigger) Pric
 		return PriceMonitoringTrigger{}
 	}
 
-	probability, _ := num.DecimalFromString(trigger.Probability)
+	probability, _ := decimal.NewFromString(trigger.Probability)
 
 	return PriceMonitoringTrigger{
 		Horizon:          uint64(trigger.Horizon),

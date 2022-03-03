@@ -333,6 +333,7 @@ func (l *NodeCommand) createGRPCServer(config api.Config, useSQLStores bool) *ap
 		l.networkLimitsStoreSQL,
 		l.marketDataStoreSQL,
 		l.tradeStoreSQL,
+		l.assetStoreSQL,
 	)
 	return grpcServer
 }

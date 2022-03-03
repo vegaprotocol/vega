@@ -1,6 +1,7 @@
 package sqlstore_test
 
 import (
+	"context"
 	"crypto/sha256"
 	"fmt"
 	"math/rand"
@@ -11,6 +12,8 @@ import (
 
 	"code.vegaprotocol.io/data-node/logging"
 	"code.vegaprotocol.io/data-node/sqlstore"
+	"github.com/cenkalti/backoff/v4"
+	"github.com/jackc/pgx/v4"
 )
 
 var (
@@ -19,6 +22,8 @@ var (
 	minPort              = 30000
 	maxPort              = 40000
 	testDBPort      int
+
+	postgresServerTimeout = time.Second * 10
 )
 
 func TestMain(m *testing.M) {
@@ -35,6 +40,28 @@ func TestMain(m *testing.M) {
 		if err != nil {
 			panic(err)
 		}
+
+		// Make sure the database has started before we run the tests.
+		ctx, cancel := context.WithTimeout(context.Background(), postgresServerTimeout)
+
+		op := func() error {
+			connStr := connectionString(sqlConfig)
+			conn, err := pgx.Connect(ctx, connStr)
+
+			if err != nil {
+				return err
+			}
+
+			return conn.Ping(ctx)
+		}
+
+		if err := backoff.Retry(op, backoff.NewExponentialBackOff()); err != nil {
+			cancel()
+			panic(err)
+		}
+
+		cancel()
+
 		defer testStore.Stop()
 
 		m.Run()

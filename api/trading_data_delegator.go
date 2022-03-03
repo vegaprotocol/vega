@@ -2,13 +2,13 @@ package api
 
 import (
 	"context"
+	"errors"
 
 	"code.vegaprotocol.io/data-node/entities"
 	"code.vegaprotocol.io/data-node/metrics"
 	"code.vegaprotocol.io/data-node/sqlstore"
 	protoapi "code.vegaprotocol.io/protos/data-node/api/v1"
 	"code.vegaprotocol.io/protos/vega"
-
 	"google.golang.org/grpc/codes"
 )
 
@@ -16,6 +16,7 @@ type tradingDataDelegator struct {
 	*tradingDataService
 	orderStore *sqlstore.Orders
 	tradeStore *sqlstore.Trades
+	assetStore *sqlstore.Assets
 }
 
 var defaultEntityPagination = entities.Pagination{
@@ -201,4 +202,34 @@ func toEntityPagination(pagination *protoapi.Pagination) entities.Pagination {
 		Limit:      pagination.Limit,
 		Descending: pagination.Descending,
 	}
+}
+
+func (t *tradingDataDelegator) AssetByID(ctx context.Context, req *protoapi.AssetByIDRequest) (*protoapi.AssetByIDResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("AssetByID-SQL")()
+	if len(req.Id) <= 0 {
+		return nil, apiError(codes.InvalidArgument, errors.New("missing ID"))
+	}
+
+	asset, err := t.assetStore.GetByID(ctx, req.Id)
+	if err != nil {
+		return nil, apiError(codes.NotFound, err)
+	}
+
+	return &protoapi.AssetByIDResponse{
+		Asset: asset.ToProto(),
+	}, nil
+}
+
+func (t *tradingDataDelegator) Assets(ctx context.Context, _ *protoapi.AssetsRequest) (*protoapi.AssetsResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("Assets-SQL")()
+
+	assets, _ := t.assetStore.GetAll(ctx)
+
+	out := make([]*vega.Asset, 0, len(assets))
+	for _, v := range assets {
+		out = append(out, v.ToProto())
+	}
+	return &protoapi.AssetsResponse{
+		Assets: out,
+	}, nil
 }
