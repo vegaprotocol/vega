@@ -85,9 +85,11 @@ type ResolverRoot interface {
 	Proposal() ProposalResolver
 	ProposalTerms() ProposalTermsResolver
 	Query() QueryResolver
+	RankingScore() RankingScoreResolver
 	RecurringTransfer() RecurringTransferResolver
 	Reward() RewardResolver
 	RewardPerAssetDetail() RewardPerAssetDetailResolver
+	RewardScore() RewardScoreResolver
 	RewardSummary() RewardSummaryResolver
 	StakeLinking() StakeLinkingResolver
 	Statistics() StatisticsResolver
@@ -532,12 +534,10 @@ type ComplexityRoot struct {
 		InfoUrl           func(childComplexity int) int
 		Location          func(childComplexity int) int
 		Name              func(childComplexity int) int
-		NormalisedScore   func(childComplexity int) int
 		PendingStake      func(childComplexity int) int
-		Performance       func(childComplexity int) int
 		PubKey            func(childComplexity int) int
-		RawScore          func(childComplexity int) int
-		Score             func(childComplexity int) int
+		RankingScore      func(childComplexity int) int
+		RewardScore       func(childComplexity int) int
 		StakedByDelegates func(childComplexity int) int
 		StakedByOperator  func(childComplexity int) int
 		StakedTotal       func(childComplexity int) int
@@ -775,6 +775,15 @@ type ComplexityRoot struct {
 		Withdrawal                 func(childComplexity int, id string) int
 	}
 
+	RankingScore struct {
+		PerformanceScore func(childComplexity int) int
+		PreviousStatus   func(childComplexity int) int
+		RankingScore     func(childComplexity int) int
+		StakeScore       func(childComplexity int) int
+		Status           func(childComplexity int) int
+		VotingPower      func(childComplexity int) int
+	}
+
 	RecurringTransfer struct {
 		EndEpoch   func(childComplexity int) int
 		Factor     func(childComplexity int) int
@@ -795,6 +804,15 @@ type ComplexityRoot struct {
 		AssetId     func(childComplexity int) int
 		Rewards     func(childComplexity int) int
 		TotalAmount func(childComplexity int) int
+	}
+
+	RewardScore struct {
+		MultisigScore     func(childComplexity int) int
+		NormalisedScore   func(childComplexity int) int
+		PerformanceScore  func(childComplexity int) int
+		RawValidatorScore func(childComplexity int) int
+		ValidatorScore    func(childComplexity int) int
+		ValidatorStatus   func(childComplexity int) int
 	}
 
 	RewardSummary struct {
@@ -1304,6 +1322,12 @@ type QueryResolver interface {
 	NetworkLimits(ctx context.Context) (*vega.NetworkLimits, error)
 	GetMarketDataHistoryByID(ctx context.Context, id string, start *int, end *int, skip *int, first *int, last *int) ([]*vega.MarketData, error)
 }
+type RankingScoreResolver interface {
+	Status(ctx context.Context, obj *vega.RankingScore) (string, error)
+	PreviousStatus(ctx context.Context, obj *vega.RankingScore) (string, error)
+
+	VotingPower(ctx context.Context, obj *vega.RankingScore) (string, error)
+}
 type RecurringTransferResolver interface {
 	StartEpoch(ctx context.Context, obj *v1.RecurringTransfer) (int, error)
 	EndEpoch(ctx context.Context, obj *v1.RecurringTransfer) (*int, error)
@@ -1320,6 +1344,9 @@ type RewardPerAssetDetailResolver interface {
 
 	Rewards(ctx context.Context, obj *vega.RewardSummary) ([]*vega.Reward, error)
 	TotalAmount(ctx context.Context, obj *vega.RewardSummary) (string, error)
+}
+type RewardScoreResolver interface {
+	ValidatorStatus(ctx context.Context, obj *vega.RewardScore) (string, error)
 }
 type RewardSummaryResolver interface {
 	Asset(ctx context.Context, obj *vega.RewardSummary) (*vega.Asset, error)
@@ -3304,26 +3331,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Node.Name(childComplexity), true
 
-	case "Node.normalisedScore":
-		if e.complexity.Node.NormalisedScore == nil {
-			break
-		}
-
-		return e.complexity.Node.NormalisedScore(childComplexity), true
-
 	case "Node.pendingStake":
 		if e.complexity.Node.PendingStake == nil {
 			break
 		}
 
 		return e.complexity.Node.PendingStake(childComplexity), true
-
-	case "Node.performance":
-		if e.complexity.Node.Performance == nil {
-			break
-		}
-
-		return e.complexity.Node.Performance(childComplexity), true
 
 	case "Node.pubkey":
 		if e.complexity.Node.PubKey == nil {
@@ -3332,19 +3345,19 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Node.PubKey(childComplexity), true
 
-	case "Node.rawScore":
-		if e.complexity.Node.RawScore == nil {
+	case "Node.rankingScore":
+		if e.complexity.Node.RankingScore == nil {
 			break
 		}
 
-		return e.complexity.Node.RawScore(childComplexity), true
+		return e.complexity.Node.RankingScore(childComplexity), true
 
-	case "Node.score":
-		if e.complexity.Node.Score == nil {
+	case "Node.rewardScore":
+		if e.complexity.Node.RewardScore == nil {
 			break
 		}
 
-		return e.complexity.Node.Score(childComplexity), true
+		return e.complexity.Node.RewardScore(childComplexity), true
 
 	case "Node.stakedByDelegates":
 		if e.complexity.Node.StakedByDelegates == nil {
@@ -4609,6 +4622,48 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.Withdrawal(childComplexity, args["id"].(string)), true
 
+	case "RankingScore.performanceScore":
+		if e.complexity.RankingScore.PerformanceScore == nil {
+			break
+		}
+
+		return e.complexity.RankingScore.PerformanceScore(childComplexity), true
+
+	case "RankingScore.previousStatus":
+		if e.complexity.RankingScore.PreviousStatus == nil {
+			break
+		}
+
+		return e.complexity.RankingScore.PreviousStatus(childComplexity), true
+
+	case "RankingScore.rankingScore":
+		if e.complexity.RankingScore.RankingScore == nil {
+			break
+		}
+
+		return e.complexity.RankingScore.RankingScore(childComplexity), true
+
+	case "RankingScore.stakeScore":
+		if e.complexity.RankingScore.StakeScore == nil {
+			break
+		}
+
+		return e.complexity.RankingScore.StakeScore(childComplexity), true
+
+	case "RankingScore.status":
+		if e.complexity.RankingScore.Status == nil {
+			break
+		}
+
+		return e.complexity.RankingScore.Status(childComplexity), true
+
+	case "RankingScore.votingPower":
+		if e.complexity.RankingScore.VotingPower == nil {
+			break
+		}
+
+		return e.complexity.RankingScore.VotingPower(childComplexity), true
+
 	case "RecurringTransfer.endEpoch":
 		if e.complexity.RecurringTransfer.EndEpoch == nil {
 			break
@@ -4699,6 +4754,48 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.RewardPerAssetDetail.TotalAmount(childComplexity), true
+
+	case "RewardScore.multisigScore":
+		if e.complexity.RewardScore.MultisigScore == nil {
+			break
+		}
+
+		return e.complexity.RewardScore.MultisigScore(childComplexity), true
+
+	case "RewardScore.normalisedScore":
+		if e.complexity.RewardScore.NormalisedScore == nil {
+			break
+		}
+
+		return e.complexity.RewardScore.NormalisedScore(childComplexity), true
+
+	case "RewardScore.performanceScore":
+		if e.complexity.RewardScore.PerformanceScore == nil {
+			break
+		}
+
+		return e.complexity.RewardScore.PerformanceScore(childComplexity), true
+
+	case "RewardScore.rawValidatorScore":
+		if e.complexity.RewardScore.RawValidatorScore == nil {
+			break
+		}
+
+		return e.complexity.RewardScore.RawValidatorScore(childComplexity), true
+
+	case "RewardScore.validatorScore":
+		if e.complexity.RewardScore.ValidatorScore == nil {
+			break
+		}
+
+		return e.complexity.RewardScore.ValidatorScore(childComplexity), true
+
+	case "RewardScore.validatorStatus":
+		if e.complexity.RewardScore.ValidatorStatus == nil {
+			break
+		}
+
+		return e.complexity.RewardScore.ValidatorStatus(childComplexity), true
 
 	case "RewardSummary.amount":
 		if e.complexity.RewardSummary.Amount == nil {
@@ -6412,21 +6509,46 @@ type Node {
     "Pagination last element"
     last: Int): [Delegation!]
 
-  score: String!
+  "Reward scores for the current epoch for the validator"
+  rewardScore: RewardScore
 
-  normalisedScore: String!
-
-  # The score prior to being adjusted to account for the performance
-  rawScore: String!
-
-  # Expressed as a fraction between 0 and 1, 1 being the best performance possible
-  performance: String!
-
+  "Ranking scores and status for the validator for the current epoch"
+  rankingScore: RankingScore!
   # The name of the node
   name: String!
 
   # An url to an avatar
   avatarUrl: String
+}
+
+type RewardScore {
+  "The stake based validator score with anti-whaling"
+  rawValidatorScore: String!
+  "The performance score of the validator"
+  performanceScore: String!
+  "The multisig score of the validator"
+  multisigScore: String!
+  "The composite score of the validator"
+  validatorScore: String!
+  "The normalised score of the validator"
+  normalisedScore: String!
+  "The status of the validator for this score"
+  validatorStatus: String!
+}
+
+type RankingScore {
+  "The current validation status of the validator"
+  status: String!
+  "The former validation status of teh validator"
+  previousStatus: String!
+  "The ranking score of the validator"
+  rankingScore: String! 
+  "The stake based score of the validator (no anti-whaling)"
+  stakeScore: String!
+  "The performance score of the validator"
+  performanceScore: String! 
+  "The tendermint voting power of the validator (uint32)"
+  votingPower: String!
 }
 
 type Delegation {
@@ -19337,7 +19459,7 @@ func (ec *executionContext) _Node_delegations(ctx context.Context, field graphql
 	return ec.marshalODelegation2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐDelegationᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Node_score(ctx context.Context, field graphql.CollectedField, obj *vega.Node) (ret graphql.Marshaler) {
+func (ec *executionContext) _Node_rewardScore(ctx context.Context, field graphql.CollectedField, obj *vega.Node) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -19355,24 +19477,21 @@ func (ec *executionContext) _Node_score(ctx context.Context, field graphql.Colle
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Score, nil
+		return obj.RewardScore, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(*vega.RewardScore)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalORewardScore2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐRewardScore(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Node_normalisedScore(ctx context.Context, field graphql.CollectedField, obj *vega.Node) (ret graphql.Marshaler) {
+func (ec *executionContext) _Node_rankingScore(ctx context.Context, field graphql.CollectedField, obj *vega.Node) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -19390,7 +19509,7 @@ func (ec *executionContext) _Node_normalisedScore(ctx context.Context, field gra
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.NormalisedScore, nil
+		return obj.RankingScore, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -19402,79 +19521,9 @@ func (ec *executionContext) _Node_normalisedScore(ctx context.Context, field gra
 		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(*vega.RankingScore)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Node_rawScore(ctx context.Context, field graphql.CollectedField, obj *vega.Node) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "Node",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.RawScore, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Node_performance(ctx context.Context, field graphql.CollectedField, obj *vega.Node) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "Node",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Performance, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNRankingScore2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐRankingScore(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Node_name(ctx context.Context, field graphql.CollectedField, obj *vega.Node) (ret graphql.Marshaler) {
@@ -24876,6 +24925,216 @@ func (ec *executionContext) _Query___schema(ctx context.Context, field graphql.C
 	return ec.marshalO__Schema2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐSchema(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _RankingScore_status(ctx context.Context, field graphql.CollectedField, obj *vega.RankingScore) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "RankingScore",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.RankingScore().Status(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _RankingScore_previousStatus(ctx context.Context, field graphql.CollectedField, obj *vega.RankingScore) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "RankingScore",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.RankingScore().PreviousStatus(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _RankingScore_rankingScore(ctx context.Context, field graphql.CollectedField, obj *vega.RankingScore) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "RankingScore",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.RankingScore, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _RankingScore_stakeScore(ctx context.Context, field graphql.CollectedField, obj *vega.RankingScore) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "RankingScore",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.StakeScore, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _RankingScore_performanceScore(ctx context.Context, field graphql.CollectedField, obj *vega.RankingScore) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "RankingScore",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PerformanceScore, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _RankingScore_votingPower(ctx context.Context, field graphql.CollectedField, obj *vega.RankingScore) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "RankingScore",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.RankingScore().VotingPower(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _RecurringTransfer_startEpoch(ctx context.Context, field graphql.CollectedField, obj *v1.RecurringTransfer) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -25309,6 +25568,216 @@ func (ec *executionContext) _RewardPerAssetDetail_totalAmount(ctx context.Contex
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return ec.resolvers.RewardPerAssetDetail().TotalAmount(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _RewardScore_rawValidatorScore(ctx context.Context, field graphql.CollectedField, obj *vega.RewardScore) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "RewardScore",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.RawValidatorScore, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _RewardScore_performanceScore(ctx context.Context, field graphql.CollectedField, obj *vega.RewardScore) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "RewardScore",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PerformanceScore, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _RewardScore_multisigScore(ctx context.Context, field graphql.CollectedField, obj *vega.RewardScore) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "RewardScore",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MultisigScore, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _RewardScore_validatorScore(ctx context.Context, field graphql.CollectedField, obj *vega.RewardScore) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "RewardScore",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ValidatorScore, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _RewardScore_normalisedScore(ctx context.Context, field graphql.CollectedField, obj *vega.RewardScore) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "RewardScore",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.NormalisedScore, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _RewardScore_validatorStatus(ctx context.Context, field graphql.CollectedField, obj *vega.RewardScore) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "RewardScore",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.RewardScore().ValidatorStatus(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -36218,39 +36687,16 @@ func (ec *executionContext) _Node(ctx context.Context, sel ast.SelectionSet, obj
 				return innerFunc(ctx)
 
 			})
-		case "score":
+		case "rewardScore":
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._Node_score(ctx, field, obj)
+				return ec._Node_rewardScore(ctx, field, obj)
 			}
 
 			out.Values[i] = innerFunc(ctx)
 
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
-			}
-		case "normalisedScore":
+		case "rankingScore":
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._Node_normalisedScore(ctx, field, obj)
-			}
-
-			out.Values[i] = innerFunc(ctx)
-
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
-			}
-		case "rawScore":
-			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._Node_rawScore(ctx, field, obj)
-			}
-
-			out.Values[i] = innerFunc(ctx)
-
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
-			}
-		case "performance":
-			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._Node_performance(ctx, field, obj)
+				return ec._Node_rankingScore(ctx, field, obj)
 			}
 
 			out.Values[i] = innerFunc(ctx)
@@ -39221,6 +39667,117 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 	return out
 }
 
+var rankingScoreImplementors = []string{"RankingScore"}
+
+func (ec *executionContext) _RankingScore(ctx context.Context, sel ast.SelectionSet, obj *vega.RankingScore) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, rankingScoreImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("RankingScore")
+		case "status":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._RankingScore_status(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "previousStatus":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._RankingScore_previousStatus(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "rankingScore":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._RankingScore_rankingScore(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "stakeScore":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._RankingScore_stakeScore(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "performanceScore":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._RankingScore_performanceScore(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "votingPower":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._RankingScore_votingPower(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
 var recurringTransferImplementors = []string{"RecurringTransfer", "TransferKind"}
 
 func (ec *executionContext) _RecurringTransfer(ctx context.Context, sel ast.SelectionSet, obj *v1.RecurringTransfer) graphql.Marshaler {
@@ -39477,6 +40034,97 @@ func (ec *executionContext) _RewardPerAssetDetail(ctx context.Context, sel ast.S
 					}
 				}()
 				res = ec._RewardPerAssetDetail_totalAmount(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var rewardScoreImplementors = []string{"RewardScore"}
+
+func (ec *executionContext) _RewardScore(ctx context.Context, sel ast.SelectionSet, obj *vega.RewardScore) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, rewardScoreImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("RewardScore")
+		case "rawValidatorScore":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._RewardScore_rawValidatorScore(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "performanceScore":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._RewardScore_performanceScore(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "multisigScore":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._RewardScore_multisigScore(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "validatorScore":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._RewardScore_validatorScore(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "normalisedScore":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._RewardScore_normalisedScore(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "validatorStatus":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._RewardScore_validatorStatus(ctx, field, obj)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}
@@ -43291,6 +43939,16 @@ func (ec *executionContext) marshalNProposalVotes2ᚖcodeᚗvegaprotocolᚗioᚋ
 	return ec._ProposalVotes(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalNRankingScore2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐRankingScore(ctx context.Context, sel ast.SelectionSet, v *vega.RankingScore) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._RankingScore(ctx, sel, v)
+}
+
 func (ec *executionContext) marshalNReward2codeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐReward(ctx context.Context, sel ast.SelectionSet, v vega.Reward) graphql.Marshaler {
 	return ec._Reward(ctx, sel, &v)
 }
@@ -45957,6 +46615,13 @@ func (ec *executionContext) marshalORewardPerAssetDetail2ᚖcodeᚗvegaprotocol�
 		return graphql.Null
 	}
 	return ec._RewardPerAssetDetail(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalORewardScore2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐRewardScore(ctx context.Context, sel ast.SelectionSet, v *vega.RewardScore) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._RewardScore(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalORewardSummary2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐRewardSummary(ctx context.Context, sel ast.SelectionSet, v []*vega.RewardSummary) graphql.Marshaler {

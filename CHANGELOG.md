@@ -3,7 +3,7 @@
 ## Unreleased (0.50.0)
 
 ### 🚨 Breaking changes
-- [](https://github.com/vegaprotocol/data-node/pull/xxx) -
+- [333](https://github.com/vegaprotocol/data-node/issues/333) - extend node model with additional information about reward scores and ranking scores + validator statuses
 
 ### 🗑️  Deprecation
 - [](https://github.com/vegaprotocol/data-node/pull/xxx) -

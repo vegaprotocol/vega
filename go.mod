@@ -3,10 +3,10 @@ module code.vegaprotocol.io/data-node
 go 1.17
 
 require (
-	code.vegaprotocol.io/protos v0.49.1-0.20220302152340-f3ee1b21f8db
+	code.vegaprotocol.io/protos v0.49.1-0.20220303153840-0b604a655cae
 	code.vegaprotocol.io/quant v0.2.5
 	code.vegaprotocol.io/shared v0.0.0-20220202150846-b6aba31dcdb0
-	code.vegaprotocol.io/vega v0.49.1-0.20220302155158-bb3c1e291b92
+	code.vegaprotocol.io/vega v0.49.1-0.20220303173501-cf6cd34af619
 	github.com/99designs/gqlgen v0.16.0
 	github.com/dgraph-io/badger/v2 v2.2007.3
 	github.com/fergusstrange/embedded-postgres v0.0.0-00010101000000-000000000000

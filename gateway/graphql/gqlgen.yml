@@ -214,3 +214,7 @@ models:
     model: code.vegaprotocol.io/data-node/gateway/graphql/marshallers.Timestamp
   NetworkLimits:
     model: code.vegaprotocol.io/protos/vega.NetworkLimits
+  RankingScore:
+    model: code.vegaprotocol.io/protos/vega.RankingScore
+  RewardScore:
+    model: code.vegaprotocol.io/protos/vega.RewardScore
