@@ -24,6 +24,7 @@
 ## 0.49.0
 
 ### 🚨 Breaking changes
+- [4900](https://github.com/vegaprotocol/vega/issues/4809) - Review LP fee tests, and move to VEGA repo
 - [4844](https://github.com/vegaprotocol/vega/issues/4844) - Add endpoints for checking transactions raw transactions
 - [4515](https://github.com/vegaprotocol/vega/issues/4615) - Add snapshot options description and check provided storage method
 - [4581](https://github.com/vegaprotocol/vega/issues/4561) - Separate endpoints for liquidity provision submissions, amendment and cancellation
