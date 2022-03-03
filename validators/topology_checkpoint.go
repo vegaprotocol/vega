@@ -63,9 +63,11 @@ func (t *Topology) Load(ctx context.Context, data []byte) error {
 				expectedNexthashSince: time.Time{},
 			},
 			validatorPower: node.ValidatorPower,
+			rankingScore:   node.RankingScore,
 		}
 		votingPower[node.ValidatorUpdate.NodeId] = node.ValidatorPower
 		t.sendValidatorUpdateEvent(ctx, t.validators[node.ValidatorUpdate.NodeId].data, true)
+		t.checkpointLoaded = true
 	}
 
 	for _, pr := range ckp.PendingKeyRotations {
@@ -177,6 +179,7 @@ func (t *Topology) getValidatorStateCheckpoint() []*checkpoint.ValidatorState {
 			Status:             int32(node.status),
 			EthEventsForwarded: node.numberOfEthereumEventsForwarded,
 			ValidatorPower:     node.validatorPower,
+			RankingScore:       node.rankingScore,
 		})
 	}
 	return vsSlice
