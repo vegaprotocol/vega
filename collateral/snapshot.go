@@ -82,10 +82,9 @@ func (e *Engine) restoreAccounts(ctx context.Context, accs *types.CollateralAcco
 			e.partiesAccs[acc.Owner] = map[string]*types.Account{}
 		}
 		e.partiesAccs[acc.Owner][acc.ID] = acc
-		if acc.Type != types.AccountTypeExternal {
-			e.hashableAccs = append(e.hashableAccs, acc)
-			e.addAccountToHashableSlice(acc)
-		}
+		e.hashableAccs = append(e.hashableAccs, acc)
+		e.addAccountToHashableSlice(acc)
+
 		evts = append(evts, events.NewAccountEvent(ctx, *acc))
 
 		if acc.Owner != systemOwner {
@@ -186,6 +185,7 @@ func (a *accState) hashAccounts() error {
 	if !a.updates[k] {
 		return nil
 	}
+
 	// the account slice is already set, sorted and all
 	pl := types.Payload{
 		Data: &a.accPL,

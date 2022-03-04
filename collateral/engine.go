@@ -234,6 +234,13 @@ func (e *Engine) EnableAsset(ctx context.Context, asset types.Asset) error {
 			Type:     types.AccountTypeExternal,
 		}
 		e.accs[externalID] = externalAcc
+
+		// This account originally wan't added to the app-state hash of accounts because it can always be "recontructed" from
+		// the withdrawl/deposits in banking. For snapshotting we we need to restore it and so instead of trying to make
+		// something thats already complicated more complex. we're just going to include it in the apphash which then gets
+		// included in the snapshot.
+		// see https://github.com/vegaprotocol/vega/pull/2745 for more information
+		e.addAccountToHashableSlice(externalAcc)
 	}
 
 	// when an asset is enabled a global reward account (aka network treasury) is created for it along with the other 4 types of rewards
@@ -1607,7 +1614,6 @@ func (e *Engine) getTransferRequest(ctx context.Context, p *types.Transfer, sett
 		// a partry would have a bond account only if it was also a market maker
 		mEvt.bond, _ = e.GetAccountByID(e.accountID(settle.MarketID, p.Owner, asset, types.AccountTypeBond))
 	}
-
 	if settle != nil && mEvt.margin == nil && p.Owner != types.NetworkParty {
 		// the accounts for the party we need
 		// the accounts for the trader we need
@@ -1637,9 +1643,17 @@ func (e *Engine) getTransferRequest(ctx context.Context, p *types.Transfer, sett
 	}
 	if p.Type == types.TransferTypeWithdraw || p.Type == types.TransferTypeDeposit {
 		// external account:
-		eacc, _ = e.GetAccountByID(e.accountID(noMarket, systemOwner, asset, types.AccountTypeExternal))
+		eacc, err = e.GetAccountByID(e.accountID(noMarket, systemOwner, asset, types.AccountTypeExternal))
+		if err != nil {
+			// if we get here it means we have an enabled asset but have not made all the accounts for it
+			// so something has gone very awry
+			e.log.Panic(
+				"Failed to get the asset external account",
+				logging.String("asset", asset),
+				logging.Error(err),
+			)
+		}
 	}
-
 	switch p.Type {
 	// final settle, or MTM settle, makes no difference, it's win/loss still
 	case types.TransferTypeLoss, types.TransferTypeMTMLoss:
@@ -1722,7 +1736,6 @@ func (e *Engine) getTransferRequest(ctx context.Context, p *types.Transfer, sett
 		req.FromAccount = []*types.Account{
 			eacc,
 		}
-
 		// Look for the special case where we are topping up the reward account
 		if p.Owner == rewardPartyID {
 			rewardAcct, _ := e.GetGlobalRewardAccount(p.Amount.Asset)
@@ -1761,7 +1774,6 @@ func (e *Engine) getTransferRequest(ctx context.Context, p *types.Transfer, sett
 	default:
 		return nil, errors.New("unexpected transfer type")
 	}
-
 	return &req, nil
 }
 
@@ -2462,6 +2474,7 @@ func (e *Engine) Deposit(ctx context.Context, partyID, asset string, amount *num
 	mEvt := marginUpdate{
 		general: acc,
 	}
+
 	req, err := e.getTransferRequest(ctx, &transf, nil, nil, &mEvt)
 	if err != nil {
 		return nil, err
@@ -2528,6 +2541,7 @@ func (e *Engine) DecrementBalance(ctx context.Context, id string, dec *num.Uint)
 // GetAccountByID will return an account using the given id.
 func (e *Engine) GetAccountByID(id string) (*types.Account, error) {
 	acc, ok := e.accs[id]
+
 	if !ok {
 		return nil, fmt.Errorf("account does not exist: %s", id)
 	}
