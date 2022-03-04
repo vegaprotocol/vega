@@ -169,3 +169,10 @@ Feature: Replicate LP getting distressed during continuous trading, check if pen
       | party0 | ETH/MAR22 | 355691      | 391260 | 426829  | 497967   |
       | party1 | ETH/MAR22 | 10159       | 11174  | 12190   | 14222    |
       | party2 | ETH/MAR22 | 221129      | 243241 | 265354  | 309580   |
+      
+#documented behavier why margin account has higher value than margin initial level:
+#When an LP submits a new order, we recalculate the margin requirements as we do for any order. At this point, we don't care if the party is an LP or not. We work out the margin requirements assuming whatever position the party holds stays the same. If the margin requirement increases, we try and top up the margin balance to the initial margin level. If this means dipping in to the bond account, we slash the bond account and apply a penalty.
+#This newly submitted order will change the LP orders/shapes, so we cancel the orders currently on the book, and replace them with new ones. In doing so, we check the margin requirements as we submit the new orders. In this particular case, the party had buy and sell orders (potential long/short) on the book the book like this: sell 106@1020, buy 109@970. The party submitted a sell order of 15@1000. This meant that their worst potential short (and the position we based the margin calculation on) was short 121@(15000+108120)/121 (≃1017.5).
+#The sell LP order was updated to sell 90@1020 (potential short becoming 105@(15000+91800)/105 (≃1017.1). The margin requirement drops, but the release level remains above the margin balance. Because the margin requirement when the sell order for 15@1000 was submitted caused the margin balance to go up to 500000, we didn't release any of the balance later on. The initial margin level dropped down to 448170, but the release level was higher than the margin account balance still.
+#The upshot is that seemingly, we transferred too much to the margin account, because briefly (between placing the new order and repricing the LP orders), that was the balance required.
+
