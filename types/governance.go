@@ -90,6 +90,11 @@ const (
 	ProposalErrorUnknownRiskParameterType ProposalError = vegapb.ProposalError_PROPOSAL_ERROR_UNKNOWN_RISK_PARAMETER_TYPE
 	// ProposalErrorInvalidFreeform Validation failed for freeform proposal.
 	ProposalErrorInvalidFreeform ProposalError = vegapb.ProposalError_PROPOSAL_ERROR_INVALID_FREEFORM
+	// ProposalErrorInsufficientEquityLikeShare The party doesn't have enough equity-like share to propose an update on the market
+	// targeted by the proposal.
+	ProposalErrorInsufficientEquityLikeShare ProposalError = vegapb.ProposalError_PROPOSAL_ERROR_INSUFFICIENT_EQUITY_LIKE_SHARE
+	// ProposalErrorInvalidMarket The market targeted by the proposal does not exist or is not eligible to modification.
+	ProposalErrorInvalidMarket ProposalError = vegapb.ProposalError_PROPOSAL_ERROR_INVALID_MARKET
 )
 
 type ProposalState = vegapb.Proposal_State
@@ -140,6 +145,9 @@ type Vote struct {
 	// TotalGovernanceTokenWeight is the weight of the vote compared to the
 	// total number of governance token.
 	TotalGovernanceTokenWeight num.Decimal
+	// TotalEquityLikeShareWeight is the weight of the vote compared to the
+	// total number of equity-like share on the market.
+	TotalEquityLikeShareWeight num.Decimal
 }
 
 type VoteSubmission struct {
@@ -214,6 +222,30 @@ type Proposal struct {
 	ErrorDetails string
 }
 
+func (p *Proposal) IsMarketUpdate() bool {
+	switch p.Terms.Change.(type) {
+	case *ProposalTermsUpdateMarket:
+		return true
+	default:
+		return false
+	}
+}
+
+func (p *Proposal) WaitForNodeVote() {
+	p.State = ProposalStateWaitingForNodeVote
+}
+
+func (p *Proposal) Reject(reason ProposalError) {
+	p.State = ProposalStateRejected
+	p.Reason = reason
+}
+
+func (p *Proposal) RejectWithErr(reason ProposalError, details error) {
+	p.ErrorDetails = details.Error()
+	p.State = ProposalStateRejected
+	p.Reason = reason
+}
+
 func (p Proposal) DeepClone() *Proposal {
 	cpy := p
 	if p.Terms != nil {
@@ -260,6 +292,7 @@ func (v Vote) IntoProto() *vegapb.Vote {
 		Timestamp:                   v.Timestamp,
 		TotalGovernanceTokenBalance: num.UintToString(v.TotalGovernanceTokenBalance),
 		TotalGovernanceTokenWeight:  v.TotalGovernanceTokenWeight.String(),
+		TotalEquityLikeShareWeight:  v.TotalEquityLikeShareWeight.String(),
 	}
 }
 
@@ -279,6 +312,9 @@ func VoteFromProto(v *vegapb.Vote) (*Vote, error) {
 			return nil, err
 		}
 		ret.TotalGovernanceTokenWeight = w
+	}
+	if len(v.TotalEquityLikeShareWeight) > 0 {
+		ret.TotalEquityLikeShareWeight, _ = num.DecimalFromString(v.TotalEquityLikeShareWeight)
 	}
 	return &ret, nil
 }
@@ -405,10 +441,31 @@ type ProposalTermsNewMarket struct {
 	NewMarket *NewMarket
 }
 
-type UpdateMarket = vegapb.UpdateMarket
-
 type ProposalTermsUpdateMarket struct {
 	UpdateMarket *UpdateMarket
+}
+
+type UpdateMarket struct {
+	Changes *UpdateMarketConfiguration
+}
+
+func (n UpdateMarket) IntoProto() *vegapb.UpdateMarket {
+	return &vegapb.UpdateMarket{}
+}
+
+func (n UpdateMarket) DeepClone() *UpdateMarket {
+	cpy := UpdateMarket{}
+	if n.Changes != nil {
+		cpy.Changes = n.Changes.DeepClone()
+	}
+	return &cpy
+}
+
+type UpdateMarketConfiguration struct{}
+
+func (n UpdateMarketConfiguration) DeepClone() *UpdateMarketConfiguration {
+	cpy := &UpdateMarketConfiguration{}
+	return cpy
 }
 
 type UpdateNetworkParameter struct {
@@ -437,7 +494,7 @@ type NewFreeform struct {
 	Changes *NewFreeformDetails
 }
 
-type ProposalTerms_NewFreeform struct {
+type ProposalTermsNewFreeform struct {
 	NewFreeform *NewFreeform
 }
 
@@ -654,7 +711,7 @@ func NewNewAssetFromProto(p *vegapb.ProposalTerms_NewAsset) *ProposalTermsNewAss
 	}
 }
 
-func NewNewFreeformFromProto(p *vegapb.ProposalTerms_NewFreeform) *ProposalTerms_NewFreeform {
+func NewNewFreeformFromProto(p *vegapb.ProposalTerms_NewFreeform) *ProposalTermsNewFreeform {
 	var newFreeform *NewFreeform
 	if p.NewFreeform != nil && p.NewFreeform.Changes != nil {
 		newFreeform = &NewFreeform{
@@ -666,7 +723,7 @@ func NewNewFreeformFromProto(p *vegapb.ProposalTerms_NewFreeform) *ProposalTerms
 		}
 	}
 
-	return &ProposalTerms_NewFreeform{
+	return &ProposalTermsNewFreeform{
 		NewFreeform: newFreeform,
 	}
 }
@@ -732,7 +789,7 @@ func (p *ProposalTerms) GetUpdateNetworkParameter() *UpdateNetworkParameter {
 
 func (p *ProposalTerms) GetNewFreeform() *NewFreeform {
 	switch c := p.Change.(type) {
-	case *ProposalTerms_NewFreeform:
+	case *ProposalTermsNewFreeform:
 		return c.NewFreeform
 	default:
 		return nil
@@ -765,7 +822,7 @@ func (a ProposalTermsNewMarket) DeepClone() proposalTerm {
 
 func (a ProposalTermsUpdateMarket) IntoProto() *vegapb.ProposalTerms_UpdateMarket {
 	return &vegapb.ProposalTerms_UpdateMarket{
-		UpdateMarket: a.UpdateMarket,
+		UpdateMarket: a.UpdateMarket.IntoProto(),
 	}
 }
 
@@ -1096,7 +1153,7 @@ func (f FutureProduct) Asset() string {
 	return f.SettlementAsset
 }
 
-func (f ProposalTerms_NewFreeform) IntoProto() *vegapb.ProposalTerms_NewFreeform {
+func (f ProposalTermsNewFreeform) IntoProto() *vegapb.ProposalTerms_NewFreeform {
 	var newFreeform *vegapb.NewFreeform
 	if f.NewFreeform != nil {
 		newFreeform = f.NewFreeform.IntoProto()
@@ -1106,20 +1163,20 @@ func (f ProposalTerms_NewFreeform) IntoProto() *vegapb.ProposalTerms_NewFreeform
 	}
 }
 
-func (f ProposalTerms_NewFreeform) isPTerm() {}
-func (f ProposalTerms_NewFreeform) oneOfProto() interface{} {
+func (f ProposalTermsNewFreeform) isPTerm() {}
+func (f ProposalTermsNewFreeform) oneOfProto() interface{} {
 	return f.IntoProto()
 }
 
-func (f ProposalTerms_NewFreeform) GetTermType() ProposalTermsType {
+func (f ProposalTermsNewFreeform) GetTermType() ProposalTermsType {
 	return ProposalTermsTypeNewFreeform
 }
 
-func (f ProposalTerms_NewFreeform) DeepClone() proposalTerm {
+func (f ProposalTermsNewFreeform) DeepClone() proposalTerm {
 	if f.NewFreeform == nil {
-		return &ProposalTerms_NewFreeform{}
+		return &ProposalTermsNewFreeform{}
 	}
-	return &ProposalTerms_NewFreeform{
+	return &ProposalTermsNewFreeform{
 		NewFreeform: f.NewFreeform.DeepClone(),
 	}
 }

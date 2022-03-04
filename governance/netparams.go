@@ -22,6 +22,25 @@ func (e *Engine) getNewMarketProposalParameters() *ProposalParameters {
 		netparams.GovernanceProposalMarketRequiredMajority,
 		netparams.GovernanceProposalMarketMinProposerBalance,
 		netparams.GovernanceProposalMarketMinVoterBalance,
+		"0",
+		"0",
+		"0",
+	)
+}
+
+func (e *Engine) getUpdateMarketProposalParameters() *ProposalParameters {
+	return e.getProposalParametersFromNetParams(
+		netparams.GovernanceProposalUpdateMarketMinClose,
+		netparams.GovernanceProposalUpdateMarketMaxClose,
+		netparams.GovernanceProposalUpdateMarketMinEnact,
+		netparams.GovernanceProposalUpdateMarketMaxEnact,
+		netparams.GovernanceProposalUpdateMarketRequiredParticipation,
+		netparams.GovernanceProposalUpdateMarketRequiredMajority,
+		netparams.GovernanceProposalUpdateMarketMinProposerBalance,
+		netparams.GovernanceProposalUpdateMarketMinVoterBalance,
+		netparams.GovernanceProposalUpdateMarketRequiredParticipationLP,
+		netparams.GovernanceProposalUpdateMarketRequiredMajorityLP,
+		netparams.GovernanceProposalUpdateMarketMinProposerEquityLikeShare,
 	)
 }
 
@@ -35,6 +54,9 @@ func (e *Engine) getNewAssetProposalParameters() *ProposalParameters {
 		netparams.GovernanceProposalAssetRequiredMajority,
 		netparams.GovernanceProposalAssetMinProposerBalance,
 		netparams.GovernanceProposalAssetMinVoterBalance,
+		"0",
+		"0",
+		"0",
 	)
 }
 
@@ -48,10 +70,13 @@ func (e *Engine) getUpdateNetworkParameterProposalParameters() *ProposalParamete
 		netparams.GovernanceProposalUpdateNetParamRequiredMajority,
 		netparams.GovernanceProposalUpdateNetParamMinProposerBalance,
 		netparams.GovernanceProposalUpdateNetParamMinVoterBalance,
+		"0",
+		"0",
+		"0",
 	)
 }
 
-func (e *Engine) getNewFreeformProposalarameters() *ProposalParameters {
+func (e *Engine) getNewFreeformProposalParameters() *ProposalParameters {
 	return e.getProposalParametersFromNetParams(
 		netparams.GovernanceProposalFreeformMinClose,
 		netparams.GovernanceProposalFreeformMaxClose,
@@ -61,12 +86,16 @@ func (e *Engine) getNewFreeformProposalarameters() *ProposalParameters {
 		netparams.GovernanceProposalFreeformRequiredMajority,
 		netparams.GovernanceProposalFreeformMinProposerBalance,
 		netparams.GovernanceProposalFreeformMinVoterBalance,
+		"0",
+		"0",
+		"0",
 	)
 }
 
 func (e *Engine) getProposalParametersFromNetParams(
 	minCloseKey, maxCloseKey, minEnactKey, maxEnactKey, requiredParticipationKey,
-	requiredMajorityKey, minProposerBalanceKey, minVoterBalanceKey string,
+	requiredMajorityKey, minProposerBalanceKey, minVoterBalanceKey,
+	requiredParticipationLPKey, requiredMajorityLPKey, minEquityLikeShareKey string,
 ) *ProposalParameters {
 	pp := ProposalParameters{}
 	pp.MinClose, _ = e.netp.GetDuration(minCloseKey)
@@ -75,10 +104,11 @@ func (e *Engine) getProposalParametersFromNetParams(
 	pp.MaxEnact, _ = e.netp.GetDuration(maxEnactKey)
 	pp.RequiredParticipation, _ = e.netp.GetDecimal(requiredParticipationKey)
 	pp.RequiredMajority, _ = e.netp.GetDecimal(requiredMajorityKey)
-	mpb, _ := e.netp.GetUint(minProposerBalanceKey)
-	pp.MinProposerBalance = mpb
-	mvb, _ := e.netp.GetUint(minVoterBalanceKey)
-	pp.MinVoterBalance = mvb
+	pp.MinProposerBalance, _ = e.netp.GetUint(minProposerBalanceKey)
+	pp.MinVoterBalance, _ = e.netp.GetUint(minVoterBalanceKey)
+	pp.RequiredParticipationLP, _ = e.netp.GetDecimal(requiredParticipationLPKey)
+	pp.RequiredMajorityLP, _ = e.netp.GetDecimal(requiredMajorityLPKey)
+	pp.MinEquityLikeShare, _ = e.netp.GetDecimal(minEquityLikeShareKey)
 	return &pp
 }
 
