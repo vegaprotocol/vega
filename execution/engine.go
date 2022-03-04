@@ -1060,3 +1060,18 @@ func (e *Engine) OnMinLpStakeQuantumMultipleUpdate(ctx context.Context, d num.De
 	e.npv.minLpStakeQuantumMultiple = d
 	return nil
 }
+
+func (e *Engine) MarketExists(market string) bool {
+	_, ok := e.markets[market]
+	return ok
+}
+
+// GetEquityLikeShareForMarketAndParty return the equity-like shares of the given
+// party in the given market. If the market doesn't exist, it returns false.
+func (e *Engine) GetEquityLikeShareForMarketAndParty(market, party string) (num.Decimal, bool) {
+	mkt, ok := e.markets[market]
+	if !ok {
+		return num.DecimalZero(), false
+	}
+	return mkt.equityShares.SharesFromParty(party), true
+}
