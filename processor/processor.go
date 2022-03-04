@@ -57,6 +57,7 @@ type ExecutionEngine interface {
 
 	// market stuff
 	SubmitMarket(ctx context.Context, marketConfig *types.Market) error
+	UpdateMarket(ctx context.Context, marketConfig *types.Market) error
 	SubmitMarketWithLiquidityProvision(ctx context.Context, marketConfig *types.Market, lp *types.LiquidityProvisionSubmission, party, lpid, deterministicId string) error
 	RejectMarket(ctx context.Context, marketid string) error
 	StartOpeningAuction(ctx context.Context, marketid string) error

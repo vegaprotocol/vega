@@ -11,6 +11,7 @@
 ### 🛠 Improvements
 - [4951](https://github.com/vegaprotocol/vega/issues/4951) - Add ability to stream events to a file
 - [4953](https://github.com/vegaprotocol/vega/issues/4953) - Add block hash to statistics and to block height request
+- [4832](https://github.com/vegaprotocol/vega/issues/4832) - Add validation of update market proposals.
 
 ### 🐛 Fixes
 - [4947](https://github.com/vegaprotocol/vega/issues/4947) - Fix time formatting problem that was breaking consensus on nodes in different time zones

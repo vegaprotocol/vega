@@ -440,6 +440,10 @@ func appendBytes(bz ...[]byte) []byte {
 	return out
 }
 
+func (m *Market) IntoType() types.Market {
+	return *m.mkt.DeepClone()
+}
+
 // UpdateRiskFactorsForTest is a hack for setting the risk factors for tests directly rather than through the consensus engine.
 // Never use this for anything functional.
 func (m *Market) UpdateRiskFactorsForTest() {
