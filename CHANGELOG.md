@@ -650,6 +650,7 @@
 - [#3489](https://github.com/vegaprotocol/vega/pull/3489) - Run `buf breaking` at build time
 - [#3487](https://github.com/vegaprotocol/vega/pull/3487) - Refactor `prepare*` command validation
 - [#3516](https://github.com/vegaprotocol/vega/pull/3516) - New tests for distressed LP + use margin for bond slashing as fallback
+- [#4921](https://github.com/vegaprotocol/vega/issues/4921) - Add comment to document behaviour on margin account in feature test (liquidity-provision-bond-account.feature)
 
 ### 🐛 Fixes
 - [#3513](https://github.com/vegaprotocol/vega/pull/3513) - Fix reprice of pegged orders on every liquidity update
