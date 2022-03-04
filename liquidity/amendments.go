@@ -84,7 +84,7 @@ func (e *Engine) AmendLiquidityProvision(
 // to submit orders later on.
 func (e *Engine) GetPotentialShapeOrders(
 	party string,
-	bestBidPrice, bestAskPrice *num.Uint,
+	bestBidPrice, bestAskPrice num.Decimal,
 	lps *types.LiquidityProvisionAmendment,
 	repriceFn RepricePeggedOrder,
 ) ([]*types.Order, error) {

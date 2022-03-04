@@ -27,7 +27,7 @@ type StakingAccounts interface {
 }
 
 type EpochEngine interface {
-	NotifyOnEpoch(f func(context.Context, types.Epoch))
+	NotifyOnEpoch(f func(context.Context, types.Epoch), r func(context.Context, types.Epoch))
 }
 
 type Engine struct {
@@ -99,7 +99,7 @@ func New(log *logging.Logger, config Config, epochEngine EpochEngine, accounting
 	e.transactionTypeToPolicy[txn.AnnounceNodeCommand] = valJoinPolicy
 
 	// register for epoch end notifications
-	epochEngine.NotifyOnEpoch(e.OnEpochEvent)
+	epochEngine.NotifyOnEpoch(e.OnEpochEvent, e.OnEpochRestore)
 	e.log.Info("Spam protection started")
 
 	return e
@@ -152,6 +152,7 @@ func (e *Engine) OnMinValidatorTokensChanged(_ context.Context, minTokens num.De
 // OnEpochEvent is a callback for epoch events.
 func (e *Engine) OnEpochEvent(ctx context.Context, epoch types.Epoch) {
 	e.log.Info("Spam protection OnEpochEvent called", logging.Uint64("epoch", epoch.Seq))
+
 	if e.currentEpoch == nil || e.currentEpoch.Seq != epoch.Seq {
 		if e.log.GetLevel() <= logging.DebugLevel {
 			e.log.Debug("Spam protection new epoch started", logging.Uint64("epochSeq", epoch.Seq))

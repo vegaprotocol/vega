@@ -46,7 +46,7 @@ var defaultCollateralAssets = []types.Asset{
 		ID: "ETH",
 		Details: &types.AssetDetails{
 			Symbol:  "ETH",
-			Quantum: num.Zero(),
+			Quantum: num.DecimalZero(),
 		},
 	},
 	{
@@ -56,7 +56,7 @@ var defaultCollateralAssets = []types.Asset{
 			Symbol:      "VOTE",
 			Decimals:    5,
 			TotalSupply: num.NewUint(1000),
-			Quantum:     num.Zero(),
+			Quantum:     num.DecimalZero(),
 			Source: &types.AssetDetailsBuiltinAsset{
 				BuiltinAsset: &types.BuiltinAsset{},
 			},
@@ -183,7 +183,7 @@ func (tm *testMarket) Run(ctx context.Context, mktCfg types.Market) *testMarket 
 
 	statevarEngine := stubs.NewStateVar()
 	epochEngine := mocks.NewMockEpochEngine(tm.ctrl)
-	epochEngine.EXPECT().NotifyOnEpoch(gomock.Any()).Times(1)
+	epochEngine.EXPECT().NotifyOnEpoch(gomock.Any(), gomock.Any()).Times(1)
 	feeTracker := execution.NewFeesTracker(epochEngine)
 	mktEngine, err := execution.NewMarket(ctx,
 		tm.log, riskConfig, positionConfig, settlementConfig, matchingConfig,
@@ -338,7 +338,7 @@ func getTestMarket2WithDP(
 			Symbol:      "ETH",
 			TotalSupply: num.Zero(),
 			Decimals:    0, // no decimals
-			Quantum:     num.Zero(),
+			Quantum:     num.DecimalZero(),
 		},
 	})
 	// create asset stub to match the test asset:
@@ -355,7 +355,7 @@ func getTestMarket2WithDP(
 			Symbol:      "VOTE",
 			Decimals:    5,
 			TotalSupply: num.NewUint(1000),
-			Quantum:     num.Zero(),
+			Quantum:     num.DecimalZero(),
 			Source: &types.AssetDetailsBuiltinAsset{
 				BuiltinAsset: &types.BuiltinAsset{},
 			},
@@ -379,7 +379,7 @@ func getTestMarket2WithDP(
 	statevar := stubs.NewStateVar()
 
 	epoch := mocks.NewMockEpochEngine(ctrl)
-	epoch.EXPECT().NotifyOnEpoch(gomock.Any()).Times(1)
+	epoch.EXPECT().NotifyOnEpoch(gomock.Any(), gomock.Any()).Times(1)
 	feeTracker := execution.NewFeesTracker(epoch)
 
 	mktEngine, err := execution.NewMarket(context.Background(),

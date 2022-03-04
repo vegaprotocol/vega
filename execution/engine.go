@@ -272,7 +272,7 @@ func (e *Engine) IsEligibleForProposerBonus(marketID string, value *num.Uint) bo
 	if err != nil {
 		return false
 	}
-	return value.ToDecimal().GreaterThan(quantum.ToDecimal().Mul(e.npv.minLpStakeQuantumMultiple))
+	return value.ToDecimal().GreaterThan(quantum.Mul(e.npv.minLpStakeQuantumMultiple))
 }
 
 // SubmitMarketWithLiquidityProvision is submitting a market through

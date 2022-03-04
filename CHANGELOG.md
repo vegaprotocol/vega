@@ -9,17 +9,22 @@
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 ### 🛠 Improvements
-- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+- [4895](https://github.com/vegaprotocol/vega/issues/4895) - Emit validators signature when a validator is added or remove from the set
+- [4901](https://github.com/vegaprotocol/vega/issues/4901) - Update the decimal library
+- [4906](https://github.com/vegaprotocol/vega/issues/4906) - Get rid of unnecessary `ToDecimal` conversions (no functional change)
 
 ### 🐛 Fixes
 - [4877](https://github.com/vegaprotocol/vega/issues/4877) - Fix topology and `erc20` topology snapshots
+- [4890](https://github.com/vegaprotocol/vega/issues/4890) - epoch service now notifies other engines when it has restored from a snapshot
 - [4879](https://github.com/vegaprotocol/vega/issues/4879) - Fixes for invalid data types in the `MarketData` proto message.
 - [4881](https://github.com/vegaprotocol/vega/issues/4881) - Set tendermint validators' voting power when loading from snapshot
 - [4882](https://github.com/vegaprotocol/vega/issues/4882) - Fixed tracking of liquidity fee received and added feature tests for the fee based rewards
+- [4898](https://github.com/vegaprotocol/vega/issues/4898) - Add ranking score information to checkpoint and snapshot and emit an event when loaded
 
 ## 0.49.0
 
 ### 🚨 Breaking changes
+- [4900](https://github.com/vegaprotocol/vega/issues/4809) - Review LP fee tests, and move to VEGA repo
 - [4844](https://github.com/vegaprotocol/vega/issues/4844) - Add endpoints for checking transactions raw transactions
 - [4515](https://github.com/vegaprotocol/vega/issues/4615) - Add snapshot options description and check provided storage method
 - [4581](https://github.com/vegaprotocol/vega/issues/4561) - Separate endpoints for liquidity provision submissions, amendment and cancellation
@@ -113,6 +118,7 @@
 - [4865](https://github.com/vegaprotocol/vega/issues/4865) - Fix: issue with project board automation action and update commit checker action
 - [4674](https://github.com/vegaprotocol/vega/issues/4674) - Add Ethereum events reconciliation for `multisig control`
 - [4886](https://github.com/vegaprotocol/vega/pull/4886) - Add more integration tests around order amends and fees.
+- [4885](https://github.com/vegaprotocol/vega/pull/4885) - Update amend orders scenario to have fees transfers in int tests
 - [4846](https://github.com/vegaprotocol/vega/issues/4846) - Tidying up feature tests in verified folder - part 2 - auction tests
 
 ### 🐛 Fixes

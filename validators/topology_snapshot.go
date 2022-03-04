@@ -3,6 +3,7 @@ package validators
 import (
 	"context"
 	"encoding/base64"
+	"math/rand"
 	"sort"
 	"time"
 
@@ -12,6 +13,7 @@ import (
 	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/types/num"
 
 	"github.com/golang/protobuf/proto"
 	tmtypes "github.com/tendermint/tendermint/abci/types"
@@ -72,6 +74,7 @@ func (t *Topology) serialiseNodes() []*snapshot.ValidatorState {
 					ExpectedNextHashSince: node.heartbeatTracker.expectedNexthashSince.UnixNano(),
 				},
 				ValidatorPower: node.validatorPower,
+				RankingScore:   node.rankingScore,
 			},
 		)
 	}
@@ -191,6 +194,7 @@ func (t *Topology) restore(ctx context.Context, topology *types.Topology) error 
 
 	vUpdates := []tmtypes.ValidatorUpdate{}
 
+	epochSeq := num.NewUint(t.epochSeq).String()
 	for _, node := range topology.ValidatorData {
 		t.log.Debug("restoring validator data snapshot", logging.String("nodeid", node.ValidatorUpdate.NodeId))
 		vs := &valState{
@@ -217,6 +221,7 @@ func (t *Topology) restore(ctx context.Context, topology *types.Topology) error 
 				expectedNexthashSince: time.Unix(0, node.HeartbeatTracker.ExpectedNextHashSince),
 			},
 			validatorPower: node.ValidatorPower,
+			rankingScore:   node.RankingScore,
 		}
 		for i := 0; i < 10; i++ {
 			vs.heartbeatTracker.blockSigs[i] = node.HeartbeatTracker.BlockSigs[i]
@@ -224,6 +229,11 @@ func (t *Topology) restore(ctx context.Context, topology *types.Topology) error 
 		t.validators[node.ValidatorUpdate.NodeId] = vs
 
 		t.sendValidatorUpdateEvent(ctx, vs.data, true)
+
+		// send an event with the current ranking of the validator
+		if node.RankingScore != nil {
+			t.broker.Send(events.NewValidatorRanking(ctx, epochSeq, node.ValidatorUpdate.NodeId, node.RankingScore.StakeScore, node.RankingScore.PerformanceScore, node.RankingScore.RankingScore, protoStatusToString(node.RankingScore.PreviousStatus), protoStatusToString(node.RankingScore.Status), int(node.RankingScore.VotingPower)))
+		}
 
 		// this node is started and expect to be a validator
 		// but so far we haven't seen ourselve as validators for
@@ -248,4 +258,12 @@ func (t *Topology) restore(ctx context.Context, topology *types.Topology) error 
 	t.validatorPerformance.Deserialize(topology.ValidatorPerformance)
 	t.tss.changed = true
 	return nil
+}
+
+// OnEpochRestore is the epochtime service telling us the restored epoch data.
+func (t *Topology) OnEpochRestore(_ context.Context, epoch types.Epoch) {
+	t.log.Debug("epoch restoration notification received", logging.String("epoch", epoch.String()))
+	t.epochSeq = epoch.Seq
+	t.newEpochStarted = true
+	t.rng = rand.New(rand.NewSource(epoch.StartTime.Unix()))
 }

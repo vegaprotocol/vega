@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"math/rand"
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -52,6 +53,14 @@ type ValidatorPerformance interface {
 	Serialize() *v1.ValidatorPerformance
 	Deserialize(*v1.ValidatorPerformance)
 	Reset()
+}
+
+// Notary ...
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/notary_mock.go -package mocks code.vegaprotocol.io/vega/validators Notary
+type Notary interface {
+	StartAggregate(resID string, kind types.NodeSignatureKind, signature []byte)
+	IsSigned(ctx context.Context, id string, kind types.NodeSignatureKind) ([]types.NodeSignature, bool)
+	OfferSignatures(kind types.NodeSignatureKind, f func(resources string) []byte)
 }
 
 type ValidatorData struct {
@@ -130,15 +139,38 @@ type Topology struct {
 	epochSeq              uint64
 	newEpochStarted       bool
 
-	cmd Commander
+	cmd              Commander
+	checkpointLoaded bool
+	notary           Notary
+	signatures       Signatures
 }
 
-func (t *Topology) OnEpochEvent(_ context.Context, epoch types.Epoch) {
+func (t *Topology) OnEpochEvent(ctx context.Context, epoch types.Epoch) {
 	t.epochSeq = epoch.Seq
 	if epoch.Action == proto.EpochAction_EPOCH_ACTION_START {
 		t.newEpochStarted = true
 		t.rng = rand.New(rand.NewSource(epoch.StartTime.Unix()))
 		t.validatorPerformance.Reset()
+	}
+	// this is a workaround to the topology loaded from checkpoint before the epoch.
+	if t.checkpointLoaded {
+		evts := make([]events.Event, 0, len(t.validators))
+		seq := num.NewUint(t.epochSeq).String()
+		t.checkpointLoaded = false
+		nodeIDs := make([]string, 0, len(t.validators))
+		for k := range t.validators {
+			nodeIDs = append(nodeIDs, k)
+		}
+		sort.Strings(nodeIDs)
+		for _, nid := range nodeIDs {
+			node := t.validators[nid]
+			if node.rankingScore == nil {
+				continue
+			}
+			evts = append(evts, events.NewValidatorRanking(ctx, seq, node.data.ID, node.rankingScore.StakeScore, node.rankingScore.PerformanceScore, node.rankingScore.RankingScore, protoStatusToString(node.rankingScore.PreviousStatus), protoStatusToString(node.rankingScore.Status), int(node.rankingScore.VotingPower)))
+		}
+		// send ranking events for all loaded validators so data node knows the current ranking
+		t.broker.SendBatch(evts)
 	}
 }
 
@@ -163,9 +195,23 @@ func NewTopology(
 		ersatzValidatorsFactor:        num.DecimalZero(),
 		multiSigTopology:              msTopology,
 		cmd:                           cmd,
+		signatures:                    &noopSignatures{log},
 	}
 
 	return t
+}
+
+// SetNotary this is not good, the topology depends on the notary
+// which in return also depends on the topology... Luckily they
+// do not require recursive calls as for each calls are one offs...
+// anyway we may want to extract the code requiring the notary somewhere
+// else or have different pattern somehow...
+func (t *Topology) SetNotary(notary Notary) {
+	// if we are not even setup as a validator, no need for this.
+	if t.isValidatorSetup {
+		t.signatures = NewSignatures(t.log, notary, t.wallets.GetEthereum(), t.broker)
+	}
+	t.notary = notary
 }
 
 // ReloadConf updates the internal configuration.
@@ -332,11 +378,23 @@ func (t *Topology) AddNewNode(ctx context.Context, nr *commandspb.AnnounceNode, 
 		t.validators[nr.Id].validatorPower = 10
 	}
 
+	rankingScoreStatus := statusToProtoStatus(ValidatorStatusToName[status])
+	t.validators[nr.Id].rankingScore = &proto.RankingScore{
+		StakeScore:       "0",
+		PerformanceScore: "0",
+		RankingScore:     "0",
+		Status:           rankingScoreStatus,
+		PreviousStatus:   statusToProtoStatus("pending"),
+		VotingPower:      uint32(t.validators[nr.Id].validatorPower),
+	}
+
 	t.tss.changed = true
 
 	// Send event to notify core about new validator
 	t.sendValidatorUpdateEvent(ctx, data, true)
-
+	// Send an event to notify the new validator ranking
+	epochSeq := num.NewUint(t.epochSeq).String()
+	t.broker.Send(events.NewValidatorRanking(ctx, epochSeq, nr.Id, "0", "0", "0", "pending", ValidatorStatusToName[status], int(t.validators[nr.Id].validatorPower)))
 	t.log.Info("new node registration successful",
 		logging.String("id", nr.Id),
 		logging.String("vega-key", nr.VegaPubKey),

@@ -47,7 +47,7 @@ func testRejectedIfDoesntReachMinimalAmount(t *testing.T) {
 
 	e.OnMinTransferQuantumMultiple(context.Background(), num.DecimalFromFloat(1))
 	// asset exists
-	e.assets.EXPECT().Get(gomock.Any()).Times(1).Return(assets.NewAsset(&mockAsset{num.NewUint(100)}), nil)
+	e.assets.EXPECT().Get(gomock.Any()).Times(1).Return(assets.NewAsset(&mockAsset{num.DecimalFromFloat(100)}), nil)
 	e.broker.EXPECT().Send(gomock.Any()).Times(1)
 
 	assert.EqualError(t,
@@ -95,7 +95,7 @@ func testOneOffTransferNotEnoughFundsToTransfer(t *testing.T) {
 	}
 
 	// asset exists
-	e.assets.EXPECT().Get(gomock.Any()).Times(1).Return(assets.NewAsset(&mockAsset{num.NewUint(1)}), nil)
+	e.assets.EXPECT().Get(gomock.Any()).Times(1).Return(assets.NewAsset(&mockAsset{num.DecimalFromFloat(1)}), nil)
 	e.col.EXPECT().GetPartyGeneralAccount(gomock.Any(), gomock.Any()).Times(1).Return(&fromAcc, nil)
 	e.broker.EXPECT().Send(gomock.Any()).Times(1)
 
@@ -215,7 +215,7 @@ func testValidOneOffTransfer(t *testing.T) {
 
 	// asset exists
 	e.assets.EXPECT().Get(gomock.Any()).Times(1).Return(
-		assets.NewAsset(&mockAsset{num.NewUint(1)}), nil)
+		assets.NewAsset(&mockAsset{num.DecimalFromFloat(1)}), nil)
 	e.col.EXPECT().GetPartyGeneralAccount(gomock.Any(), gomock.Any()).Times(1).Return(&fromAcc, nil)
 
 	// assert the calculation of fees and transfer request are correct
@@ -293,7 +293,7 @@ func testValidOneOffTransferWithDeliverOnInThePastStraightAway(t *testing.T) {
 	}
 
 	// asset exists
-	e.assets.EXPECT().Get(gomock.Any()).Times(1).Return(assets.NewAsset(&mockAsset{num.NewUint(1)}), nil)
+	e.assets.EXPECT().Get(gomock.Any()).Times(1).Return(assets.NewAsset(&mockAsset{num.DecimalFromFloat(1)}), nil)
 	e.col.EXPECT().GetPartyGeneralAccount(gomock.Any(), gomock.Any()).Times(1).Return(&fromAcc, nil)
 
 	// assert the calculation of fees and transfer request are correct
@@ -371,7 +371,7 @@ func testValidOneOffTransferWithDeliverOn(t *testing.T) {
 	}
 
 	// asset exists
-	e.assets.EXPECT().Get(gomock.Any()).Times(1).Return(assets.NewAsset(&mockAsset{num.NewUint(1)}), nil)
+	e.assets.EXPECT().Get(gomock.Any()).Times(1).Return(assets.NewAsset(&mockAsset{num.DecimalFromFloat(1)}), nil)
 	e.col.EXPECT().GetPartyGeneralAccount(gomock.Any(), gomock.Any()).Times(1).Return(&fromAcc, nil)
 
 	// assert the calculation of fees and transfer request are correct

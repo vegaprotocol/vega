@@ -6,6 +6,7 @@ import (
 	"errors"
 	"sort"
 
+	proto "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
@@ -46,7 +47,8 @@ type valState struct {
 	lastBlockWithPositiveRanking    int64                      // the last epoch with non zero ranking for the validator
 	numberOfEthereumEventsForwarded uint64                     // number of events forwarded by the validator
 	heartbeatTracker                *validatorHeartbeatTracker // track hearbeat transactions
-	validatorPower                  int64
+	validatorPower                  int64                      // the voting power of the validator
+	rankingScore                    *proto.RankingScore        // the last ranking score of the validator
 }
 
 // UpdateNumberEthMultisigSigners updates the required number of multisig signers.
@@ -105,9 +107,12 @@ func (t *Topology) RecalcValidatorSet(ctx context.Context, epochSeq string, dele
 	t.mu.Lock()
 	defer t.mu.Unlock()
 	// first we record the current status of validators before the promotion/demotion so we can capture in an event.
-	currentState := make(map[string]ValidatorStatus, len(t.validators))
+	currentState := make(map[string]StatusAddress, len(t.validators))
 	for k, vs := range t.validators {
-		currentState[k] = vs.status
+		currentState[k] = StatusAddress{
+			Status:     vs.status,
+			EthAddress: vs.data.EthereumAddress,
+		}
 	}
 
 	keys := make([]string, 0, len(currentState))
@@ -127,6 +132,20 @@ func (t *Topology) RecalcValidatorSet(ctx context.Context, epochSeq string, dele
 		t.log.Info("setting voting power to", logging.String(("address"), cPubKey.Address().String()), logging.Uint64("power", uint64(vu.Power)))
 	}
 
+	newState := make(map[string]StatusAddress, len(t.validators))
+	for k, vs := range t.validators {
+		newState[k] = StatusAddress{
+			Status:     vs.status,
+			EthAddress: vs.data.EthereumAddress,
+		}
+	}
+
+	// do this only if we are a validator, not need otherwise
+	if t.IsValidator() {
+		t.signatures.EmitPromotionsSignatures(
+			ctx, t.currentTime, currentState, newState)
+	}
+
 	// prepare and send the events
 	evts := make([]events.Event, 0, len(currentState))
 	for _, nodeID := range keys {
@@ -140,7 +159,18 @@ func (t *Topology) RecalcValidatorSet(ctx context.Context, epochSeq string, dele
 			vp = 0
 		}
 
-		evts = append(evts, events.NewValidatorRanking(ctx, epochSeq, nodeID, stakeScore[nodeID].String(), perfScore[nodeID].String(), rankingScore[nodeID].String(), ValidatorStatusToName[currentState[nodeID]], status, int(vp)))
+		if vd, ok := t.validators[nodeID]; ok {
+			vd.rankingScore = &proto.RankingScore{
+				StakeScore:       stakeScore[nodeID].String(),
+				PerformanceScore: perfScore[nodeID].String(),
+				RankingScore:     rankingScore[nodeID].String(),
+				PreviousStatus:   statusToProtoStatus(ValidatorStatusToName[currentState[nodeID].Status]),
+				Status:           statusToProtoStatus(status),
+				VotingPower:      uint32(vp),
+			}
+		}
+
+		evts = append(evts, events.NewValidatorRanking(ctx, epochSeq, nodeID, stakeScore[nodeID].String(), perfScore[nodeID].String(), rankingScore[nodeID].String(), ValidatorStatusToName[currentState[nodeID].Status], status, int(vp)))
 	}
 	t.broker.SendBatch(evts)
 
@@ -166,6 +196,26 @@ func (t *Topology) RecalcValidatorSet(ctx context.Context, epochSeq string, dele
 		}
 	}
 	t.tss.changed = true
+}
+
+func protoStatusToString(status proto.ValidatorNodeStatus) string {
+	if status == proto.ValidatorNodeStatus_VALIDATOR_NODE_STATUS_TENDERMINT {
+		return "tendermint"
+	}
+	if status == proto.ValidatorNodeStatus_VALIDATOR_NODE_STATUS_ERSATZ {
+		return "ersatz"
+	}
+	return "pending"
+}
+
+func statusToProtoStatus(status string) proto.ValidatorNodeStatus {
+	if status == "tendermint" {
+		return proto.ValidatorNodeStatus_VALIDATOR_NODE_STATUS_TENDERMINT
+	}
+	if status == "ersatz" {
+		return proto.ValidatorNodeStatus_VALIDATOR_NODE_STATUS_ERSATZ
+	}
+	return proto.ValidatorNodeStatus_VALIDATOR_NODE_STATUS_PENDING
 }
 
 // applyPromotion calculates the new validator set for tendermint and ersatz and returns the set of updates to apply to tendermint voting powers.

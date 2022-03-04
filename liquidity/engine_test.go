@@ -229,7 +229,7 @@ func TestInitialDeployFailsWorksLater(t *testing.T) {
 		any, any, any, any, any, any, any,
 	).AnyTimes().Return(num.DecimalFromFloat(0.5))
 
-	newOrders, amendments, err := tng.engine.Update(context.Background(), markPrice, markPrice, fn, []*types.Order{})
+	newOrders, amendments, err := tng.engine.Update(context.Background(), markPrice.ToDecimal(), markPrice.ToDecimal(), fn, []*types.Order{})
 	require.NoError(t, err)
 	require.Len(t, newOrders, 3)
 	require.Len(t, amendments, 0)
@@ -403,6 +403,7 @@ func TestUpdate(t *testing.T) {
 	)
 
 	markPrice := num.NewUint(10)
+	markPriceD := markPrice.ToDecimal()
 
 	fn := func(order *types.PeggedOrder, side types.Side) (*num.Uint, *types.PeggedOrder, error) {
 		retPrice := markPrice.Clone()
@@ -426,20 +427,20 @@ func TestUpdate(t *testing.T) {
 		{ID: "2", Party: party, Price: num.NewUint(11), Size: 1, Side: types.SideSell, Status: types.OrderStatusActive},
 	}
 
-	creates, err := tng.engine.CreateInitialOrders(ctx, markPrice, markPrice, party, orders, fn)
+	creates, err := tng.engine.CreateInitialOrders(ctx, markPriceD, markPriceD, party, orders, fn)
 	require.NoError(t, err)
 	require.Len(t, creates, 3)
 
 	// Manual order satisfies the commitment, LiqOrders should be removed
 	orders[0].Remaining, orders[0].Size = 1000, 1000
 	orders[1].Remaining, orders[1].Size = 1000, 1000
-	newOrders, toCancels, err := tng.engine.Update(ctx, markPrice, markPrice, fn, orders)
+	newOrders, toCancels, err := tng.engine.Update(ctx, markPriceD, markPriceD, fn, orders)
 	require.NoError(t, err)
 	require.Len(t, newOrders, 0)
 	require.Len(t, toCancels[0].OrderIDs, 3)
 	require.Equal(t, toCancels[0].Party, party)
 
-	newOrders, toCancels, err = tng.engine.Update(ctx, markPrice, markPrice, fn, orders)
+	newOrders, toCancels, err = tng.engine.Update(ctx, markPriceD, markPriceD, fn, orders)
 	require.NoError(t, err)
 	require.Len(t, newOrders, 0)
 	require.Len(t, toCancels, 0)
