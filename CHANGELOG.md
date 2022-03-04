@@ -113,6 +113,7 @@
 - [4865](https://github.com/vegaprotocol/vega/issues/4865) - Fix: issue with project board automation action and update commit checker action
 - [4674](https://github.com/vegaprotocol/vega/issues/4674) - Add Ethereum events reconciliation for `multisig control`
 - [4886](https://github.com/vegaprotocol/vega/pull/4886) - Add more integration tests around order amends and fees.
+- [4846](https://github.com/vegaprotocol/vega/issues/4846) - Tidying up feature tests in verified folder - part 2 - auction tests
 
 ### 🐛 Fixes
 - [4842](https://github.com/vegaprotocol/vega/pull/4842) - Fix margin balance not being released after close-out.
