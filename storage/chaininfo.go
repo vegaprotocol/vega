@@ -68,11 +68,14 @@ func (c *ChainInfo) SetChainID(chainID string) error {
 			logging.Error(err))
 		c.onCriticalError()
 	}
+	// save the stored chain ID
+	c.storedInfo = &data
 	return err
 }
 
 func (c *ChainInfo) GetChainID() (string, error) {
-	if c.storedInfo != nil {
+	// if the chain ID is non nil and not empty return the cached value
+	if c.storedInfo != nil && len(c.storedInfo.ChainID) > 0 {
 		return c.storedInfo.ChainID, nil
 	}
 
