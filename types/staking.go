@@ -42,7 +42,7 @@ func (s *StakeTotalSupply) IntoProto() *vgproto.StakeTotalSupply {
 }
 
 func (s *StakeTotalSupply) String() string {
-	return s.IntoProto().String()
+	return fmt.Sprintf("StakeTotalSupply: TokenAddress:%v, TotalSupply:%v", s.TokenAddress, s.TotalSupply.String())
 }
 
 func StakeTotalSupplyFromProto(s *vgproto.StakeTotalSupply) (*StakeTotalSupply, error) {
