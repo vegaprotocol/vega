@@ -21,6 +21,7 @@
 - [4881](https://github.com/vegaprotocol/vega/issues/4881) - Set tendermint validators' voting power when loading from snapshot
 - [4882](https://github.com/vegaprotocol/vega/issues/4882) - Fixed tracking of liquidity fee received and added feature tests for the fee based rewards
 - [4898](https://github.com/vegaprotocol/vega/issues/4898) - Add ranking score information to checkpoint and snapshot and emit an event when loaded
+- [4932](https://github.com/vegaprotocol/vega/issues/4932) - Fix the string used for resource id of stake total supply to be stable to fix the replay of non validator node locally
 
 ## 0.49.0
 
