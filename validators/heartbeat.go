@@ -13,7 +13,13 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/txn"
 
+	"github.com/cenkalti/backoff"
 	ecrypto "github.com/ethereum/go-ethereum/crypto"
+)
+
+const (
+	timeToSendHeartbeat   = 500 * time.Second
+	timeBetweenHeartbeats = 1000 * time.Second
 )
 
 // validatorHeartbeatTracker keeps track of heartbeat transactions and their results.
@@ -101,7 +107,7 @@ func (t *Topology) checkAndExpireStaleHeartbeats() {
 		// we consider this validator invalid
 		// arbitrary 500 seconds duration for the validator to send a
 		// heartbeat, that's ~500 blocks a 1 block per sec
-		hbExpired := len(v.heartbeatTracker.expectedNextHash) > 0 && v.heartbeatTracker.expectedNexthashSince.Add(500*time.Second).Before(t.currentTime)
+		hbExpired := len(v.heartbeatTracker.expectedNextHash) > 0 && v.heartbeatTracker.expectedNexthashSince.Add(timeToSendHeartbeat).Before(t.currentTime)
 		if hbExpired {
 			v.heartbeatTracker.recordHeartbeatResult(false)
 		}
@@ -112,7 +118,7 @@ func (t *Topology) getNodesRequiringHB() []string {
 	validatorNeedResend := []string{}
 	for k, vs := range t.validators {
 		if len(vs.heartbeatTracker.expectedNextHash) == 0 &&
-			vs.heartbeatTracker.expectedNexthashSince.Add(1000*time.Second).Before(t.currentTime) &&
+			vs.heartbeatTracker.expectedNexthashSince.Add(timeBetweenHeartbeats).Before(t.currentTime) &&
 			vs.data.FromEpoch <= t.epochSeq {
 			validatorNeedResend = append(validatorNeedResend, k)
 		}
@@ -184,13 +190,18 @@ func (t *Topology) prepareHeartbeat(blockHash string) *commandspb.ValidatorHeart
 
 // sendHeartbeat sends the hearbeat transaction.
 func (t *Topology) sendHeartbeat(ctx context.Context, hb *commandspb.ValidatorHeartbeat) {
+	bo := backoff.NewExponentialBackOff()
+	bo.MaxElapsedTime = timeToSendHeartbeat
+	bo.InitialInterval = 1 * time.Second
+
+	t.log.Debug("sending heartbeat", logging.String("nodeID", hb.NodeId))
 	t.cmd.CommandSync(ctx, txn.ValidatorHeartbeatCommand, hb, func(err error) {
 		if err != nil {
 			t.log.Error("couldn't send validator heartbeat", logging.Error(err))
-			// we do a simple call again for it
-			t.sendHeartbeat(ctx, hb)
+			return
 		}
-	})
+		t.log.Debug("heartbeat sent", logging.String("nodeID", hb.NodeId))
+	}, bo)
 }
 
 // selectValidatorForHeartbeat selects a validator for sending heartbeat transaction.

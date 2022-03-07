@@ -13,6 +13,7 @@ import (
 	"code.vegaprotocol.io/vega/nodewallets/vega"
 	"code.vegaprotocol.io/vega/txn"
 
+	"github.com/cenkalti/backoff"
 	"github.com/golang/protobuf/proto"
 	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
 )
@@ -59,19 +60,20 @@ func (c *Commander) SetChain(bc *blockchain.Client) {
 }
 
 // Command - send command to chain.
-func (c *Commander) Command(ctx context.Context, cmd txn.Command, payload proto.Message, done func(error)) {
-	c.command(ctx, cmd, payload, done, api.SubmitTransactionRequest_TYPE_ASYNC)
+// Note: beware when passing in an exponential back off since the done function may be called many times.
+func (c *Commander) Command(ctx context.Context, cmd txn.Command, payload proto.Message, done func(error), bo *backoff.ExponentialBackOff) {
+	c.command(ctx, cmd, payload, done, api.SubmitTransactionRequest_TYPE_ASYNC, bo)
 }
 
-func (c *Commander) CommandSync(ctx context.Context, cmd txn.Command, payload proto.Message, done func(error)) {
-	c.command(ctx, cmd, payload, done, api.SubmitTransactionRequest_TYPE_SYNC)
+func (c *Commander) CommandSync(ctx context.Context, cmd txn.Command, payload proto.Message, done func(error), bo *backoff.ExponentialBackOff) {
+	c.command(ctx, cmd, payload, done, api.SubmitTransactionRequest_TYPE_SYNC, bo)
 }
 
-func (c *Commander) command(_ context.Context, cmd txn.Command, payload proto.Message, done func(error), ty api.SubmitTransactionRequest_Type) {
+func (c *Commander) command(_ context.Context, cmd txn.Command, payload proto.Message, done func(error), ty api.SubmitTransactionRequest_Type, bo *backoff.ExponentialBackOff) {
 	if c.bc == nil {
 		panic("commander was instantiated without a chain")
 	}
-	go func() {
+	f := func() error {
 		ctx, cfunc := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cfunc()
 		inputData := commands.NewInputData(c.bstats.Height())
@@ -100,7 +102,15 @@ func (c *Commander) command(_ context.Context, cmd txn.Command, payload proto.Me
 		if done != nil {
 			done(err)
 		}
-	}()
+
+		return err
+	}
+
+	if bo != nil {
+		go backoff.Retry(f, bo)
+	} else {
+		go f()
+	}
 }
 
 func (c *Commander) sign(marshalledData []byte) (*commandspb.Signature, error) {

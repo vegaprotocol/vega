@@ -235,8 +235,8 @@ func (e *Engine) EnableAsset(ctx context.Context, asset types.Asset) error {
 		}
 		e.accs[externalID] = externalAcc
 
-		// This account originally wan't added to the app-state hash of accounts because it can always be "recontructed" from
-		// the withdrawl/deposits in banking. For snapshotting we we need to restore it and so instead of trying to make
+		// This account originally wan't added to the app-state hash of accounts because it can always be "reconstructed" from
+		// the withdrawal/deposits in banking. For snapshotting we we need to restore it and so instead of trying to make
 		// something thats already complicated more complex. we're just going to include it in the apphash which then gets
 		// included in the snapshot.
 		// see https://github.com/vegaprotocol/vega/pull/2745 for more information

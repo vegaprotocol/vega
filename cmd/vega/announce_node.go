@@ -97,7 +97,7 @@ func (opts *AnnounceNodeCmd) Execute(args []string) error {
 				ch <- fmt.Errorf("failed to send restore command: %v", err)
 			}
 			close(ch)
-		})
+		}, nil)
 
 	err = <-ch
 	if err != nil {
