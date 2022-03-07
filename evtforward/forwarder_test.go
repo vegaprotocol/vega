@@ -97,7 +97,7 @@ func testForwardSuccessNodeIsForwarder(t *testing.T) {
 	evtfwd := getTestEvtFwd(t)
 	defer evtfwd.ctrl.Finish()
 	evt := getTestChainEvent("some")
-	evtfwd.cmd.EXPECT().Command(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
+	evtfwd.cmd.EXPECT().Command(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 	evtfwd.top.EXPECT().AllNodeIDs().Times(1).Return(testAllPubKeys)
 	// set the time so the hash match our current node
 	evtfwd.cb(context.Background(), time.Unix(3, 0))
@@ -109,7 +109,7 @@ func testForwardFailureDuplicateEvent(t *testing.T) {
 	evtfwd := getTestEvtFwd(t)
 	defer evtfwd.ctrl.Finish()
 	evt := getTestChainEvent("some")
-	evtfwd.cmd.EXPECT().Command(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
+	evtfwd.cmd.EXPECT().Command(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 	evtfwd.top.EXPECT().AllNodeIDs().Times(1).Return(testAllPubKeys)
 	// set the time so the hash match our current node
 	evtfwd.cb(context.Background(), time.Unix(12, 0))

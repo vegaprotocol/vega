@@ -122,7 +122,7 @@ func setupValidators(t *testing.T, offset int, numValidators int, startCalc func
 			return err == nil && ID >= 0 && ID < len(allNodeIds)
 		}).AnyTimes()
 		v.topology.EXPECT().AllNodeIDs().Return(allNodeIds).AnyTimes()
-		v.commander.EXPECT().Command(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
+		v.commander.EXPECT().Command(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 	}
 	return validators
 }

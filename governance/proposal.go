@@ -9,14 +9,17 @@ import (
 
 // ProposalParameters stores proposal specific parameters.
 type ProposalParameters struct {
-	MinClose              time.Duration
-	MaxClose              time.Duration
-	MinEnact              time.Duration
-	MaxEnact              time.Duration
-	RequiredParticipation num.Decimal
-	RequiredMajority      num.Decimal
-	MinProposerBalance    *num.Uint
-	MinVoterBalance       *num.Uint
+	MinClose                time.Duration
+	MaxClose                time.Duration
+	MinEnact                time.Duration
+	MaxEnact                time.Duration
+	RequiredParticipation   num.Decimal
+	RequiredMajority        num.Decimal
+	MinProposerBalance      *num.Uint
+	MinVoterBalance         *num.Uint
+	RequiredParticipationLP num.Decimal
+	RequiredMajorityLP      num.Decimal
+	MinEquityLikeShare      num.Decimal
 }
 
 // ToEnact wraps the proposal in a type that has a convenient interface
@@ -99,8 +102,8 @@ func (t *ToEnact) Proposal() *types.Proposal {
 
 // ToSubmit wraps the proposal in a type that has a convenient interface
 // to quickly work out what change we're dealing with, and get the data
-// This cover every kind of proposal which requires action after a
-// a proposal is submitted.
+// This cover every kind of proposal which requires action after a proposal
+// is submitted.
 type ToSubmit struct {
 	p *types.Proposal
 	m *ToSubmitNewMarket

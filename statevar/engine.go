@@ -15,6 +15,7 @@ import (
 	"code.vegaprotocol.io/vega/types/statevar"
 	"code.vegaprotocol.io/vega/validators"
 
+	"github.com/cenkalti/backoff"
 	"github.com/golang/protobuf/proto"
 )
 
@@ -25,9 +26,9 @@ var (
 	chars               = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
 )
 
-// go:generate go run github.com/golang/mock/mockgen -destination -destination mocks/commander_mock.go -package mocks code.vegaprotocol.io/vega/statevar Commander.
+// go:generate go run github.com/golang/mock/mockgen -destination mocks/commander_mock.go -package mocks code.vegaprotocol.io/vega/statevar Commander.
 type Commander interface {
-	Command(ctx context.Context, cmd txn.Command, payload proto.Message, f func(error))
+	Command(ctx context.Context, cmd txn.Command, payload proto.Message, f func(error), bo *backoff.ExponentialBackOff)
 }
 
 // Broker send events.

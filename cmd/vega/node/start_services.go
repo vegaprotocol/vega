@@ -148,12 +148,12 @@ func (n *NodeCommand) startServices(_ []string) (err error) {
 	)
 
 	if n.conf.Blockchain.ChainProvider == blockchain.ProviderNullChain {
-		// Use staking-loop to pretend a dummy builtin asssets deposited with the faucet was staked
+		// Use staking-loop to pretend a dummy builtin assets deposited with the faucet was staked
 		stakingLoop := nullchain.NewStakingLoop(n.collateral, n.assets)
-		n.governance = governance.NewEngine(n.Log, n.conf.Governance, stakingLoop, n.broker, n.assets, n.witness, n.netParams, now)
+		n.governance = governance.NewEngine(n.Log, n.conf.Governance, stakingLoop, n.broker, n.assets, n.witness, n.executionEngine, n.netParams, now)
 		n.delegation = delegation.New(n.Log, n.conf.Delegation, n.broker, n.topology, stakingLoop, n.epochService, n.timeService)
 	} else {
-		n.governance = governance.NewEngine(n.Log, n.conf.Governance, n.stakingAccounts, n.broker, n.assets, n.witness, n.netParams, now)
+		n.governance = governance.NewEngine(n.Log, n.conf.Governance, n.stakingAccounts, n.broker, n.assets, n.witness, n.executionEngine, n.netParams, now)
 		n.delegation = delegation.New(n.Log, n.conf.Delegation, n.broker, n.topology, n.stakingAccounts, n.epochService, n.timeService)
 	}
 

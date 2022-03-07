@@ -72,7 +72,6 @@ func (s *Svc) LoadState(ctx context.Context, payload *types.Payload) ([]types.St
 
 		s.readyToStartNewEpoch = snap.ReadyToStartNewEpoch
 		s.readyToEndEpoch = snap.ReadyToEndEpoch
-		s.length = s.epoch.ExpireTime.Sub(s.epoch.StartTime)
 
 		// notify all the engines that store epoch data about the current restored epoch
 		s.notifyRestore(ctx, s.epoch)

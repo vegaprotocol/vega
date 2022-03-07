@@ -9,6 +9,7 @@ import (
 	reflect "reflect"
 
 	txn "code.vegaprotocol.io/vega/txn"
+	backoff "github.com/cenkalti/backoff"
 	gomock "github.com/golang/mock/gomock"
 	protoiface "google.golang.org/protobuf/runtime/protoiface"
 )
@@ -37,25 +38,25 @@ func (m *MockCommander) EXPECT() *MockCommanderMockRecorder {
 }
 
 // Command mocks base method.
-func (m *MockCommander) Command(arg0 context.Context, arg1 txn.Command, arg2 protoiface.MessageV1, arg3 func(error)) {
+func (m *MockCommander) Command(arg0 context.Context, arg1 txn.Command, arg2 protoiface.MessageV1, arg3 func(error), arg4 *backoff.ExponentialBackOff) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "Command", arg0, arg1, arg2, arg3)
+	m.ctrl.Call(m, "Command", arg0, arg1, arg2, arg3, arg4)
 }
 
 // Command indicates an expected call of Command.
-func (mr *MockCommanderMockRecorder) Command(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
+func (mr *MockCommanderMockRecorder) Command(arg0, arg1, arg2, arg3, arg4 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Command", reflect.TypeOf((*MockCommander)(nil).Command), arg0, arg1, arg2, arg3)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Command", reflect.TypeOf((*MockCommander)(nil).Command), arg0, arg1, arg2, arg3, arg4)
 }
 
 // CommandSync mocks base method.
-func (m *MockCommander) CommandSync(arg0 context.Context, arg1 txn.Command, arg2 protoiface.MessageV1, arg3 func(error)) {
+func (m *MockCommander) CommandSync(arg0 context.Context, arg1 txn.Command, arg2 protoiface.MessageV1, arg3 func(error), arg4 *backoff.ExponentialBackOff) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "CommandSync", arg0, arg1, arg2, arg3)
+	m.ctrl.Call(m, "CommandSync", arg0, arg1, arg2, arg3, arg4)
 }
 
 // CommandSync indicates an expected call of CommandSync.
-func (mr *MockCommanderMockRecorder) CommandSync(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
+func (mr *MockCommanderMockRecorder) CommandSync(arg0, arg1, arg2, arg3, arg4 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CommandSync", reflect.TypeOf((*MockCommander)(nil).CommandSync), arg0, arg1, arg2, arg3)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CommandSync", reflect.TypeOf((*MockCommander)(nil).CommandSync), arg0, arg1, arg2, arg3, arg4)
 }

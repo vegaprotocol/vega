@@ -12,6 +12,7 @@ import (
 	"code.vegaprotocol.io/vega/txn"
 	"code.vegaprotocol.io/vega/types/num"
 
+	"github.com/cenkalti/backoff"
 	"github.com/golang/protobuf/proto"
 	"github.com/pkg/errors"
 )
@@ -45,8 +46,8 @@ type Broker interface {
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/commander_mock.go -package mocks code.vegaprotocol.io/vega/notary Commander
 type Commander interface {
-	Command(ctx context.Context, cmd txn.Command, payload proto.Message, f func(error))
-	CommandSync(ctx context.Context, cmd txn.Command, payload proto.Message, f func(error))
+	Command(ctx context.Context, cmd txn.Command, payload proto.Message, f func(error), bo *backoff.ExponentialBackOff)
+	CommandSync(ctx context.Context, cmd txn.Command, payload proto.Message, f func(error), bo *backoff.ExponentialBackOff)
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/time_ticker_mock.go -package mocks code.vegaprotocol.io/vega/notary TimeTicker
@@ -242,7 +243,7 @@ func (n *Notary) send(id string, kind commandspb.NodeSignatureKind, signature []
 		// just a log is enough here, the transaction will be retried
 		// later
 		n.log.Error("could not send the transaction to tendermint", logging.Error(err))
-	})
+	}, nil)
 }
 
 func (n *Notary) votePassed(votesCount, topLen int) bool {
