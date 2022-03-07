@@ -545,7 +545,7 @@ func (e *Engine) validateOpenProposal(proposal *types.Proposal) (types.ProposalE
 			logging.Time("provided", closeTime),
 			logging.String("id", proposal.ID))
 		return types.ProposalErrorCloseTimeTooSoon,
-			fmt.Errorf("proposal closing time too soon, expected > %v, got %v", minCloseTime, closeTime)
+			fmt.Errorf("proposal closing time too soon, expected > %v, got %v", minCloseTime.UTC(), closeTime.UTC())
 	}
 
 	maxCloseTime := e.currentTime.Add(params.MaxClose)
@@ -555,7 +555,7 @@ func (e *Engine) validateOpenProposal(proposal *types.Proposal) (types.ProposalE
 			logging.Time("provided", closeTime),
 			logging.String("id", proposal.ID))
 		return types.ProposalErrorCloseTimeTooLate,
-			fmt.Errorf("proposal closing time too late, expected < %v, got %v", maxCloseTime, closeTime)
+			fmt.Errorf("proposal closing time too late, expected < %v, got %v", maxCloseTime.UTC(), closeTime.UTC())
 	}
 
 	enactTime := time.Unix(proposal.Terms.EnactmentTimestamp, 0)
@@ -566,7 +566,7 @@ func (e *Engine) validateOpenProposal(proposal *types.Proposal) (types.ProposalE
 			logging.Time("provided", enactTime),
 			logging.String("id", proposal.ID))
 		return types.ProposalErrorEnactTimeTooSoon,
-			fmt.Errorf("proposal enactment time too soon, expected > %v, got %v", minEnactTime, enactTime)
+			fmt.Errorf("proposal enactment time too soon, expected > %v, got %v", minEnactTime.UTC(), enactTime.UTC())
 	}
 
 	maxEnactTime := e.currentTime.Add(params.MaxEnact)
@@ -576,7 +576,7 @@ func (e *Engine) validateOpenProposal(proposal *types.Proposal) (types.ProposalE
 			logging.Time("provided", enactTime),
 			logging.String("id", proposal.ID))
 		return types.ProposalErrorEnactTimeTooLate,
-			fmt.Errorf("proposal enactment time too late, expected < %v, got %v", maxEnactTime, enactTime)
+			fmt.Errorf("proposal enactment time too late, expected < %v, got %v", maxEnactTime.UTC(), enactTime.UTC())
 	}
 
 	if e.isTwoStepsProposal(proposal) {
@@ -587,7 +587,7 @@ func (e *Engine) validateOpenProposal(proposal *types.Proposal) (types.ProposalE
 				logging.Time("validation-time", validationTime),
 				logging.String("id", proposal.ID))
 			return types.ProposalErrorIncompatibleTimestamps,
-				fmt.Errorf("proposal closing time cannot be before validation time, expected > %v got %v", validationTime, closeTime)
+				fmt.Errorf("proposal closing time cannot be before validation time, expected > %v got %v", validationTime.UTC(), closeTime.UTC())
 		}
 	}
 
@@ -597,7 +597,7 @@ func (e *Engine) validateOpenProposal(proposal *types.Proposal) (types.ProposalE
 			logging.Time("closing-time", closeTime),
 			logging.String("id", proposal.ID))
 		return types.ProposalErrorIncompatibleTimestamps,
-			fmt.Errorf("proposal enactment time cannot be before closing time, expected > %v got %v", closeTime, enactTime)
+			fmt.Errorf("proposal enactment time cannot be before closing time, expected > %v got %v", closeTime.UTC(), enactTime.UTC())
 	}
 
 	proposerTokens, err := getGovernanceTokens(e.accs, proposal.Party)
