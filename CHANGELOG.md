@@ -9,6 +9,15 @@
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 ### 🛠 Improvements
+- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+
+### 🐛 Fixes
+- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+
+
+## 0.49.1
+
+### 🛠 Improvements
 - [4895](https://github.com/vegaprotocol/vega/issues/4895) - Emit validators signature when a validator is added or remove from the set
 - [4901](https://github.com/vegaprotocol/vega/issues/4901) - Update the decimal library
 - [4906](https://github.com/vegaprotocol/vega/issues/4906) - Get rid of unnecessary `ToDecimal` conversions (no functional change)
