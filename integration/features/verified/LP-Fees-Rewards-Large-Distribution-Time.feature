@@ -142,6 +142,8 @@ Feature: Test liquidity provider reward distribution; Check what happens when di
 
     Then the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/MAR22"
 
+    Then debug orders
+
     And the following trades should be executed:
       | buyer   | price | size | seller |
       | party1  | 951   | 15   | lp1    |

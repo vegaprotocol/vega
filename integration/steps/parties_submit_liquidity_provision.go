@@ -2,6 +2,7 @@ package steps
 
 import (
 	"context"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"sort"
@@ -95,8 +96,8 @@ func PartiesSubmitLiquidityProvision(exec Execution, table *godog.Table) error {
 				Buys:             lp.Buys,
 				Reference:        lp.Reference,
 			}
-
-			if err := exec.SubmitLiquidityProvision(context.Background(), sub, party, id, crypto.RandomHash()); err != nil {
+			deterministicId := hex.EncodeToString(crypto.Hash([]byte(id + party + lp.MarketID)))
+			if err := exec.SubmitLiquidityProvision(context.Background(), sub, party, id, deterministicId); err != nil {
 				return errSubmittingLiquidityProvision(sub, party, id, err)
 			}
 		}
