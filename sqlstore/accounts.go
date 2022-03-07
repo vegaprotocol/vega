@@ -106,3 +106,24 @@ func (as *Accounts) Query(filter entities.AccountFilter) ([]entities.Account, er
 
 	return accs, nil
 }
+
+func (as *Accounts) QueryBalances(ctx context.Context, filter entities.AccountFilter, pagination entities.Pagination) ([]entities.AccountBalance, error) {
+	query, args := filterAccountBalancesQuery(filter, pagination)
+	accountBalances := make([]entities.AccountBalance, 0)
+
+	timeoutCtx, cancel := context.WithTimeout(ctx, as.conf.Timeout.Duration)
+	defer cancel()
+
+	rows, err := as.pool.Query(timeoutCtx, query, args...)
+	defer rows.Close()
+
+	if err != nil {
+		return accountBalances, fmt.Errorf("querying account balances: %w", err)
+	}
+
+	if err = pgxscan.ScanAll(&accountBalances, rows); err != nil {
+		return accountBalances, fmt.Errorf("parsing account balances: %w", err)
+	}
+
+	return accountBalances, nil
+}

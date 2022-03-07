@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"encoding/hex"
 	"errors"
 
 	"code.vegaprotocol.io/data-node/entities"
@@ -14,9 +15,10 @@ import (
 
 type tradingDataDelegator struct {
 	*tradingDataService
-	orderStore *sqlstore.Orders
-	tradeStore *sqlstore.Trades
-	assetStore *sqlstore.Assets
+	orderStore   *sqlstore.Orders
+	tradeStore   *sqlstore.Trades
+	assetStore   *sqlstore.Assets
+	accountStore *sqlstore.Accounts
 }
 
 var defaultEntityPagination = entities.Pagination{
@@ -231,5 +233,186 @@ func (t *tradingDataDelegator) Assets(ctx context.Context, _ *protoapi.AssetsReq
 	}
 	return &protoapi.AssetsResponse{
 		Assets: out,
+	}, nil
+}
+
+func isValidAccountType(accountType vega.AccountType, validAccountTypes ...vega.AccountType) bool {
+	for _, vt := range validAccountTypes {
+		if accountType == vt {
+			return true
+		}
+	}
+
+	return false
+}
+
+func (t *tradingDataDelegator) PartyAccounts(ctx context.Context, req *protoapi.PartyAccountsRequest) (*protoapi.PartyAccountsResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("PartyAccounts_SQL")()
+
+	// This is just nicer to read and update if the list of valid account types change than multiple AND statements
+	if !isValidAccountType(req.Type, vega.AccountType_ACCOUNT_TYPE_GENERAL, vega.AccountType_ACCOUNT_TYPE_MARGIN,
+		vega.AccountType_ACCOUNT_TYPE_LOCK_WITHDRAW, vega.AccountType_ACCOUNT_TYPE_BOND, vega.AccountType_ACCOUNT_TYPE_UNSPECIFIED) {
+		return nil, errors.New("invalid type for query, only GENERAL, MARGIN, LOCK_WITHDRAW AND BOND accounts for a party supported")
+	}
+
+	pagination := entities.Pagination{}
+
+	filter := entities.AccountFilter{
+		Asset:        toAccountsFilterAsset(req.Asset),
+		Parties:      toAccountsFilterParties(req.PartyId),
+		AccountTypes: toAccountsFilterAccountTypes(req.Type),
+		Markets:      toAccountsFilterMarkets(req.MarketId),
+	}
+
+	accountBalances, err := t.accountStore.QueryBalances(ctx, filter, pagination)
+	if err != nil {
+		return nil, apiError(codes.Internal, ErrAccountServiceGetPartyAccounts, err)
+	}
+
+	return &protoapi.PartyAccountsResponse{
+		Accounts: accountBalancesToProtoAccountList(accountBalances),
+	}, nil
+}
+
+func toAccountsFilterAccountTypes(accountTypes ...vega.AccountType) []vega.AccountType {
+	accountTypesProto := make([]vega.AccountType, 0)
+
+	for _, accountType := range accountTypes {
+		if accountType == vega.AccountType_ACCOUNT_TYPE_UNSPECIFIED {
+			return nil
+		}
+
+		accountTypesProto = append(accountTypesProto, accountType)
+	}
+
+	return accountTypesProto
+}
+
+func accountBalancesToProtoAccountList(accounts []entities.AccountBalance) []*vega.Account {
+	accountsProto := make([]*vega.Account, 0, len(accounts))
+
+	for _, acc := range accounts {
+		accountsProto = append(accountsProto, acc.ToProto())
+	}
+
+	return accountsProto
+}
+
+func toAccountsFilterAsset(assetID string) entities.Asset {
+	asset := entities.Asset{}
+
+	if len(assetID) > 0 {
+		assetIDBytes, _ := hex.DecodeString(assetID)
+		asset.ID = assetIDBytes
+	}
+
+	return asset
+}
+
+func toAccountsFilterParties(partyIDs ...string) []entities.Party {
+	parties := make([]entities.Party, 0, len(partyIDs))
+	for _, id := range partyIDs {
+		if id == "" {
+			continue
+		}
+
+		idBytes, err := hex.DecodeString(id)
+
+		if err != nil {
+			continue
+		}
+
+		party := entities.Party{
+			ID: idBytes,
+		}
+		parties = append(parties, party)
+	}
+
+	return parties
+}
+
+func toAccountsFilterMarkets(marketIDs ...string) []entities.Market {
+	markets := make([]entities.Market, 0, len(marketIDs))
+	for _, id := range marketIDs {
+		if id == "" {
+			continue
+		}
+		idBytes, err := hex.DecodeString(id)
+		if err != nil {
+			continue
+		}
+
+		market := entities.Market{
+			ID: idBytes,
+		}
+		markets = append(markets, market)
+	}
+
+	return markets
+}
+
+func (t *tradingDataDelegator) MarketAccounts(ctx context.Context,
+	req *protoapi.MarketAccountsRequest) (*protoapi.MarketAccountsResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("MarketAccounts")()
+
+	filter := entities.AccountFilter{
+		Asset:   toAccountsFilterAsset(req.Asset),
+		Markets: toAccountsFilterMarkets(req.MarketId),
+		AccountTypes: toAccountsFilterAccountTypes(
+			vega.AccountType_ACCOUNT_TYPE_INSURANCE,
+			vega.AccountType_ACCOUNT_TYPE_FEES_LIQUIDITY,
+		),
+	}
+
+	pagination := entities.Pagination{}
+
+	accountBalances, err := t.accountStore.QueryBalances(ctx, filter, pagination)
+	if err != nil {
+		return nil, apiError(codes.Internal, ErrAccountServiceGetMarketAccounts, err)
+	}
+
+	return &protoapi.MarketAccountsResponse{
+		Accounts: accountBalancesToProtoAccountList(accountBalances),
+	}, nil
+}
+
+func (t *tradingDataDelegator) FeeInfrastructureAccounts(ctx context.Context,
+	req *protoapi.FeeInfrastructureAccountsRequest) (*protoapi.FeeInfrastructureAccountsResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("FeeInfrastructureAccounts")()
+
+	filter := entities.AccountFilter{
+		Asset: toAccountsFilterAsset(req.Asset),
+		AccountTypes: toAccountsFilterAccountTypes(
+			vega.AccountType_ACCOUNT_TYPE_FEES_INFRASTRUCTURE,
+		),
+	}
+	pagination := entities.Pagination{}
+
+	accountBalances, err := t.accountStore.QueryBalances(ctx, filter, pagination)
+	if err != nil {
+		return nil, apiError(codes.Internal, ErrAccountServiceGetFeeInfrastructureAccounts, err)
+	}
+	return &protoapi.FeeInfrastructureAccountsResponse{
+		Accounts: accountBalancesToProtoAccountList(accountBalances),
+	}, nil
+}
+
+func (t *tradingDataDelegator) GlobalRewardPoolAccounts(ctx context.Context,
+	req *protoapi.GlobalRewardPoolAccountsRequest) (*protoapi.GlobalRewardPoolAccountsResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("GloabRewardPoolAccounts")()
+	filter := entities.AccountFilter{
+		Asset: toAccountsFilterAsset(req.Asset),
+		AccountTypes: toAccountsFilterAccountTypes(
+			vega.AccountType_ACCOUNT_TYPE_GLOBAL_REWARD,
+		),
+	}
+	pagination := entities.Pagination{}
+
+	accountBalances, err := t.accountStore.QueryBalances(ctx, filter, pagination)
+	if err != nil {
+		return nil, apiError(codes.Internal, ErrAccountServiceGetGlobalRewardPoolAccounts, err)
+	}
+	return &protoapi.GlobalRewardPoolAccountsResponse{
+		Accounts: accountBalancesToProtoAccountList(accountBalances),
 	}, nil
 }

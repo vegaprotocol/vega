@@ -334,6 +334,7 @@ func (l *NodeCommand) createGRPCServer(config api.Config, useSQLStores bool) *ap
 		l.marketDataStoreSQL,
 		l.tradeStoreSQL,
 		l.assetStoreSQL,
+		l.accountStoreSQL,
 	)
 	return grpcServer
 }

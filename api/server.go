@@ -90,6 +90,7 @@ type GRPCServer struct {
 	marketDataStore    *sqlstore.MarketData
 	tradeStore         *sqlstore.Trades
 	assetStore         *sqlstore.Assets
+	accountStore       *sqlstore.Accounts
 
 	eventObserver *eventObserver
 
@@ -136,6 +137,7 @@ func NewGRPCServer(
 	marketDataStore *sqlstore.MarketData,
 	tradeStore *sqlstore.Trades,
 	assertStore *sqlstore.Assets,
+	accountStore *sqlstore.Accounts,
 ) *GRPCServer {
 	// setup logger
 	log = log.Named(namedLogger)
@@ -179,6 +181,7 @@ func NewGRPCServer(
 		marketDataStore:         marketDataStore,
 		tradeStore:              tradeStore,
 		assetStore:              assertStore,
+		accountStore:            accountStore,
 		eventObserver: &eventObserver{
 			log:          log,
 			eventService: eventService,
@@ -327,6 +330,7 @@ func (g *GRPCServer) Start(ctx context.Context, lis net.Listener) error {
 			orderStore:         g.orderStore,
 			tradeStore:         g.tradeStore,
 			assetStore:         g.assetStore,
+			accountStore:       g.accountStore,
 		}
 	} else {
 		g.tradingDataService = tradingDataSvc

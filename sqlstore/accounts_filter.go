@@ -42,3 +42,57 @@ func filterAccountsQuery(af entities.AccountFilter) (string, []interface{}) {
 
 	return query, args
 }
+
+func filterAccountBalancesQuery(af entities.AccountFilter, pagination entities.Pagination) (string, []interface{}) {
+	var args []interface{}
+
+	where := ""
+	and := ""
+
+	if len(af.Asset.ID) != 0 {
+		where = fmt.Sprintf("ACCOUNTS.asset_id=%s", nextBindVar(&args, af.Asset.ID))
+		and = " AND "
+	}
+
+	if len(af.Parties) > 0 {
+		partyIDs := make([][]byte, len(af.Parties))
+		for i, party := range af.Parties {
+			partyIDs[i] = party.ID
+		}
+		where = fmt.Sprintf(`%s%sACCOUNTS.party_id=ANY(%s)`, where, and, nextBindVar(&args, partyIDs))
+		if and == "" {
+			and = " AND "
+		}
+	}
+
+	if len(af.AccountTypes) > 0 {
+		where = fmt.Sprintf(`%s%stype=ANY(%s)`, where, and, nextBindVar(&args, af.AccountTypes))
+		if and == "" {
+			and = " AND "
+		}
+	}
+
+	if len(af.Markets) > 0 {
+		marketIDs := make([][]byte, len(af.Markets))
+		for i, market := range af.Markets {
+			marketIDs[i] = market.ID
+		}
+
+		where = fmt.Sprintf(`%s%sACCOUNTS.market_id=ANY(%s)`, where, and, nextBindVar(&args, marketIDs))
+	}
+
+	query := `SELECT DISTINCT ON (ACCOUNTS.id) ACCOUNTS.id, ACCOUNTS.party_id, ACCOUNTS.asset_id, ACCOUNTS.market_id, ACCOUNTS.type, 
+				BALANCES.balance, BALANCES.vega_time
+	          FROM ACCOUNTS JOIN BALANCES ON ACCOUNTS.id = BALANCES.account_id `
+
+	if where != "" {
+		query = fmt.Sprintf("%s WHERE %s", query, where)
+	}
+
+	// We are adding a custom ordering to ensure we're getting the latest balances for each account from our query
+	query = fmt.Sprintf("%s ORDER BY ACCOUNTS.id, BALANCES.vega_time DESC", query)
+
+	// and we're calling the order and paginate query method so that we can paginate later as it is a requirement for
+	// data-node API v2, but pass no ordering columns as we've already defined the ordering we want for this query.
+	return orderAndPaginateQuery(query, nil, pagination, args...)
+}
