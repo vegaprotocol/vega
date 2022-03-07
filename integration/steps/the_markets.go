@@ -61,7 +61,7 @@ func enableMarketAssets(markets []types.Market, collateralEngine *collateral.Eng
 		err := collateralEngine.EnableAsset(context.Background(), types.Asset{
 			ID: assetToEnable,
 			Details: &types.AssetDetails{
-				Quantum: num.Zero(),
+				Quantum: num.DecimalZero(),
 				Symbol:  assetToEnable,
 			},
 		})
@@ -161,9 +161,9 @@ func newMarket(config *market.Config, row marketRow) types.Market {
 		LiquidityMonitoringParameters: &types.LiquidityMonitoringParameters{
 			TargetStakeParameters: &types.TargetStakeParameters{
 				TimeWindow:    3600,
-				ScalingFactor: num.NewDecimalFromFloat(10),
+				ScalingFactor: num.DecimalFromInt64(10),
 			},
-			TriggeringRatio: num.NewDecimalFromFloat(0),
+			TriggeringRatio: num.DecimalFromInt64(0),
 		},
 	}
 

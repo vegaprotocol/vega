@@ -2,13 +2,12 @@ module code.vegaprotocol.io/vega
 
 go 1.17
 
-
 require (
 	code.vegaprotocol.io/oracles-relay v0.0.0-20210201140234-f047e1bf6df3
-	code.vegaprotocol.io/protos v0.49.1-0.20220301143139-21f9a7a056b6
+	code.vegaprotocol.io/protos v0.49.1
 	code.vegaprotocol.io/quant v0.2.5
 	code.vegaprotocol.io/shared v0.0.0-20220202150846-b6aba31dcdb0
-	code.vegaprotocol.io/vegawallet v0.13.0
+	code.vegaprotocol.io/vegawallet v0.13.1
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/cenkalti/backoff v2.2.1+incompatible
 	github.com/cenkalti/backoff/v4 v4.1.2 // indirect
@@ -158,5 +157,5 @@ require (
 replace (
 	github.com/ethereum/go-ethereum => github.com/vegaprotocol/go-ethereum v0.0.0-20220125130820-eb1d3928a97e
 	// so we can use our own updates
-	github.com/shopspring/decimal => github.com/vegaprotocol/decimal v1.2.1-0.20210705145732-aaa563729a0a
+	github.com/shopspring/decimal => github.com/vegaprotocol/decimal v1.3.1-uint256
 )

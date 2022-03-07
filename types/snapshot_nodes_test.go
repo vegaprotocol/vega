@@ -33,7 +33,7 @@ func getDummyData() *types.Chunk {
 							Symbol:      "AST",
 							TotalSupply: num.Zero(),
 							Decimals:    0,
-							Quantum:     num.Zero(),
+							Quantum:     num.DecimalZero(),
 							Source: &types.AssetDetailsBuiltinAsset{
 								BuiltinAsset: &types.BuiltinAsset{
 									MaxFaucetAmountMint: num.Zero(),
@@ -55,7 +55,7 @@ func getDummyData() *types.Chunk {
 							Symbol:      "AS2",
 							TotalSupply: num.Zero(),
 							Decimals:    0,
-							Quantum:     num.Zero(),
+							Quantum:     num.DecimalZero(),
 							Source: &types.AssetDetailsBuiltinAsset{
 								BuiltinAsset: &types.BuiltinAsset{
 									MaxFaucetAmountMint: num.Zero(),
@@ -163,7 +163,7 @@ func getDummyData() *types.Chunk {
 							Symbol:      "AST",
 							TotalSupply: num.Zero(),
 							Decimals:    0,
-							Quantum:     num.Zero(),
+							Quantum:     num.DecimalZero(),
 							Source: &types.AssetDetailsBuiltinAsset{
 								BuiltinAsset: &types.BuiltinAsset{
 									MaxFaucetAmountMint: num.Zero(),
@@ -259,7 +259,7 @@ func getDummyData() *types.Chunk {
 											Symbol:      "FO2",
 											TotalSupply: num.NewUint(1000000),
 											Decimals:    5,
-											Quantum:     num.NewUint(10),
+											Quantum:     num.DecimalFromFloat(10),
 											Source: &types.AssetDetailsBuiltinAsset{
 												BuiltinAsset: &types.BuiltinAsset{
 													MaxFaucetAmountMint: num.NewUint(1),
@@ -310,7 +310,7 @@ func getDummyData() *types.Chunk {
 											Symbol:      "FOO",
 											TotalSupply: num.NewUint(1000000),
 											Decimals:    5,
-											Quantum:     num.NewUint(10),
+											Quantum:     num.DecimalFromFloat(10),
 											Source: &types.AssetDetailsBuiltinAsset{
 												BuiltinAsset: &types.BuiltinAsset{
 													MaxFaucetAmountMint: num.NewUint(1),

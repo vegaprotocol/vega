@@ -137,16 +137,46 @@ func (es *EquityShares) equity(id string) (num.Decimal, error) {
 	return num.DecimalZero(), fmt.Errorf("party %s has no stake", id)
 }
 
-// Shares returns the ratio of equity for a given party.
-func (es *EquityShares) Shares(undeployed map[string]struct{}) map[string]num.Decimal {
+// AllShares returns the ratio of equity for each party on the market.
+func (es *EquityShares) AllShares() map[string]num.Decimal {
+	return es.SharesExcept(map[string]struct{}{})
+}
+
+// SharesFromParty returns the equity-like shares of a given party on the market.
+func (es *EquityShares) SharesFromParty(party string) num.Decimal {
+	totalEquity := num.DecimalZero()
+	partyELS := num.DecimalZero()
+	for id := range es.lps {
+		eq, err := es.equity(id)
+		if err != nil {
+			// since equity(id) returns an error when the party does not exist
+			// getting an error here means we are doing something wrong cause
+			// it should never happen unless `.equity()` behavior changes.
+			panic(err)
+		}
+		if id == party {
+			partyELS = eq
+		}
+		totalEquity = totalEquity.Add(eq)
+	}
+
+	if partyELS.Equal(num.DecimalZero()) || totalEquity.Equal(num.DecimalZero()) {
+		return num.DecimalZero()
+	}
+
+	return partyELS.Div(totalEquity)
+}
+
+// SharesExcept returns the ratio of equity for each party on the market, except
+// the ones listed in parameter.
+func (es *EquityShares) SharesExcept(except map[string]struct{}) map[string]num.Decimal {
 	// Calculate the equity for each party and the totalEquity (the sum of all
 	// the equities)
 	var totalEquity num.Decimal
 	shares := map[string]num.Decimal{}
 	for id := range es.lps {
-		// if the party is not one of the deployed parties,
-		// we just skip
-		if _, ok := undeployed[id]; ok {
+		// If the party is not one of the deployed parties, we just skip.
+		if _, ok := except[id]; ok {
 			continue
 		}
 		eq, err := es.equity(id)

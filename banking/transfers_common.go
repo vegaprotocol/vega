@@ -38,7 +38,7 @@ func (e *Engine) TransferFunds(
 }
 
 func (e *Engine) ensureMinimalTransferAmount(a *assets.Asset, amount *num.Uint) error {
-	quantum := a.Type().Details.Quantum.ToDecimal()
+	quantum := a.Type().Details.Quantum
 	// no reason this would produce an error
 	minAmount, _ := num.UintFromDecimal(quantum.Mul(e.minTransferQuantumMultiple))
 

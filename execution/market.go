@@ -151,7 +151,7 @@ type MarketCollateral interface {
 	MarkToMarket(ctx context.Context, marketID string, transfers []events.Transfer, asset string) ([]events.Margin, []*types.TransferResponse, error)
 	RemoveDistressed(ctx context.Context, parties []events.MarketPosition, marketID, asset string) (*types.TransferResponse, error)
 	GetMarketLiquidityFeeAccount(market, asset string) (*types.Account, error)
-	GetAssetQuantum(asset string) (*num.Uint, error)
+	GetAssetQuantum(asset string) (num.Decimal, error)
 }
 
 // AuctionState ...
@@ -426,7 +426,7 @@ func NewMarket(
 		positionFactor:            positionFactor,
 	}
 
-	liqEngine.SetGetStaticPricesFunc(market.getBestStaticPrices)
+	liqEngine.SetGetStaticPricesFunc(market.getBestStaticPricesDecimal)
 	market.tradableInstrument.Instrument.Product.NotifyOnTradingTerminated(market.tradingTerminated)
 	market.tradableInstrument.Instrument.Product.NotifyOnSettlementPrice(market.settlementPrice)
 	return market, nil
@@ -1284,7 +1284,7 @@ func (m *Market) submitValidatedOrder(ctx context.Context, order *types.Order) (
 			err := m.repricePeggedOrder(order)
 			if err != nil {
 				m.broker.Send(events.NewOrderEvent(ctx, order))
-				return &types.OrderConfirmation{Order: order}, nil, nil //nolint
+				return &types.OrderConfirmation{Order: order}, nil, nil // nolint
 			}
 		}
 	}
@@ -2900,17 +2900,20 @@ func (m *Market) getBestStaticBidPriceAndVolume() (*num.Uint, uint64, error) {
 	return m.matching.GetBestStaticBidPriceAndVolume()
 }
 
-func (m *Market) getBestStaticPrices() (bid, ask *num.Uint, err error) {
-	ask = num.Zero()
-	bid, err = m.getBestStaticBidPrice()
+func (m *Market) getBestStaticPricesDecimal() (bid, ask num.Decimal, err error) {
+	ask = num.DecimalZero()
+	ubid, err := m.getBestStaticBidPrice()
 	if err != nil {
-		bid = num.Zero()
+		bid = num.DecimalZero()
 		return
 	}
-	ask, err = m.getBestStaticAskPrice()
+	bid = ubid.ToDecimal()
+	uask, err := m.getBestStaticAskPrice()
 	if err != nil {
-		ask = num.Zero()
+		ask = num.DecimalZero()
+		return
 	}
+	ask = uask.ToDecimal()
 	return
 }
 
@@ -3174,7 +3177,7 @@ func (m *Market) distributeLiquidityFees(ctx context.Context) error {
 		return nil
 	}
 
-	shares := m.equityShares.Shares(m.liquidity.GetInactiveParties())
+	shares := m.equityShares.SharesExcept(m.liquidity.GetInactiveParties())
 	if len(shares) == 0 {
 		return nil
 	}

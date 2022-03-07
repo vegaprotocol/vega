@@ -157,14 +157,15 @@ func (m *Market) repriceAllSpecialOrders(
 	// parked pegged orders from before
 	// we can call liquidityUpdate, which is going to give us the
 	// actual updates to be done on liquidity orders
-	bestBidPrice, bestAskPrice, err := m.getBestStaticPrices()
+	bestBidPrice, bestAskPrice, err := m.getBestStaticPricesDecimal()
 	if err != nil {
 		m.log.Debug("could not get one of the static mid prices",
 			logging.Error(err))
 		// we do not return here, we could not get one of the prices eventually
 	}
+
 	newOrders, cancels, err := m.liquidity.Update(
-		ctx, bestBidPrice.Clone(), bestAskPrice.Clone(), m.repriceLiquidityOrder, orderUpdates)
+		ctx, bestBidPrice, bestAskPrice, m.repriceLiquidityOrder, orderUpdates)
 	if err != nil {
 		// TODO: figure out if error are really possible there,
 		// But I'd think not.
@@ -186,14 +187,14 @@ func (m *Market) enterAuctionSpecialOrders(
 
 	// we know we enter an auction here,
 	// so let's just get the list of all orders, and cancel them
-	bestBidPrice, bestAskPrice, err := m.getBestStaticPrices()
+	bestBidPrice, bestAskPrice, err := m.getBestStaticPricesDecimal()
 	if err != nil {
 		m.log.Debug("could not get one of the static mid prices",
 			logging.Error(err))
 		// we do not return here, we could not get one of the prices eventually
 	}
 	newOrders, cancels, err := m.liquidity.Update(
-		ctx, bestBidPrice.Clone(), bestAskPrice.Clone(), m.repriceLiquidityOrder, updatedOrders)
+		ctx, bestBidPrice, bestAskPrice, m.repriceLiquidityOrder, updatedOrders)
 	if err != nil {
 		// TODO: figure out if error are really possible there,
 		// But I'd think not.

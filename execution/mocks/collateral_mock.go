@@ -187,10 +187,10 @@ func (mr *MockCollateralMockRecorder) FinalSettlement(arg0, arg1, arg2 interface
 }
 
 // GetAssetQuantum mocks base method.
-func (m *MockCollateral) GetAssetQuantum(arg0 string) (*num.Uint, error) {
+func (m *MockCollateral) GetAssetQuantum(arg0 string) (num.Decimal, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAssetQuantum", arg0)
-	ret0, _ := ret[0].(*num.Uint)
+	ret0, _ := ret[0].(num.Decimal)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

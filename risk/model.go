@@ -22,7 +22,7 @@ type Model interface {
 	CalculateRiskFactors() *types.RiskFactor
 	DefaultRiskFactors() *types.RiskFactor
 	PriceRange(price, yearFraction, probability num.Decimal) (minPrice, maxPrice num.Decimal)
-	ProbabilityOfTrading(currentP, orderP *num.Uint, minP, maxP, yFrac num.Decimal, isBid, applyMinMax bool) num.Decimal
+	ProbabilityOfTrading(currentP, orderP, minP, maxP, yFrac num.Decimal, isBid, applyMinMax bool) num.Decimal
 	GetProjectionHorizon() num.Decimal
 }
 

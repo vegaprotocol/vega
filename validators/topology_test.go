@@ -457,7 +457,11 @@ func testAddNewNodeSendsValidatorUpdateEventToBroker(t *testing.T) {
 		true,
 	)
 
+	rankingEvent := events.NewValidatorRanking(ctx, "0", nr.Id, "0", "0", "0", "pending", "tendermint", 10)
+
+	// one for the validator update, one for the ranking score
 	broker.EXPECT().Send(updateEvent).Times(1)
+	broker.EXPECT().Send(rankingEvent).Times(1)
 
 	assert.NoError(t, top.AddNewNode(ctx, &nr, validators.ValidatorStatusTendermint))
 }
