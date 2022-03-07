@@ -34,8 +34,8 @@ type TimeService interface {
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/commander_mock.go -package mocks code.vegaprotocol.io/vega/validators Commander
 type Commander interface {
-	Command(ctx context.Context, cmd txn.Command, payload proto.Message, f func(error))
-	CommandSync(ctx context.Context, cmd txn.Command, payload proto.Message, f func(error))
+	Command(ctx context.Context, cmd txn.Command, payload proto.Message, f func(error), bo *backoff.ExponentialBackOff)
+	CommandSync(ctx context.Context, cmd txn.Command, payload proto.Message, f func(error), bo *backoff.ExponentialBackOff)
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/validator_topology_mock.go -package mocks code.vegaprotocol.io/vega/validators ValidatorTopology
@@ -369,7 +369,7 @@ func (w *Witness) OnTick(ctx context.Context, t time.Time) {
 				PubKey:    pubKey,
 				Reference: v.res.GetID(),
 			}
-			w.cmd.Command(ctx, txn.NodeVoteCommand, nv, w.onCommandSent(k))
+			w.cmd.Command(ctx, txn.NodeVoteCommand, nv, w.onCommandSent(k), nil)
 			// set new state so we do not try to validate again
 			atomic.StoreUint32(&v.state, voteSent)
 		} else if (isValidator && state == voteSent) && t.After(v.lastSentVote.Add(10*time.Second)) {
