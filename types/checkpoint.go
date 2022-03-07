@@ -30,6 +30,7 @@ const (
 	PendingRewardsCheckpoint CheckpointName = "rewards"
 	BankingCheckpoint        CheckpointName = "banking"
 	ValidatorsCheckpoint     CheckpointName = "validators"
+	StakingCheckpoint        CheckpointName = "staking"
 )
 
 type Block struct {
@@ -52,6 +53,7 @@ type Checkpoint struct {
 	Rewards           []byte
 	Validators        []byte
 	Banking           []byte
+	Staking           []byte
 }
 
 type DelegationEntry struct {
@@ -181,7 +183,7 @@ func (c *Checkpoint) SetBlockHeight(height int64) error {
 // HashBytes returns the data contained in the checkpoint as a []byte for hashing
 // the order in which the data is added to the slice matters.
 func (c Checkpoint) HashBytes() []byte {
-	ret := make([]byte, 0, len(c.Governance)+len(c.Assets)+len(c.Collateral)+len(c.NetworkParameters)+len(c.Delegation)+len(c.Epoch)+len(c.Block)+len(c.Rewards)+len(c.Validators)+len(c.Banking))
+	ret := make([]byte, 0, len(c.Governance)+len(c.Assets)+len(c.Collateral)+len(c.NetworkParameters)+len(c.Delegation)+len(c.Epoch)+len(c.Block)+len(c.Rewards)+len(c.Validators)+len(c.Banking)+len(c.Staking))
 	// the order in which we append is quite important
 	ret = append(ret, c.NetworkParameters...)
 	ret = append(ret, c.Assets...)
@@ -192,7 +194,8 @@ func (c Checkpoint) HashBytes() []byte {
 	ret = append(ret, c.Governance...)
 	ret = append(ret, c.Rewards...)
 	ret = append(ret, c.Banking...)
-	return append(ret, c.Validators...)
+	ret = append(ret, c.Validators...)
+	return append(ret, c.Staking...)
 }
 
 // Set set a specific checkpoint value using the name the engine returns.
@@ -218,6 +221,8 @@ func (c *Checkpoint) Set(name CheckpointName, val []byte) {
 		c.Validators = val
 	case BankingCheckpoint:
 		c.Banking = val
+	case StakingCheckpoint:
+		c.Staking = val
 	}
 }
 
@@ -244,6 +249,8 @@ func (c Checkpoint) Get(name CheckpointName) []byte {
 		return c.Validators
 	case BankingCheckpoint:
 		return c.Banking
+	case StakingCheckpoint:
+		return c.Staking
 	}
 	return nil
 }

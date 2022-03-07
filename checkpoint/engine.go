@@ -20,15 +20,17 @@ var (
 	ErrIncompatibleHashes               = errors.New("incompatible hashes")
 
 	cpOrder = []types.CheckpointName{
-		types.ValidatorsCheckpoint,     // validators information
-		types.AssetsCheckpoint,         // assets are required for collateral to work, and the vote asset needs to be restored
-		types.CollateralCheckpoint,     // without balances, governance (proposals, bonds) are difficult
-		types.NetParamsCheckpoint,      // net params should go right after assets and collateral, so vote tokens are restored
-		types.GovernanceCheckpoint,     // depends on all of the above
-		types.EpochCheckpoint,          // restore epoch information...
-		types.DelegationCheckpoint,     // so delegation sequence ID's make sense
+		types.ValidatorsCheckpoint, // validators information
+		types.AssetsCheckpoint,     // assets are required for collateral to work, and the vote asset needs to be restored
+		types.CollateralCheckpoint, // without balances, governance (proposals, bonds) are difficult
+		types.NetParamsCheckpoint,  // net params should go right after assets and collateral, so vote tokens are restored
+		types.GovernanceCheckpoint, // depends on all of the above
+		types.EpochCheckpoint,      // restore epoch information... so delegation sequence ID's make sense
+		types.StakingCheckpoint,    // restore the staking information, so delegation make sense
+		types.DelegationCheckpoint,
 		types.PendingRewardsCheckpoint, // pending rewards can basically be reloaded any time
 		types.BankingCheckpoint,        // Banking checkpoint needs to be reload any time after collateral
+
 	}
 )
 
@@ -72,6 +74,8 @@ type Engine struct {
 	updated bool
 	snapErr error
 	poll    chan struct{}
+
+	onCheckpointLoadedCB func(context.Context)
 }
 
 func New(log *logging.Logger, cfg Config, components ...State) (*Engine, error) {
@@ -94,7 +98,11 @@ func New(log *logging.Logger, cfg Config, components ...State) (*Engine, error) 
 	return e, nil
 }
 
-func (e *Engine) UponGenesis(_ context.Context, data []byte) (err error) {
+func (e *Engine) RegisterOnCheckpointLoaded(f func(context.Context)) {
+	e.onCheckpointLoadedCB = f
+}
+
+func (e *Engine) UponGenesis(ctx context.Context, data []byte) (err error) {
 	e.log.Debug("Entering checkpoint.Engine.UponGenesis")
 	defer func() {
 		if err != nil {
@@ -121,6 +129,14 @@ func (e *Engine) UponGenesis(_ context.Context, data []byte) (err error) {
 			)
 		}
 	}
+
+	// if state nil, no checkpoint to load, let's just call
+	// the onCheckPointloaded stuff to notify engine they don't have to wait for a
+	// checkpoint to get in business
+	if state == nil {
+		e.onCheckpointLoaded(ctx)
+	}
+
 	return nil
 }
 
@@ -284,6 +300,11 @@ func (e *Engine) Load(ctx context.Context, cpt *types.CheckpointState) error {
 			return err
 		}
 	}
+
+	// seems like we went through it all without issue
+	// we can execute the callback
+	e.onCheckpointLoaded(ctx)
+
 	return nil
 }
 
@@ -306,4 +327,12 @@ func (e *Engine) OnTimeElapsedUpdate(ctx context.Context, d time.Duration) error
 	// update delta
 	e.delta = d
 	return nil
+}
+
+// onCheckpointLoaded will call the OnCheckpointLoaded method for
+// all checkpoint providers (if it exists)
+func (e *Engine) onCheckpointLoaded(ctx context.Context) {
+	if e.onCheckpointLoadedCB != nil {
+		e.onCheckpointLoadedCB(ctx)
+	}
 }
