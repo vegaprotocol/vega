@@ -26,8 +26,8 @@ type IndicativePriceAndVolume struct {
 
 type ipvPriceLevel struct {
 	price  *num.Uint
-	buypl  *ipvVolume
-	sellpl *ipvVolume
+	buypl  ipvVolume
+	sellpl ipvVolume
 }
 
 type ipvVolume struct {
@@ -66,7 +66,7 @@ func (ipv *IndicativePriceAndVolume) buildInitialCumulativeLevels(buy, sell *Ord
 	mplm := map[num.Uint]ipvPriceLevel{}
 
 	for i := len(buy.levels) - 1; i >= 0; i-- {
-		mplm[*buy.levels[i].price] = ipvPriceLevel{price: buy.levels[i].price.Clone(), buypl: &ipvVolume{buy.levels[i].volume}}
+		mplm[*buy.levels[i].price] = ipvPriceLevel{price: buy.levels[i].price.Clone(), buypl: ipvVolume{buy.levels[i].volume}, sellpl: ipvVolume{0}}
 	}
 
 	// now we add all the sells
@@ -75,10 +75,10 @@ func (ipv *IndicativePriceAndVolume) buildInitialCumulativeLevels(buy, sell *Ord
 	for i := len(sell.levels) - 1; i >= 0; i-- {
 		price := sell.levels[i].price.Clone()
 		if mpl, ok := mplm[*price]; ok {
-			mpl.sellpl = &ipvVolume{sell.levels[i].volume}
+			mpl.sellpl = ipvVolume{sell.levels[i].volume}
 			mplm[*price] = mpl
 		} else {
-			mplm[*price] = ipvPriceLevel{price: price, sellpl: &ipvVolume{sell.levels[i].volume}}
+			mplm[*price] = ipvPriceLevel{price: price, sellpl: ipvVolume{sell.levels[i].volume}, buypl: ipvVolume{0}}
 		}
 	}
 
@@ -96,14 +96,8 @@ func (ipv *IndicativePriceAndVolume) buildInitialCumulativeLevels(buy, sell *Ord
 func (ipv *IndicativePriceAndVolume) incrementLevelVolume(idx int, volume uint64, side types.Side) {
 	switch side {
 	case types.SideBuy:
-		if ipv.levels[idx].buypl == nil {
-			ipv.levels[idx].buypl = &ipvVolume{}
-		}
 		ipv.levels[idx].buypl.volume += volume
 	case types.SideSell:
-		if ipv.levels[idx].sellpl == nil {
-			ipv.levels[idx].sellpl = &ipvVolume{}
-		}
 		ipv.levels[idx].sellpl.volume += volume
 	}
 }
@@ -132,20 +126,8 @@ func (ipv *IndicativePriceAndVolume) AddVolumeAtPrice(price *num.Uint, volume ui
 func (ipv *IndicativePriceAndVolume) decrementLevelVolume(idx int, volume uint64, side types.Side) {
 	switch side {
 	case types.SideBuy:
-		if ipv.levels[idx].buypl == nil {
-			ipv.log.Panic("cannot decrement volume from a non-existing level",
-				logging.String("side", side.String()),
-				logging.BigUint("price", ipv.levels[idx].price),
-				logging.Uint64("volume", volume))
-		}
 		ipv.levels[idx].buypl.volume -= volume
 	case types.SideSell:
-		if ipv.levels[idx].sellpl == nil {
-			ipv.log.Panic("cannot decrement volume from a non-existing level",
-				logging.String("side", side.String()),
-				logging.BigUint("price", ipv.levels[idx].price),
-				logging.Uint64("volume", volume))
-		}
 		ipv.levels[idx].sellpl.volume -= volume
 	}
 }
@@ -239,14 +221,14 @@ func (ipv *IndicativePriceAndVolume) GetCumulativePriceLevels(maxPrice, minPrice
 		// always set the price
 		cumulativeVolumes[i].price = rangedLevels[i].price
 
-		// if we had a price level in the bug side, use it
-		if rangedLevels[j].buypl != nil {
+		// if we had a price level in the buy side, use it
+		if rangedLevels[j].buypl.volume > 0 {
 			cumulativeVolumeBuy += rangedLevels[j].buypl.volume
 			cumulativeVolumes[j].bidVolume = rangedLevels[j].buypl.volume
 		}
 
 		// same same
-		if rangedLevels[i].sellpl != nil {
+		if rangedLevels[i].sellpl.volume > 0 {
 			cumulativeVolumeSell += rangedLevels[i].sellpl.volume
 			cumulativeVolumes[i].askVolume = rangedLevels[i].sellpl.volume
 		}
