@@ -331,6 +331,7 @@ func (g *GRPCServer) Start(ctx context.Context, lis net.Listener) error {
 			tradeStore:         g.tradeStore,
 			assetStore:         g.assetStore,
 			accountStore:       g.accountStore,
+			marketDataStore:    g.marketDataStore,
 		}
 	} else {
 		g.tradingDataService = tradingDataSvc

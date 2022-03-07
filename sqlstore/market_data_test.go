@@ -197,7 +197,7 @@ func getLatestMarketData(t *testing.T) {
 		},
 		VegaTime: time.Date(2022, 2, 11, 10, 5, 41, 0, time.UTC),
 	}
-	got, err := store.GetByID(ctx, "8cc0e020c0bc2f9eba77749d81ecec8283283b85941722c2cb88318aaf8b8cd8")
+	got, err := store.GetMarketDataByID(ctx, "8cc0e020c0bc2f9eba77749d81ecec8283283b85941722c2cb88318aaf8b8cd8")
 	assert.NoError(t, err)
 
 	assert.True(t, want.Equal(got))

@@ -147,7 +147,7 @@ func (bs *tradingDataServiceV2) getMarketDataHistoryByID(ctx context.Context, id
 }
 
 func (bs *tradingDataServiceV2) getMarketDataByID(ctx context.Context, id string) (*v2.GetMarketDataHistoryByIDResponse, error) {
-	results, err := bs.marketDataStore.GetByID(ctx, id)
+	results, err := bs.marketDataStore.GetMarketDataByID(ctx, id)
 
 	if err != nil {
 		return nil, fmt.Errorf("could not retrieve market data history for market id: %w", err)

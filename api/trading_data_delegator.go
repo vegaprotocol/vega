@@ -15,10 +15,11 @@ import (
 
 type tradingDataDelegator struct {
 	*tradingDataService
-	orderStore   *sqlstore.Orders
-	tradeStore   *sqlstore.Trades
-	assetStore   *sqlstore.Assets
-	accountStore *sqlstore.Accounts
+	orderStore      *sqlstore.Orders
+	tradeStore      *sqlstore.Trades
+	assetStore      *sqlstore.Assets
+	accountStore    *sqlstore.Accounts
+	marketDataStore *sqlstore.MarketData
 }
 
 var defaultEntityPagination = entities.Pagination{
@@ -414,5 +415,41 @@ func (t *tradingDataDelegator) GlobalRewardPoolAccounts(ctx context.Context,
 	}
 	return &protoapi.GlobalRewardPoolAccountsResponse{
 		Accounts: accountBalancesToProtoAccountList(accountBalances),
+	}, nil
+}
+
+// MarketDataByID provides market data for the given ID.
+func (t *tradingDataDelegator) MarketDataByID(ctx context.Context, req *protoapi.MarketDataByIDRequest) (*protoapi.MarketDataByIDResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("MarketDataByID_SQL")()
+
+	// validate the market exist
+	if req.MarketId != "" {
+		_, err := t.MarketService.GetByID(ctx, req.MarketId)
+		if err != nil {
+			return nil, apiError(codes.InvalidArgument, ErrInvalidMarketID, err)
+		}
+	}
+
+	md, err := t.marketDataStore.GetMarketDataByID(ctx, req.MarketId)
+	if err != nil {
+		return nil, apiError(codes.Internal, ErrMarketServiceGetMarketData, err)
+	}
+	return &protoapi.MarketDataByIDResponse{
+		MarketData: md.ToProto(),
+	}, nil
+}
+
+// MarketsData provides all market data for all markets on this network.
+func (t *tradingDataDelegator) MarketsData(ctx context.Context, _ *protoapi.MarketsDataRequest) (*protoapi.MarketsDataResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("MarketsData_SQL")()
+	mds, _ := t.marketDataStore.GetMarketsData(ctx)
+
+	mdptrs := make([]*vega.MarketData, 0, len(mds))
+	for _, v := range mds {
+		mdptrs = append(mdptrs, v.ToProto())
+	}
+
+	return &protoapi.MarketsDataResponse{
+		MarketsData: mdptrs,
 	}, nil
 }

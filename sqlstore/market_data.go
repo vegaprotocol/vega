@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/data-node/entities"
+	"code.vegaprotocol.io/data-node/logging"
 	"github.com/georgysavva/scany/pgxscan"
 )
 
@@ -62,7 +63,8 @@ func (md *MarketData) Add(data *entities.MarketData) error {
 	return nil
 }
 
-func (md *MarketData) GetByID(ctx context.Context, marketID string) (entities.MarketData, error) {
+func (md *MarketData) GetMarketDataByID(ctx context.Context, marketID string) (entities.MarketData, error) {
+	md.log.Debug("Retrieving market data from Postgres", logging.String("market-id", marketID))
 	market, err := hex.DecodeString(marketID)
 	if err != nil {
 		return entities.MarketData{}, fmt.Errorf("bad ID (must be a hex string): %w", err)
@@ -72,6 +74,17 @@ func (md *MarketData) GetByID(ctx context.Context, marketID string) (entities.Ma
 	query := fmt.Sprintf("select %s from market_data_snapshot where market = $1", sqlColumns)
 
 	err = pgxscan.Get(ctx, md.pool, &marketData, query, market)
+
+	return marketData, err
+}
+
+func (md *MarketData) GetMarketsData(ctx context.Context) ([]entities.MarketData, error) {
+	md.log.Debug("Retrieving markets data from Postgres")
+
+	var marketData []entities.MarketData
+	query := fmt.Sprintf("select %s from market_data_snapshot", sqlColumns)
+
+	err := pgxscan.Select(ctx, md.pool, &marketData, query)
 
 	return marketData, err
 }
