@@ -48,3 +48,11 @@ func nodeStatusFromProto(s proto.NodeStatus) (NodeStatus, error) {
 		return NodeStatus(""), fmt.Errorf("failed to convert NodeStatus from Proto to GraphQL: %s", s.String())
 	}
 }
+
+func (r *nodeResolver) RankingScore(ctx context.Context, obj *proto.Node) (proto.RankingScore, error) {
+	return *obj.RankingScore, nil
+}
+
+func (r *nodeResolver) RewardScore(ctx context.Context, obj *proto.Node) (proto.RewardScore, error) {
+	return *obj.RewardScore, nil
+}

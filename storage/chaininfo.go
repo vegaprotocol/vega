@@ -14,6 +14,7 @@ type ChainInfo struct {
 	jsonFile        string
 	log             *logging.Logger
 	onCriticalError func()
+	storedInfo      *storedInfo
 }
 
 type storedInfo struct {
@@ -67,10 +68,17 @@ func (c *ChainInfo) SetChainID(chainID string) error {
 			logging.Error(err))
 		c.onCriticalError()
 	}
+	// save the stored chain ID
+	c.storedInfo = &data
 	return err
 }
 
 func (c *ChainInfo) GetChainID() (string, error) {
+	// if the chain ID is non nil and not empty return the cached value
+	if c.storedInfo != nil && len(c.storedInfo.ChainID) > 0 {
+		return c.storedInfo.ChainID, nil
+	}
+
 	jsonData, err := ioutil.ReadFile(c.jsonFile)
 	if err != nil {
 		c.log.Error("Unable to read chain info file: ",
@@ -86,6 +94,6 @@ func (c *ChainInfo) GetChainID() (string, error) {
 		c.log.Error("Unable to deserialize chain info", logging.Error(err))
 		c.onCriticalError()
 	}
-
+	c.storedInfo = &ci
 	return ci.ChainID, nil
 }

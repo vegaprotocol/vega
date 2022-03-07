@@ -20,6 +20,10 @@ type GraphqlServiceConfig struct {
 	ServerConfig
 	Enabled         encoding.Bool `long:"enabled" description:"Start the GraphQl gateway"`
 	ComplexityLimit int           `long:"complexity-limit"`
+	HTTPSEnabled    encoding.Bool `long:"https-enabled" description:"If true, GraphQL gateway will require an HTTPS connection"`
+	AutoCertDomain  string        `long:"auto-cert-domain" description:"Automatically generate and sign https certificate via LetsEncrypt"`
+	CertificateFile string        `long:"certificate-file" description:"Path to SSL certificate, if using HTTPS but not autocert"`
+	KeyFile         string        `long:"key-file" description:"Path to private key, if using HTTPS but not autocert"`
 }
 
 // RESTGatewayServiceConfig represent the configuration of the rest service
@@ -51,7 +55,8 @@ func NewDefaultConfig() Config {
 				IP:   "0.0.0.0",
 				Port: 3008,
 			},
-			Enabled: true,
+			Enabled:      true,
+			HTTPSEnabled: false,
 		},
 		REST: RESTGatewayServiceConfig{
 			ServerConfig: ServerConfig{

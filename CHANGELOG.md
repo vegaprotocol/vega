@@ -15,6 +15,20 @@
 - [](https://github.com/vegaprotocol/data-node/pull/xxx) -
 
 
+## 0.49.1
+
+### 🚨 Breaking changes
+- [333](https://github.com/vegaprotocol/data-node/issues/333) - extend node model with additional information about reward scores and ranking scores + validator statuses
+
+### 🛠  Improvements
+- [362](https://github.com/vegaprotocol/data-node/pull/362) - Added support using TLS for `GraphQL` connections
+- [393](https://github.com/vegaprotocol/data-node/pull/393) - Data store migration
+- [395](https://github.com/vegaprotocol/data-node/pull/395) - Migrate Asset API to retrieve data from `Postgres`
+
+### 🐛 Fixes
+- [387](https://github.com/vegaprotocol/data-node/pull/387) - Fixes incorrect data types in the `MarketData` proto message
+- [390](https://github.com/vegaprotocol/data-node/pull/390) - Cache `ChainInfo` data
+
 ## 0.49.0
 
 ### 🛠  Improvements

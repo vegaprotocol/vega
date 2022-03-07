@@ -36,25 +36,29 @@ func (as *Assets) Add(a entities.Asset) error {
 	return err
 }
 
-func (as *Assets) GetByID(id string) (entities.Asset, error) {
+func (as *Assets) GetByID(ctx context.Context, id string) (entities.Asset, error) {
 	a := entities.Asset{}
 	idBytes, err := hex.DecodeString(id)
 	if err != nil {
 		return a, ErrBadID
 	}
 
-	ctx := context.Background()
-	err = pgxscan.Get(ctx, as.pool, &a,
+	ctxTimeout, cancel := context.WithTimeout(ctx, as.conf.Timeout.Get())
+	defer cancel()
+
+	err = pgxscan.Get(ctxTimeout, as.pool, &a,
 		`SELECT id, name, symbol, total_supply, decimals, quantum, source, erc20_contract, vega_time
 		 FROM assets WHERE id=$1`,
 		idBytes)
 	return a, err
 }
 
-func (as *Assets) GetAll() ([]entities.Asset, error) {
-	ctx := context.Background()
+func (as *Assets) GetAll(ctx context.Context) ([]entities.Asset, error) {
+	ctxTimeout, cancel := context.WithTimeout(ctx, as.conf.Timeout.Get())
+	defer cancel()
+
 	assets := []entities.Asset{}
-	err := pgxscan.Select(ctx, as.pool, &assets, `
+	err := pgxscan.Select(ctxTimeout, as.pool, &assets, `
 		SELECT id, name, symbol, total_supply, decimals, quantum, source, erc20_contract, vega_time
 		FROM assets`)
 	return assets, err

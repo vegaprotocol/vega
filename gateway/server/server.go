@@ -7,21 +7,24 @@ import (
 	gql "code.vegaprotocol.io/data-node/gateway/graphql"
 	"code.vegaprotocol.io/data-node/gateway/rest"
 	"code.vegaprotocol.io/data-node/logging"
+	"code.vegaprotocol.io/shared/paths"
 	"golang.org/x/sync/errgroup"
 )
 
 type Server struct {
-	cfg *gateway.Config
-	log *logging.Logger
+	cfg       *gateway.Config
+	log       *logging.Logger
+	vegaPaths paths.Paths
 
 	rest *rest.ProxyServer
 	gql  *gql.GraphServer
 }
 
-func New(cfg gateway.Config, log *logging.Logger) *Server {
+func New(cfg gateway.Config, log *logging.Logger, vegaPaths paths.Paths) *Server {
 	return &Server{
-		log: log,
-		cfg: &cfg,
+		log:       log,
+		cfg:       &cfg,
+		vegaPaths: vegaPaths,
 	}
 }
 
@@ -30,7 +33,7 @@ func (srv *Server) Start(ctx context.Context) error {
 
 	if srv.cfg.GraphQL.Enabled {
 		var err error
-		srv.gql, err = gql.New(srv.log, *srv.cfg)
+		srv.gql, err = gql.New(srv.log, *srv.cfg, srv.vegaPaths)
 		if err != nil {
 			return err
 		}

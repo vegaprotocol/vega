@@ -268,6 +268,14 @@ func (r *VegaResolverRoot) Node() NodeResolver {
 	return (*nodeResolver)(r)
 }
 
+func (r *VegaResolverRoot) RankingScore() RankingScoreResolver {
+	return (*rankingScoreResolver)(r)
+}
+
+func (r *VegaResolverRoot) RewardScore() RewardScoreResolver {
+	return (*rewardScoreResolver)(r)
+}
+
 func (r *VegaResolverRoot) KeyRotation() KeyRotationResolver {
 	return (*keyRotationResolver)(r)
 }
@@ -1438,15 +1446,21 @@ func (r *myMarketDataResolver) Commitments(ctx context.Context, m *types.MarketD
 func (r *myMarketDataResolver) PriceMonitoringBounds(ctx context.Context, obj *types.MarketData) ([]*PriceMonitoringBounds, error) {
 	ret := make([]*PriceMonitoringBounds, 0, len(obj.PriceMonitoringBounds))
 	for _, b := range obj.PriceMonitoringBounds {
+
+		probability, err := strconv.ParseFloat(b.Trigger.Probability, 64)
+		if err != nil {
+			return nil, err
+		}
+
 		bounds := &PriceMonitoringBounds{
 			MinValidPrice: b.MinValidPrice,
 			MaxValidPrice: b.MaxValidPrice,
 			Trigger: &PriceMonitoringTrigger{
 				HorizonSecs:          int(b.Trigger.Horizon),
-				Probability:          b.Trigger.Probability,
+				Probability:          probability,
 				AuctionExtensionSecs: int(b.Trigger.AuctionExtension),
 			},
-			ReferencePrice: strconv.FormatFloat(b.ReferencePrice, 'f', -1, 64),
+			ReferencePrice: b.ReferencePrice,
 		}
 		ret = append(ret, bounds)
 	}

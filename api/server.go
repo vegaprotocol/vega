@@ -49,7 +49,7 @@ import (
 // GRPCServer represent the grpc api provided by the vega node
 type GRPCServer struct {
 	Config
-
+	useSQLStores          bool
 	log                   *logging.Logger
 	srv                   *grpc.Server
 	vegaCoreServiceClient CoreServiceClient
@@ -75,7 +75,7 @@ type GRPCServer struct {
 	oracleService           *oracles.Service
 	stakingService          *staking.Service
 	coreProxySvc            *coreProxyService
-	tradingDataService      *tradingDataService
+	tradingDataService      protoapi.TradingDataServiceServer
 	nodeService             *nodes.Service
 	epochService            *epochs.Service
 	delegationService       *delegations.Service
@@ -88,6 +88,8 @@ type GRPCServer struct {
 	orderStore         *sqlstore.Orders
 	networkLimitsStore *sqlstore.NetworkLimits
 	marketDataStore    *sqlstore.MarketData
+	tradeStore         *sqlstore.Trades
+	assetStore         *sqlstore.Assets
 
 	eventObserver *eventObserver
 
@@ -100,6 +102,7 @@ type GRPCServer struct {
 func NewGRPCServer(
 	log *logging.Logger,
 	config Config,
+	useSQLStores bool,
 	coreServiceClient CoreServiceClient,
 	timeService *vegatime.Svc,
 	marketService MarketService,
@@ -131,6 +134,8 @@ func NewGRPCServer(
 	orderStore *sqlstore.Orders,
 	networkLimitsStore *sqlstore.NetworkLimits,
 	marketDataStore *sqlstore.MarketData,
+	tradeStore *sqlstore.Trades,
+	assertStore *sqlstore.Assets,
 ) *GRPCServer {
 	// setup logger
 	log = log.Named(namedLogger)
@@ -140,6 +145,7 @@ func NewGRPCServer(
 	return &GRPCServer{
 		log:                     log,
 		Config:                  config,
+		useSQLStores:            useSQLStores,
 		vegaCoreServiceClient:   coreServiceClient,
 		orderService:            orderService,
 		liquidityService:        liquidityService,
@@ -171,6 +177,8 @@ func NewGRPCServer(
 		orderStore:              orderStore,
 		networkLimitsStore:      networkLimitsStore,
 		marketDataStore:         marketDataStore,
+		tradeStore:              tradeStore,
+		assetStore:              assertStore,
 		eventObserver: &eventObserver{
 			log:          log,
 			eventService: eventService,
@@ -249,7 +257,7 @@ func (g *GRPCServer) getTCPListener() (net.Listener, error) {
 	ip := g.IP
 	port := strconv.Itoa(g.Port)
 
-	g.log.Info("Starting gRPC based API", logging.String("addr", ip), logging.String("port", port))
+	g.log.Info("Starting gRPC based API", logging.Bool("v1 API using sql stores", g.useSQLStores), logging.String("addr", ip), logging.String("port", port))
 
 	tpcLis, err := net.Listen("tcp", net.JoinHostPort(ip, port))
 	if err != nil {
@@ -313,8 +321,18 @@ func (g *GRPCServer) Start(ctx context.Context, lis net.Listener) error {
 		stakingService:          g.stakingService,
 		checkpointService:       g.checkpointSvc,
 	}
-	g.tradingDataService = tradingDataSvc
-	protoapi.RegisterTradingDataServiceServer(g.srv, tradingDataSvc)
+	if g.useSQLStores {
+		g.tradingDataService = &tradingDataDelegator{
+			tradingDataService: tradingDataSvc,
+			orderStore:         g.orderStore,
+			tradeStore:         g.tradeStore,
+			assetStore:         g.assetStore,
+		}
+	} else {
+		g.tradingDataService = tradingDataSvc
+	}
+
+	protoapi.RegisterTradingDataServiceServer(g.srv, g.tradingDataService)
 
 	tradingDataSvcV2 := &tradingDataServiceV2{
 		balanceStore:       g.balanceStore,

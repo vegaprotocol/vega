@@ -1,6 +1,7 @@
 package sqlstore_test
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
@@ -42,9 +43,10 @@ func TestAsset(t *testing.T) {
 	block := addTestBlock(t, bs)
 
 	as := sqlstore.NewAssets(testStore)
+	ctx := context.Background()
 
 	// Get all assets, there shouldn't be any yet
-	assets, err := as.GetAll()
+	assets, err := as.GetAll(ctx)
 	require.NoError(t, err)
 	require.Empty(t, assets)
 
@@ -55,12 +57,12 @@ func TestAsset(t *testing.T) {
 	assert.Error(t, err)
 
 	// Query and check we've got back an asset the same as the one we put in
-	fetchedAsset, err := as.GetByID(asset.HexID())
+	fetchedAsset, err := as.GetByID(ctx, asset.HexID())
 	assert.NoError(t, err)
 	assert.Equal(t, asset, fetchedAsset)
 
 	// Get all assets and make sure there's one more than there was to begin with
-	assets, err = as.GetAll()
+	assets, err = as.GetAll(ctx)
 	assert.NoError(t, err)
 	assert.Len(t, assets, 1)
 }
