@@ -64,7 +64,6 @@ func (c *Checkpoint) Load(ctx context.Context, data []byte) error {
 				logging.String("event-id", stakeLinking.ID),
 			)
 		}
-
 	}
 
 	// 0 is default value, we assume that it was then not set

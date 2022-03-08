@@ -20,13 +20,14 @@ var (
 	ErrIncompatibleHashes               = errors.New("incompatible hashes")
 
 	cpOrder = []types.CheckpointName{
-		types.ValidatorsCheckpoint, // validators information
-		types.AssetsCheckpoint,     // assets are required for collateral to work, and the vote asset needs to be restored
-		types.CollateralCheckpoint, // without balances, governance (proposals, bonds) are difficult
-		types.NetParamsCheckpoint,  // net params should go right after assets and collateral, so vote tokens are restored
-		types.GovernanceCheckpoint, // depends on all of the above
-		types.EpochCheckpoint,      // restore epoch information... so delegation sequence ID's make sense
-		types.StakingCheckpoint,    // restore the staking information, so delegation make sense
+		types.ValidatorsCheckpoint,      // validators information
+		types.AssetsCheckpoint,          // assets are required for collateral to work, and the vote asset needs to be restored
+		types.CollateralCheckpoint,      // without balances, governance (proposals, bonds) are difficult
+		types.NetParamsCheckpoint,       // net params should go right after assets and collateral, so vote tokens are restored
+		types.GovernanceCheckpoint,      // depends on all of the above
+		types.EpochCheckpoint,           // restore epoch information... so delegation sequence ID's make sense
+		types.MultisigControlCheckpoint, // restore the staking information, so delegation make sense
+		types.StakingCheckpoint,         // restore the staking information, so delegation make sense
 		types.DelegationCheckpoint,
 		types.PendingRewardsCheckpoint, // pending rewards can basically be reloaded any time
 		types.BankingCheckpoint,        // Banking checkpoint needs to be reload any time after collateral
@@ -330,7 +331,7 @@ func (e *Engine) OnTimeElapsedUpdate(ctx context.Context, d time.Duration) error
 }
 
 // onCheckpointLoaded will call the OnCheckpointLoaded method for
-// all checkpoint providers (if it exists)
+// all checkpoint providers (if it exists).
 func (e *Engine) onCheckpointLoaded(ctx context.Context) {
 	if e.onCheckpointLoadedCB != nil {
 		e.onCheckpointLoadedCB(ctx)
