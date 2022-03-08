@@ -9,7 +9,7 @@
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 ### 🛠 Improvements
-- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+- [4951](https://github.com/vegaprotocol/vega/issues/4951) - Add ability to stream events to a file
 
 ### 🐛 Fixes
 - [4947](https://github.com/vegaprotocol/vega/issues/4947) - Fix time formatting problem that was breaking consensus on nodes in different time zones
