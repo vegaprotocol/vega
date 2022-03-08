@@ -554,6 +554,7 @@ func (app *App) OnBeginBlock(req tmtypes.RequestBeginBlock) (ctx context.Context
 
 	hash := hex.EncodeToString(req.Hash)
 	app.cBlock = hash
+	app.stats.SetHash(hash)
 
 	// Set chainID, if we have loaded from a snapshot we will not have called InitChain
 	// TODO: we may be able to better if we store the chainID in the appstate's snapshot
