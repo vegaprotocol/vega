@@ -9,7 +9,7 @@
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 ### 🛠 Improvements
-- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+- [4953](https://github.com/vegaprotocol/vega/issues/4953) - Add block hash to statistics and to block height request
 
 ### 🐛 Fixes
 - [4947](https://github.com/vegaprotocol/vega/issues/4947) - Fix time formatting problem that was breaking consensus on nodes in different time zones
@@ -131,7 +131,6 @@
 - [4674](https://github.com/vegaprotocol/vega/issues/4674) - Add Ethereum events reconciliation for `multisig control`
 - [4886](https://github.com/vegaprotocol/vega/pull/4886) - Add more integration tests around order amends and fees.
 - [4885](https://github.com/vegaprotocol/vega/pull/4885) - Update amend orders scenario to have fees transfers in int tests
-- [4846](https://github.com/vegaprotocol/vega/issues/4846) - Tidying up feature tests in verified folder - part 2 - auction tests
 
 ### 🐛 Fixes
 - [4842](https://github.com/vegaprotocol/vega/pull/4842) - Fix margin balance not being released after close-out.

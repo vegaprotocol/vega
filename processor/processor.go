@@ -108,6 +108,7 @@ type Stats interface {
 	SetTotalTxCurrentBatch(i uint64)
 	TotalTxCurrentBatch() uint64
 	TotalTxLastBatch() uint64
+	SetHash(string)
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/assets_mock.go -package mocks code.vegaprotocol.io/vega/processor Assets
