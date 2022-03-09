@@ -43,6 +43,10 @@ type SocketClient interface {
 	SendBatch(events []events.Event) error
 }
 
+type FileClient interface {
+	SendBatch(events []events.Event) error
+}
+
 type subscription struct {
 	Subscriber
 	required bool
@@ -68,6 +72,7 @@ type Broker struct {
 
 	config       Config
 	socketClient SocketClient
+	fileClient   FileClient
 	canStream    bool // whether not we should send events to the socketClient
 }
 
@@ -95,6 +100,14 @@ func New(ctx context.Context, log *logging.Logger, config Config) (*Broker, erro
 		}
 
 		b.socketClient = sc
+	}
+
+	if config.File.Enabled {
+		fc, err := newFileClient(ctx, log, &config.File)
+		if err != nil {
+			return nil, fmt.Errorf("failed to initialize file client: %w", err)
+		}
+		b.fileClient = fc
 	}
 
 	return b, nil
@@ -144,6 +157,12 @@ func (b *Broker) startSending(t events.Type, evts []events.Event) {
 	if b.streamingEnabled() {
 		if err := b.socketClient.SendBatch(evts); err != nil {
 			b.log.Fatal("Failed to send to socket client", logging.Error(err))
+		}
+	}
+
+	if b.fileStreamEnabled() {
+		if err := b.fileClient.SendBatch(evts); err != nil {
+			b.log.Fatal("Failed to send to file client", logging.Error(err))
 		}
 	}
 
@@ -366,4 +385,8 @@ func (b *Broker) SetStreaming(on bool) bool {
 
 func (b *Broker) streamingEnabled() bool {
 	return b.canStream && b.socketClient != nil
+}
+
+func (b *Broker) fileStreamEnabled() bool {
+	return b.fileClient != nil
 }

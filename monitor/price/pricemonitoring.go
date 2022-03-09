@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"sort"
+	"sync"
 	"time"
 
 	proto "code.vegaprotocol.io/protos/vega"
@@ -117,6 +118,7 @@ type Engine struct {
 
 	refPriceCacheTime time.Time
 	refPriceCache     map[int64]num.Decimal
+	refPriceLock      sync.Mutex
 
 	boundFactorsInitialised bool
 
@@ -495,6 +497,8 @@ func (e *Engine) clearStalePrices() {
 
 // getRefPrice caches and returns the ref price for a given horizon. The cache is invalidated when block changes.
 func (e *Engine) getRefPrice(horizon int64, force bool) num.Decimal {
+	e.refPriceLock.Lock()
+	defer e.refPriceLock.Unlock()
 	if e.refPriceCacheTime != e.now || force {
 		e.refPriceCache = make(map[int64]num.Decimal, len(e.refPriceCache))
 		e.stateChanged = true

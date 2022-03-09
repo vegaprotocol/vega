@@ -69,7 +69,15 @@ func (c *checkpointRestore) Execute(_ []string) error {
 	if err != nil {
 		return fmt.Errorf("failed to read checkpoint file: %w", err)
 	}
-	commander, cfunc, err := getNodeWalletCommander(log)
+
+	vegaPaths := paths.New(checkpointCmd.VegaHome)
+
+	registryPass, err := checkpointCmd.PassphraseFile.Get("node wallet", false)
+	if err != nil {
+		return err
+	}
+
+	commander, cfunc, err := getNodeWalletCommander(log, registryPass, vegaPaths)
 	if err != nil {
 		return fmt.Errorf("failed to get commander: %w", err)
 	}
@@ -89,15 +97,8 @@ func (c *checkpointRestore) Execute(_ []string) error {
 	return <-ch
 }
 
-func getNodeWalletCommander(log *logging.Logger) (*nodewallets.Commander, context.CancelFunc, error) {
-	vegaPaths := paths.New(checkpointCmd.VegaHome)
-
+func getNodeWalletCommander(log *logging.Logger, registryPass string, vegaPaths paths.Paths) (*nodewallets.Commander, context.CancelFunc, error) {
 	_, cfg, err := config.EnsureNodeConfig(vegaPaths)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	registryPass, err := checkpointCmd.PassphraseFile.Get("node wallet", false)
 	if err != nil {
 		return nil, nil, err
 	}
