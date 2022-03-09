@@ -870,6 +870,63 @@ func newMarketTerms() *types.ProposalTermsNewMarket {
 	}
 }
 
+func updateMarketTerms() *types.ProposalTermsUpdateMarket {
+	return &types.ProposalTermsUpdateMarket{
+		UpdateMarket: &types.UpdateMarket{
+			Changes: &types.UpdateMarketConfiguration{
+				Instrument: &types.UpdateInstrumentConfiguration{
+					Code: "CRYPTO:GBPVUSD/JUN20",
+					Product: &types.UpdateInstrumentConfigurationFuture{
+						Future: &types.UpdateFutureProduct{
+							QuoteName: "VUSD",
+							OracleSpecForSettlementPrice: &oraclesv1.OracleSpecConfiguration{
+								PubKeys: []string{"0xDEADBEEF"},
+								Filters: []*oraclesv1.Filter{
+									{
+										Key: &oraclesv1.PropertyKey{
+											Name: "prices.ETH.value",
+											Type: oraclesv1.PropertyKey_TYPE_INTEGER,
+										},
+										Conditions: []*oraclesv1.Condition{},
+									},
+								},
+							},
+							OracleSpecForTradingTermination: &oraclesv1.OracleSpecConfiguration{
+								PubKeys: []string{"0xDEADBEEF"},
+								Filters: []*oraclesv1.Filter{
+									{
+										Key: &oraclesv1.PropertyKey{
+											Name: "trading.terminated",
+											Type: oraclesv1.PropertyKey_TYPE_BOOLEAN,
+										},
+										Conditions: []*oraclesv1.Condition{},
+									},
+								},
+							},
+							OracleSpecBinding: &types.OracleSpecToFutureBinding{
+								SettlementPriceProperty:    "prices.ETH.value",
+								TradingTerminationProperty: "trading.terminated",
+							},
+						},
+					},
+				},
+				RiskParameters: &types.UpdateMarketConfigurationLogNormal{
+					LogNormal: &types.LogNormalRiskModel{
+						RiskAversionParameter: num.DecimalFromFloat(0.01),
+						Tau:                   num.DecimalFromFloat(0.00011407711613050422),
+						Params: &types.LogNormalModelParams{
+							Mu:    num.DecimalZero(),
+							R:     num.DecimalFromFloat(0.016),
+							Sigma: num.DecimalFromFloat(0.09),
+						},
+					},
+				},
+				Metadata: []string{"asset_class:fx/crypto", "product:futures"},
+			},
+		},
+	}
+}
+
 func newMarketLiquidityCommitment() *types.NewMarketCommitment {
 	return &types.NewMarketCommitment{
 		CommitmentAmount: num.NewUint(1000),
@@ -961,12 +1018,6 @@ func (e *tstEngine) newProposalForMarketUpdate(partyID string, now time.Time) ty
 	}
 }
 
-func updateMarketTerms() *types.ProposalTermsUpdateMarket {
-	return &types.ProposalTermsUpdateMarket{
-		UpdateMarket: &types.UpdateMarket{},
-	}
-}
-
 func (e *tstEngine) newProposalForNewAsset(partyID string, now time.Time) types.Proposal {
 	id := e.newProposalID()
 	return types.Proposal{
@@ -1045,7 +1096,7 @@ func (e *tstEngine) expectOpenProposalEvent(t *testing.T, party, proposal string
 		pe, ok := ev.(*events.Proposal)
 		require.True(t, ok)
 		p := pe.Proposal()
-		assert.Equal(t, types.ProposalStateOpen.String(), p.State.String())
+		assert.Equal(t, types.ProposalStateOpen.String(), p.State.String(), fmt.Sprintf("reason: %s, details: %s", p.Reason, p.ErrorDetails))
 		assert.Equal(t, party, p.PartyId)
 		assert.Equal(t, proposal, p.Id)
 	})

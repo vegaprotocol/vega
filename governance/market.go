@@ -105,19 +105,18 @@ func assignRiskModel(definition *types.NewMarketConfiguration, target *types.Tra
 	return nil
 }
 
-func createMarket(
+func buildMarketFromProposal(
 	marketID string,
 	definition *types.NewMarket,
 	netp NetParams,
-	currentTime time.Time,
 	assets Assets,
 	openingAuctionDuration time.Duration,
 ) (*types.Market, types.ProposalError, error) {
-	if perr, err := validateNewMarket(currentTime, definition, assets, true, netp, openingAuctionDuration); err != nil {
+	if perr, err := validateNewMarketChange(definition, assets, true, netp, openingAuctionDuration); err != nil {
 		return nil, perr, err
 	}
-	instrument, perr, err := createInstrument(definition.Changes.
-		Instrument, definition.Changes.Metadata)
+	instrument, perr, err := createInstrument(
+		definition.Changes.Instrument, definition.Changes.Metadata)
 	if err != nil {
 		return nil, perr, err
 	}
@@ -218,7 +217,7 @@ func validateAsset(assetID string, decimals uint64, assets Assets, deepCheck boo
 	return types.ProposalErrorUnspecified, nil
 }
 
-func validateFuture(currentTime time.Time, future *types.FutureProduct, decimals uint64, assets Assets, deepCheck bool) (types.ProposalError, error) {
+func validateFuture(future *types.FutureProduct, decimals uint64, assets Assets, deepCheck bool) (types.ProposalError, error) {
 	if future.OracleSpecForSettlementPrice == nil {
 		return types.ProposalErrorInvalidFutureProduct, ErrMissingOracleSpecForSettlementPrice
 	}
@@ -252,12 +251,12 @@ func validateFuture(currentTime time.Time, future *types.FutureProduct, decimals
 	return validateAsset(future.SettlementAsset, decimals, assets, deepCheck)
 }
 
-func validateInstrument(currentTime time.Time, instrument *types.InstrumentConfiguration, decimals uint64, assets Assets, deepCheck bool) (types.ProposalError, error) {
+func validateNewInstrument(instrument *types.InstrumentConfiguration, decimals uint64, assets Assets, deepCheck bool) (types.ProposalError, error) {
 	switch product := instrument.Product.(type) {
 	case nil:
 		return types.ProposalErrorNoProduct, ErrMissingProduct
 	case *types.InstrumentConfigurationFuture:
-		return validateFuture(currentTime, product.Future, decimals, assets, deepCheck)
+		return validateFuture(product.Future, decimals, assets, deepCheck)
 	default:
 		return types.ProposalErrorUnsupportedProduct, ErrUnsupportedProduct
 	}
@@ -267,7 +266,14 @@ func validateRiskParameters(rp interface{}) (types.ProposalError, error) {
 	switch r := rp.(type) {
 	case *types.NewMarketConfigurationSimple:
 		return types.ProposalErrorUnspecified, nil
+	case *types.UpdateMarketConfigurationSimple:
+		return types.ProposalErrorUnspecified, nil
 	case *types.NewMarketConfigurationLogNormal:
+		if r.LogNormal.Params == nil {
+			return types.ProposalErrorInvalidRiskParameter, ErrInvalidRiskParameter
+		}
+		return types.ProposalErrorUnspecified, nil
+	case *types.UpdateMarketConfigurationLogNormal:
 		if r.LogNormal.Params == nil {
 			return types.ProposalErrorInvalidRiskParameter, ErrInvalidRiskParameter
 		}
@@ -367,15 +373,14 @@ func validateShape(
 }
 
 // ValidateNewMarket checks new market proposal terms.
-func validateNewMarket(
-	currentTime time.Time,
+func validateNewMarketChange(
 	terms *types.NewMarket,
 	assets Assets,
 	deepCheck bool,
 	netp NetParams,
 	openingAuctionDuration time.Duration,
 ) (types.ProposalError, error) {
-	if perr, err := validateInstrument(currentTime, terms.Changes.Instrument, terms.Changes.DecimalPlaces, assets, deepCheck); err != nil {
+	if perr, err := validateNewInstrument(terms.Changes.Instrument, terms.Changes.DecimalPlaces, assets, deepCheck); err != nil {
 		return perr, err
 	}
 	if perr, err := validateRiskParameters(terms.Changes.RiskParameters); err != nil {
@@ -387,6 +392,66 @@ func validateNewMarket(
 
 	if perr, err := validateCommitment(terms.LiquidityCommitment, netp); err != nil {
 		return perr, err
+	}
+
+	return types.ProposalErrorUnspecified, nil
+}
+
+// validateUpdateMarketChange checks market update proposal terms.
+func validateUpdateMarketChange(terms *types.UpdateMarket, netp NetParams, openingAuctionDuration time.Duration) (types.ProposalError, error) {
+	if perr, err := validateUpdateInstrument(terms.Changes.Instrument); err != nil {
+		return perr, err
+	}
+	if perr, err := validateRiskParameters(terms.Changes.RiskParameters); err != nil {
+		return perr, err
+	}
+	if perr, err := validateAuctionDuration(openingAuctionDuration, netp); err != nil {
+		return perr, err
+	}
+
+	return types.ProposalErrorUnspecified, nil
+}
+
+func validateUpdateInstrument(instrument *types.UpdateInstrumentConfiguration) (types.ProposalError, error) {
+	switch product := instrument.Product.(type) {
+	case nil:
+		return types.ProposalErrorNoProduct, ErrMissingProduct
+	case *types.UpdateInstrumentConfigurationFuture:
+		return validateUpdateFuture(product.Future)
+	default:
+		return types.ProposalErrorUnsupportedProduct, ErrUnsupportedProduct
+	}
+}
+
+func validateUpdateFuture(future *types.UpdateFutureProduct) (types.ProposalError, error) {
+	if future.OracleSpecForSettlementPrice == nil {
+		return types.ProposalErrorInvalidFutureProduct, ErrMissingOracleSpecForSettlementPrice
+	}
+
+	if future.OracleSpecForTradingTermination == nil {
+		return types.ProposalErrorInvalidFutureProduct, ErrMissingOracleSpecForTradingTermination
+	}
+
+	if future.OracleSpecBinding == nil {
+		return types.ProposalErrorInvalidFutureProduct, ErrMissingOracleSpecBinding
+	}
+
+	// ensure the oracle spec for settlement price can be constructed
+	ospec, err := oracles.NewOracleSpec(*future.OracleSpecForSettlementPrice.ToOracleSpec())
+	if err != nil {
+		return types.ProposalErrorInvalidFutureProduct, err
+	}
+	if err := ospec.EnsureBoundableProperty(future.OracleSpecBinding.SettlementPriceProperty, oraclespb.PropertyKey_TYPE_INTEGER); err != nil {
+		return types.ProposalErrorInvalidFutureProduct, fmt.Errorf("invalid oracle spec binding for settlement price: %w", err)
+	}
+
+	ospec, err = oracles.NewOracleSpec(*future.OracleSpecForTradingTermination.ToOracleSpec())
+	if err != nil {
+		return types.ProposalErrorInvalidFutureProduct, err
+	}
+
+	if err := ospec.EnsureBoundableProperty(future.OracleSpecBinding.TradingTerminationProperty, oraclespb.PropertyKey_TYPE_BOOLEAN); err != nil {
+		return types.ProposalErrorInvalidFutureProduct, fmt.Errorf("invalid oracle spec binding for trading termination: %w", err)
 	}
 
 	return types.ProposalErrorUnspecified, nil
