@@ -112,6 +112,7 @@ const (
 	ERC20MultiSigSignerEvent
 	ERC20MultiSigSignerAddedEvent
 	ERC20MultiSigSignerRemovedEvent
+	PositionStateEvent
 )
 
 var (
@@ -170,6 +171,7 @@ var (
 		eventspb.BusEventType_BUS_EVENT_TYPE_ERC20_MULTI_SIG_SIGNER_EVENT:   ERC20MultiSigSignerEvent,
 		eventspb.BusEventType_BUS_EVENT_TYPE_ERC20_MULTI_SIG_SIGNER_ADDED:   ERC20MultiSigSignerAddedEvent,
 		eventspb.BusEventType_BUS_EVENT_TYPE_ERC20_MULTI_SIG_SIGNER_REMOVED: ERC20MultiSigSignerRemovedEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_POSITION_STATE:                 PositionStateEvent,
 	}
 
 	toProto = map[Type]eventspb.BusEventType{
@@ -218,6 +220,7 @@ var (
 		ERC20MultiSigSignerEvent:        eventspb.BusEventType_BUS_EVENT_TYPE_ERC20_MULTI_SIG_SIGNER_EVENT,
 		ERC20MultiSigSignerAddedEvent:   eventspb.BusEventType_BUS_EVENT_TYPE_ERC20_MULTI_SIG_SIGNER_ADDED,
 		ERC20MultiSigSignerRemovedEvent: eventspb.BusEventType_BUS_EVENT_TYPE_ERC20_MULTI_SIG_SIGNER_REMOVED,
+		PositionStateEvent:              eventspb.BusEventType_BUS_EVENT_TYPE_POSITION_STATE,
 	}
 
 	eventStrings = map[Type]string{
@@ -267,6 +270,7 @@ var (
 		ERC20MultiSigThresholdSetEvent:  "ERC20MultiSigThresholdSetEvent",
 		ERC20MultiSigSignerAddedEvent:   "ERC20MultiSigSignerAddedEvent",
 		ERC20MultiSigSignerRemovedEvent: "ERC20MultiSigSignerRemovedEvent",
+		PositionStateEvent:              "PositionStateEvent",
 	}
 )
 

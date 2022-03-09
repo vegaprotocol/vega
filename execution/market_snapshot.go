@@ -91,7 +91,7 @@ func NewMarketFromSnapshot(
 		broker,
 		positionFactor,
 	)
-	positionEngine := positions.NewSnapshotEngine(log, positionConfig, mkt.ID)
+	positionEngine := positions.NewSnapshotEngine(log, positionConfig, mkt.ID, broker)
 
 	feeEngine, err := fee.New(log, feeConfig, *mkt.Fees, asset, positionFactor)
 	if err != nil {
