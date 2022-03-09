@@ -2380,7 +2380,7 @@ func AuctionStateFromProto(as *snapshot.AuctionState) *AuctionState {
 	return &AuctionState{
 		Mode:        as.Mode,
 		DefaultMode: as.DefaultMode,
-		Begin:       time.Unix(as.Begin, 0).UTC(),
+		Begin:       time.Unix(0, as.Begin).UTC(),
 		Trigger:     as.Trigger,
 		End:         end,
 		Start:       as.Start,
@@ -2398,7 +2398,7 @@ func (a AuctionState) IntoProto() *snapshot.AuctionState {
 		Mode:        a.Mode,
 		DefaultMode: a.DefaultMode,
 		Trigger:     a.Trigger,
-		Begin:       a.Begin.Unix(),
+		Begin:       a.Begin.UnixNano(),
 		End:         end,
 		Start:       a.Start,
 		Stop:        a.Stop,
