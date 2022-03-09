@@ -117,13 +117,12 @@ func (c *Checkpoint) getLastBlockSeen() uint64 {
 	// the newest block verified then instead ...
 	if block == 0 {
 		for _, acc := range c.accounting.hashableAccounts {
-			for _, evt := range acc.Events {
-				if block < evt.BlockHeight {
-					block = evt.BlockHeight
-				}
+			height := acc.Events[len(acc.Events)-1].BlockHeight
+			if block < height {
+				block = height
 			}
 		}
 	}
 
-	return 0
+	return block
 }
