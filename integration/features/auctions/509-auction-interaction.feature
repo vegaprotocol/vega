@@ -32,9 +32,9 @@ Feature: Test interactions between different auction types
   Scenario: When trying to exit opening auction liquidity monitoring doesn't get triggered, hence the opening auction uncrosses and market goes into continuous trading mode.
 
     Given the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
+      | id  | party   | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type |
       | lp1 | party0 | ETH/DEC21 | 10000             | 0.001 | buy  | BID              | 500        | 10     | submission |
-      | lp1 | party0 | ETH/DEC21 | 10000             | 0.001 | sell | ASK              | 500        | 10     | amendment  |
+      | lp1 | party0 | ETH/DEC21 | 10000             | 0.001 | sell | ASK              | 500        | 10     | amendment |
 
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference  |
@@ -55,9 +55,9 @@ Feature: Test interactions between different auction types
 
   Scenario: When trying to exit opening auction liquidity monitoring is triggered due to missing best bid, hence the opening auction gets extended, the markets trading mode is TRADING_MODE_MONITORING_AUCTION and the trigger is AUCTION_TRIGGER_LIQUIDITY.
 
-   # This ought to be "buy_shape" and "sell_shape" equivalents
+  # This ought to be "buy_shape" and "sell_shape" equivalents
     Given the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type |
+      | id  | party   | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type |
       | lp1 | party0 | ETH/DEC21 | 10000             | 0.001 | buy  | BID              | 1          | 2      | submission |
       | lp1 | party0 | ETH/DEC21 | 10000             | 0.001 | buy  | MID              | 2          | 1      | amendment |
       | lp1 | party0 | ETH/DEC21 | 10000             | 0.001 | sell | ASK              | 1          | 2      | amendment |
@@ -69,13 +69,13 @@ Feature: Test interactions between different auction types
       | party2 | ETH/DEC21 | sell | 1      | 1100  | 0                | TYPE_LIMIT | TIF_GTC |
       | party2 | ETH/DEC21 | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
 
-   # Again, pointless to check this in auction
-   # And the price monitoring bounds are []
+  # Again, pointless to check this in auction
+  # And the price monitoring bounds are []
 
     When the opening auction period ends for market "ETH/DEC21"
-   # Perhaps the reason for extending could be changed to reflect which check actually failed
-   # In this case, though, it's the orderbook status, which applies to all auctions alike
-   # So the trigger being AUCTION_TRIGGER_OPENING is as accurate as any
+  # Perhaps the reason for extending could be changed to reflect which check actually failed
+  # In this case, though, it's the orderbook status, which applies to all auctions alike
+  # So the trigger being AUCTION_TRIGGER_OPENING is as accurate as any
     Then the market data for the market "ETH/DEC21" should be:
       | trading mode                 | auction trigger         |
       | TRADING_MODE_OPENING_AUCTION | AUCTION_TRIGGER_OPENING |
@@ -90,6 +90,7 @@ Feature: Test interactions between different auction types
     And the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
       | 1000       | TRADING_MODE_CONTINUOUS | 1       | 990       | 1010      | 1000         | 10000          | 10            |
+
 
   Scenario: When trying to exit opening auction liquidity monitoring is triggered due to insufficient supplied stake, hence the opening auction gets extended, the markets trading mode is TRADING_MODE_MONITORING_AUCTION and the trigger is AUCTION_TRIGGER_LIQUIDITY.
 
@@ -112,7 +113,7 @@ Feature: Test interactions between different auction types
       | party2 | ETH/DEC21 | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
 
     When the opening auction period ends for market "ETH/DEC21"
-   # In this case, the required time has expired, and the book is fine, so the trigger probably should be LIQUIDITY
+  # In this case, the required time has expired, and the book is fine, so the trigger probably should be LIQUIDITY
     Then the market data for the market "ETH/DEC21" should be:
       | trading mode                    | auction trigger           |
       | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY |
@@ -188,13 +189,14 @@ Feature: Test interactions between different auction types
       | trading mode                    | auction trigger           | target stake | supplied stake | open interest |
       | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY | 1000         | 1000           | 10            |
 
+
   Scenario: Once market is in continuous trading mode: post a GFN order that should trigger price auction, check that the order gets stopped, appropriate event is sent and market remains in TRADING_MODE_CONTINUOUS
     Given the following network parameters are set:
       | name                                          | value |
       | market.liquidity.targetstake.triggering.ratio | 0.8   |
 
     And the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type |
+      | id  | party   | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type |
       | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | buy  | BID              | 1          | 2      | submission |
       | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | buy  | MID              | 2          | 1      | amendment |
       | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | sell | ASK              | 1          | 2      | amendment |
@@ -219,8 +221,7 @@ Feature: Test interactions between different auction types
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference | error                                                       |
       | party2 | ETH/DEC21 | sell | 10     | 1020  | 0                | TYPE_LIMIT | TIF_GTC | no-reject |                                                             |
       | party1 | ETH/DEC21 | buy  | 10     | 1020  | 0                | TYPE_LIMIT | TIF_GFN | reject-me | OrderError: non-persistent order trades out of price bounds |
-      
-      Then the following orders should be stopped:
+    Then the following orders should be stopped:
       | party  | market id | reason                                               |
       | party1 | ETH/DEC21 | ORDER_ERROR_NON_PERSISTENT_ORDER_OUT_OF_PRICE_BOUNDS |
     
@@ -229,7 +230,8 @@ Feature: Test interactions between different auction types
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
       | 1000       | TRADING_MODE_CONTINUOUS | 1       | 1001      | 1019      | 1000         | 1000           | 10            |
 
-  Scenario: Once market is in continuous trading mode: enter liquidity monitoring auction -> extend with liquidity monitoring auction -> leave auction mode
+
+  Scenario: Once market is in continuous trading mode: enter liquidity monitoring auction -> extend with price monitoring auction -> leave auction mode
     Given the following network parameters are set:
       | name                                          | value |
       | market.liquidity.targetstake.triggering.ratio | 0.8   |
@@ -304,7 +306,7 @@ Feature: Test interactions between different auction types
       | mark price | trading mode            | auction trigger             | horizon | min bound | max bound | target stake | supplied stake | open interest |
       | 1020       | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 1       | 1010      | 1030      | 3060         | 4080           | 30            |
 
-  Scenario: Once market is in continuous trading mode: enter liquidity monitoring auction -> extend with liquidity monitoring auction -> extend with liquidity monitoring -> leave auction mode
+  Scenario: Once market is in continuous trading mode: enter liquidity monitoring auction -> extend with price monitoring auction -> extend with liquidity monitoring -> leave auction mode
     Given the following network parameters are set:
       | name                                          | value |
       | market.liquidity.targetstake.triggering.ratio | 0.8   |
@@ -397,9 +399,8 @@ Feature: Test interactions between different auction types
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
       | 1020       | TRADING_MODE_CONTINUOUS | 1       | 1010      | 1030      | 4080         | 5100           | 40            |
 
-  # Below scenarios are taken from .mock feature files from specs internal  qa scenarios and needs to be implemented
 
-  # Scenario: Once market is in continuous trading mode: enter price monitoring auction -> extend with liquidity monitoring auction -> leave auction mode
+      #Scenario: Once market is in continuous trading mode: enter price monitoring auction -> extend with liquidity monitoring auction -> leave auction mode
       #    Given the following network parameters are set:
       #      | name                                          | value |
       #      | market.liquidity.targetstake.triggering.ratio | 0.8   |
@@ -454,145 +455,3 @@ Feature: Test interactions between different auction types
       #    And the market data for the market "ETH/DEC21" should be:
       #     | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
       #     | 1020       | TRADING_MODE_CONTINUOUS | 1       | 1010      | 1030      | 3060         | 5000           | 20            |
-
-  Scenario: Once market is in continuous trading mode: enter liquidity monitoring auction -> extend with price monitoring auction -> leave auction mode
-     
-    Given the following network parameters are set:
-      | name                                          | value |
-      | market.liquidity.targetstake.triggering.ratio | 0.8   |
-
-    And the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | buy  | BID              | 1          | 2      | submission |
-      | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | sell | ASK              | 1          | 2      | amendment  |
-
-    And the parties place the following orders:
-      | party  | market id | side | volume | price | resulting trades | type       | tif     |
-      | party1 | ETH/DEC21 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC |
-      | party1 | ETH/DEC21 | buy  | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
-      | party2 | ETH/DEC21 | sell | 1      | 1100  | 0                | TYPE_LIMIT | TIF_GTC |
-      | party2 | ETH/DEC21 | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
-
-    When the opening auction period ends for market "ETH/DEC21"
-    Then the auction ends with a traded volume of "10" at a price of "1000"
-    And the market data for the market "ETH/DEC21" should be:
-      | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 1000       | TRADING_MODE_CONTINUOUS | 1       | 990       | 1010      | 1000         | 1000           | 10            |
-
-    # Triggering liquidity monitoring auction
-    When the parties place the following orders:
-      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference   |
-      | party1 | ETH/DEC21 | buy  | 10     | 1010  | 0                | TYPE_LIMIT | TIF_GTC | cancel-me-1 |
-      | party2 | ETH/DEC21 | sell | 10     | 1010  | 0                | TYPE_LIMIT | TIF_GTC | cancel-me-2 |
-
-    Then the market data for the market "ETH/DEC21" should be:
-      | trading mode                    | auction trigger           |
-      | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY |
-
-    When the network moves ahead "1" blocks
-    And the parties cancel the following orders:
-      | party  | reference   |
-      | party1 | cancel-me-1 |
-      | party2 | cancel-me-2 |
-
-     # Updating the commitment amount to come out of liquidity auction
-    Then  the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type |
-      | lp1 | party0 | ETH/DEC21 | 4080              | 0.001 | buy  | BID              | 1          | 2      | amendment |
-      | lp1 | party0 | ETH/DEC21 | 4080              | 0.001 | sell | ASK              | 1          | 2      | amendment |
-
-    When the network moves ahead "1" blocks
-
-    # Now we place some orders that are outside the price range to trigger price auction
-    Then the parties place the following orders:
-      | party  | market id | side | volume | price | resulting trades | type       | tif     |
-      | party1 | ETH/DEC21 | buy  | 20     | 1020  | 0                | TYPE_LIMIT | TIF_GTC |
-      | party2 | ETH/DEC21 | sell | 20     | 1020  | 0                | TYPE_LIMIT | TIF_GTC |
-
-    Then the market data for the market "ETH/DEC21" should be:
-      | trading mode                    | auction trigger       |
-      | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_PRICE |
-
-    # Jump ahead to the end of the auction
-    When the network moves ahead "301" blocks
-
-    Then the following trades should be executed:
-      | buyer  | price | size | seller |
-      | party1 | 1020   | 20  | party2 |
-
-    And the market data for the market "ETH/DEC21" should be:
-      | mark price | trading mode            | auction trigger horizon     | min bound | max bound | target stake | supplied stake | open interest |
-      | 1020       | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 1         |    1010   |    3060      |   4080         |      30       |
-
-  # Scenario: Once market is in continuous trading mode: enter liquidity monitoring auction -> extend with price monitoring auction -> extend with liquidity monitoring -> leave auction mode
-
-      #     Given the network parameter "market.liquidity.targetstake.triggering.ratio" is "0.8"
-
-      #     Then traders place following liquidity provisions:
-      #       | trader  | market id | commitment amount | fee bid | buy shape object | sell shape object |
-      #       | lp1     | ETH/DEC19 |              1000 | 0.001   | "buy_shape"      | "sell_shape"      |
-
-      #      Then traders place following orders:
-      #       | trader  | market id | side | volume | price | resulting trades | type       | tif     |
-      #       | trader1 | ETH/DEC19 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC |
-      #       | trader1 | ETH/DEC19 | buy  | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
-      #       | trader2 | ETH/DEC19 | sell | 1      | 1100  | 0                | TYPE_LIMIT | TIF_GTC |
-      #       | trader2 | ETH/DEC19 | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
-
-      #     And the price monitoring bounds are []
-
-      #     Then the opening auction period for market "ETH/DEC19" ends
-      #     And the auction ends resulting in traded volume of "10" at a price of "1000"
-      #     And the trading mode for the market "ETH/DEC19" is "TRADING_MODE_CONTINUOUS"
-      #     And the max_oi for the market "ETH/DEC21" is "10"
-      #     And the mark price is "1000"
-      #     And the price monitoring bounds are [[990,1010]]
-      #     And the target stake is 1000
-      #     And the supplied stake is 1000
-
-      #     Then traders place following orders:
-      #       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference   |
-      #       | trader1 | ETH/DEC19 | buy  | 10     | 1010  | 0                | TYPE_LIMIT | TIF_GTC | cancel-me-1 |
-      #       | trader2 | ETH/DEC19 | sell | 10     | 1010  | 0                | TYPE_LIMIT | TIF_GTC | cancel-me-2 |
-
-      #     And the auction for market "ETH/DEC19" gets started with the "AUCTION_TRIGGER_LIQUIDITY" trigger
-      #     And the trading mode for the market "ETH/DEC19" is "TRADING_MODE_MONITORING_AUCTION"
-
-      #     Then traders place following orders:
-      #       | trader  | market id | side | volume | price | resulting trades | type       | tif     |
-      #       | trader1 | ETH/DEC19 | buy  | 20     | 1020  | 0                | TYPE_LIMIT | TIF_GTC |
-      #       | trader2 | ETH/DEC19 | sell | 20     | 1020  | 0                | TYPE_LIMIT | TIF_GTC |
-
-      #     Then traders cancel the following orders:
-      #       | trader  | reference   |
-      #       | trader1 | cancel-me-1 |
-      #       | trader2 | cancel-me-2 |
-
-      #     Then traders place following liquidity provisions:
-      #       | trader  | market id | commitment amount | fee bid | buy shape object | sell shape object |
-      #       | lp1     | ETH/DEC19 |              3060 | 0.001   | "buy_shape"      | "sell_shape"      |
-
-      #     And the auction for market "ETH/DEC19" gets started with the "AUCTION_TRIGGER_PRICE" trigger
-      #     And the trading mode for the market "ETH/DEC19" is "TRADING_MODE_MONITORING_AUCTION"
-      #     And the auction duration is "3s"
-
-      #     Then traders place following orders:
-      #       | trader  | market id | side | volume | price | resulting trades | type       | tif     |
-      #       | trader1 | ETH/DEC19 | buy  | 10     | 1020  | 0                | TYPE_LIMIT | TIF_GTC |
-      #       | trader2 | ETH/DEC19 | sell | 10     | 1020  | 0                | TYPE_LIMIT | TIF_GTC |
-
-      #     Then the time is advanced by "4s"
-      #     And the auction for market "ETH/DEC19" gets extended with the "AUCTION_TRIGGER_LIQUIDITY" trigger
-      #     And the trading mode for the market "ETH/DEC19" is "TRADING_MODE_MONITORING_AUCTION"
-
-      #     Then traders place following liquidity provisions:
-      #       | trader  | market id | commitment amount | fee bid | buy shape object | sell shape object |
-      #       | lp1     | ETH/DEC19 |              5000 | 0.001   | "buy_shape"      | "sell_shape"      |
-
-      #     And the auction ends resulting in traded volume of "30" at a price of "1020"
-      #     And the trading mode for the market "ETH/DEC19" is "TRADING_MODE_CONTINUOUS"
-      #     And the max_oi for the market "ETH/DEC21" is "40"
-      #     And the mark price is "1020"
-      #     And the price monitoring bounds are [[1010,1030]]
-      #     And the target stake is 4080
-      #     And the supplied stake is 5000
