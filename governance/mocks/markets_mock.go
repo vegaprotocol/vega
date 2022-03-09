@@ -7,6 +7,7 @@ package mocks
 import (
 	reflect "reflect"
 
+	types "code.vegaprotocol.io/vega/types"
 	gomock "github.com/golang/mock/gomock"
 	decimal "github.com/shopspring/decimal"
 )
@@ -47,6 +48,21 @@ func (m *MockMarkets) GetEquityLikeShareForMarketAndParty(arg0, arg1 string) (de
 func (mr *MockMarketsMockRecorder) GetEquityLikeShareForMarketAndParty(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetEquityLikeShareForMarketAndParty", reflect.TypeOf((*MockMarkets)(nil).GetEquityLikeShareForMarketAndParty), arg0, arg1)
+}
+
+// GetMarket mocks base method.
+func (m *MockMarkets) GetMarket(arg0 string) (types.Market, bool) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetMarket", arg0)
+	ret0, _ := ret[0].(types.Market)
+	ret1, _ := ret[1].(bool)
+	return ret0, ret1
+}
+
+// GetMarket indicates an expected call of GetMarket.
+func (mr *MockMarketsMockRecorder) GetMarket(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMarket", reflect.TypeOf((*MockMarkets)(nil).GetMarket), arg0)
 }
 
 // MarketExists mocks base method.
