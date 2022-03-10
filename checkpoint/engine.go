@@ -134,7 +134,7 @@ func (e *Engine) UponGenesis(ctx context.Context, data []byte) (err error) {
 	// if state nil, no checkpoint to load, let's just call
 	// the onCheckPointloaded stuff to notify engine they don't have to wait for a
 	// checkpoint to get in business
-	if state == nil {
+	if state == nil || len(state.CheckpointHash) <= 0 {
 		e.onCheckpointLoaded(ctx)
 	}
 
