@@ -53,6 +53,10 @@ func NewSnapshotEngine(
 	}
 }
 
+func (e *SnapshotEngine) UpdateParameters(parameters types.TargetStakeParameters) {
+	e.Engine.UpdateParameters(parameters)
+}
+
 func (e *SnapshotEngine) StopSnapshots() {
 	e.stopped = true
 }

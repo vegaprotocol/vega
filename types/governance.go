@@ -235,6 +235,15 @@ func (p *Proposal) IsMarketUpdate() bool {
 	}
 }
 
+func (p *Proposal) MarketUpdate() *UpdateMarket {
+	switch terms := p.Terms.Change.(type) {
+	case *ProposalTermsUpdateMarket:
+		return terms.UpdateMarket
+	default:
+		return nil
+	}
+}
+
 func (p *Proposal) WaitForNodeVote() {
 	p.State = ProposalStateWaitingForNodeVote
 }
@@ -1157,6 +1166,8 @@ func UpdateMarketFromProto(p *vegapb.ProposalTerms_UpdateMarket) *ProposalTermsU
 	if p.UpdateMarket != nil {
 		updateMarket = &UpdateMarket{}
 
+		updateMarket.MarketID = p.UpdateMarket.MarketId
+
 		if p.UpdateMarket.Changes != nil {
 			updateMarket.Changes = UpdateMarketConfigurationFromProto(p.UpdateMarket.Changes)
 		}
@@ -1267,7 +1278,8 @@ type ProposalTermsUpdateMarket struct {
 }
 
 type UpdateMarket struct {
-	Changes *UpdateMarketConfiguration
+	MarketID string
+	Changes  *UpdateMarketConfiguration
 }
 
 func (n UpdateMarket) IntoProto() *vegapb.UpdateMarket {
@@ -1275,7 +1287,9 @@ func (n UpdateMarket) IntoProto() *vegapb.UpdateMarket {
 }
 
 func (n UpdateMarket) DeepClone() *UpdateMarket {
-	cpy := UpdateMarket{}
+	cpy := UpdateMarket{
+		MarketID: n.MarketID,
+	}
 	if n.Changes != nil {
 		cpy.Changes = n.Changes.DeepClone()
 	}

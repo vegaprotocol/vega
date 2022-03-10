@@ -153,30 +153,33 @@ func (esm *equityShareMarket) BuildOrder(id, party string, side types.Side, pric
 	}
 }
 
-func (esm *equityShareMarket) createPartyIfMissing(party string) {
+func (esm *equityShareMarket) createPartyIfMissing(t *testing.T, party string) {
+	t.Helper()
 	if _, ok := esm.parties[party]; !ok {
 		esm.parties[party] = struct{}{}
-		addAccount(esm.tm, party)
+		addAccount(t, esm.tm, party)
 	}
 }
 
-func (esm *equityShareMarket) SubmitOrder(ctx context.Context, order *types.Order) (*types.OrderConfirmation, error) {
-	esm.createPartyIfMissing(order.Party)
+func (esm *equityShareMarket) SubmitOrder(t *testing.T, ctx context.Context, order *types.Order) (*types.OrderConfirmation, error) {
+	t.Helper()
+	esm.createPartyIfMissing(t, order.Party)
 	return esm.tm.market.SubmitOrder(ctx, order)
 }
 
-func (esm *equityShareMarket) WithSubmittedOrder(id, party string, side types.Side, price uint64) *equityShareMarket {
+func (esm *equityShareMarket) WithSubmittedOrder(t *testing.T, id, party string, side types.Side, price uint64) *equityShareMarket {
+	t.Helper()
 	ctx := context.Background()
 	order := esm.BuildOrder(id, party, side, price)
 
-	_, err := esm.SubmitOrder(ctx, order)
+	_, err := esm.SubmitOrder(t, ctx, order)
 	require.NoError(esm.t, err)
 	return esm
 }
 
-func (esm *equityShareMarket) WithSubmittedLiquidityProvision(party, id string, amount uint64, fee string,
-	buys, sells []*types.LiquidityOrder) *equityShareMarket {
-	esm.createPartyIfMissing(party)
+func (esm *equityShareMarket) WithSubmittedLiquidityProvision(t *testing.T, party, id string, amount uint64, fee string, buys, sells []*types.LiquidityOrder) *equityShareMarket {
+	t.Helper()
+	esm.createPartyIfMissing(t, party)
 	esm.tm.WithSubmittedLiquidityProvision(esm.t, party, id, amount, fee, buys, sells)
 	return esm
 }
@@ -217,26 +220,20 @@ func testWithinMarket(t *testing.T) {
 	// Setup a market with a set of non-matching orders and Liquidity Provision
 	// Submissions from 2 parties.
 	esm := newEquityShareMarket(t).
-		WithSubmittedOrder("some-id-1", "party1", types.SideSell, matchingPrice+one).
-		WithSubmittedOrder("some-id-2", "party2", types.SideBuy, matchingPrice-one).
+		WithSubmittedOrder(t, "some-id-1", "party1", types.SideSell, matchingPrice+one).
+		WithSubmittedOrder(t, "some-id-2", "party2", types.SideBuy, matchingPrice-one).
 		// party1 (commitment: 2000) should get 2/3 of the fee
-		WithSubmittedLiquidityProvision("party1", "lp-id-1", 2000, "0.5",
-			[]*types.LiquidityOrder{
-				newLiquidityOrder(types.PeggedReferenceBestBid, 11, 1),
-			},
-			[]*types.LiquidityOrder{
-				newLiquidityOrder(types.PeggedReferenceBestAsk, 10, 1),
-			},
-		).
+		WithSubmittedLiquidityProvision(t, "party1", "lp-id-1", 2000, "0.5", []*types.LiquidityOrder{
+			newLiquidityOrder(types.PeggedReferenceBestBid, 11, 1),
+		}, []*types.LiquidityOrder{
+			newLiquidityOrder(types.PeggedReferenceBestAsk, 10, 1),
+		}).
 		// party2 (commitment: 1000) should get 1/3 of the fee
-		WithSubmittedLiquidityProvision("party2", "lp-id-2", 1000, "0.5",
-			[]*types.LiquidityOrder{
-				newLiquidityOrder(types.PeggedReferenceBestBid, 10, 1),
-			},
-			[]*types.LiquidityOrder{
-				newLiquidityOrder(types.PeggedReferenceBestAsk, 11, 1),
-			},
-		)
+		WithSubmittedLiquidityProvision(t, "party2", "lp-id-2", 1000, "0.5", []*types.LiquidityOrder{
+			newLiquidityOrder(types.PeggedReferenceBestBid, 10, 1),
+		}, []*types.LiquidityOrder{
+			newLiquidityOrder(types.PeggedReferenceBestAsk, 11, 1),
+		})
 
 	// tm is the testMarket instance
 	var (
@@ -264,11 +261,8 @@ func testWithinMarket(t *testing.T) {
 
 	// Match a pair of orders (same price) to trigger a fee distribution.
 	conf, err := esm.
-		WithSubmittedOrder("some-id-3", "party1", types.SideSell, matchingPrice).
-		SubmitOrder(
-			context.Background(),
-			esm.BuildOrder("some-id-4", "party2", types.SideBuy, matchingPrice),
-		)
+		WithSubmittedOrder(t, "some-id-3", "party1", types.SideSell, matchingPrice).
+		SubmitOrder(t, context.Background(), esm.BuildOrder("some-id-4", "party2", types.SideBuy, matchingPrice))
 	require.NoError(t, err)
 	require.Len(t, conf.Trades, 1)
 

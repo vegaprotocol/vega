@@ -48,6 +48,10 @@ func NewMonitor(tsCalc TargetStakeCalculator, params *types.LiquidityMonitoringP
 	return e
 }
 
+func (e *Engine) UpdateParameters(parameters *types.LiquidityMonitoringParameters) {
+	e.params = parameters
+}
+
 func (e *Engine) SetMinDuration(d time.Duration) {
 	e.mu.Lock()
 	e.minDuration = d

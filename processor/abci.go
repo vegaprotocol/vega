@@ -1339,7 +1339,7 @@ func (app *App) onTick(ctx context.Context, t time.Time) {
 		case toEnact.IsNewAsset():
 			app.enactAsset(ctx, prop, toEnact.NewAsset())
 		case toEnact.IsUpdateMarket():
-			app.log.Error("update market enactment is not implemented")
+			app.enactUpdateMarket(ctx, prop, toEnact.UpdateMarket())
 		case toEnact.IsUpdateNetworkParameter():
 			app.enactNetworkParameterUpdate(ctx, prop, toEnact.UpdateNetworkParameter())
 		case toEnact.IsFreeform():
@@ -1563,4 +1563,14 @@ func (app *App) DeliverStateVarProposal(ctx context.Context, tx abci.Tx) error {
 		return err
 	}
 	return app.stateVar.ProposedValueReceived(ctx, stateVarID, node, eventID, bundle)
+}
+
+func (app *App) enactUpdateMarket(ctx context.Context, prop *types.Proposal, market *types.Market) {
+	if err := app.exec.UpdateMarket(ctx, market); err != nil {
+		prop.State = types.ProposalStateFailed
+		app.log.Error("failed to update market",
+			logging.ProposalID(prop.ID),
+			logging.Error(err))
+	}
+	prop.State = types.ProposalStateEnacted
 }

@@ -10,6 +10,7 @@ import (
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/liquidity/supplied"
 	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/vega/risk"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
 	"code.vegaprotocol.io/vega/types/statevar"
@@ -832,4 +833,8 @@ func validateShape(sh []*types.LiquidityOrder, side types.Side, maxSize int64) e
 
 func (e *Engine) IsPoTInitialised() bool {
 	return e.suppliedEngine.IsPoTInitialised()
+}
+
+func (e *Engine) UpdateMarketConfig(model risk.Model, monitor PriceMonitor) {
+	e.suppliedEngine.UpdateMarketConfig(model, monitor)
 }
