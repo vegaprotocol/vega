@@ -33,21 +33,21 @@ Feature: Target stake
 # this is now out of the time window.
     And time is updated to "2021-03-08T00:00:00Z"
 
-  Scenario: Max open interest changes over time
+  Scenario: Max open interest changes over time (0041-TSTK-002)
     # setup accounts
     Given the parties deposit on asset's general account the following amount:
       | party | asset | amount    |
-      | tt_0   | BTC   | 100000000 |
-      | tt_1   | BTC   | 100000000 |
-      | tt_2   | BTC   | 100000000 |
-      | tt_3   | BTC   | 100000000 |
+      | tt_0  | BTC   | 100000000 |
+      | tt_1  | BTC   | 100000000 |
+      | tt_2  | BTC   | 100000000 |
+      | tt_3  | BTC   | 100000000 |
 
     # put some volume on the book so that others can increase their
     # positions and close out if needed too
     When the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
-      | tt_0   | ETH/DEC21 | buy  | 1000   | 90    | 0                | TYPE_LIMIT | TIF_GTC | tt_0_0    |
-      | tt_0   | ETH/DEC21 | sell | 1000   | 110   | 0                | TYPE_LIMIT | TIF_GTC | tt_0_1    |
+      | tt_0  | ETH/DEC21 | buy  | 1000   | 90    | 0                | TYPE_LIMIT | TIF_GTC | tt_0_0    |
+      | tt_0  | ETH/DEC21 | sell | 1000   | 110   | 0                | TYPE_LIMIT | TIF_GTC | tt_0_1    |
 
     # nothing should have traded, we have mark price set apriori or
     # due to auction closing.
@@ -56,9 +56,9 @@ Feature: Target stake
     # Traders 1, 2, 3 go long
     When the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
-      | tt_1   | ETH/DEC21 | buy  | 10     | 110   | 0                | TYPE_LIMIT | TIF_GTC | tt_1_0    |
-      | tt_2   | ETH/DEC21 | buy  | 20     | 110   | 0                | TYPE_LIMIT | TIF_GTC | tt_2_0    |
-      | tt_3   | ETH/DEC21 | buy  | 30     | 110   | 0                | TYPE_LIMIT | TIF_GTC | tt_2_0    |
+      | tt_1  | ETH/DEC21 | buy  | 10     | 110   | 0                | TYPE_LIMIT | TIF_GTC | tt_1_0    |
+      | tt_2  | ETH/DEC21 | buy  | 20     | 110   | 0                | TYPE_LIMIT | TIF_GTC | tt_2_0    |
+      | tt_3  | ETH/DEC21 | buy  | 30     | 110   | 0                | TYPE_LIMIT | TIF_GTC | tt_2_0    |
 
     Then the opening auction period ends for market "ETH/DEC21"
 
@@ -76,7 +76,7 @@ Feature: Target stake
     # Trader 3 closes out 20
     When the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
-      | tt_3   | ETH/DEC21 | sell | 20     | 90    | 1                | TYPE_LIMIT | TIF_GTC | tt_2_1    |
+      | tt_3  | ETH/DEC21 | sell | 20     | 90    | 1                | TYPE_LIMIT | TIF_GTC | tt_2_1    |
 
     Then the mark price should be "90" for the market "ETH/DEC21"
 
