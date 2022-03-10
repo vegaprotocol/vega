@@ -2,7 +2,6 @@ package markets
 
 import (
 	"context"
-	"time"
 
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/products"
@@ -67,14 +66,4 @@ func NewInstrument(ctx context.Context, log *logging.Logger, pi *types.Instrumen
 		Metadata: pi.Metadata,
 		Product:  product,
 	}, err
-}
-
-// GetMarketClosingTime return the maturity of the product.
-func (i *Instrument) GetMarketClosingTime() (time.Time, error) {
-	switch p := i.Product.(type) {
-	case *products.Future:
-		return p.Maturity, nil
-	default:
-		return time.Time{}, ErrNoMarketClosingTime
-	}
 }

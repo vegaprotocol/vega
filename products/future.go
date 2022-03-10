@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"strings"
-	"time"
 
 	oraclespb "code.vegaprotocol.io/protos/vega/oracles/v1"
 	"code.vegaprotocol.io/vega/logging"
@@ -28,7 +27,6 @@ type Future struct {
 	log                        *logging.Logger
 	SettlementAsset            string
 	QuoteName                  string
-	Maturity                   time.Time
 	oracle                     oracle
 	tradingTerminationListener func(context.Context, bool)
 	settlementPriceListener    func(context.Context, *num.Uint)
