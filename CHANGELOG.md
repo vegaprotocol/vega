@@ -13,7 +13,7 @@
 - [406](https://github.com/vegaprotocol/data-node/pull/406) - Add a basic integration test
 
 ### 🐛 Fixes
-- [](https://github.com/vegaprotocol/data-node/pull/xxx) -
+- [411](https://github.com/vegaprotocol/data-node/pull/411) - Fix a couple of incompatibilities in `data-node v2`
 
 
 ## 0.49.1

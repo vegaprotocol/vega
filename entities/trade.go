@@ -3,6 +3,7 @@ package entities
 import (
 	"encoding/hex"
 	"fmt"
+	"strings"
 	"time"
 
 	"code.vegaprotocol.io/protos/vega"
@@ -37,15 +38,15 @@ type Trade struct {
 
 func (t *Trade) ToProto() *vega.Trade {
 	return &vega.Trade{
-		Id:        hex.EncodeToString(t.ID),
+		Id:        strings.ToUpper(hex.EncodeToString(t.ID)),
 		MarketId:  hex.EncodeToString(t.MarketID),
 		Price:     t.Price.String(),
 		Size:      t.Size.UintNO().Uint64(),
-		Buyer:     hex.EncodeToString(t.Buyer),
-		Seller:    hex.EncodeToString(t.Seller),
+		Buyer:     Party{ID: t.Buyer}.HexID(),
+		Seller:    Party{ID: t.Seller}.HexID(),
 		Aggressor: t.Aggressor,
-		BuyOrder:  hex.EncodeToString(t.BuyOrder),
-		SellOrder: hex.EncodeToString(t.SellOrder),
+		BuyOrder:  strings.ToUpper(hex.EncodeToString(t.BuyOrder)),
+		SellOrder: strings.ToUpper(hex.EncodeToString(t.SellOrder)),
 		Timestamp: t.VegaTime.UnixNano(),
 		Type:      t.Type,
 		BuyerFee: &vega.Fee{
@@ -80,22 +81,22 @@ func TradeFromProto(t *vega.Trade, vegaTime time.Time, sequenceNumber uint64) (*
 
 	size := decimal.NewFromUint(uint256.NewInt(t.Size))
 
-	buyer, err := hex.DecodeString(t.Buyer)
+	buyer, err := MakePartyID(t.Buyer)
 	if err != nil {
 		return nil, fmt.Errorf("failed to decode buyer id:%w", err)
 	}
 
-	seller, err := hex.DecodeString(t.Seller)
+	seller, err := MakePartyID(t.Seller)
 	if err != nil {
 		return nil, fmt.Errorf("failed to decode seller id:%w", err)
 	}
 
-	buyOrderId, err := hex.DecodeString(t.BuyOrder)
+	buyOrderId, err := MakeOrderID(t.BuyOrder)
 	if err != nil {
 		return nil, fmt.Errorf("failed to decode buy order id:%w", err)
 	}
 
-	sellOrderId, err := hex.DecodeString(t.SellOrder)
+	sellOrderId, err := MakeOrderID(t.SellOrder)
 	if err != nil {
 		return nil, fmt.Errorf("failed to decode sell order id:%w", err)
 	}

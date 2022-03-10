@@ -65,6 +65,7 @@ func TestMain(m *testing.M) {
 	// When you're debugging tests, it's helpful to stop here so you can go in and poke around
 	// sending queries via the graphql playground etc..
 	if blockWhenDone {
+		log.Print("Blocking now to allow debugging")
 		waitForSIGTERM()
 	}
 }
@@ -92,9 +93,22 @@ func assertGraphQLQueriesReturnSame(t *testing.T, query string, oldResp, newResp
 	err = newClient.Run(context.Background(), req, &newResp)
 	require.NoError(t, err)
 
+	sortAccounts := cmpopts.SortSlices(func(a Account, b Account) bool {
+		if a.Type != b.Type {
+			return a.Type < b.Type
+		}
+		if a.Asset.Id != b.Asset.Id {
+			return a.Asset.Id < b.Asset.Id
+		}
+		if a.Market.Id != b.Market.Id {
+			return a.Market.Id < b.Market.Id
+		}
+		return a.Balance < b.Balance
+	})
 	sortTrades := cmpopts.SortSlices(func(a Trade, b Trade) bool { return a.Id < b.Id })
+	sortMarkets := cmpopts.SortSlices(func(a Market, b Market) bool { return a.Id < b.Id })
 	sortVotes := cmpopts.SortSlices(func(a Vote, b Vote) bool { return a.Party.Id < b.Party.Id })
-	diff := cmp.Diff(oldResp, newResp, sortTrades, sortVotes)
+	diff := cmp.Diff(oldResp, newResp, sortTrades, sortVotes, sortAccounts, sortMarkets)
 	assert.Empty(t, diff)
 }
 
@@ -111,6 +125,9 @@ func newTestConfig() (*config.Config, error) {
 	cfg.Broker.FileEventSourceConfig.TimeBetweenBlocks = encoding.Duration{Duration: 0}
 	cfg.API.ExposeLegacyAPI = encoding.Bool(true)
 	cfg.API.LegacyAPIPortOffset = 10
+	cfg.API.WebUIEnabled = encoding.Bool(true)
+	cfg.API.Reflection = encoding.Bool(true)
+
 	return &cfg, nil
 }
 

@@ -1,7 +1,6 @@
 package integration_test
 
 import (
-	"strings"
 	"time"
 )
 
@@ -212,9 +211,9 @@ type LiquidityProvision struct {
 
 type Account struct {
 	Balance string
-	Asset   *Asset
+	Asset   Asset
 	Type    string
-	Market  *Market
+	Market  Market
 }
 
 type Asset struct {
@@ -225,8 +224,8 @@ type Asset struct {
 	Decimals    int
 	Quantum     string
 	// TODO: source
-	InfrastructureFeeAccount Account
-	GlobalRewardPoolAccount  Account
+	InfrastructureFeeAccount *Account
+	GlobalRewardPoolAccount  *Account
 }
 
 // ----------------------------------------------------------------------------
@@ -234,11 +233,6 @@ type Asset struct {
 // where the output from the API might differ slightly but we don't care.
 
 type HexString string
-
-func (s HexString) Equal(other HexString) bool {
-	// Don't care about casing of hex strings
-	return strings.EqualFold(string(s), string(other))
-}
 
 type TimeString string
 

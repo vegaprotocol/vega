@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math"
 	"strconv"
+	"strings"
 	"time"
 
 	"code.vegaprotocol.io/protos/vega"
@@ -44,7 +45,7 @@ func MakeOrderID(stringID string) ([]byte, error) {
 }
 
 func (o *Order) HexID() string {
-	return hex.EncodeToString(o.ID)
+	return strings.ToUpper(hex.EncodeToString(o.ID))
 }
 
 func (o *Order) ToProto() *vega.Order {
