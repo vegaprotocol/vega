@@ -2,6 +2,7 @@ package stats
 
 // Blockchain hold stats over all the vega node.
 type Blockchain struct {
+	hash                  string
 	height                uint64
 	averageTxSizeBytes    uint64
 	averageTxPerBatch     uint64
@@ -66,6 +67,10 @@ func (b Blockchain) CurrentTradesInBatch() uint64 {
 	return b.currentTradesInBatch
 }
 
+func (b Blockchain) Hash() string {
+	return b.hash
+}
+
 // Height returns the current heights of the chain.
 func (b Blockchain) Height() uint64 {
 	return b.height
@@ -78,6 +83,10 @@ func (b *Blockchain) IncHeight() {
 
 func (b *Blockchain) SetHeight(height uint64) {
 	b.height = height
+}
+
+func (b *Blockchain) SetHash(hash string) {
+	b.hash = hash
 }
 
 // AverageTxSizeBytes return the average size in bytes of the

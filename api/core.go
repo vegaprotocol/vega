@@ -69,6 +69,7 @@ func (s *coreService) LastBlockHeight(
 
 	return &protoapi.LastBlockHeightResponse{
 		Height: s.stats.Blockchain.Height(),
+		Hash:   s.stats.Blockchain.Hash(),
 	}, nil
 }
 
@@ -306,6 +307,7 @@ func (s *coreService) Statistics(ctx context.Context, _ *protoapi.StatisticsRequ
 
 	stats := &protoapi.Statistics{
 		BlockHeight:           s.stats.Blockchain.Height(),
+		BlockHash:             s.stats.Blockchain.Hash(),
 		BacklogLength:         uint64(backlogLength),
 		TotalPeers:            uint64(numPeers),
 		GenesisTime:           genesisTime,

@@ -45,7 +45,7 @@ func (e *Engine) startCalcPriceRanges(eventID string, endOfCalcCallback statevar
 	}
 
 	for _, b := range e.bounds {
-		ref := e.getRefPrice(b.Trigger.Horizon)
+		ref := e.getRefPriceNoUpdate(b.Trigger.Horizon)
 		minPrice, maxPrice := e.riskModel.PriceRange(ref, e.fpHorizons[b.Trigger.Horizon], b.Trigger.Probability)
 		down = append(down, minPrice.Div(ref))
 		up = append(up, maxPrice.Div(ref))

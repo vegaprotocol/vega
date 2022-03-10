@@ -14,6 +14,20 @@
 ### 🐛 Fixes
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
+## 0.49.2
+
+### 🛠 Improvements
+- [4951](https://github.com/vegaprotocol/vega/issues/4951) - Add ability to stream events to a file
+- [4953](https://github.com/vegaprotocol/vega/issues/4953) - Add block hash to statistics and to block height request
+- [4961](https://github.com/vegaprotocol/vega/issues/4961) - Extend auction feature tests
+- [4832](https://github.com/vegaprotocol/vega/issues/4832) - Add validation of update market proposals.
+
+### 🐛 Fixes
+- [4947](https://github.com/vegaprotocol/vega/issues/4947) - Fix time formatting problem that was breaking consensus on nodes in different time zones
+- [4956](https://github.com/vegaprotocol/vega/issues/4956) - Fix concurrent write to price monitoring ref price cache
+- [4957](https://github.com/vegaprotocol/vega/issues/4957) - Fix `vega announce_node` to work with `--home` and `--passphrase-file`
+- [4964](https://github.com/vegaprotocol/vega/issues/4964) - Fix price monitoring snapshot
+
 
 ## 0.49.1
 
@@ -28,6 +42,7 @@
 - [4890](https://github.com/vegaprotocol/vega/issues/4890) - epoch service now notifies other engines when it has restored from a snapshot
 - [4879](https://github.com/vegaprotocol/vega/issues/4879) - Fixes for invalid data types in the `MarketData` proto message.
 - [4881](https://github.com/vegaprotocol/vega/issues/4881) - Set tendermint validators' voting power when loading from snapshot
+- [4915](https://github.com/vegaprotocol/vega/issues/4915) - Take full snapshot of collateral engine, always read epoch length from network parameters, use back-off on heartbeats
 - [4882](https://github.com/vegaprotocol/vega/issues/4882) - Fixed tracking of liquidity fee received and added feature tests for the fee based rewards
 - [4898](https://github.com/vegaprotocol/vega/issues/4898) - Add ranking score information to checkpoint and snapshot and emit an event when loaded
 - [4932](https://github.com/vegaprotocol/vega/issues/4932) - Fix the string used for resource id of stake total supply to be stable to fix the replay of non validator node locally

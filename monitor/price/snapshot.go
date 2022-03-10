@@ -147,7 +147,7 @@ func newPriceRangeCacheFromSlice(prs []*types.PriceRangeCache) map[*bound]priceR
 	return priceRangesCache
 }
 
-func (e Engine) serialisePriceRanges() []*types.PriceRangeCache {
+func (e *Engine) serialisePriceRanges() []*types.PriceRangeCache {
 	prc := make([]*types.PriceRangeCache, 0, len(e.priceRangesCache))
 	for bound, priceRange := range e.priceRangesCache {
 		prc = append(prc, &types.PriceRangeCache{
@@ -162,7 +162,10 @@ func (e Engine) serialisePriceRanges() []*types.PriceRangeCache {
 
 	sort.Slice(prc, func(i, j int) bool {
 		if prc[i].Bound.UpFactor.Equal(prc[j].Bound.UpFactor) {
-			return prc[j].Bound.DownFactor.GreaterThan(prc[i].Bound.DownFactor)
+			if prc[i].Bound.DownFactor.Equal(prc[j].Bound.DownFactor) {
+				return prc[i].Bound.Trigger.Horizon < prc[j].Bound.Trigger.Horizon
+			}
+			return prc[j].Bound.DownFactor.LessThan(prc[i].Bound.DownFactor)
 		}
 
 		return prc[j].Bound.UpFactor.GreaterThan(prc[i].Bound.UpFactor)
@@ -171,11 +174,11 @@ func (e Engine) serialisePriceRanges() []*types.PriceRangeCache {
 	return prc
 }
 
-func (e Engine) Changed() bool {
+func (e *Engine) Changed() bool {
 	return e.stateChanged
 }
 
-func (e Engine) serialisePricesNow() []*types.CurrentPrice {
+func (e *Engine) serialisePricesNow() []*types.CurrentPrice {
 	psn := make([]*types.CurrentPrice, 0, len(e.pricesNow))
 	for _, pn := range e.pricesNow {
 		psn = append(psn, &types.CurrentPrice{
@@ -195,7 +198,7 @@ func (e Engine) serialisePricesNow() []*types.CurrentPrice {
 	return psn
 }
 
-func (e Engine) serialisePricesPast() []*types.PastPrice {
+func (e *Engine) serialisePricesPast() []*types.PastPrice {
 	pps := make([]*types.PastPrice, 0, len(e.pricesPast))
 	for _, pp := range pps {
 		pps = append(pps, &types.PastPrice{

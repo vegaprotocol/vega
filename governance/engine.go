@@ -40,6 +40,7 @@ type Broker interface {
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/markets_mock.go -package mocks code.vegaprotocol.io/vega/governance Markets
 type Markets interface {
 	MarketExists(market string) bool
+	GetMarket(market string) (types.Market, bool)
 	GetEquityLikeShareForMarketAndParty(market, party string) (num.Decimal, bool)
 }
 
@@ -210,7 +211,13 @@ func (e *Engine) preEnactProposal(p *proposal) (te *ToEnact, perr types.Proposal
 
 	switch p.Terms.Change.GetTermType() {
 	case types.ProposalTermsTypeNewMarket:
-		te.m = &ToEnactMarket{}
+		te.m = &ToEnactNewMarket{}
+	case types.ProposalTermsTypeUpdateMarket:
+		mkt, perr, err := e.updatedMarketFromProposal(p)
+		if err != nil {
+			return nil, perr, err
+		}
+		te.updatedMarket = mkt
 	case types.ProposalTermsTypeUpdateNetworkParameter:
 		unp := p.Terms.GetUpdateNetworkParameter()
 		if unp != nil {
@@ -225,7 +232,7 @@ func (e *Engine) preEnactProposal(p *proposal) (te *ToEnact, perr types.Proposal
 	case types.ProposalTermsTypeNewFreeform:
 		te.f = &ToEnactFreeform{}
 	}
-	return
+	return // nolint:nakedret
 }
 
 func (e *Engine) preVoteClosedProposal(p *proposal) *VoteClosed {
@@ -461,7 +468,7 @@ func (e *Engine) intoToSubmit(p *types.Proposal) (*ToSubmit, error) {
 		closeTime := e.currentTime
 		enactTime := time.Unix(p.Terms.EnactmentTimestamp, 0)
 		newMarket := p.Terms.GetNewMarket()
-		mkt, perr, err := createMarket(p.ID, newMarket, e.netp, e.currentTime, e.assets, enactTime.Sub(closeTime))
+		mkt, perr, err := buildMarketFromProposal(p.ID, newMarket, e.netp, e.assets, enactTime.Sub(closeTime))
 		if err != nil {
 			e.rejectProposal(p, perr, err)
 			return nil, fmt.Errorf("%w, %v", err, perr)
@@ -471,8 +478,6 @@ func (e *Engine) intoToSubmit(p *types.Proposal) (*ToSubmit, error) {
 		}
 		tsb.m.l = types.LiquidityProvisionSubmissionFromMarketCommitment(
 			newMarket.LiquidityCommitment, p.ID)
-	case types.ProposalTermsTypeUpdateMarket:
-		// TODO Implement
 	}
 
 	return tsb, nil
@@ -545,7 +550,7 @@ func (e *Engine) validateOpenProposal(proposal *types.Proposal) (types.ProposalE
 			logging.Time("provided", closeTime),
 			logging.String("id", proposal.ID))
 		return types.ProposalErrorCloseTimeTooSoon,
-			fmt.Errorf("proposal closing time too soon, expected > %v, got %v", minCloseTime, closeTime)
+			fmt.Errorf("proposal closing time too soon, expected > %v, got %v", minCloseTime.UTC(), closeTime.UTC())
 	}
 
 	maxCloseTime := e.currentTime.Add(params.MaxClose)
@@ -555,7 +560,7 @@ func (e *Engine) validateOpenProposal(proposal *types.Proposal) (types.ProposalE
 			logging.Time("provided", closeTime),
 			logging.String("id", proposal.ID))
 		return types.ProposalErrorCloseTimeTooLate,
-			fmt.Errorf("proposal closing time too late, expected < %v, got %v", maxCloseTime, closeTime)
+			fmt.Errorf("proposal closing time too late, expected < %v, got %v", maxCloseTime.UTC(), closeTime.UTC())
 	}
 
 	enactTime := time.Unix(proposal.Terms.EnactmentTimestamp, 0)
@@ -566,7 +571,7 @@ func (e *Engine) validateOpenProposal(proposal *types.Proposal) (types.ProposalE
 			logging.Time("provided", enactTime),
 			logging.String("id", proposal.ID))
 		return types.ProposalErrorEnactTimeTooSoon,
-			fmt.Errorf("proposal enactment time too soon, expected > %v, got %v", minEnactTime, enactTime)
+			fmt.Errorf("proposal enactment time too soon, expected > %v, got %v", minEnactTime.UTC(), enactTime.UTC())
 	}
 
 	maxEnactTime := e.currentTime.Add(params.MaxEnact)
@@ -576,7 +581,7 @@ func (e *Engine) validateOpenProposal(proposal *types.Proposal) (types.ProposalE
 			logging.Time("provided", enactTime),
 			logging.String("id", proposal.ID))
 		return types.ProposalErrorEnactTimeTooLate,
-			fmt.Errorf("proposal enactment time too late, expected < %v, got %v", maxEnactTime, enactTime)
+			fmt.Errorf("proposal enactment time too late, expected < %v, got %v", maxEnactTime.UTC(), enactTime.UTC())
 	}
 
 	if e.isTwoStepsProposal(proposal) {
@@ -587,7 +592,7 @@ func (e *Engine) validateOpenProposal(proposal *types.Proposal) (types.ProposalE
 				logging.Time("validation-time", validationTime),
 				logging.String("id", proposal.ID))
 			return types.ProposalErrorIncompatibleTimestamps,
-				fmt.Errorf("proposal closing time cannot be before validation time, expected > %v got %v", validationTime, closeTime)
+				fmt.Errorf("proposal closing time cannot be before validation time, expected > %v got %v", validationTime.UTC(), closeTime.UTC())
 		}
 	}
 
@@ -597,7 +602,7 @@ func (e *Engine) validateOpenProposal(proposal *types.Proposal) (types.ProposalE
 			logging.Time("closing-time", closeTime),
 			logging.String("id", proposal.ID))
 		return types.ProposalErrorIncompatibleTimestamps,
-			fmt.Errorf("proposal enactment time cannot be before closing time, expected > %v got %v", closeTime, enactTime)
+			fmt.Errorf("proposal enactment time cannot be before closing time, expected > %v got %v", closeTime.UTC(), enactTime.UTC())
 	}
 
 	proposerTokens, err := getGovernanceTokens(e.accs, proposal.Party)
@@ -738,19 +743,20 @@ func (e *Engine) validateChange(terms *types.ProposalTerms) (types.ProposalError
 	case types.ProposalTermsTypeNewMarket:
 		closeTime := time.Unix(terms.ClosingTimestamp, 0)
 		enactTime := time.Unix(terms.EnactmentTimestamp, 0)
-		perr, err := validateNewMarket(e.currentTime, terms.GetNewMarket(), e.assets, true, e.netp, enactTime.Sub(closeTime))
-		if err != nil {
-			return perr, err
-		}
-		return types.ProposalErrorUnspecified, nil
+		return validateNewMarketChange(terms.GetNewMarket(), e.assets, true, e.netp, enactTime.Sub(closeTime))
+	case types.ProposalTermsTypeUpdateMarket:
+		closeTime := time.Unix(terms.ClosingTimestamp, 0)
+		enactTime := time.Unix(terms.EnactmentTimestamp, 0)
+		return validateUpdateMarketChange(terms.GetUpdateMarket(), e.netp, enactTime.Sub(closeTime))
 	case types.ProposalTermsTypeNewAsset:
 		return validateNewAsset(terms.GetNewAsset().Changes)
 	case types.ProposalTermsTypeUpdateNetworkParameter:
 		return validateNetworkParameterUpdate(e.netp, terms.GetUpdateNetworkParameter().Changes)
 	case types.ProposalTermsTypeNewFreeform:
 		return validateNewFreeform(terms.GetNewFreeform())
+	default:
+		return types.ProposalErrorUnspecified, nil
 	}
-	return types.ProposalErrorUnspecified, nil
 }
 
 func (e *Engine) closeProposal(ctx context.Context, proposal *proposal) {
@@ -814,6 +820,47 @@ func (e *Engine) updateValidatorKey(ctx context.Context, m map[string]*types.Vot
 		e.broker.Send(events.NewVoteEvent(ctx, *vote))
 		m[newKey] = vote
 	}
+}
+
+func (e *Engine) updatedMarketFromProposal(p *proposal) (*types.Market, types.ProposalError, error) {
+	change := p.Terms.GetUpdateMarket()
+	existingMarket, _ := e.markets.GetMarket(p.ID)
+
+	newMarket := &types.NewMarket{
+		Changes: &types.NewMarketConfiguration{
+			Instrument: &types.InstrumentConfiguration{
+				Name: existingMarket.TradableInstrument.Instrument.Name,
+				Code: change.Changes.Instrument.Code,
+			},
+			DecimalPlaces:                 existingMarket.DecimalPlaces,
+			Metadata:                      change.Changes.Metadata,
+			PriceMonitoringParameters:     change.Changes.PriceMonitoringParameters,
+			LiquidityMonitoringParameters: change.Changes.LiquidityMonitoringParameters,
+			RiskParameters:                change.Changes.RiskParameters,
+		},
+	}
+
+	switch product := change.Changes.Instrument.Product.(type) {
+	case nil:
+		return nil, types.ProposalErrorNoProduct, ErrMissingProduct
+	case *types.UpdateInstrumentConfigurationFuture:
+		asset, _ := existingMarket.GetAsset()
+		newMarket.Changes.Instrument.Product = &types.InstrumentConfigurationFuture{
+			Future: &types.FutureProduct{
+				SettlementAsset:                 asset,
+				QuoteName:                       product.Future.QuoteName,
+				OracleSpecForSettlementPrice:    product.Future.OracleSpecForSettlementPrice,
+				OracleSpecForTradingTermination: product.Future.OracleSpecForTradingTermination,
+				OracleSpecBinding:               product.Future.OracleSpecBinding,
+			},
+		}
+	default:
+		return nil, types.ProposalErrorUnsupportedProduct, ErrUnsupportedProduct
+	}
+
+	closeTime := e.currentTime
+	enactTime := time.Unix(p.Terms.EnactmentTimestamp, 0)
+	return buildMarketFromProposal(p.ID, newMarket, e.netp, e.assets, enactTime.Sub(closeTime))
 }
 
 type proposal struct {

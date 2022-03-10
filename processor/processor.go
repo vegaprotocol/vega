@@ -57,6 +57,7 @@ type ExecutionEngine interface {
 
 	// market stuff
 	SubmitMarket(ctx context.Context, marketConfig *types.Market) error
+	UpdateMarket(ctx context.Context, marketConfig *types.Market) error
 	SubmitMarketWithLiquidityProvision(ctx context.Context, marketConfig *types.Market, lp *types.LiquidityProvisionSubmission, party, lpid, deterministicId string) error
 	RejectMarket(ctx context.Context, marketid string) error
 	StartOpeningAuction(ctx context.Context, marketid string) error
@@ -108,6 +109,7 @@ type Stats interface {
 	SetTotalTxCurrentBatch(i uint64)
 	TotalTxCurrentBatch() uint64
 	TotalTxLastBatch() uint64
+	SetHash(string)
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/assets_mock.go -package mocks code.vegaprotocol.io/vega/processor Assets

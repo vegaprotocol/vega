@@ -93,7 +93,7 @@ func testSignedCommandSuccess(t *testing.T) {
 	ok := make(chan error)
 	commander.Command(ctx, cmd, payload, func(err error) {
 		ok <- err
-	})
+	}, nil)
 	assert.NoError(t, <-ok)
 }
 
@@ -115,7 +115,7 @@ func testSignedCommandFailure(t *testing.T) {
 	ok := make(chan error)
 	commander.Command(ctx, cmd, payload, func(err error) {
 		ok <- err
-	})
+	}, nil)
 	assert.Error(t, <-ok)
 }
 

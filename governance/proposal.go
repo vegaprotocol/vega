@@ -25,20 +25,20 @@ type ProposalParameters struct {
 // ToEnact wraps the proposal in a type that has a convenient interface
 // to quickly work out what change we're dealing with, and get the data.
 type ToEnact struct {
-	p  *proposal
-	m  *ToEnactMarket
-	a  *types.Asset
-	n  *types.NetworkParameter
-	as *types.AssetDetails
-	u  *types.UpdateMarket
-	f  *ToEnactFreeform
+	p             *proposal
+	m             *ToEnactNewMarket
+	a             *types.Asset
+	n             *types.NetworkParameter
+	as            *types.AssetDetails
+	updatedMarket *types.Market
+	f             *ToEnactFreeform
 }
 
-// ToEnactMarket is just a empty struct, to signal
+// ToEnactNewMarket is just a empty struct, to signal
 // an enacted market. nothing to be done with it
 // for now (later maybe add information to check
 // end of opening auction or so).
-type ToEnactMarket struct{}
+type ToEnactNewMarket struct{}
 
 // ToEnactFreeform there is nothing to enact with a freeform proposal.
 type ToEnactFreeform struct{}
@@ -53,7 +53,7 @@ func (t ToEnact) IsNewAsset() bool {
 }
 
 func (t ToEnact) IsUpdateMarket() bool {
-	return t.u != nil
+	return t.updatedMarket != nil
 }
 
 func (t ToEnact) IsUpdateNetworkParameter() bool {
@@ -68,7 +68,7 @@ func (t ToEnact) IsFreeform() bool {
 	return t.f != nil
 }
 
-func (t *ToEnact) NewMarket() *ToEnactMarket {
+func (t *ToEnact) NewMarket() *ToEnactNewMarket {
 	return t.m
 }
 
@@ -84,8 +84,8 @@ func (t *ToEnact) UpdateNetworkParameter() *types.NetworkParameter {
 	return t.n
 }
 
-func (t *ToEnact) UpdateMarket() *types.UpdateMarket {
-	return t.u
+func (t *ToEnact) UpdateMarket() *types.Market {
+	return t.updatedMarket
 }
 
 func (t *ToEnact) NewFreeform() *ToEnactFreeform {

@@ -13,6 +13,7 @@ const namedLogger = "broker"
 type Config struct {
 	Level  encoding.LogLevel `long:"log-level"`
 	Socket SocketConfig      `group:"Socket" namespace:"socket"`
+	File   FileConfig        `group:"File" namespace:"file"`
 }
 
 // NewDefaultConfig creates an instance of config with default values.
@@ -31,6 +32,9 @@ func NewDefaultConfig() Config {
 			Transport:               "tcp",
 			Enabled:                 false,
 		},
+		File: FileConfig{
+			Enabled: false,
+		},
 	}
 }
 
@@ -48,4 +52,9 @@ type SocketConfig struct {
 	Port      int           `long:"port" description:"Data node port"`
 	Enabled   encoding.Bool `long:"enabled" description:"Enable streaming of bus events over socket"`
 	Transport string        `long:"transport" description:"Transport of socket. tcp/inproc are allowed. Default is TCP"`
+}
+
+type FileConfig struct {
+	Enabled encoding.Bool `long:"enabled" description:"Enable streaming of bus events to a file"`
+	File    string        `long:"file" description:"Path of a file to write event log to"`
 }
