@@ -162,7 +162,10 @@ func (e *Engine) serialisePriceRanges() []*types.PriceRangeCache {
 
 	sort.Slice(prc, func(i, j int) bool {
 		if prc[i].Bound.UpFactor.Equal(prc[j].Bound.UpFactor) {
-			return prc[j].Bound.DownFactor.GreaterThan(prc[i].Bound.DownFactor)
+			if prc[i].Bound.DownFactor.Equal(prc[j].Bound.DownFactor) {
+				return prc[i].Bound.Trigger.Horizon < prc[j].Bound.Trigger.Horizon
+			}
+			return prc[j].Bound.DownFactor.LessThan(prc[i].Bound.DownFactor)
 		}
 
 		return prc[j].Bound.UpFactor.GreaterThan(prc[i].Bound.UpFactor)
