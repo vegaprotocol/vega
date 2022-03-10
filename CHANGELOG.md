@@ -10,10 +10,11 @@
 
 ### 🛠  Improvements
 - [404](https://github.com/vegaprotocol/data-node/pull/404) - Migrate market data API to retrieve data from `Postgres`
-- [406](https://github.com/vegaprotocol/data-node/pull/406) - Add a basic integration test
+- [407](https://github.com/vegaprotocol/data-node/pull/407) - Add `positionDecimalPlaces` to market `graphQL` 
+
 
 ### 🐛 Fixes
-- [411](https://github.com/vegaprotocol/data-node/pull/411) - Fix a couple of incompatibilities in `data-node v2`
+- [](https://github.com/vegaprotocol/data-node/pull/xxx) -
 
 
 ## 0.49.1

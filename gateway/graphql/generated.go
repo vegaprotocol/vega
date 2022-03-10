@@ -402,6 +402,7 @@ type ComplexityRoot struct {
 		Name                          func(childComplexity int) int
 		OpeningAuction                func(childComplexity int) int
 		Orders                        func(childComplexity int, skip *int, first *int, last *int) int
+		PositionDecimalPlaces         func(childComplexity int) int
 		PriceMonitoringSettings       func(childComplexity int) int
 		Proposal                      func(childComplexity int) int
 		State                         func(childComplexity int) int
@@ -874,6 +875,7 @@ type ComplexityRoot struct {
 		AverageTxBytes        func(childComplexity int) int
 		BacklogLength         func(childComplexity int) int
 		BlockDuration         func(childComplexity int) int
+		BlockHash             func(childComplexity int) int
 		BlockHeight           func(childComplexity int) int
 		ChainId               func(childComplexity int) int
 		ChainVersion          func(childComplexity int) int
@@ -1113,6 +1115,7 @@ type MarketResolver interface {
 	Name(ctx context.Context, obj *vega.Market) (string, error)
 
 	DecimalPlaces(ctx context.Context, obj *vega.Market) (int, error)
+	PositionDecimalPlaces(ctx context.Context, obj *vega.Market) (int, error)
 	OpeningAuction(ctx context.Context, obj *vega.Market) (*AuctionDuration, error)
 	PriceMonitoringSettings(ctx context.Context, obj *vega.Market) (*PriceMonitoringSettings, error)
 	LiquidityMonitoringParameters(ctx context.Context, obj *vega.Market) (*LiquidityMonitoringParameters, error)
@@ -1363,6 +1366,7 @@ type StakeLinkingResolver interface {
 }
 type StatisticsResolver interface {
 	BlockHeight(ctx context.Context, obj *v14.Statistics) (string, error)
+
 	BacklogLength(ctx context.Context, obj *v14.Statistics) (string, error)
 	TotalPeers(ctx context.Context, obj *v14.Statistics) (string, error)
 
@@ -2690,6 +2694,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Market.Orders(childComplexity, args["skip"].(*int), args["first"].(*int), args["last"].(*int)), true
+
+	case "Market.positionDecimalPlaces":
+		if e.complexity.Market.PositionDecimalPlaces == nil {
+			break
+		}
+
+		return e.complexity.Market.PositionDecimalPlaces(childComplexity), true
 
 	case "Market.priceMonitoringSettings":
 		if e.complexity.Market.PriceMonitoringSettings == nil {
@@ -5040,6 +5051,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Statistics.BlockDuration(childComplexity), true
 
+	case "Statistics.blockHash":
+		if e.complexity.Statistics.BlockHash == nil {
+			break
+		}
+
+		return e.complexity.Statistics.BlockHash(childComplexity), true
+
 	case "Statistics.blockHeight":
 		if e.complexity.Statistics.BlockHeight == nil {
 			break
@@ -6636,6 +6654,9 @@ type Statistics {
   "Current block number"
   blockHeight: String!
 
+  "Current block hash"
+  blockHash: String!
+
   "Number of items in the backlog"
   backlogLength: String!
 
@@ -7101,6 +7122,13 @@ type Market {
   GBX (pence)        1              4       GBP   0.000001 (  0.0001p)
   """
   decimalPlaces: Int!
+
+  """
+  positionDecimalPlaces indicated the number of decimal places that an integer must be shifted in order to get a correct size (uint64).
+  i.e. 0 means there are no fractional orders for the market, and order sizes are always whole sizes. 
+  2 means sizes given as 10^2 * desired size, e.g. a desired size of 1.23 is represented as 123 in this market. 
+  """
+  positionDecimalPlaces: Int!
 
   """
   Auction duration specifies how long the opening auction will run (minimum
@@ -15882,6 +15910,41 @@ func (ec *executionContext) _Market_decimalPlaces(ctx context.Context, field gra
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return ec.resolvers.Market().DecimalPlaces(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Market_positionDecimalPlaces(ctx context.Context, field graphql.CollectedField, obj *vega.Market) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Market",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Market().PositionDecimalPlaces(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -26807,6 +26870,41 @@ func (ec *executionContext) _Statistics_blockHeight(ctx context.Context, field g
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Statistics_blockHash(ctx context.Context, field graphql.CollectedField, obj *v14.Statistics) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Statistics",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.BlockHash, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Statistics_backlogLength(ctx context.Context, field graphql.CollectedField, obj *v14.Statistics) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -34916,6 +35014,26 @@ func (ec *executionContext) _Market(ctx context.Context, sel ast.SelectionSet, o
 				return innerFunc(ctx)
 
 			})
+		case "positionDecimalPlaces":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Market_positionDecimalPlaces(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
 		case "openingAuction":
 			field := field
 
@@ -40685,6 +40803,16 @@ func (ec *executionContext) _Statistics(ctx context.Context, sel ast.SelectionSe
 				return innerFunc(ctx)
 
 			})
+		case "blockHash":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Statistics_blockHash(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
 		case "backlogLength":
 			field := field
 
