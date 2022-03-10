@@ -309,10 +309,6 @@ func NewMarket(
 	if err != nil {
 		return nil, fmt.Errorf("unable to instantiate a new market: %w", err)
 	}
-	closingAt, err := tradableInstrument.Instrument.GetMarketClosingTime()
-	if err != nil {
-		return nil, fmt.Errorf("unable to get market closing time: %w", err)
-	}
 
 	// @TODO -> the raw auctionstate shouldn't be something exposed to the matching engine
 	// as far as matching goes: it's either an auction or not
@@ -378,7 +374,6 @@ func NewMarket(
 	// Populate the market timestamps
 	ts := &types.MarketTimestamps{
 		Proposed: now.UnixNano(),
-		Close:    closingAt.UnixNano(),
 	}
 
 	if mkt.OpeningAuction != nil {
@@ -393,7 +388,6 @@ func NewMarket(
 		log:                       log,
 		idgen:                     nil,
 		mkt:                       mkt,
-		closingAt:                 closingAt,
 		currentTime:               now,
 		matching:                  book,
 		tradableInstrument:        tradableInstrument,

@@ -17,6 +17,9 @@ type Engine struct {
 	log *logging.Logger
 
 	ethEngine *ethereum.Engine
+
+	stakingStartingBlock         uint64
+	multisigControlStartingBlock uint64
 }
 
 func NewEngine(log *logging.Logger, config Config) *Engine {
@@ -43,7 +46,17 @@ func (e *Engine) ReloadConf(config Config) {
 	e.ethEngine.ReloadConf(config.Ethereum)
 }
 
-func (e *Engine) StartEthereumEngine(
+func (e *Engine) UpdateStakingStartingBlock(b uint64) {
+	e.stakingStartingBlock = b
+	e.ethEngine.UpdateStakingStartingBlock(b)
+}
+
+func (e *Engine) UpdateMultiSigControlStartingBlock(b uint64) {
+	e.multisigControlStartingBlock = b
+	e.ethEngine.UpdateMultiSigControlStartingBlock(b)
+}
+
+func (e *Engine) SetupEthereumEngine(
 	client ethereum.Client,
 	forwarder ethereum.Forwarder,
 	config ethereum.Config,
@@ -90,12 +103,25 @@ func (e *Engine) StartEthereumEngine(
 		ethCfg.MultiSigControl(),
 	)
 
-	go func() {
-		e.log.Info("Starting the Ethereum Event Forwarder")
-		e.ethEngine.Start()
-	}()
+	if e.multisigControlStartingBlock != 0 {
+		e.ethEngine.UpdateMultiSigControlStartingBlock(e.multisigControlStartingBlock)
+	}
+	if e.stakingStartingBlock != 0 {
+		e.ethEngine.UpdateStakingStartingBlock(e.stakingStartingBlock)
+	}
+
+	e.Start()
 
 	return nil
+}
+
+func (e *Engine) Start() {
+	if e.ethEngine != nil {
+		go func() {
+			e.log.Info("Starting the Ethereum Event Forwarder")
+			e.ethEngine.Start()
+		}()
+	}
 }
 
 func (e *Engine) Stop() {
@@ -126,7 +152,11 @@ func (e *NoopEngine) ReloadConf(_ Config) {
 	}
 }
 
-func (e *NoopEngine) StartEthereumEngine(
+func (e *NoopEngine) UpdateStakingStartingBlock(b uint64) {}
+
+func (e *NoopEngine) UpdateMultiSigControlStartingBlock(b uint64) {}
+
+func (e *NoopEngine) SetupEthereumEngine(
 	_ ethereum.Client,
 	_ ethereum.Forwarder,
 	_ ethereum.Config,
@@ -138,6 +168,12 @@ func (e *NoopEngine) StartEthereumEngine(
 	}
 
 	return nil
+}
+
+func (e *NoopEngine) Start() {
+	if e.log.IsDebug() {
+		e.log.Debug("Starting Ethereum configuration is a no-op")
+	}
 }
 
 func (e *NoopEngine) Stop() {

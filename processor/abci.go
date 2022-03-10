@@ -599,10 +599,15 @@ func (app *App) OnCommit() (resp tmtypes.ResponseCommit) {
 
 	// call checkpoint _first_ so the snapshot contains the correct checkpoint state.
 	cpt, _ := app.checkpoint.Checkpoint(app.blockCtx, app.currentTimestamp)
+	t0 := time.Now()
 	snapHash, err := app.snapshot.Snapshot(app.blockCtx)
 	if err != nil {
 		app.log.Panic("Failed to create snapshot",
 			logging.Error(err))
+	}
+	t1 := time.Now()
+	if len(snapHash) > 0 {
+		app.log.Info("#### snapshot took ", logging.Float64("time", t1.Sub(t0).Seconds()))
 	}
 	resp.Data = snapHash
 
