@@ -115,6 +115,7 @@ type NodeCommand struct {
 	ethConfirmations      *ethclient.EthereumConfirmations
 	stakingAccounts       *staking.Accounting
 	stakeVerifier         *staking.StakeVerifier
+	stakeCheckpoint       *staking.Checkpoint
 	erc20MultiSigTopology *erc20multisig.Topology
 
 	commander *nodewallets.Commander

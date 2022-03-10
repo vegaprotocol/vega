@@ -132,8 +132,8 @@ func (n *NodeCommand) startServices(_ []string) (err error) {
 		n.eventForwarderEngine = evtforward.NewNoopEngine(n.Log, n.conf.EvtForward)
 	}
 
-	n.stakingAccounts, n.stakeVerifier = staking.New(
-		n.Log, n.conf.Staking, n.broker, n.timeService, n.witness, n.ethClient, n.netParams, n.eventForwarder, n.conf.HaveEthClient(), n.ethConfirmations,
+	n.stakingAccounts, n.stakeVerifier, n.stakeCheckpoint = staking.New(
+		n.Log, n.conf.Staking, n.broker, n.timeService, n.witness, n.ethClient, n.netParams, n.eventForwarder, n.conf.HaveEthClient(), n.ethConfirmations, n.eventForwarderEngine,
 	)
 	n.epochService = epochtime.NewService(n.Log, n.conf.Epoch, n.timeService, n.broker)
 	n.epochService.NotifyOnEpoch(n.topology.OnEpochEvent, n.topology.OnEpochRestore)
@@ -166,10 +166,18 @@ func (n *NodeCommand) startServices(_ []string) (err error) {
 	n.banking = banking.New(n.Log, n.conf.Banking, n.collateral, n.witness, n.timeService, n.assets, n.notary, n.broker, n.topology, n.epochService)
 
 	// checkpoint engine
-	n.checkpoint, err = checkpoint.New(n.Log, n.conf.Checkpoint, n.assets, n.collateral, n.governance, n.netParams, n.delegation, n.epochService, n.topology, n.banking)
+	n.checkpoint, err = checkpoint.New(n.Log, n.conf.Checkpoint, n.assets, n.collateral, n.governance, n.netParams, n.delegation, n.epochService, n.topology, n.banking, n.stakeCheckpoint)
 	if err != nil {
 		panic(err)
 	}
+
+	// register the callback to startup stuff when checkpoint is loaded
+	n.checkpoint.RegisterOnCheckpointLoaded(func(_ context.Context) {
+		// checkpoint have been loaded
+		// which means that genesis has been loaded as well
+		// we should be fully ready to start the event sourcing from ethereum
+		n.eventForwarderEngine.Start()
+	})
 
 	n.genesisHandler.OnGenesisAppStateLoaded(
 		// be sure to keep this in order.
@@ -384,7 +392,7 @@ func (n *NodeCommand) setupNetParameters() error {
 					return err
 				}
 
-				return n.eventForwarderEngine.StartEthereumEngine(n.ethClient, n.eventForwarder, n.conf.EvtForward.Ethereum, ethCfg, n.assets)
+				return n.eventForwarderEngine.SetupEthereumEngine(n.ethClient, n.eventForwarder, n.conf.EvtForward.Ethereum, ethCfg, n.assets)
 			},
 		},
 		netparams.WatchParam{

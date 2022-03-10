@@ -19,10 +19,11 @@ import (
 type testTopology struct {
 	*erc20multisig.Topology
 
-	ctrl    *gomock.Controller
-	broker  *bmocks.MockBrokerI
-	witness *mocks.MockWitness
-	ocv     *mocks.MockMultiSigOnChainVerifier
+	ctrl           *gomock.Controller
+	broker         *bmocks.MockBrokerI
+	witness        *mocks.MockWitness
+	ocv            *mocks.MockMultiSigOnChainVerifier
+	ethEventSource *mocks.MockEthereumEventSource
 }
 
 func getTestTopology(t *testing.T) *testTopology {
@@ -31,8 +32,9 @@ func getTestTopology(t *testing.T) *testTopology {
 	witness := mocks.NewMockWitness(ctrl)
 	ocv := mocks.NewMockMultiSigOnChainVerifier(ctrl)
 	broker := bmocks.NewMockBrokerI(ctrl)
+	ethEventSource := mocks.NewMockEthereumEventSource(ctrl)
 
-	return &testTopology{
+	top := &testTopology{
 		Topology: erc20multisig.NewTopology(
 			erc20multisig.NewDefaultConfig(),
 			logging.NewTestLogger(),
@@ -40,11 +42,15 @@ func getTestTopology(t *testing.T) *testTopology {
 			ocv,
 			broker,
 		),
-		ctrl:    ctrl,
-		broker:  broker,
-		witness: witness,
-		ocv:     ocv,
+		ctrl:           ctrl,
+		broker:         broker,
+		witness:        witness,
+		ocv:            ocv,
+		ethEventSource: ethEventSource,
 	}
+
+	top.SetEthereumEventSource(ethEventSource)
+	return top
 }
 
 func TestERC20Topology(t *testing.T) {

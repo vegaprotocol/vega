@@ -37,6 +37,11 @@ type MultiSigOnChainVerifier interface {
 	CheckThresholdSetEvent(*types.SignerThresholdSetEvent) error
 }
 
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/ethereum_event_source_mock.go -package mocks code.vegaprotocol.io/vega/validators/erc20multisig EthereumEventSource
+type EthereumEventSource interface {
+	UpdateMultisigControlLastBlockSeen(uint64)
+}
+
 // Topology keeps track of all the validators
 // registered in the erc20 bridge.
 type Topology struct {
@@ -74,6 +79,8 @@ type Topology struct {
 	// snapshot state
 	tss             *topologySnapshotState
 	keyToSerialiser map[string]func() ([]byte, error)
+
+	ethEventSource EthereumEventSource
 }
 
 type pendingSigner struct {
@@ -134,6 +141,10 @@ func NewTopology(
 
 func (t *Topology) SetWitness(w Witness) {
 	t.witness = w
+}
+
+func (t *Topology) SetEthereumEventSource(e EthereumEventSource) {
+	t.ethEventSource = e
 }
 
 func (t *Topology) ExcessSigners(addresses []string) bool {
@@ -288,21 +299,20 @@ func (t *Topology) updateThreshold(ctx context.Context) {
 	// block time.
 	for _, v := range ids {
 		event := t.pendingThresholds[v]
-
-		// if it's out first time here
-		if t.threshold == nil {
-			t.threshold = event.SignerThresholdSetEvent
-		} else if event.BlockTime > t.threshold.BlockTime {
-			// this event is more recent, we can replace our internal
-			// event for treshold
-			t.threshold = event.SignerThresholdSetEvent
-		}
-
-		// send the event anyway so APIs can be aware of past thresholds
-		t.broker.Send(events.NewERC20MultiSigThresholdSet(ctx, *event.SignerThresholdSetEvent))
-
+		t.setThresholdSetEvent(ctx, event.SignerThresholdSetEvent)
 		delete(t.pendingThresholds, v)
 	}
+}
+
+func (t *Topology) setThresholdSetEvent(
+	ctx context.Context, event *types.SignerThresholdSetEvent) {
+	// if it's out first time here
+	if t.threshold == nil || event.BlockTime > t.threshold.BlockTime {
+		t.threshold = event
+	}
+
+	// send the event anyway so APIs can be aware of past thresholds
+	t.broker.Send(events.NewERC20MultiSigThresholdSet(ctx, *event))
 }
 
 func (t *Topology) updateSigners(ctx context.Context) {
@@ -329,32 +339,38 @@ func (t *Topology) updateSigners(ctx context.Context) {
 	for _, id := range ids {
 		// get the event
 		event := t.pendingSigners[id]
-		epa, ok := t.eventsPerAddress[event.Address]
-		if !ok {
-			epa = []*types.SignerEvent{}
-		}
 
-		// now add the event to the list for this address
-		epa = append(epa, event.SignerEvent)
-		// sort them in arrival order
-		sort.Slice(epa, func(i, j int) bool {
-			return epa[i].BlockTime < epa[j].BlockTime
-		})
+		t.addSignerEvent(ctx, event.SignerEvent)
 
-		t.eventsPerAddress[event.Address] = epa
-
-		// now depending of the last event received,
-		// we add or remove from the list of signers
-		switch epa[len(epa)-1].Kind {
-		case types.SignerEventKindRemoved:
-			delete(t.signers, event.Address)
-		case types.SignerEventKindAdded:
-			t.signers[event.Address] = struct{}{}
-		}
-
-		// send the event anyway so APIs can be aware of past thresholds
-		t.broker.Send(events.NewERC20MultiSigSigner(ctx, *event.SignerEvent))
 		// delete from pending then
 		delete(t.pendingSigners, id)
 	}
+}
+
+func (t *Topology) addSignerEvent(ctx context.Context, event *types.SignerEvent) {
+	epa, ok := t.eventsPerAddress[event.Address]
+	if !ok {
+		epa = []*types.SignerEvent{}
+	}
+
+	// now add the event to the list for this address
+	epa = append(epa, event)
+	// sort them in arrival order
+	sort.Slice(epa, func(i, j int) bool {
+		return epa[i].BlockTime < epa[j].BlockTime
+	})
+
+	t.eventsPerAddress[event.Address] = epa
+
+	// now depending of the last event received,
+	// we add or remove from the list of signers
+	switch epa[len(epa)-1].Kind {
+	case types.SignerEventKindRemoved:
+		delete(t.signers, event.Address)
+	case types.SignerEventKindAdded:
+		t.signers[event.Address] = struct{}{}
+	}
+
+	// send the event anyway so APIs can be aware of past thresholds
+	t.broker.Send(events.NewERC20MultiSigSigner(ctx, *event))
 }
