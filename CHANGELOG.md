@@ -9,7 +9,7 @@
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 ### 🛠 Improvements
-- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+- [4952](https://github.com/vegaprotocol/vega/issues/4952) - Add checkpoints for staking and `multisig control`
 
 ### 🐛 Fixes
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -

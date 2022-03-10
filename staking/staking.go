@@ -23,7 +23,7 @@ type EthereumClientConfirmations interface {
 	HeaderByNumber(context.Context, *big.Int) (*ethtypes.Header, error)
 }
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/ethereum_client_confirmations_mock.go -package mocks code.vegaprotocol.io/vega/staking EthereumEventSource
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/ethereum_event_source_mock.go -package mocks code.vegaprotocol.io/vega/staking EthereumEventSource
 type EthereumEventSource interface {
 	UpdateStakingStartingBlock(uint64)
 }
