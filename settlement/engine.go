@@ -9,6 +9,7 @@ import (
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/metrics"
+	"code.vegaprotocol.io/vega/products"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
 )
@@ -75,6 +76,10 @@ func New(log *logging.Logger, conf Config, product Product, market string, broke
 		broker:         broker,
 		positionFactor: positionFactor,
 	}
+}
+
+func (e *Engine) UpdateProduct(product products.Product) {
+	e.product = product
 }
 
 // ReloadConf update the internal configuration of the settlement engined.
@@ -373,8 +378,6 @@ func (e *Engine) RemoveDistressed(ctx context.Context, evts []events.Margin) {
 func (e *Engine) settleAll() ([]*types.Transfer, error) {
 	e.mu.Lock()
 
-	settleProd := e.product
-
 	// there should be as many positions as there are parties (obviously)
 	aggregated := make([]*types.Transfer, 0, len(e.pos))
 	// parties who are in profit should be appended (collect first).
@@ -396,7 +399,7 @@ func (e *Engine) settleAll() ([]*types.Transfer, error) {
 		e.log.Debug("Settling position for party", logging.String("party-id", party))
 		// @TODO - there was something here... the final amount had to be oracle - market or something
 		// check with Tamlyn why that was, because we're only handling open positions here...
-		amt, neg, err := settleProd.Settle(pos.price, num.DecimalFromInt64(pos.size).Div(e.positionFactor))
+		amt, neg, err := e.product.Settle(pos.price, num.DecimalFromInt64(pos.size).Div(e.positionFactor))
 		// for now, product.Settle returns the total value, we need to only settle the delta between a parties current position
 		// and the final price coming from the oracle, so oracle_price - mark_price * volume (check with Tamlyn whether this should be absolute or not)
 		if err != nil {

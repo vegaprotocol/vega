@@ -20,7 +20,7 @@ func TestOrderBookAmends_FlipToGTT(t *testing.T) {
 	ctx := context.Background()
 	defer tm.ctrl.Finish()
 
-	addAccount(tm, "aaa")
+	addAccount(t, tm, "aaa")
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
 	o1 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "Order01", types.SideBuy, "aaa", 2, 100)

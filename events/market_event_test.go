@@ -176,7 +176,7 @@ func TestMarketDeepClone(t *testing.T) {
 	me.TradableInstrument.Instrument.Name = "Changed"
 	me.TradableInstrument.Instrument.Metadata.Tags[0] = "Changed1"
 	me.TradableInstrument.Instrument.Metadata.Tags[1] = "Changed2"
-	future := me.TradableInstrument.Instrument.Product.(*types.Instrument_Future)
+	future := me.TradableInstrument.Instrument.Product.(*types.InstrumentFuture)
 	future.Future.SettlementAsset = "Changed"
 	future.Future.QuoteName = "Changed"
 	changeOracleSpec(future.Future.OracleSpecForSettlementPrice)

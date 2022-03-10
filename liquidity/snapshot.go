@@ -11,6 +11,7 @@ import (
 	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/libs/proto"
 	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/vega/risk"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
 )
@@ -64,6 +65,10 @@ func NewSnapshotEngine(config Config,
 	se.buildHashKeys(market)
 
 	return se
+}
+
+func (e *SnapshotEngine) UpdateMarketConfig(model risk.Model, monitor PriceMonitor) {
+	e.Engine.UpdateMarketConfig(model, monitor)
 }
 
 func (e *SnapshotEngine) StopSnapshots() {

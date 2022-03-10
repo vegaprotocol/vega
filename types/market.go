@@ -12,14 +12,6 @@ import (
 
 type LiquidityProviderFeeShare = proto.LiquidityProviderFeeShare
 
-type MarketTradingConfigType int
-
-const (
-	MarketTradingConfigUndefined MarketTradingConfigType = iota
-	MarketTradingConfigContinuous
-	MarketTradingConfigDiscrete
-)
-
 var (
 	ErrNilTradableInstrument = errors.New("nil tradable instrument")
 	ErrNilInstrument         = errors.New("nil instrument")
@@ -308,7 +300,7 @@ func (t TradableInstrument) DeepClone() *TradableInstrument {
 	}
 }
 
-type Instrument_Future struct {
+type InstrumentFuture struct {
 	Future *Future
 }
 
@@ -350,26 +342,26 @@ func iInstrumentFromProto(pi interface{}) iProto {
 	return nil
 }
 
-func InstrumentFutureFromProto(f *proto.Instrument_Future) *Instrument_Future {
-	return &Instrument_Future{
+func InstrumentFutureFromProto(f *proto.Instrument_Future) *InstrumentFuture {
+	return &InstrumentFuture{
 		Future: FutureFromProto(f.Future),
 	}
 }
 
-func (i Instrument_Future) IntoProto() *proto.Instrument_Future {
+func (i InstrumentFuture) IntoProto() *proto.Instrument_Future {
 	return &proto.Instrument_Future{
 		Future: i.Future.IntoProto(),
 	}
 }
 
-func (i Instrument_Future) getAsset() (string, error) {
+func (i InstrumentFuture) getAsset() (string, error) {
 	if i.Future == nil {
 		return "", ErrUnknownAsset
 	}
 	return i.Future.SettlementAsset, nil
 }
 
-func (i Instrument_Future) iIntoProto() interface{} {
+func (i InstrumentFuture) iIntoProto() interface{} {
 	return i.IntoProto()
 }
 
@@ -384,7 +376,7 @@ type Instrument struct {
 	Name     string
 	Metadata *InstrumentMetadata
 	// Types that are valid to be assigned to Product:
-	//	*Instrument_Future
+	//	*InstrumentFuture
 	Product iProto
 }
 
@@ -398,6 +390,15 @@ func InstrumentFromProto(i *proto.Instrument) *Instrument {
 		Name:     i.Name,
 		Metadata: InstrumentMetadataFromProto(i.Metadata),
 		Product:  iInstrumentFromProto(i.Product),
+	}
+}
+
+func (i Instrument) GetFuture() *Future {
+	switch p := i.Product.(type) {
+	case *InstrumentFuture:
+		return p.Future
+	default:
+		return nil
 	}
 }
 
@@ -535,12 +536,6 @@ func (m MarketData) String() string {
 	return m.IntoProto().String()
 }
 
-type istmc interface {
-	istmc()
-	tmcIntoProto() interface{}
-	tmcType() MarketTradingConfigType
-}
-
 type Market struct {
 	ID                            string
 	TradableInstrument            *TradableInstrument
@@ -548,14 +543,13 @@ type Market struct {
 	PositionDecimalPlaces         uint64
 	Fees                          *Fees
 	OpeningAuction                *AuctionDuration
-	TradingModeConfig             istmc
 	PriceMonitoringSettings       *PriceMonitoringSettings
 	LiquidityMonitoringParameters *LiquidityMonitoringParameters
-	TradingMode                   MarketTradingMode
-	State                         MarketState
-	MarketTimestamps              *MarketTimestamps
-	tmc                           MarketTradingConfigType
-	asset                         string
+
+	TradingMode      MarketTradingMode
+	State            MarketState
+	MarketTimestamps *MarketTimestamps
+	asset            string
 }
 
 func MarketFromProto(mkt *proto.Market) *Market {
@@ -573,9 +567,6 @@ func MarketFromProto(mkt *proto.Market) *Market {
 		State:                         mkt.State,
 		MarketTimestamps:              MarketTimestampsFromProto(mkt.MarketTimestamps),
 		asset:                         asset,
-	}
-	if m.TradingModeConfig != nil {
-		m.tmc = m.TradingModeConfig.tmcType()
 	}
 	return m
 }
@@ -657,6 +648,10 @@ func (m *Market) GetAsset() (string, error) {
 	return m.asset, nil
 }
 
+func (m *Market) SetAsset(a string) {
+	m.asset = a
+}
+
 func (m Market) String() string {
 	return m.IntoProto().String()
 }
@@ -666,10 +661,8 @@ func (m Market) DeepClone() *Market {
 		ID:                    m.ID,
 		DecimalPlaces:         m.DecimalPlaces,
 		PositionDecimalPlaces: m.PositionDecimalPlaces,
-		TradingModeConfig:     m.TradingModeConfig,
 		TradingMode:           m.TradingMode,
 		State:                 m.State,
-		tmc:                   m.tmc,
 		asset:                 m.asset,
 	}
 

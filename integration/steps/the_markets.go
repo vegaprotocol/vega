@@ -143,7 +143,7 @@ func newMarket(config *market.Config, row marketRow) types.Market {
 						"product:futures",
 					},
 				},
-				Product: &types.Instrument_Future{
+				Product: &types.InstrumentFuture{
 					Future: &types.Future{
 						SettlementAsset:                 row.asset(),
 						QuoteName:                       row.quoteName(),

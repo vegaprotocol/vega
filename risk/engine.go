@@ -73,8 +73,7 @@ type Engine struct {
 }
 
 // NewEngine instantiate a new risk engine.
-func NewEngine(
-	log *logging.Logger,
+func NewEngine(log *logging.Logger,
 	config Config,
 	marginCalculator *types.MarginCalculator,
 	model Model,
@@ -85,7 +84,6 @@ func NewEngine(
 	mktID string,
 	asset string,
 	stateVarEngine StateVarEngine,
-	factors *types.RiskFactor,
 	riskFactorsInitialised bool,
 	positionFactor num.Decimal,
 ) *Engine {
@@ -98,8 +96,6 @@ func NewEngine(
 		log:                    log,
 		Config:                 config,
 		marginCalculator:       marginCalculator,
-		scalingFactorsUint:     sfUint,
-		factors:                factors,
 		model:                  model,
 		waiting:                false,
 		ob:                     ob,
@@ -108,11 +104,13 @@ func NewEngine(
 		currTime:               initialTime,
 		mktID:                  mktID,
 		asset:                  asset,
+		scalingFactorsUint:     sfUint,
+		factors:                model.DefaultRiskFactors(),
 		riskFactorsInitialised: riskFactorsInitialised,
 		positionFactor:         positionFactor,
 	}
 
-	stateVarEngine.RegisterStateVariable(asset, mktID, RiskFactorStateVarName, RiskFactorConverter{}, e.startRiskFactorsCalculation, []statevar.StateVarEventType{statevar.StateVarEventTypeMarketEnactment}, e.updateRiskFactor)
+	stateVarEngine.RegisterStateVariable(asset, mktID, RiskFactorStateVarName, RiskFactorConverter{}, e.startRiskFactorsCalculation, []statevar.StateVarEventType{statevar.StateVarEventTypeMarketEnactment, statevar.StateVarEventTypeMarketUpdated}, e.updateRiskFactor)
 	// trigger the calculation of risk factors for the market
 	stateVarEngine.NewEvent(asset, mktID, statevar.StateVarEventTypeMarketEnactment)
 	return e
@@ -126,6 +124,13 @@ func (e *Engine) OnMarginScalingFactorsUpdate(sf *types.ScalingFactors) error {
 	e.marginCalculator.ScalingFactors = sf
 	e.scalingFactorsUint = scalingFactorsUintFromDecimals(sf)
 	return nil
+}
+
+func (e *Engine) UpdateModel(stateVarEngine StateVarEngine, calculator *types.MarginCalculator, model Model) {
+	e.scalingFactorsUint = scalingFactorsUintFromDecimals(calculator.ScalingFactors)
+	e.factors = model.DefaultRiskFactors()
+	stateVarEngine.NewEvent(e.asset, e.mktID, statevar.StateVarEventTypeMarketUpdated)
+	e.model = model
 }
 
 func (e *Engine) OnTimeUpdate(t time.Time) {

@@ -62,8 +62,7 @@ func NewMarketFromSnapshot(
 	asset := tradableInstrument.Instrument.Product.GetAsset()
 
 	// this needs to stay
-	riskEngine := risk.NewEngine(
-		log,
+	riskEngine := risk.NewEngine(log,
 		riskConfig,
 		tradableInstrument.MarginCalculator,
 		tradableInstrument.RiskModel,
@@ -74,11 +73,6 @@ func NewMarketFromSnapshot(
 		mkt.ID,
 		asset,
 		stateVarEngine,
-		&types.RiskFactor{
-			Market: mkt.ID,
-			Short:  em.ShortRiskFactor,
-			Long:   em.LongRiskFactor,
-		},
 		em.RiskFactorConsensusReached,
 		positionFactor,
 	)

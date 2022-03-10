@@ -28,7 +28,7 @@ func getValidInstrumentProto() *types.Instrument {
 				"product:futures",
 			},
 		},
-		Product: &types.Instrument_Future{
+		Product: &types.InstrumentFuture{
 			Future: &types.Future{
 				QuoteName:       "USD",
 				SettlementAsset: SettlementAssetStr,
@@ -65,7 +65,7 @@ func getValidInstrumentProto() *types.Instrument {
 	}
 }
 
-func TestFuture(t *testing.T) {
+func TestFutureSettlement(t *testing.T) {
 	ctx := context.Background()
 	ctrl := gomock.NewController(t)
 	oe := mocks.NewMockOracleEngine(ctrl)

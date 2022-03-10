@@ -39,7 +39,7 @@ func TestInstrument(t *testing.T) {
 
 	t.Run("nil oracle spec", func(t *testing.T) {
 		pinst := getValidInstrumentProto()
-		pinst.Product = &types.Instrument_Future{
+		pinst.Product = &types.InstrumentFuture{
 			Future: &types.Future{
 				SettlementAsset:                 "Ethereum/Ether",
 				OracleSpecForSettlementPrice:    nil,
@@ -58,7 +58,7 @@ func TestInstrument(t *testing.T) {
 
 	t.Run("nil oracle spec binding", func(t *testing.T) {
 		pinst := getValidInstrumentProto()
-		pinst.Product = &types.Instrument_Future{
+		pinst.Product = &types.InstrumentFuture{
 			Future: &types.Future{
 				SettlementAsset: "Ethereum/Ether",
 				OracleSpecForSettlementPrice: &oraclesv1.OracleSpec{
@@ -124,7 +124,7 @@ func getValidInstrumentProto() *types.Instrument {
 				"product:futures",
 			},
 		},
-		Product: &types.Instrument_Future{
+		Product: &types.InstrumentFuture{
 			Future: &types.Future{
 				QuoteName:       "USD",
 				SettlementAsset: "Ethereum/Ether",

@@ -21,7 +21,7 @@ func TestVersioning(t *testing.T) {
 	price := uint64(100)
 	size := uint64(100)
 
-	addAccount(tm, party1)
+	addAccount(t, tm, party1)
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
 	orderBuy := &types.Order{

@@ -53,7 +53,7 @@ func assignProduct(
 			return types.ProposalErrorInvalidFutureProduct, ErrMissingOracleSpecBinding
 		}
 
-		target.Product = &types.Instrument_Future{
+		target.Product = &types.InstrumentFuture{
 			Future: &types.Future{
 				SettlementAsset:                 product.Future.SettlementAsset,
 				QuoteName:                       product.Future.QuoteName,
