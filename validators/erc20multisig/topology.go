@@ -37,7 +37,7 @@ type MultiSigOnChainVerifier interface {
 	CheckThresholdSetEvent(*types.SignerThresholdSetEvent) error
 }
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/multisig_on_chain_verifier_mock.go -package mocks code.vegaprotocol.io/vega/validators/erc20multisig EthereumEventSource
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/ethereum_event_source_mock.go -package mocks code.vegaprotocol.io/vega/validators/erc20multisig EthereumEventSource
 type EthereumEventSource interface {
 	UpdateMultisigControlLastBlockSeen(uint64)
 }
