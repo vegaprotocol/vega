@@ -10,6 +10,7 @@
 
 ### 🛠  Improvements
 - [404](https://github.com/vegaprotocol/data-node/pull/404) - Migrate market data API to retrieve data from `Postgres`
+- [406](https://github.com/vegaprotocol/data-node/pull/406) - Add a basic integration test
 
 ### 🐛 Fixes
 - [](https://github.com/vegaprotocol/data-node/pull/xxx) -

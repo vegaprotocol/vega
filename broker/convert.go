@@ -89,6 +89,14 @@ func toEvent(ctx context.Context, be *eventspb.BusEvent) events.Event {
 		return events.TransferFundsEventFromStream(ctx, be)
 	case eventspb.BusEventType_BUS_EVENT_TYPE_VALIDATOR_RANKING:
 		return events.ValidatorRankingEventFromStream(ctx, be)
+	case eventspb.BusEventType_BUS_EVENT_TYPE_ERC20_MULTI_SIG_SET_THRESHOLD:
+		return events.ERC20MultiSigThresholdSetFromStream(ctx, be)
+	case eventspb.BusEventType_BUS_EVENT_TYPE_ERC20_MULTI_SIG_SIGNER_EVENT:
+		return events.ERC20MultiSigSignerFromStream(ctx, be)
+	case eventspb.BusEventType_BUS_EVENT_TYPE_ERC20_MULTI_SIG_SIGNER_ADDED:
+		return events.ERC20MultiSigSignerAddedFromStream(ctx, be)
+	case eventspb.BusEventType_BUS_EVENT_TYPE_ERC20_MULTI_SIG_SIGNER_REMOVED:
+		return events.ERC20MultiSigSignerRemovedFromStream(ctx, be)
 	}
 
 	return nil
