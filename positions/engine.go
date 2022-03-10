@@ -112,7 +112,7 @@ func (e *Engine) ReloadConf(cfg Config) {
 // It returns the updated position.
 // The margins+risk engines need the updated position to determine whether the
 // order should be accepted.
-func (e *Engine) RegisterOrder(order *types.Order, sendEvent bool) *MarketPosition {
+func (e *Engine) RegisterOrder(ctx context.Context, order *types.Order) *MarketPosition {
 	pos, found := e.positions[order.Party]
 	if !found {
 		pos = NewMarketPosition(order.Party)
@@ -120,47 +120,35 @@ func (e *Engine) RegisterOrder(order *types.Order, sendEvent bool) *MarketPositi
 		// append the pointer to the slice as well
 		e.positionsCpy = append(e.positionsCpy, pos)
 	}
-
 	pos.RegisterOrder(order)
-
-	if sendEvent {
-		e.broker.Send(events.NewPositionStateEvent(context.TODO(), pos))
-	}
+	e.broker.Send(events.NewPositionStateEvent(ctx, pos))
 	return pos
 }
 
 // UnregisterOrder undoes the actions of RegisterOrder. It is used when an order
 // has been rejected by the Risk Engine, or when an order is amended or canceled.
-func (e *Engine) UnregisterOrder(order *types.Order, sendEvent bool) *MarketPosition {
+func (e *Engine) UnregisterOrder(ctx context.Context, order *types.Order) *MarketPosition {
 	pos, found := e.positions[order.Party]
 	if !found {
 		e.log.Panic("could not find position in engine when unregistering order",
 			logging.Order(*order))
 	}
-
 	pos.UnregisterOrder(e.log, order)
-
-	if sendEvent {
-		e.broker.Send(events.NewPositionStateEvent(context.TODO(), pos))
-	}
+	e.broker.Send(events.NewPositionStateEvent(ctx, pos))
 	return pos
 }
 
 // AmendOrder unregisters the original order and then registers the newly amended order
 // this method is a quicker way of handling separate unregister+register pairs.
-func (e *Engine) AmendOrder(originalOrder, newOrder *types.Order, sendEvent bool) *MarketPosition {
+func (e *Engine) AmendOrder(ctx context.Context, originalOrder, newOrder *types.Order) *MarketPosition {
 	pos, found := e.positions[originalOrder.Party]
 	if !found {
 		e.log.Panic("could not find position in engine when amending order",
 			logging.Order(*originalOrder),
 			logging.Order(*newOrder))
 	}
-
 	pos.AmendOrder(e.log, originalOrder, newOrder)
-
-	if sendEvent {
-		e.broker.Send(events.NewPositionStateEvent(context.TODO(), pos))
-	}
+	e.broker.Send(events.NewPositionStateEvent(ctx, pos))
 	return pos
 }
 

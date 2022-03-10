@@ -764,7 +764,7 @@ func (m *Market) closeMarket(ctx context.Context, t time.Time) error {
 }
 
 func (m *Market) unregisterAndReject(ctx context.Context, order *types.Order, err error) error {
-	_ = m.position.UnregisterOrder(order, true)
+	_ = m.position.UnregisterOrder(ctx, order)
 	order.UpdatedAt = m.currentTime.UnixNano()
 	order.Status = types.OrderStatusRejected
 	if oerr, ok := types.IsOrderError(err); ok {
@@ -1291,7 +1291,7 @@ func (m *Market) submitValidatedOrder(ctx context.Context, order *types.Order) (
 
 	oldPos, ok := m.position.GetPositionByPartyID(order.Party)
 	// Register order as potential positions
-	pos := m.position.RegisterOrder(order, true)
+	pos := m.position.RegisterOrder(ctx, order)
 	checkMargin := true
 	if !isPegged && ok {
 		oldVol, newVol := pos.Size()+pos.Buy()-pos.Sell(), oldPos.Size()+pos.Buy()-pos.Sell()
@@ -1364,7 +1364,7 @@ func (m *Market) submitValidatedOrder(ctx context.Context, order *types.Order) (
 		// Also do it if specifically we went against a wash trade
 		(order.Status == types.OrderStatusRejected &&
 			order.Reason == types.OrderErrorSelfTrading) {
-		_ = m.position.UnregisterOrder(order, true)
+		_ = m.position.UnregisterOrder(ctx, order)
 	}
 
 	// we replace the trades in the confirmation with the one we got initially
@@ -1697,7 +1697,7 @@ func (m *Market) resolveClosedOutParties(ctx context.Context, distressedMarginEv
 		}
 		o.UpdatedAt = m.currentTime.UnixNano()
 		evts = append(evts, events.NewOrderEvent(ctx, o))
-		_ = m.position.UnregisterOrder(o, true)
+		_ = m.position.UnregisterOrder(ctx, o)
 	}
 
 	// add the orders remove from the book to the orders
@@ -2281,7 +2281,7 @@ func (m *Market) cancelOrder(ctx context.Context, partyID, orderID string) (*typ
 			}
 			return nil, err
 		}
-		_ = m.position.UnregisterOrder(order, true)
+		_ = m.position.UnregisterOrder(ctx, order)
 	}
 
 	if order.IsExpireable() {
@@ -2315,7 +2315,7 @@ func (m *Market) parkOrder(ctx context.Context, order *types.Order) {
 
 	m.peggedOrders.Park(order)
 	m.broker.Send(events.NewOrderEvent(ctx, order))
-	_ = m.position.UnregisterOrder(order, true)
+	_ = m.position.UnregisterOrder(ctx, order)
 }
 
 // AmendOrder amend an existing order from the order book.
@@ -2503,7 +2503,7 @@ func (m *Market) amendOrder(
 				return nil, nil, err
 			}
 
-			_ = m.position.UnregisterOrder(cancellation.Order, true)
+			_ = m.position.UnregisterOrder(ctx, cancellation.Order)
 			amendedOrder = cancellation.Order
 		}
 
@@ -2590,7 +2590,7 @@ func (m *Market) amendOrder(
 	}
 
 	// Update potential new position after the amend
-	pos := m.position.AmendOrder(existingOrder, amendedOrder, true)
+	pos := m.position.AmendOrder(ctx, existingOrder, amendedOrder)
 
 	// Perform check and allocate margin if price or order size is increased
 	// ignore rollback return here, as if we amend it means the order
@@ -2600,7 +2600,7 @@ func (m *Market) amendOrder(
 	if priceIncrease || sizeIncrease {
 		if err = m.checkMarginForOrder(ctx, pos, amendedOrder); err != nil {
 			// Undo the position registering
-			_ = m.position.AmendOrder(amendedOrder, existingOrder, true)
+			_ = m.position.AmendOrder(ctx, amendedOrder, existingOrder)
 
 			if m.log.GetLevel() == logging.DebugLevel {
 				m.log.Debug("Unable to check/add margin for party",
@@ -2854,7 +2854,7 @@ func (m *Market) RemoveExpiredOrders(
 		// either a pegged + non parked
 		// or a non-pegged order
 		if foundOnBook {
-			m.position.UnregisterOrder(order, true)
+			m.position.UnregisterOrder(ctx, order)
 			m.matching.DeleteOrder(order)
 		}
 

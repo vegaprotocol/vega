@@ -35,7 +35,7 @@ func (m *Market) repricePeggedOrders(
 				}
 
 				// Remove it from the party position
-				_ = m.position.UnregisterOrder(order, true)
+				_ = m.position.UnregisterOrder(ctx, order)
 			}
 
 			if price, err := m.getNewPeggedPrice(order); err != nil {

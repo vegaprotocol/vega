@@ -47,19 +47,19 @@ func (e *SnapshotEngine) StopSnapshots() {
 	e.stopped = true
 }
 
-func (e *SnapshotEngine) RegisterOrder(order *types.Order, sendEvent bool) *MarketPosition {
+func (e *SnapshotEngine) RegisterOrder(ctx context.Context, order *types.Order) *MarketPosition {
 	e.changed = true
-	return e.Engine.RegisterOrder(order, sendEvent)
+	return e.Engine.RegisterOrder(ctx, order)
 }
 
-func (e *SnapshotEngine) UnregisterOrder(order *types.Order, sendEvent bool) *MarketPosition {
+func (e *SnapshotEngine) UnregisterOrder(ctx context.Context, order *types.Order) *MarketPosition {
 	e.changed = true
-	return e.Engine.UnregisterOrder(order, sendEvent)
+	return e.Engine.UnregisterOrder(ctx, order)
 }
 
-func (e *SnapshotEngine) AmendOrder(originalOrder, newOrder *types.Order, sendEvent bool) *MarketPosition {
+func (e *SnapshotEngine) AmendOrder(ctx context.Context, originalOrder, newOrder *types.Order) *MarketPosition {
 	e.changed = true
-	return e.Engine.AmendOrder(originalOrder, newOrder, sendEvent)
+	return e.Engine.AmendOrder(ctx, originalOrder, newOrder)
 }
 
 func (e *SnapshotEngine) UpdateNetwork(trade *types.Trade) []events.MarketPosition {
