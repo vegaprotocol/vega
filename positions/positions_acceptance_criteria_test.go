@@ -1,6 +1,7 @@
 package positions_test
 
 import (
+	"context"
 	"fmt"
 	"testing"
 	"time"
@@ -575,7 +576,7 @@ func testNewOrderAddedToTheBook(t *testing.T) {
 	assert.Empty(t, engine.Positions())
 
 	for _, c := range cases {
-		pos := engine.RegisterOrder(&c.order)
+		pos := engine.RegisterOrder(context.TODO(), &c.order)
 		assert.Equal(t, c.expectedBuy, pos.Buy())
 		assert.Equal(t, c.expectedSell, pos.Sell())
 		assert.Equal(t, c.expectedSize, pos.Size())
@@ -632,7 +633,7 @@ func testNewTradePartialAmountOfExistingOrderTraded(t *testing.T) {
 	assert.Empty(t, engine.Positions())
 
 	for i, c := range cases.orders {
-		engine.RegisterOrder(&c)
+		engine.RegisterOrder(context.TODO(), &c)
 		// ensure we have 1 position with 1 potential buy of size 10 for partyA
 		pos := engine.Positions()
 		assert.Len(t, pos, i+1)
@@ -726,7 +727,7 @@ func testTradeCauseTheFullAmountOfOrderToTrade(t *testing.T) {
 	assert.Empty(t, engine.Positions())
 
 	for i, c := range cases.orders {
-		engine.RegisterOrder(&c)
+		engine.RegisterOrder(context.TODO(), &c)
 		// ensure we have 1 position with 1 potential buy of size 10 for partyA
 		pos := engine.Positions()
 		assert.Len(t, pos, i+1)
@@ -821,7 +822,7 @@ func testOrderCancelled(t *testing.T) {
 
 	// first add the orders
 	for i, c := range cases.orders {
-		engine.RegisterOrder(&c)
+		engine.RegisterOrder(context.TODO(), &c)
 		// ensure we have 1 position with 1 potential buy of size 10 for partyA
 		pos := engine.Positions()
 		assert.Len(t, pos, i+1)
@@ -877,7 +878,7 @@ func testOrderCancelled(t *testing.T) {
 
 	// first add the orders
 	for _, c := range cases.orders {
-		_ = engine.UnregisterOrder(&c)
+		_ = engine.UnregisterOrder(context.TODO(), &c)
 	}
 
 	// test everything is back to 0 once orders are unregistered

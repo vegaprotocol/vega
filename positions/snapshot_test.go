@@ -50,7 +50,7 @@ func fillTestPositions(e *positions.SnapshotEngine) {
 	}
 
 	for _, order := range orders {
-		e.RegisterOrder(&order)
+		e.RegisterOrder(context.TODO(), &order)
 	}
 
 	trade := types.Trade{
@@ -141,7 +141,7 @@ func TestSnapshotHashRegisterOrder(t *testing.T) {
 		Remaining: uint64(150),
 		Price:     num.Zero(),
 	}
-	engine.RegisterOrder(newOrder)
+	engine.RegisterOrder(context.TODO(), newOrder)
 	h2, err := engine.GetHash(keys[0])
 	require.Nil(t, err)
 	require.False(t, bytes.Equal(h1, h2))
@@ -163,7 +163,7 @@ func TestSnapshotHashUnregisterOrder(t *testing.T) {
 		Remaining: uint64(10),
 		Price:     num.Zero(),
 	}
-	engine.RegisterOrder(newOrder)
+	engine.RegisterOrder(context.TODO(), newOrder)
 	h2, err := engine.GetHash(keys[0])
 	require.Nil(t, err)
 	require.False(t, bytes.Equal(h1, h2))
@@ -190,19 +190,19 @@ func TestSnapshotHashAmendOrder(t *testing.T) {
 			Price:     num.Zero(),
 		},
 	}
-	engine.RegisterOrder(newOrders[0])
+	engine.RegisterOrder(context.TODO(), newOrders[0])
 	keys := engine.Keys()
 	h1, err := engine.GetHash(keys[0])
 	require.Nil(t, err)
 
 	// Amend it
-	engine.AmendOrder(newOrders[0], newOrders[1])
+	engine.AmendOrder(context.TODO(), newOrders[0], newOrders[1])
 	h2, err := engine.GetHash(keys[0])
 	require.Nil(t, err)
 	require.False(t, bytes.Equal(h1, h2))
 
 	// Then amend it back, hash should be the same as originally
-	engine.AmendOrder(newOrders[1], newOrders[0])
+	engine.AmendOrder(context.TODO(), newOrders[1], newOrders[0])
 	h2, err = engine.GetHash(keys[0])
 	require.Nil(t, err)
 	require.True(t, bytes.Equal(h1, h2))
