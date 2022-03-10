@@ -17,6 +17,9 @@ type Engine struct {
 	log *logging.Logger
 
 	ethEngine *ethereum.Engine
+
+	stakingStartingBlock         uint64
+	multisigControlStartingBlock uint64
 }
 
 func NewEngine(log *logging.Logger, config Config) *Engine {
@@ -44,10 +47,12 @@ func (e *Engine) ReloadConf(config Config) {
 }
 
 func (e *Engine) UpdateStakingStartingBlock(b uint64) {
+	e.stakingStartingBlock = b
 	e.ethEngine.UpdateStakingStartingBlock(b)
 }
 
 func (e *Engine) UpdateMultiSigControlStartingBlock(b uint64) {
+	e.multisigControlStartingBlock = b
 	e.ethEngine.UpdateMultiSigControlStartingBlock(b)
 }
 
@@ -98,14 +103,25 @@ func (e *Engine) SetupEthereumEngine(
 		ethCfg.MultiSigControl(),
 	)
 
+	if e.multisigControlStartingBlock != 0 {
+		e.ethEngine.UpdateMultiSigControlStartingBlock(e.multisigControlStartingBlock)
+	}
+	if e.stakingStartingBlock != 0 {
+		e.ethEngine.UpdateStakingStartingBlock(e.stakingStartingBlock)
+	}
+
+	e.Start()
+
 	return nil
 }
 
 func (e *Engine) Start() {
-	go func() {
-		e.log.Info("Starting the Ethereum Event Forwarder")
-		e.ethEngine.Start()
-	}()
+	if e.ethEngine != nil {
+		go func() {
+			e.log.Info("Starting the Ethereum Event Forwarder")
+			e.ethEngine.Start()
+		}()
+	}
 }
 
 func (e *Engine) Stop() {

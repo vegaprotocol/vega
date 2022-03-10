@@ -9,6 +9,7 @@ import (
 	"code.vegaprotocol.io/vega/validators"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestMultisigTopologySheckpoint(t *testing.T) {
@@ -20,7 +21,7 @@ func TestMultisigTopologySheckpoint(t *testing.T) {
 
 	// Let's create threshold
 	// first assert we have no threshold
-	assert.Equal(t, top.GetThreshold(), uint32(0))
+	assert.Equal(t, uint32(0), top.GetThreshold())
 
 	thresholdEvent1 := types.SignerThresholdSetEvent{
 		Threshold:   666,
@@ -154,7 +155,7 @@ func TestMultisigTopologySheckpoint(t *testing.T) {
 		},
 	)
 
-	assert.NoError(t, top2.Load(context.Background(), cp))
+	require.NoError(t, top2.Load(context.Background(), cp))
 
 	// no assert state is restored correctly
 	assert.Equal(t, int(top2.GetThreshold()), 666)
