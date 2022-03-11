@@ -152,7 +152,7 @@ func (s *StakeVerifier) ensureNotDuplicate(id, h string) bool {
 
 func (s *StakeVerifier) ProcessStakeRemoved(
 	ctx context.Context, event *types.StakeRemoved) error {
-	if ok := s.ensureNotDuplicate(event.ID, event.Hash()); !ok {
+	if ok := s.ensureNotDuplicate(event.ID, event.IntoStakeLinking().Hash()); !ok {
 		s.log.Error("stake removed event already exists",
 			logging.String("event", event.String()))
 		return ErrDuplicatedStakeRemovedEvent
@@ -178,7 +178,7 @@ func (s *StakeVerifier) ProcessStakeRemoved(
 
 func (s *StakeVerifier) ProcessStakeDeposited(
 	ctx context.Context, event *types.StakeDeposited) error {
-	if ok := s.ensureNotDuplicate(event.ID, event.Hash()); !ok {
+	if ok := s.ensureNotDuplicate(event.ID, event.IntoStakeLinking().Hash()); !ok {
 		s.log.Error("stake deposited event already exists",
 			logging.String("event", event.String()))
 		return ErrDuplicatedStakeDepositedEvent

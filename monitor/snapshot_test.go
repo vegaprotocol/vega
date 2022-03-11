@@ -173,9 +173,9 @@ func TestChangedState(t *testing.T) {
 // TestAuctionTypeChain checks that if an auction is ended, then started again it is logged as a change.
 func TestAuctionEndsOpens(t *testing.T) {
 	as := createAuctionState()
-
+	now := time.Now()
 	// Perform some updates to the object
-	as.StartOpeningAuction(time.Now(), &types.AuctionDuration{
+	as.StartOpeningAuction(now, &types.AuctionDuration{
 		Duration: 200,
 		Volume:   200,
 	})
@@ -185,10 +185,10 @@ func TestAuctionEndsOpens(t *testing.T) {
 	original := getHash(t, as)
 
 	// Close it down and then start exactly the same auction again
-	as.Left(context.Background(), time.Now())
+	as.Left(context.Background(), now)
 	require.False(t, as.InAuction()) // definitely no auction
 
-	as.StartOpeningAuction(time.Now(), &types.AuctionDuration{
+	as.StartOpeningAuction(now, &types.AuctionDuration{
 		Duration: 200,
 		Volume:   200,
 	})

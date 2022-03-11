@@ -122,7 +122,7 @@ func (s *StakeVerifier) restorePendingSD(ctx context.Context, deposited []*types
 	evts := []events.Event{}
 	for _, d := range deposited {
 		// this populates the id/hash structs
-		if !s.ensureNotDuplicate(d.ID, d.Hash()) {
+		if !s.ensureNotDuplicate(d.ID, d.IntoStakeLinking().Hash()) {
 			s.log.Panic("pendingSD's unexpectedly pre-populated when restoring from snapshot")
 		}
 
@@ -146,7 +146,7 @@ func (s *StakeVerifier) restorePendingSR(ctx context.Context, removed []*types.S
 	evts := []events.Event{}
 	for _, r := range removed {
 		// this populates the id/hash structs
-		if !s.ensureNotDuplicate(r.ID, r.Hash()) {
+		if !s.ensureNotDuplicate(r.ID, r.IntoStakeLinking().Hash()) {
 			s.log.Panic("pendingSR's unexpectedly pre-populated when restoring from snapshot")
 		}
 

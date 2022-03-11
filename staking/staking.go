@@ -23,6 +23,11 @@ type EthereumClientConfirmations interface {
 	HeaderByNumber(context.Context, *big.Int) (*ethtypes.Header, error)
 }
 
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/ethereum_event_source_mock.go -package mocks code.vegaprotocol.io/vega/staking EthereumEventSource
+type EthereumEventSource interface {
+	UpdateStakingStartingBlock(uint64)
+}
+
 func New(
 	log *logging.Logger,
 	cfg Config,
@@ -34,7 +39,8 @@ func New(
 	evtFwd EvtForwarder,
 	isValidator bool,
 	ethCfns EthConfirmations,
-) (*Accounting, *StakeVerifier) {
+	ethEventSource EthereumEventSource,
+) (*Accounting, *StakeVerifier, *Checkpoint) {
 	log = log.Named(namedLogger)
 	log.SetLevel(cfg.Level.Get())
 	accs := NewAccounting(log, cfg, broker, ethClient, evtFwd, witness, tt, isValidator)
@@ -60,5 +66,5 @@ func New(
 		},
 	})
 
-	return accs, stakeV
+	return accs, stakeV, NewCheckpoint(log, accs, stakeV, ethEventSource)
 }

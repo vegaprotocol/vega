@@ -410,7 +410,6 @@ type NewMarketConfiguration struct {
 	PriceMonitoringParameters     *PriceMonitoringParameters
 	LiquidityMonitoringParameters *LiquidityMonitoringParameters
 	RiskParameters                riskParams
-	TradingMode                   tradingMode
 	// New market risk model parameters
 	//
 	// Types that are valid to be assigned to RiskParameters:
@@ -426,46 +425,12 @@ type NewMarketConfiguration struct {
 }
 
 type riskParams interface {
-	isNMCRP()
 	rpIntoProto() interface{}
 	DeepClone() riskParams
 }
 
-type tradingMode interface {
-	isTradingMode()
-	tmIntoProto() interface{}
-	DeepClone() tradingMode
-}
-
 type ProposalTermsNewMarket struct {
 	NewMarket *NewMarket
-}
-
-type ProposalTermsUpdateMarket struct {
-	UpdateMarket *UpdateMarket
-}
-
-type UpdateMarket struct {
-	Changes *UpdateMarketConfiguration
-}
-
-func (n UpdateMarket) IntoProto() *vegapb.UpdateMarket {
-	return &vegapb.UpdateMarket{}
-}
-
-func (n UpdateMarket) DeepClone() *UpdateMarket {
-	cpy := UpdateMarket{}
-	if n.Changes != nil {
-		cpy.Changes = n.Changes.DeepClone()
-	}
-	return &cpy
-}
-
-type UpdateMarketConfiguration struct{}
-
-func (n UpdateMarketConfiguration) DeepClone() *UpdateMarketConfiguration {
-	cpy := &UpdateMarketConfiguration{}
-	return cpy
 }
 
 type UpdateNetworkParameter struct {
@@ -590,9 +555,6 @@ func (n NewMarketConfiguration) DeepClone() *NewMarketConfiguration {
 	if n.RiskParameters != nil {
 		cpy.RiskParameters = n.RiskParameters.DeepClone()
 	}
-	if n.TradingMode != nil {
-		cpy.TradingMode = n.TradingMode.DeepClone()
-	}
 	return cpy
 }
 
@@ -639,7 +601,7 @@ func ProposalTermsFromProto(p *vegapb.ProposalTerms) *ProposalTerms {
 		case *vegapb.ProposalTerms_NewMarket:
 			change = NewNewMarketFromProto(ch)
 		case *vegapb.ProposalTerms_UpdateMarket:
-			change = NewUpdateMarketFromProto(ch)
+			change = UpdateMarketFromProto(ch)
 		case *vegapb.ProposalTerms_UpdateNetworkParameter:
 			change = NewUpdateNetworkParameterFromProto(ch)
 		case *vegapb.ProposalTerms_NewAsset:
@@ -673,10 +635,6 @@ func NewNewMarketFromProto(p *vegapb.ProposalTerms_NewMarket) *ProposalTermsNewM
 	return &ProposalTermsNewMarket{
 		NewMarket: newMarket,
 	}
-}
-
-func NewUpdateMarketFromProto(p *vegapb.ProposalTerms_UpdateMarket) *ProposalTermsUpdateMarket {
-	panic("unimplemented")
 }
 
 func NewUpdateNetworkParameterFromProto(
@@ -778,6 +736,15 @@ func (p *ProposalTerms) GetNewMarket() *NewMarket {
 	}
 }
 
+func (p *ProposalTerms) GetUpdateMarket() *UpdateMarket {
+	switch c := p.Change.(type) {
+	case *ProposalTermsUpdateMarket:
+		return c.UpdateMarket
+	default:
+		return nil
+	}
+}
+
 func (p *ProposalTerms) GetUpdateNetworkParameter() *UpdateNetworkParameter {
 	switch c := p.Change.(type) {
 	case *ProposalTermsUpdateNetworkParameter:
@@ -817,30 +784,6 @@ func (a ProposalTermsNewMarket) DeepClone() proposalTerm {
 	}
 	return &ProposalTermsNewMarket{
 		NewMarket: a.NewMarket.DeepClone(),
-	}
-}
-
-func (a ProposalTermsUpdateMarket) IntoProto() *vegapb.ProposalTerms_UpdateMarket {
-	return &vegapb.ProposalTerms_UpdateMarket{
-		UpdateMarket: a.UpdateMarket.IntoProto(),
-	}
-}
-
-func (a ProposalTermsUpdateMarket) isPTerm() {}
-func (a ProposalTermsUpdateMarket) oneOfProto() interface{} {
-	return a.IntoProto()
-}
-
-func (a ProposalTermsUpdateMarket) GetTermType() ProposalTermsType {
-	return ProposalTermsTypeUpdateMarket
-}
-
-func (a ProposalTermsUpdateMarket) DeepClone() proposalTerm {
-	if a.UpdateMarket == nil {
-		return &ProposalTermsUpdateMarket{}
-	}
-	return &ProposalTermsUpdateMarket{
-		UpdateMarket: a.UpdateMarket.DeepClone(),
 	}
 }
 
@@ -992,8 +935,6 @@ func (n NewMarketConfigurationLogNormal) DeepClone() riskParams {
 	}
 }
 
-func (*NewMarketConfigurationLogNormal) isNMCRP() {}
-
 func (n NewMarketConfigurationLogNormal) rpIntoProto() interface{} {
 	return n.IntoProto()
 }
@@ -1009,8 +950,6 @@ func NewMarketConfigurationSimpleFromProto(p *vegapb.NewMarketConfiguration_Simp
 		Simple: SimpleModelParamsFromProto(p.Simple),
 	}
 }
-
-func (*NewMarketConfigurationSimple) isNMCRP() {}
 
 func (n NewMarketConfigurationSimple) DeepClone() riskParams {
 	if n.Simple == nil {
@@ -1202,5 +1141,297 @@ func (n NewFreeform) DeepClone() *NewFreeform {
 			Description: n.Changes.Description,
 			Hash:        n.Changes.Hash,
 		},
+	}
+}
+
+func UpdateMarketFromProto(p *vegapb.ProposalTerms_UpdateMarket) *ProposalTermsUpdateMarket {
+	var updateMarket *UpdateMarket
+	if p.UpdateMarket != nil {
+		updateMarket = &UpdateMarket{}
+
+		if p.UpdateMarket.Changes != nil {
+			updateMarket.Changes = UpdateMarketConfigurationFromProto(p.UpdateMarket.Changes)
+		}
+	}
+
+	return &ProposalTermsUpdateMarket{
+		UpdateMarket: updateMarket,
+	}
+}
+
+func UpdateMarketConfigurationFromProto(p *vegapb.UpdateMarketConfiguration) *UpdateMarketConfiguration {
+	md := make([]string, 0, len(p.Metadata))
+	md = append(md, p.Metadata...)
+
+	var instrument *UpdateInstrumentConfiguration
+	if p.Instrument != nil {
+		instrument = UpdateInstrumentConfigurationFromProto(p.Instrument)
+	}
+
+	var priceMonitoring *PriceMonitoringParameters
+	if p.PriceMonitoringParameters != nil {
+		priceMonitoring = PriceMonitoringParametersFromProto(p.PriceMonitoringParameters)
+	}
+	var liquidityMonitoring *LiquidityMonitoringParameters
+	if p.LiquidityMonitoringParameters != nil {
+		liquidityMonitoring = LiquidityMonitoringParametersFromProto(p.LiquidityMonitoringParameters)
+	}
+
+	r := &UpdateMarketConfiguration{
+		Instrument:                    instrument,
+		Metadata:                      md,
+		PriceMonitoringParameters:     priceMonitoring,
+		LiquidityMonitoringParameters: liquidityMonitoring,
+	}
+	if p.RiskParameters != nil {
+		switch rp := p.RiskParameters.(type) {
+		case *vegapb.UpdateMarketConfiguration_Simple:
+			r.RiskParameters = UpdateMarketConfigurationSimpleFromProto(rp)
+		case *vegapb.UpdateMarketConfiguration_LogNormal:
+			r.RiskParameters = UpdateMarketConfigurationLogNormalFromProto(rp)
+		}
+	}
+	return r
+}
+
+func UpdateInstrumentConfigurationFromProto(p *vegapb.UpdateInstrumentConfiguration) *UpdateInstrumentConfiguration {
+	r := &UpdateInstrumentConfiguration{
+		Code: p.Code,
+	}
+
+	switch pr := p.Product.(type) {
+	case *vegapb.UpdateInstrumentConfiguration_Future:
+		r.Product = &UpdateInstrumentConfigurationFuture{
+			Future: &UpdateFutureProduct{
+				QuoteName:                       pr.Future.QuoteName,
+				OracleSpecForSettlementPrice:    pr.Future.OracleSpecForSettlementPrice.DeepClone(),
+				OracleSpecForTradingTermination: pr.Future.OracleSpecForTradingTermination.DeepClone(),
+				OracleSpecBinding:               OracleSpecToFutureBindingFromProto(pr.Future.OracleSpecBinding),
+			},
+		}
+	}
+	return r
+}
+
+func UpdateMarketConfigurationSimpleFromProto(p *vegapb.UpdateMarketConfiguration_Simple) *UpdateMarketConfigurationSimple {
+	return &UpdateMarketConfigurationSimple{
+		Simple: SimpleModelParamsFromProto(p.Simple),
+	}
+}
+
+func UpdateMarketConfigurationLogNormalFromProto(p *vegapb.UpdateMarketConfiguration_LogNormal) *UpdateMarketConfigurationLogNormal {
+	return &UpdateMarketConfigurationLogNormal{
+		LogNormal: &LogNormalRiskModel{
+			RiskAversionParameter: num.DecimalFromFloat(p.LogNormal.RiskAversionParameter),
+			Tau:                   num.DecimalFromFloat(p.LogNormal.Tau),
+			Params:                LogNormalParamsFromProto(p.LogNormal.Params),
+		},
+	}
+}
+
+func (a ProposalTermsUpdateMarket) IntoProto() *vegapb.ProposalTerms_UpdateMarket {
+	return &vegapb.ProposalTerms_UpdateMarket{
+		UpdateMarket: a.UpdateMarket.IntoProto(),
+	}
+}
+
+func (a ProposalTermsUpdateMarket) isPTerm() {}
+
+func (a ProposalTermsUpdateMarket) oneOfProto() interface{} {
+	return a.IntoProto()
+}
+
+func (a ProposalTermsUpdateMarket) GetTermType() ProposalTermsType {
+	return ProposalTermsTypeUpdateMarket
+}
+
+func (a ProposalTermsUpdateMarket) DeepClone() proposalTerm {
+	if a.UpdateMarket == nil {
+		return &ProposalTermsUpdateMarket{}
+	}
+	return &ProposalTermsUpdateMarket{
+		UpdateMarket: a.UpdateMarket.DeepClone(),
+	}
+}
+
+type ProposalTermsUpdateMarket struct {
+	UpdateMarket *UpdateMarket
+}
+
+type UpdateMarket struct {
+	Changes *UpdateMarketConfiguration
+}
+
+func (n UpdateMarket) IntoProto() *vegapb.UpdateMarket {
+	return &vegapb.UpdateMarket{}
+}
+
+func (n UpdateMarket) DeepClone() *UpdateMarket {
+	cpy := UpdateMarket{}
+	if n.Changes != nil {
+		cpy.Changes = n.Changes.DeepClone()
+	}
+	return &cpy
+}
+
+type UpdateMarketConfiguration struct {
+	Instrument                    *UpdateInstrumentConfiguration
+	Metadata                      []string
+	PriceMonitoringParameters     *PriceMonitoringParameters
+	LiquidityMonitoringParameters *LiquidityMonitoringParameters
+	RiskParameters                riskParams
+}
+
+func (n UpdateMarketConfiguration) DeepClone() *UpdateMarketConfiguration {
+	cpy := &UpdateMarketConfiguration{
+		Metadata: make([]string, len(n.Metadata)),
+	}
+	cpy.Metadata = append(cpy.Metadata, n.Metadata...)
+	if n.Instrument != nil {
+		cpy.Instrument = n.Instrument.DeepClone()
+	}
+	if n.PriceMonitoringParameters != nil {
+		cpy.PriceMonitoringParameters = n.PriceMonitoringParameters.DeepClone()
+	}
+	if n.LiquidityMonitoringParameters != nil {
+		cpy.LiquidityMonitoringParameters = n.LiquidityMonitoringParameters.DeepClone()
+	}
+	if n.RiskParameters != nil {
+		cpy.RiskParameters = n.RiskParameters.DeepClone()
+	}
+	return cpy
+}
+
+type UpdateInstrumentConfiguration struct {
+	Code string
+	// *UpdateInstrumentConfigurationFuture
+	Product updateInstrumentConfigurationProduct
+}
+
+func (i UpdateInstrumentConfiguration) DeepClone() *UpdateInstrumentConfiguration {
+	cpy := UpdateInstrumentConfiguration{
+		Code: i.Code,
+	}
+	if i.Product != nil {
+		cpy.Product = i.Product.DeepClone()
+	}
+	return &cpy
+}
+
+func (i UpdateInstrumentConfiguration) IntoProto() *vegapb.UpdateInstrumentConfiguration {
+	p := i.Product.icpIntoProto()
+	r := &vegapb.UpdateInstrumentConfiguration{
+		Code: i.Code,
+	}
+	switch pr := p.(type) {
+	case *vegapb.UpdateInstrumentConfiguration_Future:
+		r.Product = pr
+	}
+	return r
+}
+
+type updateInstrumentConfigurationProduct interface {
+	isUpdateInstrumentConfigurationProduct()
+	icpIntoProto() interface{}
+	DeepClone() updateInstrumentConfigurationProduct
+}
+
+type UpdateInstrumentConfigurationFuture struct {
+	Future *UpdateFutureProduct
+}
+
+func (i UpdateInstrumentConfigurationFuture) isUpdateInstrumentConfigurationProduct() {}
+
+func (i UpdateInstrumentConfigurationFuture) icpIntoProto() interface{} {
+	return i.IntoProto()
+}
+
+func (i UpdateInstrumentConfigurationFuture) DeepClone() updateInstrumentConfigurationProduct {
+	if i.Future == nil {
+		return &UpdateInstrumentConfigurationFuture{}
+	}
+	return &UpdateInstrumentConfigurationFuture{
+		Future: i.Future.DeepClone(),
+	}
+}
+
+func (i UpdateInstrumentConfigurationFuture) IntoProto() *vegapb.UpdateInstrumentConfiguration_Future {
+	return &vegapb.UpdateInstrumentConfiguration_Future{
+		Future: i.Future.IntoProto(),
+	}
+}
+
+type UpdateFutureProduct struct {
+	QuoteName                       string
+	OracleSpecForSettlementPrice    *oraclespb.OracleSpecConfiguration
+	OracleSpecForTradingTermination *oraclespb.OracleSpecConfiguration
+	OracleSpecBinding               *OracleSpecToFutureBinding
+}
+
+func (f UpdateFutureProduct) IntoProto() *vegapb.UpdateFutureProduct {
+	return &vegapb.UpdateFutureProduct{
+		QuoteName:                       f.QuoteName,
+		OracleSpecForSettlementPrice:    f.OracleSpecForSettlementPrice.DeepClone(),
+		OracleSpecForTradingTermination: f.OracleSpecForTradingTermination.DeepClone(),
+		OracleSpecBinding:               f.OracleSpecBinding.IntoProto(),
+	}
+}
+
+func (f UpdateFutureProduct) DeepClone() *UpdateFutureProduct {
+	return &UpdateFutureProduct{
+		QuoteName:                       f.QuoteName,
+		OracleSpecForSettlementPrice:    f.OracleSpecForSettlementPrice.DeepClone(),
+		OracleSpecForTradingTermination: f.OracleSpecForTradingTermination.DeepClone(),
+		OracleSpecBinding:               f.OracleSpecBinding.DeepClone(),
+	}
+}
+
+func (f UpdateFutureProduct) String() string {
+	return f.IntoProto().String()
+}
+
+type UpdateMarketConfigurationSimple struct {
+	Simple *SimpleModelParams
+}
+
+func (n UpdateMarketConfigurationSimple) rpIntoProto() interface{} {
+	return n.IntoProto()
+}
+
+func (n UpdateMarketConfigurationSimple) DeepClone() riskParams {
+	if n.Simple == nil {
+		return &UpdateMarketConfigurationSimple{}
+	}
+	return &UpdateMarketConfigurationSimple{
+		Simple: n.Simple.DeepClone(),
+	}
+}
+
+func (n UpdateMarketConfigurationSimple) IntoProto() *vegapb.UpdateMarketConfiguration_Simple {
+	return &vegapb.UpdateMarketConfiguration_Simple{
+		Simple: n.Simple.IntoProto(),
+	}
+}
+
+type UpdateMarketConfigurationLogNormal struct {
+	LogNormal *LogNormalRiskModel
+}
+
+func (n UpdateMarketConfigurationLogNormal) rpIntoProto() interface{} {
+	return n.IntoProto()
+}
+
+func (n UpdateMarketConfigurationLogNormal) DeepClone() riskParams {
+	if n.LogNormal == nil {
+		return &UpdateMarketConfigurationLogNormal{}
+	}
+	return &UpdateMarketConfigurationLogNormal{
+		LogNormal: n.LogNormal.DeepClone(),
+	}
+}
+
+func (n UpdateMarketConfigurationLogNormal) IntoProto() *vegapb.UpdateMarketConfiguration_LogNormal {
+	return &vegapb.UpdateMarketConfiguration_LogNormal{
+		LogNormal: n.LogNormal.IntoProto(),
 	}
 }

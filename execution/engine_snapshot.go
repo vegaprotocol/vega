@@ -99,7 +99,7 @@ func (e *Engine) restoreMarket(ctx context.Context, em *types.ExecMarket) (*Mark
 		return nil, err
 	}
 
-	e.publishMarketInfos(ctx, mkt)
+	e.publishNewMarketInfos(ctx, mkt)
 	return mkt, nil
 }
 

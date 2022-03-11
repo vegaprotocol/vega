@@ -81,7 +81,7 @@ func (opts *AnnounceNodeCmd) Execute(args []string) error {
 
 	// now we are OK, send the command
 
-	commander, cfunc, err := getNodeWalletCommander(log)
+	commander, cfunc, err := getNodeWalletCommander(log, registryPass, vegaPaths)
 	if err != nil {
 		return fmt.Errorf("failed to get commander: %w", err)
 	}

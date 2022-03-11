@@ -69,6 +69,15 @@ func NewEngine(
 	}
 }
 
+func (e *Engine) UpdateStakingStartingBlock(b uint64) {
+	e.nextStakingBlockNumber = b
+	e.nextVestingBlockNumber = b
+}
+
+func (e *Engine) UpdateMultiSigControlStartingBlock(b uint64) {
+	e.nextMultiSigControlBlockNumber = b
+}
+
 func (e *Engine) ReloadConf(cfg Config) {
 	e.log.Info("Reloading configuration")
 

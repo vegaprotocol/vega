@@ -297,7 +297,7 @@ func (e *Engine) SubmitMarketWithLiquidityProvision(ctx context.Context, marketC
 	e.marketTracker.MarketProposed(marketConfig.ID, party)
 
 	// publish market data anyway initially
-	e.publishMarketInfos(ctx, mkt)
+	e.publishNewMarketInfos(ctx, mkt)
 
 	// now we try to submit the liquidity
 	if err := mkt.SubmitLiquidityProvision(ctx, lp, party, deterministicId); err != nil {
@@ -322,18 +322,40 @@ func (e *Engine) SubmitMarket(ctx context.Context, marketConfig *types.Market) e
 	mkt := e.markets[marketConfig.ID]
 	_ = mkt.StartOpeningAuction(ctx)
 
-	e.publishMarketInfos(ctx, mkt)
+	e.publishNewMarketInfos(ctx, mkt)
 	return nil
 }
 
-func (e *Engine) publishMarketInfos(ctx context.Context, mkt *Market) {
+// UpdateMarket will update an existing market configuration.
+func (e *Engine) UpdateMarket(ctx context.Context, marketConfig *types.Market) error {
+	if e.log.IsDebug() {
+		e.log.Debug("update market", logging.Market(*marketConfig))
+	}
+
+	if err := e.updateMarket(ctx, marketConfig); err != nil {
+		return err
+	}
+
+	mkt := e.markets[marketConfig.ID]
+
+	e.publishUpdateMarketInfos(ctx, mkt)
+	return nil
+}
+
+func (e *Engine) publishNewMarketInfos(ctx context.Context, mkt *Market) {
 	// we send a market data event for this market when it's created so graphql does not fail
 	e.broker.Send(events.NewMarketDataEvent(ctx, mkt.GetMarketData()))
 	e.broker.Send(events.NewMarketCreatedEvent(ctx, *mkt.mkt))
 	e.broker.Send(events.NewMarketUpdatedEvent(ctx, *mkt.mkt))
 }
 
-// SubmitMarket will submit a new market configuration to the network.
+func (e *Engine) publishUpdateMarketInfos(ctx context.Context, mkt *Market) {
+	// we send a market data event for this market when it's created so graphql does not fail
+	e.broker.Send(events.NewMarketDataEvent(ctx, mkt.GetMarketData()))
+	e.broker.Send(events.NewMarketUpdatedEvent(ctx, *mkt.mkt))
+}
+
+// submitMarket will submit a new market configuration to the network.
 func (e *Engine) submitMarket(ctx context.Context, marketConfig *types.Market) error {
 	if len(marketConfig.ID) == 0 {
 		return ErrNoMarketID
@@ -401,6 +423,11 @@ func (e *Engine) submitMarket(ctx context.Context, marketConfig *types.Market) e
 		return err
 	}
 
+	return nil
+}
+
+func (e *Engine) updateMarket(ctx context.Context, marketConfig *types.Market) error {
+	// TODO Implement me
 	return nil
 }
 
@@ -1064,6 +1091,14 @@ func (e *Engine) OnMinLpStakeQuantumMultipleUpdate(ctx context.Context, d num.De
 func (e *Engine) MarketExists(market string) bool {
 	_, ok := e.markets[market]
 	return ok
+}
+
+func (e *Engine) GetMarket(market string) (types.Market, bool) {
+	mkt, ok := e.markets[market]
+	if !ok {
+		return types.Market{}, false
+	}
+	return mkt.IntoType(), true
 }
 
 // GetEquityLikeShareForMarketAndParty return the equity-like shares of the given
