@@ -57,7 +57,7 @@ jobs:
             }'  -f pr_url=$PR_URL > linked_issue_data.json
             echo 'LINKED_ISSUE_ID='$(jq '.data.resource.closingIssuesReferences.nodes[] | .id' linked_issue_data.json) >> $GITHUB_ENV
 
-      - name: Verfiy linked issue
+      - name: Verify linked issue
         if: env.LINKED_ISSUE_ID != ''
         uses: actions/github-script@0.9.0
         with:
