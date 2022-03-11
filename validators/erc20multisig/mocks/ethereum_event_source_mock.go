@@ -33,14 +33,14 @@ func (m *MockEthereumEventSource) EXPECT() *MockEthereumEventSourceMockRecorder 
 	return m.recorder
 }
 
-// UpdateMultisigControlLastBlockSeen mocks base method.
-func (m *MockEthereumEventSource) UpdateMultisigControlLastBlockSeen(arg0 uint64) {
+// UpdateMultisigControlStartingBlock mocks base method.
+func (m *MockEthereumEventSource) UpdateMultisigControlStartingBlock(arg0 uint64) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "UpdateMultisigControlLastBlockSeen", arg0)
+	m.ctrl.Call(m, "UpdateMultisigControlStartingBlock", arg0)
 }
 
-// UpdateMultisigControlLastBlockSeen indicates an expected call of UpdateMultisigControlLastBlockSeen.
-func (mr *MockEthereumEventSourceMockRecorder) UpdateMultisigControlLastBlockSeen(arg0 interface{}) *gomock.Call {
+// UpdateMultisigControlStartingBlock indicates an expected call of UpdateMultisigControlStartingBlock.
+func (mr *MockEthereumEventSourceMockRecorder) UpdateMultisigControlStartingBlock(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateMultisigControlLastBlockSeen", reflect.TypeOf((*MockEthereumEventSource)(nil).UpdateMultisigControlLastBlockSeen), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateMultisigControlStartingBlock", reflect.TypeOf((*MockEthereumEventSource)(nil).UpdateMultisigControlStartingBlock), arg0)
 }
