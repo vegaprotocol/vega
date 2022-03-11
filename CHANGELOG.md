@@ -9,7 +9,7 @@
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 ### 🛠 Improvements
-- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+- [2585](https://github.com/vegaprotocol/vega/issues/2585) - Adding position state event to eventbus
 
 ### 🐛 Fixes
 - [4947](https://github.com/vegaprotocol/vega/issues/4947) - Fix time formatting problem that was breaking consensus on nodes in different time zones
