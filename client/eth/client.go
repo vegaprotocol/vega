@@ -161,23 +161,23 @@ func (c *Client) VerifyContract(ctx context.Context, address ethcommon.Address, 
 	return nil
 }
 
-func (c *Client) verifyStakingContract(ctx context.Context, ethConfig *types.EthereumConfig) error {
-	if address := ethConfig.StakingBridge(); address.HasAddress() {
-		return c.VerifyContract(ctx, address.Address(), ContractHashes["staking"])
-	}
-	return nil
-}
+// func (c *Client) verifyStakingContract(ctx context.Context, ethConfig *types.EthereumConfig) error {
+// 	if address := ethConfig.StakingBridge(); address.HasAddress() {
+// 		return c.VerifyContract(ctx, address.Address(), ContractHashes["staking"])
+// 	}
+// 	return nil
+// }
 
-func (c *Client) verifyVestingContract(ctx context.Context, ethConfig *types.EthereumConfig) error {
-	if address := ethConfig.VestingBridge(); address.HasAddress() {
-		return c.VerifyContract(ctx, address.Address(), ContractHashes["vesting"])
-	}
-	return nil
-}
+// func (c *Client) verifyVestingContract(ctx context.Context, ethConfig *types.EthereumConfig) error {
+// 	if address := ethConfig.VestingBridge(); address.HasAddress() {
+// 		return c.VerifyContract(ctx, address.Address(), ContractHashes["vesting"])
+// 	}
+// 	return nil
+// }
 
-func (c *Client) verifyCollateralContract(ctx context.Context, ethConfig *types.EthereumConfig) error {
-	if address := ethConfig.CollateralBridge(); address.HasAddress() {
-		return c.VerifyContract(ctx, address.Address(), ContractHashes["collateral"])
-	}
-	return nil
-}
+// func (c *Client) verifyCollateralContract(ctx context.Context, ethConfig *types.EthereumConfig) error {
+// 	if address := ethConfig.CollateralBridge(); address.HasAddress() {
+// 		return c.VerifyContract(ctx, address.Address(), ContractHashes["collateral"])
+// 	}
+// 	return nil
+// }
