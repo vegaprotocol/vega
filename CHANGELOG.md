@@ -21,6 +21,7 @@
 - [4953](https://github.com/vegaprotocol/vega/issues/4953) - Add block hash to statistics and to block height request
 - [4961](https://github.com/vegaprotocol/vega/issues/4961) - Extend auction feature tests
 - [4832](https://github.com/vegaprotocol/vega/issues/4832) - Add validation of update market proposals.
+- [4971](https://github.com/vegaprotocol/vega/issues/4971) - Add acceptance criteria to auction tests
 
 ### 🐛 Fixes
 - [4947](https://github.com/vegaprotocol/vega/issues/4947) - Fix time formatting problem that was breaking consensus on nodes in different time zones
