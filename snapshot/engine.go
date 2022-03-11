@@ -70,6 +70,7 @@ type Engine struct {
 
 	ctx          context.Context
 	cfunc        context.CancelFunc
+	initialised  bool
 	timeService  TimeService
 	statsService StatsService
 	db           db.DB
@@ -347,6 +348,10 @@ func (e *Engine) Loaded() (bool, error) {
 // initialiseTree connects to the snapshotdb and sets the engine's state to
 // point to the latest version of the tree.
 func (e *Engine) initialiseTree() error {
+	// prevent re-initialising the tree several times over
+	if e.initialised {
+		return nil
+	}
 	switch e.Config.Storage {
 	case memDB:
 		e.db = db.NewMemDB()
@@ -369,6 +374,7 @@ func (e *Engine) initialiseTree() error {
 		e.log.Error("Failed to load AVL version", logging.Error(err))
 		return err
 	}
+	e.initialised = true
 	return nil
 }
 
