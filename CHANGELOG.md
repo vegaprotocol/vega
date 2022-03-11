@@ -28,6 +28,7 @@
 - [4957](https://github.com/vegaprotocol/vega/issues/4957) - Fix `vega announce_node` to work with `--home` and `--passphrase-file`
 - [4964](https://github.com/vegaprotocol/vega/issues/4964) - Fix price monitoring snapshot
 - [4974](https://github.com/vegaprotocol/vega/issues/4974) - Fix panic when checkpointing staking accounts if there are no events
+- [4888](https://github.com/vegaprotocol/vega/issues/4888) - Fix memory leak when loading snapshots.
 
 
 ## 0.49.1
