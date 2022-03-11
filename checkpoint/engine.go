@@ -142,7 +142,7 @@ func (e *Engine) UponGenesis(ctx context.Context, data []byte) (err error) {
 
 		buf, err := base64.StdEncoding.DecodeString(state.CheckpointState)
 		if err != nil {
-			return fmt.Errorf("invalid genesis file checkpoint.state", logging.Error(err))
+			return fmt.Errorf("invalid genesis file checkpoint.state: %w", err)
 		}
 
 		cpt := &types.CheckpointState{}
