@@ -3,26 +3,26 @@ Feature: Distressed parties should not have general balance left
   Background:
     Given time is updated to "2020-10-16T00:00:00Z"
     And the markets:
-      | id        | quote name | asset | maturity date        | risk model                  | margin calculator         | auction duration | fees         | price monitoring | oracle config          |
-      | ETH/DEC20 | ETH        | ETH   | 2020-12-31T23:59:59Z | default-simple-risk-model-3 | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future |
+      | id        | quote name | asset | risk model                  | margin calculator         | auction duration | fees         | price monitoring | oracle config          |
+      | ETH/DEC20 | ETH        | ETH   | default-simple-risk-model-3 | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future |
     And the following network parameters are set:
       | name                           | value |
       | market.auction.minimumDuration | 1     |
 
   Scenario: Upper bound breached
     Given the parties deposit on asset's general account the following amount:
-      | party    | asset | amount         |
-      | party1   | ETH   | 10000000000000 |
-      | party2   | ETH   | 10000000000000 |
-      | party3   | ETH   | 24000          |
-      | party4   | ETH   | 10000000000000 |
-      | party5   | ETH   | 10000000000000 |
+      | party     | asset | amount         |
+      | party1    | ETH   | 10000000000000 |
+      | party2    | ETH   | 10000000000000 |
+      | party3    | ETH   | 24000          |
+      | party4    | ETH   | 10000000000000 |
+      | party5    | ETH   | 10000000000000 |
       | auxiliary | ETH   | 100000000000   |
       | aux2      | ETH   | 100000000000   |
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     Then the parties place the following orders:
-      | party    | market id | side | volume | price | resulting trades | type       | tif     |
+      | party     | market id | side | volume | price | resulting trades | type       | tif     |
       | auxiliary | ETH/DEC20 | buy  | 1      | 1     | 0                | TYPE_LIMIT | TIF_GTC |
       | auxiliary | ETH/DEC20 | sell | 1      | 200   | 0                | TYPE_LIMIT | TIF_GTC |
       | aux2      | ETH/DEC20 | buy  | 1      | 100   | 0                | TYPE_LIMIT | TIF_GTC |
@@ -60,11 +60,11 @@ Feature: Distressed parties should not have general balance left
       | party5 | ETH   | ETH/DEC20 | 372    | 9999999999628 |
     And clear all events
     Then the parties submit the following liquidity provision:
-      | id  | party   | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type |
+      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
       | lp1 | party3 | ETH/DEC20 | 10000             | 0.1 | buy  | BID              | 10         | 10     | submission |
-      | lp1 | party3 | ETH/DEC20 | 10000             | 0.1 | sell | ASK              | 10         | 10     | amendment |
+      | lp1 | party3 | ETH/DEC20 | 10000             | 0.1 | sell | ASK              | 10         | 10     | amendment  |
     Then the liquidity provisions should have the following states:
-      | id  | party   | market    | commitment amount | status        |
+      | id  | party  | market    | commitment amount | status        |
       | lp1 | party3 | ETH/DEC20 | 10000             | STATUS_ACTIVE |
 
     Then the orders should have the following states:

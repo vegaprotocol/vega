@@ -445,7 +445,6 @@ func getMarketWithDP(closingAt time.Time, pMonitorSettings *types.PriceMonitorin
 				},
 				Product: &types.Instrument_Future{
 					Future: &types.Future{
-						Maturity:        closingAt.Format(time.RFC3339),
 						SettlementAsset: "ETH",
 						QuoteName:       "USD",
 						OracleSpecForSettlementPrice: &oraclesv1.OracleSpec{
@@ -998,7 +997,6 @@ func TestSetMarketID(t *testing.T) {
 					},
 					Product: &types.Instrument_Future{
 						Future: &types.Future{
-							Maturity:        "2019-12-31T23:59:59Z",
 							SettlementAsset: "Ethereum/Ether",
 							OracleSpecForSettlementPrice: &oraclesv1.OracleSpec{
 								Id:      "1",

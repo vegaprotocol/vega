@@ -36,7 +36,6 @@ func getMarket(closingAt time.Time, openingAuctionDuration *types.AuctionDuratio
 				},
 				Product: &types.Instrument_Future{
 					Future: &types.Future{
-						Maturity:        closingAt.Format(time.RFC3339),
 						SettlementAsset: "ETH",
 						QuoteName:       "USD",
 						OracleSpecBinding: &types.OracleSpecToFutureBinding{

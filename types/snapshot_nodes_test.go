@@ -381,7 +381,6 @@ func getDummyData() *types.Chunk {
 									},
 									Product: &types.Instrument_Future{
 										Future: &types.Future{
-											Maturity:        "1",
 											SettlementAsset: "AST",
 											QuoteName:       "AST",
 											OracleSpecForSettlementPrice: &ov1.OracleSpec{

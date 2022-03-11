@@ -28,47 +28,6 @@ func TestInstrument(t *testing.T) {
 		assert.Nil(t, err)
 	})
 
-	t.Run("Invalid future maturity", func(t *testing.T) {
-		pinst := getValidInstrumentProto()
-		pinst.Product = &types.Instrument_Future{
-			Future: &types.Future{
-				Maturity:        "notavaliddate",
-				SettlementAsset: "Ethereum/Ether",
-				OracleSpecForSettlementPrice: &oraclesv1.OracleSpec{
-					PubKeys: []string{"0xDEADBEEF"},
-					Filters: []*oraclesv1.Filter{
-						{
-							Key: &oraclesv1.PropertyKey{
-								Name: "prices.ETH.value",
-								Type: oraclesv1.PropertyKey_TYPE_INTEGER,
-							},
-							Conditions: []*oraclesv1.Condition{},
-						},
-					},
-				},
-				OracleSpecForTradingTermination: &oraclesv1.OracleSpec{
-					PubKeys: []string{"0xDEADBEEF"},
-					Filters: []*oraclesv1.Filter{
-						{
-							Key: &oraclesv1.PropertyKey{
-								Name: "trading.terminated",
-								Type: oraclesv1.PropertyKey_TYPE_INTEGER,
-							},
-							Conditions: []*oraclesv1.Condition{},
-						},
-					},
-				},
-				OracleSpecBinding: &types.OracleSpecToFutureBinding{
-					SettlementPriceProperty:    "prices.ETH.value",
-					TradingTerminationProperty: "trading.terminated",
-				},
-			},
-		}
-		inst, err := markets.NewInstrument(context.Background(), logging.NewTestLogger(), pinst, newOracleEngine(t))
-		assert.Nil(t, inst)
-		assert.NotNil(t, err)
-	})
-
 	t.Run("nil product", func(t *testing.T) {
 		pinst := getValidInstrumentProto()
 		pinst.Product = nil
@@ -82,7 +41,6 @@ func TestInstrument(t *testing.T) {
 		pinst := getValidInstrumentProto()
 		pinst.Product = &types.Instrument_Future{
 			Future: &types.Future{
-				Maturity:                        "2019-12-31T00:00:00Z",
 				SettlementAsset:                 "Ethereum/Ether",
 				OracleSpecForSettlementPrice:    nil,
 				OracleSpecForTradingTermination: nil,
@@ -102,7 +60,6 @@ func TestInstrument(t *testing.T) {
 		pinst := getValidInstrumentProto()
 		pinst.Product = &types.Instrument_Future{
 			Future: &types.Future{
-				Maturity:        "2019-12-31T00:00:00Z",
 				SettlementAsset: "Ethereum/Ether",
 				OracleSpecForSettlementPrice: &oraclesv1.OracleSpec{
 					PubKeys: []string{"0xDEADBEEF"},
@@ -170,7 +127,6 @@ func getValidInstrumentProto() *types.Instrument {
 		Product: &types.Instrument_Future{
 			Future: &types.Future{
 				QuoteName:       "USD",
-				Maturity:        "2019-12-31T00:00:00Z",
 				SettlementAsset: "Ethereum/Ether",
 				OracleSpecForSettlementPrice: &oraclesv1.OracleSpec{
 					PubKeys: []string{"0xDEADBEEF"},

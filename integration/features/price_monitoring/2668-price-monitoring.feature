@@ -9,23 +9,23 @@ Feature: Price monitoring test for issue 2668
       | risk aversion | tau                    | mu | r     | sigma |
       | 0.000001      | 0.00011407711613050422 | 0  | 0.016 | 0.8   |
     And the markets:
-      | id        | quote name | asset | maturity date        | risk model               | margin calculator         | auction duration | fees         | price monitoring    | oracle config          |
-      | ETH/DEC20 | ETH        | ETH   | 2020-12-31T23:59:59Z | my-log-normal-risk-model | default-margin-calculator | 1                | default-none | my-price-monitoring | default-eth-for-future |
+      | id        | quote name | asset | risk model               | margin calculator         | auction duration | fees         | price monitoring    | oracle config          |
+      | ETH/DEC20 | ETH        | ETH   | my-log-normal-risk-model | default-margin-calculator | 1                | default-none | my-price-monitoring | default-eth-for-future |
     And the following network parameters are set:
       | name                           | value |
       | market.auction.minimumDuration | 300   |
 
   Scenario: Upper bound breached
     Given the parties deposit on asset's general account the following amount:
-      | party    | asset | amount       |
-      | party1   | ETH   | 10000000000  |
-      | party2   | ETH   | 10000000000  |
+      | party     | asset | amount       |
+      | party1    | ETH   | 10000000000  |
+      | party2    | ETH   | 10000000000  |
       | auxiliary | ETH   | 100000000000 |
       | aux2      | ETH   | 100000000000 |
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     Then the parties place the following orders:
-      | party    | market id | side | volume | price    | resulting trades | type       | tif     |
+      | party     | market id | side | volume | price    | resulting trades | type       | tif     |
       | auxiliary | ETH/DEC20 | buy  | 1      | 1        | 0                | TYPE_LIMIT | TIF_GTC |
       | auxiliary | ETH/DEC20 | sell | 1      | 10000000 | 0                | TYPE_LIMIT | TIF_GTC |
       | auxiliary | ETH/DEC20 | sell | 1      | 5670000  | 0                | TYPE_LIMIT | TIF_GTC |
@@ -90,15 +90,15 @@ Feature: Price monitoring test for issue 2668
 
   Scenario: Lower bound breached
     Given the parties deposit on asset's general account the following amount:
-      | party    | asset | amount       |
-      | party1   | ETH   | 10000000000  |
-      | party2   | ETH   | 10000000000  |
+      | party     | asset | amount       |
+      | party1    | ETH   | 10000000000  |
+      | party2    | ETH   | 10000000000  |
       | auxiliary | ETH   | 100000000000 |
       | aux2      | ETH   | 100000000000 |
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     Then the parties place the following orders:
-      | party    | market id | side | volume | price    | resulting trades | type       | tif     |
+      | party     | market id | side | volume | price    | resulting trades | type       | tif     |
       | auxiliary | ETH/DEC20 | buy  | 1      | 1        | 0                | TYPE_LIMIT | TIF_GTC |
       | auxiliary | ETH/DEC20 | sell | 1      | 10000000 | 0                | TYPE_LIMIT | TIF_GTC |
       | auxiliary | ETH/DEC20 | sell | 1      | 5670000  | 0                | TYPE_LIMIT | TIF_GTC |
@@ -114,7 +114,7 @@ Feature: Price monitoring test for issue 2668
     And the mark price should be "5670000" for the market "ETH/DEC20"
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
-    
+
     When the parties place the following orders:
       | party  | market id | side | volume | price   | resulting trades | type       | tif     | reference |
       | party1 | ETH/DEC20 | sell | 1      | 4850000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
@@ -159,15 +159,15 @@ Feature: Price monitoring test for issue 2668
 
   Scenario: Upper bound breached (scale prices down by 10000)
     Given the parties deposit on asset's general account the following amount:
-      | party    | asset | amount       |
-      | party1   | ETH   | 10000000000  |
-      | party2   | ETH   | 10000000000  |
+      | party     | asset | amount       |
+      | party1    | ETH   | 10000000000  |
+      | party2    | ETH   | 10000000000  |
       | auxiliary | ETH   | 100000000000 |
       | aux2      | ETH   | 100000000000 |
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     When the parties place the following orders:
-      | party    | market id | side | volume | price    | resulting trades | type       | tif     |
+      | party     | market id | side | volume | price    | resulting trades | type       | tif     |
       | auxiliary | ETH/DEC20 | buy  | 1      | 1        | 0                | TYPE_LIMIT | TIF_GTC |
       | auxiliary | ETH/DEC20 | sell | 1      | 10000000 | 0                | TYPE_LIMIT | TIF_GTC |
       | auxiliary | ETH/DEC20 | sell | 1      | 567      | 0                | TYPE_LIMIT | TIF_GTC |
