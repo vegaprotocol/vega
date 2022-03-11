@@ -83,17 +83,17 @@ func (c *Client) UpdateEthereumConfig(ethConfig *types.EthereumConfig) error {
 		return fmt.Errorf("updated chain ID does not matchthe one set during start up, expected %v got %v", ethConfig.ChainID(), chainID)
 	}
 
-	if err := c.verifyStakingContract(context.Background(), ethConfig); err != nil {
-		return fmt.Errorf("failed to verify staking bridge contract: %w", err)
-	}
+	// if err := c.verifyStakingContract(context.Background(), ethConfig); err != nil {
+	// 	return fmt.Errorf("failed to verify staking bridge contract: %w", err)
+	// }
 
-	if err := c.verifyVestingContract(context.Background(), ethConfig); err != nil {
-		return fmt.Errorf("failed to verify vesting bridge contract: %w", err)
-	}
+	// if err := c.verifyVestingContract(context.Background(), ethConfig); err != nil {
+	// 	return fmt.Errorf("failed to verify vesting bridge contract: %w", err)
+	// }
 
-	if err := c.verifyCollateralContract(context.Background(), ethConfig); err != nil {
-		return fmt.Errorf("failed to verify collateral bridge contract: %w", err)
-	}
+	// if err := c.verifyCollateralContract(context.Background(), ethConfig); err != nil {
+	// 	return fmt.Errorf("failed to verify collateral bridge contract: %w", err)
+	// }
 
 	c.ethConfig = ethConfig
 
