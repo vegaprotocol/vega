@@ -18,11 +18,11 @@ type PositionState struct {
 	vwSellPrice    *num.Uint
 }
 
-func NewPositionStateEvent(ctx context.Context, mp MarketPosition) *PositionState {
+func NewPositionStateEvent(ctx context.Context, mp MarketPosition, marketID string) *PositionState {
 	return &PositionState{
 		Base:           newBase(ctx, PositionStateEvent),
 		partyID:        mp.Party(),
-		marketID:       "TODO",
+		marketID:       marketID,
 		size:           mp.Size(),
 		potentialBuys:  mp.Buy(),
 		potentialSells: mp.Sell(),
