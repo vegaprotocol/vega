@@ -22,12 +22,15 @@
 - [4953](https://github.com/vegaprotocol/vega/issues/4953) - Add block hash to statistics and to block height request
 - [4961](https://github.com/vegaprotocol/vega/issues/4961) - Extend auction feature tests
 - [4832](https://github.com/vegaprotocol/vega/issues/4832) - Add validation of update market proposals.
+- [4971](https://github.com/vegaprotocol/vega/issues/4971) - Add acceptance criteria to auction tests
 
 ### 🐛 Fixes
 - [4947](https://github.com/vegaprotocol/vega/issues/4947) - Fix time formatting problem that was breaking consensus on nodes in different time zones
 - [4956](https://github.com/vegaprotocol/vega/issues/4956) - Fix concurrent write to price monitoring ref price cache
 - [4957](https://github.com/vegaprotocol/vega/issues/4957) - Fix `vega announce_node` to work with `--home` and `--passphrase-file`
 - [4964](https://github.com/vegaprotocol/vega/issues/4964) - Fix price monitoring snapshot
+- [4974](https://github.com/vegaprotocol/vega/issues/4974) - Fix panic when checkpointing staking accounts if there are no events
+- [4888](https://github.com/vegaprotocol/vega/issues/4888) - Fix memory leak when loading snapshots.
 
 
 ## 0.49.1
