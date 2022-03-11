@@ -25,18 +25,18 @@ Feature: Test margin for lp near price monitoring boundaries
       | horizon | probability | auction extension |
       | 1       | 0.99        | 300               |
     And the markets:
-      | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring   | oracle config          | maturity date        |
-      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 2021-12-31T23:59:59Z |
+      | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring   | oracle config          |
+      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future |
     And the parties deposit on asset's general account the following amount:
       | party  | asset | amount    |
-      | lp1     | ETH   | 100000000 |
+      | lp1    | ETH   | 100000000 |
       | party1 | ETH   | 10000000  |
       | party2 | ETH   | 10000000  |
 
     Given the parties submit the following liquidity provision:
-      | id          | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type |
+      | id          | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
       | commitment1 | lp1   | ETH/DEC21 | 78000000          | 0.001 | buy  | BID              | 500        | 100    | submission |
-      | commitment1 | lp1   | ETH/DEC21 | 78000000          | 0.001 | sell | ASK              | 500        | 100    | amendment |
+      | commitment1 | lp1   | ETH/DEC21 | 78000000          | 0.001 | sell | ASK              | 500        | 100    | amendment  |
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference  |
       | party1 | ETH/DEC21 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-1  |
@@ -66,11 +66,11 @@ Feature: Test margin for lp near price monitoring boundaries
 
     And the parties should have the following margin levels:
       | party | market id | maintenance | search   | initial  | release  |
-      | lp1    | ETH/DEC21 | 17333400    | 19066740 | 20800080 | 24266760 |
+      | lp1   | ETH/DEC21 | 17333400    | 19066740 | 20800080 | 24266760 |
 
     And the parties should have the following account balances:
       | party | asset | market id | margin   | general | bond     |
-      | lp1    | ETH   | ETH/DEC21 | 20800080 | 1199920 | 78000000 |
+      | lp1   | ETH   | ETH/DEC21 | 20800080 | 1199920 | 78000000 |
 
 
     Then the parties place the following orders:
@@ -79,7 +79,7 @@ Feature: Test margin for lp near price monitoring boundaries
 
     And the parties should have the following margin levels:
       | party | market id | maintenance | search   | initial  | release  |
-      | lp1    | ETH/DEC21 | 17333400    | 19066740 | 20800080 | 24266760 |
+      | lp1   | ETH/DEC21 | 17333400    | 19066740 | 20800080 | 24266760 |
 
     # now we place an order which makes the best bid 901.
     Then the parties place the following orders:
@@ -92,7 +92,7 @@ Feature: Test margin for lp near price monitoring boundaries
 
     And the parties should have the following margin levels:
       | party | market id | maintenance | search   | initial   | release   |
-      | lp1    | ETH/DEC21 | 86666700    | 95333370 | 104000040 | 121333380 |
+      | lp1   | ETH/DEC21 | 86666700    | 95333370 | 104000040 | 121333380 |
 
   Scenario: second scenario for volume at near price monitoring bounds with log-normal
 
@@ -106,18 +106,18 @@ Feature: Test margin for lp near price monitoring boundaries
       | horizon | probability | auction extension |
       | 43200   | 0.982       | 300               |
     And the markets:
-      | id         | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | oracle config          | maturity date        |
-      | ETH2/MAR22 | ETH2       | ETH2  | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-2 | default-eth-for-future | 2022-03-31T23:59:59Z |
+      | id         | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | oracle config          |
+      | ETH2/MAR22 | ETH2       | ETH2  | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-2 | default-eth-for-future |
     And the parties deposit on asset's general account the following amount:
       | party  | asset | amount    |
-      | lp1     | ETH2  | 100000000 |
+      | lp1    | ETH2  | 100000000 |
       | party1 | ETH2  | 10000000  |
       | party2 | ETH2  | 10000000  |
 
     And the parties submit the following liquidity provision:
-      | id          | party | market id  | commitment amount | fee   | side | pegged reference | proportion | offset | lp type |
+      | id          | party | market id  | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
       | commitment1 | lp1   | ETH2/MAR22 | 50000000          | 0.001 | buy  | BID              | 500        | 100    | submission |
-      | commitment1 | lp1   | ETH2/MAR22 | 50000000          | 0.001 | sell | ASK              | 500        | 100    | amendment |
+      | commitment1 | lp1   | ETH2/MAR22 | 50000000          | 0.001 | sell | ASK              | 500        | 100    | amendment  |
     And the parties place the following orders:
       | party  | market id  | side | volume | price | resulting trades | type       | tif     | reference  |
       | party1 | ETH2/MAR22 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-1  |
@@ -153,11 +153,11 @@ Feature: Test margin for lp near price monitoring boundaries
 
     And the parties should have the following margin levels:
       | party | market id  | maintenance | search   | initial  | release  |
-      | lp1    | ETH2/MAR22 | 32569511    | 35826462 | 39083413 | 45597315 |
+      | lp1   | ETH2/MAR22 | 32569511    | 35826462 | 39083413 | 45597315 |
 
     And the parties should have the following account balances:
       | party | asset | market id  | margin   | general  | bond     |
-      | lp1    | ETH2  | ETH2/MAR22 | 39083413 | 10916587 | 50000000 |
+      | lp1   | ETH2  | ETH2/MAR22 | 39083413 | 10916587 | 50000000 |
 
     Then the parties place the following orders:
       | party  | market id  | side | volume | price | resulting trades | type       | tif     | reference |
@@ -175,7 +175,7 @@ Feature: Test margin for lp near price monitoring boundaries
 
     And the parties should have the following margin levels:
       | party | market id  | maintenance | search   | initial  | release  |
-      | lp1    | ETH2/MAR22 | 32569511    | 35826462 | 39083413 | 45597315 |
+      | lp1   | ETH2/MAR22 | 32569511    | 35826462 | 39083413 | 45597315 |
 
     # now we place an order which makes the best bid 901.
     Then the parties place the following orders:
@@ -192,11 +192,11 @@ Feature: Test margin for lp near price monitoring boundaries
     # Hence a bit volume is required to meet commitment and thus the margin requirement moves but not much.
 
     Then the order book should have the following volumes for market "ETH2/MAR22":
-      | side | price    | volume |
-      | sell | 1109     | 90173  |
-      | buy  | 901      | 1      |
-      | buy  | 900      | 112668 |
-      | buy  | 899      | 0      |
+      | side | price | volume |
+      | sell | 1109  | 90173  |
+      | buy  | 901   | 1      |
+      | buy  | 900   | 112668 |
+      | buy  | 899   | 0      |
 
     And the parties should have the following margin levels:
       | party | market id  | maintenance | search   | initial  | release  |

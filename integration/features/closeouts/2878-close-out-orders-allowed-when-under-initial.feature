@@ -3,26 +3,26 @@ Feature: Trader below initial margin, but above maintenance can submit an order 
   Background:
     Given time is updated to "2020-10-16T00:00:00Z"
     And the markets:
-      | id        | quote name | asset | maturity date        | auction duration | risk model                  | margin calculator         | fees         | price monitoring | oracle config          |
-      | ETH/DEC20 | ETH        | ETH   | 2020-12-31T23:59:59Z | 1                | default-simple-risk-model-3 | default-margin-calculator | default-none | default-none     | default-eth-for-future |
+      | id        | quote name | asset | auction duration | risk model                  | margin calculator         | fees         | price monitoring | oracle config          |
+      | ETH/DEC20 | ETH        | ETH   | 1                | default-simple-risk-model-3 | default-margin-calculator | default-none | default-none     | default-eth-for-future |
     And the following network parameters are set:
       | name                           | value |
       | market.auction.minimumDuration | 1     |
 
   Scenario: Trader under initial margin closes out their own position
     Given the parties deposit on asset's general account the following amount:
-      | party    | asset | amount         |
-      | party1   | ETH   | 10000000000000 |
-      | party2   | ETH   | 10000000000000 |
-      | party3   | ETH   | 1220           |
-      | party4   | ETH   | 10000000000000 |
-      | party5   | ETH   | 10000000000000 |
+      | party     | asset | amount         |
+      | party1    | ETH   | 10000000000000 |
+      | party2    | ETH   | 10000000000000 |
+      | party3    | ETH   | 1220           |
+      | party4    | ETH   | 10000000000000 |
+      | party5    | ETH   | 10000000000000 |
       | auxiliary | ETH   | 100000000000   |
       | aux2      | ETH   | 100000000000   |
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     Then the parties place the following orders:
-      | party    | market id | side | volume | price | resulting trades | type       | tif     |
+      | party     | market id | side | volume | price | resulting trades | type       | tif     |
       | auxiliary | ETH/DEC20 | buy  | 1      | 1     | 0                | TYPE_LIMIT | TIF_GTC |
       | auxiliary | ETH/DEC20 | sell | 1      | 200   | 0                | TYPE_LIMIT | TIF_GTC |
       | aux2      | ETH/DEC20 | buy  | 1      | 100   | 0                | TYPE_LIMIT | TIF_GTC |

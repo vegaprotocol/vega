@@ -118,7 +118,6 @@ func getMarketConfig() *types.Market {
 				},
 				Product: &types.Instrument_Future{
 					Future: &types.Future{
-						Maturity:        "2019-12-31T23:59:59Z",
 						SettlementAsset: "Ethereum/Ether",
 						OracleSpecForSettlementPrice: &oraclesv1.OracleSpec{
 							Id:      "1",

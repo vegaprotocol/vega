@@ -7,23 +7,23 @@ Feature: Amend order to trigger price monitoring auction
       | 5       | 0.95        | 6                 |
       | 10      | 0.99        | 8                 |
     And the markets:
-      | id        | quote name | asset | maturity date        | risk model             | margin calculator         | auction duration | fees         | price monitoring    | oracle config          |
-      | ETH/DEC20 | ETH        | ETH   | 2020-12-31T23:59:59Z | system-test-risk-model | default-margin-calculator | 1                | default-none | my-price-monitoring | default-eth-for-future |
+      | id        | quote name | asset | risk model             | margin calculator         | auction duration | fees         | price monitoring    | oracle config          |
+      | ETH/DEC20 | ETH        | ETH   | system-test-risk-model | default-margin-calculator | 1                | default-none | my-price-monitoring | default-eth-for-future |
     And the following network parameters are set:
       | name                           | value |
       | market.auction.minimumDuration | 6     |
 
   Scenario: Upper bound breached
     Given the parties deposit on asset's general account the following amount:
-      | party    | asset | amount       |
-      | party1   | ETH   | 100000000000 |
-      | party2   | ETH   | 100000000000 |
+      | party     | asset | amount       |
+      | party1    | ETH   | 100000000000 |
+      | party2    | ETH   | 100000000000 |
       | auxiliary | ETH   | 100000000000 |
       | aux2      | ETH   | 100000000000 |
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     Then the parties place the following orders:
-      | party    | market id | side | volume | price    | resulting trades | type       | tif     |
+      | party     | market id | side | volume | price    | resulting trades | type       | tif     |
       | auxiliary | ETH/DEC20 | buy  | 1      | 1        | 0                | TYPE_LIMIT | TIF_GTC |
       | auxiliary | ETH/DEC20 | sell | 1      | 10000000 | 0                | TYPE_LIMIT | TIF_GTC |
       | auxiliary | ETH/DEC20 | sell | 1      | 5670000  | 0                | TYPE_LIMIT | TIF_GTC |

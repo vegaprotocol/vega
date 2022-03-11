@@ -145,7 +145,6 @@ func newMarket(config *market.Config, row marketRow) types.Market {
 				},
 				Product: &types.Instrument_Future{
 					Future: &types.Future{
-						Maturity:                        row.maturityDate(),
 						SettlementAsset:                 row.asset(),
 						QuoteName:                       row.quoteName(),
 						OracleSpecForSettlementPrice:    oracleConfigForSettlement.Spec,
@@ -200,7 +199,6 @@ func parseMarketsTable(table *godog.Table) []RowWrapper {
 		"margin calculator",
 		"auction duration",
 	}, []string{
-		"maturity date",
 		"decimal places",
 		"position decimal places",
 	})
@@ -258,17 +256,4 @@ func (r marketRow) marginCalculator() string {
 
 func (r marketRow) auctionDuration() int64 {
 	return r.row.MustI64("auction duration")
-}
-
-func (r marketRow) maturityDate() string {
-	if !r.row.HasColumn("maturity date") {
-		return "2019-12-31T23:59:59Z"
-	}
-
-	time := r.row.MustTime("maturity date")
-	if timeNano := time.UnixNano(); timeNano == 0 {
-		panic(fmt.Errorf("maturity date is required"))
-	}
-
-	return r.row.Str("maturity date")
 }
