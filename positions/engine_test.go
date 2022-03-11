@@ -1,11 +1,13 @@
 package positions_test
 
 import (
+	"context"
 	"encoding/hex"
 	"testing"
 	"time"
 
 	"code.vegaprotocol.io/vega/events"
+	"code.vegaprotocol.io/vega/integration/stubs"
 	"code.vegaprotocol.io/vega/types/num"
 
 	"code.vegaprotocol.io/vega/logging"
@@ -32,19 +34,19 @@ func TestGetOpenInterest(t *testing.T) {
 		size   uint64 = 10
 		price         = num.NewUint(10000)
 	)
-	engine.RegisterOrder(&types.Order{
+	engine.RegisterOrder(context.TODO(), &types.Order{
 		Party:     buyer,
 		Remaining: size,
 		Price:     price,
 		Side:      types.SideBuy,
 	})
-	engine.RegisterOrder(&types.Order{
+	engine.RegisterOrder(context.TODO(), &types.Order{
 		Party:     buyer2,
 		Remaining: size,
 		Price:     price,
 		Side:      types.SideBuy,
 	})
-	engine.RegisterOrder(&types.Order{
+	engine.RegisterOrder(context.TODO(), &types.Order{
 		Party:     seller,
 		Remaining: size * 2,
 		Price:     price,
@@ -94,13 +96,13 @@ func testUpdatePositionRegular(t *testing.T) {
 		size   uint64 = 10
 		price         = num.NewUint(10000)
 	)
-	engine.RegisterOrder(&types.Order{
+	engine.RegisterOrder(context.TODO(), &types.Order{
 		Party:     buyer,
 		Remaining: size,
 		Price:     price,
 		Side:      types.SideBuy,
 	})
-	engine.RegisterOrder(&types.Order{
+	engine.RegisterOrder(context.TODO(), &types.Order{
 		Party:     seller,
 		Remaining: size,
 		Price:     price,
@@ -218,7 +220,7 @@ func testRegisterOrderSuccessful(t *testing.T) {
 		Remaining: uint64(buysize),
 		Price:     num.Zero(),
 	}
-	pos := e.RegisterOrder(&orderBuy)
+	pos := e.RegisterOrder(context.TODO(), &orderBuy)
 	assert.Equal(t, buysize, pos.Buy())
 	assert.Zero(t, pos.Sell())
 	assert.True(t, pos.Price().IsZero())
@@ -234,7 +236,7 @@ func testRegisterOrderSuccessful(t *testing.T) {
 		Remaining: uint64(sellsize),
 		Price:     num.Zero(),
 	}
-	pos = e.RegisterOrder(&orderSell)
+	pos = e.RegisterOrder(context.TODO(), &orderSell)
 	assert.Equal(t, buysize, pos.Buy())
 	assert.Equal(t, sellsize, pos.Sell())
 	assert.True(t, pos.Price().IsZero())
@@ -258,10 +260,10 @@ func testUnregisterOrderSuccessful(t *testing.T) {
 		Remaining: uint64(buysize),
 		Price:     num.Zero(),
 	}
-	pos := e.RegisterOrder(&orderBuy)
+	pos := e.RegisterOrder(context.TODO(), &orderBuy)
 	assert.Equal(t, buysize, pos.Buy())
 
-	pos = e.UnregisterOrder(&orderBuy)
+	pos = e.UnregisterOrder(context.TODO(), &orderBuy)
 	assert.Zero(t, pos.Buy())
 
 	orderSell := types.Order{
@@ -271,11 +273,11 @@ func testUnregisterOrderSuccessful(t *testing.T) {
 		Remaining: uint64(sellsize),
 		Price:     num.Zero(),
 	}
-	pos = e.RegisterOrder(&orderSell)
+	pos = e.RegisterOrder(context.TODO(), &orderSell)
 	assert.Zero(t, pos.Buy())
 	assert.Equal(t, sellsize, pos.Sell())
 
-	pos = e.UnregisterOrder(&orderSell)
+	pos = e.UnregisterOrder(context.TODO(), &orderSell)
 	assert.Zero(t, pos.Buy())
 	assert.Zero(t, pos.Sell())
 }
@@ -290,15 +292,18 @@ func testUnregisterOrderUnsuccessful(t *testing.T) {
 		Price:     num.Zero(),
 	}
 	require.Panics(t, func() {
-		_ = e.UnregisterOrder(&orderBuy)
+		_ = e.UnregisterOrder(context.TODO(), &orderBuy)
 	})
 }
 
 func getTestEngine(t *testing.T) *positions.SnapshotEngine {
 	t.Helper()
+	broker := stubs.NewBrokerStub()
+
 	return positions.NewSnapshotEngine(
 		logging.NewTestLogger(), positions.NewDefaultConfig(),
 		"test_market",
+		broker,
 	)
 }
 
@@ -552,7 +557,7 @@ func TestHash(t *testing.T) {
 	}
 
 	for _, order := range orders {
-		e.RegisterOrder(&order)
+		e.RegisterOrder(context.TODO(), &order)
 	}
 
 	trade := types.Trade{
@@ -584,7 +589,7 @@ func TestHash(t *testing.T) {
 }
 
 func registerOrder(e *positions.SnapshotEngine, side types.Side, party string, price *num.Uint, size uint64) {
-	e.RegisterOrder(&types.Order{
+	e.RegisterOrder(context.TODO(), &types.Order{
 		Party:     party,
 		Side:      side,
 		Price:     price,
