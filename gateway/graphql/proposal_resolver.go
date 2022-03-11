@@ -93,8 +93,8 @@ func (r *proposalResolver) Votes(_ context.Context, obj *types.GovernanceData) (
 			return nil, err
 		}
 		yesWeight += weight
-		yesUint, ok := num.UintFromString(yes.TotalGovernanceTokenBalance, 10)
-		if !ok {
+		yesUint, notOk := num.UintFromString(yes.TotalGovernanceTokenBalance, 10)
+		if notOk {
 			continue
 		}
 		yesToken.Add(yesToken, yesUint)
@@ -107,8 +107,8 @@ func (r *proposalResolver) Votes(_ context.Context, obj *types.GovernanceData) (
 			return nil, err
 		}
 		noWeight += weight
-		noUint, ok := num.UintFromString(no.TotalGovernanceTokenBalance, 10)
-		if !ok {
+		noUint, notOk := num.UintFromString(no.TotalGovernanceTokenBalance, 10)
+		if notOk {
 			continue
 		}
 		noToken.Add(noToken, noUint)

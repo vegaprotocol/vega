@@ -14,8 +14,8 @@
 
 
 ### 🐛 Fixes
-- [](https://github.com/vegaprotocol/data-node/pull/xxx) -
-
+- [411](https://github.com/vegaprotocol/data-node/pull/411) - Fix a couple of incompatibilities in `data-node v2`
+- [417](https://github.com/vegaprotocol/data-node/pull/411) - Report correct total tokens for a vote in `graphql`
 
 ## 0.49.1
 
