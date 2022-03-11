@@ -55,41 +55,41 @@ Feature: Test interactions between different auction types
 
   Scenario: When trying to exit opening auction liquidity monitoring is triggered due to missing best bid, hence the opening auction gets extended, the markets trading mode is TRADING_MODE_MONITORING_AUCTION and the trigger is AUCTION_TRIGGER_LIQUIDITY (0026-AUCT-001, 0026-AUCT-005)
 
-      # This ought to be "buy_shape" and "sell_shape" equivalents
-        Given the parties submit the following liquidity provision:
-          | id  | party   | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type |
-          | lp1 | party0 | ETH/DEC21 | 10000             | 0.001 | buy  | BID              | 1          | 2      | submission |
-          | lp1 | party0 | ETH/DEC21 | 10000             | 0.001 | buy  | MID              | 2          | 1      | amendment |
-          | lp1 | party0 | ETH/DEC21 | 10000             | 0.001 | sell | ASK              | 1          | 2      | amendment |
-          | lp1 | party0 | ETH/DEC21 | 10000             | 0.001 | sell | MID              | 2          | 1      | amendment |
+    # This ought to be "buy_shape" and "sell_shape" equivalents
+    Given the parties submit the following liquidity provision:
+      | id  | party   | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type |
+      | lp1 | party0 | ETH/DEC21 | 10000             | 0.001 | buy  | BID              | 1          | 2      | submission |
+      | lp1 | party0 | ETH/DEC21 | 10000             | 0.001 | buy  | MID              | 2          | 1      | amendment |
+      | lp1 | party0 | ETH/DEC21 | 10000             | 0.001 | sell | ASK              | 1          | 2      | amendment |
+      | lp1 | party0 | ETH/DEC21 | 10000             | 0.001 | sell | MID              | 2          | 1      | amendment |
 
-        And the parties place the following orders:
-          | party  | market id | side | volume | price | resulting trades | type       | tif     |
-          | party1 | ETH/DEC21 | buy  | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
-          | party2 | ETH/DEC21 | sell | 1      | 1100  | 0                | TYPE_LIMIT | TIF_GTC |
-          | party2 | ETH/DEC21 | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+    And the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     |
+      | party1 | ETH/DEC21 | buy  | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party2 | ETH/DEC21 | sell | 1      | 1100  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party2 | ETH/DEC21 | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
 
-      # Again, pointless to check this in auction
-      # And the price monitoring bounds are []
+    # Again, pointless to check this in auction
+    # And the price monitoring bounds are []
 
-        When the opening auction period ends for market "ETH/DEC21"
-      # Perhaps the reason for extending could be changed to reflect which check actually failed
-      # In this case, though, it's the orderbook status, which applies to all auctions alike
-      # So the trigger being AUCTION_TRIGGER_OPENING is as accurate as any
-        Then the market data for the market "ETH/DEC21" should be:
-          | trading mode                 | auction trigger         |
-          | TRADING_MODE_OPENING_AUCTION | AUCTION_TRIGGER_OPENING |
+    When the opening auction period ends for market "ETH/DEC21"
+    # Perhaps the reason for extending could be changed to reflect which check actually failed
+    # In this case, though, it's the orderbook status, which applies to all auctions alike
+    # So the trigger being AUCTION_TRIGGER_OPENING is as accurate as any
+    Then the market data for the market "ETH/DEC21" should be:
+      | trading mode                 | auction trigger         |
+      | TRADING_MODE_OPENING_AUCTION | AUCTION_TRIGGER_OPENING |
 
-        And the parties place the following orders:
-          | party  | market id | side | volume | price | resulting trades | type       | tif     |
-          | party1 | ETH/DEC21 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC |
+    And the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     |
+      | party1 | ETH/DEC21 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC |
 
-        When the network moves ahead "1" blocks
-        Then the auction ends with a traded volume of "10" at a price of "1000"
+    When the network moves ahead "1" blocks
+    Then the auction ends with a traded volume of "10" at a price of "1000"
 
-        And the market data for the market "ETH/DEC21" should be:
-          | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-          | 1000       | TRADING_MODE_CONTINUOUS | 1       | 990       | 1010      | 1000         | 10000          | 10            |
+    And the market data for the market "ETH/DEC21" should be:
+      | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
+      | 1000       | TRADING_MODE_CONTINUOUS | 1       | 990       | 1010      | 1000         | 10000          | 10            |
 
   Scenario: When trying to exit opening auction liquidity monitoring is triggered due to insufficient supplied stake, hence the opening auction gets extended, the markets trading mode is TRADING_MODE_MONITORING_AUCTION and the trigger is AUCTION_TRIGGER_LIQUIDITY (0026-AUCT-001,0026-AUCT-004, 0026-AUCT-005)
 
