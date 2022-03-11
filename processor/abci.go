@@ -554,6 +554,7 @@ func (app *App) OnBeginBlock(req tmtypes.RequestBeginBlock) (ctx context.Context
 
 	hash := hex.EncodeToString(req.Hash)
 	app.cBlock = hash
+	app.stats.SetHash(hash)
 
 	// Set chainID, if we have loaded from a snapshot we will not have called InitChain
 	// TODO: we may be able to better if we store the chainID in the appstate's snapshot
@@ -598,10 +599,15 @@ func (app *App) OnCommit() (resp tmtypes.ResponseCommit) {
 
 	// call checkpoint _first_ so the snapshot contains the correct checkpoint state.
 	cpt, _ := app.checkpoint.Checkpoint(app.blockCtx, app.currentTimestamp)
+	t0 := time.Now()
 	snapHash, err := app.snapshot.Snapshot(app.blockCtx)
 	if err != nil {
 		app.log.Panic("Failed to create snapshot",
 			logging.Error(err))
+	}
+	t1 := time.Now()
+	if len(snapHash) > 0 {
+		app.log.Info("#### snapshot took ", logging.Float64("time", t1.Sub(t0).Seconds()))
 	}
 	resp.Data = snapHash
 

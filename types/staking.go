@@ -61,14 +61,28 @@ func StakeTotalSupplyFromProto(s *vgproto.StakeTotalSupply) (*StakeTotalSupply, 
 }
 
 type StakeLinking struct {
-	ID          string
-	Type        StakeLinkingType
-	TS          int64
-	Party       string
-	Amount      *num.Uint
-	Status      StakeLinkingStatus
-	FinalizedAt int64
-	TxHash      string
+	ID              string
+	Type            StakeLinkingType
+	TS              int64
+	Party           string
+	Amount          *num.Uint
+	Status          StakeLinkingStatus
+	FinalizedAt     int64
+	TxHash          string
+	BlockHeight     uint64
+	BlockTime       int64
+	LogIndex        uint64
+	EthereumAddress string
+}
+
+func (s StakeLinking) Hash() string {
+	bn, li := strconv.FormatUint(s.BlockHeight, 10), strconv.FormatUint(s.LogIndex, 10)
+	bt := strconv.FormatInt(s.BlockTime, 10)
+	return hex.EncodeToString(
+		crypto.Hash(
+			[]byte(bn + li + bt + s.TxHash + s.Party + s.EthereumAddress + s.Amount.String() + s.Type.String()),
+		),
+	)
 }
 
 func (s *StakeLinking) String() string {
@@ -77,14 +91,18 @@ func (s *StakeLinking) String() string {
 
 func (s *StakeLinking) IntoProto() *eventspb.StakeLinking {
 	return &eventspb.StakeLinking{
-		Id:          s.ID,
-		Type:        s.Type,
-		Ts:          s.TS,
-		Party:       s.Party,
-		Amount:      num.UintToString(s.Amount),
-		Status:      s.Status,
-		FinalizedAt: s.FinalizedAt,
-		TxHash:      s.TxHash,
+		Id:              s.ID,
+		Type:            s.Type,
+		Ts:              s.TS,
+		Party:           s.Party,
+		Amount:          num.UintToString(s.Amount),
+		Status:          s.Status,
+		FinalizedAt:     s.FinalizedAt,
+		TxHash:          s.TxHash,
+		BlockHeight:     s.BlockHeight,
+		BlockTime:       s.BlockTime,
+		LogIndex:        s.LogIndex,
+		EthereumAddress: s.EthereumAddress,
 	}
 }
 
@@ -111,16 +129,6 @@ type StakeDeposited struct {
 	EthereumAddress string
 	Amount          *num.Uint
 	BlockTime       int64
-}
-
-func (s StakeDeposited) Hash() string {
-	bn, li := strconv.FormatUint(s.BlockNumber, 10), strconv.FormatUint(s.LogIndex, 10)
-	bt := strconv.FormatInt(s.BlockTime, 10)
-	return hex.EncodeToString(
-		crypto.Hash(
-			[]byte(bn + li + bt + s.TxID + s.VegaPubKey + s.EthereumAddress + s.Amount.String() + "stake_deposited"),
-		),
-	)
 }
 
 func StakeDepositedFromProto(
@@ -151,12 +159,16 @@ func StakeDepositedFromProto(
 
 func (s *StakeDeposited) IntoStakeLinking() *StakeLinking {
 	return &StakeLinking{
-		ID:     s.ID,
-		Type:   StakeLinkingTypeDeposited,
-		TS:     s.BlockTime,
-		Party:  s.VegaPubKey,
-		Amount: s.Amount.Clone(),
-		TxHash: s.TxID,
+		ID:              s.ID,
+		Type:            StakeLinkingTypeDeposited,
+		TS:              s.BlockTime,
+		Party:           s.VegaPubKey,
+		Amount:          s.Amount.Clone(),
+		TxHash:          s.TxID,
+		BlockHeight:     s.BlockNumber,
+		BlockTime:       s.BlockTime,
+		LogIndex:        s.LogIndex,
+		EthereumAddress: s.EthereumAddress,
 	}
 }
 
@@ -173,16 +185,6 @@ type StakeRemoved struct {
 	EthereumAddress string
 	Amount          *num.Uint
 	BlockTime       int64
-}
-
-func (s StakeRemoved) Hash() string {
-	bn, li := strconv.FormatUint(s.BlockNumber, 10), strconv.FormatUint(s.LogIndex, 10)
-	bt := strconv.FormatInt(s.BlockTime, 10)
-	return hex.EncodeToString(
-		crypto.Hash(
-			[]byte(bn + li + bt + s.TxID + s.VegaPubKey + s.EthereumAddress + s.Amount.String() + "stake_removed"),
-		),
-	)
 }
 
 func StakeRemovedFromProto(
@@ -217,11 +219,15 @@ func (s StakeRemoved) String() string {
 
 func (s *StakeRemoved) IntoStakeLinking() *StakeLinking {
 	return &StakeLinking{
-		ID:     s.ID,
-		Type:   StakeLinkingTypeRemoved,
-		TS:     s.BlockTime,
-		Party:  s.VegaPubKey,
-		Amount: s.Amount.Clone(),
-		TxHash: s.TxID,
+		ID:              s.ID,
+		Type:            StakeLinkingTypeRemoved,
+		TS:              s.BlockTime,
+		Party:           s.VegaPubKey,
+		Amount:          s.Amount.Clone(),
+		TxHash:          s.TxID,
+		BlockHeight:     s.BlockNumber,
+		BlockTime:       s.BlockTime,
+		LogIndex:        s.LogIndex,
+		EthereumAddress: s.EthereumAddress,
 	}
 }

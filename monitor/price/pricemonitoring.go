@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"sort"
+	"sync"
 	"time"
 
 	proto "code.vegaprotocol.io/protos/vega"
@@ -117,6 +118,7 @@ type Engine struct {
 
 	refPriceCacheTime time.Time
 	refPriceCache     map[int64]num.Decimal
+	refPriceLock      sync.RWMutex
 
 	boundFactorsInitialised bool
 
@@ -495,6 +497,8 @@ func (e *Engine) clearStalePrices() {
 
 // getRefPrice caches and returns the ref price for a given horizon. The cache is invalidated when block changes.
 func (e *Engine) getRefPrice(horizon int64, force bool) num.Decimal {
+	e.refPriceLock.Lock()
+	defer e.refPriceLock.Unlock()
 	if e.refPriceCacheTime != e.now || force {
 		e.refPriceCache = make(map[int64]num.Decimal, len(e.refPriceCache))
 		e.stateChanged = true
@@ -506,6 +510,18 @@ func (e *Engine) getRefPrice(horizon int64, force bool) num.Decimal {
 		e.stateChanged = true
 	}
 	return e.refPriceCache[horizon]
+}
+
+func (e *Engine) getRefPriceNoUpdate(horizon int64) num.Decimal {
+	e.refPriceLock.RLock()
+	defer e.refPriceLock.RUnlock()
+	if e.refPriceCacheTime == e.now {
+		if _, ok := e.refPriceCache[horizon]; !ok {
+			return e.calculateRefPrice(horizon)
+		}
+		return e.refPriceCache[horizon]
+	}
+	return e.calculateRefPrice(horizon)
 }
 
 // calculateRefPrice returns theh last VolumeWeightedPrice with time preceding currentTime - horizon seconds. If there's only one price it returns the Price.

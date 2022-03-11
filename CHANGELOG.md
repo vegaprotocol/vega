@@ -10,9 +10,24 @@
 
 ### 🛠 Improvements
 - [2585](https://github.com/vegaprotocol/vega/issues/2585) - Adding position state event to eventbus
+- [4952](https://github.com/vegaprotocol/vega/issues/4952) - Add checkpoints for staking and `multisig control`
+
+### 🐛 Fixes
+- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+
+## 0.49.2
+
+### 🛠 Improvements
+- [4951](https://github.com/vegaprotocol/vega/issues/4951) - Add ability to stream events to a file
+- [4953](https://github.com/vegaprotocol/vega/issues/4953) - Add block hash to statistics and to block height request
+- [4961](https://github.com/vegaprotocol/vega/issues/4961) - Extend auction feature tests
+- [4832](https://github.com/vegaprotocol/vega/issues/4832) - Add validation of update market proposals.
 
 ### 🐛 Fixes
 - [4947](https://github.com/vegaprotocol/vega/issues/4947) - Fix time formatting problem that was breaking consensus on nodes in different time zones
+- [4956](https://github.com/vegaprotocol/vega/issues/4956) - Fix concurrent write to price monitoring ref price cache
+- [4957](https://github.com/vegaprotocol/vega/issues/4957) - Fix `vega announce_node` to work with `--home` and `--passphrase-file`
+- [4964](https://github.com/vegaprotocol/vega/issues/4964) - Fix price monitoring snapshot
 
 
 ## 0.49.1

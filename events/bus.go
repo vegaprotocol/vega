@@ -172,6 +172,7 @@ var (
 		eventspb.BusEventType_BUS_EVENT_TYPE_ERC20_MULTI_SIG_SIGNER_ADDED:   ERC20MultiSigSignerAddedEvent,
 		eventspb.BusEventType_BUS_EVENT_TYPE_ERC20_MULTI_SIG_SIGNER_REMOVED: ERC20MultiSigSignerRemovedEvent,
 		eventspb.BusEventType_BUS_EVENT_TYPE_POSITION_STATE:                 PositionStateEvent,
+		// If adding a type here, please also add it to data-node/broker/convert.go
 	}
 
 	toProto = map[Type]eventspb.BusEventType{
