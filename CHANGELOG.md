@@ -20,6 +20,7 @@
 ### 🛠 Improvements
 - [2585](https://github.com/vegaprotocol/vega/issues/2585) - Adding position state event to event bus
 - [4952](https://github.com/vegaprotocol/vega/issues/4952) - Add checkpoints for staking and `multisig control`
+- [4923](https://github.com/vegaprotocol/vega/issues/4923) - Add checkpoint state in the genesis file + add subcommand to do it.
 
 ### 🐛 Fixes
 - [4983](https://github.com/vegaprotocol/vega/issues/4983) - Set correct event type for positions state event
