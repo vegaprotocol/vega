@@ -1127,11 +1127,11 @@ func TestSubmit(t *testing.T) {
 				size  uint64
 				found bool
 			}{
-				{119, false},
+				{139, false},
 				{2, false},
 				{2, false},
 				{3, false},
-				{112, false},
+				{194, false},
 			}
 
 			for _, v := range found {

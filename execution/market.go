@@ -309,6 +309,10 @@ func NewMarket(
 	if err != nil {
 		return nil, fmt.Errorf("unable to instantiate a new market: %w", err)
 	}
+	priceFactor := num.NewUint(1)
+	if exp := assetDetails.DecimalPlaces() - mkt.DecimalPlaces; exp != 0 {
+		priceFactor.Exp(num.NewUint(10), num.NewUint(exp))
+	}
 
 	// @TODO -> the raw auctionstate shouldn't be something exposed to the matching engine
 	// as far as matching goes: it's either an auction or not
@@ -355,14 +359,10 @@ func NewMarket(
 		return nil, fmt.Errorf("unable to instantiate price monitoring engine: %w", err)
 	}
 
-	priceFactor := num.NewUint(1)
-	if exp := assetDetails.DecimalPlaces() - mkt.DecimalPlaces; exp != 0 {
-		priceFactor.Exp(num.NewUint(10), num.NewUint(exp))
-	}
 	lMonitor := lmon.NewMonitor(tsCalc, mkt.LiquidityMonitoringParameters)
 
 	liqEngine := liquidity.NewSnapshotEngine(
-		liquidityConfig, log, broker, tradableInstrument.RiskModel, pMonitor, asset, mkt.ID, stateVarEngine, mkt.TickSize(), positionFactor)
+		liquidityConfig, log, broker, tradableInstrument.RiskModel, pMonitor, asset, mkt.ID, stateVarEngine, priceFactor.Clone(), positionFactor)
 	// call on chain time update straight away, so
 	// the time in the engine is being updatedat creation
 	liqEngine.OnChainTimeUpdate(ctx, now)
@@ -2926,10 +2926,12 @@ func (m *Market) getStaticMidPrice(side types.Side) (*num.Uint, error) {
 	}
 	mid := num.Zero()
 	one := num.NewUint(1)
+	two := num.Sum(one, one)
+	one.Mul(one, m.priceFactor)
 	if side == types.SideBuy {
-		mid = mid.Div(num.Sum(bid, ask, one), num.Sum(one, one))
+		mid = mid.Div(num.Sum(bid, ask, one), two)
 	} else {
-		mid = mid.Div(num.Sum(bid, ask), num.Sum(one, one))
+		mid = mid.Div(num.Sum(bid, ask), two)
 	}
 
 	return mid, nil
