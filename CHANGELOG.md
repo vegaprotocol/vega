@@ -9,12 +9,22 @@
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 ### 🛠 Improvements
+- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+
+### 🐛 Fixes
+- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+
+
+## 0.49.4
+
+### 🛠 Improvements
 - [2585](https://github.com/vegaprotocol/vega/issues/2585) - Adding position state event to event bus
 - [4952](https://github.com/vegaprotocol/vega/issues/4952) - Add checkpoints for staking and `multisig control`
 
 ### 🐛 Fixes
 - [4983](https://github.com/vegaprotocol/vega/issues/4983) - Set correct event type for positions state event
 - [4989](https://github.com/vegaprotocol/vega/issues/4989) - Fixing incorrect overflow logic
+- [4981](https://github.com/vegaprotocol/vega/issues/4981) - Fix bug causing LP orders to uncross at auction end.
 
 ## 0.49.2
 
