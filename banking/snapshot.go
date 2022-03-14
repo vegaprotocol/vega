@@ -308,7 +308,9 @@ func (e *Engine) restoreAssetActions(ctx context.Context, aa *types.BankingAsset
 			erc20D:      v.Erc20D,
 		}
 		e.assetActs[v.ID] = aa
-		e.witness.RestoreResource(aa, e.onCheckDone)
+		if err := e.witness.RestoreResource(aa, e.onCheckDone); err != nil {
+			e.log.Panic("unable to restore witness resource", logging.String("id", v.ID), logging.Error(err))
+		}
 	}
 
 	e.bss.changed[assetActionsKey] = true

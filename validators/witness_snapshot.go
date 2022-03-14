@@ -10,6 +10,7 @@ import (
 	"github.com/golang/protobuf/proto"
 
 	"code.vegaprotocol.io/vega/libs/crypto"
+	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
 )
 
@@ -45,6 +46,7 @@ func (w *Witness) serialise() ([]byte, error) {
 	}
 	sort.Strings(needResendRes)
 
+	w.log.Debug("serialising witness resources", logging.Int("n", len(w.resources)))
 	resources := make([]*types.Resource, 0, len(w.resources))
 	for id, r := range w.resources {
 		r.mu.Lock()
@@ -53,7 +55,6 @@ func (w *Witness) serialise() ([]byte, error) {
 			votes = append(votes, v)
 		}
 		sort.Strings(votes)
-
 		resources = append(resources, &types.Resource{
 			ID:         id,
 			CheckUntil: r.checkUntil,
@@ -61,6 +62,9 @@ func (w *Witness) serialise() ([]byte, error) {
 		})
 		r.mu.Unlock()
 	}
+
+	// sort the resources
+	sort.SliceStable(resources, func(i, j int) bool { return resources[i].ID < resources[j].ID })
 
 	payload := types.Payload{
 		Data: &types.PayloadWitness{
@@ -98,14 +102,16 @@ func (w *Witness) getSerialisedAndHash(k string) ([]byte, []byte, error) {
 	return data, hash, nil
 }
 
+func (w *Witness) Stopped() bool { return false }
+
 func (w *Witness) GetHash(k string) ([]byte, error) {
 	_, hash, err := w.getSerialisedAndHash(k)
 	return hash, err
 }
 
-func (w *Witness) GetState(k string) ([]byte, error) {
+func (w *Witness) GetState(k string) ([]byte, []types.StateProvider, error) {
 	state, _, err := w.getSerialisedAndHash(k)
-	return state, err
+	return state, nil, err
 }
 
 func (w *Witness) LoadState(ctx context.Context, p *types.Payload) ([]types.StateProvider, error) {
@@ -129,6 +135,7 @@ func (w *Witness) restore(ctx context.Context, witness *types.Witness) error {
 		w.needResendRes[r] = struct{}{}
 	}
 
+	w.log.Debug("restoring witness resources", logging.Int("n", len(witness.Resources)))
 	for _, r := range witness.Resources {
 		w.resources[r.ID] = &res{
 			checkUntil: r.CheckUntil,
@@ -159,6 +166,7 @@ func (w *Witness) restore(ctx context.Context, witness *types.Witness) error {
 }
 
 func (w *Witness) RestoreResource(r Resource, cb func(interface{}, bool)) error {
+	w.log.Info("finalising restored resource", logging.String("id", r.GetID()))
 	if _, ok := w.resources[r.GetID()]; !ok {
 		return ErrInvalidResourceIDForNodeVote
 	}
