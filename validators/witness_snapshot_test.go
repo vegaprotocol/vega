@@ -23,7 +23,7 @@ func TestSnapshot(t *testing.T) {
 
 		key := (&types.PayloadWitness{}).Key()
 
-		state1, err := erc.Witness.GetState(key)
+		state1, _, err := erc.Witness.GetState(key)
 		require.Nil(t, err)
 
 		erc.top.EXPECT().IsValidator().AnyTimes().Return(true)
@@ -40,7 +40,7 @@ func TestSnapshot(t *testing.T) {
 		time.Sleep(10 * time.Millisecond)
 
 		// take a snapshot after the resource has been added
-		state2, err := erc.Witness.GetState(key)
+		state2, _, err := erc.Witness.GetState(key)
 		require.Nil(t, err)
 
 		// verify it has changed from before the resource
@@ -62,7 +62,7 @@ func TestSnapshot(t *testing.T) {
 		erc2.RestoreResource(res, cb)
 
 		// expect the hash and state have been restored successfully
-		state3, err := erc2.GetState(key)
+		state3, _, err := erc2.GetState(key)
 		require.Nil(t, err)
 		require.True(t, bytes.Equal(state2, state3))
 
@@ -73,7 +73,7 @@ func TestSnapshot(t *testing.T) {
 		assert.NoError(t, err)
 
 		// expect the hash/state to have changed
-		state4, err := erc2.GetState(key)
+		state4, _, err := erc2.GetState(key)
 		require.Nil(t, err)
 		require.False(t, bytes.Equal(state4, state3))
 
@@ -91,7 +91,7 @@ func TestSnapshot(t *testing.T) {
 		require.Nil(t, err)
 		erc3.RestoreResource(res, cb)
 
-		state5, err := erc3.GetState(key)
+		state5, _, err := erc3.GetState(key)
 		require.Nil(t, err)
 		require.True(t, bytes.Equal(state5, state4))
 	}

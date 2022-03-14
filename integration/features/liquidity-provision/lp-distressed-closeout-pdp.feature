@@ -21,8 +21,8 @@ Feature: Replicate LP getting distressed during continuous trading, and after le
       | horizon | probability | auction extension |
       | 1       | 0.99        | 300               |
     And the markets:
-      | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring   | oracle config          | maturity date        | position decimal places |
-      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 2021-12-31T23:59:59Z |           2             |
+      | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring   | oracle config          | position decimal places |
+      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 2                       |
     And the parties deposit on asset's general account the following amount:
       | party  | asset | amount     |
       | party0 | ETH   | 6400       |
@@ -35,9 +35,9 @@ Feature: Replicate LP getting distressed during continuous trading, and after le
   Scenario: LP gets distressed during continuous trading
 
     Given the parties submit the following liquidity provision:
-      | id  | party   | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | party0 | ETH/DEC21  | 5000              | 0.001 | buy  | BID              | 500        | 10     | submission |
-      | lp1 | party0 | ETH/DEC21  | 5000              | 0.001 | sell | ASK              | 500        | 10     | amendment  |
+      | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
+      | lp1 | party0 | ETH/DEC21 | 5000              | 0.001 | buy  | BID              | 500        | 10     | submission |
+      | lp1 | party0 | ETH/DEC21 | 5000              | 0.001 | sell | ASK              | 500        | 10     | amendment  |
 
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference  |
@@ -61,7 +61,7 @@ Feature: Replicate LP getting distressed during continuous trading, and after le
 
     # Now let's make some trades happen to increase the margin for LP
     When the parties place the following orders:
-      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference      |
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference     |
       | party3 | ETH/DEC21 | buy  | 300    | 1010  | 2                | TYPE_LIMIT | TIF_GTC | party3-buy-1  |
       | party2 | ETH/DEC21 | sell | 500    | 1010  | 0                | TYPE_LIMIT | TIF_GTC | party2-sell-4 |
     # target stake 1313 with target trigger on 0.6 -> ~788 triggers liquidity auction
@@ -76,7 +76,7 @@ Feature: Replicate LP getting distressed during continuous trading, and after le
     # progress time a bit, so the price bounds get updated
     When the network moves ahead "2" blocks
     And the parties place the following orders:
-      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference      |
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference     |
       | party2 | ETH/DEC21 | sell | 1500   | 1030  | 0                | TYPE_LIMIT | TIF_GTC | party2-sell-1 |
       | party3 | ETH/DEC21 | buy  | 1000   | 1022  | 2                | TYPE_LIMIT | TIF_GTC | party3-buy-1  |
       | party3 | ETH/DEC21 | buy  | 300    | 1020  | 0                | TYPE_LIMIT | TIF_GTC | party3-buy-2  |
@@ -87,16 +87,14 @@ Feature: Replicate LP getting distressed during continuous trading, and after le
     And the insurance pool balance should be "6250" for the market "ETH/DEC21"
 
 
-
-
   Scenario: LP gets distressed after auction
 
     Given the parties submit the following liquidity provision:
-      | id  | party   | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | party0 | ETH/DEC21  | 5000              | 0.001 | buy  | BID              | 500        | 10     | submission |
-      | lp1 | party0 | ETH/DEC21  | 5000              | 0.001 | sell | ASK              | 500        | 10     | amendment  |
-      | lp2 | party5 | ETH/DEC21  | 5000              | 0.001 | buy  | BID              | 500        | 10     | submission |
-      | lp2 | party5 | ETH/DEC21  | 5000              | 0.001 | sell | ASK              | 500        | 10     | amendment  |
+      | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
+      | lp1 | party0 | ETH/DEC21 | 5000              | 0.001 | buy  | BID              | 500        | 10     | submission |
+      | lp1 | party0 | ETH/DEC21 | 5000              | 0.001 | sell | ASK              | 500        | 10     | amendment  |
+      | lp2 | party5 | ETH/DEC21 | 5000              | 0.001 | buy  | BID              | 500        | 10     | submission |
+      | lp2 | party5 | ETH/DEC21 | 5000              | 0.001 | sell | ASK              | 500        | 10     | amendment  |
 
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference  |
@@ -120,9 +118,9 @@ Feature: Replicate LP getting distressed during continuous trading, and after le
 
     # Now let's make some trades happen to increase the margin for LP
     When the parties place the following orders:
-      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference      |
-      | party3 | ETH/DEC21 | buy  | 300    | 1010  | 2                | TYPE_LIMIT | TIF_GTC | party3-buy-4   |
-      | party2 | ETH/DEC21 | sell | 500    | 1010  | 0                | TYPE_LIMIT | TIF_GTC | party2-sell-4  |
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference     |
+      | party3 | ETH/DEC21 | buy  | 300    | 1010  | 2                | TYPE_LIMIT | TIF_GTC | party3-buy-4  |
+      | party2 | ETH/DEC21 | sell | 500    | 1010  | 0                | TYPE_LIMIT | TIF_GTC | party2-sell-4 |
     # target stake 1313 with target trigger on 0.6 -> ~788 triggers liquidity auction
     Then the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
@@ -135,7 +133,7 @@ Feature: Replicate LP getting distressed during continuous trading, and after le
     # progress time a bit, so the price bounds get updated
     When the network moves ahead "2" blocks
     And the parties place the following orders:
-      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference      |
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference     |
       | party3 | ETH/DEC21 | buy  | 1000   | 1022  | 2                | TYPE_LIMIT | TIF_GTC | party3-buy-5  |
       | party2 | ETH/DEC21 | sell | 7500   | 1050  | 0                | TYPE_LIMIT | TIF_GTC | party2-sell-5 |
       | party3 | ETH/DEC21 | buy  | 300    | 1020  | 0                | TYPE_LIMIT | TIF_GTC | party2-sell-6 |
@@ -168,5 +166,5 @@ Feature: Replicate LP getting distressed during continuous trading, and after le
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general | bond |
       | party0 | ETH   | ETH/DEC21 | 928    | 1573    | 0    |
-            
+
     And the insurance pool balance should be "3616" for the market "ETH/DEC21"

@@ -40,7 +40,7 @@ func getTestEngine(t *testing.T) *tstEngine {
 	time := mocks.NewMockTimeService(ctrl)
 	stats := mocks.NewMockStatsService(ctrl)
 	eng, err := snapshot.New(context.Background(), nil, snapshot.NewTestConfig(), logging.NewTestLogger(), time, stats)
-	eng.Start()
+	eng.ClearAndInitialise()
 	require.NoError(t, err)
 	ctx = vegactx.WithTraceID(vegactx.WithBlockHeight(ctx, 1), "0xDEADBEEF")
 	return &tstEngine{
@@ -320,7 +320,7 @@ func testReloadSnapshot(t *testing.T) {
 	// OK, our snapshot is ready to load
 	require.NoError(t, eng2.ApplySnapshot(eng2.ctx))
 
-	loaded, err := eng2.Loaded()
+	loaded, err := eng2.CheckLoaded()
 	require.NoError(t, err)
 	require.True(t, loaded)
 }
@@ -401,7 +401,7 @@ func testReloadReplayProtectors(t *testing.T) {
 	require.True(t, ready)
 	// OK, snapshot is ready to be applied
 	require.NoError(t, e2.ApplySnapshot(e.ctx))
-	loaded, err := e2.Loaded()
+	loaded, err := e2.CheckLoaded()
 	require.NoError(t, err)
 	require.True(t, loaded)
 	// so now we can check if taking a snapshot calls the methods on the replacement provider
@@ -486,7 +486,7 @@ func testReloadRestore(t *testing.T) {
 
 	// OK, our snapshot is ready to load
 	require.NoError(t, eng2.ApplySnapshot(eng2.ctx))
-	loaded, err := eng2.Loaded()
+	loaded, err := eng2.CheckLoaded()
 	require.NoError(t, err)
 	require.True(t, loaded)
 }

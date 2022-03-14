@@ -218,7 +218,9 @@ func (n *NodeValidation) restore(p *types.Proposal) error {
 		checker: checker,
 	}
 	n.nodeProposals = append(n.nodeProposals, np)
-	n.witness.RestoreResource(np, n.onResChecked)
+	if err := n.witness.RestoreResource(np, n.onResChecked); err != nil {
+		n.log.Panic("unable to restore witness resource", logging.String("id", np.ID), logging.Error(err))
+	}
 	return nil
 }
 

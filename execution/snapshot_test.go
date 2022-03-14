@@ -123,7 +123,7 @@ func TestLoadTerminatedMarketFromSnapshot(t *testing.T) {
 	exec2 := getEngine(t, now)
 	exec2.snapshotEngine.ReceiveSnapshot(snap1)
 	exec2.snapshotEngine.ApplySnapshot(ctx)
-	exec2.snapshotEngine.Loaded()
+	exec2.snapshotEngine.CheckLoaded()
 
 	// progress time to trigger any side effect on time ticks
 	exec.timeService.SetTime(now.Add(2 * time.Second))
@@ -212,7 +212,6 @@ func newMarket(ID, pubKey string) *types.Market {
 				},
 				Product: &types.Instrument_Future{
 					Future: &types.Future{
-						Maturity:        "2019-12-31T23:59:59Z",
 						SettlementAsset: "Ethereum/Ether",
 						OracleSpecForSettlementPrice: &oraclesv1.OracleSpec{
 							Id:      hex.EncodeToString(crypto.Hash([]byte(ID + "price"))),
@@ -304,7 +303,7 @@ func getEngine(t *testing.T, now time.Time) *snapshotTestData {
 	statsData := stats.New(log, stats.NewDefaultConfig(), "", "")
 	snapshotEngine, _ := snp.New(context.Background(), &paths.DefaultPaths{}, snp.NewDefaultConfig(), log, timeService, statsData.Blockchain)
 	snapshotEngine.AddProviders(eng)
-	snapshotEngine.Start()
+	snapshotEngine.ClearAndInitialise()
 
 	return &snapshotTestData{
 		engine:         eng,

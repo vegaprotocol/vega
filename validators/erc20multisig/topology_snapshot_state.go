@@ -122,7 +122,9 @@ func (t *Topology) restorePendingState(
 		t.pendingSigners[evt.ID] = pending
 		// if we have witnessed it already,
 		if _, ok := t.witnessedSigners[evt.ID]; !ok {
-			t.witness.RestoreResource(pending, t.onEventVerified)
+			if err := t.witness.RestoreResource(pending, t.onEventVerified); err != nil {
+				t.log.Panic("unable to restore pending signer resource", logging.String("id", pending.ID), logging.Error(err))
+			}
 		}
 	}
 
@@ -137,7 +139,9 @@ func (t *Topology) restorePendingState(
 		t.pendingThresholds[evt.ID] = pending
 		// if we have witnessed it already,
 		if _, ok := t.witnessedThresholds[evt.ID]; !ok {
-			t.witness.RestoreResource(pending, t.onEventVerified)
+			if err := t.witness.RestoreResource(pending, t.onEventVerified); err != nil {
+				t.log.Panic("unable to restore pending threshold resource", logging.String("id", pending.ID), logging.Error(err))
+			}
 		}
 	}
 

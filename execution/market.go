@@ -309,9 +309,9 @@ func NewMarket(
 	if err != nil {
 		return nil, fmt.Errorf("unable to instantiate a new market: %w", err)
 	}
-	closingAt, err := tradableInstrument.Instrument.GetMarketClosingTime()
-	if err != nil {
-		return nil, fmt.Errorf("unable to get market closing time: %w", err)
+	priceFactor := num.NewUint(1)
+	if exp := assetDetails.DecimalPlaces() - mkt.DecimalPlaces; exp != 0 {
+		priceFactor.Exp(num.NewUint(10), num.NewUint(exp))
 	}
 
 	// @TODO -> the raw auctionstate shouldn't be something exposed to the matching engine
@@ -345,7 +345,7 @@ func NewMarket(
 		broker,
 		positionFactor,
 	)
-	positionEngine := positions.NewSnapshotEngine(log, positionConfig, mkt.ID)
+	positionEngine := positions.NewSnapshotEngine(log, positionConfig, mkt.ID, broker)
 
 	feeEngine, err := fee.New(log, feeConfig, *mkt.Fees, asset, positionFactor)
 	if err != nil {
@@ -359,14 +359,10 @@ func NewMarket(
 		return nil, fmt.Errorf("unable to instantiate price monitoring engine: %w", err)
 	}
 
-	priceFactor := num.NewUint(1)
-	if exp := assetDetails.DecimalPlaces() - mkt.DecimalPlaces; exp != 0 {
-		priceFactor.Exp(num.NewUint(10), num.NewUint(exp))
-	}
 	lMonitor := lmon.NewMonitor(tsCalc, mkt.LiquidityMonitoringParameters)
 
 	liqEngine := liquidity.NewSnapshotEngine(
-		liquidityConfig, log, broker, tradableInstrument.RiskModel, pMonitor, asset, mkt.ID, stateVarEngine, mkt.TickSize(), positionFactor)
+		liquidityConfig, log, broker, tradableInstrument.RiskModel, pMonitor, asset, mkt.ID, stateVarEngine, priceFactor.Clone(), positionFactor)
 	// call on chain time update straight away, so
 	// the time in the engine is being updatedat creation
 	liqEngine.OnChainTimeUpdate(ctx, now)
@@ -378,7 +374,6 @@ func NewMarket(
 	// Populate the market timestamps
 	ts := &types.MarketTimestamps{
 		Proposed: now.UnixNano(),
-		Close:    closingAt.UnixNano(),
 	}
 
 	if mkt.OpeningAuction != nil {
@@ -393,7 +388,6 @@ func NewMarket(
 		log:                       log,
 		idgen:                     nil,
 		mkt:                       mkt,
-		closingAt:                 closingAt,
 		currentTime:               now,
 		matching:                  book,
 		tradableInstrument:        tradableInstrument,
@@ -768,7 +762,7 @@ func (m *Market) closeMarket(ctx context.Context, t time.Time) error {
 }
 
 func (m *Market) unregisterAndReject(ctx context.Context, order *types.Order, err error) error {
-	_ = m.position.UnregisterOrder(order)
+	_ = m.position.UnregisterOrder(ctx, order)
 	order.UpdatedAt = m.currentTime.UnixNano()
 	order.Status = types.OrderStatusRejected
 	if oerr, ok := types.IsOrderError(err); ok {
@@ -1295,7 +1289,7 @@ func (m *Market) submitValidatedOrder(ctx context.Context, order *types.Order) (
 
 	oldPos, ok := m.position.GetPositionByPartyID(order.Party)
 	// Register order as potential positions
-	pos := m.position.RegisterOrder(order)
+	pos := m.position.RegisterOrder(ctx, order)
 	checkMargin := true
 	if !isPegged && ok {
 		oldVol, newVol := pos.Size()+pos.Buy()-pos.Sell(), oldPos.Size()+pos.Buy()-pos.Sell()
@@ -1368,7 +1362,7 @@ func (m *Market) submitValidatedOrder(ctx context.Context, order *types.Order) (
 		// Also do it if specifically we went against a wash trade
 		(order.Status == types.OrderStatusRejected &&
 			order.Reason == types.OrderErrorSelfTrading) {
-		_ = m.position.UnregisterOrder(order)
+		_ = m.position.UnregisterOrder(ctx, order)
 	}
 
 	// we replace the trades in the confirmation with the one we got initially
@@ -1701,7 +1695,7 @@ func (m *Market) resolveClosedOutParties(ctx context.Context, distressedMarginEv
 		}
 		o.UpdatedAt = m.currentTime.UnixNano()
 		evts = append(evts, events.NewOrderEvent(ctx, o))
-		_ = m.position.UnregisterOrder(o)
+		_ = m.position.UnregisterOrder(ctx, o)
 	}
 
 	// add the orders remove from the book to the orders
@@ -2285,7 +2279,7 @@ func (m *Market) cancelOrder(ctx context.Context, partyID, orderID string) (*typ
 			}
 			return nil, err
 		}
-		_ = m.position.UnregisterOrder(order)
+		_ = m.position.UnregisterOrder(ctx, order)
 	}
 
 	if order.IsExpireable() {
@@ -2319,7 +2313,7 @@ func (m *Market) parkOrder(ctx context.Context, order *types.Order) {
 
 	m.peggedOrders.Park(order)
 	m.broker.Send(events.NewOrderEvent(ctx, order))
-	_ = m.position.UnregisterOrder(order)
+	_ = m.position.UnregisterOrder(ctx, order)
 }
 
 // AmendOrder amend an existing order from the order book.
@@ -2507,7 +2501,7 @@ func (m *Market) amendOrder(
 				return nil, nil, err
 			}
 
-			_ = m.position.UnregisterOrder(cancellation.Order)
+			_ = m.position.UnregisterOrder(ctx, cancellation.Order)
 			amendedOrder = cancellation.Order
 		}
 
@@ -2594,7 +2588,7 @@ func (m *Market) amendOrder(
 	}
 
 	// Update potential new position after the amend
-	pos := m.position.AmendOrder(existingOrder, amendedOrder)
+	pos := m.position.AmendOrder(ctx, existingOrder, amendedOrder)
 
 	// Perform check and allocate margin if price or order size is increased
 	// ignore rollback return here, as if we amend it means the order
@@ -2604,7 +2598,7 @@ func (m *Market) amendOrder(
 	if priceIncrease || sizeIncrease {
 		if err = m.checkMarginForOrder(ctx, pos, amendedOrder); err != nil {
 			// Undo the position registering
-			_ = m.position.AmendOrder(amendedOrder, existingOrder)
+			_ = m.position.AmendOrder(ctx, amendedOrder, existingOrder)
 
 			if m.log.GetLevel() == logging.DebugLevel {
 				m.log.Debug("Unable to check/add margin for party",
@@ -2858,7 +2852,7 @@ func (m *Market) RemoveExpiredOrders(
 		// either a pegged + non parked
 		// or a non-pegged order
 		if foundOnBook {
-			m.position.UnregisterOrder(order)
+			m.position.UnregisterOrder(ctx, order)
 			m.matching.DeleteOrder(order)
 		}
 
@@ -2932,10 +2926,12 @@ func (m *Market) getStaticMidPrice(side types.Side) (*num.Uint, error) {
 	}
 	mid := num.Zero()
 	one := num.NewUint(1)
+	two := num.Sum(one, one)
+	one.Mul(one, m.priceFactor)
 	if side == types.SideBuy {
-		mid = mid.Div(num.Sum(bid, ask, one), num.Sum(one, one))
+		mid = mid.Div(num.Sum(bid, ask, one), two)
 	} else {
-		mid = mid.Div(num.Sum(bid, ask), num.Sum(one, one))
+		mid = mid.Div(num.Sum(bid, ask), two)
 	}
 
 	return mid, nil

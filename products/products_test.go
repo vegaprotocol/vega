@@ -31,7 +31,6 @@ func getValidInstrumentProto() *types.Instrument {
 		Product: &types.Instrument_Future{
 			Future: &types.Future{
 				QuoteName:       "USD",
-				Maturity:        "2019-12-31T00:00:00Z",
 				SettlementAsset: SettlementAssetStr,
 				OracleSpecForSettlementPrice: &oraclesv1.OracleSpec{
 					PubKeys: []string{"0xDEADBEEF"},

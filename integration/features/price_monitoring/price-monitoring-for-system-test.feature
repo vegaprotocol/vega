@@ -10,8 +10,8 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
       | risk aversion | tau                    | mu | r     | sigma |
       | 0.000001      | 0.00011407711613050422 | 0  | 0.016 | 2.0   |
     And the markets:
-      | id        | quote name | asset | maturity date        | risk model               | margin calculator         | auction duration | fees         | price monitoring    | oracle config          |
-      | ETH/DEC20 | ETH        | ETH   | 2020-12-31T23:59:59Z | my-log-normal-risk-model | default-margin-calculator | 6                | default-none | my-price-monitoring | default-eth-for-future |
+      | id        | quote name | asset | risk model               | margin calculator         | auction duration | fees         | price monitoring    | oracle config          |
+      | ETH/DEC20 | ETH        | ETH   | my-log-normal-risk-model | default-margin-calculator | 6                | default-none | my-price-monitoring | default-eth-for-future |
     And the following network parameters are set:
       | name                           | value |
       | market.auction.minimumDuration | 6     |
@@ -24,18 +24,18 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
       | party2 | ETH   | 100000000000 |
       | party3 | ETH   | 100000000000 |
       | party4 | ETH   | 100000000000 |
-      | aux     | ETH   | 100000000000 |
+      | aux    | ETH   | 100000000000 |
       
      # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     When the parties place the following orders:
       | party | market id | side | volume | price  | resulting trades | type       | tif     |
-      | aux    | ETH/DEC20 | buy  | 1      | 2      | 0                | TYPE_LIMIT | TIF_GTC |
-      | aux    | ETH/DEC20 | sell | 1      | 110000 | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux   | ETH/DEC20 | buy  | 1      | 2      | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux   | ETH/DEC20 | sell | 1      | 110000 | 0                | TYPE_LIMIT | TIF_GTC |
 
     And the parties place the following orders:
-      | party  | market id | side | volume | price  | resulting trades | type       | tif     | reference      |
-      | party1 | ETH/DEC20 | sell | 1      | 100000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1          |
-      | party2 | ETH/DEC20 | buy  | 1      | 100000 | 0                | TYPE_LIMIT | TIF_GTC | ref-2          |
+      | party  | market id | side | volume | price  | resulting trades | type       | tif     | reference     |
+      | party1 | ETH/DEC20 | sell | 1      | 100000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1         |
+      | party2 | ETH/DEC20 | buy  | 1      | 100000 | 0                | TYPE_LIMIT | TIF_GTC | ref-2         |
       | party3 | ETH/DEC20 | buy  | 1      | 80000  | 0                | TYPE_LIMIT | TIF_GTC | party3_buy_1  |
       | party4 | ETH/DEC20 | sell | 1      | 105000 | 0                | TYPE_LIMIT | TIF_GTC | party4_sell_1 |
 
@@ -57,22 +57,22 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
 
     # We've left opening auction, cancel the orders we had to place on the book to allow for this to happen
     And the parties cancel the following orders:
-      | party  | reference      |
+      | party  | reference     |
       | party3 | party3_buy_1  |
       | party4 | party4_sell_1 |
       
     # 1st trigger breached with non-persistent order -> auction with initial duration of 6s starts
     When the parties place the following orders:
-      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference      |
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference     |
       | party1 | ETH/DEC20 | sell | 1      | 99843 | 0                | TYPE_LIMIT | TIF_GTC | party1_sell_1 |
-      | party2 | ETH/DEC20 | buy  | 1      | 99843 | 0                | TYPE_LIMIT | TIF_GTC | ref-3          |
+      | party2 | ETH/DEC20 | buy  | 1      | 99843 | 0                | TYPE_LIMIT | TIF_GTC | ref-3         |
 
     Then the mark price should be "100000" for the market "ETH/DEC20"
     And the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC20"
     And the parties cancel the following orders:
-      | party  | reference      |
+      | party  | reference     |
       | party1 | party1_sell_1 |
-      | party2 | ref-3          |
+      | party2 | ref-3         |
 
     # T + 4s
     When time is updated to "2020-10-16T00:00:10Z"

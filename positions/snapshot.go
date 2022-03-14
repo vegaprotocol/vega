@@ -24,11 +24,11 @@ type SnapshotEngine struct {
 }
 
 func NewSnapshotEngine(
-	log *logging.Logger, config Config, marketID string) *SnapshotEngine {
+	log *logging.Logger, config Config, marketID string, broker Broker) *SnapshotEngine {
 	buf := proto.NewBuffer(nil)
 	buf.SetDeterministic(true)
 	return &SnapshotEngine{
-		Engine:  New(log, config, marketID),
+		Engine:  New(log, config, marketID, broker),
 		pl:      types.Payload{},
 		changed: true,
 		buf:     buf,
@@ -47,19 +47,19 @@ func (e *SnapshotEngine) StopSnapshots() {
 	e.stopped = true
 }
 
-func (e *SnapshotEngine) RegisterOrder(order *types.Order) *MarketPosition {
+func (e *SnapshotEngine) RegisterOrder(ctx context.Context, order *types.Order) *MarketPosition {
 	e.changed = true
-	return e.Engine.RegisterOrder(order)
+	return e.Engine.RegisterOrder(ctx, order)
 }
 
-func (e *SnapshotEngine) UnregisterOrder(order *types.Order) *MarketPosition {
+func (e *SnapshotEngine) UnregisterOrder(ctx context.Context, order *types.Order) *MarketPosition {
 	e.changed = true
-	return e.Engine.UnregisterOrder(order)
+	return e.Engine.UnregisterOrder(ctx, order)
 }
 
-func (e *SnapshotEngine) AmendOrder(originalOrder, newOrder *types.Order) *MarketPosition {
+func (e *SnapshotEngine) AmendOrder(ctx context.Context, originalOrder, newOrder *types.Order) *MarketPosition {
 	e.changed = true
-	return e.Engine.AmendOrder(originalOrder, newOrder)
+	return e.Engine.AmendOrder(ctx, originalOrder, newOrder)
 }
 
 func (e *SnapshotEngine) UpdateNetwork(trade *types.Trade) []events.MarketPosition {

@@ -122,7 +122,7 @@ func (s *StakeVerifier) restorePendingSD(ctx context.Context, deposited []*types
 	evts := []events.Event{}
 	for _, d := range deposited {
 		// this populates the id/hash structs
-		if !s.ensureNotDuplicate(d.ID, d.Hash()) {
+		if !s.ensureNotDuplicate(d.ID, d.IntoStakeLinking().Hash()) {
 			s.log.Panic("pendingSD's unexpectedly pre-populated when restoring from snapshot")
 		}
 
@@ -132,7 +132,10 @@ func (s *StakeVerifier) restorePendingSD(ctx context.Context, deposited []*types
 		}
 
 		s.pendingSDs = append(s.pendingSDs, pending)
-		s.witness.RestoreResource(pending, s.onEventVerified)
+		s.log.Debug("restoring witness resource")
+		if err := s.witness.RestoreResource(pending, s.onEventVerified); err != nil {
+			s.log.Panic("unable to restore pending stake deposited resource", logging.String("id", pending.ID), logging.Error(err))
+		}
 		evts = append(evts, events.NewStakeLinking(ctx, *pending.IntoStakeLinking()))
 	}
 	s.svss.changed[depositedKey] = true
@@ -146,7 +149,7 @@ func (s *StakeVerifier) restorePendingSR(ctx context.Context, removed []*types.S
 	evts := []events.Event{}
 	for _, r := range removed {
 		// this populates the id/hash structs
-		if !s.ensureNotDuplicate(r.ID, r.Hash()) {
+		if !s.ensureNotDuplicate(r.ID, r.IntoStakeLinking().Hash()) {
 			s.log.Panic("pendingSR's unexpectedly pre-populated when restoring from snapshot")
 		}
 
@@ -156,7 +159,9 @@ func (s *StakeVerifier) restorePendingSR(ctx context.Context, removed []*types.S
 		}
 
 		s.pendingSRs = append(s.pendingSRs, pending)
-		s.witness.RestoreResource(pending, s.onEventVerified)
+		if err := s.witness.RestoreResource(pending, s.onEventVerified); err != nil {
+			s.log.Panic("unable to restore pending stake removed resource", logging.String("id", pending.ID), logging.Error(err))
+		}
 		evts = append(evts, events.NewStakeLinking(ctx, *pending.IntoStakeLinking()))
 	}
 

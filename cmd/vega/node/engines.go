@@ -8,6 +8,11 @@ import (
 
 type EventForwarderEngine interface {
 	ReloadConf(evtforward.Config)
-	StartEthereumEngine(evtfwdeth.Client, evtfwdeth.Forwarder, evtfwdeth.Config, *types.EthereumConfig, evtfwdeth.Assets) error
+	SetupEthereumEngine(evtfwdeth.Client, evtfwdeth.Forwarder, evtfwdeth.Config, *types.EthereumConfig, evtfwdeth.Assets) error
+	Start()
 	Stop()
+
+	// methods used to update starting blocks of the eef
+	UpdateStakingStartingBlock(uint64)
+	UpdateMultiSigControlStartingBlock(uint64)
 }
