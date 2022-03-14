@@ -17,7 +17,7 @@ type MarketData struct {
 }
 
 const (
-	sqlColumns = `market, vega_time, seq_num, mark_price, 
+	sqlMarketDataColumns = `market, vega_time, seq_num, mark_price, 
 		best_bid_price, best_bid_volume, best_offer_price, best_offer_volume,
 		best_static_bid_price, best_static_bid_volume, best_static_offer_price, best_static_offer_volume,
 		mid_price, static_mid_price, open_interest, auction_end, 
@@ -45,7 +45,7 @@ func (md *MarketData) Add(data *entities.MarketData) error {
 			$13, $14, $15, $16, 
 			$17, $18, $19, $20, 
 			$21, $22, $23, $24, 
-			$25, $26, $27)`, sqlColumns)
+			$25, $26, $27)`, sqlMarketDataColumns)
 
 	if _, err := md.pool.Exec(ctx, query,
 		data.Market, data.VegaTime, data.SeqNum, data.MarkPrice,
@@ -71,7 +71,7 @@ func (md *MarketData) GetMarketDataByID(ctx context.Context, marketID string) (e
 	}
 
 	var marketData entities.MarketData
-	query := fmt.Sprintf("select %s from market_data_snapshot where market = $1", sqlColumns)
+	query := fmt.Sprintf("select %s from market_data_snapshot where market = $1", sqlMarketDataColumns)
 
 	err = pgxscan.Get(ctx, md.pool, &marketData, query, market)
 
@@ -82,7 +82,7 @@ func (md *MarketData) GetMarketsData(ctx context.Context) ([]entities.MarketData
 	md.log.Debug("Retrieving markets data from Postgres")
 
 	var marketData []entities.MarketData
-	query := fmt.Sprintf("select %s from market_data_snapshot", sqlColumns)
+	query := fmt.Sprintf("select %s from market_data_snapshot", sqlMarketDataColumns)
 
 	err := pgxscan.Select(ctx, md.pool, &marketData, query)
 
@@ -113,7 +113,7 @@ func (md *MarketData) getBetweenDatesByID(ctx context.Context, marketID string, 
 		return nil, err
 	}
 
-	selectStatement := fmt.Sprintf(`select %s from market_data`, sqlColumns)
+	selectStatement := fmt.Sprintf(`select %s from market_data`, sqlMarketDataColumns)
 
 	if start != nil && end != nil {
 		query, args := orderAndPaginateQuery(

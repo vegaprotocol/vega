@@ -1,6 +1,11 @@
 package entities
 
-import "code.vegaprotocol.io/protos/vega"
+import (
+	"fmt"
+
+	"code.vegaprotocol.io/protos/vega"
+	"github.com/jackc/pgtype"
+)
 
 type Side = vega.Side
 
@@ -195,3 +200,122 @@ const (
 	// An FOK, IOC, or GFN order was rejected because it resulted in trades outside the price bounds.
 	OrderErrorNonPersistentOrderOutOfPriceBounds OrderError = vega.OrderError_ORDER_ERROR_NON_PERSISTENT_ORDER_OUT_OF_PRICE_BOUNDS
 )
+
+type MarketTradingMode vega.Market_TradingMode
+
+const (
+	MarketTradingModeUnspecified       = MarketTradingMode(vega.Market_TRADING_MODE_UNSPECIFIED)
+	MarketTradingModeContinuous        = MarketTradingMode(vega.Market_TRADING_MODE_CONTINUOUS)
+	MarketTradingModeBatchAuction      = MarketTradingMode(vega.Market_TRADING_MODE_BATCH_AUCTION)
+	MarketTradingModeOpeningAuction    = MarketTradingMode(vega.Market_TRADING_MODE_OPENING_AUCTION)
+	MarketTradingModeMonitoringAuction = MarketTradingMode(vega.Market_TRADING_MODE_MONITORING_AUCTION)
+)
+
+func (m MarketTradingMode) EncodeText(_ *pgtype.ConnInfo, buf []byte) ([]byte, error) {
+	var mode []byte
+	switch m {
+	case MarketTradingModeUnspecified:
+		mode = []byte("TRADING_MODE_UNSPECIFIED")
+	case MarketTradingModeContinuous:
+		mode = []byte("TRADING_MODE_CONTINUOUS")
+	case MarketTradingModeBatchAuction:
+		mode = []byte("TRADING_MODE_BATCH_AUCTION")
+	case MarketTradingModeOpeningAuction:
+		mode = []byte("TRADING_MODE_OPENING_AUCTION")
+	case MarketTradingModeMonitoringAuction:
+		mode = []byte("TRADING_MODE_MONITORING_AUCTION")
+	}
+
+	return append(buf, mode...), nil
+}
+
+func (m *MarketTradingMode) DecodeText(_ *pgtype.ConnInfo, src []byte) error {
+	switch string(src) {
+	case "TRADING_MODE_UNSPECIFIED":
+		*m = MarketTradingModeUnspecified
+	case "TRADING_MODE_CONTINUOUS":
+		*m = MarketTradingModeContinuous
+	case "TRADING_MODE_BATCH_AUCTION":
+		*m = MarketTradingModeBatchAuction
+	case "TRADING_MODE_OPENING_AUCTION":
+		*m = MarketTradingModeOpeningAuction
+	case "TRADING_MODE_MONITORING_AUCTION":
+		*m = MarketTradingModeMonitoringAuction
+	default:
+		return fmt.Errorf("unrecognized trading mode: %s", src)
+	}
+
+	return nil
+}
+
+type MarketState vega.Market_State
+
+const (
+	MarketStateUnspecified       = MarketState(vega.Market_STATE_UNSPECIFIED)
+	MarketStateProposed          = MarketState(vega.Market_STATE_PROPOSED)
+	MarketStateRejected          = MarketState(vega.Market_STATE_REJECTED)
+	MarketStatePending           = MarketState(vega.Market_STATE_PENDING)
+	MarketStateCancelled         = MarketState(vega.Market_STATE_CANCELLED)
+	MarketStateActive            = MarketState(vega.Market_STATE_ACTIVE)
+	MarketStateSuspended         = MarketState(vega.Market_STATE_SUSPENDED)
+	MarketStateClosed            = MarketState(vega.Market_STATE_CLOSED)
+	MarketStateTradingTerminated = MarketState(vega.Market_STATE_TRADING_TERMINATED)
+	MarketStateSettled           = MarketState(vega.Market_STATE_SETTLED)
+)
+
+func (s MarketState) EncodeText(_ *pgtype.ConnInfo, buf []byte) ([]byte, error) {
+	var state []byte
+	switch s {
+	case MarketStateUnspecified:
+		state = []byte("STATE_UNSPECIFIED")
+	case MarketStateProposed:
+		state = []byte("STATE_PROPOSED")
+	case MarketStateRejected:
+		state = []byte("STATE_REJECTED")
+	case MarketStatePending:
+		state = []byte("STATE_PENDING")
+	case MarketStateCancelled:
+		state = []byte("STATE_CANCELLED")
+	case MarketStateActive:
+		state = []byte("STATE_ACTIVE")
+	case MarketStateSuspended:
+		state = []byte("STATE_SUSPENDED")
+	case MarketStateClosed:
+		state = []byte("STATE_CLOSED")
+	case MarketStateTradingTerminated:
+		state = []byte("STATE_TRADING_TERMINATED")
+	case MarketStateSettled:
+		state = []byte("STATE_SETTLED")
+	}
+
+	return append(buf, state...), nil
+}
+
+func (s *MarketState) DecodeText(_ *pgtype.ConnInfo, src []byte) error {
+	switch string(src) {
+	case "STATE_UNSPECIFIED":
+		*s = MarketStateUnspecified
+	case "STATE_PROPOSED":
+		*s = MarketStateProposed
+	case "STATE_REJECTED":
+		*s = MarketStateRejected
+	case "STATE_PENDING":
+		*s = MarketStatePending
+	case "STATE_CANCELLED":
+		*s = MarketStateCancelled
+	case "STATE_ACTIVE":
+		*s = MarketStateActive
+	case "STATE_SUSPENDED":
+		*s = MarketStateSuspended
+	case "STATE_CLOSED":
+		*s = MarketStateClosed
+	case "STATE_TRADING_TERMINATED":
+		*s = MarketStateTradingTerminated
+	case "STATE_SETTLED":
+		*s = MarketStateSettled
+	default:
+		return fmt.Errorf("unknown state: %s", src)
+	}
+
+	return nil
+}

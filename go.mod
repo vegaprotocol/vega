@@ -20,7 +20,7 @@ require (
 	github.com/gorilla/websocket v1.4.2
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.7.3
 	github.com/holiman/uint256 v1.2.0
-	github.com/jackc/pgtype v1.9.1
+	github.com/jackc/pgtype v1.10.0
 	github.com/jackc/pgx/v4 v4.14.1
 	github.com/jessevdk/go-flags v1.4.0
 	github.com/machinebox/graphql v0.2.2

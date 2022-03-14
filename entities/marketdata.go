@@ -89,6 +89,14 @@ func (trigger PriceMonitoringTrigger) Equals(other PriceMonitoringTrigger) bool 
 		trigger.AuctionExtension == other.AuctionExtension
 }
 
+func (trigger PriceMonitoringTrigger) ToProto() *types.PriceMonitoringTrigger {
+	return &types.PriceMonitoringTrigger{
+		Horizon:          int64(trigger.Horizon),
+		Probability:      trigger.Probability.String(),
+		AuctionExtension: int64(trigger.AuctionExtension),
+	}
+}
+
 type PriceMonitoringBound struct {
 	MinValidPrice  uint64                 `json:"minValidPrice"`
 	MaxValidPrice  uint64                 `json:"maxValidPrice"`
