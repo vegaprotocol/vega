@@ -63,10 +63,8 @@ code.vegaprotocol.io/quant v0.2.5 h1:8h+TTHdz1LCO4oGXt8mbowXszd8CQP1MHlJOkthUp1E
 code.vegaprotocol.io/quant v0.2.5/go.mod h1:HEzOoPKj8OIP49r9AZYeo5281M5ygeGWxopwvt8k6Es=
 code.vegaprotocol.io/shared v0.0.0-20220202150846-b6aba31dcdb0 h1:vDjKTd508FwIwoSdZBEvtEfmBeaYdodgLM96v253zKI=
 code.vegaprotocol.io/shared v0.0.0-20220202150846-b6aba31dcdb0/go.mod h1:pNHKwqRDkotUN0s6jErl7Eb2EpZa2HAf03lyPMTCUT0=
-code.vegaprotocol.io/vega v0.49.3-0.20220314115959-4931decc4876 h1:WNS/jyo6PHz3CEgOdTZb2r8NNz4AloTjDzsjet4/MOI=
-code.vegaprotocol.io/vega v0.49.3-0.20220314115959-4931decc4876/go.mod h1:AHarOGQoFWj4MGVoGBiVphQfXFZzM9/VVi1Kk9F5j3s=
-code.vegaprotocol.io/vega v0.49.3-0.20220314154126-d24110799980 h1:ALYJp51qUh86yfYvDWcyk1fB/XIJda5vtSvNesvTzkg=
-code.vegaprotocol.io/vega v0.49.3-0.20220314154126-d24110799980/go.mod h1:AHarOGQoFWj4MGVoGBiVphQfXFZzM9/VVi1Kk9F5j3s=
+code.vegaprotocol.io/vega v0.49.4 h1:KTAPV+5vrBdJz1cyvyzU8th/FfmYAaJrS1Cv547Arsk=
+code.vegaprotocol.io/vega v0.49.4/go.mod h1:AHarOGQoFWj4MGVoGBiVphQfXFZzM9/VVi1Kk9F5j3s=
 code.vegaprotocol.io/vegawallet v0.13.1 h1:VEBDuEBEdNLiVY/XG8abjU+YmKxcpEDnfilXin9hzDk=
 code.vegaprotocol.io/vegawallet v0.13.1/go.mod h1:+TFntziVXPEaFYR48t1VW9MaLSoOzhCUehlOq5Iy9jg=
 collectd.org v0.3.0/go.mod h1:A/8DzQBkF6abtvrT2j/AU/4tiBgJWYyh0y/oB/4MlWE=
@@ -703,7 +701,6 @@ github.com/jackc/pgtype v1.3.1-0.20200510190516-8cd94a14c75a/go.mod h1:vaogEUkAL
 github.com/jackc/pgtype v1.3.1-0.20200606141011-f6355165a91c/go.mod h1:cvk9Bgu/VzJ9/lxTO5R5sf80p0DiucVtN7ZxvaC4GmQ=
 github.com/jackc/pgtype v1.6.2/go.mod h1:JCULISAZBFGrHaOXIIFiyfzW5VY0GRitRr8NeJsrdig=
 github.com/jackc/pgtype v1.8.1-0.20210724151600-32e20a603178/go.mod h1:C516IlIV9NKqfsMCXTdChteoXmwgUceqaLfjg2e3NlM=
-github.com/jackc/pgtype v1.9.1 h1:MJc2s0MFS8C3ok1wQTdQxWuXQcB6+HwAm5x1CzW7mf0=
 github.com/jackc/pgtype v1.9.1/go.mod h1:LUMuVrfsFfdKGLw+AFFVv6KtHOFMwRgDDzBt76IqCA4=
 github.com/jackc/pgtype v1.10.0 h1:ILnBWrRMSXGczYvmkYD6PsYyVFUNLTnIUJHHDLmqk38=
 github.com/jackc/pgtype v1.10.0/go.mod h1:LUMuVrfsFfdKGLw+AFFVv6KtHOFMwRgDDzBt76IqCA4=
