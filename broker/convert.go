@@ -97,6 +97,8 @@ func toEvent(ctx context.Context, be *eventspb.BusEvent) events.Event {
 		return events.ERC20MultiSigSignerAddedFromStream(ctx, be)
 	case eventspb.BusEventType_BUS_EVENT_TYPE_ERC20_MULTI_SIG_SIGNER_REMOVED:
 		return events.ERC20MultiSigSignerRemovedFromStream(ctx, be)
+	case eventspb.BusEventType_BUS_EVENT_TYPE_POSITION_STATE:
+		return events.PositionStateEventFromStream(ctx, be)
 	}
 
 	return nil
