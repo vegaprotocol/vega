@@ -69,13 +69,13 @@ func (s PositionState) StreamMessage() *eventspb.BusEvent {
 func PositionStateEventFromStream(ctx context.Context, be *eventspb.BusEvent) *PositionState {
 	pse := be.GetPositionStateEvent()
 
-	vwBuy, ok := num.UintFromString(pse.VwBuyPrice, 10)
-	if !ok {
+	vwBuy, overflow := num.UintFromString(pse.VwBuyPrice, 10)
+	if overflow {
 		return nil
 	}
 
-	vwSell, ok := num.UintFromString(pse.VwSellPrice, 10)
-	if !ok {
+	vwSell, overflow := num.UintFromString(pse.VwSellPrice, 10)
+	if overflow {
 		return nil
 	}
 
