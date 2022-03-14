@@ -20,6 +20,7 @@ type tradingDataDelegator struct {
 	assetStore      *sqlstore.Assets
 	accountStore    *sqlstore.Accounts
 	marketDataStore *sqlstore.MarketData
+	marketsStore    *sqlstore.Markets
 }
 
 var defaultEntityPagination = entities.Pagination{
@@ -424,7 +425,7 @@ func (t *tradingDataDelegator) MarketDataByID(ctx context.Context, req *protoapi
 
 	// validate the market exist
 	if req.MarketId != "" {
-		_, err := t.MarketService.GetByID(ctx, req.MarketId)
+		_, err := t.marketsStore.GetByID(ctx, req.MarketId)
 		if err != nil {
 			return nil, apiError(codes.InvalidArgument, ErrInvalidMarketID, err)
 		}
@@ -451,5 +452,65 @@ func (t *tradingDataDelegator) MarketsData(ctx context.Context, _ *protoapi.Mark
 
 	return &protoapi.MarketsDataResponse{
 		MarketsData: mdptrs,
+	}, nil
+}
+
+// MarketByID provides the given market.
+func (t *tradingDataDelegator) MarketByID(ctx context.Context, req *protoapi.MarketByIDRequest) (*protoapi.MarketByIDResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("MarketByID_SQL")()
+
+	mkt, err := validateMarketSQL(ctx, req.MarketId, t.marketsStore)
+	if err != nil {
+		return nil, err // validateMarket already returns an API error, no need to additionally wrap
+	}
+
+	return &protoapi.MarketByIDResponse{
+		Market: mkt,
+	}, nil
+}
+
+func validateMarketSQL(ctx context.Context, marketID string, marketsStore *sqlstore.Markets) (*vega.Market, error) {
+	if len(marketID) == 0 {
+		return nil, apiError(codes.InvalidArgument, ErrEmptyMissingMarketID)
+	}
+
+	market, err := marketsStore.GetByID(ctx, marketID)
+
+	if err != nil {
+		// We return nil for error as we do not want
+		// to return an error when a market is not found
+		// but just a nil value.
+		return nil, nil
+	}
+
+	mkt, err := market.ToProto()
+
+	if err != nil {
+		return nil, nil
+	}
+
+	return mkt, nil
+}
+
+// Markets provides a list of all current markets that exist on the VEGA platform.
+func (t *tradingDataDelegator) Markets(ctx context.Context, _ *protoapi.MarketsRequest) (*protoapi.MarketsResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("Markets_SQL")()
+	markets, err := t.marketsStore.GetAll(ctx, entities.Pagination{})
+	if err != nil {
+		return nil, apiError(codes.Internal, ErrMarketServiceGetMarkets, err)
+	}
+
+	results := make([]*vega.Market, 0, len(markets))
+	for _, m := range markets {
+		mkt, err := m.ToProto()
+		if err != nil {
+			continue
+		}
+
+		results = append(results, mkt)
+	}
+
+	return &protoapi.MarketsResponse{
+		Markets: results,
 	}, nil
 }

@@ -166,11 +166,9 @@ CREATE AGGREGATE public.last (anyelement) (
 , PARALLEL = safe
 );
 
-drop type if exists auction_trigger_type;
 create type auction_trigger_type as enum('AUCTION_TRIGGER_UNSPECIFIED', 'AUCTION_TRIGGER_BATCH', 'AUCTION_TRIGGER_OPENING', 'AUCTION_TRIGGER_PRICE', 'AUCTION_TRIGGER_LIQUIDITY');
-
-drop type if exists market_trading_mode_type;
 create type market_trading_mode_type as enum('TRADING_MODE_UNSPECIFIED', 'TRADING_MODE_CONTINUOUS', 'TRADING_MODE_BATCH_AUCTION', 'TRADING_MODE_OPENING_AUCTION', 'TRADING_MODE_MONITORING_AUCTION');
+create type market_state_type as enum('STATE_UNSPECIFIED', 'STATE_PROPOSED', 'STATE_REJECTED', 'STATE_PENDING', 'STATE_CANCELLED', 'STATE_ACTIVE', 'STATE_SUSPENDED', 'STATE_CLOSED', 'STATE_TRADING_TERMINATED', 'STATE_SETTLED');
 
 create table market_data (
     market bytea not null,
@@ -224,6 +222,23 @@ and md.vega_time = mx.vega_time
 ;
 
 
+create table if not exists markets (
+    id bytea not null,
+    vega_time timestamp with time zone not null references blocks(vega_time),
+    instrument_id text,
+    tradable_instrument jsonb,
+    decimal_places int,
+    fees jsonb,
+    opening_auction jsonb,
+    price_monitoring_settings jsonb,
+    liquidity_monitoring_parameters jsonb,
+    trading_mode market_trading_mode_type,
+    state market_state_type,
+    market_timestamps jsonb,
+    position_decimal_places int,
+    primary key (id, vega_time)
+);
+
 -- +goose Down
 DROP AGGREGATE IF EXISTS public.first(anyelement);
 DROP AGGREGATE IF EXISTS public.last(anyelement);
@@ -241,10 +256,12 @@ DROP TYPE IF EXISTS order_side;
 DROP TYPE IF EXISTS order_type;
 DROP TYPE IF EXISTS order_pegged_reference;
 
+DROP TABLE IF EXISTS markets;
 DROP VIEW IF EXISTS market_data_snapshot;
 DROP TABLE IF EXISTS market_data;
-DROP TYPE IF EXISTS market_trading_mode_type;
 DROP TYPE IF EXISTS auction_trigger_type;
+DROP TYPE IF EXISTS market_trading_mode_type;
+DROP TYPE IF EXISTS market_state_type;
 
 DROP TABLE IF EXISTS ledger;
 DROP TABLE IF EXISTS balances;
@@ -252,4 +269,5 @@ DROP TABLE IF EXISTS accounts;
 DROP TABLE IF EXISTS parties;
 DROP TABLE IF EXISTS assets;
 DROP TABLE IF EXISTS trades;
-DROP TABLE IF EXISTS blocks;
+DROP TABLE IF EXISTS blocks cascade;
+
