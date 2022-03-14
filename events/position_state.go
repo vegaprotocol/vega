@@ -80,7 +80,7 @@ func PositionStateEventFromStream(ctx context.Context, be *eventspb.BusEvent) *P
 	}
 
 	return &PositionState{
-		Base:           newBaseFromBusEvent(ctx, SettlePositionEvent, be),
+		Base:           newBaseFromBusEvent(ctx, PositionStateEvent, be),
 		partyID:        pse.PartyId,
 		marketID:       pse.MarketId,
 		size:           pse.Size,
