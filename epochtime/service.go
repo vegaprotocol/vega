@@ -2,6 +2,7 @@ package epochtime
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"code.vegaprotocol.io/protos/vega"
@@ -176,15 +177,21 @@ func (s *Svc) Load(ctx context.Context, data []byte) error {
 // fastForward advances time and expires/starts any epoch that would have expired/started during the time period. It would trigger the epoch events naturally
 // so will have a side effect of delegations getting promoted and rewards getting calculated and potentially paid.
 func (s *Svc) fastForward(ctx context.Context) {
+	fmt.Printf("\n\nFAST FORWARDING START\n\n")
 	tt := s.currentTime
+	fmt.Printf("\n\n FAST FORWARDING CURRENT TIME: %s\n\n", tt.Format(time.RFC3339))
 	for {
 		if !s.epoch.ExpireTime.Before(tt) {
 			break
 		}
+
+		fmt.Printf("\n\n\nFAST FORWARDING: %v\n\n\n", s.epoch.String())
 		s.OnBlockEnd(ctx)
 		s.onTick(ctx, s.epoch.ExpireTime.Add(1*time.Second))
 	}
+	fmt.Printf("\n\nFAST FORWARDING DONE\n\n")
 	s.onTick(ctx, tt)
+	fmt.Printf("\n\n FAST FORWARDING CURRENT EPOCH %v\n\n", s.epoch.String())
 }
 
 // NotifyOnEpoch allows other services to register 2 callback functions.
