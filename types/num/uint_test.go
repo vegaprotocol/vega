@@ -18,14 +18,14 @@ func TestUint256Constructors(t *testing.T) {
 	})
 
 	t.Run("test from string", func(t *testing.T) {
-		n, ok := num.UintFromString("42", 10)
-		assert.False(t, ok)
+		n, overflow := num.UintFromString("42", 10)
+		assert.False(t, overflow)
 		assert.Equal(t, expected, n.Uint64())
 	})
 
 	t.Run("test from big", func(t *testing.T) {
-		n, ok := num.UintFromBig(big.NewInt(int64(expected)))
-		assert.False(t, ok)
+		n, overflow := num.UintFromBig(big.NewInt(int64(expected)))
+		assert.False(t, overflow)
 		assert.Equal(t, expected, n.Uint64())
 	})
 }

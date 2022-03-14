@@ -14,6 +14,7 @@
 
 ### 🐛 Fixes
 - [4983](https://github.com/vegaprotocol/vega/issues/4983) - Set correct event type for positions state event
+- [4989](https://github.com/vegaprotocol/vega/issues/4989) - Fixing incorrect overflow logic
 
 ## 0.49.2
 
