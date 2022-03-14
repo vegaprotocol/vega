@@ -152,6 +152,7 @@ func TestEpochServiceCheckpointLoading(t *testing.T) {
 	println(now.String())
 	loadService.cb(ctx, now)
 	loadService.Load(ctx, cp)
+	loadService.cb(ctx, now.Add(time.Second))
 	// after the load we expect an event regardless of what epoch we were in before
 	require.Equal(t, 2, len(loadEpochs))
 
@@ -216,7 +217,7 @@ func TestEpochServiceCheckpointFastForward(t *testing.T) {
 	loadService.Load(ctx, cp)
 
 	// new block should trigger fast forward
-	loadService.cb(ctx, now)
+	loadService.cb(ctx, now.Add(time.Second))
 	require.Equal(t, 8, len(loadEpochs))
 
 	// to advance to the first block after the expiry we need advance by for 11h and 4 seconds
