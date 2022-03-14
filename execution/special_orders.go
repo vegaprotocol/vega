@@ -45,12 +45,15 @@ func (m *Market) repricePeggedOrders(
 					order.UpdatedAt = m.currentTime.UnixNano()
 					order.Status = types.OrderStatusParked
 					order.Price = num.Zero()
+					order.OriginalPrice = num.Zero()
 					m.broker.Send(events.NewOrderEvent(ctx, order))
 					parked = append(parked, order)
 				}
 			} else {
 				// Repriced so all good make sure status is correct
 				order.Price = price.Clone()
+				order.OriginalPrice = price.Clone()
+				order.OriginalPrice.Div(order.OriginalPrice, m.priceFactor)
 				order.Status = types.OrderStatusParked
 				toSubmit = append(toSubmit, order)
 			}
