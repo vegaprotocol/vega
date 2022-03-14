@@ -31,6 +31,7 @@
 - [4964](https://github.com/vegaprotocol/vega/issues/4964) - Fix price monitoring snapshot
 - [4974](https://github.com/vegaprotocol/vega/issues/4974) - Fix panic when checkpointing staking accounts if there are no events
 - [4888](https://github.com/vegaprotocol/vega/issues/4888) - Fix memory leak when loading snapshots.
+- [4981](https://github.com/vegaprotocol/vega/issues/4981) - Fix bug causing LP orders to uncross at auction end.
 
 
 ## 0.49.1
