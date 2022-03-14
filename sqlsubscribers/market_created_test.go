@@ -44,7 +44,6 @@ func getTestMarket() types.Market {
 				},
 				Product: types.Instrument_Future{
 					Future: &types.Future{
-						Maturity:        "",
 						SettlementAsset: "",
 						QuoteName:       "",
 						OracleSpecForSettlementPrice: &v1.OracleSpec{
