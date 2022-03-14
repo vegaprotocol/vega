@@ -28,6 +28,7 @@ Install it somewhere, then point "`$GOROOT`" at that location:
 # Add to $HOME/.bashrc:
 export GOROOT="/path/to/your/go1.16.2"
 export PATH="$PATH:$GOROOT/bin"
+export GOPRIVATE=github.com/vegaprotocol,code.vegaprotocol.io
 ```
 
 Ensure you have `go` and `gofmt`:
