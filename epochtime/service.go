@@ -98,12 +98,12 @@ func (s *Svc) onTick(ctx context.Context, t time.Time) {
 		return
 	}
 
+	s.currentTime = t
+
 	if s.needsFastForward {
 		s.needsFastForward = false
 		s.fastForward(ctx)
 	}
-
-	s.currentTime = t
 
 	if s.epoch.StartTime.IsZero() {
 		// First block so let's create our first epoch
