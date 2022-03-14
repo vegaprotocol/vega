@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"encoding/hex"
 	"errors"
 
 	"code.vegaprotocol.io/data-node/entities"
@@ -14,9 +15,12 @@ import (
 
 type tradingDataDelegator struct {
 	*tradingDataService
-	orderStore *sqlstore.Orders
-	tradeStore *sqlstore.Trades
-	assetStore *sqlstore.Assets
+	orderStore      *sqlstore.Orders
+	tradeStore      *sqlstore.Trades
+	assetStore      *sqlstore.Assets
+	accountStore    *sqlstore.Accounts
+	marketDataStore *sqlstore.MarketData
+	marketsStore    *sqlstore.Markets
 }
 
 var defaultEntityPagination = entities.Pagination{
@@ -231,5 +235,282 @@ func (t *tradingDataDelegator) Assets(ctx context.Context, _ *protoapi.AssetsReq
 	}
 	return &protoapi.AssetsResponse{
 		Assets: out,
+	}, nil
+}
+
+func isValidAccountType(accountType vega.AccountType, validAccountTypes ...vega.AccountType) bool {
+	for _, vt := range validAccountTypes {
+		if accountType == vt {
+			return true
+		}
+	}
+
+	return false
+}
+
+func (t *tradingDataDelegator) PartyAccounts(ctx context.Context, req *protoapi.PartyAccountsRequest) (*protoapi.PartyAccountsResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("PartyAccounts_SQL")()
+
+	// This is just nicer to read and update if the list of valid account types change than multiple AND statements
+	if !isValidAccountType(req.Type, vega.AccountType_ACCOUNT_TYPE_GENERAL, vega.AccountType_ACCOUNT_TYPE_MARGIN,
+		vega.AccountType_ACCOUNT_TYPE_LOCK_WITHDRAW, vega.AccountType_ACCOUNT_TYPE_BOND, vega.AccountType_ACCOUNT_TYPE_UNSPECIFIED) {
+		return nil, errors.New("invalid type for query, only GENERAL, MARGIN, LOCK_WITHDRAW AND BOND accounts for a party supported")
+	}
+
+	pagination := entities.Pagination{}
+
+	filter := entities.AccountFilter{
+		Asset:        toAccountsFilterAsset(req.Asset),
+		Parties:      toAccountsFilterParties(req.PartyId),
+		AccountTypes: toAccountsFilterAccountTypes(req.Type),
+		Markets:      toAccountsFilterMarkets(req.MarketId),
+	}
+
+	accountBalances, err := t.accountStore.QueryBalances(ctx, filter, pagination)
+	if err != nil {
+		return nil, apiError(codes.Internal, ErrAccountServiceGetPartyAccounts, err)
+	}
+
+	return &protoapi.PartyAccountsResponse{
+		Accounts: accountBalancesToProtoAccountList(accountBalances),
+	}, nil
+}
+
+func toAccountsFilterAccountTypes(accountTypes ...vega.AccountType) []vega.AccountType {
+	accountTypesProto := make([]vega.AccountType, 0)
+
+	for _, accountType := range accountTypes {
+		if accountType == vega.AccountType_ACCOUNT_TYPE_UNSPECIFIED {
+			return nil
+		}
+
+		accountTypesProto = append(accountTypesProto, accountType)
+	}
+
+	return accountTypesProto
+}
+
+func accountBalancesToProtoAccountList(accounts []entities.AccountBalance) []*vega.Account {
+	accountsProto := make([]*vega.Account, 0, len(accounts))
+
+	for _, acc := range accounts {
+		accountsProto = append(accountsProto, acc.ToProto())
+	}
+
+	return accountsProto
+}
+
+func toAccountsFilterAsset(assetID string) entities.Asset {
+	asset := entities.Asset{}
+
+	if len(assetID) > 0 {
+		assetIDBytes, _ := hex.DecodeString(assetID)
+		asset.ID = assetIDBytes
+	}
+
+	return asset
+}
+
+func toAccountsFilterParties(partyIDs ...string) []entities.Party {
+	parties := make([]entities.Party, 0, len(partyIDs))
+	for _, id := range partyIDs {
+		if id == "" {
+			continue
+		}
+
+		idBytes, err := hex.DecodeString(id)
+
+		if err != nil {
+			continue
+		}
+
+		party := entities.Party{
+			ID: idBytes,
+		}
+		parties = append(parties, party)
+	}
+
+	return parties
+}
+
+func toAccountsFilterMarkets(marketIDs ...string) []entities.Market {
+	markets := make([]entities.Market, 0, len(marketIDs))
+	for _, id := range marketIDs {
+		if id == "" {
+			continue
+		}
+		idBytes, err := hex.DecodeString(id)
+		if err != nil {
+			continue
+		}
+
+		market := entities.Market{
+			ID: idBytes,
+		}
+		markets = append(markets, market)
+	}
+
+	return markets
+}
+
+func (t *tradingDataDelegator) MarketAccounts(ctx context.Context,
+	req *protoapi.MarketAccountsRequest) (*protoapi.MarketAccountsResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("MarketAccounts")()
+
+	filter := entities.AccountFilter{
+		Asset:   toAccountsFilterAsset(req.Asset),
+		Markets: toAccountsFilterMarkets(req.MarketId),
+		AccountTypes: toAccountsFilterAccountTypes(
+			vega.AccountType_ACCOUNT_TYPE_INSURANCE,
+			vega.AccountType_ACCOUNT_TYPE_FEES_LIQUIDITY,
+		),
+	}
+
+	pagination := entities.Pagination{}
+
+	accountBalances, err := t.accountStore.QueryBalances(ctx, filter, pagination)
+	if err != nil {
+		return nil, apiError(codes.Internal, ErrAccountServiceGetMarketAccounts, err)
+	}
+
+	return &protoapi.MarketAccountsResponse{
+		Accounts: accountBalancesToProtoAccountList(accountBalances),
+	}, nil
+}
+
+func (t *tradingDataDelegator) FeeInfrastructureAccounts(ctx context.Context,
+	req *protoapi.FeeInfrastructureAccountsRequest) (*protoapi.FeeInfrastructureAccountsResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("FeeInfrastructureAccounts")()
+
+	filter := entities.AccountFilter{
+		Asset: toAccountsFilterAsset(req.Asset),
+		AccountTypes: toAccountsFilterAccountTypes(
+			vega.AccountType_ACCOUNT_TYPE_FEES_INFRASTRUCTURE,
+		),
+	}
+	pagination := entities.Pagination{}
+
+	accountBalances, err := t.accountStore.QueryBalances(ctx, filter, pagination)
+	if err != nil {
+		return nil, apiError(codes.Internal, ErrAccountServiceGetFeeInfrastructureAccounts, err)
+	}
+	return &protoapi.FeeInfrastructureAccountsResponse{
+		Accounts: accountBalancesToProtoAccountList(accountBalances),
+	}, nil
+}
+
+func (t *tradingDataDelegator) GlobalRewardPoolAccounts(ctx context.Context,
+	req *protoapi.GlobalRewardPoolAccountsRequest) (*protoapi.GlobalRewardPoolAccountsResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("GloabRewardPoolAccounts")()
+	filter := entities.AccountFilter{
+		Asset: toAccountsFilterAsset(req.Asset),
+		AccountTypes: toAccountsFilterAccountTypes(
+			vega.AccountType_ACCOUNT_TYPE_GLOBAL_REWARD,
+		),
+	}
+	pagination := entities.Pagination{}
+
+	accountBalances, err := t.accountStore.QueryBalances(ctx, filter, pagination)
+	if err != nil {
+		return nil, apiError(codes.Internal, ErrAccountServiceGetGlobalRewardPoolAccounts, err)
+	}
+	return &protoapi.GlobalRewardPoolAccountsResponse{
+		Accounts: accountBalancesToProtoAccountList(accountBalances),
+	}, nil
+}
+
+// MarketDataByID provides market data for the given ID.
+func (t *tradingDataDelegator) MarketDataByID(ctx context.Context, req *protoapi.MarketDataByIDRequest) (*protoapi.MarketDataByIDResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("MarketDataByID_SQL")()
+
+	// validate the market exist
+	if req.MarketId != "" {
+		_, err := t.marketsStore.GetByID(ctx, req.MarketId)
+		if err != nil {
+			return nil, apiError(codes.InvalidArgument, ErrInvalidMarketID, err)
+		}
+	}
+
+	md, err := t.marketDataStore.GetMarketDataByID(ctx, req.MarketId)
+	if err != nil {
+		return nil, apiError(codes.Internal, ErrMarketServiceGetMarketData, err)
+	}
+	return &protoapi.MarketDataByIDResponse{
+		MarketData: md.ToProto(),
+	}, nil
+}
+
+// MarketsData provides all market data for all markets on this network.
+func (t *tradingDataDelegator) MarketsData(ctx context.Context, _ *protoapi.MarketsDataRequest) (*protoapi.MarketsDataResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("MarketsData_SQL")()
+	mds, _ := t.marketDataStore.GetMarketsData(ctx)
+
+	mdptrs := make([]*vega.MarketData, 0, len(mds))
+	for _, v := range mds {
+		mdptrs = append(mdptrs, v.ToProto())
+	}
+
+	return &protoapi.MarketsDataResponse{
+		MarketsData: mdptrs,
+	}, nil
+}
+
+// MarketByID provides the given market.
+func (t *tradingDataDelegator) MarketByID(ctx context.Context, req *protoapi.MarketByIDRequest) (*protoapi.MarketByIDResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("MarketByID_SQL")()
+
+	mkt, err := validateMarketSQL(ctx, req.MarketId, t.marketsStore)
+	if err != nil {
+		return nil, err // validateMarket already returns an API error, no need to additionally wrap
+	}
+
+	return &protoapi.MarketByIDResponse{
+		Market: mkt,
+	}, nil
+}
+
+func validateMarketSQL(ctx context.Context, marketID string, marketsStore *sqlstore.Markets) (*vega.Market, error) {
+	if len(marketID) == 0 {
+		return nil, apiError(codes.InvalidArgument, ErrEmptyMissingMarketID)
+	}
+
+	market, err := marketsStore.GetByID(ctx, marketID)
+
+	if err != nil {
+		// We return nil for error as we do not want
+		// to return an error when a market is not found
+		// but just a nil value.
+		return nil, nil
+	}
+
+	mkt, err := market.ToProto()
+
+	if err != nil {
+		return nil, nil
+	}
+
+	return mkt, nil
+}
+
+// Markets provides a list of all current markets that exist on the VEGA platform.
+func (t *tradingDataDelegator) Markets(ctx context.Context, _ *protoapi.MarketsRequest) (*protoapi.MarketsResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("Markets_SQL")()
+	markets, err := t.marketsStore.GetAll(ctx, entities.Pagination{})
+	if err != nil {
+		return nil, apiError(codes.Internal, ErrMarketServiceGetMarkets, err)
+	}
+
+	results := make([]*vega.Market, 0, len(markets))
+	for _, m := range markets {
+		mkt, err := m.ToProto()
+		if err != nil {
+			continue
+		}
+
+		results = append(results, mkt)
+	}
+
+	return &protoapi.MarketsResponse{
+		Markets: results,
 	}, nil
 }

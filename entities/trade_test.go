@@ -15,7 +15,7 @@ import (
 
 func TestProtoFromTrade(t *testing.T) {
 	vegaTime := time.Now()
-	idString := "bc2001bddac588f8aaae0d9bec3d6881a447b888447e5d0a9de92d149ba4e877"
+	idString := "BC2001BDDAC588F8AAAE0D9BEC3D6881A447B888447E5D0A9DE92D149BA4E877"
 	id, _ := hex.DecodeString(idString)
 	marketIdString := "8cc0e020c0bc2f9eba77749d81ecec8283283b85941722c2cb88318aaf8b8cd8"
 	marketId, _ := hex.DecodeString(marketIdString)
@@ -28,10 +28,10 @@ func TestProtoFromTrade(t *testing.T) {
 	sellerIdString := "8b6be1a03cc4d529f682887a78b66e6879d17f81e2b37356ca0acbc5d5886eb8"
 	seller, _ := hex.DecodeString(sellerIdString)
 
-	buyOrderIdString := "cf951606211775c43449807fe15f908704a85c514d65d549d67bbd6b5eef66bb"
+	buyOrderIdString := "CF951606211775C43449807FE15F908704A85C514D65D549D67BBD6B5EEF66BB"
 	buyOrderId, _ := hex.DecodeString(buyOrderIdString)
 
-	sellOrderIdString := "6a94947f724cdb7851bee793aca6888f68abbf8d49dfd0f778424a7ce42e7b7d"
+	sellOrderIdString := "6A94947F724CDB7851BEE793ACA6888F68ABBF8D49DFD0F778424A7CE42E7B7D"
 	sellOrderId, _ := hex.DecodeString(sellOrderIdString)
 
 	trade := entities.Trade{

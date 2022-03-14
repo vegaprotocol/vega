@@ -3,11 +3,14 @@ package entities
 import (
 	"encoding/hex"
 	"fmt"
+	"strings"
 	"time"
 
 	pb "code.vegaprotocol.io/protos/vega"
 	"github.com/shopspring/decimal"
 )
+
+const badAssetPrefix = "bad_asset_"
 
 type Asset struct {
 	ID            []byte
@@ -28,14 +31,14 @@ type Asset struct {
 func MakeAssetID(stringID string) []byte {
 	id, err := hex.DecodeString(stringID)
 	if err != nil {
-		id = []byte("bad_asset_" + stringID)
+		id = []byte(badAssetPrefix + stringID)
 	}
 	return id
 }
 
 func (a Asset) HexID() string {
-	if string(a.ID[:10]) == "bad_asset_" {
-		return string(a.ID[10:])
+	if strings.HasPrefix(string(a.ID), badAssetPrefix) {
+		return strings.TrimPrefix(string(a.ID), badAssetPrefix)
 	}
 
 	return hex.EncodeToString(a.ID)

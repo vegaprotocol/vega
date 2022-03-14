@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -60,6 +61,10 @@ func (t *tradingDataServiceV2) QueryBalanceHistory(ctx context.Context, req *v2.
 }
 
 func (t *tradingDataServiceV2) OrdersByMarket(ctx context.Context, req *v2.OrdersByMarketRequest) (*v2.OrdersByMarketResponse, error) {
+	if t.orderStore == nil {
+		return nil, errors.New("sql order store not available")
+	}
+
 	p := defaultPaginationV2
 	if req.Pagination != nil {
 		p = entities.PaginationFromProto(req.Pagination)
@@ -94,7 +99,11 @@ func entityMarketDataListToProtoList(list []entities.MarketData) []*vega.MarketD
 	return results
 }
 
-func (bs *tradingDataServiceV2) GetMarketDataHistoryByID(ctx context.Context, req *v2.GetMarketDataHistoryByIDRequest) (*v2.GetMarketDataHistoryByIDResponse, error) {
+func (t *tradingDataServiceV2) GetMarketDataHistoryByID(ctx context.Context, req *v2.GetMarketDataHistoryByIDRequest) (*v2.GetMarketDataHistoryByIDResponse, error) {
+	if t.marketDataStore == nil {
+		return nil, errors.New("sql market data store not available")
+	}
+
 	var startTime, endTime time.Time
 
 	if req.StartTimestamp != nil {
@@ -114,18 +123,18 @@ func (bs *tradingDataServiceV2) GetMarketDataHistoryByID(ctx context.Context, re
 	}
 
 	if req.StartTimestamp != nil && req.EndTimestamp != nil {
-		return bs.getMarketDataHistoryByID(ctx, req.MarketId, startTime, endTime, pagination)
+		return t.getMarketDataHistoryByID(ctx, req.MarketId, startTime, endTime, pagination)
 	}
 
 	if req.StartTimestamp != nil {
-		return bs.getMarketDataHistoryFromDateByID(ctx, req.MarketId, startTime, pagination)
+		return t.getMarketDataHistoryFromDateByID(ctx, req.MarketId, startTime, pagination)
 	}
 
 	if req.EndTimestamp != nil {
-		return bs.getMarketDataHistoryToDateByID(ctx, req.MarketId, endTime, pagination)
+		return t.getMarketDataHistoryToDateByID(ctx, req.MarketId, endTime, pagination)
 	}
 
-	return bs.getMarketDataByID(ctx, req.MarketId)
+	return t.getMarketDataByID(ctx, req.MarketId)
 }
 
 func parseMarketDataResults(results []entities.MarketData) (*v2.GetMarketDataHistoryByIDResponse, error) {
@@ -136,8 +145,8 @@ func parseMarketDataResults(results []entities.MarketData) (*v2.GetMarketDataHis
 	return &response, nil
 }
 
-func (bs *tradingDataServiceV2) getMarketDataHistoryByID(ctx context.Context, id string, start, end time.Time, pagination entities.Pagination) (*v2.GetMarketDataHistoryByIDResponse, error) {
-	results, err := bs.marketDataStore.GetBetweenDatesByID(ctx, id, start, end, pagination)
+func (t *tradingDataServiceV2) getMarketDataHistoryByID(ctx context.Context, id string, start, end time.Time, pagination entities.Pagination) (*v2.GetMarketDataHistoryByIDResponse, error) {
+	results, err := t.marketDataStore.GetBetweenDatesByID(ctx, id, start, end, pagination)
 
 	if err != nil {
 		return nil, fmt.Errorf("could not retrieve market data history for market id: %w", err)
@@ -146,8 +155,8 @@ func (bs *tradingDataServiceV2) getMarketDataHistoryByID(ctx context.Context, id
 	return parseMarketDataResults(results)
 }
 
-func (bs *tradingDataServiceV2) getMarketDataByID(ctx context.Context, id string) (*v2.GetMarketDataHistoryByIDResponse, error) {
-	results, err := bs.marketDataStore.GetByID(ctx, id)
+func (t *tradingDataServiceV2) getMarketDataByID(ctx context.Context, id string) (*v2.GetMarketDataHistoryByIDResponse, error) {
+	results, err := t.marketDataStore.GetMarketDataByID(ctx, id)
 
 	if err != nil {
 		return nil, fmt.Errorf("could not retrieve market data history for market id: %w", err)
@@ -156,8 +165,8 @@ func (bs *tradingDataServiceV2) getMarketDataByID(ctx context.Context, id string
 	return parseMarketDataResults([]entities.MarketData{results})
 }
 
-func (bs *tradingDataServiceV2) getMarketDataHistoryFromDateByID(ctx context.Context, id string, start time.Time, pagination entities.Pagination) (*v2.GetMarketDataHistoryByIDResponse, error) {
-	results, err := bs.marketDataStore.GetFromDateByID(ctx, id, start, pagination)
+func (t *tradingDataServiceV2) getMarketDataHistoryFromDateByID(ctx context.Context, id string, start time.Time, pagination entities.Pagination) (*v2.GetMarketDataHistoryByIDResponse, error) {
+	results, err := t.marketDataStore.GetFromDateByID(ctx, id, start, pagination)
 
 	if err != nil {
 		return nil, fmt.Errorf("could not retrieve market data history for market id: %w", err)
@@ -166,8 +175,8 @@ func (bs *tradingDataServiceV2) getMarketDataHistoryFromDateByID(ctx context.Con
 	return parseMarketDataResults(results)
 }
 
-func (bs *tradingDataServiceV2) getMarketDataHistoryToDateByID(ctx context.Context, id string, end time.Time, pagination entities.Pagination) (*v2.GetMarketDataHistoryByIDResponse, error) {
-	results, err := bs.marketDataStore.GetToDateByID(ctx, id, end, pagination)
+func (t *tradingDataServiceV2) getMarketDataHistoryToDateByID(ctx context.Context, id string, end time.Time, pagination entities.Pagination) (*v2.GetMarketDataHistoryByIDResponse, error) {
+	results, err := t.marketDataStore.GetToDateByID(ctx, id, end, pagination)
 
 	if err != nil {
 		return nil, fmt.Errorf("could not retrieve market data history for market id: %w", err)
@@ -177,6 +186,10 @@ func (bs *tradingDataServiceV2) getMarketDataHistoryToDateByID(ctx context.Conte
 }
 
 func (t *tradingDataServiceV2) GetNetworkLimits(ctx context.Context, req *v2.GetNetworkLimitsRequest) (*v2.GetNetworkLimitsResponse, error) {
+	if t.networkLimitsStore == nil {
+		return nil, errors.New("sql network limits store is not available")
+	}
+
 	limits, err := t.networkLimitsStore.GetLatest(ctx)
 	if err != nil {
 		return nil, apiError(codes.Unknown, ErrGetNetworkLimits, err)

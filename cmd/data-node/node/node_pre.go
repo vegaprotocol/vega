@@ -130,6 +130,8 @@ func (l *NodeCommand) setupSQLSubscribers() {
 	l.networkLimitsSubSQL = sqlsubscribers.NewNetworkLimitSub(l.ctx, l.networkLimitsStoreSQL, l.Log)
 	l.marketDataSubSQL = sqlsubscribers.NewMarketData(l.marketDataStoreSQL, l.Log, l.conf.SQLStore.Timeout.Duration)
 	l.tradesSubSQL = sqlsubscribers.NewTradesSubscriber(l.tradeStoreSQL, l.Log)
+	l.marketCreatedSubSQL = sqlsubscribers.NewMarketCreated(l.marketsStoreSQL, l.Log)
+	l.marketUpdatedSubSQL = sqlsubscribers.NewMarketUpdated(l.marketsStoreSQL, l.Log)
 }
 
 func (l *NodeCommand) setupStorages() error {
@@ -165,6 +167,7 @@ func (l *NodeCommand) setupStorages() error {
 		l.networkLimitsStoreSQL = sqlstore.NewNetworkLimits(sqlStore)
 		l.marketDataStoreSQL = sqlstore.NewMarketData(sqlStore)
 		l.tradeStoreSQL = sqlstore.NewTrades(sqlStore)
+		l.marketsStoreSQL = sqlstore.NewMarkets(sqlStore)
 		l.sqlStore = sqlStore
 	}
 
@@ -240,7 +243,9 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 			l.orderSubSQL,
 			l.networkLimitsSubSQL,
 			l.marketDataSubSQL,
-			l.tradesSubSQL)
+			l.tradesSubSQL,
+			l.marketCreatedSubSQL,
+			l.marketUpdatedSubSQL)
 	}
 
 	l.broker, err = broker.New(l.ctx, l.Log, l.conf.Broker, l.chainInfoStore, eventSource)
