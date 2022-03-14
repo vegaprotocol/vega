@@ -109,14 +109,18 @@ func (s *StakeLinking) IntoProto() *eventspb.StakeLinking {
 func StakeLinkingFromProto(sl *eventspb.StakeLinking) *StakeLinking {
 	amt, _ := num.UintFromString(sl.Amount, 10)
 	return &StakeLinking{
-		ID:          sl.Id,
-		Type:        sl.Type,
-		TS:          sl.Ts,
-		Party:       sl.Party,
-		Amount:      amt,
-		Status:      sl.Status,
-		FinalizedAt: sl.FinalizedAt,
-		TxHash:      sl.TxHash,
+		ID:              sl.Id,
+		Type:            sl.Type,
+		TS:              sl.Ts,
+		Party:           sl.Party,
+		Amount:          amt,
+		Status:          sl.Status,
+		FinalizedAt:     sl.FinalizedAt,
+		TxHash:          sl.TxHash,
+		BlockHeight:     sl.BlockHeight,
+		BlockTime:       sl.BlockTime,
+		LogIndex:        sl.LogIndex,
+		EthereumAddress: sl.EthereumAddress,
 	}
 }
 

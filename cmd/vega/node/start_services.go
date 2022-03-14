@@ -203,7 +203,7 @@ func (n *NodeCommand) startServices(_ []string) (err error) {
 	// notify delegation, rewards, and accounting on changes in the validator pub key
 	n.topology.NotifyOnKeyChange(n.delegation.ValidatorKeyChanged, n.stakingAccounts.ValidatorKeyChanged, n.governance.ValidatorKeyChanged)
 
-	n.snapshot.AddProviders(n.checkpoint, n.collateral, n.governance, n.delegation, n.netParams, n.epochService, n.assets, n.banking,
+	n.snapshot.AddProviders(n.checkpoint, n.collateral, n.governance, n.delegation, n.netParams, n.epochService, n.assets, n.banking, n.witness,
 		n.notary, n.spam, n.stakingAccounts, n.stakeVerifier, n.limits, n.topology, n.eventForwarder, n.executionEngine, n.feesTracker, marketTracker, n.statevar, n.erc20MultiSigTopology)
 
 	// setup config reloads for all engines / services /etc

@@ -132,7 +132,10 @@ func (s *StakeVerifier) restorePendingSD(ctx context.Context, deposited []*types
 		}
 
 		s.pendingSDs = append(s.pendingSDs, pending)
-		s.witness.RestoreResource(pending, s.onEventVerified)
+		s.log.Debug("restoring witness resource")
+		if err := s.witness.RestoreResource(pending, s.onEventVerified); err != nil {
+			s.log.Panic("unable to restore pending stake deposited resource", logging.String("id", pending.ID), logging.Error(err))
+		}
 		evts = append(evts, events.NewStakeLinking(ctx, *pending.IntoStakeLinking()))
 	}
 	s.svss.changed[depositedKey] = true
@@ -156,7 +159,9 @@ func (s *StakeVerifier) restorePendingSR(ctx context.Context, removed []*types.S
 		}
 
 		s.pendingSRs = append(s.pendingSRs, pending)
-		s.witness.RestoreResource(pending, s.onEventVerified)
+		if err := s.witness.RestoreResource(pending, s.onEventVerified); err != nil {
+			s.log.Panic("unable to restore pending stake removed resource", logging.String("id", pending.ID), logging.Error(err))
+		}
 		evts = append(evts, events.NewStakeLinking(ctx, *pending.IntoStakeLinking()))
 	}
 
