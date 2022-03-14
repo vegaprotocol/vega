@@ -60,8 +60,13 @@ type SpamEngine interface {
 }
 
 type Snapshot interface {
-	Start() error
 	Info() ([]byte, int64)
+	Snapshot(ctx context.Context) ([]byte, error)
+	AddProviders(provs ...types.StateProvider)
+	CheckLoaded() (bool, error)
+	ClearAndInitialise() error
+
+	// Calls related to statesync
 	List() ([]*types.Snapshot, error)
 	ReceiveSnapshot(snap *types.Snapshot) error
 	RejectSnapshot() error
@@ -69,9 +74,6 @@ type Snapshot interface {
 	GetMissingChunks() []uint32
 	ApplySnapshot(ctx context.Context) error
 	LoadSnapshotChunk(height uint64, format, chunk uint32) (*types.RawChunk, error)
-	AddProviders(provs ...types.StateProvider)
-	Snapshot(ctx context.Context) ([]byte, error)
-	Loaded() (bool, error)
 }
 
 type StateVarEngine interface {
@@ -91,6 +93,7 @@ type App struct {
 	cBlock            string
 	chainCtx          context.Context // use this to have access to chain ID
 	blockCtx          context.Context // use this to have access to block hash + height in commit call
+	lastBlockAppHash  []byte
 	reloadCP          bool
 	version           string
 	blockchainClient  BlockchainClient
@@ -350,12 +353,27 @@ func (app *App) cancel() {
 }
 
 func (app *App) Info(_ tmtypes.RequestInfo) tmtypes.ResponseInfo {
+	if len(app.lastBlockAppHash) != 0 {
+		// we must've lost connection to tendermint for a bit, tell it where we got up to
+		height, _ := vgcontext.BlockHeightFromContext(app.blockCtx)
+		app.log.Info("ABCI service INFO requested after reconnect",
+			logging.Int64("height", height),
+			logging.String("hash", hex.EncodeToString(app.lastBlockAppHash)),
+		)
+		return tmtypes.ResponseInfo{
+			AppVersion:       1,
+			Version:          app.version,
+			LastBlockHeight:  height,
+			LastBlockAppHash: app.lastBlockAppHash,
+		}
+	}
+
 	// returns whether or not we have loaded from a snapshot (and may even do the loading)
 	old := app.broker.SetStreaming(false)
 	defer app.broker.SetStreaming(old)
-	loaded, err := app.snapshot.Loaded()
+	loaded, err := app.snapshot.CheckLoaded()
 	if err != nil {
-		app.log.Panic("failed to load from snapshot", logging.Error(err))
+		app.log.Panic("failed to check if snapshot has been loaded", logging.Error(err))
 	}
 
 	resp := tmtypes.ResponseInfo{
@@ -508,7 +526,7 @@ func (app *App) OnInitChain(req tmtypes.RequestInitChain) tmtypes.ResponseInitCh
 	// Start the snapshot engine letting it clear any pre-existing state so that if we are
 	// replaying a chain from block 0 we won't recreate snapshots for blocks as we revisit
 	// them
-	if err := app.snapshot.Start(); err != nil {
+	if err := app.snapshot.ClearAndInitialise(); err != nil {
 		app.cancel()
 		app.log.Fatal("couldn't start snapshot engine", logging.Error(err))
 	}
@@ -637,7 +655,9 @@ func (app *App) OnCommit() (resp tmtypes.ResponseCommit) {
 		resp.Data = vgcrypto.Hash(resp.Data)
 	}
 
-	// Compute the AppHash and update the response
+	// Update response and save the apphash incase we lose connection with tendermint and need to verify our
+	// current state
+	app.lastBlockAppHash = resp.Data
 	app.log.Debug("apphash calculated", logging.String("response-data", hex.EncodeToString(resp.Data)))
 	app.updateStats()
 	app.setBatchStats()

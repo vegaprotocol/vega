@@ -230,10 +230,10 @@ func (e *Engine) List() ([]*types.Snapshot, error) {
 	return snapshots, nil
 }
 
-// Start kicks the snapshot engine into its initial state setting up the DB connections
+// ClearAndInitialise kicks the snapshot engine into its initial state setting up the DB connections
 // and ensuring any pre-existing snapshot database is removed first. It is to be called
 // by a chain that is starting from block 0.
-func (e *Engine) Start() error {
+func (e *Engine) ClearAndInitialise() error {
 	p := filepath.Join(e.dbPath, SnapshotDBName+".db")
 
 	exists, err := vgfs.PathExists(p)
@@ -248,7 +248,12 @@ func (e *Engine) Start() error {
 		}
 	}
 
-	return e.initialiseTree()
+	if err := e.initialiseTree(); err != nil {
+		return err
+	}
+
+	e.log.Info("snapshot engine successfully initialised")
+	return nil
 }
 
 // this function loads snapshots in local store as though they were generated at runtime.
@@ -279,11 +284,12 @@ func (e *Engine) populateLocalVersions(versions []int) {
 // Loaded will return whether we have loaded from a snapshot. If we have loaded
 // via stat-sync we will already know, if we are loading from local store then we do that
 // node.
-func (e *Engine) Loaded() (bool, error) {
+func (e *Engine) CheckLoaded() (bool, error) {
 	// if the avl has been initialised we must have loaded it earlier via using state-sync
 	// we can go straight into loading the state into the providers
 	if e.avl != nil {
 		// OK, but let's make the engine aware of its local store versions
+		e.log.Info("applying snapshot received via statesync")
 		e.populateLocalVersions(nil)
 		return true, e.applySnap(e.ctx)
 	}
@@ -294,11 +300,11 @@ func (e *Engine) Loaded() (bool, error) {
 		return false, nil
 	}
 
-	e.log.Debug("loading snapshot for height", logging.Int64("height", startHeight))
+	e.log.Info("loading snapshot for height", logging.Int64("height", startHeight))
 	// setup AVL tree from local store
 	e.initialiseTree()
 	if startHeight < 0 {
-		return true, e.load(e.ctx)
+		return true, e.applySnapshotFromLocalStore(e.ctx)
 	}
 
 	height := uint64(startHeight)
@@ -321,7 +327,7 @@ func (e *Engine) Loaded() (bool, error) {
 		}
 		if app.AppState.Height == height {
 			e.last = e.avl.ImmutableTree
-			return true, e.load(e.ctx)
+			return true, e.applySnapshotFromLocalStore(e.ctx)
 		}
 		// we've gone past the specified height, we're not going to find the snapshot
 		// log and error
@@ -369,16 +375,17 @@ func (e *Engine) initialiseTree() error {
 	}
 
 	e.avl = tree
+
 	// Either create the first empty tree, or load the latest tree we have in the store
-	if err := e.loadTree(); err != nil {
-		e.log.Error("Failed to load AVL version", logging.Error(err))
+	if err := e.ensureTreeLoaded(); err != nil {
+		e.log.Error("Failed to create or load AVL version", logging.Error(err))
 		return err
 	}
 	e.initialised = true
 	return nil
 }
 
-func (e *Engine) loadTree() error {
+func (e *Engine) ensureTreeLoaded() error {
 	if _, err := e.avl.Load(); err != nil {
 		return err
 	}
@@ -386,7 +393,7 @@ func (e *Engine) loadTree() error {
 	return nil
 }
 
-func (e *Engine) load(ctx context.Context) error {
+func (e *Engine) applySnapshotFromLocalStore(ctx context.Context) error {
 	snap, err := types.SnapshotFromTree(e.last)
 	if err != nil {
 		return err
@@ -425,7 +432,7 @@ func (e *Engine) RejectSnapshot() error {
 // tree from the data. This call does *not* restore the state into the providers.
 func (e *Engine) ApplySnapshot(ctx context.Context) error {
 	// remove all existing snapshot and create an initial empty tree
-	e.Start()
+	e.ClearAndInitialise()
 
 	// Import the AVL tree from the snapshot data so we have a working copy
 	// that is consistent with the other nodes
@@ -434,9 +441,8 @@ func (e *Engine) ApplySnapshot(ctx context.Context) error {
 		return err
 	}
 
+	e.log.Info("snapshot imported via statesync")
 	return nil
-	// Load the snapshot data into each provider
-	// return e.applySnap(ctx)
 }
 
 func (e *Engine) applySnap(ctx context.Context) error {
@@ -675,7 +681,14 @@ func (e *Engine) Snapshot(ctx context.Context) (b []byte, errlol error) {
 	if !updated {
 		return e.lastSnapshotHash, nil
 	}
-	return e.saveCurrentTree()
+
+	snapshot, err := e.saveCurrentTree()
+	if err != nil {
+		return nil, err
+	}
+
+	e.log.Info("snapshot taken", logging.Int64("height", height))
+	return snapshot, err
 }
 
 func (e *Engine) saveCurrentTree() ([]byte, error) {

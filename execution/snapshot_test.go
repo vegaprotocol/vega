@@ -123,7 +123,7 @@ func TestLoadTerminatedMarketFromSnapshot(t *testing.T) {
 	exec2 := getEngine(t, now)
 	exec2.snapshotEngine.ReceiveSnapshot(snap1)
 	exec2.snapshotEngine.ApplySnapshot(ctx)
-	exec2.snapshotEngine.Loaded()
+	exec2.snapshotEngine.CheckLoaded()
 
 	// progress time to trigger any side effect on time ticks
 	exec.timeService.SetTime(now.Add(2 * time.Second))
@@ -303,7 +303,7 @@ func getEngine(t *testing.T, now time.Time) *snapshotTestData {
 	statsData := stats.New(log, stats.NewDefaultConfig(), "", "")
 	snapshotEngine, _ := snp.New(context.Background(), &paths.DefaultPaths{}, snp.NewDefaultConfig(), log, timeService, statsData.Blockchain)
 	snapshotEngine.AddProviders(eng)
-	snapshotEngine.Start()
+	snapshotEngine.ClearAndInitialise()
 
 	return &snapshotTestData{
 		engine:         eng,
