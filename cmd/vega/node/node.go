@@ -34,7 +34,6 @@ import (
 	"code.vegaprotocol.io/vega/monitoring"
 	"code.vegaprotocol.io/vega/netparams"
 	"code.vegaprotocol.io/vega/nodewallets"
-	nodewallet "code.vegaprotocol.io/vega/nodewallets"
 	"code.vegaprotocol.io/vega/notary"
 	"code.vegaprotocol.io/vega/oracles"
 	"code.vegaprotocol.io/vega/oracles/adaptors"
@@ -58,6 +57,10 @@ import (
 type NodeCommand struct {
 	ctx    context.Context
 	cancel context.CancelFunc
+
+	// blockchain
+	// protocol
+	// protocolUpgrade
 
 	broker *broker.Broker
 
@@ -90,7 +93,7 @@ type NodeCommand struct {
 	rewards              *rewards.Engine
 	checkpoint           *checkpoint.Engine
 	spam                 *spam.Engine
-	nodeWallets          *nodewallet.NodeWallets
+	nodeWallets          *nodewallets.NodeWallets
 	nodeWalletPassphrase string
 	builtinOracle        *oracles.Builtin
 

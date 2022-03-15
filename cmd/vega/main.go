@@ -73,6 +73,7 @@ func Main(ctx context.Context) error {
 		UnsafeResetAll,
 		SnapshotList,
 		AnnounceNode,
+		Start,
 	); err != nil {
 		_, _ = fmt.Fprintln(os.Stderr, err)
 		return err

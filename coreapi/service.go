@@ -3,6 +3,7 @@ package coreapi
 import (
 	"context"
 	"errors"
+	"sync"
 
 	apipb "code.vegaprotocol.io/protos/vega/api/v1"
 	"code.vegaprotocol.io/vega/broker"
@@ -14,10 +15,12 @@ var ErrServiceDisabled = errors.New("service disabled")
 
 type Service struct {
 	apipb.UnimplementedCoreStateServiceServer
-	ctx    context.Context
+	ctx context.Context
+	cfg Config
+	log *logging.Logger
+
+	bmu    sync.RWMutex
 	broker broker.BrokerI
-	cfg    Config
-	log    *logging.Logger
 
 	accounts     *services.Accounts
 	assets       *services.Assets
@@ -48,76 +51,73 @@ func NewService(
 	if cfg.Accounts {
 		log.Info("starting accounts core api")
 		svc.accounts = services.NewAccounts(ctx)
-		broker.SubscribeBatch(svc.accounts)
 	}
 
 	if cfg.Assets {
 		log.Info("starting assets core api")
 		svc.assets = services.NewAssets(ctx)
-		broker.SubscribeBatch(svc.assets)
 	}
 
 	if cfg.NetworkParameters {
 		log.Info("starting network parameters core api")
 		svc.netparams = services.NewNetParams(ctx)
-		broker.SubscribeBatch(svc.netparams)
 	}
 
 	if cfg.NetworkLimits {
 		log.Info("starting network limits core api")
 		svc.netlimits = services.NewNetLimits(ctx)
-		broker.SubscribeBatch(svc.netlimits)
 	}
 
 	if cfg.Parties {
 		log.Info("starting parties core api")
 		svc.parties = services.NewParties(ctx)
-		broker.SubscribeBatch(svc.parties)
 	}
 
 	if cfg.Validators {
 		log.Info("starting validators core api")
 		svc.validators = services.NewValidators(ctx)
-		broker.SubscribeBatch(svc.validators)
 	}
 
 	if cfg.Markets {
 		log.Info("starting markets core api")
 		svc.markets = services.NewMarkets(ctx)
-		broker.SubscribeBatch(svc.markets)
 	}
 
 	if cfg.Proposals {
 		log.Info("starting proposals core api")
 		svc.proposals = services.NewProposals(ctx)
-		broker.SubscribeBatch(svc.proposals)
 	}
 
 	if cfg.MarketsData {
 		log.Info("starting marketsData core api")
 		svc.marketsData = services.NewMarketsData(ctx)
-		broker.SubscribeBatch(svc.marketsData)
 	}
 
 	if cfg.Votes {
 		log.Info("starting votes core api")
 		svc.votes = services.NewVotes(ctx)
-		broker.SubscribeBatch(svc.votes)
 	}
 
 	if cfg.PartiesStake {
 		log.Info("starting parties stake core api")
 		svc.partiesStake = services.NewPartiesStake(ctx, log)
-		broker.SubscribeBatch(svc.partiesStake)
 	}
 
 	if cfg.Delegations {
 		log.Info("starting delegations core api")
 		svc.delegations = services.NewDelegations(ctx)
-		broker.SubscribeBatch(svc.delegations)
 	}
 
+	svc.subscribeAll()
+
 	return svc
+}
+
+func (s *Service) UpdateBroker(broker broker.BrokerI) {
+	s.bmu.Lock()
+	defer s.bmu.Unlock()
+	s.broker = broker
+	s.subscribeAll()
 }
 
 func (s *Service) ListAccounts(
@@ -126,6 +126,8 @@ func (s *Service) ListAccounts(
 	if !s.cfg.Accounts {
 		return nil, ErrServiceDisabled
 	}
+	s.bmu.RLock()
+	defer s.bmu.RUnlock()
 	return &apipb.ListAccountsResponse{
 		Accounts: s.accounts.List(in.Party, in.Market),
 	}, nil
@@ -137,6 +139,8 @@ func (s *Service) ListAssets(
 	if !s.cfg.Assets {
 		return nil, ErrServiceDisabled
 	}
+	s.bmu.RLock()
+	defer s.bmu.RUnlock()
 	return &apipb.ListAssetsResponse{
 		Assets: s.assets.List(in.Asset),
 	}, nil
@@ -148,6 +152,8 @@ func (s *Service) ListParties(
 	if !s.cfg.Parties {
 		return nil, ErrServiceDisabled
 	}
+	s.bmu.RLock()
+	defer s.bmu.RUnlock()
 	return &apipb.ListPartiesResponse{
 		Parties: s.parties.List(),
 	}, nil
@@ -159,6 +165,8 @@ func (s *Service) ListNetworkParameters(
 	if !s.cfg.NetworkParameters {
 		return nil, ErrServiceDisabled
 	}
+	s.bmu.RLock()
+	defer s.bmu.RUnlock()
 	return &apipb.ListNetworkParametersResponse{
 		NetworkParameters: s.netparams.List(in.NetworkParameterKey),
 	}, nil
@@ -170,6 +178,8 @@ func (s *Service) ListNetworkLimits(
 	if !s.cfg.NetworkLimits {
 		return nil, ErrServiceDisabled
 	}
+	s.bmu.RLock()
+	defer s.bmu.RUnlock()
 	return &apipb.ListNetworkLimitsResponse{
 		NetworkLimits: s.netlimits.Get(),
 	}, nil
@@ -181,6 +191,8 @@ func (s *Service) ListValidators(
 	if !s.cfg.Validators {
 		return nil, ErrServiceDisabled
 	}
+	s.bmu.RLock()
+	defer s.bmu.RUnlock()
 	return &apipb.ListValidatorsResponse{
 		Validators: s.validators.List(),
 	}, nil
@@ -192,6 +204,8 @@ func (s *Service) ListMarkets(
 	if !s.cfg.Markets {
 		return nil, ErrServiceDisabled
 	}
+	s.bmu.RLock()
+	defer s.bmu.RUnlock()
 	return &apipb.ListMarketsResponse{
 		Markets: s.markets.List(in.Market),
 	}, nil
@@ -203,6 +217,8 @@ func (s *Service) ListProposals(
 	if !s.cfg.Proposals {
 		return nil, ErrServiceDisabled
 	}
+	s.bmu.RLock()
+	defer s.bmu.RUnlock()
 	return &apipb.ListProposalsResponse{
 		Proposals: s.proposals.List(in.Proposal, in.Proposer),
 	}, nil
@@ -214,6 +230,8 @@ func (s *Service) ListVotes(
 	if !s.cfg.Votes {
 		return nil, ErrServiceDisabled
 	}
+	s.bmu.RLock()
+	defer s.bmu.RUnlock()
 	votes, err := s.votes.List(in.Proposal, in.Party)
 	return &apipb.ListVotesResponse{
 		Votes: votes,
@@ -226,6 +244,8 @@ func (s *Service) ListMarketsData(
 	if !s.cfg.MarketsData {
 		return nil, ErrServiceDisabled
 	}
+	s.bmu.RLock()
+	defer s.bmu.RUnlock()
 	return &apipb.ListMarketsDataResponse{
 		MarketsData: s.marketsData.List(in.Market),
 	}, nil
@@ -237,6 +257,8 @@ func (s *Service) ListPartiesStake(
 	if !s.cfg.PartiesStake {
 		return nil, ErrServiceDisabled
 	}
+	s.bmu.RLock()
+	defer s.bmu.RUnlock()
 	return &apipb.ListPartiesStakeResponse{
 		PartiesStake: s.partiesStake.List(in.Party),
 	}, nil
@@ -248,7 +270,63 @@ func (s *Service) ListDelegations(
 	if !s.cfg.Delegations {
 		return nil, ErrServiceDisabled
 	}
+	s.bmu.RLock()
+	defer s.bmu.RUnlock()
 	return &apipb.ListDelegationsResponse{
 		Delegations: s.delegations.List(in.Party, in.Node, in.EpochSeq),
 	}, nil
+}
+
+func (s *Service) subscribeAll() {
+	subscribers := []broker.Subscriber{}
+
+	if s.cfg.Accounts {
+		subscribers = append(subscribers, s.accounts)
+	}
+
+	if s.cfg.Assets {
+		subscribers = append(subscribers, s.assets)
+	}
+
+	if s.cfg.NetworkParameters {
+		subscribers = append(subscribers, s.netparams)
+	}
+
+	if s.cfg.NetworkLimits {
+		subscribers = append(subscribers, s.netlimits)
+	}
+
+	if s.cfg.Parties {
+		subscribers = append(subscribers, s.parties)
+	}
+
+	if s.cfg.Validators {
+		subscribers = append(subscribers, s.validators)
+	}
+
+	if s.cfg.Markets {
+		subscribers = append(subscribers, s.markets)
+	}
+
+	if s.cfg.Proposals {
+		subscribers = append(subscribers, s.proposals)
+	}
+
+	if s.cfg.MarketsData {
+		subscribers = append(subscribers, s.marketsData)
+	}
+
+	if s.cfg.Votes {
+		subscribers = append(subscribers, s.votes)
+	}
+
+	if s.cfg.PartiesStake {
+		subscribers = append(subscribers, s.partiesStake)
+	}
+
+	if s.cfg.Delegations {
+		subscribers = append(subscribers, s.delegations)
+	}
+
+	s.broker.SubscribeBatch(subscribers...)
 }

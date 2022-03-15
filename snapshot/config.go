@@ -2,6 +2,7 @@ package snapshot
 
 import (
 	"errors"
+	"fmt"
 	"os"
 
 	"code.vegaprotocol.io/shared/paths"
@@ -55,6 +56,7 @@ func (c *Config) validate(vegapath paths.Paths) (string, error) {
 		return "", nil
 	case goLevelDB:
 
+		fmt.Printf("path: %v\n", vegapath)
 		if len(c.DBPath) == 0 {
 			return vegapath.StatePathFor(paths.SnapshotStateHome), nil
 		}

@@ -41,11 +41,14 @@ type coreService struct {
 	conf Config
 
 	blockchain    Blockchain
-	evtForwarder  EvtForwarder
-	timesvc       TimeService
 	stats         *stats.Stats
 	statusChecker *monitoring.Status
-	eventService  EventService
+
+	svcMu        sync.RWMutex
+	evtForwarder EvtForwarder
+	timesvc      TimeService
+	eventService EventService
+	subCancels   []func()
 
 	chainID                  string
 	genesisTime              time.Time
@@ -54,6 +57,22 @@ type coreService struct {
 
 	netInfo   *tmctypes.ResultNetInfo
 	netInfoMu sync.RWMutex
+}
+
+func (s *coreService) UpdateProtocolServices(
+	evtforwarder EvtForwarder,
+	timesvc TimeService,
+	evtsvc EventService,
+) {
+	s.svcMu.Lock()
+	defer s.svcMu.Unlock()
+	// first cancel all subscribtions
+	for _, f := range s.subCancels {
+		f()
+	}
+	s.evtForwarder = evtforwarder
+	s.eventService = evtsvc
+	s.timesvc = timesvc
 }
 
 // no need for a mutex - we only access the config through a value receiver.
@@ -77,6 +96,8 @@ func (s *coreService) LastBlockHeight(
 // Example: "1568025900111222333" corresponds to 2019-09-09T10:45:00.111222333Z.
 func (s *coreService) GetVegaTime(ctx context.Context, _ *protoapi.GetVegaTimeRequest) (*protoapi.GetVegaTimeResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("GetVegaTime")()
+	s.svcMu.RLock()
+	defer s.svcMu.RUnlock()
 
 	return &protoapi.GetVegaTimeResponse{
 		Timestamp: s.timesvc.GetTimeNow().UnixNano(),
@@ -226,6 +247,8 @@ func (s *coreService) PropagateChainEvent(ctx context.Context, req *protoapi.Pro
 	}
 
 	ok := true
+	s.svcMu.RLock()
+	defer s.svcMu.RUnlock()
 	err = s.evtForwarder.Forward(ctx, &evt, req.PubKey)
 	if err != nil && err != evtforward.ErrEvtAlreadyExist {
 		s.log.Error("unable to forward chain event",
@@ -284,7 +307,9 @@ func (s *coreService) Statistics(ctx context.Context, _ *protoapi.StatisticsRequ
 	defer metrics.StartAPIRequestAndTimeGRPC("Statistics")()
 	// Call tendermint and related services to get information for statistics
 	// We load read-only internal statistics through each package level statistics structs
+	s.svcMu.RLock()
 	epochTime := s.timesvc.GetTimeNow()
+	s.svcMu.RUnlock()
 
 	// Call tendermint via rpc client
 	var (
@@ -464,6 +489,13 @@ func (s *coreService) ObserveEventBus(
 			filters = append(filters, events.GetPartyIDFilter(req.PartyId))
 		}
 	}
+
+	// here we add the cancel to the list of observer
+	// so if a protocol upgrade happen we can stop processing those
+	// and nicely do the upgrade
+	s.svcMu.Lock()
+	s.subCancels = append(s.subCancels, cfunc)
+	s.svcMu.Unlock()
 
 	// number of retries to -1 to have pretty much unlimited retries
 	ch, bCh := s.eventService.ObserveEvents(ctx, s.conf.StreamRetries, types, int(req.BatchSize), filters...)

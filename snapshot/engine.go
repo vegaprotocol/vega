@@ -150,6 +150,7 @@ func New(ctx context.Context, vegapath paths.Paths, conf Config, log *logging.Lo
 	log = log.Named(namedLogger)
 	log.SetLevel(conf.Level.Get())
 
+	fmt.Printf("conf: %v", conf)
 	dbPath, err := conf.validate(vegapath)
 	if err != nil {
 		return nil, err

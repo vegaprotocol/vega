@@ -46,13 +46,6 @@ func (n *NodeCommand) setupCommon(_ []string) (err error) {
 		)
 	}
 
-	// Set ulimits
-	if err = n.SetUlimits(); err != nil {
-		n.Log.Warn("Unable to set ulimits", logging.Error(err))
-	} else {
-		n.Log.Debug("Set ulimits", logging.Uint64("nofile", n.conf.UlimitNOFile))
-	}
-
 	return err
 }
 
