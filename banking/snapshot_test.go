@@ -75,19 +75,27 @@ func TestSeenSnapshotRoundTrip(t *testing.T) {
 	eng := getTestEngine(t)
 	defer eng.ctrl.Finish()
 
+	hash1, err := eng.GetHash(seenKey)
+	require.Nil(t, err)
+	eng.col.EXPECT().Deposit(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().Return(&types.TransferResponse{}, nil)
+
 	d1 := deposit(eng, "VGT1", "someparty1", num.NewUint(42))
-	err := eng.DepositBuiltinAsset(context.Background(), d1, "depositid1", 42)
+	err = eng.DepositBuiltinAsset(context.Background(), d1, "depositid1", 42)
 	assert.NoError(t, err)
+	eng.erc.f(eng.erc.r, true)
 
 	d2 := deposit(eng, "VGT2", "someparty2", num.NewUint(24))
 	err = eng.DepositBuiltinAsset(context.Background(), d2, "depositid2", 24)
 	assert.NoError(t, err)
+	eng.erc.f(eng.erc.r, true)
 
 	eng.OnTick(context.Background(), time.Now())
-	hash, err := eng.GetHash(seenKey)
+	hash2, err := eng.GetHash(seenKey)
 	require.Nil(t, err)
-	state, _, err := eng.GetState(seenKey)
+	state2, _, err := eng.GetState(seenKey)
 	require.Nil(t, err)
+
+	require.NotEqual(t, hash1, hash2)
 
 	// verify hash is consistent in the absence of change
 	hashNoChange, err := eng.GetHash(seenKey)
@@ -95,21 +103,21 @@ func TestSeenSnapshotRoundTrip(t *testing.T) {
 	stateNoChange, _, err := eng.GetState(seenKey)
 	require.Nil(t, err)
 
-	require.True(t, bytes.Equal(hash, hashNoChange))
-	require.True(t, bytes.Equal(state, stateNoChange))
+	require.True(t, bytes.Equal(hash2, hashNoChange))
+	require.True(t, bytes.Equal(state2, stateNoChange))
 
 	// reload the state
 	var seen snapshot.Payload
-	proto.Unmarshal(state, &seen)
+	proto.Unmarshal(state2, &seen)
 
 	payload := types.PayloadFromProto(&seen)
 
 	_, err = eng.LoadState(context.Background(), payload)
 	require.Nil(t, err)
 	hashPostReload, _ := eng.GetHash(seenKey)
-	require.True(t, bytes.Equal(hash, hashPostReload))
+	require.True(t, bytes.Equal(hash2, hashPostReload))
 	statePostReload, _, _ := eng.GetState(seenKey)
-	require.True(t, bytes.Equal(state, statePostReload))
+	require.True(t, bytes.Equal(state2, statePostReload))
 }
 
 func TestWithdrawlsSnapshotRoundTrip(t *testing.T) {
