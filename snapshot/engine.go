@@ -687,7 +687,7 @@ func (e *Engine) Snapshot(ctx context.Context) (b []byte, errlol error) {
 		return nil, err
 	}
 
-	e.log.Info("snapshot taken", logging.Int64("height", height))
+	e.log.Info("snapshot taken", logging.Int64("height", height), logging.String("hash", hex.EncodeToString(snapshot)))
 	return snapshot, err
 }
 
