@@ -59,7 +59,6 @@ func Main(ctx context.Context) error {
 		faucet.Faucet,
 		genesis.Genesis,
 		Init,
-		Node,
 		nodewallet.NodeWallet,
 		Verify,
 		Version,

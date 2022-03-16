@@ -58,10 +58,6 @@ type NodeCommand struct {
 	ctx    context.Context
 	cancel context.CancelFunc
 
-	// blockchain
-	// protocol
-	// protocolUpgrade
-
 	broker *broker.Broker
 
 	timeService  *vegatime.Svc

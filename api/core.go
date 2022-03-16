@@ -66,7 +66,7 @@ func (s *coreService) UpdateProtocolServices(
 ) {
 	s.svcMu.Lock()
 	defer s.svcMu.Unlock()
-	// first cancel all subscribtions
+	// first cancel all subscriptions
 	for _, f := range s.subCancels {
 		f()
 	}

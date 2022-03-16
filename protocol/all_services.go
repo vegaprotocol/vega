@@ -63,22 +63,21 @@ type allServices struct {
 
 	vegaPaths paths.Paths
 
-	feesTracker          *execution.FeesTracker
-	statevar             *statevar.Engine
-	snapshot             *snapshot.Engine
-	executionEngine      *execution.Engine
-	governance           *governance.Engine
-	collateral           *collateral.Engine
-	oracle               *oracles.Engine
-	oracleAdaptors       *adaptors.Adaptors
-	netParams            *netparams.Store
-	delegation           *delegation.Engine
-	limits               *limits.Engine
-	rewards              *rewards.Engine
-	checkpoint           *checkpoint.Engine
-	spam                 *spam.Engine
-	nodeWalletPassphrase string
-	builtinOracle        *oracles.Builtin
+	feesTracker     *execution.FeesTracker
+	statevar        *statevar.Engine
+	snapshot        *snapshot.Engine
+	executionEngine *execution.Engine
+	governance      *governance.Engine
+	collateral      *collateral.Engine
+	oracle          *oracles.Engine
+	oracleAdaptors  *adaptors.Adaptors
+	netParams       *netparams.Store
+	delegation      *delegation.Engine
+	limits          *limits.Engine
+	rewards         *rewards.Engine
+	checkpoint      *checkpoint.Engine
+	spam            *spam.Engine
+	builtinOracle   *oracles.Builtin
 
 	assets               *assets.Service
 	topology             *validators.Topology
@@ -111,7 +110,7 @@ func newServices(
 	ctx context.Context,
 	log *logging.Logger,
 	conf *config.Watcher,
-	// this is a paramter as not reloaded as part of the protocol
+	// this is a parameter as not reloaded as part of the protocol
 	nodeWallets *nodewallets.NodeWallets,
 	ethClient *ethclient.Client,
 	ethConfirmations *ethclient.EthereumConfirmations,

@@ -18,9 +18,7 @@ import (
 	"github.com/blang/semver"
 )
 
-var (
-	Version = semver.MustParse("0.1.0")
-)
+var Version = semver.MustParse("0.1.0")
 
 type Protocol struct {
 	*processor.App
@@ -104,12 +102,12 @@ func New(
 }
 
 // Start will start the protocol, this means it's ready to process
-// blocks from the blockchain
+// blocks from the blockchain.
 func (n *Protocol) Start() error {
 	return nil
 }
 
-// Stop will stop all services of the protocol
+// Stop will stop all services of the protocol.
 func (n *Protocol) Stop() error {
 	// unregister conf listeners
 	n.confWatcher.Unregister(n.confListenerIDs)
