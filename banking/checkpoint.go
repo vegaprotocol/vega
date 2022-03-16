@@ -8,8 +8,8 @@ import (
 	checkpoint "code.vegaprotocol.io/protos/vega/checkpoint/v1"
 	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
 	"code.vegaprotocol.io/vega/events"
+	"code.vegaprotocol.io/vega/libs/proto"
 	"code.vegaprotocol.io/vega/types"
-	"github.com/golang/protobuf/proto"
 )
 
 func (e *Engine) Name() types.CheckpointName {

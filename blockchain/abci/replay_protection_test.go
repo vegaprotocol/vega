@@ -8,9 +8,9 @@ import (
 
 	snapshot "code.vegaprotocol.io/protos/vega/snapshot/v1"
 	"code.vegaprotocol.io/vega/blockchain/abci"
+	"code.vegaprotocol.io/vega/libs/proto"
 	"code.vegaprotocol.io/vega/txn"
 	"code.vegaprotocol.io/vega/types"
-	"github.com/golang/protobuf/proto"
 	"github.com/stretchr/testify/require"
 )
 

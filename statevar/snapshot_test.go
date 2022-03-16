@@ -6,9 +6,9 @@ import (
 	"testing"
 
 	snapshotpb "code.vegaprotocol.io/protos/vega/snapshot/v1"
+	"code.vegaprotocol.io/vega/libs/proto"
 	gtypes "code.vegaprotocol.io/vega/types"
 	types "code.vegaprotocol.io/vega/types/statevar"
-	"github.com/golang/protobuf/proto"
 	"github.com/stretchr/testify/require"
 )
 

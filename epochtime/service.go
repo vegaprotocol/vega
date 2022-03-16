@@ -10,7 +10,7 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
 
-	"github.com/golang/protobuf/proto"
+	"code.vegaprotocol.io/vega/libs/proto"
 )
 
 type Broker interface {

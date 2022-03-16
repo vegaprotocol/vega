@@ -16,13 +16,13 @@ import (
 	"code.vegaprotocol.io/vega/integration/stubs"
 	vgcontext "code.vegaprotocol.io/vega/libs/context"
 	"code.vegaprotocol.io/vega/libs/crypto"
+	"code.vegaprotocol.io/vega/libs/proto"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/oracles"
 	snp "code.vegaprotocol.io/vega/snapshot"
 	"code.vegaprotocol.io/vega/stats"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
-	"github.com/golang/protobuf/proto"
 	"github.com/stretchr/testify/require"
 )
 

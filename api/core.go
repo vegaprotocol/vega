@@ -22,7 +22,7 @@ import (
 	"code.vegaprotocol.io/vega/vegatime"
 	"code.vegaprotocol.io/vegawallet/crypto"
 
-	"github.com/golang/protobuf/proto"
+	"code.vegaprotocol.io/vega/libs/proto"
 	"github.com/pkg/errors"
 	"github.com/tendermint/tendermint/libs/bytes"
 	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
