@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"code.vegaprotocol.io/shared/paths"
-	"code.vegaprotocol.io/vega/cmd/vega/node2"
+	"code.vegaprotocol.io/vega/cmd/vega/node"
 	"code.vegaprotocol.io/vega/config"
 	"code.vegaprotocol.io/vega/logging"
 
@@ -50,7 +50,7 @@ func (cmd *StartCmd) Execute(args []string) error {
 		}
 	}
 
-	return (&node2.NodeCommand{
+	return (&node.NodeCommand{
 		Log:         log,
 		Version:     CLIVersion,
 		VersionHash: CLIVersionHash,

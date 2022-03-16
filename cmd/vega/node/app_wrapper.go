@@ -1,4 +1,4 @@
-package node2
+package node
 
 import "github.com/tendermint/tendermint/abci/types"
 
