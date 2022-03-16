@@ -1,4 +1,4 @@
-package node
+package protocol
 
 import (
 	"code.vegaprotocol.io/vega/evtforward"

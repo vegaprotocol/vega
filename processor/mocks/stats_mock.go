@@ -257,6 +257,18 @@ func (mr *MockStatsMockRecorder) SetBlockDuration(arg0 interface{}) *gomock.Call
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetBlockDuration", reflect.TypeOf((*MockStats)(nil).SetBlockDuration), arg0)
 }
 
+// SetHash mocks base method.
+func (m *MockStats) SetHash(arg0 string) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "SetHash", arg0)
+}
+
+// SetHash indicates an expected call of SetHash.
+func (mr *MockStatsMockRecorder) SetHash(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetHash", reflect.TypeOf((*MockStats)(nil).SetHash), arg0)
+}
+
 // SetOrdersPerSecond mocks base method.
 func (m *MockStats) SetOrdersPerSecond(arg0 uint64) {
 	m.ctrl.T.Helper()
