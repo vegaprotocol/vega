@@ -9,7 +9,7 @@
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 ### 🛠 Improvements
-- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+- [5007](https://github.com/vegaprotocol/vega/issues/5007) - Run approbation as part of the CI pipeline
 
 ### 🐛 Fixes
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
