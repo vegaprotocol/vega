@@ -3067,11 +3067,6 @@ func (m *Market) tradingTerminated(ctx context.Context, tt bool) {
 	defer m.mu.Unlock()
 	m.mkt.State = types.MarketStateTradingTerminated
 	m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
-
-	sp, _ := m.tradableInstrument.Instrument.Product.SettlementPrice()
-	if sp != nil {
-		m.settlementPriceWithLock(ctx, sp)
-	}
 	m.stateChanged = true
 }
 
