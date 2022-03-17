@@ -21,7 +21,8 @@
 - [404](https://github.com/vegaprotocol/data-node/pull/404) - Migrate market data API to retrieve data from `Postgres`
 - [406](https://github.com/vegaprotocol/data-node/pull/406) - Add a basic integration test
 - [412](https://github.com/vegaprotocol/data-node/pull/412) - Migrate markets API to retrieve data from `Postgres`
-- [407](https://github.com/vegaprotocol/data-node/pull/407) - Add `positionDecimalPlaces` to market `graphQL`
+- [407](https://github.com/vegaprotocol/data-node/pull/407) - Add `positionDecimalPlaces` to market `graphQL` 
+- [420](https://github.com/vegaprotocol/data-node/pull/420) - Migrate rewards, delegations and epochs to `Postgres`
 
 ### 🐛 Fixes
 - [411](https://github.com/vegaprotocol/data-node/pull/411) - Fix a couple of incompatibilities in `data-node v2`
