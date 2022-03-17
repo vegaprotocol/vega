@@ -14,6 +14,7 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/txn"
 	"code.vegaprotocol.io/vega/types/num"
+
 	"github.com/cenkalti/backoff"
 	"github.com/golang/protobuf/proto"
 )

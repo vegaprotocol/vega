@@ -6,9 +6,9 @@ import (
 
 	snapshot "code.vegaprotocol.io/protos/vega/snapshot/v1"
 	"code.vegaprotocol.io/vega/libs/crypto"
+	"code.vegaprotocol.io/vega/libs/proto"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
-	"github.com/golang/protobuf/proto"
 )
 
 func newTimestampedOISnapshotFromProto(s *snapshot.TimestampedOpenInterest) timestampedOI {
@@ -31,7 +31,6 @@ type SnapshotEngine struct {
 	data    []byte
 	stopped bool
 	changed bool
-	buf     *proto.Buffer
 	key     string
 	keys    []string
 }
@@ -42,9 +41,6 @@ func NewSnapshotEngine(
 	marketID string,
 	positionFactor num.Decimal,
 ) *SnapshotEngine {
-	buf := proto.NewBuffer(nil)
-	buf.SetDeterministic(true)
-
 	key := (&types.PayloadLiquidityTarget{
 		Target: &snapshot.LiquidityTarget{MarketId: marketID},
 	}).Key()
@@ -52,7 +48,6 @@ func NewSnapshotEngine(
 	return &SnapshotEngine{
 		Engine:  NewEngine(parameters, oiCalc, marketID, positionFactor),
 		changed: true,
-		buf:     buf,
 		key:     key,
 		keys:    []string{key},
 	}
@@ -184,12 +179,12 @@ func (e *SnapshotEngine) serialise() ([]byte, []byte, error) {
 		},
 	}
 
-	e.buf.Reset()
-	if err := e.buf.Marshal(p); err != nil {
+	var err error
+	e.data, err = proto.Marshal(p)
+	if err != nil {
 		return nil, nil, err
 	}
 
-	e.data = e.buf.Bytes()
 	e.hash = crypto.Hash(e.data)
 	e.changed = false
 

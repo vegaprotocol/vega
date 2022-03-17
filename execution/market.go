@@ -35,7 +35,7 @@ import (
 	"code.vegaprotocol.io/vega/types/num"
 	"code.vegaprotocol.io/vega/types/statevar"
 
-	"github.com/golang/protobuf/proto"
+	"code.vegaprotocol.io/vega/libs/proto"
 )
 
 // InitialOrderVersion is set on `Version` field for every new order submission read from the network.

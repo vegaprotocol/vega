@@ -10,7 +10,7 @@ import (
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
 
-	"github.com/golang/protobuf/proto"
+	"code.vegaprotocol.io/vega/libs/proto"
 )
 
 type SnapshotEngine struct {
@@ -20,18 +20,14 @@ type SnapshotEngine struct {
 	data    []byte
 	changed bool
 	stopped bool
-	buf     *proto.Buffer
 }
 
 func NewSnapshotEngine(
 	log *logging.Logger, config Config, marketID string, broker Broker) *SnapshotEngine {
-	buf := proto.NewBuffer(nil)
-	buf.SetDeterministic(true)
 	return &SnapshotEngine{
 		Engine:  New(log, config, marketID, broker),
 		pl:      types.Payload{},
 		changed: true,
-		buf:     buf,
 		stopped: false,
 	}
 }
@@ -179,13 +175,12 @@ func (e *SnapshotEngine) serialise() ([]byte, []byte, error) {
 		},
 	}
 
-	e.buf.Reset()
-	err := e.buf.Marshal(e.pl.IntoProto())
+	var err error
+	e.data, err = proto.Marshal(e.pl.IntoProto())
 	if err != nil {
 		return nil, nil, err
 	}
 
-	e.data = e.buf.Bytes()
 	e.hash = crypto.Hash(e.data)
 	e.changed = false
 

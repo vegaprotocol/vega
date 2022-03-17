@@ -9,8 +9,8 @@ import (
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
 
+	"code.vegaprotocol.io/vega/libs/proto"
 	"github.com/golang/mock/gomock"
-	"github.com/golang/protobuf/proto"
 	"github.com/stretchr/testify/require"
 )
 
