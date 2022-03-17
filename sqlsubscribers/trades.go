@@ -1,6 +1,7 @@
 package sqlsubscribers
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -17,6 +18,7 @@ type TradeEvent interface {
 
 type TradesStore interface {
 	Add(*entities.Trade) error
+	OnTimeUpdateEvent(ctx context.Context) error
 }
 
 type TradeSubscriber struct {
@@ -43,6 +45,7 @@ func (ts *TradeSubscriber) Push(evt events.Event) {
 	case TimeUpdateEvent:
 		ts.sequenceNum = evt.Sequence()
 		ts.vegaTime = e.Time()
+		ts.store.OnTimeUpdateEvent(evt.Context())
 	case TradeEvent:
 		ts.sequenceNum = evt.Sequence()
 		ts.consume(e)
@@ -52,12 +55,15 @@ func (ts *TradeSubscriber) Push(evt events.Event) {
 	}
 }
 
-func (ts *TradeSubscriber) consume(ae TradeEvent) {
+func (ts *TradeSubscriber) consume(ae TradeEvent) error {
 	trade := ae.Trade()
 	err := ts.addTrade(&trade, ts.vegaTime, ts.sequenceNum)
+
 	if err != nil {
-		ts.log.Error("adding trade", logging.Error(err))
+		return fmt.Errorf("failed to consume trade:%w", err)
 	}
+
+	return nil
 }
 
 func (ts *TradeSubscriber) addTrade(t *types.Trade, vegaTime time.Time, blockSeqNumber uint64) error {

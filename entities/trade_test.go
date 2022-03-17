@@ -7,7 +7,6 @@ import (
 	"code.vegaprotocol.io/data-node/entities"
 	"code.vegaprotocol.io/protos/vega"
 
-	"github.com/holiman/uint256"
 	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/assert"
 )
@@ -16,11 +15,10 @@ func TestProtoFromTrade(t *testing.T) {
 	vegaTime := time.Now()
 	priceString := "1000035452"
 	price, _ := decimal.NewFromString(priceString)
-	sizeInt := uint64(5)
-	size := decimal.NewFromInt(int64(sizeInt))
 
 	idString := "BC2001BDDAC588F8AAAE0D9BEC3D6881A447B888447E5D0A9DE92D149BA4E877"
 	marketIdString := "8cc0e020c0bc2f9eba77749d81ecec8283283b85941722c2cb88318aaf8b8cd8"
+	size := uint64(5)
 	buyerIdString := "2e4f34a38204a2a155be678e670903ed8df96e813700729deacd3daf7e55039e"
 	sellerIdString := "8b6be1a03cc4d529f682887a78b66e6879d17f81e2b37356ca0acbc5d5886eb8"
 	buyOrderIdString := "CF951606211775C43449807FE15F908704A85C514D65D549D67BBD6B5EEF66BB"
@@ -54,7 +52,7 @@ func TestProtoFromTrade(t *testing.T) {
 	assert.Equal(t, idString, p.Id)
 	assert.Equal(t, marketIdString, p.MarketId)
 	assert.Equal(t, priceString, p.Price)
-	assert.Equal(t, sizeInt, p.Size)
+	assert.Equal(t, size, p.Size)
 	assert.Equal(t, buyerIdString, p.Buyer)
 	assert.Equal(t, sellerIdString, p.Seller)
 	assert.Equal(t, vega.Side_SIDE_BUY, p.Aggressor)
@@ -100,6 +98,7 @@ func TestTradeFromProto(t *testing.T) {
 		t.Fatalf("failed to convert proto to trade:%s", err)
 	}
 
+	assert.Equal(t, testVegaTime.Add(5*time.Microsecond), trade.SyntheticTime)
 	assert.Equal(t, testVegaTime, trade.VegaTime)
 	assert.Equal(t, uint64(5), trade.SeqNum)
 
@@ -107,7 +106,7 @@ func TestTradeFromProto(t *testing.T) {
 	assert.Equal(t, tradeEventProto.MarketId, trade.MarketID.String())
 	price, _ := decimal.NewFromString(tradeEventProto.Price)
 	assert.Equal(t, price, trade.Price)
-	size := decimal.NewFromUint(uint256.NewInt(tradeEventProto.Size))
+	size := tradeEventProto.Size
 	assert.Equal(t, size, trade.Size)
 	assert.Equal(t, tradeEventProto.Buyer, trade.Buyer.String())
 	assert.Equal(t, tradeEventProto.Seller, trade.Seller.String())

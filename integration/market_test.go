@@ -21,10 +21,14 @@ func TestMarkets(t *testing.T) {
 		"OrderTrades":      "{ markets{ id, trades{ id, price, size, createdAt, market{ id }, type, buyOrder, sellOrder, buyer{id}, seller{id}, aggressor, buyerAuctionBatch, sellerAuctionBatch } } }",
 		"OrderBuyFees":     "{ markets{ id, trades{ id, buyerFee { makerFee, infrastructureFee, liquidityFee } } } }",
 		"OrderSellFees":    "{ markets{ id, trades{ id, sellerFee { makerFee, infrastructureFee, liquidityFee } } } }",
-		"RiskFactor":       "{ markets { riskFactors { market, short, long } } }",
+		"Candles1Minute":   "{ markets{ id, candles(since : \"2000-01-01T00:00:00Z\",interval : I1M)  {  timestamp, datetime, high, low, open, close, volume, interval} } }",
+		"Candles5Minute":   "{ markets{ id, candles(since : \"2000-01-01T00:00:00Z\",interval : I5M)  {  timestamp, datetime, high, low, open, close, volume, interval} } }",
+		"Candles15Minute":  "{ markets{ id, candles(since : \"2000-01-01T00:00:00Z\",interval : I15M)  {  timestamp, datetime, high, low, open, close, volume, interval} } }",
+
+		"RiskFactor": "{ markets { riskFactors { market, short, long } } }",
 		// TODO - accounts fails, but I think it is the old API which has wrong market balances
 		//"Accounts": "{ markets{ id, accounts { balance, asset {id}, type, market {id}, } } }",
-		// TODO: Market depth / data / candles / liquidity provisions / timestamps
+		// TODO: Market depth / data / liquidity provisions / timestamps
 	}
 
 	for name, query := range queries {

@@ -81,7 +81,9 @@ var (
 	// RiskService...
 	ErrRiskServiceGetMarginLevelsByID = errors.New("failed to get margin levels")
 	// CandleService...
-	ErrCandleServiceGetCandles = errors.New("failed to get candles")
+	ErrCandleServiceGetCandleData       = errors.New("failed to get candle data")
+	ErrCandleServiceSubscribeToCandles  = errors.New("failed to subscribe to candle data")
+	ErrCandleServiceGetCandlesForMarket = errors.New("failed to get candles for market")
 	// PartyService...
 	ErrPartyServiceGetAll  = errors.New("failed to get parties")
 	ErrPartyServiceGetByID = errors.New("failed to get party for ID")
@@ -151,7 +153,7 @@ var errorMap = map[string]int32{
 	ErrPartyServiceGetAll.Error():  50001,
 	ErrPartyServiceGetByID.Error(): 50002,
 	// Candles
-	ErrCandleServiceGetCandles.Error(): 60001,
+	ErrCandleServiceGetCandleData.Error(): 60001,
 	// Risk
 	ErrRiskServiceGetMarginLevelsByID.Error(): 70001,
 	// Accounts

@@ -5,11 +5,14 @@ import (
 	"fmt"
 
 	"code.vegaprotocol.io/data-node/entities"
+
 	"github.com/georgysavva/scany/pgxscan"
+	"github.com/jackc/pgx/v4"
 )
 
 type Trades struct {
 	*SQLStore
+	trades []*entities.Trade
 }
 
 func NewTrades(sqlStore *SQLStore) *Trades {
@@ -19,38 +22,63 @@ func NewTrades(sqlStore *SQLStore) *Trades {
 	return t
 }
 
-// Add inserts a row to the trades table.
+func (ts *Trades) OnTimeUpdateEvent(ctx context.Context) error {
+	var rows [][]interface{}
+	for _, t := range ts.trades {
+		rows = append(rows, []interface{}{
+			t.SyntheticTime,
+			t.VegaTime,
+			t.SeqNum,
+			t.ID,
+			t.MarketID,
+			t.Price,
+			t.Size,
+			t.Buyer,
+			t.Seller,
+			t.Aggressor,
+			t.BuyOrder,
+			t.SellOrder,
+			t.Type,
+			t.BuyerMakerFee,
+			t.BuyerInfrastructureFee,
+			t.BuyerLiquidityFee,
+			t.SellerMakerFee,
+			t.SellerInfrastructureFee,
+			t.SellerLiquidityFee,
+			t.BuyerAuctionBatch,
+			t.SellerAuctionBatch,
+		})
+	}
+
+	if rows != nil {
+		copyCount, err := ts.pool.CopyFrom(
+			ctx,
+			pgx.Identifier{"trades"},
+			[]string{
+				"synthetic_time", "vega_time", "seq_num", "id", "market_id", "price", "size", "buyer", "seller",
+				"aggressor", "buy_order", "sell_order", "type", "buyer_maker_fee", "buyer_infrastructure_fee",
+				"buyer_liquidity_fee", "seller_maker_fee", "seller_infrastructure_fee", "seller_liquidity_fee",
+				"buyer_auction_batch", "seller_auction_batch",
+			},
+			pgx.CopyFromRows(rows),
+		)
+		if err != nil {
+			return fmt.Errorf("failed to copy trades into database:%w", err)
+		}
+
+		if copyCount != int64(len(rows)) {
+			return fmt.Errorf("copied %d rows into the database, expected to copy %d", copyCount, len(rows))
+		}
+	}
+
+	ts.trades = nil
+
+	return nil
+}
+
 func (ts *Trades) Add(t *entities.Trade) error {
-	ctx := context.Background()
-
-	_, err := ts.pool.Exec(ctx,
-		`INSERT INTO trades(vega_time, seq_num, id, market_id, price, size, buyer, seller, aggressor, buy_order, 
-				sell_order, type, buyer_maker_fee, buyer_infrastructure_fee, buyer_liquidity_fee, 
-                seller_maker_fee, seller_infrastructure_fee, seller_liquidity_fee,
-				buyer_auction_batch, seller_auction_batch)
-         		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)`,
-		t.VegaTime,
-		t.SeqNum,
-		t.ID,
-		t.MarketID,
-		t.Price,
-		t.Size,
-		t.Buyer,
-		t.Seller,
-		t.Aggressor,
-		t.BuyOrder,
-		t.SellOrder,
-		t.Type,
-		t.BuyerMakerFee,
-		t.BuyerInfrastructureFee,
-		t.BuyerLiquidityFee,
-		t.SellerMakerFee,
-		t.SellerInfrastructureFee,
-		t.SellerLiquidityFee,
-		t.BuyerAuctionBatch,
-		t.SellerAuctionBatch)
-
-	return err
+	ts.trades = append(ts.trades, t)
+	return nil
 }
 
 func (ts *Trades) GetByMarket(ctx context.Context, market string, p entities.Pagination) ([]entities.Trade, error) {
@@ -91,32 +119,15 @@ func (ts *Trades) queryTradesWithMarketFilter(ctx context.Context, query string,
 	return trades, nil
 }
 
-func (os *Trades) queryTrades(ctx context.Context, query string, args []interface{}, p *entities.Pagination) ([]entities.Trade, error) {
+func (ts *Trades) queryTrades(ctx context.Context, query string, args []interface{}, p *entities.Pagination) ([]entities.Trade, error) {
 	if p != nil {
-		query, args = paginateTradeQuery(query, args, *p)
+		query, args = orderAndPaginateQuery(query, []string{"synthetic_time"}, *p, args...)
 	}
 
 	var trades []entities.Trade
-	err := pgxscan.Select(ctx, os.pool, &trades, query, args...)
+	err := pgxscan.Select(ctx, ts.pool, &trades, query, args...)
 	if err != nil {
 		return nil, fmt.Errorf("querying trades: %w", err)
 	}
 	return trades, nil
-}
-
-func paginateTradeQuery(query string, args []interface{}, p entities.Pagination) (string, []interface{}) {
-	dir := "ASC"
-	if p.Descending {
-		dir = "DESC"
-	}
-
-	var limit interface{} = nil
-	if p.Limit != 0 {
-		limit = p.Limit
-	}
-
-	query = fmt.Sprintf(" %s ORDER BY vega_time %s, seq_num %s LIMIT %s OFFSET %s",
-		query, dir, dir, nextBindVar(&args, limit), nextBindVar(&args, p.Skip))
-
-	return query, args
 }

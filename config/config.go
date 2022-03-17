@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"os"
 
+	"code.vegaprotocol.io/data-node/candlesv2"
+
 	"code.vegaprotocol.io/data-node/accounts"
 	"code.vegaprotocol.io/data-node/api"
 	"code.vegaprotocol.io/data-node/assets"
@@ -45,6 +47,7 @@ type Config struct {
 	API               api.Config         `group:"API" namespace:"api"`
 	Accounts          accounts.Config    `group:"Accounts" namespace:"accounts"`
 	Candles           candles.Config     `group:"Candles" namespace:"candles"`
+	CandlesV2         candlesv2.Config   `group:"CandlesV2" namespace:"candlesv2"`
 	Logging           logging.Config     `group:"Logging" namespace:"logging"`
 	Markets           markets.Config     `group:"Markets" namespace:"markets"`
 	Oracles           oracles.Config     `group:"Oracles" namespace:"oracles"`
@@ -90,6 +93,7 @@ func NewDefaultConfig() Config {
 		Markets:           markets.NewDefaultConfig(),
 		Parties:           parties.NewDefaultConfig(),
 		Candles:           candles.NewDefaultConfig(),
+		CandlesV2:         candlesv2.NewDefaultConfig(),
 		Risk:              risk.NewDefaultConfig(),
 		Storage:           storage.NewDefaultConfig(),
 		SQLStore:          sqlstore.NewDefaultConfig(),

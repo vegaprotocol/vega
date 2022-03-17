@@ -124,5 +124,4 @@ func TestDelegations(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, expected, actual) // Explicitly check the order on this one
 	})
-
 }

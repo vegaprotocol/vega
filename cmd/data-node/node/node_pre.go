@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"code.vegaprotocol.io/data-node/candlesv2"
+
 	"code.vegaprotocol.io/data-node/accounts"
 	"code.vegaprotocol.io/data-node/assets"
 	"code.vegaprotocol.io/data-node/broker"
@@ -177,7 +179,6 @@ func (l *NodeCommand) setupStorages() error {
 		l.orderStoreSQL = sqlstore.NewOrders(sqlStore)
 		l.networkLimitsStoreSQL = sqlstore.NewNetworkLimits(sqlStore)
 		l.marketDataStoreSQL = sqlstore.NewMarketData(sqlStore)
-		l.tradeStoreSQL = sqlstore.NewTrades(sqlStore)
 		l.rewardStoreSQL = sqlstore.NewRewards(sqlStore)
 		l.marketsStoreSQL = sqlstore.NewMarkets(sqlStore)
 		l.delegationStoreSQL = sqlstore.NewDelegations(sqlStore)
@@ -191,6 +192,13 @@ func (l *NodeCommand) setupStorages() error {
 		l.netParamStoreSQL = sqlstore.NewNetworkParameters(sqlStore)
 		l.checkpointStoreSQL = sqlstore.NewCheckpoints(sqlStore)
 
+		candleStore, err := sqlstore.NewCandles(l.ctx, sqlStore, l.conf.CandlesV2.CandleStore)
+		if err != nil {
+			return fmt.Errorf("failed to create candles store: %w", err)
+		}
+		l.candleServiceV2 = candlesv2.NewService(l.ctx, l.Log, l.conf.CandlesV2, candleStore)
+
+		l.tradeStoreSQL = sqlstore.NewTrades(sqlStore)
 		l.sqlStore = sqlStore
 	}
 
