@@ -705,6 +705,14 @@ func (m *Market) repriceLiquidityOrder(
 	return m.adjustPriceRange(po, side, price)
 }
 
+func (m *Market) scaleOffsetAsset(offset *num.Uint) *num.Uint {
+	return num.Zero().Mul(offset, m.priceFactor)
+}
+
+func (m *Market) scaleOffsetToMarket(offset *num.Uint) *num.Uint {
+	return num.Zero().Div(offset, m.priceFactor)
+}
+
 func (m *Market) adjustPriceRange(po *types.PeggedOrder, side types.Side, price *num.Uint) (p *num.Uint, _ *types.PeggedOrder, _ error) {
 	// now from here, we will be adjusting the offset
 	// to ensure the price is always in the range [minPrice, maxPrice]
@@ -736,7 +744,7 @@ func (m *Market) adjustPriceRange(po *types.PeggedOrder, side types.Side, price 
 	// this is handling bestAsk / mid for ASK.
 	if side == types.SideSell {
 		// that's our initial price with our offset
-		basePrice := num.Sum(price, po.Offset)
+		basePrice := num.Sum(price, m.scaleOffsetAsset(po.Offset))
 		// now if this price+offset is < to maxPrice,
 		// nothing needs to be changed. we return
 		// both the current price, and the offset
@@ -760,8 +768,7 @@ func (m *Market) adjustPriceRange(po *types.PeggedOrder, side types.Side, price 
 				}
 			}
 			// ensure the offset takes into account the decimal places
-			offset := num.Zero().Mul(po.Offset, m.priceFactor)
-			return num.Sum(price, offset), po, nil
+			return num.Sum(price, m.scaleOffsetAsset(po.Offset)), po, nil
 		}
 
 		// now our basePrice is outside range.
@@ -771,7 +778,7 @@ func (m *Market) adjustPriceRange(po *types.PeggedOrder, side types.Side, price 
 		if price.LT(maxP) {
 			// this is the case where maxPrice is > to price,
 			// then we need to adapt the offset
-			po.Offset = num.Zero().Sub(maxP, price)
+			po.Offset = m.scaleOffsetToMarket(num.Zero().Sub(maxP, price))
 			// and our price is the maxPrice
 			return maxP, po, nil
 		}
@@ -789,14 +796,14 @@ func (m *Market) adjustPriceRange(po *types.PeggedOrder, side types.Side, price 
 				po.Offset = num.Zero()
 			}
 		}
-		offset := num.Zero().Mul(po.Offset, m.priceFactor)
-		return num.Sum(price, offset), po, nil
+		return num.Sum(price, m.scaleOffsetAsset(po.Offset)), po, nil
 	}
 
 	// This is handling bestBid / mid for BID
 	// first the case where we are sure to be able to price
-	if price.GT(po.Offset) {
-		basePrice := num.Zero().Sub(price, po.Offset)
+	offset := m.scaleOffsetAsset(po.Offset)
+	if price.GT(offset) {
+		basePrice := num.Zero().Sub(price, offset)
 
 		// this is the case where our price is correct
 		// at this point our basePrice should not be 0
@@ -821,16 +828,15 @@ func (m *Market) adjustPriceRange(po *types.PeggedOrder, side types.Side, price 
 					po.Offset = num.Zero()
 				}
 			}
-			offset := num.Zero().Mul(po.Offset, m.priceFactor)
-			return price.Sub(price, offset), po, nil
+			return price.Sub(price, m.scaleOffsetAsset(po.Offset)), po, nil
 		}
 
 		// now this is the case where basePrice is < minPrice
 		// and minPrice is non-negative + inferior to bestBid
 		if !minP.IsZero() && minP.LT(price) {
-			po.Offset = po.Offset.Sub(price, minP)
-
-			return price.Sub(price, po.Offset), po, nil
+			offset = po.Offset.Sub(price, minP)
+			po.Offset = m.scaleOffsetToMarket(offset)
+			return price.Sub(price, offset), po, nil
 		}
 
 		// now we are going to handle the case where
@@ -848,8 +854,7 @@ func (m *Market) adjustPriceRange(po *types.PeggedOrder, side types.Side, price 
 				po.Offset = num.Zero()
 			}
 		}
-		offset := num.Zero().Mul(po.Offset, m.priceFactor)
-		return price.Sub(price, offset), po, nil
+		return price.Sub(price, m.scaleOffsetAsset(po.Offset)), po, nil
 	}
 
 	// now at this point we know that price - offset
@@ -865,13 +870,12 @@ func (m *Market) adjustPriceRange(po *types.PeggedOrder, side types.Side, price 
 		case types.PeggedReferenceMid:
 			po.Offset.SetUint64(1)
 		}
-		offset := num.Zero().Mul(po.Offset, m.priceFactor)
-		return price.Sub(price, offset), po, nil
+		return price.Sub(price, m.scaleOffsetAsset(po.Offset)), po, nil
 	}
 
 	// this is the last case where we can use the minPrice
 	off := num.Zero().Sub(price, minP)
-	po.Offset = off.Clone()
+	po.Offset = m.scaleOffsetToMarket(off)
 	return price.Sub(price, off), po, nil
 }
 
