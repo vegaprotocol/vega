@@ -95,6 +95,7 @@ type GRPCServer struct {
 	marketsStore       *sqlstore.Markets
 	delegationsStore   *sqlstore.Delegations
 	epochStore         *sqlstore.Epochs
+	depositsStore      *sqlstore.Deposits
 
 	eventObserver *eventObserver
 
@@ -146,6 +147,7 @@ func NewGRPCServer(
 	marketsStore *sqlstore.Markets,
 	delegationStore *sqlstore.Delegations,
 	epochStore *sqlstore.Epochs,
+	depositsStore *sqlstore.Deposits,
 ) *GRPCServer {
 	// setup logger
 	log = log.Named(namedLogger)
@@ -194,6 +196,7 @@ func NewGRPCServer(
 		marketsStore:            marketsStore,
 		delegationsStore:        delegationStore,
 		epochStore:              epochStore,
+		depositsStore:           depositsStore,
 		eventObserver: &eventObserver{
 			log:          log,
 			eventService: eventService,
@@ -348,6 +351,7 @@ func (g *GRPCServer) Start(ctx context.Context, lis net.Listener) error {
 			marketsStore:       g.marketsStore,
 			delegationStore:    g.delegationsStore,
 			epochStore:         g.epochStore,
+			depositsStore:      g.depositsStore,
 		}
 	} else {
 		g.tradingDataService = tradingDataSvc

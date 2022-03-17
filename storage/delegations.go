@@ -137,6 +137,9 @@ func (s *Delegations) notifyWithLock(de pb.Delegation) {
 func (s *Delegations) GetAllDelegations(skip, limit uint64, descending bool) ([]*pb.Delegation, error) {
 	delegations := []*pb.Delegation{}
 
+	s.mut.RLock()
+	defer s.mut.RUnlock()
+
 	for epoch, epochDelegations := range s.epochToPartyDelegations {
 		for party, partyDelegations := range epochDelegations {
 			for node, amount := range partyDelegations {
@@ -159,6 +162,9 @@ func (s *Delegations) GetAllDelegationsOnEpoch(
 	skip, limit uint64, descending bool,
 ) ([]*pb.Delegation, error) {
 	delegations := []*pb.Delegation{}
+
+	s.mut.RLock()
+	defer s.mut.RUnlock()
 
 	epochDelegations, ok := s.epochToPartyDelegations[epochSeq]
 	if !ok {
@@ -185,6 +191,9 @@ func (s *Delegations) GetNodeDelegations(
 ) ([]*pb.Delegation, error) {
 	delegations := []*pb.Delegation{}
 
+	s.mut.RLock()
+	defer s.mut.RUnlock()
+
 	for epoch, epochDelegations := range s.epochToPartyDelegations {
 		for party, partyDelegations := range epochDelegations {
 			for node, amount := range partyDelegations {
@@ -207,6 +216,9 @@ func (s *Delegations) GetNodeDelegations(
 //GetNodeDelegationsOnEpoch returns the delegations to a node by all parties at a given epoch
 func (s *Delegations) GetNodeDelegationsOnEpoch(nodeID string, epochSeq string, skip, limit uint64, descending bool) ([]*pb.Delegation, error) {
 	delegations := []*pb.Delegation{}
+
+	s.mut.RLock()
+	defer s.mut.RUnlock()
 
 	epochDelegations, ok := s.epochToPartyDelegations[epochSeq]
 	if !ok {
@@ -234,6 +246,9 @@ func (s *Delegations) GetNodeDelegationsOnEpoch(nodeID string, epochSeq string, 
 func (s *Delegations) GetPartyDelegations(party string, skip, limit uint64, descending bool) ([]*pb.Delegation, error) {
 	delegations := []*pb.Delegation{}
 
+	s.mut.RLock()
+	defer s.mut.RUnlock()
+
 	for epoch, epochDelegations := range s.epochToPartyDelegations {
 		partyDelAtEpoch, ok := epochDelegations[party]
 		if !ok {
@@ -256,6 +271,9 @@ func (s *Delegations) GetPartyDelegations(party string, skip, limit uint64, desc
 //GetPartyDelegationsOnEpoch returns all delegation by party on a given epoch
 func (s *Delegations) GetPartyDelegationsOnEpoch(party string, epochSeq string, skip, limit uint64, descending bool) ([]*pb.Delegation, error) {
 	delegations := []*pb.Delegation{}
+
+	s.mut.RLock()
+	defer s.mut.RUnlock()
 
 	epochDelegations, ok := s.epochToPartyDelegations[epochSeq]
 	if !ok {
@@ -286,6 +304,9 @@ func (s *Delegations) GetPartyNodeDelegations(
 ) ([]*pb.Delegation, error) {
 	delegations := []*pb.Delegation{}
 
+	s.mut.RLock()
+	defer s.mut.RUnlock()
+
 	for epoch, epochDelegations := range s.epochToPartyDelegations {
 		partyDelegations, ok := epochDelegations[party]
 		if !ok {
@@ -312,6 +333,9 @@ func (s *Delegations) GetPartyNodeDelegations(
 //GetPartyNodeDelegationsOnEpoch returns the delegations from party to node at epoch
 func (s *Delegations) GetPartyNodeDelegationsOnEpoch(party, node, epochSeq string) ([]*pb.Delegation, error) {
 	delegations := []*pb.Delegation{}
+
+	s.mut.RLock()
+	defer s.mut.RUnlock()
 
 	epochDelegations, ok := s.epochToPartyDelegations[epochSeq]
 	if !ok {

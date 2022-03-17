@@ -25,6 +25,7 @@ type tradingDataDelegator struct {
 	marketsStore    *sqlstore.Markets
 	delegationStore *sqlstore.Delegations
 	epochStore      *sqlstore.Epochs
+	depositsStore   *sqlstore.Deposits
 }
 
 var defaultEntityPagination = entities.Pagination{
@@ -671,5 +672,36 @@ func (t *tradingDataDelegator) Markets(ctx context.Context, _ *protoapi.MarketsR
 
 	return &protoapi.MarketsResponse{
 		Markets: results,
+	}, nil
+}
+
+func (t *tradingDataDelegator) Deposit(ctx context.Context, req *protoapi.DepositRequest) (*protoapi.DepositResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("Deposit SQL")()
+	if len(req.Id) <= 0 {
+		return nil, ErrMissingDepositID
+	}
+	deposit, err := t.depositsStore.GetByID(ctx, req.Id)
+	if err != nil {
+		return nil, apiError(codes.NotFound, err)
+	}
+	return &protoapi.DepositResponse{
+		Deposit: deposit.ToProto(),
+	}, nil
+}
+
+func (t *tradingDataDelegator) Deposits(ctx context.Context, req *protoapi.DepositsRequest) (*protoapi.DepositsResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("Deposits SQL")()
+	if len(req.PartyId) <= 0 {
+		return nil, ErrMissingPartyID
+	}
+
+	// current API doesn't support pagination, but we will need to support it for v2
+	deposits := t.depositsStore.GetByParty(ctx, req.PartyId, false, entities.Pagination{})
+	out := make([]*vega.Deposit, 0, len(deposits))
+	for _, v := range deposits {
+		out = append(out, v.ToProto())
+	}
+	return &protoapi.DepositsResponse{
+		Deposits: out,
 	}, nil
 }

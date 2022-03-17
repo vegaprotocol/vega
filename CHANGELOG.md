@@ -9,7 +9,7 @@
 - [](https://github.com/vegaprotocol/data-node/pull/xxx) -
 
 ### 🛠  Improvements
-- [](https://github.com/vegaprotocol/data-node/pull/xxx) -
+- [430](https://github.com/vegaprotocol/data-node/pull/430) - Migrate deposit API to retrieve data from `Postgres`
 
 ### 🐛 Fixes
 - [](https://github.com/vegaprotocol/data-node/pull/xxx) -

@@ -4,12 +4,14 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"path/filepath"
+	"sync"
 
 	"code.vegaprotocol.io/data-node/logging"
 	vgfs "code.vegaprotocol.io/shared/libs/fs"
 )
 
 type ChainInfo struct {
+	mutex           sync.Mutex
 	config          Config
 	jsonFile        string
 	log             *logging.Logger
@@ -69,11 +71,17 @@ func (c *ChainInfo) SetChainID(chainID string) error {
 		c.onCriticalError()
 	}
 	// save the stored chain ID
+	c.mutex.Lock()
 	c.storedInfo = &data
+	c.mutex.Unlock()
+
 	return err
 }
 
 func (c *ChainInfo) GetChainID() (string, error) {
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
+
 	// if the chain ID is non nil and not empty return the cached value
 	if c.storedInfo != nil && len(c.storedInfo.ChainID) > 0 {
 		return c.storedInfo.ChainID, nil
@@ -94,6 +102,8 @@ func (c *ChainInfo) GetChainID() (string, error) {
 		c.log.Error("Unable to deserialize chain info", logging.Error(err))
 		c.onCriticalError()
 	}
+
 	c.storedInfo = &ci
+
 	return ci.ChainID, nil
 }

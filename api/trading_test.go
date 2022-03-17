@@ -282,6 +282,7 @@ func getTestGRPCServer(
 	sqlMarketsStore := sqlstore.NewMarkets(&sqlStore)
 	sqlDelegationStore := sqlstore.NewDelegations(&sqlStore)
 	sqlEpochStore := sqlstore.NewEpochs(&sqlStore)
+	sqlDepositStore := sqlstore.NewDeposits(&sqlStore)
 
 	g := api.NewGRPCServer(
 		logger,
@@ -325,6 +326,7 @@ func getTestGRPCServer(
 		sqlMarketsStore,
 		sqlDelegationStore,
 		sqlEpochStore,
+		sqlDepositStore,
 	)
 	if g == nil {
 		err = fmt.Errorf("failed to create gRPC server")

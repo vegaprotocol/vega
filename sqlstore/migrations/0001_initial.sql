@@ -264,6 +264,21 @@ CREATE TABLE epochs(
   PRIMARY KEY(id, vega_time)
 );
 
+create type deposit_status as enum('STATUS_UNSPECIFIED', 'STATUS_OPEN', 'STATUS_CANCELLED', 'STATUS_FINALIZED');
+
+create table if not exists deposits (
+    id bytea not null,
+    status deposit_status not null,
+    party_id bytea not null,
+    asset bytea not null,
+    amount numeric,
+    tx_hash text not null,
+    credited_timestamp timestamp with time zone not null,
+    created_timestamp timestamp with time zone not null,
+    vega_time timestamp with time zone not null references blocks(vega_time),
+    primary key (id, party_id, vega_time)
+);
+
 -- +goose Down
 DROP AGGREGATE IF EXISTS public.first(anyelement);
 DROP AGGREGATE IF EXISTS public.last(anyelement);
@@ -277,6 +292,9 @@ DROP TABLE IF EXISTS rewards;
 DROP TABLE IF EXISTS network_limits;
 DROP VIEW IF EXISTS orders_current;
 DROP VIEW IF EXISTS orders_current_versions;
+
+DROP TABLE IF EXISTS deposits;
+DROP TYPE IF EXISTS deposit_status;
 
 DROP TABLE IF EXISTS orders;
 DROP TYPE IF EXISTS order_time_in_force;

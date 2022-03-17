@@ -54,7 +54,6 @@ func (nl *NetworkLimits) Push(evt events.Event) {
 }
 
 func (nl *NetworkLimits) consume(event NetworkLimitsEvent) {
-	nl.log.Debug("NetworkLimits: ", logging.Int64("block", event.BlockNr()))
 	protoLimits := event.NetworkLimits()
 	limits := entities.NetworkLimitsFromProto(protoLimits)
 	limits.VegaTime = nl.vegaTime
