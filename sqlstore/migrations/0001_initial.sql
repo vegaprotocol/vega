@@ -221,6 +221,22 @@ on md.market = mx.market
 and md.vega_time = mx.vega_time
 ;
 
+CREATE TABLE rewards(
+  party_id         BYTEA NOT NULL REFERENCES parties(id),
+  asset_id         BYTEA NOT NULL REFERENCES assets(id),
+  epoch_id         BIGINT NOT NULL,
+  amount           NUMERIC(32, 0),
+  percent_of_total FLOAT,
+  vega_time        TIMESTAMP WITH TIME ZONE NOT NULL
+);
+
+CREATE TABLE delegations(
+  party_id         BYTEA NOT NULL, -- REFERENCES parties(id), TODO once parties table is populated
+  node_id          BYTEA NOT NULL, -- REFERENCES nodes(id),   TODO once we have node table
+  epoch_id         BIGINT NOT NULL,
+  amount           NUMERIC(32, 0),
+  vega_time        TIMESTAMP WITH TIME ZONE NOT NULL
+);
 
 create table if not exists markets (
     id bytea not null,
@@ -239,11 +255,24 @@ create table if not exists markets (
     primary key (id, vega_time)
 );
 
+CREATE TABLE epochs(
+  id           BIGINT                   NOT NULL,
+  start_time   TIMESTAMP WITH TIME ZONE NOT NULL,
+  expire_time  TIMESTAMP WITH TIME ZONE NOT NULL,
+  end_time     TIMESTAMP WITH TIME ZONE,
+  vega_time    TIMESTAMP WITH TIME ZONE NOT NULL REFERENCES blocks(vega_time),
+  PRIMARY KEY(id, vega_time)
+);
+
 -- +goose Down
 DROP AGGREGATE IF EXISTS public.first(anyelement);
 DROP AGGREGATE IF EXISTS public.last(anyelement);
 DROP FUNCTION IF EXISTS public.first_agg(anyelement, anyelement);
 DROP FUNCTION IF EXISTS public.last_agg(anyelement, anyelement);
+
+DROP TABLE IF EXISTS epochs;
+DROP TABLE IF EXISTS delegations;
+DROP TABLE IF EXISTS rewards;
 
 DROP TABLE IF EXISTS network_limits;
 DROP VIEW IF EXISTS orders_current;
