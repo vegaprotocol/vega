@@ -1,4 +1,4 @@
-@Library('vega-shared-library@96-create-approbation-pipeline') _
+@Library('vega-shared-library') _
 
 /* properties of scmVars (example):
     - GIT_BRANCH:PR-40-head
@@ -222,7 +222,7 @@ pipeline {
                         }
                     }
                 }
-                stage('Approbation') {
+                stage('approbation') {
                     steps {
                         script {
                             runApprobation ignoreFailure: !isPRBuild(),
