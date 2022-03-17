@@ -1,4 +1,4 @@
-@Library('vega-shared-library') _
+@Library('vega-shared-library@96-create-approbation-pipeline') _
 
 /* properties of scmVars (example):
     - GIT_BRANCH:PR-40-head
@@ -219,6 +219,14 @@ pipeline {
                     steps {
                         dir('vega') {
                             sh 'mdspell --en-gb --ignore-acronyms --ignore-numbers --no-suggestions --report "*.md" "docs/**/*.md"'
+                        }
+                    }
+                }
+                stage('Approbation') {
+                    steps {
+                        script {
+                            runApprobation ignoreFailure: !isPRBuild(),
+                                vegaCore: commitHash
                         }
                     }
                 }
