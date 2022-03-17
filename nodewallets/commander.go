@@ -9,6 +9,7 @@ import (
 	api "code.vegaprotocol.io/protos/vega/api/v1"
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	"code.vegaprotocol.io/vega/blockchain"
+	vgproto "code.vegaprotocol.io/vega/libs/proto"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/nodewallets/vega"
 	"code.vegaprotocol.io/vega/txn"
@@ -78,7 +79,7 @@ func (c *Commander) command(_ context.Context, cmd txn.Command, payload proto.Me
 		defer cfunc()
 		inputData := commands.NewInputData(c.bstats.Height())
 		wrapPayloadIntoInputData(inputData, cmd, payload)
-		marshalledData, err := proto.Marshal(inputData)
+		marshalledData, err := vgproto.Marshal(inputData)
 		if err != nil {
 			// this should never be possible
 			c.log.Panic("could not marshal core transaction", logging.Error(err))

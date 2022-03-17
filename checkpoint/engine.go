@@ -3,6 +3,7 @@ package checkpoint
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
 	"encoding/hex"
 	"errors"
 	"fmt"
@@ -117,6 +118,8 @@ func (e *Engine) UponGenesis(ctx context.Context, data []byte) (err error) {
 	if err != nil {
 		return err
 	}
+
+	// first is there a hash
 	if state != nil && len(state.CheckpointHash) != 0 {
 		e.loadHash, err = hex.DecodeString(state.CheckpointHash)
 		e.log.Warn("Checkpoint restore enabled",
@@ -128,6 +131,28 @@ func (e *Engine) UponGenesis(ctx context.Context, data []byte) (err error) {
 			e.log.Panic("Malformed restore hash in genesis file",
 				logging.Error(err),
 			)
+		}
+	}
+
+	if state != nil && len(state.CheckpointState) > 0 {
+		// no loadHash but a state specified.
+		if len(e.loadHash) <= 0 {
+			e.log.Panic("invalid genesis file, state specified without hash")
+		}
+
+		buf, err := base64.StdEncoding.DecodeString(state.CheckpointState)
+		if err != nil {
+			return fmt.Errorf("invalid genesis file checkpoint.state: %w", err)
+		}
+
+		cpt := &types.CheckpointState{}
+		if err := cpt.SetState(buf); err != nil {
+			return fmt.Errorf("invalid restore checkpoint command: %w", err)
+		}
+
+		// now we can proceed with loading it.
+		if err := e.Load(ctx, cpt); err != nil {
+			return fmt.Errorf("could not load checkpoint: %w", err)
 		}
 	}
 

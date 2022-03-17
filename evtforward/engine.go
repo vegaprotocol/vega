@@ -51,7 +51,7 @@ func (e *Engine) UpdateStakingStartingBlock(b uint64) {
 	e.ethEngine.UpdateStakingStartingBlock(b)
 }
 
-func (e *Engine) UpdateMultiSigControlStartingBlock(b uint64) {
+func (e *Engine) UpdateMultisigControlStartingBlock(b uint64) {
 	e.multisigControlStartingBlock = b
 	e.ethEngine.UpdateMultiSigControlStartingBlock(b)
 }
@@ -154,7 +154,7 @@ func (e *NoopEngine) ReloadConf(_ Config) {
 
 func (e *NoopEngine) UpdateStakingStartingBlock(b uint64) {}
 
-func (e *NoopEngine) UpdateMultiSigControlStartingBlock(b uint64) {}
+func (e *NoopEngine) UpdateMultisigControlStartingBlock(b uint64) {}
 
 func (e *NoopEngine) SetupEthereumEngine(
 	_ ethereum.Client,

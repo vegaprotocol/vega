@@ -17,8 +17,8 @@ import (
 	"code.vegaprotocol.io/vega/metrics"
 	"code.vegaprotocol.io/vega/types"
 
+	"code.vegaprotocol.io/vega/libs/proto"
 	"github.com/cosmos/iavl"
-	"github.com/golang/protobuf/proto"
 	"github.com/tendermint/tendermint/libs/strings"
 	db "github.com/tendermint/tm-db"
 )

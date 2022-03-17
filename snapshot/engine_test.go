@@ -15,9 +15,9 @@ import (
 	"code.vegaprotocol.io/vega/types"
 	tmocks "code.vegaprotocol.io/vega/types/mocks"
 
+	"code.vegaprotocol.io/vega/libs/proto"
 	"github.com/cosmos/iavl"
 	"github.com/golang/mock/gomock"
-	"github.com/golang/protobuf/proto"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	db "github.com/tendermint/tm-db"
