@@ -311,6 +311,125 @@ func (s *DepositStatus) DecodeText(_ *pgtype.ConnInfo, src []byte) error {
 	default:
 		return fmt.Errorf("unknown status: %s", src)
 	}
+	return nil
+}
 
+/************************* Proposal State *****************************/
+
+type ProposalState vega.Proposal_State
+
+const (
+	ProposalStateUnspecified        = ProposalState(vega.Proposal_STATE_UNSPECIFIED)
+	ProposalStateFailed             = ProposalState(vega.Proposal_STATE_FAILED)
+	ProposalStateOpen               = ProposalState(vega.Proposal_STATE_OPEN)
+	ProposalStatePassed             = ProposalState(vega.Proposal_STATE_PASSED)
+	ProposalStateRejected           = ProposalState(vega.Proposal_STATE_REJECTED)
+	ProposalStateDeclined           = ProposalState(vega.Proposal_STATE_DECLINED)
+	ProposalStateEnacted            = ProposalState(vega.Proposal_STATE_ENACTED)
+	ProposalStateWaitingForNodeVote = ProposalState(vega.Proposal_STATE_WAITING_FOR_NODE_VOTE)
+)
+
+func (s ProposalState) EncodeText(_ *pgtype.ConnInfo, buf []byte) ([]byte, error) {
+	str, ok := vega.Proposal_State_name[int32(s)]
+	if !ok {
+		return buf, fmt.Errorf("unknown state: %v", s)
+	}
+	return append(buf, []byte(str)...), nil
+}
+
+func (s *ProposalState) DecodeText(_ *pgtype.ConnInfo, src []byte) error {
+	val, ok := vega.Proposal_State_value[string(src)]
+	if !ok {
+		return fmt.Errorf("unknown state: %s", src)
+	}
+	*s = ProposalState(val)
+	return nil
+}
+
+/************************* Proposal Error *****************************/
+
+type ProposalError vega.ProposalError
+
+const (
+	ProposalErrorUnspecified                      = ProposalError(vega.ProposalError_PROPOSAL_ERROR_UNSPECIFIED)
+	ProposalErrorCloseTimeTooSoon                 = ProposalError(vega.ProposalError_PROPOSAL_ERROR_CLOSE_TIME_TOO_SOON)
+	ProposalErrorCloseTimeTooLate                 = ProposalError(vega.ProposalError_PROPOSAL_ERROR_CLOSE_TIME_TOO_LATE)
+	ProposalErrorEnactTimeTooSoon                 = ProposalError(vega.ProposalError_PROPOSAL_ERROR_ENACT_TIME_TOO_SOON)
+	ProposalErrorEnactTimeTooLate                 = ProposalError(vega.ProposalError_PROPOSAL_ERROR_ENACT_TIME_TOO_LATE)
+	ProposalErrorInsufficientTokens               = ProposalError(vega.ProposalError_PROPOSAL_ERROR_INSUFFICIENT_TOKENS)
+	ProposalErrorInvalidInstrumentSecurity        = ProposalError(vega.ProposalError_PROPOSAL_ERROR_INVALID_INSTRUMENT_SECURITY)
+	ProposalErrorNoProduct                        = ProposalError(vega.ProposalError_PROPOSAL_ERROR_NO_PRODUCT)
+	ProposalErrorUnsupportedProduct               = ProposalError(vega.ProposalError_PROPOSAL_ERROR_UNSUPPORTED_PRODUCT)
+	ProposalErrorNoTradingMode                    = ProposalError(vega.ProposalError_PROPOSAL_ERROR_NO_TRADING_MODE)
+	ProposalErrorUnsupportedTradingMode           = ProposalError(vega.ProposalError_PROPOSAL_ERROR_UNSUPPORTED_TRADING_MODE)
+	ProposalErrorNodeValidationFailed             = ProposalError(vega.ProposalError_PROPOSAL_ERROR_NODE_VALIDATION_FAILED)
+	ProposalErrorMissingBuiltinAssetField         = ProposalError(vega.ProposalError_PROPOSAL_ERROR_MISSING_BUILTIN_ASSET_FIELD)
+	ProposalErrorMissingErc20ContractAddress      = ProposalError(vega.ProposalError_PROPOSAL_ERROR_MISSING_ERC20_CONTRACT_ADDRESS)
+	ProposalErrorInvalidAsset                     = ProposalError(vega.ProposalError_PROPOSAL_ERROR_INVALID_ASSET)
+	ProposalErrorIncompatibleTimestamps           = ProposalError(vega.ProposalError_PROPOSAL_ERROR_INCOMPATIBLE_TIMESTAMPS)
+	ProposalErrorNoRiskParameters                 = ProposalError(vega.ProposalError_PROPOSAL_ERROR_NO_RISK_PARAMETERS)
+	ProposalErrorNetworkParameterInvalidKey       = ProposalError(vega.ProposalError_PROPOSAL_ERROR_NETWORK_PARAMETER_INVALID_KEY)
+	ProposalErrorNetworkParameterInvalidValue     = ProposalError(vega.ProposalError_PROPOSAL_ERROR_NETWORK_PARAMETER_INVALID_VALUE)
+	ProposalErrorNetworkParameterValidationFailed = ProposalError(vega.ProposalError_PROPOSAL_ERROR_NETWORK_PARAMETER_VALIDATION_FAILED)
+	ProposalErrorOpeningAuctionDurationTooSmall   = ProposalError(vega.ProposalError_PROPOSAL_ERROR_OPENING_AUCTION_DURATION_TOO_SMALL)
+	ProposalErrorOpeningAuctionDurationTooLarge   = ProposalError(vega.ProposalError_PROPOSAL_ERROR_OPENING_AUCTION_DURATION_TOO_LARGE)
+	ProposalErrorMarketMissingLiquidityCommitment = ProposalError(vega.ProposalError_PROPOSAL_ERROR_MARKET_MISSING_LIQUIDITY_COMMITMENT)
+	ProposalErrorCouldNotInstantiateMarket        = ProposalError(vega.ProposalError_PROPOSAL_ERROR_COULD_NOT_INSTANTIATE_MARKET)
+	ProposalErrorInvalidFutureProduct             = ProposalError(vega.ProposalError_PROPOSAL_ERROR_INVALID_FUTURE_PRODUCT)
+	ProposalErrorMissingCommitmentAmount          = ProposalError(vega.ProposalError_PROPOSAL_ERROR_MISSING_COMMITMENT_AMOUNT)
+	ProposalErrorInvalidFeeAmount                 = ProposalError(vega.ProposalError_PROPOSAL_ERROR_INVALID_FEE_AMOUNT)
+	ProposalErrorInvalidShape                     = ProposalError(vega.ProposalError_PROPOSAL_ERROR_INVALID_SHAPE)
+	ProposalErrorInvalidRiskParameter             = ProposalError(vega.ProposalError_PROPOSAL_ERROR_INVALID_RISK_PARAMETER)
+	ProposalErrorMajorityThresholdNotReached      = ProposalError(vega.ProposalError_PROPOSAL_ERROR_MAJORITY_THRESHOLD_NOT_REACHED)
+	ProposalErrorParticipationThresholdNotReached = ProposalError(vega.ProposalError_PROPOSAL_ERROR_PARTICIPATION_THRESHOLD_NOT_REACHED)
+	ProposalErrorInvalidAssetDetails              = ProposalError(vega.ProposalError_PROPOSAL_ERROR_INVALID_ASSET_DETAILS)
+	ProposalErrorUnknownType                      = ProposalError(vega.ProposalError_PROPOSAL_ERROR_UNKNOWN_TYPE)
+	ProposalErrorUnknownRiskParameterType         = ProposalError(vega.ProposalError_PROPOSAL_ERROR_UNKNOWN_RISK_PARAMETER_TYPE)
+	ProposalErrorInvalidFreeform                  = ProposalError(vega.ProposalError_PROPOSAL_ERROR_INVALID_FREEFORM)
+	ProposalErrorInsufficientEquityLikeShare      = ProposalError(vega.ProposalError_PROPOSAL_ERROR_INSUFFICIENT_EQUITY_LIKE_SHARE)
+	ProposalErrorInvalidMarket                    = ProposalError(vega.ProposalError_PROPOSAL_ERROR_INVALID_MARKET)
+)
+
+func (s ProposalError) EncodeText(_ *pgtype.ConnInfo, buf []byte) ([]byte, error) {
+	str, ok := vega.ProposalError_name[int32(s)]
+	if !ok {
+		return buf, fmt.Errorf("unknown proposal error: %v", s)
+	}
+	return append(buf, []byte(str)...), nil
+}
+
+func (s *ProposalError) DecodeText(_ *pgtype.ConnInfo, src []byte) error {
+	val, ok := vega.ProposalError_value[string(src)]
+	if !ok {
+		return fmt.Errorf("unknown proposal error: %s", src)
+	}
+	*s = ProposalError(val)
+	return nil
+}
+
+/************************* VoteValue *****************************/
+
+type VoteValue vega.Vote_Value
+
+const (
+	VoteValueUnspecified = VoteValue(vega.Vote_VALUE_UNSPECIFIED)
+	VoteValueNo          = VoteValue(vega.Vote_VALUE_NO)
+	VoteValueYes         = VoteValue(vega.Vote_VALUE_YES)
+)
+
+func (s VoteValue) EncodeText(_ *pgtype.ConnInfo, buf []byte) ([]byte, error) {
+	str, ok := vega.Vote_Value_name[int32(s)]
+	if !ok {
+		return buf, fmt.Errorf("unknown vote value: %v", s)
+	}
+	return append(buf, []byte(str)...), nil
+}
+
+func (s *VoteValue) DecodeText(_ *pgtype.ConnInfo, src []byte) error {
+	val, ok := vega.Vote_Value_value[string(src)]
+	if !ok {
+		return fmt.Errorf("unknown vote value: %s", src)
+	}
+	*s = VoteValue(val)
 	return nil
 }
