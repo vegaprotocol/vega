@@ -222,6 +222,14 @@ pipeline {
                         }
                     }
                 }
+                stage('approbation') {
+                    steps {
+                        script {
+                            runApprobation ignoreFailure: !isPRBuild(),
+                                vegaCore: commitHash
+                        }
+                    }
+                }
             }
         }
 
