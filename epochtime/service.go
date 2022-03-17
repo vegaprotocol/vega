@@ -97,12 +97,20 @@ func (s *Svc) onTick(ctx context.Context, t time.Time) {
 		return
 	}
 
-	if s.needsFastForward {
-		s.needsFastForward = false
-		s.fastForward(ctx)
+	if s.needsFastForward && t.Equal(s.currentTime) {
+		s.log.Debug("onTick called with the same time again", logging.Time("tick-time", t))
+		return
 	}
 
 	s.currentTime = t
+
+	if s.needsFastForward {
+		s.log.Info("fast forwarding epoch starts", logging.Uint64("from-epoch", s.epoch.Seq), logging.Time("at", t))
+		s.needsFastForward = false
+		s.fastForward(ctx)
+		s.currentTime = t
+		s.log.Info("fast forwarding epochs ended", logging.Uint64("current-epoch", s.epoch.Seq))
+	}
 
 	if s.epoch.StartTime.IsZero() {
 		// First block so let's create our first epoch
@@ -177,10 +185,7 @@ func (s *Svc) Load(ctx context.Context, data []byte) error {
 // so will have a side effect of delegations getting promoted and rewards getting calculated and potentially paid.
 func (s *Svc) fastForward(ctx context.Context) {
 	tt := s.currentTime
-	for {
-		if !s.epoch.ExpireTime.Before(tt) {
-			break
-		}
+	for s.epoch.ExpireTime.Before(tt) {
 		s.OnBlockEnd(ctx)
 		s.onTick(ctx, s.epoch.ExpireTime.Add(1*time.Second))
 	}
