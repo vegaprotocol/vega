@@ -13,10 +13,11 @@ type Cmd struct {
 	config.PassphraseFlag
 
 	// Subcommands
-	Generate generateCmd `command:"generate" description:"Generates the genesis file"`
-	Update   updateCmd   `command:"update" description:"Update the genesis file with the app_state, useful if the genesis generation is not done using \"vega genesis generate\""`
-	Sign     signCmd     `command:"sign" description:"Sign a subset of the network parameters"`
-	Verify   verifyCmd   `command:"verify" description:"Verify the signature of the network parameter against local genesis file"`
+	Generate       generateCmd       `command:"generate" description:"Generates the genesis file"`
+	Update         updateCmd         `command:"update" description:"Update the genesis file with the app_state, useful if the genesis generation is not done using \"vega genesis generate\""`
+	Sign           signCmd           `command:"sign" description:"Sign a subset of the network parameters"`
+	Verify         verifyCmd         `command:"verify" description:"Verify the signature of the network parameter against local genesis file"`
+	LoadCheckpoint loadCheckpointCmd `command:"load_checkpoint" description:"Load the given checkpoint file in the genesis file"`
 }
 
 var genesisCmd Cmd
@@ -33,6 +34,9 @@ func Genesis(ctx context.Context, parser *flags.Parser) error {
 			TmHome: "$HOME/.tendermint",
 		},
 		Update: updateCmd{
+			TmHome: "$HOME/.tendermint",
+		},
+		LoadCheckpoint: loadCheckpointCmd{
 			TmHome: "$HOME/.tendermint",
 		},
 	}

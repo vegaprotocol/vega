@@ -16,6 +16,7 @@ import (
 	"code.vegaprotocol.io/vega/metrics"
 	"code.vegaprotocol.io/vega/txn"
 
+	vgproto "code.vegaprotocol.io/vega/libs/proto"
 	"github.com/cenkalti/backoff"
 	"github.com/golang/protobuf/proto"
 )
@@ -339,13 +340,11 @@ func (f *Forwarder) getEvtKey(evt *commandspb.ChainEvent) (string, error) {
 }
 
 func (f *Forwarder) marshalEvt(evt *commandspb.ChainEvent) ([]byte, error) {
-	pbuf := proto.Buffer{}
-	pbuf.Reset()
-	pbuf.SetDeterministic(true)
-	if err := pbuf.Marshal(evt); err != nil {
+	buf, err := vgproto.Marshal(evt)
+	if err != nil {
 		return nil, err
 	}
-	return pbuf.Bytes(), nil
+	return buf, nil
 }
 
 func (f *Forwarder) makeEvtHashKey(evt *commandspb.ChainEvent) ([]byte, error) {

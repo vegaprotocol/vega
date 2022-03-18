@@ -238,8 +238,7 @@ func (e *Engine) OnTick(ctx context.Context, t time.Time) {
 			continue
 		}
 
-		// get the action reference to ensure it's not
-		// a duplicate
+		// get the action reference to ensure it's not a duplicate
 		ref := v.getRef()
 
 		switch state {
@@ -254,6 +253,7 @@ func (e *Engine) OnTick(ctx context.Context, t time.Time) {
 			} else {
 				// first time we seen this transaction, let's add iter
 				e.seen[ref] = struct{}{}
+				e.bss.changed[seenKey] = true
 				if err := e.finalizeAction(ctx, v); err != nil {
 					e.log.Error("unable to finalize action",
 						logging.String("action", v.String()),

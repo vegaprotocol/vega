@@ -191,3 +191,17 @@ func (mr *MockExecutionEngineMockRecorder) SubmitOrder(arg0, arg1, arg2, arg3 in
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubmitOrder", reflect.TypeOf((*MockExecutionEngine)(nil).SubmitOrder), arg0, arg1, arg2, arg3)
 }
+
+// UpdateMarket mocks base method.
+func (m *MockExecutionEngine) UpdateMarket(arg0 context.Context, arg1 *types.Market) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateMarket", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateMarket indicates an expected call of UpdateMarket.
+func (mr *MockExecutionEngineMockRecorder) UpdateMarket(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateMarket", reflect.TypeOf((*MockExecutionEngine)(nil).UpdateMarket), arg0, arg1)
+}

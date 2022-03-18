@@ -1,6 +1,7 @@
 package positions
 
 import (
+	"context"
 	"encoding/binary"
 	"errors"
 	"fmt"
@@ -19,6 +20,12 @@ var (
 	ErrPositionNotFound = errors.New("position not found")
 )
 
+// Broker (no longer need to mock this, use the broker/mocks wrapper).
+type Broker interface {
+	Send(event events.Event)
+	SendBatch(events []events.Event)
+}
+
 // Engine represents the positions engine.
 type Engine struct {
 	marketID string
@@ -35,10 +42,12 @@ type Engine struct {
 	// any function to mutate them, so we can consider it safe to return
 	// this slice.
 	positionsCpy []events.MarketPosition
+
+	broker Broker
 }
 
 // New instantiates a new positions engine.
-func New(log *logging.Logger, config Config, marketID string) *Engine {
+func New(log *logging.Logger, config Config, marketID string, broker Broker) *Engine {
 	// setup logger
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
@@ -49,6 +58,7 @@ func New(log *logging.Logger, config Config, marketID string) *Engine {
 		log:          log,
 		positions:    map[string]*MarketPosition{},
 		positionsCpy: []events.MarketPosition{},
+		broker:       broker,
 	}
 }
 
@@ -102,7 +112,7 @@ func (e *Engine) ReloadConf(cfg Config) {
 // It returns the updated position.
 // The margins+risk engines need the updated position to determine whether the
 // order should be accepted.
-func (e *Engine) RegisterOrder(order *types.Order) *MarketPosition {
+func (e *Engine) RegisterOrder(ctx context.Context, order *types.Order) *MarketPosition {
 	pos, found := e.positions[order.Party]
 	if !found {
 		pos = NewMarketPosition(order.Party)
@@ -110,35 +120,35 @@ func (e *Engine) RegisterOrder(order *types.Order) *MarketPosition {
 		// append the pointer to the slice as well
 		e.positionsCpy = append(e.positionsCpy, pos)
 	}
-
 	pos.RegisterOrder(order)
+	e.broker.Send(events.NewPositionStateEvent(ctx, pos, order.MarketID))
 	return pos
 }
 
 // UnregisterOrder undoes the actions of RegisterOrder. It is used when an order
 // has been rejected by the Risk Engine, or when an order is amended or canceled.
-func (e *Engine) UnregisterOrder(order *types.Order) *MarketPosition {
+func (e *Engine) UnregisterOrder(ctx context.Context, order *types.Order) *MarketPosition {
 	pos, found := e.positions[order.Party]
 	if !found {
 		e.log.Panic("could not find position in engine when unregistering order",
 			logging.Order(*order))
 	}
-
 	pos.UnregisterOrder(e.log, order)
+	e.broker.Send(events.NewPositionStateEvent(ctx, pos, order.MarketID))
 	return pos
 }
 
 // AmendOrder unregisters the original order and then registers the newly amended order
 // this method is a quicker way of handling separate unregister+register pairs.
-func (e *Engine) AmendOrder(originalOrder, newOrder *types.Order) *MarketPosition {
+func (e *Engine) AmendOrder(ctx context.Context, originalOrder, newOrder *types.Order) *MarketPosition {
 	pos, found := e.positions[originalOrder.Party]
 	if !found {
 		e.log.Panic("could not find position in engine when amending order",
 			logging.Order(*originalOrder),
 			logging.Order(*newOrder))
 	}
-
 	pos.AmendOrder(e.log, originalOrder, newOrder)
+	e.broker.Send(events.NewPositionStateEvent(ctx, pos, originalOrder.MarketID))
 	return pos
 }
 

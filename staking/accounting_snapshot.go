@@ -8,7 +8,7 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
 
-	"github.com/golang/protobuf/proto"
+	"code.vegaprotocol.io/vega/libs/proto"
 )
 
 var accountsKey = (&types.PayloadStakingAccounts{}).Key()
@@ -22,6 +22,7 @@ type accountingSnapshotState struct {
 
 func (a *Accounting) serialiseStakingAccounts() ([]byte, error) {
 	accounts := make([]*types.StakingAccount, 0, len(a.hashableAccounts))
+	a.log.Debug("serialsing staking accounts", logging.Int("n", len(a.hashableAccounts)))
 	for _, acc := range a.hashableAccounts {
 		accounts = append(accounts,
 			&types.StakingAccount{
@@ -112,6 +113,9 @@ func (a *Accounting) LoadState(ctx context.Context, payload *types.Payload) ([]t
 
 func (a *Accounting) restoreStakingAccounts(ctx context.Context, accounts *types.StakingAccounts) error {
 	a.hashableAccounts = make([]*StakingAccount, 0, len(accounts.Accounts))
+	a.log.Debug("restoring staking accounts",
+		logging.Int("n", len(accounts.Accounts)),
+	)
 	evts := []events.Event{}
 	pevts := []events.Event{}
 	for _, acc := range accounts.Accounts {
@@ -123,10 +127,6 @@ func (a *Accounting) restoreStakingAccounts(ctx context.Context, accounts *types
 		a.hashableAccounts = append(a.hashableAccounts, stakingAcc)
 		a.accounts[acc.Party] = stakingAcc
 		pevts = append(pevts, events.NewPartyEvent(ctx, types.Party{Id: acc.Party}))
-		a.log.Debug("restoring staking account",
-			logging.String("party", acc.Party),
-			logging.Int("stakelinkings", len(acc.Events)),
-		)
 		for _, e := range acc.Events {
 			evts = append(evts, events.NewStakeLinking(ctx, *e))
 		}

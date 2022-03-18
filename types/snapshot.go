@@ -9,8 +9,8 @@ import (
 	snapshot "code.vegaprotocol.io/protos/vega/snapshot/v1"
 	"code.vegaprotocol.io/vega/libs/crypto"
 
+	"code.vegaprotocol.io/vega/libs/proto"
 	"github.com/cosmos/iavl"
-	"github.com/golang/protobuf/proto"
 	tmtypes "github.com/tendermint/tendermint/abci/types"
 )
 
@@ -46,6 +46,7 @@ const (
 	undefinedSnapshot              SnapshotNamespace = ""
 	AppSnapshot                    SnapshotNamespace = "app"
 	AssetsSnapshot                 SnapshotNamespace = "assets"
+	WitnessSnapshot                SnapshotNamespace = "witness" // Must be done before any engine that call RestoreResource
 	BankingSnapshot                SnapshotNamespace = "banking"
 	CheckpointSnapshot             SnapshotNamespace = "checkpoint"
 	CollateralSnapshot             SnapshotNamespace = "collateral"
@@ -65,7 +66,6 @@ const (
 	StakeVerifierSnapshot          SnapshotNamespace = "stakeverifier"
 	ReplayProtectionSnapshot       SnapshotNamespace = "replay"
 	EventForwarderSnapshot         SnapshotNamespace = "eventforwarder"
-	WitnessSnapshot                SnapshotNamespace = "witness"
 	TopologySnapshot               SnapshotNamespace = "topology"
 	LiquiditySnapshot              SnapshotNamespace = "liquidity"
 	LiquidityTargetSnapshot        SnapshotNamespace = "liquiditytarget"

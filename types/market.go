@@ -313,7 +313,6 @@ type Instrument_Future struct {
 }
 
 type Future struct {
-	Maturity                        string
 	SettlementAsset                 string
 	QuoteName                       string
 	OracleSpecForSettlementPrice    *v1.OracleSpec

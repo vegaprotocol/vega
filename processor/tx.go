@@ -12,7 +12,7 @@ import (
 	"code.vegaprotocol.io/vega/txn"
 	wcrypto "code.vegaprotocol.io/vegawallet/crypto"
 
-	"github.com/golang/protobuf/proto"
+	"code.vegaprotocol.io/vega/libs/proto"
 )
 
 var ErrUnsupportedFromValueInTransaction = errors.New("unsupported value from `from` field in transaction")

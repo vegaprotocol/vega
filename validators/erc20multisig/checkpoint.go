@@ -9,7 +9,7 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
 
-	"github.com/golang/protobuf/proto"
+	"code.vegaprotocol.io/vega/libs/proto"
 )
 
 func (t *Topology) Name() types.CheckpointName {
@@ -60,7 +60,7 @@ func (t *Topology) Load(ctx context.Context, data []byte) error {
 
 	// 0 is default value, we assume that it was then not set
 	if mc.LastBlockSeen != 0 {
-		t.ethEventSource.UpdateMultisigControlLastBlockSeen(mc.LastBlockSeen)
+		t.ethEventSource.UpdateMultisigControlStartingBlock(mc.LastBlockSeen)
 	}
 
 	return nil

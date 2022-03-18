@@ -9,11 +9,10 @@ import (
 	snapshotpb "code.vegaprotocol.io/protos/vega/snapshot/v1"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/libs/crypto"
+	"code.vegaprotocol.io/vega/libs/proto"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
-
-	"github.com/golang/protobuf/proto"
 )
 
 type SnapshotEngine struct {
@@ -26,7 +25,6 @@ type SnapshotEngine struct {
 	stopped           bool
 	hashes            map[string][]byte
 	serialised        map[string][]byte
-	serialisers       map[string]*proto.Buffer
 
 	// keys, need to be computed when the engine is
 	// instantiated as they are dynamic
@@ -58,19 +56,12 @@ func NewSnapshotEngine(config Config,
 		parametersChanged: true,
 		stopped:           false,
 		// empty so default to nil to force update
-		hashes:      map[string][]byte{},
-		serialised:  map[string][]byte{},
-		serialisers: map[string]*proto.Buffer{},
+		hashes:     map[string][]byte{},
+		serialised: map[string][]byte{},
 	}
 
 	// build the keys
 	se.buildHashKeys(market)
-
-	// inialised some stuff
-	for _, v := range se.hashKeys {
-		se.serialisers[v] = proto.NewBuffer(nil)
-		se.serialisers[v].SetDeterministic(true)
-	}
 
 	return se
 }
@@ -413,24 +404,23 @@ func (e *SnapshotEngine) serialiseProvisions() ([]byte, bool, error) {
 
 func (e *SnapshotEngine) serialiseSupplied() ([]byte, bool, error) {
 	key := e.suppliedKey
-	if !e.Engine.suppliedEngine.HasUpdates() {
+	if !e.suppliedEngine.HasUpdates() {
 		return e.serialised[key], false, nil
 	}
 
-	e.Engine.suppliedEngine.ResetUpdated()
+	e.suppliedEngine.ResetUpdated()
 
-	payload := e.Engine.suppliedEngine.Payload()
+	payload := e.suppliedEngine.Payload()
 	return e.marshalPayload(key, payload)
 }
 
 func (e *SnapshotEngine) marshalPayload(key string, payload *snapshotpb.Payload) ([]byte, bool, error) {
-	buf := e.serialisers[key]
-	buf.Reset()
-	if err := buf.Marshal(payload); err != nil {
+	buf, err := proto.Marshal(payload)
+	if err != nil {
 		return nil, false, err
 	}
 
-	return buf.Bytes(), true, nil
+	return buf, true, nil
 }
 
 func (e *SnapshotEngine) buildHashKeys(market string) {

@@ -11,16 +11,16 @@ import (
 	"github.com/jessevdk/go-flags"
 )
 
-type NodeCmd struct {
+type StartCmd struct {
 	config.Passphrase `long:"nodewallet-passphrase-file"`
 	config.VegaHomeFlag
 
 	config.Config
 }
 
-var nodeCmd NodeCmd
+var startCmd StartCmd
 
-func (cmd *NodeCmd) Execute(args []string) error {
+func (cmd *StartCmd) Execute(args []string) error {
 	log := logging.NewLoggerFromConfig(
 		logging.NewDefaultConfig(),
 	)
@@ -62,11 +62,11 @@ func (cmd *NodeCmd) Execute(args []string) error {
 	)
 }
 
-func Node(ctx context.Context, parser *flags.Parser) error {
-	nodeCmd = NodeCmd{
+func Start(ctx context.Context, parser *flags.Parser) error {
+	startCmd = StartCmd{
 		Config: config.NewDefaultConfig(),
 	}
-	cmd, err := parser.AddCommand("node", "Runs a vega node", "Runs a vega node as defined by the config files", &nodeCmd)
+	cmd, err := parser.AddCommand("node", "Start a vega instance", "Runs a vega node as defined by the config files", &startCmd)
 	if err != nil {
 		return err
 	}

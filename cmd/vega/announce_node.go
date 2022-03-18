@@ -22,7 +22,7 @@ type AnnounceNodeCmd struct {
 	config.Passphrase `long:"passphrase-file"`
 
 	InfoURL   string `short:"i" long:"info-url" required:"true" description:"An url to the website / information about this validator"`
-	Country   string `short:"c" long:"Country" required:"true" description:"The country from which the validator is operating"`
+	Country   string `short:"c" long:"country" required:"true" description:"The country from which the validator is operating"`
 	Name      string `short:"n" long:"name" required:"true" description:"The name of this validator"`
 	AvatarURL string `short:"a" long:"avatar-url" required:"true" description:"A link to an avatar picture for this validator"`
 	FromEpoch uint64 `short:"f" long:"from-epoch" required:"true" description:"The epoch from which this validator should be ready to validate blocks" `

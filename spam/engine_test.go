@@ -8,12 +8,12 @@ import (
 
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	snapshot "code.vegaprotocol.io/protos/vega/snapshot/v1"
+	"code.vegaprotocol.io/vega/libs/proto"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/spam"
 	"code.vegaprotocol.io/vega/txn"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
-	"github.com/golang/protobuf/proto"
 	"github.com/stretchr/testify/require"
 )
 

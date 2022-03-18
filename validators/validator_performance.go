@@ -62,7 +62,7 @@ func (vp *validatorPerformance) ValidatorPerformanceScore(tmPubKey string, power
 	expected := num.DecimalFromInt64(power).Div(num.DecimalFromInt64(totalPower))
 
 	score := num.MaxD(minPerfScore, num.MinD(decimalOne, actual.Div(expected)))
-	vp.log.Info("loooking up performance for", logging.String("address", address), logging.String("perf-score", score.String()))
+	vp.log.Info("looking up performance for", logging.String("address", address), logging.String("perf-score", score.String()))
 	return score
 }
 

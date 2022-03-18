@@ -148,7 +148,7 @@ func TestMultisigTopologySheckpoint(t *testing.T) {
 	top2 := getTestTopology(t)
 
 	top2.broker.EXPECT().Send(gomock.Any()).Times(2)
-	top2.ethEventSource.EXPECT().UpdateMultisigControlLastBlockSeen(gomock.Any()).Do(
+	top2.ethEventSource.EXPECT().UpdateMultisigControlStartingBlock(gomock.Any()).Do(
 		func(block uint64) {
 			// ensure we restart at the right block
 			assert.Equal(t, int(block), 101)

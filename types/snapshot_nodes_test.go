@@ -11,8 +11,8 @@ import (
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
 
+	"code.vegaprotocol.io/vega/libs/proto"
 	"github.com/cosmos/iavl"
-	"github.com/golang/protobuf/proto"
 	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/require"
 	db "github.com/tendermint/tm-db"
@@ -381,7 +381,6 @@ func getDummyData() *types.Chunk {
 									},
 									Product: &types.Instrument_Future{
 										Future: &types.Future{
-											Maturity:        "1",
 											SettlementAsset: "AST",
 											QuoteName:       "AST",
 											OracleSpecForSettlementPrice: &ov1.OracleSpec{

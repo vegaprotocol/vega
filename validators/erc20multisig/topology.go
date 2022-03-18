@@ -39,7 +39,7 @@ type MultiSigOnChainVerifier interface {
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/ethereum_event_source_mock.go -package mocks code.vegaprotocol.io/vega/validators/erc20multisig EthereumEventSource
 type EthereumEventSource interface {
-	UpdateMultisigControlLastBlockSeen(uint64)
+	UpdateMultisigControlStartingBlock(uint64)
 }
 
 // Topology keeps track of all the validators

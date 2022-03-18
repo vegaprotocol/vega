@@ -6,10 +6,10 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/libs/crypto"
+	"code.vegaprotocol.io/vega/libs/proto"
 	"code.vegaprotocol.io/vega/monitor"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
-	"github.com/golang/protobuf/proto"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -36,7 +36,6 @@ func getMarket(closingAt time.Time, openingAuctionDuration *types.AuctionDuratio
 				},
 				Product: &types.Instrument_Future{
 					Future: &types.Future{
-						Maturity:        closingAt.Format(time.RFC3339),
 						SettlementAsset: "ETH",
 						QuoteName:       "USD",
 						OracleSpecBinding: &types.OracleSpecToFutureBinding{

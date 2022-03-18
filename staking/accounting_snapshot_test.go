@@ -9,8 +9,8 @@ import (
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
 
+	"code.vegaprotocol.io/vega/libs/proto"
 	"github.com/golang/mock/gomock"
-	"github.com/golang/protobuf/proto"
 	"github.com/stretchr/testify/require"
 )
 
@@ -35,11 +35,15 @@ func TestAccountsSnapshotRoundTrip(t *testing.T) {
 	require.Nil(t, err)
 
 	evt := &types.StakeLinking{
-		ID:     "someid1",
-		Type:   types.StakeLinkingTypeDeposited,
-		TS:     100,
-		Party:  testParty,
-		Amount: num.NewUint(10),
+		ID:              "someid1",
+		Type:            types.StakeLinkingTypeDeposited,
+		TS:              100,
+		Party:           testParty,
+		Amount:          num.NewUint(10),
+		BlockHeight:     12,
+		BlockTime:       1000002000,
+		LogIndex:        100022,
+		EthereumAddress: "blah",
 	}
 	acc.AddEvent(ctx, evt)
 
@@ -65,4 +69,8 @@ func TestAccountsSnapshotRoundTrip(t *testing.T) {
 	require.Nil(t, err)
 	require.Nil(t, provs)
 	require.Equal(t, acc.GetAllAvailableBalances(), snapAcc.GetAllAvailableBalances())
+
+	h3, err := snapAcc.GetHash(allKey)
+	require.Nil(t, err)
+	require.True(t, bytes.Equal(h2, h3))
 }

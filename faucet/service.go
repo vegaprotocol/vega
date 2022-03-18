@@ -17,8 +17,8 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types/num"
 
+	"code.vegaprotocol.io/vega/libs/proto"
 	"github.com/cenkalti/backoff"
-	"github.com/golang/protobuf/proto"
 	"github.com/julienschmidt/httprouter"
 	"github.com/rs/cors"
 	"google.golang.org/grpc"

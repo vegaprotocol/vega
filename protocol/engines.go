@@ -1,4 +1,4 @@
-package node
+package protocol
 
 import (
 	"code.vegaprotocol.io/vega/evtforward"
@@ -14,5 +14,5 @@ type EventForwarderEngine interface {
 
 	// methods used to update starting blocks of the eef
 	UpdateStakingStartingBlock(uint64)
-	UpdateMultiSigControlStartingBlock(uint64)
+	UpdateMultisigControlStartingBlock(uint64)
 }

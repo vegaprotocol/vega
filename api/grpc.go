@@ -111,6 +111,22 @@ func NewGRPC(
 	}
 }
 
+func (s *GRPC) UpdateProtocolServices(
+	evtforwarder EvtForwarder,
+	timesvc *vegatime.Svc,
+	evtsvc EventService,
+) {
+	// first save them, in case the core service is not started,
+	// it'll be used later
+	s.evtService = evtsvc
+	s.timesvc = timesvc
+	s.evtfwd = evtforwarder
+
+	if s.core != nil {
+		s.core.UpdateProtocolServices(evtforwarder, timesvc, evtsvc)
+	}
+}
+
 func (g *GRPC) RegisterService(f func(*grpc.Server)) {
 	g.services = append(g.services, f)
 }

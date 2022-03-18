@@ -9,10 +9,23 @@
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 ### 🛠 Improvements
-- [4952](https://github.com/vegaprotocol/vega/issues/4952) - Add checkpoints for staking and `multisig control`
+- [5007](https://github.com/vegaprotocol/vega/issues/5007) - Run approbation as part of the CI pipeline
 
 ### 🐛 Fixes
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+
+
+## 0.49.4
+
+### 🛠 Improvements
+- [2585](https://github.com/vegaprotocol/vega/issues/2585) - Adding position state event to event bus
+- [4952](https://github.com/vegaprotocol/vega/issues/4952) - Add checkpoints for staking and `multisig control`
+- [4923](https://github.com/vegaprotocol/vega/issues/4923) - Add checkpoint state in the genesis file + add subcommand to do it.
+
+### 🐛 Fixes
+- [4983](https://github.com/vegaprotocol/vega/issues/4983) - Set correct event type for positions state event
+- [4989](https://github.com/vegaprotocol/vega/issues/4989) - Fixing incorrect overflow logic
+- [4981](https://github.com/vegaprotocol/vega/issues/4981) - Fix bug causing LP orders to uncross at auction end.
 
 ## 0.49.2
 
@@ -21,13 +34,18 @@
 - [4953](https://github.com/vegaprotocol/vega/issues/4953) - Add block hash to statistics and to block height request
 - [4961](https://github.com/vegaprotocol/vega/issues/4961) - Extend auction feature tests
 - [4832](https://github.com/vegaprotocol/vega/issues/4832) - Add validation of update market proposals.
+- [4971](https://github.com/vegaprotocol/vega/issues/4971) - Add acceptance criteria to auction tests
 
 ### 🐛 Fixes
 - [4947](https://github.com/vegaprotocol/vega/issues/4947) - Fix time formatting problem that was breaking consensus on nodes in different time zones
 - [4956](https://github.com/vegaprotocol/vega/issues/4956) - Fix concurrent write to price monitoring ref price cache
+- [4987](https://github.com/vegaprotocol/vega/issues/4987) - Include the witness engine in snapshots
 - [4957](https://github.com/vegaprotocol/vega/issues/4957) - Fix `vega announce_node` to work with `--home` and `--passphrase-file`
 - [4964](https://github.com/vegaprotocol/vega/issues/4964) - Fix price monitoring snapshot
 - [4974](https://github.com/vegaprotocol/vega/issues/4974) - Fix panic when checkpointing staking accounts if there are no events
+- [4888](https://github.com/vegaprotocol/vega/issues/4888) - Fix memory leak when loading snapshots.
+- [4993](https://github.com/vegaprotocol/vega/issues/4993) - Stop snapshots thinking we've loaded via `statesync` when we just lost connection to TM
+- [4981](https://github.com/vegaprotocol/vega/issues/4981) - Fix bug causing LP orders to uncross at auction end.
 
 
 ## 0.49.1
