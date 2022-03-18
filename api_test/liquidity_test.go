@@ -64,7 +64,9 @@ func TestLiquidity_Get(t *testing.T) {
 	lpMmarketID := "076BB86A5AA41E3E"
 	lpPartyID := "0f3d86044f8e7efff27131227235fb6db82574e24f788c30723d67f888b51d61"
 
-	var resp *apipb.LiquidityProvisionsResponse
+	var respWithParty *apipb.LiquidityProvisionsResponse
+	var respNoParty *apipb.LiquidityProvisionsResponse
+
 	var err error
 
 loop:
@@ -73,19 +75,30 @@ loop:
 		case <-ctx.Done():
 			t.Fatalf("test timeout")
 		case <-time.Tick(50 * time.Millisecond):
-			resp, err = client.LiquidityProvisions(ctx, &apipb.LiquidityProvisionsRequest{
+			respNoParty, err = client.LiquidityProvisions(ctx, &apipb.LiquidityProvisionsRequest{
+				Market: lpMmarketID,
+			})
+			require.NotNil(t, respNoParty)
+			require.NoError(t, err)
+
+			respWithParty, err = client.LiquidityProvisions(ctx, &apipb.LiquidityProvisionsRequest{
 				Market: lpMmarketID,
 				Party:  lpPartyID,
 			})
-			require.NotNil(t, resp)
+			require.NotNil(t, respWithParty)
 			require.NoError(t, err)
-			if len(resp.LiquidityProvisions) > 0 {
+
+			if len(respWithParty.LiquidityProvisions) > 0 {
 				break loop
 			}
 		}
 	}
 
 	assert.NoError(t, err)
-	assert.Equal(t, lpMmarketID, resp.LiquidityProvisions[0].MarketId)
-	assert.Equal(t, lpPartyID, resp.LiquidityProvisions[0].PartyId)
+
+	require.NotEmpty(t, respNoParty.LiquidityProvisions)
+	require.NotEqual(t, "", respNoParty.String())
+
+	assert.Equal(t, lpMmarketID, respWithParty.LiquidityProvisions[0].MarketId)
+	assert.Equal(t, lpPartyID, respWithParty.LiquidityProvisions[0].PartyId)
 }
