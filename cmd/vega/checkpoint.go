@@ -125,7 +125,7 @@ func getNodeWalletCommander(log *logging.Logger, registryPass string, vegaPaths 
 		return nil, nil, fmt.Errorf("couldn't get last block height: %w", err)
 	}
 
-	commander, err := nodewallets.NewCommander(cfg.NodeWallet, log, nil, vegaWallet, heightProvider(resp.Height))
+	commander, err := nodewallets.NewCommander(cfg.NodeWallet, log, nil, vegaWallet, heightProvider{height: resp.Height})
 	if err != nil {
 		return nil, nil, fmt.Errorf("couldn't initialise node wallet commander: %w", err)
 	}
@@ -134,10 +134,12 @@ func getNodeWalletCommander(log *logging.Logger, registryPass string, vegaPaths 
 	return commander, cancel, nil
 }
 
-type heightProvider uint64
+type heightProvider struct {
+	height uint64
+}
 
 func (h heightProvider) Height() uint64 {
-	return uint64(h)
+	return h.height
 }
 
 func getCoreClient(address string) (api.CoreServiceClient, error) {

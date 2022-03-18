@@ -49,6 +49,7 @@ type coreService struct {
 	timesvc      TimeService
 	eventService EventService
 	subCancels   []func()
+	powParams    ProofOfWorkParams
 
 	chainID                  string
 	genesisTime              time.Time
@@ -63,6 +64,7 @@ func (s *coreService) UpdateProtocolServices(
 	evtforwarder EvtForwarder,
 	timesvc TimeService,
 	evtsvc EventService,
+	powParams ProofOfWorkParams,
 ) {
 	s.svcMu.Lock()
 	defer s.svcMu.Unlock()
@@ -73,6 +75,7 @@ func (s *coreService) UpdateProtocolServices(
 	s.evtForwarder = evtforwarder
 	s.eventService = evtsvc
 	s.timesvc = timesvc
+	s.powParams = powParams
 }
 
 // no need for a mutex - we only access the config through a value receiver.
@@ -87,8 +90,13 @@ func (s *coreService) LastBlockHeight(
 	defer metrics.StartAPIRequestAndTimeGRPC("LastBlockHeight")()
 
 	return &protoapi.LastBlockHeightResponse{
-		Height: s.stats.Blockchain.Height(),
-		Hash:   s.stats.Blockchain.Hash(),
+		Height:                      s.stats.Blockchain.Height(),
+		Hash:                        s.stats.Blockchain.Hash(),
+		SpamPowDifficulty:           s.powParams.SpamPoWDifficulty(),
+		SpamPowHashFunction:         s.powParams.SpamPoWHashFunction(),
+		SpamPowNumberOfPastBlocks:   s.powParams.SpamPoWNumberOfPastBlocks(),
+		SpamPowNumberOfTxPerBlock:   s.powParams.SpamPoWNumberOfTxPerBlock(),
+		SpamPowIncreasingDifficulty: s.powParams.SpamPoWIncreasingDifficulty(),
 	}, nil
 }
 

@@ -2,6 +2,7 @@ package types
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 	"time"
 
@@ -60,6 +61,16 @@ type isPayload interface {
 	plToProto() interface{}
 	Namespace() SnapshotNamespace
 	Key() string
+}
+
+type PayloadProofOfWork struct {
+	BlockHeight   []uint64
+	BlockHash     []string
+	SeenTx        map[string]struct{}
+	HeightToTx    map[uint64][]string
+	SeenTid       map[string]struct{}
+	HeightToTid   map[uint64][]string
+	BannedParties map[string]uint64
 }
 
 type PayloadActiveAssets struct {
@@ -214,12 +225,6 @@ type Resource struct {
 	ID         string
 	CheckUntil time.Time
 	Votes      []string
-}
-
-type PayloadReplayProtection struct {
-	Transactions []*snapshot.TransactionAtHeight
-	BackTol      uint64
-	ForwardTol   uint64
 }
 
 type PayloadEventForwarder struct {
@@ -683,8 +688,6 @@ func PayloadFromProto(p *snapshot.Payload) *Payload {
 		ret.Data = PayloadSimpleSpamPolicyFromProto(dt)
 	case *snapshot.Payload_Notary:
 		ret.Data = PayloadNotaryFromProto(dt)
-	case *snapshot.Payload_ReplayProtection:
-		ret.Data = PayloadReplayProtectionFromProto(dt)
 	case *snapshot.Payload_EventForwarder:
 		ret.Data = PayloadEventForwarderFromProto(dt)
 	case *snapshot.Payload_Witness:
@@ -727,6 +730,8 @@ func PayloadFromProto(p *snapshot.Payload) *Payload {
 		ret.Data = PayloadERC20MultiSigTopologyPendingFromProto(dt)
 	case *snapshot.Payload_Erc20MultisigTopologyVerified:
 		ret.Data = PayloadERC20MultiSigTopologyVerifiedFromProto(dt)
+	case *snapshot.Payload_ProofOfWork:
+		ret.Data = PayloadProofOfWorkFromProto(dt)
 	}
 
 	return ret
@@ -857,6 +862,8 @@ func (p Payload) IntoProto() *snapshot.Payload {
 	case *snapshot.Payload_Erc20MultisigTopologyPending:
 		ret.Data = dt
 	case *snapshot.Payload_Erc20MultisigTopologyVerified:
+		ret.Data = dt
+	case *snapshot.Payload_ProofOfWork:
 		ret.Data = dt
 	}
 	return &ret
@@ -3383,38 +3390,6 @@ func (*PayloadStakeVerifierDeposited) Namespace() SnapshotNamespace {
 	return StakeVerifierSnapshot
 }
 
-func PayloadReplayProtectionFromProto(rp *snapshot.Payload_ReplayProtection) *PayloadReplayProtection {
-	return &PayloadReplayProtection{
-		Transactions: rp.ReplayProtection.Transactions,
-		BackTol:      rp.ReplayProtection.BackTol,
-		ForwardTol:   rp.ReplayProtection.ForwardTol,
-	}
-}
-
-func (p PayloadReplayProtection) IntoProto() *snapshot.Payload_ReplayProtection {
-	return &snapshot.Payload_ReplayProtection{
-		ReplayProtection: &snapshot.ReplayProtection{
-			Transactions: p.Transactions,
-			BackTol:      p.BackTol,
-			ForwardTol:   p.ForwardTol,
-		},
-	}
-}
-
-func (*PayloadReplayProtection) isPayload() {}
-
-func (p *PayloadReplayProtection) plToProto() interface{} {
-	return p.IntoProto()
-}
-
-func (*PayloadReplayProtection) Key() string {
-	return "all"
-}
-
-func (*PayloadReplayProtection) Namespace() SnapshotNamespace {
-	return ReplayProtectionSnapshot
-}
-
 func PayloadEventForwarderFromProto(ef *snapshot.Payload_EventForwarder) *PayloadEventForwarder {
 	return &PayloadEventForwarder{
 		Events: ef.EventForwarder.AckedEvents,
@@ -3682,6 +3657,92 @@ func (f *FutureState) IntoProto() *snapshot.FutureState {
 		SettlementPrice:   f.SettlementPrice.String(),
 		TradingTerminated: f.TradingTerminated,
 	}
+}
+
+func (*PayloadProofOfWork) isPayload() {}
+
+func PayloadProofOfWorkFromProto(s *snapshot.Payload_ProofOfWork) *PayloadProofOfWork {
+	pow := &PayloadProofOfWork{
+		BlockHeight:   s.ProofOfWork.BlockHeight,
+		BlockHash:     s.ProofOfWork.BlockHash,
+		SeenTx:        make(map[string]struct{}, len(s.ProofOfWork.SeenTx)),
+		SeenTid:       make(map[string]struct{}, len(s.ProofOfWork.SeenTid)),
+		BannedParties: make(map[string]uint64, len(s.ProofOfWork.Banned)),
+		HeightToTx:    make(map[uint64][]string, len(s.ProofOfWork.TxAtHeight)),
+		HeightToTid:   make(map[uint64][]string, len(s.ProofOfWork.TidAtHeight)),
+	}
+	for _, v := range s.ProofOfWork.SeenTx {
+		pow.SeenTx[v] = struct{}{}
+	}
+	for _, v := range s.ProofOfWork.SeenTid {
+		pow.SeenTid[v] = struct{}{}
+	}
+	for _, bp := range s.ProofOfWork.Banned {
+		pow.BannedParties[bp.Party] = bp.UntilEpoch
+	}
+	for _, tah := range s.ProofOfWork.TxAtHeight {
+		pow.HeightToTx[tah.Height] = tah.Transactions
+	}
+	for _, tah := range s.ProofOfWork.TidAtHeight {
+		pow.HeightToTid[tah.Height] = tah.Transactions
+	}
+	return pow
+}
+
+func (p *PayloadProofOfWork) IntoProto() *snapshot.Payload_ProofOfWork {
+	seenTx := make([]string, 0, len(p.SeenTx))
+	for k := range p.SeenTx {
+		seenTx = append(seenTx, k)
+	}
+	sort.Strings(seenTx)
+
+	seenTid := make([]string, 0, len(p.SeenTid))
+	for k := range p.SeenTid {
+		seenTid = append(seenTid, k)
+	}
+	sort.Strings(seenTid)
+
+	banned := make([]*snapshot.BannedParty, 0, len(p.BannedParties))
+	for k, v := range p.BannedParties {
+		banned = append(banned, &snapshot.BannedParty{Party: k, UntilEpoch: v})
+	}
+	sort.Slice(banned, func(i, j int) bool { return banned[i].Party < banned[j].Party })
+
+	txAtHeight := make([]*snapshot.TransactionsAtHeight, 0, len(p.HeightToTx))
+	for k, v := range p.HeightToTx {
+		txAtHeight = append(txAtHeight, &snapshot.TransactionsAtHeight{Height: k, Transactions: v})
+	}
+	sort.Slice(txAtHeight, func(i, j int) bool { return txAtHeight[i].Height < txAtHeight[j].Height })
+
+	tidAtHeight := make([]*snapshot.TransactionsAtHeight, 0, len(p.HeightToTid))
+	for k, v := range p.HeightToTid {
+		tidAtHeight = append(tidAtHeight, &snapshot.TransactionsAtHeight{Height: k, Transactions: v})
+	}
+	sort.Slice(tidAtHeight, func(i, j int) bool { return tidAtHeight[i].Height < tidAtHeight[j].Height })
+
+	return &snapshot.Payload_ProofOfWork{
+		ProofOfWork: &snapshot.ProofOfWork{
+			BlockHeight: p.BlockHeight,
+			BlockHash:   p.BlockHash,
+			SeenTx:      seenTx,
+			SeenTid:     seenTid,
+			Banned:      banned,
+			TxAtHeight:  txAtHeight,
+			TidAtHeight: tidAtHeight,
+		},
+	}
+}
+
+func (p *PayloadProofOfWork) plToProto() interface{} {
+	return p.IntoProto()
+}
+
+func (p *PayloadProofOfWork) Key() string {
+	return "pow"
+}
+
+func (*PayloadProofOfWork) Namespace() SnapshotNamespace {
+	return PoWSnapshot
 }
 
 // KeyFromPayload is useful in snapshot engine, used by the Payload type, too.

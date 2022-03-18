@@ -472,8 +472,6 @@ func getDummyData() *types.Chunk {
 			Topology: &types.Topology{},
 		},
 	}, &types.Payload{
-		Data: &types.PayloadReplayProtection{},
-	}, &types.Payload{
 		Data: &types.PayloadEventForwarder{},
 	}, &types.Payload{
 		Data: &types.PayloadLiquidityParameters{
@@ -660,8 +658,6 @@ func TestPayloadConversion(t *testing.T) {
 		Data: &types.PayloadTopology{
 			Topology: &types.Topology{},
 		},
-	}, &types.Payload{
-		Data: &types.PayloadReplayProtection{},
 	}, &types.Payload{
 		Data: &types.PayloadEventForwarder{},
 	}, &types.Payload{

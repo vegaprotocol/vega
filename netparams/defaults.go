@@ -146,5 +146,12 @@ func defaultNetParams() map[string]value {
 		TransferFeeFactor:                  NewDecimal(DecimalGTE(num.DecimalZero())).Mutable(true).MustUpdate("0.001"),
 		TransferMinTransferQuantumMultiple: NewDecimal(DecimalGTE(num.DecimalZero())).Mutable(true).MustUpdate("0.1"),
 		TransferMaxCommandsPerEpoch:        NewInt(IntGTE(0)).Mutable(true).MustUpdate("20"),
+
+		// pow
+		SpamPoWNumberOfPastBlocks:   NewUint(UintGTE(num.Zero())).Mutable(true).MustUpdate("100"),
+		SpamPoWDifficulty:           NewUint(UintGT(num.Zero()), UintLTE(num.NewUint(256))).Mutable(true).MustUpdate("17"),
+		SpamPoWHashFunction:         NewString().Mutable(true).MustUpdate("sha3_24_rounds"),
+		SpamPoWNumberOfTxPerBlock:   NewUint(UintGTE(num.Zero())).Mutable(true).MustUpdate("20"),
+		SpamPoWIncreasingDifficulty: NewUint(UintGTE(num.Zero()), UintLTE(num.NewUint(1))).Mutable(true).MustUpdate("0"),
 	}
 }

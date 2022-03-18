@@ -3,7 +3,7 @@
 ## Unreleased (0.50.0)
 
 ### 🚨 Breaking changes
-- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+- [4985](https://github.com/vegaprotocol/vega/issues/4985) - Proof of work spam protection
 
 ### 🗑️ Deprecation
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
@@ -16,7 +16,6 @@
 
 
 ## 0.49.4
-
 ### 🛠 Improvements
 - [2585](https://github.com/vegaprotocol/vega/issues/2585) - Adding position state event to event bus
 - [4952](https://github.com/vegaprotocol/vega/issues/4952) - Add checkpoints for staking and `multisig control`

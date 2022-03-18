@@ -125,6 +125,13 @@ const (
 	TransferFeeFactor                  = "transfer.fee.factor"
 	TransferMinTransferQuantumMultiple = "transfer.minTransferQuantumMultiple"
 	TransferMaxCommandsPerEpoch        = "spam.protection.maxUserTransfersPerEpoch"
+
+	// proof of work.
+	SpamPoWNumberOfPastBlocks   = "spam.pow.numberOfPastBlocks"
+	SpamPoWDifficulty           = "spam.pow.difficulty"
+	SpamPoWHashFunction         = "spam.pow.hashFunction"
+	SpamPoWNumberOfTxPerBlock   = "spam.pow.numberOfTxPerBlock"
+	SpamPoWIncreasingDifficulty = "spam.pow.increaseDifficulty"
 )
 
 var AllKeys = map[string]struct{}{
@@ -222,4 +229,9 @@ var AllKeys = map[string]struct{}{
 	MinimumEthereumEventsForNewValidator:                     {},
 	TransferMinTransferQuantumMultiple:                       {},
 	TransferMaxCommandsPerEpoch:                              {},
+	SpamPoWNumberOfPastBlocks:                                {},
+	SpamPoWDifficulty:                                        {},
+	SpamPoWHashFunction:                                      {},
+	SpamPoWNumberOfTxPerBlock:                                {},
+	SpamPoWIncreasingDifficulty:                              {},
 }

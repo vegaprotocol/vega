@@ -22,6 +22,10 @@ type testTx struct {
 	command  txn.Command
 }
 
+func (*testTx) GetPoWNonce() uint64 { return 0 }
+func (*testTx) GetPoWTID() string   { return "" }
+func (*testTx) GetVersion() uint32  { return 2 }
+
 var (
 	sufficientTokensForVoting, _    = num.UintFromString("100000000000000000000", 10)
 	sufficientTokens2ForVoting, _   = num.UintFromString("200000000000000000000", 10)
