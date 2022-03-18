@@ -10,6 +10,7 @@
 
 ### 🛠 Improvements
 - [5007](https://github.com/vegaprotocol/vega/issues/5007) - Run approbation as part of the CI pipeline
+- [5018](https://github.com/vegaprotocol/vega/issues/5018) - Label Price Monitoring features
 
 ### 🐛 Fixes
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
