@@ -73,3 +73,7 @@ func (s *Stats) GetUptime() time.Time {
 func (s Stats) Height() uint64 {
 	return s.Blockchain.Height()
 }
+
+func (s Stats) BlockHash() string {
+	return s.Blockchain.Hash()
+}

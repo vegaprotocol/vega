@@ -229,6 +229,7 @@ func (n *NodeCommand) updateAPIsServices() {
 		n.protocol.GetEventForwarder(),
 		n.protocol.GetTimeService(),
 		n.protocol.GetEventService(),
+		n.protocol.GetPoW(),
 	)
 
 	n.coreService.UpdateBroker(n.protocol.GetBroker())
@@ -244,6 +245,7 @@ func (n *NodeCommand) startAPIs() error {
 		n.protocol.GetTimeService(),
 		n.protocol.GetEventService(),
 		n.statusChecker,
+		n.protocol.GetPoW(),
 	)
 
 	n.grpcServer.RegisterService(func(server *grpc.Server) {

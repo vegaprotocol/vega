@@ -18,6 +18,9 @@ type Tx interface {
 	Validate() error
 	BlockHeight() uint64
 	GetCmd() interface{}
+	GetPoWNonce() uint64
+	GetPoWTID() string
+	GetVersion() uint32
 }
 
 type Codec interface {
@@ -37,4 +40,6 @@ type (
 	LoadSnapshotChunkHandler  func(types.RequestLoadSnapshotChunk) types.ResponseLoadSnapshotChunk
 	ApplySnapshotChunkHandler func(context.Context, types.RequestApplySnapshotChunk) types.ResponseApplySnapshotChunk
 	InfoHandler               func(types.RequestInfo) types.ResponseInfo
+	OnCheckTxSpamHandler      func(Tx) types.ResponseCheckTx
+	OnDeliverTxSpamHandler    func(Tx) types.ResponseDeliverTx
 )

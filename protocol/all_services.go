@@ -31,6 +31,7 @@ import (
 	"code.vegaprotocol.io/vega/oracles/adaptors"
 	oracleAdaptors "code.vegaprotocol.io/vega/oracles/adaptors"
 	"code.vegaprotocol.io/vega/plugins"
+	"code.vegaprotocol.io/vega/pow"
 	"code.vegaprotocol.io/vega/rewards"
 	"code.vegaprotocol.io/vega/snapshot"
 	"code.vegaprotocol.io/vega/spam"
@@ -77,6 +78,7 @@ type allServices struct {
 	rewards         *rewards.Engine
 	checkpoint      *checkpoint.Engine
 	spam            *spam.Engine
+	pow             *pow.Engine
 	builtinOracle   *oracles.Builtin
 
 	assets               *assets.Service
@@ -136,6 +138,9 @@ func newServices(
 		return nil, err
 	}
 
+	svcs.timeService = vegatime.New(svcs.conf.Time, svcs.broker)
+	svcs.epochService = epochtime.NewService(svcs.log, svcs.conf.Epoch, svcs.timeService, svcs.broker)
+	svcs.pow = pow.New(svcs.log, svcs.conf.PoW, svcs.epochService)
 	// if we are not a validator, no need to instantiate the commander
 	if svcs.conf.IsValidator() {
 		// we cannot pass the Chain dependency here (that's set by the blockchain)
@@ -155,7 +160,6 @@ func newServices(
 
 	svcs.genesisHandler = genesis.New(svcs.log, svcs.conf.Genesis)
 
-	svcs.timeService = vegatime.New(svcs.conf.Time, svcs.broker)
 	svcs.genesisHandler.OnGenesisTimeLoaded(svcs.timeService.SetTimeNow)
 	svcs.eventService = subscribers.NewService(svcs.broker)
 
@@ -203,7 +207,6 @@ func newServices(
 	svcs.stakingAccounts, svcs.stakeVerifier, svcs.stakeCheckpoint = staking.New(
 		svcs.log, svcs.conf.Staking, svcs.broker, svcs.timeService, svcs.witness, svcs.ethClient, svcs.netParams, svcs.eventForwarder, svcs.conf.HaveEthClient(), svcs.ethConfirmations, svcs.eventForwarderEngine,
 	)
-	svcs.epochService = epochtime.NewService(svcs.log, svcs.conf.Epoch, svcs.timeService, svcs.broker)
 	svcs.epochService.NotifyOnEpoch(svcs.topology.OnEpochEvent, svcs.topology.OnEpochRestore)
 
 	svcs.statevar = statevar.New(svcs.log, svcs.conf.StateVar, svcs.broker, svcs.topology, svcs.commander, svcs.timeService)
@@ -325,6 +328,26 @@ func (svcs *allServices) setupNetParameters() error {
 
 	// now add some watcher for our netparams
 	return svcs.netParams.Watch(
+		netparams.WatchParam{
+			Param:   netparams.SpamPoWNumberOfPastBlocks,
+			Watcher: svcs.pow.UpdateSpamPoWNumberOfPastBlocks,
+		},
+		netparams.WatchParam{
+			Param:   netparams.SpamPoWDifficulty,
+			Watcher: svcs.pow.UpdateSpamPoWDifficulty,
+		},
+		netparams.WatchParam{
+			Param:   netparams.SpamPoWHashFunction,
+			Watcher: svcs.pow.UpdateSpamPoWHashFunction,
+		},
+		netparams.WatchParam{
+			Param:   netparams.SpamPoWIncreasingDifficulty,
+			Watcher: svcs.pow.UpdateSpamPoWIncreasingDifficulty,
+		},
+		netparams.WatchParam{
+			Param:   netparams.SpamPoWNumberOfTxPerBlock,
+			Watcher: svcs.pow.UpdateSpamPoWNumberOfTxPerBlock,
+		},
 		netparams.WatchParam{
 			Param:   netparams.NumberOfTendermintValidators,
 			Watcher: svcs.topology.UpdateNumberOfTendermintValidators,

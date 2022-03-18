@@ -33,7 +33,6 @@ func (app *App) setBatchStats() {
 }
 
 func (app *App) updateStats() {
-	app.stats.IncHeight()
 	app.stats.IncTotalBatches()
 	avg := app.stats.TotalOrders() / app.stats.TotalBatches()
 	app.stats.SetAverageOrdersPerBatch(avg)

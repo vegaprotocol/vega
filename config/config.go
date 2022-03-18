@@ -32,6 +32,7 @@ import (
 	"code.vegaprotocol.io/vega/nodewallets"
 	"code.vegaprotocol.io/vega/notary"
 	"code.vegaprotocol.io/vega/oracles"
+	"code.vegaprotocol.io/vega/pow"
 	"code.vegaprotocol.io/vega/processor"
 	"code.vegaprotocol.io/vega/rewards"
 	"code.vegaprotocol.io/vega/snapshot"
@@ -75,6 +76,7 @@ type Config struct {
 	Rewards           rewards.Config       `group:"Rewards" namespace:"rewards"`
 	Delegation        delegation.Config    `group:"Delegation" namespace:"delegation"`
 	Spam              spam.Config          `group:"Spam" namespace:"spam"`
+	PoW               pow.Config           `group:"ProofOfWork" namespace:"pow"`
 	Snapshot          snapshot.Config      `group:"Snapshot" namespace:"snapshot"`
 	StateVar          statevar.Config      `group:"StateVar" namespace:"statevar"`
 	ERC20MultiSig     erc20multisig.Config `group:"ERC20MultiSig" namespace:"erc20multisig"`
@@ -120,6 +122,7 @@ func NewDefaultConfig() Config {
 		Snapshot:          snapshot.NewDefaultConfig(),
 		StateVar:          statevar.NewDefaultConfig(),
 		ERC20MultiSig:     erc20multisig.NewDefaultConfig(),
+		PoW:               pow.NewDefaultConfig(),
 	}
 }
 
