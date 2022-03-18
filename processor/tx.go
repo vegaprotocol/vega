@@ -22,6 +22,8 @@ type Tx struct {
 	tx         *commandspb.Transaction
 	inputData  *commandspb.InputData
 	err        error
+	pow        *commandspb.ProofOfWork
+	version    uint32
 }
 
 func DecodeTx(payload []byte) (*Tx, error) {
@@ -45,6 +47,8 @@ func DecodeTx(payload []byte) (*Tx, error) {
 		tx:         tx,
 		inputData:  inputData,
 		err:        err,
+		pow:        tx.Pow,
+		version:    tx.Version,
 	}, nil
 }
 
@@ -129,6 +133,22 @@ func (t Tx) Command() txn.Command {
 		panic("unsupported command")
 	}
 }
+
+func (t Tx) GetPoWNonce() uint64 {
+	if t.version > 1 && t.pow != nil {
+		return t.pow.Nonce
+	}
+	return 0
+}
+
+func (t Tx) GetPoWTID() string {
+	if t.version > 1 && t.pow != nil {
+		return t.pow.Tid
+	}
+	return ""
+}
+
+func (t Tx) GetVersion() uint32 { return t.version }
 
 func (t Tx) GetCmd() interface{} {
 	switch cmd := t.inputData.Command.(type) {

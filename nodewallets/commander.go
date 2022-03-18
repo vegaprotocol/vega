@@ -92,6 +92,7 @@ func (c *Commander) command(_ context.Context, cmd txn.Command, payload proto.Me
 		}
 
 		tx := commands.NewTransaction(c.wallet.PubKey().Hex(), marshalledData, signature)
+
 		_, err = c.bc.SubmitTransactionAsync(ctx, tx)
 		if err != nil {
 			// this can happen as network dependent

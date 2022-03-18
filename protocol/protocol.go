@@ -11,6 +11,7 @@ import (
 	"code.vegaprotocol.io/vega/evtforward"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/nodewallets"
+	"code.vegaprotocol.io/vega/pow"
 	"code.vegaprotocol.io/vega/processor"
 	"code.vegaprotocol.io/vega/stats"
 	"code.vegaprotocol.io/vega/subscribers"
@@ -88,6 +89,7 @@ func New(
 			svcs.stakeVerifier,
 			svcs.checkpoint,
 			svcs.spam,
+			svcs.pow,
 			svcs.stakingAccounts,
 			svcs.snapshot,
 			svcs.statevar,
@@ -134,4 +136,8 @@ func (n *Protocol) GetEventService() *subscribers.Service {
 
 func (n *Protocol) GetBroker() *broker.Broker {
 	return n.services.broker
+}
+
+func (n *Protocol) GetPoW() *pow.Engine {
+	return n.services.pow
 }

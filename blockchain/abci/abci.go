@@ -34,13 +34,9 @@ func (app *App) Info(req types.RequestInfo) types.ResponseInfo {
 }
 
 func (app *App) InitChain(req types.RequestInitChain) (resp types.ResponseInitChain) {
-	state, err := LoadGenesisState(req.AppStateBytes)
+	_, err := LoadGenesisState(req.AppStateBytes)
 	if err != nil {
 		panic(err)
-	}
-
-	if state.ReplayAttackThreshold != 0 {
-		app.ReplaceReplayProtector(state.ReplayAttackThreshold)
 	}
 
 	if fn := app.OnInitChain; fn != nil {
@@ -50,11 +46,6 @@ func (app *App) InitChain(req types.RequestInitChain) (resp types.ResponseInitCh
 }
 
 func (app *App) BeginBlock(req types.RequestBeginBlock) (resp types.ResponseBeginBlock) {
-	height := uint64(req.Header.Height)
-	if app.replayProtector != nil {
-		app.replayProtector.SetHeight(height)
-	}
-
 	if fn := app.OnBeginBlock; fn != nil {
 		app.ctx, resp = fn(req)
 	}
@@ -76,15 +67,24 @@ func (app *App) Commit() (resp types.ResponseCommit) {
 }
 
 func (app *App) CheckTx(req types.RequestCheckTx) (resp types.ResponseCheckTx) {
+	// first, only decode the transaction but don't validate
 	tx, code, err := app.getTx(req.GetTx())
 	if err != nil {
 		return NewResponseCheckTxError(code, err)
 	}
 
-	if err := app.replayProtector.CheckTx(tx); err != nil {
-		return AddCommonCheckTxEvents(
-			NewResponseCheckTxError(AbciTxnValidationFailure, err), tx,
-		)
+	// check for spam and replay
+	if fn := app.OnCheckTxSpam; fn != nil {
+		resp = fn(tx)
+		if resp.IsErr() {
+			return AddCommonCheckTxEvents(resp, tx)
+		}
+	}
+
+	// if we passed spam protection, validate the signature
+	code, err = app.validateTx(tx)
+	if err != nil {
+		return AddCommonCheckTxEvents(NewResponseCheckTxError(code, err), tx)
 	}
 
 	ctx := app.ctx
@@ -112,16 +112,25 @@ func (app *App) CheckTx(req types.RequestCheckTx) (resp types.ResponseCheckTx) {
 }
 
 func (app *App) DeliverTx(req types.RequestDeliverTx) (resp types.ResponseDeliverTx) {
+	// first, only decode the transaction but don't validate
 	tx, code, err := app.getTx(req.GetTx())
 	if err != nil {
 		return NewResponseDeliverTxError(code, err)
 	}
 	app.removeTxFromCache(req.GetTx())
 
-	if err := app.replayProtector.DeliverTx(tx); err != nil {
-		return AddCommonDeliverTxEvents(
-			NewResponseDeliverTxError(AbciTxnValidationFailure, err), tx,
-		)
+	// check for spam and replay
+	if fn := app.OnDeliverTxSpam; fn != nil {
+		resp = fn(tx)
+		if resp.IsErr() {
+			return AddCommonDeliverTxEvents(resp, tx)
+		}
+	}
+
+	// if we passed spam protection, validate the signature
+	code, err = app.validateTx(tx)
+	if err != nil {
+		return NewResponseDeliverTxError(code, err)
 	}
 
 	// It's been validated by CheckTx so we can skip the validation here

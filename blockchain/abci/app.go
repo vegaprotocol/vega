@@ -18,20 +18,9 @@ type SnapshotEngine interface {
 	AddProviders(provs ...types.StateProvider)
 }
 
-type replayProtector interface {
-	SetHeight(uint64)
-	DeliverTx(Tx) error
-	CheckTx(Tx) error
-	GetReplacement() *ReplayProtector
-	Stopped() bool
-}
-
 type App struct {
 	abci.BaseApplication
 	codec Codec
-
-	// options
-	replayProtector replayProtector
 
 	// handlers
 	OnInitChain  OnInitChainHandler
@@ -40,6 +29,11 @@ type App struct {
 	OnCheckTx    OnCheckTxHandler
 	OnDeliverTx  OnDeliverTxHandler
 	OnCommit     OnCommitHandler
+
+	// spam check
+	OnCheckTxSpam   OnCheckTxSpamHandler
+	OnDeliverTxSpam OnDeliverTxSpamHandler
+
 	// snapshot stuff
 
 	OnListSnapshots      ListSnapshotsHandler
@@ -63,37 +57,12 @@ type App struct {
 func New(codec Codec) *App {
 	lruCache, _ := lru.New(1024)
 	return &App{
-		codec:           codec,
-		replayProtector: &replayProtectorNoop{}, // this is going to be tricky for a restore
-		checkTxs:        map[txn.Command]TxHandler{},
-		deliverTxs:      map[txn.Command]TxHandler{},
-		checkedTxs:      lruCache,
-		ctx:             context.Background(),
+		codec:      codec,
+		checkTxs:   map[txn.Command]TxHandler{},
+		deliverTxs: map[txn.Command]TxHandler{},
+		checkedTxs: lruCache,
+		ctx:        context.Background(),
 	}
-}
-
-func (app *App) ReplaceReplayProtector(tolerance uint) {
-	rpl := app.replayProtector.GetReplacement()
-	if rpl == nil {
-		// no replacement to consider since we haven't loaded from a snapshot
-		// tolerance comes directly from the appstate in this instance
-		// for now lets have forward and backward tolerance equal.
-		app.replayProtector = NewReplayProtector(uint64(tolerance), uint64(tolerance))
-		return
-	}
-
-	// We have loaded from the snapshot and so the tolerance i.e the length of the ring buffer
-	// has been restored based on the length in the snapshot data, so the tolerance passed in here is irrelevant
-	// since we've already handled it when we loaded.
-	app.replayProtector = rpl
-}
-
-func (app *App) RegisterSnapshot(eng SnapshotEngine) {
-	rpp, ok := app.replayProtector.(types.StateProvider)
-	if !ok {
-		return
-	}
-	eng.AddProviders(rpp)
 }
 
 func (app *App) HandleCheckTx(cmd txn.Command, fn TxHandler) *App {
@@ -106,20 +75,19 @@ func (app *App) HandleDeliverTx(cmd txn.Command, fn TxHandler) *App {
 	return app
 }
 
-// decodeAndValidateTx tries to decode a Tendermint Tx and validate
-// it.  It returns the Tx if decoded and validated successfully,
-// otherwise it returns the Abci error code and the underlying
-// error.
-func (app *App) decodeAndValidateTx(bytes []byte) (Tx, uint32, error) {
+func (app *App) validateTx(tx Tx) (uint32, error) {
+	if err := tx.Validate(); err != nil {
+		return AbciTxnValidationFailure, err
+	}
+
+	return 0, nil
+}
+
+func (app *App) decodeTx(bytes []byte) (Tx, uint32, error) {
 	tx, err := app.codec.Decode(bytes)
 	if err != nil {
 		return nil, AbciTxnDecodingFailure, err
 	}
-
-	if err := tx.Validate(); err != nil {
-		return nil, AbciTxnValidationFailure, err
-	}
-
 	return tx, 0, nil
 }
 
@@ -144,16 +112,13 @@ func (app *App) removeTxFromCache(in []byte) {
 }
 
 // getTx returns an internal Tx given a []byte.
-// if no errors were found during decoding and validation, the resulting Tx
-// will be cached.
-// An error code different from 0 is returned if decoding or validation fails
-// with its the corresponding error.
+// An error code different from 0 is returned if decoding  fails with its the corresponding error.
 func (app *App) getTx(bytes []byte) (Tx, uint32, error) {
 	if tx := app.txFromCache(bytes); tx != nil {
 		return tx, 0, nil
 	}
 
-	tx, code, err := app.decodeAndValidateTx(bytes)
+	tx, code, err := app.decodeTx(bytes)
 	if err != nil {
 		return nil, code, err
 	}
