@@ -33,6 +33,10 @@ Scenario: S001,Testing fees in continuous trading with one trade and no liquidit
       | aux1  | ETH/DEC21 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC |
       | aux2  | ETH/DEC21 | sell | 1      | 1100  | 0                | TYPE_LIMIT | TIF_GTC |
 
+      Then the parties should have the following account balances:
+      | party   | asset | market id | margin | general  |
+      | aux1    | ETH   | ETH/DEC21 | 5253   | 99994747 |
+
     Then the opening auction period ends for market "ETH/DEC21"
     And the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            | 
@@ -1618,65 +1622,282 @@ Scenario: S020, Testing fees in continuous trading with two pegged trades and on
       | buy  | 990   | 20     |
       | sell | 1010  | 20     |
   
+    Then the parties should have the following account balances:
+      | party    | asset | market id | margin | general    |  bond    |
+      | aux1     | ETH   | ETH/DEC21 | 5376   | 99984624   |  10000   |
+
     Then the parties place the following orders:
       | party    | market id | side | volume | price | resulting trades | type       | tif     |
       | trader3a | ETH/DEC21 | buy  | 10     | 990   | 0                | TYPE_LIMIT | TIF_GTC |
-      | trader4  | ETH/DEC21 | sell | 30     | 990   | 1                | TYPE_LIMIT | TIF_GTC |
-      
-     Then the parties should have the following account balances:
-      | party    | asset | market id | margin | general |
-      | trader3a | ETH   | ETH/DEC21 | 3216   | 96834   |
-      | trader4  | ETH   | ETH/DEC21 | 3600   | 96320   |
-    
-    And the liquidity fee factor should "0.001" for the market "ETH/DEC21"
-    And the accumulated liquidity fees should be "10" for the market "ETH/DEC21"
+      # | trader4  | ETH/DEC21 | sell | 30     | 990   | 1                | TYPE_LIMIT | TIF_GTC |
 
-    Then the following trades should be executed:
-      # | buyer    | price | size | seller  | maker   | taker   | buyer_fee | seller_fee | maker_fee |
-      # | trader3a | 1002  | 2    | trader4 | trader3 | trader4 | 30        | 11         | 11        |
-      # TODO to be implemented by Core Team
-      | buyer      | price | size | seller  |
-      # | aux1     | 990   | 19   | trader4 |
-        | trader3a | 990   | 10  | trader4 |
-      # Somehow the trades for party aux1 with size = 20 at price = 990 are getting cancelled and new trades of size = 21 at price = 965 are getting placed
+    And the market data for the market "ETH/DEC21" should be:
+      | mark price | trading mode            | 
+      | 1000       | TRADING_MODE_CONTINUOUS |  
 
-    Then the market data for the market "ETH/DEC21" should be:
-      | mark price | trading mode            |  
-      | 990        | TRADING_MODE_CONTINUOUS |
-     
-    # For trader4 -
-    # trade_value_for_fee_purposes for trader3a = size_of_trade * price_of_trade = 10 * 990 = 9900
-    # infrastructure_fee = fee_factor[infrastructure] * trade_value_for_fee_purposes = 0.002 * 9900 = 19.8 = 20 (rounded up to nearest whole value)
-    # maker_fee =  fee_factor[maker]  * trade_value_for_fee_purposes = 0.005 * 9900 = 49.5 = 50 (rounded up to nearest whole value)
-    # liquidity_fee = fee_factor[liquidity] * trade_value_for_fee_purposes = 0.001 * 9900 = 9.9 = 10 (rounded up to nearest whole value)
-
-    # For trader3a -
-    # trade_value_for_fee_purposes for trader3a = size_of_trade * price_of_trade = 10 * 990 = 9900
-    # infrastructure_fee = fee_factor[infrastructure] * trade_value_for_fee_purposes = 0.002 * 9900 = 19.8 = 20 (rounded up to nearest whole value)
-    # maker_fee =  fee_factor[maker]  * trade_value_for_fee_purposes = 0.005 * 9900 = 49.5 = 50 (rounded up to nearest whole value)
-    # liquidity_fee = fee_factor[liquidity] * trade_value_for_fee_purposes = 0.001 * 9900 = 9.9 = 10 (rounded up to nearest whole value)
-
-
-    And the following transfers should happen:
-      | from    | to       | from account            | to account                       | market id | amount | asset |
-      | trader4 | market   | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_MAKER          | ETH/DEC21 | 50     | ETH   |
-      | trader4 |          | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_INFRASTRUCTURE |           | 20     | ETH   |
-      | trader4 | market   | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_LIQUIDITY      | ETH/DEC21 | 10     | ETH   |
-      | market  | trader3a | ACCOUNT_TYPE_FEES_MAKER | ACCOUNT_TYPE_GENERAL             | ETH/DEC21 | 50     | ETH   |  
+    And the order book should have the following volumes for market "ETH/DEC21":
+      | side | price | volume |
+      | buy  | 920   | 1      |
+      | buy  | 990   | 10     |
+      | buy  | 1025  | 0      |
+      | sell | 910  | 0      |
+      | sell | 911  | 0      |
+      | sell | 912  | 0      |
+      | sell | 913  | 0      |
+      | sell | 914  | 0      |
+      | sell | 915  | 0      |
+      | sell | 916  | 0      |
+      | sell | 917  | 0      |
+      | sell | 918  | 0      |
+      | sell | 919  | 0      |
+      | sell | 920  | 0      |
+      | sell | 921  | 0      |
+      | sell | 922  | 0      |
+      | sell | 923  | 0      |
+      | sell | 924  | 0      |
+      | sell | 925  | 0      |
+      | sell | 926  | 0      |
+      | sell | 927  | 0      |
+      | sell | 928  | 0      |
+      | sell | 929  | 0      |
+      | sell | 930  | 0      |
+      | sell | 931  | 0      |
+      | sell | 932  | 0      |
+      | sell | 933  | 0      |
+      | sell | 934  | 0      |
+      | sell | 935  | 0      |
+      | sell | 936  | 0      |
+      | sell | 937  | 0      |
+      | sell | 938  | 0      |
+      | sell | 939  | 0      |
+      | sell | 940  | 0      |
+      | sell | 941  | 0      |
+      | sell | 942  | 0      |
+      | sell | 943  | 0      |
+      | sell | 944  | 0      |
+      | sell | 945  | 0      |
+      | sell | 946  | 0      |
+      | sell | 947  | 0      |
+      | sell | 948  | 0      |
+      | sell | 949  | 0      |
+      | sell | 950  | 0      |
+      | sell | 951  | 0      |
+      | sell | 952  | 0      |
+      | sell | 953  | 0      |
+      | sell | 954  | 0      |
+      | sell | 955  | 0      |
+      | sell | 956  | 0      |
+      | sell | 957  | 0      |
+      | sell | 958  | 0      |
+      | sell | 959  | 0      |
+      | sell | 960  | 0      |
+      | sell | 961  | 0      |
+      | sell | 962  | 0      |
+      | sell | 963  | 0      |
+      | sell | 964  | 0      |
+      | sell | 965  | 0      |
+      | sell | 966  | 0      |
+      | sell | 967  | 0      |
+      | sell | 968  | 0      |
+      | sell | 969  | 0      |
+      | sell | 970  | 0      |
+      | sell | 971  | 0      |
+      | sell | 972  | 0      |
+      | sell | 973  | 0      |
+      | sell | 974  | 0      |
+      | sell | 975  | 0      |
+      | sell | 976  | 0      |
+      | sell | 977  | 0      |
+      | sell | 978  | 0      |
+      | sell | 979  | 0      |
+      | sell | 980  | 0      |
+      | sell | 981  | 0      |
+      | sell | 982  | 0      |
+      | sell | 983  | 0      |
+      | sell | 984  | 0      |
+      | sell | 985  | 0      |
+      | sell | 986  | 0      |
+      | sell | 987  | 0      |
+      | sell | 988  | 0      |
+      | sell | 989  | 0      |
+      | sell | 990  | 0      |
+      | sell | 991  | 0      |
+      | sell | 992  | 0      |
+      | sell | 993  | 0      |
+      | sell | 994  | 0      |
+      | sell | 995  | 0      |
+      | sell | 996  | 0      |
+      | sell | 997  | 0      |
+      | sell | 998  | 0      |
+      | sell | 999  | 0      |
+      | sell | 1000  | 0      |
+      | sell | 1001  | 0      |
+      | sell | 1002  | 0      |
+      | sell | 1003  | 0      |
+      | sell | 1004  | 0      |
+      | sell | 1005  | 0      |
+      | sell | 1006  | 0      |
+      | sell | 1007  | 0      |
+      | sell | 1008  | 0      |
+      | sell | 1009  | 0      |
+      | sell | 1010  | 0      |
+      | sell | 1011  | 0      |
+      | sell | 1012  | 0      |
+      | sell | 1013  | 0      |
+      | sell | 1014  | 0      |
+      | sell | 1015  | 0      |
+      | sell | 1016  | 0      |
+      | sell | 1017  | 0      |
+      | sell | 1018  | 0      |
+      | sell | 1019  | 0      |
+      | sell | 1020  | 0      |
+      | sell | 1021  | 0      |
+      | sell | 1022  | 0      |
+      | sell | 1023  | 0      |
+      | sell | 1024  | 0      |
+      | sell | 1025  | 0      |
+      | sell | 1026  | 0      |
+      | sell | 1027  | 0      |
+      | sell | 1028  | 0      |
+      | sell | 1029  | 0      |
+      | sell | 1030  | 0      |
+      | sell | 1031  | 0      |
+      | sell | 1032  | 0      |
+      | sell | 1033  | 0      |
+      | sell | 1034  | 0      |
+      | sell | 1035  | 0      |
+      | sell | 1036  | 0      |
+      | sell | 1037  | 0      |
+      | sell | 1038  | 0      |
+      | sell | 1039  | 0      |
+      | sell | 1040  | 0      |
+      | sell | 1040  | 0      |
+      | sell | 1041  | 0      |
+      | sell | 1042  | 0      |
+      | sell | 1043  | 0      |
+      | sell | 1044  | 0      |
+      | sell | 1045  | 0      |
+      | sell | 1046  | 0      |
+      | sell | 1047  | 0      |
+      | sell | 1048  | 0      |
+      | sell | 1049  | 0      |
+      | sell | 1050  | 0      |
+      | sell | 1051  | 0      |
+      | sell | 1052  | 0      |
+      | sell | 1053  | 0      |
+      | sell | 1054  | 0      |
+      | sell | 1055  | 0      |
+      | sell | 1056  | 0      |
+      | sell | 1057  | 0      |
+      | sell | 1058  | 0      |
+      | sell | 1059  | 0      |
+      | sell | 1060  | 0      |
+      | sell | 1060  | 0      |
+      | sell | 1061  | 0      |
+      | sell | 1062  | 0      |
+      | sell | 1063  | 0      |
+      | sell | 1064  | 0      |
+      | sell | 1065  | 0      |
+      | sell | 1066  | 0      |
+      | sell | 1067  | 0      |
+      | sell | 1068  | 0      |
+      | sell | 1069  | 0      |
+      | sell | 1070  | 0      |
+      | sell | 1071  | 0      |
+      | sell | 1072  | 0      |
+      | sell | 1073  | 0      |
+      | sell | 1074  | 0      |
+      | sell | 1075  | 0      |
+      | sell | 1076  | 0      |
+      | sell | 1077  | 0      |
+      | sell | 1078  | 0      |
+      | sell | 1079  | 0      |
+      | sell | 1080  | 1      |
+      | sell | 1081  | 0      |
+      | sell | 1082  | 0      |
+      | sell | 1083  | 0      |
+      | sell | 1084  | 0      |
+      | sell | 1085  | 0      |
+      | sell | 1086  | 0      |
+      | sell | 1087  | 0      |
+      | sell | 1088  | 0      |
+      | sell | 1089  | 0      |
+      | sell | 1090  | 0      |
+      | sell | 1091  | 0      |
+      | sell | 1092  | 0      |
+      | sell | 1093  | 0      |
+      | sell | 1094  | 0      |
+      | sell | 1095  | 0      |
+      | sell | 1096  | 0      |
+      | sell | 1097  | 0      |
+      | sell | 1098  | 0      |
+      | sell | 1099  | 0      |
+      | sell | 1100  | 0      |
+  
 
     Then the parties should have the following account balances:
-      | party      | asset | market id | margin | general |
-      | trader3a    | ETH   | ETH/DEC21 | 3216    | 96834    | 
-      | trader4     | ETH   | ETH/DEC21 | 3600    | 96320    |
+      | party    | asset | market id | margin | general    |  bond    |
+      | aux1     | ETH   | ETH/DEC21 | 5376   | 99984624   |  10000   |
 
-    # And the accumulated infrastructure fee should be "20" for the market "ETH/DEC21"
-    And the accumulated liquidity fees should be "10" for the market "ETH/DEC21"
 
-    When the network moves ahead "11" blocks
+#  Then the parties place the following orders:
+#       | party    | market id | side | volume | price | resulting trades | type       | tif     |
+#       | trader4  | ETH/DEC21 | sell | 30     | 990   | 1                | TYPE_LIMIT | TIF_GTC |
+      
+#      Then the parties should have the following account balances:
+#       | party    | asset | market id | margin | general |
+#       | trader3a | ETH   | ETH/DEC21 | 3216   | 96834   |
+#       | trader4  | ETH   | ETH/DEC21 | 3600   | 96320   |
     
-    And the following transfers should happen:
-      | from   | to   | from account                | to account           | market id | amount | asset |
-      | market | aux1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/DEC21 | 10     | ETH   |
+#     And the liquidity fee factor should "0.001" for the market "ETH/DEC21"
+#     And the accumulated liquidity fees should be "10" for the market "ETH/DEC21"
+
+#     Then the following trades should be executed:
+#       # | buyer    | price | size | seller  | maker   | taker   | buyer_fee | seller_fee | maker_fee |
+#       # | trader3a | 1002  | 2    | trader4 | trader3 | trader4 | 30        | 11         | 11        |
+#       # TODO to be implemented by Core Team
+#       | buyer      | price | size | seller  |
+#       # | aux1     | 990   | 19   | trader4 |
+#         | trader3a | 990   | 10  | trader4 |
+#       # Somehow the trades for party aux1 with size = 20 at price = 990 are getting cancelled and new trades of size = 21 at price = 965 are getting placed
+
+#     Then the market data for the market "ETH/DEC21" should be:
+#       | mark price | trading mode            |  
+#       | 990        | TRADING_MODE_CONTINUOUS |
+     
+#     # For trader4 -
+#     # trade_value_for_fee_purposes for trader3a = size_of_trade * price_of_trade = 10 * 990 = 9900
+#     # infrastructure_fee = fee_factor[infrastructure] * trade_value_for_fee_purposes = 0.002 * 9900 = 19.8 = 20 (rounded up to nearest whole value)
+#     # maker_fee =  fee_factor[maker]  * trade_value_for_fee_purposes = 0.005 * 9900 = 49.5 = 50 (rounded up to nearest whole value)
+#     # liquidity_fee = fee_factor[liquidity] * trade_value_for_fee_purposes = 0.001 * 9900 = 9.9 = 10 (rounded up to nearest whole value)
+
+#     # For trader3a -
+#     # trade_value_for_fee_purposes for trader3a = size_of_trade * price_of_trade = 10 * 990 = 9900
+#     # infrastructure_fee = fee_factor[infrastructure] * trade_value_for_fee_purposes = 0.002 * 9900 = 19.8 = 20 (rounded up to nearest whole value)
+#     # maker_fee =  fee_factor[maker]  * trade_value_for_fee_purposes = 0.005 * 9900 = 49.5 = 50 (rounded up to nearest whole value)
+#     # liquidity_fee = fee_factor[liquidity] * trade_value_for_fee_purposes = 0.001 * 9900 = 9.9 = 10 (rounded up to nearest whole value)
+
+
+#     And the following transfers should happen:
+#       | from    | to       | from account            | to account                       | market id | amount | asset |
+#       | trader4 | market   | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_MAKER          | ETH/DEC21 | 50     | ETH   |
+#       | trader4 |          | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_INFRASTRUCTURE |           | 20     | ETH   |
+#       | trader4 | market   | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_LIQUIDITY      | ETH/DEC21 | 10     | ETH   |
+#       | market  | trader3a | ACCOUNT_TYPE_FEES_MAKER | ACCOUNT_TYPE_GENERAL             | ETH/DEC21 | 50     | ETH   |  
+
+#     Then the parties should have the following account balances:
+#       | party      | asset | market id | margin | general |
+#       | trader3a    | ETH   | ETH/DEC21 | 3216    | 96834    | 
+#       | trader4     | ETH   | ETH/DEC21 | 3600    | 96320    |
+
+#     # And the accumulated infrastructure fee should be "20" for the market "ETH/DEC21"
+#     And the accumulated liquidity fees should be "10" for the market "ETH/DEC21"
+
+#     When the network moves ahead "11" blocks
+    
+#     And the following transfers should happen:
+#       | from   | to   | from account                | to account           | market id | amount | asset |
+#       | market | aux1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/DEC21 | 10     | ETH   |
 
 Scenario: S021, Testing fees when network parameters are changed (in continuous trading with one trade and no liquidity providers), 0029-ALL-FEES-002
  Description : Changing net params does change the fees being collected appropriately even if the market is already running
