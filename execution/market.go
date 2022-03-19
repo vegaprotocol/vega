@@ -2670,7 +2670,12 @@ func (m *Market) amendOrder(
 	if priceShift || sizeIncrease {
 		confirmation, err := m.orderCancelReplace(ctx, existingOrder, amendedOrder)
 		var orders []*types.Order
-		if err == nil {
+		if err != nil {
+			// if an error happen, the order never hit the book, so we can
+			// just rollback the position size
+			_ = m.position.AmendOrder(ctx, amendedOrder, existingOrder)
+
+		} else {
 			orders = m.handleConfirmation(ctx, confirmation)
 			m.broker.Send(events.NewOrderEvent(ctx, confirmation.Order))
 		}
@@ -2681,11 +2686,16 @@ func (m *Market) amendOrder(
 	// ---> DO amend in place in matching engine
 	if expiryChange || sizeDecrease || timeInForceChange {
 		if sizeDecrease && amendedOrder.Remaining >= existingOrder.Remaining {
+			_ = m.position.AmendOrder(ctx, amendedOrder, existingOrder)
+
 			if m.log.GetLevel() == logging.DebugLevel {
 				m.log.Debug("Order amendment not allowed when reducing to a larger amount", logging.Order(*existingOrder))
 			}
 			return nil, nil, ErrInvalidAmendRemainQuantity
 		}
+		// we not doing anything in case of error here as its
+		// pretty much impossible at this point for an order not to be
+		// amended in place. Maybe a panic would be better
 		ret, err := m.orderAmendInPlace(existingOrder, amendedOrder)
 		if err == nil {
 			m.broker.Send(events.NewOrderEvent(ctx, amendedOrder))
@@ -2827,12 +2837,12 @@ func (m *Market) orderCancelReplace(ctx context.Context, existingOrder, newOrder
 	// first we call the order book to evaluate auction triggers and get the list of trades
 	trades, err := m.checkPriceAndGetTrades(ctx, newOrder)
 	if err != nil {
-		return nil, m.unregisterAndReject(ctx, newOrder, err)
+		return nil, errors.New("couldn't insert order in book")
 	}
 
 	// try to apply fees on the trade
 	if err := m.applyFees(ctx, newOrder, trades); err != nil {
-		return nil, m.unregisterAndReject(ctx, newOrder, err)
+		return nil, errors.New("could not apply fees for order")
 	}
 
 	// "hot-swap" of the orders
@@ -2846,7 +2856,7 @@ func (m *Market) orderCancelReplace(ctx context.Context, existingOrder, newOrder
 
 	timer.EngineTimeCounterAdd()
 
-	return conf, err
+	return conf, nil
 }
 
 func (m *Market) orderAmendInPlace(originalOrder, amendOrder *types.Order) (*types.OrderConfirmation, error) {
@@ -2870,6 +2880,7 @@ func (m *Market) orderAmendInPlace(originalOrder, amendOrder *types.Order) (*typ
 func (m *Market) orderAmendWhenParked(originalOrder, amendOrder *types.Order) *types.OrderConfirmation {
 	amendOrder.Status = types.OrderStatusParked
 	amendOrder.Price = num.Zero()
+	amendOrder.OriginalPrice = num.Zero()
 	*originalOrder = *amendOrder
 
 	return &types.OrderConfirmation{
