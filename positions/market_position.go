@@ -42,6 +42,16 @@ func (p MarketPosition) Clone() *MarketPosition {
 func (p *MarketPosition) SetParty(party string) { p.partyID = party }
 
 func (p *MarketPosition) RegisterOrder(order *types.Order) {
+	if order.Party == "jeremy-debug" {
+		fmt.Printf("POS REGISTER: %v\n", order.String())
+		fmt.Printf("POS BEFORE  : %v\n", p.String())
+	}
+
+	defer func() {
+		if order.Party == "jeremy-debug" {
+			fmt.Printf("POS AFTER   : %v\n", p.String())
+		}
+	}()
 	if order.Side == types.SideBuy {
 		// calculate vwBuyPrice: total worth of orders divided by total size
 		if buyVol := uint64(p.buy) + order.Remaining; buyVol != 0 {
@@ -72,6 +82,16 @@ func (p *MarketPosition) RegisterOrder(order *types.Order) {
 }
 
 func (p *MarketPosition) UnregisterOrder(log *logging.Logger, order *types.Order) {
+	if order.Party == "jeremy-debug" {
+		fmt.Printf("POS UNREGISTER: %v\n", order.String())
+		fmt.Printf("POS BEFORE    : %v\n", p.String())
+	}
+
+	defer func() {
+		if order.Party == "jeremy-debug" {
+			fmt.Printf("POS AFTER     : %v\n", p.String())
+		}
+	}()
 	if order.Side == types.SideBuy {
 		if uint64(p.buy) < order.Remaining {
 			log.Panic("cannot unregister order with remaining > potential buy",
@@ -115,6 +135,18 @@ func (p *MarketPosition) UnregisterOrder(log *logging.Logger, order *types.Order
 // AmendOrder unregisters the original order and then registers the newly amended order
 // this method is a quicker way of handling separate unregister+register pairs.
 func (p *MarketPosition) AmendOrder(log *logging.Logger, originalOrder, newOrder *types.Order) {
+	if originalOrder.Party == "jeremy-debug" {
+		fmt.Printf("POS AMEND ORIGINAL: %v\n", originalOrder.String())
+		fmt.Printf("POS AMEND NEW     : %v\n", newOrder.String())
+		fmt.Printf("POS BEFORE        : %v\n", p.String())
+	}
+
+	defer func() {
+		if originalOrder.Party == "jeremy-debug" {
+			fmt.Printf("POS AFTER         : %v\n", p.String())
+		}
+	}()
+
 	if originalOrder.Side == types.SideBuy {
 		if uint64(p.buy) < originalOrder.Remaining {
 			log.Panic("cannot amend order with remaining > potential buy",

@@ -206,6 +206,10 @@ func (e *Engine) UpdateNetwork(trade *types.Trade) []events.MarketPosition {
 
 // Update pushes the previous positions on the channel + the updated open volumes of buyer/seller.
 func (e *Engine) Update(trade *types.Trade) []events.MarketPosition {
+	if trade.BuyOrder == "jeremy-debug" || trade.Seller == "jeremy-debug" {
+		fmt.Printf("POS UPDATE: %v\n", trade.String())
+	}
+
 	buyer, ok := e.positions[trade.Buyer]
 	if !ok {
 		e.log.Panic("could not find buyer position",
