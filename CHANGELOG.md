@@ -13,7 +13,7 @@
 - [5022](https://github.com/vegaprotocol/vega/issues/5022) - CI: Run approbation for main/master/develop branches only
 
 ### 🐛 Fixes
-- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+- [5025](https://github.com/vegaprotocol/vega/issues/5025) - Witness snapshot breaking consensus
 
 
 ## 0.49.4
