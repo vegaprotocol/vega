@@ -438,12 +438,6 @@ func (m *Market) IntoType() types.Market {
 	return *m.mkt.DeepClone()
 }
 
-// UpdateRiskFactorsForTest is a hack for setting the risk factors for tests directly rather than through the consensus engine.
-// Never use this for anything functional.
-func (m *Market) UpdateRiskFactorsForTest() {
-	m.risk.CalculateRiskFactorsForTest()
-}
-
 func (m *Market) Hash() []byte {
 	mID := logging.String("market-id", m.GetID())
 	matchingHash := m.matching.Hash()
@@ -752,6 +746,12 @@ func (m *Market) closeMarket(ctx context.Context, t time.Time) error {
 			logging.Error(err))
 		return err
 	}
+
+	// TODO(William): is this necessary?
+	m.matching.StopSnapshots()
+	m.position.StopSnapshots()
+	m.liquidity.StopSnapshots()
+	m.tsCalc.StopSnapshots()
 
 	m.broker.Send(events.NewTransferResponse(ctx, clearMarketTransfers))
 	m.mkt.State = types.MarketStateSettled
@@ -1307,7 +1307,7 @@ func (m *Market) submitValidatedOrder(ctx context.Context, order *types.Order) (
 			if err != nil {
 				fmt.Printf("ERROR: %v\n\n", err)
 				m.broker.Send(events.NewOrderEvent(ctx, order))
-				return &types.OrderConfirmation{Order: order}, nil, nil // nolint
+				return &types.OrderConfirmation{Order: order}, nil, nil
 			}
 		}
 	}
@@ -2674,7 +2674,6 @@ func (m *Market) amendOrder(
 			// if an error happen, the order never hit the book, so we can
 			// just rollback the position size
 			_ = m.position.AmendOrder(ctx, amendedOrder, existingOrder)
-
 		} else {
 			orders = m.handleConfirmation(ctx, confirmation)
 			m.broker.Send(events.NewOrderEvent(ctx, confirmation.Order))

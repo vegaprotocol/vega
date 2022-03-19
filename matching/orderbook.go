@@ -591,7 +591,9 @@ func (b *OrderBook) RemoveOrder(order *types.Order) error {
 // AmendOrder amends an order which is an active order on the book.
 func (b *OrderBook) AmendOrder(originalOrder, amendedOrder *types.Order) error {
 	if originalOrder == nil {
-		return types.ErrOrderNotFound
+		if amendedOrder != nil {
+			b.log.Panic("invalid input, orginalOrder is nil", logging.Order(*amendedOrder))
+		}
 	}
 
 	// If the creation date for the 2 orders is different, something went wrong
