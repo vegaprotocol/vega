@@ -2,6 +2,7 @@ package pow
 
 import (
 	"context"
+	"encoding/hex"
 	"errors"
 	"math"
 	"math/big"
@@ -201,8 +202,9 @@ func (e *Engine) DeliverTx(tx abci.Tx) error {
 	defer e.lock.Unlock()
 
 	// keep the transaction ID
-	e.seenTx[string(tx.Hash())] = struct{}{}
-	e.heightToTx[tx.BlockHeight()] = append(e.heightToTx[tx.BlockHeight()], string(tx.Hash()))
+	txID := hex.EncodeToString(tx.Hash())
+	e.seenTx[txID] = struct{}{}
+	e.heightToTx[tx.BlockHeight()] = append(e.heightToTx[tx.BlockHeight()], txID)
 
 	// if version supports pow, save the pow result and the tid
 	if tx.GetVersion() > 1 {
@@ -235,7 +237,8 @@ func (e *Engine) verify(tx abci.Tx) (big.Int, error) {
 	}
 
 	// check if the transaction was seen in scope
-	if _, ok := e.seenTx[string(tx.Hash())]; ok {
+	txID := hex.EncodeToString(tx.Hash())
+	if _, ok := e.seenTx[txID]; ok {
 		return h, errors.New("transaction ID already used")
 	}
 

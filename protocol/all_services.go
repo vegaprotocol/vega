@@ -276,7 +276,7 @@ func newServices(
 	svcs.topology.NotifyOnKeyChange(svcs.delegation.ValidatorKeyChanged, svcs.stakingAccounts.ValidatorKeyChanged, svcs.governance.ValidatorKeyChanged)
 
 	svcs.snapshot.AddProviders(svcs.checkpoint, svcs.collateral, svcs.governance, svcs.delegation, svcs.netParams, svcs.epochService, svcs.assets, svcs.banking, svcs.witness,
-		svcs.notary, svcs.spam, svcs.stakingAccounts, svcs.stakeVerifier, svcs.limits, svcs.topology, svcs.eventForwarder, svcs.executionEngine, svcs.feesTracker, marketTracker, svcs.statevar, svcs.erc20MultiSigTopology)
+		svcs.notary, svcs.spam, svcs.pow, svcs.stakingAccounts, svcs.stakeVerifier, svcs.limits, svcs.topology, svcs.eventForwarder, svcs.executionEngine, svcs.feesTracker, marketTracker, svcs.statevar, svcs.erc20MultiSigTopology)
 
 	// setup config reloads for all engines / services /etc
 	svcs.registerConfigWatchers()
