@@ -50,9 +50,6 @@ disable = [
     "funlen",
     "gocyclo",
     "errname",
-    "forbidigo",
-    "typecheck",
-    "staticcheck",
 ]
 
 [[issues.exclude-rules]]
@@ -79,8 +76,8 @@ linters = ["forbidigo"]
 path = "print.go"
 linters = ["forbidigo"]
 
-# [linters-settings.forbidigo]
-# forbid = ["fmt\\.Print.*"]
+[linters-settings.forbidigo]
+forbid = ["fmt\\.Print.*"]
 
 # protoc doesn't want us copying protobuf messages because they can have some internal state
 # that shouldn't be copied; but we do it a lot. see below for details

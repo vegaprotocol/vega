@@ -8,7 +8,6 @@ import (
 	"errors"
 	"fmt"
 	"sort"
-	"strings"
 	"sync"
 	"time"
 
@@ -1187,30 +1186,6 @@ func (m *Market) SubmitOrder(
 	party string,
 	deterministicId string,
 ) (oc *types.OrderConfirmation, _ error) {
-	defer func() {
-		if oc != nil {
-			party := ""
-			if strings.HasPrefix(oc.Order.Reference, "jeremy-debug") {
-				fmt.Printf("SUBMIT ORDER  : %v\n", oc.Order.String())
-				party = oc.Order.Party
-			}
-			for _, v := range oc.PassiveOrdersAffected {
-				if strings.HasPrefix(v.Reference, "jeremy-debug") {
-					fmt.Printf("SUBMIT PASSIVE: %v\n", v.String())
-					party = v.Party
-				}
-			}
-
-			if party != "" {
-				for _, v := range oc.Trades {
-					if strings.HasPrefix(v.Buyer, "jeremy-debug") || strings.HasPrefix(v.SellOrder, "jeremy-debug") {
-						fmt.Printf("SUBMIT TRADE  : %v\n", v.String())
-					}
-				}
-			}
-		}
-	}()
-
 	m.idgen = idgeneration.New(deterministicId)
 	defer func() { m.idgen = nil }()
 
@@ -1306,9 +1281,8 @@ func (m *Market) submitValidatedOrder(ctx context.Context, order *types.Order) (
 			// Reprice
 			err := m.repricePeggedOrder(order)
 			if err != nil {
-				fmt.Printf("ERROR: %v\n\n", err)
 				m.broker.Send(events.NewOrderEvent(ctx, order))
-				return &types.OrderConfirmation{Order: order}, nil, nil
+				return &types.OrderConfirmation{Order: order}, nil, nil // nolint
 			}
 		}
 	}
@@ -2242,13 +2216,6 @@ func (m *Market) CancelAllOrders(ctx context.Context, partyID string) ([]*types.
 }
 
 func (m *Market) CancelOrder(ctx context.Context, partyID, orderID string, deterministicId string) (oc *types.OrderCancellationConfirmation, _ error) {
-	defer func() {
-		if oc != nil {
-			if strings.HasPrefix(oc.Order.Reference, "jeremy-debug") {
-				fmt.Printf("CANCEL ORDER  : %v\n", oc.Order.String())
-			}
-		}
-	}()
 	m.idgen = idgeneration.New(deterministicId)
 	defer func() { m.idgen = nil }()
 
@@ -2353,30 +2320,6 @@ func (m *Market) parkOrder(ctx context.Context, order *types.Order) {
 func (m *Market) AmendOrder(ctx context.Context, orderAmendment *types.OrderAmendment, party string,
 	deterministicId string) (oc *types.OrderConfirmation, _ error,
 ) {
-	defer func() {
-		if oc != nil {
-			party := ""
-			if strings.HasPrefix(oc.Order.Reference, "jeremy-debug") {
-				fmt.Printf("AMEND ORDER  : %v\n", oc.Order.String())
-				party = oc.Order.Party
-			}
-			for _, v := range oc.PassiveOrdersAffected {
-				if strings.HasPrefix(v.Reference, "jeremy-debug") {
-					fmt.Printf("AMEND PASSIVE: %v\n", v.String())
-					party = v.Party
-				}
-			}
-
-			if party != "" {
-				for _, v := range oc.Trades {
-					if strings.HasPrefix(v.Buyer, "jeremy-debug") || strings.HasPrefix(v.SellOrder, "jeremy-debug") {
-						fmt.Printf("AMEND TRADE: %v\n", v.String())
-					}
-				}
-			}
-		}
-	}()
-
 	m.idgen = idgeneration.New(deterministicId)
 	defer func() { m.idgen = nil }()
 
@@ -2892,7 +2835,7 @@ func (m *Market) orderAmendWhenParked(originalOrder, amendOrder *types.Order) *t
 	amendOrder.Status = types.OrderStatusParked
 	amendOrder.Price = num.Zero()
 	amendOrder.OriginalPrice = num.Zero()
-	*originalOrder = *amendOrder
+	m.peggedOrders.Amend(amendOrder)
 
 	return &types.OrderConfirmation{
 		Order: amendOrder,

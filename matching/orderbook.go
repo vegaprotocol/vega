@@ -597,7 +597,7 @@ func (b *OrderBook) AmendOrder(originalOrder, amendedOrder *types.Order) error {
 	}
 
 	// If the creation date for the 2 orders is different, something went wrong
-	if originalOrder.CreatedAt != amendedOrder.CreatedAt {
+	if originalOrder != nil && originalOrder.CreatedAt != amendedOrder.CreatedAt {
 		return types.ErrOrderOutOfSequence
 	}
 
