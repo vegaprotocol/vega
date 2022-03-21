@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"sort"
+	"strings"
 	"sync"
 	"time"
 
@@ -1189,12 +1190,12 @@ func (m *Market) SubmitOrder(
 	defer func() {
 		if oc != nil {
 			party := ""
-			if oc.Order.Reference == "jeremy-debug" {
+			if strings.HasPrefix(oc.Order.Reference, "jeremy-debug") {
 				fmt.Printf("SUBMIT ORDER  : %v\n", oc.Order.String())
 				party = oc.Order.Party
 			}
 			for _, v := range oc.PassiveOrdersAffected {
-				if v.Reference == "jeremy-debug" {
+				if strings.HasPrefix(v.Reference, "jeremy-debug") {
 					fmt.Printf("SUBMIT PASSIVE: %v\n", v.String())
 					party = v.Party
 				}
@@ -1202,7 +1203,7 @@ func (m *Market) SubmitOrder(
 
 			if party != "" {
 				for _, v := range oc.Trades {
-					if v.Buyer == "jeremy-debug" || v.SellOrder == "jeremy-debug" {
+					if strings.HasPrefix(v.Buyer, "jeremy-debug") || strings.HasPrefix(v.SellOrder, "jeremy-debug") {
 						fmt.Printf("SUBMIT TRADE  : %v\n", v.String())
 					}
 				}
@@ -2243,7 +2244,7 @@ func (m *Market) CancelAllOrders(ctx context.Context, partyID string) ([]*types.
 func (m *Market) CancelOrder(ctx context.Context, partyID, orderID string, deterministicId string) (oc *types.OrderCancellationConfirmation, _ error) {
 	defer func() {
 		if oc != nil {
-			if oc.Order.Reference == "jeremy-debug" {
+			if strings.HasPrefix(oc.Order.Reference, "jeremy-debug") {
 				fmt.Printf("CANCEL ORDER  : %v\n", oc.Order.String())
 			}
 		}
@@ -2355,12 +2356,12 @@ func (m *Market) AmendOrder(ctx context.Context, orderAmendment *types.OrderAmen
 	defer func() {
 		if oc != nil {
 			party := ""
-			if oc.Order.Reference == "jeremy-debug" {
+			if strings.HasPrefix(oc.Order.Reference, "jeremy-debug") {
 				fmt.Printf("AMEND ORDER  : %v\n", oc.Order.String())
 				party = oc.Order.Party
 			}
 			for _, v := range oc.PassiveOrdersAffected {
-				if v.Reference == "jeremy-debug" {
+				if strings.HasPrefix(v.Reference, "jeremy-debug") {
 					fmt.Printf("AMEND PASSIVE: %v\n", v.String())
 					party = v.Party
 				}
@@ -2368,7 +2369,7 @@ func (m *Market) AmendOrder(ctx context.Context, orderAmendment *types.OrderAmen
 
 			if party != "" {
 				for _, v := range oc.Trades {
-					if v.Buyer == "jeremy-debug" || v.SellOrder == "jeremy-debug" {
+					if strings.HasPrefix(v.Buyer, "jeremy-debug") || strings.HasPrefix(v.SellOrder, "jeremy-debug") {
 						fmt.Printf("AMEND TRADE: %v\n", v.String())
 					}
 				}
