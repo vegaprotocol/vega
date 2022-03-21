@@ -747,12 +747,6 @@ func (m *Market) closeMarket(ctx context.Context, t time.Time) error {
 		return err
 	}
 
-	// TODO(William): is this necessary?
-	m.matching.StopSnapshots()
-	m.position.StopSnapshots()
-	m.liquidity.StopSnapshots()
-	m.tsCalc.StopSnapshots()
-
 	m.broker.Send(events.NewTransferResponse(ctx, clearMarketTransfers))
 	m.mkt.State = types.MarketStateSettled
 	m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
