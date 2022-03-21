@@ -72,7 +72,7 @@ Feature: Position resolution case 2
       | buySideProvider  | ETH/DEC19 | buy  | 1      | 120   | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
    # margin level: vol* slippage = vol * (MarkPrice-ExitPrice) =290 * (120-(1*1+40*1)/2) = 290*100 = 29000
-   # margin account with MTM: 12000 - 290*(150-120)= 3300
+   # margin account with MTM: 12000 - 290*(150-120)= 3300 (0008-TRAD-004)
 
     Then the parties should have the following account balances:
       | party            | asset | market id | margin    | general  |
