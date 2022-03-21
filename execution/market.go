@@ -2854,6 +2854,11 @@ func (m *Market) orderCancelReplace(ctx context.Context, existingOrder, newOrder
 	// the ones with the fees embedded
 	conf.Trades = trades
 
+	// orer submitted successfully, update the pegged list
+	if newOrder.PeggedOrder != nil {
+		m.peggedOrders.Amend(newOrder)
+	}
+
 	timer.EngineTimeCounterAdd()
 
 	return conf, nil
@@ -2872,6 +2877,12 @@ func (m *Market) orderAmendInPlace(originalOrder, amendOrder *types.Order) (*typ
 		}
 		return nil, err
 	}
+
+	// order is successfully submitted, update the pegged list
+	if amendOrder.PeggedOrder != nil {
+		m.peggedOrders.Amend(amendOrder)
+	}
+
 	return &types.OrderConfirmation{
 		Order: amendOrder,
 	}, nil
