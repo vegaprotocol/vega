@@ -25,12 +25,37 @@ jobs:
       ((startsWith(github.head_ref, 'renovate/') != true) && (contains(github.event.*.name, 'labeled')
       || contains(github.event.*.name, 'unlabeled') || !contains(github.event.pull_request.labels.*.name, 'no-changelog') == true))
     runs-on: ubuntu-latest
-    name: Verify Linked Issue
     steps:
-      - name: Verify linked issue
-        uses: hattan/verify-linked-issue-action@v1.1.5
+      - name: Check for linked issue nodeid
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GH_NEW_CARD_TO_PROJECT }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+        run: |
+          gh api graphql -f query='
+            query($pr_url: URI!) {
+              resource(url: $pr_url) {
+                ... on PullRequest {
+                  closingIssuesReferences(first: 1) {
+                    nodes {
+                      id
+                      number
+                      projectNextItems(first: 5) {
+                        edges {
+                          node {
+                            id
+                            project {
+                              id
+                              number
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }'  -f pr_url=$PR_URL > linked_issue_data.json
+            echo 'LINKED_ISSUE_ID='$(jq '.data.resource.closingIssuesReferences.nodes[] | .id' linked_issue_data.json) >> $GITHUB_ENV
 
   verify-changelog-updated:
     if: |
