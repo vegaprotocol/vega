@@ -63,8 +63,6 @@ func (r *RateLimit) NewRequest(prefix, ip string) error {
 	if time.Now().Before(until) {
 		// we are already greylisted,
 		// another request came in while still greylisted
-		// add a penalty time
-		r.requests[identifier] = until.Add(r.cfg.CoolDown.Duration)
 		return fmt.Errorf("rate-limited (%s for %s) until %v", prefix, ip, r.requests[identifier])
 	}
 
