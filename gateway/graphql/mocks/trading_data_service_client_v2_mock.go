@@ -36,6 +36,46 @@ func (m *MockTradingDataServiceClientV2) EXPECT() *MockTradingDataServiceClientV
 	return m.recorder
 }
 
+// Candles mocks base method.
+func (m *MockTradingDataServiceClientV2) Candles(arg0 context.Context, arg1 *v2.CandlesRequest, arg2 ...grpc.CallOption) (*v2.CandlesResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "Candles", varargs...)
+	ret0, _ := ret[0].(*v2.CandlesResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Candles indicates an expected call of Candles.
+func (mr *MockTradingDataServiceClientV2MockRecorder) Candles(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Candles", reflect.TypeOf((*MockTradingDataServiceClientV2)(nil).Candles), varargs...)
+}
+
+// CandlesSubscribe mocks base method.
+func (m *MockTradingDataServiceClientV2) CandlesSubscribe(arg0 context.Context, arg1 *v2.CandlesSubscribeRequest, arg2 ...grpc.CallOption) (v2.TradingDataService_CandlesSubscribeClient, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "CandlesSubscribe", varargs...)
+	ret0, _ := ret[0].(v2.TradingDataService_CandlesSubscribeClient)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CandlesSubscribe indicates an expected call of CandlesSubscribe.
+func (mr *MockTradingDataServiceClientV2MockRecorder) CandlesSubscribe(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CandlesSubscribe", reflect.TypeOf((*MockTradingDataServiceClientV2)(nil).CandlesSubscribe), varargs...)
+}
+
 // GetMarketDataHistoryByID mocks base method.
 func (m *MockTradingDataServiceClientV2) GetMarketDataHistoryByID(arg0 context.Context, arg1 *v2.GetMarketDataHistoryByIDRequest, arg2 ...grpc.CallOption) (*v2.GetMarketDataHistoryByIDResponse, error) {
 	m.ctrl.T.Helper()

@@ -12,10 +12,10 @@
 - [426](https://github.com/vegaprotocol/data-node/pull/426) - Add bindings for party less liquidity provision requests
 - [430](https://github.com/vegaprotocol/data-node/pull/430) - Migrate deposit API to retrieve data from `Postgres`
 - [435](https://github.com/vegaprotocol/data-node/pull/435) - Migrate governance API to retrieve data from `Postgres`
+- [442](https://github.com/vegaprotocol/data-node/pull/442) - Migrate estimator API to retrieve data from `Postgres`
 
 ### 🐛 Fixes
-- [](https://github.com/vegaprotocol/data-node/pull/xxx) -
-
+- [256](https://github.com/vegaprotocol/data-node/pull/256) - Market Risk Factors missing from Market `GraphQL` API
 
 ## 0.49.2
 

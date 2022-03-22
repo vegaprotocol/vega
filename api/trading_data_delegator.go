@@ -8,26 +8,30 @@ import (
 
 	"code.vegaprotocol.io/data-node/entities"
 	"code.vegaprotocol.io/data-node/metrics"
+	"code.vegaprotocol.io/data-node/risk"
 	"code.vegaprotocol.io/data-node/sqlstore"
 	protoapi "code.vegaprotocol.io/protos/data-node/api/v1"
 	"code.vegaprotocol.io/protos/vega"
+	"code.vegaprotocol.io/vega/types/num"
 	"google.golang.org/grpc/codes"
 )
 
 type tradingDataDelegator struct {
 	*tradingDataService
-	orderStore      *sqlstore.Orders
-	tradeStore      *sqlstore.Trades
-	assetStore      *sqlstore.Assets
-	accountStore    *sqlstore.Accounts
-	marketDataStore *sqlstore.MarketData
-	rewardStore     *sqlstore.Rewards
-	marketsStore    *sqlstore.Markets
-	delegationStore *sqlstore.Delegations
-	epochStore      *sqlstore.Epochs
-	depositsStore   *sqlstore.Deposits
-	proposalsStore  *sqlstore.Proposals
-	voteStore       *sqlstore.Votes
+	orderStore        *sqlstore.Orders
+	tradeStore        *sqlstore.Trades
+	assetStore        *sqlstore.Assets
+	accountStore      *sqlstore.Accounts
+	marketDataStore   *sqlstore.MarketData
+	rewardStore       *sqlstore.Rewards
+	marketsStore      *sqlstore.Markets
+	delegationStore   *sqlstore.Delegations
+	epochStore        *sqlstore.Epochs
+	depositsStore     *sqlstore.Deposits
+	proposalsStore    *sqlstore.Proposals
+	voteStore         *sqlstore.Votes
+	riskFactorStore   *sqlstore.RiskFactors
+	marginLevelsStore *sqlstore.MarginLevels
 }
 
 var defaultEntityPagination = entities.Pagination{
@@ -940,5 +944,171 @@ func (t *tradingDataDelegator) Deposits(ctx context.Context, req *protoapi.Depos
 	}
 	return &protoapi.DepositsResponse{
 		Deposits: out,
+	}, nil
+}
+
+func (t *tradingDataDelegator) EstimateMargin(ctx context.Context, req *protoapi.EstimateMarginRequest) (*protoapi.EstimateMarginResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("EstimateMargin SQL")()
+	if req.Order == nil {
+		return nil, apiError(codes.InvalidArgument, errors.New("missing order"))
+	}
+
+	margin, err := t.estimateMargin(ctx, req.Order)
+	if err != nil {
+		return nil, apiError(codes.Internal, err)
+	}
+
+	return &protoapi.EstimateMarginResponse{
+		MarginLevels: margin,
+	}, nil
+}
+
+func (t *tradingDataDelegator) estimateMargin(ctx context.Context, order *vega.Order) (*vega.MarginLevels, error) {
+	if order.Side == vega.Side_SIDE_UNSPECIFIED {
+		return nil, risk.ErrInvalidOrderSide
+	}
+
+	// first get the risk factors and market data (marketdata->markprice)
+	rf, err := t.riskFactorStore.GetMarketRiskFactors(ctx, order.MarketId)
+	if err != nil {
+		return nil, err
+	}
+	mkt, err := t.marketsStore.GetByID(ctx, order.MarketId)
+	if err != nil {
+		return nil, err
+	}
+
+	mktProto, err := mkt.ToProto()
+	if err != nil {
+		return nil, err
+	}
+
+	mktData, err := t.marketDataStore.GetMarketDataByID(ctx, order.MarketId)
+	if err != nil {
+		return nil, err
+	}
+
+	f, err := num.DecimalFromString(rf.Short.String())
+	if err != nil {
+		return nil, err
+	}
+	if order.Side == vega.Side_SIDE_BUY {
+		f, err = num.DecimalFromString(rf.Long.String())
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	asset, err := mktProto.GetAsset()
+	if err != nil {
+		return nil, err
+	}
+
+	// now calculate margin maintenance
+	markPrice, _ := num.DecimalFromString(mktData.MarkPrice.String())
+	maintenanceMargin := num.DecimalFromFloat(float64(order.Size)).Mul(f).Mul(markPrice)
+	// now we use the risk factors
+	return &vega.MarginLevels{
+		PartyId:                order.PartyId,
+		MarketId:               mktProto.GetId(),
+		Asset:                  asset,
+		Timestamp:              0,
+		MaintenanceMargin:      maintenanceMargin.String(),
+		SearchLevel:            maintenanceMargin.Mul(num.DecimalFromFloat(mkt.TradableInstrument.MarginCalculator.ScalingFactors.SearchLevel)).String(),
+		InitialMargin:          maintenanceMargin.Mul(num.DecimalFromFloat(mkt.TradableInstrument.MarginCalculator.ScalingFactors.InitialMargin)).String(),
+		CollateralReleaseLevel: maintenanceMargin.Mul(num.DecimalFromFloat(mkt.TradableInstrument.MarginCalculator.ScalingFactors.CollateralRelease)).String(),
+	}, nil
+}
+
+func (t *tradingDataDelegator) EstimateFee(ctx context.Context, req *protoapi.EstimateFeeRequest) (*protoapi.EstimateFeeResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("EstimateFee SQL")()
+	if req.Order == nil {
+		return nil, apiError(codes.InvalidArgument, errors.New("missing order"))
+	}
+
+	fee, err := t.estimateFee(ctx, req.Order)
+	if err != nil {
+		return nil, apiError(codes.Internal, err)
+	}
+
+	return &protoapi.EstimateFeeResponse{
+		Fee: fee,
+	}, nil
+}
+
+func (t *tradingDataDelegator) estimateFee(ctx context.Context, order *vega.Order) (*vega.Fee, error) {
+	mkt, err := t.marketsStore.GetByID(ctx, order.MarketId)
+	if err != nil {
+		return nil, err
+	}
+	price, overflowed := num.UintFromString(order.Price, 10)
+	if overflowed {
+		return nil, errors.New("invalid order price")
+	}
+	if order.PeggedOrder != nil {
+		return &vega.Fee{
+			MakerFee:          "0",
+			InfrastructureFee: "0",
+			LiquidityFee:      "0",
+		}, nil
+	}
+
+	base := num.DecimalFromUint(price.Mul(price, num.NewUint(order.Size)))
+	maker, infra, liquidity, err := t.feeFactors(mkt)
+	if err != nil {
+		return nil, err
+	}
+
+	fee := &vega.Fee{
+		MakerFee:          base.Mul(num.NewDecimalFromFloat(maker)).String(),
+		InfrastructureFee: base.Mul(num.NewDecimalFromFloat(infra)).String(),
+		LiquidityFee:      base.Mul(num.NewDecimalFromFloat(liquidity)).String(),
+	}
+
+	return fee, nil
+}
+
+func (t *tradingDataDelegator) feeFactors(mkt entities.Market) (maker, infra, liquidity float64, err error) {
+	if maker, err = strconv.ParseFloat(mkt.Fees.Factors.MakerFee, 64); err != nil {
+		return
+	}
+	if infra, err = strconv.ParseFloat(mkt.Fees.Factors.InfrastructureFee, 64); err != nil {
+		return
+	}
+	if liquidity, err = strconv.ParseFloat(mkt.Fees.Factors.LiquidityFee, 64); err != nil {
+		return
+	}
+
+	return
+}
+
+// MarginLevels returns the current margin levels for a given party and market.
+func (t *tradingDataDelegator) MarginLevels(ctx context.Context, req *protoapi.MarginLevelsRequest) (*protoapi.MarginLevelsResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("MarginLevels SQL")()
+
+	mls, err := t.marginLevelsStore.GetMarginLevelsByID(ctx, req.PartyId, req.MarketId, entities.Pagination{})
+	if err != nil {
+		return nil, apiError(codes.Internal, ErrRiskServiceGetMarginLevelsByID, err)
+	}
+	levels := make([]*vega.MarginLevels, 0, len(mls))
+	for _, v := range mls {
+		levels = append(levels, v.ToProto())
+	}
+	return &protoapi.MarginLevelsResponse{
+		MarginLevels: levels,
+	}, nil
+}
+
+func (t *tradingDataDelegator) GetRiskFactors(ctx context.Context, in *protoapi.GetRiskFactorsRequest) (*protoapi.GetRiskFactorsResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("GetRiskFactors")()
+
+	rfs, err := t.riskFactorStore.GetMarketRiskFactors(ctx, in.MarketId)
+
+	if err != nil {
+		return nil, nil
+	}
+
+	return &protoapi.GetRiskFactorsResponse{
+		RiskFactor: rfs.ToProto(),
 	}, nil
 }

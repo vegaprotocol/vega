@@ -324,8 +324,13 @@ func (r *VegaResolverRoot) Transfer() TransferResolver {
 func (r *VegaResolverRoot) OneOffTransfer() OneOffTransferResolver {
 	return (*oneoffTransferResolver)(r)
 }
+
 func (r *VegaResolverRoot) RecurringTransfer() RecurringTransferResolver {
 	return (*recurringTransferResolver)(r)
+}
+
+func (r *VegaResolverRoot) UpdateMarketConfiguration() UpdateMarketConfigurationResolver {
+	return (*updateMarketConfigurationResolver)(r)
 }
 
 // LiquidityOrder resolver
