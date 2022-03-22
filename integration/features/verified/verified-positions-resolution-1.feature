@@ -9,7 +9,7 @@ Feature: Position resolution case 1
       | name                           | value |
       | market.auction.minimumDuration | 1     |
 
-  Scenario: close out when there is not enough orders on the orderbook to cover the position (0008-TRAD-001, 0008-TRAD-002) 
+  Scenario: close out when there is not enough orders on the orderbook to cover the position (0008-TRAD-001, 0008-TRAD-002, 0008-TRAD-005)
   # setup accounts
     Given the parties deposit on asset's general account the following amount:
       | party            | asset | amount        |
@@ -59,7 +59,7 @@ Feature: Position resolution case 1
       | party           | market id | side | volume | price | resulting trades | type       | tif     | reference      |
       | buySideProvider | ETH/DEC19 | buy  | 1      | 40    | 0                | TYPE_LIMIT | TIF_GTC | buy-provider-2 |
 
-# insurance pool generation - set new mark price (and trigger closeout) (0008-TRAD-003,0008-TRAD-004, 0008-TRAD-005) 
+# insurance pool generation - set new mark price (and trigger closeout)  
     When the parties place the following orders:
       | party            | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | sellSideProvider | ETH/DEC19 | sell | 1      | 120   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
