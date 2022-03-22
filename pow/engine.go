@@ -377,5 +377,9 @@ func (e *Engine) SpamPoWIncreasingDifficulty() bool { return e.spamPoWIncreasing
 func (e *Engine) BlockData() (uint64, string) {
 	e.lock.RLock()
 	defer e.lock.RUnlock()
+
+	if e.spamPoWNumberOfPastBlocks == 0 {
+		return 0, ""
+	}
 	return e.currentBlock, e.blockHash[e.currentBlock%e.spamPoWNumberOfPastBlocks]
 }
