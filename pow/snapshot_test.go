@@ -101,23 +101,16 @@ func TestSnapshot(t *testing.T) {
 	e.UpdateSpamPoWDifficulty(context.Background(), num.NewUint(20))
 	e.UpdateSpamPoWHashFunction(context.Background(), crypto.Sha3)
 	e.UpdateSpamPoWNumberOfTxPerBlock(context.Background(), num.NewUint(1))
+	e.UpdateSpamPoWIncreasingDifficulty(context.Background(), num.NewUint(1))
 
 	e.OnEpochEvent(context.Background(), types.Epoch{Seq: 1, Action: vega.EpochAction_EPOCH_ACTION_START})
 	e.BeginBlock(100, "2E7A16D9EF690F0D2BEED115FBA13BA2AAA16C8F971910AD88C72B9DB010C7D4")
 
 	party := crypto.RandomHash()
 
-	// difficulty 20 - 00000e31f8ac983354f5885d46b7631bc75f69ec82e8f6178bae53db0ab7e054
 	require.NoError(t, e.DeliverTx(&testTx{txID: "1", party: party, blockHeight: 100, powTxID: "DFE522E234D67E6AE3F017859F898E576B3928EA57310B765398615A0D3FDE2F", powNonce: 424517}))
-
-	// difficulty 21 but make it 20 - 000009c5043c4e1dd7fe190ece8d3fd83d94c4e2a2b7800456ce5f5a653c9f75
-	require.NoError(t, e.DeliverTx(&testTx{txID: "2", party: party, blockHeight: 100, powTxID: "2A1319636230740888C968E4E7610D6DE820E644EEC3C08AA5322A0A022014BD", powNonce: 1421231}))
-
-	// difficulty 22 - 000002a98320df372412d7179ca2645b13ff3ecbe660e4a9a743fb423d8aec1f
-	require.NoError(t, e.DeliverTx(&testTx{txID: "3", party: party, blockHeight: 100, powTxID: "5B0E1EB96CCAC120E6D824A5F4C4007EABC59573B861BD84B1EF09DFB376DC84", powNonce: 4031737}))
-
-	// difficulty 23 - 000001c297318619efd60b9197f89e36fea83ca8d7461cf7b7c78af84e0a3b51
-	require.NoError(t, e.DeliverTx(&testTx{txID: "4", party: party, blockHeight: 100, powTxID: "94A9CB1532011081B013CCD8E6AAA832CAB1CBA603F0C5A093B14C4961E5E7F0", powNonce: 431336}))
+	require.NoError(t, e.DeliverTx(&testTx{txID: "2", party: party, blockHeight: 100, powTxID: "5B0E1EB96CCAC120E6D824A5F4C4007EABC59573B861BD84B1EF09DFB376DC84", powNonce: 4031737}))
+	require.NoError(t, e.DeliverTx(&testTx{txID: "3", party: party, blockHeight: 100, powTxID: "94A9CB1532011081B013CCD8E6AAA832CAB1CBA603F0C5A093B14C4961E5E7F0", powNonce: 431336}))
 
 	e.BeginBlock(101, "2E289FB9CEF7234E2C08F34CCD66B330229067CE47E22F76EF0595B3ABA9968F")
 	e.BeginBlock(102, "2E289FB9CEF7234E2C08F34CCD66B330229067CE47E22F76EF0595B3ABA9968F")

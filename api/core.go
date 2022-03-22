@@ -89,9 +89,12 @@ func (s *coreService) LastBlockHeight(
 ) (*protoapi.LastBlockHeightResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("LastBlockHeight")()
 
+	blockHeight, blockHash := s.powParams.BlockData()
+	s.log.Info("block height requested, returning", logging.Uint64("block-height", blockHeight), logging.String("block hash", blockHash))
+
 	return &protoapi.LastBlockHeightResponse{
-		Height:                      s.stats.Blockchain.Height(),
-		Hash:                        s.stats.Blockchain.Hash(),
+		Height:                      blockHeight,
+		Hash:                        blockHash,
 		SpamPowDifficulty:           s.powParams.SpamPoWDifficulty(),
 		SpamPowHashFunction:         s.powParams.SpamPoWHashFunction(),
 		SpamPowNumberOfPastBlocks:   s.powParams.SpamPoWNumberOfPastBlocks(),

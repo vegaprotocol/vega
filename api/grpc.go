@@ -65,6 +65,7 @@ type ProofOfWorkParams interface {
 	SpamPoWHashFunction() string
 	SpamPoWNumberOfTxPerBlock() uint32
 	SpamPoWIncreasingDifficulty() bool
+	BlockData() (uint64, string)
 }
 
 // GRPCServer represent the grpc api provided by the vega node.

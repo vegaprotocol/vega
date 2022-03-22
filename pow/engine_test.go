@@ -228,7 +228,7 @@ func TestCheckTx(t *testing.T) {
 	e.heightToTid[96] = []string{"49B0DF0954A8C048554B1C65F4F5883C38640D101A11959EB651AE2065A80BBB"}
 
 	// seen transction
-	require.Equal(t, errors.New("transaction ID already used"), e.CheckTx(&testTx{blockHeight: 100, powTxID: "49B0DF0954A8C048554B1C65F4F5883C38640D101A11959EB651AE2065A80BBB"}))
+	require.Equal(t, errors.New("Proof of work tid already used"), e.CheckTx(&testTx{blockHeight: 100, powTxID: "49B0DF0954A8C048554B1C65F4F5883C38640D101A11959EB651AE2065A80BBB"}))
 
 	// party is banned
 	e.bannedParties["C692100485479CE9E1815B9E0A66D3596295A04DB42170CB4B61CFAE7332ADD8"] = 6
@@ -259,7 +259,16 @@ func TestDeliverTx(t *testing.T) {
 	require.Equal(t, 1, len(e.seenTid))
 	require.Equal(t, 1, len(e.heightToTid))
 	require.Equal(t, "2E7A16D9EF690F0D2BEED115FBA13BA2AAA16C8F971910AD88C72B9DB010C7D4", e.heightToTid[100][0])
-	require.Equal(t, "54152512217159022870910287014126436409543381468363031094569505280365618", e.blockPartyToPoW[party][0].String())
+}
+
+func TestExpectedDifficulty(t *testing.T) {
+	require.Equal(t, uint(60), calculateExpectedDifficulty(20, 5, 3))
+	require.Equal(t, uint(100), calculateExpectedDifficulty(20, 5, 5))
+	require.Equal(t, uint(121), calculateExpectedDifficulty(20, 5, 6))
+	require.Equal(t, uint(143), calculateExpectedDifficulty(20, 5, 7))
+	require.Equal(t, uint(166), calculateExpectedDifficulty(20, 5, 8))
+	require.Equal(t, uint(190), calculateExpectedDifficulty(20, 5, 9))
+	require.Equal(t, uint(215), calculateExpectedDifficulty(20, 5, 10))
 }
 
 func TestBeginBlock(t *testing.T) {
@@ -301,40 +310,16 @@ func TestBeginBlock(t *testing.T) {
 	require.Equal(t, 0, len(e.heightToTid))
 }
 
-func TestEndBlock(t *testing.T) {
+func TestBan(t *testing.T) {
 	e := New(logging.NewTestLogger(), NewDefaultConfig(), &TestEpochEngine{})
 	e.UpdateSpamPoWNumberOfPastBlocks(context.Background(), num.NewUint(1))
 	e.UpdateSpamPoWDifficulty(context.Background(), num.NewUint(20))
 	e.UpdateSpamPoWHashFunction(context.Background(), crypto.Sha3)
 	e.UpdateSpamPoWNumberOfTxPerBlock(context.Background(), num.NewUint(1))
-
-	party := crypto.RandomHash()
-	e.BeginBlock(100, "2E7A16D9EF690F0D2BEED115FBA13BA2AAA16C8F971910AD88C72B9DB010C7D4")
-	e.DeliverTx(&testTx{txID: "1", party: party, blockHeight: 100, powTxID: "94A9CB1532011081B013CCD8E6AAA832CAB1CBA603F0C5A093B14C4961E5E7F0", powNonce: 431336})
-	require.Equal(t, 1, len(e.blockPartyToPoW))
-	require.Equal(t, 0, len(e.bannedParties))
-
-	// we only sent one transaction for the block and it's legit with the difficulty so we expect no banning in the end of block
-	e.EndOfBlock()
-	require.Equal(t, 0, len(e.bannedParties))
-	require.Equal(t, 0, len(e.blockPartyToPoW))
-
-	// now lets submit 2 transactions both with the same difficulty for the same block (will reuse the same block hash for simplicity)
-	// this should cause the party to be banned because increase difficulty is off.
-	e.BeginBlock(101, "2E7A16D9EF690F0D2BEED115FBA13BA2AAA16C8F971910AD88C72B9DB010C7D4")
-	require.NoError(t, e.DeliverTx(&testTx{txID: "2", party: party, blockHeight: 101, powTxID: "94A9CB1532011081B013CCD8E6AAA832CAB1CBA603F0C5A093B14C4961E5E7F0", powNonce: 431336}))
-	require.NoError(t, e.DeliverTx(&testTx{txID: "3", party: party, blockHeight: 101, powTxID: "DC911C0EA95545441F3E1182DD25D973764395A7E75CBDBC086F1C6F7075AED6", powNonce: 523162}))
-
-	require.Equal(t, 2, len(e.blockPartyToPoW[party]))
-	e.EndOfBlock()
-	require.Equal(t, 1, len(e.bannedParties))
-	require.Equal(t, uint64(4), e.bannedParties[party])
-	require.Equal(t, 0, len(e.blockPartyToPoW))
-
-	// enable increasing difficulty
 	e.UpdateSpamPoWIncreasingDifficulty(context.Background(), num.NewUint(1))
 
 	// test happy days first - 4 transactions with increasing difficulty results in no ban - regardless of the order they come in
+	party := crypto.RandomHash()
 	txs := []*testTx{
 		{txID: "4", party: party, powTxID: "DFE522E234D67E6AE3F017859F898E576B3928EA57310B765398615A0D3FDE2F", powNonce: 424517},  // 00000e31f8ac983354f5885d46b7631bc75f69ec82e8f6178bae53db0ab7e054 - 20
 		{txID: "5", party: party, powTxID: "5B87F9DFA41DABE84A11CA78D9FE11DA8FC2AA926004CA66454A7AF0A206480D", powNonce: 4095356}, // 0000077b7d66117b57e45ccba0c31554e61c9853cc1cd9a2cf09c41b0aa9c22e - 21
@@ -343,7 +328,6 @@ func TestEndBlock(t *testing.T) {
 	}
 	testBanWithTxPermutations(t, e, txs, false, 102, party)
 
-	// test transactions not satisfying the required increasing difficulty leading to ban of the party
 	txs = []*testTx{
 		{txID: "8", party: party, powTxID: "2A1319636230740888C968E4E7610D6DE820E644EEC3C08AA5322A0A022014BD", powNonce: 1421231},  // 000009c5043c4e1dd7fe190ece8d3fd83d94c4e2a2b7800456ce5f5a653c9f75 - 20
 		{txID: "9", party: party, powTxID: "DFE522E234D67E6AE3F017859F898E576B3928EA57310B765398615A0D3FDE2F", powNonce: 424517},   // 00000e31f8ac983354f5885d46b7631bc75f69ec82e8f6178bae53db0ab7e054 - 20
@@ -351,6 +335,14 @@ func TestEndBlock(t *testing.T) {
 		{txID: "11", party: party, powTxID: "94A9CB1532011081B013CCD8E6AAA832CAB1CBA603F0C5A093B14C4961E5E7F0", powNonce: 431336},  // 000001c297318619efd60b9197f89e36fea83ca8d7461cf7b7c78af84e0a3b51 - 23
 	}
 	testBanWithTxPermutations(t, e, txs, true, 126, party)
+}
+
+func TestEndBlock(t *testing.T) {
+	e := New(logging.NewTestLogger(), NewDefaultConfig(), &TestEpochEngine{})
+	e.UpdateSpamPoWNumberOfPastBlocks(context.Background(), num.NewUint(1))
+	e.UpdateSpamPoWDifficulty(context.Background(), num.NewUint(20))
+	e.UpdateSpamPoWHashFunction(context.Background(), crypto.Sha3)
+	e.UpdateSpamPoWNumberOfTxPerBlock(context.Background(), num.NewUint(1))
 }
 
 func testBanWithTxPermutations(t *testing.T, e *Engine, txs []*testTx, expectedBan bool, blockHeight uint64, party string) {
@@ -364,9 +356,20 @@ func testBanWithTxPermutations(t *testing.T, e *Engine, txs []*testTx, expectedB
 		e.BeginBlock(blockHeight+uint64(i), "2E7A16D9EF690F0D2BEED115FBA13BA2AAA16C8F971910AD88C72B9DB010C7D4")
 
 		// send the transactions with the given permutation
+		errors := []error{}
 		for _, p := range perm {
 			p.blockHeight = blockHeight + uint64(i)
-			require.NoError(t, e.DeliverTx(p))
+			err := e.DeliverTx(p)
+			if err != nil {
+				errors = append(errors, err)
+			}
+		}
+
+		if expectedBan {
+			require.True(t, len(errors) > 0)
+			require.Equal(t, "too many transactions per block", errors[0].Error())
+		} else {
+			require.Equal(t, 0, len(errors))
 		}
 
 		// end the block to check if the party was playing nice
@@ -376,10 +379,8 @@ func testBanWithTxPermutations(t *testing.T, e *Engine, txs []*testTx, expectedB
 		if expectedBan {
 			require.Equal(t, 1, len(e.bannedParties))
 			require.Equal(t, uint64(4), e.bannedParties[party])
-			require.Equal(t, 0, len(e.blockPartyToPoW))
 		} else {
 			require.Equal(t, 0, len(e.bannedParties))
-			require.Equal(t, 0, len(e.blockPartyToPoW))
 		}
 	}
 }
