@@ -149,6 +149,7 @@ func NewMarketFromSnapshot(
 		feesTracker:                feesTracker,
 		marketTracker:              marketTracker,
 		positionFactor:             positionFactor,
+		stateVarEngine:             stateVarEngine,
 	}
 
 	market.tradableInstrument.Instrument.Product.NotifyOnTradingTerminated(market.tradingTerminated)
