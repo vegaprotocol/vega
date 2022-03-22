@@ -61,8 +61,9 @@ code.vegaprotocol.io/protos v0.49.3-0.20220318174501-215809e7a1ee h1:kA6s65Y2IXL
 code.vegaprotocol.io/protos v0.49.3-0.20220318174501-215809e7a1ee/go.mod h1:K6FWDdxWzEgZjz2G1f8gmrSPMey720ryHnzNRn1pW7w=
 code.vegaprotocol.io/quant v0.2.5 h1:8h+TTHdz1LCO4oGXt8mbowXszd8CQP1MHlJOkthUp1E=
 code.vegaprotocol.io/quant v0.2.5/go.mod h1:HEzOoPKj8OIP49r9AZYeo5281M5ygeGWxopwvt8k6Es=
-code.vegaprotocol.io/shared v0.0.0-20220316120021-93b67baf439a h1:yXjs1EerIfaQ7soXgLcoapLR+Y1J8OUFlmIBaYS2URc=
 code.vegaprotocol.io/shared v0.0.0-20220316120021-93b67baf439a/go.mod h1:pNHKwqRDkotUN0s6jErl7Eb2EpZa2HAf03lyPMTCUT0=
+code.vegaprotocol.io/shared v0.0.0-20220321185018-3b5684b00533 h1:IxTWvyF0i0AgUAS+FTgQKIpbsS6Ki/Y9Ug0GSlgChJw=
+code.vegaprotocol.io/shared v0.0.0-20220321185018-3b5684b00533/go.mod h1:pNHKwqRDkotUN0s6jErl7Eb2EpZa2HAf03lyPMTCUT0=
 code.vegaprotocol.io/vegawallet v0.13.2-0.20220318133911-3c373bc555af h1:Fsm7kFlTP01362+2kVs6Lm1CcMPi2p2SkxxiGkqNHVI=
 code.vegaprotocol.io/vegawallet v0.13.2-0.20220318133911-3c373bc555af/go.mod h1:l3BTEITNGNtgICnRo6lSUiq+ZKqQQ+mZZ7/oYKdxx/E=
 collectd.org v0.3.0/go.mod h1:A/8DzQBkF6abtvrT2j/AU/4tiBgJWYyh0y/oB/4MlWE=

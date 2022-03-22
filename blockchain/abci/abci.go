@@ -99,12 +99,14 @@ func (app *App) CheckTx(req types.RequestCheckTx) (resp types.ResponseCheckTx) {
 	if fn, ok := app.checkTxs[tx.Command()]; ok {
 		if err := fn(ctx, tx); err != nil {
 			resp.Code = AbciTxnInternalError
+			println("transaction failed command validation", tx.Command().String(), "tid", tx.GetPoWTID(), err.Error())
 		}
 	}
 
 	// at this point we consider the Tx as valid, so we add it to
 	// the cache to be consumed by DeliveryTx
 	if resp.IsOK() {
+		println("transaction passed validation", tx.Command().String(), "tid", tx.GetPoWTID())
 		app.cacheTx(req.Tx, tx)
 	}
 

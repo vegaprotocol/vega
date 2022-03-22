@@ -579,13 +579,16 @@ func (app *App) OnBeginBlock(req tmtypes.RequestBeginBlock) (ctx context.Context
 
 	hash := hex.EncodeToString(req.Hash)
 	app.cBlock = hash
-	app.stats.SetHash(hash)
-	app.stats.SetHeight(uint64(req.Header.Height))
+
+	app.log.Info("updating block height", logging.Uint64("height", uint64(req.Header.Height)))
 
 	// update pow engine on a new block
 	if app.pow != nil {
 		app.pow.BeginBlock(uint64(req.Header.Height), hash)
 	}
+
+	app.stats.SetHash(hash)
+	app.stats.SetHeight(uint64(req.Header.Height))
 
 	// Set chainID, if we have loaded from a snapshot we will not have called InitChain
 	// TODO: we may be able to better if we store the chainID in the appstate's snapshot
@@ -734,6 +737,8 @@ func (app *App) OnCheckTx(ctx context.Context, _ tmtypes.RequestCheckTx, tx abci
 	// Check ratelimits
 	// FIXME(): temporary disable all rate limiting
 	_, isval := app.limitPubkey(tx.PubKeyHex())
+
+	app.log.Info("transaction passed checkTx", logging.String("tid", tx.GetPoWTID()), logging.String("command", tx.Command().String()))
 	if isval {
 		return ctx, resp
 	}
