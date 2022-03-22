@@ -144,9 +144,11 @@ func (e *Engine) CheckTx(tx abci.Tx) error {
 		return nil
 	}
 
-	e.lock.RLock()
-	e.log.Info("checktx got tx", logging.String("command", tx.Command().String()), logging.Uint64("height", tx.BlockHeight()), logging.String("tid", tx.GetPoWTID()), logging.Uint64("current-block", e.currentBlock))
-	e.lock.RUnlock()
+	if e.log.IsDebug() {
+		e.lock.RLock()
+		e.log.Debug("checktx got tx", logging.String("command", tx.Command().String()), logging.Uint64("height", tx.BlockHeight()), logging.String("tid", tx.GetPoWTID()), logging.Uint64("current-block", e.currentBlock))
+		e.lock.RUnlock()
+	}
 
 	_, err := e.verify(tx)
 	return err
@@ -159,9 +161,11 @@ func (e *Engine) DeliverTx(tx abci.Tx) error {
 		return nil
 	}
 
-	e.lock.RLock()
-	e.log.Info("delivertx got tx", logging.String("command", tx.Command().String()), logging.Uint64("height", tx.BlockHeight()), logging.String("tid", tx.GetPoWTID()), logging.Uint64("current-block", e.currentBlock))
-	e.lock.RUnlock()
+	if e.log.IsDebug() {
+		e.lock.RLock()
+		e.log.Debug("delivertx got tx", logging.String("command", tx.Command().String()), logging.Uint64("height", tx.BlockHeight()), logging.String("tid", tx.GetPoWTID()), logging.Uint64("current-block", e.currentBlock))
+		e.lock.RUnlock()
+	}
 
 	d, err := e.verify(tx)
 	if err != nil {
@@ -185,7 +189,9 @@ func (e *Engine) DeliverTx(tx abci.Tx) error {
 		if _, ok := e.blockPartyToSeenCount[tx.Party()]; !ok {
 			e.blockPartyToObservedDifficulty[tx.Party()] = uint(d)
 			e.blockPartyToSeenCount[tx.Party()] = 1
-			e.log.Info("transaction accepted", logging.String("tid", tx.GetPoWTID()))
+			if e.log.IsDebug() {
+				e.log.Debug("transaction accepted", logging.String("tid", tx.GetPoWTID()))
+			}
 			return nil
 		}
 
@@ -193,7 +199,9 @@ func (e *Engine) DeliverTx(tx abci.Tx) error {
 		if e.blockPartyToSeenCount[tx.Party()] < uint(e.spamPoWNumberOfTxPerBlock) {
 			e.blockPartyToObservedDifficulty[tx.Party()] += uint(d)
 			e.blockPartyToSeenCount[tx.Party()]++
-			e.log.Info("transaction accepted", logging.String("tid", tx.GetPoWTID()))
+			if e.log.IsDebug() {
+				e.log.Debug("transaction accepted", logging.String("tid", tx.GetPoWTID()))
+			}
 			return nil
 		}
 
@@ -274,7 +282,9 @@ func (e *Engine) verify(tx abci.Tx) (byte, error) {
 		e.log.Error("failed to verify proof of work", logging.String("tid", tx.GetPoWTID()), logging.String("party", tx.Party()))
 		return diff, errors.New("failed to verify proof of work")
 	}
-	e.log.Info("transaction passed verify", logging.String("tid", tx.GetPoWTID()), logging.String("party", tx.Party()))
+	if e.log.IsDebug() {
+		e.log.Debug("transaction passed verify", logging.String("tid", tx.GetPoWTID()), logging.String("party", tx.Party()))
+	}
 	return diff, nil
 }
 
