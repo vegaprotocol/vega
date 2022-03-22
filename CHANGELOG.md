@@ -3,10 +3,22 @@
 ## Unreleased (0.50.0)
 
 ### 🚨 Breaking changes
-- [4985](https://github.com/vegaprotocol/vega/issues/4985) - Proof of work spam protection
+- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 ### 🗑️ Deprecation
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+
+### 🛠 Improvements
+- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+
+### 🐛 Fixes
+- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+
+
+## 0.49.7
+
+### 🚨 Breaking changes
+- [4985](https://github.com/vegaprotocol/vega/issues/4985) - Proof of work spam protection
 
 ### 🛠 Improvements
 - [5007](https://github.com/vegaprotocol/vega/issues/5007) - Run approbation as part of the CI pipeline
