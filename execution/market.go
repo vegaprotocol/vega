@@ -661,17 +661,10 @@ func (m *Market) OnChainTimeUpdate(ctx context.Context, t time.Time) bool {
 		return false
 	}
 
-	// if in somce case we're still in trading terminated state and tried to settle but failed,
-	// as long as there's settlement price we can retry
-	settlementPrice, _ := m.tradableInstrument.Instrument.Product.SettlementPrice()
-
+	// if trading is terminated, we have nothing to do here.
+	// we just need to wait for the settlementPrice to arrive through oracle
 	if m.mkt.State == types.MarketStateTradingTerminated {
-		// if we now have settlement price - try to settle and close the market
-		if settlementPrice != nil {
-			m.closeMarket(ctx, t)
-		}
-		m.closed = m.mkt.State == types.MarketStateSettled
-		return m.closed
+		return false
 	}
 
 	// distribute liquidity fees each `m.lpFeeDistributionTimeStep`
@@ -3067,17 +3060,13 @@ func (m *Market) tradingTerminated(ctx context.Context, tt bool) {
 	defer m.mu.Unlock()
 	m.mkt.State = types.MarketStateTradingTerminated
 	m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
-
-	sp, _ := m.tradableInstrument.Instrument.Product.SettlementPrice()
-	if sp != nil {
-		m.settlementPriceWithLock(ctx, sp)
-	}
 	m.stateChanged = true
 }
 
 func (m *Market) settlementPrice(ctx context.Context, settlementPrice *num.Uint) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
+
 	m.settlementPriceWithLock(ctx, settlementPrice)
 }
 
@@ -3087,7 +3076,10 @@ func (m *Market) settlementPriceWithLock(ctx context.Context, settlementPrice *n
 		return
 	}
 	if m.mkt.State == types.MarketStateTradingTerminated && settlementPrice != nil {
-		m.closeMarket(ctx, m.currentTime)
+		err := m.closeMarket(ctx, m.currentTime)
+		if err != nil {
+			m.log.Error("could not close market", logging.Error(err))
+		}
 		m.closed = m.mkt.State == types.MarketStateSettled
 	}
 }
