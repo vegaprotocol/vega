@@ -6,7 +6,6 @@ import (
 	"errors"
 	"math"
 	"math/big"
-	"sort"
 	"sync"
 
 	"code.vegaprotocol.io/protos/vega"
@@ -32,8 +31,9 @@ type Engine struct {
 	seenTid     map[string]struct{} // seen tid in scope set
 	heightToTid map[uint64][]string // height to slice of seen tid in scope ring buffer
 
-	bannedParties   map[string]uint64    // banned party to last epoch of ban
-	blockPartyToPoW map[string][]big.Int // proof of work for party transactions for the current block
+	bannedParties                  map[string]uint64 // banned party to last epoch of ban
+	blockPartyToObservedDifficulty map[string]uint   // party observed total difficulty in block
+	blockPartyToSeenCount          map[string]uint   // party observed transactions in block
 
 	currentBlock uint64 // the current block height
 	currentEpoch uint64 // the current epoch sequence
@@ -59,14 +59,15 @@ func New(log *logging.Logger, config Config, epochEngine EpochEngine) *Engine {
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
 	e := &Engine{
-		seenTx:          map[string]struct{}{},
-		seenTid:         map[string]struct{}{},
-		bannedParties:   map[string]uint64{},
-		blockPartyToPoW: map[string][]big.Int{},
-		heightToTx:      map[uint64][]string{},
-		heightToTid:     map[uint64][]string{},
-		log:             log,
-		hashKeys:        []string{(&types.PayloadProofOfWork{}).Key()},
+		seenTx:                         map[string]struct{}{},
+		seenTid:                        map[string]struct{}{},
+		bannedParties:                  map[string]uint64{},
+		blockPartyToObservedDifficulty: map[string]uint{},
+		blockPartyToSeenCount:          map[string]uint{},
+		heightToTx:                     map[uint64][]string{},
+		heightToTid:                    map[uint64][]string{},
+		log:                            log,
+		hashKeys:                       []string{(&types.PayloadProofOfWork{}).Key()},
 	}
 	epochEngine.NotifyOnEpoch(e.OnEpochEvent, e.OnEpochRestore)
 
@@ -127,52 +128,13 @@ func (e *Engine) BeginBlock(blockHeight uint64, blockHash string) {
 	e.currentBlock = blockHeight
 }
 
-// EndOfBlock processes transactions at the end of the block to check for violations of the number of transactions allowed per block and ban offenders.
+// EndOfBlock clears up block data structures at the end of the block.
 func (e *Engine) EndOfBlock() {
 	e.lock.Lock()
 	defer e.lock.Unlock()
 
-	// iterate over the parties and their transactions in the block and verify that they didn't abuse the block
-	for k, v := range e.blockPartyToPoW {
-		// if the number of transactions for the party is less or equal than what's allowed, no violation
-		if uint64(len(v)) <= e.spamPoWNumberOfTxPerBlock {
-			continue
-		}
-
-		// if the number of transaction is more than what's allowed and increasing difficulty is off or the number of transaction in the block
-		// is greater than the maximum number of transactions - then the party should be banned.
-		if !e.spamPoWIncreasingDifficulty || uint64(len(v))-e.spamPoWNumberOfTxPerBlock > uint64(256-e.spamPoWDifficulty) {
-			e.log.Info("banning party for sending too many transactions in block", logging.String("party", k))
-			e.bannedParties[k] = e.currentEpoch + banPeriod
-			continue
-		}
-
-		// sort the proof of work from the smallest to the largest
-		sort.SliceStable(v, func(i, j int) bool {
-			return v[i].Cmp(&v[j]) < 0
-		})
-
-		// we need to check that all transactions beyond the `spamPoWNumberOfTxPerBlock` have increasing difficulty
-		numberToCompare := uint64(len(v)) - e.spamPoWNumberOfTxPerBlock
-		incDiff := v[:numberToCompare]
-
-		// we're looking at the difficulty from the hardest to the easiet and checking that there is a pow that satisfied this difficulty
-		// by comparing against the corresponding hash.
-		// NB there is always a chance that they got lucky and when asking for difficulty of 20 they incidentally got 22 and by that they can get away
-		// without actually increasing the difficulty of the calculation
-		for ind, pow := range incDiff {
-			maskIndex := uint64(e.spamPoWDifficulty) + uint64(len(incDiff)) - uint64(ind)
-			mask := e.difficultyMasks[maskIndex-1]
-			// if they don't satisfy the required difficulty for last level - i then ban them
-			if pow.Cmp(&mask) != -1 {
-				e.log.Info("banning party for sending too many transactions in block with insufficient difficulty", logging.String("party", k))
-				e.bannedParties[k] = e.currentEpoch + banPeriod
-				break
-			}
-		}
-	}
-	// clear the pow map in preparation for the next block.
-	e.blockPartyToPoW = map[string][]big.Int{}
+	e.blockPartyToObservedDifficulty = map[string]uint{}
+	e.blockPartyToSeenCount = map[string]uint{}
 }
 
 // CheckTx is called by checkTx in the abci and verifies the proof of work, it doesn't update any state.
@@ -181,6 +143,10 @@ func (e *Engine) CheckTx(tx abci.Tx) error {
 	if tx.Command().IsValidatorCommand() {
 		return nil
 	}
+
+	e.lock.RLock()
+	e.log.Info("checktx got tx", logging.String("command", tx.Command().String()), logging.Uint64("height", tx.BlockHeight()), logging.String("tid", tx.GetPoWTID()), logging.Uint64("current-block", e.currentBlock))
+	e.lock.RUnlock()
 
 	_, err := e.verify(tx)
 	return err
@@ -193,7 +159,11 @@ func (e *Engine) DeliverTx(tx abci.Tx) error {
 		return nil
 	}
 
-	h, err := e.verify(tx)
+	e.lock.RLock()
+	e.log.Info("delivertx got tx", logging.String("command", tx.Command().String()), logging.Uint64("height", tx.BlockHeight()), logging.String("tid", tx.GetPoWTID()), logging.Uint64("current-block", e.currentBlock))
+	e.lock.RUnlock()
+
+	d, err := e.verify(tx)
 	if err != nil {
 		return err
 	}
@@ -210,9 +180,51 @@ func (e *Engine) DeliverTx(tx abci.Tx) error {
 	if tx.GetVersion() > 1 {
 		e.heightToTid[tx.BlockHeight()] = append(e.heightToTid[tx.BlockHeight()], tx.GetPoWTID())
 		e.seenTid[tx.GetPoWTID()] = struct{}{}
-		e.blockPartyToPoW[tx.Party()] = append(e.blockPartyToPoW[tx.Party()], h)
+
+		// if we've not seen any transactions from this party this block then let it pass and save the observed difficulty
+		if _, ok := e.blockPartyToSeenCount[tx.Party()]; !ok {
+			e.blockPartyToObservedDifficulty[tx.Party()] = uint(d)
+			e.blockPartyToSeenCount[tx.Party()] = 1
+			e.log.Info("transaction accepted", logging.String("tid", tx.GetPoWTID()))
+			return nil
+		}
+
+		// if we've seen less than the allow number of transactions per block, take a note and let it pass
+		if e.blockPartyToSeenCount[tx.Party()] < uint(e.spamPoWNumberOfTxPerBlock) {
+			e.blockPartyToObservedDifficulty[tx.Party()] += uint(d)
+			e.blockPartyToSeenCount[tx.Party()]++
+			e.log.Info("transaction accepted", logging.String("tid", tx.GetPoWTID()))
+			return nil
+		}
+
+		// if we've seen already enough transactions and `spamPoWIncreasingDifficulty` is not enabled then fail the transction and ban the party
+		if !e.spamPoWIncreasingDifficulty {
+			e.bannedParties[tx.Party()] = e.currentEpoch + banPeriod
+			return errors.New("too many transactions per block")
+		}
+
+		// calculate the expected difficulty as `e.spamPoWDifficulty` * `e.spamPoWNumberOfTxPerBlock` + sigma((e.spamPoWDifficulty + i) for i in {`blockTransactions` - `e.spamPoWNumberOfTxPerBlock`}
+		totalExpectedDifficulty := calculateExpectedDifficulty(e.spamPoWDifficulty, uint(e.spamPoWNumberOfTxPerBlock), e.blockPartyToSeenCount[tx.Party()]+1)
+
+		// if the observed difficulty sum is less than the expected difficulty, ban the party and reject the tx
+		if e.blockPartyToObservedDifficulty[tx.Party()]+uint(d) < totalExpectedDifficulty {
+			e.bannedParties[tx.Party()] = e.currentEpoch + banPeriod
+			return errors.New("too many transactions per block")
+		}
+
+		e.blockPartyToObservedDifficulty[tx.Party()] = e.blockPartyToObservedDifficulty[tx.Party()] + uint(d)
+		e.blockPartyToSeenCount[tx.Party()]++
 	}
 	return nil
+}
+
+// calculateExpectedDifficulty calculates the expected difficulty of the transction with index `seenTx`, i.e. having seen already `seenTx`-1 transactions.
+// `spamPoWDifficulty * i for i == 0..min(seenTx, spamPoWNumberOfTxPerBlock) + sum(spamPoWDifficulty + i) for i = spamPoWNumberOfTxPerBlock..seenTx if seenTx > spamPoWNumberOfTxPerBlock`.
+func calculateExpectedDifficulty(spamPoWDifficulty uint, spamPoWNumberOfTxPerBlock uint, seenTx uint) uint {
+	if seenTx <= spamPoWNumberOfTxPerBlock {
+		return seenTx * spamPoWDifficulty
+	}
+	return spamPoWDifficulty*seenTx + (seenTx-spamPoWNumberOfTxPerBlock)*(1+seenTx-spamPoWNumberOfTxPerBlock)/2
 }
 
 // verify the proof of work
@@ -220,25 +232,28 @@ func (e *Engine) DeliverTx(tx abci.Tx) error {
 // 2. check that the block height is already known to the engine - this is rejected if its too old or not yet seen as we need to know the block hash
 // 3. check that we've not seen this transaction ID before (in the previous `spamPoWNumberOfPastBlocks` blocks)
 // 4. check that the proof of work can be verified with the required difficulty.
-func (e *Engine) verify(tx abci.Tx) (big.Int, error) {
+func (e *Engine) verify(tx abci.Tx) (byte, error) {
 	e.lock.RLock()
 	defer e.lock.RUnlock()
-	var h big.Int
+	var h byte
 
 	// check if the party is banned for the epoch
 	if _, ok := e.bannedParties[tx.Party()]; ok {
+		e.log.Error("party is banned", logging.String("tid", tx.GetPoWTID()), logging.String("party", tx.Party()))
 		return h, errors.New("party is banned from sending transactions")
 	}
 
 	// check if the block height is in scope and is known
 	idx := tx.BlockHeight() % e.spamPoWNumberOfPastBlocks
 	if e.blockHeight[idx] != tx.BlockHeight() {
+		e.log.Error("unknown block height", logging.Uint64("tx-block-height", tx.BlockHeight()), logging.Uint64("index", idx), logging.Uint64("indexed-height", e.blockHeight[idx]), logging.String("command", tx.Command().String()), logging.String("party", tx.Party()))
 		return h, errors.New("unknown block height")
 	}
 
 	// check if the transaction was seen in scope
 	txID := hex.EncodeToString(tx.Hash())
 	if _, ok := e.seenTx[txID]; ok {
+		e.log.Error("transaction ID already used", logging.String("tid", tx.GetPoWTID()), logging.String("party", tx.Party()))
 		return h, errors.New("transaction ID already used")
 	}
 
@@ -248,16 +263,19 @@ func (e *Engine) verify(tx abci.Tx) (big.Int, error) {
 
 	// check if the tid was seen in scope
 	if _, ok := e.seenTid[tx.GetPoWTID()]; ok {
-		return h, errors.New("transaction ID already used")
+		e.log.Error("tid already used", logging.String("tid", tx.GetPoWTID()), logging.String("party", tx.Party()))
+		return h, errors.New("Proof of work tid already used")
 	}
 
 	// verify the proof of work
 	hash := e.blockHash[idx]
-	success, h := crypto.Verify(hash, tx.GetPoWTID(), tx.GetPoWNonce(), e.spamPoWHashFunction, e.spamPoWDifficulty)
+	success, diff := crypto.Verify(hash, tx.GetPoWTID(), tx.GetPoWNonce(), e.spamPoWHashFunction, e.spamPoWDifficulty)
 	if !success {
-		return h, errors.New("failed to verify proof of work")
+		e.log.Error("failed to verify proof of work", logging.String("tid", tx.GetPoWTID()), logging.String("party", tx.Party()))
+		return diff, errors.New("failed to verify proof of work")
 	}
-	return h, nil
+	e.log.Info("transaction passed verify", logging.String("tid", tx.GetPoWTID()), logging.String("party", tx.Party()))
+	return diff, nil
 }
 
 // UpdateSpamPoWNumberOfPastBlocks updates the network parameter of number of past blocks to look at. This requires extending or shrinking the size of the cache.
@@ -345,3 +363,9 @@ func (e *Engine) SpamPoWDifficulty() uint32         { return uint32(e.spamPoWDif
 func (e *Engine) SpamPoWHashFunction() string       { return e.spamPoWHashFunction }
 func (e *Engine) SpamPoWNumberOfTxPerBlock() uint32 { return uint32(e.spamPoWNumberOfTxPerBlock) }
 func (e *Engine) SpamPoWIncreasingDifficulty() bool { return e.spamPoWIncreasingDifficulty }
+
+func (e *Engine) BlockData() (uint64, string) {
+	e.lock.RLock()
+	defer e.lock.RUnlock()
+	return e.currentBlock, e.blockHash[e.currentBlock%e.spamPoWNumberOfPastBlocks]
+}

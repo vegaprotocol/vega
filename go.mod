@@ -6,7 +6,7 @@ require (
 	code.vegaprotocol.io/oracles-relay v0.0.0-20210201140234-f047e1bf6df3
 	code.vegaprotocol.io/protos v0.49.3-0.20220318174501-215809e7a1ee
 	code.vegaprotocol.io/quant v0.2.5
-	code.vegaprotocol.io/shared v0.0.0-20220316120021-93b67baf439a
+	code.vegaprotocol.io/shared v0.0.0-20220321185018-3b5684b00533
 	code.vegaprotocol.io/vegawallet v0.13.2-0.20220318133911-3c373bc555af
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/cenkalti/backoff v2.2.1+incompatible
@@ -49,7 +49,10 @@ require (
 	google.golang.org/protobuf v1.27.1
 )
 
-require github.com/grpc-ecosystem/grpc-gateway/v2 v2.7.3
+require (
+	github.com/gogo/protobuf v1.3.2
+	github.com/grpc-ecosystem/grpc-gateway/v2 v2.7.3
+)
 
 require (
 	github.com/BurntSushi/toml v1.0.0 // indirect
@@ -83,7 +86,6 @@ require (
 	github.com/go-ole/go-ole v1.2.6 // indirect
 	github.com/go-stack/stack v1.8.0 // indirect
 	github.com/gofrs/uuid v3.3.0+incompatible // indirect
-	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/google/orderedcode v0.0.1 // indirect
 	github.com/google/uuid v1.3.0 // indirect
