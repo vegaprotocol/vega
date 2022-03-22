@@ -106,7 +106,6 @@ func (app *App) CheckTx(req types.RequestCheckTx) (resp types.ResponseCheckTx) {
 	// at this point we consider the Tx as valid, so we add it to
 	// the cache to be consumed by DeliveryTx
 	if resp.IsOK() {
-		println("transaction passed validation", tx.Command().String(), "tid", tx.GetPoWTID())
 		app.cacheTx(req.Tx, tx)
 	}
 

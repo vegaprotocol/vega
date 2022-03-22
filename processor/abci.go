@@ -574,13 +574,11 @@ func (app *App) OnEndBlock(req tmtypes.RequestEndBlock) (ctx context.Context, re
 
 // OnBeginBlock updates the internal lastBlockTime value with each new block.
 func (app *App) OnBeginBlock(req tmtypes.RequestBeginBlock) (ctx context.Context, resp tmtypes.ResponseBeginBlock) {
-	app.log.Debug("entering begin block", logging.Time("at", time.Now()))
+	app.log.Debug("entering begin block", logging.Time("at", time.Now()), logging.Uint64("height", uint64(req.Header.Height)))
 	defer func() { app.log.Debug("leaving begin block", logging.Time("at", time.Now())) }()
 
 	hash := hex.EncodeToString(req.Hash)
 	app.cBlock = hash
-
-	app.log.Info("updating block height", logging.Uint64("height", uint64(req.Header.Height)))
 
 	// update pow engine on a new block
 	if app.pow != nil {
@@ -728,6 +726,10 @@ func (app *App) OnCheckTxSpam(tx abci.Tx) tmtypes.ResponseCheckTx {
 func (app *App) OnCheckTx(ctx context.Context, _ tmtypes.RequestCheckTx, tx abci.Tx) (context.Context, tmtypes.ResponseCheckTx) {
 	resp := tmtypes.ResponseCheckTx{}
 
+	if app.log.IsDebug() {
+		app.log.Debug("entering checkTx", logging.String("tid", tx.GetPoWTID()), logging.String("command", tx.Command().String()))
+	}
+
 	if err := app.canSubmitTx(tx); err != nil {
 		resp.Code = abci.AbciTxnValidationFailure
 		resp.Data = []byte(err.Error())
@@ -738,7 +740,10 @@ func (app *App) OnCheckTx(ctx context.Context, _ tmtypes.RequestCheckTx, tx abci
 	// FIXME(): temporary disable all rate limiting
 	_, isval := app.limitPubkey(tx.PubKeyHex())
 
-	app.log.Info("transaction passed checkTx", logging.String("tid", tx.GetPoWTID()), logging.String("command", tx.Command().String()))
+	if app.log.IsDebug() {
+		app.log.Debug("transaction passed checkTx", logging.String("tid", tx.GetPoWTID()), logging.String("command", tx.Command().String()))
+	}
+
 	if isval {
 		return ctx, resp
 	}

@@ -90,7 +90,9 @@ func (s *coreService) LastBlockHeight(
 	defer metrics.StartAPIRequestAndTimeGRPC("LastBlockHeight")()
 
 	blockHeight, blockHash := s.powParams.BlockData()
-	s.log.Info("block height requested, returning", logging.Uint64("block-height", blockHeight), logging.String("block hash", blockHash))
+	if s.log.IsDebug() {
+		s.log.Debug("block height requested, returning", logging.Uint64("block-height", blockHeight), logging.String("block hash", blockHash))
+	}
 
 	return &protoapi.LastBlockHeightResponse{
 		Height:                      blockHeight,
