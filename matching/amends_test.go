@@ -309,6 +309,7 @@ func TestOrderBookAmends_noOrderToAmend(t *testing.T) {
 		TimeInForce:   types.OrderTimeInForceGTC,
 		Type:          types.OrderTypeLimit,
 	}
-	err := book.AmendOrder(nil, &amend)
-	assert.Error(t, types.ErrOrderNotFound, err)
+	assert.Panics(t, func() {
+		book.AmendOrder(nil, &amend)
+	})
 }
