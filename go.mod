@@ -7,7 +7,7 @@ require (
 	code.vegaprotocol.io/protos v0.49.3-0.20220318174501-215809e7a1ee
 	code.vegaprotocol.io/quant v0.2.5
 	code.vegaprotocol.io/shared v0.0.0-20220321185018-3b5684b00533
-	code.vegaprotocol.io/vegawallet v0.13.2-0.20220318133911-3c373bc555af
+	code.vegaprotocol.io/vegawallet v0.13.2-0.20220322164721-c0e96d14aacb
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/cenkalti/backoff v2.2.1+incompatible
 	github.com/cenkalti/backoff/v4 v4.1.2 // indirect
@@ -35,7 +35,7 @@ require (
 	github.com/satori/go.uuid v1.2.0
 	github.com/shopspring/decimal v1.2.0
 	github.com/spf13/afero v1.8.0
-	github.com/spf13/cobra v1.3.0
+	github.com/spf13/cobra v1.4.0
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.7.0
 	github.com/syndtr/goleveldb v1.0.1-0.20210819022825-2ae1ddf74ef7
@@ -43,15 +43,15 @@ require (
 	github.com/tendermint/tm-db v0.6.6
 	go.elastic.co/apm/module/apmhttp v1.8.0
 	go.nanomsg.org/mangos/v3 v3.2.1
-	go.uber.org/zap v1.20.0
-	golang.org/x/crypto v0.0.0-20220314234724-5d542ad81a58
+	go.uber.org/zap v1.21.0
+	golang.org/x/crypto v0.0.0-20220315160706-3147a52a75dd
 	google.golang.org/grpc v1.45.0
 	google.golang.org/protobuf v1.27.1
 )
 
 require (
 	github.com/gogo/protobuf v1.3.2
-	github.com/grpc-ecosystem/grpc-gateway/v2 v2.7.3
+	github.com/grpc-ecosystem/grpc-gateway/v2 v2.9.0
 )
 
 require (
@@ -60,7 +60,7 @@ require (
 	github.com/DataDog/zstd v1.4.1 // indirect
 	github.com/StackExchange/wmi v1.2.1 // indirect
 	github.com/Workiva/go-datastructures v1.0.53 // indirect
-	github.com/adrg/xdg v0.3.3 // indirect
+	github.com/adrg/xdg v0.4.0 // indirect
 	github.com/armon/go-radix v1.0.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/blang/semver/v4 v4.0.0 // indirect
@@ -108,8 +108,8 @@ require (
 	github.com/mimoo/StrobeGo v0.0.0-20181016162300-f8f6d4d2b643 // indirect
 	github.com/minio/highwayhash v1.0.2 // indirect
 	github.com/mitchellh/mapstructure v1.4.3 // indirect
-	github.com/muesli/termenv v0.9.0 // indirect
-	github.com/oasisprotocol/curve25519-voi v0.0.0-20210716083614-f38f8e8b0b84 // indirect
+	github.com/muesli/termenv v0.11.0 // indirect
+	github.com/oasisprotocol/curve25519-voi v0.0.0-20220317090546-adb2f9614b17 // indirect
 	github.com/pelletier/go-toml v1.9.4 // indirect
 	github.com/petermattis/goid v0.0.0-20180202154549-b0b1615b78e5 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
@@ -137,18 +137,18 @@ require (
 	go.elastic.co/fastjson v1.1.0 // indirect
 	go.etcd.io/bbolt v1.3.6 // indirect
 	go.uber.org/atomic v1.9.0 // indirect
-	go.uber.org/multierr v1.7.0 // indirect
+	go.uber.org/multierr v1.8.0 // indirect
 	golang.org/x/exp v0.0.0-20200331195152-e8c3332aa8e5 // indirect
 	golang.org/x/lint v0.0.0-20210508222113-6edffad5e616 // indirect
 	golang.org/x/mod v0.5.1 // indirect
-	golang.org/x/net v0.0.0-20220127200216-cd36cc0744dd // indirect
-	golang.org/x/sys v0.0.0-20220209214540-3681064d5158 // indirect
+	golang.org/x/net v0.0.0-20220225172249-27dd8689420f // indirect
+	golang.org/x/sys v0.0.0-20220318055525-2edf467146b5 // indirect
 	golang.org/x/term v0.0.0-20210927222741-03fcf44c2211 // indirect
 	golang.org/x/text v0.3.7 // indirect
 	golang.org/x/tools v0.1.9-0.20211228192929-ee1ca4ffc4da // indirect
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
 	gonum.org/v1/gonum v0.9.1 // indirect
-	google.golang.org/genproto v0.0.0-20220314164441-57ef72a4c106 // indirect
+	google.golang.org/genproto v0.0.0-20220317150908-0efb43f6373e // indirect
 	gopkg.in/ini.v1 v1.66.3 // indirect
 	gopkg.in/natefinch/npipe.v2 v2.0.0-20160621034901-c1b8fa8bdcce // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
