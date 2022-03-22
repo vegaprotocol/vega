@@ -28,6 +28,7 @@
 ### 🐛 Fixes
 - [4983](https://github.com/vegaprotocol/vega/issues/4983) - Set correct event type for positions state event
 - [4989](https://github.com/vegaprotocol/vega/issues/4989) - Fixing incorrect overflow logic
+- [5036](https://github.com/vegaprotocol/vega/issues/5036) - Fix the `nullblockchain`
 - [4981](https://github.com/vegaprotocol/vega/issues/4981) - Fix bug causing LP orders to uncross at auction end.
 
 ## 0.49.2
