@@ -16,6 +16,7 @@
 
 ### 🐛 Fixes
 - [5025](https://github.com/vegaprotocol/vega/issues/5025) - Witness snapshot breaking consensus
+- [5046](https://github.com/vegaprotocol/vega/issues/5046) - Save all events in `ERC20` topology snapshot
 
 
 ## 0.49.4
