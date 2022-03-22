@@ -3,10 +3,10 @@ module code.vegaprotocol.io/data-node
 go 1.17
 
 require (
-	code.vegaprotocol.io/protos v0.49.2-0.20220310165757-e0f646ce39aa
+	code.vegaprotocol.io/protos v0.49.3-0.20220322110621-3cb499fcec08
 	code.vegaprotocol.io/quant v0.2.5
-	code.vegaprotocol.io/shared v0.0.0-20220202150846-b6aba31dcdb0
-	code.vegaprotocol.io/vega v0.49.4
+	code.vegaprotocol.io/shared v0.0.0-20220321185018-3b5684b00533
+	code.vegaprotocol.io/vega v0.49.5-0.20220322124540-6f4218c66428
 	github.com/99designs/gqlgen v0.16.0
 	github.com/cenkalti/backoff/v4 v4.1.2
 	github.com/dgraph-io/badger/v2 v2.2007.3
@@ -36,14 +36,14 @@ require (
 	go.elastic.co/apm/module/apmhttp v1.8.0
 	go.nanomsg.org/mangos/v3 v3.2.1
 	go.uber.org/zap v1.20.0
-	golang.org/x/crypto v0.0.0-20220112180741-5e0467b6c7ce
+	golang.org/x/crypto v0.0.0-20220314234724-5d542ad81a58
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
-	google.golang.org/grpc v1.44.0
+	google.golang.org/grpc v1.45.0
 	google.golang.org/protobuf v1.27.1
 )
 
 require (
-	code.vegaprotocol.io/vegawallet v0.13.1 // indirect
+	code.vegaprotocol.io/vegawallet v0.13.2-0.20220318133911-3c373bc555af // indirect
 	github.com/BurntSushi/toml v1.0.0 // indirect
 	github.com/DataDog/zstd v1.4.1 // indirect
 	github.com/adrg/xdg v0.3.3 // indirect
@@ -106,14 +106,14 @@ require (
 	golang.org/x/exp v0.0.0-20200331195152-e8c3332aa8e5 // indirect
 	golang.org/x/lint v0.0.0-20210508222113-6edffad5e616 // indirect
 	golang.org/x/mod v0.5.1 // indirect
-	golang.org/x/net v0.0.0-20211208012354-db4efeb81f4b // indirect
-	golang.org/x/sys v0.0.0-20220114195835-da31bd327af9 // indirect
+	golang.org/x/net v0.0.0-20220127200216-cd36cc0744dd // indirect
+	golang.org/x/sys v0.0.0-20220209214540-3681064d5158 // indirect
 	golang.org/x/term v0.0.0-20210927222741-03fcf44c2211 // indirect
 	golang.org/x/text v0.3.7 // indirect
 	golang.org/x/tools v0.1.9 // indirect
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
 	gonum.org/v1/gonum v0.9.1 // indirect
-	google.golang.org/genproto v0.0.0-20220118154757-00ab72f36ad5 // indirect
+	google.golang.org/genproto v0.0.0-20220314164441-57ef72a4c106 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect
 	howett.net/plist v0.0.0-20181124034731-591f970eefbb // indirect
