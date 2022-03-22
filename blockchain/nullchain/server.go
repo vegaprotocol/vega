@@ -24,6 +24,11 @@ func (n *NullBlockchain) Stop() {
 }
 
 func (n *NullBlockchain) Start() error {
+	// the nullblockchain needs to start after the grpc API have started, so we pretend to start here
+	return nil
+}
+
+func (n *NullBlockchain) StartServer() error {
 	n.log.Info("starting blockchain")
 	if err := n.StartChain(); err != nil {
 		return err
