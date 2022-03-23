@@ -9,6 +9,15 @@
 - [](https://github.com/vegaprotocol/data-node/pull/xxx) -
 
 ### 🛠  Improvements
+- [](https://github.com/vegaprotocol/data-node/pull/xxx) -
+
+### 🐛 Fixes
+- [](https://github.com/vegaprotocol/data-node/pull/xxx) -
+
+
+## 0.49.3
+
+### 🛠  Improvements
 - [426](https://github.com/vegaprotocol/data-node/pull/426) - Add bindings for party less liquidity provision requests
 - [430](https://github.com/vegaprotocol/data-node/pull/430) - Migrate deposit API to retrieve data from `Postgres`
 - [435](https://github.com/vegaprotocol/data-node/pull/435) - Migrate governance API to retrieve data from `Postgres`
@@ -23,7 +32,7 @@
 - [404](https://github.com/vegaprotocol/data-node/pull/404) - Migrate market data API to retrieve data from `Postgres`
 - [406](https://github.com/vegaprotocol/data-node/pull/406) - Add a basic integration test
 - [412](https://github.com/vegaprotocol/data-node/pull/412) - Migrate markets API to retrieve data from `Postgres`
-- [407](https://github.com/vegaprotocol/data-node/pull/407) - Add `positionDecimalPlaces` to market `graphQL` 
+- [407](https://github.com/vegaprotocol/data-node/pull/407) - Add `positionDecimalPlaces` to market `graphQL`
 - [429](https://github.com/vegaprotocol/data-node/issues/429) - Add environment variable to getting started document
 - [420](https://github.com/vegaprotocol/data-node/pull/420) - Migrate rewards, delegations and epochs to `Postgres`
 
