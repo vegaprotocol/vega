@@ -732,6 +732,7 @@ func (m *Market) closeMarket(ctx context.Context, t time.Time) error {
 		parties = append(parties, k)
 	}
 
+	sort.Strings(parties)
 	clearMarketTransfers, err := m.collateral.ClearMarket(ctx, m.GetID(), asset, parties)
 	if err != nil {
 		m.log.Error("Clear market error",
@@ -2838,6 +2839,10 @@ func (m *Market) RemoveExpiredOrders(
 
 	if m.closed {
 		return nil, ErrMarketClosed
+	}
+
+	if !m.canTrade() {
+		return nil, ErrTradingNotAllowed
 	}
 
 	expired := []*types.Order{}
