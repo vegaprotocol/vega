@@ -138,6 +138,7 @@ var nodeOrder = []types.SnapshotNamespace{
 	types.FeeTrackerSnapshot,
 	types.MarketTrackerSnapshot,
 	types.ERC20MultiSigTopologySnapshot,
+	types.PoWSnapshot,
 }
 
 // New returns a new snapshot engine.

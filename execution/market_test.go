@@ -758,11 +758,18 @@ func TestMarketWithTradeClosing(t *testing.T) {
 	futureTime := closingAt.Add(1 * time.Second)
 	properties := map[string]string{}
 	properties["trading.terminated"] = "true"
+	tm.oracleEngine.BroadcastData(context.Background(), oracles.OracleData{
+		PubKeys: []string{"0xDEADBEEF"},
+		Data:    properties,
+	})
+
+	properties = map[string]string{}
 	properties["prices.ETH.value"] = "100"
 	tm.oracleEngine.BroadcastData(context.Background(), oracles.OracleData{
 		PubKeys: []string{"0xDEADBEEF"},
 		Data:    properties,
 	})
+
 	closed := tm.market.OnChainTimeUpdate(vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash()), futureTime)
 	assert.True(t, closed)
 }

@@ -43,6 +43,26 @@ func (s PositionState) PartyID() string {
 	return s.partyID
 }
 
+func (s PositionState) Size() int64 {
+	return s.size
+}
+
+func (s PositionState) PotentialBuys() int64 {
+	return s.potentialBuys
+}
+
+func (s PositionState) PotentialSells() int64 {
+	return s.potentialSells
+}
+
+func (s PositionState) VWBuyPrice() *num.Uint {
+	return s.vwBuyPrice
+}
+
+func (s PositionState) VWSellPrice() *num.Uint {
+	return s.vwSellPrice
+}
+
 func (s PositionState) Proto() eventspb.PositionStateEvent {
 	return eventspb.PositionStateEvent{
 		MarketId:       s.marketID,

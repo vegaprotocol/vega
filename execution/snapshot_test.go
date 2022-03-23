@@ -149,7 +149,7 @@ func TestLoadTerminatedMarketFromSnapshot(t *testing.T) {
 
 		marketState1, _ := exec.engine.GetMarketState(marketIDs[i])
 		marketState2, _ := exec2.engine.GetMarketState(marketIDs[i])
-		require.Equal(t, marketState1, marketState2)
+		require.Equal(t, marketState1.String(), marketState2.String())
 		require.Equal(t, types.MarketStateSettled, marketState1)
 		require.Equal(t, types.MarketStateSettled, marketState2)
 

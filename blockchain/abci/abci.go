@@ -99,6 +99,7 @@ func (app *App) CheckTx(req types.RequestCheckTx) (resp types.ResponseCheckTx) {
 	if fn, ok := app.checkTxs[tx.Command()]; ok {
 		if err := fn(ctx, tx); err != nil {
 			resp.Code = AbciTxnInternalError
+			println("transaction failed command validation", tx.Command().String(), "tid", tx.GetPoWTID(), err.Error())
 		}
 	}
 

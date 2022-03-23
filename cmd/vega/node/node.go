@@ -123,6 +123,12 @@ func (n *NodeCommand) Run(
 	n.Log.Info("Vega startup complete",
 		logging.String("node-mode", string(n.conf.NodeMode)))
 
+	// start the nullblockchain if we are in that mode, it *needs* to be after we've started the gRPC server
+	// otherwise it'll start calling init-chain and all the way before we're ready.
+	if n.conf.Blockchain.ChainProvider == blockchain.ProviderNullChain {
+		n.nullBlockchain.StartServer()
+	}
+
 	// wait for possible protocol upgrade, or user exist
 	n.wait()
 
@@ -291,7 +297,6 @@ func (n *NodeCommand) startBlockchain() error {
 		return err
 	}
 
-	// some clients need to start after the rpc-server is up
 	if err := n.blockchainClient.Start(); err != nil {
 		return err
 	}
@@ -356,7 +361,6 @@ func (n *NodeCommand) loadNodeWallets(_ []string) (err error) {
 }
 
 func (n *NodeCommand) startBlockchainClients(_ []string) error {
-	var null *nullchain.NullBlockchain
 	switch n.conf.Blockchain.ChainProvider {
 	case blockchain.ProviderTendermint:
 		a, err := abci.NewClient(n.conf.Blockchain.Tendermint.ClientAddr)
@@ -366,7 +370,7 @@ func (n *NodeCommand) startBlockchainClients(_ []string) error {
 		n.blockchainClient = blockchain.NewClient(a)
 	case blockchain.ProviderNullChain:
 		n.nullBlockchain = nullchain.NewClient(n.Log, n.conf.Blockchain.Null)
-		n.blockchainClient = blockchain.NewClient(null)
+		n.blockchainClient = blockchain.NewClient(n.nullBlockchain)
 	}
 
 	// if we are a non-validator, nothing needs to be done here

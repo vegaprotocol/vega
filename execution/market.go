@@ -438,12 +438,6 @@ func (m *Market) IntoType() types.Market {
 	return *m.mkt.DeepClone()
 }
 
-// UpdateRiskFactorsForTest is a hack for setting the risk factors for tests directly rather than through the consensus engine.
-// Never use this for anything functional.
-func (m *Market) UpdateRiskFactorsForTest() {
-	m.risk.CalculateRiskFactorsForTest()
-}
-
 func (m *Market) Hash() []byte {
 	mID := logging.String("market-id", m.GetID())
 	matchingHash := m.matching.Hash()
@@ -667,17 +661,10 @@ func (m *Market) OnChainTimeUpdate(ctx context.Context, t time.Time) bool {
 		return false
 	}
 
-	// if in somce case we're still in trading terminated state and tried to settle but failed,
-	// as long as there's settlement price we can retry
-	settlementPrice, _ := m.tradableInstrument.Instrument.Product.SettlementPrice()
-
+	// if trading is terminated, we have nothing to do here.
+	// we just need to wait for the settlementPrice to arrive through oracle
 	if m.mkt.State == types.MarketStateTradingTerminated {
-		// if we now have settlement price - try to settle and close the market
-		if settlementPrice != nil {
-			m.closeMarket(ctx, t)
-		}
-		m.closed = m.mkt.State == types.MarketStateSettled
-		return m.closed
+		return false
 	}
 
 	// distribute liquidity fees each `m.lpFeeDistributionTimeStep`
@@ -1185,7 +1172,7 @@ func (m *Market) SubmitOrder(
 	orderSubmission *types.OrderSubmission,
 	party string,
 	deterministicId string,
-) (*types.OrderConfirmation, error) {
+) (oc *types.OrderConfirmation, _ error) {
 	m.idgen = idgeneration.New(deterministicId)
 	defer func() { m.idgen = nil }()
 
@@ -2215,7 +2202,7 @@ func (m *Market) CancelAllOrders(ctx context.Context, partyID string) ([]*types.
 	return cancellations, nil
 }
 
-func (m *Market) CancelOrder(ctx context.Context, partyID, orderID string, deterministicId string) (*types.OrderCancellationConfirmation, error) {
+func (m *Market) CancelOrder(ctx context.Context, partyID, orderID string, deterministicId string) (oc *types.OrderCancellationConfirmation, _ error) {
 	m.idgen = idgeneration.New(deterministicId)
 	defer func() { m.idgen = nil }()
 
@@ -2318,7 +2305,7 @@ func (m *Market) parkOrder(ctx context.Context, order *types.Order) {
 
 // AmendOrder amend an existing order from the order book.
 func (m *Market) AmendOrder(ctx context.Context, orderAmendment *types.OrderAmendment, party string,
-	deterministicId string) (*types.OrderConfirmation, error,
+	deterministicId string) (oc *types.OrderConfirmation, _ error,
 ) {
 	m.idgen = idgeneration.New(deterministicId)
 	defer func() { m.idgen = nil }()
@@ -2614,7 +2601,11 @@ func (m *Market) amendOrder(
 	if priceShift || sizeIncrease {
 		confirmation, err := m.orderCancelReplace(ctx, existingOrder, amendedOrder)
 		var orders []*types.Order
-		if err == nil {
+		if err != nil {
+			// if an error happen, the order never hit the book, so we can
+			// just rollback the position size
+			_ = m.position.AmendOrder(ctx, amendedOrder, existingOrder)
+		} else {
 			orders = m.handleConfirmation(ctx, confirmation)
 			m.broker.Send(events.NewOrderEvent(ctx, confirmation.Order))
 		}
@@ -2625,11 +2616,16 @@ func (m *Market) amendOrder(
 	// ---> DO amend in place in matching engine
 	if expiryChange || sizeDecrease || timeInForceChange {
 		if sizeDecrease && amendedOrder.Remaining >= existingOrder.Remaining {
+			_ = m.position.AmendOrder(ctx, amendedOrder, existingOrder)
+
 			if m.log.GetLevel() == logging.DebugLevel {
 				m.log.Debug("Order amendment not allowed when reducing to a larger amount", logging.Order(*existingOrder))
 			}
 			return nil, nil, ErrInvalidAmendRemainQuantity
 		}
+		// we not doing anything in case of error here as its
+		// pretty much impossible at this point for an order not to be
+		// amended in place. Maybe a panic would be better
 		ret, err := m.orderAmendInPlace(existingOrder, amendedOrder)
 		if err == nil {
 			m.broker.Send(events.NewOrderEvent(ctx, amendedOrder))
@@ -2771,12 +2767,12 @@ func (m *Market) orderCancelReplace(ctx context.Context, existingOrder, newOrder
 	// first we call the order book to evaluate auction triggers and get the list of trades
 	trades, err := m.checkPriceAndGetTrades(ctx, newOrder)
 	if err != nil {
-		return nil, m.unregisterAndReject(ctx, newOrder, err)
+		return nil, errors.New("couldn't insert order in book")
 	}
 
 	// try to apply fees on the trade
 	if err := m.applyFees(ctx, newOrder, trades); err != nil {
-		return nil, m.unregisterAndReject(ctx, newOrder, err)
+		return nil, errors.New("could not apply fees for order")
 	}
 
 	// "hot-swap" of the orders
@@ -2788,9 +2784,14 @@ func (m *Market) orderCancelReplace(ctx context.Context, existingOrder, newOrder
 	// the ones with the fees embedded
 	conf.Trades = trades
 
+	// orer submitted successfully, update the pegged list
+	if newOrder.PeggedOrder != nil {
+		m.peggedOrders.Amend(newOrder)
+	}
+
 	timer.EngineTimeCounterAdd()
 
-	return conf, err
+	return conf, nil
 }
 
 func (m *Market) orderAmendInPlace(originalOrder, amendOrder *types.Order) (*types.OrderConfirmation, error) {
@@ -2806,6 +2807,12 @@ func (m *Market) orderAmendInPlace(originalOrder, amendOrder *types.Order) (*typ
 		}
 		return nil, err
 	}
+
+	// order is successfully submitted, update the pegged list
+	if amendOrder.PeggedOrder != nil {
+		m.peggedOrders.Amend(amendOrder)
+	}
+
 	return &types.OrderConfirmation{
 		Order: amendOrder,
 	}, nil
@@ -2814,7 +2821,8 @@ func (m *Market) orderAmendInPlace(originalOrder, amendOrder *types.Order) (*typ
 func (m *Market) orderAmendWhenParked(originalOrder, amendOrder *types.Order) *types.OrderConfirmation {
 	amendOrder.Status = types.OrderStatusParked
 	amendOrder.Price = num.Zero()
-	*originalOrder = *amendOrder
+	amendOrder.OriginalPrice = num.Zero()
+	m.peggedOrders.Amend(amendOrder)
 
 	return &types.OrderConfirmation{
 		Order: amendOrder,
@@ -3052,17 +3060,13 @@ func (m *Market) tradingTerminated(ctx context.Context, tt bool) {
 	defer m.mu.Unlock()
 	m.mkt.State = types.MarketStateTradingTerminated
 	m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
-
-	sp, _ := m.tradableInstrument.Instrument.Product.SettlementPrice()
-	if sp != nil {
-		m.settlementPriceWithLock(ctx, sp)
-	}
 	m.stateChanged = true
 }
 
 func (m *Market) settlementPrice(ctx context.Context, settlementPrice *num.Uint) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
+
 	m.settlementPriceWithLock(ctx, settlementPrice)
 }
 
@@ -3072,7 +3076,10 @@ func (m *Market) settlementPriceWithLock(ctx context.Context, settlementPrice *n
 		return
 	}
 	if m.mkt.State == types.MarketStateTradingTerminated && settlementPrice != nil {
-		m.closeMarket(ctx, m.currentTime)
+		err := m.closeMarket(ctx, m.currentTime)
+		if err != nil {
+			m.log.Error("could not close market", logging.Error(err))
+		}
 		m.closed = m.mkt.State == types.MarketStateSettled
 	}
 }
