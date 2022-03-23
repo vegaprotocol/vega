@@ -88,10 +88,7 @@ func (rs *Rewards) GetSummaries(ctx context.Context,
 func addRewardWhereClause(queryPtr *string, args *[]interface{}, partyIDHex, assetIDHex *string) error {
 	query := *queryPtr
 	if partyIDHex != nil {
-		partyID, err := entities.MakePartyID(*partyIDHex)
-		if err != nil {
-			return err
-		}
+		partyID := entities.NewPartyID(*partyIDHex)
 		query = fmt.Sprintf("%s WHERE party_id=%s", query, nextBindVar(args, partyID))
 	}
 
@@ -101,7 +98,7 @@ func addRewardWhereClause(queryPtr *string, args *[]interface{}, partyIDHex, ass
 			clause = "AND"
 		}
 
-		assetID := entities.MakeAssetID(*assetIDHex)
+		assetID := entities.ID(*assetIDHex)
 		query = fmt.Sprintf("%s %s asset_id=%s", query, clause, nextBindVar(args, assetID))
 	}
 	*queryPtr = query

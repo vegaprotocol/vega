@@ -97,9 +97,9 @@ func getMarginLevelProto() *vega.MarginLevels {
 		SearchLevel:            "1000",
 		InitialMargin:          "1000",
 		CollateralReleaseLevel: "1000",
-		PartyId:                "DEADBEEF",
-		MarketId:               "DEADBEEF",
-		Asset:                  "DEADBEEF",
+		PartyId:                "deadbeef",
+		MarketId:               "deadbeef",
+		Asset:                  "deadbeef",
 		Timestamp:              time.Now().UnixNano(),
 	}
 }
@@ -121,7 +121,7 @@ func testGetMarginLevelsByPartyID(t *testing.T) {
 	ml3 := getMarginLevelProto()
 	ml4 := getMarginLevelProto()
 
-	ml2.MarketId = "DEADBAAD"
+	ml2.MarketId = "deadbaad"
 
 	ml3.Timestamp = ml2.Timestamp + 1000000000
 	ml3.MaintenanceMargin = "2000"
@@ -130,7 +130,7 @@ func testGetMarginLevelsByPartyID(t *testing.T) {
 	ml4.Timestamp = ml2.Timestamp + 1000000000
 	ml4.MaintenanceMargin = "2000"
 	ml4.SearchLevel = "2000"
-	ml4.MarketId = "DEADBAAD"
+	ml4.MarketId = "deadbaad"
 
 	block := addTestBlock(t, bs)
 	marginLevel1, err := entities.MarginLevelsFromProto(ml1, block.VegaTime)
@@ -201,7 +201,7 @@ func testGetMarginLevelsByMarketID(t *testing.T) {
 	ml3 := getMarginLevelProto()
 	ml4 := getMarginLevelProto()
 
-	ml2.PartyId = "DEADBAAD"
+	ml2.PartyId = "deadbaad"
 
 	ml3.Timestamp = ml2.Timestamp + 1000000000
 	ml3.MaintenanceMargin = "2000"
@@ -210,7 +210,7 @@ func testGetMarginLevelsByMarketID(t *testing.T) {
 	ml4.Timestamp = ml2.Timestamp + 1000000000
 	ml4.MaintenanceMargin = "2000"
 	ml4.SearchLevel = "2000"
-	ml4.PartyId = "DEADBAAD"
+	ml4.PartyId = "deadbaad"
 
 	block := addTestBlock(t, bs)
 	marginLevel1, err := entities.MarginLevelsFromProto(ml1, block.VegaTime)

@@ -20,7 +20,7 @@ func addTestAsset(t *testing.T, as *sqlstore.Assets, block entities.Block) entit
 	totalSupply, _ := decimal.NewFromString("1000000000000000000001")
 
 	asset := entities.Asset{
-		ID:            generateID(),
+		ID:            entities.NewAssetID(generateID()),
 		Name:          fmt.Sprint("my test asset", testAssetCount),
 		Symbol:        fmt.Sprint("TEST", testAssetCount),
 		TotalSupply:   totalSupply,
@@ -57,7 +57,7 @@ func TestAsset(t *testing.T) {
 	assert.Error(t, err)
 
 	// Query and check we've got back an asset the same as the one we put in
-	fetchedAsset, err := as.GetByID(ctx, asset.HexID())
+	fetchedAsset, err := as.GetByID(ctx, asset.ID.String())
 	assert.NoError(t, err)
 	assert.Equal(t, asset, fetchedAsset)
 

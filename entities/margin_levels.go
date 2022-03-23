@@ -1,7 +1,6 @@
 package entities
 
 import (
-	"encoding/hex"
 	"fmt"
 	"time"
 
@@ -10,9 +9,9 @@ import (
 )
 
 type MarginLevels struct {
-	MarketID               []byte
-	AssetID                []byte
-	PartyID                []byte
+	MarketID               MarketID
+	AssetID                AssetID
+	PartyID                PartyID
 	MaintenanceMargin      decimal.Decimal
 	SearchLevel            decimal.Decimal
 	InitialMargin          decimal.Decimal
@@ -23,22 +22,9 @@ type MarginLevels struct {
 
 func MarginLevelsFromProto(margin *vega.MarginLevels, vegaTime time.Time) (*MarginLevels, error) {
 	var (
-		marketID, assetID, partyID                                            []byte
 		maintenanceMargin, searchLevel, initialMargin, collateralReleaseLevel decimal.Decimal
 		err                                                                   error
 	)
-
-	if marketID, err = makeID(margin.MarketId); err != nil {
-		return nil, fmt.Errorf("invalid market ID: %w", err)
-	}
-
-	if assetID, err = makeID(margin.Asset); err != nil {
-		return nil, fmt.Errorf("invalid asset ID: %w", err)
-	}
-
-	if partyID, err = makeID(margin.PartyId); err != nil {
-		return nil, fmt.Errorf("invalid party ID: %w", err)
-	}
 
 	if maintenanceMargin, err = decimal.NewFromString(margin.MaintenanceMargin); err != nil {
 		return nil, fmt.Errorf("invalid maintenance margin: %w", err)
@@ -57,9 +43,9 @@ func MarginLevelsFromProto(margin *vega.MarginLevels, vegaTime time.Time) (*Marg
 	}
 
 	return &MarginLevels{
-		MarketID:               marketID,
-		AssetID:                assetID,
-		PartyID:                partyID,
+		MarketID:               NewMarketID(margin.MarketId),
+		AssetID:                NewAssetID(margin.Asset),
+		PartyID:                NewPartyID(margin.PartyId),
 		MaintenanceMargin:      maintenanceMargin,
 		SearchLevel:            searchLevel,
 		InitialMargin:          initialMargin,
@@ -70,18 +56,14 @@ func MarginLevelsFromProto(margin *vega.MarginLevels, vegaTime time.Time) (*Marg
 }
 
 func (ml *MarginLevels) ToProto() *vega.MarginLevels {
-	marketID := hex.EncodeToString(ml.MarketID)
-	assetID := hex.EncodeToString(ml.AssetID)
-	partyID := hex.EncodeToString(ml.PartyID)
-
 	return &vega.MarginLevels{
 		MaintenanceMargin:      ml.MaintenanceMargin.String(),
 		SearchLevel:            ml.SearchLevel.String(),
 		InitialMargin:          ml.InitialMargin.String(),
 		CollateralReleaseLevel: ml.CollateralReleaseLevel.String(),
-		PartyId:                partyID,
-		MarketId:               marketID,
-		Asset:                  assetID,
+		PartyId:                ml.PartyID.String(),
+		MarketId:               ml.MarketID.String(),
+		Asset:                  ml.AssetID.String(),
 		Timestamp:              ml.Timestamp.UnixNano(),
 	}
 }

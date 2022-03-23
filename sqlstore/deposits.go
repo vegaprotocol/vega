@@ -2,7 +2,6 @@ package sqlstore
 
 import (
 	"context"
-	"encoding/hex"
 	"fmt"
 	"strings"
 
@@ -50,11 +49,6 @@ set
 }
 
 func (d *Deposits) GetByID(ctx context.Context, depositID string) (entities.Deposit, error) {
-	id, err := hex.DecodeString(depositID)
-	if err != nil {
-		return entities.Deposit{}, err
-	}
-
 	var deposit entities.Deposit
 
 	query := `select distinct on (id, party_id) id, status, party_id, asset, amount, tx_hash, credited_timestamp, created_timestamp, vega_time
@@ -62,23 +56,18 @@ func (d *Deposits) GetByID(ctx context.Context, depositID string) (entities.Depo
 		where id = $1
 		order by id, party_id, vega_time desc`
 
-	err = pgxscan.Get(ctx, d.pool, &deposit, query, id)
+	err := pgxscan.Get(ctx, d.pool, &deposit, query, entities.NewDepositID(depositID))
 	return deposit, err
 }
 
 func (d *Deposits) GetByParty(ctx context.Context, party string, openOnly bool, pagination entities.Pagination) []entities.Deposit {
-	id, err := hex.DecodeString(party)
-	if err != nil {
-		return nil
-	}
-
 	var deposits []entities.Deposit
 	var args []interface{}
 
 	queryBuilder := strings.Builder{}
 	queryBuilder.WriteString(fmt.Sprintf(`select distinct on (id, party_id) id, status, party_id, asset, amount, tx_hash, credited_timestamp, created_timestamp, vega_time
 		from deposits
-		where party_id = %s `, nextBindVar(&args, id)))
+		where party_id = %s `, nextBindVar(&args, entities.NewPartyID(party))))
 
 	if openOnly {
 		queryBuilder.WriteString(fmt.Sprintf(`and status = %s`, nextBindVar(&args, entities.DepositStatusOpen)))
@@ -89,7 +78,7 @@ func (d *Deposits) GetByParty(ctx context.Context, party string, openOnly bool, 
 	var query string
 	query, args = orderAndPaginateQuery(queryBuilder.String(), nil, pagination, args...)
 
-	if err = pgxscan.Select(ctx, d.pool, &deposits, query, args...); err != nil {
+	if err := pgxscan.Select(ctx, d.pool, &deposits, query, args...); err != nil {
 		return nil
 	}
 

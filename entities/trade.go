@@ -1,7 +1,6 @@
 package entities
 
 import (
-	"encoding/hex"
 	"fmt"
 	"strings"
 	"time"
@@ -13,18 +12,24 @@ import (
 	"github.com/shopspring/decimal"
 )
 
+type TradeID struct{ ID }
+
+func NewTradeID(id string) TradeID {
+	return TradeID{ID: ID(id)}
+}
+
 type Trade struct {
 	VegaTime                time.Time
 	SeqNum                  uint64
-	ID                      []byte
-	MarketID                []byte
+	ID                      TradeID
+	MarketID                MarketID
 	Price                   decimal.Decimal
 	Size                    decimal.Decimal
-	Buyer                   []byte
-	Seller                  []byte
+	Buyer                   PartyID
+	Seller                  PartyID
 	Aggressor               Side
-	BuyOrder                []byte
-	SellOrder               []byte
+	BuyOrder                OrderID
+	SellOrder               OrderID
 	Type                    TradeType
 	BuyerMakerFee           decimal.Decimal
 	BuyerInfrastructureFee  decimal.Decimal
@@ -38,15 +43,15 @@ type Trade struct {
 
 func (t *Trade) ToProto() *vega.Trade {
 	return &vega.Trade{
-		Id:        strings.ToUpper(hex.EncodeToString(t.ID)),
-		MarketId:  hex.EncodeToString(t.MarketID),
+		Id:        strings.ToUpper(t.ID.String()),
+		MarketId:  t.MarketID.String(),
 		Price:     t.Price.String(),
 		Size:      t.Size.UintNO().Uint64(),
-		Buyer:     Party{ID: t.Buyer}.HexID(),
-		Seller:    Party{ID: t.Seller}.HexID(),
+		Buyer:     t.Buyer.String(),
+		Seller:    t.Seller.String(),
 		Aggressor: t.Aggressor,
-		BuyOrder:  strings.ToUpper(hex.EncodeToString(t.BuyOrder)),
-		SellOrder: strings.ToUpper(hex.EncodeToString(t.SellOrder)),
+		BuyOrder:  strings.ToUpper(t.BuyOrder.String()),
+		SellOrder: strings.ToUpper(t.SellOrder.String()),
 		Timestamp: t.VegaTime.UnixNano(),
 		Type:      t.Type,
 		BuyerFee: &vega.Fee{
@@ -65,41 +70,12 @@ func (t *Trade) ToProto() *vega.Trade {
 }
 
 func TradeFromProto(t *vega.Trade, vegaTime time.Time, sequenceNumber uint64) (*Trade, error) {
-	id, err := hex.DecodeString(t.Id)
-	if err != nil {
-		return nil, fmt.Errorf("failed to decode trade id:%w", err)
-	}
-	marketId, err := hex.DecodeString(t.MarketId)
-	if err != nil {
-		return nil, fmt.Errorf("failed to decode market id:%w", err)
-	}
-
 	price, err := decimal.NewFromString(t.Price)
 	if err != nil {
 		return nil, fmt.Errorf("failed to decode price:%w", err)
 	}
 
 	size := decimal.NewFromUint(uint256.NewInt(t.Size))
-
-	buyer, err := MakePartyID(t.Buyer)
-	if err != nil {
-		return nil, fmt.Errorf("failed to decode buyer id:%w", err)
-	}
-
-	seller, err := MakePartyID(t.Seller)
-	if err != nil {
-		return nil, fmt.Errorf("failed to decode seller id:%w", err)
-	}
-
-	buyOrderId, err := MakeOrderID(t.BuyOrder)
-	if err != nil {
-		return nil, fmt.Errorf("failed to decode buy order id:%w", err)
-	}
-
-	sellOrderId, err := MakeOrderID(t.SellOrder)
-	if err != nil {
-		return nil, fmt.Errorf("failed to decode sell order id:%w", err)
-	}
 
 	buyerMakerFee := decimal.Zero
 	buyerInfraFee := decimal.Zero
@@ -144,15 +120,15 @@ func TradeFromProto(t *vega.Trade, vegaTime time.Time, sequenceNumber uint64) (*
 	trade := Trade{
 		VegaTime:                vegaTime,
 		SeqNum:                  sequenceNumber,
-		ID:                      id,
-		MarketID:                marketId,
+		ID:                      NewTradeID(t.Id),
+		MarketID:                NewMarketID(t.MarketId),
 		Price:                   price,
 		Size:                    size,
-		Buyer:                   buyer,
-		Seller:                  seller,
+		Buyer:                   NewPartyID(t.Buyer),
+		Seller:                  NewPartyID(t.Seller),
 		Aggressor:               t.Aggressor,
-		BuyOrder:                buyOrderId,
-		SellOrder:               sellOrderId,
+		BuyOrder:                NewOrderID(t.BuyOrder),
+		SellOrder:               NewOrderID(t.SellOrder),
 		Type:                    t.Type,
 		BuyerMakerFee:           buyerMakerFee,
 		BuyerInfrastructureFee:  buyerInfraFee,

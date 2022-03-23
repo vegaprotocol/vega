@@ -2,7 +2,6 @@ package sqlstore
 
 import (
 	"context"
-	"encoding/hex"
 	"fmt"
 
 	"code.vegaprotocol.io/data-node/entities"
@@ -69,27 +68,22 @@ func (os *Orders) GetAll(ctx context.Context) ([]entities.Order, error) {
 }
 
 // GetByOrderId returns the last update of the order with the given ID
-func (os *Orders) GetByOrderID(ctx context.Context, id string, version *int32) (entities.Order, error) {
+func (os *Orders) GetByOrderID(ctx context.Context, orderIdStr string, version *int32) (entities.Order, error) {
+	var err error
 	order := entities.Order{}
-	idBytes, err := hex.DecodeString(id)
-	if err != nil {
-		return order, ErrBadID
-	}
+	orderId := entities.NewOrderID(orderIdStr)
 
 	if version != nil && *version > 0 {
-		err = pgxscan.Get(ctx, os.pool, &order, `SELECT * FROM orders_current_versions WHERE id=$1 and version=$2`, idBytes, version)
+		err = pgxscan.Get(ctx, os.pool, &order, `SELECT * FROM orders_current_versions WHERE id=$1 and version=$2`, orderId, version)
 	} else {
-		err = pgxscan.Get(ctx, os.pool, &order, `SELECT * FROM orders_current WHERE id=$1`, idBytes)
+		err = pgxscan.Get(ctx, os.pool, &order, `SELECT * FROM orders_current WHERE id=$1`, orderId)
 	}
 	return order, err
 }
 
 // GetByMarket returns the last update of the all the orders in a particular market
-func (os *Orders) GetByMarket(ctx context.Context, marketIdHex string, p entities.Pagination) ([]entities.Order, error) {
-	marketId, err := entities.MakeMarketID(marketIdHex)
-	if err != nil {
-		return nil, err
-	}
+func (os *Orders) GetByMarket(ctx context.Context, marketIdStr string, p entities.Pagination) ([]entities.Order, error) {
+	marketId := entities.NewMarketID(marketIdStr)
 
 	query := `SELECT * from orders_current WHERE market_id=$1`
 	args := []interface{}{marketId}
@@ -97,11 +91,8 @@ func (os *Orders) GetByMarket(ctx context.Context, marketIdHex string, p entitie
 }
 
 // GetByParty returns the last update of the all the orders in a particular party
-func (os *Orders) GetByParty(ctx context.Context, partyIdHex string, p entities.Pagination) ([]entities.Order, error) {
-	partyId, err := entities.MakePartyID(partyIdHex)
-	if err != nil {
-		return nil, err
-	}
+func (os *Orders) GetByParty(ctx context.Context, partyIdStr string, p entities.Pagination) ([]entities.Order, error) {
+	partyId := entities.NewPartyID(partyIdStr)
 
 	query := `SELECT * from orders_current WHERE party_id=$1`
 	args := []interface{}{partyId}
@@ -118,13 +109,8 @@ func (os *Orders) GetByReference(ctx context.Context, reference string, p entiti
 // GetAllVersionsByOrderID the last update to all versions (e.g. manual changes that lead to
 // incrementing the version field) of a given order id.
 func (os *Orders) GetAllVersionsByOrderID(ctx context.Context, id string, p entities.Pagination) ([]entities.Order, error) {
-	idBytes, err := hex.DecodeString(id)
-	if err != nil {
-		return nil, ErrBadID
-	}
-
 	query := `SELECT * from orders_current_versions WHERE id=$1`
-	args := []interface{}{idBytes}
+	args := []interface{}{entities.NewOrderID(id)}
 	return os.queryOrders(ctx, query, args, &p)
 }
 

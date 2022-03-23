@@ -91,7 +91,7 @@ func testUpsertDuplicateMarketInSameBlock(t *testing.T) {
 
 func getRiskFactorProto() *vega.RiskFactor {
 	return &vega.RiskFactor{
-		Market: "DEADBEEF",
+		Market: "deadbeef",
 		Short:  "1000",
 		Long:   "1000",
 	}

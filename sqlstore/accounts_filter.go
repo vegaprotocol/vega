@@ -8,12 +8,13 @@ import (
 
 // Return an SQL query string and corresponding bind arguments to return rows
 // from the account table filtered according to this AccountFilter.
-func filterAccountsQuery(af entities.AccountFilter) (string, []interface{}) {
+func filterAccountsQuery(af entities.AccountFilter) (string, []interface{}, error) {
 	var args []interface{}
+	var err error
 
 	query := `SELECT id, party_id, asset_id, market_id, type, vega_time
 	          FROM ACCOUNTS `
-	if af.Asset.ID != nil {
+	if af.Asset.ID.String() != "" {
 		query = fmt.Sprintf("%s WHERE asset_id=%s", query, nextBindVar(&args, af.Asset.ID))
 	} else {
 		query = fmt.Sprintf("%s WHERE true", query)
@@ -22,7 +23,10 @@ func filterAccountsQuery(af entities.AccountFilter) (string, []interface{}) {
 	if len(af.Parties) > 0 {
 		partyIDs := make([][]byte, len(af.Parties))
 		for i, party := range af.Parties {
-			partyIDs[i] = party.ID
+			partyIDs[i], err = party.ID.Bytes()
+			if err != nil {
+				return "", nil, fmt.Errorf("invalid party id: %w", err)
+			}
 		}
 		query += " AND party_id=ANY(" + nextBindVar(&args, partyIDs) + ")"
 	}
@@ -34,13 +38,16 @@ func filterAccountsQuery(af entities.AccountFilter) (string, []interface{}) {
 	if len(af.Markets) > 0 {
 		marketIds := make([][]byte, len(af.Markets))
 		for i, market := range af.Markets {
-			marketIds[i] = market.ID
+			marketIds[i], err = market.ID.Bytes()
+			if err != nil {
+				return "", nil, fmt.Errorf("invalid market id: %w", err)
+			}
 		}
 
 		query += " AND market_id=ANY(" + nextBindVar(&args, marketIds) + ")"
 	}
 
-	return query, args
+	return query, args, nil
 }
 
 func filterAccountBalancesQuery(af entities.AccountFilter, pagination entities.Pagination) (string, []interface{}) {
@@ -49,13 +56,13 @@ func filterAccountBalancesQuery(af entities.AccountFilter, pagination entities.P
 	where := ""
 	and := ""
 
-	if len(af.Asset.ID) != 0 {
+	if len(af.Asset.ID.String()) != 0 {
 		where = fmt.Sprintf("ACCOUNTS.asset_id=%s", nextBindVar(&args, af.Asset.ID))
 		and = " AND "
 	}
 
 	if len(af.Parties) > 0 {
-		partyIDs := make([][]byte, len(af.Parties))
+		partyIDs := make([]entities.PartyID, len(af.Parties))
 		for i, party := range af.Parties {
 			partyIDs[i] = party.ID
 		}
@@ -73,7 +80,7 @@ func filterAccountBalancesQuery(af entities.AccountFilter, pagination entities.P
 	}
 
 	if len(af.Markets) > 0 {
-		marketIDs := make([][]byte, len(af.Markets))
+		marketIDs := make([]entities.MarketID, len(af.Markets))
 		for i, market := range af.Markets {
 			marketIDs[i] = market.ID
 		}

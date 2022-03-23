@@ -55,7 +55,6 @@ func (rs *Proposal) Push(evt events.Event) {
 }
 
 func (ps *Proposal) consume(event ProposalEvent) {
-	ps.log.Debug("Proposal: ", logging.Int64("block", event.BlockNr()))
 	protoProposal := event.Proposal()
 	proposal, err := entities.ProposalFromProto(&protoProposal)
 

@@ -15,7 +15,7 @@ import (
 
 func addTestOrder(t *testing.T, os *sqlstore.Orders, block entities.Block, party entities.Party, market entities.Market, reference string) entities.Order {
 	order := entities.Order{
-		ID:              generateID(),
+		ID:              entities.NewOrderID(generateID()),
 		MarketID:        market.ID,
 		PartyID:         party.ID,
 		Side:            types.SideBuy,
@@ -64,8 +64,8 @@ func TestOrders(t *testing.T) {
 	}
 
 	markets := []entities.Market{
-		{ID: []byte{1}},
-		{ID: []byte{2}},
+		{ID: entities.NewMarketID("aa")},
+		{ID: entities.NewMarketID("bb")},
 	}
 
 	// Make some orders
@@ -121,7 +121,7 @@ func TestOrders(t *testing.T) {
 	t.Run("GetByOrderID", func(t *testing.T) {
 		// Ensure we get the most recently updated version
 		for i := 0; i < numTestOrders; i++ {
-			fetchedOrder, err := os.GetByOrderID(ctx, orders[i].HexID(), nil)
+			fetchedOrder, err := os.GetByOrderID(ctx, orders[i].ID.String(), nil)
 			require.NoError(t, err)
 			assert.Equal(t, fetchedOrder, updatedOrders[i])
 		}
@@ -130,14 +130,14 @@ func TestOrders(t *testing.T) {
 	t.Run("GetByOrderID specific version", func(t *testing.T) {
 		for i := 0; i < numTestOrders; i++ {
 			ver := updatedOrders[i].Version
-			fetchedOrder, err := os.GetByOrderID(ctx, updatedOrders[i].HexID(), &ver)
+			fetchedOrder, err := os.GetByOrderID(ctx, updatedOrders[i].ID.String(), &ver)
 			require.NoError(t, err)
 			assert.Equal(t, fetchedOrder, updatedOrders[i])
 		}
 	})
 
 	t.Run("GetByMarket", func(t *testing.T) {
-		fetchedOrders, err := os.GetByMarket(ctx, markets[0].HexID(), entities.Pagination{})
+		fetchedOrders, err := os.GetByMarket(ctx, markets[0].ID.String(), entities.Pagination{})
 		require.NoError(t, err)
 		assert.Len(t, fetchedOrders, numTestOrders/2)
 		for _, fetchedOrder := range fetchedOrders {
@@ -146,7 +146,7 @@ func TestOrders(t *testing.T) {
 
 		t.Run("Pagination", func(t *testing.T) {
 			fetchedOrdersP, err := os.GetByMarket(ctx,
-				markets[0].HexID(),
+				markets[0].ID.String(),
 				entities.Pagination{Skip: 4, Limit: 3, Descending: true})
 			require.NoError(t, err)
 			assert.Equal(t, reverseOrderSlice(fetchedOrders)[4:7], fetchedOrdersP)
@@ -154,7 +154,7 @@ func TestOrders(t *testing.T) {
 	})
 
 	t.Run("GetByParty", func(t *testing.T) {
-		fetchedOrders, err := os.GetByParty(ctx, parties[0].HexID(), entities.Pagination{})
+		fetchedOrders, err := os.GetByParty(ctx, parties[0].ID.String(), entities.Pagination{})
 		require.NoError(t, err)
 		assert.Len(t, fetchedOrders, numTestOrders/3)
 		for _, fetchedOrder := range fetchedOrders {
@@ -170,7 +170,7 @@ func TestOrders(t *testing.T) {
 	})
 
 	t.Run("GetAllVersionsByOrderID", func(t *testing.T) {
-		fetchedOrders, err := os.GetAllVersionsByOrderID(ctx, orders[3].HexID(), entities.Pagination{})
+		fetchedOrders, err := os.GetAllVersionsByOrderID(ctx, orders[3].ID.String(), entities.Pagination{})
 		require.NoError(t, err)
 		require.Len(t, fetchedOrders, 2)
 		assert.Equal(t, int32(1), fetchedOrders[0].Version)

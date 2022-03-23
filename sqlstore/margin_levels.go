@@ -2,7 +2,6 @@ package sqlstore
 
 import (
 	"context"
-	"encoding/hex"
 	"fmt"
 
 	"code.vegaprotocol.io/data-node/entities"
@@ -48,15 +47,8 @@ set
 }
 
 func (ml *MarginLevels) GetMarginLevelsByID(ctx context.Context, partyID, marketID string, pagination entities.Pagination) ([]entities.MarginLevels, error) {
-	party, err := entities.MakePartyID(partyID)
-	if err != nil {
-		return nil, fmt.Errorf("bad party ID - %s (must be a hex string): %w", partyID, err)
-	}
-
-	market, err := hex.DecodeString(marketID)
-	if err != nil {
-		return nil, fmt.Errorf("bad market ID - %s (must be a hex string): %w", marketID, err)
-	}
+	party := entities.NewPartyID(partyID)
+	market := entities.NewMarketID(marketID)
 
 	var marginLevels []entities.MarginLevels
 
@@ -89,7 +81,7 @@ func (ml *MarginLevels) GetMarginLevelsByID(ctx context.Context, partyID, market
 		whereClause)
 
 	query, bindVars = orderAndPaginateQuery(query, nil, pagination, bindVars...)
-	err = pgxscan.Select(ctx, ml.pool, &marginLevels, query, bindVars...)
+	err := pgxscan.Select(ctx, ml.pool, &marginLevels, query, bindVars...)
 
 	return marginLevels, err
 }

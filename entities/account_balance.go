@@ -1,8 +1,6 @@
 package entities
 
 import (
-	"encoding/hex"
-
 	"code.vegaprotocol.io/protos/vega"
 	"github.com/shopspring/decimal"
 )
@@ -13,26 +11,11 @@ type AccountBalance struct {
 }
 
 func (ab *AccountBalance) ToProto() *vega.Account {
-	owner := ""
-	market := ""
-
-	if len(ab.PartyID) > 0 {
-		owner = hex.EncodeToString(ab.PartyID)
-	}
-
-	asset := Asset{
-		ID: ab.AssetID,
-	}
-
-	if len(ab.MarketID) > 0 {
-		market = hex.EncodeToString(ab.MarketID)
-	}
-
 	return &vega.Account{
-		Owner:    owner,
+		Owner:    ab.PartyID.String(),
 		Balance:  ab.Balance.String(),
-		Asset:    asset.HexID(),
-		MarketId: market,
+		Asset:    ab.AssetID.String(),
+		MarketId: ab.MarketID.String(),
 		Type:     ab.Account.Type,
 	}
 }

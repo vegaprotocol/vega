@@ -61,7 +61,11 @@ func (bs *Balances) Add(b entities.Balance) error {
 // 3     100        y
 //
 func (bs *Balances) Query(filter entities.AccountFilter, groupBy []entities.AccountField) (*[]entities.AggregatedBalance, error) {
-	assetsQuery, args := filterAccountsQuery(filter)
+	assetsQuery, args, err := filterAccountsQuery(filter)
+	if err != nil {
+		return nil, err
+	}
+
 	query := `
         WITH our_accounts AS (%s),
              timestamps AS (SELECT DISTINCT balances.vega_time

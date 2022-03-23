@@ -2,7 +2,6 @@ package api
 
 import (
 	"context"
-	"encoding/hex"
 	"errors"
 	"strconv"
 
@@ -248,13 +247,13 @@ func (t *tradingDataDelegator) proposalListToGovernanceData(ctx context.Context,
 }
 
 func (t *tradingDataDelegator) proposalToGovernanceData(ctx context.Context, proposal entities.Proposal) (*vega.GovernanceData, error) {
-	yesVotes, err := t.voteStore.GetYesVotesForProposal(ctx, proposal.HexID())
+	yesVotes, err := t.voteStore.GetYesVotesForProposal(ctx, proposal.ID.String())
 	if err != nil {
 		return nil, err
 	}
 	protoYesVotes := voteListToProto(yesVotes)
 
-	noVotes, err := t.voteStore.GetNoVotesForProposal(ctx, proposal.HexID())
+	noVotes, err := t.voteStore.GetNoVotesForProposal(ctx, proposal.ID.String())
 	if err != nil {
 		return nil, err
 	}
@@ -705,8 +704,7 @@ func toAccountsFilterAsset(assetID string) entities.Asset {
 	asset := entities.Asset{}
 
 	if len(assetID) > 0 {
-		assetIDBytes, _ := hex.DecodeString(assetID)
-		asset.ID = assetIDBytes
+		asset.ID = entities.NewAssetID(assetID)
 	}
 
 	return asset
@@ -714,20 +712,11 @@ func toAccountsFilterAsset(assetID string) entities.Asset {
 
 func toAccountsFilterParties(partyIDs ...string) []entities.Party {
 	parties := make([]entities.Party, 0, len(partyIDs))
-	for _, id := range partyIDs {
-		if id == "" {
+	for _, idStr := range partyIDs {
+		if idStr == "" {
 			continue
 		}
-
-		idBytes, err := hex.DecodeString(id)
-
-		if err != nil {
-			continue
-		}
-
-		party := entities.Party{
-			ID: idBytes,
-		}
+		party := entities.Party{ID: entities.NewPartyID(idStr)}
 		parties = append(parties, party)
 	}
 
@@ -736,18 +725,11 @@ func toAccountsFilterParties(partyIDs ...string) []entities.Party {
 
 func toAccountsFilterMarkets(marketIDs ...string) []entities.Market {
 	markets := make([]entities.Market, 0, len(marketIDs))
-	for _, id := range marketIDs {
-		if id == "" {
+	for _, idStr := range marketIDs {
+		if idStr == "" {
 			continue
 		}
-		idBytes, err := hex.DecodeString(id)
-		if err != nil {
-			continue
-		}
-
-		market := entities.Market{
-			ID: idBytes,
-		}
+		market := entities.Market{ID: entities.NewMarketID(idStr)}
 		markets = append(markets, market)
 	}
 

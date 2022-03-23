@@ -8,7 +8,7 @@ import (
 
 	"code.vegaprotocol.io/data-node/entities"
 	"code.vegaprotocol.io/data-node/logging"
-	types "code.vegaprotocol.io/protos/vega"
+	"code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/events"
 
 	"github.com/shopspring/decimal"
@@ -16,7 +16,7 @@ import (
 
 type AssetEvent interface {
 	events.Event
-	Asset() types.Asset
+	Asset() vega.Asset
 }
 
 type AssetStore interface {
@@ -59,9 +59,7 @@ func (as *Asset) consume(ae AssetEvent) {
 	}
 }
 
-func (as *Asset) addAsset(va types.Asset, vegaTime time.Time) error {
-	id := entities.MakeAssetID(va.Id)
-
+func (as *Asset) addAsset(va vega.Asset, vegaTime time.Time) error {
 	totalSupply, err := decimal.NewFromString(va.Details.TotalSupply)
 	if err != nil {
 		return fmt.Errorf("bad total supply '%v'", va.Details.TotalSupply)
@@ -75,9 +73,9 @@ func (as *Asset) addAsset(va types.Asset, vegaTime time.Time) error {
 	var source, erc20Contract string
 
 	switch src := va.Details.Source.(type) {
-	case *types.AssetDetails_BuiltinAsset:
+	case *vega.AssetDetails_BuiltinAsset:
 		source = src.BuiltinAsset.MaxFaucetAmountMint
-	case *types.AssetDetails_Erc20:
+	case *vega.AssetDetails_Erc20:
 		erc20Contract = src.Erc20.ContractAddress
 	default:
 		return fmt.Errorf("unknown asset source: %v", source)
@@ -90,7 +88,7 @@ func (as *Asset) addAsset(va types.Asset, vegaTime time.Time) error {
 	decimals := int(va.Details.Decimals)
 
 	asset := entities.Asset{
-		ID:            id,
+		ID:            entities.NewAssetID(va.Id),
 		Name:          va.Details.Name,
 		Symbol:        va.Details.Symbol,
 		TotalSupply:   totalSupply,

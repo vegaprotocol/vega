@@ -35,11 +35,11 @@ func delegationLessThan(x, y entities.Delegation) bool {
 	if x.EpochID != y.EpochID {
 		return x.EpochID < y.EpochID
 	}
-	if x.PartyHexID() != y.PartyHexID() {
-		return x.PartyHexID() < y.PartyHexID()
+	if x.PartyID.String() != y.PartyID.String() {
+		return x.PartyID.String() < y.PartyID.String()
 	}
-	if x.NodeHexID() != y.NodeHexID() {
-		return x.NodeHexID() < y.NodeHexID()
+	if x.NodeID.String() != y.NodeID.String() {
+		return x.NodeID.String() < y.NodeID.String()
 	}
 	return x.Amount.LessThan(y.Amount)
 }
@@ -58,16 +58,14 @@ func TestDelegations(t *testing.T) {
 
 	node1ID := "dead"
 	node2ID := "beef"
-	node1IDBytes, _ := entities.MakeNodeID(node1ID)
-	node2IDBytes, _ := entities.MakeNodeID(node2ID)
 
-	node1 := entities.Node{ID: node1IDBytes}
-	node2 := entities.Node{ID: node2IDBytes}
+	node1 := entities.Node{ID: entities.NewNodeID(node1ID)}
+	node2 := entities.Node{ID: entities.NewNodeID(node2ID)}
 	party1 := addTestParty(t, ps, block)
 	party2 := addTestParty(t, ps, block)
 
-	party1ID := party1.HexID()
-	party2ID := party2.HexID()
+	party1ID := party1.ID.String()
+	party2ID := party2.ID.String()
 
 	delegation1 := addTestDelegation(t, ds, party1, node1, 1, block)
 	delegation2 := addTestDelegation(t, ds, party1, node2, 2, block)

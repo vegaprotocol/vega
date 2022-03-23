@@ -47,15 +47,10 @@ func (ps *Proposals) Add(ctx context.Context, r entities.Proposal) error {
 	return err
 }
 
-func (ps *Proposals) GetByID(ctx context.Context, ID string) (entities.Proposal, error) {
-	idBytes, err := entities.MakeProposalID(ID)
-	if err != nil {
-		return entities.Proposal{}, err
-	}
-
+func (ps *Proposals) GetByID(ctx context.Context, id string) (entities.Proposal, error) {
 	var p entities.Proposal
 	query := `SELECT * FROM proposals_current WHERE id=$1`
-	err = pgxscan.Get(ctx, ps.pool, &p, query, idBytes)
+	err := pgxscan.Get(ctx, ps.pool, &p, query, entities.NewProposalID(id))
 	return p, err
 }
 
@@ -68,7 +63,7 @@ func (ps *Proposals) GetByReference(ctx context.Context, ref string) (entities.P
 
 func (ps *Proposals) Get(ctx context.Context,
 	inState *entities.ProposalState,
-	partyIDHex *string,
+	partyIDStr *string,
 	proposalType *entities.ProposalType,
 ) ([]entities.Proposal, error) {
 	query := `SELECT * FROM proposals_current`
@@ -80,11 +75,8 @@ func (ps *Proposals) Get(ctx context.Context,
 		conditions = append(conditions, fmt.Sprintf("state=%s", nextBindVar(&args, *inState)))
 	}
 
-	if partyIDHex != nil {
-		partyID, err := entities.MakePartyID(*partyIDHex)
-		if err != nil {
-			return nil, err
-		}
+	if partyIDStr != nil {
+		partyID := entities.NewPartyID(*partyIDStr)
 		conditions = append(conditions, fmt.Sprintf("party_id=%s", nextBindVar(&args, partyID)))
 	}
 

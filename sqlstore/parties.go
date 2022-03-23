@@ -2,7 +2,6 @@ package sqlstore
 
 import (
 	"context"
-	"encoding/hex"
 
 	"code.vegaprotocol.io/data-node/entities"
 	"github.com/georgysavva/scany/pgxscan"
@@ -31,16 +30,11 @@ func (ps *Parties) Add(p entities.Party) error {
 
 func (ps *Parties) GetByID(id string) (entities.Party, error) {
 	a := entities.Party{}
-	idBytes, err := hex.DecodeString(id)
-	if err != nil {
-		return a, ErrBadID
-	}
-
 	ctx := context.Background()
-	err = pgxscan.Get(ctx, ps.pool, &a,
+	err := pgxscan.Get(ctx, ps.pool, &a,
 		`SELECT id, vega_time
 		 FROM parties WHERE id=$1`,
-		idBytes)
+		entities.NewOrderID(id))
 	return a, err
 }
 

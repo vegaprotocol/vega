@@ -19,7 +19,7 @@ func addTestAccount(t *testing.T,
 	account := entities.Account{
 		PartyID:  party.ID,
 		AssetID:  asset.ID,
-		MarketID: generateID(),
+		MarketID: entities.NewMarketID(generateID()),
 		Type:     1,
 		VegaTime: block.VegaTime,
 	}
@@ -70,7 +70,7 @@ func TestAccount(t *testing.T) {
 	// Query by asset + party should have only 1 account
 	filter = entities.AccountFilter{Asset: asset, Parties: []entities.Party{party2}}
 	accs, err = accountStore.Query(filter)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Len(t, accs, 1)
 	assert.Equal(t, accs[0], account2)
 
@@ -81,8 +81,8 @@ func TestAccount(t *testing.T) {
 	assert.Len(t, accs, 0)
 
 	// Query by asset + invalid market, should have 0 accounts
-	filter = entities.AccountFilter{Asset: asset, Markets: []entities.Market{{ID: []byte("Not A Market")}}}
+	filter = entities.AccountFilter{Asset: asset, Markets: []entities.Market{{ID: entities.NewMarketID("ffff")}}}
 	accs, err = accountStore.Query(filter)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Len(t, accs, 0)
 }

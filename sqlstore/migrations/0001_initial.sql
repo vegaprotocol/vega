@@ -308,6 +308,7 @@ CREATE TABLE votes(
   total_governance_token_weight  NUMERIC(32, 16)           NOT NULL,
   total_equity_like_share_weight NUMERIC(32, 16)           NOT NULL,
   vega_time                      TIMESTAMP WITH TIME ZONE NOT NULL REFERENCES blocks(vega_time),
+  initial_time                   TIMESTAMP WITH TIME ZONE,
   PRIMARY KEY (proposal_id, party_id, vega_time)
 );
 

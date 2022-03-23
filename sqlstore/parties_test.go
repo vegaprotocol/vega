@@ -11,7 +11,7 @@ import (
 
 func addTestParty(t *testing.T, ps *sqlstore.Parties, block entities.Block) entities.Party {
 	party := entities.Party{
-		ID:       generateID(),
+		ID:       entities.NewPartyID(generateID()),
 		VegaTime: block.VegaTime,
 	}
 
@@ -39,7 +39,7 @@ func TestParty(t *testing.T) {
 	assert.Error(t, err)
 
 	// Query and check we've got back a party the same as the one we put in
-	fetchedParty, err := ps.GetByID(party.HexID())
+	fetchedParty, err := ps.GetByID(party.ID.String())
 	assert.NoError(t, err)
 	assert.Equal(t, party, fetchedParty)
 

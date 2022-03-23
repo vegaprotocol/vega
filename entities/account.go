@@ -1,49 +1,39 @@
 package entities
 
 import (
-	"encoding/hex"
 	"fmt"
 	"time"
 
 	"code.vegaprotocol.io/protos/vega"
 )
 
+const (
+	noMarketStr     string = "!"
+	noMarketByte    byte   = '!'
+	systemOwnerStr  string = "*"
+	systemOwnerByte byte   = '*'
+)
+
 type Account struct {
 	ID       int64
-	PartyID  []byte
-	AssetID  []byte
-	MarketID []byte
+	PartyID  PartyID
+	AssetID  AssetID
+	MarketID MarketID
 	Type     vega.AccountType
 	VegaTime time.Time
 }
 
 func (a Account) String() string {
-	return fmt.Sprintf("{ID: %s}", hex.EncodeToString(a.AssetID))
+	return fmt.Sprintf("{ID: %s}", a.AssetID)
 }
 
 func AccountFromProto(va vega.Account) (Account, error) {
-	account := Account{}
-	var err error
-
-	if va.Owner == "*" {
-		account.PartyID = []byte("")
-	} else {
-		if account.PartyID, err = hex.DecodeString(va.Owner); err != nil {
-			return Account{}, fmt.Errorf("Can't decode party hex string %v", va.Owner)
-		}
+	account := Account{
+		PartyID:  NewPartyID(va.Owner),
+		AssetID:  NewAssetID(va.Asset),
+		MarketID: NewMarketID(va.MarketId),
+		Type:     va.Type,
 	}
-
-	account.AssetID = MakeAssetID(va.Asset)
-
-	if va.MarketId == "!" {
-		account.MarketID = []byte("")
-	} else {
-		if account.MarketID, err = hex.DecodeString(va.MarketId); err != nil {
-			return Account{}, fmt.Errorf("Can't decode market hex string %v", va.MarketId)
-		}
-	}
-
-	account.Type = va.Type
 	return account, nil
 }
 
@@ -55,38 +45,35 @@ func AccountFromProto(va vega.Account) (Account, error) {
 // out of an TransferResponse message.
 func AccountFromAccountID(id string) (Account, error) {
 	var a Account
-	var err error
 	var offset int
 
 	// Market ID is first, '!' indicates no market
-	if id[offset] == '!' {
+	if id[offset] == noMarketByte {
 		offset++
-		a.MarketID = []byte{}
+		a.MarketID = NewMarketID(noMarketStr)
 	} else {
 		if len(id) < 64 {
 			return Account{}, fmt.Errorf("account id too short: %v", id)
 		}
-
-		a.MarketID, err = hex.DecodeString(id[0:64])
-		if err != nil {
-			return Account{}, fmt.Errorf("market id not hex: %v", id)
+		a.MarketID = NewMarketID(id[0:64])
+		if err := a.MarketID.Error(); err != nil {
+			return Account{}, fmt.Errorf("account id: %w", err)
 		}
 		offset += 64
 	}
 
 	// Party ID is next, '*' indicates system owner
-	if id[offset] == '*' {
-		a.PartyID = []byte{}
+	if id[offset] == systemOwnerByte {
+		a.PartyID = NewPartyID(systemOwnerStr)
 		offset++
 	} else {
 		if len(id) < offset+64 {
-			return Account{}, fmt.Errorf(" %v", id)
+			return Account{}, fmt.Errorf("party id to short %v", id)
 		}
 
-		// TODO - missing last dig
-		a.PartyID, err = hex.DecodeString(id[offset : offset+64])
-		if err != nil {
-			return Account{}, fmt.Errorf("party id not hex: %v", id)
+		a.PartyID = NewPartyID(id[offset : offset+64])
+		if err := a.PartyID.Error(); err != nil {
+			return Account{}, fmt.Errorf("party id: %w", err)
 		}
 		offset += 64
 	}
@@ -96,7 +83,10 @@ func AccountFromAccountID(id string) (Account, error) {
 		return Account{}, fmt.Errorf("account id too short %v", id)
 	}
 
-	a.AssetID = MakeAssetID(id[offset : len(id)-1])
+	a.AssetID = NewAssetID(id[offset : len(id)-1])
+	if err := a.AssetID.Error(); err != nil {
+		return Account{}, fmt.Errorf("party id: %w", err)
+	}
 	a.Type = vega.AccountType(id[len(id)-1] - 48)
 	return a, nil
 }

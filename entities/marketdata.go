@@ -1,8 +1,6 @@
 package entities
 
 import (
-	"bytes"
-	"encoding/hex"
 	"errors"
 	"fmt"
 	"math"
@@ -44,7 +42,7 @@ type MarketData struct {
 	// Arithmetic average of the best static bid price and best static offer price
 	StaticMidPrice decimal.Decimal
 	// Market identifier for the data
-	Market []byte
+	Market MarketID
 	// The sum of the size of all positions greater than 0 on the market
 	OpenInterest int64
 	// Time in seconds until the end of the auction (0 if currently not in auction period)
@@ -125,11 +123,7 @@ func (fee LiquidityProviderFeeShare) Equals(other LiquidityProviderFeeShare) boo
 func MarketDataFromProto(data *types.MarketData) (*MarketData, error) {
 	var mark, bid, offer, staticBid, staticOffer, mid, staticMid, indicative, targetStake, suppliedStake decimal.Decimal
 	var err error
-	var marketID []byte
 
-	if marketID, err = hex.DecodeString(data.Market); err != nil {
-		return nil, nil
-	}
 	if mark, err = parseDecimal(data.MarkPrice); err != nil {
 		return nil, err
 	}
@@ -185,7 +179,7 @@ func MarketDataFromProto(data *types.MarketData) (*MarketData, error) {
 		BestStaticOfferVolume:      bestStaticOfferVolume,
 		MidPrice:                   mid,
 		StaticMidPrice:             staticMid,
-		Market:                     marketID,
+		Market:                     NewMarketID(data.Market),
 		OpenInterest:               openInterest,
 		AuctionEnd:                 data.AuctionEnd,
 		AuctionStart:               data.AuctionStart,
@@ -311,7 +305,7 @@ func (md MarketData) Equal(other MarketData) bool {
 		md.AuctionEnd == other.AuctionEnd &&
 		md.AuctionStart == other.AuctionStart &&
 		md.IndicativeVolume == other.IndicativeVolume &&
-		bytes.Equal(md.Market, other.Market) &&
+		md.Market == other.Market &&
 		md.MarketTradingMode == other.MarketTradingMode &&
 		md.AuctionTrigger == other.AuctionTrigger &&
 		md.ExtensionTrigger == other.ExtensionTrigger &&
@@ -361,7 +355,7 @@ func (md MarketData) ToProto() *types.MarketData {
 		BestStaticOfferVolume:     uint64(md.BestStaticOfferVolume),
 		MidPrice:                  md.MidPrice.String(),
 		StaticMidPrice:            md.StaticMidPrice.String(),
-		Market:                    hex.EncodeToString(md.Market),
+		Market:                    md.Market.String(),
 		Timestamp:                 md.VegaTime.UnixNano(),
 		OpenInterest:              uint64(md.OpenInterest),
 		AuctionEnd:                md.AuctionEnd,

@@ -22,6 +22,7 @@
 - [430](https://github.com/vegaprotocol/data-node/pull/430) - Migrate deposit API to retrieve data from `Postgres`
 - [435](https://github.com/vegaprotocol/data-node/pull/435) - Migrate governance API to retrieve data from `Postgres`
 - [442](https://github.com/vegaprotocol/data-node/pull/442) - Migrate estimator API to retrieve data from `Postgres`
+- [449](https://github.com/vegaprotocol/data-node/issue/449) - Refactor identifiers to use `ID` types instead of `[]byte`
 
 ### 🐛 Fixes
 - [256](https://github.com/vegaprotocol/data-node/pull/256) - Market Risk Factors missing from Market `GraphQL` API
