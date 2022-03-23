@@ -1,4 +1,4 @@
-Feature: Tests confirming probability of trading acceptance criteria
+Feature: Tests confirming probability of trading acceptance criteria (0038-OLIQ-001, 0038-OLIQ-002)
 
   Background:
 
