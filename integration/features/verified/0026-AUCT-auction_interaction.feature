@@ -1,4 +1,4 @@
-Feature: Test interactions between different auction types
+Feature: Test interactions between different auction types (0035-LIQM-001)
 
   Background:
     Given the following network parameters are set:
