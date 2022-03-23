@@ -2840,6 +2840,10 @@ func (m *Market) RemoveExpiredOrders(
 		return nil, ErrMarketClosed
 	}
 
+	if !m.canTrade() {
+		return nil, ErrTradingNotAllowed
+	}
+
 	expired := []*types.Order{}
 	evts := []events.Event{}
 	for _, orderID := range m.expiringOrders.Expire(timestamp) {
