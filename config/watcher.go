@@ -3,6 +3,7 @@ package config
 import (
 	"context"
 	"fmt"
+	"sort"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -26,7 +27,11 @@ type Watcher struct {
 	hasChanged         int32
 	cfgUpdateListeners []func(Config)
 	cfgHandlers        []func(*Config) error
-	mu                 sync.Mutex
+
+	// listeners with IDs
+	cfgUpdateListenersWithID map[int]func(Config)
+	currentID                int
+	mu                       sync.Mutex
 }
 
 type Option func(w *Watcher)
@@ -51,10 +56,11 @@ func NewWatcher(ctx context.Context, log *logging.Logger, vegaPaths paths.Paths,
 	}
 
 	w := &Watcher{
-		log:                watcherLog,
-		cfg:                NewDefaultConfig(),
-		configFilePath:     configFilePath,
-		cfgUpdateListeners: []func(Config){},
+		log:                      watcherLog,
+		cfg:                      NewDefaultConfig(),
+		configFilePath:           configFilePath,
+		cfgUpdateListeners:       []func(Config){},
+		cfgUpdateListenersWithID: map[int]func(Config){},
 	}
 
 	for _, opt := range opts {
@@ -95,6 +101,16 @@ func (w *Watcher) OnTimeUpdate(_ context.Context, _ time.Time) {
 		f(cfg)
 	}
 
+	ids := []int{}
+	for k := range w.cfgUpdateListenersWithID {
+		ids = append(ids, k)
+	}
+	sort.Ints(ids)
+
+	for id := range ids {
+		w.cfgUpdateListenersWithID[id](cfg)
+	}
+
 	// reset the atomic
 	atomic.StoreInt32(&w.hasChanged, 0)
 }
@@ -112,6 +128,27 @@ func (w *Watcher) OnConfigUpdate(fns ...func(Config)) {
 	w.mu.Lock()
 	w.cfgUpdateListeners = append(w.cfgUpdateListeners, fns...)
 	w.mu.Unlock()
+}
+
+// OnConfigUpdate register a function to be called when the configuration is getting updated.
+func (w *Watcher) OnConfigUpdateWithID(fns ...func(Config)) []int {
+	w.mu.Lock()
+	// w.cfgUpdateListeners = append(w.cfgUpdateListeners, fns...)
+	ids := []int{}
+	for _, f := range fns {
+		id := w.currentID
+		ids = append(ids, id)
+		w.cfgUpdateListenersWithID[id] = f
+		w.currentID++
+	}
+	w.mu.Unlock()
+	return ids
+}
+
+func (w *Watcher) Unregister(ids []int) {
+	for _, id := range ids {
+		delete(w.cfgUpdateListenersWithID, id)
+	}
 }
 
 // Use registers a function that modify the config when the configuration is updated.

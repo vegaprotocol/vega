@@ -28,6 +28,7 @@ import (
 	"code.vegaprotocol.io/vega/netparams/dispatch"
 	"code.vegaprotocol.io/vega/nodewallets"
 	"code.vegaprotocol.io/vega/oracles"
+	"code.vegaprotocol.io/vega/pow"
 	"code.vegaprotocol.io/vega/processor"
 	"code.vegaprotocol.io/vega/snapshot"
 	"code.vegaprotocol.io/vega/spam"
@@ -214,7 +215,7 @@ func setupVega() (*processor.App, processor.Stats, error) {
 	limits.EXPECT().CanProposeAsset().AnyTimes().Return(true)
 
 	spamEngine := spam.New(log, spam.NewDefaultConfig(), epochService, stakingAccounts)
-
+	powEngine := pow.New(log, pow.NewDefaultConfig(), epochService)
 	stakeV := mocks.NewMockStakeVerifier(ctrl)
 	cp, _ := checkpoint.New(logging.NewTestLogger(), checkpoint.NewDefaultConfig())
 	snapshot, err := snapshot.New(ctx, vegaPaths, snapshot.NewDefaultConfig(), log, timeService, bstats)
@@ -250,6 +251,7 @@ func setupVega() (*processor.App, processor.Stats, error) {
 		stakeV,
 		cp,
 		spamEngine,
+		powEngine,
 		nil,
 		snapshot,
 		stateVarEngine,

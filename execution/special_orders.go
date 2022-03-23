@@ -45,7 +45,7 @@ func (m *Market) repricePeggedOrders(
 					order.UpdatedAt = m.currentTime.UnixNano()
 					order.Status = types.OrderStatusParked
 					order.Price = num.Zero()
-					order.OriginalPrice = num.Zero()
+					order.OriginalPrice = nil
 					m.broker.Send(events.NewOrderEvent(ctx, order))
 					parked = append(parked, order)
 				}

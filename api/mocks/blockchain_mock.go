@@ -9,8 +9,7 @@ import (
 	reflect "reflect"
 	time "time"
 
-	v1 "code.vegaprotocol.io/protos/vega/api/v1"
-	v10 "code.vegaprotocol.io/protos/vega/commands/v1"
+	v1 "code.vegaprotocol.io/protos/vega/commands/v1"
 	gomock "github.com/golang/mock/gomock"
 	coretypes "github.com/tendermint/tendermint/rpc/core/types"
 )
@@ -36,6 +35,36 @@ func NewMockBlockchain(ctrl *gomock.Controller) *MockBlockchain {
 // EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockBlockchain) EXPECT() *MockBlockchainMockRecorder {
 	return m.recorder
+}
+
+// CheckRawTransaction mocks base method.
+func (m *MockBlockchain) CheckRawTransaction(arg0 context.Context, arg1 []byte) (*coretypes.ResultCheckTx, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CheckRawTransaction", arg0, arg1)
+	ret0, _ := ret[0].(*coretypes.ResultCheckTx)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CheckRawTransaction indicates an expected call of CheckRawTransaction.
+func (mr *MockBlockchainMockRecorder) CheckRawTransaction(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckRawTransaction", reflect.TypeOf((*MockBlockchain)(nil).CheckRawTransaction), arg0, arg1)
+}
+
+// CheckTransaction mocks base method.
+func (m *MockBlockchain) CheckTransaction(arg0 context.Context, arg1 *v1.Transaction) (*coretypes.ResultCheckTx, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CheckTransaction", arg0, arg1)
+	ret0, _ := ret[0].(*coretypes.ResultCheckTx)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CheckTransaction indicates an expected call of CheckTransaction.
+func (mr *MockBlockchainMockRecorder) CheckTransaction(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckTransaction", reflect.TypeOf((*MockBlockchain)(nil).CheckTransaction), arg0, arg1)
 }
 
 // GetChainID mocks base method.
@@ -128,32 +157,92 @@ func (mr *MockBlockchainMockRecorder) Health() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Health", reflect.TypeOf((*MockBlockchain)(nil).Health))
 }
 
-// SubmitRawTransaction mocks base method.
-func (m *MockBlockchain) SubmitRawTransaction(arg0 context.Context, arg1 []byte, arg2 v1.SubmitRawTransactionRequest_Type) (string, error) {
+// SubmitRawTransactionAsync mocks base method.
+func (m *MockBlockchain) SubmitRawTransactionAsync(arg0 context.Context, arg1 []byte) (*coretypes.ResultBroadcastTx, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SubmitRawTransaction", arg0, arg1, arg2)
-	ret0, _ := ret[0].(string)
+	ret := m.ctrl.Call(m, "SubmitRawTransactionAsync", arg0, arg1)
+	ret0, _ := ret[0].(*coretypes.ResultBroadcastTx)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// SubmitRawTransaction indicates an expected call of SubmitRawTransaction.
-func (mr *MockBlockchainMockRecorder) SubmitRawTransaction(arg0, arg1, arg2 interface{}) *gomock.Call {
+// SubmitRawTransactionAsync indicates an expected call of SubmitRawTransactionAsync.
+func (mr *MockBlockchainMockRecorder) SubmitRawTransactionAsync(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubmitRawTransaction", reflect.TypeOf((*MockBlockchain)(nil).SubmitRawTransaction), arg0, arg1, arg2)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubmitRawTransactionAsync", reflect.TypeOf((*MockBlockchain)(nil).SubmitRawTransactionAsync), arg0, arg1)
 }
 
-// SubmitTransaction mocks base method.
-func (m *MockBlockchain) SubmitTransaction(arg0 context.Context, arg1 *v10.Transaction, arg2 v1.SubmitTransactionRequest_Type) (string, error) {
+// SubmitRawTransactionCommit mocks base method.
+func (m *MockBlockchain) SubmitRawTransactionCommit(arg0 context.Context, arg1 []byte) (*coretypes.ResultBroadcastTxCommit, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SubmitTransaction", arg0, arg1, arg2)
-	ret0, _ := ret[0].(string)
+	ret := m.ctrl.Call(m, "SubmitRawTransactionCommit", arg0, arg1)
+	ret0, _ := ret[0].(*coretypes.ResultBroadcastTxCommit)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// SubmitTransaction indicates an expected call of SubmitTransaction.
-func (mr *MockBlockchainMockRecorder) SubmitTransaction(arg0, arg1, arg2 interface{}) *gomock.Call {
+// SubmitRawTransactionCommit indicates an expected call of SubmitRawTransactionCommit.
+func (mr *MockBlockchainMockRecorder) SubmitRawTransactionCommit(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubmitTransaction", reflect.TypeOf((*MockBlockchain)(nil).SubmitTransaction), arg0, arg1, arg2)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubmitRawTransactionCommit", reflect.TypeOf((*MockBlockchain)(nil).SubmitRawTransactionCommit), arg0, arg1)
+}
+
+// SubmitRawTransactionSync mocks base method.
+func (m *MockBlockchain) SubmitRawTransactionSync(arg0 context.Context, arg1 []byte) (*coretypes.ResultBroadcastTx, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SubmitRawTransactionSync", arg0, arg1)
+	ret0, _ := ret[0].(*coretypes.ResultBroadcastTx)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// SubmitRawTransactionSync indicates an expected call of SubmitRawTransactionSync.
+func (mr *MockBlockchainMockRecorder) SubmitRawTransactionSync(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubmitRawTransactionSync", reflect.TypeOf((*MockBlockchain)(nil).SubmitRawTransactionSync), arg0, arg1)
+}
+
+// SubmitTransactionAsync mocks base method.
+func (m *MockBlockchain) SubmitTransactionAsync(arg0 context.Context, arg1 *v1.Transaction) (*coretypes.ResultBroadcastTx, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SubmitTransactionAsync", arg0, arg1)
+	ret0, _ := ret[0].(*coretypes.ResultBroadcastTx)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// SubmitTransactionAsync indicates an expected call of SubmitTransactionAsync.
+func (mr *MockBlockchainMockRecorder) SubmitTransactionAsync(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubmitTransactionAsync", reflect.TypeOf((*MockBlockchain)(nil).SubmitTransactionAsync), arg0, arg1)
+}
+
+// SubmitTransactionCommit mocks base method.
+func (m *MockBlockchain) SubmitTransactionCommit(arg0 context.Context, arg1 *v1.Transaction) (*coretypes.ResultBroadcastTxCommit, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SubmitTransactionCommit", arg0, arg1)
+	ret0, _ := ret[0].(*coretypes.ResultBroadcastTxCommit)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// SubmitTransactionCommit indicates an expected call of SubmitTransactionCommit.
+func (mr *MockBlockchainMockRecorder) SubmitTransactionCommit(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubmitTransactionCommit", reflect.TypeOf((*MockBlockchain)(nil).SubmitTransactionCommit), arg0, arg1)
+}
+
+// SubmitTransactionSync mocks base method.
+func (m *MockBlockchain) SubmitTransactionSync(arg0 context.Context, arg1 *v1.Transaction) (*coretypes.ResultBroadcastTx, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SubmitTransactionSync", arg0, arg1)
+	ret0, _ := ret[0].(*coretypes.ResultBroadcastTx)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// SubmitTransactionSync indicates an expected call of SubmitTransactionSync.
+func (mr *MockBlockchainMockRecorder) SubmitTransactionSync(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubmitTransactionSync", reflect.TypeOf((*MockBlockchain)(nil).SubmitTransactionSync), arg0, arg1)
 }

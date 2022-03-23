@@ -124,11 +124,7 @@ func (a *Accounting) Hash() []byte {
 func (a *Accounting) AddEvent(ctx context.Context, evt *types.StakeLinking) {
 	acc, ok := a.accounts[evt.Party]
 	if !ok {
-		a.broker.Send(events.NewPartyEvent(ctx, types.Party{Id: evt.Party}))
 		acc = NewStakingAccount(evt.Party)
-		a.accounts[evt.Party] = acc
-		a.hashableAccounts = append(a.hashableAccounts, acc)
-		a.accState.changed = true
 	}
 
 	// errors here do not really matter I'd say
@@ -144,6 +140,14 @@ func (a *Accounting) AddEvent(ctx context.Context, evt *types.StakeLinking) {
 			logging.Error(err))
 		return
 	}
+
+	// only add the account if all went well
+	if !ok {
+		a.broker.Send(events.NewPartyEvent(ctx, types.Party{Id: evt.Party}))
+		a.accounts[evt.Party] = acc
+		a.hashableAccounts = append(a.hashableAccounts, acc)
+	}
+
 	a.accState.changed = true
 }
 

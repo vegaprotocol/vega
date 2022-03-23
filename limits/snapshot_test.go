@@ -10,7 +10,7 @@ import (
 	"code.vegaprotocol.io/vega/limits"
 	"code.vegaprotocol.io/vega/types"
 
-	"github.com/golang/protobuf/proto"
+	"code.vegaprotocol.io/vega/libs/proto"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

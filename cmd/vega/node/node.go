@@ -12,118 +12,63 @@ import (
 	"code.vegaprotocol.io/shared/paths"
 	"code.vegaprotocol.io/vega/api"
 	"code.vegaprotocol.io/vega/api/rest"
-	"code.vegaprotocol.io/vega/assets"
-	"code.vegaprotocol.io/vega/banking"
 	"code.vegaprotocol.io/vega/blockchain"
-	"code.vegaprotocol.io/vega/broker"
-	"code.vegaprotocol.io/vega/checkpoint"
+	"code.vegaprotocol.io/vega/blockchain/abci"
+	"code.vegaprotocol.io/vega/blockchain/nullchain"
 	ethclient "code.vegaprotocol.io/vega/client/eth"
-	"code.vegaprotocol.io/vega/collateral"
 	"code.vegaprotocol.io/vega/config"
 	"code.vegaprotocol.io/vega/coreapi"
-	"code.vegaprotocol.io/vega/delegation"
-	"code.vegaprotocol.io/vega/epochtime"
-	"code.vegaprotocol.io/vega/evtforward"
-	"code.vegaprotocol.io/vega/execution"
-	"code.vegaprotocol.io/vega/genesis"
-	"code.vegaprotocol.io/vega/governance"
 	"code.vegaprotocol.io/vega/libs/pprof"
-	"code.vegaprotocol.io/vega/limits"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/metrics"
 	"code.vegaprotocol.io/vega/monitoring"
-	"code.vegaprotocol.io/vega/netparams"
 	"code.vegaprotocol.io/vega/nodewallets"
-	nodewallet "code.vegaprotocol.io/vega/nodewallets"
-	"code.vegaprotocol.io/vega/notary"
-	"code.vegaprotocol.io/vega/oracles"
-	"code.vegaprotocol.io/vega/oracles/adaptors"
-	"code.vegaprotocol.io/vega/plugins"
-	"code.vegaprotocol.io/vega/processor"
-	"code.vegaprotocol.io/vega/rewards"
-	"code.vegaprotocol.io/vega/snapshot"
-	"code.vegaprotocol.io/vega/spam"
-	"code.vegaprotocol.io/vega/staking"
-	"code.vegaprotocol.io/vega/statevar"
+	"code.vegaprotocol.io/vega/protocol"
 	"code.vegaprotocol.io/vega/stats"
-	"code.vegaprotocol.io/vega/subscribers"
-	"code.vegaprotocol.io/vega/validators"
-	"code.vegaprotocol.io/vega/validators/erc20multisig"
-	"code.vegaprotocol.io/vega/vegatime"
 
+	"github.com/blang/semver"
 	"google.golang.org/grpc"
 )
 
-// NodeCommand use to implement 'node' command.
+var ErrUnknownChainProvider = errors.New("unknown chain provider")
+
 type NodeCommand struct {
 	ctx    context.Context
 	cancel context.CancelFunc
 
-	broker *broker.Broker
-
-	timeService  *vegatime.Svc
-	epochService *epochtime.Svc
-	eventService *subscribers.Service
-
-	blockchainServer *blockchain.Server
-	blockchainClient *blockchain.Client
+	Log         *logging.Logger
+	Version     string
+	VersionHash string
 
 	pproffhandlr *pprof.Pprofhandler
 	stats        *stats.Stats
-	Log          *logging.Logger
 
-	vegaPaths   paths.Paths
 	conf        config.Config
 	confWatcher *config.Watcher
 
-	feesTracker          *execution.FeesTracker
-	statevar             *statevar.Engine
-	snapshot             *snapshot.Engine
-	executionEngine      *execution.Engine
-	governance           *governance.Engine
-	collateral           *collateral.Engine
-	oracle               *oracles.Engine
-	oracleAdaptors       *adaptors.Adaptors
-	netParams            *netparams.Store
-	delegation           *delegation.Engine
-	limits               *limits.Engine
-	rewards              *rewards.Engine
-	checkpoint           *checkpoint.Engine
-	spam                 *spam.Engine
-	nodeWallets          *nodewallet.NodeWallets
+	nullBlockchain   *nullchain.NullBlockchain
+	blockchainServer *blockchain.Server
+	blockchainClient *blockchain.Client
+
+	nodeWallets          *nodewallets.NodeWallets
 	nodeWalletPassphrase string
-	builtinOracle        *oracles.Builtin
 
-	assets               *assets.Service
-	topology             *validators.Topology
-	notary               *notary.SnapshotNotary
-	eventForwarder       *evtforward.Forwarder
-	eventForwarderEngine EventForwarderEngine
-	witness              *validators.Witness
-	banking              *banking.Engine
-	genesisHandler       *genesis.Handler
+	vegaPaths paths.Paths
 
-	// plugins
-	settlePlugin     *plugins.Positions
-	notaryPlugin     *plugins.Notary
-	assetPlugin      *plugins.Asset
-	withdrawalPlugin *plugins.Withdrawal
-	depositPlugin    *plugins.Deposit
+	ethClient        *ethclient.Client
+	ethConfirmations *ethclient.EthereumConfirmations
 
-	// staking
-	ethClient             *ethclient.Client
-	ethConfirmations      *ethclient.EthereumConfirmations
-	stakingAccounts       *staking.Accounting
-	stakeVerifier         *staking.StakeVerifier
-	stakeCheckpoint       *staking.Checkpoint
-	erc20MultiSigTopology *erc20multisig.Topology
+	abciApp  *appW
+	protocol *protocol.Protocol
 
-	commander *nodewallets.Commander
+	// APIs
+	grpcServer  *api.GRPC
+	proxyServer *rest.ProxyServer
+	coreService *coreapi.Service
 
-	app *processor.App
+	statusChecker *monitoring.Status
 
-	Version     string
-	VersionHash string
+	protocolUpgrade <-chan string
 }
 
 func (n *NodeCommand) Run(
@@ -138,103 +83,309 @@ func (n *NodeCommand) Run(
 	n.conf = confWatcher.Get()
 	n.vegaPaths = vegaPaths
 
-	tmCfg := n.conf.Blockchain.Tendermint
-	if tmCfg.ABCIRecordDir != "" && tmCfg.ABCIReplayFile != "" {
-		return errors.New("you can't specify both abci-record and abci-replay flags")
+	if err := n.setupCommon(args); err != nil {
+		return err
 	}
 
-	stages := []func([]string) error{
-		n.setupCommon,
-		n.startBlockchainConnections,
-		n.loadNodeWallets,
-		n.startServices,
-		n.runNode,
-		n.stopServices,
-		n.postRun,
-		n.persistentPost,
+	if err := n.loadNodeWallets(args); err != nil {
+		return err
 	}
-	for _, fn := range stages {
-		if err := fn(args); err != nil {
-			return err
-		}
+
+	if err := n.startBlockchainClients(args); err != nil {
+		return err
 	}
+
+	n.statusChecker = monitoring.New(n.Log, n.conf.Monitoring, n.blockchainClient)
+	n.statusChecker.OnChainDisconnect(n.cancel)
+	n.statusChecker.OnChainVersionObtained(
+		func(v string) { n.stats.SetChainVersion(v) },
+	)
+
+	// TODO(): later we will want to select what version of the protocol
+	// to run, most likely via configuration, so we can use legacy or current
+	var err error
+	n.protocol, err = protocol.New(
+		n.ctx, n.confWatcher, n.Log, n.cancel, n.nodeWallets, n.ethClient, n.ethConfirmations, n.blockchainClient, vegaPaths, n.stats)
+	if err != nil {
+		return err
+	}
+
+	if err := n.startBlockchain(); err != nil {
+		return err
+	}
+
+	if err := n.startAPIs(); err != nil {
+		return err
+	}
+
+	// at this point all is good, and we should be started, we can
+	// just wait for signals or whatever
+	n.Log.Info("Vega startup complete",
+		logging.String("node-mode", string(n.conf.NodeMode)))
+
+	// start the nullblockchain if we are in that mode, it *needs* to be after we've started the gRPC server
+	// otherwise it'll start calling init-chain and all the way before we're ready.
+	if n.conf.Blockchain.ChainProvider == blockchain.ProviderNullChain {
+		n.nullBlockchain.StartServer()
+	}
+
+	// wait for possible protocol upgrade, or user exist
+	n.wait()
+
+	// cleanup
+	n.Stop()
 
 	return nil
 }
 
-// runNode is the entry of node command.
-func (n *NodeCommand) runNode(args []string) error {
-	defer n.cancel()
-	defer func() {
-		if n.conf.IsValidator() {
-			if err := n.nodeWallets.Ethereum.Cleanup(); err != nil {
-				n.Log.Error("couldn't clean up Ethereum node wallet", logging.Error(err))
-			}
-		}
-	}()
+func (n *NodeCommand) wait() {
+	gracefulStop := make(chan os.Signal, 1)
+	signal.Notify(gracefulStop, syscall.SIGTERM, syscall.SIGINT)
 
-	statusChecker := monitoring.New(n.Log, n.conf.Monitoring, n.blockchainClient)
-	statusChecker.OnChainDisconnect(n.cancel)
-	statusChecker.OnChainVersionObtained(
-		func(v string) { n.stats.SetChainVersion(v) },
+	for {
+		select {
+		case version := <-n.protocolUpgrade:
+			n.startProtocolUpgrade(version)
+		case sig := <-gracefulStop:
+			n.Log.Info("Caught signal", logging.String("name", fmt.Sprintf("%+v", sig)))
+			return
+		case <-n.ctx.Done():
+			// nothing to do
+			return
+		}
+	}
+}
+
+func (n *NodeCommand) startProtocolUpgrade(version string) {
+	semVersion, err := semver.Parse(version)
+	if err != nil {
+		n.Log.Error("invalid protocol version upgrade received, upgrade aborted",
+			logging.String("version", version),
+			logging.Error(err),
+		)
+		return
+	}
+
+	// first check if the request to upgrade match the version we know
+	if !protocol.Version.EQ(semVersion) {
+		n.Log.Error("unknown protocol version upgrade received, upgrade aborted",
+			logging.String("version", version),
+			logging.Error(err),
+		)
+		return
+	}
+
+	// TODO(): this is not final
+	// then by instantiating the new version of the protocol
+	// this is placeholder for now as not implemented.
+	n.protocol, err = protocol.New(
+		n.ctx, n.confWatcher, n.Log, n.cancel, n.nodeWallets, n.ethClient, n.ethConfirmations, n.blockchainClient, n.vegaPaths, n.stats)
+	if err != nil {
+		n.Log.Panic("protocol upgrade failure, could not instantiate the new version of the protocol", logging.Error(err))
+	}
+
+	n.abciApp.ScheduleUpgrade(n.protocol.Abci())
+
+	// now we can update all the services used from the protocol
+	n.updateAPIsServices()
+}
+
+func (n *NodeCommand) Stop() error {
+	if n.protocol != nil {
+		n.protocol.Stop()
+	}
+	if n.grpcServer != nil {
+		n.grpcServer.Stop()
+	}
+	if n.blockchainServer != nil {
+		n.blockchainServer.Stop()
+	}
+	if n.statusChecker != nil {
+		n.statusChecker.Stop()
+	}
+	if n.proxyServer != nil {
+		n.proxyServer.Stop()
+	}
+
+	if n.conf.IsValidator() {
+		if err := n.nodeWallets.Ethereum.Cleanup(); err != nil {
+			n.Log.Error("couldn't clean up Ethereum node wallet", logging.Error(err))
+		}
+	}
+
+	var err error
+	if n.pproffhandlr != nil {
+		err = n.pproffhandlr.Stop()
+	}
+
+	n.Log.Info("Vega shutdown complete",
+		logging.String("version", n.Version),
+		logging.String("version-hash", n.VersionHash))
+
+	n.Log.Sync()
+	n.cancel()
+
+	return err
+}
+
+// updateAPIsServices is to be called when a new protocol is being loaded
+// so the API services bind to the proper engines / services.
+func (n *NodeCommand) updateAPIsServices() {
+	n.grpcServer.UpdateProtocolServices(
+		n.protocol.GetEventForwarder(),
+		n.protocol.GetTimeService(),
+		n.protocol.GetEventService(),
+		n.protocol.GetPoW(),
 	)
 
-	grpcServer := api.NewGRPC(
+	n.coreService.UpdateBroker(n.protocol.GetBroker())
+}
+
+func (n *NodeCommand) startAPIs() error {
+	n.grpcServer = api.NewGRPC(
 		n.Log,
 		n.conf.API,
 		n.stats,
 		n.blockchainClient,
-		n.eventForwarder,
-		n.timeService,
-		n.eventService,
-		statusChecker,
+		n.protocol.GetEventForwarder(),
+		n.protocol.GetTimeService(),
+		n.protocol.GetEventService(),
+		n.statusChecker,
+		n.protocol.GetPoW(),
 	)
 
-	grpcServer.RegisterService(func(server *grpc.Server) {
-		svc := coreapi.NewService(n.ctx, n.Log, n.conf.CoreAPI, n.broker)
+	n.grpcServer.RegisterService(func(server *grpc.Server) {
+		svc := coreapi.NewService(n.ctx, n.Log, n.conf.CoreAPI, n.protocol.GetBroker())
 		apipb.RegisterCoreStateServiceServer(server, svc)
 	})
 
 	// watch configs
 	n.confWatcher.OnConfigUpdate(
-		func(cfg config.Config) { grpcServer.ReloadConf(cfg.API) },
-		func(cfg config.Config) { statusChecker.ReloadConf(cfg.Monitoring) },
+		func(cfg config.Config) { n.grpcServer.ReloadConf(cfg.API) },
+		func(cfg config.Config) { n.statusChecker.ReloadConf(cfg.Monitoring) },
 	)
 
-	proxyServer := rest.NewProxyServer(n.Log, n.conf.API)
+	n.proxyServer = rest.NewProxyServer(n.Log, n.conf.API)
 
-	// start the grpc server
-	go grpcServer.Start()
-	go proxyServer.Start()
-	metrics.Start(n.conf.Metrics)
+	go n.grpcServer.Start()
+	go n.proxyServer.Start()
 
-	// some clients need to start after the rpc-server is up
-	err := n.blockchainClient.Start()
+	return nil
+}
 
-	if err == nil {
-		n.Log.Info("Vega startup complete",
-			logging.String("node-mode", string(n.conf.NodeMode)))
-		waitSig(n.ctx, n.Log)
+func (n *NodeCommand) startBlockchain() error {
+	n.abciApp = newAppW(n.protocol.Abci())
+
+	switch n.conf.Blockchain.ChainProvider {
+	case blockchain.ProviderTendermint:
+		n.blockchainServer = blockchain.NewServer(
+			abci.NewServer(n.Log, n.conf.Blockchain, n.abciApp),
+		)
+	case blockchain.ProviderNullChain:
+		n.nullBlockchain.SetABCIApp(n.abciApp)
+		// nullchain acts as both the client and the server because its does everything
+		n.blockchainServer = blockchain.NewServer(n.nullBlockchain)
+	default:
+		return ErrUnknownChainProvider
 	}
 
-	// Clean up and close resources
-	grpcServer.Stop()
-	n.blockchainServer.Stop()
-	statusChecker.Stop()
-	proxyServer.Stop()
+	n.confWatcher.OnConfigUpdate(
+		func(cfg config.Config) { n.blockchainServer.ReloadConf(cfg.Blockchain) },
+	)
+
+	if err := n.blockchainServer.Start(); err != nil {
+		return err
+	}
+
+	if err := n.blockchainClient.Start(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (n *NodeCommand) setupCommon(_ []string) (err error) {
+	// this shouldn't happen, the context is initialized in here
+	if n.cancel != nil {
+		n.cancel()
+	}
+
+	// ensure we cancel the context on error
+	defer func() {
+		if err != nil {
+			n.cancel()
+		}
+	}()
+
+	// initialize the application contet
+	n.ctx, n.cancel = context.WithCancel(context.Background())
+
+	// get the configuration, this have been loaded by the root
+	conf := n.confWatcher.Get()
+
+	// reload logger with the setup from configuration
+	n.Log = logging.NewLoggerFromConfig(conf.Logging)
+
+	// enable pprof if necessary
+	if conf.Pprof.Enabled {
+		n.Log.Info("vega is starting with pprof profile, this is not a recommended setting for production")
+		n.pproffhandlr, err = pprof.New(n.Log, conf.Pprof)
+		if err != nil {
+			return err
+		}
+		n.confWatcher.OnConfigUpdate(
+			func(cfg config.Config) { n.pproffhandlr.ReloadConf(cfg.Pprof) },
+		)
+	}
+
+	n.stats = stats.New(n.Log, n.conf.Stats, n.Version, n.VersionHash)
+
+	// start prometheus stuff
+	metrics.Start(n.conf.Metrics)
 
 	return err
 }
 
-// waitSig will wait for a sigterm or sigint interrupt.
-func waitSig(ctx context.Context, log *logging.Logger) {
-	gracefulStop := make(chan os.Signal, 1)
-	signal.Notify(gracefulStop, syscall.SIGTERM, syscall.SIGINT)
-
-	select {
-	case sig := <-gracefulStop:
-		log.Info("Caught signal", logging.String("name", fmt.Sprintf("%+v", sig)))
-	case <-ctx.Done():
-		// nothing to do
+func (n *NodeCommand) loadNodeWallets(_ []string) (err error) {
+	// if we are a non-validator, nothing needs to be done here
+	if !n.conf.IsValidator() {
+		return nil
 	}
+
+	n.nodeWallets, err = nodewallets.GetNodeWallets(n.conf.NodeWallet, n.vegaPaths, n.nodeWalletPassphrase)
+	if err != nil {
+		return fmt.Errorf("couldn't get node wallets: %w", err)
+	}
+
+	return n.nodeWallets.Verify()
+}
+
+func (n *NodeCommand) startBlockchainClients(_ []string) error {
+	switch n.conf.Blockchain.ChainProvider {
+	case blockchain.ProviderTendermint:
+		a, err := abci.NewClient(n.conf.Blockchain.Tendermint.ClientAddr)
+		if err != nil {
+			return err
+		}
+		n.blockchainClient = blockchain.NewClient(a)
+	case blockchain.ProviderNullChain:
+		n.nullBlockchain = nullchain.NewClient(n.Log, n.conf.Blockchain.Null)
+		n.blockchainClient = blockchain.NewClient(n.nullBlockchain)
+	}
+
+	// if we are a non-validator, nothing needs to be done here
+	if !n.conf.IsValidator() {
+		return nil
+	}
+
+	if n.conf.Blockchain.ChainProvider != blockchain.ProviderNullChain {
+		var err error
+		n.ethClient, err = ethclient.Dial(n.ctx, n.conf.NodeWallet.ETH.Address)
+		if err != nil {
+			return fmt.Errorf("could not instantiate ethereum client: %w", err)
+		}
+		n.ethConfirmations = ethclient.NewEthereumConfirmations(n.ethClient, nil)
+	}
+
+	return nil
 }

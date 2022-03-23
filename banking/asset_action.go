@@ -6,7 +6,6 @@ import (
 	"code.vegaprotocol.io/vega/assets"
 	"code.vegaprotocol.io/vega/assets/common"
 	"code.vegaprotocol.io/vega/types"
-	uuid "github.com/satori/go.uuid"
 )
 
 var ErrUnknownAssetAction = errors.New("unknown asset action")
@@ -106,7 +105,7 @@ func (t *assetAction) checkERC20AssetList() error {
 func (t *assetAction) getRef() txRef {
 	switch {
 	case t.IsBuiltinAssetDeposit():
-		return txRef{common.Builtin, 0, uuid.NewV4().String(), 0}
+		return txRef{common.Builtin, 0, t.hash, 0}
 	case t.IsERC20Deposit():
 		return txRef{common.ERC20, t.blockNumber, t.hash, t.txIndex}
 	case t.IsERC20AssetList():

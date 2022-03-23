@@ -16,13 +16,13 @@ import (
 	"code.vegaprotocol.io/vega/integration/stubs"
 	vgcontext "code.vegaprotocol.io/vega/libs/context"
 	"code.vegaprotocol.io/vega/libs/crypto"
+	"code.vegaprotocol.io/vega/libs/proto"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/oracles"
 	snp "code.vegaprotocol.io/vega/snapshot"
 	"code.vegaprotocol.io/vega/stats"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
-	"github.com/golang/protobuf/proto"
 	"github.com/stretchr/testify/require"
 )
 
@@ -149,7 +149,7 @@ func TestLoadTerminatedMarketFromSnapshot(t *testing.T) {
 
 		marketState1, _ := exec.engine.GetMarketState(marketIDs[i])
 		marketState2, _ := exec2.engine.GetMarketState(marketIDs[i])
-		require.Equal(t, marketState1, marketState2)
+		require.Equal(t, marketState1.String(), marketState2.String())
 		require.Equal(t, types.MarketStateSettled, marketState1)
 		require.Equal(t, types.MarketStateSettled, marketState2)
 

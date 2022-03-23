@@ -36,15 +36,15 @@ func (m *MockEpochService) EXPECT() *MockEpochServiceMockRecorder {
 }
 
 // NotifyOnEpoch mocks base method.
-func (m *MockEpochService) NotifyOnEpoch(arg0 func(context.Context, types.Epoch)) {
+func (m *MockEpochService) NotifyOnEpoch(arg0, arg1 func(context.Context, types.Epoch)) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "NotifyOnEpoch", arg0)
+	m.ctrl.Call(m, "NotifyOnEpoch", arg0, arg1)
 }
 
 // NotifyOnEpoch indicates an expected call of NotifyOnEpoch.
-func (mr *MockEpochServiceMockRecorder) NotifyOnEpoch(arg0 interface{}) *gomock.Call {
+func (mr *MockEpochServiceMockRecorder) NotifyOnEpoch(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NotifyOnEpoch", reflect.TypeOf((*MockEpochService)(nil).NotifyOnEpoch), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NotifyOnEpoch", reflect.TypeOf((*MockEpochService)(nil).NotifyOnEpoch), arg0, arg1)
 }
 
 // OnBlockEnd mocks base method.

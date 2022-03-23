@@ -9,8 +9,9 @@ import (
 	"sync"
 
 	"code.vegaprotocol.io/vega/events"
+	vgproto "code.vegaprotocol.io/vega/libs/proto"
 	"code.vegaprotocol.io/vega/logging"
-	"github.com/golang/protobuf/proto"
+	"google.golang.org/protobuf/proto"
 )
 
 type fileClient struct {
@@ -63,7 +64,7 @@ func (fc *fileClient) Send(event events.Event) error {
 	sizeBytes := make([]byte, 4)
 	binary.BigEndian.PutUint32(sizeBytes, size)
 
-	protoBytes, err := proto.Marshal(busEvent)
+	protoBytes, err := vgproto.Marshal(busEvent)
 	if err != nil {
 		return fmt.Errorf("failed to marshal bus event:" + busEvent.String())
 	}

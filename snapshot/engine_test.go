@@ -5,7 +5,6 @@ import (
 	"testing"
 	"time"
 
-	pbsnapshot "code.vegaprotocol.io/protos/vega/snapshot/v1"
 	vegactx "code.vegaprotocol.io/vega/libs/context"
 	"code.vegaprotocol.io/vega/libs/crypto"
 	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
@@ -15,9 +14,9 @@ import (
 	"code.vegaprotocol.io/vega/types"
 	tmocks "code.vegaprotocol.io/vega/types/mocks"
 
+	"code.vegaprotocol.io/vega/libs/proto"
 	"github.com/cosmos/iavl"
 	"github.com/golang/mock/gomock"
-	"github.com/golang/protobuf/proto"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	db "github.com/tendermint/tm-db"
@@ -114,7 +113,6 @@ func TestEngine(t *testing.T) {
 
 func TestRestore(t *testing.T) {
 	t.Run("Restoring a snapshot from chain works as expected", testReloadSnapshot)
-	t.Run("Restoring replay protectors replaces the provider as expected", testReloadReplayProtectors)
 	t.Run("Restoring a snapshot calls the post-restore callback if available", testReloadRestore)
 }
 
@@ -323,94 +321,6 @@ func testReloadSnapshot(t *testing.T) {
 	loaded, err := eng2.CheckLoaded()
 	require.NoError(t, err)
 	require.True(t, loaded)
-}
-
-func testReloadReplayProtectors(t *testing.T) {
-	e := getTestEngine(t)
-	defer e.Finish()
-	rpPl := types.PayloadReplayProtection{
-		BackTol:    100,
-		ForwardTol: 200,
-		Transactions: []*pbsnapshot.TransactionAtHeight{
-			{Tx: "foo", Height: 1},
-			{Tx: "bar", Height: 2},
-		},
-	}
-	payload := types.Payload{
-		Data: &rpPl,
-	}
-	data, err := proto.Marshal(payload.IntoProto())
-	require.NoError(t, err)
-	hash := crypto.Hash(data)
-	rpl := e.getNewProviderMock()
-	rpl.EXPECT().Namespace().Times(1).Return(payload.Namespace())
-	rpl.EXPECT().Keys().Times(1).Return([]string{payload.Key()})
-
-	old := e.getNewProviderMock()
-	old.EXPECT().Namespace().Times(2).Return(payload.Namespace())
-	old.EXPECT().Keys().Times(3).Return([]string{payload.Key()}) // this gets called a second time when replacing
-	old.EXPECT().GetHash(payload.Key()).Times(1).Return(hash, nil)
-	old.EXPECT().GetState(payload.Key()).Times(1).Return(data, nil, nil)
-	old.EXPECT().LoadState(gomock.Any(), gomock.Any()).Times(1).DoAndReturn(func(_ context.Context, pl *types.Payload) ([]types.StateProvider, error) {
-		switch dt := pl.Data.(type) {
-		case *types.PayloadReplayProtection:
-			require.Equal(t, dt.BackTol, rpPl.BackTol)
-			require.Equal(t, dt.ForwardTol, rpPl.ForwardTol)
-			require.Equal(t, len(dt.Transactions), len(rpPl.Transactions))
-		default:
-			t.Fatal("Incorrect payload type passed")
-		}
-		return []types.StateProvider{rpl}, nil
-	})
-	// call is made when creating the snapshot
-	now := time.Now()
-	e.time.EXPECT().GetTimeNow().Times(1).Return(now)
-
-	// add old provider
-	e.AddProviders(old)
-	// take a snapshot
-	snapHash, err := e.Snapshot(e.ctx)
-	require.NoError(t, err)
-	require.NotNil(t, snapHash)
-	// now get the snapshot we've just created
-	snaps, err := e.List()
-	require.NoError(t, err)
-	require.NotEmpty(t, snaps)
-	require.Equal(t, 1, len(snaps))
-
-	snap := snaps[0]
-
-	// now reload the snapshot on a new engine
-	e2 := getTestEngine(t)
-	defer e2.Finish()
-	e2.time.EXPECT().GetTimeNow().Times(1).Return(now)
-	// calls we expect to see when reloading
-	e2.time.EXPECT().SetTimeNow(gomock.Any(), gomock.Any()).Times(1).Do(func(_ context.Context, newT time.Time) {
-		require.Equal(t, newT.Unix(), now.Unix())
-	})
-	e2.stats.EXPECT().SetHeight(uint64(1)).Times(1)
-	e2.AddProviders(old)
-	require.NoError(t, e2.ReceiveSnapshot(snap))
-	ready := false
-	for i := uint32(0); i < snap.Chunks; i++ {
-		chunk, err := e.LoadSnapshotChunk(snap.Height, uint32(snap.Format), i)
-		require.NoError(t, err)
-		ready, err = e2.ApplySnapshotChunk(chunk)
-		require.NoError(t, err)
-	}
-	require.True(t, ready)
-	// OK, snapshot is ready to be applied
-	require.NoError(t, e2.ApplySnapshot(e.ctx))
-	loaded, err := e2.CheckLoaded()
-	require.NoError(t, err)
-	require.True(t, loaded)
-	// so now we can check if taking a snapshot calls the methods on the replacement provider
-
-	rpl.EXPECT().GetHash(payload.Key()).Times(1).Return(hash, nil)
-	snapHash2, err := e2.Snapshot(e.ctx)
-	require.NoError(t, err)
-	require.NotNil(t, snapHash2)
-	require.EqualValues(t, snapHash, snapHash2)
 }
 
 func testReloadRestore(t *testing.T) {

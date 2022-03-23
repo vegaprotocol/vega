@@ -11,8 +11,8 @@ import (
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
 
+	"code.vegaprotocol.io/vega/libs/proto"
 	"github.com/cosmos/iavl"
-	"github.com/golang/protobuf/proto"
 	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/require"
 	db "github.com/tendermint/tm-db"
@@ -472,8 +472,6 @@ func getDummyData() *types.Chunk {
 			Topology: &types.Topology{},
 		},
 	}, &types.Payload{
-		Data: &types.PayloadReplayProtection{},
-	}, &types.Payload{
 		Data: &types.PayloadEventForwarder{},
 	}, &types.Payload{
 		Data: &types.PayloadLiquidityParameters{
@@ -660,8 +658,6 @@ func TestPayloadConversion(t *testing.T) {
 		Data: &types.PayloadTopology{
 			Topology: &types.Topology{},
 		},
-	}, &types.Payload{
-		Data: &types.PayloadReplayProtection{},
 	}, &types.Payload{
 		Data: &types.PayloadEventForwarder{},
 	}, &types.Payload{

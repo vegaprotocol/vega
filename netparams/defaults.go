@@ -3,6 +3,7 @@ package netparams
 import (
 	"time"
 
+	"code.vegaprotocol.io/shared/libs/crypto"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
 
@@ -146,5 +147,12 @@ func defaultNetParams() map[string]value {
 		TransferFeeFactor:                  NewDecimal(DecimalGTE(num.DecimalZero())).Mutable(true).MustUpdate("0.001"),
 		TransferMinTransferQuantumMultiple: NewDecimal(DecimalGTE(num.DecimalZero())).Mutable(true).MustUpdate("0.1"),
 		TransferMaxCommandsPerEpoch:        NewInt(IntGTE(0)).Mutable(true).MustUpdate("20"),
+
+		// pow
+		SpamPoWNumberOfPastBlocks:   NewUint(UintGTE(num.NewUint(50)), UintLTE(num.NewUint(500))).Mutable(true).MustUpdate("100"),
+		SpamPoWDifficulty:           NewUint(UintGT(num.Zero()), UintLTE(num.NewUint(256))).Mutable(true).MustUpdate("15"),
+		SpamPoWHashFunction:         NewString().Mutable(true).MustUpdate(crypto.Sha3),
+		SpamPoWNumberOfTxPerBlock:   NewUint(UintGTE(num.NewUint(1)), UintLTE(num.NewUint(1000))).Mutable(true).MustUpdate("2"),
+		SpamPoWIncreasingDifficulty: NewUint(UintGTE(num.Zero()), UintLTE(num.NewUint(1))).Mutable(true).MustUpdate("0"),
 	}
 }

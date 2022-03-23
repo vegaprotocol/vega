@@ -59,6 +59,13 @@ type SpamEngine interface {
 	PostBlockAccept(tx abci.Tx) (bool, error)
 }
 
+type PoWEngine interface {
+	BeginBlock(blockHeight uint64, blockHash string)
+	EndOfBlock()
+	CheckTx(tx abci.Tx) error
+	DeliverTx(tx abci.Tx) error
+}
+
 type Snapshot interface {
 	Info() ([]byte, int64)
 	Snapshot(ctx context.Context) ([]byte, error)
@@ -125,6 +132,7 @@ type App struct {
 	stakingAccounts       StakingAccounts
 	checkpoint            Checkpoint
 	spam                  SpamEngine
+	pow                   PoWEngine
 	epoch                 EpochService
 	snapshot              Snapshot
 	stateVar              StateVarEngine
@@ -157,6 +165,7 @@ func NewApp(
 	stake StakeVerifier,
 	checkpoint Checkpoint,
 	spam SpamEngine,
+	pow PoWEngine,
 	stakingAccounts StakingAccounts,
 	snapshot Snapshot,
 	stateVarEngine StateVarEngine,
@@ -198,6 +207,7 @@ func NewApp(
 		stake:                 stake,
 		checkpoint:            checkpoint,
 		spam:                  spam,
+		pow:                   pow,
 		stakingAccounts:       stakingAccounts,
 		epoch:                 epoch,
 		snapshot:              snapshot,
@@ -207,15 +217,15 @@ func NewApp(
 		erc20MultiSigTopology: erc20MultiSigTopology,
 	}
 
-	// register replay protection if needed:
-	app.abci.RegisterSnapshot(snapshot)
 	// setup handlers
 	app.abci.OnInitChain = app.OnInitChain
 	app.abci.OnBeginBlock = app.OnBeginBlock
 	app.abci.OnEndBlock = app.OnEndBlock
 	app.abci.OnCommit = app.OnCommit
 	app.abci.OnCheckTx = app.OnCheckTx
+	app.abci.OnCheckTxSpam = app.OnCheckTxSpam
 	app.abci.OnDeliverTx = app.OnDeliverTx
+	app.abci.OnDeliverTxSpam = app.OnDeliverTXSpam
 	app.abci.OnInfo = app.Info
 	// snapshot specific handlers.
 	app.abci.OnListSnapshots = app.ListSnapshots
@@ -382,7 +392,6 @@ func (app *App) Info(_ tmtypes.RequestInfo) tmtypes.ResponseInfo {
 	}
 
 	if loaded {
-		app.Abci().ReplaceReplayProtector(0)
 		hash, height := app.snapshot.Info()
 		resp.LastBlockHeight = height
 		resp.LastBlockAppHash = hash
@@ -521,8 +530,6 @@ func (app *App) OnInitChain(req tmtypes.RequestInitChain) tmtypes.ResponseInitCh
 	ctx = vgcontext.WithTraceID(ctx, hash)
 	app.blockCtx = ctx
 
-	app.abci.RegisterSnapshot(app.snapshot)
-
 	// Start the snapshot engine letting it clear any pre-existing state so that if we are
 	// replaying a chain from block 0 we won't recreate snapshots for blocks as we revisit
 	// them
@@ -567,12 +574,19 @@ func (app *App) OnEndBlock(req tmtypes.RequestEndBlock) (ctx context.Context, re
 
 // OnBeginBlock updates the internal lastBlockTime value with each new block.
 func (app *App) OnBeginBlock(req tmtypes.RequestBeginBlock) (ctx context.Context, resp tmtypes.ResponseBeginBlock) {
-	app.log.Debug("entering begin block", logging.Time("at", time.Now()))
+	app.log.Debug("entering begin block", logging.Time("at", time.Now()), logging.Uint64("height", uint64(req.Header.Height)))
 	defer func() { app.log.Debug("leaving begin block", logging.Time("at", time.Now())) }()
 
 	hash := hex.EncodeToString(req.Hash)
 	app.cBlock = hash
+
+	// update pow engine on a new block
+	if app.pow != nil {
+		app.pow.BeginBlock(uint64(req.Header.Height), hash)
+	}
+
 	app.stats.SetHash(hash)
+	app.stats.SetHeight(uint64(req.Header.Height))
 
 	// Set chainID, if we have loaded from a snapshot we will not have called InitChain
 	// TODO: we may be able to better if we store the chainID in the appstate's snapshot
@@ -683,16 +697,37 @@ func (app *App) handleCheckpoint(cpt *types.CheckpointState) error {
 	return nil
 }
 
-// OnCheckTx performs soft validations.
-func (app *App) OnCheckTx(ctx context.Context, _ tmtypes.RequestCheckTx, tx abci.Tx) (context.Context, tmtypes.ResponseCheckTx) {
+// OnCheckTxSpam checks for spam and replay.
+func (app *App) OnCheckTxSpam(tx abci.Tx) tmtypes.ResponseCheckTx {
 	resp := tmtypes.ResponseCheckTx{}
+
+	// verify proof of work and replay
+	if app.pow != nil {
+		if err := app.pow.CheckTx(tx); err != nil {
+			app.log.Error(err.Error())
+			resp.Code = abci.AbciSpamError
+			resp.Data = []byte(err.Error())
+			return resp
+		}
+	}
+	// additional spam checks
 	if app.spam != nil {
 		if _, err := app.spam.PreBlockAccept(tx); err != nil {
 			app.log.Error(err.Error())
 			resp.Code = abci.AbciSpamError
 			resp.Data = []byte(err.Error())
-			return ctx, resp
+			return resp
 		}
+	}
+	return resp
+}
+
+// OnCheckTx performs soft validations.
+func (app *App) OnCheckTx(ctx context.Context, _ tmtypes.RequestCheckTx, tx abci.Tx) (context.Context, tmtypes.ResponseCheckTx) {
+	resp := tmtypes.ResponseCheckTx{}
+
+	if app.log.IsDebug() {
+		app.log.Debug("entering checkTx", logging.String("tid", tx.GetPoWTID()), logging.String("command", tx.Command().String()))
 	}
 
 	if err := app.canSubmitTx(tx); err != nil {
@@ -704,6 +739,11 @@ func (app *App) OnCheckTx(ctx context.Context, _ tmtypes.RequestCheckTx, tx abci
 	// Check ratelimits
 	// FIXME(): temporary disable all rate limiting
 	_, isval := app.limitPubkey(tx.PubKeyHex())
+
+	if app.log.IsDebug() {
+		app.log.Debug("transaction passed checkTx", logging.String("tid", tx.GetPoWTID()), logging.String("command", tx.Command().String()))
+	}
+
 	if isval {
 		return ctx, resp
 	}
@@ -845,21 +885,34 @@ func (app *App) canSubmitTx(tx abci.Tx) (err error) {
 	return nil
 }
 
-// OnDeliverTx increments the internal tx counter and decorates the context with tracing information.
-func (app *App) OnDeliverTx(ctx context.Context, req tmtypes.RequestDeliverTx, tx abci.Tx) (context.Context, tmtypes.ResponseDeliverTx) {
-	app.setTxStats(len(req.Tx))
-
+// OnDeliverTXSpam checks spam and replay.
+func (app *App) OnDeliverTXSpam(tx abci.Tx) tmtypes.ResponseDeliverTx {
 	var resp tmtypes.ResponseDeliverTx
 
+	// verify proof of work
+	if app.pow != nil {
+		if err := app.pow.DeliverTx(tx); err != nil {
+			app.log.Error(err.Error())
+			resp.Code = abci.AbciSpamError
+			resp.Data = []byte(err.Error())
+			return resp
+		}
+	}
 	if app.spam != nil {
 		if _, err := app.spam.PostBlockAccept(tx); err != nil {
 			app.log.Error(err.Error())
 			resp.Code = abci.AbciSpamError
 			resp.Data = []byte(err.Error())
-			return ctx, resp
+			return resp
 		}
 	}
+	return resp
+}
 
+// OnDeliverTx increments the internal tx counter and decorates the context with tracing information.
+func (app *App) OnDeliverTx(ctx context.Context, req tmtypes.RequestDeliverTx, tx abci.Tx) (context.Context, tmtypes.ResponseDeliverTx) {
+	app.setTxStats(len(req.Tx))
+	var resp tmtypes.ResponseDeliverTx
 	if err := app.canSubmitTx(tx); err != nil {
 		resp.Code = abci.AbciTxnValidationFailure
 		resp.Data = []byte(err.Error())

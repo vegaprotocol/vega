@@ -3,7 +3,6 @@ package abci_test
 import (
 	"context"
 	"encoding/hex"
-	"encoding/json"
 	"errors"
 	"testing"
 
@@ -11,7 +10,6 @@ import (
 	"code.vegaprotocol.io/vega/txn"
 	"github.com/stretchr/testify/require"
 	"github.com/tendermint/tendermint/abci/types"
-	htypes "github.com/tendermint/tendermint/proto/tendermint/types"
 )
 
 type testTx struct {
@@ -22,19 +20,23 @@ type testTx struct {
 	command     txn.Command
 	validateFn  func() error
 	blockHeight uint64
+	powNonce    uint64
+	powTxID     string
 }
 
 func (tx *testTx) Unmarshal(interface{}) error { return nil }
-
-func (tx *testTx) Signature() []byte    { return tx.signature }
-func (tx *testTx) Payload() []byte      { return tx.payload }
-func (tx *testTx) PubKey() []byte       { return tx.pubkey }
-func (tx *testTx) PubKeyHex() string    { return hex.EncodeToString(tx.pubkey) }
-func (tx *testTx) Party() string        { return hex.EncodeToString(tx.pubkey) }
-func (tx *testTx) Hash() []byte         { return tx.hash }
-func (tx *testTx) Command() txn.Command { return tx.command }
-func (tx *testTx) BlockHeight() uint64  { return tx.blockHeight }
-func (tx *testTx) GetCmd() interface{}  { return nil }
+func (tx *testTx) GetPoWTID() string           { return tx.powTxID }
+func (tx *testTx) GetVersion() uint32          { return 2 }
+func (tx *testTx) GetPoWNonce() uint64         { return tx.powNonce }
+func (tx *testTx) Signature() []byte           { return tx.signature }
+func (tx *testTx) Payload() []byte             { return tx.payload }
+func (tx *testTx) PubKey() []byte              { return tx.pubkey }
+func (tx *testTx) PubKeyHex() string           { return hex.EncodeToString(tx.pubkey) }
+func (tx *testTx) Party() string               { return hex.EncodeToString(tx.pubkey) }
+func (tx *testTx) Hash() []byte                { return tx.hash }
+func (tx *testTx) Command() txn.Command        { return tx.command }
+func (tx *testTx) BlockHeight() uint64         { return tx.blockHeight }
+func (tx *testTx) GetCmd() interface{}         { return nil }
 func (tx *testTx) Validate() error {
 	if fn := tx.validateFn; fn != nil {
 		return fn()
@@ -136,122 +138,4 @@ func TestABCICheckTx(t *testing.T) {
 		require.True(t, resp.IsErr())
 		require.Equal(t, abci.AbciTxnDecodingFailure, resp.Code)
 	})
-}
-
-// beginBlockN is a helper function that will move the blockchain to a given
-// block number by calling BeginBlock with the right parameter.
-func beginBlockN(app *abci.App, n int) {
-	header := htypes.Header{Height: int64(n)}
-	app.BeginBlock(types.RequestBeginBlock{
-		Header: header,
-	})
-}
-
-// setGenesisState sets the network section of the genesis.
-func setGenesisState(app *abci.App, state *abci.GenesisState) {
-	bz, err := json.Marshal(struct {
-		Network abci.GenesisState
-	}{Network: *state})
-	if err != nil {
-		panic(err)
-	}
-
-	app.InitChain(types.RequestInitChain{
-		AppStateBytes: bz,
-	})
-}
-
-func TestReplayProtectionByDistance(t *testing.T) {
-	cdc := newTestCodec()
-	tx := []byte("tx")
-	cdc.addTx(tx, &testTx{
-		blockHeight: 100,
-		command:     testCommandA,
-	})
-
-	// the transaction is at height 100, ring bugger size is 2 * 10
-	// forward tolernace = 10
-	// backward tolernace = 10
-	tests := []struct {
-		name        string
-		height      int
-		expectError bool
-	}{
-		// 10 in the future >= forwrad tolerance => reject
-		{"too far in the future", 90, true},
-		// 9 to the future, within the 10 tolerance => accept
-		{"within distance: low", 91, false},
-		// 9 in the past < 10 back tolerance => accept
-		{"within distance: high", 109, false},
-		// same hight => accept
-		{"same heights", 100, false},
-		// 10 in the past >= 10 back tolerance => reject
-		{"higher distance - short", 110, true},
-		// 100 in the past >= 10 back tolerance => reject
-		{"higher distance - long", 200, true},
-	}
-
-	for _, test := range tests {
-		app := abci.New(cdc).
-			HandleDeliverTx(
-				testCommandA,
-				func(ctx context.Context, tx abci.Tx) error { return nil },
-			)
-
-		setGenesisState(app, &abci.GenesisState{
-			ReplayAttackThreshold: 10,
-		})
-
-		// forward to a given block
-		beginBlockN(app, test.height)
-
-		// perform the request (all of them uses blockHeight 100)
-		req := types.RequestDeliverTx{Tx: tx}
-		resp := app.DeliverTx(req)
-
-		t.Run(test.name, func(t *testing.T) {
-			if test.expectError {
-				require.True(t, resp.IsErr(), resp)
-				require.Equal(t, abci.AbciTxnValidationFailure, resp.Code)
-				require.NotEmpty(t, resp.Info)
-			} else {
-				require.True(t, resp.IsOK(), resp)
-			}
-		})
-	}
-}
-
-func TestReplayProtectionByCache(t *testing.T) {
-	cdc := newTestCodec()
-	tx := []byte("tx")
-	cdc.addTx(tx, &testTx{
-		blockHeight: 1,
-		command:     testCommandA,
-	})
-
-	app := abci.New(cdc).HandleDeliverTx(
-		testCommandA,
-		func(ctx context.Context, tx abci.Tx) error { return nil },
-	)
-
-	setGenesisState(app, &abci.GenesisState{
-		ReplayAttackThreshold: 2,
-	})
-
-	// forward to a given block
-	beginBlockN(app, 2)
-	req := types.RequestDeliverTx{Tx: tx}
-	resp1 := app.DeliverTx(req)
-	resp2 := app.DeliverTx(req)
-
-	require.True(t, resp1.IsOK())
-	require.True(t, resp2.IsErr())
-	require.Equal(t, abci.ErrTxAlreadyInCache.Error(), resp2.Info)
-
-	beginBlockN(app, 3)
-	beginBlockN(app, 4)
-	beginBlockN(app, 6) // the tx was added to the cache at block 2, the total size of the ring buffer is 2 * 2 = 4 => at block 6 it's too old
-	resp3 := app.DeliverTx(req)
-	require.True(t, resp3.IsErr())
-	require.Equal(t, abci.ErrTxStaled.Error(), resp3.Info)
 }

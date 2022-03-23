@@ -6,10 +6,10 @@ import (
 	"sync"
 
 	"code.vegaprotocol.io/vega/blockchain/abci"
+	"code.vegaprotocol.io/vega/libs/proto"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
-	"github.com/golang/protobuf/proto"
 )
 
 // Simple spam policy supports encforcing of max allowed commands and min required tokens + banning of parties when their reject rate in the block

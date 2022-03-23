@@ -59,7 +59,6 @@ func Main(ctx context.Context) error {
 		faucet.Faucet,
 		genesis.Genesis,
 		Init,
-		Node,
 		nodewallet.NodeWallet,
 		Verify,
 		Version,
@@ -73,6 +72,7 @@ func Main(ctx context.Context) error {
 		UnsafeResetAll,
 		SnapshotList,
 		AnnounceNode,
+		Start,
 	); err != nil {
 		_, _ = fmt.Fprintln(os.Stderr, err)
 		return err

@@ -59,6 +59,15 @@ type Blockchain interface {
 	Health() (*tmctypes.ResultHealth, error)
 }
 
+type ProofOfWorkParams interface {
+	SpamPoWNumberOfPastBlocks() uint32
+	SpamPoWDifficulty() uint32
+	SpamPoWHashFunction() string
+	SpamPoWNumberOfTxPerBlock() uint32
+	SpamPoWIncreasingDifficulty() bool
+	BlockData() (uint64, string)
+}
+
 // GRPCServer represent the grpc api provided by the vega node.
 type GRPC struct {
 	Config
@@ -71,6 +80,7 @@ type GRPC struct {
 	timesvc       *vegatime.Svc
 	evtfwd        EvtForwarder
 	evtService    EventService
+	powParams     ProofOfWorkParams
 
 	// used in order to gracefully close streams
 	ctx   context.Context
@@ -91,6 +101,7 @@ func NewGRPC(
 	timeService *vegatime.Svc,
 	eventService *subscribers.Service,
 	statusChecker *monitoring.Status,
+	powParams ProofOfWorkParams,
 ) *GRPC {
 	// setup logger
 	log = log.Named(namedLogger)
@@ -108,6 +119,25 @@ func NewGRPC(
 		cfunc:         cfunc,
 		evtfwd:        evtfwd,
 		evtService:    eventService,
+		powParams:     powParams,
+	}
+}
+
+func (s *GRPC) UpdateProtocolServices(
+	evtforwarder EvtForwarder,
+	timesvc *vegatime.Svc,
+	evtsvc EventService,
+	powParams ProofOfWorkParams,
+) {
+	// first save them, in case the core service is not started,
+	// it'll be used later
+	s.evtService = evtsvc
+	s.timesvc = timesvc
+	s.evtfwd = evtforwarder
+	s.powParams = powParams
+
+	if s.core != nil {
+		s.core.UpdateProtocolServices(evtforwarder, timesvc, evtsvc, powParams)
 	}
 }
 
@@ -203,6 +233,7 @@ func (g *GRPC) Start() {
 		stats:         g.stats,
 		evtForwarder:  g.evtfwd,
 		eventService:  g.evtService,
+		powParams:     g.powParams,
 	}
 	g.core = coreSvc
 	protoapi.RegisterCoreServiceServer(g.srv, coreSvc)

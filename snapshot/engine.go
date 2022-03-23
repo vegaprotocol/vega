@@ -17,8 +17,8 @@ import (
 	"code.vegaprotocol.io/vega/metrics"
 	"code.vegaprotocol.io/vega/types"
 
+	"code.vegaprotocol.io/vega/libs/proto"
 	"github.com/cosmos/iavl"
-	"github.com/golang/protobuf/proto"
 	"github.com/tendermint/tendermint/libs/strings"
 	db "github.com/tendermint/tm-db"
 )
@@ -138,6 +138,7 @@ var nodeOrder = []types.SnapshotNamespace{
 	types.FeeTrackerSnapshot,
 	types.MarketTrackerSnapshot,
 	types.ERC20MultiSigTopologySnapshot,
+	types.PoWSnapshot,
 }
 
 // New returns a new snapshot engine.
@@ -687,7 +688,7 @@ func (e *Engine) Snapshot(ctx context.Context) (b []byte, errlol error) {
 		return nil, err
 	}
 
-	e.log.Info("snapshot taken", logging.Int64("height", height))
+	e.log.Info("snapshot taken", logging.Int64("height", height), logging.String("hash", hex.EncodeToString(snapshot)))
 	return snapshot, err
 }
 

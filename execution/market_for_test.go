@@ -8,6 +8,12 @@ import (
 	"code.vegaprotocol.io/vega/types/num"
 )
 
+// UpdateRiskFactorsForTest is a hack for setting the risk factors for tests directly rather than through the consensus engine.
+// Never use this for anything functional.
+func (m *Market) UpdateRiskFactorsForTest() {
+	m.risk.CalculateRiskFactorsForTest()
+}
+
 func (m *Market) EnterAuction(ctx context.Context) {
 	m.enterAuction(ctx)
 }

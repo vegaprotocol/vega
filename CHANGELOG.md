@@ -15,15 +15,32 @@
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 
-## 0.49.4
+## 0.49.7
 
+### 🚨 Breaking changes
+- [4985](https://github.com/vegaprotocol/vega/issues/4985) - Proof of work spam protection
+
+### 🛠 Improvements
+- [5007](https://github.com/vegaprotocol/vega/issues/5007) - Run approbation as part of the CI pipeline
+- [5019](https://github.com/vegaprotocol/vega/issues/5019) - Label Price Monitoring tests
+- [5022](https://github.com/vegaprotocol/vega/issues/5022) - CI: Run approbation for main/master/develop branches only
+- [5017](https://github.com/vegaprotocol/vega/issues/5017) - Added access functions to `PositionState` type
+
+### 🐛 Fixes
+- [5025](https://github.com/vegaprotocol/vega/issues/5025) - Witness snapshot breaking consensus
+- [5046](https://github.com/vegaprotocol/vega/issues/5046) - Save all events in `ERC20` topology snapshot
+
+
+## 0.49.4
 ### 🛠 Improvements
 - [2585](https://github.com/vegaprotocol/vega/issues/2585) - Adding position state event to event bus
 - [4952](https://github.com/vegaprotocol/vega/issues/4952) - Add checkpoints for staking and `multisig control`
+- [4923](https://github.com/vegaprotocol/vega/issues/4923) - Add checkpoint state in the genesis file + add subcommand to do it.
 
 ### 🐛 Fixes
 - [4983](https://github.com/vegaprotocol/vega/issues/4983) - Set correct event type for positions state event
 - [4989](https://github.com/vegaprotocol/vega/issues/4989) - Fixing incorrect overflow logic
+- [5036](https://github.com/vegaprotocol/vega/issues/5036) - Fix the `nullblockchain`
 - [4981](https://github.com/vegaprotocol/vega/issues/4981) - Fix bug causing LP orders to uncross at auction end.
 
 ## 0.49.2

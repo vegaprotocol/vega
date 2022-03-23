@@ -10,8 +10,8 @@ import (
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/validators"
 
+	"code.vegaprotocol.io/vega/libs/proto"
 	"github.com/golang/mock/gomock"
-	"github.com/golang/protobuf/proto"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -272,4 +272,108 @@ func TestERC20TopologySnapshot(t *testing.T) {
 		hex.EncodeToString(t2HashPendingLast),
 		"74b4ccedd16267f6e93d3416a14cc142e528518bb3bcc30cfa9884705045f197",
 	)
+}
+
+func TestERC20TopologySnapshotAddRemoveSigner(t *testing.T) {
+	top := getTestTopology(t)
+	defer top.ctrl.Finish()
+
+	top.OnTick(context.Background(), time.Unix(10, 0))
+
+	var cb func(interface{}, bool)
+	var res validators.Resource
+	// first assert we have no signers
+	assert.Len(t, top.GetSigners(), 0)
+
+	signerEvent1 := types.SignerEvent{
+		BlockNumber: 10,
+		LogIndex:    11,
+		TxHash:      "0xacbde",
+		ID:          "someid",
+		Address:     "0x123456",
+		Nonce:       "123",
+		BlockTime:   123456789,
+		Kind:        types.SignerEventKindAdded,
+	}
+
+	top.witness.EXPECT().StartCheck(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).DoAndReturn(func(r validators.Resource, f func(interface{}, bool), _ time.Time) error {
+		cb = f
+		res = r
+		return nil
+	})
+
+	assert.NoError(t, top.ProcessSignerEvent(&signerEvent1))
+
+	// now we can call the callback
+	cb(res, true)
+
+	// now we can update the time
+	top.broker.EXPECT().Send(gomock.Any()).Times(1)
+	top.OnTick(context.Background(), time.Unix(12, 0))
+
+	// Now we have a signer
+	t.Run("ensure the signer list is updated", func(t *testing.T) {
+		signers := top.GetSigners()
+		assert.Len(t, signers, 1)
+		assert.Equal(t, "0x123456", signers[0])
+	})
+
+	signerEvent2 := types.SignerEvent{
+		BlockNumber: 11,
+		LogIndex:    12,
+		TxHash:      "0xacbde",
+		ID:          "someid",
+		Address:     "0x123456",
+		Nonce:       "123",
+		BlockTime:   123456789,
+		Kind:        types.SignerEventKindRemoved,
+	}
+
+	top.witness.EXPECT().StartCheck(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).DoAndReturn(func(r validators.Resource, f func(interface{}, bool), _ time.Time) error {
+		return nil
+	})
+
+	assert.NoError(t, top.ProcessSignerEvent(&signerEvent2))
+
+	// now we can call the callback
+	cb(res, true)
+
+	// now we can update the time
+	top.broker.EXPECT().Send(gomock.Any()).Times(1)
+	top.OnTick(context.Background(), time.Unix(15, 0))
+
+	// Now we have no signer, but some seen events
+	t.Run("ensure the signer has been removed", func(t *testing.T) {
+		signers := top.GetSigners()
+		require.Len(t, signers, 0)
+	})
+
+	// now we can snapshot
+	stateVerified, _, err := top.GetState((&types.PayloadERC20MultiSigTopologyVerified{}).Key())
+	assert.NoError(t, err)
+	assert.NotNil(t, stateVerified)
+
+	// now instantiate a new one, and load the stuff
+	top2 := getTestTopology(t)
+	defer top2.ctrl.Finish()
+
+	snap := &snapshotpb.Payload{}
+	err = proto.Unmarshal(stateVerified, snap)
+	require.NoError(t, err)
+
+	_, err = top2.LoadState(context.Background(), types.PayloadFromProto(snap))
+	assert.NoError(t, err)
+
+	// no signers because they were all removed
+	signers2 := top2.GetSigners()
+	assert.Len(t, signers2, 0)
+
+	// take a checkpoint to be sure that addressesPerEvents were restored properly
+	b1, err := top.Checkpoint()
+	require.NoError(t, err)
+
+	b2, err := top2.Checkpoint()
+	require.NoError(t, err)
+
+	require.Equal(t, b1, b2)
 }

@@ -7,7 +7,7 @@ import (
 	"sync"
 	"sync/atomic"
 
-	"github.com/golang/protobuf/proto"
+	"code.vegaprotocol.io/vega/libs/proto"
 
 	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/logging"
@@ -40,12 +40,6 @@ func (w *Witness) Keys() []string {
 }
 
 func (w *Witness) serialise() ([]byte, error) {
-	needResendRes := make([]string, 0, len(w.needResendRes))
-	for r := range w.needResendRes {
-		needResendRes = append(needResendRes, r)
-	}
-	sort.Strings(needResendRes)
-
 	w.log.Debug("serialising witness resources", logging.Int("n", len(w.resources)))
 	resources := make([]*types.Resource, 0, len(w.resources))
 	for id, r := range w.resources {
@@ -69,8 +63,7 @@ func (w *Witness) serialise() ([]byte, error) {
 	payload := types.Payload{
 		Data: &types.PayloadWitness{
 			Witness: &types.Witness{
-				Resources:           resources,
-				NeedResendResources: needResendRes,
+				Resources: resources,
 			},
 		},
 	}
@@ -130,10 +123,6 @@ func (w *Witness) LoadState(ctx context.Context, p *types.Payload) ([]types.Stat
 func (w *Witness) restore(ctx context.Context, witness *types.Witness) error {
 	w.resources = map[string]*res{}
 	w.needResendRes = map[string]struct{}{}
-
-	for _, r := range witness.NeedResendResources {
-		w.needResendRes[r] = struct{}{}
-	}
 
 	w.log.Debug("restoring witness resources", logging.Int("n", len(witness.Resources)))
 	for _, r := range witness.Resources {

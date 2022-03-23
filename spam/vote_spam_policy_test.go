@@ -6,13 +6,13 @@ import (
 	"testing"
 
 	snapshot "code.vegaprotocol.io/protos/vega/snapshot/v1"
+	"code.vegaprotocol.io/vega/libs/proto"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/netparams"
 	"code.vegaprotocol.io/vega/spam"
 	"code.vegaprotocol.io/vega/txn"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
-	"github.com/golang/protobuf/proto"
 	"github.com/stretchr/testify/require"
 )
 
@@ -21,6 +21,10 @@ type testTx struct {
 	proposal string
 	command  txn.Command
 }
+
+func (*testTx) GetPoWNonce() uint64 { return 0 }
+func (*testTx) GetPoWTID() string   { return "" }
+func (*testTx) GetVersion() uint32  { return 2 }
 
 var (
 	sufficientTokensForVoting, _    = num.UintFromString("100000000000000000000", 10)

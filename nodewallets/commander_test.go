@@ -37,7 +37,6 @@ func getTestCommander(t *testing.T) *testCommander {
 	ctrl := gomock.NewController(t)
 	chain := mocks.NewMockChain(ctrl)
 	bstats := mocks.NewMockBlockchainStats(ctrl)
-
 	vegaPaths, _ := vgtesting.NewVegaPaths()
 	registryPass := vgrand.RandomStr(10)
 	walletPass := vgrand.RandomStr(10)
@@ -86,7 +85,7 @@ func testSignedCommandSuccess(t *testing.T) {
 	}
 	ctx := context.Background()
 
-	commander.bstats.EXPECT().Height().Times(1).Return(uint64(42))
+	commander.bstats.EXPECT().Height().AnyTimes().Return(uint64(42))
 	commander.chain.EXPECT().SubmitTransactionAsync(
 		gomock.Any(), gomock.Any()).Times(1).Return(&tmctypes.ResultBroadcastTx{}, nil)
 
@@ -108,7 +107,7 @@ func testSignedCommandFailure(t *testing.T) {
 	}
 	ctx := context.Background()
 
-	commander.bstats.EXPECT().Height().Times(1).Return(uint64(42))
+	commander.bstats.EXPECT().Height().AnyTimes().Return(uint64(42))
 	commander.chain.EXPECT().SubmitTransactionAsync(
 		gomock.Any(), gomock.Any()).Times(1).Return(&tmctypes.ResultBroadcastTx{}, errors.New("bad bad"))
 

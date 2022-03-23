@@ -10,7 +10,7 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
 
-	"github.com/golang/protobuf/proto"
+	"code.vegaprotocol.io/vega/libs/proto"
 )
 
 var (
@@ -169,25 +169,26 @@ func (t *Topology) serialiseVerifiedState() ([]byte, error) {
 	// sort it + reuse it next in the eventsPerAddress
 	sort.Strings(out.Signers)
 
-	out.EventsPerAddress = make([]*snapshotpb.SignerEventsPerAddress, 0, len(t.eventsPerAddress))
+	evts := make([]*snapshotpb.SignerEventsPerAddress, 0, len(t.eventsPerAddress))
 	// now the signers events
-	for _, v := range out.Signers {
-		addressEvents := t.eventsPerAddress[v]
-		events := make([]*eventspb.ERC20MultiSigSignerEvent, 0, len(addressEvents))
+	for k, v := range t.eventsPerAddress {
+		events := make([]*eventspb.ERC20MultiSigSignerEvent, 0, len(v))
 
-		t.log.Debug("serialising events", logging.String("signer", v), logging.Int("n", len(addressEvents)))
-		for _, v := range addressEvents {
+		t.log.Debug("serialising events", logging.String("signer", k), logging.Int("n", len(v)))
+		for _, v := range v {
 			events = append(events, v.IntoProto())
 		}
 
-		out.EventsPerAddress = append(
-			out.EventsPerAddress,
+		evts = append(
+			evts,
 			&snapshotpb.SignerEventsPerAddress{
-				Address: v,
+				Address: k,
 				Events:  events,
 			},
 		)
 	}
+	sort.SliceStable(evts, func(i, j int) bool { return evts[i].Address < evts[j].Address })
+	out.EventsPerAddress = evts
 
 	// finally do the current threshold
 	if t.threshold != nil {

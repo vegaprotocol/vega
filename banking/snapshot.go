@@ -10,9 +10,9 @@ import (
 	checkpoint "code.vegaprotocol.io/protos/vega/checkpoint/v1"
 	"code.vegaprotocol.io/vega/assets/common"
 	"code.vegaprotocol.io/vega/libs/crypto"
+	"code.vegaprotocol.io/vega/libs/proto"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
-	"github.com/golang/protobuf/proto"
 )
 
 var (
@@ -120,6 +120,8 @@ func (e *Engine) serialiseWithdrawals() ([]byte, error) {
 
 func (e *Engine) serialiseSeen() ([]byte, error) {
 	seen := make([]*types.TxRef, 0, len(e.seen))
+
+	e.log.Info("serialising seen", logging.Int("n", len(e.seen)))
 	for v := range e.seen {
 		seen = append(seen, &types.TxRef{Asset: string(v.asset), BlockNr: v.blockNumber, Hash: v.hash, LogIndex: v.logIndex})
 	}
@@ -276,6 +278,7 @@ func (e *Engine) restoreWithdrawals(ctx context.Context, withdrawals *types.Bank
 }
 
 func (e *Engine) restoreSeen(ctx context.Context, seen *types.BankingSeen) error {
+	e.log.Info("restoring seen", logging.Int("n", len(seen.Refs)))
 	for _, s := range seen.Refs {
 		e.seen[txRef{
 			asset:       common.AssetClass(s.Asset),

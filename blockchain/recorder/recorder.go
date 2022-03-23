@@ -9,7 +9,7 @@ import (
 
 	tmreplay "code.vegaprotocol.io/protos/vega/tm"
 
-	"github.com/golang/protobuf/proto"
+	"code.vegaprotocol.io/vega/libs/proto"
 	"github.com/spf13/afero"
 	"github.com/tendermint/tendermint/abci/types"
 )
