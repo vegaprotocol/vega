@@ -12,7 +12,7 @@
 - [](https://github.com/vegaprotocol/data-node/pull/xxx) -
 
 ### 🐛 Fixes
-- [](https://github.com/vegaprotocol/data-node/pull/xxx) -
+- [451](https://github.com/vegaprotocol/data-node/issues/451) - Correct conversion of pending validator status
 
 
 ## 0.49.3
