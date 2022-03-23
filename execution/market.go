@@ -745,6 +745,16 @@ func (m *Market) closeMarket(ctx context.Context, t time.Time) error {
 	m.mkt.State = types.MarketStateSettled
 	m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
 
+	// remove all order from the book
+	// and send events with the stopped status
+	orders := append(m.matching.Settled(), m.peggedOrders.Settled()...)
+	orderEvents := make([]events.Event, 0, len(orders))
+	for _, v := range orders {
+		orderEvents = append(orderEvents, events.NewOrderEvent(ctx, v))
+	}
+
+	m.broker.SendBatch(orderEvents)
+
 	m.stateChanged = true
 	return nil
 }
