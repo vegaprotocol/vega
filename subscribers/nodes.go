@@ -75,13 +75,16 @@ func (ns *NodesSub) loop(ctx context.Context) {
 }
 
 func validatorStatusToProto(vStatus string) vegapb.ValidatorNodeStatus {
-	status := vegapb.ValidatorNodeStatus_VALIDATOR_NODE_STATUS_UNSPECIFIED
-	if vStatus == "tendermint" {
-		status = vegapb.ValidatorNodeStatus_VALIDATOR_NODE_STATUS_TENDERMINT
-	} else if vStatus == "ersatz" {
-		status = vegapb.ValidatorNodeStatus_VALIDATOR_NODE_STATUS_ERSATZ
+	switch vStatus {
+	case "tendermint":
+		return vegapb.ValidatorNodeStatus_VALIDATOR_NODE_STATUS_TENDERMINT
+	case "ersatz":
+		return vegapb.ValidatorNodeStatus_VALIDATOR_NODE_STATUS_ERSATZ
+	case "pending":
+		return vegapb.ValidatorNodeStatus_VALIDATOR_NODE_STATUS_PENDING
+	default:
+		return vegapb.ValidatorNodeStatus_VALIDATOR_NODE_STATUS_UNSPECIFIED
 	}
-	return status
 }
 
 func (ns *NodesSub) Push(evts ...events.Event) {
