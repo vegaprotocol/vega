@@ -20,7 +20,7 @@ Once you have successfully installed `V E G A` with `tendermint` these are the s
     ```bash
     DEBUGVEGA=yes make build
     ```
-    If you're on a Mac `make build` will fail. This is because Mac OS isn't updating `bash` beyond version 3.x (something to do with GPL). The easiest solution is to install a recent `bash` e.g. with `https://brew.sh/` and then either run the above in the new `bash` instance or add your new bash to `/etc/shells` and then do `chsh` to change your default shell. 
+    If you're on a Mac `make build` will fail. This is because Mac OS isn't updating `bash` beyond version 3.x (something to do with GPL). The easiest solution is to install a recent `bash` e.g. with `https://brew.sh/` and then either run the above in the new `bash` instance or add your new bash to `/etc/shells` and then do `chsh` to change your default shell.
 
 - Use "Command Palette" to run `Debug: Open launch.json`. If you didn't already have a `launch.json` file, this will create one with the below default configuration which can be used to debug the current package. Enter the following into `launch.json` (which will be by default created inside `vega/.vscode/`):
 
@@ -99,11 +99,11 @@ Once you have successfully installed `V E G A` with `tendermint` these are the s
 - Stick a breakpoint somewhere in the code that you *know* will be triggered by your integration test (this clearly has to be in a `.go` file, not `.feature`).
 
 
-- Launch the feature test you care about (in the example below it's `2668-price-monitoring.feature`) 
+- Launch the feature test you care about (in the example below it's `2668-price-monitoring.feature`)
     ```bash
     dlv exec ./integration.test  --headless --listen=:2345 --log --api-version=2    -- -godog.format=pretty --  $(pwd)/integration/features/2668-price-monitoring.feature
     ```
-    The `godog` test harness is now running inside `dlv` and it has launched the integration test you chose. 
+    The `godog` test harness is now running inside `dlv` and it has launched the integration test you chose.
 
 - Finally in `VSCode` open the Debug panel and run the `Debug Test`.
 
@@ -115,7 +115,7 @@ Prerequisites: Vim version >= 8.0 and the [vim-go](https://github.com/fatih/vim-
 
 ### Build a debug binary for delve
 
-A debug binary can be built using the `go test -c` command, which works in the same way `go build` would. Some compiler optimisations, however, can mess up the output when trying to print certain variables (e.g. slices being passed appearing empty, or cotaining seemingly garbage values).
+A debug binary can be built using the `go test -c` command, which works in the same way `go build` would. Some compiler optimisations, however, can mess up the output when trying to print certain variables (e.g. slices being passed appearing empty, or containing seemingly garbage values).
 To disable any and all compiler optimisations we might encounter, simply add the `gcflags="ALL=-N -l"` option.
 
 To build the vega binary for debugging, then:
@@ -138,7 +138,7 @@ As-is, you can use the compiled binary to step through the code in dlv. Setting 
 
 ```bash
 dlv exec --headless --api-version=2 --listen 127.0.0.1:9876 ./integration.test
-````
+```
 
 The address and port to listen to is arbitrary, but in this particular example, we'll use 9876. In this example we're starting a debug session on the integration test binary. To debug `vega.test`, just replace `integration.test` with `vega.test` (obviously).
 
