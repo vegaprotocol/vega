@@ -40,7 +40,7 @@ Feature: Tests confirming probability of trading acceptance criteria
       | party2 | ETH/DEC19 | sell | 1      | 12000000 | 0                | TYPE_LIMIT | TIF_GFA | party2-2 |
     Then the opening auction period ends for market "ETH/DEC19"
     And the mark price should be "12000000" for the market "ETH/DEC19"
-   
+
     And the parties submit the following liquidity provision:
       | id  | party      | market id | commitment amount | fee | side | pegged reference | proportion | offset | reference | lp type    |
       | lp1 | party-lp-1 | ETH/DEC19 | 1000000000        | 0.1 | buy  | BID              | 1          | 1000   | lp-1-ref  | submission |
@@ -79,15 +79,15 @@ Feature: Tests confirming probability of trading acceptance criteria
        | buy  | 11999200 |      925987659 |
        | buy  | 11999100 |      925995376 |
        | buy  | 11999000 |      926003093 |
-       | sell | 12000100 |      1         |    
-       | sell | 12000300 |      31        | 
-       | sell | 12000400 |      47        | 
-       | sell | 12000500 |      93        | 
-       | sell | 12000600 |      925879632 | 
-       | sell | 12000700 |      925871917 | 
-       | sell | 12000800 |      925864202 | 
-       | sell | 12000900 |      925856487 | 
-       | sell | 12001000 |      925848772 | 
+       | sell | 12000100 |      1         |
+       | sell | 12000300 |      31        |
+       | sell | 12000400 |      47        |
+       | sell | 12000500 |      93        |
+       | sell | 12000600 |      925879632 |
+       | sell | 12000700 |      925871917 |
+       | sell | 12000800 |      925864202 |
+       | sell | 12000900 |      925856487 |
+       | sell | 12001000 |      925848772 |
 
  Scenario:  LP pegged volume is pushed inside price monitoring bounds(0034-PROB-002);
 
@@ -101,8 +101,8 @@ Feature: Tests confirming probability of trading acceptance criteria
       | horizon | probability | auction extension |
       | 43200   | 0.982       | 300               |
     And the markets:
-      | id         | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | oracle config          | maturity date        |
-      | ETH2/MAR22 | ETH2       | ETH2  | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-2 | default-eth-for-future | 2022-03-31T23:59:59Z |
+      | id         | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | oracle config          |
+      | ETH2/MAR22 | ETH2       | ETH2  | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-2 | default-eth-for-future |
     And the parties deposit on asset's general account the following amount:
       | party  | asset | amount    |
       | lp1    | ETH2  | 100000000 |
@@ -233,8 +233,8 @@ Feature: Tests confirming probability of trading acceptance criteria
       | horizon | probability | auction extension |
       | 43200   | 0.999999999999       | 300               |
     And the markets:
-      | id         | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | oracle config          | maturity date        |
-      | ETH2/MAR22 | ETH2       | ETH2  | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-2 | default-eth-for-future | 2022-03-31T23:59:59Z |
+      | id         | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | oracle config          |
+      | ETH2/MAR22 | ETH2       | ETH2  | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-2 | default-eth-for-future |
     And the parties deposit on asset's general account the following amount:
       | party  | asset | amount    |
       | lp1    | ETH2  | 100000000000000 |
@@ -285,8 +285,8 @@ Scenario:  LP Volume being pushed by limit of Probability of Trading (capped at 
       | 0.004     | 0.001              |
 
     And the markets:
-      | id         | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | oracle config          | maturity date        |
-      | ETH2/MAR22 | ETH2       | ETH2  | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | default-none       | default-eth-for-future | 2022-03-31T23:59:59Z |
+      | id         | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | oracle config          |
+      | ETH2/MAR22 | ETH2       | ETH2  | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | default-none       | default-eth-for-future |
     And the parties deposit on asset's general account the following amount:
       | party  | asset | amount    |
       | lp1    | ETH2  | 1000000000000000000 |
@@ -330,8 +330,8 @@ Scenario:  LP Volume being pushed by limit of Probability of Trading (capped at 
       | 0.004     | 0.001              |
 
     And the markets:
-      | id         | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | oracle config          | maturity date        |
-      | ETH2/MAR22 | ETH2       | ETH2  | default-simple-risk-model  | default-margin-calculator | 1                | fees-config-1 | default-none       | default-eth-for-future | 2022-03-31T23:59:59Z |
+      | id         | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | oracle config          |
+      | ETH2/MAR22 | ETH2       | ETH2  | default-simple-risk-model  | default-margin-calculator | 1                | fees-config-1 | default-none       | default-eth-for-future |
     And the parties deposit on asset's general account the following amount:
       | party  | asset | amount    |
       | lp1    | ETH2  | 1000000000000000000 |
@@ -369,7 +369,7 @@ Scenario:  LP Volume being pushed by limit of Probability of Trading (capped at 
 
     And the order book should have the following volumes for market "ETH2/MAR22":
       | side | price | volume  |
-      | buy  | 95   | 221607   | 
+      | buy  | 95   | 221607   |
       #50000000*(20/95)/0.5/95
       | buy  | 90   | 350878   |
       #50000000*(30/95)/0.5/90
