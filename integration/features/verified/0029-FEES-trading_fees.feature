@@ -300,10 +300,10 @@ Feature: Fees calculations
       | from   | to   | from account                | to account           | market id | amount | asset |
       | market | aux1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/DEC21 | 5      | ETH   |
 
-  Scenario: S004, Testing fees in continuous trading with two trades and one liquidity providers with 0s liquidity fee distribution timestep (0029-FEES-004)
+    # Scenario: S004, Testing fees in continuous trading with two trades and one liquidity providers with 0s liquidity fee distribution timestep (0029-FEES-004)
     When the following network parameters are set:
       | name                                                | value |
-      | market.liquidity.providers.fee.distributionTimeStep | 0s    |
+      | market.liquidity.providers.fee.distributionTimeStep | 1s    |
 
     When the parties place the following orders:
       | party   | market id | side | volume | price | resulting trades | type       | tif     |
@@ -327,9 +327,8 @@ Feature: Fees calculations
       | market   | trader4 | ACCOUNT_TYPE_FEES_MAKER | ACCOUNT_TYPE_GENERAL             | ETH/DEC21 | 6      | ETH   |
 
     And the accumulated liquidity fees should be "2" for the market "ETH/DEC21"
-
-    When the network moves ahead "1" blocks
-
+    When the network moves ahead "11" blocks
+    
     And the following transfers should happen:
       | from   | to   | from account                | to account           | market id | amount | asset |
       | market | aux1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/DEC21 | 2      | ETH   |
