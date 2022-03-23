@@ -732,6 +732,7 @@ func (m *Market) closeMarket(ctx context.Context, t time.Time) error {
 		parties = append(parties, k)
 	}
 
+	sort.Strings(parties)
 	clearMarketTransfers, err := m.collateral.ClearMarket(ctx, m.GetID(), asset, parties)
 	if err != nil {
 		m.log.Error("Clear market error",
