@@ -12,7 +12,7 @@
 - [4814](https://github.com/vegaprotocol/vega/issues/4814) - Review fees tests
 
 ### 🐛 Fixes
-- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+- [5064](https://github.com/vegaprotocol/vega/issues/5064) - Send order event on settlement
 
 
 ## 0.49.7
