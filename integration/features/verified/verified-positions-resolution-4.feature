@@ -9,7 +9,7 @@ Feature: Position resolution case 4
       | name                           | value |
       | market.auction.minimumDuration | 1     |
 
-  Scenario: close out when there is enough orders on the orderbook to cover the position 
+  Scenario: close out when there is enough orders on the orderbook to cover the position (0008-TRAD-006, 0008-TRAD-007))
 # setup accounts
     Given the parties deposit on asset's general account the following amount:
       | party            | asset | amount        |
