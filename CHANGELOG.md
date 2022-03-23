@@ -25,6 +25,7 @@
 - [5019](https://github.com/vegaprotocol/vega/issues/5019) - Label Price Monitoring tests
 - [5022](https://github.com/vegaprotocol/vega/issues/5022) - CI: Run approbation for main/master/develop branches only
 - [5017](https://github.com/vegaprotocol/vega/issues/5017) - Added access functions to `PositionState` type
+- [5049](https://github.com/vegaprotocol/vega/issues/5049) - Liquidity Provision test coverage for 0034 spec
 
 ### 🐛 Fixes
 - [5025](https://github.com/vegaprotocol/vega/issues/5025) - Witness snapshot breaking consensus
