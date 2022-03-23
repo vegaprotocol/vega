@@ -132,7 +132,7 @@ type Party struct {
 	// Positions []Position
 	// Margins []MarginLevels
 	// Withdrawals []WithDrawal
-	// Deposits []Deposit
+	Deposits []Deposit
 	// Delegations []Delegation
 	// Stake PartyStake
 	// Rewards []Reward
@@ -254,4 +254,15 @@ func (s TimeString) Equal(other TimeString) bool {
 		_ = "foo"
 	}
 	return t1t == t2t
+}
+
+type Deposit struct {
+	ID                string
+	Party             Party
+	Amount            string
+	Asset             Asset
+	Status            string
+	CreatedTimestamp  string
+	CreditedTimestamp string
+	TxHash            string
 }

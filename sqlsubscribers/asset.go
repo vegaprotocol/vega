@@ -53,10 +53,6 @@ func (as *Asset) Push(evt events.Event) {
 }
 
 func (as *Asset) consume(ae AssetEvent) {
-	as.log.Debug("AssetEvent: ",
-		logging.Int64("block", ae.BlockNr()),
-		logging.String("assetId", ae.Asset().Id))
-
 	err := as.addAsset(ae.Asset(), as.vegaTime)
 	if err != nil {
 		as.log.Error("adding asset", logging.Error(err))

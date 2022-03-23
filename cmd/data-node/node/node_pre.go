@@ -130,8 +130,16 @@ func (l *NodeCommand) setupSQLSubscribers() {
 	l.networkLimitsSubSQL = sqlsubscribers.NewNetworkLimitSub(l.ctx, l.networkLimitsStoreSQL, l.Log)
 	l.marketDataSubSQL = sqlsubscribers.NewMarketData(l.marketDataStoreSQL, l.Log, l.conf.SQLStore.Timeout.Duration)
 	l.tradesSubSQL = sqlsubscribers.NewTradesSubscriber(l.tradeStoreSQL, l.Log)
+	l.rewardsSubSQL = sqlsubscribers.NewReward(l.rewardStoreSQL, l.Log)
 	l.marketCreatedSubSQL = sqlsubscribers.NewMarketCreated(l.marketsStoreSQL, l.Log)
 	l.marketUpdatedSubSQL = sqlsubscribers.NewMarketUpdated(l.marketsStoreSQL, l.Log)
+	l.delegationsSubSQL = sqlsubscribers.NewDelegation(l.delegationStoreSQL, l.Log)
+	l.epochSubSQL = sqlsubscribers.NewEpoch(l.epochStoreSQL, l.Log)
+	l.depositSubSQL = sqlsubscribers.NewDeposit(l.depositStoreSQL, l.Log)
+	l.proposalsSubSQL = sqlsubscribers.NewProposal(l.proposalStoreSQL, l.Log)
+	l.votesSubSQL = sqlsubscribers.NewVote(l.voteStoreSQL, l.Log)
+	l.marginLevelsSubSQL = sqlsubscribers.NewMarginLevels(l.marginLevelsStoreSQL, l.Log)
+	l.riskFactorSubSQL = sqlsubscribers.NewRiskFactor(l.riskFactorStoreSQL, l.Log)
 }
 
 func (l *NodeCommand) setupStorages() error {
@@ -167,7 +175,16 @@ func (l *NodeCommand) setupStorages() error {
 		l.networkLimitsStoreSQL = sqlstore.NewNetworkLimits(sqlStore)
 		l.marketDataStoreSQL = sqlstore.NewMarketData(sqlStore)
 		l.tradeStoreSQL = sqlstore.NewTrades(sqlStore)
+		l.rewardStoreSQL = sqlstore.NewRewards(sqlStore)
 		l.marketsStoreSQL = sqlstore.NewMarkets(sqlStore)
+		l.delegationStoreSQL = sqlstore.NewDelegations(sqlStore)
+		l.epochStoreSQL = sqlstore.NewEpochs(sqlStore)
+		l.depositStoreSQL = sqlstore.NewDeposits(sqlStore)
+		l.proposalStoreSQL = sqlstore.NewProposals(sqlStore)
+		l.voteStoreSQL = sqlstore.NewVotes(sqlStore)
+		l.marginLevelsStoreSQL = sqlstore.NewMarginLevels(sqlStore)
+		l.riskFactorStoreSQL = sqlstore.NewRiskFactors(sqlStore)
+
 		l.sqlStore = sqlStore
 	}
 
@@ -244,8 +261,18 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 			l.networkLimitsSubSQL,
 			l.marketDataSubSQL,
 			l.tradesSubSQL,
+			l.rewardsSubSQL,
+			l.delegationsSubSQL,
 			l.marketCreatedSubSQL,
-			l.marketUpdatedSubSQL)
+			l.marketUpdatedSubSQL,
+			l.epochSubSQL,
+			l.marketUpdatedSubSQL,
+			l.depositSubSQL,
+			l.proposalsSubSQL,
+			l.votesSubSQL,
+			l.depositSubSQL,
+			l.marginLevelsSubSQL,
+			l.riskFactorSubSQL)
 	}
 
 	l.broker, err = broker.New(l.ctx, l.Log, l.conf.Broker, l.chainInfoStore, eventSource)

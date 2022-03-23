@@ -72,8 +72,6 @@ func (t *TransferResponse) Push(evt events.Event) {
 }
 
 func (t *TransferResponse) consume(e TransferResponseEvent) {
-	t.log.Debug("TransferResponseEvent: ", logging.Int64("block", e.BlockNr()))
-
 	for _, tr := range e.TransferResponses() {
 		for _, vle := range tr.Transfers {
 			if err := t.addLedgerEntry(vle, t.vegaTime); err != nil {

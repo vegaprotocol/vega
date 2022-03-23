@@ -104,6 +104,8 @@ var (
 	ErrMissingDepositID = errors.New("missing deposit ID")
 	// Network Limits...
 	ErrGetNetworkLimits = errors.New("failed to get network limits")
+	// Rewards
+	ErrGetRewards = errors.New("failed to get rewards")
 )
 
 // errorMap contains a mapping between errors and Vega numeric error codes.

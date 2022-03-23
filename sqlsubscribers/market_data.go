@@ -53,11 +53,6 @@ func NewMarketData(store MarketDataStore, log *logging.Logger, dbTimeout time.Du
 }
 
 func (md *MarketData) consume(event MarketDataEvent) {
-	md.log.Debug("Received MarketData Event",
-		logging.Int64("block", event.BlockNr()),
-		logging.String("market", event.MarketData().Market),
-	)
-
 	var record *entities.MarketData
 	var err error
 	mdProto := event.MarketData()

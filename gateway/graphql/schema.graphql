@@ -1347,6 +1347,9 @@ type Market {
 
   "timestamps for state changes in the market"
   marketTimestamps: MarketTimestamps!
+
+  "risk factors for the market"
+  riskFactors: RiskFactor
 }
 
 """
@@ -2344,6 +2347,37 @@ TODO: complete the type
 """
 type UpdateMarket {
   marketId: ID!
+  updateMarketConfiguration: UpdateMarketConfiguration!
+}
+
+type UpdateMarketConfiguration {
+  instrument: UpdateInstrumentConfiguration!
+  metadata: [String]
+  priceMonitoringParameters: PriceMonitoringParameters!
+  liquidityMonitoringParameters: LiquidityMonitoringParameters!
+  riskParameters: UpdateMarketRiskParameters!
+}
+
+type UpdateInstrumentConfiguration {
+  code: String!
+  product: UpdateFutureProduct!
+}
+
+type UpdateFutureProduct {
+  quoteName: String!
+  oracleSpecForSettlementPrice: OracleSpecConfiguration!
+  oracleSpecForTradingTermination: OracleSpecConfiguration!
+  oracleSpecBinding: OracleSpecToFutureBinding!
+}
+
+union UpdateMarketRiskParameters = UpdateMarketSimpleRiskModel | UpdateMarketLogNormalRiskModel
+
+type UpdateMarketSimpleRiskModel {
+  simple: SimpleRiskModelParams
+}
+
+type UpdateMarketLogNormalRiskModel {
+  logNormal: LogNormalRiskModel
 }
 
 "A new asset proposal change"

@@ -40,6 +40,10 @@ type TransferKind interface {
 	IsTransferKind()
 }
 
+type UpdateMarketRiskParameters interface {
+	IsUpdateMarketRiskParameters()
+}
+
 type WithdrawalDetails interface {
 	IsWithdrawalDetails()
 }
@@ -381,6 +385,11 @@ type TransferResponses struct {
 }
 
 func (TransferResponses) IsEvent() {}
+
+type UpdateInstrumentConfiguration struct {
+	Code    string                    `json:"code"`
+	Product *vega.UpdateFutureProduct `json:"product"`
+}
 
 type AuctionTrigger string
 

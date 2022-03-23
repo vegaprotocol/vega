@@ -50,9 +50,6 @@ func (os *Order) Push(evt events.Event) {
 
 func (os *Order) consume(oe OrderEvent) {
 	protoOrder := oe.Order()
-	os.log.Debug("OrderEvent: ",
-		logging.Int64("block", oe.BlockNr()),
-		logging.String("orderId", protoOrder.Id))
 
 	order, err := entities.OrderFromProto(protoOrder)
 	if err != nil {

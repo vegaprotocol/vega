@@ -50,10 +50,6 @@ func (t *Time) Push(evt events.Event) {
 }
 
 func (t *Time) consume(te TimeUpdateEvent) {
-	t.log.Debug("TimeUpdate: ",
-		logging.Int64("block", te.BlockNr()),
-		logging.Time("time", te.Time()))
-
 	hash, err := hex.DecodeString(te.TraceID())
 	if err != nil {
 		t.log.Panic("Trace ID is not valid hex string",

@@ -46,11 +46,6 @@ func (m *MarketCreated) Push(evt events.Event) {
 }
 
 func (m *MarketCreated) consume(event MarketCreatedEvent) {
-	m.log.Debug("Received MarketCreatedEvent",
-		logging.Int64("block", event.BlockNr()),
-		logging.String("market-id", event.Market().Id),
-	)
-
 	market := event.Market()
 	record, err := entities.NewMarketFromProto(&market, m.vegaTime)
 

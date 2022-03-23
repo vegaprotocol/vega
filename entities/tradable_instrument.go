@@ -58,7 +58,7 @@ func (ti TradableInstrument) ToProto() *vega.TradableInstrument {
 	}
 }
 
-func (ti *TradableInstrument) UnmarshalJson(b []byte) error {
+func (ti *TradableInstrument) UnmarshalJSON(b []byte) error {
 	var objMap map[string]*json.RawMessage
 	if err := json.Unmarshal(b, &objMap); err != nil {
 		return err
@@ -67,7 +67,7 @@ func (ti *TradableInstrument) UnmarshalJson(b []byte) error {
 	riskModelRaw := *objMap["riskModel"]
 	instrument := &Instrument{}
 
-	if err := instrument.UnmarshalJson(*objMap["instrument"]); err != nil {
+	if err := instrument.UnmarshalJSON(*objMap["instrument"]); err != nil {
 		return err
 	}
 
@@ -93,15 +93,6 @@ func (ti *TradableInstrument) UnmarshalJson(b []byte) error {
 	return errors.New("tradable instrument contains invalid risk model")
 }
 
-func (ti *TradableInstrument) Scan(value interface{}) error {
-	bs, ok := value.([]byte)
-	if !ok {
-		return errors.New("received unexpected data for TradableInstrument")
-	}
-
-	return ti.UnmarshalJson(bs)
-}
-
 type Instrument struct {
 	Id       string             `json:"id"`
 	Code     string             `json:"code"`
@@ -110,7 +101,7 @@ type Instrument struct {
 	Product  Product            `json:"product"`
 }
 
-func (i *Instrument) UnmarshalJson(b []byte) error {
+func (i *Instrument) UnmarshalJSON(b []byte) error {
 	var objMap map[string]*json.RawMessage
 	if err := json.Unmarshal(b, &objMap); err != nil {
 		return err

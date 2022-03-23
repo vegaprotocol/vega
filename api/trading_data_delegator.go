@@ -4,23 +4,34 @@ import (
 	"context"
 	"encoding/hex"
 	"errors"
+	"strconv"
 
 	"code.vegaprotocol.io/data-node/entities"
 	"code.vegaprotocol.io/data-node/metrics"
+	"code.vegaprotocol.io/data-node/risk"
 	"code.vegaprotocol.io/data-node/sqlstore"
 	protoapi "code.vegaprotocol.io/protos/data-node/api/v1"
 	"code.vegaprotocol.io/protos/vega"
+	"code.vegaprotocol.io/vega/types/num"
 	"google.golang.org/grpc/codes"
 )
 
 type tradingDataDelegator struct {
 	*tradingDataService
-	orderStore      *sqlstore.Orders
-	tradeStore      *sqlstore.Trades
-	assetStore      *sqlstore.Assets
-	accountStore    *sqlstore.Accounts
-	marketDataStore *sqlstore.MarketData
-	marketsStore    *sqlstore.Markets
+	orderStore        *sqlstore.Orders
+	tradeStore        *sqlstore.Trades
+	assetStore        *sqlstore.Assets
+	accountStore      *sqlstore.Accounts
+	marketDataStore   *sqlstore.MarketData
+	rewardStore       *sqlstore.Rewards
+	marketsStore      *sqlstore.Markets
+	delegationStore   *sqlstore.Delegations
+	epochStore        *sqlstore.Epochs
+	depositsStore     *sqlstore.Deposits
+	proposalsStore    *sqlstore.Proposals
+	voteStore         *sqlstore.Votes
+	riskFactorStore   *sqlstore.RiskFactors
+	marginLevelsStore *sqlstore.MarginLevels
 }
 
 var defaultEntityPagination = entities.Pagination{
@@ -29,6 +40,396 @@ var defaultEntityPagination = entities.Pagination{
 	Descending: true,
 }
 
+/****************************** Governance **************************************/
+
+func (t *tradingDataDelegator) GetProposals(ctx context.Context, req *protoapi.GetProposalsRequest,
+) (*protoapi.GetProposalsResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("GetProposals SQL")()
+
+	inState := proposalState(req.SelectInState)
+
+	proposals, err := t.proposalsStore.Get(ctx, inState, nil, nil)
+	if err != nil {
+		return nil, apiError(codes.Internal, err)
+	}
+
+	governanceData, err := t.proposalListToGovernanceData(ctx, proposals)
+	if err != nil {
+		return nil, apiError(codes.Internal, err)
+	}
+
+	return &protoapi.GetProposalsResponse{Data: governanceData}, nil
+}
+
+func (t *tradingDataDelegator) GetProposalsByParty(ctx context.Context,
+	req *protoapi.GetProposalsByPartyRequest,
+) (*protoapi.GetProposalsByPartyResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("GetProposalsByParty SQL")()
+
+	inState := proposalState(req.SelectInState)
+
+	proposals, err := t.proposalsStore.Get(ctx, inState, &req.PartyId, nil)
+	if err != nil {
+		return nil, apiError(codes.Internal, err)
+	}
+
+	governanceData, err := t.proposalListToGovernanceData(ctx, proposals)
+	if err != nil {
+		return nil, apiError(codes.Internal, err)
+	}
+
+	return &protoapi.GetProposalsByPartyResponse{
+		Data: governanceData,
+	}, nil
+}
+
+func (t *tradingDataDelegator) GetProposalByID(ctx context.Context,
+	req *protoapi.GetProposalByIDRequest,
+) (*protoapi.GetProposalByIDResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("GetProposalByID SQL")()
+
+	proposal, err := t.proposalsStore.GetByID(ctx, req.ProposalId)
+	if err != nil {
+		return nil, apiError(codes.Internal, ErrNotMapped, err)
+	}
+
+	gd, err := t.proposalToGovernanceData(ctx, proposal)
+	if err != nil {
+		return nil, apiError(codes.Internal, ErrNotMapped, err)
+	}
+
+	return &protoapi.GetProposalByIDResponse{Data: gd}, nil
+}
+
+func (t *tradingDataDelegator) GetProposalByReference(ctx context.Context,
+	req *protoapi.GetProposalByReferenceRequest,
+) (*protoapi.GetProposalByReferenceResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("GetProposalByID SQL")()
+
+	proposal, err := t.proposalsStore.GetByReference(ctx, req.Reference)
+	if err != nil {
+		return nil, apiError(codes.Internal, ErrNotMapped, err)
+	}
+
+	gd, err := t.proposalToGovernanceData(ctx, proposal)
+	if err != nil {
+		return nil, apiError(codes.Internal, ErrNotMapped, err)
+	}
+
+	return &protoapi.GetProposalByReferenceResponse{Data: gd}, nil
+}
+
+func (t *tradingDataDelegator) GetVotesByParty(ctx context.Context,
+	req *protoapi.GetVotesByPartyRequest,
+) (*protoapi.GetVotesByPartyResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("GetVotesByParty SQL")()
+
+	votes, err := t.voteStore.GetByParty(ctx, req.PartyId)
+	if err != nil {
+		return nil, apiError(codes.Internal, err)
+	}
+
+	return &protoapi.GetVotesByPartyResponse{Votes: voteListToProto(votes)}, nil
+}
+
+func (t *tradingDataDelegator) GetNewMarketProposals(ctx context.Context,
+	req *protoapi.GetNewMarketProposalsRequest,
+) (*protoapi.GetNewMarketProposalsResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("GetNewMarketProposals SQL")()
+
+	inState := proposalState(req.SelectInState)
+	proposals, err := t.proposalsStore.Get(ctx, inState, nil, &entities.ProposalTypeNewMarket)
+	if err != nil {
+		return nil, apiError(codes.Internal, err)
+	}
+	governanceData, err := t.proposalListToGovernanceData(ctx, proposals)
+	if err != nil {
+		return nil, apiError(codes.Internal, err)
+	}
+	return &protoapi.GetNewMarketProposalsResponse{Data: governanceData}, nil
+}
+
+func (t *tradingDataDelegator) GetUpdateMarketProposals(ctx context.Context,
+	req *protoapi.GetUpdateMarketProposalsRequest,
+) (*protoapi.GetUpdateMarketProposalsResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("GetUpdateMarketProposals SQL")()
+
+	inState := proposalState(req.SelectInState)
+	proposals, err := t.proposalsStore.Get(ctx, inState, nil, &entities.ProposalTypeUpdateMarket)
+	if err != nil {
+		return nil, apiError(codes.Internal, err)
+	}
+	governanceData, err := t.proposalListToGovernanceData(ctx, proposals)
+	if err != nil {
+		return nil, apiError(codes.Internal, err)
+	}
+	return &protoapi.GetUpdateMarketProposalsResponse{Data: governanceData}, nil
+}
+
+func (t *tradingDataDelegator) GetNetworkParametersProposals(ctx context.Context,
+	req *protoapi.GetNetworkParametersProposalsRequest,
+) (*protoapi.GetNetworkParametersProposalsResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("GetNetworkParametersProposals SQL")()
+
+	inState := proposalState(req.SelectInState)
+
+	proposals, err := t.proposalsStore.Get(ctx, inState, nil, &entities.ProposalTypeUpdateNetworkParameter)
+	if err != nil {
+		return nil, apiError(codes.Internal, err)
+	}
+
+	governanceData, err := t.proposalListToGovernanceData(ctx, proposals)
+	if err != nil {
+		return nil, apiError(codes.Internal, err)
+	}
+
+	return &protoapi.GetNetworkParametersProposalsResponse{Data: governanceData}, nil
+}
+
+func (t *tradingDataDelegator) GetNewAssetProposals(ctx context.Context,
+	req *protoapi.GetNewAssetProposalsRequest,
+) (*protoapi.GetNewAssetProposalsResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("GetNewAssetProposals SQL")()
+
+	inState := proposalState(req.SelectInState)
+
+	proposals, err := t.proposalsStore.Get(ctx, inState, nil, &entities.ProposalTypeNewAsset)
+	if err != nil {
+		return nil, apiError(codes.Internal, err)
+	}
+
+	governanceData, err := t.proposalListToGovernanceData(ctx, proposals)
+	if err != nil {
+		return nil, apiError(codes.Internal, err)
+	}
+
+	return &protoapi.GetNewAssetProposalsResponse{Data: governanceData}, nil
+}
+
+func (t *tradingDataDelegator) GetNewFreeformProposals(ctx context.Context,
+	req *protoapi.GetNewFreeformProposalsRequest,
+) (*protoapi.GetNewFreeformProposalsResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("GetNewFreeformProposals SQL")()
+
+	inState := proposalState(req.SelectInState)
+
+	proposals, err := t.proposalsStore.Get(ctx, inState, nil, &entities.ProposalTypeNewFreeform)
+	if err != nil {
+		return nil, apiError(codes.Internal, err)
+	}
+
+	governanceData, err := t.proposalListToGovernanceData(ctx, proposals)
+	if err != nil {
+		return nil, apiError(codes.Internal, err)
+	}
+
+	return &protoapi.GetNewFreeformProposalsResponse{Data: governanceData}, nil
+}
+
+func proposalState(protoState *protoapi.OptionalProposalState) *entities.ProposalState {
+	var s *entities.ProposalState
+	if protoState != nil {
+		state := entities.ProposalState(protoState.Value)
+		s = &state
+	}
+	return s
+}
+
+func (t *tradingDataDelegator) proposalListToGovernanceData(ctx context.Context, proposals []entities.Proposal) ([]*vega.GovernanceData, error) {
+	governanceData := make([]*vega.GovernanceData, len(proposals))
+	for i, proposal := range proposals {
+		gd, err := t.proposalToGovernanceData(ctx, proposal)
+		if err != nil {
+			return nil, err
+		}
+		governanceData[i] = gd
+	}
+	return governanceData, nil
+}
+
+func (t *tradingDataDelegator) proposalToGovernanceData(ctx context.Context, proposal entities.Proposal) (*vega.GovernanceData, error) {
+	yesVotes, err := t.voteStore.GetYesVotesForProposal(ctx, proposal.HexID())
+	if err != nil {
+		return nil, err
+	}
+	protoYesVotes := voteListToProto(yesVotes)
+
+	noVotes, err := t.voteStore.GetNoVotesForProposal(ctx, proposal.HexID())
+	if err != nil {
+		return nil, err
+	}
+	protoNoVotes := voteListToProto(noVotes)
+
+	gd := vega.GovernanceData{
+		Proposal: proposal.ToProto(),
+		Yes:      protoYesVotes,
+		No:       protoNoVotes,
+	}
+	return &gd, nil
+}
+func voteListToProto(votes []entities.Vote) []*vega.Vote {
+	protoVotes := make([]*vega.Vote, len(votes))
+	for j, vote := range votes {
+		protoVotes[j] = vote.ToProto()
+	}
+	return protoVotes
+}
+
+/****************************** Epochs **************************************/
+
+func (t *tradingDataDelegator) GetEpoch(ctx context.Context, req *protoapi.GetEpochRequest) (*protoapi.GetEpochResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("GetEpoch SQL")()
+
+	var epoch entities.Epoch
+	var err error
+
+	if req.GetId() == 0 {
+		epoch, err = t.epochStore.GetCurrent(ctx)
+	} else {
+		epoch, err = t.epochStore.Get(ctx, int64(req.GetId()))
+	}
+
+	if err != nil {
+		return nil, apiError(codes.Internal, err)
+	}
+
+	protoEpoch := epoch.ToProto()
+
+	delegations, err := t.delegationStore.Get(ctx, nil, nil, &epoch.ID, nil)
+	if err != nil {
+		return nil, apiError(codes.Internal, err)
+	}
+
+	protoDelegations := make([]*vega.Delegation, len(delegations))
+	for i, delegation := range delegations {
+		protoDelegations[i] = delegation.ToProto()
+	}
+	protoEpoch.Delegations = protoDelegations
+
+	// TODO: Add in nodes once we've got them in the sql store too
+
+	return &protoapi.GetEpochResponse{
+		Epoch: protoEpoch,
+	}, nil
+}
+
+/****************************** Delegations **************************************/
+
+func (t *tradingDataDelegator) Delegations(ctx context.Context,
+	req *protoapi.DelegationsRequest) (*protoapi.DelegationsResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("Delegations SQL")()
+
+	var delegations []entities.Delegation
+	var err error
+
+	p := defaultPaginationV2
+	if req.Pagination != nil {
+		p = toEntityPagination(req.Pagination)
+	}
+
+	var epochID *int64
+	var partyID *string
+	var nodeID *string
+
+	if req.EpochSeq != "" {
+		epochNum, err := strconv.ParseInt(req.EpochSeq, 10, 64)
+		if err != nil {
+			return nil, apiError(codes.InvalidArgument, err)
+		}
+		epochID = &epochNum
+	}
+
+	if req.Party != "" {
+		partyID = &req.Party
+	}
+
+	if req.NodeId != "" {
+		nodeID = &req.NodeId
+	}
+
+	delegations, err = t.delegationStore.Get(ctx, partyID, nodeID, epochID, &p)
+
+	if err != nil {
+		return nil, apiError(codes.Internal, err)
+	}
+
+	protoDelegations := make([]*vega.Delegation, len(delegations))
+	for i, delegation := range delegations {
+		protoDelegations[i] = delegation.ToProto()
+	}
+
+	return &protoapi.DelegationsResponse{
+		Delegations: protoDelegations,
+	}, nil
+}
+
+/****************************** Rewards **************************************/
+
+func (t *tradingDataDelegator) GetRewards(ctx context.Context,
+	req *protoapi.GetRewardsRequest) (*protoapi.GetRewardsResponse, error) {
+
+	defer metrics.StartAPIRequestAndTimeGRPC("GetRewards-SQL")()
+	if len(req.PartyId) <= 0 {
+		return nil, apiError(codes.InvalidArgument, ErrGetRewards)
+	}
+
+	p := defaultPaginationV2
+	if req.Pagination != nil {
+		p = toEntityPagination(req.Pagination)
+	}
+
+	var rewards []entities.Reward
+	var err error
+
+	if len(req.AssetId) <= 0 {
+		rewards, err = t.rewardStore.Get(ctx, &req.PartyId, nil, &p)
+	} else {
+		rewards, err = t.rewardStore.Get(ctx, &req.PartyId, &req.AssetId, &p)
+	}
+
+	if err != nil {
+		return nil, apiError(codes.Internal, ErrGetRewards, err)
+	}
+
+	protoRewards := make([]*vega.Reward, len(rewards))
+	for i, reward := range rewards {
+		protoRewards[i] = reward.ToProto()
+	}
+
+	return &protoapi.GetRewardsResponse{Rewards: protoRewards}, nil
+}
+
+func (t *tradingDataDelegator) GetRewardSummaries(ctx context.Context,
+	req *protoapi.GetRewardSummariesRequest) (*protoapi.GetRewardSummariesResponse, error) {
+
+	defer metrics.StartAPIRequestAndTimeGRPC("GetRewardSummaries-SQL")()
+
+	if len(req.PartyId) <= 0 {
+		return nil, apiError(codes.InvalidArgument, ErrTradeServiceGetByParty)
+	}
+
+	var summaries []entities.RewardSummary
+	var err error
+
+	if len(req.AssetId) <= 0 {
+		summaries, err = t.rewardStore.GetSummaries(ctx, &req.PartyId, nil)
+	} else {
+		summaries, err = t.rewardStore.GetSummaries(ctx, &req.PartyId, &req.AssetId)
+	}
+
+	if err != nil {
+		return nil, apiError(codes.Internal, ErrGetRewards, err)
+	}
+
+	protoSummaries := make([]*vega.RewardSummary, len(summaries))
+	for i, summary := range summaries {
+		protoSummaries[i] = summary.ToProto()
+	}
+
+	return &protoapi.GetRewardSummariesResponse{Summaries: protoSummaries}, nil
+}
+
+/****************************** Trades **************************************/
 // TradesByParty provides a list of trades for the given party.
 // Pagination: Optional. If not provided, defaults are used.
 func (t *tradingDataDelegator) TradesByParty(ctx context.Context,
@@ -512,5 +913,202 @@ func (t *tradingDataDelegator) Markets(ctx context.Context, _ *protoapi.MarketsR
 
 	return &protoapi.MarketsResponse{
 		Markets: results,
+	}, nil
+}
+
+func (t *tradingDataDelegator) Deposit(ctx context.Context, req *protoapi.DepositRequest) (*protoapi.DepositResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("Deposit SQL")()
+	if len(req.Id) <= 0 {
+		return nil, ErrMissingDepositID
+	}
+	deposit, err := t.depositsStore.GetByID(ctx, req.Id)
+	if err != nil {
+		return nil, apiError(codes.NotFound, err)
+	}
+	return &protoapi.DepositResponse{
+		Deposit: deposit.ToProto(),
+	}, nil
+}
+
+func (t *tradingDataDelegator) Deposits(ctx context.Context, req *protoapi.DepositsRequest) (*protoapi.DepositsResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("Deposits SQL")()
+	if len(req.PartyId) <= 0 {
+		return nil, ErrMissingPartyID
+	}
+
+	// current API doesn't support pagination, but we will need to support it for v2
+	deposits := t.depositsStore.GetByParty(ctx, req.PartyId, false, entities.Pagination{})
+	out := make([]*vega.Deposit, 0, len(deposits))
+	for _, v := range deposits {
+		out = append(out, v.ToProto())
+	}
+	return &protoapi.DepositsResponse{
+		Deposits: out,
+	}, nil
+}
+
+func (t *tradingDataDelegator) EstimateMargin(ctx context.Context, req *protoapi.EstimateMarginRequest) (*protoapi.EstimateMarginResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("EstimateMargin SQL")()
+	if req.Order == nil {
+		return nil, apiError(codes.InvalidArgument, errors.New("missing order"))
+	}
+
+	margin, err := t.estimateMargin(ctx, req.Order)
+	if err != nil {
+		return nil, apiError(codes.Internal, err)
+	}
+
+	return &protoapi.EstimateMarginResponse{
+		MarginLevels: margin,
+	}, nil
+}
+
+func (t *tradingDataDelegator) estimateMargin(ctx context.Context, order *vega.Order) (*vega.MarginLevels, error) {
+	if order.Side == vega.Side_SIDE_UNSPECIFIED {
+		return nil, risk.ErrInvalidOrderSide
+	}
+
+	// first get the risk factors and market data (marketdata->markprice)
+	rf, err := t.riskFactorStore.GetMarketRiskFactors(ctx, order.MarketId)
+	if err != nil {
+		return nil, err
+	}
+	mkt, err := t.marketsStore.GetByID(ctx, order.MarketId)
+	if err != nil {
+		return nil, err
+	}
+
+	mktProto, err := mkt.ToProto()
+	if err != nil {
+		return nil, err
+	}
+
+	mktData, err := t.marketDataStore.GetMarketDataByID(ctx, order.MarketId)
+	if err != nil {
+		return nil, err
+	}
+
+	f, err := num.DecimalFromString(rf.Short.String())
+	if err != nil {
+		return nil, err
+	}
+	if order.Side == vega.Side_SIDE_BUY {
+		f, err = num.DecimalFromString(rf.Long.String())
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	asset, err := mktProto.GetAsset()
+	if err != nil {
+		return nil, err
+	}
+
+	// now calculate margin maintenance
+	markPrice, _ := num.DecimalFromString(mktData.MarkPrice.String())
+	maintenanceMargin := num.DecimalFromFloat(float64(order.Size)).Mul(f).Mul(markPrice)
+	// now we use the risk factors
+	return &vega.MarginLevels{
+		PartyId:                order.PartyId,
+		MarketId:               mktProto.GetId(),
+		Asset:                  asset,
+		Timestamp:              0,
+		MaintenanceMargin:      maintenanceMargin.String(),
+		SearchLevel:            maintenanceMargin.Mul(num.DecimalFromFloat(mkt.TradableInstrument.MarginCalculator.ScalingFactors.SearchLevel)).String(),
+		InitialMargin:          maintenanceMargin.Mul(num.DecimalFromFloat(mkt.TradableInstrument.MarginCalculator.ScalingFactors.InitialMargin)).String(),
+		CollateralReleaseLevel: maintenanceMargin.Mul(num.DecimalFromFloat(mkt.TradableInstrument.MarginCalculator.ScalingFactors.CollateralRelease)).String(),
+	}, nil
+}
+
+func (t *tradingDataDelegator) EstimateFee(ctx context.Context, req *protoapi.EstimateFeeRequest) (*protoapi.EstimateFeeResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("EstimateFee SQL")()
+	if req.Order == nil {
+		return nil, apiError(codes.InvalidArgument, errors.New("missing order"))
+	}
+
+	fee, err := t.estimateFee(ctx, req.Order)
+	if err != nil {
+		return nil, apiError(codes.Internal, err)
+	}
+
+	return &protoapi.EstimateFeeResponse{
+		Fee: fee,
+	}, nil
+}
+
+func (t *tradingDataDelegator) estimateFee(ctx context.Context, order *vega.Order) (*vega.Fee, error) {
+	mkt, err := t.marketsStore.GetByID(ctx, order.MarketId)
+	if err != nil {
+		return nil, err
+	}
+	price, overflowed := num.UintFromString(order.Price, 10)
+	if overflowed {
+		return nil, errors.New("invalid order price")
+	}
+	if order.PeggedOrder != nil {
+		return &vega.Fee{
+			MakerFee:          "0",
+			InfrastructureFee: "0",
+			LiquidityFee:      "0",
+		}, nil
+	}
+
+	base := num.DecimalFromUint(price.Mul(price, num.NewUint(order.Size)))
+	maker, infra, liquidity, err := t.feeFactors(mkt)
+	if err != nil {
+		return nil, err
+	}
+
+	fee := &vega.Fee{
+		MakerFee:          base.Mul(num.NewDecimalFromFloat(maker)).String(),
+		InfrastructureFee: base.Mul(num.NewDecimalFromFloat(infra)).String(),
+		LiquidityFee:      base.Mul(num.NewDecimalFromFloat(liquidity)).String(),
+	}
+
+	return fee, nil
+}
+
+func (t *tradingDataDelegator) feeFactors(mkt entities.Market) (maker, infra, liquidity float64, err error) {
+	if maker, err = strconv.ParseFloat(mkt.Fees.Factors.MakerFee, 64); err != nil {
+		return
+	}
+	if infra, err = strconv.ParseFloat(mkt.Fees.Factors.InfrastructureFee, 64); err != nil {
+		return
+	}
+	if liquidity, err = strconv.ParseFloat(mkt.Fees.Factors.LiquidityFee, 64); err != nil {
+		return
+	}
+
+	return
+}
+
+// MarginLevels returns the current margin levels for a given party and market.
+func (t *tradingDataDelegator) MarginLevels(ctx context.Context, req *protoapi.MarginLevelsRequest) (*protoapi.MarginLevelsResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("MarginLevels SQL")()
+
+	mls, err := t.marginLevelsStore.GetMarginLevelsByID(ctx, req.PartyId, req.MarketId, entities.Pagination{})
+	if err != nil {
+		return nil, apiError(codes.Internal, ErrRiskServiceGetMarginLevelsByID, err)
+	}
+	levels := make([]*vega.MarginLevels, 0, len(mls))
+	for _, v := range mls {
+		levels = append(levels, v.ToProto())
+	}
+	return &protoapi.MarginLevelsResponse{
+		MarginLevels: levels,
+	}, nil
+}
+
+func (t *tradingDataDelegator) GetRiskFactors(ctx context.Context, in *protoapi.GetRiskFactorsRequest) (*protoapi.GetRiskFactorsResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("GetRiskFactors")()
+
+	rfs, err := t.riskFactorStore.GetMarketRiskFactors(ctx, in.MarketId)
+
+	if err != nil {
+		return nil, nil
+	}
+
+	return &protoapi.GetRiskFactorsResponse{
+		RiskFactor: rfs.ToProto(),
 	}, nil
 }
