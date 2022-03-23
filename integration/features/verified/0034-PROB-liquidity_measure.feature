@@ -10,7 +10,7 @@ Feature: Tests confirming probability of trading acceptance criteria
       | market.liquidity.targetstake.triggering.ratio       | 0     |
       | market.liquidity.providers.fee.distributionTimeStep | 10m   |
 
-  Scenario: Order from liquidity provision and from normal order submission are correctly cumulated in order book's total size(0034-PROB-001);Probability of trading decreases away from the mid-price (0034-PROB-005).
+ Scenario: Order from liquidity provision and from normal order submission are correctly cumulated in order book's total size(0034-PROB-001);Probability of trading decreases away from the mid-price (0034-PROB-005).
 
     And the log normal risk model named "my-log-normal-risk-model":
       | risk aversion | tau                    | mu | r     | sigma |
@@ -174,7 +174,7 @@ Feature: Tests confirming probability of trading acceptance criteria
 
     And the parties should have the following margin levels:
        | party | market id  | maintenance | search   | initial  | release  |
-       | lp1    | ETH2/MAR22 | 32570956    | 35828051 | 39085147 | 45599338 |
+       | lp1   | ETH2/MAR22 | 32570956    | 35828051 | 39085147 | 45599338 |
 
     And the parties should have the following account balances:
       | party  | asset | market id  | margin   | general  | bond     |
@@ -221,7 +221,7 @@ Feature: Tests confirming probability of trading acceptance criteria
       | party | market id  | maintenance | search   | initial  | release  |
       | lp1   | ETH2/MAR22 | 32570956    | 35828051 | 39085147 | 45599338 |
 
-  Scenario:  LP pegged volume is pushed by Price Monitoring lower bound (0034-PROB-003);
+ Scenario:  LP pegged volume is pushed by Price Monitoring lower bound (0034-PROB-003);
 
   Given the log normal risk model named "log-normal-risk-model-1":
       | risk aversion | tau     | mu | r | sigma |
@@ -274,8 +274,8 @@ Feature: Tests confirming probability of trading acceptance criteria
       | buy  | 728   | 48675135  |
       | buy  | 900   | 1  |
 
-Scenario:  LP Volume being pushed by limit of Probability of Trading (capped at 1e-8) (0034-PROB-004).
-#Price Monitoring has been removed as Prob in Price Monitoring only take up to 15 decimal places which will prevent scenatio which will trigger the ProbOfTrading cap at 1e-8
+ Scenario:  LP Volume being pushed by limit of Probability of Trading (capped at 1e-8) (0034-PROB-004)
+   #Price Monitoring has been removed as Prob in Price Monitoring only take up to 15 decimal places which will prevent scenatio which will trigger the ProbOfTrading cap at 1e-8
 
   Given the log normal risk model named "log-normal-risk-model-1":
       | risk aversion | tau     | mu | r | sigma |
@@ -322,8 +322,7 @@ Scenario:  LP Volume being pushed by limit of Probability of Trading (capped at 
       | buy  | 300   | 16666666666667 |
       | buy  | 900   | 1              |
 
-
-  Scenario:  Create LP shape that pegs to mid and deploys volumes and price between best ask and best bid (0034-PROB-005).
+ Scenario:  Create LP shape that pegs to mid and deploys volumes and price between best ask and best bid (0034-PROB-005)
 
     Given the fees configuration named "fees-config-1":
       | maker fee | infrastructure fee |
