@@ -14,7 +14,7 @@ Feature: Test margins releases on position = 0
       | party2   | BTC   | 1000000    |
       | aux       | BTC   | 100000     |
 
-  # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
+   # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     Then the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     |
       | aux    | ETH/DEC19 | buy  | 1      | 1     | 0                | TYPE_LIMIT | TIF_GTC |
@@ -49,7 +49,7 @@ Feature: Test margins releases on position = 0
       | party2   | BTC   | 1000000    |
       | aux       | BTC   | 100000     |
 
-  # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
+   # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     Then the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     |
       | aux    | ETH/DEC19 | buy  | 1      | 1     | 0                | TYPE_LIMIT | TIF_GTC |
@@ -76,12 +76,12 @@ Feature: Test margins releases on position = 0
       | party    | asset | market id | margin | general   |
       | partyGuy | BTC   | ETH/DEC19 | 980    | 999999020 |
 
-# now we place an order which would wash trade and see
+   # now we place an order which would wash trade and see
     When the parties place the following orders:
       | party    | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | partyGuy | ETH/DEC19 | sell | 13     | 15000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
 
-# checking margins, should have the margins required for the current order
+   # checking margins, should have the margins required for the current order
     Then the parties should have the following account balances:
       | party    | asset | market id | margin | general   |
       | partyGuy | BTC   | ETH/DEC19 | 980    | 999999020 |
@@ -94,7 +94,7 @@ Feature: Test margins releases on position = 0
       | party2   | BTC   | 1000000    |
       | aux       | BTC   | 100000     |
 
-  # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
+    # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     Then the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     |
       | aux    | ETH/DEC19 | buy  | 1      | 1     | 0                | TYPE_LIMIT | TIF_GTC |
@@ -138,7 +138,7 @@ Feature: Test margins releases on position = 0
       | party2   | BTC   | 1000000    |
       | aux       | BTC   | 100000     |
 
-  # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
+    # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     Then the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     |
       | aux    | ETH/DEC19 | buy  | 1      | 1     | 0                | TYPE_LIMIT | TIF_GTC |
@@ -166,17 +166,17 @@ Feature: Test margins releases on position = 0
       | party    | asset | market id | margin | general   |
       | partyGuy | BTC   | ETH/DEC19 | 980    | 999999020 |
 
-# now we place an order which would wash trade and see
+    # now we place an order which would wash trade and see
     When the parties place the following orders:
       | party    | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | partyGuy | ETH/DEC19 | sell | 13     | 15000 | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
-# checking margins, should have the margins required for the current order
+    # checking margins, should have the margins required for the current order
     Then the parties should have the following account balances:
       | party    | asset | market id | margin | general   |
       | partyGuy | BTC   | ETH/DEC19 | 980    | 999999020 |
 
-# cancel the first order
+    # cancel the first order
     Then the parties cancel the following orders:
       | party    | reference |
       | partyGuy | ref-1     |
