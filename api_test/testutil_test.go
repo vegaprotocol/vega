@@ -222,6 +222,7 @@ func NewTestServer(t testing.TB, ctx context.Context, blocking bool) *TestServer
 	sqlDelegationStore := sqlstore.NewDelegations(&sqlStore)
 	sqlEpochStore := sqlstore.NewEpochs(&sqlStore)
 	sqlDepositStore := sqlstore.NewDeposits(&sqlStore)
+	sqlWithdrawalsStore := sqlstore.NewWithdrawals(&sqlStore)
 	sqlProposalStore := sqlstore.NewProposals(&sqlStore)
 	sqlVoteStore := sqlstore.NewVotes(&sqlStore)
 	sqlRiskFactorsStore := sqlstore.NewRiskFactors(&sqlStore)
@@ -301,6 +302,7 @@ func NewTestServer(t testing.TB, ctx context.Context, blocking bool) *TestServer
 		sqlDelegationStore,
 		sqlEpochStore,
 		sqlDepositStore,
+		sqlWithdrawalsStore,
 		sqlProposalStore,
 		sqlVoteStore,
 		sqlRiskFactorsStore,

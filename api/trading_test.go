@@ -259,8 +259,8 @@ func getTestGRPCServer(
 	feeService := fee.NewService(logger, conf.Fee, marketStore, marketDataStore)
 	eventService := subscribers.NewService(broker)
 
-	withdrawal := plugins.NewWithdrawal(ctx)
 	deposit := plugins.NewDeposit(ctx)
+	withdrawal := plugins.NewWithdrawal(ctx)
 	netparams := netparams.NewService(ctx)
 	oracleService := oracles.NewService(ctx)
 	rewardsService := subscribers.NewRewards(ctx, logger, true)
@@ -283,6 +283,7 @@ func getTestGRPCServer(
 	sqlDelegationStore := sqlstore.NewDelegations(&sqlStore)
 	sqlEpochStore := sqlstore.NewEpochs(&sqlStore)
 	sqlDepositStore := sqlstore.NewDeposits(&sqlStore)
+	sqlWithdrawalStore := sqlstore.NewWithdrawals(&sqlStore)
 	sqlProposalStore := sqlstore.NewProposals(&sqlStore)
 	sqlVoteStore := sqlstore.NewVotes(&sqlStore)
 	sqlRiskFactorsStore := sqlstore.NewRiskFactors(&sqlStore)
@@ -334,6 +335,7 @@ func getTestGRPCServer(
 		sqlDelegationStore,
 		sqlEpochStore,
 		sqlDepositStore,
+		sqlWithdrawalStore,
 		sqlProposalStore,
 		sqlVoteStore,
 		sqlRiskFactorsStore,

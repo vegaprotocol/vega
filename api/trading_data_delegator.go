@@ -28,6 +28,7 @@ type tradingDataDelegator struct {
 	delegationStore   *sqlstore.Delegations
 	epochStore        *sqlstore.Epochs
 	depositsStore     *sqlstore.Deposits
+	withdrawalsStore  *sqlstore.Withdrawals
 	proposalsStore    *sqlstore.Proposals
 	voteStore         *sqlstore.Votes
 	riskFactorStore   *sqlstore.RiskFactors
@@ -1147,5 +1148,36 @@ func (t *tradingDataDelegator) GetRiskFactors(ctx context.Context, in *protoapi.
 
 	return &protoapi.GetRiskFactorsResponse{
 		RiskFactor: rfs.ToProto(),
+	}, nil
+}
+
+func (t *tradingDataDelegator) Withdrawal(ctx context.Context, req *protoapi.WithdrawalRequest) (*protoapi.WithdrawalResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("Withdrawal SQL")()
+	if len(req.Id) <= 0 {
+		return nil, ErrMissingDepositID
+	}
+	withdrawal, err := t.withdrawalsStore.GetByID(ctx, req.Id)
+	if err != nil {
+		return nil, apiError(codes.NotFound, err)
+	}
+	return &protoapi.WithdrawalResponse{
+		Withdrawal: withdrawal.ToProto(),
+	}, nil
+}
+
+func (t *tradingDataDelegator) Withdrawals(ctx context.Context, req *protoapi.WithdrawalsRequest) (*protoapi.WithdrawalsResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("Withdrawals SQL")()
+	if len(req.PartyId) <= 0 {
+		return nil, ErrMissingPartyID
+	}
+
+	// current API doesn't support pagination, but we will need to support it for v2
+	withdrawals := t.withdrawalsStore.GetByParty(ctx, req.PartyId, false, entities.Pagination{})
+	out := make([]*vega.Withdrawal, 0, len(withdrawals))
+	for _, w := range withdrawals {
+		out = append(out, w.ToProto())
+	}
+	return &protoapi.WithdrawalsResponse{
+		Withdrawals: out,
 	}, nil
 }

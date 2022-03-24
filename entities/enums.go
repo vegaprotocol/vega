@@ -291,6 +291,32 @@ func (s *DepositStatus) DecodeText(_ *pgtype.ConnInfo, src []byte) error {
 	return nil
 }
 
+type WithdrawalStatus vega.Withdrawal_Status
+
+const (
+	WithdrawalStatusUnspecified = WithdrawalStatus(vega.Withdrawal_STATUS_UNSPECIFIED)
+	WithdrawalStatusOpen        = WithdrawalStatus(vega.Withdrawal_STATUS_OPEN)
+	WithdrawalStatusRejected    = WithdrawalStatus(vega.Withdrawal_STATUS_REJECTED)
+	WithdrawalStatusFinalized   = WithdrawalStatus(vega.Withdrawal_STATUS_FINALIZED)
+)
+
+func (s WithdrawalStatus) EncodeText(_ *pgtype.ConnInfo, buf []byte) ([]byte, error) {
+	status, ok := vega.Withdrawal_Status_name[int32(s)]
+	if !ok {
+		return buf, fmt.Errorf("unknown withdrawal status: %s", status)
+	}
+	return append(buf, []byte(status)...), nil
+}
+
+func (s *WithdrawalStatus) DecodeText(_ *pgtype.ConnInfo, src []byte) error {
+	val, ok := vega.Withdrawal_Status_value[string(src)]
+	if !ok {
+		return fmt.Errorf("unknown withdrawal status: %s", src)
+	}
+	*s = WithdrawalStatus(val)
+	return nil
+}
+
 /************************* Proposal State *****************************/
 
 type ProposalState vega.Proposal_State

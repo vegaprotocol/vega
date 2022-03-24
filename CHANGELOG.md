@@ -9,6 +9,7 @@
 - [](https://github.com/vegaprotocol/data-node/pull/xxx) -
 
 ### 🛠  Improvements
+- [386](https://github.com/vegaprotocol/data-node/pull/386) - Migrate withdrawal API to retrieve data from `Postgres`
 - [](https://github.com/vegaprotocol/data-node/pull/xxx) -
 
 ### 🐛 Fixes
