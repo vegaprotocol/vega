@@ -87,6 +87,18 @@ func TestNewState(t *testing.T) {
 	mp.sell = 50
 	ps2 := events.NewPositionStateEvent(position.ctx, mp, market)
 	position.Push(ps2)
+
+	pp, err = position.GetPositionsByMarket(market)
+	assert.NoError(t, err)
+	assert.NotZero(t, len(pp))
+	// This is an position with no values yet as nothing had traded
+	assert.Equal(t, market, pp[0].MarketId)
+	assert.Equal(t, "party1", pp[0].PartyId)
+	assert.EqualValues(t, 0, pp[0].OpenVolume)
+	assert.Equal(t, num.Zero(), pp[0].AverageEntryPrice)
+	assert.Equal(t, "0", pp[0].RealisedPnl.String())
+	assert.Equal(t, "0", pp[0].UnrealisedPnl.String())
+	assert.EqualValues(t, 0, pp[0].UpdatedAt)
 }
 
 func TestMultipleTradesOfSameSize(t *testing.T) {

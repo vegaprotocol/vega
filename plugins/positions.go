@@ -348,5 +348,6 @@ func (p *Positions) Types() []events.Type {
 		events.SettlePositionEvent,
 		events.SettleDistressedEvent,
 		events.LossSocializationEvent,
+		events.PositionStateEvent,
 	}
 }
