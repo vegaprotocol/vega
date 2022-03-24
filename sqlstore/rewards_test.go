@@ -36,11 +36,11 @@ func rewardLessThan(x, y entities.Reward) bool {
 	if x.EpochID != y.EpochID {
 		return x.EpochID < y.EpochID
 	}
-	if x.PartyHexID() != y.PartyHexID() {
-		return x.PartyHexID() < y.PartyHexID()
+	if x.PartyID.String() != y.PartyID.String() {
+		return x.PartyID.String() < y.PartyID.String()
 	}
-	if x.AssetHexID() != y.AssetHexID() {
-		return x.AssetHexID() < y.AssetHexID()
+	if x.AssetID.String() != y.AssetID.String() {
+		return x.AssetID.String() < y.AssetID.String()
 	}
 	return x.Amount.LessThan(y.Amount)
 }
@@ -63,10 +63,10 @@ func TestRewards(t *testing.T) {
 	party1 := addTestParty(t, ps, block)
 	party2 := addTestParty(t, ps, block)
 
-	party1ID := party1.HexID()
-	asset1ID := asset1.HexID()
-	party2ID := party2.HexID()
-	asset2ID := asset2.HexID()
+	party1ID := party1.ID.String()
+	asset1ID := asset1.ID.String()
+	party2ID := party2.ID.String()
+	asset2ID := asset2.ID.String()
 
 	reward1 := addTestReward(t, rs, party1, asset1, 1, block)
 	reward2 := addTestReward(t, rs, party1, asset2, 2, block)

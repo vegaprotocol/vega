@@ -1,8 +1,6 @@
 package entities
 
 import (
-	"encoding/hex"
-	"fmt"
 	"time"
 
 	"code.vegaprotocol.io/protos/vega"
@@ -19,10 +17,16 @@ var (
 	ProposalTypeNewFreeform            = ProposalType("newFreeform")
 )
 
+type ProposalID struct{ ID }
+
+func NewProposalID(id string) ProposalID {
+	return ProposalID{ID: ID(id)}
+}
+
 type Proposal struct {
-	ID           []byte
+	ID           ProposalID
 	Reference    string
-	PartyID      []byte
+	PartyID      PartyID
 	State        ProposalState
 	Terms        ProposalTerms
 	Reason       ProposalError
@@ -31,27 +35,11 @@ type Proposal struct {
 	VegaTime     time.Time
 }
 
-func (p *Proposal) PartyHexID() string {
-	return Party{ID: p.PartyID}.HexID()
-}
-
-func (p Proposal) HexID() string {
-	return hex.EncodeToString(p.ID)
-}
-
-func MakeProposalID(stringID string) ([]byte, error) {
-	id, err := hex.DecodeString(stringID)
-	if err != nil {
-		return nil, fmt.Errorf("proposal id is not valid hex string: %v", stringID)
-	}
-	return id, nil
-}
-
 func (p *Proposal) ToProto() *vega.Proposal {
 	pp := vega.Proposal{
-		Id:           p.HexID(),
+		Id:           p.ID.String(),
 		Reference:    p.Reference,
-		PartyId:      p.PartyHexID(),
+		PartyId:      p.PartyID.String(),
 		State:        vega.Proposal_State(p.State),
 		Timestamp:    p.ProposalTime.UnixNano(),
 		Terms:        p.Terms.ProposalTerms,
@@ -62,20 +50,10 @@ func (p *Proposal) ToProto() *vega.Proposal {
 }
 
 func ProposalFromProto(pp *vega.Proposal) (Proposal, error) {
-	id, err := MakeProposalID(pp.Id)
-	if err != nil {
-		return Proposal{}, err
-	}
-
-	partyID, err := MakePartyID(pp.PartyId)
-	if err != nil {
-		return Proposal{}, err
-	}
-
 	p := Proposal{
-		ID:           id,
+		ID:           NewProposalID(pp.Id),
 		Reference:    pp.Reference,
-		PartyID:      partyID,
+		PartyID:      NewPartyID(pp.PartyId),
 		State:        ProposalState(pp.State),
 		Terms:        ProposalTerms{pp.Terms},
 		Reason:       ProposalError(pp.Reason),

@@ -2,7 +2,6 @@ package sqlstore_test
 
 import (
 	"context"
-	"encoding/hex"
 	"testing"
 
 	"code.vegaprotocol.io/data-node/entities"
@@ -17,9 +16,9 @@ import (
 func addTestProposal(t *testing.T, ps *sqlstore.Proposals, party entities.Party, block entities.Block) entities.Proposal {
 	terms := entities.ProposalTerms{ProposalTerms: &vega.ProposalTerms{}}
 	p := entities.Proposal{
-		ID:           generateID(),
+		ID:           entities.NewProposalID(generateID()),
 		PartyID:      party.ID,
-		Reference:    hex.EncodeToString(generateID()),
+		Reference:    generateID(),
 		Terms:        terms,
 		State:        entities.ProposalStateEnacted,
 		VegaTime:     block.VegaTime,
@@ -30,7 +29,7 @@ func addTestProposal(t *testing.T, ps *sqlstore.Proposals, party entities.Party,
 }
 
 func proposalLessThan(x, y entities.Proposal) bool {
-	return x.HexID() < y.HexID()
+	return x.ID.String() < y.ID.String()
 }
 
 func assertProposalsMatch(t *testing.T, expected, actual []entities.Proposal) {
@@ -59,8 +58,8 @@ func TestProposals(t *testing.T) {
 	prop1 := addTestProposal(t, propStore, party1, block1)
 	prop2 := addTestProposal(t, propStore, party2, block1)
 
-	party1ID := party1.HexID()
-	prop1ID := prop1.HexID()
+	party1ID := party1.ID.String()
+	prop1ID := prop1.ID.String()
 
 	t.Run("GetById", func(t *testing.T) {
 		expected := prop1

@@ -88,10 +88,8 @@ func shouldInsertAValidMarketDataRecord(t *testing.T) {
 
 	block := addTestBlock(t, bs)
 
-	market := []byte("deadbeef")
-
 	err = md.Add(&entities.MarketData{
-		Market:            market,
+		Market:            entities.NewMarketID("deadbeef"),
 		MarketTradingMode: "TRADING_MODE_MONITORING_AUCTION",
 		AuctionTrigger:    "AUCTION_TRIGGER_LIQUIDITY",
 		ExtensionTrigger:  "AUCTION_TRIGGER_UNSPECIFIED",
@@ -127,9 +125,8 @@ func shouldErrorIfNoVegaBlock(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, 0, rowCount)
 
-	market := []byte("deadbeef")
 	err = md.Add(&entities.MarketData{
-		Market:            market,
+		Market:            entities.NewMarketID("deadbeef"),
 		MarketTradingMode: "TRADING_MODE_MONITORING_AUCTION",
 		AuctionTrigger:    "AUCTION_TRIGGER_LIQUIDITY",
 		ExtensionTrigger:  "AUCTION_TRIGGER_UNSPECIFIED",
@@ -160,8 +157,7 @@ func getLatestMarketData(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	defer cancel()
 
-	market, err := hex.DecodeString("8cc0e020c0bc2f9eba77749d81ecec8283283b85941722c2cb88318aaf8b8cd8")
-	assert.NoError(t, err)
+	marketID := entities.NewMarketID("8cc0e020c0bc2f9eba77749d81ecec8283283b85941722c2cb88318aaf8b8cd8")
 
 	want := entities.MarketData{
 		MarkPrice:             mustParseDecimal(t, "999992587"),
@@ -175,7 +171,7 @@ func getLatestMarketData(t *testing.T) {
 		BestStaticOfferVolume: 1,
 		MidPrice:              mustParseDecimal(t, "1000000765"),
 		StaticMidPrice:        mustParseDecimal(t, "1000000765"),
-		Market:                market,
+		Market:                marketID,
 		OpenInterest:          27,
 		AuctionEnd:            1644573937314794695,
 		AuctionStart:          1644573911314794695,
@@ -401,8 +397,6 @@ func mustParseLiquidity(t *testing.T, value string) []*entities.LiquidityProvide
 
 func csvToMarketData(t *testing.T, line []string) *entities.MarketData {
 	t.Helper()
-	market, err := hex.DecodeString(line[csvColumnMarket])
-	assert.NoError(t, err)
 
 	return &entities.MarketData{
 		MarkPrice:                  mustParseDecimal(t, line[csvColumnMarkPrice]),
@@ -416,7 +410,7 @@ func csvToMarketData(t *testing.T, line []string) *entities.MarketData {
 		BestStaticOfferVolume:      mustParseInt64(t, line[csvColumnBestStaticOfferVolume]),
 		MidPrice:                   mustParseDecimal(t, line[csvColumnMidPrice]),
 		StaticMidPrice:             mustParseDecimal(t, line[csvColumnStaticMidPrice]),
-		Market:                     market,
+		Market:                     entities.NewMarketID(line[csvColumnMarket]),
 		OpenInterest:               mustParseInt64(t, line[csvColumnOpenInterest]),
 		AuctionEnd:                 mustParseInt64(t, line[csvColumnAuctionEnd]),
 		AuctionStart:               mustParseInt64(t, line[csvColumnAuctionStart]),

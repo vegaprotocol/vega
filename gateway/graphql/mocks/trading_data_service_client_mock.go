@@ -636,6 +636,26 @@ func (mr *MockTradingDataServiceClientMockRecorder) GetRewards(arg0, arg1 interf
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRewards", reflect.TypeOf((*MockTradingDataServiceClient)(nil).GetRewards), varargs...)
 }
 
+// GetRiskFactors mocks base method.
+func (m *MockTradingDataServiceClient) GetRiskFactors(arg0 context.Context, arg1 *v1.GetRiskFactorsRequest, arg2 ...grpc.CallOption) (*v1.GetRiskFactorsResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "GetRiskFactors", varargs...)
+	ret0, _ := ret[0].(*v1.GetRiskFactorsResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetRiskFactors indicates an expected call of GetRiskFactors.
+func (mr *MockTradingDataServiceClientMockRecorder) GetRiskFactors(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRiskFactors", reflect.TypeOf((*MockTradingDataServiceClient)(nil).GetRiskFactors), varargs...)
+}
+
 // GetUpdateMarketProposals mocks base method.
 func (m *MockTradingDataServiceClient) GetUpdateMarketProposals(arg0 context.Context, arg1 *v1.GetUpdateMarketProposalsRequest, arg2 ...grpc.CallOption) (*v1.GetUpdateMarketProposalsResponse, error) {
 	m.ctrl.T.Helper()

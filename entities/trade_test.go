@@ -1,7 +1,6 @@
 package entities_test
 
 import (
-	"encoding/hex"
 	"testing"
 	"time"
 
@@ -15,36 +14,29 @@ import (
 
 func TestProtoFromTrade(t *testing.T) {
 	vegaTime := time.Now()
-	idString := "BC2001BDDAC588F8AAAE0D9BEC3D6881A447B888447E5D0A9DE92D149BA4E877"
-	id, _ := hex.DecodeString(idString)
-	marketIdString := "8cc0e020c0bc2f9eba77749d81ecec8283283b85941722c2cb88318aaf8b8cd8"
-	marketId, _ := hex.DecodeString(marketIdString)
 	priceString := "1000035452"
 	price, _ := decimal.NewFromString(priceString)
 	sizeInt := uint64(5)
 	size := decimal.NewFromInt(int64(sizeInt))
+
+	idString := "BC2001BDDAC588F8AAAE0D9BEC3D6881A447B888447E5D0A9DE92D149BA4E877"
+	marketIdString := "8cc0e020c0bc2f9eba77749d81ecec8283283b85941722c2cb88318aaf8b8cd8"
 	buyerIdString := "2e4f34a38204a2a155be678e670903ed8df96e813700729deacd3daf7e55039e"
-	buyer, _ := hex.DecodeString(buyerIdString)
 	sellerIdString := "8b6be1a03cc4d529f682887a78b66e6879d17f81e2b37356ca0acbc5d5886eb8"
-	seller, _ := hex.DecodeString(sellerIdString)
-
 	buyOrderIdString := "CF951606211775C43449807FE15F908704A85C514D65D549D67BBD6B5EEF66BB"
-	buyOrderId, _ := hex.DecodeString(buyOrderIdString)
-
 	sellOrderIdString := "6A94947F724CDB7851BEE793ACA6888F68ABBF8D49DFD0F778424A7CE42E7B7D"
-	sellOrderId, _ := hex.DecodeString(sellOrderIdString)
 
 	trade := entities.Trade{
 		VegaTime:                vegaTime,
-		ID:                      id,
-		MarketID:                marketId,
+		ID:                      entities.NewTradeID(idString),
+		MarketID:                entities.NewMarketID(marketIdString),
 		Price:                   price,
 		Size:                    size,
-		Buyer:                   buyer,
-		Seller:                  seller,
+		Buyer:                   entities.NewPartyID(buyerIdString),
+		Seller:                  entities.NewPartyID(sellerIdString),
 		Aggressor:               entities.SideBuy,
-		BuyOrder:                buyOrderId,
-		SellOrder:               sellOrderId,
+		BuyOrder:                entities.NewOrderID(buyOrderIdString),
+		SellOrder:               entities.NewOrderID(sellOrderIdString),
 		Type:                    entities.TradeTypeNetworkCloseOutGood,
 		BuyerMakerFee:           decimal.NewFromInt(2),
 		BuyerInfrastructureFee:  decimal.NewFromInt(3),
@@ -111,23 +103,17 @@ func TestTradeFromProto(t *testing.T) {
 	assert.Equal(t, testVegaTime, trade.VegaTime)
 	assert.Equal(t, uint64(5), trade.SeqNum)
 
-	idBytes, _ := hex.DecodeString(tradeEventProto.Id)
-	assert.Equal(t, idBytes, trade.ID)
-	marketIdBytes, _ := hex.DecodeString(tradeEventProto.MarketId)
-	assert.Equal(t, marketIdBytes, trade.MarketID)
+	assert.Equal(t, tradeEventProto.Id, trade.ID.String())
+	assert.Equal(t, tradeEventProto.MarketId, trade.MarketID.String())
 	price, _ := decimal.NewFromString(tradeEventProto.Price)
 	assert.Equal(t, price, trade.Price)
 	size := decimal.NewFromUint(uint256.NewInt(tradeEventProto.Size))
 	assert.Equal(t, size, trade.Size)
-	buyerBytes, _ := hex.DecodeString(tradeEventProto.Buyer)
-	assert.Equal(t, buyerBytes, trade.Buyer)
-	sellerBytes, _ := hex.DecodeString(tradeEventProto.Seller)
-	assert.Equal(t, sellerBytes, trade.Seller)
+	assert.Equal(t, tradeEventProto.Buyer, trade.Buyer.String())
+	assert.Equal(t, tradeEventProto.Seller, trade.Seller.String())
 	assert.Equal(t, entities.SideSell, trade.Aggressor)
-	buyOrderBytes, _ := hex.DecodeString(tradeEventProto.BuyOrder)
-	assert.Equal(t, buyOrderBytes, trade.BuyOrder)
-	sellOrderBytes, _ := hex.DecodeString(tradeEventProto.SellOrder)
-	assert.Equal(t, sellOrderBytes, trade.SellOrder)
+	assert.Equal(t, tradeEventProto.BuyOrder, trade.BuyOrder.String())
+	assert.Equal(t, tradeEventProto.SellOrder, trade.SellOrder.String())
 	assert.Equal(t, entities.TradeTypeDefault, trade.Type)
 
 	buyerMakerFee, _ := decimal.NewFromString(tradeEventProto.BuyerFee.MakerFee)

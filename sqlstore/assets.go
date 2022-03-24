@@ -38,15 +38,13 @@ func (as *Assets) Add(a entities.Asset) error {
 func (as *Assets) GetByID(ctx context.Context, id string) (entities.Asset, error) {
 	a := entities.Asset{}
 
-	idBytes := entities.MakeAssetID(id)
-
 	ctxTimeout, cancel := context.WithTimeout(ctx, as.conf.Timeout.Get())
 	defer cancel()
 
 	err := pgxscan.Get(ctxTimeout, as.pool, &a,
 		`SELECT id, name, symbol, total_supply, decimals, quantum, source, erc20_contract, vega_time
 		 FROM assets WHERE id=$1`,
-		idBytes)
+		entities.NewAssetID(id))
 	return a, err
 }
 

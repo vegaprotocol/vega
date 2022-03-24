@@ -34,10 +34,10 @@ func addTestVote(t *testing.T, vs *sqlstore.Votes,
 }
 
 func voteLessThan(x, y entities.Vote) bool {
-	if x.PartyHexID() != y.PartyHexID() {
-		return x.PartyHexID() < y.PartyHexID()
+	if x.PartyID.String() != y.PartyID.String() {
+		return x.PartyID.String() < y.PartyID.String()
 	}
-	return x.ProposalHexID() < y.ProposalHexID()
+	return x.ProposalID.String() < y.ProposalID.String()
 }
 
 func assertVotesMatch(t *testing.T, expected, actual []entities.Vote) {
@@ -59,8 +59,8 @@ func TestVotes(t *testing.T) {
 	prop1 := addTestProposal(t, propStore, party1, block1)
 	prop2 := addTestProposal(t, propStore, party1, block1)
 
-	party1ID := party1.HexID()
-	prop1ID := prop1.HexID()
+	party1ID := party1.ID.String()
+	prop1ID := prop1.ID.String()
 
 	vote1 := addTestVote(t, voteStore, party1, prop1, entities.VoteValueYes, block1)
 	vote2 := addTestVote(t, voteStore, party1, prop2, entities.VoteValueYes, block1)

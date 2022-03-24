@@ -57,7 +57,7 @@ func (bs *Blocks) GetAll() ([]entities.Block, error) {
 
 func (bs *Blocks) GetAtHeight(height int64) (entities.Block, error) {
 	// Check if it's in our cache first
-	block, err := bs.getLastBlock()
+	block, err := bs.GetLastBlock()
 	if err == nil && block.Height == height {
 		return block, nil
 	}
@@ -70,7 +70,7 @@ func (bs *Blocks) GetAtHeight(height int64) (entities.Block, error) {
 	return block, err
 }
 
-func (bs *Blocks) getLastBlock() (entities.Block, error) {
+func (bs *Blocks) GetLastBlock() (entities.Block, error) {
 	bs.mu.Lock()
 	defer bs.mu.Unlock()
 	if bs.lastBlock != nil {

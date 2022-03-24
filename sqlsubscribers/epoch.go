@@ -53,7 +53,6 @@ func (es *Epoch) Push(evt events.Event) {
 }
 
 func (es *Epoch) consume(event EpochUpdateEvent) {
-	es.log.Debug("Epoch: ", logging.Int64("block", event.BlockNr()))
 	epochUpdateEvent := event.Proto()
 	epoch := entities.EpochFromProto(epochUpdateEvent)
 	epoch.VegaTime = es.vegaTime

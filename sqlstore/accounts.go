@@ -90,7 +90,10 @@ func (as *Accounts) Obtain(a *entities.Account) error {
 }
 
 func (as *Accounts) Query(filter entities.AccountFilter) ([]entities.Account, error) {
-	query, args := filterAccountsQuery(filter)
+	query, args, err := filterAccountsQuery(filter)
+	if err != nil {
+		return nil, err
+	}
 	accs := []entities.Account{}
 
 	rows, err := as.pool.Query(context.Background(), query, args...)

@@ -218,3 +218,11 @@ models:
     model: code.vegaprotocol.io/protos/vega.RankingScore
   RewardScore:
     model: code.vegaprotocol.io/protos/vega.RewardScore
+  UpdateMarketConfiguration:
+    model: code.vegaprotocol.io/protos/vega.UpdateMarketConfiguration
+  UpdateMarketSimpleRiskModel:
+    model: code.vegaprotocol.io/protos/vega.UpdateMarketConfiguration_Simple
+  UpdateMarketLogNormalRiskModel:
+    model: code.vegaprotocol.io/protos/vega.UpdateMarketConfiguration_LogNormal
+  UpdateFutureProduct:
+    model: code.vegaprotocol.io/protos/vega.UpdateFutureProduct

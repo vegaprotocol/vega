@@ -11,31 +11,23 @@ import (
 )
 
 type Reward struct {
-	PartyID        []byte
-	AssetID        []byte
+	PartyID        PartyID
+	AssetID        AssetID
 	EpochID        int64
 	Amount         decimal.Decimal
 	PercentOfTotal float64
 	VegaTime       time.Time
 }
 
-func (r *Reward) PartyHexID() string {
-	return Party{ID: r.PartyID}.HexID()
-}
-
-func (r *Reward) AssetHexID() string {
-	return Asset{ID: r.AssetID}.HexID()
-}
-
 func (r Reward) String() string {
 	return fmt.Sprintf("{Epoch: %v, Party: %s, Asset: %s, Amount: %v}",
-		r.EpochID, r.PartyHexID(), r.AssetHexID(), r.Amount)
+		r.EpochID, r.PartyID, r.AssetID, r.Amount)
 }
 
 func (r *Reward) ToProto() *vega.Reward {
 	protoReward := vega.Reward{
-		PartyId:           r.PartyHexID(),
-		AssetId:           r.AssetHexID(),
+		PartyId:           r.PartyID.String(),
+		AssetId:           r.AssetID.String(),
 		Epoch:             uint64(r.EpochID),
 		Amount:            r.Amount.String(),
 		PercentageOfTotal: fmt.Sprintf("%v", r.PercentOfTotal),
@@ -45,13 +37,6 @@ func (r *Reward) ToProto() *vega.Reward {
 }
 
 func RewardFromProto(pr eventspb.RewardPayoutEvent) (Reward, error) {
-	partyID, err := MakePartyID(pr.Party)
-	if err != nil {
-		return Reward{}, fmt.Errorf("parsing party id '%v': %w", pr.Party, err)
-	}
-
-	assetID := MakeAssetID(pr.Asset)
-
 	epochID, err := strconv.ParseInt(pr.EpochSeq, 10, 64)
 	if err != nil {
 		return Reward{}, fmt.Errorf("parsing epoch '%v': %w", pr.EpochSeq, err)
@@ -70,8 +55,8 @@ func RewardFromProto(pr eventspb.RewardPayoutEvent) (Reward, error) {
 	}
 
 	reward := Reward{
-		PartyID:        partyID,
-		AssetID:        assetID,
+		PartyID:        NewPartyID(pr.Party),
+		AssetID:        NewAssetID(pr.Asset),
 		EpochID:        epochID,
 		Amount:         amount,
 		PercentOfTotal: percentOfTotal,

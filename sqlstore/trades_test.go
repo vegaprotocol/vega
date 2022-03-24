@@ -2,7 +2,6 @@ package sqlstore_test
 
 import (
 	"context"
-	"encoding/hex"
 	"testing"
 	"time"
 
@@ -28,24 +27,6 @@ const (
 	tradeId6 = "8cc0e020c0bc2f9eba77749d81ecec8283283b85941722c2cb88318aaf8b8cd8"
 )
 
-var (
-	tradeid1Bytes []byte
-	tradeid2Bytes []byte
-	tradeid3Bytes []byte
-	tradeid4Bytes []byte
-	tradeid5Bytes []byte
-	tradeid6Bytes []byte
-)
-
-func setupTradeIdBytes() {
-	tradeid1Bytes, _ = hex.DecodeString(tradeId1)
-	tradeid2Bytes, _ = hex.DecodeString(tradeId2)
-	tradeid3Bytes, _ = hex.DecodeString(tradeId3)
-	tradeid4Bytes, _ = hex.DecodeString(tradeId4)
-	tradeid5Bytes, _ = hex.DecodeString(tradeId5)
-	tradeid6Bytes, _ = hex.DecodeString(tradeId6)
-}
-
 func TestStorage_GetTradesByOrderId(t *testing.T) {
 	market := testMarket
 
@@ -55,7 +36,6 @@ func TestStorage_GetTradesByOrderId(t *testing.T) {
 
 func GetTradesByOrderIdAndMarket(t *testing.T, market *string) {
 	defer testStore.DeleteEverything()
-	setupTradeIdBytes()
 
 	tradeStore := sqlstore.NewTrades(testStore)
 
@@ -65,12 +45,12 @@ func GetTradesByOrderIdAndMarket(t *testing.T, market *string) {
 
 	assert.Nil(t, err)
 	assert.Equal(t, 6, len(trades))
-	assert.Equal(t, tradeid1Bytes, trades[0].ID)
-	assert.Equal(t, tradeid2Bytes, trades[1].ID)
-	assert.Equal(t, tradeid3Bytes, trades[2].ID)
-	assert.Equal(t, tradeid4Bytes, trades[3].ID)
-	assert.Equal(t, tradeid5Bytes, trades[4].ID)
-	assert.Equal(t, tradeid6Bytes, trades[5].ID)
+	assert.Equal(t, tradeId1, trades[0].ID.String())
+	assert.Equal(t, tradeId2, trades[1].ID.String())
+	assert.Equal(t, tradeId3, trades[2].ID.String())
+	assert.Equal(t, tradeId4, trades[3].ID.String())
+	assert.Equal(t, tradeId5, trades[4].ID.String())
+	assert.Equal(t, tradeId6, trades[5].ID.String())
 }
 
 func TestStorage_GetTradesByPartyWithPagination(t *testing.T) {
@@ -81,7 +61,6 @@ func TestStorage_GetTradesByPartyWithPagination(t *testing.T) {
 
 func GetTradesByPartyAndMarketWithPagination(t *testing.T, market *string) {
 	ctx := context.Background()
-	setupTradeIdBytes()
 	defer testStore.DeleteEverything()
 
 	tradeStore := sqlstore.NewTrades(testStore)
@@ -96,9 +75,9 @@ func GetTradesByPartyAndMarketWithPagination(t *testing.T, market *string) {
 	trades, err := tradeStore.GetByParty(ctx, testPartyA, market, entities.Pagination{Limit: last, Descending: true})
 	assert.Nil(t, err)
 	assert.Equal(t, 3, len(trades))
-	assert.Equal(t, tradeid6Bytes, trades[0].ID)
-	assert.Equal(t, tradeid5Bytes, trades[1].ID)
-	assert.Equal(t, tradeid4Bytes, trades[2].ID)
+	assert.Equal(t, tradeId6, trades[0].ID.String())
+	assert.Equal(t, tradeId5, trades[1].ID.String())
+	assert.Equal(t, tradeId4, trades[2].ID.String())
 
 	// Want last 3 trades (timestamp descending) and skip 2
 	skip := uint64(2)
@@ -107,14 +86,13 @@ func GetTradesByPartyAndMarketWithPagination(t *testing.T, market *string) {
 	trades, err = tradeStore.GetByParty(ctx, testPartyA, market, entities.Pagination{Skip: skip, Limit: last, Descending: true})
 	assert.Nil(t, err)
 	assert.Equal(t, 3, len(trades))
-	assert.Equal(t, tradeid4Bytes, trades[0].ID)
-	assert.Equal(t, tradeid3Bytes, trades[1].ID)
-	assert.Equal(t, tradeid2Bytes, trades[2].ID)
+	assert.Equal(t, tradeId4, trades[0].ID.String())
+	assert.Equal(t, tradeId3, trades[1].ID.String())
+	assert.Equal(t, tradeId2, trades[2].ID.String())
 }
 
 func TestStorage_GetTradesByMarketWithPagination(t *testing.T) {
 	ctx := context.Background()
-	setupTradeIdBytes()
 
 	defer testStore.DeleteEverything()
 
@@ -133,8 +111,8 @@ func TestStorage_GetTradesByMarketWithPagination(t *testing.T) {
 	trades, err = tradeStore.GetByMarket(ctx, testMarket, entities.Pagination{Limit: first})
 	assert.Nil(t, err)
 	assert.Equal(t, 2, len(trades))
-	assert.Equal(t, tradeid1Bytes, trades[0].ID)
-	assert.Equal(t, tradeid2Bytes, trades[1].ID)
+	assert.Equal(t, tradeId1, trades[0].ID.String())
+	assert.Equal(t, tradeId2, trades[1].ID.String())
 
 	// Want last 3 trades (timestamp descending)
 	last := uint64(3)
@@ -142,9 +120,9 @@ func TestStorage_GetTradesByMarketWithPagination(t *testing.T) {
 	trades, err = tradeStore.GetByMarket(ctx, testMarket, entities.Pagination{Limit: last, Descending: true})
 	assert.Nil(t, err)
 	assert.Equal(t, 3, len(trades))
-	assert.Equal(t, tradeid6Bytes, trades[0].ID)
-	assert.Equal(t, tradeid5Bytes, trades[1].ID)
-	assert.Equal(t, tradeid4Bytes, trades[2].ID)
+	assert.Equal(t, tradeId6, trades[0].ID.String())
+	assert.Equal(t, tradeId5, trades[1].ID.String())
+	assert.Equal(t, tradeId4, trades[2].ID.String())
 
 	// Want first 2 trades after skipping 2
 	skip := uint64(2)
@@ -152,15 +130,15 @@ func TestStorage_GetTradesByMarketWithPagination(t *testing.T) {
 	trades, err = tradeStore.GetByMarket(ctx, testMarket, entities.Pagination{Skip: skip, Limit: first})
 	assert.Nil(t, err)
 	assert.Equal(t, 2, len(trades))
-	assert.Equal(t, tradeid3Bytes, trades[0].ID)
-	assert.Equal(t, tradeid4Bytes, trades[1].ID)
+	assert.Equal(t, tradeId3, trades[0].ID.String())
+	assert.Equal(t, tradeId4, trades[1].ID.String())
 
 	trades, err = tradeStore.GetByMarket(ctx, testMarket, entities.Pagination{Skip: skip, Limit: last, Descending: true})
 	assert.Nil(t, err)
 	assert.Equal(t, 3, len(trades))
-	assert.Equal(t, tradeid4Bytes, trades[0].ID)
-	assert.Equal(t, tradeid3Bytes, trades[1].ID)
-	assert.Equal(t, tradeid2Bytes, trades[2].ID)
+	assert.Equal(t, tradeId4, trades[0].ID.String())
+	assert.Equal(t, tradeId3, trades[1].ID.String())
+	assert.Equal(t, tradeId2, trades[2].ID.String())
 
 	// Skip a large page size of trades (compared to our set)
 	// effectively skipping past the end of the set, so no

@@ -252,7 +252,7 @@ pipeline {
                 stage('LNL System Tests') {
                     steps {
                         script {
-                            systemTestsLNL ignoreFailure: true,
+                            systemTestsLNL ignoreFailure: !isPRBuild(),
                                 vegaCore: params.VEGA_CORE_BRANCH,
                                 dataNode: commitHash,
                                 vegawallet: params.VEGAWALLET_BRANCH,

@@ -3,6 +3,7 @@ package sqlstore_test
 import (
 	"context"
 	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"math/rand"
 	"net"
@@ -69,11 +70,11 @@ func TestMain(m *testing.M) {
 }
 
 // Generate a 256 bit pseudo-random hash ID based on the time
-func generateID() []byte {
+func generateID() string {
 	currentTime := time.Now().UnixNano()
 	currentTimeString := strconv.FormatInt(currentTime, 10)
 	hash := sha256.Sum256([]byte(currentTimeString))
-	return hash[:]
+	return hex.EncodeToString(hash[:])
 }
 
 func NewTestConfig(port int) sqlstore.Config {

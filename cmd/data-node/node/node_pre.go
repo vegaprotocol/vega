@@ -138,6 +138,10 @@ func (l *NodeCommand) setupSQLSubscribers() {
 	l.depositSubSQL = sqlsubscribers.NewDeposit(l.depositStoreSQL, l.Log)
 	l.proposalsSubSQL = sqlsubscribers.NewProposal(l.proposalStoreSQL, l.Log)
 	l.votesSubSQL = sqlsubscribers.NewVote(l.voteStoreSQL, l.Log)
+	l.marginLevelsSubSQL = sqlsubscribers.NewMarginLevels(l.marginLevelsStoreSQL, l.Log)
+	l.riskFactorSubSQL = sqlsubscribers.NewRiskFactor(l.riskFactorStoreSQL, l.Log)
+	l.netParamSubSQL = sqlsubscribers.NewNetworkParameter(l.netParamStoreSQL, l.Log)
+	l.checkpointSubSQL = sqlsubscribers.NewCheckpoint(l.checkpointStoreSQL, l.Log)
 }
 
 func (l *NodeCommand) setupStorages() error {
@@ -180,6 +184,11 @@ func (l *NodeCommand) setupStorages() error {
 		l.depositStoreSQL = sqlstore.NewDeposits(sqlStore)
 		l.proposalStoreSQL = sqlstore.NewProposals(sqlStore)
 		l.voteStoreSQL = sqlstore.NewVotes(sqlStore)
+		l.marginLevelsStoreSQL = sqlstore.NewMarginLevels(sqlStore)
+		l.riskFactorStoreSQL = sqlstore.NewRiskFactors(sqlStore)
+		l.netParamStoreSQL = sqlstore.NewNetworkParameters(sqlStore)
+		l.checkpointStoreSQL = sqlstore.NewCheckpoints(sqlStore)
+
 		l.sqlStore = sqlStore
 	}
 
@@ -265,6 +274,11 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 			l.depositSubSQL,
 			l.proposalsSubSQL,
 			l.votesSubSQL,
+			l.depositSubSQL,
+			l.marginLevelsSubSQL,
+			l.riskFactorSubSQL,
+			l.netParamSubSQL,
+			l.checkpointSubSQL,
 		)
 	}
 

@@ -5,17 +5,23 @@ import (
 	"fmt"
 	"math"
 	"strconv"
-	"strings"
 	"time"
 
 	"code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/types"
 )
 
+// TODO: These need to decode to upper case
+type OrderID struct{ ID }
+
+func NewOrderID(id string) OrderID {
+	return OrderID{ID: ID(id)}
+}
+
 type Order struct {
-	ID              []byte
-	MarketID        []byte
-	PartyID         []byte
+	ID              OrderID
+	MarketID        MarketID
+	PartyID         PartyID
 	Side            Side
 	Price           int64
 	Size            int64
@@ -36,18 +42,6 @@ type Order struct {
 	VegaTime        time.Time
 }
 
-func MakeOrderID(stringID string) ([]byte, error) {
-	id, err := hex.DecodeString(stringID)
-	if err != nil {
-		return nil, fmt.Errorf("order id is not valid hex string: %v", stringID)
-	}
-	return id, nil
-}
-
-func (o *Order) HexID() string {
-	return strings.ToUpper(hex.EncodeToString(o.ID))
-}
-
 func (o *Order) ToProto() *vega.Order {
 	var peggedOrder *vega.PeggedOrder
 	if o.PeggedReference != types.PeggedReferenceUnspecified {
@@ -57,9 +51,9 @@ func (o *Order) ToProto() *vega.Order {
 	}
 
 	vo := vega.Order{
-		Id:                   o.HexID(),
-		MarketId:             Market{ID: o.MarketID}.HexID(),
-		PartyId:              Party{ID: o.PartyID}.HexID(),
+		Id:                   o.ID.String(),
+		MarketId:             o.MarketID.String(),
+		PartyId:              o.PartyID.String(),
 		Side:                 o.Side,
 		Price:                strconv.FormatInt(o.Price, 10),
 		Size:                 uint64(o.Size),
@@ -81,21 +75,6 @@ func (o *Order) ToProto() *vega.Order {
 }
 
 func OrderFromProto(po *vega.Order) (Order, error) {
-	id, err := hex.DecodeString(po.Id)
-	if err != nil {
-		return Order{}, fmt.Errorf("Order ID is not a valid hex string: %v", po.Id)
-	}
-
-	marketId, err := hex.DecodeString(po.MarketId)
-	if err != nil {
-		return Order{}, fmt.Errorf("Market ID is not a valid hex string: %v", po.MarketId)
-	}
-
-	partyId, err := hex.DecodeString(po.PartyId)
-	if err != nil {
-		return Order{}, fmt.Errorf("Party ID is not a valid hex string: %v", po.PartyId)
-	}
-
 	price, err := strconv.ParseInt(po.Price, 10, 64)
 	if err != nil {
 		return Order{}, fmt.Errorf("Price is not a valid integer: %v", po.Price)
@@ -138,9 +117,9 @@ func OrderFromProto(po *vega.Order) (Order, error) {
 	}
 
 	o := Order{
-		ID:              id,
-		MarketID:        marketId,
-		PartyID:         partyId,
+		ID:              NewOrderID(po.Id),
+		MarketID:        NewMarketID(po.MarketId),
+		PartyID:         NewPartyID(po.PartyId),
 		Side:            po.Side,
 		Price:           price,
 		Size:            size,

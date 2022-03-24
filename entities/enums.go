@@ -212,26 +212,20 @@ const (
 )
 
 func (m MarketTradingMode) EncodeText(_ *pgtype.ConnInfo, buf []byte) ([]byte, error) {
-	mode := []byte(vega.Market_TradingMode_name[int32(m)])
-	return append(buf, mode...), nil
+	mode, ok := vega.Market_TradingMode_name[int32(m)]
+	if !ok {
+		return buf, fmt.Errorf("unknown trading mode: %s", mode)
+	}
+	return append(buf, []byte(mode)...), nil
 }
 
 func (m *MarketTradingMode) DecodeText(_ *pgtype.ConnInfo, src []byte) error {
-	switch string(src) {
-	case "TRADING_MODE_UNSPECIFIED":
-		*m = MarketTradingModeUnspecified
-	case "TRADING_MODE_CONTINUOUS":
-		*m = MarketTradingModeContinuous
-	case "TRADING_MODE_BATCH_AUCTION":
-		*m = MarketTradingModeBatchAuction
-	case "TRADING_MODE_OPENING_AUCTION":
-		*m = MarketTradingModeOpeningAuction
-	case "TRADING_MODE_MONITORING_AUCTION":
-		*m = MarketTradingModeMonitoringAuction
-	default:
-		return fmt.Errorf("unrecognized trading mode: %s", src)
+	val, ok := vega.Market_TradingMode_value[string(src)]
+	if !ok {
+		return fmt.Errorf("unknown trading mode: %s", src)
 	}
 
+	*m = MarketTradingMode(val)
 	return nil
 }
 
@@ -251,35 +245,20 @@ const (
 )
 
 func (s MarketState) EncodeText(_ *pgtype.ConnInfo, buf []byte) ([]byte, error) {
-	state := []byte(vega.Market_State_name[(int32(s))])
-	return append(buf, state...), nil
+	state, ok := vega.Market_State_name[int32(s)]
+	if !ok {
+		return buf, fmt.Errorf("unknown market state: %s", state)
+	}
+	return append(buf, []byte(state)...), nil
 }
 
 func (s *MarketState) DecodeText(_ *pgtype.ConnInfo, src []byte) error {
-	switch string(src) {
-	case "STATE_UNSPECIFIED":
-		*s = MarketStateUnspecified
-	case "STATE_PROPOSED":
-		*s = MarketStateProposed
-	case "STATE_REJECTED":
-		*s = MarketStateRejected
-	case "STATE_PENDING":
-		*s = MarketStatePending
-	case "STATE_CANCELLED":
-		*s = MarketStateCancelled
-	case "STATE_ACTIVE":
-		*s = MarketStateActive
-	case "STATE_SUSPENDED":
-		*s = MarketStateSuspended
-	case "STATE_CLOSED":
-		*s = MarketStateClosed
-	case "STATE_TRADING_TERMINATED":
-		*s = MarketStateTradingTerminated
-	case "STATE_SETTLED":
-		*s = MarketStateSettled
-	default:
-		return fmt.Errorf("unknown state: %s", src)
+	val, ok := vega.Market_State_value[string(src)]
+	if !ok {
+		return fmt.Errorf("unknown market state: %s", src)
 	}
+
+	*s = MarketState(val)
 
 	return nil
 }
@@ -294,23 +273,21 @@ const (
 )
 
 func (s DepositStatus) EncodeText(_ *pgtype.ConnInfo, buf []byte) ([]byte, error) {
-	status := []byte(vega.Deposit_Status_name[int32(s)])
-	return append(buf, status...), nil
+	status, ok := vega.Deposit_Status_name[int32(s)]
+	if !ok {
+		return buf, fmt.Errorf("unknown deposit state, %s", status)
+	}
+	return append(buf, []byte(status)...), nil
 }
 
 func (s *DepositStatus) DecodeText(_ *pgtype.ConnInfo, src []byte) error {
-	switch string(src) {
-	case "STATUS_UNSPECIFIED":
-		*s = DepositStatusUnspecified
-	case "STATUS_OPEN":
-		*s = DepositStatusOpen
-	case "STATUS_CANCELLED":
-		*s = DepositStatusCancelled
-	case "STATUS_FINALIZED":
-		*s = DepositStatusFinalized
-	default:
-		return fmt.Errorf("unknown status: %s", src)
+	val, ok := vega.Deposit_Status_value[string(src)]
+	if !ok {
+		return fmt.Errorf("unknown deposit state: %s", src)
 	}
+
+	*s = DepositStatus(val)
+
 	return nil
 }
 

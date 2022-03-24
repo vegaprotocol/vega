@@ -271,7 +271,7 @@ create table if not exists deposits (
     status deposit_status not null,
     party_id bytea not null,
     asset bytea not null,
-    amount numeric,
+    amount numeric(32, 0),
     tx_hash text not null,
     credited_timestamp timestamp with time zone not null,
     created_timestamp timestamp with time zone not null,
@@ -308,6 +308,7 @@ CREATE TABLE votes(
   total_governance_token_weight  NUMERIC(32, 16)           NOT NULL,
   total_equity_like_share_weight NUMERIC(32, 16)           NOT NULL,
   vega_time                      TIMESTAMP WITH TIME ZONE NOT NULL REFERENCES blocks(vega_time),
+  initial_time                   TIMESTAMP WITH TIME ZONE,
   PRIMARY KEY (proposal_id, party_id, vega_time)
 );
 
@@ -315,11 +316,51 @@ CREATE VIEW votes_current AS (
   SELECT DISTINCT ON (proposal_id, party_id) * FROM votes ORDER BY proposal_id, party_id, vega_time DESC
 );
 
+create table if not exists margin_levels (
+    market_id bytea not null,
+    asset_id bytea not null,
+    party_id bytea not null,
+    timestamp timestamp with time zone not null,
+    maintenance_margin numeric(32, 0),
+    search_level numeric(32, 0),
+    initial_margin numeric(32, 0),
+    collateral_release_level numeric(32, 0),
+    vega_time timestamp with time zone not null references blocks(vega_time),
+    primary key (market_id, asset_id, party_id, vega_time)
+);
+
+create table if not exists risk_factors (
+    market_id bytea not null,
+    short numeric(32, 16) not null, 
+    long numeric(32, 16) not null,
+    vega_time timestamp with time zone not null references blocks(vega_time),
+    primary key (market_id, vega_time)
+);
+
+CREATE TABLE network_parameters (
+    key          TEXT                     NOT NULL,
+    value        TEXT                     NOT NULL,
+    vega_time    TIMESTAMP WITH TIME ZONE NOT NULL REFERENCES blocks(vega_time),
+    PRIMARY KEY (key, vega_time)
+);
+
+CREATE TABLE checkpoints(
+    hash         TEXT                     NOT NULL,
+    block_hash   TEXT                     NOT NULL,
+    block_height BIGINT                   NOT NULL,
+    vega_time    TIMESTAMP WITH TIME ZONE NOT NULL REFERENCES blocks(vega_time),
+    PRIMARY KEY (block_height)
+);
+
 -- +goose Down
 DROP AGGREGATE IF EXISTS public.first(anyelement);
 DROP AGGREGATE IF EXISTS public.last(anyelement);
 DROP FUNCTION IF EXISTS public.first_agg(anyelement, anyelement);
 DROP FUNCTION IF EXISTS public.last_agg(anyelement, anyelement);
+
+DROP TABLE IF EXISTS checkpoints;
+
+DROP TABLE IF EXISTS network_parameters;
 
 DROP VIEW IF EXISTS votes_current;
 DROP TABLE IF EXISTS votes;
@@ -336,6 +377,9 @@ DROP TABLE IF EXISTS rewards;
 DROP TABLE IF EXISTS network_limits;
 DROP VIEW IF EXISTS orders_current;
 DROP VIEW IF EXISTS orders_current_versions;
+
+drop table if exists risk_factors;
+drop table if exists margin_levels;
 
 DROP TABLE IF EXISTS deposits;
 DROP TYPE IF EXISTS deposit_status;

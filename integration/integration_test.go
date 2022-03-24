@@ -109,7 +109,8 @@ func assertGraphQLQueriesReturnSame(t *testing.T, query string, oldResp, newResp
 	sortMarkets := cmpopts.SortSlices(func(a Market, b Market) bool { return a.Id < b.Id })
 	sortVotes := cmpopts.SortSlices(func(a Vote, b Vote) bool { return a.Party.Id < b.Party.Id })
 	sortProposals := cmpopts.SortSlices(func(a Proposal, b Proposal) bool { return a.Id < b.Id })
-	diff := cmp.Diff(oldResp, newResp, sortTrades, sortVotes, sortAccounts, sortMarkets, sortProposals)
+	sortNetParams := cmpopts.SortSlices(func(a NetworkParameter, b NetworkParameter) bool { return a.Key < b.Key })
+	diff := cmp.Diff(oldResp, newResp, sortTrades, sortVotes, sortAccounts, sortMarkets, sortProposals, sortNetParams)
 	assert.Empty(t, diff)
 }
 

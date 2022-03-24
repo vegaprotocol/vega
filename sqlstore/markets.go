@@ -2,7 +2,6 @@ package sqlstore
 
 import (
 	"context"
-	"encoding/hex"
 	"fmt"
 
 	"code.vegaprotocol.io/data-node/entities"
@@ -56,12 +55,6 @@ set
 }
 
 func (m *Markets) GetByID(ctx context.Context, marketID string) (entities.Market, error) {
-	id, err := hex.DecodeString(marketID)
-
-	if err != nil {
-		return entities.Market{}, fmt.Errorf("bad ID (must be a hex string): %w", err)
-	}
-
 	var market entities.Market
 
 	query := fmt.Sprintf(`select distinct on (id) %s 
@@ -69,7 +62,7 @@ from markets
 where id = $1
 order by id, vega_time desc
 `, sqlMarketsColumns)
-	err = pgxscan.Get(ctx, m.pool, &market, query, id)
+	err := pgxscan.Get(ctx, m.pool, &market, query, entities.NewMarketID(marketID))
 
 	return market, err
 }

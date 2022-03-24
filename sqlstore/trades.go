@@ -2,7 +2,6 @@ package sqlstore
 
 import (
 	"context"
-	"encoding/hex"
 	"fmt"
 
 	"code.vegaprotocol.io/data-node/entities"
@@ -55,13 +54,8 @@ func (ts *Trades) Add(t *entities.Trade) error {
 }
 
 func (ts *Trades) GetByMarket(ctx context.Context, market string, p entities.Pagination) ([]entities.Trade, error) {
-	marketId, err := hex.DecodeString(market)
-	if err != nil {
-		return nil, err
-	}
-
 	query := `SELECT * from trades WHERE market_id=$1`
-	args := []interface{}{marketId}
+	args := []interface{}{entities.NewMarketID(market)}
 	trades, err := ts.queryTrades(ctx, query, args, &p)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get trade by market:%w", err)
@@ -71,35 +65,22 @@ func (ts *Trades) GetByMarket(ctx context.Context, market string, p entities.Pag
 }
 
 func (ts *Trades) GetByParty(ctx context.Context, party string, market *string, pagination entities.Pagination) ([]entities.Trade, error) {
-	partyId, err := hex.DecodeString(party)
-	if err != nil {
-		return nil, err
-	}
-	args := []interface{}{partyId}
+	args := []interface{}{entities.NewPartyID(party)}
 	query := `SELECT * from trades WHERE buyer=$1 or seller=$1`
 
 	return ts.queryTradesWithMarketFilter(ctx, query, args, market, pagination)
 }
 
 func (ts *Trades) GetByOrderID(ctx context.Context, order string, market *string, pagination entities.Pagination) ([]entities.Trade, error) {
-	orderId, err := hex.DecodeString(order)
-	if err != nil {
-		return nil, err
-	}
-	args := []interface{}{orderId}
+	args := []interface{}{entities.NewOrderID(order)}
 	query := `SELECT * from trades WHERE buy_order=$1 or sell_order=$1`
 	return ts.queryTradesWithMarketFilter(ctx, query, args, market, pagination)
 }
 
 func (ts *Trades) queryTradesWithMarketFilter(ctx context.Context, query string, args []interface{}, market *string, p entities.Pagination) ([]entities.Trade, error) {
 	if market != nil && *market != "" {
-
-		marketId, err := hex.DecodeString(*market)
-		if err != nil {
-			return nil, err
-		}
-		position := nextBindVar(&args, marketId)
-		query += ` AND market_id=` + position
+		marketID := nextBindVar(&args, entities.NewMarketID(*market))
+		query += ` AND market_id=` + marketID
 	}
 
 	trades, err := ts.queryTrades(ctx, query, args, &p)

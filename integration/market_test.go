@@ -21,6 +21,7 @@ func TestMarkets(t *testing.T) {
 		"OrderTrades":      "{ markets{ id, trades{ id, price, size, createdAt, market{ id }, type, buyOrder, sellOrder, buyer{id}, seller{id}, aggressor, buyerAuctionBatch, sellerAuctionBatch } } }",
 		"OrderBuyFees":     "{ markets{ id, trades{ id, buyerFee { makerFee, infrastructureFee, liquidityFee } } } }",
 		"OrderSellFees":    "{ markets{ id, trades{ id, sellerFee { makerFee, infrastructureFee, liquidityFee } } } }",
+		"RiskFactor":       "{ markets { riskFactors { market, short, long } } }",
 		// TODO - accounts fails, but I think it is the old API which has wrong market balances
 		//"Accounts": "{ markets{ id, accounts { balance, asset {id}, type, market {id}, } } }",
 		// TODO: Market depth / data / candles / liquidity provisions / timestamps

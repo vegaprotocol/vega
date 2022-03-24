@@ -234,3 +234,7 @@ func (s *Svc) ObserveMarginLevels(
 func (s *Svc) GetMarginLevelsSubscribersCount() int32 {
 	return atomic.LoadInt32(&s.subscriberCnt)
 }
+
+func (s *Svc) GetMarketRiskFactors(marketID string) (ptypes.RiskFactor, error) {
+	return s.store.GetMarketRiskFactors(marketID)
+}

@@ -19,7 +19,6 @@ import (
 	oraclespb "code.vegaprotocol.io/protos/vega/oracles/v1"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/types/num"
-
 	"github.com/pkg/errors"
 	"google.golang.org/grpc/codes"
 )
@@ -141,6 +140,7 @@ type RiskService interface {
 	GetMarginLevelsSubscribersCount() int32
 	GetMarginLevelsByID(partyID, marketID string) ([]pbtypes.MarginLevels, error)
 	EstimateMargin(ctx context.Context, order *pbtypes.Order) (*pbtypes.MarginLevels, error)
+	GetMarketRiskFactors(marketID string) (pbtypes.RiskFactor, error)
 }
 
 // NotaryService ...
@@ -2339,4 +2339,17 @@ func (t *tradingDataService) observeEventsWithAck(
 			bCh <- int(batchSize)
 		}
 	}
+}
+
+func (t *tradingDataService) GetRiskFactors(ctx context.Context, in *protoapi.GetRiskFactorsRequest) (*protoapi.GetRiskFactorsResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("GetRiskFactors")()
+
+	rfs, err := t.RiskService.GetMarketRiskFactors(in.MarketId)
+	if err != nil {
+		return nil, apiError(codes.Internal, err)
+	}
+
+	return &protoapi.GetRiskFactorsResponse{
+		RiskFactor: &rfs,
+	}, nil
 }

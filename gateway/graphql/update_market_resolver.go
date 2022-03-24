@@ -3,11 +3,11 @@ package gql
 import (
 	"context"
 
-	types "code.vegaprotocol.io/protos/vega"
+	"code.vegaprotocol.io/protos/vega"
 )
 
 type updateMarketResolver VegaResolverRoot
 
-func (r *updateMarketResolver) MarketID(ctx context.Context, obj *types.UpdateMarket) (string, error) {
-	return "not implemented", nil
+func (r *updateMarketResolver) UpdateMarketConfiguration(ctx context.Context, obj *vega.UpdateMarket) (*vega.UpdateMarketConfiguration, error) {
+	return obj.Changes, nil
 }

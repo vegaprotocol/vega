@@ -1,7 +1,6 @@
 package entities
 
 import (
-	"encoding/hex"
 	"errors"
 	"fmt"
 	"math"
@@ -11,8 +10,14 @@ import (
 	"github.com/shopspring/decimal"
 )
 
+type MarketID struct{ ID }
+
+func NewMarketID(id string) MarketID {
+	return MarketID{ID: ID(id)}
+}
+
 type Market struct {
-	ID                            []byte
+	ID                            MarketID
 	VegaTime                      time.Time
 	InstrumentID                  string
 	TradableInstrument            TradableInstrument
@@ -27,25 +32,8 @@ type Market struct {
 	PositionDecimalPlaces         int
 }
 
-func MakeMarketID(stringID string) ([]byte, error) {
-	id, err := hex.DecodeString(stringID)
-	if err != nil {
-		return nil, fmt.Errorf("market id is not valid hex string: %v", stringID)
-	}
-	return id, nil
-}
-
-func (m Market) HexID() string {
-	return hex.EncodeToString(m.ID)
-}
-
 func NewMarketFromProto(market *vega.Market, vegaTime time.Time) (*Market, error) {
-	id, err := MakeMarketID(market.Id)
-
-	if err != nil {
-		return nil, err
-	}
-
+	var err error
 	var tradableInstrument TradableInstrument
 	var liquidityMonitoringParameters LiquidityMonitoringParameters
 	var marketTimestamps MarketTimestamps
@@ -90,7 +78,7 @@ func NewMarketFromProto(market *vega.Market, vegaTime time.Time) (*Market, error
 	positionDps := int(market.PositionDecimalPlaces)
 
 	return &Market{
-		ID:                            id,
+		ID:                            NewMarketID(market.Id),
 		VegaTime:                      vegaTime,
 		InstrumentID:                  market.TradableInstrument.Instrument.Id,
 		TradableInstrument:            tradableInstrument,
@@ -108,7 +96,7 @@ func NewMarketFromProto(market *vega.Market, vegaTime time.Time) (*Market, error
 
 func (m Market) ToProto() (*vega.Market, error) {
 	return &vega.Market{
-		Id:                 m.HexID(),
+		Id:                 m.ID.String(),
 		TradableInstrument: m.TradableInstrument.ToProto(),
 		DecimalPlaces:      uint64(m.DecimalPlaces),
 		Fees:               m.Fees.ToProto(),

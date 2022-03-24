@@ -59,10 +59,10 @@ func (vs *Vote) consume(event VoteEvent) {
 	protoVote := event.Vote()
 	vote, err := entities.VoteFromProto(&protoVote)
 
-	if vote.VegaTime != vs.vegaTime {
-		vs.log.Error("proposal timestamp does not match current VegaTime",
-			logging.Reflect("reward", protoVote))
-	}
+	// The timestamp provided on the vote proto object is from when the vote was first created.
+	// It doesn't change when the vote is updated (e.g. with TotalGovernanceTokenWeight et al when
+	// the proposal closes.)
+	vote.VegaTime = vs.vegaTime
 
 	if err != nil {
 		vs.log.Error("unable to parse vote", logging.Error(err))

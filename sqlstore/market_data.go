@@ -2,7 +2,6 @@ package sqlstore
 
 import (
 	"context"
-	"encoding/hex"
 	"errors"
 	"fmt"
 	"time"
@@ -65,15 +64,11 @@ func (md *MarketData) Add(data *entities.MarketData) error {
 
 func (md *MarketData) GetMarketDataByID(ctx context.Context, marketID string) (entities.MarketData, error) {
 	md.log.Debug("Retrieving market data from Postgres", logging.String("market-id", marketID))
-	market, err := hex.DecodeString(marketID)
-	if err != nil {
-		return entities.MarketData{}, fmt.Errorf("bad ID (must be a hex string): %w", err)
-	}
 
 	var marketData entities.MarketData
 	query := fmt.Sprintf("select %s from market_data_snapshot where market = $1", sqlMarketDataColumns)
 
-	err = pgxscan.Get(ctx, md.pool, &marketData, query, market)
+	err := pgxscan.Get(ctx, md.pool, &marketData, query, entities.NewMarketID(marketID))
 
 	return marketData, err
 }
@@ -106,12 +101,7 @@ func (md *MarketData) GetToDateByID(ctx context.Context, marketID string, end ti
 }
 
 func (md *MarketData) getBetweenDatesByID(ctx context.Context, marketID string, start, end *time.Time, pagination entities.Pagination) (results []entities.MarketData, err error) {
-	var market []byte
-
-	market, err = hex.DecodeString(marketID)
-	if err != nil {
-		return nil, err
-	}
+	market := entities.NewMarketID(marketID)
 
 	selectStatement := fmt.Sprintf(`select %s from market_data`, sqlMarketDataColumns)
 

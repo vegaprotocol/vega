@@ -52,18 +52,12 @@ func (ds *Delegations) Get(ctx context.Context,
 	conditions := []string{}
 
 	if partyIDHex != nil {
-		partyID, err := entities.MakePartyID(*partyIDHex)
-		if err != nil {
-			return []entities.Delegation{}, err
-		}
+		partyID := entities.NewPartyID(*partyIDHex)
 		conditions = append(conditions, fmt.Sprintf("party_id=%s", nextBindVar(&args, partyID)))
 	}
 
 	if nodeIDHex != nil {
-		nodeID, err := entities.MakeNodeID(*nodeIDHex)
-		if err != nil {
-			return []entities.Delegation{}, err
-		}
+		nodeID := entities.NewNodeID(*nodeIDHex)
 		conditions = append(conditions, fmt.Sprintf("node_id=%s", nextBindVar(&args, nodeID)))
 	}
 

@@ -27,39 +27,40 @@ func (vs *Votes) Add(ctx context.Context, v entities.Vote) error {
 			party_id,
 			value,
 			vega_time,
+			initial_time,
 			total_governance_token_balance,
 			total_governance_token_weight,
 			total_equity_like_share_weight
 		)
-		 VALUES ($1,  $2,  $3,  $4,  $5, $6, $7)
+		 VALUES ($1,  $2,  $3,  $4,  $5, $6, $7, $8)
 		 ON CONFLICT (proposal_id, party_id, vega_time) DO UPDATE SET
 			value = EXCLUDED.value,
 			total_governance_token_balance =EXCLUDED.total_governance_token_balance,
 			total_governance_token_weight = EXCLUDED.total_governance_token_weight,
 			total_equity_like_share_weight = EXCLUDED.total_equity_like_share_weight;
 		`,
-		v.ProposalID, v.PartyID, v.Value, v.VegaTime,
+		v.ProposalID, v.PartyID, v.Value, v.VegaTime, v.InitialTime,
 		v.TotalGovernanceTokenBalance, v.TotalGovernanceTokenWeight, v.TotalEquityLikeShareWeight)
 	return err
 }
 
-func (rs *Votes) GetYesVotesForProposal(ctx context.Context, proposalIDHex string) ([]entities.Vote, error) {
+func (rs *Votes) GetYesVotesForProposal(ctx context.Context, proposalIDStr string) ([]entities.Vote, error) {
 	yes := entities.VoteValueYes
-	return rs.Get(ctx, &proposalIDHex, nil, &yes)
+	return rs.Get(ctx, &proposalIDStr, nil, &yes)
 }
 
-func (rs *Votes) GetNoVotesForProposal(ctx context.Context, proposalIDHex string) ([]entities.Vote, error) {
+func (rs *Votes) GetNoVotesForProposal(ctx context.Context, proposalIDStr string) ([]entities.Vote, error) {
 	no := entities.VoteValueNo
-	return rs.Get(ctx, &proposalIDHex, nil, &no)
+	return rs.Get(ctx, &proposalIDStr, nil, &no)
 }
 
-func (rs *Votes) GetByParty(ctx context.Context, partyIDHex string) ([]entities.Vote, error) {
-	return rs.Get(ctx, nil, &partyIDHex, nil)
+func (rs *Votes) GetByParty(ctx context.Context, partyIDStr string) ([]entities.Vote, error) {
+	return rs.Get(ctx, nil, &partyIDStr, nil)
 }
 
 func (rs *Votes) Get(ctx context.Context,
-	proposalIDHex *string,
-	partyIDHex *string,
+	proposalIDStr *string,
+	partyIDStr *string,
 	value *entities.VoteValue,
 ) ([]entities.Vote, error) {
 	query := `SELECT * FROM votes_current`
@@ -67,19 +68,13 @@ func (rs *Votes) Get(ctx context.Context,
 
 	conditions := []string{}
 
-	if proposalIDHex != nil {
-		proposalID, err := entities.MakeProposalID(*proposalIDHex)
-		if err != nil {
-			return nil, err
-		}
+	if proposalIDStr != nil {
+		proposalID := entities.NewProposalID(*proposalIDStr)
 		conditions = append(conditions, fmt.Sprintf("proposal_id=%s", nextBindVar(&args, proposalID)))
 	}
 
-	if partyIDHex != nil {
-		partyID, err := entities.MakePartyID(*partyIDHex)
-		if err != nil {
-			return nil, err
-		}
+	if partyIDStr != nil {
+		partyID := entities.NewPartyID(*partyIDStr)
 		conditions = append(conditions, fmt.Sprintf("party_id=%s", nextBindVar(&args, partyID)))
 	}
 

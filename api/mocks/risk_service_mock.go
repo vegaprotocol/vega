@@ -79,6 +79,21 @@ func (mr *MockRiskServiceMockRecorder) GetMarginLevelsSubscribersCount() *gomock
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMarginLevelsSubscribersCount", reflect.TypeOf((*MockRiskService)(nil).GetMarginLevelsSubscribersCount))
 }
 
+// GetMarketRiskFactors mocks base method.
+func (m *MockRiskService) GetMarketRiskFactors(arg0 string) (vega.RiskFactor, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetMarketRiskFactors", arg0)
+	ret0, _ := ret[0].(vega.RiskFactor)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetMarketRiskFactors indicates an expected call of GetMarketRiskFactors.
+func (mr *MockRiskServiceMockRecorder) GetMarketRiskFactors(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMarketRiskFactors", reflect.TypeOf((*MockRiskService)(nil).GetMarketRiskFactors), arg0)
+}
+
 // ObserveMarginLevels mocks base method.
 func (m *MockRiskService) ObserveMarginLevels(arg0 context.Context, arg1 int, arg2, arg3 string) (<-chan []vega.MarginLevels, uint64) {
 	m.ctrl.T.Helper()

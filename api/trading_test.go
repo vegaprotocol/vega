@@ -285,6 +285,11 @@ func getTestGRPCServer(
 	sqlDepositStore := sqlstore.NewDeposits(&sqlStore)
 	sqlProposalStore := sqlstore.NewProposals(&sqlStore)
 	sqlVoteStore := sqlstore.NewVotes(&sqlStore)
+	sqlRiskFactorsStore := sqlstore.NewRiskFactors(&sqlStore)
+	sqlMarginLevelsStore := sqlstore.NewMarginLevels(&sqlStore)
+	sqlNetParamStore := sqlstore.NewNetworkParameters(&sqlStore)
+	sqlBlockStore := sqlstore.NewBlocks(&sqlStore)
+	sqlCheckpointStore := sqlstore.NewCheckpoints(&sqlStore)
 
 	g := api.NewGRPCServer(
 		logger,
@@ -331,6 +336,11 @@ func getTestGRPCServer(
 		sqlDepositStore,
 		sqlProposalStore,
 		sqlVoteStore,
+		sqlRiskFactorsStore,
+		sqlMarginLevelsStore,
+		sqlNetParamStore,
+		sqlBlockStore,
+		sqlCheckpointStore,
 	)
 	if g == nil {
 		err = fmt.Errorf("failed to create gRPC server")
