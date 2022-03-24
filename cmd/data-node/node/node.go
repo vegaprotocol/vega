@@ -119,6 +119,8 @@ type NodeCommand struct {
 	voteStoreSQL          *sqlstore.Votes
 	marginLevelsStoreSQL  *sqlstore.MarginLevels
 	riskFactorStoreSQL    *sqlstore.RiskFactors
+	netParamStoreSQL      *sqlstore.NetworkParameters
+	checkpointStoreSQL    *sqlstore.Checkpoints
 
 	vegaCoreServiceClient vegaprotoapi.CoreServiceClient
 
@@ -165,6 +167,8 @@ type NodeCommand struct {
 	votesSubSQL            *sqlsubscribers.Vote
 	marginLevelsSubSQL     *sqlsubscribers.MarginLevels
 	riskFactorSubSQL       *sqlsubscribers.RiskFactor
+	netParamSubSQL         *sqlsubscribers.NetworkParameter
+	checkpointSubSQL       *sqlsubscribers.Checkpoint
 
 	candleService     *candles.Svc
 	tradeService      *trades.Svc
@@ -363,6 +367,9 @@ func (l *NodeCommand) createGRPCServer(config api.Config, useSQLStores bool) *ap
 		l.voteStoreSQL,
 		l.riskFactorStoreSQL,
 		l.marginLevelsStoreSQL,
+		l.netParamStoreSQL,
+		l.blockStoreSQL,
+		l.checkpointStoreSQL,
 	)
 	return grpcServer
 }

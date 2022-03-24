@@ -11,6 +11,7 @@ import (
 	"code.vegaprotocol.io/data-node/sqlstore"
 	protoapi "code.vegaprotocol.io/protos/data-node/api/v1"
 	"code.vegaprotocol.io/protos/vega"
+	pbtypes "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/types/num"
 	"google.golang.org/grpc/codes"
 )
@@ -31,12 +32,66 @@ type tradingDataDelegator struct {
 	voteStore         *sqlstore.Votes
 	riskFactorStore   *sqlstore.RiskFactors
 	marginLevelsStore *sqlstore.MarginLevels
+	netParamStore     *sqlstore.NetworkParameters
+	blockStore        *sqlstore.Blocks
+	checkpointStore   *sqlstore.Checkpoints
 }
 
 var defaultEntityPagination = entities.Pagination{
 	Skip:       0,
 	Limit:      50,
 	Descending: true,
+}
+
+/****************************** General **************************************/
+
+func (t *tradingDataDelegator) GetVegaTime(ctx context.Context, _ *protoapi.GetVegaTimeRequest) (*protoapi.GetVegaTimeResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("GetVegaTime SQL")()
+	b, err := t.blockStore.GetLastBlock()
+	if err != nil {
+		return nil, apiError(codes.Internal, ErrTimeServiceGetTimeNow, err)
+	}
+
+	return &protoapi.GetVegaTimeResponse{
+		Timestamp: b.VegaTime.UnixNano(),
+	}, nil
+}
+
+/****************************** Checkpoints **************************************/
+
+func (t *tradingDataDelegator) Checkpoints(ctx context.Context, _ *protoapi.CheckpointsRequest) (*protoapi.CheckpointsResponse, error) {
+	checkpoints, err := t.checkpointStore.GetAll(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	out := make([]*protoapi.Checkpoint, len(checkpoints))
+	for i, cp := range checkpoints {
+		out[i] = cp.ToProto()
+	}
+
+	return &protoapi.CheckpointsResponse{
+		Checkpoints: out,
+	}, nil
+}
+
+/****************************** Network Parameters **************************************/
+
+func (t *tradingDataDelegator) NetworkParameters(ctx context.Context, req *protoapi.NetworkParametersRequest) (*protoapi.NetworkParametersResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("NetworkParameters SQL")()
+	nps, err := t.netParamStore.GetAll(ctx)
+	if err != nil {
+		return nil, apiError(codes.Internal, err)
+	}
+
+	out := make([]*pbtypes.NetworkParameter, len(nps))
+	for i, np := range nps {
+		out[i] = np.ToProto()
+	}
+
+	return &protoapi.NetworkParametersResponse{
+		NetworkParameters: out,
+	}, nil
 }
 
 /****************************** Governance **************************************/

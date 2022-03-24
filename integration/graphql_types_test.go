@@ -266,3 +266,8 @@ type Deposit struct {
 	CreditedTimestamp string
 	TxHash            string
 }
+
+type NetworkParameter struct {
+	Key   string
+	Value string
+}
