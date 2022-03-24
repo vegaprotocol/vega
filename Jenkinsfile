@@ -273,6 +273,15 @@ pipeline {
                     }
                 }
                 stage('System Tests') {
+                    when {
+                        anyOf {
+                            changeset "*.go"
+                            changeset "**/*.go"
+                            changeset "go.mod"
+                            changeset "go.sum"
+                            changeset "Makefile"
+                        }
+                    }
                     steps {
                         script {
                             systemTests ignoreFailure: !isPRBuild(),
@@ -288,6 +297,15 @@ pipeline {
                     }
                 }
                 stage('LNL System Tests') {
+                   when {
+                        anyOf {
+                            changeset "*.go"
+                            changeset "**/*.go"
+                            changeset "go.mod"
+                            changeset "go.sum"
+                            changeset "Makefile"
+                        }
+                    }
                     steps {
                         script {
                             systemTestsLNL ignoreFailure: !isPRBuild(),
