@@ -47,6 +47,13 @@ type LSE interface {
 	Timestamp() int64
 }
 
+type PSE interface {
+	events.Event
+	PartyID() string
+	MarketID() string
+	Size() int64
+}
+
 // Positions plugin taking settlement data to build positions API data.
 type Positions struct {
 	*subscribers.Base
@@ -76,9 +83,37 @@ func (p *Positions) Push(evts ...events.Event) {
 			p.updateSettleDestressed(te)
 		case LSE:
 			p.applyLossSocialization(te)
+		case PSE:
+			p.updatePositionEvent(te)
 		}
 	}
 	p.mu.Unlock()
+}
+
+func (p *Positions) updatePositionEvent(e PSE) {
+	mID, pID := e.MarketID(), e.PartyID()
+	if _, ok := p.data[mID]; !ok {
+		p.data[mID] = map[string]Position{}
+	}
+
+	// We have a matching market here, now get the party
+	if pos, ok := p.data[mID][pID]; !ok {
+		// Create a new position object and populate with values
+		pos = Position{Position: types.Position{
+			MarketId:          mID,
+			PartyId:           pID,
+			OpenVolume:        e.Size(),
+			RealisedPnl:       num.DecimalZero(),
+			UnrealisedPnl:     num.DecimalZero(),
+			AverageEntryPrice: num.Zero(),
+			UpdatedAt:         0,
+		}}
+		p.data[mID][pID] = pos
+	} else {
+		// Update the existing position object
+		pos.OpenVolume = e.Size()
+		p.data[mID][pID] = pos
+	}
 }
 
 func (p *Positions) applyLossSocialization(e LSE) {
@@ -313,5 +348,6 @@ func (p *Positions) Types() []events.Type {
 		events.SettlePositionEvent,
 		events.SettleDistressedEvent,
 		events.LossSocializationEvent,
+		events.PositionStateEvent,
 	}
 }
