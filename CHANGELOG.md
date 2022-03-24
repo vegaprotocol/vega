@@ -14,6 +14,7 @@
 
 ### 🐛 Fixes
 - [5064](https://github.com/vegaprotocol/vega/issues/5064) - Send order event on settlement
+- [5068](https://github.com/vegaprotocol/vega/issues/5068) - Use settlement price if exists when received trading terminated event
 
 
 ## 0.49.7

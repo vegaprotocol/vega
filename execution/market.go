@@ -3076,6 +3076,10 @@ func (m *Market) tradingTerminated(ctx context.Context, tt bool) {
 	m.mkt.State = types.MarketStateTradingTerminated
 	m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
 	m.stateChanged = true
+
+	if price, err := m.tradableInstrument.Instrument.Product.SettlementPrice(); err != nil {
+		m.settlementPriceWithLock(ctx, price)
+	}
 }
 
 func (m *Market) settlementPrice(ctx context.Context, settlementPrice *num.Uint) {
