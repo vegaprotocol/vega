@@ -9,7 +9,7 @@ Feature: Test LP orders
       | name                           | value |
       | market.auction.minimumDuration | 1     |
 
-  Scenario: create liquidity provisions
+  Scenario: create liquidity provisions (0038-OLIQ-additional-tests)
     Given the parties deposit on asset's general account the following amount:
       | party           | asset | amount    |
       | party1          | ETH   | 100000000 |

@@ -634,6 +634,7 @@ func (b *BrokerStub) GetPartyBondAccountForMarket(party, asset, marketID string)
 	}
 	return
 }
+
 func (b *BrokerStub) ClearOrderByReference(party, ref string) error {
 	b.mu.Lock()
 	data := b.data[events.OrderEvent]
