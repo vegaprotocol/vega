@@ -2,9 +2,6 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
 # to look into and test: If an equity-like share is small and LP rewards are distributed immediately, then how do we round? (does a small share get rounded up or down, do they all add up?)
 #Check what happens with time and distribution period (both in genesis and mid-market)
 
-# Spec file: ../spec/0042-setting-fees-and-rewarding-lps.md
-# Spec file: ../protocol/0042-LIQF-setting_fees_and_rewarding_lps.md
-
   Background:
 
     Given the simple risk model named "simple-risk-model-1":
@@ -431,7 +428,6 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
       | from   | to  | from account                | to account           | market id | amount | asset |
       | market | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 19     | USD   |
       | market | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 1      | USD   |
-
 
   Scenario: 2 LPs joining at start, unequal commitments, Check what happens on lp fee distribution when time is moving (0042-LP-Fees-005)
 
