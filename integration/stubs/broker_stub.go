@@ -621,6 +621,20 @@ func (b *BrokerStub) GetPartyBondAccount(party, asset string) (ba types.Account,
 	return
 }
 
+func (b *BrokerStub) GetPartyBondAccountForMarket(party, asset, marketID string) (ba types.Account, err error) {
+	batch := b.GetAccountEvents()
+	err = errors.New("account does not exist")
+	for _, e := range batch {
+		v := e.Account()
+		if v.Owner == party && v.Type == types.AccountType_ACCOUNT_TYPE_BOND && v.Asset == asset && v.MarketId == marketID {
+			// may not be the latest ballence, so keep iterating
+			ba = v
+			err = nil
+		}
+	}
+	return
+}
+
 func (b *BrokerStub) ClearOrderByReference(party, ref string) error {
 	b.mu.Lock()
 	data := b.data[events.OrderEvent]

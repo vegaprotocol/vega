@@ -1,8 +1,5 @@
 Feature: Test liquidity provider reward distribution; Check what happens when distribution period is large(both in genesis)
 
-# Spec file: ../spec/0042-setting-fees-and-rewarding-lps.md
-# Spec file: ../protocol/0042-LIQF-setting_fees_and_rewarding_lps.md
-
   Background:
 
     Given the simple risk model named "simple-risk-model-1":

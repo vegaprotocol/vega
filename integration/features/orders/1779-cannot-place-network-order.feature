@@ -5,7 +5,7 @@ Feature: Cannot place an network order
       | id        | quote name | asset | risk model                  | margin calculator         | auction duration | fees         | price monitoring | oracle config          |
       | ETH/DEC19 | ETH        | ETH   | default-simple-risk-model-3 | default-margin-calculator | 0                | default-none | default-none     | default-eth-for-future |
 
-  Scenario: an order is rejected if a party try to place an order with type NETWORK
+  Scenario: an order is rejected if a party try to place an order with type NETWORK (0014-ORDT-005)
     Given the parties deposit on asset's general account the following amount:
       | party  | asset | amount |
       | party1 | ETH   | 1      |

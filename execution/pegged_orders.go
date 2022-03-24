@@ -2,6 +2,7 @@ package execution
 
 import (
 	"context"
+	"sort"
 	"time"
 
 	"code.vegaprotocol.io/vega/events"
@@ -165,4 +166,21 @@ func (p *PeggedOrders) GetAllForParty(party string) (orders []*types.Order) {
 		}
 	}
 	return
+}
+
+func (p *PeggedOrders) Settled() []*types.Order {
+	// now we can remove the pegged orders too
+	peggedOrders := make([]*types.Order, 0, len(p.orders))
+	for _, v := range p.orders {
+		if v.Status == types.OrderStatusParked {
+			order := v.Clone()
+			order.Status = types.OrderStatusStopped
+			peggedOrders = append(peggedOrders, order)
+		}
+	}
+	sort.Slice(peggedOrders, func(i, j int) bool {
+		return peggedOrders[i].ID < peggedOrders[j].ID
+	})
+
+	return peggedOrders
 }

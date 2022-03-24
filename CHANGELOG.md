@@ -15,6 +15,17 @@
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 
+## 0.49.8
+
+### 🛠 Improvements
+- [4814](https://github.com/vegaprotocol/vega/issues/4814) - Review fees tests
+- [5067](https://github.com/vegaprotocol/vega/pull/5067) - Adding acceptance codes and tidy up tests
+
+### 🐛 Fixes
+- [5064](https://github.com/vegaprotocol/vega/issues/5064) - Send order event on settlement
+- [5068](https://github.com/vegaprotocol/vega/issues/5068) - Use settlement price if exists when received trading terminated event
+
+
 ## 0.49.7
 
 ### 🚨 Breaking changes
@@ -25,6 +36,12 @@
 - [5019](https://github.com/vegaprotocol/vega/issues/5019) - Label Price Monitoring tests
 - [5022](https://github.com/vegaprotocol/vega/issues/5022) - CI: Run approbation for main/master/develop branches only
 - [5017](https://github.com/vegaprotocol/vega/issues/5017) - Added access functions to `PositionState` type
+- [5049](https://github.com/vegaprotocol/vega/issues/5049) - Liquidity Provision test coverage for 0034 spec
+- [5022](https://github.com/vegaprotocol/vega/issues/5022) - CI: Run approbation for main/master/develop branches
+only
+- [4916](https://github.com/vegaprotocol/vega/issues/4916) - Add acceptance criteria number in the existing feature tests to address acceptance criteria in `0008-TRAD-trading_workflow.md`
+- [5061](https://github.com/vegaprotocol/vega/issues/5061) - Add a test scenario using log normal risk model into feature test "insurance-pool-balance-test.feature"
+
 
 ### 🐛 Fixes
 - [5025](https://github.com/vegaprotocol/vega/issues/5025) - Witness snapshot breaking consensus

@@ -10,7 +10,7 @@ Feature: Verify the order size is correctly cumulated.
       | id        | quote name | asset | risk model               | margin calculator         | auction duration | fees         | price monitoring | oracle config          |
       | ETH/DEC19 | ETH        | ETH   | my-log-normal-risk-model | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future |
 
-  Scenario: Order from liquidity provision and from normal order submission are correctly cumulated in order book's total size (0038-OLIQ-001)
+  Scenario: Order from liquidity provision and from normal order submission are correctly cumulated in order book's total size (0038-OLIQ-003, 0038-OLIQ-004, 0038-OLIQ-005)
 
     Given the parties deposit on asset's general account the following amount:
       | party      | asset | amount       |

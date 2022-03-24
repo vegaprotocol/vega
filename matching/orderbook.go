@@ -1,6 +1,7 @@
 package matching
 
 import (
+	"sort"
 	"sync"
 	"time"
 
@@ -952,4 +953,18 @@ func (b *OrderBook) GetTotalNumberOfOrders() int64 {
 // GetTotalVolume is a debug/testing function to return the total volume in the order book.
 func (b *OrderBook) GetTotalVolume() int64 {
 	return b.buy.getTotalVolume() + b.sell.getTotalVolume()
+}
+
+func (b *OrderBook) Settled() []*types.Order {
+	orders := make([]*types.Order, 0, len(b.ordersByID))
+	for _, v := range b.ordersByID {
+		v.Status = types.OrderStatusStopped
+		orders = append(orders, v)
+	}
+
+	sort.Slice(orders, func(i, j int) bool {
+		return orders[i].ID < orders[j].ID
+	})
+
+	return orders
 }

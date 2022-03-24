@@ -305,6 +305,10 @@ func (m *Market) AmendLiquidityProvision(ctx context.Context, lpa *types.Liquidi
 
 // CancelLiquidityProvision forwards a LiquidityProvisionCancel to the Liquidity Engine.
 func (m *Market) CancelLiquidityProvision(ctx context.Context, cancel *types.LiquidityProvisionCancellation, party string) (err error) {
+	if !m.canSubmitCommitment() {
+		return ErrCommitmentSubmissionNotAllowed
+	}
+
 	if !m.liquidity.IsLiquidityProvider(party) {
 		return ErrPartyNotLiquidityProvider
 	}

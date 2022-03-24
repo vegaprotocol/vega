@@ -32,7 +32,7 @@ func PartiesShouldHaveTheFollowingAccountBalances(
 		// check bond
 		var bondAcc types.Account
 		if row.ExpectBondAccountBalance() {
-			bondAcc, err = broker.GetPartyBondAccount(row.Party(), row.Asset())
+			bondAcc, err = broker.GetPartyBondAccountForMarket(row.Party(), row.Asset(), row.MarketID())
 			if err == nil && stringToU64(bondAcc.Balance) != row.BondAccountBalance() {
 				hasError = true
 			}

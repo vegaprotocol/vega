@@ -732,6 +732,7 @@ func (m *Market) closeMarket(ctx context.Context, t time.Time) error {
 		parties = append(parties, k)
 	}
 
+	sort.Strings(parties)
 	clearMarketTransfers, err := m.collateral.ClearMarket(ctx, m.GetID(), asset, parties)
 	if err != nil {
 		m.log.Error("Clear market error",
@@ -743,6 +744,16 @@ func (m *Market) closeMarket(ctx context.Context, t time.Time) error {
 	m.broker.Send(events.NewTransferResponse(ctx, clearMarketTransfers))
 	m.mkt.State = types.MarketStateSettled
 	m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
+
+	// remove all order from the book
+	// and send events with the stopped status
+	orders := append(m.matching.Settled(), m.peggedOrders.Settled()...)
+	orderEvents := make([]events.Event, 0, len(orders))
+	for _, v := range orders {
+		orderEvents = append(orderEvents, events.NewOrderEvent(ctx, v))
+	}
+
+	m.broker.SendBatch(orderEvents)
 
 	m.stateChanged = true
 	return nil
@@ -2840,6 +2851,10 @@ func (m *Market) RemoveExpiredOrders(
 		return nil, ErrMarketClosed
 	}
 
+	if !m.canTrade() {
+		return nil, ErrTradingNotAllowed
+	}
+
 	expired := []*types.Order{}
 	evts := []events.Event{}
 	for _, orderID := range m.expiringOrders.Expire(timestamp) {
@@ -3061,6 +3076,10 @@ func (m *Market) tradingTerminated(ctx context.Context, tt bool) {
 	m.mkt.State = types.MarketStateTradingTerminated
 	m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
 	m.stateChanged = true
+
+	if price, err := m.tradableInstrument.Instrument.Product.SettlementPrice(); err != nil {
+		m.settlementPriceWithLock(ctx, price)
+	}
 }
 
 func (m *Market) settlementPrice(ctx context.Context, settlementPrice *num.Uint) {
