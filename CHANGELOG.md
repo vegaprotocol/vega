@@ -9,6 +9,15 @@
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 ### 🛠 Improvements
+- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+
+### 🐛 Fixes
+- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+
+
+## 0.49.8
+
+### 🛠 Improvements
 - [4814](https://github.com/vegaprotocol/vega/issues/4814) - Review fees tests
 - [5067](https://github.com/vegaprotocol/vega/pull/5067) - Adding acceptance codes and tidy up tests
 
