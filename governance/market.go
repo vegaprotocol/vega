@@ -211,7 +211,7 @@ func validateAsset(assetID string, decimals uint64, assets Assets, deepCheck boo
 	// decimal places asset less than market -> invalid.
 	// @TODO add a specific error for this validation?
 	if asset.DecimalPlaces() < decimals {
-		return types.ProposalErrorInvalidAsset, errors.New("market cannot have more decimal places than assets")
+		return types.ProposalErrorTooManyMarketDecimalPlaces, errors.New("market cannot have more decimal places than assets")
 	}
 
 	return types.ProposalErrorUnspecified, nil
@@ -392,6 +392,11 @@ func validateNewMarketChange(
 
 	if perr, err := validateCommitment(terms.LiquidityCommitment, netp); err != nil {
 		return perr, err
+	}
+
+	if terms.Changes.PriceMonitoringParameters != nil && len(terms.Changes.PriceMonitoringParameters.Triggers) > 5 {
+		return types.ProposalErrorTooManyPriceMonitoringTriggers,
+			fmt.Errorf("%v price monitoring triggers set, maximum allowed is 5", len(terms.Changes.PriceMonitoringParameters.Triggers) > 5)
 	}
 
 	return types.ProposalErrorUnspecified, nil
