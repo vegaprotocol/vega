@@ -46,6 +46,14 @@ func NewTxErrEvent(ctx context.Context, err error, partyID string, tx interface{
 		evt.evt.Transaction = &eventspb.TxErrorEvent_LiquidityProvisionSubmission{
 			LiquidityProvisionSubmission: tv,
 		}
+	case *commandspb.LiquidityProvisionCancellation:
+		evt.evt.Transaction = &eventspb.TxErrorEvent_LiquidityProvisionCancellation{
+			LiquidityProvisionCancellation: tv,
+		}
+	case *commandspb.LiquidityProvisionAmendment:
+		evt.evt.Transaction = &eventspb.TxErrorEvent_LiquidityProvisionAmendment{
+			LiquidityProvisionAmendment: tv,
+		}
 	case *commandspb.ProposalSubmission:
 		evt.evt.Transaction = &eventspb.TxErrorEvent_Proposal{
 			Proposal: tv,
@@ -69,6 +77,14 @@ func NewTxErrEvent(ctx context.Context, err error, partyID string, tx interface{
 	case *commandspb.CancelTransfer:
 		evt.evt.Transaction = &eventspb.TxErrorEvent_CancelTransfer{
 			CancelTransfer: tv,
+		}
+	case *commandspb.AnnounceNode:
+		evt.evt.Transaction = &eventspb.TxErrorEvent_AnnounceNode{
+			AnnounceNode: tv,
+		}
+	case *commandspb.OracleDataSubmission:
+		evt.evt.Transaction = &eventspb.TxErrorEvent_OracleDataSubmission{
+			OracleDataSubmission: tv,
 		}
 	case error: // unsupported command error
 		evt.evt.ErrMsg = fmt.Sprintf("%v - %v", err, tv)
