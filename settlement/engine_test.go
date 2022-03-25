@@ -220,7 +220,6 @@ func testMTMWinOneExcess(t *testing.T) {
 		price: newPrice.Clone(),
 		party: "party4",
 	}
-	// the updated position (new possition to settle, already at mark price)
 
 	trades := []*types.Trade{
 		{
