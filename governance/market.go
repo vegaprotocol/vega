@@ -193,8 +193,7 @@ func buildMarketFromProposal(
 
 func validateAsset(assetID string, decimals uint64, assets Assets, deepCheck bool) (types.ProposalError, error) {
 	if len(assetID) <= 0 {
-		return types.ProposalErrorInvalidAsset,
-			errors.New("missing asset ID")
+		return types.ProposalErrorInvalidAsset, errors.New("missing asset ID")
 	}
 
 	if !deepCheck {
@@ -212,7 +211,7 @@ func validateAsset(assetID string, decimals uint64, assets Assets, deepCheck boo
 	// decimal places asset less than market -> invalid.
 	// @TODO add a specific error for this validation?
 	if asset.DecimalPlaces() < decimals {
-		return types.ProposalErrorInvalidAsset, err
+		return types.ProposalErrorInvalidAsset, errors.New("market cannot have more decimal places than assets")
 	}
 
 	return types.ProposalErrorUnspecified, nil

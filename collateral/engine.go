@@ -640,7 +640,7 @@ func (e *Engine) FinalSettlement(ctx context.Context, marketID string, transfers
 	// needs to be propagated forward so we return now.
 	if winidx == 0 {
 		if !settle.Balance.IsZero() {
-			return nil, ErrSettlementBalanceNotZero
+			e.log.Panic("settlement balance is not zero", logging.BigUint("balance", settle.Balance))
 		}
 		return responses, nil
 	}
@@ -712,7 +712,7 @@ func (e *Engine) FinalSettlement(ctx context.Context, marketID string, transfers
 	}
 
 	if !settle.Balance.IsZero() {
-		return nil, ErrSettlementBalanceNotZero
+		e.log.Panic("settlement balance is not zero", logging.BigUint("balance", settle.Balance))
 	}
 
 	return responses, nil
