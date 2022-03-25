@@ -156,7 +156,7 @@ func (sv *StateVariable) eventTriggered(eventID string) error {
 	sv.lock.Unlock()
 
 	// kickoff calculation
-	go sv.startCalculation(sv.eventID, sv)
+	sv.startCalculation(sv.eventID, sv)
 
 	return nil
 }
