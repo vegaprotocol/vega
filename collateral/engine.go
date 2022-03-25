@@ -977,7 +977,7 @@ func (e *Engine) MarkToMarket(ctx context.Context, marketID string, transfers []
 	}
 
 	if !settle.Balance.IsZero() {
-		e.log.Panic("Settlement balance non-zero at the end of MTM settlement", logging.BigUint(settle.Balance))
+		e.log.Panic("Settlement balance non-zero at the end of MTM settlement", logging.BigUint("settlement-balance", settle.Balance))
 		return nil, nil, ErrSettlementBalanceNotZero
 	}
 	return marginEvts, responses, nil
