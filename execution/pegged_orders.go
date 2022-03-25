@@ -182,5 +182,7 @@ func (p *PeggedOrders) Settled() []*types.Order {
 		return peggedOrders[i].ID < peggedOrders[j].ID
 	})
 
+	p.orders = nil
+
 	return peggedOrders
 }
