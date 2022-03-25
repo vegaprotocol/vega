@@ -1,4 +1,4 @@
-package nodewallets
+package registryloader
 
 import (
 	"encoding/json"
@@ -15,8 +15,8 @@ var (
 )
 
 const (
-	ethereumWalletTypeKeyStore ethereumWalletType = "key-store"
-	ethereumWalletTypeClef     ethereumWalletType = "clef"
+	EthereumWalletTypeKeyStore ethereumWalletType = "key-store"
+	EthereumWalletTypeClef     ethereumWalletType = "clef"
 )
 
 type Registry struct {
@@ -27,7 +27,7 @@ type Registry struct {
 
 type ethereumWalletType string
 
-type ethereumWallet interface {
+type EthereumWalletDetails interface {
 	ETHWallet()
 }
 
@@ -47,8 +47,8 @@ type EthereumClefWallet struct {
 func (e EthereumClefWallet) ETHWallet() {}
 
 type RegisteredEthereumWallet struct {
-	Type    ethereumWalletType `json:"type"`
-	Details ethereumWallet     `json:"details"`
+	Type    ethereumWalletType    `json:"type"`
+	Details EthereumWalletDetails `json:"details"`
 }
 
 func (rw *RegisteredEthereumWallet) UnmarshalJSON(data []byte) error {
@@ -64,14 +64,14 @@ func (rw *RegisteredEthereumWallet) UnmarshalJSON(data []byte) error {
 	rw.Type = ethereumWalletType(input.Type)
 
 	switch rw.Type {
-	case ethereumWalletTypeKeyStore:
+	case EthereumWalletTypeKeyStore:
 		var keyStore EthereumKeyStoreWallet
 		if err := json.Unmarshal(input.Details, &keyStore); err != nil {
 			return err
 		}
 
 		rw.Details = keyStore
-	case ethereumWalletTypeClef:
+	case EthereumWalletTypeClef:
 		var clef EthereumClefWallet
 		if err := json.Unmarshal(input.Details, &clef); err != nil {
 			return err
@@ -98,7 +98,7 @@ type RegistryLoader struct {
 	registryFilePath string
 }
 
-func NewRegistryLoader(vegaPaths paths.Paths, passphrase string) (*RegistryLoader, error) {
+func New(vegaPaths paths.Paths, passphrase string) (*RegistryLoader, error) {
 	registryFilePath, err := vegaPaths.CreateConfigPathFor(paths.NodeWalletsConfigFile)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't get config path for %s: %w", paths.NodeWalletsConfigFile, err)

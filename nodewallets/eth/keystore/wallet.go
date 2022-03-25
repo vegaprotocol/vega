@@ -2,16 +2,19 @@ package keystore
 
 import (
 	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
 
 	vgrand "code.vegaprotocol.io/shared/libs/rand"
 	"code.vegaprotocol.io/vega/crypto"
+	"code.vegaprotocol.io/vega/nodewallets/registryloader"
 	"github.com/ethereum/go-ethereum/accounts"
 	"github.com/ethereum/go-ethereum/accounts/keystore"
 )
 
 type Wallet struct {
+	homeDir    string
 	name       string
 	acc        accounts.Account
 	ks         *keystore.KeyStore
@@ -19,7 +22,7 @@ type Wallet struct {
 	address    crypto.PublicKey
 }
 
-func newWallet(walletName, passphrase string, data []byte) (*Wallet, error) {
+func newWallet(walletHome, walletName, passphrase string, data []byte) (*Wallet, error) {
 	// NewKeyStore always create a new wallet key store file
 	// we create this in tmp as we do not want to impact the original one.
 	tempFile := filepath.Join(os.TempDir(), vgrand.RandomStr(10))
@@ -37,6 +40,7 @@ func newWallet(walletName, passphrase string, data []byte) (*Wallet, error) {
 	address := crypto.NewPublicKey(acc.Address.Hex(), acc.Address.Bytes())
 
 	return &Wallet{
+		homeDir:    walletHome,
 		name:       walletName,
 		acc:        acc,
 		ks:         ks,
@@ -72,4 +76,30 @@ func (w *Wallet) Version() (string, error) {
 
 func (w *Wallet) PubKey() crypto.PublicKey {
 	return w.address
+}
+
+func (w *Wallet) Reload(details registryloader.EthereumWalletDetails) error {
+	d, ok := details.(registryloader.EthereumKeyStoreWallet)
+	if !ok {
+		return fmt.Errorf("failed to get EthereumKeyStoreWallet")
+	}
+
+	data, err := fs.ReadFile(os.DirFS(w.homeDir), w.name)
+	if err != nil {
+		return fmt.Errorf("couldn't read wallet file: %v", err)
+	}
+
+	nW, err := newWallet(w.homeDir, d.Name, d.Passphrase, data)
+	if err != nil {
+		return fmt.Errorf("couldn't create wallet: %w", err)
+	}
+
+	w.homeDir = nW.homeDir
+	w.name = nW.name
+	w.acc = nW.acc
+	w.ks = nW.ks
+	w.passphrase = nW.passphrase
+	w.address = nW.address
+
+	return nil
 }

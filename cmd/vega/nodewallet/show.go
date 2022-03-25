@@ -7,6 +7,7 @@ import (
 	"code.vegaprotocol.io/vega/config"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/nodewallets"
+	"code.vegaprotocol.io/vega/nodewallets/registryloader"
 
 	"github.com/jessevdk/go-flags"
 )
@@ -37,7 +38,7 @@ func (opts *showCmd) Execute(_ []string) error {
 		return err
 	}
 
-	registryLoader, err := nodewallets.NewRegistryLoader(vegaPaths, registryPass)
+	registryLoader, err := registryloader.New(vegaPaths, registryPass)
 	if err != nil {
 		return err
 	}

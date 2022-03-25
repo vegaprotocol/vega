@@ -440,7 +440,7 @@ func (t *Topology) LoadValidatorsOnGenesis(ctx context.Context, rawstate []byte)
 		}
 
 		// this node is started and expect to be a validator
-		// but so far we haven't seen ourselve as validators for
+		// but so far we haven't seen ourselves as validators for
 		// this network.
 		if t.isValidatorSetup && !t.isValidator {
 			t.checkValidatorDataWithSelfWallets(data)

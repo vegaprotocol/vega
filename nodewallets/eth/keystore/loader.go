@@ -40,7 +40,7 @@ func (l *WalletLoader) Generate(passphrase string) (*Wallet, map[string]string, 
 		return nil, nil, fmt.Errorf("couldn't read file %s: %w", acc.URL.Path, err)
 	}
 
-	w, err := newWallet(fileName, passphrase, content)
+	w, err := newWallet(l.walletHome, fileName, passphrase, content)
 	if err != nil {
 		return nil, nil, fmt.Errorf("couldn't create wallet: %w", err)
 	}
@@ -58,7 +58,7 @@ func (l *WalletLoader) Load(walletName, passphrase string) (*Wallet, error) {
 		return nil, fmt.Errorf("couldn't read wallet file: %v", err)
 	}
 
-	w, err := newWallet(walletName, passphrase, data)
+	w, err := newWallet(l.walletHome, walletName, passphrase, data)
 	if err != nil {
 		return nil, err
 	}
@@ -80,7 +80,7 @@ func (l *WalletLoader) Import(sourceFilePath, passphrase string) (*Wallet, map[s
 		return nil, nil, fmt.Errorf("couldn't write file %s: %w", walletFilePath, err)
 	}
 
-	w, err := newWallet(fileName, passphrase, content)
+	w, err := newWallet(l.walletHome, fileName, passphrase, content)
 	if err != nil {
 		return nil, nil, fmt.Errorf("couldn't create wallet: %w", err)
 	}

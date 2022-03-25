@@ -8,12 +8,13 @@ import (
 	"code.vegaprotocol.io/vega/nodewallets/eth"
 	"code.vegaprotocol.io/vega/nodewallets/eth/clef"
 	"code.vegaprotocol.io/vega/nodewallets/eth/keystore"
+	"code.vegaprotocol.io/vega/nodewallets/registryloader"
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/rpc"
 )
 
 func GetEthereumWallet(config eth.Config, vegaPaths paths.Paths, registryPassphrase string) (*eth.Wallet, error) {
-	registryLoader, err := NewRegistryLoader(vegaPaths, registryPassphrase)
+	registryLoader, err := registryloader.New(vegaPaths, registryPassphrase)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't initialise node wallet registry: %v", err)
 	}
@@ -30,9 +31,9 @@ func GetEthereumWallet(config eth.Config, vegaPaths paths.Paths, registryPassphr
 	return getEthereumWalletWithRegistry(config, vegaPaths, registry)
 }
 
-func getEthereumWalletWithRegistry(config eth.Config, vegaPaths paths.Paths, registry *Registry) (*eth.Wallet, error) {
+func getEthereumWalletWithRegistry(config eth.Config, vegaPaths paths.Paths, registry *registryloader.Registry) (*eth.Wallet, error) {
 	switch walletRegistry := registry.Ethereum.Details.(type) {
-	case EthereumClefWallet:
+	case registryloader.EthereumClefWallet:
 		ethAddress := ethcommon.HexToAddress(walletRegistry.AccountAddress)
 
 		client, err := rpc.Dial(config.ClefAddress)
@@ -46,7 +47,7 @@ func getEthereumWalletWithRegistry(config eth.Config, vegaPaths paths.Paths, reg
 		}
 
 		return eth.NewWallet(w), nil
-	case EthereumKeyStoreWallet:
+	case registryloader.EthereumKeyStoreWallet:
 		walletLoader, err := keystore.InitialiseWalletLoader(vegaPaths)
 		if err != nil {
 			return nil, fmt.Errorf("couldn't initialise Ethereum key store node wallet loader: %w", err)
@@ -70,7 +71,7 @@ func GenerateEthereumWallet(
 	walletPassphrase string,
 	overwrite bool,
 ) (map[string]string, error) {
-	registryLoader, err := NewRegistryLoader(vegaPaths, registryPassphrase)
+	registryLoader, err := registryloader.New(vegaPaths, registryPassphrase)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't initialise node wallet registry: %v", err)
 	}
@@ -102,9 +103,9 @@ func GenerateEthereumWallet(
 			"accountAddress": w.PubKey().Hex(),
 		}
 
-		registry.Ethereum = &RegisteredEthereumWallet{
-			Type: ethereumWalletTypeClef,
-			Details: EthereumClefWallet{
+		registry.Ethereum = &registryloader.RegisteredEthereumWallet{
+			Type: registryloader.EthereumWalletTypeClef,
+			Details: registryloader.EthereumClefWallet{
 				Name:           w.Name(),
 				AccountAddress: w.PubKey().Hex(),
 				ClefAddress:    config.ClefAddress,
@@ -123,9 +124,9 @@ func GenerateEthereumWallet(
 
 		data = d
 
-		registry.Ethereum = &RegisteredEthereumWallet{
-			Type: ethereumWalletTypeKeyStore,
-			Details: EthereumKeyStoreWallet{
+		registry.Ethereum = &registryloader.RegisteredEthereumWallet{
+			Type: registryloader.EthereumWalletTypeKeyStore,
+			Details: registryloader.EthereumKeyStoreWallet{
 				Name:       w.Name(),
 				Passphrase: walletPassphrase,
 			},
@@ -149,7 +150,7 @@ func ImportEthereumWallet(
 	sourceFilePath string,
 	overwrite bool,
 ) (map[string]string, error) {
-	registryLoader, err := NewRegistryLoader(vegaPaths, registryPassphrase)
+	registryLoader, err := registryloader.New(vegaPaths, registryPassphrase)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't initialise node wallet registry: %v", err)
 	}
@@ -187,9 +188,9 @@ func ImportEthereumWallet(
 			"accountAddress": w.PubKey().Hex(),
 		}
 
-		registry.Ethereum = &RegisteredEthereumWallet{
-			Type: ethereumWalletTypeClef,
-			Details: EthereumClefWallet{
+		registry.Ethereum = &registryloader.RegisteredEthereumWallet{
+			Type: registryloader.EthereumWalletTypeClef,
+			Details: registryloader.EthereumClefWallet{
 				Name:           w.Name(),
 				AccountAddress: w.PubKey().Hex(),
 				ClefAddress:    config.ClefAddress,
@@ -212,9 +213,9 @@ func ImportEthereumWallet(
 
 		data = d
 
-		registry.Ethereum = &RegisteredEthereumWallet{
-			Type: ethereumWalletTypeKeyStore,
-			Details: EthereumKeyStoreWallet{
+		registry.Ethereum = &registryloader.RegisteredEthereumWallet{
+			Type: registryloader.EthereumWalletTypeKeyStore,
+			Details: registryloader.EthereumKeyStoreWallet{
 				Name:       w.Name(),
 				Passphrase: walletPassphrase,
 			},

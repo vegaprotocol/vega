@@ -1,19 +1,24 @@
 package vega
 
 import (
+	"fmt"
+
 	"code.vegaprotocol.io/vega/crypto"
+	"code.vegaprotocol.io/vega/nodewallets/registryloader"
 	"code.vegaprotocol.io/vegawallet/wallet"
+	storev1 "code.vegaprotocol.io/vegawallet/wallet/store/v1"
 )
 
 type Wallet struct {
-	walletName string
-	keyPair    wallet.KeyPair
-	pubKey     crypto.PublicKey
-	walletID   crypto.PublicKey
+	homeDir  string
+	name     string
+	keyPair  wallet.KeyPair
+	pubKey   crypto.PublicKey
+	walletID crypto.PublicKey
 }
 
 func (w *Wallet) Name() string {
-	return w.walletName
+	return w.name
 }
 
 func (w *Wallet) Chain() string {
@@ -42,4 +47,23 @@ func (w *Wallet) Index() uint32 {
 
 func (w *Wallet) ID() crypto.PublicKey {
 	return w.walletID
+}
+
+func (w *Wallet) Reload(rw registryloader.RegisteredVegaWallet) error {
+	store, err := storev1.InitialiseStore(w.homeDir)
+	if err != nil {
+		return fmt.Errorf("failed to initialise store: %w", err)
+	}
+
+	nW, err := newWallet(store, w.homeDir, rw.Name, rw.Passphrase)
+	if err != nil {
+		return fmt.Errorf("failed to create new wallet: %w", err)
+	}
+
+	w.name = nW.name
+	w.keyPair = nW.keyPair
+	w.pubKey = nW.pubKey
+	w.walletID = nW.walletID
+
+	return nil
 }

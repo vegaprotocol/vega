@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 
 	"code.vegaprotocol.io/shared/paths"
+	"code.vegaprotocol.io/vega/nodewallets/registryloader"
 	"code.vegaprotocol.io/vega/nodewallets/vega"
 )
 
@@ -16,7 +17,7 @@ var (
 )
 
 func GetVegaWallet(vegaPaths paths.Paths, registryPassphrase string) (*vega.Wallet, error) {
-	registryLoader, err := NewRegistryLoader(vegaPaths, registryPassphrase)
+	registryLoader, err := registryloader.New(vegaPaths, registryPassphrase)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't initialise node wallet registry: %v", err)
 	}
@@ -44,12 +45,16 @@ func GetVegaWallet(vegaPaths paths.Paths, registryPassphrase string) (*vega.Wall
 }
 
 func GetNodeWallets(config Config, vegaPaths paths.Paths, registryPassphrase string) (*NodeWallets, error) {
-	nodeWallets := &NodeWallets{}
+	nodeWallets := &NodeWallets{
+		registryPassphrase: registryPassphrase,
+	}
 
-	registryLoader, err := NewRegistryLoader(vegaPaths, registryPassphrase)
+	registryLoader, err := registryloader.New(vegaPaths, registryPassphrase)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't initialise node wallet registry: %v", err)
 	}
+
+	nodeWallets.registryLoader = registryLoader
 
 	registry, err := registryLoader.GetRegistry(registryPassphrase)
 	if err != nil {
@@ -87,7 +92,7 @@ func GetNodeWallets(config Config, vegaPaths paths.Paths, registryPassphrase str
 }
 
 func GenerateVegaWallet(vegaPaths paths.Paths, registryPassphrase, walletPassphrase string, overwrite bool) (map[string]string, error) {
-	registryLoader, err := NewRegistryLoader(vegaPaths, registryPassphrase)
+	registryLoader, err := registryloader.New(vegaPaths, registryPassphrase)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't initialise node wallet registry: %v", err)
 	}
@@ -111,7 +116,7 @@ func GenerateVegaWallet(vegaPaths paths.Paths, registryPassphrase, walletPassphr
 		return nil, fmt.Errorf("couldn't generate Vega node wallet: %w", err)
 	}
 
-	registry.Vega = &RegisteredVegaWallet{
+	registry.Vega = &registryloader.RegisteredVegaWallet{
 		Name:       w.Name(),
 		Passphrase: walletPassphrase,
 	}
@@ -129,7 +134,7 @@ func ImportVegaWallet(vegaPaths paths.Paths, registryPassphrase, walletPassphras
 		return nil, fmt.Errorf("path to the wallet file need to be absolute")
 	}
 
-	registryLoader, err := NewRegistryLoader(vegaPaths, registryPassphrase)
+	registryLoader, err := registryloader.New(vegaPaths, registryPassphrase)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't initialise node wallet registry: %v", err)
 	}
@@ -153,7 +158,7 @@ func ImportVegaWallet(vegaPaths paths.Paths, registryPassphrase, walletPassphras
 		return nil, fmt.Errorf("couldn't import Vega node wallet: %w", err)
 	}
 
-	registry.Vega = &RegisteredVegaWallet{
+	registry.Vega = &registryloader.RegisteredVegaWallet{
 		Name:       w.Name(),
 		Passphrase: walletPassphrase,
 	}
@@ -171,7 +176,7 @@ func ImportTendermintPubkey(
 	registryPassphrase, pubkey string,
 	overwrite bool,
 ) (map[string]string, error) {
-	registryLoader, err := NewRegistryLoader(vegaPaths, registryPassphrase)
+	registryLoader, err := registryloader.New(vegaPaths, registryPassphrase)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't initialise node wallet registry: %v", err)
 	}
@@ -185,7 +190,7 @@ func ImportTendermintPubkey(
 		return nil, ErrTendermintPubkeyAlreadyExists
 	}
 
-	registry.Tendermint = &RegisteredTendermintPubkey{
+	registry.Tendermint = &registryloader.RegisteredTendermintPubkey{
 		Pubkey: pubkey,
 	}
 
