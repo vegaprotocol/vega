@@ -3100,6 +3100,10 @@ func (m *Market) settlementPriceWithLock(ctx context.Context, settlementPrice *n
 			m.log.Error("could not close market", logging.Error(err))
 		}
 		m.closed = m.mkt.State == types.MarketStateSettled
+		m.markPrice = settlementPrice.Clone()
+
+		// send the market data with all updated stuff
+		m.broker.Send(events.NewMarketDataEvent(ctx, m.GetMarketData()))
 	}
 }
 

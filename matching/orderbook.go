@@ -966,5 +966,12 @@ func (b *OrderBook) Settled() []*types.Order {
 		return orders[i].ID < orders[j].ID
 	})
 
+	// reset all order stores
+	b.ordersByID = map[string]*types.Order{}
+	b.ordersPerParty = map[string]map[string]struct{}{}
+	b.indicativePriceAndVolume = nil
+	b.buy.cleanup()
+	b.sell.cleanup()
+
 	return orders
 }
