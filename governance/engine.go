@@ -871,7 +871,7 @@ type proposal struct {
 }
 
 func (p *proposal) IsTimeToEnact(now int64) bool {
-	return p.Proposal.Terms.EnactmentTimestamp < now
+	return p.Terms.EnactmentTimestamp < now
 }
 
 // ShouldClose tells if the proposal should be closed or not.
@@ -879,7 +879,7 @@ func (p *proposal) IsTimeToEnact(now int64) bool {
 // relying on the closing timestamp could lead to call Close() on an
 // already-closed proposal.
 func (p *proposal) ShouldClose(now int64) bool {
-	return p.IsOpen() && p.Proposal.Terms.ClosingTimestamp < now
+	return p.IsOpen() && p.Terms.ClosingTimestamp < now
 }
 
 func (p *proposal) IsOpen() bool {
