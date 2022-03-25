@@ -12,7 +12,7 @@
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 ### 🐛 Fixes
-- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+- [5078](https://github.com/vegaprotocol/vega/issues/5078) - Unwrap properly position decimal place from payload
 
 
 ## 0.49.8
