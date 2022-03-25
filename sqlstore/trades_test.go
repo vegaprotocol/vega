@@ -259,4 +259,6 @@ func insertTestData(t *testing.T, tradeStore *sqlstore.Trades) {
 		}
 		seqNum++
 	}
+
+	tradeStore.OnTimeUpdateEvent(context.Background())
 }

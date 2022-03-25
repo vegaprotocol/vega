@@ -8,6 +8,8 @@ import (
 	"os/signal"
 	"syscall"
 
+	"code.vegaprotocol.io/data-node/candlesv2"
+
 	"code.vegaprotocol.io/data-node/api"
 
 	"code.vegaprotocol.io/data-node/accounts"
@@ -107,6 +109,7 @@ type NodeCommand struct {
 	ledgerSQL             *sqlstore.Ledger
 	partyStoreSQL         *sqlstore.Parties
 	orderStoreSQL         *sqlstore.Orders
+	candleServiceV2       *candlesv2.Svc
 	tradeStoreSQL         *sqlstore.Trades
 	networkLimitsStoreSQL *sqlstore.NetworkLimits
 	marketDataStoreSQL    *sqlstore.MarketData
@@ -373,6 +376,7 @@ func (l *NodeCommand) createGRPCServer(config api.Config, useSQLStores bool) *ap
 		l.netParamStoreSQL,
 		l.blockStoreSQL,
 		l.checkpointStoreSQL,
+		l.candleServiceV2,
 	)
 	return grpcServer
 }

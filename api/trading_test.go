@@ -7,6 +7,8 @@ import (
 	"testing"
 	"time"
 
+	"code.vegaprotocol.io/data-node/candlesv2"
+
 	"code.vegaprotocol.io/data-node/accounts"
 	"code.vegaprotocol.io/data-node/api"
 	"code.vegaprotocol.io/data-node/api/mocks"
@@ -275,6 +277,13 @@ func getTestGRPCServer(
 	sqlOrderStore := sqlstore.NewOrders(&sqlStore)
 	sqlNetworkLimitsStore := sqlstore.NewNetworkLimits(&sqlStore)
 	sqlMarketDataStore := sqlstore.NewMarketData(&sqlStore)
+	conf.CandlesV2.CandleStore.DefaultCandleIntervals = ""
+	sqlCandleStore, err := sqlstore.NewCandles(ctx, &sqlStore, conf.CandlesV2.CandleStore)
+	if err != nil {
+		t.Fatalf("failed to create candle store: %v", err)
+	}
+	candlesServiceV2 := candlesv2.NewService(ctx, logger, conf.CandlesV2, sqlCandleStore)
+
 	sqlTradeStore := sqlstore.NewTrades(&sqlStore)
 	sqlAssetStore := sqlstore.NewAssets(&sqlStore)
 	sqlAccountStore := sqlstore.NewAccounts(&sqlStore)
@@ -343,6 +352,7 @@ func getTestGRPCServer(
 		sqlNetParamStore,
 		sqlBlockStore,
 		sqlCheckpointStore,
+		candlesServiceV2,
 	)
 	if g == nil {
 		err = fmt.Errorf("failed to create gRPC server")

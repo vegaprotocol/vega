@@ -115,16 +115,13 @@ type GovernanceDataService interface {
 	GetProposals(inState *pbtypes.Proposal_State) []*pbtypes.GovernanceData
 	GetProposalsByParty(partyID string, inState *pbtypes.Proposal_State) []*pbtypes.GovernanceData
 	GetVotesByParty(partyID string) []*pbtypes.Vote
-
 	GetProposalByID(id string) (*pbtypes.GovernanceData, error)
 	GetProposalByReference(ref string) (*pbtypes.GovernanceData, error)
-
 	GetNewMarketProposals(inState *pbtypes.Proposal_State) []*pbtypes.GovernanceData
 	GetUpdateMarketProposals(marketID string, inState *pbtypes.Proposal_State) []*pbtypes.GovernanceData
 	GetNetworkParametersProposals(inState *pbtypes.Proposal_State) []*pbtypes.GovernanceData
 	GetNewAssetProposals(inState *pbtypes.Proposal_State) []*pbtypes.GovernanceData
 	GetNewFreeformProposals(inState *pbtypes.Proposal_State) []*pbtypes.GovernanceData
-
 	ObserveGovernance(ctx context.Context, retries int) <-chan []pbtypes.GovernanceData
 	ObservePartyProposals(ctx context.Context, retries int, partyID string) <-chan []pbtypes.GovernanceData
 	ObservePartyVotes(ctx context.Context, retries int, partyID string) <-chan []pbtypes.Vote
@@ -930,7 +927,7 @@ func (t *tradingDataService) Candles(ctx context.Context,
 
 	c, err := t.CandleService.GetCandles(ctx, request.MarketId, vegatime.UnixNano(request.SinceTimestamp), request.Interval)
 	if err != nil {
-		return nil, apiError(codes.Internal, ErrCandleServiceGetCandles, err)
+		return nil, apiError(codes.Internal, ErrCandleServiceGetCandleData, err)
 	}
 
 	return &protoapi.CandlesResponse{

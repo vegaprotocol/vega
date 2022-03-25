@@ -37,7 +37,7 @@ func (bs *Balances) Add(b entities.Balance) error {
 // It returns a timeseries (implemented as a list of AggregateBalance structs), with a row for every time
 // the summed balance of the set of specified accounts changes.
 //
-// Optionally you can supply a list of fields to group by, which will break down the results by those fields.
+// Optionally you can supply a list of fields to market by, which will break down the results by those fields.
 //
 // For example, if you have balances table that looks like
 //

@@ -7,8 +7,6 @@ import (
 
 	"code.vegaprotocol.io/protos/vega"
 
-	"github.com/holiman/uint256"
-
 	"github.com/shopspring/decimal"
 )
 
@@ -19,12 +17,13 @@ func NewTradeID(id string) TradeID {
 }
 
 type Trade struct {
+	SyntheticTime           time.Time
 	VegaTime                time.Time
 	SeqNum                  uint64
 	ID                      TradeID
 	MarketID                MarketID
 	Price                   decimal.Decimal
-	Size                    decimal.Decimal
+	Size                    uint64
 	Buyer                   PartyID
 	Seller                  PartyID
 	Aggressor               Side
@@ -46,7 +45,7 @@ func (t *Trade) ToProto() *vega.Trade {
 		Id:        strings.ToUpper(t.ID.String()),
 		MarketId:  t.MarketID.String(),
 		Price:     t.Price.String(),
-		Size:      t.Size.UintNO().Uint64(),
+		Size:      t.Size,
 		Buyer:     t.Buyer.String(),
 		Seller:    t.Seller.String(),
 		Aggressor: t.Aggressor,
@@ -70,12 +69,12 @@ func (t *Trade) ToProto() *vega.Trade {
 }
 
 func TradeFromProto(t *vega.Trade, vegaTime time.Time, sequenceNumber uint64) (*Trade, error) {
+	syntheticTime := vegaTime.Add(time.Duration(sequenceNumber) * time.Microsecond)
+
 	price, err := decimal.NewFromString(t.Price)
 	if err != nil {
 		return nil, fmt.Errorf("failed to decode price:%w", err)
 	}
-
-	size := decimal.NewFromUint(uint256.NewInt(t.Size))
 
 	buyerMakerFee := decimal.Zero
 	buyerInfraFee := decimal.Zero
@@ -118,12 +117,13 @@ func TradeFromProto(t *vega.Trade, vegaTime time.Time, sequenceNumber uint64) (*
 	}
 
 	trade := Trade{
+		SyntheticTime:           syntheticTime,
 		VegaTime:                vegaTime,
 		SeqNum:                  sequenceNumber,
 		ID:                      NewTradeID(t.Id),
 		MarketID:                NewMarketID(t.MarketId),
 		Price:                   price,
-		Size:                    size,
+		Size:                    t.Size,
 		Buyer:                   NewPartyID(t.Buyer),
 		Seller:                  NewPartyID(t.Seller),
 		Aggressor:               t.Aggressor,

@@ -101,12 +101,13 @@ CREATE VIEW orders_current_versions AS (
 
 create table trades
 (
+    synthetic_time       TIMESTAMP WITH TIME ZONE NOT NULL,
     vega_time       TIMESTAMP WITH TIME ZONE NOT NULL REFERENCES blocks(vega_time),
     seq_num    BIGINT NOT NULL,
     id     BYTEA NOT NULL,
     market_id BYTEA NOT NULL,
-    price     NUMERIC(32, 0),
-    size      NUMERIC(32, 0),
+    price     NUMERIC(32, 0) NOT NULL,
+    size      BIGINT NOT NULL,
     buyer     BYTEA NOT NULL,
     seller    BYTEA NOT NULL,
     aggressor SMALLINT,
@@ -123,8 +124,8 @@ create table trades
     seller_auction_batch BIGINT
 );
 
-SELECT create_hypertable('trades', 'vega_time', chunk_time_interval => INTERVAL '1 day');
-CREATE INDEX ON trades (market_id, vega_time DESC);
+SELECT create_hypertable('trades', 'synthetic_time', chunk_time_interval => INTERVAL '1 day');
+CREATE INDEX ON trades (market_id, synthetic_time DESC);
 
 
 CREATE TABLE network_limits (
@@ -424,6 +425,6 @@ DROP TABLE IF EXISTS balances;
 DROP TABLE IF EXISTS accounts;
 DROP TABLE IF EXISTS parties;
 DROP TABLE IF EXISTS assets;
-DROP TABLE IF EXISTS trades;
+DROP TABLE IF EXISTS trades cascade;
 DROP TABLE IF EXISTS blocks cascade;
 

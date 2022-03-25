@@ -6,6 +6,11 @@ import (
 	"fmt"
 	"time"
 
+	"code.vegaprotocol.io/data-node/candlesv2"
+
+	"code.vegaprotocol.io/data-node/logging"
+	"code.vegaprotocol.io/data-node/vegatime"
+
 	"code.vegaprotocol.io/data-node/entities"
 	"code.vegaprotocol.io/data-node/sqlstore"
 	v2 "code.vegaprotocol.io/protos/data-node/api/v2"
@@ -21,10 +26,13 @@ var defaultPaginationV2 = entities.Pagination{
 
 type tradingDataServiceV2 struct {
 	v2.UnimplementedTradingDataServiceServer
+	log                *logging.Logger
 	balanceStore       *sqlstore.Balances
 	orderStore         *sqlstore.Orders
 	networkLimitsStore *sqlstore.NetworkLimits
 	marketDataStore    *sqlstore.MarketData
+	tradeStore         *sqlstore.Trades
+	candleServiceV2    *candlesv2.Svc
 }
 
 func (t *tradingDataServiceV2) QueryBalanceHistory(ctx context.Context, req *v2.QueryBalanceHistoryRequest) (*v2.QueryBalanceHistoryResponse, error) {
@@ -114,12 +122,9 @@ func (t *tradingDataServiceV2) GetMarketDataHistoryByID(ctx context.Context, req
 		endTime = time.Unix(0, *req.EndTimestamp)
 	}
 
-	pagination := entities.Pagination{}
-
+	pagination := defaultPaginationV2
 	if req.Pagination != nil {
-		pagination.Skip = req.Pagination.Skip
-		pagination.Limit = req.Pagination.Limit
-		pagination.Descending = req.Pagination.Descending
+		pagination = entities.PaginationFromProto(req.Pagination)
 	}
 
 	if req.StartTimestamp != nil && req.EndTimestamp != nil {
@@ -147,7 +152,6 @@ func parseMarketDataResults(results []entities.MarketData) (*v2.GetMarketDataHis
 
 func (t *tradingDataServiceV2) getMarketDataHistoryByID(ctx context.Context, id string, start, end time.Time, pagination entities.Pagination) (*v2.GetMarketDataHistoryByIDResponse, error) {
 	results, err := t.marketDataStore.GetBetweenDatesByID(ctx, id, start, end, pagination)
-
 	if err != nil {
 		return nil, fmt.Errorf("could not retrieve market data history for market id: %w", err)
 	}
@@ -157,7 +161,6 @@ func (t *tradingDataServiceV2) getMarketDataHistoryByID(ctx context.Context, id 
 
 func (t *tradingDataServiceV2) getMarketDataByID(ctx context.Context, id string) (*v2.GetMarketDataHistoryByIDResponse, error) {
 	results, err := t.marketDataStore.GetMarketDataByID(ctx, id)
-
 	if err != nil {
 		return nil, fmt.Errorf("could not retrieve market data history for market id: %w", err)
 	}
@@ -167,7 +170,6 @@ func (t *tradingDataServiceV2) getMarketDataByID(ctx context.Context, id string)
 
 func (t *tradingDataServiceV2) getMarketDataHistoryFromDateByID(ctx context.Context, id string, start time.Time, pagination entities.Pagination) (*v2.GetMarketDataHistoryByIDResponse, error) {
 	results, err := t.marketDataStore.GetFromDateByID(ctx, id, start, pagination)
-
 	if err != nil {
 		return nil, fmt.Errorf("could not retrieve market data history for market id: %w", err)
 	}
@@ -177,7 +179,6 @@ func (t *tradingDataServiceV2) getMarketDataHistoryFromDateByID(ctx context.Cont
 
 func (t *tradingDataServiceV2) getMarketDataHistoryToDateByID(ctx context.Context, id string, end time.Time, pagination entities.Pagination) (*v2.GetMarketDataHistoryByIDResponse, error) {
 	results, err := t.marketDataStore.GetToDateByID(ctx, id, end, pagination)
-
 	if err != nil {
 		return nil, fmt.Errorf("could not retrieve market data history for market id: %w", err)
 	}
@@ -196,4 +197,87 @@ func (t *tradingDataServiceV2) GetNetworkLimits(ctx context.Context, req *v2.Get
 	}
 
 	return &v2.GetNetworkLimitsResponse{Limits: limits.ToProto()}, nil
+}
+
+// GetCandleData for a given market, time range and interval.  Interval must be a valid postgres interval value
+func (t *tradingDataServiceV2) GetCandleData(ctx context.Context, req *v2.GetCandleDataRequest) (*v2.GetCandleDataResponse, error) {
+	from := vegatime.UnixNano(req.FromTimestamp)
+	to := vegatime.UnixNano(req.ToTimestamp)
+
+	pagination := defaultPaginationV2
+	if req.Pagination != nil {
+		pagination = entities.PaginationFromProto(req.Pagination)
+	}
+
+	candles, err := t.candleServiceV2.GetCandleDataForTimeSpan(ctx, req.CandleId, &from, &to, pagination)
+	if err != nil {
+		return nil, apiError(codes.Internal, ErrCandleServiceGetCandleData, err)
+	}
+
+	protoCandles := make([]*v2.Candle, len(candles))
+	for _, candle := range candles {
+		protoCandles = append(protoCandles, candle.ToV2CandleProto())
+	}
+
+	return &v2.GetCandleDataResponse{Candles: protoCandles}, nil
+}
+
+// SubscribeToCandleData subscribes to candle updates for a given market and interval.  Interval must be a valid postgres interval value
+func (t *tradingDataServiceV2) SubscribeToCandleData(req *v2.SubscribeToCandleDataRequest, srv v2.TradingDataService_SubscribeToCandleDataServer) error {
+	ctx, cancel := context.WithCancel(srv.Context())
+	defer cancel()
+
+	subscriptionId, candlesChan, err := t.candleServiceV2.Subscribe(ctx, req.CandleId)
+	if err != nil {
+		return apiError(codes.Internal, ErrCandleServiceSubscribeToCandles, err)
+	}
+
+	for {
+		select {
+		case candle, ok := <-candlesChan:
+			if !ok {
+				return apiError(codes.Internal, ErrCandleServiceSubscribeToCandles, fmt.Errorf("channel closed"))
+			}
+
+			resp := &v2.SubscribeToCandleDataResponse{
+				Candle: candle.ToV2CandleProto(),
+			}
+			if err = srv.Send(resp); err != nil {
+				return apiError(codes.Internal, ErrCandleServiceSubscribeToCandles,
+					fmt.Errorf("sending candles:%w", err))
+			}
+		case <-ctx.Done():
+			err := t.candleServiceV2.Unsubscribe(subscriptionId)
+			if err != nil {
+				t.log.Errorf("failed to unsubscribe from candle updates:%s", err)
+			}
+
+			err = ctx.Err()
+			if err != nil {
+				return apiError(codes.Internal, ErrCandleServiceSubscribeToCandles, err)
+			}
+			return nil
+		}
+	}
+}
+
+// GetCandlesForMarket gets all available intervals for a given market along with the corresponding candle id
+func (t *tradingDataServiceV2) GetCandlesForMarket(ctx context.Context, req *v2.GetCandlesForMarketRequest) (*v2.GetCandlesForMarketResponse, error) {
+	mappings, err := t.candleServiceV2.GetCandlesForMarket(ctx, req.MarketId)
+
+	if err != nil {
+		return nil, apiError(codes.Internal, ErrCandleServiceGetCandlesForMarket, err)
+	}
+
+	var intervalToCandleIds []*v2.IntervalToCandleId
+	for interval, candleId := range mappings {
+		intervalToCandleIds = append(intervalToCandleIds, &v2.IntervalToCandleId{
+			Interval: interval,
+			CandleId: candleId,
+		})
+	}
+
+	return &v2.GetCandlesForMarketResponse{
+		IntervalToCandleId: intervalToCandleIds,
+	}, nil
 }
