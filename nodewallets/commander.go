@@ -63,14 +63,18 @@ func (c *Commander) SetChain(bc *blockchain.Client) {
 // Command - send command to chain.
 // Note: beware when passing in an exponential back off since the done function may be called many times.
 func (c *Commander) Command(ctx context.Context, cmd txn.Command, payload proto.Message, done func(error), bo *backoff.ExponentialBackOff) {
-	c.command(ctx, cmd, payload, done, api.SubmitTransactionRequest_TYPE_ASYNC, bo)
+	c.command(ctx, cmd, payload, done, api.SubmitTransactionRequest_TYPE_ASYNC, bo, nil)
 }
 
 func (c *Commander) CommandSync(ctx context.Context, cmd txn.Command, payload proto.Message, done func(error), bo *backoff.ExponentialBackOff) {
-	c.command(ctx, cmd, payload, done, api.SubmitTransactionRequest_TYPE_SYNC, bo)
+	c.command(ctx, cmd, payload, done, api.SubmitTransactionRequest_TYPE_SYNC, bo, nil)
 }
 
-func (c *Commander) command(_ context.Context, cmd txn.Command, payload proto.Message, done func(error), ty api.SubmitTransactionRequest_Type, bo *backoff.ExponentialBackOff) {
+func (c *Commander) CommandWithPoW(ctx context.Context, cmd txn.Command, payload proto.Message, done func(error), bo *backoff.ExponentialBackOff, pow *commandspb.ProofOfWork) {
+	c.command(ctx, cmd, payload, done, api.SubmitTransactionRequest_TYPE_SYNC, bo, pow)
+}
+
+func (c *Commander) command(_ context.Context, cmd txn.Command, payload proto.Message, done func(error), ty api.SubmitTransactionRequest_Type, bo *backoff.ExponentialBackOff, pow *commandspb.ProofOfWork) {
 	if c.bc == nil {
 		panic("commander was instantiated without a chain")
 	}
@@ -92,6 +96,7 @@ func (c *Commander) command(_ context.Context, cmd txn.Command, payload proto.Me
 		}
 
 		tx := commands.NewTransaction(c.wallet.PubKey().Hex(), marshalledData, signature)
+		tx.Pow = pow
 
 		_, err = c.bc.SubmitTransactionAsync(ctx, tx)
 		if err != nil {
