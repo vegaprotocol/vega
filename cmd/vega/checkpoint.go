@@ -77,7 +77,7 @@ func (c *checkpointRestore) Execute(_ []string) error {
 		return err
 	}
 
-	commander, cfunc, err := getNodeWalletCommander(log, registryPass, vegaPaths)
+	commander, _, cfunc, err := getNodeWalletCommander(log, registryPass, vegaPaths)
 	if err != nil {
 		return fmt.Errorf("failed to get commander: %w", err)
 	}
@@ -97,41 +97,41 @@ func (c *checkpointRestore) Execute(_ []string) error {
 	return <-ch
 }
 
-func getNodeWalletCommander(log *logging.Logger, registryPass string, vegaPaths paths.Paths) (*nodewallets.Commander, context.CancelFunc, error) {
+func getNodeWalletCommander(log *logging.Logger, registryPass string, vegaPaths paths.Paths) (*nodewallets.Commander, *api.LastBlockHeightResponse, context.CancelFunc, error) {
 	_, cfg, err := config.EnsureNodeConfig(vegaPaths)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 
 	vegaWallet, err := nodewallets.GetVegaWallet(vegaPaths, registryPass)
 	if err != nil {
-		return nil, nil, fmt.Errorf("couldn't get Vega node wallet: %w", err)
+		return nil, nil, nil, fmt.Errorf("couldn't get Vega node wallet: %w", err)
 	}
 
 	abciClient, err := abci.NewClient(cfg.Blockchain.Tendermint.ClientAddr)
 	if err != nil {
-		return nil, nil, fmt.Errorf("couldn't initialise ABCI client: %w", err)
+		return nil, nil, nil, fmt.Errorf("couldn't initialise ABCI client: %w", err)
 	}
 
 	coreClient, err := getCoreClient(
 		net.JoinHostPort(cfg.API.IP, strconv.Itoa(cfg.API.Port)))
 	if err != nil {
-		return nil, nil, fmt.Errorf("couldn't connect to node: %w", err)
+		return nil, nil, nil, fmt.Errorf("couldn't connect to node: %w", err)
 	}
 
 	ctx, cancel := timeoutContext()
 	resp, err := coreClient.LastBlockHeight(ctx, &api.LastBlockHeightRequest{})
 	if err != nil {
-		return nil, nil, fmt.Errorf("couldn't get last block height: %w", err)
+		return nil, nil, nil, fmt.Errorf("couldn't get last block height: %w", err)
 	}
 
 	commander, err := nodewallets.NewCommander(cfg.NodeWallet, log, nil, vegaWallet, heightProvider{height: resp.Height})
 	if err != nil {
-		return nil, nil, fmt.Errorf("couldn't initialise node wallet commander: %w", err)
+		return nil, nil, nil, fmt.Errorf("couldn't initialise node wallet commander: %w", err)
 	}
 
 	commander.SetChain(blockchain.NewClient(abciClient))
-	return commander, cancel, nil
+	return commander, resp, cancel, nil
 }
 
 type heightProvider struct {

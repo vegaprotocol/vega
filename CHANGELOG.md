@@ -14,6 +14,7 @@
 ### 🐛 Fixes
 - [5078](https://github.com/vegaprotocol/vega/issues/5078) - Unwrap properly position decimal place from payload
 - [5076](https://github.com/vegaprotocol/vega/issues/5076) - Set last mark price to settlement price when market is settled
+- [5038](https://github.com/vegaprotocol/vega/issues/5038) - Send proof-of-work when when announcing node
 - [5034](https://github.com/vegaprotocol/vega/issues/5034) - Ensure to / from in transfers payloads are vega public keys
 - [5066](https://github.com/vegaprotocol/vega/issues/5066) - Return an error if market decimal place > to asset decimal place
 
