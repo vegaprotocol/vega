@@ -20,14 +20,14 @@ Background:
 
     Given time is updated to "2021-08-26T00:00:00Z"
     Given the average block duration is "2"
-    
+
     And the fees configuration named "fees-config-1":
       | maker fee | infrastructure fee |
       | 0.004     | 0.001             |
     And the price monitoring updated every "1000" seconds named "price-monitoring":
       | horizon | probability | auction extension |
       | 1       | 0.99        | 3                 |
-    
+
     Given the fees configuration named "fees-config-2":
       | maker fee | infrastructure fee |
       | 0.02      | 0.002              |
@@ -45,8 +45,8 @@ Background:
 
     Given the parties deposit on asset's general account the following amount:
     | party           | asset | amount   |
-    | reward_funder   | ETH   | 10000000 |
-    | reward_funder   | BTC   | 5000000  |
+    | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf   | ETH   | 10000000 |
+    | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf   | BTC   | 5000000  |
 
     Given the parties deposit on asset's general account the following amount:
       | party  | asset | amount     |
@@ -87,7 +87,7 @@ Scenario: all sort of fees with multiple assets and multiple markets pay rewards
       | lp2 | lp2   | ETH/DEC22 | 2000              | 0.002 | buy  | BID              | 1          | 2      | submission |
       | lp2 | lp2   | ETH/DEC22 | 2000              | 0.002 | buy  | MID              | 2          | 1      | amendment |
       | lp2 | lp2   | ETH/DEC22 | 2000              | 0.002 | sell | ASK              | 1          | 2      | amendment |
-      | lp2 | lp2   | ETH/DEC22 | 2000              | 0.002 | sell | MID              | 2          | 1      | amendment |      
+      | lp2 | lp2   | ETH/DEC22 | 2000              | 0.002 | sell | MID              | 2          | 1      | amendment |
       | lp2 | lp2   | BTC/DEC21 | 500               | 0.002 | buy  | BID              | 1          | 2      | submission |
       | lp2 | lp2   | BTC/DEC21 | 500               | 0.002 | buy  | MID              | 2          | 1      | amendment |
       | lp2 | lp2   | BTC/DEC21 | 500               | 0.002 | sell | ASK              | 1          | 2      | amendment |
@@ -124,7 +124,7 @@ Scenario: all sort of fees with multiple assets and multiple markets pay rewards
     When the opening auction period ends for market "ETH/DEC22"
     Then the following trades should be executed:
       | buyer   | price | size | seller  |
-      | party1  | 1050  | 30   |  party2 |  
+      | party1  | 1050  | 30   |  party2 |
 
     When the opening auction period ends for market "BTC/DEC21"
     Then the following trades should be executed:
@@ -134,8 +134,8 @@ Scenario: all sort of fees with multiple assets and multiple markets pay rewards
     When the opening auction period ends for market "BTC/DEC22"
     Then the following trades should be executed:
       | buyer   | price | size | seller  |
-      | party1  | 1030  | 25   |  party2 |  
-    
+      | party1  | 1030  | 25   |  party2 |
+
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC21"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC22"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "BTC/DEC21"
@@ -169,13 +169,13 @@ Scenario: all sort of fees with multiple assets and multiple markets pay rewards
 
     Given the parties submit the following one off transfers:
     | id |      from     |  from_account_type    | to |   to_account_type                       | asset | amount |       delivery_time   |
-    | 1  | reward_funder |  ACCOUNT_TYPE_GENERAL |  * | ACCOUNT_TYPE_REWARD_MAKER_RECEIVED_FEES | ETH   |  10000 | 2021-08-26T00:00:00Z  |    
-    | 2  | reward_funder |  ACCOUNT_TYPE_GENERAL |  * | ACCOUNT_TYPE_REWARD_TAKER_PAID_FEES     | ETH   |  20000 | 2021-08-26T00:00:10Z  |    
-    | 3  | reward_funder |  ACCOUNT_TYPE_GENERAL |  * | ACCOUNT_TYPE_REWARD_LP_RECEIVED_FEES    | ETH   |  5000  | 2021-08-26T00:00:10Z  |    
-    | 4  | reward_funder |  ACCOUNT_TYPE_GENERAL |  * | ACCOUNT_TYPE_REWARD_MAKER_RECEIVED_FEES | BTC   |  1000 | 2021-08-26T00:00:00Z  |    
-    | 5  | reward_funder |  ACCOUNT_TYPE_GENERAL |  * | ACCOUNT_TYPE_REWARD_TAKER_PAID_FEES     | BTC   |  2000 | 2021-08-26T00:00:10Z  |    
-    | 6  | reward_funder |  ACCOUNT_TYPE_GENERAL |  * | ACCOUNT_TYPE_REWARD_LP_RECEIVED_FEES    | BTC   |  500  | 2021-08-26T00:00:10Z  |    
- 
+    | 1  | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf |  ACCOUNT_TYPE_GENERAL |  0000000000000000000000000000000000000000000000000000000000000000 | ACCOUNT_TYPE_REWARD_MAKER_RECEIVED_FEES | ETH   |  10000 | 2021-08-26T00:00:00Z  |
+    | 2  | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf |  ACCOUNT_TYPE_GENERAL |  0000000000000000000000000000000000000000000000000000000000000000 | ACCOUNT_TYPE_REWARD_TAKER_PAID_FEES     | ETH   |  20000 | 2021-08-26T00:00:10Z  |
+    | 3  | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf |  ACCOUNT_TYPE_GENERAL |  0000000000000000000000000000000000000000000000000000000000000000 | ACCOUNT_TYPE_REWARD_LP_RECEIVED_FEES    | ETH   |  5000  | 2021-08-26T00:00:10Z  |
+    | 4  | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf |  ACCOUNT_TYPE_GENERAL |  0000000000000000000000000000000000000000000000000000000000000000 | ACCOUNT_TYPE_REWARD_MAKER_RECEIVED_FEES | BTC   |  1000 | 2021-08-26T00:00:00Z  |
+    | 5  | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf |  ACCOUNT_TYPE_GENERAL |  0000000000000000000000000000000000000000000000000000000000000000 | ACCOUNT_TYPE_REWARD_TAKER_PAID_FEES     | BTC   |  2000 | 2021-08-26T00:00:10Z  |
+    | 6  | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf |  ACCOUNT_TYPE_GENERAL |  0000000000000000000000000000000000000000000000000000000000000000 | ACCOUNT_TYPE_REWARD_LP_RECEIVED_FEES    | BTC   |  500  | 2021-08-26T00:00:10Z  |
+
     Then "party1" should have general account balance of "599982442" for asset "ETH"
     Then "party2" should have general account balance of "599995070" for asset "ETH"
     Then "lp1" should have general account balance of "5999990005" for asset "ETH"
@@ -189,7 +189,7 @@ Scenario: all sort of fees with multiple assets and multiple markets pay rewards
     #complete the epoch for rewards to take place
     Then the network moves ahead "7" blocks
 
-    # ETH maker fees received: 
+    # ETH maker fees received:
     # party1 - 158 => 158 / 206 = 0.7669902913 * 10000 = 7669
     # lp1 - 32 => 32/206 = 0.1553398058 * 10000 = 1553
     # lp2 - 16 => 16/206 = 0.0776699029 * 10000 = 776
@@ -210,9 +210,9 @@ Scenario: all sort of fees with multiple assets and multiple markets pay rewards
     # lp2 = 5999996665 + 8 (lp fee) + 1000 (lp fee reward) + 776 (maker fee received reward) = 5999998449
     Then "lp2" should have general account balance of "5999998449" for asset "ETH"
 
-    # BTC maker fees received: 
+    # BTC maker fees received:
     # party2 - 188 => 1000
-    
+
     # BTC taker fees paid:
     # party1 - 188 => 2000
 

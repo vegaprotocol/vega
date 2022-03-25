@@ -7,6 +7,7 @@ import (
 	vegapb "code.vegaprotocol.io/protos/vega"
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
+	vgcrypto "code.vegaprotocol.io/vega/crypto"
 	"code.vegaprotocol.io/vega/types/num"
 )
 
@@ -61,10 +62,10 @@ type TransferBase struct {
 }
 
 func (t *TransferBase) IsValid() error {
-	if len(t.From) <= 0 {
+	if !vgcrypto.IsValidVegaPubKey(t.From) {
 		return ErrInvalidFromAccount
 	}
-	if len(t.To) <= 0 {
+	if !vgcrypto.IsValidVegaPubKey(t.To) {
 		return ErrInvalidToAccount
 	}
 

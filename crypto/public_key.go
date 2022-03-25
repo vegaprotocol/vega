@@ -1,5 +1,7 @@
 package crypto
 
+import "encoding/hex"
+
 type PublicKey struct {
 	hex   string
 	bytes []byte
@@ -18,4 +20,18 @@ func (p PublicKey) Hex() string {
 
 func (p PublicKey) Bytes() []byte {
 	return p.bytes
+}
+
+func IsValidVegaPubKey(pkey string) bool {
+	// should be exactly 64 chars
+	if len(pkey) != 64 {
+		return false
+	}
+
+	// should be strictly hex encoded
+	if _, err := hex.DecodeString(pkey); err != nil {
+		return false
+	}
+
+	return true
 }
