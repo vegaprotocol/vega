@@ -95,6 +95,10 @@ const (
 	ProposalErrorInsufficientEquityLikeShare ProposalError = vegapb.ProposalError_PROPOSAL_ERROR_INSUFFICIENT_EQUITY_LIKE_SHARE
 	// ProposalErrorInvalidMarket The market targeted by the proposal does not exist or is not eligible to modification.
 	ProposalErrorInvalidMarket ProposalError = vegapb.ProposalError_PROPOSAL_ERROR_INVALID_MARKET
+	// ProposalErrorTooManyMarketDecimalPlace the market uses more decimal places than the settlement asset.
+	ProposalErrorTooManyMarketDecimalPlaces ProposalError = vegapb.ProposalError_PROPOSAL_ERROR_TOO_MANY_MARKET_DECIMAL_PLACES
+	// ProposalErrorTooManyPriceMonitoringTriggers the market price monitoring setting uses too many triggers.
+	ProposalErrorTooManyPriceMonitoringTriggers ProposalError = vegapb.ProposalError_PROPOSAL_ERROR_TOO_MANY_PRICE_MONITORING_TRIGGERS
 )
 
 type ProposalState = vegapb.Proposal_State
