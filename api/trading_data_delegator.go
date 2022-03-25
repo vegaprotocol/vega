@@ -9,6 +9,7 @@ import (
 	"code.vegaprotocol.io/data-node/candlesv2"
 	"code.vegaprotocol.io/data-node/risk"
 	"code.vegaprotocol.io/data-node/vegatime"
+	v1 "code.vegaprotocol.io/protos/vega/events/v1"
 	"code.vegaprotocol.io/vega/types/num"
 
 	"code.vegaprotocol.io/data-node/entities"
@@ -45,6 +46,7 @@ type tradingDataDelegator struct {
 	oracleSpecStore         *sqlstore.OracleSpec
 	oracleDataStore         *sqlstore.OracleData
 	liquidityProvisionStore *sqlstore.LiquidityProvision
+	transfersStore          *sqlstore.Transfers
 }
 
 var defaultEntityPagination = entities.Pagination{
@@ -123,6 +125,57 @@ func (t *tradingDataDelegator) Checkpoints(ctx context.Context, _ *protoapi.Chec
 
 	return &protoapi.CheckpointsResponse{
 		Checkpoints: out,
+	}, nil
+}
+
+/****************************** Transfers **************************************/
+
+func (t *tradingDataDelegator) Transfers(ctx context.Context, req *protoapi.TransfersRequest) (*protoapi.TransfersResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("Transfers-SQL")()
+
+	if len(req.Pubkey) <= 0 && (req.IsFrom || req.IsTo) {
+		return nil, apiError(codes.InvalidArgument, errors.New("missing pubkey"))
+	}
+
+	if req.IsFrom && req.IsTo {
+		return nil, apiError(codes.InvalidArgument, errors.New("request is for transfers to and from the same party"))
+	}
+
+	var transfers []*entities.Transfer
+	var err error
+	if !req.IsFrom && !req.IsTo {
+		transfers, err = t.transfersStore.GetAll(ctx)
+		if err != nil {
+			return nil, apiError(codes.Internal, err)
+		}
+	} else if req.IsFrom || req.IsTo {
+
+		if req.IsFrom {
+			transfers, err = t.transfersStore.GetTransfersFromParty(ctx, entities.PartyID{ID: entities.ID(req.Pubkey)})
+			if err != nil {
+				return nil, apiError(codes.Internal, err)
+			}
+		}
+
+		if req.IsTo {
+			transfers, err = t.transfersStore.GetTransfersToParty(ctx, entities.PartyID{ID: entities.ID(req.Pubkey)})
+			if err != nil {
+				return nil, apiError(codes.Internal, err)
+			}
+		}
+	}
+
+	protoTransfers := make([]*v1.Transfer, 0, len(transfers))
+	for _, transfer := range transfers {
+		proto, err := transfer.ToProto(t.accountStore)
+		if err != nil {
+			return nil, apiError(codes.Internal, err)
+		}
+		protoTransfers = append(protoTransfers, proto)
+	}
+
+	return &protoapi.TransfersResponse{
+		Transfers: protoTransfers,
 	}, nil
 }
 
