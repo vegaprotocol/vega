@@ -63,6 +63,9 @@ func (v *VoteSub) loop(ctx context.Context) {
 }
 
 func (v *VoteSub) Push(evts ...events.Event) {
+	v.mu.Lock()
+	defer v.mu.Unlock()
+
 	if len(evts) == 0 {
 		return
 	}
@@ -88,18 +91,19 @@ func (v *VoteSub) Push(evts ...events.Event) {
 	if len(add) == 0 {
 		return
 	}
-	v.mu.Lock()
 	// no data in subscriber, first time adding
 	// close the update channel to signal callers they can call GetData
 	if len(v.all) == 0 {
 		close(v.update)
 	}
 	v.all = append(v.all, add...)
-	v.mu.Unlock()
 }
 
 // Filter allows us to fetch votes using callbacks (e.g. filter out all votes by party)
-func (v VoteSub) Filter(filters ...VoteFilter) []*types.Vote {
+func (v *VoteSub) Filter(filters ...VoteFilter) []*types.Vote {
+	v.mu.Lock()
+	defer v.mu.Unlock()
+
 	ret := []*types.Vote{}
 	for _, vote := range v.all {
 		add := true

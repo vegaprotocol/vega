@@ -50,6 +50,7 @@ func (d *Deposit) consume(event DepositEvent) {
 	record, err := entities.DepositFromProto(&deposit, d.vegaTime)
 	if err != nil {
 		d.log.Error("converting deposit proto to database entity failed", logging.Error(err))
+		return
 	}
 
 	if err = d.store.Upsert(record); err != nil {

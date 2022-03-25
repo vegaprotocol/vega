@@ -1,6 +1,7 @@
 package sqlstore
 
 import (
+	"bytes"
 	"context"
 	"embed"
 	"errors"
@@ -98,7 +99,7 @@ func InitialiseStorage(log *logging.Logger, config Config, vegapaths paths.Paths
 		embeddedPostgresRuntimePath := paths.JoinStatePath(paths.StatePath(vegapaths.StatePathFor(paths.DataNodeStorageHome)), "sqlstore")
 		embeddedPostgresDataPath := paths.JoinStatePath(paths.StatePath(vegapaths.StatePathFor(paths.DataNodeStorageHome)), "node-data")
 
-		if err := s.initializeEmbeddedPostgres(&embeddedPostgresRuntimePath, &embeddedPostgresDataPath); err != nil {
+		if err := s.initializeEmbeddedPostgres(&embeddedPostgresRuntimePath, &embeddedPostgresDataPath, io.Discard); err != nil {
 			return nil, fmt.Errorf("use embedded database was true, but failed to start: %w", err)
 		}
 	}
@@ -124,7 +125,10 @@ func InitialiseTestStorage(log *logging.Logger, config Config) (*SQLStore, error
 		embeddedPostgresRuntimePath := paths.JoinStatePath(paths.StatePath(tempDir), "sqlstore")
 		embeddedPostgresDataPath := paths.JoinStatePath(paths.StatePath(tempDir), "sqlstore", "node-data")
 
-		if err := s.initializeEmbeddedPostgres(&embeddedPostgresRuntimePath, &embeddedPostgresDataPath); err != nil {
+		postgresLog := &bytes.Buffer{}
+
+		if err := s.initializeEmbeddedPostgres(&embeddedPostgresRuntimePath, &embeddedPostgresDataPath, postgresLog); err != nil {
+			log.Errorf("postgres log: \n%s", postgresLog.String())
 			return nil, fmt.Errorf("use embedded database was true, but failed to start: %w", err)
 		}
 	}
@@ -162,13 +166,13 @@ func (s *SQLStore) DeleteEverything() error {
 	return nil
 }
 
-func (s *SQLStore) initializeEmbeddedPostgres(runtimePath *paths.StatePath, dataPath *paths.StatePath) error {
+func (s *SQLStore) initializeEmbeddedPostgres(runtimePath *paths.StatePath, dataPath *paths.StatePath, writer io.Writer) error {
 	dbConfig := embeddedpostgres.DefaultConfig().
 		Username(s.conf.Username).
 		Password(s.conf.Password).
 		Database(s.conf.Database).
 		Port(uint32(s.conf.Port)).
-		Logger(io.Discard)
+		Logger(writer)
 
 	if runtimePath != nil {
 		dbConfig = dbConfig.RuntimePath(runtimePath.String()).BinariesPath(runtimePath.String())

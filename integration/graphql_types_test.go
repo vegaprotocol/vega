@@ -284,3 +284,44 @@ type Withdrawal struct {
 	CreatedTimestamp   string
 	WithdrawnTimeStamp string
 }
+
+type Property struct {
+	Name  string
+	Value string
+}
+
+type OracleData struct {
+	PubKeys []string
+	Data    []Property
+}
+
+type PropertyKeyType = string
+
+type PropertyKey struct {
+	Name string
+	Type PropertyKeyType
+}
+
+type ConditionOperator = string
+
+type Condition struct {
+	Operator ConditionOperator
+	Value    string
+}
+
+type Filter struct {
+	Key        PropertyKey
+	Conditions []Condition
+}
+
+type OracleSpecStatus = string
+
+type OracleSpec struct {
+	ID        string
+	CreatedAt TimeString
+	UpdatedAt TimeString
+	PubKeys   []string
+	Filters   []Filter
+	Status    OracleSpecStatus
+	Data      []OracleData
+}

@@ -145,6 +145,8 @@ func (l *NodeCommand) setupSQLSubscribers() {
 	l.riskFactorSubSQL = sqlsubscribers.NewRiskFactor(l.riskFactorStoreSQL, l.Log)
 	l.netParamSubSQL = sqlsubscribers.NewNetworkParameter(l.netParamStoreSQL, l.Log)
 	l.checkpointSubSQL = sqlsubscribers.NewCheckpoint(l.checkpointStoreSQL, l.Log)
+	l.oracleSpecSubSQL = sqlsubscribers.NewOracleSpec(l.oracleSpecStoreSQL, l.Log)
+	l.oracleDataSubSQL = sqlsubscribers.NewOracleData(l.oracleDataStoreSQL, l.Log)
 }
 
 func (l *NodeCommand) setupStorages() error {
@@ -191,6 +193,8 @@ func (l *NodeCommand) setupStorages() error {
 		l.riskFactorStoreSQL = sqlstore.NewRiskFactors(sqlStore)
 		l.netParamStoreSQL = sqlstore.NewNetworkParameters(sqlStore)
 		l.checkpointStoreSQL = sqlstore.NewCheckpoints(sqlStore)
+		l.oracleSpecStoreSQL = sqlstore.NewOracleSpec(sqlStore)
+		l.oracleDataStoreSQL = sqlstore.NewOracleData(sqlStore)
 
 		candleStore, err := sqlstore.NewCandles(l.ctx, sqlStore, l.conf.CandlesV2.CandleStore)
 		if err != nil {
@@ -289,6 +293,8 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 			l.riskFactorSubSQL,
 			l.netParamSubSQL,
 			l.checkpointSubSQL,
+			l.oracleSpecSubSQL,
+			l.oracleDataSubSQL,
 		)
 	}
 

@@ -125,6 +125,8 @@ type NodeCommand struct {
 	riskFactorStoreSQL    *sqlstore.RiskFactors
 	netParamStoreSQL      *sqlstore.NetworkParameters
 	checkpointStoreSQL    *sqlstore.Checkpoints
+	oracleSpecStoreSQL    *sqlstore.OracleSpec
+	oracleDataStoreSQL    *sqlstore.OracleData
 
 	vegaCoreServiceClient vegaprotoapi.CoreServiceClient
 
@@ -174,6 +176,8 @@ type NodeCommand struct {
 	riskFactorSubSQL       *sqlsubscribers.RiskFactor
 	netParamSubSQL         *sqlsubscribers.NetworkParameter
 	checkpointSubSQL       *sqlsubscribers.Checkpoint
+	oracleSpecSubSQL       *sqlsubscribers.OracleSpec
+	oracleDataSubSQL       *sqlsubscribers.OracleData
 
 	candleService     *candles.Svc
 	tradeService      *trades.Svc
@@ -377,6 +381,8 @@ func (l *NodeCommand) createGRPCServer(config api.Config, useSQLStores bool) *ap
 		l.blockStoreSQL,
 		l.checkpointStoreSQL,
 		l.candleServiceV2,
+		l.oracleSpecStoreSQL,
+		l.oracleDataStoreSQL,
 	)
 	return grpcServer
 }

@@ -34,16 +34,11 @@ type Market struct {
 
 func NewMarketFromProto(market *vega.Market, vegaTime time.Time) (*Market, error) {
 	var err error
-	var tradableInstrument TradableInstrument
 	var liquidityMonitoringParameters LiquidityMonitoringParameters
 	var marketTimestamps MarketTimestamps
 	var priceMonitoringSettings PriceMonitoringSettings
 	var openingAuction AuctionDuration
 	var fees Fees
-
-	if tradableInstrument, err = tradableInstrumentFromProto(market.TradableInstrument); err != nil {
-		return nil, err
-	}
 
 	if fees, err = feesFromProto(market.Fees); err != nil {
 		return nil, err
@@ -81,7 +76,7 @@ func NewMarketFromProto(market *vega.Market, vegaTime time.Time) (*Market, error
 		ID:                            NewMarketID(market.Id),
 		VegaTime:                      vegaTime,
 		InstrumentID:                  market.TradableInstrument.Instrument.Id,
-		TradableInstrument:            tradableInstrument,
+		TradableInstrument:            TradableInstrument{market.TradableInstrument},
 		DecimalPlaces:                 dps,
 		Fees:                          fees,
 		OpeningAuction:                openingAuction,
