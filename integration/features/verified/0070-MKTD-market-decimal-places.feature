@@ -79,7 +79,7 @@ Feature: Allow markets to be specified with a smaller number of decimal places t
             | party1 | ETH   | USD/DEC19 | 1081   | 99996757 | 0    |
             | party2 | ETH   | USD/DEC19 | 4388   | 99986836 | 0    |
 
-    Scenario: Users engage in a USD market auction, 0070-MKTD-003, 0070-MKTD-008
+    Scenario: Users engage in a USD market auction, (0070-MKTD-003, 0070-MKTD-008)
         Given the parties submit the following liquidity provision:
             | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
             | lp1 | party0 | ETH/MAR22 | 500               | 0.001 | sell | ASK              | 500        | 20     | submission |
@@ -105,7 +105,7 @@ Feature: Allow markets to be specified with a smaller number of decimal places t
             | buyer  | price | size | seller |
             | party1 | 10    | 10   | party2 |
 
-    Scenario: Users engage in an ETH market auction, 0070-MKTD-003, 0070-MKTD-008
+    Scenario: Users engage in an ETH market auction, (0070-MKTD-003, 0070-MKTD-008)
         Given the parties submit the following liquidity provision:
             | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
             | lp1 | party0 | USD/DEC19 | 50000             | 0.001 | sell | ASK              | 500        | 20     | submission |
@@ -131,7 +131,7 @@ Feature: Allow markets to be specified with a smaller number of decimal places t
             | buyer  | price | size | seller |
             | party1 | 1000  | 10   | party2 |
 
-    Scenario: Users engage in an ETH market auction with full decimal places, 0070-MKTD-003, 0070-MKTD-008
+    Scenario: Users engage in an ETH market auction with full decimal places, (0070-MKTD-003, 0070-MKTD-008)
 
         Given  the parties submit the following liquidity provision:
             | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
@@ -158,7 +158,7 @@ Feature: Allow markets to be specified with a smaller number of decimal places t
             | buyer  | price  | size | seller |
             | party1 | 100000 | 10   | party2 |
 
-    Scenario: User tops up markets with differing precisions with the same asset + amount, should result in identical margin changes, 0070-MKTD-004
+    Scenario: User tops up markets with differing precisions with the same asset + amount, should result in identical margin changes, (0070-MKTD-004)
 
         Given  the parties submit the following liquidity provision:
             | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
@@ -210,7 +210,7 @@ Feature: Allow markets to be specified with a smaller number of decimal places t
             | party1 | ETH   | USD/DEC19 | 1273   | 99999714 | 0      |
             | party2 | ETH   | USD/DEC19 | 5188   | 99995760 | 0      |
 
-    Scenario: User checks prices after opening auction, 0070-MKTD-005
+    Scenario: User checks prices after opening auction, (0070-MKTD-005)
 
         Given  the parties submit the following liquidity provision:
             | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
@@ -239,7 +239,7 @@ Feature: Allow markets to be specified with a smaller number of decimal places t
         Then the mark price should be "100000" for the market "USD/DEC20"
         And the mark price should be "1000" for the market "USD/DEC19"
 
-    Scenario: Offsets are calculated in market units, 0070-MKTD-007
+    Scenario: Offsets are calculated in market units, (0070-MKTD-007)
 
         Given  the parties submit the following liquidity provision:
             | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
@@ -275,7 +275,7 @@ Feature: Allow markets to be specified with a smaller number of decimal places t
             | party1 | USD/DEC20 | sell | 5      | ASK       | 5      | 101005 | STATUS_ACTIVE |
             | party1 | USD/DEC19 | sell | 5      | ASK       | 5      | 1015   | STATUS_ACTIVE |
 
-    Scenario: Price monitoring bounds are calculated at asset precision but displayed rounded, 0070-MKTD-006
+    Scenario: Price monitoring bounds are calculated at asset precision but displayed rounded, (0070-MKTD-006)
 
 
         Given  the parties submit the following liquidity provision:
