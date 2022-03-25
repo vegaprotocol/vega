@@ -55,6 +55,7 @@ func TestCollateralTransfer(t *testing.T) {
 func TestCollateralMarkToMarket(t *testing.T) {
 	t.Run("Mark to Market distribution, insufficient funcs - complex scenario", testProcessBothProRatedMTM)
 	t.Run("Mark to Market successful", testMTMSuccess)
+	// we panic if settlement account is non-zero, this test doesn't pass anymore
 	t.Run("Mark to Market wins and losses do not match up, settlement not drained", testSettleBalanceNotZero)
 }
 
@@ -1052,10 +1053,12 @@ func testSettleBalanceNotZero(t *testing.T) {
 	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 	eng.broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
 	transfers := eng.getTestMTMTransfer(pos)
-	_, _, err = eng.MarkToMarket(context.Background(), testMarketID, transfers, "BTC")
+	defer func() {
+		r := recover()
+		require.NotNil(t, r)
+	}()
+	_, _, _ = eng.MarkToMarket(context.Background(), testMarketID, transfers, "BTC")
 	// this should return an error
-	assert.Error(t, err)
-	assert.Equal(t, collateral.ErrSettlementBalanceNotZero, err)
 }
 
 func testProcessBothProRated(t *testing.T) {
