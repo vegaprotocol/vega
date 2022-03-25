@@ -161,8 +161,9 @@ func buildMarketFromProposal(
 	makerFeeDec, _ := num.DecimalFromString(makerFee)
 	infraFeeDec, _ := num.DecimalFromString(infraFee)
 	market := &types.Market{
-		ID:            marketID,
-		DecimalPlaces: definition.Changes.DecimalPlaces,
+		ID:                    marketID,
+		DecimalPlaces:         definition.Changes.DecimalPlaces,
+		PositionDecimalPlaces: definition.Changes.PositionDecimalPlaces,
 		Fees: &types.Fees{
 			Factors: &types.FeeFactors{
 				MakerFee:          makerFeeDec,
