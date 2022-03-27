@@ -9,64 +9,81 @@ import (
 	"code.vegaprotocol.io/data-node/entities"
 	"code.vegaprotocol.io/data-node/logging"
 	"github.com/georgysavva/scany/pgxscan"
+	"github.com/jackc/pgx/v4"
 )
 
 type MarketData struct {
 	*SQLStore
+	columns    []string
+	marketData []*entities.MarketData
 }
-
-const (
-	sqlMarketDataColumns = `market, vega_time, seq_num, mark_price, 
-		best_bid_price, best_bid_volume, best_offer_price, best_offer_volume,
-		best_static_bid_price, best_static_bid_volume, best_static_offer_price, best_static_offer_volume,
-		mid_price, static_mid_price, open_interest, auction_end, 
-		auction_start, indicative_price, indicative_volume,	market_trading_mode, 
-		auction_trigger, extension_trigger, target_stake, supplied_stake, 
-		price_monitoring_bounds, market_value_proxy, liquidity_provider_fee_shares`
-)
 
 var ErrInvalidDateRange = errors.New("invalid date range, end date must be after start date")
 
 func NewMarketData(sqlStore *SQLStore) *MarketData {
 	return &MarketData{
 		SQLStore: sqlStore,
+		columns: []string{"synthetic_time", "vega_time", "seq_num",
+			"market", "mark_price", "best_bid_price", "best_bid_volume",
+			"best_offer_price", "best_offer_volume", "best_static_bid_price", "best_static_bid_volume",
+			"best_static_offer_price", "best_static_offer_volume", "mid_price", "static_mid_price",
+			"open_interest", "auction_end", "auction_start", "indicative_price", "indicative_volume",
+			"market_trading_mode", "auction_trigger", "extension_trigger", "target_stake",
+			"supplied_stake", "price_monitoring_bounds", "market_value_proxy", "liquidity_provider_fee_shares",
+		},
 	}
 }
 
 func (md *MarketData) Add(data *entities.MarketData) error {
-	ctx, cancel := context.WithTimeout(context.Background(), md.conf.Timeout.Duration)
+	md.marketData = append(md.marketData, data)
+	return nil
+
+}
+
+func (md *MarketData) OnTimeUpdateEvent(ctx context.Context) error {
+	ctx, cancel := context.WithTimeout(ctx, md.conf.Timeout.Duration)
 	defer cancel()
 
-	query := fmt.Sprintf(`insert into market_data(%s) 
-	values ($1, $2, $3, $4, 
-			$5, $6, $7, $8,	
-			$9, $10, $11, $12, 
-			$13, $14, $15, $16, 
-			$17, $18, $19, $20, 
-			$21, $22, $23, $24, 
-			$25, $26, $27)`, sqlMarketDataColumns)
+	var rows [][]interface{}
+	for _, data := range md.marketData {
 
-	if _, err := md.pool.Exec(ctx, query,
-		data.Market, data.VegaTime, data.SeqNum, data.MarkPrice,
-		data.BestBidPrice, data.BestBidVolume, data.BestOfferPrice, data.BestOfferVolume,
-		data.BestStaticBidPrice, data.BestStaticBidVolume, data.BestStaticOfferPrice, data.BestStaticOfferVolume,
-		data.MidPrice, data.StaticMidPrice, data.OpenInterest, data.AuctionEnd,
-		data.AuctionStart, data.IndicativePrice, data.IndicativeVolume, data.MarketTradingMode,
-		data.AuctionTrigger, data.ExtensionTrigger, data.TargetStake, data.SuppliedStake,
-		data.PriceMonitoringBounds, data.MarketValueProxy, data.LiquidityProviderFeeShares,
-	); err != nil {
-		err = fmt.Errorf("could not insert into database: %w", err)
-		return err
+		rows = append(rows, []interface{}{data.SyntheticTime, data.VegaTime, data.SeqNum,
+			data.Market, data.MarkPrice,
+			data.BestBidPrice, data.BestBidVolume, data.BestOfferPrice, data.BestOfferVolume,
+			data.BestStaticBidPrice, data.BestStaticBidVolume, data.BestStaticOfferPrice, data.BestStaticOfferVolume,
+			data.MidPrice, data.StaticMidPrice, data.OpenInterest, data.AuctionEnd,
+			data.AuctionStart, data.IndicativePrice, data.IndicativeVolume, data.MarketTradingMode,
+			data.AuctionTrigger, data.ExtensionTrigger, data.TargetStake, data.SuppliedStake,
+			data.PriceMonitoringBounds, data.MarketValueProxy, data.LiquidityProviderFeeShares,
+		})
+
 	}
 
+	if rows != nil {
+		copyCount, err := md.pool.CopyFrom(
+			ctx,
+			pgx.Identifier{"market_data"}, md.columns, pgx.CopyFromRows(rows),
+		)
+		if err != nil {
+			return fmt.Errorf("failed to copy market data into database:%w", err)
+		}
+
+		if copyCount != int64(len(rows)) {
+			return fmt.Errorf("copied %d market data rows into the database, expected to copy %d", copyCount, len(rows))
+		}
+	}
+
+	md.marketData = nil
+
 	return nil
+
 }
 
 func (md *MarketData) GetMarketDataByID(ctx context.Context, marketID string) (entities.MarketData, error) {
 	md.log.Debug("Retrieving market data from Postgres", logging.String("market-id", marketID))
 
 	var marketData entities.MarketData
-	query := fmt.Sprintf("select %s from market_data_snapshot where market = $1", sqlMarketDataColumns)
+	query := "select * from market_data_snapshot where market = $1"
 
 	err := pgxscan.Get(ctx, md.pool, &marketData, query, entities.NewMarketID(marketID))
 
@@ -77,7 +94,7 @@ func (md *MarketData) GetMarketsData(ctx context.Context) ([]entities.MarketData
 	md.log.Debug("Retrieving markets data from Postgres")
 
 	var marketData []entities.MarketData
-	query := fmt.Sprintf("select %s from market_data_snapshot", sqlMarketDataColumns)
+	query := "select * from market_data_snapshot"
 
 	err := pgxscan.Select(ctx, md.pool, &marketData, query)
 
@@ -103,24 +120,24 @@ func (md *MarketData) GetToDateByID(ctx context.Context, marketID string, end ti
 func (md *MarketData) getBetweenDatesByID(ctx context.Context, marketID string, start, end *time.Time, pagination entities.Pagination) (results []entities.MarketData, err error) {
 	market := entities.NewMarketID(marketID)
 
-	selectStatement := fmt.Sprintf(`select %s from market_data`, sqlMarketDataColumns)
+	selectStatement := `select * from market_data`
 
 	if start != nil && end != nil {
 		query, args := orderAndPaginateQuery(
-			fmt.Sprintf(`%s where market = $1 and vega_time between $2 and $3`, selectStatement),
-			[]string{"vega_time", "seq_num"}, pagination,
+			fmt.Sprintf(`%s where market = $1 and synthetic_time between $2 and $3`, selectStatement),
+			[]string{"synthetic_time"}, pagination,
 			market, *start, *end)
 
 		err = pgxscan.Select(ctx, md.pool, &results, query, args...)
 	} else if start != nil && end == nil {
 		query, args := orderAndPaginateQuery(fmt.Sprintf(`%s where market = $1 and vega_time >= $2`, selectStatement),
-			[]string{"vega_time", "seq_num"}, pagination,
+			[]string{"synthetic_time"}, pagination,
 			market, *start)
 
 		err = pgxscan.Select(ctx, md.pool, &results, query, args...)
 	} else if start == nil && end != nil {
 		query, args := orderAndPaginateQuery(fmt.Sprintf(`%s where market = $1 and vega_time <= $2`, selectStatement),
-			[]string{"vega_time", "seq_num"}, pagination,
+			[]string{"synthetic_time"}, pagination,
 			market, *end)
 
 		err = pgxscan.Select(ctx, md.pool, &results, query, args...)

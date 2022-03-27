@@ -5,6 +5,7 @@
 package mocks
 
 import (
+	context "context"
 	reflect "reflect"
 
 	entities "code.vegaprotocol.io/data-node/entities"
@@ -46,4 +47,18 @@ func (m *MockMarketDataStore) Add(arg0 *entities.MarketData) error {
 func (mr *MockMarketDataStoreMockRecorder) Add(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Add", reflect.TypeOf((*MockMarketDataStore)(nil).Add), arg0)
+}
+
+// OnTimeUpdateEvent mocks base method.
+func (m *MockMarketDataStore) OnTimeUpdateEvent(arg0 context.Context) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "OnTimeUpdateEvent", arg0)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// OnTimeUpdateEvent indicates an expected call of OnTimeUpdateEvent.
+func (mr *MockMarketDataStoreMockRecorder) OnTimeUpdateEvent(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OnTimeUpdateEvent", reflect.TypeOf((*MockMarketDataStore)(nil).OnTimeUpdateEvent), arg0)
 }

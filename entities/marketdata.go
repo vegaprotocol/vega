@@ -69,6 +69,8 @@ type MarketData struct {
 	MarketValueProxy string
 	// the equity like share of liquidity fee for each liquidity provider
 	LiquidityProviderFeeShares []*LiquidityProviderFeeShare
+	// A synthetic time created which is the sum of vega_time + (seq num * Microsecond)
+	SyntheticTime time.Time
 	// Vega Block time at which the data was received from Vega Node
 	VegaTime time.Time
 	// SeqNum is the order in which the market data was received in the block

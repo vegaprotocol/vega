@@ -1,6 +1,7 @@
 package sqlsubscribers
 
 import (
+	"context"
 	"time"
 
 	"code.vegaprotocol.io/data-node/entities"
@@ -17,6 +18,7 @@ type MarketDataEvent interface {
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/market_data_mock.go -package mocks code.vegaprotocol.io/data-node/sqlsubscribers MarketDataStore
 type MarketDataStore interface {
 	Add(*entities.MarketData) error
+	OnTimeUpdateEvent(context.Context) error
 }
 
 type MarketData struct {
@@ -31,6 +33,7 @@ func (md *MarketData) Push(evt events.Event) {
 	switch e := evt.(type) {
 	case TimeUpdateEvent:
 		md.vegaTime = e.Time()
+		md.store.OnTimeUpdateEvent(e.Context())
 	case MarketDataEvent:
 		md.seqNum = e.Sequence()
 		md.consume(e)
@@ -73,6 +76,7 @@ func (md *MarketData) convertMarketDataProto(data *types.MarketData) (*entities.
 		return nil, err
 	}
 
+	record.SyntheticTime = md.vegaTime.Add(time.Duration(record.SeqNum) * time.Microsecond)
 	record.VegaTime = md.vegaTime
 	record.SeqNum = md.seqNum
 

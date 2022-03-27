@@ -67,7 +67,7 @@ func (ts *Trades) OnTimeUpdateEvent(ctx context.Context) error {
 		}
 
 		if copyCount != int64(len(rows)) {
-			return fmt.Errorf("copied %d rows into the database, expected to copy %d", copyCount, len(rows))
+			return fmt.Errorf("copied %d trade rows into the database, expected to copy %d", copyCount, len(rows))
 		}
 	}
 

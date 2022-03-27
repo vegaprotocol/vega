@@ -97,6 +97,9 @@ func shouldInsertAValidMarketDataRecord(t *testing.T) {
 	})
 	require.NoError(t, err)
 
+	err = md.OnTimeUpdateEvent(context.Background())
+	require.NoError(t, err)
+
 	err = conn.QueryRow(ctx, `select count(*) from market_data`).Scan(&rowCount)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, rowCount)
@@ -132,6 +135,8 @@ func shouldErrorIfNoVegaBlock(t *testing.T) {
 		ExtensionTrigger:  "AUCTION_TRIGGER_UNSPECIFIED",
 		VegaTime:          time.Now().Truncate(time.Microsecond),
 	})
+	require.NoError(t, err)
+	err = md.OnTimeUpdateEvent(context.Background())
 	require.Error(t, err)
 
 	err = conn.QueryRow(ctx, `select count(*) from market_data`).Scan(&rowCount)
@@ -333,6 +338,8 @@ func setupMarketData(t *testing.T) (*sqlstore.MarketData, error) {
 		err = md.Add(marketData)
 		require.NoError(t, err)
 	}
+	err = md.OnTimeUpdateEvent(context.Background())
+	require.NoError(t, err)
 
 	return md, nil
 }
@@ -398,6 +405,10 @@ func mustParseLiquidity(t *testing.T, value string) []*entities.LiquidityProvide
 func csvToMarketData(t *testing.T, line []string) *entities.MarketData {
 	t.Helper()
 
+	seqNum := 0
+	vegaTime := mustParseTimestamp(t, line[csvColumnVegaTime])
+	syntheticTime := vegaTime.Add(time.Duration(seqNum) * time.Microsecond)
+
 	return &entities.MarketData{
 		MarkPrice:                  mustParseDecimal(t, line[csvColumnMarkPrice]),
 		BestBidPrice:               mustParseDecimal(t, line[csvColumnBestBidPrice]),
@@ -424,6 +435,8 @@ func csvToMarketData(t *testing.T, line []string) *entities.MarketData {
 		PriceMonitoringBounds:      mustParsePriceMonitoringBounds(t, line[csvColumnPriceMonitoringBounds]),
 		MarketValueProxy:           line[csvColumnMarketValueProxy],
 		LiquidityProviderFeeShares: mustParseLiquidity(t, line[csvColumnLiquidityProviderFeeShares]),
-		VegaTime:                   mustParseTimestamp(t, line[csvColumnVegaTime]),
+		VegaTime:                   vegaTime,
+		SeqNum:                     uint64(seqNum),
+		SyntheticTime:              syntheticTime,
 	}
 }

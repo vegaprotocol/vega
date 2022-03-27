@@ -172,9 +172,10 @@ create type market_trading_mode_type as enum('TRADING_MODE_UNSPECIFIED', 'TRADIN
 create type market_state_type as enum('STATE_UNSPECIFIED', 'STATE_PROPOSED', 'STATE_REJECTED', 'STATE_PENDING', 'STATE_CANCELLED', 'STATE_ACTIVE', 'STATE_SUSPENDED', 'STATE_CLOSED', 'STATE_TRADING_TERMINATED', 'STATE_SETTLED');
 
 create table market_data (
-    market bytea not null,
+    synthetic_time       TIMESTAMP WITH TIME ZONE NOT NULL,
     vega_time timestamp with time zone not null references blocks(vega_time),
-    seq_num bigint not null,
+    seq_num    BIGINT NOT NULL,
+    market bytea not null,
     mark_price numeric(32),
     best_bid_price numeric(32),
     best_bid_volume bigint,
@@ -201,7 +202,7 @@ create table market_data (
     liquidity_provider_fee_shares jsonb
 );
 
-select create_hypertable('market_data', 'vega_time', chunk_time_interval => INTERVAL '1 day');
+select create_hypertable('market_data', 'synthetic_time', chunk_time_interval => INTERVAL '1 day');
 
 create index on market_data (market, vega_time);
 
