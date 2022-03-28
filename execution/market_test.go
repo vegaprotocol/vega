@@ -6477,3 +6477,91 @@ func TestLiquidityMonitoring_BestBidAskExistAfterAuction(t *testing.T) {
 	require.Equal(t, types.MarketTradingModeContinuous, md.MarketTradingMode)
 	require.Equal(t, types.AuctionTriggerUnspecified, md.Trigger)
 }
+
+func TestAmendTrade(t *testing.T) {
+	now := time.Unix(10, 0)
+	closingAt := time.Unix(1000000000, 0)
+	ctx := vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
+
+	auctionEnd := now.Add(10001 * time.Second)
+	mktCfg := getMarket(closingAt, defaultPriceMonitorSettings, &types.AuctionDuration{
+		Duration: 10000,
+	})
+	mktCfg.Fees = &types.Fees{
+		Factors: &types.FeeFactors{
+			LiquidityFee:      num.DecimalFromFloat(0.001),
+			InfrastructureFee: num.DecimalFromFloat(0.0005),
+			MakerFee:          num.DecimalFromFloat(0.00025),
+		},
+	}
+	mktCfg.TradableInstrument.RiskModel = &types.TradableInstrumentLogNormalRiskModel{
+		LogNormalRiskModel: &types.LogNormalRiskModel{
+			RiskAversionParameter: num.DecimalFromFloat(0.001),
+			Tau:                   num.DecimalFromFloat(0.00011407711613050422),
+			Params: &types.LogNormalModelParams{
+				Mu:    num.DecimalZero(),
+				R:     num.DecimalFromFloat(0.016),
+				Sigma: num.DecimalFromFloat(20),
+			},
+		},
+	}
+
+	lpparty := "lp-party-1"
+	lpparty2 := "lp-party-2"
+	lpparty3 := "lp-party-3"
+
+	p1 := "p1"
+	p2 := "p2"
+
+	tm := newTestMarket(t, now).Run(ctx, mktCfg)
+	tm.StartOpeningAuction().
+		// the liquidity provider
+		WithAccountAndAmount(lpparty, 500000000000).
+		WithAccountAndAmount(lpparty2, 500000000000).
+		WithAccountAndAmount(lpparty3, 500000000000).
+		WithAccountAndAmount(p1, 500000000000).
+		WithAccountAndAmount(p2, 500000000000)
+
+	tm.market.OnSuppliedStakeToObligationFactorUpdate(num.DecimalFromFloat(.2))
+	tm.EndOpeningAuction(t, auctionEnd, false)
+
+	assert.Equal(t, types.MarketTradingModeContinuous, tm.market.GetMarketData().MarketTradingMode)
+
+	tm.events = nil
+
+	p1Order := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "pid1", types.SideBuy, p1, 10, 1010)
+	p2Order := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "pid2", types.SideSell, p2, 10, 1020)
+
+	p1conf, err := tm.market.SubmitOrder(ctx, p1Order)
+	assert.NoError(t, err)
+	assert.Len(t, p1conf.Trades, 0)
+
+	p2conf, err := tm.market.SubmitOrder(ctx, p2Order)
+	assert.NoError(t, err)
+	assert.Len(t, p2conf.Trades, 0)
+
+	assert.Equal(t, types.MarketTradingModeContinuous, tm.market.GetMarketData().MarketTradingMode)
+
+	// now we
+	amend := types.OrderAmendment{
+		OrderID:  p1conf.Order.ID,
+		MarketID: p1conf.Order.MarketID,
+		Price:    num.NewUint(1020),
+	}
+
+	tm.events = nil
+	amendConf, err := tm.market.AmendOrder(ctx, &amend, p1conf.Order.Party, vgcrypto.RandomHash())
+	assert.NoError(t, err)
+	assert.Len(t, amendConf.Trades, 1)
+
+	positions := map[string]*events.PositionState{}
+	for _, v := range tm.events {
+		if e, ok := v.(*events.PositionState); ok {
+			positions[e.PartyID()] = e
+		}
+	}
+
+	assert.Len(t, positions, 2)
+	assert.Equal(t, int(positions[p1].Size()), 10)
+	assert.Equal(t, int(positions[p2].Size()), -10)
+}
