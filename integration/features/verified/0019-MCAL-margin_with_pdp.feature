@@ -1,4 +1,4 @@
-Feature: Test party accounts margins with fractional orders - the test is identical to margin.feature just with 2 position decimal places and all volumes are scaled by 10^2, to demonstrate that margins are calculated correctly. 
+Feature: Test party accounts margins with fractional orders - the test is identical to margin.feature just with 2 position decimal places and all volumes are scaled by 10^2, to demonstrate that margins are calculated correctly (0019-MCAL-008)
 
   Background:
 
@@ -33,8 +33,8 @@ Feature: Test party accounts margins with fractional orders - the test is identi
     And the mark price should be "1000" for the market "ETH/DEC19"
     Then the parties cancel the following orders:
       | party  | reference |
-      | party1 | party1-1 |
-      | party2 | party2-1 |
+      | party1 | party1-1  |
+      | party2 | party2-1  |
 
     When the parties place the following orders:
       | party    | market id | side | volume | price | resulting trades | type       | tif     | reference |
@@ -64,12 +64,12 @@ Feature: Test party accounts margins with fractional orders - the test is identi
     And the mark price should be "1000" for the market "ETH/DEC19"
     Then the parties cancel the following orders:
       | party  | reference |
-      | party1 | party1-1 |
-      | party2 | party2-1 |
+      | party1 | party1-1  |
+      | party2 | party2-1  |
 
     When the parties place the following orders:
       | party    | market id | side | volume | price | type       | tif     | reference | error               |
-      | partyGuy | ETH/DEC19 | sell | 100    | 1000  | TYPE_LIMIT | TIF_GTC | party1-1 | margin check failed |
+      | partyGuy | ETH/DEC19 | sell | 100    | 1000  | TYPE_LIMIT | TIF_GTC | party1-1  | margin check failed |
     Then the following orders should be rejected:
       | party    | market id | reason                          |
       | partyGuy | ETH/DEC19 | ORDER_ERROR_MARGIN_CHECK_FAILED |

@@ -27,7 +27,7 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
 
     Given the average block duration is "2"
 
-  Scenario: 1 LP joining at start, checking liquidity rewards over 3 periods, 1 period with no trades (0042-LP-Fees-001)
+  Scenario: 1 LP joining at start, checking liquidity rewards over 3 periods, 1 period with no trades (0042-LIQF-001)
     # setup accounts
     Given the parties deposit on asset's general account the following amount:
       | party  | asset | amount     |
@@ -160,7 +160,7 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
 
     And the accumulated liquidity fees should be "0" for the market "ETH/MAR22"
 
-  Scenario: 2 LPs joining at start, equal commitments (0042-LP-Fees-002)
+  Scenario: 2 LPs joining at start, equal commitments (0042-LIQF-002)
 
     Given the parties deposit on asset's general account the following amount:
       | party  | asset | amount     |
@@ -258,7 +258,7 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
       | market | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 16     | USD   |
       | market | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 16     | USD   |
 
-  Scenario: 2 LPs joining at start, unequal commitments (0042-LP-Fees-003)
+  Scenario: 2 LPs joining at start, unequal commitments (0042-LIQF-003)
 
     Given the parties deposit on asset's general account the following amount:
       | party  | asset | amount     |
@@ -357,7 +357,7 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
 
     And the accumulated liquidity fees should be "0" for the market "ETH/MAR22"
 
-  Scenario: 2 LPs joining at start, unequal commitments, lp2's equity like share is very small, check the rounding of equity like share (round to 16 decimal places in this case)(0042-LP-Fees-004)
+  Scenario: 2 LPs joining at start, unequal commitments, lp2's equity like share is very small, check the rounding of equity like share (round to 16 decimal places in this case)(0042-LIQF-004)
 
     Given the parties deposit on asset's general account the following amount:
       | party  | asset | amount     |
@@ -429,7 +429,7 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
       | market | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 19     | USD   |
       | market | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 1      | USD   |
 
-  Scenario: 2 LPs joining at start, unequal commitments, Check what happens on lp fee distribution when time is moving (0042-LP-Fees-005)
+  Scenario: 2 LPs joining at start, unequal commitments, Check what happens on lp fee distribution when time is moving (0042-LIQF-005)
 
     Given the parties deposit on asset's general account the following amount:
       | party  | asset | amount     |
