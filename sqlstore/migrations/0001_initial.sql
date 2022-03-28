@@ -395,6 +395,26 @@ create table if not exists oracle_data (
 
 create index if not exists idx_oracle_data_matched_spec_ids on oracle_data(matched_spec_ids);
 
+create type liquidity_provision_status as enum('STATUS_UNSPECIFIED', 'STATUS_ACTIVE', 'STATUS_STOPPED',
+    'STATUS_CANCELLED', 'STATUS_REJECTED', 'STATUS_UNDEPLOYED', 'STATUS_PENDING');
+
+create table if not exists liquidity_provisions (
+    id bytea not null,
+    party_id bytea,
+    created_at timestamp with time zone not null,
+    updated_at timestamp with time zone not null,
+    market_id bytea,
+    commitment_amount numeric(32, 0),
+    fee numeric(32, 16),
+    sells jsonb,
+    buys jsonb,
+    version text,
+    status liquidity_provision_status not null,
+    reference text,
+    vega_time timestamp with time zone not null references blocks(vega_time),
+    primary key (id, vega_time)
+);
+
 -- +goose Down
 DROP AGGREGATE IF EXISTS public.first(anyelement);
 DROP AGGREGATE IF EXISTS public.last(anyelement);
@@ -404,6 +424,9 @@ DROP FUNCTION IF EXISTS public.last_agg(anyelement, anyelement);
 DROP TABLE IF EXISTS checkpoints;
 
 DROP TABLE IF EXISTS network_parameters;
+
+DROP TABLE IF EXISTS liquidity_provisions;
+DROP TYPE IF EXISTS liquidity_provision_status;
 
 DROP INDEX IF EXISTS idx_oracle_data_matched_spec_ids;
 DROP TABLE IF EXISTS oracle_data;

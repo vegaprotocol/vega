@@ -147,6 +147,7 @@ func (l *NodeCommand) setupSQLSubscribers() {
 	l.checkpointSubSQL = sqlsubscribers.NewCheckpoint(l.checkpointStoreSQL, l.Log)
 	l.oracleSpecSubSQL = sqlsubscribers.NewOracleSpec(l.oracleSpecStoreSQL, l.Log)
 	l.oracleDataSubSQL = sqlsubscribers.NewOracleData(l.oracleDataStoreSQL, l.Log)
+	l.liquidityProvisionSubSQL = sqlsubscribers.NewLiquidityProvision(l.liquidityProvisionStoreSQL, l.Log)
 }
 
 func (l *NodeCommand) setupStorages() error {
@@ -195,6 +196,7 @@ func (l *NodeCommand) setupStorages() error {
 		l.checkpointStoreSQL = sqlstore.NewCheckpoints(sqlStore)
 		l.oracleSpecStoreSQL = sqlstore.NewOracleSpec(sqlStore)
 		l.oracleDataStoreSQL = sqlstore.NewOracleData(sqlStore)
+		l.liquidityProvisionStoreSQL = sqlstore.NewLiquidityProvision(sqlStore)
 
 		candleStore, err := sqlstore.NewCandles(l.ctx, sqlStore, l.conf.CandlesV2.CandleStore)
 		if err != nil {
@@ -295,6 +297,7 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 			l.checkpointSubSQL,
 			l.oracleSpecSubSQL,
 			l.oracleDataSubSQL,
+			l.liquidityProvisionSubSQL,
 		)
 	}
 

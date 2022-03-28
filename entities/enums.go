@@ -462,3 +462,32 @@ func (s *OracleSpecStatus) DecodeText(_ *pgtype.ConnInfo, src []byte) error {
 	*s = OracleSpecStatus(val)
 	return nil
 }
+
+type LiquidityProvisionStatus vega.LiquidityProvision_Status
+
+const (
+	LiquidityProvisionStatusUnspecified = vega.LiquidityProvision_STATUS_UNSPECIFIED
+	LiquidityProvisionStatusActive      = vega.LiquidityProvision_STATUS_ACTIVE
+	LiquidityProvisionStatusStopped     = vega.LiquidityProvision_STATUS_STOPPED
+	LiquidityProvisionStatusCancelled   = vega.LiquidityProvision_STATUS_CANCELLED
+	LiquidityProvisionStatusRejected    = vega.LiquidityProvision_STATUS_REJECTED
+	LiquidityProvisionStatusUndeployed  = vega.LiquidityProvision_STATUS_UNDEPLOYED
+	LiquidityProvisionStatusPending     = vega.LiquidityProvision_STATUS_PENDING
+)
+
+func (s LiquidityProvisionStatus) EncodeText(_ *pgtype.ConnInfo, buf []byte) ([]byte, error) {
+	status, ok := vega.LiquidityProvision_Status_name[int32(s)]
+	if !ok {
+		return buf, fmt.Errorf("unknown liquidity provision status: %v", s)
+	}
+	return append(buf, []byte(status)...), nil
+}
+
+func (s *LiquidityProvisionStatus) DecodeText(_ *pgtype.ConnInfo, src []byte) error {
+	val, ok := vega.LiquidityProvision_Status_value[string(src)]
+	if !ok {
+		return fmt.Errorf("unknown liquidity provision status: %s", src)
+	}
+	*s = LiquidityProvisionStatus(val)
+	return nil
+}

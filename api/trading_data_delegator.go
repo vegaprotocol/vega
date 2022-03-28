@@ -22,27 +22,28 @@ import (
 
 type tradingDataDelegator struct {
 	*tradingDataService
-	orderStore        *sqlstore.Orders
-	tradeStore        *sqlstore.Trades
-	assetStore        *sqlstore.Assets
-	accountStore      *sqlstore.Accounts
-	marketDataStore   *sqlstore.MarketData
-	rewardStore       *sqlstore.Rewards
-	marketsStore      *sqlstore.Markets
-	delegationStore   *sqlstore.Delegations
-	epochStore        *sqlstore.Epochs
-	depositsStore     *sqlstore.Deposits
-	withdrawalsStore  *sqlstore.Withdrawals
-	proposalsStore    *sqlstore.Proposals
-	voteStore         *sqlstore.Votes
-	riskFactorStore   *sqlstore.RiskFactors
-	marginLevelsStore *sqlstore.MarginLevels
-	netParamStore     *sqlstore.NetworkParameters
-	blockStore        *sqlstore.Blocks
-	checkpointStore   *sqlstore.Checkpoints
-	candleServiceV2   *candlesv2.Svc
-	oracleSpecStore   *sqlstore.OracleSpec
-	oracleDataStore   *sqlstore.OracleData
+	orderStore              *sqlstore.Orders
+	tradeStore              *sqlstore.Trades
+	assetStore              *sqlstore.Assets
+	accountStore            *sqlstore.Accounts
+	marketDataStore         *sqlstore.MarketData
+	rewardStore             *sqlstore.Rewards
+	marketsStore            *sqlstore.Markets
+	delegationStore         *sqlstore.Delegations
+	epochStore              *sqlstore.Epochs
+	depositsStore           *sqlstore.Deposits
+	withdrawalsStore        *sqlstore.Withdrawals
+	proposalsStore          *sqlstore.Proposals
+	voteStore               *sqlstore.Votes
+	riskFactorStore         *sqlstore.RiskFactors
+	marginLevelsStore       *sqlstore.MarginLevels
+	netParamStore           *sqlstore.NetworkParameters
+	blockStore              *sqlstore.Blocks
+	checkpointStore         *sqlstore.Checkpoints
+	candleServiceV2         *candlesv2.Svc
+	oracleSpecStore         *sqlstore.OracleSpec
+	oracleDataStore         *sqlstore.OracleData
+	liquidityProvisionStore *sqlstore.LiquidityProvision
 }
 
 var defaultEntityPagination = entities.Pagination{
@@ -1362,5 +1363,25 @@ func (t *tradingDataDelegator) OracleDataBySpec(ctx context.Context, req *protoa
 	}
 	return &protoapi.OracleDataBySpecResponse{
 		OracleData: out,
+	}, nil
+}
+
+func (t *tradingDataDelegator) LiquidityProvisions(ctx context.Context, req *protoapi.LiquidityProvisionsRequest) (*protoapi.LiquidityProvisionsResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("LiquidityProvisions")()
+
+	partyID := entities.NewPartyID(req.Party)
+	marketID := entities.NewMarketID(req.Market)
+
+	lps, err := t.liquidityProvisionStore.Get(ctx, partyID, marketID, entities.Pagination{})
+	if err != nil {
+		return nil, err
+	}
+
+	out := make([]*vega.LiquidityProvision, 0, len(lps))
+	for _, v := range lps {
+		out = append(out, v.ToProto())
+	}
+	return &protoapi.LiquidityProvisionsResponse{
+		LiquidityProvisions: out,
 	}, nil
 }
