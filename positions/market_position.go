@@ -115,46 +115,23 @@ func (p *MarketPosition) UnregisterOrder(log *logging.Logger, order *types.Order
 // AmendOrder unregisters the original order and then registers the newly amended order
 // this method is a quicker way of handling separate unregister+register pairs.
 func (p *MarketPosition) AmendOrder(log *logging.Logger, originalOrder, newOrder *types.Order) {
-	if originalOrder.Side == types.SideBuy {
+	switch originalOrder.Side {
+	case types.SideBuy:
 		if uint64(p.buy) < originalOrder.Remaining {
 			log.Panic("cannot amend order with remaining > potential buy",
 				logging.Order(*originalOrder),
 				logging.Int64("potential-buy", p.buy))
 		}
-
-		var a, b, vwap num.Uint
-		// p.vwBuyPrice*uint64(p.buy) - originalOrder.Price*originalOrder.Remaining
-		a.Mul(p.vwBuyPrice, num.NewUint(uint64(p.buy)))
-		b.Mul(originalOrder.Price, num.NewUint(originalOrder.Remaining))
-		vwap.Sub(&a, &b)
-		p.buy -= int64(originalOrder.Remaining)
-		if p.buy != 0 {
-			p.vwBuyPrice.Div(&vwap, num.NewUint(uint64(p.buy)))
-		} else {
-			p.vwBuyPrice.SetUint64(0)
+	case types.SideSell:
+		if uint64(p.sell) < originalOrder.Remaining {
+			log.Panic("cannot amend order with remaining > potential sell",
+				logging.Order(*originalOrder),
+				logging.Int64("potential-sell", p.sell))
 		}
-		p.buy += int64(newOrder.Remaining)
-		return
 	}
 
-	if uint64(p.sell) < originalOrder.Remaining {
-		log.Panic("cannot amend order with remaining > potential sell",
-			logging.Order(*originalOrder),
-			logging.Int64("potential-sell", p.sell))
-	}
-
-	var a, b, vwap num.Uint
-	// p.vwSellPrice*uint64(p.sell) - originalOrder.Price*originalOrder.Remaining
-	a.Mul(p.vwSellPrice, num.NewUint(uint64(p.sell)))
-	b.Mul(originalOrder.Price, num.NewUint(originalOrder.Remaining))
-	vwap.Sub(&a, &b)
-	p.sell -= int64(originalOrder.Remaining)
-	if p.sell != 0 {
-		p.vwSellPrice.Div(&vwap, num.NewUint(uint64(p.sell)))
-	} else {
-		p.vwSellPrice.SetUint64(0)
-	}
-	p.sell += int64(newOrder.Remaining)
+	p.UnregisterOrder(log, originalOrder)
+	p.RegisterOrder(newOrder)
 }
 
 // String returns a string representation of a market.
