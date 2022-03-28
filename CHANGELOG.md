@@ -10,6 +10,7 @@
 
 ### 🛠 Improvements
 - [5055](https://github.com/vegaprotocol/vega/issues/5055) - Ensure at most 5 triggers are used in price monitoring settings
+- [5091](https://github.com/vegaprotocol/vega/pull/5091) - Sometimes skip system tests
 
 ### 🐛 Fixes
 - [5078](https://github.com/vegaprotocol/vega/issues/5078) - Unwrap properly position decimal place from payload

@@ -1,6 +1,5 @@
 Feature: Replicate issue 3528, where price monitoring continuously extended liquidity auction
 
-
   Background:
     Given the following network parameters are set:
       | name                                          | value |
