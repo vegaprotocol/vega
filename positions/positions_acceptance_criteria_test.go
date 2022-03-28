@@ -93,7 +93,7 @@ func testTradeOccurIncreaseShortAndLong(t *testing.T) {
 		// call an update on the positions with the trade
 		registerOrder(engine, types.SideBuy, c.trade.Buyer, c.trade.Price, c.trade.Size)
 		registerOrder(engine, types.SideSell, c.trade.Seller, c.trade.Price, c.trade.Size)
-		positions := engine.Update(&c.trade)
+		positions := engine.Update(context.Background(), &c.trade)
 		pos := engine.Positions()
 		assert.Equal(t, 2, len(pos))
 		assert.Equal(t, 2, len(positions))
@@ -158,7 +158,7 @@ func testTradeOccurDecreaseShortAndLong(t *testing.T) {
 		// call an update on the positions with the trade
 		registerOrder(engine, types.SideBuy, c.trade.Buyer, c.trade.Price, c.trade.Size)
 		registerOrder(engine, types.SideSell, c.trade.Seller, c.trade.Price, c.trade.Size)
-		positions := engine.Update(&c.trade)
+		positions := engine.Update(context.Background(), &c.trade)
 		pos := engine.Positions()
 		assert.Equal(t, 2, len(pos))
 		assert.Equal(t, 2, len(positions))
@@ -222,7 +222,7 @@ func testTradeOccurClosingShortAndLong(t *testing.T) {
 	for _, c := range cases {
 		registerOrder(engine, types.SideBuy, c.trade.Buyer, c.trade.Price, c.trade.Size)
 		registerOrder(engine, types.SideSell, c.trade.Seller, c.trade.Price, c.trade.Size)
-		positions := engine.Update(&c.trade)
+		positions := engine.Update(context.Background(), &c.trade)
 		pos := engine.Positions()
 		assert.Equal(t, 2, len(pos))
 		assert.Equal(t, 2, len(positions))
@@ -287,7 +287,7 @@ func testTradeOccurShortBecomeLongAndLongBecomeShort(t *testing.T) {
 		registerOrder(engine, types.SideBuy, c.trade.Buyer, c.trade.Price, c.trade.Size)
 		registerOrder(engine, types.SideSell, c.trade.Seller, c.trade.Price, c.trade.Size)
 		// call an update on the positions with the trade
-		positions := engine.Update(&c.trade)
+		positions := engine.Update(context.Background(), &c.trade)
 		pos := engine.Positions()
 		assert.Equal(t, 2, len(pos))
 		assert.Equal(t, 2, len(positions))
@@ -334,7 +334,7 @@ func testNoOpenPositionsTradeOccurOpenLongAndShortPosition(t *testing.T) {
 	// now create a trade an make sure the positions are created an correct
 	registerOrder(engine, types.SideBuy, c.trade.Buyer, c.trade.Price, c.trade.Size)
 	registerOrder(engine, types.SideSell, c.trade.Seller, c.trade.Price, c.trade.Size)
-	positions := engine.Update(&c.trade)
+	positions := engine.Update(context.Background(), &c.trade)
 	pos := engine.Positions()
 	assert.Equal(t, 2, len(pos))
 	assert.Equal(t, 2, len(positions))
@@ -424,7 +424,7 @@ func testOpenPosTradeOccurCloseThanOpenPositioAgain(t *testing.T) {
 	for _, c := range cases {
 		registerOrder(engine, types.SideBuy, c.trade.Buyer, c.trade.Price, c.trade.Size)
 		registerOrder(engine, types.SideSell, c.trade.Seller, c.trade.Price, c.trade.Size)
-		positions := engine.Update(&c.trade)
+		positions := engine.Update(context.Background(), &c.trade)
 		pos := engine.Positions()
 		assert.Equal(t, c.posSize, len(pos), fmt.Sprintf("all pos trade: %v", c.trade.ID))
 		assert.Equal(t, 2, len(positions), fmt.Sprintf("chan trade: %v", c.trade.ID))
@@ -492,7 +492,7 @@ func testWashTradeDoNotChangePosition(t *testing.T) {
 		registerOrder(engine, types.SideBuy, c.trade.Buyer, c.trade.Price, c.trade.Size)
 		registerOrder(engine, types.SideSell, c.trade.Seller, c.trade.Price, c.trade.Size)
 		// call an update on the positions with the trade
-		positions := engine.Update(&c.trade)
+		positions := engine.Update(context.Background(), &c.trade)
 		pos := engine.Positions()
 		assert.Equal(t, 2, len(pos))
 		assert.Equal(t, 2, len(positions))
@@ -660,7 +660,7 @@ func testNewTradePartialAmountOfExistingOrderTraded(t *testing.T) {
 
 	// add the trade
 	// call an update on the positions with the trade
-	positions := engine.Update(&trade)
+	positions := engine.Update(context.Background(), &trade)
 	pos := engine.Positions()
 	assert.Equal(t, 2, len(pos))
 	assert.Equal(t, 2, len(positions))
@@ -754,7 +754,7 @@ func testTradeCauseTheFullAmountOfOrderToTrade(t *testing.T) {
 
 	// add the trade
 	// call an update on the positions with the trade
-	positions := engine.Update(&trade)
+	positions := engine.Update(context.Background(), &trade)
 	pos := engine.Positions()
 	assert.Equal(t, 2, len(pos))
 	assert.Equal(t, 2, len(positions))

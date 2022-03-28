@@ -1542,7 +1542,7 @@ func (m *Market) handleConfirmation(ctx context.Context, conf *types.OrderConfir
 			tradeEvts = append(tradeEvts, events.NewTradeEvent(ctx, *trade))
 
 			// Update positions (this communicates with settlement via channel)
-			m.position.Update(trade)
+			m.position.Update(ctx, trade)
 			// Record open interest change
 			if err := m.tsCalc.RecordOpenInterest(m.position.GetOpenInterest(), m.currentTime); err != nil {
 				m.log.Debug("unable record open interest",
@@ -1858,7 +1858,7 @@ func (m *Market) resolveClosedOutParties(ctx context.Context, distressedMarginEv
 
 			// Update positions - this is a special trade involving the network as party
 			// so rather than checking this every time we call Update, call special UpdateNetwork
-			m.position.UpdateNetwork(trade)
+			m.position.UpdateNetwork(ctx, trade)
 			if err := m.tsCalc.RecordOpenInterest(m.position.GetOpenInterest(), m.currentTime); err != nil {
 				m.log.Debug("unable record open interest",
 					logging.String("market-id", m.GetID()),
