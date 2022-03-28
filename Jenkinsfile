@@ -1,4 +1,4 @@
-@Library('vega-shared-library') _
+@Library('vega-shared-library@list-of-changed-files') _
 
 /* properties of scmVars (example):
     - GIT_BRANCH:PR-40-head
@@ -66,6 +66,10 @@ pipeline {
                         versionHash = sh (returnStdout: true, script: "echo \"${scmVars.GIT_COMMIT}\"|cut -b1-8").trim()
                         version = sh (returnStdout: true, script: "git describe --tags 2>/dev/null || echo ${versionHash}").trim()
                         commitHash = getCommitHash()
+                    
+                        ff = getChangedFiles()
+                        
+                        echo "ggg ${ff}"
                     }
                     echo "scmVars=${scmVars}"
                     echo "commitHash=${commitHash}"
