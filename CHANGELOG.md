@@ -10,6 +10,7 @@
 
 ### 🛠 Improvements
 - [5055](https://github.com/vegaprotocol/vega/issues/5055) - Ensure at most 5 triggers are used in price monitoring settings
+- [5100](https://github.com/vegaprotocol/vega/issues/5100) - add a new scenario into feature test, acution folder, leaving aution when liquidity provider provides a limit order
 
 ### 🐛 Fixes
 - [5078](https://github.com/vegaprotocol/vega/issues/5078) - Unwrap properly position decimal place from payload
