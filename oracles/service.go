@@ -129,7 +129,7 @@ func (s *Service) GetOracleDataBySpecID(id string) ([]oraclespb.OracleData, erro
 	defer s.mu.RUnlock()
 	sentDataList, ok := s.data[id]
 	if !ok {
-		return []oraclespb.OracleData{}, ErrNoOracleSpecForID
+		return []oraclespb.OracleData{}, nil
 	}
 	out := make([]oraclespb.OracleData, 0, len(sentDataList))
 	out = append(out, sentDataList...)
