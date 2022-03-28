@@ -11,6 +11,7 @@
 ### 🛠  Improvements
 - [386](https://github.com/vegaprotocol/data-node/pull/386) - Migrate withdrawal API to retrieve data from `Postgres`
 - [378](https://github.com/vegaprotocol/data-node/issues/378) - Migrate existing Oracles API to new `Postgres` database.
+- [461](https://github.com/vegaprotocol/data-node/pull/461) - Migrate market data time series to consistent format
 - [](https://github.com/vegaprotocol/data-node/pull/xxx) -
 
 ### 🐛 Fixes
