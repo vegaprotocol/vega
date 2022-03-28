@@ -6,7 +6,7 @@ Feature: Test party accounts
       | id        | quote name | asset | risk model                  | margin calculator         | auction duration | fees         | price monitoring | oracle config          |
       | ETH/DEC19 | ETH        | ETH   | default-simple-risk-model-3 | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future |
 
-  Scenario: a party place a new order in the system, margin are calculated (011-MARA-001, 0011-MARA-002)
+  Scenario: a party place a new order in the system, margin are calculated (0011-MARA-001, 0011-MARA-002)
     Given the parties deposit on asset's general account the following amount:
       | party    | asset | amount       |
       | partyGuy | ETH   | 1000        |
