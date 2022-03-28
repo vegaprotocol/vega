@@ -69,7 +69,7 @@ pipeline {
                         def changedFiles = pullRequest.files.collect {
                             it.getFilename()
                         }
-                        echo changedFiles
+                        println changedFiles
                     }
                     echo "scmVars=${scmVars}"
                     echo "commitHash=${commitHash}"
