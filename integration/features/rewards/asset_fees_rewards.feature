@@ -34,7 +34,7 @@ Feature: Fees reward calculations for a single asset, single market
 
     Given the parties deposit on asset's general account the following amount:
       | party         | asset | amount   |
-      | reward_funder | ETH   | 10000000 |
+      | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ETH   | 10000000 |
 
     # setup accounts
     Given the parties deposit on asset's general account the following amount:
@@ -77,19 +77,19 @@ Feature: Fees reward calculations for a single asset, single market
     Then the following trades should be executed:
       | buyer   | price | size | seller  | aggressor side |
       | trader3 | 1002  | 3    | trader4 | sell           |
-        
-    # trade_value_for_fee_purposes = size_of_trade * price_of_trade = 3 *1002 = 3006
-    # infrastructure_fee = fee_factor[infrastructure] * trade_value_for_fee_purposes = 0.002 * 3006 = 6.012 = 7 (rounded up to nearest whole value)
-    # maker_fee =  fee_factor[maker]  * trade_value_for_fee_purposes = 0.005 * 3006 = 15.030 = 16 (rounded up to nearest whole value)
-    # liquidity_fee = fee_factor[liquidity] * trade_value_for_fee_purposes = 0 * 3006 = 0
+
+    # trade_value_for_fee_purposes = size_of_trade 0000000000000000000000000000000000000000000000000000000000000000 price_of_trade = 3 00000000000000000000000000000000000000000000000000000000000000001002 = 3006
+    # infrastructure_fee = fee_factor[infrastructure] 0000000000000000000000000000000000000000000000000000000000000000 trade_value_for_fee_purposes = 0.002 0000000000000000000000000000000000000000000000000000000000000000 3006 = 6.012 = 7 (rounded up to nearest whole value)
+    # maker_fee =  fee_factor[maker]  0000000000000000000000000000000000000000000000000000000000000000 trade_value_for_fee_purposes = 0.005 0000000000000000000000000000000000000000000000000000000000000000 3006 = 15.030 = 16 (rounded up to nearest whole value)
+    # liquidity_fee = fee_factor[liquidity] 0000000000000000000000000000000000000000000000000000000000000000 trade_value_for_fee_purposes = 0 0000000000000000000000000000000000000000000000000000000000000000 3006 = 0
 
     And the following transfers should happen:
       | from    | to      | from account            | to account                       | market id | amount | asset |
       | trader4 | market  | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_MAKER          | ETH/DEC21 | 16     | ETH   |
       | trader4 |         | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_INFRASTRUCTURE |           | 7      | ETH   |
       | trader4 | market  | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_LIQUIDITY      | ETH/DEC21 | 0      | ETH   |
-      | market  | trader3 | ACCOUNT_TYPE_FEES_MAKER | ACCOUNT_TYPE_GENERAL             | ETH/DEC21 | 16     | ETH   |  
-    
+      | market  | trader3 | ACCOUNT_TYPE_FEES_MAKER | ACCOUNT_TYPE_GENERAL             | ETH/DEC21 | 16     | ETH   |
+
     # total_fee = infrastructure_fee + maker_fee + liquidity_fee = 7 + 16 + 0 = 23
     # Trader3 margin + general account balance = 10000 + 16 ( Maker fees) = 10016
     # Trader4 margin + general account balance = 10000 - 16 ( Maker fees) - 7 (Infra fee) = 99977
@@ -105,8 +105,8 @@ Feature: Fees reward calculations for a single asset, single market
     # transfer to the maker fee reward account
     Given the parties submit the following one off transfers:
       | id | from          | from_account_type    | to | to_account_type                         | asset | amount | delivery_time        |
-      | 1  | reward_funder | ACCOUNT_TYPE_GENERAL | *  | ACCOUNT_TYPE_REWARD_MAKER_RECEIVED_FEES | ETH   | 10000  | 2021-08-26T00:00:00Z |
-    
+      | 1  | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000  | ACCOUNT_TYPE_REWARD_MAKER_RECEIVED_FEES | ETH   | 10000  | 2021-08-26T00:00:00Z |
+
     #complete the epoch for rewards to take place
     Then the network moves ahead "7" blocks
     # only trader3 received the maker fees so only they get the reward of 10k
@@ -118,7 +118,7 @@ Feature: Fees reward calculations for a single asset, single market
     # make another transfer and end an epoch to verify that no one gets the reward this time because there were no maker fees received
     Given the parties submit the following one off transfers:
       | id | from          | from_account_type    | to | to_account_type                         | asset | amount | delivery_time        |
-      | 1  | reward_funder | ACCOUNT_TYPE_GENERAL | *  | ACCOUNT_TYPE_REWARD_MAKER_RECEIVED_FEES | ETH   | 10000  | 2021-08-26T00:00:10Z |
+      | 1  | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000  | ACCOUNT_TYPE_REWARD_MAKER_RECEIVED_FEES | ETH   | 10000  | 2021-08-26T00:00:10Z |
 
     #complete the epoch for rewards to take place
     Then the network moves ahead "7" blocks
@@ -147,7 +147,7 @@ Feature: Fees reward calculations for a single asset, single market
 
     Given the parties deposit on asset's general account the following amount:
       | party         | asset | amount   |
-      | reward_funder | ETH   | 10000000 |
+      | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ETH   | 10000000 |
 
     # setup accounts
     Given the parties deposit on asset's general account the following amount:
@@ -194,18 +194,18 @@ Feature: Fees reward calculations for a single asset, single market
       | buyer    | price | size | seller  | aggressor side |
       | trader3a | 1002  | 2    | trader4 | sell           |
       | trader3b | 1002  | 1    | trader4 | sell           |
-        
+
     # For trader3a-
-    # trade_value_for_fee_purposes for trader3a = size_of_trade * price_of_trade = 2 * 1002 = 2004
-    # infrastructure_fee = fee_factor[infrastructure] * trade_value_for_fee_purposes = 0.002 * 2004 = 4.008 = 5 (rounded up to nearest whole value)
-    # maker_fee =  fee_factor[maker]  * trade_value_for_fee_purposes = 0.005 * 2004 = 10.02 = 11 (rounded up to nearest whole value)
-    # liquidity_fee = fee_factor[liquidity] * trade_value_for_fee_purposes = 0 * 3006 = 0
+    # trade_value_for_fee_purposes for trader3a = size_of_trade 0000000000000000000000000000000000000000000000000000000000000000 price_of_trade = 2 0000000000000000000000000000000000000000000000000000000000000000 1002 = 2004
+    # infrastructure_fee = fee_factor[infrastructure] 0000000000000000000000000000000000000000000000000000000000000000 trade_value_for_fee_purposes = 0.002 0000000000000000000000000000000000000000000000000000000000000000 2004 = 4.008 = 5 (rounded up to nearest whole value)
+    # maker_fee =  fee_factor[maker]  0000000000000000000000000000000000000000000000000000000000000000 trade_value_for_fee_purposes = 0.005 0000000000000000000000000000000000000000000000000000000000000000 2004 = 10.02 = 11 (rounded up to nearest whole value)
+    # liquidity_fee = fee_factor[liquidity] 0000000000000000000000000000000000000000000000000000000000000000 trade_value_for_fee_purposes = 0 0000000000000000000000000000000000000000000000000000000000000000 3006 = 0
 
     # For trader3b -
-    # trade_value_for_fee_purposes = size_of_trade * price_of_trade = 1 * 1002 = 1002
-    # infrastructure_fee = fee_factor[infrastructure] * trade_value_for_fee_purposes = 0.002 * 1002 = 2.004 = 3 (rounded up to nearest whole value)
-    # maker_fee =  fee_factor[maker]  * trade_value_for_fee_purposes = 0.005 * 1002 = 5.01 = 6 (rounded up to nearest whole value)
-    # liquidity_fee = fee_factor[liquidity] * trade_value_for_fee_purposes = 0 * 3006 = 0
+    # trade_value_for_fee_purposes = size_of_trade 0000000000000000000000000000000000000000000000000000000000000000 price_of_trade = 1 0000000000000000000000000000000000000000000000000000000000000000 1002 = 1002
+    # infrastructure_fee = fee_factor[infrastructure] 0000000000000000000000000000000000000000000000000000000000000000 trade_value_for_fee_purposes = 0.002 0000000000000000000000000000000000000000000000000000000000000000 1002 = 2.004 = 3 (rounded up to nearest whole value)
+    # maker_fee =  fee_factor[maker]  0000000000000000000000000000000000000000000000000000000000000000 trade_value_for_fee_purposes = 0.005 0000000000000000000000000000000000000000000000000000000000000000 1002 = 5.01 = 6 (rounded up to nearest whole value)
+    # liquidity_fee = fee_factor[liquidity] 0000000000000000000000000000000000000000000000000000000000000000 trade_value_for_fee_purposes = 0 0000000000000000000000000000000000000000000000000000000000000000 3006 = 0
 
     And the following transfers should happen:
       | from    | to       | from account            | to account                       | market id | amount | asset |
@@ -214,7 +214,7 @@ Feature: Fees reward calculations for a single asset, single market
       | trader4 |          | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_INFRASTRUCTURE |           | 8      | ETH   |
       | trader4 | market   | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_LIQUIDITY      | ETH/DEC21 | 0      | ETH   |
       | market  | trader3a | ACCOUNT_TYPE_FEES_MAKER | ACCOUNT_TYPE_GENERAL             | ETH/DEC21 | 11     | ETH   |
-      | market  | trader3b | ACCOUNT_TYPE_FEES_MAKER | ACCOUNT_TYPE_GENERAL             | ETH/DEC21 | 6      | ETH   |  
+      | market  | trader3b | ACCOUNT_TYPE_FEES_MAKER | ACCOUNT_TYPE_GENERAL             | ETH/DEC21 | 6      | ETH   |
 
     # total_fee = infrastructure_fee + maker_fee + liquidity_fee = 8 + 11 + 6 + 0 = 25 ??
     # Trader3a margin + general account balance = 10000 + 11 ( Maker fees) = 10011
@@ -233,23 +233,23 @@ Feature: Fees reward calculations for a single asset, single market
      # transfer to the maker fee received reward account and the taker paid fee reward account
     Given the parties submit the following one off transfers:
       | id | from          | from_account_type    | to | to_account_type                         | asset | amount | delivery_time        |
-      | 1  | reward_funder | ACCOUNT_TYPE_GENERAL | *  | ACCOUNT_TYPE_REWARD_MAKER_RECEIVED_FEES | ETH   | 10000  | 2021-08-26T00:00:00Z |
-      | 2  | reward_funder | ACCOUNT_TYPE_GENERAL | *  | ACCOUNT_TYPE_REWARD_TAKER_PAID_FEES     | ETH   | 1234   | 2021-08-26T00:00:10Z |
-    
+      | 1  | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000  | ACCOUNT_TYPE_REWARD_MAKER_RECEIVED_FEES | ETH   | 10000  | 2021-08-26T00:00:00Z |
+      | 2  | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000  | ACCOUNT_TYPE_REWARD_TAKER_PAID_FEES     | ETH   | 1234   | 2021-08-26T00:00:10Z |
+
     #complete the epoch for rewards to take place
     Then the network moves ahead "7" blocks
     # only trader3 received the maker fees so only they get the reward of 10k
     Then the parties should have the following account balances:
       | party    | asset | market id | margin | general |
-      | trader3a | ETH   | ETH/DEC21 | 726    | 15755   | # 9285 + 11/17 * 10000 -> maker fee received
-      | trader3b | ETH   | ETH/DEC21 | 363    | 13172   | # 9643 + 6/17 * 1000 -> maker fee recevied
+      | trader3a | ETH   | ETH/DEC21 | 726    | 15755   | # 9285 + 11/17 0000000000000000000000000000000000000000000000000000000000000000 10000 -> maker fee received
+      | trader3b | ETH   | ETH/DEC21 | 363    | 13172   | # 9643 + 6/17 0000000000000000000000000000000000000000000000000000000000000000 1000 -> maker fee recevied
       | trader4  | ETH   | ETH/DEC21 | 657    | 10552   | # 9318 + 1234 = 10552 -> taker fee paid
 
     # make another transfer and end an epoch to verify that no one gets the reward this time because there were no maker fees received
     Given the parties submit the following one off transfers:
       | id | from          | from_account_type    | to | to_account_type                         | asset | amount | delivery_time        |
-      | 3  | reward_funder | ACCOUNT_TYPE_GENERAL | *  | ACCOUNT_TYPE_REWARD_MAKER_RECEIVED_FEES | ETH   | 5000   | 2021-08-26T00:00:10Z |
-      | 4  | reward_funder | ACCOUNT_TYPE_GENERAL | *  | ACCOUNT_TYPE_REWARD_TAKER_PAID_FEES     | ETH   | 5678   | 2021-08-26T00:00:10Z |
+      | 3  | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000  | ACCOUNT_TYPE_REWARD_MAKER_RECEIVED_FEES | ETH   | 5000   | 2021-08-26T00:00:10Z |
+      | 4  | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000  | ACCOUNT_TYPE_REWARD_TAKER_PAID_FEES     | ETH   | 5678   | 2021-08-26T00:00:10Z |
 
     #complete the epoch for rewards to take place
     Then the network moves ahead "7" blocks
@@ -282,7 +282,7 @@ Feature: Fees reward calculations for a single asset, single market
 
     Given the parties deposit on asset's general account the following amount:
       | party         | asset | amount   |
-      | reward_funder | ETH   | 10000000 |
+      | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ETH   | 10000000 |
 
     # setup accounts
     Given the parties deposit on asset's general account the following amount:
@@ -336,16 +336,16 @@ Feature: Fees reward calculations for a single asset, single market
       | 1002       | TRADING_MODE_CONTINUOUS |
 
     # For trader3a-
-    # trade_value_for_fee_purposes for trader3a = size_of_trade * price_of_trade = 2 * 1002 = 2004
-    # infrastructure_fee = fee_factor[infrastructure] * trade_value_for_fee_purposes = 0.002 * 2004 = 4.008 = 5 (rounded up to nearest whole value)
-    # maker_fee =  fee_factor[maker]  * trade_value_for_fee_purposes = 0.005 * 2004 = 10.02 = 11 (rounded up to nearest whole value)
-    # liquidity_fee = fee_factor[liquidity] * trade_value_for_fee_purposes = 0.001 * 2004 = 2.004 = 3 (rounded up to nearest whole value)
+    # trade_value_for_fee_purposes for trader3a = size_of_trade 0000000000000000000000000000000000000000000000000000000000000000 price_of_trade = 2 0000000000000000000000000000000000000000000000000000000000000000 1002 = 2004
+    # infrastructure_fee = fee_factor[infrastructure] 0000000000000000000000000000000000000000000000000000000000000000 trade_value_for_fee_purposes = 0.002 0000000000000000000000000000000000000000000000000000000000000000 2004 = 4.008 = 5 (rounded up to nearest whole value)
+    # maker_fee =  fee_factor[maker]  0000000000000000000000000000000000000000000000000000000000000000 trade_value_for_fee_purposes = 0.005 0000000000000000000000000000000000000000000000000000000000000000 2004 = 10.02 = 11 (rounded up to nearest whole value)
+    # liquidity_fee = fee_factor[liquidity] 0000000000000000000000000000000000000000000000000000000000000000 trade_value_for_fee_purposes = 0.001 0000000000000000000000000000000000000000000000000000000000000000 2004 = 2.004 = 3 (rounded up to nearest whole value)
 
     # For trader3b -
-    # trade_value_for_fee_purposes = size_of_trade * price_of_trade = 1 * 1002 = 1002
-    # infrastructure_fee = fee_factor[infrastructure] * trade_value_for_fee_purposes = 0.002 * 1002 = 2.004 = 3 (rounded up to nearest whole value)
-    # maker_fee =  fee_factor[maker]  * trade_value_for_fee_purposes = 0.005 * 1002 = 5.01 = 6 (rounded up to nearest whole value)
-    # liquidity_fee = fee_factor[liquidity] * trade_value_for_fee_purposes = 0.001 * 1002 = 1.002 = 2 (rounded up to nearest whole value)
+    # trade_value_for_fee_purposes = size_of_trade 0000000000000000000000000000000000000000000000000000000000000000 price_of_trade = 1 0000000000000000000000000000000000000000000000000000000000000000 1002 = 1002
+    # infrastructure_fee = fee_factor[infrastructure] 0000000000000000000000000000000000000000000000000000000000000000 trade_value_for_fee_purposes = 0.002 0000000000000000000000000000000000000000000000000000000000000000 1002 = 2.004 = 3 (rounded up to nearest whole value)
+    # maker_fee =  fee_factor[maker]  0000000000000000000000000000000000000000000000000000000000000000 trade_value_for_fee_purposes = 0.005 0000000000000000000000000000000000000000000000000000000000000000 1002 = 5.01 = 6 (rounded up to nearest whole value)
+    # liquidity_fee = fee_factor[liquidity] 0000000000000000000000000000000000000000000000000000000000000000 trade_value_for_fee_purposes = 0.001 0000000000000000000000000000000000000000000000000000000000000000 1002 = 1.002 = 2 (rounded up to nearest whole value)
 
     Then the following trades should be executed:
       | buyer    | price | size | seller  | aggressor side | buyer fee | seller fee | infrastructure fee | maker fee | liquidity fee |
@@ -379,10 +379,10 @@ Feature: Fees reward calculations for a single asset, single market
     # transfer to the maker fee received reward account and the taker paid fee reward account
     Given the parties submit the following one off transfers:
       | id | from          | from_account_type    | to | to_account_type                         | asset | amount | delivery_time        |
-      | 1  | reward_funder | ACCOUNT_TYPE_GENERAL | *  | ACCOUNT_TYPE_REWARD_MAKER_RECEIVED_FEES | ETH   | 10000  | 2021-08-26T00:00:00Z |
-      | 2  | reward_funder | ACCOUNT_TYPE_GENERAL | *  | ACCOUNT_TYPE_REWARD_TAKER_PAID_FEES     | ETH   | 1234   | 2021-08-26T00:00:10Z |
-      | 3  | reward_funder | ACCOUNT_TYPE_GENERAL | *  | ACCOUNT_TYPE_REWARD_LP_RECEIVED_FEES    | ETH   | 500    | 2021-08-26T00:00:10Z |
-    
+      | 1  | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000  | ACCOUNT_TYPE_REWARD_MAKER_RECEIVED_FEES | ETH   | 10000  | 2021-08-26T00:00:00Z |
+      | 2  | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000  | ACCOUNT_TYPE_REWARD_TAKER_PAID_FEES     | ETH   | 1234   | 2021-08-26T00:00:10Z |
+      | 3  | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000  | ACCOUNT_TYPE_REWARD_LP_RECEIVED_FEES    | ETH   | 500    | 2021-08-26T00:00:10Z |
+
     #complete the epoch for rewards to take place
     Then the network moves ahead "7" blocks
 
@@ -393,21 +393,21 @@ Feature: Fees reward calculations for a single asset, single market
     # only trader3 received the maker fees so only they get the reward of 10k
     Then the parties should have the following account balances:
       | party    | asset | market id | margin | general  |
-      | trader3a | ETH   | ETH/DEC21 | 480    | 16001    | # 9531 + 11/17 * 10000 -> maker fee received
-      | trader3b | ETH   | ETH/DEC21 | 240    | 13295    | # 9766 + 6/17 * 10000 -> maker fee recevied
+      | trader3a | ETH   | ETH/DEC21 | 480    | 16001    | # 9531 + 11/17 0000000000000000000000000000000000000000000000000000000000000000 10000 -> maker fee received
+      | trader3b | ETH   | ETH/DEC21 | 240    | 13295    | # 9766 + 6/17 0000000000000000000000000000000000000000000000000000000000000000 10000 -> maker fee recevied
       | trader4  | ETH   | ETH/DEC21 | 679    | 10525    | # 9291 + 1234 = 10552 -> taker fee paid
       | aux1     | ETH   | ETH/DEC21 | 51080  | 99938927 |
 
     # make another transfer and end an epoch to verify that no one gets the reward this time because there were no maker fees received
     Given the parties submit the following one off transfers:
       | id | from          | from_account_type    | to | to_account_type                         | asset | amount | delivery_time        |
-      | 4  | reward_funder | ACCOUNT_TYPE_GENERAL | *  | ACCOUNT_TYPE_REWARD_MAKER_RECEIVED_FEES | ETH   | 5000   | 2021-08-26T00:00:10Z |
-      | 5  | reward_funder | ACCOUNT_TYPE_GENERAL | *  | ACCOUNT_TYPE_REWARD_TAKER_PAID_FEES     | ETH   | 5678   | 2021-08-26T00:00:10Z |
-      | 6  | reward_funder | ACCOUNT_TYPE_GENERAL | *  | ACCOUNT_TYPE_REWARD_LP_RECEIVED_FEES    | ETH   | 250    | 2021-08-26T00:00:10Z |
-  
+      | 4  | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000  | ACCOUNT_TYPE_REWARD_MAKER_RECEIVED_FEES | ETH   | 5000   | 2021-08-26T00:00:10Z |
+      | 5  | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000  | ACCOUNT_TYPE_REWARD_TAKER_PAID_FEES     | ETH   | 5678   | 2021-08-26T00:00:10Z |
+      | 6  | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000  | ACCOUNT_TYPE_REWARD_LP_RECEIVED_FEES    | ETH   | 250    | 2021-08-26T00:00:10Z |
+
     #complete the epoch for rewards to take place
     Then the network moves ahead "7" blocks
-   
+
     # at the end of the epoch the LP gets the 750 reward as they received 5 ETH in fees during this epoch
     # expect no change to anyone
     Then the parties should have the following account balances:

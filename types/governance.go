@@ -95,6 +95,10 @@ const (
 	ProposalErrorInsufficientEquityLikeShare ProposalError = vegapb.ProposalError_PROPOSAL_ERROR_INSUFFICIENT_EQUITY_LIKE_SHARE
 	// ProposalErrorInvalidMarket The market targeted by the proposal does not exist or is not eligible to modification.
 	ProposalErrorInvalidMarket ProposalError = vegapb.ProposalError_PROPOSAL_ERROR_INVALID_MARKET
+	// ProposalErrorTooManyMarketDecimalPlace the market uses more decimal places than the settlement asset.
+	ProposalErrorTooManyMarketDecimalPlaces ProposalError = vegapb.ProposalError_PROPOSAL_ERROR_TOO_MANY_MARKET_DECIMAL_PLACES
+	// ProposalErrorTooManyPriceMonitoringTriggers the market price monitoring setting uses too many triggers.
+	ProposalErrorTooManyPriceMonitoringTriggers ProposalError = vegapb.ProposalError_PROPOSAL_ERROR_TOO_MANY_PRICE_MONITORING_TRIGGERS
 )
 
 type ProposalState = vegapb.Proposal_State
@@ -406,6 +410,7 @@ type NewMarket struct {
 type NewMarketConfiguration struct {
 	Instrument                    *InstrumentConfiguration
 	DecimalPlaces                 uint64
+	PositionDecimalPlaces         uint64
 	Metadata                      []string
 	PriceMonitoringParameters     *PriceMonitoringParameters
 	LiquidityMonitoringParameters *LiquidityMonitoringParameters
@@ -524,6 +529,7 @@ func (n NewMarketConfiguration) IntoProto() *vegapb.NewMarketConfiguration {
 	r := &vegapb.NewMarketConfiguration{
 		Instrument:                    instrument,
 		DecimalPlaces:                 n.DecimalPlaces,
+		PositionDecimalPlaces:         n.PositionDecimalPlaces,
 		Metadata:                      md,
 		PriceMonitoringParameters:     priceMonitoring,
 		LiquidityMonitoringParameters: liquidityMonitoring,
@@ -539,8 +545,9 @@ func (n NewMarketConfiguration) IntoProto() *vegapb.NewMarketConfiguration {
 
 func (n NewMarketConfiguration) DeepClone() *NewMarketConfiguration {
 	cpy := &NewMarketConfiguration{
-		DecimalPlaces: n.DecimalPlaces,
-		Metadata:      make([]string, len(n.Metadata)),
+		DecimalPlaces:         n.DecimalPlaces,
+		PositionDecimalPlaces: n.PositionDecimalPlaces,
+		Metadata:              make([]string, len(n.Metadata)),
 	}
 	cpy.Metadata = append(cpy.Metadata, n.Metadata...)
 	if n.Instrument != nil {
@@ -579,6 +586,7 @@ func NewMarketConfigurationFromProto(p *vegapb.NewMarketConfiguration) *NewMarke
 	r := &NewMarketConfiguration{
 		Instrument:                    instrument,
 		DecimalPlaces:                 p.DecimalPlaces,
+		PositionDecimalPlaces:         p.PositionDecimalPlaces,
 		Metadata:                      md,
 		PriceMonitoringParameters:     priceMonitoring,
 		LiquidityMonitoringParameters: liquidityMonitoring,

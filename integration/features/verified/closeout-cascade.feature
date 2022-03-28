@@ -17,7 +17,7 @@ Feature: Closeout-cascades
       | name                           | value |
       | market.auction.minimumDuration | 1     |
 
-  Scenario: Distressed position gets taken over by another party whose margin level is insufficient to support it (however mark price doesn't get updated on closeout trade and hence no further closeouts are carried out)
+  Scenario: Distressed position gets taken over by another party whose margin level is insufficient to support it (however mark price doesn't get updated on closeout trade and hence no further closeouts are carried out) (0005-COLL-002)
    # setup accounts, we are trying to closeout trader3 first and then trader2
 
     Given the insurance pool balance should be "0" for the market "ETH/DEC19"

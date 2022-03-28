@@ -40,6 +40,10 @@ func (s *OrderBookSide) Hash() []byte {
 	return crypto.Hash(output)
 }
 
+func (s *OrderBookSide) cleanup() {
+	s.levels = nil
+}
+
 // When we leave an auction we need to remove any orders marked as GFA.
 func (s *OrderBookSide) getOrdersToCancel(auction bool) []*types.Order {
 	ordersToCancel := make([]*types.Order, 0)

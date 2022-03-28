@@ -3,6 +3,7 @@ package settlement_test
 import (
 	"context"
 	"errors"
+	"fmt"
 	"sync"
 	"testing"
 	"time"
@@ -53,6 +54,225 @@ func TestMarkToMarket(t *testing.T) {
 	// add this test case because we had a runtime panic on the trades map earlier
 	t.Run("Trade adds new party, immediately closing out with themselves", testAddNewPartySelfTrade)
 	t.Run("Test MTM settle when the network is closed out", testMTMNetworkZero)
+}
+
+func TestMTMWinDistribution(t *testing.T) {
+	t.Run("A MTM loss party with a loss of value 1, with several parties needing a win", testMTMWinOneExcess)
+	t.Run("A MTM scenario with several parties winning less than 1, and several parties losing 1, to distribute equally", testMTMWinDivideExcess)
+}
+
+func testMTMWinDivideExcess(t *testing.T) {
+	engine := getTestEngineWithFactor(t, 1)
+	defer engine.Finish()
+
+	price := num.NewUint(10000)
+	one := num.NewUint(1)
+	ctx := context.Background()
+
+	initPos := []testPos{
+		{
+			price: price.Clone(),
+			party: "party1",
+			size:  10,
+		},
+		{
+			price: price.Clone(),
+			party: "party2",
+			size:  20,
+		},
+		{
+			price: price.Clone(),
+			party: "party3",
+			size:  -29,
+		},
+		{
+			price: price.Clone(),
+			party: "party4",
+			size:  1,
+		},
+		{
+			price: price.Clone(),
+			party: "party5",
+			size:  -1,
+		},
+		{
+			price: price.Clone(),
+			party: "party5",
+			size:  1,
+		},
+	}
+
+	init := make([]events.MarketPosition, 0, len(initPos))
+	for _, p := range initPos {
+		init = append(init, p)
+	}
+
+	newPrice := num.Sum(price, one)
+	newParty := testPos{
+		size:  30,
+		price: newPrice.Clone(),
+		party: "party4",
+	}
+
+	trades := []*types.Trade{
+		{
+			Size:   10,
+			Buyer:  newParty.party,
+			Seller: initPos[0].party,
+			Price:  newPrice.Clone(),
+		},
+		{
+			Size:   10,
+			Buyer:  newParty.party,
+			Seller: initPos[1].party,
+			Price:  newPrice.Clone(),
+		},
+		{
+			Size:   10,
+			Buyer:  newParty.party,
+			Seller: initPos[2].party,
+			Price:  newPrice.Clone(),
+		},
+	}
+	updates := make([]events.MarketPosition, 0, len(initPos)+2)
+	for _, trade := range trades {
+		for i, p := range initPos {
+			if p.party == trade.Seller {
+				p.size -= int64(trade.Size)
+			}
+			p.price = trade.Price.Clone()
+			initPos[i] = p
+		}
+	}
+	for _, p := range initPos {
+		updates = append(updates, p)
+	}
+	updates = append(updates, newParty)
+	engine.Update(init)
+	for _, trade := range trades {
+		engine.AddTrade(trade)
+	}
+	transfers := engine.SettleMTM(ctx, newPrice.Clone(), updates)
+	require.NotEmpty(t, transfers)
+	for _, tr := range transfers {
+		if tr == nil {
+			fmt.Println("NIL")
+			continue
+		}
+		t := tr.Transfer()
+		if t == nil {
+			fmt.Println("NIL TRANSFER")
+			continue
+		}
+		fmt.Printf("Transfer for party %s: %s\n%s -%#v", tr.Party(), t.Amount.Amount.String(), t.String(), t)
+	}
+}
+
+func testMTMWinOneExcess(t *testing.T) {
+	engine := getTestEngineWithFactor(t, 1)
+	defer engine.Finish()
+
+	price := num.NewUint(10000)
+	one := num.NewUint(1)
+	ctx := context.Background()
+
+	initPos := []testPos{
+		{
+			price: price.Clone(),
+			party: "party1",
+			size:  10,
+		},
+		{
+			price: price.Clone(),
+			party: "party2",
+			size:  20,
+		},
+		{
+			price: price.Clone(),
+			party: "party3",
+			size:  -29,
+		},
+		{
+			price: price.Clone(),
+			party: "party4",
+			size:  1,
+		},
+		{
+			price: price.Clone(),
+			party: "party5",
+			size:  -1,
+		},
+		{
+			price: price.Clone(),
+			party: "party5",
+			size:  1,
+		},
+	}
+
+	init := make([]events.MarketPosition, 0, len(initPos))
+	for _, p := range initPos {
+		init = append(init, p)
+	}
+
+	newPrice := num.Sum(price, one)
+	newParty := testPos{
+		size:  30,
+		price: newPrice.Clone(),
+		party: "party4",
+	}
+
+	trades := []*types.Trade{
+		{
+			Size:   10,
+			Buyer:  newParty.party,
+			Seller: initPos[0].party,
+			Price:  newPrice.Clone(),
+		},
+		{
+			Size:   10,
+			Buyer:  newParty.party,
+			Seller: initPos[1].party,
+			Price:  newPrice.Clone(),
+		},
+		{
+			Size:   10,
+			Buyer:  newParty.party,
+			Seller: initPos[2].party,
+			Price:  newPrice.Clone(),
+		},
+	}
+	updates := make([]events.MarketPosition, 0, len(initPos)+2)
+	for _, trade := range trades {
+		for i, p := range initPos {
+			if p.party == trade.Seller {
+				p.size -= int64(trade.Size)
+			}
+			p.price = trade.Price.Clone()
+			initPos[i] = p
+		}
+	}
+	for _, p := range initPos {
+		updates = append(updates, p)
+	}
+	updates = append(updates, newParty)
+	engine.Update(init)
+	for _, trade := range trades {
+		engine.AddTrade(trade)
+	}
+	transfers := engine.SettleMTM(ctx, newPrice.Clone(), updates)
+	require.NotEmpty(t, transfers)
+	for _, tr := range transfers {
+		if tr == nil {
+			fmt.Println("NIL")
+			continue
+		}
+		t := tr.Transfer()
+		if t == nil {
+			fmt.Println("NIL TRANSFER")
+			continue
+		}
+		fmt.Printf("Transfer for party %s: %s\n%s -%#v", tr.Party(), t.Amount.Amount.String(), t.String(), t)
+	}
 }
 
 func testSettleExpiredSuccess(t *testing.T) {
@@ -590,7 +810,7 @@ func (t testPos) VWSell() *num.Uint {
 
 func (t testPos) ClearPotentials() {}
 
-func getTestEngine(t *testing.T) *testEngine {
+func getTestEngineWithFactor(t *testing.T, f float64) *testEngine {
 	t.Helper()
 	ctrl := gomock.NewController(t)
 	conf := settlement.NewDefaultConfig()
@@ -600,13 +820,18 @@ func getTestEngine(t *testing.T) *testEngine {
 	market := "BTC/DEC19"
 	prod.EXPECT().GetAsset().AnyTimes().Do(func() string { return "BTC" })
 	return &testEngine{
-		Engine:    settlement.New(logging.NewTestLogger(), conf, prod, market, broker, num.DecimalFromInt64(1)),
+		Engine:    settlement.New(logging.NewTestLogger(), conf, prod, market, broker, num.NewDecimalFromFloat(f)),
 		ctrl:      ctrl,
 		prod:      prod,
 		broker:    broker,
 		positions: nil,
 		market:    market,
 	}
+}
+
+func getTestEngine(t *testing.T) *testEngine {
+	t.Helper()
+	return getTestEngineWithFactor(t, 1)
 } // }}}
 
 func (m marginVal) Asset() string {
