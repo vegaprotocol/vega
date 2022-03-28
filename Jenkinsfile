@@ -66,6 +66,10 @@ pipeline {
                         versionHash = sh (returnStdout: true, script: "echo \"${scmVars.GIT_COMMIT}\"|cut -b1-8").trim()
                         version = sh (returnStdout: true, script: "git describe --tags 2>/dev/null || echo ${versionHash}").trim()
                         commitHash = getCommitHash()
+                        def changedFiles = pullRequest.files.collect {
+                            it.getFilename()
+                        }
+                        echo changedFiles
                     }
                     echo "scmVars=${scmVars}"
                     echo "commitHash=${commitHash}"
