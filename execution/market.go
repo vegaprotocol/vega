@@ -1380,12 +1380,12 @@ func (m *Market) checkPriceAndGetTrades(ctx context.Context, order *types.Order)
 	if err != nil {
 		return nil, err
 	}
-	persistent := true
-	switch order.TimeInForce {
-	case types.OrderTimeInForceFOK, types.OrderTimeInForceGFN, types.OrderTimeInForceIOC:
-		persistent = false
-	}
-
+	persistent := order.IsPersistent()
+	// persistent := true
+	// switch order.TimeInForce {
+	// case types.OrderTimeInForceFOK, types.OrderTimeInForceGFN, types.OrderTimeInForceIOC:
+	// 	persistent = false
+	// }
 	for _, t := range trades {
 		if merr := m.pMonitor.CheckPrice(ctx, m.as, t.Price.Clone(), t.Size, m.currentTime, persistent); merr != nil {
 			// a specific order error
