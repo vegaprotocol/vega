@@ -21,6 +21,7 @@
 - [4870](https://github.com/vegaprotocol/vega/issues/5870) - Add missing commands to the `TxError` event
 - [5088](https://github.com/vegaprotocol/vega/issues/5088) - Fixed MTM bug where settlement balance would not be zero when loss amount was 1.
 - [5093](https://github.com/vegaprotocol/vega/issues/5093) - Fixed proof of engine end of block callback never called to clear up state
+- [4996](https://github.com/vegaprotocol/vega/issues/4996) - Fix positions engines `vwBuys` and `vwSell` when amending, send events on `Update` and `UpdateNetwork`
 
 
 ## 0.49.8

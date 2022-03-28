@@ -156,7 +156,7 @@ func (e *Engine) AmendOrder(ctx context.Context, originalOrder, newOrder *types.
 // party in the trade (whether it be buyer or seller). This could be incorporated into the Update
 // function, but we know when we're adding network trades, and having this check every time is
 // wasteful, and would only serve to add complexity to the Update func, and slow it down.
-func (e *Engine) UpdateNetwork(trade *types.Trade) []events.MarketPosition {
+func (e *Engine) UpdateNetwork(ctx context.Context, trade *types.Trade) []events.MarketPosition {
 	// there's only 1 position
 	var (
 		ok  bool
@@ -200,12 +200,13 @@ func (e *Engine) UpdateNetwork(trade *types.Trade) []events.MarketPosition {
 	}
 	pos.size += size
 
+	e.broker.Send(events.NewPositionStateEvent(ctx, pos, trade.MarketID))
 	cpy := pos.Clone()
 	return []events.MarketPosition{*cpy}
 }
 
 // Update pushes the previous positions on the channel + the updated open volumes of buyer/seller.
-func (e *Engine) Update(trade *types.Trade) []events.MarketPosition {
+func (e *Engine) Update(ctx context.Context, trade *types.Trade) []events.MarketPosition {
 	buyer, ok := e.positions[trade.Buyer]
 	if !ok {
 		e.log.Panic("could not find buyer position",
@@ -247,6 +248,13 @@ func (e *Engine) Update(trade *types.Trade) []events.MarketPosition {
 		*buyer.Clone(),
 		*seller.Clone(),
 	}
+
+	e.broker.SendBatch(
+		[]events.Event{
+			events.NewPositionStateEvent(ctx, buyer, trade.MarketID),
+			events.NewPositionStateEvent(ctx, seller, trade.MarketID),
+		},
+	)
 
 	if e.log.GetLevel() == logging.DebugLevel {
 		e.log.Debug("Positions Updated for trade",
