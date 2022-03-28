@@ -12,6 +12,7 @@ import (
 
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	snapshot "code.vegaprotocol.io/protos/vega/snapshot/v1"
+	vegactx "code.vegaprotocol.io/vega/libs/context"
 	"code.vegaprotocol.io/vega/types"
 
 	"code.vegaprotocol.io/vega/libs/proto"
@@ -114,7 +115,8 @@ func TestTopologySnapshot(t *testing.T) {
 	snapTop := getTestTopWithDefaultValidator(t)
 	defer snapTop.ctrl.Finish()
 
-	_, err = snapTop.LoadState(context.Background(), types.PayloadFromProto(snap))
+	ctx = vegactx.WithBlockHeight(ctx, 100)
+	_, err = snapTop.LoadState(ctx, types.PayloadFromProto(snap))
 	require.Nil(t, err)
 
 	// Check the new reloaded engine is the same as the original

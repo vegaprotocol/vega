@@ -10,6 +10,7 @@ import (
 	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
 	snapshot "code.vegaprotocol.io/protos/vega/snapshot/v1"
 	"code.vegaprotocol.io/vega/events"
+	vegactx "code.vegaprotocol.io/vega/libs/context"
 	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
@@ -251,6 +252,12 @@ func (t *Topology) restore(ctx context.Context, topology *types.Topology) error 
 		}
 	}
 
+	bh, err := vegactx.BlockHeightFromContext(ctx)
+	if err != nil {
+		t.log.Panic("failed to restore current block-height from context", logging.Error(err))
+	}
+
+	t.currentBlockHeight = uint64(bh)
 	t.validatorPowerUpdates = vUpdates
 	t.newEpochStarted = true
 	t.chainValidators = topology.ChainValidators[:]
