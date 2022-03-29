@@ -22,6 +22,18 @@ type Signatures interface {
 		previousState map[string]StatusAddress,
 		newState map[string]StatusAddress,
 	)
+	EmitNewValidatorsSignatures(
+		ctx context.Context,
+		validators []NodeIDAddress,
+		currentTime time.Time,
+	)
+	EmitRemoveValidatorsSignatures(
+		ctx context.Context,
+		remove []NodeIDAddress,
+		validators []NodeIDAddress,
+		currentTime time.Time,
+	)
+	SetNonce(t time.Time)
 }
 
 type ERC20Signatures struct {
@@ -100,12 +112,16 @@ func (s *ERC20Signatures) EmitPromotionsSignatures(
 		}
 	}
 
-	s.lastNonce = num.NewUint(uint64(currentTime.Unix()) + 1)
-	s.emitNewValidatorsSignatures(ctx, toAdd, currentTime)
-	s.emitRemoveValidatorsSignatures(ctx, toRemove, allValidators, currentTime)
+	s.SetNonce(currentTime)
+	s.EmitNewValidatorsSignatures(ctx, toAdd, currentTime)
+	s.EmitRemoveValidatorsSignatures(ctx, toRemove, allValidators, currentTime)
 }
 
-func (s *ERC20Signatures) emitNewValidatorsSignatures(
+func (s *ERC20Signatures) SetNonce(t time.Time) {
+	s.lastNonce = num.NewUint(uint64(t.Unix()) + 1)
+}
+
+func (s *ERC20Signatures) EmitNewValidatorsSignatures(
 	ctx context.Context,
 	validators []NodeIDAddress,
 	currentTime time.Time,
@@ -149,7 +165,7 @@ func (s *ERC20Signatures) emitNewValidatorsSignatures(
 	s.broker.SendBatch(evts)
 }
 
-func (s *ERC20Signatures) emitRemoveValidatorsSignatures(
+func (s *ERC20Signatures) EmitRemoveValidatorsSignatures(
 	ctx context.Context,
 	remove []NodeIDAddress,
 	validators []NodeIDAddress,
@@ -210,5 +226,21 @@ type noopSignatures struct {
 func (n *noopSignatures) EmitPromotionsSignatures(
 	_ context.Context, _ time.Time, _ map[string]StatusAddress, _ map[string]StatusAddress,
 ) {
+	n.log.Error("noopSignatures implementation in use in production")
+}
+
+func (n *noopSignatures) EmitNewValidatorsSignatures(
+	_ context.Context, _ []NodeIDAddress, _ time.Time,
+) {
+	n.log.Error("noopSignatures implementation in use in production")
+}
+
+func (n *noopSignatures) EmitRemoveValidatorsSignatures(
+	_ context.Context, _ []NodeIDAddress, _ []NodeIDAddress, _ time.Time,
+) {
+	n.log.Error("noopSignatures implementation in use in production")
+}
+
+func (n *noopSignatures) SetNonce(_ time.Time) {
 	n.log.Error("noopSignatures implementation in use in production")
 }

@@ -240,7 +240,8 @@ func NewApp(
 		HandleCheckTx(txn.SubmitOracleDataCommand, app.CheckSubmitOracleData).
 		HandleCheckTx(txn.KeyRotateSubmissionCommand, app.RequireValidatorMasterPubKey).
 		HandleCheckTx(txn.StateVariableProposalCommand, app.RequireValidatorPubKey).
-		HandleCheckTx(txn.ValidatorHeartbeatCommand, app.RequireValidatorPubKey)
+		HandleCheckTx(txn.ValidatorHeartbeatCommand, app.RequireValidatorPubKey).
+		HandleCheckTx(txn.EthereumKeyRotateSubmissionCommand, app.RequireValidatorPubKey)
 
 	app.abci.
 		HandleDeliverTx(txn.AnnounceNodeCommand,
@@ -285,7 +286,9 @@ func NewApp(
 		HandleDeliverTx(txn.KeyRotateSubmissionCommand,
 			app.RequireValidatorMasterPubKeyW(app.DeliverKeyRotateSubmission)).
 		HandleDeliverTx(txn.StateVariableProposalCommand,
-			app.RequireValidatorPubKeyW(app.DeliverStateVarProposal))
+			app.RequireValidatorPubKeyW(app.DeliverStateVarProposal)).
+		HandleDeliverTx(txn.EthereumKeyRotateSubmissionCommand,
+			app.RequireValidatorMasterPubKeyW(app.DeliverEthereumKeyRotateSubmission))
 
 	app.time.NotifyOnTick(app.onTick)
 
@@ -1573,4 +1576,24 @@ func (app *App) enactUpdateMarket(ctx context.Context, prop *types.Proposal, mar
 			logging.Error(err))
 	}
 	prop.State = types.ProposalStateEnacted
+}
+
+func (app *App) DeliverEthereumKeyRotateSubmission(ctx context.Context, tx abci.Tx) error {
+	if app.reloadCP {
+		app.log.Debug("Skipping transaction while waiting for checkpoint restore")
+		return nil
+	}
+	kr := &commandspb.EthereumKeyRotateSubmission{}
+	if err := tx.Unmarshal(kr); err != nil {
+		return err
+	}
+
+	currentBlockHeight, _ := vgcontext.BlockHeightFromContext(ctx)
+
+	return app.top.RotateEthereumKey(
+		ctx,
+		tx.PubKeyHex(),
+		uint64(currentBlockHeight),
+		kr,
+	)
 }

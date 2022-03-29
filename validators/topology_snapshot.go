@@ -28,6 +28,20 @@ var (
 	}
 )
 
+type pendingKeyRotator interface {
+	GetBlockHeight() uint64
+	GetNodeId() string
+}
+
+func sortPendingKeyRotations[T pendingKeyRotator](pkrs []T) {
+	sort.SliceStable(pkrs, func(i, j int) bool {
+		if pkrs[i].GetBlockHeight() == pkrs[j].GetBlockHeight() {
+			return pkrs[i].GetNodeId() < pkrs[j].GetNodeId()
+		}
+		return pkrs[i].GetBlockHeight() < pkrs[j].GetBlockHeight()
+	})
+}
+
 type topologySnapshotState struct {
 	changed    bool
 	hash       []byte
@@ -99,12 +113,26 @@ func (t *Topology) serialisePendingKeyRotation() []*snapshot.PendingKeyRotation 
 		}
 	}
 
-	sort.SliceStable(pkrs, func(i, j int) bool {
-		if pkrs[i].BlockHeight == pkrs[j].BlockHeight {
-			return pkrs[i].NodeId < pkrs[j].NodeId
+	sortPendingKeyRotations(pkrs)
+
+	return pkrs
+}
+
+func (t *Topology) serialisePendingEthereumKeyRotation() []*snapshot.PendingEthereumKeyRotation {
+	// len(t.pendingEthKeyRotations)*2 - assuming there is at least one rotation per blockHeight
+	pkrs := make([]*snapshot.PendingEthereumKeyRotation, 0, len(t.pendingEthKeyRotations)*2)
+
+	for blockHeight, rotations := range t.pendingEthKeyRotations {
+		for _, r := range rotations {
+			pkrs = append(pkrs, &snapshot.PendingEthereumKeyRotation{
+				BlockHeight: blockHeight,
+				NodeId:      r.NodeID,
+				NewAddress:  r.NewAddress,
+			})
 		}
-		return pkrs[i].BlockHeight < pkrs[j].BlockHeight
-	})
+	}
+
+	sortPendingKeyRotations(pkrs)
 
 	return pkrs
 }
@@ -113,10 +141,11 @@ func (t *Topology) serialise() ([]byte, error) {
 	payload := types.Payload{
 		Data: &types.PayloadTopology{
 			Topology: &types.Topology{
-				ChainValidators:        t.chainValidators[:],
-				ValidatorData:          t.serialiseNodes(),
-				PendingPubKeyRotations: t.serialisePendingKeyRotation(),
-				ValidatorPerformance:   t.validatorPerformance.Serialize(),
+				ChainValidators:             t.chainValidators[:],
+				ValidatorData:               t.serialiseNodes(),
+				PendingPubKeyRotations:      t.serialisePendingKeyRotation(),
+				PendingEthereumKeyRotations: t.serialisePendingEthereumKeyRotation(),
+				ValidatorPerformance:        t.validatorPerformance.Serialize(),
 			},
 		},
 	}
@@ -182,8 +211,15 @@ func (t *Topology) restorePendingKeyRotations(ctx context.Context, pkrs []*snaps
 			newPubKey:   pkr.NewPubKey,
 			newKeyIndex: pkr.NewPubKeyIndex,
 		}
-		data := t.validators[pkr.NodeId]
-		t.broker.Send(events.NewKeyRotationEvent(ctx, pkr.NodeId, data.data.VegaPubKey, pkr.NewPubKey, pkr.BlockHeight))
+	}
+}
+
+func (t *Topology) restorePendingEthereumKeyRotations(ctx context.Context, pkrs []*snapshot.PendingEthereumKeyRotation) {
+	for _, pkr := range pkrs {
+		t.pendingEthKeyRotations.add(pkr.BlockHeight, PendingEthereumKeyRotation{
+			NodeID:     pkr.NodeId,
+			NewAddress: pkr.NewAddress,
+		})
 	}
 }
 
@@ -262,6 +298,7 @@ func (t *Topology) restore(ctx context.Context, topology *types.Topology) error 
 	t.newEpochStarted = true
 	t.chainValidators = topology.ChainValidators[:]
 	t.restorePendingKeyRotations(ctx, topology.PendingPubKeyRotations)
+	t.restorePendingEthereumKeyRotations(ctx, topology.PendingEthereumKeyRotations)
 	t.validatorPerformance.Deserialize(topology.ValidatorPerformance)
 	t.tss.changed = true
 	return nil

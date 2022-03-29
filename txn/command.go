@@ -49,36 +49,39 @@ const (
 	CancelTransferFundsCommand Command = 0x55
 	// ValidatorHeartbeat ...
 	ValidatorHeartbeatCommand Command = 0x56
+	// EthereumKeyRotateSubmissionCommand ...
+	EthereumKeyRotateSubmissionCommand Command = 0x57
 )
 
 var commandName = map[Command]string{
-	SubmitOrderCommand:              "Submit Order",
-	CancelOrderCommand:              "Cancel Order",
-	AmendOrderCommand:               "Amend Order",
-	WithdrawCommand:                 "Withdraw",
-	ProposeCommand:                  "Proposal",
-	VoteCommand:                     "Vote on Proposal",
-	AnnounceNodeCommand:             "Register new Node",
-	NodeVoteCommand:                 "Node Vote",
-	NodeSignatureCommand:            "Node Signature",
-	LiquidityProvisionCommand:       "Liquidity Provision Order",
-	CancelLiquidityProvisionCommand: "Cancel LiquidityProvision Order",
-	AmendLiquidityProvisionCommand:  "Amend LiquidityProvision Order",
-	ChainEventCommand:               "Chain Event",
-	SubmitOracleDataCommand:         "Submit Oracle Data",
-	DelegateCommand:                 "Delegate",
-	UndelegateCommand:               "Undelegate",
-	CheckpointRestoreCommand:        "Checkpoint Restore",
-	KeyRotateSubmissionCommand:      "Key Rotate Submission",
-	StateVariableProposalCommand:    "State Variable Proposal",
-	TransferFundsCommand:            "Transfer Funds",
-	CancelTransferFundsCommand:      "Cancel Transfer Funds",
-	ValidatorHeartbeatCommand:       "Validator Heartbeat",
+	SubmitOrderCommand:                 "Submit Order",
+	CancelOrderCommand:                 "Cancel Order",
+	AmendOrderCommand:                  "Amend Order",
+	WithdrawCommand:                    "Withdraw",
+	ProposeCommand:                     "Proposal",
+	VoteCommand:                        "Vote on Proposal",
+	AnnounceNodeCommand:                "Register new Node",
+	NodeVoteCommand:                    "Node Vote",
+	NodeSignatureCommand:               "Node Signature",
+	LiquidityProvisionCommand:          "Liquidity Provision Order",
+	CancelLiquidityProvisionCommand:    "Cancel LiquidityProvision Order",
+	AmendLiquidityProvisionCommand:     "Amend LiquidityProvision Order",
+	ChainEventCommand:                  "Chain Event",
+	SubmitOracleDataCommand:            "Submit Oracle Data",
+	DelegateCommand:                    "Delegate",
+	UndelegateCommand:                  "Undelegate",
+	CheckpointRestoreCommand:           "Checkpoint Restore",
+	KeyRotateSubmissionCommand:         "Key Rotate Submission",
+	StateVariableProposalCommand:       "State Variable Proposal",
+	TransferFundsCommand:               "Transfer Funds",
+	CancelTransferFundsCommand:         "Cancel Transfer Funds",
+	ValidatorHeartbeatCommand:          "Validator Heartbeat",
+	EthereumKeyRotateSubmissionCommand: "Ethereum Key Rotate Submission",
 }
 
 func (cmd Command) IsValidatorCommand() bool {
 	switch cmd {
-	case CheckpointRestoreCommand, NodeSignatureCommand, ChainEventCommand, NodeVoteCommand, ValidatorHeartbeatCommand, KeyRotateSubmissionCommand, StateVariableProposalCommand:
+	case CheckpointRestoreCommand, NodeSignatureCommand, ChainEventCommand, NodeVoteCommand, ValidatorHeartbeatCommand, KeyRotateSubmissionCommand, StateVariableProposalCommand, EthereumKeyRotateSubmissionCommand:
 		return true
 	default:
 		return false

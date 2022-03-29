@@ -26,7 +26,7 @@ type SocketServer struct {
 	nodeWallets *nodewallets.NodeWallets
 }
 
-// NewSocketServer returns a new instance of the rest proxy server.
+// NewSocketServer returns a new instance of the RPC socket server.
 func NewSocketServer(
 	log *logging.Logger,
 	config api.Config,

@@ -3,6 +3,7 @@ package nodewallet
 import (
 	"context"
 
+	"code.vegaprotocol.io/vega/api"
 	"code.vegaprotocol.io/vega/config"
 	"code.vegaprotocol.io/vega/nodewallets"
 
@@ -25,6 +26,7 @@ type RootCmd struct {
 	Generate generateCmd `command:"generate" description:"Generate and register a wallet into the nodewallet"`
 	Import   importCmd   `command:"import" description:"Import the configuration of a wallet required by the vega node"`
 	Verify   verifyCmd   `command:"verify" description:"Verify the configuration imported in the nodewallet"`
+	Reload   reloadCmd   `command:"reload" description:"Reload node wallet of a running node instance"`
 }
 
 var rootCmd RootCmd
@@ -39,6 +41,9 @@ func NodeWallet(ctx context.Context, parser *flags.Parser) error {
 		},
 		Verify: verifyCmd{
 			Config: nodewallets.NewDefaultConfig(),
+		},
+		Reload: reloadCmd{
+			Config: api.NewDefaultConfig(),
 		},
 	}
 

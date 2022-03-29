@@ -19,6 +19,10 @@ type Wallet struct {
 	PublicKey string
 }
 
+func (w *Wallet) String() string {
+	return fmt.Sprintf("Name: %s, PublicKey: %s", w.Name, w.PublicKey)
+}
+
 func newWallet(w wallet) Wallet {
 	return Wallet{
 		Name:      w.Name(),
@@ -69,15 +73,12 @@ func (h *NodeWallet) Reload(r *http.Request, args *NodeWalletArgs, reply *NodeWa
 	case "ethereum":
 		oW := newWallet(h.nodeWallets.Ethereum)
 
-		fmt.Println("---- ow:", oW)
 		if err := h.nodeWallets.ReloadEthereum(); err != nil {
 			h.log.Error("Reloading node wallet failed", logging.Error(err))
 			return fmt.Errorf("failed to reload Ethereum wallet: %w", err)
 		}
 
 		nW := newWallet(h.nodeWallets.Ethereum)
-
-		fmt.Println("---- ow:", nW)
 
 		reply.NewWallet = nW
 		reply.OldWallet = oW

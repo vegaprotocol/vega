@@ -15,7 +15,7 @@ type KeyRotation struct {
 	BlockHeight uint64
 }
 
-func NewKeyRotationEvent(
+func NewVegaKeyRotationEvent(
 	ctx context.Context,
 	nodeID string,
 	oldPubKey string,

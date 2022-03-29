@@ -20,8 +20,9 @@ func (e *Topology) Name() types.CheckpointName {
 
 func (t *Topology) Checkpoint() ([]byte, error) {
 	snap := &checkpoint.Validators{
-		ValidatorState:      t.getValidatorStateCheckpoint(),
-		PendingKeyRotations: t.getCheckpointPendingKeyRotations(),
+		ValidatorState:              t.getValidatorStateCheckpoint(),
+		PendingKeyRotations:         t.getCheckpointPendingKeyRotations(),
+		PendingEthereumKeyRotations: t.getCheckpointPendingEthereumKeyRotations(),
 	}
 	return proto.Marshal(snap)
 }
@@ -70,23 +71,8 @@ func (t *Topology) Load(ctx context.Context, data []byte) error {
 		t.checkpointLoaded = true
 	}
 
-	for _, pr := range ckp.PendingKeyRotations {
-		// skip this key rotation as the node is not parcitipating in the new network
-		if _, ok := t.validators[pr.NodeId]; !ok {
-			continue
-		}
-
-		targetBlockHeight := t.currentBlockHeight + pr.RelativeTargetBlockHeight
-
-		if _, ok := t.pendingPubKeyRotations[targetBlockHeight]; !ok {
-			t.pendingPubKeyRotations[targetBlockHeight] = map[string]pendingKeyRotation{}
-		}
-
-		t.pendingPubKeyRotations[targetBlockHeight][pr.NodeId] = pendingKeyRotation{
-			newPubKey:   pr.NewPubKey,
-			newKeyIndex: pr.NewPubKeyIndex,
-		}
-	}
+	t.restoreCheckpointPendingKeyRotations(ckp.PendingKeyRotations)
+	t.restoreCheckpointPendingEthereumKeyRotations(ckp.PendingEthereumKeyRotations)
 
 	nextValidators := make([]string, 0, len(votingPower))
 	for k := range votingPower {
@@ -112,6 +98,42 @@ func (t *Topology) Load(ctx context.Context, data []byte) error {
 	t.validatorPowerUpdates = vUpdates
 	t.newEpochStarted = true
 	return nil
+}
+
+func (t *Topology) restoreCheckpointPendingKeyRotations(rotations []*checkpoint.PendingKeyRotation) {
+	for _, pr := range rotations {
+		// skip this key rotation as the node is not parcitipating in the new network
+		if _, ok := t.validators[pr.NodeId]; !ok {
+			continue
+		}
+
+		targetBlockHeight := t.currentBlockHeight + pr.RelativeTargetBlockHeight
+
+		if _, ok := t.pendingPubKeyRotations[targetBlockHeight]; !ok {
+			t.pendingPubKeyRotations[targetBlockHeight] = map[string]pendingKeyRotation{}
+		}
+
+		t.pendingPubKeyRotations[targetBlockHeight][pr.NodeId] = pendingKeyRotation{
+			newPubKey:   pr.NewPubKey,
+			newKeyIndex: pr.NewPubKeyIndex,
+		}
+	}
+}
+
+func (t *Topology) restoreCheckpointPendingEthereumKeyRotations(rotations []*checkpoint.PendingEthereumKeyRotation) {
+	for _, pr := range rotations {
+		// skip this key rotation as the node is not parcitipating in the new network
+		if _, ok := t.validators[pr.NodeId]; !ok {
+			continue
+		}
+
+		targetBlockHeight := t.currentBlockHeight + pr.RelativeTargetBlockHeight
+
+		t.pendingEthKeyRotations.add(targetBlockHeight, PendingEthereumKeyRotation{
+			NodeID:     pr.NodeId,
+			NewAddress: pr.NewAddress,
+		})
+	}
 }
 
 func (t *Topology) getRelativeBlockHeight(blockHeight, currentBlockHeight uint64) uint64 {
@@ -151,6 +173,29 @@ func (t *Topology) getCheckpointPendingKeyRotations() []*checkpoint.PendingKeyRo
 		}
 	}
 	return rotations
+}
+
+func (t *Topology) getCheckpointPendingEthereumKeyRotations() []*checkpoint.PendingEthereumKeyRotation {
+	outRotations := make([]*checkpoint.PendingEthereumKeyRotation, 0, len(t.pendingEthKeyRotations)*2)
+
+	for blockHeight, rotations := range t.pendingEthKeyRotations {
+		for _, r := range rotations {
+			outRotations = append(outRotations, &checkpoint.PendingEthereumKeyRotation{
+				RelativeTargetBlockHeight: t.getRelativeBlockHeight(blockHeight, t.currentBlockHeight),
+				NodeId:                    r.NodeID,
+				NewAddress:                r.NewAddress,
+			})
+		}
+	}
+
+	sort.SliceStable(outRotations, func(i, j int) bool {
+		if outRotations[i].GetRelativeTargetBlockHeight() == outRotations[j].GetRelativeTargetBlockHeight() {
+			return outRotations[i].GetNodeId() < outRotations[j].GetNodeId()
+		}
+		return outRotations[i].GetRelativeTargetBlockHeight() < outRotations[j].GetRelativeTargetBlockHeight()
+	})
+
+	return outRotations
 }
 
 func (t *Topology) getValidatorStateCheckpoint() []*checkpoint.ValidatorState {

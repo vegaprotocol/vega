@@ -173,7 +173,7 @@ func (t *Topology) keyRotationBeginBlockLocked(ctx context.Context) {
 		t.validators[nodeID] = data
 
 		t.notifyKeyChange(ctx, oldPubKey, rotation.newPubKey)
-		t.broker.Send(events.NewKeyRotationEvent(ctx, nodeID, oldPubKey, rotation.newPubKey, t.currentBlockHeight))
+		t.broker.Send(events.NewVegaKeyRotationEvent(ctx, nodeID, oldPubKey, rotation.newPubKey, t.currentBlockHeight))
 	}
 
 	delete(t.pendingPubKeyRotations, t.currentBlockHeight)
