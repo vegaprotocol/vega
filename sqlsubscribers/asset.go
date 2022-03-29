@@ -36,8 +36,8 @@ func NewAsset(store AssetStore, log *logging.Logger) *Asset {
 	}
 }
 
-func (a *Asset) Type() events.Type {
-	return events.AssetEvent
+func (a *Asset) Types() []events.Type {
+	return []events.Type{events.AssetEvent}
 }
 
 func (as *Asset) Push(evt events.Event) {

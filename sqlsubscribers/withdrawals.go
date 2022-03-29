@@ -32,8 +32,8 @@ func NewWithdrawal(store WithdrawalStore, log *logging.Logger) *Withdrawal {
 	}
 }
 
-func (w *Withdrawal) Type() events.Type {
-	return events.WithdrawalEvent
+func (w *Withdrawal) Types() []events.Type {
+	return []events.Type{events.WithdrawalEvent}
 }
 
 func (w *Withdrawal) Push(evt events.Event) {

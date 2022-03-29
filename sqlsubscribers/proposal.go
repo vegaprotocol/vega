@@ -38,8 +38,8 @@ func NewProposal(
 	return ps
 }
 
-func (ps *Proposal) Type() events.Type {
-	return events.ProposalEvent
+func (ps *Proposal) Types() []events.Type {
+	return []events.Type{events.ProposalEvent}
 }
 
 func (rs *Proposal) Push(evt events.Event) {

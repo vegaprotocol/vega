@@ -32,8 +32,8 @@ func NewLiquidityProvision(store LiquidityProvisionStore, log *logging.Logger) *
 	}
 }
 
-func (lp *LiquidityProvision) Type() events.Type {
-	return events.LiquidityProvisionEvent
+func (lp *LiquidityProvision) Types() []events.Type {
+	return []events.Type{events.LiquidityProvisionEvent}
 }
 
 func (lp *LiquidityProvision) Push(evt events.Event) {

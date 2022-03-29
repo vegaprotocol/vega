@@ -35,8 +35,8 @@ func NewTimeSub(
 	return t
 }
 
-func (t *Time) Type() events.Type {
-	return events.TimeUpdate
+func (t *Time) Types() []events.Type {
+	return []events.Type{events.TimeUpdate}
 }
 
 func (t *Time) Push(evt events.Event) {

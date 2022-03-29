@@ -32,8 +32,8 @@ func NewDeposit(store DepositStore, log *logging.Logger) *Deposit {
 	}
 }
 
-func (d *Deposit) Type() events.Type {
-	return events.DepositEvent
+func (d *Deposit) Types() []events.Type {
+	return []events.Type{events.DepositEvent}
 }
 
 func (d *Deposit) Push(evt events.Event) {

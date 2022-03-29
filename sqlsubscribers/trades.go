@@ -35,8 +35,8 @@ func NewTradesSubscriber(store TradesStore, log *logging.Logger) *TradeSubscribe
 	}
 }
 
-func (ts *TradeSubscriber) Type() events.Type {
-	return events.TradeEvent
+func (ts *TradeSubscriber) Types() []events.Type {
+	return []events.Type{events.TradeEvent}
 }
 
 func (ts *TradeSubscriber) Push(evt events.Event) {

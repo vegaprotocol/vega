@@ -53,8 +53,8 @@ func NewTransferResponse(
 	}
 }
 
-func (t *TransferResponse) Type() events.Type {
-	return events.TransferResponses
+func (t *TransferResponse) Types() []events.Type {
+	return []events.Type{events.TransferResponses}
 }
 
 func (t *TransferResponse) Push(evt events.Event) {

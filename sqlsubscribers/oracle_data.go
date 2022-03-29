@@ -32,8 +32,8 @@ func NewOracleData(store OracleDataStore, log *logging.Logger) *OracleData {
 	}
 }
 
-func (od *OracleData) Type() events.Type {
-	return events.OracleDataEvent
+func (od *OracleData) Types() []events.Type {
+	return []events.Type{events.OracleDataEvent}
 }
 
 func (od *OracleData) Push(evt events.Event) {

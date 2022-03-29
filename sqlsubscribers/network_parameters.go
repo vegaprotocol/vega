@@ -36,8 +36,8 @@ func NewNetworkParameter(
 	return np
 }
 
-func (n *NetworkParameter) Type() events.Type {
-	return events.NetworkParameterEvent
+func (n *NetworkParameter) Types() []events.Type {
+	return []events.Type{events.NetworkParameterEvent}
 }
 
 func (n *NetworkParameter) Push(evt events.Event) {
