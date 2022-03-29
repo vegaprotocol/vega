@@ -9,7 +9,7 @@ Feature: Test mark to market settlement
       | name                           | value |
       | market.auction.minimumDuration | 1     |
 
-  Scenario: If settlement amount <= the party’s margin account balance entire settlement amount is transferred from party’s margin account to the market’s temporary settlement account
+  Scenario: If settlement amount <= the party’s margin account balance entire settlement amount is transferred from party’s margin account to the market’s temporary settlement account (0003-MTMK-001)
     Given the parties deposit on asset's general account the following amount:
       | party  | asset | amount |
       | party1 | ETH   | 10000  |
@@ -62,7 +62,7 @@ Feature: Test mark to market settlement
     And the cumulated balance for all accounts should be worth "230000"
     And the settlement account should have a balance of "0" for the market "ETH/DEC19"
 
-  Scenario: If settlement amount > party’s margin account balance  and <= party's margin account balance + general account balance for the asset, he full balance of the party’s margin account is transferred to the market’s temporary settlement account the remainder, i.e. difference between the amount transferred from the margin account and the settlement amount, is transferred from the party’s general account for the asset to the market’s temporary settlement account
+  Scenario: If settlement amount > party’s margin account balance  and <= party's margin account balance + general account balance for the asset, he full balance of the party’s margin account is transferred to the market’s temporary settlement account the remainder, i.e. difference between the amount transferred from the margin account and the settlement amount, is transferred from the party’s general account for the asset to the market’s temporary settlement account (0003-MTMK-002)
     Given the parties deposit on asset's general account the following amount:
       | party  | asset | amount |
       | party1 | ETH   | 10000  |
@@ -113,8 +113,8 @@ Feature: Test mark to market settlement
       | party1 | market | ACCOUNT_TYPE_MARGIN | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC19 | 4000   | ETH   |
     And the settlement account should have a balance of "0" for the market "ETH/DEC19"
 
-# this part show that funds are moved from margin account general account for party 3 as he does not have
-# enough funds in the margin account
+   # this part show that funds are moved from margin account general account for party 3 as he does not have
+   # enough funds in the margin account
     And the settlement account should have a balance of "0" for the market "ETH/DEC19"
     When the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
@@ -132,8 +132,7 @@ Feature: Test mark to market settlement
       | party3 | market  | ACCOUNT_TYPE_MARGIN  | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC19 | 4001   | ETH   |
     And the cumulated balance for all accounts should be worth "230000"
 
-  @ignore
-  Scenario: If the mark price hasn’t changed, A party with no change in open position size has no transfers in or out of their margin account, A party with no change in open volume
+  Scenario: If the mark price hasn’t changed, A party with no change in open position size has no transfers in or out of their margin account, A party with no change in open volume (0003-MTMK-012)
     Given the parties deposit on asset's general account the following amount:
       | party  | asset | amount |
       | party1 | ETH   | 10000  |
@@ -174,7 +173,7 @@ Feature: Test mark to market settlement
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | party3 | ETH/DEC19 | buy  | 1      | 1000  | 1                | TYPE_LIMIT | TIF_GTC | ref-1     |
 
-# here we expect party 2 to still have the same margin as the previous trade did not change the markprice
+   # here we expect party 2 to still have the same margin as the previous trade did not change the markprice
     Then the parties should have the following account balances:
       | party  | asset | market id | margin | general |
       | party1 | ETH   | ETH/DEC19 | 9842   | 158     |
