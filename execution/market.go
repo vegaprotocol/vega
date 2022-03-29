@@ -2855,6 +2855,10 @@ func (m *Market) RemoveExpiredOrders(
 		return nil, ErrTradingNotAllowed
 	}
 
+	_, blockHash := vegacontext.TraceIDFromContext(ctx)
+	m.idgen = idgeneration.New(blockHash)
+	defer func() { m.idgen = nil }()
+
 	expired := []*types.Order{}
 	evts := []events.Event{}
 	for _, orderID := range m.expiringOrders.Expire(timestamp) {
