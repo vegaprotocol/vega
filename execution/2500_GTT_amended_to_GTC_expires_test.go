@@ -45,7 +45,7 @@ func TestGTTAmendToGTCAmendInPlace_OrderGetExpired(t *testing.T) {
 	ctx = vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
 	tm.market.OnChainTimeUpdate(ctx, now.Add(10*time.Second))
 	orders, err := tm.market.RemoveExpiredOrders(
-		context.Background(), now.UnixNano())
+		ctx, now.UnixNano())
 	require.Equal(t, 0, len(orders))
 	require.NoError(t, err)
 }
