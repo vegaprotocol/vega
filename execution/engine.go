@@ -332,13 +332,14 @@ func (e *Engine) UpdateMarket(ctx context.Context, marketConfig *types.Market) e
 		e.log.Debug("update market", logging.Market(*marketConfig))
 	}
 
-	if err := e.updateMarket(ctx, marketConfig); err != nil {
+	mkt := e.markets[marketConfig.ID]
+
+	if err := mkt.Update(ctx, marketConfig, e.oracle); err != nil {
 		return err
 	}
 
-	mkt := e.markets[marketConfig.ID]
-
 	e.publishUpdateMarketInfos(ctx, mkt)
+
 	return nil
 }
 
@@ -423,11 +424,6 @@ func (e *Engine) submitMarket(ctx context.Context, marketConfig *types.Market) e
 		return err
 	}
 
-	return nil
-}
-
-func (e *Engine) updateMarket(ctx context.Context, marketConfig *types.Market) error {
-	// TODO Implement me
 	return nil
 }
 

@@ -34,7 +34,7 @@ func getMarket(closingAt time.Time, openingAuctionDuration *types.AuctionDuratio
 						"product:futures",
 					},
 				},
-				Product: &types.Instrument_Future{
+				Product: &types.InstrumentFuture{
 					Future: &types.Future{
 						SettlementAsset: "ETH",
 						QuoteName:       "USD",

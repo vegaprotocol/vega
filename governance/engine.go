@@ -696,7 +696,7 @@ func (e *Engine) validateVote(vote types.VoteSubmission, party string) (*proposa
 	}
 
 	if proposal.IsMarketUpdate() {
-		partyELS, _ := e.markets.GetEquityLikeShareForMarketAndParty(proposal.ID, party)
+		partyELS, _ := e.markets.GetEquityLikeShareForMarketAndParty(proposal.MarketUpdate().MarketID, party)
 		if partyELS.IsZero() && voterTokens.IsZero() {
 			return nil, ErrVoterInsufficientTokensAndEquityLikeShare
 		}
@@ -715,20 +715,21 @@ func (e *Engine) validateVote(vote types.VoteSubmission, party string) (*proposa
 }
 
 func (e *Engine) validateMarketUpdate(proposal *types.Proposal, params *ProposalParameters) (types.ProposalError, error) {
-	if !e.markets.MarketExists(proposal.ID) {
+	updateMarket := proposal.MarketUpdate()
+	if !e.markets.MarketExists(updateMarket.MarketID) {
 		e.log.Debug("market does not exist",
-			logging.MarketID(proposal.ID),
+			logging.MarketID(updateMarket.MarketID),
 			logging.PartyID(proposal.Party),
 			logging.ProposalID(proposal.ID))
 		return types.ProposalErrorInvalidMarket, ErrMarketDoesNotExist
 	}
-	partyELS, _ := e.markets.GetEquityLikeShareForMarketAndParty(proposal.ID, proposal.Party)
+	partyELS, _ := e.markets.GetEquityLikeShareForMarketAndParty(updateMarket.MarketID, proposal.Party)
 	if partyELS.LessThan(params.MinEquityLikeShare) {
 		e.log.Debug("proposer have insufficient equity-like share",
 			logging.String("expect-balance", params.MinEquityLikeShare.String()),
 			logging.String("proposer-balance", partyELS.String()),
 			logging.PartyID(proposal.Party),
-			logging.MarketID(proposal.ID),
+			logging.MarketID(updateMarket.MarketID),
 			logging.ProposalID(proposal.ID))
 		return types.ProposalErrorInsufficientEquityLikeShare,
 			fmt.Errorf("proposer have insufficient equity-like share, expected >= %v got %v", params.MinEquityLikeShare, partyELS)
@@ -1004,7 +1005,7 @@ func (p *proposal) countTokens(votes map[string]*types.Vote, accounts StakingAcc
 func (p *proposal) countEquityLikeShare(votes map[string]*types.Vote, markets Markets) num.Decimal {
 	tally := num.DecimalZero()
 	for _, v := range votes {
-		v.TotalEquityLikeShareWeight, _ = markets.GetEquityLikeShareForMarketAndParty(p.ID, v.PartyID)
+		v.TotalEquityLikeShareWeight, _ = markets.GetEquityLikeShareForMarketAndParty(p.MarketUpdate().MarketID, v.PartyID)
 		tally = tally.Add(v.TotalEquityLikeShareWeight)
 	}
 
