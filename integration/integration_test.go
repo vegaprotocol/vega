@@ -2,12 +2,14 @@ package integration_test
 
 import (
 	"context"
+	"flag"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
 	"os/signal"
 	"path/filepath"
+	"sort"
 	"strconv"
 	"syscall"
 	"testing"
@@ -32,12 +34,15 @@ const PlaybackTimeout = 30 * time.Second
 var (
 	newClient               *graphql.Client
 	oldClient               *graphql.Client
-	integrationTestsEnabled bool = false
-	blockWhenDone           bool = false
+	integrationTestsEnabled *bool = flag.Bool("integration", false, "run integration tests")
+	blockWhenDone           bool  = false
 )
 
 func TestMain(m *testing.M) {
-	if !integrationTestsEnabled {
+	flag.Parse()
+
+	if !*integrationTestsEnabled {
+		log.Print("Skipping integration tests. To enable pass -integration flag to 'go test'")
 		return
 	}
 
@@ -85,6 +90,9 @@ func waitForSIGTERM() {
 
 func compareResponses(t *testing.T, oldResp, newResp interface{}) {
 	t.Helper()
+	require.NotEmpty(t, oldResp)
+	require.NotEmpty(t, newResp)
+
 	sortAccounts := cmpopts.SortSlices(func(a Account, b Account) bool {
 		if a.Type != b.Type {
 			return a.Type < b.Type
@@ -99,12 +107,32 @@ func compareResponses(t *testing.T, oldResp, newResp interface{}) {
 	})
 	sortTrades := cmpopts.SortSlices(func(a Trade, b Trade) bool { return a.Id < b.Id })
 	sortMarkets := cmpopts.SortSlices(func(a Market, b Market) bool { return a.Id < b.Id })
-	sortVotes := cmpopts.SortSlices(func(a Vote, b Vote) bool { return a.Party.Id < b.Party.Id })
 	sortProposals := cmpopts.SortSlices(func(a Proposal, b Proposal) bool { return a.Id < b.Id })
 	sortNetParams := cmpopts.SortSlices(func(a NetworkParameter, b NetworkParameter) bool { return a.Key < b.Key })
+	sortParties := cmpopts.SortSlices(func(a Party, b Party) bool { return a.Id < b.Id })
+	sortDeposits := cmpopts.SortSlices(func(a Deposit, b Deposit) bool { return a.ID < b.ID })
 	sortSpecs := cmpopts.SortSlices(func(a, b OracleSpec) bool { return a.ID < b.ID })
 
-	diff := cmp.Diff(oldResp, newResp, sortTrades, sortVotes, sortAccounts, sortMarkets, sortProposals, sortNetParams, sortSpecs)
+	// This is a bit grim; in the old API you get repeated entries for votes when they are updated,
+	// which is a bug not present in the new API - so remove duplicates when comparing (and sort)
+	removeDupVotes := cmp.Transformer("DuplicateVotes", func(in []Vote) []Vote {
+		m := make(map[string]Vote)
+		for _, vote := range in {
+			m[fmt.Sprintf("%v-%v", vote.ProposalId, vote.Party.Id)] = vote
+		}
+
+		keys := make([]string, len(m))
+		sort.Strings(keys)
+
+		out := make([]Vote, len(m))
+		for i, key := range keys {
+			out[i] = m[key]
+		}
+		return out
+	})
+
+	diff := cmp.Diff(oldResp, newResp, removeDupVotes, sortTrades, sortAccounts,
+		sortMarkets, sortProposals, sortNetParams, sortParties, sortDeposits, sortSpecs)
 
 	assert.Empty(t, diff)
 }

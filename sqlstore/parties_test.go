@@ -1,6 +1,8 @@
 package sqlstore_test
 
 import (
+	"context"
+	"fmt"
 	"testing"
 
 	"code.vegaprotocol.io/data-node/entities"
@@ -12,39 +14,47 @@ import (
 func addTestParty(t *testing.T, ps *sqlstore.Parties, block entities.Block) entities.Party {
 	party := entities.Party{
 		ID:       entities.NewPartyID(generateID()),
-		VegaTime: block.VegaTime,
+		VegaTime: &block.VegaTime,
 	}
 
-	err := ps.Add(party)
+	err := ps.Add(context.Background(), party)
 	require.NoError(t, err)
 	return party
 }
 
 func TestParty(t *testing.T) {
 	defer testStore.DeleteEverything()
+	ctx := context.Background()
 	ps := sqlstore.NewParties(testStore)
+	ps.Initialise()
 	bs := sqlstore.NewBlocks(testStore)
 	block := addTestBlock(t, bs)
 
-	// Make sure we're starting with an empty set of parties
-	parties, err := ps.GetAll()
-	assert.NoError(t, err)
-	assert.Empty(t, parties)
+	// Make sure we're starting with an empty set of parties (except network party)
+	parties, err := ps.GetAll(ctx)
+	require.NoError(t, err)
+	assert.Len(t, parties, 1)
+	assert.Equal(t, "network", parties[0].ID.String())
 
 	// Make a new party
 	party := addTestParty(t, ps, block)
 
-	// Add it again, we should get a primary key violation
-	err = ps.Add(party)
-	assert.Error(t, err)
+	// Add it again, we shouldn't get a primary key violation (we just ignore)
+	err = ps.Add(ctx, party)
+	require.NoError(t, err)
 
 	// Query and check we've got back a party the same as the one we put in
-	fetchedParty, err := ps.GetByID(party.ID.String())
-	assert.NoError(t, err)
+	fetchedParty, err := ps.GetByID(ctx, party.ID.String())
+	require.NoError(t, err)
 	assert.Equal(t, party, fetchedParty)
 
-	// Get all assets and make sure ours is in there
-	parties, err = ps.GetAll()
-	assert.NoError(t, err)
-	assert.Len(t, parties, 1)
+	// Get all assets and make sure ours is in there (along with built in network party)
+	parties, err = ps.GetAll(ctx)
+	require.NoError(t, err)
+	assert.Len(t, parties, 2)
+
+	// Check we get the right error if we ask for a non-existent party
+	_, err = ps.GetByID(ctx, ("beef"))
+	assert.ErrorIs(t, err, sqlstore.ErrPartyNotFound)
+	fmt.Println("yay")
 }

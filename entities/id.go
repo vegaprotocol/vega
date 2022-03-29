@@ -2,10 +2,13 @@ package entities
 
 import (
 	"encoding/hex"
+	"errors"
 	"fmt"
 
 	"github.com/jackc/pgtype"
 )
+
+var ErrInvalidID = errors.New("Not a valid hex ID (or well known exception)")
 
 type ID string
 
@@ -32,7 +35,7 @@ func (id *ID) Bytes() ([]byte, error) {
 
 	bytes, err := hex.DecodeString(strID)
 	if err != nil {
-		return nil, fmt.Errorf("Not hex or well known ID: '%v'", string(id.String()))
+		return nil, fmt.Errorf("decoding '%v': %w", string(id.String()), ErrInvalidID)
 	}
 	return bytes, nil
 }

@@ -126,6 +126,7 @@ func (l *NodeCommand) setupSQLSubscribers() {
 	}
 
 	l.assetSubSQL = sqlsubscribers.NewAsset(l.assetStoreSQL, l.Log)
+	l.partySubSQL = sqlsubscribers.NewParty(l.partyStoreSQL, l.Log)
 	l.timeSubSQL = sqlsubscribers.NewTimeSub(l.blockStoreSQL, l.Log)
 	l.transferResponseSubSQL = sqlsubscribers.NewTransferResponse(l.ledgerSQL, l.accountStoreSQL, l.balanceStoreSQL, l.partyStoreSQL, l.Log)
 	l.orderSubSQL = sqlsubscribers.NewOrder(l.ctx, l.orderStoreSQL, l.blockStoreSQL, l.Log)
@@ -176,6 +177,7 @@ func (l *NodeCommand) setupStorages() error {
 		l.assetStoreSQL = sqlstore.NewAssets(sqlStore)
 		l.blockStoreSQL = sqlstore.NewBlocks(sqlStore)
 		l.partyStoreSQL = sqlstore.NewParties(sqlStore)
+		l.partyStoreSQL.Initialise()
 		l.accountStoreSQL = sqlstore.NewAccounts(sqlStore)
 		l.balanceStoreSQL = sqlstore.NewBalances(sqlStore)
 		l.ledgerSQL = sqlstore.NewLedger(sqlStore)
@@ -276,6 +278,7 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 			l.conf.SQLStore.SqlEventBrokerBufferSize,
 			l.timeSubSQL,
 			l.assetSubSQL,
+			l.partySubSQL,
 			l.transferResponseSubSQL,
 			l.orderSubSQL,
 			l.networkLimitsSubSQL,

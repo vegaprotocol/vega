@@ -44,6 +44,7 @@
 - [407](https://github.com/vegaprotocol/data-node/pull/407) - Add `positionDecimalPlaces` to market `graphQL`
 - [429](https://github.com/vegaprotocol/data-node/issues/429) - Add environment variable to getting started document
 - [420](https://github.com/vegaprotocol/data-node/pull/420) - Migrate rewards, delegations and epochs to `Postgres`
+- [380](https://github.com/vegaprotocol/data-node/pull/420) - Migrate party API to `postgres`
 
 ### 🐛 Fixes
 - [411](https://github.com/vegaprotocol/data-node/pull/411) - Fix a couple of incompatibilities in `data-node v2`

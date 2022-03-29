@@ -262,14 +262,60 @@ type Deposit struct {
 	Amount            string
 	Asset             Asset
 	Status            string
-	CreatedTimestamp  string
-	CreditedTimestamp string
+	CreatedTimestamp  TimeString
+	CreditedTimestamp TimeString
 	TxHash            string
 }
 
 type NetworkParameter struct {
 	Key   string
 	Value string
+}
+
+type Epoch struct {
+	ID          string
+	Timestamps  EpochTimestamps
+	Delegations []Delegation
+}
+
+type EpochTimestamps struct {
+	Start  string
+	End    string
+	Expiry string
+}
+
+type Delegation struct {
+	Amount string
+	Party  Party
+	Node   Node
+	Epoch  int
+}
+
+type Node struct {
+	Id                string
+	Pubkey            string
+	TmPubkey          string
+	EthereumAdddress  string
+	InfoUrl           string
+	Location          string
+	StakedByOperator  string
+	StakedByDelegates string
+	StakedTotal       string
+	PendingStake      string
+	EpochData         EpochData
+	Status            string
+	Delegations       []Delegation
+	Name              string
+	AvatarUrl         string
+	// TODO
+	// RewardScore RewardScore
+	// RankingScore RankingScore
+}
+
+type EpochData struct {
+	Total   int
+	Offline int
+	Online  int
 }
 
 type Withdrawal struct {

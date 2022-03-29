@@ -106,6 +106,7 @@ type GRPCServer struct {
 	marginLevelsStore       *sqlstore.MarginLevels
 	netParamStore           *sqlstore.NetworkParameters
 	blockStore              *sqlstore.Blocks
+	partyStore              *sqlstore.Parties
 	checkpointStore         *sqlstore.Checkpoints
 	oracleSpecStore         *sqlstore.OracleSpec
 	oracleDataStore         *sqlstore.OracleData
@@ -170,6 +171,7 @@ func NewGRPCServer(
 	netParamStore *sqlstore.NetworkParameters,
 	blockStore *sqlstore.Blocks,
 	checkpointStore *sqlstore.Checkpoints,
+	partyStore *sqlstore.Parties,
 	candleServiceV2 *candlesv2.Svc,
 	oracleSpecStore *sqlstore.OracleSpec,
 	oracleDataStore *sqlstore.OracleData,
@@ -231,6 +233,7 @@ func NewGRPCServer(
 		netParamStore:           netParamStore,
 		blockStore:              blockStore,
 		checkpointStore:         checkpointStore,
+		partyStore:              partyStore,
 		candleServiceV2:         candleServiceV2,
 		oracleSpecStore:         oracleSpecStore,
 		oracleDataStore:         oracleDataStore,
@@ -398,6 +401,7 @@ func (g *GRPCServer) Start(ctx context.Context, lis net.Listener) error {
 			netParamStore:           g.netParamStore,
 			blockStore:              g.blockStore,
 			checkpointStore:         g.checkpointStore,
+			partyStore:              g.partyStore,
 			candleServiceV2:         g.candleServiceV2,
 			oracleSpecStore:         g.oracleSpecStore,
 			oracleDataStore:         g.oracleDataStore,

@@ -40,6 +40,7 @@ type tradingDataDelegator struct {
 	netParamStore           *sqlstore.NetworkParameters
 	blockStore              *sqlstore.Blocks
 	checkpointStore         *sqlstore.Checkpoints
+	partyStore              *sqlstore.Parties
 	candleServiceV2         *candlesv2.Svc
 	oracleSpecStore         *sqlstore.OracleSpec
 	oracleDataStore         *sqlstore.OracleData
@@ -50,6 +51,47 @@ var defaultEntityPagination = entities.Pagination{
 	Skip:       0,
 	Limit:      50,
 	Descending: true,
+}
+
+/****************************** Parties **************************************/
+func (t *tradingDataDelegator) Parties(ctx context.Context, _ *protoapi.PartiesRequest) (*protoapi.PartiesResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("Parties SQL")()
+	parties, err := t.partyStore.GetAll(ctx)
+	if err != nil {
+		return nil, apiError(codes.Internal, ErrPartyServiceGetAll, err)
+	}
+
+	out := make([]*vega.Party, len(parties))
+	for i, p := range parties {
+		out[i] = p.ToProto()
+	}
+
+	return &protoapi.PartiesResponse{
+		Parties: out,
+	}, nil
+}
+
+func (t *tradingDataDelegator) PartyByID(ctx context.Context, req *protoapi.PartyByIDRequest) (*protoapi.PartyByIDResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("PartyByID SQL")()
+	out := protoapi.PartyByIDResponse{}
+
+	party, err := t.partyStore.GetByID(ctx, req.PartyId)
+
+	if errors.Is(err, sqlstore.ErrPartyNotFound) {
+		return &out, nil
+	}
+
+	if errors.Is(err, sqlstore.ErrInvalidPartyID) {
+		return &out, apiError(codes.InvalidArgument, ErrPartyServiceGetByID, err)
+	}
+
+	if err != nil {
+		return nil, apiError(codes.Internal, ErrPartyServiceGetByID, err)
+	}
+
+	return &protoapi.PartyByIDResponse{
+		Party: party.ToProto(),
+	}, nil
 }
 
 /****************************** General **************************************/

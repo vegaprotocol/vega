@@ -23,8 +23,6 @@ type BalanceStore interface {
 	Add(b entities.Balance) error
 }
 
-type PartyStore interface{}
-
 type TransferResponseEvent interface {
 	events.Event
 	TransferResponses() []*vega.TransferResponse

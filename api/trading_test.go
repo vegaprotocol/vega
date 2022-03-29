@@ -300,6 +300,7 @@ func getTestGRPCServer(
 	sqlNetParamStore := sqlstore.NewNetworkParameters(&sqlStore)
 	sqlBlockStore := sqlstore.NewBlocks(&sqlStore)
 	sqlCheckpointStore := sqlstore.NewCheckpoints(&sqlStore)
+	sqlPartyStore := sqlstore.NewParties(&sqlStore)
 	sqlOracleSpecStore := sqlstore.NewOracleSpec(&sqlStore)
 	sqlOracleDataStore := sqlstore.NewOracleData(&sqlStore)
 	sqlLPDataStore := sqlstore.NewLiquidityProvision(&sqlStore)
@@ -355,6 +356,7 @@ func getTestGRPCServer(
 		sqlNetParamStore,
 		sqlBlockStore,
 		sqlCheckpointStore,
+		sqlPartyStore,
 		candlesServiceV2,
 		sqlOracleSpecStore,
 		sqlOracleDataStore,
