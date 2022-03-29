@@ -77,7 +77,7 @@ func (e *Engine) UpdateScalingFactor(sFactor num.Decimal) error {
 	return nil
 }
 
-// RecordOpenInterest records open interset history so that target stake can be calculated.
+// RecordOpenInterest records open interest history so that target stake can be calculated.
 func (e *Engine) RecordOpenInterest(oi uint64, now time.Time) error {
 	if now.Before(e.now) {
 		return ErrTimeSequence
@@ -88,8 +88,8 @@ func (e *Engine) RecordOpenInterest(oi uint64, now time.Time) error {
 	}
 
 	if now.After(e.now) {
-		toi := e.getMaxFromCurrent()
-		e.previous = append(e.previous, toi)
+		maxFromCurrent := e.getMaxFromCurrent()
+		e.previous = append(e.previous, maxFromCurrent)
 		e.current = make([]uint64, 0, len(e.current))
 		e.now = now
 	}
@@ -144,6 +144,12 @@ func (e *Engine) GetTheoreticalTargetStake(rf types.RiskFactor, now time.Time, m
 	factorUint, _ := num.UintFromDecimal(factor.Mul(expDec))
 	value, _ := num.UintFromDecimal(markPrice.ToDecimal().Mul(num.DecimalFromInt64(int64(maxOI))).Div(e.positionFactor))
 	return num.Zero().Div(num.Zero().Mul(value, factorUint.Mul(factorUint, e.sFactor)), exp2), changed
+}
+
+func (e *Engine) UpdateParameters(parameters types.TargetStakeParameters) {
+	factor, _ := num.UintFromDecimal(parameters.ScalingFactor.Mul(expDec))
+	e.sFactor = factor
+	e.tWindow = time.Duration(parameters.TimeWindow) * time.Second
 }
 
 func (e *Engine) getMaxFromCurrent() timestampedOI {

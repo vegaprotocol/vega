@@ -31,7 +31,7 @@ func (e *Engine) IsBoundFactorsInitialised() bool {
 	return e.boundFactorsInitialised
 }
 
-// startCalcPriceRanges kicks off the bounds factors factors calculation, done asynchronously for illustration.
+// startCalcPriceRanges kicks off the bounds factors calculation, done asynchronously for illustration.
 func (e *Engine) startCalcPriceRanges(eventID string, endOfCalcCallback statevar.FinaliseCalculation) {
 	e.log.Info("price range factors calculation started", logging.String("event-id", eventID))
 

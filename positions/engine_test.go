@@ -65,7 +65,7 @@ func TestGetOpenInterest(t *testing.T) {
 		SellOrder: "sell_order_id",
 		Timestamp: time.Now().Unix(),
 	}
-	_ = engine.Update(&trade)
+	_ = engine.Update(context.Background(), &trade)
 	trade = types.Trade{
 		Type:      types.TradeTypeDefault,
 		ID:        "trade_id",
@@ -78,7 +78,7 @@ func TestGetOpenInterest(t *testing.T) {
 		SellOrder: "sell_order_id",
 		Timestamp: time.Now().Unix(),
 	}
-	_ = engine.Update(&trade)
+	_ = engine.Update(context.Background(), &trade)
 	// 3 positions
 	// 2 at + 10
 	// 1 at -20
@@ -121,7 +121,7 @@ func testUpdatePositionRegular(t *testing.T) {
 		SellOrder: "sell_order_id",
 		Timestamp: time.Now().Unix(),
 	}
-	positions := engine.Update(&trade)
+	positions := engine.Update(context.Background(), &trade)
 	pos := engine.Positions()
 	assert.Equal(t, 2, len(pos))
 	assert.Equal(t, 2, len(positions))
@@ -153,7 +153,7 @@ func testUpdatePositionNetworkBuy(t *testing.T) {
 		Timestamp: time.Now().Unix(),
 	}
 	registerOrder(engine, types.SideSell, seller, num.NewUint(10000), uint64(size))
-	positions := engine.UpdateNetwork(&trade)
+	positions := engine.UpdateNetwork(context.Background(), &trade)
 	pos := engine.Positions()
 	assert.Equal(t, 1, len(pos))
 	assert.Equal(t, 1, len(positions))
@@ -180,7 +180,7 @@ func testUpdatePositionNetworkSell(t *testing.T) {
 		Timestamp: time.Now().Unix(),
 	}
 	registerOrder(engine, types.SideBuy, buyer, num.NewUint(10000), uint64(size))
-	positions := engine.UpdateNetwork(&trade)
+	positions := engine.UpdateNetwork(context.Background(), &trade)
 	pos := engine.Positions()
 	assert.Equal(t, 1, len(pos))
 	assert.Equal(t, 1, len(positions))
@@ -467,7 +467,7 @@ func TestGetOpenInterestGivenTrades(t *testing.T) {
 		for _, tr := range tc.ExistingPositions {
 			registerOrder(e, types.SideBuy, tr.Buyer, tr.Price, tr.Size)
 			registerOrder(e, types.SideSell, tr.Seller, tr.Price, tr.Size)
-			e.Update(tr)
+			e.Update(context.Background(), tr)
 		}
 
 		oiGivenTrades := e.GetOpenInterestGivenTrades(tc.Trades)
@@ -475,7 +475,7 @@ func TestGetOpenInterestGivenTrades(t *testing.T) {
 		for _, tr := range tc.Trades {
 			registerOrder(e, types.SideBuy, tr.Buyer, tr.Price, tr.Size)
 			registerOrder(e, types.SideSell, tr.Seller, tr.Price, tr.Size)
-			e.Update(tr)
+			e.Update(context.Background(), tr)
 		}
 
 		// Now check it matches ones those trades are registered as positions
@@ -572,7 +572,7 @@ func TestHash(t *testing.T) {
 		SellOrder: "sell_order_id",
 		Timestamp: time.Now().Unix(),
 	}
-	e.Update(&trade)
+	e.Update(context.Background(), &trade)
 
 	hash := e.Hash()
 	require.Equal(t,

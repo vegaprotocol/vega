@@ -9,6 +9,7 @@ import (
 
 	proto "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/vega/risk"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
 	"code.vegaprotocol.io/vega/types/statevar"
@@ -128,6 +129,12 @@ type Engine struct {
 	asset          string
 }
 
+func (e *Engine) UpdateSettings(riskModel risk.Model, settings *types.PriceMonitoringSettings) {
+	e.riskModel = riskModel
+	e.fpHorizons, e.bounds = computeBoundsAndHorizons(settings)
+	e.boundFactorsInitialised = false
+}
+
 // NewMonitor returns a new instance of PriceMonitoring.
 func NewMonitor(asset, mktID string, riskModel RangeProvider, settings *types.PriceMonitoringSettings, stateVarEngine StateVarEngine, log *logging.Logger) (*Engine, error) {
 	if riskModel == nil {
@@ -137,34 +144,12 @@ func NewMonitor(asset, mktID string, riskModel RangeProvider, settings *types.Pr
 		return nil, ErrNilPriceMonitoringSettings
 	}
 
-	parameters := make([]*types.PriceMonitoringTrigger, 0, len(settings.Parameters.Triggers))
-	for _, p := range settings.Parameters.Triggers {
-		p := *p
-		parameters = append(parameters, &p)
-	}
-
 	// Other functions depend on this sorting
-	sort.Slice(parameters,
-		func(i, j int) bool {
-			return parameters[i].Horizon < parameters[j].Horizon &&
-				parameters[i].Probability.GreaterThanOrEqual(parameters[j].Probability)
-		})
-
-	h := map[int64]num.Decimal{}
-	bounds := make([]*bound, 0, len(parameters))
-	for _, p := range parameters {
-		bounds = append(bounds, &bound{
-			Active:  true,
-			Trigger: p,
-		})
-		if _, ok := h[p.Horizon]; !ok {
-			h[p.Horizon] = p.HorizonDec.Div(secondsPerYear)
-		}
-	}
+	horizons, bounds := computeBoundsAndHorizons(settings)
 
 	e := &Engine{
 		riskModel:               riskModel,
-		fpHorizons:              h,
+		fpHorizons:              horizons,
 		bounds:                  bounds,
 		stateChanged:            true,
 		stateVarEngine:          stateVarEngine,
@@ -538,4 +523,30 @@ func (e *Engine) calculateRefPrice(horizon int64) num.Decimal {
 		ref = p.VolumeWeightedPrice
 	}
 	return ref
+}
+
+func computeBoundsAndHorizons(settings *types.PriceMonitoringSettings) (map[int64]num.Decimal, []*bound) {
+	parameters := make([]*types.PriceMonitoringTrigger, 0, len(settings.Parameters.Triggers))
+	for _, p := range settings.Parameters.Triggers {
+		p := *p
+		parameters = append(parameters, &p)
+	}
+	sort.Slice(parameters,
+		func(i, j int) bool {
+			return parameters[i].Horizon < parameters[j].Horizon &&
+				parameters[i].Probability.GreaterThanOrEqual(parameters[j].Probability)
+		})
+
+	horizons := map[int64]num.Decimal{}
+	bounds := make([]*bound, 0, len(parameters))
+	for _, p := range parameters {
+		bounds = append(bounds, &bound{
+			Active:  true,
+			Trigger: p,
+		})
+		if _, ok := horizons[p.Horizon]; !ok {
+			horizons[p.Horizon] = p.HorizonDec.Div(secondsPerYear)
+		}
+	}
+	return horizons, bounds
 }

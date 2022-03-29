@@ -3,11 +3,10 @@ module code.vegaprotocol.io/vega
 go 1.17
 
 require (
-	code.vegaprotocol.io/oracles-relay v0.0.0-20210201140234-f047e1bf6df3
-	code.vegaprotocol.io/protos v0.49.4-0.20220325171325-cd35ebda441d
+	code.vegaprotocol.io/protos v0.49.4-0.20220325171548-f44df03bc6d2
 	code.vegaprotocol.io/quant v0.2.5
 	code.vegaprotocol.io/shared v0.0.0-20220321185018-3b5684b00533
-	code.vegaprotocol.io/vegawallet v0.13.2
+	code.vegaprotocol.io/vegawallet v0.13.3-0.20220325131640-e19b55a4aa00
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/cenkalti/backoff v2.2.1+incompatible
 	github.com/cenkalti/backoff/v4 v4.1.2 // indirect
@@ -34,7 +33,7 @@ require (
 	github.com/rs/cors v1.8.2
 	github.com/satori/go.uuid v1.2.0
 	github.com/shopspring/decimal v1.2.0
-	github.com/spf13/afero v1.8.0
+	github.com/spf13/afero v1.8.0 // indirect
 	github.com/spf13/cobra v1.4.0
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.7.0
@@ -49,7 +48,10 @@ require (
 	google.golang.org/protobuf v1.27.1
 )
 
-require github.com/grpc-ecosystem/grpc-gateway/v2 v2.9.0
+require (
+	code.vegaprotocol.io/oracles-relay v0.0.0-20210201140234-f047e1bf6df3
+	github.com/grpc-ecosystem/grpc-gateway/v2 v2.9.0
+)
 
 require (
 	github.com/BurntSushi/toml v1.0.0 // indirect

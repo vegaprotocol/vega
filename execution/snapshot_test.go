@@ -210,7 +210,7 @@ func newMarket(ID, pubKey string) *types.Market {
 						"product:futures",
 					},
 				},
-				Product: &types.Instrument_Future{
+				Product: &types.InstrumentFuture{
 					Future: &types.Future{
 						SettlementAsset: "Ethereum/Ether",
 						OracleSpecForSettlementPrice: &oraclesv1.OracleSpec{

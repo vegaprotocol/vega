@@ -26,15 +26,15 @@ func TestMargins(t *testing.T) {
 	price := num.NewUint(100)
 	size := uint64(100)
 
-	addAccount(tm, party1)
-	addAccount(tm, party2)
-	addAccount(tm, party3)
+	addAccount(t, tm, party1)
+	addAccount(t, tm, party2)
+	addAccount(t, tm, party3)
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
 	auxParty := "auxParty"
 	auxParty2 := "auxParty2"
-	addAccount(tm, auxParty)
-	addAccount(tm, auxParty2)
+	addAccount(t, tm, auxParty)
+	addAccount(t, tm, auxParty2)
 
 	// Assure liquidity auction won't be triggered
 	tm.market.OnMarketLiquidityTargetStakeTriggeringRatio(context.Background(), num.DecimalFromFloat(0))
@@ -159,11 +159,11 @@ func TestPartialFillMargins(t *testing.T) {
 		Duration: 1,
 	})
 
-	addAccount(tm, party1)
-	addAccount(tm, party2)
-	addAccount(tm, party3)
-	addAccount(tm, auxParty)
-	addAccount(tm, auxParty2)
+	addAccount(t, tm, party1)
+	addAccount(t, tm, party2)
+	addAccount(t, tm, party3)
+	addAccount(t, tm, auxParty)
+	addAccount(t, tm, auxParty2)
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
 	// Assure liquidity auction won't be triggered

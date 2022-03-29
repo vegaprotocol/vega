@@ -34,6 +34,7 @@ type Product interface {
 	SettlementPrice() (*num.Uint, error)
 	NotifyOnTradingTerminated(listener func(context.Context, bool))
 	NotifyOnSettlementPrice(listener func(context.Context, *num.Uint))
+	Unsubscribe(context.Context, OracleEngine)
 }
 
 // New instance a new product from a Market framework product configuration.
@@ -42,8 +43,8 @@ func New(ctx context.Context, log *logging.Logger, pp interface{}, oe OracleEngi
 		return nil, ErrNilProduct
 	}
 	switch p := pp.(type) {
-	case *types.Instrument_Future:
-		return newFuture(ctx, log, p.Future, oe)
+	case *types.InstrumentFuture:
+		return NewFuture(ctx, log, p.Future, oe)
 	default:
 		return nil, ErrUnimplementedProduct
 	}

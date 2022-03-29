@@ -32,6 +32,11 @@ type Future struct {
 	settlementPriceListener    func(context.Context, *num.Uint)
 }
 
+func (f *Future) Unsubscribe(ctx context.Context, oe OracleEngine) {
+	oe.Unsubscribe(ctx, f.oracle.settlementPriceSubscriptionID)
+	oe.Unsubscribe(ctx, f.oracle.tradingTerminatedSubscriptionID)
+}
+
 type oracle struct {
 	settlementPriceSubscriptionID   oracles.SubscriptionID
 	tradingTerminatedSubscriptionID oracles.SubscriptionID
@@ -181,7 +186,7 @@ func (f *Future) updateSettlementPrice(ctx context.Context, data oracles.OracleD
 	return nil
 }
 
-func newFuture(ctx context.Context, log *logging.Logger, f *types.Future, oe OracleEngine) (*Future, error) {
+func NewFuture(ctx context.Context, log *logging.Logger, f *types.Future, oe OracleEngine) (*Future, error) {
 	if f.OracleSpecForSettlementPrice == nil || f.OracleSpecForTradingTermination == nil || f.OracleSpecBinding == nil {
 		return nil, ErrOracleSpecAndBindingAreRequired
 	}

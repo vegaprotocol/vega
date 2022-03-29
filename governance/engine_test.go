@@ -873,6 +873,7 @@ func newMarketTerms() *types.ProposalTermsNewMarket {
 func updateMarketTerms() *types.ProposalTermsUpdateMarket {
 	return &types.ProposalTermsUpdateMarket{
 		UpdateMarket: &types.UpdateMarket{
+			MarketID: vgrand.RandomStr(5),
 			Changes: &types.UpdateMarketConfiguration{
 				Instrument: &types.UpdateInstrumentConfiguration{
 					Code: "CRYPTO:GBPVUSD/JUN20",

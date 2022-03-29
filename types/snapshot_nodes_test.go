@@ -379,7 +379,7 @@ func getDummyData() *types.Chunk {
 									Metadata: &types.InstrumentMetadata{
 										Tags: []string{},
 									},
-									Product: &types.Instrument_Future{
+									Product: &types.InstrumentFuture{
 										Future: &types.Future{
 											SettlementAsset: "AST",
 											QuoteName:       "AST",

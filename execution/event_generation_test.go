@@ -170,7 +170,7 @@ func TestEvents_EnteringAuctionCancelsGFNOrders(t *testing.T) {
 	tm.market.OnMarketLiquidityTargetStakeTriggeringRatio(ctx, num.DecimalFromFloat(0))
 
 	auxParty := "aux"
-	addAccount(tm, auxParty)
+	addAccount(t, tm, auxParty)
 	auxOrder1 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "AuxOrderBuy", types.SideBuy, auxParty, 1, 1)
 	conf, err := tm.market.SubmitOrder(ctx, auxOrder1)
 	require.NotNil(t, conf)
@@ -233,7 +233,7 @@ func TestEvents_CloseOutParty(t *testing.T) {
 	tm.market.OnMarketLiquidityTargetStakeTriggeringRatio(ctx, num.DecimalFromFloat(0))
 
 	auxParty := "aux"
-	addAccount(tm, auxParty)
+	addAccount(t, tm, auxParty)
 	auxOrder1 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "AuxOrderBuy", types.SideBuy, auxParty, 1, 1)
 	conf, err := tm.market.SubmitOrder(ctx, auxOrder1)
 	require.NotNil(t, conf)
@@ -313,7 +313,7 @@ func TestEvents_CloseOutPartyWithPeggedOrder(t *testing.T) {
 	tm.market.OnMarketLiquidityTargetStakeTriggeringRatio(ctx, num.DecimalFromFloat(0))
 
 	auxParty := "aux"
-	addAccount(tm, auxParty)
+	addAccount(t, tm, auxParty)
 	auxOrder1 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "AuxOrderBuy", types.SideBuy, auxParty, 1, 1)
 	conf, err := tm.market.SubmitOrder(ctx, auxOrder1)
 	require.NotNil(t, conf)
@@ -440,7 +440,7 @@ func TestEvents_EnteringAuctionParksAllPegs(t *testing.T) {
 	tm.market.OnMarketLiquidityTargetStakeTriggeringRatio(ctx, num.DecimalFromFloat(0))
 
 	auxParty := "aux"
-	addAccount(tm, auxParty)
+	addAccount(t, tm, auxParty)
 	auxOrder1 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "AuxOrderBuy", types.SideBuy, auxParty, 1, 1)
 	conf, err := tm.market.SubmitOrder(ctx, auxOrder1)
 	require.NotNil(t, conf)
@@ -507,7 +507,7 @@ func TestEvents_SelfTrading(t *testing.T) {
 	tm.market.OnMarketLiquidityTargetStakeTriggeringRatio(ctx, num.DecimalFromFloat(0))
 
 	auxParty := "aux"
-	addAccount(tm, auxParty)
+	addAccount(t, tm, auxParty)
 	auxOrder1 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "AuxOrderBuy", types.SideBuy, auxParty, 1, 1)
 	conf, err := tm.market.SubmitOrder(ctx, auxOrder1)
 	require.NotNil(t, conf)
@@ -607,7 +607,7 @@ func TestEvents_MovingPegsAround(t *testing.T) {
 	tm.market.OnMarketLiquidityTargetStakeTriggeringRatio(ctx, num.DecimalFromFloat(0))
 
 	auxParty := "aux"
-	addAccount(tm, auxParty)
+	addAccount(t, tm, auxParty)
 	auxOrder1 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "AuxOrderBuy", types.SideBuy, auxParty, 1, 1)
 	conf, err := tm.market.SubmitOrder(ctx, auxOrder1)
 	require.NotNil(t, conf)
@@ -675,7 +675,7 @@ func TestEvents_MovingPegsAround2(t *testing.T) {
 	tm.market.OnMarketLiquidityTargetStakeTriggeringRatio(ctx, num.DecimalFromFloat(0))
 
 	auxParty := "aux"
-	addAccount(tm, auxParty)
+	addAccount(t, tm, auxParty)
 	auxOrder1 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "AuxOrderBuy", types.SideBuy, auxParty, 1, 1)
 	conf, err := tm.market.SubmitOrder(ctx, auxOrder1)
 	require.NotNil(t, conf)
@@ -733,7 +733,7 @@ func TestEvents_AmendOrderToSelfTrade(t *testing.T) {
 	tm.market.OnMarketLiquidityTargetStakeTriggeringRatio(ctx, num.DecimalFromFloat(0))
 
 	auxParty := "aux"
-	addAccount(tm, auxParty)
+	addAccount(t, tm, auxParty)
 	auxOrder1 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "AuxOrderBuy", types.SideBuy, auxParty, 1, 1)
 	conf, err := tm.market.SubmitOrder(ctx, auxOrder1)
 	require.NotNil(t, conf)
@@ -790,7 +790,7 @@ func TestEvents_AmendOrderToIncreaseSizeAndPartiallyFill(t *testing.T) {
 	tm.market.OnMarketLiquidityTargetStakeTriggeringRatio(ctx, num.DecimalFromFloat(0))
 
 	auxParty := "aux"
-	addAccount(tm, auxParty)
+	addAccount(t, tm, auxParty)
 	auxOrder1 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "AuxOrderBuy", types.SideBuy, auxParty, 1, 1)
 	conf, err := tm.market.SubmitOrder(ctx, auxOrder1)
 	require.NotNil(t, conf)
@@ -1038,5 +1038,5 @@ func TestEvents_PeggedOrders(t *testing.T) {
 
 	processEvents(t, tm, mdb)
 	assert.Equal(t, 2, tm.market.GetPeggedOrderCount())
-	assert.Equal(t, 0, tm.market.GetParkedOrderCount()) //??
+	assert.Equal(t, 0, tm.market.GetParkedOrderCount()) // ??
 }

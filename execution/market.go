@@ -105,6 +105,7 @@ type PriceMonitor interface {
 	GetState() *types.PriceMonitor
 	Changed() bool
 	IsBoundFactorsInitialised() bool
+	UpdateSettings(risk.Model, *types.PriceMonitoringSettings)
 }
 
 // LiquidityMonitor.
@@ -112,6 +113,7 @@ type LiquidityMonitor interface {
 	CheckLiquidity(as lmon.AuctionState, t time.Time, currentStake *num.Uint, trades []*types.Trade, rf types.RiskFactor, markPrice *num.Uint, bestStaticBidVolume, bestStaticAskVolume uint64)
 	SetMinDuration(d time.Duration)
 	UpdateTargetStakeTriggerRatio(ctx context.Context, ratio num.Decimal)
+	UpdateParameters(*types.LiquidityMonitoringParameters)
 }
 
 // TargetStakeCalculator interface.
@@ -124,6 +126,7 @@ type TargetStakeCalculator interface {
 	UpdateTimeWindow(tWindow time.Duration)
 	Changed() bool
 	StopSnapshots()
+	UpdateParameters(types.TargetStakeParameters)
 }
 
 type MarketCollateral interface {
@@ -316,12 +319,10 @@ func NewMarket(
 
 	// @TODO -> the raw auctionstate shouldn't be something exposed to the matching engine
 	// as far as matching goes: it's either an auction or not
-	book := matching.NewCachedOrderBook(
-		log, matchingConfig, mkt.ID, as.InAuction())
+	book := matching.NewCachedOrderBook(log, matchingConfig, mkt.ID, as.InAuction())
 	asset := tradableInstrument.Instrument.Product.GetAsset()
 
-	riskEngine := risk.NewEngine(
-		log,
+	riskEngine := risk.NewEngine(log,
 		riskConfig,
 		tradableInstrument.MarginCalculator,
 		tradableInstrument.RiskModel,
@@ -332,7 +333,6 @@ func NewMarket(
 		mkt.ID,
 		asset,
 		stateVarEngine,
-		tradableInstrument.RiskModel.DefaultRiskFactors(),
 		false,
 		positionFactor,
 	)
@@ -426,6 +426,36 @@ func NewMarket(
 	return market, nil
 }
 
+func (m *Market) Update(ctx context.Context, config *types.Market, oracleEngine products.OracleEngine) error {
+	config.TradingMode = m.mkt.TradingMode
+	config.State = m.mkt.State
+	config.MarketTimestamps = m.mkt.MarketTimestamps
+	asset, err := m.mkt.GetAsset()
+	if err != nil {
+		return err
+	}
+	config.SetAsset(asset)
+
+	m.mkt = config
+
+	if err := m.tradableInstrument.UpdateInstrument(ctx, m.log, m.mkt.TradableInstrument, oracleEngine); err != nil {
+		return err
+	}
+	m.risk.UpdateModel(m.stateVarEngine, m.tradableInstrument.MarginCalculator, m.tradableInstrument.RiskModel)
+	m.settlement.UpdateProduct(m.tradableInstrument.Instrument.Product)
+	m.tsCalc.UpdateParameters(*m.mkt.LiquidityMonitoringParameters.TargetStakeParameters)
+	m.pMonitor.UpdateSettings(m.tradableInstrument.RiskModel, m.mkt.PriceMonitoringSettings)
+	m.lMonitor.UpdateParameters(m.mkt.LiquidityMonitoringParameters)
+	m.liquidity.UpdateMarketConfig(m.tradableInstrument.RiskModel, m.pMonitor)
+
+	m.tradableInstrument.Instrument.Product.NotifyOnTradingTerminated(m.tradingTerminated)
+	m.tradableInstrument.Instrument.Product.NotifyOnSettlementPrice(m.settlementPrice)
+
+	m.stateChanged = true
+
+	return nil
+}
+
 func appendBytes(bz ...[]byte) []byte {
 	var out []byte
 	for _, b := range bz {
@@ -497,9 +527,9 @@ func (m *Market) GetMarketData() types.MarketData {
 
 	var targetStake string
 	if m.as.InAuction() {
-		targetStake = m.priceToMarketPrecision(m.getTheoreticalTargetStake()).String()
+		targetStake = m.getTheoreticalTargetStake().String()
 	} else {
-		targetStake = m.priceToMarketPrecision(m.getTargetStake()).String()
+		targetStake = m.getTargetStake().String()
 	}
 	bounds := m.pMonitor.GetCurrentBounds()
 	for _, b := range bounds {
@@ -1542,7 +1572,7 @@ func (m *Market) handleConfirmation(ctx context.Context, conf *types.OrderConfir
 			tradeEvts = append(tradeEvts, events.NewTradeEvent(ctx, *trade))
 
 			// Update positions (this communicates with settlement via channel)
-			m.position.Update(trade)
+			m.position.Update(ctx, trade)
 			// Record open interest change
 			if err := m.tsCalc.RecordOpenInterest(m.position.GetOpenInterest(), m.currentTime); err != nil {
 				m.log.Debug("unable record open interest",
@@ -1858,7 +1888,7 @@ func (m *Market) resolveClosedOutParties(ctx context.Context, distressedMarginEv
 
 			// Update positions - this is a special trade involving the network as party
 			// so rather than checking this every time we call Update, call special UpdateNetwork
-			m.position.UpdateNetwork(trade)
+			m.position.UpdateNetwork(ctx, trade)
 			if err := m.tsCalc.RecordOpenInterest(m.position.GetOpenInterest(), m.currentTime); err != nil {
 				m.log.Debug("unable record open interest",
 					logging.String("market-id", m.GetID()),
@@ -3077,9 +3107,12 @@ func (m *Market) tradingTerminated(ctx context.Context, tt bool) {
 	m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
 	m.stateChanged = true
 
-	if price, err := m.tradableInstrument.Instrument.Product.SettlementPrice(); err != nil {
-		m.settlementPriceWithLock(ctx, price)
+	settlementPrice, err := m.tradableInstrument.Instrument.Product.SettlementPrice()
+	if err != nil {
+		m.log.Debug("no settlement price", logging.MarketID(m.GetID()))
+		return
 	}
+	m.settlementPriceWithLock(ctx, settlementPrice)
 }
 
 func (m *Market) settlementPrice(ctx context.Context, settlementPrice *num.Uint) {
