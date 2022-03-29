@@ -8,9 +8,10 @@ Feature: Allow markets to be specified with a smaller number of decimal places t
             | market.liquidity.bondPenaltyParameter         | 0.2   |
             | market.liquidity.targetstake.triggering.ratio | 0.1   |
         And the following assets are registered:
-            | id  | decimal places |
-            | ETH | 5              |
-            | USD | 2              |
+            | id      | decimal places |
+            | ETH     | 5              |
+            | ETHLong | 18             |
+            | USD     | 2              |
         And the average block duration is "1"
         And the log normal risk model named "log-normal-risk-model-1":
             | risk aversion | tau | mu | r | sigma |
@@ -22,20 +23,24 @@ Feature: Allow markets to be specified with a smaller number of decimal places t
             | horizon | probability | auction extension |
             | 1       | 0.99        | 300               |
         And the markets:
-            | id        | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | oracle config          | decimal places | position decimal places |
-            | ETH/MAR22 | ETH        | USD   | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 0              | 0                       |
-            | USD/DEC19 | USD        | ETH   | log-normal-risk-model-1 | default-margin-calculator | 1                | default-none  | price-monitoring-1 | default-usd-for-future | 3              | 3                       |
-            | USD/DEC20 | USD        | ETH   | log-normal-risk-model-1 | default-margin-calculator | 1                | default-none  | price-monitoring-1 | default-usd-for-future | 5              | 5                       |
-            | USD/DEC21 | USD        | ETH   | log-normal-risk-model-1 | default-margin-calculator | 1                | default-none  | price-monitoring-1 | default-usd-for-future | 5              | 3                       |
+            | id        | quote name | asset   | risk model              | margin calculator         | auction duration | fees          | price monitoring   | oracle config          | decimal places | position decimal places |
+            | ETH/MAR22 | ETH        | USD     | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 0              | 0                       |
+            | USD/DEC19 | USD        | ETH     | log-normal-risk-model-1 | default-margin-calculator | 1                | default-none  | price-monitoring-1 | default-usd-for-future | 3              | 3                       |
+            | USD/DEC20 | USD        | ETH     | log-normal-risk-model-1 | default-margin-calculator | 1                | default-none  | price-monitoring-1 | default-usd-for-future | 5              | 5                       |
+            | USD/DEC21 | USD        | ETH     | log-normal-risk-model-1 | default-margin-calculator | 1                | default-none  | price-monitoring-1 | default-usd-for-future | 5              | 3                       |
+            | USD/DEC22 | USD        | ETHLong | log-normal-risk-model-1 | default-margin-calculator | 1                | default-none  | price-monitoring-1 | default-usd-for-future | 5              | 5                       |
         And the parties deposit on asset's general account the following amount:
-            | party  | asset | amount    |
-            | party0 | USD   | 5000000   |
-            | party0 | ETH   | 5000000   |
-            | party1 | USD   | 100000000 |
-            | party1 | ETH   | 100000000 |
-            | party2 | USD   | 100000000 |
-            | party2 | ETH   | 100000000 |
-            | party3 | USD   | 100000000 |
+            | party  | asset   | amount            |
+            | party0 | USD     | 5000000           |
+            | party0 | ETH     | 5000000           |
+            | party0 | ETHLong | 50000000000000000 |
+            | party1 | USD     | 100000000         |
+            | party1 | ETH     | 100000000         |
+            | party1 | ETHLong | 50000000000000000 |
+            | party2 | USD     | 100000000         |
+            | party2 | ETH     | 100000000         |
+            | party2 | ETHLong | 50000000000000000 |
+            | party3 | USD     | 100000000         |
 
 
     Scenario: Markets with different precisions trade at the same price
@@ -78,6 +83,38 @@ Feature: Allow markets to be specified with a smaller number of decimal places t
             | party0 | ETH   | USD/DEC19 | 427256 | 3716655  | 1000 |
             | party1 | ETH   | USD/DEC19 | 1081   | 99996757 | 0    |
             | party2 | ETH   | USD/DEC19 | 4388   | 99986836 | 0    |
+
+    Scenario: Markets with different precisions trade at the same price (high dp)
+
+        Given  the parties submit the following liquidity provision:
+            | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
+            | lp1 | party0 | USD/DEC20 | 1000              | 0.001 | sell | ASK              | 100        | 20     | submission |
+            | lp1 | party0 | USD/DEC20 | 1000              | 0.001 | buy  | BID              | 100        | -20    | amendment  |
+            | lp1 | party0 | USD/DEC22 | 1000              | 0.001 | sell | ASK              | 100        | 20     | submission |
+            | lp1 | party0 | USD/DEC22 | 1000              | 0.001 | buy  | BID              | 100        | -20    | amendment  |
+
+        And the parties place the following orders:
+            | party  | market id | side | volume | price  | resulting trades | type       | tif     | reference  |
+            | party1 | USD/DEC22 | buy  | 100    | 100000 | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-2  |
+            | party2 | USD/DEC22 | sell | 100    | 100000 | 0                | TYPE_LIMIT | TIF_GTC | sell-ref-3 |
+            | party1 | USD/DEC20 | buy  | 100    | 100000 | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-2  |
+            | party2 | USD/DEC20 | sell | 100    | 100000 | 0                | TYPE_LIMIT | TIF_GTC | sell-ref-3 |
+            | party0 | USD/DEC22 | buy  | 100    | 90000  | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-1  |
+            | party0 | USD/DEC22 | sell | 100    | 110000 | 0                | TYPE_LIMIT | TIF_GTC | sell-ref-2 |
+            | party0 | USD/DEC20 | buy  | 100    | 90000  | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-1  |
+            | party0 | USD/DEC20 | sell | 100    | 110000 | 0                | TYPE_LIMIT | TIF_GTC | sell-ref-2 |
+
+        When the opening auction period ends for market "USD/DEC20"
+        And the opening auction period ends for market "USD/DEC19"
+
+        Then the parties should have the following account balances:
+            | party  | asset   | market id | margin           | general           | bond |
+            | party0 | ETHLong | USD/DEC22 | 4268284309895210 | 45731715690104790 | 1000 |
+            | party1 | ETHLong | USD/DEC22 | 1080873849581296 | 48919126150418704 | 0    |
+            | party2 | ETHLong | USD/DEC22 | 4388284309895210 | 45611715690104790 | 0    |
+            | party0 | ETH     | USD/DEC20 | 854084           | 4144916           | 1000 |
+            | party1 | ETH     | USD/DEC20 | 109              | 99999891          | 0    |
+            | party2 | ETH     | USD/DEC20 | 439              | 99999561          | 0    |
 
     Scenario: Users engage in a USD market auction, (0070-MKTD-003, 0070-MKTD-008)
         Given the parties submit the following liquidity provision:
