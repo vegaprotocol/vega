@@ -18,6 +18,7 @@ import (
 	"code.vegaprotocol.io/vega/checkpoint"
 	"code.vegaprotocol.io/vega/crypto"
 	"code.vegaprotocol.io/vega/events"
+	"code.vegaprotocol.io/vega/execution"
 	"code.vegaprotocol.io/vega/genesis"
 	vgcontext "code.vegaprotocol.io/vega/libs/context"
 	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
@@ -576,6 +577,10 @@ func (app *App) OnEndBlock(req tmtypes.RequestEndBlock) (ctx context.Context, re
 func (app *App) OnBeginBlock(req tmtypes.RequestBeginBlock) (ctx context.Context, resp tmtypes.ResponseBeginBlock) {
 	app.log.Debug("entering begin block", logging.Time("at", time.Now()), logging.Uint64("height", uint64(req.Header.Height)))
 	defer func() { app.log.Debug("leaving begin block", logging.Time("at", time.Now())) }()
+
+	if req.Header.Height == 329906 {
+		execution.ApplyPatchAtBlock329906 = true
+	}
 
 	hash := hex.EncodeToString(req.Hash)
 	app.cBlock = hash
