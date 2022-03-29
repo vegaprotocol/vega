@@ -343,7 +343,15 @@ func (t *Topology) applyPromotion(performanceScore, rankingScore map[string]num.
 	}
 
 	for _, vu := range vUpdates {
-		t.log.Info("voting power update", logging.String("pubKey", vu.PubKey.String()), logging.Int64("power", vu.Power))
+		pkey := vu.PubKey.GetEd25519()
+		if pkey == nil || len(pkey) <= 0 {
+			pkey = vu.PubKey.GetSecp256K1()
+		}
+		// tendermint pubkey are marshalled in base64,
+		// so let's do this as well here for logging
+		spkey := base64.StdEncoding.EncodeToString(pkey)
+
+		t.log.Info("voting power update", logging.String("pubKey", spkey), logging.Int64("power", vu.Power))
 	}
 
 	return vUpdates, nextValidatorsVotingPower
