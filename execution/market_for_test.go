@@ -2,11 +2,40 @@ package execution
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/base32"
+	"encoding/binary"
+	"errors"
 	"time"
 
+	"code.vegaprotocol.io/vega/libs/proto"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
 )
+
+// SetMarketID assigns a deterministic pseudo-random ID to a Market.
+func SetMarketID(marketcfg *types.Market, seq uint64) error {
+	marketcfg.ID = ""
+	marketbytes, err := proto.Marshal(marketcfg.IntoProto())
+	if err != nil {
+		return err
+	}
+	if len(marketbytes) == 0 {
+		return errors.New("failed to marshal market")
+	}
+
+	seqbytes := make([]byte, 8)
+	binary.LittleEndian.PutUint64(seqbytes, seq)
+
+	h := sha256.New()
+	h.Write(marketbytes)
+	h.Write(seqbytes)
+
+	d := h.Sum(nil)
+	d = d[:20]
+	marketcfg.ID = base32.StdEncoding.EncodeToString(d)
+	return nil
+}
 
 // UpdateRiskFactorsForTest is a hack for setting the risk factors for tests directly rather than through the consensus engine.
 // Never use this for anything functional.

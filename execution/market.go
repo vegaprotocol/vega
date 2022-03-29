@@ -2,21 +2,17 @@ package execution
 
 import (
 	"context"
-	"crypto/sha256"
-	"encoding/base32"
-	"encoding/binary"
 	"errors"
 	"fmt"
 	"sort"
 	"sync"
 	"time"
 
-	"code.vegaprotocol.io/vega/idgeneration"
-	vegacontext "code.vegaprotocol.io/vega/libs/context"
-
 	"code.vegaprotocol.io/vega/assets"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/fee"
+	"code.vegaprotocol.io/vega/idgeneration"
+	vegacontext "code.vegaprotocol.io/vega/libs/context"
 	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/liquidity"
 	liquiditytarget "code.vegaprotocol.io/vega/liquidity/target"
@@ -34,8 +30,6 @@ import (
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
 	"code.vegaprotocol.io/vega/types/statevar"
-
-	"code.vegaprotocol.io/vega/libs/proto"
 )
 
 // InitialOrderVersion is set on `Version` field for every new order submission read from the network.
@@ -254,30 +248,6 @@ type Market struct {
 	positionFactor num.Decimal // 10^pdp
 }
 
-// SetMarketID assigns a deterministic pseudo-random ID to a Market.
-func SetMarketID(marketcfg *types.Market, seq uint64) error {
-	marketcfg.ID = ""
-	marketbytes, err := proto.Marshal(marketcfg.IntoProto())
-	if err != nil {
-		return err
-	}
-	if len(marketbytes) == 0 {
-		return errors.New("failed to marshal market")
-	}
-
-	seqbytes := make([]byte, 8)
-	binary.LittleEndian.PutUint64(seqbytes, seq)
-
-	h := sha256.New()
-	h.Write(marketbytes)
-	h.Write(seqbytes)
-
-	d := h.Sum(nil)
-	d = d[:20]
-	marketcfg.ID = base32.StdEncoding.EncodeToString(d)
-	return nil
-}
-
 // NewMarket creates a new market using the market framework configuration and creates underlying engines.
 func NewMarket(
 	ctx context.Context,
@@ -371,18 +341,15 @@ func NewMarket(
 	mkt.State = types.MarketStateProposed
 	mkt.TradingMode = types.MarketTradingModeContinuous
 
+	if mkt.OpeningAuction == nil {
+		log.Panic("market submitted with no opening auction", logging.MarketID(mkt.ID))
+	}
+
 	// Populate the market timestamps
-	ts := &types.MarketTimestamps{
+	mkt.MarketTimestamps = &types.MarketTimestamps{
 		Proposed: now.UnixNano(),
+		Open:     now.Add(time.Duration(mkt.OpeningAuction.Duration)).UnixNano(),
 	}
-
-	if mkt.OpeningAuction != nil {
-		ts.Open = now.Add(time.Duration(mkt.OpeningAuction.Duration)).UnixNano()
-	} else {
-		ts.Open = now.UnixNano()
-	}
-
-	mkt.MarketTimestamps = ts
 
 	market := &Market{
 		log:                       log,
@@ -576,7 +543,9 @@ func (m *Market) CanLeaveOpeningAuction() bool {
 	boundFactorsInitialised := m.pMonitor.IsBoundFactorsInitialised()
 	potInitialised := m.liquidity.IsPoTInitialised()
 	riskFactorsInitialised := m.risk.IsRiskFactorInitialised()
-	canLeave := boundFactorsInitialised && potInitialised && riskFactorsInitialised
+	openingAuctionEnded := m.currentTime.After(time.Unix(m.mkt.MarketTimestamps.Open, 0))
+	canLeave := boundFactorsInitialised && potInitialised && riskFactorsInitialised && openingAuctionEnded
+
 	if !canLeave {
 		m.log.Info("Cannot leave opening auction", logging.String("market", m.mkt.ID), logging.Bool("bound-factors-initialised", boundFactorsInitialised), logging.Bool("pot-initialised", potInitialised), logging.Bool("risk-factors-initialised", riskFactorsInitialised))
 	}
@@ -595,9 +564,7 @@ func (m *Market) StartOpeningAuction(ctx context.Context) error {
 		m.mkt.MarketTimestamps.Pending = m.currentTime.UnixNano()
 		m.enterAuction(ctx)
 	} else {
-		// TODO(): to be removed once we don't have market starting
-		// without an opening auction
-		m.mkt.State = types.MarketStateActive
+		m.log.Panic("market is in invalid state when trying to start opening auction", logging.MarketID(m.mkt.ID))
 	}
 
 	m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
@@ -657,13 +624,10 @@ func (m *Market) OnChainTimeUpdate(ctx context.Context, t time.Time) bool {
 	// not even specced or implemented as of now...
 	// if the state of the market is just PROPOSED,
 	// we will just skip everything there as nothing apply.
-	if m.mkt.State == types.MarketStateProposed {
-		return false
-	}
-
-	// if trading is terminated, we have nothing to do here.
-	// we just need to wait for the settlementPrice to arrive through oracle
-	if m.mkt.State == types.MarketStateTradingTerminated {
+	if m.mkt.State == types.MarketStateProposed ||
+		// if trading is terminated, we have nothing to do here.
+		// we just need to wait for the settlementPrice to arrive through oracle
+		m.mkt.State == types.MarketStateTradingTerminated {
 		return false
 	}
 
