@@ -32,8 +32,8 @@ func NewMarginLevels(store MarginLevelsStore, log *logging.Logger) *MarginLevels
 	}
 }
 
-func (ml *MarginLevels) Type() events.Type {
-	return events.MarginLevelsEvent
+func (ml *MarginLevels) Types() []events.Type {
+	return []events.Type{events.MarginLevelsEvent}
 }
 
 func (ml *MarginLevels) Push(evt events.Event) {

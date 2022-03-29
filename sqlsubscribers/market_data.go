@@ -43,8 +43,8 @@ func (md *MarketData) Push(evt events.Event) {
 	}
 }
 
-func (md *MarketData) Type() events.Type {
-	return events.MarketDataEvent
+func (md *MarketData) Types() []events.Type {
+	return []events.Type{events.MarketDataEvent}
 }
 
 func NewMarketData(store MarketDataStore, log *logging.Logger, dbTimeout time.Duration) *MarketData {

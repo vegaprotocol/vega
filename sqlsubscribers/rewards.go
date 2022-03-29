@@ -36,8 +36,8 @@ func NewReward(
 	return t
 }
 
-func (rs *Reward) Type() events.Type {
-	return events.RewardPayoutEvent
+func (rs *Reward) Types() []events.Type {
+	return []events.Type{events.RewardPayoutEvent}
 }
 
 func (rs *Reward) Push(evt events.Event) {

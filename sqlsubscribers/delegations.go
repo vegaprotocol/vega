@@ -36,8 +36,8 @@ func NewDelegation(
 	return t
 }
 
-func (ds *Delegation) Type() events.Type {
-	return events.DelegationBalanceEvent
+func (ds *Delegation) Types() []events.Type {
+	return []events.Type{events.DelegationBalanceEvent}
 }
 
 func (ds *Delegation) Push(evt events.Event) {

@@ -36,8 +36,8 @@ func NewParty(
 	return ps
 }
 
-func (ps *Party) Type() events.Type {
-	return events.PartyEvent
+func (ps *Party) Types() []events.Type {
+	return []events.Type{events.PartyEvent}
 }
 
 func (ps *Party) Push(evt events.Event) {

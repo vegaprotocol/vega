@@ -27,8 +27,8 @@ func NewMarketUpdated(store MarketsStore, log *logging.Logger) *MarketUpdated {
 	}
 }
 
-func (m *MarketUpdated) Type() events.Type {
-	return events.MarketUpdatedEvent
+func (m *MarketUpdated) Types() []events.Type {
+	return []events.Type{events.MarketUpdatedEvent}
 }
 
 func (m *MarketUpdated) Push(evt events.Event) {

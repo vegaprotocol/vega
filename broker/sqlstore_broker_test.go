@@ -106,8 +106,8 @@ func (t testSqlBrokerSubscriber) Push(evt events.Event) {
 	t.receivedCh <- evt
 }
 
-func (t testSqlBrokerSubscriber) Type() events.Type {
-	return t.eventType
+func (t testSqlBrokerSubscriber) Types() []events.Type {
+	return []events.Type{t.eventType}
 }
 
 type testChainInfo struct {

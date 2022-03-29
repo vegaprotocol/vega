@@ -36,8 +36,8 @@ func NewEpoch(
 	return t
 }
 
-func (es *Epoch) Type() events.Type {
-	return events.EpochUpdate
+func (es *Epoch) Types() []events.Type {
+	return []events.Type{events.EpochUpdate}
 }
 
 func (es *Epoch) Push(evt events.Event) {

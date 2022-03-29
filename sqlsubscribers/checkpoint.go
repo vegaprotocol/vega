@@ -36,8 +36,8 @@ func NewCheckpoint(
 	return np
 }
 
-func (n *Checkpoint) Type() events.Type {
-	return events.CheckpointEvent
+func (n *Checkpoint) Types() []events.Type {
+	return []events.Type{events.CheckpointEvent}
 }
 
 func (n *Checkpoint) Push(evt events.Event) {

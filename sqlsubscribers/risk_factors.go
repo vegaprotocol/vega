@@ -32,8 +32,8 @@ func NewRiskFactor(store RiskFactorStore, log *logging.Logger) *RiskFactor {
 	}
 }
 
-func (rf *RiskFactor) Type() events.Type {
-	return events.RiskFactorEvent
+func (rf *RiskFactor) Types() []events.Type {
+	return []events.Type{events.RiskFactorEvent}
 }
 
 func (rf *RiskFactor) Push(evt events.Event) {

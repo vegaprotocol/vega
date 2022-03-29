@@ -9,7 +9,7 @@ import (
 
 type SqlBrokerSubscriber interface {
 	Push(val events.Event)
-	Type() events.Type
+	Types() []events.Type
 }
 
 type SqlStoreEventBroker interface {
@@ -90,12 +90,14 @@ func (b *concurrentSqlStoreBroker) Receive(ctx context.Context) error {
 }
 
 func (b *concurrentSqlStoreBroker) subscribe(s SqlBrokerSubscriber) {
-	if _, exists := b.typeToEvtCh[s.Type()]; !exists {
-		ch := make(chan events.Event, b.eventTypeBufferSize)
-		b.typeToEvtCh[s.Type()] = ch
-	}
+	for _, evtType := range s.Types() {
+		if _, exists := b.typeToEvtCh[evtType]; !exists {
+			ch := make(chan events.Event, b.eventTypeBufferSize)
+			b.typeToEvtCh[evtType] = ch
+		}
 
-	b.typeToSubs[s.Type()] = append(b.typeToSubs[s.Type()], s)
+		b.typeToSubs[evtType] = append(b.typeToSubs[evtType], s)
+	}
 }
 
 func (b *concurrentSqlStoreBroker) startSendingEvents(ctx context.Context) {
@@ -148,9 +150,10 @@ func newSequentialSqlStoreBroker(log *logging.Logger, chainInfo ChainInfoI,
 	}
 
 	for _, s := range subs {
-		b.typeToSubs[s.Type()] = append(b.typeToSubs[s.Type()], s)
+		for _, evtType := range s.Types() {
+			b.typeToSubs[evtType] = append(b.typeToSubs[evtType], s)
+		}
 	}
-
 	return b
 }
 

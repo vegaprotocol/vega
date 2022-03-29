@@ -32,8 +32,8 @@ func NewOracleSpec(store OracleSpecStore, log *logging.Logger) *OracleSpec {
 	}
 }
 
-func (od *OracleSpec) Type() events.Type {
-	return events.OracleSpecEvent
+func (od *OracleSpec) Types() []events.Type {
+	return []events.Type{events.OracleSpecEvent}
 }
 
 func (od *OracleSpec) Push(evt events.Event) {

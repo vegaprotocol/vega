@@ -39,8 +39,8 @@ func NewVote(
 	return vs
 }
 
-func (vs *Vote) Type() events.Type {
-	return events.VoteEvent
+func (vs *Vote) Types() []events.Type {
+	return []events.Type{events.VoteEvent}
 }
 
 func (vs *Vote) Push(evt events.Event) {

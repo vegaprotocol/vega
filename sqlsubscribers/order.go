@@ -32,8 +32,8 @@ func NewOrder(ctx context.Context, store OrderStore, blockStore BlockStore, log 
 	}
 }
 
-func (os *Order) Type() events.Type {
-	return events.OrderEvent
+func (os *Order) Types() []events.Type {
+	return []events.Type{events.OrderEvent}
 }
 
 func (os *Order) Push(evt events.Event) {
