@@ -25,7 +25,7 @@ Feature: Test liquidity provider reward distribution; Check what happens when di
 
     Given the average block duration is "2"
 
-  Scenario: 1 LP joining at start, checking liquidity rewards over 3 periods, 1 period with no trades (0042-LP-Fees-006)
+  Scenario: 1 LP joining at start, checking liquidity rewards over 3 periods, 1 period with no trades (0042-LIQF-006)
     # setup accounts
     Given the parties deposit on asset's general account the following amount:
       | party  | asset | amount     |

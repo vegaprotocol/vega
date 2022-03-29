@@ -65,7 +65,7 @@ func fillTestPositions(e *positions.SnapshotEngine) {
 		SellOrder: "sell_order_id",
 		Timestamp: time.Now().Unix(),
 	}
-	e.Update(&trade)
+	e.Update(context.Background(), &trade)
 }
 
 func TestSnapshotSaveAndLoad(t *testing.T) {
