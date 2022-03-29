@@ -2840,8 +2840,6 @@ func (m *Market) orderAmendWhenParked(originalOrder, amendOrder *types.Order) *t
 	}
 }
 
-var ApplyPatchAtBlock329906 = false
-
 // RemoveExpiredOrders remove all expired orders from the order book
 // and also any pegged orders that are parked.
 func (m *Market) RemoveExpiredOrders(
@@ -2857,11 +2855,9 @@ func (m *Market) RemoveExpiredOrders(
 		return nil, ErrTradingNotAllowed
 	}
 
-	if ApplyPatchAtBlock329906 {
-		_, blockHash := vegacontext.TraceIDFromContext(ctx)
-		m.idgen = idgeneration.New(blockHash)
-		defer func() { m.idgen = nil }()
-	}
+	_, blockHash := vegacontext.TraceIDFromContext(ctx)
+	m.idgen = idgeneration.New(blockHash)
+	defer func() { m.idgen = nil }()
 
 	expired := []*types.Order{}
 	evts := []events.Event{}
