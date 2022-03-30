@@ -8,7 +8,7 @@ import (
 	"code.vegaprotocol.io/vega/types"
 )
 
-func MarketOpeningAuctionPeriodEnds(timeStub *stubs.TimeStub, markets []types.Market, marketID string) error {
+func MarketOpeningAuctionPeriodEnds(execEngine Execution, timeStub *stubs.TimeStub, markets []types.Market, marketID string) error {
 	var mkt *types.Market
 	for _, m := range markets {
 		if m.ID == marketID {
@@ -21,8 +21,20 @@ func MarketOpeningAuctionPeriodEnds(timeStub *stubs.TimeStub, markets []types.Ma
 		return errMarketNotFound(marketID)
 	}
 	// double the time, so it's definitely past opening auction time
+	data, err := execEngine.GetMarketData(mkt.ID)
+	if err != nil {
+		return errMarketDataNotFound(marketID, err)
+	}
+
+	end := time.Unix(0, data.AuctionEnd)
 	now := timeStub.GetTimeNow()
-	timeStub.SetTime(now.Add(time.Duration(mkt.OpeningAuction.Duration*2) * time.Second))
+	if end.Before(now) {
+		// already out of auction step a second to make things happen
+		timeStub.SetTime(now.Add(time.Second))
+		return nil
+	}
+
+	timeStub.SetTime(now.Add(2 * end.Sub(now)))
 	return nil
 }
 
