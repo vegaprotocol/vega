@@ -1,4 +1,5 @@
-Feature: Replicate LP getting distressed during continuous trading, check if penalty is implemented correctly
+Feature: testing decimal when with LP commitment
+
 
   Background:
     Given the following network parameters are set:
@@ -8,20 +9,24 @@ Feature: Replicate LP getting distressed during continuous trading, check if pen
       | market.liquidity.bondPenaltyParameter         | 0.2   |
       | market.liquidity.targetstake.triggering.ratio | 0.1   |
 
-       And the following assets are registered:
+    And the following assets are registered:
       | id  | decimal places |
       | USD | 5              |
    
     And the average block duration is "1"
     And the log normal risk model named "log-normal-risk-model-1":
-      | risk aversion | tau                    | mu | r     | sigma |
-      | 0.001         | 0.00011407711613050422 | 0  | 0.016 | 1.5   |
+      | risk aversion | tau    | mu | r     | sigma |
+      | 0.001         | 0.0001 | 0  | 0     | 1.5   |
+
+      # RiskFactorShort	0.0516933
+      # RiskFactorLong	0.04935184
+
     And the fees configuration named "fees-config-1":
       | maker fee | infrastructure fee |
       | 0.004     | 0.001              |
     And the price monitoring updated every "1" seconds named "price-monitoring-1":
       | horizon | probability | auction extension |
-      | 1       | 0.99  | 300               |
+      | 3600    | 0.99        | 300               |
     And the markets:
       | id        | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | oracle config          | decimal places | position decimal places |
       | ETH/MAR22 | ETH        | USD   | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future |5               |5                        |
@@ -31,7 +36,7 @@ Feature: Replicate LP getting distressed during continuous trading, check if pen
       | party1 | USD   | 10000000000000 |
       | party2 | USD   | 10000000000000 |
   
-  Scenario: LP gets distressed during continuous trading, with decimal set to 5
+  Scenario: 001, same dp setting: market 5/ asset 5/ position 5; 0070-MKTD-003, 0070-MKTD-004, 0070-MKTD-005, 0070-MKTD-006, 0070-MKTD-007
 
     Given the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset  | lp type    |
@@ -53,29 +58,29 @@ Feature: Replicate LP getting distressed during continuous trading, check if pen
     And the insurance pool balance should be "0" for the market "ETH/MAR22"
     And the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 97600000   | TRADING_MODE_CONTINUOUS | 1       | 97532892  | 97667147  | 26981520     | 390500000000   | 500000        |
+      | 97600000   | TRADING_MODE_CONTINUOUS | 3600    | 93642254  | 101698911  | 25224720     | 390500000000   | 500000        |
  
     #check the volume on the order book
     Then the order book should have the following volumes for market "ETH/MAR22":
-      | side | price      | volume |
-      | sell | 110000000  | 0      |
-      | sell | 102000000  | 0      |
-      | sell | 101000000  | 0      |
+      | side | price      | volume    |
+      | sell | 110000000  | 0         |
+      | sell | 102000000  | 0         |
+      | sell | 101000000  | 0         |
       | sell | 120000000  | 651400000 |
-      | sell | 120100000  | 0      |
+      | sell | 120100000  | 0         |
       | buy  | 90000000   | 868300000 |
-      | buy  | 99000000   | 0      |
-      | buy  | 98000000   | 0      |
+      | buy  | 99000000   | 0         |
+      | buy  | 98000000   | 0         |
     
     # check the requried balances
     And the parties should have the following account balances:
       | party  | asset | market id | margin      | general        | bond         |
-      | lp     | USD   | ETH/MAR22 | 53489839419 | 9556010160581  | 390500000000 |
+      | lp     | USD   | ETH/MAR22 | 50159587363 | 9559340412637  | 390500000000 |
 
     #check the margin levels
     Then the parties should have the following margin levels:
       | party  | market id | maintenance | search      | initial      | release      |
-      | lp     | ETH/MAR22 | 44574866183 | 49032352801 | 53489839419  | 62404812656  |
+      | lp     | ETH/MAR22 | 41799656136 | 45979621749 | 50159587363  | 58519518590  |
 
     # #check position (party0 has no position)
     # Then the parties should have the following profit and loss:
