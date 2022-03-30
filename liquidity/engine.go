@@ -110,10 +110,11 @@ func NewEngine(config Config,
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
 	e := &Engine{
-		marketID:       marketID,
-		log:            log,
-		broker:         broker,
-		suppliedEngine: supplied.NewEngine(riskModel, priceMonitor, asset, marketID, stateVarEngine, tickSize, log, positionFactor),
+		marketID: marketID,
+		log:      log,
+		broker:   broker,
+		// tick size to be used by the supplied engine should actually be in asset decimal
+		suppliedEngine: supplied.NewEngine(riskModel, priceMonitor, asset, marketID, stateVarEngine, num.Zero().Mul(tickSize, priceFactor), log, positionFactor),
 
 		// parameters
 		stakeToObligationFactor: num.DecimalFromInt64(1),

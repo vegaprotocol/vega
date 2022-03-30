@@ -301,6 +301,21 @@ pipeline {
                         }
                     }
                 }
+                stage('Capsule System Tests') {
+                        steps {
+                            script {
+                                systemTestsCapsule vegaCore: commitHash,
+                                    dataNode: params.DATA_NODE_BRANCH,
+                                    vegawallet: params.VEGAWALLET_BRANCH,
+                                    devopsInfra: params.DEVOPS_INFRA_BRANCH,
+                                    vegatools: params.VEGATOOLS_BRANCH,
+                                    systemTests: params.SYSTEM_TESTS_BRANCH,
+                                    protos: params.PROTOS_BRANCH,
+                                    ignoreFailure: true // Will be changed when stable
+
+                            }
+                        }
+                }
             }
         }
 
