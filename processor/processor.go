@@ -46,6 +46,11 @@ type DelegationEngine interface {
 	UndelegateNow(ctx context.Context, party string, nodeID string, amount *num.Uint) error
 	ProcessEpochDelegations(ctx context.Context, epoch types.Epoch) []*types.ValidatorData
 	Hash() []byte
+	GetValidatorData() []*types.ValidatorData
+}
+
+type RewardEngine interface {
+	GetStakingParams() types.StakeScoreParams
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/execution_engine_mock.go -package mocks code.vegaprotocol.io/vega/processor ExecutionEngine
@@ -133,6 +138,8 @@ type ValidatorTopology interface {
 	ProcessAnnounceNode(ctx context.Context, nr *commandspb.AnnounceNode) error
 	ProcessValidatorHeartbeat(context.Context, *commandspb.ValidatorHeartbeat, func(message, signature, pubkey []byte) error, func(message, signature []byte, hexAddress string) error) error
 	AddForwarder(ID string)
+	RefreshVotingPowerNeeded() bool
+	RefreshValidatorVotingPower(ctx context.Context, delegationState []*types.ValidatorData, stakeScoreParams types.StakeScoreParams) []abcitypes.ValidatorUpdate
 }
 
 // Broker - the event bus.

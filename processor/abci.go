@@ -127,6 +127,7 @@ type App struct {
 	netp                  NetworkParameters
 	oracles               *Oracle
 	delegation            DelegationEngine
+	reward                RewardEngine
 	limits                Limits
 	stake                 StakeVerifier
 	stakingAccounts       StakingAccounts
@@ -171,6 +172,7 @@ func NewApp(
 	stateVarEngine StateVarEngine,
 	blockchainClient BlockchainClient,
 	erc20MultiSigTopology ERC20MultiSigTopology,
+	reward RewardEngine,
 	version string, // we need the version for snapshot reload
 ) *App {
 	log = log.Named(namedLogger)
@@ -215,6 +217,7 @@ func NewApp(
 		version:               version,
 		blockchainClient:      blockchainClient,
 		erc20MultiSigTopology: erc20MultiSigTopology,
+		reward:                reward,
 	}
 
 	// setup handlers
@@ -566,6 +569,15 @@ func (app *App) OnEndBlock(req tmtypes.RequestEndBlock) (ctx context.Context, re
 		app.spam.EndOfBlock(uint64(req.Height))
 	}
 
+	// check if we need to refresh the voting power of the validators, if so, get the delegation state and the staking parameters and recalculate the voting powers.
+	// this cannot change the validator set only their voting power.
+	if app.top.RefreshVotingPowerNeeded() {
+		d := app.delegation.GetValidatorData()
+		s := app.reward.GetStakingParams()
+		resp = tmtypes.ResponseEndBlock{
+			ValidatorUpdates: app.top.RefreshValidatorVotingPower(ctx, d, s),
+		}
+	}
 	powerUpdates := app.top.GetValidatorPowerUpdates()
 	if len(powerUpdates) > 0 {
 		resp = tmtypes.ResponseEndBlock{

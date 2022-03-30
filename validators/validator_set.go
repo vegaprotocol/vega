@@ -100,6 +100,123 @@ func (t *Topology) AddForwarder(pubKey string) {
 	}
 }
 
+// RefreshValidatorVotingPower is called every 1000 blocks to refresh the voting power in cases of intra-epoch changes in the delegation and performance.
+// It cannot change the status of a validator but only its voring power.
+func (t *Topology) RefreshValidatorVotingPower(ctx context.Context, delegationState []*types.ValidatorData, stakeScoreParams types.StakeScoreParams) []tmtypes.ValidatorUpdate {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+
+	// get the ranking of the validators
+	stakeScore, perfScore, rankingScore := t.getRankingScore(delegationState)
+
+	// get the tendermint validator set
+	tendermintValidators := []*valState{}
+	tmValidtatorSet := map[string]struct{}{}
+
+	// split the validator set into current tendermint validators and the others
+	for _, vd := range t.validators {
+		if vd.status == ValidatorStatusTendermint {
+			tendermintValidators = append(tendermintValidators, vd)
+			tmValidtatorSet[vd.data.ID] = struct{}{}
+		}
+	}
+
+	tmValidatorIDs := make([]string, 0, len(tendermintValidators))
+	for _, vs := range tendermintValidators {
+		tmValidatorIDs = append(tmValidatorIDs, vs.data.ID)
+	}
+	sort.Strings(tmValidatorIDs)
+
+	// extract the delegation and the total delegation of the new set of validators for tendermint
+	tmDelegation, tmTotalDelegation := CalcDelegation(tmValidtatorSet, delegationState)
+
+	// for the voting power we use the anti-whaling stake score so we need to calculate it here. Then we calculate voting power as: `antiWhalingStakeScore x performanceScore x 10000`
+
+	// calculate the anti-whaling stake score of the validators with respect to stake represented by the tm validators
+	nextValidatorsStakeScore := CalcAntiWhalingScore(tmDelegation, tmTotalDelegation, stakeScoreParams)
+
+	// recored the performance score of the tm validators
+	nextValidatorsPerformanceScore := make(map[string]num.Decimal, len(tmValidtatorSet))
+	for k := range tmValidtatorSet {
+		nextValidatorsPerformanceScore[k] = perfScore[k]
+	}
+	// calculate the score as stake_score x perf_score (no need to normalise, this will be done inside calculateVotingPower
+	nextValidatorsScore := getValScore(nextValidatorsStakeScore, nextValidatorsPerformanceScore)
+
+	// calculate the voting power of the next tendermint validators
+	nextValidatorsVotingPower := t.calculateVotingPower(tmValidatorIDs, nextValidatorsScore)
+
+	// generate the tendermint updates from the voting power
+	vUpdates := make([]tmtypes.ValidatorUpdate, 0, len(tmValidtatorSet))
+
+	// make sure we update the validator power to all nodes, so first reset all to 0
+	for _, vd := range t.validators {
+		vd.validatorPower = 0
+	}
+
+	// now update the validator power for the ones that go to tendermint
+	for _, v := range tmValidatorIDs {
+		vd := t.validators[v]
+		pubkey, err := base64.StdEncoding.DecodeString(vd.data.TmPubKey)
+		if err != nil {
+			continue
+		}
+		vd.validatorPower = nextValidatorsVotingPower[v]
+		update := tmtypes.UpdateValidator(pubkey, nextValidatorsVotingPower[v], "")
+		vUpdates = append(vUpdates, update)
+	}
+
+	// log ranking scores
+	for k, d := range rankingScore {
+		t.log.Info("ranking score", logging.Uint64("block-height", t.currentBlockHeight), logging.String(k, d.String()))
+	}
+
+	// log voting power
+	for _, vu := range vUpdates {
+		pkey := vu.PubKey.GetEd25519()
+		if pkey == nil || len(pkey) <= 0 {
+			pkey = vu.PubKey.GetSecp256K1()
+		}
+		// tendermint pubkey are marshalled in base64,
+		// so let's do this as well here for logging
+		spkey := base64.StdEncoding.EncodeToString(pkey)
+
+		t.log.Info("voting power update", logging.Uint64("block-height", t.currentBlockHeight), logging.String("pubKey", spkey), logging.Int64("power", vu.Power))
+	}
+
+	// update the ranking score and voting power in the validator set and emit an event
+	evts := make([]events.Event, 0, len(t.validators))
+	keys := make([]string, 0, len(t.validators))
+	for k := range t.validators {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	epochSeq := num.NewUint(t.epochSeq).String()
+	for _, nodeID := range keys {
+		vp, ok := nextValidatorsVotingPower[nodeID]
+		if !ok {
+			vp = 0
+		}
+
+		if vd, ok := t.validators[nodeID]; ok {
+			vd.rankingScore = &proto.RankingScore{
+				StakeScore:       stakeScore[nodeID].String(),
+				PerformanceScore: perfScore[nodeID].String(),
+				RankingScore:     rankingScore[nodeID].String(),
+				PreviousStatus:   vd.rankingScore.PreviousStatus, // we're not changing the status here
+				Status:           vd.rankingScore.Status,         // we're not changing the status here
+				VotingPower:      uint32(vp),
+			}
+			status := vd.rankingScore.Status
+			prev := vd.rankingScore.PreviousStatus
+
+			evts = append(evts, events.NewValidatorRanking(ctx, epochSeq, nodeID, stakeScore[nodeID].String(), perfScore[nodeID].String(), rankingScore[nodeID].String(), ValidatorStatusToName[ValidatorStatus(prev)], ValidatorStatusToName[ValidatorStatus(status)], int(vp)))
+		}
+	}
+	t.broker.SendBatch(evts)
+	return vUpdates
+}
+
 // RecalcValidatorSet is called at the before a new epoch is started to update the validator sets.
 // the delegation state corresponds to the epoch about to begin.
 func (t *Topology) RecalcValidatorSet(ctx context.Context, epochSeq string, delegationState []*types.ValidatorData, stakeScoreParams types.StakeScoreParams) {
@@ -443,6 +560,10 @@ func (t *Topology) calculateVotingPower(IDs []string, rankingScores map[string]n
 		}
 	}
 	return votingPower
+}
+
+func (t *Topology) RefreshVotingPowerNeeded() bool {
+	return t.currentBlockHeight > 0 && (t.currentBlockHeight%1000 == 0)
 }
 
 // GetValidatorPowerUpdates returns the voting power changes if this is the first block of an epoch.

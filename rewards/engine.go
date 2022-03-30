@@ -229,6 +229,10 @@ func calcTotalDelegation(d []*types.ValidatorData) num.Decimal {
 	return total.ToDecimal()
 }
 
+func (e *Engine) GetStakingParams() types.StakeScoreParams {
+	return types.StakeScoreParams{MinVal: e.global.minValidators, CompLevel: e.global.compLevel, OptimalStakeMultiplier: e.global.optimalStakeMultiplier}
+}
+
 func (e *Engine) calculateRewardPayouts(ctx context.Context, epoch types.Epoch) []*payout {
 	// get the validator delegation data from the delegation engine and calculate the staking and delegation rewards for the epoch
 	delegationState := e.delegation.ProcessEpochDelegations(ctx, epoch)

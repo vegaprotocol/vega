@@ -95,6 +95,7 @@ func New(
 			svcs.statevar,
 			svcs.blockchainClient,
 			svcs.erc20MultiSigTopology,
+			svcs.rewards,
 			stats.GetVersion(),
 		),
 		log:         log,
