@@ -88,8 +88,10 @@ type Engine struct {
 	maxShapesSize int64
 
 	// this is the max fee that can be specified
-	maxFee   num.Decimal
-	tickSize *num.Uint
+	maxFee num.Decimal
+
+	// this is the ratio between 10^{asset_dp} / 10^{market_dp}
+	priceFactor *num.Uint
 }
 
 // NewEngine returns a new Liquidity Engine.
@@ -102,6 +104,7 @@ func NewEngine(config Config,
 	marketID string,
 	stateVarEngine StateVarEngine,
 	tickSize *num.Uint,
+	priceFactor *num.Uint,
 	positionFactor num.Decimal,
 ) *Engine {
 	log = log.Named(namedLogger)
@@ -116,7 +119,7 @@ func NewEngine(config Config,
 		stakeToObligationFactor: num.DecimalFromInt64(1),
 		maxShapesSize:           100, // set it to the same default than the netparams
 		maxFee:                  num.DecimalFromInt64(1),
-		tickSize:                tickSize,
+		priceFactor:             priceFactor,
 		// provisions related state
 		provisions: newSnapshotableProvisionsPerParty(),
 		pendings:   newSnapshotablePendingProvisions(),
@@ -653,7 +656,7 @@ func (e *Engine) createOrUpdateForParty(
 
 func (e *Engine) buildOrder(side types.Side, price *num.Uint, partyID, marketID string, size uint64, ref string, lpID string) *types.Order {
 	op := price.Clone()
-	op.Div(op, e.tickSize)
+	op.Div(op, e.priceFactor)
 	order := &types.Order{
 		MarketID:             marketID,
 		Side:                 side,
