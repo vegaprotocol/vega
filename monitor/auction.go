@@ -30,7 +30,6 @@ func NewAuctionState(mkt *types.Market, now time.Time) *AuctionState {
 		defMode:      types.MarketTradingModeContinuous,
 		trigger:      types.AuctionTriggerOpening,
 		begin:        &now,
-		end:          mkt.OpeningAuction,
 		start:        true,
 		m:            mkt,
 		stateChanged: true,
@@ -46,6 +45,8 @@ func NewAuctionState(mkt *types.Market, now time.Time) *AuctionState {
 		s.begin = nil
 		s.start = false
 		s.trigger = types.AuctionTriggerUnspecified
+	} else {
+		s.end = mkt.OpeningAuction.DeepClone()
 	}
 	return &s
 }
