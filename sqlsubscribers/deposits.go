@@ -7,6 +7,7 @@ import (
 	"code.vegaprotocol.io/data-node/logging"
 	"code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/events"
+	"github.com/pkg/errors"
 )
 
 type DepositEvent interface {
@@ -36,24 +37,25 @@ func (d *Deposit) Types() []events.Type {
 	return []events.Type{events.DepositEvent}
 }
 
-func (d *Deposit) Push(evt events.Event) {
+func (d *Deposit) Push(evt events.Event) error {
 	switch e := evt.(type) {
 	case TimeUpdateEvent:
 		d.vegaTime = e.Time()
 	case DepositEvent:
-		d.consume(e)
+		return d.consume(e)
+	default:
+		return errors.Errorf("unknown event type %s", e.Type().String())
 	}
+
+	return nil
 }
 
-func (d *Deposit) consume(event DepositEvent) {
+func (d *Deposit) consume(event DepositEvent) error {
 	deposit := event.Deposit()
 	record, err := entities.DepositFromProto(&deposit, d.vegaTime)
 	if err != nil {
-		d.log.Error("converting deposit proto to database entity failed", logging.Error(err))
-		return
+		return errors.Wrap(err, "converting deposit proto to database entity failed")
 	}
 
-	if err = d.store.Upsert(record); err != nil {
-		d.log.Error("Inserting deposit to SQL store failed", logging.Error(err))
-	}
+	return errors.Wrap(d.store.Upsert(record), "inserting deposit to SQL store failed")
 }

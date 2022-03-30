@@ -8,6 +8,7 @@ import (
 	"code.vegaprotocol.io/data-node/logging"
 	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
 	"code.vegaprotocol.io/vega/events"
+	"github.com/pkg/errors"
 )
 
 type CheckpointEvent interface {
@@ -40,28 +41,30 @@ func (n *Checkpoint) Types() []events.Type {
 	return []events.Type{events.CheckpointEvent}
 }
 
-func (n *Checkpoint) Push(evt events.Event) {
+func (n *Checkpoint) Push(evt events.Event) error {
 	switch event := evt.(type) {
 	case TimeUpdateEvent:
 		n.vegaTime = event.Time()
 	case CheckpointEvent:
-		n.consume(event)
+		return n.consume(event)
 	default:
-		n.log.Panic("unknown event type in checkpoint subscriber",
-			logging.String("Type", event.Type().String()))
+		return errors.Errorf("unknown event type %s", event.Type().String())
 	}
+
+	return nil
 }
 
-func (n *Checkpoint) consume(event CheckpointEvent) {
+func (n *Checkpoint) consume(event CheckpointEvent) error {
 	pnp := event.Proto()
 	np, err := entities.CheckpointFromProto(&pnp)
 	if err != nil {
-		n.log.Error("unable to parse checkpoint", logging.Error(err))
-		return
+		return errors.Wrap(err, "unable to parse checkpoint")
 	}
 	np.VegaTime = n.vegaTime
 
 	if err := n.store.Add(context.Background(), np); err != nil {
-		n.log.Error("error adding checkpoint", logging.Error(err))
+		return errors.Wrap(err, "error adding checkpoint")
 	}
+
+	return nil
 }

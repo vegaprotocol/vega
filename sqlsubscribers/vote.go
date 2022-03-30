@@ -8,6 +8,7 @@ import (
 	"code.vegaprotocol.io/data-node/logging"
 	"code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/events"
+	"github.com/pkg/errors"
 )
 
 type VoteEvent interface {
@@ -43,19 +44,20 @@ func (vs *Vote) Types() []events.Type {
 	return []events.Type{events.VoteEvent}
 }
 
-func (vs *Vote) Push(evt events.Event) {
+func (vs *Vote) Push(evt events.Event) error {
 	switch event := evt.(type) {
 	case TimeUpdateEvent:
 		vs.vegaTime = event.Time()
 	case VoteEvent:
-		vs.consume(event)
+		return vs.consume(event)
 	default:
-		vs.log.Panic("Unknown event type in vote subscriber",
-			logging.String("Type", event.Type().String()))
+		return errors.Errorf("unknown event type %s", event.Type().String())
 	}
+
+	return nil
 }
 
-func (vs *Vote) consume(event VoteEvent) {
+func (vs *Vote) consume(event VoteEvent) error {
 	protoVote := event.Vote()
 	vote, err := entities.VoteFromProto(&protoVote)
 
@@ -65,11 +67,8 @@ func (vs *Vote) consume(event VoteEvent) {
 	vote.VegaTime = vs.vegaTime
 
 	if err != nil {
-		vs.log.Error("unable to parse vote", logging.Error(err))
-		return
+		return errors.Wrap(err, "unable to parse vote")
 	}
 
-	if err := vs.store.Add(context.Background(), vote); err != nil {
-		vs.log.Error("Error adding vote", logging.Error(err))
-	}
+	return errors.Wrap(vs.store.Add(context.Background(), vote), "error adding vote:%w")
 }

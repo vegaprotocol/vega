@@ -7,6 +7,7 @@ import (
 	"code.vegaprotocol.io/data-node/logging"
 	"code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/events"
+	"github.com/pkg/errors"
 )
 
 type RiskFactorEvent interface {
@@ -36,23 +37,25 @@ func (rf *RiskFactor) Types() []events.Type {
 	return []events.Type{events.RiskFactorEvent}
 }
 
-func (rf *RiskFactor) Push(evt events.Event) {
+func (rf *RiskFactor) Push(evt events.Event) error {
 	switch e := evt.(type) {
 	case TimeUpdateEvent:
 		rf.vegaTime = e.Time()
 	case RiskFactorEvent:
-		rf.consume(e)
+		return rf.consume(e)
+	default:
+		return errors.Errorf("unknown event type %s", e.Type().String())
 	}
+
+	return nil
 }
 
-func (rf *RiskFactor) consume(event RiskFactorEvent) {
+func (rf *RiskFactor) consume(event RiskFactorEvent) error {
 	riskFactor := event.RiskFactor()
 	record, err := entities.RiskFactorFromProto(&riskFactor, rf.vegaTime)
 	if err != nil {
-		rf.log.Error("converting risk factor proto to database entity failed", logging.Error(err))
+		return errors.Wrap(err, "converting risk factor proto to database entity failed")
 	}
 
-	if err = rf.store.Upsert(record); err != nil {
-		rf.log.Error("Inserting risk factor to SQL store failed", logging.Error(err))
-	}
+	return errors.Wrap(rf.store.Upsert(record), "inserting risk factor to SQL store failed")
 }

@@ -7,6 +7,7 @@ import (
 	"code.vegaprotocol.io/data-node/logging"
 	oraclespb "code.vegaprotocol.io/protos/vega/oracles/v1"
 	"code.vegaprotocol.io/vega/events"
+	"github.com/pkg/errors"
 )
 
 type OracleSpecEvent interface {
@@ -36,24 +37,25 @@ func (od *OracleSpec) Types() []events.Type {
 	return []events.Type{events.OracleSpecEvent}
 }
 
-func (od *OracleSpec) Push(evt events.Event) {
+func (od *OracleSpec) Push(evt events.Event) error {
 	switch e := evt.(type) {
 	case TimeUpdateEvent:
 		od.vegaTime = e.Time()
 	case OracleSpecEvent:
-		od.consume(e)
+		return od.consume(e)
+	default:
+		return errors.Errorf("unknown event type %s", e.Type().String())
 	}
+
+	return nil
 }
 
-func (od *OracleSpec) consume(event OracleSpecEvent) {
+func (od *OracleSpec) consume(event OracleSpecEvent) error {
 	spec := event.OracleSpec()
 	entity, err := entities.OracleSpecFromProto(&spec, od.vegaTime)
 	if err != nil {
-		od.log.Error("converting oracle spec to database entity failed", logging.Error(err))
-		return
+		return errors.Wrap(err, "converting oracle spec to database entity failed")
 	}
 
-	if err = od.store.Upsert(entity); err != nil {
-		od.log.Error("inserting oracle spec to SQL store failed", logging.Error(err))
-	}
+	return errors.Wrap(od.store.Upsert(entity), "inserting oracle spec to SQL store failed")
 }

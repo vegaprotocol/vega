@@ -7,6 +7,7 @@ import (
 	"code.vegaprotocol.io/data-node/logging"
 	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
 	"code.vegaprotocol.io/vega/events"
+	"github.com/pkg/errors"
 )
 
 type TransferEvent interface {
@@ -43,24 +44,26 @@ func (rf *Transfer) Types() []events.Type {
 	return []events.Type{events.TransferEvent}
 }
 
-func (rf *Transfer) Push(evt events.Event) {
+func (rf *Transfer) Push(evt events.Event) error {
 	switch e := evt.(type) {
 	case TimeUpdateEvent:
 		rf.vegaTime = e.Time()
 	case TransferEvent:
-		rf.consume(e)
+		return rf.consume(e)
+	default:
+		return errors.Errorf("unknown event type %s", e.Type().String())
 	}
+
+	return nil
 }
 
-func (rf *Transfer) consume(event TransferEvent) {
+func (rf *Transfer) consume(event TransferEvent) error {
 
 	transfer := event.TransferFunds()
 	record, err := entities.TransferFromProto(&transfer, rf.vegaTime, rf.accountSource)
 	if err != nil {
-		rf.log.Error("converting transfer proto to database entity failed", logging.Error(err))
+		return errors.Wrap(err, "converting transfer proto to database entity failed")
 	}
 
-	if err = rf.store.Upsert(record); err != nil {
-		rf.log.Error("Inserting transfer into to SQL store failed", logging.Error(err))
-	}
+	return errors.Wrap(rf.store.Upsert(record), "inserting transfer into to SQL store failed")
 }
