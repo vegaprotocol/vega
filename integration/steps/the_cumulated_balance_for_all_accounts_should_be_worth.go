@@ -4,24 +4,23 @@ import (
 	"fmt"
 
 	"code.vegaprotocol.io/vega/integration/stubs"
+	"code.vegaprotocol.io/vega/types/num"
 )
 
 func TheCumulatedBalanceForAllAccountsShouldBeWorth(broker *stubs.BrokerStub, rawAmount string) error {
-	amount, err := U64(rawAmount)
-	if err != nil {
-		panicW("balance", err)
-	}
+	amount, _ := num.UintFromString(rawAmount, 10)
 
-	var cumulatedBalance uint64
+	cumulatedBalance := num.Zero()
 	accounts := broker.GetAccounts()
 	for _, v := range accounts {
 		// remove vote token
 		if v.Asset != "VOTE" {
-			cumulatedBalance += stringToU64(v.Balance)
+			b, _ := num.UintFromString(v.Balance, 10)
+			cumulatedBalance.AddSum(b)
 		}
 	}
 
-	if amount != cumulatedBalance {
+	if !amount.EQ(cumulatedBalance) {
 		return fmt.Errorf("expected cumulated balance to be %v but found %v",
 			amount, cumulatedBalance,
 		)
