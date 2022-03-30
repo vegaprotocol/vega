@@ -13,6 +13,8 @@
 - [5100](https://github.com/vegaprotocol/vega/issues/5100) - add a new scenario into feature test, auction folder, leaving auction when liquidity provider provides a limit order
 - [4919](https://github.com/vegaprotocol/vega/issues/4919) - Feature tests for 0011 check order allocate margin
 - [4922](https://github.com/vegaprotocol/vega/issues/4922) - Feature tests for 0015 market insurance pool collateral
+- [4926](https://github.com/vegaprotocol/vega/issues/4926) - Feature tests for 0019 margin calculator scenarios
+
 
 ### 🐛 Fixes
 - [5078](https://github.com/vegaprotocol/vega/issues/5078) - Unwrap properly position decimal place from payload
