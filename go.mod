@@ -11,8 +11,7 @@ require (
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/cenkalti/backoff v2.2.1+incompatible
 	github.com/cosmos/iavl v0.15.3
-	github.com/cucumber/godog v0.11.0
-	github.com/cucumber/messages-go/v10 v10.0.3
+	github.com/cucumber/godog v0.12.5
 	github.com/ethereum/go-ethereum v1.10.16
 	github.com/fatih/color v1.13.0
 	github.com/fsnotify/fsnotify v1.5.1
@@ -47,7 +46,10 @@ require (
 	google.golang.org/protobuf v1.27.1
 )
 
-require github.com/grpc-ecosystem/grpc-gateway/v2 v2.9.0
+require (
+	github.com/cucumber/messages-go/v16 v16.0.1
+	github.com/grpc-ecosystem/grpc-gateway/v2 v2.9.0
+)
 
 require (
 	github.com/BurntSushi/toml v1.0.0 // indirect
@@ -64,7 +66,7 @@ require (
 	github.com/cespare/xxhash/v2 v2.1.2 // indirect
 	github.com/confio/ics23/go v0.6.3 // indirect
 	github.com/cosmos/go-bip39 v0.0.0-20180819234021-555e2067c45d // indirect
-	github.com/cucumber/gherkin-go/v11 v11.0.0 // indirect
+	github.com/cucumber/gherkin-go/v19 v19.0.3 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/deckarep/golang-set v1.8.0 // indirect
 	github.com/dgraph-io/badger/v2 v2.2007.2 // indirect
@@ -79,7 +81,7 @@ require (
 	github.com/go-kit/log v0.2.0 // indirect
 	github.com/go-logfmt/logfmt v0.5.1 // indirect
 	github.com/go-stack/stack v1.8.0 // indirect
-	github.com/gofrs/uuid v3.3.0+incompatible // indirect
+	github.com/gofrs/uuid v4.0.0+incompatible // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/google/orderedcode v0.0.1 // indirect
