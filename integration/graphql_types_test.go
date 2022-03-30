@@ -331,6 +331,19 @@ type Withdrawal struct {
 	WithdrawnTimeStamp string
 }
 
+type Transfer struct {
+	Id              string
+	From            string
+	FromAccountType string
+	To              string
+	ToAccountType   string
+	Amount          string
+	Reference       string
+	Status          string
+	Timestamp       time.Time
+	Asset           Asset
+}
+
 type Property struct {
 	Name  string
 	Value string

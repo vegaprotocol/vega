@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"code.vegaprotocol.io/protos/vega"
+	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
 	v1 "code.vegaprotocol.io/protos/vega/oracles/v1"
 	"github.com/jackc/pgtype"
 )
@@ -201,6 +202,74 @@ const (
 	// An FOK, IOC, or GFN order was rejected because it resulted in trades outside the price bounds.
 	OrderErrorNonPersistentOrderOutOfPriceBounds OrderError = vega.OrderError_ORDER_ERROR_NON_PERSISTENT_ORDER_OUT_OF_PRICE_BOUNDS
 )
+
+type TransferType int
+
+const (
+	Unknown TransferType = iota
+	OneOff
+	Recurring
+)
+
+const (
+	OneOffStr    = "OneOff"
+	RecurringStr = "Recurring"
+	UnknownStr   = "Unknown"
+)
+
+func (m TransferType) EncodeText(_ *pgtype.ConnInfo, buf []byte) ([]byte, error) {
+	mode := UnknownStr
+	switch m {
+	case OneOff:
+		mode = OneOffStr
+	case Recurring:
+		mode = RecurringStr
+	}
+
+	return append(buf, []byte(mode)...), nil
+}
+
+func (m *TransferType) DecodeText(_ *pgtype.ConnInfo, src []byte) error {
+	val := Unknown
+	switch string(src) {
+	case OneOffStr:
+		val = OneOff
+	case RecurringStr:
+		val = Recurring
+	}
+
+	*m = TransferType(val)
+	return nil
+}
+
+type TransferStatus eventspb.Transfer_Status
+
+const (
+	TransferStatusUnspecified = TransferStatus(eventspb.Transfer_STATUS_UNSPECIFIED)
+	TransferStatusPending     = TransferStatus(eventspb.Transfer_STATUS_PENDING)
+	TransferStatusDone        = TransferStatus(eventspb.Transfer_STATUS_DONE)
+	TransferStatusRejected    = TransferStatus(eventspb.Transfer_STATUS_REJECTED)
+	TransferStatusStopped     = TransferStatus(eventspb.Transfer_STATUS_STOPPED)
+	TransferStatusCancelled   = TransferStatus(eventspb.Transfer_STATUS_CANCELLED)
+)
+
+func (m TransferStatus) EncodeText(_ *pgtype.ConnInfo, buf []byte) ([]byte, error) {
+	mode, ok := eventspb.Transfer_Status_name[int32(m)]
+	if !ok {
+		return buf, fmt.Errorf("unknown transfer status: %s", mode)
+	}
+	return append(buf, []byte(mode)...), nil
+}
+
+func (m *TransferStatus) DecodeText(_ *pgtype.ConnInfo, src []byte) error {
+	val, ok := eventspb.Transfer_Status_value[string(src)]
+	if !ok {
+		return fmt.Errorf("unknown transfer status: %s", src)
+	}
+
+	*m = TransferStatus(val)
+	return nil
+}
 
 type MarketTradingMode vega.Market_TradingMode
 

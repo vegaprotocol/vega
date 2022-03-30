@@ -111,8 +111,8 @@ type GRPCServer struct {
 	oracleSpecStore         *sqlstore.OracleSpec
 	oracleDataStore         *sqlstore.OracleData
 	liquidityProvisionStore *sqlstore.LiquidityProvision
-
-	eventObserver *eventObserver
+	transfersStore          *sqlstore.Transfers
+	eventObserver           *eventObserver
 
 	// used in order to gracefully close streams
 	ctx   context.Context
@@ -176,6 +176,7 @@ func NewGRPCServer(
 	oracleSpecStore *sqlstore.OracleSpec,
 	oracleDataStore *sqlstore.OracleData,
 	liquidityProvisionStore *sqlstore.LiquidityProvision,
+	transfersStore *sqlstore.Transfers,
 ) *GRPCServer {
 	// setup logger
 	log = log.Named(namedLogger)
@@ -238,6 +239,8 @@ func NewGRPCServer(
 		oracleSpecStore:         oracleSpecStore,
 		oracleDataStore:         oracleDataStore,
 		liquidityProvisionStore: liquidityProvisionStore,
+		transfersStore:          transfersStore,
+
 		eventObserver: &eventObserver{
 			log:          log,
 			eventService: eventService,
@@ -406,6 +409,7 @@ func (g *GRPCServer) Start(ctx context.Context, lis net.Listener) error {
 			oracleSpecStore:         g.oracleSpecStore,
 			oracleDataStore:         g.oracleDataStore,
 			liquidityProvisionStore: g.liquidityProvisionStore,
+			transfersStore:          g.transfersStore,
 		}
 	} else {
 		g.tradingDataService = tradingDataSvc

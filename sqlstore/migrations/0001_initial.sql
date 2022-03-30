@@ -415,11 +415,45 @@ create table if not exists liquidity_provisions (
     primary key (id, vega_time)
 );
 
+
+CREATE TYPE transfer_type AS enum('OneOff','Recurring','Unknown');
+CREATE TYPE transfer_status AS enum('STATUS_UNSPECIFIED','STATUS_PENDING','STATUS_DONE','STATUS_REJECTED','STATUS_STOPPED','STATUS_CANCELLED');
+
+create table if not exists transfers (
+         id bytea not null,
+         vega_time timestamp with time zone not null references blocks(vega_time),
+         from_account_id INT NOT NULL REFERENCES accounts(id),
+         to_account_id INT NOT NULL REFERENCES accounts(id),
+         asset_id bytea not null,
+         amount        NUMERIC(32, 0)           NOT NULL,
+         reference       TEXT,
+         status           transfer_status NOT NULL,
+         transfer_type   transfer_type NOT NULL,
+         deliver_on      TIMESTAMP WITH TIME ZONE,
+         start_epoch     BIGINT,
+         end_epoch       BIGINT,
+         factor        NUMERIC(32, 16) ,
+
+         primary key (id, vega_time)
+);
+
+create index on transfers (from_account_id);
+create index on transfers (to_account_id);
+
+CREATE VIEW transfers_current AS ( SELECT DISTINCT ON (id) * FROM transfers ORDER BY id DESC, vega_time DESC);
+
+
 -- +goose Down
 DROP AGGREGATE IF EXISTS public.first(anyelement);
 DROP AGGREGATE IF EXISTS public.last(anyelement);
 DROP FUNCTION IF EXISTS public.first_agg(anyelement, anyelement);
 DROP FUNCTION IF EXISTS public.last_agg(anyelement, anyelement);
+
+DROP VIEW IF EXISTS transfers_current;
+DROP TABLE IF EXISTS transfers;
+DROP TYPE IF EXISTS transfer_status;
+DROP TYPE IF EXISTS transfer_type;
+
 
 DROP TABLE IF EXISTS checkpoints;
 

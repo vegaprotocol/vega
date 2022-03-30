@@ -105,6 +105,12 @@ func (t *Transfers) GetAll(
 		}
 	}
 
+	if !isTo && !isFrom {
+		for id := range t.transfers {
+			transferIDs[id] = struct{}{}
+		}
+	}
+
 	out := make([]*eventspb.Transfer, 0, len(transferIDs))
 	for k := range transferIDs {
 		tf := t.transfers[k]
