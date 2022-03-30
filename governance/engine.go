@@ -825,7 +825,10 @@ func (e *Engine) updateValidatorKey(ctx context.Context, m map[string]*types.Vot
 
 func (e *Engine) updatedMarketFromProposal(p *proposal) (*types.Market, types.ProposalError, error) {
 	change := p.Terms.GetUpdateMarket()
-	existingMarket, _ := e.markets.GetMarket(p.ID)
+	existingMarket, exists := e.markets.GetMarket(change.MarketID)
+	if !exists {
+		return nil, types.ProposalErrorInvalidMarket, fmt.Errorf("market \"%s\" doesn't exist anymore", change.MarketID)
+	}
 
 	newMarket := &types.NewMarket{
 		Changes: &types.NewMarketConfiguration{
