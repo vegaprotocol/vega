@@ -3580,7 +3580,7 @@ func TestOrderBook_ExpiredOrderTriggersReprice(t *testing.T) {
 	// Move the clock forward to expire the first order
 	now = now.Add(time.Second * 10)
 	tm.market.OnChainTimeUpdate(vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash()), now)
-	orders, err := tm.market.RemoveExpiredOrders(context.Background(), now.UnixNano())
+	orders, err := tm.market.RemoveExpiredOrders(ctx, now.UnixNano())
 	require.NoError(t, err)
 
 	// we have one order
@@ -3838,7 +3838,7 @@ func TestOrderBook_AmendTIME_IN_FORCEForPeggedOrder(t *testing.T) {
 	// Move the clock forward to expire any old orders
 	now = now.Add(time.Second * 10)
 	tm.market.OnChainTimeUpdate(vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash()), now)
-	orders, err := tm.market.RemoveExpiredOrders(context.Background(), now.UnixNano())
+	orders, err := tm.market.RemoveExpiredOrders(ctx, now.UnixNano())
 	require.Equal(t, 0, len(orders))
 	require.NoError(t, err)
 
@@ -3920,7 +3920,7 @@ func TestOrderBook_AmendTIME_IN_FORCEForPeggedOrder2(t *testing.T) {
 	// Move the clock forward to expire any old orders
 	now = now.Add(time.Second * 10)
 	tm.market.OnChainTimeUpdate(vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash()), now)
-	orders, err := tm.market.RemoveExpiredOrders(context.Background(), now.UnixNano())
+	orders, err := tm.market.RemoveExpiredOrders(ctx, now.UnixNano())
 	require.NoError(t, err)
 
 	// 1 expired order
