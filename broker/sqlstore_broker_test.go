@@ -102,8 +102,9 @@ type testSqlBrokerSubscriber struct {
 	receivedCh chan events.Event
 }
 
-func (t testSqlBrokerSubscriber) Push(evt events.Event) {
+func (t testSqlBrokerSubscriber) Push(evt events.Event) error {
 	t.receivedCh <- evt
+	return nil
 }
 
 func (t testSqlBrokerSubscriber) Types() []events.Type {

@@ -7,6 +7,7 @@ import (
 	"code.vegaprotocol.io/data-node/logging"
 	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
 	"code.vegaprotocol.io/vega/events"
+	"github.com/pkg/errors"
 )
 
 type StakeLinkingEvent interface {
@@ -36,24 +37,23 @@ func (sl *StakeLinking) Types() []events.Type {
 	return []events.Type{events.StakeLinkingEvent}
 }
 
-func (sl *StakeLinking) Push(evt events.Event) {
+func (sl *StakeLinking) Push(evt events.Event) error {
 	switch e := evt.(type) {
 	case TimeUpdateEvent:
 		sl.vegaTime = e.Time()
 	case StakeLinkingEvent:
-		sl.consume(e)
+		return sl.consume(e)
 	}
+
+	return nil
 }
 
-func (sl StakeLinking) consume(event StakeLinkingEvent) {
+func (sl StakeLinking) consume(event StakeLinkingEvent) error {
 	stake := event.StakeLinking()
 	entity, err := entities.StakeLinkingFromProto(&stake, sl.vegaTime)
 	if err != nil {
-		sl.log.Error("converting stake linking event to database entitiy failed", logging.Error(err))
-		return
+		return errors.Wrap(err, "converting stake linking event to database entity failed")
 	}
 
-	if err = sl.store.Upsert(entity); err != nil {
-		sl.log.Error("inserting stake linking event to SQL store failed", logging.Error(err))
-	}
+	return errors.Wrap(sl.store.Upsert(entity), "inserting stake linking event to SQL store failed")
 }

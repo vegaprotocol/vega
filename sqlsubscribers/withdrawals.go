@@ -7,6 +7,7 @@ import (
 	"code.vegaprotocol.io/data-node/logging"
 	"code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/events"
+	"github.com/pkg/errors"
 )
 
 type WithdrawalEvent interface {
@@ -36,23 +37,25 @@ func (w *Withdrawal) Types() []events.Type {
 	return []events.Type{events.WithdrawalEvent}
 }
 
-func (w *Withdrawal) Push(evt events.Event) {
+func (w *Withdrawal) Push(evt events.Event) error {
 	switch e := evt.(type) {
 	case TimeUpdateEvent:
 		w.vegaTime = e.Time()
 	case WithdrawalEvent:
-		w.consume(e)
+		return w.consume(e)
+	default:
+		return errors.Errorf("unknown event type %s", e.Type().String())
 	}
+
+	return nil
 }
 
-func (w *Withdrawal) consume(event WithdrawalEvent) {
+func (w *Withdrawal) consume(event WithdrawalEvent) error {
 	withdrawal := event.Withdrawal()
 	record, err := entities.WithdrawalFromProto(&withdrawal, w.vegaTime)
 	if err != nil {
-		w.log.Error("converting withdrawal proto to database entity failed", logging.Error(err))
+		return errors.Wrap(err, "converting withdrawal proto to database entity failed")
 	}
 
-	if err = w.store.Upsert(record); err != nil {
-		w.log.Error("Inserting withdrawal to SQL store failed", logging.Error(err))
-	}
+	return errors.Wrap(w.store.Upsert(record), "inserting withdrawal to SQL store failed")
 }

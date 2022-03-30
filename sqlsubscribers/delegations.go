@@ -8,6 +8,7 @@ import (
 	"code.vegaprotocol.io/data-node/logging"
 	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
 	"code.vegaprotocol.io/vega/events"
+	"github.com/pkg/errors"
 )
 
 type DelegationBalanceEvent interface {
@@ -40,28 +41,31 @@ func (ds *Delegation) Types() []events.Type {
 	return []events.Type{events.DelegationBalanceEvent}
 }
 
-func (ds *Delegation) Push(evt events.Event) {
-	switch event := evt.(type) {
+func (ds *Delegation) Push(e events.Event) error {
+	switch event := e.(type) {
 	case TimeUpdateEvent:
 		ds.vegaTime = event.Time()
 	case DelegationBalanceEvent:
-		ds.consume(event)
+		return ds.consume(event)
 	default:
-		ds.log.Panic("Unknown event type in delegation subscriber",
-			logging.String("Type", event.Type().String()))
+		return errors.Errorf("unknown event type %s", e.Type().String())
 	}
+
+	return nil
 }
 
-func (ds *Delegation) consume(event DelegationBalanceEvent) {
+func (ds *Delegation) consume(event DelegationBalanceEvent) error {
 	protoDBE := event.Proto()
 	delegation, err := entities.DelegationFromProto(&protoDBE)
 	if err != nil {
-		ds.log.Error("unable to parse delegation", logging.Error(err))
+		return errors.Wrap(err, "unable to parse delegation")
 	}
 
 	delegation.VegaTime = ds.vegaTime
 
 	if err := ds.store.Add(context.Background(), delegation); err != nil {
-		ds.log.Error("Error adding delegation", logging.Error(err))
+		return errors.Wrap(err, "error adding delegation")
 	}
+
+	return nil
 }

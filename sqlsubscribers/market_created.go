@@ -7,6 +7,7 @@ import (
 	"code.vegaprotocol.io/data-node/logging"
 	"code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/events"
+	"github.com/pkg/errors"
 )
 
 type MarketCreatedEvent interface {
@@ -36,25 +37,26 @@ func (m *MarketCreated) Types() []events.Type {
 	return []events.Type{events.MarketCreatedEvent}
 }
 
-func (m *MarketCreated) Push(evt events.Event) {
+func (m *MarketCreated) Push(evt events.Event) error {
 	switch e := evt.(type) {
 	case TimeUpdateEvent:
 		m.vegaTime = e.Time()
 	case MarketCreatedEvent:
-		m.consume(e)
+		return m.consume(e)
+	default:
+		return errors.Errorf("unknown event type %s", e.Type().String())
 	}
+
+	return nil
 }
 
-func (m *MarketCreated) consume(event MarketCreatedEvent) {
+func (m *MarketCreated) consume(event MarketCreatedEvent) error {
 	market := event.Market()
 	record, err := entities.NewMarketFromProto(&market, m.vegaTime)
 
 	if err != nil {
-		m.log.Error("Converting market proto to database entity failed", logging.Error(err))
-		return
+		return errors.Wrap(err, "converting market proto to database entity failed")
 	}
 
-	if err = m.store.Upsert(record); err != nil {
-		m.log.Error("Inserting market to SQL store failed", logging.Error(err))
-	}
+	return errors.Wrap(m.store.Upsert(record), "inserting market to SQL store failed:%w")
 }

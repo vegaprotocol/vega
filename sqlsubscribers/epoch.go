@@ -8,6 +8,7 @@ import (
 	"code.vegaprotocol.io/data-node/logging"
 	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
 	"code.vegaprotocol.io/vega/events"
+	"github.com/pkg/errors"
 )
 
 type EpochUpdateEvent interface {
@@ -40,24 +41,23 @@ func (es *Epoch) Types() []events.Type {
 	return []events.Type{events.EpochUpdate}
 }
 
-func (es *Epoch) Push(evt events.Event) {
+func (es *Epoch) Push(evt events.Event) error {
 	switch event := evt.(type) {
 	case TimeUpdateEvent:
 		es.vegaTime = event.Time()
 	case EpochUpdateEvent:
-		es.consume(event)
+		return es.consume(event)
 	default:
-		es.log.Panic("Unknown event type in epoch update subscriber",
-			logging.String("Type", event.Type().String()))
+		return errors.Errorf("unknown event type %s", evt.Type().String())
 	}
+
+	return nil
 }
 
-func (es *Epoch) consume(event EpochUpdateEvent) {
+func (es *Epoch) consume(event EpochUpdateEvent) error {
 	epochUpdateEvent := event.Proto()
 	epoch := entities.EpochFromProto(epochUpdateEvent)
 	epoch.VegaTime = es.vegaTime
 
-	if err := es.store.Add(context.Background(), epoch); err != nil {
-		es.log.Error("Error adding epoch update", logging.Error(err))
-	}
+	return errors.Wrap(es.store.Add(context.Background(), epoch), "error adding epoch update")
 }

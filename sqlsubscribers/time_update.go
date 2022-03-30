@@ -7,6 +7,7 @@ import (
 	"code.vegaprotocol.io/data-node/entities"
 	"code.vegaprotocol.io/data-node/logging"
 	"code.vegaprotocol.io/vega/events"
+	"github.com/pkg/errors"
 )
 
 type TimeUpdateEvent interface {
@@ -39,17 +40,16 @@ func (t *Time) Types() []events.Type {
 	return []events.Type{events.TimeUpdate}
 }
 
-func (t *Time) Push(evt events.Event) {
+func (t *Time) Push(evt events.Event) error {
 	switch et := evt.(type) {
 	case TimeUpdateEvent:
-		t.consume(et)
+		return t.consume(et)
 	default:
-		t.log.Panic("Unknown event type in time subscriber",
-			logging.String("Type", et.Type().String()))
+		return errors.Errorf("unknown event type %s", et.Type().String())
 	}
 }
 
-func (t *Time) consume(te TimeUpdateEvent) {
+func (t *Time) consume(te TimeUpdateEvent) error {
 	hash, err := hex.DecodeString(te.TraceID())
 	if err != nil {
 		t.log.Panic("Trace ID is not valid hex string",
@@ -63,9 +63,11 @@ func (t *Time) consume(te TimeUpdateEvent) {
 		Height:   te.BlockNr(),
 	}
 
+	//@Todo figure out why still getting dup key violation on this at startup:return errors.Wrap(t.store.Add(block), "error adding block")
 	err = t.store.Add(block)
 	if err != nil {
-		t.log.Error("Error adding block",
-			logging.Error(err))
+		t.log.Errorf("error adding block:%s", err)
 	}
+
+	return nil
 }

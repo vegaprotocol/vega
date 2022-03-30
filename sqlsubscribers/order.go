@@ -8,6 +8,7 @@ import (
 	"code.vegaprotocol.io/data-node/logging"
 	"code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/events"
+	"github.com/pkg/errors"
 )
 
 type OrderEvent interface {
@@ -36,30 +37,27 @@ func (os *Order) Types() []events.Type {
 	return []events.Type{events.OrderEvent}
 }
 
-func (os *Order) Push(evt events.Event) {
+func (os *Order) Push(evt events.Event) error {
 	switch e := evt.(type) {
 	case TimeUpdateEvent:
 		os.vegaTime = e.Time()
 	case OrderEvent:
-		os.consume(e)
+		return os.consume(e)
 	default:
-		os.log.Panic("Unknown event type in order subscriber",
-			logging.String("Type", e.Type().String()))
+		return errors.Errorf("unknown event type %s", e.Type().String())
 	}
+
+	return nil
 }
 
-func (os *Order) consume(oe OrderEvent) {
+func (os *Order) consume(oe OrderEvent) error {
 	protoOrder := oe.Order()
 
 	order, err := entities.OrderFromProto(protoOrder)
 	if err != nil {
-		os.log.Errorf("deserializing order: %v", err)
-		return
+		return errors.Wrap(err, "deserializing order")
 	}
 	order.VegaTime = os.vegaTime
-	err = os.store.Add(context.Background(), order)
-	if err != nil {
-		os.log.Errorf("adding order to database: %v", err)
-		return
-	}
+
+	return errors.Wrap(os.store.Add(context.Background(), order), "adding order to database")
 }

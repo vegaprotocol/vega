@@ -1,7 +1,6 @@
 package sqlsubscribers
 
 import (
-	"fmt"
 	"math"
 	"strconv"
 	"time"
@@ -10,6 +9,7 @@ import (
 	"code.vegaprotocol.io/data-node/logging"
 	"code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/events"
+	"github.com/pkg/errors"
 
 	"github.com/shopspring/decimal"
 )
@@ -40,34 +40,37 @@ func (a *Asset) Types() []events.Type {
 	return []events.Type{events.AssetEvent}
 }
 
-func (as *Asset) Push(evt events.Event) {
+func (as *Asset) Push(evt events.Event) error {
 	switch e := evt.(type) {
 	case TimeUpdateEvent:
 		as.vegaTime = e.Time()
 	case AssetEvent:
-		as.consume(e)
+		return as.consume(e)
 	default:
-		as.log.Panic("Unknown event type in transfer response subscriber",
-			logging.String("Type", e.Type().String()))
+		return errors.Errorf("unknown event type %s", e.Type().String())
 	}
+
+	return nil
 }
 
-func (as *Asset) consume(ae AssetEvent) {
+func (as *Asset) consume(ae AssetEvent) error {
 	err := as.addAsset(ae.Asset(), as.vegaTime)
 	if err != nil {
-		as.log.Error("adding asset", logging.Error(err))
+		return errors.WithStack(err)
 	}
+
+	return nil
 }
 
 func (as *Asset) addAsset(va vega.Asset, vegaTime time.Time) error {
 	totalSupply, err := decimal.NewFromString(va.Details.TotalSupply)
 	if err != nil {
-		return fmt.Errorf("bad total supply '%v'", va.Details.TotalSupply)
+		return errors.Errorf("bad total supply '%v'", va.Details.TotalSupply)
 	}
 
 	quantum, err := strconv.Atoi(va.Details.Quantum)
 	if err != nil {
-		return fmt.Errorf("bad quantum '%v'", va.Details.Quantum)
+		return errors.Errorf("bad quantum '%v'", va.Details.Quantum)
 	}
 
 	var source, erc20Contract string
@@ -78,11 +81,11 @@ func (as *Asset) addAsset(va vega.Asset, vegaTime time.Time) error {
 	case *vega.AssetDetails_Erc20:
 		erc20Contract = src.Erc20.ContractAddress
 	default:
-		return fmt.Errorf("unknown asset source: %v", source)
+		return errors.Errorf("unknown asset source: %v", source)
 	}
 
 	if va.Details.Decimals > math.MaxInt {
-		return fmt.Errorf("decimals value will cause integer overflow: %d", va.Details.Decimals)
+		return errors.Errorf("decimals value will cause integer overflow: %d", va.Details.Decimals)
 	}
 
 	decimals := int(va.Details.Decimals)
@@ -99,9 +102,5 @@ func (as *Asset) addAsset(va vega.Asset, vegaTime time.Time) error {
 		VegaTime:      vegaTime,
 	}
 
-	err = as.store.Add(asset)
-	if err != nil {
-		return fmt.Errorf("adding asset to store: %w", err)
-	}
-	return nil
+	return errors.WithStack(as.store.Add(asset))
 }

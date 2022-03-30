@@ -7,6 +7,7 @@ import (
 	"code.vegaprotocol.io/data-node/logging"
 	"code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/events"
+	"github.com/pkg/errors"
 )
 
 type LiquidityProvisionEvent interface {
@@ -36,24 +37,25 @@ func (lp *LiquidityProvision) Types() []events.Type {
 	return []events.Type{events.LiquidityProvisionEvent}
 }
 
-func (lp *LiquidityProvision) Push(evt events.Event) {
+func (lp *LiquidityProvision) Push(evt events.Event) error {
 	switch e := evt.(type) {
 	case TimeUpdateEvent:
 		lp.vegaTime = e.Time()
 	case LiquidityProvisionEvent:
-		lp.consume(e)
+		return lp.consume(e)
+	default:
+		return errors.Errorf("unknown event type %s", e.Type().String())
 	}
+
+	return nil
 }
 
-func (lp *LiquidityProvision) consume(event LiquidityProvisionEvent) {
+func (lp *LiquidityProvision) consume(event LiquidityProvisionEvent) error {
 	provision := event.LiquidityProvision()
 	entity, err := entities.LiquidityProvisionFromProto(provision, lp.vegaTime)
 	if err != nil {
-		lp.log.Error("converting liquidity provision to database entity failed", logging.Error(err))
-		return
+		return errors.Wrap(err, "converting liquidity provision to database entity failed")
 	}
 
-	if err = lp.store.Upsert(entity); err != nil {
-		lp.log.Error("inserting liquidity provision to SQL store failed", logging.Error(err))
-	}
+	return errors.Wrap(lp.store.Upsert(entity), "inserting liquidity provision to SQL store failed")
 }

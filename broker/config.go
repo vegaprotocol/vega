@@ -16,6 +16,7 @@ type Config struct {
 	FileEventSourceConfig       FileEventSourceConfig `group:"FileEventSourceConfig" namespace:"fileeventsource"`
 	UseEventFile                encoding.Bool         `long:"use-event-file" description:"set to true to source events from a file"`
 	UseSequentialSqlStoreBroker encoding.Bool         `long:"use-sequential-sql-store-broker"`
+	PanicOnError                encoding.Bool         `long:"panic-on-error" description:"if an error occurs on event push the broker will panic, else log the error"`
 }
 
 // NewDefaultConfig creates an instance of config with default values.
@@ -35,6 +36,7 @@ func NewDefaultConfig() Config {
 		},
 		UseEventFile:                false,
 		UseSequentialSqlStoreBroker: true,
+		PanicOnError:                true,
 	}
 }
 

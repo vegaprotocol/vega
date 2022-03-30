@@ -8,6 +8,7 @@ import (
 	"code.vegaprotocol.io/data-node/logging"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/types"
+	"github.com/pkg/errors"
 )
 
 type PartyEvent interface {
@@ -40,25 +41,24 @@ func (ps *Party) Types() []events.Type {
 	return []events.Type{events.PartyEvent}
 }
 
-func (ps *Party) Push(evt events.Event) {
+func (ps *Party) Push(evt events.Event) error {
 	switch event := evt.(type) {
 	case TimeUpdateEvent:
 		ps.vegaTime = event.Time()
 	case PartyEvent:
-		ps.consume(event)
+		return ps.consume(event)
 	default:
-		ps.log.Panic("unknown event type in party subscriber",
-			logging.String("Type", event.Type().String()))
+		return errors.Errorf("unknown event type %s", event.Type().String())
 	}
+
+	return nil
 }
 
-func (ps *Party) consume(event PartyEvent) {
+func (ps *Party) consume(event PartyEvent) error {
 	pp := event.Party()
 	p := entities.PartyFromProto(&pp)
 	vt := ps.vegaTime
 	p.VegaTime = &vt
 
-	if err := ps.store.Add(context.Background(), p); err != nil {
-		ps.log.Error("error adding party", logging.Error(err))
-	}
+	return errors.Wrap(ps.store.Add(context.Background(), p), "error adding party:%w")
 }

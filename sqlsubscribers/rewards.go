@@ -8,6 +8,7 @@ import (
 	"code.vegaprotocol.io/data-node/logging"
 	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
 	"code.vegaprotocol.io/vega/events"
+	"github.com/pkg/errors"
 )
 
 type RewardPayoutEvent interface {
@@ -40,31 +41,30 @@ func (rs *Reward) Types() []events.Type {
 	return []events.Type{events.RewardPayoutEvent}
 }
 
-func (rs *Reward) Push(evt events.Event) {
+func (rs *Reward) Push(evt events.Event) error {
 	switch event := evt.(type) {
 	case TimeUpdateEvent:
 		rs.vegaTime = event.Time()
 	case RewardPayoutEvent:
-		rs.consume(event)
+		return rs.consume(event)
 	default:
-		rs.log.Panic("Unknown event type in rewards subscriber",
-			logging.String("Type", event.Type().String()))
+		return errors.Errorf("unknown event type %s", event.Type().String())
 	}
+
+	return nil
 }
 
-func (rs *Reward) consume(event RewardPayoutEvent) {
+func (rs *Reward) consume(event RewardPayoutEvent) error {
 	protoRewardPayoutEvent := event.RewardPayoutEvent()
 	reward, err := entities.RewardFromProto(protoRewardPayoutEvent)
 	if err != nil {
-		rs.log.Error("unable to parse reward", logging.Error(err))
+		return errors.Wrap(err, "unable to parse reward")
 	}
 
 	if reward.VegaTime != rs.vegaTime {
-		rs.log.Error("reward timestamp does not match current VegaTime",
-			logging.Reflect("reward", protoRewardPayoutEvent))
+		return errors.Errorf("reward timestamp does not match current VegaTime. Reward:%v",
+			protoRewardPayoutEvent)
 	}
 
-	if err := rs.store.Add(context.Background(), reward); err != nil {
-		rs.log.Error("Error adding reward payout", logging.Error(err))
-	}
+	return errors.Wrap(rs.store.Add(context.Background(), reward), "error adding reward payout")
 }
