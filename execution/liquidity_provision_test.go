@@ -981,7 +981,7 @@ func TestSubmit(t *testing.T) {
 		auctionEnd := now.Add(10001 * time.Second)
 		mktCfg := getMarketWithDP(closingAt, pMonitorSettings, &types.AuctionDuration{
 			Duration: 10000,
-		}, 4)
+		}, 0)
 		mktCfg.Fees = &types.Fees{
 			Factors: &types.FeeFactors{
 				InfrastructureFee: num.DecimalFromFloat(0.0005),
