@@ -294,6 +294,7 @@ func newServices(
 func (svcs *allServices) Stop() {
 	svcs.confWatcher.Unregister(svcs.confListenerIDs)
 	svcs.eventForwarderEngine.Stop()
+	svcs.snapshot.Close()
 }
 
 func (svcs *allServices) registerConfigWatchers() {
