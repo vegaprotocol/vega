@@ -196,6 +196,7 @@ func testTendermintValidatorsNumberReduced(t *testing.T) {
 func testTendermintFreeSlotsPromotion(t *testing.T) {
 	topology := NewTopology(logging.NewLoggerFromConfig(logging.Config{}), NewDefaultConfig(), nil, nil, true, nil, &DummyMultiSigTopology{})
 	topology.numberOfTendermintValidators = 5
+	topology.numberOfErsatzValidators = 1
 	topology.validators["node1"] = &valState{
 		data: ValidatorData{
 			ID:       "node1",
@@ -306,6 +307,7 @@ func testTendermintFreeSlotsPromotion(t *testing.T) {
 func testSwapBestErsatzWithWorstTendermint(t *testing.T) {
 	topology := NewTopology(logging.NewLoggerFromConfig(logging.Config{}), NewDefaultConfig(), nil, nil, true, nil, &DummyMultiSigTopology{})
 	topology.numberOfTendermintValidators = 4
+	topology.numberOfErsatzValidators = 1
 	topology.validators["node1"] = &valState{
 		data: ValidatorData{
 			ID:       "node1",
