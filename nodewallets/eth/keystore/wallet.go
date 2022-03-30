@@ -2,7 +2,6 @@ package keystore
 
 import (
 	"fmt"
-	"io/fs"
 	"os"
 	"path/filepath"
 
@@ -13,8 +12,12 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/keystore"
 )
 
+type loader interface {
+	Load(walletName, passphrase string) (*Wallet, error)
+}
+
 type Wallet struct {
-	homeDir    string
+	loader     loader
 	name       string
 	acc        accounts.Account
 	ks         *keystore.KeyStore
@@ -22,7 +25,7 @@ type Wallet struct {
 	address    crypto.PublicKey
 }
 
-func newWallet(walletHome, walletName, passphrase string, data []byte) (*Wallet, error) {
+func newWallet(loader loader, walletName, passphrase string, data []byte) (*Wallet, error) {
 	// NewKeyStore always create a new wallet key store file
 	// we create this in tmp as we do not want to impact the original one.
 	tempFile := filepath.Join(os.TempDir(), vgrand.RandomStr(10))
@@ -40,7 +43,7 @@ func newWallet(walletHome, walletName, passphrase string, data []byte) (*Wallet,
 	address := crypto.NewPublicKey(acc.Address.Hex(), acc.Address.Bytes())
 
 	return &Wallet{
-		homeDir:    walletHome,
+		loader:     loader,
 		name:       walletName,
 		acc:        acc,
 		ks:         ks,
@@ -84,17 +87,11 @@ func (w *Wallet) Reload(details registryloader.EthereumWalletDetails) error {
 		return fmt.Errorf("failed to get EthereumKeyStoreWallet")
 	}
 
-	data, err := fs.ReadFile(os.DirFS(w.homeDir), w.name)
+	nW, err := w.loader.Load(d.Name, d.Passphrase)
 	if err != nil {
-		return fmt.Errorf("couldn't read wallet file: %v", err)
+		return fmt.Errorf("failed to load new wallet: %w", err)
 	}
 
-	nW, err := newWallet(w.homeDir, d.Name, d.Passphrase, data)
-	if err != nil {
-		return fmt.Errorf("couldn't create wallet: %w", err)
-	}
-
-	w.homeDir = nW.homeDir
 	w.name = nW.name
 	w.acc = nW.acc
 	w.ks = nW.ks

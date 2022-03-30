@@ -1,4 +1,4 @@
-package socket
+package admin
 
 import (
 	"context"
@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"os"
 
-	"code.vegaprotocol.io/vega/api"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/nodewallets"
 	"github.com/gorilla/mux"
@@ -14,30 +13,26 @@ import (
 	"github.com/gorilla/rpc/json"
 )
 
-const (
-	namedLogger = "api.socket"
-)
-
-// SocketServer implement a socket server allowing to run simple RPC commands
-type SocketServer struct {
+// Server implement a socket server allowing to run simple RPC commands
+type Server struct {
 	log         *logging.Logger
-	cfg         api.Config
+	cfg         Config
 	srv         *http.Server
 	nodeWallets *nodewallets.NodeWallets
 }
 
-// NewSocketServer returns a new instance of the RPC socket server.
-func NewSocketServer(
+// NewServer returns a new instance of the RPC socket server
+func NewServer(
 	log *logging.Logger,
-	config api.Config,
+	config Config,
 	nodeWallets *nodewallets.NodeWallets,
-) *SocketServer {
+) *Server {
 
 	// setup logger
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
 
-	return &SocketServer{
+	return &Server{
 		log:         log,
 		cfg:         config,
 		nodeWallets: nodeWallets,
@@ -46,7 +41,7 @@ func NewSocketServer(
 }
 
 // ReloadConf update the internal configuration of the server.
-func (s *SocketServer) ReloadConf(cfg api.Config) {
+func (s *Server) ReloadConf(cfg Config) {
 	s.log.Info("reloading configuration")
 	if s.log.GetLevel() != cfg.Level.Get() {
 		s.log.Info("updating log level",
@@ -62,12 +57,12 @@ func (s *SocketServer) ReloadConf(cfg api.Config) {
 }
 
 // Start start the server.
-func (s *SocketServer) Start() {
+func (s *Server) Start() {
 	logger := s.log
 
-	logger.Info("Starting Socket<>RPC based API",
-		logging.String("file-path", s.cfg.Socket.FilePath),
-		logging.String("http-path", s.cfg.Socket.HttpPath))
+	logger.Info("Starting Server<>RPC based API",
+		logging.String("socket-path", s.cfg.Server.SocketPath),
+		logging.String("http-path", s.cfg.Server.HttpPath))
 
 	rs := rpc.NewServer()
 	rs.RegisterCodec(json.NewCodec(), "application/json")
@@ -75,12 +70,12 @@ func (s *SocketServer) Start() {
 
 	rs.RegisterService(newNodeWallet(s.log, s.nodeWallets), "")
 	r := mux.NewRouter()
-	r.Handle(s.cfg.Socket.HttpPath, rs)
+	r.Handle(s.cfg.Server.HttpPath, rs)
 
 	// Try to remove just in case
-	os.Remove(s.cfg.Socket.FilePath)
+	os.Remove(s.cfg.Server.SocketPath)
 
-	l, err := net.Listen("unix", s.cfg.Socket.FilePath)
+	l, err := net.Listen("unix", s.cfg.Server.SocketPath)
 	if err != nil {
 		logger.Panic("Failed to open unix socket", logging.Error(err))
 	}
@@ -89,19 +84,19 @@ func (s *SocketServer) Start() {
 		Handler: r,
 	}
 
-	logger.Info("Serving Socket<>RPC based API")
+	logger.Info("Serving Server<>RPC based API")
 	if err := s.srv.Serve(l); err != nil {
-		logger.Panic("Failed to serve Socket<>RPC based API", logging.Error(err))
+		logger.Panic("Failed to serve Server<>RPC based API", logging.Error(err))
 	}
 }
 
 // Stop stops the server.
-func (s *SocketServer) Stop() {
+func (s *Server) Stop() {
 	if s.srv != nil {
-		s.log.Info("Stopping Socket<>RPC based API")
+		s.log.Info("Stopping Server<>RPC based API")
 
 		if err := s.srv.Shutdown(context.Background()); err != nil {
-			s.log.Error("Failed to stop Socket<>RPC based API cleanly",
+			s.log.Error("Failed to stop Server<>RPC based API cleanly",
 				logging.Error(err))
 		}
 	}

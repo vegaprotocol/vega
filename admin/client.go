@@ -1,4 +1,4 @@
-package socket
+package admin
 
 import (
 	"bytes"
@@ -8,44 +8,40 @@ import (
 	"net/http"
 	"net/url"
 
-	"code.vegaprotocol.io/vega/api"
 	"code.vegaprotocol.io/vega/logging"
 	"github.com/gorilla/rpc/json"
 )
 
-// SocketClient implement a socket client allowing to run simple RPC commands
-type SocketClient struct {
+// Client implement a socket client allowing to run simple RPC commands
+type Client struct {
 	log  *logging.Logger
-	cfg  api.Config
+	cfg  Config
 	http *http.Client
 }
 
-// NewSocketClient returns a new instance of the RPC socket client.
-func NewSocketClient(
+// Client returns a new instance of the RPC socket client.
+func NewClient(
 	log *logging.Logger,
-	config api.Config,
-) *SocketClient {
-
-	// l, err := net.Listen("unix", s.cfg.Socket.FilePath)
-
+	config Config,
+) *Client {
 	// setup logger
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
 
-	return &SocketClient{
+	return &Client{
 		log: log,
 		cfg: config,
 		http: &http.Client{
 			Transport: &http.Transport{
 				DialContext: func(_ context.Context, _, _ string) (net.Conn, error) {
-					return net.Dial("unix", config.Socket.FilePath)
+					return net.Dial("unix", config.Server.SocketPath)
 				},
 			},
 		},
 	}
 }
 
-func (s *SocketClient) call(method string, args any, reply any) error {
+func (s *Client) call(method string, args any, reply any) error {
 	req, err := json.EncodeClientRequest(method, args)
 	if err != nil {
 		return fmt.Errorf("failed to encode client JSON request: %w", err)
@@ -54,7 +50,7 @@ func (s *SocketClient) call(method string, args any, reply any) error {
 	u := url.URL{
 		Scheme: "http",
 		Host:   "unix",
-		Path:   s.cfg.Socket.HttpPath,
+		Path:   s.cfg.Server.HttpPath,
 	}
 
 	resp, err := s.http.Post(u.String(), "application/json", bytes.NewReader(req))
@@ -71,7 +67,7 @@ func (s *SocketClient) call(method string, args any, reply any) error {
 	return nil
 }
 
-func (s *SocketClient) NodeWalletReload(chain string) (*NodeWalletReloadReply, error) {
+func (s *Client) NodeWalletReload(chain string) (*NodeWalletReloadReply, error) {
 	var reply NodeWalletReloadReply
 
 	if err := s.call("NodeWallet.Reload", NodeWalletArgs{Chain: chain}, &reply); err != nil {
@@ -81,7 +77,7 @@ func (s *SocketClient) NodeWalletReload(chain string) (*NodeWalletReloadReply, e
 	return &reply, nil
 }
 
-func (s *SocketClient) NodeWalletShow(chain string) (*Wallet, error) {
+func (s *Client) NodeWalletShow(chain string) (*Wallet, error) {
 	var reply Wallet
 
 	if err := s.call("NodeWallet.Show", NodeWalletArgs{Chain: chain}, &reply); err != nil {

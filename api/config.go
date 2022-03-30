@@ -20,8 +20,7 @@ type Config struct {
 	StreamRetries   int               `long:"stream-retries"`
 	DisableTxCommit bool              `long:"disable-tx-commit"`
 
-	REST   RESTServiceConfig   `group:"REST" namespace:"rest"`
-	Socket SocketServiceConfig `group:"Socket" namespace:"socket"`
+	REST RESTServiceConfig `group:"REST" namespace:"rest"`
 }
 
 // RESTGatewayServiceConfig represent the configuration of the rest service.
@@ -30,13 +29,6 @@ type RESTServiceConfig struct {
 	IP         string        `long:"ip" description:"Bind to address <ip>"`
 	Enabled    encoding.Bool `long:"enabled" choice:"true"  description:"Start the REST gateway"`
 	APMEnabled encoding.Bool `long:"apm-enabled" choice:"true"  description:" "`
-}
-
-// SocketServiceConfig represent the configuration of the socket service.
-type SocketServiceConfig struct {
-	FilePath string        `long:"file-path" description:"Listen for connection on file path <file-path>"`
-	HttpPath string        `long:"http-path" description:"Http path of the socket HTTP RPC server"`
-	Enabled  encoding.Bool `long:"enabled" choice:"true"  description:"Start the socket server"`
 }
 
 // NewDefaultConfig creates an instance of the package specific configuration, given a
@@ -55,11 +47,6 @@ func NewDefaultConfig() Config {
 			Port:       3003,
 			Enabled:    true,
 			APMEnabled: true,
-		},
-		Socket: SocketServiceConfig{
-			FilePath: "/tmp/vega.sock",
-			HttpPath: "/rpc",
-			Enabled:  true,
 		},
 	}
 }

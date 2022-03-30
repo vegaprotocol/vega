@@ -6,8 +6,7 @@ import (
 	vgjson "code.vegaprotocol.io/shared/libs/json"
 	"code.vegaprotocol.io/shared/paths"
 
-	"code.vegaprotocol.io/vega/api"
-	"code.vegaprotocol.io/vega/api/socket"
+	"code.vegaprotocol.io/vega/admin"
 	"code.vegaprotocol.io/vega/config"
 	vgfmt "code.vegaprotocol.io/vega/libs/fmt"
 	"code.vegaprotocol.io/vega/logging"
@@ -18,9 +17,7 @@ import (
 type reloadCmd struct {
 	config.OutputFlag
 
-	Config api.Config
-
-	WalletPassphrase config.Passphrase `long:"wallet-passphrase-file"`
+	Config admin.Config
 
 	Chain string `short:"c" long:"chain" required:"true" description:"The chain to be imported" choice:"vega" choice:"ethereum"`
 }
@@ -41,13 +38,13 @@ func (opts *reloadCmd) Execute(_ []string) error {
 		return err
 	}
 
-	opts.Config = conf.API
+	opts.Config = conf.Admin
 
 	if _, err := flags.NewParser(opts, flags.Default|flags.IgnoreUnknown).Parse(); err != nil {
 		return err
 	}
 
-	sc := socket.NewSocketClient(log, opts.Config)
+	sc := admin.NewClient(log, opts.Config)
 
 	var data map[string]string
 	switch opts.Chain {

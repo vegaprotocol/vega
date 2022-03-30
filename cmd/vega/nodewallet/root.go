@@ -3,7 +3,7 @@ package nodewallet
 import (
 	"context"
 
-	"code.vegaprotocol.io/vega/api"
+	"code.vegaprotocol.io/vega/admin"
 	"code.vegaprotocol.io/vega/config"
 	"code.vegaprotocol.io/vega/nodewallets"
 
@@ -43,7 +43,7 @@ func NodeWallet(ctx context.Context, parser *flags.Parser) error {
 			Config: nodewallets.NewDefaultConfig(),
 		},
 		Reload: reloadCmd{
-			Config: api.NewDefaultConfig(),
+			Config: admin.NewDefaultConfig(),
 		},
 	}
 
