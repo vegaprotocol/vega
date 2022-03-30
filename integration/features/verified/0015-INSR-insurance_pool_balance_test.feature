@@ -1,6 +1,6 @@
-Feature: Test closeout type 1: margin >= cost of closeout
+Feature: Test closeout type 1: margin >= cost of closeout 
 
-  Scenario: case 1 (using simple risk model) from https://docs.google.com/spreadsheets/d/1CIPH0aQmIKj6YeFW9ApP_l-jwB4OcsNQ/edit#gid=1555964910
+Scenario: case 1 (using simple risk model) from https://docs.google.com/spreadsheets/d/1CIPH0aQmIKj6YeFW9ApP_l-jwB4OcsNQ/edit#gid=1555964910 (0015-INSR-001, 0015-INSR-003)
   Background:
 
     And the simple risk model named "simple-risk-model-1":
@@ -18,7 +18,9 @@ Feature: Test closeout type 1: margin >= cost of closeout
       | name                           | value |
       | market.auction.minimumDuration | 1     |
 
-# setup accounts
+   # setup accounts
+
+    Given the insurance pool balance should be "0" for the market "ETH/DEC19"
     Given the initial insurance pool balance is "15000" for the markets:
     Given the parties deposit on asset's general account the following amount:
       | party            | asset | amount     |
@@ -268,7 +270,7 @@ Feature: Test closeout type 1: margin >= cost of closeout
        | party2 | 201    | -7096          | 0            |
        | party3 | 0      | 0              | -30000       |
 
-Scenario: case 2 using lognomal risk model
+Scenario: case 2 using lognomal risk model (0015-INSR-003)
   Background:
 
     And the log normal risk model named "lognormal-risk-model-fish":
@@ -292,7 +294,7 @@ Scenario: case 2 using lognomal risk model
       | name                           | value |
       | market.auction.minimumDuration | 1     |
 
-# setup accounts
+    # setup accounts
     Given the initial insurance pool balance is "15000" for the markets:
     Given the parties deposit on asset's general account the following amount:
       | party            | asset | amount     |
@@ -304,7 +306,7 @@ Scenario: case 2 using lognomal risk model
       | aux1             | USD   | 1000000000 |
       | aux2             | USD   | 1000000000 |
      #And the cumulated balance for all accounts should be worth "4050075000"
-# setup order book
+  # setup order book
     When the parties place the following orders:
       | party            | market id | side | volume | price | resulting trades | type       | tif     | reference       |
       | sellSideProvider | ETH/DEC19 | sell | 1000   | 150   | 0                | TYPE_LIMIT | TIF_GTC | sell-provider-1 |
@@ -322,22 +324,22 @@ Scenario: case 2 using lognomal risk model
       | party            | market id | side | volume | price | resulting trades | type       | tif     | reference       |
       | party1           | ETH/DEC19 | sell | 100    | 120   | 0                | TYPE_LIMIT | TIF_GTC | party1-s-1      |
 
- # party1 margin account: MarginInitialFactor x MaintenanceMarginLevel = 4879*1.5=7318
+   # party1 margin account: MarginInitialFactor x MaintenanceMarginLevel = 4879*1.5=7318
     Then the parties should have the following account balances:
       | party   | asset | market id | margin | general  |
       | party1  | USD   | ETH/DEC19 | 7318   |  22682   |
 
- # party1 maintenance margin level: position*(mark_price*risk_factor_short+slippage_per_unit) + OrderVolume x Mark_price x risk_factor_short  = 100 x 100 x 0.4878731  is about 4879
+   # party1 maintenance margin level: position*(mark_price*risk_factor_short+slippage_per_unit) + OrderVolume x Mark_price x risk_factor_short  = 100 x 100 x 0.4878731  is about 4879
     Then the parties should have the following margin levels:
       | party  | market id | maintenance | search | initial | release  |
       | party1 | ETH/DEC19 | 4879        | 5854   | 7318    | 9758     |
 
-  # party1 place more order volume 300
+   # party1 place more order volume 300
     When the parties place the following orders:
       | party            | market id | side | volume | price | resulting trades | type       | tif     | reference       |
       | party1           | ETH/DEC19 | sell | 300    | 120   | 0                | TYPE_LIMIT | TIF_GTC | party1-s-1      |
 
-  # party1 maintenance margin level: position*(mark_price*risk_factor_short+slippage_per_unit) + OrderVolume x Mark_price x risk_factor_short  = 100 x 400 x 0.4878731  is about 19515
+   # party1 maintenance margin level: position*(mark_price*risk_factor_short+slippage_per_unit) + OrderVolume x Mark_price x risk_factor_short  = 100 x 400 x 0.4878731  is about 19515
     Then the parties should have the following account balances:
       | party   | asset | market id | margin | general  |
       | party1  | USD   | ETH/DEC19 | 29272  |  728     |
@@ -391,8 +393,8 @@ Scenario: case 2 using lognomal risk model
       | buy  | 80    | 100    |
       | buy  | 70    | 1000   |
 
-   # margin on order should be mark_price x volume x rf = 119 x 400 x 0.4878731 = 23223
-   #margin account is above maintenance level, so it stays at 29272
+    # margin on order should be mark_price x volume x rf = 119 x 400 x 0.4878731 = 23223
+    # margin account is above maintenance level, so it stays at 29272
     Then the parties should have the following account balances:
       | party   | asset | market id | margin | general  |
       | party1  | USD   | ETH/DEC19 | 29272  |  728     |
