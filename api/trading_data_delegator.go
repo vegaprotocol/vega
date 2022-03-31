@@ -9,7 +9,7 @@ import (
 	"code.vegaprotocol.io/data-node/candlesv2"
 	"code.vegaprotocol.io/data-node/risk"
 	"code.vegaprotocol.io/data-node/vegatime"
-	v1 "code.vegaprotocol.io/protos/vega/events/v1"
+	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
 	"code.vegaprotocol.io/vega/types/num"
 
 	"code.vegaprotocol.io/data-node/entities"
@@ -47,6 +47,7 @@ type tradingDataDelegator struct {
 	oracleDataStore         *sqlstore.OracleData
 	liquidityProvisionStore *sqlstore.LiquidityProvision
 	transfersStore          *sqlstore.Transfers
+	stakingStore            *sqlstore.StakeLinking
 }
 
 var defaultEntityPagination = entities.Pagination{
@@ -165,7 +166,7 @@ func (t *tradingDataDelegator) Transfers(ctx context.Context, req *protoapi.Tran
 		}
 	}
 
-	protoTransfers := make([]*v1.Transfer, 0, len(transfers))
+	protoTransfers := make([]*eventspb.Transfer, 0, len(transfers))
 	for _, transfer := range transfers {
 		proto, err := transfer.ToProto(t.accountStore)
 		if err != nil {
@@ -554,6 +555,7 @@ func (t *tradingDataDelegator) proposalToGovernanceData(ctx context.Context, pro
 	}
 	return &gd, nil
 }
+
 func voteListToProto(votes []entities.Vote) []*vega.Vote {
 	protoVotes := make([]*vega.Vote, len(votes))
 	for j, vote := range votes {
@@ -654,7 +656,6 @@ func (t *tradingDataDelegator) Delegations(ctx context.Context,
 
 func (t *tradingDataDelegator) GetRewards(ctx context.Context,
 	req *protoapi.GetRewardsRequest) (*protoapi.GetRewardsResponse, error) {
-
 	defer metrics.StartAPIRequestAndTimeGRPC("GetRewards-SQL")()
 	if len(req.PartyId) <= 0 {
 		return nil, apiError(codes.InvalidArgument, ErrGetRewards)
@@ -688,7 +689,6 @@ func (t *tradingDataDelegator) GetRewards(ctx context.Context,
 
 func (t *tradingDataDelegator) GetRewardSummaries(ctx context.Context,
 	req *protoapi.GetRewardSummariesRequest) (*protoapi.GetRewardSummariesResponse, error) {
-
 	defer metrics.StartAPIRequestAndTimeGRPC("GetRewardSummaries-SQL")()
 
 	if len(req.PartyId) <= 0 {
@@ -1371,7 +1371,6 @@ func (t *tradingDataDelegator) GetRiskFactors(ctx context.Context, in *protoapi.
 	defer metrics.StartAPIRequestAndTimeGRPC("GetRiskFactors SQL")()
 
 	rfs, err := t.riskFactorStore.GetMarketRiskFactors(ctx, in.MarketId)
-
 	if err != nil {
 		return nil, nil
 	}
@@ -1478,5 +1477,24 @@ func (t *tradingDataDelegator) LiquidityProvisions(ctx context.Context, req *pro
 	}
 	return &protoapi.LiquidityProvisionsResponse{
 		LiquidityProvisions: out,
+	}, nil
+}
+
+func (t *tradingDataDelegator) PartyStake(ctx context.Context, req *protoapi.PartyStakeRequest) (*protoapi.PartyStakeResponse, error) {
+	if len(req.Party) <= 0 {
+		return nil, apiError(codes.InvalidArgument, errors.New("missing party id"))
+	}
+
+	partyID := entities.NewPartyID(req.Party)
+
+	stake, stakeLinkings := t.stakingStore.GetStake(ctx, partyID, entities.Pagination{})
+	outStakeLinkings := make([]*eventspb.StakeLinking, 0, len(stakeLinkings))
+	for _, v := range stakeLinkings {
+		outStakeLinkings = append(outStakeLinkings, v.ToProto())
+	}
+
+	return &protoapi.PartyStakeResponse{
+		CurrentStakeAvailable: num.UintToString(stake),
+		StakeLinkings:         outStakeLinkings,
 	}, nil
 }

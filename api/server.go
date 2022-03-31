@@ -112,6 +112,7 @@ type GRPCServer struct {
 	oracleDataStore         *sqlstore.OracleData
 	liquidityProvisionStore *sqlstore.LiquidityProvision
 	transfersStore          *sqlstore.Transfers
+	stakeLinkingStore       *sqlstore.StakeLinking
 	eventObserver           *eventObserver
 
 	// used in order to gracefully close streams
@@ -177,6 +178,7 @@ func NewGRPCServer(
 	oracleDataStore *sqlstore.OracleData,
 	liquidityProvisionStore *sqlstore.LiquidityProvision,
 	transfersStore *sqlstore.Transfers,
+	stakeLinkingStore *sqlstore.StakeLinking,
 ) *GRPCServer {
 	// setup logger
 	log = log.Named(namedLogger)
@@ -240,7 +242,7 @@ func NewGRPCServer(
 		oracleDataStore:         oracleDataStore,
 		liquidityProvisionStore: liquidityProvisionStore,
 		transfersStore:          transfersStore,
-
+		stakeLinkingStore:       stakeLinkingStore,
 		eventObserver: &eventObserver{
 			log:          log,
 			eventService: eventService,
@@ -274,7 +276,6 @@ func remoteAddrInterceptor(log *logging.Logger) grpc.UnaryServerInterceptor {
 		info *grpc.UnaryServerInfo,
 		handler grpc.UnaryHandler,
 	) (resp interface{}, err error) {
-
 		// first check if the request is forwarded from our restproxy
 		// get the metadata
 		var ip string
@@ -410,6 +411,7 @@ func (g *GRPCServer) Start(ctx context.Context, lis net.Listener) error {
 			oracleDataStore:         g.oracleDataStore,
 			liquidityProvisionStore: g.liquidityProvisionStore,
 			transfersStore:          g.transfersStore,
+			stakingStore:            g.stakeLinkingStore,
 		}
 	} else {
 		g.tradingDataService = tradingDataSvc

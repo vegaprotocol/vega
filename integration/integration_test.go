@@ -27,9 +27,10 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const LastEpoch = 210
-
-const PlaybackTimeout = 30 * time.Second
+const (
+	LastEpoch       = 2090
+	PlaybackTimeout = 90 * time.Second
+)
 
 var (
 	newClient               *graphql.Client
@@ -59,7 +60,6 @@ func TestMain(m *testing.M) {
 	oldClient = graphql.NewClient(fmt.Sprintf("http://localhost:%v/query", cfg.Gateway.GraphQL.Port+cfg.API.LegacyAPIPortOffset))
 	if err := waitForEpoch(newClient, LastEpoch, PlaybackTimeout); err != nil {
 		log.Fatal("problem piping event stream: ", err)
-
 	}
 
 	// Cheesy sleep to give everything chance to percolate
@@ -113,10 +113,21 @@ func compareResponses(t *testing.T, oldResp, newResp interface{}) {
 	sortDeposits := cmpopts.SortSlices(func(a Deposit, b Deposit) bool { return a.ID < b.ID })
 	sortSpecs := cmpopts.SortSlices(func(a, b OracleSpec) bool { return a.ID < b.ID })
 	sortTransfers := cmpopts.SortSlices(func(a Transfer, b Transfer) bool { return a.Id < b.Id })
+	sortWithdrawals := cmpopts.SortSlices(func(a, b Withdrawal) bool { return a.ID < b.ID })
+	sortOrders := cmpopts.SortSlices(func(a, b Order) bool { return a.Id < b.Id })
+	sortNodes := cmpopts.SortSlices(func(a, b Node) bool { return a.Id < b.Id })
 
+	diff := cmp.Diff(oldResp, newResp, removeDupVotes(), sortTrades, sortAccounts, sortMarkets,
+		sortProposals, sortNetParams, sortParties, sortDeposits, sortSpecs, sortTransfers,
+		sortWithdrawals, sortOrders, sortNodes)
+
+	assert.Empty(t, diff)
+}
+
+func removeDupVotes() cmp.Option {
 	// This is a bit grim; in the old API you get repeated entries for votes when they are updated,
 	// which is a bug not present in the new API - so remove duplicates when comparing (and sort)
-	removeDupVotes := cmp.Transformer("DuplicateVotes", func(in []Vote) []Vote {
+	return cmp.Transformer("DuplicateVotes", func(in []Vote) []Vote {
 		m := make(map[string]Vote)
 		for _, vote := range in {
 			m[fmt.Sprintf("%v-%v", vote.ProposalId, vote.Party.Id)] = vote
@@ -131,22 +142,14 @@ func compareResponses(t *testing.T, oldResp, newResp interface{}) {
 		}
 		return out
 	})
-
-	diff := cmp.Diff(oldResp, newResp, removeDupVotes, sortTrades, sortAccounts,
-		sortMarkets, sortProposals, sortNetParams, sortParties, sortDeposits, sortSpecs, sortTransfers)
-
-	assert.Empty(t, diff)
 }
 
 func assertGraphQLQueriesReturnSame(t *testing.T, query string, oldResp, newResp interface{}) {
 	t.Helper()
 	req := graphql.NewRequest(query)
-
-	err := oldClient.Run(context.Background(), req, &oldResp)
-	require.NoError(t, err)
-
-	err = newClient.Run(context.Background(), req, &newResp)
-	require.NoError(t, err)
+	oldErr := oldClient.Run(context.Background(), req, &oldResp)
+	newErr := newClient.Run(context.Background(), req, &newResp)
+	require.Equal(t, oldErr, newErr)
 	compareResponses(t, oldResp, newResp)
 }
 
