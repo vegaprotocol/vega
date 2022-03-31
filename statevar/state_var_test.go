@@ -594,4 +594,20 @@ func testTimeBasedEvent(t *testing.T) {
 		require.Equal(t, "20210221_011050", evt.EventID)
 		require.Equal(t, "consensus_calc_started", evt.State)
 	}
+
+	// Remove time trigger events
+	for _, v := range validators {
+		v.engine.RemoveTimeTriggers("asset", "market")
+	}
+
+	// advance even more to when we should have triggered
+	brokerEvents = []events.Event{}
+	now = now.Add(time.Second * 9)
+	for _, v := range validators {
+		v.engine.OnTimeTick(context.Background(), now)
+	}
+
+	// expected no events
+	brokerEvents = []events.Event{}
+	require.Equal(t, 0, len(brokerEvents))
 }
