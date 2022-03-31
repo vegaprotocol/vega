@@ -111,7 +111,7 @@ type Engine struct {
 // order in which snapshots are to be restored.
 var nodeOrder = []types.SnapshotNamespace{
 	types.AppSnapshot,
-	types.AssetsSnapshot,
+	types.AssetsSnapshot,  // needs to happen before banking
 	types.WitnessSnapshot, // needs to happen before banking and governance
 	types.GovernanceSnapshot,
 	types.BankingSnapshot,
