@@ -33,14 +33,17 @@ func TestMain(m *testing.M) {
 	sqlConfig := NewTestConfig(testDBPort)
 
 	if sqlTestsEnabled {
+		log := logging.NewTestLogger()
+
 		testStore, err = sqlstore.InitialiseTestStorage(
-			logging.NewTestLogger(),
+			log,
 			sqlConfig,
 		)
-
 		if err != nil {
 			panic(err)
 		}
+
+		log.Infof("Test DB Port: %d", testDBPort)
 
 		// Make sure the database has started before we run the tests.
 		ctx, cancel := context.WithTimeout(context.Background(), postgresServerTimeout)
@@ -48,7 +51,6 @@ func TestMain(m *testing.M) {
 		op := func() error {
 			connStr := connectionString(sqlConfig)
 			conn, err := pgx.Connect(ctx, connStr)
-
 			if err != nil {
 				return err
 			}

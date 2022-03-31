@@ -14,7 +14,7 @@
 - [461](https://github.com/vegaprotocol/data-node/pull/461) - Migrate market data time series to consistent format
 - [375](https://github.com/vegaprotocol/data-node/issues/375) - Migrate existing Liquidity Provisions API to new `Postgres` database.
 - [467](https://github.com/vegaprotocol/data-node/pull/467) - Migrate transfers API to retrieve data from `Postgres`
-- [](https://github.com/vegaprotocol/data-node/pull/xxx) -
+- [469](https://github.com/vegaprotocol/data-node/issues/469) - Migrate existing stake linking API to new `Postgres` database.
 
 ### 🐛 Fixes
 - [451](https://github.com/vegaprotocol/data-node/issues/451) - Correct conversion of pending validator status

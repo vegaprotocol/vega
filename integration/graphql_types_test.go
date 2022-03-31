@@ -1,6 +1,7 @@
 package integration_test
 
 import (
+	"strings"
 	"time"
 )
 
@@ -61,6 +62,7 @@ type AuctionDuration struct {
 	DurationSecs int
 	Volume       int
 }
+
 type Trade struct {
 	Id                 HexString
 	Price              string
@@ -84,6 +86,7 @@ type TradeFee struct {
 	InfrastructureFee string
 	LiquidityFee      string
 }
+
 type PriceMonitoringSettings struct {
 	Parameters          PriceMonitoringParameters
 	UpdateFrequencySecs int
@@ -168,7 +171,7 @@ type Vote struct {
 }
 
 type Order struct {
-	Id                 string
+	Id                 HexString
 	Price              string
 	Side               string
 	Timeinforce        string
@@ -195,19 +198,32 @@ type PeggedOrder struct {
 }
 
 type LiquidityProvision struct {
-	Id               string
+	Id               HexString
 	Party            Party
 	CreatedAt        TimeString
 	UpdatedAt        TimeString
 	Market           Market
 	CommitmentAmount string
 	Fee              string
-	// TODO: sells
-	// TODO: buys
-	Version   string
-	Status    string
-	Reference string
+	Sells            []LiquidityOrderReference
+	Buys             []LiquidityOrderReference
+	Version          string
+	Status           string
+	Reference        string
 }
+
+type LiquidityOrderReference struct {
+	Order          Order
+	LiquidityOrder LiquidityOrder
+}
+
+type LiquidityOrder struct {
+	Reference  PeggedReference
+	Proportion int
+	Offset     string
+}
+
+type PeggedReference = HexString
 
 type Account struct {
 	Balance string
@@ -217,7 +233,7 @@ type Account struct {
 }
 
 type Asset struct {
-	Id          string
+	Id          HexString
 	Name        string
 	Symbol      string
 	TotalSupply string
@@ -233,6 +249,10 @@ type Asset struct {
 // where the output from the API might differ slightly but we don't care.
 
 type HexString string
+
+func (s HexString) Equal(other HexString) bool {
+	return strings.ToLower(string(s)) == strings.ToLower(string(other))
+}
 
 type TimeString string
 
@@ -257,7 +277,7 @@ func (s TimeString) Equal(other TimeString) bool {
 }
 
 type Deposit struct {
-	ID                string
+	ID                HexString
 	Party             Party
 	Amount            string
 	Asset             Asset
@@ -273,7 +293,7 @@ type NetworkParameter struct {
 }
 
 type Epoch struct {
-	ID          string
+	ID          HexString
 	Timestamps  EpochTimestamps
 	Delegations []Delegation
 }
@@ -292,7 +312,7 @@ type Delegation struct {
 }
 
 type Node struct {
-	Id                string
+	Id                HexString
 	Pubkey            string
 	TmPubkey          string
 	EthereumAdddress  string
@@ -319,16 +339,16 @@ type EpochData struct {
 }
 
 type Withdrawal struct {
-	ID                 string
+	ID                 HexString
 	Party              Party
 	Amount             string
 	Asset              Asset
 	Status             string
 	Ref                string
-	Expiry             string
+	Expiry             TimeString
 	TxHash             string
-	CreatedTimestamp   string
-	WithdrawnTimeStamp string
+	CreatedTimestamp   TimeString
+	WithdrawnTimeStamp TimeString
 }
 
 type Transfer struct {
@@ -376,7 +396,7 @@ type Filter struct {
 type OracleSpecStatus = string
 
 type OracleSpec struct {
-	ID        string
+	ID        HexString
 	CreatedAt TimeString
 	UpdatedAt TimeString
 	PubKeys   []string

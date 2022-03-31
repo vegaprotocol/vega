@@ -535,13 +535,13 @@ func (s *OracleSpecStatus) DecodeText(_ *pgtype.ConnInfo, src []byte) error {
 type LiquidityProvisionStatus vega.LiquidityProvision_Status
 
 const (
-	LiquidityProvisionStatusUnspecified = vega.LiquidityProvision_STATUS_UNSPECIFIED
-	LiquidityProvisionStatusActive      = vega.LiquidityProvision_STATUS_ACTIVE
-	LiquidityProvisionStatusStopped     = vega.LiquidityProvision_STATUS_STOPPED
-	LiquidityProvisionStatusCancelled   = vega.LiquidityProvision_STATUS_CANCELLED
-	LiquidityProvisionStatusRejected    = vega.LiquidityProvision_STATUS_REJECTED
-	LiquidityProvisionStatusUndeployed  = vega.LiquidityProvision_STATUS_UNDEPLOYED
-	LiquidityProvisionStatusPending     = vega.LiquidityProvision_STATUS_PENDING
+	LiquidityProvisionStatusUnspecified = LiquidityProvisionStatus(vega.LiquidityProvision_STATUS_UNSPECIFIED)
+	LiquidityProvisionStatusActive      = LiquidityProvisionStatus(vega.LiquidityProvision_STATUS_ACTIVE)
+	LiquidityProvisionStatusStopped     = LiquidityProvisionStatus(vega.LiquidityProvision_STATUS_STOPPED)
+	LiquidityProvisionStatusCancelled   = LiquidityProvisionStatus(vega.LiquidityProvision_STATUS_CANCELLED)
+	LiquidityProvisionStatusRejected    = LiquidityProvisionStatus(vega.LiquidityProvision_STATUS_REJECTED)
+	LiquidityProvisionStatusUndeployed  = LiquidityProvisionStatus(vega.LiquidityProvision_STATUS_UNDEPLOYED)
+	LiquidityProvisionStatusPending     = LiquidityProvisionStatus(vega.LiquidityProvision_STATUS_PENDING)
 )
 
 func (s LiquidityProvisionStatus) EncodeText(_ *pgtype.ConnInfo, buf []byte) ([]byte, error) {
@@ -558,5 +558,56 @@ func (s *LiquidityProvisionStatus) DecodeText(_ *pgtype.ConnInfo, src []byte) er
 		return fmt.Errorf("unknown liquidity provision status: %s", src)
 	}
 	*s = LiquidityProvisionStatus(val)
+	return nil
+}
+
+type StakeLinkingStatus eventspb.StakeLinking_Status
+
+const (
+	StakeLinkingStatusUnspecified = StakeLinkingStatus(eventspb.StakeLinking_STATUS_UNSPECIFIED)
+	StakeLinkingStatusPending     = StakeLinkingStatus(eventspb.StakeLinking_STATUS_PENDING)
+	StakeLinkingStatusAccepted    = StakeLinkingStatus(eventspb.StakeLinking_STATUS_ACCEPTED)
+	StakeLinkingStatusRejected    = StakeLinkingStatus(eventspb.StakeLinking_STATUS_REJECTED)
+)
+
+func (s StakeLinkingStatus) EncodeText(_ *pgtype.ConnInfo, buf []byte) ([]byte, error) {
+	status, ok := eventspb.StakeLinking_Status_name[int32(s)]
+	if !ok {
+		return buf, fmt.Errorf("unknown stake linking status: %v", s)
+	}
+	return append(buf, []byte(status)...), nil
+}
+
+func (s *StakeLinkingStatus) DecodeText(_ *pgtype.ConnInfo, src []byte) error {
+	val, ok := eventspb.StakeLinking_Status_value[string(src)]
+	if !ok {
+		return fmt.Errorf("unknown stake linking status: %s", src)
+	}
+	*s = StakeLinkingStatus(val)
+	return nil
+}
+
+type StakeLinkingType eventspb.StakeLinking_Type
+
+const (
+	StakeLinkingTypeUnspecified = StakeLinkingType(eventspb.StakeLinking_TYPE_UNSPECIFIED)
+	StakeLinkingTypeLink        = StakeLinkingType(eventspb.StakeLinking_TYPE_LINK)
+	StakeLinkingTypeUnlink      = StakeLinkingType(eventspb.StakeLinking_TYPE_UNLINK)
+)
+
+func (s StakeLinkingType) EncodeText(_ *pgtype.ConnInfo, buf []byte) ([]byte, error) {
+	status, ok := eventspb.StakeLinking_Type_name[int32(s)]
+	if !ok {
+		return buf, fmt.Errorf("unknown stake linking type: %v", s)
+	}
+	return append(buf, []byte(status)...), nil
+}
+
+func (s *StakeLinkingType) DecodeText(_ *pgtype.ConnInfo, src []byte) error {
+	val, ok := eventspb.StakeLinking_Type_value[string(src)]
+	if !ok {
+		return fmt.Errorf("unknown stake linking type: %s", src)
+	}
+	*s = StakeLinkingType(val)
 	return nil
 }

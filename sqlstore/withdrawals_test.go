@@ -292,7 +292,7 @@ func testWithdrawalsGetByParty(t *testing.T) {
 }
 
 func getTestWithdrawal() *vega.Withdrawal {
-	now := time.Now().UnixNano()
+	now := time.Now()
 	return &vega.Withdrawal{
 		Id:                 "deadbeef",
 		PartyId:            "deadbeef",
@@ -300,10 +300,10 @@ func getTestWithdrawal() *vega.Withdrawal {
 		Asset:              "deadbeef",
 		Status:             vega.Withdrawal_STATUS_OPEN,
 		Ref:                "deadbeef",
-		Expiry:             now + 1e9,
+		Expiry:             now.Unix() + 1,
 		TxHash:             "deadbeef",
-		CreatedTimestamp:   now,
-		WithdrawnTimestamp: now,
+		CreatedTimestamp:   now.UnixNano(),
+		WithdrawnTimestamp: now.UnixNano(),
 		Ext: &vega.WithdrawExt{
 			Ext: &vega.WithdrawExt_Erc20{
 				Erc20: &vega.Erc20WithdrawExt{
