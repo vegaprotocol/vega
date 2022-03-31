@@ -99,7 +99,7 @@ Feature: Test LP orders
     Then the following trades should be executed:
       | buyer   | price    | size | seller    |
       | aux2    | 1000     | 100  | auxiliary |
-    And the mark price should be "100" for the market "ETH/DEC19"
+    And the mark price should be "1000" for the market "ETH/DEC19"
 
 
     Then the orders should have the following states:
