@@ -151,7 +151,7 @@ Feature: Replicate LP getting distressed during continuous trading, check if pen
       | side | price | volume |
       | sell | 1100  | 1      |
       | sell | 1010  | 1      |
-      | sell | 1000  | 100    |
+      | sell | 1000  | 100    | 
       | buy  | 1000  | 0      |
       | buy  | 990   | 103    |
       | buy  | 900   | 1      |
