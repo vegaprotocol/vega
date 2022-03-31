@@ -1,6 +1,5 @@
-Feature: 0032-PRIM-price-mornitoring, test horizon trigger. 0032-PRIM-001, 0032-PRIM-009
-
-  Scenario: 001, horizon set to 3600 in price monitoring model
+Feature: 0032-PRIM-price-mornitoring, test horizon trigger.
+  Scenario: 001, horizon set to 3600 in price monitoring model.  0032-PRIM-001, 0032-PRIM-009
 
   Given the following network parameters are set:
       | name                                          | value |
@@ -78,9 +77,7 @@ Feature: 0032-PRIM-price-mornitoring, test horizon trigger. 0032-PRIM-001, 0032-
       | party  | market id | maintenance | search      | initial      | release      |
       | lp     | ETH/MAR22 | 41799656136 | 45979621749 | 50159587363  | 58519518590  |
 
-Scenario: 002, horizon set to 360000 in price monitoring model
-# bug: monitoring auction is trigger once increase "horizon" in price monitoring, which is not expected;
-# changing "horizon" parameter should only change price bounds  
+Scenario: 002, horizon set to 360000 in price monitoring model.  0032-PRIM-001, 0032-PRIM-009
 
   Given the following network parameters are set:
       | name                                          | value |
