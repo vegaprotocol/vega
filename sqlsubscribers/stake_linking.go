@@ -7,6 +7,7 @@ import (
 	"code.vegaprotocol.io/data-node/logging"
 	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
 	"code.vegaprotocol.io/vega/events"
+
 	"github.com/pkg/errors"
 )
 
@@ -37,6 +38,7 @@ func (sl *StakeLinking) Types() []events.Type {
 	return []events.Type{events.StakeLinkingEvent}
 }
 
+
 func (sl *StakeLinking) Push(evt events.Event) error {
 	switch e := evt.(type) {
 	case TimeUpdateEvent:
@@ -57,3 +59,4 @@ func (sl StakeLinking) consume(event StakeLinkingEvent) error {
 
 	return errors.Wrap(sl.store.Upsert(entity), "inserting stake linking event to SQL store failed")
 }
+
