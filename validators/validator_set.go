@@ -436,7 +436,7 @@ func (t *Topology) calculateVotingPower(IDs []string, rankingScores map[string]n
 	}
 
 	for _, ID := range IDs {
-		if sumOfScores.IsPositive() && rankingScores[ID].IsPositive() {
+		if sumOfScores.IsPositive() {
 			votingPower[ID] = num.MaxD(DecimalOne, rankingScores[ID].Div(sumOfScores).Mul(VotingPowerScalingFactor)).IntPart()
 		} else {
 			votingPower[ID] = 10
@@ -449,6 +449,8 @@ func (t *Topology) calculateVotingPower(IDs []string, rankingScores map[string]n
 func (t *Topology) GetValidatorPowerUpdates() []tmtypes.ValidatorUpdate {
 	if t.newEpochStarted {
 		t.newEpochStarted = false
+		// it's safer to reset the validator performance counter here which is the exact time we're updating tendermint on the voting power.
+		t.validatorPerformance.Reset()
 		return t.validatorPowerUpdates
 	}
 	return []tmtypes.ValidatorUpdate{}
