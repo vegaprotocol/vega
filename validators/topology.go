@@ -150,7 +150,6 @@ func (t *Topology) OnEpochEvent(ctx context.Context, epoch types.Epoch) {
 	if epoch.Action == proto.EpochAction_EPOCH_ACTION_START {
 		t.newEpochStarted = true
 		t.rng = rand.New(rand.NewSource(epoch.StartTime.Unix()))
-		t.validatorPerformance.Reset()
 	}
 	// this is a workaround to the topology loaded from checkpoint before the epoch.
 	if t.checkpointLoaded {
