@@ -41,7 +41,7 @@ func NewClient(
 	}
 }
 
-func (s *Client) call(method string, args any, reply any) error {
+func (s *Client) call(method string, args interface{}, reply interface{}) error {
 	req, err := json.EncodeClientRequest(method, args)
 	if err != nil {
 		return fmt.Errorf("failed to encode client JSON request: %w", err)

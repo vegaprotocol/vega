@@ -28,20 +28,6 @@ var (
 	}
 )
 
-type pendingKeyRotator interface {
-	GetBlockHeight() uint64
-	GetNodeId() string
-}
-
-func sortPendingKeyRotations[T pendingKeyRotator](pkrs []T) {
-	sort.SliceStable(pkrs, func(i, j int) bool {
-		if pkrs[i].GetBlockHeight() == pkrs[j].GetBlockHeight() {
-			return pkrs[i].GetNodeId() < pkrs[j].GetNodeId()
-		}
-		return pkrs[i].GetBlockHeight() < pkrs[j].GetBlockHeight()
-	})
-}
-
 type topologySnapshotState struct {
 	changed    bool
 	hash       []byte
@@ -113,7 +99,12 @@ func (t *Topology) serialisePendingKeyRotation() []*snapshot.PendingKeyRotation 
 		}
 	}
 
-	sortPendingKeyRotations(pkrs)
+	sort.SliceStable(pkrs, func(i, j int) bool {
+		if pkrs[i].GetBlockHeight() == pkrs[j].GetBlockHeight() {
+			return pkrs[i].GetNodeId() < pkrs[j].GetNodeId()
+		}
+		return pkrs[i].GetBlockHeight() < pkrs[j].GetBlockHeight()
+	})
 
 	return pkrs
 }
@@ -132,7 +123,12 @@ func (t *Topology) serialisePendingEthereumKeyRotation() []*snapshot.PendingEthe
 		}
 	}
 
-	sortPendingKeyRotations(pkrs)
+	sort.SliceStable(pkrs, func(i, j int) bool {
+		if pkrs[i].GetBlockHeight() == pkrs[j].GetBlockHeight() {
+			return pkrs[i].GetNodeId() < pkrs[j].GetNodeId()
+		}
+		return pkrs[i].GetBlockHeight() < pkrs[j].GetBlockHeight()
+	})
 
 	return pkrs
 }
