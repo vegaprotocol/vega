@@ -27,7 +27,6 @@ func NewServer(
 	config Config,
 	nodeWallets *nodewallets.NodeWallets,
 ) *Server {
-
 	// setup logger
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
