@@ -12,7 +12,7 @@ import (
 	"github.com/gorilla/rpc/json"
 )
 
-// Client implement a socket client allowing to run simple RPC commands
+// Client implement a socket client allowing to run simple RPC commands.
 type Client struct {
 	log  *logging.Logger
 	cfg  Config
@@ -41,7 +41,7 @@ func NewClient(
 	}
 }
 
-func (s *Client) call(method string, args interface{}, reply interface{}) error {
+func (s *Client) call(ctx context.Context, method string, args interface{}, reply interface{}) error {
 	req, err := json.EncodeClientRequest(method, args)
 	if err != nil {
 		return fmt.Errorf("failed to encode client JSON request: %w", err)
@@ -53,11 +53,17 @@ func (s *Client) call(method string, args interface{}, reply interface{}) error 
 		Path:   s.cfg.Server.HttpPath,
 	}
 
-	resp, err := s.http.Post(u.String(), "application/json", bytes.NewReader(req))
+	httpReq, err := http.NewRequestWithContext(ctx, "POST", u.String(), bytes.NewReader(req))
+	if err != nil {
+		return fmt.Errorf("failed to create HTTP request: %w", err)
+	}
+
+	httpReq.Header.Set("Content-Type", "application/json")
+
+	resp, err := s.http.Do(httpReq)
 	if err != nil {
 		return fmt.Errorf("failed to post data %q: %w", string(req), err)
 	}
-
 	defer resp.Body.Close()
 
 	if err := json.DecodeClientResponse(resp.Body, reply); err != nil {
@@ -67,20 +73,20 @@ func (s *Client) call(method string, args interface{}, reply interface{}) error 
 	return nil
 }
 
-func (s *Client) NodeWalletReload(chain string) (*NodeWalletReloadReply, error) {
+func (s *Client) NodeWalletReload(ctx context.Context, chain string) (*NodeWalletReloadReply, error) {
 	var reply NodeWalletReloadReply
 
-	if err := s.call("NodeWallet.Reload", NodeWalletArgs{Chain: chain}, &reply); err != nil {
+	if err := s.call(ctx, "NodeWallet.Reload", NodeWalletArgs{Chain: chain}, &reply); err != nil {
 		return nil, fmt.Errorf("failed to call NodeWallet.Reload method: %w", err)
 	}
 
 	return &reply, nil
 }
 
-func (s *Client) NodeWalletShow(chain string) (*Wallet, error) {
+func (s *Client) NodeWalletShow(ctx context.Context, chain string) (*Wallet, error) {
 	var reply Wallet
 
-	if err := s.call("NodeWallet.Show", NodeWalletArgs{Chain: chain}, &reply); err != nil {
+	if err := s.call(ctx, "NodeWallet.Show", NodeWalletArgs{Chain: chain}, &reply); err != nil {
 		return nil, fmt.Errorf("failed to call NodeWallet.Show method: %w", err)
 	}
 

@@ -67,7 +67,7 @@ func (t *Topology) RotateEthereumKey(
 	// we can emit remove validator signatures immediately
 	t.signatures.EmitRemoveValidatorsSignatures(ctx, toRemove, allValidators, t.currentTime)
 
-	// schedule emition of validator add signatures to future block
+	// schedule signature collection to future block
 	// those signature should be emitted after validator has rotated is key in node wallet
 	t.pendingEthKeyRotations.add(kr.TargetBlock, PendingEthereumKeyRotation{
 		NodeID:     nodeID,

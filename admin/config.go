@@ -9,7 +9,7 @@ import (
 // this is simply emitted as a hierarchical label e.g. 'admin.server'.
 const namedLogger = "admin.server"
 
-// ServerConfig represent the configuration of the server
+// ServerConfig represent the configuration of the server.
 type ServerConfig struct {
 	SocketPath string        `long:"socket-path" description:"Listen for connection on UNIX socket path <file-path>"`
 	HttpPath   string        `long:"http-path" description:"Http path of the socket HTTP RPC server"`

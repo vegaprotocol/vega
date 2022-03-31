@@ -1,7 +1,9 @@
 package nodewallet
 
 import (
+	"context"
 	"fmt"
+	"time"
 
 	vgjson "code.vegaprotocol.io/shared/libs/json"
 	"code.vegaprotocol.io/shared/paths"
@@ -46,10 +48,13 @@ func (opts *reloadCmd) Execute(_ []string) error {
 
 	sc := admin.NewClient(log, opts.Config)
 
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
 	var data map[string]string
 	switch opts.Chain {
 	case vegaChain, ethereumChain:
-		resp, err := sc.NodeWalletReload(opts.Chain)
+		resp, err := sc.NodeWalletReload(ctx, opts.Chain)
 		if err != nil {
 			return fmt.Errorf("failed to reload node wallet: %w", err)
 		}

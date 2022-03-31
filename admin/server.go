@@ -13,7 +13,7 @@ import (
 	"github.com/gorilla/rpc/json"
 )
 
-// Server implement a socket server allowing to run simple RPC commands
+// Server implement a socket server allowing to run simple RPC commands.
 type Server struct {
 	log         *logging.Logger
 	cfg         Config
@@ -21,7 +21,7 @@ type Server struct {
 	nodeWallets *nodewallets.NodeWallets
 }
 
-// NewServer returns a new instance of the RPC socket server
+// NewServer returns a new instance of the RPC socket server.
 func NewServer(
 	log *logging.Logger,
 	config Config,

@@ -134,8 +134,6 @@ func testEthereumKeyRotationBeginBlock(t *testing.T) {
 
 	chainValidators := []string{"tm-pubkey-1", "tm-pubkey-2", "tm-pubkey-3", "tm-pubkey-4"}
 
-	toRemove := []validators.NodeIDAddress{}
-
 	ctx := context.TODO()
 	for i := 0; i < len(chainValidators); i++ {
 		j := i + 1
@@ -146,8 +144,6 @@ func testEthereumKeyRotationBeginBlock(t *testing.T) {
 			VegaPubKey:      fmt.Sprintf("vega-key-%d", j),
 			EthereumAddress: fmt.Sprintf("eth-address-%d", j),
 		}
-
-		toRemove = append(toRemove, validators.NodeIDAddress{NodeID: nr.Id, EthAddress: nr.EthereumAddress})
 
 		err := top.AddNewNode(ctx, &nr, validators.ValidatorStatusTendermint)
 		assert.NoErrorf(t, err, "failed to add node registation %s", id)
@@ -209,6 +205,8 @@ type testTopWithSignatures struct {
 }
 
 func getTestTopWithMockedSignatures(t *testing.T) *testTopWithSignatures {
+	t.Helper()
+
 	top := getTestTopWithDefaultValidator(t)
 	signatures := mocks.NewMockSignatures(top.ctrl)
 
