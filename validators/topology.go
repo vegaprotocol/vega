@@ -231,6 +231,12 @@ func (t *Topology) SetNotary(notary Notary) {
 	t.notary = notary
 }
 
+// SetSignatures this is not good, same issue as for SetNotary method.
+// This is only used as a helper for testing..
+func (t *Topology) SetSignatures(signatures Signatures) {
+	t.signatures = signatures
+}
+
 // ReloadConf updates the internal configuration.
 func (t *Topology) ReloadConf(cfg Config) {
 	t.log.Info("reloading configuration")

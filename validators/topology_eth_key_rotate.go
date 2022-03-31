@@ -50,7 +50,7 @@ func (t *Topology) RotateEthereumKey(
 
 	node, ok := t.validators[nodeID]
 	if !ok {
-		return fmt.Errorf("failed to rotate signature for non existing validator %q", nodeID)
+		return fmt.Errorf("failed to rotate ethereum key for non existing validator %q", nodeID)
 	}
 
 	if currentBlockHeight >= kr.TargetBlock {

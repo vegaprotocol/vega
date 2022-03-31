@@ -49,10 +49,7 @@ require (
 	google.golang.org/protobuf v1.27.1
 )
 
-require (
-	code.vegaprotocol.io/oracles-relay v0.0.0-20210201140234-f047e1bf6df3
-	github.com/grpc-ecosystem/grpc-gateway/v2 v2.9.0
-)
+require github.com/grpc-ecosystem/grpc-gateway/v2 v2.9.0
 
 require (
 	github.com/BurntSushi/toml v1.0.0 // indirect

@@ -15,6 +15,7 @@ import (
 	"code.vegaprotocol.io/vega/types/num"
 )
 
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/signatures_mock.go -package mocks code.vegaprotocol.io/vega/validators Signatures
 type Signatures interface {
 	EmitPromotionsSignatures(
 		ctx context.Context,
