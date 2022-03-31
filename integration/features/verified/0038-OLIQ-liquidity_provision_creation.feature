@@ -24,6 +24,14 @@ Feature: Test LP orders
       | auxiliary | ETH/DEC19 | sell | 1      | 120   | 0                | TYPE_LIMIT | TIF_GTC | oa-s-1    |
       | aux2      | ETH/DEC19 | buy  | 1      | 100   | 0                | TYPE_LIMIT | TIF_GTC | oa-b-2    |
       | auxiliary | ETH/DEC19 | sell | 1      | 100   | 0                | TYPE_LIMIT | TIF_GTC | oa-s-2    |
+    
+    Then the order book should have the following volumes for market "ETH/DEC19":
+      | side | price   | volume |
+      | sell | 120     | 1      |
+      | buy  | 80      | 1      |
+      | buy  | 100     | 1      |
+      | sell | 100     | 1      |
+    
     Then the opening auction period ends for market "ETH/DEC19"
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
@@ -44,11 +52,11 @@ Feature: Test LP orders
 
 
     When the parties place the following orders:
-      | party           | market id | side | volume | price | resulting trades | type       | tif     | reference       |
+      | party            | market id | side | volume | price | resulting trades | type       | tif     | reference       |
       | sellSideProvider | ETH/DEC19 | sell | 1000   | 120   | 0                | TYPE_LIMIT | TIF_GTC | sell-provider-1 |
       | buySideProvider  | ETH/DEC19 | buy  | 1000   | 80    | 0                | TYPE_LIMIT | TIF_GTC | buy-provider-1  |
-      | party1          | ETH/DEC19 | buy  | 500    | 110   | 0                | TYPE_LIMIT | TIF_GTC | lp-ref-1        |
-      | party1          | ETH/DEC19 | sell | 500    | 120   | 0                | TYPE_LIMIT | TIF_GTC | lp-ref-2        |
+      | party1           | ETH/DEC19 | buy  | 500    | 110   | 0                | TYPE_LIMIT | TIF_GTC | lp-ref-1        |
+      | party1           | ETH/DEC19 | sell | 500    | 120   | 0                | TYPE_LIMIT | TIF_GTC | lp-ref-2        |
     Then the orders should have the following states:
       | party           | market id | side | volume | price | status        |
       | sellSideProvider | ETH/DEC19 | sell | 1000   | 120   | STATUS_ACTIVE |
@@ -94,6 +102,14 @@ Feature: Test LP orders
       | auxiliary | ETH/DEC19 | sell | 100      | 1200   | 0                | TYPE_LIMIT | TIF_GTC | oa-s-1    |
       | aux2      | ETH/DEC19 | buy  | 100      | 1000   | 0                | TYPE_LIMIT | TIF_GTC | oa-b-2    |
       | auxiliary | ETH/DEC19 | sell | 100      | 1000   | 0                | TYPE_LIMIT | TIF_GTC | oa-s-2    |
+    
+    Then the order book should have the following volumes for market "ETH/DEC19":
+      | side | price    | volume |
+      | sell | 1200     | 100    |
+      | buy  | 800      | 100    |
+      | buy  | 1000     | 100    |
+      | sell | 1000     | 100    |
+    
     Then the opening auction period ends for market "ETH/DEC19"
     
     Then the following trades should be executed:
