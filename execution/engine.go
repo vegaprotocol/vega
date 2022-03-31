@@ -510,9 +510,6 @@ func (e *Engine) removeMarket(mktID string) {
 			mkt.liquidity.StopSnapshots()
 			mkt.tsCalc.StopSnapshots()
 
-			asset, _ := mkt.mkt.GetAsset()
-			mkt.stateVarEngine.RemoveTimeTriggers(asset, mkt.GetID())
-
 			copy(e.marketsCpy[i:], e.marketsCpy[i+1:])
 			e.marketsCpy[len(e.marketsCpy)-1] = nil
 			e.marketsCpy = e.marketsCpy[:len(e.marketsCpy)-1]
