@@ -338,7 +338,7 @@ func testMarginWithOrderInBook(t *testing.T) {
 	statevar := mocks.NewMockStateVarEngine(ctrl)
 	statevar.EXPECT().RegisterStateVariable(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any())
 	statevar.EXPECT().NewEvent(gomock.Any(), gomock.Any(), gomock.Any())
-	testE := risk.NewEngine(log, conf.Execution.Risk, mc, model, book, as, broker, 0, "mktid", "ETH", statevar, false, num.DecimalFromInt64(1))
+	testE := risk.NewEngine(log, conf.Execution.Risk, mc, model, book, as, broker, 0, "mktid", "ETH", statevar, num.DecimalFromInt64(1), false, nil)
 	evt := testMargin{
 		party:   "tx",
 		size:    10,
@@ -439,7 +439,7 @@ func testMarginWithOrderInBook2(t *testing.T) {
 	statevar := mocks.NewMockStateVarEngine(ctrl)
 	statevar.EXPECT().RegisterStateVariable(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any())
 	statevar.EXPECT().NewEvent(gomock.Any(), gomock.Any(), gomock.Any())
-	testE := risk.NewEngine(log, conf.Execution.Risk, mc, model, book, as, broker, 0, "mktid", "ETH", statevar, false, num.DecimalFromInt64(1))
+	testE := risk.NewEngine(log, conf.Execution.Risk, mc, model, book, as, broker, 0, "mktid", "ETH", statevar, num.DecimalFromInt64(1), false, nil)
 	evt := testMargin{
 		party:   "tx",
 		size:    13,
@@ -544,7 +544,7 @@ func testMarginWithOrderInBookAfterParamsUpdate(t *testing.T) {
 	statevarEngine.EXPECT().RegisterStateVariable(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any())
 	statevarEngine.EXPECT().NewEvent(gomock.Any(), gomock.Any(), gomock.Any())
 	asset := "ETH"
-	testE := risk.NewEngine(log, conf.Execution.Risk, mc, model, book, as, broker, 0, marketID, asset, statevarEngine, false, num.DecimalFromInt64(1))
+	testE := risk.NewEngine(log, conf.Execution.Risk, mc, model, book, as, broker, 0, marketID, asset, statevarEngine, num.DecimalFromInt64(1), false, nil)
 
 	evt := testMargin{
 		party:   "tx",
@@ -637,8 +637,9 @@ func getTestEngine(t *testing.T, initialRisk *types.RiskFactor) *testEngine {
 		"mktid",
 		"ETH",
 		statevar,
-		false,
 		num.DecimalFromInt64(1),
+		false,
+		nil,
 	)
 
 	return &testEngine{

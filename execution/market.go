@@ -333,8 +333,9 @@ func NewMarket(
 		mkt.ID,
 		asset,
 		stateVarEngine,
-		false,
 		positionFactor,
+		false,
+		nil,
 	)
 
 	settleEngine := settlement.New(
@@ -770,6 +771,9 @@ func (m *Market) closeMarket(ctx context.Context, t time.Time) error {
 			logging.Error(err))
 		return err
 	}
+
+	// stop time triggered events in the statevar engine
+	m.stateVarEngine.RemoveTimeTriggers(asset, m.mkt.ID)
 
 	m.broker.Send(events.NewTransferResponse(ctx, clearMarketTransfers))
 	m.mkt.State = types.MarketStateSettled
@@ -3183,11 +3187,6 @@ func (m *Market) cleanupOnReject(ctx context.Context) {
 			logging.Error(err))
 		return
 	}
-
-	m.matching.StopSnapshots()
-	m.position.StopSnapshots()
-	m.liquidity.StopSnapshots()
-	m.tsCalc.StopSnapshots()
 
 	// then send the responses
 	m.broker.Send(events.NewTransferResponse(ctx, tresps))

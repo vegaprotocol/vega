@@ -60,13 +60,16 @@ func TestAssetActionsSnapshotRoundTrip(t *testing.T) {
 
 	// reload the state
 	var assetActions snapshot.Payload
+	snap := getTestEngine(t)
+	snap.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(testAsset, nil)
+
 	proto.Unmarshal(state, &assetActions)
 	payload := types.PayloadFromProto(&assetActions)
-	_, err = eng.LoadState(context.Background(), payload)
+	_, err = snap.LoadState(context.Background(), payload)
 	require.Nil(t, err)
-	hashPostReload, _ := eng.GetHash(aaKey)
+	hashPostReload, _ := snap.GetHash(aaKey)
 	require.True(t, bytes.Equal(hash, hashPostReload))
-	statePostReload, _, _ := eng.GetState(aaKey)
+	statePostReload, _, _ := snap.GetState(aaKey)
 	require.True(t, bytes.Equal(state, statePostReload))
 }
 
@@ -108,15 +111,16 @@ func TestSeenSnapshotRoundTrip(t *testing.T) {
 
 	// reload the state
 	var seen snapshot.Payload
+	snap := getTestEngine(t)
 	proto.Unmarshal(state2, &seen)
 
 	payload := types.PayloadFromProto(&seen)
 
-	_, err = eng.LoadState(context.Background(), payload)
+	_, err = snap.LoadState(context.Background(), payload)
 	require.Nil(t, err)
-	hashPostReload, _ := eng.GetHash(seenKey)
+	hashPostReload, _ := snap.GetHash(seenKey)
 	require.True(t, bytes.Equal(hash2, hashPostReload))
-	statePostReload, _, _ := eng.GetState(seenKey)
+	statePostReload, _, _ := snap.GetState(seenKey)
 	require.True(t, bytes.Equal(state2, statePostReload))
 }
 
@@ -158,15 +162,16 @@ func TestWithdrawlsSnapshotRoundTrip(t *testing.T) {
 
 		// reload the state
 		var withdrawals snapshot.Payload
+		snap := getTestEngine(t)
 		proto.Unmarshal(state, &withdrawals)
 
 		payload := types.PayloadFromProto(&withdrawals)
 
-		_, err = eng.LoadState(context.Background(), payload)
+		_, err = snap.LoadState(context.Background(), payload)
 		require.Nil(t, err)
-		hashPostReload, _ := eng.GetHash(withdrawalsKey)
+		hashPostReload, _ := snap.GetHash(withdrawalsKey)
 		require.True(t, bytes.Equal(hash, hashPostReload))
-		statePostReload, _, _ := eng.GetState(withdrawalsKey)
+		statePostReload, _, _ := snap.GetState(withdrawalsKey)
 		require.True(t, bytes.Equal(state, statePostReload))
 	}
 }
@@ -200,13 +205,140 @@ func TestDepositSnapshotRoundTrip(t *testing.T) {
 
 		// reload the state
 		var deposits snapshot.Payload
+		snap := getTestEngine(t)
 		proto.Unmarshal(state, &deposits)
 		payload := types.PayloadFromProto(&deposits)
-		_, err = eng.LoadState(context.Background(), payload)
+		_, err = snap.LoadState(context.Background(), payload)
 		require.Nil(t, err)
-		hashPostReload, _ := eng.GetHash(depositsKey)
+		hashPostReload, _ := snap.GetHash(depositsKey)
 		require.True(t, bytes.Equal(hash, hashPostReload))
-		statePostReload, _, _ := eng.GetState(depositsKey)
+		statePostReload, _, _ := snap.GetState(depositsKey)
 		require.True(t, bytes.Equal(state, statePostReload))
 	}
+}
+
+func TestOneOffTransfersSnapshotRoundTrip(t *testing.T) {
+	ctx := context.Background()
+	key := (&types.PayloadBankingScheduledTransfers{}).Key()
+	eng := getTestEngine(t)
+	defer eng.ctrl.Finish()
+
+	fromAcc := types.Account{
+		Balance: num.NewUint(1000),
+	}
+
+	eng.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(assets.NewAsset(&mockAsset{num.DecimalFromFloat(100)}), nil)
+	eng.col.EXPECT().GetPartyGeneralAccount(gomock.Any(), gomock.Any()).AnyTimes().Return(&fromAcc, nil)
+	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+	eng.col.EXPECT().TransferFunds(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
+
+	hash, err := eng.GetHash(key)
+	require.Nil(t, err)
+	state, _, err := eng.GetState(key)
+	require.Nil(t, err)
+
+	now := time.Unix(1111, 0)
+	deliver := now.Add(time.Hour)
+	eng.OnTick(ctx, now)
+
+	oneoff := &types.TransferFunds{
+		Kind: types.TransferCommandKindOneOff,
+		OneOff: &types.OneOffTransfer{
+			TransferBase: &types.TransferBase{
+				From:            "03ae90688632c649c4beab6040ff5bd04dbde8efbf737d8673bbda792a110301",
+				FromAccountType: types.AccountTypeGeneral,
+				To:              "2e05fd230f3c9f4eaf0bdc5bfb7ca0c9d00278afc44637aab60da76653d7ccf0",
+				ToAccountType:   types.AccountTypeGeneral,
+				Asset:           "eth",
+				Amount:          num.NewUint(10),
+				Reference:       "someref",
+			},
+			DeliverOn: &deliver,
+		},
+	}
+
+	require.NoError(t, eng.TransferFunds(ctx, oneoff))
+
+	// test the new transfer prompts a change
+	hash2, err := eng.GetHash(key)
+	require.Nil(t, err)
+	state2, _, err := eng.GetState(key)
+	require.Nil(t, err)
+
+	require.False(t, bytes.Equal(hash, hash2))
+	require.False(t, bytes.Equal(state, state2))
+
+	// reload the state
+	var transfers snapshot.Payload
+	snap := getTestEngine(t)
+	proto.Unmarshal(state2, &transfers)
+	payload := types.PayloadFromProto(&transfers)
+	_, err = snap.LoadState(context.Background(), payload)
+	require.Nil(t, err)
+	hashPostReload, _ := snap.GetHash(key)
+	require.True(t, bytes.Equal(hash2, hashPostReload))
+	statePostReload, _, _ := snap.GetState(key)
+	require.True(t, bytes.Equal(state2, statePostReload))
+}
+
+func TestRecurringransfersSnapshotRoundTrip(t *testing.T) {
+	ctx := context.Background()
+	key := (&types.PayloadBankingRecurringTransfers{}).Key()
+	eng := getTestEngine(t)
+	defer eng.ctrl.Finish()
+
+	fromAcc := types.Account{
+		Balance: num.NewUint(1000),
+	}
+
+	eng.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(assets.NewAsset(&mockAsset{num.DecimalFromFloat(100)}), nil)
+	eng.col.EXPECT().GetPartyGeneralAccount(gomock.Any(), gomock.Any()).AnyTimes().Return(&fromAcc, nil)
+	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+	eng.col.EXPECT().TransferFunds(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
+
+	hash, err := eng.GetHash(key)
+	require.Nil(t, err)
+	state, _, err := eng.GetState(key)
+	require.Nil(t, err)
+
+	recurring := &types.TransferFunds{
+		Kind: types.TransferCommandKindRecurring,
+		Recurring: &types.RecurringTransfer{
+			TransferBase: &types.TransferBase{
+				From:            "03ae90688632c649c4beab6040ff5bd04dbde8efbf737d8673bbda792a110301",
+				FromAccountType: types.AccountTypeGeneral,
+				To:              "2e05fd230f3c9f4eaf0bdc5bfb7ca0c9d00278afc44637aab60da76653d7ccf0",
+				ToAccountType:   types.AccountTypeGeneral,
+				Asset:           "eth",
+				Amount:          num.NewUint(10),
+				Reference:       "someref",
+			},
+			StartEpoch: 10,
+			EndEpoch:   nil, // forever
+			Factor:     num.MustDecimalFromString("0.9"),
+		},
+	}
+
+	require.NoError(t, eng.TransferFunds(ctx, recurring))
+
+	// test the new transfer prompts a change
+	hash2, err := eng.GetHash(key)
+	require.Nil(t, err)
+	state2, _, err := eng.GetState(key)
+	require.Nil(t, err)
+
+	require.False(t, bytes.Equal(hash, hash2))
+	require.False(t, bytes.Equal(state, state2))
+
+	// reload the state
+	var transfers snapshot.Payload
+	snap := getTestEngine(t)
+	proto.Unmarshal(state2, &transfers)
+	payload := types.PayloadFromProto(&transfers)
+	_, err = snap.LoadState(context.Background(), payload)
+	require.Nil(t, err)
+	hashPostReload, _ := snap.GetHash(key)
+	require.True(t, bytes.Equal(hash2, hashPostReload))
+	statePostReload, _, _ := snap.GetState(key)
+	require.True(t, bytes.Equal(state2, statePostReload))
 }

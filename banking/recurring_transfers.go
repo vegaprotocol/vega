@@ -22,7 +22,7 @@ func (e *Engine) recurringTransfer(
 	transfer *types.RecurringTransfer,
 ) (err error) {
 	defer func() {
-		if err != nil {
+		if err == nil {
 			e.bss.changed[recurringTransfersKey] = true
 		}
 		e.broker.Send(events.NewRecurringTransferFundsEvent(ctx, transfer))

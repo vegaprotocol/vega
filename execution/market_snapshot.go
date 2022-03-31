@@ -73,8 +73,9 @@ func NewMarketFromSnapshot(
 		mkt.ID,
 		asset,
 		stateVarEngine,
-		em.RiskFactorConsensusReached,
 		positionFactor,
+		em.RiskFactorConsensusReached,
+		&types.RiskFactor{Market: mkt.ID, Short: em.ShortRiskFactor, Long: em.LongRiskFactor},
 	)
 
 	settleEngine := settlement.New(
