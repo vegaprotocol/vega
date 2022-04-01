@@ -25,7 +25,7 @@ func TheLiquidityProvisionsShouldHaveTheFollowingStates(broker *stubs.BrokerStub
 		id := row.MustStr("id")
 		party := row.MustStr("party")
 		market := row.MustStr("market")
-		commitment := row.MustU64("commitment amount")
+		commitment := row.MustStr("commitment amount")
 		status := row.MustLiquidityStatus("status")
 
 		e := evtByID(id)
@@ -33,7 +33,7 @@ func TheLiquidityProvisionsShouldHaveTheFollowingStates(broker *stubs.BrokerStub
 			return errLiquidityProvisionEventNotFound()
 		}
 
-		if e.PartyId != party || e.MarketId != market || stringToU64(e.CommitmentAmount) != commitment || e.Status != status {
+		if e.PartyId != party || e.MarketId != market || e.CommitmentAmount != commitment || e.Status != status {
 			return errLiquidityProvisionEventNotFound()
 		}
 	}
