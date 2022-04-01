@@ -160,8 +160,8 @@ func (t *Topology) keyRotationBeginBlockLocked(ctx context.Context) {
 	for _, nodeID := range nodeIDs {
 		data, ok := t.validators[nodeID]
 		if !ok {
-			// this should never happened, but just to be safe
-			t.log.Error("failed to rotate key due to non existing validator", logging.String("nodeID", nodeID))
+			// this should actually happen if validator was removed due to poor performance
+			t.log.Error("failed to rotate Vega key due to non present validator", logging.String("nodeID", nodeID))
 			continue
 		}
 

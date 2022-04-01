@@ -39,8 +39,8 @@ const (
 	UndelegateCommand Command = 0x4E
 	// CheckpointRestoreCommand ...
 	CheckpointRestoreCommand Command = 0x4F
-	// KeyRotateSubmissionCommand ...
-	KeyRotateSubmissionCommand Command = 0x50
+	// RotateKeySubmissionCommand ...
+	RotateKeySubmissionCommand Command = 0x50
 	// StateVariableProposalCommand ...
 	StateVariableProposalCommand Command = 0x51
 	// TransferFundsCommand ...
@@ -49,8 +49,8 @@ const (
 	CancelTransferFundsCommand Command = 0x55
 	// ValidatorHeartbeat ...
 	ValidatorHeartbeatCommand Command = 0x56
-	// EthereumKeyRotateSubmissionCommand ...
-	EthereumKeyRotateSubmissionCommand Command = 0x57
+	// RotateEthereumKeySubmissionCommand ...
+	RotateEthereumKeySubmissionCommand Command = 0x57
 )
 
 var commandName = map[Command]string{
@@ -71,17 +71,17 @@ var commandName = map[Command]string{
 	DelegateCommand:                    "Delegate",
 	UndelegateCommand:                  "Undelegate",
 	CheckpointRestoreCommand:           "Checkpoint Restore",
-	KeyRotateSubmissionCommand:         "Key Rotate Submission",
+	RotateKeySubmissionCommand:         "Key Rotate Submission",
 	StateVariableProposalCommand:       "State Variable Proposal",
 	TransferFundsCommand:               "Transfer Funds",
 	CancelTransferFundsCommand:         "Cancel Transfer Funds",
 	ValidatorHeartbeatCommand:          "Validator Heartbeat",
-	EthereumKeyRotateSubmissionCommand: "Ethereum Key Rotate Submission",
+	RotateEthereumKeySubmissionCommand: "Ethereum Key Rotate Submission",
 }
 
 func (cmd Command) IsValidatorCommand() bool {
 	switch cmd {
-	case CheckpointRestoreCommand, NodeSignatureCommand, ChainEventCommand, NodeVoteCommand, ValidatorHeartbeatCommand, KeyRotateSubmissionCommand, StateVariableProposalCommand, EthereumKeyRotateSubmissionCommand:
+	case CheckpointRestoreCommand, NodeSignatureCommand, ChainEventCommand, NodeVoteCommand, ValidatorHeartbeatCommand, RotateKeySubmissionCommand, StateVariableProposalCommand, RotateEthereumKeySubmissionCommand:
 		return true
 	default:
 		return false

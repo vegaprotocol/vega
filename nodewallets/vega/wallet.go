@@ -2,19 +2,24 @@ package vega
 
 import (
 	"fmt"
+	"sync"
 
 	"code.vegaprotocol.io/vega/crypto"
-	"code.vegaprotocol.io/vega/nodewallets/registryloader"
+	"code.vegaprotocol.io/vega/nodewallets/registry"
 	"code.vegaprotocol.io/vegawallet/wallet"
-	storev1 "code.vegaprotocol.io/vegawallet/wallet/store/v1"
 )
 
+type loader interface {
+	Load(walletName, passphrase string) (*Wallet, error)
+}
+
 type Wallet struct {
-	homeDir  string
+	loader   loader
 	name     string
 	keyPair  wallet.KeyPair
 	pubKey   crypto.PublicKey
 	walletID crypto.PublicKey
+	mut      sync.Mutex
 }
 
 func (w *Wallet) Name() string {
@@ -49,16 +54,14 @@ func (w *Wallet) ID() crypto.PublicKey {
 	return w.walletID
 }
 
-func (w *Wallet) Reload(rw registryloader.RegisteredVegaWallet) error {
-	store, err := storev1.InitialiseStore(w.homeDir)
+func (w *Wallet) Reload(rw registry.RegisteredVegaWallet) error {
+	nW, err := w.loader.Load(rw.Name, rw.Passphrase)
 	if err != nil {
-		return fmt.Errorf("failed to initialise store: %w", err)
+		return fmt.Errorf("failed to load wallet: %w", err)
 	}
 
-	nW, err := newWallet(store, w.homeDir, rw.Name, rw.Passphrase)
-	if err != nil {
-		return fmt.Errorf("failed to create new wallet: %w", err)
-	}
+	w.mut.Lock()
+	defer w.mut.Unlock()
 
 	w.name = nW.name
 	w.keyPair = nW.keyPair

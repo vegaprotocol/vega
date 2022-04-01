@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 
 	"code.vegaprotocol.io/shared/paths"
-	"code.vegaprotocol.io/vega/nodewallets/registryloader"
+	"code.vegaprotocol.io/vega/nodewallets/registry"
 	"code.vegaprotocol.io/vega/nodewallets/vega"
 )
 
@@ -17,7 +17,7 @@ var (
 )
 
 func GetVegaWallet(vegaPaths paths.Paths, registryPassphrase string) (*vega.Wallet, error) {
-	registryLoader, err := registryloader.New(vegaPaths, registryPassphrase)
+	registryLoader, err := registry.NewLoader(vegaPaths, registryPassphrase)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't initialise node wallet registry: %v", err)
 	}
@@ -45,24 +45,20 @@ func GetVegaWallet(vegaPaths paths.Paths, registryPassphrase string) (*vega.Wall
 }
 
 func GetNodeWallets(config Config, vegaPaths paths.Paths, registryPassphrase string) (*NodeWallets, error) {
-	nodeWallets := &NodeWallets{
-		registryPassphrase: registryPassphrase,
-	}
+	nodeWallets := &NodeWallets{}
 
-	registryLoader, err := registryloader.New(vegaPaths, registryPassphrase)
+	registryLoader, err := registry.NewLoader(vegaPaths, registryPassphrase)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't initialise node wallet registry: %v", err)
 	}
 
-	nodeWallets.registryLoader = registryLoader
-
-	registry, err := registryLoader.GetRegistry(registryPassphrase)
+	reg, err := registryLoader.GetRegistry(registryPassphrase)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't load node wallet registry: %v", err)
 	}
 
-	if registry.Ethereum != nil {
-		w, err := getEthereumWalletWithRegistry(config.ETH, vegaPaths, registry)
+	if reg.Ethereum != nil {
+		w, err := getEthereumWalletWithRegistry(config.ETH, vegaPaths, reg)
 		if err != nil {
 			return nil, err
 		}
@@ -70,21 +66,21 @@ func GetNodeWallets(config Config, vegaPaths paths.Paths, registryPassphrase str
 		nodeWallets.Ethereum = w
 	}
 
-	if registry.Vega != nil {
+	if reg.Vega != nil {
 		vegaWalletLoader, err := vega.InitialiseWalletLoader(vegaPaths)
 		if err != nil {
 			return nil, fmt.Errorf("couldn't initialise Vega node wallet loader: %w", err)
 		}
 
-		nodeWallets.Vega, err = vegaWalletLoader.Load(registry.Vega.Name, registry.Vega.Passphrase)
+		nodeWallets.Vega, err = vegaWalletLoader.Load(reg.Vega.Name, reg.Vega.Passphrase)
 		if err != nil {
 			return nil, fmt.Errorf("couldn't load Vega node wallet: %w", err)
 		}
 	}
 
-	if registry.Tendermint != nil {
+	if reg.Tendermint != nil {
 		nodeWallets.Tendermint = &TendermintPubkey{
-			Pubkey: registry.Tendermint.Pubkey,
+			Pubkey: reg.Tendermint.Pubkey,
 		}
 	}
 
@@ -92,17 +88,17 @@ func GetNodeWallets(config Config, vegaPaths paths.Paths, registryPassphrase str
 }
 
 func GenerateVegaWallet(vegaPaths paths.Paths, registryPassphrase, walletPassphrase string, overwrite bool) (map[string]string, error) {
-	registryLoader, err := registryloader.New(vegaPaths, registryPassphrase)
+	registryLoader, err := registry.NewLoader(vegaPaths, registryPassphrase)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't initialise node wallet registry: %v", err)
 	}
 
-	registry, err := registryLoader.GetRegistry(registryPassphrase)
+	reg, err := registryLoader.GetRegistry(registryPassphrase)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't load node wallet registry: %v", err)
 	}
 
-	if !overwrite && registry.Vega != nil {
+	if !overwrite && reg.Vega != nil {
 		return nil, ErrVegaWalletAlreadyExists
 	}
 
@@ -116,12 +112,12 @@ func GenerateVegaWallet(vegaPaths paths.Paths, registryPassphrase, walletPassphr
 		return nil, fmt.Errorf("couldn't generate Vega node wallet: %w", err)
 	}
 
-	registry.Vega = &registryloader.RegisteredVegaWallet{
+	reg.Vega = &registry.RegisteredVegaWallet{
 		Name:       w.Name(),
 		Passphrase: walletPassphrase,
 	}
 
-	if err := registryLoader.SaveRegistry(registry, registryPassphrase); err != nil {
+	if err := registryLoader.SaveRegistry(reg, registryPassphrase); err != nil {
 		return nil, fmt.Errorf("couldn't save registry: %w", err)
 	}
 
@@ -134,17 +130,17 @@ func ImportVegaWallet(vegaPaths paths.Paths, registryPassphrase, walletPassphras
 		return nil, fmt.Errorf("path to the wallet file need to be absolute")
 	}
 
-	registryLoader, err := registryloader.New(vegaPaths, registryPassphrase)
+	registryLoader, err := registry.NewLoader(vegaPaths, registryPassphrase)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't initialise node wallet registry: %v", err)
 	}
 
-	registry, err := registryLoader.GetRegistry(registryPassphrase)
+	reg, err := registryLoader.GetRegistry(registryPassphrase)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't load node wallet registry: %v", err)
 	}
 
-	if !overwrite && registry.Vega != nil {
+	if !overwrite && reg.Vega != nil {
 		return nil, ErrVegaWalletAlreadyExists
 	}
 
@@ -158,12 +154,12 @@ func ImportVegaWallet(vegaPaths paths.Paths, registryPassphrase, walletPassphras
 		return nil, fmt.Errorf("couldn't import Vega node wallet: %w", err)
 	}
 
-	registry.Vega = &registryloader.RegisteredVegaWallet{
+	reg.Vega = &registry.RegisteredVegaWallet{
 		Name:       w.Name(),
 		Passphrase: walletPassphrase,
 	}
 
-	if err := registryLoader.SaveRegistry(registry, registryPassphrase); err != nil {
+	if err := registryLoader.SaveRegistry(reg, registryPassphrase); err != nil {
 		return nil, fmt.Errorf("couldn't save registry: %w", err)
 	}
 
@@ -176,25 +172,25 @@ func ImportTendermintPubkey(
 	registryPassphrase, pubkey string,
 	overwrite bool,
 ) (map[string]string, error) {
-	registryLoader, err := registryloader.New(vegaPaths, registryPassphrase)
+	registryLoader, err := registry.NewLoader(vegaPaths, registryPassphrase)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't initialise node wallet registry: %v", err)
 	}
 
-	registry, err := registryLoader.GetRegistry(registryPassphrase)
+	reg, err := registryLoader.GetRegistry(registryPassphrase)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't load node wallet registry: %v", err)
 	}
 
-	if !overwrite && registry.Tendermint != nil {
+	if !overwrite && reg.Tendermint != nil {
 		return nil, ErrTendermintPubkeyAlreadyExists
 	}
 
-	registry.Tendermint = &registryloader.RegisteredTendermintPubkey{
+	reg.Tendermint = &registry.RegisteredTendermintPubkey{
 		Pubkey: pubkey,
 	}
 
-	if err := registryLoader.SaveRegistry(registry, registryPassphrase); err != nil {
+	if err := registryLoader.SaveRegistry(reg, registryPassphrase); err != nil {
 		return nil, fmt.Errorf("couldn't save registry: %w", err)
 	}
 

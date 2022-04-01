@@ -4,9 +4,11 @@ import (
 	"fmt"
 	"net/http"
 
+	"code.vegaprotocol.io/shared/paths"
 	"code.vegaprotocol.io/vega/crypto"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/nodewallets"
+	"code.vegaprotocol.io/vega/nodewallets/registry"
 )
 
 type wallet interface {
@@ -15,8 +17,8 @@ type wallet interface {
 }
 
 type Wallet struct {
-	Name      string
-	PublicKey string
+	Name      string `json:"name"`
+	PublicKey string `json:"public_key"`
 }
 
 func (w *Wallet) String() string {
@@ -40,15 +42,29 @@ type NodeWalletReloadReply struct {
 }
 
 type NodeWallet struct {
-	log         *logging.Logger
-	nodeWallets *nodewallets.NodeWallets
+	log                  *logging.Logger
+	nodeWallets          *nodewallets.NodeWallets
+	registryLoader       *registry.RegistryLoader
+	nodeWalletPassphrase string
 }
 
-func newNodeWallet(log *logging.Logger, nodeWallets *nodewallets.NodeWallets) *NodeWallet {
-	return &NodeWallet{
-		log:         log,
-		nodeWallets: nodeWallets,
+func NewNodeWallet(
+	log *logging.Logger,
+	vegaPaths paths.Paths,
+	nodeWalletPassphrase string,
+	nodeWallets *nodewallets.NodeWallets,
+) (*NodeWallet, error) {
+	registryLoader, err := registry.NewLoader(vegaPaths, nodeWalletPassphrase)
+	if err != nil {
+		return nil, err
 	}
+
+	return &NodeWallet{
+		log:                  log,
+		nodeWallets:          nodeWallets,
+		registryLoader:       registryLoader,
+		nodeWalletPassphrase: nodeWalletPassphrase,
+	}, nil
 }
 
 func (h *NodeWallet) Reload(r *http.Request, args *NodeWalletArgs, reply *NodeWalletReloadReply) error {
@@ -58,7 +74,12 @@ func (h *NodeWallet) Reload(r *http.Request, args *NodeWalletArgs, reply *NodeWa
 	case "vega":
 		oW := newWallet(h.nodeWallets.Vega)
 
-		if err := h.nodeWallets.ReloadVega(); err != nil {
+		reg, err := h.registryLoader.GetRegistry(h.nodeWalletPassphrase)
+		if err != nil {
+			return fmt.Errorf("couldn't load node wallet registry: %v", err)
+		}
+
+		if err := h.nodeWallets.Vega.Reload(*reg.Vega); err != nil {
 			h.log.Error("Reloading node wallet failed", logging.Error(err))
 			return fmt.Errorf("failed to reload Vega wallet: %w", err)
 		}
@@ -73,7 +94,12 @@ func (h *NodeWallet) Reload(r *http.Request, args *NodeWalletArgs, reply *NodeWa
 	case "ethereum":
 		oW := newWallet(h.nodeWallets.Ethereum)
 
-		if err := h.nodeWallets.ReloadEthereum(); err != nil {
+		reg, err := h.registryLoader.GetRegistry(h.nodeWalletPassphrase)
+		if err != nil {
+			return fmt.Errorf("couldn't load node wallet registry: %v", err)
+		}
+
+		if err := h.nodeWallets.Ethereum.Reload(reg.Ethereum.Details); err != nil {
 			h.log.Error("Reloading node wallet failed", logging.Error(err))
 			return fmt.Errorf("failed to reload Ethereum wallet: %w", err)
 		}

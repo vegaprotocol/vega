@@ -3,10 +3,11 @@ package clef
 import (
 	"context"
 	"fmt"
+	"sync"
 	"time"
 
 	"code.vegaprotocol.io/vega/crypto"
-	"code.vegaprotocol.io/vega/nodewallets/registryloader"
+	"code.vegaprotocol.io/vega/nodewallets/registry"
 	"github.com/ethereum/go-ethereum/accounts"
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
@@ -25,6 +26,7 @@ type wallet struct {
 	endpoint string
 	name     string
 	account  *accounts.Account
+	mut      sync.Mutex
 }
 
 func newAccount(accountAddr ethcommon.Address, endpoint string) *accounts.Account {
@@ -166,16 +168,20 @@ func (w *wallet) PubKey() crypto.PublicKey {
 	return crypto.NewPublicKey(w.account.Address.Hex(), w.account.Address.Bytes())
 }
 
-func (w *wallet) Reload(details registryloader.EthereumWalletDetails) error {
-	d, ok := details.(registryloader.EthereumClefWallet)
+func (w *wallet) Reload(details registry.EthereumWalletDetails) error {
+	d, ok := details.(registry.EthereumClefWallet)
 	if !ok {
-		return fmt.Errorf("failed to get EthereumClefWallet")
+		// this would mean an implementation error
+		panic(fmt.Errorf("failed to get EthereumClefWallet"))
 	}
 
 	accountAddr := ethcommon.HexToAddress(d.AccountAddress)
 	if err := w.contains(accountAddr); err != nil {
 		return fmt.Errorf("account not found: %w", err)
 	}
+
+	w.mut.Lock()
+	defer w.mut.Unlock()
 
 	w.account = newAccount(accountAddr, w.endpoint)
 

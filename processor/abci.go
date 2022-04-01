@@ -238,10 +238,10 @@ func NewApp(
 		HandleCheckTx(txn.NodeVoteCommand, app.RequireValidatorPubKey).
 		HandleCheckTx(txn.ChainEventCommand, app.RequireValidatorPubKey).
 		HandleCheckTx(txn.SubmitOracleDataCommand, app.CheckSubmitOracleData).
-		HandleCheckTx(txn.KeyRotateSubmissionCommand, app.RequireValidatorMasterPubKey).
+		HandleCheckTx(txn.RotateKeySubmissionCommand, app.RequireValidatorMasterPubKey).
 		HandleCheckTx(txn.StateVariableProposalCommand, app.RequireValidatorPubKey).
 		HandleCheckTx(txn.ValidatorHeartbeatCommand, app.RequireValidatorPubKey).
-		HandleCheckTx(txn.EthereumKeyRotateSubmissionCommand, app.RequireValidatorPubKey)
+		HandleCheckTx(txn.RotateEthereumKeySubmissionCommand, app.RequireValidatorPubKey)
 
 	app.abci.
 		HandleDeliverTx(txn.AnnounceNodeCommand,
@@ -283,12 +283,12 @@ func NewApp(
 			app.SendEventOnError(app.DeliverUndelegate)).
 		HandleDeliverTx(txn.CheckpointRestoreCommand,
 			app.SendEventOnError(app.DeliverReloadCheckpoint)).
-		HandleDeliverTx(txn.KeyRotateSubmissionCommand,
+		HandleDeliverTx(txn.RotateKeySubmissionCommand,
 			app.RequireValidatorMasterPubKeyW(app.DeliverKeyRotateSubmission)).
 		HandleDeliverTx(txn.StateVariableProposalCommand,
 			app.RequireValidatorPubKeyW(app.DeliverStateVarProposal)).
-		HandleDeliverTx(txn.EthereumKeyRotateSubmissionCommand,
-			app.RequireValidatorMasterPubKeyW(app.DeliverEthereumKeyRotateSubmission))
+		HandleDeliverTx(txn.RotateEthereumKeySubmissionCommand,
+			app.RequireValidatorPubKeyW(app.DeliverEthereumKeyRotateSubmission))
 
 	app.time.NotifyOnTick(app.onTick)
 

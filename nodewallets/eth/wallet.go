@@ -2,7 +2,7 @@ package eth
 
 import (
 	"code.vegaprotocol.io/vega/crypto"
-	"code.vegaprotocol.io/vega/nodewallets/registryloader"
+	"code.vegaprotocol.io/vega/nodewallets/registry"
 )
 
 type wallet interface {
@@ -13,7 +13,7 @@ type wallet interface {
 	Algo() string
 	Version() (string, error)
 	PubKey() crypto.PublicKey
-	Reload(details registryloader.EthereumWalletDetails) error
+	Reload(details registry.EthereumWalletDetails) error
 }
 
 type Wallet struct {
@@ -52,6 +52,6 @@ func (w *Wallet) PubKey() crypto.PublicKey {
 	return w.w.PubKey()
 }
 
-func (w *Wallet) Reload(details registryloader.EthereumWalletDetails) error {
+func (w *Wallet) Reload(details registry.EthereumWalletDetails) error {
 	return w.w.Reload(details)
 }

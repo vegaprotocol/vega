@@ -108,8 +108,8 @@ func (t *Topology) ethereumKeyRotationBeginBlockLocked(ctx context.Context) {
 	for _, r := range rotations {
 		data, ok := t.validators[r.NodeID]
 		if !ok {
-			// this should never happened, but just to be safe
-			t.log.Error("failed to rotate Ethereum key due to non existing validator", logging.String("nodeID", r.NodeID), logging.String("EthereumAddress", r.NewAddress))
+			// this should actually happen if validator was removed due to poor performance
+			t.log.Error("failed to rotate Ethereum key due to non present validator", logging.String("nodeID", r.NodeID), logging.String("EthereumAddress", r.NewAddress))
 			continue
 		}
 

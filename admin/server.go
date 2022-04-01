@@ -2,10 +2,12 @@ package admin
 
 import (
 	"context"
+	"fmt"
 	"net"
 	"net/http"
 	"os"
 
+	"code.vegaprotocol.io/shared/paths"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/nodewallets"
 	"github.com/gorilla/mux"
@@ -15,28 +17,36 @@ import (
 
 // Server implement a socket server allowing to run simple RPC commands.
 type Server struct {
-	log         *logging.Logger
-	cfg         Config
-	srv         *http.Server
-	nodeWallets *nodewallets.NodeWallets
+	log *logging.Logger
+	cfg Config
+	srv *http.Server
+
+	nodeWallet *NodeWallet
 }
 
 // NewServer returns a new instance of the RPC socket server.
 func NewServer(
 	log *logging.Logger,
 	config Config,
+	vegaPaths paths.Paths,
+	nodeWalletPassphrase string,
 	nodeWallets *nodewallets.NodeWallets,
-) *Server {
+) (*Server, error) {
 	// setup logger
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
 
-	return &Server{
-		log:         log,
-		cfg:         config,
-		nodeWallets: nodeWallets,
-		srv:         nil,
+	nodeWallet, err := NewNodeWallet(log, vegaPaths, nodeWalletPassphrase, nodeWallets)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create node wallet service: %w", err)
 	}
+
+	return &Server{
+		log:        log,
+		cfg:        config,
+		nodeWallet: nodeWallet,
+		srv:        nil,
+	}, nil
 }
 
 // ReloadConf update the internal configuration of the server.
@@ -67,7 +77,7 @@ func (s *Server) Start() {
 	rs.RegisterCodec(json.NewCodec(), "application/json")
 	rs.RegisterCodec(json.NewCodec(), "application/json;charset=UTF-8")
 
-	rs.RegisterService(newNodeWallet(s.log, s.nodeWallets), "")
+	rs.RegisterService(s.nodeWallet, "")
 	r := mux.NewRouter()
 	r.Handle(s.cfg.Server.HttpPath, rs)
 

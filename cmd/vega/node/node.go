@@ -273,7 +273,11 @@ func (n *NodeCommand) startAPIs() error {
 	n.proxyServer = rest.NewProxyServer(n.Log, n.conf.API)
 
 	if bool(n.conf.Admin.Server.Enabled) && n.conf.IsValidator() {
-		n.adminServer = admin.NewServer(n.Log, n.conf.Admin, n.nodeWallets)
+		adminServer, err := admin.NewServer(n.Log, n.conf.Admin, n.vegaPaths, n.nodeWalletPassphrase, n.nodeWallets)
+		if err != nil {
+			return err
+		}
+		n.adminServer = adminServer
 	}
 
 	go n.grpcServer.Start()

@@ -10,6 +10,7 @@ import (
 	"code.vegaprotocol.io/vega/validators/mocks"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	abcitypes "github.com/tendermint/tendermint/abci/types"
 	types1 "github.com/tendermint/tendermint/proto/tendermint/types"
 )
@@ -32,9 +33,9 @@ func testRotateEthereumKeySuccess(t *testing.T) {
 		VegaPubKey:      "vega-key",
 		EthereumAddress: "eth-address",
 	}
-	ctx := context.TODO()
+	ctx := context.Background()
 	err := top.AddNewNode(ctx, &nr, validators.ValidatorStatusTendermint)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	ekr := &commandspb.EthereumKeyRotateSubmission{
 		TargetBlock:    15,
@@ -52,7 +53,7 @@ func testRotateEthereumKeySuccess(t *testing.T) {
 	).Times(1)
 
 	err = top.RotateEthereumKey(ctx, nr.Id, 10, ekr)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 }
 
 func testRotateEthereumKeyFailsOnNonExistingNode(t *testing.T) {
@@ -60,7 +61,7 @@ func testRotateEthereumKeyFailsOnNonExistingNode(t *testing.T) {
 	defer top.ctrl.Finish()
 
 	err := top.RotateEthereumKey(
-		context.TODO(),
+		context.Background(),
 		"vega-master-pubkey",
 		10,
 		newEthereumKeyRotationSubmission("", "new-eth-addr", 10),
@@ -83,11 +84,11 @@ func testRotateEthereumKeyFailsWhenTargetBlockHeightIsLessThenCurrentBlockHeight
 		EthereumAddress: "eth-address",
 	}
 
-	err := top.AddNewNode(context.TODO(), &nr, validators.ValidatorStatusTendermint)
-	assert.NoError(t, err)
+	err := top.AddNewNode(context.Background(), &nr, validators.ValidatorStatusTendermint)
+	require.NoError(t, err)
 
 	err = top.RotateEthereumKey(
-		context.TODO(),
+		context.Background(),
 		id,
 		10,
 		newEthereumKeyRotationSubmission("eth-address", "new-eth-addr", 5),
@@ -108,11 +109,11 @@ func testRotateEthereumKeyFailsWhenCurrentAddressDoesNotMatch(t *testing.T) {
 		EthereumAddress: "eth-address",
 		VegaPubKeyIndex: 1,
 	}
-	err := top.AddNewNode(context.TODO(), &nr, validators.ValidatorStatusTendermint)
-	assert.NoError(t, err)
+	err := top.AddNewNode(context.Background(), &nr, validators.ValidatorStatusTendermint)
+	require.NoError(t, err)
 
 	err = top.RotateEthereumKey(
-		context.TODO(),
+		context.Background(),
 		id,
 		10,
 		newEthereumKeyRotationSubmission("random-key", "new-eth-key", 20),
@@ -134,7 +135,7 @@ func testEthereumKeyRotationBeginBlock(t *testing.T) {
 
 	chainValidators := []string{"tm-pubkey-1", "tm-pubkey-2", "tm-pubkey-3", "tm-pubkey-4"}
 
-	ctx := context.TODO()
+	ctx := context.Background()
 	for i := 0; i < len(chainValidators); i++ {
 		j := i + 1
 		id := fmt.Sprintf("vega-master-pubkey-%d", j)
@@ -146,7 +147,7 @@ func testEthereumKeyRotationBeginBlock(t *testing.T) {
 		}
 
 		err := top.AddNewNode(ctx, &nr, validators.ValidatorStatusTendermint)
-		assert.NoErrorf(t, err, "failed to add node registation %s", id)
+		require.NoErrorf(t, err, "failed to add node registation %s", id)
 	}
 
 	top.signatures.EXPECT().EmitRemoveValidatorsSignatures(
@@ -164,38 +165,38 @@ func testEthereumKeyRotationBeginBlock(t *testing.T) {
 
 	// add ethereum key rotations
 	err := top.RotateEthereumKey(ctx, "vega-master-pubkey-1", 10, newEthereumKeyRotationSubmission("eth-address-1", "new-eth-address-1", 11))
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	err = top.RotateEthereumKey(ctx, "vega-master-pubkey-2", 10, newEthereumKeyRotationSubmission("eth-address-2", "new-eth-address-2", 11))
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	err = top.RotateEthereumKey(ctx, "vega-master-pubkey-3", 10, newEthereumKeyRotationSubmission("eth-address-3", "new-eth-address-3", 13))
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	err = top.RotateEthereumKey(ctx, "vega-master-pubkey-4", 10, newEthereumKeyRotationSubmission("eth-address-4", "new-eth-address-4", 13))
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// when
 	top.BeginBlock(ctx, abcitypes.RequestBeginBlock{Header: types1.Header{Height: 11}})
 	// then
 	data1 := top.Get("vega-master-pubkey-1")
-	assert.NotNil(t, data1)
+	require.NotNil(t, data1)
 	assert.Equal(t, "new-eth-address-1", data1.EthereumAddress)
 	data2 := top.Get("vega-master-pubkey-2")
-	assert.NotNil(t, data2)
+	require.NotNil(t, data2)
 	assert.Equal(t, "new-eth-address-2", data2.EthereumAddress)
 	data3 := top.Get("vega-master-pubkey-3")
-	assert.NotNil(t, data3)
+	require.NotNil(t, data3)
 	assert.Equal(t, "eth-address-3", data3.EthereumAddress)
 	data4 := top.Get("vega-master-pubkey-4")
-	assert.NotNil(t, data4)
+	require.NotNil(t, data4)
 	assert.Equal(t, "eth-address-4", data4.EthereumAddress)
 
 	// when
 	top.BeginBlock(ctx, abcitypes.RequestBeginBlock{Header: types1.Header{Height: 13}})
 	// then
 	data3 = top.Get("vega-master-pubkey-3")
-	assert.NotNil(t, data3)
+	require.NotNil(t, data3)
 	assert.Equal(t, "new-eth-address-3", data3.EthereumAddress)
 	data4 = top.Get("vega-master-pubkey-4")
-	assert.NotNil(t, data4)
+	require.NotNil(t, data4)
 	assert.Equal(t, "new-eth-address-4", data4.EthereumAddress)
 }
 

@@ -7,7 +7,7 @@ import (
 
 	"code.vegaprotocol.io/vega/nodewallets/eth/clef"
 	"code.vegaprotocol.io/vega/nodewallets/eth/clef/mocks"
-	"code.vegaprotocol.io/vega/nodewallets/registryloader"
+	"code.vegaprotocol.io/vega/nodewallets/registry"
 	ethCommon "github.com/ethereum/go-ethereum/common"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
@@ -187,7 +187,7 @@ func testReloadWalletSuccess(t *testing.T) {
 	a.Equal(testAddress.Hex(), wallet.PubKey().Hex())
 
 	// reload key
-	wallet.Reload(registryloader.EthereumClefWallet{
+	wallet.Reload(registry.EthereumClefWallet{
 		Name:           wallet.Name(),
 		AccountAddress: reloadedAddress.Hex(),
 		ClefAddress:    clefAddr,

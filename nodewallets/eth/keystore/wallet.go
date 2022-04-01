@@ -4,10 +4,11 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sync"
 
 	vgrand "code.vegaprotocol.io/shared/libs/rand"
 	"code.vegaprotocol.io/vega/crypto"
-	"code.vegaprotocol.io/vega/nodewallets/registryloader"
+	"code.vegaprotocol.io/vega/nodewallets/registry"
 	"github.com/ethereum/go-ethereum/accounts"
 	"github.com/ethereum/go-ethereum/accounts/keystore"
 )
@@ -23,6 +24,7 @@ type Wallet struct {
 	ks         *keystore.KeyStore
 	passphrase string
 	address    crypto.PublicKey
+	mut        sync.Mutex
 }
 
 func newWallet(loader loader, walletName, passphrase string, data []byte) (*Wallet, error) {
@@ -81,16 +83,20 @@ func (w *Wallet) PubKey() crypto.PublicKey {
 	return w.address
 }
 
-func (w *Wallet) Reload(details registryloader.EthereumWalletDetails) error {
-	d, ok := details.(registryloader.EthereumKeyStoreWallet)
+func (w *Wallet) Reload(details registry.EthereumWalletDetails) error {
+	d, ok := details.(registry.EthereumKeyStoreWallet)
 	if !ok {
-		return fmt.Errorf("failed to get EthereumKeyStoreWallet")
+		// this would mean an implementation error
+		panic(fmt.Errorf("failed to get EthereumKeyStoreWallet"))
 	}
 
 	nW, err := w.loader.Load(d.Name, d.Passphrase)
 	if err != nil {
 		return fmt.Errorf("failed to load new wallet: %w", err)
 	}
+
+	w.mut.Lock()
+	defer w.mut.Unlock()
 
 	w.name = nW.name
 	w.acc = nW.acc
