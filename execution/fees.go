@@ -67,8 +67,8 @@ func (fs *FeeSplitter) MarketValueProxy(mvwl time.Duration, totalStakeU *num.Uin
 	// t is the distance between
 	awl := fs.activeWindowLength(mvwl)
 	if awl > 0 {
-		factor := num.DecimalFromFloat(mvwl.Seconds()).Div(
-			num.DecimalFromFloat(awl.Seconds()))
+		factor := num.DecimalFromInt64(mvwl.Nanoseconds()).Div(
+			num.DecimalFromInt64(awl.Nanoseconds()))
 		tv := num.DecimalFromUint(fs.tradeValue)
 		return num.MaxD(totalStake, factor.Mul(tv))
 	}
