@@ -20,7 +20,8 @@ type ValidatorScore struct {
 }
 
 func NewValidatorScore(ctx context.Context, nodeID, epochSeq string, score, normalisedScore, rawValidatorScore,
-	validatorPerformance num.Decimal, multisigScore num.Decimal, validatorStatus string) *ValidatorScore {
+	validatorPerformance num.Decimal, multisigScore num.Decimal, validatorStatus string,
+) *ValidatorScore {
 	return &ValidatorScore{
 		Base:                 newBase(ctx, ValidatorScoreEvent),
 		NodeID:               nodeID,

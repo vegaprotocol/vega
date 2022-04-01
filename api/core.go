@@ -470,7 +470,8 @@ func (s *coreService) getGenesisTimeAndChainID(ctx context.Context) error {
 }
 
 func (s *coreService) ObserveEventBus(
-	stream protoapi.CoreService_ObserveEventBusServer) error {
+	stream protoapi.CoreService_ObserveEventBusServer,
+) error {
 	defer metrics.StartAPIRequestAndTimeGRPC("ObserveEventBus")()
 
 	ctx, cfunc := context.WithCancel(stream.Context())

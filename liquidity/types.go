@@ -226,7 +226,8 @@ func (o *SnapshotablePartiesOrders) Get(party, orderID string) (*types.Order, bo
 
 // GetForParty expects to read through them, not do any write operation.
 func (o *SnapshotablePartiesOrders) GetForParty(
-	party string) (map[string]*types.Order, bool) {
+	party string,
+) (map[string]*types.Order, bool) {
 	orders, ok := o.m[party]
 	return orders, ok
 }

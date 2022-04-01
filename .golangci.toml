@@ -50,6 +50,17 @@ disable = [
     "funlen",
     "gocyclo",
     "errname",
+    # New in golangci-lint 1.45 but would be nice to address
+    "maintidx",
+    "contextcheck",
+    "containedctx",
+    "varnamelen",
+    "ireturn",
+    "nilnil",
+    "errchkjson",
+    "ifshort",
+    "predeclared",
+    "nolintlint",
 ]
 
 [[issues.exclude-rules]]

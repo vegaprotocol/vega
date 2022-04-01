@@ -70,7 +70,8 @@ func (e *EthereumConfirmations) Check(block uint64) error {
 }
 
 func (e *EthereumConfirmations) currentHeight(
-	_ context.Context) (uint64, error) {
+	_ context.Context,
+) (uint64, error) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 

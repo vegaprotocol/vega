@@ -65,21 +65,25 @@ func (app *appW) EndBlock(req types.RequestEndBlock) types.ResponseEndBlock {
 }
 
 func (app *appW) ListSnapshots(
-	req types.RequestListSnapshots) types.ResponseListSnapshots {
+	req types.RequestListSnapshots,
+) types.ResponseListSnapshots {
 	return app.impl.ListSnapshots(req)
 }
 
 func (app *appW) OfferSnapshot(
-	req types.RequestOfferSnapshot) types.ResponseOfferSnapshot {
+	req types.RequestOfferSnapshot,
+) types.ResponseOfferSnapshot {
 	return app.impl.OfferSnapshot(req)
 }
 
 func (app *appW) LoadSnapshotChunk(
-	req types.RequestLoadSnapshotChunk) types.ResponseLoadSnapshotChunk {
+	req types.RequestLoadSnapshotChunk,
+) types.ResponseLoadSnapshotChunk {
 	return app.impl.LoadSnapshotChunk(req)
 }
 
 func (app *appW) ApplySnapshotChunk(
-	req types.RequestApplySnapshotChunk) types.ResponseApplySnapshotChunk {
+	req types.RequestApplySnapshotChunk,
+) types.ResponseApplySnapshotChunk {
 	return app.impl.ApplySnapshotChunk(req)
 }
