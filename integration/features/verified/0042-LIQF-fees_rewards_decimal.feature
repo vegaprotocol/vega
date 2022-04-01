@@ -11,7 +11,11 @@ Scenario: 001: 1 LP joining at start, checking liquidity rewards over 3 periods,
       | 0.0004    | 0.001              |
     And the price monitoring updated every "1" seconds named "price-monitoring-1":
       | horizon | probability | auction extension |
-      | 100000   | 0.99        | 3                 |
+      | 100000   | 0.99        | 3                |
+    And the following assets are registered:
+      | id  | decimal places |
+      | ETH | 5              |
+      | USD | 2              |
     And the markets:
       | id        | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | oracle config          | decimal places | position decimal places |
       | ETH/MAR22 | ETH        | USD   | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 0              | 0                       |
@@ -27,37 +31,32 @@ Scenario: 001: 1 LP joining at start, checking liquidity rewards over 3 periods,
       | market.liquidity.targetstake.triggering.ratio       | 0     |
       | market.liquidity.providers.fee.distributionTimeStep | 10m   |
 
-    And the following assets are registered:
-      | id  | decimal places |
-      | ETH | 5              |
-      | USD | 2              |
-
     Given the average block duration is "2"
   
     # setup accounts
     Given the parties deposit on asset's general account the following amount:
       | party  | asset | amount          |
-      | lp1    | USD   | 100000000000    |
-      | lp1    | ETH   | 100000000000000 |
-      | party1 | USD   | 10000000000     |
-      | party1 | ETH   | 10000000000000  |
-      | party2 | USD   | 10000000000     |
-      | party2 | ETH   | 10000000000000  |
-
+      | lp1    | USD   | 100000000000000000    |
+      | lp1    | ETH   | 100000000000000000 |
+      | party1 | USD   | 10000000000000000     |
+      | party1 | ETH   | 10000000000000000  |
+      | party2 | USD   | 10000000000000000     |
+      | party2 | ETH   | 10000000000000000  |
+      
     And the parties submit the following liquidity provision:
       | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
       | lp1 | lp1   | USD/DEC19 | 1000000000        | 0.001 | buy  | BID              | 1          | 2000   | submission |
-      | lp1 | lp1   | USD/DEC20 | 1000000000        | 0.001 | buy  | BID              | 1          | 200000 | submission |
-      | lp1 | lp1   | USD/DEC21 | 1000000000        | 0.001 | buy  | BID              | 1          | 200000 | submission |
-      | lp1 | lp1   | USD/DEC19 | 1000000000        | 0.001 | buy  | MID              | 2          | 1000    | amendment |
-      | lp1 | lp1   | USD/DEC20 | 1000000000        | 0.001 | buy  | MID              | 2          | 100000  | amendment |
-      | lp1 | lp1   | USD/DEC21 | 1000000000        | 0.001 | buy  | MID              | 2          | 100000  | amendment |
-      | lp1 | lp1   | USD/DEC19 | 1000000000        | 0.001 | sell | ASK              | 1          | 2000    | amendment |
-      | lp1 | lp1   | USD/DEC20 | 1000000000        | 0.001 | sell | ASK              | 1          | 200000  | amendment |
-      | lp1 | lp1   | USD/DEC21 | 1000000000        | 0.001 | sell | ASK              | 1          | 200000  | amendment |
-      | lp1 | lp1   | USD/DEC19 | 1000000000        | 0.001 | sell | MID              | 2          | 1000     | amendment|
-      | lp1 | lp1   | USD/DEC20 | 1000000000        | 0.001 | sell | MID              | 2          | 100000   | amendment|
-      | lp1 | lp1   | USD/DEC21 | 1000000000        | 0.001 | sell | MID              | 2          | 100000   | amendment|
+      | lp1 | lp1   | USD/DEC20 | 1000000000        | 0.001 | buy  | BID              | 1          | 200000 | submission  |
+      | lp1 | lp1   | USD/DEC21 | 1000000000        | 0.001 | buy  | BID              | 1          | 200000 | submission  |
+      | lp1 | lp1   | USD/DEC19 | 1000000000        | 0.001 | buy  | MID              | 2          | 1000   | amendment  |
+      | lp1 | lp1   | USD/DEC20 | 1000000000        | 0.001 | buy  | MID              | 2          | 100000 | amendment  |
+      | lp1 | lp1   | USD/DEC21 | 1000000000        | 0.001 | buy  | MID              | 2          | 100000 | amendment  |
+      | lp1 | lp1   | USD/DEC19 | 1000000000        | 0.001 | sell | ASK              | 1          | 2000   | amendment  |
+      | lp1 | lp1   | USD/DEC20 | 1000000000        | 0.001 | sell | ASK              | 1          | 200000 | amendment  |
+      | lp1 | lp1   | USD/DEC21 | 1000000000        | 0.001 | sell | ASK              | 1          | 200000 | amendment  |
+      | lp1 | lp1   | USD/DEC19 | 1000000000        | 0.001 | sell | MID              | 2          | 1000   | amendment  |
+      | lp1 | lp1   | USD/DEC20 | 1000000000        | 0.001 | sell | MID              | 2          | 100000 | amendment  |
+      | lp1 | lp1   | USD/DEC21 | 1000000000        | 0.001 | sell | MID              | 2          | 100000 | amendment  |
 
     Then the parties place the following orders:
       | party  | market id | side | volume | price    | resulting trades | type       | tif     |
@@ -75,31 +74,31 @@ Scenario: 001: 1 LP joining at start, checking liquidity rewards over 3 periods,
       | party2 | USD/DEC21 | sell | 10000  | 100000000| 0                | TYPE_LIMIT | TIF_GTC |
 
      Then the opening auction period ends for market "USD/DEC19"
-    # Then the opening auction period ends for market "USD/DEC20"
-    # Then the opening auction period ends for market "USD/DEC21"
+     Then the opening auction period ends for market "USD/DEC20"
+     Then the opening auction period ends for market "USD/DEC21"
 
     And the market data for the market "USD/DEC19" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 1000000    | TRADING_MODE_CONTINUOUS | 100000  | 500000    | 1500000   | 100000000    | 1000000000     | 10000         |
+      | 1000000    | TRADING_MODE_CONTINUOUS | 100000  | 863654    | 1154208   | 3556900000   | 1000000000     | 10000         |
 
     And the market data for the market "USD/DEC20" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 100000000  | TRADING_MODE_CONTINUOUS | 1       | 50000000  | 150000000 | 100000000    | 1000000000     | 1000000       |
+      | 100000000  | TRADING_MODE_CONTINUOUS | 100000  | 86365368  | 115420826 | 3556900000   | 0              | 1000000       |
 
     And the market data for the market "USD/DEC21" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 100000000  | TRADING_MODE_CONTINUOUS | 1       | 50000000  | 150000000 | 100000000    | 1000000000     | 10000         |
+      | 100000000  | TRADING_MODE_CONTINUOUS | 100000  | 86365368  | 115420826 | 3556900000   | 0              | 10000         |
     # target_stake = mark_price x max_oi x target_stake_scaling_factor x rf = 1000 x 10 x 1 x 0.1
     # max_oi: max open interest
 
     Then the order book should have the following volumes for market "USD/DEC19":
       | side | price    | volume    |
-      | buy  | 898000   | 75000     |
-      | buy  | 900000   | 1000      |
-      | buy  | 999000   | 14000     |
-      | sell | 1102000  | 61000     |
-      | sell | 1100000  | 1000      |
-      | sell | 1001000  | 14000     |
+      | buy  | 898000   | 3000      |
+      | buy  | 900000   | 11000      |
+      | buy  | 999000   | 5000     |
+      | sell | 1102000  | 3000     |
+      | sell | 1100000  | 11000      |
+      | sell | 1001000  | 5000     |
 
     #volume = ceiling(liquidity_obligation x liquidity-normalised-proportion / probability_of_trading / price)
     #for any price better than the bid price or better than the ask price it returns 0.5
@@ -115,7 +114,7 @@ Scenario: 001: 1 LP joining at start, checking liquidity rewards over 3 periods,
 
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general   | bond  |
-      | lp1    | USD   | ETH/MAR22 | 10680  | 999979320 | 10000 |
+      | lp1    | ETH   | ETH/MAR22 | 10680  | 999979320 | 10000 |
       | party1 | USD   | ETH/MAR22 | 2758   | 99997242  | 0     |
       | party2 | USD   | ETH/MAR22 | 2652   | 99997348  | 0     |
       
