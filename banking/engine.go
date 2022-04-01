@@ -381,7 +381,8 @@ func (e *Engine) finalizeDeposit(ctx context.Context, d *types.Deposit) error {
 }
 
 func (e *Engine) finalizeWithdraw(
-	ctx context.Context, w *types.Withdrawal) error {
+	ctx context.Context, w *types.Withdrawal,
+) error {
 	// always send the withdrawal event, don't delete it from the map because we
 	// may still receive events
 	defer func() {

@@ -1514,7 +1514,8 @@ func (m *Market) applyFees(ctx context.Context, order *types.Order, trades []*ty
 
 func (m *Market) handleConfirmationPassiveOrders(
 	ctx context.Context,
-	conf *types.OrderConfirmation) {
+	conf *types.OrderConfirmation,
+) {
 	if conf.PassiveOrdersAffected != nil {
 		var (
 			evts        = make([]events.Event, 0, len(conf.PassiveOrdersAffected))
@@ -1607,7 +1608,8 @@ func (m *Market) handleConfirmation(ctx context.Context, conf *types.OrderConfir
 }
 
 func (m *Market) confirmMTM(
-	ctx context.Context, order *types.Order) (orderUpdates []*types.Order) {
+	ctx context.Context, order *types.Order,
+) (orderUpdates []*types.Order) {
 	// now let's get the transfers for MTM settlement
 	markPrice := m.getCurrentMarkPrice()
 	evts := m.position.UpdateMarkPrice(markPrice)
@@ -2877,7 +2879,8 @@ func (m *Market) orderAmendWhenParked(originalOrder, amendOrder *types.Order) *t
 // RemoveExpiredOrders remove all expired orders from the order book
 // and also any pegged orders that are parked.
 func (m *Market) RemoveExpiredOrders(
-	ctx context.Context, timestamp int64) ([]*types.Order, error) {
+	ctx context.Context, timestamp int64,
+) ([]*types.Order, error) {
 	timer := metrics.NewTimeCounter(m.mkt.ID, "market", "RemoveExpiredOrders")
 	defer timer.EngineTimeCounterAdd()
 

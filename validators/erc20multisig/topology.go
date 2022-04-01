@@ -305,7 +305,8 @@ func (t *Topology) updateThreshold(ctx context.Context) {
 }
 
 func (t *Topology) setThresholdSetEvent(
-	ctx context.Context, event *types.SignerThresholdSetEvent) {
+	ctx context.Context, event *types.SignerThresholdSetEvent,
+) {
 	// if it's out first time here
 	if t.threshold == nil || event.BlockTime > t.threshold.BlockTime {
 		t.threshold = event
