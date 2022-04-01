@@ -57,6 +57,13 @@ disable = [
     "whitespace",
     "wrapcheck",
     "wsl",
+    # New in golangci-lint 1.45 but would be nice to address
+    "varnamelen",
+    "ireturn",
+    "containedctx",
+    "contextcheck",
+    "maintidx",
+    "nilnil",
     # Deprecated linters
     "golint",
     "interfacer",
