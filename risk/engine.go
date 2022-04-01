@@ -301,7 +301,8 @@ func (e *Engine) UpdateMarginOnNewOrder(ctx context.Context, evt events.Margin, 
 // move monies later, we'll need to close out the party but that cannot be figured out
 // now only in later when we try to move monies from the general account.
 func (e *Engine) UpdateMarginsOnSettlement(
-	ctx context.Context, evts []events.Margin, markPrice *num.Uint) []events.Risk {
+	ctx context.Context, evts []events.Margin, markPrice *num.Uint,
+) []events.Risk {
 	ret := make([]events.Risk, 0, len(evts))
 	// var err error
 	// this will keep going until we've closed this channel

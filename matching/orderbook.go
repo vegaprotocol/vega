@@ -799,7 +799,8 @@ func (b *OrderBook) SubmitOrder(order *types.Order) (*types.OrderConfirmation, e
 
 // DeleteOrder remove a given order on a given side from the book.
 func (b *OrderBook) DeleteOrder(
-	order *types.Order) (*types.Order, error) {
+	order *types.Order,
+) (*types.Order, error) {
 	dorder, err := b.getSide(order.Side).RemoveOrder(order)
 	if err != nil {
 		if b.log.GetLevel() == logging.DebugLevel {

@@ -32,7 +32,8 @@ func (a *ExpiringOrders) GetExpiryingOrderCount() int {
 }
 
 func (a *ExpiringOrders) Insert(
-	orderID string, ts int64) {
+	orderID string, ts int64,
+) {
 	item := &ordersAtTS{ts: ts}
 	if item := a.orders.Get(item); item != nil {
 		item.(*ordersAtTS).orders = append(item.(*ordersAtTS).orders, orderID)

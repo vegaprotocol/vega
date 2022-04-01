@@ -263,7 +263,8 @@ func getTestMarketWithDP(
 	closingAt time.Time,
 	pMonitorSettings *types.PriceMonitoringSettings,
 	openingAuctionDuration *types.AuctionDuration,
-	decimalPlaces uint64) *testMarket {
+	decimalPlaces uint64,
+) *testMarket {
 	t.Helper()
 	return getTestMarket2WithDP(t, now, closingAt, pMonitorSettings, openingAuctionDuration, true, decimalPlaces)
 }
@@ -529,7 +530,8 @@ func addAccountWithAmount(market *testMarket, party string, amnt uint64) *types.
 
 // WithSubmittedLiquidityProvision Submits a Liquidity Provision and asserts that it was created without errors.
 func (tm *testMarket) WithSubmittedLiquidityProvision(t *testing.T, party, id string, amount uint64, fee string,
-	buys, sells []*types.LiquidityOrder) *testMarket {
+	buys, sells []*types.LiquidityOrder,
+) *testMarket {
 	t.Helper()
 	ctx := vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
 
@@ -2981,7 +2983,8 @@ func getMarketOrder(tm *testMarket,
 	side types.Side,
 	partyID string,
 	size uint64,
-	price uint64) *types.Order {
+	price uint64,
+) *types.Order {
 	order := &types.Order{
 		Type:        orderType,
 		TimeInForce: orderTIF,

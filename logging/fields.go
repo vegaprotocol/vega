@@ -217,42 +217,50 @@ func LiquidityID(id string) zap.Field {
 }
 
 func LiquidityProvisionSubmissionProto(
-	lp *commandspb.LiquidityProvisionSubmission) zap.Field {
+	lp *commandspb.LiquidityProvisionSubmission,
+) zap.Field {
 	return zap.String("liquidity-provision-submission", lp.String())
 }
 
 func LiquidityProvisionSubmission(
-	lp types.LiquidityProvisionSubmission) zap.Field {
+	lp types.LiquidityProvisionSubmission,
+) zap.Field {
 	return zap.String("liquidity-provision-submission", lp.String())
 }
 
 func LiquidityProvisionCancellationProto(
-	lp *commandspb.LiquidityProvisionCancellation) zap.Field {
+	lp *commandspb.LiquidityProvisionCancellation,
+) zap.Field {
 	return zap.String("liquidity-provision-cancellation", lp.String())
 }
 
 func LiquidityProvisionCancellation(
-	lp types.LiquidityProvisionCancellation) zap.Field {
+	lp types.LiquidityProvisionCancellation,
+) zap.Field {
 	return zap.String("liquidity-provision-cancellation", lp.String())
 }
 
 func LiquidityProvisionAmendmentProto(
-	lp *commandspb.LiquidityProvisionAmendment) zap.Field {
+	lp *commandspb.LiquidityProvisionAmendment,
+) zap.Field {
 	return zap.String("liquidity-provision-amendment", lp.String())
 }
 
 func LiquidityProvisionAmendment(
-	lp types.LiquidityProvisionAmendment) zap.Field {
+	lp types.LiquidityProvisionAmendment,
+) zap.Field {
 	return zap.String("liquidity-provision-amendment", lp.String())
 }
 
 func WithdrawSubmissionProto(
-	lp *commandspb.WithdrawSubmission) zap.Field {
+	lp *commandspb.WithdrawSubmission,
+) zap.Field {
 	return zap.String("withdraw-submission", lp.String())
 }
 
 func WithdrawSubmission(
-	lp types.WithdrawSubmission) zap.Field {
+	lp types.WithdrawSubmission,
+) zap.Field {
 	return zap.String("withdraw-submission", lp.String())
 }
 
