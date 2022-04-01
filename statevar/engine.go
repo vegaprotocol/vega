@@ -5,6 +5,7 @@ import (
 	"errors"
 	"math/rand"
 	"sort"
+	"strings"
 	"time"
 
 	"code.vegaprotocol.io/vega/events"
@@ -232,6 +233,27 @@ func (e *Engine) RegisterStateVariable(asset, market, name string, converter sta
 		e.eventTypeToStateVar[t] = append(e.eventTypeToStateVar[t], sv)
 	}
 	return nil
+}
+
+// RemoveTimeTriggers when a market is settled it no longer exists in the execution engine, and so we don't need to keep setting off
+// the time triggered events for it anymore.
+func (e *Engine) RemoveTimeTriggers(asset, market string) {
+	e.log.Info("removing time triggers for", logging.String("market", market))
+	prefix := e.generateID(asset, market, "")
+
+	toRemove := make([]string, 0)
+	for id := range e.stateVars {
+		if strings.HasPrefix(id, prefix) {
+			toRemove = append(toRemove, id)
+		}
+	}
+
+	for _, id := range toRemove {
+		// removing this is also necessary for snapshots. If it stays in we restore a time trigger for a market/asset we don't have
+		// and then in the subsequent snapshot things go awry because we don't have an entry for `stateVar[ID]`.
+		delete(e.stateVarToNextCalc, id)
+	}
+	e.ss.changed = true
 }
 
 // ProposedValueReceived is called when we receive a result from another node with a proposed result for the calculation triggered by an event.

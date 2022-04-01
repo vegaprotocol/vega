@@ -172,7 +172,14 @@ func New(
 		deposits:      map[string]*types.Deposit{},
 		withdrawalCnt: big.NewInt(0),
 		bss: &bankingSnapshotState{
-			changed:    map[string]bool{withdrawalsKey: true, depositsKey: true, seenKey: true, assetActionsKey: true},
+			changed: map[string]bool{
+				withdrawalsKey:        true,
+				depositsKey:           true,
+				seenKey:               true,
+				assetActionsKey:       true,
+				recurringTransfersKey: true,
+				scheduledTransfersKey: true,
+			},
 			hash:       map[string][]byte{},
 			serialised: map[string][]byte{},
 		},

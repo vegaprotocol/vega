@@ -84,8 +84,9 @@ func NewEngine(log *logging.Logger,
 	mktID string,
 	asset string,
 	stateVarEngine StateVarEngine,
-	riskFactorsInitialised bool,
 	positionFactor num.Decimal,
+	riskFactorsInitialised bool,
+	initialisedRiskFactors *types.RiskFactor, // if restored from snapshot, will be nil otherwise
 ) *Engine {
 	// setup logger
 	log = log.Named(namedLogger)
@@ -108,6 +109,10 @@ func NewEngine(log *logging.Logger,
 		factors:                model.DefaultRiskFactors(),
 		riskFactorsInitialised: riskFactorsInitialised,
 		positionFactor:         positionFactor,
+	}
+
+	if initialisedRiskFactors != nil {
+		e.factors = initialisedRiskFactors
 	}
 
 	stateVarEngine.RegisterStateVariable(asset, mktID, RiskFactorStateVarName, RiskFactorConverter{}, e.startRiskFactorsCalculation, []statevar.StateVarEventType{statevar.StateVarEventTypeMarketEnactment, statevar.StateVarEventTypeMarketUpdated}, e.updateRiskFactor)

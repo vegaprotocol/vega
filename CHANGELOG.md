@@ -25,13 +25,14 @@
 - [5066](https://github.com/vegaprotocol/vega/issues/5066) - Return an error if market decimal place > to asset decimal place
 - [5095](https://github.com/vegaprotocol/vega/issues/5095) - Stabilise state sync restore and restore block height in the topology engine
 - [4870](https://github.com/vegaprotocol/vega/issues/5870) - Add missing commands to the `TxError` event
+- [5136](https://github.com/vegaprotocol/vega/issues/5136) - Fix banking snapshot for transfers, risk factor restoration, and `statevar` handling of settled markets
 - [5088](https://github.com/vegaprotocol/vega/issues/5088) - Fixed MTM bug where settlement balance would not be zero when loss amount was 1.
 - [5093](https://github.com/vegaprotocol/vega/issues/5093) - Fixed proof of engine end of block callback never called to clear up state
 - [4996](https://github.com/vegaprotocol/vega/issues/4996) - Fix positions engines `vwBuys` and `vwSell` when amending, send events on `Update` and `UpdateNetwork`
 - [5016](https://github.com/vegaprotocol/vega/issues/5016) - Target stake in asset decimal place in Market Data
 - [5109](https://github.com/vegaprotocol/vega/issues/5109) - Fixed promotion of ersatz to tendermint validator
 - [5110](https://github.com/vegaprotocol/vega/issues/5110) - Fixed wrong tick size used for calculating probability of trading
-
+- [5144](https://github.com/vegaprotocol/vega/issues/5144) - Fixed the default voting power in case there is stake in the network
 
 ## 0.49.8
 
@@ -39,6 +40,7 @@
 - [4814](https://github.com/vegaprotocol/vega/issues/4814) - Review fees tests
 - [5067](https://github.com/vegaprotocol/vega/pull/5067) - Adding acceptance codes and tidy up tests
 - [5052](https://github.com/vegaprotocol/vega/issues/5052) - Adding acceptance criteria tests for market decimal places
+- [5138](https://github.com/vegaprotocol/vega/issues/5038) - Adding feature test for "0032-PRIM-price_monitoring.md"
 
 ### 🐛 Fixes
 - [5064](https://github.com/vegaprotocol/vega/issues/5064) - Send order event on settlement

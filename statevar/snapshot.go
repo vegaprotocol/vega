@@ -50,12 +50,13 @@ func (e *Engine) serialiseNextTimeTrigger() []*snapshot.NextTimeTrigger {
 
 	for _, id := range ids {
 		if sv, ok := e.stateVars[id]; ok {
-			timeTriggers = append(timeTriggers, &snapshot.NextTimeTrigger{
+			data := &snapshot.NextTimeTrigger{
 				Asset:       sv.asset,
 				Market:      sv.market,
 				Id:          id,
 				NextTrigger: e.stateVarToNextCalc[id].UnixNano(),
-			})
+			}
+			timeTriggers = append(timeTriggers, data)
 		}
 	}
 

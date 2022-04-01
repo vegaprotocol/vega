@@ -61,6 +61,7 @@ type Collateral interface {
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/state_var_engine_mock.go -package mocks code.vegaprotocol.io/vega/execution StateVarEngine
 type StateVarEngine interface {
 	RegisterStateVariable(asset, market, name string, converter statevar.Converter, startCalculation func(string, statevar.FinaliseCalculation), trigger []statevar.StateVarEventType, result func(context.Context, statevar.StateVariableResult) error) error
+	RemoveTimeTriggers(asset, market string)
 	NewEvent(asset, market string, eventType statevar.StateVarEventType)
 	ReadyForTimeTrigger(asset, mktID string)
 }
@@ -498,14 +499,22 @@ func (e *Engine) propagateInitialNetParams(ctx context.Context, mkt *Market) err
 }
 
 func (e *Engine) removeMarket(mktID string) {
+	e.log.Debug("removing market", logging.String("id", mktID))
 	e.stateChanged = true
+
 	delete(e.markets, mktID)
 	for i, mkt := range e.marketsCpy {
 		if mkt.GetID() == mktID {
+			mkt.matching.StopSnapshots()
+			mkt.position.StopSnapshots()
+			mkt.liquidity.StopSnapshots()
+			mkt.tsCalc.StopSnapshots()
+
 			copy(e.marketsCpy[i:], e.marketsCpy[i+1:])
 			e.marketsCpy[len(e.marketsCpy)-1] = nil
 			e.marketsCpy = e.marketsCpy[:len(e.marketsCpy)-1]
 			e.marketTracker.removeMarket(mktID)
+			e.log.Debug("removed in total", logging.String("id", mktID))
 			return
 		}
 	}
@@ -768,21 +777,12 @@ func (e *Engine) onChainTimeUpdate(ctx context.Context, t time.Time) {
 		if closing {
 			e.log.Info("market is closed, removing from execution engine",
 				logging.MarketID(mkt.GetID()))
-			delete(e.markets, mkt.GetID())
 			toDelete = append(toDelete, mkt.GetID())
 		}
 	}
 
 	for _, id := range toDelete {
-		var i int
-		for idx, mkt := range e.marketsCpy {
-			if mkt.GetID() == id {
-				i = idx
-				break
-			}
-		}
-		copy(e.marketsCpy[i:], e.marketsCpy[i+1:])
-		e.marketsCpy = e.marketsCpy[:len(e.marketsCpy)-1]
+		e.removeMarket(id)
 	}
 
 	timer.EngineTimeCounterAdd()

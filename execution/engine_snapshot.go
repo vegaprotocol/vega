@@ -23,6 +23,7 @@ func (e *Engine) marketsStates() ([]*types.ExecMarket, []types.StateProvider, er
 	}
 	e.newGeneratedProviders = make([]types.StateProvider, 0, mkts*4)
 	for _, m := range e.marketsCpy {
+		e.log.Debug("serialising market", logging.String("id", m.mkt.ID))
 		mks = append(mks, m.getState())
 
 		if _, ok := e.generatedProviders[m.GetID()]; !ok {
@@ -65,6 +66,7 @@ func (e *Engine) restoreMarket(ctx context.Context, em *types.ExecMarket) (*Mark
 	}
 
 	// create market auction state
+	e.log.Info("restoring market", logging.String("id", em.Market.ID))
 	mkt, err := NewMarketFromSnapshot(
 		ctx,
 		e.log,

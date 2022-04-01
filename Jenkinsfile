@@ -218,7 +218,9 @@ pipeline {
                     options { retry(3) }
                     steps {
                         dir('vega') {
-                            sh 'mdspell --en-gb --ignore-acronyms --ignore-numbers --no-suggestions --report "*.md" "docs/**/*.md"'
+                            ansiColor('xterm') {
+                                sh 'mdspell --en-gb --ignore-acronyms --ignore-numbers --no-suggestions --report "*.md" "docs/**/*.md"'
+                            }
                         }
                     }
                 }
