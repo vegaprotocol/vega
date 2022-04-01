@@ -204,8 +204,7 @@ func (e *Engine) preEnactProposal(p *proposal) (te *ToEnact, perr types.Proposal
 	}
 	defer func() {
 		if err != nil {
-			p.State = types.ProposalStateFailed
-			p.Reason = perr
+			p.FailWithErr(perr, err)
 		}
 	}()
 
@@ -399,12 +398,13 @@ func (e *Engine) SubmitProposal(
 		e.broker.Send(events.NewProposalEvent(ctx, *p))
 	}()
 
-	perr, err := e.validateOpenProposal(p)
-	if err != nil {
+	if perr, err := e.validateOpenProposal(p); err != nil {
 		p.RejectWithErr(perr, err)
-		if e.log.GetLevel() == logging.DebugLevel {
-			e.log.Debug("Proposal rejected", logging.String("proposal-id", p.ID),
-				logging.String("proposal details", p.IntoProto().String()))
+		if e.log.IsDebug() {
+			e.log.Debug("Proposal rejected",
+				logging.String("proposal-id", p.ID),
+				logging.String("proposal details", p.IntoProto().String()),
+			)
 		}
 		return nil, err
 	}
@@ -412,13 +412,13 @@ func (e *Engine) SubmitProposal(
 	// now if it's a 2 steps proposal, start the node votes
 	if e.isTwoStepsProposal(p) {
 		p.WaitForNodeVote()
-		err = e.startTwoStepsProposal(p)
+		if err := e.startTwoStepsProposal(p); err != nil {
+			return nil, err
+		}
 	} else {
 		e.startProposal(p)
 	}
-	if err != nil {
-		return nil, err
-	}
+
 	return e.intoToSubmit(p)
 }
 

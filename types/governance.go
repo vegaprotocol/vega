@@ -259,6 +259,20 @@ func (p *Proposal) RejectWithErr(reason ProposalError, details error) {
 	p.Reason = reason
 }
 
+func (p *Proposal) FailWithErr(reason ProposalError, details error) {
+	p.ErrorDetails = details.Error()
+	p.State = ProposalStateFailed
+	p.Reason = reason
+}
+
+// FailUnexpectedly marks the proposal as failed. Calling this method should be
+// reserved to cases where errors are the result of an internal issue, such as
+// bad workflow, or conditions.
+func (p *Proposal) FailUnexpectedly(details error) {
+	p.State = ProposalStateFailed
+	p.ErrorDetails = details.Error()
+}
+
 func (p Proposal) DeepClone() *Proposal {
 	cpy := p
 	if p.Terms != nil {
