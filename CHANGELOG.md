@@ -19,6 +19,7 @@
 ### 🐛 Fixes
 - [451](https://github.com/vegaprotocol/data-node/issues/451) - Correct conversion of pending validator status
 - [391](https://github.com/vegaprotocol/data-node/issues/391) - Fix `OracleSpecs GraphQL` query returns error and null when there is no data.
+- [281](https://github.com/vegaprotocol/data-node/issues/281) - Fix Estimate Margin calculates incorrectly for Limit Orders
 
 
 ## 0.49.3
