@@ -98,20 +98,16 @@ func (p *Positions) updatePositionEvent(e PSE) {
 
 	// We have a matching market here, now get the party
 	if pos, ok := p.data[mID][pID]; !ok {
-		// Create a new position object and populate with values
+		// Create a new position object so the external API users can see something
 		pos = Position{Position: types.Position{
 			MarketId:          mID,
 			PartyId:           pID,
-			OpenVolume:        e.Size(),
+			OpenVolume:        0,
 			RealisedPnl:       num.DecimalZero(),
 			UnrealisedPnl:     num.DecimalZero(),
 			AverageEntryPrice: num.Zero(),
 			UpdatedAt:         0,
 		}}
-		p.data[mID][pID] = pos
-	} else {
-		// Update the existing position object
-		pos.OpenVolume = e.Size()
 		p.data[mID][pID] = pos
 	}
 }
