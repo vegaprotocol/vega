@@ -33,6 +33,7 @@
 - [5109](https://github.com/vegaprotocol/vega/issues/5109) - Fixed promotion of ersatz to tendermint validator
 - [5110](https://github.com/vegaprotocol/vega/issues/5110) - Fixed wrong tick size used for calculating probability of trading
 - [5144](https://github.com/vegaprotocol/vega/issues/5144) - Fixed the default voting power in case there is stake in the network
+- [5124](https://github.com/vegaprotocol/vega/issues/5124) - Add UpdateMarket proposal proto serialization
 
 ## 0.49.8
 
