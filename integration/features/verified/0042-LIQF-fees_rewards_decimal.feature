@@ -11,7 +11,7 @@ Scenario: 001: 1 LP joining at start, checking liquidity rewards over 3 periods,
       | 0.0004    | 0.001              |
     And the price monitoring updated every "1" seconds named "price-monitoring-1":
       | horizon | probability | auction extension |
-      | 100000   | 0.99        | 3                |
+      | 100000  | 0.99        | 3                |
     And the following assets are registered:
       | id  | decimal places |
       | ETH | 5              |
@@ -36,12 +36,12 @@ Scenario: 001: 1 LP joining at start, checking liquidity rewards over 3 periods,
     # setup accounts
     Given the parties deposit on asset's general account the following amount:
       | party  | asset | amount          |
-      | lp1    | USD   | 100000000000000000    |
-      | lp1    | ETH   | 100000000000000000 |
-      | party1 | USD   | 10000000000000000     |
-      | party1 | ETH   | 10000000000000000  |
-      | party2 | USD   | 10000000000000000     |
-      | party2 | ETH   | 10000000000000000  |
+      | lp1    | USD   | 100000000000    |
+      | lp1    | ETH   | 100000000000000 |
+      | party1 | USD   | 10000000000     |
+      | party1 | ETH   | 10000000000000  |
+      | party2 | USD   | 10000000000     |
+      | party2 | ETH   | 10000000000000  |
       
     And the parties submit the following liquidity provision:
       | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
@@ -92,31 +92,23 @@ Scenario: 001: 1 LP joining at start, checking liquidity rewards over 3 periods,
     # max_oi: max open interest
 
     Then the order book should have the following volumes for market "USD/DEC19":
-      | side | price    | volume    |
-      | buy  | 898000   | 3000      |
-      | buy  | 900000   | 11000      |
+      | side | price    | volume   |
+      | buy  | 898000   | 3000     |
+      | buy  | 900000   | 11000    |
       | buy  | 999000   | 5000     |
       | sell | 1102000  | 3000     |
-      | sell | 1100000  | 11000      |
+      | sell | 1100000  | 11000    |
       | sell | 1001000  | 5000     |
-
-    #volume = ceiling(liquidity_obligation x liquidity-normalised-proportion / probability_of_trading / price)
-    #for any price better than the bid price or better than the ask price it returns 0.5
-    #for any price in within 500 price ticks from the best bid/ask (i.e. worse than) it returns the probability as returned by the risk model (in this case 0.1 scaled by 0.5.
-    #priceLvel at 898:10000*(1/3)/0.05/898=74.23
-    #priceLvel at 999:10000*(2/3)/0.5/999=13.34
-    #priceLvel at 1102:10000*(1/3)/0.05/1102=60.49
-    #priceLvel at 1001:10000*(2/3)/0.5/1001=13.32
 
     And the liquidity provider fee shares for the market "USD/DEC19" should be:
       | party | equity like share | average entry valuation |
       | lp1   | 1                 | 1000000000              |
 
     And the parties should have the following account balances:
-      | party  | asset | market id | margin | general   | bond  |
-      | lp1    | ETH   | ETH/MAR22 | 10680  | 999979320 | 10000 |
-      | party1 | USD   | ETH/MAR22 | 2758   | 99997242  | 0     |
-      | party2 | USD   | ETH/MAR22 | 2652   | 99997348  | 0     |
+      | party  | asset | market id | margin       | general        | bond       |
+      | lp1    | ETH   | USD/DEC19 | 10243882344  | 99988756117656 | 1000000000 |
+      | party1 | USD   | USD/DEC19 | 1176961234   | 10000000000    | 0          |
+      | party2 | USD   | USD/DEC19 | 4815112741   | 10000000000    | 0          |
       
   Scenario: 002, no decimal
 
@@ -172,3 +164,22 @@ Scenario: 001: 1 LP joining at start, checking liquidity rewards over 3 periods,
     And the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
       | 1000       | TRADING_MODE_CONTINUOUS | 100000  | 864       | 1154      | 35569        | 10000          | 10            |
+
+    Then the order book should have the following volumes for market "ETH/MAR22":
+      | side | price | volume |
+      | buy  | 898   | 8      |
+      | buy  | 900   | 1      |
+      | buy  | 999   | 14     |
+      | sell | 1102  | 7      |
+      | sell | 1100  | 1      |
+      | sell | 1001  | 14     |
+
+    And the liquidity provider fee shares for the market "ETH/MAR22" should be:
+      | party | equity like share | average entry valuation |
+      | lp1   | 1                 | 1000000000              |
+
+    And the parties should have the following account balances:
+      | party  | asset | market id | margin       | general        | bond       |
+      | lp1    | ETH   | ETH/MAR22 | 10243882344  | 99988756117656 | 1000000000 |
+      | party1 | USD   | ETH/MAR22 | 1176961234   | 10000000000    | 0          |
+      | party2 | USD   | ETH/MAR22 | 4815112741   | 10000000000    | 0          |
