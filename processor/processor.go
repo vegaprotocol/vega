@@ -110,6 +110,7 @@ type Stats interface {
 	TotalTxCurrentBatch() uint64
 	TotalTxLastBatch() uint64
 	SetHash(string)
+	Hash() string
 	SetHeight(uint64)
 }
 
