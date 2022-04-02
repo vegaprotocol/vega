@@ -572,6 +572,11 @@ func (app *App) OnEndBlock(req tmtypes.RequestEndBlock) (ctx context.Context, re
 			ValidatorUpdates: powerUpdates,
 		}
 	}
+
+	ctx = vgcontext.WithBlockHeight(vgcontext.WithTraceID(app.chainCtx, app.stats.Hash()), req.Height)
+	blockEndEvt := events.NewBlockEnd(ctx)
+	app.broker.Send(blockEndEvt)
+
 	return ctx, resp
 }
 

@@ -113,6 +113,7 @@ const (
 	ERC20MultiSigSignerAddedEvent
 	ERC20MultiSigSignerRemovedEvent
 	PositionStateEvent
+	BlockEndEvent
 )
 
 var (
@@ -172,6 +173,7 @@ var (
 		eventspb.BusEventType_BUS_EVENT_TYPE_ERC20_MULTI_SIG_SIGNER_ADDED:   ERC20MultiSigSignerAddedEvent,
 		eventspb.BusEventType_BUS_EVENT_TYPE_ERC20_MULTI_SIG_SIGNER_REMOVED: ERC20MultiSigSignerRemovedEvent,
 		eventspb.BusEventType_BUS_EVENT_TYPE_POSITION_STATE:                 PositionStateEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_BLOCK_END:                      BlockEndEvent,
 		// If adding a type here, please also add it to data-node/broker/convert.go
 	}
 
@@ -222,6 +224,7 @@ var (
 		ERC20MultiSigSignerAddedEvent:   eventspb.BusEventType_BUS_EVENT_TYPE_ERC20_MULTI_SIG_SIGNER_ADDED,
 		ERC20MultiSigSignerRemovedEvent: eventspb.BusEventType_BUS_EVENT_TYPE_ERC20_MULTI_SIG_SIGNER_REMOVED,
 		PositionStateEvent:              eventspb.BusEventType_BUS_EVENT_TYPE_POSITION_STATE,
+		BlockEndEvent:                   eventspb.BusEventType_BUS_EVENT_TYPE_BLOCK_END,
 	}
 
 	eventStrings = map[Type]string{
@@ -272,6 +275,7 @@ var (
 		ERC20MultiSigSignerAddedEvent:   "ERC20MultiSigSignerAddedEvent",
 		ERC20MultiSigSignerRemovedEvent: "ERC20MultiSigSignerRemovedEvent",
 		PositionStateEvent:              "PositionStateEvent",
+		BlockEndEvent:                   "BlockEndEvent",
 	}
 )
 
