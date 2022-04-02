@@ -49,7 +49,8 @@ func (e *exEng) CancelOrder(ctx context.Context, cancel *types.OrderCancellation
 }
 
 func (e *exEng) SubmitLiquidityProvision(ctx context.Context, sub *types.LiquidityProvisionSubmission, party, lpID,
-	deterministicId string) error {
+	deterministicId string,
+) error {
 	if err := e.Engine.SubmitLiquidityProvision(ctx, sub, party, deterministicId); err != nil {
 		e.broker.Send(events.NewTxErrEvent(ctx, err, party, sub.IntoProto()))
 		return err

@@ -685,7 +685,8 @@ func (m *Market) rollBackMargin(
 
 // repriceFuncW is an adapter for getNewPeggedPrice.
 func (m *Market) repriceLiquidityOrder(
-	po *types.PeggedOrder, side types.Side) (*num.Uint, *types.PeggedOrder, error) {
+	po *types.PeggedOrder, side types.Side,
+) (*num.Uint, *types.PeggedOrder, error) {
 	if m.as.InAuction() {
 		return num.Zero(), nil, ErrCannotRepriceDuringAuction
 	}
@@ -884,7 +885,8 @@ func (m *Market) adjustPriceRange(po *types.PeggedOrder, side types.Side, price 
 }
 
 func (m *Market) cancelLiquidityProvision(
-	ctx context.Context, party string, isDistressed bool) error {
+	ctx context.Context, party string, isDistressed bool,
+) error {
 	// cancel the liquidity provision
 	cancelOrders, err := m.liquidity.CancelLiquidityProvision(ctx, party)
 	if err != nil {

@@ -878,7 +878,8 @@ func (p Payload) GetAppState() *PayloadAppState {
 }
 
 func PayloadERC20MultiSigTopologyVerifiedFromProto(
-	s *snapshot.Payload_Erc20MultisigTopologyVerified) *PayloadERC20MultiSigTopologyVerified {
+	s *snapshot.Payload_Erc20MultisigTopologyVerified,
+) *PayloadERC20MultiSigTopologyVerified {
 	return &PayloadERC20MultiSigTopologyVerified{
 		Verified: s.Erc20MultisigTopologyVerified,
 	}
@@ -901,7 +902,8 @@ func (p *PayloadERC20MultiSigTopologyVerified) Key() string {
 }
 
 func PayloadERC20MultiSigTopologyPendingFromProto(
-	s *snapshot.Payload_Erc20MultisigTopologyPending) *PayloadERC20MultiSigTopologyPending {
+	s *snapshot.Payload_Erc20MultisigTopologyPending,
+) *PayloadERC20MultiSigTopologyPending {
 	return &PayloadERC20MultiSigTopologyPending{
 		Pending: s.Erc20MultisigTopologyPending,
 	}

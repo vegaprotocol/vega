@@ -23,7 +23,8 @@ type SnapshotEngine struct {
 }
 
 func NewSnapshotEngine(
-	log *logging.Logger, config Config, marketID string, broker Broker) *SnapshotEngine {
+	log *logging.Logger, config Config, marketID string, broker Broker,
+) *SnapshotEngine {
 	return &SnapshotEngine{
 		Engine:  New(log, config, marketID, broker),
 		pl:      types.Payload{},

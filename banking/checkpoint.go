@@ -69,7 +69,8 @@ func (e *Engine) loadScheduledTransfers(
 }
 
 func (e *Engine) loadRecurringTransfers(
-	ctx context.Context, r *checkpoint.RecurringTransfers) []events.Event {
+	ctx context.Context, r *checkpoint.RecurringTransfers,
+) []events.Event {
 	evts := []events.Event{}
 	for _, v := range r.RecurringTransfers {
 		transfer := types.RecurringTransferFromEvent(v)

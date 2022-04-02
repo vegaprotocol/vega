@@ -280,7 +280,8 @@ func (e *Engine) IsEligibleForProposerBonus(marketID string, value *num.Uint) bo
 // the usual governance process.
 func (e *Engine) SubmitMarketWithLiquidityProvision(ctx context.Context, marketConfig *types.Market, lp *types.LiquidityProvisionSubmission, party,
 	lpID,
-	deterministicId string) error {
+	deterministicId string,
+) error {
 	if e.log.IsDebug() {
 		e.log.Debug("submit market with liquidity provision",
 			logging.Market(*marketConfig),
@@ -555,7 +556,8 @@ func (e *Engine) SubmitOrder(
 // AmendOrder takes order amendment details and attempts to amend the order
 // if it exists and is in a editable state.
 func (e *Engine) AmendOrder(ctx context.Context, amendment *types.OrderAmendment, party string,
-	deterministicId string) (confirmation *types.OrderConfirmation, returnedErr error) {
+	deterministicId string,
+) (confirmation *types.OrderConfirmation, returnedErr error) {
 	timer := metrics.NewTimeCounter(amendment.MarketID, "execution", "AmendOrder")
 	defer func() {
 		timer.EngineTimeCounterAdd()
@@ -706,7 +708,8 @@ func (e *Engine) SubmitLiquidityProvision(
 }
 
 func (e *Engine) AmendLiquidityProvision(ctx context.Context, lpa *types.LiquidityProvisionAmendment, party string,
-	deterministicId string) (returnedErr error) {
+	deterministicId string,
+) (returnedErr error) {
 	timer := metrics.NewTimeCounter(lpa.MarketID, "execution", "LiquidityProvisionAmendment")
 	defer func() {
 		timer.EngineTimeCounterAdd()
@@ -989,7 +992,8 @@ func (e *Engine) OnMarketLiquidityProvidersFeeDistributionTimeStep(_ context.Con
 }
 
 func (e *Engine) OnMarketLiquidityProvisionShapesMaxSizeUpdate(
-	_ context.Context, v int64) error {
+	_ context.Context, v int64,
+) error {
 	if e.log.IsDebug() {
 		e.log.Debug("update liquidity provision max shape",
 			logging.Int64("max-shape", v),
@@ -1006,7 +1010,8 @@ func (e *Engine) OnMarketLiquidityProvisionShapesMaxSizeUpdate(
 }
 
 func (e *Engine) OnMarketLiquidityMaximumLiquidityFeeFactorLevelUpdate(
-	_ context.Context, d num.Decimal) error {
+	_ context.Context, d num.Decimal,
+) error {
 	if e.log.IsDebug() {
 		e.log.Debug("update liquidity provision max liquidity fee factor",
 			logging.Decimal("max-liquidity-fee", d),
