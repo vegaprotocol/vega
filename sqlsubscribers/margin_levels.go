@@ -49,7 +49,7 @@ func (ml *MarginLevels) Push(evt events.Event) error {
 			ml.log.Error("inserting margin level events to Postgres failed", logging.Error(err))
 		}
 	case MarginLevelsEvent:
-    ml.seqNum = e.Sequence()
+		ml.seqNum = e.Sequence()
 		ml.consume(e)
 	default:
 		return errors.Errorf("unknown event type %s", e.Type().String())
@@ -68,5 +68,5 @@ func (ml *MarginLevels) consume(event MarginLevelsEvent) error {
 	record.SyntheticTime = ml.vegaTime.Add(time.Duration(ml.seqNum) * time.Microsecond)
 	record.SeqNum = ml.seqNum
 
-  return errors.Wrap(ml.store.Add(record), "inserting margin levels to SQL store failed")
+	return errors.Wrap(ml.store.Add(record), "inserting margin levels to SQL store failed")
 }
