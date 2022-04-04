@@ -3,8 +3,10 @@ package broker
 import (
 	"context"
 	"fmt"
+	"reflect"
 
 	"code.vegaprotocol.io/data-node/logging"
+	"code.vegaprotocol.io/data-node/metrics"
 	"code.vegaprotocol.io/vega/events"
 )
 
@@ -190,27 +192,23 @@ func (b *sequentialSqlStoreBroker) Receive(ctx context.Context) error {
 		if err := checkChainID(b.chainInfo, e.ChainID()); err != nil {
 			return err
 		}
-
+		metrics.EventCounterInc(e.Type().String())
 		// If the event is a time event send it to all subscribers, this indicates a new block start (for now)
 		if e.Type() == events.TimeUpdate {
+			metrics.BlockCounterInc()
 			for _, subs := range b.typeToSubs {
 				for _, sub := range subs {
-					err := sub.Push(e)
-					if err != nil {
-						b.OnPushEventError(e, err)
-					}
+					b.push(sub, e)
 				}
 			}
 		} else {
 			if subs, ok := b.typeToSubs[e.Type()]; ok {
 				for _, sub := range subs {
-					err := sub.Push(e)
-					if err != nil {
-						b.OnPushEventError(e, err)
-					}
+					b.push(sub, e)
 				}
 			}
 		}
+
 	}
 
 	select {
@@ -219,6 +217,16 @@ func (b *sequentialSqlStoreBroker) Receive(ctx context.Context) error {
 	default:
 		return nil
 	}
+}
+
+func (b *sequentialSqlStoreBroker) push(sub SqlBrokerSubscriber, e events.Event) {
+	sub_name := reflect.TypeOf(sub).Elem().Name()
+	timer := metrics.NewTimeCounter("sql", sub_name, e.Type().String())
+	err := sub.Push(e)
+	if err != nil {
+		b.OnPushEventError(e, err)
+	}
+	timer.EventTimeCounterAdd()
 }
 
 func (b *sequentialSqlStoreBroker) OnPushEventError(evt events.Event, err error) {

@@ -35,3 +35,11 @@ func (tc *TimeCounter) EngineTimeCounterAdd() {
 	}
 	engineTime.WithLabelValues(tc.labelValues...).Add(time.Since(tc.start).Seconds())
 }
+
+func (tc *TimeCounter) EventTimeCounterAdd() {
+	// Check that the metric has been set up. (Testing does not use metrics.)
+	if eventHandlingTime == nil {
+		return
+	}
+	eventHandlingTime.WithLabelValues(tc.labelValues...).Add(time.Since(tc.start).Seconds())
+}
