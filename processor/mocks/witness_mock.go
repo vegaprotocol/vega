@@ -9,6 +9,7 @@ import (
 	reflect "reflect"
 
 	v1 "code.vegaprotocol.io/protos/vega/commands/v1"
+	crypto "code.vegaprotocol.io/vega/crypto"
 	gomock "github.com/golang/mock/gomock"
 )
 
@@ -36,15 +37,15 @@ func (m *MockWitness) EXPECT() *MockWitnessMockRecorder {
 }
 
 // AddNodeCheck mocks base method.
-func (m *MockWitness) AddNodeCheck(arg0 context.Context, arg1 *v1.NodeVote) error {
+func (m *MockWitness) AddNodeCheck(arg0 context.Context, arg1 *v1.NodeVote, arg2 crypto.PublicKey) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AddNodeCheck", arg0, arg1)
+	ret := m.ctrl.Call(m, "AddNodeCheck", arg0, arg1, arg2)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // AddNodeCheck indicates an expected call of AddNodeCheck.
-func (mr *MockWitnessMockRecorder) AddNodeCheck(arg0, arg1 interface{}) *gomock.Call {
+func (mr *MockWitnessMockRecorder) AddNodeCheck(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddNodeCheck", reflect.TypeOf((*MockWitness)(nil).AddNodeCheck), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddNodeCheck", reflect.TypeOf((*MockWitness)(nil).AddNodeCheck), arg0, arg1, arg2)
 }

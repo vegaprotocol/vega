@@ -14,7 +14,7 @@ import (
 	tmtypes "github.com/tendermint/tendermint/abci/types"
 )
 
-func (e *Topology) Name() types.CheckpointName {
+func (t *Topology) Name() types.CheckpointName {
 	return types.ValidatorsCheckpoint
 }
 
