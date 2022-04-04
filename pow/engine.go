@@ -139,11 +139,6 @@ func (e *Engine) EndOfBlock() {
 
 // CheckTx is called by checkTx in the abci and verifies the proof of work, it doesn't update any state.
 func (e *Engine) CheckTx(tx abci.Tx) error {
-	// we don't require proof of work for validator command
-	if tx.Command().IsValidatorCommand() {
-		return nil
-	}
-
 	if e.log.IsDebug() {
 		e.lock.RLock()
 		e.log.Debug("checktx got tx", logging.String("command", tx.Command().String()), logging.Uint64("height", tx.BlockHeight()), logging.String("tid", tx.GetPoWTID()), logging.Uint64("current-block", e.currentBlock))
@@ -156,11 +151,6 @@ func (e *Engine) CheckTx(tx abci.Tx) error {
 
 // DeliverTx is called by deliverTx in the abci and verifies the proof of work, takes a not of the transaction id and counts the number of transactions of the party in the block.
 func (e *Engine) DeliverTx(tx abci.Tx) error {
-	// we don't require proof of work for validator command
-	if tx.Command().IsValidatorCommand() {
-		return nil
-	}
-
 	if e.log.IsDebug() {
 		e.lock.RLock()
 		e.log.Debug("delivertx got tx", logging.String("command", tx.Command().String()), logging.Uint64("height", tx.BlockHeight()), logging.String("tid", tx.GetPoWTID()), logging.Uint64("current-block", e.currentBlock))
@@ -180,49 +170,52 @@ func (e *Engine) DeliverTx(tx abci.Tx) error {
 	e.seenTx[txID] = struct{}{}
 	e.heightToTx[tx.BlockHeight()] = append(e.heightToTx[tx.BlockHeight()], txID)
 
-	// if version supports pow, save the pow result and the tid
-	if tx.GetVersion() > 1 {
-		e.heightToTid[tx.BlockHeight()] = append(e.heightToTid[tx.BlockHeight()], tx.GetPoWTID())
-		e.seenTid[tx.GetPoWTID()] = struct{}{}
-
-		// if we've not seen any transactions from this party this block then let it pass and save the observed difficulty
-		if _, ok := e.blockPartyToSeenCount[tx.Party()]; !ok {
-			e.blockPartyToObservedDifficulty[tx.Party()] = uint(d)
-			e.blockPartyToSeenCount[tx.Party()] = 1
-			if e.log.IsDebug() {
-				e.log.Debug("transaction accepted", logging.String("tid", tx.GetPoWTID()))
-			}
-			return nil
-		}
-
-		// if we've seen less than the allow number of transactions per block, take a note and let it pass
-		if e.blockPartyToSeenCount[tx.Party()] < uint(e.spamPoWNumberOfTxPerBlock) {
-			e.blockPartyToObservedDifficulty[tx.Party()] += uint(d)
-			e.blockPartyToSeenCount[tx.Party()]++
-			if e.log.IsDebug() {
-				e.log.Debug("transaction accepted", logging.String("tid", tx.GetPoWTID()))
-			}
-			return nil
-		}
-
-		// if we've seen already enough transactions and `spamPoWIncreasingDifficulty` is not enabled then fail the transction and ban the party
-		if !e.spamPoWIncreasingDifficulty {
-			e.bannedParties[tx.Party()] = e.currentEpoch + banPeriod
-			return errors.New("too many transactions per block")
-		}
-
-		// calculate the expected difficulty as `e.spamPoWDifficulty` * `e.spamPoWNumberOfTxPerBlock` + sigma((e.spamPoWDifficulty + i) for i in {`blockTransactions` - `e.spamPoWNumberOfTxPerBlock`}
-		totalExpectedDifficulty := calculateExpectedDifficulty(e.spamPoWDifficulty, uint(e.spamPoWNumberOfTxPerBlock), e.blockPartyToSeenCount[tx.Party()]+1)
-
-		// if the observed difficulty sum is less than the expected difficulty, ban the party and reject the tx
-		if e.blockPartyToObservedDifficulty[tx.Party()]+uint(d) < totalExpectedDifficulty {
-			e.bannedParties[tx.Party()] = e.currentEpoch + banPeriod
-			return errors.New("too many transactions per block")
-		}
-
-		e.blockPartyToObservedDifficulty[tx.Party()] = e.blockPartyToObservedDifficulty[tx.Party()] + uint(d)
-		e.blockPartyToSeenCount[tx.Party()]++
+	if tx.GetVersion() < 2 || tx.Command().IsValidatorCommand() {
+		return nil
 	}
+
+	// if version supports pow, save the pow result and the tid
+	e.heightToTid[tx.BlockHeight()] = append(e.heightToTid[tx.BlockHeight()], tx.GetPoWTID())
+	e.seenTid[tx.GetPoWTID()] = struct{}{}
+
+	// if we've not seen any transactions from this party this block then let it pass and save the observed difficulty
+	if _, ok := e.blockPartyToSeenCount[tx.Party()]; !ok {
+		e.blockPartyToObservedDifficulty[tx.Party()] = uint(d)
+		e.blockPartyToSeenCount[tx.Party()] = 1
+		if e.log.IsDebug() {
+			e.log.Debug("transaction accepted", logging.String("tid", tx.GetPoWTID()))
+		}
+		return nil
+	}
+
+	// if we've seen less than the allow number of transactions per block, take a note and let it pass
+	if e.blockPartyToSeenCount[tx.Party()] < uint(e.spamPoWNumberOfTxPerBlock) {
+		e.blockPartyToObservedDifficulty[tx.Party()] += uint(d)
+		e.blockPartyToSeenCount[tx.Party()]++
+		if e.log.IsDebug() {
+			e.log.Debug("transaction accepted", logging.String("tid", tx.GetPoWTID()))
+		}
+		return nil
+	}
+
+	// if we've seen already enough transactions and `spamPoWIncreasingDifficulty` is not enabled then fail the transction and ban the party
+	if !e.spamPoWIncreasingDifficulty {
+		e.bannedParties[tx.Party()] = e.currentEpoch + banPeriod
+		return errors.New("too many transactions per block")
+	}
+
+	// calculate the expected difficulty as `e.spamPoWDifficulty` * `e.spamPoWNumberOfTxPerBlock` + sigma((e.spamPoWDifficulty + i) for i in {`blockTransactions` - `e.spamPoWNumberOfTxPerBlock`}
+	totalExpectedDifficulty := calculateExpectedDifficulty(e.spamPoWDifficulty, uint(e.spamPoWNumberOfTxPerBlock), e.blockPartyToSeenCount[tx.Party()]+1)
+
+	// if the observed difficulty sum is less than the expected difficulty, ban the party and reject the tx
+	if e.blockPartyToObservedDifficulty[tx.Party()]+uint(d) < totalExpectedDifficulty {
+		e.bannedParties[tx.Party()] = e.currentEpoch + banPeriod
+		return errors.New("too many transactions per block")
+	}
+
+	e.blockPartyToObservedDifficulty[tx.Party()] = e.blockPartyToObservedDifficulty[tx.Party()] + uint(d)
+	e.blockPartyToSeenCount[tx.Party()]++
+
 	return nil
 }
 
@@ -265,7 +258,8 @@ func (e *Engine) verify(tx abci.Tx) (byte, error) {
 		return h, errors.New("transaction ID already used")
 	}
 
-	if tx.GetVersion() < 2 {
+	// we don't require proof of work for v1 or validator command
+	if tx.GetVersion() < 2 || tx.Command().IsValidatorCommand() {
 		return h, nil
 	}
 
