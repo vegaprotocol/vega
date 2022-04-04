@@ -862,7 +862,7 @@ func (e *Engine) updatedMarketFromProposal(p *proposal) (*types.Market, types.Pr
 		return nil, types.ProposalErrorUnsupportedProduct, ErrUnsupportedProduct
 	}
 
-	closeTime := e.currentTime
+	closeTime := time.Unix(p.Terms.ClosingTimestamp, 0)
 	enactTime := time.Unix(p.Terms.EnactmentTimestamp, 0)
 	return buildMarketFromProposal(p.ID, newMarket, e.netp, e.assets, enactTime.Sub(closeTime))
 }
