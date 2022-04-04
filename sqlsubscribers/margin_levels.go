@@ -8,6 +8,7 @@ import (
 	"code.vegaprotocol.io/data-node/logging"
 	"code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/events"
+	"github.com/pkg/errors"
 )
 
 type MarginLevelsEvent interface {
@@ -39,7 +40,7 @@ func (ml *MarginLevels) Types() []events.Type {
 	return []events.Type{events.MarginLevelsEvent}
 }
 
-func (ml *MarginLevels) Push(evt events.Event) {
+func (ml *MarginLevels) Push(evt events.Event) error {
 	switch e := evt.(type) {
 	case TimeUpdateEvent:
 		ml.vegaTime = e.Time()
@@ -50,20 +51,22 @@ func (ml *MarginLevels) Push(evt events.Event) {
 	case MarginLevelsEvent:
 		ml.seqNum = e.Sequence()
 		ml.consume(e)
+	default:
+		return errors.Errorf("unknown event type %s", e.Type().String())
 	}
+
+	return nil
 }
 
-func (ml *MarginLevels) consume(event MarginLevelsEvent) {
+func (ml *MarginLevels) consume(event MarginLevelsEvent) error {
 	marginLevels := event.MarginLevels()
 	record, err := entities.MarginLevelsFromProto(&marginLevels, ml.vegaTime)
 	if err != nil {
-		ml.log.Error("converting margin levels proto to database entity failed", logging.Error(err))
+		return errors.Wrap(err, "converting margin levels proto to database entity failed")
 	}
 
 	record.SyntheticTime = ml.vegaTime.Add(time.Duration(ml.seqNum) * time.Microsecond)
 	record.SeqNum = ml.seqNum
 
-	if err = ml.store.Add(record); err != nil {
-		ml.log.Error("Inserting margin levels to SQL store failed", logging.Error(err))
-	}
+	return errors.Wrap(ml.store.Add(record), "inserting margin levels to SQL store failed")
 }

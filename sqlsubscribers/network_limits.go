@@ -8,6 +8,7 @@ import (
 	"code.vegaprotocol.io/data-node/logging"
 	"code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/events"
+	"github.com/pkg/errors"
 )
 
 type NetworkLimitsEvent interface {
@@ -41,25 +42,23 @@ func (t *NetworkLimits) Types() []events.Type {
 	return []events.Type{events.NetworkLimitsEvent}
 }
 
-func (nl *NetworkLimits) Push(evt events.Event) {
+func (nl *NetworkLimits) Push(evt events.Event) error {
 	switch event := evt.(type) {
 	case TimeUpdateEvent:
 		nl.vegaTime = event.Time()
 	case NetworkLimitsEvent:
-		nl.consume(event)
+		return nl.consume(event)
 	default:
-		nl.log.Panic("Unknown event type in time subscriber",
-			logging.String("Type", event.Type().String()))
+		return errors.Errorf("unknown event type %s", event.Type().String())
 	}
+
+	return nil
 }
 
-func (nl *NetworkLimits) consume(event NetworkLimitsEvent) {
+func (nl *NetworkLimits) consume(event NetworkLimitsEvent) error {
 	protoLimits := event.NetworkLimits()
 	limits := entities.NetworkLimitsFromProto(protoLimits)
 	limits.VegaTime = nl.vegaTime
-	err := nl.store.Add(context.Background(), limits)
-	if err != nil {
-		nl.log.Error("Error adding network limits",
-			logging.Error(err))
-	}
+
+	return errors.Wrap(nl.store.Add(context.Background(), limits), "error adding network limits")
 }

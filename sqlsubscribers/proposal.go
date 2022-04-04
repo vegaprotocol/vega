@@ -8,6 +8,7 @@ import (
 	"code.vegaprotocol.io/data-node/logging"
 	"code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/events"
+	"github.com/pkg/errors"
 )
 
 type ProposalEvent interface {
@@ -42,30 +43,28 @@ func (ps *Proposal) Types() []events.Type {
 	return []events.Type{events.ProposalEvent}
 }
 
-func (rs *Proposal) Push(evt events.Event) {
+func (ps *Proposal) Push(evt events.Event) error {
 	switch event := evt.(type) {
 	case TimeUpdateEvent:
-		rs.vegaTime = event.Time()
+		ps.vegaTime = event.Time()
 	case ProposalEvent:
-		rs.consume(event)
+		return ps.consume(event)
 	default:
-		rs.log.Panic("Unknown event type in rewards subscriber",
-			logging.String("Type", event.Type().String()))
+		return errors.Errorf("unknown event type %s", event.Type().String())
 	}
+
+	return nil
 }
 
-func (ps *Proposal) consume(event ProposalEvent) {
+func (ps *Proposal) consume(event ProposalEvent) error {
 	protoProposal := event.Proposal()
 	proposal, err := entities.ProposalFromProto(&protoProposal)
 
 	// The timestamp in the proto proposal is the time of the initial proposal, not any update
 	proposal.VegaTime = ps.vegaTime
 	if err != nil {
-		ps.log.Error("unable to parse proposal", logging.Error(err))
-		return
+		return errors.Wrap(err, "unable to parse proposal")
 	}
 
-	if err := ps.store.Add(context.Background(), proposal); err != nil {
-		ps.log.Error("Error adding proposal", logging.Error(err))
-	}
+	return errors.Wrap(ps.store.Add(context.Background(), proposal), "error adding proposal")
 }

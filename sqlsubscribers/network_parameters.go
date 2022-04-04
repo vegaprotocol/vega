@@ -8,6 +8,7 @@ import (
 	"code.vegaprotocol.io/data-node/logging"
 	"code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/events"
+	"github.com/pkg/errors"
 )
 
 type NetworkParameterEvent interface {
@@ -40,28 +41,26 @@ func (n *NetworkParameter) Types() []events.Type {
 	return []events.Type{events.NetworkParameterEvent}
 }
 
-func (n *NetworkParameter) Push(evt events.Event) {
+func (n *NetworkParameter) Push(evt events.Event) error {
 	switch event := evt.(type) {
 	case TimeUpdateEvent:
 		n.vegaTime = event.Time()
 	case NetworkParameterEvent:
-		n.consume(event)
+		return n.consume(event)
 	default:
-		n.log.Panic("unknown event type in network parameter subscriber",
-			logging.String("Type", event.Type().String()))
+		return errors.Errorf("unknown event type %s", event.Type().String())
 	}
+
+	return nil
 }
 
-func (n *NetworkParameter) consume(event NetworkParameterEvent) {
+func (n *NetworkParameter) consume(event NetworkParameterEvent) error {
 	pnp := event.NetworkParameter()
 	np, err := entities.NetworkParameterFromProto(&pnp)
 	if err != nil {
-		n.log.Error("unable to parse network parameter", logging.Error(err))
-		return
+		return errors.Wrap(err, "unable to parse network parameter")
 	}
 	np.VegaTime = n.vegaTime
 
-	if err := n.store.Add(context.Background(), np); err != nil {
-		n.log.Error("error adding networkParameter", logging.Error(err))
-	}
+	return errors.Wrap(n.store.Add(context.Background(), np), "error adding networkParameter")
 }
