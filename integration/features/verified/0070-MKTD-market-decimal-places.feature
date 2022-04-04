@@ -12,9 +12,7 @@ Feature: Allow markets to be specified with a smaller number of decimal places t
             | ETH | 5              |
             | USD | 2              |
         And the average block duration is "1"
-        And the log normal risk model named "log-normal-risk-model-1":
-            | risk aversion | tau | mu | r | sigma |
-            | 0.000001      | 0.1 | 0  | 0 | 1.0   |
+        
         And the fees configuration named "fees-config-1":
             | maker fee | infrastructure fee |
             | 0.004     | 0.001              |
