@@ -204,7 +204,7 @@ func AddCommonDeliverTxEvents(resp types.ResponseDeliverTx, tx Tx) types.Respons
 }
 
 func getBaseTxEvents(tx Tx) []types.Event {
-	return []types.Event{
+	base := []types.Event{
 		{
 			Type: "tx",
 			Attributes: []types.EventAttribute{
@@ -226,4 +226,72 @@ func getBaseTxEvents(tx Tx) []types.Event {
 			},
 		},
 	}
+
+	var market string
+	if m, ok := tx.(interface{ GetMarketId() string }); ok {
+		market = m.GetMarketId()
+	}
+	if m, ok := tx.(interface{ GetMarket() string }); ok {
+		market = m.GetMarket()
+	}
+	base = append(base, types.Event{
+		Type: "command",
+		Attributes: []types.EventAttribute{
+			{
+				Key:   []byte("market"),
+				Value: []byte(market),
+				Index: true,
+			},
+		},
+	})
+
+	var asset string
+	if m, ok := tx.(interface{ GetAssetId() string }); ok {
+		asset = m.GetAssetId()
+	}
+	if m, ok := tx.(interface{ GetAsset() string }); ok {
+		asset = m.GetAsset()
+	}
+	base = append(base, types.Event{
+		Type: "command",
+		Attributes: []types.EventAttribute{
+			{
+				Key:   []byte("asset"),
+				Value: []byte(asset),
+				Index: true,
+			},
+		},
+	})
+
+	var reference string
+	if m, ok := tx.(interface{ GetReference() string }); ok {
+		reference = m.GetReference()
+	}
+	base = append(base, types.Event{
+		Type: "command",
+		Attributes: []types.EventAttribute{
+			{
+				Key:   []byte("reference"),
+				Value: []byte(reference),
+				Index: true,
+			},
+		},
+	})
+
+	var proposal string
+	if m, ok := tx.(interface{ GetProposalId() string }); ok {
+		proposal = m.GetProposalId()
+	}
+	base = append(base, types.Event{
+		Type: "command",
+		Attributes: []types.EventAttribute{
+			{
+				Key:   []byte("proposal"),
+				Value: []byte(proposal),
+				Index: true,
+			},
+		},
+	})
+
+	return base
 }
