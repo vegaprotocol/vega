@@ -1,6 +1,7 @@
 package sqlsubscribers
 
 import (
+	"context"
 	"time"
 
 	"code.vegaprotocol.io/data-node/entities"
@@ -16,13 +17,15 @@ type MarginLevelsEvent interface {
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/margin_levels_mock.go -package mocks code.vegaprotocol.io/data-node/sqlsubscribers MarginLevelsStore
 type MarginLevelsStore interface {
-	Upsert(*entities.MarginLevels) error
+	Add(*entities.MarginLevels) error
+	OnTimeUpdateEvent(context.Context) error
 }
 
 type MarginLevels struct {
 	store    MarginLevelsStore
 	log      *logging.Logger
 	vegaTime time.Time
+	seqNum   uint64
 }
 
 func NewMarginLevels(store MarginLevelsStore, log *logging.Logger) *MarginLevels {
@@ -40,7 +43,12 @@ func (ml *MarginLevels) Push(evt events.Event) {
 	switch e := evt.(type) {
 	case TimeUpdateEvent:
 		ml.vegaTime = e.Time()
+		err := ml.store.OnTimeUpdateEvent(e.Context())
+		if err != nil {
+			ml.log.Error("inserting margin level events to Postgres failed", logging.Error(err))
+		}
 	case MarginLevelsEvent:
+		ml.seqNum = e.Sequence()
 		ml.consume(e)
 	}
 }
@@ -52,7 +60,10 @@ func (ml *MarginLevels) consume(event MarginLevelsEvent) {
 		ml.log.Error("converting margin levels proto to database entity failed", logging.Error(err))
 	}
 
-	if err = ml.store.Upsert(record); err != nil {
+	record.SyntheticTime = ml.vegaTime.Add(time.Duration(ml.seqNum) * time.Microsecond)
+	record.SeqNum = ml.seqNum
+
+	if err = ml.store.Add(record); err != nil {
 		ml.log.Error("Inserting margin levels to SQL store failed", logging.Error(err))
 	}
 }

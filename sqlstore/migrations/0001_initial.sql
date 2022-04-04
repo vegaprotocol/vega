@@ -346,8 +346,13 @@ create table if not exists margin_levels (
     initial_margin numeric(32, 0),
     collateral_release_level numeric(32, 0),
     vega_time timestamp with time zone not null references blocks(vega_time),
-    primary key (market_id, asset_id, party_id, vega_time)
+    synthetic_time timestamp with time zone not null,
+    seq_num int
 );
+
+select create_hypertable('margin_levels', 'synthetic_time', chunk_time_interval => INTERVAL '1 day');
+
+create index on margin_levels (market_id, asset_id, party_id, vega_time);
 
 create table if not exists risk_factors (
     market_id bytea not null,
