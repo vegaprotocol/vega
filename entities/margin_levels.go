@@ -18,6 +18,8 @@ type MarginLevels struct {
 	CollateralReleaseLevel decimal.Decimal
 	Timestamp              time.Time
 	VegaTime               time.Time
+	SyntheticTime          time.Time
+	SeqNum                 uint64
 }
 
 func MarginLevelsFromProto(margin *vega.MarginLevels, vegaTime time.Time) (*MarginLevels, error) {
