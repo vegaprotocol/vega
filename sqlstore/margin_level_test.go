@@ -14,8 +14,8 @@ import (
 )
 
 func TestMarginLevels(t *testing.T) {
-	t.Run("Upsert should insert margin levels that don't exist in the current block", testInsertMarginLevels)
-	t.Run("Upsert should update margin levels that already exist in the same block", testUpdateDuplicateMarginLevelInSameBlock)
+	t.Run("Add should insert margin levels that don't exist in the current block", testInsertMarginLevels)
+	t.Run("Add should insert margin levels that already exist in the same block", testDuplicateMarginLevelInSameBlock)
 	t.Run("GetMarginLevelsByID should return the latest state of margin levels for all markets if only party ID is provided", testGetMarginLevelsByPartyID)
 	t.Run("GetMarginLevelsByID should return the latest state of margin levels for all parties if only market ID is provided", testGetMarginLevelsByMarketID)
 	t.Run("GetMarginLevelsByID should return the latest state of margin levels for the given party/market ID", testGetMarginLevelsByID)
@@ -47,20 +47,31 @@ func testInsertMarginLevels(t *testing.T) {
 	err := conn.QueryRow(ctx, `select count(*) from margin_levels`).Scan(&rowCount)
 	assert.NoError(t, err)
 
+	seqNum := uint64(1)
 	block := addTestBlock(t, bs)
 	marginLevelProto := getMarginLevelProto()
 	marginLevel, err := entities.MarginLevelsFromProto(marginLevelProto, block.VegaTime)
 	require.NoError(t, err, "Converting margin levels proto to database entity")
 
-	err = ml.Upsert(marginLevel)
+	marginLevel.SeqNum = seqNum
+	marginLevel.SyntheticTime = marginLevel.VegaTime.Add(time.Duration(marginLevel.SeqNum) * time.Microsecond)
+
+	err = ml.Add(marginLevel)
 	require.NoError(t, err)
+
+	err = conn.QueryRow(ctx, `select count(*) from margin_levels`).Scan(&rowCount)
+	assert.NoError(t, err)
+	assert.Equal(t, 0, rowCount)
+
+	err = ml.OnTimeUpdateEvent(ctx)
+	assert.NoError(t, err)
 
 	err = conn.QueryRow(ctx, `select count(*) from margin_levels`).Scan(&rowCount)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, rowCount)
 }
 
-func testUpdateDuplicateMarginLevelInSameBlock(t *testing.T) {
+func testDuplicateMarginLevelInSameBlock(t *testing.T) {
 	testTimeout := time.Second * 10
 	ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
 	defer cancel()
@@ -76,19 +87,28 @@ func testUpdateDuplicateMarginLevelInSameBlock(t *testing.T) {
 	marginLevel, err := entities.MarginLevelsFromProto(marginLevelProto, block.VegaTime)
 	require.NoError(t, err, "Converting margin levels proto to database entity")
 
-	err = ml.Upsert(marginLevel)
+	seqNum := uint64(1)
+	marginLevel.SeqNum = seqNum
+	marginLevel.SyntheticTime = marginLevel.VegaTime.Add(time.Duration(marginLevel.SeqNum) * time.Microsecond)
+	err = ml.Add(marginLevel)
+	require.NoError(t, err)
+
+	seqNum += 1
+	marginLevel.SeqNum = seqNum
+	marginLevel.SyntheticTime = marginLevel.VegaTime.Add(time.Duration(marginLevel.SeqNum) * time.Microsecond)
+	err = ml.Add(marginLevel)
 	require.NoError(t, err)
 
 	err = conn.QueryRow(ctx, `select count(*) from margin_levels`).Scan(&rowCount)
 	assert.NoError(t, err)
-	assert.Equal(t, 1, rowCount)
+	assert.Equal(t, 0, rowCount)
 
-	err = ml.Upsert(marginLevel)
-	require.NoError(t, err)
+	err = ml.OnTimeUpdateEvent(ctx)
+	assert.NoError(t, err)
 
 	err = conn.QueryRow(ctx, `select count(*) from margin_levels`).Scan(&rowCount)
 	assert.NoError(t, err)
-	assert.Equal(t, 1, rowCount)
+	assert.Equal(t, 2, rowCount)
 }
 
 func getMarginLevelProto() *vega.MarginLevels {
@@ -115,6 +135,7 @@ func testGetMarginLevelsByPartyID(t *testing.T) {
 	err := conn.QueryRow(ctx, `select count(*) from margin_levels`).Scan(&rowCount)
 	assert.NoError(t, err)
 	assert.Equal(t, 0, rowCount)
+	var seqNum uint64
 
 	ml1 := getMarginLevelProto()
 	ml2 := getMarginLevelProto()
@@ -135,14 +156,23 @@ func testGetMarginLevelsByPartyID(t *testing.T) {
 	block := addTestBlock(t, bs)
 	marginLevel1, err := entities.MarginLevelsFromProto(ml1, block.VegaTime)
 	require.NoError(t, err, "Converting margin levels proto to database entity")
+	seqNum += 1
+	marginLevel1.SeqNum = seqNum
+	marginLevel1.SyntheticTime = marginLevel1.VegaTime.Add(time.Duration(marginLevel1.SeqNum) * time.Microsecond)
 
 	marginLevel2, err := entities.MarginLevelsFromProto(ml2, block.VegaTime)
 	require.NoError(t, err, "Converting margin levels proto to database entity")
+	seqNum += 1
+	marginLevel2.SeqNum = seqNum
+	marginLevel2.SyntheticTime = marginLevel2.VegaTime.Add(time.Duration(marginLevel2.SeqNum) * time.Microsecond)
 
-	err = ml.Upsert(marginLevel1)
+	err = ml.Add(marginLevel1)
 	require.NoError(t, err)
-	err = ml.Upsert(marginLevel2)
+	err = ml.Add(marginLevel2)
 	require.NoError(t, err)
+
+	err = ml.OnTimeUpdateEvent(ctx)
+	assert.NoError(t, err)
 
 	err = conn.QueryRow(ctx, `select count(*) from margin_levels`).Scan(&rowCount)
 	assert.NoError(t, err)
@@ -153,14 +183,23 @@ func testGetMarginLevelsByPartyID(t *testing.T) {
 	block = addTestBlock(t, bs)
 	marginLevel3, err := entities.MarginLevelsFromProto(ml3, block.VegaTime)
 	require.NoError(t, err, "Converting margin levels proto to database entity")
+	seqNum += 1
+	marginLevel3.SeqNum = seqNum
+	marginLevel3.SyntheticTime = marginLevel3.VegaTime.Add(time.Duration(marginLevel3.SeqNum) * time.Microsecond)
 
 	marginLevel4, err := entities.MarginLevelsFromProto(ml4, block.VegaTime)
 	require.NoError(t, err, "Converting margin levels proto to database entity")
+	seqNum += 1
+	marginLevel4.SeqNum = seqNum
+	marginLevel4.SyntheticTime = marginLevel4.VegaTime.Add(time.Duration(marginLevel4.SeqNum) * time.Microsecond)
 
-	err = ml.Upsert(marginLevel3)
+	err = ml.Add(marginLevel3)
 	require.NoError(t, err)
-	err = ml.Upsert(marginLevel4)
+	err = ml.Add(marginLevel4)
 	require.NoError(t, err)
+
+	err = ml.OnTimeUpdateEvent(ctx)
+	assert.NoError(t, err)
 
 	err = conn.QueryRow(ctx, `select count(*) from margin_levels`).Scan(&rowCount)
 	assert.NoError(t, err)
@@ -192,6 +231,7 @@ func testGetMarginLevelsByMarketID(t *testing.T) {
 	bs, ml, conn := setupMarginLevelTests(t, ctx)
 
 	var rowCount int
+	var seqNum uint64
 	err := conn.QueryRow(ctx, `select count(*) from margin_levels`).Scan(&rowCount)
 	assert.NoError(t, err)
 	assert.Equal(t, 0, rowCount)
@@ -215,14 +255,23 @@ func testGetMarginLevelsByMarketID(t *testing.T) {
 	block := addTestBlock(t, bs)
 	marginLevel1, err := entities.MarginLevelsFromProto(ml1, block.VegaTime)
 	require.NoError(t, err, "Converting margin levels proto to database entity")
+	seqNum += 1
+	marginLevel1.SeqNum = seqNum
+	marginLevel1.SyntheticTime = marginLevel1.VegaTime.Add(time.Duration(marginLevel1.SeqNum) * time.Microsecond)
 
 	marginLevel2, err := entities.MarginLevelsFromProto(ml2, block.VegaTime)
 	require.NoError(t, err, "Converting margin levels proto to database entity")
+	seqNum += 1
+	marginLevel2.SeqNum = seqNum
+	marginLevel2.SyntheticTime = marginLevel2.VegaTime.Add(time.Duration(marginLevel2.SeqNum) * time.Microsecond)
 
-	err = ml.Upsert(marginLevel1)
+	err = ml.Add(marginLevel1)
 	require.NoError(t, err)
-	err = ml.Upsert(marginLevel2)
+	err = ml.Add(marginLevel2)
 	require.NoError(t, err)
+
+	err = ml.OnTimeUpdateEvent(ctx)
+	assert.NoError(t, err)
 
 	err = conn.QueryRow(ctx, `select count(*) from margin_levels`).Scan(&rowCount)
 	assert.NoError(t, err)
@@ -233,14 +282,23 @@ func testGetMarginLevelsByMarketID(t *testing.T) {
 	block = addTestBlock(t, bs)
 	marginLevel3, err := entities.MarginLevelsFromProto(ml3, block.VegaTime)
 	require.NoError(t, err, "Converting margin levels proto to database entity")
+	seqNum += 1
+	marginLevel3.SeqNum = seqNum
+	marginLevel3.SyntheticTime = marginLevel3.VegaTime.Add(time.Duration(marginLevel3.SeqNum) * time.Microsecond)
 
 	marginLevel4, err := entities.MarginLevelsFromProto(ml4, block.VegaTime)
 	require.NoError(t, err, "Converting margin levels proto to database entity")
+	seqNum += 1
+	marginLevel4.SeqNum = seqNum
+	marginLevel4.SyntheticTime = marginLevel4.VegaTime.Add(time.Duration(marginLevel4.SeqNum) * time.Microsecond)
 
-	err = ml.Upsert(marginLevel3)
+	err = ml.Add(marginLevel3)
 	require.NoError(t, err)
-	err = ml.Upsert(marginLevel4)
+	err = ml.Add(marginLevel4)
 	require.NoError(t, err)
+
+	err = ml.OnTimeUpdateEvent(ctx)
+	assert.NoError(t, err)
 
 	err = conn.QueryRow(ctx, `select count(*) from margin_levels`).Scan(&rowCount)
 	assert.NoError(t, err)
@@ -272,6 +330,7 @@ func testGetMarginLevelsByID(t *testing.T) {
 	bs, ml, conn := setupMarginLevelTests(t, ctx)
 
 	var rowCount int
+	var seqNum uint64
 	err := conn.QueryRow(ctx, `select count(*) from margin_levels`).Scan(&rowCount)
 	assert.NoError(t, err)
 	assert.Equal(t, 0, rowCount)
@@ -295,14 +354,23 @@ func testGetMarginLevelsByID(t *testing.T) {
 	block := addTestBlock(t, bs)
 	marginLevel1, err := entities.MarginLevelsFromProto(ml1, block.VegaTime)
 	require.NoError(t, err, "Converting margin levels proto to database entity")
+	seqNum += 1
+	marginLevel1.SeqNum = seqNum
+	marginLevel1.SyntheticTime = marginLevel1.VegaTime.Add(time.Duration(marginLevel1.SeqNum) * time.Microsecond)
 
 	marginLevel2, err := entities.MarginLevelsFromProto(ml2, block.VegaTime)
 	require.NoError(t, err, "Converting margin levels proto to database entity")
+	seqNum += 1
+	marginLevel2.SeqNum = seqNum
+	marginLevel2.SyntheticTime = marginLevel2.VegaTime.Add(time.Duration(marginLevel2.SeqNum) * time.Microsecond)
 
-	err = ml.Upsert(marginLevel1)
+	err = ml.Add(marginLevel1)
 	require.NoError(t, err)
-	err = ml.Upsert(marginLevel2)
+	err = ml.Add(marginLevel2)
 	require.NoError(t, err)
+
+	err = ml.OnTimeUpdateEvent(ctx)
+	assert.NoError(t, err)
 
 	err = conn.QueryRow(ctx, `select count(*) from margin_levels`).Scan(&rowCount)
 	assert.NoError(t, err)
@@ -313,14 +381,23 @@ func testGetMarginLevelsByID(t *testing.T) {
 	block = addTestBlock(t, bs)
 	marginLevel3, err := entities.MarginLevelsFromProto(ml3, block.VegaTime)
 	require.NoError(t, err, "Converting margin levels proto to database entity")
+	seqNum += 1
+	marginLevel3.SeqNum = seqNum
+	marginLevel3.SyntheticTime = marginLevel3.VegaTime.Add(time.Duration(marginLevel3.SeqNum) * time.Microsecond)
 
 	marginLevel4, err := entities.MarginLevelsFromProto(ml4, block.VegaTime)
 	require.NoError(t, err, "Converting margin levels proto to database entity")
+	seqNum += 1
+	marginLevel4.SeqNum = seqNum
+	marginLevel4.SyntheticTime = marginLevel4.VegaTime.Add(time.Duration(marginLevel4.SeqNum) * time.Microsecond)
 
-	err = ml.Upsert(marginLevel3)
+	err = ml.Add(marginLevel3)
 	require.NoError(t, err)
-	err = ml.Upsert(marginLevel4)
+	err = ml.Add(marginLevel4)
 	require.NoError(t, err)
+
+	err = ml.OnTimeUpdateEvent(ctx)
+	assert.NoError(t, err)
 
 	err = conn.QueryRow(ctx, `select count(*) from margin_levels`).Scan(&rowCount)
 	assert.NoError(t, err)

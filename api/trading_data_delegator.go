@@ -1274,6 +1274,12 @@ func (t *tradingDataDelegator) estimateMargin(ctx context.Context, order *vega.O
 
 	// now calculate margin maintenance
 	markPrice, _ := num.DecimalFromString(mktData.MarkPrice.String())
+
+	// if the order is a limit order, use the limit price to calculate the margin maintenance
+	if order.Type == vega.Order_TYPE_LIMIT {
+		markPrice, _ = num.DecimalFromString(order.Price)
+	}
+
 	maintenanceMargin := num.DecimalFromFloat(float64(order.Size)).Mul(f).Mul(markPrice)
 	// now we use the risk factors
 	return &vega.MarginLevels{

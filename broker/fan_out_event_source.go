@@ -16,7 +16,8 @@ type fanOutEventSource struct {
 	numSubscribers         int
 	eventChannels          []chan events.Event
 	errorChannels          []chan error
-	receiveLock            sync.Mutex
+	listening              bool
+	mutex                  sync.Mutex
 }
 
 func NewFanOutEventSource(source eventSource, sendChannelBufferSize int, expectedNumSubscribers int) *fanOutEventSource {
@@ -28,12 +29,24 @@ func NewFanOutEventSource(source eventSource, sendChannelBufferSize int, expecte
 }
 
 func (e *fanOutEventSource) Listen() error {
-	return e.source.Listen()
+	e.mutex.Lock()
+	defer e.mutex.Unlock()
+
+	if !e.listening {
+
+		err := e.source.Listen()
+		if err != nil {
+			return err
+		}
+		e.listening = true
+	}
+
+	return nil
 }
 
 func (e *fanOutEventSource) Receive(ctx context.Context) (<-chan events.Event, <-chan error) {
-	e.receiveLock.Lock()
-	defer e.receiveLock.Unlock()
+	e.mutex.Lock()
+	defer e.mutex.Unlock()
 
 	eventsCh := make(chan events.Event, e.sendChannelBufferSize)
 	errorCh := make(chan error, 1)
