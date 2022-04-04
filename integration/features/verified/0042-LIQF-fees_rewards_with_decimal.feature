@@ -80,10 +80,12 @@ Scenario: 001: 1 LP joining at start, checking liquidity rewards over 3 periods,
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
       | 1000000    | TRADING_MODE_CONTINUOUS | 100000  | 863654    | 1154208   | 3556900000   | 1000000000     | 10000         |
 
+   # bug: supplied stake is incorrect, should be 1000000000
     And the market data for the market "USD/DEC20" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
       | 100000000  | TRADING_MODE_CONTINUOUS | 100000  | 86365368  | 115420826 | 3556900000   | 0              | 1000000       |
 
+   # bug: supplied stake is incorrect, should be 1000000000
     And the market data for the market "USD/DEC21" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
       | 100000000  | TRADING_MODE_CONTINUOUS | 100000  | 86365368  | 115420826 | 3556900000   | 0              | 10000         |
@@ -98,15 +100,15 @@ Scenario: 001: 1 LP joining at start, checking liquidity rewards over 3 periods,
       | sell | 1102000  | 3000     |
       | sell | 1100000  | 11000    |
       | sell | 1001000  | 5000     |
-
+# bug: LP pegged order volume on price 89800000 should be 300000 as there is pegged LP order
     Then the order book should have the following volumes for market "USD/DEC20":
       | side | price      | volume   |
-      | buy  | 89800000   | 0     |
-      | buy  | 90000000   | 100000    |
-      | buy  | 99900000   | 0     |
-      | sell | 110200000  | 0     |
-      | sell | 110000000  | 100000    |
-      | sell | 100100000  | 0     |
+      | buy  | 89800000   | 0        |
+      | buy  | 90000000   | 100000   |
+      | buy  | 99900000   | 0        |
+      | sell | 110200000  | 0        |
+      | sell | 110000000  | 100000   |
+      | sell | 100100000  | 0        |
 
     # Then the order book should have the following volumes for market "USD/DEC21":
     #   | side | price    | volume   |
