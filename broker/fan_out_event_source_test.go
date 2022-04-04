@@ -79,12 +79,28 @@ func TestPanicOnInvalidSubscriberNumber(t *testing.T) {
 	fos.Receive(context.Background())
 }
 
+func TestListenOnlyCalledOnceOnSource(t *testing.T) {
+	tes := &testEventSource{
+		eventsCh: make(chan events.Event),
+		errorsCh: make(chan error),
+	}
+
+	fos := broker.NewFanOutEventSource(tes, 20, 2)
+	fos.Listen()
+	fos.Listen()
+	fos.Listen()
+
+	assert.Equal(t, 1, tes.listenCount)
+}
+
 type testEventSource struct {
-	eventsCh chan events.Event
-	errorsCh chan error
+	eventsCh    chan events.Event
+	errorsCh    chan error
+	listenCount int
 }
 
 func (te *testEventSource) Listen() error {
+	te.listenCount++
 	return nil
 }
 
