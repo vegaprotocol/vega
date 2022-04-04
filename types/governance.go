@@ -259,6 +259,20 @@ func (p *Proposal) RejectWithErr(reason ProposalError, details error) {
 	p.Reason = reason
 }
 
+func (p *Proposal) FailWithErr(reason ProposalError, details error) {
+	p.ErrorDetails = details.Error()
+	p.State = ProposalStateFailed
+	p.Reason = reason
+}
+
+// FailUnexpectedly marks the proposal as failed. Calling this method should be
+// reserved to cases where errors are the result of an internal issue, such as
+// bad workflow, or conditions.
+func (p *Proposal) FailUnexpectedly(details error) {
+	p.State = ProposalStateFailed
+	p.ErrorDetails = details.Error()
+}
+
 func (p Proposal) DeepClone() *Proposal {
 	cpy := p
 	if p.Terms != nil {
@@ -1283,7 +1297,13 @@ type UpdateMarket struct {
 }
 
 func (n UpdateMarket) IntoProto() *vegapb.UpdateMarket {
-	return &vegapb.UpdateMarket{}
+	var changes *vegapb.UpdateMarketConfiguration
+	if n.Changes != nil {
+		changes = n.Changes.IntoProto()
+	}
+	return &vegapb.UpdateMarket{
+		Changes: changes,
+	}
 }
 
 func (n UpdateMarket) DeepClone() *UpdateMarket {
@@ -1322,6 +1342,39 @@ func (n UpdateMarketConfiguration) DeepClone() *UpdateMarketConfiguration {
 		cpy.RiskParameters = n.RiskParameters.DeepClone()
 	}
 	return cpy
+}
+
+func (n UpdateMarketConfiguration) IntoProto() *vegapb.UpdateMarketConfiguration {
+	riskParams := n.RiskParameters.rpIntoProto()
+	md := make([]string, 0, len(n.Metadata))
+	md = append(md, n.Metadata...)
+
+	var instrument *vegapb.UpdateInstrumentConfiguration
+	if n.Instrument != nil {
+		instrument = n.Instrument.IntoProto()
+	}
+	var priceMonitoring *vegapb.PriceMonitoringParameters
+	if n.PriceMonitoringParameters != nil {
+		priceMonitoring = n.PriceMonitoringParameters.IntoProto()
+	}
+	var liquidityMonitoring *vegapb.LiquidityMonitoringParameters
+	if n.LiquidityMonitoringParameters != nil {
+		liquidityMonitoring = n.LiquidityMonitoringParameters.IntoProto()
+	}
+
+	r := &vegapb.UpdateMarketConfiguration{
+		Instrument:                    instrument,
+		Metadata:                      md,
+		PriceMonitoringParameters:     priceMonitoring,
+		LiquidityMonitoringParameters: liquidityMonitoring,
+	}
+	switch rp := riskParams.(type) {
+	case *vegapb.UpdateMarketConfiguration_Simple:
+		r.RiskParameters = rp
+	case *vegapb.UpdateMarketConfiguration_LogNormal:
+		r.RiskParameters = rp
+	}
+	return r
 }
 
 type UpdateInstrumentConfiguration struct {
