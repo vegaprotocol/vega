@@ -146,6 +146,7 @@ func (l *NodeCommand) setupSQLSubscribers() {
 	l.riskFactorSubSQL = sqlsubscribers.NewRiskFactor(l.riskFactorStoreSQL, l.Log)
 	l.netParamSubSQL = sqlsubscribers.NewNetworkParameter(l.netParamStoreSQL, l.Log)
 	l.checkpointSubSQL = sqlsubscribers.NewCheckpoint(l.checkpointStoreSQL, l.Log)
+	l.positionsSubSQL = sqlsubscribers.NewPosition(l.positionStoreSQL, l.Log)
 	l.oracleSpecSubSQL = sqlsubscribers.NewOracleSpec(l.oracleSpecStoreSQL, l.Log)
 	l.oracleDataSubSQL = sqlsubscribers.NewOracleData(l.oracleDataStoreSQL, l.Log)
 	l.liquidityProvisionSubSQL = sqlsubscribers.NewLiquidityProvision(l.liquidityProvisionStoreSQL, l.Log)
@@ -198,6 +199,7 @@ func (l *NodeCommand) setupStorages() error {
 		l.riskFactorStoreSQL = sqlstore.NewRiskFactors(sqlStore)
 		l.netParamStoreSQL = sqlstore.NewNetworkParameters(sqlStore)
 		l.checkpointStoreSQL = sqlstore.NewCheckpoints(sqlStore)
+		l.positionStoreSQL = sqlstore.NewPositions(sqlStore)
 		l.oracleSpecStoreSQL = sqlstore.NewOracleSpec(sqlStore)
 		l.oracleDataStoreSQL = sqlstore.NewOracleData(sqlStore)
 		l.liquidityProvisionStoreSQL = sqlstore.NewLiquidityProvision(sqlStore)
@@ -303,6 +305,7 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 			l.riskFactorSubSQL,
 			l.netParamSubSQL,
 			l.checkpointSubSQL,
+			l.positionsSubSQL,
 			l.oracleSpecSubSQL,
 			l.oracleDataSubSQL,
 			l.liquidityProvisionSubSQL,

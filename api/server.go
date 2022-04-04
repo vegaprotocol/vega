@@ -111,6 +111,7 @@ type GRPCServer struct {
 	oracleSpecStore         *sqlstore.OracleSpec
 	oracleDataStore         *sqlstore.OracleData
 	liquidityProvisionStore *sqlstore.LiquidityProvision
+	positionStore           *sqlstore.Positions
 	transfersStore          *sqlstore.Transfers
 	stakeLinkingStore       *sqlstore.StakeLinking
 	eventObserver           *eventObserver
@@ -177,6 +178,7 @@ func NewGRPCServer(
 	oracleSpecStore *sqlstore.OracleSpec,
 	oracleDataStore *sqlstore.OracleData,
 	liquidityProvisionStore *sqlstore.LiquidityProvision,
+	positionStore *sqlstore.Positions,
 	transfersStore *sqlstore.Transfers,
 	stakeLinkingStore *sqlstore.StakeLinking,
 ) *GRPCServer {
@@ -241,6 +243,7 @@ func NewGRPCServer(
 		oracleSpecStore:         oracleSpecStore,
 		oracleDataStore:         oracleDataStore,
 		liquidityProvisionStore: liquidityProvisionStore,
+		positionStore:           positionStore,
 		transfersStore:          transfersStore,
 		stakeLinkingStore:       stakeLinkingStore,
 		eventObserver: &eventObserver{
@@ -410,6 +413,7 @@ func (g *GRPCServer) Start(ctx context.Context, lis net.Listener) error {
 			oracleSpecStore:         g.oracleSpecStore,
 			oracleDataStore:         g.oracleDataStore,
 			liquidityProvisionStore: g.liquidityProvisionStore,
+			positionStore:           g.positionStore,
 			transfersStore:          g.transfersStore,
 			stakingStore:            g.stakeLinkingStore,
 		}

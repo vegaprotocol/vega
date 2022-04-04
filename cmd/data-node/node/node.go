@@ -128,6 +128,7 @@ type NodeCommand struct {
 	oracleSpecStoreSQL         *sqlstore.OracleSpec
 	oracleDataStoreSQL         *sqlstore.OracleData
 	liquidityProvisionStoreSQL *sqlstore.LiquidityProvision
+	positionStoreSQL           *sqlstore.Positions
 	transfersStoreSQL          *sqlstore.Transfers
 	stakeLinkingStoreSQL       *sqlstore.StakeLinking
 
@@ -183,6 +184,7 @@ type NodeCommand struct {
 	oracleSpecSubSQL         *sqlsubscribers.OracleSpec
 	oracleDataSubSQL         *sqlsubscribers.OracleData
 	liquidityProvisionSubSQL *sqlsubscribers.LiquidityProvision
+	positionsSubSQL          *sqlsubscribers.Position
 	transferSubSQL           *sqlsubscribers.Transfer
 	stakeLinkingSubSQL       *sqlsubscribers.StakeLinking
 
@@ -392,6 +394,7 @@ func (l *NodeCommand) createGRPCServer(config api.Config, useSQLStores bool) *ap
 		l.oracleSpecStoreSQL,
 		l.oracleDataStoreSQL,
 		l.liquidityProvisionStoreSQL,
+		l.positionStoreSQL,
 		l.transfersStoreSQL,
 		l.stakeLinkingStoreSQL,
 	)

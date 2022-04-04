@@ -112,14 +112,23 @@ func compareResponses(t *testing.T, oldResp, newResp interface{}) {
 	sortParties := cmpopts.SortSlices(func(a Party, b Party) bool { return a.Id < b.Id })
 	sortDeposits := cmpopts.SortSlices(func(a Deposit, b Deposit) bool { return a.ID < b.ID })
 	sortSpecs := cmpopts.SortSlices(func(a, b OracleSpec) bool { return a.ID < b.ID })
+	sortPositions := cmpopts.SortSlices(func(a, b Position) bool {
+		if a.Party.Id != b.Party.Id {
+			return a.Party.Id < b.Party.Id
+		}
+		return a.Market.Id < b.Market.Id
+	})
 	sortTransfers := cmpopts.SortSlices(func(a Transfer, b Transfer) bool { return a.Id < b.Id })
 	sortWithdrawals := cmpopts.SortSlices(func(a, b Withdrawal) bool { return a.ID < b.ID })
 	sortOrders := cmpopts.SortSlices(func(a, b Order) bool { return a.Id < b.Id })
 	sortNodes := cmpopts.SortSlices(func(a, b Node) bool { return a.Id < b.Id })
 
+	// The old API has nulls for the 'UpdatedAt' field in positions
+	ignorePositionTimestamps := cmpopts.IgnoreFields(Position{}, "UpdatedAt")
+
 	diff := cmp.Diff(oldResp, newResp, removeDupVotes(), sortTrades, sortAccounts, sortMarkets,
 		sortProposals, sortNetParams, sortParties, sortDeposits, sortSpecs, sortTransfers,
-		sortWithdrawals, sortOrders, sortNodes)
+		sortWithdrawals, sortOrders, sortNodes, sortPositions, ignorePositionTimestamps)
 
 	assert.Empty(t, diff)
 }

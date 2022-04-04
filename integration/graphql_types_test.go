@@ -131,8 +131,8 @@ type Party struct {
 	Proposals          []Proposal
 	Votes              []Vote
 	LiquidityProvision []LiquidityProvision
+	Positions          []Position
 	// TODO:
-	// Positions []Position
 	// Margins []MarginLevels
 	Withdrawals []Withdrawal
 	Deposits    []Deposit
@@ -403,4 +403,14 @@ type OracleSpec struct {
 	Filters   []Filter
 	Status    OracleSpecStatus
 	Data      []OracleData
+}
+
+type Position struct {
+	Market            Market
+	Party             Party
+	OpenVolume        string
+	RealisedPNL       string
+	UnrealisedPNL     string
+	AverageEntryPrice string
+	UpdatedAt         TimeString
 }

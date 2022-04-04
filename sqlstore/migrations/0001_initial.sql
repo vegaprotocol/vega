@@ -377,6 +377,24 @@ CREATE TABLE checkpoints(
     PRIMARY KEY (block_height)
 );
 
+CREATE TABLE positions(
+  market_id           BYTEA NOT NULL, -- TODO REFERENCES market(id),
+  party_id            BYTEA NOT NULL, -- TODO REFERENCES parties(id),
+  open_volume         BIGINT NOT NULL,
+  realised_pnl        NUMERIC NOT NULL,
+  unrealised_pnl      NUMERIC NOT NULL,
+  average_entry_price NUMERIC NOT NULL,
+  loss                NUMERIC NOT NULL,
+  adjustment          NUMERIC NOT NULL,
+  vega_time           TIMESTAMP WITH TIME ZONE NOT NULL REFERENCES blocks(vega_time),
+  PRIMARY KEY (party_id, market_id, vega_time)
+);
+
+CREATE VIEW positions_current AS (
+  SELECT DISTINCT ON (party_id, market_id) * FROM positions ORDER BY party_id, market_id, vega_time DESC
+);
+
+
 create type oracle_spec_status as enum('STATUS_UNSPECIFIED', 'STATUS_ACTIVE', 'STATUS_DEACTIVATED');
 
 create table if not exists oracle_specs (
@@ -501,6 +519,9 @@ DROP INDEX IF EXISTS idx_oracle_data_matched_spec_ids;
 DROP TABLE IF EXISTS oracle_data;
 DROP TABLE IF EXISTS oracle_specs;
 DROP TYPE IF EXISTS oracle_spec_status;
+
+DROP VIEW IF EXISTS positions_current;
+DROP TABLE IF EXISTS positions;
 
 DROP VIEW IF EXISTS votes_current;
 DROP TABLE IF EXISTS votes;

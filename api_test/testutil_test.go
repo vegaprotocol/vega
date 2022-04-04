@@ -223,6 +223,7 @@ func NewTestServer(t testing.TB, ctx context.Context, blocking bool) *TestServer
 	candlesServiceV2 := candlesv2.NewService(ctx, logger, conf.CandlesV2, sqlCandleStore)
 
 	sqlTradeStore := sqlstore.NewTrades(&sqlStore)
+	sqlPositionStore := sqlstore.NewPositions(&sqlStore)
 	sqlNetworkLimitsStore := sqlstore.NewNetworkLimits(&sqlStore)
 	sqlAssetStore := sqlstore.NewAssets(&sqlStore)
 	sqlAccountStore := sqlstore.NewAccounts(&sqlStore)
@@ -329,6 +330,7 @@ func NewTestServer(t testing.TB, ctx context.Context, blocking bool) *TestServer
 		sqlOracleSpecStore,
 		sqlOracleDataStore,
 		sqlLPDataStore,
+		sqlPositionStore,
 		sqlTransfersStore,
 		sqlStakeLinkingStore,
 	)

@@ -46,6 +46,7 @@ type tradingDataDelegator struct {
 	oracleSpecStore         *sqlstore.OracleSpec
 	oracleDataStore         *sqlstore.OracleData
 	liquidityProvisionStore *sqlstore.LiquidityProvision
+	positionStore           *sqlstore.Positions
 	transfersStore          *sqlstore.Transfers
 	stakingStore            *sqlstore.StakeLinking
 }
@@ -54,6 +55,39 @@ var defaultEntityPagination = entities.Pagination{
 	Skip:       0,
 	Limit:      50,
 	Descending: true,
+}
+
+/****************************** Positions **************************************/
+func (t *tradingDataDelegator) PositionsByParty(ctx context.Context, request *protoapi.PositionsByPartyRequest) (*protoapi.PositionsByPartyResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("PositionsByParty SQL")()
+
+	var positions []entities.Position
+	var err error
+
+	if request.MarketId == "" && request.PartyId == "" {
+		positions, err = t.positionStore.GetAll(ctx)
+	} else if request.MarketId == "" {
+		positions, err = t.positionStore.GetByParty(ctx, entities.NewPartyID(request.PartyId))
+	} else if request.PartyId == "" {
+		positions, err = t.positionStore.GetByMarket(ctx, entities.NewMarketID(request.MarketId))
+	} else {
+		positions = make([]entities.Position, 1)
+		positions[0], err = t.positionStore.GetByMarketAndParty(ctx,
+			entities.NewMarketID(request.MarketId),
+			entities.NewPartyID(request.PartyId))
+	}
+
+	if err != nil {
+		return nil, apiError(codes.Internal, ErrTradeServiceGetPositionsByParty, err)
+	}
+
+	out := make([]*vega.Position, len(positions))
+	for i, position := range positions {
+		out[i] = position.ToProto()
+	}
+
+	response := &protoapi.PositionsByPartyResponse{Positions: out}
+	return response, nil
 }
 
 /****************************** Parties **************************************/

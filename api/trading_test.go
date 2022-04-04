@@ -285,6 +285,7 @@ func getTestGRPCServer(
 	candlesServiceV2 := candlesv2.NewService(ctx, logger, conf.CandlesV2, sqlCandleStore)
 
 	sqlTradeStore := sqlstore.NewTrades(&sqlStore)
+	sqlPositionStore := sqlstore.NewPositions(&sqlStore)
 	sqlAssetStore := sqlstore.NewAssets(&sqlStore)
 	sqlAccountStore := sqlstore.NewAccounts(&sqlStore)
 	sqlRewardsStore := sqlstore.NewRewards(&sqlStore)
@@ -363,6 +364,7 @@ func getTestGRPCServer(
 		sqlOracleSpecStore,
 		sqlOracleDataStore,
 		sqlLPDataStore,
+		sqlPositionStore,
 		sqlTransferStore,
 		sqlStakeLinkingStore,
 	)
