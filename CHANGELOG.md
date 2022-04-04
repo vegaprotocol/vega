@@ -35,6 +35,7 @@
 - [5144](https://github.com/vegaprotocol/vega/issues/5144) - Fixed the default voting power in case there is stake in the network
 - [5124](https://github.com/vegaprotocol/vega/issues/5124) - Add proto serialization for update market proposal
 - [5124](https://github.com/vegaprotocol/vega/issues/5124) - Ensure update market proposal compute a proper auction duration
+- [5172](https://github.com/vegaprotocol/vega/issues/5172) - Add replay protection for validator commands
 
 ## 0.49.8
 
