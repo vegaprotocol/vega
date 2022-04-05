@@ -3,6 +3,7 @@ package entities
 import (
 	"encoding/hex"
 	"fmt"
+	"strings"
 	"time"
 
 	oraclespb "code.vegaprotocol.io/protos/vega/oracles/v1"
@@ -75,6 +76,7 @@ func decodePublicKeys(publicKeys []string) (PublicKeys, error) {
 	pkList := make(PublicKeys, 0, len(publicKeys))
 
 	for _, publicKey := range publicKeys {
+		publicKey := strings.TrimPrefix(publicKey, "0x")
 		pk, err := hex.DecodeString(publicKey)
 		if err != nil {
 			return nil, fmt.Errorf("cannot decode public key: %s", publicKey)

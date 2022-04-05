@@ -18,6 +18,7 @@ type OrderEvent interface {
 
 type OrderStore interface {
 	Add(context.Context, entities.Order) error
+	Flush(ctx context.Context) error
 }
 
 type Order struct {
@@ -41,13 +42,12 @@ func (os *Order) Push(evt events.Event) error {
 	switch e := evt.(type) {
 	case TimeUpdateEvent:
 		os.vegaTime = e.Time()
+		return os.store.Flush(context.Background())
 	case OrderEvent:
 		return os.consume(e)
 	default:
 		return errors.Errorf("unknown event type %s", e.Type().String())
 	}
-
-	return nil
 }
 
 func (os *Order) consume(oe OrderEvent) error {

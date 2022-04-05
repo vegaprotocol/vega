@@ -141,3 +141,29 @@ func OrderFromProto(po *vega.Order) (Order, error) {
 
 	return o, nil
 }
+
+type OrderKey struct {
+	ID       OrderID
+	Version  int32
+	VegaTime time.Time
+}
+
+func (o Order) Key() OrderKey {
+	return OrderKey{o.ID, o.Version, o.VegaTime}
+}
+
+func (o Order) ToRow() []interface{} {
+	return []interface{}{
+		o.ID, o.MarketID, o.PartyID, o.Side, o.Price,
+		o.Size, o.Remaining, o.TimeInForce, o.Type, o.Status,
+		o.Reference, o.Reason, o.Version, o.PeggedOffset, o.BatchID,
+		o.PeggedReference, o.LpID, o.CreatedAt, o.UpdatedAt, o.ExpiresAt,
+		o.VegaTime}
+}
+
+var OrderColumns = []string{"id", "market_id", "party_id", "side", "price",
+	"size", "remaining", "time_in_force", "type", "status",
+	"reference", "reason", "version", "pegged_offset", "batch_id",
+	"pegged_reference", "lp_id", "created_at", "updated_at", "expires_at",
+	"vega_time",
+}

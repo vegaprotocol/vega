@@ -111,6 +111,8 @@ func TestOrders(t *testing.T) {
 		updatedOrders = append(updatedOrders, updatedOrder)
 	}
 
+	os.Flush(ctx)
+
 	t.Run("GetAll", func(t *testing.T) {
 		// Check we inserted new rows only when the update was in a different block
 		allOrders, err := os.GetAll(ctx)

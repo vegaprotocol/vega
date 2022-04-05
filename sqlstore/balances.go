@@ -10,27 +10,28 @@ import (
 
 type Balances struct {
 	*SQLStore
+	batcher Batcher[entities.BalanceKey, entities.Balance]
 }
 
 func NewBalances(sqlStore *SQLStore) *Balances {
 	b := &Balances{
 		SQLStore: sqlStore,
+		batcher: NewBatcher[entities.BalanceKey, entities.Balance](
+			"balances",
+			entities.BalanceColumns),
 	}
 	return b
+}
+
+func (bs *Balances) Flush(ctx context.Context) error {
+	return bs.batcher.Flush(ctx, bs.pool)
 }
 
 // Add inserts a row to the balance table. If there's already a balance for this
 // (account, block time) update it to match with the one supplied.
 func (bs *Balances) Add(b entities.Balance) error {
-	ctx := context.Background()
-	_, err := bs.pool.Exec(ctx,
-		`INSERT INTO balances(account_id, vega_time, balance)
-         VALUES ($1, $2, $3)
-         ON CONFLICT (account_id, vega_time) DO UPDATE SET balance=EXCLUDED.balance`,
-		b.AccountID,
-		b.VegaTime,
-		b.Balance)
-	return err
+	bs.batcher.Add(b)
+	return nil
 }
 
 // Query queries and sums the balances of a given subset of accounts, specified via the 'filter' argument.

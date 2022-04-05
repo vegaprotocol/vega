@@ -1,6 +1,7 @@
 package sqlstore_test
 
 import (
+	"context"
 	"sort"
 	"testing"
 
@@ -34,6 +35,7 @@ func assertBalanceCorrect(t *testing.T,
 
 func TestBalances(t *testing.T) {
 	defer testStore.DeleteEverything()
+	ctx := context.Background()
 
 	blockStore := sqlstore.NewBlocks(testStore)
 	assetStore := sqlstore.NewAssets(testStore)
@@ -65,6 +67,8 @@ func TestBalances(t *testing.T) {
 	addTestBalance(t, balanceStore, blocks[2], accounts[1], 10)
 	addTestBalance(t, balanceStore, blocks[3], accounts[2], 100)
 	addTestBalance(t, balanceStore, blocks[4], accounts[0], 30)
+
+	balanceStore.Flush(ctx)
 
 	// Query all the balances (they're all for the same asset)
 	bals, err := balanceStore.Query(entities.AccountFilter{Asset: asset}, []entities.AccountField{})

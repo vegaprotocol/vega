@@ -1,6 +1,7 @@
 package sqlstore_test
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -33,6 +34,7 @@ func addTestLedgerEntry(t *testing.T, ledger *sqlstore.Ledger,
 
 func TestLedger(t *testing.T) {
 	defer testStore.DeleteEverything()
+	ctx := context.Background()
 
 	blockStore := sqlstore.NewBlocks(testStore)
 	assetStore := sqlstore.NewAssets(testStore)
@@ -52,12 +54,19 @@ func TestLedger(t *testing.T) {
 	accountTo := addTestAccount(t, accountStore, party, asset, block)
 	ledgerEntry := addTestLedgerEntry(t, ledgerStore, accountFrom, accountTo, block)
 
+	err = ledgerStore.Flush(ctx)
+	assert.NoError(t, err)
+
 	// Add it again; we're allowed multiple ledger entries with the same parameters
 	err = ledgerStore.Add(&ledgerEntry)
 	assert.NoError(t, err)
 
-	// Query and check we've got back an asset the same as the one we put in
-	fetchedLedgerEntry, err := ledgerStore.GetByID(ledgerEntry.ID)
+	err = ledgerStore.Flush(ctx)
+	assert.NoError(t, err)
+
+	// Query and check we've got back an asset the same as the one we put in, once we give it an ID
+	ledgerEntry.ID = 1
+	fetchedLedgerEntry, err := ledgerStore.GetByID(1)
 	assert.NoError(t, err)
 	assert.Equal(t, ledgerEntry, fetchedLedgerEntry)
 

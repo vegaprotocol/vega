@@ -10,53 +10,30 @@ import (
 
 type Orders struct {
 	*SQLStore
+	batcher Batcher[entities.OrderKey, entities.Order]
 }
 
 func NewOrders(sqlStore *SQLStore) *Orders {
 	a := &Orders{
 		SQLStore: sqlStore,
+		batcher: NewBatcher[entities.OrderKey, entities.Order](
+			"orders",
+			entities.OrderColumns),
 	}
 	return a
+}
+
+func (os *Orders) Flush(ctx context.Context) error {
+	return os.batcher.Flush(ctx, os.pool)
 }
 
 // Add inserts an order update row into the database if an row for this (block time, order id, version)
 // does not already exist; otherwise update the existing row with information supplied.
 // Currently we only store the last update to an order per block, so the order history is not
 // complete if multiple updates happen in one block.
-func (ps *Orders) Add(ctx context.Context, o entities.Order) error {
-	_, err := ps.pool.Exec(ctx,
-		`INSERT INTO orders(
-			id, market_id, party_id, side, price,
-			size, remaining, time_in_force, type, status,
-			reference, reason, version, pegged_offset, batch_id,
-			pegged_reference, lp_id, created_at, updated_at, expires_at, vega_time)
-		 VALUES ($1,  $2,  $3,  $4,  $5,  $6,  $7,  $8,  $9, $10,
-				 $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21)
-		 ON CONFLICT (id, version, vega_time) DO UPDATE SET
-			market_id=EXCLUDED.market_id,
-			party_id=EXCLUDED.party_id,
-			side=EXCLUDED.side,
-			price=EXCLUDED.price,
-			size=EXCLUDED.size,
-			remaining=EXCLUDED.remaining,
-			time_in_force=EXCLUDED.time_in_force,
-			type=EXCLUDED.type,
-			status=EXCLUDED.status,
-			reference=EXCLUDED.reference,
-			reason=EXCLUDED.reason,
-			version=EXCLUDED.version,
-			pegged_offset=EXCLUDED.pegged_offset,
-			batch_id=EXCLUDED.batch_id,
-			pegged_reference=EXCLUDED.pegged_reference,
-			lp_id=EXCLUDED.lp_id,
-			created_at=EXCLUDED.created_at,
-			updated_at=EXCLUDED.updated_at,
-			expires_at=EXCLUDED.expires_at;`,
-		o.ID, o.MarketID, o.PartyID, o.Side, o.Price,
-		o.Size, o.Remaining, o.TimeInForce, o.Type, o.Status,
-		o.Reference, o.Reason, o.Version, o.PeggedOffset, o.BatchID,
-		o.PeggedReference, o.LpID, o.CreatedAt, o.UpdatedAt, o.ExpiresAt, o.VegaTime)
-	return err
+func (os *Orders) Add(ctx context.Context, o entities.Order) error {
+	os.batcher.Add(o)
+	return nil
 }
 
 // GetAll returns all updates to all orders (including changes to orders that don't increment the version number)

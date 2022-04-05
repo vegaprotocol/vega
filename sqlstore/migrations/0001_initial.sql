@@ -50,7 +50,7 @@ create table balances
 
 create table ledger
 (
-    id              SERIAL                   PRIMARY KEY,
+    id              SERIAL                   ,--PRIMARY KEY,
     account_from_id INT                      NOT NULL REFERENCES accounts(id),
     account_to_id   INT                      NOT NULL REFERENCES accounts(id),
     quantity        NUMERIC(32, 0)           NOT NULL,
@@ -59,6 +59,8 @@ create table ledger
     reference       TEXT,
     type            TEXT
 );
+SELECT create_hypertable('ledger', 'vega_time', chunk_time_interval => INTERVAL '1 day');
+
 
 CREATE TABLE orders (
     id                BYTEA                     NOT NULL,
@@ -81,9 +83,13 @@ CREATE TABLE orders (
     created_at        TIMESTAMP WITH TIME ZONE NOT NULL,
     updated_at        TIMESTAMP WITH TIME ZONE,
     expires_at        TIMESTAMP WITH TIME ZONE,
-    vega_time         TIMESTAMP WITH TIME ZONE NOT NULL REFERENCES blocks(vega_time),
-    PRIMARY key(vega_time, id, version)
+    vega_time         TIMESTAMP WITH TIME ZONE NOT NULL REFERENCES blocks(vega_time)
+    --PRIMARY key(vega_time, id, version) -- TODO think about this
 );
+
+SELECT create_hypertable('orders', 'vega_time', chunk_time_interval => INTERVAL '1 day');
+CREATE INDEX ON orders (market_id, vega_time DESC);
+CREATE INDEX ON orders (party_id, vega_time DESC);
 
 -- Orders contains all the historical changes to each order (as of the end of the block),
 -- this view contains the *current* state of the latest version each order

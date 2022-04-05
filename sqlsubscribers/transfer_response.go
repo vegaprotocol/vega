@@ -1,6 +1,7 @@
 package sqlsubscribers
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"time"
@@ -15,6 +16,7 @@ import (
 
 type Ledger interface {
 	Add(*entities.LedgerEntry) error
+	Flush(ctx context.Context) error
 }
 
 type AccountStore interface {
@@ -23,6 +25,7 @@ type AccountStore interface {
 
 type BalanceStore interface {
 	Add(b entities.Balance) error
+	Flush(ctx context.Context) error
 }
 
 type TransferResponseEvent interface {
@@ -60,16 +63,21 @@ func (t *TransferResponse) Types() []events.Type {
 }
 
 func (t *TransferResponse) Push(evt events.Event) error {
+	ctx := context.Background()
 	switch e := evt.(type) {
 	case TimeUpdateEvent:
 		t.vegaTime = e.Time()
+		err := t.ledger.Flush(ctx)
+		if err != nil {
+			return errors.Wrap(err, "flushing ledgers")
+		}
+		err = t.balances.Flush(ctx)
+		return errors.Wrap(err, "flushing balances")
 	case TransferResponseEvent:
 		return t.consume(e)
 	default:
 		return errors.Errorf("unknown event type %s", e.Type().String())
 	}
-
-	return nil
 }
 
 func (t *TransferResponse) consume(e TransferResponseEvent) error {
