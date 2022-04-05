@@ -44,7 +44,8 @@ Feature: Test LP orders
     Then the liquidity provisions should have the following states:
       | id  | party   | market    | commitment amount | status        |
       | lp1 | party1 | ETH/DEC19 | 50000             | STATUS_ACTIVE |
+    
     Then the orders should have the following states:
       | party  | market id | side | volume | price | status        |
       | party1 | ETH/DEC19 | buy  | 225000   | 100   | STATUS_ACTIVE |
-      | party1 | ETH/DEC19 | sell | 153900   | 130   | STATUS_ACTIVE |
+      | party1 | ETH/DEC19 | sell | 153847   | 130   | STATUS_ACTIVE |
