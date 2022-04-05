@@ -122,10 +122,14 @@ Scenario: 001: 1 LP joining at start, checking liquidity rewards over 3 periods,
       | lp1   | 1                 | 1000000000              |
 
     # got error message when including the 3 lines below:  "missing fee share for market USD/DEC20"
-    # bug missing fee share 
-    # And the liquidity provider fee shares for the market "USD/DEC20" should be:
-    #   | party | equity like share | average entry valuation |
-    #   | lp1   | 1                 | 100000000000            |
+    # bug feature test is not really checking the value in "average entry valuation"
+    And the liquidity provider fee shares for the market "USD/DEC20" should be:
+      | party | equity like share | average entry valuation |
+      | lp1   | 1                 | 1                       |
+
+    And the liquidity provider fee shares for the market "USD/DEC21" should be:
+      | party | equity like share | average entry valuation |
+      | lp1   | 1                 | 100                     |
 
     And the parties should have the following account balances:
       | party  | asset | market id | margin       | general        | bond       |
@@ -207,5 +211,21 @@ Scenario: 001: 1 LP joining at start, checking liquidity rewards over 3 periods,
       | sell | 1102  | 7      |
       | sell | 1100  | 1      |
       | sell | 1001  | 14     |
-
   
+And the liquidity provider fee shares for the market "ETH/MAR22" should be:
+      | party | equity like share | average entry valuation |
+      | lp1   | 1                 | 10000                   |
+
+    And the parties should have the following account balances:
+      | party  | asset | market id | margin | general   | bond  |
+      | lp1    | USD   | ETH/MAR22 | 89634  | 999900366 | 10000 |
+      | party1 | USD   | ETH/MAR22 | 11770  | 99988230  | 0     |
+      | party2 | USD   | ETH/MAR22 | 48151  | 99951849  | 0     |
+
+    Then the network moves ahead "1" blocks
+
+    And the price monitoring bounds for the market "ETH/MAR22" should be:
+      | min bound | max bound |
+      | 864       | 1154      |
+
+    And the liquidity fee factor should "0.001" for the market "ETH/MAR22"
