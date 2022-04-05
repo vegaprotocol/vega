@@ -238,27 +238,31 @@ func testSubLoop(t *testing.T) {
 }
 
 func TestIntFromString(t *testing.T) {
-	n, overflow := num.IntFromString("100", 10)
-	assert.False(t, overflow)
+	n, hasError := num.IntFromString("100", 10)
+	assert.False(t, hasError)
 	assert.Equal(t, "100", n.String())
 
-	n, overflow = num.IntFromString("+100", 10)
-	assert.False(t, overflow)
+	n, hasError = num.IntFromString("+100", 10)
+	assert.False(t, hasError)
 	assert.Equal(t, "100", n.String())
 
-	n, overflow = num.IntFromString("-100", 10)
-	assert.False(t, overflow)
+	n, hasError = num.IntFromString("-100", 10)
+	assert.False(t, hasError)
 	assert.Equal(t, "-100", n.String())
 
-	n, overflow = num.IntFromString("0", 10)
-	assert.False(t, overflow)
+	n, hasError = num.IntFromString("0", 10)
+	assert.False(t, hasError)
 	assert.Equal(t, "0", n.String())
 
-	n, overflow = num.IntFromString("1000000000000000000000000000000000000000000000000000000000000000000000000000000", 10)
-	assert.True(t, overflow)
+	n, hasError = num.IntFromString("1000000000000000000000000000000000000000000000000000000000000000000000000000000", 10)
+	assert.True(t, hasError)
 	assert.Equal(t, "0", n.String())
 
-	n, overflow = num.IntFromString("-1000000000000000000000000000000000000000000000000000000000000000000000000000000", 10)
-	assert.True(t, overflow)
+	n, hasError = num.IntFromString("-1000000000000000000000000000000000000000000000000000000000000000000000000000000", 10)
+	assert.True(t, hasError)
+	assert.Equal(t, "0", n.String())
+
+	n, hasError = num.IntFromString("not a number", 10)
+	assert.True(t, hasError)
 	assert.Equal(t, "0", n.String())
 }
