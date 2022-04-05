@@ -57,7 +57,7 @@ Feature: Replicate LP getting distressed during continuous trading, and after le
     # check the requried balances
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general | bond |
-      | party0 | ETH   | ETH/DEC21 | 1320   | 80      | 5000 |
+      | party0 | ETH   | ETH/DEC21 | 1213   | 187      | 5000 |
 
     # Now let's make some trades happen to increase the margin for LP
     When the parties place the following orders:
@@ -71,7 +71,7 @@ Feature: Replicate LP getting distressed during continuous trading, and after le
     # LP margin requirement increased, had to dip in to bond account to top up the margin
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general | bond |
-      | party0 | ETH   | ETH/DEC21 | 1670   | 0       | 4478 |
+      | party0 | ETH   | ETH/DEC21 | 1562   | 0       | 4694 |
 
     # progress time a bit, so the price bounds get updated
     When the network moves ahead "2" blocks
@@ -114,7 +114,7 @@ Feature: Replicate LP getting distressed during continuous trading, and after le
     # check the requried balances
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general | bond |
-      | party0 | ETH   | ETH/DEC21 | 1320   | 80      | 5000 |
+      | party0 | ETH   | ETH/DEC21 | 1213   | 187     | 5000 |
 
     # Now let's make some trades happen to increase the margin for LP
     When the parties place the following orders:
@@ -128,7 +128,7 @@ Feature: Replicate LP getting distressed during continuous trading, and after le
     # LP margin requirement increased, had to dip in to bond account to top up the margin
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general | bond |
-      | party0 | ETH   | ETH/DEC21 | 1670   | 0       | 4478 |
+      | party0 | ETH   | ETH/DEC21 | 1562   | 0       | 4694 |
 
     # progress time a bit, so the price bounds get updated
     When the network moves ahead "2" blocks
@@ -139,12 +139,12 @@ Feature: Replicate LP getting distressed during continuous trading, and after le
       | party3 | ETH/DEC21 | buy  | 300    | 1020  | 0                | TYPE_LIMIT | TIF_GTC | party2-sell-6 |
     Then the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 1010       | TRADING_MODE_CONTINUOUS | 1       | 993       | 1012      | 2323         | 5000           | 2300          |
+      | 1010       | TRADING_MODE_CONTINUOUS | 1       | 993       | 1012      | 2323         | 10000          | 2300          |
     # getting closer to distressed LP, still in continuous trading
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general | bond |
-      | party0 | ETH   | ETH/DEC21 | 2816   | 0       | 0    |
-    And the insurance pool balance should be "3616" for the market "ETH/DEC21"
+      | party0 | ETH   | ETH/DEC21 | 1861   | 0       | 0    |
+    And the insurance pool balance should be "4571" for the market "ETH/DEC21"
 
     # Move price out of bounds
     When the network moves ahead "2" blocks
@@ -153,10 +153,10 @@ Feature: Replicate LP getting distressed during continuous trading, and after le
       | party3 | ETH/DEC21 | buy  | 1000   | 1060  | 0                | TYPE_LIMIT | TIF_GTC |
     Then the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode                    | auction trigger       | target stake | supplied stake | open interest |
-      | 1010       | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_PRICE | 2323         | 5000           | 2300          |
+      | 1010       | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_PRICE | 2323         | 10000          | 2300          |
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general | bond |
-      | party0 | ETH   | ETH/DEC21 | 2816   | 0       | 0    |
+      | party0 | ETH   | ETH/DEC21 | 1861   | 0       | 6    |
 
     # end price auction
     When the network moves ahead "301" blocks
@@ -165,6 +165,6 @@ Feature: Replicate LP getting distressed during continuous trading, and after le
       | 1055       | TRADING_MODE_CONTINUOUS | 1       | 1045      | 1065      | 3481         | 5000           | 3300          |
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general | bond |
-      | party0 | ETH   | ETH/DEC21 | 928    | 1573    | 0    |
+      | party0 | ETH   | ETH/DEC21 | 1242   | 0       | 0    |
 
-    And the insurance pool balance should be "3616" for the market "ETH/DEC21"
+    And the insurance pool balance should be "4881" for the market "ETH/DEC21"

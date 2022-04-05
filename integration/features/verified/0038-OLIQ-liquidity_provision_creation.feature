@@ -133,4 +133,4 @@ Feature: Test LP orders
     Then the orders should have the following states:
       | party  | market id | side | volume | price | status        |
       | party1 | ETH/DEC19 | buy  | 225000   | 1000   | STATUS_ACTIVE |
-      | party1 | ETH/DEC19 | sell | 153900   | 1300   | STATUS_ACTIVE |
+      | party1 | ETH/DEC19 | sell | 153847   | 1300   | STATUS_ACTIVE |

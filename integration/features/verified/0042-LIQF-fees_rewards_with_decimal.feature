@@ -135,30 +135,30 @@ Scenario: 001: 0070-MKTD-007, 0042-LIQF-001
 
     Then the order book should have the following volumes for market "USD/DEC19":
       | side | price    | volume   |
-      | buy  | 898000   | 8000     |
+      | buy  | 898000   | 7459     |
       | buy  | 900000   | 1000     |
-      | buy  | 999000   | 14000    |
-      | sell | 1102000  | 7000     |
+      | buy  | 999000   | 13347    |
+      | sell | 1102000  | 6092     |
       | sell | 1100000  | 1000     |
-      | sell | 1001000  | 14000    |
+      | sell | 1001000  | 13321    |
 
     Then the order book should have the following volumes for market "USD/DEC20":
       | side | price      | volume   |
-      | buy  | 89800000   | 800000   |
+      | buy  | 89800000   | 745826   |
       | buy  | 90000000   | 100000   |
-      | buy  | 99900000   | 1400000  |
-      | sell | 110200000  | 700000   |
+      | buy  | 99900000   | 1334669  |
+      | sell | 110200000  | 609144   |
       | sell | 110000000  | 100000   |
-      | sell | 100100000  | 1400000  |
+      | sell | 100100000  | 1332002  |
 
     Then the order book should have the following volumes for market "USD/DEC21":
       | side | price      | volume   |
-      | buy  | 89800000   | 8000     |
+      | buy  | 89800000   | 7459     |
       | buy  | 90000000   | 1000     |
-      | buy  | 99900000   | 14000    |
-      | sell | 110200000  | 7000     |
+      | buy  | 99900000   | 13347    |
+      | sell | 110200000  | 6092     |
       | sell | 110000000  | 1000     |
-      | sell | 100100000  | 14000    |
+      | sell | 100100000  | 13321    |
     
     And the liquidity provider fee shares for the market "USD/DEC19" should be:
       | party | equity like share | average entry valuation |
@@ -174,12 +174,12 @@ Scenario: 001: 0070-MKTD-007, 0042-LIQF-001
 
     And the parties should have the following account balances:
       | party  | asset | market id | margin       | general        | bond       |
-      | lp1    | ETH   | USD/DEC19 | 8963397051   | 99970109808847 | 1000000000 |
-      | lp1    | USD   | USD/DEC19 | 8963397051   | 100000000000   |            |
-      | lp1    | ETH   | USD/DEC20 | 8963397051   | 99970109808847 | 1000000000 |
-      | lp1    | USD   | USD/DEC20 | 8963397051   | 100000000000   | 1000000000 |
-      | lp1    | ETH   | USD/DEC21 | 8963397051   | 99970109808847 | 1000000000 |
-      | lp1    | USD   | USD/DEC21 | 8963397051   | 100000000000   | 1000000000 |
+      | lp1    | ETH   | USD/DEC19 | 8286020331   | 99972142596322 | 1000000000 |
+      | lp1    | USD   | USD/DEC19 | 8286020331   | 100000000000   |            |
+      | lp1    | ETH   | USD/DEC20 | 8285363016   | 99972142596322 | 1000000000 |
+      | lp1    | USD   | USD/DEC20 | 8285363016   | 100000000000   |            |
+      | lp1    | ETH   | USD/DEC21 | 8286020331   | 99972142596322 | 1000000000 |
+      | lp1    | USD   | USD/DEC21 | 8286020331   | 100000000000   | 1000000000 |
       | party1 | ETH   | USD/DEC19 | 1176961234   | 9996469116298  |            |
       | party1 | USD   | USD/DEC19 | 1176961234   | 10000000000    |            |
       | party2 | ETH   | USD/DEC19 | 4815112741   | 9985554661777  |            |
@@ -281,30 +281,30 @@ Scenario: 001: 0070-MKTD-007, 0042-LIQF-001
     # could be improved: as we do have fractional order, if we do the position scaling before we divide by price we can get a more sensible result
     Then the order book should have the following volumes for market "USD/DEC19":
       | side | price    | volume   |
-      | buy  | 898000   | 1000     |
+      | buy  | 898000   | 8        |
       | buy  | 900000   | 1000     |
-      | buy  | 999000   | 1000     |
-      | sell | 1102000  | 1000     |
+      | buy  | 999000   | 14       |
+      | sell | 1102000  | 7        |
       | sell | 1100000  | 1000     |
-      | sell | 1001000  | 1000     |
+      | sell | 1001000  | 14       |
 
-    # Then the order book should have the following volumes for market "USD/DEC20":
-    #   | side | price      | volume   |
-    #   | buy  | 89800000   | 800000   |
-    #   | buy  | 90000000   | 100000   |
-    #   | buy  | 99900000   | 1400000  |
-    #   | sell | 110200000  | 700000   |
-    #   | sell | 110000000  | 100000   |
-    #   | sell | 100100000  | 1400000  |
+    Then the order book should have the following volumes for market "USD/DEC20":
+      | side | price      | volume   |
+      | buy  | 89800000   | 746      |
+      | buy  | 90000000   | 100000   |
+      | buy  | 99900000   | 1335     |
+      | sell | 110200000  | 610      |
+      | sell | 110000000  | 100000   |
+      | sell | 100100000  | 1333     |
 
-    # Then the order book should have the following volumes for market "USD/DEC21":
-    #   | side | price      | volume   |
-    #   | buy  | 89800000   | 8000     |
-    #   | buy  | 90000000   | 1000     |
-    #   | buy  | 99900000   | 14000    |
-    #   | sell | 110200000  | 7000     |
-    #   | sell | 110000000  | 1000     |
-    #   | sell | 100100000  | 14000    |
+    Then the order book should have the following volumes for market "USD/DEC21":
+      | side | price      | volume   |
+      | buy  | 89800000   | 8        |
+      | buy  | 90000000   | 1000     |
+      | buy  | 99900000   | 14       |
+      | sell | 110200000  | 7        |
+      | sell | 110000000  | 1000     |
+      | sell | 100100000  | 14       |
     
     And the liquidity provider fee shares for the market "USD/DEC19" should be:
       | party | equity like share | average entry valuation |
