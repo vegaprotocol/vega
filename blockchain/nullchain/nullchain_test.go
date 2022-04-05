@@ -62,7 +62,9 @@ func testTransactionsCreateBlock(t *testing.T) {
 	r := abci.RequestBeginBlock{Header: types.Header{Time: now.Add(time.Second), ChainID: chainID, Height: 2}}
 
 	// One round of block processing calls
-	testChain.app.EXPECT().BeginBlock(r).Times(1)
+	testChain.app.EXPECT().BeginBlock(gomock.Any()).Do(func(rr abci.RequestBeginBlock) {
+		require.Equal(t, rr.Header, r.Header)
+	}).Times(1)
 	testChain.app.EXPECT().EndBlock(gomock.Any()).Times(1)
 	testChain.app.EXPECT().Commit().Times(1)
 
