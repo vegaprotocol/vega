@@ -44,18 +44,18 @@ Scenario: 001: 1 LP joining at start, checking liquidity rewards over 3 periods,
       
     And the parties submit the following liquidity provision:
       | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | lp1   | USD/DEC19 | 1000000000        | 0.001 | buy  | BID              | 1          | 2000   | submission |
-      | lp2 | lp1   | USD/DEC20 | 1000000000        | 0.001 | buy  | BID              | 1          | 200000 | submission  |
-      | lp3 | lp1   | USD/DEC21 | 1000000000        | 0.001 | buy  | BID              | 1          | 200000 | submission  |
-      | lp1 | lp1   | USD/DEC19 | 1000000000        | 0.001 | buy  | MID              | 2          | 1000   | amendment  |
-      | lp2 | lp1   | USD/DEC20 | 1000000000        | 0.001 | buy  | MID              | 2          | 100000 | amendment  |
-      | lp3 | lp1   | USD/DEC21 | 1000000000        | 0.001 | buy  | MID              | 2          | 100000 | amendment  |
-      | lp1 | lp1   | USD/DEC19 | 1000000000        | 0.001 | sell | ASK              | 1          | 2000   | amendment  |
-      | lp2 | lp1   | USD/DEC20 | 1000000000        | 0.001 | sell | ASK              | 1          | 200000 | amendment  |
-      | lp3 | lp1   | USD/DEC21 | 1000000000        | 0.001 | sell | ASK              | 1          | 200000 | amendment  |
-      | lp1 | lp1   | USD/DEC19 | 1000000000        | 0.001 | sell | MID              | 2          | 1000   | amendment  |
-      | lp2 | lp1   | USD/DEC20 | 1000000000        | 0.001 | sell | MID              | 2          | 100000 | amendment  |
-      | lp3 | lp1   | USD/DEC21 | 1000000000        | 0.001 | sell | MID              | 2          | 100000 | amendment  |
+      | lp1 | lp1   | USD/DEC19 | 1000000           | 0.001 | buy  | BID              | 1          | 2000   | submission |
+      | lp2 | lp1   | USD/DEC20 | 1000000           | 0.001 | buy  | BID              | 1          | 200000 | submission  |
+      | lp3 | lp1   | USD/DEC21 | 1000000           | 0.001 | buy  | BID              | 1          | 200000 | submission  |
+      | lp1 | lp1   | USD/DEC19 | 1000000           | 0.001 | buy  | MID              | 2          | 1000   | amendment  |
+      | lp2 | lp1   | USD/DEC20 | 1000000           | 0.001 | buy  | MID              | 2          | 100000 | amendment  |
+      | lp3 | lp1   | USD/DEC21 | 1000000           | 0.001 | buy  | MID              | 2          | 100000 | amendment  |
+      | lp1 | lp1   | USD/DEC19 | 1000000           | 0.001 | sell | ASK              | 1          | 2000   | amendment  |
+      | lp2 | lp1   | USD/DEC20 | 1000000           | 0.001 | sell | ASK              | 1          | 200000 | amendment  |
+      | lp3 | lp1   | USD/DEC21 | 1000000           | 0.001 | sell | ASK              | 1          | 200000 | amendment  |
+      | lp1 | lp1   | USD/DEC19 | 1000000           | 0.001 | sell | MID              | 2          | 1000   | amendment  |
+      | lp2 | lp1   | USD/DEC20 | 1000000           | 0.001 | sell | MID              | 2          | 100000 | amendment  |
+      | lp3 | lp1   | USD/DEC21 | 1000000           | 0.001 | sell | MID              | 2          | 100000 | amendment  |
 
     Then the parties place the following orders:
       | party  | market id | side | volume | price    | resulting trades | type       | tif     |
@@ -78,71 +78,72 @@ Scenario: 001: 1 LP joining at start, checking liquidity rewards over 3 periods,
 
     And the market data for the market "USD/DEC19" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 1000000    | TRADING_MODE_CONTINUOUS | 100000  | 863654    | 1154208   | 3556900000   | 1000000000     | 10000         |
+      | 1000000    | TRADING_MODE_CONTINUOUS | 100000  | 863654    | 1154208   | 3556900000   | 1000000        | 10000         |
+    # bug?: target_stake = mark_price x max_oi x target_stake_scaling_factor x rf = 1000000 x 10000 x 1 x 3.5569=35569000000
 
     And the market data for the market "USD/DEC20" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 100000000  | TRADING_MODE_CONTINUOUS | 100000  | 86365368  | 115420826 | 3556900000   | 1000000000     | 1000000       |
+      | 100000000  | TRADING_MODE_CONTINUOUS | 100000  | 86365368  | 115420826 | 3556900000   | 1000000        | 1000000       |
+    # bug?: target_stake = mark_price x max_oi x target_stake_scaling_factor x rf = 100000000 x 1000000 x 1 x 3.5569=355690000000000
 
     And the market data for the market "USD/DEC21" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 100000000  | TRADING_MODE_CONTINUOUS | 100000  | 86365368  | 115420826 | 3556900000   | 1000000000     | 10000         |
-    # target_stake = mark_price x max_oi x target_stake_scaling_factor x rf = 1000 x 10 x 1 x 0.1
+      | 100000000  | TRADING_MODE_CONTINUOUS | 100000  | 86365368  | 115420826 | 3556900000   | 1000000        | 10000         |
+    # bug?: target_stake = mark_price x max_oi x target_stake_scaling_factor x rf = 100000000 x 10000 x 1 x 3.5569=3556900000000
     # max_oi: max open interest
 
+    # bug: pegged vol looks wrong 
     Then the order book should have the following volumes for market "USD/DEC19":
       | side | price    | volume   |
-      | buy  | 898000   | 8000     |
+      | buy  | 898000   | 1000     |
       | buy  | 900000   | 1000     |
-      | buy  | 999000   | 14000    |
-      | sell | 1102000  | 7000     |
+      | buy  | 999000   | 1000     |
+      | sell | 1102000  | 1000     |
       | sell | 1100000  | 1000     |
-      | sell | 1001000  | 14000    |
+      | sell | 1001000  | 1000     |
 
     Then the order book should have the following volumes for market "USD/DEC20":
       | side | price      | volume   |
-      | buy  | 89800000   | 800000   |
+      | buy  | 89800000   | 100000   |
       | buy  | 90000000   | 100000   |
-      | buy  | 99900000   | 1400000  |
-      | sell | 110200000  | 700000   |
+      | buy  | 99900000   | 100000   |
+      | sell | 110200000  | 100000   |
       | sell | 110000000  | 100000   |
-      | sell | 100100000  | 1400000  |
+      | sell | 100100000  | 100000   |
 
     Then the order book should have the following volumes for market "USD/DEC21":
       | side | price      | volume   |
-      | buy  | 89800000   | 8000     |
+      | buy  | 89800000   | 1000     |
       | buy  | 90000000   | 1000     |
-      | buy  | 99900000   | 14000    |
-      | sell | 110200000  | 7000     |
+      | buy  | 99900000   | 1000     |
+      | sell | 110200000  | 1000     |
       | sell | 110000000  | 1000     |
-      | sell | 100100000  | 14000    |
+      | sell | 100100000  | 1000     |
     
     And the liquidity provider fee shares for the market "USD/DEC19" should be:
       | party | equity like share | average entry valuation |
-      | lp1   | 1                 | 1000000000              |
+      | lp1   | 1                 | 1000000                 |
 
-    # got error message when including the 3 lines below:  "missing fee share for market USD/DEC20"
-    # bug feature test is not really checking the value in "average entry valuation"
     And the liquidity provider fee shares for the market "USD/DEC20" should be:
       | party | equity like share | average entry valuation |
-      | lp1   | 1                 | 1                       |
+      | lp1   | 1                 | 1000000                 |
 
     And the liquidity provider fee shares for the market "USD/DEC21" should be:
       | party | equity like share | average entry valuation |
-      | lp1   | 1                 | 100                     |
+      | lp1   | 1                 | 1000000                 |
 
     And the parties should have the following account balances:
-      | party  | asset | market id | margin       | general        | bond       |
-      | lp1    | ETH   | USD/DEC19 | 8963397051   | 99970109808847 | 1000000000 |
-      | lp1    | USD   | USD/DEC19 | 8963397051   | 100000000000   |            |
-      | lp1    | ETH   | USD/DEC20 | 8963397051   | 99970109808847 | 1000000000 |
-      | lp1    | USD   | USD/DEC20 | 8963397051   | 100000000000   | 1000000000 |
-      | lp1    | ETH   | USD/DEC21 | 8963397051   | 99970109808847 | 1000000000 |
-      | lp1    | USD   | USD/DEC21 | 8963397051   | 100000000000   | 1000000000 |
-      | party1 | ETH   | USD/DEC19 | 1176961234   | 9996469116298  |            |
-      | party1 | USD   | USD/DEC19 | 1176961234   | 10000000000    |            |
-      | party2 | ETH   | USD/DEC19 | 4815112741   | 9985554661777  |            |
-      | party2 | USD   | USD/DEC19 | 4815112741   | 10000000000    |            |
+      | party  | asset | market id | margin       | general        | bond    |
+      | lp1    | ETH   | USD/DEC19 | 853656862    | 99997436029414 | 1000000 |
+      | lp1    | USD   | USD/DEC19 | 853656862    | 100000000000   |         |
+      | lp1    | ETH   | USD/DEC20 | 853656862    | 99997436029414 | 1000000 |
+      | lp1    | USD   | USD/DEC20 | 853656862    | 100000000000   | 1000000 |
+      | lp1    | ETH   | USD/DEC21 | 853656862    | 99997436029414 | 1000000 |
+      | lp1    | USD   | USD/DEC21 | 853656862    | 100000000000   | 1000000 |
+      | party1 | ETH   | USD/DEC19 | 1176961234   | 9996469116298  |         |
+      | party1 | USD   | USD/DEC19 | 1176961234   | 10000000000    |         |
+      | party2 | ETH   | USD/DEC19 | 4815112741   | 9985554661777  |         |
+      | party2 | USD   | USD/DEC19 | 4815112741   | 10000000000    |         |
       
   Scenario: 002, no decimal
 
@@ -200,7 +201,7 @@ Scenario: 001: 1 LP joining at start, checking liquidity rewards over 3 periods,
     And the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
       | 1000       | TRADING_MODE_CONTINUOUS | 100000  | 864       | 1154      | 35569         | 10000          | 10            |
-    # target_stake = mark_price x max_oi x target_stake_scaling_factor x rf = 1000 x 10 x 1 x 3.6
+    # target_stake = mark_price x max_oi x target_stake_scaling_factor x rf = 1000 x 10 x 1 x 3.5569
     # max_oi: max open interest
 
     Then the order book should have the following volumes for market "ETH/MAR22":
