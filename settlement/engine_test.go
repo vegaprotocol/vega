@@ -58,14 +58,15 @@ func TestMarkToMarket(t *testing.T) {
 
 func TestMTMWinDistribution(t *testing.T) {
 	t.Run("A MTM loss party with a loss of value 1, with several parties needing a win", testMTMWinOneExcess)
-	t.Run("A MTM scenario with several parties winning less than 1, and several parties losing 1, to distribute equally", testMTMWinDivideExcess)
+	t.Run("Distribute win excess in a scenario where no transfer amount is < 1", testMTMWinNoZero)
 }
 
-func testMTMWinDivideExcess(t *testing.T) {
+func testMTMWinNoZero(t *testing.T) {
+	// cheat by setting the factor to some specific value, makes it easier to create a scenario where win/loss amounts don't match
 	engine := getTestEngineWithFactor(t, 1)
 	defer engine.Finish()
 
-	price := num.NewUint(10000)
+	price := num.NewUint(100000)
 	one := num.NewUint(1)
 	ctx := context.Background()
 
@@ -78,12 +79,12 @@ func testMTMWinDivideExcess(t *testing.T) {
 		{
 			price: price.Clone(),
 			party: "party2",
-			size:  20,
+			size:  23,
 		},
 		{
 			price: price.Clone(),
 			party: "party3",
-			size:  -29,
+			size:  -32,
 		},
 		{
 			price: price.Clone(),
@@ -93,12 +94,12 @@ func testMTMWinDivideExcess(t *testing.T) {
 		{
 			price: price.Clone(),
 			party: "party5",
-			size:  -1,
+			size:  -29,
 		},
 		{
 			price: price.Clone(),
-			party: "party5",
-			size:  1,
+			party: "party6",
+			size:  27,
 		},
 	}
 
@@ -107,7 +108,8 @@ func testMTMWinDivideExcess(t *testing.T) {
 		init = append(init, p)
 	}
 
-	newPrice := num.Sum(price, one)
+	newPrice := num.Sum(price, one, one, one)
+	somePrice := num.Sum(price, one)
 	newParty := testPos{
 		size:  30,
 		price: newPrice.Clone(),
@@ -119,13 +121,13 @@ func testMTMWinDivideExcess(t *testing.T) {
 			Size:   10,
 			Buyer:  newParty.party,
 			Seller: initPos[0].party,
-			Price:  newPrice.Clone(),
+			Price:  somePrice.Clone(),
 		},
 		{
 			Size:   10,
 			Buyer:  newParty.party,
 			Seller: initPos[1].party,
-			Price:  newPrice.Clone(),
+			Price:  somePrice.Clone(),
 		},
 		{
 			Size:   10,
