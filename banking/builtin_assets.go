@@ -14,7 +14,8 @@ import (
 )
 
 func (e *Engine) WithdrawBuiltinAsset(
-	ctx context.Context, id, party, assetID string, amount *num.Uint) error {
+	ctx context.Context, id, party, assetID string, amount *num.Uint,
+) error {
 	// build the withdrawal type
 	w, ref := e.newWithdrawal(id, party, assetID, amount, time.Time{}, nil)
 	w.Status = types.WithdrawalStatusRejected // default
@@ -38,7 +39,8 @@ func (e *Engine) WithdrawBuiltinAsset(
 }
 
 func (e *Engine) DepositBuiltinAsset(
-	ctx context.Context, d *types.BuiltinAssetDeposit, id string, nonce uint64) error {
+	ctx context.Context, d *types.BuiltinAssetDeposit, id string, nonce uint64,
+) error {
 	now := e.currentTime
 	dep := e.newDeposit(id, d.PartyID, d.VegaAssetID, d.Amount, "") // no hash
 	e.broker.Send(events.NewDepositEvent(ctx, *dep))

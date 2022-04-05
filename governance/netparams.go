@@ -113,7 +113,8 @@ func (e *Engine) getProposalParametersFromNetParams(
 }
 
 func validateNetworkParameterUpdate(
-	netp NetParams, np *types.NetworkParameter) (types.ProposalError, error) {
+	netp NetParams, np *types.NetworkParameter,
+) (types.ProposalError, error) {
 	if len(np.Key) <= 0 {
 		return types.ProposalErrorNetworkParameterInvalidKey, ErrEmptyNetParamKey
 	}

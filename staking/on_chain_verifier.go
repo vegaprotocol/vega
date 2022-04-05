@@ -60,7 +60,8 @@ func (o *OnChainVerifier) UpdateStakingBridgeAddresses(stakingBridgeAddresses []
 }
 
 func (o *OnChainVerifier) CheckStakeDeposited(
-	event *types.StakeDeposited) error {
+	event *types.StakeDeposited,
+) error {
 	o.mu.RLock()
 	defer o.mu.RUnlock()
 

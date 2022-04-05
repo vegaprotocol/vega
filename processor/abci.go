@@ -1080,7 +1080,8 @@ func (app *App) DeliverAmendOrder(ctx context.Context, tx abci.Tx, deterministic
 }
 
 func (app *App) DeliverWithdraw(
-	ctx context.Context, tx abci.Tx, id string) error {
+	ctx context.Context, tx abci.Tx, id string,
+) error {
 	w := &commandspb.WithdrawSubmission{}
 	if err := tx.Unmarshal(w); err != nil {
 		return err
@@ -1348,8 +1349,8 @@ func (app *App) onTick(ctx context.Context, t time.Time) {
 		case toEnact.IsFreeform():
 			app.enactFreeform(ctx, prop)
 		default:
-			prop.State = types.ProposalStateFailed
 			app.log.Error("unknown proposal cannot be enacted", logging.ProposalID(prop.ID))
+			prop.FailUnexpectedly(fmt.Errorf("unknown proposal \"%s\" cannot be enacted", prop.ID))
 		}
 
 		app.gov.FinaliseEnactment(ctx, prop)
@@ -1365,7 +1366,7 @@ func (app *App) enactAsset(ctx context.Context, prop *types.Proposal, _ *types.A
 		app.log.Error("invalid asset is getting enacted",
 			logging.String("asset-id", prop.ID),
 			logging.Error(err))
-		prop.State = types.ProposalStateFailed
+		prop.FailUnexpectedly(err)
 		return
 	}
 
@@ -1378,7 +1379,7 @@ func (app *App) enactAsset(ctx context.Context, prop *types.Proposal, _ *types.A
 			app.log.Error("unable to get builtin asset enabled",
 				logging.String("asset-id", prop.ID),
 				logging.Error(err))
-			prop.State = types.ProposalStateFailed
+			prop.FailUnexpectedly(err)
 		}
 		return
 	}
@@ -1418,7 +1419,7 @@ func (app *App) enactFreeform(_ context.Context, prop *types.Proposal) {
 func (app *App) enactNetworkParameterUpdate(ctx context.Context, prop *types.Proposal, np *types.NetworkParameter) {
 	prop.State = types.ProposalStateEnacted
 	if err := app.netp.Update(ctx, np.Key, np.Value); err != nil {
-		prop.State = types.ProposalStateFailed
+		prop.FailUnexpectedly(err)
 		app.log.Error("failed to update network parameters",
 			logging.ProposalID(prop.ID),
 			logging.Error(err))
@@ -1570,10 +1571,11 @@ func (app *App) DeliverStateVarProposal(ctx context.Context, tx abci.Tx) error {
 
 func (app *App) enactUpdateMarket(ctx context.Context, prop *types.Proposal, market *types.Market) {
 	if err := app.exec.UpdateMarket(ctx, market); err != nil {
-		prop.State = types.ProposalStateFailed
+		prop.FailUnexpectedly(err)
 		app.log.Error("failed to update market",
 			logging.ProposalID(prop.ID),
 			logging.Error(err))
+		return
 	}
 	prop.State = types.ProposalStateEnacted
 }

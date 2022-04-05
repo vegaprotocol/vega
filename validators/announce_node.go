@@ -14,7 +14,8 @@ import (
 var ErrMissingRequiredAnnounceNodeFields = errors.New("missing required announce node fields")
 
 func (t *Topology) ProcessAnnounceNode(
-	ctx context.Context, an *commandspb.AnnounceNode) error {
+	ctx context.Context, an *commandspb.AnnounceNode,
+) error {
 	if err := VerifyAnnounceNode(an); err != nil {
 		return err
 	}

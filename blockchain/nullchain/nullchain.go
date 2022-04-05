@@ -3,6 +3,7 @@ package nullchain
 import (
 	"context"
 	"encoding/base64"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"net"
@@ -11,6 +12,7 @@ import (
 	"sync"
 	"time"
 
+	vgcrypto "code.vegaprotocol.io/shared/libs/crypto"
 	vgfs "code.vegaprotocol.io/shared/libs/fs"
 	vgrand "code.vegaprotocol.io/shared/libs/rand"
 	"code.vegaprotocol.io/vega/blockchain"
@@ -249,12 +251,16 @@ func (n *NullBlockchain) BeginBlock() *NullBlockchain {
 	n.log.Debug("sending BeginBlock",
 		logging.String("time", n.now.String()),
 	)
+
+	hash, _ := hex.DecodeString(vgcrypto.RandomHash())
+
 	r := abci.RequestBeginBlock{
 		Header: types.Header{
 			Time:    n.now,
 			Height:  n.blockHeight,
 			ChainID: n.chainID,
 		},
+		Hash: hash,
 	}
 	n.app.BeginBlock(r)
 	return n

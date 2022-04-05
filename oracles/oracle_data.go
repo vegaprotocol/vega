@@ -28,19 +28,19 @@ func (d OracleData) GetUint(name string) (*num.Uint, error) {
 }
 
 // GetInteger converts the value associated to propertyName into an integer.
-func (d OracleData) GetInteger(propertyName string) (int64, error) {
+func (d OracleData) GetInteger(propertyName string) (*num.Int, error) {
 	value, ok := d.Data[propertyName]
 	if !ok {
-		return 0, errPropertyNotFound(propertyName)
+		return num.IntZero(), errPropertyNotFound(propertyName)
 	}
 	return toInteger(value)
 }
 
 // GetDecimal converts the value associated to propertyName into a decimal.
-func (d OracleData) GetDecimal(propertyName string) (float64, error) {
+func (d OracleData) GetDecimal(propertyName string) (num.Decimal, error) {
 	value, ok := d.Data[propertyName]
 	if !ok {
-		return 0, errPropertyNotFound(propertyName)
+		return num.DecimalZero(), errPropertyNotFound(propertyName)
 	}
 	return toDecimal(value)
 }
