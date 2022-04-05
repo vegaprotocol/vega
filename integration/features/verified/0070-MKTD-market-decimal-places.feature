@@ -69,13 +69,13 @@ Feature: Allow markets to be specified with a smaller number of decimal places t
 
         Then the parties should have the following account balances:
             | party  | asset | market id | margin | general  | bond |
-            | party0 | ETH   | USD/DEC21 | 427    | 3716655  | 1000 |
+            | party0 | ETH   | USD/DEC21 | 427    | 4981264  | 1000 |
             | party1 | ETH   | USD/DEC21 | 1081   | 99996757 | 0    |
             | party2 | ETH   | USD/DEC21 | 4388   | 99986836 | 0    |
-            | party0 | ETH   | USD/DEC20 | 853662 | 3716655  | 1000 |
+            | party0 | ETH   | USD/DEC20 | 7773   | 4981264  | 1000 |
             | party1 | ETH   | USD/DEC20 | 1081   | 99996757 | 0    |
             | party2 | ETH   | USD/DEC20 | 4388   | 99986836 | 0    |
-            | party0 | ETH   | USD/DEC19 | 427256 | 3716655  | 1000 |
+            | party0 | ETH   | USD/DEC19 | 8536   | 4981264  | 1000 |
             | party1 | ETH   | USD/DEC19 | 1081   | 99996757 | 0    |
             | party2 | ETH   | USD/DEC19 | 4388   | 99986836 | 0    |
 
@@ -124,7 +124,7 @@ Feature: Allow markets to be specified with a smaller number of decimal places t
         Then the auction ends with a traded volume of "10" at a price of "1000"
         And the parties should have the following account balances:
             | party  | asset | market id | margin | general  | bond  |
-            | party0 | ETH   | USD/DEC19 | 426829 | 4523171  | 50000 |
+            | party0 | ETH   | USD/DEC19 | 422988 | 4527012  | 50000 |
             | party1 | ETH   | USD/DEC19 | 1273   | 99998727 | 0     |
             | party2 | ETH   | USD/DEC19 | 5188   | 99994812 | 0     |
         And the following trades should be executed:
@@ -151,7 +151,7 @@ Feature: Allow markets to be specified with a smaller number of decimal places t
         Then the auction ends with a traded volume of "10" at a price of "100000"
         And the parties should have the following account balances:
             | party  | asset | market id | margin | general  | bond |
-            | party0 | ETH   | USD/DEC20 | 426829 | 4572671  | 500  |
+            | party0 | ETH   | USD/DEC20 | 4230   | 4995270  | 500  |
             | party1 | ETH   | USD/DEC20 | 13     | 99999987 | 0    |
             | party2 | ETH   | USD/DEC20 | 52     | 99999948 | 0    |
         And the following trades should be executed:
@@ -189,10 +189,10 @@ Feature: Allow markets to be specified with a smaller number of decimal places t
 
         Then the parties should have the following account balances:
             | party  | asset | market id | margin | general  | bond   |
-            | party0 | ETH   | USD/DEC20 | 853657 | 3618514  | 100000 |
+            | party0 | ETH   | USD/DEC20 | 845206 | 4045258  | 100000 |
             | party1 | ETH   | USD/DEC20 | 13     | 99998714 | 0      |
             | party2 | ETH   | USD/DEC20 | 52     | 99994760 | 0      |
-            | party0 | ETH   | USD/DEC19 | 426829 | 3618514  | 1000   |
+            | party0 | ETH   | USD/DEC19 | 8536 | 4045258  | 1000   |
             | party1 | ETH   | USD/DEC19 | 1273   | 99998714 | 0      |
             | party2 | ETH   | USD/DEC19 | 5188   | 99994760 | 0      |
 
@@ -203,10 +203,10 @@ Feature: Allow markets to be specified with a smaller number of decimal places t
             | party2 | ETH   | 1000   |
         Then the parties should have the following account balances:
             | party  | asset | market id | margin | general  | bond   |
-            | party0 | ETH   | USD/DEC20 | 853657 | 3619514  | 100000 |
+            | party0 | ETH   | USD/DEC20 | 845206 | 4046258  | 100000 |
             | party1 | ETH   | USD/DEC20 | 13     | 99999714 | 0      |
             | party2 | ETH   | USD/DEC20 | 52     | 99995760 | 0      |
-            | party0 | ETH   | USD/DEC19 | 426829 | 3619514  | 1000   |
+            | party0 | ETH   | USD/DEC19 | 8536   | 4046258  | 1000   |
             | party1 | ETH   | USD/DEC19 | 1273   | 99999714 | 0      |
             | party2 | ETH   | USD/DEC19 | 5188   | 99995760 | 0      |
 

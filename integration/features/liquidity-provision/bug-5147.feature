@@ -56,5 +56,5 @@ Feature: Test LP orders with different decimals for market and asset
 
     Then the orders should have the following states:
       | party  | market id | side | volume    | price     | status        |
-      | party1 | ETH/DEC19 | buy  | 926100000 | 89900000  | STATUS_ACTIVE |
-      | party1 | ETH/DEC19 | sell | 678700000 | 120100000 | STATUS_ACTIVE |
+      | party1 | ETH/DEC19 | buy  | 926017959 | 89900000  | STATUS_ACTIVE |
+      | party1 | ETH/DEC19 | sell | 678604619 | 120100000 | STATUS_ACTIVE |
