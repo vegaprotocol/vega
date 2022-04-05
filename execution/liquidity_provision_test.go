@@ -609,7 +609,7 @@ func TestSubmit(t *testing.T) {
 			UpdateFrequency: 600,
 		}
 
-		tm := getTestMarket(t, now, closingAt, pMonitorSettings, nil)
+		tm := getTestMarket(t, now, closingAt, pMonitorSettings, &types.AuctionDuration{Duration: 10})
 		tm.market.OnMarketAuctionMinimumDurationUpdate(ctx, time.Second*10)
 
 		// Create a new party account with very little funding
@@ -657,7 +657,6 @@ func TestSubmit(t *testing.T) {
 
 		// Leave the auction so we can uncross the book
 		now = now.Add(time.Second * 20)
-		tm.market.LeaveAuctionWithIdGen(ctx, now, newTestIdGenerator())
 		tm.market.OnChainTimeUpdate(ctx, now)
 
 		// Save the total amount of assets we have in general+margin+bond
