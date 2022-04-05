@@ -1626,7 +1626,7 @@ func TestTriggerByPriceAuctionPriceOutsideBounds(t *testing.T) {
 	tm.market.OnMarketAuctionMinimumDurationUpdate(context.Background(), time.Duration(auctionExtensionSeconds)*time.Second)
 	alwaysOnBid := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "alwaysOnBid", types.SideBuy, auxParty, 1, 1)
 	conf, err := tm.market.SubmitOrder(context.Background(), alwaysOnBid)
-	require.Equal(t, types.MarketStateSuspended, tm.market.State()) // enter auction
+	require.Equal(t, types.MarketStatePending, tm.market.State()) // enter auction
 	require.NotNil(t, conf)
 	require.NoError(t, err)
 	require.Equal(t, types.OrderStatusActive, conf.Order.Status)
@@ -1650,7 +1650,7 @@ func TestTriggerByPriceAuctionPriceOutsideBounds(t *testing.T) {
 
 	md := tm.market.GetMarketData()
 
-	require.Nil(t, md.Trigger)
+	require.Equal(t, types.AuctionTriggerUnspecified, md.Trigger)
 
 	require.Equal(t, types.MarketStateActive, tm.market.State())
 	now = openEnd
