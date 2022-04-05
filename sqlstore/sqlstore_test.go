@@ -30,6 +30,7 @@ var (
 func TestMain(m *testing.M) {
 	var err error
 	testDBPort = getNextPort()
+
 	sqlConfig := NewTestConfig(testDBPort)
 
 	if sqlTestsEnabled {
