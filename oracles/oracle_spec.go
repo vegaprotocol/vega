@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	oraclespb "code.vegaprotocol.io/protos/vega/oracles/v1"
+	"code.vegaprotocol.io/vega/types/num"
 )
 
 var (
@@ -180,7 +181,7 @@ func toConditions(typ oraclespb.PropertyKey_Type, cs []*oraclespb.Condition) ([]
 		return nil, errUnsupportedPropertyType(typ)
 	}
 
-	conditions := []condition{}
+	conditions := make([]condition, 0, len(cs))
 	for _, c := range cs {
 		cond, err := converter(c)
 		if err != nil {
@@ -212,11 +213,15 @@ func toIntegerCondition(c *oraclespb.Condition) (condition, error) {
 	}, nil
 }
 
-func toInteger(value string) (int64, error) {
-	return strconv.ParseInt(value, 10, 64)
+func toInteger(value string) (*num.Int, error) {
+	convertedValue, hasError := num.IntFromString(value, 10)
+	if hasError {
+		return nil, fmt.Errorf("value \"%s\" is not a valid integer", value)
+	}
+	return convertedValue, nil
 }
 
-var integerMatchers = map[oraclespb.Condition_Operator]func(int64, int64) bool{
+var integerMatchers = map[oraclespb.Condition_Operator]func(*num.Int, *num.Int) bool{
 	oraclespb.Condition_OPERATOR_EQUALS:                equalsInteger,
 	oraclespb.Condition_OPERATOR_GREATER_THAN:          greaterThanInteger,
 	oraclespb.Condition_OPERATOR_GREATER_THAN_OR_EQUAL: greaterThanOrEqualInteger,
@@ -224,24 +229,24 @@ var integerMatchers = map[oraclespb.Condition_Operator]func(int64, int64) bool{
 	oraclespb.Condition_OPERATOR_LESS_THAN_OR_EQUAL:    lessThanOrEqualInteger,
 }
 
-func equalsInteger(dataValue, condValue int64) bool {
-	return dataValue == condValue
+func equalsInteger(dataValue, condValue *num.Int) bool {
+	return dataValue.EQ(condValue)
 }
 
-func greaterThanInteger(dataValue, condValue int64) bool {
-	return dataValue > condValue
+func greaterThanInteger(dataValue, condValue *num.Int) bool {
+	return dataValue.GT(condValue)
 }
 
-func greaterThanOrEqualInteger(dataValue, condValue int64) bool {
-	return dataValue >= condValue
+func greaterThanOrEqualInteger(dataValue, condValue *num.Int) bool {
+	return dataValue.GTE(condValue)
 }
 
-func lessThanInteger(dataValue, condValue int64) bool {
-	return dataValue < condValue
+func lessThanInteger(dataValue, condValue *num.Int) bool {
+	return dataValue.LT(condValue)
 }
 
-func lessThanOrEqualInteger(dataValue, condValue int64) bool {
-	return dataValue <= condValue
+func lessThanOrEqualInteger(dataValue, condValue *num.Int) bool {
+	return dataValue.LTE(condValue)
 }
 
 func toDecimalCondition(c *oraclespb.Condition) (condition, error) {
@@ -264,11 +269,11 @@ func toDecimalCondition(c *oraclespb.Condition) (condition, error) {
 	}, nil
 }
 
-func toDecimal(value string) (float64, error) {
-	return strconv.ParseFloat(value, 64)
+func toDecimal(value string) (num.Decimal, error) {
+	return num.DecimalFromString(value)
 }
 
-var decimalMatchers = map[oraclespb.Condition_Operator]func(float64, float64) bool{
+var decimalMatchers = map[oraclespb.Condition_Operator]func(num.Decimal, num.Decimal) bool{
 	oraclespb.Condition_OPERATOR_EQUALS:                equalsDecimal,
 	oraclespb.Condition_OPERATOR_GREATER_THAN:          greaterThanDecimal,
 	oraclespb.Condition_OPERATOR_GREATER_THAN_OR_EQUAL: greaterThanOrEqualDecimal,
@@ -276,24 +281,24 @@ var decimalMatchers = map[oraclespb.Condition_Operator]func(float64, float64) bo
 	oraclespb.Condition_OPERATOR_LESS_THAN_OR_EQUAL:    lessThanOrEqualDecimal,
 }
 
-func equalsDecimal(dataValue, condValue float64) bool {
-	return dataValue == condValue
+func equalsDecimal(dataValue, condValue num.Decimal) bool {
+	return dataValue.Equal(condValue)
 }
 
-func greaterThanDecimal(dataValue, condValue float64) bool {
-	return dataValue > condValue
+func greaterThanDecimal(dataValue, condValue num.Decimal) bool {
+	return dataValue.GreaterThan(condValue)
 }
 
-func greaterThanOrEqualDecimal(dataValue, condValue float64) bool {
-	return dataValue >= condValue
+func greaterThanOrEqualDecimal(dataValue, condValue num.Decimal) bool {
+	return dataValue.GreaterThanOrEqual(condValue)
 }
 
-func lessThanDecimal(dataValue, condValue float64) bool {
-	return dataValue < condValue
+func lessThanDecimal(dataValue, condValue num.Decimal) bool {
+	return dataValue.LessThan(condValue)
 }
 
-func lessThanOrEqualDecimal(dataValue, condValue float64) bool {
-	return dataValue <= condValue
+func lessThanOrEqualDecimal(dataValue, condValue num.Decimal) bool {
+	return dataValue.LessThanOrEqual(condValue)
 }
 
 func toTimestampCondition(c *oraclespb.Condition) (condition, error) {

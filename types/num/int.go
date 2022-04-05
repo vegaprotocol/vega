@@ -6,6 +6,8 @@ import (
 	"github.com/holiman/uint256"
 )
 
+var intZero = NewInt(0)
+
 // Int a wrapper to a signed big int.
 type Int struct {
 	// The unsigned version of the integer
@@ -32,7 +34,7 @@ func IntToString(u *Int) string {
 // interpreted using the give base.
 // A big.Int is used to read the string, so
 // all error related to big.Int parsing applied here.
-// will return true if an error/overflow happened.
+// will return true if an error happened.
 func IntFromString(str string, base int) (*Int, bool) {
 	b, ok := big.NewInt(0).SetString(str, base)
 	if !ok {
@@ -93,6 +95,10 @@ func (i Int) Clone() *Int {
 	}
 }
 
+func (i Int) EQ(o *Int) bool {
+	return i.s == o.s && i.U.EQ(o.U)
+}
+
 // GT returns if i > o.
 func (i Int) GT(o *Int) bool {
 	if i.IsNegative() {
@@ -113,6 +119,10 @@ func (i Int) GT(o *Int) bool {
 	return o.IsNegative()
 }
 
+func (i Int) GTE(o *Int) bool {
+	return i.GT(o) || i.EQ(o)
+}
+
 // LT returns if i < o.
 func (i Int) LT(o *Int) bool {
 	if i.IsNegative() {
@@ -131,6 +141,10 @@ func (i Int) LT(o *Int) bool {
 	}
 
 	return o.IsPositive()
+}
+
+func (i Int) LTE(o *Int) bool {
+	return i.LT(o) || i.EQ(o)
 }
 
 func (i Int) Int64() int64 {
@@ -247,6 +261,10 @@ func NewInt(val int64) *Int {
 		U: NewUint(uint64(val)),
 		s: true,
 	}
+}
+
+func IntZero() *Int {
+	return intZero.Clone()
 }
 
 // NewIntFromUint creates a new Int with the value of the

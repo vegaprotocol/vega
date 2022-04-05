@@ -28,8 +28,8 @@ func TestOracleEngine(t *testing.T) {
 
 func testOracleEngineSubscribingSucceeds(t *testing.T) {
 	// given
-	btcEquals42 := spec("BTC", oraclespb.Condition_OPERATOR_EQUALS, "42")
-	ethLess84 := spec("ETH", oraclespb.Condition_OPERATOR_LESS_THAN, "84")
+	btcEquals42 := spec(t, "BTC", oraclespb.Condition_OPERATOR_EQUALS, "42")
+	ethLess84 := spec(t, "ETH", oraclespb.Condition_OPERATOR_LESS_THAN, "84")
 
 	// setup
 	ctx := context.Background()
@@ -49,7 +49,7 @@ func testOracleEngineSubscribingSucceeds(t *testing.T) {
 
 func testOracleEngineSubscribingWithoutCallbackFails(t *testing.T) {
 	// given
-	spec := spec("BTC", oraclespb.Condition_OPERATOR_EQUALS, "42")
+	spec := spec(t, "BTC", oraclespb.Condition_OPERATOR_EQUALS, "42")
 
 	// setup
 	ctx := context.Background()
@@ -67,11 +67,11 @@ func testOracleEngineSubscribingWithoutCallbackFails(t *testing.T) {
 
 func testOracleEngineBroadcastingCorrectDataSucceeds(t *testing.T) {
 	// given
-	btcEquals42 := spec("BTC", oraclespb.Condition_OPERATOR_EQUALS, "42")
-	btcGreater21 := spec("BTC", oraclespb.Condition_OPERATOR_GREATER_THAN, "21")
-	ethEquals42 := spec("ETH", oraclespb.Condition_OPERATOR_EQUALS, "42")
-	ethLess84 := spec("ETH", oraclespb.Condition_OPERATOR_LESS_THAN, "84")
-	btcGreater100 := spec("BTC", oraclespb.Condition_OPERATOR_GREATER_THAN, "100")
+	btcEquals42 := spec(t, "BTC", oraclespb.Condition_OPERATOR_EQUALS, "42")
+	btcGreater21 := spec(t, "BTC", oraclespb.Condition_OPERATOR_GREATER_THAN, "21")
+	ethEquals42 := spec(t, "ETH", oraclespb.Condition_OPERATOR_EQUALS, "42")
+	ethLess84 := spec(t, "ETH", oraclespb.Condition_OPERATOR_LESS_THAN, "84")
+	btcGreater100 := spec(t, "BTC", oraclespb.Condition_OPERATOR_GREATER_THAN, "100")
 	dataBTC42 := dataWithPrice("BTC", "42")
 
 	// setup
@@ -123,8 +123,8 @@ func testOracleEngineUnsubscribingUnknownIDPanics(t *testing.T) {
 
 func testOracleEngineUnsubscribingKnownIDSucceeds(t *testing.T) {
 	// given
-	btcEquals42 := spec("BTC", oraclespb.Condition_OPERATOR_EQUALS, "42")
-	ethEquals42 := spec("ETH", oraclespb.Condition_OPERATOR_EQUALS, "42")
+	btcEquals42 := spec(t, "BTC", oraclespb.Condition_OPERATOR_EQUALS, "42")
+	ethEquals42 := spec(t, "ETH", oraclespb.Condition_OPERATOR_EQUALS, "42")
 	dataBTC42 := dataWithPrice("BTC", "42")
 	dataETH42 := dataWithPrice("ETH", "42")
 
@@ -227,8 +227,9 @@ type specBundle struct {
 	subscriber dummySubscriber
 }
 
-func spec(currency string, op oraclespb.Condition_Operator, price string) specBundle {
-	spec, _ := oracles.NewOracleSpec(*oraclespb.NewOracleSpec(
+func spec(t *testing.T, currency string, op oraclespb.Condition_Operator, price string) specBundle {
+	t.Helper()
+	spec, err := oracles.NewOracleSpec(*oraclespb.NewOracleSpec(
 		[]string{
 			"0xCAFED00D",
 		},
@@ -246,6 +247,9 @@ func spec(currency string, op oraclespb.Condition_Operator, price string) specBu
 				},
 			},
 		}))
+	if err != nil {
+		t.Fatalf("Couldn't create oracle spec: %v", err)
+	}
 	return specBundle{
 		spec:       *spec,
 		subscriber: dummySubscriber{},

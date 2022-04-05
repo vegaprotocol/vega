@@ -271,7 +271,7 @@ func testOracleDataGetIntegerSucceeds(t *testing.T) {
 
 	// then
 	require.NoError(t, err)
-	assert.Equal(t, int64(42), value)
+	assert.True(t, num.NewInt(42).EQ(value))
 }
 
 func testOracleDataGetDecimalSucceeds(t *testing.T) {
@@ -290,7 +290,7 @@ func testOracleDataGetDecimalSucceeds(t *testing.T) {
 
 	// then
 	require.NoError(t, err)
-	assert.Equal(t, 1.2, value)
+	assert.True(t, num.DecimalFromFloat(1.2).Equal(value))
 }
 
 func testOracleDataGetBooleanSucceeds(t *testing.T) {
