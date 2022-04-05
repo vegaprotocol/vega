@@ -1,6 +1,9 @@
 package admin
 
 import (
+	"os"
+	"path"
+
 	"code.vegaprotocol.io/vega/config/encoding"
 	"code.vegaprotocol.io/vega/logging"
 )
@@ -28,7 +31,7 @@ func NewDefaultConfig() Config {
 	return Config{
 		Level: encoding.LogLevel{Level: logging.InfoLevel},
 		Server: ServerConfig{
-			SocketPath: "/tmp/vega.sock",
+			SocketPath: path.Join(os.TempDir(), "vega.sock"),
 			HttpPath:   "/rpc",
 			Enabled:    true,
 		},
