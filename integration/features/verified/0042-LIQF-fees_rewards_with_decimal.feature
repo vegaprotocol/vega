@@ -41,47 +41,6 @@ Scenario: 001: 0070-MKTD-007, 0042-LIQF-001
       | party1 | ETH   | 10000000000000  |
       | party2 | USD   | 10000000000     |
       | party2 | ETH   | 10000000000000  |
-Scenario: 001: 0070-MKTD-007, 0042-LIQF-001
-  Background:
-
-    Given the following network parameters are set:
-      | name                                                | value |
-      | market.value.windowLength                           | 1h    |
-      | market.stake.target.timeWindow                      | 24h   |
-      | market.stake.target.scalingFactor                   | 1     |
-      | market.liquidity.targetstake.triggering.ratio       | 0     |
-      | market.liquidity.providers.fee.distributionTimeStep | 10m   |
-    And the following assets are registered:
-      | id  | decimal places |
-      | ETH | 5              |
-      | USD | 2              |
-    And the average block duration is "2"
-
-    And the log normal risk model named "log-normal-risk-model-1":
-      | risk aversion | tau | mu | r | sigma |
-      | 0.000001      | 0.1 | 0  | 0 | 1.0   |
-    And the fees configuration named "fees-config-1":
-      | maker fee | infrastructure fee |
-      | 0.0004    | 0.001              |
-    And the price monitoring updated every "1" seconds named "price-monitoring-1":
-      | horizon | probability | auction extension |
-      | 100000  | 0.99        | 3                 |
-    
-    And the markets:
-      | id        | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | oracle config          | decimal places | position decimal places |
-      | ETH/MAR22 | ETH        | USD   | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 0              | 0                       |
-      | USD/DEC19 | USD        | ETH   | log-normal-risk-model-1 | default-margin-calculator | 1                | default-none  | price-monitoring-1 | default-usd-for-future | 3              | 3                       |
-      | USD/DEC20 | USD        | ETH   | log-normal-risk-model-1 | default-margin-calculator | 1                | default-none  | price-monitoring-1 | default-usd-for-future | 5              | 5                       |
-      | USD/DEC21 | USD        | ETH   | log-normal-risk-model-1 | default-margin-calculator | 1                | default-none  | price-monitoring-1 | default-usd-for-future | 5              | 3                       |
-      
-    Given the parties deposit on asset's general account the following amount:
-      | party  | asset | amount          |
-      | lp1    | USD   | 100000000000    |
-      | lp1    | ETH   | 100000000000000 |
-      | party1 | USD   | 10000000000     |
-      | party1 | ETH   | 10000000000000  |
-      | party2 | USD   | 10000000000     |
-      | party2 | ETH   | 10000000000000  |
       
     And the parties submit the following liquidity provision:
       | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
@@ -318,18 +277,18 @@ Scenario: 001: 0070-MKTD-007, 0042-LIQF-001
       | party | equity like share | average entry valuation |
       | lp1   | 1                 | 1000000                 |
 
-    # And the parties should have the following account balances:
-    #   | party  | asset | market id | margin       | general        | bond       |
-    #   | lp1    | ETH   | USD/DEC19 | 8963397051   | 99970109808847 | 1000000000 |
-    #   | lp1    | USD   | USD/DEC19 | 8963397051   | 100000000000   |            |
-    #   | lp1    | ETH   | USD/DEC20 | 8963397051   | 99970109808847 | 1000000000 |
-    #   | lp1    | USD   | USD/DEC20 | 8963397051   | 100000000000   | 1000000000 |
-    #   | lp1    | ETH   | USD/DEC21 | 8963397051   | 99970109808847 | 1000000000 |
-    #   | lp1    | USD   | USD/DEC21 | 8963397051   | 100000000000   | 1000000000 |
-    #   | party1 | ETH   | USD/DEC19 | 1176961234   | 9996469116298  |            |
-    #   | party1 | USD   | USD/DEC19 | 1176961234   | 10000000000    |            |
-    #   | party2 | ETH   | USD/DEC19 | 4815112741   | 9985554661777  |            |
-    #   | party2 | USD   | USD/DEC19 | 4815112741   | 10000000000    |            |
+    And the parties should have the following account balances:
+      | party  | asset | market id | margin       | general        | bond    |
+      | lp1    | ETH   | USD/DEC19 | 8963397      | 99999970779930 | 1000000 |
+      | lp1    | USD   | USD/DEC19 | 8963397      | 100000000000   |         |
+      | lp1    | ETH   | USD/DEC20 | 8293276      | 99999970779930 | 1000000 |
+      | lp1    | USD   | USD/DEC20 | 8293276      | 100000000000   |         |
+      | lp1    | ETH   | USD/DEC21 | 8963397      | 99999970779930 | 1000000 |
+      | lp1    | USD   | USD/DEC21 | 8963397      | 100000000000   |         |
+      | party1 | ETH   | USD/DEC19 | 1176961234   | 9996469116298  |         |
+      | party1 | USD   | USD/DEC19 | 1176961234   | 10000000000    |         |
+      | party2 | ETH   | USD/DEC19 | 4815112741   | 9985554661777  |         |
+      | party2 | USD   | USD/DEC19 | 4815112741   | 10000000000    |         |
       
   Scenario: 003, no decimal, 0042-LIQF-001
 
