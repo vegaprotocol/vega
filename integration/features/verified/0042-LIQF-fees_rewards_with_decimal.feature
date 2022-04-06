@@ -351,7 +351,7 @@ Scenario: 001: 0070-MKTD-007, 0042-LIQF-001
 
     Then the order book should have the following volumes for market "ETH/MAR22":
       | side | price | volume |
-      | buy  | 898   | 8      |#=333/898
+      | buy  | 898   | 8      |
       | buy  | 900   | 1      |
       | buy  | 999   | 14     |
       | sell | 1102  | 7      |
