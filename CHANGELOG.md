@@ -38,6 +38,7 @@
 - [5172](https://github.com/vegaprotocol/vega/issues/5172) - Add replay protection for validator commands
 - [5181](https://github.com/vegaprotocol/vega/issues/5181) - Ensure Oracle specs handle numbers using `num.Decimal` and `num.Int`
 - [5190](https://github.com/vegaprotocol/vega/issues/5190) - Fix settlement at expiry to scale the settlement price from market decimals to asset decimals
+- [5185](https://github.com/vegaprotocol/vega/issues/5185) - Fix MTM settlement where win transfers get truncated resulting in settlement balance not being zero after settlement.
 
 ## 0.49.8
 
