@@ -240,8 +240,8 @@ func (e *Engine) updateSizes(
 		// uint64(math.Ceil(liquidityObligation * scaling / float64(o.Price.Uint64())))
 		d := num.DecimalFromUint(liquidityObligation)
 		d = d.Mul(scaling)
-		// scale the volume by 10^pdp
-		liv, _ := num.UintFromDecimal(d.Div(num.DecimalFromUint(o.Price)).Ceil().Mul(e.positionFactor))
+		// scale the volume by 10^pdp BEFORE dividing by price for better precision.
+		liv, _ := num.UintFromDecimal(d.Mul(e.positionFactor).Div(num.DecimalFromUint(o.Price)).Ceil())
 		o.LiquidityImpliedVolume = liv.Uint64()
 	}
 	return nil

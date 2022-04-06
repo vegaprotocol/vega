@@ -21,7 +21,7 @@ func PartiesShouldHaveTheFollowingAccountBalances(
 		if err != nil {
 			return errCannotGetPartyGeneralAccount(row.Party(), row.Asset(), err)
 		}
-		if stringToU64(generalAccount.GetBalance()) != row.GeneralAccountBalance() {
+		if generalAccount.GetBalance() != row.GeneralAccountBalance() {
 			hasError = true
 		}
 
@@ -33,11 +33,11 @@ func PartiesShouldHaveTheFollowingAccountBalances(
 		var bondAcc types.Account
 		if row.ExpectBondAccountBalance() {
 			bondAcc, err = broker.GetPartyBondAccountForMarket(row.Party(), row.Asset(), row.MarketID())
-			if err == nil && stringToU64(bondAcc.Balance) != row.BondAccountBalance() {
+			if err == nil && bondAcc.Balance != row.BondAccountBalance() {
 				hasError = true
 			}
 		}
-		if stringToU64(marginAccount.GetBalance()) != row.MarginAccountBalance() {
+		if marginAccount.GetBalance() != row.MarginAccountBalance() {
 			hasError = true
 		}
 
@@ -66,9 +66,9 @@ func errMismatchedAccountBalances(row accountBalancesRow, marginAccount, general
 		return formatDiff(
 			fmt.Sprintf("account balances did not match for party(%s)", row.Party()),
 			map[string]string{
-				"margin account balance":  u64ToS(row.MarginAccountBalance()),
-				"general account balance": u64ToS(row.GeneralAccountBalance()),
-				"bond account balance":    u64ToS(row.BondAccountBalance()),
+				"margin account balance":  row.MarginAccountBalance(),
+				"general account balance": row.GeneralAccountBalance(),
+				"bond account balance":    row.BondAccountBalance(),
 			},
 			map[string]string{
 				"margin account balance":  marginAccount.GetBalance(),
@@ -80,8 +80,8 @@ func errMismatchedAccountBalances(row accountBalancesRow, marginAccount, general
 	return formatDiff(
 		fmt.Sprintf("account balances did not match for party(%s)", row.Party()),
 		map[string]string{
-			"margin account balance":  u64ToS(row.MarginAccountBalance()),
-			"general account balance": u64ToS(row.GeneralAccountBalance()),
+			"margin account balance":  row.MarginAccountBalance(),
+			"general account balance": row.GeneralAccountBalance(),
 		},
 		map[string]string{
 			"margin account balance":  marginAccount.GetBalance(),
@@ -118,18 +118,18 @@ func (r accountBalancesRow) MarketID() string {
 	return r.row.MustStr("market id")
 }
 
-func (r accountBalancesRow) MarginAccountBalance() uint64 {
-	return r.row.MustU64("margin")
+func (r accountBalancesRow) MarginAccountBalance() string {
+	return r.row.MustStr("margin")
 }
 
-func (r accountBalancesRow) GeneralAccountBalance() uint64 {
-	return r.row.MustU64("general")
+func (r accountBalancesRow) GeneralAccountBalance() string {
+	return r.row.MustStr("general")
 }
 
 func (r accountBalancesRow) ExpectBondAccountBalance() bool {
 	return r.row.HasColumn("bond")
 }
 
-func (r accountBalancesRow) BondAccountBalance() uint64 {
-	return r.row.U64("bond")
+func (r accountBalancesRow) BondAccountBalance() string {
+	return r.row.MustStr("bond")
 }
