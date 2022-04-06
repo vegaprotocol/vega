@@ -58,14 +58,15 @@ func TestMarkToMarket(t *testing.T) {
 
 func TestMTMWinDistribution(t *testing.T) {
 	t.Run("A MTM loss party with a loss of value 1, with several parties needing a win", testMTMWinOneExcess)
-	t.Run("A MTM scenario with several parties winning less than 1, and several parties losing 1, to distribute equally", testMTMWinDivideExcess)
+	t.Run("Distribute win excess in a scenario where no transfer amount is < 1", testMTMWinNoZero)
 }
 
-func testMTMWinDivideExcess(t *testing.T) {
+func testMTMWinNoZero(t *testing.T) {
+	// cheat by setting the factor to some specific value, makes it easier to create a scenario where win/loss amounts don't match
 	engine := getTestEngineWithFactor(t, 1)
 	defer engine.Finish()
 
-	price := num.NewUint(10000)
+	price := num.NewUint(100000)
 	one := num.NewUint(1)
 	ctx := context.Background()
 
@@ -78,12 +79,12 @@ func testMTMWinDivideExcess(t *testing.T) {
 		{
 			price: price.Clone(),
 			party: "party2",
-			size:  20,
+			size:  23,
 		},
 		{
 			price: price.Clone(),
 			party: "party3",
-			size:  -29,
+			size:  -32,
 		},
 		{
 			price: price.Clone(),
@@ -93,12 +94,12 @@ func testMTMWinDivideExcess(t *testing.T) {
 		{
 			price: price.Clone(),
 			party: "party5",
-			size:  -1,
+			size:  -29,
 		},
 		{
 			price: price.Clone(),
-			party: "party5",
-			size:  1,
+			party: "party6",
+			size:  27,
 		},
 	}
 
@@ -107,7 +108,8 @@ func testMTMWinDivideExcess(t *testing.T) {
 		init = append(init, p)
 	}
 
-	newPrice := num.Sum(price, one)
+	newPrice := num.Sum(price, one, one, one)
+	somePrice := num.Sum(price, one)
 	newParty := testPos{
 		size:  30,
 		price: newPrice.Clone(),
@@ -119,13 +121,13 @@ func testMTMWinDivideExcess(t *testing.T) {
 			Size:   10,
 			Buyer:  newParty.party,
 			Seller: initPos[0].party,
-			Price:  newPrice.Clone(),
+			Price:  somePrice.Clone(),
 		},
 		{
 			Size:   10,
 			Buyer:  newParty.party,
 			Seller: initPos[1].party,
-			Price:  newPrice.Clone(),
+			Price:  somePrice.Clone(),
 		},
 		{
 			Size:   10,
@@ -322,7 +324,7 @@ func testSettleExpiredSuccess(t *testing.T) {
 		},
 	} // }}}
 	oraclePrice := num.NewUint(1100)
-	settleF := func(price *num.Uint, size num.Decimal) (*types.FinancialAmount, bool, error) {
+	settleF := func(price *num.Uint, pricePrecision *num.Uint, size num.Decimal) (*types.FinancialAmount, bool, error) {
 		amt, neg := num.Zero().Delta(oraclePrice, price)
 		if size.IsNegative() {
 			size = size.Neg()
@@ -336,11 +338,11 @@ func testSettleExpiredSuccess(t *testing.T) {
 	}
 	positions := engine.getExpiryPositions(data...)
 	// we expect settle calls for each position
-	engine.prod.EXPECT().Settle(gomock.Any(), gomock.Any()).DoAndReturn(settleF).AnyTimes()
+	engine.prod.EXPECT().Settle(gomock.Any(), gomock.Any(), gomock.Any()).DoAndReturn(settleF).AnyTimes()
 	// ensure positions are set
 	engine.Update(positions)
 	// now settle:
-	got, err := engine.Settle(time.Now())
+	got, err := engine.Settle(time.Now(), num.NewUint(1))
 	assert.NoError(t, err)
 	assert.Equal(t, len(expect), len(got))
 	for i, p := range got {
@@ -363,9 +365,9 @@ func testSettleExpiryFail(t *testing.T) {
 	}
 	errExp := errors.New("product.Settle error")
 	positions := engine.getExpiryPositions(data...)
-	engine.prod.EXPECT().Settle(gomock.Any(), gomock.Any()).Times(1).Return(nil, false, errExp)
+	engine.prod.EXPECT().Settle(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(nil, false, errExp)
 	engine.Update(positions)
-	empty, err := engine.Settle(time.Now())
+	empty, err := engine.Settle(time.Now(), num.NewUint(1))
 	assert.Empty(t, empty)
 	assert.Error(t, err)
 	assert.Equal(t, errExp, err)
@@ -706,7 +708,7 @@ func TestConcurrent(t *testing.T) {
 
 	engine := getTestEngine(t)
 	defer engine.Finish()
-	engine.prod.EXPECT().Settle(gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(func(price *num.Uint, size num.Decimal) (*types.FinancialAmount, bool, error) {
+	engine.prod.EXPECT().Settle(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(func(price, pricePrecision *num.Uint, size num.Decimal) (*types.FinancialAmount, bool, error) {
 		return &types.FinancialAmount{Amount: num.Zero()}, false, nil
 	})
 
@@ -755,7 +757,7 @@ func TestConcurrent(t *testing.T) {
 		go func() {
 			defer wg.Done()
 			// Settle requires posMu
-			_, err := engine.Settle(now)
+			_, err := engine.Settle(now, num.NewUint(1))
 			assert.NoError(t, err)
 		}()
 	}

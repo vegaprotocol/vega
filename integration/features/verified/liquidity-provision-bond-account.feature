@@ -28,7 +28,7 @@ Feature: Replicate LP getting distressed during continuous trading, check if pen
       | party3 | USD   | 100000000 |
 
 
-  Scenario: LP gets distressed during continuous trading
+  Scenario: LP gets distressed during continuous trading, 0044-LIQM-002
 
     Given the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
