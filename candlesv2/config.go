@@ -33,9 +33,6 @@ type CandleUpdatesConfig struct {
 func NewDefaultConfig() Config {
 	return Config{
 		Level: encoding.LogLevel{Level: logging.InfoLevel},
-		CandleStore: CandleStoreConfig{
-			DefaultCandleIntervals: "1 minute,5 minutes,15 minutes,1 hour,6 hours,1 day,1 week,1 month,3 months,1 year",
-		},
 		CandleUpdates: CandleUpdatesConfig{
 			CandleUpdatesStreamBufferSize: 100,
 			CandleUpdatesStreamInterval:   encoding.Duration{Duration: time.Second},

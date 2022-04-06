@@ -34,26 +34,6 @@ func NewCandles(ctx context.Context, sqlStore *SQLStore, config candlesv2.Candle
 		config:   config,
 	}
 
-	for _, interval := range strings.Split(config.DefaultCandleIntervals, ",") {
-		if interval == "" {
-			continue
-		}
-
-		viewAlreadyExists, _, err := cs.viewExistsForInterval(ctx, interval)
-		if err != nil {
-			return nil, fmt.Errorf("creating candle store:%w", err)
-		}
-
-		if viewAlreadyExists {
-			continue
-		}
-
-		err = cs.createViewForInterval(ctx, interval)
-		if err != nil {
-			return nil, fmt.Errorf("creating candles store:%w", err)
-		}
-	}
-
 	return cs, nil
 }
 
@@ -138,30 +118,6 @@ func (cs *Candles) GetCandleIdForIntervalAndMarket(ctx context.Context, interval
 	return false, "", nil
 }
 
-func (cs *Candles) CreateCandleForIntervalAndMarket(ctx context.Context, interval string, market string) (string, error) {
-	interval, err := cs.normaliseInterval(ctx, interval)
-	if err != nil {
-		return "", fmt.Errorf("invalid interval: %w", err)
-	}
-
-	viewAlreadyExists, existingInterval, err := cs.viewExistsForInterval(ctx, interval)
-	if err != nil {
-		return "", fmt.Errorf("checking for existing view: %w", err)
-	}
-	if viewAlreadyExists {
-		return "",
-			fmt.Errorf("an equivalent candle for interval %s already exists.  Existing equivalent candle interval:%s", interval, existingInterval)
-	}
-
-	descriptor := candleDescriptorFromIntervalAndMarket(interval, market)
-	err = cs.createViewForInterval(ctx, descriptor.interval)
-	if err != nil {
-		return "", fmt.Errorf("creating view for interval:%w", err)
-	}
-
-	return descriptor.id, nil
-}
-
 func (cs *Candles) getIntervalToView(ctx context.Context) (map[string]string, error) {
 	query := fmt.Sprintf("SELECT view_name FROM timescaledb_information.continuous_aggregates where view_name like '%s%%'",
 		candlesViewNamePrePend)
@@ -190,25 +146,6 @@ func (cs *Candles) getIntervalToView(ctx context.Context) (map[string]string, er
 		result[interval] = viewName
 	}
 	return result, nil
-}
-
-func (cs *Candles) createViewForInterval(ctx context.Context, interval string) error {
-	view := getViewNameForInterval(interval)
-
-	query := fmt.Sprintf(`CREATE MATERIALIZED VIEW %s
-		WITH (timescaledb.continuous) AS
-		SELECT market_id,
-			timescaledb_experimental.time_bucket_ng('%s', synthetic_time,'UTC') AS period_start, first(price, synthetic_time) AS open, last(price, synthetic_time) AS close,
-			max(price) AS high, min(price) AS low, sum(size) AS volume, last(synthetic_time, synthetic_time) AS last_update_in_period
-		FROM %s
-		GROUP BY market_id, period_start`, view, interval, sourceDataTableName)
-
-	_, err := cs.pool.Exec(ctx, query)
-	if err != nil {
-		return fmt.Errorf("creating view %s: %w", view, err)
-	}
-
-	return nil
 }
 
 func (cs *Candles) CandleExists(ctx context.Context, candleId string) (bool, error) {

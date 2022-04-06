@@ -132,6 +132,102 @@ create table trades
 
 SELECT create_hypertable('trades', 'synthetic_time', chunk_time_interval => INTERVAL '1 day');
 CREATE INDEX ON trades (market_id, synthetic_time DESC);
+SELECT add_retention_policy('trades', INTERVAL '7 days');
+
+CREATE MATERIALIZED VIEW trades_candle_1_minute
+            WITH (timescaledb.continuous) AS
+SELECT market_id, time_bucket('1 minute', synthetic_time) AS period_start,
+       first(price, synthetic_time) AS open,
+       last(price, synthetic_time) AS close,
+       max(price) AS high,
+       min(price) AS low,
+       sum(size) AS volume,
+       last(synthetic_time,
+            synthetic_time) AS last_update_in_period
+FROM trades
+GROUP BY market_id, period_start WITH NO DATA;
+
+SELECT add_continuous_aggregate_policy('trades_candle_1_minute', start_offset => INTERVAL '3 minutes', end_offset => INTERVAL '1 minute', schedule_interval => INTERVAL '1 minute');
+SELECT add_retention_policy('trades_candle_1_minute', INTERVAL '1 month');
+
+CREATE MATERIALIZED VIEW trades_candle_5_minutes
+            WITH (timescaledb.continuous) AS
+SELECT market_id, time_bucket('5 minutes', synthetic_time) AS period_start,
+       first(price, synthetic_time) AS open,
+       last(price, synthetic_time) AS close,
+       max(price) AS high,
+       min(price) AS low,
+       sum(size) AS volume,
+       last(synthetic_time,
+            synthetic_time) AS last_update_in_period
+FROM trades
+GROUP BY market_id, period_start WITH NO DATA;
+
+SELECT add_continuous_aggregate_policy('trades_candle_5_minutes', start_offset => INTERVAL '15 minutes', end_offset => INTERVAL '5 minutes', schedule_interval => INTERVAL '5 minutes');
+SELECT add_retention_policy('trades_candle_5_minutes', INTERVAL '1 month');
+
+CREATE MATERIALIZED VIEW trades_candle_15_minutes
+            WITH (timescaledb.continuous) AS
+SELECT market_id, time_bucket('15 minutes', synthetic_time) AS period_start,
+       first(price, synthetic_time) AS open,
+       last(price, synthetic_time) AS close,
+       max(price) AS high,
+       min(price) AS low,
+       sum(size) AS volume,
+       last(synthetic_time,
+            synthetic_time) AS last_update_in_period
+FROM trades
+GROUP BY market_id, period_start WITH NO DATA;
+
+SELECT add_continuous_aggregate_policy('trades_candle_15_minutes', start_offset => INTERVAL '45 minutes', end_offset => INTERVAL '15 minutes', schedule_interval => INTERVAL '15 minutes');
+SELECT add_retention_policy('trades_candle_15_minutes', INTERVAL '1 month');
+
+CREATE MATERIALIZED VIEW trades_candle_1_hour
+            WITH (timescaledb.continuous) AS
+SELECT market_id, time_bucket('1 hour', synthetic_time) AS period_start,
+       first(price, synthetic_time) AS open,
+       last(price, synthetic_time) AS close,
+       max(price) AS high,
+       min(price) AS low,
+       sum(size) AS volume,
+       last(synthetic_time,
+            synthetic_time) AS last_update_in_period
+FROM trades
+GROUP BY market_id, period_start WITH NO DATA;
+
+SELECT add_continuous_aggregate_policy('trades_candle_1_hour', start_offset => INTERVAL '3 hours', end_offset => INTERVAL '1 hour', schedule_interval => INTERVAL '1 hour');
+SELECT add_retention_policy('trades_candle_1_hour', INTERVAL '1 year');
+
+CREATE MATERIALIZED VIEW trades_candle_6_hours
+            WITH (timescaledb.continuous) AS
+SELECT market_id, time_bucket('6 hours', synthetic_time) AS period_start,
+       first(price, synthetic_time) AS open,
+       last(price, synthetic_time) AS close,
+       max(price) AS high,
+       min(price) AS low,
+       sum(size) AS volume,
+       last(synthetic_time,
+            synthetic_time) AS last_update_in_period
+FROM trades
+GROUP BY market_id, period_start WITH NO DATA;
+
+SELECT add_continuous_aggregate_policy('trades_candle_6_hours', start_offset => INTERVAL '18 hours', end_offset => INTERVAL '6 hours', schedule_interval => INTERVAL '6 hours');
+SELECT add_retention_policy('trades_candle_6_hours', INTERVAL '1 year');
+
+CREATE MATERIALIZED VIEW trades_candle_1_day
+            WITH (timescaledb.continuous) AS
+SELECT market_id, time_bucket('1 day', synthetic_time) AS period_start,
+       first(price, synthetic_time) AS open,
+       last(price, synthetic_time) AS close,
+       max(price) AS high,
+       min(price) AS low,
+       sum(size) AS volume,
+       last(synthetic_time,
+            synthetic_time) AS last_update_in_period
+FROM trades
+GROUP BY market_id, period_start WITH NO DATA;
+
+SELECT add_continuous_aggregate_policy('trades_candle_1_day', start_offset => INTERVAL '3 days', end_offset => INTERVAL '1 day', schedule_interval => INTERVAL '1 day');
 
 
 CREATE TABLE network_limits (
