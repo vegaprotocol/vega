@@ -35,7 +35,6 @@ func NewClient(
 			Transport: &http.Transport{
 				DialContext: func(_ context.Context, _, _ string) (net.Conn, error) {
 					return net.Dial("unix", config.Server.SocketPath)
-
 				},
 			},
 		},
