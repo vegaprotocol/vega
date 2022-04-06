@@ -19,7 +19,8 @@ type Config struct {
 	IP              string            `long:"ip"`
 	StreamRetries   int               `long:"stream-retries"`
 	DisableTxCommit bool              `long:"disable-tx-commit"`
-	REST            RESTServiceConfig `group:"REST" namespace:"rest"`
+
+	REST RESTServiceConfig `group:"REST" namespace:"rest"`
 }
 
 // RESTGatewayServiceConfig represent the configuration of the rest service.

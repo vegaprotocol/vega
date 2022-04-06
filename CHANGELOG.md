@@ -14,6 +14,7 @@
 - [4919](https://github.com/vegaprotocol/vega/issues/4919) - Feature tests for 0011 check order allocate margin
 - [4922](https://github.com/vegaprotocol/vega/issues/4922) - Feature tests for 0015 market insurance pool collateral
 - [4926](https://github.com/vegaprotocol/vega/issues/4926) - Feature tests for 0019 margin calculator scenarios
+- [5119](https://github.com/vegaprotocol/vega/issues/5119) - Add Ethereum key rotation support
 
 
 ### 🐛 Fixes
@@ -38,6 +39,7 @@
 - [5172](https://github.com/vegaprotocol/vega/issues/5172) - Add replay protection for validator commands
 - [5181](https://github.com/vegaprotocol/vega/issues/5181) - Ensure Oracle specs handle numbers using `num.Decimal` and `num.Int`
 - [5190](https://github.com/vegaprotocol/vega/issues/5190) - Fix settlement at expiry to scale the settlement price from market decimals to asset decimals
+- [5185](https://github.com/vegaprotocol/vega/issues/5185) - Fix MTM settlement where win transfers get truncated resulting in settlement balance not being zero after settlement.
 
 ## 0.49.8
 

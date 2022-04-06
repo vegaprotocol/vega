@@ -10,6 +10,7 @@ import (
 
 	apipb "code.vegaprotocol.io/protos/vega/api/v1"
 	"code.vegaprotocol.io/shared/paths"
+	"code.vegaprotocol.io/vega/admin"
 	"code.vegaprotocol.io/vega/api"
 	"code.vegaprotocol.io/vega/api/rest"
 	"code.vegaprotocol.io/vega/blockchain"
@@ -64,6 +65,7 @@ type NodeCommand struct {
 	// APIs
 	grpcServer  *api.GRPC
 	proxyServer *rest.ProxyServer
+	adminServer *admin.Server
 	coreService *coreapi.Service
 
 	statusChecker *monitoring.Status
@@ -206,6 +208,9 @@ func (n *NodeCommand) Stop() error {
 	if n.proxyServer != nil {
 		n.proxyServer.Stop()
 	}
+	if n.adminServer != nil {
+		n.adminServer.Stop()
+	}
 
 	if n.conf.IsValidator() {
 		if err := n.nodeWallets.Ethereum.Cleanup(); err != nil {
@@ -267,8 +272,20 @@ func (n *NodeCommand) startAPIs() error {
 
 	n.proxyServer = rest.NewProxyServer(n.Log, n.conf.API)
 
+	if bool(n.conf.Admin.Server.Enabled) && n.conf.IsValidator() {
+		adminServer, err := admin.NewServer(n.Log, n.conf.Admin, n.vegaPaths, n.nodeWalletPassphrase, n.nodeWallets)
+		if err != nil {
+			return err
+		}
+		n.adminServer = adminServer
+	}
+
 	go n.grpcServer.Start()
 	go n.proxyServer.Start()
+
+	if n.adminServer != nil {
+		go n.adminServer.Start()
+	}
 
 	return nil
 }

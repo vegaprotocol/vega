@@ -194,6 +194,9 @@ func (e *Engine) getMtmTransfer(mtmShare *num.Uint, neg bool, mpos events.Market
 }
 
 func (e *Engine) winSocialisationUpdate(transfer *mtmTransfer, amt *num.Uint) {
+	if amt.IsZero() {
+		return
+	}
 	if transfer.transfer == nil {
 		transfer.transfer = &types.Transfer{
 			Type:  types.TransferTypeMTMWin,
@@ -245,10 +248,10 @@ func (e *Engine) SettleMTM(ctx context.Context, markPrice *num.Uint, positions [
 			wins = append(wins, mtmTransfer)
 			winTotal.AddSum(mtmShare)
 			winTotalDec = winTotalDec.Add(mtmDShare)
+			mtmDec = mtmDShare
+			largestShare = mtmTransfer
 			// mtmDec is zero at this point, this will always be the largest winning party at this point
 			if mtmShare.IsZero() {
-				mtmDec = mtmDShare
-				largestShare = mtmTransfer
 				zeroShares = append(zeroShares, mtmTransfer)
 				zeroAmts = true
 			}
@@ -307,10 +310,10 @@ func (e *Engine) SettleMTM(ctx context.Context, markPrice *num.Uint, positions [
 			if mtmShare.IsZero() {
 				zeroShares = append(zeroShares, mtmTransfer)
 				zeroAmts = true
-				if mtmDShare.GreaterThan(mtmDec) {
-					mtmDec = mtmDShare
-					largestShare = mtmTransfer
-				}
+			}
+			if mtmDShare.GreaterThan(mtmDec) {
+				mtmDec = mtmDShare
+				largestShare = mtmTransfer
 			}
 		} else if mtmShare.IsZero() {
 			// zero value loss
@@ -322,37 +325,41 @@ func (e *Engine) SettleMTM(ctx context.Context, markPrice *num.Uint, positions [
 			lossTotalDec = lossTotalDec.Add(mtmDShare)
 		}
 	}
+	// no need for this lock anymore
+	e.mu.Unlock()
 	delta := num.Zero().Sub(lossTotal, winTotal)
-	if !delta.IsZero() && zeroAmts {
-		// there are more transfers from losses than we pay out to wins, but some winning parties have zero transfers
-		// this delta should == combined win decimals, let's sanity check this!
-		if winTotalDec.LessThan(lossTotalDec) {
-			e.log.Panic("There's less MTM wins than losses, even accounting for decimals",
-				logging.Decimal("total loss", lossTotalDec),
-				logging.Decimal("total wins", winTotalDec),
-			)
-		}
-		// now let's check the delta can be distributed evenly
-		deltaI := delta.Uint64()
-		if zeroes := uint64(len(zeroShares)); deltaI < zeroes {
-			parts := num.NewUint(deltaI / zeroes) // everyone gets this share
-			deltaI = deltaI % zeroes
-			delta = num.NewUint(deltaI) // this is the remainder to set on the largest share
+	if !delta.IsZero() {
+		if zeroAmts {
+			// there are more transfers from losses than we pay out to wins, but some winning parties have zero transfers
+			// this delta should == combined win decimals, let's sanity check this!
+			if winTotalDec.LessThan(lossTotalDec) {
+				e.log.Panic("There's less MTM wins than losses, even accounting for decimals",
+					logging.Decimal("total loss", lossTotalDec),
+					logging.Decimal("total wins", winTotalDec),
+				)
+			}
+			// parties with a zero win transfer should get AT MOST a transfer of value 1
+			// any remainder after that should go to the largest win share, unless we only have parties
+			// with a win share of 0. that shouldn't be possible however, and so we can ignore that case
+			// should this happen at any point, the collateral engine will panic on settlement balance > 0
+			// which is the correct behaviour
+
+			// start distributing the delta
+			one := num.NewUint(1)
 			for _, transfer := range zeroShares {
-				e.winSocialisationUpdate(transfer, parts)
+				e.winSocialisationUpdate(transfer, one)
+				delta.Sub(delta, one)
+				if delta.IsZero() {
+					break // all done
+				}
 			}
 		}
-		if largestShare == nil && len(zeroShares) > 0 {
-			largestShare = zeroShares[0]
-		}
 		// delta is whatever amount the largest share win party gets, this shouldn't be too much
-		// @TODO maybe iterate over the slice and give all of the parties 1, until nothing is left?
+		// delta can be zero at this stage, which is fine
 		e.winSocialisationUpdate(largestShare, delta)
 	}
 	// append wins after loss transfers
 	transfers = append(transfers, wins...)
-	// whatever was added to the buffer is now ready to be flushed
-	e.mu.Unlock()
 	e.broker.SendBatch(evts)
 	timer.EngineTimeCounterAdd()
 	return transfers

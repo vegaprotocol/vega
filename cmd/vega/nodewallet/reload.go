@@ -1,0 +1,80 @@
+package nodewallet
+
+import (
+	"context"
+	"fmt"
+	"time"
+
+	vgjson "code.vegaprotocol.io/shared/libs/json"
+	"code.vegaprotocol.io/shared/paths"
+
+	"code.vegaprotocol.io/vega/admin"
+	"code.vegaprotocol.io/vega/config"
+	vgfmt "code.vegaprotocol.io/vega/libs/fmt"
+	"code.vegaprotocol.io/vega/logging"
+
+	"github.com/jessevdk/go-flags"
+)
+
+type reloadCmd struct {
+	config.OutputFlag
+
+	Config admin.Config
+
+	Chain string `short:"c" long:"chain" required:"true" description:"The chain to be imported" choice:"vega" choice:"ethereum"`
+}
+
+func (opts *reloadCmd) Execute(_ []string) error {
+	output, err := opts.GetOutput()
+	if err != nil {
+		return err
+	}
+
+	log := logging.NewLoggerFromConfig(logging.NewDefaultConfig())
+	defer log.AtExit()
+
+	vegaPaths := paths.New(rootCmd.VegaHome)
+
+	_, conf, err := config.EnsureNodeConfig(vegaPaths)
+	if err != nil {
+		return err
+	}
+
+	opts.Config = conf.Admin
+
+	if _, err := flags.NewParser(opts, flags.Default|flags.IgnoreUnknown).Parse(); err != nil {
+		return err
+	}
+
+	sc := admin.NewClient(log, opts.Config)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	var data map[string]string
+	switch opts.Chain {
+	case vegaChain, ethereumChain:
+		resp, err := sc.NodeWalletReload(ctx, opts.Chain)
+		if err != nil {
+			return fmt.Errorf("failed to reload node wallet: %w", err)
+		}
+
+		data = map[string]string{
+			"OldWallet": resp.OldWallet.String(),
+			"NewWallet": resp.NewWallet.String(),
+		}
+	default:
+		return fmt.Errorf("chain %q is not supported", opts.Chain)
+	}
+
+	if output.IsHuman() {
+		fmt.Println(green("reload successful:"))
+		vgfmt.PrettyPrint(data)
+	} else if output.IsJSON() {
+		if err := vgjson.Print(data); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}

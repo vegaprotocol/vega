@@ -1,4 +1,4 @@
-package nodewallets
+package registry
 
 import (
 	"encoding/json"
@@ -15,8 +15,8 @@ var (
 )
 
 const (
-	ethereumWalletTypeKeyStore ethereumWalletType = "key-store"
-	ethereumWalletTypeClef     ethereumWalletType = "clef"
+	EthereumWalletTypeKeyStore ethereumWalletType = "key-store"
+	EthereumWalletTypeClef     ethereumWalletType = "clef"
 )
 
 type Registry struct {
@@ -27,7 +27,7 @@ type Registry struct {
 
 type ethereumWalletType string
 
-type ethereumWallet interface {
+type EthereumWalletDetails interface {
 	ETHWallet()
 }
 
@@ -47,8 +47,8 @@ type EthereumClefWallet struct {
 func (e EthereumClefWallet) ETHWallet() {}
 
 type RegisteredEthereumWallet struct {
-	Type    ethereumWalletType `json:"type"`
-	Details ethereumWallet     `json:"details"`
+	Type    ethereumWalletType    `json:"type"`
+	Details EthereumWalletDetails `json:"details"`
 }
 
 func (rw *RegisteredEthereumWallet) UnmarshalJSON(data []byte) error {
@@ -64,14 +64,14 @@ func (rw *RegisteredEthereumWallet) UnmarshalJSON(data []byte) error {
 	rw.Type = ethereumWalletType(input.Type)
 
 	switch rw.Type {
-	case ethereumWalletTypeKeyStore:
+	case EthereumWalletTypeKeyStore:
 		var keyStore EthereumKeyStoreWallet
 		if err := json.Unmarshal(input.Details, &keyStore); err != nil {
 			return err
 		}
 
 		rw.Details = keyStore
-	case ethereumWalletTypeClef:
+	case EthereumWalletTypeClef:
 		var clef EthereumClefWallet
 		if err := json.Unmarshal(input.Details, &clef); err != nil {
 			return err
@@ -94,11 +94,11 @@ type RegisteredTendermintPubkey struct {
 	Pubkey string `json:"pubkey"`
 }
 
-type RegistryLoader struct {
+type Loader struct {
 	registryFilePath string
 }
 
-func NewRegistryLoader(vegaPaths paths.Paths, passphrase string) (*RegistryLoader, error) {
+func NewLoader(vegaPaths paths.Paths, passphrase string) (*Loader, error) {
 	registryFilePath, err := vegaPaths.CreateConfigPathFor(paths.NodeWalletsConfigFile)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't get config path for %s: %w", paths.NodeWalletsConfigFile, err)
@@ -115,12 +115,12 @@ func NewRegistryLoader(vegaPaths paths.Paths, passphrase string) (*RegistryLoade
 		}
 	}
 
-	return &RegistryLoader{
+	return &Loader{
 		registryFilePath: registryFilePath,
 	}, nil
 }
 
-func (l *RegistryLoader) GetRegistry(passphrase string) (*Registry, error) {
+func (l *Loader) Get(passphrase string) (*Registry, error) {
 	registry := &Registry{}
 	if err := paths.ReadEncryptedFile(l.registryFilePath, passphrase, registry); err != nil {
 		if err.Error() == errInternalWrongPassphrase.Error() {
@@ -131,7 +131,7 @@ func (l *RegistryLoader) GetRegistry(passphrase string) (*Registry, error) {
 	return registry, nil
 }
 
-func (l *RegistryLoader) SaveRegistry(registry *Registry, passphrase string) error {
+func (l *Loader) Save(registry *Registry, passphrase string) error {
 	err := paths.WriteEncryptedFile(l.registryFilePath, passphrase, registry)
 	if err != nil {
 		return fmt.Errorf("couldn't write encrypted file %s: %w", l.registryFilePath, err)
@@ -139,6 +139,6 @@ func (l *RegistryLoader) SaveRegistry(registry *Registry, passphrase string) err
 	return nil
 }
 
-func (l *RegistryLoader) RegistryFilePath() string {
+func (l *Loader) RegistryFilePath() string {
 	return l.registryFilePath
 }
