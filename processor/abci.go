@@ -238,9 +238,10 @@ func NewApp(
 		HandleCheckTx(txn.NodeVoteCommand, app.RequireValidatorPubKey).
 		HandleCheckTx(txn.ChainEventCommand, app.RequireValidatorPubKey).
 		HandleCheckTx(txn.SubmitOracleDataCommand, app.CheckSubmitOracleData).
-		HandleCheckTx(txn.KeyRotateSubmissionCommand, app.RequireValidatorMasterPubKey).
+		HandleCheckTx(txn.RotateKeySubmissionCommand, app.RequireValidatorMasterPubKey).
 		HandleCheckTx(txn.StateVariableProposalCommand, app.RequireValidatorPubKey).
-		HandleCheckTx(txn.ValidatorHeartbeatCommand, app.RequireValidatorPubKey)
+		HandleCheckTx(txn.ValidatorHeartbeatCommand, app.RequireValidatorPubKey).
+		HandleCheckTx(txn.RotateEthereumKeySubmissionCommand, app.RequireValidatorPubKey)
 
 	app.abci.
 		HandleDeliverTx(txn.AnnounceNodeCommand,
@@ -282,10 +283,12 @@ func NewApp(
 			app.SendEventOnError(app.DeliverUndelegate)).
 		HandleDeliverTx(txn.CheckpointRestoreCommand,
 			app.SendEventOnError(app.DeliverReloadCheckpoint)).
-		HandleDeliverTx(txn.KeyRotateSubmissionCommand,
+		HandleDeliverTx(txn.RotateKeySubmissionCommand,
 			app.RequireValidatorMasterPubKeyW(app.DeliverKeyRotateSubmission)).
 		HandleDeliverTx(txn.StateVariableProposalCommand,
-			app.RequireValidatorPubKeyW(app.DeliverStateVarProposal))
+			app.RequireValidatorPubKeyW(app.DeliverStateVarProposal)).
+		HandleDeliverTx(txn.RotateEthereumKeySubmissionCommand,
+			app.RequireValidatorPubKeyW(app.DeliverEthereumKeyRotateSubmission))
 
 	app.time.NotifyOnTick(app.onTick)
 
@@ -1575,4 +1578,24 @@ func (app *App) enactUpdateMarket(ctx context.Context, prop *types.Proposal, mar
 		return
 	}
 	prop.State = types.ProposalStateEnacted
+}
+
+func (app *App) DeliverEthereumKeyRotateSubmission(ctx context.Context, tx abci.Tx) error {
+	if app.reloadCP {
+		app.log.Debug("Skipping transaction while waiting for checkpoint restore")
+		return nil
+	}
+	kr := &commandspb.EthereumKeyRotateSubmission{}
+	if err := tx.Unmarshal(kr); err != nil {
+		return err
+	}
+
+	currentBlockHeight, _ := vgcontext.BlockHeightFromContext(ctx)
+
+	return app.top.RotateEthereumKey(
+		ctx,
+		tx.PubKeyHex(),
+		uint64(currentBlockHeight),
+		kr,
+	)
 }

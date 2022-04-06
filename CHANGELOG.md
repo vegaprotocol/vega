@@ -14,6 +14,7 @@
 - [4919](https://github.com/vegaprotocol/vega/issues/4919) - Feature tests for 0011 check order allocate margin
 - [4922](https://github.com/vegaprotocol/vega/issues/4922) - Feature tests for 0015 market insurance pool collateral
 - [4926](https://github.com/vegaprotocol/vega/issues/4926) - Feature tests for 0019 margin calculator scenarios
+- [5119](https://github.com/vegaprotocol/vega/issues/5119) - Add Ethereum key rotation support
 
 
 ### 🐛 Fixes

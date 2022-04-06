@@ -128,6 +128,7 @@ type ValidatorTopology interface {
 	AllVegaPubKeys() []string
 	IsValidator() bool
 	AddKeyRotate(ctx context.Context, nodeID string, currentBlockHeight uint64, kr *commandspb.KeyRotateSubmission) error
+	RotateEthereumKey(ctx context.Context, nodeID string, currentBlockHeight uint64, kr *commandspb.EthereumKeyRotateSubmission) error
 	BeginBlock(ctx context.Context, req abcitypes.RequestBeginBlock)
 	GetValidatorPowerUpdates() []abcitypes.ValidatorUpdate
 	ProcessAnnounceNode(ctx context.Context, nr *commandspb.AnnounceNode) error

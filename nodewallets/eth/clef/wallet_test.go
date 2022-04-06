@@ -7,6 +7,7 @@ import (
 
 	"code.vegaprotocol.io/vega/nodewallets/eth/clef"
 	"code.vegaprotocol.io/vega/nodewallets/eth/clef/mocks"
+	"code.vegaprotocol.io/vega/nodewallets/registry"
 	ethCommon "github.com/ethereum/go-ethereum/common"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
@@ -150,4 +151,47 @@ func testVersionSuccess(t *testing.T) {
 	v, err := wallet.Version()
 	a.NoError(err)
 	a.Equal(testVersion, v)
+}
+
+func TestReloadWallet(t *testing.T) {
+	t.Run("Success", testReloadWalletSuccess)
+}
+
+func testReloadWalletSuccess(t *testing.T) {
+	a := assert.New(t)
+
+	ctrl := gomock.NewController(t)
+	clientMock := mocks.NewMockClient(ctrl)
+
+	reloadedAddress := ethCommon.HexToAddress("0x6d573e92918124496ffefb0f273846ddb23a48c5")
+
+	var mockedCallTimes int
+	clientMock.EXPECT().
+		CallContext(gomock.Any(), gomock.Any(), "account_list", gomock.Any()).
+		Times(2).
+		DoAndReturn(func(_ context.Context, accs *[]ethCommon.Address, s string, _ ...interface{}) error {
+			if mockedCallTimes == 0 {
+				*accs = append(*accs, testAddress)
+			}
+			*accs = append(*accs, reloadedAddress)
+
+			mockedCallTimes++
+
+			return nil
+		})
+
+	clefAddr := "http://127.0.0.1:8580"
+	wallet, err := clef.NewWallet(clientMock, clefAddr, testAddress)
+	a.NoError(err)
+	a.NotNil(wallet)
+	a.Equal(testAddress.Hex(), wallet.PubKey().Hex())
+
+	// reload key
+	wallet.Reload(registry.EthereumClefWallet{
+		Name:           wallet.Name(),
+		AccountAddress: reloadedAddress.Hex(),
+		ClefAddress:    clefAddr,
+	})
+
+	a.Equal(reloadedAddress.Hex(), wallet.PubKey().Hex())
 }

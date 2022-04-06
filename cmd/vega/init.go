@@ -10,7 +10,7 @@ import (
 	"code.vegaprotocol.io/vega/config"
 	"code.vegaprotocol.io/vega/config/encoding"
 	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/nodewallets"
+	"code.vegaprotocol.io/vega/nodewallets/registry"
 	"github.com/jessevdk/go-flags"
 )
 
@@ -45,14 +45,14 @@ func (opts *InitCmd) Execute(args []string) error {
 	vegaPaths := paths.New(opts.VegaHome)
 
 	// a nodewallet will be required only for a validator node
-	var nwRegistry *nodewallets.RegistryLoader
+	var nwRegistry *registry.Loader
 	if mode == encoding.NodeModeValidator {
 		pass, err := opts.Get("node wallet", true)
 		if err != nil {
 			return err
 		}
 
-		nwRegistry, err = nodewallets.NewRegistryLoader(vegaPaths, pass)
+		nwRegistry, err = registry.NewLoader(vegaPaths, pass)
 		if err != nil {
 			return err
 		}

@@ -3,7 +3,8 @@ module code.vegaprotocol.io/vega
 go 1.17
 
 require (
-	code.vegaprotocol.io/protos v0.49.4-0.20220325171548-f44df03bc6d2
+	code.vegaprotocol.io/oracles-relay v0.0.0-20210201140234-f047e1bf6df3
+	code.vegaprotocol.io/protos v0.49.4-0.20220331114651-6aa87bc4a08d
 	code.vegaprotocol.io/quant v0.2.5
 	code.vegaprotocol.io/shared v0.0.0-20220321185018-3b5684b00533
 	code.vegaprotocol.io/vegawallet v0.13.3-0.20220325131640-e19b55a4aa00
@@ -48,10 +49,7 @@ require (
 	google.golang.org/protobuf v1.27.1
 )
 
-require (
-	code.vegaprotocol.io/oracles-relay v0.0.0-20210201140234-f047e1bf6df3
-	github.com/grpc-ecosystem/grpc-gateway/v2 v2.9.0
-)
+require github.com/grpc-ecosystem/grpc-gateway/v2 v2.9.0
 
 require (
 	github.com/BurntSushi/toml v1.0.0 // indirect
@@ -89,6 +87,8 @@ require (
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/google/orderedcode v0.0.1 // indirect
 	github.com/google/uuid v1.3.0 // indirect
+	github.com/gorilla/mux v1.8.0
+	github.com/gorilla/rpc v1.2.0
 	github.com/gorilla/websocket v1.4.2 // indirect
 	github.com/gtank/merlin v0.1.1 // indirect
 	github.com/gtank/ristretto255 v0.1.2 // indirect

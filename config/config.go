@@ -8,6 +8,7 @@ import (
 
 	vgfs "code.vegaprotocol.io/shared/libs/fs"
 	"code.vegaprotocol.io/shared/paths"
+	"code.vegaprotocol.io/vega/admin"
 	"code.vegaprotocol.io/vega/api"
 	"code.vegaprotocol.io/vega/assets"
 	"code.vegaprotocol.io/vega/banking"
@@ -47,6 +48,7 @@ import (
 
 // Config ties together all other application configuration types.
 type Config struct {
+	Admin             admin.Config         `group:"Admin" namespace:"admin"`
 	API               api.Config           `group:"API" namespace:"api"`
 	Blockchain        blockchain.Config    `group:"Blockchain" namespace:"blockchain"`
 	Collateral        collateral.Config    `group:"Collateral" namespace:"collateral"`
@@ -91,6 +93,7 @@ type Config struct {
 func NewDefaultConfig() Config {
 	return Config{
 		NodeMode:          cfgencoding.NodeModeValidator,
+		Admin:             admin.NewDefaultConfig(),
 		API:               api.NewDefaultConfig(),
 		CoreAPI:           coreapi.NewDefaultConfig(),
 		Blockchain:        blockchain.NewDefaultConfig(),

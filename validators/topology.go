@@ -92,6 +92,20 @@ func (v ValidatorData) HashVegaPubKey() string {
 // ValidatorMapping maps a tendermint pubkey with a vega pubkey.
 type ValidatorMapping map[string]ValidatorData
 
+type validators map[string]*valState
+
+func (vs validators) toNodeIDAdresses() []NodeIDAddress {
+	nodeIDAdresses := make([]NodeIDAddress, 0, len(vs))
+	for k, v := range vs {
+		nodeIDAdresses = append(nodeIDAdresses, NodeIDAddress{
+			NodeID:     k,
+			EthAddress: v.data.EthereumAddress,
+		})
+	}
+
+	return nodeIDAdresses
+}
+
 type Topology struct {
 	log                  *logging.Logger
 	cfg                  Config
@@ -102,7 +116,7 @@ type Topology struct {
 	multiSigTopology     MultiSigTopology
 
 	// vega pubkey to validator data
-	validators map[string]*valState
+	validators validators
 
 	chainValidators []string
 
@@ -118,6 +132,9 @@ type Topology struct {
 	pendingPubKeyRotations pendingKeyRotationMapping
 	pubKeyChangeListeners  []func(ctx context.Context, oldPubKey, newPubKey string)
 	currentBlockHeight     uint64
+
+	// eth key rotations
+	pendingEthKeyRotations pendingEthereumKeyRotationMapping
 
 	mu sync.RWMutex
 
@@ -188,6 +205,7 @@ func NewTopology(
 		chainValidators:               []string{},
 		tss:                           &topologySnapshotState{changed: true},
 		pendingPubKeyRotations:        pendingKeyRotationMapping{},
+		pendingEthKeyRotations:        pendingEthereumKeyRotationMapping{},
 		isValidatorSetup:              isValidatorSetup,
 		validatorPerformance:          NewValidatorPerformance(log),
 		validatorIncumbentBonusFactor: num.DecimalZero(),
@@ -211,6 +229,12 @@ func (t *Topology) SetNotary(notary Notary) {
 		t.signatures = NewSignatures(t.log, notary, t.wallets.GetEthereum(), t.broker)
 	}
 	t.notary = notary
+}
+
+// SetSignatures this is not good, same issue as for SetNotary method.
+// This is only used as a helper for testing..
+func (t *Topology) SetSignatures(signatures Signatures) {
+	t.signatures = signatures
 }
 
 // ReloadConf updates the internal configuration.
@@ -335,6 +359,7 @@ func (t *Topology) BeginBlock(ctx context.Context, req abcitypes.RequestBeginBlo
 	blockHeight := uint64(req.Header.Height)
 	t.currentBlockHeight = blockHeight
 	t.keyRotationBeginBlockLocked(ctx)
+	t.ethereumKeyRotationBeginBlockLocked(ctx)
 
 	// validator performance will have updated
 	t.tss.changed = true
@@ -440,7 +465,7 @@ func (t *Topology) LoadValidatorsOnGenesis(ctx context.Context, rawstate []byte)
 		}
 
 		// this node is started and expect to be a validator
-		// but so far we haven't seen ourselve as validators for
+		// but so far we haven't seen ourselves as validators for
 		// this network.
 		if t.isValidatorSetup && !t.isValidator {
 			t.checkValidatorDataWithSelfWallets(data)
