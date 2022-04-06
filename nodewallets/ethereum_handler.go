@@ -19,7 +19,7 @@ func GetEthereumWallet(config eth.Config, vegaPaths paths.Paths, registryPassphr
 		return nil, fmt.Errorf("couldn't initialise node wallet registry: %v", err)
 	}
 
-	registry, err := registryLoader.GetRegistry(registryPassphrase)
+	registry, err := registryLoader.Get(registryPassphrase)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't load node wallet registry: %v", err)
 	}
@@ -76,7 +76,7 @@ func GenerateEthereumWallet(
 		return nil, fmt.Errorf("couldn't initialise node wallet registry: %v", err)
 	}
 
-	reg, err := registryLoader.GetRegistry(registryPassphrase)
+	reg, err := registryLoader.Get(registryPassphrase)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't load node wallet registry: %v", err)
 	}
@@ -133,7 +133,7 @@ func GenerateEthereumWallet(
 		}
 	}
 
-	if err := registryLoader.SaveRegistry(reg, registryPassphrase); err != nil {
+	if err := registryLoader.Save(reg, registryPassphrase); err != nil {
 		return nil, fmt.Errorf("couldn't save registry: %w", err)
 	}
 
@@ -155,7 +155,7 @@ func ImportEthereumWallet(
 		return nil, fmt.Errorf("couldn't initialise node wallet registry: %v", err)
 	}
 
-	reg, err := registryLoader.GetRegistry(registryPassphrase)
+	reg, err := registryLoader.Get(registryPassphrase)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't load node wallet registry: %v", err)
 	}
@@ -222,7 +222,7 @@ func ImportEthereumWallet(
 		}
 	}
 
-	if err := registryLoader.SaveRegistry(reg, registryPassphrase); err != nil {
+	if err := registryLoader.Save(reg, registryPassphrase); err != nil {
 		return nil, fmt.Errorf("couldn't save registry: %w", err)
 	}
 

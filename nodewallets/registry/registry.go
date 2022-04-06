@@ -94,11 +94,11 @@ type RegisteredTendermintPubkey struct {
 	Pubkey string `json:"pubkey"`
 }
 
-type RegistryLoader struct {
+type Loader struct {
 	registryFilePath string
 }
 
-func NewLoader(vegaPaths paths.Paths, passphrase string) (*RegistryLoader, error) {
+func NewLoader(vegaPaths paths.Paths, passphrase string) (*Loader, error) {
 	registryFilePath, err := vegaPaths.CreateConfigPathFor(paths.NodeWalletsConfigFile)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't get config path for %s: %w", paths.NodeWalletsConfigFile, err)
@@ -115,12 +115,12 @@ func NewLoader(vegaPaths paths.Paths, passphrase string) (*RegistryLoader, error
 		}
 	}
 
-	return &RegistryLoader{
+	return &Loader{
 		registryFilePath: registryFilePath,
 	}, nil
 }
 
-func (l *RegistryLoader) GetRegistry(passphrase string) (*Registry, error) {
+func (l *Loader) Get(passphrase string) (*Registry, error) {
 	registry := &Registry{}
 	if err := paths.ReadEncryptedFile(l.registryFilePath, passphrase, registry); err != nil {
 		if err.Error() == errInternalWrongPassphrase.Error() {
@@ -131,7 +131,7 @@ func (l *RegistryLoader) GetRegistry(passphrase string) (*Registry, error) {
 	return registry, nil
 }
 
-func (l *RegistryLoader) SaveRegistry(registry *Registry, passphrase string) error {
+func (l *Loader) Save(registry *Registry, passphrase string) error {
 	err := paths.WriteEncryptedFile(l.registryFilePath, passphrase, registry)
 	if err != nil {
 		return fmt.Errorf("couldn't write encrypted file %s: %w", l.registryFilePath, err)
@@ -139,6 +139,6 @@ func (l *RegistryLoader) SaveRegistry(registry *Registry, passphrase string) err
 	return nil
 }
 
-func (l *RegistryLoader) RegistryFilePath() string {
+func (l *Loader) RegistryFilePath() string {
 	return l.registryFilePath
 }

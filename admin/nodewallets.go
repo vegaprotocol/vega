@@ -44,7 +44,7 @@ type NodeWalletReloadReply struct {
 type NodeWallet struct {
 	log                  *logging.Logger
 	nodeWallets          *nodewallets.NodeWallets
-	registryLoader       *registry.RegistryLoader
+	registryLoader       *registry.Loader
 	nodeWalletPassphrase string
 }
 
@@ -74,7 +74,7 @@ func (h *NodeWallet) Reload(r *http.Request, args *NodeWalletArgs, reply *NodeWa
 	case "vega":
 		oW := newWallet(h.nodeWallets.Vega)
 
-		reg, err := h.registryLoader.GetRegistry(h.nodeWalletPassphrase)
+		reg, err := h.registryLoader.Get(h.nodeWalletPassphrase)
 		if err != nil {
 			return fmt.Errorf("couldn't load node wallet registry: %v", err)
 		}
@@ -94,7 +94,7 @@ func (h *NodeWallet) Reload(r *http.Request, args *NodeWalletArgs, reply *NodeWa
 	case "ethereum":
 		oW := newWallet(h.nodeWallets.Ethereum)
 
-		reg, err := h.registryLoader.GetRegistry(h.nodeWalletPassphrase)
+		reg, err := h.registryLoader.Get(h.nodeWalletPassphrase)
 		if err != nil {
 			return fmt.Errorf("couldn't load node wallet registry: %v", err)
 		}

@@ -43,7 +43,7 @@ func (opts *showCmd) Execute(_ []string) error {
 		return err
 	}
 
-	registry, err := registryLoader.GetRegistry(registryPass)
+	registry, err := registryLoader.Get(registryPass)
 	if err != nil {
 		return err
 	}
