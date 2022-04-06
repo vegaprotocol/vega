@@ -79,13 +79,15 @@ func (f *Future) SettlementPrice() (*num.Uint, error) {
 }
 
 // Settle a position against the future.
-func (f *Future) Settle(entryPrice *num.Uint, netFractionalPosition num.Decimal) (amt *types.FinancialAmount, neg bool, err error) {
+func (f *Future) Settle(entryPriceInAsset *num.Uint, pricePrecision *num.Uint, netFractionalPosition num.Decimal) (amt *types.FinancialAmount, neg bool, err error) {
 	settlementPrice, err := f.oracle.data.SettlementPrice()
 	if err != nil {
 		return nil, false, err
 	}
 
-	amount, neg := settlementPrice.Delta(settlementPrice, entryPrice)
+	// scale to asset decimals
+	settlementPriceInAsset := num.Zero().Mul(settlementPrice, pricePrecision)
+	amount, neg := settlementPrice.Delta(settlementPriceInAsset, entryPriceInAsset)
 	// Make sure net position is positive
 	if netFractionalPosition.IsNegative() {
 		netFractionalPosition = netFractionalPosition.Neg()

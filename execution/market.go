@@ -736,7 +736,7 @@ func (m *Market) updateMarketValueProxy() {
 func (m *Market) closeMarket(ctx context.Context, t time.Time) error {
 	// market is closed, final settlement
 	// call settlement and stuff
-	positions, err := m.settlement.Settle(t)
+	positions, err := m.settlement.Settle(t, m.priceFactor)
 	if err != nil {
 		m.log.Error("Failed to get settle positions on market closed",
 			logging.Error(err))

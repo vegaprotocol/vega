@@ -322,7 +322,7 @@ func testSettleExpiredSuccess(t *testing.T) {
 		},
 	} // }}}
 	oraclePrice := num.NewUint(1100)
-	settleF := func(price *num.Uint, size num.Decimal) (*types.FinancialAmount, bool, error) {
+	settleF := func(price *num.Uint, pricePrecision *num.Uint, size num.Decimal) (*types.FinancialAmount, bool, error) {
 		amt, neg := num.Zero().Delta(oraclePrice, price)
 		if size.IsNegative() {
 			size = size.Neg()
@@ -336,11 +336,11 @@ func testSettleExpiredSuccess(t *testing.T) {
 	}
 	positions := engine.getExpiryPositions(data...)
 	// we expect settle calls for each position
-	engine.prod.EXPECT().Settle(gomock.Any(), gomock.Any()).DoAndReturn(settleF).AnyTimes()
+	engine.prod.EXPECT().Settle(gomock.Any(), gomock.Any(), gomock.Any()).DoAndReturn(settleF).AnyTimes()
 	// ensure positions are set
 	engine.Update(positions)
 	// now settle:
-	got, err := engine.Settle(time.Now())
+	got, err := engine.Settle(time.Now(), num.NewUint(1))
 	assert.NoError(t, err)
 	assert.Equal(t, len(expect), len(got))
 	for i, p := range got {
@@ -363,9 +363,9 @@ func testSettleExpiryFail(t *testing.T) {
 	}
 	errExp := errors.New("product.Settle error")
 	positions := engine.getExpiryPositions(data...)
-	engine.prod.EXPECT().Settle(gomock.Any(), gomock.Any()).Times(1).Return(nil, false, errExp)
+	engine.prod.EXPECT().Settle(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(nil, false, errExp)
 	engine.Update(positions)
-	empty, err := engine.Settle(time.Now())
+	empty, err := engine.Settle(time.Now(), num.NewUint(1))
 	assert.Empty(t, empty)
 	assert.Error(t, err)
 	assert.Equal(t, errExp, err)
@@ -706,7 +706,7 @@ func TestConcurrent(t *testing.T) {
 
 	engine := getTestEngine(t)
 	defer engine.Finish()
-	engine.prod.EXPECT().Settle(gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(func(price *num.Uint, size num.Decimal) (*types.FinancialAmount, bool, error) {
+	engine.prod.EXPECT().Settle(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(func(price, pricePrecision *num.Uint, size num.Decimal) (*types.FinancialAmount, bool, error) {
 		return &types.FinancialAmount{Amount: num.Zero()}, false, nil
 	})
 
@@ -755,7 +755,7 @@ func TestConcurrent(t *testing.T) {
 		go func() {
 			defer wg.Done()
 			// Settle requires posMu
-			_, err := engine.Settle(now)
+			_, err := engine.Settle(now, num.NewUint(1))
 			assert.NoError(t, err)
 		}()
 	}
