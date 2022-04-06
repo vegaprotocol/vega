@@ -1,7 +1,7 @@
 Feature: Replicate LP getting distressed during continuous trading, check if penalty is implemented correctly
 
   Background:
-   
+
     Given the log normal risk model named "log-normal-risk-model-1":
       | risk aversion | tau | mu | r | sigma |
       | 0.000001      | 0.1 | 0  | 0 | 1.0   |
@@ -21,7 +21,7 @@ Feature: Replicate LP getting distressed during continuous trading, check if pen
       | party2 | USD   | 100000000 |
       | party3 | USD   | 100000000 |
 
-   Scenario: 001, LP gets distressed during continuous trading, 0044-LIQM-002, No DPD setting 
+   Scenario: 001, LP gets distressed during continuous trading, 0044-LIQM-002, No DPD setting
 
    Given the following network parameters are set:
       | name                                          | value |
@@ -29,7 +29,7 @@ Feature: Replicate LP getting distressed during continuous trading, check if pen
       | market.stake.target.scalingFactor             | 1     |
       | market.liquidity.bondPenaltyParameter         | 0.2   |
       | market.liquidity.targetstake.triggering.ratio | 0.1   |
-      
+
    And the average block duration is "1"
 
    And the parties submit the following liquidity provision:
@@ -65,7 +65,7 @@ Feature: Replicate LP getting distressed during continuous trading, check if pen
       | buy  | 990   | 103    |
       | buy  | 980   | 0      |
       | buy  | 900   | 1      |
-      
+
     # check the requried balances
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general  | bond  |
@@ -171,22 +171,22 @@ Feature: Replicate LP getting distressed during continuous trading, check if pen
       | party0 | ETH/MAR22 | 355691      | 391260 | 426829  | 497967  |
       | party1 | ETH/MAR22 | 10159       | 11174  | 12190   | 14222   |
       | party2 | ETH/MAR22 | 221129      | 243241 | 265354  | 309580  |
-      
+
 #documented behavier why margin account has higher value than margin initial level:
 #When an LP submits a new order, we recalculate the margin requirements as we do for any order. At this point, we don't care if the party is an LP or not. We work out the margin requirements assuming whatever position the party holds stays the same. If the margin requirement increases, we try and top up the margin balance to the initial margin level. If this means dipping in to the bond account, we slash the bond account and apply a penalty.
 #This newly submitted order will change the LP orders/shapes, so we cancel the orders currently on the book, and replace them with new ones. In doing so, we check the margin requirements as we submit the new orders. In this particular case, the party had buy and sell orders (potential long/short) on the book the book like this: sell 106@1020, buy 109@970. The party submitted a sell order of 15@1000. This meant that their worst potential short (and the position we based the margin calculation on) was short 121@(15000+108120)/121 (≃1017.5).
 #The sell LP order was updated to sell 90@1020 (potential short becoming 105@(15000+91800)/105 (≃1017.1). The margin requirement drops, but the release level remains above the margin balance. Because the margin requirement when the sell order for 15@1000 was submitted caused the margin balance to go up to 500000, we didn't release any of the balance later on. The initial margin level dropped down to 448170, but the release level was higher than the margin account balance still.
 #The upshot is that seemingly, we transferred too much to the margin account, because briefly (between placing the new order and repricing the LP orders), that was the balance required.
 
-Scenario: 002, LP gets closed-out during continuous trading, 0044-LIQM-002, No DPD setting 
+Scenario: 002, LP gets slashed twice during continuous trading, 0044-LIQM-002, No DPD setting
 
    Given the following network parameters are set:
       | name                                          | value |
       | market.stake.target.timeWindow                | 24h   |
       | market.stake.target.scalingFactor             | 1     |
-      | market.liquidity.bondPenaltyParameter         | 0.2   |
+      | market.liquidity.bondPenaltyParameter         | 0.5   |
       | market.liquidity.targetstake.triggering.ratio | 0.1   |
-      
+
    And the average block duration is "1"
 
    And the parties submit the following liquidity provision:
@@ -222,12 +222,12 @@ Scenario: 002, LP gets closed-out during continuous trading, 0044-LIQM-002, No D
       | buy  | 990   | 103    |
       | buy  | 980   | 0      |
       | buy  | 900   | 2      |
-      
+
     # check the requried balances
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general  | bond  |
       | party0 | USD   | ETH/MAR22 | 426829 | 23171    | 50000 |
-  
+
     #check the margin levels
     Then the parties should have the following margin levels:
       | party  | market id | maintenance | search | initial | release |
@@ -288,7 +288,7 @@ Scenario: 002, LP gets closed-out during continuous trading, 0044-LIQM-002, No D
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
       | 1000       | TRADING_MODE_CONTINUOUS | 1       | 1000      | 1000      | 213414       | 50000          | 60            |
 
-    And the insurance pool balance should be "8154" for the market "ETH/MAR22"
+    And the insurance pool balance should be "20386" for the market "ETH/MAR22"
     #check the volume on the order book
     Then the order book should have the following volumes for market "ETH/MAR22":
       | side | price | volume |
@@ -302,53 +302,26 @@ Scenario: 002, LP gets closed-out during continuous trading, 0044-LIQM-002, No D
   #check the requried balances
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general  | bond |
-      | party0 | USD   | ETH/MAR22 | 490852 | 0        | 1074 |
-      | party2 | USD   | ETH/MAR22 | 264754 | 99734946 |      |
+      | party0 | USD   | ETH/MAR22 | 479694 | 0        |      |
 
     Then the parties should have the following margin levels:
       | party  | market id | maintenance | search | initial | release |
       | party0 | ETH/MAR22 | 355691      | 391260 | 426829  | 497967  |
 
-    # Lp provider party0 keeps on putting order, and more bond slashing is done 
+    # Lp provider party0 keeps on putting order, and more bond slashing is done
     When the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference     |
       | party0 | ETH/MAR22 | sell | 30     | 1000  | 0                | TYPE_LIMIT | TIF_GTC | party0-sell-3 |
 
-    And the insurance pool balance should be "20959" for the market "ETH/MAR22"
+    And the insurance pool balance should be "57977" for the market "ETH/MAR22"
 
-    # margin levels stays the same as there is no new trade to trigger new mark price 
+    # margin levels stays the same as there is no new trade to trigger new mark price
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general  | bond |
-      | party0 | USD   | ETH/MAR22 | 479121 | 0        | 0    |
+      | party0 | USD   | ETH/MAR22 | 442103 | 0        | 0    |
 
-    Then the order book should have the following volumes for market "ETH/MAR22":
-      | side | price | volume |
-      | sell | 1100  | 1      |
-      | sell | 1010  | 1      |
-      | sell | 1000  | 100    |
-      | buy  | 1000  | 0      |
-      | buy  | 990   | 103    |
-      | buy  | 900   | 2      |
-
-    When the parties place the following orders:
-      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference     |
-      | party2 | ETH/MAR22 | sell  | 1      | 990  | 0                | TYPE_LIMIT | TIF_GTC | party2-sell-3 |
-
-    And the market data for the market "ETH/MAR22" should be:
-      | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 1000       | TRADING_MODE_CONTINUOUS | 1       | 1000      | 1000      | 35569        | 50000          | 10            |
-
-And the parties should have the following account balances:
-      | party  | asset | market id | margin | general  | bond |
-      | party0 | USD   | ETH/MAR22 | 479121 | 0        | 0    |
-
-    Then the parties should have the following margin levels:
-      | party  | market id | maintenance | search | initial | release |
-      | party0 | ETH/MAR22 | 355691      | 391260 | 426829  | 497967  |
-      
 #documented behavier why margin account has higher value than margin initial level:
 #When an LP submits a new order, we recalculate the margin requirements as we do for any order. At this point, we don't care if the party is an LP or not. We work out the margin requirements assuming whatever position the party holds stays the same. If the margin requirement increases, we try and top up the margin balance to the initial margin level. If this means dipping in to the bond account, we slash the bond account and apply a penalty.
 #This newly submitted order will change the LP orders/shapes, so we cancel the orders currently on the book, and replace them with new ones. In doing so, we check the margin requirements as we submit the new orders. In this particular case, the party had buy and sell orders (potential long/short) on the book the book like this: sell 106@1020, buy 109@970. The party submitted a sell order of 15@1000. This meant that their worst potential short (and the position we based the margin calculation on) was short 121@(15000+108120)/121 (≃1017.5).
 #The sell LP order was updated to sell 90@1020 (potential short becoming 105@(15000+91800)/105 (≃1017.1). The margin requirement drops, but the release level remains above the margin balance. Because the margin requirement when the sell order for 15@1000 was submitted caused the margin balance to go up to 500000, we didn't release any of the balance later on. The initial margin level dropped down to 448170, but the release level was higher than the margin account balance still.
 #The upshot is that seemingly, we transferred too much to the margin account, because briefly (between placing the new order and repricing the LP orders), that was the balance required.
-
