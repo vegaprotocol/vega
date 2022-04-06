@@ -37,7 +37,7 @@ func TestGetKeyRotations(t *testing.T) {
 	// make sure event has been processed
 	time.Sleep(20 * time.Millisecond)
 
-	server.broker.Send(events.NewKeyRotationEvent(
+	server.broker.Send(events.NewVegaKeyRotationEvent(
 		ctx,
 		"node-1",
 		"vega-pub-key",
@@ -45,7 +45,7 @@ func TestGetKeyRotations(t *testing.T) {
 		10,
 	))
 
-	server.broker.Send(events.NewKeyRotationEvent(
+	server.broker.Send(events.NewVegaKeyRotationEvent(
 		ctx,
 		"node-1",
 		"new-vega-pub-key",
