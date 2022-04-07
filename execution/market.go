@@ -2811,6 +2811,19 @@ func (m *Market) orderCancelReplace(ctx context.Context, existingOrder, newOrder
 			logging.OrderWithTag(*existingOrder, "existing-order"),
 			logging.Error(err))
 	}
+	// cancel-replace amend during auction is quite simple at this point
+	if m.as.InAuction() {
+		conf, err := m.matching.ReplaceOrder(existingOrder, newOrder)
+		if err != nil {
+			m.log.Panic("unable to submit order", logging.Error(err))
+		}
+		if newOrder.PeggedOrder != nil {
+			m.peggedOrders.Amend(newOrder)
+		}
+		timer.EngineTimeCounterAdd()
+
+		return conf, nil
+	}
 	// first we call the order book to evaluate auction triggers and get the list of trades
 	trades, err := m.checkPriceAndGetTrades(ctx, newOrder)
 	if err != nil {
