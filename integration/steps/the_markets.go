@@ -160,7 +160,7 @@ func newMarket(config *market.Config, row marketRow) types.Market {
 		LiquidityMonitoringParameters: &types.LiquidityMonitoringParameters{
 			TargetStakeParameters: &types.TargetStakeParameters{
 				TimeWindow:    3600,
-				ScalingFactor: num.DecimalFromInt64(10),
+				ScalingFactor: row.scalingFactor(),
 			},
 			TriggeringRatio: num.DecimalFromInt64(0),
 		},
@@ -201,6 +201,7 @@ func parseMarketsTable(table *godog.Table) []RowWrapper {
 	}, []string{
 		"decimal places",
 		"position decimal places",
+		"scaling factor",
 	})
 }
 
@@ -217,6 +218,13 @@ func (r marketRow) decimalPlaces() uint64 {
 		return 0
 	}
 	return r.row.MustU64("decimal places")
+}
+
+func (r marketRow) scalingFactor() num.Decimal {
+	if !r.row.HasColumn("scaling factor") {
+		return num.DecimalFromInt64(10)
+	}
+	return r.row.MustDecimal("scaling factor")
 }
 
 func (r marketRow) positionDecimalPlaces() uint64 {

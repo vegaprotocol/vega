@@ -12,7 +12,7 @@
                 "--godog.format",
                 "pretty",
                 "-test.run",
-                "${workspaceFolder}/integration/features/settlement/settlement_at_expiry.feature"
+                "${workspaceFolder}/integration/features/verified/0041-TSK-target_stake.feature"
             ]
         },
         {
@@ -26,7 +26,7 @@
                 "--godog.format",
                 "pretty",
                 "-test.run",
-                "${workspaceFolder}/integration/features/settlement/settlement_at_expiry.feature:23"
+                "${workspaceFolder}/integration/features/verified/0041-TSK-target_stake.feature:100"
             ]
         }
     ]
