@@ -94,6 +94,15 @@ func (b *CachedOrderBook) AmendOrder(
 	return b.OrderBook.AmendOrder(originalOrder, amendedOrder)
 }
 
+func (b *CachedOrderBook) ReplaceOrder(rm, rpl *types.Order) (*types.OrderConfirmation, error) {
+	if !b.InAuction() {
+		b.cache.Invalidate()
+	} else {
+		b.maybeInvalidateDuringAuction(rpl)
+	}
+	return b.OrderBook.ReplaceOrder(rm, rpl)
+}
+
 func (b *CachedOrderBook) SubmitOrder(
 	order *types.Order,
 ) (*types.OrderConfirmation, error) {
