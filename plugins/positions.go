@@ -137,9 +137,13 @@ func (p *Positions) updatePosition(e SPE) {
 	}
 	calc, ok := p.data[mID][tID]
 	if !ok {
+		// we received a SPE event before the initial PSE, this call will create the position and
+		// set the average entry price so the updateSettlePosition call calculates the P&L and avg entry price
+		// correctly
 		calc = seToProto(e)
 	}
 	updateSettlePosition(&calc, e)
+	// set updated value, and update data map
 	calc.Position.UpdatedAt = e.Timestamp()
 	p.data[mID][tID] = calc
 }
@@ -321,7 +325,7 @@ type Position struct {
 }
 
 func seToProto(e SE) Position {
-	return Position{
+	pos := Position{
 		Position: types.Position{
 			MarketId: e.MarketID(),
 			PartyId:  e.PartyID(),
@@ -330,6 +334,37 @@ func seToProto(e SE) Position {
 		RealisedPnlFP:       num.DecimalZero(),
 		UnrealisedPnlFP:     num.DecimalZero(),
 	}
+	// we're initialising the position data from a settle position event
+	if spe, ok := e.(SPE); ok {
+		speToProto(&pos, spe)
+	}
+	return pos
+}
+
+func speToProto(pos *Position, e SPE) {
+	// note we don't set the open volume here
+	// that's calculated more precisely in the updateSettlePosition call
+	// we just have to ensure we accurately set an average entry price here
+	// updateSettlePosition runs this new position through some logic that is a bit too complex for this
+	// specific use-case (receiving a SPE event before the PSE), but it beats duplicating the logic
+	priceTot := num.Zero()
+	sizeTot := num.Zero()
+	for _, t := range e.Trades() {
+		size := num.NewUint(uint64(abs(t.Size())))
+		sizeTot.AddSum(size)
+		// size * price
+		priceTot.AddSum(size.Mul(size, t.Price()))
+	}
+	ptDec, stDec := num.DecimalFromUint(priceTot), num.DecimalFromUint(sizeTot)
+	pos.AverageEntryPrice = priceTot.Div(priceTot, sizeTot)
+	pos.AverageEntryPriceFP = ptDec.Div(stDec)
+}
+
+func abs(i int64) int64 {
+	if i < 0 {
+		return -i
+	}
+	return i
 }
 
 func absUint64(v int64) uint64 {
