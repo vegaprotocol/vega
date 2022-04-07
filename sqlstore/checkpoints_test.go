@@ -22,10 +22,10 @@ func addCheckpoint(t *testing.T, ns *sqlstore.Checkpoints, hash, blockHash strin
 }
 
 func TestCheckpoints(t *testing.T) {
-	defer testStore.DeleteEverything()
+	defer DeleteEverything()
 	ctx := context.Background()
-	checkpointStore := sqlstore.NewCheckpoints(testStore)
-	blockStore := sqlstore.NewBlocks(testStore)
+	checkpointStore := sqlstore.NewCheckpoints(connectionSource)
+	blockStore := sqlstore.NewBlocks(connectionSource)
 	block1 := addTestBlock(t, blockStore)
 	block2 := addTestBlock(t, blockStore)
 

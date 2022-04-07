@@ -31,10 +31,10 @@ func addTestEpoch(t *testing.T, es *sqlstore.Epochs,
 }
 
 func TestEpochs(t *testing.T) {
-	defer testStore.DeleteEverything()
+	defer DeleteEverything()
 	ctx := context.Background()
-	es := sqlstore.NewEpochs(testStore)
-	bs := sqlstore.NewBlocks(testStore)
+	es := sqlstore.NewEpochs(connectionSource)
+	bs := sqlstore.NewBlocks(connectionSource)
 	block1 := addTestBlock(t, bs)
 	block2 := addTestBlock(t, bs)
 	block3 := addTestBlock(t, bs)

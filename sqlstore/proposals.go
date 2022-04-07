@@ -10,18 +10,18 @@ import (
 )
 
 type Proposals struct {
-	*SQLStore
+	*ConnectionSource
 }
 
-func NewProposals(sqlStore *SQLStore) *Proposals {
+func NewProposals(connectionSource *ConnectionSource) *Proposals {
 	p := &Proposals{
-		SQLStore: sqlStore,
+		ConnectionSource: connectionSource,
 	}
 	return p
 }
 
 func (ps *Proposals) Add(ctx context.Context, r entities.Proposal) error {
-	_, err := ps.pool.Exec(ctx,
+	_, err := ps.Connection.Exec(ctx,
 		`INSERT INTO proposals(
 			id,
 			reference,
@@ -50,14 +50,14 @@ func (ps *Proposals) Add(ctx context.Context, r entities.Proposal) error {
 func (ps *Proposals) GetByID(ctx context.Context, id string) (entities.Proposal, error) {
 	var p entities.Proposal
 	query := `SELECT * FROM proposals_current WHERE id=$1`
-	err := pgxscan.Get(ctx, ps.pool, &p, query, entities.NewProposalID(id))
+	err := pgxscan.Get(ctx, ps.Connection, &p, query, entities.NewProposalID(id))
 	return p, err
 }
 
 func (ps *Proposals) GetByReference(ctx context.Context, ref string) (entities.Proposal, error) {
 	var p entities.Proposal
 	query := `SELECT * FROM proposals_current WHERE reference=$1 LIMIT 1`
-	err := pgxscan.Get(ctx, ps.pool, &p, query, ref)
+	err := pgxscan.Get(ctx, ps.Connection, &p, query, ref)
 	return p, err
 }
 
@@ -89,7 +89,7 @@ func (ps *Proposals) Get(ctx context.Context,
 	}
 
 	proposals := []entities.Proposal{}
-	err := pgxscan.Select(ctx, ps.pool, &proposals, query, args...)
+	err := pgxscan.Select(ctx, ps.Connection, &proposals, query, args...)
 	if err != nil {
 		return nil, fmt.Errorf("querying proposals: %w", err)
 	}

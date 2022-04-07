@@ -3,7 +3,6 @@ package sqlsubscribers
 import (
 	"context"
 	"testing"
-	"time"
 
 	"code.vegaprotocol.io/data-node/logging"
 	"code.vegaprotocol.io/data-node/sqlsubscribers/mocks"
@@ -22,10 +21,8 @@ func testShouldCallStoreAdd(t *testing.T) {
 
 	store := mocks.NewMockMarketDataStore(ctrl)
 
-	timeout := time.Second * 5
-
 	store.EXPECT().Add(gomock.Any()).Times(1)
 
-	subscriber := NewMarketData(store, logging.NewTestLogger(), timeout)
-	subscriber.Push(events.NewMarketDataEvent(context.Background(), types.MarketData{}))
+	subscriber := NewMarketData(store, logging.NewTestLogger())
+	subscriber.Push(context.Background(), events.NewMarketDataEvent(context.Background(), types.MarketData{}))
 }

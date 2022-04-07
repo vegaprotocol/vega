@@ -5,6 +5,7 @@
 package mocks
 
 import (
+	context "context"
 	reflect "reflect"
 
 	entities "code.vegaprotocol.io/data-node/entities"
@@ -35,15 +36,15 @@ func (m *MockBlockStore) EXPECT() *MockBlockStoreMockRecorder {
 }
 
 // Add mocks base method.
-func (m *MockBlockStore) Add(arg0 entities.Block) error {
+func (m *MockBlockStore) Add(arg0 context.Context, arg1 entities.Block) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Add", arg0)
+	ret := m.ctrl.Call(m, "Add", arg0, arg1)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Add indicates an expected call of Add.
-func (mr *MockBlockStoreMockRecorder) Add(arg0 interface{}) *gomock.Call {
+func (mr *MockBlockStoreMockRecorder) Add(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Add", reflect.TypeOf((*MockBlockStore)(nil).Add), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Add", reflect.TypeOf((*MockBlockStore)(nil).Add), arg0, arg1)
 }

@@ -20,7 +20,7 @@ type Ledger interface {
 }
 
 type AccountStore interface {
-	Obtain(a *entities.Account) error
+	Obtain(ctx context.Context, a *entities.Account) error
 }
 
 type BalanceStore interface {
@@ -62,8 +62,8 @@ func (t *TransferResponse) Types() []events.Type {
 	return []events.Type{events.TransferResponses}
 }
 
-func (t *TransferResponse) Push(evt events.Event) error {
-	ctx := context.Background()
+func (t *TransferResponse) Push(ctx context.Context, evt events.Event) error {
+
 	switch e := evt.(type) {
 	case TimeUpdateEvent:
 		t.vegaTime = e.Time()
@@ -74,23 +74,23 @@ func (t *TransferResponse) Push(evt events.Event) error {
 		err = t.balances.Flush(ctx)
 		return errors.Wrap(err, "flushing balances")
 	case TransferResponseEvent:
-		return t.consume(e)
+		return t.consume(ctx, e)
 	default:
 		return errors.Errorf("unknown event type %s", e.Type().String())
 	}
 }
 
-func (t *TransferResponse) consume(e TransferResponseEvent) error {
+func (t *TransferResponse) consume(ctx context.Context, e TransferResponseEvent) error {
 
 	var errs strings.Builder
 	for _, tr := range e.TransferResponses() {
 		for _, vle := range tr.Transfers {
-			if err := t.addLedgerEntry(vle, t.vegaTime); err != nil {
+			if err := t.addLedgerEntry(ctx, vle, t.vegaTime); err != nil {
 				errs.WriteString(fmt.Sprintf("couldn't add ledger entry: %v, error:%s\n", vle, err))
 			}
 		}
 		for _, vb := range tr.Balances {
-			if err := t.addBalance(vb, t.vegaTime); err != nil {
+			if err := t.addBalance(ctx, vb, t.vegaTime); err != nil {
 				errs.WriteString(fmt.Sprintf("couldn't add balance: %v, error:%s\n", vb, err))
 			}
 		}
@@ -103,8 +103,8 @@ func (t *TransferResponse) consume(e TransferResponseEvent) error {
 	return nil
 }
 
-func (t *TransferResponse) addBalance(vb *vega.TransferBalance, vegaTime time.Time) error {
-	acc, err := t.obtainAccountWithProto(vb.Account, vegaTime)
+func (t *TransferResponse) addBalance(ctx context.Context, vb *vega.TransferBalance, vegaTime time.Time) error {
+	acc, err := t.obtainAccountWithProto(ctx, vb.Account, vegaTime)
 	if err != nil {
 		return errors.Wrap(err, "obtaining account")
 	}
@@ -127,13 +127,13 @@ func (t *TransferResponse) addBalance(vb *vega.TransferBalance, vegaTime time.Ti
 	return nil
 }
 
-func (t *TransferResponse) addLedgerEntry(vle *vega.LedgerEntry, vegaTime time.Time) error {
-	accFrom, err := t.obtainAccountWithID(vle.FromAccount, vegaTime)
+func (t *TransferResponse) addLedgerEntry(ctx context.Context, vle *vega.LedgerEntry, vegaTime time.Time) error {
+	accFrom, err := t.obtainAccountWithID(ctx, vle.FromAccount, vegaTime)
 	if err != nil {
 		return errors.Wrap(err, "obtaining 'from' account")
 	}
 
-	accTo, err := t.obtainAccountWithID(vle.ToAccount, vegaTime)
+	accTo, err := t.obtainAccountWithID(ctx, vle.ToAccount, vegaTime)
 	if err != nil {
 		return errors.Wrap(err, "obtaining 'to' account")
 	}
@@ -161,27 +161,27 @@ func (t *TransferResponse) addLedgerEntry(vle *vega.LedgerEntry, vegaTime time.T
 }
 
 // Parse the vega account ID; if that account already exists in the db, fetch it; else create it.
-func (t *TransferResponse) obtainAccountWithID(id string, vegaTime time.Time) (entities.Account, error) {
+func (t *TransferResponse) obtainAccountWithID(ctx context.Context, id string, vegaTime time.Time) (entities.Account, error) {
 	a, err := entities.AccountFromAccountID(id)
 	if err != nil {
 		return entities.Account{}, errors.Wrapf(err, "parsing account id: %s", id)
 	}
 	a.VegaTime = vegaTime
-	err = t.accounts.Obtain(&a)
+	err = t.accounts.Obtain(ctx, &a)
 	if err != nil {
 		return entities.Account{}, errors.Wrapf(err, "obtaining account for id: %s", id)
 	}
 	return a, nil
 }
 
-func (t *TransferResponse) obtainAccountWithProto(va *vega.Account, vegaTime time.Time) (entities.Account, error) {
+func (t *TransferResponse) obtainAccountWithProto(ctx context.Context, va *vega.Account, vegaTime time.Time) (entities.Account, error) {
 	a, err := entities.AccountFromProto(*va)
 	if err != nil {
 		return entities.Account{}, errors.Wrap(err, "obtaining account for balance")
 	}
 
 	a.VegaTime = vegaTime
-	err = t.accounts.Obtain(&a)
+	err = t.accounts.Obtain(ctx, &a)
 	if err != nil {
 		return entities.Account{}, errors.Wrap(err, "obtaining account")
 	}

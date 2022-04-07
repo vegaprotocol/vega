@@ -1,6 +1,7 @@
 package sqlsubscribers
 
 import (
+	"context"
 	"time"
 
 	"code.vegaprotocol.io/data-node/entities"
@@ -17,7 +18,7 @@ type MarketCreatedEvent interface {
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/markets_mock.go -package mocks code.vegaprotocol.io/data-node/sqlsubscribers MarketsStore
 type MarketsStore interface {
-	Upsert(*entities.Market) error
+	Upsert(context.Context, *entities.Market) error
 }
 
 type MarketCreated struct {
@@ -37,12 +38,12 @@ func (m *MarketCreated) Types() []events.Type {
 	return []events.Type{events.MarketCreatedEvent}
 }
 
-func (m *MarketCreated) Push(evt events.Event) error {
+func (m *MarketCreated) Push(ctx context.Context, evt events.Event) error {
 	switch e := evt.(type) {
 	case TimeUpdateEvent:
 		m.vegaTime = e.Time()
 	case MarketCreatedEvent:
-		return m.consume(e)
+		return m.consume(ctx, e)
 	default:
 		return errors.Errorf("unknown event type %s", e.Type().String())
 	}
@@ -50,7 +51,7 @@ func (m *MarketCreated) Push(evt events.Event) error {
 	return nil
 }
 
-func (m *MarketCreated) consume(event MarketCreatedEvent) error {
+func (m *MarketCreated) consume(ctx context.Context, event MarketCreatedEvent) error {
 	market := event.Market()
 	record, err := entities.NewMarketFromProto(&market, m.vegaTime)
 
@@ -58,5 +59,5 @@ func (m *MarketCreated) consume(event MarketCreatedEvent) error {
 		return errors.Wrap(err, "converting market proto to database entity failed")
 	}
 
-	return errors.Wrap(m.store.Upsert(record), "inserting market to SQL store failed:%w")
+	return errors.Wrap(m.store.Upsert(ctx, record), "inserting market to SQL store failed:%w")
 }

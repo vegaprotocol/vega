@@ -47,9 +47,9 @@ func (l *NodeCommand) postRun(_ []string) error {
 			werr = append(werr, errors.Wrap(err, "error closing transfer response store in command."))
 		}
 	}
-	if l.sqlStore != nil {
-		if err := l.sqlStore.Stop(); err != nil {
-			werr = append(werr, errors.Wrap(err, "error closing embedded sql store in command"))
+	if l.embeddedPostgres != nil {
+		if err := l.embeddedPostgres.Stop(); err != nil {
+			werr = append(werr, errors.Wrap(err, "error closing embedded postgres in command"))
 		}
 	}
 	if l.pproffhandlr != nil {

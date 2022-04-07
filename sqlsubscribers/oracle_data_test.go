@@ -19,10 +19,10 @@ func TestOracleData_Push(t *testing.T) {
 
 	store := mocks.NewMockOracleDataStore(ctrl)
 
-	store.EXPECT().Add(gomock.Any()).Times(1)
+	store.EXPECT().Add(context.Background(), gomock.Any()).Times(1)
 	subscriber := sqlsubscribers.NewOracleData(store, logging.NewTestLogger())
-	subscriber.Push(events.NewTime(context.Background(), time.Now()))
-	subscriber.Push(events.NewOracleDataEvent(context.Background(), oraclespb.OracleData{
+	subscriber.Push(context.Background(), events.NewTime(context.Background(), time.Now()))
+	subscriber.Push(context.Background(), events.NewOracleDataEvent(context.Background(), oraclespb.OracleData{
 		PubKeys:        nil,
 		Data:           nil,
 		MatchedSpecIds: nil,

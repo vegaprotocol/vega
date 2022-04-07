@@ -1,6 +1,8 @@
 package sqlsubscribers
 
 import (
+	"context"
+
 	"code.vegaprotocol.io/data-node/entities"
 	"code.vegaprotocol.io/data-node/logging"
 	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
@@ -20,7 +22,7 @@ type ERC20MultiSigSignerRemovedEvent interface {
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/withdrawals_mock.go -package mocks code.vegaprotocol.io/data-node/sqlsubscribers WithdrawalStore
 type ERC20MultiSigSignerEventStore interface {
-	Add(e *entities.ERC20MultiSigSignerEvent) error
+	Add(ctx context.Context, e *entities.ERC20MultiSigSignerEvent) error
 }
 
 type ERC20MultiSigSignerEvent struct {
@@ -42,36 +44,36 @@ func (t *ERC20MultiSigSignerEvent) Types() []events.Type {
 	}
 }
 
-func (m *ERC20MultiSigSignerEvent) Push(evt events.Event) error {
+func (m *ERC20MultiSigSignerEvent) Push(ctx context.Context, evt events.Event) error {
 	switch e := evt.(type) {
 	case TimeUpdateEvent:
 		return nil // we have a timestamp in the event so we don't need to do anything here
 	case ERC20MultiSigSignerAddedEvent:
-		return m.consumeAddedEvent(e)
+		return m.consumeAddedEvent(ctx, e)
 	case ERC20MultiSigSignerRemovedEvent:
-		return m.consumeRemovedEvent(e)
+		return m.consumeRemovedEvent(ctx, e)
 	default:
 		return errors.Errorf("unknown event type %s", e.Type().String())
 	}
 }
 
-func (m *ERC20MultiSigSignerEvent) consumeAddedEvent(event ERC20MultiSigSignerAddedEvent) error {
+func (m *ERC20MultiSigSignerEvent) consumeAddedEvent(ctx context.Context, event ERC20MultiSigSignerAddedEvent) error {
 	e := event.Proto()
 	record, err := entities.ERC20MultiSigSignerEventFromAddedProto(&e)
 	if err != nil {
 		return errors.Wrap(err, "converting signer-added proto to database entity failed")
 	}
-	return m.store.Add(record)
+	return m.store.Add(ctx, record)
 }
 
-func (m *ERC20MultiSigSignerEvent) consumeRemovedEvent(event ERC20MultiSigSignerRemovedEvent) error {
+func (m *ERC20MultiSigSignerEvent) consumeRemovedEvent(ctx context.Context, event ERC20MultiSigSignerRemovedEvent) error {
 	e := event.Proto()
 	records, err := entities.ERC20MultiSigSignerEventFromRemovedProto(&e)
 	if err != nil {
 		return errors.Wrap(err, "converting signer-added proto to database entity failed")
 	}
 	for _, r := range records {
-		m.store.Add(r)
+		m.store.Add(ctx, r)
 	}
 	return nil
 }

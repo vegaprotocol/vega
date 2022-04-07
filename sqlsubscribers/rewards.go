@@ -41,12 +41,12 @@ func (rs *Reward) Types() []events.Type {
 	return []events.Type{events.RewardPayoutEvent}
 }
 
-func (rs *Reward) Push(evt events.Event) error {
+func (rs *Reward) Push(ctx context.Context, evt events.Event) error {
 	switch event := evt.(type) {
 	case TimeUpdateEvent:
 		rs.vegaTime = event.Time()
 	case RewardPayoutEvent:
-		return rs.consume(event)
+		return rs.consume(ctx, event)
 	default:
 		return errors.Errorf("unknown event type %s", event.Type().String())
 	}
@@ -54,7 +54,7 @@ func (rs *Reward) Push(evt events.Event) error {
 	return nil
 }
 
-func (rs *Reward) consume(event RewardPayoutEvent) error {
+func (rs *Reward) consume(ctx context.Context, event RewardPayoutEvent) error {
 	protoRewardPayoutEvent := event.RewardPayoutEvent()
 	reward, err := entities.RewardFromProto(protoRewardPayoutEvent)
 	if err != nil {
@@ -66,5 +66,5 @@ func (rs *Reward) consume(event RewardPayoutEvent) error {
 			protoRewardPayoutEvent)
 	}
 
-	return errors.Wrap(rs.store.Add(context.Background(), reward), "error adding reward payout")
+	return errors.Wrap(rs.store.Add(ctx, reward), "error adding reward payout")
 }

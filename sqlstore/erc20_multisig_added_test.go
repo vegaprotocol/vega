@@ -22,13 +22,12 @@ func TestERC20MultiSigEvent(t *testing.T) {
 
 func setupERC20MultiSigEventStoreTests(t *testing.T, ctx context.Context) (*sqlstore.ERC20MultiSigSignerEvent, *pgx.Conn) {
 	t.Helper()
-	err := testStore.DeleteEverything()
-	require.NoError(t, err)
-	ms := sqlstore.NewERC20MultiSigSignerEvent(testStore)
+	DeleteEverything()
+	ms := sqlstore.NewERC20MultiSigSignerEvent(connectionSource)
 
 	config := NewTestConfig(testDBPort)
 
-	conn, err := pgx.Connect(ctx, connectionString(config))
+	conn, err := pgx.Connect(ctx, connectionString(config.ConnectionConfig))
 	require.NoError(t, err)
 
 	return ms, conn
@@ -48,7 +47,7 @@ func testAddSigner(t *testing.T) {
 	assert.Equal(t, 0, rowCount)
 
 	sa := getTestSignerEvent(t, "fc677151d0c93726", vgcrypto.RandomHash(), "12", true)
-	err = ms.Add(sa)
+	err = ms.Add(ctx, sa)
 	require.NoError(t, err)
 
 	err = conn.QueryRow(ctx, `select count(*) from erc20_multisig_signer_events`).Scan(&rowCount)
@@ -56,7 +55,7 @@ func testAddSigner(t *testing.T) {
 	assert.Equal(t, 1, rowCount)
 
 	// now add a duplicate and check we still remain with one
-	err = ms.Add(sa)
+	err = ms.Add(ctx, sa)
 	require.NoError(t, err)
 
 	err = conn.QueryRow(ctx, `select count(*) from erc20_multisig_signer_events`).Scan(&rowCount)
@@ -79,15 +78,15 @@ func testGetWithFilters(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, 0, rowCount)
 
-	err = ms.Add(getTestSignerEvent(t, vID1, vgcrypto.RandomHash(), "12", true))
+	err = ms.Add(ctx, getTestSignerEvent(t, vID1, vgcrypto.RandomHash(), "12", true))
 	require.NoError(t, err)
 
 	// same validator different epoch
-	err = ms.Add(getTestSignerEvent(t, vID1, vgcrypto.RandomHash(), "24", true))
+	err = ms.Add(ctx, getTestSignerEvent(t, vID1, vgcrypto.RandomHash(), "24", true))
 	require.NoError(t, err)
 
 	// same epoch different validator
-	err = ms.Add(getTestSignerEvent(t, vID2, vgcrypto.RandomHash(), "12", true))
+	err = ms.Add(ctx, getTestSignerEvent(t, vID2, vgcrypto.RandomHash(), "12", true))
 	require.NoError(t, err)
 
 	res, err := ms.GetAddedEvents(ctx, vID1, nil, entities.Pagination{})
@@ -121,15 +120,15 @@ func testGetWithAddAndRemoveEvents(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, 0, rowCount)
 
-	err = ms.Add(getTestSignerEvent(t, vID1, vgcrypto.RandomHash(), "12", true))
+	err = ms.Add(ctx, getTestSignerEvent(t, vID1, vgcrypto.RandomHash(), "12", true))
 	require.NoError(t, err)
 
 	// same validator different epoch
-	err = ms.Add(getTestSignerEvent(t, vID1, submitter, "24", false))
+	err = ms.Add(ctx, getTestSignerEvent(t, vID1, submitter, "24", false))
 	require.NoError(t, err)
 
 	// same epoch different validator
-	err = ms.Add(getTestSignerEvent(t, vID2, vgcrypto.RandomHash(), "12", true))
+	err = ms.Add(ctx, getTestSignerEvent(t, vID2, vgcrypto.RandomHash(), "12", true))
 	require.NoError(t, err)
 
 	res, err := ms.GetAddedEvents(ctx, vID1, nil, entities.Pagination{})

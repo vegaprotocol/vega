@@ -210,7 +210,7 @@ func NewTestServer(t testing.TB, ctx context.Context, blocking bool) *TestServer
 		t.Fatalf("failed to create chain info store: %v", err)
 	}
 
-	sqlStore := sqlstore.SQLStore{}
+	sqlStore := sqlstore.ConnectionSource{}
 	sqlBalanceStore := sqlstore.NewBalances(&sqlStore)
 	sqlMarketDataStore := sqlstore.NewMarketData(&sqlStore)
 

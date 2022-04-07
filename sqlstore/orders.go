@@ -9,13 +9,13 @@ import (
 )
 
 type Orders struct {
-	*SQLStore
+	*ConnectionSource
 	batcher MapBatcher[entities.OrderKey, entities.Order]
 }
 
-func NewOrders(sqlStore *SQLStore) *Orders {
+func NewOrders(connectionSource *ConnectionSource) *Orders {
 	a := &Orders{
-		SQLStore: sqlStore,
+		ConnectionSource: connectionSource,
 		batcher: NewMapBatcher[entities.OrderKey, entities.Order](
 			"orders",
 			entities.OrderColumns),
@@ -24,14 +24,14 @@ func NewOrders(sqlStore *SQLStore) *Orders {
 }
 
 func (os *Orders) Flush(ctx context.Context) error {
-	return os.batcher.Flush(ctx, os.pool)
+	return os.batcher.Flush(ctx, os.Connection)
 }
 
 // Add inserts an order update row into the database if an row for this (block time, order id, version)
 // does not already exist; otherwise update the existing row with information supplied.
 // Currently we only store the last update to an order per block, so the order history is not
 // complete if multiple updates happen in one block.
-func (os *Orders) Add(ctx context.Context, o entities.Order) error {
+func (os *Orders) Add(o entities.Order) error {
 	os.batcher.Add(o)
 	return nil
 }
@@ -39,7 +39,7 @@ func (os *Orders) Add(ctx context.Context, o entities.Order) error {
 // GetAll returns all updates to all orders (including changes to orders that don't increment the version number)
 func (os *Orders) GetAll(ctx context.Context) ([]entities.Order, error) {
 	orders := []entities.Order{}
-	err := pgxscan.Select(ctx, os.pool, &orders, `
+	err := pgxscan.Select(ctx, os.Connection, &orders, `
 		SELECT * from orders;`)
 	return orders, err
 }
@@ -51,9 +51,9 @@ func (os *Orders) GetByOrderID(ctx context.Context, orderIdStr string, version *
 	orderId := entities.NewOrderID(orderIdStr)
 
 	if version != nil && *version > 0 {
-		err = pgxscan.Get(ctx, os.pool, &order, `SELECT * FROM orders_current_versions WHERE id=$1 and version=$2`, orderId, version)
+		err = pgxscan.Get(ctx, os.Connection, &order, `SELECT * FROM orders_current_versions WHERE id=$1 and version=$2`, orderId, version)
 	} else {
-		err = pgxscan.Get(ctx, os.pool, &order, `SELECT * FROM orders_current WHERE id=$1`, orderId)
+		err = pgxscan.Get(ctx, os.Connection, &order, `SELECT * FROM orders_current WHERE id=$1`, orderId)
 	}
 	return order, err
 }
@@ -110,7 +110,7 @@ func (os *Orders) queryOrders(ctx context.Context, query string, args []interfac
 	}
 
 	orders := []entities.Order{}
-	err := pgxscan.Select(ctx, os.pool, &orders, query, args...)
+	err := pgxscan.Select(ctx, os.Connection, &orders, query, args...)
 	if err != nil {
 		return nil, fmt.Errorf("querying orders: %w", err)
 	}

@@ -44,12 +44,12 @@ func (vs *Vote) Types() []events.Type {
 	return []events.Type{events.VoteEvent}
 }
 
-func (vs *Vote) Push(evt events.Event) error {
+func (vs *Vote) Push(ctx context.Context, evt events.Event) error {
 	switch event := evt.(type) {
 	case TimeUpdateEvent:
 		vs.vegaTime = event.Time()
 	case VoteEvent:
-		return vs.consume(event)
+		return vs.consume(ctx, event)
 	default:
 		return errors.Errorf("unknown event type %s", event.Type().String())
 	}
@@ -57,7 +57,7 @@ func (vs *Vote) Push(evt events.Event) error {
 	return nil
 }
 
-func (vs *Vote) consume(event VoteEvent) error {
+func (vs *Vote) consume(ctx context.Context, event VoteEvent) error {
 	protoVote := event.Vote()
 	vote, err := entities.VoteFromProto(&protoVote)
 
@@ -70,5 +70,5 @@ func (vs *Vote) consume(event VoteEvent) error {
 		return errors.Wrap(err, "unable to parse vote")
 	}
 
-	return errors.Wrap(vs.store.Add(context.Background(), vote), "error adding vote:%w")
+	return errors.Wrap(vs.store.Add(ctx, vote), "error adding vote:%w")
 }

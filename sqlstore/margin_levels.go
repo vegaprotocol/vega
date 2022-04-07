@@ -9,17 +9,19 @@ import (
 )
 
 type MarginLevels struct {
-	*SQLStore
-	batcher MapBatcher[entities.MarginLevelsKey, entities.MarginLevels]
+	*ConnectionSource
+	columns      []string
+	marginLevels []*entities.MarginLevels
+	batcher      MapBatcher[entities.MarginLevelsKey, entities.MarginLevels]
 }
 
 const (
 	sqlMarginLevelColumns = `market_id,asset_id,party_id,timestamp,maintenance_margin,search_level,initial_margin,collateral_release_level,vega_time`
 )
 
-func NewMarginLevels(sqlStore *SQLStore) *MarginLevels {
+func NewMarginLevels(connectionSource *ConnectionSource) *MarginLevels {
 	return &MarginLevels{
-		SQLStore: sqlStore,
+		ConnectionSource: connectionSource,
 		batcher: NewMapBatcher[entities.MarginLevelsKey, entities.MarginLevels](
 			"margin_levels",
 			entities.MarginLevelsColumns),
@@ -32,9 +34,7 @@ func (ml *MarginLevels) Add(marginLevel entities.MarginLevels) error {
 }
 
 func (ml *MarginLevels) Flush(ctx context.Context) error {
-	timeoutCtx, cancel := context.WithTimeout(ctx, ml.conf.Timeout.Duration)
-	defer cancel()
-	return ml.batcher.Flush(timeoutCtx, ml.pool)
+	return ml.batcher.Flush(ctx, ml.pool)
 }
 
 func (ml *MarginLevels) GetMarginLevelsByID(ctx context.Context, partyID, marketID string, pagination entities.Pagination) ([]entities.MarginLevels, error) {
@@ -72,7 +72,7 @@ func (ml *MarginLevels) GetMarginLevelsByID(ctx context.Context, partyID, market
 		whereClause)
 
 	query, bindVars = orderAndPaginateQuery(query, nil, pagination, bindVars...)
-	err := pgxscan.Select(ctx, ml.pool, &marginLevels, query, bindVars...)
+	err := pgxscan.Select(ctx, ml.Connection, &marginLevels, query, bindVars...)
 
 	return marginLevels, err
 }

@@ -33,14 +33,14 @@ func addTestLedgerEntry(t *testing.T, ledger *sqlstore.Ledger,
 }
 
 func TestLedger(t *testing.T) {
-	defer testStore.DeleteEverything()
+	defer DeleteEverything()
 	ctx := context.Background()
 
-	blockStore := sqlstore.NewBlocks(testStore)
-	assetStore := sqlstore.NewAssets(testStore)
-	accountStore := sqlstore.NewAccounts(testStore)
-	partyStore := sqlstore.NewParties(testStore)
-	ledgerStore := sqlstore.NewLedger(testStore)
+	blockStore := sqlstore.NewBlocks(connectionSource)
+	assetStore := sqlstore.NewAssets(connectionSource)
+	accountStore := sqlstore.NewAccounts(connectionSource)
+	partyStore := sqlstore.NewParties(connectionSource)
+	ledgerStore := sqlstore.NewLedger(connectionSource)
 
 	// Account store should be empty to begin with
 	ledgerEntries, err := ledgerStore.GetAll()

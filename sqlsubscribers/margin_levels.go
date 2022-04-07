@@ -39,11 +39,11 @@ func (ml *MarginLevels) Types() []events.Type {
 	return []events.Type{events.MarginLevelsEvent}
 }
 
-func (ml *MarginLevels) Push(evt events.Event) error {
+func (ml *MarginLevels) Push(ctx context.Context, evt events.Event) error {
 	switch e := evt.(type) {
 	case TimeUpdateEvent:
 		ml.vegaTime = e.Time()
-		err := ml.store.Flush(e.Context())
+		err := ml.store.Flush(ctx)
 		if err != nil {
 			ml.log.Error("inserting margin level events to Postgres failed", logging.Error(err))
 		}

@@ -8,18 +8,18 @@ import (
 )
 
 type NetworkParameters struct {
-	*SQLStore
+	*ConnectionSource
 }
 
-func NewNetworkParameters(sqlStore *SQLStore) *NetworkParameters {
+func NewNetworkParameters(connectionSource *ConnectionSource) *NetworkParameters {
 	p := &NetworkParameters{
-		SQLStore: sqlStore,
+		ConnectionSource: connectionSource,
 	}
 	return p
 }
 
 func (ps *NetworkParameters) Add(ctx context.Context, r entities.NetworkParameter) error {
-	_, err := ps.pool.Exec(ctx,
+	_, err := ps.Connection.Exec(ctx,
 		`INSERT INTO network_parameters(
 			key,
 			value,
@@ -35,6 +35,6 @@ func (ps *NetworkParameters) Add(ctx context.Context, r entities.NetworkParamete
 func (np *NetworkParameters) GetAll(ctx context.Context) ([]entities.NetworkParameter, error) {
 	var nps []entities.NetworkParameter
 	query := `SELECT DISTINCT ON (key) * FROM network_parameters ORDER BY key, vega_time DESC`
-	err := pgxscan.Select(ctx, np.pool, &nps, query)
+	err := pgxscan.Select(ctx, np.Connection, &nps, query)
 	return nps, err
 }

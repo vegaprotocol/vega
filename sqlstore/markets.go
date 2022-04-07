@@ -9,7 +9,7 @@ import (
 )
 
 type Markets struct {
-	*SQLStore
+	*ConnectionSource
 }
 
 const (
@@ -18,16 +18,13 @@ const (
 		trading_mode, state, market_timestamps, position_decimal_places`
 )
 
-func NewMarkets(sqlStore *SQLStore) *Markets {
+func NewMarkets(connectionSource *ConnectionSource) *Markets {
 	return &Markets{
-		SQLStore: sqlStore,
+		ConnectionSource: connectionSource,
 	}
 }
 
-func (m *Markets) Upsert(market *entities.Market) error {
-	ctx, cancel := context.WithTimeout(context.Background(), m.conf.Timeout.Duration)
-	defer cancel()
-
+func (m *Markets) Upsert(ctx context.Context, market *entities.Market) error {
 	query := fmt.Sprintf(`insert into markets(%s) 
 values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
 on conflict (id, vega_time) do update
@@ -44,7 +41,7 @@ set
 	market_timestamps=EXCLUDED.market_timestamps,
 	position_decimal_places=EXCLUDED.position_decimal_places;`, sqlMarketsColumns)
 
-	if _, err := m.pool.Exec(ctx, query, market.ID, market.VegaTime, market.InstrumentID, market.TradableInstrument, market.DecimalPlaces,
+	if _, err := m.Connection.Exec(ctx, query, market.ID, market.VegaTime, market.InstrumentID, market.TradableInstrument, market.DecimalPlaces,
 		market.Fees, market.OpeningAuction, market.PriceMonitoringSettings, market.LiquidityMonitoringParameters,
 		market.TradingMode, market.State, market.MarketTimestamps, market.PositionDecimalPlaces); err != nil {
 		err = fmt.Errorf("could not insert market into database: %w", err)
@@ -62,7 +59,7 @@ from markets
 where id = $1
 order by id, vega_time desc
 `, sqlMarketsColumns)
-	err := pgxscan.Get(ctx, m.pool, &market, query, entities.NewMarketID(marketID))
+	err := pgxscan.Get(ctx, m.Connection, &market, query, entities.NewMarketID(marketID))
 
 	return market, err
 }
@@ -76,7 +73,7 @@ order by id, vega_time desc
 
 	query, _ = orderAndPaginateQuery(query, nil, pagination)
 
-	err := pgxscan.Select(ctx, m.pool, &markets, query)
+	err := pgxscan.Select(ctx, m.Connection, &markets, query)
 
 	return markets, err
 }

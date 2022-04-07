@@ -20,10 +20,10 @@ func TestRiskFactor_Push(t *testing.T) {
 
 	store := mocks.NewMockRiskFactorStore(ctrl)
 
-	store.EXPECT().Upsert(gomock.Any()).Times(1)
+	store.EXPECT().Upsert(context.Background(), gomock.Any()).Times(1)
 	subscriber := sqlsubscribers.NewRiskFactor(store, logging.NewTestLogger())
-	subscriber.Push(events.NewTime(context.Background(), time.Now()))
-	subscriber.Push(events.NewRiskFactorEvent(context.Background(), types.RiskFactor{
+	subscriber.Push(context.Background(), events.NewTime(context.Background(), time.Now()))
+	subscriber.Push(context.Background(), events.NewRiskFactorEvent(context.Background(), types.RiskFactor{
 		Market: "deadbeef",
 		Short:  num.DecimalFromInt64(1000),
 		Long:   num.DecimalFromInt64(1000),

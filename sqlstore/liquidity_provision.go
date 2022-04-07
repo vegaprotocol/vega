@@ -10,7 +10,7 @@ import (
 )
 
 type LiquidityProvision struct {
-	*SQLStore
+	*ConnectionSource
 	batcher MapBatcher[entities.LiquidityProvisionKey, entities.LiquidityProvision]
 }
 
@@ -19,21 +19,19 @@ const (
 		commitment_amount, fee, sells, buys, version, status, reference, vega_time`
 )
 
-func NewLiquidityProvision(sqlStore *SQLStore) *LiquidityProvision {
+func NewLiquidityProvision(connectionSource *ConnectionSource) *LiquidityProvision {
 	return &LiquidityProvision{
-		SQLStore: sqlStore,
+		ConnectionSource: connectionSource,
 		batcher: NewMapBatcher[entities.LiquidityProvisionKey, entities.LiquidityProvision](
 			"liquidity_provisions", entities.LiquidityProvisionColumns),
 	}
 }
 
 func (lp *LiquidityProvision) Flush(ctx context.Context) error {
-	ctx, cancel := context.WithTimeout(context.Background(), lp.conf.Timeout.Duration)
-	defer cancel()
 	return lp.batcher.Flush(ctx, lp.pool)
 }
 
-func (lp *LiquidityProvision) Upsert(liquidityProvision entities.LiquidityProvision) error {
+func (lp *LiquidityProvision) Upsert(ctx context.Context, liquidityProvision entities.LiquidityProvision) error {
 	lp.batcher.Add(liquidityProvision)
 	return nil
 }
@@ -70,6 +68,6 @@ order by id, vega_time desc`, selectSql, where)
 
 	var liquidityProvisions []entities.LiquidityProvision
 
-	err := pgxscan.Select(ctx, lp.pool, &liquidityProvisions, query, bindVars...)
+	err := pgxscan.Select(ctx, lp.Connection, &liquidityProvisions, query, bindVars...)
 	return liquidityProvisions, err
 }

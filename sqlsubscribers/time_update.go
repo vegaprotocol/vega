@@ -1,6 +1,7 @@
 package sqlsubscribers
 
 import (
+	"context"
 	"encoding/hex"
 	"time"
 
@@ -17,12 +18,13 @@ type TimeUpdateEvent interface {
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/time_update_mock.go -package mocks code.vegaprotocol.io/data-node/sqlsubscribers BlockStore
 type BlockStore interface {
-	Add(entities.Block) error
+	Add(context.Context, entities.Block) error
 }
 
 type Time struct {
-	store BlockStore
-	log   *logging.Logger
+	store     BlockStore
+	log       *logging.Logger
+	lastBlock *entities.Block
 }
 
 func NewTimeSub(
@@ -40,16 +42,16 @@ func (t *Time) Types() []events.Type {
 	return []events.Type{events.TimeUpdate}
 }
 
-func (t *Time) Push(evt events.Event) error {
+func (t *Time) Push(ctx context.Context, evt events.Event) error {
 	switch et := evt.(type) {
 	case TimeUpdateEvent:
-		return t.consume(et)
+		return t.consume(ctx, et)
 	default:
 		return errors.Errorf("unknown event type %s", et.Type().String())
 	}
 }
 
-func (t *Time) consume(te TimeUpdateEvent) error {
+func (t *Time) consume(ctx context.Context, te TimeUpdateEvent) error {
 	hash, err := hex.DecodeString(te.TraceID())
 	if err != nil {
 		t.log.Panic("Trace ID is not valid hex string",
@@ -63,10 +65,14 @@ func (t *Time) consume(te TimeUpdateEvent) error {
 		Height:   te.BlockNr(),
 	}
 
-	//@Todo figure out why still getting dup key violation on this at startup:return errors.Wrap(t.store.Add(block), "error adding block")
-	err = t.store.Add(block)
-	if err != nil {
-		t.log.Errorf("error adding block:%s", err)
+	// At startup we get time updates that have the same time to microsecond precision which causes
+	// a primary key restraint failure, this code is to handle this scenario
+	if t.lastBlock == nil || !block.VegaTime.Equal(t.lastBlock.VegaTime) {
+		t.lastBlock = &block
+		err = t.store.Add(ctx, block)
+		if err != nil {
+			return errors.Wrap(err, "failed to add block")
+		}
 	}
 
 	return nil

@@ -1,6 +1,7 @@
 package entities
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -10,7 +11,7 @@ import (
 )
 
 type AccountSource interface {
-	Obtain(a *Account) error
+	Obtain(ctx context.Context, a *Account) error
 	GetByID(id int64) (Account, error)
 }
 
@@ -84,7 +85,7 @@ func (t *Transfer) ToProto(accountSource AccountSource) (*eventspb.Transfer, err
 	return &proto, nil
 }
 
-func TransferFromProto(t *eventspb.Transfer, vegaTime time.Time, accountSource AccountSource) (*Transfer, error) {
+func TransferFromProto(ctx context.Context, t *eventspb.Transfer, vegaTime time.Time, accountSource AccountSource) (*Transfer, error) {
 
 	fromAcc := Account{
 		ID:       0,
@@ -95,7 +96,7 @@ func TransferFromProto(t *eventspb.Transfer, vegaTime time.Time, accountSource A
 		VegaTime: vegaTime,
 	}
 
-	err := accountSource.Obtain(&fromAcc)
+	err := accountSource.Obtain(ctx, &fromAcc)
 
 	if err != nil {
 		return nil, fmt.Errorf("obtaining from account id for transfer:%w", err)
@@ -110,7 +111,7 @@ func TransferFromProto(t *eventspb.Transfer, vegaTime time.Time, accountSource A
 		VegaTime: vegaTime,
 	}
 
-	err = accountSource.Obtain(&toAcc)
+	err = accountSource.Obtain(ctx, &toAcc)
 
 	if err != nil {
 		return nil, fmt.Errorf("obtaining to account id for transfer:%w", err)

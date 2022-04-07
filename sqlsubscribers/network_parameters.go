@@ -41,12 +41,12 @@ func (n *NetworkParameter) Types() []events.Type {
 	return []events.Type{events.NetworkParameterEvent}
 }
 
-func (n *NetworkParameter) Push(evt events.Event) error {
+func (n *NetworkParameter) Push(ctx context.Context, evt events.Event) error {
 	switch event := evt.(type) {
 	case TimeUpdateEvent:
 		n.vegaTime = event.Time()
 	case NetworkParameterEvent:
-		return n.consume(event)
+		return n.consume(ctx, event)
 	default:
 		return errors.Errorf("unknown event type %s", event.Type().String())
 	}
@@ -54,7 +54,7 @@ func (n *NetworkParameter) Push(evt events.Event) error {
 	return nil
 }
 
-func (n *NetworkParameter) consume(event NetworkParameterEvent) error {
+func (n *NetworkParameter) consume(ctx context.Context, event NetworkParameterEvent) error {
 	pnp := event.NetworkParameter()
 	np, err := entities.NetworkParameterFromProto(&pnp)
 	if err != nil {
@@ -62,5 +62,5 @@ func (n *NetworkParameter) consume(event NetworkParameterEvent) error {
 	}
 	np.VegaTime = n.vegaTime
 
-	return errors.Wrap(n.store.Add(context.Background(), np), "error adding networkParameter")
+	return errors.Wrap(n.store.Add(ctx, np), "error adding networkParameter")
 }

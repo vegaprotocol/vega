@@ -41,12 +41,12 @@ func (ds *Delegation) Types() []events.Type {
 	return []events.Type{events.DelegationBalanceEvent}
 }
 
-func (ds *Delegation) Push(e events.Event) error {
+func (ds *Delegation) Push(ctx context.Context, e events.Event) error {
 	switch event := e.(type) {
 	case TimeUpdateEvent:
 		ds.vegaTime = event.Time()
 	case DelegationBalanceEvent:
-		return ds.consume(event)
+		return ds.consume(ctx, event)
 	default:
 		return errors.Errorf("unknown event type %s", e.Type().String())
 	}
@@ -54,7 +54,7 @@ func (ds *Delegation) Push(e events.Event) error {
 	return nil
 }
 
-func (ds *Delegation) consume(event DelegationBalanceEvent) error {
+func (ds *Delegation) consume(ctx context.Context, event DelegationBalanceEvent) error {
 	protoDBE := event.Proto()
 	delegation, err := entities.DelegationFromProto(&protoDBE)
 	if err != nil {
@@ -63,7 +63,7 @@ func (ds *Delegation) consume(event DelegationBalanceEvent) error {
 
 	delegation.VegaTime = ds.vegaTime
 
-	if err := ds.store.Add(context.Background(), delegation); err != nil {
+	if err := ds.store.Add(ctx, delegation); err != nil {
 		return errors.Wrap(err, "error adding delegation")
 	}
 

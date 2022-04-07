@@ -15,14 +15,14 @@ import (
 
 func TestTransfers_GetTransfersFromPartyAndGetToParty(t *testing.T) {
 
-	defer testStore.DeleteEverything()
+	defer DeleteEverything()
 
 	now := time.Now()
 	block := getTestBlock(t, now)
-	accounts := sqlstore.NewAccounts(testStore)
+	accounts := sqlstore.NewAccounts(connectionSource)
 	accountFrom, accountTo := getTestAccounts(t, accounts, block)
 
-	transfers := sqlstore.NewTransfers(testStore)
+	transfers := sqlstore.NewTransfers(connectionSource)
 
 	testTimeout := time.Second * 10
 	ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
@@ -46,8 +46,8 @@ func TestTransfers_GetTransfersFromPartyAndGetToParty(t *testing.T) {
 		}},
 	}
 
-	transfer, _ := entities.TransferFromProto(sourceTransferProto, block.VegaTime, accounts)
-	transfers.Upsert(transfer)
+	transfer, _ := entities.TransferFromProto(context.Background(), sourceTransferProto, block.VegaTime, accounts)
+	transfers.Upsert(context.Background(), transfer)
 
 	sourceTransferProto2 := &eventspb.Transfer{
 		Id:              "deadd0d0",
@@ -67,8 +67,8 @@ func TestTransfers_GetTransfersFromPartyAndGetToParty(t *testing.T) {
 		}},
 	}
 
-	transfer, _ = entities.TransferFromProto(sourceTransferProto2, block.VegaTime, accounts)
-	transfers.Upsert(transfer)
+	transfer, _ = entities.TransferFromProto(context.Background(), sourceTransferProto2, block.VegaTime, accounts)
+	transfers.Upsert(context.Background(), transfer)
 
 	retrieved, err := transfers.GetTransfersFromParty(ctx, accountFrom.PartyID)
 	if err != nil {
@@ -89,14 +89,14 @@ func TestTransfers_GetTransfersFromPartyAndGetToParty(t *testing.T) {
 }
 
 func TestTransfers_GetFromAccountAndGetToAccount(t *testing.T) {
-	defer testStore.DeleteEverything()
+	defer DeleteEverything()
 
 	now := time.Now()
 	block := getTestBlock(t, now)
-	accounts := sqlstore.NewAccounts(testStore)
+	accounts := sqlstore.NewAccounts(connectionSource)
 	accountFrom, accountTo := getTestAccounts(t, accounts, block)
 
-	transfers := sqlstore.NewTransfers(testStore)
+	transfers := sqlstore.NewTransfers(connectionSource)
 
 	testTimeout := time.Second * 10
 	ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
@@ -120,8 +120,8 @@ func TestTransfers_GetFromAccountAndGetToAccount(t *testing.T) {
 		}},
 	}
 
-	transfer, _ := entities.TransferFromProto(sourceTransferProto1, block.VegaTime, accounts)
-	transfers.Upsert(transfer)
+	transfer, _ := entities.TransferFromProto(context.Background(), sourceTransferProto1, block.VegaTime, accounts)
+	transfers.Upsert(context.Background(), transfer)
 
 	sourceTransferProto2 := &eventspb.Transfer{
 		Id:              "deadd0d1",
@@ -141,8 +141,8 @@ func TestTransfers_GetFromAccountAndGetToAccount(t *testing.T) {
 		}},
 	}
 
-	transfer, _ = entities.TransferFromProto(sourceTransferProto2, block.VegaTime, accounts)
-	transfers.Upsert(transfer)
+	transfer, _ = entities.TransferFromProto(context.Background(), sourceTransferProto2, block.VegaTime, accounts)
+	transfers.Upsert(context.Background(), transfer)
 
 	retrieved, _ := transfers.GetAll(ctx)
 	assert.Equal(t, 2, len(retrieved))
@@ -170,14 +170,14 @@ func TestTransfers_GetFromAccountAndGetToAccount(t *testing.T) {
 }
 
 func TestTransfers_UpdatesInDifferentBlocks(t *testing.T) {
-	defer testStore.DeleteEverything()
+	defer DeleteEverything()
 
 	now := time.Now()
 	block := getTestBlock(t, now)
-	accounts := sqlstore.NewAccounts(testStore)
+	accounts := sqlstore.NewAccounts(connectionSource)
 	accountFrom, accountTo := getTestAccounts(t, accounts, block)
 
-	transfers := sqlstore.NewTransfers(testStore)
+	transfers := sqlstore.NewTransfers(connectionSource)
 
 	testTimeout := time.Second * 10
 	ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
@@ -199,8 +199,8 @@ func TestTransfers_UpdatesInDifferentBlocks(t *testing.T) {
 		Kind:            &eventspb.Transfer_OneOff{OneOff: &eventspb.OneOffTransfer{DeliverOn: deliverOn.Unix()}},
 	}
 
-	transfer, _ := entities.TransferFromProto(sourceTransferProto, block.VegaTime, accounts)
-	transfers.Upsert(transfer)
+	transfer, _ := entities.TransferFromProto(context.Background(), sourceTransferProto, block.VegaTime, accounts)
+	transfers.Upsert(context.Background(), transfer)
 
 	block = getTestBlock(t, block.VegaTime.Add(1*time.Microsecond))
 	deliverOn = deliverOn.Add(1 * time.Minute)
@@ -217,8 +217,8 @@ func TestTransfers_UpdatesInDifferentBlocks(t *testing.T) {
 		Timestamp:       block.VegaTime.UnixNano(),
 		Kind:            &eventspb.Transfer_OneOff{OneOff: &eventspb.OneOffTransfer{DeliverOn: deliverOn.Unix()}},
 	}
-	transfer, _ = entities.TransferFromProto(sourceTransferProto, block.VegaTime, accounts)
-	transfers.Upsert(transfer)
+	transfer, _ = entities.TransferFromProto(context.Background(), sourceTransferProto, block.VegaTime, accounts)
+	transfers.Upsert(context.Background(), transfer)
 
 	retrieved, _ := transfers.GetAll(ctx)
 	assert.Equal(t, 1, len(retrieved))
@@ -228,14 +228,14 @@ func TestTransfers_UpdatesInDifferentBlocks(t *testing.T) {
 }
 
 func TestTransfers_UpdateInSameBlock(t *testing.T) {
-	defer testStore.DeleteEverything()
+	defer DeleteEverything()
 
 	now := time.Now()
 	block := getTestBlock(t, now)
-	accounts := sqlstore.NewAccounts(testStore)
+	accounts := sqlstore.NewAccounts(connectionSource)
 	accountFrom, accountTo := getTestAccounts(t, accounts, block)
 
-	transfers := sqlstore.NewTransfers(testStore)
+	transfers := sqlstore.NewTransfers(connectionSource)
 
 	testTimeout := time.Second * 10
 	ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
@@ -257,8 +257,8 @@ func TestTransfers_UpdateInSameBlock(t *testing.T) {
 		Kind:            &eventspb.Transfer_OneOff{OneOff: &eventspb.OneOffTransfer{DeliverOn: deliverOn.Unix()}},
 	}
 
-	transfer, _ := entities.TransferFromProto(sourceTransferProto, block.VegaTime, accounts)
-	transfers.Upsert(transfer)
+	transfer, _ := entities.TransferFromProto(context.Background(), sourceTransferProto, block.VegaTime, accounts)
+	transfers.Upsert(context.Background(), transfer)
 
 	deliverOn = deliverOn.Add(1 * time.Minute)
 	sourceTransferProto = &eventspb.Transfer{
@@ -274,8 +274,8 @@ func TestTransfers_UpdateInSameBlock(t *testing.T) {
 		Timestamp:       block.VegaTime.UnixNano(),
 		Kind:            &eventspb.Transfer_OneOff{OneOff: &eventspb.OneOffTransfer{DeliverOn: deliverOn.Unix()}},
 	}
-	transfer, _ = entities.TransferFromProto(sourceTransferProto, block.VegaTime, accounts)
-	transfers.Upsert(transfer)
+	transfer, _ = entities.TransferFromProto(context.Background(), sourceTransferProto, block.VegaTime, accounts)
+	transfers.Upsert(context.Background(), transfer)
 
 	retrieved, _ := transfers.GetAll(ctx)
 	assert.Equal(t, 1, len(retrieved))
@@ -285,14 +285,14 @@ func TestTransfers_UpdateInSameBlock(t *testing.T) {
 }
 
 func TestTransfers_AddAndRetrieveOneOffTransfer(t *testing.T) {
-	defer testStore.DeleteEverything()
+	defer DeleteEverything()
 
 	now := time.Now()
 	block := getTestBlock(t, now)
-	accounts := sqlstore.NewAccounts(testStore)
+	accounts := sqlstore.NewAccounts(connectionSource)
 	accountFrom, accountTo := getTestAccounts(t, accounts, block)
 
-	transfers := sqlstore.NewTransfers(testStore)
+	transfers := sqlstore.NewTransfers(connectionSource)
 
 	testTimeout := time.Second * 10
 	ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
@@ -314,8 +314,8 @@ func TestTransfers_AddAndRetrieveOneOffTransfer(t *testing.T) {
 		Kind:            &eventspb.Transfer_OneOff{OneOff: &eventspb.OneOffTransfer{DeliverOn: deliverOn.Unix()}},
 	}
 
-	transfer, _ := entities.TransferFromProto(sourceTransferProto, block.VegaTime, accounts)
-	transfers.Upsert(transfer)
+	transfer, _ := entities.TransferFromProto(context.Background(), sourceTransferProto, block.VegaTime, accounts)
+	transfers.Upsert(context.Background(), transfer)
 	retrieved, _ := transfers.GetAll(ctx)
 	assert.Equal(t, 1, len(retrieved))
 	retrievedTransferProto, _ := retrieved[0].ToProto(accounts)
@@ -324,14 +324,14 @@ func TestTransfers_AddAndRetrieveOneOffTransfer(t *testing.T) {
 }
 
 func TestTransfers_AddAndRetrieveRecurringTransfer(t *testing.T) {
-	defer testStore.DeleteEverything()
+	defer DeleteEverything()
 
 	now := time.Now()
 	block := getTestBlock(t, now)
-	accounts := sqlstore.NewAccounts(testStore)
+	accounts := sqlstore.NewAccounts(connectionSource)
 	accountFrom, accountTo := getTestAccounts(t, accounts, block)
 
-	transfers := sqlstore.NewTransfers(testStore)
+	transfers := sqlstore.NewTransfers(connectionSource)
 
 	testTimeout := time.Second * 10
 	ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
@@ -355,8 +355,8 @@ func TestTransfers_AddAndRetrieveRecurringTransfer(t *testing.T) {
 		}},
 	}
 
-	transfer, _ := entities.TransferFromProto(sourceTransferProto, block.VegaTime, accounts)
-	transfers.Upsert(transfer)
+	transfer, _ := entities.TransferFromProto(context.Background(), sourceTransferProto, block.VegaTime, accounts)
+	transfers.Upsert(context.Background(), transfer)
 
 	retrieved, _ := transfers.GetAll(ctx)
 	assert.Equal(t, 1, len(retrieved))
@@ -366,7 +366,7 @@ func TestTransfers_AddAndRetrieveRecurringTransfer(t *testing.T) {
 }
 
 func getTestBlock(t *testing.T, testTime time.Time) entities.Block {
-	blocks := sqlstore.NewBlocks(testStore)
+	blocks := sqlstore.NewBlocks(connectionSource)
 	vegaTime := time.UnixMicro(testTime.UnixMicro())
 	block := addTestBlockForTime(t, blocks, vegaTime)
 	return block
@@ -375,7 +375,7 @@ func getTestBlock(t *testing.T, testTime time.Time) entities.Block {
 func getTestAccounts(t *testing.T, accounts *sqlstore.Accounts, block entities.Block) (accountFrom entities.Account,
 	accountTo entities.Account) {
 
-	assets := sqlstore.NewAssets(testStore)
+	assets := sqlstore.NewAssets(connectionSource)
 
 	testAssetId := entities.AssetID{ID: entities.ID(generateID())}
 	testAsset := entities.Asset{
@@ -390,7 +390,7 @@ func getTestAccounts(t *testing.T, accounts *sqlstore.Accounts, block entities.B
 		VegaTime:      block.VegaTime,
 	}
 
-	err := assets.Add(testAsset)
+	err := assets.Add(context.Background(), testAsset)
 	if err != nil {
 		t.Fatalf("failed to add test asset:%s", err)
 	}
@@ -401,7 +401,7 @@ func getTestAccounts(t *testing.T, accounts *sqlstore.Accounts, block entities.B
 		Type:     vega.AccountType_ACCOUNT_TYPE_GLOBAL_REWARD,
 		VegaTime: block.VegaTime,
 	}
-	err = accounts.Obtain(&accountFrom)
+	err = accounts.Obtain(context.Background(), &accountFrom)
 	if err != nil {
 		t.Fatalf("failed to obtain from account:%s", err)
 	}
@@ -413,7 +413,7 @@ func getTestAccounts(t *testing.T, accounts *sqlstore.Accounts, block entities.B
 		Type:     vega.AccountType_ACCOUNT_TYPE_GENERAL,
 		VegaTime: block.VegaTime,
 	}
-	err = accounts.Obtain(&accountTo)
+	err = accounts.Obtain(context.Background(), &accountTo)
 	if err != nil {
 		t.Fatalf("failed to obtain to account:%s", err)
 	}

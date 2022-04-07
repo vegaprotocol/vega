@@ -21,10 +21,10 @@ func TestWithdrawal_Push(t *testing.T) {
 
 	store := mocks.NewMockWithdrawalStore(ctrl)
 
-	store.EXPECT().Upsert(gomock.Any()).Times(1)
+	store.EXPECT().Upsert(context.Background(), gomock.Any()).Times(1)
 	subscriber := sqlsubscribers.NewWithdrawal(store, logging.NewTestLogger())
-	subscriber.Push(events.NewTime(context.Background(), time.Now()))
-	subscriber.Push(events.NewWithdrawalEvent(context.Background(), types.Withdrawal{
+	subscriber.Push(context.Background(), events.NewTime(context.Background(), time.Now()))
+	subscriber.Push(context.Background(), events.NewWithdrawalEvent(context.Background(), types.Withdrawal{
 		ID:             "DEADBEEF",
 		PartyID:        "DEADBEEF",
 		Amount:         num.NewUint(1000),

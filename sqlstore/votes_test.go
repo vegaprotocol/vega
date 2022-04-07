@@ -46,11 +46,11 @@ func assertVotesMatch(t *testing.T, expected, actual []entities.Vote) {
 }
 
 func TestVotes(t *testing.T) {
-	defer testStore.DeleteEverything()
-	partyStore := sqlstore.NewParties(testStore)
-	propStore := sqlstore.NewProposals(testStore)
-	voteStore := sqlstore.NewVotes(testStore)
-	blockStore := sqlstore.NewBlocks(testStore)
+	defer DeleteEverything()
+	partyStore := sqlstore.NewParties(connectionSource)
+	propStore := sqlstore.NewProposals(connectionSource)
+	voteStore := sqlstore.NewVotes(connectionSource)
+	blockStore := sqlstore.NewBlocks(connectionSource)
 	block1 := addTestBlock(t, blockStore)
 	block2 := addTestBlock(t, blockStore)
 

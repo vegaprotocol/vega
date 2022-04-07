@@ -23,14 +23,13 @@ func TestMarginLevels(t *testing.T) {
 
 func setupMarginLevelTests(t *testing.T, ctx context.Context) (*sqlstore.Blocks, *sqlstore.MarginLevels, *pgx.Conn) {
 	t.Helper()
-	err := testStore.DeleteEverything()
-	require.NoError(t, err)
+	DeleteEverything()
 
-	bs := sqlstore.NewBlocks(testStore)
-	ml := sqlstore.NewMarginLevels(testStore)
+	bs := sqlstore.NewBlocks(connectionSource)
+	ml := sqlstore.NewMarginLevels(connectionSource)
 	config := NewTestConfig(testDBPort)
 
-	conn, err := pgx.Connect(ctx, connectionString(config))
+	conn, err := pgx.Connect(ctx, config.ConnectionConfig.GetConnectionString())
 	require.NoError(t, err)
 
 	return bs, ml, conn

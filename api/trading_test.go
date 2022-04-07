@@ -272,7 +272,7 @@ func getTestGRPCServer(
 
 	stakingService := staking.NewService(ctx, logger)
 
-	sqlStore := sqlstore.SQLStore{}
+	sqlStore := sqlstore.ConnectionSource{}
 	sqlBalanceStore := sqlstore.NewBalances(&sqlStore)
 	sqlOrderStore := sqlstore.NewOrders(&sqlStore)
 	sqlNetworkLimitsStore := sqlstore.NewNetworkLimits(&sqlStore)

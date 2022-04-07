@@ -23,11 +23,11 @@ func addTestParty(t *testing.T, ps *sqlstore.Parties, block entities.Block) enti
 }
 
 func TestParty(t *testing.T) {
-	defer testStore.DeleteEverything()
+	defer DeleteEverything()
 	ctx := context.Background()
-	ps := sqlstore.NewParties(testStore)
+	ps := sqlstore.NewParties(connectionSource)
 	ps.Initialise()
-	bs := sqlstore.NewBlocks(testStore)
+	bs := sqlstore.NewBlocks(connectionSource)
 	block := addTestBlock(t, bs)
 
 	// Make sure we're starting with an empty set of parties (except network party)

@@ -63,16 +63,15 @@ func Test_MarketData(t *testing.T) {
 }
 
 func shouldInsertAValidMarketDataRecord(t *testing.T) {
-	bs := sqlstore.NewBlocks(testStore)
-	md := sqlstore.NewMarketData(testStore)
+	bs := sqlstore.NewBlocks(connectionSource)
+	md := sqlstore.NewMarketData(connectionSource)
 
-	err := testStore.DeleteEverything()
-	require.NoError(t, err)
+	DeleteEverything()
 
 	config := sqlstore.NewDefaultConfig()
-	config.Port = testDBPort
+	config.ConnectionConfig.Port = testDBPort
 
-	connStr := connectionString(config)
+	connStr := connectionString(config.ConnectionConfig)
 
 	testTimeout := time.Second * 10
 	ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
@@ -106,15 +105,14 @@ func shouldInsertAValidMarketDataRecord(t *testing.T) {
 }
 
 func shouldErrorIfNoVegaBlock(t *testing.T) {
-	md := sqlstore.NewMarketData(testStore)
+	md := sqlstore.NewMarketData(connectionSource)
 
-	err := testStore.DeleteEverything()
-	require.NoError(t, err)
+	DeleteEverything()
 
 	config := sqlstore.NewDefaultConfig()
-	config.Port = testDBPort
+	config.ConnectionConfig.Port = testDBPort
 
-	connStr := connectionString(config)
+	connStr := connectionString(config.ConnectionConfig)
 
 	testTimeout := time.Second * 10
 	ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
@@ -144,7 +142,7 @@ func shouldErrorIfNoVegaBlock(t *testing.T) {
 	assert.Equal(t, 0, rowCount)
 }
 
-func connectionString(config sqlstore.Config) string {
+func connectionString(config sqlstore.ConnectionConfig) string {
 	return fmt.Sprintf("postgresql://%s:%s@%s:%d/%s",
 		config.Username,
 		config.Password,
@@ -295,11 +293,10 @@ func getForMarketToDate(t *testing.T) {
 func setupMarketData(t *testing.T) (*sqlstore.MarketData, error) {
 	t.Helper()
 
-	bs := sqlstore.NewBlocks(testStore)
-	md := sqlstore.NewMarketData(testStore)
+	bs := sqlstore.NewBlocks(connectionSource)
+	md := sqlstore.NewMarketData(connectionSource)
 
-	err := testStore.DeleteEverything()
-	require.NoError(t, err)
+	DeleteEverything()
 
 	f, err := os.Open(filepath.Join("testdata", "marketdata.csv"))
 	if err != nil {
@@ -333,7 +330,7 @@ func setupMarketData(t *testing.T) (*sqlstore.MarketData, error) {
 		}
 
 		// Add it to the database
-		_ = bs.Add(block)
+		_ = bs.Add(context.Background(), block)
 
 		err = md.Add(marketData)
 		require.NoError(t, err)

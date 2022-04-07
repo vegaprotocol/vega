@@ -9,18 +9,16 @@ import (
 )
 
 type ERC20MultiSigSignerEvent struct {
-	*SQLStore
+	*ConnectionSource
 }
 
-func NewERC20MultiSigSignerEvent(sqlStore *SQLStore) *ERC20MultiSigSignerEvent {
+func NewERC20MultiSigSignerEvent(connectionSource *ConnectionSource) *ERC20MultiSigSignerEvent {
 	return &ERC20MultiSigSignerEvent{
-		SQLStore: sqlStore,
+		ConnectionSource: connectionSource,
 	}
 }
 
-func (m *ERC20MultiSigSignerEvent) Add(e *entities.ERC20MultiSigSignerEvent) error {
-	ctx, cancel := context.WithTimeout(context.Background(), m.conf.Timeout.Duration)
-	defer cancel()
+func (m *ERC20MultiSigSignerEvent) Add(ctx context.Context, e *entities.ERC20MultiSigSignerEvent) error {
 
 	query := `INSERT INTO erc20_multisig_signer_events (id, validator_id, signer_change, submitter, nonce, event, vega_time, epoch_id)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)

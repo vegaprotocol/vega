@@ -13,17 +13,17 @@ import (
 var ErrPositionNotFound = errors.New("party not found")
 
 type Positions struct {
-	*SQLStore
+	*ConnectionSource
 	cache     map[entities.MarketID]map[entities.PartyID]entities.Position
 	cacheLock sync.Mutex
 	batcher   MapBatcher[entities.PositionKey, entities.Position]
 }
 
-func NewPositions(sqlStore *SQLStore) *Positions {
+func NewPositions(connectionSource *ConnectionSource) *Positions {
 	a := &Positions{
-		SQLStore:  sqlStore,
-		cache:     map[entities.MarketID]map[entities.PartyID]entities.Position{},
-		cacheLock: sync.Mutex{},
+		ConnectionSource: connectionSource,
+		cache:            map[entities.MarketID]map[entities.PartyID]entities.Position{},
+		cacheLock:        sync.Mutex{},
 		batcher: NewMapBatcher[entities.PositionKey, entities.Position](
 			"positions",
 			entities.PositionColumns),
@@ -55,7 +55,7 @@ func (ps *Positions) GetByMarketAndParty(ctx context.Context,
 		return position, nil
 	}
 
-	err := pgxscan.Get(ctx, ps.pool, &position,
+	err := pgxscan.Get(ctx, ps.Connection, &position,
 		`SELECT * FROM positions_current WHERE market_id=$1 AND party_id=$2`,
 		marketID, partyID)
 
@@ -72,7 +72,7 @@ func (ps *Positions) GetByMarketAndParty(ctx context.Context,
 
 func (ps *Positions) GetByMarket(ctx context.Context, marketID entities.MarketID) ([]entities.Position, error) {
 	positions := []entities.Position{}
-	err := pgxscan.Select(ctx, ps.pool, &positions,
+	err := pgxscan.Select(ctx, ps.Connection, &positions,
 		`SELECT * FROM positions_current WHERE market_id=$1`,
 		marketID)
 	return positions, err
@@ -80,7 +80,7 @@ func (ps *Positions) GetByMarket(ctx context.Context, marketID entities.MarketID
 
 func (ps *Positions) GetByParty(ctx context.Context, partyID entities.PartyID) ([]entities.Position, error) {
 	positions := []entities.Position{}
-	err := pgxscan.Select(ctx, ps.pool, &positions,
+	err := pgxscan.Select(ctx, ps.Connection, &positions,
 		`SELECT * FROM positions_current WHERE party_id=$1`,
 		partyID)
 	return positions, err
@@ -88,7 +88,7 @@ func (ps *Positions) GetByParty(ctx context.Context, partyID entities.PartyID) (
 
 func (ps *Positions) GetAll(ctx context.Context) ([]entities.Position, error) {
 	positions := []entities.Position{}
-	err := pgxscan.Select(ctx, ps.pool, &positions,
+	err := pgxscan.Select(ctx, ps.Connection, &positions,
 		`SELECT * FROM positions_current`)
 	return positions, err
 }

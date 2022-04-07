@@ -9,26 +9,24 @@ import (
 )
 
 type OracleData struct {
-	*SQLStore
+	*ConnectionSource
 }
 
 const (
 	sqlOracleDataColumns = `public_keys, data, matched_spec_ids, broadcast_at, vega_time`
 )
 
-func NewOracleData(sqlStore *SQLStore) *OracleData {
+func NewOracleData(connectionSource *ConnectionSource) *OracleData {
 	return &OracleData{
-		SQLStore: sqlStore,
+		ConnectionSource: connectionSource,
 	}
 }
 
-func (od *OracleData) Add(data *entities.OracleData) error {
-	ctx, cancel := context.WithTimeout(context.Background(), od.conf.Timeout.Duration)
-	defer cancel()
+func (od *OracleData) Add(ctx context.Context, data *entities.OracleData) error {
 
 	query := fmt.Sprintf("insert into oracle_data(%s) values ($1, $2, $3, $4, $5)", sqlOracleDataColumns)
 
-	if _, err := od.pool.Exec(ctx, query, data.PublicKeys, data.Data, data.MatchedSpecIds, data.BroadcastAt, data.VegaTime); err != nil {
+	if _, err := od.Connection.Exec(ctx, query, data.PublicKeys, data.Data, data.MatchedSpecIds, data.BroadcastAt, data.VegaTime); err != nil {
 		err = fmt.Errorf("could not insert oracle data into database: %w", err)
 		return err
 	}
@@ -46,7 +44,7 @@ func (od *OracleData) GetOracleDataBySpecID(ctx context.Context, id string, pagi
 	query, bindVars = orderAndPaginateQuery(query, nil, pagination, bindVars...)
 	var oracleData []entities.OracleData
 
-	err := pgxscan.Select(ctx, od.pool, &oracleData, query, bindVars...)
+	err := pgxscan.Select(ctx, od.Connection, &oracleData, query, bindVars...)
 
 	return oracleData, err
 }

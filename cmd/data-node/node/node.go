@@ -9,6 +9,7 @@ import (
 	"syscall"
 
 	"code.vegaprotocol.io/data-node/candlesv2"
+	embeddedpostgres "github.com/fergusstrange/embedded-postgres"
 
 	"code.vegaprotocol.io/data-node/api"
 
@@ -101,7 +102,9 @@ type NodeCommand struct {
 	chainInfoStore        *storage.ChainInfo
 	transferStore         *storage.Transfers
 
-	sqlStore                    *sqlstore.SQLStore
+	embeddedPostgres              *embeddedpostgres.EmbeddedPostgres
+	transactionalConnectionSource *sqlstore.ConnectionSource
+
 	assetStoreSQL               *sqlstore.Assets
 	blockStoreSQL               *sqlstore.Blocks
 	accountStoreSQL             *sqlstore.Accounts

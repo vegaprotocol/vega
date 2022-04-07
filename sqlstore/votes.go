@@ -10,18 +10,18 @@ import (
 )
 
 type Votes struct {
-	*SQLStore
+	*ConnectionSource
 }
 
-func NewVotes(sqlStore *SQLStore) *Votes {
+func NewVotes(connectionSource *ConnectionSource) *Votes {
 	d := &Votes{
-		SQLStore: sqlStore,
+		ConnectionSource: connectionSource,
 	}
 	return d
 }
 
 func (vs *Votes) Add(ctx context.Context, v entities.Vote) error {
-	_, err := vs.pool.Exec(ctx,
+	_, err := vs.Connection.Exec(ctx,
 		`INSERT INTO votes(
 			proposal_id,
 			party_id,
@@ -87,7 +87,7 @@ func (rs *Votes) Get(ctx context.Context,
 	}
 
 	votes := []entities.Vote{}
-	err := pgxscan.Select(ctx, rs.pool, &votes, query, args...)
+	err := pgxscan.Select(ctx, rs.Connection, &votes, query, args...)
 	if err != nil {
 		return nil, fmt.Errorf("querying votes: %w", err)
 	}

@@ -12,12 +12,12 @@ import (
 )
 
 func TestNetworkLimits(t *testing.T) {
-	defer testStore.DeleteEverything()
+	defer DeleteEverything()
 	ctx := context.Background()
-	bs := sqlstore.NewBlocks(testStore)
+	bs := sqlstore.NewBlocks(connectionSource)
 	block := addTestBlock(t, bs)
 	block2 := addTestBlock(t, bs)
-	nls := sqlstore.NewNetworkLimits(testStore)
+	nls := sqlstore.NewNetworkLimits(connectionSource)
 
 	nl := entities.NetworkLimits{
 		VegaTime:                 block.VegaTime,

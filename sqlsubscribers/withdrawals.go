@@ -1,6 +1,7 @@
 package sqlsubscribers
 
 import (
+	"context"
 	"time"
 
 	"code.vegaprotocol.io/data-node/entities"
@@ -17,7 +18,7 @@ type WithdrawalEvent interface {
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/withdrawals_mock.go -package mocks code.vegaprotocol.io/data-node/sqlsubscribers WithdrawalStore
 type WithdrawalStore interface {
-	Upsert(*entities.Withdrawal) error
+	Upsert(context.Context, *entities.Withdrawal) error
 }
 
 type Withdrawal struct {
@@ -37,12 +38,12 @@ func (w *Withdrawal) Types() []events.Type {
 	return []events.Type{events.WithdrawalEvent}
 }
 
-func (w *Withdrawal) Push(evt events.Event) error {
+func (w *Withdrawal) Push(ctx context.Context, evt events.Event) error {
 	switch e := evt.(type) {
 	case TimeUpdateEvent:
 		w.vegaTime = e.Time()
 	case WithdrawalEvent:
-		return w.consume(e)
+		return w.consume(ctx, e)
 	default:
 		return errors.Errorf("unknown event type %s", e.Type().String())
 	}
@@ -50,12 +51,12 @@ func (w *Withdrawal) Push(evt events.Event) error {
 	return nil
 }
 
-func (w *Withdrawal) consume(event WithdrawalEvent) error {
+func (w *Withdrawal) consume(ctx context.Context, event WithdrawalEvent) error {
 	withdrawal := event.Withdrawal()
 	record, err := entities.WithdrawalFromProto(&withdrawal, w.vegaTime)
 	if err != nil {
 		return errors.Wrap(err, "converting withdrawal proto to database entity failed")
 	}
 
-	return errors.Wrap(w.store.Upsert(record), "inserting withdrawal to SQL store failed")
+	return errors.Wrap(w.store.Upsert(ctx, record), "inserting withdrawal to SQL store failed")
 }

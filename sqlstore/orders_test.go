@@ -38,7 +38,7 @@ func addTestOrder(t *testing.T, os *sqlstore.Orders, id entities.OrderID, block 
 		SeqNum:          seqNum,
 	}
 
-	err := os.Add(context.Background(), order)
+	err := os.Add(order)
 	require.NoError(t, err)
 	return order
 }
@@ -46,10 +46,10 @@ func addTestOrder(t *testing.T, os *sqlstore.Orders, id entities.OrderID, block 
 const numTestOrders = 30
 
 func TestOrders(t *testing.T) {
-	defer testStore.DeleteEverything()
-	ps := sqlstore.NewParties(testStore)
-	os := sqlstore.NewOrders(testStore)
-	bs := sqlstore.NewBlocks(testStore)
+	defer DeleteEverything()
+	ps := sqlstore.NewParties(connectionSource)
+	os := sqlstore.NewOrders(connectionSource)
+	bs := sqlstore.NewBlocks(connectionSource)
 	block := addTestBlock(t, bs)
 	block2 := addTestBlock(t, bs)
 
@@ -100,7 +100,7 @@ func TestOrders(t *testing.T) {
 		if i%4 == 1 {
 			updatedOrder = order
 			updatedOrder.Remaining = 50
-			err = os.Add(context.Background(), updatedOrder)
+			err = os.Add(updatedOrder)
 			require.NoError(t, err)
 		}
 
@@ -109,7 +109,7 @@ func TestOrders(t *testing.T) {
 			updatedOrder = order
 			updatedOrder.Remaining = 25
 			updatedOrder.VegaTime = block2.VegaTime
-			err = os.Add(context.Background(), updatedOrder)
+			err = os.Add(updatedOrder)
 			require.NoError(t, err)
 			numOrdersUpdatedInDifferentBlock++
 		}
@@ -120,7 +120,7 @@ func TestOrders(t *testing.T) {
 			updatedOrder.Remaining = 10
 			updatedOrder.VegaTime = block2.VegaTime
 			updatedOrder.Version++
-			err = os.Add(context.Background(), updatedOrder)
+			err = os.Add(updatedOrder)
 			require.NoError(t, err)
 			numOrdersUpdatedInDifferentBlock++
 		}
@@ -229,7 +229,7 @@ func addTestMarket(t *testing.T, ms *sqlstore.Markets, block entities.Block) ent
 		VegaTime: block.VegaTime,
 	}
 
-	err := ms.Upsert(&market)
+	err := ms.Upsert(context.Background(), &market)
 	require.NoError(t, err)
 	return market
 }
@@ -388,12 +388,12 @@ func generateTestOrders(t *testing.T, blocks []entities.Block, parties []entitie
 }
 
 func TestOrders_GetLiveOrders(t *testing.T) {
-	defer testStore.DeleteEverything()
+	defer DeleteEverything()
 
-	bs := sqlstore.NewBlocks(testStore)
-	ps := sqlstore.NewParties(testStore)
-	ms := sqlstore.NewMarkets(testStore)
-	os := sqlstore.NewOrders(testStore)
+	bs := sqlstore.NewBlocks(connectionSource)
+	ps := sqlstore.NewParties(connectionSource)
+	ms := sqlstore.NewMarkets(connectionSource)
+	os := sqlstore.NewOrders(connectionSource)
 
 	t.Logf("test store port: %d", testDBPort)
 

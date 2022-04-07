@@ -51,11 +51,11 @@ func assertRewardsMatch(t *testing.T, expected, actual []entities.Reward) {
 }
 
 func TestRewards(t *testing.T) {
-	defer testStore.DeleteEverything()
-	ps := sqlstore.NewParties(testStore)
-	as := sqlstore.NewAssets(testStore)
-	rs := sqlstore.NewRewards(testStore)
-	bs := sqlstore.NewBlocks(testStore)
+	defer DeleteEverything()
+	ps := sqlstore.NewParties(connectionSource)
+	as := sqlstore.NewAssets(connectionSource)
+	rs := sqlstore.NewRewards(connectionSource)
+	bs := sqlstore.NewBlocks(connectionSource)
 	block := addTestBlock(t, bs)
 
 	asset1 := addTestAsset(t, as, block)

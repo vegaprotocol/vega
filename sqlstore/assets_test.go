@@ -31,18 +31,18 @@ func addTestAsset(t *testing.T, as *sqlstore.Assets, block entities.Block) entit
 	}
 
 	// Add it to the database
-	err := as.Add(asset)
+	err := as.Add(context.Background(), asset)
 	require.NoError(t, err)
 	return asset
 }
 
 func TestAsset(t *testing.T) {
-	defer testStore.DeleteEverything()
+	defer DeleteEverything()
 
-	bs := sqlstore.NewBlocks(testStore)
+	bs := sqlstore.NewBlocks(connectionSource)
 	block := addTestBlock(t, bs)
 
-	as := sqlstore.NewAssets(testStore)
+	as := sqlstore.NewAssets(connectionSource)
 	ctx := context.Background()
 
 	// Get all assets, there shouldn't be any yet
@@ -53,7 +53,7 @@ func TestAsset(t *testing.T) {
 	asset := addTestAsset(t, as, block)
 
 	// Add it again, we should get a primary key violation
-	err = as.Add(asset)
+	err = as.Add(context.Background(), asset)
 	assert.Error(t, err)
 
 	// Query and check we've got back an asset the same as the one we put in

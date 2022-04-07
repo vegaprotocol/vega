@@ -43,12 +43,12 @@ func (ps *Proposal) Types() []events.Type {
 	return []events.Type{events.ProposalEvent}
 }
 
-func (ps *Proposal) Push(evt events.Event) error {
+func (ps *Proposal) Push(ctx context.Context, evt events.Event) error {
 	switch event := evt.(type) {
 	case TimeUpdateEvent:
 		ps.vegaTime = event.Time()
 	case ProposalEvent:
-		return ps.consume(event)
+		return ps.consume(ctx, event)
 	default:
 		return errors.Errorf("unknown event type %s", event.Type().String())
 	}
@@ -56,7 +56,7 @@ func (ps *Proposal) Push(evt events.Event) error {
 	return nil
 }
 
-func (ps *Proposal) consume(event ProposalEvent) error {
+func (ps *Proposal) consume(ctx context.Context, event ProposalEvent) error {
 	protoProposal := event.Proposal()
 	proposal, err := entities.ProposalFromProto(&protoProposal)
 
@@ -66,5 +66,5 @@ func (ps *Proposal) consume(event ProposalEvent) error {
 		return errors.Wrap(err, "unable to parse proposal")
 	}
 
-	return errors.Wrap(ps.store.Add(context.Background(), proposal), "error adding proposal")
+	return errors.Wrap(ps.store.Add(ctx, proposal), "error adding proposal")
 }

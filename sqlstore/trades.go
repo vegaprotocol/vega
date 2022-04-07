@@ -11,13 +11,13 @@ import (
 )
 
 type Trades struct {
-	*SQLStore
+	*ConnectionSource
 	trades []*entities.Trade
 }
 
-func NewTrades(sqlStore *SQLStore) *Trades {
+func NewTrades(connectionSource *ConnectionSource) *Trades {
 	t := &Trades{
-		SQLStore: sqlStore,
+		ConnectionSource: connectionSource,
 	}
 	return t
 }
@@ -51,7 +51,7 @@ func (ts *Trades) OnTimeUpdateEvent(ctx context.Context) error {
 	}
 
 	if rows != nil {
-		copyCount, err := ts.pool.CopyFrom(
+		copyCount, err := ts.Connection.CopyFrom(
 			ctx,
 			pgx.Identifier{"trades"},
 			[]string{
@@ -125,7 +125,7 @@ func (ts *Trades) queryTrades(ctx context.Context, query string, args []interfac
 	}
 
 	var trades []entities.Trade
-	err := pgxscan.Select(ctx, ts.pool, &trades, query, args...)
+	err := pgxscan.Select(ctx, ts.Connection, &trades, query, args...)
 	if err != nil {
 		return nil, fmt.Errorf("querying trades: %w", err)
 	}
