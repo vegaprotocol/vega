@@ -82,6 +82,8 @@ func (s socketServer) Listen() error {
 
 func (s socketServer) Receive(ctx context.Context) (<-chan events.Event, <-chan error) {
 	receiveCh := make(chan events.Event, defaultEventChannelBufferSize)
+	// channel onto which we push the raw messages from the queue
+	rawCh := make(chan []byte, defaultEventChannelBufferSize)
 	errCh := make(chan error, 1)
 
 	eg, ctx := errgroup.WithContext(ctx)
@@ -95,11 +97,34 @@ func (s socketServer) Receive(ctx context.Context) (<-chan events.Event, <-chan 
 	})
 
 	eg.Go(func() error {
+		for msg := range rawCh {
+			var be eventspb.BusEvent
+			if err := proto.Unmarshal(msg, &be); err != nil {
+				// surely we should stop if this happens?
+				s.log.Error("Failed to unmarshal received event", logging.Error(err))
+				continue
+			}
+			if be.Version != eventspb.Version {
+				return fmt.Errorf("mismatched BusEvent version received: %d, want %d", be.Version, eventspb.Version)
+			}
+
+			evt := toEvent(ctx, &be)
+			if evt == nil {
+				s.log.Error("Can not convert proto event to internal event", logging.String("event_type", be.GetType().String()))
+				continue
+			}
+
+			receiveCh <- evt
+		}
+
+		return nil
+
+	})
+
+	eg.Go(func() error {
 		var recvTimeouts int
 
 		for {
-			var be eventspb.BusEvent
-
 			msg, err := s.sock.Recv()
 			if err != nil {
 				switch err {
@@ -119,23 +144,7 @@ func (s socketServer) Receive(ctx context.Context) (<-chan events.Event, <-chan 
 				}
 			}
 
-			if err := proto.Unmarshal(msg, &be); err != nil {
-				s.log.Error("Failed to unmarshal received event", logging.Error(err))
-				continue
-			}
-
-			if be.Version != eventspb.Version {
-				return fmt.Errorf("mismatched BusEvent version received: %d, want %d", be.Version, eventspb.Version)
-			}
-
-			evt := toEvent(ctx, &be)
-			if evt == nil {
-				s.log.Error("Can not convert proto event to internal event", logging.String("event_type", be.GetType().String()))
-				continue
-			}
-
-			receiveCh <- evt
-
+			rawCh <- msg
 			recvTimeouts = 0
 		}
 	})
@@ -143,6 +152,7 @@ func (s socketServer) Receive(ctx context.Context) (<-chan events.Event, <-chan 
 	go func() {
 		defer func() {
 			close(receiveCh)
+			close(rawCh)
 			close(errCh)
 		}()
 

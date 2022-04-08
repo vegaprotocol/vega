@@ -56,7 +56,7 @@ type ChainInfoI interface {
 // perhaps we can extend this to embed into type-specific brokers
 type Broker struct {
 	ctx   context.Context
-	mu    sync.Mutex
+	mu    sync.RWMutex
 	tSubs map[events.Type]map[int]*subscription
 	// these fields ensure a unique ID for all subscribers, regardless of what event types they subscribe to
 	// once the broker context is cancelled, this map will be used to notify all subscribers, who can then
@@ -64,6 +64,7 @@ type Broker struct {
 	subs   map[int]subscription
 	keys   []int
 	eChans map[events.Type]chan []events.Event
+	smVer  int // version of subscriber map
 
 	eventSource eventSource
 	quit        chan struct{}
@@ -131,10 +132,14 @@ func (b *Broker) sendChannelSync(sub Subscriber, evts []events.Event) bool {
 }
 
 func (b *Broker) startSending(t events.Type, evts []events.Event) {
+	var (
+		subs map[int]*subscription
+		ver  int
+	)
 	b.mu.Lock()
 	ch, ok := b.eChans[t]
 	if !ok {
-		subs := b.getSubsByType(t)
+		subs, ver = b.getSubsByType(t, 0)
 		ln := len(subs) + 1                      // at least buffer 1
 		ch = make(chan []events.Event, ln*20+20) // create a channel with buffer, min 40
 		b.eChans[t] = ch                         // assign the newly created channel
@@ -158,14 +163,18 @@ func (b *Broker) startSending(t events.Type, evts []events.Event) {
 			case <-b.ctx.Done():
 				return
 			case events := <-ch:
-				b.mu.Lock()
-				subs := b.getSubsByType(t)
-				b.mu.Unlock()
+				// we're only reading here, so allow multiple routines to do traverse the map simultaneously
+				b.mu.RLock()
+				ns, nv := b.getSubsByType(t, ver)
+				b.mu.RUnlock()
+				// if nv == ver, the subs haven't changed
+				if nv != ver {
+					ver = nv
+					subs = ns
+				}
 				unsub := make([]int, 0, len(subs))
 				for k, sub := range subs {
 					select {
-					case <-b.ctx.Done():
-						return
 					case <-sub.Skip():
 						continue
 					case <-sub.Closed():
@@ -181,6 +190,8 @@ func (b *Broker) startSending(t events.Type, evts []events.Event) {
 				if len(unsub) != 0 {
 					b.mu.Lock()
 					b.rmSubs(unsub...)
+					// we could update the sub map here, because we know subscribers have been removed
+					// but that would hold a write lock for a longer time.
 					b.mu.Unlock()
 				}
 			}
@@ -194,8 +205,11 @@ func (b *Broker) Send(event events.Event) {
 }
 
 // simplified version for better performance - unfortunately, we'll still need to copy the map
-func (b *Broker) getSubsByType(t events.Type) map[int]*subscription {
+func (b *Broker) getSubsByType(t events.Type, sv int) (map[int]*subscription, int) {
 	// we add the entire ALL map to type-specific maps, so if set, we can return this map directly
+	if sv != 0 && sv == b.smVer {
+		return nil, sv
+	}
 	subs, ok := b.tSubs[t]
 	if !ok && t != events.TxErrEvent {
 		// if a typed map isn't set (yet), and it's not the error event, we can return
@@ -207,7 +221,7 @@ func (b *Broker) getSubsByType(t events.Type) map[int]*subscription {
 	for k, v := range subs {
 		cpy[k] = v
 	}
-	return cpy
+	return cpy, b.smVer
 }
 
 // Subscribe registers a new subscriber, returning the key
@@ -271,6 +285,7 @@ func (b *Broker) subscribe(s Subscriber) int {
 			}
 		}
 	}
+	b.smVer++
 	return k
 }
 
@@ -292,6 +307,9 @@ func (b *Broker) getKey() int {
 }
 
 func (b *Broker) rmSubs(keys ...int) {
+	if len(keys) == 0 {
+		return
+	}
 	for _, k := range keys {
 		// if the sub doesn't exist, this could be a duplicate call
 		// we do not want the keys slice to contain duplicate values
@@ -320,6 +338,7 @@ func (b *Broker) rmSubs(keys ...int) {
 		delete(b.subs, k)
 		b.keys = append(b.keys, k)
 	}
+	b.smVer++
 }
 
 func (b *Broker) Receive(ctx context.Context) error {
