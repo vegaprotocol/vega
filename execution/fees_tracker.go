@@ -62,6 +62,7 @@ func NewFeesTracker(epochEngine EpochEngine) *FeesTracker {
 func (f *FeesTracker) onEpochEvent(_ context.Context, epoch types.Epoch) {
 	if epoch.Action == proto.EpochAction_EPOCH_ACTION_START {
 		f.assetToTracker = map[string]*assetFeesTracker{}
+		f.ss.changed = true
 	}
 	f.currentEpoch = epoch.Seq
 }
@@ -112,6 +113,7 @@ func (f *FeesTracker) ensureAssetFeesTracker(asset string) *assetFeesTracker {
 		lpFees:    map[string]*num.Uint{},
 	}
 	f.assetToTracker[asset] = aft
+	f.ss.changed = true
 	return aft
 }
 

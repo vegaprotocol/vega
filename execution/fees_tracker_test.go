@@ -5,6 +5,7 @@ import (
 	"context"
 	"testing"
 
+	vgproto "code.vegaprotocol.io/protos/vega"
 	snapshotpb "code.vegaprotocol.io/protos/vega/snapshot/v1"
 	"code.vegaprotocol.io/vega/execution"
 	"code.vegaprotocol.io/vega/libs/proto"
@@ -28,6 +29,10 @@ func TestFeesTracker(t *testing.T) {
 
 	partyScores := feesTracker.GetFeePartyScores("does not exist", types.TransferTypeMakerFeeReceive)
 	require.Equal(t, 0, len(partyScores))
+
+	key := (&types.PayloadFeeTracker{}).Key()
+	hash1, err := feesTracker.GetHash(key)
+	require.NoError(t, err)
 
 	// update with a few transfers
 	transfers := []*types.Transfer{
@@ -87,10 +92,12 @@ func TestFeesTracker(t *testing.T) {
 	require.Equal(t, "1", scores[0].Score.String())
 	require.Equal(t, "party2", scores[0].Party)
 
-	key := (&types.PayloadFeeTracker{}).Key()
-	hash1, err := feesTracker.GetHash(key)
+	// check hash has changed
+	hash2, err := feesTracker.GetHash(key)
 	require.NoError(t, err)
-	state1, _, err := feesTracker.GetState(key)
+	require.False(t, bytes.Equal(hash1, hash2))
+
+	state2, _, err := feesTracker.GetState(key)
 	require.NoError(t, err)
 
 	epochEngineLoad := &TestEpochEngine{}
@@ -98,14 +105,26 @@ func TestFeesTracker(t *testing.T) {
 	epochEngineLoad.target(context.Background(), types.Epoch{Seq: 1})
 
 	pl := snapshotpb.Payload{}
-	require.NoError(t, proto.Unmarshal(state1, &pl))
+	require.NoError(t, proto.Unmarshal(state2, &pl))
 	feesTrackerLoad.LoadState(context.Background(), types.PayloadFromProto(&pl))
 
-	hash2, err := feesTrackerLoad.GetHash(key)
+	hash3, err := feesTrackerLoad.GetHash(key)
 	require.NoError(t, err)
-	require.True(t, bytes.Equal(hash1, hash2))
+	require.True(t, bytes.Equal(hash2, hash3))
 
-	state2, _, err := feesTrackerLoad.GetState(key)
+	state3, _, err := feesTrackerLoad.GetState(key)
 	require.NoError(t, err)
-	require.True(t, bytes.Equal(state1, state2))
+	require.True(t, bytes.Equal(state2, state3))
+
+	// check a restored party exist in the restored engine
+	scores = feesTrackerLoad.GetFeePartyScores("asset2", types.TransferTypeMakerFeeReceive)
+	require.Equal(t, 1, len(scores))
+	require.Equal(t, "1", scores[0].Score.String())
+	require.Equal(t, "party1", scores[0].Party)
+
+	// New epoch should scrub the state an produce a difference hash
+	epochEngineLoad.target(context.Background(), types.Epoch{Seq: 2, Action: vgproto.EpochAction_EPOCH_ACTION_START})
+	hash4, err := feesTrackerLoad.GetHash(key)
+	require.NoError(t, err)
+	require.False(t, bytes.Equal(hash3, hash4))
 }
