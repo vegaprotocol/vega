@@ -121,15 +121,15 @@ Scenario: 001: 0070-MKTD-007, 0042-LIQF-001
     
     And the liquidity provider fee shares for the market "USD/DEC19" should be:
       | party | equity like share | average entry valuation |
-      | lp1   | 1                 | 1000000                 |
+      | lp1   | 1                 | 1000000000              |
 
     And the liquidity provider fee shares for the market "USD/DEC20" should be:
       | party | equity like share | average entry valuation |
-      | lp1   | 1                 | 1000000                 |
+      | lp1   | 1                 | 1000000000              |
 
     And the liquidity provider fee shares for the market "USD/DEC21" should be:
       | party | equity like share | average entry valuation |
-      | lp1   | 1                 | 1000000                 |
+      | lp1   | 1                 | 1000000000              |
 
     And the parties should have the following account balances:
       | party  | asset | market id | margin       | general        | bond       |
@@ -271,7 +271,7 @@ Scenario: 001: 0070-MKTD-007, 0042-LIQF-001
 
     And the liquidity provider fee shares for the market "USD/DEC20" should be:
       | party | equity like share | average entry valuation |
-      | lp1   | 1                 | 1000000                 |
+      | lp1   | 1                 | 1000000              |
 
     And the liquidity provider fee shares for the market "USD/DEC21" should be:
       | party | equity like share | average entry valuation |

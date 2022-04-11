@@ -2,7 +2,6 @@ package steps
 
 import (
 	"fmt"
-	"strings"
 
 	types "code.vegaprotocol.io/protos/vega"
 	"github.com/cucumber/godog"
@@ -26,11 +25,8 @@ func TheLiquidityProviderFeeSharesForTheMarketShouldBe(engine Execution, marketI
 		for _, v := range marketData.LiquidityProviderFeeShare {
 			got = append(got, *v)
 			if v.Party == expected.Party &&
-				// ok it's trick not pretty here, but the actual numbers are
-				// something like 0.6666666666666, and I don't want to create
-				// a float, so just checking if they start the same should be fine...
-				strings.HasPrefix(v.EquityLikeShare, expected.EquityLikeShare) &&
-				strings.HasPrefix(v.AverageEntryValuation, expected.AverageEntryValuation) {
+				v.EquityLikeShare == expected.EquityLikeShare &&
+				v.AverageEntryValuation == expected.AverageEntryValuation {
 				found = true
 			}
 		}
