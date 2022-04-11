@@ -19,6 +19,7 @@
 - [474](https://github.com/vegaprotocol/data-node/pull/474) - Clean up error handling in subscribers and make action on error configurable 
 - [487](https://github.com/vegaprotocol/data-node/pull/487) - Trade data retention 
 - [495](https://github.com/vegaprotocol/data-node/pull/495) - Account for `SettlePosition` events reaching the positions plug-in before the `PositionState` event.
+- [495](https://github.com/vegaprotocol/data-node/pull/495) - Make sure `SettlePosition` does not result in a division by zero panic.
 - [](https://github.com/vegaprotocol/data-node/pull/xxx) -
 
 ### 🐛 Fixes
