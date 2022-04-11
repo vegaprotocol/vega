@@ -648,6 +648,8 @@ func (e *Engine) createOrUpdateForParty(
 		lp.Status = types.LiquidityProvisionStatusActive
 	}
 
+	// fields in the lp might have changed so we re-set it to trigger the snapshot `changed` flag
+	e.provisions.Set(party, lp)
 	e.broker.Send(events.NewLiquidityProvisionEvent(ctx, lp))
 
 	return append(needsCreateBuys, needsCreateSells...),

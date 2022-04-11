@@ -25,6 +25,7 @@
 - [5111](https://github.com/vegaprotocol/vega/issues/5111) - Stop updating the market's initial configuration when an opening auction is extended
 - [5066](https://github.com/vegaprotocol/vega/issues/5066) - Return an error if market decimal place > to asset decimal place
 - [5095](https://github.com/vegaprotocol/vega/issues/5095) - Stabilise state sync restore and restore block height in the topology engine
+- [5204](https://github.com/vegaprotocol/vega/issues/5204) - Mark a snapshot state change when liquidity provision state changes
 - [4870](https://github.com/vegaprotocol/vega/issues/5870) - Add missing commands to the `TxError` event
 - [5136](https://github.com/vegaprotocol/vega/issues/5136) - Fix banking snapshot for transfers, risk factor restoration, and `statevar` handling of settled markets
 - [5088](https://github.com/vegaprotocol/vega/issues/5088) - Fixed MTM bug where settlement balance would not be zero when loss amount was 1.
