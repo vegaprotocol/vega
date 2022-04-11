@@ -506,3 +506,49 @@ Feature: Test settlement at expiry time from internal oracle
     And the cumulated balance for all accounts should be worth "102012000"
     And the insurance pool balance should be "0" for the market "ETH/DEC21"
     And the insurance pool balance should be "750" for the market "ETH/DEC19"
+
+  @Oracle
+  Scenario: Orders can still be placed if the order expiry was sent with the wrong pub key
+    Given the parties deposit on asset's general account the following amount:
+      | party  | asset | amount |
+      | party1 | ETH   | 100000 |
+      | aux1   | ETH   | 100000 |
+      | aux2   | ETH   | 100000 |
+
+    When the parties place the following orders:
+      | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | aux1  | ETH/DEC21 | buy  | 1      | 999   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
+      | aux2  | ETH/DEC21 | sell | 1      | 1001  | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
+      | aux1  | ETH/DEC21 | buy  | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC | ref-3     |
+      | aux2  | ETH/DEC21 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC | ref-4     |
+    Then the opening auction period ends for market "ETH/DEC21"
+    And the mark price should be "1000" for the market "ETH/DEC21"
+    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC21"
+
+    When the network moves ahead "2" blocks
+    Then the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC21"
+
+    When the oracles broadcast data signed with "0xDEADBEEF1":
+      | name               | value |
+      | trading.terminated | true  |
+    And the network moves ahead "2" blocks
+    Then the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC21"
+
+    # we can still place orders
+    When the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | party1 | ETH/DEC21 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC | ref-7     |
+    Then the parties should have the following account balances:
+      | party  | asset | market id | margin  | general |
+      | party1 | ETH   | ETH/DEC21 | 120     | 99880   |
+    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC21"
+
+    When the oracles broadcast data signed with "0xCAFECAFE1":
+      | name               | value |
+      | trading.terminated | true  |
+    And the network moves ahead "2" blocks
+    Then the market state should be "STATE_TRADING_TERMINATED" for the market "ETH/DEC21"
+    Then the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference | error               |
+      | party1 | ETH/DEC21 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC | ref-7     | trading not allowed |
+    Then the market state should be "STATE_TRADING_TERMINATED" for the market "ETH/DEC21"
