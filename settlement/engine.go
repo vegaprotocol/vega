@@ -30,7 +30,7 @@ type MarketPosition interface {
 // Product ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/settlement_product_mock.go -package mocks code.vegaprotocol.io/vega/settlement Product
 type Product interface {
-	Settle(entryPrice, pricePrecision *num.Uint, netFractionalPosition num.Decimal) (amt *types.FinancialAmount, neg bool, err error)
+	Settle(entryPrice *num.Uint, assetDecimals uint32, netFractionalPosition num.Decimal) (amt *types.FinancialAmount, neg bool, err error)
 	GetAsset() string
 	SettlementPrice() (*num.Uint, error)
 }
@@ -114,9 +114,9 @@ func (e *Engine) Update(positions []events.MarketPosition) {
 }
 
 // Settle run settlement over all the positions.
-func (e *Engine) Settle(t time.Time, pricePrecision *num.Uint) ([]*types.Transfer, error) {
+func (e *Engine) Settle(t time.Time, assetDecimals uint32) ([]*types.Transfer, error) {
 	e.log.Debugf("Settling market, closed at %s", t.Format(time.RFC3339))
-	positions, err := e.settleAll(pricePrecision)
+	positions, err := e.settleAll(assetDecimals)
 	if err != nil {
 		e.log.Error(
 			"Something went wrong trying to settle positions",
@@ -382,7 +382,7 @@ func (e *Engine) RemoveDistressed(ctx context.Context, evts []events.Margin) {
 }
 
 // simplified settle call.
-func (e *Engine) settleAll(pricePrecision *num.Uint) ([]*types.Transfer, error) {
+func (e *Engine) settleAll(assetDecimals uint32) ([]*types.Transfer, error) {
 	e.mu.Lock()
 
 	// there should be as many positions as there are parties (obviously)
@@ -406,7 +406,7 @@ func (e *Engine) settleAll(pricePrecision *num.Uint) ([]*types.Transfer, error) 
 		e.log.Debug("Settling position for party", logging.String("party-id", party))
 		// @TODO - there was something here... the final amount had to be oracle - market or something
 		// check with Tamlyn why that was, because we're only handling open positions here...
-		amt, neg, err := e.product.Settle(pos.price, pricePrecision, num.DecimalFromInt64(pos.size).Div(e.positionFactor))
+		amt, neg, err := e.product.Settle(pos.price, assetDecimals, num.DecimalFromInt64(pos.size).Div(e.positionFactor))
 		// for now, product.Settle returns the total value, we need to only settle the delta between a parties current position
 		// and the final price coming from the oracle, so oracle_price - mark_price * volume (check with Tamlyn whether this should be absolute or not)
 		if err != nil {

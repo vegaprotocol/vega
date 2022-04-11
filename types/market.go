@@ -310,6 +310,7 @@ type Future struct {
 	OracleSpecForSettlementPrice    *v1.OracleSpec
 	OracleSpecForTradingTermination *v1.OracleSpec
 	OracleSpecBinding               *OracleSpecToFutureBinding
+	SettlementPriceDecimals         uint32
 }
 
 func FutureFromProto(f *proto.Future) *Future {
@@ -319,6 +320,7 @@ func FutureFromProto(f *proto.Future) *Future {
 		OracleSpecForSettlementPrice:    f.OracleSpecForSettlementPrice.DeepClone(),
 		OracleSpecForTradingTermination: f.OracleSpecForTradingTermination.DeepClone(),
 		OracleSpecBinding:               OracleSpecToFutureBindingFromProto(f.OracleSpecBinding),
+		SettlementPriceDecimals:         f.SettlementPriceDecimals,
 	}
 }
 
@@ -329,6 +331,7 @@ func (f Future) IntoProto() *proto.Future {
 		OracleSpecForSettlementPrice:    f.OracleSpecForSettlementPrice.DeepClone(),
 		OracleSpecForTradingTermination: f.OracleSpecForTradingTermination.DeepClone(),
 		OracleSpecBinding:               f.OracleSpecBinding.IntoProto(),
+		SettlementPriceDecimals:         f.SettlementPriceDecimals,
 	}
 }
 
