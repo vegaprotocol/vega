@@ -347,9 +347,20 @@ func speToProto(pos *Position, e SPE) {
 	// we just have to ensure we accurately set an average entry price here
 	// updateSettlePosition runs this new position through some logic that is a bit too complex for this
 	// specific use-case (receiving a SPE event before the PSE), but it beats duplicating the logic
+	trades := e.Trades()
+	// if no trades are present on this event, just treat it as a position state event
+	// otherwise we'd have a division by zero panic
+	if len(trades) == 0 {
+		if !pos.AverageEntryPrice.IsZero() {
+			return
+		}
+		pos.AverageEntryPrice = e.Price().Clone()
+		pos.AverageEntryPriceFP = num.DecimalFromUint(e.Price())
+		return
+	}
 	priceTot := num.Zero()
 	sizeTot := num.Zero()
-	for _, t := range e.Trades() {
+	for _, t := range trades {
 		size := num.NewUint(uint64(abs(t.Size())))
 		sizeTot.AddSum(size)
 		// size * price
