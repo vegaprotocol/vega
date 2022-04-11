@@ -80,7 +80,6 @@ func testSignedCommandSuccess(t *testing.T) {
 
 	cmd := txn.NodeVoteCommand
 	payload := &commandspb.NodeVote{
-		PubKey:    []byte("my-pub-key"),
 		Reference: "test",
 	}
 	ctx := context.Background()
@@ -102,7 +101,6 @@ func testSignedCommandFailure(t *testing.T) {
 
 	cmd := txn.NodeVoteCommand
 	payload := &commandspb.NodeVote{
-		PubKey:    []byte("my-pub-key"),
 		Reference: "test",
 	}
 	ctx := context.Background()

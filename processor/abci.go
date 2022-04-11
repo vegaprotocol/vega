@@ -1265,7 +1265,9 @@ func (app *App) DeliverNodeVote(ctx context.Context, tx abci.Tx) error {
 		return err
 	}
 
-	return app.witness.AddNodeCheck(ctx, vote)
+	pubKey := crypto.NewPublicKey(tx.PubKeyHex(), tx.PubKey())
+
+	return app.witness.AddNodeCheck(ctx, vote, pubKey)
 }
 
 func (app *App) DeliverChainEvent(ctx context.Context, tx abci.Tx, id string) error {

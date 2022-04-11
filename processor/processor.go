@@ -153,7 +153,7 @@ type Notary interface {
 // Witness ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/witness_mock.go -package mocks code.vegaprotocol.io/vega/processor Witness
 type Witness interface {
-	AddNodeCheck(ctx context.Context, nv *commandspb.NodeVote) error
+	AddNodeCheck(ctx context.Context, nv *commandspb.NodeVote, key crypto.PublicKey) error
 }
 
 // EvtForwarder ...

@@ -7,6 +7,7 @@ import (
 	"time"
 
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
+	"code.vegaprotocol.io/vega/crypto"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/validators"
 	"code.vegaprotocol.io/vega/validators/mocks"
@@ -126,7 +127,8 @@ func testNodeVoteInvalidProposalReference(t *testing.T) {
 	err := erc.StartCheck(res, cb, checkUntil)
 	assert.NoError(t, err)
 
-	err = erc.AddNodeCheck(context.Background(), &commandspb.NodeVote{Reference: "bad-id"})
+	pubKey := newPublicKey("somepubkey")
+	err = erc.AddNodeCheck(context.Background(), &commandspb.NodeVote{Reference: "bad-id"}, pubKey)
 	assert.EqualError(t, err, validators.ErrInvalidResourceIDForNodeVote.Error())
 }
 
@@ -145,8 +147,9 @@ func testNodeVoteNotAValidator(t *testing.T) {
 	err := erc.StartCheck(res, cb, checkUntil)
 	assert.NoError(t, err)
 
-	erc.top.EXPECT().IsValidatorNodeID(gomock.Any()).Times(1).Return(false)
-	err = erc.AddNodeCheck(context.Background(), &commandspb.NodeVote{Reference: res.id})
+	pubKey := newPublicKey("somepubkey")
+	erc.top.EXPECT().IsValidatorVegaPubKey(pubKey.Hex()).Times(1).Return(false)
+	err = erc.AddNodeCheck(context.Background(), &commandspb.NodeVote{Reference: res.id}, pubKey)
 	assert.EqualError(t, err, validators.ErrVoteFromNonValidator.Error())
 }
 
@@ -166,8 +169,9 @@ func testNodeVoteOK(t *testing.T) {
 	err := erc.StartCheck(res, cb, checkUntil)
 	assert.NoError(t, err)
 
-	erc.top.EXPECT().IsValidatorNodeID(gomock.Any()).Times(1).Return(true)
-	err = erc.AddNodeCheck(context.Background(), &commandspb.NodeVote{Reference: res.id})
+	pubKey := newPublicKey("somepubkey")
+	erc.top.EXPECT().IsValidatorVegaPubKey(pubKey.Hex()).Times(1).Return(true)
+	err = erc.AddNodeCheck(context.Background(), &commandspb.NodeVote{Reference: res.id}, pubKey)
 	assert.NoError(t, err)
 }
 
@@ -187,13 +191,14 @@ func testNodeVoteDuplicateVote(t *testing.T) {
 	assert.NoError(t, err)
 
 	// first vote, all good
-	erc.top.EXPECT().IsValidatorNodeID(gomock.Any()).Times(1).Return(true)
-	err = erc.AddNodeCheck(context.Background(), &commandspb.NodeVote{Reference: res.id, PubKey: []byte("somepubkey")})
+	pubKey := newPublicKey("somepubkey")
+	erc.top.EXPECT().IsValidatorVegaPubKey(pubKey.Hex()).Times(1).Return(true)
+	err = erc.AddNodeCheck(context.Background(), &commandspb.NodeVote{Reference: res.id}, pubKey)
 	require.NoError(t, err)
 
 	// second vote, bad
-	erc.top.EXPECT().IsValidatorNodeID(gomock.Any()).Times(1).Return(true)
-	err = erc.AddNodeCheck(context.Background(), &commandspb.NodeVote{Reference: res.id, PubKey: []byte("somepubkey")})
+	erc.top.EXPECT().IsValidatorVegaPubKey(pubKey.Hex()).Times(1).Return(true)
+	err = erc.AddNodeCheck(context.Background(), &commandspb.NodeVote{Reference: res.id}, pubKey)
 	require.EqualError(t, err, validators.ErrDuplicateVoteFromNode.Error())
 }
 
@@ -202,11 +207,12 @@ func testOnChainTimeUpdate(t *testing.T) {
 	defer erc.ctrl.Finish()
 	defer erc.Stop()
 
-	selfPubKey := "a5ee437dc100d629"
+	selfNodeID := "a5ee437dc100d629"
+	selfPubKey := "b7ee437dc100d642"
 
 	erc.top.EXPECT().Len().AnyTimes().Return(2)
 	erc.top.EXPECT().IsValidator().AnyTimes().Return(true)
-	erc.top.EXPECT().SelfNodeID().AnyTimes().Return(selfPubKey)
+	erc.top.EXPECT().SelfNodeID().AnyTimes().Return(selfNodeID)
 
 	ch := make(chan struct{}, 1)
 	res := testRes{"resource-id-1", func() error {
@@ -231,14 +237,15 @@ func testOnChainTimeUpdate(t *testing.T) {
 	erc.OnTick(context.Background(), newNow)
 
 	// then we propagate our own vote
-	erc.top.EXPECT().IsValidatorNodeID(gomock.Any()).Times(1).Return(true)
-	pubKeyBytes, _ := hex.DecodeString(selfPubKey)
-	err = erc.AddNodeCheck(context.Background(), &commandspb.NodeVote{Reference: res.id, PubKey: pubKeyBytes})
+	pubKey := newPublicKey(selfPubKey)
+	erc.top.EXPECT().IsValidatorVegaPubKey(pubKey.Hex()).Times(1).Return(true)
+	err = erc.AddNodeCheck(context.Background(), &commandspb.NodeVote{Reference: res.id}, pubKey)
 	assert.NoError(t, err)
 
 	// second vote from another validator
-	erc.top.EXPECT().IsValidatorNodeID(gomock.Any()).Times(1).Return(true)
-	err = erc.AddNodeCheck(context.Background(), &commandspb.NodeVote{Reference: res.id, PubKey: []byte("somepubkey")})
+	othPubKey := newPublicKey("somepubkey")
+	erc.top.EXPECT().IsValidatorVegaPubKey(othPubKey.Hex()).Times(1).Return(true)
+	err = erc.AddNodeCheck(context.Background(), &commandspb.NodeVote{Reference: res.id}, othPubKey)
 	assert.NoError(t, err)
 
 	// call onTick again to get the callback called
@@ -254,11 +261,12 @@ func testOnChainTimeUpdateNonValidator(t *testing.T) {
 	defer erc.ctrl.Finish()
 	defer erc.Stop()
 
-	selfPubKey := "a5ee437dc100d629"
+	selfNodeID := "a5ee437dc100d629"
+	selfPubKey := "b7ee437dc100d642"
 
 	erc.top.EXPECT().Len().AnyTimes().Return(2)
 	erc.top.EXPECT().IsValidator().AnyTimes().Return(false)
-	erc.top.EXPECT().SelfNodeID().AnyTimes().Return(selfPubKey)
+	erc.top.EXPECT().SelfNodeID().AnyTimes().Return(selfNodeID)
 
 	res := testRes{"resource-id-1", func() error {
 		return nil
@@ -276,14 +284,15 @@ func testOnChainTimeUpdateNonValidator(t *testing.T) {
 	erc.OnTick(context.Background(), newNow)
 
 	// then we propagate our own vote
-	erc.top.EXPECT().IsValidatorNodeID(gomock.Any()).Times(1).Return(true)
-	pubKeyBytes, _ := hex.DecodeString(selfPubKey)
-	err = erc.AddNodeCheck(context.Background(), &commandspb.NodeVote{Reference: res.id, PubKey: pubKeyBytes})
+	pubKey := newPublicKey(selfPubKey)
+	erc.top.EXPECT().IsValidatorVegaPubKey(pubKey.Hex()).Times(1).Return(true)
+	err = erc.AddNodeCheck(context.Background(), &commandspb.NodeVote{Reference: res.id}, pubKey)
 	assert.NoError(t, err)
 
 	// second vote from another validator
-	erc.top.EXPECT().IsValidatorNodeID(gomock.Any()).Times(1).Return(true)
-	err = erc.AddNodeCheck(context.Background(), &commandspb.NodeVote{Reference: res.id, PubKey: []byte("somepubkey")})
+	othPubKey := newPublicKey("somepubkey")
+	erc.top.EXPECT().IsValidatorVegaPubKey(othPubKey.Hex()).Times(1).Return(true)
+	err = erc.AddNodeCheck(context.Background(), &commandspb.NodeVote{Reference: res.id}, othPubKey)
 	assert.NoError(t, err)
 
 	// call onTick again to get the callback called
@@ -298,3 +307,8 @@ type testRes struct {
 
 func (t testRes) GetID() string { return t.id }
 func (t testRes) Check() error  { return t.check() }
+
+func newPublicKey(k string) crypto.PublicKey {
+	pubKeyB := []byte(k)
+	return crypto.NewPublicKey(hex.EncodeToString(pubKeyB), pubKeyB)
+}
