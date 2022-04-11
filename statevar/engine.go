@@ -170,7 +170,7 @@ func (e *Engine) OnTimeTick(ctx context.Context, t time.Time) {
 	sort.Strings(allStateVarIDs)
 
 	for _, ID := range allStateVarIDs {
-		e.stateVars[ID].startBlock(ctx)
+		e.stateVars[ID].startBlock(ctx, t)
 	}
 
 	// get all the state var with time triggers whose time to tick has come and call them
