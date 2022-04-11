@@ -2,6 +2,7 @@ package statevar
 
 import (
 	"context"
+	"errors"
 	"math/rand"
 	"sort"
 	"sync"
@@ -58,6 +59,12 @@ type StateVariable struct {
 	roundsSinceMeaningfulUpdate uint
 	pendingEvents               []pendingEvent
 	lock                        sync.Mutex
+
+	currentTime time.Time
+
+	// use retries to workaround transactions go missing in tendermint
+	lastSentSelfBundle     *commandspb.StateVariableProposal
+	lastSentSelfBundleTime time.Time
 }
 
 func NewStateVar(
@@ -102,7 +109,7 @@ func (sv *StateVariable) GetMarket() string {
 }
 
 // startBlock flushes the pending events.
-func (sv *StateVariable) startBlock(ctx context.Context) {
+func (sv *StateVariable) startBlock(ctx context.Context, t time.Time) {
 	sv.lock.Lock()
 	evts := make([]events.Event, 0, len(sv.pendingEvents))
 	for _, pending := range sv.pendingEvents {
@@ -112,7 +119,19 @@ func (sv *StateVariable) startBlock(ctx context.Context) {
 		sv.log.Info("state-var event sent", logging.String("event", protoEvt.String()))
 	}
 	sv.pendingEvents = []pendingEvent{}
+	sv.currentTime = t
+
+	// if we have an active event, and we sent the bundle and we're 5 seconds after sending the bundle and haven't received our self bundle
+	// that means the transaction may have gone missing, let's retry sending it.
+	needsResend := false
+	if sv.eventID != "" && sv.lastSentSelfBundle != nil && t.After(sv.lastSentSelfBundleTime.Add(5*time.Second)) {
+		sv.lastSentSelfBundleTime = t
+		needsResend = true
+	}
 	sv.lock.Unlock()
+	if needsResend {
+		sv.logAndRetry(errors.New("timeout expired"), sv.lastSentSelfBundle)
+	}
 
 	sv.broker.SendBatch(evts)
 }
@@ -127,6 +146,9 @@ func (sv *StateVariable) eventTriggered(eventID string) error {
 		if sv.log.GetLevel() <= logging.DebugLevel {
 			sv.log.Debug("aborting state variable event", logging.String("state-var", sv.ID), logging.String("aborted-event-id", sv.eventID), logging.String("new-event-id", sv.eventID))
 		}
+
+		// reset the last bundle so we don't send it by mistake
+		sv.lastSentSelfBundle = nil
 
 		// if we got a new event and were not in consensus, increase the number of rounds with no consensus and if
 		// we've not had a meaningful update - send an event with stale state
@@ -191,6 +213,10 @@ func (sv *StateVariable) CalculationFinished(eventID string, result statevar.Sta
 		},
 	}
 
+	// set the bundle and the time
+	sv.lastSentSelfBundle = svp
+	sv.lastSentSelfBundleTime = sv.currentTime
+
 	// need to release the lock before we send the transaction command
 	sv.lock.Unlock()
 	sv.cmd.Command(context.Background(), txn.StateVariableProposalCommand, svp, func(err error) { sv.logAndRetry(err, svp) }, nil)
@@ -230,6 +256,12 @@ func (sv *StateVariable) bundleReceived(ctx context.Context, t time.Time, node, 
 	if !sv.top.IsValidatorVegaPubKey(node) {
 		sv.log.Debug("state var bundle received from a non validator node - ignoring", logging.String("from-validator", node), logging.String("state-var", sv.ID), logging.String("eventID", eventID))
 		return
+	}
+
+	if sv.top.SelfNodeID() == node {
+		sv.lastSentSelfBundle = nil
+		sv.lastSentSelfBundleTime = time.Time{}
+		sv.log.Debug("state var bundle received self vote", logging.String("from-validator", node), logging.String("state-var", sv.ID), logging.String("eventID", eventID))
 	}
 
 	if sv.log.GetLevel() <= logging.DebugLevel {

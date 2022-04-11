@@ -324,7 +324,7 @@ func testSettleExpiredSuccess(t *testing.T) {
 		},
 	} // }}}
 	oraclePrice := num.NewUint(1100)
-	settleF := func(price *num.Uint, pricePrecision *num.Uint, size num.Decimal) (*types.FinancialAmount, bool, error) {
+	settleF := func(price *num.Uint, assetDecimals uint32, size num.Decimal) (*types.FinancialAmount, bool, error) {
 		amt, neg := num.Zero().Delta(oraclePrice, price)
 		if size.IsNegative() {
 			size = size.Neg()
@@ -342,7 +342,7 @@ func testSettleExpiredSuccess(t *testing.T) {
 	// ensure positions are set
 	engine.Update(positions)
 	// now settle:
-	got, err := engine.Settle(time.Now(), num.NewUint(1))
+	got, err := engine.Settle(time.Now(), 0)
 	assert.NoError(t, err)
 	assert.Equal(t, len(expect), len(got))
 	for i, p := range got {
@@ -367,7 +367,7 @@ func testSettleExpiryFail(t *testing.T) {
 	positions := engine.getExpiryPositions(data...)
 	engine.prod.EXPECT().Settle(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(nil, false, errExp)
 	engine.Update(positions)
-	empty, err := engine.Settle(time.Now(), num.NewUint(1))
+	empty, err := engine.Settle(time.Now(), 0)
 	assert.Empty(t, empty)
 	assert.Error(t, err)
 	assert.Equal(t, errExp, err)
@@ -708,7 +708,7 @@ func TestConcurrent(t *testing.T) {
 
 	engine := getTestEngine(t)
 	defer engine.Finish()
-	engine.prod.EXPECT().Settle(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(func(price, pricePrecision *num.Uint, size num.Decimal) (*types.FinancialAmount, bool, error) {
+	engine.prod.EXPECT().Settle(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(func(price *num.Uint, assetDecimals uint32, size num.Decimal) (*types.FinancialAmount, bool, error) {
 		return &types.FinancialAmount{Amount: num.Zero()}, false, nil
 	})
 
@@ -757,7 +757,7 @@ func TestConcurrent(t *testing.T) {
 		go func() {
 			defer wg.Done()
 			// Settle requires posMu
-			_, err := engine.Settle(now, num.NewUint(1))
+			_, err := engine.Settle(now, 0)
 			assert.NoError(t, err)
 		}()
 	}

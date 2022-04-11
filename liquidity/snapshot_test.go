@@ -232,3 +232,74 @@ func TestStopSnapshotTaking(t *testing.T) {
 	assert.Nil(t, h)
 	assert.True(t, te.engine.Stopped())
 }
+
+func TestSnapshotChangeOnUpdate(t *testing.T) {
+	var (
+		party1 = "p1"
+		market = "market-id"
+		ctx    = context.Background()
+		e1     = newTestEngine(t, initialTime)
+	)
+
+	e1.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+
+	lp1 := &types.LiquidityProvisionSubmission{
+		MarketID:         market,
+		Fee:              num.MustDecimalFromString("0.01"),
+		CommitmentAmount: num.NewUint(1000),
+		Buys: []*types.LiquidityOrder{
+			{
+				Reference:  types.PeggedReferenceMid,
+				Offset:     num.NewUint(1),
+				Proportion: 1,
+			},
+		},
+		Sells: []*types.LiquidityOrder{
+			{
+				Reference:  types.PeggedReferenceMid,
+				Offset:     num.NewUint(1),
+				Proportion: 1,
+			},
+		},
+	}
+	idgen1 := idgeneration.New("f663375fd6843a0807d17b10ad8425a6ba45c8c2dd6339f400c5b2426f900c13")
+	require.NoError(t,
+		e1.engine.SubmitLiquidityProvision(ctx, lp1, party1, idgen1),
+	)
+
+	key := "provisions:market-id"
+	h1, err := e1.engine.GetHash(key)
+	assert.NoError(t, err)
+	assert.NotEmpty(t, h1)
+
+	repriceFN := func(
+		order *types.PeggedOrder, side types.Side,
+	) (*num.Uint, *types.PeggedOrder, error) {
+		return num.NewUint(100), order, nil
+	}
+
+	e1.priceMonitor.EXPECT().GetValidPriceRange().
+		Return(num.NewWrappedDecimal(num.Zero(), num.DecimalZero()), num.NewWrappedDecimal(num.NewUint(90), num.DecimalFromInt64(110))).
+		AnyTimes()
+
+	_, _, err = e1.engine.Update(ctx, num.DecimalFromFloat(99), num.DecimalFromFloat(101),
+		repriceFN, []*types.Order{
+			{
+				ID:        "order-id-1",
+				Party:     party1,
+				MarketID:  market,
+				Side:      types.SideBuy,
+				Price:     num.NewUint(90),
+				Size:      10,
+				Remaining: 10,
+			},
+		},
+	)
+	require.NoError(t, err)
+
+	// Get new hash, it should have changed
+	h2, err := e1.engine.GetHash(key)
+	require.NoError(t, err)
+	require.NotEmpty(t, h1)
+	require.NotEqual(t, h1, h2)
+}

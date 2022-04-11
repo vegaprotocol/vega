@@ -16,7 +16,7 @@ Feature: Test settlement at expiry with decimal places for asset and market (dif
       | property           | type         | binding             |
       | trading.terminated | TYPE_BOOLEAN | trading termination |
 
-    And the oracle spec for settlement price filtering data from "0xCAFECAFE1" named "ethDec21Oracle":
+    And the oracle spec for settlement price filtering data from "0xCAFECAFE1" named "ethDec21Oracle": 
       | property         | type         | binding          |
       | prices.ETH.value | TYPE_INTEGER | settlement price |
 
@@ -28,6 +28,9 @@ Feature: Test settlement at expiry with decimal places for asset and market (dif
       | name                           | value |
       | market.auction.minimumDuration | 1     |
 
+    And the settlement price decimals for the oracle named "ethDec20Oracle" is given in "2" decimal places
+    And the settlement price decimals for the oracle named "ethDec21Oracle" is given in "1" decimal places
+  
     And the fees configuration named "fees-config-1":
       | maker fee | infrastructure fee |
       | 0.005     | 0.02               |
@@ -66,7 +69,7 @@ Feature: Test settlement at expiry with decimal places for asset and market (dif
     Then the market state should be "STATE_TRADING_TERMINATED" for the market "ETH/DEC19"
     Then the oracles broadcast data signed with "0xCAFECAFE":
       | name             | value |
-      | prices.ETH.value | 42000 |
+      | prices.ETH.value | 4200 |
     Then time is updated to "2020-01-01T01:01:02Z"
 
     When the parties place the following orders:
@@ -117,8 +120,8 @@ Feature: Test settlement at expiry with decimal places for asset and market (dif
     Then the market state should be "STATE_TRADING_TERMINATED" for the market "ETH/DEC21"
 
     When the oracles broadcast data signed with "0xCAFECAFE1":
-      | name             | value |
-      | prices.ETH.value | 2000000  |
+      | name             | value  |
+      | prices.ETH.value | 200000 |
 
     And the network moves ahead "2" blocks
 
@@ -176,7 +179,7 @@ Feature: Test settlement at expiry with decimal places for asset and market (dif
     Then the market state should be "STATE_TRADING_TERMINATED" for the market "ETH/DEC19"
     Then the oracles broadcast data signed with "0xCAFECAFE":
       | name             | value |
-      | prices.ETH.value | 42000 |
+      | prices.ETH.value | 4200 |
 
     Then time is updated to "2020-01-01T01:01:02Z"
 
@@ -262,7 +265,7 @@ Feature: Test settlement at expiry with decimal places for asset and market (dif
 
     When the oracles broadcast data signed with "0xCAFECAFE1":
       | name             | value  |
-      | prices.ETH.value | 700000 |
+      | prices.ETH.value | 70000  |
 
     And the network moves ahead "1" blocks
     And the insurance pool balance should be "0" for the market "ETH/DEC21"
@@ -294,7 +297,7 @@ Feature: Test settlement at expiry with decimal places for asset and market (dif
     Then the market state should be "STATE_TRADING_TERMINATED" for the market "ETH/DEC19"
     Then the oracles broadcast data signed with "0xCAFECAFE":
       | name             | value |
-      | prices.ETH.value | 42000 |
+      | prices.ETH.value | 4200  |
 
     Then time is updated to "2020-01-01T01:01:02Z"
 
@@ -364,7 +367,7 @@ Feature: Test settlement at expiry with decimal places for asset and market (dif
     Then the market state should be "STATE_TRADING_TERMINATED" for the market "ETH/DEC19"
     Then the oracles broadcast data signed with "0xCAFECAFE":
       | name             | value |
-      | prices.ETH.value | 42000 |
+      | prices.ETH.value | 4200 |
     Then time is updated to "2020-01-01T01:01:02Z"
 
     And the parties should have the following account balances:
@@ -424,7 +427,7 @@ Feature: Test settlement at expiry with decimal places for asset and market (dif
     Then the market state should be "STATE_TRADING_TERMINATED" for the market "ETH/DEC19"
     When the oracles broadcast data signed with "0xCAFECAFE":
       | name             | value |
-      | prices.ETH.value | 42000 |
+      | prices.ETH.value | 4200  |
     And time is updated to "2020-01-01T01:01:02Z"
 
 
@@ -515,7 +518,7 @@ Feature: Test settlement at expiry with decimal places for asset and market (dif
 
     When the oracles broadcast data signed with "0xCAFECAFE1":
       | name             | value |
-      | prices.ETH.value | 80000 |
+      | prices.ETH.value | 8000  |
 
     And then the network moves ahead "10" blocks
 

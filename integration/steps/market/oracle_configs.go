@@ -25,6 +25,7 @@ var (
 type oracleConfigs struct {
 	configForSettlementPrice   map[string]*OracleConfig
 	configFoTradingTermination map[string]*OracleConfig
+	settlementPriceDecimals    map[string]uint32
 }
 
 type OracleConfig struct {
@@ -36,6 +37,7 @@ func newOracleSpecs(unmarshaler *defaults.Unmarshaler) *oracleConfigs {
 	specs := &oracleConfigs{
 		configForSettlementPrice:   map[string]*OracleConfig{},
 		configFoTradingTermination: map[string]*OracleConfig{},
+		settlementPriceDecimals:    map[string]uint32{},
 	}
 
 	contentReaders := defaults.ReadAll(defaultOracleConfigs, defaultOracleConfigFileNames)
@@ -53,6 +55,18 @@ func newOracleSpecs(unmarshaler *defaults.Unmarshaler) *oracleConfigs {
 	}
 
 	return specs
+}
+
+func (f *oracleConfigs) SetSettlementPriceDP(name string, decimals uint32) {
+	f.settlementPriceDecimals[name] = decimals
+}
+
+func (f *oracleConfigs) GetSettlementPriceDP(name string) uint32 {
+	dp, ok := f.settlementPriceDecimals[name]
+	if ok {
+		return dp
+	}
+	return 0
 }
 
 func (f *oracleConfigs) Add(

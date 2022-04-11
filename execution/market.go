@@ -255,6 +255,7 @@ type Market struct {
 	feesTracker    *FeesTracker
 	marketTracker  *MarketTracker
 	positionFactor num.Decimal // 10^pdp
+	assetDP        uint32
 }
 
 // SetMarketID assigns a deterministic pseudo-random ID to a Market.
@@ -424,6 +425,7 @@ func NewMarket(
 	liqEngine.SetGetStaticPricesFunc(market.getBestStaticPricesDecimal)
 	market.tradableInstrument.Instrument.Product.NotifyOnTradingTerminated(market.tradingTerminated)
 	market.tradableInstrument.Instrument.Product.NotifyOnSettlementPrice(market.settlementPrice)
+	market.assetDP = uint32(assetDetails.DecimalPlaces())
 	return market, nil
 }
 
@@ -736,7 +738,7 @@ func (m *Market) updateMarketValueProxy() {
 func (m *Market) closeMarket(ctx context.Context, t time.Time) error {
 	// market is closed, final settlement
 	// call settlement and stuff
-	positions, err := m.settlement.Settle(t, m.priceFactor)
+	positions, err := m.settlement.Settle(t, m.assetDP)
 	if err != nil {
 		m.log.Error("Failed to get settle positions on market closed",
 			logging.Error(err))
@@ -3157,10 +3159,16 @@ func (m *Market) settlementPriceWithLock(ctx context.Context, settlementPrice *n
 			m.log.Error("could not close market", logging.Error(err))
 		}
 		m.closed = m.mkt.State == types.MarketStateSettled
-		m.markPrice = settlementPrice.Clone()
 
-		// send the market data with all updated stuff
-		m.broker.Send(events.NewMarketDataEvent(ctx, m.GetMarketData()))
+		settlementPriceInAsset, ok := m.tradableInstrument.Instrument.Product.ScaleSettlementPriceToDecimalPlaces(settlementPrice, m.assetDP)
+		if ok {
+			m.markPrice = settlementPriceInAsset.Clone()
+
+			// send the market data with all updated stuff
+			m.broker.Send(events.NewMarketDataEvent(ctx, m.GetMarketData()))
+		} else {
+			m.log.Error("failed to scale settlement price to asset")
+		}
 	}
 }
 

@@ -3,7 +3,7 @@
 ## Unreleased (0.50.0)
 
 ### 🚨 Breaking changes
-- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+- [5197](https://github.com/vegaprotocol/vega/issues/5197) - Scale settlement price based on oracle definition 
 
 ### 🗑️ Deprecation
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
@@ -15,6 +15,7 @@
 - [4922](https://github.com/vegaprotocol/vega/issues/4922) - Feature tests for 0015 market insurance pool collateral
 - [4926](https://github.com/vegaprotocol/vega/issues/4926) - Feature tests for 0019 margin calculator scenarios
 - [5119](https://github.com/vegaprotocol/vega/issues/5119) - Add Ethereum key rotation support
+- [5209](https://github.com/vegaprotocol/vega/issues/5209) - Add retries to floating point consensus engine to work around tendermint missing transactions
 
 
 ### 🐛 Fixes
@@ -25,6 +26,7 @@
 - [5111](https://github.com/vegaprotocol/vega/issues/5111) - Stop updating the market's initial configuration when an opening auction is extended
 - [5066](https://github.com/vegaprotocol/vega/issues/5066) - Return an error if market decimal place > to asset decimal place
 - [5095](https://github.com/vegaprotocol/vega/issues/5095) - Stabilise state sync restore and restore block height in the topology engine
+- [5204](https://github.com/vegaprotocol/vega/issues/5204) - Mark a snapshot state change when liquidity provision state changes
 - [4870](https://github.com/vegaprotocol/vega/issues/5870) - Add missing commands to the `TxError` event
 - [5136](https://github.com/vegaprotocol/vega/issues/5136) - Fix banking snapshot for transfers, risk factor restoration, and `statevar` handling of settled markets
 - [5088](https://github.com/vegaprotocol/vega/issues/5088) - Fixed MTM bug where settlement balance would not be zero when loss amount was 1.
@@ -49,6 +51,7 @@
 - [5067](https://github.com/vegaprotocol/vega/pull/5067) - Adding acceptance codes and tidy up tests
 - [5052](https://github.com/vegaprotocol/vega/issues/5052) - Adding acceptance criteria tests for market decimal places
 - [5138](https://github.com/vegaprotocol/vega/issues/5038) - Adding feature test for "0032-PRIM-price_monitoring.md"
+- [4753](https://github.com/vegaprotocol/vega/issues/4753) - Adding feature test for oracle spec public key validation
 
 ### 🐛 Fixes
 - [5064](https://github.com/vegaprotocol/vega/issues/5064) - Send order event on settlement

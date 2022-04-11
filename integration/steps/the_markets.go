@@ -111,6 +111,7 @@ func newMarket(config *market.Config, row marketRow) types.Market {
 		panic(err)
 	}
 
+	settlementPriceDecimals := config.OracleConfigs.GetSettlementPriceDP(row.oracleConfig())
 	var binding proto.OracleSpecToFutureBinding
 	binding.SettlementPriceProperty = oracleConfigForSettlement.Binding.SettlementPriceProperty
 	binding.TradingTerminationProperty = oracleConfigForTradingTermination.Binding.TradingTerminationProperty
@@ -150,6 +151,7 @@ func newMarket(config *market.Config, row marketRow) types.Market {
 						OracleSpecForSettlementPrice:    oracleConfigForSettlement.Spec,
 						OracleSpecForTradingTermination: oracleConfigForTradingTermination.Spec,
 						OracleSpecBinding:               types.OracleSpecToFutureBindingFromProto(&binding),
+						SettlementPriceDecimals:         settlementPriceDecimals,
 					},
 				},
 			},

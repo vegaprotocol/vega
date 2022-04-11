@@ -61,18 +61,18 @@ func (mr *MockValidatorTopologyMockRecorder) IsValidator() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsValidator", reflect.TypeOf((*MockValidatorTopology)(nil).IsValidator))
 }
 
-// IsValidatorNodeID mocks base method.
-func (m *MockValidatorTopology) IsValidatorNodeID(arg0 string) bool {
+// IsValidatorVegaPubKey mocks base method.
+func (m *MockValidatorTopology) IsValidatorVegaPubKey(arg0 string) bool {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "IsValidatorNodeID", arg0)
+	ret := m.ctrl.Call(m, "IsValidatorVegaPubKey", arg0)
 	ret0, _ := ret[0].(bool)
 	return ret0
 }
 
-// IsValidatorNodeID indicates an expected call of IsValidatorNodeID.
-func (mr *MockValidatorTopologyMockRecorder) IsValidatorNodeID(arg0 interface{}) *gomock.Call {
+// IsValidatorVegaPubKey indicates an expected call of IsValidatorVegaPubKey.
+func (mr *MockValidatorTopologyMockRecorder) IsValidatorVegaPubKey(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsValidatorNodeID", reflect.TypeOf((*MockValidatorTopology)(nil).IsValidatorNodeID), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsValidatorVegaPubKey", reflect.TypeOf((*MockValidatorTopology)(nil).IsValidatorVegaPubKey), arg0)
 }
 
 // Len mocks base method.
