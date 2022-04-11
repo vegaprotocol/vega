@@ -3,7 +3,7 @@
 ## Unreleased (0.50.0)
 
 ### 🚨 Breaking changes
-- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+- [5197](https://github.com/vegaprotocol/vega/issues/5197) - Scale settlement price based on oracle definition 
 
 ### 🗑️ Deprecation
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -

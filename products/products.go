@@ -27,11 +27,12 @@ type OracleEngine interface {
 
 // Product is the interface provided by all product in vega.
 type Product interface {
-	Settle(entryPrice, pricePrecision *num.Uint, netFractionalPosition num.Decimal) (amt *types.FinancialAmount, neg bool, err error)
+	Settle(entryPrice *num.Uint, assetDecimals uint32, netFractionalPosition num.Decimal) (amt *types.FinancialAmount, neg bool, err error)
 	Value(markPrice *num.Uint) (*num.Uint, error)
 	GetAsset() string
 	IsTradingTerminated() bool
 	SettlementPrice() (*num.Uint, error)
+	ScaleSettlementPriceToDecimalPlaces(price *num.Uint, dp uint32) (*num.Uint, bool)
 	NotifyOnTradingTerminated(listener func(context.Context, bool))
 	NotifyOnSettlementPrice(listener func(context.Context, *num.Uint))
 	Unsubscribe(context.Context, OracleEngine)
