@@ -1,6 +1,8 @@
 package types
 
 import (
+	"fmt"
+
 	proto "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/types/num"
 )
@@ -15,7 +17,15 @@ type Account struct {
 }
 
 func (a Account) String() string {
-	return a.IntoProto().String()
+	return fmt.Sprintf(
+		"ID(%s) owner(%s) balance(%s) asset(%s) marketID(%s) type(%s)",
+		a.ID,
+		a.Owner,
+		uintPointerToString(a.Balance),
+		a.Asset,
+		a.MarketID,
+		a.Type.String(),
+	)
 }
 
 func (a *Account) Clone() *Account {

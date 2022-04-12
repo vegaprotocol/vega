@@ -168,7 +168,7 @@ func CandleWithTag(c types.Candle, tag string) zap.Field {
 
 // Order constructs a field with the given VEGA order value.
 func Order(o types.Order) zap.Field {
-	return zap.String("order", o.IntoProto().String())
+	return zap.String("order", o.String())
 }
 
 // ProtoOrder constructs a field with the given VEGA order proto value.
@@ -187,7 +187,7 @@ func Time(key string, t time.Time) zap.Field {
 
 // OrderWithTag constructs a field with the given VEGA order proto value and key equal to the tag string.
 func OrderWithTag(o types.Order, tag string) zap.Field {
-	return zap.String(tag, o.IntoProto().String())
+	return zap.String(tag, o.String())
 }
 
 // Trade constructs a field with the given VEGA trade proto value.

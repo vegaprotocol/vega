@@ -496,6 +496,8 @@ func (m *Market) GetMarketState() types.MarketState {
 	return m.mkt.State
 }
 
+// priceToMarketPrecision
+// It should never return a nil pointer.
 func (m *Market) priceToMarketPrecision(price *num.Uint) *num.Uint {
 	// we assume the price is cloned correctly already
 	return price.Div(price, m.priceFactor)
@@ -2416,9 +2418,9 @@ func (m *Market) amendOrder(
 	if err != nil {
 		if m.log.GetLevel() == logging.DebugLevel {
 			m.log.Debug("Invalid order ID",
-				logging.OrderID(orderAmendment.GetOrderId()),
+				logging.OrderID(orderAmendment.GetOrderID()),
 				logging.PartyID(party),
-				logging.MarketID(orderAmendment.GetMarketId()),
+				logging.MarketID(orderAmendment.GetMarketID()),
 				logging.Error(err))
 		}
 		return nil, nil, types.ErrInvalidOrderID

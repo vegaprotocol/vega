@@ -405,7 +405,7 @@ func (e *Engine) SubmitProposal(
 		if e.log.IsDebug() {
 			e.log.Debug("Proposal rejected",
 				logging.String("proposal-id", p.ID),
-				logging.String("proposal details", p.IntoProto().String()),
+				logging.String("proposal details", p.String()),
 			)
 		}
 		return nil, err
