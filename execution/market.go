@@ -376,6 +376,7 @@ func NewMarket(
 	// Populate the market timestamps
 	ts := &types.MarketTimestamps{
 		Proposed: now.UnixNano(),
+		Pending:  now.UnixNano(),
 	}
 
 	if mkt.OpeningAuction != nil {
