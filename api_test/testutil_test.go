@@ -246,6 +246,7 @@ func NewTestServer(t testing.TB, ctx context.Context, blocking bool) *TestServer
 	sqlLPDataStore := sqlstore.NewLiquidityProvision(&sqlStore)
 	sqlTransfersStore := sqlstore.NewTransfers(&sqlStore)
 	sqlStakeLinkingStore := sqlstore.NewStakeLinking(&sqlStore)
+	sqlNotaryStore := sqlstore.NewNotary(&sqlStore)
 
 	eventSource, err := broker.NewEventSource(conf.Broker, logger)
 	if err != nil {
@@ -333,6 +334,7 @@ func NewTestServer(t testing.TB, ctx context.Context, blocking bool) *TestServer
 		sqlPositionStore,
 		sqlTransfersStore,
 		sqlStakeLinkingStore,
+		sqlNotaryStore,
 	)
 	if srv == nil {
 		t.Fatal("failed to create gRPC server")
@@ -384,7 +386,8 @@ func PublishEvents(
 	ctx context.Context,
 	b *broker.Broker,
 	convertEvt func(be *eventspb.BusEvent) (events.Event, error),
-	goldenFile string) {
+	goldenFile string,
+) {
 	t.Helper()
 	path := filepath.Join("testdata", goldenFile)
 	f, err := os.Open(path)

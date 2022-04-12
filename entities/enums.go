@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"code.vegaprotocol.io/protos/vega"
+	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
 	v1 "code.vegaprotocol.io/protos/vega/oracles/v1"
 	"github.com/jackc/pgtype"
@@ -504,6 +505,35 @@ func (s *VoteValue) DecodeText(_ *pgtype.ConnInfo, src []byte) error {
 		return fmt.Errorf("unknown vote value: %s", src)
 	}
 	*s = VoteValue(val)
+	return nil
+}
+
+/************************* NodeSignature Kind *****************************/
+
+type NodeSignatureKind commandspb.NodeSignatureKind
+
+const (
+	NodeSignatureKindUnspecified          = NodeSignatureKind(commandspb.NodeSignatureKind_NODE_SIGNATURE_KIND_UNSPECIFIED)
+	NodeSignatureKindAsset                = NodeSignatureKind(commandspb.NodeSignatureKind_NODE_SIGNATURE_KIND_ASSET_NEW)
+	NodeSignatureKindAssetWithdrawal      = NodeSignatureKind(commandspb.NodeSignatureKind_NODE_SIGNATURE_KIND_ASSET_WITHDRAWAL)
+	NodeSignatureKindMultisigSignerAdded  = NodeSignatureKind(commandspb.NodeSignatureKind_NODE_SIGNATURE_KIND_ERC20_MULTISIG_SIGNER_ADDED)
+	NodeSignatureKindMultisigSignerRemove = NodeSignatureKind(commandspb.NodeSignatureKind_NODE_SIGNATURE_KIND_ERC20_MULTISIG_SIGNER_REMOVED)
+)
+
+func (s NodeSignatureKind) EncodeText(_ *pgtype.ConnInfo, buf []byte) ([]byte, error) {
+	str, ok := commandspb.NodeSignatureKind_name[int32(s)]
+	if !ok {
+		return buf, fmt.Errorf("unknown state: %v", s)
+	}
+	return append(buf, []byte(str)...), nil
+}
+
+func (s *NodeSignatureKind) DecodeText(_ *pgtype.ConnInfo, src []byte) error {
+	val, ok := commandspb.NodeSignatureKind_value[string(src)]
+	if !ok {
+		return fmt.Errorf("unknown state: %s", src)
+	}
+	*s = NodeSignatureKind(val)
 	return nil
 }
 

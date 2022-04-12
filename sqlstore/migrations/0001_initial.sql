@@ -593,6 +593,17 @@ create view stake_linking_current as (
     order by id, vega_time desc
 );
 
+
+create type node_signature_kind as enum('NODE_SIGNATURE_KIND_UNSPECIFIED', 'NODE_SIGNATURE_KIND_ASSET_NEW', 'NODE_SIGNATURE_KIND_ASSET_WITHDRAWAL', 'NODE_SIGNATURE_KIND_ERC20_MULTISIG_SIGNER_ADDED', 'NODE_SIGNATURE_KIND_ERC20_MULTISIG_SIGNER_REMOVED');
+
+create table if not exists node_signatures(
+    resource_id bytea not null,
+    sig bytea not null,
+    kind node_signature_kind,
+    primary key (resource_id, sig)
+);
+
+
 -- +goose Down
 DROP AGGREGATE IF EXISTS public.first(anyelement);
 DROP AGGREGATE IF EXISTS public.last(anyelement);
@@ -613,6 +624,9 @@ DROP VIEW IF EXISTS stake_linking_current;
 DROP TABLE IF EXISTS stake_linking;
 DROP TYPE IF EXISTS stake_linking_status;
 DROP TYPE IF EXISTS stake_linking_type;
+
+DROP TABLE IF EXISTS node_signatures;
+DROP TYPE IF EXISTS node_signature_kind;
 
 DROP TABLE IF EXISTS liquidity_provisions;
 DROP TYPE IF EXISTS liquidity_provision_status;

@@ -114,6 +114,7 @@ type GRPCServer struct {
 	positionStore           *sqlstore.Positions
 	transfersStore          *sqlstore.Transfers
 	stakeLinkingStore       *sqlstore.StakeLinking
+	notaryStore             *sqlstore.Notary
 	eventObserver           *eventObserver
 
 	// used in order to gracefully close streams
@@ -181,6 +182,7 @@ func NewGRPCServer(
 	positionStore *sqlstore.Positions,
 	transfersStore *sqlstore.Transfers,
 	stakeLinkingStore *sqlstore.StakeLinking,
+	notaryStore *sqlstore.Notary,
 ) *GRPCServer {
 	// setup logger
 	log = log.Named(namedLogger)
@@ -246,6 +248,7 @@ func NewGRPCServer(
 		positionStore:           positionStore,
 		transfersStore:          transfersStore,
 		stakeLinkingStore:       stakeLinkingStore,
+		notaryStore:             notaryStore,
 		eventObserver: &eventObserver{
 			log:          log,
 			eventService: eventService,
@@ -416,6 +419,7 @@ func (g *GRPCServer) Start(ctx context.Context, lis net.Listener) error {
 			positionStore:           g.positionStore,
 			transfersStore:          g.transfersStore,
 			stakingStore:            g.stakeLinkingStore,
+			notaryStore:             g.notaryStore,
 		}
 	} else {
 		g.tradingDataService = tradingDataSvc

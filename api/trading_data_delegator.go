@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"strconv"
@@ -9,6 +10,7 @@ import (
 	"code.vegaprotocol.io/data-node/candlesv2"
 	"code.vegaprotocol.io/data-node/risk"
 	"code.vegaprotocol.io/data-node/vegatime"
+	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
 	"code.vegaprotocol.io/vega/types/num"
 
@@ -49,6 +51,7 @@ type tradingDataDelegator struct {
 	positionStore           *sqlstore.Positions
 	transfersStore          *sqlstore.Transfers
 	stakingStore            *sqlstore.StakeLinking
+	notaryStore             *sqlstore.Notary
 }
 
 var defaultEntityPagination = entities.Pagination{
@@ -236,7 +239,8 @@ func (t *tradingDataDelegator) NetworkParameters(ctx context.Context, req *proto
 /****************************** Candles **************************************/
 
 func (t *tradingDataDelegator) Candles(ctx context.Context,
-	request *protoapi.CandlesRequest) (*protoapi.CandlesResponse, error) {
+	request *protoapi.CandlesRequest,
+) (*protoapi.CandlesResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("Candles-SQL")()
 
 	if request.Interval == vega.Interval_INTERVAL_UNSPECIFIED {
@@ -639,7 +643,8 @@ func (t *tradingDataDelegator) GetEpoch(ctx context.Context, req *protoapi.GetEp
 /****************************** Delegations **************************************/
 
 func (t *tradingDataDelegator) Delegations(ctx context.Context,
-	req *protoapi.DelegationsRequest) (*protoapi.DelegationsResponse, error) {
+	req *protoapi.DelegationsRequest,
+) (*protoapi.DelegationsResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("Delegations SQL")()
 
 	var delegations []entities.Delegation
@@ -689,7 +694,8 @@ func (t *tradingDataDelegator) Delegations(ctx context.Context,
 /****************************** Rewards **************************************/
 
 func (t *tradingDataDelegator) GetRewards(ctx context.Context,
-	req *protoapi.GetRewardsRequest) (*protoapi.GetRewardsResponse, error) {
+	req *protoapi.GetRewardsRequest,
+) (*protoapi.GetRewardsResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("GetRewards-SQL")()
 	if len(req.PartyId) <= 0 {
 		return nil, apiError(codes.InvalidArgument, ErrGetRewards)
@@ -722,7 +728,8 @@ func (t *tradingDataDelegator) GetRewards(ctx context.Context,
 }
 
 func (t *tradingDataDelegator) GetRewardSummaries(ctx context.Context,
-	req *protoapi.GetRewardSummariesRequest) (*protoapi.GetRewardSummariesResponse, error) {
+	req *protoapi.GetRewardSummariesRequest,
+) (*protoapi.GetRewardSummariesResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("GetRewardSummaries-SQL")()
 
 	if len(req.PartyId) <= 0 {
@@ -754,7 +761,8 @@ func (t *tradingDataDelegator) GetRewardSummaries(ctx context.Context,
 // TradesByParty provides a list of trades for the given party.
 // Pagination: Optional. If not provided, defaults are used.
 func (t *tradingDataDelegator) TradesByParty(ctx context.Context,
-	req *protoapi.TradesByPartyRequest) (*protoapi.TradesByPartyResponse, error) {
+	req *protoapi.TradesByPartyRequest,
+) (*protoapi.TradesByPartyResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("TradesByParty-SQL")()
 
 	p := defaultEntityPagination
@@ -782,7 +790,8 @@ func tradesToProto(trades []entities.Trade) []*vega.Trade {
 
 // TradesByOrder provides a list of the trades that correspond to a given order.
 func (t *tradingDataDelegator) TradesByOrder(ctx context.Context,
-	req *protoapi.TradesByOrderRequest) (*protoapi.TradesByOrderResponse, error) {
+	req *protoapi.TradesByOrderRequest,
+) (*protoapi.TradesByOrderResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("TradesByOrder-SQL")()
 
 	trades, err := t.tradeStore.GetByOrderID(ctx, req.OrderId, nil, defaultEntityPagination)
@@ -818,7 +827,8 @@ func (t *tradingDataDelegator) TradesByMarket(ctx context.Context, req *protoapi
 
 // LastTrade provides the last trade for the given market.
 func (t *tradingDataDelegator) LastTrade(ctx context.Context,
-	req *protoapi.LastTradeRequest) (*protoapi.LastTradeResponse, error) {
+	req *protoapi.LastTradeRequest,
+) (*protoapi.LastTradeResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("LastTrade-SQL")()
 
 	if len(req.MarketId) <= 0 {
@@ -864,7 +874,8 @@ func (t *tradingDataDelegator) OrderByID(ctx context.Context, req *protoapi.Orde
 }
 
 func (t *tradingDataDelegator) OrderByMarketAndID(ctx context.Context,
-	req *protoapi.OrderByMarketAndIDRequest) (*protoapi.OrderByMarketAndIDResponse, error) {
+	req *protoapi.OrderByMarketAndIDRequest,
+) (*protoapi.OrderByMarketAndIDResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("OrderByMarketAndID-SQL")()
 
 	// This function is no longer needed; IDs are globally unique now, but keep it for compatibility for now
@@ -899,7 +910,8 @@ func (t *tradingDataDelegator) OrderByReference(ctx context.Context, req *protoa
 }
 
 func (t *tradingDataDelegator) OrdersByParty(ctx context.Context,
-	req *protoapi.OrdersByPartyRequest) (*protoapi.OrdersByPartyResponse, error) {
+	req *protoapi.OrdersByPartyRequest,
+) (*protoapi.OrdersByPartyResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("OrdersByParty-SQL")()
 
 	p := defaultPaginationV2
@@ -1059,7 +1071,8 @@ func toAccountsFilterMarkets(marketIDs ...string) []entities.Market {
 }
 
 func (t *tradingDataDelegator) MarketAccounts(ctx context.Context,
-	req *protoapi.MarketAccountsRequest) (*protoapi.MarketAccountsResponse, error) {
+	req *protoapi.MarketAccountsRequest,
+) (*protoapi.MarketAccountsResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("MarketAccounts")()
 
 	filter := entities.AccountFilter{
@@ -1084,7 +1097,8 @@ func (t *tradingDataDelegator) MarketAccounts(ctx context.Context,
 }
 
 func (t *tradingDataDelegator) FeeInfrastructureAccounts(ctx context.Context,
-	req *protoapi.FeeInfrastructureAccountsRequest) (*protoapi.FeeInfrastructureAccountsResponse, error) {
+	req *protoapi.FeeInfrastructureAccountsRequest,
+) (*protoapi.FeeInfrastructureAccountsResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("FeeInfrastructureAccounts")()
 
 	filter := entities.AccountFilter{
@@ -1105,7 +1119,8 @@ func (t *tradingDataDelegator) FeeInfrastructureAccounts(ctx context.Context,
 }
 
 func (t *tradingDataDelegator) GlobalRewardPoolAccounts(ctx context.Context,
-	req *protoapi.GlobalRewardPoolAccountsRequest) (*protoapi.GlobalRewardPoolAccountsResponse, error) {
+	req *protoapi.GlobalRewardPoolAccountsRequest,
+) (*protoapi.GlobalRewardPoolAccountsResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("GloabRewardPoolAccounts")()
 	filter := entities.AccountFilter{
 		Asset: toAccountsFilterAsset(req.Asset),
@@ -1448,6 +1463,82 @@ func (t *tradingDataDelegator) Withdrawals(ctx context.Context, req *protoapi.Wi
 	}
 	return &protoapi.WithdrawalsResponse{
 		Withdrawals: out,
+	}, nil
+}
+
+func (t *tradingDataDelegator) ERC20WithdrawalApproval(ctx context.Context, req *protoapi.ERC20WithdrawalApprovalRequest) (*protoapi.ERC20WithdrawalApprovalResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("ERC20WithdrawalApproval SQL")()
+	if len(req.WithdrawalId) <= 0 {
+		return nil, ErrMissingDepositID
+	}
+
+	// get withdrawal first
+	w, err := t.withdrawalsStore.GetByID(ctx, req.WithdrawalId)
+	if err != nil {
+		return nil, apiError(codes.NotFound, err)
+	}
+
+	// get the signatures from  notaryStore
+	signatures, err := t.notaryStore.GetByResourceID(ctx, req.WithdrawalId)
+	if err != nil {
+		return nil, apiError(codes.NotFound, err)
+	}
+
+	// some assets stuff
+	assets, err := t.assetStore.GetAll(ctx)
+	if err != nil {
+		return nil, apiError(codes.Internal, err)
+	}
+
+	// get the signature into the form form:
+	// 0x + sig1 + sig2 + ... + sigN in hex encoded form
+	pack := "0x"
+	for _, v := range signatures {
+		pack = fmt.Sprintf("%v%v", pack, hex.EncodeToString(v.Sig))
+	}
+
+	var address string
+	for _, v := range assets {
+		if v.ID == w.Asset {
+			address = v.ERC20Contract
+			break // found the one we want
+		}
+	}
+	if len(address) <= 0 {
+		return nil, fmt.Errorf("invalid erc20 token contract address")
+	}
+
+	return &protoapi.ERC20WithdrawalApprovalResponse{
+		AssetSource:   address,
+		Amount:        fmt.Sprintf("%v", w.Amount),
+		Expiry:        w.Expiry.UnixMicro(),
+		Nonce:         w.Ref,
+		TargetAddress: w.Ext.GetErc20().ReceiverAddress,
+		Signatures:    pack,
+	}, nil
+}
+
+func (t *tradingDataDelegator) GetNodeSignaturesAggregate(ctx context.Context,
+	req *protoapi.GetNodeSignaturesAggregateRequest,
+) (*protoapi.GetNodeSignaturesAggregateResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("GetNodeSignaturesAggregate SQL")()
+	if len(req.Id) <= 0 {
+		return nil, apiError(codes.InvalidArgument, errors.New("missing ID"))
+	}
+
+	sigs, err := t.notaryStore.GetByResourceID(ctx, req.Id)
+	if err != nil {
+		return nil, apiError(codes.NotFound, err)
+	}
+
+	out := make([]*commandspb.NodeSignature, 0, len(sigs))
+	for _, v := range sigs {
+		vv := v.ToProto()
+		out = append(out, vv)
+	}
+
+	return &protoapi.GetNodeSignaturesAggregateResponse{
+		Signatures: out,
 	}, nil
 }
 

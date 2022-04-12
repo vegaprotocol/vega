@@ -23,7 +23,7 @@ import (
 
 var (
 	ErrBadID   = errors.New("Bad ID (must be hex string)")
-	tableNames = [...]string{"ledger", "accounts", "parties", "assets", "blocks"}
+	tableNames = [...]string{"ledger", "accounts", "parties", "assets", "blocks", "node_signatures"}
 )
 
 //go:embed migrations/*.sql
@@ -117,7 +117,6 @@ func InitialiseTestStorage(log *logging.Logger, config Config) (*SQLStore, error
 		testID := uuid.NewV4().String()
 
 		tempDir, err := ioutil.TempDir("", testID)
-
 		if err != nil {
 			return nil, err
 		}

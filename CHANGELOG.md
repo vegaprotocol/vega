@@ -16,6 +16,7 @@
 - [381](https://github.com/vegaprotocol/data-node/issues/381) - Migrate existing Positions API to new `Postgres` database.
 - [467](https://github.com/vegaprotocol/data-node/pull/467) - Migrate transfers API to retrieve data from `Postgres`
 - [469](https://github.com/vegaprotocol/data-node/issues/469) - Migrate existing stake linking API to new `Postgres` database.
+- [496](https://github.com/vegaprotocol/data-node/issues/496) - Migrate `ERC20WithdrawlApproval` and `NodeSignaturesAggregate` API to new `Postgres` database.
 - [474](https://github.com/vegaprotocol/data-node/pull/474) - Clean up error handling in subscribers and make action on error configurable 
 - [487](https://github.com/vegaprotocol/data-node/pull/487) - Trade data retention 
 - [495](https://github.com/vegaprotocol/data-node/pull/495) - Account for `SettlePosition` events reaching the positions plug-in before the `PositionState` event.

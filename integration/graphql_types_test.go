@@ -140,7 +140,6 @@ type Party struct {
 	// Stake PartyStake
 	// Rewards []Reward
 	// RewardSummaries []RewardSummary
-
 }
 
 type ProposalTerms struct {
@@ -413,4 +412,18 @@ type Position struct {
 	UnrealisedPNL     string
 	AverageEntryPrice string
 	UpdatedAt         TimeString
+}
+
+type NodeSignature struct {
+	ID        HexString
+	Signature HexString
+	Kind      string
+}
+
+type ERC20WithdrawalApproval struct {
+	AssetSource   string
+	Amount        string
+	Nonce         string
+	Signatures    string
+	TargetAddress string
 }
