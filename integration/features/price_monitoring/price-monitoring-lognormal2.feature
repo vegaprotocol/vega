@@ -14,7 +14,7 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
       | ETH/DEC20 | ETH        | ETH   | my-log-normal-risk-model | default-margin-calculator | 3600             | default-none | my-price-monitoring | default-eth-for-future |
     And the following network parameters are set:
       | name                           | value |
-      | market.auction.minimumDuration | 3600  |
+      | market.auction.minimumDuration | 100   |
 
   Scenario: Auction triggered by 1st trigger (lower bound breached)
     Given the parties deposit on asset's general account the following amount:
@@ -79,6 +79,9 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
       | 104251     | TRADING_MODE_CONTINUOUS | 3600    | 95878     | 104251    |
       | 104251     | TRADING_MODE_CONTINUOUS | 7200    | 90497     | 110401    |
 
+    # T0
+    Then time is updated to "2020-10-16T02:00:00Z"
+
     When the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | party1 | ETH/DEC20 | sell | 1      | 95877 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
@@ -88,13 +91,13 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
 
     And the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC20"
 
-    #T0 + 4min + 2 second opening auction
-    Then time is updated to "2020-10-16T02:04:02Z"
+    #T0 + 4min
+    Then time is updated to "2020-10-16T02:04:00Z"
 
     And the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC20"
 
-    #T0 + 4min03s
-    Then time is updated to "2020-10-16T03:04:03Z"
+    #T0 + 4min + 1 second 
+    Then time is updated to "2020-10-16T02:04:01Z"
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
@@ -170,12 +173,12 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
     And the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC20"
 
     #T0 + 4min + 2 second opening auction
-    Then time is updated to "2020-10-16T02:04:02Z"
+    Then time is updated to "2020-10-16T01:04:00Z"
 
     And the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC20"
 
     #T0 + 4min03s
-    Then time is updated to "2020-10-16T03:04:03Z"
+    Then time is updated to "2020-10-16T03:04:04Z"
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
@@ -247,13 +250,13 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
 
     And the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC20"
 
-    #T0 + 4min + 2 second opening auction
-    Then time is updated to "2020-10-16T02:04:02Z"
+    #T0 + 4min
+    Then time is updated to "2020-10-16T02:04:00Z"
 
     And the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC20"
 
-    #T0 + 4min03s
-    Then time is updated to "2020-10-16T03:04:03Z"
+    #T0 + 4min01s
+    Then time is updated to "2020-10-16T03:04:01Z"
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
@@ -284,6 +287,10 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
       | party4 | ETH/DEC20 | buy  | 1      | 100000 | 0                | TYPE_LIMIT | TIF_GFA | party4-2  |
     Then the opening auction period ends for market "ETH/DEC20"
     And the mark price should be "100000" for the market "ETH/DEC20"
+   
+    #T0
+    Then time is updated to "2020-10-16T02:00:00Z"
+   
     Then the parties cancel the following orders:
       | party  | reference |
       | party3 | party3-1  |
@@ -325,25 +332,25 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
 
     And the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC20"
 
-    #T0 + 4min + 2 second opening auction
-    Then time is updated to "2020-10-16T02:04:02Z"
+    #T0 + 4min 
+    Then time is updated to "2020-10-16T02:04:00Z"
 
     And the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC20"
 
-    #T0 + 4min03s
-    Then time is updated to "2020-10-16T02:04:03Z"
+    #T0 + 4min01s
+    Then time is updated to "2020-10-16T02:04:01Z"
 
     And the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC20"
 
     And the mark price should be "104251" for the market "ETH/DEC20"
 
-    #T0 + 10min + 2 second opening auction
-    Then time is updated to "2020-10-16T02:10:02Z"
+    #T0 + 10min
+    Then time is updated to "2020-10-16T02:10:00Z"
 
     And the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC20"
 
-    #T0 + 10min03s
-    Then time is updated to "2020-10-16T03:10:03Z"
+    #T0 + 10min01s
+    Then time is updated to "2020-10-16T02:10:01Z"
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
@@ -374,6 +381,10 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
       | party4 | ETH/DEC20 | buy  | 1      | 100000 | 0                | TYPE_LIMIT | TIF_GFA | party4-2  |
     Then the opening auction period ends for market "ETH/DEC20"
     And the mark price should be "100000" for the market "ETH/DEC20"
+   
+    #T0
+    Then time is updated to "2020-10-16T02:00:00Z"
+   
     Then the parties cancel the following orders:
       | party  | reference |
       | party3 | party3-1  |
@@ -415,25 +426,25 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
 
     And the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC20"
 
-    #T0 + 4min + 2 second opening auction
-    Then time is updated to "2020-10-16T02:04:02Z"
+    #T0 + 4min 
+    Then time is updated to "2020-10-16T02:04:00Z"
 
     And the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC20"
 
-    #T0 + 4min03s
-    Then time is updated to "2020-10-16T02:04:03Z"
+    #T0 + 4min01s
+    Then time is updated to "2020-10-16T02:04:01Z"
 
     And the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC20"
 
     And the mark price should be "104251" for the market "ETH/DEC20"
 
-    #T0 + 10min + 2 second opening auction
-    Then time is updated to "2020-10-16T02:10:01Z"
+    #T0 + 10min 
+    Then time is updated to "2020-10-16T02:10:00Z"
 
     And the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC20"
 
-    #T0 + 10min03s
-    Then time is updated to "2020-10-16T03:10:03Z"
+    #T0 + 10min01s
+    Then time is updated to "2020-10-16T03:10:01Z"
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
@@ -448,7 +459,12 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
       | party4 | ETH   | 10000000000  |
       | aux    | ETH   | 100000000000 |
 
-     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
+    Then the parties submit the following liquidity provision:
+      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
+      | lp1 | aux   | ETH/DEC20 | 614212            | 0.001 | buy  | BID              | 1          | 10     | submission |
+      | lp1 | aux   | ETH/DEC20 | 614212            | 0.001 | sell | ASK              | 1          | 10     | amendment  |
+
+    # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     Then the parties place the following orders:
       | party | market id | side | volume | price  | resulting trades | type       | tif     |
       | aux   | ETH/DEC20 | buy  | 1      | 1      | 0                | TYPE_LIMIT | TIF_GTC |
@@ -520,8 +536,10 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
       | party  | reference |
       | party1 | cancel-me |
 
+    # Additional sell volume prevents liquidity extension
     When the parties place the following orders:
       | party  | market id | side | volume | price  | resulting trades | type       | tif     | reference |
+      | party1 | ETH/DEC20 | sell | 1      | 110431 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     | 
       | party1 | ETH/DEC20 | sell | 1      | 110430 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | party2 | ETH/DEC20 | buy  | 1      | 110430 | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
@@ -535,13 +553,13 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
     #T0 + 10min
     Then time is updated to "2020-10-16T02:10:02Z"
 
-    And the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC20"
-
-    And the mark price should be "104251" for the market "ETH/DEC20"
+   Then the market data for the market "ETH/DEC20" should be:
+      | mark price | trading mode            | auction trigger             | extension trigger       | target stake | supplied stake | open interest |
+      | 104251     | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_PRICE | AUCTION_TRIGGER_PRICE | 614211       | 614212         | 4             |
 
     #T0 + 10min01sec
-    Then time is updated to "2020-10-16T03:10:03Z"
+    Then time is updated to "2020-10-16T02:10:03Z"
 
-    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
-
-    And the mark price should be "110430" for the market "ETH/DEC20"
+    Then the market data for the market "ETH/DEC20" should be:
+      | mark price | trading mode            | auction trigger             | extension trigger           | target stake | supplied stake | open interest |
+      | 110430     | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | AUCTION_TRIGGER_UNSPECIFIED | 614211       | 614212         | 5             |

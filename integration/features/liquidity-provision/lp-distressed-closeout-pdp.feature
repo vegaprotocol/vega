@@ -153,7 +153,7 @@ Feature: Replicate LP getting distressed during continuous trading, and after le
       | party3 | ETH/DEC21 | buy  | 1000   | 1060  | 0                | TYPE_LIMIT | TIF_GTC |
     Then the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode                    | auction trigger       | target stake | supplied stake | open interest |
-      | 1010       | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_PRICE | 2323         | 10000          | 2300          |
+      | 1010       | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_PRICE | 3481         | 10000          | 2300          |
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general | bond |
       | party0 | ETH   | ETH/DEC21 | 1861   | 0       | 6    |

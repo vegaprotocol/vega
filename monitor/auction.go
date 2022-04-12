@@ -105,7 +105,7 @@ func (a *AuctionState) ExtendAuctionLiquidity(delta types.AuctionDuration) {
 	a.ExtendAuction(delta)
 }
 
-// ExtendAuction extends the current auction
+// ExtendAuction extends the current auction.
 func (a *AuctionState) ExtendAuction(delta types.AuctionDuration) {
 	a.end.Duration += delta.Duration
 	a.end.Volume += delta.Volume
