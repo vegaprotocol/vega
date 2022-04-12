@@ -3141,7 +3141,7 @@ func (m *Market) tradingTerminated(ctx context.Context, tt bool) {
 	m.settlementPriceWithLock(ctx, settlementPrice)
 }
 
-func (m *Market) settlementPrice(ctx context.Context, settlementPrice *num.Uint) {
+func (m *Market) settlementPrice(ctx context.Context, settlementPrice *num.Decimal) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
@@ -3149,7 +3149,7 @@ func (m *Market) settlementPrice(ctx context.Context, settlementPrice *num.Uint)
 }
 
 // NB this musy be called with the lock already acquired.
-func (m *Market) settlementPriceWithLock(ctx context.Context, settlementPrice *num.Uint) {
+func (m *Market) settlementPriceWithLock(ctx context.Context, settlementPrice *num.Decimal) {
 	if m.closed {
 		return
 	}
@@ -3160,7 +3160,7 @@ func (m *Market) settlementPriceWithLock(ctx context.Context, settlementPrice *n
 		}
 		m.closed = m.mkt.State == types.MarketStateSettled
 
-		settlementPriceInAsset, ok := m.tradableInstrument.Instrument.Product.ScaleSettlementPriceToDecimalPlaces(settlementPrice, m.assetDP)
+		settlementPriceInAsset, ok := m.tradableInstrument.Instrument.Product.ScaleSettlementPriceToDecimalPlaces(*settlementPrice, m.assetDP)
 		if ok {
 			m.markPrice = settlementPriceInAsset.Clone()
 

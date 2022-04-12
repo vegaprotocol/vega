@@ -32,7 +32,7 @@ type MarketPosition interface {
 type Product interface {
 	Settle(entryPrice *num.Uint, assetDecimals uint32, netFractionalPosition num.Decimal) (amt *types.FinancialAmount, neg bool, err error)
 	GetAsset() string
-	SettlementPrice() (*num.Uint, error)
+	SettlementPrice() (*num.Decimal, error)
 }
 
 // Broker - the event bus broker, send events here.

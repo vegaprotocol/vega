@@ -67,10 +67,10 @@ func (mr *MockProductMockRecorder) Settle(arg0, arg1, arg2 interface{}) *gomock.
 }
 
 // SettlementPrice mocks base method.
-func (m *MockProduct) SettlementPrice() (*num.Uint, error) {
+func (m *MockProduct) SettlementPrice() (*decimal.Decimal, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SettlementPrice")
-	ret0, _ := ret[0].(*num.Uint)
+	ret0, _ := ret[0].(*decimal.Decimal)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

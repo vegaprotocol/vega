@@ -20,51 +20,113 @@ func TestFuture(t *testing.T) {
 }
 
 func TestScalingOfSettlementPrice(t *testing.T) {
-	t.Run("No scaling needed for settlement price for asset decimals", testNoScalingNeeded)
-	t.Run("Need to scale up the settlement price for asset decimals", testScalingUpNeeded)
-	t.Run("Need to scale down the settlement price for asset decimals no loss of precision", testScalingDownNeeded)
-	t.Run("Need to scale down the settlement price for asset decimals with loss of precision", testScalingDownNeededWithPrecisionLoss)
-}
+	ft := testFuture(t, 5)
 
-func testNoScalingNeeded(t *testing.T) {
-	ft := testFuture(t)
-
-	// settlement price is in 5 decimal places, asset in 5 decimal places => no scaling
-	scaled, overflow := ft.future.ScaleSettlementPriceToDecimalPlaces(num.NewUint(100000), 5)
+	// scaling factor = 5, asset scaling = 5
+	// scaled = 123.45678 * 1 => to uint => 123
+	scaled, overflow := ft.future.ScaleSettlementPriceToDecimalPlaces(num.MustDecimalFromString("123.45678"), 5)
 	require.Equal(t, false, overflow)
-	require.Equal(t, num.NewUint(100000), scaled)
-}
+	require.Equal(t, num.NewUint(123), scaled)
 
-func testScalingUpNeeded(t *testing.T) {
-	ft := testFuture(t)
-
-	// settlement price is in 5 decimal places, asset in 10 decimal places => x10^5
-	scaled, overflow := ft.future.ScaleSettlementPriceToDecimalPlaces(num.NewUint(100000), 10)
+	// scaling factor = 5, asset scaling = 5
+	// scaled = 1000000 * 1 => to uint => 1000000
+	scaled, overflow = ft.future.ScaleSettlementPriceToDecimalPlaces(num.MustDecimalFromString("1000000"), 5)
 	require.Equal(t, false, overflow)
-	require.Equal(t, num.NewUint(10000000000), scaled)
-}
+	require.Equal(t, num.NewUint(1000000), scaled)
 
-func testScalingDownNeeded(t *testing.T) {
-	ft := testFuture(t)
-
-	// settlement price is in 5 decimal places, asset in 3 decimal places => x10^-2
-	scaled, overflow := ft.future.ScaleSettlementPriceToDecimalPlaces(num.NewUint(100000), 3)
+	// scaling factor = 5, asset scaling = 3
+	// scaled = 123.45678 * 10^(3-5) => 1.2345678 => to uint => 1
+	scaled, overflow = ft.future.ScaleSettlementPriceToDecimalPlaces(num.MustDecimalFromString("123.45678"), 3)
 	require.Equal(t, false, overflow)
-	require.Equal(t, num.NewUint(1000), scaled)
-}
+	require.Equal(t, num.NewUint(1), scaled)
 
-func testScalingDownNeededWithPrecisionLoss(t *testing.T) {
-	ft := testFuture(t)
-
-	// settlement price is in 5 decimal places, asset in 3 decimal places => x10^-2
-	scaled, overflow := ft.future.ScaleSettlementPriceToDecimalPlaces(num.NewUint(123456), 3)
+	// scaling factor = 5, asset scaling = 3
+	// scaled = 1000000 * 10^(3-5) => 10000 => to uint => 10000
+	scaled, overflow = ft.future.ScaleSettlementPriceToDecimalPlaces(num.MustDecimalFromString("1000000"), 3)
 	require.Equal(t, false, overflow)
-	require.Equal(t, num.NewUint(1234), scaled)
+	require.Equal(t, num.NewUint(10000), scaled)
+
+	// scaling factor = 5, asset scaling = 7
+	// scaled = 123.45678 * 10^(7-5) => 12345.678 => to uint => 12345
+	scaled, overflow = ft.future.ScaleSettlementPriceToDecimalPlaces(num.MustDecimalFromString("123.45678"), 7)
+	require.Equal(t, false, overflow)
+	require.Equal(t, num.NewUint(12345), scaled)
+
+	// scaling factor = 5, asset scaling = 7
+	// scaled = 1000000 * 10^(7-5) => 100000000 => to uint => 100000000
+	scaled, overflow = ft.future.ScaleSettlementPriceToDecimalPlaces(num.MustDecimalFromString("1000000"), 7)
+	require.Equal(t, false, overflow)
+	require.Equal(t, num.NewUint(100000000), scaled)
+
+	// scaling factor = 5, asset scaling = 0
+	// scaled = 123456.78 * 10^(0-5) => 1.2345678 => to uint => 1
+	scaled, overflow = ft.future.ScaleSettlementPriceToDecimalPlaces(num.MustDecimalFromString("123456.78"), 0)
+	require.Equal(t, false, overflow)
+	require.Equal(t, num.NewUint(1), scaled)
+
+	// scaling factor = 5, asset scaling = 0
+	// scaled = 1000000 * 10^(0-5) => 10 => to uint => 1
+	scaled, overflow = ft.future.ScaleSettlementPriceToDecimalPlaces(num.MustDecimalFromString("1000000"), 0)
+	require.Equal(t, false, overflow)
+	require.Equal(t, num.NewUint(10), scaled)
+
+	tf := testFuture(t, 0)
+
+	// scaling factor = 0, asset scaling = 0
+	// scaled = 123456.78 * 10^(0-0) => 123456.78 => to uint => 123456
+	scaled, overflow = tf.future.ScaleSettlementPriceToDecimalPlaces(num.MustDecimalFromString("123456.78"), 0)
+	require.Equal(t, false, overflow)
+	require.Equal(t, num.NewUint(123456), scaled)
+
+	// scaling factor = 0, asset scaling = 0
+	// scaled = 1000000 * 10^(0-0) => 1000000 => to uint => 1000000
+	scaled, overflow = tf.future.ScaleSettlementPriceToDecimalPlaces(num.MustDecimalFromString("1000000"), 0)
+	require.Equal(t, false, overflow)
+	require.Equal(t, num.NewUint(1000000), scaled)
+
+	// scaling factor = 0, asset scaling = 5
+	// scaled = 123456.78 * 10^(5-0) => 12345678000 => to uint => 12345678000
+	scaled, overflow = tf.future.ScaleSettlementPriceToDecimalPlaces(num.MustDecimalFromString("123456.78"), 5)
+	require.Equal(t, false, overflow)
+	require.Equal(t, num.NewUint(12345678000), scaled)
+
+	// scaling factor = 0, asset scaling = 5
+	// scaled = 1000000 * 10^(5-0) => 100000000000 => to uint => 100000000000
+	scaled, overflow = tf.future.ScaleSettlementPriceToDecimalPlaces(num.MustDecimalFromString("1000000"), 5)
+	require.Equal(t, false, overflow)
+	require.Equal(t, num.NewUint(100000000000), scaled)
+
+	// negative scaling
+	ntf := testFuture(t, -2)
+
+	// scaling factor = -2, asset scaling = 0
+	// scaled = 123456.78 * 10^(0--2) => 12345678 => to uint => 12345678
+	scaled, overflow = ntf.future.ScaleSettlementPriceToDecimalPlaces(num.MustDecimalFromString("123456.78"), 0)
+	require.Equal(t, false, overflow)
+	require.Equal(t, num.NewUint(12345678), scaled)
+
+	// scaling factor = -2, asset scaling = 0
+	// scaled = 1000000 * 10^(0--2) => 100000000 => to uint => 100000000
+	scaled, overflow = ntf.future.ScaleSettlementPriceToDecimalPlaces(num.MustDecimalFromString("1000000"), 0)
+	require.Equal(t, false, overflow)
+	require.Equal(t, num.NewUint(100000000), scaled)
+
+	// scaling factor = -2, asset scaling = 5
+	// scaled = 123456.78 * 10^(5--2) => 1234567800000 => to uint => 1234567800000
+	scaled, overflow = ntf.future.ScaleSettlementPriceToDecimalPlaces(num.MustDecimalFromString("123456.78"), 5)
+	require.Equal(t, false, overflow)
+	require.Equal(t, num.NewUint(1234567800000), scaled)
+
+	// scaling factor = -2, asset scaling = 5
+	// scaled = 1000000 * 10^(5--2) => 10000000000000 => to uint => 10000000000000
+	scaled, overflow = ntf.future.ScaleSettlementPriceToDecimalPlaces(num.MustDecimalFromString("1000000"), 5)
+	require.Equal(t, false, overflow)
+	require.Equal(t, num.NewUint(10000000000000), scaled)
 }
 
 func testUnsubscribingTheOracleEngineSucceeds(t *testing.T) {
 	// given
-	tf := testFuture(t)
+	tf := testFuture(t, 0)
 	ctx := context.Background()
 
 	// expect
@@ -80,7 +142,7 @@ type tstFuture struct {
 	future *products.Future
 }
 
-func testFuture(t *testing.T) *tstFuture {
+func testFuture(t *testing.T, scaling int32) *tstFuture {
 	t.Helper()
 
 	log := logging.NewTestLogger()
@@ -118,7 +180,7 @@ func testFuture(t *testing.T) *tstFuture {
 			SettlementPriceProperty:    "price.ETH.value",
 			TradingTerminationProperty: "trading.termination",
 		},
-		SettlementPriceDecimals: 5,
+		SettlementPriceDecimalScalingExponent: scaling,
 	}
 
 	oe.EXPECT().

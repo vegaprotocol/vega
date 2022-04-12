@@ -6,11 +6,11 @@ import (
 	"code.vegaprotocol.io/vega/integration/steps/market"
 )
 
-func OracleSpecSettlementPriceDecimals(config *market.Config, name string, settlementDP string) error {
-	dp, err := strconv.ParseUint(settlementDP, 10, 0)
+func OracleSpecSettlementPriceDecimalScalingFactorExponent(config *market.Config, name string, exponent string) error {
+	dp, err := strconv.ParseUint(exponent, 10, 0)
 	if err != nil {
 		return err
 	}
-	config.OracleConfigs.SetSettlementPriceDP(name, uint32(dp))
+	config.OracleConfigs.SetSettlementPriceDecimalScalingExponent(name, int32(dp))
 	return nil
 }

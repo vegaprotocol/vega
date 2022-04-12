@@ -305,33 +305,33 @@ type InstrumentFuture struct {
 }
 
 type Future struct {
-	SettlementAsset                 string
-	QuoteName                       string
-	OracleSpecForSettlementPrice    *v1.OracleSpec
-	OracleSpecForTradingTermination *v1.OracleSpec
-	OracleSpecBinding               *OracleSpecToFutureBinding
-	SettlementPriceDecimals         uint32
+	SettlementAsset                       string
+	QuoteName                             string
+	OracleSpecForSettlementPrice          *v1.OracleSpec
+	OracleSpecForTradingTermination       *v1.OracleSpec
+	OracleSpecBinding                     *OracleSpecToFutureBinding
+	SettlementPriceDecimalScalingExponent int32
 }
 
 func FutureFromProto(f *proto.Future) *Future {
 	return &Future{
-		SettlementAsset:                 f.SettlementAsset,
-		QuoteName:                       f.QuoteName,
-		OracleSpecForSettlementPrice:    f.OracleSpecForSettlementPrice.DeepClone(),
-		OracleSpecForTradingTermination: f.OracleSpecForTradingTermination.DeepClone(),
-		OracleSpecBinding:               OracleSpecToFutureBindingFromProto(f.OracleSpecBinding),
-		SettlementPriceDecimals:         f.SettlementPriceDecimals,
+		SettlementAsset:                       f.SettlementAsset,
+		QuoteName:                             f.QuoteName,
+		OracleSpecForSettlementPrice:          f.OracleSpecForSettlementPrice.DeepClone(),
+		OracleSpecForTradingTermination:       f.OracleSpecForTradingTermination.DeepClone(),
+		OracleSpecBinding:                     OracleSpecToFutureBindingFromProto(f.OracleSpecBinding),
+		SettlementPriceDecimalScalingExponent: f.SettlementPriceDecimalScalingExponent,
 	}
 }
 
 func (f Future) IntoProto() *proto.Future {
 	return &proto.Future{
-		SettlementAsset:                 f.SettlementAsset,
-		QuoteName:                       f.QuoteName,
-		OracleSpecForSettlementPrice:    f.OracleSpecForSettlementPrice.DeepClone(),
-		OracleSpecForTradingTermination: f.OracleSpecForTradingTermination.DeepClone(),
-		OracleSpecBinding:               f.OracleSpecBinding.IntoProto(),
-		SettlementPriceDecimals:         f.SettlementPriceDecimals,
+		SettlementAsset:                       f.SettlementAsset,
+		QuoteName:                             f.QuoteName,
+		OracleSpecForSettlementPrice:          f.OracleSpecForSettlementPrice.DeepClone(),
+		OracleSpecForTradingTermination:       f.OracleSpecForTradingTermination.DeepClone(),
+		OracleSpecBinding:                     f.OracleSpecBinding.IntoProto(),
+		SettlementPriceDecimalScalingExponent: f.SettlementPriceDecimalScalingExponent,
 	}
 }
 

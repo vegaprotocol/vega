@@ -28,8 +28,8 @@ Feature: Test settlement at expiry with decimal places for asset and market (dif
       | name                           | value |
       | market.auction.minimumDuration | 1     |
 
-    And the settlement price decimals for the oracle named "ethDec20Oracle" is given in "2" decimal places
-    And the settlement price decimals for the oracle named "ethDec21Oracle" is given in "1" decimal places
+    And the settlement price decimal scaling factor exponent for the oracle named "ethDec20Oracle" is "2"
+    And the settlement price decimal scaling factor exponent for the oracle named "ethDec21Oracle" is "1"
   
     And the fees configuration named "fees-config-1":
       | maker fee | infrastructure fee |

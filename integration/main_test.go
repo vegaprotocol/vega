@@ -115,8 +115,8 @@ func InitializeScenario(s *godog.ScenarioContext) {
 	s.Step(`^the oracle spec for trading termination filtering data from "([^"]*)" named "([^"]*)":$`, func(pubKeys string, name string, table *godog.Table) error {
 		return steps.TheOracleSpec(marketConfig, name, "trading termination", pubKeys, table)
 	})
-	s.Step(`^the settlement price decimals for the oracle named "([^"]*)" is given in "([^"]*)" decimal places$`, func(name, decimals string) error {
-		return steps.OracleSpecSettlementPriceDecimals(marketConfig, name, decimals)
+	s.Step(`^the settlement price decimal scaling factor exponent for the oracle named "([^"]*)" is "([^"]*)"$`, func(name, exponent string) error {
+		return steps.OracleSpecSettlementPriceDecimalScalingFactorExponent(marketConfig, name, exponent)
 	})
 	s.Step(`the price monitoring updated every "([^"]*)" seconds named "([^"]*)":$`, func(updateFrequency, name string, table *godog.Table) error {
 		return steps.ThePriceMonitoring(marketConfig, name, updateFrequency, table)

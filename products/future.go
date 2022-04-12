@@ -29,7 +29,7 @@ type Future struct {
 	QuoteName                  string
 	oracle                     oracle
 	tradingTerminationListener func(context.Context, bool)
-	settlementPriceListener    func(context.Context, *num.Uint)
+	settlementPriceListener    func(context.Context, *num.Decimal)
 }
 
 func (f *Future) Unsubscribe(ctx context.Context, oe OracleEngine) {
@@ -42,19 +42,16 @@ type oracle struct {
 	tradingTerminatedSubscriptionID oracles.SubscriptionID
 	binding                         oracleBinding
 	data                            oracleData
-	settlementPriceDecimals         uint32
+	settlementPriceScalingFactor    int32
 }
 
 type oracleData struct {
-	settlementPrice   *num.Uint
+	settlementPrice   *num.Decimal
 	tradingTerminated bool
 }
 
-func (d *oracleData) SettlementPrice() (*num.Uint, error) {
-	if d.settlementPrice == nil {
-		return nil, ErrOracleSettlementPriceNotSet
-	}
-	return d.settlementPrice.Clone(), nil
+func (d *oracleData) SettlementPrice() (*num.Decimal, error) {
+	return d.settlementPrice, nil
 }
 
 // IsTradingTerminated returns true when oracle has signalled termination of trading.
@@ -67,7 +64,7 @@ type oracleBinding struct {
 	tradingTerminationProperty string
 }
 
-func (f *Future) NotifyOnSettlementPrice(listener func(context.Context, *num.Uint)) {
+func (f *Future) NotifyOnSettlementPrice(listener func(context.Context, *num.Decimal)) {
 	f.settlementPriceListener = listener
 }
 
@@ -75,17 +72,14 @@ func (f *Future) NotifyOnTradingTerminated(listener func(context.Context, bool))
 	f.tradingTerminationListener = listener
 }
 
-func (f *Future) SettlementPrice() (*num.Uint, error) {
+func (f *Future) SettlementPrice() (*num.Decimal, error) {
 	return f.oracle.data.SettlementPrice()
 }
 
-func (f *Future) ScaleSettlementPriceToDecimalPlaces(price *num.Uint, dp uint32) (*num.Uint, bool) {
-	// scale to asset decimals by multiplying by 10^(assetDP - oracleDP)
-	// if assetDP > oracleDP - this scales up the decimals of settlement price
-	// if assetDP < oracleDP - this scaled down the decimals of settlement price and can lead to loss of accuracy
-	// if there're equal - no scaling happens
-	scalingFactor := num.DecimalFromInt64(10).Pow(num.DecimalFromInt64(int64(dp) - int64(f.oracle.settlementPriceDecimals)))
-	return num.UintFromDecimal(price.ToDecimal().Mul(scalingFactor))
+func (f *Future) ScaleSettlementPriceToDecimalPlaces(price num.Decimal, dp uint32) (*num.Uint, bool) {
+	// scale to asset decimals by multiplying by 10^(assetDP - oracleDecimalScalingExponent)
+	scalingFactor := num.DecimalFromInt64(10).Pow(num.DecimalFromInt64(int64(dp) - int64(f.oracle.settlementPriceScalingFactor)))
+	return num.UintFromDecimal(price.Mul(scalingFactor))
 }
 
 // Settle a position against the future.
@@ -95,12 +89,12 @@ func (f *Future) Settle(entryPriceInAsset *num.Uint, assetDecimals uint32, netFr
 		return nil, false, err
 	}
 
-	settlementPriceInAsset, overflow := f.ScaleSettlementPriceToDecimalPlaces(settlementPrice, assetDecimals)
+	settlementPriceInAsset, overflow := f.ScaleSettlementPriceToDecimalPlaces(*settlementPrice, assetDecimals)
 	if overflow {
 		return nil, false, errors.New("Error scaling settlement price")
 	}
 
-	amount, neg := settlementPrice.Delta(settlementPriceInAsset, entryPriceInAsset)
+	amount, neg := num.Zero().Delta(settlementPriceInAsset, entryPriceInAsset)
 	// Make sure net position is positive
 	if netFractionalPosition.IsNegative() {
 		netFractionalPosition = netFractionalPosition.Neg()
@@ -177,7 +171,7 @@ func (f *Future) updateSettlementPrice(ctx context.Context, data oracles.OracleD
 		f.log.Debug("new oracle data received", data.Debug()...)
 	}
 
-	settlementPrice, err := data.GetUint(f.oracle.binding.settlementPriceProperty)
+	settlementPrice, err := data.GetDecimal(f.oracle.binding.settlementPriceProperty)
 	if err != nil {
 		f.log.Error(
 			"could not parse the property acting as settlement price",
@@ -186,15 +180,15 @@ func (f *Future) updateSettlementPrice(ctx context.Context, data oracles.OracleD
 		return err
 	}
 
-	f.oracle.data.settlementPrice = settlementPrice
+	f.oracle.data.settlementPrice = &settlementPrice
 	if f.settlementPriceListener != nil {
-		f.settlementPriceListener(ctx, settlementPrice)
+		f.settlementPriceListener(ctx, &settlementPrice)
 	}
 
 	if f.log.GetLevel() == logging.DebugLevel {
 		f.log.Debug(
 			"future settlement price updated",
-			logging.BigUint("settlementPrice", settlementPrice),
+			logging.String("settlementPrice", settlementPrice.String()),
 		)
 	}
 
@@ -216,8 +210,8 @@ func NewFuture(ctx context.Context, log *logging.Logger, f *types.Future, oe Ora
 		SettlementAsset: f.SettlementAsset,
 		QuoteName:       f.QuoteName,
 		oracle: oracle{
-			binding:                 oracleBinding,
-			settlementPriceDecimals: f.SettlementPriceDecimals,
+			binding:                      oracleBinding,
+			settlementPriceScalingFactor: f.SettlementPriceDecimalScalingExponent,
 		},
 	}
 
