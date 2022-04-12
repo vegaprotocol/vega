@@ -2426,12 +2426,11 @@ func (m *Market) amendOrder(
 
 	// Validate Market
 	if existingOrder.MarketID != m.mkt.ID {
-		if m.log.GetLevel() == logging.DebugLevel {
-			m.log.Debug("Market ID mismatch",
-				logging.MarketID(m.mkt.ID),
-				logging.Order(*existingOrder))
-		}
-		return nil, nil, types.ErrInvalidMarketID
+		m.log.Panic("Market ID mismatch",
+			logging.MarketID(m.mkt.ID),
+			logging.Order(*existingOrder),
+			logging.Error(types.ErrInvalidMarketID),
+		)
 	}
 
 	if err := m.validateOrderAmendment(existingOrder, orderAmendment); err != nil {
@@ -2441,6 +2440,22 @@ func (m *Market) amendOrder(
 	amendedOrder, err := m.applyOrderAmendment(existingOrder, orderAmendment)
 	if err != nil {
 		return nil, nil, err
+	}
+
+	// We do this first, just in case the party would also have
+	// change the expiry, and that would have been catched by
+	// the follow up checks, so we do not insert a non-existing
+	// order in the expiring orders
+	// if remaining is reduces <= 0, then order is cancelled
+	if amendedOrder.Remaining <= 0 {
+		confirm, err := m.cancelOrder(
+			ctx, existingOrder.Party, existingOrder.ID)
+		if err != nil {
+			return nil, nil, err
+		}
+		return &types.OrderConfirmation{
+			Order: confirm.Order,
+		}, nil, nil
 	}
 
 	// If we have a pegged order that is no longer expiring, we need to remove it
@@ -2460,22 +2475,6 @@ func (m *Market) amendOrder(
 			}
 		}
 	}()
-
-	// We do this first, just in case the party would also have
-	// change the expiry, and that would have been catched by
-	// the follow up checks, so we do not insert a non-existing
-	// order in the expiring orders
-	// if remaining is reduces <= 0, then order is cancelled
-	if amendedOrder.Remaining <= 0 {
-		confirm, err := m.cancelOrder(
-			ctx, existingOrder.Party, existingOrder.ID)
-		if err != nil {
-			return nil, nil, err
-		}
-		return &types.OrderConfirmation{
-			Order: confirm.Order,
-		}, nil, nil
-	}
 
 	// if we are amending from GTT to GTC, flag ready to remove from expiry list
 	if existingOrder.IsExpireable() &&
@@ -2664,6 +2663,8 @@ func (m *Market) amendOrder(
 	// if decrease in size or change in expiration date
 	// ---> DO amend in place in matching engine
 	if expiryChange || sizeDecrease || timeInForceChange {
+		// @TODO how is this even possible? size decrease subtracts from remaining, or sets it to 0
+		// IMO, this should be removed
 		if sizeDecrease && amendedOrder.Remaining >= existingOrder.Remaining {
 			_ = m.position.AmendOrder(ctx, amendedOrder, existingOrder)
 
@@ -2762,17 +2763,26 @@ func (m *Market) applyOrderAmendment(
 
 	// apply size changes
 	if amendment.SizeDelta != 0 {
-		if amendment.SizeDelta > 0 {
-			order.Size += uint64(amendment.SizeDelta)
+		neg := false
+		delta := uint64(amendment.SizeDelta)
+		newRemaining := existingOrder.Remaining
+		if amendment.SizeDelta < 0 {
+			neg = true
+			delta = uint64(-amendment.SizeDelta)
+		}
+		if neg {
+			order.Size -= delta
+			if delta > newRemaining {
+				newRemaining = 0
+			} else {
+				newRemaining -= delta
+			}
 		} else {
-			order.Size -= uint64(-amendment.SizeDelta)
+			order.Size += delta
+			newRemaining += delta
 		}
 
-		newRemaining := int64(existingOrder.Remaining) + amendment.SizeDelta
-		if newRemaining <= 0 {
-			newRemaining = 0
-		}
-		order.Remaining = uint64(newRemaining)
+		order.Remaining = newRemaining
 	}
 
 	// apply tif
