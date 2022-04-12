@@ -58,6 +58,11 @@ func (o Order) Clone() *Order {
 	} else {
 		cpy.Price = num.Zero()
 	}
+	// this isn't really needed, to original order is about to be replaced, or the original price is getting reassinged
+	// but in case something goes wrong, we don't want a pointer to this field in 2 places
+	if o.OriginalPrice != nil {
+		cpy.OriginalPrice = o.OriginalPrice.Clone()
+	}
 	if o.PeggedOrder != nil {
 		cpy.PeggedOrder = o.PeggedOrder.Clone()
 	}

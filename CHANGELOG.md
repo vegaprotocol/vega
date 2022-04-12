@@ -64,6 +64,7 @@
 - [5052](https://github.com/vegaprotocol/vega/issues/5052) - Adding acceptance criteria tests for market decimal places
 - [5138](https://github.com/vegaprotocol/vega/issues/5038) - Adding feature test for "0032-PRIM-price_monitoring.md"
 - [4753](https://github.com/vegaprotocol/vega/issues/4753) - Adding feature test for oracle spec public key validation
+- [4559](https://github.com/vegaprotocol/vega/issues/4559) - Small fixes to the amend order flow
 
 ### 🐛 Fixes
 - [5064](https://github.com/vegaprotocol/vega/issues/5064) - Send order event on settlement
