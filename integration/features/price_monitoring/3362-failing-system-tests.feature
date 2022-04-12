@@ -45,13 +45,16 @@ Feature: Replicate failing system tests after changes to price monitoring (not t
     Then the mark price should be "100000" for the market "ETH/DEC20"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
+    And the market data for the market "ETH/DEC20" should be:
+      | horizon | min bound | max bound |
+      | 5       | 99845     | 100156    |
+      | 10      | 99711     | 100290    |
+
     ## price bounds are 99771 to 100290
     When the parties place the following orders:
       | party  | market id | side | volume | price  | resulting trades | type       | tif     |
       | party1 | ETH/DEC20 | buy  | 1      | 100150 | 0                | TYPE_LIMIT | TIF_GTC |
       | party2 | ETH/DEC20 | sell | 1      | 100150 | 1                | TYPE_LIMIT | TIF_GTC |
-      # | party1 | ETH/DEC20 | buy  | 1      | 100448 | 0                | TYPE_LIMIT  | TIF_GTC |
-      # | party2 | ETH/DEC20 | sell | 1      | 100448 | 1                | TYPE_LIMIT  | TIF_GTC |
     Then the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
     And the mark price should be "100150" for the market "ETH/DEC20"
 
@@ -67,6 +70,8 @@ Feature: Replicate failing system tests after changes to price monitoring (not t
       | party2 | ETH/DEC20 | sell | 3      | 0     | 0                | TYPE_MARKET | TIF_FOK | OrderError: non-persistent order trades out of price bounds |
     Then the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
     And the mark price should be "100150" for the market "ETH/DEC20"
+
+    Then the network moves ahead "1" blocks
 
     ## Now place the order for the same volume again, but set price to 100,000 -> the buy at 95,000 doesn't uncross
     ## We'll see the mark price move as we've uncrossed with the orders at 100213 and 100050 we've just placed
