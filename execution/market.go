@@ -2762,27 +2762,18 @@ func (m *Market) applyOrderAmendment(
 	}
 
 	// apply size changes
-	if amendment.SizeDelta != 0 {
-		neg := false
-		delta := uint64(amendment.SizeDelta)
-		newRemaining := existingOrder.Remaining
-		if amendment.SizeDelta < 0 {
-			neg = true
-			delta = uint64(-amendment.SizeDelta)
-		}
-		if neg {
-			order.Size -= delta
-			if delta > newRemaining {
-				newRemaining = 0
+	if delta := amendment.SizeDelta; delta != 0 {
+		if delta < 0 {
+			order.Size -= uint64(-delta)
+			if order.Remaining > uint64(-delta) {
+				order.Remaining -= uint64(-delta)
 			} else {
-				newRemaining -= delta
+				order.Remaining = 0
 			}
 		} else {
-			order.Size += delta
-			newRemaining += delta
+			order.Size += uint64(delta)
+			order.Remaining += uint64(delta)
 		}
-
-		order.Remaining = newRemaining
 	}
 
 	// apply tif
