@@ -2663,16 +2663,6 @@ func (m *Market) amendOrder(
 	// if decrease in size or change in expiration date
 	// ---> DO amend in place in matching engine
 	if expiryChange || sizeDecrease || timeInForceChange {
-		// @TODO how is this even possible? size decrease subtracts from remaining, or sets it to 0
-		// IMO, this should be removed
-		if sizeDecrease && amendedOrder.Remaining >= existingOrder.Remaining {
-			_ = m.position.AmendOrder(ctx, amendedOrder, existingOrder)
-
-			if m.log.GetLevel() == logging.DebugLevel {
-				m.log.Debug("Order amendment not allowed when reducing to a larger amount", logging.Order(*existingOrder))
-			}
-			return nil, nil, ErrInvalidAmendRemainQuantity
-		}
 		// we not doing anything in case of error here as its
 		// pretty much impossible at this point for an order not to be
 		// amended in place. Maybe a panic would be better
