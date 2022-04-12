@@ -477,7 +477,7 @@ func (b *OrderBook) buildCumulativePriceLevels() ([]CumulativeVolumeLevel, uint6
 }
 
 // Uncrosses the book to generate the maximum volume set of trades
-// if removeOrders is set to true then matched orders get removed from the book
+// if removeOrders is set to true then matched orders get removed from the book.
 func (b *OrderBook) uncrossBook() ([]*types.OrderConfirmation, error) {
 	// Get the uncrossing price and which side has the most volume at that price
 	price, volume, uncrossSide := b.GetIndicativePriceAndVolume()

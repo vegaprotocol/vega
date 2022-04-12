@@ -1622,7 +1622,6 @@ Feature: Fees calculations
       | trader3a | ETH   | ETH/DEC21 | 3216   | 96834   |
       | trader4  | ETH   | ETH/DEC21 | 5506   | 94934   |
 
-
     And the liquidity fee factor should "0.001" for the market "ETH/DEC21"
     And the accumulated liquidity fees should be "30" for the market "ETH/DEC21"
 

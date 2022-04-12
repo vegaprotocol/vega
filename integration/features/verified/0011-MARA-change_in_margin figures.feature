@@ -9,7 +9,7 @@ Feature: Test party accounts
   Scenario: a party place a new order in the system, margin are calculated (0011-MARA-001, 0011-MARA-002)
     Given the parties deposit on asset's general account the following amount:
       | party    | asset | amount       |
-      | partyGuy | ETH   | 1000        |
+      | partyGuy | ETH   | 1000         |
       | party1   | ETH   | 1000000      |
       | party2   | ETH   | 1000000      |
       | aux      | ETH   | 100000000000 |

@@ -99,59 +99,6 @@ Feature: Price monitoring test using simple risk model
       | party2 | ETH/DEC20 | buy  | 1      | 111   | TYPE_LIMIT | TIF_GFN | ref-1     | OrderError: non-persistent order trades out of price bounds |
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
-  Scenario: Non-persistent order don't result in an auction (both triggers breached)
-    Given the parties deposit on asset's general account the following amount:
-      | party  | asset | amount       |
-      | party1 | ETH   | 10000        |
-      | party2 | ETH   | 10000        |
-      | aux    | ETH   | 100000000000 |
-      | aux2   | ETH   | 100000000000 |
-
-    # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
-    When the parties place the following orders:
-      | party | market id | side | volume | price | resulting trades | type       | tif     |
-      | aux   | ETH/DEC20 | buy  | 1      | 99    | 0                | TYPE_LIMIT | TIF_GTC |
-      | aux   | ETH/DEC20 | sell | 1      | 134   | 0                | TYPE_LIMIT | TIF_GTC |
-      | aux2  | ETH/DEC20 | buy  | 1      | 100   | 0                | TYPE_LIMIT | TIF_GTC |
-      | aux   | ETH/DEC20 | sell | 1      | 100   | 0                | TYPE_LIMIT | TIF_GTC |
-    Then the opening auction period ends for market "ETH/DEC20"
-    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
-    And the mark price should be "100" for the market "ETH/DEC20"
-    And time is updated to "2020-10-16T00:10:00Z"
-
-    When the parties place the following orders:
-      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
-      | party1 | ETH/DEC20 | sell | 1      | 100   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
-      | party2 | ETH/DEC20 | buy  | 1      | 100   | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
-    Then the mark price should be "100" for the market "ETH/DEC20"
-
-    When the parties place the following orders:
-      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
-      | party1 | ETH/DEC20 | sell | 1      | 111   | 0                | TYPE_LIMIT | TIF_GTC | ref-5     |
-      | party2 | ETH/DEC20 | buy  | 1      | 111   | 0                | TYPE_LIMIT | TIF_GTC | ref-6     |
-
-    Then the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC20"
-    And the mark price should be "100" for the market "ETH/DEC20"
-
-    #T0 + 10min
-    Then time is updated to "2020-10-16T00:20:00Z"
-
-    And the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC20"
-
-    #T0 + 10min01s
-    Then time is updated to "2020-10-16T00:20:01Z"
-
-    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
-
-    And the mark price should be "111" for the market "ETH/DEC20"
-
-    When the parties place the following orders:
-      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference | error                                                       |
-      | party1 | ETH/DEC20 | sell | 1      | 211   | 0                | TYPE_LIMIT | TIF_GTC | ref-3     |                                                             |
-      | party2 | ETH/DEC20 | buy  | 1      | 211   | 0                | TYPE_LIMIT | TIF_FOK | ref-4     | OrderError: non-persistent order trades out of price bounds |
-    Then the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
-    And the mark price should be "111" for the market "ETH/DEC20"
-
   Scenario: Non-persistent order results in an auction (both triggers breached), orders placed during auction result in a trade with indicative price within the price monitoring bounds, hence auction concludes.
 
     Given the parties deposit on asset's general account the following amount:
@@ -298,7 +245,7 @@ Feature: Price monitoring test using simple risk model
 
     And the mark price should be "120" for the market "ETH/DEC20"
 
-  Scenario: Non-persistent order results in an auction (one trigger breached), no orders placed during auction and auction terminates
+  Scenario: Persistent order results in an auction (one trigger breached), no orders placed during auction and auction terminates
 
     Given the parties deposit on asset's general account the following amount:
       | party  | asset | amount       |
@@ -314,6 +261,12 @@ Feature: Price monitoring test using simple risk model
       | aux   | ETH/DEC20 | sell | 1      | 134   | 0                | TYPE_LIMIT | TIF_GTC |
       | aux2  | ETH/DEC20 | buy  | 1      | 110   | 0                | TYPE_LIMIT | TIF_GTC |
       | aux   | ETH/DEC20 | sell | 1      | 110   | 0                | TYPE_LIMIT | TIF_GTC |
+   
+   Then the parties submit the following liquidity provision:
+      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
+      | lp1 | aux   | ETH/DEC20 | 660               | 0.001 | buy  | BID              | 1          | 10     | submission |
+      | lp1 | aux   | ETH/DEC20 | 660               | 0.001 | sell | ASK              | 1          | 10     | amendment  |
+   
     Then the opening auction period ends for market "ETH/DEC20"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
     And the mark price should be "110" for the market "ETH/DEC20"
@@ -351,8 +304,13 @@ Feature: Price monitoring test using simple risk model
 
     And the mark price should be "105" for the market "ETH/DEC20"
 
-    #T1 = T0 + 02min10s (auction start)
-    Then time is updated to "2020-10-16T00:10:10Z"
+    #T1 = T0 + 04min10s (auction start)
+    Then time is updated to "2020-10-16T00:12:10Z"
+
+    And the market data for the market "ETH/DEC20" should be:
+      | horizon | min bound | max bound |
+      | 60      | 104       | 124       |
+      | 120     | 99        | 119       |
 
     When the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
@@ -361,21 +319,29 @@ Feature: Price monitoring test using simple risk model
 
     And the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC20"
 
+    Then the market data for the market "ETH/DEC20" should be:
+      | mark price | trading mode                    | auction trigger       | extension trigger           | target stake | supplied stake | auction end |
+      | 105        | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_PRICE | AUCTION_TRIGGER_UNSPECIFIED | 660          | 660            | 600         |
+
     And the mark price should be "105" for the market "ETH/DEC20"
 
-    #T1 + 04min00s (last second of the auction)
-    Then time is updated to "2020-10-16T00:14:10Z"
+    #T1 + 10min00s (last second of the auction)
+    Then time is updated to "2020-10-16T00:22:10Z"
 
     And the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC20"
 
-    #T1 + 04min01s
-    Then time is updated to "2020-10-16T00:24:21Z"
+    #T1 + 10min01s
+    Then time is updated to "2020-10-16T00:22:11Z"
+
+    Then the market data for the market "ETH/DEC20" should be:
+      | mark price | trading mode            | auction trigger             | extension trigger           | target stake | supplied stake | auction extension |
+      | 120        | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | AUCTION_TRIGGER_UNSPECIFIED | 660          | 660            | 0                 |  
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
     And the mark price should be "120" for the market "ETH/DEC20"
 
-  Scenario: Non-persistent order results in an auction (one trigger breached), orders placed during auction result in a trade with indicative price outside the price monitoring bounds, hence auction get extended, no further orders placed, auction concludes.
+  Scenario: Persistent order results in an auction (one trigger breached), orders placed during auction result in a trade with indicative price outside the price monitoring bounds, hence auction get extended, no further orders placed, auction concludes.
 
     Given the parties deposit on asset's general account the following amount:
       | party  | asset | amount       |
@@ -471,7 +437,7 @@ Feature: Price monitoring test using simple risk model
 
     And the mark price should be "133" for the market "ETH/DEC20"
 
-  Scenario: Non-persistent order results in an auction (one trigger breached), orders placed during auction result in trade with indicative price outside the price monitoring bounds, hence auction get extended, additional orders resulting in more trades placed, auction concludes.
+  Scenario: Persistent order results in an auction (one trigger breached), orders placed during auction result in trade with indicative price outside the price monitoring bounds, hence auction get extended, additional orders resulting in more trades placed, auction concludes.
 
     Given the parties deposit on asset's general account the following amount:
       | party  | asset | amount       |

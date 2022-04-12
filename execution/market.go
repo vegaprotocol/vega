@@ -3308,7 +3308,7 @@ func (m *Market) distributeLiquidityFees(ctx context.Context) error {
 	return nil
 }
 
-// Mark price gets returned when market is not in auction, otherwise indicative uncrossing price gets returned
+// Mark price gets returned when market is not in auction, otherwise indicative uncrossing price gets returned.
 func (m *Market) getReferencePrice() *num.Uint {
 	if m.as.InAuction() {
 		p, v, _ := m.matching.GetIndicativePriceAndVolume()

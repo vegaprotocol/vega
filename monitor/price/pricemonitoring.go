@@ -340,7 +340,7 @@ func (e *Engine) resetPriceHistory(price *num.Uint, volume uint64) {
 	e.stateChanged = true
 }
 
-// reactivateBounds reactivates all bounds
+// reactivateBounds reactivates all bounds.
 func (e *Engine) reactivateBounds() {
 	for _, b := range e.bounds {
 		if !b.Active {

@@ -63,10 +63,18 @@ Feature: Target stake
       | tt_2  | ETH/DEC21 | buy  | 20     | 110   | 0                | TYPE_LIMIT | TIF_GTC | tt_2_0    |
       | tt_3  | ETH/DEC21 | buy  | 30     | 110   | 0                | TYPE_LIMIT | TIF_GTC | tt_2_0    |
 
+      Then the parties submit the following liquidity provision:
+      | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
+      | lp1 | tt_0   | ETH/DEC21 | 990000            | 0.001 | buy  | BID              | 1          | 10     | submission |
+      | lp1 | tt_0   | ETH/DEC21 | 990000            | 0.001 | sell | ASK              | 1          | 10     | amendment  |
+
+
     Then the opening auction period ends for market "ETH/DEC21"
 
     # So now parties 1,2,3 are long 10+20+30 = 60.
-    Then the mark price should be "110" for the market "ETH/DEC21"
+    Then the market data for the market "ETH/DEC21" should be:
+      | mark price | open interest | trading mode            | auction trigger             | extension trigger           | target stake | supplied stake |
+      | 110        | 60            | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | AUCTION_TRIGGER_UNSPECIFIED | 990000       | 990000       |
 
     # Target stake is mark_price x max_oi x target_stake_scaling_factor x rf_short
     # rf_short should have been set above to 0.1
