@@ -1,12 +1,21 @@
 # Changelog
 
-## Unreleased (0.50.0)
+## Unreleased (0.51.0)
 
 ### 🚨 Breaking changes
 - [](https://github.com/vegaprotocol/data-node/pull/xxx) -
 
 ### 🗑️  Deprecation
 - [](https://github.com/vegaprotocol/data-node/pull/xxx) -
+
+### 🛠  Improvements
+- [](https://github.com/vegaprotocol/data-node/pull/xxx) -
+
+### 🐛 Fixes
+- [](https://github.com/vegaprotocol/data-node/pull/xxx) -
+
+
+## 0.50.0
 
 ### 🛠  Improvements
 - [386](https://github.com/vegaprotocol/data-node/pull/386) - Migrate withdrawal API to retrieve data from `Postgres`
@@ -17,8 +26,8 @@
 - [467](https://github.com/vegaprotocol/data-node/pull/467) - Migrate transfers API to retrieve data from `Postgres`
 - [469](https://github.com/vegaprotocol/data-node/issues/469) - Migrate existing stake linking API to new `Postgres` database.
 - [496](https://github.com/vegaprotocol/data-node/issues/496) - Migrate `ERC20WithdrawlApproval` and `NodeSignaturesAggregate` API to new `Postgres` database.
-- [474](https://github.com/vegaprotocol/data-node/pull/474) - Clean up error handling in subscribers and make action on error configurable 
-- [487](https://github.com/vegaprotocol/data-node/pull/487) - Trade data retention 
+- [474](https://github.com/vegaprotocol/data-node/pull/474) - Clean up error handling in subscribers and make action on error configurable
+- [487](https://github.com/vegaprotocol/data-node/pull/487) - Trade data retention
 - [495](https://github.com/vegaprotocol/data-node/pull/495) - Account for `SettlePosition` events reaching the positions plug-in before the `PositionState` event.
 - [495](https://github.com/vegaprotocol/data-node/pull/495) - Make sure `SettlePosition` does not result in a division by zero panic.
 - [](https://github.com/vegaprotocol/data-node/pull/xxx) -
