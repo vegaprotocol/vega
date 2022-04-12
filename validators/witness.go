@@ -43,7 +43,7 @@ type Commander interface {
 type ValidatorTopology interface {
 	Len() int
 	IsValidator() bool
-	SelfNodeID() string
+	SelfVegaPubKey() string
 	AllNodeIDs() []string
 	IsValidatorVegaPubKey(string) bool
 }
@@ -371,7 +371,7 @@ func (w *Witness) OnTick(ctx context.Context, t time.Time) {
 			// set new state so we do not try to validate again
 			atomic.StoreUint32(&v.state, voteSent)
 		} else if (isValidator && state == voteSent) && t.After(v.lastSentVote.Add(10*time.Second)) {
-			if v.selfVoteReceived(w.top.SelfNodeID()) {
+			if v.selfVoteReceived(w.top.SelfVegaPubKey()) {
 				continue
 			}
 			w.onCommandSent(v.res.GetID())(errors.New("no self votes received after 10 seconds"))
