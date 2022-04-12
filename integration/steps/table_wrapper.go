@@ -15,7 +15,7 @@ import (
 	"code.vegaprotocol.io/vega/types/num"
 
 	"github.com/cucumber/godog"
-	"github.com/cucumber/messages-go/v10"
+	"github.com/cucumber/messages-go/v16"
 )
 
 // StrictParseFirstRow parses and verifies, table integrity and returns only the
@@ -68,7 +68,7 @@ func ParseTable(dt *godog.Table) []RowWrapper {
 	return StrictParseTable(dt, []string{}, []string{})
 }
 
-func verifyTableIntegrity(required, optional []string, header *messages.PickleStepArgument_PickleTable_PickleTableRow) error {
+func verifyTableIntegrity(required, optional []string, header *messages.PickleTableRow) error {
 	cols, err := newColumns(required, optional)
 	if err != nil {
 		return err
