@@ -1,12 +1,24 @@
 # Changelog
 
-## Unreleased (0.50.0)
+## Unreleased (0.51.0)
 
 ### 🚨 Breaking changes
-- [5197](https://github.com/vegaprotocol/vega/issues/5197) - Scale settlement price based on oracle definition 
+- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 ### 🗑️ Deprecation
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+
+### 🛠 Improvements
+- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+
+### 🐛 Fixes
+- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+
+
+## 0.50.0
+
+### 🚨 Breaking changes
+- [5197](https://github.com/vegaprotocol/vega/issues/5197) - Scale settlement price based on oracle definition
 
 ### 🛠 Improvements
 - [5055](https://github.com/vegaprotocol/vega/issues/5055) - Ensure at most 5 triggers are used in price monitoring settings
@@ -17,7 +29,6 @@
 - [5119](https://github.com/vegaprotocol/vega/issues/5119) - Add Ethereum key rotation support
 - [5209](https://github.com/vegaprotocol/vega/issues/5209) - Add retries to floating point consensus engine to work around tendermint missing transactions
 - [5219](https://github.com/vegaprotocol/vega/issues/5219) - Remove genesis sign command.
-
 
 ### 🐛 Fixes
 - [5078](https://github.com/vegaprotocol/vega/issues/5078) - Unwrap properly position decimal place from payload
