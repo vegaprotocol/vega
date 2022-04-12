@@ -133,7 +133,7 @@ func (w *Witness) restore(ctx context.Context, witness *types.Witness) error {
 		selfVoted := false
 		for _, v := range r.Votes {
 			w.resources[r.ID].votes[v] = struct{}{}
-			if r.ID == w.top.SelfNodeID() {
+			if v == w.top.SelfVegaPubKey() {
 				selfVoted = true
 			}
 		}

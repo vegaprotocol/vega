@@ -207,12 +207,10 @@ func testOnChainTimeUpdate(t *testing.T) {
 	defer erc.ctrl.Finish()
 	defer erc.Stop()
 
-	selfNodeID := "a5ee437dc100d629"
 	selfPubKey := "b7ee437dc100d642"
 
 	erc.top.EXPECT().Len().AnyTimes().Return(2)
 	erc.top.EXPECT().IsValidator().AnyTimes().Return(true)
-	erc.top.EXPECT().SelfNodeID().AnyTimes().Return(selfNodeID)
 
 	ch := make(chan struct{}, 1)
 	res := testRes{"resource-id-1", func() error {
@@ -261,12 +259,10 @@ func testOnChainTimeUpdateNonValidator(t *testing.T) {
 	defer erc.ctrl.Finish()
 	defer erc.Stop()
 
-	selfNodeID := "a5ee437dc100d629"
 	selfPubKey := "b7ee437dc100d642"
 
 	erc.top.EXPECT().Len().AnyTimes().Return(2)
 	erc.top.EXPECT().IsValidator().AnyTimes().Return(false)
-	erc.top.EXPECT().SelfNodeID().AnyTimes().Return(selfNodeID)
 
 	res := testRes{"resource-id-1", func() error {
 		return nil
