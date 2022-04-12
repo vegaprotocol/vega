@@ -54,7 +54,7 @@ func TestSnapshot(t *testing.T) {
 		defer erc2.ctrl.Finish()
 		defer erc2.Stop()
 		erc2.top.EXPECT().IsValidator().AnyTimes().Return(true)
-		erc2.top.EXPECT().SelfNodeID().AnyTimes().Return("1234")
+		erc2.top.EXPECT().SelfVegaPubKey().AnyTimes().Return("1234")
 
 		_, err = erc2.LoadState(context.Background(), payload)
 		require.Nil(t, err)
@@ -85,7 +85,7 @@ func TestSnapshot(t *testing.T) {
 		defer erc3.ctrl.Finish()
 		defer erc3.Stop()
 		erc3.top.EXPECT().IsValidator().AnyTimes().Return(true)
-		erc3.top.EXPECT().SelfNodeID().AnyTimes().Return("1234")
+		erc3.top.EXPECT().SelfVegaPubKey().AnyTimes().Return("1234")
 
 		_, err = erc3.LoadState(context.Background(), payload)
 		require.Nil(t, err)
