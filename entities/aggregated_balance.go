@@ -1,7 +1,6 @@
 package entities
 
 import (
-	"encoding/hex"
 	"strconv"
 	"time"
 
@@ -18,9 +17,9 @@ type AggregatedBalance struct {
 	VegaTime  time.Time
 	Balance   decimal.Decimal
 	AccountID *int64
-	PartyID   *[]byte
-	AssetID   *[]byte
-	MarketID  *[]byte
+	PartyID   *PartyID
+	AssetID   *AssetID
+	MarketID  *MarketID
 	Type      *types.AccountType
 }
 
@@ -34,17 +33,17 @@ func (balance *AggregatedBalance) ToProto() v2.AggregatedBalance {
 	}
 
 	if balance.PartyID != nil {
-		pid := hex.EncodeToString(*balance.PartyID)
+		pid := balance.PartyID.String()
 		partyID = &pid
 	}
 
 	if balance.AssetID != nil {
-		aid := Asset{ID: *balance.AssetID}.HexID()
+		aid := balance.AssetID.String()
 		assetID = &aid
 	}
 
 	if balance.MarketID != nil {
-		mid := hex.EncodeToString(*balance.MarketID)
+		mid := balance.MarketID.String()
 		marketID = &mid
 	}
 

@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"code.vegaprotocol.io/data-node/candlesv2"
+
 	"code.vegaprotocol.io/data-node/accounts"
 	"code.vegaprotocol.io/data-node/assets"
 	"code.vegaprotocol.io/data-node/broker"
@@ -124,6 +126,7 @@ func (l *NodeCommand) setupSQLSubscribers() {
 	}
 
 	l.assetSubSQL = sqlsubscribers.NewAsset(l.assetStoreSQL, l.Log)
+	l.partySubSQL = sqlsubscribers.NewParty(l.partyStoreSQL, l.Log)
 	l.timeSubSQL = sqlsubscribers.NewTimeSub(l.blockStoreSQL, l.Log)
 	l.transferResponseSubSQL = sqlsubscribers.NewTransferResponse(l.ledgerSQL, l.accountStoreSQL, l.balanceStoreSQL, l.partyStoreSQL, l.Log)
 	l.orderSubSQL = sqlsubscribers.NewOrder(l.ctx, l.orderStoreSQL, l.blockStoreSQL, l.Log)
@@ -136,10 +139,20 @@ func (l *NodeCommand) setupSQLSubscribers() {
 	l.delegationsSubSQL = sqlsubscribers.NewDelegation(l.delegationStoreSQL, l.Log)
 	l.epochSubSQL = sqlsubscribers.NewEpoch(l.epochStoreSQL, l.Log)
 	l.depositSubSQL = sqlsubscribers.NewDeposit(l.depositStoreSQL, l.Log)
+	l.withdrawalSubSQL = sqlsubscribers.NewWithdrawal(l.withdrawalsStoreSQL, l.Log)
 	l.proposalsSubSQL = sqlsubscribers.NewProposal(l.proposalStoreSQL, l.Log)
 	l.votesSubSQL = sqlsubscribers.NewVote(l.voteStoreSQL, l.Log)
 	l.marginLevelsSubSQL = sqlsubscribers.NewMarginLevels(l.marginLevelsStoreSQL, l.Log)
 	l.riskFactorSubSQL = sqlsubscribers.NewRiskFactor(l.riskFactorStoreSQL, l.Log)
+	l.netParamSubSQL = sqlsubscribers.NewNetworkParameter(l.netParamStoreSQL, l.Log)
+	l.checkpointSubSQL = sqlsubscribers.NewCheckpoint(l.checkpointStoreSQL, l.Log)
+	l.positionsSubSQL = sqlsubscribers.NewPosition(l.positionStoreSQL, l.Log)
+	l.oracleSpecSubSQL = sqlsubscribers.NewOracleSpec(l.oracleSpecStoreSQL, l.Log)
+	l.oracleDataSubSQL = sqlsubscribers.NewOracleData(l.oracleDataStoreSQL, l.Log)
+	l.liquidityProvisionSubSQL = sqlsubscribers.NewLiquidityProvision(l.liquidityProvisionStoreSQL, l.Log)
+	l.transferSubSQL = sqlsubscribers.NewTransfer(l.transfersStoreSQL, l.accountStoreSQL, l.Log)
+	l.stakeLinkingSubSQL = sqlsubscribers.NewStakeLinking(l.stakeLinkingStoreSQL, l.Log)
+	l.notarySubSQL = sqlsubscribers.NewNotary(l.notaryStoreSQL, l.Log)
 }
 
 func (l *NodeCommand) setupStorages() error {
@@ -168,23 +181,40 @@ func (l *NodeCommand) setupStorages() error {
 		l.assetStoreSQL = sqlstore.NewAssets(sqlStore)
 		l.blockStoreSQL = sqlstore.NewBlocks(sqlStore)
 		l.partyStoreSQL = sqlstore.NewParties(sqlStore)
+		l.partyStoreSQL.Initialise()
 		l.accountStoreSQL = sqlstore.NewAccounts(sqlStore)
 		l.balanceStoreSQL = sqlstore.NewBalances(sqlStore)
 		l.ledgerSQL = sqlstore.NewLedger(sqlStore)
 		l.orderStoreSQL = sqlstore.NewOrders(sqlStore)
 		l.networkLimitsStoreSQL = sqlstore.NewNetworkLimits(sqlStore)
 		l.marketDataStoreSQL = sqlstore.NewMarketData(sqlStore)
-		l.tradeStoreSQL = sqlstore.NewTrades(sqlStore)
 		l.rewardStoreSQL = sqlstore.NewRewards(sqlStore)
 		l.marketsStoreSQL = sqlstore.NewMarkets(sqlStore)
 		l.delegationStoreSQL = sqlstore.NewDelegations(sqlStore)
 		l.epochStoreSQL = sqlstore.NewEpochs(sqlStore)
 		l.depositStoreSQL = sqlstore.NewDeposits(sqlStore)
+		l.withdrawalsStoreSQL = sqlstore.NewWithdrawals(sqlStore)
 		l.proposalStoreSQL = sqlstore.NewProposals(sqlStore)
 		l.voteStoreSQL = sqlstore.NewVotes(sqlStore)
 		l.marginLevelsStoreSQL = sqlstore.NewMarginLevels(sqlStore)
 		l.riskFactorStoreSQL = sqlstore.NewRiskFactors(sqlStore)
+		l.netParamStoreSQL = sqlstore.NewNetworkParameters(sqlStore)
+		l.checkpointStoreSQL = sqlstore.NewCheckpoints(sqlStore)
+		l.positionStoreSQL = sqlstore.NewPositions(sqlStore)
+		l.oracleSpecStoreSQL = sqlstore.NewOracleSpec(sqlStore)
+		l.oracleDataStoreSQL = sqlstore.NewOracleData(sqlStore)
+		l.liquidityProvisionStoreSQL = sqlstore.NewLiquidityProvision(sqlStore)
+		l.transfersStoreSQL = sqlstore.NewTransfers(sqlStore)
+		l.stakeLinkingStoreSQL = sqlstore.NewStakeLinking(sqlStore)
+		l.notaryStoreSQL = sqlstore.NewNotary(sqlStore)
 
+		candleStore, err := sqlstore.NewCandles(l.ctx, sqlStore, l.conf.CandlesV2.CandleStore)
+		if err != nil {
+			return fmt.Errorf("failed to create candles store: %w", err)
+		}
+		l.candleServiceV2 = candlesv2.NewService(l.ctx, l.Log, l.conf.CandlesV2, candleStore)
+
+		l.tradeStoreSQL = sqlstore.NewTrades(sqlStore)
 		l.sqlStore = sqlStore
 	}
 
@@ -256,6 +286,7 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 			l.conf.SQLStore.SqlEventBrokerBufferSize,
 			l.timeSubSQL,
 			l.assetSubSQL,
+			l.partySubSQL,
 			l.transferResponseSubSQL,
 			l.orderSubSQL,
 			l.networkLimitsSubSQL,
@@ -268,11 +299,22 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 			l.epochSubSQL,
 			l.marketUpdatedSubSQL,
 			l.depositSubSQL,
+			l.withdrawalSubSQL,
 			l.proposalsSubSQL,
 			l.votesSubSQL,
 			l.depositSubSQL,
 			l.marginLevelsSubSQL,
-			l.riskFactorSubSQL)
+			l.riskFactorSubSQL,
+			l.netParamSubSQL,
+			l.checkpointSubSQL,
+			l.positionsSubSQL,
+			l.oracleSpecSubSQL,
+			l.oracleDataSubSQL,
+			l.liquidityProvisionSubSQL,
+			l.transferSubSQL,
+			l.stakeLinkingSubSQL,
+			l.notarySubSQL,
+		)
 	}
 
 	l.broker, err = broker.New(l.ctx, l.Log, l.conf.Broker, l.chainInfoStore, eventSource)

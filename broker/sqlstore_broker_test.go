@@ -26,7 +26,7 @@ func testSqlBrokerEventDistribution(t *testing.T, sequential bool) {
 	s1 := testSqlBrokerSubscriber{eventType: events.AssetEvent, receivedCh: make(chan events.Event)}
 	s2 := testSqlBrokerSubscriber{eventType: events.AssetEvent, receivedCh: make(chan events.Event)}
 	s3 := testSqlBrokerSubscriber{eventType: events.AccountEvent, receivedCh: make(chan events.Event)}
-	tes, sb := createTestBroker(t, sequential, s1, s2, s3)
+	tes, sb := createTestBroker(t, sequential, &s1, &s2, &s3)
 	go sb.Receive(context.Background())
 
 	tes.eventsCh <- events.NewAssetEvent(context.Background(), types.Asset{ID: "a1"})
@@ -52,7 +52,7 @@ func TestSqlBrokerTimeEventSentToAllSubscribers(t *testing.T) {
 func testSqlBrokerTimeEventSentToAllSubscribers(t *testing.T, sequential bool) {
 	s1 := testSqlBrokerSubscriber{eventType: events.AssetEvent, receivedCh: make(chan events.Event)}
 	s2 := testSqlBrokerSubscriber{eventType: events.AssetEvent, receivedCh: make(chan events.Event)}
-	tes, sb := createTestBroker(t, sequential, s1, s2)
+	tes, sb := createTestBroker(t, sequential, &s1, &s2)
 
 	go sb.Receive(context.Background())
 
@@ -71,7 +71,7 @@ func TestSqlBrokerTimeEventOnlySendOnceToTimeSubscribers(t *testing.T) {
 
 func testNewSqlStoreBrokerestSqlBrokerTimeEventOnlySendOnceToTimeSubscribers(t *testing.T, seq bool) {
 	s1 := testSqlBrokerSubscriber{eventType: events.TimeUpdate, receivedCh: make(chan events.Event)}
-	tes, sb := createTestBroker(t, seq, s1)
+	tes, sb := createTestBroker(t, seq, &s1)
 
 	go sb.Receive(context.Background())
 
@@ -102,12 +102,13 @@ type testSqlBrokerSubscriber struct {
 	receivedCh chan events.Event
 }
 
-func (t testSqlBrokerSubscriber) Push(evt events.Event) {
+func (t testSqlBrokerSubscriber) Push(evt events.Event) error {
 	t.receivedCh <- evt
+	return nil
 }
 
-func (t testSqlBrokerSubscriber) Type() events.Type {
-	return t.eventType
+func (t testSqlBrokerSubscriber) Types() []events.Type {
+	return []events.Type{t.eventType}
 }
 
 type testChainInfo struct {

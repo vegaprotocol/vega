@@ -2,7 +2,6 @@ package sqlstore
 
 import (
 	"context"
-	"encoding/hex"
 	"fmt"
 
 	"code.vegaprotocol.io/data-node/entities"
@@ -43,19 +42,14 @@ set
 }
 
 func (rf *RiskFactors) GetMarketRiskFactors(ctx context.Context, marketID string) (entities.RiskFactor, error) {
-	market, err := hex.DecodeString(marketID)
-	if err != nil {
-		return entities.RiskFactor{}, fmt.Errorf("bad market ID (must be a hex string): %w", err)
-	}
-
 	var riskFactor entities.RiskFactor
 	var bindVars []interface{}
 
 	query := fmt.Sprintf(`select %s
 		from risk_factors
-		where market_id = %s`, sqlRiskFactorColumns, nextBindVar(&bindVars, market))
+		where market_id = %s`, sqlRiskFactorColumns, nextBindVar(&bindVars, entities.NewMarketID(marketID)))
 
-	err = pgxscan.Get(ctx, rf.pool, &riskFactor, query, bindVars...)
+	err := pgxscan.Get(ctx, rf.pool, &riskFactor, query, bindVars...)
 
 	return riskFactor, err
 }

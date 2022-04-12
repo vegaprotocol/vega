@@ -79,7 +79,7 @@ func (d OracleData) Debug() []zap.Field {
 	}
 
 	fields := []zap.Field{
-		logging.String("PubKeys", keys),
+		logging.String("PublicKeys", keys),
 	}
 	for property, value := range d.Data {
 		fields = append(fields, logging.String(property, value))

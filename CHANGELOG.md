@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased (0.50.0)
+## Unreleased (0.51.0)
 
 ### 🚨 Breaking changes
 - [](https://github.com/vegaprotocol/data-node/pull/xxx) -
@@ -15,13 +15,41 @@
 - [](https://github.com/vegaprotocol/data-node/pull/xxx) -
 
 
+## 0.50.0
+
+### 🛠  Improvements
+- [386](https://github.com/vegaprotocol/data-node/pull/386) - Migrate withdrawal API to retrieve data from `Postgres`
+- [378](https://github.com/vegaprotocol/data-node/issues/378) - Migrate existing Oracles API to new `Postgres` database.
+- [461](https://github.com/vegaprotocol/data-node/pull/461) - Migrate market data time series to consistent format
+- [375](https://github.com/vegaprotocol/data-node/issues/375) - Migrate existing Liquidity Provisions API to new `Postgres` database.
+- [381](https://github.com/vegaprotocol/data-node/issues/381) - Migrate existing Positions API to new `Postgres` database.
+- [467](https://github.com/vegaprotocol/data-node/pull/467) - Migrate transfers API to retrieve data from `Postgres`
+- [469](https://github.com/vegaprotocol/data-node/issues/469) - Migrate existing stake linking API to new `Postgres` database.
+- [496](https://github.com/vegaprotocol/data-node/issues/496) - Migrate `ERC20WithdrawlApproval` and `NodeSignaturesAggregate` API to new `Postgres` database.
+- [474](https://github.com/vegaprotocol/data-node/pull/474) - Clean up error handling in subscribers and make action on error configurable
+- [487](https://github.com/vegaprotocol/data-node/pull/487) - Trade data retention
+- [495](https://github.com/vegaprotocol/data-node/pull/495) - Account for `SettlePosition` events reaching the positions plug-in before the `PositionState` event.
+- [495](https://github.com/vegaprotocol/data-node/pull/495) - Make sure `SettlePosition` does not result in a division by zero panic.
+- [](https://github.com/vegaprotocol/data-node/pull/xxx) -
+
+### 🐛 Fixes
+- [451](https://github.com/vegaprotocol/data-node/issues/451) - Correct conversion of pending validator status
+- [391](https://github.com/vegaprotocol/data-node/issues/391) - Fix `OracleSpecs GraphQL` query returns error and null when there is no data.
+- [477](https://github.com/vegaprotocol/data-node/issues/477) - Fix position open volume calculation.
+- [281](https://github.com/vegaprotocol/data-node/issues/281) - Fix Estimate Margin calculates incorrectly for Limit Orders
+- [482](https://github.com/vegaprotocol/data-node/issues/482) - Fan out event broker should only call listen once on source broker
+
 ## 0.49.3
 
 ### 🛠  Improvements
 - [426](https://github.com/vegaprotocol/data-node/pull/426) - Add bindings for party less liquidity provision requests
 - [430](https://github.com/vegaprotocol/data-node/pull/430) - Migrate deposit API to retrieve data from `Postgres`
 - [435](https://github.com/vegaprotocol/data-node/pull/435) - Migrate governance API to retrieve data from `Postgres`
+- [438](https://github.com/vegaprotocol/data-node/pull/438) - Migrate candles to retrieve data from `Postgres`
+- [447](https://github.com/vegaprotocol/data-node/issue/447) - Use `PositionState` event to update position
 - [442](https://github.com/vegaprotocol/data-node/pull/442) - Migrate estimator API to retrieve data from `Postgres`
+- [449](https://github.com/vegaprotocol/data-node/issue/449) - Refactor identifiers to use `ID` types instead of `[]byte`
+- [373](https://github.com/vegaprotocol/data-node/issue/373) - Migrate `GetVegaTime`, `Checkpoints` and `NetworkParameters` to `Postgres`
 
 ### 🐛 Fixes
 - [256](https://github.com/vegaprotocol/data-node/pull/256) - Market Risk Factors missing from Market `GraphQL` API
@@ -35,6 +63,7 @@
 - [407](https://github.com/vegaprotocol/data-node/pull/407) - Add `positionDecimalPlaces` to market `graphQL`
 - [429](https://github.com/vegaprotocol/data-node/issues/429) - Add environment variable to getting started document
 - [420](https://github.com/vegaprotocol/data-node/pull/420) - Migrate rewards, delegations and epochs to `Postgres`
+- [380](https://github.com/vegaprotocol/data-node/pull/420) - Migrate party API to `postgres`
 
 ### 🐛 Fixes
 - [411](https://github.com/vegaprotocol/data-node/pull/411) - Fix a couple of incompatibilities in `data-node v2`

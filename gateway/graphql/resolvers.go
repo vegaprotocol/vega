@@ -430,7 +430,29 @@ type myQueryResolver VegaResolverRoot
 func (r *myQueryResolver) Transfers(
 	ctx context.Context, pubkey string, isFrom *bool, isTo *bool,
 ) ([]*eventspb.Transfer, error) {
-	return nil, nil
+
+	from := false
+	to := false
+
+	if isFrom != nil {
+		from = *isFrom
+	}
+
+	if isTo != nil {
+		to = *isTo
+	}
+
+	response, err := r.tradingDataClient.Transfers(ctx, &protoapi.TransfersRequest{
+		Pubkey: pubkey,
+		IsFrom: from,
+		IsTo:   to,
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return response.Transfers, nil
 }
 
 func (r *myQueryResolver) LastBlockHeight(ctx context.Context) (string, error) {

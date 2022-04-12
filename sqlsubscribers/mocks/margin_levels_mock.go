@@ -5,6 +5,7 @@
 package mocks
 
 import (
+	context "context"
 	reflect "reflect"
 
 	entities "code.vegaprotocol.io/data-node/entities"
@@ -34,16 +35,30 @@ func (m *MockMarginLevelsStore) EXPECT() *MockMarginLevelsStoreMockRecorder {
 	return m.recorder
 }
 
-// Upsert mocks base method.
-func (m *MockMarginLevelsStore) Upsert(arg0 *entities.MarginLevels) error {
+// Add mocks base method.
+func (m *MockMarginLevelsStore) Add(arg0 *entities.MarginLevels) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Upsert", arg0)
+	ret := m.ctrl.Call(m, "Add", arg0)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// Upsert indicates an expected call of Upsert.
-func (mr *MockMarginLevelsStoreMockRecorder) Upsert(arg0 interface{}) *gomock.Call {
+// Add indicates an expected call of Add.
+func (mr *MockMarginLevelsStoreMockRecorder) Add(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Upsert", reflect.TypeOf((*MockMarginLevelsStore)(nil).Upsert), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Add", reflect.TypeOf((*MockMarginLevelsStore)(nil).Add), arg0)
+}
+
+// OnTimeUpdateEvent mocks base method.
+func (m *MockMarginLevelsStore) OnTimeUpdateEvent(arg0 context.Context) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "OnTimeUpdateEvent", arg0)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// OnTimeUpdateEvent indicates an expected call of OnTimeUpdateEvent.
+func (mr *MockMarginLevelsStoreMockRecorder) OnTimeUpdateEvent(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OnTimeUpdateEvent", reflect.TypeOf((*MockMarginLevelsStore)(nil).OnTimeUpdateEvent), arg0)
 }

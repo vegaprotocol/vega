@@ -1,9 +1,6 @@
 package entities
 
 import (
-	"encoding/hex"
-	"fmt"
-
 	v2 "code.vegaprotocol.io/protos/data-node/api/v2"
 	"code.vegaprotocol.io/vega/types"
 )
@@ -19,24 +16,16 @@ func AccountFilterFromProto(pbFilter *v2.AccountFilter) (AccountFilter, error) {
 	filter := AccountFilter{}
 	if pbFilter != nil {
 		if pbFilter.AssetId != "" {
-			filter.Asset.ID = MakeAssetID(pbFilter.AssetId)
+			filter.Asset.ID = NewAssetID(pbFilter.AssetId)
 		}
 		for _, partyID := range pbFilter.PartyIds {
-			hexID, err := hex.DecodeString(partyID)
-			if err != nil {
-				return filter, fmt.Errorf("party ID is not a hex string: %v", partyID)
-			}
-			filter.Parties = append(filter.Parties, Party{ID: hexID})
+			filter.Parties = append(filter.Parties, Party{ID: NewPartyID(partyID)})
 		}
 
 		filter.AccountTypes = append(filter.AccountTypes, pbFilter.AccountTypes...)
 
 		for _, marketID := range pbFilter.MarketIds {
-			hexID, err := hex.DecodeString(marketID)
-			if err != nil {
-				return filter, fmt.Errorf("market ID is not a hex string: %v", marketID)
-			}
-			filter.Markets = append(filter.Markets, Market{ID: hexID})
+			filter.Markets = append(filter.Markets, Market{ID: NewMarketID(marketID)})
 		}
 	}
 	return filter, nil

@@ -7,11 +7,12 @@ func TestGovernance(t *testing.T) {
 		"Proposals":                  `{ proposals{ id, reference, party { id }, state, datetime, rejectionReason, errorDetails } }`,
 		"ProposalVoteSummary":        `{ proposals{ id votes{ yes{ totalNumber totalWeight totalTokens } } } }`,
 		"ProposalVoteDetails":        `{ proposals{ id votes{ yes{ votes{value party { id } datetime proposalId governanceTokenBalance governanceTokenWeight } } } } }`,
-		"NewMarketProposals":         `{ newMarketProposals { id } }`,
-		"UpdateMarketProposals":      `{ updateMarketProposals { id } }`,
-		"NetworkParametersProposals": `{ networkParametersProposals { id } }`,
-		"NewAssetProposals":          `{ newAssetProposals { id } }`,
-		"NewFreeformProposals":       `{ newFreeformProposals { id } }`,
+		"NewMarketProposals":         `{ proposals: newMarketProposals { id } }`,
+		"NetworkParametersProposals": `{ proposals: networkParametersProposals { id } }`,
+		"NewAssetProposals":          `{ proposals: newAssetProposals { id } }`,
+		"NewFreeformProposals":       `{ proposals: newFreeformProposals { id } }`,
+		// Don't currently have these in test data stream
+		//"UpdateMarketProposals":      `{ updateMarketProposals { id } }`,
 	}
 
 	for name, query := range queries {

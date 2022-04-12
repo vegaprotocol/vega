@@ -42,7 +42,7 @@ func getTestMarket() types.Market {
 				Metadata: &types.InstrumentMetadata{
 					Tags: []string{"AAA", "BBB"},
 				},
-				Product: types.Instrument_Future{
+				Product: types.InstrumentFuture{
 					Future: &types.Future{
 						SettlementAsset: "",
 						QuoteName:       "",
@@ -97,8 +97,7 @@ func getTestMarket() types.Market {
 				LiquidityFee:      num.DecimalZero(),
 			},
 		},
-		OpeningAuction:    nil,
-		TradingModeConfig: nil,
+		OpeningAuction: nil,
 		PriceMonitoringSettings: &types.PriceMonitoringSettings{
 			Parameters: &types.PriceMonitoringParameters{
 				Triggers: []*types.PriceMonitoringTrigger{

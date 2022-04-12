@@ -25,8 +25,8 @@ func TestRewardFromProto(t *testing.T) {
 
 	reward, err := entities.RewardFromProto(pbReward)
 	require.NoError(t, err)
-	assert.Equal(t, "a0b1", reward.PartyHexID())
-	assert.Equal(t, "c2d3", reward.AssetHexID())
+	assert.Equal(t, "a0b1", reward.PartyID.String())
+	assert.Equal(t, "c2d3", reward.AssetID.String())
 	assert.Equal(t, int64(42), reward.EpochID)
 	assert.InDelta(t, 3.14, reward.PercentOfTotal, 0.001)
 	fmt.Printf("%v - %v\n", now, reward.VegaTime)

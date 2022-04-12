@@ -10,34 +10,35 @@ import (
 
 type Balances struct {
 	*SQLStore
+	batcher Batcher[entities.BalanceKey, entities.Balance]
 }
 
 func NewBalances(sqlStore *SQLStore) *Balances {
 	b := &Balances{
 		SQLStore: sqlStore,
+		batcher: NewBatcher[entities.BalanceKey, entities.Balance](
+			"balances",
+			entities.BalanceColumns),
 	}
 	return b
+}
+
+func (bs *Balances) Flush(ctx context.Context) error {
+	return bs.batcher.Flush(ctx, bs.pool)
 }
 
 // Add inserts a row to the balance table. If there's already a balance for this
 // (account, block time) update it to match with the one supplied.
 func (bs *Balances) Add(b entities.Balance) error {
-	ctx := context.Background()
-	_, err := bs.pool.Exec(ctx,
-		`INSERT INTO balances(account_id, vega_time, balance)
-         VALUES ($1, $2, $3)
-         ON CONFLICT (account_id, vega_time) DO UPDATE SET balance=EXCLUDED.balance`,
-		b.AccountID,
-		b.VegaTime,
-		b.Balance)
-	return err
+	bs.batcher.Add(b)
+	return nil
 }
 
 // Query queries and sums the balances of a given subset of accounts, specified via the 'filter' argument.
 // It returns a timeseries (implemented as a list of AggregateBalance structs), with a row for every time
 // the summed balance of the set of specified accounts changes.
 //
-// Optionally you can supply a list of fields to group by, which will break down the results by those fields.
+// Optionally you can supply a list of fields to market by, which will break down the results by those fields.
 //
 // For example, if you have balances table that looks like
 //
@@ -61,7 +62,11 @@ func (bs *Balances) Add(b entities.Balance) error {
 // 3     100        y
 //
 func (bs *Balances) Query(filter entities.AccountFilter, groupBy []entities.AccountField) (*[]entities.AggregatedBalance, error) {
-	assetsQuery, args := filterAccountsQuery(filter)
+	assetsQuery, args, err := filterAccountsQuery(filter)
+	if err != nil {
+		return nil, err
+	}
+
 	query := `
         WITH our_accounts AS (%s),
              timestamps AS (SELECT DISTINCT balances.vega_time

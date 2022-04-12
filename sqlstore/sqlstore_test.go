@@ -3,6 +3,7 @@ package sqlstore_test
 import (
 	"context"
 	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"math/rand"
 	"net"
@@ -29,17 +30,21 @@ var (
 func TestMain(m *testing.M) {
 	var err error
 	testDBPort = getNextPort()
+
 	sqlConfig := NewTestConfig(testDBPort)
 
 	if sqlTestsEnabled {
+		log := logging.NewTestLogger()
+
 		testStore, err = sqlstore.InitialiseTestStorage(
-			logging.NewTestLogger(),
+			log,
 			sqlConfig,
 		)
-
 		if err != nil {
 			panic(err)
 		}
+
+		log.Infof("Test DB Port: %d", testDBPort)
 
 		// Make sure the database has started before we run the tests.
 		ctx, cancel := context.WithTimeout(context.Background(), postgresServerTimeout)
@@ -47,7 +52,6 @@ func TestMain(m *testing.M) {
 		op := func() error {
 			connStr := connectionString(sqlConfig)
 			conn, err := pgx.Connect(ctx, connStr)
-
 			if err != nil {
 				return err
 			}
@@ -69,11 +73,11 @@ func TestMain(m *testing.M) {
 }
 
 // Generate a 256 bit pseudo-random hash ID based on the time
-func generateID() []byte {
+func generateID() string {
 	currentTime := time.Now().UnixNano()
 	currentTimeString := strconv.FormatInt(currentTime, 10)
 	hash := sha256.Sum256([]byte(currentTimeString))
-	return hash[:]
+	return hex.EncodeToString(hash[:])
 }
 
 func NewTestConfig(port int) sqlstore.Config {

@@ -1,6 +1,7 @@
 package integration_test
 
 import (
+	"strings"
 	"time"
 )
 
@@ -61,6 +62,7 @@ type AuctionDuration struct {
 	DurationSecs int
 	Volume       int
 }
+
 type Trade struct {
 	Id                 HexString
 	Price              string
@@ -84,6 +86,7 @@ type TradeFee struct {
 	InfrastructureFee string
 	LiquidityFee      string
 }
+
 type PriceMonitoringSettings struct {
 	Parameters          PriceMonitoringParameters
 	UpdateFrequencySecs int
@@ -128,16 +131,15 @@ type Party struct {
 	Proposals          []Proposal
 	Votes              []Vote
 	LiquidityProvision []LiquidityProvision
+	Positions          []Position
 	// TODO:
-	// Positions []Position
 	// Margins []MarginLevels
-	// Withdrawals []WithDrawal
-	Deposits []Deposit
+	Withdrawals []Withdrawal
+	Deposits    []Deposit
 	// Delegations []Delegation
 	// Stake PartyStake
 	// Rewards []Reward
 	// RewardSummaries []RewardSummary
-
 }
 
 type ProposalTerms struct {
@@ -168,7 +170,7 @@ type Vote struct {
 }
 
 type Order struct {
-	Id                 string
+	Id                 HexString
 	Price              string
 	Side               string
 	Timeinforce        string
@@ -195,19 +197,32 @@ type PeggedOrder struct {
 }
 
 type LiquidityProvision struct {
-	Id               string
+	Id               HexString
 	Party            Party
 	CreatedAt        TimeString
 	UpdatedAt        TimeString
 	Market           Market
 	CommitmentAmount string
 	Fee              string
-	// TODO: sells
-	// TODO: buys
-	Version   string
-	Status    string
-	Reference string
+	Sells            []LiquidityOrderReference
+	Buys             []LiquidityOrderReference
+	Version          string
+	Status           string
+	Reference        string
 }
+
+type LiquidityOrderReference struct {
+	Order          Order
+	LiquidityOrder LiquidityOrder
+}
+
+type LiquidityOrder struct {
+	Reference  PeggedReference
+	Proportion int
+	Offset     string
+}
+
+type PeggedReference = HexString
 
 type Account struct {
 	Balance string
@@ -217,7 +232,7 @@ type Account struct {
 }
 
 type Asset struct {
-	Id          string
+	Id          HexString
 	Name        string
 	Symbol      string
 	TotalSupply string
@@ -233,6 +248,10 @@ type Asset struct {
 // where the output from the API might differ slightly but we don't care.
 
 type HexString string
+
+func (s HexString) Equal(other HexString) bool {
+	return strings.ToLower(string(s)) == strings.ToLower(string(other))
+}
 
 type TimeString string
 
@@ -257,12 +276,154 @@ func (s TimeString) Equal(other TimeString) bool {
 }
 
 type Deposit struct {
-	ID                string
+	ID                HexString
 	Party             Party
 	Amount            string
 	Asset             Asset
 	Status            string
-	CreatedTimestamp  string
-	CreditedTimestamp string
+	CreatedTimestamp  TimeString
+	CreditedTimestamp TimeString
 	TxHash            string
+}
+
+type NetworkParameter struct {
+	Key   string
+	Value string
+}
+
+type Epoch struct {
+	ID          HexString
+	Timestamps  EpochTimestamps
+	Delegations []Delegation
+}
+
+type EpochTimestamps struct {
+	Start  string
+	End    string
+	Expiry string
+}
+
+type Delegation struct {
+	Amount string
+	Party  Party
+	Node   Node
+	Epoch  int
+}
+
+type Node struct {
+	Id                HexString
+	Pubkey            string
+	TmPubkey          string
+	EthereumAdddress  string
+	InfoUrl           string
+	Location          string
+	StakedByOperator  string
+	StakedByDelegates string
+	StakedTotal       string
+	PendingStake      string
+	EpochData         EpochData
+	Status            string
+	Delegations       []Delegation
+	Name              string
+	AvatarUrl         string
+	// TODO
+	// RewardScore RewardScore
+	// RankingScore RankingScore
+}
+
+type EpochData struct {
+	Total   int
+	Offline int
+	Online  int
+}
+
+type Withdrawal struct {
+	ID                 HexString
+	Party              Party
+	Amount             string
+	Asset              Asset
+	Status             string
+	Ref                string
+	Expiry             TimeString
+	TxHash             string
+	CreatedTimestamp   TimeString
+	WithdrawnTimeStamp TimeString
+}
+
+type Transfer struct {
+	Id              string
+	From            string
+	FromAccountType string
+	To              string
+	ToAccountType   string
+	Amount          string
+	Reference       string
+	Status          string
+	Timestamp       time.Time
+	Asset           Asset
+}
+
+type Property struct {
+	Name  string
+	Value string
+}
+
+type OracleData struct {
+	PubKeys []string
+	Data    []Property
+}
+
+type PropertyKeyType = string
+
+type PropertyKey struct {
+	Name string
+	Type PropertyKeyType
+}
+
+type ConditionOperator = string
+
+type Condition struct {
+	Operator ConditionOperator
+	Value    string
+}
+
+type Filter struct {
+	Key        PropertyKey
+	Conditions []Condition
+}
+
+type OracleSpecStatus = string
+
+type OracleSpec struct {
+	ID        HexString
+	CreatedAt TimeString
+	UpdatedAt TimeString
+	PubKeys   []string
+	Filters   []Filter
+	Status    OracleSpecStatus
+	Data      []OracleData
+}
+
+type Position struct {
+	Market            Market
+	Party             Party
+	OpenVolume        string
+	RealisedPNL       string
+	UnrealisedPNL     string
+	AverageEntryPrice string
+	UpdatedAt         TimeString
+}
+
+type NodeSignature struct {
+	ID        HexString
+	Signature HexString
+	Kind      string
+}
+
+type ERC20WithdrawalApproval struct {
+	AssetSource   string
+	Amount        string
+	Nonce         string
+	Signatures    string
+	TargetAddress string
 }

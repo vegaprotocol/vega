@@ -8,6 +8,8 @@ import (
 	"strconv"
 	"time"
 
+	"code.vegaprotocol.io/data-node/candlesv2"
+
 	"code.vegaprotocol.io/data-node/accounts"
 	"code.vegaprotocol.io/data-node/assets"
 	"code.vegaprotocol.io/data-node/candles"
@@ -84,24 +86,36 @@ type GRPCServer struct {
 
 	marketDepthService *subscribers.MarketDepthBuilder
 
-	balanceStore       *sqlstore.Balances
-	orderStore         *sqlstore.Orders
-	networkLimitsStore *sqlstore.NetworkLimits
-	marketDataStore    *sqlstore.MarketData
-	tradeStore         *sqlstore.Trades
-	assetStore         *sqlstore.Assets
-	accountStore       *sqlstore.Accounts
-	rewardStore        *sqlstore.Rewards
-	marketsStore       *sqlstore.Markets
-	delegationsStore   *sqlstore.Delegations
-	epochStore         *sqlstore.Epochs
-	depositsStore      *sqlstore.Deposits
-	proposalStore      *sqlstore.Proposals
-	voteStore          *sqlstore.Votes
-	riskFactorsStore   *sqlstore.RiskFactors
-	marginLevelsStore  *sqlstore.MarginLevels
-
-	eventObserver *eventObserver
+	balanceStore            *sqlstore.Balances
+	orderStore              *sqlstore.Orders
+	candleServiceV2         *candlesv2.Svc
+	networkLimitsStore      *sqlstore.NetworkLimits
+	marketDataStore         *sqlstore.MarketData
+	tradeStore              *sqlstore.Trades
+	assetStore              *sqlstore.Assets
+	accountStore            *sqlstore.Accounts
+	rewardStore             *sqlstore.Rewards
+	marketsStore            *sqlstore.Markets
+	delegationsStore        *sqlstore.Delegations
+	epochStore              *sqlstore.Epochs
+	depositsStore           *sqlstore.Deposits
+	withdrawalsStore        *sqlstore.Withdrawals
+	proposalStore           *sqlstore.Proposals
+	voteStore               *sqlstore.Votes
+	riskFactorsStore        *sqlstore.RiskFactors
+	marginLevelsStore       *sqlstore.MarginLevels
+	netParamStore           *sqlstore.NetworkParameters
+	blockStore              *sqlstore.Blocks
+	partyStore              *sqlstore.Parties
+	checkpointStore         *sqlstore.Checkpoints
+	oracleSpecStore         *sqlstore.OracleSpec
+	oracleDataStore         *sqlstore.OracleData
+	liquidityProvisionStore *sqlstore.LiquidityProvision
+	positionStore           *sqlstore.Positions
+	transfersStore          *sqlstore.Transfers
+	stakeLinkingStore       *sqlstore.StakeLinking
+	notaryStore             *sqlstore.Notary
+	eventObserver           *eventObserver
 
 	// used in order to gracefully close streams
 	ctx   context.Context
@@ -152,10 +166,23 @@ func NewGRPCServer(
 	delegationStore *sqlstore.Delegations,
 	epochStore *sqlstore.Epochs,
 	depositsStore *sqlstore.Deposits,
+	withdrawalsStore *sqlstore.Withdrawals,
 	proposalStore *sqlstore.Proposals,
 	voteStore *sqlstore.Votes,
 	riskFactorsStore *sqlstore.RiskFactors,
 	marginLevelsStore *sqlstore.MarginLevels,
+	netParamStore *sqlstore.NetworkParameters,
+	blockStore *sqlstore.Blocks,
+	checkpointStore *sqlstore.Checkpoints,
+	partyStore *sqlstore.Parties,
+	candleServiceV2 *candlesv2.Svc,
+	oracleSpecStore *sqlstore.OracleSpec,
+	oracleDataStore *sqlstore.OracleData,
+	liquidityProvisionStore *sqlstore.LiquidityProvision,
+	positionStore *sqlstore.Positions,
+	transfersStore *sqlstore.Transfers,
+	stakeLinkingStore *sqlstore.StakeLinking,
+	notaryStore *sqlstore.Notary,
 ) *GRPCServer {
 	// setup logger
 	log = log.Named(namedLogger)
@@ -205,10 +232,23 @@ func NewGRPCServer(
 		delegationsStore:        delegationStore,
 		epochStore:              epochStore,
 		depositsStore:           depositsStore,
+		withdrawalsStore:        withdrawalsStore,
 		proposalStore:           proposalStore,
 		voteStore:               voteStore,
 		riskFactorsStore:        riskFactorsStore,
 		marginLevelsStore:       marginLevelsStore,
+		netParamStore:           netParamStore,
+		blockStore:              blockStore,
+		checkpointStore:         checkpointStore,
+		partyStore:              partyStore,
+		candleServiceV2:         candleServiceV2,
+		oracleSpecStore:         oracleSpecStore,
+		oracleDataStore:         oracleDataStore,
+		liquidityProvisionStore: liquidityProvisionStore,
+		positionStore:           positionStore,
+		transfersStore:          transfersStore,
+		stakeLinkingStore:       stakeLinkingStore,
+		notaryStore:             notaryStore,
 		eventObserver: &eventObserver{
 			log:          log,
 			eventService: eventService,
@@ -242,7 +282,6 @@ func remoteAddrInterceptor(log *logging.Logger) grpc.UnaryServerInterceptor {
 		info *grpc.UnaryServerInfo,
 		handler grpc.UnaryHandler,
 	) (resp interface{}, err error) {
-
 		// first check if the request is forwarded from our restproxy
 		// get the metadata
 		var ip string
@@ -353,21 +392,34 @@ func (g *GRPCServer) Start(ctx context.Context, lis net.Listener) error {
 	}
 	if g.useSQLStores {
 		g.tradingDataService = &tradingDataDelegator{
-			tradingDataService: tradingDataSvc,
-			orderStore:         g.orderStore,
-			tradeStore:         g.tradeStore,
-			assetStore:         g.assetStore,
-			accountStore:       g.accountStore,
-			marketDataStore:    g.marketDataStore,
-			rewardStore:        g.rewardStore,
-			marketsStore:       g.marketsStore,
-			delegationStore:    g.delegationsStore,
-			epochStore:         g.epochStore,
-			depositsStore:      g.depositsStore,
-			proposalsStore:     g.proposalStore,
-			voteStore:          g.voteStore,
-			riskFactorStore:    g.riskFactorsStore,
-			marginLevelsStore:  g.marginLevelsStore,
+			tradingDataService:      tradingDataSvc,
+			orderStore:              g.orderStore,
+			tradeStore:              g.tradeStore,
+			assetStore:              g.assetStore,
+			accountStore:            g.accountStore,
+			marketDataStore:         g.marketDataStore,
+			rewardStore:             g.rewardStore,
+			marketsStore:            g.marketsStore,
+			delegationStore:         g.delegationsStore,
+			epochStore:              g.epochStore,
+			depositsStore:           g.depositsStore,
+			withdrawalsStore:        g.withdrawalsStore,
+			proposalsStore:          g.proposalStore,
+			voteStore:               g.voteStore,
+			riskFactorStore:         g.riskFactorsStore,
+			marginLevelsStore:       g.marginLevelsStore,
+			netParamStore:           g.netParamStore,
+			blockStore:              g.blockStore,
+			checkpointStore:         g.checkpointStore,
+			partyStore:              g.partyStore,
+			candleServiceV2:         g.candleServiceV2,
+			oracleSpecStore:         g.oracleSpecStore,
+			oracleDataStore:         g.oracleDataStore,
+			liquidityProvisionStore: g.liquidityProvisionStore,
+			positionStore:           g.positionStore,
+			transfersStore:          g.transfersStore,
+			stakingStore:            g.stakeLinkingStore,
+			notaryStore:             g.notaryStore,
 		}
 	} else {
 		g.tradingDataService = tradingDataSvc
@@ -376,10 +428,13 @@ func (g *GRPCServer) Start(ctx context.Context, lis net.Listener) error {
 	protoapi.RegisterTradingDataServiceServer(g.srv, g.tradingDataService)
 
 	tradingDataSvcV2 := &tradingDataServiceV2{
+		log:                g.log,
 		balanceStore:       g.balanceStore,
 		orderStore:         g.orderStore,
 		networkLimitsStore: g.networkLimitsStore,
 		marketDataStore:    g.marketDataStore,
+		tradeStore:         g.tradeStore,
+		candleServiceV2:    g.candleServiceV2,
 	}
 	protoapi2.RegisterTradingDataServiceServer(g.srv, tradingDataSvcV2)
 

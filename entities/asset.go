@@ -1,19 +1,21 @@
 package entities
 
 import (
-	"encoding/hex"
 	"fmt"
-	"strings"
 	"time"
 
 	pb "code.vegaprotocol.io/protos/vega"
 	"github.com/shopspring/decimal"
 )
 
-const badAssetPrefix = "bad_asset_"
+type AssetID struct{ ID }
+
+func NewAssetID(id string) AssetID {
+	return AssetID{ID: ID(id)}
+}
 
 type Asset struct {
-	ID            []byte
+	ID            AssetID
 	Name          string
 	Symbol        string
 	TotalSupply   decimal.Decimal // Maybe num.Uint if we can figure out how to add support to pgx
@@ -24,29 +26,9 @@ type Asset struct {
 	VegaTime      time.Time
 }
 
-// MakeAssetID converts a string into a set if bytes. Normally this takes a hex encoded
-// SHA256 string, which gets encoded into the corresponding binary representation.
-// However some assets have IDs that are not hex strings; this will be fixed but
-// in the mean time in that case, store the name as-is with a prefix.
-func MakeAssetID(stringID string) []byte {
-	id, err := hex.DecodeString(stringID)
-	if err != nil {
-		id = []byte(badAssetPrefix + stringID)
-	}
-	return id
-}
-
-func (a Asset) HexID() string {
-	if strings.HasPrefix(string(a.ID), badAssetPrefix) {
-		return strings.TrimPrefix(string(a.ID), badAssetPrefix)
-	}
-
-	return hex.EncodeToString(a.ID)
-}
-
 func (a Asset) ToProto() *pb.Asset {
 	pbAsset := &pb.Asset{
-		Id: a.HexID(),
+		Id: a.ID.String(),
 		Details: &pb.AssetDetails{
 			Name:        a.Name,
 			Symbol:      a.Symbol,

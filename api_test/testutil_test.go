@@ -10,6 +10,8 @@ import (
 	"testing"
 	"time"
 
+	"code.vegaprotocol.io/data-node/candlesv2"
+
 	vgtesting "code.vegaprotocol.io/data-node/libs/testing"
 	"code.vegaprotocol.io/data-node/sqlstore"
 	"github.com/golang/protobuf/jsonpb"
@@ -213,7 +215,15 @@ func NewTestServer(t testing.TB, ctx context.Context, blocking bool) *TestServer
 	sqlMarketDataStore := sqlstore.NewMarketData(&sqlStore)
 
 	sqlOrderStore := sqlstore.NewOrders(&sqlStore)
+	conf.CandlesV2.CandleStore.DefaultCandleIntervals = ""
+	sqlCandleStore, err := sqlstore.NewCandles(ctx, &sqlStore, conf.CandlesV2.CandleStore)
+	if err != nil {
+		t.Fatalf("failed to create candle store: %v", err)
+	}
+	candlesServiceV2 := candlesv2.NewService(ctx, logger, conf.CandlesV2, sqlCandleStore)
+
 	sqlTradeStore := sqlstore.NewTrades(&sqlStore)
+	sqlPositionStore := sqlstore.NewPositions(&sqlStore)
 	sqlNetworkLimitsStore := sqlstore.NewNetworkLimits(&sqlStore)
 	sqlAssetStore := sqlstore.NewAssets(&sqlStore)
 	sqlAccountStore := sqlstore.NewAccounts(&sqlStore)
@@ -222,13 +232,23 @@ func NewTestServer(t testing.TB, ctx context.Context, blocking bool) *TestServer
 	sqlDelegationStore := sqlstore.NewDelegations(&sqlStore)
 	sqlEpochStore := sqlstore.NewEpochs(&sqlStore)
 	sqlDepositStore := sqlstore.NewDeposits(&sqlStore)
+	sqlWithdrawalsStore := sqlstore.NewWithdrawals(&sqlStore)
 	sqlProposalStore := sqlstore.NewProposals(&sqlStore)
 	sqlVoteStore := sqlstore.NewVotes(&sqlStore)
 	sqlRiskFactorsStore := sqlstore.NewRiskFactors(&sqlStore)
 	sqlMarginLevelsStore := sqlstore.NewMarginLevels(&sqlStore)
+	sqlNetParamStore := sqlstore.NewNetworkParameters(&sqlStore)
+	sqlBlockStore := sqlstore.NewBlocks(&sqlStore)
+	sqlCheckpointStore := sqlstore.NewCheckpoints(&sqlStore)
+	sqlPartyStore := sqlstore.NewParties(&sqlStore)
+	sqlOracleSpecStore := sqlstore.NewOracleSpec(&sqlStore)
+	sqlOracleDataStore := sqlstore.NewOracleData(&sqlStore)
+	sqlLPDataStore := sqlstore.NewLiquidityProvision(&sqlStore)
+	sqlTransfersStore := sqlstore.NewTransfers(&sqlStore)
+	sqlStakeLinkingStore := sqlstore.NewStakeLinking(&sqlStore)
+	sqlNotaryStore := sqlstore.NewNotary(&sqlStore)
 
 	eventSource, err := broker.NewEventSource(conf.Broker, logger)
-
 	if err != nil {
 		t.Fatalf("failed to create event source: %v", err)
 	}
@@ -298,10 +318,23 @@ func NewTestServer(t testing.TB, ctx context.Context, blocking bool) *TestServer
 		sqlDelegationStore,
 		sqlEpochStore,
 		sqlDepositStore,
+		sqlWithdrawalsStore,
 		sqlProposalStore,
 		sqlVoteStore,
 		sqlRiskFactorsStore,
 		sqlMarginLevelsStore,
+		sqlNetParamStore,
+		sqlBlockStore,
+		sqlCheckpointStore,
+		sqlPartyStore,
+		candlesServiceV2,
+		sqlOracleSpecStore,
+		sqlOracleDataStore,
+		sqlLPDataStore,
+		sqlPositionStore,
+		sqlTransfersStore,
+		sqlStakeLinkingStore,
+		sqlNotaryStore,
 	)
 	if srv == nil {
 		t.Fatal("failed to create gRPC server")
@@ -353,8 +386,8 @@ func PublishEvents(
 	ctx context.Context,
 	b *broker.Broker,
 	convertEvt func(be *eventspb.BusEvent) (events.Event, error),
-	goldenFile string) {
-
+	goldenFile string,
+) {
 	t.Helper()
 	path := filepath.Join("testdata", goldenFile)
 	f, err := os.Open(path)

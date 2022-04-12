@@ -1,12 +1,14 @@
 package sqlsubscribers
 
 import (
+	"context"
 	"time"
 
 	"code.vegaprotocol.io/data-node/entities"
 	"code.vegaprotocol.io/data-node/logging"
 	types "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/events"
+	"github.com/pkg/errors"
 )
 
 type MarketDataEvent interface {
@@ -17,6 +19,7 @@ type MarketDataEvent interface {
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/market_data_mock.go -package mocks code.vegaprotocol.io/data-node/sqlsubscribers MarketDataStore
 type MarketDataStore interface {
 	Add(*entities.MarketData) error
+	OnTimeUpdateEvent(context.Context) error
 }
 
 type MarketData struct {
@@ -27,21 +30,23 @@ type MarketData struct {
 	seqNum    uint64
 }
 
-func (md *MarketData) Push(evt events.Event) {
+func (md *MarketData) Push(evt events.Event) error {
 	switch e := evt.(type) {
 	case TimeUpdateEvent:
 		md.vegaTime = e.Time()
+		md.store.OnTimeUpdateEvent(e.Context())
 	case MarketDataEvent:
 		md.seqNum = e.Sequence()
-		md.consume(e)
+		return md.consume(e)
 	default:
-		md.log.Error("Unknown event type in transfer response subscriber",
-			logging.String("type", e.Type().String()))
+		return errors.Errorf("unknown event type %s", e.Type().String())
 	}
+
+	return nil
 }
 
-func (md *MarketData) Type() events.Type {
-	return events.MarketDataEvent
+func (md *MarketData) Types() []events.Type {
+	return []events.Type{events.MarketDataEvent}
 }
 
 func NewMarketData(store MarketDataStore, log *logging.Logger, dbTimeout time.Duration) *MarketData {
@@ -52,19 +57,16 @@ func NewMarketData(store MarketDataStore, log *logging.Logger, dbTimeout time.Du
 	}
 }
 
-func (md *MarketData) consume(event MarketDataEvent) {
+func (md *MarketData) consume(event MarketDataEvent) error {
 	var record *entities.MarketData
 	var err error
 	mdProto := event.MarketData()
 
 	if record, err = md.convertMarketDataProto(&mdProto); err != nil {
-		md.log.Error("Converting market data proto for persistence failed", logging.Error(err))
-		return
+		errors.Wrap(err, "converting market data proto for persistence failed")
 	}
 
-	if err := md.store.Add(record); err != nil {
-		md.log.Error("Inserting market data to SQL store failed.", logging.Error(err))
-	}
+	return errors.Wrap(md.store.Add(record), "inserting market data to SQL store failed")
 }
 
 func (md *MarketData) convertMarketDataProto(data *types.MarketData) (*entities.MarketData, error) {
@@ -73,6 +75,7 @@ func (md *MarketData) convertMarketDataProto(data *types.MarketData) (*entities.
 		return nil, err
 	}
 
+	record.SyntheticTime = md.vegaTime.Add(time.Duration(record.SeqNum) * time.Microsecond)
 	record.VegaTime = md.vegaTime
 	record.SeqNum = md.seqNum
 

@@ -993,7 +993,7 @@ type OracleSpec {
   "status describes the status of the oracle spec"
   status: OracleSpecStatus!
   "data list all the oracle data broadcast to this spec"
-  data: [OracleData!]
+  data: [OracleData!]!
 }
 
 "Status describe the status of the oracle spec"

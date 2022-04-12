@@ -1,13 +1,14 @@
 package sqlsubscribers
 
 import (
-	"fmt"
+	"context"
 	"time"
 
 	"code.vegaprotocol.io/data-node/entities"
 	"code.vegaprotocol.io/data-node/logging"
 	types "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/events"
+	"github.com/pkg/errors"
 )
 
 type TradeEvent interface {
@@ -17,6 +18,7 @@ type TradeEvent interface {
 
 type TradesStore interface {
 	Add(*entities.Trade) error
+	OnTimeUpdateEvent(ctx context.Context) error
 }
 
 type TradeSubscriber struct {
@@ -33,43 +35,37 @@ func NewTradesSubscriber(store TradesStore, log *logging.Logger) *TradeSubscribe
 	}
 }
 
-func (ts *TradeSubscriber) Type() events.Type {
-	return events.TradeEvent
+func (ts *TradeSubscriber) Types() []events.Type {
+	return []events.Type{events.TradeEvent}
 }
 
-func (ts *TradeSubscriber) Push(evt events.Event) {
+func (ts *TradeSubscriber) Push(evt events.Event) error {
 
 	switch e := evt.(type) {
 	case TimeUpdateEvent:
 		ts.sequenceNum = evt.Sequence()
 		ts.vegaTime = e.Time()
+		ts.store.OnTimeUpdateEvent(evt.Context())
 	case TradeEvent:
 		ts.sequenceNum = evt.Sequence()
-		ts.consume(e)
+		return ts.consume(e)
 	default:
-		ts.log.Panic("Unknown event type in trade subscriber",
-			logging.String("Type", e.Type().String()))
+		return errors.Errorf("unknown event type %s", e.Type().String())
 	}
+
+	return nil
 }
 
-func (ts *TradeSubscriber) consume(ae TradeEvent) {
+func (ts *TradeSubscriber) consume(ae TradeEvent) error {
 	trade := ae.Trade()
-	err := ts.addTrade(&trade, ts.vegaTime, ts.sequenceNum)
-	if err != nil {
-		ts.log.Error("adding trade", logging.Error(err))
-	}
+	return errors.Wrap(ts.addTrade(&trade, ts.vegaTime, ts.sequenceNum), "failed to consume trade")
 }
 
 func (ts *TradeSubscriber) addTrade(t *types.Trade, vegaTime time.Time, blockSeqNumber uint64) error {
 	trade, err := entities.TradeFromProto(t, vegaTime, blockSeqNumber)
 	if err != nil {
-		return fmt.Errorf("converting event to trade:%w", err)
+		return errors.Wrap(err, "converting event to trade")
 	}
 
-	err = ts.store.Add(trade)
-	if err != nil {
-		return fmt.Errorf("adding trade to store: %w", err)
-	}
-
-	return nil
+	return errors.Wrap(ts.store.Add(trade), "adding trade to store")
 }

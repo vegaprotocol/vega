@@ -11,30 +11,22 @@ import (
 )
 
 type Delegation struct {
-	PartyID  []byte
-	NodeID   []byte
+	PartyID  PartyID
+	NodeID   NodeID
 	EpochID  int64
 	Amount   decimal.Decimal
 	VegaTime time.Time
 }
 
-func (d *Delegation) PartyHexID() string {
-	return Party{ID: d.PartyID}.HexID()
-}
-
-func (d *Delegation) NodeHexID() string {
-	return Node{ID: d.NodeID}.HexID()
-}
-
 func (d Delegation) String() string {
 	return fmt.Sprintf("{Epoch: %v, Party: %s, Node: %s, Amount: %v}",
-		d.EpochID, d.PartyHexID(), d.NodeHexID(), d.Amount)
+		d.EpochID, d.PartyID, d.NodeID, d.Amount)
 }
 
 func (d *Delegation) ToProto() *vega.Delegation {
 	protoDelegation := vega.Delegation{
-		Party:    d.PartyHexID(),
-		NodeId:   d.NodeHexID(),
+		Party:    d.PartyID.String(),
+		NodeId:   d.NodeID.String(),
 		EpochSeq: fmt.Sprintf("%v", d.EpochID),
 		Amount:   d.Amount.String(),
 	}
@@ -42,16 +34,6 @@ func (d *Delegation) ToProto() *vega.Delegation {
 }
 
 func DelegationFromProto(pd *eventspb.DelegationBalanceEvent) (Delegation, error) {
-	partyID, err := MakePartyID(pd.Party)
-	if err != nil {
-		return Delegation{}, fmt.Errorf("parsing party id '%v': %w", pd.Party, err)
-	}
-
-	nodeID, err := MakeNodeID(pd.NodeId)
-	if err != nil {
-		return Delegation{}, fmt.Errorf("parsing node id '%v': %w", pd.NodeId, err)
-	}
-
 	epochID, err := strconv.ParseInt(pd.EpochSeq, 10, 64)
 	if err != nil {
 		return Delegation{}, fmt.Errorf("parsing epoch '%v': %w", pd.EpochSeq, err)
@@ -64,8 +46,8 @@ func DelegationFromProto(pd *eventspb.DelegationBalanceEvent) (Delegation, error
 	}
 
 	delegation := Delegation{
-		PartyID: partyID,
-		NodeID:  nodeID,
+		PartyID: NewPartyID(pd.Party),
+		NodeID:  NewNodeID(pd.NodeId),
 		EpochID: epochID,
 		Amount:  amount,
 	}

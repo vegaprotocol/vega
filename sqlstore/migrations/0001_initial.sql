@@ -50,7 +50,7 @@ create table balances
 
 create table ledger
 (
-    id              SERIAL                   PRIMARY KEY,
+    id              SERIAL                   ,--PRIMARY KEY,
     account_from_id INT                      NOT NULL REFERENCES accounts(id),
     account_to_id   INT                      NOT NULL REFERENCES accounts(id),
     quantity        NUMERIC(32, 0)           NOT NULL,
@@ -59,6 +59,8 @@ create table ledger
     reference       TEXT,
     type            TEXT
 );
+SELECT create_hypertable('ledger', 'vega_time', chunk_time_interval => INTERVAL '1 day');
+
 
 CREATE TABLE orders (
     id                BYTEA                     NOT NULL,
@@ -81,9 +83,13 @@ CREATE TABLE orders (
     created_at        TIMESTAMP WITH TIME ZONE NOT NULL,
     updated_at        TIMESTAMP WITH TIME ZONE,
     expires_at        TIMESTAMP WITH TIME ZONE,
-    vega_time         TIMESTAMP WITH TIME ZONE NOT NULL REFERENCES blocks(vega_time),
-    PRIMARY key(vega_time, id, version)
+    vega_time         TIMESTAMP WITH TIME ZONE NOT NULL REFERENCES blocks(vega_time)
+    --PRIMARY key(vega_time, id, version) -- TODO think about this
 );
+
+SELECT create_hypertable('orders', 'vega_time', chunk_time_interval => INTERVAL '1 day');
+CREATE INDEX ON orders (market_id, vega_time DESC);
+CREATE INDEX ON orders (party_id, vega_time DESC);
 
 -- Orders contains all the historical changes to each order (as of the end of the block),
 -- this view contains the *current* state of the latest version each order
@@ -101,12 +107,13 @@ CREATE VIEW orders_current_versions AS (
 
 create table trades
 (
+    synthetic_time       TIMESTAMP WITH TIME ZONE NOT NULL,
     vega_time       TIMESTAMP WITH TIME ZONE NOT NULL REFERENCES blocks(vega_time),
     seq_num    BIGINT NOT NULL,
     id     BYTEA NOT NULL,
     market_id BYTEA NOT NULL,
-    price     NUMERIC(32, 0),
-    size      NUMERIC(32, 0),
+    price     NUMERIC(32, 0) NOT NULL,
+    size      BIGINT NOT NULL,
     buyer     BYTEA NOT NULL,
     seller    BYTEA NOT NULL,
     aggressor SMALLINT,
@@ -123,8 +130,104 @@ create table trades
     seller_auction_batch BIGINT
 );
 
-SELECT create_hypertable('trades', 'vega_time', chunk_time_interval => INTERVAL '1 day');
-CREATE INDEX ON trades (market_id, vega_time DESC);
+SELECT create_hypertable('trades', 'synthetic_time', chunk_time_interval => INTERVAL '1 day');
+CREATE INDEX ON trades (market_id, synthetic_time DESC);
+SELECT add_retention_policy('trades', INTERVAL '7 days');
+
+CREATE MATERIALIZED VIEW trades_candle_1_minute
+            WITH (timescaledb.continuous) AS
+SELECT market_id, time_bucket('1 minute', synthetic_time) AS period_start,
+       first(price, synthetic_time) AS open,
+       last(price, synthetic_time) AS close,
+       max(price) AS high,
+       min(price) AS low,
+       sum(size) AS volume,
+       last(synthetic_time,
+            synthetic_time) AS last_update_in_period
+FROM trades
+GROUP BY market_id, period_start WITH NO DATA;
+
+SELECT add_continuous_aggregate_policy('trades_candle_1_minute', start_offset => INTERVAL '3 minutes', end_offset => INTERVAL '1 minute', schedule_interval => INTERVAL '1 minute');
+SELECT add_retention_policy('trades_candle_1_minute', INTERVAL '1 month');
+
+CREATE MATERIALIZED VIEW trades_candle_5_minutes
+            WITH (timescaledb.continuous) AS
+SELECT market_id, time_bucket('5 minutes', synthetic_time) AS period_start,
+       first(price, synthetic_time) AS open,
+       last(price, synthetic_time) AS close,
+       max(price) AS high,
+       min(price) AS low,
+       sum(size) AS volume,
+       last(synthetic_time,
+            synthetic_time) AS last_update_in_period
+FROM trades
+GROUP BY market_id, period_start WITH NO DATA;
+
+SELECT add_continuous_aggregate_policy('trades_candle_5_minutes', start_offset => INTERVAL '15 minutes', end_offset => INTERVAL '5 minutes', schedule_interval => INTERVAL '5 minutes');
+SELECT add_retention_policy('trades_candle_5_minutes', INTERVAL '1 month');
+
+CREATE MATERIALIZED VIEW trades_candle_15_minutes
+            WITH (timescaledb.continuous) AS
+SELECT market_id, time_bucket('15 minutes', synthetic_time) AS period_start,
+       first(price, synthetic_time) AS open,
+       last(price, synthetic_time) AS close,
+       max(price) AS high,
+       min(price) AS low,
+       sum(size) AS volume,
+       last(synthetic_time,
+            synthetic_time) AS last_update_in_period
+FROM trades
+GROUP BY market_id, period_start WITH NO DATA;
+
+SELECT add_continuous_aggregate_policy('trades_candle_15_minutes', start_offset => INTERVAL '45 minutes', end_offset => INTERVAL '15 minutes', schedule_interval => INTERVAL '15 minutes');
+SELECT add_retention_policy('trades_candle_15_minutes', INTERVAL '1 month');
+
+CREATE MATERIALIZED VIEW trades_candle_1_hour
+            WITH (timescaledb.continuous) AS
+SELECT market_id, time_bucket('1 hour', synthetic_time) AS period_start,
+       first(price, synthetic_time) AS open,
+       last(price, synthetic_time) AS close,
+       max(price) AS high,
+       min(price) AS low,
+       sum(size) AS volume,
+       last(synthetic_time,
+            synthetic_time) AS last_update_in_period
+FROM trades
+GROUP BY market_id, period_start WITH NO DATA;
+
+SELECT add_continuous_aggregate_policy('trades_candle_1_hour', start_offset => INTERVAL '3 hours', end_offset => INTERVAL '1 hour', schedule_interval => INTERVAL '1 hour');
+SELECT add_retention_policy('trades_candle_1_hour', INTERVAL '1 year');
+
+CREATE MATERIALIZED VIEW trades_candle_6_hours
+            WITH (timescaledb.continuous) AS
+SELECT market_id, time_bucket('6 hours', synthetic_time) AS period_start,
+       first(price, synthetic_time) AS open,
+       last(price, synthetic_time) AS close,
+       max(price) AS high,
+       min(price) AS low,
+       sum(size) AS volume,
+       last(synthetic_time,
+            synthetic_time) AS last_update_in_period
+FROM trades
+GROUP BY market_id, period_start WITH NO DATA;
+
+SELECT add_continuous_aggregate_policy('trades_candle_6_hours', start_offset => INTERVAL '18 hours', end_offset => INTERVAL '6 hours', schedule_interval => INTERVAL '6 hours');
+SELECT add_retention_policy('trades_candle_6_hours', INTERVAL '1 year');
+
+CREATE MATERIALIZED VIEW trades_candle_1_day
+            WITH (timescaledb.continuous) AS
+SELECT market_id, time_bucket('1 day', synthetic_time) AS period_start,
+       first(price, synthetic_time) AS open,
+       last(price, synthetic_time) AS close,
+       max(price) AS high,
+       min(price) AS low,
+       sum(size) AS volume,
+       last(synthetic_time,
+            synthetic_time) AS last_update_in_period
+FROM trades
+GROUP BY market_id, period_start WITH NO DATA;
+
+SELECT add_continuous_aggregate_policy('trades_candle_1_day', start_offset => INTERVAL '3 days', end_offset => INTERVAL '1 day', schedule_interval => INTERVAL '1 day');
 
 
 CREATE TABLE network_limits (
@@ -171,9 +274,10 @@ create type market_trading_mode_type as enum('TRADING_MODE_UNSPECIFIED', 'TRADIN
 create type market_state_type as enum('STATE_UNSPECIFIED', 'STATE_PROPOSED', 'STATE_REJECTED', 'STATE_PENDING', 'STATE_CANCELLED', 'STATE_ACTIVE', 'STATE_SUSPENDED', 'STATE_CLOSED', 'STATE_TRADING_TERMINATED', 'STATE_SETTLED');
 
 create table market_data (
-    market bytea not null,
+    synthetic_time       TIMESTAMP WITH TIME ZONE NOT NULL,
     vega_time timestamp with time zone not null references blocks(vega_time),
-    seq_num bigint not null,
+    seq_num    BIGINT NOT NULL,
+    market bytea not null,
     mark_price numeric(32),
     best_bid_price numeric(32),
     best_bid_volume bigint,
@@ -200,7 +304,7 @@ create table market_data (
     liquidity_provider_fee_shares jsonb
 );
 
-select create_hypertable('market_data', 'vega_time', chunk_time_interval => INTERVAL '1 day');
+select create_hypertable('market_data', 'synthetic_time', chunk_time_interval => INTERVAL '1 day');
 
 create index on market_data (market, vega_time);
 
@@ -279,6 +383,24 @@ create table if not exists deposits (
     primary key (id, party_id, vega_time)
 );
 
+create type withdrawal_status as enum('STATUS_UNSPECIFIED', 'STATUS_OPEN', 'STATUS_REJECTED', 'STATUS_FINALIZED');
+
+create table if not exists withdrawals (
+    id bytea not null,
+    party_id bytea not null,
+    amount numeric,
+    asset bytea not null,
+    status withdrawal_status not null,
+    ref text not null,
+    expiry timestamp with time zone not null,
+    tx_hash text not null,
+    created_timestamp timestamp with time zone not null,
+    withdrawn_timestamp timestamp with time zone not null,
+    ext jsonb not null,
+    vega_time timestamp with time zone not null references blocks(vega_time),
+    primary key (id, vega_time)
+);
+
 CREATE TYPE proposal_state AS enum('STATE_UNSPECIFIED', 'STATE_FAILED', 'STATE_OPEN', 'STATE_PASSED', 'STATE_REJECTED', 'STATE_DECLINED', 'STATE_ENACTED', 'STATE_WAITING_FOR_NODE_VOTE');
 CREATE TYPE proposal_error AS enum('PROPOSAL_ERROR_UNSPECIFIED', 'PROPOSAL_ERROR_CLOSE_TIME_TOO_SOON', 'PROPOSAL_ERROR_CLOSE_TIME_TOO_LATE', 'PROPOSAL_ERROR_ENACT_TIME_TOO_SOON', 'PROPOSAL_ERROR_ENACT_TIME_TOO_LATE', 'PROPOSAL_ERROR_INSUFFICIENT_TOKENS', 'PROPOSAL_ERROR_INVALID_INSTRUMENT_SECURITY', 'PROPOSAL_ERROR_NO_PRODUCT', 'PROPOSAL_ERROR_UNSUPPORTED_PRODUCT', 'PROPOSAL_ERROR_NO_TRADING_MODE', 'PROPOSAL_ERROR_UNSUPPORTED_TRADING_MODE', 'PROPOSAL_ERROR_NODE_VALIDATION_FAILED', 'PROPOSAL_ERROR_MISSING_BUILTIN_ASSET_FIELD', 'PROPOSAL_ERROR_MISSING_ERC20_CONTRACT_ADDRESS', 'PROPOSAL_ERROR_INVALID_ASSET', 'PROPOSAL_ERROR_INCOMPATIBLE_TIMESTAMPS', 'PROPOSAL_ERROR_NO_RISK_PARAMETERS', 'PROPOSAL_ERROR_NETWORK_PARAMETER_INVALID_KEY', 'PROPOSAL_ERROR_NETWORK_PARAMETER_INVALID_VALUE', 'PROPOSAL_ERROR_NETWORK_PARAMETER_VALIDATION_FAILED', 'PROPOSAL_ERROR_OPENING_AUCTION_DURATION_TOO_SMALL', 'PROPOSAL_ERROR_OPENING_AUCTION_DURATION_TOO_LARGE', 'PROPOSAL_ERROR_MARKET_MISSING_LIQUIDITY_COMMITMENT', 'PROPOSAL_ERROR_COULD_NOT_INSTANTIATE_MARKET', 'PROPOSAL_ERROR_INVALID_FUTURE_PRODUCT', 'PROPOSAL_ERROR_MISSING_COMMITMENT_AMOUNT', 'PROPOSAL_ERROR_INVALID_FEE_AMOUNT', 'PROPOSAL_ERROR_INVALID_SHAPE', 'PROPOSAL_ERROR_INVALID_RISK_PARAMETER', 'PROPOSAL_ERROR_MAJORITY_THRESHOLD_NOT_REACHED', 'PROPOSAL_ERROR_PARTICIPATION_THRESHOLD_NOT_REACHED', 'PROPOSAL_ERROR_INVALID_ASSET_DETAILS', 'PROPOSAL_ERROR_UNKNOWN_TYPE', 'PROPOSAL_ERROR_UNKNOWN_RISK_PARAMETER_TYPE', 'PROPOSAL_ERROR_INVALID_FREEFORM', 'PROPOSAL_ERROR_INSUFFICIENT_EQUITY_LIKE_SHARE', 'PROPOSAL_ERROR_INVALID_MARKET');
 CREATE TYPE vote_value AS enum('VALUE_UNSPECIFIED', 'VALUE_NO', 'VALUE_YES');
@@ -308,6 +430,7 @@ CREATE TABLE votes(
   total_governance_token_weight  NUMERIC(32, 16)           NOT NULL,
   total_equity_like_share_weight NUMERIC(32, 16)           NOT NULL,
   vega_time                      TIMESTAMP WITH TIME ZONE NOT NULL REFERENCES blocks(vega_time),
+  initial_time                   TIMESTAMP WITH TIME ZONE,
   PRIMARY KEY (proposal_id, party_id, vega_time)
 );
 
@@ -325,8 +448,13 @@ create table if not exists margin_levels (
     initial_margin numeric(32, 0),
     collateral_release_level numeric(32, 0),
     vega_time timestamp with time zone not null references blocks(vega_time),
-    primary key (market_id, asset_id, party_id, vega_time)
+    synthetic_time timestamp with time zone not null,
+    seq_num int
 );
+
+select create_hypertable('margin_levels', 'synthetic_time', chunk_time_interval => INTERVAL '1 day');
+
+create index on margin_levels (market_id, asset_id, party_id, vega_time);
 
 create table if not exists risk_factors (
     market_id bytea not null,
@@ -336,11 +464,180 @@ create table if not exists risk_factors (
     primary key (market_id, vega_time)
 );
 
+CREATE TABLE network_parameters (
+    key          TEXT                     NOT NULL,
+    value        TEXT                     NOT NULL,
+    vega_time    TIMESTAMP WITH TIME ZONE NOT NULL REFERENCES blocks(vega_time),
+    PRIMARY KEY (key, vega_time)
+);
+
+CREATE TABLE checkpoints(
+    hash         TEXT                     NOT NULL,
+    block_hash   TEXT                     NOT NULL,
+    block_height BIGINT                   NOT NULL,
+    vega_time    TIMESTAMP WITH TIME ZONE NOT NULL REFERENCES blocks(vega_time),
+    PRIMARY KEY (block_height)
+);
+
+CREATE TABLE positions(
+  market_id           BYTEA NOT NULL, -- TODO REFERENCES market(id),
+  party_id            BYTEA NOT NULL, -- TODO REFERENCES parties(id),
+  open_volume         BIGINT NOT NULL,
+  realised_pnl        NUMERIC NOT NULL,
+  unrealised_pnl      NUMERIC NOT NULL,
+  average_entry_price NUMERIC NOT NULL,
+  loss                NUMERIC NOT NULL,
+  adjustment          NUMERIC NOT NULL,
+  vega_time           TIMESTAMP WITH TIME ZONE NOT NULL REFERENCES blocks(vega_time),
+  PRIMARY KEY (party_id, market_id, vega_time)
+);
+
+CREATE VIEW positions_current AS (
+  SELECT DISTINCT ON (party_id, market_id) * FROM positions ORDER BY party_id, market_id, vega_time DESC
+);
+
+
+create type oracle_spec_status as enum('STATUS_UNSPECIFIED', 'STATUS_ACTIVE', 'STATUS_DEACTIVATED');
+
+create table if not exists oracle_specs (
+    id bytea not null,
+    created_at timestamp with time zone not null,
+    updated_at timestamp with time zone not null,
+    public_keys bytea[],
+    filters jsonb,
+    status oracle_spec_status not null,
+    vega_time timestamp with time zone not null references blocks(vega_time),
+    primary key (id, vega_time)
+);
+
+create table if not exists oracle_data (
+    public_keys bytea[],
+    data jsonb not null,
+    matched_spec_ids bytea[],
+    broadcast_at timestamp with time zone not null,
+    vega_time timestamp with time zone not null references blocks(vega_time)
+);
+
+create index if not exists idx_oracle_data_matched_spec_ids on oracle_data(matched_spec_ids);
+
+create type liquidity_provision_status as enum('STATUS_UNSPECIFIED', 'STATUS_ACTIVE', 'STATUS_STOPPED',
+    'STATUS_CANCELLED', 'STATUS_REJECTED', 'STATUS_UNDEPLOYED', 'STATUS_PENDING');
+
+create table if not exists liquidity_provisions (
+    id bytea not null,
+    party_id bytea,
+    created_at timestamp with time zone not null,
+    updated_at timestamp with time zone not null,
+    market_id bytea,
+    commitment_amount numeric(32, 0),
+    fee numeric(32, 16),
+    sells jsonb,
+    buys jsonb,
+    version text,
+    status liquidity_provision_status not null,
+    reference text,
+    vega_time timestamp with time zone not null references blocks(vega_time),
+    primary key (id, vega_time)
+);
+
+
+CREATE TYPE transfer_type AS enum('OneOff','Recurring','Unknown');
+CREATE TYPE transfer_status AS enum('STATUS_UNSPECIFIED','STATUS_PENDING','STATUS_DONE','STATUS_REJECTED','STATUS_STOPPED','STATUS_CANCELLED');
+
+create table if not exists transfers (
+         id bytea not null,
+         vega_time timestamp with time zone not null references blocks(vega_time),
+         from_account_id INT NOT NULL REFERENCES accounts(id),
+         to_account_id INT NOT NULL REFERENCES accounts(id),
+         asset_id bytea not null,
+         amount        NUMERIC(32, 0)           NOT NULL,
+         reference       TEXT,
+         status           transfer_status NOT NULL,
+         transfer_type   transfer_type NOT NULL,
+         deliver_on      TIMESTAMP WITH TIME ZONE,
+         start_epoch     BIGINT,
+         end_epoch       BIGINT,
+         factor        NUMERIC(32, 16) ,
+
+         primary key (id, vega_time)
+);
+
+create index on transfers (from_account_id);
+create index on transfers (to_account_id);
+
+CREATE VIEW transfers_current AS ( SELECT DISTINCT ON (id) * FROM transfers ORDER BY id DESC, vega_time DESC);
+
+
+create type stake_linking_type as enum('TYPE_UNSPECIFIED', 'TYPE_LINK', 'TYPE_UNLINK');
+create type stake_linking_status as enum('STATUS_UNSPECIFIED', 'STATUS_PENDING', 'STATUS_ACCEPTED', 'STATUS_REJECTED');
+
+create table if not exists stake_linking(
+    id bytea not null,
+    stake_linking_type stake_linking_type not null,
+    ethereum_timestamp timestamp with time zone not null,
+    party_id bytea not null,
+    amount numeric(32, 0),
+    stake_linking_status stake_linking_status not null,
+    finalized_at timestamp with time zone,
+    tx_hash text not null,
+    log_index bigint,
+    ethereum_address text not null,
+    vega_time timestamp with time zone not null references blocks(vega_time),
+    primary key (id, vega_time)
+);
+
+create view stake_linking_current as (
+    select distinct on (id) id, stake_linking_type, ethereum_timestamp, party_id, amount, stake_linking_status, finalized_at,
+        tx_hash, log_index, ethereum_address, vega_time
+    from stake_linking
+    order by id, vega_time desc
+);
+
+
+create type node_signature_kind as enum('NODE_SIGNATURE_KIND_UNSPECIFIED', 'NODE_SIGNATURE_KIND_ASSET_NEW', 'NODE_SIGNATURE_KIND_ASSET_WITHDRAWAL', 'NODE_SIGNATURE_KIND_ERC20_MULTISIG_SIGNER_ADDED', 'NODE_SIGNATURE_KIND_ERC20_MULTISIG_SIGNER_REMOVED');
+
+create table if not exists node_signatures(
+    resource_id bytea not null,
+    sig bytea not null,
+    kind node_signature_kind,
+    primary key (resource_id, sig)
+);
+
+
 -- +goose Down
 DROP AGGREGATE IF EXISTS public.first(anyelement);
 DROP AGGREGATE IF EXISTS public.last(anyelement);
 DROP FUNCTION IF EXISTS public.first_agg(anyelement, anyelement);
 DROP FUNCTION IF EXISTS public.last_agg(anyelement, anyelement);
+
+DROP VIEW IF EXISTS transfers_current;
+DROP TABLE IF EXISTS transfers;
+DROP TYPE IF EXISTS transfer_status;
+DROP TYPE IF EXISTS transfer_type;
+
+
+DROP TABLE IF EXISTS checkpoints;
+
+DROP TABLE IF EXISTS network_parameters;
+
+DROP VIEW IF EXISTS stake_linking_current;
+DROP TABLE IF EXISTS stake_linking;
+DROP TYPE IF EXISTS stake_linking_status;
+DROP TYPE IF EXISTS stake_linking_type;
+
+DROP TABLE IF EXISTS node_signatures;
+DROP TYPE IF EXISTS node_signature_kind;
+
+DROP TABLE IF EXISTS liquidity_provisions;
+DROP TYPE IF EXISTS liquidity_provision_status;
+
+DROP INDEX IF EXISTS idx_oracle_data_matched_spec_ids;
+DROP TABLE IF EXISTS oracle_data;
+DROP TABLE IF EXISTS oracle_specs;
+DROP TYPE IF EXISTS oracle_spec_status;
+
+DROP VIEW IF EXISTS positions_current;
+DROP TABLE IF EXISTS positions;
 
 DROP VIEW IF EXISTS votes_current;
 DROP TABLE IF EXISTS votes;
@@ -364,6 +661,9 @@ drop table if exists margin_levels;
 DROP TABLE IF EXISTS deposits;
 DROP TYPE IF EXISTS deposit_status;
 
+DROP TABLE IF EXISTS withdrawals;
+DROP TYPE IF EXISTS withdrawal_status;
+
 DROP TABLE IF EXISTS orders;
 DROP TYPE IF EXISTS order_time_in_force;
 DROP TYPE IF EXISTS order_status;
@@ -383,6 +683,6 @@ DROP TABLE IF EXISTS balances;
 DROP TABLE IF EXISTS accounts;
 DROP TABLE IF EXISTS parties;
 DROP TABLE IF EXISTS assets;
-DROP TABLE IF EXISTS trades;
+DROP TABLE IF EXISTS trades cascade;
 DROP TABLE IF EXISTS blocks cascade;
 

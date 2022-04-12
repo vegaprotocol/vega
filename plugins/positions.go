@@ -47,6 +47,13 @@ type LSE interface {
 	Timestamp() int64
 }
 
+type PSE interface {
+	events.Event
+	PartyID() string
+	MarketID() string
+	Size() int64
+}
+
 // Positions plugin taking settlement data to build positions API data.
 type Positions struct {
 	*subscribers.Base
@@ -76,9 +83,33 @@ func (p *Positions) Push(evts ...events.Event) {
 			p.updateSettleDestressed(te)
 		case LSE:
 			p.applyLossSocialization(te)
+		case PSE:
+			p.updatePositionEvent(te)
 		}
 	}
 	p.mu.Unlock()
+}
+
+func (p *Positions) updatePositionEvent(e PSE) {
+	mID, pID := e.MarketID(), e.PartyID()
+	if _, ok := p.data[mID]; !ok {
+		p.data[mID] = map[string]Position{}
+	}
+
+	// We have a matching market here, now get the party
+	if _, ok := p.data[mID][pID]; !ok {
+		// Create a new position object so the external API users can see something
+		pos := Position{Position: types.Position{
+			MarketId:          mID,
+			PartyId:           pID,
+			OpenVolume:        0,
+			RealisedPnl:       num.DecimalZero(),
+			UnrealisedPnl:     num.DecimalZero(),
+			AverageEntryPrice: num.Zero(),
+			UpdatedAt:         0,
+		}}
+		p.data[mID][pID] = pos
+	}
 }
 
 func (p *Positions) applyLossSocialization(e LSE) {
@@ -106,9 +137,13 @@ func (p *Positions) updatePosition(e SPE) {
 	}
 	calc, ok := p.data[mID][tID]
 	if !ok {
+		// we received a SPE event before the initial PSE, this call will create the position and
+		// set the average entry price so the updateSettlePosition call calculates the P&L and avg entry price
+		// correctly
 		calc = seToProto(e)
 	}
 	updateSettlePosition(&calc, e)
+	// set updated value, and update data map
 	calc.Position.UpdatedAt = e.Timestamp()
 	p.data[mID][tID] = calc
 }
@@ -290,7 +325,7 @@ type Position struct {
 }
 
 func seToProto(e SE) Position {
-	return Position{
+	pos := Position{
 		Position: types.Position{
 			MarketId: e.MarketID(),
 			PartyId:  e.PartyID(),
@@ -299,6 +334,48 @@ func seToProto(e SE) Position {
 		RealisedPnlFP:       num.DecimalZero(),
 		UnrealisedPnlFP:     num.DecimalZero(),
 	}
+	// we're initialising the position data from a settle position event
+	if spe, ok := e.(SPE); ok {
+		speToProto(&pos, spe)
+	}
+	return pos
+}
+
+func speToProto(pos *Position, e SPE) {
+	// note we don't set the open volume here
+	// that's calculated more precisely in the updateSettlePosition call
+	// we just have to ensure we accurately set an average entry price here
+	// updateSettlePosition runs this new position through some logic that is a bit too complex for this
+	// specific use-case (receiving a SPE event before the PSE), but it beats duplicating the logic
+	trades := e.Trades()
+	// if no trades are present on this event, just treat it as a position state event
+	// otherwise we'd have a division by zero panic
+	if len(trades) == 0 {
+		if !pos.AverageEntryPrice.IsZero() {
+			return
+		}
+		pos.AverageEntryPrice = e.Price().Clone()
+		pos.AverageEntryPriceFP = num.DecimalFromUint(e.Price())
+		return
+	}
+	priceTot := num.Zero()
+	sizeTot := num.Zero()
+	for _, t := range trades {
+		size := num.NewUint(uint64(abs(t.Size())))
+		sizeTot.AddSum(size)
+		// size * price
+		priceTot.AddSum(size.Mul(size, t.Price()))
+	}
+	ptDec, stDec := num.DecimalFromUint(priceTot), num.DecimalFromUint(sizeTot)
+	pos.AverageEntryPrice = priceTot.Div(priceTot, sizeTot)
+	pos.AverageEntryPriceFP = ptDec.Div(stDec)
+}
+
+func abs(i int64) int64 {
+	if i < 0 {
+		return -i
+	}
+	return i
 }
 
 func absUint64(v int64) uint64 {
@@ -313,5 +390,6 @@ func (p *Positions) Types() []events.Type {
 		events.SettlePositionEvent,
 		events.SettleDistressedEvent,
 		events.LossSocializationEvent,
+		events.PositionStateEvent,
 	}
 }

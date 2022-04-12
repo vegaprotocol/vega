@@ -67,6 +67,10 @@ func (ts *testStore) Add(t *entities.Trade) error {
 	return nil
 }
 
+func (ts *testStore) OnTimeUpdateEvent(ctx context.Context) error {
+	return nil
+}
+
 func newTrade() types.Trade {
 	trade := types.Trade{
 		ID:                 "bc2001bddac588f8aaae0d9bec3d6881a447b888447e5d0a9de92d149ba4e877",

@@ -231,10 +231,10 @@ func testDepositsGetByParty(t *testing.T) {
 
 	block := addTestBlock(t, bs)
 	depositProto1 := getTestDeposit()
-	depositProto1.Id = "DEADBEEF01"
+	depositProto1.Id = "deadbeef01"
 
 	depositProto2 := getTestDeposit()
-	depositProto2.Id = "DEADBEEF02"
+	depositProto2.Id = "deadbeef02"
 
 	want := make([]entities.Deposit, 0)
 
@@ -291,12 +291,12 @@ func testDepositsGetByParty(t *testing.T) {
 func getTestDeposit() *vega.Deposit {
 	now := time.Now().UnixNano()
 	return &vega.Deposit{
-		Id:                "DEADBEEF",
+		Id:                "deadbeef",
 		Status:            vega.Deposit_STATUS_OPEN,
-		PartyId:           "DEADBEEF",
-		Asset:             "DEADBEEF",
+		PartyId:           "deadbeef",
+		Asset:             "deadbeef",
 		Amount:            "1000",
-		TxHash:            "DEADBEEF",
+		TxHash:            "deadbeef",
 		CreditedTimestamp: now,
 		CreatedTimestamp:  now,
 	}

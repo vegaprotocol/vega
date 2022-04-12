@@ -8,46 +8,29 @@ import (
 )
 
 type Vote struct {
-	PartyID                     []byte
-	ProposalID                  []byte
+	PartyID                     PartyID
+	ProposalID                  ProposalID
 	Value                       VoteValue
 	TotalGovernanceTokenBalance decimal.Decimal
 	TotalGovernanceTokenWeight  decimal.Decimal
 	TotalEquityLikeShareWeight  decimal.Decimal
-	VegaTime                    time.Time
-}
-
-func (v *Vote) PartyHexID() string {
-	return Party{ID: v.PartyID}.HexID()
-}
-
-func (v *Vote) ProposalHexID() string {
-	return Proposal{ID: v.ProposalID}.HexID()
+	InitialTime                 time.Time // First vote for this party/proposal
+	VegaTime                    time.Time // Time of last vote update
 }
 
 func (v *Vote) ToProto() *vega.Vote {
 	return &vega.Vote{
-		PartyId:                     v.PartyHexID(),
-		ProposalId:                  v.ProposalHexID(),
+		PartyId:                     v.PartyID.String(),
+		ProposalId:                  v.ProposalID.String(),
 		Value:                       vega.Vote_Value(v.Value),
 		TotalGovernanceTokenBalance: v.TotalGovernanceTokenBalance.String(),
 		TotalGovernanceTokenWeight:  v.TotalGovernanceTokenWeight.String(),
 		TotalEquityLikeShareWeight:  v.TotalEquityLikeShareWeight.String(),
-		Timestamp:                   v.VegaTime.UnixNano(),
+		Timestamp:                   v.InitialTime.UnixNano(),
 	}
 }
 
 func VoteFromProto(pv *vega.Vote) (Vote, error) {
-	partyID, err := MakePartyID(pv.PartyId)
-	if err != nil {
-		return Vote{}, err
-	}
-
-	proposalID, err := MakeProposalID(pv.ProposalId)
-	if err != nil {
-		return Vote{}, err
-	}
-
 	totalGovernanceTokenBalance, err := decimal.NewFromString(pv.TotalGovernanceTokenBalance)
 	if err != nil {
 		return Vote{}, err
@@ -64,13 +47,13 @@ func VoteFromProto(pv *vega.Vote) (Vote, error) {
 	}
 
 	v := Vote{
-		PartyID:                     partyID,
-		ProposalID:                  proposalID,
+		PartyID:                     NewPartyID(pv.PartyId),
+		ProposalID:                  NewProposalID(pv.ProposalId),
 		Value:                       VoteValue(pv.Value),
 		TotalGovernanceTokenBalance: totalGovernanceTokenBalance,
 		TotalGovernanceTokenWeight:  totalGovernanceTokenWeight,
 		TotalEquityLikeShareWeight:  totalEquityLikeShareWeight,
-		VegaTime:                    time.Unix(0, pv.Timestamp),
+		InitialTime:                 time.Unix(0, pv.Timestamp),
 	}
 
 	return v, nil

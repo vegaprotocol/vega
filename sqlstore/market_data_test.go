@@ -88,15 +88,16 @@ func shouldInsertAValidMarketDataRecord(t *testing.T) {
 
 	block := addTestBlock(t, bs)
 
-	market := []byte("deadbeef")
-
 	err = md.Add(&entities.MarketData{
-		Market:            market,
+		Market:            entities.NewMarketID("deadbeef"),
 		MarketTradingMode: "TRADING_MODE_MONITORING_AUCTION",
 		AuctionTrigger:    "AUCTION_TRIGGER_LIQUIDITY",
 		ExtensionTrigger:  "AUCTION_TRIGGER_UNSPECIFIED",
 		VegaTime:          block.VegaTime,
 	})
+	require.NoError(t, err)
+
+	err = md.OnTimeUpdateEvent(context.Background())
 	require.NoError(t, err)
 
 	err = conn.QueryRow(ctx, `select count(*) from market_data`).Scan(&rowCount)
@@ -127,14 +128,15 @@ func shouldErrorIfNoVegaBlock(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, 0, rowCount)
 
-	market := []byte("deadbeef")
 	err = md.Add(&entities.MarketData{
-		Market:            market,
+		Market:            entities.NewMarketID("deadbeef"),
 		MarketTradingMode: "TRADING_MODE_MONITORING_AUCTION",
 		AuctionTrigger:    "AUCTION_TRIGGER_LIQUIDITY",
 		ExtensionTrigger:  "AUCTION_TRIGGER_UNSPECIFIED",
 		VegaTime:          time.Now().Truncate(time.Microsecond),
 	})
+	require.NoError(t, err)
+	err = md.OnTimeUpdateEvent(context.Background())
 	require.Error(t, err)
 
 	err = conn.QueryRow(ctx, `select count(*) from market_data`).Scan(&rowCount)
@@ -160,8 +162,7 @@ func getLatestMarketData(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	defer cancel()
 
-	market, err := hex.DecodeString("8cc0e020c0bc2f9eba77749d81ecec8283283b85941722c2cb88318aaf8b8cd8")
-	assert.NoError(t, err)
+	marketID := entities.NewMarketID("8cc0e020c0bc2f9eba77749d81ecec8283283b85941722c2cb88318aaf8b8cd8")
 
 	want := entities.MarketData{
 		MarkPrice:             mustParseDecimal(t, "999992587"),
@@ -175,7 +176,7 @@ func getLatestMarketData(t *testing.T) {
 		BestStaticOfferVolume: 1,
 		MidPrice:              mustParseDecimal(t, "1000000765"),
 		StaticMidPrice:        mustParseDecimal(t, "1000000765"),
-		Market:                market,
+		Market:                marketID,
 		OpenInterest:          27,
 		AuctionEnd:            1644573937314794695,
 		AuctionStart:          1644573911314794695,
@@ -337,6 +338,8 @@ func setupMarketData(t *testing.T) (*sqlstore.MarketData, error) {
 		err = md.Add(marketData)
 		require.NoError(t, err)
 	}
+	err = md.OnTimeUpdateEvent(context.Background())
+	require.NoError(t, err)
 
 	return md, nil
 }
@@ -401,8 +404,10 @@ func mustParseLiquidity(t *testing.T, value string) []*entities.LiquidityProvide
 
 func csvToMarketData(t *testing.T, line []string) *entities.MarketData {
 	t.Helper()
-	market, err := hex.DecodeString(line[csvColumnMarket])
-	assert.NoError(t, err)
+
+	seqNum := 0
+	vegaTime := mustParseTimestamp(t, line[csvColumnVegaTime])
+	syntheticTime := vegaTime.Add(time.Duration(seqNum) * time.Microsecond)
 
 	return &entities.MarketData{
 		MarkPrice:                  mustParseDecimal(t, line[csvColumnMarkPrice]),
@@ -416,7 +421,7 @@ func csvToMarketData(t *testing.T, line []string) *entities.MarketData {
 		BestStaticOfferVolume:      mustParseInt64(t, line[csvColumnBestStaticOfferVolume]),
 		MidPrice:                   mustParseDecimal(t, line[csvColumnMidPrice]),
 		StaticMidPrice:             mustParseDecimal(t, line[csvColumnStaticMidPrice]),
-		Market:                     market,
+		Market:                     entities.NewMarketID(line[csvColumnMarket]),
 		OpenInterest:               mustParseInt64(t, line[csvColumnOpenInterest]),
 		AuctionEnd:                 mustParseInt64(t, line[csvColumnAuctionEnd]),
 		AuctionStart:               mustParseInt64(t, line[csvColumnAuctionStart]),
@@ -430,6 +435,8 @@ func csvToMarketData(t *testing.T, line []string) *entities.MarketData {
 		PriceMonitoringBounds:      mustParsePriceMonitoringBounds(t, line[csvColumnPriceMonitoringBounds]),
 		MarketValueProxy:           line[csvColumnMarketValueProxy],
 		LiquidityProviderFeeShares: mustParseLiquidity(t, line[csvColumnLiquidityProviderFeeShares]),
-		VegaTime:                   mustParseTimestamp(t, line[csvColumnVegaTime]),
+		VegaTime:                   vegaTime,
+		SeqNum:                     uint64(seqNum),
+		SyntheticTime:              syntheticTime,
 	}
 }

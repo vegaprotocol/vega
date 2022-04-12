@@ -1,30 +1,26 @@
 package entities
 
 import (
-	"encoding/hex"
-	"fmt"
 	"time"
+
+	"code.vegaprotocol.io/vega/types"
 )
 
+type PartyID struct{ ID }
+
+func NewPartyID(id string) PartyID {
+	return PartyID{ID: ID(id)}
+}
+
 type Party struct {
-	ID       []byte
-	VegaTime time.Time
+	ID       PartyID
+	VegaTime *time.Time // Can be NULL for built-in party 'network'
 }
 
-func (p Party) HexID() string {
-	if len(p.ID) == 0 {
-		return "network"
-	}
-	return hex.EncodeToString(p.ID)
+func PartyFromProto(pp *types.Party) Party {
+	return Party{ID: NewPartyID(pp.Id)}
 }
 
-func MakePartyID(stringID string) ([]byte, error) {
-	if stringID == "network" {
-		return []byte{}, nil
-	}
-	id, err := hex.DecodeString(stringID)
-	if err != nil {
-		return nil, fmt.Errorf("party id is not valid hex string: %v", stringID)
-	}
-	return id, nil
+func (p *Party) ToProto() *types.Party {
+	return &types.Party{Id: p.ID.String()}
 }

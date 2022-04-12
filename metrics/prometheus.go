@@ -32,6 +32,9 @@ var (
 var (
 	unconfirmedTxGauge prometheus.Gauge
 	engineTime         *prometheus.CounterVec
+	eventHandlingTime  *prometheus.CounterVec
+	eventCounter       *prometheus.CounterVec
+	blockCounter       prometheus.Counter
 	orderCounter       *prometheus.CounterVec
 	ethCallCounter     *prometheus.CounterVec
 	evtForwardCounter  *prometheus.CounterVec
@@ -336,6 +339,38 @@ func setupMetrics() error {
 	}
 	engineTime = est
 
+	//eventHandlingTime
+	h, err = AddInstrument(
+		Counter,
+		"event_handling_seconds_total",
+		Namespace("vega"),
+		Vectors("type", "subscriber", "event"),
+	)
+	if err != nil {
+		return err
+	}
+	eht, err := h.CounterVec()
+	if err != nil {
+		return err
+	}
+	eventHandlingTime = eht
+
+	//eventCount
+	h, err = AddInstrument(
+		Counter,
+		"event_count_total",
+		Namespace("vega"),
+		Vectors("event"),
+	)
+	if err != nil {
+		return err
+	}
+	ec, err := h.CounterVec()
+	if err != nil {
+		return err
+	}
+	eventCounter = ec
+
 	h, err = AddInstrument(
 		Counter,
 		"orders_total",
@@ -351,6 +386,22 @@ func setupMetrics() error {
 		return err
 	}
 	orderCounter = ot
+
+	h, err = AddInstrument(
+		Counter,
+		"blocks_total",
+		Namespace("vega"),
+		Vectors(),
+		Help("Number of blocks processed"),
+	)
+	if err != nil {
+		return err
+	}
+	bt, err := h.Counter()
+	if err != nil {
+		return err
+	}
+	blockCounter = bt
 
 	h, err = AddInstrument(
 		Counter,
@@ -466,6 +517,22 @@ func OrderCounterInc(labelValues ...string) {
 		return
 	}
 	orderCounter.WithLabelValues(labelValues...).Inc()
+}
+
+// BlockCounterInc increments the block counter
+func BlockCounterInc(labelValues ...string) {
+	if blockCounter == nil {
+		return
+	}
+	blockCounter.Inc()
+}
+
+// BlockCounterInc increments the block counter
+func EventCounterInc(labelValues ...string) {
+	if eventCounter == nil {
+		return
+	}
+	eventCounter.WithLabelValues(labelValues...).Inc()
 }
 
 // EthCallInc increments the eth call counter

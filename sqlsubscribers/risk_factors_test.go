@@ -24,7 +24,7 @@ func TestRiskFactor_Push(t *testing.T) {
 	subscriber := sqlsubscribers.NewRiskFactor(store, logging.NewTestLogger())
 	subscriber.Push(events.NewTime(context.Background(), time.Now()))
 	subscriber.Push(events.NewRiskFactorEvent(context.Background(), types.RiskFactor{
-		Market: "DEADBEEF",
+		Market: "deadbeef",
 		Short:  num.DecimalFromInt64(1000),
 		Long:   num.DecimalFromInt64(1000),
 	}))

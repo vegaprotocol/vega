@@ -2,14 +2,17 @@ package broker
 
 import (
 	"context"
+	"fmt"
+	"reflect"
 
 	"code.vegaprotocol.io/data-node/logging"
+	"code.vegaprotocol.io/data-node/metrics"
 	"code.vegaprotocol.io/vega/events"
 )
 
 type SqlBrokerSubscriber interface {
-	Push(val events.Event)
-	Type() events.Type
+	Push(val events.Event) error
+	Types() []events.Type
 }
 
 type SqlStoreEventBroker interface {
@@ -22,32 +25,34 @@ func NewSqlStoreBroker(log *logging.Logger, config Config, chainInfo ChainInfoI,
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
 	if config.UseSequentialSqlStoreBroker {
-		return newSequentialSqlStoreBroker(log, chainInfo, eventsource, eventTypeBufferSize, subs)
+		return newSequentialSqlStoreBroker(log, chainInfo, eventsource, eventTypeBufferSize, subs, bool(config.PanicOnError))
 	} else {
-		return newConcurrentSqlStoreBroker(log, chainInfo, eventsource, eventTypeBufferSize, subs)
+		return newConcurrentSqlStoreBroker(log, chainInfo, eventsource, eventTypeBufferSize, subs, bool(config.PanicOnError))
 	}
 }
 
 // concurrentSqlStoreBroker : push events to each subscriber with a go-routine per type
 type concurrentSqlStoreBroker struct {
+	log                 *logging.Logger
 	typeToSubs          map[events.Type][]SqlBrokerSubscriber
 	typeToEvtCh         map[events.Type]chan events.Event
 	eventSource         eventSource
 	chainInfo           ChainInfoI
 	eventTypeBufferSize int
-	log                 *logging.Logger
+	panicOnError        bool
 }
 
 func newConcurrentSqlStoreBroker(log *logging.Logger, chainInfo ChainInfoI, eventsource eventSource, eventTypeBufferSize int,
-	subs []SqlBrokerSubscriber,
+	subs []SqlBrokerSubscriber, panicOnError bool,
 ) *concurrentSqlStoreBroker {
 	b := &concurrentSqlStoreBroker{
+		log:                 log,
 		typeToSubs:          map[events.Type][]SqlBrokerSubscriber{},
 		typeToEvtCh:         map[events.Type]chan events.Event{},
 		eventSource:         eventsource,
 		chainInfo:           chainInfo,
 		eventTypeBufferSize: eventTypeBufferSize,
-		log:                 log,
+		panicOnError:        panicOnError,
 	}
 
 	for _, s := range subs {
@@ -90,12 +95,14 @@ func (b *concurrentSqlStoreBroker) Receive(ctx context.Context) error {
 }
 
 func (b *concurrentSqlStoreBroker) subscribe(s SqlBrokerSubscriber) {
-	if _, exists := b.typeToEvtCh[s.Type()]; !exists {
-		ch := make(chan events.Event, b.eventTypeBufferSize)
-		b.typeToEvtCh[s.Type()] = ch
-	}
+	for _, evtType := range s.Types() {
+		if _, exists := b.typeToEvtCh[evtType]; !exists {
+			ch := make(chan events.Event, b.eventTypeBufferSize)
+			b.typeToEvtCh[evtType] = ch
+		}
 
-	b.typeToSubs[s.Type()] = append(b.typeToSubs[s.Type()], s)
+		b.typeToSubs[evtType] = append(b.typeToSubs[evtType], s)
+	}
 }
 
 func (b *concurrentSqlStoreBroker) startSendingEvents(ctx context.Context) {
@@ -109,7 +116,10 @@ func (b *concurrentSqlStoreBroker) startSendingEvents(ctx context.Context) {
 					if evt.Type() == events.TimeUpdate {
 						time := evt.(*events.Time)
 						for _, sub := range subs {
-							sub.Push(time)
+							err := sub.Push(time)
+							if err != nil {
+								b.OnPushEventError(time, err)
+							}
 						}
 					} else {
 						for _, sub := range subs {
@@ -117,7 +127,10 @@ func (b *concurrentSqlStoreBroker) startSendingEvents(ctx context.Context) {
 							case <-ctx.Done():
 								return
 							default:
-								sub.Push(evt)
+								err := sub.Push(evt)
+								if err != nil {
+									b.OnPushEventError(evt, err)
+								}
 							}
 						}
 					}
@@ -127,30 +140,44 @@ func (b *concurrentSqlStoreBroker) startSendingEvents(ctx context.Context) {
 	}
 }
 
+func (b *concurrentSqlStoreBroker) OnPushEventError(evt events.Event, err error) {
+	errMsg := fmt.Sprintf("failed to process event %v error:%+v", evt.StreamMessage(), err)
+	if b.panicOnError {
+		b.log.Panic(errMsg)
+	} else {
+		b.log.Error(errMsg)
+	}
+
+}
+
 // sequentialSqlStoreBroker : push events to each subscriber with a single go routine across all types
 type sequentialSqlStoreBroker struct {
+	log                 *logging.Logger
 	typeToSubs          map[events.Type][]SqlBrokerSubscriber
 	eventSource         eventSource
 	chainInfo           ChainInfoI
 	eventTypeBufferSize int
-	log                 *logging.Logger
+	panicOnError        bool
 }
 
 func newSequentialSqlStoreBroker(log *logging.Logger, chainInfo ChainInfoI,
 	eventsource eventSource, eventTypeBufferSize int, subs []SqlBrokerSubscriber,
+	panicOnError bool,
 ) *sequentialSqlStoreBroker {
 	b := &sequentialSqlStoreBroker{
+		log:                 log,
 		typeToSubs:          map[events.Type][]SqlBrokerSubscriber{},
 		eventSource:         eventsource,
 		chainInfo:           chainInfo,
 		eventTypeBufferSize: eventTypeBufferSize,
-		log:                 log,
+		panicOnError:        panicOnError,
 	}
 
 	for _, s := range subs {
-		b.typeToSubs[s.Type()] = append(b.typeToSubs[s.Type()], s)
+		for _, evtType := range s.Types() {
+			b.typeToSubs[evtType] = append(b.typeToSubs[evtType], s)
+		}
 	}
-
 	return b
 }
 
@@ -165,21 +192,23 @@ func (b *sequentialSqlStoreBroker) Receive(ctx context.Context) error {
 		if err := checkChainID(b.chainInfo, e.ChainID()); err != nil {
 			return err
 		}
-
+		metrics.EventCounterInc(e.Type().String())
 		// If the event is a time event send it to all subscribers, this indicates a new block start (for now)
 		if e.Type() == events.TimeUpdate {
+			metrics.BlockCounterInc()
 			for _, subs := range b.typeToSubs {
 				for _, sub := range subs {
-					sub.Push(e)
+					b.push(sub, e)
 				}
 			}
 		} else {
 			if subs, ok := b.typeToSubs[e.Type()]; ok {
 				for _, sub := range subs {
-					sub.Push(e)
+					b.push(sub, e)
 				}
 			}
 		}
+
 	}
 
 	select {
@@ -188,4 +217,24 @@ func (b *sequentialSqlStoreBroker) Receive(ctx context.Context) error {
 	default:
 		return nil
 	}
+}
+
+func (b *sequentialSqlStoreBroker) push(sub SqlBrokerSubscriber, e events.Event) {
+	sub_name := reflect.TypeOf(sub).Elem().Name()
+	timer := metrics.NewTimeCounter("sql", sub_name, e.Type().String())
+	err := sub.Push(e)
+	if err != nil {
+		b.OnPushEventError(e, err)
+	}
+	timer.EventTimeCounterAdd()
+}
+
+func (b *sequentialSqlStoreBroker) OnPushEventError(evt events.Event, err error) {
+	errMsg := fmt.Sprintf("failed to process event %v error:%+v", evt.StreamMessage(), err)
+	if b.panicOnError {
+		b.log.Panic(errMsg)
+	} else {
+		b.log.Error(errMsg)
+	}
+
 }

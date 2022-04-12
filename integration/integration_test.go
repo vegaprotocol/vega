@@ -2,12 +2,14 @@ package integration_test
 
 import (
 	"context"
+	"flag"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
 	"os/signal"
 	"path/filepath"
+	"sort"
 	"strconv"
 	"syscall"
 	"testing"
@@ -25,19 +27,23 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const LastEpoch = 210
-
-const PlaybackTimeout = 30 * time.Second
+const (
+	LastEpoch       = 2090
+	PlaybackTimeout = 90 * time.Second
+)
 
 var (
 	newClient               *graphql.Client
 	oldClient               *graphql.Client
-	integrationTestsEnabled bool = false
-	blockWhenDone           bool = false
+	integrationTestsEnabled *bool = flag.Bool("integration", false, "run integration tests")
+	blockWhenDone           bool  = false
 )
 
 func TestMain(m *testing.M) {
-	if !integrationTestsEnabled {
+	flag.Parse()
+
+	if !*integrationTestsEnabled {
+		log.Print("Skipping integration tests. To enable pass -integration flag to 'go test'")
 		return
 	}
 
@@ -54,7 +60,6 @@ func TestMain(m *testing.M) {
 	oldClient = graphql.NewClient(fmt.Sprintf("http://localhost:%v/query", cfg.Gateway.GraphQL.Port+cfg.API.LegacyAPIPortOffset))
 	if err := waitForEpoch(newClient, LastEpoch, PlaybackTimeout); err != nil {
 		log.Fatal("problem piping event stream: ", err)
-
 	}
 
 	// Cheesy sleep to give everything chance to percolate
@@ -83,15 +88,10 @@ func waitForSIGTERM() {
 	}
 }
 
-func assertGraphQLQueriesReturnSame(t *testing.T, query string, oldResp, newResp interface{}) {
+func compareResponses(t *testing.T, oldResp, newResp interface{}) {
 	t.Helper()
-	req := graphql.NewRequest(query)
-
-	err := oldClient.Run(context.Background(), req, &oldResp)
-	require.NoError(t, err)
-
-	err = newClient.Run(context.Background(), req, &newResp)
-	require.NoError(t, err)
+	require.NotEmpty(t, oldResp)
+	require.NotEmpty(t, newResp)
 
 	sortAccounts := cmpopts.SortSlices(func(a Account, b Account) bool {
 		if a.Type != b.Type {
@@ -107,10 +107,69 @@ func assertGraphQLQueriesReturnSame(t *testing.T, query string, oldResp, newResp
 	})
 	sortTrades := cmpopts.SortSlices(func(a Trade, b Trade) bool { return a.Id < b.Id })
 	sortMarkets := cmpopts.SortSlices(func(a Market, b Market) bool { return a.Id < b.Id })
-	sortVotes := cmpopts.SortSlices(func(a Vote, b Vote) bool { return a.Party.Id < b.Party.Id })
 	sortProposals := cmpopts.SortSlices(func(a Proposal, b Proposal) bool { return a.Id < b.Id })
-	diff := cmp.Diff(oldResp, newResp, sortTrades, sortVotes, sortAccounts, sortMarkets, sortProposals)
+	sortNetParams := cmpopts.SortSlices(func(a NetworkParameter, b NetworkParameter) bool { return a.Key < b.Key })
+	sortParties := cmpopts.SortSlices(func(a Party, b Party) bool { return a.Id < b.Id })
+	sortDeposits := cmpopts.SortSlices(func(a Deposit, b Deposit) bool { return a.ID < b.ID })
+	sortSpecs := cmpopts.SortSlices(func(a, b OracleSpec) bool { return a.ID < b.ID })
+	sortPositions := cmpopts.SortSlices(func(a, b Position) bool {
+		if a.Party.Id != b.Party.Id {
+			return a.Party.Id < b.Party.Id
+		}
+		return a.Market.Id < b.Market.Id
+	})
+	sortTransfers := cmpopts.SortSlices(func(a Transfer, b Transfer) bool { return a.Id < b.Id })
+	sortWithdrawals := cmpopts.SortSlices(func(a, b Withdrawal) bool { return a.ID < b.ID })
+	sortOrders := cmpopts.SortSlices(func(a, b Order) bool { return a.Id < b.Id })
+	sortNodes := cmpopts.SortSlices(func(a, b Node) bool { return a.Id < b.Id })
+
+	// The old API has nulls for the 'UpdatedAt' field in positions
+	ignorePositionTimestamps := cmpopts.IgnoreFields(Position{}, "UpdatedAt")
+
+	diff := cmp.Diff(oldResp, newResp, removeDupVotes(), sortTrades, sortAccounts, sortMarkets,
+		sortProposals, sortNetParams, sortParties, sortDeposits, sortSpecs, sortTransfers,
+		sortWithdrawals, sortOrders, sortNodes, sortPositions, ignorePositionTimestamps)
+
 	assert.Empty(t, diff)
+}
+
+func removeDupVotes() cmp.Option {
+	// This is a bit grim; in the old API you get repeated entries for votes when they are updated,
+	// which is a bug not present in the new API - so remove duplicates when comparing (and sort)
+	return cmp.Transformer("DuplicateVotes", func(in []Vote) []Vote {
+		m := make(map[string]Vote)
+		for _, vote := range in {
+			m[fmt.Sprintf("%v-%v", vote.ProposalId, vote.Party.Id)] = vote
+		}
+
+		keys := make([]string, len(m))
+		sort.Strings(keys)
+
+		out := make([]Vote, len(m))
+		for i, key := range keys {
+			out[i] = m[key]
+		}
+		return out
+	})
+}
+
+func assertGraphQLQueriesReturnSame(t *testing.T, query string, oldResp, newResp interface{}) {
+	t.Helper()
+	req := graphql.NewRequest(query)
+	oldErr := oldClient.Run(context.Background(), req, &oldResp)
+	newErr := newClient.Run(context.Background(), req, &newResp)
+	require.Equal(t, oldErr, newErr)
+	compareResponses(t, oldResp, newResp)
+}
+
+func assertGraphQLQueriesReturnSameIgnoreErrors(t *testing.T, query string, oldResp, newResp interface{}) {
+	t.Helper()
+	req := graphql.NewRequest(query)
+
+	_ = oldClient.Run(context.Background(), req, &oldResp)
+	_ = newClient.Run(context.Background(), req, &newResp)
+
+	compareResponses(t, oldResp, newResp)
 }
 
 func newTestConfig() (*config.Config, error) {

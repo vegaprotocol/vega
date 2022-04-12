@@ -6,23 +6,15 @@ import (
 )
 
 type RewardSummary struct {
-	PartyID []byte
-	AssetID []byte
+	PartyID PartyID
+	AssetID AssetID
 	Amount  decimal.Decimal
-}
-
-func (r *RewardSummary) PartyHexID() string {
-	return Party{ID: r.PartyID}.HexID()
-}
-
-func (r *RewardSummary) AssetHexID() string {
-	return Asset{ID: r.AssetID}.HexID()
 }
 
 func (r *RewardSummary) ToProto() *vega.RewardSummary {
 	protoRewardSummary := vega.RewardSummary{
-		PartyId: r.PartyHexID(),
-		AssetId: r.AssetHexID(),
+		PartyId: r.PartyID.String(),
+		AssetId: r.AssetID.String(),
 		Amount:  r.Amount.String(),
 	}
 	return &protoRewardSummary
