@@ -4,23 +4,20 @@ go 1.17
 
 require (
 	code.vegaprotocol.io/oracles-relay v0.0.0-20210201140234-f047e1bf6df3
-	code.vegaprotocol.io/protos v0.49.3
+	code.vegaprotocol.io/protos v0.50.0
 	code.vegaprotocol.io/quant v0.2.5
 	code.vegaprotocol.io/shared v0.0.0-20220321185018-3b5684b00533
-	code.vegaprotocol.io/vegawallet v0.13.2
+	code.vegaprotocol.io/vegawallet v0.14.0
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/cenkalti/backoff v2.2.1+incompatible
-	github.com/cenkalti/backoff/v4 v4.1.2 // indirect
 	github.com/cosmos/iavl v0.15.3
-	github.com/cucumber/godog v0.11.0
-	github.com/cucumber/messages-go/v10 v10.0.3
+	github.com/cucumber/godog v0.12.5
 	github.com/ethereum/go-ethereum v1.10.16
 	github.com/fatih/color v1.13.0
 	github.com/fsnotify/fsnotify v1.5.1
 	github.com/golang/mock v1.6.0
 	github.com/golang/protobuf v1.5.2
 	github.com/google/btree v1.0.0
-	github.com/grpc-ecosystem/grpc-gateway v1.16.0 // indirect
 	github.com/hashicorp/golang-lru v0.5.5-0.20210104140557-80c98217689d
 	github.com/holiman/uint256 v1.2.0
 	github.com/imdario/mergo v0.3.11
@@ -34,7 +31,7 @@ require (
 	github.com/rs/cors v1.8.2
 	github.com/satori/go.uuid v1.2.0
 	github.com/shopspring/decimal v1.2.0
-	github.com/spf13/afero v1.8.0
+	github.com/spf13/afero v1.8.0 // indirect
 	github.com/spf13/cobra v1.4.0
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.7.0
@@ -49,24 +46,27 @@ require (
 	google.golang.org/protobuf v1.27.1
 )
 
-require github.com/grpc-ecosystem/grpc-gateway/v2 v2.9.0
+require (
+	github.com/cucumber/messages-go/v16 v16.0.1
+	github.com/grpc-ecosystem/grpc-gateway/v2 v2.9.0
+)
 
 require (
 	github.com/BurntSushi/toml v1.0.0 // indirect
 	github.com/ChainSafe/go-schnorrkel v0.0.0-20200405005733-88cbf1b4c40d // indirect
 	github.com/DataDog/zstd v1.4.1 // indirect
-	github.com/StackExchange/wmi v1.2.1 // indirect
 	github.com/Workiva/go-datastructures v1.0.53 // indirect
 	github.com/adrg/xdg v0.4.0 // indirect
 	github.com/armon/go-radix v1.0.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/blang/semver/v4 v4.0.0 // indirect
 	github.com/btcsuite/btcd v0.22.0-beta // indirect
+	github.com/cenkalti/backoff/v4 v4.1.2 // indirect
 	github.com/cespare/xxhash v1.1.0 // indirect
 	github.com/cespare/xxhash/v2 v2.1.2 // indirect
 	github.com/confio/ics23/go v0.6.3 // indirect
 	github.com/cosmos/go-bip39 v0.0.0-20180819234021-555e2067c45d // indirect
-	github.com/cucumber/gherkin-go/v11 v11.0.0 // indirect
+	github.com/cucumber/gherkin-go/v19 v19.0.3 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/deckarep/golang-set v1.8.0 // indirect
 	github.com/dgraph-io/badger/v2 v2.2007.2 // indirect
@@ -80,14 +80,13 @@ require (
 	github.com/go-kit/kit v0.12.0 // indirect
 	github.com/go-kit/log v0.2.0 // indirect
 	github.com/go-logfmt/logfmt v0.5.1 // indirect
-	github.com/go-ole/go-ole v1.2.6 // indirect
 	github.com/go-stack/stack v1.8.0 // indirect
-	github.com/gofrs/uuid v3.3.0+incompatible // indirect
+	github.com/gofrs/uuid v4.0.0+incompatible // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/google/orderedcode v0.0.1 // indirect
-	github.com/google/uuid v1.3.0 // indirect
 	github.com/gorilla/websocket v1.4.2 // indirect
+	github.com/grpc-ecosystem/grpc-gateway v1.16.0 // indirect
 	github.com/gtank/merlin v0.1.1 // indirect
 	github.com/gtank/ristretto255 v0.1.2 // indirect
 	github.com/hashicorp/go-immutable-radix v1.3.1 // indirect
@@ -123,15 +122,12 @@ require (
 	github.com/skratchdot/open-golang v0.0.0-20200116055534-eef842397966 // indirect
 	github.com/spf13/cast v1.4.1 // indirect
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
-	github.com/spf13/viper v1.10.1 // indirect
 	github.com/stretchr/objx v0.1.1 // indirect
 	github.com/subosito/gotenv v1.2.0 // indirect
 	github.com/tecbot/gorocksdb v0.0.0-20191217155057-f0fad39f321c // indirect
-	github.com/tklauser/go-sysconf v0.3.9 // indirect
 	github.com/tklauser/numcpus v0.3.0 // indirect
 	github.com/tyler-smith/go-bip39 v1.1.0 // indirect
 	github.com/vegaprotocol/go-slip10 v0.1.0 // indirect
-	go.elastic.co/apm v1.12.0 // indirect
 	go.elastic.co/fastjson v1.1.0 // indirect
 	go.etcd.io/bbolt v1.3.6 // indirect
 	go.uber.org/atomic v1.9.0 // indirect
@@ -143,15 +139,26 @@ require (
 	golang.org/x/sys v0.0.0-20220318055525-2edf467146b5 // indirect
 	golang.org/x/term v0.0.0-20210927222741-03fcf44c2211 // indirect
 	golang.org/x/text v0.3.7 // indirect
-	golang.org/x/tools v0.1.9-0.20211228192929-ee1ca4ffc4da // indirect
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
 	gonum.org/v1/gonum v0.9.1 // indirect
 	google.golang.org/genproto v0.0.0-20220317150908-0efb43f6373e // indirect
-	gopkg.in/ini.v1 v1.66.3 // indirect
 	gopkg.in/natefinch/npipe.v2 v2.0.0-20160621034901-c1b8fa8bdcce // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect
 	howett.net/plist v0.0.0-20181124034731-591f970eefbb // indirect
+)
+
+require (
+	github.com/StackExchange/wmi v1.2.1 // indirect
+	github.com/go-ole/go-ole v1.2.6 // indirect
+	github.com/google/uuid v1.3.0 // indirect
+	github.com/gorilla/mux v1.8.0
+	github.com/gorilla/rpc v1.2.0
+	github.com/spf13/viper v1.10.1 // indirect
+	github.com/tklauser/go-sysconf v0.3.9 // indirect
+	go.elastic.co/apm v1.12.0 // indirect
+	golang.org/x/tools v0.1.9-0.20211228192929-ee1ca4ffc4da // indirect
+	gopkg.in/ini.v1 v1.66.3 // indirect
 )
 
 replace github.com/shopspring/decimal => github.com/vegaprotocol/decimal v1.3.1-uint256

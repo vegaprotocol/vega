@@ -11,6 +11,7 @@ import (
 	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/libs/proto"
 	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/vega/risk"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
 )
@@ -46,10 +47,14 @@ func NewSnapshotEngine(config Config,
 	market string,
 	stateVarEngine StateVarEngine,
 	tickSize *num.Uint,
+	priceFactor *num.Uint,
 	positionFactor num.Decimal,
 ) *SnapshotEngine {
 	se := &SnapshotEngine{
-		Engine: NewEngine(config, log, broker, riskModel, priceMonitor, asset, market, stateVarEngine, tickSize, positionFactor),
+		// tickSize = 10^{market_dp} - used for calculating probabilities at offsets from the best bid/ask
+		// priceFactor = 10^{asset_dp} / 10^{market_dp} - used for scaling a price to the market
+		// positionFactor = 10^{position_dp} - used to scale sizes to the market position decimals
+		Engine: NewEngine(config, log, broker, riskModel, priceMonitor, asset, market, stateVarEngine, tickSize, priceFactor, positionFactor),
 		pl:     types.Payload{},
 		market: market,
 
@@ -64,6 +69,10 @@ func NewSnapshotEngine(config Config,
 	se.buildHashKeys(market)
 
 	return se
+}
+
+func (e *SnapshotEngine) UpdateMarketConfig(model risk.Model, monitor PriceMonitor) {
+	e.Engine.UpdateMarketConfig(model, monitor)
 }
 
 func (e *SnapshotEngine) StopSnapshots() {

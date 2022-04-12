@@ -16,7 +16,8 @@ var ErrBondSlashing = errors.New("bond slashing")
 // this will transfer funds calculated for a party amending a liquidity
 // provision during auction.
 func (m *Market) transferMarginsLiquidityProvisionAmendAuction(
-	ctx context.Context, risk events.Risk) error {
+	ctx context.Context, risk events.Risk,
+) error {
 	market := m.GetID()
 	// This is ultimately the same behaviour than update on order
 	// all or nothing of margin needsto be transferred

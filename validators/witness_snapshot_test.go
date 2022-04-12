@@ -10,7 +10,6 @@ import (
 	snapshot "code.vegaprotocol.io/protos/vega/snapshot/v1"
 	"code.vegaprotocol.io/vega/libs/proto"
 	"code.vegaprotocol.io/vega/types"
-	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -55,7 +54,7 @@ func TestSnapshot(t *testing.T) {
 		defer erc2.ctrl.Finish()
 		defer erc2.Stop()
 		erc2.top.EXPECT().IsValidator().AnyTimes().Return(true)
-		erc2.top.EXPECT().SelfNodeID().AnyTimes().Return("1234")
+		erc2.top.EXPECT().SelfVegaPubKey().AnyTimes().Return("1234")
 
 		_, err = erc2.LoadState(context.Background(), payload)
 		require.Nil(t, err)
@@ -67,8 +66,9 @@ func TestSnapshot(t *testing.T) {
 		require.True(t, bytes.Equal(state2, state3))
 
 		// add a vote
-		erc2.top.EXPECT().IsValidatorNodeID(gomock.Any()).Times(1).Return(true)
-		err = erc2.AddNodeCheck(context.Background(), &commandspb.NodeVote{Reference: res.id, PubKey: []byte("1234")})
+		pubkey := newPublicKey("1234")
+		erc2.top.EXPECT().IsValidatorVegaPubKey(pubkey.Hex()).Times(1).Return(true)
+		err = erc2.AddNodeCheck(context.Background(), &commandspb.NodeVote{Reference: res.id}, pubkey)
 
 		assert.NoError(t, err)
 
@@ -85,7 +85,7 @@ func TestSnapshot(t *testing.T) {
 		defer erc3.ctrl.Finish()
 		defer erc3.Stop()
 		erc3.top.EXPECT().IsValidator().AnyTimes().Return(true)
-		erc3.top.EXPECT().SelfNodeID().AnyTimes().Return("1234")
+		erc3.top.EXPECT().SelfVegaPubKey().AnyTimes().Return("1234")
 
 		_, err = erc3.LoadState(context.Background(), payload)
 		require.Nil(t, err)

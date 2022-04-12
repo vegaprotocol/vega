@@ -27,13 +27,15 @@ type OracleEngine interface {
 
 // Product is the interface provided by all product in vega.
 type Product interface {
-	Settle(entryPrice *num.Uint, netFractionalPosition num.Decimal) (amt *types.FinancialAmount, neg bool, err error)
+	Settle(entryPrice *num.Uint, assetDecimals uint32, netFractionalPosition num.Decimal) (amt *types.FinancialAmount, neg bool, err error)
 	Value(markPrice *num.Uint) (*num.Uint, error)
 	GetAsset() string
 	IsTradingTerminated() bool
 	SettlementPrice() (*num.Uint, error)
+	ScaleSettlementPriceToDecimalPlaces(price *num.Uint, dp uint32) (*num.Uint, bool)
 	NotifyOnTradingTerminated(listener func(context.Context, bool))
 	NotifyOnSettlementPrice(listener func(context.Context, *num.Uint))
+	Unsubscribe(context.Context, OracleEngine)
 }
 
 // New instance a new product from a Market framework product configuration.
@@ -42,8 +44,8 @@ func New(ctx context.Context, log *logging.Logger, pp interface{}, oe OracleEngi
 		return nil, ErrNilProduct
 	}
 	switch p := pp.(type) {
-	case *types.Instrument_Future:
-		return newFuture(ctx, log, p.Future, oe)
+	case *types.InstrumentFuture:
+		return NewFuture(ctx, log, p.Future, oe)
 	default:
 		return nil, ErrUnimplementedProduct
 	}

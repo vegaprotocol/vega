@@ -46,7 +46,8 @@ func (v *validatorHeartbeatTracker) recordHeartbeatResult(status bool) {
 // ProcessValidatorHeartbeat is verifying the signatures from a validator's transaction and records the status.
 func (t *Topology) ProcessValidatorHeartbeat(ctx context.Context, vh *commandspb.ValidatorHeartbeat,
 	verifyVegaSig func(message, signature, pubkey []byte) error,
-	verifyEthSig func(message, signature []byte, hexAddress string) error) error {
+	verifyEthSig func(message, signature []byte, hexAddress string) error,
+) error {
 	t.mu.RLock()
 	defer t.mu.RUnlock()
 	validator, ok := t.validators[vh.NodeId]

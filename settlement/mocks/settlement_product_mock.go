@@ -51,9 +51,9 @@ func (mr *MockProductMockRecorder) GetAsset() *gomock.Call {
 }
 
 // Settle mocks base method.
-func (m *MockProduct) Settle(arg0 *num.Uint, arg1 decimal.Decimal) (*types.FinancialAmount, bool, error) {
+func (m *MockProduct) Settle(arg0 *num.Uint, arg1 uint32, arg2 decimal.Decimal) (*types.FinancialAmount, bool, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Settle", arg0, arg1)
+	ret := m.ctrl.Call(m, "Settle", arg0, arg1, arg2)
 	ret0, _ := ret[0].(*types.FinancialAmount)
 	ret1, _ := ret[1].(bool)
 	ret2, _ := ret[2].(error)
@@ -61,9 +61,9 @@ func (m *MockProduct) Settle(arg0 *num.Uint, arg1 decimal.Decimal) (*types.Finan
 }
 
 // Settle indicates an expected call of Settle.
-func (mr *MockProductMockRecorder) Settle(arg0, arg1 interface{}) *gomock.Call {
+func (mr *MockProductMockRecorder) Settle(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Settle", reflect.TypeOf((*MockProduct)(nil).Settle), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Settle", reflect.TypeOf((*MockProduct)(nil).Settle), arg0, arg1, arg2)
 }
 
 // SettlementPrice mocks base method.

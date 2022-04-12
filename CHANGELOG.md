@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased (0.50.0)
+## Unreleased (0.51.0)
 
 ### 🚨 Breaking changes
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
@@ -15,11 +15,55 @@
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 
+## 0.50.0
+
+### 🚨 Breaking changes
+- [5197](https://github.com/vegaprotocol/vega/issues/5197) - Scale settlement price based on oracle definition
+
+### 🛠 Improvements
+- [5055](https://github.com/vegaprotocol/vega/issues/5055) - Ensure at most 5 triggers are used in price monitoring settings
+- [5100](https://github.com/vegaprotocol/vega/issues/5100) - add a new scenario into feature test, auction folder, leaving auction when liquidity provider provides a limit order
+- [4919](https://github.com/vegaprotocol/vega/issues/4919) - Feature tests for 0011 check order allocate margin
+- [4922](https://github.com/vegaprotocol/vega/issues/4922) - Feature tests for 0015 market insurance pool collateral
+- [4926](https://github.com/vegaprotocol/vega/issues/4926) - Feature tests for 0019 margin calculator scenarios
+- [5119](https://github.com/vegaprotocol/vega/issues/5119) - Add Ethereum key rotation support
+- [5209](https://github.com/vegaprotocol/vega/issues/5209) - Add retries to floating point consensus engine to work around tendermint missing transactions
+- [5219](https://github.com/vegaprotocol/vega/issues/5219) - Remove genesis sign command.
+
+### 🐛 Fixes
+- [5078](https://github.com/vegaprotocol/vega/issues/5078) - Unwrap properly position decimal place from payload
+- [5076](https://github.com/vegaprotocol/vega/issues/5076) - Set last mark price to settlement price when market is settled
+- [5038](https://github.com/vegaprotocol/vega/issues/5038) - Send proof-of-work when when announcing node
+- [5034](https://github.com/vegaprotocol/vega/issues/5034) - Ensure to / from in transfers payloads are vega public keys
+- [5111](https://github.com/vegaprotocol/vega/issues/5111) - Stop updating the market's initial configuration when an opening auction is extended
+- [5066](https://github.com/vegaprotocol/vega/issues/5066) - Return an error if market decimal place > to asset decimal place
+- [5095](https://github.com/vegaprotocol/vega/issues/5095) - Stabilise state sync restore and restore block height in the topology engine
+- [5204](https://github.com/vegaprotocol/vega/issues/5204) - Mark a snapshot state change when liquidity provision state changes
+- [4870](https://github.com/vegaprotocol/vega/issues/5870) - Add missing commands to the `TxError` event
+- [5136](https://github.com/vegaprotocol/vega/issues/5136) - Fix banking snapshot for transfers, risk factor restoration, and `statevar` handling of settled markets
+- [5088](https://github.com/vegaprotocol/vega/issues/5088) - Fixed MTM bug where settlement balance would not be zero when loss amount was 1.
+- [5093](https://github.com/vegaprotocol/vega/issues/5093) - Fixed proof of engine end of block callback never called to clear up state
+- [4996](https://github.com/vegaprotocol/vega/issues/4996) - Fix positions engines `vwBuys` and `vwSell` when amending, send events on `Update` and `UpdateNetwork`
+- [5016](https://github.com/vegaprotocol/vega/issues/5016) - Target stake in asset decimal place in Market Data
+- [5109](https://github.com/vegaprotocol/vega/issues/5109) - Fixed promotion of ersatz to tendermint validator
+- [5110](https://github.com/vegaprotocol/vega/issues/5110) - Fixed wrong tick size used for calculating probability of trading
+- [5144](https://github.com/vegaprotocol/vega/issues/5144) - Fixed the default voting power in case there is stake in the network
+- [5124](https://github.com/vegaprotocol/vega/issues/5124) - Add proto serialization for update market proposal
+- [5124](https://github.com/vegaprotocol/vega/issues/5124) - Ensure update market proposal compute a proper auction duration
+- [5172](https://github.com/vegaprotocol/vega/issues/5172) - Add replay protection for validator commands
+- [5181](https://github.com/vegaprotocol/vega/issues/5181) - Ensure Oracle specs handle numbers using `num.Decimal` and `num.Int`
+- [5190](https://github.com/vegaprotocol/vega/issues/5190) - Fix settlement at expiry to scale the settlement price from market decimals to asset decimals
+- [5185](https://github.com/vegaprotocol/vega/issues/5185) - Fix MTM settlement where win transfers get truncated resulting in settlement balance not being zero after settlement.
+- [4943](https://github.com/vegaprotocol/vega/issues/4943) - Fix bug where amending orders in opening auctions did not work as expected
+
 ## 0.49.8
 
 ### 🛠 Improvements
 - [4814](https://github.com/vegaprotocol/vega/issues/4814) - Review fees tests
 - [5067](https://github.com/vegaprotocol/vega/pull/5067) - Adding acceptance codes and tidy up tests
+- [5052](https://github.com/vegaprotocol/vega/issues/5052) - Adding acceptance criteria tests for market decimal places
+- [5138](https://github.com/vegaprotocol/vega/issues/5038) - Adding feature test for "0032-PRIM-price_monitoring.md"
+- [4753](https://github.com/vegaprotocol/vega/issues/4753) - Adding feature test for oracle spec public key validation
 
 ### 🐛 Fixes
 - [5064](https://github.com/vegaprotocol/vega/issues/5064) - Send order event on settlement
@@ -68,6 +112,7 @@ only
 - [4961](https://github.com/vegaprotocol/vega/issues/4961) - Extend auction feature tests
 - [4832](https://github.com/vegaprotocol/vega/issues/4832) - Add validation of update market proposals.
 - [4971](https://github.com/vegaprotocol/vega/issues/4971) - Add acceptance criteria to auction tests
+- [4833](https://github.com/vegaprotocol/vega/issues/4833) - Propagate market update to other engines
 
 ### 🐛 Fixes
 - [4947](https://github.com/vegaprotocol/vega/issues/4947) - Fix time formatting problem that was breaking consensus on nodes in different time zones

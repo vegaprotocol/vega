@@ -1,4 +1,4 @@
-Feature: CASE-5: Trader submits short order that will trade - new formula & low exit price (0019-MCAL-001, 0019-MCAL-003, 0019-MCAL-007)
+Feature: CASE-5: Trader submits short order that will trade - new formula & low exit price (0019-MCAL-001, 0019-MCAL-002, 0019-MCAL-003, 0019-MCAL-007)
   # https://drive.google.com/drive/folders/1BCOKaEb7LZYAKoiPfXfaqwM4BNicPpF-
 
   Background:
@@ -98,7 +98,7 @@ Feature: CASE-5: Trader submits short order that will trade - new formula & low 
     # ANOTHER TRADE HAPPENING (BY A DIFFERENT PARTY)
     # updating mark price to 300
     When the parties place the following orders:
-      | party     | market id | side | volume | price    | resulting trades | type       | tif     | reference |
+      | party      | market id | side | volume | price    | resulting trades | type       | tif     | reference |
       | sellSideMM | ETH/DEC19 | sell | 50     | 30000000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | buySideMM  | ETH/DEC19 | buy  | 27     | 30000000 | 4                | TYPE_LIMIT | TIF_GTC | ref-2     |
 

@@ -20,6 +20,9 @@ Feature: Test settlement at expiry
       | property           | type         | binding             |
       | trading.terminated | TYPE_BOOLEAN | trading termination |
 
+    And the settlement price decimals for the oracle named "ethDec20Oracle" is given in "0" decimal places
+    And the settlement price decimals for the oracle named "ethDec21Oracle" is given in "0" decimal places
+
     And the following network parameters are set:
       | name                           | value |
       | market.auction.minimumDuration | 1     |
@@ -69,7 +72,7 @@ Feature: Test settlement at expiry
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference | error                         |
       | party1 | ETH/DEC19 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC | ref-7     | OrderError: Invalid Market ID |
 
-  Scenario: Settlement happened when market is being closed - no loss socialisation needed - no insurance taken (0002-STTL-002, 0002-STTL-007)
+  Scenario: Settlement happened when market is being closed - no loss socialisation needed - no insurance taken (0002-STTL-002, 0002-STTL-007, 0005-COLL-002, 0015-INSR-002)
     Given the initial insurance pool balance is "10000" for the markets:
     Given the parties deposit on asset's general account the following amount:
       | party    | asset | amount    |
@@ -191,7 +194,7 @@ Feature: Test settlement at expiry
     And the network treasury balance should be "20000" for the asset "ETH"
     And the insurance pool balance should be "0" for the market "ETH/DEC21"
 
-  Scenario: Same as above, but the other market already terminated before the end of scenario, expecting 0 balances in per market insurance pools - all should go to per asset insurance pool (0002-STTL-additional-tests)
+  Scenario: Same as above, but the other market already terminated before the end of scenario, expecting 0 balances in per market insurance pools - all should go to per asset insurance pool (0002-STTL-additional-tests, 0005-COLL-002, 0015-INSR-002)
 
     Given the initial insurance pool balance is "10000" for the markets:
     Given the parties deposit on asset's general account the following amount:

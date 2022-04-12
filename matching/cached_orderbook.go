@@ -29,13 +29,15 @@ func (b *CachedOrderBook) EnterAuction() []*types.Order {
 }
 
 func (b *CachedOrderBook) LeaveAuction(
-	at time.Time) ([]*types.OrderConfirmation, []*types.Order, error) {
+	at time.Time,
+) ([]*types.OrderConfirmation, []*types.Order, error) {
 	b.cache.Invalidate()
 	return b.OrderBook.LeaveAuction(at)
 }
 
 func (b *CachedOrderBook) CancelAllOrders(
-	party string) ([]*types.OrderCancellationConfirmation, error) {
+	party string,
+) ([]*types.OrderCancellationConfirmation, error) {
 	b.cache.Invalidate()
 	return b.OrderBook.CancelAllOrders(party)
 }
@@ -82,7 +84,8 @@ func (b *CachedOrderBook) RemoveOrder(order *types.Order) error {
 }
 
 func (b *CachedOrderBook) AmendOrder(
-	originalOrder, amendedOrder *types.Order) error {
+	originalOrder, amendedOrder *types.Order,
+) error {
 	if !b.InAuction() {
 		b.cache.Invalidate()
 	} else {
@@ -91,8 +94,18 @@ func (b *CachedOrderBook) AmendOrder(
 	return b.OrderBook.AmendOrder(originalOrder, amendedOrder)
 }
 
+func (b *CachedOrderBook) ReplaceOrder(rm, rpl *types.Order) (*types.OrderConfirmation, error) {
+	if !b.InAuction() {
+		b.cache.Invalidate()
+	} else {
+		b.maybeInvalidateDuringAuction(rpl)
+	}
+	return b.OrderBook.ReplaceOrder(rm, rpl)
+}
+
 func (b *CachedOrderBook) SubmitOrder(
-	order *types.Order) (*types.OrderConfirmation, error) {
+	order *types.Order,
+) (*types.OrderConfirmation, error) {
 	if !b.InAuction() {
 		b.cache.Invalidate()
 	} else {
@@ -102,7 +115,8 @@ func (b *CachedOrderBook) SubmitOrder(
 }
 
 func (b *CachedOrderBook) DeleteOrder(
-	order *types.Order) (*types.Order, error) {
+	order *types.Order,
+) (*types.Order, error) {
 	if !b.InAuction() {
 		b.cache.Invalidate()
 	} else {

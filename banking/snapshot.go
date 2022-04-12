@@ -82,6 +82,7 @@ func (e *Engine) serialiseAssetActions() ([]byte, error) {
 			BlockNumber: v.blockNumber,
 			Asset:       v.asset.ToAssetType().ID,
 			TxIndex:     v.txIndex,
+			Hash:        v.hash,
 			BuiltinD:    v.builtinD,
 			Erc20AL:     v.erc20AL,
 			Erc20D:      v.erc20D,
@@ -243,13 +244,14 @@ func (e *Engine) LoadState(ctx context.Context, p *types.Payload) ([]types.State
 func (e *Engine) restoreRecurringTransfers(ctx context.Context, transfers *checkpoint.RecurringTransfers) error {
 	// ignore events here as we don't need to send them
 	_ = e.loadRecurringTransfers(ctx, transfers)
-
+	e.bss.changed[recurringTransfersKey] = true
 	return nil
 }
 
 func (e *Engine) restoreScheduledTransfers(ctx context.Context, transfers []*checkpoint.ScheduledTransferAtTime) error {
 	// ignore events
 	_, err := e.loadScheduledTransfers(ctx, transfers)
+	e.bss.changed[scheduledTransfersKey] = true
 	return err
 }
 
@@ -295,9 +297,7 @@ func (e *Engine) restoreAssetActions(ctx context.Context, aa *types.BankingAsset
 	for _, v := range aa.AssetAction {
 		asset, err := e.assets.Get(v.Asset)
 		if err != nil {
-			e.log.Error("error restoring asset actions for asset", logging.String("asset", v.Asset))
-
-			continue
+			e.log.Panic("trying to restore an assetAction with no asset", logging.String("asset", v.Asset))
 		}
 
 		aa := &assetAction{
@@ -306,6 +306,7 @@ func (e *Engine) restoreAssetActions(ctx context.Context, aa *types.BankingAsset
 			blockNumber: v.BlockNumber,
 			asset:       asset,
 			txIndex:     v.TxIndex,
+			hash:        v.Hash,
 			builtinD:    v.BuiltinD,
 			erc20AL:     v.Erc20AL,
 			erc20D:      v.Erc20D,

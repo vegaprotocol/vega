@@ -5,6 +5,7 @@ import (
 	"errors"
 
 	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/vega/risk"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
 	"code.vegaprotocol.io/vega/types/statevar"
@@ -85,6 +86,14 @@ func NewEngine(riskModel RiskModel, priceMonitor PriceMonitor, asset, marketID s
 
 	stateVarEngine.RegisterStateVariable(asset, marketID, "probability_of_trading", probabilityOfTradingConverter{}, e.startCalcProbOfTrading, []statevar.StateVarEventType{statevar.StateVarEventTypeTimeTrigger, statevar.StateVarEventTypeAuctionEnded, statevar.StateVarEventTypeOpeningAuctionFirstUncrossingPrice}, e.updateProbabilities)
 	return e
+}
+
+func (e *Engine) UpdateMarketConfig(riskModel risk.Model, monitor PriceMonitor) {
+	e.rm = riskModel
+	e.pm = monitor
+	e.horizon = riskModel.GetProjectionHorizon()
+	e.potInitialised = false
+	e.changed = true
 }
 
 func (e *Engine) SetGetStaticPricesFunc(f func() (num.Decimal, num.Decimal, error)) {
@@ -231,8 +240,8 @@ func (e *Engine) updateSizes(
 		// uint64(math.Ceil(liquidityObligation * scaling / float64(o.Price.Uint64())))
 		d := num.DecimalFromUint(liquidityObligation)
 		d = d.Mul(scaling)
-		// scale the volume by 10^pdp
-		liv, _ := num.UintFromDecimal(d.Div(num.DecimalFromUint(o.Price)).Ceil().Mul(e.positionFactor))
+		// scale the volume by 10^pdp BEFORE dividing by price for better precision.
+		liv, _ := num.UintFromDecimal(d.Mul(e.positionFactor).Div(num.DecimalFromUint(o.Price)).Ceil())
 		o.LiquidityImpliedVolume = liv.Uint64()
 	}
 	return nil

@@ -162,6 +162,7 @@ const (
 	StateVarEventTypeOpeningAuctionFirstUncrossingPrice
 	StateVarEventTypeAuctionEnded
 	StateVarEventTypeTimeTrigger
+	StateVarEventTypeMarketUpdated
 )
 
 var StateVarEventTypeToName = map[StateVarEventType]string{
@@ -170,4 +171,5 @@ var StateVarEventTypeToName = map[StateVarEventType]string{
 	StateVarEventTypeOpeningAuctionFirstUncrossingPrice: "opening-auction-first-uncrossing-price",
 	StateVarEventTypeAuctionEnded:                       "auction-ended",
 	StateVarEventTypeTimeTrigger:                        "time-trigger",
+	StateVarEventTypeMarketUpdated:                      "market-updated",
 }

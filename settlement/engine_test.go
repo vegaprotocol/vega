@@ -3,6 +3,7 @@ package settlement_test
 import (
 	"context"
 	"errors"
+	"fmt"
 	"sync"
 	"testing"
 	"time"
@@ -55,6 +56,227 @@ func TestMarkToMarket(t *testing.T) {
 	t.Run("Test MTM settle when the network is closed out", testMTMNetworkZero)
 }
 
+func TestMTMWinDistribution(t *testing.T) {
+	t.Run("A MTM loss party with a loss of value 1, with several parties needing a win", testMTMWinOneExcess)
+	t.Run("Distribute win excess in a scenario where no transfer amount is < 1", testMTMWinNoZero)
+}
+
+func testMTMWinNoZero(t *testing.T) {
+	// cheat by setting the factor to some specific value, makes it easier to create a scenario where win/loss amounts don't match
+	engine := getTestEngineWithFactor(t, 1)
+	defer engine.Finish()
+
+	price := num.NewUint(100000)
+	one := num.NewUint(1)
+	ctx := context.Background()
+
+	initPos := []testPos{
+		{
+			price: price.Clone(),
+			party: "party1",
+			size:  10,
+		},
+		{
+			price: price.Clone(),
+			party: "party2",
+			size:  23,
+		},
+		{
+			price: price.Clone(),
+			party: "party3",
+			size:  -32,
+		},
+		{
+			price: price.Clone(),
+			party: "party4",
+			size:  1,
+		},
+		{
+			price: price.Clone(),
+			party: "party5",
+			size:  -29,
+		},
+		{
+			price: price.Clone(),
+			party: "party6",
+			size:  27,
+		},
+	}
+
+	init := make([]events.MarketPosition, 0, len(initPos))
+	for _, p := range initPos {
+		init = append(init, p)
+	}
+
+	newPrice := num.Sum(price, one, one, one)
+	somePrice := num.Sum(price, one)
+	newParty := testPos{
+		size:  30,
+		price: newPrice.Clone(),
+		party: "party4",
+	}
+
+	trades := []*types.Trade{
+		{
+			Size:   10,
+			Buyer:  newParty.party,
+			Seller: initPos[0].party,
+			Price:  somePrice.Clone(),
+		},
+		{
+			Size:   10,
+			Buyer:  newParty.party,
+			Seller: initPos[1].party,
+			Price:  somePrice.Clone(),
+		},
+		{
+			Size:   10,
+			Buyer:  newParty.party,
+			Seller: initPos[2].party,
+			Price:  newPrice.Clone(),
+		},
+	}
+	updates := make([]events.MarketPosition, 0, len(initPos)+2)
+	for _, trade := range trades {
+		for i, p := range initPos {
+			if p.party == trade.Seller {
+				p.size -= int64(trade.Size)
+			}
+			p.price = trade.Price.Clone()
+			initPos[i] = p
+		}
+	}
+	for _, p := range initPos {
+		updates = append(updates, p)
+	}
+	updates = append(updates, newParty)
+	engine.Update(init)
+	for _, trade := range trades {
+		engine.AddTrade(trade)
+	}
+	transfers := engine.SettleMTM(ctx, newPrice.Clone(), updates)
+	require.NotEmpty(t, transfers)
+	for _, tr := range transfers {
+		if tr == nil {
+			fmt.Println("NIL")
+			continue
+		}
+		t := tr.Transfer()
+		if t == nil {
+			fmt.Println("NIL TRANSFER")
+			continue
+		}
+		fmt.Printf("Transfer for party %s: %s\n%s -%#v", tr.Party(), t.Amount.Amount.String(), t.String(), t)
+	}
+}
+
+func testMTMWinOneExcess(t *testing.T) {
+	engine := getTestEngineWithFactor(t, 1)
+	defer engine.Finish()
+
+	price := num.NewUint(10000)
+	one := num.NewUint(1)
+	ctx := context.Background()
+
+	initPos := []testPos{
+		{
+			price: price.Clone(),
+			party: "party1",
+			size:  10,
+		},
+		{
+			price: price.Clone(),
+			party: "party2",
+			size:  20,
+		},
+		{
+			price: price.Clone(),
+			party: "party3",
+			size:  -29,
+		},
+		{
+			price: price.Clone(),
+			party: "party4",
+			size:  1,
+		},
+		{
+			price: price.Clone(),
+			party: "party5",
+			size:  -1,
+		},
+		{
+			price: price.Clone(),
+			party: "party5",
+			size:  1,
+		},
+	}
+
+	init := make([]events.MarketPosition, 0, len(initPos))
+	for _, p := range initPos {
+		init = append(init, p)
+	}
+
+	newPrice := num.Sum(price, one)
+	newParty := testPos{
+		size:  30,
+		price: newPrice.Clone(),
+		party: "party4",
+	}
+
+	trades := []*types.Trade{
+		{
+			Size:   10,
+			Buyer:  newParty.party,
+			Seller: initPos[0].party,
+			Price:  newPrice.Clone(),
+		},
+		{
+			Size:   10,
+			Buyer:  newParty.party,
+			Seller: initPos[1].party,
+			Price:  newPrice.Clone(),
+		},
+		{
+			Size:   10,
+			Buyer:  newParty.party,
+			Seller: initPos[2].party,
+			Price:  newPrice.Clone(),
+		},
+	}
+	updates := make([]events.MarketPosition, 0, len(initPos)+2)
+	for _, trade := range trades {
+		for i, p := range initPos {
+			if p.party == trade.Seller {
+				p.size -= int64(trade.Size)
+			}
+			p.price = trade.Price.Clone()
+			initPos[i] = p
+		}
+	}
+	for _, p := range initPos {
+		updates = append(updates, p)
+	}
+	updates = append(updates, newParty)
+	engine.Update(init)
+	for _, trade := range trades {
+		engine.AddTrade(trade)
+	}
+	transfers := engine.SettleMTM(ctx, newPrice.Clone(), updates)
+	require.NotEmpty(t, transfers)
+	for _, tr := range transfers {
+		if tr == nil {
+			fmt.Println("NIL")
+			continue
+		}
+		t := tr.Transfer()
+		if t == nil {
+			fmt.Println("NIL TRANSFER")
+			continue
+		}
+		fmt.Printf("Transfer for party %s: %s\n%s -%#v", tr.Party(), t.Amount.Amount.String(), t.String(), t)
+	}
+}
+
 func testSettleExpiredSuccess(t *testing.T) {
 	engine := getTestEngine(t)
 	defer engine.Finish()
@@ -102,7 +324,7 @@ func testSettleExpiredSuccess(t *testing.T) {
 		},
 	} // }}}
 	oraclePrice := num.NewUint(1100)
-	settleF := func(price *num.Uint, size num.Decimal) (*types.FinancialAmount, bool, error) {
+	settleF := func(price *num.Uint, assetDecimals uint32, size num.Decimal) (*types.FinancialAmount, bool, error) {
 		amt, neg := num.Zero().Delta(oraclePrice, price)
 		if size.IsNegative() {
 			size = size.Neg()
@@ -116,11 +338,11 @@ func testSettleExpiredSuccess(t *testing.T) {
 	}
 	positions := engine.getExpiryPositions(data...)
 	// we expect settle calls for each position
-	engine.prod.EXPECT().Settle(gomock.Any(), gomock.Any()).DoAndReturn(settleF).AnyTimes()
+	engine.prod.EXPECT().Settle(gomock.Any(), gomock.Any(), gomock.Any()).DoAndReturn(settleF).AnyTimes()
 	// ensure positions are set
 	engine.Update(positions)
 	// now settle:
-	got, err := engine.Settle(time.Now())
+	got, err := engine.Settle(time.Now(), 0)
 	assert.NoError(t, err)
 	assert.Equal(t, len(expect), len(got))
 	for i, p := range got {
@@ -143,9 +365,9 @@ func testSettleExpiryFail(t *testing.T) {
 	}
 	errExp := errors.New("product.Settle error")
 	positions := engine.getExpiryPositions(data...)
-	engine.prod.EXPECT().Settle(gomock.Any(), gomock.Any()).Times(1).Return(nil, false, errExp)
+	engine.prod.EXPECT().Settle(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(nil, false, errExp)
 	engine.Update(positions)
-	empty, err := engine.Settle(time.Now())
+	empty, err := engine.Settle(time.Now(), 0)
 	assert.Empty(t, empty)
 	assert.Error(t, err)
 	assert.Equal(t, errExp, err)
@@ -486,7 +708,7 @@ func TestConcurrent(t *testing.T) {
 
 	engine := getTestEngine(t)
 	defer engine.Finish()
-	engine.prod.EXPECT().Settle(gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(func(price *num.Uint, size num.Decimal) (*types.FinancialAmount, bool, error) {
+	engine.prod.EXPECT().Settle(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(func(price *num.Uint, assetDecimals uint32, size num.Decimal) (*types.FinancialAmount, bool, error) {
 		return &types.FinancialAmount{Amount: num.Zero()}, false, nil
 	})
 
@@ -535,7 +757,7 @@ func TestConcurrent(t *testing.T) {
 		go func() {
 			defer wg.Done()
 			// Settle requires posMu
-			_, err := engine.Settle(now)
+			_, err := engine.Settle(now, 0)
 			assert.NoError(t, err)
 		}()
 	}
@@ -590,7 +812,7 @@ func (t testPos) VWSell() *num.Uint {
 
 func (t testPos) ClearPotentials() {}
 
-func getTestEngine(t *testing.T) *testEngine {
+func getTestEngineWithFactor(t *testing.T, f float64) *testEngine {
 	t.Helper()
 	ctrl := gomock.NewController(t)
 	conf := settlement.NewDefaultConfig()
@@ -600,13 +822,18 @@ func getTestEngine(t *testing.T) *testEngine {
 	market := "BTC/DEC19"
 	prod.EXPECT().GetAsset().AnyTimes().Do(func() string { return "BTC" })
 	return &testEngine{
-		Engine:    settlement.New(logging.NewTestLogger(), conf, prod, market, broker, num.DecimalFromInt64(1)),
+		Engine:    settlement.New(logging.NewTestLogger(), conf, prod, market, broker, num.NewDecimalFromFloat(f)),
 		ctrl:      ctrl,
 		prod:      prod,
 		broker:    broker,
 		positions: nil,
 		market:    market,
 	}
+}
+
+func getTestEngine(t *testing.T) *testEngine {
+	t.Helper()
+	return getTestEngineWithFactor(t, 1)
 } // }}}
 
 func (m marginVal) Asset() string {

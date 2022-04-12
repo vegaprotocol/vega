@@ -182,7 +182,7 @@ func testTendermintValidatorsNumberReduced(t *testing.T) {
 	// node4 is remove => 0
 	require.Equal(t, int64(0), res[3].Power) // remove from rm
 	// node5 is anti-whaled => 0 => 0 => 10
-	require.Equal(t, int64(10), res[4].Power) // 10000 * 0.6/2.2
+	require.Equal(t, int64(1), res[4].Power) // 10000 * 0.6/2.2
 
 	require.Equal(t, "ersatz", ValidatorStatusToName[topology.validators["node3"].status])
 	require.Equal(t, int64(1001), topology.validators["node3"].statusChangeBlock)
@@ -196,6 +196,7 @@ func testTendermintValidatorsNumberReduced(t *testing.T) {
 func testTendermintFreeSlotsPromotion(t *testing.T) {
 	topology := NewTopology(logging.NewLoggerFromConfig(logging.Config{}), NewDefaultConfig(), nil, nil, true, nil, &DummyMultiSigTopology{})
 	topology.numberOfTendermintValidators = 5
+	topology.numberOfErsatzValidators = 1
 	topology.validators["node1"] = &valState{
 		data: ValidatorData{
 			ID:       "node1",
@@ -306,6 +307,7 @@ func testTendermintFreeSlotsPromotion(t *testing.T) {
 func testSwapBestErsatzWithWorstTendermint(t *testing.T) {
 	topology := NewTopology(logging.NewLoggerFromConfig(logging.Config{}), NewDefaultConfig(), nil, nil, true, nil, &DummyMultiSigTopology{})
 	topology.numberOfTendermintValidators = 4
+	topology.numberOfErsatzValidators = 1
 	topology.validators["node1"] = &valState{
 		data: ValidatorData{
 			ID:       "node1",

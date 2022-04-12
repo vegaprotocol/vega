@@ -12,6 +12,7 @@ import (
 	"code.vegaprotocol.io/vega/types/num"
 
 	ethnw "code.vegaprotocol.io/vega/nodewallets/eth"
+	"code.vegaprotocol.io/vega/nodewallets/registry"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
@@ -122,9 +123,10 @@ func (testWallet) Sign(data []byte) ([]byte, error) {
 	priv, _ := hex.DecodeString(privKey)
 	return ed25519.Sign(ed25519.PrivateKey(priv), data), nil
 }
-func (testWallet) Algo() string              { return "eth" }
-func (testWallet) Version() (string, error)  { return "1", nil }
-func (testWallet) PubKey() vcrypto.PublicKey { return vcrypto.PublicKey{} }
+func (testWallet) Algo() string                                  { return "eth" }
+func (testWallet) Version() (string, error)                      { return "1", nil }
+func (testWallet) PubKey() vcrypto.PublicKey                     { return vcrypto.PublicKey{} }
+func (testWallet) Reload(d registry.EthereumWalletDetails) error { return nil }
 
 func verifySignature(msg, sig []byte) bool {
 	pub, _ := hex.DecodeString(pubKey)

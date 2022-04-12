@@ -67,7 +67,8 @@ func (s *Topology) LoadState(ctx context.Context, payload *types.Payload) ([]typ
 }
 
 func (t *Topology) restoreVerifiedState(
-	_ context.Context, s *snapshotpb.ERC20MultiSigTopologyVerified) error {
+	_ context.Context, s *snapshotpb.ERC20MultiSigTopologyVerified,
+) error {
 	t.log.Debug("restoring snapshot verified state")
 	if s.Threshold != nil {
 		t.log.Debug("restoring threshold")
@@ -99,7 +100,8 @@ func (t *Topology) restoreVerifiedState(
 }
 
 func (t *Topology) restorePendingState(
-	_ context.Context, s *snapshotpb.ERC20MultiSigTopologyPending) error {
+	_ context.Context, s *snapshotpb.ERC20MultiSigTopologyPending,
+) error {
 	t.log.Debug("restoring snapshot pending state")
 	t.log.Debug("restoring witness signers", logging.Int("n", len(s.WitnessedSigners)))
 	for _, v := range s.WitnessedSigners {

@@ -204,8 +204,7 @@ func (e *Engine) preEnactProposal(p *proposal) (te *ToEnact, perr types.Proposal
 	}
 	defer func() {
 		if err != nil {
-			p.State = types.ProposalStateFailed
-			p.Reason = perr
+			p.FailWithErr(perr, err)
 		}
 	}()
 
@@ -399,12 +398,13 @@ func (e *Engine) SubmitProposal(
 		e.broker.Send(events.NewProposalEvent(ctx, *p))
 	}()
 
-	perr, err := e.validateOpenProposal(p)
-	if err != nil {
+	if perr, err := e.validateOpenProposal(p); err != nil {
 		p.RejectWithErr(perr, err)
-		if e.log.GetLevel() == logging.DebugLevel {
-			e.log.Debug("Proposal rejected", logging.String("proposal-id", p.ID),
-				logging.String("proposal details", p.IntoProto().String()))
+		if e.log.IsDebug() {
+			e.log.Debug("Proposal rejected",
+				logging.String("proposal-id", p.ID),
+				logging.String("proposal details", p.IntoProto().String()),
+			)
 		}
 		return nil, err
 	}
@@ -412,13 +412,13 @@ func (e *Engine) SubmitProposal(
 	// now if it's a 2 steps proposal, start the node votes
 	if e.isTwoStepsProposal(p) {
 		p.WaitForNodeVote()
-		err = e.startTwoStepsProposal(p)
+		if err := e.startTwoStepsProposal(p); err != nil {
+			return nil, err
+		}
 	} else {
 		e.startProposal(p)
 	}
-	if err != nil {
-		return nil, err
-	}
+
 	return e.intoToSubmit(p)
 }
 
@@ -696,7 +696,7 @@ func (e *Engine) validateVote(vote types.VoteSubmission, party string) (*proposa
 	}
 
 	if proposal.IsMarketUpdate() {
-		partyELS, _ := e.markets.GetEquityLikeShareForMarketAndParty(proposal.ID, party)
+		partyELS, _ := e.markets.GetEquityLikeShareForMarketAndParty(proposal.MarketUpdate().MarketID, party)
 		if partyELS.IsZero() && voterTokens.IsZero() {
 			return nil, ErrVoterInsufficientTokensAndEquityLikeShare
 		}
@@ -715,20 +715,21 @@ func (e *Engine) validateVote(vote types.VoteSubmission, party string) (*proposa
 }
 
 func (e *Engine) validateMarketUpdate(proposal *types.Proposal, params *ProposalParameters) (types.ProposalError, error) {
-	if !e.markets.MarketExists(proposal.ID) {
+	updateMarket := proposal.MarketUpdate()
+	if !e.markets.MarketExists(updateMarket.MarketID) {
 		e.log.Debug("market does not exist",
-			logging.MarketID(proposal.ID),
+			logging.MarketID(updateMarket.MarketID),
 			logging.PartyID(proposal.Party),
 			logging.ProposalID(proposal.ID))
 		return types.ProposalErrorInvalidMarket, ErrMarketDoesNotExist
 	}
-	partyELS, _ := e.markets.GetEquityLikeShareForMarketAndParty(proposal.ID, proposal.Party)
+	partyELS, _ := e.markets.GetEquityLikeShareForMarketAndParty(updateMarket.MarketID, proposal.Party)
 	if partyELS.LessThan(params.MinEquityLikeShare) {
 		e.log.Debug("proposer have insufficient equity-like share",
 			logging.String("expect-balance", params.MinEquityLikeShare.String()),
 			logging.String("proposer-balance", partyELS.String()),
 			logging.PartyID(proposal.Party),
-			logging.MarketID(proposal.ID),
+			logging.MarketID(updateMarket.MarketID),
 			logging.ProposalID(proposal.ID))
 		return types.ProposalErrorInsufficientEquityLikeShare,
 			fmt.Errorf("proposer have insufficient equity-like share, expected >= %v got %v", params.MinEquityLikeShare, partyELS)
@@ -824,7 +825,10 @@ func (e *Engine) updateValidatorKey(ctx context.Context, m map[string]*types.Vot
 
 func (e *Engine) updatedMarketFromProposal(p *proposal) (*types.Market, types.ProposalError, error) {
 	change := p.Terms.GetUpdateMarket()
-	existingMarket, _ := e.markets.GetMarket(p.ID)
+	existingMarket, exists := e.markets.GetMarket(change.MarketID)
+	if !exists {
+		return nil, types.ProposalErrorInvalidMarket, fmt.Errorf("market \"%s\" doesn't exist anymore", change.MarketID)
+	}
 
 	newMarket := &types.NewMarket{
 		Changes: &types.NewMarketConfiguration{
@@ -858,7 +862,7 @@ func (e *Engine) updatedMarketFromProposal(p *proposal) (*types.Market, types.Pr
 		return nil, types.ProposalErrorUnsupportedProduct, ErrUnsupportedProduct
 	}
 
-	closeTime := e.currentTime
+	closeTime := time.Unix(p.Terms.ClosingTimestamp, 0)
 	enactTime := time.Unix(p.Terms.EnactmentTimestamp, 0)
 	return buildMarketFromProposal(p.ID, newMarket, e.netp, e.assets, enactTime.Sub(closeTime))
 }
@@ -871,7 +875,7 @@ type proposal struct {
 }
 
 func (p *proposal) IsTimeToEnact(now int64) bool {
-	return p.Proposal.Terms.EnactmentTimestamp < now
+	return p.Terms.EnactmentTimestamp < now
 }
 
 // ShouldClose tells if the proposal should be closed or not.
@@ -879,7 +883,7 @@ func (p *proposal) IsTimeToEnact(now int64) bool {
 // relying on the closing timestamp could lead to call Close() on an
 // already-closed proposal.
 func (p *proposal) ShouldClose(now int64) bool {
-	return p.IsOpen() && p.Proposal.Terms.ClosingTimestamp < now
+	return p.IsOpen() && p.Terms.ClosingTimestamp < now
 }
 
 func (p *proposal) IsOpen() bool {
@@ -1004,7 +1008,7 @@ func (p *proposal) countTokens(votes map[string]*types.Vote, accounts StakingAcc
 func (p *proposal) countEquityLikeShare(votes map[string]*types.Vote, markets Markets) num.Decimal {
 	tally := num.DecimalZero()
 	for _, v := range votes {
-		v.TotalEquityLikeShareWeight, _ = markets.GetEquityLikeShareForMarketAndParty(p.ID, v.PartyID)
+		v.TotalEquityLikeShareWeight, _ = markets.GetEquityLikeShareForMarketAndParty(p.MarketUpdate().MarketID, v.PartyID)
 		tally = tally.Add(v.TotalEquityLikeShareWeight)
 	}
 

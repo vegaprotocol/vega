@@ -61,6 +61,7 @@ type Collateral interface {
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/state_var_engine_mock.go -package mocks code.vegaprotocol.io/vega/execution StateVarEngine
 type StateVarEngine interface {
 	RegisterStateVariable(asset, market, name string, converter statevar.Converter, startCalculation func(string, statevar.FinaliseCalculation), trigger []statevar.StateVarEventType, result func(context.Context, statevar.StateVariableResult) error) error
+	RemoveTimeTriggers(asset, market string)
 	NewEvent(asset, market string, eventType statevar.StateVarEventType)
 	ReadyForTimeTrigger(asset, mktID string)
 }
@@ -279,7 +280,8 @@ func (e *Engine) IsEligibleForProposerBonus(marketID string, value *num.Uint) bo
 // the usual governance process.
 func (e *Engine) SubmitMarketWithLiquidityProvision(ctx context.Context, marketConfig *types.Market, lp *types.LiquidityProvisionSubmission, party,
 	lpID,
-	deterministicId string) error {
+	deterministicId string,
+) error {
 	if e.log.IsDebug() {
 		e.log.Debug("submit market with liquidity provision",
 			logging.Market(*marketConfig),
@@ -332,13 +334,14 @@ func (e *Engine) UpdateMarket(ctx context.Context, marketConfig *types.Market) e
 		e.log.Debug("update market", logging.Market(*marketConfig))
 	}
 
-	if err := e.updateMarket(ctx, marketConfig); err != nil {
+	mkt := e.markets[marketConfig.ID]
+
+	if err := mkt.Update(ctx, marketConfig, e.oracle); err != nil {
 		return err
 	}
 
-	mkt := e.markets[marketConfig.ID]
-
 	e.publishUpdateMarketInfos(ctx, mkt)
+
 	return nil
 }
 
@@ -426,11 +429,6 @@ func (e *Engine) submitMarket(ctx context.Context, marketConfig *types.Market) e
 	return nil
 }
 
-func (e *Engine) updateMarket(ctx context.Context, marketConfig *types.Market) error {
-	// TODO Implement me
-	return nil
-}
-
 func (e *Engine) propagateInitialNetParams(ctx context.Context, mkt *Market) error {
 	if !e.npv.probabilityOfTradingTauScaling.Equal(num.DecimalFromInt64(-1)) {
 		mkt.OnMarketProbabilityOfTradingTauScalingUpdate(ctx, e.npv.probabilityOfTradingTauScaling)
@@ -502,14 +500,22 @@ func (e *Engine) propagateInitialNetParams(ctx context.Context, mkt *Market) err
 }
 
 func (e *Engine) removeMarket(mktID string) {
+	e.log.Debug("removing market", logging.String("id", mktID))
 	e.stateChanged = true
+
 	delete(e.markets, mktID)
 	for i, mkt := range e.marketsCpy {
 		if mkt.GetID() == mktID {
+			mkt.matching.StopSnapshots()
+			mkt.position.StopSnapshots()
+			mkt.liquidity.StopSnapshots()
+			mkt.tsCalc.StopSnapshots()
+
 			copy(e.marketsCpy[i:], e.marketsCpy[i+1:])
 			e.marketsCpy[len(e.marketsCpy)-1] = nil
 			e.marketsCpy = e.marketsCpy[:len(e.marketsCpy)-1]
 			e.marketTracker.removeMarket(mktID)
+			e.log.Debug("removed in total", logging.String("id", mktID))
 			return
 		}
 	}
@@ -550,7 +556,8 @@ func (e *Engine) SubmitOrder(
 // AmendOrder takes order amendment details and attempts to amend the order
 // if it exists and is in a editable state.
 func (e *Engine) AmendOrder(ctx context.Context, amendment *types.OrderAmendment, party string,
-	deterministicId string) (confirmation *types.OrderConfirmation, returnedErr error) {
+	deterministicId string,
+) (confirmation *types.OrderConfirmation, returnedErr error) {
 	timer := metrics.NewTimeCounter(amendment.MarketID, "execution", "AmendOrder")
 	defer func() {
 		timer.EngineTimeCounterAdd()
@@ -701,7 +708,8 @@ func (e *Engine) SubmitLiquidityProvision(
 }
 
 func (e *Engine) AmendLiquidityProvision(ctx context.Context, lpa *types.LiquidityProvisionAmendment, party string,
-	deterministicId string) (returnedErr error) {
+	deterministicId string,
+) (returnedErr error) {
 	timer := metrics.NewTimeCounter(lpa.MarketID, "execution", "LiquidityProvisionAmendment")
 	defer func() {
 		timer.EngineTimeCounterAdd()
@@ -772,21 +780,12 @@ func (e *Engine) onChainTimeUpdate(ctx context.Context, t time.Time) {
 		if closing {
 			e.log.Info("market is closed, removing from execution engine",
 				logging.MarketID(mkt.GetID()))
-			delete(e.markets, mkt.GetID())
 			toDelete = append(toDelete, mkt.GetID())
 		}
 	}
 
 	for _, id := range toDelete {
-		var i int
-		for idx, mkt := range e.marketsCpy {
-			if mkt.GetID() == id {
-				i = idx
-				break
-			}
-		}
-		copy(e.marketsCpy[i:], e.marketsCpy[i+1:])
-		e.marketsCpy = e.marketsCpy[:len(e.marketsCpy)-1]
+		e.removeMarket(id)
 	}
 
 	timer.EngineTimeCounterAdd()
@@ -993,7 +992,8 @@ func (e *Engine) OnMarketLiquidityProvidersFeeDistributionTimeStep(_ context.Con
 }
 
 func (e *Engine) OnMarketLiquidityProvisionShapesMaxSizeUpdate(
-	_ context.Context, v int64) error {
+	_ context.Context, v int64,
+) error {
 	if e.log.IsDebug() {
 		e.log.Debug("update liquidity provision max shape",
 			logging.Int64("max-shape", v),
@@ -1010,7 +1010,8 @@ func (e *Engine) OnMarketLiquidityProvisionShapesMaxSizeUpdate(
 }
 
 func (e *Engine) OnMarketLiquidityMaximumLiquidityFeeFactorLevelUpdate(
-	_ context.Context, d num.Decimal) error {
+	_ context.Context, d num.Decimal,
+) error {
 	if e.log.IsDebug() {
 		e.log.Debug("update liquidity provision max liquidity fee factor",
 			logging.Decimal("max-liquidity-fee", d),

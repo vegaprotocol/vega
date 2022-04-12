@@ -120,7 +120,7 @@ func (t Tx) Command() txn.Command {
 	case *commandspb.InputData_RestoreSnapshotSubmission:
 		return txn.CheckpointRestoreCommand
 	case *commandspb.InputData_KeyRotateSubmission:
-		return txn.KeyRotateSubmissionCommand
+		return txn.RotateKeySubmissionCommand
 	case *commandspb.InputData_StateVariableProposal:
 		return txn.StateVariableProposalCommand
 	case *commandspb.InputData_Transfer:
@@ -129,6 +129,8 @@ func (t Tx) Command() txn.Command {
 		return txn.CancelTransferFundsCommand
 	case *commandspb.InputData_ValidatorHeartbeat:
 		return txn.ValidatorHeartbeatCommand
+	case *commandspb.InputData_EthereumKeyRotateSubmission:
+		return txn.RotateEthereumKeySubmissionCommand
 	default:
 		panic("unsupported command")
 	}
@@ -196,6 +198,8 @@ func (t Tx) GetCmd() interface{} {
 		return cmd.CancelTransfer
 	case *commandspb.InputData_ValidatorHeartbeat:
 		return cmd.ValidatorHeartbeat
+	case *commandspb.InputData_EthereumKeyRotateSubmission:
+		return cmd.EthereumKeyRotateSubmission
 	default:
 		return errors.New("unsupported command")
 	}
@@ -335,6 +339,12 @@ func (t Tx) Unmarshal(i interface{}) error {
 			return errors.New("failed to unmarshal ValidatorHeartbeat")
 		}
 		*underlyingCmd = *cmd.ValidatorHeartbeat
+	case *commandspb.InputData_EthereumKeyRotateSubmission:
+		underlyingCmd, ok := i.(*commandspb.EthereumKeyRotateSubmission)
+		if !ok {
+			return errors.New("failed to unmarshal EthereumKeyRotateSubmission")
+		}
+		*underlyingCmd = *cmd.EthereumKeyRotateSubmission
 	default:
 		return errors.New("unsupported command")
 	}

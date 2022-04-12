@@ -22,7 +22,7 @@ func TestOrderBufferOutputCount(t *testing.T) {
 	closingAt := time.Unix(10000000000, 0)
 	tm := getTestMarket(t, now, closingAt, nil, nil)
 
-	addAccount(tm, party1)
+	addAccount(t, tm, party1)
 
 	orderBuy := &types.Order{
 		Type:        types.OrderTypeLimit,
@@ -121,7 +121,7 @@ func TestAmendCancelResubmit(t *testing.T) {
 	closingAt := time.Unix(10000000000, 0)
 	tm := getTestMarket(t, now, closingAt, nil, nil)
 
-	addAccount(tm, party1)
+	addAccount(t, tm, party1)
 
 	orderBuy := &types.Order{
 		Status:      types.OrderStatusActive,
@@ -173,8 +173,8 @@ func TestCancelWithWrongPartyID(t *testing.T) {
 	closingAt := time.Unix(10000000000, 0)
 	tm := getTestMarket(t, now, closingAt, nil, nil)
 
-	addAccount(tm, party1)
-	addAccount(tm, party2)
+	addAccount(t, tm, party1)
+	addAccount(t, tm, party2)
 
 	orderBuy := &types.Order{
 		Status:      types.OrderStatusActive,
@@ -216,10 +216,10 @@ func TestMarkPriceUpdateAfterPartialFill(t *testing.T) {
 		Duration: 1,
 	})
 
-	addAccount(tm, party1)
-	addAccount(tm, party2)
-	addAccount(tm, auxParty)
-	addAccount(tm, auxParty2)
+	addAccount(t, tm, party1)
+	addAccount(t, tm, party2)
+	addAccount(t, tm, auxParty)
+	addAccount(t, tm, auxParty2)
 
 	// Assure liquidity auction won't be triggered
 	tm.market.OnMarketLiquidityTargetStakeTriggeringRatio(context.Background(), num.DecimalFromFloat(0))
@@ -297,7 +297,7 @@ func TestExpireCancelGTCOrder(t *testing.T) {
 	closingAt := time.Unix(10000000000, 0)
 	tm := getTestMarket(t, now, closingAt, nil, nil)
 
-	addAccount(tm, party1)
+	addAccount(t, tm, party1)
 
 	orderBuy := &types.Order{
 		CreatedAt:   10000000000,
@@ -351,10 +351,10 @@ func TestAmendPartialFillCancelReplace(t *testing.T) {
 		Duration: 1,
 	})
 
-	addAccount(tm, party1)
-	addAccount(tm, party2)
-	addAccount(tm, auxParty)
-	addAccount(tm, auxParty2)
+	addAccount(t, tm, party1)
+	addAccount(t, tm, party2)
+	addAccount(t, tm, auxParty)
+	addAccount(t, tm, auxParty2)
 
 	// Assure liquidity auction won't be triggered
 	tm.market.OnMarketLiquidityTargetStakeTriggeringRatio(context.Background(), num.DecimalFromFloat(0))
@@ -440,8 +440,8 @@ func TestAmendWrongPartyID(t *testing.T) {
 	closingAt := time.Unix(10000000000, 0)
 	tm := getTestMarket(t, now, closingAt, nil, nil)
 
-	addAccount(tm, party1)
-	addAccount(tm, party2)
+	addAccount(t, tm, party1)
+	addAccount(t, tm, party2)
 
 	orderBuy := &types.Order{
 		Status:      types.OrderStatusActive,
@@ -484,10 +484,10 @@ func TestPartialFilledWashTrade(t *testing.T) {
 	})
 	ctx := vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
 
-	addAccount(tm, party1)
-	addAccount(tm, party2)
-	addAccount(tm, auxParty)
-	addAccount(tm, auxParty2)
+	addAccount(t, tm, party1)
+	addAccount(t, tm, party2)
+	addAccount(t, tm, auxParty)
+	addAccount(t, tm, auxParty2)
 
 	// Assure liquidity auction won't be triggered
 	tm.market.OnMarketLiquidityTargetStakeTriggeringRatio(context.Background(), num.DecimalFromFloat(0))
@@ -593,7 +593,8 @@ func getAmend(market string, orderID string, sizeDelta int64, price uint64, tif 
 }
 
 func amendOrder(t *testing.T, tm *testMarket, party string, orderID string, sizeDelta int64, price uint64,
-	tif types.OrderTimeInForce, expiresAt int64, pass bool) {
+	tif types.OrderTimeInForce, expiresAt int64, pass bool,
+) {
 	t.Helper()
 	amend := getAmend(tm.market.GetID(), orderID, sizeDelta, price, tif, expiresAt)
 
@@ -605,7 +606,8 @@ func amendOrder(t *testing.T, tm *testMarket, party string, orderID string, size
 }
 
 func getOrder(t *testing.T, tm *testMarket, now *time.Time, orderType types.OrderType, tif types.OrderTimeInForce,
-	expiresAt int64, side types.Side, party string, size uint64, price uint64) types.Order {
+	expiresAt int64, side types.Side, party string, size uint64, price uint64,
+) types.Order {
 	t.Helper()
 	order := types.Order{
 		Status:      types.OrderStatusActive,
@@ -628,7 +630,8 @@ func getOrder(t *testing.T, tm *testMarket, now *time.Time, orderType types.Orde
 }
 
 func sendOrder(t *testing.T, tm *testMarket, now *time.Time, orderType types.OrderType, tif types.OrderTimeInForce, expiresAt int64, side types.Side, party string,
-	size uint64, price uint64) string {
+	size uint64, price uint64,
+) string {
 	t.Helper()
 	order := &types.Order{
 		Status:      types.OrderStatusActive,
@@ -664,8 +667,8 @@ func TestAmendToFill(t *testing.T) {
 	closingAt := time.Unix(10000000000, 0)
 	tm := getTestMarket(t, now, closingAt, nil, nil)
 
-	addAccount(tm, "party1")
-	addAccount(tm, "party2")
+	addAccount(t, tm, "party1")
+	addAccount(t, tm, "party2")
 
 	// test_AmendMarketOrderFail
 	_ = sendOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideSell, "party1", 10, 100)      // 1 - a8
@@ -680,8 +683,8 @@ func TestAmendToLosePriorityThenCancel(t *testing.T) {
 	closingAt := time.Unix(10000000000, 0)
 	tm := getTestMarket(t, now, closingAt, nil, nil)
 
-	addAccount(tm, "party1")
-	addAccount(tm, "party2")
+	addAccount(t, tm, "party1")
+	addAccount(t, tm, "party2")
 
 	// Create 2 orders at the same level
 	order1 := sendOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideSell, "party1", 1, 100)
@@ -704,9 +707,9 @@ func TestUnableToAmendGFAGFN(t *testing.T) {
 	mainParty := "party1"
 	auxParty := "party2"
 	auxParty2 := "party22"
-	addAccount(tm, mainParty)
-	addAccount(tm, auxParty)
-	addAccount(tm, auxParty2)
+	addAccount(t, tm, mainParty)
+	addAccount(t, tm, auxParty)
+	addAccount(t, tm, auxParty2)
 
 	// Assure liquidity auction won't be triggered
 	tm.market.OnMarketLiquidityTargetStakeTriggeringRatio(context.Background(), num.DecimalFromFloat(0))
@@ -790,8 +793,8 @@ func testPeggedOrderRepriceCrashWhenNoLimitOrders(t *testing.T) {
 	tm := getTestMarket(t, now, closingAt, nil, nil)
 	ctx := vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
 
-	addAccount(tm, "party1")
-	addAccount(tm, "party2")
+	addAccount(t, tm, "party1")
+	addAccount(t, tm, "party2")
 
 	sendOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideSell, "party2", 5, 9000)
 
@@ -813,10 +816,10 @@ func testPeggedOrderUnpark(t *testing.T) {
 	ctx := vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
 
 	auxParty, auxParty2 := "auxParty", "auxParty2"
-	addAccount(tm, "party1")
-	addAccount(tm, "party2")
-	addAccount(tm, auxParty)
-	addAccount(tm, auxParty2)
+	addAccount(t, tm, "party1")
+	addAccount(t, tm, "party2")
+	addAccount(t, tm, auxParty)
+	addAccount(t, tm, auxParty2)
 
 	tm.market.OnMarketAuctionMinimumDurationUpdate(ctx, time.Second)
 	auxOrders := []*types.Order{
@@ -860,9 +863,9 @@ func testPeggedOrderAmendToMoveReference(t *testing.T) {
 	ctx := vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
 
 	auxParty, auxParty2 := "auxParty", "auxParty2"
-	addAccount(tm, "party1")
-	addAccount(tm, auxParty)
-	addAccount(tm, auxParty2)
+	addAccount(t, tm, "party1")
+	addAccount(t, tm, auxParty)
+	addAccount(t, tm, auxParty2)
 
 	tm.market.OnMarketAuctionMinimumDurationUpdate(ctx, time.Second)
 	auxOrders := []*types.Order{
@@ -905,10 +908,10 @@ func testPeggedOrderFilledOrder(t *testing.T) {
 	ctx := vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
 
 	auxParty, auxParty2 := "auxParty", "auxParty2"
-	addAccount(tm, "party1")
-	addAccount(tm, "party2")
-	addAccount(tm, auxParty)
-	addAccount(tm, auxParty2)
+	addAccount(t, tm, "party1")
+	addAccount(t, tm, "party2")
+	addAccount(t, tm, auxParty)
+	addAccount(t, tm, auxParty2)
 
 	tm.market.OnMarketAuctionMinimumDurationUpdate(ctx, time.Second)
 	auxOrders := []*types.Order{
@@ -953,10 +956,10 @@ func testParkedOrdersAreUnparkedWhenPossible(t *testing.T) {
 	ctx := vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
 
 	auxParty, auxParty2 := "auxParty", "auxParty2"
-	addAccount(tm, "party1")
-	addAccount(tm, "party2")
-	addAccount(tm, auxParty)
-	addAccount(tm, auxParty2)
+	addAccount(t, tm, "party1")
+	addAccount(t, tm, "party2")
+	addAccount(t, tm, auxParty)
+	addAccount(t, tm, auxParty2)
 
 	tm.market.OnMarketAuctionMinimumDurationUpdate(ctx, time.Second)
 	auxOrders := []*types.Order{
@@ -1004,9 +1007,9 @@ func testPeggedOrdersLeavingAuction(t *testing.T) {
 	})
 	ctx := vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
 
-	addAccount(tm, "party1")
-	addAccount(tm, "party2")
-	addAccount(tm, "party3")
+	addAccount(t, tm, "party1")
+	addAccount(t, tm, "party2")
+	addAccount(t, tm, "party3")
 
 	// Move into auction
 	tm.market.OnMarketAuctionMinimumDurationUpdate(ctx, 100*time.Second)
@@ -1045,11 +1048,11 @@ func testPeggedOrdersEnteringAuction(t *testing.T) {
 	ctx := vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
 
 	auxParty, auxParty2 := "auxParty", "auxParty2"
-	addAccount(tm, "party1")
-	addAccount(tm, "party2")
-	addAccount(tm, "party3")
-	addAccount(tm, auxParty)
-	addAccount(tm, auxParty2)
+	addAccount(t, tm, "party1")
+	addAccount(t, tm, "party2")
+	addAccount(t, tm, "party3")
+	addAccount(t, tm, auxParty)
+	addAccount(t, tm, auxParty2)
 
 	tm.market.OnMarketAuctionMinimumDurationUpdate(ctx, 100*time.Second)
 	// Place 2 orders to create valid reference prices
@@ -1080,7 +1083,7 @@ func testPeggedOrderAddWithNoMarketPrice(t *testing.T) {
 	tm := getTestMarket(t, now, closingAt, nil, nil)
 	ctx := vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
 
-	addAccount(tm, "party1")
+	addAccount(t, tm, "party1")
 
 	// Place a valid pegged order which will be parked
 	order := getOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideBuy, "party1", 10, 100)
@@ -1103,9 +1106,9 @@ func testPeggedOrderAdd(t *testing.T) {
 	ctx := vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
 
 	auxParty, auxParty2 := "auxParty", "auxParty2"
-	addAccount(tm, "party1")
-	addAccount(tm, auxParty)
-	addAccount(tm, auxParty2)
+	addAccount(t, tm, "party1")
+	addAccount(t, tm, auxParty)
+	addAccount(t, tm, auxParty2)
 
 	auxOrders := []*types.Order{
 		getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "alwaysOnBid", types.SideBuy, auxParty, 1, 1),
@@ -1150,9 +1153,9 @@ func testPeggedOrderWithReprice(t *testing.T) {
 	tm.market.OnMarketAuctionMinimumDurationUpdate(ctx, time.Second)
 
 	auxParty, auxParty2 := "auxParty", "auxParty2"
-	addAccount(tm, "party1")
-	addAccount(tm, auxParty)
-	addAccount(tm, auxParty2)
+	addAccount(t, tm, "party1")
+	addAccount(t, tm, auxParty)
+	addAccount(t, tm, auxParty2)
 
 	auxOrders := []*types.Order{
 		getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "alwaysOnBid", types.SideBuy, auxParty, 1, 1),
@@ -1195,7 +1198,7 @@ func testPeggedOrderParkWhenInAuction(t *testing.T) {
 	tm := getTestMarket(t, now, closingAt, nil, nil)
 	ctx := vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
 
-	addAccount(tm, "party1")
+	addAccount(t, tm, "party1")
 
 	// Move into auction
 	tm.mas.StartOpeningAuction(now, &types.AuctionDuration{Duration: 100})
@@ -1217,7 +1220,7 @@ func testPeggedOrderUnparkAfterLeavingAuction(t *testing.T) {
 	tm := getTestMarket(t, now, closingAt, nil, nil)
 	ctx := vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
 
-	addAccount(tm, "party1")
+	addAccount(t, tm, "party1")
 
 	// Move into auction
 	tm.mas.StartOpeningAuction(now, &types.AuctionDuration{Duration: 100})
@@ -1252,7 +1255,7 @@ func testPeggedOrderTypes(t *testing.T) {
 	closingAt := time.Unix(closeSec, 0)
 	tm := getTestMarket(t, now, closingAt, nil, nil)
 
-	addAccount(tm, "party1")
+	addAccount(t, tm, "party1")
 
 	// Pegged order must be a LIMIT order
 	order := getOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideBuy, "party1", 10, 100)
@@ -1274,7 +1277,7 @@ func testPeggedOrderCancelParked(t *testing.T) {
 	closingAt := time.Unix(closeSec, 0)
 	tm := getTestMarket(t, now, closingAt, nil, nil)
 
-	addAccount(tm, "party1")
+	addAccount(t, tm, "party1")
 
 	// Pegged order will be parked as no reference prices
 	order := getOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideBuy, "party1", 10, 100)
@@ -1290,7 +1293,7 @@ func testPeggedOrderTIFs(t *testing.T) {
 	closingAt := time.Unix(closeSec, 0)
 	tm := getTestMarket(t, now, closingAt, nil, nil)
 
-	addAccount(tm, "party1")
+	addAccount(t, tm, "party1")
 
 	// Pegged order must be a LIMIT order
 	order := getOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideBuy, "party1", 10, 100)
@@ -1330,7 +1333,7 @@ func testPeggedOrderBuys(t *testing.T) {
 	closingAt := time.Unix(closeSec, 0)
 	tm := getTestMarket(t, now, closingAt, nil, nil)
 
-	addAccount(tm, "party1")
+	addAccount(t, tm, "party1")
 
 	order := getOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideBuy, "party1", 10, 100)
 
@@ -1379,7 +1382,7 @@ func testPeggedOrderSells(t *testing.T) {
 	closingAt := time.Unix(closeSec, 0)
 	tm := getTestMarket(t, now, closingAt, nil, nil)
 
-	addAccount(tm, "party1")
+	addAccount(t, tm, "party1")
 
 	order := getOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideSell, "party1", 10, 100)
 
@@ -1430,7 +1433,7 @@ func testPeggedOrderParkWhenPriceBelowZero(t *testing.T) {
 	ctx := vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
 
 	for _, acc := range []string{"buyer", "seller", "pegged"} {
-		addAccount(tm, acc)
+		addAccount(t, tm, acc)
 	}
 
 	buy := getOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideBuy, "buyer", 10, 4)
@@ -1458,7 +1461,7 @@ func testPeggedOrderParkWhenPriceRepricesBelowZero(t *testing.T) {
 	ctx := vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
 
 	for _, acc := range []string{"buyer", "seller", "pegged"} {
-		addAccount(tm, acc)
+		addAccount(t, tm, acc)
 	}
 
 	buy := getOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideBuy, "buyer", 10, 4)
@@ -1526,7 +1529,7 @@ func testPeggedOrderParkCancelAll(t *testing.T) {
 	tm := getTestMarket(t, now, closingAt, nil, nil)
 	ctx := vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
 
-	addAccount(tm, "user")
+	addAccount(t, tm, "user")
 
 	// Send one normal order
 	limitOrder := sendOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideBuy, "user", 10, 100)
@@ -1561,7 +1564,7 @@ func testPeggedOrderExpiring2(t *testing.T) {
 	tm := getTestMarket(t, now, closingAt, nil, nil)
 	ctx := vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
 
-	addAccount(tm, "user")
+	addAccount(t, tm, "user")
 
 	// Send one normal expiring order
 	limitOrder := sendOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTT, expire.UnixNano(), types.SideBuy, "user", 10, 100)
@@ -1588,7 +1591,7 @@ func testPeggedOrderExpiring2(t *testing.T) {
 	assert.Equal(t, 2, tm.market.GetPeggedOrderCount())
 
 	// Move the time forward
-	orders, err := tm.market.RemoveExpiredOrders(context.Background(), afterexpire.UnixNano())
+	orders, err := tm.market.RemoveExpiredOrders(ctx, afterexpire.UnixNano())
 	require.NotNil(t, orders)
 	assert.NoError(t, err)
 
@@ -1606,16 +1609,16 @@ func testPeggedOrderOutputMessages(t *testing.T) {
 	})
 	ctx := vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
 
-	addAccount(tm, "user1")
-	addAccount(tm, "user2")
-	addAccount(tm, "user3")
-	addAccount(tm, "user4")
-	addAccount(tm, "user5")
-	addAccount(tm, "user6")
+	addAccount(t, tm, "user1")
+	addAccount(t, tm, "user2")
+	addAccount(t, tm, "user3")
+	addAccount(t, tm, "user4")
+	addAccount(t, tm, "user5")
+	addAccount(t, tm, "user6")
 	auxParty := "auxParty"
 	auxParty2 := "auxParty2"
-	addAccount(tm, auxParty)
-	addAccount(tm, auxParty2)
+	addAccount(t, tm, auxParty)
+	addAccount(t, tm, auxParty2)
 
 	// Assure liquidity auction won't be triggered
 	tm.market.OnMarketLiquidityTargetStakeTriggeringRatio(context.Background(), num.DecimalFromFloat(0))
@@ -1691,12 +1694,12 @@ func testPeggedOrderOutputMessages2(t *testing.T) {
 	})
 	ctx := vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
 
-	addAccount(tm, "user1")
-	addAccount(tm, "user2")
+	addAccount(t, tm, "user1")
+	addAccount(t, tm, "user2")
 	auxParty := "auxParty"
 	auxParty2 := "auxParty2"
-	addAccount(tm, auxParty)
-	addAccount(tm, auxParty2)
+	addAccount(t, tm, auxParty)
+	addAccount(t, tm, auxParty2)
 
 	// Assure liquidity auction won't be triggered
 	tm.market.OnMarketLiquidityTargetStakeTriggeringRatio(context.Background(), num.DecimalFromFloat(0))
@@ -1817,9 +1820,9 @@ func testPeggedOrderRepricing(t *testing.T) {
 			tm.market.OnMarketAuctionMinimumDurationUpdate(ctx, time.Second)
 
 			auxParty, auxParty2 := "auxParty", "auxParty2"
-			addAccount(tm, "party1")
-			addAccount(tm, auxParty)
-			addAccount(tm, auxParty2)
+			addAccount(t, tm, "party1")
+			addAccount(t, tm, auxParty)
+			addAccount(t, tm, auxParty2)
 
 			auxOrders := []*types.Order{
 				getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "alwaysOnBid", types.SideBuy, auxParty, 1, 1),
@@ -1861,7 +1864,7 @@ func testPeggedOrderExpiring(t *testing.T) {
 	closingAt := time.Unix(closeSec, 0)
 
 	tm := getTestMarket(t, now, closingAt, nil, nil)
-	addAccount(tm, "party")
+	addAccount(t, tm, "party")
 
 	// Create buy and sell orders
 	sendOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideBuy, "party", 1, 100)
@@ -1877,7 +1880,7 @@ func testPeggedOrderExpiring(t *testing.T) {
 		{"party-30", now.Add(30 * time.Minute)},
 	}
 	for _, test := range expirations {
-		addAccount(tm, test.party)
+		addAccount(t, tm, test.party)
 
 		order := getOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTT, 0, types.SideBuy, test.party, 10, 150)
 		order.PeggedOrder = newPeggedOrder(types.PeggedReferenceBestBid, 10)
@@ -1887,7 +1890,8 @@ func testPeggedOrderExpiring(t *testing.T) {
 	}
 	assert.Equal(t, len(expirations), tm.market.GetPeggedOrderCount())
 
-	orders, err := tm.market.RemoveExpiredOrders(context.Background(), now.Add(25*time.Minute).UnixNano())
+	ctx := vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
+	orders, err := tm.market.RemoveExpiredOrders(ctx, now.Add(25*time.Minute).UnixNano())
 	require.NoError(t, err)
 	assert.Equal(t, 2, len(orders))
 	assert.Equal(t, 1, tm.market.GetPeggedOrderCount(), "1 order should still be in the market")
@@ -1914,7 +1918,7 @@ func testPeggedOrderCanDeleteAfterLostPriority(t *testing.T) {
 	closingAt := time.Unix(closeSec, 0)
 	tm := getTestMarket(t, now, closingAt, nil, nil)
 
-	addAccount(tm, "party1")
+	addAccount(t, tm, "party1")
 
 	// Place trades so we have a valid BEST_BID
 	buyOrder1 := sendOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideBuy, "party1", 1, 100)
@@ -1955,9 +1959,9 @@ func testPeggedOrderAmendParkedToLive(t *testing.T) {
 	tm.market.OnMarketAuctionMinimumDurationUpdate(ctx, time.Second)
 
 	auxParty, auxParty2 := "auxParty", "auxParty2"
-	addAccount(tm, "party1")
-	addAccount(tm, auxParty)
-	addAccount(tm, auxParty2)
+	addAccount(t, tm, "party1")
+	addAccount(t, tm, auxParty)
+	addAccount(t, tm, auxParty2)
 
 	// Place 2 trades so we have a valid BEST_BID+MID+BEST_ASK price
 	buyOrder := sendOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideBuy, "party1", 10, 9)
@@ -2008,7 +2012,7 @@ func testPeggedOrderAmendParkedStayParked(t *testing.T) {
 	tm := getTestMarket(t, now, closingAt, nil, nil)
 	ctx := vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
 
-	addAccount(tm, "party1")
+	addAccount(t, tm, "party1")
 
 	// Place 2 trades so we have a valid BEST_BID+MID+BEST_ASK price
 	buyOrder := sendOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideBuy, "party1", 10, 9)
@@ -2045,7 +2049,7 @@ func testPeggedOrderAmendForcesPark(t *testing.T) {
 	tm := getTestMarket(t, now, closingAt, nil, nil)
 	ctx := vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
 
-	addAccount(tm, "party1")
+	addAccount(t, tm, "party1")
 
 	// Place 2 trades so we have a valid BEST_BID+MID+BEST_ASK price
 	buyOrder := sendOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideBuy, "party1", 10, 9)
@@ -2080,7 +2084,7 @@ func testPeggedOrderAmendDuringAuction(t *testing.T) {
 	tm := getTestMarket(t, now, closingAt, nil, nil)
 	ctx := vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
 
-	addAccount(tm, "party1")
+	addAccount(t, tm, "party1")
 
 	tm.mas.StartPriceAuction(now, &types.AuctionDuration{
 		Duration: closeSec / 10, // some time in the future, before closing
@@ -2123,9 +2127,9 @@ func testPeggedOrderAmendReference(t *testing.T) {
 	tm.market.OnMarketAuctionMinimumDurationUpdate(ctx, time.Second)
 
 	auxParty, auxParty2 := "auxParty", "auxParty2"
-	addAccount(tm, "party1")
-	addAccount(tm, auxParty)
-	addAccount(tm, auxParty2)
+	addAccount(t, tm, "party1")
+	addAccount(t, tm, auxParty)
+	addAccount(t, tm, auxParty2)
 
 	auxOrders := []*types.Order{
 		getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "aux1", types.SideSell, auxParty, 1, 10),
@@ -2172,7 +2176,7 @@ func testPeggedOrderAmendReferenceInAuction(t *testing.T) {
 	tm := getTestMarket(t, now, closingAt, nil, nil)
 	ctx := vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
 
-	addAccount(tm, "party1")
+	addAccount(t, tm, "party1")
 
 	tm.mas.StartPriceAuction(now, &types.AuctionDuration{
 		Duration: closeSec / 10, // some time in the future, before closing
@@ -2212,7 +2216,7 @@ func testPeggedOrderAmendMultipleInAuction(t *testing.T) {
 	tm := getTestMarket(t, now, closingAt, nil, nil)
 	ctx := vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
 
-	addAccount(tm, "party1")
+	addAccount(t, tm, "party1")
 
 	tm.mas.StartPriceAuction(now, &types.AuctionDuration{
 		Duration: closeSec / 10, // some time in the future, before closing
@@ -2260,9 +2264,9 @@ func testPeggedOrderAmendMultiple(t *testing.T) {
 	tm.market.OnMarketAuctionMinimumDurationUpdate(ctx, time.Second)
 
 	auxParty, auxParty2 := "auxParty", "auxParty2"
-	addAccount(tm, "party1")
-	addAccount(tm, auxParty)
-	addAccount(tm, auxParty2)
+	addAccount(t, tm, "party1")
+	addAccount(t, tm, auxParty)
+	addAccount(t, tm, auxParty2)
 
 	auxOrders := []*types.Order{
 		getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "aux1", types.SideSell, auxParty, 1, 10),
@@ -2318,9 +2322,9 @@ func testPeggedOrderMidPriceCalc(t *testing.T) {
 	tm.market.OnMarketAuctionMinimumDurationUpdate(ctx, time.Second)
 
 	auxParty, auxParty2 := "auxParty", "auxParty2"
-	addAccount(tm, "party1")
-	addAccount(tm, auxParty)
-	addAccount(tm, auxParty2)
+	addAccount(t, tm, "party1")
+	addAccount(t, tm, auxParty)
+	addAccount(t, tm, auxParty2)
 
 	// Place 2 trades so we have a valid BEST_BID+MID+BEST_ASK price
 	buyOrder := sendOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideBuy, "party1", 1, 90)
@@ -2370,12 +2374,12 @@ func TestPeggedOrderUnparkAfterLeavingAuctionWithNoFunds2772(t *testing.T) {
 	tm := getTestMarket(t, now, closingAt, nil, nil)
 	ctx := vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
 
-	addAccount(tm, "party1")
-	addAccount(tm, "party2")
-	addAccount(tm, "party3")
-	addAccount(tm, "party4")
+	addAccount(t, tm, "party1")
+	addAccount(t, tm, "party2")
+	addAccount(t, tm, "party3")
+	addAccount(t, tm, "party4")
 	auxParty := "auxParty"
-	addAccount(tm, auxParty)
+	addAccount(t, tm, auxParty)
 
 	// Assure liquidity auction won't be triggered
 	tm.market.OnMarketLiquidityTargetStakeTriggeringRatio(context.Background(), num.DecimalFromFloat(0))
@@ -2438,7 +2442,7 @@ func TestOrderBookSimple_CancelGTTOrderThenRunExpiration(t *testing.T) {
 	ctx := vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
 	defer tm.ctrl.Finish()
 
-	addAccount(tm, "aaa")
+	addAccount(t, tm, "aaa")
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
 	o1 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTT, "Order01", types.SideBuy, "aaa", 10, 100)
@@ -2452,7 +2456,7 @@ func TestOrderBookSimple_CancelGTTOrderThenRunExpiration(t *testing.T) {
 	require.NotNil(t, cncl)
 	assert.Equal(t, 0, tm.market.GetPeggedExpiryOrderCount())
 
-	orders, err := tm.market.RemoveExpiredOrders(context.Background(), now.Add(10*time.Second).UnixNano())
+	orders, err := tm.market.RemoveExpiredOrders(ctx, now.Add(10*time.Second).UnixNano())
 	require.NoError(t, err)
 	require.Len(t, orders, 0)
 	assert.Equal(t, 0, tm.market.GetPeggedExpiryOrderCount())
@@ -2465,7 +2469,7 @@ func TestGTTExpiredNotFilled(t *testing.T) {
 	ctx := vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
 	defer tm.ctrl.Finish()
 
-	addAccount(tm, "aaa")
+	addAccount(t, tm, "aaa")
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
 	o1 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTT, "Order01", types.SideSell, "aaa", 10, 100)
@@ -2475,7 +2479,7 @@ func TestGTTExpiredNotFilled(t *testing.T) {
 	require.NotNil(t, o1conf)
 
 	// then remove expired, set 1 sec after order exp time.
-	orders, err := tm.market.RemoveExpiredOrders(context.Background(), now.Add(10*time.Second).UnixNano())
+	orders, err := tm.market.RemoveExpiredOrders(ctx, now.Add(10*time.Second).UnixNano())
 	assert.NoError(t, err)
 	assert.Len(t, orders, 1)
 	assert.Equal(t, types.OrderStatusExpired, orders[0].Status)
@@ -2493,8 +2497,8 @@ func TestGTTExpiredPartiallyFilled(t *testing.T) {
 	tm.market.OnMarketAuctionMinimumDurationUpdate(ctx, time.Second)
 
 	auxParty, auxParty2 := "auxParty", "auxParty2"
-	addAccount(tm, auxParty)
-	addAccount(tm, auxParty2)
+	addAccount(t, tm, auxParty)
+	addAccount(t, tm, auxParty2)
 
 	auxOrders := []*types.Order{
 		getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "alwaysOnAsk", types.SideSell, auxParty, 1, 1000000),
@@ -2510,8 +2514,8 @@ func TestGTTExpiredPartiallyFilled(t *testing.T) {
 	// leave auction
 	now = now.Add(2 * time.Second)
 	tm.market.OnChainTimeUpdate(ctx, now)
-	addAccount(tm, "aaa")
-	addAccount(tm, "bbb")
+	addAccount(t, tm, "aaa")
+	addAccount(t, tm, "bbb")
 
 	// We probably don't need these orders anymore, but they don't do any harm
 	// Assure liquidity auction won't be triggered
@@ -2543,7 +2547,7 @@ func TestGTTExpiredPartiallyFilled(t *testing.T) {
 	require.NotNil(t, o2conf)
 
 	// then remove expired, set 1 sec after order exp time.
-	orders, err := tm.market.RemoveExpiredOrders(context.Background(), now.Add(10*time.Second).UnixNano())
+	orders, err := tm.market.RemoveExpiredOrders(ctx, now.Add(10*time.Second).UnixNano())
 	assert.NoError(t, err)
 	assert.Len(t, orders, 1)
 	assert.Equal(t, types.OrderStatusExpired, orders[0].Status)
@@ -2557,7 +2561,7 @@ func TestOrderBook_RemoveExpiredOrders(t *testing.T) {
 	ctx := vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
 	defer tm.ctrl.Finish()
 
-	addAccount(tm, "aaa")
+	addAccount(t, tm, "aaa")
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
 	someTimeLater := now.Add(100 * time.Second)
@@ -2619,7 +2623,7 @@ func TestOrderBook_RemoveExpiredOrders(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, o10conf)
 
-	expired, err := tm.market.RemoveExpiredOrders(context.Background(), someTimeLater.UnixNano())
+	expired, err := tm.market.RemoveExpiredOrders(ctx, someTimeLater.UnixNano())
 	assert.NoError(t, err)
 	assert.Len(t, expired, 5)
 }
@@ -2845,11 +2849,11 @@ func TestMissingLP(t *testing.T) {
 	})
 	ctx := vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
 
-	addAccount(tm, party1)
-	addAccount(tm, party2)
-	addAccount(tm, party3)
-	addAccount(tm, auxParty)
-	addAccount(tm, auxParty2)
+	addAccount(t, tm, party1)
+	addAccount(t, tm, party2)
+	addAccount(t, tm, party3)
+	addAccount(t, tm, auxParty)
+	addAccount(t, tm, auxParty2)
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
 	// Assure liquidity auction won't be triggered

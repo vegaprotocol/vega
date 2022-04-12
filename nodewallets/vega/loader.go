@@ -50,7 +50,7 @@ func (l *WalletLoader) Generate(passphrase string) (*Wallet, map[string]string, 
 		return nil, nil, err
 	}
 
-	w, err := newWallet(store, walletName, passphrase)
+	w, err := newWallet(l, store, l.walletHome, walletName, passphrase)
 	if err != nil {
 		return nil, nil, fmt.Errorf("couldn't create wallet: %w", err)
 	}
@@ -63,7 +63,7 @@ func (l *WalletLoader) Load(walletName, passphrase string) (*Wallet, error) {
 		return nil, err
 	}
 
-	return newWallet(store, walletName, passphrase)
+	return newWallet(l, store, l.walletHome, walletName, passphrase)
 }
 
 func (l *WalletLoader) Import(sourceFilePath string, passphrase string) (*Wallet, map[string]string, error) {
@@ -91,7 +91,7 @@ func (l *WalletLoader) Import(sourceFilePath string, passphrase string) (*Wallet
 		return nil, nil, fmt.Errorf("couldn't save the wallet %s: %w", destWalletName, err)
 	}
 
-	destWallet, err := newWallet(destStore, destWalletName, passphrase)
+	destWallet, err := newWallet(l, destStore, l.walletHome, destWalletName, passphrase)
 	if err != nil {
 		return nil, nil, fmt.Errorf("couldn't create wallet: %w", err)
 	}
@@ -103,7 +103,7 @@ func (l *WalletLoader) Import(sourceFilePath string, passphrase string) (*Wallet
 	return destWallet, data, nil
 }
 
-func newWallet(store *storev1.Store, walletName, passphrase string) (*Wallet, error) {
+func newWallet(loader loader, store *storev1.Store, walletHome, walletName, passphrase string) (*Wallet, error) {
 	w, err := store.GetWallet(walletName, passphrase)
 	if err != nil {
 		return nil, fmt.Errorf("could not get wallet `%s`: %w", walletName, err)
@@ -130,10 +130,11 @@ func newWallet(store *storev1.Store, walletName, passphrase string) (*Wallet, er
 	}
 
 	return &Wallet{
-		walletName: walletName,
-		keyPair:    keyPair,
-		pubKey:     pubKey,
-		walletID:   walletID,
+		loader:   loader,
+		name:     walletName,
+		keyPair:  keyPair,
+		pubKey:   pubKey,
+		walletID: walletID,
 	}, nil
 }
 

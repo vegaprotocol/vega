@@ -111,7 +111,7 @@ type Engine struct {
 // order in which snapshots are to be restored.
 var nodeOrder = []types.SnapshotNamespace{
 	types.AppSnapshot,
-	types.AssetsSnapshot,
+	types.AssetsSnapshot,  // needs to happen before banking
 	types.WitnessSnapshot, // needs to happen before banking and governance
 	types.GovernanceSnapshot,
 	types.BankingSnapshot,
@@ -264,6 +264,7 @@ func (e *Engine) populateLocalVersions(versions []int) {
 	if len(versions) == 0 {
 		versions = e.avl.AvailableVersions()
 	}
+
 	vc := cap(e.versions)
 	for _, v := range versions {
 		if len(e.versions) >= vc {
@@ -301,16 +302,17 @@ func (e *Engine) CheckLoaded() (bool, error) {
 		return false, nil
 	}
 
+	e.initialiseTree()
+	versions := e.avl.AvailableVersions()
+	e.populateLocalVersions(versions)
+
 	e.log.Info("loading snapshot for height", logging.Int64("height", startHeight))
 	// setup AVL tree from local store
-	e.initialiseTree()
 	if startHeight < 0 {
 		return true, e.applySnapshotFromLocalStore(e.ctx)
 	}
 
 	height := uint64(startHeight)
-	versions := e.avl.AvailableVersions()
-	e.populateLocalVersions(versions)
 	// descending order, because that makes most sense
 	var last, first uint64
 	for i := len(versions) - 1; i > -1; i-- {
@@ -463,7 +465,7 @@ func (e *Engine) applySnap(ctx context.Context) error {
 	e.avl.SetInitialVersion(uint64(version))
 	// now let's clear the versions slice and pretend the more recent versions don't exist yet
 	for i := 0; i < len(e.versions); i++ {
-		if e.versions[i] >= loaded {
+		if e.versions[i] > loaded {
 			e.versions = append(e.versions[0:0], e.versions[:i]...)
 			break
 		}
@@ -567,7 +569,7 @@ func (e *Engine) ApplySnapshotChunk(chunk *types.RawChunk) (bool, error) {
 }
 
 func (e *Engine) LoadSnapshotChunk(height uint64, format, chunk uint32) (*types.RawChunk, error) {
-	if e.snapshot == nil {
+	if e.snapshot == nil || height != e.snapshot.Height {
 		if err := e.setSnapshotForHeight(height); err != nil {
 			return nil, err
 		}

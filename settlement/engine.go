@@ -9,6 +9,7 @@ import (
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/metrics"
+	"code.vegaprotocol.io/vega/products"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
 )
@@ -29,7 +30,7 @@ type MarketPosition interface {
 // Product ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/settlement_product_mock.go -package mocks code.vegaprotocol.io/vega/settlement Product
 type Product interface {
-	Settle(entryPrice *num.Uint, netFractionalPosition num.Decimal) (amt *types.FinancialAmount, neg bool, err error)
+	Settle(entryPrice *num.Uint, assetDecimals uint32, netFractionalPosition num.Decimal) (amt *types.FinancialAmount, neg bool, err error)
 	GetAsset() string
 	SettlementPrice() (*num.Uint, error)
 }
@@ -77,6 +78,10 @@ func New(log *logging.Logger, conf Config, product Product, market string, broke
 	}
 }
 
+func (e *Engine) UpdateProduct(product products.Product) {
+	e.product = product
+}
+
 // ReloadConf update the internal configuration of the settlement engined.
 func (e *Engine) ReloadConf(cfg Config) {
 	e.log.Info("reloading configuration")
@@ -109,9 +114,9 @@ func (e *Engine) Update(positions []events.MarketPosition) {
 }
 
 // Settle run settlement over all the positions.
-func (e *Engine) Settle(t time.Time) ([]*types.Transfer, error) {
+func (e *Engine) Settle(t time.Time, assetDecimals uint32) ([]*types.Transfer, error) {
 	e.log.Debugf("Settling market, closed at %s", t.Format(time.RFC3339))
-	positions, err := e.settleAll()
+	positions, err := e.settleAll(assetDecimals)
 	if err != nil {
 		e.log.Error(
 			"Something went wrong trying to settle positions",
@@ -188,6 +193,23 @@ func (e *Engine) getMtmTransfer(mtmShare *num.Uint, neg bool, mpos events.Market
 	}
 }
 
+func (e *Engine) winSocialisationUpdate(transfer *mtmTransfer, amt *num.Uint) {
+	if amt.IsZero() {
+		return
+	}
+	if transfer.transfer == nil {
+		transfer.transfer = &types.Transfer{
+			Type:  types.TransferTypeMTMWin,
+			Owner: transfer.Party(),
+			Amount: &types.FinancialAmount{
+				Amount: num.Zero(),
+				Asset:  e.product.GetAsset(),
+			},
+		}
+	}
+	transfer.transfer.Amount.Amount.AddSum(amt)
+}
+
 func (e *Engine) SettleMTM(ctx context.Context, markPrice *num.Uint, positions []events.MarketPosition) []events.Transfer {
 	timer := metrics.NewTimeCounter("-", "settlement", "SettleOrder")
 	e.mu.Lock()
@@ -198,13 +220,23 @@ func (e *Engine) SettleMTM(ctx context.Context, markPrice *num.Uint, positions [
 	trades := e.trades
 	e.trades = map[string][]*pos{} // remove here, once we've processed it all here, we're done
 	evts := make([]events.Event, 0, len(positions))
+	var (
+		largestShare *mtmTransfer       // pointer to whomever gets the last remaining amount from the loss
+		zeroShares   = []*mtmTransfer{} // all zero shares for equal distribution if possible
+		zeroAmts     = false
+		mtmDec       = num.NewDecimalFromFloat(0)
+		lossTotal    = num.Zero()
+		winTotal     = num.Zero()
+		lossTotalDec = num.NewDecimalFromFloat(0)
+		winTotalDec  = num.NewDecimalFromFloat(0)
+	)
 
 	// Process any network trades first
 	traded, hasTraded := trades[types.NetworkParty]
 	if hasTraded {
 		// don't create an event for the network. Its position is irrelevant
 
-		mtmShare, neg := calcMTM(markPrice, markPrice, 0, traded, e.positionFactor)
+		mtmShare, mtmDShare, neg := calcMTM(markPrice, markPrice, 0, traded, e.positionFactor)
 		// MarketPosition stub for network
 		netMPos := &npos{
 			price: markPrice.Clone(),
@@ -212,10 +244,27 @@ func (e *Engine) SettleMTM(ctx context.Context, markPrice *num.Uint, positions [
 
 		mtmTransfer := e.getMtmTransfer(mtmShare.Clone(), neg, netMPos, types.NetworkParty)
 
-		if mtmShare.IsZero() || !neg {
+		if !neg {
 			wins = append(wins, mtmTransfer)
+			winTotal.AddSum(mtmShare)
+			winTotalDec = winTotalDec.Add(mtmDShare)
+			mtmDec = mtmDShare
+			largestShare = mtmTransfer
+			// mtmDec is zero at this point, this will always be the largest winning party at this point
+			if mtmShare.IsZero() {
+				zeroShares = append(zeroShares, mtmTransfer)
+				zeroAmts = true
+			}
+		} else if mtmShare.IsZero() {
+			// This would be a zero-value loss, so not sure why this would be at the end of the slice
+			// shouldn't really matter if this is in the wins or losses part of the slice, but
+			// this was the previous behaviour, so let's keep it
+			wins = append(wins, mtmTransfer)
+			lossTotalDec = lossTotalDec.Add(mtmDShare)
 		} else {
 			transfers = append(transfers, mtmTransfer)
+			lossTotal.AddSum(mtmShare)
+			lossTotalDec = lossTotalDec.Add(mtmDShare)
 		}
 	}
 
@@ -241,7 +290,7 @@ func (e *Engine) SettleMTM(ctx context.Context, markPrice *num.Uint, positions [
 		// and the old mark price at which the party held the position
 		// the trades slice contains all trade positions (position changes for the party)
 		// at their exact trade price, so we can MTM that volume correctly, too
-		mtmShare, neg := calcMTM(markPrice, current.price, current.size, traded, e.positionFactor)
+		mtmShare, mtmDShare, neg := calcMTM(markPrice, current.price, current.size, traded, e.positionFactor)
 		// we've marked this party to market, their position can now reflect this
 		_ = current.update(evt)
 		current.price = markPrice
@@ -254,16 +303,63 @@ func (e *Engine) SettleMTM(ctx context.Context, markPrice *num.Uint, positions [
 
 		mtmTransfer := e.getMtmTransfer(mtmShare.Clone(), neg, current, current.Party())
 
-		if mtmShare.IsZero() || !neg {
+		if !neg {
 			wins = append(wins, mtmTransfer)
+			winTotal.AddSum(mtmShare)
+			winTotalDec = winTotalDec.Add(mtmDShare)
+			if mtmShare.IsZero() {
+				zeroShares = append(zeroShares, mtmTransfer)
+				zeroAmts = true
+			}
+			if mtmDShare.GreaterThan(mtmDec) {
+				mtmDec = mtmDShare
+				largestShare = mtmTransfer
+			}
+		} else if mtmShare.IsZero() {
+			// zero value loss
+			wins = append(wins, mtmTransfer)
+			lossTotalDec = lossTotalDec.Add(mtmDShare)
 		} else {
 			transfers = append(transfers, mtmTransfer)
+			lossTotal.AddSum(mtmShare)
+			lossTotalDec = lossTotalDec.Add(mtmDShare)
 		}
+	}
+	// no need for this lock anymore
+	e.mu.Unlock()
+	delta := num.Zero().Sub(lossTotal, winTotal)
+	if !delta.IsZero() {
+		if zeroAmts {
+			// there are more transfers from losses than we pay out to wins, but some winning parties have zero transfers
+			// this delta should == combined win decimals, let's sanity check this!
+			if winTotalDec.LessThan(lossTotalDec) {
+				e.log.Panic("There's less MTM wins than losses, even accounting for decimals",
+					logging.Decimal("total loss", lossTotalDec),
+					logging.Decimal("total wins", winTotalDec),
+				)
+			}
+			// parties with a zero win transfer should get AT MOST a transfer of value 1
+			// any remainder after that should go to the largest win share, unless we only have parties
+			// with a win share of 0. that shouldn't be possible however, and so we can ignore that case
+			// should this happen at any point, the collateral engine will panic on settlement balance > 0
+			// which is the correct behaviour
+
+			// start distributing the delta
+			one := num.NewUint(1)
+			for _, transfer := range zeroShares {
+				e.winSocialisationUpdate(transfer, one)
+				delta.Sub(delta, one)
+				if delta.IsZero() {
+					break // all done
+				}
+			}
+		}
+		// delta is whatever amount the largest share win party gets, this shouldn't be too much
+		// delta can be zero at this stage, which is fine
+		e.winSocialisationUpdate(largestShare, delta)
 	}
 	// append wins after loss transfers
 	transfers = append(transfers, wins...)
-	// whatever was added to the buffer is now ready to be flushed
-	e.mu.Unlock()
 	e.broker.SendBatch(evts)
 	timer.EngineTimeCounterAdd()
 	return transfers
@@ -286,10 +382,8 @@ func (e *Engine) RemoveDistressed(ctx context.Context, evts []events.Margin) {
 }
 
 // simplified settle call.
-func (e *Engine) settleAll() ([]*types.Transfer, error) {
+func (e *Engine) settleAll(assetDecimals uint32) ([]*types.Transfer, error) {
 	e.mu.Lock()
-
-	settleProd := e.product
 
 	// there should be as many positions as there are parties (obviously)
 	aggregated := make([]*types.Transfer, 0, len(e.pos))
@@ -312,7 +406,7 @@ func (e *Engine) settleAll() ([]*types.Transfer, error) {
 		e.log.Debug("Settling position for party", logging.String("party-id", party))
 		// @TODO - there was something here... the final amount had to be oracle - market or something
 		// check with Tamlyn why that was, because we're only handling open positions here...
-		amt, neg, err := settleProd.Settle(pos.price, num.DecimalFromInt64(pos.size).Div(e.positionFactor))
+		amt, neg, err := e.product.Settle(pos.price, assetDecimals, num.DecimalFromInt64(pos.size).Div(e.positionFactor))
 		// for now, product.Settle returns the total value, we need to only settle the delta between a parties current position
 		// and the final price coming from the oracle, so oracle_price - mark_price * volume (check with Tamlyn whether this should be absolute or not)
 		if err != nil {
@@ -383,7 +477,7 @@ func (e *Engine) transferCap(evts []events.MarketPosition) int {
 // amount =  prev_vol * (current_price - prev_mark_price) + SUM(new_trade := range trades)( new_trade(i).volume(party)*(current_price - new_trade(i).price )
 // given that the new trades price will equal new mark price,  the sum(trades) bit will probably == 0 for nicenet
 // the size here is the _new_ position size, the price is the OLD price!!
-func calcMTM(markPrice, price *num.Uint, size int64, trades []*pos, positionFactor num.Decimal) (*num.Uint, bool) {
+func calcMTM(markPrice, price *num.Uint, size int64, trades []*pos, positionFactor num.Decimal) (*num.Uint, num.Decimal, bool) {
 	delta, sign := num.Zero().Delta(markPrice, price)
 	// this shouldn't be possible I don't think, but just in case
 	if size < 0 {
@@ -418,6 +512,7 @@ func calcMTM(markPrice, price *num.Uint, size int64, trades []*pos, positionFact
 	}
 
 	// as mtmShare was calculated with the volumes as integers (not decimals in pdp space) we need to divide by position factor
-	res, _ := num.UintFromDecimal(mtmShare.ToDecimal().Div(positionFactor))
-	return res, sign
+	decShare := mtmShare.ToDecimal().Div(positionFactor)
+	res, _ := num.UintFromDecimal(decShare)
+	return res, decShare, sign
 }

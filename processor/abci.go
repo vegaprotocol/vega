@@ -238,9 +238,10 @@ func NewApp(
 		HandleCheckTx(txn.NodeVoteCommand, app.RequireValidatorPubKey).
 		HandleCheckTx(txn.ChainEventCommand, app.RequireValidatorPubKey).
 		HandleCheckTx(txn.SubmitOracleDataCommand, app.CheckSubmitOracleData).
-		HandleCheckTx(txn.KeyRotateSubmissionCommand, app.RequireValidatorMasterPubKey).
+		HandleCheckTx(txn.RotateKeySubmissionCommand, app.RequireValidatorMasterPubKey).
 		HandleCheckTx(txn.StateVariableProposalCommand, app.RequireValidatorPubKey).
-		HandleCheckTx(txn.ValidatorHeartbeatCommand, app.RequireValidatorPubKey)
+		HandleCheckTx(txn.ValidatorHeartbeatCommand, app.RequireValidatorPubKey).
+		HandleCheckTx(txn.RotateEthereumKeySubmissionCommand, app.RequireValidatorPubKey)
 
 	app.abci.
 		HandleDeliverTx(txn.AnnounceNodeCommand,
@@ -282,10 +283,12 @@ func NewApp(
 			app.SendEventOnError(app.DeliverUndelegate)).
 		HandleDeliverTx(txn.CheckpointRestoreCommand,
 			app.SendEventOnError(app.DeliverReloadCheckpoint)).
-		HandleDeliverTx(txn.KeyRotateSubmissionCommand,
+		HandleDeliverTx(txn.RotateKeySubmissionCommand,
 			app.RequireValidatorMasterPubKeyW(app.DeliverKeyRotateSubmission)).
 		HandleDeliverTx(txn.StateVariableProposalCommand,
-			app.RequireValidatorPubKeyW(app.DeliverStateVarProposal))
+			app.RequireValidatorPubKeyW(app.DeliverStateVarProposal)).
+		HandleDeliverTx(txn.RotateEthereumKeySubmissionCommand,
+			app.RequireValidatorPubKeyW(app.DeliverEthereumKeyRotateSubmission))
 
 	app.time.NotifyOnTick(app.onTick)
 
@@ -558,6 +561,9 @@ func (app *App) OnEndBlock(req tmtypes.RequestEndBlock) (ctx context.Context, re
 	)
 
 	app.epoch.OnBlockEnd(ctx)
+	if app.pow != nil {
+		app.pow.EndOfBlock()
+	}
 
 	if app.spam != nil {
 		app.spam.EndOfBlock(uint64(req.Height))
@@ -1074,7 +1080,8 @@ func (app *App) DeliverAmendOrder(ctx context.Context, tx abci.Tx, deterministic
 }
 
 func (app *App) DeliverWithdraw(
-	ctx context.Context, tx abci.Tx, id string) error {
+	ctx context.Context, tx abci.Tx, id string,
+) error {
 	w := &commandspb.WithdrawSubmission{}
 	if err := tx.Unmarshal(w); err != nil {
 		return err
@@ -1258,7 +1265,9 @@ func (app *App) DeliverNodeVote(ctx context.Context, tx abci.Tx) error {
 		return err
 	}
 
-	return app.witness.AddNodeCheck(ctx, vote)
+	pubKey := crypto.NewPublicKey(tx.PubKeyHex(), tx.PubKey())
+
+	return app.witness.AddNodeCheck(ctx, vote, pubKey)
 }
 
 func (app *App) DeliverChainEvent(ctx context.Context, tx abci.Tx, id string) error {
@@ -1336,14 +1345,14 @@ func (app *App) onTick(ctx context.Context, t time.Time) {
 		case toEnact.IsNewAsset():
 			app.enactAsset(ctx, prop, toEnact.NewAsset())
 		case toEnact.IsUpdateMarket():
-			app.log.Error("update market enactment is not implemented")
+			app.enactUpdateMarket(ctx, prop, toEnact.UpdateMarket())
 		case toEnact.IsUpdateNetworkParameter():
 			app.enactNetworkParameterUpdate(ctx, prop, toEnact.UpdateNetworkParameter())
 		case toEnact.IsFreeform():
 			app.enactFreeform(ctx, prop)
 		default:
-			prop.State = types.ProposalStateFailed
 			app.log.Error("unknown proposal cannot be enacted", logging.ProposalID(prop.ID))
+			prop.FailUnexpectedly(fmt.Errorf("unknown proposal \"%s\" cannot be enacted", prop.ID))
 		}
 
 		app.gov.FinaliseEnactment(ctx, prop)
@@ -1359,7 +1368,7 @@ func (app *App) enactAsset(ctx context.Context, prop *types.Proposal, _ *types.A
 		app.log.Error("invalid asset is getting enacted",
 			logging.String("asset-id", prop.ID),
 			logging.Error(err))
-		prop.State = types.ProposalStateFailed
+		prop.FailUnexpectedly(err)
 		return
 	}
 
@@ -1372,7 +1381,7 @@ func (app *App) enactAsset(ctx context.Context, prop *types.Proposal, _ *types.A
 			app.log.Error("unable to get builtin asset enabled",
 				logging.String("asset-id", prop.ID),
 				logging.Error(err))
-			prop.State = types.ProposalStateFailed
+			prop.FailUnexpectedly(err)
 		}
 		return
 	}
@@ -1412,7 +1421,7 @@ func (app *App) enactFreeform(_ context.Context, prop *types.Proposal) {
 func (app *App) enactNetworkParameterUpdate(ctx context.Context, prop *types.Proposal, np *types.NetworkParameter) {
 	prop.State = types.ProposalStateEnacted
 	if err := app.netp.Update(ctx, np.Key, np.Value); err != nil {
-		prop.State = types.ProposalStateFailed
+		prop.FailUnexpectedly(err)
 		app.log.Error("failed to update network parameters",
 			logging.ProposalID(prop.ID),
 			logging.Error(err))
@@ -1560,4 +1569,35 @@ func (app *App) DeliverStateVarProposal(ctx context.Context, tx abci.Tx) error {
 		return err
 	}
 	return app.stateVar.ProposedValueReceived(ctx, stateVarID, node, eventID, bundle)
+}
+
+func (app *App) enactUpdateMarket(ctx context.Context, prop *types.Proposal, market *types.Market) {
+	if err := app.exec.UpdateMarket(ctx, market); err != nil {
+		prop.FailUnexpectedly(err)
+		app.log.Error("failed to update market",
+			logging.ProposalID(prop.ID),
+			logging.Error(err))
+		return
+	}
+	prop.State = types.ProposalStateEnacted
+}
+
+func (app *App) DeliverEthereumKeyRotateSubmission(ctx context.Context, tx abci.Tx) error {
+	if app.reloadCP {
+		app.log.Debug("Skipping transaction while waiting for checkpoint restore")
+		return nil
+	}
+	kr := &commandspb.EthereumKeyRotateSubmission{}
+	if err := tx.Unmarshal(kr); err != nil {
+		return err
+	}
+
+	currentBlockHeight, _ := vgcontext.BlockHeightFromContext(ctx)
+
+	return app.top.RotateEthereumKey(
+		ctx,
+		tx.PubKeyHex(),
+		uint64(currentBlockHeight),
+		kr,
+	)
 }

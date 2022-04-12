@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
+	vgcrypto "code.vegaprotocol.io/shared/libs/crypto"
 	vgjson "code.vegaprotocol.io/shared/libs/json"
 	"code.vegaprotocol.io/shared/paths"
 	"code.vegaprotocol.io/vega/config"
@@ -81,14 +82,25 @@ func (opts *AnnounceNodeCmd) Execute(args []string) error {
 
 	// now we are OK, send the command
 
-	commander, cfunc, err := getNodeWalletCommander(log, registryPass, vegaPaths)
+	commander, blockData, cfunc, err := getNodeWalletCommander(log, registryPass, vegaPaths)
 	if err != nil {
 		return fmt.Errorf("failed to get commander: %w", err)
 	}
 	defer cfunc()
 
+	tid := vgcrypto.RandomHash()
+	powNonce, _, err := vgcrypto.PoW(blockData.Hash, tid, uint(blockData.SpamPowDifficulty), vgcrypto.Sha3)
+	if err != nil {
+		return fmt.Errorf("failed to get commander: %w", err)
+	}
+
+	pow := &commandspb.ProofOfWork{
+		Tid:   tid,
+		Nonce: powNonce,
+	}
+
 	ch := make(chan error)
-	commander.CommandSync(
+	commander.CommandWithPoW(
 		context.Background(),
 		txn.AnnounceNodeCommand,
 		&cmd,
@@ -97,7 +109,7 @@ func (opts *AnnounceNodeCmd) Execute(args []string) error {
 				ch <- fmt.Errorf("failed to send restore command: %v", err)
 			}
 			close(ch)
-		}, nil)
+		}, nil, pow)
 
 	err = <-ch
 	if err != nil {

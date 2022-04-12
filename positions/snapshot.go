@@ -23,7 +23,8 @@ type SnapshotEngine struct {
 }
 
 func NewSnapshotEngine(
-	log *logging.Logger, config Config, marketID string, broker Broker) *SnapshotEngine {
+	log *logging.Logger, config Config, marketID string, broker Broker,
+) *SnapshotEngine {
 	return &SnapshotEngine{
 		Engine:  New(log, config, marketID, broker),
 		pl:      types.Payload{},
@@ -58,14 +59,14 @@ func (e *SnapshotEngine) AmendOrder(ctx context.Context, originalOrder, newOrder
 	return e.Engine.AmendOrder(ctx, originalOrder, newOrder)
 }
 
-func (e *SnapshotEngine) UpdateNetwork(trade *types.Trade) []events.MarketPosition {
+func (e *SnapshotEngine) UpdateNetwork(ctx context.Context, trade *types.Trade) []events.MarketPosition {
 	e.changed = true
-	return e.Engine.UpdateNetwork(trade)
+	return e.Engine.UpdateNetwork(ctx, trade)
 }
 
-func (e *SnapshotEngine) Update(trade *types.Trade) []events.MarketPosition {
+func (e *SnapshotEngine) Update(ctx context.Context, trade *types.Trade) []events.MarketPosition {
 	e.changed = true
-	return e.Engine.Update(trade)
+	return e.Engine.Update(ctx, trade)
 }
 
 func (e *SnapshotEngine) RemoveDistressed(parties []events.MarketPosition) []events.MarketPosition {

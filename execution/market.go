@@ -105,6 +105,7 @@ type PriceMonitor interface {
 	GetState() *types.PriceMonitor
 	Changed() bool
 	IsBoundFactorsInitialised() bool
+	UpdateSettings(risk.Model, *types.PriceMonitoringSettings)
 }
 
 // LiquidityMonitor.
@@ -112,6 +113,7 @@ type LiquidityMonitor interface {
 	CheckLiquidity(as lmon.AuctionState, t time.Time, currentStake *num.Uint, trades []*types.Trade, rf types.RiskFactor, markPrice *num.Uint, bestStaticBidVolume, bestStaticAskVolume uint64)
 	SetMinDuration(d time.Duration)
 	UpdateTargetStakeTriggerRatio(ctx context.Context, ratio num.Decimal)
+	UpdateParameters(*types.LiquidityMonitoringParameters)
 }
 
 // TargetStakeCalculator interface.
@@ -124,6 +126,7 @@ type TargetStakeCalculator interface {
 	UpdateTimeWindow(tWindow time.Duration)
 	Changed() bool
 	StopSnapshots()
+	UpdateParameters(types.TargetStakeParameters)
 }
 
 type MarketCollateral interface {
@@ -252,6 +255,7 @@ type Market struct {
 	feesTracker    *FeesTracker
 	marketTracker  *MarketTracker
 	positionFactor num.Decimal // 10^pdp
+	assetDP        uint32
 }
 
 // SetMarketID assigns a deterministic pseudo-random ID to a Market.
@@ -316,12 +320,10 @@ func NewMarket(
 
 	// @TODO -> the raw auctionstate shouldn't be something exposed to the matching engine
 	// as far as matching goes: it's either an auction or not
-	book := matching.NewCachedOrderBook(
-		log, matchingConfig, mkt.ID, as.InAuction())
+	book := matching.NewCachedOrderBook(log, matchingConfig, mkt.ID, as.InAuction())
 	asset := tradableInstrument.Instrument.Product.GetAsset()
 
-	riskEngine := risk.NewEngine(
-		log,
+	riskEngine := risk.NewEngine(log,
 		riskConfig,
 		tradableInstrument.MarginCalculator,
 		tradableInstrument.RiskModel,
@@ -332,9 +334,9 @@ func NewMarket(
 		mkt.ID,
 		asset,
 		stateVarEngine,
-		tradableInstrument.RiskModel.DefaultRiskFactors(),
-		false,
 		positionFactor,
+		false,
+		nil,
 	)
 
 	settleEngine := settlement.New(
@@ -362,7 +364,7 @@ func NewMarket(
 	lMonitor := lmon.NewMonitor(tsCalc, mkt.LiquidityMonitoringParameters)
 
 	liqEngine := liquidity.NewSnapshotEngine(
-		liquidityConfig, log, broker, tradableInstrument.RiskModel, pMonitor, asset, mkt.ID, stateVarEngine, priceFactor.Clone(), positionFactor)
+		liquidityConfig, log, broker, tradableInstrument.RiskModel, pMonitor, asset, mkt.ID, stateVarEngine, mkt.TickSize(), priceFactor.Clone(), positionFactor)
 	// call on chain time update straight away, so
 	// the time in the engine is being updatedat creation
 	liqEngine.OnChainTimeUpdate(ctx, now)
@@ -423,7 +425,38 @@ func NewMarket(
 	liqEngine.SetGetStaticPricesFunc(market.getBestStaticPricesDecimal)
 	market.tradableInstrument.Instrument.Product.NotifyOnTradingTerminated(market.tradingTerminated)
 	market.tradableInstrument.Instrument.Product.NotifyOnSettlementPrice(market.settlementPrice)
+	market.assetDP = uint32(assetDetails.DecimalPlaces())
 	return market, nil
+}
+
+func (m *Market) Update(ctx context.Context, config *types.Market, oracleEngine products.OracleEngine) error {
+	config.TradingMode = m.mkt.TradingMode
+	config.State = m.mkt.State
+	config.MarketTimestamps = m.mkt.MarketTimestamps
+	asset, err := m.mkt.GetAsset()
+	if err != nil {
+		return err
+	}
+	config.SetAsset(asset)
+
+	m.mkt = config
+
+	if err := m.tradableInstrument.UpdateInstrument(ctx, m.log, m.mkt.TradableInstrument, oracleEngine); err != nil {
+		return err
+	}
+	m.risk.UpdateModel(m.stateVarEngine, m.tradableInstrument.MarginCalculator, m.tradableInstrument.RiskModel)
+	m.settlement.UpdateProduct(m.tradableInstrument.Instrument.Product)
+	m.tsCalc.UpdateParameters(*m.mkt.LiquidityMonitoringParameters.TargetStakeParameters)
+	m.pMonitor.UpdateSettings(m.tradableInstrument.RiskModel, m.mkt.PriceMonitoringSettings)
+	m.lMonitor.UpdateParameters(m.mkt.LiquidityMonitoringParameters)
+	m.liquidity.UpdateMarketConfig(m.tradableInstrument.RiskModel, m.pMonitor)
+
+	m.tradableInstrument.Instrument.Product.NotifyOnTradingTerminated(m.tradingTerminated)
+	m.tradableInstrument.Instrument.Product.NotifyOnSettlementPrice(m.settlementPrice)
+
+	m.stateChanged = true
+
+	return nil
 }
 
 func appendBytes(bz ...[]byte) []byte {
@@ -497,9 +530,9 @@ func (m *Market) GetMarketData() types.MarketData {
 
 	var targetStake string
 	if m.as.InAuction() {
-		targetStake = m.priceToMarketPrecision(m.getTheoreticalTargetStake()).String()
+		targetStake = m.getTheoreticalTargetStake().String()
 	} else {
-		targetStake = m.priceToMarketPrecision(m.getTargetStake()).String()
+		targetStake = m.getTargetStake().String()
 	}
 	bounds := m.pMonitor.GetCurrentBounds()
 	for _, b := range bounds {
@@ -705,7 +738,7 @@ func (m *Market) updateMarketValueProxy() {
 func (m *Market) closeMarket(ctx context.Context, t time.Time) error {
 	// market is closed, final settlement
 	// call settlement and stuff
-	positions, err := m.settlement.Settle(t)
+	positions, err := m.settlement.Settle(t, m.assetDP)
 	if err != nil {
 		m.log.Error("Failed to get settle positions on market closed",
 			logging.Error(err))
@@ -740,6 +773,9 @@ func (m *Market) closeMarket(ctx context.Context, t time.Time) error {
 			logging.Error(err))
 		return err
 	}
+
+	// stop time triggered events in the statevar engine
+	m.stateVarEngine.RemoveTimeTriggers(asset, m.mkt.ID)
 
 	m.broker.Send(events.NewTransferResponse(ctx, clearMarketTransfers))
 	m.mkt.State = types.MarketStateSettled
@@ -1480,7 +1516,8 @@ func (m *Market) applyFees(ctx context.Context, order *types.Order, trades []*ty
 
 func (m *Market) handleConfirmationPassiveOrders(
 	ctx context.Context,
-	conf *types.OrderConfirmation) {
+	conf *types.OrderConfirmation,
+) {
 	if conf.PassiveOrdersAffected != nil {
 		var (
 			evts        = make([]events.Event, 0, len(conf.PassiveOrdersAffected))
@@ -1542,7 +1579,7 @@ func (m *Market) handleConfirmation(ctx context.Context, conf *types.OrderConfir
 			tradeEvts = append(tradeEvts, events.NewTradeEvent(ctx, *trade))
 
 			// Update positions (this communicates with settlement via channel)
-			m.position.Update(trade)
+			m.position.Update(ctx, trade)
 			// Record open interest change
 			if err := m.tsCalc.RecordOpenInterest(m.position.GetOpenInterest(), m.currentTime); err != nil {
 				m.log.Debug("unable record open interest",
@@ -1573,7 +1610,8 @@ func (m *Market) handleConfirmation(ctx context.Context, conf *types.OrderConfir
 }
 
 func (m *Market) confirmMTM(
-	ctx context.Context, order *types.Order) (orderUpdates []*types.Order) {
+	ctx context.Context, order *types.Order,
+) (orderUpdates []*types.Order) {
 	// now let's get the transfers for MTM settlement
 	markPrice := m.getCurrentMarkPrice()
 	evts := m.position.UpdateMarkPrice(markPrice)
@@ -1858,7 +1896,7 @@ func (m *Market) resolveClosedOutParties(ctx context.Context, distressedMarginEv
 
 			// Update positions - this is a special trade involving the network as party
 			// so rather than checking this every time we call Update, call special UpdateNetwork
-			m.position.UpdateNetwork(trade)
+			m.position.UpdateNetwork(ctx, trade)
 			if err := m.tsCalc.RecordOpenInterest(m.position.GetOpenInterest(), m.currentTime); err != nil {
 				m.log.Debug("unable record open interest",
 					logging.String("market-id", m.GetID()),
@@ -2775,6 +2813,19 @@ func (m *Market) orderCancelReplace(ctx context.Context, existingOrder, newOrder
 			logging.OrderWithTag(*existingOrder, "existing-order"),
 			logging.Error(err))
 	}
+	// cancel-replace amend during auction is quite simple at this point
+	if m.as.InAuction() {
+		conf, err := m.matching.ReplaceOrder(existingOrder, newOrder)
+		if err != nil {
+			m.log.Panic("unable to submit order", logging.Error(err))
+		}
+		if newOrder.PeggedOrder != nil {
+			m.peggedOrders.Amend(newOrder)
+		}
+		timer.EngineTimeCounterAdd()
+
+		return conf, nil
+	}
 	// first we call the order book to evaluate auction triggers and get the list of trades
 	trades, err := m.checkPriceAndGetTrades(ctx, newOrder)
 	if err != nil {
@@ -2843,7 +2894,8 @@ func (m *Market) orderAmendWhenParked(originalOrder, amendOrder *types.Order) *t
 // RemoveExpiredOrders remove all expired orders from the order book
 // and also any pegged orders that are parked.
 func (m *Market) RemoveExpiredOrders(
-	ctx context.Context, timestamp int64) ([]*types.Order, error) {
+	ctx context.Context, timestamp int64,
+) ([]*types.Order, error) {
 	timer := metrics.NewTimeCounter(m.mkt.ID, "market", "RemoveExpiredOrders")
 	defer timer.EngineTimeCounterAdd()
 
@@ -2854,6 +2906,10 @@ func (m *Market) RemoveExpiredOrders(
 	if !m.canTrade() {
 		return nil, ErrTradingNotAllowed
 	}
+
+	_, blockHash := vegacontext.TraceIDFromContext(ctx)
+	m.idgen = idgeneration.New(blockHash)
+	defer func() { m.idgen = nil }()
 
 	expired := []*types.Order{}
 	evts := []events.Event{}
@@ -3077,9 +3133,12 @@ func (m *Market) tradingTerminated(ctx context.Context, tt bool) {
 	m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
 	m.stateChanged = true
 
-	if price, err := m.tradableInstrument.Instrument.Product.SettlementPrice(); err != nil {
-		m.settlementPriceWithLock(ctx, price)
+	settlementPrice, err := m.tradableInstrument.Instrument.Product.SettlementPrice()
+	if err != nil {
+		m.log.Debug("no settlement price", logging.MarketID(m.GetID()))
+		return
 	}
+	m.settlementPriceWithLock(ctx, settlementPrice)
 }
 
 func (m *Market) settlementPrice(ctx context.Context, settlementPrice *num.Uint) {
@@ -3100,6 +3159,16 @@ func (m *Market) settlementPriceWithLock(ctx context.Context, settlementPrice *n
 			m.log.Error("could not close market", logging.Error(err))
 		}
 		m.closed = m.mkt.State == types.MarketStateSettled
+
+		settlementPriceInAsset, ok := m.tradableInstrument.Instrument.Product.ScaleSettlementPriceToDecimalPlaces(settlementPrice, m.assetDP)
+		if ok {
+			m.markPrice = settlementPriceInAsset.Clone()
+
+			// send the market data with all updated stuff
+			m.broker.Send(events.NewMarketDataEvent(ctx, m.GetMarketData()))
+		} else {
+			m.log.Error("failed to scale settlement price to asset")
+		}
 	}
 }
 
@@ -3142,11 +3211,6 @@ func (m *Market) cleanupOnReject(ctx context.Context) {
 			logging.Error(err))
 		return
 	}
-
-	m.matching.StopSnapshots()
-	m.position.StopSnapshots()
-	m.liquidity.StopSnapshots()
-	m.tsCalc.StopSnapshots()
 
 	// then send the responses
 	m.broker.Send(events.NewTransferResponse(ctx, tresps))

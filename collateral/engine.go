@@ -640,7 +640,7 @@ func (e *Engine) FinalSettlement(ctx context.Context, marketID string, transfers
 	// needs to be propagated forward so we return now.
 	if winidx == 0 {
 		if !settle.Balance.IsZero() {
-			return nil, ErrSettlementBalanceNotZero
+			e.log.Panic("settlement balance is not zero", logging.BigUint("balance", settle.Balance))
 		}
 		return responses, nil
 	}
@@ -712,7 +712,7 @@ func (e *Engine) FinalSettlement(ctx context.Context, marketID string, transfers
 	}
 
 	if !settle.Balance.IsZero() {
-		return nil, ErrSettlementBalanceNotZero
+		e.log.Panic("settlement balance is not zero", logging.BigUint("balance", settle.Balance))
 	}
 
 	return responses, nil
@@ -875,6 +875,7 @@ func (e *Engine) MarkToMarket(ctx context.Context, marketID string, transfers []
 	// needs to be propagated forward so we return now.
 	if winidx == 0 {
 		if !settle.Balance.IsZero() {
+			e.log.Panic("No win transfers, settlement balance non-zero", logging.BigUint("settlement-balance", settle.Balance))
 			return nil, nil, ErrSettlementBalanceNotZero
 		}
 		return marginEvts, responses, nil
@@ -976,6 +977,7 @@ func (e *Engine) MarkToMarket(ctx context.Context, marketID string, transfers []
 	}
 
 	if !settle.Balance.IsZero() {
+		e.log.Panic("Settlement balance non-zero at the end of MTM settlement", logging.BigUint("settlement-balance", settle.Balance))
 		return nil, nil, ErrSettlementBalanceNotZero
 	}
 	return marginEvts, responses, nil

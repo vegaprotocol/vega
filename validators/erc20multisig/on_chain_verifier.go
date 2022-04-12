@@ -104,7 +104,8 @@ func (o *OnChainVerifier) CheckSignerEvent(event *types.SignerEvent) error {
 }
 
 func (o *OnChainVerifier) CheckThresholdSetEvent(
-	event *types.SignerThresholdSetEvent) error {
+	event *types.SignerThresholdSetEvent,
+) error {
 	o.mu.RLock()
 	defer o.mu.RUnlock()
 

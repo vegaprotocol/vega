@@ -128,6 +128,7 @@ type ValidatorTopology interface {
 	AllVegaPubKeys() []string
 	IsValidator() bool
 	AddKeyRotate(ctx context.Context, nodeID string, currentBlockHeight uint64, kr *commandspb.KeyRotateSubmission) error
+	RotateEthereumKey(ctx context.Context, nodeID string, currentBlockHeight uint64, kr *commandspb.EthereumKeyRotateSubmission) error
 	BeginBlock(ctx context.Context, req abcitypes.RequestBeginBlock)
 	GetValidatorPowerUpdates() []abcitypes.ValidatorUpdate
 	ProcessAnnounceNode(ctx context.Context, nr *commandspb.AnnounceNode) error
@@ -152,7 +153,7 @@ type Notary interface {
 // Witness ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/witness_mock.go -package mocks code.vegaprotocol.io/vega/processor Witness
 type Witness interface {
-	AddNodeCheck(ctx context.Context, nv *commandspb.NodeVote) error
+	AddNodeCheck(ctx context.Context, nv *commandspb.NodeVote, key crypto.PublicKey) error
 }
 
 // EvtForwarder ...

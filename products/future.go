@@ -32,11 +32,17 @@ type Future struct {
 	settlementPriceListener    func(context.Context, *num.Uint)
 }
 
+func (f *Future) Unsubscribe(ctx context.Context, oe OracleEngine) {
+	oe.Unsubscribe(ctx, f.oracle.settlementPriceSubscriptionID)
+	oe.Unsubscribe(ctx, f.oracle.tradingTerminatedSubscriptionID)
+}
+
 type oracle struct {
 	settlementPriceSubscriptionID   oracles.SubscriptionID
 	tradingTerminatedSubscriptionID oracles.SubscriptionID
 	binding                         oracleBinding
 	data                            oracleData
+	settlementPriceDecimals         uint32
 }
 
 type oracleData struct {
@@ -73,14 +79,28 @@ func (f *Future) SettlementPrice() (*num.Uint, error) {
 	return f.oracle.data.SettlementPrice()
 }
 
+func (f *Future) ScaleSettlementPriceToDecimalPlaces(price *num.Uint, dp uint32) (*num.Uint, bool) {
+	// scale to asset decimals by multiplying by 10^(assetDP - oracleDP)
+	// if assetDP > oracleDP - this scales up the decimals of settlement price
+	// if assetDP < oracleDP - this scaled down the decimals of settlement price and can lead to loss of accuracy
+	// if there're equal - no scaling happens
+	scalingFactor := num.DecimalFromInt64(10).Pow(num.DecimalFromInt64(int64(dp) - int64(f.oracle.settlementPriceDecimals)))
+	return num.UintFromDecimal(price.ToDecimal().Mul(scalingFactor))
+}
+
 // Settle a position against the future.
-func (f *Future) Settle(entryPrice *num.Uint, netFractionalPosition num.Decimal) (amt *types.FinancialAmount, neg bool, err error) {
+func (f *Future) Settle(entryPriceInAsset *num.Uint, assetDecimals uint32, netFractionalPosition num.Decimal) (amt *types.FinancialAmount, neg bool, err error) {
 	settlementPrice, err := f.oracle.data.SettlementPrice()
 	if err != nil {
 		return nil, false, err
 	}
 
-	amount, neg := settlementPrice.Delta(settlementPrice, entryPrice)
+	settlementPriceInAsset, overflow := f.ScaleSettlementPriceToDecimalPlaces(settlementPrice, assetDecimals)
+	if overflow {
+		return nil, false, errors.New("Error scaling settlement price")
+	}
+
+	amount, neg := settlementPrice.Delta(settlementPriceInAsset, entryPriceInAsset)
 	// Make sure net position is positive
 	if netFractionalPosition.IsNegative() {
 		netFractionalPosition = netFractionalPosition.Neg()
@@ -181,7 +201,7 @@ func (f *Future) updateSettlementPrice(ctx context.Context, data oracles.OracleD
 	return nil
 }
 
-func newFuture(ctx context.Context, log *logging.Logger, f *types.Future, oe OracleEngine) (*Future, error) {
+func NewFuture(ctx context.Context, log *logging.Logger, f *types.Future, oe OracleEngine) (*Future, error) {
 	if f.OracleSpecForSettlementPrice == nil || f.OracleSpecForTradingTermination == nil || f.OracleSpecBinding == nil {
 		return nil, ErrOracleSpecAndBindingAreRequired
 	}
@@ -196,7 +216,8 @@ func newFuture(ctx context.Context, log *logging.Logger, f *types.Future, oe Ora
 		SettlementAsset: f.SettlementAsset,
 		QuoteName:       f.QuoteName,
 		oracle: oracle{
-			binding: oracleBinding,
+			binding:                 oracleBinding,
+			settlementPriceDecimals: f.SettlementPriceDecimals,
 		},
 	}
 

@@ -115,6 +115,9 @@ func InitializeScenario(s *godog.ScenarioContext) {
 	s.Step(`^the oracle spec for trading termination filtering data from "([^"]*)" named "([^"]*)":$`, func(pubKeys string, name string, table *godog.Table) error {
 		return steps.TheOracleSpec(marketConfig, name, "trading termination", pubKeys, table)
 	})
+	s.Step(`^the settlement price decimals for the oracle named "([^"]*)" is given in "([^"]*)" decimal places$`, func(name, decimals string) error {
+		return steps.OracleSpecSettlementPriceDecimals(marketConfig, name, decimals)
+	})
 	s.Step(`the price monitoring updated every "([^"]*)" seconds named "([^"]*)":$`, func(updateFrequency, name string, table *godog.Table) error {
 		return steps.ThePriceMonitoring(marketConfig, name, updateFrequency, table)
 	})
@@ -204,7 +207,7 @@ func InitializeScenario(s *godog.ScenarioContext) {
 	})
 
 	s.Step(`^the opening auction period ends for market "([^"]+)"$`, func(marketID string) error {
-		return steps.MarketOpeningAuctionPeriodEnds(execsetup.timeService, execsetup.markets, marketID)
+		return steps.MarketOpeningAuctionPeriodEnds(execsetup.executionEngine, execsetup.timeService, execsetup.markets, marketID)
 	})
 	s.Step(`^the oracles broadcast data signed with "([^"]*)":$`, func(pubKeys string, properties *godog.Table) error {
 		return steps.OraclesBroadcastDataSignedWithKeys(execsetup.oracleEngine, pubKeys, properties)

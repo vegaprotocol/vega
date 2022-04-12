@@ -799,7 +799,8 @@ func (b *OrderBook) SubmitOrder(order *types.Order) (*types.OrderConfirmation, e
 
 // DeleteOrder remove a given order on a given side from the book.
 func (b *OrderBook) DeleteOrder(
-	order *types.Order) (*types.Order, error) {
+	order *types.Order,
+) (*types.Order, error) {
 	dorder, err := b.getSide(order.Side).RemoveOrder(order)
 	if err != nil {
 		if b.log.GetLevel() == logging.DebugLevel {
@@ -965,6 +966,13 @@ func (b *OrderBook) Settled() []*types.Order {
 	sort.Slice(orders, func(i, j int) bool {
 		return orders[i].ID < orders[j].ID
 	})
+
+	// reset all order stores
+	b.ordersByID = map[string]*types.Order{}
+	b.ordersPerParty = map[string]map[string]struct{}{}
+	b.indicativePriceAndVolume = nil
+	b.buy.cleanup()
+	b.sell.cleanup()
 
 	return orders
 }

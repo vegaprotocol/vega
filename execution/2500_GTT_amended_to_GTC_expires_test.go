@@ -21,7 +21,7 @@ func TestGTTAmendToGTCAmendInPlace_OrderGetExpired(t *testing.T) {
 	ctx := context.Background()
 	ctx = vegacontext.WithTraceID(ctx, vgcrypto.RandomHash())
 
-	addAccount(tm, "aaa")
+	addAccount(t, tm, "aaa")
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
 	o1 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTT, "Order01", types.SideBuy, "aaa", 1, 10)
@@ -45,7 +45,7 @@ func TestGTTAmendToGTCAmendInPlace_OrderGetExpired(t *testing.T) {
 	ctx = vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
 	tm.market.OnChainTimeUpdate(ctx, now.Add(10*time.Second))
 	orders, err := tm.market.RemoveExpiredOrders(
-		context.Background(), now.UnixNano())
+		ctx, now.UnixNano())
 	require.Equal(t, 0, len(orders))
 	require.NoError(t, err)
 }

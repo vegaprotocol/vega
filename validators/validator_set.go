@@ -343,7 +343,15 @@ func (t *Topology) applyPromotion(performanceScore, rankingScore map[string]num.
 	}
 
 	for _, vu := range vUpdates {
-		t.log.Info("voting power update", logging.String("pubKey", vu.PubKey.String()), logging.Int64("power", vu.Power))
+		pkey := vu.PubKey.GetEd25519()
+		if pkey == nil || len(pkey) <= 0 {
+			pkey = vu.PubKey.GetSecp256K1()
+		}
+		// tendermint pubkey are marshalled in base64,
+		// so let's do this as well here for logging
+		spkey := base64.StdEncoding.EncodeToString(pkey)
+
+		t.log.Info("voting power update", logging.String("pubKey", spkey), logging.Int64("power", vu.Power))
 	}
 
 	return vUpdates, nextValidatorsVotingPower
@@ -369,6 +377,7 @@ func demoteDueToLackOfSlots(seriesA []*valState, seriesB []*valState, statusA Va
 	return seriesA, seriesB, removedFromSeriesA
 }
 
+// promote returns seriesA and seriesB updated with promotions moved from B to A and a slice of removed from series A in case of swap-promotion.
 func promote(seriesA []*valState, seriesB []*valState, statusA ValidatorStatus, statusB ValidatorStatus, maxForSeriesA int, rankingScore map[string]num.Decimal, nextBlockHeight int64) ([]*valState, []*valState, []string) {
 	removedFromSeriesA := []string{}
 
@@ -377,15 +386,26 @@ func promote(seriesA []*valState, seriesB []*valState, statusA ValidatorStatus, 
 		if promotion > len(seriesB) {
 			promotion = len(seriesB)
 		}
+		removedIndices := map[int]struct{}{}
 		for i := 0; i < promotion; i++ {
 			if rankingScore[seriesB[i].data.ID].IsPositive() {
 				seriesB[i].statusChangeBlock = nextBlockHeight
 				seriesB[i].status = statusA
+				seriesA = append(seriesA, seriesB[i])
+				removedIndices[i] = struct{}{}
 			} else {
 				break
 			}
 		}
-	} else if maxForSeriesA > 0 && maxForSeriesA == len(seriesA) && len(seriesB) > 0 {
+		newSeriesB := make([]*valState, 0, len(seriesB)-len(removedIndices))
+		for i, vs := range seriesB {
+			if _, ok := removedIndices[i]; !ok {
+				newSeriesB = append(newSeriesB, vs)
+			}
+		}
+		return seriesA, newSeriesB, removedFromSeriesA
+	}
+	if maxForSeriesA > 0 && maxForSeriesA == len(seriesA) && len(seriesB) > 0 {
 		// the best of the remaining is better than the worst tendermint validator
 		if rankingScore[seriesA[len(seriesA)-1].data.ID].LessThan(rankingScore[seriesB[0].data.ID]) {
 			vd := seriesA[len(seriesA)-1]
@@ -396,6 +416,12 @@ func promote(seriesA []*valState, seriesB []*valState, statusA ValidatorStatus, 
 			vd = seriesB[0]
 			vd.status = statusA
 			vd.statusChangeBlock = nextBlockHeight
+			seriesA = append(seriesA, seriesB[0])
+			if len(seriesB) > 1 {
+				seriesB = seriesB[1:]
+			} else {
+				seriesB = []*valState{}
+			}
 		}
 	}
 	return seriesA, seriesB, removedFromSeriesA
@@ -410,7 +436,7 @@ func (t *Topology) calculateVotingPower(IDs []string, rankingScores map[string]n
 	}
 
 	for _, ID := range IDs {
-		if sumOfScores.IsPositive() && rankingScores[ID].IsPositive() {
+		if sumOfScores.IsPositive() {
 			votingPower[ID] = num.MaxD(DecimalOne, rankingScores[ID].Div(sumOfScores).Mul(VotingPowerScalingFactor)).IntPart()
 		} else {
 			votingPower[ID] = 10
@@ -423,6 +449,8 @@ func (t *Topology) calculateVotingPower(IDs []string, rankingScores map[string]n
 func (t *Topology) GetValidatorPowerUpdates() []tmtypes.ValidatorUpdate {
 	if t.newEpochStarted {
 		t.newEpochStarted = false
+		// it's safer to reset the validator performance counter here which is the exact time we're updating tendermint on the voting power.
+		t.validatorPerformance.Reset()
 		return t.validatorPowerUpdates
 	}
 	return []tmtypes.ValidatorUpdate{}

@@ -10,6 +10,7 @@ import (
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/liquidity/supplied"
 	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/vega/risk"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
 	"code.vegaprotocol.io/vega/types/statevar"
@@ -87,8 +88,10 @@ type Engine struct {
 	maxShapesSize int64
 
 	// this is the max fee that can be specified
-	maxFee   num.Decimal
-	tickSize *num.Uint
+	maxFee num.Decimal
+
+	// this is the ratio between 10^{asset_dp} / 10^{market_dp}
+	priceFactor *num.Uint
 }
 
 // NewEngine returns a new Liquidity Engine.
@@ -101,21 +104,23 @@ func NewEngine(config Config,
 	marketID string,
 	stateVarEngine StateVarEngine,
 	tickSize *num.Uint,
+	priceFactor *num.Uint,
 	positionFactor num.Decimal,
 ) *Engine {
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
 	e := &Engine{
-		marketID:       marketID,
-		log:            log,
-		broker:         broker,
-		suppliedEngine: supplied.NewEngine(riskModel, priceMonitor, asset, marketID, stateVarEngine, tickSize, log, positionFactor),
+		marketID: marketID,
+		log:      log,
+		broker:   broker,
+		// tick size to be used by the supplied engine should actually be in asset decimal
+		suppliedEngine: supplied.NewEngine(riskModel, priceMonitor, asset, marketID, stateVarEngine, num.Zero().Mul(tickSize, priceFactor), log, positionFactor),
 
 		// parameters
 		stakeToObligationFactor: num.DecimalFromInt64(1),
 		maxShapesSize:           100, // set it to the same default than the netparams
 		maxFee:                  num.DecimalFromInt64(1),
-		tickSize:                tickSize,
+		priceFactor:             priceFactor,
 		// provisions related state
 		provisions: newSnapshotableProvisionsPerParty(),
 		pendings:   newSnapshotablePendingProvisions(),
@@ -643,6 +648,8 @@ func (e *Engine) createOrUpdateForParty(
 		lp.Status = types.LiquidityProvisionStatusActive
 	}
 
+	// fields in the lp might have changed so we re-set it to trigger the snapshot `changed` flag
+	e.provisions.Set(party, lp)
 	e.broker.Send(events.NewLiquidityProvisionEvent(ctx, lp))
 
 	return append(needsCreateBuys, needsCreateSells...),
@@ -652,7 +659,7 @@ func (e *Engine) createOrUpdateForParty(
 
 func (e *Engine) buildOrder(side types.Side, price *num.Uint, partyID, marketID string, size uint64, ref string, lpID string) *types.Order {
 	op := price.Clone()
-	op.Div(op, e.tickSize)
+	op.Div(op, e.priceFactor)
 	order := &types.Order{
 		MarketID:             marketID,
 		Side:                 side,
@@ -832,4 +839,8 @@ func validateShape(sh []*types.LiquidityOrder, side types.Side, maxSize int64) e
 
 func (e *Engine) IsPoTInitialised() bool {
 	return e.suppliedEngine.IsPoTInitialised()
+}
+
+func (e *Engine) UpdateMarketConfig(model risk.Model, monitor PriceMonitor) {
+	e.suppliedEngine.UpdateMarketConfig(model, monitor)
 }

@@ -62,8 +62,7 @@ func NewMarketFromSnapshot(
 	asset := tradableInstrument.Instrument.Product.GetAsset()
 
 	// this needs to stay
-	riskEngine := risk.NewEngine(
-		log,
+	riskEngine := risk.NewEngine(log,
 		riskConfig,
 		tradableInstrument.MarginCalculator,
 		tradableInstrument.RiskModel,
@@ -74,13 +73,9 @@ func NewMarketFromSnapshot(
 		mkt.ID,
 		asset,
 		stateVarEngine,
-		&types.RiskFactor{
-			Market: mkt.ID,
-			Short:  em.ShortRiskFactor,
-			Long:   em.LongRiskFactor,
-		},
-		em.RiskFactorConsensusReached,
 		positionFactor,
+		em.RiskFactorConsensusReached,
+		&types.RiskFactor{Market: mkt.ID, Short: em.ShortRiskFactor, Long: em.LongRiskFactor},
 	)
 
 	settleEngine := settlement.New(
@@ -109,7 +104,7 @@ func NewMarketFromSnapshot(
 	priceFactor := num.Zero().Exp(num.NewUint(10), num.NewUint(exp))
 	lMonitor := lmon.NewMonitor(tsCalc, mkt.LiquidityMonitoringParameters)
 
-	liqEngine := liquidity.NewSnapshotEngine(liquidityConfig, log, broker, tradableInstrument.RiskModel, pMonitor, asset, mkt.ID, stateVarEngine, priceFactor.Clone(), positionFactor)
+	liqEngine := liquidity.NewSnapshotEngine(liquidityConfig, log, broker, tradableInstrument.RiskModel, pMonitor, asset, mkt.ID, stateVarEngine, mkt.TickSize(), priceFactor.Clone(), positionFactor)
 	// call on chain time update straight away, so
 	// the time in the engine is being updatedat creation
 	liqEngine.OnChainTimeUpdate(ctx, now)
@@ -152,10 +147,10 @@ func NewMarketFromSnapshot(
 		stateVarEngine:             stateVarEngine,
 	}
 
+	market.assetDP = uint32(assetDetails.DecimalPlaces())
 	market.tradableInstrument.Instrument.Product.NotifyOnTradingTerminated(market.tradingTerminated)
 	market.tradableInstrument.Instrument.Product.NotifyOnSettlementPrice(market.settlementPrice)
 	liqEngine.SetGetStaticPricesFunc(market.getBestStaticPricesDecimal)
-
 	return market, nil
 }
 

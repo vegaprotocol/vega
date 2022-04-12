@@ -28,7 +28,7 @@ func getValidInstrumentProto() *types.Instrument {
 				"product:futures",
 			},
 		},
-		Product: &types.Instrument_Future{
+		Product: &types.InstrumentFuture{
 			Future: &types.Future{
 				QuoteName:       "USD",
 				SettlementAsset: SettlementAssetStr,
@@ -65,7 +65,7 @@ func getValidInstrumentProto() *types.Instrument {
 	}
 }
 
-func TestFuture(t *testing.T) {
+func TestFutureSettlement(t *testing.T) {
 	ctx := context.Background()
 	ctrl := gomock.NewController(t)
 	oe := mocks.NewMockOracleEngine(ctrl)
@@ -109,7 +109,7 @@ func TestFuture(t *testing.T) {
 		// Use debug function to update the settlement price as if from a Oracle
 		f.SetSettlementPrice(ctx, "prices.ETH.value", param.settlementPrice)
 		ep := num.NewUint(param.entryPrice)
-		fa, _, err := prod.Settle(ep, num.DecimalFromInt64(param.position))
+		fa, _, err := prod.Settle(ep, 0, num.DecimalFromInt64(param.position))
 		assert.NoError(t, err)
 		assert.EqualValues(t, param.result, fa.Amount.Uint64())
 	}

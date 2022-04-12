@@ -73,8 +73,7 @@ type Engine struct {
 }
 
 // NewEngine instantiate a new risk engine.
-func NewEngine(
-	log *logging.Logger,
+func NewEngine(log *logging.Logger,
 	config Config,
 	marginCalculator *types.MarginCalculator,
 	model Model,
@@ -85,9 +84,9 @@ func NewEngine(
 	mktID string,
 	asset string,
 	stateVarEngine StateVarEngine,
-	factors *types.RiskFactor,
-	riskFactorsInitialised bool,
 	positionFactor num.Decimal,
+	riskFactorsInitialised bool,
+	initialisedRiskFactors *types.RiskFactor, // if restored from snapshot, will be nil otherwise
 ) *Engine {
 	// setup logger
 	log = log.Named(namedLogger)
@@ -98,8 +97,6 @@ func NewEngine(
 		log:                    log,
 		Config:                 config,
 		marginCalculator:       marginCalculator,
-		scalingFactorsUint:     sfUint,
-		factors:                factors,
 		model:                  model,
 		waiting:                false,
 		ob:                     ob,
@@ -108,11 +105,17 @@ func NewEngine(
 		currTime:               initialTime,
 		mktID:                  mktID,
 		asset:                  asset,
+		scalingFactorsUint:     sfUint,
+		factors:                model.DefaultRiskFactors(),
 		riskFactorsInitialised: riskFactorsInitialised,
 		positionFactor:         positionFactor,
 	}
 
-	stateVarEngine.RegisterStateVariable(asset, mktID, RiskFactorStateVarName, RiskFactorConverter{}, e.startRiskFactorsCalculation, []statevar.StateVarEventType{statevar.StateVarEventTypeMarketEnactment}, e.updateRiskFactor)
+	if initialisedRiskFactors != nil {
+		e.factors = initialisedRiskFactors
+	}
+
+	stateVarEngine.RegisterStateVariable(asset, mktID, RiskFactorStateVarName, RiskFactorConverter{}, e.startRiskFactorsCalculation, []statevar.StateVarEventType{statevar.StateVarEventTypeMarketEnactment, statevar.StateVarEventTypeMarketUpdated}, e.updateRiskFactor)
 	// trigger the calculation of risk factors for the market
 	stateVarEngine.NewEvent(asset, mktID, statevar.StateVarEventTypeMarketEnactment)
 	return e
@@ -126,6 +129,13 @@ func (e *Engine) OnMarginScalingFactorsUpdate(sf *types.ScalingFactors) error {
 	e.marginCalculator.ScalingFactors = sf
 	e.scalingFactorsUint = scalingFactorsUintFromDecimals(sf)
 	return nil
+}
+
+func (e *Engine) UpdateModel(stateVarEngine StateVarEngine, calculator *types.MarginCalculator, model Model) {
+	e.scalingFactorsUint = scalingFactorsUintFromDecimals(calculator.ScalingFactors)
+	e.factors = model.DefaultRiskFactors()
+	stateVarEngine.NewEvent(e.asset, e.mktID, statevar.StateVarEventTypeMarketUpdated)
+	e.model = model
 }
 
 func (e *Engine) OnTimeUpdate(t time.Time) {
@@ -291,7 +301,8 @@ func (e *Engine) UpdateMarginOnNewOrder(ctx context.Context, evt events.Margin, 
 // move monies later, we'll need to close out the party but that cannot be figured out
 // now only in later when we try to move monies from the general account.
 func (e *Engine) UpdateMarginsOnSettlement(
-	ctx context.Context, evts []events.Margin, markPrice *num.Uint) []events.Risk {
+	ctx context.Context, evts []events.Margin, markPrice *num.Uint,
+) []events.Risk {
 	ret := make([]events.Risk, 0, len(evts))
 	// var err error
 	// this will keep going until we've closed this channel

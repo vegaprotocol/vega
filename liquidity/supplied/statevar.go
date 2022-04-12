@@ -59,6 +59,7 @@ func (e *Engine) startCalcProbOfTrading(eventID string, endOfCalcCallback statev
 	// get the best bid and ask
 	bestBid, bestAsk, err := e.getBestStaticPrices()
 	if err != nil {
+		e.log.Error("failed to get static price for probability of trading state var", logging.String("error", err.Error()))
 		return
 	}
 

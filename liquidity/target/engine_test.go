@@ -8,6 +8,7 @@ import (
 	"code.vegaprotocol.io/vega/liquidity/target/mocks"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
+	"github.com/stretchr/testify/assert"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
@@ -57,25 +58,20 @@ func TestGetTargetStake_VerifyFormula(t *testing.T) {
 	tWindow := time.Hour
 	scalingFactor := num.DecimalFromFloat(11.3)
 	params := types.TargetStakeParameters{TimeWindow: int64(tWindow.Seconds()), ScalingFactor: scalingFactor}
-	rfLong := num.DecimalFromFloat(0.3)
-	rfShort := num.DecimalFromFloat(0.1)
-	var oi uint64 = 23
+	rf := types.RiskFactor{
+		Long:  num.DecimalFromFloat(0.3),
+		Short: num.DecimalFromFloat(0.1),
+	}
+	oi := uint64(23)
 	markPrice := num.NewUint(123)
 
 	// float64(markPrice.Uint64()*oi) * math.Max(rfLong, rfShort) * scalingFactor
 	expectedTargetStake := num.DecimalFromUint(markPrice)
 	expectedTargetStake = expectedTargetStake.Mul(num.DecimalFromUint(num.NewUint(oi)))
-	factor := rfLong
-	if factor.LessThan(rfShort) {
-		factor = rfShort
-	}
-	expectedTargetStake = expectedTargetStake.Mul(factor.Mul(scalingFactor))
+	expectedTargetStake = expectedTargetStake.Mul(rf.Long.Mul(scalingFactor))
 
 	engine := target.NewEngine(params, nil, marketID, num.DecimalFromFloat(1))
-	rf := types.RiskFactor{
-		Long:  rfLong,
-		Short: rfShort,
-	}
+
 	err := engine.RecordOpenInterest(oi, now)
 	require.NoError(t, err)
 
@@ -89,6 +85,91 @@ func TestGetTargetStake_VerifyFormula(t *testing.T) {
 	require.Equal(t, expectedUint, targetStakeLaterInWindow)
 	require.Equal(t, expectedUint, targetStakeAtEndOfWindow)
 	require.Equal(t, expectedUint, targetStakeAfterWindow)
+}
+
+func TestGetTargetStake_VerifyFormulaAfterParametersUpdate(t *testing.T) {
+	// given
+	tWindow := time.Hour
+	scalingFactor := num.DecimalFromFloat(11.3)
+	params := types.TargetStakeParameters{
+		TimeWindow:    int64(tWindow.Seconds()),
+		ScalingFactor: scalingFactor,
+	}
+	openInterest := uint64(23)
+
+	// setup
+	engine := target.NewEngine(params, nil, marketID, num.DecimalFromFloat(1))
+
+	// when
+	err := engine.RecordOpenInterest(openInterest, now)
+
+	// then
+	require.NoError(t, err)
+
+	// given
+	markPrice := num.NewUint(123)
+	rf := types.RiskFactor{
+		Long:  num.DecimalFromFloat(0.3),
+		Short: num.DecimalFromFloat(0.1),
+	}
+
+	// when
+	targetStakeNow, _ := engine.GetTargetStake(rf, now, markPrice.Clone())
+	targetStakeLaterInWindow, _ := engine.GetTargetStake(rf, now.Add(time.Minute), markPrice.Clone())
+	targetStakeAtEndOfWindow, _ := engine.GetTargetStake(rf, now.Add(tWindow), markPrice.Clone())
+	targetStakeAfterWindow, _ := engine.GetTargetStake(rf, now.Add(tWindow).Add(time.Nanosecond), markPrice.Clone())
+
+	// then
+	// float64(markPrice.Uint64()*openInterest) * math.Max(rf.Long, rf.Short) * scalingFactor
+	expectedTargetStake := num.DecimalFromUint(markPrice)
+	expectedTargetStake = expectedTargetStake.Mul(num.DecimalFromUint(num.NewUint(openInterest)))
+	expectedTargetStake = expectedTargetStake.Mul(rf.Long.Mul(scalingFactor))
+	expectedTargetStakeUint, _ := num.UintFromDecimal(expectedTargetStake)
+	assert.Equal(t, expectedTargetStakeUint, targetStakeNow)
+	assert.Equal(t, expectedTargetStakeUint, targetStakeLaterInWindow)
+	assert.Equal(t, expectedTargetStakeUint, targetStakeAtEndOfWindow)
+	assert.Equal(t, expectedTargetStakeUint, targetStakeAfterWindow)
+
+	// given
+	updatedTWindow := tWindow - (10 * time.Minute)
+	updatedParams := types.TargetStakeParameters{
+		TimeWindow:    int64(updatedTWindow.Seconds()),
+		ScalingFactor: num.DecimalFromFloat(10.5),
+	}
+
+	// when
+	engine.UpdateParameters(updatedParams)
+
+	// given
+	later := now.Add(updatedTWindow).Add(time.Second)
+	newOpenInterest := uint64(14)
+
+	// The new open interest should be selected as a new max open interest,
+	// even though it's smaller than the previously registered open interest,
+	// because we are recording the new open interest a second after new
+	// maximum time an open interest is kept in memory.
+	// when
+	err = engine.RecordOpenInterest(newOpenInterest, later)
+
+	// when
+	require.NoError(t, err)
+
+	// when
+	updatedTargetStakeNow, _ := engine.GetTargetStake(rf, later, markPrice.Clone())
+	updatedTargetStakeLaterInWindow, _ := engine.GetTargetStake(rf, later.Add(time.Minute), markPrice.Clone())
+	updatedTargetStakeAtEndOfWindow, _ := engine.GetTargetStake(rf, later.Add(updatedTWindow), markPrice.Clone())
+	updatedTargetStakeAfterWindow, _ := engine.GetTargetStake(rf, later.Add(updatedTWindow).Add(time.Nanosecond), markPrice.Clone())
+
+	// then
+	// float64(markPrice.Uint64()*newOpenInterest) * math.Max(rfLong, rfShort) * updatedScalingFactor
+	expectedUpdatedTargetStake := num.DecimalFromUint(markPrice)
+	expectedUpdatedTargetStake = expectedUpdatedTargetStake.Mul(num.DecimalFromUint(num.NewUint(newOpenInterest)))
+	expectedUpdatedTargetStake = expectedUpdatedTargetStake.Mul(rf.Long.Mul(updatedParams.ScalingFactor))
+	expectedUpdatedTargetStakeUint, _ := num.UintFromDecimal(expectedUpdatedTargetStake)
+	assert.Equal(t, expectedUpdatedTargetStakeUint, updatedTargetStakeNow)
+	assert.Equal(t, expectedUpdatedTargetStakeUint, updatedTargetStakeLaterInWindow)
+	assert.Equal(t, expectedUpdatedTargetStakeUint, updatedTargetStakeAtEndOfWindow)
+	assert.Equal(t, expectedUpdatedTargetStakeUint, updatedTargetStakeAfterWindow)
 }
 
 func TestGetTargetStake_VerifyMaxOI(t *testing.T) {

@@ -2,7 +2,6 @@ package validators
 
 import (
 	"context"
-	"encoding/hex"
 	"errors"
 	"math/rand"
 	"sort"
@@ -11,6 +10,7 @@ import (
 	"time"
 
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
+	"code.vegaprotocol.io/vega/crypto"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/txn"
 	"code.vegaprotocol.io/vega/types/num"
@@ -43,9 +43,9 @@ type Commander interface {
 type ValidatorTopology interface {
 	Len() int
 	IsValidator() bool
-	SelfNodeID() string
+	SelfVegaPubKey() string
 	AllNodeIDs() []string
-	IsValidatorNodeID(string) bool
+	IsValidatorVegaPubKey(string) bool
 }
 
 type Resource interface {
@@ -187,26 +187,25 @@ func (w *Witness) Stop() {
 }
 
 // AddNodeCheck registers a vote from a validator node for a given resource.
-func (w *Witness) AddNodeCheck(ctx context.Context, nv *commandspb.NodeVote) error {
-	hexPubKey := hex.EncodeToString(nv.PubKey)
+func (w *Witness) AddNodeCheck(_ context.Context, nv *commandspb.NodeVote, key crypto.PublicKey) error {
 	// get the node proposal first
 	r, ok := w.resources[nv.Reference]
 	if !ok {
 		w.log.Error("invalid resource ID received for vote",
-			logging.String("ressource-ref", nv.Reference),
-			logging.String("node-id", hexPubKey),
+			logging.String("resource-ref", nv.Reference),
+			logging.String("node-id", key.Hex()),
 		)
 		return ErrInvalidResourceIDForNodeVote
 	}
 
 	// ensure the node is a validator
-	if !w.top.IsValidatorNodeID(hexPubKey) {
+	if !w.top.IsValidatorVegaPubKey(key.Hex()) {
 		w.log.Error("non-validator node tried to register node vote",
-			logging.String("node-id", hexPubKey))
+			logging.String("node-id", key.Hex()))
 		return ErrVoteFromNonValidator
 	}
 	w.setChangedLocked(true)
-	return r.addVote(hexPubKey)
+	return r.addVote(key.Hex())
 }
 
 func (w *Witness) setChangedLocked(changed bool) {
@@ -365,16 +364,14 @@ func (w *Witness) OnTick(ctx context.Context, t time.Time) {
 		// then we try to send our vote.
 		if isValidator && state == validated || w.needResend(k) {
 			v.lastSentVote = t
-			pubKey, _ := hex.DecodeString(w.top.SelfNodeID())
 			nv := &commandspb.NodeVote{
-				PubKey:    pubKey,
 				Reference: v.res.GetID(),
 			}
 			w.cmd.Command(ctx, txn.NodeVoteCommand, nv, w.onCommandSent(k), nil)
 			// set new state so we do not try to validate again
 			atomic.StoreUint32(&v.state, voteSent)
 		} else if (isValidator && state == voteSent) && t.After(v.lastSentVote.Add(10*time.Second)) {
-			if v.selfVoteReceived(w.top.SelfNodeID()) {
+			if v.selfVoteReceived(w.top.SelfVegaPubKey()) {
 				continue
 			}
 			w.onCommandSent(v.res.GetID())(errors.New("no self votes received after 10 seconds"))

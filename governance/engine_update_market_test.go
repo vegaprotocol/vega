@@ -34,11 +34,12 @@ func testSubmittingProposalForMarketUpdateSucceeds(t *testing.T) {
 	// given
 	proposer := vgrand.RandomStr(5)
 	proposal := eng.newProposalForMarketUpdate(proposer, time.Now())
+	marketID := proposal.MarketUpdate().MarketID
 
 	// setup
 	eng.ensureTokenBalanceForParty(t, proposer, 1000)
-	eng.ensureEquityLikeShareForMarketAndParty(t, proposal.ID, proposer, 0.1)
-	eng.ensureExistingMarket(t, proposal.ID)
+	eng.ensureEquityLikeShareForMarketAndParty(t, marketID, proposer, 0.1)
+	eng.ensureExistingMarket(t, marketID)
 
 	// expect
 	eng.expectOpenProposalEvent(t, proposer, proposal.ID)
@@ -58,10 +59,11 @@ func testSubmittingProposalForMarketUpdateForUnknownMarketFails(t *testing.T) {
 	// given
 	proposer := vgrand.RandomStr(5)
 	proposal := eng.newProposalForMarketUpdate(proposer, time.Now())
+	marketID := proposal.MarketUpdate().MarketID
 
 	// setup
 	eng.ensureTokenBalanceForParty(t, proposer, 123456789)
-	eng.ensureNonExistingMarket(t, proposal.ID)
+	eng.ensureNonExistingMarket(t, marketID)
 
 	// expect
 	eng.expectRejectedProposalEvent(t, proposer, proposal.ID, types.ProposalErrorInvalidMarket)
@@ -81,11 +83,12 @@ func testSubmittingProposalForMarketUpdateWithInsufficientEquityLikeShareFails(t
 	// given
 	party := vgrand.RandomStr(5)
 	proposal := eng.newProposalForMarketUpdate(party, time.Now())
+	marketID := proposal.MarketUpdate().MarketID
 
 	// setup
 	eng.ensureTokenBalanceForParty(t, party, 100)
-	eng.ensureExistingMarket(t, proposal.ID)
-	eng.ensureEquityLikeShareForMarketAndParty(t, proposal.ID, party, 0.05)
+	eng.ensureExistingMarket(t, marketID)
+	eng.ensureEquityLikeShareForMarketAndParty(t, marketID, party, 0.05)
 
 	// expect
 	eng.expectRejectedProposalEvent(t, party, proposal.ID, types.ProposalErrorInsufficientEquityLikeShare)
@@ -106,11 +109,12 @@ func testRejectingProposalForMarketUpdateSucceeds(t *testing.T) {
 	// given
 	party := vgrand.RandomStr(5)
 	proposal := eng.newProposalForMarketUpdate(party, time.Now())
+	marketID := proposal.MarketUpdate().MarketID
 
 	// setup
 	eng.ensureAllAssetEnabled(t)
-	eng.ensureExistingMarket(t, proposal.ID)
-	eng.ensureEquityLikeShareForMarketAndParty(t, proposal.ID, party, 0.7)
+	eng.ensureExistingMarket(t, marketID)
+	eng.ensureEquityLikeShareForMarketAndParty(t, marketID, party, 0.7)
 	eng.ensureNetworkParameter(t, netparams.GovernanceProposalUpdateMarketMinProposerEquityLikeShare, "0.1")
 	eng.ensureTokenBalanceForParty(t, party, 10000)
 
@@ -149,12 +153,13 @@ func testVotingWithoutMinimumTokenHoldersAndEquityLikeShareMakesMarketUpdateProp
 	// given
 	proposer := vgrand.RandomStr(5)
 	proposal := eng.newProposalForMarketUpdate(proposer, time.Now())
+	marketID := proposal.MarketUpdate().MarketID
 
 	// setup
 	eng.ensureNetworkParameter(t, netparams.GovernanceProposalUpdateMarketRequiredParticipation, "0.5")
 	eng.ensureNetworkParameter(t, netparams.GovernanceProposalUpdateMarketRequiredParticipationLP, "0.5")
-	eng.ensureEquityLikeShareForMarketAndParty(t, proposal.ID, proposer, 0.1)
-	eng.ensureExistingMarket(t, proposal.ID)
+	eng.ensureEquityLikeShareForMarketAndParty(t, marketID, proposer, 0.1)
+	eng.ensureExistingMarket(t, marketID)
 	eng.ensureTokenBalanceForParty(t, proposer, 1)
 	eng.ensureAllAssetEnabled(t)
 
@@ -173,7 +178,7 @@ func testVotingWithoutMinimumTokenHoldersAndEquityLikeShareMakesMarketUpdateProp
 
 	// setup
 	eng.ensureTokenBalanceForParty(t, voterWithToken, 1)
-	eng.ensureEquityLikeShareForMarketAndParty(t, proposal.ID, voterWithToken, 0)
+	eng.ensureEquityLikeShareForMarketAndParty(t, marketID, voterWithToken, 0)
 
 	// expect
 	eng.expectVoteEvent(t, voterWithToken, proposal.ID)
@@ -190,7 +195,7 @@ func testVotingWithoutMinimumTokenHoldersAndEquityLikeShareMakesMarketUpdateProp
 
 	// setup
 	eng.ensureTokenBalanceForParty(t, voterWithELS, 0)
-	eng.ensureEquityLikeShareForMarketAndParty(t, proposal.ID, voterWithELS, 0.1)
+	eng.ensureEquityLikeShareForMarketAndParty(t, marketID, voterWithELS, 0.1)
 
 	// expect
 	eng.expectVoteEvent(t, voterWithELS, proposal.ID)
@@ -208,9 +213,9 @@ func testVotingWithoutMinimumTokenHoldersAndEquityLikeShareMakesMarketUpdateProp
 	// setup
 	eng.ensureStakingAssetTotalSupply(t, 10)
 	eng.ensureTokenBalanceForParty(t, voterWithToken, 1)
-	eng.ensureEquityLikeShareForMarketAndParty(t, proposal.ID, voterWithToken, 0)
+	eng.ensureEquityLikeShareForMarketAndParty(t, marketID, voterWithToken, 0)
 	eng.ensureTokenBalanceForParty(t, voterWithELS, 0)
-	eng.ensureEquityLikeShareForMarketAndParty(t, proposal.ID, voterWithELS, 0.1)
+	eng.ensureEquityLikeShareForMarketAndParty(t, marketID, voterWithELS, 0.1)
 
 	// expect
 	eng.expectDeclinedProposalEvent(t, proposal.ID, types.ProposalErrorParticipationThresholdNotReached)
@@ -228,10 +233,11 @@ func testVotingWithMajorityOfYesFromTokenHoldersMakesMarketUpdateProposalPassed(
 	// given
 	proposer := vgrand.RandomStr(5)
 	proposal := eng.newProposalForMarketUpdate(proposer, time.Now())
+	marketID := proposal.MarketUpdate().MarketID
 
 	// setup
-	eng.ensureEquityLikeShareForMarketAndParty(t, proposal.ID, proposer, 0.7)
-	eng.ensureExistingMarket(t, proposal.ID)
+	eng.ensureEquityLikeShareForMarketAndParty(t, marketID, proposer, 0.7)
+	eng.ensureExistingMarket(t, marketID)
 	eng.ensureTokenBalanceForParty(t, proposer, 1)
 	eng.ensureAllAssetEnabled(t)
 
@@ -250,7 +256,7 @@ func testVotingWithMajorityOfYesFromTokenHoldersMakesMarketUpdateProposalPassed(
 
 	// setup
 	eng.ensureTokenBalanceForParty(t, voterWithToken1, 10)
-	eng.ensureEquityLikeShareForMarketAndParty(t, proposal.ID, voterWithToken1, 0)
+	eng.ensureEquityLikeShareForMarketAndParty(t, marketID, voterWithToken1, 0)
 
 	// expect
 	eng.expectVoteEvent(t, voterWithToken1, proposal.ID)
@@ -267,7 +273,7 @@ func testVotingWithMajorityOfYesFromTokenHoldersMakesMarketUpdateProposalPassed(
 
 	// setup
 	eng.ensureTokenBalanceForParty(t, voterWithToken2, 2)
-	eng.ensureEquityLikeShareForMarketAndParty(t, proposal.ID, voterWithToken2, 0)
+	eng.ensureEquityLikeShareForMarketAndParty(t, marketID, voterWithToken2, 0)
 
 	// expect
 	eng.expectVoteEvent(t, voterWithToken2, proposal.ID)
@@ -284,7 +290,7 @@ func testVotingWithMajorityOfYesFromTokenHoldersMakesMarketUpdateProposalPassed(
 
 	// setup
 	eng.ensureTokenBalanceForParty(t, voterWithELS1, 0)
-	eng.ensureEquityLikeShareForMarketAndParty(t, proposal.ID, voterWithELS1, 0.1)
+	eng.ensureEquityLikeShareForMarketAndParty(t, marketID, voterWithELS1, 0.1)
 
 	// expect
 	eng.expectVoteEvent(t, voterWithELS1, proposal.ID)
@@ -301,7 +307,7 @@ func testVotingWithMajorityOfYesFromTokenHoldersMakesMarketUpdateProposalPassed(
 
 	// setup
 	eng.ensureTokenBalanceForParty(t, voterWithELS2, 0)
-	eng.ensureEquityLikeShareForMarketAndParty(t, proposal.ID, voterWithELS2, 0.7)
+	eng.ensureEquityLikeShareForMarketAndParty(t, marketID, voterWithELS2, 0.7)
 
 	// expect
 	eng.expectVoteEvent(t, voterWithELS2, proposal.ID)
@@ -339,10 +345,11 @@ func testVotingWithMajorityOfNoFromTokenHoldersMakesMarketUpdateProposalDeclined
 	// given
 	proposer := vgrand.RandomStr(5)
 	proposal := eng.newProposalForMarketUpdate(proposer, time.Now())
+	marketID := proposal.MarketUpdate().MarketID
 
 	// setup
-	eng.ensureEquityLikeShareForMarketAndParty(t, proposal.ID, proposer, 0.7)
-	eng.ensureExistingMarket(t, proposal.ID)
+	eng.ensureEquityLikeShareForMarketAndParty(t, marketID, proposer, 0.7)
+	eng.ensureExistingMarket(t, marketID)
 	eng.ensureTokenBalanceForParty(t, proposer, 1)
 	eng.ensureAllAssetEnabled(t)
 
@@ -361,7 +368,7 @@ func testVotingWithMajorityOfNoFromTokenHoldersMakesMarketUpdateProposalDeclined
 
 	// setup
 	eng.ensureTokenBalanceForParty(t, voterWithToken1, 10)
-	eng.ensureEquityLikeShareForMarketAndParty(t, proposal.ID, voterWithToken1, 0)
+	eng.ensureEquityLikeShareForMarketAndParty(t, marketID, voterWithToken1, 0)
 
 	// expect
 	eng.expectVoteEvent(t, voterWithToken1, proposal.ID)
@@ -378,7 +385,7 @@ func testVotingWithMajorityOfNoFromTokenHoldersMakesMarketUpdateProposalDeclined
 
 	// setup
 	eng.ensureTokenBalanceForParty(t, voterWithToken2, 2)
-	eng.ensureEquityLikeShareForMarketAndParty(t, proposal.ID, voterWithToken2, 0)
+	eng.ensureEquityLikeShareForMarketAndParty(t, marketID, voterWithToken2, 0)
 
 	// expect
 	eng.expectVoteEvent(t, voterWithToken2, proposal.ID)
@@ -395,7 +402,7 @@ func testVotingWithMajorityOfNoFromTokenHoldersMakesMarketUpdateProposalDeclined
 
 	// setup
 	eng.ensureTokenBalanceForParty(t, voterWithELS1, 0)
-	eng.ensureEquityLikeShareForMarketAndParty(t, proposal.ID, voterWithELS1, 0.1)
+	eng.ensureEquityLikeShareForMarketAndParty(t, marketID, voterWithELS1, 0.1)
 
 	// expect
 	eng.expectVoteEvent(t, voterWithELS1, proposal.ID)
@@ -412,7 +419,7 @@ func testVotingWithMajorityOfNoFromTokenHoldersMakesMarketUpdateProposalDeclined
 
 	// setup
 	eng.ensureTokenBalanceForParty(t, voterWithELS2, 0)
-	eng.ensureEquityLikeShareForMarketAndParty(t, proposal.ID, voterWithELS2, 0.7)
+	eng.ensureEquityLikeShareForMarketAndParty(t, marketID, voterWithELS2, 0.7)
 
 	// expect
 	eng.expectVoteEvent(t, voterWithELS2, proposal.ID)
@@ -450,10 +457,11 @@ func testVotingWithoutTokenAndMajorityOfYesFromEquityLikeShareHoldersMakesMarket
 	// given
 	proposer := vgrand.RandomStr(5)
 	proposal := eng.newProposalForMarketUpdate(proposer, time.Now())
+	marketID := proposal.MarketUpdate().MarketID
 
 	// setup
-	eng.ensureEquityLikeShareForMarketAndParty(t, proposal.ID, proposer, 0.7)
-	eng.ensureExistingMarket(t, proposal.ID)
+	eng.ensureEquityLikeShareForMarketAndParty(t, marketID, proposer, 0.7)
+	eng.ensureExistingMarket(t, marketID)
 	eng.ensureTokenBalanceForParty(t, proposer, 1)
 	eng.ensureAllAssetEnabled(t)
 
@@ -472,7 +480,7 @@ func testVotingWithoutTokenAndMajorityOfYesFromEquityLikeShareHoldersMakesMarket
 
 	// setup
 	eng.ensureTokenBalanceForParty(t, voterWithToken, 2)
-	eng.ensureEquityLikeShareForMarketAndParty(t, proposal.ID, voterWithToken, 0)
+	eng.ensureEquityLikeShareForMarketAndParty(t, marketID, voterWithToken, 0)
 
 	// expect
 	eng.expectVoteEvent(t, voterWithToken, proposal.ID)
@@ -489,7 +497,7 @@ func testVotingWithoutTokenAndMajorityOfYesFromEquityLikeShareHoldersMakesMarket
 
 	// setup
 	eng.ensureTokenBalanceForParty(t, voterWithELS1, 0)
-	eng.ensureEquityLikeShareForMarketAndParty(t, proposal.ID, voterWithELS1, 0.1)
+	eng.ensureEquityLikeShareForMarketAndParty(t, marketID, voterWithELS1, 0.1)
 
 	// expect
 	eng.expectVoteEvent(t, voterWithELS1, proposal.ID)
@@ -506,7 +514,7 @@ func testVotingWithoutTokenAndMajorityOfYesFromEquityLikeShareHoldersMakesMarket
 
 	// setup
 	eng.ensureTokenBalanceForParty(t, voterWithELS2, 0)
-	eng.ensureEquityLikeShareForMarketAndParty(t, proposal.ID, voterWithELS2, 0.7)
+	eng.ensureEquityLikeShareForMarketAndParty(t, marketID, voterWithELS2, 0.7)
 
 	// expect
 	eng.expectVoteEvent(t, voterWithELS2, proposal.ID)
@@ -525,11 +533,11 @@ func testVotingWithoutTokenAndMajorityOfYesFromEquityLikeShareHoldersMakesMarket
 	eng.ensureNetworkParameter(t, netparams.GovernanceProposalUpdateMarketRequiredParticipation, "0.5")
 	eng.ensureStakingAssetTotalSupply(t, 13)
 	eng.ensureTokenBalanceForParty(t, voterWithToken, 2)
-	eng.ensureEquityLikeShareForMarketAndParty(t, proposal.ID, voterWithToken, 0)
+	eng.ensureEquityLikeShareForMarketAndParty(t, marketID, voterWithToken, 0)
 	eng.ensureTokenBalanceForParty(t, voterWithELS1, 0)
-	eng.ensureEquityLikeShareForMarketAndParty(t, proposal.ID, voterWithELS1, 0.1)
+	eng.ensureEquityLikeShareForMarketAndParty(t, marketID, voterWithELS1, 0.1)
 	eng.ensureTokenBalanceForParty(t, voterWithELS2, 0)
-	eng.ensureEquityLikeShareForMarketAndParty(t, proposal.ID, voterWithELS2, 0.7)
+	eng.ensureEquityLikeShareForMarketAndParty(t, marketID, voterWithELS2, 0.7)
 
 	// expect
 	eng.expectPassedProposalEvent(t, proposal.ID)
@@ -547,10 +555,11 @@ func testVotingWithoutTokenAndMajorityOfNoFromEquityLikeShareHoldersMakesMarketU
 	// given
 	proposer := vgrand.RandomStr(5)
 	proposal := eng.newProposalForMarketUpdate(proposer, time.Now())
+	marketID := proposal.MarketUpdate().MarketID
 
 	// setup
-	eng.ensureEquityLikeShareForMarketAndParty(t, proposal.ID, proposer, 0.7)
-	eng.ensureExistingMarket(t, proposal.ID)
+	eng.ensureEquityLikeShareForMarketAndParty(t, marketID, proposer, 0.7)
+	eng.ensureExistingMarket(t, marketID)
 	eng.ensureTokenBalanceForParty(t, proposer, 1)
 	eng.ensureAllAssetEnabled(t)
 
@@ -569,7 +578,7 @@ func testVotingWithoutTokenAndMajorityOfNoFromEquityLikeShareHoldersMakesMarketU
 
 	// setup
 	eng.ensureTokenBalanceForParty(t, voterWithToken, 2)
-	eng.ensureEquityLikeShareForMarketAndParty(t, proposal.ID, voterWithToken, 0)
+	eng.ensureEquityLikeShareForMarketAndParty(t, marketID, voterWithToken, 0)
 
 	// expect
 	eng.expectVoteEvent(t, voterWithToken, proposal.ID)
@@ -586,7 +595,7 @@ func testVotingWithoutTokenAndMajorityOfNoFromEquityLikeShareHoldersMakesMarketU
 
 	// setup
 	eng.ensureTokenBalanceForParty(t, voterWithELS1, 0)
-	eng.ensureEquityLikeShareForMarketAndParty(t, proposal.ID, voterWithELS1, 0.1)
+	eng.ensureEquityLikeShareForMarketAndParty(t, marketID, voterWithELS1, 0.1)
 
 	// expect
 	eng.expectVoteEvent(t, voterWithELS1, proposal.ID)
@@ -603,7 +612,7 @@ func testVotingWithoutTokenAndMajorityOfNoFromEquityLikeShareHoldersMakesMarketU
 
 	// setup
 	eng.ensureTokenBalanceForParty(t, voterWithELS2, 0)
-	eng.ensureEquityLikeShareForMarketAndParty(t, proposal.ID, voterWithELS2, 0.7)
+	eng.ensureEquityLikeShareForMarketAndParty(t, marketID, voterWithELS2, 0.7)
 
 	// expect
 	eng.expectVoteEvent(t, voterWithELS2, proposal.ID)
@@ -622,11 +631,11 @@ func testVotingWithoutTokenAndMajorityOfNoFromEquityLikeShareHoldersMakesMarketU
 	eng.ensureNetworkParameter(t, netparams.GovernanceProposalUpdateMarketRequiredParticipation, "0.5")
 	eng.ensureStakingAssetTotalSupply(t, 13)
 	eng.ensureTokenBalanceForParty(t, voterWithToken, 2)
-	eng.ensureEquityLikeShareForMarketAndParty(t, proposal.ID, voterWithToken, 0)
+	eng.ensureEquityLikeShareForMarketAndParty(t, marketID, voterWithToken, 0)
 	eng.ensureTokenBalanceForParty(t, voterWithELS1, 0)
-	eng.ensureEquityLikeShareForMarketAndParty(t, proposal.ID, voterWithELS1, 0.1)
+	eng.ensureEquityLikeShareForMarketAndParty(t, marketID, voterWithELS1, 0.1)
 	eng.ensureTokenBalanceForParty(t, voterWithELS2, 0)
-	eng.ensureEquityLikeShareForMarketAndParty(t, proposal.ID, voterWithELS2, 0.7)
+	eng.ensureEquityLikeShareForMarketAndParty(t, marketID, voterWithELS2, 0.7)
 
 	// expect
 	eng.expectDeclinedProposalEvent(t, proposal.ID, types.ProposalErrorMajorityThresholdNotReached)

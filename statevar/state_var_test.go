@@ -113,7 +113,7 @@ func setupValidators(t *testing.T, offset int, numValidators int, startCalc func
 	t.Helper()
 	validators := getValidators(t, now, numValidators)
 	allNodeIds := []string{"0", "1", "2", "3", "4"}
-	for _, v := range validators {
+	for i, v := range validators {
 		err := generateStateVariableForValidator(t, v, now, startCalc, resultCallback)
 		require.NoError(t, err)
 		v.topology.EXPECT().IsValidator().Return(true).AnyTimes()
@@ -123,12 +123,13 @@ func setupValidators(t *testing.T, offset int, numValidators int, startCalc func
 		}).AnyTimes()
 		v.topology.EXPECT().AllNodeIDs().Return(allNodeIds).AnyTimes()
 		v.commander.EXPECT().Command(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
+		v.topology.EXPECT().SelfNodeID().Return(allNodeIds[i]).AnyTimes()
 	}
 	return validators
 }
 
 func TestStateVar(t *testing.T) {
-	for i := 0; i < 100; i++ {
+	for i := 0; i < 10; i++ {
 		now = time.Date(2021, time.Month(2), 21, 1, 10, 30, 0, time.UTC)
 		t.Run("test converters from/to native data type/key value bundle", testConverters)
 		t.Run("new event comes in, no previous active event - triggers calculation", testEventTriggeredNoPreviousEvent)
@@ -594,4 +595,20 @@ func testTimeBasedEvent(t *testing.T) {
 		require.Equal(t, "20210221_011050", evt.EventID)
 		require.Equal(t, "consensus_calc_started", evt.State)
 	}
+
+	// Remove time trigger events
+	for _, v := range validators {
+		v.engine.RemoveTimeTriggers("asset", "market")
+	}
+
+	// advance even more to when we should have triggered
+	brokerEvents = []events.Event{}
+	now = now.Add(time.Second * 9)
+	for _, v := range validators {
+		v.engine.OnTimeTick(context.Background(), now)
+	}
+
+	// expected no events
+	brokerEvents = []events.Event{}
+	require.Equal(t, 0, len(brokerEvents))
 }

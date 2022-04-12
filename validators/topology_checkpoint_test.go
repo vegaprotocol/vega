@@ -63,6 +63,22 @@ func testTopologyCheckpointSuccess(t *testing.T) {
 	err = top.AddKeyRotate(ctx, "vega-master-pubkey-1", 5, kr2)
 	assert.NoError(t, err)
 
+	ekr1 := &commandspb.EthereumKeyRotateSubmission{
+		TargetBlock:    10,
+		NewAddress:     "new-eth-address-0",
+		CurrentAddress: "eth-address-0",
+	}
+	err = top.RotateEthereumKey(ctx, "vega-master-pubkey-0", 5, ekr1)
+	assert.NoError(t, err)
+
+	ekr2 := &commandspb.EthereumKeyRotateSubmission{
+		TargetBlock:    11,
+		NewAddress:     "new-eth-address-1",
+		CurrentAddress: "eth-address-1",
+	}
+	err = top.RotateEthereumKey(ctx, "vega-master-pubkey-1", 5, ekr2)
+	assert.NoError(t, err)
+
 	pkrs := top.GetAllPendingKeyRotations()
 	assert.Len(t, pkrs, 2)
 
@@ -79,6 +95,9 @@ func testTopologyCheckpointSuccess(t *testing.T) {
 	newPkrs := newTop.GetAllPendingKeyRotations()
 	assert.Len(t, newPkrs, 2)
 	assert.Equal(t, pkrs, newPkrs)
+
+	assert.Equal(t, top.GetPendingEthereumKeyRotation(ekr1.TargetBlock, "vega-master-pubkey-0"), newTop.GetPendingEthereumKeyRotation(ekr1.TargetBlock, "vega-master-pubkey-0"))
+	assert.Equal(t, top.GetPendingEthereumKeyRotation(ekr2.TargetBlock, "vega-master-pubkey-1"), newTop.GetPendingEthereumKeyRotation(ekr2.TargetBlock, "vega-master-pubkey-1"))
 }
 
 func testTopologyCheckpointUsesRelativeBlockHeight(t *testing.T) {
@@ -104,6 +123,22 @@ func testTopologyCheckpointUsesRelativeBlockHeight(t *testing.T) {
 		CurrentPubKeyHash: hashKey("vega-key-1"),
 	}
 	err = top.AddKeyRotate(ctx, "vega-master-pubkey-1", 5, kr2)
+	assert.NoError(t, err)
+
+	ekr1 := &commandspb.EthereumKeyRotateSubmission{
+		TargetBlock:    105,
+		NewAddress:     "new-eth-address-0",
+		CurrentAddress: "eth-address-0",
+	}
+	err = top.RotateEthereumKey(ctx, "vega-master-pubkey-0", 5, ekr1)
+	assert.NoError(t, err)
+
+	ekr2 := &commandspb.EthereumKeyRotateSubmission{
+		TargetBlock:    115,
+		NewAddress:     "new-eth-address-1",
+		CurrentAddress: "eth-address-1",
+	}
+	err = top.RotateEthereumKey(ctx, "vega-master-pubkey-1", 5, ekr2)
 	assert.NoError(t, err)
 
 	pkrs := top.GetAllPendingKeyRotations()
