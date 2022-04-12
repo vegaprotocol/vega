@@ -24,6 +24,16 @@ type LPUpdate struct {
 	LpType           string
 }
 
+func PartyCancelsTheirLiquidityProvision(exec Execution, marketID, party string) error {
+	cancel := types.LiquidityProvisionCancellation{
+		MarketID: marketID,
+	}
+	if err := exec.CancelLiquidityProvision(context.Background(), &cancel, party); err != nil {
+		return errCancelLiquidityProvision(party, marketID, err)
+	}
+	return nil
+}
+
 func PartiesSubmitLiquidityProvision(exec Execution, table *godog.Table) error {
 	lps := map[string]*LPUpdate{}
 	parties := map[string]string{}
@@ -107,6 +117,10 @@ func PartiesSubmitLiquidityProvision(exec Execution, table *godog.Table) error {
 
 func errSubmittingLiquidityProvision(lp *types.LiquidityProvisionSubmission, party, id string, err error) error {
 	return fmt.Errorf("failed to submit [%v] for party %s and id %s: %v", lp, party, id, err)
+}
+
+func errCancelLiquidityProvision(party, market string, err error) error {
+	return fmt.Errorf("failed to cancel LP for party %s on market %s: %v", party, market, err)
 }
 
 func errAmendingLiquidityProvision(lp *types.LiquidityProvisionAmendment, party string, err error) error {
