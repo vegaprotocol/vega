@@ -6,7 +6,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
-	"strings"
 	"time"
 
 	"code.vegaprotocol.io/vega/genesis"
@@ -85,25 +84,9 @@ func genesisDocHTTPFromURL() (*tmtypes.GenesisDoc, error) {
 func httpGenesisDocProvider() (*tmtypes.GenesisDoc, error) {
 	genesisFilesRootPath := fmt.Sprintf("https://raw.githubusercontent.com/vegaprotocol/networks/master/%s", networkSelect)
 
-	doc, state, err := getGenesisFromRemote(genesisFilesRootPath)
-	if err != nil {
-		return nil, err
-	}
+	doc, _, err := getGenesisFromRemote(genesisFilesRootPath)
 
-	sig, err := getSignatureFromRemote(genesisFilesRootPath)
-	if err != nil {
-		return nil, err
-	}
-
-	validSignature, err := genesis.VerifyGenesisStateSignature(state, sig)
-	if err != nil {
-		return nil, fmt.Errorf("couldn't verify the genesis state signature: %s", err)
-	}
-	if !validSignature {
-		return nil, fmt.Errorf("genesis state doesn't match the signature: %s", sig)
-	}
-
-	return doc, nil
+	return doc, err
 }
 
 func getGenesisFromRemote(genesisFilesRootPath string) (*tmtypes.GenesisDoc, *genesis.GenesisState, error) {
@@ -129,26 +112,6 @@ func getGenesisFromRemote(genesisFilesRootPath string) (*tmtypes.GenesisDoc, *ge
 		return nil, nil, fmt.Errorf("invalid genesis file from %s: %w", genesisFilePath, err)
 	}
 	return doc, state, nil
-}
-
-func getSignatureFromRemote(genesisFilesRootPath string) (string, error) {
-	signatureFilePath := fmt.Sprintf("%s/signature.txt", genesisFilesRootPath)
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-	req, err := http.NewRequestWithContext(ctx, "GET", signatureFilePath, nil)
-	if err != nil {
-		return "", fmt.Errorf("couldn't load signature file from %s: %w", signatureFilePath, err)
-	}
-	sigResp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return "", fmt.Errorf("couldn't load signature file from %s: %w", signatureFilePath, err)
-	}
-	defer sigResp.Body.Close()
-	sig, err := ioutil.ReadAll(sigResp.Body)
-	if err != nil {
-		return "", err
-	}
-	return strings.Trim(string(sig), "\n"), nil
 }
 
 // this is taken from tendermint.
