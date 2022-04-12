@@ -147,10 +147,10 @@ func NewMarketFromSnapshot(
 		stateVarEngine:             stateVarEngine,
 	}
 
+	market.assetDP = uint32(assetDetails.DecimalPlaces())
 	market.tradableInstrument.Instrument.Product.NotifyOnTradingTerminated(market.tradingTerminated)
 	market.tradableInstrument.Instrument.Product.NotifyOnSettlementPrice(market.settlementPrice)
 	liqEngine.SetGetStaticPricesFunc(market.getBestStaticPricesDecimal)
-
 	return market, nil
 }
 
