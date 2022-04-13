@@ -14,6 +14,11 @@
 ### 🐛 Fixes
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
+## 0.50.1
+
+### 🐛 Fixes
+- [5226](https://github.com/vegaprotocol/vega/issues/5226) - Add support for settlement price decimal place in governance
+
 
 ## 0.50.0
 
