@@ -10,6 +10,7 @@
 
 ### 🛠 Improvements
 - [5001](https://github.com/vegaprotocol/vega/issues/5001) - Set and increment LP version field correctly
+- [3372](https://github.com/vegaprotocol/vega/issues/3372) - Add integration test making sure margin is released when an LP is cancelled.
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 ### 🐛 Fixes
