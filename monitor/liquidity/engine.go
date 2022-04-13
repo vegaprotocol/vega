@@ -115,6 +115,4 @@ func (e *Engine) CheckLiquidity(as AuctionState, t time.Time, currentStake *num.
 		})
 	}
 	return nil
-
-	//TODO: Don't leave ANY auction type if supplied < target, only
 }
