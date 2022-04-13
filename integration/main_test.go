@@ -215,6 +215,9 @@ func InitializeScenario(s *godog.ScenarioContext) {
 	s.Step(`^the oracles broadcast data signed with "([^"]*)":$`, func(pubKeys string, properties *godog.Table) error {
 		return steps.OraclesBroadcastDataSignedWithKeys(execsetup.oracleEngine, pubKeys, properties)
 	})
+	s.Step(`^the following LP events should be emitted:$`, func(table *godog.Table) error {
+		return steps.TheFollowingLPEventsShouldBeEmitted(execsetup.broker, table)
+	})
 
 	// block time stuff
 	s.Step(`^the average block duration is "([^"]+)" with variance "([^"]+)"$`, func(block, variance string) error {
