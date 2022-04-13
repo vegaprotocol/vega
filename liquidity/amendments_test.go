@@ -15,6 +15,7 @@ import (
 	"code.vegaprotocol.io/vega/types/num"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 const (
@@ -46,6 +47,9 @@ func testCanAmend(t *testing.T) {
 	tng.broker.EXPECT().Send(gomock.Any()).Times(1)
 	err := tng.engine.SubmitLiquidityProvision(ctx, lps, party, idgen)
 	assert.NoError(t, err)
+	lp := tng.engine.LiquidityProvisionByPartyID(party)
+	require.NotNil(t, lp)
+	require.EqualValues(t, 1, lp.Version)
 
 	lpa := getTestAmendSimpleSubmission()
 	// now we can do a OK can amend

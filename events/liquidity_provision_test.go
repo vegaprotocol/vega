@@ -39,7 +39,7 @@ func TestLiquidityProvisionDeepClone(t *testing.T) {
 		MarketID:         "MarketId",
 		CommitmentAmount: num.NewUint(30000),
 		Fee:              num.DecimalFromFloat(0.01),
-		Version:          "1",
+		Version:          1,
 		Status:           types.LiquidityProvisionStatusUndeployed,
 		Reference:        "Reference",
 		Sells:            []*types.LiquidityOrderReference{sellOrder},
@@ -58,7 +58,7 @@ func TestLiquidityProvisionDeepClone(t *testing.T) {
 	lp.MarketID = "Changed"
 	lp.CommitmentAmount = num.NewUint(999)
 	lp.Fee = num.DecimalFromFloat(99.9)
-	lp.Version = "999"
+	lp.Version = 999
 	lp.Status = types.LiquidityProvisionUnspecified
 	lp.Reference = "Changed"
 	sellOrder.OrderID = "Changed"
