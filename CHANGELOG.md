@@ -14,7 +14,7 @@
 
 ### 🐛 Fixes
 - [4798](https://github.com/vegaprotocol/vega/issues/4978) - Set market pending timestamp to the time at which the market is created.
-- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+- [5222](https://github.com/vegaprotocol/vega/issues/5222) - Do not panic when admin server stops.
 
 ## 0.50.1
 
