@@ -20,9 +20,9 @@ func (m *Market) checkAuction(ctx context.Context, now time.Time) {
 	// opening auction
 	if m.as.IsOpeningAuction() {
 		if wt {
-			//only do this once
+			// only do this once
 			if !m.sawIndicativePrice {
-				//pass the uncrossing price to liquidity engine
+				// pass the uncrossing price to liquidity engine
 				if err := m.pMonitor.CheckPrice(ctx, m.as, p.Clone(), v, now, true); err != nil {
 					m.log.Panic("unable to run check price with price monitor",
 						logging.String("market-id", m.GetID()),
@@ -31,7 +31,6 @@ func (m *Market) checkAuction(ctx context.Context, now time.Time) {
 				m.OnOpeningAuctionFirstUncrossingPrice()
 				m.sawIndicativePrice = true
 			}
-
 		}
 		if endTS := m.as.ExpiresAt(); endTS == nil || !endTS.Before(now) {
 			return
@@ -43,7 +42,7 @@ func (m *Market) checkAuction(ctx context.Context, now time.Time) {
 		if len(trades) == 0 {
 			return
 		}
-		//opening auction requirements satisfied at this point
+		// opening auction requirements satisfied at this point
 		m.as.SetReadyToLeave()
 
 		m.checkLiquidity(ctx, trades, true)
