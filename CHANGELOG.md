@@ -9,6 +9,10 @@
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 ### 🛠 Improvements
+- [4223](https://github.com/vegaprotocol/vega/issues/4223) - Use uncrossing price for target stake calculation during auction
+- [3047](https://github.com/vegaprotocol/vega/issues/3047) - Improve interaction between liquidity and price monitoring auctions
+- [3570](https://github.com/vegaprotocol/vega/issues/3570) - Set extension trigger during opening auction with insufficient liquidity
+- [3362](https://github.com/vegaprotocol/vega/issues/3362) - Stop non-persistent orders from triggering auctions
 - [5001](https://github.com/vegaprotocol/vega/issues/5001) - Set and increment LP version field correctly
 - [5001](https://github.com/vegaprotocol/vega/issues/5001) - Add integration test for LP versioning
 - [3372](https://github.com/vegaprotocol/vega/issues/3372) - Add integration test making sure margin is released when an LP is cancelled.
