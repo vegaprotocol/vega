@@ -223,7 +223,7 @@ func testWithinMarket(t *testing.T) {
 		WithSubmittedOrder(t, "some-id-1", "party1", types.SideSell, matchingPrice+one).
 		WithSubmittedOrder(t, "some-id-2", "party2", types.SideBuy, matchingPrice-one).
 		WithSubmittedOrder(t, "some-id-3", "party1", types.SideSell, matchingPrice).
-		WithSubmittedOrder(t, "some-id-4", "party2", types.SideBuy, matchingPrice). //Need to generate a trade to leave opening auction
+		WithSubmittedOrder(t, "some-id-4", "party2", types.SideBuy, matchingPrice). // Need to generate a trade to leave opening auction
 		// party1 (commitment: 2000) should get 2/3 of the fee
 		WithSubmittedLiquidityProvision(t, "party1", "lp-id-1", 2000, "0.5", []*types.LiquidityOrder{
 			newLiquidityOrder(types.PeggedReferenceBestBid, 11, 1),
