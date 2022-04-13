@@ -14,15 +14,13 @@ func (m *Market) checkAuction(ctx context.Context, now time.Time) {
 	if !m.as.InAuction() {
 		return
 	}
-	wt, nt := m.matching.CanLeaveAuction()
-	// at this point, it doesn't matter what auction type we're in
-	p, v, _ := m.matching.GetIndicativePriceAndVolume()
 	// opening auction
 	if m.as.IsOpeningAuction() {
-		if wt {
-			// only do this once
-			if !m.sawIndicativePrice {
-				// pass the uncrossing price to liquidity engine
+		// only do this once
+		if !m.sawIndicativePrice {
+			p, v, _ := m.matching.GetIndicativePriceAndVolume()
+			if v > 0 {
+				// pass the first uncrossing price to price engine so state variables depending on it can be initialised
 				if err := m.pMonitor.CheckPrice(ctx, m.as, p.Clone(), v, now, true); err != nil {
 					m.log.Panic("unable to run check price with price monitor",
 						logging.String("market-id", m.GetID()),
@@ -49,6 +47,7 @@ func (m *Market) checkAuction(ctx context.Context, now time.Time) {
 		if !m.as.CanLeave() {
 			return
 		}
+		p, v, _ := m.matching.GetIndicativePriceAndVolume()
 		if err := m.pMonitor.CheckPrice(ctx, m.as, p.Clone(), v, true); err != nil {
 			m.log.Panic("unable to run check price with price monitor",
 				logging.String("market-id", m.GetID()),
@@ -76,63 +75,41 @@ func (m *Market) checkAuction(ctx context.Context, now time.Time) {
 		// start the market fee window
 		m.feeSplitter.TimeWindowStart(now)
 		return
-	} else
+	}
 	// price and liquidity auctions
-	{
-		if endTS := m.as.ExpiresAt(); endTS == nil || !endTS.Before(now) {
-			return
-		}
-		isPrice := m.as.IsPriceAuction()
-		trades, err := m.matching.GetIndicativeTrades()
-		if err != nil {
-			m.log.Panic("Can't get indicative trades")
-		}
-		if !isPrice {
-			m.checkLiquidity(ctx, trades, true)
-		}
-		if isPrice || m.as.CanLeave() {
-			if err := m.pMonitor.CheckPrice(ctx, m.as, p.Clone(), v, true); err != nil {
-				m.log.Panic("unable to run check price with price monitor",
-					logging.String("market-id", m.GetID()),
-					logging.Error(err))
-			}
-		}
-		end := m.as.CanLeave()
-		if isPrice && end {
-			m.checkLiquidity(ctx, trades, true)
-		}
-		if evt := m.as.AuctionExtended(ctx, m.currentTime); evt != nil {
-			m.broker.Send(evt)
-			end = false
-		}
-		// price monitoring engine and liquidity monitoring engine both indicated auction can end
-		if end {
-			// can we leave based on the book state?
-			if !nt {
-				m.extendAuctionIncompleteBook()
-				return
-			}
-			m.leaveAuction(ctx, now)
-		}
+	if endTS := m.as.ExpiresAt(); endTS == nil || !endTS.Before(now) {
+		return
 	}
-	// This is where FBA handling will go
-}
+	isPrice := m.as.IsPriceAuction()
+	trades, err := m.matching.GetIndicativeTrades()
+	if err != nil {
+		m.log.Panic("Can't get indicative trades")
+	}
+	if !isPrice {
+		m.checkLiquidity(ctx, trades, true)
+	}
+	p, v, _ := m.matching.GetIndicativePriceAndVolume()
+	if isPrice || m.as.CanLeave() {
 
-func (m *Market) extendAuctionIncompleteBook() {
-	if m.as.IsOpeningAuction() {
-		// extend 1 second
-		m.as.ExtendAuction(types.AuctionDuration{
-			Duration: 1,
-		})
-		return
+		if err := m.pMonitor.CheckPrice(ctx, m.as, p.Clone(), v, true); err != nil {
+			m.log.Panic("unable to run check price with price monitor",
+				logging.String("market-id", m.GetID()),
+				logging.Error(err))
+		}
 	}
-	if m.as.IsPriceAuction() {
-		m.as.ExtendAuctionPrice(types.AuctionDuration{
-			Duration: 1,
-		})
-		return
+	end := m.as.CanLeave()
+	if isPrice && end {
+		m.checkLiquidity(ctx, trades, true)
 	}
-	m.as.ExtendAuctionLiquidity(types.AuctionDuration{
-		Duration: 1,
-	})
+	if evt := m.as.AuctionExtended(ctx, m.currentTime); evt != nil {
+		m.broker.Send(evt)
+		end = false
+	}
+	// price monitoring engine and liquidity monitoring engine both indicated auction can end
+	if end {
+		// can we leave based on the book state?
+		m.leaveAuction(ctx, now)
+	}
+
+	// This is where FBA handling will go
 }
