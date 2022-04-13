@@ -1033,7 +1033,7 @@ func (m *Market) leaveAuction(ctx context.Context, now time.Time) {
 	// Send an event bus update
 	m.broker.Send(endEvt)
 	m.checkForReferenceMoves(ctx, updatedOrders, true)
-	m.checkLiquidity(ctx, nil, true) // TODO (WG): Is this really needed?
+	m.checkLiquidity(ctx, nil, true)
 	m.commandLiquidityAuction(ctx)
 	m.updateLiquidityFee(ctx)
 	m.OnAuctionEnded()
@@ -3100,7 +3100,6 @@ func (m *Market) checkLiquidity(ctx context.Context, trades []*types.Trade, pers
 	_, vBid, _ := m.getBestStaticBidPriceAndVolume()
 	_, vAsk, _ := m.getBestStaticAskPriceAndVolume()
 
-	// TODO: Tidy up, this hack relies on knowledge of internal mechanism of liquidity monitor.
 	if m.as.InAuction() && !m.matching.BidAndAskPresentAfterAuction() {
 		vBid = 0
 		vAsk = 0
