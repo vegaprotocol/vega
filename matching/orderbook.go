@@ -449,7 +449,6 @@ func (b *OrderBook) GetIndicativeTrades() ([]*types.Trade, error) {
 			trades[index].Price = price.Clone()
 		}
 		output = append(output, trades...)
-
 	}
 
 	return output, nil
