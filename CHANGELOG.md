@@ -15,6 +15,9 @@
 ### 🐛 Fixes
 - [4798](https://github.com/vegaprotocol/vega/issues/4978) - Set market pending timestamp to the time at which the market is created.
 - [5222](https://github.com/vegaprotocol/vega/issues/5222) - Do not panic when admin server stops.
+- [5103](https://github.com/vegaprotocol/vega/issues/5103) - Fix invalid http status set in faucet
+- [5128](https://github.com/vegaprotocol/vega/issues/5128) - Fix wrong http rate limit for faucet
+
 
 ## 0.50.1
 

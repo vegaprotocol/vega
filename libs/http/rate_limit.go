@@ -44,7 +44,7 @@ func NewRateLimit(ctx context.Context, cfg RateLimitConfig) (*RateLimit, error) 
 }
 
 // NewRequest returns nil if the rate has not been exceeded.
-func (r *RateLimit) NewRequest(prefix, ip string) error {
+func (r *RateLimit) NewRequest(identifier, ip string) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -52,7 +52,6 @@ func (r *RateLimit) NewRequest(prefix, ip string) error {
 		return nil
 	}
 
-	identifier := fmt.Sprintf("%s %s", prefix, ip)
 	until, found := r.requests[identifier]
 	if !found {
 		until = time.Time{}
@@ -63,7 +62,7 @@ func (r *RateLimit) NewRequest(prefix, ip string) error {
 	if time.Now().Before(until) {
 		// we are already greylisted,
 		// another request came in while still greylisted
-		return fmt.Errorf("rate-limited (%s for %s) until %v", prefix, ip, r.requests[identifier])
+		return fmt.Errorf("rate-limited (%s) until %v", identifier, r.requests[identifier])
 	}
 
 	// greylist for the minimal duration
