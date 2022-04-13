@@ -12,6 +12,7 @@
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 ### 🐛 Fixes
+- [4798](https://github.com/vegaprotocol/vega/issues/4978) - Set market pending timestamp to the time at which the market is created.
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 ## 0.50.1
