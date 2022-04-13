@@ -67,7 +67,7 @@ func checkLPEvent(last events.LiquidityProvision, party, id string, amt *num.Uin
 		return fmt.Errorf("version %d is not the last version for LP %s (party %s), last is %d", version, id, party, last.LiquidityProvision().Version)
 	}
 	if amt != nil && last.LiquidityProvision().CommitmentAmount != amt.String() {
-		fmt.Errorf("commitment amount was %s, expected %s for last event for LP %s, party %s",
+		return fmt.Errorf("commitment amount was %s, expected %s for last event for LP %s, party %s",
 			last.LiquidityProvision().CommitmentAmount,
 			amt,
 			id,
