@@ -14,6 +14,11 @@
 ### 🐛 Fixes
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
+## 0.50.1
+
+### 🐛 Fixes
+- [5226](https://github.com/vegaprotocol/vega/issues/5226) - Add support for settlement price decimal place in governance
+
 
 ## 0.50.0
 
@@ -64,6 +69,7 @@
 - [5052](https://github.com/vegaprotocol/vega/issues/5052) - Adding acceptance criteria tests for market decimal places
 - [5138](https://github.com/vegaprotocol/vega/issues/5038) - Adding feature test for "0032-PRIM-price_monitoring.md"
 - [4753](https://github.com/vegaprotocol/vega/issues/4753) - Adding feature test for oracle spec public key validation
+- [4559](https://github.com/vegaprotocol/vega/issues/4559) - Small fixes to the amend order flow
 
 ### 🐛 Fixes
 - [5064](https://github.com/vegaprotocol/vega/issues/5064) - Send order event on settlement

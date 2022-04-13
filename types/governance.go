@@ -1019,6 +1019,7 @@ type FutureProduct struct {
 	OracleSpecForSettlementPrice    *oraclespb.OracleSpecConfiguration
 	OracleSpecForTradingTermination *oraclespb.OracleSpecConfiguration
 	OracleSpecBinding               *OracleSpecToFutureBinding
+	SettlementPriceDecimalPlaces    uint32
 }
 
 func (i InstrumentConfigurationFuture) DeepClone() instrumentConfigurationProduct {
@@ -1074,6 +1075,7 @@ func InstrumentConfigurationFromProto(
 				QuoteName:                       pr.Future.QuoteName,
 				OracleSpecForSettlementPrice:    pr.Future.OracleSpecForSettlementPrice.DeepClone(),
 				OracleSpecForTradingTermination: pr.Future.OracleSpecForTradingTermination.DeepClone(),
+				SettlementPriceDecimalPlaces:    pr.Future.SettlementPriceDecimals,
 				OracleSpecBinding: OracleSpecToFutureBindingFromProto(
 					pr.Future.OracleSpecBinding),
 			},
@@ -1100,8 +1102,8 @@ func (f FutureProduct) IntoProto() *vegapb.FutureProduct {
 		QuoteName:                       f.QuoteName,
 		OracleSpecForSettlementPrice:    f.OracleSpecForSettlementPrice.DeepClone(),
 		OracleSpecForTradingTermination: f.OracleSpecForTradingTermination.DeepClone(),
-
-		OracleSpecBinding: f.OracleSpecBinding.IntoProto(),
+		SettlementPriceDecimals:         f.SettlementPriceDecimalPlaces,
+		OracleSpecBinding:               f.OracleSpecBinding.IntoProto(),
 	}
 }
 
@@ -1239,6 +1241,7 @@ func UpdateInstrumentConfigurationFromProto(p *vegapb.UpdateInstrumentConfigurat
 				QuoteName:                       pr.Future.QuoteName,
 				OracleSpecForSettlementPrice:    pr.Future.OracleSpecForSettlementPrice.DeepClone(),
 				OracleSpecForTradingTermination: pr.Future.OracleSpecForTradingTermination.DeepClone(),
+				SettlementPriceDecimals:         pr.Future.SettlementPriceDecimals,
 				OracleSpecBinding:               OracleSpecToFutureBindingFromProto(pr.Future.OracleSpecBinding),
 			},
 		}
@@ -1441,6 +1444,7 @@ type UpdateFutureProduct struct {
 	OracleSpecForSettlementPrice    *oraclespb.OracleSpecConfiguration
 	OracleSpecForTradingTermination *oraclespb.OracleSpecConfiguration
 	OracleSpecBinding               *OracleSpecToFutureBinding
+	SettlementPriceDecimals         uint32
 }
 
 func (f UpdateFutureProduct) IntoProto() *vegapb.UpdateFutureProduct {
@@ -1449,6 +1453,7 @@ func (f UpdateFutureProduct) IntoProto() *vegapb.UpdateFutureProduct {
 		OracleSpecForSettlementPrice:    f.OracleSpecForSettlementPrice.DeepClone(),
 		OracleSpecForTradingTermination: f.OracleSpecForTradingTermination.DeepClone(),
 		OracleSpecBinding:               f.OracleSpecBinding.IntoProto(),
+		SettlementPriceDecimals:         f.SettlementPriceDecimals,
 	}
 }
 
@@ -1458,6 +1463,7 @@ func (f UpdateFutureProduct) DeepClone() *UpdateFutureProduct {
 		OracleSpecForSettlementPrice:    f.OracleSpecForSettlementPrice.DeepClone(),
 		OracleSpecForTradingTermination: f.OracleSpecForTradingTermination.DeepClone(),
 		OracleSpecBinding:               f.OracleSpecBinding.DeepClone(),
+		SettlementPriceDecimals:         f.SettlementPriceDecimals,
 	}
 }
 
