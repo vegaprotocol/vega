@@ -327,8 +327,9 @@ type Position struct {
 func seToProto(e SE) Position {
 	pos := Position{
 		Position: types.Position{
-			MarketId: e.MarketID(),
-			PartyId:  e.PartyID(),
+			MarketId:          e.MarketID(),
+			PartyId:           e.PartyID(),
+			AverageEntryPrice: num.Zero(),
 		},
 		AverageEntryPriceFP: num.DecimalZero(),
 		RealisedPnlFP:       num.DecimalZero(),
@@ -351,7 +352,7 @@ func speToProto(pos *Position, e SPE) {
 	// if no trades are present on this event, just treat it as a position state event
 	// otherwise we'd have a division by zero panic
 	if len(trades) == 0 {
-		if pos == nil || pos.AverageEntryPrice == nil || !pos.AverageEntryPrice.IsZero() {
+		if pos.AverageEntryPrice != nil && !pos.AverageEntryPrice.IsZero() {
 			return
 		}
 		pos.AverageEntryPrice = e.Price().Clone()
