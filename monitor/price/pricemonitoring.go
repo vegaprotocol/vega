@@ -317,7 +317,7 @@ func (e *Engine) CheckPrice(ctx context.Context, as AuctionState, p *num.Uint, v
 	return nil
 }
 
-//resetPriceHistory deletes existing price history and starts it afresh with the supplied value
+// resetPriceHistory deletes existing price history and starts it afresh with the supplied value.
 func (e *Engine) resetPriceHistory(price *num.Uint, volume uint64) {
 	e.update = e.now
 	if volume > 0 {
