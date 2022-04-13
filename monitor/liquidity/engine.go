@@ -69,7 +69,8 @@ func (e *Engine) UpdateTargetStakeTriggerRatio(ctx context.Context, ratio num.De
 // CheckLiquidity Starts or Ends a Liquidity auction given the current and target stakes along with best static bid and ask volumes.
 // The constant c1 represents the netparam `MarketLiquidityTargetStakeTriggeringRatio`.
 func (e *Engine) CheckLiquidity(as AuctionState, t time.Time, currentStake *num.Uint, trades []*types.Trade,
-	rf types.RiskFactor, refPrice *num.Uint, bestStaticBidVolume, bestStaticAskVolume uint64, persistent bool) error {
+	rf types.RiskFactor, refPrice *num.Uint, bestStaticBidVolume, bestStaticAskVolume uint64, persistent bool,
+) error {
 	exp := as.ExpiresAt()
 	if exp != nil && exp.After(t) {
 		// we're in auction, and the auction isn't expiring yet, so we don't have to do anything yet
