@@ -126,7 +126,7 @@ func (p *Positions) applyLossSocialization(e LSE) {
 	pos.RealisedPnlFP = pos.RealisedPnlFP.Add(amountLoss)
 	pos.RealisedPnl = pos.RealisedPnl.Add(amountLoss)
 
-	pos.Position.UpdatedAt = e.Timestamp()
+	pos.UpdatedAt = e.Timestamp()
 	p.data[marketID][partyID] = pos
 }
 
@@ -144,7 +144,7 @@ func (p *Positions) updatePosition(e SPE) {
 	}
 	updateSettlePosition(&calc, e)
 	// set updated value, and update data map
-	calc.Position.UpdatedAt = e.Timestamp()
+	calc.UpdatedAt = e.Timestamp()
 	p.data[mID][tID] = calc
 }
 
@@ -171,7 +171,7 @@ func (p *Positions) updateSettleDestressed(e SDE) {
 	// the volume now is zero, though, so we'll end up moving this position to storage
 	calc.UnrealisedPnlFP = num.DecimalZero()
 	calc.AverageEntryPriceFP = num.DecimalZero()
-	calc.Position.UpdatedAt = e.Timestamp()
+	calc.UpdatedAt = e.Timestamp()
 	p.data[mID][tID] = calc
 }
 
@@ -351,7 +351,7 @@ func speToProto(pos *Position, e SPE) {
 	// if no trades are present on this event, just treat it as a position state event
 	// otherwise we'd have a division by zero panic
 	if len(trades) == 0 {
-		if !pos.AverageEntryPrice.IsZero() {
+		if pos == nil || pos.AverageEntryPrice == nil || !pos.AverageEntryPrice.IsZero() {
 			return
 		}
 		pos.AverageEntryPrice = e.Price().Clone()
