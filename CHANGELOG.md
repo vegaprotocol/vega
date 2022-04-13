@@ -6,6 +6,7 @@
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 ### 🗑️ Deprecation
+
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 ### 🛠 Improvements
@@ -21,6 +22,7 @@
 - [3047](https://github.com/vegaprotocol/vega/issues/3047) - Improve interaction between liquidity and price monitoring auctions
 - [3570](https://github.com/vegaprotocol/vega/issues/3570) - Set extension trigger during opening auction with insufficient liquidity
 - [3362](https://github.com/vegaprotocol/vega/issues/3362) - Stop non-persistent orders from triggering auctions
+- [5237](https://github.com/vegaprotocol/vega/issues/5237) - Trigger state variable calculation first time indicative uncrossing price is available
 
 ## 0.51.0
 
@@ -62,6 +64,7 @@
 - [5243](https://github.com/vegaprotocol/vega/issues/5243) - Update equity like share according to spec changes.
 
 ### 🐛 Fixes
+
 - [4798](https://github.com/vegaprotocol/vega/issues/4978) - Set market pending timestamp to the time at which the market is created.
 - [5222](https://github.com/vegaprotocol/vega/issues/5222) - Do not panic when admin server stops.
 - [5103](https://github.com/vegaprotocol/vega/issues/5103) - Fix invalid http status set in faucet
@@ -77,15 +80,17 @@
 ## 0.50.1
 
 ### 🐛 Fixes
-- [5226](https://github.com/vegaprotocol/vega/issues/5226) - Add support for settlement price decimal place in governance
 
+- [5226](https://github.com/vegaprotocol/vega/issues/5226) - Add support for settlement price decimal place in governance
 
 ## 0.50.0
 
 ### 🚨 Breaking changes
+
 - [5197](https://github.com/vegaprotocol/vega/issues/5197) - Scale settlement price based on oracle definition
 
 ### 🛠 Improvements
+
 - [5055](https://github.com/vegaprotocol/vega/issues/5055) - Ensure at most 5 triggers are used in price monitoring settings
 - [5100](https://github.com/vegaprotocol/vega/issues/5100) - add a new scenario into feature test, auction folder, leaving auction when liquidity provider provides a limit order
 - [4919](https://github.com/vegaprotocol/vega/issues/4919) - Feature tests for 0011 check order allocate margin
@@ -96,6 +101,7 @@
 - [5219](https://github.com/vegaprotocol/vega/issues/5219) - Remove genesis sign command.
 
 ### 🐛 Fixes
+
 - [5078](https://github.com/vegaprotocol/vega/issues/5078) - Unwrap properly position decimal place from payload
 - [5076](https://github.com/vegaprotocol/vega/issues/5076) - Set last mark price to settlement price when market is settled
 - [5038](https://github.com/vegaprotocol/vega/issues/5038) - Send proof-of-work when when announcing node
@@ -125,6 +131,7 @@
 ## 0.49.8
 
 ### 🛠 Improvements
+
 - [4814](https://github.com/vegaprotocol/vega/issues/4814) - Review fees tests
 - [5067](https://github.com/vegaprotocol/vega/pull/5067) - Adding acceptance codes and tidy up tests
 - [5052](https://github.com/vegaprotocol/vega/issues/5052) - Adding acceptance criteria tests for market decimal places
@@ -133,16 +140,18 @@
 - [4559](https://github.com/vegaprotocol/vega/issues/4559) - Small fixes to the amend order flow
 
 ### 🐛 Fixes
+
 - [5064](https://github.com/vegaprotocol/vega/issues/5064) - Send order event on settlement
 - [5068](https://github.com/vegaprotocol/vega/issues/5068) - Use settlement price if exists when received trading terminated event
-
 
 ## 0.49.7
 
 ### 🚨 Breaking changes
+
 - [4985](https://github.com/vegaprotocol/vega/issues/4985) - Proof of work spam protection
 
 ### 🛠 Improvements
+
 - [5007](https://github.com/vegaprotocol/vega/issues/5007) - Run approbation as part of the CI pipeline
 - [5019](https://github.com/vegaprotocol/vega/issues/5019) - Label Price Monitoring tests
 - [5022](https://github.com/vegaprotocol/vega/issues/5022) - CI: Run approbation for main/master/develop branches only
@@ -153,19 +162,21 @@ only
 - [4916](https://github.com/vegaprotocol/vega/issues/4916) - Add acceptance criteria number in the existing feature tests to address acceptance criteria in `0008-TRAD-trading_workflow.md`
 - [5061](https://github.com/vegaprotocol/vega/issues/5061) - Add a test scenario using log normal risk model into feature test "insurance-pool-balance-test.feature"
 
-
 ### 🐛 Fixes
+
 - [5025](https://github.com/vegaprotocol/vega/issues/5025) - Witness snapshot breaking consensus
 - [5046](https://github.com/vegaprotocol/vega/issues/5046) - Save all events in `ERC20` topology snapshot
 
-
 ## 0.49.4
+
 ### 🛠 Improvements
+
 - [2585](https://github.com/vegaprotocol/vega/issues/2585) - Adding position state event to event bus
 - [4952](https://github.com/vegaprotocol/vega/issues/4952) - Add checkpoints for staking and `multisig control`
 - [4923](https://github.com/vegaprotocol/vega/issues/4923) - Add checkpoint state in the genesis file + add subcommand to do it.
 
 ### 🐛 Fixes
+
 - [4983](https://github.com/vegaprotocol/vega/issues/4983) - Set correct event type for positions state event
 - [4989](https://github.com/vegaprotocol/vega/issues/4989) - Fixing incorrect overflow logic
 - [5036](https://github.com/vegaprotocol/vega/issues/5036) - Fix the `nullblockchain`
@@ -174,6 +185,7 @@ only
 ## 0.49.2
 
 ### 🛠 Improvements
+
 - [4951](https://github.com/vegaprotocol/vega/issues/4951) - Add ability to stream events to a file
 - [4953](https://github.com/vegaprotocol/vega/issues/4953) - Add block hash to statistics and to block height request
 - [4961](https://github.com/vegaprotocol/vega/issues/4961) - Extend auction feature tests
@@ -182,6 +194,7 @@ only
 - [4833](https://github.com/vegaprotocol/vega/issues/4833) - Propagate market update to other engines
 
 ### 🐛 Fixes
+
 - [4947](https://github.com/vegaprotocol/vega/issues/4947) - Fix time formatting problem that was breaking consensus on nodes in different time zones
 - [4956](https://github.com/vegaprotocol/vega/issues/4956) - Fix concurrent write to price monitoring ref price cache
 - [4987](https://github.com/vegaprotocol/vega/issues/4987) - Include the witness engine in snapshots
@@ -192,16 +205,17 @@ only
 - [4993](https://github.com/vegaprotocol/vega/issues/4993) - Stop snapshots thinking we've loaded via `statesync` when we just lost connection to TM
 - [4981](https://github.com/vegaprotocol/vega/issues/4981) - Fix bug causing LP orders to uncross at auction end.
 
-
 ## 0.49.1
 
 ### 🛠 Improvements
+
 - [4895](https://github.com/vegaprotocol/vega/issues/4895) - Emit validators signature when a validator is added or remove from the set
 - [4901](https://github.com/vegaprotocol/vega/issues/4901) - Update the decimal library
 - [4906](https://github.com/vegaprotocol/vega/issues/4906) - Get rid of unnecessary `ToDecimal` conversions (no functional change)
 - [4838](https://github.com/vegaprotocol/vega/issues/4838) - Implement governance vote based on equity-like share for market update
 
 ### 🐛 Fixes
+
 - [4877](https://github.com/vegaprotocol/vega/issues/4877) - Fix topology and `erc20` topology snapshots
 - [4890](https://github.com/vegaprotocol/vega/issues/4890) - epoch service now notifies other engines when it has restored from a snapshot
 - [4879](https://github.com/vegaprotocol/vega/issues/4879) - Fixes for invalid data types in the `MarketData` proto message.
@@ -214,6 +228,7 @@ only
 ## 0.49.0
 
 ### 🚨 Breaking changes
+
 - [4900](https://github.com/vegaprotocol/vega/issues/4809) - Review LP fee tests, and move to VEGA repo
 - [4844](https://github.com/vegaprotocol/vega/issues/4844) - Add endpoints for checking transactions raw transactions
 - [4515](https://github.com/vegaprotocol/vega/issues/4615) - Add snapshot options description and check provided storage method
@@ -236,6 +251,7 @@ only
 ### 🗑️ Deprecation
 
 ### 🛠 Improvements
+
 - [4793](https://github.com/vegaprotocol/vega/issues/4793) - Add specific insurance pool balance test
 - [4633](https://github.com/vegaprotocol/vega/pull/4633) - Add possibility to list snapshots from the vega command line
 - [4640](https://github.com/vegaprotocol/vega/pull/4640) - Update feature tests related to liquidity provision following integration of probability of trading with floating point consensus
@@ -311,6 +327,7 @@ only
 - [4885](https://github.com/vegaprotocol/vega/pull/4885) - Update amend orders scenario to have fees transfers in int tests
 
 ### 🐛 Fixes
+
 - [4842](https://github.com/vegaprotocol/vega/pull/4842) - Fix margin balance not being released after close-out.
 - [4798](https://github.com/vegaprotocol/vega/pull/4798) - Fix panic in loading topology from snapshot
 - [4521](https://github.com/vegaprotocol/vega/pull/4521) - Better error when trying to use the null-blockchain with an ERC20 asset
@@ -356,49 +373,63 @@ only
 - [4849](https://github.com/vegaprotocol/vega/pull/4849) - Fixed liquidity auction trigger for certain cancel & replace amends.
 
 ## 0.47.6
+
 *2022-02-01*
 
 ### 🐛 Fixes
+
 - [4691](https://github.com/vegaprotocol/vega/pull/4691) - Handle undelegate stake with no balances gracefully
 
 ## 0.47.5
+
 *2022-01-20*
 
 ### 🐛 Fixes
+
 - [4617](https://github.com/vegaprotocol/vega/pull/4617) - Bug fix for incorrectly reporting auto delegation
 
 ## 0.47.4
+
 *2022-01-05*
 
 ### 🐛 Fixes
+
 - [4563](https://github.com/vegaprotocol/vega/pull/4563) - Send an epoch event when loaded from checkpoint
 
 ## 0.47.3
+
 *2021-12-24*
 
 ### 🐛 Fixes
+
 - [4529](https://github.com/vegaprotocol/vega/pull/4529) - Non determinism in checkpoint fixed
 
 ## 0.47.2
+
 *2021-12-17*
 
 ### 🐛 Fixes
+
 - [4500](https://github.com/vegaprotocol/vega/pull/4500) - Set minimum for validator power to avoid accidentally removing them
 - [4503](https://github.com/vegaprotocol/vega/pull/4503) - Limit delegation epochs in core API
 - [4504](https://github.com/vegaprotocol/vega/pull/4504) - Fix premature ending of epoch when loading from checkpoint
 
 ## 0.47.1
+
 *2021-11-24*
 
 ### 🐛 Fixes
+
 - [4488](https://github.com/vegaprotocol/vega/pull/4488) - Disable snapshots
 - [4536](https://github.com/vegaprotocol/vega/pull/4536) - Fixed non determinism in topology checkpoint
 - [4550](https://github.com/vegaprotocol/vega/pull/4550) - Do not validate assets when loading checkpoint from non-validators
 
 ## 0.47.0
+
 *2021-11-24*
 
 ### 🛠 Improvements
+
 - [4480](https://github.com/vegaprotocol/vega/pull/4480) - Update `CHANGELOG.md` since GH Action implemented
 - [4439](https://github.com/vegaprotocol/vega/pull/4439) - Create `release_ticket.md` issue template
 - [4456](https://github.com/vegaprotocol/vega/pull/4456) - Return 400 on bad mint amounts sent via the faucet
@@ -415,28 +446,34 @@ only
 - [4465](https://github.com/vegaprotocol/vega/pull/4465) - Add events tags to the `ResponseDeliverTx`
 
 ### 🐛 Fixes
+
 - [4435](https://github.com/vegaprotocol/vega/pull/4435) - Fix non determinism in deposits snapshot
 - [4418](https://github.com/vegaprotocol/vega/pull/4418) - Add some logging + height/version handling fixes
 - [4461](https://github.com/vegaprotocol/vega/pull/4461) - Fix problem where chain id was not present on event bus during checkpoint loading
 - [4475](https://github.com/vegaprotocol/vega/pull/4475) - Fix rewards checkpoint not assigned to its correct place
 
 ## 0.46.2
+
 *2021-11-24*
 
 ### 🐛 Fixes
+
 - [4445](https://github.com/vegaprotocol/vega/pull/4445) - Limit the number of iterations for reward calculation for delegator and fix for division by zero
 
 ## 0.46.1
+
 *2021-11-22*
 
 ### 🛠 Improvements
+
 - [4437](https://github.com/vegaprotocol/vega/pull/4437) - Turn snapshots off for `v0.46.1` only
 
-
 ## 0.46.0
+
 *2021-11-22*
 
 ### 🛠 Improvements
+
 - [4431](https://github.com/vegaprotocol/vega/pull/4431) - Update Vega wallet to version 0.10.0
 - [4406](https://github.com/vegaprotocol/vega/pull/4406) - Add changelog and project board Github actions and update linked PR action version
 - [4328](https://github.com/vegaprotocol/vega/pull/4328) - Unwrap the timestamps in reward payout event
@@ -471,6 +508,7 @@ only
 - [4464](https://github.com/vegaprotocol/vega/pull/4466) - Update validator power in tendermint based on their staking
 
 ### 🐛 Fixes
+
 - [4325](https://github.com/vegaprotocol/vega/pull/4325) - Remove state from the witness snapshot and infer it from votes
 - [4334](https://github.com/vegaprotocol/vega/pull/4334) - Fix notary implementation
 - [4343](https://github.com/vegaprotocol/vega/pull/4343) - Fix non deterministic test by using same `idGenerator`
@@ -486,49 +524,58 @@ only
 - [4474](https://github.com/vegaprotocol/vega/pull/4474) - Wire rewards checkpoint to checkpoint engine and store infrastructure fee accounts in collateral checkpoint
 
 ## 0.45.6
+
 *2021-11-16*
 
 ### 🐛 Fixes
+
 - [4506](https://github.com/vegaprotocol/vega/pull/4506) - Wire network parameters to time service to flush out pending changes
 
 ## 0.45.5
+
 *2021-11-16*
 
 ### 🐛 Fixes
+
 - [4403](https://github.com/vegaprotocol/vega/pull/4403) - Fully remove expiry from withdrawals and release version `v0.45.5`
 
-
 ## 0.45.4
+
 *2021-11-05*
 
 ### 🐛 Fixes
+
 - [4372](https://github.com/vegaprotocol/vega/pull/4372) - Fix, if all association is nominated, allow association to be unnominated and nominated again in the same epoch
 
-
 ## 0.45.3
+
 *2021-11-04*
 
 ### 🐛 Fixes
+
 - [4362](https://github.com/vegaprotocol/vega/pull/4362) - Remove staking of cache at the beginning of the epoch for spam protection
 
-
 ## 0.45.2
+
 *2021-10-27*
 
 ### 🛠 Improvements
+
 - [4308](https://github.com/vegaprotocol/vega/pull/4308) - Add Visual Studio Code configuration
 - [4319](https://github.com/vegaprotocol/vega/pull/4319) - Add snapshot node topology
 - [4321](https://github.com/vegaprotocol/vega/pull/4321) - Release version `v0.45.2` #4321
 
 ### 🐛 Fixes
+
 - [4320](https://github.com/vegaprotocol/vega/pull/4320) - Implement retries for notary transactions
 - [4312](https://github.com/vegaprotocol/vega/pull/4312) - Implement retries for witness transactions
 
-
 ## 0.45.1
+
 *2021-10-23*
 
 ### 🛠 Improvements
+
 - [4246](https://github.com/vegaprotocol/vega/pull/4246) - Add replay protection snapshot
 - [4245](https://github.com/vegaprotocol/vega/pull/4245) - Add ABCI snapshot
 - [4260](https://github.com/vegaprotocol/vega/pull/4260) - Reconcile delegation more frequently
@@ -539,16 +586,18 @@ only
 - [4292](https://github.com/vegaprotocol/vega/pull/4292) - Update the vega wallet version
 
 ### 🐛 Fixes
+
 - [4280](https://github.com/vegaprotocol/vega/pull/4280) - Make event forwarder hashing result more random
 - [4270](https://github.com/vegaprotocol/vega/pull/4270) - Prevent overflow with pending delegation
 - [4274](https://github.com/vegaprotocol/vega/pull/4274) - Ensure sufficient balances when nominating multiple nodes
 - [4286](https://github.com/vegaprotocol/vega/pull/4286) - Checkpoints fixes
 
-
 ## 0.45.0
+
 *2021-10-19*
 
 ### 🛠 Improvements
+
 - [4188](https://github.com/vegaprotocol/vega/pull/4188) - Add rewards snapshot
 - [4191](https://github.com/vegaprotocol/vega/pull/4191) - Add limit snapshot
 - [4192](https://github.com/vegaprotocol/vega/pull/4192) - Ask for passphrase confirmation on init and generate commands when applicable
@@ -569,30 +618,34 @@ only
 - [4240](https://github.com/vegaprotocol/vega/pull/4240) - Add command to list and describe Vega paths
 
 ### 🐛 Fixes
+
 - [4228](https://github.com/vegaprotocol/vega/pull/4228) - Fix readme updates
 - [4210](https://github.com/vegaprotocol/vega/pull/4210) - Add min validators network parameter and bug fix for overflow reward
 
-
 ## 0.44.2
+
 *2021-10-11*
 
 ### 🐛 Fixes
+
 - [4195](https://github.com/vegaprotocol/vega/pull/4195) - Fix rewards payout with delay
 
-
 ## 0.44.1
+
 *2021-10-08*
 
 ### 🐛 Fixes
+
 - [4183](https://github.com/vegaprotocol/vega/pull/4183) - Fix `undelegateNow` to use the passed amount instead of 0
 - [4184](https://github.com/vegaprotocol/vega/pull/4184) - Remove 0 balance events from checkpoint of delegations
 - [4185](https://github.com/vegaprotocol/vega/pull/4185) - Fix event sent on reward pool creation + fix owner
 
-
 ## 0.44.0
+
 *2021-10-07*
 
 ### 🛠 Improvements
+
 - [4159](https://github.com/vegaprotocol/vega/pull/4159) - Clean-up and separate checkpoints and snapshots
 - [4172](https://github.com/vegaprotocol/vega/pull/4172) - Added assetActions to banking snapshot
 - [4173](https://github.com/vegaprotocol/vega/pull/4173) - Add tools and linting
@@ -619,6 +672,7 @@ only
 - [4060](https://github.com/vegaprotocol/vega/pull/4060) - Edge case scenarios delegation
 
 ### 🐛 Fixes
+
 - [4156](https://github.com/vegaprotocol/vega/pull/4156) - Fix filename for checkpoints
 - [4158](https://github.com/vegaprotocol/vega/pull/4158) - Remove delay in reward/delegation calculation
 - [4150](https://github.com/vegaprotocol/vega/pull/4150) - De-duplicate stake linkings
@@ -628,11 +682,12 @@ only
 - [4124](https://github.com/vegaprotocol/vega/pull/4124) - Fixed non-deterministic checkpoint and added auto delegation to checkpoint
 - [4118](https://github.com/vegaprotocol/vega/pull/4118) - Fixed epoch issue
 
-
 ## 0.43.0
+
 *2021-09-22*
 
 ### 🛠 Improvements
+
 - [4051](https://github.com/vegaprotocol/vega/pull/4051) - New type to handle signed versions of the uint256 values we already support
 - [4090](https://github.com/vegaprotocol/vega/pull/4090) - Update the proto repository dependencies
 - [4023](https://github.com/vegaprotocol/vega/pull/4023) - Implement the spam protection engine
@@ -651,6 +706,7 @@ only
 - [4101](https://github.com/vegaprotocol/vega/pull/4101) - Remove dependency to the Ethereum client from the Ethereum wallet
 
 ### 🐛 Fixes
+
 - [4053](https://github.com/vegaprotocol/vega/pull/4053) - Fix readme explanation for log levels
 - [4054](https://github.com/vegaprotocol/vega/pull/4054) - Capture errors with Ethereum iterator and continue
 - [4040](https://github.com/vegaprotocol/vega/pull/4040) - Fix bug where the withdrawal signature uses uint64
@@ -660,9 +716,11 @@ only
 - [4115](https://github.com/vegaprotocol/vega/pull/4115) - Use block height in checkpoint file names
 
 ## 0.42.0
+
 *2021-09-10*
 
 ### 🛠 Improvements
+
 - [3862](https://github.com/vegaprotocol/vega/pull/3862) - Collateral snapshot: Add checkpoints where needed, update processor (ABCI app) to write checkpoint data to file.
 - [3926](https://github.com/vegaprotocol/vega/pull/3926) - Add epoch to delegation balance events and changes to the delegation / reward engines
 - [3963](https://github.com/vegaprotocol/vega/pull/3963) - Load tendermint logger configuration
@@ -711,6 +769,7 @@ only
 - [4031](https://github.com/vegaprotocol/vega/pull/4031) - Send error events in processor through wrapper
 
 ### 🐛 Fixes
+
 - [3950](https://github.com/vegaprotocol/vega/pull/3950) - `LoadGenesis` returns nil if checkpoint entry is empty
 - [3960](https://github.com/vegaprotocol/vega/pull/3960) - Unstaking events are not seen by all validator nodes in DV
 - [3973](https://github.com/vegaprotocol/vega/pull/3973) - Set ABCI client so it is possible to submit a transaction
@@ -727,11 +786,12 @@ only
 - [3884](https://github.com/vegaprotocol/vega/pull/3884) - Always async transaction
 - [3877](https://github.com/vegaprotocol/vega/pull/3877) - Use a custom http client for the tendermint client
 
-
 ## 0.41.0
+
 *2021-08-06*
 
 ### 🛠 Improvements
+
 - [#3743](https://github.com/vegaprotocol/vega/pull/3743) - Refactor: Rename traders to parties
 - [#3758](https://github.com/vegaprotocol/vega/pull/3758) - Refactor: Cleanup naming in the types package
 - [#3789](https://github.com/vegaprotocol/vega/pull/3789) - Update ed25519-voi
@@ -752,8 +812,8 @@ only
 - [#3836](https://github.com/vegaprotocol/vega/pull/3836) - Add a first version of the accounting engine
 - [#3859](https://github.com/vegaprotocol/vega/pull/3859) - Enable CGO in CI
 
-
 ### 🐛 Fixes
+
 - [#3751](https://github.com/vegaprotocol/vega/pull/3751) - `Unparam` linting fixes
 - [#3776](https://github.com/vegaprotocol/vega/pull/3776) - Ensure expired/settled markets are correctly recorded in app state
 - [#3774](https://github.com/vegaprotocol/vega/pull/3774) - Change liquidity fees distribution to general account and not margin account of liquidity provider
@@ -762,9 +822,11 @@ only
 - [#3838](https://github.com/vegaprotocol/vega/pull/3838) - 🔥 Fix panic on division by 0 with party voting and withdrawing funds
 
 ## 0.40.0
+
 *2021-07-12*
 
 ### 🛠 Improvements
+
 - [#3718](https://github.com/vegaprotocol/vega/pull/3718) - Run `unparam` over the codebase
 - [#3705](https://github.com/vegaprotocol/vega/pull/3705) - Return theoretical target stake when in auction
 - [#3703](https://github.com/vegaprotocol/vega/pull/3703) - Remove inefficient metrics calls
@@ -778,6 +840,7 @@ only
 - [#3745](https://github.com/vegaprotocol/vega/pull/3745) - Add loss socialization for final settlement
 
 ### 🐛 Fixes
+
 - [#3722](https://github.com/vegaprotocol/vega/pull/3722) - Added sign to settle return values to allow to determine correctly win/loss
 - [#3720](https://github.com/vegaprotocol/vega/pull/3720) - Tidy up max open interest calculations
 - [#3704](https://github.com/vegaprotocol/vega/pull/3704) - Fix settlement with network orders
@@ -786,11 +849,12 @@ only
 - [#3467](https://github.com/vegaprotocol/vega/pull/3647) - Ensure LP orders are not submitted during auction
 - [#3736](https://github.com/vegaprotocol/vega/pull/3736) - Correcting event types and adding panics to catch mistakes
 
-
 ## 0.39.0
+
 *2021-06-30*
 
 ### 🛠 Improvements
+
 - [#3642](https://github.com/vegaprotocol/vega/pull/3642) - Refactor integration tests
 - [#3637](https://github.com/vegaprotocol/vega/pull/3637) - Rewrite pegged / liquidity order control flow
 - [#3635](https://github.com/vegaprotocol/vega/pull/3635) - Unified error system and strict parsing in feature tests
@@ -798,16 +862,18 @@ only
 - [#3599](https://github.com/vegaprotocol/vega/pull/3599) - Return better errors when replay protection happen
 
 ### 🐛 Fixes
+
 - [#3640](https://github.com/vegaprotocol/vega/pull/3640) - Fix send on closed channel using timer (event bus)
 - [#3638](https://github.com/vegaprotocol/vega/pull/3638) - Fix decimal instantiation in bond slashing
 - [#3621](https://github.com/vegaprotocol/vega/pull/3621) - Remove pegged order from pegged list if order is aggressive and trade
 - [#3612](https://github.com/vegaprotocol/vega/pull/3612) - Clean code in the wallet package
 
-
 ## 0.38.0
+
 *2021-06-11*
 
 ### 🛠 Improvements
+
 - [#3546](https://github.com/vegaprotocol/vega/pull/3546) - Add Auction Extension trigger field to market data
 - [#3538](https://github.com/vegaprotocol/vega/pull/3538) - Testing: Add block time handling & block time variance
 - [#3596](https://github.com/vegaprotocol/vega/pull/3596) - Enable replay protection
@@ -815,6 +881,7 @@ only
 - [#3461](https://github.com/vegaprotocol/vega/pull/3461) - Implement new commands validation
 
 ### 🐛 Fixes
+
 - [#3528](https://github.com/vegaprotocol/vega/pull/3528) - Stop liquidity auctions from extending infinitely
 - [#3567](https://github.com/vegaprotocol/vega/pull/3567) - Fix handling of Liquidity Commitments at price bounds
 - [#3568](https://github.com/vegaprotocol/vega/pull/3568) - Fix potential nil pointer when fetching proposals
@@ -828,11 +895,12 @@ only
 - [#3523](https://github.com/vegaprotocol/vega/pull/3523) - Improve nil pointer checks on proposal submissions
 - [#3591](https://github.com/vegaprotocol/vega/pull/3591) - Avoid slice out of access bond in trades store
 
-
 ## 0.37.0
+
 *2021-05-26*
 
 ### 🛠 Improvements
+
 - [#3479](https://github.com/vegaprotocol/vega/pull/3479) - Add test coverage for auction interactions
 - [#3494](https://github.com/vegaprotocol/vega/pull/3494) - Add `error_details` field to rejected proposals
 - [#3491](https://github.com/vegaprotocol/vega/pull/3491) - Market Data no longer returns an error when no market data exists, as this is a valid situation
@@ -843,6 +911,7 @@ only
 - [#4921](https://github.com/vegaprotocol/vega/issues/4921) - Add comment to document behaviour on margin account in feature test (liquidity-provision-bond-account.feature)
 
 ### 🐛 Fixes
+
 - [#3513](https://github.com/vegaprotocol/vega/pull/3513) - Fix reprice of pegged orders on every liquidity update
 - [#3457](https://github.com/vegaprotocol/vega/pull/3457) - Fix probability of trading calculation for liquidity orders
 - [#3515](https://github.com/vegaprotocol/vega/pull/3515) - Fixes for the resolve close out LP parties flow
@@ -850,9 +919,11 @@ only
 - [#3514](https://github.com/vegaprotocol/vega/pull/3513) - Fix price monitoring bounds
 
 ## 0.36.0
+
 *2021-05-13*
 
 ### 🛠 Improvements
+
 - [#3408](https://github.com/vegaprotocol/vega/pull/3408) - Add more information on token proportion/weight on proposal votes APIs
 - [#3360](https://github.com/vegaprotocol/vega/pull/3360) - :fire: REST: Move deposits endpoint to `/parties/[partyId]/deposits`
 - [#3431](https://github.com/vegaprotocol/vega/pull/3431) - Improve caching of values when exiting auctions
@@ -863,6 +934,7 @@ only
 - [#3449](https://github.com/vegaprotocol/vega/pull/3449) - Party is no longer required when submitting an withdrawal request
 
 ### 🐛 Fixes
+
 - [#3451](https://github.com/vegaprotocol/vega/pull/3451) - Remove float usage in liquidity engine
 - [#3447](https://github.com/vegaprotocol/vega/pull/3447) - Clean up order submission code
 - [#3436](https://github.com/vegaprotocol/vega/pull/3436) - Break up internal proposal definitions
@@ -881,9 +953,11 @@ only
 - [#3450](https://github.com/vegaprotocol/vega/pull/3450) - Do not emit amendments from liquidity engine
 
 ## 0.35.0
+
 *2021-04-21*
 
 ### 🛠 Improvements
+
 - [#3341](https://github.com/vegaprotocol/vega/pull/3341) - Add logging for transactions rejected for having no accounts
 - [#3339](https://github.com/vegaprotocol/vega/pull/3339) - Reimplement amending LPs not to be cancel and replace
 - [#3371](https://github.com/vegaprotocol/vega/pull/3371) - Optimise calculation of cumulative price levels
@@ -893,6 +967,7 @@ only
 - [#3371](https://github.com/vegaprotocol/vega/pull/3371) - Optimize indicative price and volume calculation
 
 ### 🐛 Fixes
+
 - [#3356](https://github.com/vegaprotocol/vega/pull/3356) - Auctions are extended if exiting auction would leave either side of the book empty
 - [#3348](https://github.com/vegaprotocol/vega/pull/3348) - Correctly set time when liquidity engine is created
 - [#3321](https://github.com/vegaprotocol/vega/pull/3321) - Fix bond account use on LP submission
@@ -913,6 +988,7 @@ only
 *2021-04-08*
 
 ### 🐛 Fixes
+
 - [#3324](https://github.com/vegaprotocol/vega/pull/3324) - CI: Fix multi-architecture build
 
 ## 0.34.0
@@ -934,25 +1010,26 @@ only
 - [#3217](https://github.com/vegaprotocol/vega/pull/3217) - Add an event bus event when a market closes
 - [#3214](https://github.com/vegaprotocol/vega/pull/3214) - Add arbitrary data signing wallet endpoint
 - [#3316](https://github.com/vegaprotocol/vega/pull/3316) - Add tests for traders closing their own position
-- [#3270](https://github.com/vegaprotocol/vega/pull/3270) - _Feature test refactor_: Add Liquidity Provision feature tests
-- [#3289](https://github.com/vegaprotocol/vega/pull/3289) - _Feature test refactor_: Remove unused steps
-- [#3275](https://github.com/vegaprotocol/vega/pull/3275) - _Feature test refactor_: Refactor order cancellation steps
-- [#3230](https://github.com/vegaprotocol/vega/pull/3230) - _Feature test refactor_: Refactor trader amends step
-- [#3226](https://github.com/vegaprotocol/vega/pull/3226) - _Feature test refactor_: Refactor features with invalid order specs
-- [#3200](https://github.com/vegaprotocol/vega/pull/3200) - _Feature test refactor_: Add step to end opening auction
-- [#3201](https://github.com/vegaprotocol/vega/pull/3201) - _Feature test refactor_: Add step to amend order by reference
-- [#3204](https://github.com/vegaprotocol/vega/pull/3204) - _Feature test refactor_: Add step to place pegged orders
-- [#3207](https://github.com/vegaprotocol/vega/pull/3207) - _Feature test refactor_: Add step to create Liquidity Provision
-- [#3212](https://github.com/vegaprotocol/vega/pull/3212) - _Feature test refactor_: Remove unused settlement price step
-- [#3203](https://github.com/vegaprotocol/vega/pull/3203) - _Feature test refactor_: Rework Submit Order step
-- [#3251](https://github.com/vegaprotocol/vega/pull/3251) - _Feature test refactor_:  Split market declaration
-- [#3314](https://github.com/vegaprotocol/vega/pull/3314) - _Feature test refactor_:  Apply naming convention to assertions
+- [#3270](https://github.com/vegaprotocol/vega/pull/3270) - *Feature test refactor*: Add Liquidity Provision feature tests
+- [#3289](https://github.com/vegaprotocol/vega/pull/3289) - *Feature test refactor*: Remove unused steps
+- [#3275](https://github.com/vegaprotocol/vega/pull/3275) - *Feature test refactor*: Refactor order cancellation steps
+- [#3230](https://github.com/vegaprotocol/vega/pull/3230) - *Feature test refactor*: Refactor trader amends step
+- [#3226](https://github.com/vegaprotocol/vega/pull/3226) - *Feature test refactor*: Refactor features with invalid order specs
+- [#3200](https://github.com/vegaprotocol/vega/pull/3200) - *Feature test refactor*: Add step to end opening auction
+- [#3201](https://github.com/vegaprotocol/vega/pull/3201) - *Feature test refactor*: Add step to amend order by reference
+- [#3204](https://github.com/vegaprotocol/vega/pull/3204) - *Feature test refactor*: Add step to place pegged orders
+- [#3207](https://github.com/vegaprotocol/vega/pull/3207) - *Feature test refactor*: Add step to create Liquidity Provision
+- [#3212](https://github.com/vegaprotocol/vega/pull/3212) - *Feature test refactor*: Remove unused settlement price step
+- [#3203](https://github.com/vegaprotocol/vega/pull/3203) - *Feature test refactor*: Rework Submit Order step
+- [#3251](https://github.com/vegaprotocol/vega/pull/3251) - *Feature test refactor*:  Split market declaration
+- [#3314](https://github.com/vegaprotocol/vega/pull/3314) - *Feature test refactor*:  Apply naming convention to assertions
 - [#3295](https://github.com/vegaprotocol/vega/pull/3295) - Refactor governance engine tests
 - [#3298](https://github.com/vegaprotocol/vega/pull/3298) - Add order book caching
 - [#3307](https://github.com/vegaprotocol/vega/pull/3307) - Use `UpdateNetworkParams` to validate network parameter updates
 - [#3308](https://github.com/vegaprotocol/vega/pull/3308) - Add probability of trading
 
 ### 🐛 Fixes
+
 - [#3249](https://github.com/vegaprotocol/vega/pull/3249) - GraphQL: `LiquidityProvision` is no longer missing from the `EventBus` union
 - [#3253](https://github.com/vegaprotocol/vega/pull/3253) - Verify all properties on oracle specs
 - [#3224](https://github.com/vegaprotocol/vega/pull/3224) - Check for wash trades when FOK orders uncross
@@ -977,6 +1054,7 @@ only
 As per the previous release notes, this release brings a lot of fixes, most of which aren't exciting new features but improve either the code quality or the developer experience. This release is pretty hefty, as the last few updates have been patch releases. It represents a lot of heavy testing and bug fixing on Liquidity Commitment orders. Alongside that, the feature test suite (we use [godog](https://github.com/cucumber/godog)) has seen some serious attention so that we can specify more complex scenarios easily.
 
 ### 🛠 Improvements
+
 - [#3094](https://github.com/vegaprotocol/vega/pull/3094) - :fire: GraphQL: Use `ID` scalar for IDs, ensure capitalisation is correct (`marketID` -> `marketId`)
 - [#3093](https://github.com/vegaprotocol/vega/pull/3093) - :fire: GraphQL: Add LP Commitment field to market proposal
 - [#3061](https://github.com/vegaprotocol/vega/pull/3061) - GraphQL: Add market proposal to markets created via governance
@@ -998,28 +1076,29 @@ As per the previous release notes, this release brings a lot of fixes, most of w
 - [#3034](https://github.com/vegaprotocol/vega/pull/3034) - Add `buf` to get tools script
 - [#3032](https://github.com/vegaprotocol/vega/pull/3032) - Move documentation generation to [`vegaprotocol/api`](https://github.com/vegaprotocol/api) repository
 - [#3030](https://github.com/vegaprotocol/vega/pull/3030) - Add more debug logging in execution engine
-- [#3114](https://github.com/vegaprotocol/vega/pull/3114) - _Feature test refactor_: Standardise market definitions
-- [#3122](https://github.com/vegaprotocol/vega/pull/3122) - _Feature test refactor_: Remove unused trading modes
-- [#3124](https://github.com/vegaprotocol/vega/pull/3124) - _Feature test refactor_: Move submit order step to separate package
-- [#3141](https://github.com/vegaprotocol/vega/pull/3141) - _Feature test refactor_: Move oracle data step to separate package
-- [#3142](https://github.com/vegaprotocol/vega/pull/3142) - _Feature test refactor_: Move market steps to separate package
-- [#3143](https://github.com/vegaprotocol/vega/pull/3143) - _Feature test refactor_: Move confirmed trades step to separate package
-- [#3144](https://github.com/vegaprotocol/vega/pull/3144) - _Feature test refactor_: Move cancelled trades step to separate package
-- [#3145](https://github.com/vegaprotocol/vega/pull/3145) - _Feature test refactor_: Move traders step to separate package
-- [#3146](https://github.com/vegaprotocol/vega/pull/3146) - _Feature test refactor_: Create new step to verify margin accounts for a market
-- [#3153](https://github.com/vegaprotocol/vega/pull/3153) - _Feature test refactor_: Create step to verify one account of each type per asset
-- [#3152](https://github.com/vegaprotocol/vega/pull/3152) - _Feature test refactor_: Create step to deposit collateral
-- [#3151](https://github.com/vegaprotocol/vega/pull/3151) - _Feature test refactor_: Create step to withdraw collateral
-- [#3149](https://github.com/vegaprotocol/vega/pull/3149) - _Feature test refactor_: Merge deposit & verification steps
-- [#3154](https://github.com/vegaprotocol/vega/pull/3154) - _Feature test refactor_: Create step to verify settlement balance for market
-- [#3156](https://github.com/vegaprotocol/vega/pull/3156) - _Feature test refactor_: Rewrite margin levels step
-- [#3178](https://github.com/vegaprotocol/vega/pull/3178) - _Feature test refactor_: Unify error handling steps
-- [#3157](https://github.com/vegaprotocol/vega/pull/3157) - _Feature test refactor_: Various small fixes
-- [#3101](https://github.com/vegaprotocol/vega/pull/3101) - _Feature test refactor_: Remove outdated feature tests
-- [#3092](https://github.com/vegaprotocol/vega/pull/3092) - _Feature test refactor_: Add steps to test handling of LPs during auction
-- [#3071](https://github.com/vegaprotocol/vega/pull/3071) - _Feature test refactor_: Fix typo
+- [#3114](https://github.com/vegaprotocol/vega/pull/3114) - *Feature test refactor*: Standardise market definitions
+- [#3122](https://github.com/vegaprotocol/vega/pull/3122) - *Feature test refactor*: Remove unused trading modes
+- [#3124](https://github.com/vegaprotocol/vega/pull/3124) - *Feature test refactor*: Move submit order step to separate package
+- [#3141](https://github.com/vegaprotocol/vega/pull/3141) - *Feature test refactor*: Move oracle data step to separate package
+- [#3142](https://github.com/vegaprotocol/vega/pull/3142) - *Feature test refactor*: Move market steps to separate package
+- [#3143](https://github.com/vegaprotocol/vega/pull/3143) - *Feature test refactor*: Move confirmed trades step to separate package
+- [#3144](https://github.com/vegaprotocol/vega/pull/3144) - *Feature test refactor*: Move cancelled trades step to separate package
+- [#3145](https://github.com/vegaprotocol/vega/pull/3145) - *Feature test refactor*: Move traders step to separate package
+- [#3146](https://github.com/vegaprotocol/vega/pull/3146) - *Feature test refactor*: Create new step to verify margin accounts for a market
+- [#3153](https://github.com/vegaprotocol/vega/pull/3153) - *Feature test refactor*: Create step to verify one account of each type per asset
+- [#3152](https://github.com/vegaprotocol/vega/pull/3152) - *Feature test refactor*: Create step to deposit collateral
+- [#3151](https://github.com/vegaprotocol/vega/pull/3151) - *Feature test refactor*: Create step to withdraw collateral
+- [#3149](https://github.com/vegaprotocol/vega/pull/3149) - *Feature test refactor*: Merge deposit & verification steps
+- [#3154](https://github.com/vegaprotocol/vega/pull/3154) - *Feature test refactor*: Create step to verify settlement balance for market
+- [#3156](https://github.com/vegaprotocol/vega/pull/3156) - *Feature test refactor*: Rewrite margin levels step
+- [#3178](https://github.com/vegaprotocol/vega/pull/3178) - *Feature test refactor*: Unify error handling steps
+- [#3157](https://github.com/vegaprotocol/vega/pull/3157) - *Feature test refactor*: Various small fixes
+- [#3101](https://github.com/vegaprotocol/vega/pull/3101) - *Feature test refactor*: Remove outdated feature tests
+- [#3092](https://github.com/vegaprotocol/vega/pull/3092) - *Feature test refactor*: Add steps to test handling of LPs during auction
+- [#3071](https://github.com/vegaprotocol/vega/pull/3071) - *Feature test refactor*: Fix typo
 
 ### 🐛 Fixes
+
 - [#3018](https://github.com/vegaprotocol/vega/pull/3018) - Fix crash caused by distressed traders with LPs
 - [#3029](https://github.com/vegaprotocol/vega/pull/3029) - API: LP orders were missing their reference data
 - [#3031](https://github.com/vegaprotocol/vega/pull/3031) - Parties with cancelled LPs no longer receive fees
@@ -1062,12 +1141,14 @@ More fixes, primarily related to liquidity provisioning (still disabled in this 
 Two minor breaking changes in the GraphQL API are included - one fixing a typo, the other changing the content of date fields on the withdrawal object - they're now date formatted.
 
 ### 🛠 Improvements
+
 - [#3004](https://github.com/vegaprotocol/vega/pull/3004) - Incorporate `buf.yaml` tidy up submitted by `bufdev` on api-clients repo
 - [#3002](https://github.com/vegaprotocol/vega/pull/3002) -🔥GraphQL: Withdrawal fields `expiry`, `createdAt` & `updatedAt` are now `RFC3339Nano` date formatted
 - [#3000](https://github.com/vegaprotocol/vega/pull/3002) -🔥GraphQL: Fix typo in `prepareVote` mutation - `propopsalId` is now `proposalId`
 - [#2957](https://github.com/vegaprotocol/vega/pull/2957) - REST: Add missing prepare endpoints (`PrepareProposal`, `PrepareVote`, `PrepareLiquiditySubmission`)
 
 ### 🐛 Fixes
+
 - [#3011](https://github.com/vegaprotocol/vega/pull/3011) - Liquidity fees are distributed in to margin accounts, not general accounts
 - [#2991](https://github.com/vegaprotocol/vega/pull/2991) - Liquidity Provisions are now rejected if there is not enough collateral
 - [#2990](https://github.com/vegaprotocol/vega/pull/2990) - Fix a lock caused by GraphQL subscribers unsubscribing from certain endpoints
@@ -1098,6 +1179,7 @@ This release also makes some major API changes:
 - See [#2879](https://github.com/vegaprotocol/vega/pull/2879) for details
 
 ### 🛠 Improvements
+
 - [#2879](https://github.com/vegaprotocol/vega/pull/2879) - 🔥Update all the protobuf files with Buf recommendations
 - [#2847](https://github.com/vegaprotocol/vega/pull/2847) - Improve proto documentation, in particular for pegged orders
 - [#2905](https://github.com/vegaprotocol/vega/pull/2905) - Update `vega verify` command to verify genesis block files
@@ -1107,6 +1189,7 @@ This release also makes some major API changes:
 - [#2915](https://github.com/vegaprotocol/vega/pull/2915) - Add Liquidity Commitments to API responses
 
 ### 🐛 Fixes
+
 - [#2913](https://github.com/vegaprotocol/vega/pull/2913) - Fix market lifecycle events not being published through event bus API
 - [#2906](https://github.com/vegaprotocol/vega/pull/2906) - Add new process for calculating margins for orders during auction
 - [#2887](https://github.com/vegaprotocol/vega/pull/2887) - Liquidity Commitment fix-a-thon
@@ -1133,6 +1216,7 @@ The Ethereum bridge also received some work - in particular the number of confir
 :two: This fixes an issue on testnet where votes were not registered when voting on open governance proposals. The required number of Ropsten `VOTE` tokens was being calculated incorrectly on testnet, leading to all votes quietly being ignored. In 0.30.0, voting works as expected again.
 
 ### ✨ New
+
 - [#2732](https://github.com/vegaprotocol/vega/pull/2732) Add REST endpoint to fetch all proposals (`/governance/proposals`)
 - [#2735](https://github.com/vegaprotocol/vega/pull/2735) Add `FeeSplitter` to correctly split fee portion of an aggressive order
 - [#2745](https://github.com/vegaprotocol/vega/pull/2745) Add transfer bus events for withdrawals and deposits
@@ -1145,6 +1229,7 @@ The Ethereum bridge also received some work - in particular the number of confir
 - [#2838](https://github.com/vegaprotocol/vega/pull/2838) Add bond and fee transfers
 
 ### 🛠 Improvements
+
 - [#2835](https://github.com/vegaprotocol/vega/pull/2835) Fix voting for proposals :two:
 - [#2830](https://github.com/vegaprotocol/vega/pull/2830) Refactor pegged order repricing
 - [#2827](https://github.com/vegaprotocol/vega/pull/2827) Refactor expiring orders lists
@@ -1184,9 +1269,10 @@ The Ethereum bridge also received some work - in particular the number of confir
 
 *2020-12-07*
 
-Note that you'll see a lot of changes related to **Pegged Orders** and **Liquidity Commitments**. These are still in testing, so these two types cannot currently be used in _Testnet_.
+Note that you'll see a lot of changes related to **Pegged Orders** and **Liquidity Commitments**. These are still in testing, so these two types cannot currently be used in *Testnet*.
 
 ### ✨ New
+
 - [#2534](https://github.com/vegaprotocol/vega/pull/2534) Implements amends for pegged orders
 - [#2493](https://github.com/vegaprotocol/vega/pull/2493) Calculate market target stake
 - [#2649](https://github.com/vegaprotocol/vega/pull/2649) Add REST governance endpoints
@@ -1199,6 +1285,7 @@ Note that you'll see a lot of changes related to **Pegged Orders** and **Liquidi
 - [#2680](https://github.com/vegaprotocol/vega/pull/2680) Add price monitoring bounds to the market data API
 
 ### 🛠 Improvements
+
 - [#2589](https://github.com/vegaprotocol/vega/pull/2589) Fix cancellation of pegged orders
 - [#2659](https://github.com/vegaprotocol/vega/pull/2659) Fix panic in execution engine when GFN order are submit at auction start
 - [#2661](https://github.com/vegaprotocol/vega/pull/2661) Handle missing error conversion in GraphQL API
@@ -1221,9 +1308,10 @@ Vega release logs contain a 🔥 emoji to denote breaking API changes. 🔥🔥 
 
 We've also added support for synchronously submitting transactions. This can make error states easier to catch. Along with this you can now subscribe to error events in the event bus.
 
-Also: Note that you'll see a lot of changes related to **Pegged Orders** and **Liquidity Commitments**. These are still in testing, so these two types cannot currently be used in _Testnet_.
+Also: Note that you'll see a lot of changes related to **Pegged Orders** and **Liquidity Commitments**. These are still in testing, so these two types cannot currently be used in *Testnet*.
 
 ### ✨ New
+
 - [#2634](https://github.com/vegaprotocol/vega/pull/2634) Avoid caching transactions before they are rate/balance limited
 - [#2626](https://github.com/vegaprotocol/vega/pull/2626) Add a transaction submit type to GraphQL
 - [#2624](https://github.com/vegaprotocol/vega/pull/2624) Add mutexes to assets maps
@@ -1240,6 +1328,7 @@ Also: Note that you'll see a lot of changes related to **Pegged Orders** and **L
 - [#2607](https://github.com/vegaprotocol/vega/pull/2807) Add support for parking orders during auction
 
 ### 🛠 Improvements
+
 - [#2634](https://github.com/vegaprotocol/vega/pull/2634) Avoid caching transactions before they are rate/balance limited
 - [#2626](https://github.com/vegaprotocol/vega/pull/2626) Add a transaction submit type to GraphQL
 - [#2624](https://github.com/vegaprotocol/vega/pull/2624) Add mutexes to assets maps
@@ -1268,6 +1357,7 @@ Also: Note that you'll see a lot of changes related to **Pegged Orders** and **L
 This release contains a fix (read: large reduction in memory use) around auction modes with particularly large order books that caused slow block times when handling orders placed during an opening auction. It also contains a lot of internal work related to the liquidity provision mechanics.
 
 ### ✨ New
+
 - [#2498](https://github.com/vegaprotocol/vega/pull/2498) Automatically create a bond account for liquidity providers
 - [#2596](https://github.com/vegaprotocol/vega/pull/2496) Create liquidity measurement API
 - [#2490](https://github.com/vegaprotocol/vega/pull/2490) GraphQL: Add Withdrawal and Deposit events to event bus
@@ -1276,6 +1366,7 @@ This release contains a fix (read: large reduction in memory use) around auction
 - [#2506](https://github.com/vegaprotocol/vega/pull/2506) Network parameters can now contain JSON configuration
 
 ### 🛠 Improvements
+
 - [#2521](https://github.com/vegaprotocol/vega/pull/2521) Optimise memory usage when building cumulative price levels
 - [#2520](https://github.com/vegaprotocol/vega/pull/2520) Fix indicative price calculation
 - [#2517](https://github.com/vegaprotocol/vega/pull/2517) Improve command line for rate limiting in faucet & wallet
@@ -1296,6 +1387,7 @@ This release contains a fix (read: large reduction in memory use) around auction
 Fixes a number of issues discovered during the testing of 0.26.0.
 
 ### 🛠 Improvements
+
 - [#2463](https://github.com/vegaprotocol/vega/pull/2463) Further reliability fixes for the event bus
 - [#2469](https://github.com/vegaprotocol/vega/pull/2469) Fix incorrect error returned when a trader places an order in an asset that they have no account for (was `InvalidPartyID`, now `InsufficientAssetBalance`)
 - [#2458](https://github.com/vegaprotocol/vega/pull/2458) REST: Fix a crasher when a market is proposed without specifying auction times
@@ -1305,18 +1397,21 @@ Fixes a number of issues discovered during the testing of 0.26.0.
 *2020-10-20*
 
 The events API added in 0.25.0 had some reliability issues when a large volume of events were being emitted. This release addresses that in two ways:
- - The gRPC event stream now takes a parameter that sets a batch size. A client will receive the events when the batch limit is hit.
- - GraphQL is now limited to one event type per subscription, and we also removed the ALL event type as an option. This was due to the GraphQL gateway layer taking too long to process the full event stream, leading to sporadic disconnections.
+
+- The gRPC event stream now takes a parameter that sets a batch size. A client will receive the events when the batch limit is hit.
+- GraphQL is now limited to one event type per subscription, and we also removed the ALL event type as an option. This was due to the GraphQL gateway layer taking too long to process the full event stream, leading to sporadic disconnections.
 
 These two fixes combined make both the gRPC and GraphQL streams much more reliable under reasonably heavy load. Let us know if you see any other issues. The release also adds some performance improvements to the way the core processes Tendermint events, some documentation improvements, and some additional debug tools.
 
 ### ✨ New
+
 - [#2319](https://github.com/vegaprotocol/vega/pull/2319) Add fee estimate API endpoints to remaining APIs
 - [#2321](https://github.com/vegaprotocol/vega/pull/2321) 🔥 Change `estimateFee` to `estimateOrder` in GraphQL
 - [#2327](https://github.com/vegaprotocol/vega/pull/2327) 🔥 GraphQL: Event bus API - remove ALL type & limit subscription to one event type
 - [#2343](https://github.com/vegaprotocol/vega/pull/2343) 🔥 Add batching support to stream subscribers
 
 ### 🛠 Improvements
+
 - [#2229](https://github.com/vegaprotocol/vega/pull/2229) Add Price Monitoring module
 - [#2246](https://github.com/vegaprotocol/vega/pull/2246) Add new market depth subscription methods
 - [#2298](https://github.com/vegaprotocol/vega/pull/2298) Improve error messages for Good For Auction/Good For Normal rejections
@@ -1373,6 +1468,7 @@ These two fixes combined make both the gRPC and GraphQL streams much more reliab
 This release backports two fixes from the forthcoming 0.26.0 release.
 
 ### 🛠 Improvements
+
 - [#2354](https://github.com/vegaprotocol/vega/pull/2354) Update `OrderEvent` to copy by value
 - [#2379](https://github.com/vegaprotocol/vega/pull/2379) Add missing `/governance/prepare/vote` REST endpoint
 
@@ -1383,6 +1479,7 @@ This release backports two fixes from the forthcoming 0.26.0 release.
 This release adds the event bus API, allowing for much greater introspection in to the operation of a node. We've also re-enabled the order amends API, as well as a long list of fixes.
 
 ### ✨ New
+
 - [#2281](https://github.com/vegaprotocol/vega/pull/2281) Enable opening auctions
 - [#2205](https://github.com/vegaprotocol/vega/pull/2205) Add GraphQL event stream API
 - [#2219](https://github.com/vegaprotocol/vega/pull/2219) Add deposits API
@@ -1392,6 +1489,7 @@ This release adds the event bus API, allowing for much greater introspection in 
 - [#2240](https://github.com/vegaprotocol/vega/pull/2240) Add time to position responses
 
 ### 🛠 Improvements
+
 - [#2211](https://github.com/vegaprotocol/vega/pull/2211) 🔥 GraphQL: Field case change `proposalId` -> `proposalID`
 - [#2218](https://github.com/vegaprotocol/vega/pull/2218) 🔥 GraphQL: Withdrawals now return a `Party`, not a party ID
 - [#2202](https://github.com/vegaprotocol/vega/pull/2202) Fix time validation for proposals when all times are the same
@@ -1467,9 +1565,9 @@ This release contains a lot of groundwork for Fees and Auction mode.
 
 **Fees** are incurred on every trade on Vega. Those fees are divided between up to three recipient types, but traders will only see one collective fee charged. The fees reward liquidity providers, infrastructure providers and market makers.
 
-* The liquidity portion of the fee is paid to market makers for providing liquidity, and is transferred to the market-maker fee pool for the market.
-* The infrastructure portion of the fee, which is paid to validators as a reward for running the infrastructure of the network, is transferred to the infrastructure fee pool for that asset. It is then periodically distributed to the validators.
-* The maker portion of the fee is transferred to the non-aggressive, or passive party in the trade (the maker, as opposed to the taker).
+- The liquidity portion of the fee is paid to market makers for providing liquidity, and is transferred to the market-maker fee pool for the market.
+- The infrastructure portion of the fee, which is paid to validators as a reward for running the infrastructure of the network, is transferred to the infrastructure fee pool for that asset. It is then periodically distributed to the validators.
+- The maker portion of the fee is transferred to the non-aggressive, or passive party in the trade (the maker, as opposed to the taker).
 
 **Auction mode** is not enabled in this release, but the work is nearly complete for Opening Auctions on new markets.
 
@@ -1498,9 +1596,11 @@ This release contains a lot of groundwork for Fees and Auction mode.
 - [#1990](https://github.com/vegaprotocol/vega/pull/1990) Remove specified `tickSize` from market
 - [#2066](https://github.com/vegaprotocol/vega/pull/2066) Fix validation of proposal timestamps to ensure that datestamps specify events in the correct order
 - [#2043](https://github.com/vegaprotocol/vega/pull/2043) Track Event Queue events to avoid processing events from other chains twice
+
 ## 0.22.0
 
 ### 🐛 Bugfixes
+
 - [#2096](https://github.com/vegaprotocol/vega/pull/2096) Fix concurrent map access in event forward
 
 *2020-07-20*
@@ -1519,6 +1619,7 @@ It also contains a lot of bug fixes and improvements, primarily around an intern
 - [#1949](https://github.com/vegaprotocol/vega/pull/1949) Add `RejectionReason` field to rejected governance proposals
 
 ### 🛠 Improvements
+
 - 💥 [#1988](https://github.com/vegaprotocol/vega/pull/1988) REST: Update orders endpoints to use POST, not PUT or DELETE
 - 💥 [#1957](https://github.com/vegaprotocol/vega/pull/1957) GraphQL: Some endpoints returned a nullable array of Strings. Now they return an array of nullable strings
 - 💥 [#1928](https://github.com/vegaprotocol/vega/pull/1928) GraphQL & GRPC: Remove broken `open` parameter from Orders endpoints. It returned ambiguous results
@@ -1578,10 +1679,12 @@ This release fixes one small bug that was causing many closed streams, which was
 This release contains a lot of fixes to APIs, and a minor new addition to the statistics endpoint. Potentially breaking changes are now labelled with 💥. If you have implemented a client that fetches candles, places orders or amends orders, please check below.
 
 ### ✨ Features
+
 - [#1730](https://github.com/vegaprotocol/vega/pull/1730) `ChainID` added to statistics endpoint
 - 💥 [#1734](https://github.com/vegaprotocol/vega/pull/1734) Start adding `TraceID` to core events
 
 ### 🛠 Improvements
+
 - 💥 [#1721](https://github.com/vegaprotocol/vega/pull/1721) Improve API responses for `GetProposalById`
 - 💥 [#1724](https://github.com/vegaprotocol/vega/pull/1724) New Order: Type no longer defaults to LIMIT orders
 - 💥 [#1728](https://github.com/vegaprotocol/vega/pull/1728) `PrepareAmend` no longer accepts expiry time
@@ -1623,6 +1726,7 @@ This release fixes a handful of bugs, primarily around order amends and new mark
 - [#1679](https://github.com/vegaprotocol/vega/pull/1679) Add topology package to map Validator nodes to Vega keypairs
 
 ### 🛠 Improvements
+
 - [#1718](https://github.com/vegaprotocol/vega/pull/1718) Fix a case where a party can cancel another party's orders
 - [#1662](https://github.com/vegaprotocol/vega/pull/1662) Start moving to event-based architecture internally
 - [#1684](https://github.com/vegaprotocol/vega/pull/1684) Fix order expiry handling when `expiresAt` is amended
@@ -1638,6 +1742,7 @@ This release fixes a handful of bugs, primarily around order amends and new mark
 *2020-05-13*
 
 ### 🛠 Improvements
+
 - [#1649](https://github.com/vegaprotocol/vega/pull/1649)
     Fix github artefact upload CI configuration
 
@@ -1657,6 +1762,7 @@ From this release forward, compiled binaries for multiple platforms will be atta
     Add builds for multiple architectures to GitHub releases
 
 ### 🛠 Improvements
+
 - [#1630](https://github.com/vegaprotocol/vega/pull/1630)
     Fix amends triggering multiple updates to the same order
 - [#1564](https://github.com/vegaprotocol/vega/pull/1564)
