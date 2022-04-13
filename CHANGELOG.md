@@ -9,6 +9,9 @@
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 ### 🛠 Improvements
+- [5001](https://github.com/vegaprotocol/vega/issues/5001) - Set and increment LP version field correctly
+- [5001](https://github.com/vegaprotocol/vega/issues/5001) - Add integration test for LP versioning
+- [3372](https://github.com/vegaprotocol/vega/issues/3372) - Add integration test making sure margin is released when an LP is cancelled.
 - [4223](https://github.com/vegaprotocol/vega/issues/4223) - Use uncrossing price for target stake calculation during auction
 - [3047](https://github.com/vegaprotocol/vega/issues/3047) - Improve interaction between liquidity and price monitoring auctions
 - [3570](https://github.com/vegaprotocol/vega/issues/3570) - Set extension trigger during opening auction with insufficient liquidity
@@ -17,13 +20,15 @@
 - [5001](https://github.com/vegaprotocol/vega/issues/5001) - Add integration test for LP versioning
 - [3372](https://github.com/vegaprotocol/vega/issues/3372) - Add integration test making sure margin is released when an LP is cancelled.
 - [5235](https://github.com/vegaprotocol/vega/issues/5235) - Use `BroadcastTxSync` instead of async for submitting transactions to `tendermint`
+- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 ### 🐛 Fixes
+
 - [4798](https://github.com/vegaprotocol/vega/issues/4978) - Set market pending timestamp to the time at which the market is created.
 - [5222](https://github.com/vegaprotocol/vega/issues/5222) - Do not panic when admin server stops.
 - [5103](https://github.com/vegaprotocol/vega/issues/5103) - Fix invalid http status set in faucet
 - [5128](https://github.com/vegaprotocol/vega/issues/5128) - Fix wrong http rate limit for faucet
-
+- [5237](https://github.com/vegaprotocol/vega/issues/5237) - Trigger state variable calculation first time indicative uncrossing price is available
 
 ## 0.50.1
 
