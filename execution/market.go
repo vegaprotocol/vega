@@ -1006,24 +1006,24 @@ func (m *Market) leaveAuction(ctx context.Context, now time.Time) {
 	})
 
 	// keep var to see if we're leaving opening auction
-	// isOpening := m.as.IsOpeningAuction()
+	isOpening := m.as.IsOpeningAuction()
 	// update auction state, so we know what the new tradeMode ought to be
 	endEvt := m.as.Left(ctx, now)
 
 	for _, uncrossedOrder := range uncrossedOrders {
-		// if !isOpening {
-		// 	// @TODO we should update this once
-		// 	for _, trade := range uncrossedOrder.Trades {
-		// 		err := m.pMonitor.CheckPrice(
-		// 			ctx, m.as, trade.Price.Clone(), trade.Size, now, true,
-		// 		)
-		// 		if err != nil {
-		// 			m.log.Panic("unable to run check price with price monitor",
-		// 				logging.String("market-id", m.GetID()),
-		// 				logging.Error(err))
-		// 		}
-		// 	}
-		// }
+		if !isOpening {
+			// @TODO we should update this once
+			for _, trade := range uncrossedOrder.Trades {
+				err := m.pMonitor.CheckPrice(
+					ctx, m.as, trade.Price.Clone(), trade.Size, now, true,
+				)
+				if err != nil {
+					m.log.Panic("unable to run check price with price monitor",
+						logging.String("market-id", m.GetID()),
+						logging.Error(err))
+				}
+			}
+		}
 
 		updatedOrders = append(updatedOrders, uncrossedOrder.Order)
 		updatedOrders = append(
