@@ -30,6 +30,7 @@
 - [487](https://github.com/vegaprotocol/data-node/pull/487) - Trade data retention
 - [495](https://github.com/vegaprotocol/data-node/pull/495) - Account for `SettlePosition` events reaching the positions plug-in before the `PositionState` event.
 - [495](https://github.com/vegaprotocol/data-node/pull/495) - Make sure `SettlePosition` does not result in a division by zero panic.
+- [495](https://github.com/vegaprotocol/data-node/pull/495) - Fix panic caused by incorrect/missing initialisation of `AverageEntryPrice` field.
 - [](https://github.com/vegaprotocol/data-node/pull/xxx) -
 
 ### 🐛 Fixes
