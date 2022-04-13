@@ -12,7 +12,7 @@
                 "--godog.format",
                 "pretty",
                 "-test.run",
-                "${workspaceFolder}/integration/features/settlement/settlement_at_expiry.feature"
+                "${workspaceFolder}/integration/features/verified/0026-AUCT-auction_interaction.feature:590"
             ]
         },
         {
