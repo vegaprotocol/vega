@@ -33,7 +33,7 @@ func (m *Market) checkAuction(ctx context.Context, now time.Time) {
 		if endTS := m.as.ExpiresAt(); endTS == nil || !endTS.Before(now) {
 			return
 		}
-		trades, err := m.matching.GetIndicativeTrades()
+		trades, err := m.matching.OrderBook.GetIndicativeTrades()
 		if err != nil {
 			m.log.Panic("Can't get indicative trades")
 		}
@@ -81,7 +81,7 @@ func (m *Market) checkAuction(ctx context.Context, now time.Time) {
 		return
 	}
 	isPrice := m.as.IsPriceAuction()
-	trades, err := m.matching.GetIndicativeTrades()
+	trades, err := m.matching.OrderBook.GetIndicativeTrades()
 	if err != nil {
 		m.log.Panic("Can't get indicative trades")
 	}

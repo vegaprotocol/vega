@@ -145,10 +145,6 @@ func (b *CachedOrderBook) GetIndicativePriceAndVolume() (*num.Uint, uint64, type
 	return price, volume, side
 }
 
-func (b *CachedOrderBook) GetIndicativeTrades() ([]*types.Trade, error) {
-	return b.OrderBook.GetIndicativeTrades()
-}
-
 func (b *CachedOrderBook) GetIndicativePrice() *num.Uint {
 	price, ok := b.cache.GetIndicativePrice()
 
