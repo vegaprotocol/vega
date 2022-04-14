@@ -90,7 +90,6 @@ func (m *Market) checkAuction(ctx context.Context, now time.Time) {
 	}
 	p, v, _ := m.matching.GetIndicativePriceAndVolume()
 	if isPrice || m.as.CanLeave() {
-
 		if err := m.pMonitor.CheckPrice(ctx, m.as, p.Clone(), v, now, true); err != nil {
 			m.log.Panic("unable to run check price with price monitor",
 				logging.String("market-id", m.GetID()),
