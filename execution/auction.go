@@ -14,33 +14,35 @@ func (m *Market) checkAuction(ctx context.Context, now time.Time) {
 	if !m.as.InAuction() {
 		return
 	}
+
+	// as soon as we have an indicative uncrossing price in opening auction it needs to be passed into the price monitoring engine so statevar calculation can start
+	if m.as.IsOpeningAuction() && !m.pMonitor.IsBoundFactorsInitialised() {
+		p, v, _ := m.matching.GetIndicativePriceAndVolume()
+		if v > 0 {
+			// pass the first uncrossing price to price engine so state variables depending on it can be initialised
+			if err := m.pMonitor.CheckPrice(ctx, m.as, p.Clone(), v, now, true); err != nil {
+				m.log.Panic("unable to run check price with price monitor",
+					logging.String("market-id", m.GetID()),
+					logging.Error(err))
+			}
+			m.OnOpeningAuctionFirstUncrossingPrice()
+		}
+	}
+
+	if endTS := m.as.ExpiresAt(); endTS == nil || !endTS.Before(now) {
+		return
+	}
+	trades, err := m.matching.OrderBook.GetIndicativeTrades()
+	if err != nil {
+		m.log.Panic("Can't get indicative trades")
+	}
+
 	// opening auction
 	if m.as.IsOpeningAuction() {
-		// only do this once
-		if !m.sawIndicativePrice {
-			p, v, _ := m.matching.GetIndicativePriceAndVolume()
-			if v > 0 {
-				// pass the first uncrossing price to price engine so state variables depending on it can be initialised
-				if err := m.pMonitor.CheckPrice(ctx, m.as, p.Clone(), v, now, true); err != nil {
-					m.log.Panic("unable to run check price with price monitor",
-						logging.String("market-id", m.GetID()),
-						logging.Error(err))
-				}
-				m.OnOpeningAuctionFirstUncrossingPrice()
-				m.sawIndicativePrice = true
-			}
-		}
-		if endTS := m.as.ExpiresAt(); endTS == nil || !endTS.Before(now) {
-			return
-		}
-		trades, err := m.matching.OrderBook.GetIndicativeTrades()
-		if err != nil {
-			m.log.Panic("Can't get indicative trades")
-		}
 		if len(trades) == 0 {
 			return
 		}
-		// opening auction requirements satisfied at this point
+		// opening auction requirements satisfied at this point, other requirements still need to be checked downstream though
 		m.as.SetReadyToLeave()
 
 		m.checkLiquidity(ctx, trades, true)
@@ -81,10 +83,6 @@ func (m *Market) checkAuction(ctx context.Context, now time.Time) {
 		return
 	}
 	isPrice := m.as.IsPriceAuction()
-	trades, err := m.matching.OrderBook.GetIndicativeTrades()
-	if err != nil {
-		m.log.Panic("Can't get indicative trades")
-	}
 	if !isPrice {
 		m.checkLiquidity(ctx, trades, true)
 	}
