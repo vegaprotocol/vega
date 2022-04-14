@@ -93,9 +93,11 @@ func populateNotary(t *testing.T, notr *testNotary) {
 
 func TestNotarySnapshotRoundTrip(t *testing.T) {
 	notr := getTestNotary(t)
+	defer notr.ctrl.Finish()
 
 	notr.top.EXPECT().Len().AnyTimes().Return(1)
 	notr.top.EXPECT().IsValidatorVegaPubKey(gomock.Any()).AnyTimes().Return(true)
+	notr.top.EXPECT().IsTendermintValidator(gomock.Any()).AnyTimes().Return(true)
 	notr.top.EXPECT().IsValidator().AnyTimes().Return(true)
 	notr.top.EXPECT().SelfVegaPubKey().AnyTimes().Return("123456")
 
@@ -109,10 +111,12 @@ func TestNotarySnapshotRoundTrip(t *testing.T) {
 	require.Nil(t, err)
 
 	snapNotr := getTestNotary(t)
+	defer snapNotr.ctrl.Finish()
 	snapNotr.top.EXPECT().Len().AnyTimes().Return(1)
 	snapNotr.top.EXPECT().IsValidator().AnyTimes().Return(true)
 	snapNotr.top.EXPECT().SelfVegaPubKey().AnyTimes().Return("123456")
 	snapNotr.top.EXPECT().IsValidatorVegaPubKey(gomock.Any()).AnyTimes().Return(true)
+	snapNotr.top.EXPECT().IsTendermintValidator(gomock.Any()).AnyTimes().Return(true)
 
 	_, err = snapNotr.LoadState(context.Background(), types.PayloadFromProto(snap))
 	require.Nil(t, err)
