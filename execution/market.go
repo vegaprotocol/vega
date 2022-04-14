@@ -3298,13 +3298,12 @@ func (m *Market) distributeLiquidityFees(ctx context.Context) error {
 
 // Mark price gets returned when market is not in auction, otherwise indicative uncrossing price gets returned.
 func (m *Market) getReferencePrice() *num.Uint {
-	if m.as.InAuction() {
-		p, v, _ := m.matching.GetIndicativePriceAndVolume()
-		// If volume is 0 we want to rely on previous mark price (the indicative price is 0 in that case)
-		if v == 0 {
-			return m.getCurrentMarkPrice()
-		}
-		return p
+	if !m.as.InAuction() {
+		return m.getCurrentMarkPrice()
 	}
-	return m.getCurrentMarkPrice()
+	ip := m.matching.GetIndicativePrice() // can be zero
+	if ip.IsZero() {
+		return m.getCurrentMarkPrice()
+	}
+	return ip
 }
