@@ -3,7 +3,7 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
   # Related spec files:
   #  ../spec/0026-auctions.md
   #  ../spec/0032-price-monitoring.md
-  #  ../spec/0035-liquidity-monitoring.md 
+  #  ../spec/0035-liquidity-monitoring.md
 
   Background:
     Given the following network parameters are set:
@@ -48,9 +48,9 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
     When the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
       | lp1 | party0 | ETH/DEC21 | 4000              | 0.001 | buy  | BID              | 1          | 2      | submission |
-      | lp1 | party0 | ETH/DEC21 | 4000              | 0.001 | buy  | MID              | 2          | 1      | amendment  |
-      | lp1 | party0 | ETH/DEC21 | 4000              | 0.001 | sell | ASK              | 1          | 2      | amendment  |
-      | lp1 | party0 | ETH/DEC21 | 4000              | 0.001 | sell | MID              | 2          | 1      | amendment  |
+      | lp1 | party0 | ETH/DEC21 | 4000              | 0.001 | buy  | MID              | 2          | 1      | submission |
+      | lp1 | party0 | ETH/DEC21 | 4000              | 0.001 | sell | ASK              | 1          | 2      | submission |
+      | lp1 | party0 | ETH/DEC21 | 4000              | 0.001 | sell | MID              | 2          | 1      | submission |
 
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
@@ -98,7 +98,7 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
     Given the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
       | lp1 | party0 | ETH/DEC21 | 10000             | 0.001 | buy  | BID              | 500        | 10     | submission |
-      | lp1 | party0 | ETH/DEC21 | 10000             | 0.001 | sell | ASK              | 500        | 10     | amendment  |
+      | lp1 | party0 | ETH/DEC21 | 10000             | 0.001 | sell | ASK              | 500        | 10     | submission |
 
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference  |
@@ -109,7 +109,7 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
 
     When the opening auction period ends for market "ETH/DEC21"
     Then the auction ends with a traded volume of "10" at a price of "1000"
-    
+
     # target_stake = mark_price x max_oi x target_stake_scaling_factor x max(risk_factor_long, risk_factor_short) = 1000 x 10 x 1 x 0.1
     And the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
@@ -120,9 +120,9 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
     Given the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
       | lp1 | party0 | ETH/DEC21 | 10000             | 0.001 | buy  | BID              | 1          | 2      | submission |
-      | lp1 | party0 | ETH/DEC21 | 10000             | 0.001 | buy  | MID              | 2          | 1      | amendment  |
-      | lp1 | party0 | ETH/DEC21 | 10000             | 0.001 | sell | ASK              | 1          | 2      | amendment  |
-      | lp1 | party0 | ETH/DEC21 | 10000             | 0.001 | sell | MID              | 2          | 1      | amendment  |
+      | lp1 | party0 | ETH/DEC21 | 10000             | 0.001 | buy  | MID              | 2          | 1      | submission |
+      | lp1 | party0 | ETH/DEC21 | 10000             | 0.001 | sell | ASK              | 1          | 2      | submission |
+      | lp1 | party0 | ETH/DEC21 | 10000             | 0.001 | sell | MID              | 2          | 1      | submission |
 
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
@@ -131,7 +131,7 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
       | party2 | ETH/DEC21 | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
 
     When the opening auction period ends for market "ETH/DEC21"
-    
+
     Then the market data for the market "ETH/DEC21" should be:
       | trading mode                 | auction trigger         | extension trigger         |
       | TRADING_MODE_OPENING_AUCTION | AUCTION_TRIGGER_OPENING | AUCTION_TRIGGER_LIQUIDITY |
@@ -156,9 +156,9 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
     And the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
       | lp1 | party0 | ETH/DEC21 | 700               | 0.001 | buy  | BID              | 1          | 2      | submission |
-      | lp1 | party0 | ETH/DEC21 | 700               | 0.001 | buy  | MID              | 2          | 1      | amendment  |
-      | lp1 | party0 | ETH/DEC21 | 700               | 0.001 | sell | ASK              | 1          | 2      | amendment  |
-      | lp1 | party0 | ETH/DEC21 | 700               | 0.001 | sell | MID              | 2          | 1      | amendment  |
+      | lp1 | party0 | ETH/DEC21 | 700               | 0.001 | buy  | MID              | 2          | 1      | submission |
+      | lp1 | party0 | ETH/DEC21 | 700               | 0.001 | sell | ASK              | 1          | 2      | submission |
+      | lp1 | party0 | ETH/DEC21 | 700               | 0.001 | sell | MID              | 2          | 1      | submission |
 
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
@@ -168,7 +168,7 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
       | party2 | ETH/DEC21 | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
 
     When the opening auction period ends for market "ETH/DEC21"
-  
+
     Then the market data for the market "ETH/DEC21" should be:
       | trading mode                 | auction trigger         | extension trigger         |
       | TRADING_MODE_OPENING_AUCTION | AUCTION_TRIGGER_OPENING | AUCTION_TRIGGER_LIQUIDITY |
@@ -182,8 +182,8 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
 
     When the network moves ahead "1" blocks
     And the market data for the market "ETH/DEC21" should be:
-     | trading mode                 | auction trigger         | target stake | supplied stake | open interest |
-     | TRADING_MODE_OPENING_AUCTION | AUCTION_TRIGGER_OPENING | 1000         | 799            | 0             |
+      | trading mode                 | auction trigger         | target stake | supplied stake | open interest |
+      | TRADING_MODE_OPENING_AUCTION | AUCTION_TRIGGER_OPENING | 1000         | 799            | 0             |
 
     And the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type   |
@@ -193,8 +193,8 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
       | lp1 | party0 | ETH/DEC21 | 800               | 0.001 | sell | MID              | 2          | 1      | amendment |
 
     And the market data for the market "ETH/DEC21" should be:
-     | trading mode                 | auction trigger         | extension trigger         | target stake | supplied stake | open interest |
-     | TRADING_MODE_OPENING_AUCTION | AUCTION_TRIGGER_OPENING | AUCTION_TRIGGER_LIQUIDITY | 1000         | 800            | 0             |
+      | trading mode                 | auction trigger         | extension trigger         | target stake | supplied stake | open interest |
+      | TRADING_MODE_OPENING_AUCTION | AUCTION_TRIGGER_OPENING | AUCTION_TRIGGER_LIQUIDITY | 1000         | 800            | 0             |
 
     When the network moves ahead "1" blocks
 
@@ -222,9 +222,9 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
     And the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
       | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | buy  | BID              | 1          | 2      | submission |
-      | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | buy  | MID              | 2          | 1      | amendment  |
-      | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | sell | ASK              | 1          | 2      | amendment  |
-      | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | sell | MID              | 2          | 1      | amendment  |
+      | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | buy  | MID              | 2          | 1      | submission |
+      | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | sell | ASK              | 1          | 2      | submission |
+      | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | sell | MID              | 2          | 1      | submission |
 
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
@@ -246,23 +246,23 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
       | party1 | ETH/DEC21 | buy  | 20     | 1010  | 0                | TYPE_LIMIT | TIF_GTC |
       | party2 | ETH/DEC21 | sell | 20     | 1010  | 0                | TYPE_LIMIT | TIF_GTC |
     And the market data for the market "ETH/DEC21" should be:
-     | trading mode                    | auction trigger           | target stake | supplied stake | open interest |
-     | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY | 3030         | 1000           | 10            |
+      | trading mode                    | auction trigger           | target stake | supplied stake | open interest |
+      | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY | 3030         | 1000           | 10            |
 
     And the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | party0 | ETH/DEC21 | 10000             | 0.001 | buy  | BID              | 1          | 2      | amendment  |
-      | lp1 | party0 | ETH/DEC21 | 10000             | 0.001 | buy  | MID              | 2          | 1      | amendment  |
-      | lp1 | party0 | ETH/DEC21 | 10000             | 0.001 | sell | ASK              | 1          | 2      | amendment  |
-      | lp1 | party0 | ETH/DEC21 | 10000             | 0.001 | sell | MID              | 2          | 1      | amendment  |
+      | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type   |
+      | lp1 | party0 | ETH/DEC21 | 10000             | 0.001 | buy  | BID              | 1          | 2      | amendment |
+      | lp1 | party0 | ETH/DEC21 | 10000             | 0.001 | buy  | MID              | 2          | 1      | amendment |
+      | lp1 | party0 | ETH/DEC21 | 10000             | 0.001 | sell | ASK              | 1          | 2      | amendment |
+      | lp1 | party0 | ETH/DEC21 | 10000             | 0.001 | sell | MID              | 2          | 1      | amendment |
 
     When the network moves ahead "11" blocks
 
     And the market data for the market "ETH/DEC21" should be:
-     | trading mode            | auction trigger             | target stake | supplied stake | open interest |
-     | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 3030         | 10000          | 30            |
+      | trading mode            | auction trigger             | target stake | supplied stake | open interest |
+      | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 3030         | 10000          | 30            |
 
-Scenario: Once market is in continuous trading mode: post a non-persistent order that should trigger liquidity auction (not enough target stake), appropriate event is sent and market remains in TRADING_MODE_CONTINUOUS (0026-AUCT-001, 0026-AUCT-005)
+  Scenario: Once market is in continuous trading mode: post a non-persistent order that should trigger liquidity auction (not enough target stake), appropriate event is sent and market remains in TRADING_MODE_CONTINUOUS (0026-AUCT-001, 0026-AUCT-005)
     Given the following network parameters are set:
       | name                                          | value |
       | market.liquidity.targetstake.triggering.ratio | 0.8   |
@@ -270,9 +270,9 @@ Scenario: Once market is in continuous trading mode: post a non-persistent order
     And the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
       | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | buy  | BID              | 1          | 2      | submission |
-      | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | buy  | MID              | 2          | 1      | amendment  |
-      | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | sell | ASK              | 1          | 2      | amendment  |
-      | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | sell | MID              | 2          | 1      | amendment  |
+      | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | buy  | MID              | 2          | 1      | submission |
+      | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | sell | ASK              | 1          | 2      | submission |
+      | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | sell | MID              | 2          | 1      | submission |
 
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
@@ -294,10 +294,10 @@ Scenario: Once market is in continuous trading mode: post a non-persistent order
       | party1 | ETH/DEC21 | buy  | 20     | 1010  | 0                | TYPE_LIMIT | TIF_GFN | ref-ref   | OrderError: Invalid Persistence |
 
     And the market data for the market "ETH/DEC21" should be:
-     | trading mode            | auction trigger             | target stake | supplied stake | open interest |
-     | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 1000         | 1000           | 10            |
+      | trading mode            | auction trigger             | target stake | supplied stake | open interest |
+      | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 1000         | 1000           | 10            |
 
-Scenario: Once market is in continuous trading mode: post a non-persistent order that should trigger liquidity auction (no best ask), appropriate event is sent and market goes into TRADING_MODE_MONITORING_AUCTION
+  Scenario: Once market is in continuous trading mode: post a non-persistent order that should trigger liquidity auction (no best ask), appropriate event is sent and market goes into TRADING_MODE_MONITORING_AUCTION
     Given the following network parameters are set:
       | name                                          | value |
       | market.liquidity.targetstake.triggering.ratio | 0.8   |
@@ -305,9 +305,9 @@ Scenario: Once market is in continuous trading mode: post a non-persistent order
     And the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
       | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | buy  | BID              | 1          | 2      | submission |
-      | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | buy  | MID              | 2          | 1      | amendment  |
-      | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | sell | ASK              | 1          | 2      | amendment  |
-      | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | sell | MID              | 2          | 1      | amendment  |
+      | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | buy  | MID              | 2          | 1      | submission |
+      | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | sell | ASK              | 1          | 2      | submission |
+      | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | sell | MID              | 2          | 1      | submission |
 
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
@@ -320,27 +320,27 @@ Scenario: Once market is in continuous trading mode: post a non-persistent order
     Then the auction ends with a traded volume of "1" at a price of "1000"
     And the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 1000       | TRADING_MODE_CONTINUOUS | 1       | 990       | 1010      | 100          | 1000           | 1            |
+      | 1000       | TRADING_MODE_CONTINUOUS | 1       | 990       | 1010      | 100          | 1000           | 1             |
 
     Then the parties place the following orders:
-      | party  | market id | side | volume | price | resulting trades | type       | tif     | 
-      | party1 | ETH/DEC21 | buy  | 20     | 1010  | 3                | TYPE_LIMIT | TIF_GFN | 
+      | party  | market id | side | volume | price | resulting trades | type       | tif     |
+      | party1 | ETH/DEC21 | buy  | 20     | 1010  | 3                | TYPE_LIMIT | TIF_GFN |
 
     And the market data for the market "ETH/DEC21" should be:
       | trading mode                    | auction trigger           | target stake | supplied stake | open interest |
       | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY | 1111         | 1000           | 11            |
 
-Scenario: Once market is in continuous trading mode: post a non-persistent order that should trigger price auction, check that the order gets stopped, appropriate event is sent and market remains in TRADING_MODE_CONTINUOUS
+  Scenario: Once market is in continuous trading mode: post a non-persistent order that should trigger price auction, check that the order gets stopped, appropriate event is sent and market remains in TRADING_MODE_CONTINUOUS
     Given the following network parameters are set:
       | name                                          | value |
       | market.liquidity.targetstake.triggering.ratio | 0.8   |
 
     And the parties submit the following liquidity provision:
-      | id  | party   | market id | commitment amount | fee   | side | pegged reference | proportion | offset  | lp type    |
-      | lp1 | party0 | ETH/DEC21 | 1000              | 0.001  | buy  | BID              | 1          | 2       | submission |
-      | lp1 | party0 | ETH/DEC21 | 1000              | 0.001  | buy  | MID              | 2          | 1       | amendment  |
-      | lp1 | party0 | ETH/DEC21 | 1000              | 0.001  | sell | ASK              | 1          | 2       | amendment  |
-      | lp1 | party0 | ETH/DEC21 | 1000              | 0.001  | sell | MID              | 2          | 1       | amendment  |
+      | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
+      | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | buy  | BID              | 1          | 2      | submission |
+      | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | buy  | MID              | 2          | 1      | submission |
+      | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | sell | ASK              | 1          | 2      | submission |
+      | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | sell | MID              | 2          | 1      | submission |
 
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
@@ -364,24 +364,24 @@ Scenario: Once market is in continuous trading mode: post a non-persistent order
     Then the following orders should be stopped:
       | party  | market id | reason                                               |
       | party1 | ETH/DEC21 | ORDER_ERROR_NON_PERSISTENT_ORDER_OUT_OF_PRICE_BOUNDS |
-    
+
     Then the network moves ahead "5" blocks
     And the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
       | 1000       | TRADING_MODE_CONTINUOUS | 1       | 990       | 1010      | 1000         | 1000           | 10            |
 
-Scenario: Once market is in continuous trading mode: enter liquidity monitoring auction -> extend with price monitoring auction -> leave auction mode (0026-AUCT-001, 0068-MATC-033,0026-AUCT-005)
-    
+  Scenario: Once market is in continuous trading mode: enter liquidity monitoring auction -> extend with price monitoring auction -> leave auction mode (0026-AUCT-001, 0068-MATC-033,0026-AUCT-005)
+
     Given the following network parameters are set:
       | name                                          | value |
       | market.liquidity.targetstake.triggering.ratio | 0.8   |
 
     And the parties submit the following liquidity provision:
-      | id  | party   | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | party0 | ETH/DEC21 | 1000               | 0.001 | buy  | BID              | 1          | 2      | submission |
-      | lp1 | party0 | ETH/DEC21 | 1000               | 0.001 | buy  | MID              | 2          | 1      | amendment  |
-      | lp1 | party0 | ETH/DEC21 | 1000               | 0.001 | sell | ASK              | 1          | 2      | amendment  |
-      | lp1 | party0 | ETH/DEC21 | 1000               | 0.001 | sell | MID              | 2          | 1      | amendment  |
+      | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
+      | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | buy  | BID              | 1          | 2      | submission |
+      | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | buy  | MID              | 2          | 1      | submission |
+      | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | sell | ASK              | 1          | 2      | submission |
+      | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | sell | MID              | 2          | 1      | submission |
 
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
@@ -407,7 +407,7 @@ Scenario: Once market is in continuous trading mode: enter liquidity monitoring 
 
     Then the market data for the market "ETH/DEC21" should be:
       | trading mode                    | auction trigger           | horizon | min bound | max bound |
-      | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY |       1 |       990 |      1010 |
+      | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY | 1       | 990       | 1010      |
 
     When the network moves ahead "11" blocks
     Then the parties place the following orders:
@@ -421,7 +421,7 @@ Scenario: Once market is in continuous trading mode: enter liquidity monitoring 
       | party2 | cancel-me-2 |
 
     When the network moves ahead "1" blocks
-    
+
     Then  the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type   |
       | lp1 | party0 | ETH/DEC21 | 4080              | 0.001 | buy  | BID              | 1          | 2      | amendment |
@@ -432,7 +432,7 @@ Scenario: Once market is in continuous trading mode: enter liquidity monitoring 
 
     # leave liquidity auction
     When the network moves ahead "2" blocks
-    
+
     # We should be able to leave liquidity auction now (price extension keep the market in auciton mode though)
     Then the market data for the market "ETH/DEC21" should be:
       | trading mode                    | auction trigger           | extension trigger     |
@@ -444,17 +444,17 @@ Scenario: Once market is in continuous trading mode: enter liquidity monitoring 
       | mark price | trading mode            | auction trigger             | horizon | min bound | max bound | target stake | supplied stake | open interest |
       | 1020       | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 1       | 1010      | 1030      | 3060         | 4080           | 30            |
 
-Scenario: Once market is in continuous trading mode: enter liquidity monitoring auction -> extend with price monitoring auction -> extend with liquidity monitoring -> leave auction mode (0026-AUCT-001, 0068-MATC-033,0026-AUCT-005)
- Given the following network parameters are set:
+  Scenario: Once market is in continuous trading mode: enter liquidity monitoring auction -> extend with price monitoring auction -> extend with liquidity monitoring -> leave auction mode (0026-AUCT-001, 0068-MATC-033,0026-AUCT-005)
+    Given the following network parameters are set:
       | name                                          | value |
       | market.liquidity.targetstake.triggering.ratio | 0.8   |
 
     And the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
       | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | buy  | BID              | 1          | 2      | submission |
-      | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | buy  | MID              | 2          | 1      | amendment  |
-      | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | sell | ASK              | 1          | 2      | amendment  |
-      | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | sell | MID              | 2          | 1      | amendment  |
+      | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | buy  | MID              | 2          | 1      | submission |
+      | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | sell | ASK              | 1          | 2      | submission |
+      | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | sell | MID              | 2          | 1      | submission |
 
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
@@ -492,13 +492,13 @@ Scenario: Once market is in continuous trading mode: enter liquidity monitoring 
       | party2 | cancel-me-2 |
 
     When the network moves ahead "1" blocks
-    
+
     And the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | party0 | ETH/DEC21 | 3060              | 0.001 | buy  | BID              | 1          | 2      | amendment  |
-      | lp1 | party0 | ETH/DEC21 | 3060              | 0.001 | buy  | MID              | 2          | 1      | amendment  |
-      | lp1 | party0 | ETH/DEC21 | 3060              | 0.001 | sell | ASK              | 1          | 2      | amendment  |
-      | lp1 | party0 | ETH/DEC21 | 3060              | 0.001 | sell | MID              | 2          | 1      | amendment  |
+      | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type   |
+      | lp1 | party0 | ETH/DEC21 | 3060              | 0.001 | buy  | BID              | 1          | 2      | amendment |
+      | lp1 | party0 | ETH/DEC21 | 3060              | 0.001 | buy  | MID              | 2          | 1      | amendment |
+      | lp1 | party0 | ETH/DEC21 | 3060              | 0.001 | sell | ASK              | 1          | 2      | amendment |
+      | lp1 | party0 | ETH/DEC21 | 3060              | 0.001 | sell | MID              | 2          | 1      | amendment |
 
     When the network moves ahead "11" blocks
     # We should be able to leave liquidity auction now (price extension keep the market in auction mode though)
@@ -522,11 +522,11 @@ Scenario: Once market is in continuous trading mode: enter liquidity monitoring 
 
     # Increasing the supplied stake should end the auction
     Then the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
+      | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type   |
       | lp1 | party0 | ETH/DEC21 | 4080              | 0.001 | buy  | BID              | 1          | 2      | amendment |
-      | lp1 | party0 | ETH/DEC21 | 4080              | 0.001 | buy  | MID              | 2          | 1      | amendment  |
-      | lp1 | party0 | ETH/DEC21 | 4080              | 0.001 | sell | ASK              | 1          | 2      | amendment  |
-      | lp1 | party0 | ETH/DEC21 | 4080              | 0.001 | sell | MID              | 2          | 1      | amendment  |
+      | lp1 | party0 | ETH/DEC21 | 4080              | 0.001 | buy  | MID              | 2          | 1      | amendment |
+      | lp1 | party0 | ETH/DEC21 | 4080              | 0.001 | sell | ASK              | 1          | 2      | amendment |
+      | lp1 | party0 | ETH/DEC21 | 4080              | 0.001 | sell | MID              | 2          | 1      | amendment |
 
     When the network moves ahead "1" blocks
     Then the market data for the market "ETH/DEC21" should be:
@@ -541,9 +541,9 @@ Scenario: Once market is in continuous trading mode: enter liquidity monitoring 
     Then the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
       | lp1 | party0 | ETH/DEC21 | 2000              | 0.001 | buy  | BID              | 1          | 2      | submission |
-      | lp1 | party0 | ETH/DEC21 | 2000              | 0.001 | buy  | MID              | 2          | 1      | amendment  |
-      | lp1 | party0 | ETH/DEC21 | 2000              | 0.001 | sell | ASK              | 1          | 2      | amendment  |
-      | lp1 | party0 | ETH/DEC21 | 2000              | 0.001 | sell | MID              | 2          | 1      | amendment  |
+      | lp1 | party0 | ETH/DEC21 | 2000              | 0.001 | buy  | MID              | 2          | 1      | submission |
+      | lp1 | party0 | ETH/DEC21 | 2000              | 0.001 | sell | ASK              | 1          | 2      | submission |
+      | lp1 | party0 | ETH/DEC21 | 2000              | 0.001 | sell | MID              | 2          | 1      | submission |
 
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
@@ -572,8 +572,8 @@ Scenario: Once market is in continuous trading mode: enter liquidity monitoring 
     # end price auction (gets extended by liquidity)
     When the network moves ahead "301" blocks
     Then the market data for the market "ETH/DEC21" should be:
-      | trading mode                    | auction trigger        | extension trigger         |
-      | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_PRICE  | AUCTION_TRIGGER_LIQUIDITY |
+      | trading mode                    | auction trigger       | extension trigger         |
+      | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_PRICE | AUCTION_TRIGGER_LIQUIDITY |
 
     # We were in liquidity auction, we've updated the commitment amount
     When the parties submit the following liquidity provision:
@@ -587,8 +587,8 @@ Scenario: Once market is in continuous trading mode: enter liquidity monitoring 
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
       | 1020       | TRADING_MODE_CONTINUOUS | 1       | 1010      | 1030      | 3060         | 4000           | 30            |
 
-Scenario: Once market is in continuous trading mode: enter liquidity monitoring auction -> extend with price monitoring auction -> extend with liquidity auction -> leave auction mode (0026-AUCT-001, 0068-MATC-033, 0026-AUCT-005)
-     
+  Scenario: Once market is in continuous trading mode: enter liquidity monitoring auction -> extend with price monitoring auction -> extend with liquidity auction -> leave auction mode (0026-AUCT-001, 0068-MATC-033, 0026-AUCT-005)
+
     Given the following network parameters are set:
       | name                                          | value |
       | market.liquidity.targetstake.triggering.ratio | 0.8   |
@@ -596,7 +596,7 @@ Scenario: Once market is in continuous trading mode: enter liquidity monitoring 
     And the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
       | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | buy  | BID              | 1          | 2      | submission |
-      | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | sell | ASK              | 1          | 2      | amendment  |
+      | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | sell | ASK              | 1          | 2      | submission |
 
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
@@ -627,7 +627,7 @@ Scenario: Once market is in continuous trading mode: enter liquidity monitoring 
       | party1 | cancel-me-1 |
       | party2 | cancel-me-2 |
 
-     # Updating the commitment amount to come out of liquidity auction
+    # Updating the commitment amount to come out of liquidity auction
     Then  the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type   |
       | lp1 | party0 | ETH/DEC21 | 4080              | 0.001 | buy  | BID              | 1          | 2      | amendment |
@@ -639,7 +639,7 @@ Scenario: Once market is in continuous trading mode: enter liquidity monitoring 
     Then the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
       | party1 | ETH/DEC21 | buy  | 20     | 1020  | 0                | TYPE_LIMIT | TIF_GTC |
-      | party2 | ETH/DEC21 | sell | 20     | 1020  | 0                | TYPE_LIMIT | TIF_GTC | 
+      | party2 | ETH/DEC21 | sell | 20     | 1020  | 0                | TYPE_LIMIT | TIF_GTC |
 
     When the network moves ahead "9" blocks
 
@@ -667,11 +667,11 @@ Scenario: Once market is in continuous trading mode: enter liquidity monitoring 
 
     # Updating the commitment amount to come out of liquidity auction
     Then  the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type |
+      | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type   |
       | lp1 | party0 | ETH/DEC21 | 3060              | 0.001 | buy  | BID              | 1          | 2      | amendment |
       | lp1 | party0 | ETH/DEC21 | 3060              | 0.001 | sell | ASK              | 1          | 2      | amendment |
 
     When the network moves ahead "10" blocks
     And the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            | auction trigger horizon     | min bound | max bound | target stake | supplied stake | open interest |
-      | 1020       | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 1010      |      1030 | 3060         | 3060           | 30            |
+      | 1020       | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 1010      | 1030      | 3060         | 3060           | 30            |
