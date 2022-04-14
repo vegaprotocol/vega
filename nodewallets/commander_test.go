@@ -85,7 +85,7 @@ func testSignedCommandSuccess(t *testing.T) {
 	ctx := context.Background()
 
 	commander.bstats.EXPECT().Height().AnyTimes().Return(uint64(42))
-	commander.chain.EXPECT().SubmitTransactionAsync(
+	commander.chain.EXPECT().SubmitTransactionSync(
 		gomock.Any(), gomock.Any()).Times(1).Return(&tmctypes.ResultBroadcastTx{}, nil)
 
 	ok := make(chan error)
@@ -106,7 +106,7 @@ func testSignedCommandFailure(t *testing.T) {
 	ctx := context.Background()
 
 	commander.bstats.EXPECT().Height().AnyTimes().Return(uint64(42))
-	commander.chain.EXPECT().SubmitTransactionAsync(
+	commander.chain.EXPECT().SubmitTransactionSync(
 		gomock.Any(), gomock.Any()).Times(1).Return(&tmctypes.ResultBroadcastTx{}, errors.New("bad bad"))
 
 	ok := make(chan error)

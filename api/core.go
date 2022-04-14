@@ -125,7 +125,7 @@ func (s *coreService) SubmitTransaction(ctx context.Context, req *protoapi.Submi
 		return nil, apiError(codes.InvalidArgument, ErrMalformedRequest)
 	}
 
-	txResult, err := s.blockchain.SubmitTransactionAsync(ctx, req.Tx)
+	txResult, err := s.blockchain.SubmitTransactionSync(ctx, req.Tx)
 	if err != nil {
 		// This is Tendermint's specific error signature
 		if _, ok := err.(interface {

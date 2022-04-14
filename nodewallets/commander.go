@@ -25,6 +25,7 @@ const (
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/chain_mock.go -package mocks code.vegaprotocol.io/vega/nodewallets Chain
 type Chain interface {
+	SubmitTransactionSync(ctx context.Context, tx *commandspb.Transaction) (*tmctypes.ResultBroadcastTx, error)
 	SubmitTransactionAsync(ctx context.Context, tx *commandspb.Transaction) (*tmctypes.ResultBroadcastTx, error)
 }
 
@@ -63,7 +64,7 @@ func (c *Commander) SetChain(bc *blockchain.Client) {
 // Command - send command to chain.
 // Note: beware when passing in an exponential back off since the done function may be called many times.
 func (c *Commander) Command(ctx context.Context, cmd txn.Command, payload proto.Message, done func(error), bo *backoff.ExponentialBackOff) {
-	c.command(ctx, cmd, payload, done, api.SubmitTransactionRequest_TYPE_ASYNC, bo, nil)
+	c.command(ctx, cmd, payload, done, api.SubmitTransactionRequest_TYPE_SYNC, bo, nil)
 }
 
 func (c *Commander) CommandSync(ctx context.Context, cmd txn.Command, payload proto.Message, done func(error), bo *backoff.ExponentialBackOff) {
@@ -98,7 +99,12 @@ func (c *Commander) command(_ context.Context, cmd txn.Command, payload proto.Me
 		tx := commands.NewTransaction(c.wallet.PubKey().Hex(), marshalledData, signature)
 		tx.Pow = pow
 
-		_, err = c.bc.SubmitTransactionAsync(ctx, tx)
+		if ty == api.SubmitTransactionRequest_TYPE_SYNC {
+			_, err = c.bc.SubmitTransactionSync(ctx, tx)
+		} else {
+			_, err = c.bc.SubmitTransactionAsync(ctx, tx)
+		}
+
 		if err != nil {
 			// this can happen as network dependent
 			c.log.Error("could not send transaction to tendermint",
