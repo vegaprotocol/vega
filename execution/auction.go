@@ -16,8 +16,7 @@ func (m *Market) checkAuction(ctx context.Context, now time.Time) {
 	}
 	// opening auction
 	if m.as.IsOpeningAuction() {
-		// only do this once
-		if !m.sawIndicativePrice {
+		if !m.pMonitor.IsBoundFactorsInitialised() {
 			p, v, _ := m.matching.GetIndicativePriceAndVolume()
 			if v > 0 {
 				// pass the first uncrossing price to price engine so state variables depending on it can be initialised
@@ -27,7 +26,6 @@ func (m *Market) checkAuction(ctx context.Context, now time.Time) {
 						logging.Error(err))
 				}
 				m.OnOpeningAuctionFirstUncrossingPrice()
-				m.sawIndicativePrice = true
 			}
 		}
 		if endTS := m.as.ExpiresAt(); endTS == nil || !endTS.Before(now) {
