@@ -3305,7 +3305,7 @@ func (m *Market) getReferencePrice() *num.Uint {
 			return m.getCurrentMarkPrice()
 		}
 		return p
-	} else {
-		return m.getCurrentMarkPrice()
 	}
+	return m.getCurrentMarkPrice()
+
 }
