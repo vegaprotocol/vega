@@ -101,7 +101,7 @@ func (e *Engine) CheckLiquidity(as AuctionState, t time.Time, currentStake *num.
 	scaledTargetStake, _ := num.UintFromDecimal(scaledTargetStakeDec)
 	stakeUndersupplied := currentStake.LT(scaledTargetStake)
 	if stakeUndersupplied || bestStaticBidVolume == 0 || bestStaticAskVolume == 0 {
-		if stakeUndersupplied && trades != nil && !persistent {
+		if stakeUndersupplied && len(trades) > 0 && !persistent {
 			// non-persistent order cannot trigger auction by raising target stake
 			// we're going to stay in continuous trading
 			return proto.OrderError_ORDER_ERROR_INVALID_PERSISTENCE

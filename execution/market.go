@@ -3062,7 +3062,7 @@ func (m *Market) getTheoreticalTargetStake() *num.Uint {
 	}
 
 	// Ignoring the error as GetTheoreticalTargetStake handles trades==nil
-	trades, _ := m.matching.GetIndicativeTrades()
+	trades, _ := m.matching.OrderBook.GetIndicativeTrades()
 
 	return m.tsCalc.GetTheoreticalTargetStake(
 		*rf, m.currentTime, m.getReferencePrice(), trades)
