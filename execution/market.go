@@ -3318,5 +3318,4 @@ func (m *Market) getReferencePrice() *num.Uint {
 		return p
 	}
 	return m.getCurrentMarkPrice()
-
 }
