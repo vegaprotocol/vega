@@ -3061,7 +3061,7 @@ func (m *Market) getTheoreticalTargetStake() *num.Uint {
 		return num.Zero()
 	}
 
-	// Ignoring the error as GetTheoreticalTargetStake handles trades==nil
+	// Ignoring the error as GetTheoreticalTargetStake handles trades==nil and len(trades)==0
 	trades, _ := m.matching.OrderBook.GetIndicativeTrades()
 
 	return m.tsCalc.GetTheoreticalTargetStake(
@@ -3086,12 +3086,10 @@ func (m *Market) checkLiquidity(ctx context.Context, trades []*types.Trade, pers
 	// before we check liquidity, ensure we've moved all funds that can go towards
 	// provided stake to the bond accounts so we don't trigger liquidity auction for no reason
 	m.checkBondBalance(ctx)
-	_, vBid, _ := m.getBestStaticBidPriceAndVolume()
-	_, vAsk, _ := m.getBestStaticAskPriceAndVolume()
-
-	if m.as.InAuction() && !m.matching.BidAndAskPresentAfterAuction() {
-		vBid = 0
-		vAsk = 0
+	var vBid, vAsk uint64
+	if !m.as.InAuction() || m.matching.BidAndAskPresentAfterAuction() {
+		_, vBid, _ = m.getBestStaticBidPriceAndVolume()
+		_, vAsk, _ = m.getBestStaticAskPriceAndVolume()
 	}
 
 	rf, err := m.getRiskFactors()
