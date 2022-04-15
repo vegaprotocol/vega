@@ -19,7 +19,7 @@
 - [5222](https://github.com/vegaprotocol/vega/issues/5222) - Do not panic when admin server stops.
 - [5103](https://github.com/vegaprotocol/vega/issues/5103) - Fix invalid http status set in faucet
 - [5128](https://github.com/vegaprotocol/vega/issues/5128) - Fix wrong http rate limit for faucet
-
+- [5231](https://github.com/vegaprotocol/vega/issues/5231) - Fix pegged orders to be reset to the order pointer after snapshot loading
 
 ## 0.50.1
 
