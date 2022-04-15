@@ -135,6 +135,11 @@ func (e *Engine) UpdateSettings(riskModel risk.Model, settings *types.PriceMonit
 	e.boundFactorsInitialised = false
 }
 
+// Initiliased returns true if the engine already saw at least one price
+func (e *Engine) Initialised() bool {
+	return e.initialised
+}
+
 // NewMonitor returns a new instance of PriceMonitoring.
 func NewMonitor(asset, mktID string, riskModel RangeProvider, settings *types.PriceMonitoringSettings, stateVarEngine StateVarEngine, log *logging.Logger) (*Engine, error) {
 	if riskModel == nil {

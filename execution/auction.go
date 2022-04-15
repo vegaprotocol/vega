@@ -16,7 +16,7 @@ func (m *Market) checkAuction(ctx context.Context, now time.Time) {
 	}
 
 	// as soon as we have an indicative uncrossing price in opening auction it needs to be passed into the price monitoring engine so statevar calculation can start
-	if m.as.IsOpeningAuction() && !m.pMonitor.IsBoundFactorsInitialised() {
+	if m.as.IsOpeningAuction() && !m.pMonitor.Initialised() {
 		p, v, _ := m.matching.GetIndicativePriceAndVolume()
 		if v > 0 {
 			// pass the first uncrossing price to price engine so state variables depending on it can be initialised

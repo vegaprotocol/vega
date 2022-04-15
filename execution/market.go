@@ -105,6 +105,7 @@ type PriceMonitor interface {
 	GetState() *types.PriceMonitor
 	Changed() bool
 	IsBoundFactorsInitialised() bool
+	Initialised() bool
 	UpdateSettings(risk.Model, *types.PriceMonitoringSettings)
 }
 
