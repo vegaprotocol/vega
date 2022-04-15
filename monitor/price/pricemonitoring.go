@@ -135,7 +135,7 @@ func (e *Engine) UpdateSettings(riskModel risk.Model, settings *types.PriceMonit
 	e.boundFactorsInitialised = false
 }
 
-// Initiliased returns true if the engine already saw at least one price
+// Initialised returns true if the engine already saw at least one price.
 func (e *Engine) Initialised() bool {
 	return e.initialised
 }
