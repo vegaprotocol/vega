@@ -257,8 +257,6 @@ type Market struct {
 	marketTracker  *MarketTracker
 	positionFactor num.Decimal // 10^pdp
 	assetDP        uint32
-
-	sawIndicativePrice bool
 }
 
 // SetMarketID assigns a deterministic pseudo-random ID to a Market.
@@ -424,7 +422,6 @@ func NewMarket(
 		minLPStakeQuantumMultiple: num.MustDecimalFromString("1"),
 		marketTracker:             marketTracker,
 		positionFactor:            positionFactor,
-		sawIndicativePrice:        false,
 	}
 
 	liqEngine.SetGetStaticPricesFunc(market.getBestStaticPricesDecimal)
