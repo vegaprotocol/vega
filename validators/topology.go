@@ -237,6 +237,12 @@ func (t *Topology) SetSignatures(signatures Signatures) {
 	t.signatures = signatures
 }
 
+// SetSignatures this is not good, same issue as for SetNotary method.
+// This is only used as a helper for testing..
+func (t *Topology) SetIsValidator() {
+	t.isValidator = true
+}
+
 // ReloadConf updates the internal configuration.
 func (t *Topology) ReloadConf(cfg Config) {
 	t.log.Info("reloading configuration")
@@ -255,10 +261,18 @@ func (t *Topology) IsValidator() bool {
 	return t.isValidatorSetup && t.isValidator
 }
 
+// Len return the number of validators with status Tendermint, the only validators that matter.
 func (t *Topology) Len() int {
 	t.mu.RLock()
 	defer t.mu.RUnlock()
-	return len(t.validators)
+
+	count := 0
+	for _, v := range t.validators {
+		if v.status == ValidatorStatusTendermint {
+			count += 1
+		}
+	}
+	return count
 }
 
 // Get returns validator data based on validator master public key.
@@ -337,6 +351,20 @@ func (t *Topology) IsValidatorVegaPubKey(pubkey string) (ok bool) {
 
 	for _, data := range t.validators {
 		if data.data.VegaPubKey == pubkey {
+			return true
+		}
+	}
+
+	return false
+}
+
+// IsValidatorVegaPubKey returns true if the given key is a Vega validator public key and the validators is of status Tendermint.
+func (t *Topology) IsTendermintValidator(pubkey string) (ok bool) {
+	t.mu.RLock()
+	defer t.mu.RUnlock()
+
+	for _, data := range t.validators {
+		if data.data.VegaPubKey == pubkey && data.status == ValidatorStatusTendermint {
 			return true
 		}
 	}

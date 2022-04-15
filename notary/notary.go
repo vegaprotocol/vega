@@ -34,6 +34,7 @@ var (
 type ValidatorTopology interface {
 	IsValidator() bool
 	IsValidatorVegaPubKey(string) bool
+	IsTendermintValidator(string) bool
 	SelfVegaPubKey() string
 	Len() int
 }
@@ -205,11 +206,10 @@ func (n *Notary) IsSigned(
 	sig := map[string]struct{}{}
 	out := []commandspb.NodeSignature{}
 	for k := range n.sigs[idkind] {
-		// is node sig is part of the registered nodes,
+		// is node sig is part of the registered nodes, and is a tendermint validator
 		// add it to the map
-		// we may have a node which have been unregistered there, hence
-		// us checkung
-		if n.top.IsValidatorVegaPubKey(k.node) {
+		// we may have a node are validators but with a lesser status sending in votes
+		if n.top.IsTendermintValidator(k.node) {
 			sig[k.node] = struct{}{}
 			out = append(out, commandspb.NodeSignature{
 				Id:   resource,

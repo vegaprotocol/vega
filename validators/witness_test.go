@@ -248,6 +248,7 @@ func testOnChainTimeUpdate(t *testing.T) {
 
 	// call onTick again to get the callback called
 	newNow = newNow.Add(1 * time.Second)
+	erc.top.EXPECT().IsTendermintValidator(gomock.Any()).Times(2).Return(true)
 	erc.OnTick(context.Background(), newNow)
 
 	// block to wait for the result
@@ -293,6 +294,7 @@ func testOnChainTimeUpdateNonValidator(t *testing.T) {
 
 	// call onTick again to get the callback called
 	newNow = newNow.Add(1 * time.Second)
+	erc.top.EXPECT().IsTendermintValidator(gomock.Any()).Times(2).Return(true)
 	erc.OnTick(context.Background(), newNow)
 }
 

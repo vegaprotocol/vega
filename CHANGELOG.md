@@ -64,6 +64,7 @@
 - [5124](https://github.com/vegaprotocol/vega/issues/5124) - Ensure update market proposal compute a proper auction duration
 - [5172](https://github.com/vegaprotocol/vega/issues/5172) - Add replay protection for validator commands
 - [5181](https://github.com/vegaprotocol/vega/issues/5181) - Ensure Oracle specs handle numbers using `num.Decimal` and `num.Int`
+- [5059](https://github.com/vegaprotocol/vega/issues/5059) - Validators without tendermint status vote in the witness and notary engine but their votes do not count
 - [5190](https://github.com/vegaprotocol/vega/issues/5190) - Fix settlement at expiry to scale the settlement price from market decimals to asset decimals
 - [5185](https://github.com/vegaprotocol/vega/issues/5185) - Fix MTM settlement where win transfers get truncated resulting in settlement balance not being zero after settlement.
 - [4943](https://github.com/vegaprotocol/vega/issues/4943) - Fix bug where amending orders in opening auctions did not work as expected
