@@ -420,7 +420,6 @@ func NewMarket(
 		priceFactor:               priceFactor,
 		minLPStakeQuantumMultiple: num.MustDecimalFromString("1"),
 		positionFactor:            positionFactor,
-		sawIndicativePrice:        false,
 	}
 
 	liqEngine.SetGetStaticPricesFunc(market.getBestStaticPricesDecimal)
