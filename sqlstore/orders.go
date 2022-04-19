@@ -91,6 +91,17 @@ func (os *Orders) GetAllVersionsByOrderID(ctx context.Context, id string, p enti
 	return os.queryOrders(ctx, query, args, &p)
 }
 
+// GetLiveOrders fetches all currently live orders so the market depth data can be rebuilt
+// from the orders data in the database
+func (os *Orders) GetLiveOrders(ctx context.Context) ([]entities.Order, error) {
+	query := `select * from orders_current
+where type = 1
+and time_in_force not in (3, 4)
+and status in (1, 7)
+order by vega_time, seq_num`
+	return os.queryOrders(ctx, query, nil, nil)
+}
+
 // -------------------------------------------- Utility Methods
 
 func (os *Orders) queryOrders(ctx context.Context, query string, args []interface{}, p *entities.Pagination) ([]entities.Order, error) {

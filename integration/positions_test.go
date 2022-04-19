@@ -9,6 +9,7 @@ func TestPositions(t *testing.T) {
 			  id
 			  positions{
 				market{id}
+				party{id}
 				openVolume
 				realisedPNL
 				unrealisedPNL

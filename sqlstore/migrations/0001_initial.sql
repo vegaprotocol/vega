@@ -83,8 +83,9 @@ CREATE TABLE orders (
     created_at        TIMESTAMP WITH TIME ZONE NOT NULL,
     updated_at        TIMESTAMP WITH TIME ZONE,
     expires_at        TIMESTAMP WITH TIME ZONE,
-    vega_time         TIMESTAMP WITH TIME ZONE NOT NULL REFERENCES blocks(vega_time)
-    --PRIMARY key(vega_time, id, version) -- TODO think about this
+    vega_time         TIMESTAMP WITH TIME ZONE NOT NULL REFERENCES blocks(vega_time),
+    seq_num           BIGINT NOT NULL -- event sequence number in the block
+    -- PRIMARY key(vega_time, id, version)
 );
 
 SELECT create_hypertable('orders', 'vega_time', chunk_time_interval => INTERVAL '1 day');

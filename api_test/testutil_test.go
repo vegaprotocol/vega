@@ -129,7 +129,7 @@ func NewTestServer(t testing.TB, ctx context.Context, blocking bool) *TestServer
 
 	delegationStore := storage.NewDelegations(logger, conf.Storage)
 
-	marketDepth := subscribers.NewMarketDepthBuilder(ctx, logger, true)
+	marketDepth := subscribers.NewMarketDepthBuilder(ctx, logger, nil, false, true)
 
 	marketService := markets.NewService(logger, conf.Markets, marketStore, orderStore, marketDataStore, marketDepth)
 	newMarketSub := subscribers.NewMarketSub(ctx, marketStore, logger, true)

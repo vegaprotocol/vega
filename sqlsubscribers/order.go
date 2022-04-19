@@ -44,16 +44,16 @@ func (os *Order) Push(evt events.Event) error {
 		os.vegaTime = e.Time()
 		return os.store.Flush(context.Background())
 	case OrderEvent:
-		return os.consume(e)
+		return os.consume(e, e.Sequence())
 	default:
 		return errors.Errorf("unknown event type %s", e.Type().String())
 	}
 }
 
-func (os *Order) consume(oe OrderEvent) error {
+func (os *Order) consume(oe OrderEvent, seqNum uint64) error {
 	protoOrder := oe.Order()
 
-	order, err := entities.OrderFromProto(protoOrder)
+	order, err := entities.OrderFromProto(protoOrder, seqNum)
 	if err != nil {
 		return errors.Wrap(err, "deserializing order")
 	}

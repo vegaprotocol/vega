@@ -110,7 +110,7 @@ func (l *NodeCommand) setupSubscribers() {
 	l.newMarketSub = subscribers.NewMarketSub(l.ctx, l.marketStore, l.Log, true)
 	l.marketUpdatedSub = subscribers.NewMarketUpdatedSub(l.ctx, l.marketStore, l.Log, true)
 	l.candleSub = subscribers.NewCandleSub(l.ctx, l.candleStore, l.Log, true)
-	l.marketDepthSub = subscribers.NewMarketDepthBuilder(l.ctx, l.Log, true)
+	l.marketDepthSub = subscribers.NewMarketDepthBuilder(l.ctx, l.Log, l.orderStoreSQL, bool(l.conf.SQLStore.Enabled), true)
 	l.riskFactorSub = subscribers.NewRiskFactorSub(l.ctx, l.riskStore, l.Log, true)
 	l.nodesSub = subscribers.NewNodesSub(l.ctx, l.nodeStore, l.Log, true)
 	l.delegationBalanceSub = subscribers.NewDelegationBalanceSub(l.ctx, l.nodeStore, l.epochStore, l.delegationStore, l.Log, true)

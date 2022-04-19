@@ -29,7 +29,7 @@ import (
 
 const (
 	LastEpoch       = 2090
-	PlaybackTimeout = 90 * time.Second
+	PlaybackTimeout = 2 * time.Minute
 )
 
 var (
