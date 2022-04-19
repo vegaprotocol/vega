@@ -47,6 +47,7 @@ type PositionStore interface {
 	Add(context.Context, entities.Position) error
 	GetByMarket(ctx context.Context, marketID entities.MarketID) ([]entities.Position, error)
 	GetByMarketAndParty(ctx context.Context, marketID entities.MarketID, partyID entities.PartyID) (entities.Position, error)
+	Flush(ctx context.Context) error
 }
 
 type Position struct {
@@ -76,9 +77,12 @@ func (t *Position) Types() []events.Type {
 }
 
 func (nl *Position) Push(evt events.Event) error {
+	ctx := context.Background()
 	switch event := evt.(type) {
 	case TimeUpdateEvent:
 		nl.vegaTime = event.Time()
+		err := nl.store.Flush(ctx)
+		return errors.Wrap(err, "flushing positions")
 	case positionSettlement:
 		return nl.handlePositionSettlement(event)
 	case lossSocialization:
@@ -90,7 +94,6 @@ func (nl *Position) Push(evt events.Event) error {
 	default:
 		return errors.Errorf("unknown event type %s", evt.Type().String())
 	}
-	return nil
 }
 
 func (ps *Position) handlePositionSettlement(event positionSettlement) error {

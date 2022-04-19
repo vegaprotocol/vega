@@ -55,6 +55,8 @@ func testInsertNewInCurrentBlock(t *testing.T) {
 	data, err := entities.LiquidityProvisionFromProto(lpProto[0], block.VegaTime)
 	require.NoError(t, err)
 	assert.NoError(t, lp.Upsert(data))
+	err = lp.Flush(ctx)
+	require.NoError(t, err)
 
 	assert.NoError(t, conn.QueryRow(ctx, "select count(*) from liquidity_provisions").Scan(&rowCount))
 	assert.Equal(t, 1, rowCount)
@@ -80,6 +82,8 @@ func testUpdateExistingInCurrentBlock(t *testing.T) {
 
 	data.Reference = "Updated"
 	assert.NoError(t, lp.Upsert(data))
+	err = lp.Flush(ctx)
+	require.NoError(t, err)
 
 	assert.NoError(t, conn.QueryRow(ctx, "select count(*) from liquidity_provisions").Scan(&rowCount))
 	assert.Equal(t, 1, rowCount)
@@ -106,11 +110,13 @@ func testGetLPByPartyOnly(t *testing.T) {
 		data, err := entities.LiquidityProvisionFromProto(lpp, block.VegaTime)
 		require.NoError(t, err)
 		assert.NoError(t, lp.Upsert(data))
+		err = lp.Flush(ctx)
+		require.NoError(t, err)
 
 		data.CreatedAt = data.CreatedAt.Truncate(time.Microsecond)
 		data.UpdatedAt = data.UpdatedAt.Truncate(time.Microsecond)
 
-		want = append(want, *data)
+		want = append(want, data)
 
 		time.Sleep(100 * time.Millisecond)
 	}
@@ -149,12 +155,14 @@ func testGetLPByPartyAndMarket(t *testing.T) {
 		data, err := entities.LiquidityProvisionFromProto(lpp, block.VegaTime)
 		require.NoError(t, err)
 		assert.NoError(t, lp.Upsert(data))
+		err = lp.Flush(ctx)
+		require.NoError(t, err)
 
 		data.CreatedAt = data.CreatedAt.Truncate(time.Microsecond)
 		data.UpdatedAt = data.UpdatedAt.Truncate(time.Microsecond)
 
 		if data.MarketID.String() == wantMarketID {
-			want = append(want, *data)
+			want = append(want, data)
 		}
 
 		time.Sleep(100 * time.Millisecond)
@@ -204,12 +212,14 @@ func testGetLPNoPartyWithMarket(t *testing.T) {
 		data, err := entities.LiquidityProvisionFromProto(lpp, block.VegaTime)
 		require.NoError(t, err)
 		assert.NoError(t, lp.Upsert(data))
+		err = lp.Flush(ctx)
+		require.NoError(t, err)
 
 		data.CreatedAt = data.CreatedAt.Truncate(time.Microsecond)
 		data.UpdatedAt = data.UpdatedAt.Truncate(time.Microsecond)
 
 		if data.MarketID.String() == wantMarketID {
-			want = append(want, *data)
+			want = append(want, data)
 		}
 
 		time.Sleep(100 * time.Millisecond)

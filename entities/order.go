@@ -11,7 +11,6 @@ import (
 	"code.vegaprotocol.io/vega/types"
 )
 
-// TODO: These need to decode to upper case
 type OrderID struct{ ID }
 
 func NewOrderID(id string) OrderID {

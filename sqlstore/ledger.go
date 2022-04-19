@@ -9,13 +9,13 @@ import (
 
 type Ledger struct {
 	*SQLStore
-	batcher SimpleBatcher
+	batcher ListBatcher
 }
 
 func NewLedger(sqlStore *SQLStore) *Ledger {
 	a := &Ledger{
 		SQLStore: sqlStore,
-		batcher:  NewSimpleBatcher("ledger", entities.LedgerEntryColumns),
+		batcher:  NewListBatcher("ledger", entities.LedgerEntryColumns),
 	}
 	return a
 }

@@ -3,76 +3,38 @@ package sqlstore
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	"code.vegaprotocol.io/data-node/entities"
 	"github.com/georgysavva/scany/pgxscan"
-	"github.com/jackc/pgx/v4"
 )
 
 type MarginLevels struct {
 	*SQLStore
-	columns      []string
-	marginLevels []*entities.MarginLevels
+	batcher MapBatcher[entities.MarginLevelsKey, entities.MarginLevels]
 }
 
 const (
-	sqlMarginLevelColumns = `market_id,asset_id,party_id,timestamp,maintenance_margin,search_level,initial_margin,collateral_release_level,vega_time,synthetic_time,seq_num`
+	sqlMarginLevelColumns = `market_id,asset_id,party_id,timestamp,maintenance_margin,search_level,initial_margin,collateral_release_level,vega_time`
 )
 
 func NewMarginLevels(sqlStore *SQLStore) *MarginLevels {
 	return &MarginLevels{
 		SQLStore: sqlStore,
-		columns:  strings.Split(sqlMarginLevelColumns, ","),
+		batcher: NewMapBatcher[entities.MarginLevelsKey, entities.MarginLevels](
+			"margin_levels",
+			entities.MarginLevelsColumns),
 	}
 }
 
-func (ml *MarginLevels) Add(marginLevel *entities.MarginLevels) error {
-	ml.marginLevels = append(ml.marginLevels, marginLevel)
+func (ml *MarginLevels) Add(marginLevel entities.MarginLevels) error {
+	ml.batcher.Add(marginLevel)
 	return nil
 }
 
-func (ml *MarginLevels) OnTimeUpdateEvent(ctx context.Context) error {
+func (ml *MarginLevels) Flush(ctx context.Context) error {
 	timeoutCtx, cancel := context.WithTimeout(ctx, ml.conf.Timeout.Duration)
 	defer cancel()
-
-	var rows [][]interface{}
-	for _, data := range ml.marginLevels {
-		rows = append(rows, []interface{}{
-			data.MarketID,
-			data.AssetID,
-			data.PartyID,
-			data.Timestamp,
-			data.MaintenanceMargin,
-			data.SearchLevel,
-			data.InitialMargin,
-			data.CollateralReleaseLevel,
-			data.VegaTime,
-			data.SyntheticTime,
-			data.SeqNum,
-		})
-	}
-
-	if rows != nil {
-		copyCount, err := ml.pool.CopyFrom(
-			timeoutCtx,
-			pgx.Identifier{"margin_levels"},
-			ml.columns,
-			pgx.CopyFromRows(rows),
-		)
-		if err != nil {
-			return fmt.Errorf("failed to copy margin level data into database: %w", err)
-		}
-
-		expectedCount := int64(len(rows))
-
-		if copyCount != expectedCount {
-			return fmt.Errorf("copied %d margin level rows into the database, expected to copy %d", copyCount, expectedCount)
-		}
-	}
-
-	ml.marginLevels = nil
-	return nil
+	return ml.batcher.Flush(timeoutCtx, ml.pool)
 }
 
 func (ml *MarginLevels) GetMarginLevelsByID(ctx context.Context, partyID, marketID string, pagination entities.Pagination) ([]entities.MarginLevels, error) {
@@ -106,7 +68,7 @@ func (ml *MarginLevels) GetMarginLevelsByID(ctx context.Context, partyID, market
 	query := fmt.Sprintf(`select distinct on (party_id, market_id) %s
 		from margin_levels
 		%s
-		order by party_id, market_id, synthetic_time desc, asset_id`, sqlMarginLevelColumns,
+		order by party_id, market_id, vega_time desc, asset_id`, sqlMarginLevelColumns,
 		whereClause)
 
 	query, bindVars = orderAndPaginateQuery(query, nil, pagination, bindVars...)

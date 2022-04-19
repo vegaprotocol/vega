@@ -159,3 +159,25 @@ func updateVWAP(vwap num.Decimal, volume int64, addVolume int64, addPrice *num.U
 
 	return vwap.Mul(volumeDec).Add(addPriceDec.Mul(addVolumeDec)).Div(volumeDec.Add(addVolumeDec))
 }
+
+type PositionKey struct {
+	MarketID MarketID
+	PartyID  PartyID
+	VegaTime time.Time
+}
+
+func (p Position) Key() PositionKey {
+	return PositionKey{p.MarketID, p.PartyID, p.VegaTime}
+}
+
+var PositionColumns = []string{
+	"market_id", "party_id", "open_volume", "realised_pnl", "unrealised_pnl",
+	"average_entry_price", "loss", "adjustment", "vega_time",
+}
+
+func (p Position) ToRow() []interface{} {
+	return []interface{}{
+		p.MarketID, p.PartyID, p.OpenVolume, p.RealisedPnl, p.UnrealisedPnl,
+		p.AverageEntryPrice, p.Loss, p.Adjustment, p.VegaTime,
+	}
+}

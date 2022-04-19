@@ -21,7 +21,7 @@ func TestMarginLevels_Push(t *testing.T) {
 	store := mocks.NewMockMarginLevelsStore(ctrl)
 
 	store.EXPECT().Add(gomock.Any()).Times(1)
-	store.EXPECT().OnTimeUpdateEvent(gomock.Any()).Times(1)
+	store.EXPECT().Flush(gomock.Any()).Times(1)
 	subscriber := sqlsubscribers.NewMarginLevels(store, logging.NewTestLogger())
 	subscriber.Push(events.NewTime(context.Background(), time.Now()))
 	subscriber.Push(events.NewMarginLevelsEvent(context.Background(), types.MarginLevels{

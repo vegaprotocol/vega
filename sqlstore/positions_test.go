@@ -62,6 +62,7 @@ func TestPosition(t *testing.T) {
 	pos3 := addTestPosition(t, ps, market2, party1, 400, block2)
 	pos4 := addTestPosition(t, ps, market2, party2, 500, block2)
 
+	ps.Flush(ctx)
 	_, _ = pos1a, pos1b
 
 	t.Run("GetAll", func(t *testing.T) {

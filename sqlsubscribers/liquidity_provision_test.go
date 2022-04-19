@@ -20,6 +20,8 @@ func TestLiquidityProvision_Push(t *testing.T) {
 	store := mocks.NewMockLiquidityProvisionStore(ctrl)
 
 	store.EXPECT().Upsert(gomock.Any()).Times(1)
+	store.EXPECT().Flush(gomock.Any()).Times(1)
+
 	subscriber := sqlsubscribers.NewLiquidityProvision(store, logging.NewTestLogger())
 	subscriber.Push(events.NewTime(context.Background(), time.Now()))
 	subscriber.Push(events.NewLiquidityProvisionEvent(context.Background(), &types.LiquidityProvision{}))

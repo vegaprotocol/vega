@@ -1,6 +1,7 @@
 package sqlsubscribers
 
 import (
+	"context"
 	"time"
 
 	"code.vegaprotocol.io/data-node/entities"
@@ -17,7 +18,8 @@ type LiquidityProvisionEvent interface {
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/liquidity_provision_mock.go -package mocks code.vegaprotocol.io/data-node/sqlsubscribers LiquidityProvisionStore
 type LiquidityProvisionStore interface {
-	Upsert(*entities.LiquidityProvision) error
+	Upsert(entities.LiquidityProvision) error
+	Flush(ctx context.Context) error
 }
 
 type LiquidityProvision struct {
@@ -38,16 +40,17 @@ func (lp *LiquidityProvision) Types() []events.Type {
 }
 
 func (lp *LiquidityProvision) Push(evt events.Event) error {
+	ctx := context.Background()
 	switch e := evt.(type) {
 	case TimeUpdateEvent:
 		lp.vegaTime = e.Time()
+		err := lp.store.Flush(ctx)
+		return errors.Wrap(err, "flushing liquidity provisions")
 	case LiquidityProvisionEvent:
 		return lp.consume(e)
 	default:
 		return errors.Errorf("unknown event type %s", e.Type().String())
 	}
-
-	return nil
 }
 
 func (lp *LiquidityProvision) consume(event LiquidityProvisionEvent) error {

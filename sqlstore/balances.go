@@ -10,13 +10,13 @@ import (
 
 type Balances struct {
 	*SQLStore
-	batcher Batcher[entities.BalanceKey, entities.Balance]
+	batcher MapBatcher[entities.BalanceKey, entities.Balance]
 }
 
 func NewBalances(sqlStore *SQLStore) *Balances {
 	b := &Balances{
 		SQLStore: sqlStore,
-		batcher: NewBatcher[entities.BalanceKey, entities.Balance](
+		batcher: NewMapBatcher[entities.BalanceKey, entities.Balance](
 			"balances",
 			entities.BalanceColumns),
 	}

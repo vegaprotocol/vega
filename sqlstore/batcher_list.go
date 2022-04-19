@@ -8,14 +8,14 @@ import (
 	"github.com/jackc/pgx/v4/pgxpool"
 )
 
-type SimpleBatcher struct {
+type ListBatcher struct {
 	pending     [][]interface{}
 	tableName   string
 	columnNames []string
 }
 
-func NewSimpleBatcher(tableName string, columnNames []string) SimpleBatcher {
-	return SimpleBatcher{
+func NewListBatcher(tableName string, columnNames []string) ListBatcher {
+	return ListBatcher{
 		tableName:   tableName,
 		columnNames: columnNames,
 		pending:     make([][]interface{}, 0, 1000),
@@ -26,12 +26,12 @@ type simpleEntity interface {
 	ToRow() []interface{}
 }
 
-func (b *SimpleBatcher) Add(entity simpleEntity) {
+func (b *ListBatcher) Add(entity simpleEntity) {
 	row := entity.ToRow()
 	b.pending = append(b.pending, row)
 }
 
-func (b *SimpleBatcher) Flush(ctx context.Context, pool *pgxpool.Pool) error {
+func (b *ListBatcher) Flush(ctx context.Context, pool *pgxpool.Pool) error {
 	copyCount, err := pool.CopyFrom(
 		ctx,
 		pgx.Identifier{b.tableName},

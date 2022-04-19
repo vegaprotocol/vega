@@ -36,7 +36,7 @@ func (m *MockMarginLevelsStore) EXPECT() *MockMarginLevelsStoreMockRecorder {
 }
 
 // Add mocks base method.
-func (m *MockMarginLevelsStore) Add(arg0 *entities.MarginLevels) error {
+func (m *MockMarginLevelsStore) Add(arg0 entities.MarginLevels) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Add", arg0)
 	ret0, _ := ret[0].(error)
@@ -49,16 +49,16 @@ func (mr *MockMarginLevelsStoreMockRecorder) Add(arg0 interface{}) *gomock.Call 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Add", reflect.TypeOf((*MockMarginLevelsStore)(nil).Add), arg0)
 }
 
-// OnTimeUpdateEvent mocks base method.
-func (m *MockMarginLevelsStore) OnTimeUpdateEvent(arg0 context.Context) error {
+// Flush mocks base method.
+func (m *MockMarginLevelsStore) Flush(arg0 context.Context) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "OnTimeUpdateEvent", arg0)
+	ret := m.ctrl.Call(m, "Flush", arg0)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// OnTimeUpdateEvent indicates an expected call of OnTimeUpdateEvent.
-func (mr *MockMarginLevelsStoreMockRecorder) OnTimeUpdateEvent(arg0 interface{}) *gomock.Call {
+// Flush indicates an expected call of Flush.
+func (mr *MockMarginLevelsStoreMockRecorder) Flush(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OnTimeUpdateEvent", reflect.TypeOf((*MockMarginLevelsStore)(nil).OnTimeUpdateEvent), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Flush", reflect.TypeOf((*MockMarginLevelsStore)(nil).Flush), arg0)
 }

@@ -5,6 +5,7 @@
 package mocks
 
 import (
+	context "context"
 	reflect "reflect"
 
 	entities "code.vegaprotocol.io/data-node/entities"
@@ -34,8 +35,22 @@ func (m *MockLiquidityProvisionStore) EXPECT() *MockLiquidityProvisionStoreMockR
 	return m.recorder
 }
 
+// Flush mocks base method.
+func (m *MockLiquidityProvisionStore) Flush(arg0 context.Context) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Flush", arg0)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Flush indicates an expected call of Flush.
+func (mr *MockLiquidityProvisionStoreMockRecorder) Flush(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Flush", reflect.TypeOf((*MockLiquidityProvisionStore)(nil).Flush), arg0)
+}
+
 // Upsert mocks base method.
-func (m *MockLiquidityProvisionStore) Upsert(arg0 *entities.LiquidityProvision) error {
+func (m *MockLiquidityProvisionStore) Upsert(arg0 entities.LiquidityProvision) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Upsert", arg0)
 	ret0, _ := ret[0].(error)

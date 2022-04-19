@@ -10,13 +10,13 @@ import (
 
 type Orders struct {
 	*SQLStore
-	batcher Batcher[entities.OrderKey, entities.Order]
+	batcher MapBatcher[entities.OrderKey, entities.Order]
 }
 
 func NewOrders(sqlStore *SQLStore) *Orders {
 	a := &Orders{
 		SQLStore: sqlStore,
-		batcher: NewBatcher[entities.OrderKey, entities.Order](
+		batcher: NewMapBatcher[entities.OrderKey, entities.Order](
 			"orders",
 			entities.OrderColumns),
 	}
