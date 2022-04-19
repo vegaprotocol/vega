@@ -224,10 +224,7 @@ func NewTopology(
 // anyway we may want to extract the code requiring the notary somewhere
 // else or have different pattern somehow...
 func (t *Topology) SetNotary(notary Notary) {
-	// if we are not even setup as a validator, no need for this.
-	if t.isValidatorSetup {
-		t.signatures = NewSignatures(t.log, notary, t.wallets.GetEthereum(), t.broker)
-	}
+	t.signatures = NewSignatures(t.log, notary, t.wallets, t.broker, t.isValidatorSetup)
 	t.notary = notary
 }
 
@@ -237,8 +234,8 @@ func (t *Topology) SetSignatures(signatures Signatures) {
 	t.signatures = signatures
 }
 
-// SetSignatures this is not good, same issue as for SetNotary method.
-// This is only used as a helper for testing..
+// SetIsValidator will set the flag for `self` so that it is considered a real validator
+// for example, when a node has announced itself and is accepted as a PENDING validator
 func (t *Topology) SetIsValidator() {
 	t.isValidator = true
 }

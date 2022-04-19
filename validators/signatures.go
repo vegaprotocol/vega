@@ -38,26 +38,32 @@ type Signatures interface {
 }
 
 type ERC20Signatures struct {
-	log       *logging.Logger
-	notary    Notary
-	multisig  *bridges.ERC20MultiSigControl
-	lastNonce *num.Uint
-	broker    Broker
+	log              *logging.Logger
+	notary           Notary
+	multisig         *bridges.ERC20MultiSigControl
+	lastNonce        *num.Uint
+	broker           Broker
+	isValidatorSetup bool
 }
 
 func NewSignatures(
 	log *logging.Logger,
 	notary Notary,
-	ethSigner Signer,
+	nw NodeWallets,
 	broker Broker,
+	isValidatorSetup bool,
 ) *ERC20Signatures {
-	return &ERC20Signatures{
-		log:       log,
-		notary:    notary,
-		multisig:  bridges.NewERC20MultiSigControl(ethSigner),
-		lastNonce: num.Zero(),
-		broker:    broker,
+	s := &ERC20Signatures{
+		log:              log,
+		notary:           notary,
+		lastNonce:        num.Zero(),
+		broker:           broker,
+		isValidatorSetup: isValidatorSetup,
 	}
+	if isValidatorSetup {
+		s.multisig = bridges.NewERC20MultiSigControl(nw.GetEthereum())
+	}
+	return s
 }
 
 type StatusAddress struct {
@@ -133,20 +139,26 @@ func (s *ERC20Signatures) EmitNewValidatorsSignatures(
 	evts := []events.Event{}
 
 	for _, signer := range validators {
+		var sig []byte
+
 		resid := hex.EncodeToString(
 			vgcrypto.Hash([]byte(signer.EthAddress + s.lastNonce.String())))
-		signature, err := s.multisig.AddSigner(
-			signer.EthAddress,
-			signer.EthAddress,
-			s.lastNonce,
-		)
-		if err != nil {
-			s.log.Panic("could not sign remove signer event, wallet not configured properly",
-				logging.Error(err))
+
+		if s.isValidatorSetup {
+			signature, err := s.multisig.AddSigner(
+				signer.EthAddress,
+				signer.EthAddress,
+				s.lastNonce,
+			)
+			if err != nil {
+				s.log.Panic("could not sign remove signer event, wallet not configured properly",
+					logging.Error(err))
+			}
+			sig = signature.Signature
 		}
 
 		s.notary.StartAggregate(
-			resid, types.NodeSignatureKindERC20MultiSigSignerAdded, signature.Signature)
+			resid, types.NodeSignatureKindERC20MultiSigSignerAdded, sig)
 
 		evts = append(evts, events.NewERC20MultiSigSignerAdded(
 			ctx,
@@ -186,18 +198,23 @@ func (s *ERC20Signatures) EmitRemoveValidatorsSignatures(
 	for _, oldSigner := range remove {
 		submitters := []*eventspb.ERC20MulistSigSignerRemovedSubmitter{}
 		for _, validator := range validators {
+
+			var sig []byte
 			// Here resid is a concat of the oldsigner, the submitter and the nonce
 			resid := hex.EncodeToString(
 				vgcrypto.Hash([]byte(oldSigner.EthAddress + validator.EthAddress + s.lastNonce.String())))
-			signature, err := s.multisig.RemoveSigner(
-				oldSigner.EthAddress, validator.EthAddress, s.lastNonce)
-			if err != nil {
-				s.log.Panic("could not sign remove signer event, wallet not configured properly",
-					logging.Error(err))
-			}
 
+			if s.isValidatorSetup {
+				signature, err := s.multisig.RemoveSigner(
+					oldSigner.EthAddress, validator.EthAddress, s.lastNonce)
+				if err != nil {
+					s.log.Panic("could not sign remove signer event, wallet not configured properly",
+						logging.Error(err))
+				}
+				sig = signature.Signature
+			}
 			s.notary.StartAggregate(
-				resid, types.NodeSignatureKindERC20MultiSigSignerRemoved, signature.Signature)
+				resid, types.NodeSignatureKindERC20MultiSigSignerRemoved, sig)
 
 			submitters = append(submitters, &eventspb.ERC20MulistSigSignerRemovedSubmitter{
 				SignatureId: resid,

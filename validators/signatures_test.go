@@ -31,14 +31,17 @@ func getTestSignatures(t *testing.T) *testSignatures {
 	ctrl := gomock.NewController(t)
 	notary := mocks.NewMockNotary(ctrl)
 	broker := bmocks.NewMockBroker(ctrl)
+	nodewallet := mocks.NewMockNodeWallets(ctrl)
 	tsigner := testSigner{}
+	nodewallet.EXPECT().GetEthereum().AnyTimes().Return(tsigner)
 
 	return &testSignatures{
 		ERC20Signatures: validators.NewSignatures(
 			logging.NewTestLogger(),
 			notary,
-			tsigner,
+			nodewallet,
 			broker,
+			true,
 		),
 		ctrl:   ctrl,
 		notary: notary,
