@@ -235,7 +235,7 @@ func (t *Topology) SetSignatures(signatures Signatures) {
 }
 
 // SetIsValidator will set the flag for `self` so that it is considered a real validator
-// for example, when a node has announced itself and is accepted as a PENDING validator
+// for example, when a node has announced itself and is accepted as a PENDING validator.
 func (t *Topology) SetIsValidator() {
 	t.isValidator = true
 }

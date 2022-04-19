@@ -198,7 +198,6 @@ func (s *ERC20Signatures) EmitRemoveValidatorsSignatures(
 	for _, oldSigner := range remove {
 		submitters := []*eventspb.ERC20MulistSigSignerRemovedSubmitter{}
 		for _, validator := range validators {
-
 			var sig []byte
 			// Here resid is a concat of the oldsigner, the submitter and the nonce
 			resid := hex.EncodeToString(
