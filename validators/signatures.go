@@ -20,6 +20,7 @@ type Signatures interface {
 	EmitPromotionsSignatures(
 		ctx context.Context,
 		currentTime time.Time,
+		epochSeq uint64,
 		previousState map[string]StatusAddress,
 		newState map[string]StatusAddress,
 	)
@@ -27,12 +28,14 @@ type Signatures interface {
 		ctx context.Context,
 		validators []NodeIDAddress,
 		currentTime time.Time,
+		epochSeq uint64,
 	)
 	EmitRemoveValidatorsSignatures(
 		ctx context.Context,
 		remove []NodeIDAddress,
 		validators []NodeIDAddress,
 		currentTime time.Time,
+		epochSeq uint64,
 	)
 	SetNonce(t time.Time)
 }
@@ -79,6 +82,7 @@ type NodeIDAddress struct {
 func (s *ERC20Signatures) EmitPromotionsSignatures(
 	ctx context.Context,
 	currentTime time.Time,
+	epochSeq uint64,
 	previousState map[string]StatusAddress,
 	newState map[string]StatusAddress,
 ) {
@@ -120,8 +124,8 @@ func (s *ERC20Signatures) EmitPromotionsSignatures(
 	}
 
 	s.SetNonce(currentTime)
-	s.EmitNewValidatorsSignatures(ctx, toAdd, currentTime)
-	s.EmitRemoveValidatorsSignatures(ctx, toRemove, allValidators, currentTime)
+	s.EmitNewValidatorsSignatures(ctx, toAdd, currentTime, epochSeq)
+	s.EmitRemoveValidatorsSignatures(ctx, toRemove, allValidators, currentTime, epochSeq)
 }
 
 func (s *ERC20Signatures) SetNonce(t time.Time) {
@@ -132,6 +136,7 @@ func (s *ERC20Signatures) EmitNewValidatorsSignatures(
 	ctx context.Context,
 	validators []NodeIDAddress,
 	currentTime time.Time,
+	epochSeq uint64,
 ) {
 	sort.Slice(validators, func(i, j int) bool {
 		return validators[i].EthAddress < validators[j].EthAddress
@@ -166,6 +171,7 @@ func (s *ERC20Signatures) EmitNewValidatorsSignatures(
 				SignatureId: resid,
 				ValidatorId: signer.NodeID,
 				Timestamp:   currentTime.UnixNano(),
+				EpochSeq:    num.NewUint(epochSeq).String(),
 				NewSigner:   signer.EthAddress,
 				Submitter:   signer.EthAddress,
 				Nonce:       s.lastNonce.String(),
@@ -183,6 +189,7 @@ func (s *ERC20Signatures) EmitRemoveValidatorsSignatures(
 	remove []NodeIDAddress,
 	validators []NodeIDAddress,
 	currentTime time.Time,
+	epochSeq uint64,
 ) {
 	sort.Slice(validators, func(i, j int) bool {
 		return validators[i].EthAddress < validators[j].EthAddress
@@ -225,6 +232,7 @@ func (s *ERC20Signatures) EmitRemoveValidatorsSignatures(
 				SignatureSubmitters: submitters,
 				ValidatorId:         oldSigner.NodeID,
 				Timestamp:           currentTime.UnixNano(),
+				EpochSeq:            num.NewUint(epochSeq).String(),
 				OldSigner:           oldSigner.EthAddress,
 				Nonce:               s.lastNonce.String(),
 			},
@@ -241,19 +249,19 @@ type noopSignatures struct {
 }
 
 func (n *noopSignatures) EmitPromotionsSignatures(
-	_ context.Context, _ time.Time, _ map[string]StatusAddress, _ map[string]StatusAddress,
+	_ context.Context, _ time.Time, _ uint64, _ map[string]StatusAddress, _ map[string]StatusAddress,
 ) {
 	n.log.Error("noopSignatures implementation in use in production")
 }
 
 func (n *noopSignatures) EmitNewValidatorsSignatures(
-	_ context.Context, _ []NodeIDAddress, _ time.Time,
+	_ context.Context, _ []NodeIDAddress, _ time.Time, _ uint64,
 ) {
 	n.log.Error("noopSignatures implementation in use in production")
 }
 
 func (n *noopSignatures) EmitRemoveValidatorsSignatures(
-	_ context.Context, _ []NodeIDAddress, _ []NodeIDAddress, _ time.Time,
+	_ context.Context, _ []NodeIDAddress, _ []NodeIDAddress, _ time.Time, _ uint64,
 ) {
 	n.log.Error("noopSignatures implementation in use in production")
 }

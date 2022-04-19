@@ -65,7 +65,7 @@ func (t *Topology) RotateEthereumKey(
 	allValidators := t.validators.toNodeIDAdresses()
 
 	// we can emit remove validator signatures immediately
-	t.signatures.EmitRemoveValidatorsSignatures(ctx, toRemove, allValidators, t.currentTime)
+	t.signatures.EmitRemoveValidatorsSignatures(ctx, toRemove, allValidators, t.currentTime, t.epochSeq)
 
 	// schedule signature collection to future block
 	// those signature should be emitted after validator has rotated is key in node wallet
@@ -119,7 +119,7 @@ func (t *Topology) ethereumKeyRotationBeginBlockLocked(ctx context.Context) {
 		t.validators[r.NodeID] = data
 
 		toAdd := []NodeIDAddress{{NodeID: r.NodeID, EthAddress: r.NewAddress}}
-		t.signatures.EmitNewValidatorsSignatures(ctx, toAdd, t.currentTime)
+		t.signatures.EmitNewValidatorsSignatures(ctx, toAdd, t.currentTime, t.epochSeq)
 
 		t.broker.Send(events.NewEthereumKeyRotationEvent(
 			ctx,

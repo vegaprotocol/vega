@@ -140,8 +140,7 @@ func (t *Topology) RecalcValidatorSet(ctx context.Context, epochSeq string, dele
 		}
 	}
 
-	t.signatures.EmitPromotionsSignatures(
-		ctx, t.currentTime, currentState, newState)
+	t.signatures.EmitPromotionsSignatures(ctx, t.currentTime, t.epochSeq, currentState, newState)
 
 	// prepare and send the events
 	evts := make([]events.Event, 0, len(currentState))

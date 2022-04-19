@@ -109,6 +109,7 @@ func TestPromotionSignatures(t *testing.T) {
 	signatures.EmitPromotionsSignatures(
 		context.Background(),
 		currentTime,
+		12,
 		previousState,
 		newState,
 	)
