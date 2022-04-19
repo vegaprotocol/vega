@@ -647,6 +647,8 @@ func (m *Market) PostRestore(ctx context.Context) error {
 	m.settlement.Update(m.position.Positions())
 
 	pps := m.position.Parties()
+	m.peggedOrders.ReconcileWithOrderBook(m.matching)
+
 	peggedOrder := m.peggedOrders.GetAll()
 	parties := make(map[string]struct{}, len(pps)+len(peggedOrder))
 

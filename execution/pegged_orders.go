@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/events"
+	"code.vegaprotocol.io/vega/matching"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
 )
@@ -27,6 +28,16 @@ func NewPeggedOrdersFromSnapshot(orders []*types.Order) *PeggedOrders {
 	return &PeggedOrders{
 		orders: orders,
 	}
+}
+
+func (p *PeggedOrders) ReconcileWithOrderBook(orderbook *matching.CachedOrderBook) {
+	o := make([]*types.Order, 0, len(p.orders))
+	for _, ord := range p.orders {
+		if order, err := orderbook.GetOrderByID(ord.ID); err == nil {
+			o = append(o, order)
+		}
+	}
+	p.orders = o
 }
 
 func (p *PeggedOrders) Changed() bool {
