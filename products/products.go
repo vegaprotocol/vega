@@ -32,7 +32,7 @@ type Product interface {
 	GetAsset() string
 	IsTradingTerminated() bool
 	SettlementPrice() (*num.Uint, error)
-	ScaleSettlementPriceToDecimalPlaces(price *num.Uint, dp uint32) (*num.Uint, bool)
+	ScaleSettlementPriceToDecimalPlaces(price *num.Uint, dp uint32) (*num.Uint, error)
 	NotifyOnTradingTerminated(listener func(context.Context, bool))
 	NotifyOnSettlementPrice(listener func(context.Context, *num.Uint))
 	Unsubscribe(context.Context, OracleEngine)

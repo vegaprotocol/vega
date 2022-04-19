@@ -30,8 +30,8 @@ func testNoScalingNeeded(t *testing.T) {
 	ft := testFuture(t)
 
 	// settlement price is in 5 decimal places, asset in 5 decimal places => no scaling
-	scaled, overflow := ft.future.ScaleSettlementPriceToDecimalPlaces(num.NewUint(100000), 5)
-	require.Equal(t, false, overflow)
+	scaled, err := ft.future.ScaleSettlementPriceToDecimalPlaces(num.NewUint(100000), 5)
+	require.NoError(t, err)
 	require.Equal(t, num.NewUint(100000), scaled)
 }
 
@@ -39,8 +39,8 @@ func testScalingUpNeeded(t *testing.T) {
 	ft := testFuture(t)
 
 	// settlement price is in 5 decimal places, asset in 10 decimal places => x10^5
-	scaled, overflow := ft.future.ScaleSettlementPriceToDecimalPlaces(num.NewUint(100000), 10)
-	require.Equal(t, false, overflow)
+	scaled, err := ft.future.ScaleSettlementPriceToDecimalPlaces(num.NewUint(100000), 10)
+	require.NoError(t, err)
 	require.Equal(t, num.NewUint(10000000000), scaled)
 }
 
@@ -48,8 +48,8 @@ func testScalingDownNeeded(t *testing.T) {
 	ft := testFuture(t)
 
 	// settlement price is in 5 decimal places, asset in 3 decimal places => x10^-2
-	scaled, overflow := ft.future.ScaleSettlementPriceToDecimalPlaces(num.NewUint(100000), 3)
-	require.Equal(t, false, overflow)
+	scaled, err := ft.future.ScaleSettlementPriceToDecimalPlaces(num.NewUint(100000), 3)
+	require.NoError(t, err)
 	require.Equal(t, num.NewUint(1000), scaled)
 }
 
@@ -57,8 +57,8 @@ func testScalingDownNeededWithPrecisionLoss(t *testing.T) {
 	ft := testFuture(t)
 
 	// settlement price is in 5 decimal places, asset in 3 decimal places => x10^-2
-	scaled, overflow := ft.future.ScaleSettlementPriceToDecimalPlaces(num.NewUint(123456), 3)
-	require.Equal(t, false, overflow)
+	scaled, err := ft.future.ScaleSettlementPriceToDecimalPlaces(num.NewUint(123456), 3)
+	require.NoError(t, err)
 	require.Equal(t, num.NewUint(1234), scaled)
 }
 

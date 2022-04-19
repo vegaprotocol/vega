@@ -21,6 +21,7 @@
 - [5239](https://github.com/vegaprotocol/vega/issues/5239) - Always call `StartAggregate()` when signing validators joining and leaving even if not a validator
 - [5128](https://github.com/vegaprotocol/vega/issues/5128) - Fix wrong http rate limit for faucet
 - [5231](https://github.com/vegaprotocol/vega/issues/5231) - Fix pegged orders to be reset to the order pointer after snapshot loading
+- [5247](https://github.com/vegaprotocol/vega/issues/5247) - Fix the check for overflow in scaling settlement price
 
 ## 0.50.1
 
