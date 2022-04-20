@@ -2,8 +2,11 @@ package api
 
 import (
 	"context"
+	"encoding/hex"
 	"errors"
 	"fmt"
+	"strconv"
+	"strings"
 	"time"
 
 	"code.vegaprotocol.io/data-node/candlesv2"
@@ -26,13 +29,15 @@ var defaultPaginationV2 = entities.Pagination{
 
 type tradingDataServiceV2 struct {
 	v2.UnimplementedTradingDataServiceServer
-	log                *logging.Logger
-	balanceStore       *sqlstore.Balances
-	orderStore         *sqlstore.Orders
-	networkLimitsStore *sqlstore.NetworkLimits
-	marketDataStore    *sqlstore.MarketData
-	tradeStore         *sqlstore.Trades
-	candleServiceV2    *candlesv2.Svc
+	log                      *logging.Logger
+	balanceStore             *sqlstore.Balances
+	orderStore               *sqlstore.Orders
+	networkLimitsStore       *sqlstore.NetworkLimits
+	marketDataStore          *sqlstore.MarketData
+	tradeStore               *sqlstore.Trades
+	multiSigSignerEventStore *sqlstore.ERC20MultiSigSignerEvent
+	notaryStore              *sqlstore.Notary
+	candleServiceV2          *candlesv2.Svc
 }
 
 func (t *tradingDataServiceV2) QueryBalanceHistory(ctx context.Context, req *v2.QueryBalanceHistoryRequest) (*v2.QueryBalanceHistoryResponse, error) {
@@ -264,7 +269,6 @@ func (t *tradingDataServiceV2) SubscribeToCandleData(req *v2.SubscribeToCandleDa
 // GetCandlesForMarket gets all available intervals for a given market along with the corresponding candle id
 func (t *tradingDataServiceV2) GetCandlesForMarket(ctx context.Context, req *v2.GetCandlesForMarketRequest) (*v2.GetCandlesForMarketResponse, error) {
 	mappings, err := t.candleServiceV2.GetCandlesForMarket(ctx, req.MarketId)
-
 	if err != nil {
 		return nil, apiError(codes.Internal, ErrCandleServiceGetCandlesForMarket, err)
 	}
@@ -279,5 +283,128 @@ func (t *tradingDataServiceV2) GetCandlesForMarket(ctx context.Context, req *v2.
 
 	return &v2.GetCandlesForMarketResponse{
 		IntervalToCandleId: intervalToCandleIds,
+	}, nil
+}
+
+// GetERC20MutlsigSignerAddedBundles return the signature bundles needed to add a new validator to the multisig control ERC20 contract
+func (t *tradingDataServiceV2) GetERC20MultiSigSignerAddedBundles(ctx context.Context, req *v2.GetERC20MultiSigSignerAddedBundlesRequest) (*v2.GetERC20MultiSigSignerAddedBundlesResponse, error) {
+	nodeID := req.GetNodeId()
+	if len(nodeID) == 0 {
+		return nil, apiError(codes.InvalidArgument, fmt.Errorf("node id must be supplied"))
+	}
+
+	var epochID *int64
+	if len(req.EpochSeq) != 0 {
+		e, err := strconv.ParseInt(req.EpochSeq, 10, 64)
+		if err != nil {
+			return nil, apiError(codes.InvalidArgument, fmt.Errorf("epochID is not a valid integer"))
+		}
+		epochID = &e
+	}
+
+	p := defaultPaginationV2
+	if req.Pagination != nil {
+		p = entities.PaginationFromProto(req.Pagination)
+	}
+
+	res, err := t.multiSigSignerEventStore.GetAddedEvents(ctx, nodeID, epochID, p)
+	if err != nil {
+		c := codes.Internal
+		if errors.Is(err, entities.ErrInvalidID) {
+			c = codes.InvalidArgument
+		}
+		return nil, apiError(c, err)
+
+	}
+
+	// find bundle for this nodeID, might be multiple if its added, then removed then added again??
+	bundles := []*v2.ERC20MultiSigSignerAddedBundle{}
+	for _, b := range res {
+
+		signatures, err := t.notaryStore.GetByResourceID(ctx, b.ID.String())
+		if err != nil {
+			return nil, apiError(codes.Internal, err)
+		}
+
+		pack := "0x"
+		for _, v := range signatures {
+			pack = fmt.Sprintf("%v%v", pack, hex.EncodeToString(v.Sig))
+		}
+
+		bundles = append(bundles,
+			&v2.ERC20MultiSigSignerAddedBundle{
+				NewSigner:  "0x" + b.SignerChange.String(),
+				Submitter:  "0x" + b.Submitter.String(),
+				Nonce:      b.Nonce,
+				Timestamp:  b.VegaTime.UnixNano(),
+				Signatures: pack,
+				EpochSeq:   strconv.FormatInt(b.EpochID, 10),
+			},
+		)
+	}
+
+	return &v2.GetERC20MultiSigSignerAddedBundlesResponse{
+		Bundles: bundles,
+	}, nil
+}
+
+// GetERC20MutlsigSignerAddedBundles return the signature bundles needed to add a new validator to the multisig control ERC20 contract
+func (t *tradingDataServiceV2) GetERC20MultiSigSignerRemovedBundles(ctx context.Context, req *v2.GetERC20MultiSigSignerRemovedBundlesRequest) (*v2.GetERC20MultiSigSignerRemovedBundlesResponse, error) {
+	nodeID := req.GetNodeId()
+	submitter := req.GetSubmitter()
+
+	if len(nodeID) == 0 || len(submitter) == 0 {
+		return nil, apiError(codes.InvalidArgument, fmt.Errorf("nodeId and submitter must be supplied"))
+	}
+
+	var epochID *int64
+	if len(req.EpochSeq) != 0 {
+		e, err := strconv.ParseInt(req.EpochSeq, 10, 64)
+		if err != nil {
+			return nil, apiError(codes.InvalidArgument, fmt.Errorf("epochID is not a valid integer"))
+		}
+		epochID = &e
+	}
+
+	p := defaultPaginationV2
+	if req.Pagination != nil {
+		p = entities.PaginationFromProto(req.Pagination)
+	}
+
+	res, err := t.multiSigSignerEventStore.GetRemovedEvents(ctx, nodeID, strings.TrimPrefix(submitter, "0x"), epochID, p)
+	if err != nil {
+		c := codes.Internal
+		if errors.Is(err, entities.ErrInvalidID) {
+			c = codes.InvalidArgument
+		}
+		return nil, apiError(c, err)
+	}
+
+	// find bundle for this nodeID, might be multiple if its added, then removed then added again??
+	bundles := []*v2.ERC20MultiSigSignerRemovedBundle{}
+	for _, b := range res {
+
+		signatures, err := t.notaryStore.GetByResourceID(ctx, b.ID.String())
+		if err != nil {
+			return nil, apiError(codes.Internal, err)
+		}
+
+		pack := "0x"
+		for _, v := range signatures {
+			pack = fmt.Sprintf("%v%v", pack, hex.EncodeToString(v.Sig))
+		}
+
+		bundles = append(bundles, &v2.ERC20MultiSigSignerRemovedBundle{
+			OldSigner:  "0x" + b.SignerChange.String(),
+			Submitter:  "0x" + b.Submitter.String(),
+			Nonce:      b.Nonce,
+			Timestamp:  b.VegaTime.UnixNano(),
+			Signatures: pack,
+			EpochSeq:   strconv.FormatInt(b.EpochID, 10),
+		})
+	}
+
+	return &v2.GetERC20MultiSigSignerRemovedBundlesResponse{
+		Bundles: bundles,
 	}, nil
 }

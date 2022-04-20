@@ -101,37 +101,38 @@ type NodeCommand struct {
 	chainInfoStore        *storage.ChainInfo
 	transferStore         *storage.Transfers
 
-	sqlStore                   *sqlstore.SQLStore
-	assetStoreSQL              *sqlstore.Assets
-	blockStoreSQL              *sqlstore.Blocks
-	accountStoreSQL            *sqlstore.Accounts
-	balanceStoreSQL            *sqlstore.Balances
-	ledgerSQL                  *sqlstore.Ledger
-	partyStoreSQL              *sqlstore.Parties
-	orderStoreSQL              *sqlstore.Orders
-	candleServiceV2            *candlesv2.Svc
-	tradeStoreSQL              *sqlstore.Trades
-	networkLimitsStoreSQL      *sqlstore.NetworkLimits
-	marketDataStoreSQL         *sqlstore.MarketData
-	rewardStoreSQL             *sqlstore.Rewards
-	delegationStoreSQL         *sqlstore.Delegations
-	marketsStoreSQL            *sqlstore.Markets
-	epochStoreSQL              *sqlstore.Epochs
-	depositStoreSQL            *sqlstore.Deposits
-	withdrawalsStoreSQL        *sqlstore.Withdrawals
-	proposalStoreSQL           *sqlstore.Proposals
-	voteStoreSQL               *sqlstore.Votes
-	marginLevelsStoreSQL       *sqlstore.MarginLevels
-	riskFactorStoreSQL         *sqlstore.RiskFactors
-	netParamStoreSQL           *sqlstore.NetworkParameters
-	checkpointStoreSQL         *sqlstore.Checkpoints
-	oracleSpecStoreSQL         *sqlstore.OracleSpec
-	oracleDataStoreSQL         *sqlstore.OracleData
-	liquidityProvisionStoreSQL *sqlstore.LiquidityProvision
-	positionStoreSQL           *sqlstore.Positions
-	transfersStoreSQL          *sqlstore.Transfers
-	stakeLinkingStoreSQL       *sqlstore.StakeLinking
-	notaryStoreSQL             *sqlstore.Notary
+	sqlStore                    *sqlstore.SQLStore
+	assetStoreSQL               *sqlstore.Assets
+	blockStoreSQL               *sqlstore.Blocks
+	accountStoreSQL             *sqlstore.Accounts
+	balanceStoreSQL             *sqlstore.Balances
+	ledgerSQL                   *sqlstore.Ledger
+	partyStoreSQL               *sqlstore.Parties
+	orderStoreSQL               *sqlstore.Orders
+	candleServiceV2             *candlesv2.Svc
+	tradeStoreSQL               *sqlstore.Trades
+	networkLimitsStoreSQL       *sqlstore.NetworkLimits
+	marketDataStoreSQL          *sqlstore.MarketData
+	rewardStoreSQL              *sqlstore.Rewards
+	delegationStoreSQL          *sqlstore.Delegations
+	marketsStoreSQL             *sqlstore.Markets
+	epochStoreSQL               *sqlstore.Epochs
+	depositStoreSQL             *sqlstore.Deposits
+	withdrawalsStoreSQL         *sqlstore.Withdrawals
+	proposalStoreSQL            *sqlstore.Proposals
+	voteStoreSQL                *sqlstore.Votes
+	marginLevelsStoreSQL        *sqlstore.MarginLevels
+	riskFactorStoreSQL          *sqlstore.RiskFactors
+	netParamStoreSQL            *sqlstore.NetworkParameters
+	checkpointStoreSQL          *sqlstore.Checkpoints
+	oracleSpecStoreSQL          *sqlstore.OracleSpec
+	oracleDataStoreSQL          *sqlstore.OracleData
+	liquidityProvisionStoreSQL  *sqlstore.LiquidityProvision
+	positionStoreSQL            *sqlstore.Positions
+	transfersStoreSQL           *sqlstore.Transfers
+	stakeLinkingStoreSQL        *sqlstore.StakeLinking
+	notaryStoreSQL              *sqlstore.Notary
+	multiSigSignerAddedStoreSQL *sqlstore.ERC20MultiSigSignerEvent
 
 	vegaCoreServiceClient vegaprotoapi.CoreServiceClient
 
@@ -161,34 +162,35 @@ type NodeCommand struct {
 	checkpointSub        *subscribers.CheckpointSub
 	transferSub          *subscribers.TransferSub
 
-	assetSubSQL              *sqlsubscribers.Asset
-	partySubSQL              *sqlsubscribers.Party
-	timeSubSQL               *sqlsubscribers.Time
-	transferResponseSubSQL   *sqlsubscribers.TransferResponse
-	orderSubSQL              *sqlsubscribers.Order
-	networkLimitsSubSQL      *sqlsubscribers.NetworkLimits
-	marketDataSubSQL         *sqlsubscribers.MarketData
-	tradesSubSQL             *sqlsubscribers.TradeSubscriber
-	rewardsSubSQL            *sqlsubscribers.Reward
-	delegationsSubSQL        *sqlsubscribers.Delegation
-	marketCreatedSubSQL      *sqlsubscribers.MarketCreated
-	marketUpdatedSubSQL      *sqlsubscribers.MarketUpdated
-	epochSubSQL              *sqlsubscribers.Epoch
-	depositSubSQL            *sqlsubscribers.Deposit
-	withdrawalSubSQL         *sqlsubscribers.Withdrawal
-	proposalsSubSQL          *sqlsubscribers.Proposal
-	votesSubSQL              *sqlsubscribers.Vote
-	marginLevelsSubSQL       *sqlsubscribers.MarginLevels
-	riskFactorSubSQL         *sqlsubscribers.RiskFactor
-	netParamSubSQL           *sqlsubscribers.NetworkParameter
-	checkpointSubSQL         *sqlsubscribers.Checkpoint
-	oracleSpecSubSQL         *sqlsubscribers.OracleSpec
-	oracleDataSubSQL         *sqlsubscribers.OracleData
-	liquidityProvisionSubSQL *sqlsubscribers.LiquidityProvision
-	positionsSubSQL          *sqlsubscribers.Position
-	transferSubSQL           *sqlsubscribers.Transfer
-	stakeLinkingSubSQL       *sqlsubscribers.StakeLinking
-	notarySubSQL             *sqlsubscribers.Notary
+	assetSubSQL               *sqlsubscribers.Asset
+	partySubSQL               *sqlsubscribers.Party
+	timeSubSQL                *sqlsubscribers.Time
+	transferResponseSubSQL    *sqlsubscribers.TransferResponse
+	orderSubSQL               *sqlsubscribers.Order
+	networkLimitsSubSQL       *sqlsubscribers.NetworkLimits
+	marketDataSubSQL          *sqlsubscribers.MarketData
+	tradesSubSQL              *sqlsubscribers.TradeSubscriber
+	rewardsSubSQL             *sqlsubscribers.Reward
+	delegationsSubSQL         *sqlsubscribers.Delegation
+	marketCreatedSubSQL       *sqlsubscribers.MarketCreated
+	marketUpdatedSubSQL       *sqlsubscribers.MarketUpdated
+	epochSubSQL               *sqlsubscribers.Epoch
+	depositSubSQL             *sqlsubscribers.Deposit
+	withdrawalSubSQL          *sqlsubscribers.Withdrawal
+	proposalsSubSQL           *sqlsubscribers.Proposal
+	votesSubSQL               *sqlsubscribers.Vote
+	marginLevelsSubSQL        *sqlsubscribers.MarginLevels
+	riskFactorSubSQL          *sqlsubscribers.RiskFactor
+	netParamSubSQL            *sqlsubscribers.NetworkParameter
+	checkpointSubSQL          *sqlsubscribers.Checkpoint
+	oracleSpecSubSQL          *sqlsubscribers.OracleSpec
+	oracleDataSubSQL          *sqlsubscribers.OracleData
+	liquidityProvisionSubSQL  *sqlsubscribers.LiquidityProvision
+	positionsSubSQL           *sqlsubscribers.Position
+	transferSubSQL            *sqlsubscribers.Transfer
+	stakeLinkingSubSQL        *sqlsubscribers.StakeLinking
+	notarySubSQL              *sqlsubscribers.Notary
+	multiSigSignerEventSubSQL *sqlsubscribers.ERC20MultiSigSignerEvent
 
 	candleService     *candles.Svc
 	tradeService      *trades.Svc
@@ -400,6 +402,7 @@ func (l *NodeCommand) createGRPCServer(config api.Config, useSQLStores bool) *ap
 		l.transfersStoreSQL,
 		l.stakeLinkingStoreSQL,
 		l.notaryStoreSQL,
+		l.multiSigSignerAddedStoreSQL,
 	)
 	return grpcServer
 }

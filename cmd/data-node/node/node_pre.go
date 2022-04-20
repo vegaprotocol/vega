@@ -153,6 +153,7 @@ func (l *NodeCommand) setupSQLSubscribers() {
 	l.transferSubSQL = sqlsubscribers.NewTransfer(l.transfersStoreSQL, l.accountStoreSQL, l.Log)
 	l.stakeLinkingSubSQL = sqlsubscribers.NewStakeLinking(l.stakeLinkingStoreSQL, l.Log)
 	l.notarySubSQL = sqlsubscribers.NewNotary(l.notaryStoreSQL, l.Log)
+	l.multiSigSignerEventSubSQL = sqlsubscribers.NewERC20MultiSigSignerEvent(l.multiSigSignerAddedStoreSQL, l.Log)
 }
 
 func (l *NodeCommand) setupStorages() error {
@@ -207,6 +208,7 @@ func (l *NodeCommand) setupStorages() error {
 		l.transfersStoreSQL = sqlstore.NewTransfers(sqlStore)
 		l.stakeLinkingStoreSQL = sqlstore.NewStakeLinking(sqlStore)
 		l.notaryStoreSQL = sqlstore.NewNotary(sqlStore)
+		l.multiSigSignerAddedStoreSQL = sqlstore.NewERC20MultiSigSignerEvent(sqlStore)
 
 		candleStore, err := sqlstore.NewCandles(l.ctx, sqlStore, l.conf.CandlesV2.CandleStore)
 		if err != nil {
@@ -314,6 +316,7 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 			l.transferSubSQL,
 			l.stakeLinkingSubSQL,
 			l.notarySubSQL,
+			l.multiSigSignerEventSubSQL,
 		)
 	}
 

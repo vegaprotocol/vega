@@ -23,7 +23,7 @@ import (
 
 var (
 	ErrBadID   = errors.New("Bad ID (must be hex string)")
-	tableNames = [...]string{"ledger", "accounts", "parties", "assets", "blocks", "node_signatures"}
+	tableNames = [...]string{"ledger", "accounts", "parties", "assets", "blocks", "node_signatures", "erc20_multisig_signer_events"}
 )
 
 //go:embed migrations/*.sql

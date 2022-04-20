@@ -76,6 +76,46 @@ func (mr *MockTradingDataServiceClientV2MockRecorder) GetCandlesForMarket(arg0, 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCandlesForMarket", reflect.TypeOf((*MockTradingDataServiceClientV2)(nil).GetCandlesForMarket), varargs...)
 }
 
+// GetERC20MultiSigSignerAddedBundles mocks base method.
+func (m *MockTradingDataServiceClientV2) GetERC20MultiSigSignerAddedBundles(arg0 context.Context, arg1 *v2.GetERC20MultiSigSignerAddedBundlesRequest, arg2 ...grpc.CallOption) (*v2.GetERC20MultiSigSignerAddedBundlesResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "GetERC20MultiSigSignerAddedBundles", varargs...)
+	ret0, _ := ret[0].(*v2.GetERC20MultiSigSignerAddedBundlesResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetERC20MultiSigSignerAddedBundles indicates an expected call of GetERC20MultiSigSignerAddedBundles.
+func (mr *MockTradingDataServiceClientV2MockRecorder) GetERC20MultiSigSignerAddedBundles(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetERC20MultiSigSignerAddedBundles", reflect.TypeOf((*MockTradingDataServiceClientV2)(nil).GetERC20MultiSigSignerAddedBundles), varargs...)
+}
+
+// GetERC20MultiSigSignerRemovedBundles mocks base method.
+func (m *MockTradingDataServiceClientV2) GetERC20MultiSigSignerRemovedBundles(arg0 context.Context, arg1 *v2.GetERC20MultiSigSignerRemovedBundlesRequest, arg2 ...grpc.CallOption) (*v2.GetERC20MultiSigSignerRemovedBundlesResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "GetERC20MultiSigSignerRemovedBundles", varargs...)
+	ret0, _ := ret[0].(*v2.GetERC20MultiSigSignerRemovedBundlesResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetERC20MultiSigSignerRemovedBundles indicates an expected call of GetERC20MultiSigSignerRemovedBundles.
+func (mr *MockTradingDataServiceClientV2MockRecorder) GetERC20MultiSigSignerRemovedBundles(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetERC20MultiSigSignerRemovedBundles", reflect.TypeOf((*MockTradingDataServiceClientV2)(nil).GetERC20MultiSigSignerRemovedBundles), varargs...)
+}
+
 // GetMarketDataHistoryByID mocks base method.
 func (m *MockTradingDataServiceClientV2) GetMarketDataHistoryByID(arg0 context.Context, arg1 *v2.GetMarketDataHistoryByIDRequest, arg2 ...grpc.CallOption) (*v2.GetMarketDataHistoryByIDResponse, error) {
 	m.ctrl.T.Helper()

@@ -86,36 +86,37 @@ type GRPCServer struct {
 
 	marketDepthService *subscribers.MarketDepthBuilder
 
-	balanceStore            *sqlstore.Balances
-	orderStore              *sqlstore.Orders
-	candleServiceV2         *candlesv2.Svc
-	networkLimitsStore      *sqlstore.NetworkLimits
-	marketDataStore         *sqlstore.MarketData
-	tradeStore              *sqlstore.Trades
-	assetStore              *sqlstore.Assets
-	accountStore            *sqlstore.Accounts
-	rewardStore             *sqlstore.Rewards
-	marketsStore            *sqlstore.Markets
-	delegationsStore        *sqlstore.Delegations
-	epochStore              *sqlstore.Epochs
-	depositsStore           *sqlstore.Deposits
-	withdrawalsStore        *sqlstore.Withdrawals
-	proposalStore           *sqlstore.Proposals
-	voteStore               *sqlstore.Votes
-	riskFactorsStore        *sqlstore.RiskFactors
-	marginLevelsStore       *sqlstore.MarginLevels
-	netParamStore           *sqlstore.NetworkParameters
-	blockStore              *sqlstore.Blocks
-	partyStore              *sqlstore.Parties
-	checkpointStore         *sqlstore.Checkpoints
-	oracleSpecStore         *sqlstore.OracleSpec
-	oracleDataStore         *sqlstore.OracleData
-	liquidityProvisionStore *sqlstore.LiquidityProvision
-	positionStore           *sqlstore.Positions
-	transfersStore          *sqlstore.Transfers
-	stakeLinkingStore       *sqlstore.StakeLinking
-	notaryStore             *sqlstore.Notary
-	eventObserver           *eventObserver
+	balanceStore             *sqlstore.Balances
+	orderStore               *sqlstore.Orders
+	candleServiceV2          *candlesv2.Svc
+	networkLimitsStore       *sqlstore.NetworkLimits
+	marketDataStore          *sqlstore.MarketData
+	tradeStore               *sqlstore.Trades
+	assetStore               *sqlstore.Assets
+	accountStore             *sqlstore.Accounts
+	rewardStore              *sqlstore.Rewards
+	marketsStore             *sqlstore.Markets
+	delegationsStore         *sqlstore.Delegations
+	epochStore               *sqlstore.Epochs
+	depositsStore            *sqlstore.Deposits
+	withdrawalsStore         *sqlstore.Withdrawals
+	proposalStore            *sqlstore.Proposals
+	voteStore                *sqlstore.Votes
+	riskFactorsStore         *sqlstore.RiskFactors
+	marginLevelsStore        *sqlstore.MarginLevels
+	netParamStore            *sqlstore.NetworkParameters
+	blockStore               *sqlstore.Blocks
+	partyStore               *sqlstore.Parties
+	checkpointStore          *sqlstore.Checkpoints
+	oracleSpecStore          *sqlstore.OracleSpec
+	oracleDataStore          *sqlstore.OracleData
+	liquidityProvisionStore  *sqlstore.LiquidityProvision
+	positionStore            *sqlstore.Positions
+	transfersStore           *sqlstore.Transfers
+	stakeLinkingStore        *sqlstore.StakeLinking
+	notaryStore              *sqlstore.Notary
+	multiSigSignerEventStore *sqlstore.ERC20MultiSigSignerEvent
+	eventObserver            *eventObserver
 
 	// used in order to gracefully close streams
 	ctx   context.Context
@@ -183,6 +184,7 @@ func NewGRPCServer(
 	transfersStore *sqlstore.Transfers,
 	stakeLinkingStore *sqlstore.StakeLinking,
 	notaryStore *sqlstore.Notary,
+	multiSigSignerEventStore *sqlstore.ERC20MultiSigSignerEvent,
 ) *GRPCServer {
 	// setup logger
 	log = log.Named(namedLogger)
@@ -190,65 +192,66 @@ func NewGRPCServer(
 	ctx, cfunc := context.WithCancel(context.Background())
 
 	return &GRPCServer{
-		log:                     log,
-		Config:                  config,
-		useSQLStores:            useSQLStores,
-		vegaCoreServiceClient:   coreServiceClient,
-		orderService:            orderService,
-		liquidityService:        liquidityService,
-		tradeService:            tradeService,
-		candleService:           candleService,
-		timeService:             timeService,
-		marketService:           marketService,
-		partyService:            partyService,
-		accountsService:         accountsService,
-		transferResponseService: transferResponseService,
-		riskService:             riskService,
-		governanceService:       governanceService,
-		notaryService:           notaryService,
-		assetService:            assetService,
-		feeService:              feeService,
-		eventService:            eventService,
-		withdrawalService:       withdrawalService,
-		depositService:          depositService,
-		marketDepthService:      marketDepthService,
-		netParamsService:        netParamsService,
-		oracleService:           oracleService,
-		nodeService:             nodeService,
-		epochService:            epochService,
-		delegationService:       delegationService,
-		rewardsService:          rewardsService,
-		stakingService:          stakingService,
-		checkpointSvc:           checkpointSvc,
-		balanceStore:            balanceStore,
-		orderStore:              orderStore,
-		networkLimitsStore:      networkLimitsStore,
-		marketDataStore:         marketDataStore,
-		tradeStore:              tradeStore,
-		assetStore:              assertStore,
-		accountStore:            accountStore,
-		rewardStore:             rewardStore,
-		marketsStore:            marketsStore,
-		delegationsStore:        delegationStore,
-		epochStore:              epochStore,
-		depositsStore:           depositsStore,
-		withdrawalsStore:        withdrawalsStore,
-		proposalStore:           proposalStore,
-		voteStore:               voteStore,
-		riskFactorsStore:        riskFactorsStore,
-		marginLevelsStore:       marginLevelsStore,
-		netParamStore:           netParamStore,
-		blockStore:              blockStore,
-		checkpointStore:         checkpointStore,
-		partyStore:              partyStore,
-		candleServiceV2:         candleServiceV2,
-		oracleSpecStore:         oracleSpecStore,
-		oracleDataStore:         oracleDataStore,
-		liquidityProvisionStore: liquidityProvisionStore,
-		positionStore:           positionStore,
-		transfersStore:          transfersStore,
-		stakeLinkingStore:       stakeLinkingStore,
-		notaryStore:             notaryStore,
+		log:                      log,
+		Config:                   config,
+		useSQLStores:             useSQLStores,
+		vegaCoreServiceClient:    coreServiceClient,
+		orderService:             orderService,
+		liquidityService:         liquidityService,
+		tradeService:             tradeService,
+		candleService:            candleService,
+		timeService:              timeService,
+		marketService:            marketService,
+		partyService:             partyService,
+		accountsService:          accountsService,
+		transferResponseService:  transferResponseService,
+		riskService:              riskService,
+		governanceService:        governanceService,
+		notaryService:            notaryService,
+		assetService:             assetService,
+		feeService:               feeService,
+		eventService:             eventService,
+		withdrawalService:        withdrawalService,
+		depositService:           depositService,
+		marketDepthService:       marketDepthService,
+		netParamsService:         netParamsService,
+		oracleService:            oracleService,
+		nodeService:              nodeService,
+		epochService:             epochService,
+		delegationService:        delegationService,
+		rewardsService:           rewardsService,
+		stakingService:           stakingService,
+		checkpointSvc:            checkpointSvc,
+		balanceStore:             balanceStore,
+		orderStore:               orderStore,
+		networkLimitsStore:       networkLimitsStore,
+		marketDataStore:          marketDataStore,
+		tradeStore:               tradeStore,
+		assetStore:               assertStore,
+		accountStore:             accountStore,
+		rewardStore:              rewardStore,
+		marketsStore:             marketsStore,
+		delegationsStore:         delegationStore,
+		epochStore:               epochStore,
+		depositsStore:            depositsStore,
+		withdrawalsStore:         withdrawalsStore,
+		multiSigSignerEventStore: multiSigSignerEventStore,
+		proposalStore:            proposalStore,
+		voteStore:                voteStore,
+		riskFactorsStore:         riskFactorsStore,
+		marginLevelsStore:        marginLevelsStore,
+		netParamStore:            netParamStore,
+		blockStore:               blockStore,
+		checkpointStore:          checkpointStore,
+		partyStore:               partyStore,
+		candleServiceV2:          candleServiceV2,
+		oracleSpecStore:          oracleSpecStore,
+		oracleDataStore:          oracleDataStore,
+		liquidityProvisionStore:  liquidityProvisionStore,
+		positionStore:            positionStore,
+		transfersStore:           transfersStore,
+		stakeLinkingStore:        stakeLinkingStore,
+		notaryStore:              notaryStore,
 		eventObserver: &eventObserver{
 			log:          log,
 			eventService: eventService,
@@ -428,13 +431,15 @@ func (g *GRPCServer) Start(ctx context.Context, lis net.Listener) error {
 	protoapi.RegisterTradingDataServiceServer(g.srv, g.tradingDataService)
 
 	tradingDataSvcV2 := &tradingDataServiceV2{
-		log:                g.log,
-		balanceStore:       g.balanceStore,
-		orderStore:         g.orderStore,
-		networkLimitsStore: g.networkLimitsStore,
-		marketDataStore:    g.marketDataStore,
-		tradeStore:         g.tradeStore,
-		candleServiceV2:    g.candleServiceV2,
+		log:                      g.log,
+		balanceStore:             g.balanceStore,
+		orderStore:               g.orderStore,
+		networkLimitsStore:       g.networkLimitsStore,
+		marketDataStore:          g.marketDataStore,
+		tradeStore:               g.tradeStore,
+		multiSigSignerEventStore: g.multiSigSignerEventStore,
+		notaryStore:              g.notaryStore,
+		candleServiceV2:          g.candleServiceV2,
 	}
 	protoapi2.RegisterTradingDataServiceServer(g.srv, tradingDataSvcV2)
 
