@@ -3,7 +3,7 @@
 ## Unreleased (0.51.0)
 
 ### 🚨 Breaking changes
-- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+- [5192](https://github.com/vegaprotocol/vega/issues/5192) - Require a rationale on proposals
 
 ### 🗑️ Deprecation
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -

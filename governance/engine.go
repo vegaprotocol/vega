@@ -393,6 +393,7 @@ func (e *Engine) SubmitProposal(
 		State:     types.ProposalStateOpen,
 		Terms:     psub.Terms,
 		Reference: psub.Reference,
+		Rationale: psub.Rationale,
 	}
 
 	defer func() {
@@ -764,8 +765,6 @@ func (e *Engine) validateChange(terms *types.ProposalTerms) (types.ProposalError
 		return validateNewAsset(terms.GetNewAsset().Changes)
 	case types.ProposalTermsTypeUpdateNetworkParameter:
 		return validateNetworkParameterUpdate(e.netp, terms.GetUpdateNetworkParameter().Changes)
-	case types.ProposalTermsTypeNewFreeform:
-		return validateNewFreeform(terms.GetNewFreeform())
 	default:
 		return types.ProposalErrorUnspecified, nil
 	}

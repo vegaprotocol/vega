@@ -5,7 +5,13 @@ import (
 	"testing"
 	"time"
 
+	vegapb "code.vegaprotocol.io/protos/vega"
+	checkpointpb "code.vegaprotocol.io/protos/vega/checkpoint/v1"
+	vgrand "code.vegaprotocol.io/shared/libs/rand"
 	"code.vegaprotocol.io/vega/governance"
+	"code.vegaprotocol.io/vega/libs/proto"
+	"code.vegaprotocol.io/vega/types"
+
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -13,6 +19,7 @@ import (
 
 func TestCheckpoint(t *testing.T) {
 	t.Run("Basic test -> get checkpoints at various points in time, load checkpoint", testCheckpointSuccess)
+	t.Run("Loading with missing rationale shouldn't be a problem", testCheckpointLoadingWithMissingRationaleShouldNotBeProblem)
 }
 
 func testCheckpointSuccess(t *testing.T) {
@@ -104,4 +111,51 @@ func testCheckpointSuccess(t *testing.T) {
 
 	data = append(data, []byte("foo")...)
 	require.Error(t, eng2.Load(ctx, data))
+}
+
+func testCheckpointLoadingWithMissingRationaleShouldNotBeProblem(t *testing.T) {
+	eng := getTestEngine(t)
+	defer eng.ctrl.Finish()
+
+	// given
+	proposalWithoutRationale := &vegapb.Proposal{
+		Id:        vgrand.RandomStr(5),
+		Reference: vgrand.RandomStr(5),
+		PartyId:   vgrand.RandomStr(5),
+		State:     types.ProposalStateEnacted,
+		Timestamp: 123456789,
+		Terms: &vegapb.ProposalTerms{
+			ClosingTimestamp:    eng.now.Add(10 * time.Minute).Unix(),
+			EnactmentTimestamp:  eng.now.Add(30 * time.Minute).Unix(),
+			ValidationTimestamp: 0,
+			Change:              &vegapb.ProposalTerms_NewFreeform{},
+		},
+		Reason:       0,
+		ErrorDetails: "",
+		Rationale:    nil,
+	}
+	data := marshalProposal(t, proposalWithoutRationale)
+
+	// setup
+	eng.expectRestoredProposals(t, []string{proposalWithoutRationale.Id})
+
+	// when
+	err := eng.Load(context.Background(), data)
+
+	// then
+	require.NoError(t, err)
+}
+
+func marshalProposal(t *testing.T, proposal *vegapb.Proposal) []byte {
+	t.Helper()
+	proposals := &checkpointpb.Proposals{
+		Proposals: []*vegapb.Proposal{proposal},
+	}
+
+	data, err := proto.Marshal(proposals)
+	if err != nil {
+		t.Fatalf("couldn't marshal proposals for tests: %v", err)
+	}
+
+	return data
 }
