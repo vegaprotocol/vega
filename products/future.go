@@ -79,13 +79,17 @@ func (f *Future) SettlementPrice() (*num.Uint, error) {
 	return f.oracle.data.SettlementPrice()
 }
 
-func (f *Future) ScaleSettlementPriceToDecimalPlaces(price *num.Uint, dp uint32) (*num.Uint, bool) {
+func (f *Future) ScaleSettlementPriceToDecimalPlaces(price *num.Uint, dp uint32) (*num.Uint, error) {
 	// scale to asset decimals by multiplying by 10^(assetDP - oracleDP)
 	// if assetDP > oracleDP - this scales up the decimals of settlement price
 	// if assetDP < oracleDP - this scaled down the decimals of settlement price and can lead to loss of accuracy
 	// if there're equal - no scaling happens
 	scalingFactor := num.DecimalFromInt64(10).Pow(num.DecimalFromInt64(int64(dp) - int64(f.oracle.settlementPriceDecimals)))
-	return num.UintFromDecimal(price.ToDecimal().Mul(scalingFactor))
+	r, overflow := num.UintFromDecimal(price.ToDecimal().Mul(scalingFactor))
+	if overflow {
+		return nil, errors.New("failed to scale settlement price, overflow occurred")
+	}
+	return r, nil
 }
 
 // Settle a position against the future.
@@ -95,9 +99,9 @@ func (f *Future) Settle(entryPriceInAsset *num.Uint, assetDecimals uint32, netFr
 		return nil, false, err
 	}
 
-	settlementPriceInAsset, overflow := f.ScaleSettlementPriceToDecimalPlaces(settlementPrice, assetDecimals)
-	if overflow {
-		return nil, false, errors.New("Error scaling settlement price")
+	settlementPriceInAsset, err := f.ScaleSettlementPriceToDecimalPlaces(settlementPrice, assetDecimals)
+	if err != nil {
+		return nil, false, err
 	}
 
 	amount, neg := settlementPrice.Delta(settlementPriceInAsset, entryPriceInAsset)

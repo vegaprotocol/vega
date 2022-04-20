@@ -46,6 +46,7 @@ type ValidatorTopology interface {
 	SelfVegaPubKey() string
 	AllNodeIDs() []string
 	IsValidatorVegaPubKey(string) bool
+	IsTendermintValidator(string) bool
 }
 
 type Resource interface {
@@ -113,10 +114,17 @@ func (r *res) selfVoteReceived(self string) bool {
 	return ok
 }
 
-func (r *res) voteCount() int {
+func (r *res) voteCount(t ValidatorTopology) int {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	return len(r.votes)
+
+	count := 0
+	for k := range r.votes {
+		if t.IsTendermintValidator(k) {
+			count += 1
+		}
+	}
+	return count
 }
 
 type Witness struct {
@@ -204,6 +212,7 @@ func (w *Witness) AddNodeCheck(_ context.Context, nv *commandspb.NodeVote, key c
 			logging.String("node-id", key.Hex()))
 		return ErrVoteFromNonValidator
 	}
+
 	w.setChangedLocked(true)
 	return r.addVote(key.Hex())
 }
@@ -310,7 +319,7 @@ func (w *Witness) votePassed(votesCount, topLen int) bool {
 
 func (w *Witness) OnTick(ctx context.Context, t time.Time) {
 	w.now = t
-	topLen := w.top.Len()
+	topLen := w.top.Len() // this is the number of validators with Tendermint status
 	isValidator := w.top.IsValidator()
 
 	// sort resources first
@@ -325,7 +334,7 @@ func (w *Witness) OnTick(ctx context.Context, t time.Time) {
 		v := w.resources[k]
 
 		state := atomic.LoadUint32(&v.state)
-		votesLen := v.voteCount()
+		votesLen := v.voteCount(w.top)
 		checkPass := w.votePassed(votesLen, topLen)
 
 		// if the time is expired, or we received enough votes

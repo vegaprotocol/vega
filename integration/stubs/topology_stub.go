@@ -55,6 +55,10 @@ func (ts *TopologyStub) IsValidatorVegaPubKey(pubKey string) bool {
 	return true
 }
 
+func (ts *TopologyStub) IsTendermintValidator(pubKey string) bool {
+	return true
+}
+
 func (ts *TopologyStub) IsValidatorNodeID(nodeID string) bool {
 	_, ok := ts.validators[nodeID]
 	return ok

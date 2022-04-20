@@ -163,7 +163,7 @@ type LiquidityProvision struct {
 	// A set of liquidity buy orders to meet the liquidity provision obligation
 	Buys []*LiquidityOrderReference
 	// Version of this liquidity provision order
-	Version string
+	Version uint64
 	// Status of this liquidity provision order
 	Status LiquidityProvisionStatus
 	// A reference shared between this liquidity provision and all it's orders

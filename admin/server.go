@@ -94,8 +94,8 @@ func (s *Server) Start() {
 	}
 
 	logger.Info("Serving Server<>RPC based API")
-	if err := s.srv.Serve(l); err != nil {
-		logger.Panic("Failed to serve Server<>RPC based API", logging.Error(err))
+	if err := s.srv.Serve(l); err != nil && err != http.ErrServerClosed {
+		logger.Error("Error serving admin API", logging.Error(err))
 	}
 }
 

@@ -50,3 +50,18 @@ func (mr *MockChainMockRecorder) SubmitTransactionAsync(arg0, arg1 interface{}) 
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubmitTransactionAsync", reflect.TypeOf((*MockChain)(nil).SubmitTransactionAsync), arg0, arg1)
 }
+
+// SubmitTransactionSync mocks base method.
+func (m *MockChain) SubmitTransactionSync(arg0 context.Context, arg1 *v1.Transaction) (*coretypes.ResultBroadcastTx, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SubmitTransactionSync", arg0, arg1)
+	ret0, _ := ret[0].(*coretypes.ResultBroadcastTx)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// SubmitTransactionSync indicates an expected call of SubmitTransactionSync.
+func (mr *MockChainMockRecorder) SubmitTransactionSync(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubmitTransactionSync", reflect.TypeOf((*MockChain)(nil).SubmitTransactionSync), arg0, arg1)
+}

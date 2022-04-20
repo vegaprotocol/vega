@@ -147,6 +147,7 @@ func testSubmissionCRUD(t *testing.T) {
 		CreatedAt:        now.UnixNano(),
 		UpdatedAt:        now.UnixNano(),
 		Status:           types.LiquidityProvisionStatusPending,
+		Version:          1,
 		Buys: []*types.LiquidityOrderReference{
 			{LiquidityOrder: buyShape[0], OrderID: order1.ID},
 		},

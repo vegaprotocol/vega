@@ -35,10 +35,5 @@ func TestRateLimit(t *testing.T) {
 		assert.NoError(t, err)
 		err = rl.NewRequest("someprefix", "2.2.2.2")
 		assert.Error(t, err)
-
-		err = rl.NewRequest("someprefix", "1a2b::abcd")
-		assert.NoError(t, err)
-		err = rl.NewRequest("someprefix", "1a2b::abcd")
-		assert.Error(t, err)
 	}
 }

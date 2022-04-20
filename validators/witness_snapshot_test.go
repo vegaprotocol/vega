@@ -68,6 +68,7 @@ func TestSnapshot(t *testing.T) {
 		// add a vote
 		pubkey := newPublicKey("1234")
 		erc2.top.EXPECT().IsValidatorVegaPubKey(pubkey.Hex()).Times(1).Return(true)
+		erc2.top.EXPECT().IsTendermintValidator(pubkey.Hex()).AnyTimes().Return(true)
 		err = erc2.AddNodeCheck(context.Background(), &commandspb.NodeVote{Reference: res.id}, pubkey)
 
 		assert.NoError(t, err)

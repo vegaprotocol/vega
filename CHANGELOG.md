@@ -1,12 +1,38 @@
 # Changelog
 
-## Unreleased (0.50.0)
+## Unreleased (0.51.0)
 
 ### 🚨 Breaking changes
-- [5197](https://github.com/vegaprotocol/vega/issues/5197) - Scale settlement price based on oracle definition 
+- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 ### 🗑️ Deprecation
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+
+### 🛠 Improvements
+- [5001](https://github.com/vegaprotocol/vega/issues/5001) - Set and increment LP version field correctly
+- [5001](https://github.com/vegaprotocol/vega/issues/5001) - Add integration test for LP versioning
+- [3372](https://github.com/vegaprotocol/vega/issues/3372) - Add integration test making sure margin is released when an LP is cancelled.
+- [5235](https://github.com/vegaprotocol/vega/issues/5235) - Use `BroadcastTxSync` instead of async for submitting transactions to `tendermint`
+
+### 🐛 Fixes
+- [4798](https://github.com/vegaprotocol/vega/issues/4978) - Set market pending timestamp to the time at which the market is created.
+- [5222](https://github.com/vegaprotocol/vega/issues/5222) - Do not panic when admin server stops.
+- [5103](https://github.com/vegaprotocol/vega/issues/5103) - Fix invalid http status set in faucet
+- [5239](https://github.com/vegaprotocol/vega/issues/5239) - Always call `StartAggregate()` when signing validators joining and leaving even if not a validator
+- [5128](https://github.com/vegaprotocol/vega/issues/5128) - Fix wrong http rate limit for faucet
+- [5231](https://github.com/vegaprotocol/vega/issues/5231) - Fix pegged orders to be reset to the order pointer after snapshot loading
+- [5247](https://github.com/vegaprotocol/vega/issues/5247) - Fix the check for overflow in scaling settlement price
+
+## 0.50.1
+
+### 🐛 Fixes
+- [5226](https://github.com/vegaprotocol/vega/issues/5226) - Add support for settlement price decimal place in governance
+
+
+## 0.50.0
+
+### 🚨 Breaking changes
+- [5197](https://github.com/vegaprotocol/vega/issues/5197) - Scale settlement price based on oracle definition
 
 ### 🛠 Improvements
 - [5055](https://github.com/vegaprotocol/vega/issues/5055) - Ensure at most 5 triggers are used in price monitoring settings
@@ -16,7 +42,7 @@
 - [4926](https://github.com/vegaprotocol/vega/issues/4926) - Feature tests for 0019 margin calculator scenarios
 - [5119](https://github.com/vegaprotocol/vega/issues/5119) - Add Ethereum key rotation support
 - [5209](https://github.com/vegaprotocol/vega/issues/5209) - Add retries to floating point consensus engine to work around tendermint missing transactions
-
+- [5219](https://github.com/vegaprotocol/vega/issues/5219) - Remove genesis sign command.
 
 ### 🐛 Fixes
 - [5078](https://github.com/vegaprotocol/vega/issues/5078) - Unwrap properly position decimal place from payload
@@ -40,6 +66,7 @@
 - [5124](https://github.com/vegaprotocol/vega/issues/5124) - Ensure update market proposal compute a proper auction duration
 - [5172](https://github.com/vegaprotocol/vega/issues/5172) - Add replay protection for validator commands
 - [5181](https://github.com/vegaprotocol/vega/issues/5181) - Ensure Oracle specs handle numbers using `num.Decimal` and `num.Int`
+- [5059](https://github.com/vegaprotocol/vega/issues/5059) - Validators without tendermint status vote in the witness and notary engine but their votes do not count
 - [5190](https://github.com/vegaprotocol/vega/issues/5190) - Fix settlement at expiry to scale the settlement price from market decimals to asset decimals
 - [5185](https://github.com/vegaprotocol/vega/issues/5185) - Fix MTM settlement where win transfers get truncated resulting in settlement balance not being zero after settlement.
 - [4943](https://github.com/vegaprotocol/vega/issues/4943) - Fix bug where amending orders in opening auctions did not work as expected
@@ -52,6 +79,7 @@
 - [5052](https://github.com/vegaprotocol/vega/issues/5052) - Adding acceptance criteria tests for market decimal places
 - [5138](https://github.com/vegaprotocol/vega/issues/5038) - Adding feature test for "0032-PRIM-price_monitoring.md"
 - [4753](https://github.com/vegaprotocol/vega/issues/4753) - Adding feature test for oracle spec public key validation
+- [4559](https://github.com/vegaprotocol/vega/issues/4559) - Small fixes to the amend order flow
 
 ### 🐛 Fixes
 - [5064](https://github.com/vegaprotocol/vega/issues/5064) - Send order event on settlement
