@@ -22,6 +22,7 @@
 - [5128](https://github.com/vegaprotocol/vega/issues/5128) - Fix wrong http rate limit for faucet
 - [5231](https://github.com/vegaprotocol/vega/issues/5231) - Fix pegged orders to be reset to the order pointer after snapshot loading
 - [5247](https://github.com/vegaprotocol/vega/issues/5247) - Fix the check for overflow in scaling settlement price
+- [5250](https://github.com/vegaprotocol/vega/issues/5250) - Fixed panic in loading validator checkpoint
 
 ## 0.50.1
 
