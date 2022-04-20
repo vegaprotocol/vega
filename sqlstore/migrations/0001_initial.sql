@@ -439,6 +439,24 @@ on md.market = mx.market
 and md.vega_time = mx.vega_time
 ;
 
+CREATE TYPE node_status as enum('NODE_STATUS_UNSPECIFIED', 'NODE_STATUS_VALIDATOR', 'NODE_STATUS_NON_VALIDATOR');
+
+CREATE TABLE IF NOT EXISTS nodes (
+  id                    BYTEA NOT NULL,
+  vega_pub_key          BYTEA NOT NULL,
+  tendermint_pub_key    BYTEA NOT NULL,
+  ethereum_address      BYTEA NOT NULL,
+  info_url              TEXT NOT NULL,
+  location              TEXT NOT NULL,
+  status                node_status NOT NULL,
+  reward_score          JSONB,
+  ranking_score         JSONB,
+  name                  TEXT NOT NULL,
+  avatar_url            TEXT NOT NULL,
+  vega_time             TIMESTAMP WITH TIME ZONE NOT NULL,
+  PRIMARY KEY(id)
+);
+
 CREATE TABLE rewards(
   party_id         BYTEA NOT NULL REFERENCES parties(id),
   asset_id         BYTEA NOT NULL REFERENCES assets(id),
@@ -452,7 +470,7 @@ CREATE TABLE rewards(
 
 CREATE TABLE delegations(
   party_id         BYTEA NOT NULL, -- REFERENCES parties(id), TODO once parties table is populated
-  node_id          BYTEA NOT NULL, -- REFERENCES nodes(id),   TODO once we have node table
+  node_id          BYTEA NOT NULL REFERENCES nodes(id),
   epoch_id         BIGINT NOT NULL,
   amount           NUMERIC(32, 0),
   vega_time        TIMESTAMP WITH TIME ZONE NOT NULL
@@ -739,6 +757,15 @@ create index on transfers (to_account_id);
 
 CREATE VIEW transfers_current AS ( SELECT DISTINCT ON (id) * FROM transfers ORDER BY id DESC, vega_time DESC);
 
+create table if not exists key_rotations (
+  node_id bytea not null references nodes(id),
+  old_pub_key bytea not null,
+  new_pub_key bytea not null,
+  block_height bigint not null,
+  vega_time timestamp with time zone not null references blocks(vega_time),
+
+  primary key (node_id, vega_time)
+);
 
 create type erc20_multisig_signer_event as enum('SIGNER_ADDED', 'SIGNER_REMOVED');
 
@@ -795,6 +822,8 @@ DROP AGGREGATE IF EXISTS public.first(anyelement);
 DROP AGGREGATE IF EXISTS public.last(anyelement);
 DROP FUNCTION IF EXISTS public.first_agg(anyelement, anyelement);
 DROP FUNCTION IF EXISTS public.last_agg(anyelement, anyelement);
+
+DROP TABLE IF EXISTS key_rotations;
 
 DROP VIEW IF EXISTS transfers_current;
 DROP TABLE IF EXISTS transfers;
@@ -864,8 +893,13 @@ DROP TYPE IF EXISTS order_side;
 DROP TYPE IF EXISTS order_type;
 DROP TYPE IF EXISTS order_pegged_reference;
 
+DROP TABLE IF EXISTS nodes;
+DROP TYPE IF EXISTS node_status;
+
 DROP VIEW IF EXISTS markets_current;
 DROP TABLE IF EXISTS markets CASCADE;
+
+DROP TABLE IF EXISTS markets;
 DROP VIEW IF EXISTS market_data_snapshot;
 DROP TABLE IF EXISTS market_data;
 DROP TYPE IF EXISTS auction_trigger_type;

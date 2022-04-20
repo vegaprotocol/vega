@@ -3,6 +3,7 @@ package sqlstore_test
 import (
 	"context"
 	"crypto/sha256"
+	"encoding/base64"
 	"encoding/hex"
 	"fmt"
 	"io/ioutil"
@@ -114,6 +115,20 @@ func generateID() string {
 	currentTimeString := strconv.FormatInt(currentTime, 10)
 	hash := sha256.Sum256([]byte(currentTimeString))
 	return hex.EncodeToString(hash[:])
+}
+
+func generateEthereumAddress() string {
+	currentTime := time.Now().UnixNano()
+	currentTimeString := strconv.FormatInt(currentTime, 10)
+	hash := sha256.Sum256([]byte(currentTimeString))
+	return "0x" + hex.EncodeToString(hash[1:21])
+}
+
+func generateTendermintPublicKey() string {
+	currentTime := time.Now().UnixNano()
+	currentTimeString := strconv.FormatInt(currentTime, 10)
+	hash := sha256.Sum256([]byte(currentTimeString))
+	return base64.StdEncoding.EncodeToString(hash[:])
 }
 
 func NewTestConfig(port int) sqlstore.Config {

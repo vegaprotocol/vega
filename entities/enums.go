@@ -640,5 +640,59 @@ func (s *StakeLinkingType) DecodeText(_ *pgtype.ConnInfo, src []byte) error {
 		return fmt.Errorf("unknown stake linking type: %s", src)
 	}
 	*s = StakeLinkingType(val)
+
+	return nil
+}
+
+/************************* Node *****************************/
+
+type NodeStatus vega.NodeStatus
+
+const (
+	NodeStatusUnspecified  = NodeStatus(vega.NodeStatus_NODE_STATUS_UNSPECIFIED)
+	NodeStatusValidator    = NodeStatus(vega.NodeStatus_NODE_STATUS_VALIDATOR)
+	NodeStatusNonValidator = NodeStatus(vega.NodeStatus_NODE_STATUS_NON_VALIDATOR)
+)
+
+func (ns NodeStatus) EncodeText(_ *pgtype.ConnInfo, buf []byte) ([]byte, error) {
+	str, ok := vega.NodeStatus_name[int32(ns)]
+	if !ok {
+		return buf, fmt.Errorf("unknown node status: %v", ns)
+	}
+	return append(buf, []byte(str)...), nil
+}
+
+func (ns *NodeStatus) DecodeText(_ *pgtype.ConnInfo, src []byte) error {
+	val, ok := vega.NodeStatus_value[string(src)]
+	if !ok {
+		return fmt.Errorf("unknown node status: %s", src)
+	}
+	*ns = NodeStatus(val)
+	return nil
+}
+
+type ValidatorNodeStatus vega.ValidatorNodeStatus
+
+const (
+	ValidatorNodeStatusUnspecified = ValidatorNodeStatus(vega.ValidatorNodeStatus_VALIDATOR_NODE_STATUS_UNSPECIFIED)
+	ValidatorNodeStatusTendermint  = ValidatorNodeStatus(vega.ValidatorNodeStatus_VALIDATOR_NODE_STATUS_TENDERMINT)
+	ValidatorNodeStatusErsatz      = ValidatorNodeStatus(vega.ValidatorNodeStatus_VALIDATOR_NODE_STATUS_ERSATZ)
+	ValidatorNodeStatusPending     = ValidatorNodeStatus(vega.ValidatorNodeStatus_VALIDATOR_NODE_STATUS_PENDING)
+)
+
+func (ns ValidatorNodeStatus) EncodeText(_ *pgtype.ConnInfo, buf []byte) ([]byte, error) {
+	str, ok := vega.ValidatorNodeStatus_name[int32(ns)]
+	if !ok {
+		return buf, fmt.Errorf("unknown validator node status: %v", ns)
+	}
+	return append(buf, []byte(str)...), nil
+}
+
+func (ns *ValidatorNodeStatus) DecodeText(_ *pgtype.ConnInfo, src []byte) error {
+	val, ok := vega.ValidatorNodeStatus_value[string(src)]
+	if !ok {
+		return fmt.Errorf("unknown validator node status: %s", src)
+	}
+	*ns = ValidatorNodeStatus(val)
 	return nil
 }

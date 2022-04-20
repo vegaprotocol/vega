@@ -136,6 +136,8 @@ type NodeCommand struct {
 	stakeLinkingStoreSQL        *sqlstore.StakeLinking
 	notaryStoreSQL              *sqlstore.Notary
 	multiSigSignerAddedStoreSQL *sqlstore.ERC20MultiSigSignerEvent
+	keyRotationsStoreSQL        *sqlstore.KeyRotations
+	nodeStoreSQL                *sqlstore.Node
 
 	vegaCoreServiceClient vegaprotoapi.CoreServiceClient
 
@@ -194,6 +196,8 @@ type NodeCommand struct {
 	stakeLinkingSubSQL        *sqlsubscribers.StakeLinking
 	notarySubSQL              *sqlsubscribers.Notary
 	multiSigSignerEventSubSQL *sqlsubscribers.ERC20MultiSigSignerEvent
+	keyRotationsSubSQL        *sqlsubscribers.KeyRotation
+	nodeSubSQL                *sqlsubscribers.Node
 
 	candleService     *candles.Svc
 	tradeService      *trades.Svc
@@ -406,6 +410,8 @@ func (l *NodeCommand) createGRPCServer(config api.Config, useSQLStores bool) *ap
 		l.stakeLinkingStoreSQL,
 		l.notaryStoreSQL,
 		l.multiSigSignerAddedStoreSQL,
+		l.keyRotationsStoreSQL,
+		l.nodeStoreSQL,
 	)
 	return grpcServer
 }
