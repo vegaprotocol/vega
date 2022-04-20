@@ -37,39 +37,39 @@ func (m *MockSignatures) EXPECT() *MockSignaturesMockRecorder {
 }
 
 // EmitNewValidatorsSignatures mocks base method.
-func (m *MockSignatures) EmitNewValidatorsSignatures(arg0 context.Context, arg1 []validators.NodeIDAddress, arg2 time.Time) {
+func (m *MockSignatures) EmitNewValidatorsSignatures(arg0 context.Context, arg1 []validators.NodeIDAddress, arg2 time.Time, arg3 uint64) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "EmitNewValidatorsSignatures", arg0, arg1, arg2)
+	m.ctrl.Call(m, "EmitNewValidatorsSignatures", arg0, arg1, arg2, arg3)
 }
 
 // EmitNewValidatorsSignatures indicates an expected call of EmitNewValidatorsSignatures.
-func (mr *MockSignaturesMockRecorder) EmitNewValidatorsSignatures(arg0, arg1, arg2 interface{}) *gomock.Call {
+func (mr *MockSignaturesMockRecorder) EmitNewValidatorsSignatures(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EmitNewValidatorsSignatures", reflect.TypeOf((*MockSignatures)(nil).EmitNewValidatorsSignatures), arg0, arg1, arg2)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EmitNewValidatorsSignatures", reflect.TypeOf((*MockSignatures)(nil).EmitNewValidatorsSignatures), arg0, arg1, arg2, arg3)
 }
 
 // EmitPromotionsSignatures mocks base method.
-func (m *MockSignatures) EmitPromotionsSignatures(arg0 context.Context, arg1 time.Time, arg2, arg3 map[string]validators.StatusAddress) {
+func (m *MockSignatures) EmitPromotionsSignatures(arg0 context.Context, arg1 time.Time, arg2 uint64, arg3, arg4 map[string]validators.StatusAddress) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "EmitPromotionsSignatures", arg0, arg1, arg2, arg3)
+	m.ctrl.Call(m, "EmitPromotionsSignatures", arg0, arg1, arg2, arg3, arg4)
 }
 
 // EmitPromotionsSignatures indicates an expected call of EmitPromotionsSignatures.
-func (mr *MockSignaturesMockRecorder) EmitPromotionsSignatures(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
+func (mr *MockSignaturesMockRecorder) EmitPromotionsSignatures(arg0, arg1, arg2, arg3, arg4 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EmitPromotionsSignatures", reflect.TypeOf((*MockSignatures)(nil).EmitPromotionsSignatures), arg0, arg1, arg2, arg3)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EmitPromotionsSignatures", reflect.TypeOf((*MockSignatures)(nil).EmitPromotionsSignatures), arg0, arg1, arg2, arg3, arg4)
 }
 
 // EmitRemoveValidatorsSignatures mocks base method.
-func (m *MockSignatures) EmitRemoveValidatorsSignatures(arg0 context.Context, arg1, arg2 []validators.NodeIDAddress, arg3 time.Time) {
+func (m *MockSignatures) EmitRemoveValidatorsSignatures(arg0 context.Context, arg1, arg2 []validators.NodeIDAddress, arg3 time.Time, arg4 uint64) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "EmitRemoveValidatorsSignatures", arg0, arg1, arg2, arg3)
+	m.ctrl.Call(m, "EmitRemoveValidatorsSignatures", arg0, arg1, arg2, arg3, arg4)
 }
 
 // EmitRemoveValidatorsSignatures indicates an expected call of EmitRemoveValidatorsSignatures.
-func (mr *MockSignaturesMockRecorder) EmitRemoveValidatorsSignatures(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
+func (mr *MockSignaturesMockRecorder) EmitRemoveValidatorsSignatures(arg0, arg1, arg2, arg3, arg4 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EmitRemoveValidatorsSignatures", reflect.TypeOf((*MockSignatures)(nil).EmitRemoveValidatorsSignatures), arg0, arg1, arg2, arg3)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EmitRemoveValidatorsSignatures", reflect.TypeOf((*MockSignatures)(nil).EmitRemoveValidatorsSignatures), arg0, arg1, arg2, arg3, arg4)
 }
 
 // SetNonce mocks base method.
