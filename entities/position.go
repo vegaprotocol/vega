@@ -23,10 +23,6 @@ type settleDestressed interface {
 	Margin() *num.Uint
 }
 
-type updatePosition interface {
-	Size() int64
-}
-
 type Position struct {
 	MarketID          MarketID
 	PartyID           PartyID
@@ -87,10 +83,6 @@ func (p *Position) UpdateWithSettleDestressed(e settleDestressed) {
 	p.AverageEntryPrice = decimal.Zero // @TODO average entry price shouldn't be affected(?)
 	p.AverageEntryPrice = decimal.Zero
 	p.OpenVolume = 0
-}
-
-func (p *Position) UpdateWithPositionState(e updatePosition) {
-	p.OpenVolume = e.Size()
 }
 
 func (p *Position) ToProto() *vega.Position {

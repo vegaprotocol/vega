@@ -14,48 +14,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestNewState(t *testing.T) {
-	market := "market-id"
-	party := "party1"
-
-	position := entities.NewEmptyPosition(entities.NewMarketID(market), entities.NewPartyID(party))
-
-	mp := marketPosition{party: party,
-		size:   0,
-		buy:    10,
-		sell:   0,
-		price:  num.Zero(),
-		vwBuy:  num.Zero(),
-		vwSell: num.Zero()}
-	ctx := context.Background()
-	ps := events.NewPositionStateEvent(ctx, mp, market)
-	position.UpdateWithPositionState(ps)
-
-	pp := position.ToProto()
-	// This is an position with no values yet as nothing had traded
-	assert.Equal(t, market, pp.MarketId)
-	assert.Equal(t, party, pp.PartyId)
-	assert.EqualValues(t, 0, pp.OpenVolume)
-	assert.Equal(t, "0", pp.AverageEntryPrice)
-	assert.Equal(t, "0", pp.RealisedPnl)
-	assert.Equal(t, "0", pp.UnrealisedPnl)
-	assert.EqualValues(t, 0, pp.UpdatedAt)
-
-	mp.sell = 50
-	ps2 := events.NewPositionStateEvent(ctx, mp, market)
-	position.UpdateWithPositionState(ps2)
-
-	pp = position.ToProto()
-	// This is an position with no values yet as nothing had traded
-	assert.Equal(t, market, pp.MarketId)
-	assert.Equal(t, party, pp.PartyId)
-	assert.EqualValues(t, 0, pp.OpenVolume)
-	assert.Equal(t, "0", pp.AverageEntryPrice)
-	assert.Equal(t, "0", pp.RealisedPnl)
-	assert.Equal(t, "0", pp.UnrealisedPnl)
-	assert.EqualValues(t, 0, pp.UpdatedAt)
-}
-
 func TestMultipleTradesOfSameSize(t *testing.T) {
 	ctx := context.Background()
 	market := "market-id"

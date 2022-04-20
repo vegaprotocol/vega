@@ -37,11 +37,6 @@ type settleDistressed interface {
 	Margin() *num.Uint
 }
 
-type positionState interface {
-	positionEventBase
-	Size() int64
-}
-
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/positions_mock.go -package mocks code.vegaprotocol.io/data-node/sqlsubscribers PositionStore
 type PositionStore interface {
 	Add(context.Context, entities.Position) error
@@ -89,8 +84,6 @@ func (nl *Position) Push(evt events.Event) error {
 		return nl.handleLossSocialization(event)
 	case settleDistressed:
 		return nl.handleSettleDestressed(event)
-	case positionState:
-		return nl.handlePositionState(event)
 	default:
 		return errors.Errorf("unknown event type %s", evt.Type().String())
 	}
@@ -117,14 +110,6 @@ func (ps *Position) handleSettleDestressed(event settleDistressed) error {
 	defer ps.mutex.Unlock()
 	pos := ps.getPosition(event)
 	pos.UpdateWithSettleDestressed(event)
-	return ps.updatePosition(pos)
-}
-
-func (ps *Position) handlePositionState(event positionState) error {
-	ps.mutex.Lock()
-	defer ps.mutex.Unlock()
-	pos := ps.getPosition(event)
-	pos.UpdateWithPositionState(event)
 	return ps.updatePosition(pos)
 }
 
