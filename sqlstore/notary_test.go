@@ -21,13 +21,13 @@ func TestNotary(t *testing.T) {
 
 func setupNotaryStoreTests(t *testing.T, ctx context.Context) (*sqlstore.Notary, *pgx.Conn) {
 	t.Helper()
-	err := testStore.DeleteEverything()
-	require.NoError(t, err)
-	ns := sqlstore.NewNotary(testStore)
+	DeleteEverything()
+
+	ns := sqlstore.NewNotary(connectionSource)
 
 	config := NewTestConfig(testDBPort)
 
-	conn, err := pgx.Connect(ctx, connectionString(config))
+	conn, err := pgx.Connect(ctx, connectionString(config.ConnectionConfig))
 	require.NoError(t, err)
 
 	return ns, conn
@@ -47,7 +47,7 @@ func testAddSignatures(t *testing.T) {
 	assert.Equal(t, 0, rowCount)
 
 	ns := getTestNodeSignature(t, "deadbeef")
-	err = ws.Add(ns)
+	err = ws.Add(context.Background(), ns)
 	require.NoError(t, err)
 
 	err = conn.QueryRow(ctx, `select count(*) from node_signatures`).Scan(&rowCount)
@@ -70,16 +70,16 @@ func testAddMultipleSignatures(t *testing.T) {
 	nodeSig2.Sig = []byte("iamdifferentsig")
 	nodeSig4.Sig = []byte("iamdifferentsigagain")
 
-	err := ws.Add(nodeSig1)
+	err := ws.Add(context.Background(), nodeSig1)
 	require.NoError(t, err)
 
-	err = ws.Add(nodeSig2)
+	err = ws.Add(context.Background(), nodeSig2)
 	require.NoError(t, err)
 
-	err = ws.Add(nodeSig3)
+	err = ws.Add(context.Background(), nodeSig3)
 	require.NoError(t, err)
 
-	err = ws.Add(nodeSig4)
+	err = ws.Add(context.Background(), nodeSig4)
 	require.NoError(t, err)
 
 	res, err := ws.GetByResourceID(ctx, "deadbeef")

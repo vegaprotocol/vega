@@ -8,18 +8,18 @@ import (
 )
 
 type NetworkLimits struct {
-	*SQLStore
+	*ConnectionSource
 }
 
-func NewNetworkLimits(sqlStore *SQLStore) *NetworkLimits {
-	return &NetworkLimits{SQLStore: sqlStore}
+func NewNetworkLimits(connectionSource *ConnectionSource) *NetworkLimits {
+	return &NetworkLimits{ConnectionSource: connectionSource}
 }
 
 // Add inserts a row into the network limits table. If a row with the same vega time
 // exists, that row is updated instead. (i.e. there are multiple updates of the limits
 // in one block, does occur)
 func (nl *NetworkLimits) Add(ctx context.Context, limits entities.NetworkLimits) error {
-	_, err := nl.pool.Exec(ctx, `
+	_, err := nl.Connection.Exec(ctx, `
 	INSERT INTO network_limits(
 		vega_time,
 		can_propose_market,
@@ -59,7 +59,7 @@ func (nl *NetworkLimits) Add(ctx context.Context, limits entities.NetworkLimits)
 // GetLatest returns the most recent network limits
 func (nl *NetworkLimits) GetLatest(ctx context.Context) (entities.NetworkLimits, error) {
 	networkLimits := entities.NetworkLimits{}
-	err := pgxscan.Get(ctx, nl.pool, &networkLimits,
+	err := pgxscan.Get(ctx, nl.Connection, &networkLimits,
 		`SELECT * FROM network_limits ORDER BY vega_time DESC limit 1;`)
 	return networkLimits, err
 }

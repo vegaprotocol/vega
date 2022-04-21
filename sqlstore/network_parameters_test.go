@@ -21,10 +21,10 @@ func addNetParam(t *testing.T, ns *sqlstore.NetworkParameters, key, value string
 }
 
 func TestNetParams(t *testing.T) {
-	defer testStore.DeleteEverything()
+	defer DeleteEverything()
 	ctx := context.Background()
-	netParamStore := sqlstore.NewNetworkParameters(testStore)
-	blockStore := sqlstore.NewBlocks(testStore)
+	netParamStore := sqlstore.NewNetworkParameters(connectionSource)
+	blockStore := sqlstore.NewBlocks(connectionSource)
 	block1 := addTestBlock(t, blockStore)
 	block2 := addTestBlock(t, blockStore)
 

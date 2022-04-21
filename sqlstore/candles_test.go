@@ -30,9 +30,9 @@ const (
 )
 
 func TestGetExistingCandles(t *testing.T) {
-	defer testStore.DeleteEverything()
+	defer DeleteEverything()
 
-	candleStore, err := sqlstore.NewCandles(context.Background(), testStore, candlesv2.NewDefaultConfig().CandleStore)
+	candleStore, err := sqlstore.NewCandles(context.Background(), connectionSource, candlesv2.NewDefaultConfig().CandleStore)
 	if err != nil {
 		t.Fatalf("failed to create candleDescriptor store:%s", err)
 	}
@@ -54,14 +54,14 @@ func TestGetExistingCandles(t *testing.T) {
 }
 
 func TestCandlesPagination(t *testing.T) {
-	defer testStore.DeleteEverything()
+	defer DeleteEverything()
 
-	candleStore, err := sqlstore.NewCandles(context.Background(), testStore, candlesv2.NewDefaultConfig().CandleStore)
+	candleStore, err := sqlstore.NewCandles(context.Background(), connectionSource, candlesv2.NewDefaultConfig().CandleStore)
 	if err != nil {
 		t.Fatalf("failed to create candles store:%s", err)
 	}
 
-	tradeStore := sqlstore.NewTrades(testStore)
+	tradeStore := sqlstore.NewTrades(connectionSource)
 
 	startTime := time.Unix(StartTime, 0)
 	insertCandlesTestData(t, tradeStore, startTime, totalBlocks, tradesPerBlock, startPrice, priceIncrement, size, blockIntervalDur)
@@ -96,14 +96,14 @@ func TestCandlesPagination(t *testing.T) {
 }
 
 func TestCandlesGetForEmptyInterval(t *testing.T) {
-	defer testStore.DeleteEverything()
+	defer DeleteEverything()
 
-	candleStore, err := sqlstore.NewCandles(context.Background(), testStore, candlesv2.NewDefaultConfig().CandleStore)
+	candleStore, err := sqlstore.NewCandles(context.Background(), connectionSource, candlesv2.NewDefaultConfig().CandleStore)
 	if err != nil {
 		t.Fatalf("failed to created candleDescriptor store:%s", err)
 	}
-	tradeStore := sqlstore.NewTrades(testStore)
-	bs := sqlstore.NewBlocks(testStore)
+	tradeStore := sqlstore.NewTrades(connectionSource)
+	bs := sqlstore.NewBlocks(connectionSource)
 
 	startTime := time.Unix(StartTime, 0)
 	block := addTestBlockForTime(t, bs, startTime)
@@ -139,13 +139,13 @@ func TestCandlesGetForEmptyInterval(t *testing.T) {
 }
 
 func TestCandlesGetLatest(t *testing.T) {
-	defer testStore.DeleteEverything()
+	defer DeleteEverything()
 
-	candleStore, err := sqlstore.NewCandles(context.Background(), testStore, candlesv2.NewDefaultConfig().CandleStore)
+	candleStore, err := sqlstore.NewCandles(context.Background(), connectionSource, candlesv2.NewDefaultConfig().CandleStore)
 	if err != nil {
 		t.Fatalf("failed to create candleDescriptor store:%s", err)
 	}
-	tradeStore := sqlstore.NewTrades(testStore)
+	tradeStore := sqlstore.NewTrades(connectionSource)
 
 	startTime := time.Unix(StartTime, 0)
 	insertCandlesTestData(t, tradeStore, startTime, 90, 3, startPrice, priceIncrement, size,
@@ -171,13 +171,13 @@ func TestCandlesGetLatest(t *testing.T) {
 }
 
 func TestCandlesGetForDifferentIntervalAndTimeBounds(t *testing.T) {
-	defer testStore.DeleteEverything()
+	defer DeleteEverything()
 
-	candleStore, err := sqlstore.NewCandles(context.Background(), testStore, candlesv2.NewDefaultConfig().CandleStore)
+	candleStore, err := sqlstore.NewCandles(context.Background(), connectionSource, candlesv2.NewDefaultConfig().CandleStore)
 	if err != nil {
 		t.Fatalf("failed to create candleDescriptor store:%s", err)
 	}
-	tradeStore := sqlstore.NewTrades(testStore)
+	tradeStore := sqlstore.NewTrades(connectionSource)
 
 	startTime := time.Unix(StartTime, 0)
 	insertCandlesTestData(t, tradeStore, startTime, totalBlocks, tradesPerBlock, startPrice, priceIncrement, size, blockIntervalDur)
@@ -270,7 +270,7 @@ func createCandle(periodStart time.Time, lastUpdate time.Time, open int, close i
 
 func insertCandlesTestData(t *testing.T, tradeStore *sqlstore.Trades, startTime time.Time, numBlocks int,
 	tradePerBlock int, startPrice int, priceIncrement int, size int, blockIntervalDur time.Duration) {
-	bs := sqlstore.NewBlocks(testStore)
+	bs := sqlstore.NewBlocks(connectionSource)
 
 	var blocks []entities.Block
 	for i := 0; i < numBlocks; i++ {
@@ -288,7 +288,8 @@ func insertCandlesTestData(t *testing.T, tradeStore *sqlstore.Trades, startTime 
 		}
 	}
 
-	tradeStore.OnTimeUpdateEvent(context.Background())
+	err := tradeStore.OnTimeUpdateEvent(context.Background())
+	assert.NoError(t, err)
 }
 
 func insertTestTrade(t *testing.T, tradeStore *sqlstore.Trades, price int, size int, block entities.Block, seqNum int) *entities.Trade {

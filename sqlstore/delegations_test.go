@@ -50,10 +50,10 @@ func assertDelegationsMatch(t *testing.T, expected, actual []entities.Delegation
 }
 
 func TestDelegations(t *testing.T) {
-	defer testStore.DeleteEverything()
-	ps := sqlstore.NewParties(testStore)
-	ds := sqlstore.NewDelegations(testStore)
-	bs := sqlstore.NewBlocks(testStore)
+	defer DeleteEverything()
+	ps := sqlstore.NewParties(connectionSource)
+	ds := sqlstore.NewDelegations(connectionSource)
+	bs := sqlstore.NewBlocks(connectionSource)
 	block := addTestBlock(t, bs)
 
 	node1ID := "dead"

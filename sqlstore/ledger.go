@@ -8,20 +8,20 @@ import (
 )
 
 type Ledger struct {
-	*SQLStore
+	*ConnectionSource
 	batcher ListBatcher
 }
 
-func NewLedger(sqlStore *SQLStore) *Ledger {
+func NewLedger(connectionSource *ConnectionSource) *Ledger {
 	a := &Ledger{
-		SQLStore: sqlStore,
-		batcher:  NewListBatcher("ledger", entities.LedgerEntryColumns),
+		ConnectionSource: connectionSource,
+		batcher:          NewListBatcher("ledger", entities.LedgerEntryColumns),
 	}
 	return a
 }
 
 func (ls *Ledger) Flush(ctx context.Context) error {
-	return ls.batcher.Flush(ctx, ls.pool)
+	return ls.batcher.Flush(ctx, ls.Connection)
 }
 
 func (ls *Ledger) Add(le *entities.LedgerEntry) error {
@@ -32,7 +32,7 @@ func (ls *Ledger) Add(le *entities.LedgerEntry) error {
 func (ls *Ledger) GetByID(id int64) (entities.LedgerEntry, error) {
 	le := entities.LedgerEntry{}
 	ctx := context.Background()
-	err := pgxscan.Get(ctx, ls.pool, &le,
+	err := pgxscan.Get(ctx, ls.Connection, &le,
 		`SELECT id, account_from_id, account_to_id, quantity, vega_time, transfer_time, reference, type
 		 FROM ledger WHERE id=$1`,
 		id)
@@ -42,7 +42,7 @@ func (ls *Ledger) GetByID(id int64) (entities.LedgerEntry, error) {
 func (ls *Ledger) GetAll() ([]entities.LedgerEntry, error) {
 	ctx := context.Background()
 	ledgerEntries := []entities.LedgerEntry{}
-	err := pgxscan.Select(ctx, ls.pool, &ledgerEntries, `
+	err := pgxscan.Select(ctx, ls.Connection, &ledgerEntries, `
 		SELECT id, account_from_id, account_to_id, quantity, vega_time, transfer_time, reference, type
 		FROM ledger`)
 	return ledgerEntries, err

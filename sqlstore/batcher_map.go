@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/jackc/pgx/v4"
-	"github.com/jackc/pgx/v4/pgxpool"
 )
 
 type MapBatcher[K entityKey, V entity[K]] struct {
@@ -35,20 +34,17 @@ func (b *MapBatcher[K, V]) Add(e V) {
 	b.pending[e.Key()] = e
 }
 
-func (b *MapBatcher[K, V]) Flush(ctx context.Context, pool *pgxpool.Pool) error {
+func (b *MapBatcher[K, V]) Flush(ctx context.Context, connection Connection) error {
 	if len(b.pending) == 0 {
 		return nil
 	}
 
-	// if b.tableName == "margin_levels" {
-	// 	fmt.Println("yay")
-	// }
 	rows := make([][]interface{}, 0, len(b.pending))
 	for _, entity := range b.pending {
 		rows = append(rows, entity.ToRow())
 	}
 
-	copyCount, err := pool.CopyFrom(
+	copyCount, err := connection.CopyFrom(
 		ctx,
 		pgx.Identifier{b.tableName},
 		b.columnNames,
@@ -65,7 +61,6 @@ func (b *MapBatcher[K, V]) Flush(ctx context.Context, pool *pgxpool.Pool) error 
 			len(b.pending))
 	}
 
-	//b.pending = make(map[K]V)
 	for k := range b.pending {
 		delete(b.pending, k)
 	}

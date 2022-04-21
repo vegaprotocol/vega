@@ -46,11 +46,11 @@ func assertProposalMatch(t *testing.T, expected, actual entities.Proposal) {
 }
 
 func TestProposals(t *testing.T) {
-	defer testStore.DeleteEverything()
+	defer DeleteEverything()
 	ctx := context.Background()
-	partyStore := sqlstore.NewParties(testStore)
-	propStore := sqlstore.NewProposals(testStore)
-	blockStore := sqlstore.NewBlocks(testStore)
+	partyStore := sqlstore.NewParties(connectionSource)
+	propStore := sqlstore.NewProposals(connectionSource)
+	blockStore := sqlstore.NewBlocks(connectionSource)
 	block1 := addTestBlock(t, blockStore)
 
 	party1 := addTestParty(t, partyStore, block1)

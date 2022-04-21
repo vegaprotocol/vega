@@ -9,19 +9,16 @@ import (
 )
 
 type Transfers struct {
-	*SQLStore
+	*ConnectionSource
 }
 
-func NewTransfers(sqlStore *SQLStore) *Transfers {
+func NewTransfers(connectionSource *ConnectionSource) *Transfers {
 	return &Transfers{
-		SQLStore: sqlStore,
+		ConnectionSource: connectionSource,
 	}
 }
 
-func (t *Transfers) Upsert(transfer *entities.Transfer) error {
-
-	ctx, cancel := context.WithTimeout(context.Background(), t.conf.Timeout.Duration)
-	defer cancel()
+func (t *Transfers) Upsert(ctx context.Context, transfer *entities.Transfer) error {
 
 	query := `insert into transfers(
 				id,
@@ -52,7 +49,7 @@ func (t *Transfers) Upsert(transfer *entities.Transfer) error {
 				factor=EXCLUDED.factor
 				;`
 
-	if _, err := t.pool.Exec(ctx, query, transfer.ID, transfer.VegaTime, transfer.FromAccountId, transfer.ToAccountId,
+	if _, err := t.Connection.Exec(ctx, query, transfer.ID, transfer.VegaTime, transfer.FromAccountId, transfer.ToAccountId,
 		transfer.AssetId, transfer.Amount, transfer.Reference, transfer.Status, transfer.TransferType,
 		transfer.DeliverOn, transfer.StartEpoch, transfer.EndEpoch, transfer.Factor); err != nil {
 		err = fmt.Errorf("could not insert transfer into database: %w", err)
@@ -111,7 +108,7 @@ func (t *Transfers) GetAll(ctx context.Context) ([]*entities.Transfer, error) {
 func (t *Transfers) getTransfers(ctx context.Context, where string, args ...interface{}) ([]*entities.Transfer, error) {
 	var transfers []*entities.Transfer
 	query := "select * from transfers_current " + where
-	err := pgxscan.Select(ctx, t.pool, &transfers, query, args...)
+	err := pgxscan.Select(ctx, t.Connection, &transfers, query, args...)
 	if err != nil {
 		return nil, fmt.Errorf("getting transfers:%w", err)
 	}

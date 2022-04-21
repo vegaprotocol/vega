@@ -9,18 +9,16 @@ import (
 )
 
 type Notary struct {
-	*SQLStore
+	*ConnectionSource
 }
 
-func NewNotary(sqlStore *SQLStore) *Notary {
+func NewNotary(connectionSource *ConnectionSource) *Notary {
 	return &Notary{
-		SQLStore: sqlStore,
+		ConnectionSource: connectionSource,
 	}
 }
 
-func (n *Notary) Add(ns *entities.NodeSignature) error {
-	ctx, cancel := context.WithTimeout(context.Background(), n.conf.Timeout.Duration)
-	defer cancel()
+func (n *Notary) Add(ctx context.Context, ns *entities.NodeSignature) error {
 
 	query := `INSERT INTO node_signatures (resource_id, sig, kind)
 		VALUES ($1, $2, $3)
@@ -41,6 +39,6 @@ func (n *Notary) Add(ns *entities.NodeSignature) error {
 func (n *Notary) GetByResourceID(ctx context.Context, id string) ([]entities.NodeSignature, error) {
 	ns := []entities.NodeSignature{}
 	query := `SELECT resource_id, sig, kind FROM node_signatures WHERE resource_id=$1`
-	err := pgxscan.Select(ctx, n.pool, &ns, query, entities.NewNodeSignatureID(id))
+	err := pgxscan.Select(ctx, n.Connection, &ns, query, entities.NewNodeSignatureID(id))
 	return ns, err
 }

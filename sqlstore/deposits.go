@@ -10,7 +10,7 @@ import (
 )
 
 type Deposits struct {
-	*SQLStore
+	*ConnectionSource
 }
 
 const (
@@ -18,15 +18,13 @@ const (
 		credited_timestamp, created_timestamp, vega_time`
 )
 
-func NewDeposits(sqlStore *SQLStore) *Deposits {
+func NewDeposits(connectionSource *ConnectionSource) *Deposits {
 	return &Deposits{
-		SQLStore: sqlStore,
+		ConnectionSource: connectionSource,
 	}
 }
 
-func (d *Deposits) Upsert(deposit *entities.Deposit) error {
-	ctx, cancel := context.WithTimeout(context.Background(), d.conf.Timeout.Duration)
-	defer cancel()
+func (d *Deposits) Upsert(ctx context.Context, deposit *entities.Deposit) error {
 
 	query := fmt.Sprintf(`insert into deposits(%s)
 values ($1, $2, $3, $4, $5, $6, $7, $8, $9)
@@ -39,7 +37,7 @@ set
 	credited_timestamp=EXCLUDED.credited_timestamp,
 	created_timestamp=EXCLUDED.created_timestamp`, sqlDepositsColumns)
 
-	if _, err := d.pool.Exec(ctx, query, deposit.ID, deposit.Status, deposit.PartyID, deposit.Asset, deposit.Amount,
+	if _, err := d.Connection.Exec(ctx, query, deposit.ID, deposit.Status, deposit.PartyID, deposit.Asset, deposit.Amount,
 		deposit.TxHash, deposit.CreditedTimestamp, deposit.CreatedTimestamp, deposit.VegaTime); err != nil {
 		err = fmt.Errorf("could not insert deposit into database: %w", err)
 		return err
@@ -56,7 +54,7 @@ func (d *Deposits) GetByID(ctx context.Context, depositID string) (entities.Depo
 		where id = $1
 		order by id, party_id, vega_time desc`
 
-	err := pgxscan.Get(ctx, d.pool, &deposit, query, entities.NewDepositID(depositID))
+	err := pgxscan.Get(ctx, d.Connection, &deposit, query, entities.NewDepositID(depositID))
 	return deposit, err
 }
 
@@ -78,7 +76,7 @@ func (d *Deposits) GetByParty(ctx context.Context, party string, openOnly bool, 
 	var query string
 	query, args = orderAndPaginateQuery(queryBuilder.String(), nil, pagination, args...)
 
-	if err := pgxscan.Select(ctx, d.pool, &deposits, query, args...); err != nil {
+	if err := pgxscan.Select(ctx, d.Connection, &deposits, query, args...); err != nil {
 		return nil
 	}
 

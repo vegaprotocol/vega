@@ -433,7 +433,7 @@ func TestPositionSpecSuite(t *testing.T) {
 		t.Run(tc.run, func(t *testing.T) {
 			ps := tc.pos
 			sub, store := getSubscriberAndStore(t)
-			sub.Push(ps)
+			sub.Push(context.Background(), ps)
 			pp, err := store.GetByMarket(ctx, entities.NewMarketID(market))
 			assert.NoError(t, err)
 			assert.NotZero(t, len(pp))

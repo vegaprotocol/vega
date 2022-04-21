@@ -5,41 +5,48 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
+	"io/ioutil"
 	"math/rand"
 	"net"
 	"strconv"
 	"testing"
 	"time"
 
+	uuid "github.com/satori/go.uuid"
+
 	"code.vegaprotocol.io/data-node/logging"
 	"code.vegaprotocol.io/data-node/sqlstore"
 	"github.com/cenkalti/backoff/v4"
+	embeddedpostgres "github.com/fergusstrange/embedded-postgres"
 	"github.com/jackc/pgx/v4"
 )
 
 var (
-	testStore       *sqlstore.SQLStore
-	sqlTestsEnabled bool = true
-	minPort              = 30000
-	maxPort              = 40000
-	testDBPort      int
+	embeddedPostgres *embeddedpostgres.EmbeddedPostgres
+	connectionSource *sqlstore.ConnectionSource
+	sqlTestsEnabled  bool = true
+	minPort               = 30000
+	maxPort               = 40000
+	testDBPort       int
 
+	tableNames            = [...]string{"ledger", "accounts", "parties", "assets", "blocks", "node_signatures", "erc20_multisig_signer_events"}
 	postgresServerTimeout = time.Second * 10
 )
 
 func TestMain(m *testing.M) {
-	var err error
 	testDBPort = getNextPort()
-
 	sqlConfig := NewTestConfig(testDBPort)
 
 	if sqlTestsEnabled {
 		log := logging.NewTestLogger()
 
-		testStore, err = sqlstore.InitialiseTestStorage(
-			log,
-			sqlConfig,
-		)
+		testID := uuid.NewV4().String()
+		tempDir, err := ioutil.TempDir("", testID)
+		if err != nil {
+			panic(err)
+		}
+
+		embeddedPostgres, err = sqlstore.StartEmbeddedPostgres(log, sqlConfig, tempDir)
 		if err != nil {
 			panic(err)
 		}
@@ -50,7 +57,7 @@ func TestMain(m *testing.M) {
 		ctx, cancel := context.WithTimeout(context.Background(), postgresServerTimeout)
 
 		op := func() error {
-			connStr := connectionString(sqlConfig)
+			connStr := sqlConfig.ConnectionConfig.GetConnectionString()
 			conn, err := pgx.Connect(ctx, connStr)
 			if err != nil {
 				return err
@@ -65,10 +72,36 @@ func TestMain(m *testing.M) {
 		}
 
 		cancel()
+		connectionSource, err = sqlstore.NewTransactionalConnectionSource(log, sqlConfig.ConnectionConfig)
+		if err != nil {
+			panic(err)
+		}
 
-		defer testStore.Stop()
+		defer embeddedPostgres.Stop()
+
+		if err = sqlstore.MigrateToLatestSchema(log, sqlConfig); err != nil {
+			panic(err)
+		}
 
 		m.Run()
+	}
+}
+
+func DeleteEverything() {
+	ctx, cancelFn := context.WithTimeout(context.Background(), postgresServerTimeout)
+	defer cancelFn()
+	sqlConfig := NewTestConfig(testDBPort)
+	connStr := connectionString(sqlConfig.ConnectionConfig)
+	conn, err := pgx.Connect(ctx, connStr)
+	defer conn.Close(context.Background())
+	if err != nil {
+		panic(fmt.Errorf("failed to delete everything:%w", err))
+	}
+
+	for _, table := range tableNames {
+		if _, err := conn.Exec(context.Background(), "truncate table "+table+" CASCADE"); err != nil {
+			panic(fmt.Errorf("error truncating table: %s %w", table, err))
+		}
 	}
 }
 
@@ -84,7 +117,7 @@ func NewTestConfig(port int) sqlstore.Config {
 	sqlConfig := sqlstore.NewDefaultConfig()
 	sqlConfig.Enabled = true
 	sqlConfig.UseEmbedded = true
-	sqlConfig.Port = port
+	sqlConfig.ConnectionConfig.Port = port
 
 	return sqlConfig
 }

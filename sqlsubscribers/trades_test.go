@@ -25,27 +25,27 @@ func TestSubscriberSequenceNumber(t *testing.T) {
 
 	timeEvent := events.NewTime(context.Background(), now)
 	timeEvent.SetSequenceID(0)
-	sub.Push(timeEvent)
+	sub.Push(context.Background(), timeEvent)
 
 	tradeEvent := events.NewTradeEvent(context.Background(), newTrade())
 	tradeEvent.SetSequenceID(1)
-	sub.Push(tradeEvent)
+	sub.Push(context.Background(), tradeEvent)
 
 	tradeEvent = events.NewTradeEvent(context.Background(), newTrade())
 	tradeEvent.SetSequenceID(2)
-	sub.Push(tradeEvent)
+	sub.Push(context.Background(), tradeEvent)
 
 	timeEvent = events.NewTime(context.Background(), nowPlusOne)
 	timeEvent.SetSequenceID(0)
-	sub.Push(timeEvent)
+	sub.Push(context.Background(), timeEvent)
 
 	tradeEvent = events.NewTradeEvent(context.Background(), newTrade())
 	tradeEvent.SetSequenceID(1)
-	sub.Push(tradeEvent)
+	sub.Push(context.Background(), tradeEvent)
 
 	tradeEvent = events.NewTradeEvent(context.Background(), newTrade())
 	tradeEvent.SetSequenceID(2)
-	sub.Push(tradeEvent)
+	sub.Push(context.Background(), tradeEvent)
 
 	assert.Equal(t, now, ts.trades[0].VegaTime)
 	assert.Equal(t, uint64(1), ts.trades[0].SeqNum)

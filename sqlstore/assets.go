@@ -8,19 +8,18 @@ import (
 )
 
 type Assets struct {
-	*SQLStore
+	*ConnectionSource
 }
 
-func NewAssets(sqlStore *SQLStore) *Assets {
+func NewAssets(connectionSource *ConnectionSource) *Assets {
 	a := &Assets{
-		SQLStore: sqlStore,
+		ConnectionSource: connectionSource,
 	}
 	return a
 }
 
-func (as *Assets) Add(a entities.Asset) error {
-	ctx := context.Background()
-	_, err := as.pool.Exec(ctx,
+func (as *Assets) Add(ctx context.Context, a entities.Asset) error {
+	_, err := as.Connection.Exec(ctx,
 		`INSERT INTO assets(id, name, symbol, total_supply, decimals, quantum, source, erc20_contract, vega_time)
 		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
 		a.ID,
@@ -38,10 +37,7 @@ func (as *Assets) Add(a entities.Asset) error {
 func (as *Assets) GetByID(ctx context.Context, id string) (entities.Asset, error) {
 	a := entities.Asset{}
 
-	ctxTimeout, cancel := context.WithTimeout(ctx, as.conf.Timeout.Get())
-	defer cancel()
-
-	err := pgxscan.Get(ctxTimeout, as.pool, &a,
+	err := pgxscan.Get(ctx, as.Connection, &a,
 		`SELECT id, name, symbol, total_supply, decimals, quantum, source, erc20_contract, vega_time
 		 FROM assets WHERE id=$1`,
 		entities.NewAssetID(id))
@@ -49,11 +45,9 @@ func (as *Assets) GetByID(ctx context.Context, id string) (entities.Asset, error
 }
 
 func (as *Assets) GetAll(ctx context.Context) ([]entities.Asset, error) {
-	ctxTimeout, cancel := context.WithTimeout(ctx, as.conf.Timeout.Get())
-	defer cancel()
 
 	assets := []entities.Asset{}
-	err := pgxscan.Select(ctxTimeout, as.pool, &assets, `
+	err := pgxscan.Select(ctx, as.Connection, &assets, `
 		SELECT id, name, symbol, total_supply, decimals, quantum, source, erc20_contract, vega_time
 		FROM assets`)
 	return assets, err

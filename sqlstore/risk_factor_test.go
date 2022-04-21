@@ -21,14 +21,13 @@ func TestRiskFactors(t *testing.T) {
 
 func setupRiskFactorTests(t *testing.T, ctx context.Context) (*sqlstore.Blocks, *sqlstore.RiskFactors, *pgx.Conn) {
 	t.Helper()
-	err := testStore.DeleteEverything()
-	require.NoError(t, err)
+	DeleteEverything()
 
-	bs := sqlstore.NewBlocks(testStore)
-	rfStore := sqlstore.NewRiskFactors(testStore)
+	bs := sqlstore.NewBlocks(connectionSource)
+	rfStore := sqlstore.NewRiskFactors(connectionSource)
 	config := NewTestConfig(testDBPort)
 
-	conn, err := pgx.Connect(ctx, connectionString(config))
+	conn, err := pgx.Connect(ctx, config.ConnectionConfig.GetConnectionString())
 	require.NoError(t, err)
 
 	return bs, rfStore, conn
@@ -50,7 +49,7 @@ func testAddRiskFactor(t *testing.T) {
 	riskFactor, err := entities.RiskFactorFromProto(riskFactorProto, block.VegaTime)
 	require.NoError(t, err, "Converting risk factor proto to database entity")
 
-	err = rfStore.Upsert(riskFactor)
+	err = rfStore.Upsert(context.Background(), riskFactor)
 	require.NoError(t, err)
 
 	err = conn.QueryRow(ctx, `select count(*) from risk_factors`).Scan(&rowCount)
@@ -74,14 +73,14 @@ func testUpsertDuplicateMarketInSameBlock(t *testing.T) {
 	riskFactor, err := entities.RiskFactorFromProto(riskFactorProto, block.VegaTime)
 	require.NoError(t, err, "Converting risk factor proto to database entity")
 
-	err = rfStore.Upsert(riskFactor)
+	err = rfStore.Upsert(context.Background(), riskFactor)
 	require.NoError(t, err)
 
 	err = conn.QueryRow(ctx, `select count(*) from risk_factors`).Scan(&rowCount)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, rowCount)
 
-	err = rfStore.Upsert(riskFactor)
+	err = rfStore.Upsert(context.Background(), riskFactor)
 	require.NoError(t, err)
 
 	err = conn.QueryRow(ctx, `select count(*) from risk_factors`).Scan(&rowCount)
@@ -113,7 +112,7 @@ func testGetMarketRiskFactors(t *testing.T) {
 	riskFactor, err := entities.RiskFactorFromProto(riskFactorProto, block.VegaTime)
 	require.NoError(t, err, "Converting risk factor proto to database entity")
 
-	err = rfStore.Upsert(riskFactor)
+	err = rfStore.Upsert(context.Background(), riskFactor)
 	require.NoError(t, err)
 
 	err = conn.QueryRow(ctx, `select count(*) from risk_factors`).Scan(&rowCount)

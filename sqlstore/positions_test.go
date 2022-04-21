@@ -41,11 +41,11 @@ func assertPositionsMatch(t *testing.T, expected, actual []entities.Position) {
 }
 
 func TestPosition(t *testing.T) {
-	defer testStore.DeleteEverything()
+	defer DeleteEverything()
 	ctx := context.Background()
-	ps := sqlstore.NewPositions(testStore)
-	qs := sqlstore.NewParties(testStore)
-	bs := sqlstore.NewBlocks(testStore)
+	ps := sqlstore.NewPositions(connectionSource)
+	qs := sqlstore.NewParties(connectionSource)
+	bs := sqlstore.NewBlocks(connectionSource)
 
 	block1 := addTestBlock(t, bs)
 	block2 := addTestBlock(t, bs)

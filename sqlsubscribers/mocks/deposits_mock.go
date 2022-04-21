@@ -5,6 +5,7 @@
 package mocks
 
 import (
+	context "context"
 	reflect "reflect"
 
 	entities "code.vegaprotocol.io/data-node/entities"
@@ -35,15 +36,15 @@ func (m *MockDepositStore) EXPECT() *MockDepositStoreMockRecorder {
 }
 
 // Upsert mocks base method.
-func (m *MockDepositStore) Upsert(arg0 *entities.Deposit) error {
+func (m *MockDepositStore) Upsert(arg0 context.Context, arg1 *entities.Deposit) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Upsert", arg0)
+	ret := m.ctrl.Call(m, "Upsert", arg0, arg1)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Upsert indicates an expected call of Upsert.
-func (mr *MockDepositStoreMockRecorder) Upsert(arg0 interface{}) *gomock.Call {
+func (mr *MockDepositStoreMockRecorder) Upsert(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Upsert", reflect.TypeOf((*MockDepositStore)(nil).Upsert), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Upsert", reflect.TypeOf((*MockDepositStore)(nil).Upsert), arg0, arg1)
 }

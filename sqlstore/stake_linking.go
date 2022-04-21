@@ -13,7 +13,7 @@ import (
 )
 
 type StakeLinking struct {
-	*SQLStore
+	*ConnectionSource
 }
 
 const (
@@ -21,15 +21,13 @@ const (
 tx_hash, log_index, ethereum_address, vega_time`
 )
 
-func NewStakeLinking(sqlStore *SQLStore) *StakeLinking {
+func NewStakeLinking(connectionSource *ConnectionSource) *StakeLinking {
 	return &StakeLinking{
-		SQLStore: sqlStore,
+		ConnectionSource: connectionSource,
 	}
 }
 
-func (s *StakeLinking) Upsert(stake *entities.StakeLinking) error {
-	ctx, cancel := context.WithTimeout(context.Background(), s.conf.Timeout.Duration)
-	defer cancel()
+func (s *StakeLinking) Upsert(ctx context.Context, stake *entities.StakeLinking) error {
 
 	query := fmt.Sprintf(`insert into stake_linking (%s)
 values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) 
@@ -45,7 +43,7 @@ set
 	log_index=EXCLUDED.log_index,
 	ethereum_address=EXCLUDED.ethereum_address`, sqlStakeLinkingColumns)
 
-	if _, err := s.pool.Exec(ctx, query, stake.ID, stake.StakeLinkingType, stake.EthereumTimestamp, stake.PartyID, stake.Amount,
+	if _, err := s.Connection.Exec(ctx, query, stake.ID, stake.StakeLinkingType, stake.EthereumTimestamp, stake.PartyID, stake.Amount,
 		stake.StakeLinkingStatus, stake.FinalizedAt, stake.TxHash, stake.LogIndex,
 		stake.EthereumAddress, stake.VegaTime); err != nil {
 		return err
@@ -67,7 +65,7 @@ where party_id=%s`, sqlStakeLinkingColumns, nextBindVar(&bindVars, partyID))
 	var bal *num.Uint
 	var err error
 
-	err = pgxscan.Select(ctx, s.pool, &links, query, bindVars...)
+	err = pgxscan.Select(ctx, s.Connection, &links, query, bindVars...)
 	if err != nil {
 		s.log.Errorf("could not retrieve links", logging.Error(err))
 		return bal, nil
@@ -96,7 +94,7 @@ WHERE party_id = %s
 `, nextBindVar(&bindVars, partyID))
 
 	var currentBalance decimal.Decimal
-	if err := pgxscan.Get(ctx, s.pool, &currentBalance, query, bindVars...); err != nil {
+	if err := pgxscan.Get(ctx, s.Connection, &currentBalance, query, bindVars...); err != nil {
 		return bal, err
 	}
 

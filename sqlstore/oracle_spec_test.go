@@ -22,14 +22,13 @@ func TestOracleSpec(t *testing.T) {
 
 func setupOracleSpecTest(t *testing.T, ctx context.Context) (*sqlstore.Blocks, *sqlstore.OracleSpec, *pgx.Conn) {
 	t.Helper()
-	err := testStore.DeleteEverything()
-	require.NoError(t, err)
+	DeleteEverything()
 
-	bs := sqlstore.NewBlocks(testStore)
-	os := sqlstore.NewOracleSpec(testStore)
+	bs := sqlstore.NewBlocks(connectionSource)
+	os := sqlstore.NewOracleSpec(connectionSource)
 
 	config := NewTestConfig(testDBPort)
-	conn, err := pgx.Connect(ctx, connectionString(config))
+	conn, err := pgx.Connect(ctx, config.ConnectionConfig.GetConnectionString())
 	require.NoError(t, err)
 
 	return bs, os, conn
@@ -52,7 +51,7 @@ func testInsertIntoNewBlock(t *testing.T) {
 	proto := specProtos[0]
 	data, err := entities.OracleSpecFromProto(proto, block.VegaTime)
 	require.NoError(t, err)
-	assert.NoError(t, os.Upsert(data))
+	assert.NoError(t, os.Upsert(context.Background(), data))
 
 	assert.NoError(t, conn.QueryRow(ctx, "select count(*) from oracle_specs").Scan(&rowCount))
 	assert.Equal(t, 1, rowCount)
@@ -75,10 +74,10 @@ func testUpdateExistingInBlock(t *testing.T) {
 	proto := specProtos[0]
 	data, err := entities.OracleSpecFromProto(proto, block.VegaTime)
 	require.NoError(t, err)
-	assert.NoError(t, os.Upsert(data))
+	assert.NoError(t, os.Upsert(context.Background(), data))
 
 	data.Status = entities.OracleSpecDeactivated
-	assert.NoError(t, os.Upsert(data))
+	assert.NoError(t, os.Upsert(context.Background(), data))
 
 	assert.NoError(t, conn.QueryRow(ctx, "select count(*) from oracle_specs").Scan(&rowCount))
 	assert.Equal(t, 1, rowCount)
@@ -101,7 +100,7 @@ func testGetSpecByID(t *testing.T) {
 	for _, proto := range specProtos {
 		data, err := entities.OracleSpecFromProto(proto, block.VegaTime)
 		require.NoError(t, err)
-		assert.NoError(t, os.Upsert(data))
+		assert.NoError(t, os.Upsert(context.Background(), data))
 	}
 
 	assert.NoError(t, conn.QueryRow(ctx, "select count(*) from oracle_specs").Scan(&rowCount))
@@ -137,7 +136,7 @@ func testGetSpecs(t *testing.T) {
 	for _, proto := range specProtos {
 		data, err := entities.OracleSpecFromProto(proto, block.VegaTime)
 		require.NoError(t, err)
-		assert.NoError(t, os.Upsert(data))
+		assert.NoError(t, os.Upsert(context.Background(), data))
 
 		// truncate the time to microseconds as postgres doesn't support nanosecond granularity.
 		data.CreatedAt = data.CreatedAt.Truncate(time.Microsecond)

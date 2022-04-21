@@ -42,12 +42,12 @@ func (t *NetworkLimits) Types() []events.Type {
 	return []events.Type{events.NetworkLimitsEvent}
 }
 
-func (nl *NetworkLimits) Push(evt events.Event) error {
+func (nl *NetworkLimits) Push(ctx context.Context, evt events.Event) error {
 	switch event := evt.(type) {
 	case TimeUpdateEvent:
 		nl.vegaTime = event.Time()
 	case NetworkLimitsEvent:
-		return nl.consume(event)
+		return nl.consume(ctx, event)
 	default:
 		return errors.Errorf("unknown event type %s", event.Type().String())
 	}
@@ -55,10 +55,10 @@ func (nl *NetworkLimits) Push(evt events.Event) error {
 	return nil
 }
 
-func (nl *NetworkLimits) consume(event NetworkLimitsEvent) error {
+func (nl *NetworkLimits) consume(ctx context.Context, event NetworkLimitsEvent) error {
 	protoLimits := event.NetworkLimits()
 	limits := entities.NetworkLimitsFromProto(protoLimits)
 	limits.VegaTime = nl.vegaTime
 
-	return errors.Wrap(nl.store.Add(context.Background(), limits), "error adding network limits")
+	return errors.Wrap(nl.store.Add(ctx, limits), "error adding network limits")
 }

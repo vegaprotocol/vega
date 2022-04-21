@@ -25,14 +25,13 @@ func TestLiquidityProvision(t *testing.T) {
 func setupLPTests(t *testing.T, ctx context.Context) (*sqlstore.Blocks, *sqlstore.LiquidityProvision, *pgx.Conn) {
 	t.Helper()
 
-	err := testStore.DeleteEverything()
-	require.NoError(t, err)
+	DeleteEverything()
 
-	bs := sqlstore.NewBlocks(testStore)
-	lp := sqlstore.NewLiquidityProvision(testStore)
+	bs := sqlstore.NewBlocks(connectionSource)
+	lp := sqlstore.NewLiquidityProvision(connectionSource)
 
 	config := NewTestConfig(testDBPort)
-	conn, err := pgx.Connect(ctx, connectionString(config))
+	conn, err := pgx.Connect(ctx, config.ConnectionConfig.GetConnectionString())
 	require.NoError(t, err)
 
 	return bs, lp, conn
@@ -54,7 +53,7 @@ func testInsertNewInCurrentBlock(t *testing.T) {
 
 	data, err := entities.LiquidityProvisionFromProto(lpProto[0], block.VegaTime)
 	require.NoError(t, err)
-	assert.NoError(t, lp.Upsert(data))
+	assert.NoError(t, lp.Upsert(context.Background(), data))
 	err = lp.Flush(ctx)
 	require.NoError(t, err)
 
@@ -78,10 +77,10 @@ func testUpdateExistingInCurrentBlock(t *testing.T) {
 
 	data, err := entities.LiquidityProvisionFromProto(lpProto[0], block.VegaTime)
 	require.NoError(t, err)
-	assert.NoError(t, lp.Upsert(data))
+	assert.NoError(t, lp.Upsert(context.Background(), data))
 
 	data.Reference = "Updated"
-	assert.NoError(t, lp.Upsert(data))
+	assert.NoError(t, lp.Upsert(context.Background(), data))
 	err = lp.Flush(ctx)
 	require.NoError(t, err)
 
@@ -109,7 +108,7 @@ func testGetLPByPartyOnly(t *testing.T) {
 
 		data, err := entities.LiquidityProvisionFromProto(lpp, block.VegaTime)
 		require.NoError(t, err)
-		assert.NoError(t, lp.Upsert(data))
+		assert.NoError(t, lp.Upsert(context.Background(), data))
 		err = lp.Flush(ctx)
 		require.NoError(t, err)
 
@@ -154,7 +153,7 @@ func testGetLPByPartyAndMarket(t *testing.T) {
 
 		data, err := entities.LiquidityProvisionFromProto(lpp, block.VegaTime)
 		require.NoError(t, err)
-		assert.NoError(t, lp.Upsert(data))
+		assert.NoError(t, lp.Upsert(context.Background(), data))
 		err = lp.Flush(ctx)
 		require.NoError(t, err)
 
@@ -211,7 +210,7 @@ func testGetLPNoPartyWithMarket(t *testing.T) {
 
 		data, err := entities.LiquidityProvisionFromProto(lpp, block.VegaTime)
 		require.NoError(t, err)
-		assert.NoError(t, lp.Upsert(data))
+		assert.NoError(t, lp.Upsert(context.Background(), data))
 		err = lp.Flush(ctx)
 		require.NoError(t, err)
 

@@ -1,6 +1,7 @@
 package sqlsubscribers
 
 import (
+	"context"
 	"time"
 
 	"code.vegaprotocol.io/data-node/entities"
@@ -32,12 +33,12 @@ func (m *MarketUpdated) Types() []events.Type {
 	return []events.Type{events.MarketUpdatedEvent}
 }
 
-func (m *MarketUpdated) Push(evt events.Event) error {
+func (m *MarketUpdated) Push(ctx context.Context, evt events.Event) error {
 	switch e := evt.(type) {
 	case TimeUpdateEvent:
 		m.vegaTime = e.Time()
 	case MarketUpdatedEvent:
-		return m.consume(e)
+		return m.consume(ctx, e)
 	default:
 		return errors.Errorf("unknown event type %s", e.Type().String())
 	}
@@ -45,7 +46,7 @@ func (m *MarketUpdated) Push(evt events.Event) error {
 	return nil
 }
 
-func (m *MarketUpdated) consume(event MarketUpdatedEvent) error {
+func (m *MarketUpdated) consume(ctx context.Context, event MarketUpdatedEvent) error {
 	market := event.Market()
 	record, err := entities.NewMarketFromProto(&market, m.vegaTime)
 
@@ -53,5 +54,5 @@ func (m *MarketUpdated) consume(event MarketUpdatedEvent) error {
 		return errors.Wrap(err, "converting market proto to database entity failed")
 	}
 
-	return errors.Wrap(m.store.Upsert(record), "updating market to SQL store failed")
+	return errors.Wrap(m.store.Upsert(ctx, record), "updating market to SQL store failed")
 }

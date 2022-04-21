@@ -20,10 +20,10 @@ func TestDeposit_Push(t *testing.T) {
 
 	store := mocks.NewMockDepositStore(ctrl)
 
-	store.EXPECT().Upsert(gomock.Any()).Times(1)
+	store.EXPECT().Upsert(context.Background(), gomock.Any()).Times(1)
 	subscriber := sqlsubscribers.NewDeposit(store, logging.NewTestLogger())
-	subscriber.Push(events.NewTime(context.Background(), time.Now()))
-	subscriber.Push(events.NewDepositEvent(context.Background(), types.Deposit{
+	subscriber.Push(context.Background(), events.NewTime(context.Background(), time.Now()))
+	subscriber.Push(context.Background(), events.NewDepositEvent(context.Background(), types.Deposit{
 		ID:           "DEADBEEF",
 		Status:       types.DepositStatusOpen,
 		PartyID:      "DEADBEEF",

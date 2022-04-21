@@ -39,13 +39,13 @@ func (ts *TradeSubscriber) Types() []events.Type {
 	return []events.Type{events.TradeEvent}
 }
 
-func (ts *TradeSubscriber) Push(evt events.Event) error {
+func (ts *TradeSubscriber) Push(ctx context.Context, evt events.Event) error {
 
 	switch e := evt.(type) {
 	case TimeUpdateEvent:
 		ts.sequenceNum = evt.Sequence()
 		ts.vegaTime = e.Time()
-		ts.store.OnTimeUpdateEvent(evt.Context())
+		ts.store.OnTimeUpdateEvent(ctx)
 	case TradeEvent:
 		ts.sequenceNum = evt.Sequence()
 		return ts.consume(e)

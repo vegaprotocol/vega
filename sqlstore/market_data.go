@@ -13,16 +13,16 @@ import (
 )
 
 type MarketData struct {
-	*SQLStore
+	*ConnectionSource
 	columns    []string
 	marketData []*entities.MarketData
 }
 
 var ErrInvalidDateRange = errors.New("invalid date range, end date must be after start date")
 
-func NewMarketData(sqlStore *SQLStore) *MarketData {
+func NewMarketData(connectionSource *ConnectionSource) *MarketData {
 	return &MarketData{
-		SQLStore: sqlStore,
+		ConnectionSource: connectionSource,
 		columns: []string{"synthetic_time", "vega_time", "seq_num",
 			"market", "mark_price", "best_bid_price", "best_bid_volume",
 			"best_offer_price", "best_offer_volume", "best_static_bid_price", "best_static_bid_volume",
@@ -41,8 +41,6 @@ func (md *MarketData) Add(data *entities.MarketData) error {
 }
 
 func (md *MarketData) OnTimeUpdateEvent(ctx context.Context) error {
-	ctx, cancel := context.WithTimeout(ctx, md.conf.Timeout.Duration)
-	defer cancel()
 
 	var rows [][]interface{}
 	for _, data := range md.marketData {
@@ -60,7 +58,7 @@ func (md *MarketData) OnTimeUpdateEvent(ctx context.Context) error {
 	}
 
 	if rows != nil {
-		copyCount, err := md.pool.CopyFrom(
+		copyCount, err := md.Connection.CopyFrom(
 			ctx,
 			pgx.Identifier{"market_data"}, md.columns, pgx.CopyFromRows(rows),
 		)
@@ -85,7 +83,7 @@ func (md *MarketData) GetMarketDataByID(ctx context.Context, marketID string) (e
 	var marketData entities.MarketData
 	query := "select * from market_data_snapshot where market = $1"
 
-	err := pgxscan.Get(ctx, md.pool, &marketData, query, entities.NewMarketID(marketID))
+	err := pgxscan.Get(ctx, md.Connection, &marketData, query, entities.NewMarketID(marketID))
 
 	return marketData, err
 }
@@ -96,7 +94,7 @@ func (md *MarketData) GetMarketsData(ctx context.Context) ([]entities.MarketData
 	var marketData []entities.MarketData
 	query := "select * from market_data_snapshot"
 
-	err := pgxscan.Select(ctx, md.pool, &marketData, query)
+	err := pgxscan.Select(ctx, md.Connection, &marketData, query)
 
 	return marketData, err
 }
@@ -128,19 +126,19 @@ func (md *MarketData) getBetweenDatesByID(ctx context.Context, marketID string, 
 			[]string{"synthetic_time"}, pagination,
 			market, *start, *end)
 
-		err = pgxscan.Select(ctx, md.pool, &results, query, args...)
+		err = pgxscan.Select(ctx, md.Connection, &results, query, args...)
 	} else if start != nil && end == nil {
 		query, args := orderAndPaginateQuery(fmt.Sprintf(`%s where market = $1 and vega_time >= $2`, selectStatement),
 			[]string{"synthetic_time"}, pagination,
 			market, *start)
 
-		err = pgxscan.Select(ctx, md.pool, &results, query, args...)
+		err = pgxscan.Select(ctx, md.Connection, &results, query, args...)
 	} else if start == nil && end != nil {
 		query, args := orderAndPaginateQuery(fmt.Sprintf(`%s where market = $1 and vega_time <= $2`, selectStatement),
 			[]string{"synthetic_time"}, pagination,
 			market, *end)
 
-		err = pgxscan.Select(ctx, md.pool, &results, query, args...)
+		err = pgxscan.Select(ctx, md.Connection, &results, query, args...)
 	}
 
 	return results, err

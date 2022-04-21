@@ -9,22 +9,20 @@ import (
 )
 
 type OracleSpec struct {
-	*SQLStore
+	*ConnectionSource
 }
 
 const (
 	sqlOracleSpecColumns = `id, created_at, updated_at, public_keys, filters, status, vega_time`
 )
 
-func NewOracleSpec(sqlStore *SQLStore) *OracleSpec {
+func NewOracleSpec(connectionSource *ConnectionSource) *OracleSpec {
 	return &OracleSpec{
-		SQLStore: sqlStore,
+		ConnectionSource: connectionSource,
 	}
 }
 
-func (os *OracleSpec) Upsert(spec *entities.OracleSpec) error {
-	ctx, cancel := context.WithTimeout(context.Background(), os.conf.Timeout.Duration)
-	defer cancel()
+func (os *OracleSpec) Upsert(ctx context.Context, spec *entities.OracleSpec) error {
 
 	query := fmt.Sprintf(`insert into oracle_specs(%s)
 values ($1, $2, $3, $4, $5, $6, $7)
@@ -36,7 +34,7 @@ set
 	filters=EXCLUDED.filters,
 	status=EXCLUDED.status`, sqlOracleSpecColumns)
 
-	if _, err := os.pool.Exec(ctx, query, spec.ID, spec.CreatedAt, spec.UpdatedAt, spec.PublicKeys,
+	if _, err := os.Connection.Exec(ctx, query, spec.ID, spec.CreatedAt, spec.UpdatedAt, spec.PublicKeys,
 		spec.Filters, spec.Status, spec.VegaTime); err != nil {
 		return err
 	}
@@ -51,7 +49,7 @@ from oracle_specs
 where id = $1
 order by id, vega_time desc`, sqlOracleSpecColumns)
 
-	err := pgxscan.Get(ctx, os.pool, &spec, query, entities.NewSpecID(specID))
+	err := pgxscan.Get(ctx, os.Connection, &spec, query, entities.NewSpecID(specID))
 	return spec, err
 }
 
@@ -63,6 +61,6 @@ order by id, vega_time desc`, sqlOracleSpecColumns)
 
 	var bindVars []interface{}
 	query, bindVars = orderAndPaginateQuery(query, nil, pagination, bindVars...)
-	err := pgxscan.Select(ctx, os.pool, &specs, query, bindVars...)
+	err := pgxscan.Select(ctx, os.Connection, &specs, query, bindVars...)
 	return specs, err
 }

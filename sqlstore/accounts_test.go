@@ -1,6 +1,7 @@
 package sqlstore_test
 
 import (
+	"context"
 	"testing"
 
 	"code.vegaprotocol.io/data-node/entities"
@@ -24,18 +25,18 @@ func addTestAccount(t *testing.T,
 		VegaTime: block.VegaTime,
 	}
 
-	err := accountStore.Add(&account)
+	err := accountStore.Add(context.Background(), &account)
 	require.NoError(t, err)
 	return account
 }
 
 func TestAccount(t *testing.T) {
-	defer testStore.DeleteEverything()
+	defer DeleteEverything()
 
-	blockStore := sqlstore.NewBlocks(testStore)
-	assetStore := sqlstore.NewAssets(testStore)
-	accountStore := sqlstore.NewAccounts(testStore)
-	partyStore := sqlstore.NewParties(testStore)
+	blockStore := sqlstore.NewBlocks(connectionSource)
+	assetStore := sqlstore.NewAssets(connectionSource)
+	accountStore := sqlstore.NewAccounts(connectionSource)
+	partyStore := sqlstore.NewParties(connectionSource)
 
 	// Account store should be empty to begin with
 	accounts, err := accountStore.GetAll()
@@ -49,7 +50,7 @@ func TestAccount(t *testing.T) {
 	account := addTestAccount(t, accountStore, party, asset, block)
 
 	// Add it again, we should get a primary key violation
-	err = accountStore.Add(&account)
+	err = accountStore.Add(context.Background(), &account)
 	assert.Error(t, err)
 
 	// Query and check we've got back an asset the same as the one we put in

@@ -5,8 +5,6 @@ import (
 	"testing"
 	"time"
 
-	"code.vegaprotocol.io/data-node/config/encoding"
-
 	"code.vegaprotocol.io/data-node/broker"
 	"code.vegaprotocol.io/data-node/logging"
 	"code.vegaprotocol.io/vega/events"
@@ -22,11 +20,11 @@ func TestSqlBrokerEventDistribution(t *testing.T) {
 	testSqlBrokerEventDistribution(t, true)
 }
 
-func testSqlBrokerEventDistribution(t *testing.T, sequential bool) {
+func testSqlBrokerEventDistribution(t *testing.T, transactional bool) {
 	s1 := testSqlBrokerSubscriber{eventType: events.AssetEvent, receivedCh: make(chan events.Event)}
 	s2 := testSqlBrokerSubscriber{eventType: events.AssetEvent, receivedCh: make(chan events.Event)}
 	s3 := testSqlBrokerSubscriber{eventType: events.AccountEvent, receivedCh: make(chan events.Event)}
-	tes, sb := createTestBroker(t, sequential, &s1, &s2, &s3)
+	tes, sb := createTestBroker(t, transactional, &s1, &s2, &s3)
 	go sb.Receive(context.Background())
 
 	tes.eventsCh <- events.NewAssetEvent(context.Background(), types.Asset{ID: "a1"})
@@ -83,18 +81,28 @@ func testNewSqlStoreBrokerestSqlBrokerTimeEventOnlySendOnceToTimeSubscribers(t *
 	assert.Equal(t, 0, len(s1.receivedCh))
 }
 
-func createTestBroker(t *testing.T, sequential bool, subs ...broker.SqlBrokerSubscriber) (*testEventSource, broker.SqlStoreEventBroker) {
+func createTestBroker(t *testing.T, transactional bool, subs ...broker.SqlBrokerSubscriber) (*testEventSource, broker.SqlStoreEventBroker) {
 	conf := broker.NewDefaultConfig()
-	conf.UseSequentialSqlStoreBroker = encoding.Bool(sequential)
 	testChainInfo := testChainInfo{chainId: ""}
 	tes := &testEventSource{
 		eventsCh: make(chan events.Event),
 		errorsCh: make(chan error, 1),
 	}
 
-	sb := broker.NewSqlStoreBroker(logger, conf, testChainInfo, tes, 0, subs...)
+	sb := broker.NewSqlStoreBroker(logger, conf, testChainInfo, tes, testTransactionManager{}, subs...)
 
 	return tes, sb
+}
+
+type testTransactionManager struct {
+}
+
+func (t testTransactionManager) WithTransaction(ctx context.Context) (context.Context, error) {
+	return ctx, nil
+}
+
+func (t testTransactionManager) Commit(ctx context.Context) error {
+	return nil
 }
 
 type testSqlBrokerSubscriber struct {
@@ -102,7 +110,7 @@ type testSqlBrokerSubscriber struct {
 	receivedCh chan events.Event
 }
 
-func (t testSqlBrokerSubscriber) Push(evt events.Event) error {
+func (t testSqlBrokerSubscriber) Push(ctx context.Context, evt events.Event) error {
 	t.receivedCh <- evt
 	return nil
 }
