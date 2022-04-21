@@ -82,7 +82,7 @@ func (m *Market) checkAuction(ctx context.Context, now time.Time) {
 	if endTS := m.as.ExpiresAt(); endTS == nil || !endTS.Before(now) {
 		return
 	}
-	isPrice := m.as.IsPriceAuction()
+	isPrice := m.as.IsPriceAuction() || m.as.IsPriceExtension()
 	if !isPrice {
 		m.checkLiquidity(ctx, trades, true)
 	}

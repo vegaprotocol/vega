@@ -42,6 +42,8 @@ type AuctionState interface {
 	IsOpeningAuction() bool
 	IsLiquidityAuction() bool
 	IsPriceAuction() bool
+	IsPriceExtension() bool
+	IsLiquidityExtension() bool
 	IsFBA() bool
 	// is it the start/end of the auction
 	CanLeave() bool
@@ -287,7 +289,7 @@ func (e *Engine) CheckPrice(ctx context.Context, as AuctionState, p *num.Uint, v
 	if len(bounds) == 0 {
 		// current auction is price monitoring
 		// check for end of auction, reset monitoring, and end auction
-		if as.IsPriceAuction() {
+		if as.IsPriceAuction() || as.IsPriceExtension() {
 			end := as.ExpiresAt()
 			if end == nil {
 				return ErrExpiresAtNotSet
