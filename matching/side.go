@@ -164,8 +164,8 @@ func (s *OrderBookSide) amendOrder(orderAmend *types.Order) (uint64, error) {
 
 // ExtractOrders extracts the orders from the top of the book until the volume amount is hit,
 // if removeOrders is set to True then the relevant orders also get removed.
-func (s *OrderBookSide) ExtractOrders(price *num.Uint, volume uint64, removeOrders bool) []*types.Order {
-	extractedOrders := []*types.Order{}
+func (s *OrderBookSide) ExtractOrders(price *num.Uint, volume uint64, removeOrders bool) []types.Order {
+	extractedOrders := []types.Order{}
 	var (
 		totalVolume uint64
 		checkPrice  func(*num.Uint) bool
@@ -183,7 +183,7 @@ func (s *OrderBookSide) ExtractOrders(price *num.Uint, volume uint64, removeOrde
 			// Check the price is good and the total volume will not be exceeded
 			if checkPrice(order.Price) && totalVolume+order.Remaining <= volume {
 				// Remove this order
-				extractedOrders = append(extractedOrders, order)
+				extractedOrders = append(extractedOrders, *order)
 				totalVolume += order.Remaining
 				// Remove the order from the price level
 				toRemove++
