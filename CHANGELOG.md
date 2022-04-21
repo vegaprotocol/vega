@@ -67,6 +67,7 @@
 - [5144](https://github.com/vegaprotocol/vega/issues/5144) - Fixed the default voting power in case there is stake in the network
 - [5124](https://github.com/vegaprotocol/vega/issues/5124) - Add proto serialization for update market proposal
 - [5124](https://github.com/vegaprotocol/vega/issues/5124) - Ensure update market proposal compute a proper auction duration
+- [5259](https://github.com/vegaprotocol/vega/issues/5259) - Give pending validators a chance to get a positive performance score before removing them
 - [5172](https://github.com/vegaprotocol/vega/issues/5172) - Add replay protection for validator commands
 - [5181](https://github.com/vegaprotocol/vega/issues/5181) - Ensure Oracle specs handle numbers using `num.Decimal` and `num.Int`
 - [5059](https://github.com/vegaprotocol/vega/issues/5059) - Validators without tendermint status vote in the witness and notary engine but their votes do not count
