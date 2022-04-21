@@ -440,9 +440,7 @@ CREATE VIEW votes_current AS (
 );
 
 create table if not exists margin_levels (
-    market_id bytea not null,
-    asset_id bytea not null,
-    party_id bytea not null,
+    account_id INT  NOT NULL REFERENCES accounts(id),
     timestamp timestamp with time zone not null,
     maintenance_margin numeric(32, 0),
     search_level numeric(32, 0),
@@ -453,7 +451,7 @@ create table if not exists margin_levels (
 
 select create_hypertable('margin_levels', 'vega_time', chunk_time_interval => INTERVAL '1 day');
 
-create index on margin_levels (market_id, asset_id, party_id, vega_time);
+create index on margin_levels (account_id, vega_time);
 
 create table if not exists risk_factors (
     market_id bytea not null,

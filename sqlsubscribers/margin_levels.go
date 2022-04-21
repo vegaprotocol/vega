@@ -23,15 +23,17 @@ type MarginLevelsStore interface {
 }
 
 type MarginLevels struct {
-	store    MarginLevelsStore
-	log      *logging.Logger
-	vegaTime time.Time
+	store         MarginLevelsStore
+	accountSource AccountSource
+	log           *logging.Logger
+	vegaTime      time.Time
 }
 
-func NewMarginLevels(store MarginLevelsStore, log *logging.Logger) *MarginLevels {
+func NewMarginLevels(store MarginLevelsStore, log *logging.Logger, accountSource AccountSource) *MarginLevels {
 	return &MarginLevels{
-		store: store,
-		log:   log,
+		store:         store,
+		accountSource: accountSource,
+		log:           log,
 	}
 }
 
@@ -58,7 +60,7 @@ func (ml *MarginLevels) Push(ctx context.Context, evt events.Event) error {
 
 func (ml *MarginLevels) consume(event MarginLevelsEvent) error {
 	marginLevels := event.MarginLevels()
-	record, err := entities.MarginLevelsFromProto(&marginLevels, ml.vegaTime)
+	record, err := entities.MarginLevelsFromProto(&marginLevels, ml.accountSource, ml.vegaTime)
 	if err != nil {
 		return errors.Wrap(err, "converting margin levels proto to database entity failed")
 	}

@@ -8,20 +8,28 @@ import (
 	"github.com/georgysavva/scany/pgxscan"
 )
 
+type AccountSource interface {
+	Query(filter entities.AccountFilter) ([]entities.Account, error)
+}
+
 type MarginLevels struct {
 	*ConnectionSource
 	columns      []string
 	marginLevels []*entities.MarginLevels
 	batcher      MapBatcher[entities.MarginLevelsKey, entities.MarginLevels]
+	accountSource AccountSource
+
 }
 
 const (
 	sqlMarginLevelColumns = `market_id,asset_id,party_id,timestamp,maintenance_margin,search_level,initial_margin,collateral_release_level,vega_time`
 )
 
-func NewMarginLevels(connectionSource *ConnectionSource) *MarginLevels {
+func NewMarginLevels(connectionSource *ConnectionSource,
+	accountSource AccountSource) *MarginLevels {
 	return &MarginLevels{
 		ConnectionSource: connectionSource,
+		accountSource: accountSource,
 		batcher: NewMapBatcher[entities.MarginLevelsKey, entities.MarginLevels](
 			"margin_levels",
 			entities.MarginLevelsColumns),
@@ -35,6 +43,17 @@ func (ml *MarginLevels) Add(marginLevel entities.MarginLevels) error {
 
 func (ml *MarginLevels) Flush(ctx context.Context) error {
 	return ml.batcher.Flush(ctx, ml.pool)
+}
+
+func (t *Transfers) GetTransfersFromParty(ctx context.Context, partyId entities.PartyID) ([]*entities.Transfer, error) {
+	transfers, err := t.getTransfers(ctx,
+		"where transfers_current.from_account_id  in (select id from accounts where accounts.party_id=$1)", partyId)
+
+	if err != nil {
+		return nil, fmt.Errorf("getting transfers from party:%w", err)
+	}
+
+	return transfers, nil
 }
 
 func (ml *MarginLevels) GetMarginLevelsByID(ctx context.Context, partyID, marketID string, pagination entities.Pagination) ([]entities.MarginLevels, error) {
@@ -55,20 +74,22 @@ func (ml *MarginLevels) GetMarginLevelsByID(ctx context.Context, partyID, market
 		whereMarket = fmt.Sprintf("market_id = %s", nextBindVar(&bindVars, market))
 	}
 
-	whereClause := ""
+	accountsWhereClause := ""
 
 	if whereParty != "" && whereMarket != "" {
-		whereClause = fmt.Sprintf("where %s and %s", whereParty, whereMarket)
+		accountsWhereClause = fmt.Sprintf("where %s and %s", whereParty, whereMarket)
 	} else if whereParty != "" {
-		whereClause = fmt.Sprintf("where %s", whereParty)
+		accountsWhereClause = fmt.Sprintf("where %s", whereParty)
 	} else if whereMarket != "" {
-		whereClause = fmt.Sprintf("where %s", whereMarket)
+		accountsWhereClause = fmt.Sprintf("where %s", whereMarket)
 	}
 
-	query := fmt.Sprintf(`select distinct on (party_id, market_id) %s
+	whereClause := fmt.Sprintf("where margin_levels.account_id  in (select id from accounts %s)", accountsWhereClause)
+
+	query := fmt.Sprintf(`select distinct on (account_id) %s
 		from margin_levels
 		%s
-		order by party_id, market_id, vega_time desc, asset_id`, sqlMarginLevelColumns,
+		order by account_id, vega_time desc`, sqlMarginLevelColumns,
 		whereClause)
 
 	query, bindVars = orderAndPaginateQuery(query, nil, pagination, bindVars...)
