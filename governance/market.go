@@ -109,14 +109,9 @@ func buildMarketFromProposal(
 	marketID string,
 	definition *types.NewMarket,
 	netp NetParams,
-	assets Assets,
 	openingAuctionDuration time.Duration,
 ) (*types.Market, types.ProposalError, error) {
-	if perr, err := validateNewMarketChange(definition, assets, true, netp, openingAuctionDuration); err != nil {
-		return nil, perr, err
-	}
-	instrument, perr, err := createInstrument(
-		definition.Changes.Instrument, definition.Changes.Metadata)
+	instrument, perr, err := createInstrument(definition.Changes.Instrument, definition.Changes.Metadata)
 	if err != nil {
 		return nil, perr, err
 	}
@@ -403,14 +398,11 @@ func validateNewMarketChange(
 }
 
 // validateUpdateMarketChange checks market update proposal terms.
-func validateUpdateMarketChange(terms *types.UpdateMarket, netp NetParams, openingAuctionDuration time.Duration) (types.ProposalError, error) {
+func validateUpdateMarketChange(terms *types.UpdateMarket) (types.ProposalError, error) {
 	if perr, err := validateUpdateInstrument(terms.Changes.Instrument); err != nil {
 		return perr, err
 	}
 	if perr, err := validateRiskParameters(terms.Changes.RiskParameters); err != nil {
-		return perr, err
-	}
-	if perr, err := validateAuctionDuration(openingAuctionDuration, netp); err != nil {
 		return perr, err
 	}
 
