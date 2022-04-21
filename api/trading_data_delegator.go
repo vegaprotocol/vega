@@ -1415,7 +1415,11 @@ func (t *tradingDataDelegator) MarginLevels(ctx context.Context, req *protoapi.M
 	}
 	levels := make([]*vega.MarginLevels, 0, len(mls))
 	for _, v := range mls {
-		levels = append(levels, v.ToProto())
+		proto, err := v.ToProto(t.accountStore)
+		if err != nil {
+			return nil, apiError(codes.Internal, ErrRiskServiceGetMarginLevelsByID, err)
+		}
+		levels = append(levels, proto)
 	}
 	return &protoapi.MarginLevelsResponse{
 		MarginLevels: levels,

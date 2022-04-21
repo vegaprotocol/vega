@@ -1,6 +1,7 @@
 package entities
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -18,7 +19,7 @@ type MarginLevels struct {
 	VegaTime               time.Time
 }
 
-func MarginLevelsFromProto(margin *vega.MarginLevels, accountSource AccountSource, vegaTime time.Time) (MarginLevels, error) {
+func MarginLevelsFromProto(ctx context.Context, margin *vega.MarginLevels, accountSource AccountSource, vegaTime time.Time) (MarginLevels, error) {
 	var (
 		maintenanceMargin, searchLevel, initialMargin, collateralReleaseLevel decimal.Decimal
 		err                                                                   error
@@ -33,7 +34,10 @@ func MarginLevelsFromProto(margin *vega.MarginLevels, accountSource AccountSourc
 		VegaTime: vegaTime,
 	}
 
-	err = accountSource.Obtain(&marginAccount)
+	err = accountSource.Obtain(ctx, &marginAccount)
+	if err != nil {
+		return MarginLevels{}, fmt.Errorf("failed to obtain accour for margin level: %w", err)
+	}
 
 	if maintenanceMargin, err = decimal.NewFromString(margin.MaintenanceMargin); err != nil {
 		return MarginLevels{}, fmt.Errorf("invalid maintenance margin: %w", err)
