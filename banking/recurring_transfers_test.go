@@ -20,6 +20,7 @@ func TestRecurringTransfers(t *testing.T) {
 	t.Run("valid forever transfers, cancelled not enough funds", testForeverTransferCancelledNotEnoughFunds)
 	t.Run("invalid recurring transfers, duplicates", testInvalidRecurringTransfersDuplicates)
 	t.Run("invalid recurring transfers, bad amount", testInvalidRecurringTransfersBadAmount)
+	t.Run("invalid recurring transfers, in the past", testInvalidRecurringTransfersInThePast)
 }
 
 func testInvalidRecurringTransfersBadAmount(t *testing.T) {
@@ -53,6 +54,68 @@ func testInvalidRecurringTransfersBadAmount(t *testing.T) {
 	assert.EqualError(t,
 		e.TransferFunds(ctx, transfer),
 		"could not transfer funds, less than minimal amount requested to transfer",
+	)
+}
+
+func testInvalidRecurringTransfersInThePast(t *testing.T) {
+	e := getTestEngine(t)
+	defer e.ctrl.Finish()
+
+	// let's do a massive fee, easy to test
+	e.OnTransferFeeFactorUpdate(context.Background(), num.NewDecimalFromFloat(0.5))
+	e.OnEpoch(context.Background(), types.Epoch{Seq: 7, Action: vega.EpochAction_EPOCH_ACTION_START})
+
+	var endEpoch13 uint64 = 11
+	ctx := context.Background()
+	transfer := &types.TransferFunds{
+		Kind: types.TransferCommandKindRecurring,
+		Recurring: &types.RecurringTransfer{
+			TransferBase: &types.TransferBase{
+				ID:              "TRANSFERID",
+				From:            "03ae90688632c649c4beab6040ff5bd04dbde8efbf737d8673bbda792a110301",
+				FromAccountType: types.AccountTypeGeneral,
+				To:              "2e05fd230f3c9f4eaf0bdc5bfb7ca0c9d00278afc44637aab60da76653d7ccf0",
+				ToAccountType:   types.AccountTypeGlobalReward,
+				Asset:           "eth",
+				Amount:          num.NewUint(100),
+				Reference:       "someref",
+			},
+			StartEpoch: 6,
+			EndEpoch:   &endEpoch13,
+			Factor:     num.MustDecimalFromString("0.9"),
+		},
+	}
+
+	e.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(assets.NewAsset(&mockAsset{quantum: num.DecimalFromFloat(10)}), nil)
+	e.broker.EXPECT().Send(gomock.Any()).Times(1)
+	assert.EqualError(t,
+		e.TransferFunds(ctx, transfer),
+		"start epoch in the past",
+	)
+
+	// now all should be fine, let's try to start another same transfer use the current epoch
+
+	transfer2 := &types.TransferFunds{
+		Kind: types.TransferCommandKindRecurring,
+		Recurring: &types.RecurringTransfer{
+			TransferBase: &types.TransferBase{
+				ID:              "TRANSFERID2",
+				From:            "03ae90688632c649c4beab6040ff5bd04dbde8efbf737d8673bbda792a110301",
+				FromAccountType: types.AccountTypeGeneral,
+				To:              "2e05fd230f3c9f4eaf0bdc5bfb7ca0c9d00278afc44637aab60da76653d7ccf0",
+				ToAccountType:   types.AccountTypeGlobalReward,
+				Asset:           "eth",
+				Amount:          num.NewUint(50),
+				Reference:       "someotherref",
+			},
+			StartEpoch: 7,
+			Factor:     num.MustDecimalFromString("0.9"),
+		},
+	}
+
+	e.broker.EXPECT().Send(gomock.Any()).Times(1)
+	assert.NoError(t,
+		e.TransferFunds(ctx, transfer2),
 	)
 }
 
