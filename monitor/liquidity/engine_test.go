@@ -27,6 +27,7 @@ func newTestHarness(t *testing.T) *testHarness {
 
 func (h *testHarness) WhenInLiquidityAuction(v bool) *testHarness {
 	h.AuctionState.EXPECT().IsLiquidityAuction().AnyTimes().Return(v)
+	h.AuctionState.EXPECT().IsLiquidityExtension().AnyTimes().Return(false)
 	return h
 }
 
