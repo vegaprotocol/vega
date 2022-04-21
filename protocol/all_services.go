@@ -350,6 +350,10 @@ func (svcs *allServices) setupNetParameters() error {
 			Watcher: svcs.pow.UpdateSpamPoWNumberOfTxPerBlock,
 		},
 		netparams.WatchParam{
+			Param:   netparams.ValidatorsEpochLength,
+			Watcher: svcs.topology.OnEpochLengthUpdate,
+		},
+		netparams.WatchParam{
 			Param:   netparams.NumberOfTendermintValidators,
 			Watcher: svcs.topology.UpdateNumberOfTendermintValidators,
 		},
