@@ -22,7 +22,6 @@ var (
 	PerformanceIncrement        = num.DecimalFromFloat(0.1)
 	DecimalOne                  = num.DecimalFromFloat(1)
 	VotingPowerScalingFactor, _ = num.DecimalFromString("10000")
-	BlocksToKeepMalperforming   = int64(1000000)
 )
 
 type ValidatorStatus int32
@@ -183,11 +182,12 @@ func (t *Topology) RecalcValidatorSet(ctx context.Context, epochSeq string, dele
 			t.validators[k].lastBlockWithPositiveRanking = int64(t.currentBlockHeight)
 			continue
 		}
+
 		// if the node hasn't had a positive score for more than 10 epochs it is dropped - unless it has stake delegated to it, otherwise this stake
-		// will be lost
-		if int64(t.currentBlockHeight)-t.validators[k].lastBlockWithPositiveRanking > BlocksToKeepMalperforming && stakeScore[k].IsZero() {
+		// will be lost. We also keep it as long as it's still a tendermint validator.
+		if t.validators[k].status != ValidatorStatusTendermint && int64(t.currentBlockHeight)-t.validators[k].lastBlockWithPositiveRanking > t.blocksToKeepMalperforming && stakeScore[k].IsZero() {
 			t.log.Info("removing validator with 0 positive ranking for too long", logging.String("node-id", k))
-			t.sendValidatorUpdateEvent(ctx, t.validators[k].data, true)
+			t.sendValidatorUpdateEvent(ctx, t.validators[k].data, false)
 			delete(t.validators, k)
 		}
 	}

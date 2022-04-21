@@ -160,6 +160,8 @@ type Topology struct {
 	checkpointLoaded bool
 	notary           Notary
 	signatures       Signatures
+
+	blocksToKeepMalperforming int64
 }
 
 func (t *Topology) OnEpochEvent(ctx context.Context, epoch types.Epoch) {
@@ -216,6 +218,13 @@ func NewTopology(
 	}
 
 	return t
+}
+
+// OnEpochLengthUpdate updates the duration of an epoch - which is used to calculate the number of blocks to keep a malperforming validators.
+// The number of blocks is calculated as 10 epochs x duration of epoch in seconds, assuming block time is 1s.
+func (t *Topology) OnEpochLengthUpdate(ctx context.Context, l time.Duration) error {
+	t.blocksToKeepMalperforming = int64(10 * l.Seconds())
+	return nil
 }
 
 // SetNotary this is not good, the topology depends on the notary

@@ -23,6 +23,8 @@
 - [5231](https://github.com/vegaprotocol/vega/issues/5231) - Fix pegged orders to be reset to the order pointer after snapshot loading
 - [5247](https://github.com/vegaprotocol/vega/issues/5247) - Fix the check for overflow in scaling settlement price
 - [5250](https://github.com/vegaprotocol/vega/issues/5250) - Fixed panic in loading validator checkpoint
+- [5260](https://github.com/vegaprotocol/vega/issues/5260) - Process recurring transfer before rewards
+- [5262](https://github.com/vegaprotocol/vega/issues/5262) - Allow recurring transfers to start during the current epoch
 
 ## 0.50.1
 

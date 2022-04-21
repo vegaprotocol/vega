@@ -52,7 +52,7 @@ func (e *Engine) recurringTransfer(
 	}
 
 	// can't create transfer with start epoch in the past
-	if transfer.StartEpoch <= e.currentEpoch {
+	if transfer.StartEpoch < e.currentEpoch {
 		transfer.Status = types.TransferStatusRejected
 		return ErrStartEpochInThePast
 	}

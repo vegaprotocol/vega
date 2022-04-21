@@ -239,7 +239,7 @@ func (ssp *SimpleSpamPolicy) PreBlockAccept(tx abci.Tx) (bool, error) {
 
 	// check if the party has enough balance to submit commands
 	balance, err := ssp.accounts.GetAvailableBalance(party)
-	if err != nil || balance.LT(ssp.minTokensRequired) {
+	if !ssp.minTokensRequired.IsZero() && (err != nil || balance.LT(ssp.minTokensRequired)) {
 		if ssp.log.GetLevel() <= logging.DebugLevel {
 			ssp.log.Debug("Spam pre: party has insufficient balance for "+ssp.policyName, logging.String("party", party), logging.String("balance", num.UintToString(balance)))
 		}
