@@ -299,7 +299,6 @@ func (e *Engine) CheckPrice(ctx context.Context, as AuctionState, p *num.Uint, v
 			as.SetReadyToLeave()
 			// reset the engine
 			e.resetPriceHistory(p, v)
-			e.reactivateBounds()
 			return nil
 		}
 		// liquidity auction, and it was safe to end -> book is OK, price was OK, reset the engine
@@ -353,6 +352,7 @@ func (e *Engine) reactivateBounds() {
 		}
 		b.Active = true
 	}
+	e.priceRangeCacheTime = time.Time{}
 }
 
 // recordPriceChange informs price monitoring module of a price change within the same instance as specified by the last call to UpdateTime.
