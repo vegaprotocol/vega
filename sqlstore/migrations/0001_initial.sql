@@ -11,8 +11,8 @@ create table blocks
 create table assets
 (
     id             BYTEA NOT NULL PRIMARY KEY,
-    name           TEXT NOT NULL UNIQUE,
-    symbol         TEXT NOT NULL UNIQUE,
+    name           TEXT NOT NULL,
+    symbol         TEXT NOT NULL,
     total_supply   NUMERIC(32, 0),
     decimals       INT,
     quantum        INT,
@@ -530,7 +530,7 @@ create table if not exists liquidity_provisions (
     fee numeric(32, 16),
     sells jsonb,
     buys jsonb,
-    version text,
+    version bigint,
     status liquidity_provision_status not null,
     reference text,
     vega_time timestamp with time zone not null references blocks(vega_time),
