@@ -23,6 +23,7 @@
 - [3372](https://github.com/vegaprotocol/vega/issues/3372) - Add integration test making sure margin is released when an LP is cancelled.
 - [5235](https://github.com/vegaprotocol/vega/issues/5235) - Use `BroadcastTxSync` instead of async for submitting transactions to `tendermint`
 - [5268](https://github.com/vegaprotocol/vega/issues/5268) - Make validator heartbeat frequency a function of the epoch duration.
+- [5271](https://github.com/vegaprotocol/vega/issues/5271) - Make generated hex IDs lower case
 
 ### 🐛 Fixes
 - [4798](https://github.com/vegaprotocol/vega/issues/4978) - Set market pending timestamp to the time at which the market is created.
