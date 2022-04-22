@@ -50,7 +50,7 @@ func filterAccountsQuery(af entities.AccountFilter) (string, []interface{}, erro
 	return query, args, nil
 }
 
-func filterAccountBalancesQuery(af entities.AccountFilter, pagination entities.Pagination) (string, []interface{}) {
+func filterAccountBalancesQuery(af entities.AccountFilter, pagination entities.Pagination) (string, []interface{}, error) {
 	var args []interface{}
 
 	where := ""
@@ -62,9 +62,13 @@ func filterAccountBalancesQuery(af entities.AccountFilter, pagination entities.P
 	}
 
 	if len(af.Parties) > 0 {
-		partyIDs := make([]entities.PartyID, len(af.Parties))
+		partyIDs := make([][]byte, len(af.Parties))
 		for i, party := range af.Parties {
-			partyIDs[i] = party.ID
+			bytes, err := party.ID.Bytes()
+			if err != nil {
+				return "", nil, fmt.Errorf("Couldn't decode party ID: %w", err)
+			}
+			partyIDs[i] = bytes
 		}
 		where = fmt.Sprintf(`%s%sACCOUNTS.party_id=ANY(%s)`, where, and, nextBindVar(&args, partyIDs))
 		if and == "" {
@@ -101,5 +105,6 @@ func filterAccountBalancesQuery(af entities.AccountFilter, pagination entities.P
 
 	// and we're calling the order and paginate query method so that we can paginate later as it is a requirement for
 	// data-node API v2, but pass no ordering columns as we've already defined the ordering we want for this query.
-	return orderAndPaginateQuery(query, nil, pagination, args...)
+	query, args = orderAndPaginateQuery(query, nil, pagination, args...)
+	return query, args, nil
 }

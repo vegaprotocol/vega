@@ -19,15 +19,6 @@ type Ledger interface {
 	Flush(ctx context.Context) error
 }
 
-type AccountStore interface {
-	Obtain(ctx context.Context, a *entities.Account) error
-}
-
-type BalanceStore interface {
-	Add(b entities.Balance) error
-	Flush(ctx context.Context) error
-}
-
 type TransferResponseEvent interface {
 	events.Event
 	TransferResponses() []*vega.TransferResponse
@@ -36,7 +27,6 @@ type TransferResponseEvent interface {
 type TransferResponse struct {
 	ledger   Ledger
 	accounts AccountStore
-	parties  PartyStore
 	vegaTime time.Time
 	balances BalanceStore
 	log      *logging.Logger
@@ -45,15 +35,11 @@ type TransferResponse struct {
 func NewTransferResponse(
 	ledger Ledger,
 	accounts AccountStore,
-	balances BalanceStore,
-	parties PartyStore,
 	log *logging.Logger,
 ) *TransferResponse {
 	return &TransferResponse{
 		ledger:   ledger,
 		accounts: accounts,
-		balances: balances,
-		parties:  parties,
 		log:      log,
 	}
 }
@@ -68,11 +54,7 @@ func (t *TransferResponse) Push(ctx context.Context, evt events.Event) error {
 	case TimeUpdateEvent:
 		t.vegaTime = e.Time()
 		err := t.ledger.Flush(ctx)
-		if err != nil {
-			return errors.Wrap(err, "flushing ledgers")
-		}
-		err = t.balances.Flush(ctx)
-		return errors.Wrap(err, "flushing balances")
+		return errors.Wrap(err, "flushing ledger")
 	case TransferResponseEvent:
 		return t.consume(ctx, e)
 	default:
@@ -89,41 +71,12 @@ func (t *TransferResponse) consume(ctx context.Context, e TransferResponseEvent)
 				errs.WriteString(fmt.Sprintf("couldn't add ledger entry: %v, error:%s\n", vle, err))
 			}
 		}
-		for _, vb := range tr.Balances {
-			if err := t.addBalance(ctx, vb, t.vegaTime); err != nil {
-				errs.WriteString(fmt.Sprintf("couldn't add balance: %v, error:%s\n", vb, err))
-			}
-		}
 	}
 
 	if errs.Len() != 0 {
 		return errors.Errorf("processing transfer response:%s", errs.String())
 	}
 
-	return nil
-}
-
-func (t *TransferResponse) addBalance(ctx context.Context, vb *vega.TransferBalance, vegaTime time.Time) error {
-	acc, err := t.obtainAccountWithProto(ctx, vb.Account, vegaTime)
-	if err != nil {
-		return errors.Wrap(err, "obtaining account")
-	}
-
-	balance, err := decimal.NewFromString(vb.Balance)
-	if err != nil {
-		return errors.Wrap(err, "parsing account balance")
-	}
-
-	b := entities.Balance{
-		AccountID: acc.ID,
-		Balance:   balance,
-		VegaTime:  vegaTime,
-	}
-
-	err = t.balances.Add(b)
-	if err != nil {
-		return errors.Wrap(err, "adding balance to store")
-	}
 	return nil
 }
 
@@ -170,20 +123,6 @@ func (t *TransferResponse) obtainAccountWithID(ctx context.Context, id string, v
 	err = t.accounts.Obtain(ctx, &a)
 	if err != nil {
 		return entities.Account{}, errors.Wrapf(err, "obtaining account for id: %s", id)
-	}
-	return a, nil
-}
-
-func (t *TransferResponse) obtainAccountWithProto(ctx context.Context, va *vega.Account, vegaTime time.Time) (entities.Account, error) {
-	a, err := entities.AccountFromProto(*va)
-	if err != nil {
-		return entities.Account{}, errors.Wrap(err, "obtaining account for balance")
-	}
-
-	a.VegaTime = vegaTime
-	err = t.accounts.Obtain(ctx, &a)
-	if err != nil {
-		return entities.Account{}, errors.Wrap(err, "obtaining account")
 	}
 	return a, nil
 }

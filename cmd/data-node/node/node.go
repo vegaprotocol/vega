@@ -165,6 +165,7 @@ type NodeCommand struct {
 	checkpointSub        *subscribers.CheckpointSub
 	transferSub          *subscribers.TransferSub
 
+	accountSubSQL             *sqlsubscribers.Account
 	assetSubSQL               *sqlsubscribers.Asset
 	partySubSQL               *sqlsubscribers.Party
 	timeSubSQL                *sqlsubscribers.Time

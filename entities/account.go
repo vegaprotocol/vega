@@ -27,7 +27,7 @@ func (a Account) String() string {
 	return fmt.Sprintf("{ID: %s}", a.AssetID)
 }
 
-func AccountFromProto(va vega.Account) (Account, error) {
+func AccountFromProto(va *vega.Account) (Account, error) {
 	account := Account{
 		PartyID:  NewPartyID(va.Owner),
 		AssetID:  NewAssetID(va.Asset),
