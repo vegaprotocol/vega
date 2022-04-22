@@ -56,6 +56,9 @@ func (e *ChainInfo) ReloadConf(cfg Config) {
 }
 
 func (c *ChainInfo) SetChainID(chainID string) error {
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
+
 	data := storedInfo{ChainID: chainID}
 	jsonData, err := json.MarshalIndent(data, "", " ")
 	if err != nil {
@@ -71,9 +74,7 @@ func (c *ChainInfo) SetChainID(chainID string) error {
 		c.onCriticalError()
 	}
 	// save the stored chain ID
-	c.mutex.Lock()
 	c.storedInfo = &data
-	c.mutex.Unlock()
 
 	return err
 }
