@@ -46,7 +46,7 @@ type LiquidityProvision struct {
 	Fee              decimal.Decimal
 	Sells            []LiquidityOrderReference
 	Buys             []LiquidityOrderReference
-	Version          string
+	Version          int64
 	Status           LiquidityProvisionStatus
 	Reference        string
 	VegaTime         time.Time
@@ -88,7 +88,7 @@ func LiquidityProvisionFromProto(lpProto *vega.LiquidityProvision, vegaTime time
 		Fee:              fee,
 		Sells:            sells,
 		Buys:             buys,
-		Version:          lpProto.Version,
+		Version:          int64(lpProto.Version),
 		Status:           LiquidityProvisionStatus(lpProto.Status),
 		Reference:        lpProto.Reference,
 		VegaTime:         vegaTime,
@@ -116,7 +116,7 @@ func (lp *LiquidityProvision) ToProto() *vega.LiquidityProvision {
 		Fee:              lp.Fee.String(),
 		Sells:            sells,
 		Buys:             buys,
-		Version:          lp.Version,
+		Version:          uint64(lp.Version),
 		Status:           vega.LiquidityProvision_Status(lp.Status),
 		Reference:        lp.Reference,
 	}
