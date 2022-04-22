@@ -8,7 +8,6 @@ import (
 	"sync"
 	"time"
 
-	proto "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/risk"
 	"code.vegaprotocol.io/vega/types"
@@ -234,14 +233,15 @@ func (e *Engine) OnTimeUpdate(now time.Time) {
 	e.recordTimeChange(now)
 }
 
-// CheckPrice checks how current price, volume and time should impact the auction state and modifies it accordingly: start auction, end auction, extend ongoing auction.
-func (e *Engine) CheckPrice(ctx context.Context, as AuctionState, p *num.Uint, v uint64, persistent bool) error {
+// CheckPrice checks how current price, volume and time should impact the auction state and modifies it accordingly: start auction, end auction, extend ongoing auction,
+// "true" gets returned if non-persistent order should be rejected.
+func (e *Engine) CheckPrice(ctx context.Context, as AuctionState, p *num.Uint, v uint64, persistent bool) bool {
 	// initialise with the first price & time provided, otherwise there won't be any bounds
 	wasInitialised := e.initialised
 	if !wasInitialised {
 		// Volume of 0, do nothing
 		if v == 0 {
-			return nil
+			return false
 		}
 		e.resetPriceHistory(p, v)
 		e.initialised = true
@@ -254,12 +254,12 @@ func (e *Engine) CheckPrice(ctx context.Context, as AuctionState, p *num.Uint, v
 			if wasInitialised {
 				e.recordPriceChange(p, v)
 			}
-			return nil
+			return false
 		}
 		if !persistent {
 			// we're going to stay in continuous trading, make sure we still have bounds
 			e.reactivateBounds()
-			return proto.ErrNonPersistentOrderOutOfBounds
+			return true
 		}
 		duration := types.AuctionDuration{}
 		for _, b := range bounds {
@@ -269,20 +269,20 @@ func (e *Engine) CheckPrice(ctx context.Context, as AuctionState, p *num.Uint, v
 		if fba && as.CanLeave() {
 			// bounds were violated, based on the values in the bounds slice, we can calculate how long the auction should last
 			as.ExtendAuctionPrice(duration)
-			return nil
+			return false
 		}
 		if min := int64(e.minDuration / time.Second); duration.Duration < min {
 			duration.Duration = min
 		}
 
 		as.StartPriceAuction(e.now, &duration)
-		return nil
+		return false
 	}
 	// market is in auction
 	// opening auction -> ignore
 	if as.IsOpeningAuction() {
 		e.resetPriceHistory(p, v)
-		return nil
+		return false
 	}
 
 	bounds := e.checkBounds(ctx, p, v)
@@ -291,23 +291,20 @@ func (e *Engine) CheckPrice(ctx context.Context, as AuctionState, p *num.Uint, v
 		// check for end of auction, reset monitoring, and end auction
 		if as.IsPriceAuction() || as.IsPriceExtension() {
 			end := as.ExpiresAt()
-			if end == nil {
-				return ErrExpiresAtNotSet
-			}
 			if !e.now.After(*end) {
-				return nil
+				return false
 			}
 			// auction can be terminated
 			as.SetReadyToLeave()
 			// reset the engine
 			e.resetPriceHistory(p, v)
-			return nil
+			return false
 		}
 		// liquidity auction, and it was safe to end -> book is OK, price was OK, reset the engine
 		if as.CanLeave() {
 			e.reactivateBounds()
 		}
-		return nil
+		return false
 	}
 
 	var duration int64
@@ -320,7 +317,7 @@ func (e *Engine) CheckPrice(ctx context.Context, as AuctionState, p *num.Uint, v
 		Duration: duration,
 	})
 
-	return nil
+	return false
 }
 
 // resetPriceHistory deletes existing price history and starts it afresh with the supplied value.

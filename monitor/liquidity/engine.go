@@ -5,7 +5,6 @@ import (
 	"sync"
 	"time"
 
-	proto "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
 )
@@ -68,14 +67,15 @@ func (e *Engine) UpdateTargetStakeTriggerRatio(ctx context.Context, ratio num.De
 }
 
 // CheckLiquidity Starts or Ends a Liquidity auction given the current and target stakes along with best static bid and ask volumes.
-// The constant c1 represents the netparam `MarketLiquidityTargetStakeTriggeringRatio`.
+// The constant c1 represents the netparam `MarketLiquidityTargetStakeTriggeringRatio`,
+// "true" gets returned if non-persistent order should be rejected.
 func (e *Engine) CheckLiquidity(as AuctionState, t time.Time, currentStake *num.Uint, trades []*types.Trade,
 	rf types.RiskFactor, refPrice *num.Uint, bestStaticBidVolume, bestStaticAskVolume uint64, persistent bool,
-) error {
+) bool {
 	exp := as.ExpiresAt()
 	if exp != nil && exp.After(t) {
 		// we're in auction, and the auction isn't expiring yet, so we don't have to do anything yet
-		return nil
+		return false
 	}
 	e.mu.Lock()
 	c1 := e.params.TriggeringRatio
@@ -91,11 +91,11 @@ func (e *Engine) CheckLiquidity(as AuctionState, t time.Time, currentStake *num.
 	if exp != nil && as.IsLiquidityAuction() || as.IsLiquidityExtension() {
 		if currentStake.GTE(targetStake) && bestStaticBidVolume > 0 && bestStaticAskVolume > 0 {
 			as.SetReadyToLeave()
-			return nil // all done
+			return false // all done
 		}
 		// we're still in trouble, extend the auction
 		as.ExtendAuctionLiquidity(ext)
-		return nil
+		return false
 	}
 	// multiply target stake by triggering ratio
 	scaledTargetStakeDec := targetStake.ToDecimal().Mul(c1)
@@ -105,16 +105,16 @@ func (e *Engine) CheckLiquidity(as AuctionState, t time.Time, currentStake *num.
 		if stakeUndersupplied && len(trades) > 0 && !persistent {
 			// non-persistent order cannot trigger auction by raising target stake
 			// we're going to stay in continuous trading
-			return proto.OrderError_ORDER_ERROR_INVALID_PERSISTENCE
+			return true
 		}
 		if exp != nil {
 			as.ExtendAuctionLiquidity(ext)
 
-			return nil
+			return false
 		}
 		as.StartLiquidityAuction(t, &types.AuctionDuration{
 			Duration: md, // we multiply this by a second later on
 		})
 	}
-	return nil
+	return false
 }

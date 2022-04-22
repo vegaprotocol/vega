@@ -20,11 +20,7 @@ func (m *Market) checkAuction(ctx context.Context, now time.Time) {
 		p, v, _ := m.matching.GetIndicativePriceAndVolume()
 		if v > 0 {
 			// pass the first uncrossing price to price engine so state variables depending on it can be initialised
-			if err := m.pMonitor.CheckPrice(ctx, m.as, p.Clone(), v, now, true); err != nil {
-				m.log.Panic("unable to run check price with price monitor",
-					logging.String("market-id", m.GetID()),
-					logging.Error(err))
-			}
+			m.pMonitor.CheckPrice(ctx, m.as, p.Clone(), v, now, true)
 			m.OnOpeningAuctionFirstUncrossingPrice()
 		}
 	}
@@ -50,11 +46,7 @@ func (m *Market) checkAuction(ctx context.Context, now time.Time) {
 			return
 		}
 		p, v, _ := m.matching.GetIndicativePriceAndVolume()
-		if err := m.pMonitor.CheckPrice(ctx, m.as, p.Clone(), v, true); err != nil {
-			m.log.Panic("unable to run check price with price monitor",
-				logging.String("market-id", m.GetID()),
-				logging.Error(err))
-		}
+		m.pMonitor.CheckPrice(ctx, m.as, p.Clone(), v, true)
 		if m.as.ExtensionTrigger() == types.AuctionTriggerPrice {
 			// this should never, ever happen
 			m.log.Panic("Leaving opening auction somehow triggered price monitoring to extend the auction")
@@ -88,11 +80,7 @@ func (m *Market) checkAuction(ctx context.Context, now time.Time) {
 	}
 	p, v, _ := m.matching.GetIndicativePriceAndVolume()
 	if isPrice || m.as.CanLeave() {
-		if err := m.pMonitor.CheckPrice(ctx, m.as, p.Clone(), v, true); err != nil {
-			m.log.Panic("unable to run check price with price monitor",
-				logging.String("market-id", m.GetID()),
-				logging.Error(err))
-		}
+		m.pMonitor.CheckPrice(ctx, m.as, p.Clone(), v, true)
 	}
 	end := m.as.CanLeave()
 	if isPrice && end {

@@ -98,7 +98,7 @@ var (
 // @TODO the interface shouldn't be imported here.
 type PriceMonitor interface {
 	OnTimeUpdate(now time.Time)
-	CheckPrice(ctx context.Context, as price.AuctionState, p *num.Uint, v uint64, persistent bool) error
+	CheckPrice(ctx context.Context, as price.AuctionState, p *num.Uint, v uint64, persistent bool) bool
 	GetCurrentBounds() []*types.PriceMonitoringBounds
 	SetMinDuration(d time.Duration)
 	GetValidPriceRange() (num.WrappedDecimal, num.WrappedDecimal)
@@ -112,7 +112,7 @@ type PriceMonitor interface {
 
 // LiquidityMonitor.
 type LiquidityMonitor interface {
-	CheckLiquidity(as lmon.AuctionState, t time.Time, currentStake *num.Uint, trades []*types.Trade, rf types.RiskFactor, markPrice *num.Uint, bestStaticBidVolume, bestStaticAskVolume uint64, persistent bool) error
+	CheckLiquidity(as lmon.AuctionState, t time.Time, currentStake *num.Uint, trades []*types.Trade, rf types.RiskFactor, markPrice *num.Uint, bestStaticBidVolume, bestStaticAskVolume uint64, persistent bool) bool
 	SetMinDuration(d time.Duration)
 	UpdateTargetStakeTriggerRatio(ctx context.Context, ratio num.Decimal)
 	UpdateParameters(*types.LiquidityMonitoringParameters)
@@ -1014,14 +1014,7 @@ func (m *Market) leaveAuction(ctx context.Context, now time.Time) {
 		if !isOpening {
 			// @TODO we should update this once
 			for _, trade := range uncrossedOrder.Trades {
-				err := m.pMonitor.CheckPrice(
-					ctx, m.as, trade.Price.Clone(), trade.Size, now, true,
-				)
-				if err != nil {
-					m.log.Panic("unable to run check price with price monitor",
-						logging.String("market-id", m.GetID()),
-						logging.Error(err))
-				}
+				m.pMonitor.CheckPrice(ctx, m.as, trade.Price.Clone(), trade.Size, now, true)
 			}
 		}
 
@@ -1437,21 +1430,12 @@ func (m *Market) checkPriceAndGetTrades(ctx context.Context, order *types.Order)
 	}
 
 	for _, t := range trades {
-		if merr := m.pMonitor.CheckPrice(ctx, m.as, t.Price.Clone(), t.Size, persistent); merr != nil {
-			// a specific order error
-			if err, ok := merr.(types.OrderError); ok {
-				return nil, err
-			}
-			m.log.Panic("unable to run check price with price monitor",
-				logging.String("market-id", m.GetID()),
-				logging.Error(merr))
+		if m.pMonitor.CheckPrice(ctx, m.as, t.Price.Clone(), t.Size, persistent) {
+			return nil, types.OrderErrorNonPersistentOrderOutOfPriceBounds
 		}
 	}
-	if merr := m.checkLiquidity(ctx, trades, persistent); merr != nil {
-		// a specific order error
-		if err, ok := merr.(types.OrderError); ok {
-			return nil, err
-		}
+	if m.checkLiquidity(ctx, trades, persistent) {
+		return nil, types.OrderErrorInvalidPersistance
 	}
 
 	if evt := m.as.AuctionExtended(ctx, m.currentTime); evt != nil {
@@ -3093,7 +3077,7 @@ func (m *Market) getSuppliedStake() *num.Uint {
 	return m.liquidity.CalculateSuppliedStake()
 }
 
-func (m *Market) checkLiquidity(ctx context.Context, trades []*types.Trade, persistentOrder bool) error {
+func (m *Market) checkLiquidity(ctx context.Context, trades []*types.Trade, persistentOrder bool) bool {
 	// before we check liquidity, ensure we've moved all funds that can go towards
 	// provided stake to the bond accounts so we don't trigger liquidity auction for no reason
 	m.checkBondBalance(ctx)
@@ -3130,11 +3114,7 @@ func (m *Market) commandLiquidityAuction(ctx context.Context) {
 	if m.as.InAuction() && m.as.CanLeave() && !m.as.IsOpeningAuction() {
 		p, v, _ := m.matching.GetIndicativePriceAndVolume()
 		// no need to clone here, we're getting indicative price once for this call
-		if err := m.pMonitor.CheckPrice(ctx, m.as, p, v, true); err != nil {
-			m.log.Panic("unable to run check price with price monitor",
-				logging.String("market-id", m.GetID()),
-				logging.Error(err))
-		}
+		m.pMonitor.CheckPrice(ctx, m.as, p, v, true)
 		// TODO: Need to also get indicative trades and check how they'd impact target stake,
 		// see  https://github.com/vegaprotocol/vega/issues/3047
 		// If price monitoring doesn't trigger auction than leave it
