@@ -95,7 +95,7 @@ func TestSnapshotRoundTrip(t *testing.T) {
 		"partiesLiquidityOrders:market-id": "0254d8b74441ca3bac8f9b141408502d9b1f297e8ef1054d45775566677a8072",
 		"partiesOrders:market-id":          "f9cb31b1c4c8df91f6a348d43978c302c8887336107c265259bc74fdddf00e19",
 		"pendingProvisions:market-id":      "6cc4d407a2ea45e37e27993eb6f94134b3f906d080777d94bf99551aa82dc461",
-		"provisions:market-id":             "db6161ad5d878863d2a89269c5153642a5e1f86f65cbae5cc4d037d33964e238",
+		"provisions:market-id":             "7c76902e145d0eaf0abb83382575c027097abdb418364c351e2ad085e1c69c3e",
 		"liquiditySupplied:market-id":      "3276bba2a77778ba710ec29e3a6e59212452dbda69eaac8f9160930d1270da1d",
 	}
 
@@ -130,10 +130,10 @@ func TestSnapshotRoundTrip(t *testing.T) {
 
 	expectedHashes2 := map[string]string{
 		"parameters:market-id":             "b5eec91c297baf1f06830350dbcb37d79937561ae605d2304eb12680e443775c",
-		"partiesLiquidityOrders:market-id": "c92b7c102539b6c59b2b3d4be17cabbdf4b385fa85007f69e6092bbc68c186b6",
+		"partiesLiquidityOrders:market-id": "c29d0b4d9265cf7951cc396ce8d6350ab7b2e978782423c4090842cbb2619f76",
 		"partiesOrders:market-id":          "f9cb31b1c4c8df91f6a348d43978c302c8887336107c265259bc74fdddf00e19",
 		"pendingProvisions:market-id":      "627ef55af7f36bea0d09b0081b85d66531a01df060d8e9447e17049a4e152b12",
-		"provisions:market-id":             "1f8dd286b9d1cbfeaec6dfe67881f8959885acc2fe561816017764f2b5e9d149",
+		"provisions:market-id":             "89335d14e98ca80b144cb6502e9b508d97d63027ba0c7733d6024030cdf102ed",
 		"liquiditySupplied:market-id":      "3276bba2a77778ba710ec29e3a6e59212452dbda69eaac8f9160930d1270da1d",
 	}
 
