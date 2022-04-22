@@ -18,11 +18,14 @@ func TestMarginLevels_Push(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
+	accountSource := mocks.NewMockAccountSource(ctrl)
+	accountSource.EXPECT().Obtain(gomock.Any(), gomock.Any()).AnyTimes().Return(nil)
+
 	store := mocks.NewMockMarginLevelsStore(ctrl)
 
 	store.EXPECT().Add(gomock.Any()).Times(1)
 	store.EXPECT().Flush(gomock.Any()).Times(1)
-	subscriber := sqlsubscribers.NewMarginLevels(store, logging.NewTestLogger())
+	subscriber := sqlsubscribers.NewMarginLevels(store, accountSource, logging.NewTestLogger())
 	subscriber.Push(context.Background(), events.NewTime(context.Background(), time.Now()))
 	subscriber.Push(context.Background(), events.NewMarginLevelsEvent(context.Background(), types.MarginLevels{
 		MaintenanceMargin:      num.NewUint(1000),

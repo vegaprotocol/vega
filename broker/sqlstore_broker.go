@@ -95,6 +95,7 @@ func (b *sqlStoreBroker) Receive(receiveContext context.Context) error {
 			}
 			blockContextCancelFn()
 			blockContext = nil
+
 		} else {
 			if subs, ok := b.typeToSubs[e.Type()]; ok {
 				for _, sub := range subs {

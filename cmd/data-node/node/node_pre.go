@@ -143,7 +143,7 @@ func (l *NodeCommand) setupSQLSubscribers() {
 	l.withdrawalSubSQL = sqlsubscribers.NewWithdrawal(l.withdrawalsStoreSQL, l.Log)
 	l.proposalsSubSQL = sqlsubscribers.NewProposal(l.proposalStoreSQL, l.Log)
 	l.votesSubSQL = sqlsubscribers.NewVote(l.voteStoreSQL, l.Log)
-	l.marginLevelsSubSQL = sqlsubscribers.NewMarginLevels(l.marginLevelsStoreSQL, l.Log)
+	l.marginLevelsSubSQL = sqlsubscribers.NewMarginLevels(l.marginLevelsStoreSQL, l.accountStoreSQL, l.Log)
 	l.riskFactorSubSQL = sqlsubscribers.NewRiskFactor(l.riskFactorStoreSQL, l.Log)
 	l.netParamSubSQL = sqlsubscribers.NewNetworkParameter(l.netParamStoreSQL, l.Log)
 	l.checkpointSubSQL = sqlsubscribers.NewCheckpoint(l.checkpointStoreSQL, l.Log)

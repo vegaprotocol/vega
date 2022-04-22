@@ -23,15 +23,17 @@ type MarginLevelsStore interface {
 }
 
 type MarginLevels struct {
-	store    MarginLevelsStore
-	log      *logging.Logger
-	vegaTime time.Time
+	store         MarginLevelsStore
+	accountSource AccountSource
+	log           *logging.Logger
+	vegaTime      time.Time
 }
 
-func NewMarginLevels(store MarginLevelsStore, log *logging.Logger) *MarginLevels {
+func NewMarginLevels(store MarginLevelsStore, accountSource AccountSource, log *logging.Logger) *MarginLevels {
 	return &MarginLevels{
-		store: store,
-		log:   log,
+		store:         store,
+		accountSource: accountSource,
+		log:           log,
 	}
 }
 
@@ -48,7 +50,7 @@ func (ml *MarginLevels) Push(ctx context.Context, evt events.Event) error {
 			ml.log.Error("inserting margin level events to Postgres failed", logging.Error(err))
 		}
 	case MarginLevelsEvent:
-		ml.consume(e)
+		ml.consume(ctx, e)
 	default:
 		return errors.Errorf("unknown event type %s", e.Type().String())
 	}
@@ -56,9 +58,9 @@ func (ml *MarginLevels) Push(ctx context.Context, evt events.Event) error {
 	return nil
 }
 
-func (ml *MarginLevels) consume(event MarginLevelsEvent) error {
+func (ml *MarginLevels) consume(ctx context.Context, event MarginLevelsEvent) error {
 	marginLevels := event.MarginLevels()
-	record, err := entities.MarginLevelsFromProto(&marginLevels, ml.vegaTime)
+	record, err := entities.MarginLevelsFromProto(ctx, &marginLevels, ml.accountSource, ml.vegaTime)
 	if err != nil {
 		return errors.Wrap(err, "converting margin levels proto to database entity failed")
 	}

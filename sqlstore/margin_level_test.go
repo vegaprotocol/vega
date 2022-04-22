@@ -9,9 +9,12 @@ import (
 	"code.vegaprotocol.io/data-node/sqlstore"
 	"code.vegaprotocol.io/protos/vega"
 	"github.com/jackc/pgx/v4"
+	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+const testAssetId = "deadbeef"
 
 func TestMarginLevels(t *testing.T) {
 	t.Run("Add should insert margin levels that don't exist in the current block", testInsertMarginLevels)
@@ -21,18 +24,52 @@ func TestMarginLevels(t *testing.T) {
 	t.Run("GetMarginLevelsByID should return the latest state of margin levels for the given party/market ID", testGetMarginLevelsByID)
 }
 
-func setupMarginLevelTests(t *testing.T, ctx context.Context) (*sqlstore.Blocks, *sqlstore.MarginLevels, *pgx.Conn) {
+type testBlockSource struct {
+	blockStore *sqlstore.Blocks
+	blockTime  time.Time
+}
+
+func (bs *testBlockSource) getNextBlock(t *testing.T) entities.Block {
+	bs.blockTime = bs.blockTime.Add(1 * time.Second)
+	return addTestBlockForTime(t, bs.blockStore, bs.blockTime)
+}
+
+func setupMarginLevelTests(t *testing.T, ctx context.Context) (*testBlockSource, *sqlstore.MarginLevels, *sqlstore.Accounts, *pgx.Conn) {
 	t.Helper()
 	DeleteEverything()
 
 	bs := sqlstore.NewBlocks(connectionSource)
+	testBlockSource := &testBlockSource{bs, time.Now()}
+
+	block := testBlockSource.getNextBlock(t)
+
+	assets := sqlstore.NewAssets(connectionSource)
+
+	testAsset := entities.Asset{
+		ID:            entities.AssetID{ID: entities.ID(testAssetId)},
+		Name:          "testAssetName",
+		Symbol:        "tan",
+		TotalSupply:   decimal.NewFromInt(20),
+		Decimals:      1,
+		Quantum:       1,
+		Source:        "TS",
+		ERC20Contract: "ET",
+		VegaTime:      block.VegaTime,
+	}
+
+	err := assets.Add(context.Background(), testAsset)
+	if err != nil {
+		t.Fatalf("failed to add test asset:%s", err)
+	}
+
+	accountStore := sqlstore.NewAccounts(connectionSource)
 	ml := sqlstore.NewMarginLevels(connectionSource)
 	config := NewTestConfig(testDBPort)
 
 	conn, err := pgx.Connect(ctx, config.ConnectionConfig.GetConnectionString())
 	require.NoError(t, err)
 
-	return bs, ml, conn
+	return testBlockSource, ml, accountStore, conn
 }
 
 func testInsertMarginLevels(t *testing.T) {
@@ -40,15 +77,15 @@ func testInsertMarginLevels(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
 	defer cancel()
 
-	bs, ml, conn := setupMarginLevelTests(t, ctx)
+	blockSource, ml, accountStore, conn := setupMarginLevelTests(t, ctx)
+	block := blockSource.getNextBlock(t)
 
 	var rowCount int
 	err := conn.QueryRow(ctx, `select count(*) from margin_levels`).Scan(&rowCount)
 	assert.NoError(t, err)
 
-	block := addTestBlock(t, bs)
 	marginLevelProto := getMarginLevelProto()
-	marginLevel, err := entities.MarginLevelsFromProto(marginLevelProto, block.VegaTime)
+	marginLevel, err := entities.MarginLevelsFromProto(context.Background(), marginLevelProto, accountStore, block.VegaTime)
 	require.NoError(t, err, "Converting margin levels proto to database entity")
 
 	err = ml.Add(marginLevel)
@@ -71,15 +108,15 @@ func testDuplicateMarginLevelInSameBlock(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
 	defer cancel()
 
-	bs, ml, conn := setupMarginLevelTests(t, ctx)
+	blockSource, ml, accountStore, conn := setupMarginLevelTests(t, ctx)
+	block := blockSource.getNextBlock(t)
 
 	var rowCount int
 	err := conn.QueryRow(ctx, `select count(*) from margin_levels`).Scan(&rowCount)
 	assert.NoError(t, err)
 
-	block := addTestBlock(t, bs)
 	marginLevelProto := getMarginLevelProto()
-	marginLevel, err := entities.MarginLevelsFromProto(marginLevelProto, block.VegaTime)
+	marginLevel, err := entities.MarginLevelsFromProto(context.Background(), marginLevelProto, accountStore, block.VegaTime)
 	require.NoError(t, err, "Converting margin levels proto to database entity")
 
 	err = ml.Add(marginLevel)
@@ -101,6 +138,7 @@ func testDuplicateMarginLevelInSameBlock(t *testing.T) {
 }
 
 func getMarginLevelProto() *vega.MarginLevels {
+
 	return &vega.MarginLevels{
 		MaintenanceMargin:      "1000",
 		SearchLevel:            "1000",
@@ -108,7 +146,7 @@ func getMarginLevelProto() *vega.MarginLevels {
 		CollateralReleaseLevel: "1000",
 		PartyId:                "deadbeef",
 		MarketId:               "deadbeef",
-		Asset:                  "deadbeef",
+		Asset:                  testAssetId,
 		Timestamp:              time.Now().UnixNano(),
 	}
 }
@@ -118,7 +156,8 @@ func testGetMarginLevelsByPartyID(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
 	defer cancel()
 
-	bs, ml, conn := setupMarginLevelTests(t, ctx)
+	blockSource, ml, accountStore, conn := setupMarginLevelTests(t, ctx)
+	block := blockSource.getNextBlock(t)
 
 	var rowCount int
 	err := conn.QueryRow(ctx, `select count(*) from margin_levels`).Scan(&rowCount)
@@ -141,11 +180,10 @@ func testGetMarginLevelsByPartyID(t *testing.T) {
 	ml4.SearchLevel = "2000"
 	ml4.MarketId = "deadbaad"
 
-	block := addTestBlock(t, bs)
-	marginLevel1, err := entities.MarginLevelsFromProto(ml1, block.VegaTime)
+	marginLevel1, err := entities.MarginLevelsFromProto(context.Background(), ml1, accountStore, block.VegaTime)
 	require.NoError(t, err, "Converting margin levels proto to database entity")
 
-	marginLevel2, err := entities.MarginLevelsFromProto(ml2, block.VegaTime)
+	marginLevel2, err := entities.MarginLevelsFromProto(context.Background(), ml2, accountStore, block.VegaTime)
 	require.NoError(t, err, "Converting margin levels proto to database entity")
 
 	err = ml.Add(marginLevel1)
@@ -160,13 +198,11 @@ func testGetMarginLevelsByPartyID(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, 2, rowCount)
 
-	time.Sleep(time.Second)
-
-	block = addTestBlock(t, bs)
-	marginLevel3, err := entities.MarginLevelsFromProto(ml3, block.VegaTime)
+	block = blockSource.getNextBlock(t)
+	marginLevel3, err := entities.MarginLevelsFromProto(context.Background(), ml3, accountStore, block.VegaTime)
 	require.NoError(t, err, "Converting margin levels proto to database entity")
 
-	marginLevel4, err := entities.MarginLevelsFromProto(ml4, block.VegaTime)
+	marginLevel4, err := entities.MarginLevelsFromProto(context.Background(), ml4, accountStore, block.VegaTime)
 	require.NoError(t, err, "Converting margin levels proto to database entity")
 
 	err = ml.Add(marginLevel3)
@@ -204,7 +240,8 @@ func testGetMarginLevelsByMarketID(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
 	defer cancel()
 
-	bs, ml, conn := setupMarginLevelTests(t, ctx)
+	blockSource, ml, accountStore, conn := setupMarginLevelTests(t, ctx)
+	block := blockSource.getNextBlock(t)
 
 	var rowCount int
 	err := conn.QueryRow(ctx, `select count(*) from margin_levels`).Scan(&rowCount)
@@ -227,11 +264,10 @@ func testGetMarginLevelsByMarketID(t *testing.T) {
 	ml4.SearchLevel = "2000"
 	ml4.PartyId = "deadbaad"
 
-	block := addTestBlock(t, bs)
-	marginLevel1, err := entities.MarginLevelsFromProto(ml1, block.VegaTime)
+	marginLevel1, err := entities.MarginLevelsFromProto(context.Background(), ml1, accountStore, block.VegaTime)
 	require.NoError(t, err, "Converting margin levels proto to database entity")
 
-	marginLevel2, err := entities.MarginLevelsFromProto(ml2, block.VegaTime)
+	marginLevel2, err := entities.MarginLevelsFromProto(context.Background(), ml2, accountStore, block.VegaTime)
 	require.NoError(t, err, "Converting margin levels proto to database entity")
 
 	err = ml.Add(marginLevel1)
@@ -248,11 +284,11 @@ func testGetMarginLevelsByMarketID(t *testing.T) {
 
 	time.Sleep(time.Second)
 
-	block = addTestBlock(t, bs)
-	marginLevel3, err := entities.MarginLevelsFromProto(ml3, block.VegaTime)
+	block = blockSource.getNextBlock(t)
+	marginLevel3, err := entities.MarginLevelsFromProto(context.Background(), ml3, accountStore, block.VegaTime)
 	require.NoError(t, err, "Converting margin levels proto to database entity")
 
-	marginLevel4, err := entities.MarginLevelsFromProto(ml4, block.VegaTime)
+	marginLevel4, err := entities.MarginLevelsFromProto(context.Background(), ml4, accountStore, block.VegaTime)
 	require.NoError(t, err, "Converting margin levels proto to database entity")
 
 	err = ml.Add(marginLevel3)
@@ -290,7 +326,8 @@ func testGetMarginLevelsByID(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
 	defer cancel()
 
-	bs, ml, conn := setupMarginLevelTests(t, ctx)
+	blockSource, ml, accountStore, conn := setupMarginLevelTests(t, ctx)
+	block := blockSource.getNextBlock(t)
 
 	var rowCount int
 	err := conn.QueryRow(ctx, `select count(*) from margin_levels`).Scan(&rowCount)
@@ -313,11 +350,10 @@ func testGetMarginLevelsByID(t *testing.T) {
 	ml4.SearchLevel = "2000"
 	ml4.PartyId = "DEADBAAD"
 
-	block := addTestBlock(t, bs)
-	marginLevel1, err := entities.MarginLevelsFromProto(ml1, block.VegaTime)
+	marginLevel1, err := entities.MarginLevelsFromProto(context.Background(), ml1, accountStore, block.VegaTime)
 	require.NoError(t, err, "Converting margin levels proto to database entity")
 
-	marginLevel2, err := entities.MarginLevelsFromProto(ml2, block.VegaTime)
+	marginLevel2, err := entities.MarginLevelsFromProto(context.Background(), ml2, accountStore, block.VegaTime)
 	require.NoError(t, err, "Converting margin levels proto to database entity")
 
 	err = ml.Add(marginLevel1)
@@ -334,11 +370,11 @@ func testGetMarginLevelsByID(t *testing.T) {
 
 	time.Sleep(time.Second)
 
-	block = addTestBlock(t, bs)
-	marginLevel3, err := entities.MarginLevelsFromProto(ml3, block.VegaTime)
+	block = blockSource.getNextBlock(t)
+	marginLevel3, err := entities.MarginLevelsFromProto(context.Background(), ml3, accountStore, block.VegaTime)
 	require.NoError(t, err, "Converting margin levels proto to database entity")
 
-	marginLevel4, err := entities.MarginLevelsFromProto(ml4, block.VegaTime)
+	marginLevel4, err := entities.MarginLevelsFromProto(context.Background(), ml4, accountStore, block.VegaTime)
 	require.NoError(t, err, "Converting margin levels proto to database entity")
 
 	err = ml.Add(marginLevel3)
