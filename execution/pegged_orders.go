@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/events"
+	"code.vegaprotocol.io/vega/matching"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
 )
@@ -27,6 +28,26 @@ func NewPeggedOrdersFromSnapshot(orders []*types.Order) *PeggedOrders {
 	return &PeggedOrders{
 		orders: orders,
 	}
+}
+
+// ReconcileWithOrderBook ensures that any pegged orders that are on the book point to the same
+// underlying value.
+func (p *PeggedOrders) ReconcileWithOrderBook(orderbook *matching.CachedOrderBook) error {
+	newPeggedOrders := make([]*types.Order, 0, len(p.orders))
+	for _, o := range p.orders {
+		if o.Status == types.OrderStatusParked {
+			newPeggedOrders = append(newPeggedOrders, o)
+			continue
+		}
+
+		order, err := orderbook.GetOrderByID(o.ID)
+		if err != nil {
+			return err // if its not parked it should be on the book
+		}
+		newPeggedOrders = append(newPeggedOrders, order)
+	}
+	p.orders = newPeggedOrders
+	return nil
 }
 
 func (p *PeggedOrders) Changed() bool {

@@ -229,6 +229,24 @@ func calcTotalDelegation(d []*types.ValidatorData) num.Decimal {
 	return total.ToDecimal()
 }
 
+// calculateRewardFactors calculates the fraction of the reward given to tendermint and ersatz validators based on their scaled stake.
+func (e *Engine) calculateRewardFactors(s_p, s_e num.Decimal) (num.Decimal, num.Decimal) {
+	s_t := s_p.Add(s_e)
+	s_pFactor := num.DecimalZero()
+	s_eFactor := num.DecimalZero()
+	// if there's stake calculate the factors of primary vs ersatz and make sure it's <= 1
+	if s_t.IsPositive() {
+		s_pFactor = s_p.Div(s_t)
+		s_eFactor = s_e.Div(s_t)
+		// if the factors add to more than 1, subtract the excess from the ersatz factors to make the total 1
+		overflow := num.MaxD(num.DecimalZero(), s_pFactor.Add(s_eFactor).Sub(decimal1))
+		s_eFactor = s_eFactor.Sub(overflow)
+	}
+
+	e.log.Info("tendermint/ersatz fractions of the reward", logging.String("total-delegation", s_t.String()), logging.String("tenderming-total-delegation", s_p.String()), logging.String("ersatz-total-delegation", s_e.String()), logging.String("tenderming-factor", s_pFactor.String()), logging.String("ersatz-factor", s_eFactor.String()))
+	return s_pFactor, s_eFactor
+}
+
 func (e *Engine) calculateRewardPayouts(ctx context.Context, epoch types.Epoch) []*payout {
 	// get the validator delegation data from the delegation engine and calculate the staking and delegation rewards for the epoch
 	delegationState := e.delegation.ProcessEpochDelegations(ctx, epoch)
@@ -246,17 +264,7 @@ func (e *Engine) calculateRewardPayouts(ctx context.Context, epoch types.Epoch) 
 
 	s_p := calcTotalDelegation(tmValidatorsDelegation)
 	s_e := calcTotalDelegation(ersatzValidatorsDelegation).Mul(e.ersatzRewardFactor)
-	s_t := s_p.Add(s_e)
-	s_pFactor := num.DecimalZero()
-	s_eFactor := num.DecimalZero()
-	// if there's stake calculate the factors of primary vs ersatz and make sure it's <= 1
-	if s_t.IsPositive() {
-		s_pFactor = s_p.Div(s_t)
-		s_eFactor = s_e.Div(s_t)
-		overflow := num.MinD(num.DecimalZero(), s_pFactor.Add(s_eFactor).Sub(decimal1))
-		s_eFactor = s_eFactor.Sub(overflow)
-	}
-
+	s_pFactor, s_eFactor := e.calculateRewardFactors(s_p, s_e)
 	for node, score := range tmValidatorsScores.NormalisedScores {
 		e.log.Info("Rewards: calculated normalised score for tendermint validators", logging.String("validator", node), logging.String("normalisedScore", score.String()))
 	}
@@ -275,7 +283,9 @@ func (e *Engine) calculateRewardPayouts(ctx context.Context, epoch types.Epoch) 
 			}
 			pos := []*payout{}
 			if (rewardType == types.AccountTypeGlobalReward && asset == e.global.asset) || rewardType == types.AccountTypeFeesInfrastructure {
+				e.log.Info("calculating reward for tendermint validators", logging.String("account-type", rewardType.String()))
 				pos = append(pos, e.calculateRewardTypeForAsset(num.NewUint(epoch.Seq).String(), asset, rewardType, account, tmValidatorsDelegation, tmValidatorsScores.NormalisedScores, epoch.EndTime, s_pFactor))
+				e.log.Info("calculating reward for ersatz validators", logging.String("account-type", rewardType.String()))
 				pos = append(pos, e.calculateRewardTypeForAsset(num.NewUint(epoch.Seq).String(), asset, rewardType, account, ersatzValidatorsDelegation, ersatzValidatorsScores.NormalisedScores, epoch.EndTime, s_eFactor))
 			} else {
 				pos = append(pos, e.calculateRewardTypeForAsset(num.NewUint(epoch.Seq).String(), asset, rewardType, account, tmValidatorsDelegation, tmValidatorsScores.NormalisedScores, epoch.EndTime, decimal1))
@@ -299,6 +309,7 @@ func (e *Engine) calculateRewardTypeForAsset(epochSeq string, asset string, rewa
 	case types.AccountTypeGlobalReward: // given to delegator based on stake
 		if asset == e.global.asset {
 			balance, _ := num.UintFromDecimal(account.Balance.ToDecimal().Mul(factor))
+			e.log.Info("reward balance", logging.String("epoch", epochSeq), logging.String("reward-type", rewardType.String()), logging.String("account-balance", account.Balance.String()), logging.String("factor", factor.String()), logging.String("effective-balance", balance.String()))
 			return calculateRewardsByStake(epochSeq, account.Asset, account.ID, balance, validatorNormalisedScores, validatorData, e.global.delegatorShare, e.global.maxPayoutPerParticipant, e.global.minValStakeUInt, e.rng, e.log)
 		}
 		return nil

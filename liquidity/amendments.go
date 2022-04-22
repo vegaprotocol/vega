@@ -71,6 +71,8 @@ func (e *Engine) AmendLiquidityProvision(
 	if lp.Status == types.LiquidityProvisionStatusActive {
 		lp.Status = types.LiquidityProvisionStatusUndeployed
 	}
+	// update version
+	lp.Version++
 
 	e.setShapesReferencesOnLiquidityProvision(lp, lpa.Buys, lpa.Sells, idGen)
 	e.broker.Send(events.NewLiquidityProvisionEvent(ctx, lp))

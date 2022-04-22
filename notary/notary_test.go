@@ -55,6 +55,7 @@ func TestNotary(t *testing.T) {
 	t.Run("test add key for unknow resource - fail", testAddKeyForKOResource)
 	t.Run("test add bad signature for known resource - success", testAddBadSignatureForOKResource)
 	t.Run("test add key finalize all sig", testAddKeyFinalize)
+	t.Run("test add key finalize all fails if sigs aren't tendermint validators", testAddKeyFinalizeFails)
 }
 
 func testAddKeyForKOResource(t *testing.T) {
@@ -117,6 +118,7 @@ func testAddKeyFinalize(t *testing.T) {
 	// add a valid node
 	notr.top.EXPECT().Len().AnyTimes().Return(1)
 	notr.top.EXPECT().IsValidatorVegaPubKey(gomock.Any()).AnyTimes().Return(true)
+	notr.top.EXPECT().IsTendermintValidator(gomock.Any()).AnyTimes().Return(true)
 
 	notr.top.EXPECT().IsValidator().Times(1).Return(true)
 	notr.StartAggregate(resID, kind, sig)
@@ -139,4 +141,40 @@ func testAddKeyFinalize(t *testing.T) {
 	signatures, ok := notr.IsSigned(context.Background(), resID, kind)
 	assert.True(t, ok)
 	assert.Len(t, signatures, 1)
+}
+
+func testAddKeyFinalizeFails(t *testing.T) {
+	notr := getTestNotary(t)
+
+	kind := types.NodeSignatureKindAssetNew
+	resID := "resid"
+	key := "123456"
+	sig := []byte("123456")
+
+	// add a valid node
+	notr.top.EXPECT().Len().AnyTimes().Return(1)
+	notr.top.EXPECT().IsValidatorVegaPubKey(gomock.Any()).AnyTimes().Return(true)
+	notr.top.EXPECT().IsTendermintValidator(gomock.Any()).AnyTimes().Return(false)
+
+	notr.top.EXPECT().IsValidator().Times(1).Return(true)
+	notr.StartAggregate(resID, kind, sig)
+
+	// expect command to be send on next on time update
+	notr.cmd.EXPECT().Command(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(1)
+	notr.onTick(context.Background(), time.Now())
+
+	ns := commandspb.NodeSignature{
+		Sig:  sig,
+		Id:   resID,
+		Kind: kind,
+	}
+
+	// first try to add a key for invalid resource
+	notr.top.EXPECT().SelfVegaPubKey().Times(1).Return(key)
+	err := notr.RegisterSignature(context.Background(), key, ns)
+	assert.NoError(t, err, notary.ErrUnknownResourceID.Error())
+
+	signatures, ok := notr.IsSigned(context.Background(), resID, kind)
+	assert.False(t, ok)
+	assert.Len(t, signatures, 0) // no signatures because everyone that signed wasn't a Tendermint validator
 }

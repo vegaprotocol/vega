@@ -37,6 +37,10 @@ func (t *Topology) Load(ctx context.Context, data []byte) error {
 	for k := range t.validators {
 		votingPower[k] = 0
 	}
+	tmKey := make(map[string]string, len(t.validators))
+	for k, v := range t.validators {
+		tmKey[k] = v.data.TmPubKey
+	}
 
 	t.validators = make(map[string]*valState, len(ckp.ValidatorState))
 	for _, node := range ckp.ValidatorState {
@@ -84,12 +88,16 @@ func (t *Topology) Load(ctx context.Context, data []byte) error {
 	// generate the tendermint updates from the voting power so that in end of the block the validator powers are pushed to tentermint
 	vUpdates := make([]tmtypes.ValidatorUpdate, 0, len(nextValidators))
 	for _, v := range nextValidators {
+		// NB: if the validator set in the checkpoint doesn't match genesis, vd may be nil
 		vd := t.validators[v]
-		pubkey, err := base64.StdEncoding.DecodeString(vd.data.TmPubKey)
+		pubkey, err := base64.StdEncoding.DecodeString(tmKey[v])
 		if err != nil {
 			continue
 		}
-		vd.validatorPower = votingPower[v]
+
+		if vd != nil {
+			vd.validatorPower = votingPower[v]
+		}
 		update := tmtypes.UpdateValidator(pubkey, votingPower[v], "")
 		vUpdates = append(vUpdates, update)
 	}

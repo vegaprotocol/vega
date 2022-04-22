@@ -160,6 +160,8 @@ type Topology struct {
 	checkpointLoaded bool
 	notary           Notary
 	signatures       Signatures
+
+	blocksToKeepMalperforming int64
 }
 
 func (t *Topology) OnEpochEvent(ctx context.Context, epoch types.Epoch) {
@@ -218,16 +220,20 @@ func NewTopology(
 	return t
 }
 
+// OnEpochLengthUpdate updates the duration of an epoch - which is used to calculate the number of blocks to keep a malperforming validators.
+// The number of blocks is calculated as 10 epochs x duration of epoch in seconds, assuming block time is 1s.
+func (t *Topology) OnEpochLengthUpdate(ctx context.Context, l time.Duration) error {
+	t.blocksToKeepMalperforming = int64(10 * l.Seconds())
+	return nil
+}
+
 // SetNotary this is not good, the topology depends on the notary
 // which in return also depends on the topology... Luckily they
 // do not require recursive calls as for each calls are one offs...
 // anyway we may want to extract the code requiring the notary somewhere
 // else or have different pattern somehow...
 func (t *Topology) SetNotary(notary Notary) {
-	// if we are not even setup as a validator, no need for this.
-	if t.isValidatorSetup {
-		t.signatures = NewSignatures(t.log, notary, t.wallets.GetEthereum(), t.broker)
-	}
+	t.signatures = NewSignatures(t.log, notary, t.wallets, t.broker, t.isValidatorSetup)
 	t.notary = notary
 }
 
@@ -235,6 +241,12 @@ func (t *Topology) SetNotary(notary Notary) {
 // This is only used as a helper for testing..
 func (t *Topology) SetSignatures(signatures Signatures) {
 	t.signatures = signatures
+}
+
+// SetIsValidator will set the flag for `self` so that it is considered a real validator
+// for example, when a node has announced itself and is accepted as a PENDING validator.
+func (t *Topology) SetIsValidator() {
+	t.isValidator = true
 }
 
 // ReloadConf updates the internal configuration.
@@ -255,10 +267,18 @@ func (t *Topology) IsValidator() bool {
 	return t.isValidatorSetup && t.isValidator
 }
 
+// Len return the number of validators with status Tendermint, the only validators that matter.
 func (t *Topology) Len() int {
 	t.mu.RLock()
 	defer t.mu.RUnlock()
-	return len(t.validators)
+
+	count := 0
+	for _, v := range t.validators {
+		if v.status == ValidatorStatusTendermint {
+			count += 1
+		}
+	}
+	return count
 }
 
 // Get returns validator data based on validator master public key.
@@ -337,6 +357,20 @@ func (t *Topology) IsValidatorVegaPubKey(pubkey string) (ok bool) {
 
 	for _, data := range t.validators {
 		if data.data.VegaPubKey == pubkey {
+			return true
+		}
+	}
+
+	return false
+}
+
+// IsValidatorVegaPubKey returns true if the given key is a Vega validator public key and the validators is of status Tendermint.
+func (t *Topology) IsTendermintValidator(pubkey string) (ok bool) {
+	t.mu.RLock()
+	defer t.mu.RUnlock()
+
+	for _, data := range t.validators {
+		if data.data.VegaPubKey == pubkey && data.status == ValidatorStatusTendermint {
 			return true
 		}
 	}

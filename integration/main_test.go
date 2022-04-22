@@ -190,6 +190,9 @@ func InitializeScenario(s *godog.ScenarioContext) {
 	s.Step(`^the parties submit the following liquidity provision:$`, func(table *godog.Table) error {
 		return steps.PartiesSubmitLiquidityProvision(execsetup.executionEngine, table)
 	})
+	s.Step(`^party "([^"]+)" cancels their liquidity provision for market "([^"]+)"$`, func(party, marketID string) error {
+		return steps.PartyCancelsTheirLiquidityProvision(execsetup.executionEngine, marketID, party)
+	})
 	s.Step(`^the parties submit the following one off transfers:$`, func(table *godog.Table) error {
 		return steps.PartiesSubmitTransfers(execsetup.banking, table)
 	})
@@ -211,6 +214,9 @@ func InitializeScenario(s *godog.ScenarioContext) {
 	})
 	s.Step(`^the oracles broadcast data signed with "([^"]*)":$`, func(pubKeys string, properties *godog.Table) error {
 		return steps.OraclesBroadcastDataSignedWithKeys(execsetup.oracleEngine, pubKeys, properties)
+	})
+	s.Step(`^the following LP events should be emitted:$`, func(table *godog.Table) error {
+		return steps.TheFollowingLPEventsShouldBeEmitted(execsetup.broker, table)
 	})
 
 	// block time stuff

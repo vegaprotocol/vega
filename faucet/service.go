@@ -184,6 +184,7 @@ func (f *Faucet) Mint(w http.ResponseWriter, r *http.Request, _ httprouter.Param
 	if err != nil {
 		f.log.Error("unable to sign", logging.Error(err))
 		writeError(w, newError("unable to sign crypto"), http.StatusInternalServerError)
+		return
 	}
 
 	preq := &api.PropagateChainEventRequest{

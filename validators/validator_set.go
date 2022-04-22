@@ -22,7 +22,6 @@ var (
 	PerformanceIncrement        = num.DecimalFromFloat(0.1)
 	DecimalOne                  = num.DecimalFromFloat(1)
 	VotingPowerScalingFactor, _ = num.DecimalFromString("10000")
-	BlocksToKeepMalperforming   = int64(1000000)
 )
 
 type ValidatorStatus int32
@@ -140,11 +139,7 @@ func (t *Topology) RecalcValidatorSet(ctx context.Context, epochSeq string, dele
 		}
 	}
 
-	// do this only if we are a validator, not need otherwise
-	if t.IsValidator() {
-		t.signatures.EmitPromotionsSignatures(
-			ctx, t.currentTime, currentState, newState)
-	}
+	t.signatures.EmitPromotionsSignatures(ctx, t.currentTime, t.epochSeq, currentState, newState)
 
 	// prepare and send the events
 	evts := make([]events.Event, 0, len(currentState))
@@ -187,11 +182,23 @@ func (t *Topology) RecalcValidatorSet(ctx context.Context, epochSeq string, dele
 			t.validators[k].lastBlockWithPositiveRanking = int64(t.currentBlockHeight)
 			continue
 		}
-		// if the node hasn't had a positive score for more than 10 epochs it is dropped - unless it has stake delegated to it, otherwise this stake
-		// will be lost
-		if int64(t.currentBlockHeight)-t.validators[k].lastBlockWithPositiveRanking > BlocksToKeepMalperforming && stakeScore[k].IsZero() {
+
+		if t.validators[k].status == ValidatorStatusTendermint {
+			continue // can't kick out tendermint validator
+		}
+
+		if t.validators[k].status == ValidatorStatusPending && (t.validators[k].data.FromEpoch+10) > t.epochSeq {
+			continue // pending validators have 10 epochs from when they started their heartbeats to get a positive perf score
+		}
+
+		if !stakeScore[k].IsZero() {
+			continue // it has stake, we can't kick it out it'll get lost
+		}
+
+		// if the node hasn't had a positive score for more than 10 epochs it is dropped
+		if int64(t.currentBlockHeight)-t.validators[k].lastBlockWithPositiveRanking > t.blocksToKeepMalperforming {
 			t.log.Info("removing validator with 0 positive ranking for too long", logging.String("node-id", k))
-			t.sendValidatorUpdateEvent(ctx, t.validators[k].data, true)
+			t.sendValidatorUpdateEvent(ctx, t.validators[k].data, false)
 			delete(t.validators, k)
 		}
 	}

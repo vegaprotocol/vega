@@ -33,6 +33,20 @@ func (m *MockValidatorTopology) EXPECT() *MockValidatorTopologyMockRecorder {
 	return m.recorder
 }
 
+// IsTendermintValidator mocks base method.
+func (m *MockValidatorTopology) IsTendermintValidator(arg0 string) bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsTendermintValidator", arg0)
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// IsTendermintValidator indicates an expected call of IsTendermintValidator.
+func (mr *MockValidatorTopologyMockRecorder) IsTendermintValidator(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsTendermintValidator", reflect.TypeOf((*MockValidatorTopology)(nil).IsTendermintValidator), arg0)
+}
+
 // IsValidator mocks base method.
 func (m *MockValidatorTopology) IsValidator() bool {
 	m.ctrl.T.Helper()

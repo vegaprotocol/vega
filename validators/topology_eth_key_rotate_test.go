@@ -50,6 +50,7 @@ func testRotateEthereumKeySuccess(t *testing.T) {
 		toRemove,
 		gomock.Any(),
 		gomock.Any(),
+		gomock.Any(),
 	).Times(1)
 
 	err = top.RotateEthereumKey(ctx, nr.Id, 10, ekr)
@@ -155,9 +156,11 @@ func testEthereumKeyRotationBeginBlock(t *testing.T) {
 		gomock.Any(),
 		gomock.Any(),
 		gomock.Any(),
+		gomock.Any(),
 	).Times(len(chainValidators))
 
 	top.signatures.EXPECT().EmitNewValidatorsSignatures(
+		gomock.Any(),
 		gomock.Any(),
 		gomock.Any(),
 		gomock.Any(),

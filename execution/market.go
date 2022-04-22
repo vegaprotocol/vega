@@ -376,6 +376,7 @@ func NewMarket(
 	// Populate the market timestamps
 	ts := &types.MarketTimestamps{
 		Proposed: now.UnixNano(),
+		Pending:  now.UnixNano(),
 	}
 
 	if mkt.OpeningAuction != nil {
@@ -646,6 +647,10 @@ func (m *Market) PostRestore(ctx context.Context) error {
 	m.settlement.Update(m.position.Positions())
 
 	pps := m.position.Parties()
+	if err := m.peggedOrders.ReconcileWithOrderBook(m.matching); err != nil {
+		return err
+	}
+
 	peggedOrder := m.peggedOrders.GetAll()
 	parties := make(map[string]struct{}, len(pps)+len(peggedOrder))
 
@@ -3151,14 +3156,14 @@ func (m *Market) settlementPriceWithLock(ctx context.Context, settlementPrice *n
 		}
 		m.closed = m.mkt.State == types.MarketStateSettled
 
-		settlementPriceInAsset, ok := m.tradableInstrument.Instrument.Product.ScaleSettlementPriceToDecimalPlaces(settlementPrice, m.assetDP)
-		if ok {
+		settlementPriceInAsset, err := m.tradableInstrument.Instrument.Product.ScaleSettlementPriceToDecimalPlaces(settlementPrice, m.assetDP)
+		if err == nil {
 			m.markPrice = settlementPriceInAsset.Clone()
 
 			// send the market data with all updated stuff
 			m.broker.Send(events.NewMarketDataEvent(ctx, m.GetMarketData()))
 		} else {
-			m.log.Error("failed to scale settlement price to asset")
+			m.log.Error(err.Error())
 		}
 	}
 }

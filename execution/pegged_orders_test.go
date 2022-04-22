@@ -1,10 +1,15 @@
 package execution_test
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
+	"code.vegaprotocol.io/vega/config"
 	"code.vegaprotocol.io/vega/execution"
+	"code.vegaprotocol.io/vega/libs/crypto"
+	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/vega/matching"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
 	"github.com/stretchr/testify/assert"
@@ -17,7 +22,7 @@ func getTestOrders() []*types.Order {
 		p, _ := num.UintFromString(fmt.Sprintf("%d", i*10), 10)
 
 		o = append(o, &types.Order{
-			ID:          fmt.Sprintf("id-%d", i),
+			ID:          crypto.RandomHash(),
 			MarketID:    "market-1",
 			Party:       "party-1",
 			Side:        types.SideBuy,
@@ -62,8 +67,6 @@ func testPeggedOrdersSnapshot(t *testing.T) {
 	a.False(p.Changed())
 
 	// Test amend
-	testOrders[0].ID = "id-changed"
-
 	p.Amend(testOrders[0])
 	a.True(p.Changed())
 	a.Equal(testOrders, p.GetState())
@@ -91,6 +94,32 @@ func testPeggedOrdersSnapshot(t *testing.T) {
 	// Test restore state
 	s = p.GetState()
 
+	ob := matching.NewCachedOrderBook(logging.NewTestLogger(), config.NewDefaultConfig().Execution.Matching, "market-1", false)
+	pl := &types.Payload{
+		Data: &types.PayloadMatchingBook{
+			MatchingBook: &types.MatchingBook{
+				MarketID:        "market-1",
+				Buy:             testOrders,
+				Sell:            nil,
+				LastTradedPrice: num.NewUint(100),
+				Auction:         false,
+				BatchID:         1,
+			},
+		},
+	}
+	ob.LoadState(context.Background(), pl)
+
 	newP := execution.NewPeggedOrdersFromSnapshot(s)
+	newP.ReconcileWithOrderBook(ob)
 	a.Equal(s, newP.GetState())
+	a.Equal(len(p.GetAll()), len(newP.GetAll()))
+
+	// if market is in a auction we'll have pegged orders on the market but not the orderbook
+	ob2 := matching.NewCachedOrderBook(logging.NewTestLogger(), config.NewDefaultConfig().Execution.Matching, "market-1", false)
+	newP2 := execution.NewPeggedOrdersFromSnapshot(s)
+	for _, o := range newP2.GetAll() {
+		newP2.Park(o)
+	}
+	newP2.ReconcileWithOrderBook(ob2)
+	a.Equal(len(p.GetAll()), len(newP2.GetAll()))
 }

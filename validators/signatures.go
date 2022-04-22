@@ -20,6 +20,7 @@ type Signatures interface {
 	EmitPromotionsSignatures(
 		ctx context.Context,
 		currentTime time.Time,
+		epochSeq uint64,
 		previousState map[string]StatusAddress,
 		newState map[string]StatusAddress,
 	)
@@ -27,37 +28,45 @@ type Signatures interface {
 		ctx context.Context,
 		validators []NodeIDAddress,
 		currentTime time.Time,
+		epochSeq uint64,
 	)
 	EmitRemoveValidatorsSignatures(
 		ctx context.Context,
 		remove []NodeIDAddress,
 		validators []NodeIDAddress,
 		currentTime time.Time,
+		epochSeq uint64,
 	)
 	SetNonce(t time.Time)
 }
 
 type ERC20Signatures struct {
-	log       *logging.Logger
-	notary    Notary
-	multisig  *bridges.ERC20MultiSigControl
-	lastNonce *num.Uint
-	broker    Broker
+	log              *logging.Logger
+	notary           Notary
+	multisig         *bridges.ERC20MultiSigControl
+	lastNonce        *num.Uint
+	broker           Broker
+	isValidatorSetup bool
 }
 
 func NewSignatures(
 	log *logging.Logger,
 	notary Notary,
-	ethSigner Signer,
+	nw NodeWallets,
 	broker Broker,
+	isValidatorSetup bool,
 ) *ERC20Signatures {
-	return &ERC20Signatures{
-		log:       log,
-		notary:    notary,
-		multisig:  bridges.NewERC20MultiSigControl(ethSigner),
-		lastNonce: num.Zero(),
-		broker:    broker,
+	s := &ERC20Signatures{
+		log:              log,
+		notary:           notary,
+		lastNonce:        num.Zero(),
+		broker:           broker,
+		isValidatorSetup: isValidatorSetup,
 	}
+	if isValidatorSetup {
+		s.multisig = bridges.NewERC20MultiSigControl(nw.GetEthereum())
+	}
+	return s
 }
 
 type StatusAddress struct {
@@ -73,6 +82,7 @@ type NodeIDAddress struct {
 func (s *ERC20Signatures) EmitPromotionsSignatures(
 	ctx context.Context,
 	currentTime time.Time,
+	epochSeq uint64,
 	previousState map[string]StatusAddress,
 	newState map[string]StatusAddress,
 ) {
@@ -114,8 +124,8 @@ func (s *ERC20Signatures) EmitPromotionsSignatures(
 	}
 
 	s.SetNonce(currentTime)
-	s.EmitNewValidatorsSignatures(ctx, toAdd, currentTime)
-	s.EmitRemoveValidatorsSignatures(ctx, toRemove, allValidators, currentTime)
+	s.EmitNewValidatorsSignatures(ctx, toAdd, currentTime, epochSeq)
+	s.EmitRemoveValidatorsSignatures(ctx, toRemove, allValidators, currentTime, epochSeq)
 }
 
 func (s *ERC20Signatures) SetNonce(t time.Time) {
@@ -126,6 +136,7 @@ func (s *ERC20Signatures) EmitNewValidatorsSignatures(
 	ctx context.Context,
 	validators []NodeIDAddress,
 	currentTime time.Time,
+	epochSeq uint64,
 ) {
 	sort.Slice(validators, func(i, j int) bool {
 		return validators[i].EthAddress < validators[j].EthAddress
@@ -133,20 +144,26 @@ func (s *ERC20Signatures) EmitNewValidatorsSignatures(
 	evts := []events.Event{}
 
 	for _, signer := range validators {
+		var sig []byte
+
 		resid := hex.EncodeToString(
 			vgcrypto.Hash([]byte(signer.EthAddress + s.lastNonce.String())))
-		signature, err := s.multisig.AddSigner(
-			signer.EthAddress,
-			signer.EthAddress,
-			s.lastNonce,
-		)
-		if err != nil {
-			s.log.Panic("could not sign remove signer event, wallet not configured properly",
-				logging.Error(err))
+
+		if s.isValidatorSetup {
+			signature, err := s.multisig.AddSigner(
+				signer.EthAddress,
+				signer.EthAddress,
+				s.lastNonce,
+			)
+			if err != nil {
+				s.log.Panic("could not sign remove signer event, wallet not configured properly",
+					logging.Error(err))
+			}
+			sig = signature.Signature
 		}
 
 		s.notary.StartAggregate(
-			resid, types.NodeSignatureKindERC20MultiSigSignerAdded, signature.Signature)
+			resid, types.NodeSignatureKindERC20MultiSigSignerAdded, sig)
 
 		evts = append(evts, events.NewERC20MultiSigSignerAdded(
 			ctx,
@@ -154,6 +171,7 @@ func (s *ERC20Signatures) EmitNewValidatorsSignatures(
 				SignatureId: resid,
 				ValidatorId: signer.NodeID,
 				Timestamp:   currentTime.UnixNano(),
+				EpochSeq:    num.NewUint(epochSeq).String(),
 				NewSigner:   signer.EthAddress,
 				Submitter:   signer.EthAddress,
 				Nonce:       s.lastNonce.String(),
@@ -171,6 +189,7 @@ func (s *ERC20Signatures) EmitRemoveValidatorsSignatures(
 	remove []NodeIDAddress,
 	validators []NodeIDAddress,
 	currentTime time.Time,
+	epochSeq uint64,
 ) {
 	sort.Slice(validators, func(i, j int) bool {
 		return validators[i].EthAddress < validators[j].EthAddress
@@ -186,18 +205,22 @@ func (s *ERC20Signatures) EmitRemoveValidatorsSignatures(
 	for _, oldSigner := range remove {
 		submitters := []*eventspb.ERC20MulistSigSignerRemovedSubmitter{}
 		for _, validator := range validators {
+			var sig []byte
 			// Here resid is a concat of the oldsigner, the submitter and the nonce
 			resid := hex.EncodeToString(
 				vgcrypto.Hash([]byte(oldSigner.EthAddress + validator.EthAddress + s.lastNonce.String())))
-			signature, err := s.multisig.RemoveSigner(
-				oldSigner.EthAddress, validator.EthAddress, s.lastNonce)
-			if err != nil {
-				s.log.Panic("could not sign remove signer event, wallet not configured properly",
-					logging.Error(err))
-			}
 
+			if s.isValidatorSetup {
+				signature, err := s.multisig.RemoveSigner(
+					oldSigner.EthAddress, validator.EthAddress, s.lastNonce)
+				if err != nil {
+					s.log.Panic("could not sign remove signer event, wallet not configured properly",
+						logging.Error(err))
+				}
+				sig = signature.Signature
+			}
 			s.notary.StartAggregate(
-				resid, types.NodeSignatureKindERC20MultiSigSignerRemoved, signature.Signature)
+				resid, types.NodeSignatureKindERC20MultiSigSignerRemoved, sig)
 
 			submitters = append(submitters, &eventspb.ERC20MulistSigSignerRemovedSubmitter{
 				SignatureId: resid,
@@ -209,6 +232,7 @@ func (s *ERC20Signatures) EmitRemoveValidatorsSignatures(
 				SignatureSubmitters: submitters,
 				ValidatorId:         oldSigner.NodeID,
 				Timestamp:           currentTime.UnixNano(),
+				EpochSeq:            num.NewUint(epochSeq).String(),
 				OldSigner:           oldSigner.EthAddress,
 				Nonce:               s.lastNonce.String(),
 			},
@@ -225,19 +249,19 @@ type noopSignatures struct {
 }
 
 func (n *noopSignatures) EmitPromotionsSignatures(
-	_ context.Context, _ time.Time, _ map[string]StatusAddress, _ map[string]StatusAddress,
+	_ context.Context, _ time.Time, _ uint64, _ map[string]StatusAddress, _ map[string]StatusAddress,
 ) {
 	n.log.Error("noopSignatures implementation in use in production")
 }
 
 func (n *noopSignatures) EmitNewValidatorsSignatures(
-	_ context.Context, _ []NodeIDAddress, _ time.Time,
+	_ context.Context, _ []NodeIDAddress, _ time.Time, _ uint64,
 ) {
 	n.log.Error("noopSignatures implementation in use in production")
 }
 
 func (n *noopSignatures) EmitRemoveValidatorsSignatures(
-	_ context.Context, _ []NodeIDAddress, _ []NodeIDAddress, _ time.Time,
+	_ context.Context, _ []NodeIDAddress, _ []NodeIDAddress, _ time.Time, _ uint64,
 ) {
 	n.log.Error("noopSignatures implementation in use in production")
 }

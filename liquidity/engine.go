@@ -393,6 +393,7 @@ func (e *Engine) SubmitLiquidityProvision(
 			Fee:       lps.Fee,
 			Status:    types.LiquidityProvisionStatusRejected,
 			Reference: lps.Reference,
+			Version:   1,
 		}
 	)
 
