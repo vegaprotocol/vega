@@ -34,15 +34,15 @@ func (m *MockMarketTracker) EXPECT() *MockMarketTrackerMockRecorder {
 }
 
 // GetAndResetEligibleProposers mocks base method.
-func (m *MockMarketTracker) GetAndResetEligibleProposers() []string {
+func (m *MockMarketTracker) GetAndResetEligibleProposers(arg0 string) []string {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAndResetEligibleProposers")
+	ret := m.ctrl.Call(m, "GetAndResetEligibleProposers", arg0)
 	ret0, _ := ret[0].([]string)
 	return ret0
 }
 
 // GetAndResetEligibleProposers indicates an expected call of GetAndResetEligibleProposers.
-func (mr *MockMarketTrackerMockRecorder) GetAndResetEligibleProposers() *gomock.Call {
+func (mr *MockMarketTrackerMockRecorder) GetAndResetEligibleProposers(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAndResetEligibleProposers", reflect.TypeOf((*MockMarketTracker)(nil).GetAndResetEligibleProposers))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAndResetEligibleProposers", reflect.TypeOf((*MockMarketTracker)(nil).GetAndResetEligibleProposers), arg0)
 }
