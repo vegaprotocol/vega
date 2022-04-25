@@ -12,7 +12,7 @@
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 ### 🐛 Fixes
-- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+- [5277](https://github.com/vegaprotocol/vega/issues/5277) - Updating a market should default auction extension to 1
 
 
 ## 0.50.2
