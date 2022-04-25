@@ -19,6 +19,11 @@ func TestAssetProposalNewAssetDeepClone(t *testing.T) {
 		Party:     "PartyId",
 		State:     types.ProposalStateDeclined,
 		Timestamp: 100000,
+		Rationale: &types.ProposalRationale{
+			Description: "Wen moon!",
+			Hash:        "0xdeadbeef",
+			URL:         "example.com",
+		},
 		Terms: &types.ProposalTerms{
 			ClosingTimestamp:    2000000,
 			EnactmentTimestamp:  3000000,
@@ -49,6 +54,9 @@ func TestAssetProposalNewAssetDeepClone(t *testing.T) {
 	p.Terms.ClosingTimestamp = 999
 	p.Terms.EnactmentTimestamp = 888
 	p.Terms.ValidationTimestamp = 777
+	p.Rationale.Description = "Wen mars!"
+	p.Rationale.Hash = "oxcafed00d"
+	p.Rationale.URL = "www.example.com/mars"
 
 	na := p.Terms.Change.(*types.ProposalTermsNewAsset)
 	erc := na.NewAsset.Changes.Source.(*types.AssetDetailsErc20)
@@ -65,6 +73,12 @@ func TestAssetProposalNewAssetDeepClone(t *testing.T) {
 	assert.NotEqual(t, term.ClosingTimestamp, term2.ClosingTimestamp)
 	assert.NotEqual(t, term.EnactmentTimestamp, term2.EnactmentTimestamp)
 	assert.NotEqual(t, term.ValidationTimestamp, term2.ValidationTimestamp)
+
+	rationale := p.Rationale
+	rationale2 := p2.Rationale
+	assert.NotEqual(t, rationale.Description, rationale2.Description)
+	assert.NotEqual(t, rationale.Hash, rationale2.Hash)
+	assert.NotEqual(t, rationale.URL, rationale2.Url)
 
 	na2 := p2.Terms.Change.(*proto.ProposalTerms_NewAsset)
 	erc2 := na2.NewAsset.Changes.Source.(*proto.AssetDetails_Erc20)
