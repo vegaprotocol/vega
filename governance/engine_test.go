@@ -1011,9 +1011,9 @@ func (e *tstEngine) newProposalForMarketUpdate(partyID string, now time.Time) ty
 		Party:     partyID,
 		State:     types.ProposalStateOpen,
 		Terms: &types.ProposalTerms{
-			ClosingTimestamp:    now.Add(48 * time.Hour).Unix(),
-			EnactmentTimestamp:  now.Add(2 * 48 * time.Hour).Unix(),
-			ValidationTimestamp: now.Add(1 * time.Hour).Unix(),
+			ClosingTimestamp:    now.Add(96 * time.Hour).Unix(),
+			EnactmentTimestamp:  now.Add(4 * 48 * time.Hour).Unix(),
+			ValidationTimestamp: now.Add(2 * time.Hour).Unix(),
 			Change:              updateMarketTerms(),
 		},
 	}
@@ -1165,6 +1165,14 @@ func (e *tstEngine) ensureEquityLikeShareForMarketAndParty(t *testing.T, market,
 		GetEquityLikeShareForMarketAndParty(market, party).
 		Times(1).
 		Return(num.DecimalFromFloat(share), true)
+}
+
+func (e *tstEngine) ensureGetMarket(t *testing.T, marketID string, market types.Market) {
+	t.Helper()
+	e.markets.EXPECT().
+		GetMarket(marketID).
+		Times(1).
+		Return(market, true)
 }
 
 func (e *tstEngine) ensureNonExistingMarket(t *testing.T, market string) {

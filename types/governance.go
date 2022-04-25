@@ -95,7 +95,7 @@ const (
 	ProposalErrorInsufficientEquityLikeShare ProposalError = vegapb.ProposalError_PROPOSAL_ERROR_INSUFFICIENT_EQUITY_LIKE_SHARE
 	// ProposalErrorInvalidMarket The market targeted by the proposal does not exist or is not eligible to modification.
 	ProposalErrorInvalidMarket ProposalError = vegapb.ProposalError_PROPOSAL_ERROR_INVALID_MARKET
-	// ProposalErrorTooManyMarketDecimalPlace the market uses more decimal places than the settlement asset.
+	// ProposalErrorTooManyMarketDecimalPlaces the market uses more decimal places than the settlement asset.
 	ProposalErrorTooManyMarketDecimalPlaces ProposalError = vegapb.ProposalError_PROPOSAL_ERROR_TOO_MANY_MARKET_DECIMAL_PLACES
 	// ProposalErrorTooManyPriceMonitoringTriggers the market price monitoring setting uses too many triggers.
 	ProposalErrorTooManyPriceMonitoringTriggers ProposalError = vegapb.ProposalError_PROPOSAL_ERROR_TOO_MANY_PRICE_MONITORING_TRIGGERS
@@ -437,7 +437,7 @@ type NewMarketConfiguration struct {
 	Metadata                      []string
 	PriceMonitoringParameters     *PriceMonitoringParameters
 	LiquidityMonitoringParameters *LiquidityMonitoringParameters
-	RiskParameters                riskParams
+	RiskParameters                newRiskParams
 	// New market risk model parameters
 	//
 	// Types that are valid to be assigned to RiskParameters:
@@ -452,9 +452,9 @@ type NewMarketConfiguration struct {
 	// TradingMode          isNewMarketConfiguration_TradingMode `protobuf_oneof:"trading_mode"`
 }
 
-type riskParams interface {
-	rpIntoProto() interface{}
-	DeepClone() riskParams
+type newRiskParams interface {
+	newRiskParamsIntoProto() interface{}
+	DeepClone() newRiskParams
 }
 
 type ProposalTermsNewMarket struct {
@@ -532,7 +532,7 @@ func (n NewMarket) DeepClone() *NewMarket {
 }
 
 func (n NewMarketConfiguration) IntoProto() *vegapb.NewMarketConfiguration {
-	riskParams := n.RiskParameters.rpIntoProto()
+	riskParams := n.RiskParameters.newRiskParamsIntoProto()
 	md := make([]string, 0, len(n.Metadata))
 	md = append(md, n.Metadata...)
 
@@ -957,7 +957,7 @@ func NewMarketConfigurationLogNormalFromProto(p *vegapb.NewMarketConfiguration_L
 	}
 }
 
-func (n NewMarketConfigurationLogNormal) DeepClone() riskParams {
+func (n NewMarketConfigurationLogNormal) DeepClone() newRiskParams {
 	if n.LogNormal == nil {
 		return &NewMarketConfigurationLogNormal{}
 	}
@@ -966,7 +966,7 @@ func (n NewMarketConfigurationLogNormal) DeepClone() riskParams {
 	}
 }
 
-func (n NewMarketConfigurationLogNormal) rpIntoProto() interface{} {
+func (n NewMarketConfigurationLogNormal) newRiskParamsIntoProto() interface{} {
 	return n.IntoProto()
 }
 
@@ -982,7 +982,7 @@ func NewMarketConfigurationSimpleFromProto(p *vegapb.NewMarketConfiguration_Simp
 	}
 }
 
-func (n NewMarketConfigurationSimple) DeepClone() riskParams {
+func (n NewMarketConfigurationSimple) DeepClone() newRiskParams {
 	if n.Simple == nil {
 		return &NewMarketConfigurationSimple{}
 	}
@@ -991,7 +991,7 @@ func (n NewMarketConfigurationSimple) DeepClone() riskParams {
 	}
 }
 
-func (n NewMarketConfigurationSimple) rpIntoProto() interface{} {
+func (n NewMarketConfigurationSimple) newRiskParamsIntoProto() interface{} {
 	return n.IntoProto()
 }
 
@@ -1319,12 +1319,17 @@ func (n UpdateMarket) DeepClone() *UpdateMarket {
 	return &cpy
 }
 
+type updateRiskParams interface {
+	updateRiskParamsIntoProto() interface{}
+	DeepClone() updateRiskParams
+}
+
 type UpdateMarketConfiguration struct {
 	Instrument                    *UpdateInstrumentConfiguration
 	Metadata                      []string
 	PriceMonitoringParameters     *PriceMonitoringParameters
 	LiquidityMonitoringParameters *LiquidityMonitoringParameters
-	RiskParameters                riskParams
+	RiskParameters                updateRiskParams
 }
 
 func (n UpdateMarketConfiguration) DeepClone() *UpdateMarketConfiguration {
@@ -1348,7 +1353,7 @@ func (n UpdateMarketConfiguration) DeepClone() *UpdateMarketConfiguration {
 }
 
 func (n UpdateMarketConfiguration) IntoProto() *vegapb.UpdateMarketConfiguration {
-	riskParams := n.RiskParameters.rpIntoProto()
+	riskParams := n.RiskParameters.updateRiskParamsIntoProto()
 	md := make([]string, 0, len(n.Metadata))
 	md = append(md, n.Metadata...)
 
@@ -1475,11 +1480,11 @@ type UpdateMarketConfigurationSimple struct {
 	Simple *SimpleModelParams
 }
 
-func (n UpdateMarketConfigurationSimple) rpIntoProto() interface{} {
+func (n UpdateMarketConfigurationSimple) updateRiskParamsIntoProto() interface{} {
 	return n.IntoProto()
 }
 
-func (n UpdateMarketConfigurationSimple) DeepClone() riskParams {
+func (n UpdateMarketConfigurationSimple) DeepClone() updateRiskParams {
 	if n.Simple == nil {
 		return &UpdateMarketConfigurationSimple{}
 	}
@@ -1498,11 +1503,11 @@ type UpdateMarketConfigurationLogNormal struct {
 	LogNormal *LogNormalRiskModel
 }
 
-func (n UpdateMarketConfigurationLogNormal) rpIntoProto() interface{} {
+func (n UpdateMarketConfigurationLogNormal) updateRiskParamsIntoProto() interface{} {
 	return n.IntoProto()
 }
 
-func (n UpdateMarketConfigurationLogNormal) DeepClone() riskParams {
+func (n UpdateMarketConfigurationLogNormal) DeepClone() updateRiskParams {
 	if n.LogNormal == nil {
 		return &UpdateMarketConfigurationLogNormal{}
 	}

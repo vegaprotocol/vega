@@ -36,6 +36,7 @@
 - [5250](https://github.com/vegaprotocol/vega/issues/5250) - Fixed panic in loading validator checkpoint
 - [5260](https://github.com/vegaprotocol/vega/issues/5260) - Process recurring transfer before rewards
 - [5262](https://github.com/vegaprotocol/vega/issues/5262) - Allow recurring transfers to start during the current epoch
+- [5267](https://github.com/vegaprotocol/vega/issues/5267) - Do not check commitment on `UpdateMarket` proposals
 
 ## 0.50.1
 
