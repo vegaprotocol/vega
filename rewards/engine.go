@@ -31,7 +31,7 @@ type FeesTracker interface {
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/market_tracker_mock.go -package mocks code.vegaprotocol.io/vega/rewards MarketTracker
 type MarketTracker interface {
-	GetAndResetEligibleProposers() []string
+	GetAndResetEligibleProposers(market string) []string
 }
 
 // EpochEngine notifies the reward engine at the end of an epoch.
@@ -50,9 +50,7 @@ type Delegation interface {
 type Collateral interface {
 	GetAccountByID(id string) (*types.Account, error)
 	TransferRewards(ctx context.Context, rewardAccountID string, transfers []*types.Transfer) ([]*types.TransferResponse, error)
-	GetInfraFeeAccountIDs() []string
-	GetEnabledAssets() []string
-	GetRewardAccount(asset string, rewardAcccountType types.AccountType) (*types.Account, error)
+	GetRewardAccountsByType(rewardAcccountType types.AccountType) []*types.Account
 }
 
 //TimeService notifies the reward engine on time updates
@@ -97,12 +95,14 @@ type globalRewardParams struct {
 }
 
 type payout struct {
+	rewardType    types.AccountType
 	fromAccount   string
 	asset         string
 	partyToAmount map[string]*num.Uint
 	totalReward   *num.Uint
 	epochSeq      string
 	timestamp     int64
+	market        string
 }
 
 // New instantiate a new rewards engine.
@@ -273,25 +273,25 @@ func (e *Engine) calculateRewardPayouts(ctx context.Context, epoch types.Epoch) 
 	}
 
 	payouts := []*payout{}
-	// all reward types are implicitly defined for all assets. if the balance of the reward account is non-zero a reward is paid
-	for _, asset := range e.collateral.GetEnabledAssets() {
-		for _, rewardType := range rewardAccountTypes {
-			account, err := e.collateral.GetRewardAccount(asset, rewardType)
-
-			if err != nil || account.Balance.IsZero() {
+	for _, rewardType := range rewardAccountTypes {
+		accounts := e.collateral.GetRewardAccountsByType(rewardType)
+		for _, account := range accounts {
+			if account.Balance.IsZero() {
 				continue
 			}
 			pos := []*payout{}
-			if (rewardType == types.AccountTypeGlobalReward && asset == e.global.asset) || rewardType == types.AccountTypeFeesInfrastructure {
+			if (rewardType == types.AccountTypeGlobalReward && account.Asset == e.global.asset) || rewardType == types.AccountTypeFeesInfrastructure {
 				e.log.Info("calculating reward for tendermint validators", logging.String("account-type", rewardType.String()))
-				pos = append(pos, e.calculateRewardTypeForAsset(num.NewUint(epoch.Seq).String(), asset, rewardType, account, tmValidatorsDelegation, tmValidatorsScores.NormalisedScores, epoch.EndTime, s_pFactor))
+				pos = append(pos, e.calculateRewardTypeForAsset(num.NewUint(epoch.Seq).String(), account.Asset, account.MarketID, rewardType, account, tmValidatorsDelegation, tmValidatorsScores.NormalisedScores, epoch.EndTime, s_pFactor))
 				e.log.Info("calculating reward for ersatz validators", logging.String("account-type", rewardType.String()))
-				pos = append(pos, e.calculateRewardTypeForAsset(num.NewUint(epoch.Seq).String(), asset, rewardType, account, ersatzValidatorsDelegation, ersatzValidatorsScores.NormalisedScores, epoch.EndTime, s_eFactor))
+				pos = append(pos, e.calculateRewardTypeForAsset(num.NewUint(epoch.Seq).String(), account.Asset, account.MarketID, rewardType, account, ersatzValidatorsDelegation, ersatzValidatorsScores.NormalisedScores, epoch.EndTime, s_eFactor))
 			} else {
-				pos = append(pos, e.calculateRewardTypeForAsset(num.NewUint(epoch.Seq).String(), asset, rewardType, account, tmValidatorsDelegation, tmValidatorsScores.NormalisedScores, epoch.EndTime, decimal1))
+				pos = append(pos, e.calculateRewardTypeForAsset(num.NewUint(epoch.Seq).String(), account.Asset, account.MarketID, rewardType, account, tmValidatorsDelegation, tmValidatorsScores.NormalisedScores, epoch.EndTime, decimal1))
 			}
 			for _, po := range pos {
 				if po != nil && !po.totalReward.IsZero() && !po.totalReward.IsNegative() {
+					po.rewardType = rewardType
+					po.market = account.MarketID
 					po.timestamp = epoch.EndTime.UnixNano()
 					payouts = append(payouts, po)
 					e.emitEventsForPayout(ctx, epoch.EndTime, po)
@@ -304,7 +304,7 @@ func (e *Engine) calculateRewardPayouts(ctx context.Context, epoch types.Epoch) 
 }
 
 // calculateRewardTypeForAsset calculates the payout for a given asset and reward type.
-func (e *Engine) calculateRewardTypeForAsset(epochSeq string, asset string, rewardType types.AccountType, account *types.Account, validatorData []*types.ValidatorData, validatorNormalisedScores map[string]num.Decimal, timestamp time.Time, factor num.Decimal) *payout {
+func (e *Engine) calculateRewardTypeForAsset(epochSeq, asset, market string, rewardType types.AccountType, account *types.Account, validatorData []*types.ValidatorData, validatorNormalisedScores map[string]num.Decimal, timestamp time.Time, factor num.Decimal) *payout {
 	switch rewardType {
 	case types.AccountTypeGlobalReward: // given to delegator based on stake
 		if asset == e.global.asset {
@@ -316,13 +316,13 @@ func (e *Engine) calculateRewardTypeForAsset(epochSeq string, asset string, rewa
 	case types.AccountTypeFeesInfrastructure: // given to delegator based on stake
 		return calculateRewardsByStake(epochSeq, account.Asset, account.ID, account.Balance.Clone(), validatorNormalisedScores, validatorData, e.global.delegatorShare, num.Zero(), e.global.minValStakeUInt, e.rng, e.log)
 	case types.AccountTypeMakerFeeReward: // given to receivers of maker fee in the asset based on their total received fee proportion
-		return calculateRewardsByContribution(epochSeq, account.Asset, account.ID, rewardType, account.Balance, e.feesTracker.GetFeePartyScores(asset, types.TransferTypeMakerFeeReceive), timestamp)
+		return calculateRewardsByContribution(epochSeq, account.Asset, account.ID, rewardType, account.Balance, e.feesTracker.GetFeePartyScores(account.MarketID, types.TransferTypeMakerFeeReceive), timestamp)
 	case types.AccountTypeTakerFeeReward: // given to payers of fee in the asset based on their total paid fee proportion
-		return calculateRewardsByContribution(epochSeq, account.Asset, account.ID, rewardType, account.Balance, e.feesTracker.GetFeePartyScores(asset, types.TransferTypeMakerFeePay), timestamp)
+		return calculateRewardsByContribution(epochSeq, account.Asset, account.ID, rewardType, account.Balance, e.feesTracker.GetFeePartyScores(account.MarketID, types.TransferTypeMakerFeePay), timestamp)
 	case types.AccountTypeLPFeeReward: // given to LP fee receivers in the asset based on their total received fee
-		return calculateRewardsByContribution(epochSeq, account.Asset, account.ID, rewardType, account.Balance, e.feesTracker.GetFeePartyScores(asset, types.TransferTypeLiquidityFeeDistribute), timestamp)
+		return calculateRewardsByContribution(epochSeq, account.Asset, account.ID, rewardType, account.Balance, e.feesTracker.GetFeePartyScores(account.MarketID, types.TransferTypeLiquidityFeeDistribute), timestamp)
 	case types.AccountTypeMarketProposerReward:
-		return calculateRewardForProposers(epochSeq, account.Asset, account.ID, rewardType, account.Balance, e.marketTracker.GetAndResetEligibleProposers(), timestamp)
+		return calculateRewardForProposers(epochSeq, account.Asset, account.ID, rewardType, account.Balance, e.marketTracker.GetAndResetEligibleProposers(account.MarketID), timestamp)
 	}
 	return nil
 }
@@ -335,7 +335,7 @@ func (e *Engine) emitEventsForPayout(ctx context.Context, timeToSend time.Time, 
 	for party, amount := range po.partyToAmount {
 		proportion := amount.ToDecimal().Div(totalReward)
 		pct := proportion.Mul(num.DecimalFromInt64(100))
-		payoutEvents[party] = events.NewRewardPayout(ctx, timeToSend.UnixNano(), party, po.epochSeq, po.asset, amount, pct)
+		payoutEvents[party] = events.NewRewardPayout(ctx, timeToSend.UnixNano(), party, po.epochSeq, po.asset, amount, pct, po.rewardType, po.market)
 		parties = append(parties, party)
 	}
 	sort.Strings(parties)

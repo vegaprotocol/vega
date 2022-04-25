@@ -12,6 +12,8 @@ import (
 	"code.vegaprotocol.io/vega/types/num"
 )
 
+const separator = "___"
+
 func (e *Engine) Name() types.CheckpointName {
 	return types.CollateralCheckpoint
 }
@@ -29,12 +31,19 @@ func (e *Engine) Checkpoint() ([]byte, error) {
 
 var partyOverrides = map[string]types.AccountType{
 	systemOwner: types.AccountTypeGlobalReward,
-	systemOwner + types.AccountTypeMakerFeeReward.String():                 types.AccountTypeMakerFeeReward,
-	systemOwner + types.AccountTypeTakerFeeReward.String():                 types.AccountTypeTakerFeeReward,
-	systemOwner + types.AccountTypeLPFeeReward.String():                    types.AccountTypeLPFeeReward,
-	systemOwner + types.AccountTypeMarketProposerReward.String():           types.AccountTypeMarketProposerReward,
-	systemOwner + types.AccountTypeFeesInfrastructure.String():             types.AccountTypeFeesInfrastructure,
-	systemOwner + systemOwner + types.AccountTypePendingTransfers.String(): types.AccountTypePendingTransfers,
+	systemOwner + types.AccountTypeMakerFeeReward.String():       types.AccountTypeMakerFeeReward,
+	systemOwner + types.AccountTypeTakerFeeReward.String():       types.AccountTypeTakerFeeReward,
+	systemOwner + types.AccountTypeLPFeeReward.String():          types.AccountTypeLPFeeReward,
+	systemOwner + types.AccountTypeMarketProposerReward.String(): types.AccountTypeMarketProposerReward,
+	systemOwner + types.AccountTypeFeesInfrastructure.String():   types.AccountTypeFeesInfrastructure,
+	systemOwner + types.AccountTypePendingTransfers.String():     types.AccountTypePendingTransfers,
+}
+
+var tradingRewardAccountTypes = map[types.AccountType]struct{}{
+	types.AccountTypeMakerFeeReward:       {},
+	types.AccountTypeTakerFeeReward:       {},
+	types.AccountTypeLPFeeReward:          {},
+	types.AccountTypeMarketProposerReward: {},
 }
 
 func (e *Engine) Load(ctx context.Context, data []byte) error {
@@ -44,18 +53,25 @@ func (e *Engine) Load(ctx context.Context, data []byte) error {
 	}
 	for _, balance := range msg.Balances {
 		ub, _ := num.UintFromString(balance.Balance, 10)
+		partyComponents := strings.Split(balance.Party, separator)
+		owner := partyComponents[0]
+		market := noMarket
+		if len(partyComponents) > 1 {
+			market = partyComponents[1]
+		}
 		// for backward compatibility check both - after this is already out checkpoints will always have the type for global accounts
-		if tp, ok := partyOverrides[balance.Party]; ok {
-			accID := e.accountID(noMarket, systemOwner, balance.Asset, tp)
+		if tp, ok := partyOverrides[owner]; ok {
+			accID := e.accountID(market, systemOwner, balance.Asset, tp)
+			if _, ok := tradingRewardAccountTypes[tp]; ok {
+				e.GetOrCreateRewardAccount(ctx, balance.Asset, market, tp)
+			}
 			if _, err := e.GetAccountByID(accID); err != nil {
-				// this account is created when the asset is enabled. If we can't get this account,
-				// then the asset is not yet enabled and we have a problem...
 				return err
 			}
 			e.UpdateBalance(ctx, accID, ub)
 			continue
 		}
-		accID := e.accountID(noMarket, balance.Party, balance.Asset, types.AccountTypeGeneral)
+		accID := e.accountID(market, balance.Party, balance.Asset, types.AccountTypeGeneral)
 		if _, err := e.GetAccountByID(accID); err != nil {
 			accID, _ = e.CreatePartyGeneralAccount(ctx, balance.Party, balance.Asset)
 		}
@@ -85,6 +101,10 @@ func (e *Engine) getCheckpointBalances() []*checkpoint.AssetBalance {
 						owner = k
 					}
 				}
+			}
+			// NB: for market based reward accounts we don't want to move the funds to the network treasury but rather keep them
+			if acc.Type == types.AccountTypeLPFeeReward || acc.Type == types.AccountTypeMakerFeeReward || acc.Type == types.AccountTypeTakerFeeReward || acc.Type == types.AccountTypeMarketProposerReward {
+				owner += separator + acc.MarketID
 			}
 
 			assets, ok := balances[owner]

@@ -129,7 +129,7 @@ func (e *Engine) distributeRecurringTransfers(
 		}
 
 		resps, err := e.processTransfer(
-			ctx, v.From, v.To, v.Asset, v.FromAccountType, v.ToAccountType, amount, v.Reference, nil, // last is eventual oneoff, which this is not
+			ctx, v.From, v.To, v.Asset, v.Market, v.FromAccountType, v.ToAccountType, amount, v.Reference, nil, // last is eventual oneoff, which this is not
 		)
 		if err != nil {
 			v.Status = types.TransferStatusStopped

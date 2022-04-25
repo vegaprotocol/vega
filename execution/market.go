@@ -1514,7 +1514,7 @@ func (m *Market) applyFees(ctx context.Context, order *types.Order, trades []*ty
 		m.broker.Send(evt)
 	}
 
-	m.feesTracker.UpdateFeesFromTransfers(fees.Transfers())
+	m.feesTracker.UpdateFeesFromTransfers(m.GetID(), fees.Transfers())
 
 	return nil
 }
@@ -3273,7 +3273,7 @@ func (m *Market) distributeLiquidityFees(ctx context.Context) error {
 		return nil
 	}
 
-	m.feesTracker.UpdateFeesFromTransfers(feeTransfer.Transfers())
+	m.feesTracker.UpdateFeesFromTransfers(m.GetID(), feeTransfer.Transfers())
 	resp, err := m.collateral.TransferFees(ctx, m.GetID(), asset, feeTransfer)
 	if err != nil {
 		return fmt.Errorf("failed to transfer fees: %w", err)

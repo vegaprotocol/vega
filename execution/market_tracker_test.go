@@ -26,24 +26,30 @@ func TestMarketTracker(t *testing.T) {
 	tracker.MarketProposed("market1", "me")
 	tracker.MarketProposed("market2", "me2")
 
-	require.Equal(t, 0, len(tracker.GetAndResetEligibleProposers()))
+	require.Equal(t, 0, len(tracker.GetAndResetEligibleProposers("market1")))
+	require.Equal(t, 0, len(tracker.GetAndResetEligibleProposers("market2")))
 
 	tracker.AddValueTraded("market1", num.NewUint(1000))
-	require.Equal(t, 0, len(tracker.GetAndResetEligibleProposers()))
+	require.Equal(t, 0, len(tracker.GetAndResetEligibleProposers("market1")))
+	require.Equal(t, 0, len(tracker.GetAndResetEligibleProposers("market2")))
 
 	tracker.AddValueTraded("market2", num.NewUint(4000))
-	require.Equal(t, 0, len(tracker.GetAndResetEligibleProposers()))
+	require.Equal(t, 0, len(tracker.GetAndResetEligibleProposers("market1")))
+	require.Equal(t, 0, len(tracker.GetAndResetEligibleProposers("market2")))
 
 	tracker.AddValueTraded("market2", num.NewUint(1001))
 	tracker.AddValueTraded("market1", num.NewUint(4001))
 
-	eligible := tracker.GetAndResetEligibleProposers()
-	require.Equal(t, 2, len(eligible))
-	require.Equal(t, "me", eligible[0])
-	require.Equal(t, "me2", eligible[1])
+	proposers1 := tracker.GetAndResetEligibleProposers("market1")
+	require.Equal(t, 1, len(proposers1))
+	require.Equal(t, "me", proposers1[0])
+	proposers2 := tracker.GetAndResetEligibleProposers("market2")
+	require.Equal(t, 1, len(proposers2))
+	require.Equal(t, "me2", proposers2[0])
 
 	// ask again and expect nothing to be returned
-	require.Equal(t, 0, len(tracker.GetAndResetEligibleProposers()))
+	require.Equal(t, 0, len(tracker.GetAndResetEligibleProposers("market1")))
+	require.Equal(t, 0, len(tracker.GetAndResetEligibleProposers("market2")))
 
 	// take a snapshot
 	key := (&types.PayloadMarketTracker{}).Key()
@@ -85,7 +91,8 @@ func TestMarketTrackerStateChange(t *testing.T) {
 	require.NotEqual(t, hash1, hash2)
 
 	tracker.AddValueTraded("market1", num.NewUint(1000))
-	require.Equal(t, 0, len(tracker.GetAndResetEligibleProposers()))
+	require.Equal(t, 0, len(tracker.GetAndResetEligibleProposers("market1")))
+	require.Equal(t, 0, len(tracker.GetAndResetEligibleProposers("market2")))
 
 	hash3, err := tracker.GetHash(key)
 	require.NoError(t, err)

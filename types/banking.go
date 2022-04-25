@@ -55,6 +55,7 @@ type TransferBase struct {
 	To              string
 	ToAccountType   AccountType
 	Asset           string
+	Market          string
 	Amount          *num.Uint
 	Reference       string
 	Status          TransferStatus
@@ -127,6 +128,7 @@ func OneOffTransferFromEvent(p *eventspb.Transfer) *OneOffTransfer {
 			To:              p.To,
 			ToAccountType:   p.ToAccountType,
 			Asset:           p.Asset,
+			Market:          p.Market,
 			Amount:          amount,
 			Reference:       p.Reference,
 			Status:          p.Status,
@@ -144,6 +146,7 @@ func (t *OneOffTransfer) IntoEvent() *eventspb.Transfer {
 		To:              t.To,
 		ToAccountType:   t.ToAccountType,
 		Asset:           t.Asset,
+		Market:          t.Market,
 		Amount:          t.Amount.String(),
 		Reference:       t.Reference,
 		Status:          t.Status,
@@ -206,6 +209,7 @@ func (t *RecurringTransfer) IntoEvent() *eventspb.Transfer {
 		To:              t.To,
 		ToAccountType:   t.ToAccountType,
 		Asset:           t.Asset,
+		Market:          t.Market,
 		Amount:          t.Amount.String(),
 		Reference:       t.Reference,
 		Status:          t.Status,
@@ -267,6 +271,7 @@ func newTransferBase(id, from string, tf *commandspb.Transfer) (*TransferBase, e
 		To:              tf.To,
 		ToAccountType:   tf.ToAccountType,
 		Asset:           tf.Asset,
+		Market:          tf.Market,
 		Amount:          amount,
 		Reference:       tf.Reference,
 		Status:          TransferStatusPending,
@@ -339,6 +344,7 @@ func RecurringTransferFromEvent(p *eventspb.Transfer) *RecurringTransfer {
 			To:              p.To,
 			ToAccountType:   p.ToAccountType,
 			Asset:           p.Asset,
+			Market:          p.Market,
 			Amount:          amount,
 			Reference:       p.Reference,
 			Status:          p.Status,

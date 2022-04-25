@@ -37,7 +37,7 @@ func (f *FeesTracker) Stopped() bool {
 	return false
 }
 
-func assetFeesToProto(partyFees map[string]*num.Uint) []*snapshot.PartyFees {
+func marketFeesToProto(partyFees map[string]*num.Uint) []*snapshot.PartyFees {
 	parties := make([]string, 0, len(partyFees))
 	for k := range partyFees {
 		parties = append(parties, k)
@@ -50,29 +50,29 @@ func assetFeesToProto(partyFees map[string]*num.Uint) []*snapshot.PartyFees {
 	return pf
 }
 
-func (aft *assetFeesTracker) IntoProto(asset string) *snapshot.AssetFees {
-	return &snapshot.AssetFees{
-		Asset:     asset,
-		MakerFees: assetFeesToProto(aft.makerFees),
-		TakerFees: assetFeesToProto(aft.takerFees),
-		LpFees:    assetFeesToProto(aft.lpFees),
+func (mft *marketFeesTracker) IntoProto(market string) *snapshot.MarketFees {
+	return &snapshot.MarketFees{
+		Market:    market,
+		MakerFees: marketFeesToProto(mft.makerFees),
+		TakerFees: marketFeesToProto(mft.takerFees),
+		LpFees:    marketFeesToProto(mft.lpFees),
 	}
 }
 
 func (f *FeesTracker) serialiseFeesTracker() *snapshot.FeesTracker {
-	assets := make([]string, 0, len(f.assetToTracker))
-	for k := range f.assetToTracker {
-		assets = append(assets, k)
+	markets := make([]string, 0, len(f.marketToTracker))
+	for k := range f.marketToTracker {
+		markets = append(markets, k)
 	}
-	sort.Strings(assets)
+	sort.Strings(markets)
 
-	assetFees := make([]*snapshot.AssetFees, 0, len(assets))
-	for _, asset := range assets {
-		assetFees = append(assetFees, f.assetToTracker[asset].IntoProto(asset))
+	marketFees := make([]*snapshot.MarketFees, 0, len(markets))
+	for _, market := range markets {
+		marketFees = append(marketFees, f.marketToTracker[market].IntoProto(market))
 	}
 
 	return &snapshot.FeesTracker{
-		AssetFees: assetFees,
+		MarketFees: marketFees,
 	}
 }
 
@@ -131,27 +131,27 @@ func (f *FeesTracker) LoadState(ctx context.Context, p *types.Payload) ([]types.
 	}
 }
 
-func assetFeesTrackerFromProto(data *snapshot.AssetFees) *assetFeesTracker {
-	aft := &assetFeesTracker{
+func marketFeesTrackerFromProto(data *snapshot.MarketFees) *marketFeesTracker {
+	mft := &marketFeesTracker{
 		makerFees: map[string]*num.Uint{},
 		takerFees: map[string]*num.Uint{},
 		lpFees:    map[string]*num.Uint{},
 	}
 	for _, mf := range data.MakerFees {
-		aft.makerFees[mf.Party], _ = num.UintFromString(mf.Fee, 10)
+		mft.makerFees[mf.Party], _ = num.UintFromString(mf.Fee, 10)
 	}
 	for _, tf := range data.TakerFees {
-		aft.takerFees[tf.Party], _ = num.UintFromString(tf.Fee, 10)
+		mft.takerFees[tf.Party], _ = num.UintFromString(tf.Fee, 10)
 	}
 	for _, lp := range data.LpFees {
-		aft.lpFees[lp.Party], _ = num.UintFromString(lp.Fee, 10)
+		mft.lpFees[lp.Party], _ = num.UintFromString(lp.Fee, 10)
 	}
-	return aft
+	return mft
 }
 
 func (f *FeesTracker) restore(ctx context.Context, data *snapshot.FeesTracker) error {
-	for _, data := range data.AssetFees {
-		f.assetToTracker[data.Asset] = assetFeesTrackerFromProto(data)
+	for _, data := range data.MarketFees {
+		f.marketToTracker[data.Market] = marketFeesTrackerFromProto(data)
 	}
 	f.ss.changed = true
 	return nil

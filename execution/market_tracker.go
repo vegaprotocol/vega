@@ -1,8 +1,6 @@
 package execution
 
 import (
-	"sort"
-
 	"code.vegaprotocol.io/vega/types/num"
 )
 
@@ -54,17 +52,17 @@ func (m *MarketTracker) AddValueTraded(marketID string, value *num.Uint) {
 	m.ss.changed = true
 }
 
-func (m *MarketTracker) GetAndResetEligibleProposers() []string {
-	eligibleProposers := []string{}
-	for ID, t := range m.marketIDMarketTracker {
-		if !t.proposersPaid && m.eligibilityChecker.IsEligibleForProposerBonus(ID, t.volumeTraded) {
-			eligibleProposers = append(eligibleProposers, t.proposer)
-			t.proposersPaid = true
-			m.ss.changed = true
-		}
+func (m *MarketTracker) GetAndResetEligibleProposers(market string) []string {
+	if _, ok := m.marketIDMarketTracker[market]; !ok {
+		return []string{}
 	}
-	sort.Strings(eligibleProposers)
-	return eligibleProposers
+	t := m.marketIDMarketTracker[market]
+	if !t.proposersPaid && m.eligibilityChecker.IsEligibleForProposerBonus(market, t.volumeTraded) {
+		t.proposersPaid = true
+		m.ss.changed = true
+		return []string{t.proposer}
+	}
+	return []string{}
 }
 
 func (m *MarketTracker) removeMarket(marketID string) {
