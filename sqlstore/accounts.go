@@ -145,7 +145,10 @@ func (as *Accounts) Query(filter entities.AccountFilter) ([]entities.Account, er
 }
 
 func (as *Accounts) QueryBalances(ctx context.Context, filter entities.AccountFilter, pagination entities.Pagination) ([]entities.AccountBalance, error) {
-	query, args := filterAccountBalancesQuery(filter, pagination)
+	query, args, err := filterAccountBalancesQuery(filter, pagination)
+	if err != nil {
+		return nil, fmt.Errorf("querying account balances: %w", err)
+	}
 	accountBalances := make([]entities.AccountBalance, 0)
 
 	rows, err := as.Connection.Query(ctx, query, args...)

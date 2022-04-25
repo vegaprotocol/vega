@@ -13,9 +13,11 @@
 - [495](https://github.com/vegaprotocol/data-node/pull/495) - Remove deprecated `PositionState` event handling, general fixes to `SettlePosition` event handling
 - [498](https://github.com/vegaprotocol/data-node/issues/498) - Transaction event broker
 - [521](https://github.com/vegaprotocol/data-node/issues/521) - Refactor margin levels to use account id 
+
 - [](https://github.com/vegaprotocol/data-node/pull/xxx) -
 
 ### 🐛 Fixes
+- [524](https://github.com/vegaprotocol/data-node/issues/524) - Fix for incorrect balances
 - [](https://github.com/vegaprotocol/data-node/pull/xxx) -
 
 
