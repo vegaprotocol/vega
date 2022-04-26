@@ -26,6 +26,7 @@ func NewMonitorFromSnapshot(
 	}
 
 	e := &Engine{
+		market:              marketID,
 		log:                 log,
 		riskModel:           riskModel,
 		initialised:         pm.Initialised,
@@ -200,7 +201,7 @@ func (e *Engine) serialisePricesNow() []*types.CurrentPrice {
 
 func (e *Engine) serialisePricesPast() []*types.PastPrice {
 	pps := make([]*types.PastPrice, 0, len(e.pricesPast))
-	for _, pp := range pps {
+	for _, pp := range e.pricesPast {
 		pps = append(pps, &types.PastPrice{
 			Time:                pp.Time,
 			VolumeWeightedPrice: pp.VolumeWeightedPrice,
