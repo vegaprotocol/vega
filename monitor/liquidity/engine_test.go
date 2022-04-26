@@ -184,7 +184,7 @@ func TestEngineAfterParametersUpdateWithAuctionExtension0(t *testing.T) {
 	}).Times(1)
 	h.TargetStakeCalculator.EXPECT().GetTheoreticalTargetStake(rf, now, markPrice.Clone(), trades).Return(target)
 
-	mon.CheckLiquidity(h.AuctionState, now, num.NewUint(40), trades, rf, markPrice.Clone(), bestStaticBidVolume, bestStaticAskVolume)
+	mon.CheckLiquidity(h.AuctionState, now, num.NewUint(40), trades, rf, markPrice.Clone(), bestStaticBidVolume, bestStaticAskVolume, true)
 
 	updatedParams := &types.LiquidityMonitoringParameters{
 		TriggeringRatio:  num.DecimalFromFloat(.8),
@@ -201,5 +201,5 @@ func TestEngineAfterParametersUpdateWithAuctionExtension0(t *testing.T) {
 
 	h.TargetStakeCalculator.EXPECT().GetTheoreticalTargetStake(rf, now, markPrice.Clone(), trades).Return(target)
 	// Higher current stake to test the updated Triggering Ratio is reached.
-	mon.CheckLiquidity(h.AuctionState, now, num.NewUint(70), nil, rf, markPrice.Clone(), bestStaticBidVolume, bestStaticAskVolume)
+	mon.CheckLiquidity(h.AuctionState, now, num.NewUint(70), nil, rf, markPrice.Clone(), bestStaticBidVolume, bestStaticAskVolume, true)
 }

@@ -1014,7 +1014,7 @@ func (m *Market) leaveAuction(ctx context.Context, now time.Time) {
 		if !isOpening {
 			// @TODO we should update this once
 			for _, trade := range uncrossedOrder.Trades {
-				m.pMonitor.CheckPrice(ctx, m.as, trade.Price.Clone(), trade.Size, now, true)
+				m.pMonitor.CheckPrice(ctx, m.as, trade.Price.Clone(), trade.Size, true)
 			}
 		}
 

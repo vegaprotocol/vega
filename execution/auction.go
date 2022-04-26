@@ -20,7 +20,7 @@ func (m *Market) checkAuction(ctx context.Context, now time.Time) {
 		p, v, _ := m.matching.GetIndicativePriceAndVolume()
 		if v > 0 {
 			// pass the first uncrossing price to price engine so state variables depending on it can be initialised
-			m.pMonitor.CheckPrice(ctx, m.as, p.Clone(), v, now, true)
+			m.pMonitor.CheckPrice(ctx, m.as, p.Clone(), v, true)
 			m.OnOpeningAuctionFirstUncrossingPrice()
 		}
 	}
