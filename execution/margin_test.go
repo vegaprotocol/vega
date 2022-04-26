@@ -19,8 +19,7 @@ import (
 func TestMargins(t *testing.T) {
 	party1, party2, party3 := "party1", "party2", "party3"
 	now := time.Unix(10, 0)
-	closingAt := time.Unix(10000000000, 0)
-	tm := getTestMarket(t, now, closingAt, nil, &types.AuctionDuration{
+	tm := getTestMarket(t, now, nil, &types.AuctionDuration{
 		Duration: 1,
 	})
 	price := num.NewUint(100)
@@ -154,8 +153,7 @@ func TestPartialFillMargins(t *testing.T) {
 	party3 := "party3"
 	auxParty, auxParty2 := "auxParty", "auxParty2"
 	now := time.Unix(10, 0)
-	closingAt := time.Unix(10000000000, 0)
-	tm := getTestMarket(t, now, closingAt, nil, &types.AuctionDuration{
+	tm := getTestMarket(t, now, nil, &types.AuctionDuration{
 		Duration: 1,
 	})
 

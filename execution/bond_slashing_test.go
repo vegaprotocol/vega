@@ -94,11 +94,10 @@ func setMarkPrice(t *testing.T, mkt *testMarket, duration *types.AuctionDuration
 func TestAcceptLiquidityProvisionWithSufficientFunds(t *testing.T) {
 	mainParty := "mainParty"
 	now := time.Unix(10, 0)
-	closingAt := time.Unix(10000000000, 0)
 	openingAuction := &types.AuctionDuration{
 		Duration: 1,
 	}
-	tm := getTestMarket(t, now, closingAt, nil, openingAuction)
+	tm := getTestMarket(t, now, nil, openingAuction)
 	initialMarkPrice := uint64(99)
 	ctx := context.Background()
 
@@ -150,11 +149,10 @@ func TestAcceptLiquidityProvisionWithSufficientFunds(t *testing.T) {
 func TestRejectLiquidityProvisionWithInsufficientFundsForInitialMargin(t *testing.T) {
 	mainParty := "mainParty"
 	now := time.Unix(10, 0)
-	closingAt := time.Unix(10000000000, 0)
 	openingAuction := &types.AuctionDuration{
 		Duration: 1,
 	}
-	tm := getTestMarket(t, now, closingAt, nil, openingAuction)
+	tm := getTestMarket(t, now, nil, openingAuction)
 	initialMarkPrice := uint64(99)
 	ctx := context.Background()
 
@@ -229,12 +227,11 @@ func TestCloseoutLPWhenCannotCoverMargin(t *testing.T) {
 	mainParty := "mainParty"
 	auxParty1 := "auxParty1"
 	now := time.Unix(10, 0)
-	closingAt := time.Unix(10000000000, 0)
 	ctx := context.Background()
 	openingAuction := &types.AuctionDuration{
 		Duration: 1,
 	}
-	tm := getTestMarket(t, now, closingAt, nil, openingAuction)
+	tm := getTestMarket(t, now, nil, openingAuction)
 	initialMarkPrice := uint64(99)
 
 	setMarkPrice(t, tm, openingAuction, now, initialMarkPrice)
@@ -328,13 +325,12 @@ func TestBondAccountNotUsedForMarginShortageWhenEnoughMoneyInGeneral(t *testing.
 	mainParty := "mainParty"
 	auxParty1 := "auxParty1"
 	now := time.Unix(10, 0)
-	closingAt := time.Unix(10000000000, 0)
 	initialMarkPrice := uint64(99)
 	ctx := context.Background()
 	openingAuction := &types.AuctionDuration{
 		Duration: 1,
 	}
-	tm := getTestMarket(t, now, closingAt, nil, openingAuction)
+	tm := getTestMarket(t, now, nil, openingAuction)
 
 	setMarkPrice(t, tm, openingAuction, now, initialMarkPrice)
 
@@ -417,13 +413,12 @@ func TestBondAccountUsedForMarginShortage_PenaltyPaidFromBondAccount(t *testing.
 	mainParty := "mainParty"
 	auxParty1 := "auxParty1"
 	now := time.Unix(10, 0)
-	closingAt := time.Unix(10000000000, 0)
 	initialMarkPrice := uint64(99)
 	ctx := context.Background()
 	openingAuction := &types.AuctionDuration{
 		Duration: 1,
 	}
-	tm := getTestMarket(t, now, closingAt, nil, openingAuction)
+	tm := getTestMarket(t, now, nil, openingAuction)
 
 	setMarkPrice(t, tm, openingAuction, now, initialMarkPrice)
 
@@ -553,13 +548,12 @@ func TestBondAccountUsedForMarginShortagePenaltyPaidFromMarginAccount_NoCloseout
 	mainParty := "mainParty"
 	auxParty1 := "auxParty1"
 	now := time.Unix(10, 0)
-	closingAt := time.Unix(10000000000, 0)
 	initialMarkPrice := uint64(99)
 	ctx := context.Background()
 	openingAuction := &types.AuctionDuration{
 		Duration: 1,
 	}
-	tm := getTestMarket(t, now, closingAt, nil, openingAuction)
+	tm := getTestMarket(t, now, nil, openingAuction)
 
 	setMarkPrice(t, tm, openingAuction, now, initialMarkPrice)
 
@@ -668,9 +662,8 @@ func TestBondAccountUsedForMarginShortagePenaltyNotPaidOnTransitionFromAuction(t
 	auxParty1 := "auxParty1"
 	now := time.Unix(10, 0)
 	ctx := context.Background()
-	closingAt := time.Unix(10000000000, 0)
 	openingAuctionDuration := &types.AuctionDuration{Duration: 10}
-	tm := getTestMarket2(t, now, closingAt, nil, openingAuctionDuration, true)
+	tm := getTestMarket2(t, now, nil, openingAuctionDuration, true)
 
 	mktData := tm.market.GetMarketData()
 	require.NotNil(t, mktData)

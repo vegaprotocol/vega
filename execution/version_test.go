@@ -16,8 +16,7 @@ import (
 func TestVersioning(t *testing.T) {
 	party1 := "party1"
 	now := time.Unix(10, 0)
-	closingAt := time.Unix(10000000000, 0)
-	tm := getTestMarket(t, now, closingAt, nil, nil)
+	tm := getTestMarket(t, now, nil, nil)
 	price := uint64(100)
 	size := uint64(100)
 

@@ -435,6 +435,7 @@ func (m *Market) Update(ctx context.Context, config *types.Market, oracleEngine 
 	config.TradingMode = m.mkt.TradingMode
 	config.State = m.mkt.State
 	config.MarketTimestamps = m.mkt.MarketTimestamps
+
 	asset, err := m.mkt.GetAsset()
 	if err != nil {
 		return err
@@ -455,6 +456,8 @@ func (m *Market) Update(ctx context.Context, config *types.Market, oracleEngine 
 
 	m.tradableInstrument.Instrument.Product.NotifyOnTradingTerminated(m.tradingTerminated)
 	m.tradableInstrument.Instrument.Product.NotifyOnSettlementPrice(m.settlementPrice)
+
+	m.updateLiquidityFee(ctx)
 
 	m.stateChanged = true
 

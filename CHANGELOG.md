@@ -17,6 +17,7 @@
 - [5294](https://github.com/vegaprotocol/vega/issues/5294) - Parse timestamps oracle in market proposal validation
 - [5292](https://github.com/vegaprotocol/vega/issues/5292) - Internal time oracle broadcasts timestamp without nanoseconds
 - [5297](https://github.com/vegaprotocol/vega/issues/5297) - Assure min/max price always accurate
+- [5286](https://github.com/vegaprotocol/vega/issues/5286) - Ensure liquidity fees are updated when updating the market
 
 ## 0.50.2
 

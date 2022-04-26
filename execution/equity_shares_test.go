@@ -127,7 +127,7 @@ func newEquityShareMarket(t *testing.T) *equityShareMarket {
 
 	return &equityShareMarket{
 		t:         t,
-		tm:        getTestMarket(t, now, closingAt, nil, nil),
+		tm:        getTestMarket(t, now, nil, nil),
 		parties:   map[string]struct{}{},
 		Now:       now,
 		ClosingAt: closingAt,
@@ -180,7 +180,7 @@ func (esm *equityShareMarket) WithSubmittedOrder(t *testing.T, id, party string,
 func (esm *equityShareMarket) WithSubmittedLiquidityProvision(t *testing.T, party, id string, amount uint64, fee string, buys, sells []*types.LiquidityOrder) *equityShareMarket {
 	t.Helper()
 	esm.createPartyIfMissing(t, party)
-	esm.tm.WithSubmittedLiquidityProvision(esm.t, party, id, amount, fee, buys, sells)
+	esm.tm.WithSubmittedLiquidityProvision(esm.t, party, amount, fee, buys, sells)
 	return esm
 }
 

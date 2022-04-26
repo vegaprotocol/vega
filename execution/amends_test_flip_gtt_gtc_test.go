@@ -15,8 +15,7 @@ import (
 
 func TestOrderBookAmends_FlipToGTT(t *testing.T) {
 	now := time.Unix(5, 0)
-	closingAt := time.Unix(10000000000, 0)
-	tm := getTestMarket(t, now, closingAt, nil, nil)
+	tm := getTestMarket(t, now, nil, nil)
 	ctx := context.Background()
 	defer tm.ctrl.Finish()
 
