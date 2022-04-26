@@ -267,6 +267,10 @@ func (s *Svc) ObserveDepthUpdates(ctx context.Context, retries int, market strin
 				return
 			case update := <-internal:
 				retryCount := retries
+				if update.GetMarketId() != market {
+					// an update for a different market than the one we're interested in, so just drop it
+					continue
+				}
 				success := false
 				for !success && retryCount >= 0 {
 					select {
