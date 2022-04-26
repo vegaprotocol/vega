@@ -16,7 +16,7 @@
 - [5284](https://github.com/vegaprotocol/vega/issues/5284) - price monitoring past prices are now included in the snapshot
 - [5294](https://github.com/vegaprotocol/vega/issues/5294) - Parse timestamps oracle in market proposal validation
 - [5292](https://github.com/vegaprotocol/vega/issues/5292) - Internal time oracle broadcasts timestamp without nanoseconds
-
+- [5297](https://github.com/vegaprotocol/vega/issues/5297) - Assure min/max price always accurate
 
 ## 0.50.2
 
