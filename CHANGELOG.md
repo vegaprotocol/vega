@@ -16,6 +16,7 @@
 - [518](https://github.com/vegaprotocol/data-node/issues/518) - Add rationale to proposals
 - [526](https://github.com/vegaprotocol/data-node/issues/526) - Add market id and reward type to reward and market to transfer
 - [540](https://github.com/vegaprotocol/data-node/issues/540) - CI: trigger Devnet deployment on merges to develop branch
+- [546](https://github.com/vegaprotocol/data-node/issues/546) - Data retention for margin levels 
 
 ### 🐛 Fixes
 - [524](https://github.com/vegaprotocol/data-node/issues/524) - Fix for incorrect balances

@@ -70,10 +70,10 @@ func (ml *MarginLevels) GetMarginLevelsByID(ctx context.Context, partyID, market
 		accountsWhereClause = fmt.Sprintf("where %s", whereMarket)
 	}
 
-	whereClause := fmt.Sprintf("where margin_levels.account_id  in (select id from accounts %s)", accountsWhereClause)
+	whereClause := fmt.Sprintf("where all_margin_levels.account_id  in (select id from accounts %s)", accountsWhereClause)
 
 	query := fmt.Sprintf(`select distinct on (account_id) %s
-		from margin_levels
+		from all_margin_levels
 		%s
 		order by account_id, vega_time desc`, sqlMarginLevelColumns,
 		whereClause)
