@@ -344,7 +344,7 @@ type Query {
     inState: ProposalState
   ): [Proposal!]
 
-  "Governance proposals that aim to create new assets in Vega"
+  "Governance proposals that allows creation of free form proposals in Vega"
   newFreeformProposals(
     "Returns only proposals in the specified state. Leave out to get all proposals"
     inState: ProposalState
@@ -425,7 +425,7 @@ type Query {
   historicBalances(
     filter: AccountFilter,
     groupBy: [AccountField])
-    : [AggregatedBalance!]!
+  : [AggregatedBalance!]!
 
   "Current network limits"
   networkLimits: NetworkLimits
@@ -488,6 +488,9 @@ type Transfer {
 
   "The asset"
   asset: Asset
+
+  "The market identifier for the transfer is any"
+  marketID: String!
 
   "The amount sent"
   amount: String!
@@ -705,11 +708,11 @@ type RankingScore {
   "The former validation status of teh validator"
   previousStatus: String!
   "The ranking score of the validator"
-  rankingScore: String! 
+  rankingScore: String!
   "The stake based score of the validator (no anti-whaling)"
   stakeScore: String!
   "The performance score of the validator"
-  performanceScore: String! 
+  performanceScore: String!
   "The tendermint voting power of the validator (uint32)"
   votingPower: String!
 }
@@ -1270,8 +1273,8 @@ type Market {
 
   """
   positionDecimalPlaces indicated the number of decimal places that an integer must be shifted in order to get a correct size (uint64).
-  i.e. 0 means there are no fractional orders for the market, and order sizes are always whole sizes. 
-  2 means sizes given as 10^2 * desired size, e.g. a desired size of 1.23 is represented as 123 in this market. 
+  i.e. 0 means there are no fractional orders for the market, and order sizes are always whole sizes.
+  2 means sizes given as 10^2 * desired size, e.g. a desired size of 1.23 is represented as 123 in this market.
   """
   positionDecimalPlaces: Int!
 
@@ -2401,16 +2404,13 @@ type NewAsset {
   source: AssetSource!
 }
 
-"A new freeform proposal change"
+"""
+A new freeform proposal change. It has no properties on purpose. Use proposal
+rationale, instead.
+"""
 type NewFreeform {
-  "The URL containing content that describes the proposal"
-  url: String!
-
-  "A short description of what is being proposed"
-  description: String!
-
-  "The hash on the content of the URL"
-  hash: String!
+  "A placeholder to please graphQL"
+  _doNotUse: Boolean
 }
 
 "Allows submitting a proposal for changing network parameters"
@@ -2427,13 +2427,36 @@ type NetworkParameter {
 }
 
 union ProposalChange =
-    NewMarket
+  NewMarket
   | UpdateMarket
   | UpdateNetworkParameter
   | NewAsset
   | NewFreeform
 # there are no unions for input types as of today, see: https://github.com/graphql/graphql-spec/issues/488
 
+type ProposalRationale {
+  """
+  Description to show a short title / something in case the link goes offline.
+  This is to be between 0 and 1024 unicode characters.
+  This is mandatory for all proposal.
+  """
+  description: String!
+  """
+  Cryptographically secure hash (SHA3-512) of the text pointed by the `url` property
+  so that viewers can check that the text hasn't been changed over time.
+  Optional except for FreeFrom proposal where it's mandatory.
+  If set, the `url` property must be set.
+  """
+  hash: String
+  """
+  Link to a text file describing the proposal in depth.
+  Optional except for FreeFrom proposal where it's mandatory.
+  If set, the `url` property must be set.
+  """
+  url: String
+}
+
+"The rationale behind the proposal"
 type ProposalTerms {
   """
   RFC3339Nano time and date when voting closes for this proposal.
@@ -2485,6 +2508,8 @@ type Proposal {
   state: ProposalState!
   "RFC3339Nano time and date when the proposal reached Vega network"
   datetime: String!
+  "Rationale behind the proposal"
+  rationale: ProposalRationale!
   "Terms of the proposal"
   terms: ProposalTerms!
   "Votes cast for this proposal"
@@ -2737,7 +2762,7 @@ enum BusEventType {
 
 "union type for wrapped events in stream PROPOSAL is mapped to governance data, something to keep in mind"
 union Event =
-    TimeUpdate
+  TimeUpdate
   | MarketEvent
   | TransferResponses
   | PositionResolution
@@ -2851,8 +2876,12 @@ type LiquidityProvision {
 
 "Reward information for a single party"
 type Reward {
-  "The asset for which this reward is associated"
+  "The asset this reward is paid in"
   asset: Asset!
+  "The market for which this reward is paid if any"
+  marketID: String!
+  "The type of reward"
+  rewardType: String!
   "Party receiving the reward"
   party: Party!
   "Epoch for which this reward was distributed"
@@ -2921,22 +2950,22 @@ enum AccountField {
 
 "Information about whether proposals are enabled, if we are still bootstrapping etc.."
 type NetworkLimits {
-    "Are market proposals allowed at this point in time"
-		canProposeMarket: Boolean!
-    "Are asset proposals allowed at this point in time"
-		canProposeAsset: Boolean!
-    "True once block count > bootstrapBlockCount"
-		bootstrapFinished: Boolean!
-    "Are market proposals enabled on this chain"
-		proposeMarketEnabled: Boolean!
-    "Are asset proposals enabled on this chain"
-		proposeAssetEnabled: Boolean!
-    "How many blocks before the chain comes out of bootstrap mode"
-		bootstrapBlockCount: Int!
-    "True once the genesis file is loaded"
-		genesisLoaded: Boolean!
-    "The date/timestamp in unix nanoseconds at which market proposals will be enabled (0 indicates not set)"
-		proposeMarketEnabledFrom: Timestamp!
-    "The date/timestamp in unix nanoseconds at which asset proposals will be enabled (0 indicates not set)"
-		proposeAssetEnabledFrom: Timestamp!
+  "Are market proposals allowed at this point in time"
+  canProposeMarket: Boolean!
+  "Are asset proposals allowed at this point in time"
+  canProposeAsset: Boolean!
+  "True once block count > bootstrapBlockCount"
+  bootstrapFinished: Boolean!
+  "Are market proposals enabled on this chain"
+  proposeMarketEnabled: Boolean!
+  "Are asset proposals enabled on this chain"
+  proposeAssetEnabled: Boolean!
+  "How many blocks before the chain comes out of bootstrap mode"
+  bootstrapBlockCount: Int!
+  "True once the genesis file is loaded"
+  genesisLoaded: Boolean!
+  "The date/timestamp in unix nanoseconds at which market proposals will be enabled (0 indicates not set)"
+  proposeMarketEnabledFrom: Timestamp!
+  "The date/timestamp in unix nanoseconds at which asset proposals will be enabled (0 indicates not set)"
+  proposeAssetEnabledFrom: Timestamp!
 }

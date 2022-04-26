@@ -310,7 +310,7 @@ func (s *Svc) GetNetworkParametersProposals(inState *proto.Proposal_State) []*pr
 // GetNewAssetProposals returns proposals aiming to create new assets
 func (s *Svc) GetNewAssetProposals(inState *proto.Proposal_State) []*proto.GovernanceData {
 	filters := []subscribers.ProposalFilter{
-		subscribers.ProposalByChange(subscribers.NewAssetPropopsal),
+		subscribers.ProposalByChange(subscribers.NewAssetProposal),
 	}
 	if inState != nil {
 		filters = append(filters, subscribers.ProposalByState(*inState))

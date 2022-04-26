@@ -13,7 +13,7 @@ type PropE interface {
 
 const (
 	NewMarketProposal ProposalType = iota
-	NewAssetPropopsal
+	NewAssetProposal
 	UpdateMarketProposal
 	UpdateNetworkParameterProposal
 	NewFreeformProposal
@@ -59,7 +59,7 @@ func ProposalByChange(ptypes ...ProposalType) ProposalFilter {
 				if nm := p.Terms.GetNewMarket(); nm != nil {
 					return true
 				}
-			case NewAssetPropopsal:
+			case NewAssetProposal:
 				if na := p.Terms.GetNewAsset(); na != nil {
 					return true
 				}

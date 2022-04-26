@@ -28,22 +28,24 @@ func (ps *Proposals) Add(ctx context.Context, r entities.Proposal) error {
 			party_id,
 			state,
 			terms,
+			rationale,
 			reason,
 			error_details,
 			proposal_time,
 			vega_time)
-		 VALUES ($1,  $2,  $3,  $4,  $5,  $6, $7, $8, $9)
+		 VALUES ($1,  $2,  $3,  $4,  $5,  $6, $7, $8, $9, $10)
 		 ON CONFLICT (id, vega_time) DO UPDATE SET
 			reference = EXCLUDED.reference,
 			party_id = EXCLUDED.party_id,
 			state = EXCLUDED.state,
 			terms = EXCLUDED.terms,
+			rationale = EXCLUDED.rationale,
 			reason = EXCLUDED.reason,
 			error_details = EXCLUDED.error_details,
 			proposal_time = EXCLUDED.proposal_time
 			;
 		 `,
-		r.ID, r.Reference, r.PartyID, r.State, r.Terms, r.Reason, r.ErrorDetails, r.ProposalTime, r.VegaTime)
+		r.ID, r.Reference, r.PartyID, r.State, r.Terms, r.Rationale, r.Reason, r.ErrorDetails, r.ProposalTime, r.VegaTime)
 	return err
 }
 

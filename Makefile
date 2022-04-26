@@ -3,12 +3,15 @@
 .PHONY: all
 all: build
 
+.PHONY: generate
+generate: gqlgen mocks ci_check build
+
 .PHONY: lint
 lint: ## Lint the files
 	golangci-lint run --config .golangci.toml
 
 .PHONY: retest
-retest: ## Re-run all unit tests
+retest: ## Re-run all uni tests
 	@./script/build.sh -a retest
 
 .PHONY: test
@@ -37,17 +40,9 @@ msan: ## Run memory sanitizer
 	@if ! which clang 1>/dev/null ; then echo "Need clang" ; exit 1 ; fi
 	@env CC=clang CGO_ENABLED=1 go test -msan ./...
 
-.PHONY: vet
-vet: ## Run go vet
-	@./script/build.sh -a vet
-
 .PHONY: coverage
 coverage: ## Generate global code coverage report
 	@./script/build.sh -a coverage
-
-.PHONY: deps
-deps: ## Get the dependencies
-	@./script/build.sh -a deps
 
 .PHONY: build
 build: ## install the binaries in cmd/{progname}/
@@ -77,11 +72,6 @@ gqlgen_check: ## GraphQL: Check committed files match just-generated files
 		exit 1 ; \
 	fi
 
-.PHONY: ineffectassign
-ineffectassign: ## Check for ineffectual assignments
-	@ia="$$(env GO111MODULE=auto ineffassign . | grep -v '_test\.go:')" ; \
-	if test "$$(echo -n "$$ia" | wc -l | awk '{print $$1}')" -gt 0 ; then echo "$$ia" ; exit 1 ; fi
-
 # Misc Targets
 
 codeowners_check:
@@ -89,20 +79,6 @@ codeowners_check:
 		echo "CODEOWNERS cannot have entries with commas" ; \
 		exit 1 ; \
 	fi
-
-.PHONY: print_check
-print_check: ## Check for fmt.Print functions in Go code
-	@f="$$(mktemp)" && \
-	find -name vendor -prune -o \
-		-name cmd -prune -o \
-		-name '*_test.go' -prune -o \
-		-name 'flags.go' -prune -o \
-		-name '*.go' -print0 | \
-		xargs -0 grep -E '^([^/]|/[^/])*fmt.Print' | \
-		tee "$$f" && \
-	count="$$(wc -l <"$$f")" && \
-	rm -f "$$f" && \
-	if test "$$count" -gt 0 ; then exit 1 ; fi
 
 .PHONY: gettools_develop
 gettools_develop:
@@ -128,11 +104,6 @@ yamllint:
 
 # Do a bunch of the checks the CI does, to help you catch them before commit
 ci_check: spellcheck yamllint lint test
-
-# The integration directory is special, and contains a package called core_test.
-.PHONY: staticcheck
-staticcheck: ## Run statick analysis checks
-	@./script/build.sh -a staticcheck
 
 .PHONY: buflint
 buflint: ## Run buf lint

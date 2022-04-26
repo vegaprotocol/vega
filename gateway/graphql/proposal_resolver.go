@@ -73,6 +73,13 @@ func (r *proposalResolver) Datetime(_ context.Context, data *types.GovernanceDat
 	return nanoTSToDatetime(data.Proposal.Timestamp), nil
 }
 
+func (r *proposalResolver) Rationale(_ context.Context, data *types.GovernanceData) (*types.ProposalRationale, error) {
+	if data == nil || data.Proposal == nil {
+		return nil, ErrInvalidProposal
+	}
+	return data.Proposal.Rationale, nil
+}
+
 func (r *proposalResolver) Terms(_ context.Context, data *types.GovernanceData) (*types.ProposalTerms, error) {
 	if data == nil || data.Proposal == nil {
 		return nil, ErrInvalidProposal

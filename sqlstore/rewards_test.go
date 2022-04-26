@@ -16,12 +16,16 @@ import (
 func addTestReward(t *testing.T, rs *sqlstore.Rewards,
 	party entities.Party,
 	asset entities.Asset,
+	marketID entities.MarketID,
 	epochID int64,
+	rewardType string,
 	block entities.Block,
 ) entities.Reward {
 	r := entities.Reward{
 		PartyID:        party.ID,
 		AssetID:        asset.ID,
+		MarketID:       marketID,
+		RewardType:     rewardType,
 		EpochID:        epochID,
 		Amount:         decimal.NewFromInt(100),
 		PercentOfTotal: 0.2,
@@ -60,6 +64,9 @@ func TestRewards(t *testing.T) {
 
 	asset1 := addTestAsset(t, as, block)
 	asset2 := addTestAsset(t, as, block)
+
+	market1 := entities.MarketID{ID: "deadbeef"}
+	market2 := entities.MarketID{ID: ""}
 	party1 := addTestParty(t, ps, block)
 	party2 := addTestParty(t, ps, block)
 
@@ -68,11 +75,11 @@ func TestRewards(t *testing.T) {
 	party2ID := party2.ID.String()
 	asset2ID := asset2.ID.String()
 
-	reward1 := addTestReward(t, rs, party1, asset1, 1, block)
-	reward2 := addTestReward(t, rs, party1, asset2, 2, block)
-	reward3 := addTestReward(t, rs, party2, asset1, 3, block)
-	reward4 := addTestReward(t, rs, party2, asset2, 4, block)
-	reward5 := addTestReward(t, rs, party2, asset2, 5, block)
+	reward1 := addTestReward(t, rs, party1, asset1, market1, 1, "RewardTakerPaidFees", block)
+	reward2 := addTestReward(t, rs, party1, asset2, market1, 2, "RewardMakerReceivedFees", block)
+	reward3 := addTestReward(t, rs, party2, asset1, market2, 3, "GlobalReward", block)
+	reward4 := addTestReward(t, rs, party2, asset2, market2, 4, "GlobalReward", block)
+	reward5 := addTestReward(t, rs, party2, asset2, market2, 5, "GlobalReward", block)
 
 	t.Run("GetAll", func(t *testing.T) {
 		expected := []entities.Reward{reward1, reward2, reward3, reward4, reward5}
