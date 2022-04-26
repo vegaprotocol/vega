@@ -97,7 +97,8 @@ var (
 // PriceMonitor interface to handle price monitoring/auction triggers
 // @TODO the interface shouldn't be imported here.
 type PriceMonitor interface {
-	CheckPrice(ctx context.Context, as price.AuctionState, p *num.Uint, v uint64, now time.Time, persistent bool) error
+	OnTimeUpdate(now time.Time)
+	CheckPrice(ctx context.Context, as price.AuctionState, p *num.Uint, v uint64, persistent bool) error
 	GetCurrentBounds() []*types.PriceMonitoringBounds
 	SetMinDuration(d time.Duration)
 	GetValidPriceRange() (num.WrappedDecimal, num.WrappedDecimal)
@@ -682,6 +683,7 @@ func (m *Market) OnChainTimeUpdate(ctx context.Context, t time.Time) bool {
 	// some engines still needs to get updates:
 	m.currentTime = t
 	m.peggedOrders.OnTimeUpdate(t)
+	m.pMonitor.OnTimeUpdate(t)
 	m.liquidity.OnChainTimeUpdate(ctx, t)
 	m.risk.OnTimeUpdate(t)
 	m.settlement.OnTick(t)
@@ -1006,7 +1008,7 @@ func (m *Market) leaveAuction(ctx context.Context, now time.Time) {
 			// @TODO we should update this once
 			for _, trade := range uncrossedOrder.Trades {
 				err := m.pMonitor.CheckPrice(
-					ctx, m.as, trade.Price.Clone(), trade.Size, now, true,
+					ctx, m.as, trade.Price.Clone(), trade.Size, true,
 				)
 				if err != nil {
 					m.log.Panic("unable to run check price with price monitor",
@@ -1428,7 +1430,7 @@ func (m *Market) checkPriceAndGetTrades(ctx context.Context, order *types.Order)
 	}
 
 	for _, t := range trades {
-		if merr := m.pMonitor.CheckPrice(ctx, m.as, t.Price.Clone(), t.Size, m.currentTime, persistent); merr != nil {
+		if merr := m.pMonitor.CheckPrice(ctx, m.as, t.Price.Clone(), t.Size, persistent); merr != nil {
 			// a specific order error
 			if err, ok := merr.(types.OrderError); ok {
 				return nil, err
@@ -3108,7 +3110,7 @@ func (m *Market) commandLiquidityAuction(ctx context.Context) {
 	if m.as.InAuction() && m.as.CanLeave() && !m.as.IsOpeningAuction() {
 		p, v, _ := m.matching.GetIndicativePriceAndVolume()
 		// no need to clone here, we're getting indicative price once for this call
-		if err := m.pMonitor.CheckPrice(ctx, m.as, p, v, m.currentTime, true); err != nil {
+		if err := m.pMonitor.CheckPrice(ctx, m.as, p, v, true); err != nil {
 			m.log.Panic("unable to run check price with price monitor",
 				logging.String("market-id", m.GetID()),
 				logging.Error(err))
