@@ -206,6 +206,10 @@ func (t *tradingDataServiceV2) GetNetworkLimits(ctx context.Context, req *v2.Get
 
 // GetCandleData for a given market, time range and interval.  Interval must be a valid postgres interval value
 func (t *tradingDataServiceV2) GetCandleData(ctx context.Context, req *v2.GetCandleDataRequest) (*v2.GetCandleDataResponse, error) {
+	if t.candleServiceV2 == nil {
+		return nil, errors.New("sql candle service not available")
+	}
+
 	from := vegatime.UnixNano(req.FromTimestamp)
 	to := vegatime.UnixNano(req.ToTimestamp)
 
@@ -229,6 +233,10 @@ func (t *tradingDataServiceV2) GetCandleData(ctx context.Context, req *v2.GetCan
 
 // SubscribeToCandleData subscribes to candle updates for a given market and interval.  Interval must be a valid postgres interval value
 func (t *tradingDataServiceV2) SubscribeToCandleData(req *v2.SubscribeToCandleDataRequest, srv v2.TradingDataService_SubscribeToCandleDataServer) error {
+	if t.candleServiceV2 == nil {
+		return errors.New("sql candle service not available")
+	}
+
 	ctx, cancel := context.WithCancel(srv.Context())
 	defer cancel()
 
@@ -268,6 +276,10 @@ func (t *tradingDataServiceV2) SubscribeToCandleData(req *v2.SubscribeToCandleDa
 
 // GetCandlesForMarket gets all available intervals for a given market along with the corresponding candle id
 func (t *tradingDataServiceV2) GetCandlesForMarket(ctx context.Context, req *v2.GetCandlesForMarketRequest) (*v2.GetCandlesForMarketResponse, error) {
+	if t.candleServiceV2 == nil {
+		return nil, errors.New("sql candle service not available")
+	}
+
 	mappings, err := t.candleServiceV2.GetCandlesForMarket(ctx, req.MarketId)
 	if err != nil {
 		return nil, apiError(codes.Internal, ErrCandleServiceGetCandlesForMarket, err)
@@ -288,6 +300,14 @@ func (t *tradingDataServiceV2) GetCandlesForMarket(ctx context.Context, req *v2.
 
 // GetERC20MutlsigSignerAddedBundles return the signature bundles needed to add a new validator to the multisig control ERC20 contract
 func (t *tradingDataServiceV2) GetERC20MultiSigSignerAddedBundles(ctx context.Context, req *v2.GetERC20MultiSigSignerAddedBundlesRequest) (*v2.GetERC20MultiSigSignerAddedBundlesResponse, error) {
+	if t.notaryStore == nil {
+		return nil, errors.New("sql notary store not available")
+	}
+
+	if t.multiSigSignerEventStore == nil {
+		return nil, errors.New("sql multisig event store not available")
+	}
+
 	nodeID := req.GetNodeId()
 	if len(nodeID) == 0 {
 		return nil, apiError(codes.InvalidArgument, fmt.Errorf("node id must be supplied"))
@@ -350,6 +370,14 @@ func (t *tradingDataServiceV2) GetERC20MultiSigSignerAddedBundles(ctx context.Co
 
 // GetERC20MutlsigSignerAddedBundles return the signature bundles needed to add a new validator to the multisig control ERC20 contract
 func (t *tradingDataServiceV2) GetERC20MultiSigSignerRemovedBundles(ctx context.Context, req *v2.GetERC20MultiSigSignerRemovedBundlesRequest) (*v2.GetERC20MultiSigSignerRemovedBundlesResponse, error) {
+	if t.notaryStore == nil {
+		return nil, errors.New("sql notary store not available")
+	}
+
+	if t.multiSigSignerEventStore == nil {
+		return nil, errors.New("sql multisig event store not available")
+	}
+
 	nodeID := req.GetNodeId()
 	submitter := req.GetSubmitter()
 
