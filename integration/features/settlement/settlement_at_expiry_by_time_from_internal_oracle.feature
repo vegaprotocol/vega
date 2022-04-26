@@ -9,8 +9,8 @@ Feature: Test settlement at expiry time from internal oracle
       | prices.ETH.value | TYPE_INTEGER | settlement price |
 
     And the oracle spec for trading termination filtering data from "vegaprotocol.builtin" named "ethDec20Oracle":
-      | property                       | type           | binding             | condition            |
-      | vegaprotocol.builtin.timestamp | TYPE_TIMESTAMP | trading termination | 2019-12-31T23:59:59Z |
+      | property                       | type           | binding             | condition                      | value                |
+      | vegaprotocol.builtin.timestamp | TYPE_TIMESTAMP | trading termination | OPERATOR_GREATER_THAN_OR_EQUAL | 2019-12-31T23:59:59Z |
 
     And the oracle spec for settlement price filtering data from "0xCAFECAFE1" named "ethDec21Oracle":
       | property         | type         | binding          |
@@ -542,8 +542,8 @@ Feature: Test settlement at expiry time from internal oracle
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | party1 | ETH/DEC21 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC | ref-7     |
     Then the parties should have the following account balances:
-      | party  | asset | market id | margin  | general |
-      | party1 | ETH   | ETH/DEC21 | 120     | 99880   |
+      | party  | asset | market id | margin | general |
+      | party1 | ETH   | ETH/DEC21 | 120    | 99880   |
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC21"
 
     When the oracles broadcast data signed with "0xCAFECAFE1":
