@@ -2356,7 +2356,7 @@ func EquityShareLPFromProto(esl *snapshot.EquityShareLP) *EquityShareLP {
 		Stake:  stake,
 		Share:  share,
 		Avg:    avg,
-		vStake: vStake,
+		VStake: vStake,
 	}
 }
 
@@ -2366,7 +2366,7 @@ func (e EquityShareLP) IntoProto() *snapshot.EquityShareLP {
 		Stake:  e.Stake.String(),
 		Share:  e.Share.String(),
 		Avg:    e.Avg.String(),
-		Vshare: e.vStake.String(),
+		Vshare: e.VStake.String(),
 	}
 }
 

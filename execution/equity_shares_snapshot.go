@@ -11,14 +11,16 @@ func NewEquitySharesFromSnapshot(state *types.EquityShare) *EquityShares {
 
 	for _, slp := range state.Lps {
 		lps[slp.ID] = &lp{
-			stake: slp.Stake,
-			share: slp.Share,
-			avg:   slp.Avg,
+			stake:  slp.Stake,
+			share:  slp.Share,
+			avg:    slp.Avg,
+			vStake: slp.VStake,
 		}
 	}
 
 	return &EquityShares{
 		mvp:                 state.Mvp,
+		r:                   state.R,
 		openingAuctionEnded: state.OpeningAuctionEnded,
 		lps:                 lps,
 		stateChanged:        true,

@@ -68,7 +68,9 @@ func (es *EquityShares) UpdateVirtualStake() {
 }
 
 func (es *EquityShares) WithMVP(mvp num.Decimal) *EquityShares {
-	es.r = mvp.Sub(es.mvp).Div(es.mvp)
+	if !es.mvp.IsZero() {
+		es.r = mvp.Sub(es.mvp).Div(es.mvp)
+	}
 	es.mvp = mvp
 	es.stateChanged = true
 	return es
