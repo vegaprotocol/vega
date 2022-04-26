@@ -2,6 +2,7 @@ package governance
 
 import (
 	"context"
+	"fmt"
 
 	"code.vegaprotocol.io/protos/vega"
 	checkpoint "code.vegaprotocol.io/protos/vega/checkpoint/v1"
@@ -35,9 +36,11 @@ func (e *Engine) Load(ctx context.Context, data []byte) error {
 	evts := make([]events.Event, 0, len(snap.Proposals))
 	for _, p := range snap.Proposals {
 		if p.Terms.ClosingTimestamp < e.currentTime.Unix() {
+			fmt.Printf("IGNORING: %v\n", p.String())
 			// the proposal in question has expired, ignore it
 			continue
 		}
+		fmt.Printf("OK: %v\n", p.String())
 		prop := types.ProposalFromProto(p)
 		evts = append(evts, events.NewProposalEvent(ctx, *prop))
 		e.activeProposals = append(e.activeProposals, &proposal{

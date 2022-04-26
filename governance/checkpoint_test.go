@@ -2,17 +2,38 @@ package governance_test
 
 import (
 	"context"
+	_ "embed"
 	"testing"
 	"time"
 
+	checkpoint "code.vegaprotocol.io/protos/vega/checkpoint/v1"
 	"code.vegaprotocol.io/vega/governance"
+	"code.vegaprotocol.io/vega/libs/proto"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
+//go:embed testcp/20220425135518-580226-06c53cc000165dfd651d59bc1e9eff20786936667c11bc9123706274910bea0e.cp
+var cpFile []byte
+
 func TestCheckpoint(t *testing.T) {
 	t.Run("Basic test -> get checkpoints at various points in time, load checkpoint", testCheckpointSuccess)
+}
+
+func TestCheckPointLoading(t *testing.T) {
+	gov := getTestEngine(t)
+	defer gov.ctrl.Finish()
+
+	cp := &checkpoint.Checkpoint{}
+	if err := proto.Unmarshal(cpFile, cp); err != nil {
+		println(err)
+	}
+
+	// require.Equal(t, 1, len(newTop.AllNodeIDs()))
+	gov.broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
+	gov.Load(context.Background(), cp.Governance)
+	// require.Equal(t, 2, len(newTop.AllNodeIDs()))
 }
 
 func testCheckpointSuccess(t *testing.T) {
