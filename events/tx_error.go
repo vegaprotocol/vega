@@ -13,12 +13,12 @@ type TxErr struct {
 	evt *eventspb.TxErrorEvent
 }
 
-func NewTxErrEvent(ctx context.Context, err error, partyID string, tx interface{}) *TxErr {
+func NewTxErrEvent(ctx context.Context, err error, partyID string, tx interface{}, cmd string) *TxErr {
 	evt := &TxErr{
 		Base: newBase(ctx, TxErrEvent),
 		evt: &eventspb.TxErrorEvent{
 			PartyId: partyID,
-			ErrMsg:  err.Error(),
+			ErrMsg:  fmt.Sprintf("%v - %v", cmd, err.Error()),
 		},
 	}
 	switch tv := tx.(type) {
