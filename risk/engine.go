@@ -110,14 +110,16 @@ func NewEngine(log *logging.Logger,
 		riskFactorsInitialised: riskFactorsInitialised,
 		positionFactor:         positionFactor,
 	}
+	stateVarEngine.RegisterStateVariable(asset, mktID, RiskFactorStateVarName, RiskFactorConverter{}, e.startRiskFactorsCalculation, []statevar.StateVarEventType{statevar.StateVarEventTypeMarketEnactment, statevar.StateVarEventTypeMarketUpdated}, e.updateRiskFactor)
 
 	if initialisedRiskFactors != nil {
 		e.factors = initialisedRiskFactors
+		// we've restored from snapshot, we don't need want to trigger a MarketEnactment event
+	} else {
+		// trigger the calculation of risk factors for the market
+		stateVarEngine.NewEvent(asset, mktID, statevar.StateVarEventTypeMarketEnactment)
 	}
 
-	stateVarEngine.RegisterStateVariable(asset, mktID, RiskFactorStateVarName, RiskFactorConverter{}, e.startRiskFactorsCalculation, []statevar.StateVarEventType{statevar.StateVarEventTypeMarketEnactment, statevar.StateVarEventTypeMarketUpdated}, e.updateRiskFactor)
-	// trigger the calculation of risk factors for the market
-	stateVarEngine.NewEvent(asset, mktID, statevar.StateVarEventTypeMarketEnactment)
 	return e
 }
 
