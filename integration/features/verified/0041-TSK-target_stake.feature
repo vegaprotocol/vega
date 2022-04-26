@@ -92,7 +92,7 @@ Feature: Target stake
     # target_stake = 90 x 40 x 1.5 x 0.1
     And the target stake should be "540" for the market "ETH/DEC21"
 
-Scenario: Max open interest changes over time, testing change of timewindoe (0041-TSTK-002; 0041-TSTK-004; 0041-TSTK-005)
+Scenario: Max open interest changes over time, testing change of timewindoe (0041-TSTK-001; 0041-TSTK-004; 0041-TSTK-005)
   Background:
     Given the following network parameters are set:
       | name                              | value |
