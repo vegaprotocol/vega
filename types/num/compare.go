@@ -12,7 +12,7 @@ type Num interface {
 	Signed | Unsigned
 }
 
-// MaxV generic max of any numeric values
+// MaxV generic max of any numeric values.
 func MaxV[T Num](a, b T) T {
 	if a > b {
 		return a
@@ -20,7 +20,7 @@ func MaxV[T Num](a, b T) T {
 	return b
 }
 
-// MinV generic min of numneric values
+// MinV generic min of numneric values.
 func MinV[T Num](a, b T) T {
 	if a > b {
 		return b
@@ -28,7 +28,7 @@ func MinV[T Num](a, b T) T {
 	return a
 }
 
-// AbsV generic absolute value function of signed primitives
+// AbsV generic absolute value function of signed primitives.
 func AbsV[T Signed](a T) T {
 	var b T // get the nil value
 	if a < b {
