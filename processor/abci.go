@@ -334,7 +334,7 @@ func (app *App) SendEventOnError(
 ) func(context.Context, abci.Tx) error {
 	return func(ctx context.Context, tx abci.Tx) error {
 		if err := f(ctx, tx); err != nil {
-			app.broker.Send(events.NewTxErrEvent(ctx, err, tx.Party(), tx.GetCmd()))
+			app.broker.Send(events.NewTxErrEvent(ctx, err, tx.Party(), tx.GetCmd(), tx.Command().String()))
 			return err
 		}
 		return nil
