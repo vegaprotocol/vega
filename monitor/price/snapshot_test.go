@@ -102,7 +102,7 @@ func TestChangedState(t *testing.T) {
 	for i := 0; i < 10; i++ {
 		pm1.OnTimeUpdate(now)
 		err := pm1.CheckPrice(context.Background(), as, num.NewUint(uint64(100+i)), uint64(100+i), true)
-		now.Add(time.Minute * 1)
+		now = now.Add(time.Minute * 1)
 		assert.NoError(t, err)
 	}
 
