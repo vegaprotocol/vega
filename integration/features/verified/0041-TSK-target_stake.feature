@@ -92,7 +92,7 @@ Feature: Target stake
     # target_stake = 90 x 40 x 1.5 x 0.1
     And the target stake should be "540" for the market "ETH/DEC21"
 
-Scenario: Max open interest changes over time (0041-TSTK-005)
+Scenario: Max open interest changes over time, testing change of timewindoe (0041-TSTK-002; 0041-TSTK-005)
   Background:
     Given the following network parameters are set:
       | name                              | value |
@@ -185,9 +185,9 @@ Scenario: Max open interest changes over time (0041-TSTK-005)
 
     When the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
-      | tt_1  | ETH/DEC21 | buy  | 100     | 90    | 0                | TYPE_LIMIT | TIF_GTC | tt_0_0    |
-    Then the mark price should be "90" for the market "ETH/DEC21"
+      | tt_1  | ETH/DEC21 | buy  | 100    | 110   | 1                | TYPE_LIMIT | TIF_GTC | tt_0_0    |
+    Then the mark price should be "110" for the market "ETH/DEC21"
 
     # max_io=10+20+30-20+100=140
-    # target_stake = 90 x 140 x 1.5 x 0.1=1890
-    And the target stake should be "810" for the market "ETH/DEC21"
+    # target_stake = 110 x 140 x 1.5 x 0.1=2310
+    And the target stake should be "2310" for the market "ETH/DEC21"
