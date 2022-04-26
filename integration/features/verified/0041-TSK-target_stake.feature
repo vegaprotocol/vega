@@ -92,7 +92,7 @@ Feature: Target stake
     # target_stake = 90 x 40 x 1.5 x 0.1
     And the target stake should be "540" for the market "ETH/DEC21"
 
-Scenario: Max open interest changes over time, testing change of timewindoe (0041-TSTK-001; 0041-TSTK-004; 0041-TSTK-005)
+Scenario: Max open interest changes over time, testing change of timewindow (0041-TSTK-001; 0041-TSTK-004; 0041-TSTK-005)
   Background:
     Given the following network parameters are set:
       | name                              | value |
@@ -169,19 +169,20 @@ Scenario: Max open interest changes over time, testing change of timewindoe (004
 
     Then the mark price should be "90" for the market "ETH/DEC21"
 
-    # the maximum oi over the last 7 days is still unchanged
+    # the maximum oi over the last 14 days is still unchanged
     # target_stake = 90 x 60 x 1.5 x 0.1
     And the target stake should be "810" for the market "ETH/DEC21"
 
     # T0 + 15 days + 2 hour
     # so now the peak of 60 should have passed from window
     When time is updated to "2021-03-15T02:00:00Z"
-
-    Then the mark price should be "90" for the market "ETH/DEC21"
-
     # the max_io stays the same as previous timestep as the timeWindow is bigger in this scenario (14 days instead of 7 days)
     # target_stake = 90 x 60 x 1.5 x 0.1
     And the target stake should be "810" for the market "ETH/DEC21"
+
+    When time is updated to "2021-03-25T02:00:00Z"
+     # target_stake = 90 x 40 x 1.5 x 0.1
+    And the target stake should be "540" for the market "ETH/DEC21"
 
     When the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
