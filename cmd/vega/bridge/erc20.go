@@ -28,7 +28,6 @@ type ERC20Cmd struct {
 	SetDepositMinimum     ERC20SetDepositMinimumCmd     `command:"set_deposit_minimum" description:"Set the minimum allowed deposit for an ERC20 token on the bridge"`
 	SetDepositMaximum     ERC20SetDepositMaximumCmd     `command:"set_deposit_maximum" description:"Set the maximum allowed deposit for an ERC20 token on the bridge"`
 	SetBridgeAddress      ERC20SetBridgeAddressCmd      `command:"set_bridge_address" description:"Update the bridge address use by the asset pool"`
-	SetExemptionLister    ERC20SetExemptionListerCmd    `command:"set_exemption_lister" description:"Set the address allow to list for deposit limits exemptions"`
 	GlobalResume          ERC20GlobalResumeCmd          `command:"global_resume" description:"Build the signature to resume usage of the bridge"`
 	GlobalStop            ERC20GlobalStopCmd            `command:"global_stop" description:"Build the signature to stop the bridge"`
 	SetWithdrawThreshold  ERC20SetWithdrawThresholdCmd  `command:"set_withdraw_threshold" description:"Update the withdraw threshold for an asset"`
@@ -409,39 +408,6 @@ func (opts *ERC20SetBridgeAddressCmd) Execute(_ []string) error {
 	erc20Logic := bridges.NewERC20AssetPool(w, opts.AssetPoolAddress)
 	bundle, err := erc20Logic.SetBridgeAddress(
 		opts.NewAddress, nonce,
-	)
-	if err != nil {
-		return fmt.Errorf("unable to generate signature: %w", err)
-	}
-
-	fmt.Printf("0x%v\n", bundle.Signature.Hex())
-	return nil
-}
-
-type ERC20SetExemptionListerCmd struct {
-	Lister        string `long:"lister" required:"true" description:"Ethereum address of the exemption lister"`
-	Nonce         string `long:"nonce" required:"true" description:"A nonce for this signature"`
-	BridgeAddress string `long:"bridge-address" required:"true" description:"The address of the vega bridge this transaction will be submitted to"`
-}
-
-func (opts *ERC20SetExemptionListerCmd) Execute(_ []string) error {
-	if _, err := flags.NewParser(opts, flags.Default|flags.IgnoreUnknown).Parse(); err != nil {
-		return err
-	}
-
-	w, err := erc20Cmd.GetSigner()
-	if err != nil {
-		return err
-	}
-
-	nonce, overflowed := num.UintFromString(opts.Nonce, 10)
-	if overflowed {
-		return errors.New("invalid nonce, needs to be base 10 and not overflow")
-	}
-
-	erc20 := bridges.NewERC20Logic(w, opts.BridgeAddress)
-	bundle, err := erc20.SetExemptionLister(
-		opts.Lister, nonce,
 	)
 	if err != nil {
 		return fmt.Errorf("unable to generate signature: %w", err)
