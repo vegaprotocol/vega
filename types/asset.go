@@ -223,13 +223,22 @@ func (a AssetDetailsBuiltinAsset) ValidateAssetSource() (ProposalError, error) {
 }
 
 func AssetDetailsERC20FromProto(p *proto.AssetDetails_Erc20) (*AssetDetailsErc20, error) {
-	lifetimeLimit, overflow := num.UintFromString(p.Erc20.LifetimeLimit, 10)
-	if overflow {
-		return nil, errors.New("invalid lifetime limit")
+	var (
+		lifetimeLimit     = num.Zero()
+		withdrawThreshold = num.Zero()
+		overflow          bool
+	)
+	if len(p.Erc20.LifetimeLimit) > 0 {
+		lifetimeLimit, overflow = num.UintFromString(p.Erc20.LifetimeLimit, 10)
+		if overflow {
+			return nil, errors.New("invalid lifetime limit")
+		}
 	}
-	withdrawThreshold, overflow := num.UintFromString(p.Erc20.LifetimeLimit, 10)
-	if overflow {
-		return nil, errors.New("invalid withdraw threshold")
+	if len(p.Erc20.WithdrawThreshold) > 0 {
+		withdrawThreshold, overflow = num.UintFromString(p.Erc20.WithdrawThreshold, 10)
+		if overflow {
+			return nil, errors.New("invalid withdraw threshold")
+		}
 	}
 	return &AssetDetailsErc20{
 		Erc20: &ERC20{

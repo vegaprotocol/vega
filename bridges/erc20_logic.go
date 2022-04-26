@@ -220,119 +220,10 @@ func (e ERC20Logic) WithdrawAsset(
 	return sign(e.signer, msg)
 }
 
-func (e ERC20Logic) SetDepositMaximum(
-	tokenAddress string,
-	maximumAmount *num.Uint,
-	nonce *num.Uint,
-) (*SignaturePayload, error) {
-	typAddr, err := abi.NewType("address", "", nil)
-	if err != nil {
-		return nil, err
-	}
-	typString, err := abi.NewType("string", "", nil)
-	if err != nil {
-		return nil, err
-	}
-	typU256, err := abi.NewType("uint256", "", nil)
-	if err != nil {
-		return nil, err
-	}
-
-	args := abi.Arguments([]abi.Argument{
-		{
-			Name: "address",
-			Type: typAddr,
-		},
-		{
-			Name: "uint256",
-			Type: typU256,
-		},
-		{
-			Name: "uint256",
-			Type: typU256,
-		},
-		{
-			Name: "func_name",
-			Type: typString,
-		},
-	})
-
-	ethTokenAddr := ethcmn.HexToAddress(tokenAddress)
-
-	buf, err := args.Pack([]interface{}{
-		ethTokenAddr, maximumAmount.BigInt(),
-		nonce.BigInt(), "set_deposit_maximum",
-	}...)
-	if err != nil {
-		return nil, fmt.Errorf("couldn't pack abi message: %w", err)
-	}
-
-	msg, err := packBufAndSubmitter(buf, e.bridgeAddr)
-	if err != nil {
-		return nil, fmt.Errorf("couldn't pack abi message: %w", err)
-	}
-
-	return sign(e.signer, msg)
-}
-
-func (e ERC20Logic) SetDepositMinimum(
-	tokenAddress string,
-	minimumAmount *num.Uint,
-	nonce *num.Uint,
-) (*SignaturePayload, error) {
-	typAddr, err := abi.NewType("address", "", nil)
-	if err != nil {
-		return nil, err
-	}
-	typString, err := abi.NewType("string", "", nil)
-	if err != nil {
-		return nil, err
-	}
-	typU256, err := abi.NewType("uint256", "", nil)
-	if err != nil {
-		return nil, err
-	}
-
-	args := abi.Arguments([]abi.Argument{
-		{
-			Name: "address",
-			Type: typAddr,
-		},
-		{
-			Name: "uint256",
-			Type: typU256,
-		},
-		{
-			Name: "uint256",
-			Type: typU256,
-		},
-		{
-			Name: "func_name",
-			Type: typString,
-		},
-	})
-
-	ethTokenAddr := ethcmn.HexToAddress(tokenAddress)
-
-	buf, err := args.Pack([]interface{}{
-		ethTokenAddr, minimumAmount.BigInt(),
-		nonce.BigInt(), "set_deposit_minimum",
-	}...)
-	if err != nil {
-		return nil, fmt.Errorf("couldn't pack abi message: %w", err)
-	}
-
-	msg, err := packBufAndSubmitter(buf, e.bridgeAddr)
-	if err != nil {
-		return nil, fmt.Errorf("couldn't pack abi message: %w", err)
-	}
-
-	return sign(e.signer, msg)
-}
-
-func (e ERC20Logic) SetLifetimeDepositMax(
+func (e ERC20Logic) SetAssetLimits(
 	tokenAddress string,
 	lifetimeLimit *num.Uint,
+	withdrawThreshold *num.Uint,
 	nonce *num.Uint,
 ) (*SignaturePayload, error) {
 	typAddr, err := abi.NewType("address", "", nil)
@@ -352,6 +243,10 @@ func (e ERC20Logic) SetLifetimeDepositMax(
 		{
 			Name: "address",
 			Type: typAddr,
+		},
+		{
+			Name: "uint256",
+			Type: typU256,
 		},
 		{
 			Name: "uint256",
@@ -372,6 +267,7 @@ func (e ERC20Logic) SetLifetimeDepositMax(
 	buf, err := args.Pack([]interface{}{
 		ethTokenAddr,
 		lifetimeLimit.BigInt(),
+		withdrawThreshold.BigInt(),
 		nonce.BigInt(),
 		"set_lifetime_deposit_max",
 	}...)
@@ -420,63 +316,6 @@ func (e ERC20Logic) SetWithdrawDelay(
 		delayBig,
 		nonce.BigInt(),
 		"set_withdraw_delay",
-	}...)
-	if err != nil {
-		return nil, fmt.Errorf("couldn't pack abi message: %w", err)
-	}
-
-	msg, err := packBufAndSubmitter(buf, e.bridgeAddr)
-	if err != nil {
-		return nil, fmt.Errorf("couldn't pack abi message: %w", err)
-	}
-
-	return sign(e.signer, msg)
-}
-
-func (e ERC20Logic) SetWithdrawThreshold(
-	tokenAddress string,
-	threshold *num.Uint,
-	nonce *num.Uint,
-) (*SignaturePayload, error) {
-	typAddr, err := abi.NewType("address", "", nil)
-	if err != nil {
-		return nil, err
-	}
-	typString, err := abi.NewType("string", "", nil)
-	if err != nil {
-		return nil, err
-	}
-	typU256, err := abi.NewType("uint256", "", nil)
-	if err != nil {
-		return nil, err
-	}
-
-	args := abi.Arguments([]abi.Argument{
-		{
-			Name: "address",
-			Type: typAddr,
-		},
-		{
-			Name: "uint256",
-			Type: typU256,
-		},
-		{
-			Name: "uint256",
-			Type: typU256,
-		},
-		{
-			Name: "func_name",
-			Type: typString,
-		},
-	})
-
-	ethTokenAddr := ethcmn.HexToAddress(tokenAddress)
-
-	buf, err := args.Pack([]interface{}{
-		ethTokenAddr,
-		threshold.BigInt(),
-		nonce.BigInt(),
-		"set_withdraw_threshold",
 	}...)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't pack abi message: %w", err)
