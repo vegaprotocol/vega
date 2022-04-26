@@ -507,9 +507,7 @@ type ComplexityRoot struct {
 	}
 
 	NewFreeform struct {
-		Description func(childComplexity int) int
-		Hash        func(childComplexity int) int
-		URL         func(childComplexity int) int
+		DoNotUse func(childComplexity int) int
 	}
 
 	NewMarket struct {
@@ -709,11 +707,18 @@ type ComplexityRoot struct {
 		ErrorDetails    func(childComplexity int) int
 		ID              func(childComplexity int) int
 		Party           func(childComplexity int) int
+		Rationale       func(childComplexity int) int
 		Reference       func(childComplexity int) int
 		RejectionReason func(childComplexity int) int
 		State           func(childComplexity int) int
 		Terms           func(childComplexity int) int
 		Votes           func(childComplexity int) int
+	}
+
+	ProposalRationale struct {
+		Description func(childComplexity int) int
+		Hash        func(childComplexity int) int
+		Url         func(childComplexity int) int
 	}
 
 	ProposalTerms struct {
@@ -797,9 +802,11 @@ type ComplexityRoot struct {
 		Amount            func(childComplexity int) int
 		Asset             func(childComplexity int) int
 		Epoch             func(childComplexity int) int
+		MarketId          func(childComplexity int) int
 		Party             func(childComplexity int) int
 		PercentageOfTotal func(childComplexity int) int
 		ReceivedAt        func(childComplexity int) int
+		RewardType        func(childComplexity int) int
 	}
 
 	RewardPerAssetDetail struct {
@@ -970,6 +977,7 @@ type ComplexityRoot struct {
 		FromAccountType func(childComplexity int) int
 		Id              func(childComplexity int) int
 		Kind            func(childComplexity int) int
+		MarketID        func(childComplexity int) int
 		Reference       func(childComplexity int) int
 		Status          func(childComplexity int) int
 		Timestamp       func(childComplexity int) int
@@ -1130,6 +1138,7 @@ type LiquidityProvisionResolver interface {
 	UpdatedAt(ctx context.Context, obj *vega.LiquidityProvision) (*string, error)
 	Market(ctx context.Context, obj *vega.LiquidityProvision) (*vega.Market, error)
 
+	Version(ctx context.Context, obj *vega.LiquidityProvision) (string, error)
 	Status(ctx context.Context, obj *vega.LiquidityProvision) (LiquidityProvisionStatus, error)
 }
 type MarginLevelsResolver interface {
@@ -1215,9 +1224,7 @@ type NewAssetResolver interface {
 	Source(ctx context.Context, obj *vega.NewAsset) (AssetSource, error)
 }
 type NewFreeformResolver interface {
-	URL(ctx context.Context, obj *vega.NewFreeform) (string, error)
-	Description(ctx context.Context, obj *vega.NewFreeform) (string, error)
-	Hash(ctx context.Context, obj *vega.NewFreeform) (string, error)
+	DoNotUse(ctx context.Context, obj *vega.NewFreeform) (*bool, error)
 }
 type NewMarketResolver interface {
 	Instrument(ctx context.Context, obj *vega.NewMarket) (*vega.InstrumentConfiguration, error)
@@ -1310,6 +1317,7 @@ type ProposalResolver interface {
 	Party(ctx context.Context, obj *vega.GovernanceData) (*vega.Party, error)
 	State(ctx context.Context, obj *vega.GovernanceData) (ProposalState, error)
 	Datetime(ctx context.Context, obj *vega.GovernanceData) (string, error)
+	Rationale(ctx context.Context, obj *vega.GovernanceData) (*vega.ProposalRationale, error)
 	Terms(ctx context.Context, obj *vega.GovernanceData) (*vega.ProposalTerms, error)
 	Votes(ctx context.Context, obj *vega.GovernanceData) (*ProposalVotes, error)
 	RejectionReason(ctx context.Context, obj *vega.GovernanceData) (*ProposalRejectionReason, error)
@@ -1370,6 +1378,7 @@ type RecurringTransferResolver interface {
 }
 type RewardResolver interface {
 	Asset(ctx context.Context, obj *vega.Reward) (*vega.Asset, error)
+
 	Party(ctx context.Context, obj *vega.Reward) (*vega.Party, error)
 	Epoch(ctx context.Context, obj *vega.Reward) (*vega.Epoch, error)
 
@@ -1454,6 +1463,7 @@ type TradeResolver interface {
 }
 type TransferResolver interface {
 	Asset(ctx context.Context, obj *v1.Transfer) (*vega.Asset, error)
+	MarketID(ctx context.Context, obj *v1.Transfer) (string, error)
 
 	Status(ctx context.Context, obj *v1.Transfer) (TransferStatus, error)
 	Timestamp(ctx context.Context, obj *v1.Transfer) (string, error)
@@ -3237,26 +3247,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.NewAsset.TotalSupply(childComplexity), true
 
-	case "NewFreeform.description":
-		if e.complexity.NewFreeform.Description == nil {
+	case "NewFreeform._doNotUse":
+		if e.complexity.NewFreeform.DoNotUse == nil {
 			break
 		}
 
-		return e.complexity.NewFreeform.Description(childComplexity), true
-
-	case "NewFreeform.hash":
-		if e.complexity.NewFreeform.Hash == nil {
-			break
-		}
-
-		return e.complexity.NewFreeform.Hash(childComplexity), true
-
-	case "NewFreeform.url":
-		if e.complexity.NewFreeform.URL == nil {
-			break
-		}
-
-		return e.complexity.NewFreeform.URL(childComplexity), true
+		return e.complexity.NewFreeform.DoNotUse(childComplexity), true
 
 	case "NewMarket.commitment":
 		if e.complexity.NewMarket.Commitment == nil {
@@ -4176,6 +4172,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Proposal.Party(childComplexity), true
 
+	case "Proposal.rationale":
+		if e.complexity.Proposal.Rationale == nil {
+			break
+		}
+
+		return e.complexity.Proposal.Rationale(childComplexity), true
+
 	case "Proposal.reference":
 		if e.complexity.Proposal.Reference == nil {
 			break
@@ -4210,6 +4213,27 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Proposal.Votes(childComplexity), true
+
+	case "ProposalRationale.description":
+		if e.complexity.ProposalRationale.Description == nil {
+			break
+		}
+
+		return e.complexity.ProposalRationale.Description(childComplexity), true
+
+	case "ProposalRationale.hash":
+		if e.complexity.ProposalRationale.Hash == nil {
+			break
+		}
+
+		return e.complexity.ProposalRationale.Hash(childComplexity), true
+
+	case "ProposalRationale.url":
+		if e.complexity.ProposalRationale.Url == nil {
+			break
+		}
+
+		return e.complexity.ProposalRationale.Url(childComplexity), true
 
 	case "ProposalTerms.change":
 		if e.complexity.ProposalTerms.Change == nil {
@@ -4764,6 +4788,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Reward.Epoch(childComplexity), true
 
+	case "Reward.marketID":
+		if e.complexity.Reward.MarketId == nil {
+			break
+		}
+
+		return e.complexity.Reward.MarketId(childComplexity), true
+
 	case "Reward.party":
 		if e.complexity.Reward.Party == nil {
 			break
@@ -4784,6 +4815,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Reward.ReceivedAt(childComplexity), true
+
+	case "Reward.rewardType":
+		if e.complexity.Reward.RewardType == nil {
+			break
+		}
+
+		return e.complexity.Reward.RewardType(childComplexity), true
 
 	case "RewardPerAssetDetail.asset":
 		if e.complexity.RewardPerAssetDetail.Asset == nil {
@@ -5630,6 +5668,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Transfer.Kind(childComplexity), true
 
+	case "Transfer.marketID":
+		if e.complexity.Transfer.MarketID == nil {
+			break
+		}
+
+		return e.complexity.Transfer.MarketID(childComplexity), true
+
 	case "Transfer.reference":
 		if e.complexity.Transfer.Reference == nil {
 			break
@@ -6344,7 +6389,7 @@ type Query {
     inState: ProposalState
   ): [Proposal!]
 
-  "Governance proposals that aim to create new assets in Vega"
+  "Governance proposals that allows creation of free form proposals in Vega"
   newFreeformProposals(
     "Returns only proposals in the specified state. Leave out to get all proposals"
     inState: ProposalState
@@ -6425,7 +6470,7 @@ type Query {
   historicBalances(
     filter: AccountFilter,
     groupBy: [AccountField])
-    : [AggregatedBalance!]!
+  : [AggregatedBalance!]!
 
   "Current network limits"
   networkLimits: NetworkLimits
@@ -6488,6 +6533,9 @@ type Transfer {
 
   "The asset"
   asset: Asset
+
+  "The market identifier for the transfer is any"
+  marketID: String!
 
   "The amount sent"
   amount: String!
@@ -6705,11 +6753,11 @@ type RankingScore {
   "The former validation status of teh validator"
   previousStatus: String!
   "The ranking score of the validator"
-  rankingScore: String! 
+  rankingScore: String!
   "The stake based score of the validator (no anti-whaling)"
   stakeScore: String!
   "The performance score of the validator"
-  performanceScore: String! 
+  performanceScore: String!
   "The tendermint voting power of the validator (uint32)"
   votingPower: String!
 }
@@ -7270,8 +7318,8 @@ type Market {
 
   """
   positionDecimalPlaces indicated the number of decimal places that an integer must be shifted in order to get a correct size (uint64).
-  i.e. 0 means there are no fractional orders for the market, and order sizes are always whole sizes. 
-  2 means sizes given as 10^2 * desired size, e.g. a desired size of 1.23 is represented as 123 in this market. 
+  i.e. 0 means there are no fractional orders for the market, and order sizes are always whole sizes.
+  2 means sizes given as 10^2 * desired size, e.g. a desired size of 1.23 is represented as 123 in this market.
   """
   positionDecimalPlaces: Int!
 
@@ -8401,16 +8449,13 @@ type NewAsset {
   source: AssetSource!
 }
 
-"A new freeform proposal change"
+"""
+A new freeform proposal change. It has no properties on purpose. Use proposal
+rationale, instead.
+"""
 type NewFreeform {
-  "The URL containing content that describes the proposal"
-  url: String!
-
-  "A short description of what is being proposed"
-  description: String!
-
-  "The hash on the content of the URL"
-  hash: String!
+  "A placeholder to please graphQL"
+  _doNotUse: Boolean
 }
 
 "Allows submitting a proposal for changing network parameters"
@@ -8427,13 +8472,36 @@ type NetworkParameter {
 }
 
 union ProposalChange =
-    NewMarket
+  NewMarket
   | UpdateMarket
   | UpdateNetworkParameter
   | NewAsset
   | NewFreeform
 # there are no unions for input types as of today, see: https://github.com/graphql/graphql-spec/issues/488
 
+type ProposalRationale {
+  """
+  Description to show a short title / something in case the link goes offline.
+  This is to be between 0 and 1024 unicode characters.
+  This is mandatory for all proposal.
+  """
+  description: String!
+  """
+  Cryptographically secure hash (SHA3-512) of the text pointed by the ` + "`" + `url` + "`" + ` property
+  so that viewers can check that the text hasn't been changed over time.
+  Optional except for FreeFrom proposal where it's mandatory.
+  If set, the ` + "`" + `url` + "`" + ` property must be set.
+  """
+  hash: String
+  """
+  Link to a text file describing the proposal in depth.
+  Optional except for FreeFrom proposal where it's mandatory.
+  If set, the ` + "`" + `url` + "`" + ` property must be set.
+  """
+  url: String
+}
+
+"The rationale behind the proposal"
 type ProposalTerms {
   """
   RFC3339Nano time and date when voting closes for this proposal.
@@ -8485,6 +8553,8 @@ type Proposal {
   state: ProposalState!
   "RFC3339Nano time and date when the proposal reached Vega network"
   datetime: String!
+  "Rationale behind the proposal"
+  rationale: ProposalRationale!
   "Terms of the proposal"
   terms: ProposalTerms!
   "Votes cast for this proposal"
@@ -8737,7 +8807,7 @@ enum BusEventType {
 
 "union type for wrapped events in stream PROPOSAL is mapped to governance data, something to keep in mind"
 union Event =
-    TimeUpdate
+  TimeUpdate
   | MarketEvent
   | TransferResponses
   | PositionResolution
@@ -8851,8 +8921,12 @@ type LiquidityProvision {
 
 "Reward information for a single party"
 type Reward {
-  "The asset for which this reward is associated"
+  "The asset this reward is paid in"
   asset: Asset!
+  "The market for which this reward is paid if any"
+  marketID: String!
+  "The type of reward"
+  rewardType: String!
   "Party receiving the reward"
   party: Party!
   "Epoch for which this reward was distributed"
@@ -8921,24 +8995,24 @@ enum AccountField {
 
 "Information about whether proposals are enabled, if we are still bootstrapping etc.."
 type NetworkLimits {
-    "Are market proposals allowed at this point in time"
-		canProposeMarket: Boolean!
-    "Are asset proposals allowed at this point in time"
-		canProposeAsset: Boolean!
-    "True once block count > bootstrapBlockCount"
-		bootstrapFinished: Boolean!
-    "Are market proposals enabled on this chain"
-		proposeMarketEnabled: Boolean!
-    "Are asset proposals enabled on this chain"
-		proposeAssetEnabled: Boolean!
-    "How many blocks before the chain comes out of bootstrap mode"
-		bootstrapBlockCount: Int!
-    "True once the genesis file is loaded"
-		genesisLoaded: Boolean!
-    "The date/timestamp in unix nanoseconds at which market proposals will be enabled (0 indicates not set)"
-		proposeMarketEnabledFrom: Timestamp!
-    "The date/timestamp in unix nanoseconds at which asset proposals will be enabled (0 indicates not set)"
-		proposeAssetEnabledFrom: Timestamp!
+  "Are market proposals allowed at this point in time"
+  canProposeMarket: Boolean!
+  "Are asset proposals allowed at this point in time"
+  canProposeAsset: Boolean!
+  "True once block count > bootstrapBlockCount"
+  bootstrapFinished: Boolean!
+  "Are market proposals enabled on this chain"
+  proposeMarketEnabled: Boolean!
+  "Are asset proposals enabled on this chain"
+  proposeAssetEnabled: Boolean!
+  "How many blocks before the chain comes out of bootstrap mode"
+  bootstrapBlockCount: Int!
+  "True once the genesis file is loaded"
+  genesisLoaded: Boolean!
+  "The date/timestamp in unix nanoseconds at which market proposals will be enabled (0 indicates not set)"
+  proposeMarketEnabledFrom: Timestamp!
+  "The date/timestamp in unix nanoseconds at which asset proposals will be enabled (0 indicates not set)"
+  proposeAssetEnabledFrom: Timestamp!
 }
 `, BuiltIn: false},
 }
@@ -15209,14 +15283,14 @@ func (ec *executionContext) _LiquidityProvision_version(ctx context.Context, fie
 		Object:     "LiquidityProvision",
 		Field:      field,
 		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
+		IsMethod:   true,
+		IsResolver: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Version, nil
+		return ec.resolvers.LiquidityProvision().Version(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -18837,7 +18911,7 @@ func (ec *executionContext) _NewAsset_source(ctx context.Context, field graphql.
 	return ec.marshalNAssetSource2codeᚗvegaprotocolᚗioᚋdataᚑnodeᚋgatewayᚋgraphqlᚐAssetSource(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _NewFreeform_url(ctx context.Context, field graphql.CollectedField, obj *vega.NewFreeform) (ret graphql.Marshaler) {
+func (ec *executionContext) _NewFreeform__doNotUse(ctx context.Context, field graphql.CollectedField, obj *vega.NewFreeform) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -18855,91 +18929,18 @@ func (ec *executionContext) _NewFreeform_url(ctx context.Context, field graphql.
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.NewFreeform().URL(rctx, obj)
+		return ec.resolvers.NewFreeform().DoNotUse(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(*bool)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _NewFreeform_description(ctx context.Context, field graphql.CollectedField, obj *vega.NewFreeform) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "NewFreeform",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   true,
-		IsResolver: true,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.NewFreeform().Description(rctx, obj)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _NewFreeform_hash(ctx context.Context, field graphql.CollectedField, obj *vega.NewFreeform) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "NewFreeform",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   true,
-		IsResolver: true,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.NewFreeform().Hash(rctx, obj)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _NewMarket_instrument(ctx context.Context, field graphql.CollectedField, obj *vega.NewMarket) (ret graphql.Marshaler) {
@@ -23243,6 +23244,41 @@ func (ec *executionContext) _Proposal_datetime(ctx context.Context, field graphq
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Proposal_rationale(ctx context.Context, field graphql.CollectedField, obj *vega.GovernanceData) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Proposal",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Proposal().Rationale(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*vega.ProposalRationale)
+	fc.Result = res
+	return ec.marshalNProposalRationale2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐProposalRationale(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Proposal_terms(ctx context.Context, field graphql.CollectedField, obj *vega.GovernanceData) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -23375,6 +23411,105 @@ func (ec *executionContext) _Proposal_errorDetails(ctx context.Context, field gr
 	res := resTmp.(*string)
 	fc.Result = res
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ProposalRationale_description(ctx context.Context, field graphql.CollectedField, obj *vega.ProposalRationale) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "ProposalRationale",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Description, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ProposalRationale_hash(ctx context.Context, field graphql.CollectedField, obj *vega.ProposalRationale) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "ProposalRationale",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Hash, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalOString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ProposalRationale_url(ctx context.Context, field graphql.CollectedField, obj *vega.ProposalRationale) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "ProposalRationale",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Url, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalOString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _ProposalTerms_closingDatetime(ctx context.Context, field graphql.CollectedField, obj *vega.ProposalTerms) (ret graphql.Marshaler) {
@@ -25547,6 +25682,76 @@ func (ec *executionContext) _Reward_asset(ctx context.Context, field graphql.Col
 	res := resTmp.(*vega.Asset)
 	fc.Result = res
 	return ec.marshalNAsset2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐAsset(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Reward_marketID(ctx context.Context, field graphql.CollectedField, obj *vega.Reward) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Reward",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MarketId, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Reward_rewardType(ctx context.Context, field graphql.CollectedField, obj *vega.Reward) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Reward",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.RewardType, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Reward_party(ctx context.Context, field graphql.CollectedField, obj *vega.Reward) (ret graphql.Marshaler) {
@@ -29784,6 +29989,41 @@ func (ec *executionContext) _Transfer_asset(ctx context.Context, field graphql.C
 	res := resTmp.(*vega.Asset)
 	fc.Result = res
 	return ec.marshalOAsset2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐAsset(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Transfer_marketID(ctx context.Context, field graphql.CollectedField, obj *v1.Transfer) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Transfer",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Transfer().MarketID(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Transfer_amount(ctx context.Context, field graphql.CollectedField, obj *v1.Transfer) (ret graphql.Marshaler) {
@@ -35260,15 +35500,25 @@ func (ec *executionContext) _LiquidityProvision(ctx context.Context, sel ast.Sel
 				atomic.AddUint32(&invalids, 1)
 			}
 		case "version":
+			field := field
+
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._LiquidityProvision_version(ctx, field, obj)
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._LiquidityProvision_version(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
 			}
 
-			out.Values[i] = innerFunc(ctx)
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
 
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
-			}
+			})
 		case "status":
 			field := field
 
@@ -37138,7 +37388,7 @@ func (ec *executionContext) _NewFreeform(ctx context.Context, sel ast.SelectionS
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("NewFreeform")
-		case "url":
+		case "_doNotUse":
 			field := field
 
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
@@ -37147,50 +37397,7 @@ func (ec *executionContext) _NewFreeform(ctx context.Context, sel ast.SelectionS
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._NewFreeform_url(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
-			}
-
-			out.Concurrently(i, func() graphql.Marshaler {
-				return innerFunc(ctx)
-
-			})
-		case "description":
-			field := field
-
-			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._NewFreeform_description(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
-			}
-
-			out.Concurrently(i, func() graphql.Marshaler {
-				return innerFunc(ctx)
-
-			})
-		case "hash":
-			field := field
-
-			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._NewFreeform_hash(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
+				res = ec._NewFreeform__doNotUse(ctx, field, obj)
 				return res
 			}
 
@@ -39429,6 +39636,26 @@ func (ec *executionContext) _Proposal(ctx context.Context, sel ast.SelectionSet,
 				return innerFunc(ctx)
 
 			})
+		case "rationale":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Proposal_rationale(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
 		case "terms":
 			field := field
 
@@ -39503,6 +39730,51 @@ func (ec *executionContext) _Proposal(ctx context.Context, sel ast.SelectionSet,
 				return innerFunc(ctx)
 
 			})
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var proposalRationaleImplementors = []string{"ProposalRationale"}
+
+func (ec *executionContext) _ProposalRationale(ctx context.Context, sel ast.SelectionSet, obj *vega.ProposalRationale) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, proposalRationaleImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("ProposalRationale")
+		case "description":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._ProposalRationale_description(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "hash":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._ProposalRationale_hash(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+		case "url":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._ProposalRationale_url(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -40732,6 +41004,26 @@ func (ec *executionContext) _Reward(ctx context.Context, sel ast.SelectionSet, o
 				return innerFunc(ctx)
 
 			})
+		case "marketID":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Reward_marketID(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "rewardType":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Reward_rewardType(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
 		case "party":
 			field := field
 
@@ -42586,6 +42878,26 @@ func (ec *executionContext) _Transfer(ctx context.Context, sel ast.SelectionSet,
 					}
 				}()
 				res = ec._Transfer_asset(ctx, field, obj)
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "marketID":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Transfer_marketID(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
 				return res
 			}
 
@@ -45075,6 +45387,20 @@ func (ec *executionContext) marshalNProposalChange2codeᚗvegaprotocolᚗioᚋda
 		return graphql.Null
 	}
 	return ec._ProposalChange(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNProposalRationale2codeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐProposalRationale(ctx context.Context, sel ast.SelectionSet, v vega.ProposalRationale) graphql.Marshaler {
+	return ec._ProposalRationale(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNProposalRationale2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐProposalRationale(ctx context.Context, sel ast.SelectionSet, v *vega.ProposalRationale) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._ProposalRationale(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNProposalState2codeᚗvegaprotocolᚗioᚋdataᚑnodeᚋgatewayᚋgraphqlᚐProposalState(ctx context.Context, v interface{}) (ProposalState, error) {

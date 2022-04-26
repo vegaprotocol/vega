@@ -164,12 +164,6 @@ pipeline {
 
         stage('Run linters') {
             parallel {
-                stage('check print') {
-                    options { retry(3) }
-                    steps {
-                        sh 'make print_check'
-                    }
-                }
                 stage('shellcheck') {
                     options { retry(3) }
                     steps {

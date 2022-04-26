@@ -360,7 +360,11 @@ func (r *myLiquidityOrderReferenceResolver) Order(ctx context.Context, obj *type
 
 type myLiquidityProvisionResolver VegaResolverRoot
 
-func (r *myLiquidityProvisionResolver) Party(ctx context.Context, obj *types.LiquidityProvision) (*types.Party, error) {
+func (r *myLiquidityProvisionResolver) Version(_ context.Context, obj *types.LiquidityProvision) (string, error) {
+	return strconv.FormatUint(obj.Version, 10), nil
+}
+
+func (r *myLiquidityProvisionResolver) Party(_ context.Context, obj *types.LiquidityProvision) (*types.Party, error) {
 	return &types.Party{Id: obj.PartyId}, nil
 }
 

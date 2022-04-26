@@ -6,6 +6,7 @@ import (
 
 	"code.vegaprotocol.io/data-node/entities"
 	"code.vegaprotocol.io/data-node/sqlstore"
+	"code.vegaprotocol.io/protos/vega"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/shopspring/decimal"
@@ -56,8 +57,8 @@ func TestVotes(t *testing.T) {
 
 	party1 := addTestParty(t, partyStore, block1)
 	party2 := addTestParty(t, partyStore, block1)
-	prop1 := addTestProposal(t, propStore, party1, block1)
-	prop2 := addTestProposal(t, propStore, party1, block1)
+	prop1 := addTestProposal(t, propStore, party1, block1, entities.ProposalRationale{ProposalRationale: &vega.ProposalRationale{Url: "myurl1.com"}})
+	prop2 := addTestProposal(t, propStore, party1, block1, entities.ProposalRationale{ProposalRationale: &vega.ProposalRationale{Url: "myurl2.com"}})
 
 	party1ID := party1.ID.String()
 	prop1ID := prop1.ID.String()

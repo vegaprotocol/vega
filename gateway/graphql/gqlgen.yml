@@ -104,6 +104,8 @@ models:
     fields:
       votes:
         resolver: true
+  ProposalRationale:
+    model: code.vegaprotocol.io/protos/vega.ProposalRationale
   ProposalTerms:
     model: code.vegaprotocol.io/protos/vega.ProposalTerms
   NewMarket:

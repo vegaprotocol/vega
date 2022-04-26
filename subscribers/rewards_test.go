@@ -10,6 +10,7 @@ import (
 	"code.vegaprotocol.io/data-node/subscribers"
 	"code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/events"
+	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
 
 	"github.com/stretchr/testify/assert"
@@ -21,7 +22,7 @@ func TestFirstRewardMessage(t *testing.T) {
 	re := subscribers.NewRewards(ctx, logging.NewTestLogger(), true)
 
 	now := time.Now().UnixNano()
-	evt := events.NewRewardPayout(ctx, now, partyID, "1", "BTC", num.NewUint(100), num.DecimalFromFloat(0.1))
+	evt := events.NewRewardPayout(ctx, now, partyID, "1", "BTC", num.NewUint(100), num.DecimalFromFloat(0.1), types.AccountTypeMakerFeeReward, "123")
 	re.Push(evt)
 
 	// Check the summary
@@ -48,9 +49,9 @@ func TestTwoRewardsSamePartyAndAsset(t *testing.T) {
 
 	// Create a reward event and push it to the subscriber
 	now := time.Now().UnixNano()
-	evt := events.NewRewardPayout(ctx, now, partyID, "1", "BTC", num.NewUint(100), num.DecimalFromFloat(0.1))
+	evt := events.NewRewardPayout(ctx, now, partyID, "1", "BTC", num.NewUint(100), num.DecimalFromFloat(0.1), types.AccountTypeMakerFeeReward, "123")
 	re.Push(evt)
-	evt2 := events.NewRewardPayout(ctx, now, partyID, "2", "BTC", num.NewUint(50), num.DecimalFromFloat(0.2))
+	evt2 := events.NewRewardPayout(ctx, now, partyID, "2", "BTC", num.NewUint(50), num.DecimalFromFloat(0.2), types.AccountTypeMakerFeeReward, "123")
 	re.Push(evt2)
 
 	// Now query for the reward summaries for that party
@@ -89,9 +90,9 @@ func TestTwoDifferentAssetsSameParty(t *testing.T) {
 
 	// Create a reward event and push it to the subscriber
 	now := time.Now().UnixNano()
-	evt := events.NewRewardPayout(ctx, now, partyID, "1", "BTC", num.NewUint(100), num.DecimalFromFloat(0.1))
+	evt := events.NewRewardPayout(ctx, now, partyID, "1", "BTC", num.NewUint(100), num.DecimalFromFloat(0.1), types.AccountTypeMakerFeeReward, "123")
 	re.Push(evt)
-	evt2 := events.NewRewardPayout(ctx, now, partyID, "2", "ETH", num.NewUint(50), num.DecimalFromFloat(0.2))
+	evt2 := events.NewRewardPayout(ctx, now, partyID, "2", "ETH", num.NewUint(50), num.DecimalFromFloat(0.2), types.AccountTypeMakerFeeReward, "123")
 	re.Push(evt2)
 
 	// Now query for the reward summaries for that party

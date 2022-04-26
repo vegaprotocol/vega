@@ -24,12 +24,14 @@ func (rs *Rewards) Add(ctx context.Context, r entities.Reward) error {
 		`INSERT INTO rewards(
 			party_id,
 			asset_id,
+			market_id,
+			reward_type,
 			epoch_id,
 			amount,
 			percent_of_total,
 			vega_time)
-		 VALUES ($1,  $2,  $3,  $4,  $5,  $6);`,
-		r.PartyID, r.AssetID, r.EpochID, r.Amount, r.PercentOfTotal, r.VegaTime)
+		 VALUES ($1,  $2,  $3,  $4,  $5,  $6, $7, $8);`,
+		r.PartyID, r.AssetID, r.MarketID, r.RewardType, r.EpochID, r.Amount, r.PercentOfTotal, r.VegaTime)
 	return err
 }
 

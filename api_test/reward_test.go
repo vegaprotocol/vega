@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"testing"
 
+	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
 
 	apipb "code.vegaprotocol.io/protos/data-node/api/v1"
@@ -40,11 +41,11 @@ func testObserveRewardsResponsesNoFilter(t *testing.T) {
 	ctx := context.Background()
 	req := &apipb.ObserveRewardsRequest{}
 	rewardEvents := []*events.RewardPayout{
-		events.NewRewardPayout(ctx, 0, "party1", "1", "asset1", num.NewUint(100), num.DecimalFromFloat(0.1)),
-		events.NewRewardPayout(ctx, 1, "party2", "2", "asset2", num.NewUint(200), num.DecimalFromFloat(0.2)),
-		events.NewRewardPayout(ctx, 2, "party3", "3", "asset2", num.NewUint(300), num.DecimalFromFloat(0.3)),
-		events.NewRewardPayout(ctx, 3, "party1", "4", "asset2", num.NewUint(400), num.DecimalFromFloat(0.4)),
-		events.NewRewardPayout(ctx, 4, "party2", "5", "asset2", num.NewUint(500), num.DecimalFromFloat(0.5)),
+		events.NewRewardPayout(ctx, 0, "party1", "1", "asset1", num.NewUint(100), num.DecimalFromFloat(0.1), types.AccountTypeMakerFeeReward, "123"),
+		events.NewRewardPayout(ctx, 1, "party2", "2", "asset2", num.NewUint(200), num.DecimalFromFloat(0.2), types.AccountTypeMakerFeeReward, "123"),
+		events.NewRewardPayout(ctx, 2, "party3", "3", "asset2", num.NewUint(300), num.DecimalFromFloat(0.3), types.AccountTypeMakerFeeReward, "123"),
+		events.NewRewardPayout(ctx, 3, "party1", "4", "asset2", num.NewUint(400), num.DecimalFromFloat(0.4), types.AccountTypeMakerFeeReward, "123"),
+		events.NewRewardPayout(ctx, 4, "party2", "5", "asset2", num.NewUint(500), num.DecimalFromFloat(0.5), types.AccountTypeMakerFeeReward, "123"),
 	}
 
 	testRWObserverWithFilter(t, req, rewardEvents, rewardEvents)
@@ -54,16 +55,16 @@ func testObserveRewardsResponsesWithAssetFilter(t *testing.T) {
 	ctx := context.Background()
 	req := &apipb.ObserveRewardsRequest{AssetId: "asset1"}
 	rewardEvents := []*events.RewardPayout{
-		events.NewRewardPayout(ctx, 0, "party1", "1", "asset1", num.NewUint(100), num.DecimalFromFloat(0.1)),
-		events.NewRewardPayout(ctx, 1, "party2", "2", "asset2", num.NewUint(200), num.DecimalFromFloat(0.2)),
-		events.NewRewardPayout(ctx, 2, "party3", "3", "asset1", num.NewUint(300), num.DecimalFromFloat(0.3)),
-		events.NewRewardPayout(ctx, 3, "party1", "4", "asset1", num.NewUint(400), num.DecimalFromFloat(0.4)),
-		events.NewRewardPayout(ctx, 4, "party2", "5", "asset2", num.NewUint(500), num.DecimalFromFloat(0.5)),
+		events.NewRewardPayout(ctx, 0, "party1", "1", "asset1", num.NewUint(100), num.DecimalFromFloat(0.1), types.AccountTypeMakerFeeReward, "123"),
+		events.NewRewardPayout(ctx, 1, "party2", "2", "asset2", num.NewUint(200), num.DecimalFromFloat(0.2), types.AccountTypeMakerFeeReward, "123"),
+		events.NewRewardPayout(ctx, 2, "party3", "3", "asset1", num.NewUint(300), num.DecimalFromFloat(0.3), types.AccountTypeMakerFeeReward, "123"),
+		events.NewRewardPayout(ctx, 3, "party1", "4", "asset1", num.NewUint(400), num.DecimalFromFloat(0.4), types.AccountTypeMakerFeeReward, "123"),
+		events.NewRewardPayout(ctx, 4, "party2", "5", "asset2", num.NewUint(500), num.DecimalFromFloat(0.5), types.AccountTypeMakerFeeReward, "123"),
 	}
 	expectedEvents := []*events.RewardPayout{
-		events.NewRewardPayout(ctx, 0, "party1", "1", "asset1", num.NewUint(100), num.DecimalFromFloat(0.1)),
-		events.NewRewardPayout(ctx, 2, "party3", "3", "asset1", num.NewUint(300), num.DecimalFromFloat(0.3)),
-		events.NewRewardPayout(ctx, 3, "party1", "4", "asset1", num.NewUint(400), num.DecimalFromFloat(0.4)),
+		events.NewRewardPayout(ctx, 0, "party1", "1", "asset1", num.NewUint(100), num.DecimalFromFloat(0.1), types.AccountTypeMakerFeeReward, "123"),
+		events.NewRewardPayout(ctx, 2, "party3", "3", "asset1", num.NewUint(300), num.DecimalFromFloat(0.3), types.AccountTypeMakerFeeReward, "123"),
+		events.NewRewardPayout(ctx, 3, "party1", "4", "asset1", num.NewUint(400), num.DecimalFromFloat(0.4), types.AccountTypeMakerFeeReward, "123"),
 	}
 
 	testRWObserverWithFilter(t, req, rewardEvents, expectedEvents)
@@ -73,15 +74,15 @@ func testObserveRewardsResponsesWithPartyFilter(t *testing.T) {
 	ctx := context.Background()
 	req := &apipb.ObserveRewardsRequest{Party: "party1"}
 	rewardEvents := []*events.RewardPayout{
-		events.NewRewardPayout(ctx, 0, "party1", "1", "asset1", num.NewUint(100), num.DecimalFromFloat(0.1)),
-		events.NewRewardPayout(ctx, 1, "party2", "2", "asset2", num.NewUint(200), num.DecimalFromFloat(0.2)),
-		events.NewRewardPayout(ctx, 2, "party3", "3", "asset1", num.NewUint(300), num.DecimalFromFloat(0.3)),
-		events.NewRewardPayout(ctx, 3, "party1", "4", "asset1", num.NewUint(400), num.DecimalFromFloat(0.4)),
-		events.NewRewardPayout(ctx, 4, "party2", "5", "asset2", num.NewUint(500), num.DecimalFromFloat(0.5)),
+		events.NewRewardPayout(ctx, 0, "party1", "1", "asset1", num.NewUint(100), num.DecimalFromFloat(0.1), types.AccountTypeMakerFeeReward, "123"),
+		events.NewRewardPayout(ctx, 1, "party2", "2", "asset2", num.NewUint(200), num.DecimalFromFloat(0.2), types.AccountTypeMakerFeeReward, "123"),
+		events.NewRewardPayout(ctx, 2, "party3", "3", "asset1", num.NewUint(300), num.DecimalFromFloat(0.3), types.AccountTypeMakerFeeReward, "123"),
+		events.NewRewardPayout(ctx, 3, "party1", "4", "asset1", num.NewUint(400), num.DecimalFromFloat(0.4), types.AccountTypeMakerFeeReward, "123"),
+		events.NewRewardPayout(ctx, 4, "party2", "5", "asset2", num.NewUint(500), num.DecimalFromFloat(0.5), types.AccountTypeMakerFeeReward, "123"),
 	}
 	expectedEvents := []*events.RewardPayout{
-		events.NewRewardPayout(ctx, 0, "party1", "1", "asset1", num.NewUint(100), num.DecimalFromFloat(0.1)),
-		events.NewRewardPayout(ctx, 3, "party1", "4", "asset1", num.NewUint(400), num.DecimalFromFloat(0.4)),
+		events.NewRewardPayout(ctx, 0, "party1", "1", "asset1", num.NewUint(100), num.DecimalFromFloat(0.1), types.AccountTypeMakerFeeReward, ""),
+		events.NewRewardPayout(ctx, 3, "party1", "4", "asset1", num.NewUint(400), num.DecimalFromFloat(0.4), types.AccountTypeMakerFeeReward, ""),
 	}
 	testRWObserverWithFilter(t, req, rewardEvents, expectedEvents)
 }
@@ -90,15 +91,15 @@ func testObserveRewardsResponsesWithAssetPartyFilter(t *testing.T) {
 	ctx := context.Background()
 	req := &apipb.ObserveRewardsRequest{Party: "party1", AssetId: "asset1"}
 	rewardEvents := []*events.RewardPayout{
-		events.NewRewardPayout(ctx, 0, "party1", "1", "asset1", num.NewUint(100), num.DecimalFromFloat(0.1)),
-		events.NewRewardPayout(ctx, 1, "party2", "2", "asset2", num.NewUint(200), num.DecimalFromFloat(0.2)),
-		events.NewRewardPayout(ctx, 2, "party3", "3", "asset1", num.NewUint(300), num.DecimalFromFloat(0.3)),
-		events.NewRewardPayout(ctx, 3, "party1", "4", "asset1", num.NewUint(400), num.DecimalFromFloat(0.4)),
-		events.NewRewardPayout(ctx, 4, "party2", "5", "asset2", num.NewUint(500), num.DecimalFromFloat(0.5)),
+		events.NewRewardPayout(ctx, 0, "party1", "1", "asset1", num.NewUint(100), num.DecimalFromFloat(0.1), types.AccountTypeMakerFeeReward, "123"),
+		events.NewRewardPayout(ctx, 1, "party2", "2", "asset2", num.NewUint(200), num.DecimalFromFloat(0.2), types.AccountTypeMakerFeeReward, "123"),
+		events.NewRewardPayout(ctx, 2, "party3", "3", "asset1", num.NewUint(300), num.DecimalFromFloat(0.3), types.AccountTypeMakerFeeReward, "123"),
+		events.NewRewardPayout(ctx, 3, "party1", "4", "asset1", num.NewUint(400), num.DecimalFromFloat(0.4), types.AccountTypeMakerFeeReward, "123"),
+		events.NewRewardPayout(ctx, 4, "party2", "5", "asset2", num.NewUint(500), num.DecimalFromFloat(0.5), types.AccountTypeMakerFeeReward, "123"),
 	}
 	expectedEvents := []*events.RewardPayout{
-		events.NewRewardPayout(ctx, 0, "party1", "1", "asset1", num.NewUint(100), num.DecimalFromFloat(0.1)),
-		events.NewRewardPayout(ctx, 3, "party1", "4", "asset1", num.NewUint(400), num.DecimalFromFloat(0.4)),
+		events.NewRewardPayout(ctx, 0, "party1", "1", "asset1", num.NewUint(100), num.DecimalFromFloat(0.1), types.AccountTypeMakerFeeReward, ""),
+		events.NewRewardPayout(ctx, 3, "party1", "4", "asset1", num.NewUint(400), num.DecimalFromFloat(0.4), types.AccountTypeMakerFeeReward, ""),
 	}
 
 	testRWObserverWithFilter(t, req, rewardEvents, expectedEvents)

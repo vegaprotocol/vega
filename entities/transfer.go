@@ -27,6 +27,7 @@ type Transfer struct {
 	FromAccountId int64
 	ToAccountId   int64
 	AssetId       AssetID
+	MarketId      MarketID
 	Amount        decimal.Decimal
 	Reference     string
 	Status        TransferStatus
@@ -56,6 +57,7 @@ func (t *Transfer) ToProto(accountSource AccountSource) (*eventspb.Transfer, err
 		To:              toAcc.PartyID.String(),
 		ToAccountType:   toAcc.Type,
 		Asset:           t.AssetId.String(),
+		Market:          t.MarketId.String(),
 		Amount:          t.Amount.String(),
 		Reference:       t.Reference,
 		Status:          eventspb.Transfer_Status(t.Status),
@@ -106,7 +108,7 @@ func TransferFromProto(ctx context.Context, t *eventspb.Transfer, vegaTime time.
 		ID:       0,
 		PartyID:  PartyID{ID: ID(t.To)},
 		AssetID:  AssetID{ID: ID(t.Asset)},
-		MarketID: MarketID{},
+		MarketID: MarketID{ID: ID(t.Market)},
 		Type:     t.ToAccountType,
 		VegaTime: vegaTime,
 	}
@@ -129,6 +131,7 @@ func TransferFromProto(ctx context.Context, t *eventspb.Transfer, vegaTime time.
 		ToAccountId:   toAcc.ID,
 		Amount:        amount,
 		AssetId:       NewAssetID(t.Asset),
+		MarketId:      NewMarketID(t.Market),
 		Reference:     t.Reference,
 		Status:        TransferStatus(t.Status),
 		TransferType:  0,

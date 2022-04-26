@@ -24,8 +24,12 @@ type RE interface {
 
 // reward holds all the details about a single asset based reward
 type reward struct {
-	// The asset this reward is for
+	// The asset this reward is paid by
 	assetID string
+	// The market this reward is for if any
+	marketID string
+	// the type of reward
+	rewardType string
 	// The party that received the reward
 	partyID string
 	// Which epoch this reward was calculated
@@ -46,6 +50,8 @@ func (r reward) IntoProto() *vega.Reward {
 		Amount:            r.amount.String(),
 		PercentageOfTotal: strconv.FormatFloat(r.percentageAmount, 'f', 5, 64),
 		ReceivedAt:        r.receivedAt,
+		MarketId:          r.marketID,
+		RewardType:        r.rewardType,
 	}
 }
 
@@ -167,6 +173,8 @@ func (rc *RewardCounters) addNewReward(rpe types.RewardPayoutEvent) {
 		amount:           amount,
 		percentageAmount: percent,
 		receivedAt:       rpe.Timestamp,
+		marketID:         rpe.Market,
+		rewardType:       rpe.RewardType,
 	}
 
 	perAsset.rewards = append(perAsset.rewards, rd)

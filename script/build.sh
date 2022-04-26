@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # Get a list of apps to build by looking at the directories in cmd.
-mapfile -t apps < <(find cmd -maxdepth 1 -and -not -name cmd | sed -e 's#^cmd/##')
+apps=("data-node")
 
 # Set a list of all targets.
 alltargets=( \
@@ -52,8 +52,8 @@ check_golang_version() {
 	fi
 
 	goversion="$("$goprog" version)"
-	if ! echo "$goversion" | grep -q 'go1\.16\.' ; then
-		echo "Please use Go 1.16"
+	if ! echo "$goversion" | grep -q 'go1\.18\.' ; then
+		echo "Please use Go 1.18"
 		echo "Using: $goprog"
 		echo "Version: $goversion"
 		return 1
@@ -93,7 +93,7 @@ parse_args() {
 			suffix="$OPTARG"
 			;;
 		t)
-			mapfile -t targets < <(echo "$OPTARG" | tr ' ,' '\n')
+			targets=("$OPTARG")
 			;;
 		T)
 			targets=("${alltargets[@]}")
@@ -290,10 +290,6 @@ run() {
 		go test -count=1 ./...
 		return "$?"
 		;;
-	staticcheck) ## Run staticcheck
-		staticcheck -checks 'all,-SA1019,-ST1000,-ST1021' ./...
-		return "$?"
-		;;
 	buflint) ## Run
 		buf lint
 		return "$?"
@@ -306,10 +302,6 @@ run() {
 		;;
 	semgrep) ## Run semgrep
 		semgrep -f "p/dgryski.semgrep-go"
-		return "$?"
-		;;
-	vet) ## Run go vet
-		go vet ./...
 		return "$?"
 		;;
 	*)
@@ -326,29 +318,13 @@ run() {
 		can_build "$target" "$cc" "$cxx" || continue
 
 		log="/tmp/go.log"
-		echo "$target: deps ... "
-		deps 1>"$log" 2>&1
+		echo "$target: go mod download ... "
+		go mod download 1>"$log" 2>&1
 		code="$?"
 		if test "$code" = 0 ; then
-			echo "$target: deps OK"
+			echo "$target: go mod download OK"
 		else
-			echo "$target: deps failed ($code)"
-			failed=$((failed+1))
-			echo
-			echo "=== BEGIN logs ==="
-			cat "$log"
-			echo "=== END logs ==="
-			rm "$log"
-			continue
-		fi
-
-		echo "$target: go get ... "
-		go get -v . 1>"$log" 2>&1
-		code="$?"
-		if test "$code" = 0 ; then
-			echo "$target: go get OK"
-		else
-			echo "$target: go get failed ($code)"
+			echo "$target: go mod download failed ($code)"
 			failed=$((failed+1))
 			echo
 			echo "=== BEGIN logs ==="

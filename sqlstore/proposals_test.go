@@ -13,7 +13,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func addTestProposal(t *testing.T, ps *sqlstore.Proposals, party entities.Party, block entities.Block) entities.Proposal {
+func addTestProposal(t *testing.T, ps *sqlstore.Proposals, party entities.Party, block entities.Block, rationale entities.ProposalRationale) entities.Proposal {
 	terms := entities.ProposalTerms{ProposalTerms: &vega.ProposalTerms{}}
 	p := entities.Proposal{
 		ID:           entities.NewProposalID(generateID()),
@@ -23,6 +23,7 @@ func addTestProposal(t *testing.T, ps *sqlstore.Proposals, party entities.Party,
 		State:        entities.ProposalStateEnacted,
 		VegaTime:     block.VegaTime,
 		ProposalTime: block.VegaTime,
+		Rationale:    rationale,
 	}
 	ps.Add(context.Background(), p)
 	return p
@@ -35,13 +36,13 @@ func proposalLessThan(x, y entities.Proposal) bool {
 func assertProposalsMatch(t *testing.T, expected, actual []entities.Proposal) {
 	t.Helper()
 	sortProposals := cmpopts.SortSlices(proposalLessThan)
-	ignoreProtoState := cmpopts.IgnoreUnexported(vega.ProposalTerms{})
+	ignoreProtoState := cmpopts.IgnoreUnexported(vega.ProposalTerms{}, vega.ProposalRationale{})
 	assert.Empty(t, cmp.Diff(actual, expected, sortProposals, ignoreProtoState))
 }
 
 func assertProposalMatch(t *testing.T, expected, actual entities.Proposal) {
 	t.Helper()
-	ignoreProtoState := cmpopts.IgnoreUnexported(vega.ProposalTerms{})
+	ignoreProtoState := cmpopts.IgnoreUnexported(vega.ProposalTerms{}, vega.ProposalRationale{})
 	assert.Empty(t, cmp.Diff(actual, expected, ignoreProtoState))
 }
 
@@ -55,8 +56,10 @@ func TestProposals(t *testing.T) {
 
 	party1 := addTestParty(t, partyStore, block1)
 	party2 := addTestParty(t, partyStore, block1)
-	prop1 := addTestProposal(t, propStore, party1, block1)
-	prop2 := addTestProposal(t, propStore, party2, block1)
+	rationale1 := entities.ProposalRationale{ProposalRationale: &vega.ProposalRationale{Url: "myurl1.com"}}
+	rationale2 := entities.ProposalRationale{ProposalRationale: &vega.ProposalRationale{Url: "myurl2.com"}}
+	prop1 := addTestProposal(t, propStore, party1, block1, rationale1)
+	prop2 := addTestProposal(t, propStore, party2, block1, rationale2)
 
 	party1ID := party1.ID.String()
 	prop1ID := prop1.ID.String()

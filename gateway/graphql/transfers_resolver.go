@@ -13,6 +13,10 @@ var ErrUnsupportedTransferKind = errors.New("unsupported transfer kind")
 
 type transferResolver VegaResolverRoot
 
+func (r *transferResolver) MarketID(_ context.Context, obj *eventspb.Transfer) (string, error) {
+	return obj.Market, nil
+}
+
 func (r *transferResolver) Asset(ctx context.Context, obj *eventspb.Transfer) (*vega.Asset, error) {
 	return r.r.getAssetByID(ctx, obj.Asset)
 }
