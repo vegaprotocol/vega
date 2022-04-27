@@ -86,11 +86,17 @@ Feature: Target stake
     # T0 + 15 days + 2 hour
     # so now the peak of 60 should have passed from window
     When time is updated to "2021-03-15T02:00:00Z"
-
     Then the mark price should be "90" for the market "ETH/DEC21"
 
     # target_stake = 90 x 40 x 1.5 x 0.1
     And the target stake should be "540" for the market "ETH/DEC21"
+
+    When time is updated to "2021-03-15T03:00:00Z"
+    When the parties place the following orders:
+      | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | tt_3  | ETH/DEC21 | sell | 10     | 90    | 1                | TYPE_LIMIT | TIF_GTC | tt_2_1    |
+    # target_stake = 90 x 30 x 1.5 x 0.1 ???
+    And the target stake should be "405" for the market "ETH/DEC21"
 
 Scenario: Max open interest changes over time, testing change of timewindow (0041-TSTK-001; 0041-TSTK-004; 0041-TSTK-005)
   Background:
