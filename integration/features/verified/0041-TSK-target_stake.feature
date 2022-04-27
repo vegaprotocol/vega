@@ -95,7 +95,10 @@ Feature: Target stake
     When the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | tt_3  | ETH/DEC21 | sell | 10     | 90    | 1                | TYPE_LIMIT | TIF_GTC | tt_2_1    |
-    # target_stake = 90 x 30 x 1.5 x 0.1 ???
+
+    # this is a bug in target stake calculation, Max open interest should stay at 40 (instead of 30) 
+    # target_stake should be: 90 x 40 x 1.5 x 0.1 =540
+    # the current target stake is: 90 x 30 x 1.5 x 0.1 = 405
     And the target stake should be "405" for the market "ETH/DEC21"
 
 Scenario: Max open interest changes over time, testing change of timewindow (0041-TSTK-001; 0041-TSTK-004; 0041-TSTK-005)
