@@ -123,13 +123,6 @@ Scenario: Max open interest changes over time, testing change of timewindow (004
       | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring | oracle config          |
       | ETH/DEC21 | BTC        | BTC   | simple-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | default-none     | default-eth-for-future |
 
-    # Above, it says mark price but really I don't mind if we start
-    # with an opening auction as long as at start of the scenario
-    # no-one has any open positions in the market.
-    # So if we want to start with an auction, trade volume 1, then close out the position.
-
-    # T0 + 8 days so whatever open interest was there after the auction
-    # this is now out of the time window.
     And time is updated to "2021-03-08T00:00:00Z"
 
     # setup accounts
