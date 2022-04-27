@@ -214,26 +214,22 @@ Feature: Replicate issue 3528, where price monitoring continuously extended liqu
       | lp1 | party0 | ETH/DEC21 | 10000             | 0.001 | sell | ASK              | 1          | 2      | amendment |
       | lp1 | party0 | ETH/DEC21 | 10000             | 0.001 | sell | MID              | 2          | 1      | amendment |
 
-
-
     # we've met the liquidity requirements, but the auction uncrosses out of bounds
     # Auction end is now 12s (2+10 blocks) + 300 price extension
+    When the network moves ahead "1" blocks
     Then the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode                    | auction trigger           | extension trigger     | target stake | supplied stake | open interest | auction end |
       | 1010       | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY | AUCTION_TRIGGER_PRICE | 2050         | 10000          | 10            | 312         |
 
-    # place some more orders out of bounds
-    And the parties place the following orders:
-      | party  | market id | side | volume | price | resulting trades | type       | tif     |
-      | party1 | ETH/DEC21 | buy  | 5      | 1041  | 0                | TYPE_LIMIT | TIF_GTC |
-      | party3 | ETH/DEC21 | buy  | 3      | 1041  | 0                | TYPE_LIMIT | TIF_GTC |
-      | party5 | ETH/DEC21 | buy  | 2      | 1041  | 0                | TYPE_LIMIT | TIF_GTC |
-      | party2 | ETH/DEC21 | sell | 10     | 1039  | 0                | TYPE_LIMIT | TIF_GTC |
-      | party4 | ETH/DEC21 | sell | 6      | 1039  | 0                | TYPE_LIMIT | TIF_GTC |
-      | party6 | ETH/DEC21 | sell | 4      | 1039  | 0                | TYPE_LIMIT | TIF_GTC |
+    When the network moves ahead "150" blocks
 
-    When the network moves ahead "301" blocks
+    Then the market data for the market "ETH/DEC21" should be:
+      | mark price | trading mode                    | auction trigger           | extension trigger     | target stake | supplied stake | open interest | auction end |
+      | 1010       | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY | AUCTION_TRIGGER_PRICE | 2050         | 10000          | 10            | 312         |
+
+    Then the network moves ahead "150" blocks
+
     # price auction ends as expected event though uncrossing price is outwith the previous bounds (price extension can be called at most once per trigger)
     Then the market data for the market "ETH/DEC21" should be:
-      | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest | auction end |
-      | 1030       | TRADING_MODE_CONTINUOUS | 1       | 1020      | 1040      | 3090         | 10000          | 30            | 0           |
+      | mark price | trading mode            | auction trigger             | extension trigger           | horizon | min bound | max bound | target stake | supplied stake | open interest | auction end |
+      | 1025       | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | AUCTION_TRIGGER_UNSPECIFIED | 1       | 1016      | 1034      | 2050         | 10000          | 20            | 0           |
