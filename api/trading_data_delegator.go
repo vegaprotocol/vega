@@ -78,6 +78,12 @@ func (t *tradingDataDelegator) PositionsByParty(ctx context.Context, request *pr
 		positions[0], err = t.positionStore.GetByMarketAndParty(ctx,
 			entities.NewMarketID(request.MarketId),
 			entities.NewPartyID(request.PartyId))
+
+		// Don't error if there's no position for this party/market
+		if errors.Is(err, sqlstore.ErrPositionNotFound) {
+			err = nil
+			positions = []entities.Position{}
+		}
 	}
 
 	if err != nil {
