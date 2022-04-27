@@ -273,6 +273,13 @@ func (e *Engine) calculateRewardPayouts(ctx context.Context, epoch types.Epoch) 
 		e.log.Info("Rewards: calculated normalised score for ersatz validator", logging.String("validator", node), logging.String("normalisedScore", score.String()))
 	}
 
+	// we want to capture the proposers eligible for proposers reward at this epoch so that we can support paying them in more than one asset if available
+	marketToEligibleProposers := map[string][]string{}
+	// at the end of the epoch we mark all markets that have gone past the trading threshold as such so that they don't get marked again later when and if there's balance in their respective reward account
+	for _, v := range e.marketTracker.GetAllMarketIDs() {
+		marketToEligibleProposers[v] = e.marketTracker.GetAndResetEligibleProposers(v)
+	}
+
 	payouts := []*payout{}
 	for _, rewardType := range rewardAccountTypes {
 		accounts := e.collateral.GetRewardAccountsByType(rewardType)
@@ -283,11 +290,11 @@ func (e *Engine) calculateRewardPayouts(ctx context.Context, epoch types.Epoch) 
 			pos := []*payout{}
 			if (rewardType == types.AccountTypeGlobalReward && account.Asset == e.global.asset) || rewardType == types.AccountTypeFeesInfrastructure {
 				e.log.Info("calculating reward for tendermint validators", logging.String("account-type", rewardType.String()))
-				pos = append(pos, e.calculateRewardTypeForAsset(num.NewUint(epoch.Seq).String(), account.Asset, account.MarketID, rewardType, account, tmValidatorsDelegation, tmValidatorsScores.NormalisedScores, epoch.EndTime, s_pFactor))
+				pos = append(pos, e.calculateRewardTypeForAsset(num.NewUint(epoch.Seq).String(), account.Asset, account.MarketID, rewardType, account, tmValidatorsDelegation, tmValidatorsScores.NormalisedScores, epoch.EndTime, s_pFactor, marketToEligibleProposers))
 				e.log.Info("calculating reward for ersatz validators", logging.String("account-type", rewardType.String()))
-				pos = append(pos, e.calculateRewardTypeForAsset(num.NewUint(epoch.Seq).String(), account.Asset, account.MarketID, rewardType, account, ersatzValidatorsDelegation, ersatzValidatorsScores.NormalisedScores, epoch.EndTime, s_eFactor))
+				pos = append(pos, e.calculateRewardTypeForAsset(num.NewUint(epoch.Seq).String(), account.Asset, account.MarketID, rewardType, account, ersatzValidatorsDelegation, ersatzValidatorsScores.NormalisedScores, epoch.EndTime, s_eFactor, marketToEligibleProposers))
 			} else {
-				pos = append(pos, e.calculateRewardTypeForAsset(num.NewUint(epoch.Seq).String(), account.Asset, account.MarketID, rewardType, account, tmValidatorsDelegation, tmValidatorsScores.NormalisedScores, epoch.EndTime, decimal1))
+				pos = append(pos, e.calculateRewardTypeForAsset(num.NewUint(epoch.Seq).String(), account.Asset, account.MarketID, rewardType, account, tmValidatorsDelegation, tmValidatorsScores.NormalisedScores, epoch.EndTime, decimal1, marketToEligibleProposers))
 			}
 			for _, po := range pos {
 				if po != nil && !po.totalReward.IsZero() && !po.totalReward.IsNegative() {
@@ -302,16 +309,11 @@ func (e *Engine) calculateRewardPayouts(ctx context.Context, epoch types.Epoch) 
 		}
 	}
 
-	// at the end of the epoch we mark all markets that have gone past the trading threshold as such so that they don't get marked again later when and if there's balance in their respective reward account
-	for _, v := range e.marketTracker.GetAllMarketIDs() {
-		// we don't care about the result because either there's no account or they've already been paid
-		e.marketTracker.GetAndResetEligibleProposers(v)
-	}
 	return payouts
 }
 
 // calculateRewardTypeForAsset calculates the payout for a given asset and reward type.
-func (e *Engine) calculateRewardTypeForAsset(epochSeq, asset, market string, rewardType types.AccountType, account *types.Account, validatorData []*types.ValidatorData, validatorNormalisedScores map[string]num.Decimal, timestamp time.Time, factor num.Decimal) *payout {
+func (e *Engine) calculateRewardTypeForAsset(epochSeq, asset, market string, rewardType types.AccountType, account *types.Account, validatorData []*types.ValidatorData, validatorNormalisedScores map[string]num.Decimal, timestamp time.Time, factor num.Decimal, marketToProposers map[string][]string) *payout {
 	switch rewardType {
 	case types.AccountTypeGlobalReward: // given to delegator based on stake
 		if asset == e.global.asset {
@@ -329,7 +331,7 @@ func (e *Engine) calculateRewardTypeForAsset(epochSeq, asset, market string, rew
 	case types.AccountTypeLPFeeReward: // given to LP fee receivers in the asset based on their total received fee
 		return calculateRewardsByContribution(epochSeq, account.Asset, account.ID, rewardType, account.Balance, e.feesTracker.GetFeePartyScores(account.MarketID, types.TransferTypeLiquidityFeeDistribute), timestamp)
 	case types.AccountTypeMarketProposerReward:
-		return calculateRewardForProposers(epochSeq, account.Asset, account.ID, rewardType, account.Balance, e.marketTracker.GetAndResetEligibleProposers(account.MarketID), timestamp)
+		return calculateRewardForProposers(epochSeq, account.Asset, account.ID, rewardType, account.Balance, marketToProposers[account.MarketID], timestamp)
 	}
 	return nil
 }
