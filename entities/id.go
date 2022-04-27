@@ -22,6 +22,10 @@ var wellKnownIds = map[string]string{
 	"XYZdelta":     "06",
 	"XYZepsilon":   "07",
 	"XYZgamma":     "08",
+	"fBTC":         "09",
+	"fDAI":         "0A",
+	"fEURO":        "0B",
+	"fUSDC":        "0C",
 }
 
 var wellKnownIdsReversed = map[string]string{
@@ -34,6 +38,10 @@ var wellKnownIdsReversed = map[string]string{
 	"06": "XYZdelta",
 	"07": "XYZepsilon",
 	"08": "XYZgamma",
+	"09": "fBTC",
+	"0A": "fDAI",
+	"0B": "fEURO",
+	"0C": "fUSDC",
 }
 
 func (id *ID) Bytes() ([]byte, error) {
