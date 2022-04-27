@@ -15,6 +15,7 @@
 - [5277](https://github.com/vegaprotocol/vega/issues/5277) - Updating a market should default auction extension to 1
 - [5284](https://github.com/vegaprotocol/vega/issues/5284) - price monitoring past prices are now included in the snapshot
 - [5294](https://github.com/vegaprotocol/vega/issues/5294) - Parse timestamps oracle in market proposal validation
+- [5292](https://github.com/vegaprotocol/vega/issues/5292) - Internal time oracle broadcasts timestamp without nanoseconds
 
 
 ## 0.50.2
