@@ -32,6 +32,7 @@ type FeesTracker interface {
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/market_tracker_mock.go -package mocks code.vegaprotocol.io/vega/rewards MarketTracker
 type MarketTracker interface {
 	GetAndResetEligibleProposers(market string) []string
+	GetAllMarketIDs() []string
 }
 
 // EpochEngine notifies the reward engine at the end of an epoch.
@@ -299,6 +300,12 @@ func (e *Engine) calculateRewardPayouts(ctx context.Context, epoch types.Epoch) 
 				}
 			}
 		}
+	}
+
+	// at the end of the epoch we mark all markets that have gone past the trading threshold as such so that they don't get marked again later when and if there's balance in their respective reward account
+	for _, v := range e.marketTracker.GetAllMarketIDs() {
+		// we don't care about the result because either there's no account or they've already been paid
+		e.marketTracker.GetAndResetEligibleProposers(v)
 	}
 	return payouts
 }

@@ -335,6 +335,7 @@ func getEngine(t *testing.T) *testEngine {
 	topology := mocks.NewMockTopology(ctrl)
 	feesTracker := mocks.NewMockFeesTracker(ctrl)
 	MarketTracker := mocks.NewMockMarketTracker(ctrl)
+	MarketTracker.EXPECT().GetAllMarketIDs().AnyTimes()
 	engine := New(logger, conf, broker, delegation, epochEngine, collateral, ts, feesTracker, MarketTracker, topology)
 
 	broker.EXPECT().Send(gomock.Any()).AnyTimes()
