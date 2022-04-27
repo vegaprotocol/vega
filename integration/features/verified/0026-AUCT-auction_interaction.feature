@@ -368,7 +368,7 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
     Then the network moves ahead "5" blocks
     And the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 1000       | TRADING_MODE_CONTINUOUS | 1       | 992       | 1011      | 1000         | 1000           | 10            |
+      | 1000       | TRADING_MODE_CONTINUOUS | 1       | 1001      | 1019      | 1000         | 1000           | 10            |
 
   Scenario: Once market is in continuous trading mode: enter liquidity monitoring auction -> extend with price monitoring auction -> leave auction mode (0026-AUCT-001, 0068-MATC-033,0026-AUCT-005)
 

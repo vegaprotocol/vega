@@ -246,6 +246,15 @@ func (e *Engine) CheckPrice(ctx context.Context, as AuctionState, p *num.Uint, v
 		e.resetPriceHistory(p, v)
 		e.initialised = true
 	}
+
+	last := currentPrice{
+		Price:  p.Clone(),
+		Volume: v,
+	}
+	if len(e.pricesNow) > 0 {
+		last = e.pricesNow[len(e.pricesNow)-1]
+	}
+
 	// market is not in auction, or in batch auction
 	if fba := as.IsFBA(); !as.InAuction() || fba {
 		bounds := e.checkBounds(ctx, p, v)
@@ -258,7 +267,7 @@ func (e *Engine) CheckPrice(ctx context.Context, as AuctionState, p *num.Uint, v
 		}
 		if !persistent {
 			// we're going to stay in continuous trading, make sure we still have bounds
-			e.reactivateBounds()
+			e.resetPriceHistory(last.Price, last.Volume)
 			return true
 		}
 		duration := types.AuctionDuration{}
