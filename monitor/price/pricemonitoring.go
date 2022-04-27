@@ -3,6 +3,7 @@ package price
 import (
 	"context"
 	"errors"
+	"log"
 	"sort"
 	"sync"
 	"time"
@@ -367,12 +368,13 @@ func (e *Engine) recordPriceChange(price *num.Uint, volume uint64) {
 }
 
 // recordTimeChange updates the current time and moves prices from current prices to past prices by calculating their corresponding vwp.
-func (e *Engine) recordTimeChange(now time.Time) error {
+func (e *Engine) recordTimeChange(now time.Time) {
 	if now.Before(e.now) {
-		return ErrTimeSequence // This shouldn't happen, but if it does there's something fishy going on
+		log.Panic("invalid state enecountered in price monitoring engine",
+			logging.Error(ErrTimeSequence))
 	}
 	if now.Equal(e.now) {
-		return nil
+		return
 	}
 
 	if len(e.pricesNow) > 0 {
@@ -392,8 +394,6 @@ func (e *Engine) recordTimeChange(now time.Time) error {
 	e.now = now
 	e.clearStalePrices()
 	e.stateChanged = true
-
-	return nil
 }
 
 // checkBounds checks if the price is within price range for each of the bound and return trigger for each bound that it's not.
