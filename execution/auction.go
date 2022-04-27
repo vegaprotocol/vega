@@ -29,7 +29,7 @@ func (m *Market) checkAuction(ctx context.Context, now time.Time) {
 		if endTS := m.as.ExpiresAt(); endTS == nil || !endTS.Before(now) {
 			return
 		}
-		if err := m.pMonitor.CheckPrice(ctx, m.as, p.Clone(), v, now, true); err != nil {
+		if err := m.pMonitor.CheckPrice(ctx, m.as, p.Clone(), v, true); err != nil {
 			m.log.Panic("unable to run check price with price monitor",
 				logging.String("market-id", m.GetID()),
 				logging.Error(err))
@@ -75,7 +75,7 @@ func (m *Market) checkAuction(ctx context.Context, now time.Time) {
 			m.checkLiquidity(ctx, ft)
 		}
 		if isPrice || m.as.CanLeave() {
-			if err := m.pMonitor.CheckPrice(ctx, m.as, p.Clone(), v, now, true); err != nil {
+			if err := m.pMonitor.CheckPrice(ctx, m.as, p.Clone(), v, true); err != nil {
 				m.log.Panic("unable to run check price with price monitor",
 					logging.String("market-id", m.GetID()),
 					logging.Error(err))
