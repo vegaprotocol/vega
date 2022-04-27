@@ -352,19 +352,17 @@ pipeline {
                         }
                     }
                 }
-
-                stage('[TODO] deploy to Devnet') {
-                    when {
-                        branch 'develop'
-                    }
-                    steps {
-                        echo 'Deploying to Devnet....'
-                        echo 'Run basic tests on Devnet network ...'
-                    }
-                }
             }
         }
 
+        stage('Deploy to Devnet') {
+            when {
+                branch 'develop'
+            }
+            steps {
+                devnetDeploy wait: false
+            }
+        }
     }
     post {
         success {
