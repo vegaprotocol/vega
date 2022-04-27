@@ -161,14 +161,14 @@ func cmpPriceBounds(expect *MappedMD, got types.MarketData) []error {
 				errs = append(errs, fmt.Errorf("no price bound for horizon %d found", pmb.Trigger.Horizon))
 			} else {
 				errs = append(errs, fmt.Errorf(
-					"expected price bounds %d-%d (ref price=%d) for horizon %d, instead got %d-%d (ref price=%d)",
+					"expected price bounds %d-%d (ref price=%s) for horizon %d, instead got %d-%d (ref price=%s)",
 					pmb.MinValidPrice,
 					pmb.MaxValidPrice,
-					pmb.ReferencePrice,
+					pmb.ReferencePrice.String(),
 					pmb.Trigger.Horizon,
 					bounds.MinValidPrice,
 					bounds.MaxValidPrice,
-					bounds.ReferencePrice,
+					bounds.ReferencePrice.String(),
 				))
 			}
 		}
