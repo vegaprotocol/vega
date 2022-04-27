@@ -1,6 +1,8 @@
 package execution
 
 import (
+	"sort"
+
 	"code.vegaprotocol.io/vega/types/num"
 )
 
@@ -63,6 +65,16 @@ func (m *MarketTracker) GetAndResetEligibleProposers(market string) []string {
 		return []string{t.proposer}
 	}
 	return []string{}
+}
+
+func (m *MarketTracker) GetAllMarketIDs() []string {
+	mIDs := make([]string, 0, len(m.marketIDMarketTracker))
+	for k := range m.marketIDMarketTracker {
+		mIDs = append(mIDs, k)
+	}
+
+	sort.Strings(mIDs)
+	return mIDs
 }
 
 func (m *MarketTracker) removeMarket(marketID string) {

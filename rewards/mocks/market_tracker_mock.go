@@ -33,6 +33,20 @@ func (m *MockMarketTracker) EXPECT() *MockMarketTrackerMockRecorder {
 	return m.recorder
 }
 
+// GetAllMarketIDs mocks base method.
+func (m *MockMarketTracker) GetAllMarketIDs() []string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetAllMarketIDs")
+	ret0, _ := ret[0].([]string)
+	return ret0
+}
+
+// GetAllMarketIDs indicates an expected call of GetAllMarketIDs.
+func (mr *MockMarketTrackerMockRecorder) GetAllMarketIDs() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllMarketIDs", reflect.TypeOf((*MockMarketTracker)(nil).GetAllMarketIDs))
+}
+
 // GetAndResetEligibleProposers mocks base method.
 func (m *MockMarketTracker) GetAndResetEligibleProposers(arg0 string) []string {
 	m.ctrl.T.Helper()
