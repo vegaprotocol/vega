@@ -226,8 +226,7 @@ func (e *Engine) OnTimeUpdate(now time.Time) {
 	e.recordTimeChange(now)
 }
 
-// CheckPrice checks how current price, volume and time should impact the auction state and modifies it accordingly: start auction, end auction, extend ongoing auction,
-// "true" gets returned if non-persistent order should be rejected.
+// CheckPrice checks how current price, volume and time should impact the auction state and modifies it accordingly: start auction, end auction, extend ongoing auction.
 func (e *Engine) CheckPrice(ctx context.Context, as AuctionState, p *num.Uint, v uint64, persistent bool) error {
 	// initialise with the first price & time provided, otherwise there won't be any bounds
 	wasInitialised := e.initialised
