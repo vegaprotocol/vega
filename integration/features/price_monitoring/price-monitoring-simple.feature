@@ -309,8 +309,8 @@ Feature: Price monitoring test using simple risk model
 
     And the market data for the market "ETH/DEC20" should be:
       | horizon | min bound | max bound |
-      | 60      | 104       | 124       |
-      | 120     | 99        | 119       |
+      | 60      | 95        | 114       |
+      | 120     | 95        | 114       |
 
     When the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |

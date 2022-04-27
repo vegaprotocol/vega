@@ -137,6 +137,9 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
 
     Then the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
+    # T0
+    Then time is updated to "2020-10-16T02:00:00Z"
+
     When the parties place the following orders:
       | party  | market id | side | volume | price  | resulting trades | type       | tif     | reference |
       | party1 | ETH/DEC20 | sell | 1      | 100000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
@@ -172,12 +175,12 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
 
     And the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC20"
 
-    #T0 + 4min + 2 second opening auction
-    Then time is updated to "2020-10-16T01:04:00Z"
+    #T0 + 4min
+    Then time is updated to "2020-10-16T02:04:00Z"
 
     And the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC20"
 
-    #T0 + 4min03s
+    #T0 + 4min04s
     Then time is updated to "2020-10-16T03:04:04Z"
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
