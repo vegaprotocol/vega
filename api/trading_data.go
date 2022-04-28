@@ -586,7 +586,7 @@ func (t *tradingDataService) ERC20WithdrawalApproval(ctx context.Context, req *p
 		return nil, fmt.Errorf("invalid erc20 token contract address")
 	}
 
-	return &protoapi.ERC20WithdrawalApprovalResponse{
+	resp := protoapi.ERC20WithdrawalApprovalResponse{
 		AssetSource:   address,
 		Amount:        fmt.Sprintf("%v", withdrawal.Amount),
 		Expiry:        withdrawal.Expiry,
@@ -595,7 +595,10 @@ func (t *tradingDataService) ERC20WithdrawalApproval(ctx context.Context, req *p
 		Signatures:    pack,
 		// timestamps is unix nano, contract needs unix. So load if first, and cut nanos
 		Creation: time.Unix(0, withdrawal.CreatedTimestamp).Unix(),
-	}, nil
+	}
+	fmt.Printf("\n\n\nERC20WITHDRAWAL RESP: %#v\n\n\n", resp)
+
+	return &resp, nil
 }
 
 func (t *tradingDataService) Withdrawal(ctx context.Context, req *protoapi.WithdrawalRequest) (*protoapi.WithdrawalResponse, error) {
