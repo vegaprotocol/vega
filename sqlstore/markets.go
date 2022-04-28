@@ -3,6 +3,7 @@ package sqlstore
 import (
 	"context"
 	"fmt"
+	"sync"
 
 	"code.vegaprotocol.io/data-node/entities"
 	"github.com/georgysavva/scany/pgxscan"
@@ -10,6 +11,8 @@ import (
 
 type Markets struct {
 	*ConnectionSource
+	cache     map[string]entities.Market
+	cacheLock sync.Mutex
 }
 
 const (
@@ -21,10 +24,14 @@ const (
 func NewMarkets(connectionSource *ConnectionSource) *Markets {
 	return &Markets{
 		ConnectionSource: connectionSource,
+		cache:            make(map[string]entities.Market),
 	}
 }
 
 func (m *Markets) Upsert(ctx context.Context, market *entities.Market) error {
+	m.cacheLock.Lock()
+	defer m.cacheLock.Unlock()
+
 	query := fmt.Sprintf(`insert into markets(%s) 
 values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
 on conflict (id, vega_time) do update
@@ -48,11 +55,19 @@ set
 		return err
 	}
 
+	m.cache[market.ID.String()] = *market
 	return nil
 }
 
 func (m *Markets) GetByID(ctx context.Context, marketID string) (entities.Market, error) {
+	m.cacheLock.Lock()
+	defer m.cacheLock.Unlock()
+
 	var market entities.Market
+
+	if market, ok := m.cache[marketID]; ok {
+		return market, nil
+	}
 
 	query := fmt.Sprintf(`select distinct on (id) %s 
 from markets 
@@ -60,6 +75,10 @@ where id = $1
 order by id, vega_time desc
 `, sqlMarketsColumns)
 	err := pgxscan.Get(ctx, m.Connection, &market, query, entities.NewMarketID(marketID))
+
+	if err != nil {
+		m.cache[marketID] = market
+	}
 
 	return market, err
 }
