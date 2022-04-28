@@ -596,7 +596,6 @@ func (t *tradingDataService) ERC20WithdrawalApproval(ctx context.Context, req *p
 		// timestamps is unix nano, contract needs unix. So load if first, and cut nanos
 		Creation: time.Unix(0, withdrawal.CreatedTimestamp).Unix(),
 	}
-	fmt.Printf("\n\n\nERC20WITHDRAWAL RESP: %#v\n\n\n", resp)
 
 	return &resp, nil
 }
