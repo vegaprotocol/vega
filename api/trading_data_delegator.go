@@ -1525,6 +1525,8 @@ func (t *tradingDataDelegator) ERC20WithdrawalApproval(ctx context.Context, req 
 		Nonce:         w.Ref,
 		TargetAddress: w.Ext.GetErc20().ReceiverAddress,
 		Signatures:    pack,
+		// timestamps is unix nano, contract needs unix. So load if first, and cut nanos
+		Creation: w.CreatedTimestamp.Unix(),
 	}, nil
 }
 
