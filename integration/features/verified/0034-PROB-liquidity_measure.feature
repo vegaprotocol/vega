@@ -1,4 +1,4 @@
-Feature: Tests confirming probability of trading acceptance criteria (0038-OLIQ-001, 0038-OLIQ-002)
+Feature: Tests confirming probability of trading acceptance criteria (0038-OLIQ-001, 0038-OLIQ-002, 0009-MRKP-001, 0009-MRKP-002, 0009-MRKP-006)
 
   Background:
 
@@ -91,7 +91,7 @@ Feature: Tests confirming probability of trading acceptance criteria (0038-OLIQ-
       | sell | 1200090000 | 92585648669 |
       | sell | 1200100000 | 92584877187 |
 
-  Scenario:  LP pegged volume is pushed inside price monitoring bounds(0034-PROB-002);
+  Scenario:  LP pegged volume is pushed inside price monitoring bounds(0034-PROB-002, 0009-MRKP-003, 0009-MRKP-004, 0009-MRKP-005);
 
     Given the log normal risk model named "log-normal-risk-model-1":
       | risk aversion | tau     | mu | r | sigma |
