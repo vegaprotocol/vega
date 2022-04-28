@@ -38,11 +38,10 @@ func TestSubmit(t *testing.T) {
 		UpdateFrequency: 0,
 	}
 	now := time.Unix(10, 0)
-	closingAt := time.Unix(1000000000, 0)
 	ctx := vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
 
 	t.Run("check that we reject LP submission If fee is incorrect", func(t *testing.T) {
-		tm := getTestMarket(t, now, closingAt, nil, nil)
+		tm := getTestMarket(t, now, nil, nil)
 
 		// Create a new party account with very little funding
 		addAccountWithAmount(tm, "party-A", 100000000)
@@ -91,8 +90,7 @@ func TestSubmit(t *testing.T) {
 
 	t.Run("check that we reject LP submission if side is missing", func(t *testing.T) {
 		now := time.Unix(10, 0)
-		closingAt := time.Unix(1000000000, 0)
-		tm := getTestMarket(t, now, closingAt, nil, nil)
+		tm := getTestMarket(t, now, nil, nil)
 		ctx := context.Background()
 
 		// Create a new party account with very little funding
@@ -142,7 +140,7 @@ func TestSubmit(t *testing.T) {
 	// to prevent a user spaming the system. Place an LPSubmission order with too many
 	// orders in to make it reject it.
 	t.Run("check for too many shape levels", func(t *testing.T) {
-		tm := getTestMarket(t, now, closingAt, nil, nil)
+		tm := getTestMarket(t, now, nil, nil)
 
 		// Create a new party account with very little funding
 		addAccountWithAmount(tm, "party-A", 10000000)
@@ -186,7 +184,7 @@ func TestSubmit(t *testing.T) {
 			},
 			UpdateFrequency: 0,
 		}
-		mktCfg := getMarket(closingAt, pMonitorSettings, &types.AuctionDuration{
+		mktCfg := getMarket(pMonitorSettings, &types.AuctionDuration{
 			Duration: 10000,
 		})
 		mktCfg.Fees = &types.Fees{
@@ -264,7 +262,7 @@ func TestSubmit(t *testing.T) {
 	// When a liquidity provider submits an order and runs out of margin from both their general
 	// and margin account, the system should take the required amount from the bond account.
 	t.Run("check that bond account used to fund short fall in initial margin", func(t *testing.T) {
-		tm := getTestMarket(t, now, closingAt, nil, nil)
+		tm := getTestMarket(t, now, nil, nil)
 
 		// Create a new party account with very little funding
 		addAccountWithAmount(tm, "party-A", 5000)
@@ -332,7 +330,7 @@ func TestSubmit(t *testing.T) {
 	// When a liquidity provider has a position that requires more margin after a MTM settlement,
 	// they should use the assets in the bond account after the general and margin account are empty.
 	t.Run("check that bond account used to fund short fall in maintenance margin", func(t *testing.T) {
-		tm := getTestMarket(t, now, closingAt, nil, nil)
+		tm := getTestMarket(t, now, nil, nil)
 
 		// Create a new party account with very little funding
 		addAccountWithAmount(tm, "party-A", 7000)
@@ -446,7 +444,7 @@ func TestSubmit(t *testing.T) {
 			UpdateFrequency: 600,
 		}
 
-		tm := getTestMarket(t, now, closingAt, pMonitorSettings, nil)
+		tm := getTestMarket(t, now, pMonitorSettings, nil)
 		tm.market.OnMarketAuctionMinimumDurationUpdate(ctx, 10*time.Second)
 
 		// Create a new party account with very little funding
@@ -523,7 +521,7 @@ func TestSubmit(t *testing.T) {
 	})
 
 	t.Run("check that existing pegged orders count towards commitment", func(t *testing.T) {
-		tm := getTestMarket(t, now, closingAt, nil, nil)
+		tm := getTestMarket(t, now, nil, nil)
 
 		// Create a new party account with very little funding
 		addAccountWithAmount(tm, "party-A", 7000)
@@ -609,7 +607,7 @@ func TestSubmit(t *testing.T) {
 			UpdateFrequency: 600,
 		}
 
-		tm := getTestMarket(t, now, closingAt, pMonitorSettings, nil)
+		tm := getTestMarket(t, now, pMonitorSettings, nil)
 		tm.market.OnMarketAuctionMinimumDurationUpdate(ctx, time.Second*10)
 
 		// Create a new party account with very little funding
@@ -684,7 +682,7 @@ func TestSubmit(t *testing.T) {
 	t.Run("check that LP cannot get closed out when deploying order for the first time", func(t *testing.T) {
 		auctionEnd := now.Add(10001 * time.Second)
 
-		mktCfg := getMarket(closingAt, pMonitorSettings, &types.AuctionDuration{
+		mktCfg := getMarket(pMonitorSettings, &types.AuctionDuration{
 			Duration: 10000,
 		})
 		mktCfg.Fees = &types.Fees{
@@ -776,7 +774,7 @@ func TestSubmit(t *testing.T) {
 
 	t.Run("test closed out LP party cont issue 3086", func(t *testing.T) {
 		auctionEnd := now.Add(10001 * time.Second)
-		mktCfg := getMarket(closingAt, pMonitorSettings, &types.AuctionDuration{
+		mktCfg := getMarket(pMonitorSettings, &types.AuctionDuration{
 			Duration: 10000,
 		})
 		mktCfg.Fees = &types.Fees{
@@ -979,7 +977,7 @@ func TestSubmit(t *testing.T) {
 
 	t.Run("test liquidity order generated sizes", func(t *testing.T) {
 		auctionEnd := now.Add(10001 * time.Second)
-		mktCfg := getMarketWithDP(closingAt, pMonitorSettings, &types.AuctionDuration{
+		mktCfg := getMarketWithDP(pMonitorSettings, &types.AuctionDuration{
 			Duration: 10000,
 		}, 0)
 		mktCfg.Fees = &types.Fees{
@@ -1176,7 +1174,7 @@ func TestSubmit(t *testing.T) {
 	})
 
 	t.Run("check that rejected market stops liquidity provision", func(t *testing.T) {
-		mktCfg := getMarket(closingAt, pMonitorSettings, &types.AuctionDuration{
+		mktCfg := getMarket(pMonitorSettings, &types.AuctionDuration{
 			Duration: 10000,
 		})
 		mktCfg.Fees = &types.Fees{
@@ -1264,7 +1262,7 @@ func TestSubmit(t *testing.T) {
 
 	t.Run("test park order panic order not found in book", func(t *testing.T) {
 		auctionEnd := now.Add(10001 * time.Second)
-		mktCfg := getMarket(closingAt, defaultPriceMonitorSettings, &types.AuctionDuration{
+		mktCfg := getMarket(defaultPriceMonitorSettings, &types.AuctionDuration{
 			Duration: 10000,
 		})
 		mktCfg.Fees = &types.Fees{
@@ -1450,7 +1448,7 @@ func TestSubmit(t *testing.T) {
 
 	t.Run("test lots of pegged and non pegged orders", func(t *testing.T) {
 		auctionEnd := now.Add(10001 * time.Second)
-		mktCfg := getMarket(closingAt, defaultPriceMonitorSettings, &types.AuctionDuration{
+		mktCfg := getMarket(defaultPriceMonitorSettings, &types.AuctionDuration{
 			Duration: 10000,
 		})
 		mktCfg.Fees = &types.Fees{
@@ -1619,7 +1617,7 @@ func TestSubmit(t *testing.T) {
 
 	t.Run("check that Market Value Proxy is updated with trades", func(t *testing.T) {
 		auctionEnd := now.Add(10001 * time.Second)
-		mktCfg := getMarket(closingAt, pMonitorSettings, &types.AuctionDuration{
+		mktCfg := getMarket(pMonitorSettings, &types.AuctionDuration{
 			Duration: 10000,
 		})
 		mktCfg.Fees = &types.Fees{
@@ -1754,7 +1752,7 @@ func TestSubmit(t *testing.T) {
 
 	t.Run("check that fees are not paid for undeployed LPs", func(t *testing.T) {
 		auctionEnd := now.Add(10001 * time.Second)
-		mktCfg := getMarket(closingAt, defaultPriceMonitorSettings, &types.AuctionDuration{
+		mktCfg := getMarket(defaultPriceMonitorSettings, &types.AuctionDuration{
 			Duration: 10000,
 		})
 		mktCfg.Fees = &types.Fees{
@@ -1885,7 +1883,7 @@ func TestSubmit(t *testing.T) {
 
 	t.Run("test LP provider submit limit order which expires LPO order are redeployed", func(t *testing.T) {
 		auctionEnd := now.Add(10001 * time.Second)
-		mktCfg := getMarket(closingAt, pMonitorSettings, &types.AuctionDuration{
+		mktCfg := getMarket(pMonitorSettings, &types.AuctionDuration{
 			Duration: 10000,
 		})
 		mktCfg.Fees = &types.Fees{
@@ -2079,12 +2077,11 @@ func TestSubmit(t *testing.T) {
 
 func TestAmend(t *testing.T) {
 	now := time.Unix(10, 0)
-	closingAt := time.Unix(1000000000, 0)
 	ctx := vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
 
 	t.Run("check that fee is selected properly after changes", func(t *testing.T) {
 		auctionEnd := now.Add(10001 * time.Second)
-		mktCfg := getMarket(closingAt, defaultPriceMonitorSettings, &types.AuctionDuration{
+		mktCfg := getMarket(defaultPriceMonitorSettings, &types.AuctionDuration{
 			Duration: 10000,
 		})
 		mktCfg.Fees = &types.Fees{
@@ -2231,8 +2228,7 @@ func TestAmend(t *testing.T) {
 	// removed.
 	t.Run("check that LP fee is correct after changes", func(t *testing.T) {
 		now := time.Unix(10, 0)
-		closingAt := time.Unix(1000000000, 0)
-		tm := getTestMarket(t, now, closingAt, nil, nil)
+		tm := getTestMarket(t, now, nil, nil)
 		ctx := context.Background()
 
 		// Create a new party account with very little funding
@@ -2277,8 +2273,7 @@ func TestAmend(t *testing.T) {
 
 	t.Run("check that LP commitment reduction is prevented correctly", func(t *testing.T) {
 		now := time.Unix(10, 0)
-		closingAt := time.Unix(1000000000, 0)
-		tm := getTestMarket(t, now, closingAt, nil, nil)
+		tm := getTestMarket(t, now, nil, nil)
 		ctx := context.Background()
 
 		// Create a new party account with very little funding
@@ -2354,7 +2349,7 @@ func TestAmend(t *testing.T) {
 	})
 
 	t.Run("check that changing LP during auction works", func(t *testing.T) {
-		tm := getTestMarket(t, now, closingAt, nil, nil)
+		tm := getTestMarket(t, now, nil, nil)
 
 		// Create a new party account with very little funding
 		addAccountWithAmount(tm, "party-A", 7000)
@@ -2452,8 +2447,7 @@ func TestAmend(t *testing.T) {
 	// created by the LP system.
 	t.Run("check that it is not possible to cancel or amend LP order", func(t *testing.T) {
 		now := time.Unix(10, 0)
-		closingAt := time.Unix(1000000000, 0)
-		tm := getTestMarket(t, now, closingAt, nil, nil)
+		tm := getTestMarket(t, now, nil, nil)
 		ctx := context.Background()
 
 		// Create a new party account with very little funding
@@ -2535,7 +2529,7 @@ func TestAmend(t *testing.T) {
 	// If we submit a valid LP submission but then try ot alter it to something non valid
 	// the amendment should be rejected and the original submission is still valid.
 	t.Run("check that failed amend does not break existing LP", func(t *testing.T) {
-		tm := getTestMarket(t, now, closingAt, nil, nil)
+		tm := getTestMarket(t, now, nil, nil)
 
 		// Create a new party account with very little funding
 		addAccountWithAmount(tm, "party-A", 7000)
@@ -2634,7 +2628,7 @@ func TestAmend(t *testing.T) {
 
 	// Reference must be updated when LP submissions are amended.
 	t.Run("check reference is correct after changes", func(t *testing.T) {
-		tm := getTestMarket(t, now, closingAt, nil, nil)
+		tm := getTestMarket(t, now, nil, nil)
 
 		// Create a new party account with very little funding
 		addAccountWithAmount(tm, "party-A", 7000)
@@ -2696,8 +2690,7 @@ func TestAmend(t *testing.T) {
 
 	t.Run("should reject LP amendment if no current LP", func(t *testing.T) {
 		now := time.Unix(10, 0)
-		closingAt := time.Unix(1000000000, 0)
-		tm := getTestMarket(t, now, closingAt, nil, nil)
+		tm := getTestMarket(t, now, nil, nil)
 		ctx := context.Background()
 
 		// Create a new party account with very little funding
@@ -2717,7 +2710,7 @@ func TestAmend(t *testing.T) {
 	})
 
 	t.Run("should reject LP cancellation if no current LP", func(t *testing.T) {
-		tm := getTestMarket(t, now, closingAt, nil, nil)
+		tm := getTestMarket(t, now, nil, nil)
 
 		// Create a new party account with very little funding
 		addAccountWithAmount(tm, "party-A", 7000)

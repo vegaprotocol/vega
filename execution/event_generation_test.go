@@ -18,7 +18,6 @@ import (
 
 func startMarketInAuction(t *testing.T, ctx context.Context, now *time.Time) *testMarket {
 	t.Helper()
-	closingAt := time.Unix(1000000000, 0)
 
 	pmt := &types.PriceMonitoringTrigger{
 		Horizon:          60,
@@ -35,7 +34,7 @@ func startMarketInAuction(t *testing.T, ctx context.Context, now *time.Time) *te
 		UpdateFrequency: 600,
 	}
 
-	tm := getTestMarket(t, *now, closingAt, pMonitorSettings, nil)
+	tm := getTestMarket(t, *now, pMonitorSettings, nil)
 
 	addAccountWithAmount(tm, "party-A", 1000)
 	addAccountWithAmount(tm, "party-B", 100000000)

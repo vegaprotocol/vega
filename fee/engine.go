@@ -46,7 +46,7 @@ func New(log *logging.Logger, cfg Config, feeCfg types.Fees, asset string, posit
 }
 
 // ReloadConf is used in order to reload the internal configuration of
-// the of the fee engine.
+// the fee engine.
 func (e *Engine) ReloadConf(cfg Config) {
 	e.log.Info("reloading configuration")
 	if e.log.GetLevel() != cfg.Level.Get() {

@@ -17,8 +17,7 @@ import (
 
 func TestIssue2876(t *testing.T) {
 	now := time.Unix(10, 0)
-	closingAt := time.Unix(1000000000, 0)
-	tm := getTestMarketWithDP(t, now, closingAt, defaultPriceMonitorSettings, &types.AuctionDuration{Duration: 30}, 3)
+	tm := getTestMarketWithDP(t, now, defaultPriceMonitorSettings, &types.AuctionDuration{Duration: 30}, 3)
 	ctx := context.Background()
 	ctx = vegacontext.WithTraceID(ctx, vgcrypto.RandomHash())
 
