@@ -24,6 +24,31 @@ func Test(t *testing.T) {
 	t.Run("Process epoch end to calculate payout with no delay - rewards are distributed successfully", testOnEpochEventNoPayoutDelay)
 }
 
+func TestRewardFactors(t *testing.T) {
+	testEngine := getEngine(t)
+	engine := testEngine.engine
+
+	p, e := engine.calculateRewardFactors(num.DecimalFromInt64(10), num.DecimalFromInt64(10))
+	require.Equal(t, "0.5", p.String())
+	require.Equal(t, "0.5", e.String())
+
+	p, e = engine.calculateRewardFactors(num.DecimalFromInt64(100), num.DecimalFromInt64(0))
+	require.Equal(t, "1", p.String())
+	require.Equal(t, "0", e.String())
+
+	p, e = engine.calculateRewardFactors(num.DecimalFromInt64(0), num.DecimalFromInt64(1))
+	require.Equal(t, "0", p.String())
+	require.Equal(t, "1", e.String())
+
+	p, e = engine.calculateRewardFactors(num.DecimalFromInt64(99999999), num.DecimalFromInt64(1))
+	require.Equal(t, "0.99999999", p.String())
+	require.Equal(t, "0.00000001", e.String())
+
+	p, e = engine.calculateRewardFactors(num.DecimalFromInt64(1), num.DecimalFromInt64(99999999))
+	require.Equal(t, "0.00000001", p.String())
+	require.Equal(t, "0.99999999", e.String())
+}
+
 // test updating of max payout per participant for staking and delegation reward scheme.
 func testUpdateMaxPayoutPerParticipantForStakingRewardScheme(t *testing.T) {
 	testEngine := getEngine(t)
@@ -310,6 +335,7 @@ func getEngine(t *testing.T) *testEngine {
 	topology := mocks.NewMockTopology(ctrl)
 	feesTracker := mocks.NewMockFeesTracker(ctrl)
 	MarketTracker := mocks.NewMockMarketTracker(ctrl)
+	MarketTracker.EXPECT().GetAllMarketIDs().AnyTimes()
 	engine := New(logger, conf, broker, delegation, epochEngine, collateral, ts, feesTracker, MarketTracker, topology)
 
 	broker.EXPECT().Send(gomock.Any()).AnyTimes()

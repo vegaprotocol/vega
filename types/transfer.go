@@ -24,6 +24,7 @@ type Transfer struct {
 	Amount    *FinancialAmount
 	Type      TransferType
 	MinAmount *num.Uint
+	Market    string
 }
 
 func (t *Transfer) Clone() *Transfer {
@@ -47,6 +48,10 @@ func (t *Transfer) Merge(oth *Transfer) *Transfer {
 		panic(fmt.Sprintf("invalid transfer merge, different types specified, this should never happen: %v, %v", t.String(), oth.String()))
 	}
 
+	if t.Market != oth.Market {
+		panic(fmt.Sprintf("invalid transfer merge, different markets specified, this should never happen: %v, %v", t.String(), oth.String()))
+	}
+
 	return &Transfer{
 		Owner: t.Owner,
 		Amount: &FinancialAmount{
@@ -55,6 +60,7 @@ func (t *Transfer) Merge(oth *Transfer) *Transfer {
 		},
 		Type:      t.Type,
 		MinAmount: num.Sum(t.MinAmount, t.MinAmount),
+		Market:    t.Market,
 	}
 }
 
@@ -87,6 +93,7 @@ func (t *Transfer) IntoProto() *proto.Transfer {
 		Amount:    t.Amount.IntoProto(),
 		Type:      t.Type,
 		MinAmount: num.UintToString(t.MinAmount),
+		MarketId:  t.Market,
 	}
 }
 
@@ -106,6 +113,7 @@ func TransferFromProto(p *proto.Transfer) (*Transfer, error) {
 		Amount:    amount,
 		Type:      p.Type,
 		MinAmount: minAmount,
+		Market:    p.MarketId,
 	}, nil
 }
 

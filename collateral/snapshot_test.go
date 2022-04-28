@@ -62,6 +62,49 @@ func TestCheckpoint(t *testing.T) {
 		}
 	}
 
+	// topup some reward accounts for markets
+	makerFeeReward1, err := eng.Engine.GetOrCreateRewardAccount(ctx, "VOTE", "market1", types.AccountTypeMakerFeeReward)
+	require.NoError(t, err)
+	err = eng.Engine.UpdateBalance(ctx, makerFeeReward1.ID, num.NewUint(11111))
+	require.NoError(t, err)
+
+	makerFeeReward2, err := eng.Engine.GetOrCreateRewardAccount(ctx, "VOTE", "market2", types.AccountTypeMakerFeeReward)
+	require.NoError(t, err)
+	err = eng.Engine.UpdateBalance(ctx, makerFeeReward2.ID, num.NewUint(22222))
+	require.NoError(t, err)
+
+	takerFeeReward1, err := eng.Engine.GetOrCreateRewardAccount(ctx, "VOTE", "market3", types.AccountTypeTakerFeeReward)
+	require.NoError(t, err)
+	err = eng.Engine.UpdateBalance(ctx, takerFeeReward1.ID, num.NewUint(33333))
+	require.NoError(t, err)
+
+	takerFeeReward2, err := eng.Engine.GetOrCreateRewardAccount(ctx, "VOTE", "market4", types.AccountTypeTakerFeeReward)
+	require.NoError(t, err)
+	err = eng.Engine.UpdateBalance(ctx, takerFeeReward2.ID, num.NewUint(44444))
+	require.NoError(t, err)
+
+	lpFeeReward1, err := eng.Engine.GetOrCreateRewardAccount(ctx, "VOTE", "market5", types.AccountTypeLPFeeReward)
+	require.NoError(t, err)
+	err = eng.Engine.UpdateBalance(ctx, lpFeeReward1.ID, num.NewUint(55555))
+	require.NoError(t, err)
+
+	lpFeeReward2, err := eng.Engine.GetOrCreateRewardAccount(ctx, "VOTE", "market6", types.AccountTypeLPFeeReward)
+	require.NoError(t, err)
+	err = eng.Engine.UpdateBalance(ctx, lpFeeReward2.ID, num.NewUint(66666))
+	require.NoError(t, err)
+
+	marketBonusReward1, err := eng.Engine.GetOrCreateRewardAccount(ctx, "VOTE", "market7", types.AccountTypeMarketProposerReward)
+	require.NoError(t, err)
+	err = eng.Engine.UpdateBalance(ctx, marketBonusReward1.ID, num.NewUint(77777))
+	require.NoError(t, err)
+
+	marketBonusReward2, err := eng.Engine.GetOrCreateRewardAccount(ctx, "VOTE", "market8", types.AccountTypeMarketProposerReward)
+	require.NoError(t, err)
+	err = eng.Engine.UpdateBalance(ctx, marketBonusReward2.ID, num.NewUint(88888))
+	require.NoError(t, err)
+
+	rewardAccounts := []*types.Account{makerFeeReward1, makerFeeReward2, takerFeeReward1, takerFeeReward2, lpFeeReward1, lpFeeReward2, marketBonusReward1, marketBonusReward2}
+
 	checkpoint, err := eng.Checkpoint()
 	require.NoError(t, err)
 	require.NotEmpty(t, checkpoint)
@@ -104,6 +147,13 @@ func TestCheckpoint(t *testing.T) {
 			require.NoError(t, err)
 			require.Equal(t, num.NewUint(12345), acc.Balance)
 		}
+	}
+
+	for i, a := range rewardAccounts {
+		acc, err := loadEng.GetAccountByID(a.ID)
+		println(a.ID)
+		require.NoError(t, err)
+		require.Equal(t, num.NewUint(uint64((i+1)*11111)), acc.Balance)
 	}
 }
 

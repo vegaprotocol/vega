@@ -43,7 +43,7 @@ func PartiesSubmitTransfers(
 func parseOneOffTransferTable(table *godog.Table) []RowWrapper {
 	return StrictParseTable(table, []string{
 		"id", "from", "from_account_type", "to", "to_account_type", "asset", "amount", "delivery_time",
-	}, []string{"error"})
+	}, []string{"market", "error"})
 }
 
 func rowToOneOffTransfer(r RowWrapper) (*types.OneOffTransfer, error) {
@@ -55,6 +55,10 @@ func rowToOneOffTransfer(r RowWrapper) (*types.OneOffTransfer, error) {
 	toAccuontType := r.MustStr("to_account_type")
 	toAT := proto.AccountType_value[toAccuontType]
 	asset := r.MustStr("asset")
+	market := ""
+	if len(r.Str("market")) > 0 {
+		market = r.Str("market")
+	}
 	amount := r.MustStr("amount")
 	amountUint, _ := num.UintFromString(amount, 10)
 	deliveryTime, err := time.Parse("2006-01-02T15:04:05Z", r.MustStr("delivery_time"))
@@ -71,6 +75,7 @@ func rowToOneOffTransfer(r RowWrapper) (*types.OneOffTransfer, error) {
 			ToAccountType:   types.AccountType(toAT),
 			Asset:           asset,
 			Amount:          amountUint,
+			Market:          market,
 		},
 		DeliverOn: &deliveryTime,
 	}
@@ -178,5 +183,5 @@ func PartiesCancelTransfers(
 func parseOneOffCancellationTable(table *godog.Table) []RowWrapper {
 	return StrictParseTable(table, []string{
 		"party", "transfer_id",
-	}, []string{"error"})
+	}, []string{"market", "error"})
 }

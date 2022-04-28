@@ -52,7 +52,7 @@ func (e *Engine) recurringTransfer(
 	}
 
 	// can't create transfer with start epoch in the past
-	if transfer.StartEpoch <= e.currentEpoch {
+	if transfer.StartEpoch < e.currentEpoch {
 		transfer.Status = types.TransferStatusRejected
 		return ErrStartEpochInThePast
 	}
@@ -129,7 +129,7 @@ func (e *Engine) distributeRecurringTransfers(
 		}
 
 		resps, err := e.processTransfer(
-			ctx, v.From, v.To, v.Asset, v.FromAccountType, v.ToAccountType, amount, v.Reference, nil, // last is eventual oneoff, which this is not
+			ctx, v.From, v.To, v.Asset, v.Market, v.FromAccountType, v.ToAccountType, amount, v.Reference, nil, // last is eventual oneoff, which this is not
 		)
 		if err != nil {
 			v.Status = types.TransferStatusStopped

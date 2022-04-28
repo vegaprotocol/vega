@@ -37,6 +37,11 @@ type tstEngine struct {
 	assets          *mocks.MockAssets
 	netp            *netparams.Store
 	proposalCounter uint // to streamline proposal generation
+
+	// now is time used to initialise the governance engine. It's useful to
+	// set up the proposals timestamps, to ensure they are aligned with the time
+	// of the governance engine.
+	now time.Time
 }
 
 func TestSubmitProposals(t *testing.T) {
@@ -762,8 +767,8 @@ func getTestEngine(t *testing.T) *tstEngine {
 	require.NoError(t, netp.Update(ctx, netparams.GovernanceProposalUpdateMarketMinProposerEquityLikeShare, "0.1"))
 
 	// Initialise engine as validator
-	now := time.Now().Truncate(time.Second)
-	eng := governance.NewEngine(log, cfg, accounts, broker, assets, witness, markets, netp, now)
+	now := time.Now()
+	eng := governance.NewEngine(log, cfg, accounts, broker, assets, witness, markets, netp, now.Truncate(time.Second))
 	require.NotNil(t, eng)
 
 	return &tstEngine{
@@ -775,18 +780,13 @@ func getTestEngine(t *testing.T) *tstEngine {
 		assets:   assets,
 		witness:  witness,
 		netp:     netp,
+		now:      now,
 	}
 }
 
 func newFreeformTerms() *types.ProposalTermsNewFreeform {
 	return &types.ProposalTermsNewFreeform{
-		NewFreeform: &types.NewFreeform{
-			Changes: &types.NewFreeformDetails{
-				URL:         "https://example.com",
-				Description: "Test my freeform proposal",
-				Hash:        "2fb572edea4af9154edeff680e23689ed076d08934c60f8a4c1f5743a614954e",
-			},
-		},
+		NewFreeform: &types.NewFreeform{},
 	}
 }
 
@@ -1000,6 +1000,9 @@ func (e *tstEngine) newProposalForNewMarket(partyID string, now time.Time) types
 			ValidationTimestamp: now.Add(1 * time.Hour).Unix(),
 			Change:              newMarketTerms(),
 		},
+		Rationale: &types.ProposalRationale{
+			Description: "some description",
+		},
 	}
 }
 
@@ -1011,10 +1014,13 @@ func (e *tstEngine) newProposalForMarketUpdate(partyID string, now time.Time) ty
 		Party:     partyID,
 		State:     types.ProposalStateOpen,
 		Terms: &types.ProposalTerms{
-			ClosingTimestamp:    now.Add(48 * time.Hour).Unix(),
-			EnactmentTimestamp:  now.Add(2 * 48 * time.Hour).Unix(),
-			ValidationTimestamp: now.Add(1 * time.Hour).Unix(),
+			ClosingTimestamp:    now.Add(96 * time.Hour).Unix(),
+			EnactmentTimestamp:  now.Add(4 * 48 * time.Hour).Unix(),
+			ValidationTimestamp: now.Add(2 * time.Hour).Unix(),
 			Change:              updateMarketTerms(),
+		},
+		Rationale: &types.ProposalRationale{
+			Description: "some description",
 		},
 	}
 }
@@ -1032,6 +1038,9 @@ func (e *tstEngine) newProposalForNewAsset(partyID string, now time.Time) types.
 			ValidationTimestamp: now.Add(1 * time.Hour).Unix(),
 			Change:              newAssetTerms(),
 		},
+		Rationale: &types.ProposalRationale{
+			Description: "some description",
+		},
 	}
 }
 
@@ -1046,6 +1055,11 @@ func (e *tstEngine) newFreeformProposal(partyID string, now time.Time) types.Pro
 			ClosingTimestamp:    now.Add(48 * time.Hour).Unix(),
 			ValidationTimestamp: now.Add(1 * time.Hour).Unix(),
 			Change:              newFreeformTerms(),
+		},
+		Rationale: &types.ProposalRationale{
+			URL:         "https://example.com",
+			Description: "Test my freeform proposal",
+			Hash:        "2fb572edea4af9154edeff680e23689ed076d08934c60f8a4c1f5743a614954e",
 		},
 	}
 }
@@ -1139,6 +1153,21 @@ func (e *tstEngine) expectVoteEvent(t *testing.T, party, proposal string) {
 	})
 }
 
+func (e *tstEngine) expectRestoredProposals(t *testing.T, proposalIDs []string) {
+	t.Helper()
+	e.broker.EXPECT().SendBatch(gomock.Any()).Times(1).Do(func(es []events.Event) {
+		if len(es) == 0 {
+			t.Errorf("expecting %d proposals to be restored, found %d", len(proposalIDs), len(es))
+		}
+
+		for i, e := range es {
+			pe, ok := e.(*events.Proposal)
+			require.True(t, ok)
+			assert.Equal(t, proposalIDs[i], pe.ProposalID())
+		}
+	})
+}
+
 func (e *tstEngine) ensureStakingAssetTotalSupply(t *testing.T, supply uint64) {
 	t.Helper()
 	e.accounts.EXPECT().GetStakingAssetTotalSupply().Times(1).Return(num.NewUint(supply))
@@ -1165,6 +1194,14 @@ func (e *tstEngine) ensureEquityLikeShareForMarketAndParty(t *testing.T, market,
 		GetEquityLikeShareForMarketAndParty(market, party).
 		Times(1).
 		Return(num.DecimalFromFloat(share), true)
+}
+
+func (e *tstEngine) ensureGetMarket(t *testing.T, marketID string, market types.Market) {
+	t.Helper()
+	e.markets.EXPECT().
+		GetMarket(marketID).
+		Times(1).
+		Return(market, true)
 }
 
 func (e *tstEngine) ensureNonExistingMarket(t *testing.T, market string) {

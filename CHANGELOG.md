@@ -3,16 +3,32 @@
 ## Unreleased (0.51.0)
 
 ### 🚨 Breaking changes
-- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+- [5192](https://github.com/vegaprotocol/vega/issues/5192) - Require a rationale on proposals
 
 ### 🗑️ Deprecation
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+
+### 🛠 Improvements
+- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+
+### 🐛 Fixes
+- [5277](https://github.com/vegaprotocol/vega/issues/5277) - Updating a market should default auction extension to 1
+- [5284](https://github.com/vegaprotocol/vega/issues/5284) - price monitoring past prices are now included in the snapshot
+- [5294](https://github.com/vegaprotocol/vega/issues/5294) - Parse timestamps oracle in market proposal validation
+- [5292](https://github.com/vegaprotocol/vega/issues/5292) - Internal time oracle broadcasts timestamp without nanoseconds
+- [5297](https://github.com/vegaprotocol/vega/issues/5297) - Assure min/max price always accurate
+- [5286](https://github.com/vegaprotocol/vega/issues/5286) - Ensure liquidity fees are updated when updating the market
+
+## 0.50.2
 
 ### 🛠 Improvements
 - [5001](https://github.com/vegaprotocol/vega/issues/5001) - Set and increment LP version field correctly
 - [5001](https://github.com/vegaprotocol/vega/issues/5001) - Add integration test for LP versioning
 - [3372](https://github.com/vegaprotocol/vega/issues/3372) - Add integration test making sure margin is released when an LP is cancelled.
 - [5235](https://github.com/vegaprotocol/vega/issues/5235) - Use `BroadcastTxSync` instead of async for submitting transactions to `tendermint`
+- [5268](https://github.com/vegaprotocol/vega/issues/5268) - Make validator heartbeat frequency a function of the epoch duration.
+- [5271](https://github.com/vegaprotocol/vega/issues/5271) - Make generated hex IDs lower case
+- [5273](https://github.com/vegaprotocol/vega/issues/5273) - Reward / Transfer to allow payout of reward in an arbitrary asset unrelated to the settlement and by market.
 
 ### 🐛 Fixes
 - [4798](https://github.com/vegaprotocol/vega/issues/4978) - Set market pending timestamp to the time at which the market is created.
@@ -22,6 +38,10 @@
 - [5128](https://github.com/vegaprotocol/vega/issues/5128) - Fix wrong http rate limit for faucet
 - [5231](https://github.com/vegaprotocol/vega/issues/5231) - Fix pegged orders to be reset to the order pointer after snapshot loading
 - [5247](https://github.com/vegaprotocol/vega/issues/5247) - Fix the check for overflow in scaling settlement price
+- [5250](https://github.com/vegaprotocol/vega/issues/5250) - Fixed panic in loading validator checkpoint
+- [5260](https://github.com/vegaprotocol/vega/issues/5260) - Process recurring transfer before rewards
+- [5262](https://github.com/vegaprotocol/vega/issues/5262) - Allow recurring transfers to start during the current epoch
+- [5267](https://github.com/vegaprotocol/vega/issues/5267) - Do not check commitment on `UpdateMarket` proposals
 
 ## 0.50.1
 

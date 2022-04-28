@@ -112,4 +112,14 @@ func testPeggedOrdersSnapshot(t *testing.T) {
 	newP := execution.NewPeggedOrdersFromSnapshot(s)
 	newP.ReconcileWithOrderBook(ob)
 	a.Equal(s, newP.GetState())
+	a.Equal(len(p.GetAll()), len(newP.GetAll()))
+
+	// if market is in a auction we'll have pegged orders on the market but not the orderbook
+	ob2 := matching.NewCachedOrderBook(logging.NewTestLogger(), config.NewDefaultConfig().Execution.Matching, "market-1", false)
+	newP2 := execution.NewPeggedOrdersFromSnapshot(s)
+	for _, o := range newP2.GetAll() {
+		newP2.Park(o)
+	}
+	newP2.ReconcileWithOrderBook(ob2)
+	a.Equal(len(p.GetAll()), len(newP2.GetAll()))
 }

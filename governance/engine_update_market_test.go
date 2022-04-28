@@ -16,7 +16,9 @@ import (
 func TestProposalForMarketUpdate(t *testing.T) {
 	t.Run("Submitting a proposal for market update succeeds", testSubmittingProposalForMarketUpdateSucceeds)
 	t.Run("Submitting a proposal for market update on unknown market fails", testSubmittingProposalForMarketUpdateForUnknownMarketFails)
+	t.Run("Submitting a proposal for market update for not-enacted market fails", testSubmittingProposalForMarketUpdateForNotEnactedMarketFails)
 	t.Run("Submitting a proposal for market update with insufficient equity-like share fails", testSubmittingProposalForMarketUpdateWithInsufficientEquityLikeShareFails)
+	t.Run("Pre-enactment of market update proposal succeeds", testPreEnactmentOfMarketUpdateSucceeds)
 
 	t.Run("Rejecting a proposal for market update succeeds", testRejectingProposalForMarketUpdateSucceeds)
 
@@ -69,10 +71,51 @@ func testSubmittingProposalForMarketUpdateForUnknownMarketFails(t *testing.T) {
 	eng.expectRejectedProposalEvent(t, proposer, proposal.ID, types.ProposalErrorInvalidMarket)
 
 	// when
-	toSubmit, err := eng.SubmitProposal(context.Background(), *types.ProposalSubmissionFromProposal(&proposal), proposal.ID, proposer)
+	toSubmit, err := eng.submitProposal(t, proposal)
 
 	// then
 	require.ErrorIs(t, governance.ErrMarketDoesNotExist, err)
+	require.Nil(t, toSubmit)
+}
+
+func testSubmittingProposalForMarketUpdateForNotEnactedMarketFails(t *testing.T) {
+	eng := getTestEngine(t)
+	defer eng.ctrl.Finish()
+
+	// given
+	proposer := vgrand.RandomStr(5)
+	newMarketProposal := eng.newProposalForNewMarket(proposer, time.Now())
+	marketID := newMarketProposal.ID
+
+	// setup
+	eng.ensureAllAssetEnabled(t)
+	eng.ensureTokenBalanceForParty(t, proposer, 123456789)
+	eng.expectOpenProposalEvent(t, proposer, marketID)
+
+	// when
+	toSubmit, err := eng.submitProposal(t, newMarketProposal)
+
+	// then
+	require.NoError(t, err)
+	require.NotNil(t, toSubmit)
+	assert.True(t, toSubmit.IsNewMarket())
+
+	// given
+	updateMarketProposal := eng.newProposalForMarketUpdate(proposer, time.Now())
+	updateMarketProposal.MarketUpdate().MarketID = marketID
+
+	// setup
+	eng.ensureTokenBalanceForParty(t, proposer, 123456789)
+	eng.ensureExistingMarket(t, marketID)
+
+	// expect
+	eng.expectRejectedProposalEvent(t, proposer, updateMarketProposal.ID, types.ProposalErrorInvalidMarket)
+
+	// when
+	toSubmit, err = eng.submitProposal(t, updateMarketProposal)
+
+	// then
+	require.ErrorIs(t, governance.ErrMarketNotEnactedYet, err)
 	require.Nil(t, toSubmit)
 }
 
@@ -100,6 +143,121 @@ func testSubmittingProposalForMarketUpdateWithInsufficientEquityLikeShareFails(t
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "proposer have insufficient equity-like share, expected >=")
 	require.Nil(t, toSubmit)
+}
+
+func testPreEnactmentOfMarketUpdateSucceeds(t *testing.T) {
+	eng := getTestEngine(t)
+	defer eng.ctrl.Finish()
+
+	// Submit proposal.
+	// given
+	proposer := vgrand.RandomStr(5)
+	proposal := eng.newProposalForMarketUpdate(proposer, time.Now())
+	marketID := proposal.MarketUpdate().MarketID
+
+	// setup
+	eng.ensureEquityLikeShareForMarketAndParty(t, marketID, proposer, 0.7)
+	eng.ensureExistingMarket(t, marketID)
+	eng.ensureTokenBalanceForParty(t, proposer, 1)
+	eng.ensureAllAssetEnabled(t)
+
+	// expect
+	eng.expectOpenProposalEvent(t, proposer, proposal.ID)
+
+	// when
+	_, err := eng.submitProposal(t, proposal)
+
+	// then
+	require.NoError(t, err)
+
+	// Vote 'YES' with 10 tokens.
+	// given
+	voterWithToken1 := vgrand.RandomStr(5)
+
+	// setup
+	eng.ensureTokenBalanceForParty(t, voterWithToken1, 10)
+	eng.ensureEquityLikeShareForMarketAndParty(t, marketID, voterWithToken1, 0)
+
+	// expect
+	eng.expectVoteEvent(t, voterWithToken1, proposal.ID)
+
+	// when
+	err = eng.addYesVote(t, voterWithToken1, proposal.ID)
+
+	// then
+	require.NoError(t, err)
+
+	// Vote 'NO' with 2 tokens.
+	// given
+	voterWithToken2 := vgrand.RandomStr(5)
+
+	// setup
+	eng.ensureTokenBalanceForParty(t, voterWithToken2, 2)
+	eng.ensureEquityLikeShareForMarketAndParty(t, marketID, voterWithToken2, 0)
+
+	// expect
+	eng.expectVoteEvent(t, voterWithToken2, proposal.ID)
+
+	// then
+	err = eng.addNoVote(t, voterWithToken2, proposal.ID)
+
+	// then
+	require.NoError(t, err)
+
+	// Close the proposal.
+	// given
+	afterClosing := time.Unix(proposal.Terms.ClosingTimestamp, 0).Add(time.Second)
+
+	// setup
+	eng.ensureStakingAssetTotalSupply(t, 13)
+	eng.ensureTokenBalanceForParty(t, voterWithToken1, 10)
+	eng.ensureTokenBalanceForParty(t, voterWithToken2, 2)
+
+	// expect
+	eng.expectPassedProposalEvent(t, proposal.ID)
+	eng.expectVoteEvents(t)
+
+	// when
+	eng.OnChainTimeUpdate(context.Background(), afterClosing)
+
+	// Enact the proposal.
+	// given
+	afterEnactment := time.Unix(proposal.Terms.EnactmentTimestamp, 0).Add(time.Second)
+	existingMarket := types.Market{
+		ID: marketID,
+		TradableInstrument: &types.TradableInstrument{
+			Instrument: &types.Instrument{
+				Name: vgrand.RandomStr(10),
+				Product: &types.InstrumentFuture{
+					Future: &types.Future{
+						SettlementAsset: "BTC",
+					},
+				},
+			},
+		},
+		DecimalPlaces:         3,
+		PositionDecimalPlaces: 4,
+		OpeningAuction: &types.AuctionDuration{
+			Duration: 42,
+		},
+	}
+
+	// setup
+	eng.ensureGetMarket(t, marketID, existingMarket)
+
+	// when
+	enacted, _ := eng.OnChainTimeUpdate(context.Background(), afterEnactment)
+
+	// then
+	require.NotEmpty(t, enacted)
+	require.True(t, enacted[0].IsUpdateMarket())
+	updatedMarket := enacted[0].UpdateMarket()
+	assert.Equal(t, existingMarket.ID, updatedMarket.ID)
+	assert.Equal(t, existingMarket.TradableInstrument.Instrument.Name, updatedMarket.TradableInstrument.Instrument.Name)
+	assert.Equal(t, existingMarket.TradableInstrument.Instrument.Product.(*types.InstrumentFuture).Future.SettlementAsset, updatedMarket.TradableInstrument.Instrument.Product.(*types.InstrumentFuture).Future.SettlementAsset)
+	assert.Equal(t, existingMarket.DecimalPlaces, updatedMarket.DecimalPlaces)
+	assert.Equal(t, existingMarket.PositionDecimalPlaces, updatedMarket.PositionDecimalPlaces)
+	assert.Equal(t, existingMarket.OpeningAuction.Duration, updatedMarket.OpeningAuction.Duration)
 }
 
 func testRejectingProposalForMarketUpdateSucceeds(t *testing.T) {

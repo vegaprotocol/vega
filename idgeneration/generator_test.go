@@ -11,7 +11,7 @@ func TestGeneratorCreationFailsWithInvalidRootId(t *testing.T) {
 }
 
 func TestOrderIdGeneration(t *testing.T) {
-	detId := "E1152CF235F6200ED0EB4598706821031D57403462C31A80B3CDD6B209BFF2E6"
+	detId := "e1152cf235f6200ed0eb4598706821031d57403462c31a80b3cdd6b209bff2e6"
 	gen := idgeneration.New(detId)
 
 	assert.Equal(t, detId, gen.NextID())

@@ -3,11 +3,15 @@ package validators_test
 import (
 	"context"
 	"fmt"
+	"io/ioutil"
 	"testing"
 
+	checkpoint "code.vegaprotocol.io/protos/vega/checkpoint/v1"
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
+	"code.vegaprotocol.io/vega/libs/proto"
 	"code.vegaprotocol.io/vega/validators"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	abcitypes "github.com/tendermint/tendermint/abci/types"
 	types1 "github.com/tendermint/tendermint/proto/tendermint/types"
 )
@@ -36,6 +40,21 @@ func TestTopologyCheckpoint(t *testing.T) {
 		t.Run("test checkpoint success", testTopologyCheckpointSuccess)
 		t.Run("test checkpoint uses relative block height", testTopologyCheckpointUsesRelativeBlockHeight)
 	}
+}
+
+func TestCheckPointLoading(t *testing.T) {
+	newTop := getTestTopWithDefaultValidator(t)
+	defer newTop.ctrl.Finish()
+
+	inFile := "testcp/20220411202622-135-812dab0eb11196b49fd716329feb50c243f645226460df760168215d73acf0dd.cp"
+	data, _ := ioutil.ReadFile(inFile)
+	cp := &checkpoint.Checkpoint{}
+	if err := proto.Unmarshal(data, cp); err != nil {
+		println(err)
+	}
+	require.Equal(t, 1, len(newTop.AllNodeIDs()))
+	newTop.Load(context.Background(), cp.Validators)
+	require.Equal(t, 2, len(newTop.AllNodeIDs()))
 }
 
 func testTopologyCheckpointSuccess(t *testing.T) {

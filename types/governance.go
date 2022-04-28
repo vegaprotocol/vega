@@ -95,7 +95,7 @@ const (
 	ProposalErrorInsufficientEquityLikeShare ProposalError = vegapb.ProposalError_PROPOSAL_ERROR_INSUFFICIENT_EQUITY_LIKE_SHARE
 	// ProposalErrorInvalidMarket The market targeted by the proposal does not exist or is not eligible to modification.
 	ProposalErrorInvalidMarket ProposalError = vegapb.ProposalError_PROPOSAL_ERROR_INVALID_MARKET
-	// ProposalErrorTooManyMarketDecimalPlace the market uses more decimal places than the settlement asset.
+	// ProposalErrorTooManyMarketDecimalPlaces the market uses more decimal places than the settlement asset.
 	ProposalErrorTooManyMarketDecimalPlaces ProposalError = vegapb.ProposalError_PROPOSAL_ERROR_TOO_MANY_MARKET_DECIMAL_PLACES
 	// ProposalErrorTooManyPriceMonitoringTriggers the market price monitoring setting uses too many triggers.
 	ProposalErrorTooManyPriceMonitoringTriggers ProposalError = vegapb.ProposalError_PROPOSAL_ERROR_TOO_MANY_PRICE_MONITORING_TRIGGERS
@@ -184,12 +184,15 @@ type ProposalSubmission struct {
 	Reference string
 	// Proposal configuration and the actual change that is meant to be executed when proposal is enacted
 	Terms *ProposalTerms
+	// Rationale behind the proposal change.
+	Rationale *ProposalRationale
 }
 
 func ProposalSubmissionFromProposal(p *Proposal) *ProposalSubmission {
 	return &ProposalSubmission{
 		Reference: p.Reference,
 		Terms:     p.Terms,
+		Rationale: p.Rationale,
 	}
 }
 
@@ -201,6 +204,11 @@ func NewProposalSubmissionFromProto(p *commandspb.ProposalSubmission) *ProposalS
 	return &ProposalSubmission{
 		Reference: p.Reference,
 		Terms:     pterms,
+		Rationale: &ProposalRationale{
+			Description: p.Rationale.Description,
+			Hash:        p.Rationale.Hash,
+			URL:         p.Rationale.Url,
+		},
 	}
 }
 
@@ -212,6 +220,11 @@ func (p ProposalSubmission) IntoProto() *commandspb.ProposalSubmission {
 	return &commandspb.ProposalSubmission{
 		Reference: p.Reference,
 		Terms:     terms,
+		Rationale: &vegapb.ProposalRationale{
+			Description: p.Rationale.Description,
+			Hash:        p.Rationale.Hash,
+			Url:         p.Rationale.URL,
+		},
 	}
 }
 
@@ -222,6 +235,7 @@ type Proposal struct {
 	State        ProposalState
 	Timestamp    int64
 	Terms        *ProposalTerms
+	Rationale    *ProposalRationale
 	Reason       ProposalError
 	ErrorDetails string
 }
@@ -290,6 +304,7 @@ func ProposalFromProto(pp *vegapb.Proposal) *Proposal {
 		Timestamp:    pp.Timestamp,
 		Terms:        ProposalTermsFromProto(pp.Terms),
 		Reason:       pp.Reason,
+		Rationale:    ProposalRationaleFromProto(pp.Rationale),
 		ErrorDetails: pp.ErrorDetails,
 	}
 }
@@ -299,7 +314,7 @@ func (p Proposal) IntoProto() *vegapb.Proposal {
 	if p.Terms != nil {
 		terms = p.Terms.IntoProto()
 	}
-	return &vegapb.Proposal{
+	proposal := &vegapb.Proposal{
 		Id:           p.ID,
 		Reference:    p.Reference,
 		PartyId:      p.Party,
@@ -309,6 +324,16 @@ func (p Proposal) IntoProto() *vegapb.Proposal {
 		Reason:       p.Reason,
 		ErrorDetails: p.ErrorDetails,
 	}
+
+	if p.Rationale != nil {
+		proposal.Rationale = &vegapb.ProposalRationale{
+			Description: p.Rationale.Description,
+			Hash:        p.Rationale.Hash,
+			Url:         p.Rationale.URL,
+		}
+	}
+
+	return proposal
 }
 
 func (v Vote) IntoProto() *vegapb.Vote {
@@ -414,6 +439,12 @@ func (n NewMarketCommitment) DeepClone() *NewMarketCommitment {
 	return cpy
 }
 
+type ProposalRationale struct {
+	Description string
+	Hash        string
+	URL         string
+}
+
 type ProposalTerms struct {
 	ClosingTimestamp    int64
 	EnactmentTimestamp  int64
@@ -437,7 +468,7 @@ type NewMarketConfiguration struct {
 	Metadata                      []string
 	PriceMonitoringParameters     *PriceMonitoringParameters
 	LiquidityMonitoringParameters *LiquidityMonitoringParameters
-	RiskParameters                riskParams
+	RiskParameters                newRiskParams
 	// New market risk model parameters
 	//
 	// Types that are valid to be assigned to RiskParameters:
@@ -452,9 +483,9 @@ type NewMarketConfiguration struct {
 	// TradingMode          isNewMarketConfiguration_TradingMode `protobuf_oneof:"trading_mode"`
 }
 
-type riskParams interface {
-	rpIntoProto() interface{}
-	DeepClone() riskParams
+type newRiskParams interface {
+	newRiskParamsIntoProto() interface{}
+	DeepClone() newRiskParams
 }
 
 type ProposalTermsNewMarket struct {
@@ -477,15 +508,7 @@ type ProposalTermsNewAsset struct {
 	NewAsset *NewAsset
 }
 
-type NewFreeformDetails struct {
-	URL         string
-	Description string
-	Hash        string
-}
-
-type NewFreeform struct {
-	Changes *NewFreeformDetails
-}
+type NewFreeform struct{}
 
 type ProposalTermsNewFreeform struct {
 	NewFreeform *NewFreeform
@@ -532,7 +555,7 @@ func (n NewMarket) DeepClone() *NewMarket {
 }
 
 func (n NewMarketConfiguration) IntoProto() *vegapb.NewMarketConfiguration {
-	riskParams := n.RiskParameters.rpIntoProto()
+	riskParams := n.RiskParameters.newRiskParamsIntoProto()
 	md := make([]string, 0, len(n.Metadata))
 	md = append(md, n.Metadata...)
 
@@ -650,6 +673,17 @@ func ProposalTermsFromProto(p *vegapb.ProposalTerms) *ProposalTerms {
 	}
 }
 
+func ProposalRationaleFromProto(p *vegapb.ProposalRationale) *ProposalRationale {
+	if p == nil {
+		return nil
+	}
+	return &ProposalRationale{
+		Description: p.Description,
+		Hash:        p.Hash,
+		URL:         p.Url,
+	}
+}
+
 func NewNewMarketFromProto(p *vegapb.ProposalTerms_NewMarket) *ProposalTermsNewMarket {
 	var newMarket *NewMarket
 	if p.NewMarket != nil {
@@ -700,20 +734,9 @@ func NewNewAssetFromProto(p *vegapb.ProposalTerms_NewAsset) *ProposalTermsNewAss
 	}
 }
 
-func NewNewFreeformFromProto(p *vegapb.ProposalTerms_NewFreeform) *ProposalTermsNewFreeform {
-	var newFreeform *NewFreeform
-	if p.NewFreeform != nil && p.NewFreeform.Changes != nil {
-		newFreeform = &NewFreeform{
-			Changes: &NewFreeformDetails{
-				URL:         p.NewFreeform.Changes.Url,
-				Description: p.NewFreeform.Changes.Description,
-				Hash:        p.NewFreeform.Changes.Hash,
-			},
-		}
-	}
-
+func NewNewFreeformFromProto(_ *vegapb.ProposalTerms_NewFreeform) *ProposalTermsNewFreeform {
 	return &ProposalTermsNewFreeform{
-		NewFreeform: newFreeform,
+		NewFreeform: &NewFreeform{},
 	}
 }
 
@@ -957,7 +980,7 @@ func NewMarketConfigurationLogNormalFromProto(p *vegapb.NewMarketConfiguration_L
 	}
 }
 
-func (n NewMarketConfigurationLogNormal) DeepClone() riskParams {
+func (n NewMarketConfigurationLogNormal) DeepClone() newRiskParams {
 	if n.LogNormal == nil {
 		return &NewMarketConfigurationLogNormal{}
 	}
@@ -966,7 +989,7 @@ func (n NewMarketConfigurationLogNormal) DeepClone() riskParams {
 	}
 }
 
-func (n NewMarketConfigurationLogNormal) rpIntoProto() interface{} {
+func (n NewMarketConfigurationLogNormal) newRiskParamsIntoProto() interface{} {
 	return n.IntoProto()
 }
 
@@ -982,7 +1005,7 @@ func NewMarketConfigurationSimpleFromProto(p *vegapb.NewMarketConfiguration_Simp
 	}
 }
 
-func (n NewMarketConfigurationSimple) DeepClone() riskParams {
+func (n NewMarketConfigurationSimple) DeepClone() newRiskParams {
 	if n.Simple == nil {
 		return &NewMarketConfigurationSimple{}
 	}
@@ -991,7 +1014,7 @@ func (n NewMarketConfigurationSimple) DeepClone() riskParams {
 	}
 }
 
-func (n NewMarketConfigurationSimple) rpIntoProto() interface{} {
+func (n NewMarketConfigurationSimple) newRiskParamsIntoProto() interface{} {
 	return n.IntoProto()
 }
 
@@ -1154,13 +1177,7 @@ func (f ProposalTermsNewFreeform) DeepClone() proposalTerm {
 }
 
 func (n NewFreeform) IntoProto() *vegapb.NewFreeform {
-	return &vegapb.NewFreeform{
-		Changes: &vegapb.NewFreeformDetails{
-			Url:         n.Changes.URL,
-			Description: n.Changes.Description,
-			Hash:        n.Changes.Hash,
-		},
-	}
+	return &vegapb.NewFreeform{}
 }
 
 func (n NewFreeform) String() string {
@@ -1168,13 +1185,7 @@ func (n NewFreeform) String() string {
 }
 
 func (n NewFreeform) DeepClone() *NewFreeform {
-	return &NewFreeform{
-		Changes: &NewFreeformDetails{
-			URL:         n.Changes.URL,
-			Description: n.Changes.Description,
-			Hash:        n.Changes.Hash,
-		},
-	}
+	return &NewFreeform{}
 }
 
 func UpdateMarketFromProto(p *vegapb.ProposalTerms_UpdateMarket) *ProposalTermsUpdateMarket {
@@ -1319,12 +1330,17 @@ func (n UpdateMarket) DeepClone() *UpdateMarket {
 	return &cpy
 }
 
+type updateRiskParams interface {
+	updateRiskParamsIntoProto() interface{}
+	DeepClone() updateRiskParams
+}
+
 type UpdateMarketConfiguration struct {
 	Instrument                    *UpdateInstrumentConfiguration
 	Metadata                      []string
 	PriceMonitoringParameters     *PriceMonitoringParameters
 	LiquidityMonitoringParameters *LiquidityMonitoringParameters
-	RiskParameters                riskParams
+	RiskParameters                updateRiskParams
 }
 
 func (n UpdateMarketConfiguration) DeepClone() *UpdateMarketConfiguration {
@@ -1348,7 +1364,7 @@ func (n UpdateMarketConfiguration) DeepClone() *UpdateMarketConfiguration {
 }
 
 func (n UpdateMarketConfiguration) IntoProto() *vegapb.UpdateMarketConfiguration {
-	riskParams := n.RiskParameters.rpIntoProto()
+	riskParams := n.RiskParameters.updateRiskParamsIntoProto()
 	md := make([]string, 0, len(n.Metadata))
 	md = append(md, n.Metadata...)
 
@@ -1475,11 +1491,11 @@ type UpdateMarketConfigurationSimple struct {
 	Simple *SimpleModelParams
 }
 
-func (n UpdateMarketConfigurationSimple) rpIntoProto() interface{} {
+func (n UpdateMarketConfigurationSimple) updateRiskParamsIntoProto() interface{} {
 	return n.IntoProto()
 }
 
-func (n UpdateMarketConfigurationSimple) DeepClone() riskParams {
+func (n UpdateMarketConfigurationSimple) DeepClone() updateRiskParams {
 	if n.Simple == nil {
 		return &UpdateMarketConfigurationSimple{}
 	}
@@ -1498,11 +1514,11 @@ type UpdateMarketConfigurationLogNormal struct {
 	LogNormal *LogNormalRiskModel
 }
 
-func (n UpdateMarketConfigurationLogNormal) rpIntoProto() interface{} {
+func (n UpdateMarketConfigurationLogNormal) updateRiskParamsIntoProto() interface{} {
 	return n.IntoProto()
 }
 
-func (n UpdateMarketConfigurationLogNormal) DeepClone() riskParams {
+func (n UpdateMarketConfigurationLogNormal) DeepClone() updateRiskParams {
 	if n.LogNormal == nil {
 		return &UpdateMarketConfigurationLogNormal{}
 	}

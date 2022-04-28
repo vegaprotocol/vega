@@ -19,8 +19,7 @@ import (
 func TestOrderBufferOutputCount(t *testing.T) {
 	party1 := "party1"
 	now := time.Unix(10, 0)
-	closingAt := time.Unix(10000000000, 0)
-	tm := getTestMarket(t, now, closingAt, nil, nil)
+	tm := getTestMarket(t, now, nil, nil)
 
 	addAccount(t, tm, party1)
 
@@ -118,8 +117,7 @@ func TestOrderBufferOutputCount(t *testing.T) {
 func TestAmendCancelResubmit(t *testing.T) {
 	party1 := "party1"
 	now := time.Unix(10, 0)
-	closingAt := time.Unix(10000000000, 0)
-	tm := getTestMarket(t, now, closingAt, nil, nil)
+	tm := getTestMarket(t, now, nil, nil)
 
 	addAccount(t, tm, party1)
 
@@ -170,8 +168,7 @@ func TestCancelWithWrongPartyID(t *testing.T) {
 	party1 := "party1"
 	party2 := "party2"
 	now := time.Unix(10, 0)
-	closingAt := time.Unix(10000000000, 0)
-	tm := getTestMarket(t, now, closingAt, nil, nil)
+	tm := getTestMarket(t, now, nil, nil)
 
 	addAccount(t, tm, party1)
 	addAccount(t, tm, party2)
@@ -211,8 +208,7 @@ func TestMarkPriceUpdateAfterPartialFill(t *testing.T) {
 	auxParty := "auxParty"
 	auxParty2 := "auxParty2"
 	now := time.Unix(10, 0)
-	closingAt := time.Unix(10000000000, 0)
-	tm := getTestMarket(t, now, closingAt, nil, &types.AuctionDuration{
+	tm := getTestMarket(t, now, nil, &types.AuctionDuration{
 		Duration: 1,
 	})
 
@@ -294,8 +290,7 @@ func TestMarkPriceUpdateAfterPartialFill(t *testing.T) {
 func TestExpireCancelGTCOrder(t *testing.T) {
 	party1 := "party1"
 	now := time.Unix(10, 0)
-	closingAt := time.Unix(10000000000, 0)
-	tm := getTestMarket(t, now, closingAt, nil, nil)
+	tm := getTestMarket(t, now, nil, nil)
 
 	addAccount(t, tm, party1)
 
@@ -346,8 +341,7 @@ func TestAmendPartialFillCancelReplace(t *testing.T) {
 	auxParty := "auxParty"
 	auxParty2 := "auxParty2"
 	now := time.Unix(10, 0)
-	closingAt := time.Unix(10000000000, 0)
-	tm := getTestMarket(t, now, closingAt, nil, &types.AuctionDuration{
+	tm := getTestMarket(t, now, nil, &types.AuctionDuration{
 		Duration: 1,
 	})
 
@@ -437,8 +431,7 @@ func TestAmendWrongPartyID(t *testing.T) {
 	party1 := "party1"
 	party2 := "party2"
 	now := time.Unix(10, 0)
-	closingAt := time.Unix(10000000000, 0)
-	tm := getTestMarket(t, now, closingAt, nil, nil)
+	tm := getTestMarket(t, now, nil, nil)
 
 	addAccount(t, tm, party1)
 	addAccount(t, tm, party2)
@@ -478,8 +471,7 @@ func TestPartialFilledWashTrade(t *testing.T) {
 	auxParty := "auxParty"
 	auxParty2 := "auxParty2"
 	now := time.Unix(10, 0)
-	closingAt := time.Unix(10000000000, 0)
-	tm := getTestMarket(t, now, closingAt, nil, &types.AuctionDuration{
+	tm := getTestMarket(t, now, nil, &types.AuctionDuration{
 		Duration: 1,
 	})
 	ctx := vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
@@ -664,8 +656,7 @@ func sendOrder(t *testing.T, tm *testMarket, now *time.Time, orderType types.Ord
 
 func TestAmendToFill(t *testing.T) {
 	now := time.Unix(10, 0)
-	closingAt := time.Unix(10000000000, 0)
-	tm := getTestMarket(t, now, closingAt, nil, nil)
+	tm := getTestMarket(t, now, nil, nil)
 
 	addAccount(t, tm, "party1")
 	addAccount(t, tm, "party2")
@@ -680,8 +671,7 @@ func TestAmendToFill(t *testing.T) {
 
 func TestAmendToLosePriorityThenCancel(t *testing.T) {
 	now := time.Unix(10, 0)
-	closingAt := time.Unix(10000000000, 0)
-	tm := getTestMarket(t, now, closingAt, nil, nil)
+	tm := getTestMarket(t, now, nil, nil)
 
 	addAccount(t, tm, "party1")
 	addAccount(t, tm, "party2")
@@ -702,8 +692,7 @@ func TestAmendToLosePriorityThenCancel(t *testing.T) {
 func TestUnableToAmendGFAGFN(t *testing.T) {
 	now := time.Unix(10, 0)
 	closeSec := int64(10000000000)
-	closingAt := time.Unix(closeSec, 0)
-	tm := getTestMarket(t, now, closingAt, nil, &types.AuctionDuration{Duration: 1})
+	tm := getTestMarket(t, now, nil, &types.AuctionDuration{Duration: 1})
 	mainParty := "party1"
 	auxParty := "party2"
 	auxParty2 := "party22"
@@ -788,9 +777,7 @@ func TestMarketPeggedOrders(t *testing.T) {
 
 func testPeggedOrderRepriceCrashWhenNoLimitOrders(t *testing.T) {
 	now := time.Unix(10, 0)
-	closeSec := int64(10000000000)
-	closingAt := time.Unix(closeSec, 0)
-	tm := getTestMarket(t, now, closingAt, nil, nil)
+	tm := getTestMarket(t, now, nil, nil)
 	ctx := vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
 
 	addAccount(t, tm, "party1")
@@ -808,9 +795,7 @@ func testPeggedOrderRepriceCrashWhenNoLimitOrders(t *testing.T) {
 
 func testPeggedOrderUnpark(t *testing.T) {
 	now := time.Unix(10, 0)
-	closeSec := int64(10000000000)
-	closingAt := time.Unix(closeSec, 0)
-	tm := getTestMarket(t, now, closingAt, nil, &types.AuctionDuration{
+	tm := getTestMarket(t, now, nil, &types.AuctionDuration{
 		Duration: 1,
 	})
 	ctx := vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
@@ -855,9 +840,7 @@ func testPeggedOrderUnpark(t *testing.T) {
 
 func testPeggedOrderAmendToMoveReference(t *testing.T) {
 	now := time.Unix(10, 0)
-	closeSec := int64(10000000000)
-	closingAt := time.Unix(closeSec, 0)
-	tm := getTestMarket(t, now, closingAt, nil, &types.AuctionDuration{
+	tm := getTestMarket(t, now, nil, &types.AuctionDuration{
 		Duration: 1,
 	})
 	ctx := vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
@@ -900,9 +883,7 @@ func testPeggedOrderAmendToMoveReference(t *testing.T) {
 
 func testPeggedOrderFilledOrder(t *testing.T) {
 	now := time.Unix(10, 0)
-	closeSec := int64(10000000000)
-	closingAt := time.Unix(closeSec, 0)
-	tm := getTestMarket(t, now, closingAt, nil, &types.AuctionDuration{
+	tm := getTestMarket(t, now, nil, &types.AuctionDuration{
 		Duration: 1,
 	})
 	ctx := vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
@@ -948,9 +929,7 @@ func testPeggedOrderFilledOrder(t *testing.T) {
 
 func testParkedOrdersAreUnparkedWhenPossible(t *testing.T) {
 	now := time.Unix(10, 0)
-	closeSec := int64(10000000000)
-	closingAt := time.Unix(closeSec, 0)
-	tm := getTestMarket(t, now, closingAt, nil, &types.AuctionDuration{
+	tm := getTestMarket(t, now, nil, &types.AuctionDuration{
 		Duration: 1,
 	})
 	ctx := vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
@@ -1000,9 +979,7 @@ func testParkedOrdersAreUnparkedWhenPossible(t *testing.T) {
 func testPeggedOrdersLeavingAuction(t *testing.T) {
 	now := time.Unix(10, 0)
 	auctionClose := now.Add(101 * time.Second)
-	closeSec := int64(10000000000)
-	closingAt := time.Unix(closeSec, 0)
-	tm := getTestMarket(t, now, closingAt, nil, &types.AuctionDuration{
+	tm := getTestMarket(t, now, nil, &types.AuctionDuration{
 		Duration: 100,
 	})
 	ctx := vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
@@ -1040,9 +1017,7 @@ func testPeggedOrdersLeavingAuction(t *testing.T) {
 
 func testPeggedOrdersEnteringAuction(t *testing.T) {
 	now := time.Unix(10, 0)
-	closeSec := int64(10000000000)
-	closingAt := time.Unix(closeSec, 0)
-	tm := getTestMarket(t, now, closingAt, nil, &types.AuctionDuration{
+	tm := getTestMarket(t, now, nil, &types.AuctionDuration{
 		Duration: 100,
 	})
 	ctx := vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
@@ -1078,9 +1053,7 @@ func testPeggedOrdersEnteringAuction(t *testing.T) {
 
 func testPeggedOrderAddWithNoMarketPrice(t *testing.T) {
 	now := time.Unix(10, 0)
-	closeSec := int64(10000000000)
-	closingAt := time.Unix(closeSec, 0)
-	tm := getTestMarket(t, now, closingAt, nil, nil)
+	tm := getTestMarket(t, now, nil, nil)
 	ctx := vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
 
 	addAccount(t, tm, "party1")
@@ -1098,9 +1071,7 @@ func testPeggedOrderAddWithNoMarketPrice(t *testing.T) {
 
 func testPeggedOrderAdd(t *testing.T) {
 	now := time.Unix(10, 0)
-	closeSec := int64(10000000000)
-	closingAt := time.Unix(closeSec, 0)
-	tm := getTestMarket(t, now, closingAt, nil, &types.AuctionDuration{
+	tm := getTestMarket(t, now, nil, &types.AuctionDuration{
 		Duration: 1,
 	})
 	ctx := vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
@@ -1144,9 +1115,7 @@ func testPeggedOrderAdd(t *testing.T) {
 
 func testPeggedOrderWithReprice(t *testing.T) {
 	now := time.Unix(10, 0)
-	closeSec := int64(10000000000)
-	closingAt := time.Unix(closeSec, 0)
-	tm := getTestMarket(t, now, closingAt, nil, &types.AuctionDuration{
+	tm := getTestMarket(t, now, nil, &types.AuctionDuration{
 		Duration: 1,
 	})
 	ctx := vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
@@ -1193,9 +1162,7 @@ func testPeggedOrderWithReprice(t *testing.T) {
 
 func testPeggedOrderParkWhenInAuction(t *testing.T) {
 	now := time.Unix(10, 0)
-	closeSec := int64(10000000000)
-	closingAt := time.Unix(closeSec, 0)
-	tm := getTestMarket(t, now, closingAt, nil, nil)
+	tm := getTestMarket(t, now, nil, nil)
 	ctx := vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
 
 	addAccount(t, tm, "party1")
@@ -1217,7 +1184,7 @@ func testPeggedOrderUnparkAfterLeavingAuction(t *testing.T) {
 	now := time.Unix(10, 0)
 	closeSec := int64(10000000000)
 	closingAt := time.Unix(closeSec, 0)
-	tm := getTestMarket(t, now, closingAt, nil, nil)
+	tm := getTestMarket(t, now, nil, nil)
 	ctx := vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
 
 	addAccount(t, tm, "party1")
@@ -1251,9 +1218,7 @@ func testPeggedOrderUnparkAfterLeavingAuction(t *testing.T) {
 
 func testPeggedOrderTypes(t *testing.T) {
 	now := time.Unix(10, 0)
-	closeSec := int64(10000000000)
-	closingAt := time.Unix(closeSec, 0)
-	tm := getTestMarket(t, now, closingAt, nil, nil)
+	tm := getTestMarket(t, now, nil, nil)
 
 	addAccount(t, tm, "party1")
 
@@ -1273,9 +1238,7 @@ func testPeggedOrderTypes(t *testing.T) {
 
 func testPeggedOrderCancelParked(t *testing.T) {
 	now := time.Unix(10, 0)
-	closeSec := int64(10000000000)
-	closingAt := time.Unix(closeSec, 0)
-	tm := getTestMarket(t, now, closingAt, nil, nil)
+	tm := getTestMarket(t, now, nil, nil)
 
 	addAccount(t, tm, "party1")
 
@@ -1289,9 +1252,7 @@ func testPeggedOrderCancelParked(t *testing.T) {
 
 func testPeggedOrderTIFs(t *testing.T) {
 	now := time.Unix(10, 0)
-	closeSec := int64(10000000000)
-	closingAt := time.Unix(closeSec, 0)
-	tm := getTestMarket(t, now, closingAt, nil, nil)
+	tm := getTestMarket(t, now, nil, nil)
 
 	addAccount(t, tm, "party1")
 
@@ -1329,9 +1290,7 @@ func testPeggedOrderTIFs(t *testing.T) {
 
 func testPeggedOrderBuys(t *testing.T) {
 	now := time.Unix(10, 0)
-	closeSec := int64(10000000000)
-	closingAt := time.Unix(closeSec, 0)
-	tm := getTestMarket(t, now, closingAt, nil, nil)
+	tm := getTestMarket(t, now, nil, nil)
 
 	addAccount(t, tm, "party1")
 
@@ -1378,9 +1337,7 @@ func testPeggedOrderBuys(t *testing.T) {
 
 func testPeggedOrderSells(t *testing.T) {
 	now := time.Unix(10, 0)
-	closeSec := int64(10000000000)
-	closingAt := time.Unix(closeSec, 0)
-	tm := getTestMarket(t, now, closingAt, nil, nil)
+	tm := getTestMarket(t, now, nil, nil)
 
 	addAccount(t, tm, "party1")
 
@@ -1427,9 +1384,7 @@ func testPeggedOrderSells(t *testing.T) {
 
 func testPeggedOrderParkWhenPriceBelowZero(t *testing.T) {
 	now := time.Unix(10, 0)
-	closeSec := int64(10000000000)
-	closingAt := time.Unix(closeSec, 0)
-	tm := getTestMarket(t, now, closingAt, nil, nil)
+	tm := getTestMarket(t, now, nil, nil)
 	ctx := vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
 
 	for _, acc := range []string{"buyer", "seller", "pegged"} {
@@ -1455,9 +1410,7 @@ func testPeggedOrderParkWhenPriceBelowZero(t *testing.T) {
 
 func testPeggedOrderParkWhenPriceRepricesBelowZero(t *testing.T) {
 	now := time.Unix(10, 0)
-	closeSec := int64(10000000000)
-	closingAt := time.Unix(closeSec, 0)
-	tm := getTestMarket(t, now, closingAt, nil, nil)
+	tm := getTestMarket(t, now, nil, nil)
 	ctx := vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
 
 	for _, acc := range []string{"buyer", "seller", "pegged"} {
@@ -1524,9 +1477,7 @@ func testPeggedOrderParkWhenPriceRepricesBelowZero(t *testing.T) {
 
 func testPeggedOrderParkCancelAll(t *testing.T) {
 	now := time.Unix(10, 0)
-	closeSec := int64(10000000000)
-	closingAt := time.Unix(closeSec, 0)
-	tm := getTestMarket(t, now, closingAt, nil, nil)
+	tm := getTestMarket(t, now, nil, nil)
 	ctx := vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
 
 	addAccount(t, tm, "user")
@@ -1559,9 +1510,7 @@ func testPeggedOrderExpiring2(t *testing.T) {
 	now := time.Unix(10, 0)
 	expire := now.Add(time.Second * 100)
 	afterexpire := now.Add(time.Second * 200)
-	closeSec := int64(10000000000)
-	closingAt := time.Unix(closeSec, 0)
-	tm := getTestMarket(t, now, closingAt, nil, nil)
+	tm := getTestMarket(t, now, nil, nil)
 	ctx := vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
 
 	addAccount(t, tm, "user")
@@ -1602,9 +1551,7 @@ func testPeggedOrderExpiring2(t *testing.T) {
 
 func testPeggedOrderOutputMessages(t *testing.T) {
 	now := time.Unix(10, 0)
-	closeSec := int64(10000000000)
-	closingAt := time.Unix(closeSec, 0)
-	tm := getTestMarket(t, now, closingAt, nil, &types.AuctionDuration{
+	tm := getTestMarket(t, now, nil, &types.AuctionDuration{
 		Duration: 1,
 	})
 	ctx := vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
@@ -1687,9 +1634,7 @@ func testPeggedOrderOutputMessages(t *testing.T) {
 
 func testPeggedOrderOutputMessages2(t *testing.T) {
 	now := time.Unix(10, 0)
-	closeSec := int64(10000000000)
-	closingAt := time.Unix(closeSec, 0)
-	tm := getTestMarket(t, now, closingAt, nil, &types.AuctionDuration{
+	tm := getTestMarket(t, now, nil, &types.AuctionDuration{
 		Duration: 1,
 	})
 	ctx := vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
@@ -1761,8 +1706,6 @@ func testPeggedOrderOutputMessages2(t *testing.T) {
 func testPeggedOrderRepricing(t *testing.T) {
 	// Create the market
 	now := time.Unix(10, 0)
-	closeSec := int64(10000000000)
-	closingAt := time.Unix(closeSec, 0)
 
 	var (
 		buyPrice  uint64 = 90
@@ -1813,7 +1756,7 @@ func testPeggedOrderRepricing(t *testing.T) {
 	for _, test := range tests {
 		t.Run("", func(t *testing.T) {
 			// Create market
-			tm := getTestMarket(t, now, closingAt, nil, &types.AuctionDuration{
+			tm := getTestMarket(t, now, nil, &types.AuctionDuration{
 				Duration: 1,
 			})
 			ctx := vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
@@ -1860,10 +1803,8 @@ func testPeggedOrderRepricing(t *testing.T) {
 func testPeggedOrderExpiring(t *testing.T) {
 	// Create the market
 	now := time.Unix(10, 0)
-	closeSec := int64(10000000000)
-	closingAt := time.Unix(closeSec, 0)
 
-	tm := getTestMarket(t, now, closingAt, nil, nil)
+	tm := getTestMarket(t, now, nil, nil)
 	addAccount(t, tm, "party")
 
 	// Create buy and sell orders
@@ -1914,9 +1855,7 @@ func TestPeggedOrdersAmends(t *testing.T) {
 // in createdAt order. Test this by creating a pegged order and repricing to make it lose it's time order.
 func testPeggedOrderCanDeleteAfterLostPriority(t *testing.T) {
 	now := time.Unix(10, 0)
-	closeSec := int64(10000000000)
-	closingAt := time.Unix(closeSec, 0)
-	tm := getTestMarket(t, now, closingAt, nil, nil)
+	tm := getTestMarket(t, now, nil, nil)
 
 	addAccount(t, tm, "party1")
 
@@ -1950,9 +1889,7 @@ func testPeggedOrderCanDeleteAfterLostPriority(t *testing.T) {
 // order to be unparkable. If so we will have to put it back on the live book.
 func testPeggedOrderAmendParkedToLive(t *testing.T) {
 	now := time.Unix(10, 0)
-	closeSec := int64(10000000000)
-	closingAt := time.Unix(closeSec, 0)
-	tm := getTestMarket(t, now, closingAt, nil, &types.AuctionDuration{
+	tm := getTestMarket(t, now, nil, &types.AuctionDuration{
 		Duration: 1,
 	})
 	ctx := vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
@@ -2007,9 +1944,7 @@ func testPeggedOrderAmendParkedToLive(t *testing.T) {
 // Amend a parked order but the order remains parked.
 func testPeggedOrderAmendParkedStayParked(t *testing.T) {
 	now := time.Unix(10, 0)
-	closeSec := int64(10000000000)
-	closingAt := time.Unix(closeSec, 0)
-	tm := getTestMarket(t, now, closingAt, nil, nil)
+	tm := getTestMarket(t, now, nil, nil)
 	ctx := vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
 
 	addAccount(t, tm, "party1")
@@ -2044,9 +1979,7 @@ func testPeggedOrderAmendParkedStayParked(t *testing.T) {
 // Take a valid live order and force it to be parked by amending it.
 func testPeggedOrderAmendForcesPark(t *testing.T) {
 	now := time.Unix(10, 0)
-	closeSec := int64(10000000000)
-	closingAt := time.Unix(closeSec, 0)
-	tm := getTestMarket(t, now, closingAt, nil, nil)
+	tm := getTestMarket(t, now, nil, nil)
 	ctx := vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
 
 	addAccount(t, tm, "party1")
@@ -2080,8 +2013,7 @@ func testPeggedOrderAmendForcesPark(t *testing.T) {
 func testPeggedOrderAmendDuringAuction(t *testing.T) {
 	now := time.Unix(10, 0)
 	closeSec := int64(10000000000)
-	closingAt := time.Unix(closeSec, 0)
-	tm := getTestMarket(t, now, closingAt, nil, nil)
+	tm := getTestMarket(t, now, nil, nil)
 	ctx := vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
 
 	addAccount(t, tm, "party1")
@@ -2118,9 +2050,7 @@ func testPeggedOrderAmendDuringAuction(t *testing.T) {
 
 func testPeggedOrderAmendReference(t *testing.T) {
 	now := time.Unix(10, 0)
-	closeSec := int64(10000000000)
-	closingAt := time.Unix(closeSec, 0)
-	tm := getTestMarket(t, now, closingAt, nil, &types.AuctionDuration{
+	tm := getTestMarket(t, now, nil, &types.AuctionDuration{
 		Duration: 1,
 	})
 	ctx := vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
@@ -2172,8 +2102,7 @@ func testPeggedOrderAmendReference(t *testing.T) {
 func testPeggedOrderAmendReferenceInAuction(t *testing.T) {
 	now := time.Unix(10, 0)
 	closeSec := int64(10000000000)
-	closingAt := time.Unix(closeSec, 0)
-	tm := getTestMarket(t, now, closingAt, nil, nil)
+	tm := getTestMarket(t, now, nil, nil)
 	ctx := vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
 
 	addAccount(t, tm, "party1")
@@ -2212,8 +2141,7 @@ func testPeggedOrderAmendReferenceInAuction(t *testing.T) {
 func testPeggedOrderAmendMultipleInAuction(t *testing.T) {
 	now := time.Unix(10, 0)
 	closeSec := int64(10000000000)
-	closingAt := time.Unix(closeSec, 0)
-	tm := getTestMarket(t, now, closingAt, nil, nil)
+	tm := getTestMarket(t, now, nil, nil)
 	ctx := vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
 
 	addAccount(t, tm, "party1")
@@ -2255,9 +2183,7 @@ func testPeggedOrderAmendMultipleInAuction(t *testing.T) {
 
 func testPeggedOrderAmendMultiple(t *testing.T) {
 	now := time.Unix(10, 0)
-	closeSec := int64(10000000000)
-	closingAt := time.Unix(closeSec, 0)
-	tm := getTestMarket(t, now, closingAt, nil, &types.AuctionDuration{
+	tm := getTestMarket(t, now, nil, &types.AuctionDuration{
 		Duration: 1,
 	})
 	ctx := vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
@@ -2313,9 +2239,7 @@ func testPeggedOrderAmendMultiple(t *testing.T) {
 
 func testPeggedOrderMidPriceCalc(t *testing.T) {
 	now := time.Unix(10, 0)
-	closeSec := int64(10000000000)
-	closingAt := time.Unix(closeSec, 0)
-	tm := getTestMarket(t, now, closingAt, nil, &types.AuctionDuration{
+	tm := getTestMarket(t, now, nil, &types.AuctionDuration{
 		Duration: 1,
 	})
 	ctx := vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
@@ -2371,7 +2295,7 @@ func TestPeggedOrderUnparkAfterLeavingAuctionWithNoFunds2772(t *testing.T) {
 	now := time.Unix(10, 0)
 	closeSec := int64(10000000000)
 	closingAt := time.Unix(closeSec, 0)
-	tm := getTestMarket(t, now, closingAt, nil, nil)
+	tm := getTestMarket(t, now, nil, nil)
 	ctx := vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
 
 	addAccount(t, tm, "party1")
@@ -2437,8 +2361,7 @@ func TestPeggedOrderUnparkAfterLeavingAuctionWithNoFunds2772(t *testing.T) {
 // segv when an GTT order is cancelled, then expires.
 func TestOrderBookSimple_CancelGTTOrderThenRunExpiration(t *testing.T) {
 	now := time.Unix(5, 0)
-	closingAt := time.Unix(10000000000, 0)
-	tm := getTestMarket(t, now, closingAt, nil, nil)
+	tm := getTestMarket(t, now, nil, nil)
 	ctx := vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
 	defer tm.ctrl.Finish()
 
@@ -2464,8 +2387,7 @@ func TestOrderBookSimple_CancelGTTOrderThenRunExpiration(t *testing.T) {
 
 func TestGTTExpiredNotFilled(t *testing.T) {
 	now := time.Unix(5, 0)
-	closingAt := time.Unix(10000000000, 0)
-	tm := getTestMarket(t, now, closingAt, nil, nil)
+	tm := getTestMarket(t, now, nil, nil)
 	ctx := vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
 	defer tm.ctrl.Finish()
 
@@ -2487,8 +2409,7 @@ func TestGTTExpiredNotFilled(t *testing.T) {
 
 func TestGTTExpiredPartiallyFilled(t *testing.T) {
 	now := time.Unix(5, 0)
-	closingAt := time.Unix(10000000000, 0)
-	tm := getTestMarket(t, now, closingAt, nil, &types.AuctionDuration{
+	tm := getTestMarket(t, now, nil, &types.AuctionDuration{
 		Duration: 1,
 	})
 	defer tm.ctrl.Finish()
@@ -2556,8 +2477,7 @@ func TestGTTExpiredPartiallyFilled(t *testing.T) {
 
 func TestOrderBook_RemoveExpiredOrders(t *testing.T) {
 	now := time.Unix(5, 0)
-	closingAt := time.Unix(10000000000, 0)
-	tm := getTestMarket(t, now, closingAt, nil, nil)
+	tm := getTestMarket(t, now, nil, nil)
 	ctx := vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
 	defer tm.ctrl.Finish()
 
@@ -2630,10 +2550,9 @@ func TestOrderBook_RemoveExpiredOrders(t *testing.T) {
 
 func Test2965EnsureLPOrdersAreNotCancelleableWithCancelAll(t *testing.T) {
 	now := time.Unix(10, 0)
-	closingAt := time.Unix(1000000000, 0)
 	ctx := vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
 
-	mktCfg := getMarket(closingAt, defaultPriceMonitorSettings, &types.AuctionDuration{
+	mktCfg := getMarket(defaultPriceMonitorSettings, &types.AuctionDuration{
 		Duration: 10000,
 	})
 	mktCfg.Fees = &types.Fees{
@@ -2843,8 +2762,7 @@ func TestMissingLP(t *testing.T) {
 	party3 := "party3"
 	auxParty, auxParty2 := "auxParty", "auxParty2"
 	now := time.Unix(10, 0)
-	closingAt := time.Unix(10000000000, 0)
-	tm := getTestMarket(t, now, closingAt, nil, &types.AuctionDuration{
+	tm := getTestMarket(t, now, nil, &types.AuctionDuration{
 		Duration: 1,
 	})
 	ctx := vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())

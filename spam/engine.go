@@ -183,7 +183,7 @@ func (e *Engine) PreBlockAccept(tx abci.Tx) (bool, error) {
 		return true, nil
 	}
 	if e.log.GetLevel() <= logging.DebugLevel {
-		e.log.Debug("Spam protection PreBlockAccept called for policy", logging.String("command", string(command)))
+		e.log.Debug("Spam protection PreBlockAccept called for policy", logging.String("command", command.String()))
 	}
 	return e.transactionTypeToPolicy[command].PreBlockAccept(tx)
 }
@@ -196,7 +196,7 @@ func (e *Engine) PostBlockAccept(tx abci.Tx) (bool, error) {
 		return true, nil
 	}
 	if e.log.GetLevel() <= logging.DebugLevel {
-		e.log.Debug("Spam protection PostBlockAccept called for policy", logging.String("command", string(command)))
+		e.log.Debug("Spam protection PostBlockAccept called for policy", logging.String("command", command.String()))
 	}
 	return e.transactionTypeToPolicy[command].PostBlockAccept(tx)
 }

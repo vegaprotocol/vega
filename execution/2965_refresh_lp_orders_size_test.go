@@ -19,11 +19,10 @@ import (
 
 func TestRefreshLiquidityProvisionOrdersSizes(t *testing.T) {
 	now := time.Unix(10, 0)
-	closingAt := time.Unix(1000000000, 0)
 	ctx := context.Background()
 	ctx = vegacontext.WithTraceID(ctx, vgcrypto.RandomHash())
 
-	mktCfg := getMarket(closingAt, defaultPriceMonitorSettings, &types.AuctionDuration{
+	mktCfg := getMarket(defaultPriceMonitorSettings, &types.AuctionDuration{
 		Duration: 10000,
 	})
 	mktCfg.Fees = &types.Fees{
@@ -207,7 +206,7 @@ func TestRefreshLiquidityProvisionOrdersSizes(t *testing.T) {
 			switch evt := e.(type) {
 			case *events.Order:
 				if evt.Order().PartyId == "party-2" &&
-					evt.Order().Size == 534 { //"V0000000000-0000000010" {
+					evt.Order().Size == 534 { // "V0000000000-0000000010" {
 					found = append(found, mustOrderFromProto(evt.Order()))
 				}
 			}
@@ -252,12 +251,11 @@ func TestRefreshLiquidityProvisionOrdersSizes(t *testing.T) {
 
 func TestRefreshLiquidityProvisionOrdersSizesCrashOnSubmitOrder(t *testing.T) {
 	now := time.Unix(10, 0)
-	closingAt := time.Unix(1000000000, 0)
 
 	ctx := vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
 
 	auctionEnd := now.Add(10001 * time.Second)
-	mktCfg := getMarket(closingAt, defaultPriceMonitorSettings, &types.AuctionDuration{
+	mktCfg := getMarket(defaultPriceMonitorSettings, &types.AuctionDuration{
 		Duration: 10000,
 	})
 	mktCfg.Fees = &types.Fees{
@@ -319,11 +317,10 @@ func TestRefreshLiquidityProvisionOrdersSizesCrashOnSubmitOrder(t *testing.T) {
 
 func TestCommitmentIsDeployed(t *testing.T) {
 	now := time.Unix(10, 0)
-	closingAt := time.Unix(1000000000, 0)
 	ctx := vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
 
 	auctionEnd := now.Add(10001 * time.Second)
-	mktCfg := getMarket(closingAt, defaultPriceMonitorSettings, &types.AuctionDuration{
+	mktCfg := getMarket(defaultPriceMonitorSettings, &types.AuctionDuration{
 		Duration: 10000,
 	})
 	mktCfg.Fees = &types.Fees{

@@ -269,6 +269,11 @@ func getDummyData() *types.Chunk {
 									},
 								},
 							},
+							Rationale: &types.ProposalRationale{
+								Description: "some description",
+								Hash:        "0xdeadbeef",
+								URL:         "example.com",
+							},
 						},
 						Yes: []*types.Vote{
 							{
@@ -319,6 +324,11 @@ func getDummyData() *types.Chunk {
 										},
 									},
 								},
+							},
+							Rationale: &types.ProposalRationale{
+								Description: "some description",
+								Hash:        "0xdeadbeef",
+								URL:         "example.com",
 							},
 						},
 					},

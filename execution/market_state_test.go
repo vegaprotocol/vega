@@ -27,11 +27,10 @@ func TestMarketStates(t *testing.T) {
 
 func testInitialStateIsProposed(t *testing.T) {
 	now := time.Unix(10, 0)
-	closingAt := time.Unix(2000, 0)
 	auctionDuration := &types.AuctionDuration{
 		Duration: 30, // seconds
 	}
-	tm := getTestMarket2(t, now, closingAt, nil, auctionDuration, false)
+	tm := getTestMarket2(t, now, nil, auctionDuration, false)
 	defer tm.ctrl.Finish()
 
 	assert.Equal(t, types.MarketStateProposed, tm.market.State())
@@ -39,13 +38,12 @@ func testInitialStateIsProposed(t *testing.T) {
 
 func testCannotDoOrderStuffInProposedState(t *testing.T) {
 	now := time.Unix(10, 0)
-	closingAt := time.Unix(2000, 0)
 	auctionDuration := &types.AuctionDuration{
 		Duration: 30, // seconds
 	}
 	ctx := context.Background()
 
-	tm := getTestMarket2(t, now, closingAt, nil, auctionDuration, false)
+	tm := getTestMarket2(t, now, nil, auctionDuration, false)
 	defer tm.ctrl.Finish()
 	assert.Equal(t, types.MarketStateProposed, tm.market.State())
 
@@ -99,11 +97,10 @@ func testCannotDoOrderStuffInProposedState(t *testing.T) {
 
 func testCanMoveFromProposedToRejectedState(t *testing.T) {
 	now := time.Unix(10, 0)
-	closingAt := time.Unix(2000, 0)
 	auctionDuration := &types.AuctionDuration{
 		Duration: 30, // seconds
 	}
-	tm := getTestMarket2(t, now, closingAt, nil, auctionDuration, false)
+	tm := getTestMarket2(t, now, nil, auctionDuration, false)
 	defer tm.ctrl.Finish()
 
 	assert.Equal(t, types.MarketStateProposed, tm.market.State())
@@ -115,11 +112,10 @@ func testCanMoveFromProposedToRejectedState(t *testing.T) {
 
 func testCanMoveFromProposedToPendingState(t *testing.T) {
 	now := time.Unix(10, 0)
-	closingAt := time.Unix(2000, 0)
 	auctionDuration := &types.AuctionDuration{
 		Duration: 30, // seconds
 	}
-	tm := getTestMarket2(t, now, closingAt, nil, auctionDuration, false)
+	tm := getTestMarket2(t, now, nil, auctionDuration, false)
 	defer tm.ctrl.Finish()
 
 	assert.Equal(t, types.MarketStateProposed, tm.market.State())
@@ -131,11 +127,10 @@ func testCanMoveFromProposedToPendingState(t *testing.T) {
 
 func testCanMoveFromPendingToActiveState(t *testing.T) {
 	now := time.Unix(10, 0)
-	closingAt := time.Unix(2000, 0)
 	auctionDuration := &types.AuctionDuration{
 		Duration: 30, // seconds
 	}
-	tm := getTestMarket2(t, now, closingAt, nil, auctionDuration, false)
+	tm := getTestMarket2(t, now, nil, auctionDuration, false)
 	defer tm.ctrl.Finish()
 
 	assert.Equal(t, types.MarketStateProposed, tm.market.State())
@@ -166,11 +161,10 @@ func testCanMoveFromPendingToActiveState(t *testing.T) {
 
 func testCanPlaceOrderInActiveState(t *testing.T) {
 	now := time.Unix(10, 0)
-	closingAt := time.Unix(2000, 0)
 	auctionDuration := &types.AuctionDuration{
 		Duration: 30, // seconds
 	}
-	tm := getTestMarket2(t, now, closingAt, nil, auctionDuration, false)
+	tm := getTestMarket2(t, now, nil, auctionDuration, false)
 	defer tm.ctrl.Finish()
 
 	assert.Equal(t, types.MarketStateProposed, tm.market.State())

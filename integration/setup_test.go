@@ -105,6 +105,24 @@ func newExecutionTestSetup() *executionTestSetup {
 	}
 	execsetup.collateralEngine.EnableAsset(context.Background(), vegaAsset)
 
+	usdt := types.Asset{
+		ID: "USDT",
+		Details: &types.AssetDetails{
+			Name:   "USDT",
+			Symbol: "USDT",
+		},
+	}
+	execsetup.collateralEngine.EnableAsset(context.Background(), usdt)
+
+	usdc := types.Asset{
+		ID: "USDC",
+		Details: &types.AssetDetails{
+			Name:   "USDC",
+			Symbol: "USDC",
+		},
+	}
+	execsetup.collateralEngine.EnableAsset(context.Background(), usdc)
+
 	execsetup.epochEngine = epochtime.NewService(execsetup.log, epochtime.NewDefaultConfig(), execsetup.timeService, execsetup.broker)
 	execsetup.topology = stubs.NewTopologyStub("nodeID", execsetup.broker)
 

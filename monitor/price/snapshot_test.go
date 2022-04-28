@@ -100,8 +100,9 @@ func TestChangedState(t *testing.T) {
 	now := time.Now()
 
 	for i := 0; i < 10; i++ {
-		err := pm1.CheckPrice(context.Background(), as, num.NewUint(uint64(100+i)), uint64(100+i), now, true)
-		now.Add(time.Minute * 1)
+		pm1.OnTimeUpdate(now)
+		err := pm1.CheckPrice(context.Background(), as, num.NewUint(uint64(100+i)), uint64(100+i), true)
+		now = now.Add(time.Minute * 1)
 		assert.NoError(t, err)
 	}
 
@@ -114,6 +115,8 @@ func TestChangedState(t *testing.T) {
 
 	// Now try reloading the state
 	state := pm1.GetState()
+	assert.Len(t, state.PricesNow, 1)
+	assert.Len(t, state.PricesPast, 9)
 
 	riskModel, settings := createPriceMonitorDeps(t, ctrl)
 	statevar := mocks.NewMockStateVarEngine(ctrl)
@@ -123,6 +126,9 @@ func TestChangedState(t *testing.T) {
 	require.NotNil(t, pm2)
 
 	hash3 := getHash(pm2)
-
 	assert.Equal(t, hash2, hash3)
+
+	state2 := pm1.GetState()
+	assert.Len(t, state2.PricesNow, 1)
+	assert.Len(t, state2.PricesPast, 9)
 }

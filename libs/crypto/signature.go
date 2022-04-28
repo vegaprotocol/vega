@@ -11,6 +11,7 @@ import (
 var (
 	ErrAddressesDoesNotMatch = errors.New("addresses does not match")
 	ErrInvalidSignature      = errors.New("invalid signature")
+	ErrEthInvalidSignature   = errors.New("invalid ethereum signature")
 )
 
 func VerifyEthereumSignature(message, signature []byte, hexAddress string) error {
@@ -26,7 +27,7 @@ func VerifyEthereumSignature(message, signature []byte, hexAddress string) error
 	// verify the signature
 	signatureNoID := signature[:len(signature)-1]
 	if !ecrypto.VerifySignature(ecrypto.CompressPubkey(pubkey), hash, signatureNoID) {
-		return ErrInvalidSignature
+		return ErrEthInvalidSignature
 	}
 
 	// ensure the signer is the expected ethereum wallet

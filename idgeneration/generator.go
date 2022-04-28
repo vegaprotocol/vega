@@ -2,7 +2,6 @@ package idgeneration
 
 import (
 	"encoding/hex"
-	"strings"
 
 	"code.vegaprotocol.io/vega/libs/crypto"
 )
@@ -29,7 +28,7 @@ func (i *idGenerator) NextID() string {
 		panic("id generator instance is not initialised")
 	}
 
-	nextId := strings.ToUpper(hex.EncodeToString(i.nextIdBytes))
+	nextId := hex.EncodeToString(i.nextIdBytes)
 	i.nextIdBytes = crypto.Hash(i.nextIdBytes)
 	return nextId
 }
