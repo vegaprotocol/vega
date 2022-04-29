@@ -710,7 +710,9 @@ func (app *App) OnCheckTxSpam(tx abci.Tx) tmtypes.ResponseCheckTx {
 	// verify proof of work and replay
 	if app.pow != nil {
 		if err := app.pow.CheckTx(tx); err != nil {
-			app.log.Error(err.Error())
+			if app.log.IsDebug() {
+				app.log.Debug(err.Error())
+			}
 			resp.Code = abci.AbciSpamError
 			resp.Data = []byte(err.Error())
 			return resp
