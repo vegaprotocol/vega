@@ -55,8 +55,6 @@ cloud.google.com/go/storage v1.14.0/go.mod h1:GrKmX003DSIwi9o29oFT7YDnHYwZoctc3f
 code.vegaprotocol.io/oracles-relay v0.0.0-20210201140234-f047e1bf6df3 h1:/A09Q3EEiJF+/WiJfKiqzp1zvcWphiYR8lf2N/JSJBU=
 code.vegaprotocol.io/oracles-relay v0.0.0-20210201140234-f047e1bf6df3/go.mod h1:1Gwg5D0PbFEE92Vip8EU0/+n80Kx3GwlGvP850S0op8=
 code.vegaprotocol.io/protos v0.50.4-0.20220425134652-15de765d21c8/go.mod h1:4BqwDw6jhc/mnwbXq8ZFUtYBFCnk8tBW6zuPsBt8OrQ=
-code.vegaprotocol.io/protos v0.50.4-0.20220428084341-674330157f39 h1:4qH36SNkkerGsc2TsmDi4fwuvAvBF0rqwCKC6cXuHRE=
-code.vegaprotocol.io/protos v0.50.4-0.20220428084341-674330157f39/go.mod h1:4BqwDw6jhc/mnwbXq8ZFUtYBFCnk8tBW6zuPsBt8OrQ=
 code.vegaprotocol.io/protos v0.50.4-0.20220428192224-eedc5d5fe8c5 h1:bzGu+83PO18J6eJUUWBo9xZoDJ8NV3I3diMpHSZ9Ijg=
 code.vegaprotocol.io/protos v0.50.4-0.20220428192224-eedc5d5fe8c5/go.mod h1:4BqwDw6jhc/mnwbXq8ZFUtYBFCnk8tBW6zuPsBt8OrQ=
 code.vegaprotocol.io/quant v0.2.5 h1:8h+TTHdz1LCO4oGXt8mbowXszd8CQP1MHlJOkthUp1E=
