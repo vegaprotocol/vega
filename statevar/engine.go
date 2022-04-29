@@ -198,7 +198,9 @@ func (e *Engine) OnTimeTick(ctx context.Context, t time.Time) {
 // ReadyForTimeTrigger is called when the market is ready for time triggered event and sets the next time to run for all state variables of that market that are time triggered.
 // This is expected to be called at the end of the opening auction for the market.
 func (e *Engine) ReadyForTimeTrigger(asset, mktID string) {
-	e.log.Info("ReadyForTimeTrigger", logging.String("asset", asset), logging.String("market-id", mktID))
+	if e.log.IsDebug() {
+		e.log.Debug("ReadyForTimeTrigger", logging.String("asset", asset), logging.String("market-id", mktID))
+	}
 	if _, ok := e.readyForTimeTrigger[asset+mktID]; !ok {
 		e.readyForTimeTrigger[asset+mktID] = struct{}{}
 		for _, sv := range e.eventTypeToStateVar[statevar.StateVarEventTypeTimeTrigger] {
@@ -222,7 +224,9 @@ func (e *Engine) RegisterStateVariable(asset, market, name string, converter sta
 		return ErrNameAlreadyExist
 	}
 
-	e.log.Info("added state variable", logging.String("id", ID), logging.String("asset", asset), logging.String("market", market))
+	if e.log.IsDebug() {
+		e.log.Debug("added state variable", logging.String("id", ID), logging.String("asset", asset), logging.String("market", market))
+	}
 
 	sv := NewStateVar(e.log, e.broker, e.top, e.cmd, e.currentTime, ID, asset, market, converter, startCalculation, trigger, result)
 	e.stateVars[ID] = sv
@@ -238,7 +242,9 @@ func (e *Engine) RegisterStateVariable(asset, market, name string, converter sta
 // RemoveTimeTriggers when a market is settled it no longer exists in the execution engine, and so we don't need to keep setting off
 // the time triggered events for it anymore.
 func (e *Engine) RemoveTimeTriggers(asset, market string) {
-	e.log.Info("removing time triggers for", logging.String("market", market))
+	if e.log.IsDebug() {
+		e.log.Debug("removing time triggers for", logging.String("market", market))
+	}
 	prefix := e.generateID(asset, market, "")
 
 	toRemove := make([]string, 0)
@@ -258,7 +264,9 @@ func (e *Engine) RemoveTimeTriggers(asset, market string) {
 
 // ProposedValueReceived is called when we receive a result from another node with a proposed result for the calculation triggered by an event.
 func (e *Engine) ProposedValueReceived(ctx context.Context, ID, nodeID, eventID string, bundle *statevar.KeyValueBundle) error {
-	e.log.Info("bundle received", logging.String("id", ID), logging.String("from-node", nodeID), logging.String("event-id", eventID))
+	if e.log.IsDebug() {
+		e.log.Debug("bundle received", logging.String("id", ID), logging.String("from-node", nodeID), logging.String("event-id", eventID))
+	}
 
 	if sv, ok := e.stateVars[ID]; ok {
 		sv.bundleReceived(ctx, e.currentTime, nodeID, eventID, bundle, e.rng, e.validatorVotesRequired)
