@@ -55,7 +55,6 @@ const (
 
 func Test_MarketData(t *testing.T) {
 	t.Run("Add should insert a valid market data record", shouldInsertAValidMarketDataRecord)
-	t.Run("Add should return an error if the vega block does not exist", shouldErrorIfNoVegaBlock)
 	t.Run("Get should return the latest market data record for a given market", getLatestMarketData)
 	t.Run("GetBetweenDatesByID should return the all the market data between dates given for the specified market", getAllForMarketBetweenDates)
 	t.Run("GetFromDateByID should return all market data for a given market with date greater than or equal to the given date", getForMarketFromDate)
@@ -102,44 +101,6 @@ func shouldInsertAValidMarketDataRecord(t *testing.T) {
 	err = conn.QueryRow(ctx, `select count(*) from market_data`).Scan(&rowCount)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, rowCount)
-}
-
-func shouldErrorIfNoVegaBlock(t *testing.T) {
-	md := sqlstore.NewMarketData(connectionSource)
-
-	DeleteEverything()
-
-	config := sqlstore.NewDefaultConfig()
-	config.ConnectionConfig.Port = testDBPort
-
-	connStr := connectionString(config.ConnectionConfig)
-
-	testTimeout := time.Second * 10
-	ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
-	defer cancel()
-
-	conn, err := pgx.Connect(ctx, connStr)
-	require.NoError(t, err)
-	var rowCount int
-
-	err = conn.QueryRow(ctx, `select count(*) from market_data`).Scan(&rowCount)
-	require.NoError(t, err)
-	assert.Equal(t, 0, rowCount)
-
-	err = md.Add(&entities.MarketData{
-		Market:            entities.NewMarketID("deadbeef"),
-		MarketTradingMode: "TRADING_MODE_MONITORING_AUCTION",
-		AuctionTrigger:    "AUCTION_TRIGGER_LIQUIDITY",
-		ExtensionTrigger:  "AUCTION_TRIGGER_UNSPECIFIED",
-		VegaTime:          time.Now().Truncate(time.Microsecond),
-	})
-	require.NoError(t, err)
-	err = md.OnTimeUpdateEvent(context.Background())
-	require.Error(t, err)
-
-	err = conn.QueryRow(ctx, `select count(*) from market_data`).Scan(&rowCount)
-	require.NoError(t, err)
-	assert.Equal(t, 0, rowCount)
 }
 
 func connectionString(config sqlstore.ConnectionConfig) string {
