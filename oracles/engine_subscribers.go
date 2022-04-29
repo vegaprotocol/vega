@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	oraclespb "code.vegaprotocol.io/protos/vega/oracles/v1"
+	"code.vegaprotocol.io/vega/types"
 )
 
 // OnMatchedOracleData describes the callback function used to received.
@@ -25,7 +25,7 @@ type SubscriptionID uint64
 // subscription.
 type updatedSubscription struct {
 	subscriptionID  SubscriptionID
-	specProto       oraclespb.OracleSpec
+	spec            types.OracleSpec
 	specActivatedAt time.Time
 }
 
@@ -101,7 +101,7 @@ func (s *specSubscriptions) addSubscriber(spec OracleSpec, cb OnMatchedOracleDat
 	return updatedSubscription{
 		subscriptionID:  subscriptionID,
 		specActivatedAt: subscription.specActivatedAt,
-		specProto:       spec.Proto,
+		spec:            *spec.OriginalSpec,
 	}
 }
 
@@ -124,7 +124,7 @@ func (s *specSubscriptions) removeSubscriber(subscriptionID SubscriptionID) (upd
 	return updatedSubscription{
 		subscriptionID:  subscriptionID,
 		specActivatedAt: subscription.specActivatedAt,
-		specProto:       subscription.spec.Proto,
+		spec:            *subscription.spec.OriginalSpec,
 	}, hasNoMoreSubscriber
 }
 

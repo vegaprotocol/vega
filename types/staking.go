@@ -42,7 +42,11 @@ func (s *StakeTotalSupply) IntoProto() *vgproto.StakeTotalSupply {
 }
 
 func (s *StakeTotalSupply) String() string {
-	return fmt.Sprintf("StakeTotalSupply: TokenAddress:%v, TotalSupply:%v", s.TokenAddress, s.TotalSupply.String())
+	return fmt.Sprintf(
+		"tokenAddress(%s) totalSupply(%s)",
+		s.TokenAddress,
+		uintPointerToString(s.TotalSupply),
+	)
 }
 
 func StakeTotalSupplyFromProto(s *vgproto.StakeTotalSupply) (*StakeTotalSupply, error) {
@@ -86,7 +90,21 @@ func (s StakeLinking) Hash() string {
 }
 
 func (s *StakeLinking) String() string {
-	return s.IntoProto().String()
+	return fmt.Sprintf(
+		"ID(%s) type(%s) ts(%v) party(%s) amount(%s) status(%s) finalizedAt(%v) txHash(%s) blockHeight(%v) blockTime(%v) logIndex(%v) ethereumAddress(%s)",
+		s.ID,
+		s.Type.String(),
+		s.TS,
+		s.Party,
+		uintPointerToString(s.Amount),
+		s.Status.String(),
+		s.FinalizedAt,
+		s.TxHash,
+		s.BlockHeight,
+		s.BlockTime,
+		s.LogIndex,
+		s.EthereumAddress,
+	)
 }
 
 func (s *StakeLinking) IntoProto() *eventspb.StakeLinking {
@@ -177,7 +195,17 @@ func (s *StakeDeposited) IntoStakeLinking() *StakeLinking {
 }
 
 func (s StakeDeposited) String() string {
-	return fmt.Sprintf("%#v", s)
+	return fmt.Sprintf(
+		"ID(%s) txID(%s) blockNumber(%v) logIndex(%v) vegaPubKey(%s) ethereumAddress(%s) amount(%s) blockTime(%v)",
+		s.ID,
+		s.TxID,
+		s.BlockNumber,
+		s.LogIndex,
+		s.VegaPubKey,
+		s.EthereumAddress,
+		uintPointerToString(s.Amount),
+		s.BlockTime,
+	)
 }
 
 type StakeRemoved struct {
@@ -218,7 +246,17 @@ func StakeRemovedFromProto(
 }
 
 func (s StakeRemoved) String() string {
-	return fmt.Sprintf("%#v", s)
+	return fmt.Sprintf(
+		"ID(%s) txID(%s) blockNumber(%v) logIndex(%v) vegaPubKey(%s) ethereumAddress(%s) amount(%s) blockTime(%v)",
+		s.ID,
+		s.TxID,
+		s.BlockNumber,
+		s.LogIndex,
+		s.VegaPubKey,
+		s.EthereumAddress,
+		uintPointerToString(s.Amount),
+		s.BlockTime,
+	)
 }
 
 func (s *StakeRemoved) IntoStakeLinking() *StakeLinking {

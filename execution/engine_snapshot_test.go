@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	oraclesv1 "code.vegaprotocol.io/protos/vega/oracles/v1"
+	oraclespb "code.vegaprotocol.io/protos/vega/oracles/v1"
 
 	snapshot "code.vegaprotocol.io/protos/vega/snapshot/v1"
 
@@ -119,33 +119,33 @@ func getMarketConfig() *types.Market {
 				Product: &types.InstrumentFuture{
 					Future: &types.Future{
 						SettlementAsset: "Ethereum/Ether",
-						OracleSpecForSettlementPrice: &oraclesv1.OracleSpec{
-							Id:      "1",
+						OracleSpecForSettlementPrice: &types.OracleSpec{
+							ID:      "1",
 							PubKeys: []string{"0xDEADBEEF"},
-							Filters: []*oraclesv1.Filter{
+							Filters: []*types.OracleSpecFilter{
 								{
-									Key: &oraclesv1.PropertyKey{
+									Key: &types.OracleSpecPropertyKey{
 										Name: "prices.ETH.value",
-										Type: oraclesv1.PropertyKey_TYPE_INTEGER,
+										Type: oraclespb.PropertyKey_TYPE_INTEGER,
 									},
-									Conditions: []*oraclesv1.Condition{},
+									Conditions: []*types.OracleSpecCondition{},
 								},
 							},
 						},
-						OracleSpecForTradingTermination: &oraclesv1.OracleSpec{
-							Id:      "2",
+						OracleSpecForTradingTermination: &types.OracleSpec{
+							ID:      "2",
 							PubKeys: []string{"0xDEADBEEF"},
-							Filters: []*oraclesv1.Filter{
+							Filters: []*types.OracleSpecFilter{
 								{
-									Key: &oraclesv1.PropertyKey{
+									Key: &types.OracleSpecPropertyKey{
 										Name: "trading.terminated",
-										Type: oraclesv1.PropertyKey_TYPE_BOOLEAN,
+										Type: oraclespb.PropertyKey_TYPE_BOOLEAN,
 									},
-									Conditions: []*oraclesv1.Condition{},
+									Conditions: []*types.OracleSpecCondition{},
 								},
 							},
 						},
-						OracleSpecBinding: &types.OracleSpecToFutureBinding{
+						OracleSpecBinding: &types.OracleSpecBindingForFuture{
 							SettlementPriceProperty:    "prices.ETH.value",
 							TradingTerminationProperty: "trading.terminated",
 						},

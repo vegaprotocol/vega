@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	oraclesv1 "code.vegaprotocol.io/protos/vega/oracles/v1"
+	oraclespb "code.vegaprotocol.io/protos/vega/oracles/v1"
 	snapshot "code.vegaprotocol.io/protos/vega/snapshot/v1"
 	"code.vegaprotocol.io/shared/paths"
 	"code.vegaprotocol.io/vega/collateral"
@@ -213,33 +213,33 @@ func newMarket(ID, pubKey string) *types.Market {
 				Product: &types.InstrumentFuture{
 					Future: &types.Future{
 						SettlementAsset: "Ethereum/Ether",
-						OracleSpecForSettlementPrice: &oraclesv1.OracleSpec{
-							Id:      hex.EncodeToString(crypto.Hash([]byte(ID + "price"))),
+						OracleSpecForSettlementPrice: &types.OracleSpec{
+							ID:      hex.EncodeToString(crypto.Hash([]byte(ID + "price"))),
 							PubKeys: []string{pubKey},
-							Filters: []*oraclesv1.Filter{
+							Filters: []*types.OracleSpecFilter{
 								{
-									Key: &oraclesv1.PropertyKey{
+									Key: &types.OracleSpecPropertyKey{
 										Name: "prices.ETH.value",
-										Type: oraclesv1.PropertyKey_TYPE_INTEGER,
+										Type: oraclespb.PropertyKey_TYPE_INTEGER,
 									},
-									Conditions: []*oraclesv1.Condition{},
+									Conditions: []*types.OracleSpecCondition{},
 								},
 							},
 						},
-						OracleSpecForTradingTermination: &oraclesv1.OracleSpec{
-							Id:      hex.EncodeToString(crypto.Hash([]byte(ID + "tt"))),
+						OracleSpecForTradingTermination: &types.OracleSpec{
+							ID:      hex.EncodeToString(crypto.Hash([]byte(ID + "tt"))),
 							PubKeys: []string{pubKey},
-							Filters: []*oraclesv1.Filter{
+							Filters: []*types.OracleSpecFilter{
 								{
-									Key: &oraclesv1.PropertyKey{
+									Key: &types.OracleSpecPropertyKey{
 										Name: "trading.terminated",
-										Type: oraclesv1.PropertyKey_TYPE_BOOLEAN,
+										Type: oraclespb.PropertyKey_TYPE_BOOLEAN,
 									},
-									Conditions: []*oraclesv1.Condition{},
+									Conditions: []*types.OracleSpecCondition{},
 								},
 							},
 						},
-						OracleSpecBinding: &types.OracleSpecToFutureBinding{
+						OracleSpecBinding: &types.OracleSpecBindingForFuture{
 							SettlementPriceProperty:    "prices.ETH.value",
 							TradingTerminationProperty: "trading.terminated",
 						},

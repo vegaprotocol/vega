@@ -124,7 +124,7 @@ func TestSeenSnapshotRoundTrip(t *testing.T) {
 	require.True(t, bytes.Equal(state2, statePostReload))
 }
 
-func TestWithdrawlsSnapshotRoundTrip(t *testing.T) {
+func TestWithdrawalsSnapshotRoundTrip(t *testing.T) {
 	testAsset := assets.NewAsset(builtin.New("VGT", &types.AssetDetails{
 		Name:   "VEGA TOKEN",
 		Symbol: "VGT",
