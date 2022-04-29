@@ -268,7 +268,7 @@ pipeline {
                                     vegatools: params.VEGATOOLS_BRANCH,
                                     systemTests: params.SYSTEM_TESTS_BRANCH,
                                     protos: params.PROTOS_BRANCH,
-                                    ignoreFailure: true // Will be changed when stable
+                                    ignoreFailure: !isPRBuild()
 
                             }
                         }
