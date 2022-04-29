@@ -19,7 +19,7 @@
 - [5297](https://github.com/vegaprotocol/vega/issues/5297) - Assure min/max price always accurate
 - [5286](https://github.com/vegaprotocol/vega/issues/5286) - Ensure liquidity fees are updated when updating the market
 - [5322](https://github.com/vegaprotocol/vega/issues/5322) - Change vega pub key hashing in topology to fix key rotation submission.
-
+- [5313](https://github.com/vegaprotocol/vega/issues/5313) - Future update was using oracle spec for settlement price as trading termination spec
 
 ## 0.50.2
 
