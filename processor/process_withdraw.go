@@ -28,7 +28,7 @@ func (app *App) processWithdraw(ctx context.Context, w *types.WithdrawSubmission
 		if ext == nil {
 			return ErrMissingWithdrawERC20Ext
 		}
-		return app.banking.WithdrawERC20(ctx, id, party, w.Asset, w.Amount, ext)
+		return app.banking.WithdrawERC20(ctx, id, party, w.Asset, w.Amount, ext.Erc20)
 	}
 
 	return errors.New("unimplemented withdrawal")

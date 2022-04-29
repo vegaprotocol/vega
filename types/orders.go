@@ -4,6 +4,7 @@ package types
 
 import (
 	"errors"
+	"fmt"
 
 	proto "code.vegaprotocol.io/protos/vega"
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
@@ -14,18 +15,6 @@ type PriceLevel struct {
 	Price          *num.Uint
 	NumberOfOrders uint64
 	Volume         uint64
-}
-
-func NewPriceLevelFromProto(p *proto.PriceLevel) (*PriceLevel, error) {
-	price, overflowed := num.UintFromString(p.Price, 10)
-	if overflowed {
-		return nil, errors.New("invalid amount")
-	}
-	return &PriceLevel{
-		Price:          price,
-		NumberOfOrders: p.NumberOfOrders,
-		Volume:         p.Volume,
-	}, nil
 }
 
 func (p PriceLevel) IntoProto() *proto.PriceLevel {
@@ -140,13 +129,23 @@ func (o OrderAmendment) Validate() error {
 }
 
 func (o OrderAmendment) String() string {
-	return o.IntoProto().String()
+	return fmt.Sprintf(
+		"orderID(%s) marketID(%s) sizeDelta(%v) timeInForce(%s) peggedReference(%s) price(%s) expiresAt(%v) peggedOffset(%s)",
+		o.OrderID,
+		o.MarketID,
+		o.SizeDelta,
+		o.TimeInForce.String(),
+		o.PeggedReference.String(),
+		uintPointerToString(o.Price),
+		int64PointerToString(o.ExpiresAt),
+		uintPointerToString(o.PeggedOffset),
+	)
 }
 
-func (o OrderAmendment) GetOrderId() string {
+func (o OrderAmendment) GetOrderID() string {
 	return o.OrderID
 }
 
-func (o OrderAmendment) GetMarketId() string {
+func (o OrderAmendment) GetMarketID() string {
 	return o.MarketID
 }

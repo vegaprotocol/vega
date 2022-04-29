@@ -115,7 +115,7 @@ func (e *Engine) WithdrawERC20(
 	ext *types.Erc20WithdrawExt,
 ) error {
 	wext := &types.WithdrawExt{
-		Ext: &types.WithdrawExt_Erc20{
+		Ext: &types.WithdrawExtErc20{
 			Erc20: ext,
 		},
 	}
@@ -170,7 +170,7 @@ func (e *Engine) startERC20Signatures(
 		_, signature, err = asset.SignWithdrawal(
 			w.Amount, w.Ext.GetErc20().GetReceiverAddress(), ref, creation)
 		if err != nil {
-			// there's not reason we cannot build the signature here
+			// there's no reason we cannot build the signature here
 			// apart if the node isn't configure properly
 			e.log.Panic("unable to sign withdrawal",
 				logging.WithdrawalID(w.ID),
@@ -194,7 +194,7 @@ func (e *Engine) offerERC20NotarySignatures(resource string) []byte {
 
 	wref, ok := e.withdrawals[resource]
 	if !ok {
-		// there's not reason we cannot find the withdrawal here
+		// there's no reason we cannot find the withdrawal here
 		// apart if the node isn't configured properly
 		e.log.Panic("unable to find withdrawal",
 			logging.WithdrawalID(resource))
@@ -203,7 +203,7 @@ func (e *Engine) offerERC20NotarySignatures(resource string) []byte {
 
 	asset, err := e.assets.Get(w.Asset)
 	if err != nil {
-		// there's not reason we cannot build the signature here
+		// there's no reason we cannot build the signature here
 		// apart if the node isn't configure properly
 		e.log.Panic("unable to get asset when offering signature",
 			logging.WithdrawalID(w.ID),
@@ -218,7 +218,7 @@ func (e *Engine) offerERC20NotarySignatures(resource string) []byte {
 	_, signature, err := erc20asset.SignWithdrawal(
 		w.Amount, w.Ext.GetErc20().GetReceiverAddress(), wref.ref, creation)
 	if err != nil {
-		// there's not reason we cannot build the signature here
+		// there's no reason we cannot build the signature here
 		// apart if the node isn't configure properly
 		e.log.Panic("unable to sign withdrawal",
 			logging.WithdrawalID(w.ID),

@@ -2,6 +2,7 @@ package types
 
 import (
 	"errors"
+	"fmt"
 	"time"
 
 	proto "code.vegaprotocol.io/protos/vega"
@@ -70,7 +71,29 @@ func (o Order) Clone() *Order {
 }
 
 func (o Order) String() string {
-	return o.IntoProto().String()
+	return fmt.Sprintf(
+		"ID(%s) marketID(%s) party(%s) side(%s) price(%s) size(%v) remaining(%v) timeInForce(%s) type(%s) status(%s) reference(%s) reason(%s) version(%v) batchID(%v) liquidityProvisionID(%s) createdAt(%v) updatedAt(%v) expiresAt(%v) originalPrice(%s) peggedOrder(%s)",
+		o.ID,
+		o.MarketID,
+		o.Party,
+		o.Side.String(),
+		o.Price.String(),
+		o.Size,
+		o.Remaining,
+		o.TimeInForce.String(),
+		o.Type.String(),
+		o.Status.String(),
+		o.Reference,
+		o.Reason.String(),
+		o.Version,
+		o.BatchID,
+		o.LiquidityProvisionID,
+		o.CreatedAt,
+		o.UpdatedAt,
+		o.ExpiresAt,
+		uintPointerToString(o.OriginalPrice),
+		reflectPointerToString(o.PeggedOrder),
+	)
 }
 
 type Orders []*Order
@@ -234,6 +257,14 @@ func (p PeggedOrder) IntoProto() *proto.PeggedOrder {
 	}
 }
 
+func (p PeggedOrder) String() string {
+	return fmt.Sprintf(
+		"reference(%s) offset(%s)",
+		p.Reference.String(),
+		uintPointerToString(p.Offset),
+	)
+}
+
 type OrderConfirmation struct {
 	Order                 *Order
 	Trades                []*Trade
@@ -316,7 +347,25 @@ func (t *Trade) IntoProto() *proto.Trade {
 }
 
 func (t *Trade) String() string {
-	return t.IntoProto().String()
+	return fmt.Sprintf(
+		"ID(%s) marketID(%s) price(%s) marketPrice(%s) size(%v) buyer(%s) seller(%s) aggressor(%s) buyOrder(%s) sellOrder(%s) timestamp(%v) type(%s) buyerAuctionBatch(%v) sellerAuctionBatch(%v) buyerFee(%s) sellerFee(%s)",
+		t.ID,
+		t.MarketID,
+		uintPointerToString(t.Price),
+		uintPointerToString(t.MarketPrice),
+		t.Size,
+		t.Buyer,
+		t.Seller,
+		t.Aggressor.String(),
+		t.BuyOrder,
+		t.SellOrder,
+		t.Timestamp,
+		t.Type.String(),
+		t.BuyerAuctionBatch,
+		t.SellerAuctionBatch,
+		reflectPointerToString(t.SellerFee),
+		reflectPointerToString(t.BuyerFee),
+	)
 }
 
 type Trades []*Trade
