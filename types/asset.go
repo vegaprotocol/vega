@@ -9,10 +9,8 @@ import (
 )
 
 var (
-	ErrMissingERC20ContractAddress = errors.New("missing erc20 contract address")
-	ErrMissingBuiltinAssetField    = errors.New("missing builtin asset field")
-	ErrInvalidAssetDetails         = errors.New("invalid asset details")
-
+	ErrMissingERC20ContractAddress   = errors.New("missing erc20 contract address")
+	ErrMissingBuiltinAssetField      = errors.New("missing builtin asset field")
 	ErrInvalidAssetNameEmpty         = errors.New("invalid asset, name must not be empty")
 	ErrInvalidAssetSymbolEmpty       = errors.New("invalid asset, symbol must not be empty")
 	ErrInvalidAssetDecimalPlacesZero = errors.New("invalid asset, decimal places must not be zero")
@@ -43,10 +41,18 @@ type isAssetDetails interface {
 	adIntoProto() interface{}
 	DeepClone() isAssetDetails
 	ValidateAssetSource() (ProposalError, error)
+	String() string
 }
 
 type AssetDetailsBuiltinAsset struct {
 	BuiltinAsset *BuiltinAsset
+}
+
+func (a AssetDetailsBuiltinAsset) String() string {
+	return fmt.Sprintf(
+		"builtinAsset(%s)",
+		reflectPointerToString(a.BuiltinAsset),
+	)
 }
 
 // BuiltinAsset is a Vega internal asset.
@@ -54,8 +60,22 @@ type BuiltinAsset struct {
 	MaxFaucetAmountMint *num.Uint
 }
 
+func (a BuiltinAsset) String() string {
+	return fmt.Sprintf(
+		"maxFaucetAmountMint(%s)",
+		uintPointerToString(a.MaxFaucetAmountMint),
+	)
+}
+
 type AssetDetailsErc20 struct {
 	Erc20 *ERC20
+}
+
+func (a AssetDetailsErc20) String() string {
+	return fmt.Sprintf(
+		"erc20(%s)",
+		reflectPointerToString(a.Erc20),
+	)
 }
 
 // An ERC20 token based asset, living on the ethereum network.
@@ -94,7 +114,14 @@ func AssetFromProto(p *proto.Asset) (*Asset, error) {
 }
 
 func (a AssetDetails) String() string {
-	return a.IntoProto().String()
+	return fmt.Sprintf(
+		"name(%s) symbol(%s) quantum(%s) totalSupply(%s) source(%s)",
+		a.Name,
+		a.Symbol,
+		a.Quantum.String(),
+		uintPointerToString(a.TotalSupply),
+		reflectPointerToString(a.Source),
+	)
 }
 
 func (a AssetDetails) IntoProto() *proto.AssetDetails {
@@ -338,4 +365,11 @@ func (e ERC20) DeepClone() *ERC20 {
 		cpy.WithdrawThreshold = num.Zero()
 	}
 	return cpy
+}
+
+func (e ERC20) String() string {
+	return fmt.Sprintf(
+		"contractAddress(%s)",
+		e.ContractAddress,
+	)
 }

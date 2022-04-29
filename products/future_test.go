@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	v1 "code.vegaprotocol.io/protos/vega/oracles/v1"
+	oraclespb "code.vegaprotocol.io/protos/vega/oracles/v1"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/oracles"
 	"code.vegaprotocol.io/vega/products"
@@ -90,31 +90,31 @@ func testFuture(t *testing.T) *tstFuture {
 	f := &types.Future{
 		SettlementAsset: "ETH",
 		QuoteName:       "ETH",
-		OracleSpecForSettlementPrice: &v1.OracleSpec{
+		OracleSpecForSettlementPrice: &types.OracleSpec{
 			PubKeys: []string{"0xDEADBEEF"},
-			Filters: []*v1.Filter{
+			Filters: []*types.OracleSpecFilter{
 				{
-					Key: &v1.PropertyKey{
+					Key: &types.OracleSpecPropertyKey{
 						Name: "price.ETH.value",
-						Type: v1.PropertyKey_TYPE_INTEGER,
+						Type: oraclespb.PropertyKey_TYPE_INTEGER,
 					},
 					Conditions: nil,
 				},
 			},
 		},
-		OracleSpecForTradingTermination: &v1.OracleSpec{
+		OracleSpecForTradingTermination: &types.OracleSpec{
 			PubKeys: []string{"0xDEADBEEF"},
-			Filters: []*v1.Filter{
+			Filters: []*types.OracleSpecFilter{
 				{
-					Key: &v1.PropertyKey{
+					Key: &types.OracleSpecPropertyKey{
 						Name: "trading.termination",
-						Type: v1.PropertyKey_TYPE_BOOLEAN,
+						Type: oraclespb.PropertyKey_TYPE_BOOLEAN,
 					},
 					Conditions: nil,
 				},
 			},
 		},
-		OracleSpecBinding: &types.OracleSpecToFutureBinding{
+		OracleSpecBinding: &types.OracleSpecBindingForFuture{
 			SettlementPriceProperty:    "price.ETH.value",
 			TradingTerminationProperty: "trading.termination",
 		},

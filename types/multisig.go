@@ -2,6 +2,7 @@ package types
 
 import (
 	"encoding/hex"
+	"fmt"
 	"strconv"
 
 	vgproto "code.vegaprotocol.io/protos/vega"
@@ -90,7 +91,16 @@ func (s *SignerEvent) IntoProto() *eventspb.ERC20MultiSigSignerEvent {
 }
 
 func (s *SignerEvent) String() string {
-	return s.IntoProto().String()
+	return fmt.Sprintf(
+		"blockNumber(%v) txHash(%s) ID(%s) address(%s) nonce(%s) blockTime(%v) kind(%s) ",
+		s.BlockNumber,
+		s.TxHash,
+		s.ID,
+		s.Address,
+		s.Nonce,
+		s.BlockTime,
+		s.Kind.String(),
+	)
 }
 
 func SignerEventFromSignerRemovedProto(
@@ -172,5 +182,14 @@ func (s *SignerThresholdSetEvent) IntoProto() *eventspb.ERC20MultiSigThresholdSe
 }
 
 func (s *SignerThresholdSetEvent) String() string {
-	return s.IntoProto().String()
+	return fmt.Sprintf(
+		"ID(%s) blockNumber(%v) logIndex(%v) txHash(%s) threshold(%v) nonce(%s) blockTime(%v)",
+		s.ID,
+		s.BlockNumber,
+		s.LogIndex,
+		s.TxHash,
+		s.Threshold,
+		s.Nonce,
+		s.BlockTime,
+	)
 }

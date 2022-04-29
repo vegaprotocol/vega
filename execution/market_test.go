@@ -12,8 +12,8 @@ import (
 
 	"code.vegaprotocol.io/vega/integration/stubs"
 
-	proto "code.vegaprotocol.io/protos/vega"
-	oraclesv1 "code.vegaprotocol.io/protos/vega/oracles/v1"
+	vegapb "code.vegaprotocol.io/protos/vega"
+	oraclespb "code.vegaprotocol.io/protos/vega/oracles/v1"
 	bmock "code.vegaprotocol.io/vega/broker/mocks"
 	"code.vegaprotocol.io/vega/collateral"
 	"code.vegaprotocol.io/vega/events"
@@ -456,33 +456,33 @@ func getMarketWithDP(pMonitorSettings *types.PriceMonitoringSettings, openingAuc
 					Future: &types.Future{
 						SettlementAsset: "ETH",
 						QuoteName:       "USD",
-						OracleSpecForSettlementPrice: &oraclesv1.OracleSpec{
-							Id:      "1",
+						OracleSpecForSettlementPrice: &types.OracleSpec{
+							ID:      "1",
 							PubKeys: []string{"0xDEADBEEF"},
-							Filters: []*oraclesv1.Filter{
+							Filters: []*types.OracleSpecFilter{
 								{
-									Key: &oraclesv1.PropertyKey{
+									Key: &types.OracleSpecPropertyKey{
 										Name: "prices.ETH.value",
-										Type: oraclesv1.PropertyKey_TYPE_INTEGER,
+										Type: oraclespb.PropertyKey_TYPE_INTEGER,
 									},
-									Conditions: []*oraclesv1.Condition{},
+									Conditions: []*types.OracleSpecCondition{},
 								},
 							},
 						},
-						OracleSpecForTradingTermination: &oraclesv1.OracleSpec{
-							Id:      "2",
+						OracleSpecForTradingTermination: &types.OracleSpec{
+							ID:      "2",
 							PubKeys: []string{"0xDEADBEEF"},
-							Filters: []*oraclesv1.Filter{
+							Filters: []*types.OracleSpecFilter{
 								{
-									Key: &oraclesv1.PropertyKey{
+									Key: &types.OracleSpecPropertyKey{
 										Name: "trading.terminated",
-										Type: oraclesv1.PropertyKey_TYPE_BOOLEAN,
+										Type: oraclespb.PropertyKey_TYPE_BOOLEAN,
 									},
-									Conditions: []*oraclesv1.Condition{},
+									Conditions: []*types.OracleSpecCondition{},
 								},
 							},
 						},
-						OracleSpecBinding: &types.OracleSpecToFutureBinding{
+						OracleSpecBinding: &types.OracleSpecBindingForFuture{
 							SettlementPriceProperty:    "prices.ETH.value",
 							TradingTerminationProperty: "trading.terminated",
 						},
@@ -1151,33 +1151,33 @@ func TestSetMarketID(t *testing.T) {
 					Product: &types.InstrumentFuture{
 						Future: &types.Future{
 							SettlementAsset: "Ethereum/Ether",
-							OracleSpecForSettlementPrice: &oraclesv1.OracleSpec{
-								Id:      "1",
+							OracleSpecForSettlementPrice: &types.OracleSpec{
+								ID:      "1",
 								PubKeys: []string{"0xDEADBEEF"},
-								Filters: []*oraclesv1.Filter{
+								Filters: []*types.OracleSpecFilter{
 									{
-										Key: &oraclesv1.PropertyKey{
+										Key: &types.OracleSpecPropertyKey{
 											Name: "prices.ETH.value",
-											Type: oraclesv1.PropertyKey_TYPE_INTEGER,
+											Type: oraclespb.PropertyKey_TYPE_INTEGER,
 										},
-										Conditions: []*oraclesv1.Condition{},
+										Conditions: []*types.OracleSpecCondition{},
 									},
 								},
 							},
-							OracleSpecForTradingTermination: &oraclesv1.OracleSpec{
-								Id:      "2",
+							OracleSpecForTradingTermination: &types.OracleSpec{
+								ID:      "2",
 								PubKeys: []string{"0xDEADBEEF"},
-								Filters: []*oraclesv1.Filter{
+								Filters: []*types.OracleSpecFilter{
 									{
-										Key: &oraclesv1.PropertyKey{
+										Key: &types.OracleSpecPropertyKey{
 											Name: "trading.terminated",
-											Type: oraclesv1.PropertyKey_TYPE_BOOLEAN,
+											Type: oraclespb.PropertyKey_TYPE_BOOLEAN,
 										},
-										Conditions: []*oraclesv1.Condition{},
+										Conditions: []*types.OracleSpecCondition{},
 									},
 								},
 							},
-							OracleSpecBinding: &types.OracleSpecToFutureBinding{
+							OracleSpecBinding: &types.OracleSpecBindingForFuture{
 								SettlementPriceProperty:    "prices.ETH.value",
 								TradingTerminationProperty: "trading.terminated",
 							},
@@ -5024,7 +5024,7 @@ func TestLPOrdersRollback(t *testing.T) {
 
 	t.Run("LiquidityProvision_REJECTED", func(t *testing.T) {
 		// Filter events until LP is found
-		var found *proto.LiquidityProvision
+		var found *vegapb.LiquidityProvision
 		for _, e := range tm.events {
 			switch evt := e.(type) {
 			case *events.LiquidityProvision:
@@ -5443,7 +5443,7 @@ func Test3008And3007CancelLiquidityProvision(t *testing.T) {
 
 	t.Run("LiquidityProvision_CANCELLED", func(t *testing.T) {
 		// Filter events until LP is found
-		var found *proto.LiquidityProvision
+		var found *vegapb.LiquidityProvision
 		for _, e := range tm.events {
 			switch evt := e.(type) {
 			case *events.LiquidityProvision:
@@ -5512,7 +5512,7 @@ func Test3008And3007CancelLiquidityProvision(t *testing.T) {
 	tm.market.OnChainTimeUpdate(ctx, now.Add(10021*time.Second))
 
 	t.Run("Fee are distribute to party-2 only", func(t *testing.T) {
-		var found []*proto.TransferResponse
+		var found []*vegapb.TransferResponse
 		for _, e := range tm.events {
 			switch evt := e.(type) {
 			case *events.TransferResponse:
@@ -5933,7 +5933,7 @@ func Test3045DistributeFeesToManyProviders(t *testing.T) {
 	tm.market.OnChainTimeUpdate(ctx, now.Add(10021*time.Second))
 
 	t.Run("Fee are distributed", func(t *testing.T) {
-		var found []*proto.TransferResponse
+		var found []*vegapb.TransferResponse
 		for _, e := range tm.events {
 			switch evt := e.(type) {
 			case *events.TransferResponse:

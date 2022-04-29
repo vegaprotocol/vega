@@ -1,6 +1,10 @@
 package types
 
-import proto "code.vegaprotocol.io/protos/vega"
+import (
+	"fmt"
+
+	proto "code.vegaprotocol.io/protos/vega"
+)
 
 type NetworkParameter struct {
 	Key, Value string
@@ -21,7 +25,11 @@ func (n NetworkParameter) IntoProto() *proto.NetworkParameter {
 }
 
 func (n NetworkParameter) String() string {
-	return n.IntoProto().String()
+	return fmt.Sprintf(
+		"key(%s) value(%s)",
+		n.Key,
+		n.Value,
+	)
 }
 
 func (n NetworkParameter) DeepClone() *NetworkParameter {
