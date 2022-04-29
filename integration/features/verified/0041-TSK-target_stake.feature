@@ -100,6 +100,22 @@ Feature: Target stake
     # target stake is: 90 x 30 x 1.5 x 0.1 = 405
     And the target stake should be "405" for the market "ETH/DEC21"
 
+    #close out trade again
+    When time is updated to "2021-04-15T03:00:00Z"
+    And the target stake should be "405" for the market "ETH/DEC21"
+
+    When time is updated to "2021-04-15T03:00:00Z"
+    When the parties place the following orders:
+      | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | tt_1  | ETH/DEC21 | sell | 10     | 90    | 1                | TYPE_LIMIT | TIF_GTC | tt_1_2    |
+      | tt_2  | ETH/DEC21 | sell | 20     | 90    | 1                | TYPE_LIMIT | TIF_GTC | tt_2_2    |
+
+    Then the mark price should be "90" for the market "ETH/DEC21"
+
+    # target stake is: 90 x 20 x 1.5 x 0.1 = 270 ???
+    And the target stake should be "270" for the market "ETH/DEC21"
+    
+
 Scenario: Max open interest changes over time, testing change of timewindow (0041-TSTK-001; 0041-TSTK-004; 0041-TSTK-005)
   Background:
     Given the following network parameters are set:
