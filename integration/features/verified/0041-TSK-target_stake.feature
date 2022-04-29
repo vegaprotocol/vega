@@ -117,7 +117,6 @@ Feature: Target stake
     # target stake is: 90 x 20 x 1.5 x 0.1 = 270
     And the target stake should be "270" for the market "ETH/DEC21"
 
-
 Scenario: Max open interest changes over time, testing change of timewindow (0041-TSTK-001; 0041-TSTK-004; 0041-TSTK-005)
   Background:
     Given the following network parameters are set:
