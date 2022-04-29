@@ -42,7 +42,7 @@ Feature: Replicate unexpected margin issues.
     And the opening auction period ends for market "DAI/DEC22"
     Then the following trades should be executed:
       | buyer  | price      | size | seller |
-      | party2 | 3500000000 | 1    | party3 |
+      | party2 | 3500000005 | 1    | party3 |
     And the mark price should be "3500000005" for the market "DAI/DEC22"
     And the parties should have the following margin levels:
       | party  | market id | maintenance | search    | initial   | release    |
