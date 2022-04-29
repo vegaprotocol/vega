@@ -2,6 +2,7 @@ package types
 
 import (
 	"errors"
+	"fmt"
 
 	proto "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/types/num"
@@ -59,7 +60,9 @@ type AssetDetailsErc20 struct {
 
 // An ERC20 token based asset, living on the ethereum network.
 type ERC20 struct {
-	ContractAddress string
+	ContractAddress   string
+	LifetimeLimit     *num.Uint
+	WithdrawThreshold *num.Uint
 }
 
 func (a Asset) IntoProto() *proto.Asset {
@@ -73,15 +76,21 @@ func (a Asset) IntoProto() *proto.Asset {
 	}
 }
 
-func AssetFromProto(p *proto.Asset) *Asset {
-	var details *AssetDetails
+func AssetFromProto(p *proto.Asset) (*Asset, error) {
+	var (
+		details *AssetDetails
+		err     error
+	)
 	if p.Details != nil {
-		details = AssetDetailsFromProto(p.Details)
+		details, err = AssetDetailsFromProto(p.Details)
+		if err != nil {
+			return nil, err
+		}
 	}
 	return &Asset{
 		ID:      p.Id,
 		Details: details,
-	}
+	}, nil
 }
 
 func (a AssetDetails) String() string {
@@ -109,21 +118,35 @@ func (a AssetDetails) IntoProto() *proto.AssetDetails {
 	return r
 }
 
-func AssetDetailsFromProto(p *proto.AssetDetails) *AssetDetails {
-	var src isAssetDetails
+func AssetDetailsFromProto(p *proto.AssetDetails) (*AssetDetails, error) {
+	var (
+		src isAssetDetails
+		err error
+	)
 	switch st := p.Source.(type) {
 	case *proto.AssetDetails_Erc20:
-		src = AssetDetailsERC20FromProto(st)
+		src, err = AssetDetailsERC20FromProto(st)
+		if err != nil {
+			return nil, err
+		}
 	case *proto.AssetDetails_BuiltinAsset:
 		src = AssetDetailsBuiltinFromProto(st)
 	}
 	total := num.Zero()
 	min := num.DecimalZero()
 	if len(p.TotalSupply) > 0 {
-		total, _ = num.UintFromString(p.TotalSupply, 10)
+		var overflow bool
+		total, overflow = num.UintFromString(p.TotalSupply, 10)
+		if overflow {
+			return nil, errors.New("invalid total supply")
+		}
 	}
 	if len(p.Quantum) > 0 {
-		min, _ = num.DecimalFromString(p.Quantum)
+		var err error
+		min, err = num.DecimalFromString(p.Quantum)
+		if err != nil {
+			return nil, fmt.Errorf("invalid quantum: %w", err)
+		}
 	}
 	return &AssetDetails{
 		Name:        p.Name,
@@ -132,7 +155,7 @@ func AssetDetailsFromProto(p *proto.AssetDetails) *AssetDetails {
 		Decimals:    p.Decimals,
 		Quantum:     min,
 		Source:      src,
-	}
+	}, nil
 }
 
 func (a AssetDetailsBuiltinAsset) IntoProto() *proto.AssetDetails_BuiltinAsset {
@@ -175,9 +198,19 @@ func (a AssetDetailsBuiltinAsset) DeepClone() isAssetDetails {
 }
 
 func (a AssetDetailsErc20) IntoProto() *proto.AssetDetails_Erc20 {
+	lifetimeLimit := "0"
+	if a.Erc20.LifetimeLimit != nil {
+		lifetimeLimit = a.Erc20.LifetimeLimit.String()
+	}
+	withdrawThreshold := "0"
+	if a.Erc20.WithdrawThreshold != nil {
+		withdrawThreshold = a.Erc20.WithdrawThreshold.String()
+	}
 	return &proto.AssetDetails_Erc20{
 		Erc20: &proto.ERC20{
-			ContractAddress: a.Erc20.ContractAddress,
+			ContractAddress:   a.Erc20.ContractAddress,
+			LifetimeLimit:     lifetimeLimit,
+			WithdrawThreshold: withdrawThreshold,
 		},
 	}
 }
@@ -189,12 +222,31 @@ func (a AssetDetailsBuiltinAsset) ValidateAssetSource() (ProposalError, error) {
 	return ProposalErrorUnspecified, nil
 }
 
-func AssetDetailsERC20FromProto(p *proto.AssetDetails_Erc20) *AssetDetailsErc20 {
+func AssetDetailsERC20FromProto(p *proto.AssetDetails_Erc20) (*AssetDetailsErc20, error) {
+	var (
+		lifetimeLimit     = num.Zero()
+		withdrawThreshold = num.Zero()
+		overflow          bool
+	)
+	if len(p.Erc20.LifetimeLimit) > 0 {
+		lifetimeLimit, overflow = num.UintFromString(p.Erc20.LifetimeLimit, 10)
+		if overflow {
+			return nil, errors.New("invalid lifetime limit")
+		}
+	}
+	if len(p.Erc20.WithdrawThreshold) > 0 {
+		withdrawThreshold, overflow = num.UintFromString(p.Erc20.WithdrawThreshold, 10)
+		if overflow {
+			return nil, errors.New("invalid withdraw threshold")
+		}
+	}
 	return &AssetDetailsErc20{
 		Erc20: &ERC20{
-			ContractAddress: p.Erc20.ContractAddress,
+			ContractAddress:   p.Erc20.ContractAddress,
+			LifetimeLimit:     lifetimeLimit,
+			WithdrawThreshold: withdrawThreshold,
 		},
-	}
+	}, nil
 }
 
 func (a AssetDetailsErc20) adIntoProto() interface{} {
@@ -272,7 +324,18 @@ func (a AssetDetails) DeepClone() *AssetDetails {
 }
 
 func (e ERC20) DeepClone() *ERC20 {
-	return &ERC20{
+	cpy := &ERC20{
 		ContractAddress: e.ContractAddress,
 	}
+	if e.LifetimeLimit != nil {
+		cpy.LifetimeLimit = e.LifetimeLimit.Clone()
+	} else {
+		cpy.LifetimeLimit = num.Zero()
+	}
+	if e.WithdrawThreshold != nil {
+		cpy.WithdrawThreshold = e.WithdrawThreshold.Clone()
+	} else {
+		cpy.WithdrawThreshold = num.Zero()
+	}
+	return cpy
 }

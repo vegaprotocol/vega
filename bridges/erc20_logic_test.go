@@ -2,6 +2,7 @@ package bridges_test
 
 import (
 	"testing"
+	"time"
 
 	"code.vegaprotocol.io/vega/bridges"
 	"code.vegaprotocol.io/vega/types/num"
@@ -20,8 +21,6 @@ func TestERC20Logic(t *testing.T) {
 	t.Run("list asset", testListAsset)
 	t.Run("remove asset", testRemoveAsset)
 	t.Run("withdraw asset", testWithdrawAsset)
-	t.Run("set minimum deposit", testMinimumDeposit)
-	t.Run("set maximum deposit", testMaximumDeposit)
 }
 
 func testListAsset(t *testing.T) {
@@ -30,6 +29,8 @@ func testListAsset(t *testing.T) {
 	sig, err := bridge.ListAsset(
 		erc20AssetAddr,
 		erc20AssetVegaID,
+		num.NewUint(10),
+		num.NewUint(42),
 		num.NewUint(42),
 	)
 
@@ -38,7 +39,7 @@ func testListAsset(t *testing.T) {
 	assert.NotNil(t, sig.Signature)
 	assert.True(t, signer.Verify(sig.Message, sig.Signature))
 	assert.Equal(t,
-		"29761c91044262af89e38aa8f8983d777c151a7757a715cd1bd873b7d0f89be9014019d83b4358bd144578a6ef82bd1285da110a2fa826f30cfa6cfa3de28007",
+		"7df8b88552c2f981e64b13f1ce3ee5dcb71e8f59ec057010b7b469120afff7d479f234714785cfc605230dfb2d17f9cc7858143196a13f357ce008e3f3f78a00",
 		sig.Signature.Hex(),
 	)
 }
@@ -68,6 +69,7 @@ func testWithdrawAsset(t *testing.T) {
 		erc20AssetAddr,
 		num.NewUint(42), // amount
 		ethPartyAddr,
+		time.Unix(1000, 0),
 		num.NewUint(1000), // nonce
 	)
 
@@ -76,45 +78,7 @@ func testWithdrawAsset(t *testing.T) {
 	assert.NotNil(t, sig.Signature)
 	assert.True(t, signer.Verify(sig.Message, sig.Signature))
 	assert.Equal(t,
-		"bd5cdc0cdc21379846f56a52eee351eff24d6c4094e6bf0d3a107214ad785b31c3902bafd2ceed98bd600cba4180aaeaa98ab6ee1a589d801be80a870bc0520a",
-		sig.Signature.Hex(),
-	)
-}
-
-func testMinimumDeposit(t *testing.T) {
-	signer := testSigner{}
-	bridge := bridges.NewERC20Logic(signer, erc20BridgeAddr)
-	sig, err := bridge.SetDepositMinimum(
-		erc20AssetAddr,
-		num.NewUint(42),  // amount
-		num.NewUint(100), // nonce
-	)
-
-	assert.NoError(t, err)
-	assert.NotNil(t, sig.Message)
-	assert.NotNil(t, sig.Signature)
-	assert.True(t, signer.Verify(sig.Message, sig.Signature))
-	assert.Equal(t,
-		"2c8526e9c662dda56ea4f911d890338b8f9048ae6c147321f17b98678d37fa4186f41e120afcc3b312d884a88e0e39fbf4800e1d8a151be7ce85a49e6cbbdd01",
-		sig.Signature.Hex(),
-	)
-}
-
-func testMaximumDeposit(t *testing.T) {
-	signer := testSigner{}
-	bridge := bridges.NewERC20Logic(signer, erc20BridgeAddr)
-	sig, err := bridge.SetDepositMaximum(
-		erc20AssetAddr,
-		num.NewUint(42),
-		num.NewUint(100), // nonce
-	)
-
-	assert.NoError(t, err)
-	assert.NotNil(t, sig.Message)
-	assert.NotNil(t, sig.Signature)
-	assert.True(t, signer.Verify(sig.Message, sig.Signature))
-	assert.Equal(t,
-		"7b5131822184055173ac46eb1b78b4c01a5d239ec555e151820b43de4a92c93c7575bc8e43573faf200b08f3d88354c7743f20917b1da91d3d0f44f829ff1c0f",
+		"0ff08571ab504acdce063a5a5a00dd8878d64ccb09ea6887aacd1fd41b517cd13f4e12edfaa4d06fef5d24087ba9e7c980532daa0a6f1fa329b8d75961f4ab03",
 		sig.Signature.Hex(),
 	)
 }

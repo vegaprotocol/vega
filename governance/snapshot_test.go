@@ -3,6 +3,7 @@ package governance_test
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
@@ -143,6 +144,8 @@ func TestGovernanceSnapshotNodeProposal(t *testing.T) {
 
 	snapEng.assets.EXPECT().NewAsset(gomock.Any(), gomock.Any()).Times(1)
 	snapEng.witness.EXPECT().RestoreResource(gomock.Any(), gomock.Any()).Times(1)
+
+	fmt.Printf("SNAP: %v\n", snap.String())
 
 	// Load snapshot into a new engine
 	snapEng.broker.EXPECT().Send(gomock.Any()).Times(1)

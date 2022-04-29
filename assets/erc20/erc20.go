@@ -149,8 +149,10 @@ func (e *ERC20) SignBridgeListing() (msg []byte, sig []byte, err error) {
 	if err != nil {
 		return nil, nil, err
 	}
+
+	source := e.asset.Details.GetErc20()
 	bundle, err := bridges.NewERC20Logic(e.wallet, bridgeAddress).
-		ListAsset(e.address, e.asset.ID, nonce)
+		ListAsset(e.address, e.asset.ID, source.LifetimeLimit, source.WithdrawThreshold, nonce)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -212,11 +214,12 @@ func (e *ERC20) SignWithdrawal(
 	amount *num.Uint,
 	ethPartyAddress string,
 	withdrawRef *big.Int,
+	now time.Time,
 ) (msg []byte, sig []byte, err error) {
 	nonce, _ := num.UintFromBig(withdrawRef)
 	bridgeAddress := e.ethClient.CollateralBridgeAddress().Hex()
 	bundle, err := bridges.NewERC20Logic(e.wallet, bridgeAddress).
-		WithdrawAsset(e.address, amount, ethPartyAddress, nonce)
+		WithdrawAsset(e.address, amount, ethPartyAddress, now, nonce)
 	if err != nil {
 		return nil, nil, err
 	}
