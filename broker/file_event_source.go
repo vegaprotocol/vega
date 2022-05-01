@@ -6,8 +6,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"os/signal"
-	"syscall"
 	"time"
 
 	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
@@ -49,11 +47,14 @@ func sendAllEvents(ctx context.Context, out chan<- events.Event, file string,
 	timeBetweenBlocks time.Duration, errorCh chan<- error,
 ) {
 	eventFile, err := os.Open(file)
-	defer eventFile.Close()
+	defer func() {
+		eventFile.Close()
+		close(out)
+		close(errorCh)
+	}()
 
 	if err != nil {
 		errorCh <- err
-		close(out)
 		return
 	}
 
@@ -62,29 +63,25 @@ func sendAllEvents(ctx context.Context, out chan<- events.Event, file string,
 	var offset int64 = 0
 	currentBlock := ""
 
-	terminateCh := make(chan os.Signal, 1)
-	signal.Notify(terminateCh, os.Interrupt, syscall.SIGTERM, syscall.SIGINT)
-
 	for {
 		select {
-		case <-terminateCh:
-			close(out)
-			close(errorCh)
+		case <-ctx.Done():
 			return
 		default:
 
 			read, err := eventFile.ReadAt(sizeBytes, offset)
 
 			if err == io.EOF {
-				// Nothing more to read, send any pending messages and return
-				// Do not close channels, want it to behave the same way as socket based source as much as possible
+				// Nothing more to read, send any pending messages. Do not immediately close our
+				// output channel, instead sit and wait for our context to be cancelled (e.g. by a
+				// shutdown), so as not to trigger a premature exit.
 				sendBlock(ctx, out, eventBlock)
+				<-ctx.Done()
 				return
 			}
 
 			if err != nil {
 				errorCh <- fmt.Errorf("error whilst reading message size from events file:%w", err)
-				close(out)
 				return
 			}
 
@@ -94,7 +91,6 @@ func sendAllEvents(ctx context.Context, out chan<- events.Event, file string,
 			read, err = eventFile.ReadAt(msgBytes, offset)
 			if err != nil {
 				errorCh <- fmt.Errorf("error whilst reading message bytes from events file:%w", err)
-				close(out)
 				return
 			}
 
@@ -104,12 +100,14 @@ func sendAllEvents(ctx context.Context, out chan<- events.Event, file string,
 			err = proto.Unmarshal(msgBytes, event)
 			if err != nil {
 				errorCh <- fmt.Errorf("failed to unmarshal bus event: %w", err)
-				close(out)
 				return
 			}
 
 			if event.Block != currentBlock {
-				sendBlock(ctx, out, eventBlock)
+				if err := sendBlock(ctx, out, eventBlock); err != nil {
+					errorCh <- err
+					return
+				}
 				eventBlock = eventBlock[:0]
 				time.Sleep(timeBetweenBlocks)
 				currentBlock = event.Block
@@ -120,9 +118,16 @@ func sendAllEvents(ctx context.Context, out chan<- events.Event, file string,
 	}
 }
 
-func sendBlock(ctx context.Context, out chan<- events.Event, batch []*eventspb.BusEvent) {
+func sendBlock(ctx context.Context, out chan<- events.Event, batch []*eventspb.BusEvent) error {
 	for _, busEvent := range batch {
 		evt := toEvent(ctx, busEvent)
-		out <- evt
+		// Listen for context cancels, even if we're blocked sending events
+		select {
+		case out <- evt:
+		case <-ctx.Done():
+			return ctx.Err()
+		}
+
 	}
+	return nil
 }

@@ -71,14 +71,25 @@ func (e *fanOutEventSource) Receive(ctx context.Context) (<-chan events.Event, <
 func (e *fanOutEventSource) sendEvents(ctx context.Context) {
 	srcEventCh, srcErrorCh := e.source.Receive(ctx)
 
+	defer func() {
+		for _, evtCh := range e.eventChannels {
+			close(evtCh)
+		}
+
+		for _, errorCh := range e.errorChannels {
+			close(errorCh)
+		}
+	}()
+
 	for event := range srcEventCh {
 		for _, evtCh := range e.eventChannels {
-			evtCh <- event
+			// Listen for context cancels, even if we're blocked sending events
+			select {
+			case evtCh <- event:
+			case <-ctx.Done():
+				return
+			}
 		}
-	}
-
-	for _, evtCh := range e.eventChannels {
-		close(evtCh)
 	}
 
 	select {
@@ -90,7 +101,4 @@ func (e *fanOutEventSource) sendEvents(ctx context.Context) {
 		// Do nothing, continue
 	}
 
-	for _, errorCh := range e.errorChannels {
-		close(errorCh)
-	}
 }

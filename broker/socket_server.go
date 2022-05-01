@@ -97,6 +97,8 @@ func (s socketServer) Receive(ctx context.Context) (<-chan events.Event, <-chan 
 	})
 
 	eg.Go(func() error {
+		defer close(receiveCh)
+
 		for msg := range rawCh {
 			var be eventspb.BusEvent
 			if err := proto.Unmarshal(msg, &be); err != nil {
@@ -114,7 +116,12 @@ func (s socketServer) Receive(ctx context.Context) (<-chan events.Event, <-chan 
 				continue
 			}
 
-			receiveCh <- evt
+			// Listen for context cancels, even if we're blocked sending events
+			select {
+			case receiveCh <- evt:
+			case <-ctx.Done():
+				return ctx.Err()
+			}
 		}
 
 		return nil
@@ -123,7 +130,7 @@ func (s socketServer) Receive(ctx context.Context) (<-chan events.Event, <-chan 
 
 	eg.Go(func() error {
 		var recvTimeouts int
-
+		defer close(rawCh)
 		for {
 			msg, err := s.sock.Recv()
 			if err != nil {
@@ -151,8 +158,6 @@ func (s socketServer) Receive(ctx context.Context) (<-chan events.Event, <-chan 
 
 	go func() {
 		defer func() {
-			close(receiveCh)
-			close(rawCh)
 			close(errCh)
 		}()
 
