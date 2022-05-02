@@ -1,6 +1,6 @@
 Feature: Test closeout type 1: margin >= cost of closeout 
 
-Scenario: case 1 (using simple risk model) from https://docs.google.com/spreadsheets/d/1CIPH0aQmIKj6YeFW9ApP_l-jwB4OcsNQ/edit#gid=1555964910 (0015-INSR-001, 0015-INSR-003)
+Scenario: case 1 (using simple risk model) from https://docs.google.com/spreadsheets/d/1CIPH0aQmIKj6YeFW9ApP_l-jwB4OcsNQ/edit#gid=1555964910 (0015-INSR-001, 0015-INSR-003, 0018-RSKM-001, 0018-RSKM-003)
   Background:
 
     And the simple risk model named "simple-risk-model-1":
