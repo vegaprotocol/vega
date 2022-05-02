@@ -488,7 +488,7 @@ func testAddKeyRotateSuccess(t *testing.T) {
 	nr := commandspb.AnnounceNode{
 		Id:              id,
 		ChainPubKey:     tmPubKey,
-		VegaPubKey:      vegaPubKey,
+		VegaPubKey:      hex.EncodeToString([]byte(vegaPubKey)),
 		EthereumAddress: "eth-address",
 	}
 	ctx := context.TODO()
@@ -531,7 +531,7 @@ func testAddKeyRotateSuccessFailsWhenTargetBlockHeightIsLessThenCurrentBlockHeig
 	nr := commandspb.AnnounceNode{
 		Id:              id,
 		ChainPubKey:     tmPubKey,
-		VegaPubKey:      vegaPubKey,
+		VegaPubKey:      hex.EncodeToString([]byte(vegaPubKey)),
 		EthereumAddress: "eth-address",
 	}
 	ctx := context.TODO()
@@ -553,7 +553,7 @@ func testAddKeyRotateSuccessFailsWhenNewKeyIndexIsLessThenCurrentKeyIndex(t *tes
 	nr := commandspb.AnnounceNode{
 		Id:              id,
 		ChainPubKey:     tmPubKey,
-		VegaPubKey:      vegaPubKey,
+		VegaPubKey:      hex.EncodeToString([]byte(vegaPubKey)),
 		EthereumAddress: "eth-address",
 		VegaPubKeyIndex: 2,
 	}
@@ -577,7 +577,7 @@ func testAddKeyRotateSuccessFailsWhenKeyRotationForNodeAlreadyExists(t *testing.
 	nr := commandspb.AnnounceNode{
 		Id:              id,
 		ChainPubKey:     tmPubKey,
-		VegaPubKey:      vegaPubKey,
+		VegaPubKey:      hex.EncodeToString([]byte(vegaPubKey)),
 		EthereumAddress: "eth-address",
 		VegaPubKeyIndex: 1,
 	}
@@ -605,7 +605,7 @@ func testAddKeyRotateSuccessFailsWhenCurrentPubKeyHashDoesNotMatch(t *testing.T)
 	nr := commandspb.AnnounceNode{
 		Id:              id,
 		ChainPubKey:     tmPubKey,
-		VegaPubKey:      vegaPubKey,
+		VegaPubKey:      hex.EncodeToString([]byte(vegaPubKey)),
 		EthereumAddress: "eth-address",
 		VegaPubKeyIndex: 1,
 	}
@@ -643,7 +643,7 @@ func testBeginBlockSuccess(t *testing.T) {
 		nr := commandspb.AnnounceNode{
 			Id:              id,
 			ChainPubKey:     chainValidators[i],
-			VegaPubKey:      fmt.Sprintf("vega-key-%d", j),
+			VegaPubKey:      hex.EncodeToString([]byte(fmt.Sprintf("vega-key-%d", j))),
 			EthereumAddress: fmt.Sprintf("eth-address-%d", j),
 		}
 
@@ -672,10 +672,10 @@ func testBeginBlockSuccess(t *testing.T) {
 	assert.Equal(t, "new-vega-key-2", data2.VegaPubKey)
 	data3 := top.Get("vega-master-pubkey-3")
 	assert.NotNil(t, data3)
-	assert.Equal(t, "vega-key-3", data3.VegaPubKey)
+	assert.Equal(t, hex.EncodeToString([]byte("vega-key-3")), data3.VegaPubKey)
 	data4 := top.Get("vega-master-pubkey-4")
 	assert.NotNil(t, data4)
-	assert.Equal(t, "vega-key-4", data4.VegaPubKey)
+	assert.Equal(t, hex.EncodeToString([]byte("vega-key-4")), data4.VegaPubKey)
 
 	// when
 	top.BeginBlock(ctx, abcitypes.RequestBeginBlock{Header: types1.Header{Height: 13}})
@@ -715,7 +715,7 @@ func testBeginBlockNotifyKeyChange(t *testing.T) {
 		nr := commandspb.AnnounceNode{
 			Id:              id,
 			ChainPubKey:     chainValidators[i],
-			VegaPubKey:      fmt.Sprintf("vega-key-%d", j),
+			VegaPubKey:      hex.EncodeToString([]byte(fmt.Sprintf("vega-key-%d", j))),
 			EthereumAddress: fmt.Sprintf("eth-address-%d", j),
 		}
 
