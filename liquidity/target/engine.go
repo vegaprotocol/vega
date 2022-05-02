@@ -88,10 +88,10 @@ func (e *Engine) RecordOpenInterest(oi uint64, now time.Time) error {
 	}
 
 	if now.After(e.now) {
+		e.now = now
 		maxFromCurrent := e.getMaxFromCurrent()
 		e.previous = append(e.previous, maxFromCurrent)
 		e.current = make([]uint64, 0, len(e.current))
-		e.now = now
 	}
 	e.current = append(e.current, oi)
 
