@@ -1,5 +1,5 @@
 Feature: 0032-PRIM-price-mornitoring, test horizon trigger.
-  Scenario: 001, horizon set to 3600 in price monitoring model.  0032-PRIM-001, 0032-PRIM-009
+  Scenario: 001, horizon set to 3600 in price monitoring model.  0032-PRIM-001, 0032-PRIM-009, 0018-RSKM-007
 
   Given the following network parameters are set:
       | name                                          | value |
