@@ -96,17 +96,8 @@ Feature: Target stake
       | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | tt_3  | ETH/DEC21 | sell | 10     | 90    | 1                | TYPE_LIMIT | TIF_GTC | tt_2_1    |
 
-    # max_oi is only using time when open interest is recorded, so the open interest at timestep "2021-03-15T02:00:00Z" is not used when determining the maximum. Hence max_io is 30.
-    # -----------------------------------------------
-    # Can we still make this change please? Open interest used in max_oi should be all the open interest within the timewindow
-    # rather than open interest when its recorded 
-
-    # target stake is: 90 x 30 x 1.5 x 0.1 = 405
     # target stake should be: 90 x 40 x 1.5 x 0.1 = 540
-    And the target stake should be "405" for the market "ETH/DEC21"
-
-    When time is updated to "2021-04-15T03:00:00Z"
-    And the target stake should be "405" for the market "ETH/DEC21"
+    And the target stake should be "540" for the market "ETH/DEC21"
 
     When time is updated to "2021-04-15T03:00:00Z"
     When the parties place the following orders:
@@ -114,8 +105,8 @@ Feature: Target stake
       | tt_1  | ETH/DEC21 | sell | 10     | 90    | 1                | TYPE_LIMIT | TIF_GTC | tt_1_2    |
       | tt_2  | ETH/DEC21 | sell | 20     | 90    | 1                | TYPE_LIMIT | TIF_GTC | tt_2_2    |
 
-    # target stake is: 90 x 20 x 1.5 x 0.1 = 270
-    And the target stake should be "270" for the market "ETH/DEC21"
+    # target stake is: 90 x 30 x 1.5 x 0.1 = 405
+    And the target stake should be "405" for the market "ETH/DEC21"
 
 Scenario: Max open interest changes over time, testing change of timewindow (0041-TSTK-001; 0041-TSTK-004; 0041-TSTK-005)
   Background:
