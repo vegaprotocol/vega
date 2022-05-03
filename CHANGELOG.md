@@ -18,6 +18,7 @@
 - [540](https://github.com/vegaprotocol/data-node/issues/540) - CI: trigger Devnet deployment on merges to develop branch
 - [546](https://github.com/vegaprotocol/data-node/issues/546) - Data retention for margin levels 
 - [578](https://github.com/vegaprotocol/data-node/issues/578) - Add metrics for `SQL` queries
+- [582](https://github.com/vegaprotocol/data-node/issues/582) - Add a cache for assets
 
 ### 🐛 Fixes
 - [524](https://github.com/vegaprotocol/data-node/issues/524) - Fix for incorrect balances
