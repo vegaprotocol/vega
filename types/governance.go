@@ -1402,7 +1402,7 @@ func UpdateInstrumentConfigurationFromProto(p *vegapb.UpdateInstrumentConfigurat
 			Future: &UpdateFutureProduct{
 				QuoteName:                       pr.Future.QuoteName,
 				OracleSpecForSettlementPrice:    OracleSpecConfigurationFromProto(pr.Future.OracleSpecForSettlementPrice),
-				OracleSpecForTradingTermination: OracleSpecConfigurationFromProto(pr.Future.OracleSpecForSettlementPrice),
+				OracleSpecForTradingTermination: OracleSpecConfigurationFromProto(pr.Future.OracleSpecForTradingTermination),
 				SettlementPriceDecimals:         pr.Future.SettlementPriceDecimals,
 				OracleSpecBinding:               OracleSpecBindingForFutureFromProto(pr.Future.OracleSpecBinding),
 			},

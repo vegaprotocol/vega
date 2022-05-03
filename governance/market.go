@@ -454,8 +454,15 @@ func validateUpdateFuture(future *types.UpdateFutureProduct) (types.ProposalErro
 		return types.ProposalErrorInvalidFutureProduct, err
 	}
 
-	if err := ospec.EnsureBoundableProperty(future.OracleSpecBinding.TradingTerminationProperty, oraclespb.PropertyKey_TYPE_BOOLEAN); err != nil {
-		return types.ProposalErrorInvalidFutureProduct, fmt.Errorf("invalid oracle spec binding for trading termination: %w", err)
+	switch future.OracleSpecBinding.TradingTerminationProperty {
+	case oracles.BuiltinOracleTimestamp:
+		if err := ospec.EnsureBoundableProperty(future.OracleSpecBinding.TradingTerminationProperty, oraclespb.PropertyKey_TYPE_TIMESTAMP); err != nil {
+			return types.ProposalErrorInvalidFutureProduct, fmt.Errorf("invalid oracle spec binding for trading termination: %w", err)
+		}
+	default:
+		if err := ospec.EnsureBoundableProperty(future.OracleSpecBinding.TradingTerminationProperty, oraclespb.PropertyKey_TYPE_BOOLEAN); err != nil {
+			return types.ProposalErrorInvalidFutureProduct, fmt.Errorf("invalid oracle spec binding for trading termination: %w", err)
+		}
 	}
 
 	return types.ProposalErrorUnspecified, nil
