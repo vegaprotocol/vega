@@ -10,10 +10,10 @@ import (
 )
 
 func TestCalculateRewardsByContribution(t *testing.T) {
-	require.Nil(t, calculateRewardsByContribution("1", "ETH", "FROM_ACCOUNT", types.AccountTypeMakerFeeReward, num.Zero(), []*types.FeePartyScore{{Party: "party1", Score: num.DecimalFromFloat(0.2)}, {Party: "party2", Score: num.DecimalFromFloat(0.8)}}, time.Now()))
-	require.Nil(t, calculateRewardsByContribution("1", "ETH", "FROM_ACCOUNT", types.AccountTypeMakerFeeReward, num.NewUint(1000), []*types.FeePartyScore{}, time.Now()))
+	require.Nil(t, calculateRewardsByContribution("1", "ETH", "FROM_ACCOUNT", types.AccountTypeMakerFeeReward, num.Zero(), []*types.PartyContibutionScore{{Party: "party1", Score: num.DecimalFromFloat(0.2)}, {Party: "party2", Score: num.DecimalFromFloat(0.8)}}, time.Now()))
+	require.Nil(t, calculateRewardsByContribution("1", "ETH", "FROM_ACCOUNT", types.AccountTypeMakerFeeReward, num.NewUint(1000), []*types.PartyContibutionScore{}, time.Now()))
 
-	po := calculateRewardsByContribution("1", "ETH", "FROM_ACCOUNT", types.AccountTypeMakerFeeReward, num.NewUint(1000), []*types.FeePartyScore{{Party: "party1", Score: num.DecimalFromFloat(0.2)}, {Party: "party2", Score: num.DecimalFromFloat(0.8)}}, time.Now())
+	po := calculateRewardsByContribution("1", "ETH", "FROM_ACCOUNT", types.AccountTypeMakerFeeReward, num.NewUint(1000), []*types.PartyContibutionScore{{Party: "party1", Score: num.DecimalFromFloat(0.2)}, {Party: "party2", Score: num.DecimalFromFloat(0.8)}}, time.Now())
 	require.Equal(t, "ETH", po.asset)
 	require.Equal(t, "1", po.epochSeq)
 	require.Equal(t, "FROM_ACCOUNT", po.fromAccount)

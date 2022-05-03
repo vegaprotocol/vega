@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"sort"
 
+	vegapb "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
@@ -64,15 +65,46 @@ func (e *Engine) recurringTransfer(
 	return nil
 }
 
+func compareStringSlices(a, b []string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i, v := range a {
+		if v != b[i] {
+			return false
+		}
+	}
+	return true
+}
+
+func isSimilar(dispatchStrategy1, dispatchStrategy2 *vegapb.DispatchStrategy) bool {
+	return (dispatchStrategy1 == nil && dispatchStrategy2 == nil) ||
+		(dispatchStrategy1 != nil && dispatchStrategy2 != nil && dispatchStrategy1.AssetForMetric == dispatchStrategy2.AssetForMetric && dispatchStrategy1.Metric == dispatchStrategy2.Metric && compareStringSlices(dispatchStrategy1.Markets, dispatchStrategy2.Markets))
+}
+
 func (e *Engine) ensureNoRecurringTransferDuplicates(
 	transfer *types.RecurringTransfer,
 ) error {
 	for _, v := range e.recurringTransfers {
-		if v.From == transfer.From && v.To == transfer.To && v.FromAccountType == transfer.FromAccountType && v.ToAccountType == transfer.ToAccountType {
+		// NB: 2 transfers are identical and not allowed if they have the same from, to, type AND the same dispatch strategy.
+		// This is needed so that we can for example setup transfer of USDT from one PK to the reward account with type maker fees received with dispatch based on the asset ETH -
+		// and then a similar transfer of USDT from the same PK to the same reward type but with different dispatch strategy - one tracking markets for the asset DAI.
+		if v.From == transfer.From && v.To == transfer.To && v.FromAccountType == transfer.FromAccountType && v.ToAccountType == transfer.ToAccountType && isSimilar(v.DispatchStrategy, transfer.DispatchStrategy) {
 			return ErrCannotSubmitDuplicateRecurringTransferWithSameFromAndTo
 		}
 	}
 
+	return nil
+}
+
+func (e *Engine) getMarketScores(ds *vegapb.DispatchStrategy) []*types.MarketContributionScore {
+	switch ds.Metric {
+	case vegapb.DispatchMetric_DISPATCH_METRIC_TAKER_FEES_PAID, vegapb.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_RECEIVED, vegapb.DispatchMetric_DISPATCH_METRIC_LP_FEES_RECEIVED:
+		return e.marketActivityTracker.GetMarketScores(ds.AssetForMetric, ds.Markets, ds.Metric)
+
+	case vegapb.DispatchMetric_DISPATCH_METRIC_MARKET_VALUE:
+		return e.marketActivityTracker.GetMarketsWithEligibleProposer(ds.AssetForMetric, ds.Markets)
+	}
 	return nil
 }
 
@@ -128,9 +160,29 @@ func (e *Engine) distributeRecurringTransfers(
 			continue
 		}
 
-		resps, err := e.processTransfer(
-			ctx, v.From, v.To, v.Asset, v.Market, v.FromAccountType, v.ToAccountType, amount, v.Reference, nil, // last is eventual oneoff, which this is not
-		)
+		// NB: if no dispatch strategy is defined - the transfer is made to the account as defined in the transfer.
+		// If a dispatch strategy is defined but there are no relevant markets in scope or no fees in scope then no transfer is made!
+		var resps []*types.TransferResponse
+		if v.DispatchStrategy == nil {
+			resps, err = e.processTransfer(
+				ctx, v.From, v.To, v.Asset, "", v.FromAccountType, v.ToAccountType, amount, v.Reference, nil, // last is eventual oneoff, which this is not
+			)
+		} else {
+			marketScores := e.getMarketScores(v.DispatchStrategy)
+			for _, fms := range marketScores {
+				amt, _ := num.UintFromDecimal(amount.ToDecimal().Mul(fms.Score))
+				if amt.IsZero() {
+					continue
+				}
+				r, err := e.processTransfer(
+					ctx, v.From, v.To, v.Asset, fms.Market, v.FromAccountType, v.ToAccountType, amt, v.Reference, nil, // last is eventual oneoff, which this is not
+				)
+				if err != nil {
+					break
+				}
+				resps = append(resps, r...)
+			}
+		}
 		if err != nil {
 			v.Status = types.TransferStatusStopped
 			transfersDone = append(transfersDone,
