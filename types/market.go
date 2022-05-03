@@ -4,11 +4,25 @@ package types
 
 import (
 	"errors"
+	"fmt"
+	"strings"
 
 	proto "code.vegaprotocol.io/protos/vega"
-	v1 "code.vegaprotocol.io/protos/vega/oracles/v1"
 	"code.vegaprotocol.io/vega/types/num"
 )
+
+type LiquidityProviderFeeShares []*LiquidityProviderFeeShare
+
+func (ls LiquidityProviderFeeShares) String() string {
+	if ls == nil {
+		return "[]"
+	}
+	strs := make([]string, 0, len(ls))
+	for _, l := range ls {
+		strs = append(strs, l.String())
+	}
+	return "[" + strings.Join(strs, ", ") + "]"
+}
 
 type LiquidityProviderFeeShare = proto.LiquidityProviderFeeShare
 
@@ -55,6 +69,16 @@ func (m MarketTimestamps) DeepClone() *MarketTimestamps {
 		Open:     m.Open,
 		Close:    m.Close,
 	}
+}
+
+func (m MarketTimestamps) String() string {
+	return fmt.Sprintf(
+		"proposed(%v) open(%v) pending(%v) close(%v)",
+		m.Proposed,
+		m.Open,
+		m.Pending,
+		m.Close,
+	)
 }
 
 type MarketTradingMode = proto.Market_TradingMode
@@ -132,7 +156,10 @@ func (i InstrumentMetadata) IntoProto() *proto.InstrumentMetadata {
 }
 
 func (i InstrumentMetadata) String() string {
-	return i.IntoProto().String()
+	return fmt.Sprintf(
+		"tags(%v)",
+		Tags(i.Tags).String(),
+	)
 }
 
 func (i InstrumentMetadata) DeepClone() *InstrumentMetadata {
@@ -174,7 +201,11 @@ func (a AuctionDuration) IntoProto() *proto.AuctionDuration {
 }
 
 func (a AuctionDuration) String() string {
-	return a.IntoProto().String()
+	return fmt.Sprintf(
+		"duration(%v) volume(%v)",
+		a.Duration,
+		a.Volume,
+	)
 }
 
 func (a AuctionDuration) DeepClone() *AuctionDuration {
@@ -191,7 +222,10 @@ func (p Price) IntoProto() *proto.Price {
 }
 
 func (p Price) String() string {
-	return p.IntoProto().String()
+	return fmt.Sprintf(
+		"value(%s)",
+		uintPointerToString(p.Value),
+	)
 }
 
 func (t Timestamp) IntoProto() *proto.Timestamp {
@@ -201,14 +235,17 @@ func (t Timestamp) IntoProto() *proto.Timestamp {
 }
 
 func (t Timestamp) String() string {
-	return t.IntoProto().String()
+	return fmt.Sprintf(
+		"value(%v)",
+		t.Value,
+	)
 }
 
 type rmType int
 
 const (
-	SIMPLE_RISK_MODEL rmType = iota
-	LOGNORMAL_RISK_MODEL
+	SimpleRiskModelType rmType = iota
+	LogNormalRiskModelType
 )
 
 type TradableInstrument struct {
@@ -222,6 +259,7 @@ type isTRM interface {
 	isTRM()
 	trmIntoProto() interface{}
 	rmType() rmType
+	String() string
 }
 
 func TradableInstrumentFromProto(ti *proto.TradableInstrument) *TradableInstrument {
@@ -266,7 +304,7 @@ func (t TradableInstrument) IntoProto() *proto.TradableInstrument {
 }
 
 func (t TradableInstrument) GetSimpleRiskModel() *SimpleRiskModel {
-	if t.rmt == SIMPLE_RISK_MODEL {
+	if t.rmt == SimpleRiskModelType {
 		srm, ok := t.RiskModel.(*TradableInstrumentSimpleRiskModel)
 		if !ok || srm == nil {
 			return nil
@@ -277,7 +315,7 @@ func (t TradableInstrument) GetSimpleRiskModel() *SimpleRiskModel {
 }
 
 func (t TradableInstrument) GetLogNormalRiskModel() *LogNormalRiskModel {
-	if t.rmt == LOGNORMAL_RISK_MODEL {
+	if t.rmt == LogNormalRiskModelType {
 		lrm, ok := t.RiskModel.(*TradableInstrumentLogNormalRiskModel)
 		if !ok || lrm == nil {
 			return nil
@@ -288,7 +326,12 @@ func (t TradableInstrument) GetLogNormalRiskModel() *LogNormalRiskModel {
 }
 
 func (t TradableInstrument) String() string {
-	return t.IntoProto().String()
+	return fmt.Sprintf(
+		"instrument(%s) marginCalculator(%s) riskModel(%s)",
+		reflectPointerToString(t.Instrument),
+		reflectPointerToString(t.MarginCalculator),
+		reflectPointerToString(t.RiskModel),
+	)
 }
 
 func (t TradableInstrument) DeepClone() *TradableInstrument {
@@ -304,12 +347,19 @@ type InstrumentFuture struct {
 	Future *Future
 }
 
+func (i InstrumentFuture) String() string {
+	return fmt.Sprintf(
+		"future(%s)",
+		reflectPointerToString(i.Future),
+	)
+}
+
 type Future struct {
 	SettlementAsset                 string
 	QuoteName                       string
-	OracleSpecForSettlementPrice    *v1.OracleSpec
-	OracleSpecForTradingTermination *v1.OracleSpec
-	OracleSpecBinding               *OracleSpecToFutureBinding
+	OracleSpecForSettlementPrice    *OracleSpec
+	OracleSpecForTradingTermination *OracleSpec
+	OracleSpecBinding               *OracleSpecBindingForFuture
 	SettlementPriceDecimals         uint32
 }
 
@@ -317,9 +367,9 @@ func FutureFromProto(f *proto.Future) *Future {
 	return &Future{
 		SettlementAsset:                 f.SettlementAsset,
 		QuoteName:                       f.QuoteName,
-		OracleSpecForSettlementPrice:    f.OracleSpecForSettlementPrice.DeepClone(),
-		OracleSpecForTradingTermination: f.OracleSpecForTradingTermination.DeepClone(),
-		OracleSpecBinding:               OracleSpecToFutureBindingFromProto(f.OracleSpecBinding),
+		OracleSpecForSettlementPrice:    OracleSpecFromProto(f.OracleSpecForSettlementPrice),
+		OracleSpecForTradingTermination: OracleSpecFromProto(f.OracleSpecForTradingTermination),
+		OracleSpecBinding:               OracleSpecBindingForFutureFromProto(f.OracleSpecBinding),
 		SettlementPriceDecimals:         f.SettlementPriceDecimals,
 	}
 }
@@ -328,11 +378,23 @@ func (f Future) IntoProto() *proto.Future {
 	return &proto.Future{
 		SettlementAsset:                 f.SettlementAsset,
 		QuoteName:                       f.QuoteName,
-		OracleSpecForSettlementPrice:    f.OracleSpecForSettlementPrice.DeepClone(),
-		OracleSpecForTradingTermination: f.OracleSpecForTradingTermination.DeepClone(),
+		OracleSpecForSettlementPrice:    f.OracleSpecForSettlementPrice.IntoProto(),
+		OracleSpecForTradingTermination: f.OracleSpecForTradingTermination.IntoProto(),
 		OracleSpecBinding:               f.OracleSpecBinding.IntoProto(),
 		SettlementPriceDecimals:         f.SettlementPriceDecimals,
 	}
+}
+
+func (f Future) String() string {
+	return fmt.Sprintf(
+		"quoteName(%s) settlementAsset(%s) settlementPriceDecimals(%v) oracleSpec(settlementPrice(%s) tradingTermination(%s) binding(%s))",
+		f.QuoteName,
+		f.SettlementAsset,
+		f.SettlementPriceDecimals,
+		reflectPointerToString(f.OracleSpecForSettlementPrice),
+		reflectPointerToString(f.OracleSpecForTradingTermination),
+		reflectPointerToString(f.OracleSpecBinding),
+	)
 }
 
 func iInstrumentFromProto(pi interface{}) iProto {
@@ -371,6 +433,7 @@ func (i InstrumentFuture) iIntoProto() interface{} {
 type iProto interface {
 	iIntoProto() interface{}
 	getAsset() (string, error)
+	String() string
 }
 
 type Instrument struct {
@@ -421,13 +484,28 @@ func (i Instrument) IntoProto() *proto.Instrument {
 }
 
 func (i Instrument) DeepClone() *Instrument {
-	return &Instrument{
-		ID:       i.ID,
-		Code:     i.Code,
-		Name:     i.Name,
-		Metadata: i.Metadata.DeepClone(),
-		Product:  i.Product,
+	cpy := &Instrument{
+		ID:      i.ID,
+		Code:    i.Code,
+		Name:    i.Name,
+		Product: i.Product,
 	}
+
+	if i.Metadata != nil {
+		cpy.Metadata = i.Metadata.DeepClone()
+	}
+	return cpy
+}
+
+func (i Instrument) String() string {
+	return fmt.Sprintf(
+		"ID(%s) name(%s) code(%s) product(%s) metadata(%s)",
+		i.ID,
+		i.Name,
+		i.Code,
+		reflectPointerToString(i.Product),
+		reflectPointerToString(i.Metadata),
+	)
 }
 
 type MarketData struct {
@@ -461,30 +539,15 @@ type MarketData struct {
 
 func (m MarketData) DeepClone() *MarketData {
 	cpy := m
-	if m.MarkPrice != nil {
-		cpy.MarkPrice = m.MarkPrice.Clone()
-	}
-	if m.BestBidPrice != nil {
-		cpy.BestBidPrice = m.BestBidPrice.Clone()
-	}
-	if m.BestOfferPrice != nil {
-		cpy.BestOfferPrice = m.BestOfferPrice.Clone()
-	}
-	if m.BestStaticBidPrice != nil {
-		cpy.BestStaticBidPrice = m.BestStaticBidPrice.Clone()
-	}
-	if m.BestStaticOfferPrice != nil {
-		cpy.BestStaticOfferPrice = m.BestStaticOfferPrice.Clone()
-	}
-	if m.MidPrice != nil {
-		cpy.MidPrice = m.MidPrice.Clone()
-	}
-	if m.StaticMidPrice != nil {
-		cpy.StaticMidPrice = m.StaticMidPrice.Clone()
-	}
-	if m.IndicativePrice != nil {
-		cpy.IndicativePrice = m.IndicativePrice.Clone()
-	}
+	cpy.MarkPrice = m.MarkPrice.Clone()
+	cpy.BestBidPrice = m.BestBidPrice.Clone()
+	cpy.BestOfferPrice = m.BestOfferPrice.Clone()
+	cpy.BestStaticBidPrice = m.BestStaticBidPrice.Clone()
+	cpy.BestStaticOfferPrice = m.BestStaticOfferPrice.Clone()
+	cpy.MidPrice = m.MidPrice.Clone()
+	cpy.StaticMidPrice = m.StaticMidPrice.Clone()
+	cpy.IndicativePrice = m.IndicativePrice.Clone()
+
 	cpy.PriceMonitoringBounds = make([]*PriceMonitoringBounds, 0, len(m.PriceMonitoringBounds))
 	for _, pmb := range m.PriceMonitoringBounds {
 		cpy.PriceMonitoringBounds = append(cpy.PriceMonitoringBounds, pmb.DeepClone())
@@ -536,7 +599,35 @@ func (m MarketData) IntoProto() *proto.MarketData {
 }
 
 func (m MarketData) String() string {
-	return m.IntoProto().String()
+	return fmt.Sprintf(
+		"markPrice(%s) bestBidPrice(%s) bestBidVolume(%v) bestOfferPrice(%s) bestOfferVolume(%v) bestStaticBidPrice(%s) bestStaticBidVolume(%v) bestStaticOfferPrice(%s) bestStaticOfferVolume(%v) midPrice(%s) staticMidPrice(%s) market(%s) timestamp(%v) openInterest(%v) auctionEnd(%v) auctionStart(%v) indicativePrice(%s) indicativeVolume(%v) marketTradingMode(%s) trigger(%s) extensionTrigger(%s) targetStake(%s) suppliedStake(%s) priceMonitoringBounds(%s) marketValueProxy(%s) liquidityProviderFeeShare(%v)",
+		uintPointerToString(m.MarkPrice),
+		m.BestBidPrice.String(),
+		m.BestBidVolume,
+		uintPointerToString(m.BestOfferPrice),
+		m.BestOfferVolume,
+		uintPointerToString(m.BestStaticBidPrice),
+		m.BestStaticBidVolume,
+		uintPointerToString(m.BestStaticOfferPrice),
+		m.BestStaticOfferVolume,
+		uintPointerToString(m.MidPrice),
+		uintPointerToString(m.StaticMidPrice),
+		m.Market,
+		m.Timestamp,
+		m.OpenInterest,
+		m.AuctionEnd,
+		m.AuctionStart,
+		uintPointerToString(m.IndicativePrice),
+		m.IndicativeVolume,
+		m.MarketTradingMode.String(),
+		m.Trigger.String(),
+		m.ExtensionTrigger.String(),
+		m.TargetStake,
+		m.SuppliedStake,
+		PriceMonitoringBoundsList(m.PriceMonitoringBounds).String(),
+		m.MarketValueProxy,
+		LiquidityProviderFeeShares(m.LiquidityProviderFeeShare).String(),
+	)
 }
 
 type Market struct {
@@ -656,7 +747,20 @@ func (m *Market) SetAsset(a string) {
 }
 
 func (m Market) String() string {
-	return m.IntoProto().String()
+	return fmt.Sprintf(
+		"ID(%s) tradableInstrument(%s) decimalPlaces(%v) positionDecimalPlaces(%v) fees(%s) openingAuction(%s) priceMonitoringSettings(%s) liquidityMonitoringParameters(%s) tradingMode(%s) state(%s) marketTimestamps(%s)",
+		m.ID,
+		reflectPointerToString(m.TradableInstrument),
+		m.DecimalPlaces,
+		m.PositionDecimalPlaces,
+		reflectPointerToString(m.Fees),
+		reflectPointerToString(m.OpeningAuction),
+		reflectPointerToString(m.PriceMonitoringSettings),
+		reflectPointerToString(m.LiquidityMonitoringParameters),
+		m.TradingMode.String(),
+		m.State.String(),
+		reflectPointerToString(m.MarketTimestamps),
+	)
 }
 
 func (m Market) DeepClone() *Market {
@@ -693,4 +797,10 @@ func (m Market) DeepClone() *Market {
 		cpy.MarketTimestamps = m.MarketTimestamps.DeepClone()
 	}
 	return cpy
+}
+
+type Tags []string
+
+func (t Tags) String() string {
+	return "[" + strings.Join(t, ", ") + "]"
 }

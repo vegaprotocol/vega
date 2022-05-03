@@ -4,8 +4,6 @@ import (
 	"testing"
 	"time"
 
-	"code.vegaprotocol.io/protos/vega"
-	ov1 "code.vegaprotocol.io/protos/vega/oracles/v1"
 	v1 "code.vegaprotocol.io/protos/vega/snapshot/v1"
 	"code.vegaprotocol.io/vega/snapshot"
 	"code.vegaprotocol.io/vega/types"
@@ -80,7 +78,7 @@ func getDummyData() *types.Chunk {
 							Status:  0,
 							Ref:     "rw1",
 							TxHash:  "abcdef091235456",
-							Ext: &vega.WithdrawExt{
+							Ext: &types.WithdrawExt{
 								Ext: nil,
 							},
 						},
@@ -393,16 +391,16 @@ func getDummyData() *types.Chunk {
 										Future: &types.Future{
 											SettlementAsset: "AST",
 											QuoteName:       "AST",
-											OracleSpecForSettlementPrice: &ov1.OracleSpec{
-												Id:      "o1",
+											OracleSpecForSettlementPrice: &types.OracleSpec{
+												ID:      "o1",
 												PubKeys: []string{},
-												Filters: []*ov1.Filter{},
+												Filters: []*types.OracleSpecFilter{},
 											},
-											OracleSpecForTradingTermination: &ov1.OracleSpec{
-												Id:      "os1",
-												Filters: []*ov1.Filter{},
+											OracleSpecForTradingTermination: &types.OracleSpec{
+												ID:      "os1",
+												Filters: []*types.OracleSpecFilter{},
 											},
-											OracleSpecBinding: &types.OracleSpecToFutureBinding{},
+											OracleSpecBinding: &types.OracleSpecBindingForFuture{},
 										},
 									},
 								},

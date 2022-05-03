@@ -12,6 +12,7 @@ import (
 	"code.vegaprotocol.io/vega/execution/mocks"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/oracles"
+	"code.vegaprotocol.io/vega/types"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -35,8 +36,8 @@ func testOracleEngineSubscribingSucceeds(t *testing.T) {
 	ctx := context.Background()
 	currentTime := time.Now()
 	engine := newEngine(ctx, t, currentTime)
-	engine.broker.mockNewOracleSpecSubscription(currentTime, btcEquals42.spec.Proto)
-	engine.broker.mockNewOracleSpecSubscription(currentTime, ethLess84.spec.Proto)
+	engine.broker.mockNewOracleSpecSubscription(currentTime, btcEquals42.spec.OriginalSpec)
+	engine.broker.mockNewOracleSpecSubscription(currentTime, ethLess84.spec.OriginalSpec)
 
 	// when
 	id1 := engine.Subscribe(ctx, btcEquals42.spec, btcEquals42.subscriber.Cb)
@@ -78,14 +79,14 @@ func testOracleEngineBroadcastingCorrectDataSucceeds(t *testing.T) {
 	ctx := context.Background()
 	currentTime := time.Now()
 	engine := newEngine(ctx, t, currentTime)
-	engine.broker.mockNewOracleSpecSubscription(currentTime, btcEquals42.spec.Proto)
-	engine.broker.mockNewOracleSpecSubscription(currentTime, btcGreater21.spec.Proto)
-	engine.broker.mockNewOracleSpecSubscription(currentTime, ethEquals42.spec.Proto)
-	engine.broker.mockNewOracleSpecSubscription(currentTime, ethLess84.spec.Proto)
-	engine.broker.mockNewOracleSpecSubscription(currentTime, btcGreater100.spec.Proto)
+	engine.broker.mockNewOracleSpecSubscription(currentTime, btcEquals42.spec.OriginalSpec)
+	engine.broker.mockNewOracleSpecSubscription(currentTime, btcGreater21.spec.OriginalSpec)
+	engine.broker.mockNewOracleSpecSubscription(currentTime, ethEquals42.spec.OriginalSpec)
+	engine.broker.mockNewOracleSpecSubscription(currentTime, ethLess84.spec.OriginalSpec)
+	engine.broker.mockNewOracleSpecSubscription(currentTime, btcGreater100.spec.OriginalSpec)
 	engine.broker.mockOracleDataBroadcast(currentTime, dataBTC42.proto, []string{
-		btcEquals42.spec.Proto.Id,
-		btcGreater21.spec.Proto.Id,
+		btcEquals42.spec.OriginalSpec.ID,
+		btcGreater21.spec.OriginalSpec.ID,
 	})
 
 	// when
@@ -132,11 +133,11 @@ func testOracleEngineUnsubscribingKnownIDSucceeds(t *testing.T) {
 	ctx := context.Background()
 	currentTime := time.Now()
 	engine := newEngine(ctx, t, currentTime)
-	engine.broker.mockNewOracleSpecSubscription(currentTime, btcEquals42.spec.Proto)
-	engine.broker.mockNewOracleSpecSubscription(currentTime, ethEquals42.spec.Proto)
-	engine.broker.mockOracleSpecSubscriptionDeactivation(currentTime, btcEquals42.spec.Proto)
+	engine.broker.mockNewOracleSpecSubscription(currentTime, btcEquals42.spec.OriginalSpec)
+	engine.broker.mockNewOracleSpecSubscription(currentTime, ethEquals42.spec.OriginalSpec)
+	engine.broker.mockOracleSpecSubscriptionDeactivation(currentTime, btcEquals42.spec.OriginalSpec)
 	engine.broker.mockOracleDataBroadcast(currentTime, dataETH42.proto, []string{
-		ethEquals42.spec.Proto.Id,
+		ethEquals42.spec.OriginalSpec.ID,
 	})
 
 	// when
@@ -229,7 +230,7 @@ type specBundle struct {
 
 func spec(t *testing.T, currency string, op oraclespb.Condition_Operator, price string) specBundle {
 	t.Helper()
-	spec, err := oracles.NewOracleSpec(*oraclespb.NewOracleSpec(
+	typedOracleSpec := types.OracleSpecFromProto(oraclespb.NewOracleSpec(
 		[]string{
 			"0xCAFED00D",
 		},
@@ -247,6 +248,7 @@ func spec(t *testing.T, currency string, op oraclespb.Condition_Operator, price 
 				},
 			},
 		}))
+	spec, err := oracles.NewOracleSpec(*typedOracleSpec)
 	if err != nil {
 		t.Fatalf("Couldn't create oracle spec: %v", err)
 	}
@@ -293,16 +295,18 @@ func newTimeService(ctx context.Context, t *testing.T) *testTimeService {
 	}
 }
 
-func (b *testBroker) mockNewOracleSpecSubscription(currentTime time.Time, spec oraclespb.OracleSpec) {
-	spec.CreatedAt = currentTime.UnixNano()
-	spec.Status = oraclespb.OracleSpec_STATUS_ACTIVE
-	b.EXPECT().Send(events.NewOracleSpecEvent(b.ctx, spec))
+func (b *testBroker) mockNewOracleSpecSubscription(currentTime time.Time, spec *types.OracleSpec) {
+	proto := spec.IntoProto()
+	proto.CreatedAt = currentTime.UnixNano()
+	proto.Status = oraclespb.OracleSpec_STATUS_ACTIVE
+	b.EXPECT().Send(events.NewOracleSpecEvent(b.ctx, *proto))
 }
 
-func (b *testBroker) mockOracleSpecSubscriptionDeactivation(currentTime time.Time, spec oraclespb.OracleSpec) {
-	spec.CreatedAt = currentTime.UnixNano()
-	spec.Status = oraclespb.OracleSpec_STATUS_DEACTIVATED
-	b.EXPECT().Send(events.NewOracleSpecEvent(b.ctx, spec))
+func (b *testBroker) mockOracleSpecSubscriptionDeactivation(currentTime time.Time, spec *types.OracleSpec) {
+	proto := spec.IntoProto()
+	proto.CreatedAt = currentTime.UnixNano()
+	proto.Status = oraclespb.OracleSpec_STATUS_DEACTIVATED
+	b.EXPECT().Send(events.NewOracleSpecEvent(b.ctx, *proto))
 }
 
 func (b *testBroker) mockOracleDataBroadcast(currentTime time.Time, data oraclespb.OracleData, specIDs []string) {

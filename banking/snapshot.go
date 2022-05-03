@@ -172,7 +172,7 @@ func (e *Engine) serialiseDeposits() ([]byte, error) {
 	if e.log.IsDebug() {
 		e.log.Info("serialiseDeposits: number of deposits:", logging.Int("len(deposits)", len(deposits)))
 		for i, d := range deposits {
-			e.log.Info("serialiseDeposits:", logging.Int("index", i), logging.String("ID", d.ID), logging.String("deposit", d.Deposit.IntoProto().String()))
+			e.log.Info("serialiseDeposits:", logging.Int("index", i), logging.String("ID", d.ID), logging.String("deposit", d.Deposit.String()))
 		}
 	}
 	payload := types.Payload{

@@ -5,7 +5,7 @@ import (
 
 	"github.com/golang/protobuf/jsonpb"
 
-	types "code.vegaprotocol.io/protos/vega"
+	vegapb "code.vegaprotocol.io/protos/vega"
 )
 
 type Unmarshaler struct {
@@ -18,8 +18,8 @@ func NewUnmarshaler() *Unmarshaler {
 
 // UnmarshalRiskModel unmarshal a tradable instrument instead of a risk model since
 // gRPC implementation of risk models can't be used with jsonpb.Unmarshaler.
-func (u *Unmarshaler) UnmarshalRiskModel(r io.Reader) (*types.TradableInstrument, error) {
-	proto := &types.TradableInstrument{}
+func (u *Unmarshaler) UnmarshalRiskModel(r io.Reader) (*vegapb.TradableInstrument, error) {
+	proto := &vegapb.TradableInstrument{}
 	err := u.unmarshaler.Unmarshal(r, proto)
 	if err != nil {
 		return nil, err
@@ -27,8 +27,8 @@ func (u *Unmarshaler) UnmarshalRiskModel(r io.Reader) (*types.TradableInstrument
 	return proto, nil
 }
 
-func (u *Unmarshaler) UnmarshalPriceMonitoring(r io.Reader) (*types.PriceMonitoringSettings, error) {
-	proto := &types.PriceMonitoringSettings{}
+func (u *Unmarshaler) UnmarshalPriceMonitoring(r io.Reader) (*vegapb.PriceMonitoringSettings, error) {
+	proto := &vegapb.PriceMonitoringSettings{}
 	err := u.unmarshaler.Unmarshal(r, proto)
 	if err != nil {
 		return nil, err
@@ -37,8 +37,8 @@ func (u *Unmarshaler) UnmarshalPriceMonitoring(r io.Reader) (*types.PriceMonitor
 }
 
 // UnmarshalOracleConfig unmarshal a future as this is a common parent.
-func (u *Unmarshaler) UnmarshalOracleConfig(r io.Reader) (*types.Future, error) {
-	proto := &types.Future{}
+func (u *Unmarshaler) UnmarshalOracleConfig(r io.Reader) (*vegapb.Future, error) {
+	proto := &vegapb.Future{}
 	err := u.unmarshaler.Unmarshal(r, proto)
 	if err != nil {
 		return nil, err
@@ -46,8 +46,8 @@ func (u *Unmarshaler) UnmarshalOracleConfig(r io.Reader) (*types.Future, error) 
 	return proto, nil
 }
 
-func (u *Unmarshaler) UnmarshalMarginCalculator(r io.Reader) (*types.MarginCalculator, error) {
-	proto := &types.MarginCalculator{}
+func (u *Unmarshaler) UnmarshalMarginCalculator(r io.Reader) (*vegapb.MarginCalculator, error) {
+	proto := &vegapb.MarginCalculator{}
 	err := u.unmarshaler.Unmarshal(r, proto)
 	if err != nil {
 		return nil, err
@@ -55,8 +55,8 @@ func (u *Unmarshaler) UnmarshalMarginCalculator(r io.Reader) (*types.MarginCalcu
 	return proto, nil
 }
 
-func (u *Unmarshaler) UnmarshalFeesConfig(r io.Reader) (*types.Fees, error) {
-	proto := &types.Fees{}
+func (u *Unmarshaler) UnmarshalFeesConfig(r io.Reader) (*vegapb.Fees, error) {
+	proto := &vegapb.Fees{}
 	err := u.unmarshaler.Unmarshal(r, proto)
 	if err != nil {
 		return nil, err

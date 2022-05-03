@@ -120,20 +120,20 @@ func (e *Engine) Unsubscribe(ctx context.Context, id SubscriptionID) {
 // subscription (and thus activation) to an oracle spec.
 // This may be a subscription to a brand new oracle spec, or an additional one.
 func (e *Engine) sendNewOracleSpecSubscription(ctx context.Context, update updatedSubscription) {
-	specAsProto := update.specProto
-	specAsProto.CreatedAt = update.specActivatedAt.UnixNano()
-	specAsProto.Status = oraclespb.OracleSpec_STATUS_ACTIVE
-	e.broker.Send(events.NewOracleSpecEvent(ctx, specAsProto))
+	proto := update.spec.IntoProto()
+	proto.CreatedAt = update.specActivatedAt.UnixNano()
+	proto.Status = oraclespb.OracleSpec_STATUS_ACTIVE
+	e.broker.Send(events.NewOracleSpecEvent(ctx, *proto))
 }
 
 // sendOracleSpecDeactivation send an event to the broker to inform of
 // the deactivation (and thus activation) to an oracle spec.
 // This may be a subscription to a brand new oracle spec, or an additional one.
 func (e *Engine) sendOracleSpecDeactivation(ctx context.Context, update updatedSubscription) {
-	specAsProto := update.specProto
-	specAsProto.CreatedAt = update.specActivatedAt.UnixNano()
-	specAsProto.Status = oraclespb.OracleSpec_STATUS_DEACTIVATED
-	e.broker.Send(events.NewOracleSpecEvent(ctx, specAsProto))
+	proto := update.spec.IntoProto()
+	proto.CreatedAt = update.specActivatedAt.UnixNano()
+	proto.Status = oraclespb.OracleSpec_STATUS_DEACTIVATED
+	e.broker.Send(events.NewOracleSpecEvent(ctx, *proto))
 }
 
 // sendOracleSpecDeactivation send an event to the broker to inform of

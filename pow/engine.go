@@ -244,17 +244,22 @@ func (e *Engine) verify(tx abci.Tx) (byte, error) {
 		return h, errors.New("party is banned from sending transactions")
 	}
 
+	// check if the transaction was seen in scope
+	txID := hex.EncodeToString(tx.Hash())
+
 	// check if the block height is in scope and is known
 	idx := tx.BlockHeight() % e.spamPoWNumberOfPastBlocks
 	if e.blockHeight[idx] != tx.BlockHeight() {
-		e.log.Error("unknown block height", logging.Uint64("tx-block-height", tx.BlockHeight()), logging.Uint64("index", idx), logging.Uint64("indexed-height", e.blockHeight[idx]), logging.String("command", tx.Command().String()), logging.String("party", tx.Party()))
+		if e.log.IsDebug() {
+			e.log.Debug("unknown block height", logging.String("tx-hash", txID), logging.String("tid", tx.GetPoWTID()), logging.Uint64("tx-block-height", tx.BlockHeight()), logging.Uint64("index", idx), logging.Uint64("indexed-height", e.blockHeight[idx]), logging.String("command", tx.Command().String()), logging.String("party", tx.Party()))
+		}
 		return h, errors.New("unknown block height")
 	}
 
-	// check if the transaction was seen in scope
-	txID := hex.EncodeToString(tx.Hash())
 	if _, ok := e.seenTx[txID]; ok {
-		e.log.Error("transaction ID already used", logging.String("tid", tx.GetPoWTID()), logging.String("party", tx.Party()))
+		if e.log.IsDebug() {
+			e.log.Debug("transaction ID already used", logging.String("txID", txID), logging.String("tid", tx.GetPoWTID()), logging.String("party", tx.Party()))
+		}
 		return h, errors.New("transaction ID already used")
 	}
 
@@ -265,7 +270,9 @@ func (e *Engine) verify(tx abci.Tx) (byte, error) {
 
 	// check if the tid was seen in scope
 	if _, ok := e.seenTid[tx.GetPoWTID()]; ok {
-		e.log.Error("tid already used", logging.String("tid", tx.GetPoWTID()), logging.String("party", tx.Party()))
+		if e.log.IsDebug() {
+			e.log.Debug("tid already used", logging.String("tid", tx.GetPoWTID()), logging.String("party", tx.Party()))
+		}
 		return h, errors.New("Proof of work tid already used")
 	}
 
@@ -273,7 +280,9 @@ func (e *Engine) verify(tx abci.Tx) (byte, error) {
 	hash := e.blockHash[idx]
 	success, diff := crypto.Verify(hash, tx.GetPoWTID(), tx.GetPoWNonce(), e.spamPoWHashFunction, e.spamPoWDifficulty)
 	if !success {
-		e.log.Error("failed to verify proof of work", logging.String("tid", tx.GetPoWTID()), logging.String("party", tx.Party()))
+		if e.log.IsDebug() {
+			e.log.Debug("failed to verify proof of work", logging.String("tid", tx.GetPoWTID()), logging.String("party", tx.Party()))
+		}
 		return diff, errors.New("failed to verify proof of work")
 	}
 	if e.log.IsDebug() {

@@ -2,7 +2,7 @@ Feature: Target stake
 
 # Market risk parameters and assets don't really matter.
 # We need to track open interest i.e. sum of all long positions across the parties and how they change over time
- Scenario: Max open interest changes over time (0041-TSTK-002)
+ Scenario: Max open interest changes over time (0041-TSTK-002, 0041-TSTK-003)
   Background:
     Given the following network parameters are set:
       | name                              | value |
@@ -86,11 +86,27 @@ Feature: Target stake
     # T0 + 15 days + 2 hour
     # so now the peak of 60 should have passed from window
     When time is updated to "2021-03-15T02:00:00Z"
-
     Then the mark price should be "90" for the market "ETH/DEC21"
 
     # target_stake = 90 x 40 x 1.5 x 0.1
     And the target stake should be "540" for the market "ETH/DEC21"
+
+    When time is updated to "2021-03-15T03:00:00Z"
+    When the parties place the following orders:
+      | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | tt_3  | ETH/DEC21 | sell | 10     | 90    | 1                | TYPE_LIMIT | TIF_GTC | tt_2_1    |
+
+    # target stake should be: 90 x 40 x 1.5 x 0.1 = 540
+    And the target stake should be "540" for the market "ETH/DEC21"
+
+    When time is updated to "2021-04-15T03:00:00Z"
+    When the parties place the following orders:
+      | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | tt_1  | ETH/DEC21 | sell | 10     | 90    | 1                | TYPE_LIMIT | TIF_GTC | tt_1_2    |
+      | tt_2  | ETH/DEC21 | sell | 20     | 90    | 1                | TYPE_LIMIT | TIF_GTC | tt_2_2    |
+
+    # target stake is: 90 x 30 x 1.5 x 0.1 = 405
+    And the target stake should be "405" for the market "ETH/DEC21"
 
 Scenario: Max open interest changes over time, testing change of timewindow (0041-TSTK-001; 0041-TSTK-004; 0041-TSTK-005)
   Background:
@@ -114,13 +130,6 @@ Scenario: Max open interest changes over time, testing change of timewindow (004
       | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring | oracle config          |
       | ETH/DEC21 | BTC        | BTC   | simple-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | default-none     | default-eth-for-future |
 
-    # Above, it says mark price but really I don't mind if we start
-    # with an opening auction as long as at start of the scenario
-    # no-one has any open positions in the market.
-    # So if we want to start with an auction, trade volume 1, then close out the position.
-
-    # T0 + 8 days so whatever open interest was there after the auction
-    # this is now out of the time window.
     And time is updated to "2021-03-08T00:00:00Z"
 
     # setup accounts

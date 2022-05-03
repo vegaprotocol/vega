@@ -65,7 +65,11 @@ func (t *Transfer) Merge(oth *Transfer) *Transfer {
 }
 
 func (f FinancialAmount) String() string {
-	return f.IntoProto().String()
+	return fmt.Sprintf(
+		"asset(%s) amount(%s)",
+		f.Asset,
+		uintPointerToString(f.Amount),
+	)
 }
 
 func (f *FinancialAmount) IntoProto() *proto.FinancialAmount {
@@ -118,7 +122,13 @@ func TransferFromProto(p *proto.Transfer) (*Transfer, error) {
 }
 
 func (t *Transfer) String() string {
-	return t.IntoProto().String()
+	return fmt.Sprintf(
+		"owner(%s) amount(%s) type(%s) minAmount(%s)",
+		t.Owner,
+		reflectPointerToString(t.Amount),
+		t.Type.String(),
+		uintPointerToString(t.MinAmount),
+	)
 }
 
 type TransferType = proto.TransferType

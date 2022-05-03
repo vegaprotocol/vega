@@ -38,7 +38,7 @@ func getMarket(closingAt time.Time, openingAuctionDuration *types.AuctionDuratio
 					Future: &types.Future{
 						SettlementAsset: "ETH",
 						QuoteName:       "USD",
-						OracleSpecBinding: &types.OracleSpecToFutureBinding{
+						OracleSpecBinding: &types.OracleSpecBindingForFuture{
 							SettlementPriceProperty:    "prices.ETH.value",
 							TradingTerminationProperty: "trading.terminated",
 						},

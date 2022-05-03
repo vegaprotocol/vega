@@ -1777,7 +1777,11 @@ func ActiveAssetsFromProto(aa *snapshot.ActiveAssets) *ActiveAssets {
 		Assets: make([]*Asset, 0, len(aa.Assets)),
 	}
 	for _, a := range aa.Assets {
-		ret.Assets = append(ret.Assets, AssetFromProto(a))
+		aa, err := AssetFromProto(a)
+		if err != nil {
+			panic(err)
+		}
+		ret.Assets = append(ret.Assets, aa)
 	}
 	return &ret
 }
@@ -1797,7 +1801,11 @@ func PendingAssetsFromProto(aa *snapshot.PendingAssets) *PendingAssets {
 		Assets: make([]*Asset, 0, len(aa.Assets)),
 	}
 	for _, a := range aa.Assets {
-		ret.Assets = append(ret.Assets, AssetFromProto(a))
+		pa, err := AssetFromProto(a)
+		if err != nil {
+			panic(err)
+		}
+		ret.Assets = append(ret.Assets, pa)
 	}
 	return &ret
 }
@@ -2022,7 +2030,12 @@ func CollateralAssetsFromProto(ca *snapshot.CollateralAssets) *CollateralAssets 
 		Assets: make([]*Asset, 0, len(ca.Assets)),
 	}
 	for _, a := range ca.Assets {
-		ret.Assets = append(ret.Assets, AssetFromProto(a))
+		ca, err := AssetFromProto(a)
+		if err != nil {
+			panic(err)
+		}
+
+		ret.Assets = append(ret.Assets, ca)
 	}
 	return &ret
 }
@@ -2140,7 +2153,8 @@ func GovernanceEnactedFromProto(ge *snapshot.GovernanceEnacted) *GovernanceEnact
 		Proposals: make([]*ProposalData, 0, len(ge.Proposals)),
 	}
 	for _, p := range ge.Proposals {
-		ret.Proposals = append(ret.Proposals, ProposalDataFromProto(p))
+		ep := ProposalDataFromProto(p)
+		ret.Proposals = append(ret.Proposals, ep)
 	}
 	return &ret
 }
@@ -2160,7 +2174,8 @@ func GovernanceNodeFromProto(ge *snapshot.GovernanceNode) *GovernanceNode {
 		Proposals: make([]*Proposal, 0, len(ge.Proposals)),
 	}
 	for _, p := range ge.Proposals {
-		ret.Proposals = append(ret.Proposals, ProposalFromProto(p))
+		gn, _ := ProposalFromProto(p)
+		ret.Proposals = append(ret.Proposals, gn)
 	}
 	return &ret
 }
@@ -2176,8 +2191,9 @@ func (g GovernanceNode) IntoProto() *snapshot.GovernanceNode {
 }
 
 func ProposalDataFromProto(pp *snapshot.ProposalData) *ProposalData {
+	p, _ := ProposalFromProto(pp.Proposal)
 	ret := ProposalData{
-		Proposal: ProposalFromProto(pp.Proposal),
+		Proposal: p,
 		Yes:      make([]*Vote, 0, len(pp.Yes)),
 		No:       make([]*Vote, 0, len(pp.No)),
 		Invalid:  make([]*Vote, 0, len(pp.Invalid)),

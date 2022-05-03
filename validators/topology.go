@@ -86,8 +86,13 @@ func (v ValidatorData) IsValid() bool {
 }
 
 // HashVegaPubKey returns hash VegaPubKey encoded as hex string.
-func (v ValidatorData) HashVegaPubKey() string {
-	return hex.EncodeToString(vgcrypto.Hash([]byte(v.VegaPubKey)))
+func (v ValidatorData) HashVegaPubKey() (string, error) {
+	decoded, err := hex.DecodeString(v.VegaPubKey)
+	if err != nil {
+		return "", fmt.Errorf("couldn't decode public key: %w", err)
+	}
+
+	return hex.EncodeToString(vgcrypto.Hash(decoded)), nil
 }
 
 // ValidatorMapping maps a tendermint pubkey with a vega pubkey.

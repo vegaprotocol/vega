@@ -3,6 +3,7 @@ package validators_test
 import (
 	"bytes"
 	"context"
+	"encoding/hex"
 	"testing"
 
 	"code.vegaprotocol.io/vega/validators"
@@ -68,7 +69,7 @@ func TestTopologySnapshot(t *testing.T) {
 	nr1 := commandspb.AnnounceNode{
 		Id:              "vega-master-pubkey",
 		ChainPubKey:     tmPubKeys[0],
-		VegaPubKey:      "vega-key",
+		VegaPubKey:      hex.EncodeToString([]byte("vega-key")),
 		EthereumAddress: "eth-address",
 	}
 	err = top.AddNewNode(ctx, &nr1, validators.ValidatorStatusTendermint)
@@ -77,7 +78,7 @@ func TestTopologySnapshot(t *testing.T) {
 	nr2 := commandspb.AnnounceNode{
 		Id:              "vega-master-pubkey-2",
 		ChainPubKey:     tmPubKeys[1],
-		VegaPubKey:      "vega-key-2",
+		VegaPubKey:      hex.EncodeToString([]byte("vega-key-2")),
 		EthereumAddress: "eth-address-2",
 	}
 	err = top.AddNewNode(ctx, &nr2, validators.ValidatorStatusTendermint)
@@ -87,7 +88,7 @@ func TestTopologySnapshot(t *testing.T) {
 		NewPubKeyIndex:    1,
 		TargetBlock:       10,
 		NewPubKey:         "new-vega-key",
-		CurrentPubKeyHash: hashKey(nr1.VegaPubKey),
+		CurrentPubKeyHash: hashKey("vega-key"),
 	}
 	err = top.AddKeyRotate(ctx, nr1.Id, 5, kr1)
 	assert.NoError(t, err)
@@ -96,7 +97,7 @@ func TestTopologySnapshot(t *testing.T) {
 		NewPubKeyIndex:    1,
 		TargetBlock:       11,
 		NewPubKey:         "new-vega-key-2",
-		CurrentPubKeyHash: hashKey(nr2.VegaPubKey),
+		CurrentPubKeyHash: hashKey("vega-key-2"),
 	}
 	err = top.AddKeyRotate(ctx, nr2.Id, 5, kr2)
 	assert.NoError(t, err)

@@ -116,7 +116,9 @@ func (sv *StateVariable) startBlock(ctx context.Context, t time.Time) {
 		newEvt := events.NewStateVarEvent(ctx, sv.ID, pending.eventID, pending.state)
 		evts = append(evts, newEvt)
 		protoEvt := newEvt.Proto()
-		sv.log.Info("state-var event sent", logging.String("event", protoEvt.String()))
+		if sv.log.IsDebug() {
+			sv.log.Debug("state-var event sent", logging.String("event", protoEvt.String()))
+		}
 	}
 	sv.pendingEvents = []pendingEvent{}
 	sv.currentTime = t
@@ -140,7 +142,9 @@ func (sv *StateVariable) startBlock(ctx context.Context, t time.Time) {
 func (sv *StateVariable) eventTriggered(eventID string) error {
 	sv.lock.Lock()
 
-	sv.log.Info("event triggered", logging.String("state-var", sv.ID), logging.String("event-id", eventID))
+	if sv.log.IsDebug() {
+		sv.log.Debug("event triggered", logging.String("state-var", sv.ID), logging.String("event-id", eventID))
+	}
 	// if we get a new event while processing an existing event we abort the current calculation and start a new one
 	if sv.eventID != "" {
 		if sv.log.GetLevel() <= logging.DebugLevel {
@@ -234,7 +238,9 @@ func (sv *StateVariable) logAndRetry(err error, svp *commandspb.StateVariablePro
 	sv.log.Error("failed to send state variable proposal command", logging.String("id", sv.ID), logging.String("event-id", sv.eventID), logging.Error(err))
 	if svp.Proposal.EventId == sv.eventID {
 		sv.lock.Unlock()
-		sv.log.Info("retrying to send state variable proposal command", logging.String("id", sv.ID), logging.String("event-id", sv.eventID))
+		if sv.log.IsDebug() {
+			sv.log.Debug("retrying to send state variable proposal command", logging.String("id", sv.ID), logging.String("event-id", sv.eventID))
+		}
 		sv.cmd.Command(context.Background(), txn.StateVariableProposalCommand, svp, func(err error) { sv.logAndRetry(err, svp) }, nil)
 		return
 	}
@@ -279,7 +285,9 @@ func (sv *StateVariable) bundleReceived(ctx context.Context, t time.Time, node, 
 	validatorsNum := num.DecimalFromInt64(int64(len(sv.top.AllNodeIDs())))
 	requiredNumberOfResults := validatorsNum.Mul(validatorVotesRequired)
 
-	sv.log.Info("received results for state variable", logging.String("state-var", sv.ID), logging.String("event-id", eventID), logging.Decimal("received", numResults), logging.String("out-of", validatorsNum.String()))
+	if sv.log.IsDebug() {
+		sv.log.Debug("received results for state variable", logging.String("state-var", sv.ID), logging.String("event-id", eventID), logging.Decimal("received", numResults), logging.String("out-of", validatorsNum.String()))
+	}
 
 	if numResults.LessThan(requiredNumberOfResults) {
 		if sv.log.GetLevel() <= logging.DebugLevel {
@@ -373,7 +381,9 @@ func (sv *StateVariable) consensusReachedLocked(ctx context.Context, t time.Time
 	sv.result(ctx, sv.converter.BundleToInterface(acceptedValue))
 	sv.addEventLocked()
 
-	sv.log.Info("consensus reached for state variable", logging.String("state-var", sv.ID), logging.String("event-id", sv.eventID))
+	if sv.log.IsDebug() {
+		sv.log.Debug("consensus reached for state variable", logging.String("state-var", sv.ID), logging.String("event-id", sv.eventID))
+	}
 
 	// reset the state
 	sv.eventID = ""

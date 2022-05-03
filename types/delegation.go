@@ -1,7 +1,7 @@
 package types
 
 import (
-	"errors"
+	"fmt"
 
 	"code.vegaprotocol.io/protos/vega"
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
@@ -39,21 +39,6 @@ type Delegate struct {
 	Amount *num.Uint
 }
 
-func NewDelegateFromProto(p *commandspb.DelegateSubmission) (*Delegate, error) {
-	amount := num.Zero()
-	if len(p.Amount) > 0 {
-		var overflowed bool
-		amount, overflowed = num.UintFromString(p.Amount, 10)
-		if overflowed {
-			return nil, errors.New("invalid amount")
-		}
-	}
-	return &Delegate{
-		NodeID: p.NodeId,
-		Amount: amount,
-	}, nil
-}
-
 func (d Delegate) IntoProto() *commandspb.DelegateSubmission {
 	return &commandspb.DelegateSubmission{
 		NodeId: d.NodeID,
@@ -62,25 +47,17 @@ func (d Delegate) IntoProto() *commandspb.DelegateSubmission {
 }
 
 func (d Delegate) String() string {
-	return d.IntoProto().String()
+	return fmt.Sprintf(
+		"nodeID(%s) amount(%s)",
+		d.NodeID,
+		uintPointerToString(d.Amount),
+	)
 }
 
 type Undelegate struct {
 	NodeID string
 	Amount *num.Uint
 	Method string
-}
-
-func NewUndelegateFromProto(p *commandspb.UndelegateSubmission) (*Undelegate, error) {
-	amount, overflowed := num.UintFromString(p.Amount, 10)
-	if overflowed {
-		return nil, errors.New("invalid amount")
-	}
-	return &Undelegate{
-		NodeID: p.NodeId,
-		Amount: amount,
-		Method: p.Method.String(),
-	}, nil
 }
 
 func (u Undelegate) IntoProto() *commandspb.UndelegateSubmission {
@@ -92,7 +69,12 @@ func (u Undelegate) IntoProto() *commandspb.UndelegateSubmission {
 }
 
 func (u Undelegate) String() string {
-	return u.IntoProto().String()
+	return fmt.Sprintf(
+		"nodeID(%s) amount(%s) method(%s)",
+		u.NodeID,
+		uintPointerToString(u.Amount),
+		u.Method,
+	)
 }
 
 // ValidatorData is delegation data for validator.

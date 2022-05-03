@@ -1,6 +1,6 @@
 Feature: Test decimal places in LP order, liquidity provider reward distribution; Should also cover liquidity-fee-setting and equity-like-share calc and total stake.
 
-Scenario: 001: 0070-MKTD-007, 0042-LIQF-001
+Scenario: 001: 0070-MKTD-007, 0042-LIQF-001, 0018-RSKM-005, 0018-RSKM-008
   Background:
 
     Given the following network parameters are set:
