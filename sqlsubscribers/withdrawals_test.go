@@ -8,7 +8,6 @@ import (
 	"code.vegaprotocol.io/data-node/logging"
 	"code.vegaprotocol.io/data-node/sqlsubscribers"
 	"code.vegaprotocol.io/data-node/sqlsubscribers/mocks"
-	"code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
@@ -35,6 +34,6 @@ func TestWithdrawal_Push(t *testing.T) {
 		CreationDate:   0,
 		WithdrawalDate: 0,
 		ExpirationDate: 0,
-		Ext:            &vega.WithdrawExt{},
+		Ext:            &types.WithdrawExt{},
 	}))
 }
