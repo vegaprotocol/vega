@@ -64,6 +64,9 @@ Feature: Ensure price bounds are triggered as and when they should be, consideri
       | aux    | ETH/DEC20 | buy  | 1      | 975999650 | 0                | TYPE_LIMIT | TIF_GTC |
       | party4 | ETH/DEC20 | sell | 1      | 975999650 | 0                | TYPE_LIMIT | TIF_GTC |
     Then the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC20"
+    And the market data for the market "ETH/DEC20" should be:
+      | mark price | trading mode                    | auction trigger       | target stake           | supplied stake      | open interest  |
+      | 977142641  | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_PRICE | 1080524332417800000000 | 3905000000000000000 | 2              |
 
   @STAuc
   Scenario: Replicate  issue where price bounds are violated by 1 * 10^(market decimal places)
@@ -111,3 +114,6 @@ Feature: Ensure price bounds are triggered as and when they should be, consideri
       | aux    | ETH/DEC20 | buy  | 1      | 974999651 | 0                | TYPE_LIMIT | TIF_GTC |
       | party4 | ETH/DEC20 | sell | 1      | 974999651 | 0                | TYPE_LIMIT | TIF_GTC |
     Then the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC20"
+    And the market data for the market "ETH/DEC20" should be:
+      | mark price | trading mode                    | auction trigger       | target stake           | supplied stake      | open interest  |
+      | 977142641  | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_PRICE | 1080524332417800000000 | 3905000000000000000 | 2              |
