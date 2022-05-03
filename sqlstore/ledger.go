@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"code.vegaprotocol.io/data-node/entities"
+	"code.vegaprotocol.io/data-node/metrics"
 	"github.com/georgysavva/scany/pgxscan"
 )
 
@@ -21,6 +22,7 @@ func NewLedger(connectionSource *ConnectionSource) *Ledger {
 }
 
 func (ls *Ledger) Flush(ctx context.Context) error {
+	defer metrics.StartSQLQuery("Ledger", "Flush")()
 	return ls.batcher.Flush(ctx, ls.Connection)
 }
 
@@ -30,6 +32,7 @@ func (ls *Ledger) Add(le *entities.LedgerEntry) error {
 }
 
 func (ls *Ledger) GetByID(id int64) (entities.LedgerEntry, error) {
+	defer metrics.StartSQLQuery("Ledger", "GetByID")()
 	le := entities.LedgerEntry{}
 	ctx := context.Background()
 	err := pgxscan.Get(ctx, ls.Connection, &le,
@@ -40,6 +43,7 @@ func (ls *Ledger) GetByID(id int64) (entities.LedgerEntry, error) {
 }
 
 func (ls *Ledger) GetAll() ([]entities.LedgerEntry, error) {
+	defer metrics.StartSQLQuery("Ledger", "GetAll")()
 	ctx := context.Background()
 	ledgerEntries := []entities.LedgerEntry{}
 	err := pgxscan.Select(ctx, ls.Connection, &ledgerEntries, `

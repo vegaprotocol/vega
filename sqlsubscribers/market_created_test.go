@@ -8,7 +8,6 @@ import (
 	"code.vegaprotocol.io/data-node/logging"
 	"code.vegaprotocol.io/data-node/sqlsubscribers"
 	"code.vegaprotocol.io/data-node/sqlsubscribers/mocks"
-	v1 "code.vegaprotocol.io/protos/vega/oracles/v1"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
@@ -46,23 +45,23 @@ func getTestMarket() types.Market {
 					Future: &types.Future{
 						SettlementAsset: "",
 						QuoteName:       "",
-						OracleSpecForSettlementPrice: &v1.OracleSpec{
-							Id:        "",
+						OracleSpecForSettlementPrice: &types.OracleSpec{
+							ID:        "",
 							CreatedAt: 0,
 							UpdatedAt: 0,
 							PubKeys:   nil,
 							Filters:   nil,
 							Status:    0,
 						},
-						OracleSpecForTradingTermination: &v1.OracleSpec{
-							Id:        "",
+						OracleSpecForTradingTermination: &types.OracleSpec{
+							ID:        "",
 							CreatedAt: 0,
 							UpdatedAt: 0,
 							PubKeys:   nil,
 							Filters:   nil,
 							Status:    0,
 						},
-						OracleSpecBinding: &types.OracleSpecToFutureBinding{
+						OracleSpecBinding: &types.OracleSpecBindingForFuture{
 							SettlementPriceProperty:    "",
 							TradingTerminationProperty: "",
 						},

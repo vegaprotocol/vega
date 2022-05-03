@@ -7,6 +7,7 @@ import (
 	"github.com/pkg/errors"
 
 	"code.vegaprotocol.io/data-node/entities"
+	"code.vegaprotocol.io/data-node/metrics"
 	"github.com/georgysavva/scany/pgxscan"
 )
 
@@ -27,6 +28,7 @@ func NewParties(connectionSource *ConnectionSource) *Parties {
 // Initialise adds the built-in 'network' party which is never explicitly sent on the event
 // bus, but nonetheless is necessary.
 func (ps *Parties) Initialise() {
+	defer metrics.StartSQLQuery("Parties", "Initialise")()
 	_, err := ps.Connection.Exec(context.Background(),
 		`INSERT INTO parties(id) VALUES ($1) ON CONFLICT (id) DO NOTHING`,
 		entities.NewPartyID("network"))
@@ -36,6 +38,7 @@ func (ps *Parties) Initialise() {
 }
 
 func (ps *Parties) Add(ctx context.Context, p entities.Party) error {
+	defer metrics.StartSQLQuery("Parties", "Add")()
 	_, err := ps.Connection.Exec(ctx,
 		`INSERT INTO parties(id, vega_time)
 		 VALUES ($1, $2)
@@ -47,6 +50,7 @@ func (ps *Parties) Add(ctx context.Context, p entities.Party) error {
 
 func (ps *Parties) GetByID(ctx context.Context, id string) (entities.Party, error) {
 	a := entities.Party{}
+	defer metrics.StartSQLQuery("Parties", "GetByID")()
 	err := pgxscan.Get(ctx, ps.Connection, &a,
 		`SELECT id, vega_time
 		 FROM parties WHERE id=$1`,
@@ -65,6 +69,7 @@ func (ps *Parties) GetByID(ctx context.Context, id string) (entities.Party, erro
 
 func (ps *Parties) GetAll(ctx context.Context) ([]entities.Party, error) {
 	parties := []entities.Party{}
+	defer metrics.StartSQLQuery("Parties", "GetAll")()
 	err := pgxscan.Select(ctx, ps.Connection, &parties, `
 		SELECT id, vega_time
 		FROM parties`)

@@ -8,6 +8,7 @@ import (
 
 	"code.vegaprotocol.io/data-node/entities"
 	"code.vegaprotocol.io/data-node/logging"
+	"code.vegaprotocol.io/data-node/metrics"
 	"github.com/georgysavva/scany/pgxscan"
 	"github.com/jackc/pgx/v4"
 )
@@ -41,7 +42,6 @@ func (md *MarketData) Add(data *entities.MarketData) error {
 }
 
 func (md *MarketData) OnTimeUpdateEvent(ctx context.Context) error {
-
 	var rows [][]interface{}
 	for _, data := range md.marketData {
 
@@ -56,7 +56,7 @@ func (md *MarketData) OnTimeUpdateEvent(ctx context.Context) error {
 		})
 
 	}
-
+	defer metrics.StartSQLQuery("MarketData", "Flush")()
 	if rows != nil {
 		copyCount, err := md.Connection.CopyFrom(
 			ctx,
@@ -83,6 +83,7 @@ func (md *MarketData) GetMarketDataByID(ctx context.Context, marketID string) (e
 	var marketData entities.MarketData
 	query := "select * from market_data_snapshot where market = $1"
 
+	defer metrics.StartSQLQuery("MarketData", "GetByID")()
 	err := pgxscan.Get(ctx, md.Connection, &marketData, query, entities.NewMarketID(marketID))
 
 	return marketData, err
@@ -94,6 +95,7 @@ func (md *MarketData) GetMarketsData(ctx context.Context) ([]entities.MarketData
 	var marketData []entities.MarketData
 	query := "select * from market_data_snapshot"
 
+	defer metrics.StartSQLQuery("MarketData", "GetMarketsData")()
 	err := pgxscan.Select(ctx, md.Connection, &marketData, query)
 
 	return marketData, err
@@ -116,6 +118,7 @@ func (md *MarketData) GetToDateByID(ctx context.Context, marketID string, end ti
 }
 
 func (md *MarketData) getBetweenDatesByID(ctx context.Context, marketID string, start, end *time.Time, pagination entities.Pagination) (results []entities.MarketData, err error) {
+	defer metrics.StartSQLQuery("MarketData", "getBetweenDatesByID")()
 	market := entities.NewMarketID(marketID)
 
 	selectStatement := `select * from market_data`

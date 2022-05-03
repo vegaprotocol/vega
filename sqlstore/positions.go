@@ -7,6 +7,7 @@ import (
 	"sync"
 
 	"code.vegaprotocol.io/data-node/entities"
+	"code.vegaprotocol.io/data-node/metrics"
 	"github.com/georgysavva/scany/pgxscan"
 )
 
@@ -32,6 +33,7 @@ func NewPositions(connectionSource *ConnectionSource) *Positions {
 }
 
 func (ps *Positions) Flush(ctx context.Context) error {
+	defer metrics.StartSQLQuery("Positions", "FlushTest")()
 	return ps.batcher.Flush(ctx, ps.pool)
 }
 
@@ -55,6 +57,7 @@ func (ps *Positions) GetByMarketAndParty(ctx context.Context,
 		return position, nil
 	}
 
+	defer metrics.StartSQLQuery("Positions", "GetByMarketAndParty")()
 	err := pgxscan.Get(ctx, ps.Connection, &position,
 		`SELECT * FROM positions_current WHERE market_id=$1 AND party_id=$2`,
 		marketID, partyID)
@@ -71,6 +74,7 @@ func (ps *Positions) GetByMarketAndParty(ctx context.Context,
 }
 
 func (ps *Positions) GetByMarket(ctx context.Context, marketID entities.MarketID) ([]entities.Position, error) {
+	defer metrics.StartSQLQuery("Positions", "GetByMarket")()
 	positions := []entities.Position{}
 	err := pgxscan.Select(ctx, ps.Connection, &positions,
 		`SELECT * FROM positions_current WHERE market_id=$1`,
@@ -79,6 +83,7 @@ func (ps *Positions) GetByMarket(ctx context.Context, marketID entities.MarketID
 }
 
 func (ps *Positions) GetByParty(ctx context.Context, partyID entities.PartyID) ([]entities.Position, error) {
+	defer metrics.StartSQLQuery("Positions", "GetByParty")()
 	positions := []entities.Position{}
 	err := pgxscan.Select(ctx, ps.Connection, &positions,
 		`SELECT * FROM positions_current WHERE party_id=$1`,
@@ -87,6 +92,7 @@ func (ps *Positions) GetByParty(ctx context.Context, partyID entities.PartyID) (
 }
 
 func (ps *Positions) GetAll(ctx context.Context) ([]entities.Position, error) {
+	defer metrics.StartSQLQuery("Positions", "GetAll")()
 	positions := []entities.Position{}
 	err := pgxscan.Select(ctx, ps.Connection, &positions,
 		`SELECT * FROM positions_current`)

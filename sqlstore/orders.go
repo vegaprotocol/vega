@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"code.vegaprotocol.io/data-node/entities"
+	"code.vegaprotocol.io/data-node/metrics"
 	"github.com/georgysavva/scany/pgxscan"
 )
 
@@ -24,6 +25,7 @@ func NewOrders(connectionSource *ConnectionSource) *Orders {
 }
 
 func (os *Orders) Flush(ctx context.Context) error {
+	defer metrics.StartSQLQuery("Orders", "Flush")()
 	return os.batcher.Flush(ctx, os.Connection)
 }
 
@@ -38,6 +40,7 @@ func (os *Orders) Add(o entities.Order) error {
 
 // GetAll returns all updates to all orders (including changes to orders that don't increment the version number)
 func (os *Orders) GetAll(ctx context.Context) ([]entities.Order, error) {
+	defer metrics.StartSQLQuery("Orders", "GetAll")()
 	orders := []entities.Order{}
 	err := pgxscan.Select(ctx, os.Connection, &orders, `
 		SELECT * from orders;`)
@@ -50,6 +53,7 @@ func (os *Orders) GetByOrderID(ctx context.Context, orderIdStr string, version *
 	order := entities.Order{}
 	orderId := entities.NewOrderID(orderIdStr)
 
+	defer metrics.StartSQLQuery("Orders", "GetByOrderID")()
 	if version != nil && *version > 0 {
 		err = pgxscan.Get(ctx, os.Connection, &order, `SELECT * FROM orders_current_versions WHERE id=$1 and version=$2`, orderId, version)
 	} else {
@@ -60,6 +64,7 @@ func (os *Orders) GetByOrderID(ctx context.Context, orderIdStr string, version *
 
 // GetByMarket returns the last update of the all the orders in a particular market
 func (os *Orders) GetByMarket(ctx context.Context, marketIdStr string, p entities.Pagination) ([]entities.Order, error) {
+	defer metrics.StartSQLQuery("Orders", "GetByMarket")()
 	marketId := entities.NewMarketID(marketIdStr)
 
 	query := `SELECT * from orders_current WHERE market_id=$1`
@@ -69,6 +74,7 @@ func (os *Orders) GetByMarket(ctx context.Context, marketIdStr string, p entitie
 
 // GetByParty returns the last update of the all the orders in a particular party
 func (os *Orders) GetByParty(ctx context.Context, partyIdStr string, p entities.Pagination) ([]entities.Order, error) {
+	defer metrics.StartSQLQuery("Orders", "GetByParty")()
 	partyId := entities.NewPartyID(partyIdStr)
 
 	query := `SELECT * from orders_current WHERE party_id=$1`
@@ -78,6 +84,7 @@ func (os *Orders) GetByParty(ctx context.Context, partyIdStr string, p entities.
 
 // GetByReference returns the last update of orders with the specified user-suppled reference
 func (os *Orders) GetByReference(ctx context.Context, reference string, p entities.Pagination) ([]entities.Order, error) {
+	defer metrics.StartSQLQuery("Orders", "GetByReference")()
 	query := `SELECT * from orders_current WHERE reference=$1`
 	args := []interface{}{reference}
 	return os.queryOrders(ctx, query, args, &p)
@@ -86,6 +93,7 @@ func (os *Orders) GetByReference(ctx context.Context, reference string, p entiti
 // GetAllVersionsByOrderID the last update to all versions (e.g. manual changes that lead to
 // incrementing the version field) of a given order id.
 func (os *Orders) GetAllVersionsByOrderID(ctx context.Context, id string, p entities.Pagination) ([]entities.Order, error) {
+	defer metrics.StartSQLQuery("Orders", "GetAllVersionsByOrderID")()
 	query := `SELECT * from orders_current_versions WHERE id=$1`
 	args := []interface{}{entities.NewOrderID(id)}
 	return os.queryOrders(ctx, query, args, &p)
@@ -94,6 +102,7 @@ func (os *Orders) GetAllVersionsByOrderID(ctx context.Context, id string, p enti
 // GetLiveOrders fetches all currently live orders so the market depth data can be rebuilt
 // from the orders data in the database
 func (os *Orders) GetLiveOrders(ctx context.Context) ([]entities.Order, error) {
+	defer metrics.StartSQLQuery("Orders", "GetLiveOrders")()
 	query := `select * from orders_current
 where type = 1
 and time_in_force not in (3, 4)

@@ -6,6 +6,7 @@ import (
 	"sync"
 
 	"code.vegaprotocol.io/data-node/entities"
+	"code.vegaprotocol.io/data-node/metrics"
 	"github.com/georgysavva/scany/pgxscan"
 )
 
@@ -48,6 +49,7 @@ set
 	market_timestamps=EXCLUDED.market_timestamps,
 	position_decimal_places=EXCLUDED.position_decimal_places;`, sqlMarketsColumns)
 
+	defer metrics.StartSQLQuery("Markets", "Upsert")()
 	if _, err := m.Connection.Exec(ctx, query, market.ID, market.VegaTime, market.InstrumentID, market.TradableInstrument, market.DecimalPlaces,
 		market.Fees, market.OpeningAuction, market.PriceMonitoringSettings, market.LiquidityMonitoringParameters,
 		market.TradingMode, market.State, market.MarketTimestamps, market.PositionDecimalPlaces); err != nil {
@@ -74,6 +76,7 @@ from markets
 where id = $1
 order by id, vega_time desc
 `, sqlMarketsColumns)
+	defer metrics.StartSQLQuery("Markets", "GetByID")()
 	err := pgxscan.Get(ctx, m.Connection, &market, query, entities.NewMarketID(marketID))
 
 	if err != nil {
@@ -92,6 +95,7 @@ order by id, vega_time desc
 
 	query, _ = orderAndPaginateQuery(query, nil, pagination)
 
+	defer metrics.StartSQLQuery("Markets", "GetAll")()
 	err := pgxscan.Select(ctx, m.Connection, &markets, query)
 
 	return markets, err

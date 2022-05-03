@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"code.vegaprotocol.io/data-node/entities"
+	"code.vegaprotocol.io/data-node/metrics"
 	"github.com/georgysavva/scany/pgxscan"
 )
 
@@ -19,7 +20,7 @@ func NewWithdrawals(connectionSource *ConnectionSource) *Withdrawals {
 }
 
 func (w *Withdrawals) Upsert(ctx context.Context, withdrawal *entities.Withdrawal) error {
-
+	defer metrics.StartSQLQuery("Withdrawals", "Upsert")()
 	query := `insert into withdrawals(
 		id, party_id, amount, asset, status, ref, expiry, tx_hash,
 		created_timestamp, withdrawn_timestamp, ext, vega_time
@@ -59,6 +60,7 @@ func (w *Withdrawals) Upsert(ctx context.Context, withdrawal *entities.Withdrawa
 }
 
 func (w *Withdrawals) GetByID(ctx context.Context, withdrawalID string) (entities.Withdrawal, error) {
+	defer metrics.StartSQLQuery("Withdrawals", "GetByID")()
 	var withdrawal entities.Withdrawal
 
 	query := `select distinct on (id) id, party_id, amount, asset, status, ref, expiry, tx_hash, created_timestamp, withdrawn_timestamp, ext, vega_time
@@ -84,6 +86,7 @@ func (w *Withdrawals) GetByParty(ctx context.Context, partyID string, openOnly b
 
 	query, args = orderAndPaginateQuery(prequery, nil, pagination, entities.NewPartyID(partyID))
 
+	defer metrics.StartSQLQuery("Withdrawals", "GetByParty")()
 	if err := pgxscan.Select(ctx, w.Connection, &withdrawals, query, args...); err != nil {
 		return nil
 	}

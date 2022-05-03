@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"code.vegaprotocol.io/data-node/entities"
+	"code.vegaprotocol.io/data-node/metrics"
 	"github.com/georgysavva/scany/pgxscan"
 )
 
@@ -34,6 +35,7 @@ set
 	filters=EXCLUDED.filters,
 	status=EXCLUDED.status`, sqlOracleSpecColumns)
 
+	defer metrics.StartSQLQuery("OracleSpec", "Upsert")()
 	if _, err := os.Connection.Exec(ctx, query, spec.ID, spec.CreatedAt, spec.UpdatedAt, spec.PublicKeys,
 		spec.Filters, spec.Status, spec.VegaTime); err != nil {
 		return err
@@ -49,6 +51,7 @@ from oracle_specs
 where id = $1
 order by id, vega_time desc`, sqlOracleSpecColumns)
 
+	defer metrics.StartSQLQuery("OracleSpec", "GetByID")()
 	err := pgxscan.Get(ctx, os.Connection, &spec, query, entities.NewSpecID(specID))
 	return spec, err
 }
@@ -61,6 +64,7 @@ order by id, vega_time desc`, sqlOracleSpecColumns)
 
 	var bindVars []interface{}
 	query, bindVars = orderAndPaginateQuery(query, nil, pagination, bindVars...)
+	defer metrics.StartSQLQuery("OracleSpec", "GetSpecs")()
 	err := pgxscan.Select(ctx, os.Connection, &specs, query, bindVars...)
 	return specs, err
 }

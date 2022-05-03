@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"code.vegaprotocol.io/data-node/entities"
+	"code.vegaprotocol.io/data-node/metrics"
 	"github.com/georgysavva/scany/pgxscan"
 )
 
@@ -19,6 +20,7 @@ func NewNetworkParameters(connectionSource *ConnectionSource) *NetworkParameters
 }
 
 func (ps *NetworkParameters) Add(ctx context.Context, r entities.NetworkParameter) error {
+	defer metrics.StartSQLQuery("NetworkParameters", "Add")()
 	_, err := ps.Connection.Exec(ctx,
 		`INSERT INTO network_parameters(
 			key,
@@ -33,6 +35,7 @@ func (ps *NetworkParameters) Add(ctx context.Context, r entities.NetworkParamete
 }
 
 func (np *NetworkParameters) GetAll(ctx context.Context) ([]entities.NetworkParameter, error) {
+	defer metrics.StartSQLQuery("NetworkParameters", "GetAll")()
 	var nps []entities.NetworkParameter
 	query := `SELECT DISTINCT ON (key) * FROM network_parameters ORDER BY key, vega_time DESC`
 	err := pgxscan.Select(ctx, np.Connection, &nps, query)

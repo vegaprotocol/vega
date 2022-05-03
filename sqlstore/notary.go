@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"code.vegaprotocol.io/data-node/entities"
+	"code.vegaprotocol.io/data-node/metrics"
 	"github.com/georgysavva/scany/pgxscan"
 )
 
@@ -19,7 +20,7 @@ func NewNotary(connectionSource *ConnectionSource) *Notary {
 }
 
 func (n *Notary) Add(ctx context.Context, ns *entities.NodeSignature) error {
-
+	defer metrics.StartSQLQuery("Notary", "Add")()
 	query := `INSERT INTO node_signatures (resource_id, sig, kind)
 		VALUES ($1, $2, $3)
 		ON CONFLICT (resource_id, sig) DO NOTHING`
@@ -37,6 +38,7 @@ func (n *Notary) Add(ctx context.Context, ns *entities.NodeSignature) error {
 }
 
 func (n *Notary) GetByResourceID(ctx context.Context, id string) ([]entities.NodeSignature, error) {
+	defer metrics.StartSQLQuery("Notary", "GetByResourceID")()
 	ns := []entities.NodeSignature{}
 	query := `SELECT resource_id, sig, kind FROM node_signatures WHERE resource_id=$1`
 	err := pgxscan.Select(ctx, n.Connection, &ns, query, entities.NewNodeSignatureID(id))

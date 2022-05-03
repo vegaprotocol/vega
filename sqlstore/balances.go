@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"code.vegaprotocol.io/data-node/entities"
+	"code.vegaprotocol.io/data-node/metrics"
 	"github.com/georgysavva/scany/pgxscan"
 )
 
@@ -24,6 +25,7 @@ func NewBalances(connectionSource *ConnectionSource) *Balances {
 }
 
 func (bs *Balances) Flush(ctx context.Context) error {
+	defer metrics.StartSQLQuery("Balances", "Flush")()
 	return bs.batcher.Flush(ctx, bs.Connection)
 }
 
@@ -93,6 +95,7 @@ func (bs *Balances) Query(filter entities.AccountFilter, groupBy []entities.Acco
 	}
 
 	query = fmt.Sprintf(query, assetsQuery, groups, groups, groups)
+	defer metrics.StartSQLQuery("Balances", "Query")()
 	rows, err := bs.Connection.Query(context.Background(), query, args...)
 	defer rows.Close()
 	if err != nil {

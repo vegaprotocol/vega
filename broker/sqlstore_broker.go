@@ -122,11 +122,17 @@ func (b *sqlStoreBroker) handleEvent(ctx context.Context, e events.Event) (bool,
 	// If the event is a time event send it to all subscribers, this indicates a new block start
 	if e.Type() == events.TimeUpdate {
 		metrics.BlockCounterInc()
+		sent := map[SqlBrokerSubscriber]struct{}{}
 		for _, subs := range b.typeToSubs {
 			for _, sub := range subs {
+				// Make sure we push multiple times to a single subscriber
+				if _, alreadySent := sent[sub]; alreadySent {
+					continue
+				}
 				if err := b.push(ctx, sub, e); err != nil {
 					return false, err
 				}
+				sent[sub] = struct{}{}
 			}
 		}
 		return true, nil

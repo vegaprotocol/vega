@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"code.vegaprotocol.io/data-node/entities"
+	"code.vegaprotocol.io/data-node/metrics"
 
 	"github.com/georgysavva/scany/pgxscan"
 	"github.com/jackc/pgx/v4"
@@ -50,6 +51,8 @@ func (ts *Trades) OnTimeUpdateEvent(ctx context.Context) error {
 		})
 	}
 
+	defer metrics.StartSQLQuery("Trades", "Flush")()
+
 	if rows != nil {
 		copyCount, err := ts.Connection.CopyFrom(
 			ctx,
@@ -84,6 +87,7 @@ func (ts *Trades) Add(t *entities.Trade) error {
 func (ts *Trades) GetByMarket(ctx context.Context, market string, p entities.Pagination) ([]entities.Trade, error) {
 	query := `SELECT * from trades WHERE market_id=$1`
 	args := []interface{}{entities.NewMarketID(market)}
+	defer metrics.StartSQLQuery("Trades", "GetByMarket")()
 	trades, err := ts.queryTrades(ctx, query, args, &p)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get trade by market:%w", err)
@@ -96,12 +100,15 @@ func (ts *Trades) GetByParty(ctx context.Context, party string, market *string, 
 	args := []interface{}{entities.NewPartyID(party)}
 	query := `SELECT * from trades WHERE buyer=$1 or seller=$1`
 
+	defer metrics.StartSQLQuery("Trades", "GetByParty")()
 	return ts.queryTradesWithMarketFilter(ctx, query, args, market, pagination)
 }
 
 func (ts *Trades) GetByOrderID(ctx context.Context, order string, market *string, pagination entities.Pagination) ([]entities.Trade, error) {
 	args := []interface{}{entities.NewOrderID(order)}
 	query := `SELECT * from trades WHERE buy_order=$1 or sell_order=$1`
+
+	defer metrics.StartSQLQuery("Trades", "GetByOrderID")()
 	return ts.queryTradesWithMarketFilter(ctx, query, args, market, pagination)
 }
 

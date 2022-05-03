@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"code.vegaprotocol.io/data-node/entities"
+	"code.vegaprotocol.io/data-node/metrics"
 	"github.com/georgysavva/scany/pgxscan"
 )
 
@@ -23,7 +24,7 @@ func NewOracleData(connectionSource *ConnectionSource) *OracleData {
 }
 
 func (od *OracleData) Add(ctx context.Context, data *entities.OracleData) error {
-
+	defer metrics.StartSQLQuery("OracleData", "Add")()
 	query := fmt.Sprintf("insert into oracle_data(%s) values ($1, $2, $3, $4, $5)", sqlOracleDataColumns)
 
 	if _, err := od.Connection.Exec(ctx, query, data.PublicKeys, data.Data, data.MatchedSpecIds, data.BroadcastAt, data.VegaTime); err != nil {
@@ -44,6 +45,7 @@ func (od *OracleData) GetOracleDataBySpecID(ctx context.Context, id string, pagi
 	query, bindVars = orderAndPaginateQuery(query, nil, pagination, bindVars...)
 	var oracleData []entities.OracleData
 
+	defer metrics.StartSQLQuery("OracleData", "GetBySpecID")()
 	err := pgxscan.Select(ctx, od.Connection, &oracleData, query, bindVars...)
 
 	return oracleData, err
