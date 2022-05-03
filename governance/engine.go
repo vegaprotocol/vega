@@ -782,7 +782,7 @@ func (e *Engine) closeProposal(ctx context.Context, proposal *proposal) {
 	if proposal.IsPassed() {
 		e.log.Debug("Proposal passed", logging.ProposalID(proposal.ID))
 	} else if proposal.IsDeclined() {
-		e.log.Debug("Proposal declined", logging.ProposalID(proposal.ID))
+		e.log.Debug("Proposal declined", logging.ProposalID(proposal.ID), logging.String("details", proposal.ErrorDetails), logging.String("reason", proposal.Reason.String()))
 	}
 
 	e.broker.Send(events.NewProposalEvent(ctx, *proposal.Proposal))
