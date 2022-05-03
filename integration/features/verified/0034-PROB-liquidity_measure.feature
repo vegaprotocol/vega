@@ -1,4 +1,4 @@
-Feature: Tests confirming probability of trading acceptance criteria (0038-OLIQ-001, 0038-OLIQ-002, 0009-MRKP-001, 0009-MRKP-002, 0009-MRKP-006)
+Feature: Tests confirming probability of trading acceptance criteria (0038-OLIQ-001, 0038-OLIQ-002, 0009-MRKP-001, 0009-MRKP-002, 0009-MRKP-006, 0018-RSKM-007, 0018-RSKM-008)
 
   Background:
 
