@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"code.vegaprotocol.io/data-node/entities"
+	"code.vegaprotocol.io/data-node/metrics"
 	"github.com/georgysavva/scany/pgxscan"
 )
 
@@ -20,6 +21,7 @@ func NewRewards(connectionSource *ConnectionSource) *Rewards {
 }
 
 func (rs *Rewards) Add(ctx context.Context, r entities.Reward) error {
+	defer metrics.StartSQLQuery("Rewards", "Add")()
 	_, err := rs.Connection.Exec(ctx,
 		`INSERT INTO rewards(
 			party_id,
@@ -36,6 +38,7 @@ func (rs *Rewards) Add(ctx context.Context, r entities.Reward) error {
 }
 
 func (rs *Rewards) GetAll(ctx context.Context) ([]entities.Reward, error) {
+	defer metrics.StartSQLQuery("Rewards", "GetAll")()
 	rewards := []entities.Reward{}
 	err := pgxscan.Select(ctx, rs.Connection, &rewards, `
 		SELECT * from rewards;`)
@@ -59,6 +62,7 @@ func (rs *Rewards) Get(ctx context.Context,
 	}
 
 	rewards := []entities.Reward{}
+	defer metrics.StartSQLQuery("Rewards", "Get")()
 	err := pgxscan.Select(ctx, rs.Connection, &rewards, query, args...)
 	if err != nil {
 		return nil, fmt.Errorf("querying rewards: %w", err)
@@ -78,6 +82,7 @@ func (rs *Rewards) GetSummaries(ctx context.Context,
 	query = fmt.Sprintf("%s GROUP BY party_id, asset_id", query)
 
 	summaries := []entities.RewardSummary{}
+	defer metrics.StartSQLQuery("Rewards", "GetSummaries")()
 	err := pgxscan.Select(ctx, rs.Connection, &summaries, query, args...)
 	if err != nil {
 		return nil, fmt.Errorf("querying rewards: %w", err)

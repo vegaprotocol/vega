@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"code.vegaprotocol.io/data-node/entities"
+	"code.vegaprotocol.io/data-node/metrics"
 	"github.com/georgysavva/scany/pgxscan"
 )
 
@@ -19,6 +20,7 @@ func NewNetworkLimits(connectionSource *ConnectionSource) *NetworkLimits {
 // exists, that row is updated instead. (i.e. there are multiple updates of the limits
 // in one block, does occur)
 func (nl *NetworkLimits) Add(ctx context.Context, limits entities.NetworkLimits) error {
+	defer metrics.StartSQLQuery("NetworkLimits", "Add")()
 	_, err := nl.Connection.Exec(ctx, `
 	INSERT INTO network_limits(
 		vega_time,
@@ -59,6 +61,7 @@ func (nl *NetworkLimits) Add(ctx context.Context, limits entities.NetworkLimits)
 // GetLatest returns the most recent network limits
 func (nl *NetworkLimits) GetLatest(ctx context.Context) (entities.NetworkLimits, error) {
 	networkLimits := entities.NetworkLimits{}
+	defer metrics.StartSQLQuery("NetworkLimits", "GetLatest")()
 	err := pgxscan.Get(ctx, nl.Connection, &networkLimits,
 		`SELECT * FROM network_limits ORDER BY vega_time DESC limit 1;`)
 	return networkLimits, err

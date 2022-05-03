@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"code.vegaprotocol.io/data-node/entities"
+	"code.vegaprotocol.io/data-node/metrics"
 	"github.com/georgysavva/scany/pgxscan"
 )
 
@@ -19,7 +20,7 @@ func NewERC20MultiSigSignerEvent(connectionSource *ConnectionSource) *ERC20Multi
 }
 
 func (m *ERC20MultiSigSignerEvent) Add(ctx context.Context, e *entities.ERC20MultiSigSignerEvent) error {
-
+	defer metrics.StartSQLQuery("ERC20MultiSigSignerEvent", "Add")()
 	query := `INSERT INTO erc20_multisig_signer_events (id, validator_id, signer_change, submitter, nonce, event, vega_time, epoch_id)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 		ON CONFLICT (id) DO NOTHING`
@@ -50,7 +51,7 @@ func (m *ERC20MultiSigSignerEvent) GetByValidatorID(ctx context.Context, validat
 		prequery += " AND epoch_id=$2"
 		query, args = orderAndPaginateQuery(prequery, nil, pagination, entities.NewNodeID(validatorID), *epochID)
 	}
-
+	defer metrics.StartSQLQuery("ERC20MultiSigSignerEvent", "GetByValidatorID")()
 	err := pgxscan.Select(ctx, m.pool, &out, query, args...)
 	return out, err
 }
@@ -65,6 +66,7 @@ func (m *ERC20MultiSigSignerEvent) GetAddedEvents(ctx context.Context, validator
 		query, args = orderAndPaginateQuery(prequery, nil, pagination, entities.NewNodeID(validatorID), entities.ERC20MultiSigSignerEventTypeAdded, *epochID)
 	}
 
+	defer metrics.StartSQLQuery("ERC20MultiSigSignerEvent", "GetAddedEvents")()
 	err := pgxscan.Select(ctx, m.pool, &out, query, args...)
 	return out, err
 }
@@ -79,6 +81,7 @@ func (m *ERC20MultiSigSignerEvent) GetRemovedEvents(ctx context.Context, validat
 		query, args = orderAndPaginateQuery(prequery, nil, pagination, entities.NewNodeID(validatorID), entities.NewEthereumAddress(submitter), entities.ERC20MultiSigSignerEventTypeRemoved, *epochID)
 	}
 
+	defer metrics.StartSQLQuery("ERC20MultiSigSignerEvent", "GetRemovedEvents")()
 	err := pgxscan.Select(ctx, m.pool, &out, query, args...)
 	return out, err
 }

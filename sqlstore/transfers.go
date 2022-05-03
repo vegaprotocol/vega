@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"code.vegaprotocol.io/data-node/entities"
+	"code.vegaprotocol.io/data-node/metrics"
 	"github.com/georgysavva/scany/pgxscan"
 )
 
@@ -19,7 +20,7 @@ func NewTransfers(connectionSource *ConnectionSource) *Transfers {
 }
 
 func (t *Transfers) Upsert(ctx context.Context, transfer *entities.Transfer) error {
-
+	defer metrics.StartSQLQuery("Transfers", "Upsert")()
 	query := `insert into transfers(
 				id,
 				vega_time,
@@ -63,6 +64,7 @@ func (t *Transfers) Upsert(ctx context.Context, transfer *entities.Transfer) err
 }
 
 func (t *Transfers) GetTransfersFromParty(ctx context.Context, partyId entities.PartyID) ([]*entities.Transfer, error) {
+	defer metrics.StartSQLQuery("Transfers", "GetTransfersFromParty")()
 	transfers, err := t.getTransfers(ctx,
 		"where transfers_current.from_account_id  in (select id from accounts where accounts.party_id=$1)", partyId)
 
@@ -74,6 +76,7 @@ func (t *Transfers) GetTransfersFromParty(ctx context.Context, partyId entities.
 }
 
 func (t *Transfers) GetTransfersToParty(ctx context.Context, partyId entities.PartyID) ([]*entities.Transfer, error) {
+	defer metrics.StartSQLQuery("Transfers", "GetTransfersToParty")()
 	transfers, err := t.getTransfers(ctx,
 		"where transfers_current.to_account_id  in (select id from accounts where accounts.party_id=$1)", partyId)
 
@@ -85,6 +88,7 @@ func (t *Transfers) GetTransfersToParty(ctx context.Context, partyId entities.Pa
 }
 
 func (t *Transfers) GetTransfersFromAccount(ctx context.Context, accountID int64) ([]*entities.Transfer, error) {
+	defer metrics.StartSQLQuery("Transfers", "GetTransfersFromAccount")()
 	transfers, err := t.getTransfers(ctx, "WHERE from_account_id = $1", accountID)
 
 	if err != nil {
@@ -95,6 +99,7 @@ func (t *Transfers) GetTransfersFromAccount(ctx context.Context, accountID int64
 }
 
 func (t *Transfers) GetTransfersToAccount(ctx context.Context, accountID int64) ([]*entities.Transfer, error) {
+	defer metrics.StartSQLQuery("Transfers", "GetTransfersToAccount")()
 	transfers, err := t.getTransfers(ctx, "WHERE to_account_id = $1", accountID)
 
 	if err != nil {
@@ -105,6 +110,7 @@ func (t *Transfers) GetTransfersToAccount(ctx context.Context, accountID int64) 
 }
 
 func (t *Transfers) GetAll(ctx context.Context) ([]*entities.Transfer, error) {
+	defer metrics.StartSQLQuery("Transfers", "GetAll")()
 	return t.getTransfers(ctx, "")
 }
 

@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"code.vegaprotocol.io/data-node/entities"
+	"code.vegaprotocol.io/data-node/metrics"
 	"github.com/georgysavva/scany/pgxscan"
 )
 
@@ -19,6 +20,7 @@ func NewAssets(connectionSource *ConnectionSource) *Assets {
 }
 
 func (as *Assets) Add(ctx context.Context, a entities.Asset) error {
+	defer metrics.StartSQLQuery("Assets", "Add")()
 	_, err := as.Connection.Exec(ctx,
 		`INSERT INTO assets(id, name, symbol, total_supply, decimals, quantum, source, erc20_contract, vega_time)
 		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
@@ -37,6 +39,7 @@ func (as *Assets) Add(ctx context.Context, a entities.Asset) error {
 func (as *Assets) GetByID(ctx context.Context, id string) (entities.Asset, error) {
 	a := entities.Asset{}
 
+	defer metrics.StartSQLQuery("Assets", "GetByID")()
 	err := pgxscan.Get(ctx, as.Connection, &a,
 		`SELECT id, name, symbol, total_supply, decimals, quantum, source, erc20_contract, vega_time
 		 FROM assets WHERE id=$1`,
@@ -47,6 +50,7 @@ func (as *Assets) GetByID(ctx context.Context, id string) (entities.Asset, error
 func (as *Assets) GetAll(ctx context.Context) ([]entities.Asset, error) {
 
 	assets := []entities.Asset{}
+	defer metrics.StartSQLQuery("Assets", "GetAll")()
 	err := pgxscan.Select(ctx, as.Connection, &assets, `
 		SELECT id, name, symbol, total_supply, decimals, quantum, source, erc20_contract, vega_time
 		FROM assets`)

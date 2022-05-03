@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"code.vegaprotocol.io/data-node/entities"
+	"code.vegaprotocol.io/data-node/metrics"
 	"github.com/georgysavva/scany/pgxscan"
 )
 
@@ -21,6 +22,7 @@ func NewProposals(connectionSource *ConnectionSource) *Proposals {
 }
 
 func (ps *Proposals) Add(ctx context.Context, r entities.Proposal) error {
+	defer metrics.StartSQLQuery("Proposals", "Add")()
 	_, err := ps.Connection.Exec(ctx,
 		`INSERT INTO proposals(
 			id,
@@ -50,6 +52,7 @@ func (ps *Proposals) Add(ctx context.Context, r entities.Proposal) error {
 }
 
 func (ps *Proposals) GetByID(ctx context.Context, id string) (entities.Proposal, error) {
+	defer metrics.StartSQLQuery("Proposals", "GetByID")()
 	var p entities.Proposal
 	query := `SELECT * FROM proposals_current WHERE id=$1`
 	err := pgxscan.Get(ctx, ps.Connection, &p, query, entities.NewProposalID(id))
@@ -57,6 +60,7 @@ func (ps *Proposals) GetByID(ctx context.Context, id string) (entities.Proposal,
 }
 
 func (ps *Proposals) GetByReference(ctx context.Context, ref string) (entities.Proposal, error) {
+	defer metrics.StartSQLQuery("Proposals", "GetByReference")()
 	var p entities.Proposal
 	query := `SELECT * FROM proposals_current WHERE reference=$1 LIMIT 1`
 	err := pgxscan.Get(ctx, ps.Connection, &p, query, ref)
@@ -91,6 +95,7 @@ func (ps *Proposals) Get(ctx context.Context,
 	}
 
 	proposals := []entities.Proposal{}
+	defer metrics.StartSQLQuery("Proposals", "Get")()
 	err := pgxscan.Select(ctx, ps.Connection, &proposals, query, args...)
 	if err != nil {
 		return nil, fmt.Errorf("querying proposals: %w", err)

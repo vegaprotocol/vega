@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"code.vegaprotocol.io/data-node/entities"
+	"code.vegaprotocol.io/data-node/metrics"
 	"github.com/georgysavva/scany/pgxscan"
 )
 
@@ -23,6 +24,7 @@ func NewRiskFactors(connectionSource *ConnectionSource) *RiskFactors {
 }
 
 func (rf *RiskFactors) Upsert(ctx context.Context, factor *entities.RiskFactor) error {
+	defer metrics.StartSQLQuery("RiskFactor", "Upsert")()
 	query := fmt.Sprintf(`insert into risk_factors (%s)
 values ($1, $2, $3, $4)
 on conflict (market_id, vega_time) do update
@@ -39,6 +41,7 @@ set
 }
 
 func (rf *RiskFactors) GetMarketRiskFactors(ctx context.Context, marketID string) (entities.RiskFactor, error) {
+	defer metrics.StartSQLQuery("RiskFactors", "GetMarketRiskFactors")()
 	var riskFactor entities.RiskFactor
 	var bindVars []interface{}
 

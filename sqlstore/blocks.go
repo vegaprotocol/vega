@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/data-node/entities"
+	"code.vegaprotocol.io/data-node/metrics"
 	"github.com/georgysavva/scany/pgxscan"
 )
 
@@ -33,6 +34,7 @@ func NewBlocks(connectionSource *ConnectionSource) *Blocks {
 }
 
 func (bs *Blocks) Add(ctx context.Context, b entities.Block) error {
+	defer metrics.StartSQLQuery("Blocks", "Add")()
 	_, err := bs.Connection.Exec(ctx,
 		`insert into blocks(vega_time, height, hash) values ($1, $2, $3)`,
 		b.VegaTime, b.Height, b.Hash)
@@ -45,6 +47,7 @@ func (bs *Blocks) Add(ctx context.Context, b entities.Block) error {
 }
 
 func (bs *Blocks) GetAll() ([]entities.Block, error) {
+	defer metrics.StartSQLQuery("Blocks", "GetAll")()
 	ctx := context.Background()
 	blocks := []entities.Block{}
 	err := pgxscan.Select(ctx, bs.Connection, &blocks,
@@ -62,6 +65,7 @@ func (bs *Blocks) GetAtHeight(height int64) (entities.Block, error) {
 	}
 
 	// Else query the database
+	defer metrics.StartSQLQuery("Blocks", "GetAtHeight")()
 	err = pgxscan.Get(context.Background(), bs.Connection, &block,
 		`SELECT vega_time, height, hash
 		FROM blocks

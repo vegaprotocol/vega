@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"code.vegaprotocol.io/data-node/entities"
+	"code.vegaprotocol.io/data-node/metrics"
 	"github.com/georgysavva/scany/pgxscan"
 )
 
@@ -19,6 +20,7 @@ func NewCheckpoints(connectionSource *ConnectionSource) *Checkpoints {
 }
 
 func (ps *Checkpoints) Add(ctx context.Context, r entities.Checkpoint) error {
+	defer metrics.StartSQLQuery("Checkpoints", "Add")()
 	_, err := ps.Connection.Exec(ctx,
 		`INSERT INTO checkpoints(
 			hash,
@@ -32,6 +34,7 @@ func (ps *Checkpoints) Add(ctx context.Context, r entities.Checkpoint) error {
 }
 
 func (np *Checkpoints) GetAll(ctx context.Context) ([]entities.Checkpoint, error) {
+	defer metrics.StartSQLQuery("Checkpoints", "GetAll")()
 	var nps []entities.Checkpoint
 	query := `SELECT * FROM checkpoints ORDER BY block_height DESC`
 	err := pgxscan.Select(ctx, np.Connection, &nps, query)

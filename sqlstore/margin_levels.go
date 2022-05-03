@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"code.vegaprotocol.io/data-node/entities"
+	"code.vegaprotocol.io/data-node/metrics"
 	"github.com/georgysavva/scany/pgxscan"
 )
 
@@ -39,6 +40,7 @@ func (ml *MarginLevels) Add(marginLevel entities.MarginLevels) error {
 }
 
 func (ml *MarginLevels) Flush(ctx context.Context) error {
+	defer metrics.StartSQLQuery("MarginLevels", "Flush")()
 	return ml.batcher.Flush(ctx, ml.pool)
 }
 
@@ -79,6 +81,7 @@ func (ml *MarginLevels) GetMarginLevelsByID(ctx context.Context, partyID, market
 		whereClause)
 
 	query, bindVars = orderAndPaginateQuery(query, nil, pagination, bindVars...)
+	defer metrics.StartSQLQuery("MarginLevels", "GetByID")()
 	err := pgxscan.Select(ctx, ml.Connection, &marginLevels, query, bindVars...)
 
 	return marginLevels, err

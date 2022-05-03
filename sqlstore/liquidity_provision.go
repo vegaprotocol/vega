@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"code.vegaprotocol.io/data-node/entities"
+	"code.vegaprotocol.io/data-node/metrics"
 	"github.com/georgysavva/scany/pgxscan"
 )
 
@@ -28,6 +29,7 @@ func NewLiquidityProvision(connectionSource *ConnectionSource) *LiquidityProvisi
 }
 
 func (lp *LiquidityProvision) Flush(ctx context.Context) error {
+	defer metrics.StartSQLQuery("LiquidityProvision", "Flush")()
 	return lp.batcher.Flush(ctx, lp.pool)
 }
 
@@ -68,6 +70,7 @@ order by id, vega_time desc`, selectSql, where)
 
 	var liquidityProvisions []entities.LiquidityProvision
 
+	defer metrics.StartSQLQuery("LiquidityProvision", "Get")()
 	err := pgxscan.Select(ctx, lp.Connection, &liquidityProvisions, query, bindVars...)
 	return liquidityProvisions, err
 }

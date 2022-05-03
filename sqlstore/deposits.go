@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"code.vegaprotocol.io/data-node/entities"
+	"code.vegaprotocol.io/data-node/metrics"
 	"github.com/georgysavva/scany/pgxscan"
 )
 
@@ -37,6 +38,7 @@ set
 	credited_timestamp=EXCLUDED.credited_timestamp,
 	created_timestamp=EXCLUDED.created_timestamp`, sqlDepositsColumns)
 
+	defer metrics.StartSQLQuery("Deposits", "Upsert")()
 	if _, err := d.Connection.Exec(ctx, query, deposit.ID, deposit.Status, deposit.PartyID, deposit.Asset, deposit.Amount,
 		deposit.TxHash, deposit.CreditedTimestamp, deposit.CreatedTimestamp, deposit.VegaTime); err != nil {
 		err = fmt.Errorf("could not insert deposit into database: %w", err)
@@ -54,6 +56,7 @@ func (d *Deposits) GetByID(ctx context.Context, depositID string) (entities.Depo
 		where id = $1
 		order by id, party_id, vega_time desc`
 
+	defer metrics.StartSQLQuery("Deposits", "GetByID")()
 	err := pgxscan.Get(ctx, d.Connection, &deposit, query, entities.NewDepositID(depositID))
 	return deposit, err
 }
@@ -76,6 +79,7 @@ func (d *Deposits) GetByParty(ctx context.Context, party string, openOnly bool, 
 	var query string
 	query, args = orderAndPaginateQuery(queryBuilder.String(), nil, pagination, args...)
 
+	defer metrics.StartSQLQuery("Deposits", "GetByParty")()
 	if err := pgxscan.Select(ctx, d.Connection, &deposits, query, args...); err != nil {
 		return nil
 	}
