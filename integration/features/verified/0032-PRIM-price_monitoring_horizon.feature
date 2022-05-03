@@ -50,12 +50,12 @@ Feature: 0032-PRIM-price-mornitoring, test horizon trigger.
       | party2 | ETH/MAR22 | sell | 100000 | 10000000000| 0                | TYPE_LIMIT | TIF_GTC | sell-ref-3 |
 
     When the opening auction period ends for market "ETH/MAR22"
-    Then the auction ends with a traded volume of "500000" at a price of "95100000"
+    Then the auction ends with a traded volume of "500000" at a price of "97600000"
     # target_stake = mark_price x max_oi x target_stake_scaling_factor x rf = 1001 x 5 x 1 x 0.1
     And the insurance pool balance should be "0" for the market "ETH/MAR22"
     And the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 97600000   | TRADING_MODE_CONTINUOUS | 3600    | 93642254  | 101698911  | 25224720     | 390500000000   | 500000        |
+      | 97600000   | TRADING_MODE_CONTINUOUS | 3600    | 93642254  | 101698911 | 25224720     | 390500000000   | 500000        |
  
     #check the volume on the order book
     Then the order book should have the following volumes for market "ETH/MAR22":
@@ -128,7 +128,7 @@ Scenario: 002, horizon set to 360000 in price monitoring model.  0032-PRIM-001, 
       | party2 | ETH/MAR22 | sell | 100000 | 10000000000| 0                | TYPE_LIMIT | TIF_GTC | sell-ref-3 |
 
     When the opening auction period ends for market "ETH/MAR22"
-    Then the auction ends with a traded volume of "500000" at a price of "95100000"
+    Then the auction ends with a traded volume of "500000" at a price of "97600000"
     # target_stake = mark_price x max_oi x target_stake_scaling_factor x rf = 1001 x 5 x 1 x 0.1
     And the insurance pool balance should be "0" for the market "ETH/MAR22"
     
@@ -208,7 +208,7 @@ Scenario: 003, horizon set to 360000 in price monitoring model.  0032-PRIM-001, 
       | party2 | ETH/MAR22 | sell | 1      | 1000000| 0                | TYPE_LIMIT | TIF_GTC | sell-ref-3 |
 
     When the opening auction period ends for market "ETH/MAR22"
-    Then the auction ends with a traded volume of "5" at a price of "9510"
+    Then the auction ends with a traded volume of "5" at a price of "9760"
     # target_stake = mark_price x max_oi x target_stake_scaling_factor x rf = 1001 x 5 x 1 x 0.1
     And the insurance pool balance should be "0" for the market "ETH/MAR22"
   
