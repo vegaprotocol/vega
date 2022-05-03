@@ -2,6 +2,7 @@ package validators_test
 
 import (
 	"context"
+	"encoding/hex"
 	"fmt"
 	"io/ioutil"
 	"testing"
@@ -29,7 +30,7 @@ func addNodes(top *testTop, number int) {
 		top.AddNewNode(ctx, &commandspb.AnnounceNode{
 			Id:              fmt.Sprintf("vega-master-pubkey-%d", i),
 			ChainPubKey:     tmPubKeys[0],
-			VegaPubKey:      fmt.Sprintf("vega-key-%d", i),
+			VegaPubKey:      hex.EncodeToString([]byte(fmt.Sprintf("vega-key-%d", i))),
 			EthereumAddress: fmt.Sprintf("eth-address-%d", i),
 		}, validators.ValidatorStatusTendermint)
 	}

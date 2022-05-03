@@ -63,6 +63,13 @@ func (t *Topology) AddKeyRotate(ctx context.Context, nodeID string, currentBlock
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
+	t.log.Debug("Adding key rotation",
+		logging.String("nodeID", nodeID),
+		logging.Uint64("currentBlockHeight", currentBlockHeight),
+		logging.Uint64("targetBlock", kr.TargetBlock),
+		logging.String("currentPubKeyHash", kr.CurrentPubKeyHash),
+	)
+
 	node, ok := t.validators[nodeID]
 	if !ok {
 		return fmt.Errorf("failed to add key rotate for non existing node %q", nodeID)
@@ -80,7 +87,12 @@ func (t *Topology) AddKeyRotate(ctx context.Context, nodeID string, currentBlock
 		return ErrNewVegaPubKeyIndexMustBeGreaterThenCurrentPubKeyIndex
 	}
 
-	if node.data.HashVegaPubKey() != kr.CurrentPubKeyHash {
+	hashedVegaPubKey, err := node.data.HashVegaPubKey()
+	if err != nil {
+		return err
+	}
+
+	if hashedVegaPubKey != kr.CurrentPubKeyHash {
 		return ErrCurrentPubKeyHashDoesNotMatch
 	}
 
@@ -93,6 +105,12 @@ func (t *Topology) AddKeyRotate(ctx context.Context, nodeID string, currentBlock
 	}
 
 	t.tss.changed = true
+
+	t.log.Debug("Successfully added key rotation to pending key rotations",
+		logging.String("nodeID", nodeID),
+		logging.Uint64("currentBlockHeight", currentBlockHeight),
+		logging.Uint64("targetBlock", kr.TargetBlock),
+	)
 
 	return nil
 }
@@ -151,11 +169,15 @@ func (t *Topology) GetAllPendingKeyRotations() []*PendingKeyRotation {
 }
 
 func (t *Topology) keyRotationBeginBlockLocked(ctx context.Context) {
+	t.log.Debug("Trying to apply pending key rotations", logging.Uint64("currentBlockHeight", t.currentBlockHeight))
+
 	// key swaps should run in deterministic order
 	nodeIDs := t.pendingPubKeyRotations.getSortedNodeIDsPerHeight(t.currentBlockHeight)
 	if len(nodeIDs) == 0 {
 		return
 	}
+
+	t.log.Debug("Applying pending key rotations", logging.Strings("nodeIDs", nodeIDs))
 
 	for _, nodeID := range nodeIDs {
 		data, ok := t.validators[nodeID]
@@ -174,6 +196,12 @@ func (t *Topology) keyRotationBeginBlockLocked(ctx context.Context) {
 
 		t.notifyKeyChange(ctx, oldPubKey, rotation.newPubKey)
 		t.broker.Send(events.NewVegaKeyRotationEvent(ctx, nodeID, oldPubKey, rotation.newPubKey, t.currentBlockHeight))
+
+		t.log.Debug("Applied key rotation",
+			logging.String("nodeID", nodeID),
+			logging.String("oldPubKey", oldPubKey),
+			logging.String("newPubKey", rotation.newPubKey),
+		)
 	}
 
 	delete(t.pendingPubKeyRotations, t.currentBlockHeight)
