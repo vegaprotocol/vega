@@ -141,18 +141,20 @@ func TestGetTargetStake_VerifyFormulaAfterParametersUpdate(t *testing.T) {
 	engine.UpdateParameters(updatedParams)
 
 	// given
-	later := now.Add(updatedTWindow).Add(time.Second)
+
 	newOpenInterest := uint64(14)
+
+	// when
+	err = engine.RecordOpenInterest(newOpenInterest, now.Add(time.Second))
+
+	// when
+	require.NoError(t, err)
 
 	// The new open interest should be selected as a new max open interest,
 	// even though it's smaller than the previously registered open interest,
 	// because we are recording the new open interest a second after new
 	// maximum time an open interest is kept in memory.
-	// when
-	err = engine.RecordOpenInterest(newOpenInterest, later)
-
-	// when
-	require.NoError(t, err)
+	later := now.Add(updatedTWindow).Add(2 * time.Second)
 
 	// when
 	updatedTargetStakeNow, _ := engine.GetTargetStake(rf, later, markPrice.Clone())
