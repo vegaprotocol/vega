@@ -473,21 +473,30 @@ func (b *OrderBook) uncrossBookSide(
 		uncrossedOrder *types.OrderConfirmation
 		allOrders      = make([]*types.OrderConfirmation, 0, len(uncrossOrders))
 	)
+	if len(uncrossOrders) == 0 {
+		return nil, nil
+	}
+	// get price factor, if price is 10,000, but market price is 100, this is 10,000/100 -> 100
+	// so we can get the market price simply by doing price / (order.Price/ order.OriginalPrice)
+	mPrice := num.Zero().Div(uncrossOrders[0].Price, uncrossOrders[0].OriginalPrice)
+	mPrice.Div(price, mPrice)
 	// Uncross each one
 	for _, order := range uncrossOrders {
+		// try to get the market price value from the order
 		trades, affectedOrders, _, err := opSide.uncross(order, false)
 		if err != nil {
 			return nil, err
-		}
-		// Update all the trades to have the correct uncrossing price
-		for index := 0; index < len(trades); index++ {
-			trades[index].Price = price.Clone()
 		}
 		// If the affected order is fully filled set the status
 		for _, affectedOrder := range affectedOrders {
 			if affectedOrder.Remaining == 0 {
 				affectedOrder.Status = types.OrderStatusFilled
 			}
+		}
+		// Update all the trades to have the correct uncrossing price
+		for index := 0; index < len(trades); index++ {
+			trades[index].Price = price.Clone()
+			trades[index].MarketPrice = mPrice.Clone()
 		}
 		uncrossedOrder = &types.OrderConfirmation{Order: order, PassiveOrdersAffected: affectedOrders, Trades: trades}
 		allOrders = append(allOrders, uncrossedOrder)
