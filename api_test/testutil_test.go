@@ -167,6 +167,7 @@ func NewTestServer(t testing.TB, ctx context.Context, blocking bool) *TestServer
 	nodesSub := subscribers.NewNodesSub(ctx, nodeStore, logger, true)
 
 	epochStore := storage.NewEpoch(logger, nodeStore, conf.Storage)
+	epochSub := subscribers.NewEpochUpdateSub(ctx, epochStore, logger, true)
 	delegationBalanceSub := subscribers.NewDelegationBalanceSub(ctx, nodeStore, epochStore, delegationStore, logger, true)
 
 	tradeService := trades.NewService(logger, conf.Trades, tradeStore, nil)
@@ -274,6 +275,7 @@ func NewTestServer(t testing.TB, ctx context.Context, blocking bool) *TestServer
 		delegationBalanceSub,
 		rewardsService,
 		nodesSub,
+		epochSub,
 	)
 
 	srv := api.NewGRPCServer(

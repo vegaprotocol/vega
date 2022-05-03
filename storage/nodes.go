@@ -11,7 +11,10 @@ import (
 	"code.vegaprotocol.io/protos/vega"
 	pb "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/types/num"
+	"github.com/pkg/errors"
 )
+
+var ErrNodeDoesNotExist = errors.New("node does not exist")
 
 type node struct {
 	n pb.Node
@@ -93,17 +96,18 @@ func (ns *Node) AddNodeRewardScore(nodeID, epochID string, scoreData vega.Reward
 	node.rewardScoresPerEpoch[epochID] = scoreData
 }
 
-func (ns *Node) AddNodeRankingScore(nodeID, epochID string, scoreData vega.RankingScore) {
+func (ns *Node) AddNodeRankingScore(nodeID, epochID string, rankingData vega.RankingScore) error {
 	ns.mut.Lock()
 	defer ns.mut.Unlock()
 
 	node, ok := ns.nodes[nodeID]
 	if !ok {
 		ns.log.Error("Received node ranking for non existing node", logging.String("node_id", nodeID))
-		return
+		return ErrNodeDoesNotExist
 	}
 
-	node.rankingPerEpoch[epochID] = scoreData
+	node.rankingPerEpoch[epochID] = rankingData
+	return nil
 }
 
 func (ns *Node) AddDelegation(de pb.Delegation) {
