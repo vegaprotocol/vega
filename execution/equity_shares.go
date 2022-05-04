@@ -8,9 +8,10 @@ import (
 
 // lp holds LiquidityProvider stake and avg values.
 type lp struct {
-	stake num.Decimal
-	share num.Decimal
-	avg   num.Decimal
+	stake  num.Decimal
+	share  num.Decimal
+	avg    num.Decimal
+	vStake num.Decimal //@TODO add this
 }
 
 // EquityShares module controls the Equity sharing algorithm described on the spec:
@@ -18,6 +19,7 @@ type lp struct {
 type EquityShares struct {
 	// mvp is the MarketValueProxy
 	mvp num.Decimal
+	r   num.Decimal // market growth @TODO add this to snapshots
 
 	// lps is a map of party id to lp (LiquidityProviders)
 	lps map[string]*lp
@@ -30,6 +32,7 @@ type EquityShares struct {
 func NewEquityShares(mvp num.Decimal) *EquityShares {
 	return &EquityShares{
 		mvp:          mvp,
+		r:            num.DecimalZero(),
 		lps:          map[string]*lp{},
 		stateChanged: true,
 	}
@@ -56,7 +59,16 @@ func (es *EquityShares) setOpeningAuctionAVG() {
 	}
 }
 
+func (es *EquityShares) UpdateVirtualStake() {
+	growth := num.NewDecimalFromFloat(1.0).Mul(es.r)
+	for _, v := range es.lps {
+		v.vStake = num.MaxD(v.stake, growth.Mul(v.vStake))
+	}
+	es.stateChanged = true
+}
+
 func (es *EquityShares) WithMVP(mvp num.Decimal) *EquityShares {
+	es.r = mvp.Sub(es.mvp).Div(es.mvp)
 	es.mvp = mvp
 	es.stateChanged = true
 	return es
@@ -64,46 +76,49 @@ func (es *EquityShares) WithMVP(mvp num.Decimal) *EquityShares {
 
 // SetPartyStake sets LP values for a given party.
 func (es *EquityShares) SetPartyStake(id string, newStakeU *num.Uint) {
-	defer func() {
-		es.stateChanged = true
-	}()
 	if !es.openingAuctionEnded {
 		defer es.setOpeningAuctionAVG()
 	}
 
-	newStake := num.DecimalFromUint(newStakeU)
 	v, found := es.lps[id]
+	if newStakeU == nil || newStakeU.IsZero() {
+		delete(es.lps, id)
+		es.stateChanged = (es.stateChanged || found)
+		return
+	}
+	defer func() {
+		es.stateChanged = true
+	}()
+	newStake := num.DecimalFromUint(newStakeU)
 	// first time we set the newStake and mvp as avg.
 	if !found {
-		if avg := num.DecimalZero(); newStake.GreaterThan(avg) {
-			if es.openingAuctionEnded {
-				avg = es.mvp
-			}
-			es.lps[id] = &lp{stake: newStake, avg: avg}
-			return
+		avg := num.DecimalZero()
+		if es.openingAuctionEnded {
+			avg = es.mvp
 		}
-		// If we didn't previously have stake and are trying to set it to zero, just return
+		es.lps[id] = &lp{
+			stake:  newStake,
+			avg:    avg,
+			vStake: newStake,
+		}
 		return
 	}
 
-	if newStake.IsZero() {
-		// We are removing an existing stake
-		delete(es.lps, id)
-		return
-	}
-
+	delta := newStake.Sub(v.stake)
 	if newStake.LessThanOrEqual(v.stake) {
+		// vStake * (newStake/oldStake)
+		v.vStake = v.vStake.Mul(newStake.Div(v.stake))
 		v.stake = newStake
 		return
 	}
 
 	// delta will allways be > 0 at this point
-	delta := newStake.Sub(v.stake)
-	eq := es.mustEquity(id)
-	// v.avg = ((eq * v.avg) + (delta * es.mvp)) / (eq + v.stake)
 	if es.openingAuctionEnded {
+		eq := es.mustEquity(id)
+		// v.avg = ((eq * v.avg) + (delta * es.mvp)) / (eq + v.stake)
 		v.avg = (eq.Mul(v.avg).Add(delta.Mul(es.mvp))).Div(eq.Add(v.stake))
 	}
+	v.vStake = v.vStake.Add(delta) // increase
 	v.stake = newStake
 }
 
@@ -131,7 +146,7 @@ func (es *EquityShares) mustEquity(party string) num.Decimal {
 // Returns an error if the party has no stake.
 func (es *EquityShares) equity(id string) (num.Decimal, error) {
 	if v, ok := es.lps[id]; ok {
-		return (v.stake.Mul(es.mvp)).Div(v.avg), nil
+		return (v.vStake.Mul(es.mvp)).Div(v.avg), nil
 	}
 
 	return num.DecimalZero(), fmt.Errorf("party %s has no stake", id)

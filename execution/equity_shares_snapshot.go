@@ -33,10 +33,11 @@ func (es *EquityShares) GetState() *types.EquityShare {
 	lps := make([]*types.EquityShareLP, 0, len(es.lps))
 	for id, lp := range es.lps {
 		lps = append(lps, &types.EquityShareLP{
-			ID:    id,
-			Stake: lp.stake,
-			Share: lp.share,
-			Avg:   lp.avg,
+			ID:     id,
+			Stake:  lp.stake,
+			Share:  lp.share,
+			Avg:    lp.avg,
+			VStake: lp.vStake,
 		})
 	}
 
@@ -49,6 +50,7 @@ func (es *EquityShares) GetState() *types.EquityShare {
 
 	return &types.EquityShare{
 		Mvp:                 es.mvp,
+		R:                   es.r,
 		OpeningAuctionEnded: es.openingAuctionEnded,
 		Lps:                 lps,
 	}
