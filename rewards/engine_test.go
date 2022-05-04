@@ -333,12 +333,11 @@ func getEngine(t *testing.T) *testEngine {
 
 	collateral.EnableAsset(context.Background(), asset)
 	topology := mocks.NewMockTopology(ctrl)
-	feesTracker := mocks.NewMockFeesTracker(ctrl)
-	MarketTracker := mocks.NewMockMarketTracker(ctrl)
-	MarketTracker.EXPECT().GetAllMarketIDs().AnyTimes()
-	engine := New(logger, conf, broker, delegation, epochEngine, collateral, ts, feesTracker, MarketTracker, topology)
+	marketActivityTracker := mocks.NewMockMarketActivityTracker(ctrl)
+	engine := New(logger, conf, broker, delegation, epochEngine, collateral, ts, marketActivityTracker, topology)
 
 	broker.EXPECT().Send(gomock.Any()).AnyTimes()
+	marketActivityTracker.EXPECT().GetEligibleProposers(gomock.Any()).AnyTimes()
 
 	delegatorForVal1 := map[string]*num.Uint{}
 	delegatorForVal1["party1"] = num.NewUint(6000)
