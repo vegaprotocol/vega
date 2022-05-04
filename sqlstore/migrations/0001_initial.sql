@@ -602,7 +602,6 @@ create table if not exists transfers (
          from_account_id INT NOT NULL REFERENCES accounts(id),
          to_account_id INT NOT NULL REFERENCES accounts(id),
          asset_id bytea not null,
-         market_id bytea not null,
          amount        NUMERIC(32, 0)           NOT NULL,
          reference       TEXT,
          status           transfer_status NOT NULL,
@@ -611,7 +610,9 @@ create table if not exists transfers (
          start_epoch     BIGINT,
          end_epoch       BIGINT,
          factor        NUMERIC(32, 16) ,
-
+         dispatch_metric INT,
+         dispatch_metric_asset bytea,
+         dispatch_markets bytea[],
          primary key (id, vega_time)
 );
 

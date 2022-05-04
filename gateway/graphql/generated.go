@@ -206,6 +206,12 @@ type ComplexityRoot struct {
 		TickSize func(childComplexity int) int
 	}
 
+	DispatchStrategy struct {
+		DispatchMetric        func(childComplexity int) int
+		DispatchMetricAssetID func(childComplexity int) int
+		MarketIdsInScope      func(childComplexity int) int
+	}
+
 	ERC20 struct {
 		ContractAddress func(childComplexity int) int
 	}
@@ -793,9 +799,10 @@ type ComplexityRoot struct {
 	}
 
 	RecurringTransfer struct {
-		EndEpoch   func(childComplexity int) int
-		Factor     func(childComplexity int) int
-		StartEpoch func(childComplexity int) int
+		DispatchStrategy func(childComplexity int) int
+		EndEpoch         func(childComplexity int) int
+		Factor           func(childComplexity int) int
+		StartEpoch       func(childComplexity int) int
 	}
 
 	Reward struct {
@@ -977,7 +984,6 @@ type ComplexityRoot struct {
 		FromAccountType func(childComplexity int) int
 		Id              func(childComplexity int) int
 		Kind            func(childComplexity int) int
-		MarketID        func(childComplexity int) int
 		Reference       func(childComplexity int) int
 		Status          func(childComplexity int) int
 		Timestamp       func(childComplexity int) int
@@ -1375,6 +1381,8 @@ type RankingScoreResolver interface {
 type RecurringTransferResolver interface {
 	StartEpoch(ctx context.Context, obj *v1.RecurringTransfer) (int, error)
 	EndEpoch(ctx context.Context, obj *v1.RecurringTransfer) (*int, error)
+
+	DispatchStrategy(ctx context.Context, obj *v1.RecurringTransfer) (*DispatchStrategy, error)
 }
 type RewardResolver interface {
 	Asset(ctx context.Context, obj *vega.Reward) (*vega.Asset, error)
@@ -1463,7 +1471,6 @@ type TradeResolver interface {
 }
 type TransferResolver interface {
 	Asset(ctx context.Context, obj *v1.Transfer) (*vega.Asset, error)
-	MarketID(ctx context.Context, obj *v1.Transfer) (string, error)
 
 	Status(ctx context.Context, obj *v1.Transfer) (TransferStatus, error)
 	Timestamp(ctx context.Context, obj *v1.Transfer) (string, error)
@@ -1930,6 +1937,27 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.DiscreteTrading.TickSize(childComplexity), true
+
+	case "DispatchStrategy.dispatchMetric":
+		if e.complexity.DispatchStrategy.DispatchMetric == nil {
+			break
+		}
+
+		return e.complexity.DispatchStrategy.DispatchMetric(childComplexity), true
+
+	case "DispatchStrategy.dispatchMetricAssetId":
+		if e.complexity.DispatchStrategy.DispatchMetricAssetID == nil {
+			break
+		}
+
+		return e.complexity.DispatchStrategy.DispatchMetricAssetID(childComplexity), true
+
+	case "DispatchStrategy.marketIdsInScope":
+		if e.complexity.DispatchStrategy.MarketIdsInScope == nil {
+			break
+		}
+
+		return e.complexity.DispatchStrategy.MarketIdsInScope(childComplexity), true
 
 	case "ERC20.contractAddress":
 		if e.complexity.ERC20.ContractAddress == nil {
@@ -4746,6 +4774,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.RankingScore.VotingPower(childComplexity), true
 
+	case "RecurringTransfer.dispatchStrategy":
+		if e.complexity.RecurringTransfer.DispatchStrategy == nil {
+			break
+		}
+
+		return e.complexity.RecurringTransfer.DispatchStrategy(childComplexity), true
+
 	case "RecurringTransfer.endEpoch":
 		if e.complexity.RecurringTransfer.EndEpoch == nil {
 			break
@@ -5668,13 +5703,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Transfer.Kind(childComplexity), true
 
-	case "Transfer.marketID":
-		if e.complexity.Transfer.MarketID == nil {
-			break
-		}
-
-		return e.complexity.Transfer.MarketID(childComplexity), true
-
 	case "Transfer.reference":
 		if e.complexity.Transfer.Reference == nil {
 			break
@@ -6534,9 +6562,6 @@ type Transfer {
   "The asset"
   asset: Asset
 
-  "The market identifier for the transfer is any"
-  marketID: String!
-
   "The amount sent"
   amount: String!
 
@@ -6568,6 +6593,30 @@ type RecurringTransfer {
   endEpoch: Int
   "The factor of the initial amount to be distributed"
   factor: String!
+  "An optional dispatch strategy for the recurring transfer"
+  dispatchStrategy: DispatchStrategy
+}
+
+enum DispatchMetric {
+  
+  MarketTradingValue
+  
+  MakerFeesReceived
+
+  TakerFeesPaid
+
+  LPFeesReceived 
+}
+
+type DispatchStrategy {
+  "What to contribution is measured"
+  dispatchMetric: DispatchMetric!
+
+  "The asset to use for measuring contibution to the metric"
+  dispatchMetricAssetId: ID!
+
+  "Scope the dispatch to this markets only under the metric asset"
+  marketIdsInScope: [ID!]
 }
 
 enum NodeStatus {
@@ -12572,6 +12621,108 @@ func (ec *executionContext) _DiscreteTrading_tickSize(ctx context.Context, field
 	res := resTmp.(string)
 	fc.Result = res
 	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _DispatchStrategy_dispatchMetric(ctx context.Context, field graphql.CollectedField, obj *DispatchStrategy) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "DispatchStrategy",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.DispatchMetric, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(DispatchMetric)
+	fc.Result = res
+	return ec.marshalNDispatchMetric2codeᚗvegaprotocolᚗioᚋdataᚑnodeᚋgatewayᚋgraphqlᚐDispatchMetric(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _DispatchStrategy_dispatchMetricAssetId(ctx context.Context, field graphql.CollectedField, obj *DispatchStrategy) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "DispatchStrategy",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.DispatchMetricAssetID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _DispatchStrategy_marketIdsInScope(ctx context.Context, field graphql.CollectedField, obj *DispatchStrategy) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "DispatchStrategy",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MarketIdsInScope, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]string)
+	fc.Result = res
+	return ec.marshalOID2ᚕstringᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _ERC20_contractAddress(ctx context.Context, field graphql.CollectedField, obj *Erc20) (ret graphql.Marshaler) {
@@ -25649,6 +25800,38 @@ func (ec *executionContext) _RecurringTransfer_factor(ctx context.Context, field
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _RecurringTransfer_dispatchStrategy(ctx context.Context, field graphql.CollectedField, obj *v1.RecurringTransfer) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "RecurringTransfer",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.RecurringTransfer().DispatchStrategy(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*DispatchStrategy)
+	fc.Result = res
+	return ec.marshalODispatchStrategy2ᚖcodeᚗvegaprotocolᚗioᚋdataᚑnodeᚋgatewayᚋgraphqlᚐDispatchStrategy(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Reward_asset(ctx context.Context, field graphql.CollectedField, obj *vega.Reward) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -29991,41 +30174,6 @@ func (ec *executionContext) _Transfer_asset(ctx context.Context, field graphql.C
 	return ec.marshalOAsset2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐAsset(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Transfer_marketID(ctx context.Context, field graphql.CollectedField, obj *v1.Transfer) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "Transfer",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   true,
-		IsResolver: true,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Transfer().MarketID(rctx, obj)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
 func (ec *executionContext) _Transfer_amount(ctx context.Context, field graphql.CollectedField, obj *v1.Transfer) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -34125,6 +34273,54 @@ func (ec *executionContext) _DiscreteTrading(ctx context.Context, sel ast.Select
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var dispatchStrategyImplementors = []string{"DispatchStrategy"}
+
+func (ec *executionContext) _DispatchStrategy(ctx context.Context, sel ast.SelectionSet, obj *DispatchStrategy) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, dispatchStrategyImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("DispatchStrategy")
+		case "dispatchMetric":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._DispatchStrategy_dispatchMetric(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "dispatchMetricAssetId":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._DispatchStrategy_dispatchMetricAssetId(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "marketIdsInScope":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._DispatchStrategy_marketIdsInScope(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -40963,6 +41159,23 @@ func (ec *executionContext) _RecurringTransfer(ctx context.Context, sel ast.Sele
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
+		case "dispatchStrategy":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._RecurringTransfer_dispatchStrategy(ctx, field, obj)
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -42885,26 +43098,6 @@ func (ec *executionContext) _Transfer(ctx context.Context, sel ast.SelectionSet,
 				return innerFunc(ctx)
 
 			})
-		case "marketID":
-			field := field
-
-			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Transfer_marketID(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
-			}
-
-			out.Concurrently(i, func() graphql.Marshaler {
-				return innerFunc(ctx)
-
-			})
 		case "amount":
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Transfer_amount(ctx, field, obj)
@@ -44533,6 +44726,16 @@ func (ec *executionContext) unmarshalNDepositStatus2codeᚗvegaprotocolᚗioᚋd
 }
 
 func (ec *executionContext) marshalNDepositStatus2codeᚗvegaprotocolᚗioᚋdataᚑnodeᚋgatewayᚋgraphqlᚐDepositStatus(ctx context.Context, sel ast.SelectionSet, v DepositStatus) graphql.Marshaler {
+	return v
+}
+
+func (ec *executionContext) unmarshalNDispatchMetric2codeᚗvegaprotocolᚗioᚋdataᚑnodeᚋgatewayᚋgraphqlᚐDispatchMetric(ctx context.Context, v interface{}) (DispatchMetric, error) {
+	var res DispatchMetric
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNDispatchMetric2codeᚗvegaprotocolᚗioᚋdataᚑnodeᚋgatewayᚋgraphqlᚐDispatchMetric(ctx context.Context, sel ast.SelectionSet, v DispatchMetric) graphql.Marshaler {
 	return v
 }
 
@@ -46627,6 +46830,13 @@ func (ec *executionContext) marshalODeposit2ᚖcodeᚗvegaprotocolᚗioᚋprotos
 		return graphql.Null
 	}
 	return ec._Deposit(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalODispatchStrategy2ᚖcodeᚗvegaprotocolᚗioᚋdataᚑnodeᚋgatewayᚋgraphqlᚐDispatchStrategy(ctx context.Context, sel ast.SelectionSet, v *DispatchStrategy) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._DispatchStrategy(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalOEpoch2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐEpoch(ctx context.Context, sel ast.SelectionSet, v *vega.Epoch) graphql.Marshaler {

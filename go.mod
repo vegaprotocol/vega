@@ -3,10 +3,10 @@ module code.vegaprotocol.io/data-node
 go 1.18
 
 require (
-	code.vegaprotocol.io/protos v0.50.4-0.20220428192224-eedc5d5fe8c5
+	code.vegaprotocol.io/protos v0.50.4-0.20220503163151-7fc5916bf54e
 	code.vegaprotocol.io/quant v0.2.5
 	code.vegaprotocol.io/shared v0.0.0-20220321185018-3b5684b00533
-	code.vegaprotocol.io/vega v0.50.3-0.20220503112007-c46095dc7c6a
+	code.vegaprotocol.io/vega v0.0.0-20220504061204-167f68a2dfcb
 	github.com/99designs/gqlgen v0.16.0
 	github.com/cenkalti/backoff/v4 v4.1.2
 	github.com/dgraph-io/badger/v2 v2.2007.3
@@ -43,7 +43,7 @@ require (
 )
 
 require (
-	code.vegaprotocol.io/vegawallet v0.14.2-pre1.0.20220425142700-ee9cd43c568d // indirect
+	code.vegaprotocol.io/vegawallet v0.14.2-pre1.0.20220503182222-05676c95ef36 // indirect
 	github.com/BurntSushi/toml v1.1.0 // indirect
 	github.com/DataDog/zstd v1.4.1 // indirect
 	github.com/adrg/xdg v0.4.0 // indirect

@@ -489,9 +489,6 @@ type Transfer {
   "The asset"
   asset: Asset
 
-  "The market identifier for the transfer is any"
-  marketID: String!
-
   "The amount sent"
   amount: String!
 
@@ -523,6 +520,30 @@ type RecurringTransfer {
   endEpoch: Int
   "The factor of the initial amount to be distributed"
   factor: String!
+  "An optional dispatch strategy for the recurring transfer"
+  dispatchStrategy: DispatchStrategy
+}
+
+enum DispatchMetric {
+  
+  MarketTradingValue
+  
+  MakerFeesReceived
+
+  TakerFeesPaid
+
+  LPFeesReceived 
+}
+
+type DispatchStrategy {
+  "What to contribution is measured"
+  dispatchMetric: DispatchMetric!
+
+  "The asset to use for measuring contibution to the metric"
+  dispatchMetricAssetId: ID!
+
+  "Scope the dispatch to this markets only under the metric asset"
+  marketIdsInScope: [ID!]
 }
 
 enum NodeStatus {
