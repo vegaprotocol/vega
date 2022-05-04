@@ -165,10 +165,10 @@ func (e *Engine) DeliverTx(tx abci.Tx) error {
 	e.lock.Lock()
 	defer e.lock.Unlock()
 
-	// keep the transaction ID
-	txID := hex.EncodeToString(tx.Hash())
-	e.seenTx[txID] = struct{}{}
-	e.heightToTx[tx.BlockHeight()] = append(e.heightToTx[tx.BlockHeight()], txID)
+	// keep the transaction hash
+	txHash := hex.EncodeToString(tx.Hash())
+	e.seenTx[txHash] = struct{}{}
+	e.heightToTx[tx.BlockHeight()] = append(e.heightToTx[tx.BlockHeight()], txHash)
 
 	if tx.GetVersion() < 2 || tx.Command().IsValidatorCommand() {
 		return nil
@@ -245,22 +245,20 @@ func (e *Engine) verify(tx abci.Tx) (byte, error) {
 	}
 
 	// check if the transaction was seen in scope
-	txID := hex.EncodeToString(tx.Hash())
+	txHash := hex.EncodeToString(tx.Hash())
 
 	// check if the block height is in scope and is known
 	idx := tx.BlockHeight() % e.spamPoWNumberOfPastBlocks
 	if e.blockHeight[idx] != tx.BlockHeight() {
 		if e.log.IsDebug() {
-			e.log.Debug("unknown block height", logging.String("tx-hash", txID), logging.String("tid", tx.GetPoWTID()), logging.Uint64("tx-block-height", tx.BlockHeight()), logging.Uint64("index", idx), logging.Uint64("indexed-height", e.blockHeight[idx]), logging.String("command", tx.Command().String()), logging.String("party", tx.Party()))
+			e.log.Debug("unknown block height", logging.String("tx-hash", txHash), logging.String("tid", tx.GetPoWTID()), logging.Uint64("tx-block-height", tx.BlockHeight()), logging.Uint64("index", idx), logging.Uint64("indexed-height", e.blockHeight[idx]), logging.String("command", tx.Command().String()), logging.String("party", tx.Party()))
 		}
 		return h, errors.New("unknown block height")
 	}
 
-	if _, ok := e.seenTx[txID]; ok {
-		if e.log.IsDebug() {
-			e.log.Debug("transaction ID already used", logging.String("txID", txID), logging.String("tid", tx.GetPoWTID()), logging.String("party", tx.Party()))
-		}
-		return h, errors.New("transaction ID already used")
+	if _, ok := e.seenTx[txHash]; ok {
+		e.log.Error("replay attack: txHash already used", logging.String("tx-hash", txHash), logging.String("tid", tx.GetPoWTID()), logging.String("party", tx.Party()), logging.String("command", tx.Command().String()))
+		return h, errors.New("transaction hash already used")
 	}
 
 	// we don't require proof of work for v1 or validator command
