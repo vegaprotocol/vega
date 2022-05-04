@@ -56,7 +56,7 @@ func (as *Assets) GetByID(ctx context.Context, id string) (entities.Asset, error
 		 FROM assets WHERE id=$1`,
 		entities.NewAssetID(id))
 
-	if err != nil {
+	if err == nil {
 		as.cache[id] = a
 	}
 	return a, err

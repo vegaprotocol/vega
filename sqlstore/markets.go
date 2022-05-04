@@ -79,7 +79,7 @@ order by id, vega_time desc
 	defer metrics.StartSQLQuery("Markets", "GetByID")()
 	err := pgxscan.Get(ctx, m.Connection, &market, query, entities.NewMarketID(marketID))
 
-	if err != nil {
+	if err == nil {
 		m.cache[marketID] = market
 	}
 
