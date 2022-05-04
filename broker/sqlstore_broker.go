@@ -125,7 +125,7 @@ func (b *sqlStoreBroker) handleEvent(ctx context.Context, e events.Event) (bool,
 		sent := map[SqlBrokerSubscriber]struct{}{}
 		for _, subs := range b.typeToSubs {
 			for _, sub := range subs {
-				// Make sure we push multiple times to a single subscriber
+				// Make sure we don't push multiple times to a single subscriber
 				if _, alreadySent := sent[sub]; alreadySent {
 					continue
 				}

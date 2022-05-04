@@ -2,6 +2,7 @@ package sqlstore
 
 import (
 	"context"
+	"sync"
 
 	"code.vegaprotocol.io/data-node/entities"
 	"code.vegaprotocol.io/data-node/metrics"
@@ -10,11 +11,14 @@ import (
 
 type Assets struct {
 	*ConnectionSource
+	cache     map[string]entities.Asset
+	cacheLock sync.Mutex
 }
 
 func NewAssets(connectionSource *ConnectionSource) *Assets {
 	a := &Assets{
 		ConnectionSource: connectionSource,
+		cache:            make(map[string]entities.Asset),
 	}
 	return a
 }
@@ -37,6 +41,13 @@ func (as *Assets) Add(ctx context.Context, a entities.Asset) error {
 }
 
 func (as *Assets) GetByID(ctx context.Context, id string) (entities.Asset, error) {
+	as.cacheLock.Lock()
+	defer as.cacheLock.Unlock()
+
+	if asset, ok := as.cache[id]; ok {
+		return asset, nil
+	}
+
 	a := entities.Asset{}
 
 	defer metrics.StartSQLQuery("Assets", "GetByID")()
@@ -44,6 +55,10 @@ func (as *Assets) GetByID(ctx context.Context, id string) (entities.Asset, error
 		`SELECT id, name, symbol, total_supply, decimals, quantum, source, erc20_contract, vega_time
 		 FROM assets WHERE id=$1`,
 		entities.NewAssetID(id))
+
+	if err == nil {
+		as.cache[id] = a
+	}
 	return a, err
 }
 

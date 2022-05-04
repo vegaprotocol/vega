@@ -19,6 +19,7 @@
 - [546](https://github.com/vegaprotocol/data-node/issues/546) - Data retention for margin levels 
 - [553](https://github.com/vegaprotocol/data-node/issues/553) - Update transfers API to expose dispatch strategy
 - [578](https://github.com/vegaprotocol/data-node/issues/578) - Add metrics for `SQL` queries
+- [582](https://github.com/vegaprotocol/data-node/issues/582) - Add a cache for assets
 
 ### 🐛 Fixes
 - [524](https://github.com/vegaprotocol/data-node/issues/524) - Fix for incorrect balances
