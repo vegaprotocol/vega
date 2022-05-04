@@ -732,7 +732,7 @@ func (m *Market) updateMarketValueProxy() {
 	// if windows length is reached, reset fee splitter
 	if mvwl := m.marketValueWindowLength; m.feeSplitter.Elapsed() > mvwl {
 		m.feeSplitter.TimeWindowStart(m.currentTime)
-		m.equityShares.UpdateVirtualStake() // this should always set the vStake == physical stake?
+		m.equityShares.UpdateVirtualStake() // this should always set the vStake >= physical stake?
 	}
 
 	// these need to happen every block

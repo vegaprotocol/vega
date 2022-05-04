@@ -11,7 +11,7 @@ type lp struct {
 	stake  num.Decimal
 	share  num.Decimal
 	avg    num.Decimal
-	vStake num.Decimal //@TODO add this
+	vStake num.Decimal
 }
 
 // EquityShares module controls the Equity sharing algorithm described on the spec:
@@ -60,7 +60,7 @@ func (es *EquityShares) setOpeningAuctionAVG() {
 }
 
 func (es *EquityShares) UpdateVirtualStake() {
-	growth := num.NewDecimalFromFloat(1.0).Mul(es.r)
+	growth := num.NewDecimalFromFloat(1.0).Add(es.r)
 	for _, v := range es.lps {
 		v.vStake = num.MaxD(v.stake, growth.Mul(v.vStake))
 	}
