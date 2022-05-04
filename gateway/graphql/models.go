@@ -95,6 +95,15 @@ type DiscreteTrading struct {
 	TickSize string `json:"tickSize"`
 }
 
+type DispatchStrategy struct {
+	// What to contribution is measured
+	DispatchMetric DispatchMetric `json:"dispatchMetric"`
+	// The asset to use for measuring contibution to the metric
+	DispatchMetricAssetID string `json:"dispatchMetricAssetId"`
+	// Scope the dispatch to this markets only under the metric asset
+	MarketIdsInScope []string `json:"marketIdsInScope"`
+}
+
 // An asset originated from an Ethereum ERC20 Token
 type Erc20 struct {
 	// The address of the erc20 contract
@@ -657,6 +666,51 @@ func (e *DepositStatus) UnmarshalGQL(v interface{}) error {
 }
 
 func (e DepositStatus) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type DispatchMetric string
+
+const (
+	DispatchMetricMarketTradingValue DispatchMetric = "MarketTradingValue"
+	DispatchMetricMakerFeesReceived  DispatchMetric = "MakerFeesReceived"
+	DispatchMetricTakerFeesPaid      DispatchMetric = "TakerFeesPaid"
+	DispatchMetricLPFeesReceived     DispatchMetric = "LPFeesReceived"
+)
+
+var AllDispatchMetric = []DispatchMetric{
+	DispatchMetricMarketTradingValue,
+	DispatchMetricMakerFeesReceived,
+	DispatchMetricTakerFeesPaid,
+	DispatchMetricLPFeesReceived,
+}
+
+func (e DispatchMetric) IsValid() bool {
+	switch e {
+	case DispatchMetricMarketTradingValue, DispatchMetricMakerFeesReceived, DispatchMetricTakerFeesPaid, DispatchMetricLPFeesReceived:
+		return true
+	}
+	return false
+}
+
+func (e DispatchMetric) String() string {
+	return string(e)
+}
+
+func (e *DispatchMetric) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = DispatchMetric(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid DispatchMetric", str)
+	}
+	return nil
+}
+
+func (e DispatchMetric) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 

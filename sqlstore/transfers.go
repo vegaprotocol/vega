@@ -27,7 +27,6 @@ func (t *Transfers) Upsert(ctx context.Context, transfer *entities.Transfer) err
 				from_account_id,
 				to_account_id,
 				asset_id,
-				market_id,
 				amount,
 				reference,
 				status,
@@ -35,14 +34,17 @@ func (t *Transfers) Upsert(ctx context.Context, transfer *entities.Transfer) err
 				deliver_on,
 				start_epoch,
 				end_epoch,
-				factor)
-					values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+				factor,
+				dispatch_metric,
+				dispatch_metric_asset,
+				dispatch_markets			
+			)
+					values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
 					on conflict (id, vega_time) do update
 					set 
 				from_account_id=EXCLUDED.from_account_id,
 				to_account_id=EXCLUDED.to_account_id,
 				asset_id=EXCLUDED.asset_id,
-				market_id=EXCLUDED.market_id,
 				amount=EXCLUDED.amount,
 				reference=EXCLUDED.reference,
 				status=EXCLUDED.status,
@@ -50,12 +52,15 @@ func (t *Transfers) Upsert(ctx context.Context, transfer *entities.Transfer) err
 				deliver_on=EXCLUDED.deliver_on,
 				start_epoch=EXCLUDED.start_epoch,
 				end_epoch=EXCLUDED.end_epoch,
-				factor=EXCLUDED.factor
+				factor=EXCLUDED.factor,
+				dispatch_metric=EXCLUDED.dispatch_metric,
+				dispatch_metric_asset=EXCLUDED.dispatch_metric_asset,
+				dispatch_markets=EXCLUDED.dispatch_markets
 				;`
 
 	if _, err := t.Connection.Exec(ctx, query, transfer.ID, transfer.VegaTime, transfer.FromAccountId, transfer.ToAccountId,
-		transfer.AssetId, transfer.MarketId, transfer.Amount, transfer.Reference, transfer.Status, transfer.TransferType,
-		transfer.DeliverOn, transfer.StartEpoch, transfer.EndEpoch, transfer.Factor); err != nil {
+		transfer.AssetId, transfer.Amount, transfer.Reference, transfer.Status, transfer.TransferType,
+		transfer.DeliverOn, transfer.StartEpoch, transfer.EndEpoch, transfer.Factor, transfer.DispatchMetric, transfer.DispatchMetricAsset, transfer.DispatchMarkets); err != nil {
 		err = fmt.Errorf("could not insert transfer into database: %w", err)
 		return err
 	}

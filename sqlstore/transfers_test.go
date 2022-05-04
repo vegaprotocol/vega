@@ -35,7 +35,6 @@ func TestTransfers_GetTransfersFromPartyAndGetToParty(t *testing.T) {
 		To:              accountTo.PartyID.String(),
 		ToAccountType:   accountTo.Type,
 		Asset:           accountFrom.AssetID.String(),
-		Market:          "",
 		Amount:          "30",
 		Reference:       "Ref1",
 		Status:          eventspb.Transfer_STATUS_PENDING,
@@ -44,6 +43,11 @@ func TestTransfers_GetTransfersFromPartyAndGetToParty(t *testing.T) {
 			StartEpoch: 10,
 			EndEpoch:   nil,
 			Factor:     "0.1",
+			DispatchStrategy: &vega.DispatchStrategy{
+				AssetForMetric: "deadd0d0",
+				Markets:        []string{"beefdead", "feebaad"},
+				Metric:         vega.DispatchMetric_DISPATCH_METRIC_MARKET_VALUE,
+			},
 		}},
 	}
 
@@ -57,7 +61,6 @@ func TestTransfers_GetTransfersFromPartyAndGetToParty(t *testing.T) {
 		To:              accountTo.PartyID.String(),
 		ToAccountType:   accountTo.Type,
 		Asset:           accountFrom.AssetID.String(),
-		Market:          "",
 		Amount:          "30",
 		Reference:       "Ref1",
 		Status:          eventspb.Transfer_STATUS_DONE,

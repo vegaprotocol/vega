@@ -22,20 +22,22 @@ func NewTransferID(id string) TransferID {
 }
 
 type Transfer struct {
-	ID            TransferID
-	VegaTime      time.Time
-	FromAccountId int64
-	ToAccountId   int64
-	AssetId       AssetID
-	MarketId      MarketID
-	Amount        decimal.Decimal
-	Reference     string
-	Status        TransferStatus
-	TransferType  TransferType
-	DeliverOn     *time.Time
-	StartEpoch    *uint64
-	EndEpoch      *uint64
-	Factor        *decimal.Decimal
+	ID                  TransferID
+	VegaTime            time.Time
+	FromAccountId       int64
+	ToAccountId         int64
+	AssetId             AssetID
+	Amount              decimal.Decimal
+	Reference           string
+	Status              TransferStatus
+	TransferType        TransferType
+	DeliverOn           *time.Time
+	StartEpoch          *uint64
+	EndEpoch            *uint64
+	Factor              *decimal.Decimal
+	DispatchMetric      *vega.DispatchMetric
+	DispatchMetricAsset *string
+	DispatchMarkets     []string
 }
 
 func (t *Transfer) ToProto(accountSource AccountSource) (*eventspb.Transfer, error) {
@@ -57,7 +59,6 @@ func (t *Transfer) ToProto(accountSource AccountSource) (*eventspb.Transfer, err
 		To:              toAcc.PartyID.String(),
 		ToAccountType:   toAcc.Type,
 		Asset:           t.AssetId.String(),
-		Market:          t.MarketId.String(),
 		Amount:          t.Amount.String(),
 		Reference:       t.Reference,
 		Status:          eventspb.Transfer_Status(t.Status),
@@ -69,9 +70,17 @@ func (t *Transfer) ToProto(accountSource AccountSource) (*eventspb.Transfer, err
 	case OneOff:
 		proto.Kind = &eventspb.Transfer_OneOff{OneOff: &eventspb.OneOffTransfer{DeliverOn: t.DeliverOn.Unix()}}
 	case Recurring:
+
 		recurringTransfer := &eventspb.RecurringTransfer{
 			StartEpoch: *t.StartEpoch,
 			Factor:     t.Factor.String(),
+		}
+		if t.DispatchMetricAsset != nil {
+			recurringTransfer.DispatchStrategy = &vega.DispatchStrategy{
+				AssetForMetric: *t.DispatchMetricAsset,
+				Metric:         vega.DispatchMetric(*t.DispatchMetric),
+				Markets:        t.DispatchMarkets,
+			}
 		}
 
 		if t.EndEpoch != nil {
@@ -93,7 +102,6 @@ func TransferFromProto(ctx context.Context, t *eventspb.Transfer, vegaTime time.
 		ID:       0,
 		PartyID:  PartyID{ID(t.From)},
 		AssetID:  AssetID{ID(t.Asset)},
-		MarketID: MarketID{},
 		Type:     t.FromAccountType,
 		VegaTime: vegaTime,
 	}
@@ -108,7 +116,6 @@ func TransferFromProto(ctx context.Context, t *eventspb.Transfer, vegaTime time.
 		ID:       0,
 		PartyID:  PartyID{ID: ID(t.To)},
 		AssetID:  AssetID{ID: ID(t.Asset)},
-		MarketID: MarketID{ID: ID(t.Market)},
 		Type:     t.ToAccountType,
 		VegaTime: vegaTime,
 	}
@@ -131,7 +138,6 @@ func TransferFromProto(ctx context.Context, t *eventspb.Transfer, vegaTime time.
 		ToAccountId:   toAcc.ID,
 		Amount:        amount,
 		AssetId:       NewAssetID(t.Asset),
-		MarketId:      NewMarketID(t.Market),
 		Reference:     t.Reference,
 		Status:        TransferStatus(t.Status),
 		TransferType:  0,
@@ -149,6 +155,12 @@ func TransferFromProto(ctx context.Context, t *eventspb.Transfer, vegaTime time.
 	case *eventspb.Transfer_Recurring:
 		transfer.TransferType = Recurring
 		transfer.StartEpoch = &v.Recurring.StartEpoch
+		if v.Recurring.DispatchStrategy != nil {
+			transfer.DispatchMetric = &v.Recurring.DispatchStrategy.Metric
+			transfer.DispatchMetricAsset = &v.Recurring.DispatchStrategy.AssetForMetric
+			transfer.DispatchMarkets = v.Recurring.DispatchStrategy.Markets
+		}
+
 		if v.Recurring.EndEpoch != nil {
 			transfer.EndEpoch = &v.Recurring.EndEpoch.Value
 		}
