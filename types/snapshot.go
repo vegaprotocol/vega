@@ -71,8 +71,7 @@ const (
 	LiquidityTargetSnapshot        SnapshotNamespace = "liquiditytarget"
 	FutureStateSnapshot            SnapshotNamespace = "futureState"
 	FloatingPointConsensusSnapshot SnapshotNamespace = "floatingpoint"
-	FeeTrackerSnapshot             SnapshotNamespace = "feestracker"
-	MarketTrackerSnapshot          SnapshotNamespace = "markettracker"
+	MarketActivityTrackerSnapshot  SnapshotNamespace = "marketActivityTracker"
 	ERC20MultiSigTopologySnapshot  SnapshotNamespace = "erc20multisigtopology"
 	PoWSnapshot                    SnapshotNamespace = "pow"
 

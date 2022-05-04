@@ -94,6 +94,12 @@ type Topology interface {
 	IsValidator() bool
 }
 
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/market_activity_tracker_mock.go -package mocks code.vegaprotocol.io/vega/banking MarketActivityTracker
+type MarketActivityTracker interface {
+	GetMarketScores(asset string, markets []string, dispatchMetric proto.DispatchMetric) []*types.MarketContributionScore
+	GetMarketsWithEligibleProposer(asset string, markets []string) []*types.MarketContributionScore
+}
+
 const (
 	pendingState uint32 = iota
 	okState
@@ -124,6 +130,8 @@ type Engine struct {
 	bss             *bankingSnapshotState
 	keyToSerialiser map[string]func() ([]byte, error)
 
+	marketActivityTracker MarketActivityTracker
+
 	// transfer fee related stuff
 	scheduledTransfers         map[time.Time][]scheduledTransfer
 	transferFeeFactor          num.Decimal
@@ -149,6 +157,7 @@ func New(
 	broker broker.BrokerI,
 	top Topology,
 	epoch EpochService,
+	marketActivityTracker MarketActivityTracker,
 ) (e *Engine) {
 	defer func() {
 		tsvc.NotifyOnTick(e.OnTick)
@@ -188,6 +197,7 @@ func New(
 		recurringTransfers:         map[string]*types.RecurringTransfer{},
 		transferFeeFactor:          num.DecimalZero(),
 		minTransferQuantumMultiple: num.DecimalZero(),
+		marketActivityTracker:      marketActivityTracker,
 	}
 
 	e.keyToSerialiser[withdrawalsKey] = e.serialiseWithdrawals

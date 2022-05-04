@@ -24,15 +24,12 @@ type Broker interface {
 	SendBatch(events []events.Event)
 }
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/fees_tracker_mock.go -package mocks code.vegaprotocol.io/vega/rewards FeesTracker
-type FeesTracker interface {
-	GetFeePartyScores(asset string, feeType types.TransferType) []*types.FeePartyScore
-}
-
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/market_tracker_mock.go -package mocks code.vegaprotocol.io/vega/rewards MarketTracker
-type MarketTracker interface {
-	GetAndResetEligibleProposers(market string) []string
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/market_tracker_mock.go -package mocks code.vegaprotocol.io/vega/rewards MarketActivityTracker
+type MarketActivityTracker interface {
+	GetEligibleProposers(market string) []string
+	MarkPaidProposer(market string)
 	GetAllMarketIDs() []string
+	GetFeePartyScores(asset string, feeType types.TransferType) []*types.PartyContibutionScore
 }
 
 // EpochEngine notifies the reward engine at the end of an epoch.
@@ -69,19 +66,18 @@ type Topology interface {
 
 // Engine is the reward engine handling reward payouts.
 type Engine struct {
-	log                *logging.Logger
-	config             Config
-	broker             Broker
-	topology           Topology
-	delegation         Delegation
-	collateral         Collateral
-	feesTracker        FeesTracker
-	marketTracker      MarketTracker
-	rng                *rand.Rand
-	global             *globalRewardParams
-	newEpochStarted    bool // flag to signal new epoch so we can update the voting power at the end of the block
-	epochSeq           string
-	ersatzRewardFactor num.Decimal
+	log                   *logging.Logger
+	config                Config
+	broker                Broker
+	topology              Topology
+	delegation            Delegation
+	collateral            Collateral
+	marketActivityTracker MarketActivityTracker
+	rng                   *rand.Rand
+	global                *globalRewardParams
+	newEpochStarted       bool // flag to signal new epoch so we can update the voting power at the end of the block
+	epochSeq              string
+	ersatzRewardFactor    num.Decimal
 }
 
 type globalRewardParams struct {
@@ -107,20 +103,19 @@ type payout struct {
 }
 
 // New instantiate a new rewards engine.
-func New(log *logging.Logger, config Config, broker Broker, delegation Delegation, epochEngine EpochEngine, collateral Collateral, ts TimeService, feesTracker FeesTracker, marketTracker MarketTracker, topology Topology) *Engine {
+func New(log *logging.Logger, config Config, broker Broker, delegation Delegation, epochEngine EpochEngine, collateral Collateral, ts TimeService, marketActivityTracker MarketActivityTracker, topology Topology) *Engine {
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
 	e := &Engine{
-		config:          config,
-		log:             log.Named(namedLogger),
-		broker:          broker,
-		delegation:      delegation,
-		collateral:      collateral,
-		global:          &globalRewardParams{},
-		newEpochStarted: false,
-		feesTracker:     feesTracker,
-		marketTracker:   marketTracker,
-		topology:        topology,
+		config:                config,
+		log:                   log.Named(namedLogger),
+		broker:                broker,
+		delegation:            delegation,
+		collateral:            collateral,
+		global:                &globalRewardParams{},
+		newEpochStarted:       false,
+		marketActivityTracker: marketActivityTracker,
+		topology:              topology,
 	}
 
 	// register for epoch end notifications
@@ -273,13 +268,6 @@ func (e *Engine) calculateRewardPayouts(ctx context.Context, epoch types.Epoch) 
 		e.log.Info("Rewards: calculated normalised score for ersatz validator", logging.String("validator", node), logging.String("normalisedScore", score.String()))
 	}
 
-	// we want to capture the proposers eligible for proposers reward at this epoch so that we can support paying them in more than one asset if available
-	marketToEligibleProposers := map[string][]string{}
-	// at the end of the epoch we mark all markets that have gone past the trading threshold as such so that they don't get marked again later when and if there's balance in their respective reward account
-	for _, v := range e.marketTracker.GetAllMarketIDs() {
-		marketToEligibleProposers[v] = e.marketTracker.GetAndResetEligibleProposers(v)
-	}
-
 	payouts := []*payout{}
 	for _, rewardType := range rewardAccountTypes {
 		accounts := e.collateral.GetRewardAccountsByType(rewardType)
@@ -288,13 +276,14 @@ func (e *Engine) calculateRewardPayouts(ctx context.Context, epoch types.Epoch) 
 				continue
 			}
 			pos := []*payout{}
+			marketEligibleProposers := e.marketActivityTracker.GetEligibleProposers(account.MarketID)
 			if (rewardType == types.AccountTypeGlobalReward && account.Asset == e.global.asset) || rewardType == types.AccountTypeFeesInfrastructure {
 				e.log.Info("calculating reward for tendermint validators", logging.String("account-type", rewardType.String()))
-				pos = append(pos, e.calculateRewardTypeForAsset(num.NewUint(epoch.Seq).String(), account.Asset, account.MarketID, rewardType, account, tmValidatorsDelegation, tmValidatorsScores.NormalisedScores, epoch.EndTime, s_pFactor, marketToEligibleProposers))
+				pos = append(pos, e.calculateRewardTypeForAsset(num.NewUint(epoch.Seq).String(), account.Asset, account.MarketID, rewardType, account, tmValidatorsDelegation, tmValidatorsScores.NormalisedScores, epoch.EndTime, s_pFactor, marketEligibleProposers))
 				e.log.Info("calculating reward for ersatz validators", logging.String("account-type", rewardType.String()))
-				pos = append(pos, e.calculateRewardTypeForAsset(num.NewUint(epoch.Seq).String(), account.Asset, account.MarketID, rewardType, account, ersatzValidatorsDelegation, ersatzValidatorsScores.NormalisedScores, epoch.EndTime, s_eFactor, marketToEligibleProposers))
+				pos = append(pos, e.calculateRewardTypeForAsset(num.NewUint(epoch.Seq).String(), account.Asset, account.MarketID, rewardType, account, ersatzValidatorsDelegation, ersatzValidatorsScores.NormalisedScores, epoch.EndTime, s_eFactor, marketEligibleProposers))
 			} else {
-				pos = append(pos, e.calculateRewardTypeForAsset(num.NewUint(epoch.Seq).String(), account.Asset, account.MarketID, rewardType, account, tmValidatorsDelegation, tmValidatorsScores.NormalisedScores, epoch.EndTime, decimal1, marketToEligibleProposers))
+				pos = append(pos, e.calculateRewardTypeForAsset(num.NewUint(epoch.Seq).String(), account.Asset, account.MarketID, rewardType, account, tmValidatorsDelegation, tmValidatorsScores.NormalisedScores, epoch.EndTime, decimal1, marketEligibleProposers))
 			}
 			for _, po := range pos {
 				if po != nil && !po.totalReward.IsZero() && !po.totalReward.IsNegative() {
@@ -313,7 +302,7 @@ func (e *Engine) calculateRewardPayouts(ctx context.Context, epoch types.Epoch) 
 }
 
 // calculateRewardTypeForAsset calculates the payout for a given asset and reward type.
-func (e *Engine) calculateRewardTypeForAsset(epochSeq, asset, market string, rewardType types.AccountType, account *types.Account, validatorData []*types.ValidatorData, validatorNormalisedScores map[string]num.Decimal, timestamp time.Time, factor num.Decimal, marketToProposers map[string][]string) *payout {
+func (e *Engine) calculateRewardTypeForAsset(epochSeq, asset, market string, rewardType types.AccountType, account *types.Account, validatorData []*types.ValidatorData, validatorNormalisedScores map[string]num.Decimal, timestamp time.Time, factor num.Decimal, marketEligibleProposers []string) *payout {
 	switch rewardType {
 	case types.AccountTypeGlobalReward: // given to delegator based on stake
 		if asset == e.global.asset {
@@ -325,13 +314,18 @@ func (e *Engine) calculateRewardTypeForAsset(epochSeq, asset, market string, rew
 	case types.AccountTypeFeesInfrastructure: // given to delegator based on stake
 		return calculateRewardsByStake(epochSeq, account.Asset, account.ID, account.Balance.Clone(), validatorNormalisedScores, validatorData, e.global.delegatorShare, num.Zero(), e.global.minValStakeUInt, e.rng, e.log)
 	case types.AccountTypeMakerFeeReward: // given to receivers of maker fee in the asset based on their total received fee proportion
-		return calculateRewardsByContribution(epochSeq, account.Asset, account.ID, rewardType, account.Balance, e.feesTracker.GetFeePartyScores(account.MarketID, types.TransferTypeMakerFeeReceive), timestamp)
+		return calculateRewardsByContribution(epochSeq, account.Asset, account.ID, rewardType, account.Balance, e.marketActivityTracker.GetFeePartyScores(account.MarketID, types.TransferTypeMakerFeeReceive), timestamp)
 	case types.AccountTypeTakerFeeReward: // given to payers of fee in the asset based on their total paid fee proportion
-		return calculateRewardsByContribution(epochSeq, account.Asset, account.ID, rewardType, account.Balance, e.feesTracker.GetFeePartyScores(account.MarketID, types.TransferTypeMakerFeePay), timestamp)
+		return calculateRewardsByContribution(epochSeq, account.Asset, account.ID, rewardType, account.Balance, e.marketActivityTracker.GetFeePartyScores(account.MarketID, types.TransferTypeMakerFeePay), timestamp)
 	case types.AccountTypeLPFeeReward: // given to LP fee receivers in the asset based on their total received fee
-		return calculateRewardsByContribution(epochSeq, account.Asset, account.ID, rewardType, account.Balance, e.feesTracker.GetFeePartyScores(account.MarketID, types.TransferTypeLiquidityFeeDistribute), timestamp)
+		return calculateRewardsByContribution(epochSeq, account.Asset, account.ID, rewardType, account.Balance, e.marketActivityTracker.GetFeePartyScores(account.MarketID, types.TransferTypeLiquidityFeeDistribute), timestamp)
 	case types.AccountTypeMarketProposerReward:
-		return calculateRewardForProposers(epochSeq, account.Asset, account.ID, rewardType, account.Balance, marketToProposers[account.MarketID], timestamp)
+		p := calculateRewardForProposers(epochSeq, account.Asset, account.ID, rewardType, account.Balance, marketEligibleProposers, timestamp)
+		// if the reward is due, mark the proposer as paid
+		if p != nil && !p.totalReward.IsZero() {
+			e.marketActivityTracker.MarkPaidProposer(account.MarketID)
+		}
+		return p
 	}
 	return nil
 }

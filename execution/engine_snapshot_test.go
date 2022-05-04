@@ -49,7 +49,7 @@ func createEngine(t *testing.T) (*execution.Engine, *gomock.Controller) {
 		as := NewAssetStub(a, 0)
 		return as, nil
 	})
-	return execution.NewEngine(log, executionConfig, timeService, collateralService, oracleService, broker, statevar, execution.NewFeesTracker(epochEngine), execution.NewMarketTracker(), asset), ctrl
+	return execution.NewEngine(log, executionConfig, timeService, collateralService, oracleService, broker, statevar, execution.NewMarketActivityTracker(log, epochEngine), asset), ctrl
 }
 
 func TestEmptyMarkets(t *testing.T) {
@@ -189,7 +189,7 @@ func TestValidMarketSnapshot(t *testing.T) {
 	assert.NotNil(t, engine)
 
 	marketConfig := getMarketConfig()
-	err := engine.SubmitMarket(context.TODO(), marketConfig)
+	err := engine.SubmitMarket(context.TODO(), marketConfig, "")
 	assert.NoError(t, err)
 
 	keys := engine.Keys()

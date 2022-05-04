@@ -56,7 +56,7 @@ type ExecutionEngine interface {
 	AmendOrder(ctx context.Context, order *types.OrderAmendment, party string, deterministicId string) (*types.OrderConfirmation, error)
 
 	// market stuff
-	SubmitMarket(ctx context.Context, marketConfig *types.Market) error
+	SubmitMarket(ctx context.Context, marketConfig *types.Market, proposer string) error
 	UpdateMarket(ctx context.Context, marketConfig *types.Market) error
 	SubmitMarketWithLiquidityProvision(ctx context.Context, marketConfig *types.Market, lp *types.LiquidityProvisionSubmission, party, lpid, deterministicId string) error
 	RejectMarket(ctx context.Context, marketid string) error
