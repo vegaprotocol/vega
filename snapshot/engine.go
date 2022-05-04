@@ -694,10 +694,12 @@ func (e *Engine) Snapshot(ctx context.Context) (b []byte, errlol error) {
 }
 
 func (e *Engine) saveCurrentTree() ([]byte, error) {
+	t0 := time.Now()
 	h, v, err := e.avl.SaveVersion()
 	if err != nil {
 		return nil, err
 	}
+	e.log.Info("#### saving snapshot took ", logging.Float64("time", time.Since(t0).Seconds()))
 	e.lastSnapshotHash = h
 	if len(e.versions) >= cap(e.versions) {
 		if err := e.avl.DeleteVersion(e.versions[0]); err != nil {
@@ -729,6 +731,7 @@ func (e *Engine) update(ns types.SnapshotNamespace) (bool, error) {
 	update := false
 	toRemove := []int{}
 	for i, treeKey := range treeKeys {
+		t0 := time.Now()
 		treeKeyStr := string(treeKey)
 		p := e.providers[treeKeyStr] // get the specific provider for this key
 		lastHash := e.keyHashes[treeKeyStr]
@@ -770,6 +773,7 @@ func (e *Engine) update(ns types.SnapshotNamespace) (bool, error) {
 		e.log.Debug("State updated",
 			logging.String("node-key", treeKeyStr),
 			logging.String("state-hash", hex.EncodeToString(currentHash)),
+			logging.Float64("took", time.Since(t0).Seconds()),
 		)
 		e.keyHashes[treeKeyStr] = currentHash
 		if len(v) == 0 && len(currentHash) == 0 {
