@@ -83,8 +83,7 @@ func (e *Engine) restoreMarket(ctx context.Context, em *types.ExecMarket) (*Mark
 		e.broker,
 		e.stateVarEngine,
 		ad,
-		e.feesTracker,
-		e.marketTracker,
+		e.marketActivityTracker,
 	)
 	if err != nil {
 		e.log.Error("failed to instantiate market",

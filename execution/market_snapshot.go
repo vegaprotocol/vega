@@ -39,8 +39,7 @@ func NewMarketFromSnapshot(
 	broker Broker,
 	stateVarEngine StateVarEngine,
 	assetDetails *assets.Asset,
-	feesTracker *FeesTracker,
-	marketTracker *MarketTracker,
+	marketActivityTracker *MarketActivityTracker,
 ) (*Market, error) {
 	mkt := em.Market
 	positionFactor := num.DecimalFromFloat(10).Pow(num.DecimalFromInt64(int64(mkt.PositionDecimalPlaces)))
@@ -141,8 +140,7 @@ func NewMarketFromSnapshot(
 		priceFactor:                priceFactor,
 		lastMarketValueProxy:       em.LastMarketValueProxy,
 		lastEquityShareDistributed: time.Unix(0, em.LastEquityShareDistributed),
-		feesTracker:                feesTracker,
-		marketTracker:              marketTracker,
+		marketActivityTracker:      marketActivityTracker,
 		positionFactor:             positionFactor,
 		stateVarEngine:             stateVarEngine,
 	}

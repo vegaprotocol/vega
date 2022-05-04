@@ -64,22 +64,22 @@ type allServices struct {
 
 	vegaPaths paths.Paths
 
-	feesTracker     *execution.FeesTracker
-	statevar        *statevar.Engine
-	snapshot        *snapshot.Engine
-	executionEngine *execution.Engine
-	governance      *governance.Engine
-	collateral      *collateral.Engine
-	oracle          *oracles.Engine
-	oracleAdaptors  *adaptors.Adaptors
-	netParams       *netparams.Store
-	delegation      *delegation.Engine
-	limits          *limits.Engine
-	rewards         *rewards.Engine
-	checkpoint      *checkpoint.Engine
-	spam            *spam.Engine
-	pow             *pow.Engine
-	builtinOracle   *oracles.Builtin
+	marketActivityTracker *execution.MarketActivityTracker
+	statevar              *statevar.Engine
+	snapshot              *snapshot.Engine
+	executionEngine       *execution.Engine
+	governance            *governance.Engine
+	collateral            *collateral.Engine
+	oracle                *oracles.Engine
+	oracleAdaptors        *adaptors.Adaptors
+	netParams             *netparams.Store
+	delegation            *delegation.Engine
+	limits                *limits.Engine
+	rewards               *rewards.Engine
+	checkpoint            *checkpoint.Engine
+	spam                  *spam.Engine
+	pow                   *pow.Engine
+	builtinOracle         *oracles.Builtin
 
 	assets               *assets.Service
 	topology             *validators.Topology
@@ -210,12 +210,11 @@ func newServices(
 	svcs.epochService.NotifyOnEpoch(svcs.topology.OnEpochEvent, svcs.topology.OnEpochRestore)
 
 	svcs.statevar = statevar.New(svcs.log, svcs.conf.StateVar, svcs.broker, svcs.topology, svcs.commander, svcs.timeService)
-	svcs.feesTracker = execution.NewFeesTracker(svcs.epochService)
-	marketTracker := execution.NewMarketTracker()
+	svcs.marketActivityTracker = execution.NewMarketActivityTracker(svcs.log, svcs.epochService)
 
 	// instantiate the execution engine
 	svcs.executionEngine = execution.NewEngine(
-		svcs.log, svcs.conf.Execution, svcs.timeService, svcs.collateral, svcs.oracle, svcs.broker, svcs.statevar, svcs.feesTracker, marketTracker, svcs.assets,
+		svcs.log, svcs.conf.Execution, svcs.timeService, svcs.collateral, svcs.oracle, svcs.broker, svcs.statevar, svcs.marketActivityTracker, svcs.assets,
 	)
 
 	if svcs.conf.Blockchain.ChainProvider == blockchain.ProviderNullChain {
@@ -232,12 +231,12 @@ func newServices(
 	// TODO(): this is not pretty
 	svcs.topology.SetNotary(svcs.notary)
 
-	svcs.banking = banking.New(svcs.log, svcs.conf.Banking, svcs.collateral, svcs.witness, svcs.timeService, svcs.assets, svcs.notary, svcs.broker, svcs.topology, svcs.epochService)
+	svcs.banking = banking.New(svcs.log, svcs.conf.Banking, svcs.collateral, svcs.witness, svcs.timeService, svcs.assets, svcs.notary, svcs.broker, svcs.topology, svcs.epochService, svcs.marketActivityTracker)
 
-	svcs.rewards = rewards.New(svcs.log, svcs.conf.Rewards, svcs.broker, svcs.delegation, svcs.epochService, svcs.collateral, svcs.timeService, svcs.feesTracker, marketTracker, svcs.topology)
+	svcs.rewards = rewards.New(svcs.log, svcs.conf.Rewards, svcs.broker, svcs.delegation, svcs.epochService, svcs.collateral, svcs.timeService, svcs.marketActivityTracker, svcs.topology)
 
 	// checkpoint engine
-	svcs.checkpoint, err = checkpoint.New(svcs.log, svcs.conf.Checkpoint, svcs.assets, svcs.collateral, svcs.governance, svcs.netParams, svcs.delegation, svcs.epochService, svcs.topology, svcs.banking, svcs.stakeCheckpoint, svcs.erc20MultiSigTopology)
+	svcs.checkpoint, err = checkpoint.New(svcs.log, svcs.conf.Checkpoint, svcs.assets, svcs.collateral, svcs.governance, svcs.netParams, svcs.delegation, svcs.epochService, svcs.topology, svcs.banking, svcs.stakeCheckpoint, svcs.erc20MultiSigTopology, svcs.marketActivityTracker)
 	if err != nil {
 		return nil, err
 	}
@@ -276,7 +275,7 @@ func newServices(
 	svcs.topology.NotifyOnKeyChange(svcs.delegation.ValidatorKeyChanged, svcs.stakingAccounts.ValidatorKeyChanged, svcs.governance.ValidatorKeyChanged)
 
 	svcs.snapshot.AddProviders(svcs.checkpoint, svcs.collateral, svcs.governance, svcs.delegation, svcs.netParams, svcs.epochService, svcs.assets, svcs.banking, svcs.witness,
-		svcs.notary, svcs.spam, svcs.pow, svcs.stakingAccounts, svcs.stakeVerifier, svcs.limits, svcs.topology, svcs.eventForwarder, svcs.executionEngine, svcs.feesTracker, marketTracker, svcs.statevar, svcs.erc20MultiSigTopology)
+		svcs.notary, svcs.spam, svcs.pow, svcs.stakingAccounts, svcs.stakeVerifier, svcs.limits, svcs.topology, svcs.eventForwarder, svcs.executionEngine, svcs.marketActivityTracker, svcs.statevar, svcs.erc20MultiSigTopology)
 
 	// setup config reloads for all engines / services /etc
 	svcs.registerConfigWatchers()

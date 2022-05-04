@@ -37,7 +37,7 @@ type snapshotTestData struct {
 func TestSnapshotOraclesTerminatingMarketFromSnapshot(t *testing.T) {
 	now := time.Now()
 	exec := getEngine(t, now)
-	err := exec.engine.SubmitMarket(context.Background(), newMarket("MarketID", "0xDEADBEEF"))
+	err := exec.engine.SubmitMarket(context.Background(), newMarket("MarketID", "0xDEADBEEF"), "")
 	require.NoError(t, err)
 
 	state, _, _ := exec.engine.GetState("")
@@ -97,7 +97,7 @@ func TestLoadTerminatedMarketFromSnapshot(t *testing.T) {
 
 	// submit and terminate all markets
 	for i := 0; i < 3; i++ {
-		err := exec.engine.SubmitMarket(ctx, newMarket(marketIDs[i], pubKeys[i]))
+		err := exec.engine.SubmitMarket(ctx, newMarket(marketIDs[i], pubKeys[i]), "")
 		require.NoError(t, err)
 
 		// terminate all markets
@@ -275,8 +275,7 @@ func getEngine(t *testing.T, now time.Time) *snapshotTestData {
 	oracleEngine := oracles.NewEngine(log, oracles.NewDefaultConfig(), currentTime, broker, timeService)
 
 	epochEngine := epochtime.NewService(log, epochtime.NewDefaultConfig(), timeService, broker)
-	feesTracker := execution.NewFeesTracker(epochEngine)
-	marketTracker := execution.NewMarketTracker()
+	marketActivityTracker := execution.NewMarketActivityTracker(logging.NewTestLogger(), epochEngine)
 
 	ethAsset := types.Asset{
 		ID: "Ethereum/Ether",
@@ -295,8 +294,7 @@ func getEngine(t *testing.T, now time.Time) *snapshotTestData {
 		oracleEngine,
 		broker,
 		stubs.NewStateVar(),
-		feesTracker,
-		marketTracker,
+		marketActivityTracker,
 		stubs.NewAssetStub(),
 	)
 

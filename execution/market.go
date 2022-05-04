@@ -251,12 +251,11 @@ type Market struct {
 	equityShares               *EquityShares
 	minLPStakeQuantumMultiple  num.Decimal
 
-	stateVarEngine StateVarEngine
-	stateChanged   bool
-	feesTracker    *FeesTracker
-	marketTracker  *MarketTracker
-	positionFactor num.Decimal // 10^pdp
-	assetDP        uint32
+	stateVarEngine        StateVarEngine
+	stateChanged          bool
+	marketActivityTracker *MarketActivityTracker
+	positionFactor        num.Decimal // 10^pdp
+	assetDP               uint32
 }
 
 // SetMarketID assigns a deterministic pseudo-random ID to a Market.
@@ -300,9 +299,8 @@ func NewMarket(
 	broker Broker,
 	as *monitor.AuctionState,
 	stateVarEngine StateVarEngine,
-	feesTracker *FeesTracker,
+	marketActivityTracker *MarketActivityTracker,
 	assetDetails *assets.Asset,
-	marketTracker *MarketTracker,
 ) (*Market, error) {
 	if len(mkt.ID) == 0 {
 		return nil, ErrEmptyMarketID
@@ -417,10 +415,9 @@ func NewMarket(
 		lastBestBidPrice:          num.Zero(),
 		stateChanged:              true,
 		stateVarEngine:            stateVarEngine,
-		feesTracker:               feesTracker,
+		marketActivityTracker:     marketActivityTracker,
 		priceFactor:               priceFactor,
 		minLPStakeQuantumMultiple: num.MustDecimalFromString("1"),
-		marketTracker:             marketTracker,
 		positionFactor:            positionFactor,
 	}
 
@@ -1521,7 +1518,7 @@ func (m *Market) applyFees(ctx context.Context, order *types.Order, trades []*ty
 		m.broker.Send(evt)
 	}
 
-	m.feesTracker.UpdateFeesFromTransfers(m.GetID(), fees.Transfers())
+	m.marketActivityTracker.UpdateFeesFromTransfers(m.GetID(), fees.Transfers())
 
 	return nil
 }
@@ -1602,7 +1599,7 @@ func (m *Market) handleConfirmation(ctx context.Context, conf *types.OrderConfir
 			m.settlement.AddTrade(trade)
 			tradeValue, _ := num.UintFromDecimal(num.DecimalFromInt64(int64(trade.Size)).Mul(trade.Price.ToDecimal()).Div(m.positionFactor))
 			m.feeSplitter.AddTradeValue(tradeValue)
-			m.marketTracker.AddValueTraded(m.mkt.ID, tradeValue)
+			m.marketActivityTracker.AddValueTraded(m.mkt.ID, tradeValue)
 		}
 		m.broker.SendBatch(tradeEvts)
 
@@ -1918,7 +1915,7 @@ func (m *Market) resolveClosedOutParties(ctx context.Context, distressedMarginEv
 			m.settlement.AddTrade(trade)
 			tradeValue, _ := num.UintFromDecimal(num.DecimalFromInt64(int64(trade.Size)).Mul(trade.Price.ToDecimal()).Div(m.positionFactor))
 			m.feeSplitter.AddTradeValue(tradeValue)
-			m.marketTracker.AddValueTraded(m.mkt.ID, tradeValue)
+			m.marketActivityTracker.AddValueTraded(m.mkt.ID, tradeValue)
 		}
 		m.broker.SendBatch(tradeEvts)
 	}
@@ -3280,7 +3277,7 @@ func (m *Market) distributeLiquidityFees(ctx context.Context) error {
 		return nil
 	}
 
-	m.feesTracker.UpdateFeesFromTransfers(m.GetID(), feeTransfer.Transfers())
+	m.marketActivityTracker.UpdateFeesFromTransfers(m.GetID(), feeTransfer.Transfers())
 	resp, err := m.collateral.TransferFees(ctx, m.GetID(), asset, feeTransfer)
 	if err != nil {
 		return fmt.Errorf("failed to transfer fees: %w", err)

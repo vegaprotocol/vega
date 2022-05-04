@@ -18,5 +18,5 @@ type Execution interface {
 		deterministicId string) error
 	AmendLiquidityProvision(ctx context.Context, amendment *types.LiquidityProvisionAmendment, party string) error
 	CancelLiquidityProvision(ctx context.Context, cancel *types.LiquidityProvisionCancellation, party string) error
-	SubmitMarket(ctx context.Context, marketConfig *types.Market) error
+	SubmitMarket(ctx context.Context, marketConfig *types.Market, proposer string) error
 }

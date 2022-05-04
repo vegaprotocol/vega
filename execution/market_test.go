@@ -185,10 +185,10 @@ func (tm *testMarket) Run(ctx context.Context, mktCfg types.Market) *testMarket 
 	statevarEngine := stubs.NewStateVar()
 	epochEngine := mocks.NewMockEpochEngine(tm.ctrl)
 	epochEngine.EXPECT().NotifyOnEpoch(gomock.Any(), gomock.Any()).Times(1)
-	feeTracker := execution.NewFeesTracker(epochEngine)
+	marketActivityTracker := execution.NewMarketActivityTracker(logging.NewTestLogger(), epochEngine)
 	mktEngine, err := execution.NewMarket(ctx,
 		tm.log, riskConfig, positionConfig, settlementConfig, matchingConfig,
-		feeConfig, liquidityConfig, collateralEngine, oracleEngine, &mktCfg, tm.now, tm.broker, mas, statevarEngine, feeTracker, cfgAsset, execution.NewMarketTracker(),
+		feeConfig, liquidityConfig, collateralEngine, oracleEngine, &mktCfg, tm.now, tm.broker, mas, statevarEngine, marketActivityTracker, cfgAsset,
 	)
 	require.NoError(tm.t, err)
 
@@ -387,11 +387,11 @@ func getTestMarket2WithDP(
 
 	epoch := mocks.NewMockEpochEngine(ctrl)
 	epoch.EXPECT().NotifyOnEpoch(gomock.Any(), gomock.Any()).Times(1)
-	feeTracker := execution.NewFeesTracker(epoch)
+	marketActivityTracker := execution.NewMarketActivityTracker(logging.NewTestLogger(), epoch)
 
 	mktEngine, err := execution.NewMarket(context.Background(),
 		log, riskConfig, positionConfig, settlementConfig, matchingConfig,
-		feeConfig, liquidityConfig, collateralEngine, oracleEngine, mktCfg, now, broker, mas, statevar, feeTracker, cfgAsset, execution.NewMarketTracker())
+		feeConfig, liquidityConfig, collateralEngine, oracleEngine, mktCfg, now, broker, mas, statevar, marketActivityTracker, cfgAsset)
 	if err != nil {
 		t.Fatalf("couldn't create a market: %v", err)
 	}

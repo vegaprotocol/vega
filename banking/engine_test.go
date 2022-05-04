@@ -48,11 +48,12 @@ func getTestEngine(t *testing.T) *testEngine {
 	broker := bmock.NewMockBroker(ctrl)
 	top := mocks.NewMockTopology(ctrl)
 	epoch := mocks.NewMockEpochService(ctrl)
+	marketActivityTracker := mocks.NewMockMarketActivityTracker(ctrl)
 
 	notary.EXPECT().OfferSignatures(gomock.Any(), gomock.Any()).AnyTimes()
 	tsvc.EXPECT().NotifyOnTick(gomock.Any()).Times(1)
 	epoch.EXPECT().NotifyOnEpoch(gomock.Any(), gomock.Any()).Times(1)
-	eng := banking.New(logging.NewTestLogger(), banking.NewDefaultConfig(), col, erc, tsvc, assets, notary, broker, top, epoch)
+	eng := banking.New(logging.NewTestLogger(), banking.NewDefaultConfig(), col, erc, tsvc, assets, notary, broker, top, epoch, marketActivityTracker)
 
 	return &testEngine{
 		Engine: eng,

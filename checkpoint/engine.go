@@ -30,8 +30,9 @@ var (
 		types.MultisigControlCheckpoint, // restore the staking information, so delegation make sense
 		types.StakingCheckpoint,         // restore the staking information, so delegation make sense
 		types.DelegationCheckpoint,
-		types.PendingRewardsCheckpoint, // pending rewards can basically be reloaded any time
-		types.BankingCheckpoint,        // Banking checkpoint needs to be reload any time after collateral
+		types.PendingRewardsCheckpoint,        // pending rewards can basically be reloaded any time
+		types.MarketActivityTrackerCheckpoint, // restore market activity information
+		types.BankingCheckpoint,               // Banking checkpoint needs to be reload any time after collateral
 
 	}
 )

@@ -43,7 +43,7 @@ func TheMarkets(
 
 func submitMarkets(markets []types.Market, executionEngine Execution) error {
 	for i := range markets {
-		err := executionEngine.SubmitMarket(context.Background(), &markets[i])
+		err := executionEngine.SubmitMarket(context.Background(), &markets[i], "proposerID")
 		if err != nil {
 			return fmt.Errorf("couldn't submit market(%s): %v", markets[i].ID, err)
 		}
