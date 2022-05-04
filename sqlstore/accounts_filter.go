@@ -84,9 +84,13 @@ func filterAccountBalancesQuery(af entities.AccountFilter, pagination entities.P
 	}
 
 	if len(af.Markets) > 0 {
-		marketIDs := make([]entities.MarketID, len(af.Markets))
+		marketIDs := make([][]byte, len(af.Markets))
 		for i, market := range af.Markets {
-			marketIDs[i] = market.ID
+			bytes, err := market.ID.Bytes()
+			if err != nil {
+				return "", nil, fmt.Errorf("Couldn't decode market ID: %w", err)
+			}
+			marketIDs[i] = bytes
 		}
 
 		where = fmt.Sprintf(`%s%sACCOUNTS.market_id=ANY(%s)`, where, and, nextBindVar(&args, marketIDs))
