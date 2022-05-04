@@ -439,6 +439,7 @@ func (g *GRPCServer) Start(ctx context.Context, lis net.Listener) error {
 		tradeStore:               g.tradeStore,
 		multiSigSignerEventStore: g.multiSigSignerEventStore,
 		notaryStore:              g.notaryStore,
+		assetStore:               g.assetStore,
 		candleServiceV2:          g.candleServiceV2,
 	}
 	protoapi2.RegisterTradingDataServiceServer(g.srv, tradingDataSvcV2)

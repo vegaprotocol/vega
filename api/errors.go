@@ -98,12 +98,14 @@ var (
 	ErrMissingProposalID = errors.New("missing proposal id")
 	// ErrMissingProposalReference returned if proposal with this reference is not found
 	ErrMissingProposalReference = errors.New("failed to find proposal with the reference")
-	// ErrMissingWithdrawalID is returned when the ID is missing from the request
+	// ErrMissingWithdrawalID is returned when the withdrawal ID is missing from the request
 	ErrMissingWithdrawalID = errors.New("missing withdrawal ID")
 	// ErrMissingOracleSpecID is returned when the ID is missing from the request
 	ErrMissingOracleSpecID = errors.New("missing oracle spec ID")
-	// ErrMissingDepositID is returned when the ID is missing from the request
+	// ErrMissingDepositID is returned when the deposit ID is missing from the request
 	ErrMissingDepositID = errors.New("missing deposit ID")
+	// ErrMissingAssetID is returned when the Asset ID is missing from the request
+	ErrMissingAssetID = errors.New("missing asset ID")
 	// Network Limits...
 	ErrGetNetworkLimits = errors.New("failed to get network limits")
 	// Rewards
@@ -161,6 +163,7 @@ var errorMap = map[string]int32{
 	ErrAccountServiceGetPartyAccounts.Error():  80002,
 	ErrMissingWithdrawalID.Error():             80003,
 	ErrMissingDepositID.Error():                80004,
+	ErrMissingAssetID.Error():                  80005,
 	// Blockchain client
 	ErrBlockchainBacklogLength.Error(): 90001,
 	ErrBlockchainNetworkInfo.Error():   90002,

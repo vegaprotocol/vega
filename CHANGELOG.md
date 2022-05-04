@@ -9,6 +9,7 @@
 - [](https://github.com/vegaprotocol/data-node/issues/xxx) -
 
 ### 🛠  Improvements
+- [491](https://github.com/vegaprotocol/data-node/issues/491) - Expose bundle for asset
 - [414](https://github.com/vegaprotocol/data-node/issues/414) - Migrate market depth to retrieve data from `Postgres`
 - [495](https://github.com/vegaprotocol/data-node/issues/495) - Remove deprecated `PositionState` event handling, general fixes to `SettlePosition` event handling
 - [498](https://github.com/vegaprotocol/data-node/issues/498) - Transaction event broker

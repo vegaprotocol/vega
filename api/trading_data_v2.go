@@ -37,6 +37,7 @@ type tradingDataServiceV2 struct {
 	tradeStore               *sqlstore.Trades
 	multiSigSignerEventStore *sqlstore.ERC20MultiSigSignerEvent
 	notaryStore              *sqlstore.Notary
+	assetStore               *sqlstore.Assets
 	candleServiceV2          *candlesv2.Svc
 }
 
@@ -434,5 +435,55 @@ func (t *tradingDataServiceV2) GetERC20MultiSigSignerRemovedBundles(ctx context.
 
 	return &v2.GetERC20MultiSigSignerRemovedBundlesResponse{
 		Bundles: bundles,
+	}, nil
+}
+
+func (t *tradingDataServiceV2) GetERC20AssetBundle(ctx context.Context, req *v2.GetERC20AssetBundleRequest) (*v2.GetERC20AssetBundleResponse, error) {
+	if len(req.AssetId) <= 0 {
+		return nil, ErrMissingAssetID
+	}
+
+	if t.assetStore == nil {
+		return nil, errors.New("sql asset store not available")
+	}
+
+	// first here we gonna get the proposal by its ID,
+	asset, err := t.assetStore.GetByID(ctx, req.AssetId)
+	if err != nil {
+		return nil, apiError(codes.NotFound, err)
+	}
+
+	if t.notaryStore == nil {
+		return nil, errors.New("sql notary store not available")
+	}
+
+	// then we get the signature and pack them altogether
+	signatures, err := t.notaryStore.GetByResourceID(ctx, req.AssetId)
+	if err != nil {
+		return nil, apiError(codes.Internal, err)
+	}
+
+	// now we pack them
+	pack := "0x"
+	for _, v := range signatures {
+		pack = fmt.Sprintf("%v%v", pack, hex.EncodeToString(v.Sig))
+	}
+
+	var address string
+	if asset.ERC20Contract != "" {
+		address = asset.ERC20Contract
+	} else {
+		return nil, fmt.Errorf("invalid asset source")
+	}
+
+	if len(address) <= 0 {
+		return nil, fmt.Errorf("invalid erc20 token contract address")
+	}
+
+	return &v2.GetERC20AssetBundleResponse{
+		AssetSource: address,
+		Nonce:       req.AssetId,
+		VegaAssetId: asset.ID.String(),
+		Signatures:  pack,
 	}, nil
 }
