@@ -51,10 +51,10 @@ create table balances
 create table ledger
 (
     id              SERIAL                   ,--PRIMARY KEY,
-    account_from_id INT                      NOT NULL REFERENCES accounts(id),
-    account_to_id   INT                      NOT NULL REFERENCES accounts(id),
+    account_from_id INT                      NOT NULL,
+    account_to_id   INT                      NOT NULL,
     quantity        NUMERIC(32, 0)           NOT NULL,
-    vega_time       TIMESTAMP WITH TIME ZONE NOT NULL REFERENCES blocks(vega_time),
+    vega_time       TIMESTAMP WITH TIME ZONE NOT NULL,
     transfer_time   TIMESTAMP WITH TIME ZONE NOT NULL,
     reference       TEXT,
     type            TEXT
@@ -84,7 +84,7 @@ CREATE TABLE orders (
     created_at        TIMESTAMP WITH TIME ZONE NOT NULL,
     updated_at        TIMESTAMP WITH TIME ZONE,
     expires_at        TIMESTAMP WITH TIME ZONE,
-    vega_time         TIMESTAMP WITH TIME ZONE NOT NULL REFERENCES blocks(vega_time),
+    vega_time         TIMESTAMP WITH TIME ZONE NOT NULL,
     seq_num           BIGINT NOT NULL -- event sequence number in the block
     -- PRIMARY key(vega_time, id, version)
 );
@@ -110,7 +110,7 @@ CREATE VIEW orders_current_versions AS (
 create table trades
 (
     synthetic_time       TIMESTAMP WITH TIME ZONE NOT NULL,
-    vega_time       TIMESTAMP WITH TIME ZONE NOT NULL REFERENCES blocks(vega_time),
+    vega_time       TIMESTAMP WITH TIME ZONE NOT NULL,
     seq_num    BIGINT NOT NULL,
     id     BYTEA NOT NULL,
     market_id BYTEA NOT NULL,
@@ -287,7 +287,7 @@ create type market_state_type as enum('STATE_UNSPECIFIED', 'STATE_PROPOSED', 'ST
 
 create table market_data (
     synthetic_time       TIMESTAMP WITH TIME ZONE NOT NULL,
-    vega_time timestamp with time zone not null references blocks(vega_time),
+    vega_time timestamp with time zone not null,
     seq_num    BIGINT NOT NULL,
     market bytea not null,
     mark_price numeric(32),
@@ -461,7 +461,7 @@ create table if not exists margin_levels (
     search_level numeric(32, 0),
     initial_margin numeric(32, 0),
     collateral_release_level numeric(32, 0),
-    vega_time timestamp with time zone not null references blocks(vega_time)
+    vega_time timestamp with time zone not null
 );
 
 select create_hypertable('margin_levels', 'vega_time', chunk_time_interval => INTERVAL '1 day');
