@@ -209,14 +209,9 @@ type PayloadFloatingPointConsensus struct {
 	ConsensusData []*snapshot.NextTimeTrigger
 }
 
-type PayloadFeeTracker struct {
-	FeeTrackerData *snapshot.FeesTracker
+type PayloadMarketActivityTracker struct {
+	MarketActivityData *snapshot.MarketTracker
 }
-
-type PayloadMarketTracker struct {
-	MarketTracker []*snapshot.MarketVolumeTracker
-}
-
 type Witness struct {
 	NeedResendResources []string
 	Resources           []*Resource
@@ -719,10 +714,8 @@ func PayloadFromProto(p *snapshot.Payload) *Payload {
 		ret.Data = PayloadFutureStateFromProto(dt)
 	case *snapshot.Payload_FloatingPointConsensus:
 		ret.Data = PayloadFloatingPointConsensusFromProto(dt)
-	case *snapshot.Payload_FeesTracker:
-		ret.Data = PayloadFeeTrackerFromProto(dt)
 	case *snapshot.Payload_MarketTracker:
-		ret.Data = PayloadMarketTrackerFromProto(dt)
+		ret.Data = PayloadMarketActivityTrackerFromProto(dt)
 	case *snapshot.Payload_BankingRecurringTransfers:
 		ret.Data = PayloadBankingRecurringTransfersFromProto(dt)
 	case *snapshot.Payload_BankingScheduledTransfers:
@@ -851,8 +844,6 @@ func (p Payload) IntoProto() *snapshot.Payload {
 	case *snapshot.Payload_LiquidityTarget:
 		ret.Data = dt
 	case *snapshot.Payload_FloatingPointConsensus:
-		ret.Data = dt
-	case *snapshot.Payload_FeesTracker:
 		ret.Data = dt
 	case *snapshot.Payload_MarketTracker:
 		ret.Data = dt
@@ -3519,58 +3510,30 @@ func (*PayloadFloatingPointConsensus) Namespace() SnapshotNamespace {
 	return FloatingPointConsensusSnapshot
 }
 
-func (*PayloadFeeTracker) isPayload() {}
+func (*PayloadMarketActivityTracker) isPayload() {}
 
-func PayloadFeeTrackerFromProto(t *snapshot.Payload_FeesTracker) *PayloadFeeTracker {
-	return &PayloadFeeTracker{
-		FeeTrackerData: t.FeesTracker,
+func PayloadMarketActivityTrackerFromProto(t *snapshot.Payload_MarketTracker) *PayloadMarketActivityTracker {
+	return &PayloadMarketActivityTracker{
+		MarketActivityData: t.MarketTracker,
 	}
 }
 
-func (p *PayloadFeeTracker) IntoProto() *snapshot.Payload_FeesTracker {
-	return &snapshot.Payload_FeesTracker{
-		FeesTracker: p.FeeTrackerData,
-	}
-}
-
-func (p *PayloadFeeTracker) plToProto() interface{} {
-	return p.IntoProto()
-}
-
-func (*PayloadFeeTracker) Key() string {
-	return "feesTracker"
-}
-
-func (*PayloadFeeTracker) Namespace() SnapshotNamespace {
-	return FeeTrackerSnapshot
-}
-
-func (*PayloadMarketTracker) isPayload() {}
-
-func PayloadMarketTrackerFromProto(t *snapshot.Payload_MarketTracker) *PayloadMarketTracker {
-	return &PayloadMarketTracker{
-		MarketTracker: t.MarketTracker.MarketTracker,
-	}
-}
-
-func (p *PayloadMarketTracker) IntoProto() *snapshot.Payload_MarketTracker {
+func (p *PayloadMarketActivityTracker) IntoProto() *snapshot.Payload_MarketTracker {
 	return &snapshot.Payload_MarketTracker{
-		MarketTracker: &snapshot.MarketTracker{
-			MarketTracker: p.MarketTracker,
-		},
+		MarketTracker: p.MarketActivityData,
 	}
 }
 
-func (p *PayloadMarketTracker) plToProto() interface{} {
+func (p *PayloadMarketActivityTracker) plToProto() interface{} {
 	return p.IntoProto()
 }
 
-func (*PayloadMarketTracker) Key() string {
-	return "marketTracker"
+func (*PayloadMarketActivityTracker) Key() string {
+	return "marketActivityTracker"
 }
 
-func (*PayloadMarketTracker) Namespace() SnapshotNamespace {
-	return MarketTrackerSnapshot
+func (*PayloadMarketActivityTracker) Namespace() SnapshotNamespace {
+	return MarketActivityTrackerSnapshot
 }
 
 func (*PayloadTopology) isPayload() {}

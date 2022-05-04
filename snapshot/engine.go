@@ -135,8 +135,7 @@ var nodeOrder = []types.SnapshotNamespace{
 	types.RewardSnapshot,
 	types.TopologySnapshot,
 	types.EventForwarderSnapshot,
-	types.FeeTrackerSnapshot,
-	types.MarketTrackerSnapshot,
+	types.MarketActivityTrackerSnapshot,
 	types.ERC20MultiSigTopologySnapshot,
 	types.PoWSnapshot,
 }
