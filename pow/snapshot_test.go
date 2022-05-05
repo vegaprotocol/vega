@@ -36,12 +36,6 @@ func TestConversions(t *testing.T) {
 	for i, v := range p.BlockHash {
 		require.Equal(t, v, pp.ProofOfWork.BlockHash[i])
 	}
-	require.Equal(t, "1", pp.ProofOfWork.SeenTx[0])
-	require.Equal(t, "2", pp.ProofOfWork.SeenTx[1])
-	require.Equal(t, "3", pp.ProofOfWork.SeenTx[2])
-	require.Equal(t, "100", pp.ProofOfWork.SeenTid[0])
-	require.Equal(t, "200", pp.ProofOfWork.SeenTid[1])
-	require.Equal(t, "300", pp.ProofOfWork.SeenTid[2])
 	require.Equal(t, 2, len(pp.ProofOfWork.TxAtHeight))
 	require.Equal(t, 2, len(pp.ProofOfWork.TidAtHeight))
 	require.Equal(t, uint64(100), pp.ProofOfWork.TxAtHeight[0].Height)

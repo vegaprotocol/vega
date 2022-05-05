@@ -2,11 +2,11 @@ package evtforward
 
 import (
 	"context"
-	"sort"
 
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/types"
+	"github.com/jfcg/sorty/v2"
 
 	"code.vegaprotocol.io/vega/libs/proto"
 )
@@ -44,7 +44,17 @@ func (f *Forwarder) serialise() ([]byte, error) {
 	for key := range f.ackedEvts {
 		keys = append(keys, key)
 	}
-	sort.Strings(keys)
+	lsw := func(i, k, r, s int) bool {
+		if keys[i] < keys[k] { // strict comparator like < or >
+			if r != s {
+				keys[r], keys[s] = keys[s], keys[r]
+			}
+			return true
+		}
+		return false
+	}
+
+	sorty.Sort(len(keys), lsw)
 
 	for _, key := range keys {
 		events = append(events, f.ackedEvts[key])
