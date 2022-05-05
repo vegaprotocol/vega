@@ -1254,10 +1254,13 @@ func (m *Market) SubmitOrder(
 		[]*types.Order{conf.Order}, conf.PassiveOrdersAffected...)
 	allUpdatedOrders = append(allUpdatedOrders, orderUpdates...)
 
-	m.checkForReferenceMoves(
-		ctx, allUpdatedOrders, false)
-	m.checkLiquidity(ctx, nil, true)
-	m.commandLiquidityAuction(ctx)
+	if !m.as.InAuction() {
+		m.checkForReferenceMoves(
+			ctx, allUpdatedOrders, false)
+		m.checkLiquidity(ctx, nil, true)
+		m.commandLiquidityAuction(ctx)
+
+	}
 
 	return conf, nil
 }
@@ -2275,9 +2278,11 @@ func (m *Market) CancelOrder(ctx context.Context, partyID, orderID string, deter
 		return conf, err
 	}
 
-	m.checkForReferenceMoves(ctx, []*types.Order{conf.Order}, false)
-	m.checkLiquidity(ctx, nil, true)
-	m.commandLiquidityAuction(ctx)
+	if !m.as.InAuction() {
+		m.checkForReferenceMoves(ctx, []*types.Order{conf.Order}, false)
+		m.checkLiquidity(ctx, nil, true)
+		m.commandLiquidityAuction(ctx)
+	}
 
 	return conf, nil
 }
@@ -2386,9 +2391,11 @@ func (m *Market) AmendOrder(ctx context.Context, orderAmendment *types.OrderAmen
 		allUpdatedOrders,
 		updatedOrders...,
 	)
-	m.checkForReferenceMoves(ctx, allUpdatedOrders, false)
-	m.checkLiquidity(ctx, nil, true)
-	m.commandLiquidityAuction(ctx)
+	if !m.as.InAuction() {
+		m.checkForReferenceMoves(ctx, allUpdatedOrders, false)
+		m.checkLiquidity(ctx, nil, true)
+		m.commandLiquidityAuction(ctx)
+	}
 
 	return conf, nil
 }
@@ -2949,7 +2956,7 @@ func (m *Market) RemoveExpiredOrders(
 
 	// If we have removed an expired order, do we need to reprice any
 	// or maybe notify the liquidity engine
-	if len(expired) > 0 {
+	if len(expired) > 0 && !m.as.InAuction() {
 		m.checkForReferenceMoves(ctx, expired, false)
 		m.checkLiquidity(ctx, nil, true)
 		m.commandLiquidityAuction(ctx)
