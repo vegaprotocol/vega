@@ -305,4 +305,62 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
 
     And the mark price should be "303000" for the market "ETH/DEC20"
 
+  Scenario: Start with high first indicative uncrossing price and much lower final auction price
+    Given the parties deposit on asset's general account the following amount:
+      | party  | asset | amount       |
+      | party1 | ETH   | 10000000000  |
+      | party2 | ETH   | 10000000000  |
+      | aux    | ETH   | 100000000000 |
+      | aux2   | ETH   | 100000000000 |
 
+    When the parties place the following orders:
+      | party | market id | side | volume | price   | resulting trades | type       | tif     |
+      | aux   | ETH/DEC20 | buy  | 1      | 1       | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux   | ETH/DEC20 | sell | 1      | 200000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux2  | ETH/DEC20 | buy  | 1      | 1000000 | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux   | ETH/DEC20 | sell | 1      | 1000000 | 0                | TYPE_LIMIT | TIF_GTC |
+    
+    Then the network moves ahead "59" blocks
+    And the trading mode should be "TRADING_MODE_OPENING_AUCTION" for the market "ETH/DEC20"
+
+    When the parties place the following orders:
+      | party | market id | side | volume | price | resulting trades | type       | tif     |
+      | aux2  | ETH/DEC20 | buy  | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux   | ETH/DEC20 | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+
+    Then the opening auction period ends for market "ETH/DEC20"
+
+    And the market data for the market "ETH/DEC20" should be:
+      | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
+      | 1000       | TRADING_MODE_CONTINUOUS | 60      | 995       | 1005      | 7434        | 0              | 10            |
+      | 1000       | TRADING_MODE_CONTINUOUS | 120     | 990       | 1010      | 7434        | 0              | 10            |
+
+  Scenario: Start with low first indicative uncrossing price and much higher final auction price
+    Given the parties deposit on asset's general account the following amount:
+      | party  | asset | amount       |
+      | party1 | ETH   | 10000000000  |
+      | party2 | ETH   | 10000000000  |
+      | aux    | ETH   | 100000000000 |
+      | aux2   | ETH   | 100000000000 |
+
+    When the parties place the following orders:
+      | party | market id | side | volume | price   | resulting trades | type       | tif     |
+      | aux   | ETH/DEC20 | buy  | 1      | 1       | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux   | ETH/DEC20 | sell | 1      | 200000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux2  | ETH/DEC20 | buy  | 1      | 1000    | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux   | ETH/DEC20 | sell | 1      | 1000    | 0                | TYPE_LIMIT | TIF_GTC |
+    
+    Then the network moves ahead "59" blocks
+    And the trading mode should be "TRADING_MODE_OPENING_AUCTION" for the market "ETH/DEC20"
+
+    When the parties place the following orders:
+      | party | market id | side | volume | price   | resulting trades | type       | tif     |
+      | aux2  | ETH/DEC20 | buy  | 10     | 1000000 | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux   | ETH/DEC20 | sell | 10     | 1000000 | 0                | TYPE_LIMIT | TIF_GTC |
+
+    Then the opening auction period ends for market "ETH/DEC20"
+
+    And the market data for the market "ETH/DEC20" should be:
+      | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
+      | 1000000    | TRADING_MODE_CONTINUOUS | 60      | 994606    | 1005415   | 7434000      | 0              | 10            |
+      | 1000000    | TRADING_MODE_CONTINUOUS | 120     | 989997    | 1010088   | 7434000      | 0              | 10            |
