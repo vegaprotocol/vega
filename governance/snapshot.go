@@ -104,6 +104,8 @@ func (e *Engine) serialiseNodeProposals() ([]byte, error) {
 
 // get the serialised form and hash of the given key.
 func (e *Engine) getSerialisedAndHash(k string) ([]byte, []byte, error) {
+	e.lock.Lock()
+	defer e.lock.Unlock()
 	if _, ok := e.keyToSerialiser[k]; !ok {
 		return nil, nil, types.ErrSnapshotKeyDoesNotExist
 	}

@@ -69,6 +69,8 @@ func (s *Service) serialisePending() ([]byte, error) {
 
 // get the serialised form and hash of the given key.
 func (s *Service) getSerialisedAndHash(k string) ([]byte, []byte, error) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
 	if _, ok := s.keyToSerialiser[k]; !ok {
 		return nil, nil, ErrSnapshotKeyDoesNotExist
 	}

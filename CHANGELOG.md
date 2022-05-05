@@ -10,6 +10,7 @@
 
 ### 🛠 Improvements
 - [5318](https://github.com/vegaprotocol/vega/issues/5318) - Automatically dispatch reward pool into markets in recurring transfers
+- [5333](https://github.com/vegaprotocol/vega/issues/5333) - Run snapshot generation for all providers in parallel 
 
 ### 🐛 Fixes
 - [5277](https://github.com/vegaprotocol/vega/issues/5277) - Updating a market should default auction extension to 1

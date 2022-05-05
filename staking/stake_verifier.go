@@ -74,6 +74,8 @@ type StakeVerifier struct {
 	// snapshot data
 	svss            *stakeVerifierSnapshotState
 	keyToSerialiser map[string]func() ([]byte, error)
+
+	lock sync.Mutex
 }
 
 type pendingSD struct {

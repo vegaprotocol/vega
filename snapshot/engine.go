@@ -7,6 +7,9 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
+	"sync"
+	"sync/atomic"
 	"time"
 
 	vgfs "code.vegaprotocol.io/shared/libs/fs"
@@ -25,7 +28,10 @@ import (
 
 type SnapshotSource int
 
-const SnapshotDBName = "snapshot"
+const (
+	SnapshotDBName = "snapshot"
+	numWorkers     = 1000
+)
 
 type StateProviderT interface {
 	// Namespace this provider operates in, basically a prefix for the keys
@@ -35,6 +41,7 @@ type StateProviderT interface {
 	// HasChanged should return true if state for a given key was updated
 	HasChanged(key string) bool
 	// GetState returns the new state as a payload type
+	// NB: GetState must be threadsafe as it may be called from multiple goroutines concurrently!
 	GetState(key string) *types.Payload
 	// PollChanges waits for an update on a channel - if nothing was updated, then nil can be sent
 	// we can call this at the end of a block, so the engines have time until commit to provide the data
@@ -106,6 +113,8 @@ type Engine struct {
 	providerTS map[string]StateProviderT
 	pollCtx    context.Context
 	pollCfunc  context.CancelFunc
+
+	lock sync.Mutex
 }
 
 // order in which snapshots are to be restored.
@@ -618,6 +627,21 @@ func (e *Engine) Info() ([]byte, int64) {
 	return e.lastSnapshotHash, int64(e.app.Height)
 }
 
+type nsInput struct {
+	treeKey   []byte
+	index     int
+	namespace types.SnapshotNamespace
+}
+
+type nsSnapResult struct {
+	input    nsInput
+	toRemove bool
+	err      error
+	hash     []byte
+	state    []byte
+	updated  bool
+}
+
 func (e *Engine) Snapshot(ctx context.Context) (b []byte, errlol error) {
 	e.current--
 	// no snapshot to be taken yet
@@ -627,20 +651,138 @@ func (e *Engine) Snapshot(ctx context.Context) (b []byte, errlol error) {
 	// recent counter
 	e.current = e.interval
 	defer metrics.StartSnapshot("all")()
-	// always iterate over slices, so loops are deterministic
+
+	// channel for pushing inputs into workers
+	inputChan := make(chan nsInput, numWorkers)
+
+	// workers
+	wg := new(sync.WaitGroup)
+	inputCnt := int64(0)
+	inputs := []nsInput{}
+
+	// we first iterate over the namespaces and collect all the top level tree keys
+	for _, ns := range e.namespaces {
+		defer metrics.StartSnapshot(ns.String())()
+		treeKeys, ok := e.nsTreeKeys[ns]
+		if !ok || len(treeKeys) == 0 {
+			continue
+		}
+
+		for ind, tk := range treeKeys {
+			inputs = append(inputs, nsInput{treeKey: tk, index: ind, namespace: ns})
+			inputCnt++
+		}
+	}
+	// channel for the results
+	resChan := make(chan nsSnapResult, numWorkers)
+	// generate <NumWorkers> workes passing the input channel and the result channel
+	for i := 0; i < numWorkers; i++ {
+		wg.Add(1)
+		go worker(e, inputChan, resChan, wg, &inputCnt)
+	}
+
+	// push inputs to the channel
+	// NB: the input channel will be closed once there are no more inputs, i.e. when cnt==0
+	for _, input := range inputs {
+		inputChan <- input
+	}
+
+	if len(inputs) == 0 {
+		close(inputChan)
+		close(resChan)
+	}
+
+	// analyse the results
+	results := []nsSnapResult{}
+	for res := range resChan {
+		if res.err != nil {
+			e.log.Panic("Failed to update snapshot namespace",
+				logging.String("snapshot-namespace", res.input.namespace.String()),
+				logging.Error(res.err),
+			)
+		}
+		results = append(results, res)
+	}
+
+	// wait for all workers to complete
+	wg.Wait()
+
+	// sort the results slice for deterministic update
+	sort.SliceStable(results, func(i, j int) bool { return string(results[i].input.treeKey) < string(results[j].input.treeKey) })
 	updated := false
 
-	for _, ns := range e.namespaces {
-		u, err := e.update(ns)
-		if err != nil {
-			e.log.Error("Failed to update snapshot namespace",
-				logging.String("snapshot-namespace", ns.String()),
-				logging.Error(err),
-			)
-			return nil, err
+	for _, tkRes := range results {
+		e.log.Debug("State updated",
+			logging.String("node-key", string(tkRes.input.treeKey)),
+			logging.String("state-hash", hex.EncodeToString(tkRes.hash)),
+		)
+		treeKey := tkRes.input.treeKey
+		treeKeyStr := string(treeKey)
+
+		if !tkRes.updated || tkRes.toRemove {
+			continue
 		}
-		if u {
-			updated = true
+
+		e.keyHashes[treeKeyStr] = tkRes.hash
+		if len(tkRes.state) == 0 && len(treeKey) == 0 {
+			// empty state -> remove data from snapshot
+			if e.avl.Has(treeKey) {
+				_, _ = e.avl.Remove(treeKey)
+				updated = true
+				continue
+			}
+			// no value to set, but there was no node in the tree -> no update here
+			continue
+		}
+		// new value needs to be set
+		_ = e.avl.Set(treeKey, tkRes.state)
+		updated = true
+	}
+
+	toRemoveByNameSpace := map[types.SnapshotNamespace][]nsSnapResult{}
+	for _, tkRes := range results {
+		if !tkRes.toRemove {
+			continue
+		}
+
+		updated = true
+		ns := tkRes.input.namespace
+		treeKey := tkRes.input.treeKey
+		treeKeyStr := string(treeKey)
+
+		if _, ok := toRemoveByNameSpace[ns]; !ok {
+			toRemoveByNameSpace[ns] = []nsSnapResult{}
+		}
+		toRemoveByNameSpace[ns] = append(toRemoveByNameSpace[ns], tkRes)
+
+		// delete everything we've got stored
+		e.log.Debug("State to be removed", logging.String("node-key", treeKeyStr))
+		delete(e.providers, treeKeyStr)
+		delete(e.keyHashes, treeKeyStr)
+		delete(e.treeKeyProvider, treeKeyStr)
+
+		if !e.avl.Has(treeKey) {
+			e.log.Panic("trying to remove non-existent payload from tree", logging.String("key", treeKeyStr))
+			continue
+		}
+
+		if _, removed := e.avl.Remove(treeKey); !removed {
+			e.log.Panic("failed to remove node from AVL tree", logging.String("key", treeKeyStr))
+		}
+	}
+
+	toRemoveByNameSpaceSlice := make([][]nsSnapResult, 0, len(toRemoveByNameSpace))
+	for _, v := range toRemoveByNameSpace {
+		toRemoveByNameSpaceSlice = append(toRemoveByNameSpaceSlice, v)
+	}
+	sort.SliceStable(toRemoveByNameSpaceSlice, func(i, j int) bool {
+		return toRemoveByNameSpaceSlice[i][0].input.namespace.String() < toRemoveByNameSpaceSlice[j][0].input.namespace.String()
+	})
+
+	for _, nsResults := range toRemoveByNameSpaceSlice {
+		sort.SliceStable(nsResults, func(i, j int) bool { return nsResults[i].input.index > nsResults[j].input.index })
+		for _, nsr := range nsResults {
+			e.nsTreeKeys[nsr.input.namespace] = append(e.nsTreeKeys[nsr.input.namespace][:nsr.input.index], e.nsTreeKeys[nsr.input.namespace][nsr.input.index+1:]...)
 		}
 	}
 
@@ -722,51 +864,72 @@ func (e *Engine) saveCurrentTree() ([]byte, error) {
 	return h, nil
 }
 
-func (e *Engine) update(ns types.SnapshotNamespace) (bool, error) {
-	defer metrics.StartSnapshot(string(ns))()
-	treeKeys, ok := e.nsTreeKeys[ns]
-	if !ok || len(treeKeys) == 0 {
-		return false, nil
-	}
-	update := false
-	toRemove := []int{}
-	for i, treeKey := range treeKeys {
+func worker(e *Engine, nsInputChan chan nsInput, resChan chan<- nsSnapResult, wg *sync.WaitGroup, cnt *int64) {
+	// Decreasing internal counter for wait-group as soon as goroutine finishes
+	defer func() {
+		wg.Done()
+	}()
+
+	for input := range nsInputChan {
+		treeKeyStr := string(input.treeKey)
 		t0 := time.Now()
-		treeKeyStr := string(treeKey)
 		p := e.providers[treeKeyStr] // get the specific provider for this key
 		lastHash := e.keyHashes[treeKeyStr]
 		providerKey := e.treeKeyProvider[treeKeyStr]
 		currentHash, err := p.GetHash(providerKey)
 		if err != nil {
-			return update, err
+			resChan <- nsSnapResult{input: input, err: err}
+			// if there was an error we can stop here, no need proceed.
+			close(nsInputChan)
+			close(resChan)
+			return
 		}
-
 		// nothing has changed (or both values were nil)
 		if bytes.Equal(lastHash, currentHash) {
+			resChan <- nsSnapResult{input: input}
+			if atomic.AddInt64(cnt, -1) <= 0 {
+				close(nsInputChan)
+				close(resChan)
+			}
 			continue
 		}
-
 		if len(currentHash) == 0 && p.Stopped() {
 			// this signals the removal of this key
-			toRemove = append(toRemove, i)
+			resChan <- nsSnapResult{input: input, toRemove: true, updated: true}
+			if atomic.AddInt64(cnt, -1) <= 0 {
+				close(nsInputChan)
+				close(resChan)
+			}
 			continue
 		}
-
 		// hashes were different, we need to update
 		v, generatedProviders, err := p.GetState(providerKey)
 		if err != nil {
-			return update, err
+			resChan <- nsSnapResult{input: input, err: err, toRemove: false, updated: true}
+			close(nsInputChan)
+			close(resChan)
+			return
 		}
+		var tks [][]byte
+		var ok bool
+		inputs := []nsInput{}
+		genCnt := int64(0)
 		if len(generatedProviders) > 0 {
 			// The provider has generated new providers, register them with the engine
 			// add them to the AVL tree
 			e.AddProviders(generatedProviders...)
+
 			for _, n := range generatedProviders {
 				e.log.Debug("Provider generated",
 					logging.String("namespace", n.Namespace().String()),
 				)
-				if _, err = e.update(n.Namespace()); err != nil {
-					return false, err
+				tks, ok = e.nsTreeKeys[n.Namespace()]
+				if !ok || len(tks) == 0 {
+					continue
+				}
+				for ind, tk := range tks {
+					genCnt++
+					inputs = append(inputs, nsInput{treeKey: tk, namespace: n.Namespace(), index: ind})
 				}
 			}
 		}
@@ -775,51 +938,19 @@ func (e *Engine) update(ns types.SnapshotNamespace) (bool, error) {
 			logging.String("state-hash", hex.EncodeToString(currentHash)),
 			logging.Float64("took", time.Since(t0).Seconds()),
 		)
-		e.keyHashes[treeKeyStr] = currentHash
-		if len(v) == 0 && len(currentHash) == 0 {
-			// empty state -> remove data from snapshot
-			if e.avl.Has(treeKey) {
-				_, _ = e.avl.Remove(treeKey)
-				update = true
-				continue
-			}
-			// no value to set, but there was no node in the tree -> no update here
-			continue
-		}
-		// new value needs to be set
-		_ = e.avl.Set(treeKey, v)
-		update = true
-	}
 
-	if len(toRemove) == 0 {
-		return update, nil
-	}
-
-	for i := range toRemove {
-		treeKey := treeKeys[i]
-		treeKeyStr := string(treeKey)
-
-		// delete everything we've got stored
-		e.log.Debug("State to be removed", logging.String("node-key", treeKeyStr))
-		delete(e.providers, treeKeyStr)
-		delete(e.keyHashes, treeKeyStr)
-		delete(e.treeKeyProvider, treeKeyStr)
-
-		if !e.avl.Has(treeKey) {
-			e.log.Panic("trying to remove non-existent payload from tree", logging.String("key", treeKeyStr))
-			continue
+		atomic.AddInt64(cnt, genCnt)
+		for _, inp := range inputs {
+			nsInputChan <- inp
 		}
 
-		if _, removed := e.avl.Remove(treeKey); !removed {
-			e.log.Panic("failed to remove node from AVL tree", logging.String("key", treeKeyStr))
+		resChan <- nsSnapResult{input: input, hash: currentHash, state: v, updated: true}
+
+		if atomic.AddInt64(cnt, -1) <= 0 {
+			close(nsInputChan)
+			close(resChan)
 		}
 	}
-
-	for i := len(toRemove) - 1; i >= 0; i-- {
-		e.nsTreeKeys[ns] = append(e.nsTreeKeys[ns][:i], e.nsTreeKeys[ns][i+1:]...)
-	}
-
-	return true, nil
 }
 
 func (e *Engine) updateAppState() error {
@@ -851,6 +982,8 @@ func (e *Engine) Hash(ctx context.Context) ([]byte, error) {
 }
 
 func (e *Engine) AddProviders(provs ...types.StateProvider) {
+	e.lock.Lock()
+	defer e.lock.Unlock()
 	for _, p := range provs {
 		keys := p.Keys()
 		ns := p.Namespace()

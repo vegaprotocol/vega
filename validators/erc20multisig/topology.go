@@ -81,6 +81,7 @@ type Topology struct {
 	keyToSerialiser map[string]func() ([]byte, error)
 
 	ethEventSource EthereumEventSource
+	lock           sync.Mutex
 }
 
 type pendingSigner struct {

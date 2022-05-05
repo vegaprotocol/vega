@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"sort"
+	"sync"
 	"time"
 
 	"code.vegaprotocol.io/vega/events"
@@ -99,6 +100,7 @@ type Engine struct {
 	dss                      *delegationSnapshotState          // snapshot state
 	keyToSerialiser          map[string]func() ([]byte, error) // snapshot key to serialisation function
 	lastReconciliation       time.Time                         // last time staking balance has been reconciled against delegation balance
+	lock                     sync.Mutex
 }
 
 // New instantiates a new delegation engine.
