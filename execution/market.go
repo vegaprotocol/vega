@@ -1259,7 +1259,6 @@ func (m *Market) SubmitOrder(
 			ctx, allUpdatedOrders, false)
 		m.checkLiquidity(ctx, nil, true)
 		m.commandLiquidityAuction(ctx)
-
 	}
 
 	return conf, nil
