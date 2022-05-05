@@ -712,16 +712,17 @@ func (e *Engine) Snapshot(ctx context.Context) (b []byte, errlol error) {
 	updated := false
 
 	for _, tkRes := range results {
-		e.log.Debug("State updated",
-			logging.String("node-key", string(tkRes.input.treeKey)),
-			logging.String("state-hash", hex.EncodeToString(tkRes.hash)),
-		)
 		treeKey := tkRes.input.treeKey
 		treeKeyStr := string(treeKey)
 
 		if !tkRes.updated || tkRes.toRemove {
 			continue
 		}
+
+		e.log.Debug("State updated",
+			logging.String("node-key", string(tkRes.input.treeKey)),
+			logging.String("state-hash", hex.EncodeToString(tkRes.hash)),
+		)
 
 		e.keyHashes[treeKeyStr] = tkRes.hash
 		if len(tkRes.state) == 0 && len(treeKey) == 0 {
