@@ -139,6 +139,7 @@ type Engine struct {
 	// recurring transfers
 	// transfer id to recurringTransfers
 	recurringTransfers map[string]*types.RecurringTransfer
+	lock               sync.Mutex
 }
 
 type withdrawalRef struct {

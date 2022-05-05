@@ -2,6 +2,7 @@ package target
 
 import (
 	"context"
+	"sync"
 	"time"
 
 	snapshot "code.vegaprotocol.io/protos/vega/snapshot/v1"
@@ -33,6 +34,7 @@ type SnapshotEngine struct {
 	changed bool
 	key     string
 	keys    []string
+	lock    sync.Mutex
 }
 
 func NewSnapshotEngine(
@@ -162,6 +164,8 @@ func (e *SnapshotEngine) serialisePrevious() []*snapshot.TimestampedOpenInterest
 // serialise marshal the snapshot state, populating the data and hash fields
 // with updated values.
 func (e *SnapshotEngine) serialise() ([]byte, []byte, error) {
+	e.lock.Lock()
+	defer e.lock.Unlock()
 	if e.stopped {
 		return nil, nil, nil
 	}

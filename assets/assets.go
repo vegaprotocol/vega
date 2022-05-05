@@ -48,6 +48,7 @@ type Service struct {
 	ethToVega map[string]string
 
 	isValidator bool
+	lock        sync.Mutex
 }
 
 func New(

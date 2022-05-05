@@ -3,6 +3,7 @@ package collateral
 import (
 	"context"
 	"sort"
+	"sync"
 
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/libs/crypto"
@@ -22,6 +23,7 @@ type accState struct {
 	updates    map[string]bool
 	serialised map[string][]byte
 	hashKeys   []string
+	lock       sync.Mutex
 }
 
 var (
@@ -201,6 +203,8 @@ func (a *accState) hashAccounts() error {
 }
 
 func (a *accState) getState(k string) ([]byte, error) {
+	a.lock.Lock()
+	defer a.lock.Unlock()
 	update, exist := a.updates[k]
 	if !exist {
 		return nil, ErrSnapshotKeyDoesNotExist
@@ -221,6 +225,8 @@ func (a *accState) getState(k string) ([]byte, error) {
 }
 
 func (a *accState) getHash(k string) ([]byte, error) {
+	a.lock.Lock()
+	defer a.lock.Unlock()
 	update, exist := a.updates[k]
 	if !exist {
 		return nil, ErrSnapshotKeyDoesNotExist

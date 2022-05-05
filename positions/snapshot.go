@@ -2,6 +2,7 @@ package positions
 
 import (
 	"context"
+	"sync"
 
 	"code.vegaprotocol.io/vega/events"
 
@@ -20,6 +21,7 @@ type SnapshotEngine struct {
 	data    []byte
 	changed bool
 	stopped bool
+	lock    sync.Mutex
 }
 
 func NewSnapshotEngine(
@@ -146,6 +148,8 @@ func (e *SnapshotEngine) LoadState(_ context.Context, payload *types.Payload) ([
 // serialise marshal the snapshot state, populating the data and hash fields
 // with updated values.
 func (e *SnapshotEngine) serialise() ([]byte, []byte, error) {
+	e.lock.Lock()
+	defer e.lock.Unlock()
 	if e.stopped {
 		return nil, nil, nil
 	}
