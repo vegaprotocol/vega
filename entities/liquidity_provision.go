@@ -127,8 +127,8 @@ type LiquidityProvisionKey struct {
 	VegaTime time.Time
 }
 
-func (b LiquidityProvision) Key() LiquidityProvisionKey {
-	return LiquidityProvisionKey{b.ID, b.VegaTime}
+func (lp LiquidityProvision) Key() LiquidityProvisionKey {
+	return LiquidityProvisionKey{lp.ID, lp.VegaTime}
 }
 
 var LiquidityProvisionColumns = []string{

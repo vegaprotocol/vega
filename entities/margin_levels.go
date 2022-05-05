@@ -25,16 +25,7 @@ func MarginLevelsFromProto(ctx context.Context, margin *vega.MarginLevels, accou
 		err                                                                   error
 	)
 
-	marginAccount := Account{
-		ID:       0,
-		PartyID:  NewPartyID(margin.PartyId),
-		AssetID:  NewAssetID(margin.Asset),
-		MarketID: NewMarketID(margin.MarketId),
-		Type:     vega.AccountType_ACCOUNT_TYPE_MARGIN,
-		VegaTime: vegaTime,
-	}
-
-	err = accountSource.Obtain(ctx, &marginAccount)
+	marginAccount, err := GetAccountFromMarginLevel(ctx, margin, accountSource, vegaTime)
 	if err != nil {
 		return MarginLevels{}, fmt.Errorf("failed to obtain accour for margin level: %w", err)
 	}
@@ -61,9 +52,23 @@ func MarginLevelsFromProto(ctx context.Context, margin *vega.MarginLevels, accou
 		SearchLevel:            searchLevel,
 		InitialMargin:          initialMargin,
 		CollateralReleaseLevel: collateralReleaseLevel,
-		Timestamp:              time.Unix(0, margin.Timestamp),
+		Timestamp:              time.Unix(0, vegaTime.UnixNano()),
 		VegaTime:               vegaTime,
 	}, nil
+}
+
+func GetAccountFromMarginLevel(ctx context.Context, margin *vega.MarginLevels, accountSource AccountSource, vegaTime time.Time) (Account, error) {
+	marginAccount := Account{
+		ID:       0,
+		PartyID:  NewPartyID(margin.PartyId),
+		AssetID:  NewAssetID(margin.Asset),
+		MarketID: NewMarketID(margin.MarketId),
+		Type:     vega.AccountType_ACCOUNT_TYPE_MARGIN,
+		VegaTime: vegaTime,
+	}
+
+	err := accountSource.Obtain(ctx, &marginAccount)
+	return marginAccount, err
 }
 
 func (ml *MarginLevels) ToProto(accountSource AccountSource) (*vega.MarginLevels, error) {
@@ -81,7 +86,7 @@ func (ml *MarginLevels) ToProto(accountSource AccountSource) (*vega.MarginLevels
 		PartyId:                marginAccount.String(),
 		MarketId:               marginAccount.String(),
 		Asset:                  marginAccount.String(),
-		Timestamp:              ml.Timestamp.UnixNano(),
+		Timestamp:              ml.VegaTime.UnixNano(),
 	}, nil
 }
 

@@ -455,7 +455,7 @@ CREATE VIEW votes_current AS (
 );
 
 create table if not exists margin_levels (
-    account_id INT  NOT NULL REFERENCES accounts(id),
+    account_id INT NOT NULL,
     timestamp timestamp with time zone not null,
     maintenance_margin numeric(32, 0),
     search_level numeric(32, 0),
@@ -588,10 +588,12 @@ create table if not exists liquidity_provisions (
     version bigint,
     status liquidity_provision_status not null,
     reference text,
-    vega_time timestamp with time zone not null references blocks(vega_time),
+    vega_time timestamp with time zone not null,
     primary key (id, vega_time)
 );
 
+select create_hypertable('liquidity_provisions', 'vega_time', chunk_time_interval => INTERVAL '1 day');
+SELECT add_retention_policy('liquidity_provisions', INTERVAL '1 year');
 
 CREATE TYPE transfer_type AS enum('OneOff','Recurring','Unknown');
 CREATE TYPE transfer_status AS enum('STATUS_UNSPECIFIED','STATUS_PENDING','STATUS_DONE','STATUS_REJECTED','STATUS_STOPPED','STATUS_CANCELLED');

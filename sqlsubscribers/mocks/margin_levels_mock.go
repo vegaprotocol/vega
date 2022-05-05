@@ -52,7 +52,7 @@ func (mr *MockMarginLevelsStoreMockRecorder) Add(arg0 interface{}) *gomock.Call 
 // Flush mocks base method.
 func (m *MockMarginLevelsStore) Flush(arg0 context.Context) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Flush", arg0)
+	ret := m.ctrl.Call(m, "flush", arg0)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
@@ -60,5 +60,5 @@ func (m *MockMarginLevelsStore) Flush(arg0 context.Context) error {
 // Flush indicates an expected call of Flush.
 func (mr *MockMarginLevelsStoreMockRecorder) Flush(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Flush", reflect.TypeOf((*MockMarginLevelsStore)(nil).Flush), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "flush", reflect.TypeOf((*MockMarginLevelsStore)(nil).Flush), arg0)
 }
