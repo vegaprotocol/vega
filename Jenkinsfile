@@ -228,21 +228,6 @@ pipeline {
                         junit checksName: 'Unit Tests with Race', testResults: 'vega-unit-test-race-report.xml'
                     }
                 }
-                stage('System Tests') {
-                    steps {
-                        script {
-                            systemTests ignoreFailure: !isPRBuild(),
-                                vegaCore: params.VEGA_CORE_BRANCH,
-                                dataNode: commitHash,
-                                vegawallet: params.VEGAWALLET_BRANCH,
-                                ethereumEventForwarder: params.ETHEREUM_EVENT_FORWARDER_BRANCH,
-                                devopsInfra: params.DEVOPS_INFRA_BRANCH,
-                                vegatools: params.VEGATOOLS_BRANCH,
-                                systemTests: params.SYSTEM_TESTS_BRANCH,
-                                protos: params.PROTOS_BRANCH
-                        }
-                    }
-                }
                 stage('LNL System Tests') {
                     steps {
                         script {
@@ -258,20 +243,20 @@ pipeline {
                         }
                     }
                 }
-		stage('Capsule System Tests') {
-                        steps {
-                            script {
-                                systemTestsCapsule vegaCore: params.VEGA_CORE_BRANCH,
-                                    dataNode: commitHash,
-                                    vegawallet: params.VEGAWALLET_BRANCH,
-                                    devopsInfra: params.DEVOPS_INFRA_BRANCH,
-                                    vegatools: params.VEGATOOLS_BRANCH,
-                                    systemTests: params.SYSTEM_TESTS_BRANCH,
-                                    protos: params.PROTOS_BRANCH,
-                                    ignoreFailure: !isPRBuild()
+                stage('Capsule System Tests') {
+                    steps {
+                        script {
+                            systemTestsCapsule vegaCore: params.VEGA_CORE_BRANCH,
+                                dataNode: commitHash,
+                                vegawallet: params.VEGAWALLET_BRANCH,
+                                devopsInfra: params.DEVOPS_INFRA_BRANCH,
+                                vegatools: params.VEGATOOLS_BRANCH,
+                                systemTests: params.SYSTEM_TESTS_BRANCH,
+                                protos: params.PROTOS_BRANCH,
+                                ignoreFailure: !isPRBuild()
 
-                            }
                         }
+                    }
                 }
             }
         }
