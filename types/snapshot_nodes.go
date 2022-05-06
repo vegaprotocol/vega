@@ -419,14 +419,7 @@ type BDeposit struct {
 }
 
 type BankingSeen struct {
-	Refs []*TxRef
-}
-
-type TxRef struct {
-	Asset    string
-	BlockNr  uint64
-	Hash     string
-	LogIndex uint64
+	Refs []*snapshot.TxRef
 }
 
 type BankingAssetActions struct {
@@ -1881,20 +1874,14 @@ func (b BDeposit) IntoProto() *snapshot.Deposit {
 
 func BankingSeenFromProto(bs *snapshot.BankingSeen) *BankingSeen {
 	ret := BankingSeen{
-		Refs: make([]*TxRef, 0, len(bs.Refs)),
-	}
-	for _, r := range bs.Refs {
-		ret.Refs = append(ret.Refs, TxRefFromProto(r))
+		Refs: bs.Refs,
 	}
 	return &ret
 }
 
 func (b BankingSeen) IntoProto() *snapshot.BankingSeen {
 	ret := snapshot.BankingSeen{
-		Refs: make([]*snapshot.TxRef, 0, len(b.Refs)),
-	}
-	for _, r := range b.Refs {
-		ret.Refs = append(ret.Refs, r.IntoProto())
+		Refs: b.Refs,
 	}
 	return &ret
 }
@@ -1967,24 +1954,6 @@ func AssetActionFromProto(a *snapshot.AssetAction) *AssetAction {
 	}
 
 	return aa
-}
-
-func TxRefFromProto(t *snapshot.TxRef) *TxRef {
-	return &TxRef{
-		Asset:    t.Asset,
-		BlockNr:  t.BlockNr,
-		Hash:     t.Hash,
-		LogIndex: t.LogIndex,
-	}
-}
-
-func (t TxRef) IntoProto() *snapshot.TxRef {
-	return &snapshot.TxRef{
-		Asset:    t.Asset,
-		BlockNr:  t.BlockNr,
-		Hash:     t.Hash,
-		LogIndex: t.LogIndex,
-	}
 }
 
 func CheckpointFromProto(c *snapshot.Checkpoint) *CPState {
@@ -3655,37 +3624,25 @@ func PayloadProofOfWorkFromProto(s *snapshot.Payload_ProofOfWork) *PayloadProofO
 		HeightToTx:    make(map[uint64][]string, len(s.ProofOfWork.TxAtHeight)),
 		HeightToTid:   make(map[uint64][]string, len(s.ProofOfWork.TidAtHeight)),
 	}
-	for _, v := range s.ProofOfWork.SeenTx {
-		pow.SeenTx[v] = struct{}{}
-	}
-	for _, v := range s.ProofOfWork.SeenTid {
-		pow.SeenTid[v] = struct{}{}
-	}
 	for _, bp := range s.ProofOfWork.Banned {
 		pow.BannedParties[bp.Party] = bp.UntilEpoch
 	}
 	for _, tah := range s.ProofOfWork.TxAtHeight {
 		pow.HeightToTx[tah.Height] = tah.Transactions
+		for _, t := range tah.Transactions {
+			pow.SeenTx[t] = struct{}{}
+		}
 	}
 	for _, tah := range s.ProofOfWork.TidAtHeight {
 		pow.HeightToTid[tah.Height] = tah.Transactions
+		for _, t := range tah.Transactions {
+			pow.SeenTid[t] = struct{}{}
+		}
 	}
 	return pow
 }
 
 func (p *PayloadProofOfWork) IntoProto() *snapshot.Payload_ProofOfWork {
-	seenTx := make([]string, 0, len(p.SeenTx))
-	for k := range p.SeenTx {
-		seenTx = append(seenTx, k)
-	}
-	sort.Strings(seenTx)
-
-	seenTid := make([]string, 0, len(p.SeenTid))
-	for k := range p.SeenTid {
-		seenTid = append(seenTid, k)
-	}
-	sort.Strings(seenTid)
-
 	banned := make([]*snapshot.BannedParty, 0, len(p.BannedParties))
 	for k, v := range p.BannedParties {
 		banned = append(banned, &snapshot.BannedParty{Party: k, UntilEpoch: v})
@@ -3703,13 +3660,10 @@ func (p *PayloadProofOfWork) IntoProto() *snapshot.Payload_ProofOfWork {
 		tidAtHeight = append(tidAtHeight, &snapshot.TransactionsAtHeight{Height: k, Transactions: v})
 	}
 	sort.Slice(tidAtHeight, func(i, j int) bool { return tidAtHeight[i].Height < tidAtHeight[j].Height })
-
 	return &snapshot.Payload_ProofOfWork{
 		ProofOfWork: &snapshot.ProofOfWork{
 			BlockHeight: p.BlockHeight,
 			BlockHash:   p.BlockHash,
-			SeenTx:      seenTx,
-			SeenTid:     seenTid,
 			Banned:      banned,
 			TxAtHeight:  txAtHeight,
 			TidAtHeight: tidAtHeight,

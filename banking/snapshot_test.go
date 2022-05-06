@@ -74,54 +74,56 @@ func TestAssetActionsSnapshotRoundTrip(t *testing.T) {
 }
 
 func TestSeenSnapshotRoundTrip(t *testing.T) {
-	seenKey := (&types.PayloadBankingSeen{}).Key()
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
+	for i := 0; i < 100; i++ {
+		seenKey := (&types.PayloadBankingSeen{}).Key()
+		eng := getTestEngine(t)
+		defer eng.ctrl.Finish()
 
-	hash1, err := eng.GetHash(seenKey)
-	require.Nil(t, err)
-	eng.col.EXPECT().Deposit(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().Return(&types.TransferResponse{}, nil)
+		hash1, err := eng.GetHash(seenKey)
+		require.Nil(t, err)
+		eng.col.EXPECT().Deposit(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().Return(&types.TransferResponse{}, nil)
 
-	d1 := deposit(eng, "VGT1", "someparty1", num.NewUint(42))
-	err = eng.DepositBuiltinAsset(context.Background(), d1, "depositid1", 42)
-	assert.NoError(t, err)
-	eng.erc.f(eng.erc.r, true)
+		d1 := deposit(eng, "VGT1", "someparty1", num.NewUint(42))
+		err = eng.DepositBuiltinAsset(context.Background(), d1, "depositid1", 42)
+		assert.NoError(t, err)
+		eng.erc.f(eng.erc.r, true)
 
-	d2 := deposit(eng, "VGT2", "someparty2", num.NewUint(24))
-	err = eng.DepositBuiltinAsset(context.Background(), d2, "depositid2", 24)
-	assert.NoError(t, err)
-	eng.erc.f(eng.erc.r, true)
+		d2 := deposit(eng, "VGT2", "someparty2", num.NewUint(24))
+		err = eng.DepositBuiltinAsset(context.Background(), d2, "depositid2", 24)
+		assert.NoError(t, err)
+		eng.erc.f(eng.erc.r, true)
 
-	eng.OnTick(context.Background(), time.Now())
-	hash2, err := eng.GetHash(seenKey)
-	require.Nil(t, err)
-	state2, _, err := eng.GetState(seenKey)
-	require.Nil(t, err)
+		eng.OnTick(context.Background(), time.Now())
+		hash2, err := eng.GetHash(seenKey)
+		require.Nil(t, err)
+		state2, _, err := eng.GetState(seenKey)
+		require.Nil(t, err)
 
-	require.NotEqual(t, hash1, hash2)
+		require.NotEqual(t, hash1, hash2)
 
-	// verify hash is consistent in the absence of change
-	hashNoChange, err := eng.GetHash(seenKey)
-	require.Nil(t, err)
-	stateNoChange, _, err := eng.GetState(seenKey)
-	require.Nil(t, err)
+		// verify hash is consistent in the absence of change
+		hashNoChange, err := eng.GetHash(seenKey)
+		require.Nil(t, err)
+		stateNoChange, _, err := eng.GetState(seenKey)
+		require.Nil(t, err)
 
-	require.True(t, bytes.Equal(hash2, hashNoChange))
-	require.True(t, bytes.Equal(state2, stateNoChange))
+		require.True(t, bytes.Equal(hash2, hashNoChange))
+		require.True(t, bytes.Equal(state2, stateNoChange))
 
-	// reload the state
-	var seen snapshot.Payload
-	snap := getTestEngine(t)
-	proto.Unmarshal(state2, &seen)
+		// reload the state
+		var seen snapshot.Payload
+		snap := getTestEngine(t)
+		proto.Unmarshal(state2, &seen)
 
-	payload := types.PayloadFromProto(&seen)
+		payload := types.PayloadFromProto(&seen)
 
-	_, err = snap.LoadState(context.Background(), payload)
-	require.Nil(t, err)
-	hashPostReload, _ := snap.GetHash(seenKey)
-	require.True(t, bytes.Equal(hash2, hashPostReload))
-	statePostReload, _, _ := snap.GetState(seenKey)
-	require.True(t, bytes.Equal(state2, statePostReload))
+		_, err = snap.LoadState(context.Background(), payload)
+		require.Nil(t, err)
+		hashPostReload, _ := snap.GetHash(seenKey)
+		require.True(t, bytes.Equal(hash2, hashPostReload))
+		statePostReload, _, _ := snap.GetState(seenKey)
+		require.True(t, bytes.Equal(state2, statePostReload))
+	}
 }
 
 func TestWithdrawalsSnapshotRoundTrip(t *testing.T) {
