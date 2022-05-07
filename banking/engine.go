@@ -11,6 +11,7 @@ import (
 	"time"
 
 	proto "code.vegaprotocol.io/protos/vega"
+	snapshot "code.vegaprotocol.io/protos/vega/snapshot/v1"
 	"code.vegaprotocol.io/vega/assets"
 	"code.vegaprotocol.io/vega/broker"
 	"code.vegaprotocol.io/vega/events"
@@ -119,7 +120,7 @@ type Engine struct {
 	top     Topology
 
 	assetActs     map[string]*assetAction
-	seen          map[txRef]struct{}
+	seen          map[*snapshot.TxRef]struct{}
 	withdrawals   map[string]withdrawalRef
 	withdrawalCnt *big.Int
 	deposits      map[string]*types.Deposit
@@ -139,6 +140,7 @@ type Engine struct {
 	// recurring transfers
 	// transfer id to recurringTransfers
 	recurringTransfers map[string]*types.RecurringTransfer
+	lock               sync.Mutex
 }
 
 type withdrawalRef struct {
@@ -176,7 +178,7 @@ func New(
 		notary:        notary,
 		top:           top,
 		assetActs:     map[string]*assetAction{},
-		seen:          map[txRef]struct{}{},
+		seen:          map[*snapshot.TxRef]struct{}{},
 		withdrawals:   map[string]withdrawalRef{},
 		deposits:      map[string]*types.Deposit{},
 		withdrawalCnt: big.NewInt(0),
@@ -261,15 +263,15 @@ func (e *Engine) OnTick(ctx context.Context, t time.Time) {
 		switch state {
 		case okState:
 			// check if this transaction have been seen before then
-			if _, ok := e.seen[ref]; ok {
+			if _, ok := e.seen[&ref]; ok {
 				// do nothing of this transaction, just display an error
 				e.log.Error("chain event reference a transaction already processed",
-					logging.String("asset-class", string(ref.asset)),
-					logging.String("tx-hash", ref.hash),
+					logging.String("asset-class", ref.Asset),
+					logging.String("tx-hash", ref.Hash),
 					logging.String("action", v.String()))
 			} else {
 				// first time we seen this transaction, let's add iter
-				e.seen[ref] = struct{}{}
+				e.seen[&ref] = struct{}{}
 				e.bss.changed[seenKey] = true
 				if err := e.finalizeAction(ctx, v); err != nil {
 					e.log.Error("unable to finalize action",

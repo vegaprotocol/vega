@@ -4,6 +4,7 @@ import (
 	"context"
 	"sort"
 	"strconv"
+	"sync"
 
 	typespb "code.vegaprotocol.io/protos/vega"
 	snapshotpb "code.vegaprotocol.io/protos/vega/snapshot/v1"
@@ -36,6 +37,8 @@ type SnapshotEngine struct {
 	pendingProvisionsKey      string
 	provisionsKey             string
 	suppliedKey               string
+
+	lock sync.Mutex
 }
 
 func NewSnapshotEngine(config Config,
@@ -238,6 +241,9 @@ func (e *SnapshotEngine) loadProvisions(
 }
 
 func (e *SnapshotEngine) serialise(k string) ([]byte, []byte, error) {
+	e.lock.Lock()
+	defer e.lock.Unlock()
+
 	var (
 		buf     []byte
 		changed bool

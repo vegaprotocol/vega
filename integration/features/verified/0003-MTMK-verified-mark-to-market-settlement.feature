@@ -139,11 +139,12 @@ Feature: MTM settlement tests
 
     And the mark price should be "111" for the market "ETH/DEC19"
 
-
    # MTM win transfers: 200+90-64=226 as per spreadsheet
     Then the following transfers should happen:
       | from   | to     | from account        | to account              | market id | amount | asset |
       | party1 | market | ACCOUNT_TYPE_MARGIN | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC19 | 64     | BTC   |
+      | market | party2 | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN | ETH/DEC19 | 64     | BTC   |
+      
 
   Scenario: case 3 - LONG - LESS LONG - one trade (0003-MTMK-007)
    # setup accounts
@@ -263,9 +264,10 @@ Feature: MTM settlement tests
 
    # MTM win transfers
     Then the following transfers should happen:
-      | from   | to      | from account            | to account          | market id | amount | asset |
-      | market | party1 | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN | ETH/DEC19 | 200    | BTC   |
-      | market | party1 | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN | ETH/DEC19 | 30     | BTC   |
+      | from   | to     | from account            | to account              | market id | amount | asset |
+      | market | party1 | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN     | ETH/DEC19 | 200    | BTC   |
+      | market | party1 | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN     | ETH/DEC19 | 30     | BTC   |
+      | party2 | market | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC19 | 200    | BTC   |
 
      # place trade for 1@111 to set new mark price
     When the parties place the following orders:

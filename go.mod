@@ -49,6 +49,7 @@ require (
 require (
 	github.com/cucumber/messages-go/v16 v16.0.1
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.9.0
+	github.com/jfcg/sorty/v2 v2.0.8
 )
 
 require (
@@ -93,6 +94,7 @@ require (
 	github.com/hashicorp/go-memdb v1.3.0 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
+	github.com/jfcg/sixb v1.3.5 // indirect
 	github.com/jmhodges/levigo v1.0.0 // indirect
 	github.com/joeshaw/multierror v0.0.0-20140124173710-69b34d4ec901 // indirect
 	github.com/lib/pq v1.10.4 // indirect

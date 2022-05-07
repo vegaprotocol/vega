@@ -274,21 +274,6 @@ pipeline {
                         }
                     }
                 }
-                stage('System Tests') {
-                    steps {
-                        script {
-                            systemTests ignoreFailure: !isPRBuild(),
-                                vegaBuildTags: 'qa',
-                                vegaCore: commitHash,
-                                dataNode: params.DATA_NODE_BRANCH,
-                                vegawallet: params.VEGAWALLET_BRANCH,
-                                devopsInfra: params.DEVOPS_INFRA_BRANCH,
-                                vegatools: params.VEGATOOLS_BRANCH,
-                                systemTests: params.SYSTEM_TESTS_BRANCH,
-                                protos: params.PROTOS_BRANCH
-                        }
-                    }
-                }
                 stage('LNL System Tests') {
                     steps {
                         script {

@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"sort"
+	"sync"
 	"time"
 
 	"code.vegaprotocol.io/vega/assets"
@@ -104,6 +105,7 @@ type Engine struct {
 	// snapshot state
 	gss             *governanceSnapshotState
 	keyToSerialiser map[string]func() ([]byte, error)
+	lock            sync.Mutex
 }
 
 func NewEngine(

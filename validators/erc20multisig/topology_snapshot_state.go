@@ -250,6 +250,8 @@ func (t *Topology) serialisePendingState() ([]byte, error) {
 
 // get the serialised form and hash of the given key.
 func (t *Topology) getSerialisedAndHash(k string) ([]byte, []byte, error) {
+	t.lock.Lock()
+	defer t.lock.Unlock()
 	if _, ok := t.keyToSerialiser[k]; !ok {
 		return nil, nil, types.ErrSnapshotKeyDoesNotExist
 	}

@@ -13,7 +13,7 @@ Feature: Test margin release on order cancel
       | prices.ETH.value | 42    |
 
   @MarginRelease
-  Scenario: a party place a new order in the system, margin are updated, the order is closed, margin is 0ed
+  Scenario: a party place a new order in the system, margin are updated, the order is closed, margin is 0ed (0003-MTMK-0013)
     Given the parties deposit on asset's general account the following amount:
       | party    | asset | amount          |
       | partyGuy | ETH   | 10000000        |

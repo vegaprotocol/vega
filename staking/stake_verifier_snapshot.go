@@ -59,6 +59,8 @@ func (s *StakeVerifier) serialisePendingSR() ([]byte, error) {
 
 // get the serialised form and hash of the given key.
 func (s *StakeVerifier) getSerialisedAndHash(k string) ([]byte, []byte, error) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
 	if _, ok := s.keyToSerialiser[k]; !ok {
 		return nil, nil, types.ErrSnapshotKeyDoesNotExist
 	}
