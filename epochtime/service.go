@@ -38,7 +38,6 @@ type Svc struct {
 	state            *types.EpochState
 	pl               types.Payload
 	data             []byte
-	hash             []byte
 	currentTime      time.Time
 	needsFastForward bool
 }

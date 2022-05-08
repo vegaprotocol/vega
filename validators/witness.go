@@ -162,7 +162,6 @@ func NewWitness(log *logging.Logger, cfg Config, top ValidatorTopology, cmd Comm
 		validatorVotesRequired: defaultValidatorsVoteRequired,
 		wss: &witnessSnapshotState{
 			changed:    true,
-			hash:       []byte{},
 			serialised: []byte{},
 		},
 	}

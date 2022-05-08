@@ -3,7 +3,6 @@ package limits
 import (
 	"context"
 
-	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/types"
 
 	"code.vegaprotocol.io/vega/libs/proto"
@@ -18,7 +17,6 @@ var (
 )
 
 type limitsSnapshotState struct {
-	hash       []byte
 	serialised []byte
 	changed    bool
 }
@@ -42,26 +40,24 @@ func (e *Engine) serialiseLimits() ([]byte, error) {
 	return proto.Marshal(pl.IntoProto())
 }
 
-// get the serialised form and hash of the given key.
-func (e *Engine) getSerialisedAndHash(k string) ([]byte, []byte, error) {
+// get the serialised form of the given key.
+func (e *Engine) serialise(k string) ([]byte, error) {
 	if k != allKey {
-		return nil, nil, types.ErrSnapshotKeyDoesNotExist
+		return nil, types.ErrSnapshotKeyDoesNotExist
 	}
 
 	if !e.lss.changed {
-		return e.lss.serialised, e.lss.hash, nil
+		return e.lss.serialised, nil
 	}
 
 	data, err := e.serialiseLimits()
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
-	hash := crypto.Hash(data)
 	e.lss.serialised = data
-	e.lss.hash = hash
 	e.lss.changed = false
-	return data, hash, nil
+	return data, nil
 }
 
 func (e *Engine) Namespace() types.SnapshotNamespace {
@@ -76,13 +72,12 @@ func (e *Engine) Stopped() bool {
 	return false
 }
 
-func (e *Engine) GetHash(k string) ([]byte, error) {
-	_, hash, err := e.getSerialisedAndHash(k)
-	return hash, err
+func (e *Engine) HasChanged(k string) bool {
+	return e.lss.changed
 }
 
 func (e *Engine) GetState(k string) ([]byte, []types.StateProvider, error) {
-	data, _, err := e.getSerialisedAndHash(k)
+	data, err := e.serialise(k)
 	return data, nil, err
 }
 
@@ -93,13 +88,13 @@ func (e *Engine) LoadState(ctx context.Context, payload *types.Payload) ([]types
 
 	switch pl := payload.Data.(type) {
 	case *types.PayloadLimitState:
-		return nil, e.restoreLimits(ctx, pl.LimitState)
+		return nil, e.restoreLimits(ctx, pl.LimitState, payload)
 	default:
 		return nil, types.ErrUnknownSnapshotType
 	}
 }
 
-func (e *Engine) restoreLimits(ctx context.Context, l *types.LimitState) error {
+func (e *Engine) restoreLimits(ctx context.Context, l *types.LimitState, p *types.Payload) error {
 	e.blockCount = uint16(l.BlockCount)
 	e.canProposeAsset = l.CanProposeAsset
 	e.canProposeMarket = l.CanProposeMarket
@@ -114,6 +109,8 @@ func (e *Engine) restoreLimits(ctx context.Context, l *types.LimitState) error {
 	}
 
 	e.sendEvent(ctx)
-	e.lss.changed = true
-	return nil
+	var err error
+	e.lss.changed = false
+	e.lss.serialised, err = proto.Marshal(p.IntoProto())
+	return err
 }

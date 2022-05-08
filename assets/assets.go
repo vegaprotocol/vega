@@ -48,7 +48,7 @@ type Service struct {
 	ethToVega map[string]string
 
 	isValidator bool
-	lock        sync.Mutex
+	lock        sync.RWMutex
 }
 
 func New(
@@ -71,7 +71,6 @@ func New(
 		ethClient:     ethClient,
 		ass: &assetsSnapshotState{
 			changed:    map[string]bool{activeKey: true, pendingKey: true},
-			hash:       map[string][]byte{},
 			serialised: map[string][]byte{},
 		},
 		keyToSerialiser: map[string]func() ([]byte, error){},

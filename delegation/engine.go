@@ -100,7 +100,7 @@ type Engine struct {
 	dss                      *delegationSnapshotState          // snapshot state
 	keyToSerialiser          map[string]func() ([]byte, error) // snapshot key to serialisation function
 	lastReconciliation       time.Time                         // last time staking balance has been reconciled against delegation balance
-	lock                     sync.Mutex
+	lock                     sync.RWMutex
 }
 
 // New instantiates a new delegation engine.
@@ -118,7 +118,6 @@ func New(log *logging.Logger, config Config, broker Broker, topology ValidatorTo
 		autoDelegationMode:       map[string]struct{}{},
 		dss: &delegationSnapshotState{
 			changed:    map[string]bool{activeKey: true, pendingKey: true, autoKey: true, lastReconKey: true},
-			hash:       map[string][]byte{},
 			serialised: map[string][]byte{},
 		},
 		keyToSerialiser:    map[string]func() ([]byte, error){},

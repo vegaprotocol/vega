@@ -1,6 +1,7 @@
 package matching_test
 
 import (
+	"bytes"
 	"context"
 	"testing"
 
@@ -33,12 +34,11 @@ func TestEmpty(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, payload)
 
-	hash, err := ob.ob.GetHash(key)
+	_, _, err = ob.ob.GetState(key)
 	assert.NoError(t, err)
-	assert.Equal(t, 32, len(hash))
 }
 
-func TestBuyOrdersChangeHash(t *testing.T) {
+func TestBuyOrdersChangeState(t *testing.T) {
 	ob := getTestOrderBook(t, market)
 
 	orders := []orderdata{
@@ -50,14 +50,14 @@ func TestBuyOrdersChangeHash(t *testing.T) {
 
 	addOrders(t, ob.ob, orders)
 
-	hash1, err := ob.ob.GetHash(key)
+	s1, _, err := ob.ob.GetState(key)
 	assert.NoError(t, err)
-	hash2, err := ob.ob.GetHash(key)
+	s2, _, err := ob.ob.GetState(key)
 	assert.NoError(t, err)
 	// These should be the same
-	assert.Equal(t, hash1, hash2)
+	assert.True(t, bytes.Equal(s1, s2))
 
-	// Add one more order and check that the hash value changes
+	// Add one more order and check that the state value changes
 	order := &types.Order{
 		MarketID:    market,
 		ID:          "id05",
@@ -74,12 +74,12 @@ func TestBuyOrdersChangeHash(t *testing.T) {
 	assert.NotNil(t, orderConf)
 	assert.NoError(t, err)
 
-	hash3, err := ob.ob.GetHash(key)
+	s3, _, err := ob.ob.GetState(key)
 	assert.NoError(t, err)
-	assert.NotEqual(t, hash1, hash3)
+	assert.False(t, bytes.Equal(s1, s3))
 }
 
-func TestSellOrdersChangeHash(t *testing.T) {
+func TestSellOrdersChangeState(t *testing.T) {
 	ob := getTestOrderBook(t, market)
 
 	orders := []orderdata{
@@ -90,14 +90,14 @@ func TestSellOrdersChangeHash(t *testing.T) {
 	}
 	addOrders(t, ob.ob, orders)
 
-	hash1, err := ob.ob.GetHash(key)
+	s1, _, err := ob.ob.GetState(key)
 	assert.NoError(t, err)
-	hash2, err := ob.ob.GetHash(key)
+	s2, _, err := ob.ob.GetState(key)
 	assert.NoError(t, err)
 	// These should be the same
-	assert.Equal(t, hash1, hash2)
+	assert.True(t, bytes.Equal(s1, s2))
 
-	// Add one more order and check that the hash value changes
+	// Add one more order and check that the state value changes
 	order := &types.Order{
 		MarketID:    market,
 		ID:          "id05",
@@ -114,9 +114,9 @@ func TestSellOrdersChangeHash(t *testing.T) {
 	assert.NotNil(t, orderConf)
 	assert.NoError(t, err)
 
-	hash3, err := ob.ob.GetHash(key)
+	s3, _, err := ob.ob.GetState(key)
 	assert.NoError(t, err)
-	assert.NotEqual(t, hash1, hash3)
+	assert.False(t, bytes.Equal(s1, s3))
 }
 
 func addOrders(t *testing.T, ob *matching.CachedOrderBook, orders []orderdata) {
@@ -158,11 +158,11 @@ func TestSaveAndLoadSnapshot(t *testing.T) {
 	}
 	addOrders(t, ob.ob, orders)
 
-	// Create a snapshot and hash
+	// Create a snapshot
 	payload, _, err := ob.ob.GetState(key)
 	assert.NoError(t, err)
 
-	beforeHash, err := ob.ob.GetHash(key)
+	before, _, err := ob.ob.GetState(key)
 	assert.NoError(t, err)
 
 	orders2 := []orderdata{
@@ -170,7 +170,7 @@ func TestSaveAndLoadSnapshot(t *testing.T) {
 		{id: "id11", price: 105, size: 1, side: types.SideSell},
 	}
 	addOrders(t, ob.ob, orders2)
-	differentHash, err := ob.ob.GetHash(key)
+	different, _, err := ob.ob.GetState(key)
 	assert.NoError(t, err)
 
 	// Load the snapshot back in
@@ -180,11 +180,11 @@ func TestSaveAndLoadSnapshot(t *testing.T) {
 	assert.NoError(t, err)
 	ob2.ob.LoadState(context.TODO(), types.PayloadFromProto(snap))
 
-	// Get the hash and check it's the same as before
-	afterHash, err := ob2.ob.GetHash(key)
+	// Get the state and check it's the same as before
+	after, _, err := ob2.ob.GetState(key)
 	assert.NoError(t, err)
-	assert.Equal(t, beforeHash, afterHash)
-	assert.NotEqual(t, beforeHash, differentHash)
+	assert.True(t, bytes.Equal(before, after))
+	assert.False(t, bytes.Equal(before, different))
 }
 
 func TestStopSnapshotTaking(t *testing.T) {
@@ -192,7 +192,7 @@ func TestStopSnapshotTaking(t *testing.T) {
 
 	_, _, err := ob.ob.GetState(key)
 	assert.NoError(t, err)
-	_, err = ob.ob.GetHash(key)
+	_, _, err = ob.ob.GetState(key)
 	assert.NoError(t, err)
 
 	// signal to kill the engine's snapshots
@@ -201,8 +201,5 @@ func TestStopSnapshotTaking(t *testing.T) {
 	s, _, err := ob.ob.GetState(key)
 	assert.NoError(t, err)
 	assert.Nil(t, s)
-	h, err := ob.ob.GetHash(key)
-	assert.NoError(t, err)
-	assert.Nil(t, h)
 	assert.True(t, ob.ob.Stopped())
 }

@@ -60,6 +60,7 @@ func (e *Engine) startCalcProbOfTrading(eventID string, endOfCalcCallback statev
 	bestBid, bestAsk, err := e.getBestStaticPrices()
 	if err != nil {
 		e.log.Error("failed to get static price for probability of trading state var", logging.String("error", err.Error()))
+		endOfCalcCallback.CalculationFinished(eventID, nil, err)
 		return
 	}
 
@@ -151,7 +152,9 @@ func calculateAskRange(bestAsk, maxAsk, tickSize, tauScaled num.Decimal, probabi
 // updatePriceBounds is called back from the state variable consensus engine when consensus is reached for the down/up factors and updates the price bounds.
 func (e *Engine) updateProbabilities(ctx context.Context, res statevar.StateVariableResult) error {
 	e.pot = res.(*probabilityOfTrading)
-	e.log.Info("consensus reached for probability of trading", logging.String("market", e.marketID))
+	if e.log.GetLevel() <= logging.DebugLevel {
+		e.log.Debug("consensus reached for probability of trading", logging.String("market", e.marketID))
+	}
 
 	e.potInitialised = true
 	e.changed = true

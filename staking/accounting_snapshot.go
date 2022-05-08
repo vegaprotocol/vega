@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"code.vegaprotocol.io/vega/events"
-	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
 
@@ -14,7 +13,6 @@ import (
 var accountsKey = (&types.PayloadStakingAccounts{}).Key()
 
 type accountingSnapshotState struct {
-	hash        []byte
 	serialised  []byte
 	changed     bool
 	isRestoring bool
@@ -45,25 +43,23 @@ func (a *Accounting) serialiseStakingAccounts() ([]byte, error) {
 }
 
 // get the serialised form and hash of the given key.
-func (a *Accounting) getSerialisedAndHash(k string) ([]byte, []byte, error) {
+func (a *Accounting) serialise(k string) ([]byte, error) {
 	if k != accountsKey {
-		return nil, nil, types.ErrSnapshotKeyDoesNotExist
+		return nil, types.ErrSnapshotKeyDoesNotExist
 	}
 
 	if !a.accState.changed {
-		return a.accState.serialised, a.accState.hash, nil
+		return a.accState.serialised, nil
 	}
 
 	data, err := a.serialiseStakingAccounts()
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
-	hash := crypto.Hash(data)
 	a.accState.serialised = data
-	a.accState.hash = hash
 	a.accState.changed = false
-	return data, hash, nil
+	return data, nil
 }
 
 func (a *Accounting) OnStateLoaded(_ context.Context) error {
@@ -88,13 +84,12 @@ func (a *Accounting) Stopped() bool {
 	return false
 }
 
-func (a *Accounting) GetHash(k string) ([]byte, error) {
-	_, hash, err := a.getSerialisedAndHash(k)
-	return hash, err
+func (a *Accounting) HasChanged(k string) bool {
+	return a.accState.changed
 }
 
 func (a *Accounting) GetState(k string) ([]byte, []types.StateProvider, error) {
-	data, _, err := a.getSerialisedAndHash(k)
+	data, err := a.serialise(k)
 	return data, nil, err
 }
 
@@ -105,13 +100,13 @@ func (a *Accounting) LoadState(ctx context.Context, payload *types.Payload) ([]t
 
 	switch pl := payload.Data.(type) {
 	case *types.PayloadStakingAccounts:
-		return nil, a.restoreStakingAccounts(ctx, pl.StakingAccounts)
+		return nil, a.restoreStakingAccounts(ctx, pl.StakingAccounts, payload)
 	default:
 		return nil, types.ErrUnknownSnapshotType
 	}
 }
 
-func (a *Accounting) restoreStakingAccounts(ctx context.Context, accounts *types.StakingAccounts) error {
+func (a *Accounting) restoreStakingAccounts(ctx context.Context, accounts *types.StakingAccounts, p *types.Payload) error {
 	a.hashableAccounts = make([]*StakingAccount, 0, len(accounts.Accounts))
 	a.log.Debug("restoring staking accounts",
 		logging.Int("n", len(accounts.Accounts)),
@@ -133,8 +128,10 @@ func (a *Accounting) restoreStakingAccounts(ctx context.Context, accounts *types
 	}
 
 	a.stakingAssetTotalSupply = accounts.StakingAssetTotalSupply.Clone()
-	a.accState.changed = true
+	var err error
+	a.accState.changed = false
+	a.accState.serialised, err = proto.Marshal(p.IntoProto())
 	a.broker.SendBatch(evts)
 	a.broker.SendBatch(pevts)
-	return nil
+	return err
 }

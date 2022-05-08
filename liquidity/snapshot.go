@@ -9,7 +9,6 @@ import (
 	typespb "code.vegaprotocol.io/protos/vega"
 	snapshotpb "code.vegaprotocol.io/protos/vega/snapshot/v1"
 	"code.vegaprotocol.io/vega/events"
-	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/libs/proto"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/risk"
@@ -25,7 +24,6 @@ type SnapshotEngine struct {
 	// liquidity types
 	parametersChanged bool
 	stopped           bool
-	hashes            map[string][]byte
 	serialised        map[string][]byte
 
 	// keys, need to be computed when the engine is
@@ -64,7 +62,6 @@ func NewSnapshotEngine(config Config,
 		parametersChanged: true,
 		stopped:           false,
 		// empty so default to nil to force update
-		hashes:     map[string][]byte{},
 		serialised: map[string][]byte{},
 	}
 
@@ -114,13 +111,30 @@ func (e *SnapshotEngine) OnMarketLiquidityProvisionShapesMaxSizeUpdate(v int64) 
 	return e.Engine.OnMarketLiquidityProvisionShapesMaxSizeUpdate(v)
 }
 
-func (e *SnapshotEngine) GetHash(k string) ([]byte, error) {
-	_, hash, err := e.serialise(k)
-	return hash, err
+func (e *SnapshotEngine) HasChanged(k string) bool {
+	e.lock.Lock()
+	defer e.lock.Unlock()
+
+	switch k {
+	case e.parametersKey:
+		return e.parametersChanged
+	case e.partiesLiquidityOrdersKey:
+		return e.Engine.liquidityOrders.HasUpdates()
+	case e.partiesOrdersKey:
+		return e.Engine.orders.HasUpdates()
+	case e.pendingProvisionsKey:
+		return e.Engine.pendings.HasUpdates()
+	case e.provisionsKey:
+		return e.Engine.provisions.HasUpdates()
+	case e.suppliedKey:
+		return e.suppliedEngine.HasUpdates()
+	default:
+		return false
+	}
 }
 
 func (e *SnapshotEngine) GetState(k string) ([]byte, []types.StateProvider, error) {
-	state, _, err := e.serialise(k)
+	state, err := e.serialise(k)
 	return state, nil, err
 }
 
@@ -132,30 +146,36 @@ func (e *SnapshotEngine) LoadState(ctx context.Context, p *types.Payload) ([]typ
 	switch pl := p.Data.(type) {
 	case *types.PayloadLiquidityPendingProvisions:
 		return nil, e.loadPendingProvisions(
-			ctx, pl.PendingProvisions.GetPendingProvisions())
+			ctx, pl.PendingProvisions.GetPendingProvisions(), p)
 	case *types.PayloadLiquidityProvisions:
 		return nil, e.loadProvisions(
-			ctx, pl.Provisions.GetLiquidityProvisions())
+			ctx, pl.Provisions.GetLiquidityProvisions(), p)
 	case *types.PayloadLiquidityParameters:
-		return nil, e.loadParameters(ctx, pl.Parameters)
+		return nil, e.loadParameters(ctx, pl.Parameters, p)
 	case *types.PayloadLiquidityPartiesOrders:
-		return nil, e.loadPartiesOrders(ctx, pl.PartiesOrders.GetOrders())
+		return nil, e.loadPartiesOrders(ctx, pl.PartiesOrders.GetOrders(), p)
 	case *types.PayloadLiquidityPartiesLiquidityOrders:
 		return nil, e.loadPartiesLiquidityOrders(
-			ctx, pl.PartiesLiquidityOrders.GetOrders())
+			ctx, pl.PartiesLiquidityOrders.GetOrders(), p)
 	case *types.PayloadLiquiditySupplied:
-		return nil, e.loadSupplied(pl.LiquiditySupplied)
+		return nil, e.loadSupplied(pl.LiquiditySupplied, p)
 	default:
 		return nil, types.ErrUnknownSnapshotType
 	}
 }
 
-func (e *SnapshotEngine) loadSupplied(ls *snapshotpb.LiquiditySupplied) error {
-	return e.suppliedEngine.Reload(ls)
+func (e *SnapshotEngine) loadSupplied(ls *snapshotpb.LiquiditySupplied, p *types.Payload) error {
+	err := e.suppliedEngine.Reload(ls)
+	if err != nil {
+		return err
+	}
+	e.Engine.suppliedEngine.ResetUpdated()
+	e.serialised[e.suppliedKey], err = proto.Marshal(p.IntoProto())
+	return err
 }
 
 func (e *SnapshotEngine) loadPartiesOrders(
-	_ context.Context, orders []*typespb.Order,
+	_ context.Context, orders []*typespb.Order, p *types.Payload,
 ) error {
 	e.Engine.orders = newSnapshotablePartiesOrders()
 	for _, v := range orders {
@@ -165,12 +185,14 @@ func (e *SnapshotEngine) loadPartiesOrders(
 		}
 		e.Engine.orders.Add(order.Party, order)
 	}
-
-	return nil
+	var err error
+	e.Engine.orders.ResetUpdated()
+	e.serialised[e.partiesOrdersKey], err = proto.Marshal(p.IntoProto())
+	return err
 }
 
 func (e *SnapshotEngine) loadPartiesLiquidityOrders(
-	_ context.Context, orders []*typespb.Order,
+	_ context.Context, orders []*typespb.Order, p *types.Payload,
 ) error {
 	e.Engine.liquidityOrders = newSnapshotablePartiesOrders()
 	for _, v := range orders {
@@ -180,12 +202,14 @@ func (e *SnapshotEngine) loadPartiesLiquidityOrders(
 		}
 		e.Engine.liquidityOrders.Add(order.Party, order)
 	}
-
-	return nil
+	var err error
+	e.Engine.liquidityOrders.ResetUpdated()
+	e.serialised[e.partiesLiquidityOrdersKey], err = proto.Marshal(p.IntoProto())
+	return err
 }
 
 func (e *SnapshotEngine) loadParameters(
-	_ context.Context, parameters *snapshotpb.LiquidityParameters,
+	_ context.Context, parameters *snapshotpb.LiquidityParameters, p *types.Payload,
 ) error {
 	maxShapesSize, err := strconv.ParseInt(parameters.MaxShapeSize, 10, 64)
 	if err != nil {
@@ -206,23 +230,26 @@ func (e *SnapshotEngine) loadParameters(
 		return err
 	}
 	e.OnSuppliedStakeToObligationFactorUpdate(stof)
-
-	return nil
+	e.parametersChanged = false
+	e.serialised[e.parametersKey], err = proto.Marshal(p.IntoProto())
+	return err
 }
 
 func (e *SnapshotEngine) loadPendingProvisions(
-	_ context.Context, pendingProvisions []string,
+	_ context.Context, pendingProvisions []string, p *types.Payload,
 ) error {
 	e.Engine.pendings = newSnapshotablePendingProvisions()
 	for _, v := range pendingProvisions {
 		e.Engine.pendings.Add(v)
 	}
-
-	return nil
+	var err error
+	e.Engine.pendings.ResetUpdated()
+	e.serialised[e.pendingProvisionsKey], err = proto.Marshal(p.IntoProto())
+	return err
 }
 
 func (e *SnapshotEngine) loadProvisions(
-	ctx context.Context, provisions []*typespb.LiquidityProvision,
+	ctx context.Context, provisions []*typespb.LiquidityProvision, p *types.Payload,
 ) error {
 	e.Engine.provisions = newSnapshotableProvisionsPerParty()
 	evts := make([]events.Event, 0, len(provisions))
@@ -235,12 +262,14 @@ func (e *SnapshotEngine) loadProvisions(
 		evts = append(evts, events.NewLiquidityProvisionEvent(ctx, provision))
 	}
 
+	var err error
+	e.Engine.provisions.ResetUpdated()
+	e.serialised[e.provisionsKey], err = proto.Marshal(p.IntoProto())
 	e.broker.SendBatch(evts)
-
-	return nil
+	return err
 }
 
-func (e *SnapshotEngine) serialise(k string) ([]byte, []byte, error) {
+func (e *SnapshotEngine) serialise(k string) ([]byte, error) {
 	e.lock.Lock()
 	defer e.lock.Unlock()
 
@@ -263,26 +292,23 @@ func (e *SnapshotEngine) serialise(k string) ([]byte, []byte, error) {
 	case e.suppliedKey:
 		buf, changed, err = e.serialiseSupplied()
 	default:
-		return nil, nil, types.ErrSnapshotKeyDoesNotExist
+		return nil, types.ErrSnapshotKeyDoesNotExist
 	}
 
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	if e.stopped {
-		return nil, nil, nil
+		return nil, nil
 	}
 
 	if !changed {
-		return e.serialised[k], e.hashes[k], nil
+		return e.serialised[k], nil
 	}
 
 	e.serialised[k] = buf
-	h := crypto.Hash(buf)
-	e.hashes[k] = h
-
-	return buf, h, nil
+	return buf, nil
 }
 
 func (e *SnapshotEngine) serialiseParameters() ([]byte, bool, error) {

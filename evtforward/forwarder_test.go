@@ -9,10 +9,16 @@ import (
 	prototypes "code.vegaprotocol.io/protos/vega"
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	snapshot "code.vegaprotocol.io/protos/vega/snapshot/v1"
+	"code.vegaprotocol.io/shared/paths"
 	"code.vegaprotocol.io/vega/evtforward"
 	"code.vegaprotocol.io/vega/evtforward/mocks"
+	"code.vegaprotocol.io/vega/integration/stubs"
+	vgcontext "code.vegaprotocol.io/vega/libs/context"
+	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/libs/proto"
 	"code.vegaprotocol.io/vega/logging"
+	snp "code.vegaprotocol.io/vega/snapshot"
+	"code.vegaprotocol.io/vega/stats"
 	"code.vegaprotocol.io/vega/types"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
@@ -132,31 +138,20 @@ func testAckSuccess(t *testing.T) {
 	evtfwd := getTestEvtFwd(t)
 	defer evtfwd.ctrl.Finish()
 	evt := getTestChainEvent("some")
-
-	hash1, err := evtfwd.GetHash("all")
-	require.Nil(t, err)
 	state1, _, err := evtfwd.GetState("all")
 	require.Nil(t, err)
 
 	ok := evtfwd.Ack(evt)
 	assert.True(t, ok)
-	hash2, err := evtfwd.GetHash("all")
-	require.Nil(t, err)
 	state2, _, err := evtfwd.GetState("all")
 	require.Nil(t, err)
-
-	require.False(t, bytes.Equal(hash1, hash2))
 	require.False(t, bytes.Equal(state1, state2))
 
 	// try to ack again the same event
 	ok = evtfwd.Ack(evt)
 	assert.False(t, ok)
-	hash3, err := evtfwd.GetHash("all")
-	require.Nil(t, err)
 	state3, _, err := evtfwd.GetState("all")
 	require.Nil(t, err)
-
-	require.True(t, bytes.Equal(hash3, hash2))
 	require.True(t, bytes.Equal(state3, state2))
 
 	// restore the state
@@ -170,25 +165,17 @@ func testAckSuccess(t *testing.T) {
 	ok = evtfwd.Ack(evt)
 	assert.False(t, ok)
 
-	// expect the hash/state after the reload to equal what it was before
-	hash4, err := evtfwd.GetHash("all")
-	require.Nil(t, err)
+	// expect the state after the reload to equal what it was before
 	state4, _, err := evtfwd.GetState("all")
 	require.Nil(t, err)
-
-	require.True(t, bytes.Equal(hash4, hash3))
 	require.True(t, bytes.Equal(state4, state3))
 
 	// ack a new event for the hash/state to change
 	evt2 := getTestChainEvent("somenew")
 	ok = evtfwd.Ack(evt2)
 	assert.True(t, ok)
-	hash5, err := evtfwd.GetHash("all")
-	require.Nil(t, err)
 	state5, _, err := evtfwd.GetState("all")
 	require.Nil(t, err)
-
-	require.False(t, bytes.Equal(hash5, hash4))
 	require.False(t, bytes.Equal(state5, state4))
 }
 
@@ -218,4 +205,59 @@ func getTestChainEvent(txid string) *commandspb.ChainEvent {
 			},
 		},
 	}
+}
+
+func TestSnapshotRoundtripViaEngine(t *testing.T) {
+	evtfwd := getTestEvtFwd(t)
+	defer evtfwd.ctrl.Finish()
+
+	for i := 0; i < 100; i++ {
+		evtfwd.Ack(getTestChainEvent(crypto.RandomHash()))
+	}
+	ctx := vgcontext.WithTraceID(vgcontext.WithBlockHeight(context.Background(), 100), "0xDEADBEEF")
+	ctx = vgcontext.WithChainID(ctx, "chainid")
+	now := time.Now()
+	log := logging.NewTestLogger()
+	timeService := stubs.NewTimeStub()
+	timeService.SetTime(now)
+	statsData := stats.New(log, stats.NewDefaultConfig(), "", "")
+	config := snp.NewDefaultConfig()
+	config.Storage = "memory"
+	snapshotEngine, _ := snp.New(context.Background(), &paths.DefaultPaths{}, config, log, timeService, statsData.Blockchain)
+	snapshotEngine.AddProviders(evtfwd)
+	snapshotEngine.ClearAndInitialise()
+	defer snapshotEngine.Close()
+
+	_, err := snapshotEngine.Snapshot(ctx)
+	require.NoError(t, err)
+	snaps, err := snapshotEngine.List()
+	require.NoError(t, err)
+	snap1 := snaps[0]
+
+	evtfwdLoad := getTestEvtFwd(t)
+	snapshotEngineLoad, _ := snp.New(context.Background(), &paths.DefaultPaths{}, config, log, timeService, statsData.Blockchain)
+	defer snapshotEngineLoad.Close()
+	snapshotEngineLoad.AddProviders(evtfwdLoad)
+	snapshotEngineLoad.ClearAndInitialise()
+	snapshotEngineLoad.ReceiveSnapshot(snap1)
+	snapshotEngineLoad.ApplySnapshot(ctx)
+	snapshotEngineLoad.CheckLoaded()
+
+	b, err := snapshotEngine.Snapshot(ctx)
+	require.NoError(t, err)
+	bLoad, err := snapshotEngineLoad.Snapshot(ctx)
+	require.NoError(t, err)
+	require.True(t, bytes.Equal(b, bLoad))
+
+	for i := 0; i < 10; i++ {
+		txID := crypto.RandomHash()
+		evtfwd.Ack(getTestChainEvent(txID))
+		evtfwdLoad.Ack(getTestChainEvent(txID))
+	}
+
+	b, err = snapshotEngine.Snapshot(ctx)
+	require.NoError(t, err)
+	bLoad, err = snapshotEngineLoad.Snapshot(ctx)
+	require.NoError(t, err)
+	require.True(t, bytes.Equal(b, bLoad))
 }

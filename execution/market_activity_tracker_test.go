@@ -4,12 +4,18 @@ import (
 	"bytes"
 	"context"
 	"testing"
+	"time"
 
 	vgproto "code.vegaprotocol.io/protos/vega"
 	snapshotpb "code.vegaprotocol.io/protos/vega/snapshot/v1"
+	"code.vegaprotocol.io/shared/paths"
 	"code.vegaprotocol.io/vega/execution"
+	"code.vegaprotocol.io/vega/integration/stubs"
+	vgcontext "code.vegaprotocol.io/vega/libs/context"
 	"code.vegaprotocol.io/vega/libs/proto"
 	"code.vegaprotocol.io/vega/logging"
+	snp "code.vegaprotocol.io/vega/snapshot"
+	"code.vegaprotocol.io/vega/stats"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
 	"github.com/stretchr/testify/require"
@@ -65,9 +71,6 @@ func TestMarketTracker(t *testing.T) {
 
 	// take a snapshot
 	key := (&types.PayloadMarketActivityTracker{}).Key()
-	hash1, err := tracker.GetHash(key)
-	require.NoError(t, err)
-
 	state1, _, err := tracker.GetState(key)
 	require.NoError(t, err)
 
@@ -76,10 +79,6 @@ func TestMarketTracker(t *testing.T) {
 	require.NoError(t, proto.Unmarshal(state1, &pl))
 
 	trackerLoad.LoadState(context.Background(), types.PayloadFromProto(&pl))
-
-	hash2, err := trackerLoad.GetHash(key)
-	require.NoError(t, err)
-	require.True(t, bytes.Equal(hash1, hash2))
 
 	state2, _, err := trackerLoad.GetState(key)
 	require.NoError(t, err)
@@ -350,23 +349,23 @@ func TestMarketTrackerStateChange(t *testing.T) {
 	tracker := execution.NewMarketActivityTracker(logging.NewTestLogger(), &TestEpochEngine{})
 	tracker.SetEligibilityChecker(&EligibilityChecker{})
 
-	hash1, err := tracker.GetHash(key)
+	state1, _, err := tracker.GetState(key)
 	require.NoError(t, err)
 
 	tracker.MarketProposed("asset1", "market1", "me")
 	tracker.MarketProposed("asset1", "market2", "me2")
 
-	hash2, err := tracker.GetHash(key)
+	state2, _, err := tracker.GetState(key)
 	require.NoError(t, err)
-	require.NotEqual(t, hash1, hash2)
+	require.False(t, bytes.Equal(state1, state2))
 
 	tracker.AddValueTraded("market1", num.NewUint(1000))
 	require.Equal(t, 0, len(tracker.GetEligibleProposers("market1")))
 	require.Equal(t, 0, len(tracker.GetEligibleProposers("market2")))
 
-	hash3, err := tracker.GetHash(key)
+	state3, _, err := tracker.GetState(key)
 	require.NoError(t, err)
-	require.NotEqual(t, hash2, hash3)
+	require.False(t, bytes.Equal(state1, state3))
 }
 
 func TestFeesTracker(t *testing.T) {
@@ -378,7 +377,7 @@ func TestFeesTracker(t *testing.T) {
 	require.Equal(t, 0, len(partyScores))
 
 	key := (&types.PayloadMarketActivityTracker{}).Key()
-	hash1, err := tracker.GetHash(key)
+	state1, _, err := tracker.GetState(key)
 	require.NoError(t, err)
 
 	tracker.MarketProposed("asset1", "market1", "me")
@@ -446,13 +445,10 @@ func TestFeesTracker(t *testing.T) {
 	require.Equal(t, "1", scores[0].Score.String())
 	require.Equal(t, "party2", scores[0].Party)
 
-	// check hash has changed
-	hash2, err := tracker.GetHash(key)
-	require.NoError(t, err)
-	require.False(t, bytes.Equal(hash1, hash2))
-
+	// check state has changed
 	state2, _, err := tracker.GetState(key)
 	require.NoError(t, err)
+	require.False(t, bytes.Equal(state1, state2))
 
 	epochEngineLoad := &TestEpochEngine{}
 	trackerLoad := execution.NewMarketActivityTracker(logging.NewTestLogger(), epochEngineLoad)
@@ -461,10 +457,6 @@ func TestFeesTracker(t *testing.T) {
 	pl := snapshotpb.Payload{}
 	require.NoError(t, proto.Unmarshal(state2, &pl))
 	trackerLoad.LoadState(context.Background(), types.PayloadFromProto(&pl))
-
-	hash3, err := trackerLoad.GetHash(key)
-	require.NoError(t, err)
-	require.True(t, bytes.Equal(hash2, hash3))
 
 	state3, _, err := trackerLoad.GetState(key)
 	require.NoError(t, err)
@@ -478,9 +470,9 @@ func TestFeesTracker(t *testing.T) {
 
 	// New epoch should scrub the state an produce a difference hash
 	epochEngineLoad.target(context.Background(), types.Epoch{Seq: 2, Action: vgproto.EpochAction_EPOCH_ACTION_START})
-	hash4, err := trackerLoad.GetHash(key)
+	state4, _, err := trackerLoad.GetState(key)
 	require.NoError(t, err)
-	require.False(t, bytes.Equal(hash3, hash4))
+	require.False(t, bytes.Equal(state3, state4))
 
 	// new epoch, we expect the metrics to have been reset
 	for _, metric := range []types.TransferType{types.TransferTypeMakerFeePay, types.TransferTypeMakerFeeReceive, types.TransferTypeLiquidityFeeDistribute} {
@@ -494,9 +486,6 @@ func TestSnapshot(t *testing.T) {
 
 	// take a snapshot
 	key := (&types.PayloadMarketActivityTracker{}).Key()
-	hash1, err := tracker.GetHash(key)
-	require.NoError(t, err)
-
 	state1, _, err := tracker.GetState(key)
 	require.NoError(t, err)
 
@@ -505,11 +494,6 @@ func TestSnapshot(t *testing.T) {
 	require.NoError(t, proto.Unmarshal(state1, &pl))
 
 	trackerLoad.LoadState(context.Background(), types.PayloadFromProto(&pl))
-
-	hash2, err := trackerLoad.GetHash(key)
-	require.NoError(t, err)
-	require.True(t, bytes.Equal(hash1, hash2))
-
 	state2, _, err := trackerLoad.GetState(key)
 	require.NoError(t, err)
 	require.True(t, bytes.Equal(state1, state2))
@@ -569,4 +553,71 @@ func setupDefaultTrackerForTest(t *testing.T) *execution.MarketActivityTracker {
 	}
 	tracker.UpdateFeesFromTransfers("market3", transfersM3)
 	return tracker
+}
+
+func TestSnapshotRoundtripViaEngine(t *testing.T) {
+	ctx := vgcontext.WithTraceID(vgcontext.WithBlockHeight(context.Background(), 100), "0xDEADBEEF")
+	ctx = vgcontext.WithChainID(ctx, "chainid")
+	tracker := setupDefaultTrackerForTest(t)
+	now := time.Now()
+	log := logging.NewTestLogger()
+	timeService := stubs.NewTimeStub()
+	timeService.SetTime(now)
+	statsData := stats.New(log, stats.NewDefaultConfig(), "", "")
+	config := snp.NewDefaultConfig()
+	config.Storage = "memory"
+	snapshotEngine, _ := snp.New(context.Background(), &paths.DefaultPaths{}, config, log, timeService, statsData.Blockchain)
+	snapshotEngine.AddProviders(tracker)
+	snapshotEngine.ClearAndInitialise()
+	defer snapshotEngine.Close()
+
+	_, err := snapshotEngine.Snapshot(ctx)
+	require.NoError(t, err)
+	snaps, err := snapshotEngine.List()
+	require.NoError(t, err)
+	snap1 := snaps[0]
+
+	trackerLoad := execution.NewMarketActivityTracker(logging.NewTestLogger(), &TestEpochEngine{})
+	tracker.SetEligibilityChecker(&EligibilityChecker{})
+	snapshotEngineLoad, _ := snp.New(context.Background(), &paths.DefaultPaths{}, config, log, timeService, statsData.Blockchain)
+	snapshotEngineLoad.AddProviders(trackerLoad)
+	snapshotEngineLoad.ClearAndInitialise()
+	snapshotEngineLoad.ReceiveSnapshot(snap1)
+	snapshotEngineLoad.ApplySnapshot(ctx)
+	snapshotEngineLoad.CheckLoaded()
+	defer snapshotEngineLoad.Close()
+
+	b, err := snapshotEngine.Snapshot(ctx)
+	require.NoError(t, err)
+	bLoad, err := snapshotEngineLoad.Snapshot(ctx)
+	require.NoError(t, err)
+	require.True(t, bytes.Equal(b, bLoad))
+
+	// now lets get some activity going and verify they still match
+	tracker.MarketProposed("asset1", "market5", "meeeee")
+	tracker.MarketProposed("asset2", "market6", "meeeeeee")
+	trackerLoad.MarketProposed("asset1", "market5", "meeeee")
+	trackerLoad.MarketProposed("asset2", "market6", "meeeeeee")
+
+	transfersM5 := []*types.Transfer{
+		{Owner: "party3", Type: types.TransferTypeMakerFeeReceive, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(100)}},
+		{Owner: "party3", Type: types.TransferTypeMakerFeePay, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(200)}},
+		{Owner: "party3", Type: types.TransferTypeLiquidityFeeDistribute, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(200)}},
+	}
+	tracker.UpdateFeesFromTransfers("market5", transfersM5)
+	trackerLoad.UpdateFeesFromTransfers("market5", transfersM5)
+
+	transfersM6 := []*types.Transfer{
+		{Owner: "party4", Type: types.TransferTypeMakerFeeReceive, Amount: &types.FinancialAmount{Asset: "asset2", Amount: num.NewUint(500)}},
+		{Owner: "party4", Type: types.TransferTypeMakerFeePay, Amount: &types.FinancialAmount{Asset: "asset2", Amount: num.NewUint(1500)}},
+		{Owner: "party4", Type: types.TransferTypeLiquidityFeeDistribute, Amount: &types.FinancialAmount{Asset: "asset2", Amount: num.NewUint(1500)}},
+	}
+	tracker.UpdateFeesFromTransfers("market6", transfersM6)
+	trackerLoad.UpdateFeesFromTransfers("market6", transfersM6)
+
+	b, err = snapshotEngine.Snapshot(ctx)
+	require.NoError(t, err)
+	bLoad, err = snapshotEngineLoad.Snapshot(ctx)
+	require.NoError(t, err)
+	require.True(t, bytes.Equal(b, bLoad))
 }

@@ -5,7 +5,6 @@ import (
 	"sort"
 
 	"code.vegaprotocol.io/vega/events"
-	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
 
@@ -25,7 +24,6 @@ var (
 )
 
 type governanceSnapshotState struct {
-	hash       map[string][]byte
 	serialised map[string][]byte
 	changed    map[string]bool
 }
@@ -102,28 +100,26 @@ func (e *Engine) serialiseNodeProposals() ([]byte, error) {
 	return proto.Marshal(pl.IntoProto())
 }
 
-// get the serialised form and hash of the given key.
-func (e *Engine) getSerialisedAndHash(k string) ([]byte, []byte, error) {
+// get the serialised form of the given key.
+func (e *Engine) serialise(k string) ([]byte, error) {
 	e.lock.Lock()
 	defer e.lock.Unlock()
 	if _, ok := e.keyToSerialiser[k]; !ok {
-		return nil, nil, types.ErrSnapshotKeyDoesNotExist
+		return nil, types.ErrSnapshotKeyDoesNotExist
 	}
 
 	if !e.gss.changed[k] {
-		return e.gss.serialised[k], e.gss.hash[k], nil
+		return e.gss.serialised[k], nil
 	}
 
 	data, err := e.keyToSerialiser[k]()
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
-	hash := crypto.Hash(data)
 	e.gss.serialised[k] = data
-	e.gss.hash[k] = hash
 	e.gss.changed[k] = false
-	return data, hash, nil
+	return data, nil
 }
 
 func (e *Engine) Namespace() types.SnapshotNamespace {
@@ -138,34 +134,35 @@ func (e *Engine) Stopped() bool {
 	return false
 }
 
-func (e *Engine) GetHash(k string) ([]byte, error) {
-	_, hash, err := e.getSerialisedAndHash(k)
-	return hash, err
+func (e *Engine) HasChanged(k string) bool {
+	e.lock.RLock()
+	defer e.lock.RUnlock()
+	return e.gss.changed[k]
 }
 
 func (e *Engine) GetState(k string) ([]byte, []types.StateProvider, error) {
-	data, _, err := e.getSerialisedAndHash(k)
+	data, err := e.serialise(k)
 	return data, nil, err
 }
 
-func (e *Engine) LoadState(ctx context.Context, payload *types.Payload) ([]types.StateProvider, error) {
-	if e.Namespace() != payload.Data.Namespace() {
+func (e *Engine) LoadState(ctx context.Context, p *types.Payload) ([]types.StateProvider, error) {
+	if e.Namespace() != p.Data.Namespace() {
 		return nil, types.ErrInvalidSnapshotNamespace
 	}
 
-	switch pl := payload.Data.(type) {
+	switch pl := p.Data.(type) {
 	case *types.PayloadGovernanceActive:
-		return nil, e.restoreActiveProposals(ctx, pl.GovernanceActive)
+		return nil, e.restoreActiveProposals(ctx, pl.GovernanceActive, p)
 	case *types.PayloadGovernanceEnacted:
-		return nil, e.restoreEnactedProposals(ctx, pl.GovernanceEnacted)
+		return nil, e.restoreEnactedProposals(ctx, pl.GovernanceEnacted, p)
 	case *types.PayloadGovernanceNode:
-		return nil, e.restoreNodeProposals(ctx, pl.GovernanceNode)
+		return nil, e.restoreNodeProposals(ctx, pl.GovernanceNode, p)
 	default:
 		return nil, types.ErrUnknownSnapshotType
 	}
 }
 
-func (e *Engine) restoreActiveProposals(ctx context.Context, active *types.GovernanceActive) error {
+func (e *Engine) restoreActiveProposals(ctx context.Context, active *types.GovernanceActive, p *types.Payload) error {
 	e.activeProposals = make([]*proposal, 0, len(active.Proposals))
 	evts := []events.Event{}
 	vevts := []events.Event{}
@@ -198,13 +195,15 @@ func (e *Engine) restoreActiveProposals(ctx context.Context, active *types.Gover
 		}
 	}
 
-	e.gss.changed[activeKey] = true
+	var err error
+	e.gss.changed[activeKey] = false
+	e.gss.serialised[activeKey], err = proto.Marshal(p.IntoProto())
 	e.broker.SendBatch(evts)
 	e.broker.SendBatch(vevts)
-	return nil
+	return err
 }
 
-func (e *Engine) restoreEnactedProposals(ctx context.Context, enacted *types.GovernanceEnacted) error {
+func (e *Engine) restoreEnactedProposals(ctx context.Context, enacted *types.GovernanceEnacted, p *types.Payload) error {
 	evts := []events.Event{}
 	vevts := []events.Event{}
 	e.log.Debug("restoring enacted proposals snapshot", logging.Int("nproposals", len(enacted.Proposals)))
@@ -235,19 +234,24 @@ func (e *Engine) restoreEnactedProposals(ctx context.Context, enacted *types.Gov
 			vevts = append(vevts, events.NewVoteEvent(ctx, *v))
 		}
 	}
-	e.gss.changed[enactedKey] = true
+	var err error
+	e.gss.changed[enactedKey] = false
+	e.gss.serialised[enactedKey], _ = proto.Marshal(p.IntoProto())
 	e.broker.SendBatch(evts)
 	e.broker.SendBatch(vevts)
-	return nil
+
+	return err
 }
 
-func (e *Engine) restoreNodeProposals(ctx context.Context, node *types.GovernanceNode) error {
+func (e *Engine) restoreNodeProposals(ctx context.Context, node *types.GovernanceNode, p *types.Payload) error {
 	for _, p := range node.Proposals {
 		e.nodeProposalValidation.restore(p)
 		e.broker.Send(events.NewProposalEvent(ctx, *p))
 	}
-	e.gss.changed[nodeValidationKey] = true
-	return nil
+	var err error
+	e.gss.changed[nodeValidationKey] = false
+	e.gss.serialised[nodeValidationKey], err = proto.Marshal(p.IntoProto())
+	return err
 }
 
 // votesAsSlice returns a sorted slice of votes from a given map of votes.

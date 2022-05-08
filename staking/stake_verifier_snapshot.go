@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"code.vegaprotocol.io/vega/events"
-	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
 
@@ -22,7 +21,6 @@ var (
 )
 
 type stakeVerifierSnapshotState struct {
-	hash       map[string][]byte
 	serialised map[string][]byte
 	changed    map[string]bool
 }
@@ -58,27 +56,25 @@ func (s *StakeVerifier) serialisePendingSR() ([]byte, error) {
 }
 
 // get the serialised form and hash of the given key.
-func (s *StakeVerifier) getSerialisedAndHash(k string) ([]byte, []byte, error) {
+func (s *StakeVerifier) serialise(k string) ([]byte, error) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 	if _, ok := s.keyToSerialiser[k]; !ok {
-		return nil, nil, types.ErrSnapshotKeyDoesNotExist
+		return nil, types.ErrSnapshotKeyDoesNotExist
 	}
 
 	if !s.svss.changed[k] {
-		return s.svss.serialised[k], s.svss.hash[k], nil
+		return s.svss.serialised[k], nil
 	}
 
 	data, err := s.keyToSerialiser[k]()
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
-	hash := crypto.Hash(data)
 	s.svss.serialised[k] = data
-	s.svss.hash[k] = hash
 	s.svss.changed[k] = false
-	return data, hash, nil
+	return data, nil
 }
 
 func (s *StakeVerifier) Namespace() types.SnapshotNamespace {
@@ -93,13 +89,14 @@ func (s *StakeVerifier) Stopped() bool {
 	return false
 }
 
-func (s *StakeVerifier) GetHash(k string) ([]byte, error) {
-	_, hash, err := s.getSerialisedAndHash(k)
-	return hash, err
+func (s *StakeVerifier) HasChanged(k string) bool {
+	s.lock.RLock()
+	defer s.lock.RUnlock()
+	return s.svss.changed[k]
 }
 
 func (s *StakeVerifier) GetState(k string) ([]byte, []types.StateProvider, error) {
-	data, _, err := s.getSerialisedAndHash(k)
+	data, err := s.serialise(k)
 	return data, nil, err
 }
 
@@ -110,15 +107,15 @@ func (s *StakeVerifier) LoadState(ctx context.Context, payload *types.Payload) (
 
 	switch pl := payload.Data.(type) {
 	case *types.PayloadStakeVerifierDeposited:
-		return nil, s.restorePendingSD(ctx, pl.StakeVerifierDeposited)
+		return nil, s.restorePendingSD(ctx, pl.StakeVerifierDeposited, payload)
 	case *types.PayloadStakeVerifierRemoved:
-		return nil, s.restorePendingSR(ctx, pl.StakeVerifierRemoved)
+		return nil, s.restorePendingSR(ctx, pl.StakeVerifierRemoved, payload)
 	default:
 		return nil, types.ErrUnknownSnapshotType
 	}
 }
 
-func (s *StakeVerifier) restorePendingSD(ctx context.Context, deposited []*types.StakeDeposited) error {
+func (s *StakeVerifier) restorePendingSD(ctx context.Context, deposited []*types.StakeDeposited, p *types.Payload) error {
 	s.log.Debug("restoring pendingSDs snapshot", logging.Int("n_pending", len(deposited)))
 	s.pendingSDs = make([]*pendingSD, 0, len(deposited))
 	evts := []events.Event{}
@@ -140,12 +137,14 @@ func (s *StakeVerifier) restorePendingSD(ctx context.Context, deposited []*types
 		}
 		evts = append(evts, events.NewStakeLinking(ctx, *pending.IntoStakeLinking()))
 	}
-	s.svss.changed[depositedKey] = true
+	var err error
+	s.svss.changed[depositedKey] = false
+	s.svss.serialised[depositedKey], err = proto.Marshal(p.IntoProto())
 	s.broker.SendBatch(evts)
-	return nil
+	return err
 }
 
-func (s *StakeVerifier) restorePendingSR(ctx context.Context, removed []*types.StakeRemoved) error {
+func (s *StakeVerifier) restorePendingSR(ctx context.Context, removed []*types.StakeRemoved, p *types.Payload) error {
 	s.log.Debug("restoring pendingSRs snapshot", logging.Int("n_pending", len(removed)))
 	s.pendingSRs = make([]*pendingSR, 0, len(removed))
 	evts := []events.Event{}
@@ -167,7 +166,9 @@ func (s *StakeVerifier) restorePendingSR(ctx context.Context, removed []*types.S
 		evts = append(evts, events.NewStakeLinking(ctx, *pending.IntoStakeLinking()))
 	}
 
-	s.svss.changed[removedKey] = true
+	var err error
+	s.svss.changed[removedKey] = false
+	s.svss.serialised[removedKey], err = proto.Marshal(p.IntoProto())
 	s.broker.SendBatch(evts)
-	return nil
+	return err
 }

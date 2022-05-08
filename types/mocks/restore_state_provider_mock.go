@@ -35,21 +35,6 @@ func (m *MockPostRestore) EXPECT() *MockPostRestoreMockRecorder {
 	return m.recorder
 }
 
-// GetHash mocks base method.
-func (m *MockPostRestore) GetHash(arg0 string) ([]byte, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetHash", arg0)
-	ret0, _ := ret[0].([]byte)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetHash indicates an expected call of GetHash.
-func (mr *MockPostRestoreMockRecorder) GetHash(arg0 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetHash", reflect.TypeOf((*MockPostRestore)(nil).GetHash), arg0)
-}
-
 // GetState mocks base method.
 func (m *MockPostRestore) GetState(arg0 string) ([]byte, []types.StateProvider, error) {
 	m.ctrl.T.Helper()
@@ -64,6 +49,20 @@ func (m *MockPostRestore) GetState(arg0 string) ([]byte, []types.StateProvider, 
 func (mr *MockPostRestoreMockRecorder) GetState(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetState", reflect.TypeOf((*MockPostRestore)(nil).GetState), arg0)
+}
+
+// HasChanged mocks base method.
+func (m *MockPostRestore) HasChanged(arg0 string) bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "HasChanged", arg0)
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// HasChanged indicates an expected call of HasChanged.
+func (mr *MockPostRestoreMockRecorder) HasChanged(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HasChanged", reflect.TypeOf((*MockPostRestore)(nil).HasChanged), arg0)
 }
 
 // Keys mocks base method.

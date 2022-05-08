@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	v1 "code.vegaprotocol.io/protos/vega/commands/v1"
-	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
 
@@ -42,7 +41,6 @@ type SnapshotNotary struct {
 	*Notary
 
 	// snapshot bits
-	hash       []byte
 	serialised []byte
 	changed    bool
 }
@@ -71,26 +69,24 @@ func (n *SnapshotNotary) RegisterSignature(
 	return err
 }
 
-// get the serialised form and hash of the given key.
-func (n *SnapshotNotary) getSerialisedAndHash(k string) ([]byte, []byte, error) {
+// get the serialised form of the given key.
+func (n *SnapshotNotary) serialise(k string) ([]byte, error) {
 	if k != allKey {
-		return nil, nil, types.ErrSnapshotKeyDoesNotExist
+		return nil, types.ErrSnapshotKeyDoesNotExist
 	}
 
 	if !n.changed {
-		return n.serialised, n.hash, nil
+		return n.serialised, nil
 	}
 
 	data, err := n.serialiseNotary()
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
-	hash := crypto.Hash(data)
 	n.serialised = data
-	n.hash = hash
 	n.changed = false
-	return data, hash, nil
+	return data, nil
 }
 
 func (n *SnapshotNotary) Namespace() types.SnapshotNamespace {
@@ -105,13 +101,12 @@ func (n *SnapshotNotary) Stopped() bool {
 	return false
 }
 
-func (n *SnapshotNotary) GetHash(k string) ([]byte, error) {
-	_, hash, err := n.getSerialisedAndHash(k)
-	return hash, err
+func (n *SnapshotNotary) HasChanged(k string) bool {
+	return n.changed
 }
 
 func (n *SnapshotNotary) GetState(k string) ([]byte, []types.StateProvider, error) {
-	data, _, err := n.getSerialisedAndHash(k)
+	data, err := n.serialise(k)
 	return data, nil, err
 }
 
@@ -122,7 +117,7 @@ func (n *SnapshotNotary) LoadState(ctx context.Context, payload *types.Payload) 
 
 	switch pl := payload.Data.(type) {
 	case *types.PayloadNotary:
-		return nil, n.restoreNotary(pl.Notary)
+		return nil, n.restoreNotary(pl.Notary, payload)
 	default:
 		return nil, types.ErrUnknownSnapshotType
 	}
@@ -179,7 +174,7 @@ func (n *SnapshotNotary) serialiseNotary() ([]byte, error) {
 	return proto.Marshal(pl.IntoProto())
 }
 
-func (n *SnapshotNotary) restoreNotary(notary *types.Notary) error {
+func (n *SnapshotNotary) restoreNotary(notary *types.Notary, p *types.Payload) error {
 	var (
 		sigs    = map[idKind]map[nodeSig]struct{}{}
 		retries = &txTracker{
@@ -223,5 +218,8 @@ func (n *SnapshotNotary) restoreNotary(notary *types.Notary) error {
 
 	n.sigs = sigs
 	n.retries = retries
-	return nil
+	var err error
+	n.changed = false
+	n.serialised, err = proto.Marshal(p.IntoProto())
+	return err
 }

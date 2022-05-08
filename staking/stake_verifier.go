@@ -75,7 +75,7 @@ type StakeVerifier struct {
 	svss            *stakeVerifierSnapshotState
 	keyToSerialiser map[string]func() ([]byte, error)
 
-	lock sync.Mutex
+	lock sync.RWMutex
 }
 
 type pendingSD struct {
@@ -119,7 +119,6 @@ func NewStakeVerifier(
 		svss: &stakeVerifierSnapshotState{
 			changed:    map[string]bool{depositedKey: true, removedKey: true},
 			serialised: map[string][]byte{},
-			hash:       map[string][]byte{},
 		},
 		keyToSerialiser: map[string]func() ([]byte, error){},
 	}
