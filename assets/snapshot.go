@@ -22,8 +22,10 @@ var (
 )
 
 type assetsSnapshotState struct {
-	changed    map[string]bool
-	serialised map[string][]byte
+	changedActive     bool
+	changedPending    bool
+	serialisedActive  []byte
+	serialisedPending []byte
 }
 
 func (s *Service) Namespace() types.SnapshotNamespace {
@@ -65,32 +67,43 @@ func (s *Service) serialisePending() ([]byte, error) {
 	return proto.Marshal(payload.IntoProto())
 }
 
-// get the serialised form and hash of the given key.
-func (s *Service) serialise(k string) ([]byte, error) {
-	s.lock.Lock()
-	defer s.lock.Unlock()
-	if _, ok := s.keyToSerialiser[k]; !ok {
-		return nil, ErrSnapshotKeyDoesNotExist
+func (s *Service) serialiseK(k string, serialFunc func() ([]byte, error), dataField *[]byte, changedField *bool) ([]byte, error) {
+	if !s.HasChanged(k) {
+		if dataField == nil {
+			return nil, nil
+		}
+		return *dataField, nil
 	}
-
-	if !s.ass.changed[k] {
-		return s.ass.serialised[k], nil
-	}
-
-	data, err := s.keyToSerialiser[k]()
+	data, err := serialFunc()
 	if err != nil {
 		return nil, err
 	}
-
-	s.ass.serialised[k] = data
-	s.ass.changed[k] = false
+	*dataField = data
+	*changedField = false
 	return data, nil
 }
 
+// get the serialised form and hash of the given key.
+func (s *Service) serialise(k string) ([]byte, error) {
+	switch k {
+	case activeKey:
+		return s.serialiseK(k, s.serialiseActive, &s.ass.serialisedActive, &s.ass.changedActive)
+	case pendingKey:
+		return s.serialiseK(k, s.serialisePending, &s.ass.serialisedPending, &s.ass.changedPending)
+	default:
+		return nil, types.ErrSnapshotKeyDoesNotExist
+	}
+}
+
 func (s *Service) HasChanged(k string) bool {
-	s.lock.RLock()
-	defer s.lock.RUnlock()
-	return s.ass.changed[k]
+	switch k {
+	case activeKey:
+		return s.ass.changedActive
+	case pendingKey:
+		return s.ass.changedPending
+	default:
+		return false
+	}
 }
 
 func (s *Service) GetState(k string) ([]byte, []types.StateProvider, error) {
@@ -134,8 +147,8 @@ func (s *Service) restoreActive(ctx context.Context, active *types.ActiveAssets,
 			return err
 		}
 	}
-	s.ass.changed[activeKey] = false
-	s.ass.serialised[activeKey], err = proto.Marshal(p.IntoProto())
+	s.ass.changedActive = false
+	s.ass.serialisedActive, err = proto.Marshal(p.IntoProto())
 
 	return err
 }
@@ -148,8 +161,8 @@ func (s *Service) restorePending(ctx context.Context, pending *types.PendingAsse
 			return err
 		}
 	}
-	s.ass.changed[pendingKey] = false
-	s.ass.serialised[pendingKey], err = proto.Marshal(p.IntoProto())
+	s.ass.changedPending = false
+	s.ass.serialisedPending, err = proto.Marshal(p.IntoProto())
 
 	return err
 }

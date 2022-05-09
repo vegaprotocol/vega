@@ -19,8 +19,14 @@ var hashKeys = []string{
 }
 
 type delegationSnapshotState struct {
-	changed    map[string]bool
-	serialised map[string][]byte
+	changedActive       bool
+	changedPending      bool
+	changedAuto         bool
+	changedLastRecon    bool
+	serialisedActive    []byte
+	serialisedPending   []byte
+	serialisedAuto      []byte
+	serialisedLastRecon []byte
 }
 
 func (e *Engine) Namespace() types.SnapshotNamespace {
@@ -105,32 +111,51 @@ func (e *Engine) serialiseAuto() ([]byte, error) {
 	return proto.Marshal(payload.IntoProto())
 }
 
-// get the serialised form and hash of the given key.
-func (e *Engine) serialise(k string) ([]byte, error) {
-	e.lock.Lock()
-	defer e.lock.Unlock()
-	if _, ok := e.keyToSerialiser[k]; !ok {
-		return nil, types.ErrSnapshotKeyDoesNotExist
+func (e *Engine) serialiseK(k string, serialFunc func() ([]byte, error), dataField *[]byte, changedField *bool) ([]byte, error) {
+	if !e.HasChanged(k) {
+		if dataField == nil {
+			return nil, nil
+		}
+		return *dataField, nil
 	}
-
-	if !e.dss.changed[k] {
-		return e.dss.serialised[k], nil
-	}
-
-	data, err := e.keyToSerialiser[k]()
+	data, err := serialFunc()
 	if err != nil {
 		return nil, err
 	}
-
-	e.dss.serialised[k] = data
-	e.dss.changed[k] = false
+	*dataField = data
+	*changedField = false
 	return data, nil
 }
 
+// get the serialised form and hash of the given key.
+func (e *Engine) serialise(k string) ([]byte, error) {
+	switch k {
+	case activeKey:
+		return e.serialiseK(k, e.serialiseActive, &e.dss.serialisedActive, &e.dss.changedActive)
+	case pendingKey:
+		return e.serialiseK(k, e.serialisePending, &e.dss.serialisedPending, &e.dss.changedPending)
+	case autoKey:
+		return e.serialiseK(k, e.serialiseAuto, &e.dss.serialisedAuto, &e.dss.changedAuto)
+	case lastReconKey:
+		return e.serialiseK(k, e.serialiseLastReconTime, &e.dss.serialisedLastRecon, &e.dss.changedLastRecon)
+	default:
+		return nil, types.ErrSnapshotKeyDoesNotExist
+	}
+}
+
 func (e *Engine) HasChanged(k string) bool {
-	e.lock.RLock()
-	defer e.lock.RUnlock()
-	return e.dss.changed[k]
+	switch k {
+	case activeKey:
+		return e.dss.changedActive
+	case pendingKey:
+		return e.dss.changedPending
+	case autoKey:
+		return e.dss.changedAuto
+	case lastReconKey:
+		return e.dss.changedLastRecon
+	default:
+		return false
+	}
 }
 
 func (e *Engine) GetState(k string) ([]byte, []types.StateProvider, error) {
@@ -160,8 +185,8 @@ func (e *Engine) LoadState(ctx context.Context, p *types.Payload) ([]types.State
 func (e *Engine) restoreLastReconTime(ctx context.Context, t time.Time, p *types.Payload) error {
 	var err error
 	e.lastReconciliation = t
-	e.dss.changed[lastReconKey] = false
-	e.dss.serialised[lastReconKey], err = proto.Marshal(p.IntoProto())
+	e.dss.changedLastRecon = false
+	e.dss.serialisedLastRecon, err = proto.Marshal(p.IntoProto())
 
 	return err
 }
@@ -180,8 +205,8 @@ func (e *Engine) restoreActive(ctx context.Context, delegations *types.Delegatio
 	}
 	e.setActive(ctx, entries)
 	var err error
-	e.dss.changed[activeKey] = false
-	e.dss.serialised[activeKey], err = proto.Marshal(p.IntoProto())
+	e.dss.changedActive = false
+	e.dss.serialisedActive, err = proto.Marshal(p.IntoProto())
 	return err
 }
 
@@ -199,8 +224,8 @@ func (e *Engine) restorePending(ctx context.Context, delegations *types.Delegati
 	}
 	e.setPendingNew(ctx, entries)
 	var err error
-	e.dss.changed[pendingKey] = false
-	e.dss.serialised[pendingKey], err = proto.Marshal(p.IntoProto())
+	e.dss.changedPending = false
+	e.dss.serialisedPending, err = proto.Marshal(p.IntoProto())
 	return err
 }
 
@@ -208,8 +233,8 @@ func (e *Engine) restoreAuto(delegations *types.DelegationAuto, p *types.Payload
 	e.autoDelegationMode = map[string]struct{}{}
 	e.setAuto(delegations.Parties)
 	var err error
-	e.dss.changed[autoKey] = false
-	e.dss.serialised[autoKey], err = proto.Marshal(p.IntoProto())
+	e.dss.changedAuto = false
+	e.dss.serialisedAuto, err = proto.Marshal(p.IntoProto())
 	return err
 }
 

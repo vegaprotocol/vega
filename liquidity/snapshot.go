@@ -4,7 +4,6 @@ import (
 	"context"
 	"sort"
 	"strconv"
-	"sync"
 
 	typespb "code.vegaprotocol.io/protos/vega"
 	snapshotpb "code.vegaprotocol.io/protos/vega/snapshot/v1"
@@ -22,9 +21,14 @@ type SnapshotEngine struct {
 	market string
 
 	// liquidity types
-	parametersChanged bool
-	stopped           bool
-	serialised        map[string][]byte
+	parametersChanged                bool
+	stopped                          bool
+	serialisedParameters             []byte
+	serialisedPartiesLiquidityOrders []byte
+	serialisedPartiesOrders          []byte
+	serialisedPendingProvisions      []byte
+	serialisedProvisions             []byte
+	serialisedSupplied               []byte
 
 	// keys, need to be computed when the engine is
 	// instantiated as they are dynamic
@@ -35,8 +39,6 @@ type SnapshotEngine struct {
 	pendingProvisionsKey      string
 	provisionsKey             string
 	suppliedKey               string
-
-	lock sync.Mutex
 }
 
 func NewSnapshotEngine(config Config,
@@ -61,8 +63,6 @@ func NewSnapshotEngine(config Config,
 
 		parametersChanged: true,
 		stopped:           false,
-		// empty so default to nil to force update
-		serialised: map[string][]byte{},
 	}
 
 	// build the keys
@@ -112,9 +112,6 @@ func (e *SnapshotEngine) OnMarketLiquidityProvisionShapesMaxSizeUpdate(v int64) 
 }
 
 func (e *SnapshotEngine) HasChanged(k string) bool {
-	e.lock.Lock()
-	defer e.lock.Unlock()
-
 	switch k {
 	case e.parametersKey:
 		return e.parametersChanged
@@ -170,7 +167,7 @@ func (e *SnapshotEngine) loadSupplied(ls *snapshotpb.LiquiditySupplied, p *types
 		return err
 	}
 	e.Engine.suppliedEngine.ResetUpdated()
-	e.serialised[e.suppliedKey], err = proto.Marshal(p.IntoProto())
+	e.serialisedSupplied, err = proto.Marshal(p.IntoProto())
 	return err
 }
 
@@ -187,7 +184,7 @@ func (e *SnapshotEngine) loadPartiesOrders(
 	}
 	var err error
 	e.Engine.orders.ResetUpdated()
-	e.serialised[e.partiesOrdersKey], err = proto.Marshal(p.IntoProto())
+	e.serialisedPartiesOrders, err = proto.Marshal(p.IntoProto())
 	return err
 }
 
@@ -204,7 +201,7 @@ func (e *SnapshotEngine) loadPartiesLiquidityOrders(
 	}
 	var err error
 	e.Engine.liquidityOrders.ResetUpdated()
-	e.serialised[e.partiesLiquidityOrdersKey], err = proto.Marshal(p.IntoProto())
+	e.serialisedPartiesLiquidityOrders, err = proto.Marshal(p.IntoProto())
 	return err
 }
 
@@ -231,7 +228,7 @@ func (e *SnapshotEngine) loadParameters(
 	}
 	e.OnSuppliedStakeToObligationFactorUpdate(stof)
 	e.parametersChanged = false
-	e.serialised[e.parametersKey], err = proto.Marshal(p.IntoProto())
+	e.serialisedParameters, err = proto.Marshal(p.IntoProto())
 	return err
 }
 
@@ -244,7 +241,7 @@ func (e *SnapshotEngine) loadPendingProvisions(
 	}
 	var err error
 	e.Engine.pendings.ResetUpdated()
-	e.serialised[e.pendingProvisionsKey], err = proto.Marshal(p.IntoProto())
+	e.serialisedPendingProvisions, err = proto.Marshal(p.IntoProto())
 	return err
 }
 
@@ -264,15 +261,12 @@ func (e *SnapshotEngine) loadProvisions(
 
 	var err error
 	e.Engine.provisions.ResetUpdated()
-	e.serialised[e.provisionsKey], err = proto.Marshal(p.IntoProto())
+	e.serialisedProvisions, err = proto.Marshal(p.IntoProto())
 	e.broker.SendBatch(evts)
 	return err
 }
 
 func (e *SnapshotEngine) serialise(k string) ([]byte, error) {
-	e.lock.Lock()
-	defer e.lock.Unlock()
-
 	var (
 		buf     []byte
 		changed bool
@@ -304,17 +298,33 @@ func (e *SnapshotEngine) serialise(k string) ([]byte, error) {
 	}
 
 	if !changed {
-		return e.serialised[k], nil
+		return buf, nil
 	}
 
-	e.serialised[k] = buf
+	switch k {
+	case e.parametersKey:
+		e.serialisedParameters = buf
+	case e.partiesLiquidityOrdersKey:
+		e.serialisedPartiesLiquidityOrders = buf
+	case e.partiesOrdersKey:
+		e.serialisedPartiesOrders = buf
+	case e.pendingProvisionsKey:
+		e.serialisedPendingProvisions = buf
+	case e.provisionsKey:
+		e.serialisedProvisions = buf
+	case e.suppliedKey:
+		e.serialisedSupplied = buf
+	default:
+		return nil, types.ErrSnapshotKeyDoesNotExist
+	}
+
 	return buf, nil
 }
 
 func (e *SnapshotEngine) serialiseParameters() ([]byte, bool, error) {
 	key := e.parametersKey
 	if !e.parametersChanged {
-		return e.serialised[key], false, nil
+		return e.serialisedParameters, false, nil
 	}
 
 	// reset the flag
@@ -337,7 +347,7 @@ func (e *SnapshotEngine) serialiseParameters() ([]byte, bool, error) {
 func (e *SnapshotEngine) serialisePartiesLiquidityOrders() ([]byte, bool, error) {
 	key := e.partiesLiquidityOrdersKey
 	if !e.Engine.liquidityOrders.HasUpdates() {
-		return e.serialised[key], false, nil
+		return e.serialisedPartiesLiquidityOrders, false, nil
 	}
 
 	e.Engine.liquidityOrders.ResetUpdated()
@@ -365,7 +375,7 @@ func (e *SnapshotEngine) serialisePartiesLiquidityOrders() ([]byte, bool, error)
 func (e *SnapshotEngine) serialisePartiesOrders() ([]byte, bool, error) {
 	key := e.partiesOrdersKey
 	if !e.Engine.orders.HasUpdates() {
-		return e.serialised[key], false, nil
+		return e.serialisedPartiesOrders, false, nil
 	}
 
 	e.Engine.orders.ResetUpdated()
@@ -393,7 +403,7 @@ func (e *SnapshotEngine) serialisePartiesOrders() ([]byte, bool, error) {
 func (e *SnapshotEngine) serialisePendingProvisions() ([]byte, bool, error) {
 	key := e.pendingProvisionsKey
 	if !e.Engine.pendings.HasUpdates() {
-		return e.serialised[key], false, nil
+		return e.serialisedPendingProvisions, false, nil
 	}
 
 	e.Engine.pendings.ResetUpdated()
@@ -419,7 +429,7 @@ func (e *SnapshotEngine) serialisePendingProvisions() ([]byte, bool, error) {
 func (e *SnapshotEngine) serialiseProvisions() ([]byte, bool, error) {
 	key := e.provisionsKey
 	if !e.Engine.provisions.HasUpdates() {
-		return e.serialised[key], false, nil
+		return e.serialisedProvisions, false, nil
 	}
 
 	e.Engine.provisions.ResetUpdated()
@@ -446,7 +456,7 @@ func (e *SnapshotEngine) serialiseProvisions() ([]byte, bool, error) {
 func (e *SnapshotEngine) serialiseSupplied() ([]byte, bool, error) {
 	key := e.suppliedKey
 	if !e.suppliedEngine.HasUpdates() {
-		return e.serialised[key], false, nil
+		return e.serialisedSupplied, false, nil
 	}
 
 	e.suppliedEngine.ResetUpdated()

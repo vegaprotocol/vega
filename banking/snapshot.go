@@ -35,8 +35,18 @@ var (
 )
 
 type bankingSnapshotState struct {
-	changed    map[string]bool
-	serialised map[string][]byte
+	changedWithdrawals           bool
+	changedDeposits              bool
+	changedSeen                  bool
+	changedAssetActions          bool
+	changedRecurringTransfers    bool
+	changedScheduledTransfers    bool
+	serialisedWithdrawals        []byte
+	serialisedDeposits           []byte
+	serialisedSeen               []byte
+	serialisedAssetActions       []byte
+	serialisedRecurringTransfers []byte
+	serialisedScheduledTransfers []byte
 }
 
 func (e *Engine) Namespace() types.SnapshotNamespace {
@@ -182,32 +192,59 @@ func (e *Engine) serialiseDeposits() ([]byte, error) {
 	return proto.Marshal(payload.IntoProto())
 }
 
-// get the serialised form and hash of the given key.
-func (e *Engine) serialise(k string) ([]byte, error) {
-	e.lock.Lock()
-	defer e.lock.Unlock()
-	if _, ok := e.keyToSerialiser[k]; !ok {
-		return nil, ErrSnapshotKeyDoesNotExist
+func (e *Engine) serialiseK(k string, serialFunc func() ([]byte, error), dataField *[]byte, changedField *bool) ([]byte, error) {
+	if !e.HasChanged(k) {
+		if dataField == nil {
+			return nil, nil
+		}
+		return *dataField, nil
 	}
-
-	if !e.bss.changed[k] {
-		return e.bss.serialised[k], nil
-	}
-
-	data, err := e.keyToSerialiser[k]()
+	data, err := serialFunc()
 	if err != nil {
 		return nil, err
 	}
-
-	e.bss.serialised[k] = data
-	e.bss.changed[k] = false
+	*dataField = data
+	*changedField = false
 	return data, nil
 }
 
+// get the serialised form and hash of the given key.
+func (e *Engine) serialise(k string) ([]byte, error) {
+	switch k {
+	case depositsKey:
+		return e.serialiseK(k, e.serialiseDeposits, &e.bss.serialisedDeposits, &e.bss.changedDeposits)
+	case withdrawalsKey:
+		return e.serialiseK(k, e.serialiseWithdrawals, &e.bss.serialisedWithdrawals, &e.bss.changedWithdrawals)
+	case seenKey:
+		return e.serialiseK(k, e.serialiseSeen, &e.bss.serialisedSeen, &e.bss.changedSeen)
+	case assetActionsKey:
+		return e.serialiseK(k, e.serialiseAssetActions, &e.bss.serialisedAssetActions, &e.bss.changedAssetActions)
+	case recurringTransfersKey:
+		return e.serialiseK(k, e.serialiseRecurringTransfers, &e.bss.serialisedRecurringTransfers, &e.bss.changedRecurringTransfers)
+	case scheduledTransfersKey:
+		return e.serialiseK(k, e.serialiseScheduledTransfers, &e.bss.serialisedScheduledTransfers, &e.bss.changedScheduledTransfers)
+	default:
+		return nil, types.ErrSnapshotKeyDoesNotExist
+	}
+}
+
 func (e *Engine) HasChanged(k string) bool {
-	e.lock.RLock()
-	defer e.lock.RUnlock()
-	return e.bss.changed[k]
+	switch k {
+	case depositsKey:
+		return e.bss.changedDeposits
+	case withdrawalsKey:
+		return e.bss.changedWithdrawals
+	case seenKey:
+		return e.bss.changedSeen
+	case assetActionsKey:
+		return e.bss.changedAssetActions
+	case recurringTransfersKey:
+		return e.bss.changedRecurringTransfers
+	case scheduledTransfersKey:
+		return e.bss.changedScheduledTransfers
+	default:
+		return false
+	}
 }
 
 func (e *Engine) GetState(k string) ([]byte, []types.StateProvider, error) {
@@ -242,8 +279,8 @@ func (e *Engine) restoreRecurringTransfers(ctx context.Context, transfers *check
 	var err error
 	// ignore events here as we don't need to send them
 	_ = e.loadRecurringTransfers(ctx, transfers)
-	e.bss.changed[recurringTransfersKey] = false
-	e.bss.serialised[recurringTransfersKey], err = proto.Marshal(p.IntoProto())
+	e.bss.changedRecurringTransfers = false
+	e.bss.serialisedRecurringTransfers, err = proto.Marshal(p.IntoProto())
 
 	return err
 }
@@ -256,8 +293,8 @@ func (e *Engine) restoreScheduledTransfers(ctx context.Context, transfers []*che
 	if err != nil {
 		return err
 	}
-	e.bss.changed[scheduledTransfersKey] = false
-	e.bss.serialised[scheduledTransfersKey], err = proto.Marshal(p.IntoProto())
+	e.bss.changedScheduledTransfers = false
+	e.bss.serialisedScheduledTransfers, err = proto.Marshal(p.IntoProto())
 	return err
 }
 
@@ -268,8 +305,8 @@ func (e *Engine) restoreDeposits(ctx context.Context, deposits *types.BankingDep
 		e.deposits[d.ID] = d.Deposit
 	}
 
-	e.bss.serialised[depositsKey], err = proto.Marshal(p.IntoProto())
-	e.bss.changed[depositsKey] = false
+	e.bss.serialisedDeposits, err = proto.Marshal(p.IntoProto())
+	e.bss.changedDeposits = false
 	return err
 }
 
@@ -285,8 +322,8 @@ func (e *Engine) restoreWithdrawals(ctx context.Context, withdrawals *types.Bank
 		}
 	}
 
-	e.bss.changed[withdrawalsKey] = false
-	e.bss.serialised[withdrawalsKey], err = proto.Marshal(p.IntoProto())
+	e.bss.changedWithdrawals = false
+	e.bss.serialisedWithdrawals, err = proto.Marshal(p.IntoProto())
 
 	return err
 }
@@ -297,8 +334,8 @@ func (e *Engine) restoreSeen(ctx context.Context, seen *types.BankingSeen, p *ty
 	for _, s := range seen.Refs {
 		e.seen[s] = struct{}{}
 	}
-	e.bss.changed[seenKey] = false
-	e.bss.serialised[seenKey], err = proto.Marshal(p.IntoProto())
+	e.bss.changedSeen = false
+	e.bss.serialisedSeen, err = proto.Marshal(p.IntoProto())
 	return err
 }
 
@@ -327,8 +364,8 @@ func (e *Engine) restoreAssetActions(ctx context.Context, aa *types.BankingAsset
 		}
 	}
 
-	e.bss.changed[assetActionsKey] = false
-	e.bss.serialised[assetActionsKey], err = proto.Marshal(p.IntoProto())
+	e.bss.changedAssetActions = false
+	e.bss.serialisedAssetActions, err = proto.Marshal(p.IntoProto())
 	return err
 }
 

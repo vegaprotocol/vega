@@ -23,8 +23,10 @@ var (
 )
 
 type topologySnapshotState struct {
-	serialised map[string][]byte
-	changed    map[string]bool
+	serialisedVerifiedState []byte
+	serialisedPendingState  []byte
+	changedVerifiedState    bool
+	changedPendingState     bool
 }
 
 func (s *Topology) Namespace() types.SnapshotNamespace {
@@ -36,9 +38,14 @@ func (s *Topology) Keys() []string {
 }
 
 func (s *Topology) HasChanged(k string) bool {
-	s.lock.RLock()
-	defer s.lock.RUnlock()
-	return s.tss.changed[k]
+	switch k {
+	case verifiedStateKey:
+		return s.tss.changedVerifiedState
+	case pendingStateKey:
+		return s.tss.changedPendingState
+	default:
+		return false
+	}
 }
 
 func (s *Topology) GetState(k string) ([]byte, []types.StateProvider, error) {
@@ -94,8 +101,8 @@ func (t *Topology) restoreVerifiedState(
 	}
 
 	var err error
-	t.tss.changed[verifiedStateKey] = false
-	t.tss.serialised[verifiedStateKey], err = proto.Marshal(p.IntoProto())
+	t.tss.changedVerifiedState = false
+	t.tss.serialisedVerifiedState, err = proto.Marshal(p.IntoProto())
 	return err
 }
 
@@ -148,8 +155,8 @@ func (t *Topology) restorePendingState(
 	}
 
 	var err error
-	t.tss.changed[pendingStateKey] = false
-	t.tss.serialised[pendingStateKey], err = proto.Marshal(p.IntoProto())
+	t.tss.changedPendingState = false
+	t.tss.serialisedPendingState, err = proto.Marshal(p.IntoProto())
 	return err
 }
 
@@ -250,24 +257,30 @@ func (t *Topology) serialisePendingState() ([]byte, error) {
 	}.IntoProto())
 }
 
-// get the serialised form of the given key.
-func (t *Topology) serialise(k string) ([]byte, error) {
-	t.lock.Lock()
-	defer t.lock.Unlock()
-	if _, ok := t.keyToSerialiser[k]; !ok {
-		return nil, types.ErrSnapshotKeyDoesNotExist
+func (t *Topology) serialiseK(k string, serialFunc func() ([]byte, error), dataField *[]byte, changedField *bool) ([]byte, error) {
+	if !t.HasChanged(k) {
+		if dataField == nil {
+			return nil, nil
+		}
+		return *dataField, nil
 	}
-
-	if !t.tss.changed[k] {
-		return t.tss.serialised[k], nil
-	}
-
-	data, err := t.keyToSerialiser[k]()
+	data, err := serialFunc()
 	if err != nil {
 		return nil, err
 	}
-
-	t.tss.serialised[k] = data
-	t.tss.changed[k] = false
+	*dataField = data
+	*changedField = false
 	return data, nil
+}
+
+// get the serialised form of the given key.
+func (t *Topology) serialise(k string) ([]byte, error) {
+	switch k {
+	case verifiedStateKey:
+		return t.serialiseK(k, t.serialiseVerifiedState, &t.tss.serialisedVerifiedState, &t.tss.changedVerifiedState)
+	case pendingStateKey:
+		return t.serialiseK(k, t.serialisePendingState, &t.tss.serialisedPendingState, &t.tss.changedPendingState)
+	default:
+		return nil, types.ErrSnapshotKeyDoesNotExist
+	}
 }
