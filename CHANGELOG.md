@@ -22,6 +22,7 @@
 - [578](https://github.com/vegaprotocol/data-node/issues/578) - Add metrics for `SQL` queries
 - [582](https://github.com/vegaprotocol/data-node/issues/582) - Add a cache for assets
 - [548](https://github.com/vegaprotocol/data-node/issues/548) - Remove foreign key constraints on hyper tables 
+- [591](https://github.com/vegaprotocol/data-node/issues/591) - Optimise liquidity provision and margin levels data retention and storage 
 
 ### 🐛 Fixes
 - [524](https://github.com/vegaprotocol/data-node/issues/524) - Fix for incorrect balances
