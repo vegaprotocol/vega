@@ -112,7 +112,8 @@ type Engine struct {
 	pollCtx    context.Context
 	pollCfunc  context.CancelFunc
 
-	lock sync.RWMutex
+	lock    sync.RWMutex // lock for all the maps and stuff while concurrently constructing the new snapshot
+	avlLock sync.Mutex   // lock on the avl tree for reading/writing to the AVL tree
 }
 
 // order in which snapshots are to be restored.
@@ -211,6 +212,9 @@ func (e *Engine) ReloadConfig(cfg Config) {
 
 // List returns all snapshots available.
 func (e *Engine) List() ([]*types.Snapshot, error) {
+	e.avlLock.Lock()
+	defer e.avlLock.Unlock()
+
 	snapshots := make([]*types.Snapshot, 0, len(e.versions))
 	// TM list of snapshots is limited to the 10 most recent ones.
 	i := len(e.versions) - 11
@@ -576,6 +580,9 @@ func (e *Engine) LoadSnapshotChunk(height uint64, format, chunk uint32) (*types.
 }
 
 func (e *Engine) setSnapshotForHeight(height uint64) error {
+	e.avlLock.Lock()
+	defer e.avlLock.Unlock()
+
 	v, ok := e.versionHeight[height]
 	if !ok {
 		return types.ErrMissingSnapshotVersion
@@ -627,6 +634,7 @@ func (e *Engine) Snapshot(ctx context.Context) (b []byte, errlol error) {
 	// recent counter
 	e.current = e.interval
 	defer metrics.StartSnapshot("all")()
+	e.avlLock.Lock()
 
 	// channel for pushing inputs into workers
 	inputChan := make(chan nsInput, numWorkers)
@@ -761,6 +769,7 @@ func (e *Engine) Snapshot(ctx context.Context) (b []byte, errlol error) {
 	appUpdate := false
 	height, err := vegactx.BlockHeightFromContext(ctx)
 	if err != nil {
+		e.avlLock.Unlock()
 		return nil, err
 	}
 	if height != int64(e.app.Height) {
@@ -780,6 +789,7 @@ func (e *Engine) Snapshot(ctx context.Context) (b []byte, errlol error) {
 
 	cid, err := vegactx.ChainIDFromContext(ctx)
 	if err != nil {
+		e.avlLock.Unlock()
 		return nil, err
 	}
 	if e.app.ChainID != cid {
@@ -789,28 +799,37 @@ func (e *Engine) Snapshot(ctx context.Context) (b []byte, errlol error) {
 
 	if appUpdate {
 		if err = e.updateAppState(); err != nil {
+			e.avlLock.Unlock()
 			return nil, err
 		}
 		updated = true
 	}
 	if !updated {
+		e.avlLock.Unlock()
 		return e.lastSnapshotHash, nil
 	}
 
-	snapshot, err := e.saveCurrentTree()
-	if err != nil {
-		return nil, err
-	}
+	snapshot := e.avl.WorkingHash()
+	go func() {
+		if err := e.saveCurrentTree(); err != nil {
+			// If this fails we are screwed. The tree version is used to construct the root-hash so if we can't save it,
+			// the *next* snapshot we take will mismatch so we need to fail hard here.
+			e.log.Panic("failed to save snapshot to disk", logging.Error(err))
+		}
+		e.avlLock.Unlock()
+	}()
 
 	e.log.Info("snapshot taken", logging.Int64("height", height), logging.String("hash", hex.EncodeToString(snapshot)))
-	return snapshot, err
+	return snapshot, nil
 }
 
-func (e *Engine) saveCurrentTree() ([]byte, error) {
+// saveCurrentTree writes the current state of the AVL to disk and moves onto the next version of the tree
+// read for the next snapshot. Callers of this function must protect it with e.avlLock.
+func (e *Engine) saveCurrentTree() error {
 	t0 := time.Now()
 	h, v, err := e.avl.SaveVersion()
 	if err != nil {
-		return nil, err
+		return err
 	}
 	e.log.Info("#### saving snapshot took ", logging.Float64("time", time.Since(t0).Seconds()))
 	e.lastSnapshotHash = h
@@ -832,7 +851,7 @@ func (e *Engine) saveCurrentTree() ([]byte, error) {
 	}
 	// get ptr to current version
 	e.last = e.avl.ImmutableTree
-	return h, nil
+	return nil
 }
 
 func worker(e *Engine, nsInputChan chan nsInput, resChan chan<- nsSnapResult, wg *sync.WaitGroup, cnt *int64) {
