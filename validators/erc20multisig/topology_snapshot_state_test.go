@@ -1,16 +1,17 @@
 package erc20multisig_test
 
 import (
+	"bytes"
 	"context"
 	"encoding/hex"
 	"testing"
 	"time"
 
 	snapshotpb "code.vegaprotocol.io/protos/vega/snapshot/v1"
+	"code.vegaprotocol.io/vega/libs/crypto"
+	"code.vegaprotocol.io/vega/libs/proto"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/validators"
-
-	"code.vegaprotocol.io/vega/libs/proto"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -27,10 +28,6 @@ func TestERC20TopologySnapshotEmpty(t *testing.T) {
 	// first assert we have no threshold
 	assert.Equal(t, top.GetThreshold(), uint32(0))
 
-	hash, err := top.GetHash((&types.PayloadERC20MultiSigTopologyVerified{}).Key())
-	assert.NoError(t, err)
-	assert.NotNil(t, hash)
-
 	stateVerified, _, err := top.GetState((&types.PayloadERC20MultiSigTopologyVerified{}).Key())
 	assert.NoError(t, err)
 	assert.NotNil(t, stateVerified)
@@ -43,10 +40,10 @@ func TestERC20TopologySnapshotEmpty(t *testing.T) {
 	defer snapTop.ctrl.Finish()
 
 	snapTop.LoadState(context.Background(), types.PayloadFromProto(snap))
-	hash2, err := snapTop.GetHash((&types.PayloadERC20MultiSigTopologyVerified{}).Key())
+	state2, _, err := snapTop.GetState((&types.PayloadERC20MultiSigTopologyVerified{}).Key())
 	assert.NoError(t, err)
-	assert.NotNil(t, hash2)
-	assert.Equal(t, hash, hash2)
+	assert.NotNil(t, state2)
+	assert.True(t, bytes.Equal(stateVerified, state2))
 }
 
 func TestERC20TopologySnapshot(t *testing.T) {
@@ -213,30 +210,30 @@ func TestERC20TopologySnapshot(t *testing.T) {
 	assert.Len(t, cbs, 2)
 
 	// for now we still should have 2 pending, and 2 non pending
-	// we can compare hashes, they should be the same
-	tHashVerified, err := top.GetHash((&types.PayloadERC20MultiSigTopologyVerified{}).Key())
+	// we can compare states, they should be the same
+	tStateVerified, _, err := top.GetState((&types.PayloadERC20MultiSigTopologyVerified{}).Key())
 	assert.NoError(t, err)
 	assert.Equal(t,
-		hex.EncodeToString(tHashVerified),
+		hex.EncodeToString(crypto.Hash(tStateVerified)),
 		"0bde25caa61289dc7e20c6857cd3b6bb9991b07f0f0386e6dc66d8a281d47b32",
 	)
-	tHashPending, err := top.GetHash((&types.PayloadERC20MultiSigTopologyPending{}).Key())
+	tStatePending, _, err := top.GetState((&types.PayloadERC20MultiSigTopologyPending{}).Key())
 	assert.NoError(t, err)
 	assert.Equal(t,
-		hex.EncodeToString(tHashPending),
+		hex.EncodeToString(crypto.Hash(tStatePending)),
 		"f96537ca1555b1667b277c0d2694e08f2cb84e31160a3d240a7c107cc2c18be3",
 	)
 
-	t2HashVerified, err := top2.GetHash((&types.PayloadERC20MultiSigTopologyVerified{}).Key())
+	t2StateVerified, _, err := top2.GetState((&types.PayloadERC20MultiSigTopologyVerified{}).Key())
 	assert.NoError(t, err)
 	assert.Equal(t,
-		hex.EncodeToString(t2HashVerified),
+		hex.EncodeToString(crypto.Hash(t2StateVerified)),
 		"0bde25caa61289dc7e20c6857cd3b6bb9991b07f0f0386e6dc66d8a281d47b32",
 	)
-	t2HashPending, err := top2.GetHash((&types.PayloadERC20MultiSigTopologyPending{}).Key())
+	t2StatePending, _, err := top2.GetState((&types.PayloadERC20MultiSigTopologyPending{}).Key())
 	assert.NoError(t, err)
 	assert.Equal(t,
-		hex.EncodeToString(t2HashPending),
+		hex.EncodeToString(crypto.Hash(t2StatePending)),
 		"f96537ca1555b1667b277c0d2694e08f2cb84e31160a3d240a7c107cc2c18be3",
 	)
 
@@ -260,16 +257,16 @@ func TestERC20TopologySnapshot(t *testing.T) {
 	assert.Len(t, signers3, 2)
 
 	// now let's just check the hash
-	t2HashVerifiedLast, err := top2.GetHash((&types.PayloadERC20MultiSigTopologyVerified{}).Key())
+	t2StateVerifiedLast, _, err := top2.GetState((&types.PayloadERC20MultiSigTopologyVerified{}).Key())
 	assert.NoError(t, err)
 	assert.Equal(t,
-		hex.EncodeToString(t2HashVerifiedLast),
+		hex.EncodeToString(crypto.Hash(t2StateVerifiedLast)),
 		"99080a781530de82878e93a47967d0e4aed17db838834be9412d3646682a0b98",
 	)
-	t2HashPendingLast, err := top2.GetHash((&types.PayloadERC20MultiSigTopologyPending{}).Key())
+	t2StatePendingLast, _, err := top2.GetState((&types.PayloadERC20MultiSigTopologyPending{}).Key())
 	assert.NoError(t, err)
 	assert.Equal(t,
-		hex.EncodeToString(t2HashPendingLast),
+		hex.EncodeToString(crypto.Hash(t2StatePendingLast)),
 		"74b4ccedd16267f6e93d3416a14cc142e528518bb3bcc30cfa9884705045f197",
 	)
 }

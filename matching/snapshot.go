@@ -4,7 +4,6 @@ import (
 	"context"
 	"log"
 
-	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/libs/proto"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
@@ -27,21 +26,8 @@ func (b OrderBook) Namespace() types.SnapshotNamespace {
 	return types.MatchingSnapshot
 }
 
-func (b *OrderBook) GetHash(key string) ([]byte, error) {
-	if key != b.snapshot.Key() {
-		return nil, types.ErrSnapshotKeyDoesNotExist
-	}
-
-	if b.stopped {
-		return nil, nil
-	}
-
-	payload, _, e := b.GetState(key)
-	if e != nil {
-		return nil, e
-	}
-
-	return crypto.Hash(payload), nil
+func (e *OrderBook) HasChanged(k string) bool {
+	return true
 }
 
 func (b *OrderBook) GetState(key string) ([]byte, []types.StateProvider, error) {

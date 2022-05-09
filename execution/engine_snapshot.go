@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/libs/proto"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
@@ -123,14 +122,14 @@ func (e *Engine) restoreMarketsStates(ctx context.Context, ems []*types.ExecMark
 	return pvds, nil
 }
 
-func (e *Engine) getSerialiseSnapshotAndHash() (snapshot, hash []byte, providers []types.StateProvider, err error) {
+func (e *Engine) serialise() (snapshot []byte, providers []types.StateProvider, err error) {
 	if !e.changed() {
-		return e.snapshotSerialised, e.snapshotHash, e.newGeneratedProviders, nil
+		return e.snapshotSerialised, e.newGeneratedProviders, nil
 	}
 
 	mkts, pvds, err := e.marketsStates()
 	if err != nil {
-		return nil, nil, nil, fmt.Errorf("failed to get market states: %w", err)
+		return nil, nil, fmt.Errorf("failed to get market states: %w", err)
 	}
 
 	pl := types.Payload{
@@ -143,16 +142,12 @@ func (e *Engine) getSerialiseSnapshotAndHash() (snapshot, hash []byte, providers
 
 	s, err := proto.Marshal(pl.IntoProto())
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, err
 	}
-
-	h := crypto.Hash(s)
-
 	e.snapshotSerialised = s
-	e.snapshotHash = h
 	e.stateChanged = false
 
-	return s, h, pvds, nil
+	return s, pvds, nil
 }
 
 func (e *Engine) changed() bool {
@@ -185,17 +180,12 @@ func (e *Engine) Stopped() bool {
 	return false
 }
 
-func (e *Engine) GetHash(_ string) ([]byte, error) {
-	_, hash, _, err := e.getSerialiseSnapshotAndHash()
-	if err != nil {
-		return nil, err
-	}
-
-	return hash, nil
+func (e *Engine) HasChanged(k string) bool {
+	return e.changed()
 }
 
 func (e *Engine) GetState(_ string) ([]byte, []types.StateProvider, error) {
-	serialised, _, providers, err := e.getSerialiseSnapshotAndHash()
+	serialised, providers, err := e.serialise()
 	if err != nil {
 		return nil, providers, err
 	}
@@ -210,8 +200,9 @@ func (e *Engine) LoadState(ctx context.Context, payload *types.Payload) ([]types
 		if err != nil {
 			return nil, fmt.Errorf("failed to restore markets states: %w", err)
 		}
-
-		return providers, nil
+		e.snapshotSerialised, err = proto.Marshal(payload.IntoProto())
+		e.stateChanged = false
+		return providers, err
 	default:
 		return nil, types.ErrUnknownSnapshotType
 	}

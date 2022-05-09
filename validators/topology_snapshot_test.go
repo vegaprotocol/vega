@@ -27,10 +27,6 @@ func TestEmptySnapshot(t *testing.T) {
 	top := getTestTopology(t)
 	defer top.ctrl.Finish()
 
-	h, err := top.GetHash(topKey)
-	assert.Nil(t, err)
-	assert.NotEmpty(t, h)
-
 	s, p, err := top.GetState(topKey)
 	assert.Nil(t, err)
 	assert.Empty(t, p)
@@ -43,16 +39,16 @@ func TestChangeOnValidatorPerfUpdate(t *testing.T) {
 	top := getTestTopology(t)
 	defer top.ctrl.Finish()
 
-	h, err := top.GetHash(topKey)
+	s, _, err := top.GetState(topKey)
 	assert.Nil(t, err)
-	assert.NotEmpty(t, h)
+	assert.NotEmpty(t, s)
 
 	updateValidatorPerformanceToNonDefaultState(t, top.Topology)
 
-	h2, err := top.GetHash(topKey)
+	s2, _, err := top.GetState(topKey)
 	assert.Nil(t, err)
-	assert.NotEmpty(t, h2)
-	require.NotEqual(t, h, h2)
+	assert.NotEmpty(t, s2)
+	require.False(t, bytes.Equal(s, s2))
 }
 
 func TestTopologySnapshot(t *testing.T) {
@@ -60,7 +56,7 @@ func TestTopologySnapshot(t *testing.T) {
 	updateValidatorPerformanceToNonDefaultState(t, top.Topology)
 	defer top.ctrl.Finish()
 
-	h1, err := top.GetHash(topKey)
+	s1, _, err := top.GetState(topKey)
 	require.Nil(t, err)
 
 	tmPubKeys := []string{"2w5hxsVqWFTV6/f0swyNVqOhY1vWI42MrfO0xkUqsiA=", "67g7+123M0kfMR35U7LLq09eEU1dVr6jHBEgEtPzkrs="}
@@ -119,9 +115,9 @@ func TestTopologySnapshot(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Check the hashes have changed after each state change
-	h3, err := top.GetHash(topKey)
+	s3, _, err := top.GetState(topKey)
 	require.Nil(t, err)
-	require.False(t, bytes.Equal(h1, h3))
+	require.False(t, bytes.Equal(s1, s3))
 
 	// Get the state ready to load into a new instance of the engine
 	state, _, _ := top.GetState(topKey)
@@ -137,9 +133,9 @@ func TestTopologySnapshot(t *testing.T) {
 	require.Nil(t, err)
 
 	// Check the new reloaded engine is the same as the original
-	h4, err := snapTop.GetHash(topKey)
+	s4, _, err := snapTop.GetState(topKey)
 	require.Nil(t, err)
-	require.True(t, bytes.Equal(h3, h4))
+	require.True(t, bytes.Equal(s3, s4))
 	assert.ElementsMatch(t, top.AllNodeIDs(), snapTop.AllNodeIDs())
 	assert.ElementsMatch(t, top.AllVegaPubKeys(), snapTop.AllVegaPubKeys())
 	assert.Equal(t, top.IsValidator(), snapTop.IsValidator())

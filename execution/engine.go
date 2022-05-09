@@ -97,7 +97,6 @@ type Engine struct {
 	// Snapshot
 	stateChanged          bool
 	snapshotSerialised    []byte
-	snapshotHash          []byte
 	newGeneratedProviders []types.StateProvider // new providers generated during the last state change
 
 	// Map of all active snapshot providers that the execution engine has generated

@@ -187,7 +187,7 @@ func (e *Engine) OnTimeTick(ctx context.Context, t time.Time) {
 		sv := e.stateVars[ID]
 
 		if e.log.GetLevel() <= logging.DebugLevel {
-			e.log.Debug("New time based event for state variable received", logging.String("eventID", eventID))
+			e.log.Debug("New time based event for state variable received", logging.String("state-var", ID), logging.String("eventID", eventID))
 		}
 		sv.eventTriggered(eventID)
 		e.stateVarToNextCalc[ID] = t.Add(e.updateFrequency)
@@ -229,6 +229,7 @@ func (e *Engine) RegisterStateVariable(asset, market, name string, converter sta
 	}
 
 	sv := NewStateVar(e.log, e.broker, e.top, e.cmd, e.currentTime, ID, asset, market, converter, startCalculation, trigger, result)
+	sv.currentTime = e.currentTime
 	e.stateVars[ID] = sv
 	for _, t := range trigger {
 		if _, ok := e.eventTypeToStateVar[t]; !ok {

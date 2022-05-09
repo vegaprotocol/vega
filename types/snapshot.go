@@ -20,8 +20,8 @@ import (
 type StateProvider interface {
 	Namespace() SnapshotNamespace
 	Keys() []string
-	// NB: GetHash must be threadsafe as it may be called from multiple goroutines concurrently!
-	GetHash(key string) ([]byte, error)
+	// HasChanged indicates if the key state has changed and needs to be updated in the snapshot
+	HasChanged(key string) bool
 	// NB: GetState must be threadsafe as it may be called from multiple goroutines concurrently!
 	GetState(key string) ([]byte, []StateProvider, error)
 	LoadState(ctx context.Context, pl *Payload) ([]StateProvider, error)

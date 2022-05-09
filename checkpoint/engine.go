@@ -72,7 +72,6 @@ type Engine struct {
 
 	// snapshot fields
 	state   *types.PayloadCheckpoint
-	hash    []byte
 	data    []byte
 	updated bool
 	snapErr error

@@ -105,7 +105,7 @@ type Engine struct {
 	// snapshot state
 	gss             *governanceSnapshotState
 	keyToSerialiser map[string]func() ([]byte, error)
-	lock            sync.Mutex
+	lock            sync.RWMutex
 }
 
 func NewEngine(
@@ -136,7 +136,6 @@ func NewEngine(
 		netp:                   netp,
 		gss: &governanceSnapshotState{
 			changed:    map[string]bool{activeKey: true, enactedKey: true, nodeValidationKey: true},
-			hash:       map[string][]byte{},
 			serialised: map[string][]byte{},
 		},
 		keyToSerialiser: map[string]func() ([]byte, error){},

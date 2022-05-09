@@ -18,15 +18,15 @@ var allKey = (&types.PayloadNotary{}).Key()
 
 func TestNotarySnapshotEmpty(t *testing.T) {
 	notr := getTestNotary(t)
-	h1, err := notr.GetHash(allKey)
+	s, _, err := notr.GetState(allKey)
 	require.Nil(t, err)
-	require.Equal(t, 32, len(h1))
+	require.NotNil(t, s)
 }
 
 func TestNotarySnapshotVotesKinds(t *testing.T) {
 	notr := getTestNotary(t)
 
-	h1, err := notr.GetHash(allKey)
+	s1, _, err := notr.GetState(allKey)
 	require.Nil(t, err)
 
 	resID := "resid"
@@ -36,9 +36,9 @@ func TestNotarySnapshotVotesKinds(t *testing.T) {
 
 	notr.StartAggregate(resID, types.NodeSignatureKindAssetNew, []byte("123456"))
 
-	h2, err := notr.GetHash(allKey)
+	s2, _, err := notr.GetState(allKey)
 	require.Nil(t, err)
-	require.False(t, bytes.Equal(h1, h2))
+	require.False(t, bytes.Equal(s1, s2))
 }
 
 func populateNotary(t *testing.T, notr *testNotary) {
@@ -121,11 +121,11 @@ func TestNotarySnapshotRoundTrip(t *testing.T) {
 	_, err = snapNotr.LoadState(context.Background(), types.PayloadFromProto(snap))
 	require.Nil(t, err)
 
-	h1, err := notr.GetHash(allKey)
+	s1, _, err := notr.GetState(allKey)
 	require.Nil(t, err)
-	h2, err := notr.GetHash(allKey)
+	s2, _, err := notr.GetState(allKey)
 	require.Nil(t, err)
-	require.True(t, bytes.Equal(h1, h2))
+	require.True(t, bytes.Equal(s1, s2))
 
 	// Check the the loaded in (and original) node signatures exist and are perceived to be ok
 	_, ok1 := snapNotr.IsSigned(context.Background(), "resid1", types.NodeSignatureKindAssetNew)

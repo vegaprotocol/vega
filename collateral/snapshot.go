@@ -6,7 +6,6 @@ import (
 	"sync"
 
 	"code.vegaprotocol.io/vega/events"
-	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
 
@@ -19,11 +18,10 @@ type accState struct {
 	assPL      types.PayloadCollateralAssets
 	assets     map[string]types.Asset
 	assetIDs   []string
-	hashes     map[string][]byte
 	updates    map[string]bool
 	serialised map[string][]byte
 	hashKeys   []string
-	lock       sync.Mutex
+	lock       sync.RWMutex
 }
 
 var (
@@ -44,8 +42,10 @@ func (e *Engine) Stopped() bool {
 	return false
 }
 
-func (e *Engine) GetHash(k string) ([]byte, error) {
-	return e.state.getHash(k)
+func (e *Engine) HasChanged(k string) bool {
+	e.state.lock.RLock()
+	defer e.state.lock.RUnlock()
+	return e.state.updates[k]
 }
 
 func (e *Engine) GetState(k string) ([]byte, []types.StateProvider, error) {
@@ -60,17 +60,17 @@ func (e *Engine) LoadState(ctx context.Context, p *types.Payload) ([]types.State
 	// see what we're reloading
 	switch pl := p.Data.(type) {
 	case *types.PayloadCollateralAssets:
-		err := e.restoreAssets(ctx, pl.CollateralAssets)
+		err := e.restoreAssets(ctx, pl.CollateralAssets, p)
 		return nil, err
 	case *types.PayloadCollateralAccounts:
-		err := e.restoreAccounts(ctx, pl.CollateralAccounts)
+		err := e.restoreAccounts(ctx, pl.CollateralAccounts, p)
 		return nil, err
 	default:
 		return nil, ErrUnknownSnapshotType
 	}
 }
 
-func (e *Engine) restoreAccounts(ctx context.Context, accs *types.CollateralAccounts) error {
+func (e *Engine) restoreAccounts(ctx context.Context, accs *types.CollateralAccounts, p *types.Payload) error {
 	e.log.Debug("restoring accounts snapshot", logging.Int("n_accounts", len(accs.Accounts)))
 
 	evts := []events.Event{}
@@ -96,10 +96,14 @@ func (e *Engine) restoreAccounts(ctx context.Context, accs *types.CollateralAcco
 	e.state.updateAccs(e.hashableAccs)
 	e.broker.SendBatch(evts)
 	e.broker.SendBatch(pevts)
-	return nil
+	var err error
+	e.state.updates[e.state.accPL.Key()] = false
+	e.state.serialised[e.state.accPL.Key()], err = proto.Marshal(p.IntoProto())
+
+	return err
 }
 
-func (e *Engine) restoreAssets(ctx context.Context, assets *types.CollateralAssets) error {
+func (e *Engine) restoreAssets(ctx context.Context, assets *types.CollateralAssets, p *types.Payload) error {
 	// @TODO the ID and name might not be the same, perhaps we need
 	// to wrap the asset details to preserve that data
 	e.log.Debug("restoring assets snapshot", logging.Int("n_assets", len(assets.Assets)))
@@ -117,7 +121,10 @@ func (e *Engine) restoreAssets(ctx context.Context, assets *types.CollateralAsse
 		evts = append(evts, events.NewAssetEvent(ctx, *a))
 	}
 	e.broker.SendBatch(evts)
-	return nil
+	var err error
+	e.state.updates[e.state.assPL.Key()] = false
+	e.state.serialised[e.state.assPL.Key()], err = proto.Marshal(p.IntoProto())
+	return err
 }
 
 func newAccState() *accState {
@@ -130,7 +137,6 @@ func newAccState() *accState {
 		},
 		assets:     map[string]types.Asset{},
 		assetIDs:   []string{},
-		hashes:     map[string][]byte{},
 		updates:    map[string]bool{},
 		serialised: map[string][]byte{},
 	}
@@ -139,7 +145,6 @@ func newAccState() *accState {
 		state.accPL.Key(),
 	}
 	for _, k := range state.hashKeys {
-		state.hashes[k] = nil
 		state.updates[k] = true
 		state.serialised[k] = nil
 	}
@@ -177,7 +182,6 @@ func (a *accState) hashAssets() error {
 		return err
 	}
 	a.updates[k] = false
-	a.hashes[k] = crypto.Hash(data)
 	a.serialised[k] = data
 	return nil
 }
@@ -197,7 +201,6 @@ func (a *accState) hashAccounts() error {
 		return err
 	}
 	a.serialised[k] = data
-	a.hashes[k] = crypto.Hash(data)
 	a.updates[k] = false
 	return nil
 }
@@ -221,28 +224,5 @@ func (a *accState) getState(k string) ([]byte, error) {
 		return nil, err
 	}
 	h := a.serialised[k]
-	return h, nil
-}
-
-func (a *accState) getHash(k string) ([]byte, error) {
-	a.lock.Lock()
-	defer a.lock.Unlock()
-	update, exist := a.updates[k]
-	if !exist {
-		return nil, ErrSnapshotKeyDoesNotExist
-	}
-	// we have a pending update
-	if update {
-		// hash whichever one we need to update
-		if k == a.assPL.Key() {
-			if err := a.hashAssets(); err != nil {
-				return nil, err
-			}
-		} else if err := a.hashAccounts(); err != nil {
-			return nil, err
-		}
-	}
-	// fetch the new hash and return
-	h := a.hashes[k]
 	return h, nil
 }

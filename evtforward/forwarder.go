@@ -92,7 +92,6 @@ func New(log *logging.Logger, cfg Config, cmd Commander, time TimeService, top V
 		bcQueueAllowlist: allowlist,
 		efss: &efSnapshotState{
 			changed:    true,
-			hash:       []byte{},
 			serialised: []byte{},
 		},
 	}

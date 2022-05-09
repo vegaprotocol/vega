@@ -140,7 +140,7 @@ type Engine struct {
 	// recurring transfers
 	// transfer id to recurringTransfers
 	recurringTransfers map[string]*types.RecurringTransfer
-	lock               sync.Mutex
+	lock               sync.RWMutex
 }
 
 type withdrawalRef struct {
@@ -191,7 +191,6 @@ func New(
 				recurringTransfersKey: true,
 				scheduledTransfersKey: true,
 			},
-			hash:       map[string][]byte{},
 			serialised: map[string][]byte{},
 		},
 		keyToSerialiser:            map[string]func() ([]byte, error){},

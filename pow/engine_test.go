@@ -218,9 +218,6 @@ func TestCheckTx(t *testing.T) {
 	e.UpdateSpamPoWHashFunction(context.Background(), crypto.Sha3)
 	e.UpdateSpamPoWNumberOfTxPerBlock(context.Background(), num.NewUint(1))
 
-	// incorrect block
-	require.Equal(t, errors.New("unknown block height"), e.CheckTx(&testTx{blockHeight: 100}))
-
 	e.currentBlock = 100
 	e.blockHeight[0] = 100
 	e.blockHash[0] = "113EB390CBEB921433BDBA832CCDFD81AC4C77C3748A41B1AF08C96BC6C7BCD9"

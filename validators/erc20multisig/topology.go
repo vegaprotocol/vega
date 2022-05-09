@@ -81,7 +81,7 @@ type Topology struct {
 	keyToSerialiser map[string]func() ([]byte, error)
 
 	ethEventSource EthereumEventSource
-	lock           sync.Mutex
+	lock           sync.RWMutex
 }
 
 type pendingSigner struct {
@@ -123,7 +123,6 @@ func NewTopology(
 		witnessedThresholds: map[string]struct{}{},
 		witnessedSigners:    map[string]struct{}{},
 		tss: &topologySnapshotState{
-			hash:       map[string][]byte{},
 			serialised: map[string][]byte{},
 			changed: map[string]bool{
 				verifiedStateKey: true,
