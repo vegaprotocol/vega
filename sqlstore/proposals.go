@@ -8,7 +8,10 @@ import (
 	"code.vegaprotocol.io/data-node/entities"
 	"code.vegaprotocol.io/data-node/metrics"
 	"github.com/georgysavva/scany/pgxscan"
+	"github.com/pkg/errors"
 )
+
+var ErrProposalNotFound = errors.New("proposal not found")
 
 type Proposals struct {
 	*ConnectionSource
@@ -56,6 +59,10 @@ func (ps *Proposals) GetByID(ctx context.Context, id string) (entities.Proposal,
 	var p entities.Proposal
 	query := `SELECT * FROM proposals_current WHERE id=$1`
 	err := pgxscan.Get(ctx, ps.Connection, &p, query, entities.NewProposalID(id))
+	if pgxscan.NotFound(err) {
+		return p, fmt.Errorf("'%v': %w", id, ErrProposalNotFound)
+	}
+
 	return p, err
 }
 
@@ -64,6 +71,10 @@ func (ps *Proposals) GetByReference(ctx context.Context, ref string) (entities.P
 	var p entities.Proposal
 	query := `SELECT * FROM proposals_current WHERE reference=$1 LIMIT 1`
 	err := pgxscan.Get(ctx, ps.Connection, &p, query, ref)
+	if pgxscan.NotFound(err) {
+		return p, fmt.Errorf("'%v': %w", ref, ErrProposalNotFound)
+	}
+
 	return p, err
 }
 
