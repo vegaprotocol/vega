@@ -1,4 +1,5 @@
 # Vega specific entries
+build/
 cmd/*/*-dbg
 cmd/data-node/data-node*
 cmd/vegabenchmark/vegabenchmark*

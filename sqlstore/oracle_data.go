@@ -50,3 +50,16 @@ func (od *OracleData) GetOracleDataBySpecID(ctx context.Context, id string, pagi
 
 	return oracleData, err
 }
+
+func (od *OracleData) ListOracleData(ctx context.Context, pagination entities.Pagination) ([]entities.OracleData, error) {
+	var data []entities.OracleData
+	query := fmt.Sprintf(`select distinct on (id) %s
+from oracle_data
+order by id, vega_time desc`, sqlOracleDataColumns)
+
+	var bindVars []interface{}
+	query, bindVars = orderAndPaginateQuery(query, nil, pagination, bindVars...)
+	defer metrics.StartSQLQuery("OracleData", "ListOracleData")()
+	err := pgxscan.Select(ctx, od.Connection, &data, query, bindVars...)
+	return data, err
+}

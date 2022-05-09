@@ -17,7 +17,7 @@ func TestOracleSpec(t *testing.T) {
 	t.Run("Upsert should insert an OracleSpec when the id does not exist in the current block", testInsertIntoNewBlock)
 	t.Run("Upsert should update an OracleSpec when the id already exists in the current block", testUpdateExistingInBlock)
 	t.Run("GetSpecByID should retrieve the latest version of the specified OracleSpec", testGetSpecByID)
-	t.Run("GetSpecs should retrieve the latest versions of all OracleSpecs", testGetSpecs)
+	t.Run("ListOracleSpecs should retrieve the latest versions of all OracleSpecs", testGetSpecs)
 }
 
 func setupOracleSpecTest(t *testing.T, ctx context.Context) (*sqlstore.Blocks, *sqlstore.OracleSpec, *pgx.Conn) {

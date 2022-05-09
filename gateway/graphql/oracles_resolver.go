@@ -45,3 +45,12 @@ type conditionResolver VegaResolverRoot
 func (c conditionResolver) Operator(_ context.Context, obj *v1.Condition) (ConditionOperator, error) {
 	return convertConditionOperatorFromProto(obj.Operator)
 }
+
+type oracleDataResolver VegaResolverRoot
+
+func (o *oracleDataResolver) BroadcastAt(_ context.Context, obj *v1.OracleData) (string, error) {
+	if obj.BroadcastAt == 0 {
+		return "", nil
+	}
+	return vegatime.Format(vegatime.UnixNano(obj.BroadcastAt)), nil
+}

@@ -236,6 +236,16 @@ type OrderEstimate struct {
 	MarginLevels *vega.MarginLevels `json:"marginLevels"`
 }
 
+type Pagination struct {
+	// Skip the number of records specified, default is 0
+	Skip int `json:"skip"`
+	// Limit the number of returned records to the value specified, default is 50
+	Limit int `json:"limit"`
+	// Descending reverses the order of the records returned
+	// default is true, if false the results will be returned in ascending order
+	Descending bool `json:"descending"`
+}
+
 type PositionResolution struct {
 	// the market ID where position resolution happened
 	MarketID string `json:"marketId"`

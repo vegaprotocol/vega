@@ -74,6 +74,7 @@ type ResolverRoot interface {
 	NodeData() NodeDataResolver
 	NodeSignature() NodeSignatureResolver
 	OneOffTransfer() OneOffTransferResolver
+	OracleData() OracleDataResolver
 	OracleSpec() OracleSpecResolver
 	Order() OrderResolver
 	Party() PartyResolver
@@ -571,8 +572,10 @@ type ComplexityRoot struct {
 	}
 
 	OracleData struct {
-		Data    func(childComplexity int) int
-		PubKeys func(childComplexity int) int
+		BroadcastAt    func(childComplexity int) int
+		Data           func(childComplexity int) int
+		MatchedSpecIds func(childComplexity int) int
+		PubKeys        func(childComplexity int) int
 	}
 
 	OracleSpec struct {
@@ -773,9 +776,10 @@ type ComplexityRoot struct {
 		NodeData                   func(childComplexity int) int
 		NodeSignatures             func(childComplexity int, resourceID string) int
 		Nodes                      func(childComplexity int) int
-		OracleDataBySpec           func(childComplexity int, oracleSpecID string) int
+		OracleData                 func(childComplexity int, pagination *Pagination) int
+		OracleDataBySpec           func(childComplexity int, oracleSpecID string, pagination *Pagination) int
 		OracleSpec                 func(childComplexity int, oracleSpecID string) int
-		OracleSpecs                func(childComplexity int) int
+		OracleSpecs                func(childComplexity int, pagination *Pagination) int
 		OrderByID                  func(childComplexity int, orderID string, version *int) int
 		OrderByReference           func(childComplexity int, reference string) int
 		OrderVersions              func(childComplexity int, orderID string, skip *int, first *int, last *int) int
@@ -1253,6 +1257,9 @@ type NodeSignatureResolver interface {
 type OneOffTransferResolver interface {
 	DeliverOn(ctx context.Context, obj *v1.OneOffTransfer) (*string, error)
 }
+type OracleDataResolver interface {
+	BroadcastAt(ctx context.Context, obj *v11.OracleData) (string, error)
+}
 type OracleSpecResolver interface {
 	CreatedAt(ctx context.Context, obj *v11.OracleSpec) (string, error)
 	UpdatedAt(ctx context.Context, obj *v11.OracleSpec) (*string, error)
@@ -1340,9 +1347,10 @@ type QueryResolver interface {
 	Parties(ctx context.Context, id *string) ([]*vega.Party, error)
 	Party(ctx context.Context, id string) (*vega.Party, error)
 	LastBlockHeight(ctx context.Context) (string, error)
-	OracleSpecs(ctx context.Context) ([]*v11.OracleSpec, error)
+	OracleSpecs(ctx context.Context, pagination *Pagination) ([]*v11.OracleSpec, error)
 	OracleSpec(ctx context.Context, oracleSpecID string) (*v11.OracleSpec, error)
-	OracleDataBySpec(ctx context.Context, oracleSpecID string) ([]*v11.OracleData, error)
+	OracleDataBySpec(ctx context.Context, oracleSpecID string, pagination *Pagination) ([]*v11.OracleData, error)
+	OracleData(ctx context.Context, pagination *Pagination) ([]*v11.OracleData, error)
 	OrderByID(ctx context.Context, orderID string, version *int) (*vega.Order, error)
 	OrderVersions(ctx context.Context, orderID string, skip *int, first *int, last *int) ([]*vega.Order, error)
 	OrderByReference(ctx context.Context, reference string) (*vega.Order, error)
@@ -3539,12 +3547,26 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.OneOffTransfer.DeliverOn(childComplexity), true
 
+	case "OracleData.broadcastAt":
+		if e.complexity.OracleData.BroadcastAt == nil {
+			break
+		}
+
+		return e.complexity.OracleData.BroadcastAt(childComplexity), true
+
 	case "OracleData.data":
 		if e.complexity.OracleData.Data == nil {
 			break
 		}
 
 		return e.complexity.OracleData.Data(childComplexity), true
+
+	case "OracleData.matchedSpecIds":
+		if e.complexity.OracleData.MatchedSpecIds == nil {
+			break
+		}
+
+		return e.complexity.OracleData.MatchedSpecIds(childComplexity), true
 
 	case "OracleData.pubKeys":
 		if e.complexity.OracleData.PubKeys == nil {
@@ -4574,6 +4596,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.Nodes(childComplexity), true
 
+	case "Query.oracleData":
+		if e.complexity.Query.OracleData == nil {
+			break
+		}
+
+		args, err := ec.field_Query_oracleData_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.OracleData(childComplexity, args["pagination"].(*Pagination)), true
+
 	case "Query.oracleDataBySpec":
 		if e.complexity.Query.OracleDataBySpec == nil {
 			break
@@ -4584,7 +4618,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.OracleDataBySpec(childComplexity, args["oracleSpecID"].(string)), true
+		return e.complexity.Query.OracleDataBySpec(childComplexity, args["oracleSpecID"].(string), args["pagination"].(*Pagination)), true
 
 	case "Query.oracleSpec":
 		if e.complexity.Query.OracleSpec == nil {
@@ -4603,7 +4637,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		return e.complexity.Query.OracleSpecs(childComplexity), true
+		args, err := ec.field_Query_oracleSpecs_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.OracleSpecs(childComplexity, args["pagination"].(*Pagination)), true
 
 	case "Query.orderByID":
 		if e.complexity.Query.OrderByID == nil {
@@ -6344,13 +6383,27 @@ type Query {
   lastBlockHeight: String!
 
   "All registered oracle specs"
-  oracleSpecs: [OracleSpec!]
+  oracleSpecs(
+    "Pagination"
+    pagination: Pagination
+  ): [OracleSpec!]
 
   "An oracle spec for a given oracle spec ID"
   oracleSpec("ID for an oracle spec" oracleSpecID: String!): OracleSpec
 
   "All oracle data for a given oracle spec ID"
-  oracleDataBySpec("ID for an oracle spec" oracleSpecID: String!): [OracleData!]
+  oracleDataBySpec(
+    "ID for an oracle spec"
+    oracleSpecID: String!
+    "Pagination"
+    pagination: Pagination
+  ): [OracleData!]
+
+  "All registered oracle specs"
+  oracleData(
+    "Pagination"
+    pagination: Pagination
+  ): [OracleData!]
 
   "An order in the VEGA network found by orderID"
   orderByID(
@@ -6598,14 +6651,14 @@ type RecurringTransfer {
 }
 
 enum DispatchMetric {
-  
+
   MarketTradingValue
-  
+
   MakerFeesReceived
 
   TakerFeesPaid
 
-  LPFeesReceived 
+  LPFeesReceived
 }
 
 type DispatchStrategy {
@@ -7181,6 +7234,18 @@ type OracleData {
   pubKeys: [String!]
   "data contains all the properties send by an oracle"
   data: [Property!]
+
+  """
+  lists all the oracle specs that matched this oracle data.
+  When the array is empty, it means no oracle spec matched this oracle data.
+  """
+  matchedSpecIds: [String!]
+  """
+  RFC3339Nano formatted date and time for when the data was broadcast to the markets
+  with a matching oracle spec.
+  It has no value when the oracle date did not match any oracle spec.
+  """
+  broadcastAt:  String!
 }
 
 "A property associates a name to a value"
@@ -9063,6 +9128,18 @@ type NetworkLimits {
   "The date/timestamp in unix nanoseconds at which asset proposals will be enabled (0 indicates not set)"
   proposeAssetEnabledFrom: Timestamp!
 }
+
+input Pagination {
+  "Skip the number of records specified, default is 0"
+  skip: Int!
+  "Limit the number of returned records to the value specified, default is 50"
+  limit: Int!
+  """
+  Descending reverses the order of the records returned
+  default is true, if false the results will be returned in ascending order
+  """
+  descending: Boolean!
+}
 `, BuiltIn: false},
 }
 var parsedSchema = gqlparser.MustLoadSchema(sources...)
@@ -9944,6 +10021,30 @@ func (ec *executionContext) field_Query_oracleDataBySpec_args(ctx context.Contex
 		}
 	}
 	args["oracleSpecID"] = arg0
+	var arg1 *Pagination
+	if tmp, ok := rawArgs["pagination"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pagination"))
+		arg1, err = ec.unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋdataᚑnodeᚋgatewayᚋgraphqlᚐPagination(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["pagination"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_oracleData_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *Pagination
+	if tmp, ok := rawArgs["pagination"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pagination"))
+		arg0, err = ec.unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋdataᚑnodeᚋgatewayᚋgraphqlᚐPagination(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["pagination"] = arg0
 	return args, nil
 }
 
@@ -9959,6 +10060,21 @@ func (ec *executionContext) field_Query_oracleSpec_args(ctx context.Context, raw
 		}
 	}
 	args["oracleSpecID"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_oracleSpecs_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *Pagination
+	if tmp, ok := rawArgs["pagination"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pagination"))
+		arg0, err = ec.unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋdataᚑnodeᚋgatewayᚋgraphqlᚐPagination(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["pagination"] = arg0
 	return args, nil
 }
 
@@ -20389,6 +20505,73 @@ func (ec *executionContext) _OracleData_data(ctx context.Context, field graphql.
 	return ec.marshalOProperty2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚋoraclesᚋv1ᚐPropertyᚄ(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _OracleData_matchedSpecIds(ctx context.Context, field graphql.CollectedField, obj *v11.OracleData) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "OracleData",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MatchedSpecIds, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]string)
+	fc.Result = res
+	return ec.marshalOString2ᚕstringᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _OracleData_broadcastAt(ctx context.Context, field graphql.CollectedField, obj *v11.OracleData) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "OracleData",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.OracleData().BroadcastAt(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _OracleSpec_id(ctx context.Context, field graphql.CollectedField, obj *v11.OracleSpec) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -24252,9 +24435,16 @@ func (ec *executionContext) _Query_oracleSpecs(ctx context.Context, field graphq
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_oracleSpecs_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().OracleSpecs(rctx)
+		return ec.resolvers.Query().OracleSpecs(rctx, args["pagination"].(*Pagination))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -24332,7 +24522,46 @@ func (ec *executionContext) _Query_oracleDataBySpec(ctx context.Context, field g
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().OracleDataBySpec(rctx, args["oracleSpecID"].(string))
+		return ec.resolvers.Query().OracleDataBySpec(rctx, args["oracleSpecID"].(string), args["pagination"].(*Pagination))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*v11.OracleData)
+	fc.Result = res
+	return ec.marshalOOracleData2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚋoraclesᚋv1ᚐOracleDataᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_oracleData(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_oracleData_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().OracleData(rctx, args["pagination"].(*Pagination))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -32818,6 +33047,45 @@ func (ec *executionContext) unmarshalInputAccountFilter(ctx context.Context, obj
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputPagination(ctx context.Context, obj interface{}) (Pagination, error) {
+	var it Pagination
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	for k, v := range asMap {
+		switch k {
+		case "skip":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("skip"))
+			it.Skip, err = ec.unmarshalNInt2int(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "limit":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("limit"))
+			it.Limit, err = ec.unmarshalNInt2int(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "descending":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("descending"))
+			it.Descending, err = ec.unmarshalNBoolean2bool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
 // endregion **************************** input.gotpl *****************************
 
 // region    ************************** interface.gotpl ***************************
@@ -38196,6 +38464,33 @@ func (ec *executionContext) _OracleData(ctx context.Context, sel ast.SelectionSe
 
 			out.Values[i] = innerFunc(ctx)
 
+		case "matchedSpecIds":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._OracleData_matchedSpecIds(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+		case "broadcastAt":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._OracleData_broadcastAt(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -40375,6 +40670,26 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_oracleDataBySpec(ctx, field)
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx, innerFunc)
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return rrm(innerCtx)
+			})
+		case "oracleData":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_oracleData(ctx, field)
 				return res
 			}
 
@@ -47832,6 +48147,14 @@ func (ec *executionContext) marshalOOrderType2ᚖcodeᚗvegaprotocolᚗioᚋdata
 		return graphql.Null
 	}
 	return v
+}
+
+func (ec *executionContext) unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋdataᚑnodeᚋgatewayᚋgraphqlᚐPagination(ctx context.Context, v interface{}) (*Pagination, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputPagination(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) marshalOParty2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐPartyᚄ(ctx context.Context, sel ast.SelectionSet, v []*vega.Party) graphql.Marshaler {

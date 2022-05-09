@@ -221,7 +221,7 @@ func (rc *RewardCounters) notifyWithLock(rd vega.Reward) {
 	}
 }
 
-//subscribe allows a client to register for updates of the reward details.
+// subscribe allows a client to register for updates of the reward details.
 func (rc *RewardCounters) subscribe(sub subscription) uint64 {
 	rc.mu.Lock()
 	defer rc.mu.Unlock()
@@ -254,7 +254,7 @@ func (rc *RewardCounters) unsubscribe(id uint64) error {
 	return fmt.Errorf("subscriber to delegation updates does not exist with id: %d", id)
 }
 
-//ObserveRewardDetails returns a channel for subscribing to reward details.
+// ObserveRewardDetails returns a channel for subscribing to reward details.
 func (rc *RewardCounters) ObserveRewards(ctx context.Context, retries int, assetID, party string) (rewardCh <-chan vega.Reward, ref uint64) {
 	rewards := make(chan vega.Reward)
 	ctx, cancel := context.WithCancel(ctx)
@@ -349,8 +349,7 @@ func (rc *RewardCounters) GetRewards(ctx context.Context, partyID string, skip, 
 		rewards = append(rewards, rc.getRewards(ctx, partyID, assetID)...)
 	}
 
-	rewards = PaginateRewards(rewards, skip, limit, descending)
-	return rewards
+	return PaginateRewards(rewards, skip, limit, descending)
 }
 
 // Types returns all the message types this subscriber wants to receive
@@ -378,18 +377,18 @@ func (rc *RewardCounters) getRewards(ctx context.Context, partyID, assetID strin
 	return rewards
 }
 
-// Paginate rewards, sorting by epoch
+// PaginateRewards paginates rewards, sorted by epoch
 func PaginateRewards(rewards []*vega.Reward, skip, limit uint64, descending bool) []*vega.Reward {
 	length := uint64(len(rewards))
 	start := uint64(0)
 	end := length
 
-	sort_fn := func(i, j int) bool { return rewards[i].Epoch < rewards[j].Epoch }
+	sortFn := func(i, j int) bool { return rewards[i].Epoch < rewards[j].Epoch }
 	if descending {
-		sort_fn = func(i, j int) bool { return rewards[i].Epoch > rewards[j].Epoch }
+		sortFn = func(i, j int) bool { return rewards[i].Epoch > rewards[j].Epoch }
 	}
 
-	sort.Slice(rewards, sort_fn)
+	sort.SliceStable(rewards, sortFn)
 	start = skip
 	if limit != 0 {
 		end = skip + limit

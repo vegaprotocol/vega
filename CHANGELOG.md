@@ -24,6 +24,7 @@
 - [548](https://github.com/vegaprotocol/data-node/issues/548) - Remove foreign key constraints on hyper tables
 - [591](https://github.com/vegaprotocol/data-node/issues/591) - Optimise liquidity provision and margin levels data retention and storage
 - [588](https://github.com/vegaprotocol/data-node/issues/588) - Return correct error code when proposal not found
+- [556](https://github.com/vegaprotocol/data-node/issues/556) - Expose an endpoint to list oracle data
 
 ### 🐛 Fixes
 - [524](https://github.com/vegaprotocol/data-node/issues/524) - Fix for incorrect balances

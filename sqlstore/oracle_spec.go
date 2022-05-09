@@ -64,7 +64,7 @@ order by id, vega_time desc`, sqlOracleSpecColumns)
 
 	var bindVars []interface{}
 	query, bindVars = orderAndPaginateQuery(query, nil, pagination, bindVars...)
-	defer metrics.StartSQLQuery("OracleSpec", "GetSpecs")()
+	defer metrics.StartSQLQuery("OracleSpec", "ListOracleSpecs")()
 	err := pgxscan.Select(ctx, os.Connection, &specs, query, bindVars...)
 	return specs, err
 }
