@@ -26,7 +26,7 @@ func TestGovernanceSnapshotProposalReject(t *testing.T) {
 	defer eng.ctrl.Finish()
 
 	// get snapshot hash for active proposals
-	emptyHash, err := eng.GetHash(activeKey)
+	emptyState, _, err := eng.GetState(activeKey)
 	require.Nil(t, err)
 
 	// Submit a proposal
@@ -39,7 +39,7 @@ func TestGovernanceSnapshotProposalReject(t *testing.T) {
 	require.NoError(t, err)
 
 	// get snapshot hash for active proposals
-	h1, err := eng.GetHash(activeKey)
+	s1, _, err := eng.GetState(activeKey)
 	require.Nil(t, err)
 
 	// Reject proposal
@@ -48,12 +48,12 @@ func TestGovernanceSnapshotProposalReject(t *testing.T) {
 	require.NoError(t, err)
 
 	// Check its changed now proposal has been rejected
-	h2, err := eng.GetHash(activeKey)
+	s2, _, err := eng.GetState(activeKey)
 	require.Nil(t, err)
-	require.False(t, bytes.Equal(h1, h2))
+	require.False(t, bytes.Equal(s1, s2))
 
 	// Check the hash is the same before we submitted the proposal
-	require.True(t, bytes.Equal(emptyHash, h2))
+	require.True(t, bytes.Equal(emptyState, s2))
 }
 
 func TestGovernanceSnapshotProposalEnacted(t *testing.T) {
@@ -61,10 +61,10 @@ func TestGovernanceSnapshotProposalEnacted(t *testing.T) {
 	defer eng.ctrl.Finish()
 
 	// get snapshot hashes
-	emptyActive, err := eng.GetHash(activeKey)
+	emptyActive, _, err := eng.GetState(activeKey)
 	require.Nil(t, err)
 
-	emptyEnacted, err := eng.GetHash(enactedKey)
+	emptyEnacted, _, err := eng.GetState(enactedKey)
 	require.Nil(t, err)
 
 	proposer := eng.newValidParty("proposer", 1)
@@ -96,11 +96,11 @@ func TestGovernanceSnapshotProposalEnacted(t *testing.T) {
 	eng.OnChainTimeUpdate(context.Background(), afterEnactment)
 
 	// check snapshot hashes (should have no active proposals and one enacted proposal)
-	activeHash, err := eng.GetHash(activeKey)
+	activeHash, _, err := eng.GetState(activeKey)
 	require.Nil(t, err)
 	require.True(t, bytes.Equal(emptyActive, activeHash)) // active proposal should be gone now its enacted
 
-	enactedHash, err := eng.GetHash(enactedKey)
+	enactedHash, _, err := eng.GetState(enactedKey)
 	require.Nil(t, err)
 	require.False(t, bytes.Equal(emptyEnacted, enactedHash))
 }
@@ -109,8 +109,8 @@ func TestGovernanceSnapshotNodeProposal(t *testing.T) {
 	eng := getTestEngine(t)
 	defer eng.ctrl.Finish()
 
-	// get snapshot hash for active proposals
-	emptyHash, err := eng.GetHash(nodeValidationKey)
+	// get snapshot state for active proposals
+	emptyState, _, err := eng.GetState(nodeValidationKey)
 	require.Nil(t, err)
 
 	// Submit a proposal
@@ -126,10 +126,10 @@ func TestGovernanceSnapshotNodeProposal(t *testing.T) {
 	_, err = eng.SubmitProposal(context.Background(), *types.ProposalSubmissionFromProposal(&proposal), proposal.ID, party.Id)
 	require.Nil(t, err)
 
-	// get snapshot hash for node proposals and hope its changed
-	h1, err := eng.GetHash(nodeValidationKey)
+	// get snapshot state for node proposals and hope its changed
+	s1, _, err := eng.GetState(nodeValidationKey)
 	require.Nil(t, err)
-	require.False(t, bytes.Equal(emptyHash, h1))
+	require.False(t, bytes.Equal(emptyState, s1))
 
 	// Get snapshot payload
 	state, _, err := eng.GetState(nodeValidationKey)
@@ -155,9 +155,9 @@ func TestGovernanceSnapshotNodeProposal(t *testing.T) {
 	)
 	require.Nil(t, err)
 
-	h2, err := snapEng.GetHash(nodeValidationKey)
+	s2, _, err := snapEng.GetState(nodeValidationKey)
 	require.Nil(t, err)
-	require.True(t, bytes.Equal(h1, h2))
+	require.True(t, bytes.Equal(s1, s2))
 }
 
 func TestGovernanceSnapshotRoundTrip(t *testing.T) {
@@ -166,7 +166,7 @@ func TestGovernanceSnapshotRoundTrip(t *testing.T) {
 	defer eng.ctrl.Finish()
 
 	// initial state
-	emptyHash, err := eng.GetHash(activeKey)
+	emptyState, _, err := eng.GetState(activeKey)
 	require.Nil(t, err)
 
 	proposer := eng.newValidParty("proposer", 1)
@@ -179,9 +179,9 @@ func TestGovernanceSnapshotRoundTrip(t *testing.T) {
 	_, err = eng.SubmitProposal(ctx, *types.ProposalSubmissionFromProposal(&proposal), proposal.ID, proposer.Id)
 	assert.Nil(t, err)
 
-	h1, err := eng.GetHash(activeKey)
+	s1, _, err := eng.GetState(activeKey)
 	require.Nil(t, err)
-	assert.False(t, bytes.Equal(emptyHash, h1))
+	assert.False(t, bytes.Equal(emptyState, s1))
 
 	snapEng := getTestEngine(t)
 	defer snapEng.ctrl.Finish()
@@ -197,9 +197,9 @@ func TestGovernanceSnapshotRoundTrip(t *testing.T) {
 	_, err = snapEng.LoadState(ctx, types.PayloadFromProto(snap))
 	require.Nil(t, err)
 
-	h2, err := snapEng.GetHash(activeKey)
+	s2, _, err := snapEng.GetState(activeKey)
 	require.Nil(t, err)
-	require.True(t, bytes.Equal(h1, h2))
+	require.True(t, bytes.Equal(s1, s2))
 }
 
 func TestGovernanceSnapshotEmpty(t *testing.T) {
@@ -207,15 +207,15 @@ func TestGovernanceSnapshotEmpty(t *testing.T) {
 	eng := getTestEngine(t)
 	defer eng.ctrl.Finish()
 
-	h, err := eng.GetHash(activeKey)
+	s, _, err := eng.GetState(activeKey)
 	require.Nil(t, err)
-	require.NotNil(t, h)
+	require.NotNil(t, s)
 
-	h, err = eng.GetHash(enactedKey)
+	s, _, err = eng.GetState(enactedKey)
 	require.Nil(t, err)
-	require.NotNil(t, h)
+	require.NotNil(t, s)
 
-	h, err = eng.GetHash(nodeValidationKey)
+	s, _, err = eng.GetState(nodeValidationKey)
 	require.Nil(t, err)
-	require.NotNil(t, h)
+	require.NotNil(t, s)
 }

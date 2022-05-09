@@ -24,7 +24,7 @@ func (e *Engine) recurringTransfer(
 ) (err error) {
 	defer func() {
 		if err == nil {
-			e.bss.changed[recurringTransfersKey] = true
+			e.bss.changedRecurringTransfers = true
 		}
 		e.broker.Send(events.NewRecurringTransferFundsEvent(ctx, transfer))
 	}()
@@ -207,7 +207,7 @@ func (e *Engine) distributeRecurringTransfers(
 	}
 	if len(transfersDone) > 0 {
 		// also set the state change
-		e.bss.changed[recurringTransfersKey] = true
+		e.bss.changedRecurringTransfers = true
 		e.broker.SendBatch(transfersDone)
 	}
 

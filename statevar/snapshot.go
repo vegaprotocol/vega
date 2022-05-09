@@ -7,7 +7,6 @@ import (
 	"time"
 
 	snapshot "code.vegaprotocol.io/protos/vega/snapshot/v1"
-	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
 
@@ -22,7 +21,6 @@ var (
 
 type snapshotState struct {
 	changed    bool
-	hash       []byte
 	serialised []byte
 }
 
@@ -63,45 +61,37 @@ func (e *Engine) serialiseNextTimeTrigger() []*snapshot.NextTimeTrigger {
 	return timeTriggers
 }
 
-func (e *Engine) serialise() ([]byte, error) {
+// get the serialised form of the given key.
+func (e *Engine) serialise(k string) ([]byte, error) {
+	if k != key {
+		return nil, ErrSnapshotKeyDoesNotExist
+	}
+
+	if !e.ss.changed {
+		return e.ss.serialised, nil
+	}
+
 	payload := types.Payload{
 		Data: &types.PayloadFloatingPointConsensus{
 			ConsensusData: e.serialiseNextTimeTrigger(),
 		},
 	}
-	x := payload.IntoProto()
-	return proto.Marshal(x)
-}
-
-// get the serialised form and hash of the given key.
-func (e *Engine) getSerialisedAndHash(k string) ([]byte, []byte, error) {
-	if k != key {
-		return nil, nil, ErrSnapshotKeyDoesNotExist
-	}
-
-	if !e.ss.changed {
-		return e.ss.serialised, e.ss.hash, nil
-	}
-
-	data, err := e.serialise()
+	data, err := proto.Marshal(payload.IntoProto())
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
-	hash := crypto.Hash(data)
 	e.ss.serialised = data
-	e.ss.hash = hash
 	e.ss.changed = false
-	return data, hash, nil
+	return data, nil
 }
 
-func (e *Engine) GetHash(k string) ([]byte, error) {
-	_, hash, err := e.getSerialisedAndHash(k)
-	return hash, err
+func (e *Engine) HasChanged(k string) bool {
+	return e.ss.changed
 }
 
 func (e *Engine) GetState(k string) ([]byte, []types.StateProvider, error) {
-	state, _, err := e.getSerialisedAndHash(k)
+	state, err := e.serialise(k)
 	return state, nil, err
 }
 
@@ -112,19 +102,21 @@ func (e *Engine) LoadState(ctx context.Context, p *types.Payload) ([]types.State
 	// see what we're reloading
 	switch pl := p.Data.(type) {
 	case *types.PayloadFloatingPointConsensus:
-		return nil, e.restore(ctx, pl.ConsensusData)
+		return nil, e.restore(ctx, pl.ConsensusData, p)
 	default:
 		return nil, types.ErrUnknownSnapshotType
 	}
 }
 
-func (e *Engine) restore(ctx context.Context, nextTimeTrigger []*snapshot.NextTimeTrigger) error {
+func (e *Engine) restore(ctx context.Context, nextTimeTrigger []*snapshot.NextTimeTrigger, p *types.Payload) error {
 	e.log.Debug("restoring statevar snapshot", logging.Int("n_triggers", len(nextTimeTrigger)))
 	for _, data := range nextTimeTrigger {
 		e.readyForTimeTrigger[data.Asset+data.Market] = struct{}{}
 		e.stateVarToNextCalc[data.Id] = time.Unix(0, data.NextTrigger)
 		e.log.Debug("restoring", logging.String("id", data.Id), logging.Time("time", time.Unix(0, data.NextTrigger)))
 	}
-	e.ss.changed = true
-	return nil
+	var err error
+	e.ss.changed = false
+	e.ss.serialised, err = proto.Marshal(p.IntoProto())
+	return err
 }

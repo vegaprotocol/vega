@@ -1,6 +1,7 @@
 package execution_test
 
 import (
+	"bytes"
 	"context"
 	"testing"
 
@@ -196,16 +197,14 @@ func TestValidMarketSnapshot(t *testing.T) {
 	require.Equal(t, 1, len(keys))
 	key := keys[0]
 
-	// The snapshot engine will call GetHash first so we keep that order
-	// to mimic the flow
-	hash1, err := engine.GetHash(key)
+	state1, _, err := engine.GetState(key)
 	assert.NoError(t, err)
-	assert.NotEmpty(t, hash1)
+	assert.NotEmpty(t, state1)
 
 	// Take the snapshot and hash
-	bytes, providers, err := engine.GetState(key)
+	b, providers, err := engine.GetState(key)
 	assert.NoError(t, err)
-	assert.NotEmpty(t, bytes)
+	assert.NotEmpty(t, b)
 	assert.Len(t, providers, 4)
 
 	// Turn the bytes back into a payload and restore to a new engine
@@ -213,7 +212,7 @@ func TestValidMarketSnapshot(t *testing.T) {
 	defer ctrl.Finish()
 	assert.NotNil(t, engine2)
 	snap := &snapshot.Payload{}
-	err = proto.Unmarshal(bytes, snap)
+	err = proto.Unmarshal(b, snap)
 	assert.NoError(t, err)
 	loadStateProviders, err := engine2.LoadState(context.Background(), types.PayloadFromProto(snap))
 	assert.Len(t, loadStateProviders, 4)
@@ -221,7 +220,7 @@ func TestValidMarketSnapshot(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Check the hashes are the same
-	hash2, err := engine2.GetHash(key)
+	state2, _, err := engine2.GetState(key)
 	assert.NoError(t, err)
-	assert.Equal(t, hash1, hash2)
+	assert.True(t, bytes.Equal(state1, state2))
 }

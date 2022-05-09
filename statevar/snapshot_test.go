@@ -25,10 +25,6 @@ func TestSnapshot(t *testing.T) {
 	engine1.ReadyForTimeTrigger("asset1", "market2")
 
 	key := (&gtypes.PayloadFloatingPointConsensus{}).Key()
-
-	hash1, err := engine1.GetHash(key)
-	require.NoError(t, err)
-
 	state1, _, err := engine1.GetState(key)
 	require.NoError(t, err)
 
@@ -44,10 +40,6 @@ func TestSnapshot(t *testing.T) {
 	require.NoError(t, proto.Unmarshal(state1, &pl))
 	engine2.LoadState(context.Background(), gtypes.PayloadFromProto(&pl))
 
-	hash2, err := engine2.GetHash(key)
-	require.NoError(t, err)
-	require.True(t, bytes.Equal(hash1, hash2))
-
 	state2, _, err := engine2.GetState(key)
 	require.NoError(t, err)
 	require.True(t, bytes.Equal(state1, state2))
@@ -59,13 +51,13 @@ func TestSnapshotChangeFlagSet(t *testing.T) {
 
 	engine1.RegisterStateVariable("asset1", "market1", "var1", converter{}, defaultStartCalc(), []types.StateVarEventType{types.StateVarEventTypeMarketEnactment, types.StateVarEventTypeTimeTrigger}, defaultResultBack())
 
-	hash1, err := engine1.GetHash(key)
+	state1, _, err := engine1.GetState(key)
 	require.NoError(t, err)
 
 	// this should hit the change flag causing us to reserialise at the next hash
 	engine1.ReadyForTimeTrigger("asset1", "market1")
 
-	hash2, err := engine1.GetHash(key)
+	state2, _, err := engine1.GetState(key)
 	require.NoError(t, err)
-	require.NotEqual(t, hash1, hash2)
+	require.False(t, bytes.Equal(state1, state2))
 }

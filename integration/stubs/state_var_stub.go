@@ -90,7 +90,9 @@ func (e *StateVarStub) NewEvent(asset, market string, eventType statevar.StateVa
 }
 
 func (s *sv) CalculationFinished(eventID string, result statevar.StateVariableResult, err error) {
-	s.result(context.Background(), result)
+	if err == nil {
+		s.result(context.Background(), result)
+	}
 }
 
 func (e *StateVarStub) ReadyForTimeTrigger(asset, mktID string) {

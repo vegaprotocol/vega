@@ -6,7 +6,6 @@ import (
 
 	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
 	snapshotpb "code.vegaprotocol.io/protos/vega/snapshot/v1"
-	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
 
@@ -24,9 +23,10 @@ var (
 )
 
 type topologySnapshotState struct {
-	hash       map[string][]byte
-	serialised map[string][]byte
-	changed    map[string]bool
+	serialisedVerifiedState []byte
+	serialisedPendingState  []byte
+	changedVerifiedState    bool
+	changedPendingState     bool
 }
 
 func (s *Topology) Namespace() types.SnapshotNamespace {
@@ -37,13 +37,19 @@ func (s *Topology) Keys() []string {
 	return hashKeys
 }
 
-func (s *Topology) GetHash(k string) ([]byte, error) {
-	_, hash, err := s.getSerialisedAndHash(k)
-	return hash, err
+func (s *Topology) HasChanged(k string) bool {
+	switch k {
+	case verifiedStateKey:
+		return s.tss.changedVerifiedState
+	case pendingStateKey:
+		return s.tss.changedPendingState
+	default:
+		return false
+	}
 }
 
 func (s *Topology) GetState(k string) ([]byte, []types.StateProvider, error) {
-	data, _, err := s.getSerialisedAndHash(k)
+	data, err := s.serialise(k)
 	return data, nil, err
 }
 
@@ -58,16 +64,16 @@ func (s *Topology) LoadState(ctx context.Context, payload *types.Payload) ([]typ
 
 	switch pl := payload.Data.(type) {
 	case *types.PayloadERC20MultiSigTopologyVerified:
-		return nil, s.restoreVerifiedState(ctx, pl.Verified)
+		return nil, s.restoreVerifiedState(ctx, pl.Verified, payload)
 	case *types.PayloadERC20MultiSigTopologyPending:
-		return nil, s.restorePendingState(ctx, pl.Pending)
+		return nil, s.restorePendingState(ctx, pl.Pending, payload)
 	default:
 		return nil, types.ErrUnknownSnapshotType
 	}
 }
 
 func (t *Topology) restoreVerifiedState(
-	_ context.Context, s *snapshotpb.ERC20MultiSigTopologyVerified,
+	_ context.Context, s *snapshotpb.ERC20MultiSigTopologyVerified, p *types.Payload,
 ) error {
 	t.log.Debug("restoring snapshot verified state")
 	if s.Threshold != nil {
@@ -94,13 +100,14 @@ func (t *Topology) restoreVerifiedState(
 		t.eventsPerAddress[v.Address] = events
 	}
 
-	t.tss.changed[verifiedStateKey] = true
-
-	return nil
+	var err error
+	t.tss.changedVerifiedState = false
+	t.tss.serialisedVerifiedState, err = proto.Marshal(p.IntoProto())
+	return err
 }
 
 func (t *Topology) restorePendingState(
-	_ context.Context, s *snapshotpb.ERC20MultiSigTopologyPending,
+	_ context.Context, s *snapshotpb.ERC20MultiSigTopologyPending, p *types.Payload,
 ) error {
 	t.log.Debug("restoring snapshot pending state")
 	t.log.Debug("restoring witness signers", logging.Int("n", len(s.WitnessedSigners)))
@@ -147,8 +154,10 @@ func (t *Topology) restorePendingState(
 		}
 	}
 
-	t.tss.changed[pendingStateKey] = true
-	return nil
+	var err error
+	t.tss.changedPendingState = false
+	t.tss.serialisedPendingState, err = proto.Marshal(p.IntoProto())
+	return err
 }
 
 func (t *Topology) serialiseVerifiedState() ([]byte, error) {
@@ -248,26 +257,30 @@ func (t *Topology) serialisePendingState() ([]byte, error) {
 	}.IntoProto())
 }
 
-// get the serialised form and hash of the given key.
-func (t *Topology) getSerialisedAndHash(k string) ([]byte, []byte, error) {
-	t.lock.Lock()
-	defer t.lock.Unlock()
-	if _, ok := t.keyToSerialiser[k]; !ok {
-		return nil, nil, types.ErrSnapshotKeyDoesNotExist
+func (t *Topology) serialiseK(k string, serialFunc func() ([]byte, error), dataField *[]byte, changedField *bool) ([]byte, error) {
+	if !t.HasChanged(k) {
+		if dataField == nil {
+			return nil, nil
+		}
+		return *dataField, nil
 	}
-
-	if !t.tss.changed[k] {
-		return t.tss.serialised[k], t.tss.hash[k], nil
-	}
-
-	data, err := t.keyToSerialiser[k]()
+	data, err := serialFunc()
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
+	*dataField = data
+	*changedField = false
+	return data, nil
+}
 
-	hash := crypto.Hash(data)
-	t.tss.serialised[k] = data
-	t.tss.hash[k] = hash
-	t.tss.changed[k] = false
-	return data, hash, nil
+// get the serialised form of the given key.
+func (t *Topology) serialise(k string) ([]byte, error) {
+	switch k {
+	case verifiedStateKey:
+		return t.serialiseK(k, t.serialiseVerifiedState, &t.tss.serialisedVerifiedState, &t.tss.changedVerifiedState)
+	case pendingStateKey:
+		return t.serialiseK(k, t.serialisePendingState, &t.tss.serialisedPendingState, &t.tss.changedPendingState)
+	default:
+		return nil, types.ErrSnapshotKeyDoesNotExist
+	}
 }

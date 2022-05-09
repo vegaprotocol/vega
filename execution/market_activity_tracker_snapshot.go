@@ -8,7 +8,6 @@ import (
 	checkpoint "code.vegaprotocol.io/protos/vega/checkpoint/v1"
 	snapshot "code.vegaprotocol.io/protos/vega/snapshot/v1"
 
-	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
 
@@ -23,7 +22,6 @@ var (
 
 type snapshotState struct {
 	changed    bool
-	hash       []byte
 	serialised []byte
 }
 
@@ -83,45 +81,38 @@ func (mat *MarketActivityTracker) serialiseFeesTracker() *snapshot.MarketTracker
 	}
 }
 
-func (mat *MarketActivityTracker) serialise() ([]byte, error) {
+// get the serialised form and hash of the given key.
+func (mat *MarketActivityTracker) serialise(k string) ([]byte, error) {
+	if k != key {
+		return nil, ErrSnapshotKeyDoesNotExist
+	}
+
+	if !mat.ss.changed {
+		return mat.ss.serialised, nil
+	}
+
 	payload := types.Payload{
 		Data: &types.PayloadMarketActivityTracker{
 			MarketActivityData: mat.serialiseFeesTracker(),
 		},
 	}
 	x := payload.IntoProto()
-	return proto.Marshal(x)
-}
-
-// get the serialised form and hash of the given key.
-func (mat *MarketActivityTracker) getSerialisedAndHash(k string) ([]byte, []byte, error) {
-	if k != key {
-		return nil, nil, ErrSnapshotKeyDoesNotExist
-	}
-
-	if !mat.ss.changed {
-		return mat.ss.serialised, mat.ss.hash, nil
-	}
-
-	data, err := mat.serialise()
+	data, err := proto.Marshal(x)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
-	hash := crypto.Hash(data)
 	mat.ss.serialised = data
-	mat.ss.hash = hash
 	mat.ss.changed = false
-	return data, hash, nil
+	return data, nil
 }
 
-func (mat *MarketActivityTracker) GetHash(k string) ([]byte, error) {
-	_, hash, err := mat.getSerialisedAndHash(k)
-	return hash, err
+func (mat *MarketActivityTracker) HasChanged(k string) bool {
+	return mat.ss.changed
 }
 
 func (mat *MarketActivityTracker) GetState(k string) ([]byte, []types.StateProvider, error) {
-	state, _, err := mat.getSerialisedAndHash(k)
+	state, err := mat.serialise(k)
 	return state, nil, err
 }
 
@@ -132,7 +123,11 @@ func (mat *MarketActivityTracker) LoadState(ctx context.Context, p *types.Payloa
 	// see what we're reloading
 	switch pl := p.Data.(type) {
 	case *types.PayloadMarketActivityTracker:
-		return nil, mat.restore(ctx, pl.MarketActivityData)
+		mat.restore(ctx, pl.MarketActivityData)
+		var err error
+		mat.ss.changed = false
+		mat.ss.serialised, err = proto.Marshal(p.IntoProto())
+		return nil, err
 	default:
 		return nil, types.ErrUnknownSnapshotType
 	}
@@ -169,12 +164,10 @@ func marketTrackerFromProto(data *checkpoint.MarketActivityTracker) *marketTrack
 	return mft
 }
 
-func (mat *MarketActivityTracker) restore(ctx context.Context, data *snapshot.MarketTracker) error {
+func (mat *MarketActivityTracker) restore(ctx context.Context, data *snapshot.MarketTracker) {
 	for _, data := range data.MarketActivity {
 		mat.marketToTracker[data.Market] = marketTrackerFromProto(data)
 	}
-	mat.ss.changed = true
-	return nil
 }
 
 // onEpochRestore is called when the state of the epoch changes, we only care about new epochs starting.
