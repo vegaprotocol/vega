@@ -169,7 +169,7 @@ func (w *Witness) RestoreResource(r Resource, cb func(interface{}, bool)) error 
 		go w.start(ctx, res)
 	}
 	w.wss.mu.Lock()
-	w.wss.changed = true
+	w.wss.changed = false
 	w.wss.mu.Unlock()
 	return nil
 }

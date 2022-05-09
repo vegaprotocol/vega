@@ -3,7 +3,6 @@ package collateral
 import (
 	"context"
 	"sort"
-	"sync"
 
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
@@ -14,14 +13,17 @@ import (
 )
 
 type accState struct {
-	accPL      types.PayloadCollateralAccounts
-	assPL      types.PayloadCollateralAssets
-	assets     map[string]types.Asset
-	assetIDs   []string
-	updates    map[string]bool
-	serialised map[string][]byte
-	hashKeys   []string
-	lock       sync.RWMutex
+	accPL              types.PayloadCollateralAccounts
+	assPL              types.PayloadCollateralAssets
+	assets             map[string]types.Asset
+	assetIDs           []string
+	updatesAccounts    bool
+	updatesAssets      bool
+	serialisedAccounts []byte
+	serialisedAssets   []byte
+	hashKeys           []string
+	accountsKey        string
+	assetsKey          string
 }
 
 var (
@@ -43,9 +45,7 @@ func (e *Engine) Stopped() bool {
 }
 
 func (e *Engine) HasChanged(k string) bool {
-	e.state.lock.RLock()
-	defer e.state.lock.RUnlock()
-	return e.state.updates[k]
+	return e.state.HasChanged(k)
 }
 
 func (e *Engine) GetState(k string) ([]byte, []types.StateProvider, error) {
@@ -97,8 +97,8 @@ func (e *Engine) restoreAccounts(ctx context.Context, accs *types.CollateralAcco
 	e.broker.SendBatch(evts)
 	e.broker.SendBatch(pevts)
 	var err error
-	e.state.updates[e.state.accPL.Key()] = false
-	e.state.serialised[e.state.accPL.Key()], err = proto.Marshal(p.IntoProto())
+	e.state.updatesAccounts = false
+	e.state.serialisedAccounts, err = proto.Marshal(p.IntoProto())
 
 	return err
 }
@@ -122,8 +122,8 @@ func (e *Engine) restoreAssets(ctx context.Context, assets *types.CollateralAsse
 	}
 	e.broker.SendBatch(evts)
 	var err error
-	e.state.updates[e.state.assPL.Key()] = false
-	e.state.serialised[e.state.assPL.Key()], err = proto.Marshal(p.IntoProto())
+	e.state.updatesAssets = false
+	e.state.serialisedAssets, err = proto.Marshal(p.IntoProto())
 	return err
 }
 
@@ -135,19 +135,18 @@ func newAccState() *accState {
 		assPL: types.PayloadCollateralAssets{
 			CollateralAssets: &types.CollateralAssets{},
 		},
-		assets:     map[string]types.Asset{},
-		assetIDs:   []string{},
-		updates:    map[string]bool{},
-		serialised: map[string][]byte{},
+		assets:          map[string]types.Asset{},
+		assetIDs:        []string{},
+		updatesAccounts: true,
+		updatesAssets:   true,
 	}
+	state.accountsKey = state.accPL.Key()
+	state.assetsKey = state.assPL.Key()
 	state.hashKeys = []string{
-		state.assPL.Key(),
-		state.accPL.Key(),
+		state.assetsKey,
+		state.accountsKey,
 	}
-	for _, k := range state.hashKeys {
-		state.updates[k] = true
-		state.serialised[k] = nil
-	}
+
 	return state
 }
 
@@ -155,19 +154,15 @@ func (a *accState) enableAsset(asset types.Asset) {
 	a.assets[asset.ID] = asset
 	a.assetIDs = append(a.assetIDs, asset.ID)
 	sort.Strings(a.assetIDs)
-	a.updates[a.assPL.Key()] = true
+	a.updatesAssets = true
 }
 
 func (a *accState) updateAccs(accs []*types.Account) {
-	a.updates[a.accPL.Key()] = true
+	a.updatesAccounts = true
 	a.accPL.CollateralAccounts.Accounts = accs[:]
 }
 
-func (a *accState) hashAssets() error {
-	k := a.assPL.Key()
-	if !a.updates[k] {
-		return nil
-	}
+func (a *accState) hashAssets() ([]byte, error) {
 	assets := make([]*types.Asset, 0, len(a.assetIDs))
 	for _, id := range a.assetIDs {
 		ast := a.assets[id]
@@ -179,50 +174,62 @@ func (a *accState) hashAssets() error {
 	}
 	data, err := proto.Marshal(pl.IntoProto())
 	if err != nil {
-		return err
+		return nil, err
 	}
-	a.updates[k] = false
-	a.serialised[k] = data
-	return nil
+	a.updatesAssets = false
+	a.serialisedAssets = data
+	return data, nil
 }
 
-func (a *accState) hashAccounts() error {
-	k := a.accPL.Key()
-	if !a.updates[k] {
-		return nil
-	}
-
+func (a *accState) hashAccounts() ([]byte, error) {
 	// the account slice is already set, sorted and all
 	pl := types.Payload{
 		Data: &a.accPL,
 	}
 	data, err := proto.Marshal(pl.IntoProto())
 	if err != nil {
-		return err
-	}
-	a.serialised[k] = data
-	a.updates[k] = false
-	return nil
-}
-
-func (a *accState) getState(k string) ([]byte, error) {
-	a.lock.Lock()
-	defer a.lock.Unlock()
-	update, exist := a.updates[k]
-	if !exist {
-		return nil, ErrSnapshotKeyDoesNotExist
-	}
-	if !update {
-		h := a.serialised[k]
-		return h, nil
-	}
-	if k == a.assPL.Key() {
-		if err := a.hashAssets(); err != nil {
-			return nil, err
-		}
-	} else if err := a.hashAccounts(); err != nil {
 		return nil, err
 	}
-	h := a.serialised[k]
-	return h, nil
+	a.serialisedAccounts = data
+	a.updatesAccounts = false
+	return data, nil
+}
+
+func (a *accState) HasChanged(k string) bool {
+	switch k {
+	case a.accountsKey:
+		return a.updatesAccounts
+	case a.assetsKey:
+		return a.updatesAssets
+	default:
+		return false
+	}
+}
+
+func (a *accState) serialiseK(k string, serialFunc func() ([]byte, error), dataField *[]byte, changedField *bool) ([]byte, error) {
+	if !a.HasChanged(k) {
+		if dataField == nil {
+			return nil, nil
+		}
+		return *dataField, nil
+	}
+	data, err := serialFunc()
+	if err != nil {
+		return nil, err
+	}
+	*dataField = data
+	*changedField = false
+	return data, nil
+}
+
+// get the serialised form and hash of the given key.
+func (a *accState) getState(k string) ([]byte, error) {
+	switch k {
+	case a.accountsKey:
+		return a.serialiseK(k, a.hashAccounts, &a.serialisedAccounts, &a.updatesAccounts)
+	case a.assetsKey:
+		return a.serialiseK(k, a.hashAssets, &a.serialisedAssets, &a.updatesAssets)
+	default:
+		return nil, types.ErrSnapshotKeyDoesNotExist
+	}
 }

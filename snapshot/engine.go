@@ -926,6 +926,7 @@ func worker(e *Engine, nsInputChan chan nsInput, resChan chan<- nsSnapResult, wg
 		}
 		e.log.Debug("State updated",
 			logging.String("node-key", treeKeyStr),
+			logging.String("hash", hex.EncodeToString(v)),
 			logging.Float64("took", time.Since(t0).Seconds()),
 		)
 

@@ -6,7 +6,6 @@ import (
 	"encoding/hex"
 	"fmt"
 	"sort"
-	"sync"
 	"time"
 
 	"code.vegaprotocol.io/vega/assets"
@@ -103,9 +102,7 @@ type Engine struct {
 	netp                   NetParams
 
 	// snapshot state
-	gss             *governanceSnapshotState
-	keyToSerialiser map[string]func() ([]byte, error)
-	lock            sync.RWMutex
+	gss *governanceSnapshotState
 }
 
 func NewEngine(
@@ -135,15 +132,11 @@ func NewEngine(
 		markets:                markets,
 		netp:                   netp,
 		gss: &governanceSnapshotState{
-			changed:    map[string]bool{activeKey: true, enactedKey: true, nodeValidationKey: true},
-			serialised: map[string][]byte{},
+			changedActive:         true,
+			changedEnacted:        true,
+			changedNodeValidation: true,
 		},
-		keyToSerialiser: map[string]func() ([]byte, error){},
 	}
-
-	e.keyToSerialiser[activeKey] = e.serialiseActiveProposals
-	e.keyToSerialiser[enactedKey] = e.serialiseEnactedProposals
-	e.keyToSerialiser[nodeValidationKey] = e.serialiseNodeProposals
 	return e
 }
 
@@ -249,8 +242,7 @@ func (e *Engine) preVoteClosedProposal(p *proposal) *VoteClosed {
 			// this proposal needs to be included in the checkpoint but we don't need to copy
 			// the proposal here, as it may reach the enacted state shortly
 			e.enactedProposals = append(e.enactedProposals, p)
-
-			e.gss.changed[enactedKey] = true
+			e.gss.changedEnacted = true
 		}
 		vc.m = &NewMarketVoteClosed{
 			startAuction: startAuction,
@@ -266,7 +258,7 @@ func (e *Engine) removeProposal(id string) {
 			e.activeProposals[len(e.activeProposals)-1] = nil
 			e.activeProposals = e.activeProposals[:len(e.activeProposals)-1]
 
-			e.gss.changed[activeKey] = true
+			e.gss.changedActive = true
 			return
 		}
 	}
@@ -328,7 +320,7 @@ func (e *Engine) OnChainTimeUpdate(ctx context.Context, t time.Time) ([]*ToEnact
 	}
 
 	if len(accepted) != 0 || len(rejected) != 0 {
-		e.gss.changed[nodeValidationKey] = true
+		e.gss.changedNodeValidation = true
 	}
 
 	for _, ep := range toBeEnacted {
@@ -354,7 +346,7 @@ func (e *Engine) OnChainTimeUpdate(ctx context.Context, t time.Time) ([]*ToEnact
 	}
 
 	if len(toBeEnacted) != 0 {
-		e.gss.changed[enactedKey] = true
+		e.gss.changedEnacted = true
 	}
 
 	// flush here for now
@@ -500,16 +492,16 @@ func (e *Engine) startProposal(p *types.Proposal) {
 		invalidVotes: map[string]*types.Vote{},
 	})
 
-	e.gss.changed[activeKey] = true
+	e.gss.changedActive = true
 }
 
 func (e *Engine) startValidatedProposal(p *proposal) {
 	e.activeProposals = append(e.activeProposals, p)
-	e.gss.changed[activeKey] = true
+	e.gss.changedActive = true
 }
 
 func (e *Engine) startTwoStepsProposal(p *types.Proposal) error {
-	e.gss.changed[nodeValidationKey] = true
+	e.gss.changedNodeValidation = true
 	return e.nodeProposalValidation.Start(p)
 }
 

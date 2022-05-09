@@ -21,8 +21,10 @@ var (
 )
 
 type stakeVerifierSnapshotState struct {
-	serialised map[string][]byte
-	changed    map[string]bool
+	serialisedDeposited []byte
+	serialisedRemoved   []byte
+	changedDeposited    bool
+	changedRemoved      bool
 }
 
 func (s *StakeVerifier) serialisePendingSD() ([]byte, error) {
@@ -55,26 +57,32 @@ func (s *StakeVerifier) serialisePendingSR() ([]byte, error) {
 	return proto.Marshal(pl.IntoProto())
 }
 
-// get the serialised form and hash of the given key.
-func (s *StakeVerifier) serialise(k string) ([]byte, error) {
-	s.lock.Lock()
-	defer s.lock.Unlock()
-	if _, ok := s.keyToSerialiser[k]; !ok {
-		return nil, types.ErrSnapshotKeyDoesNotExist
+func (s *StakeVerifier) serialiseK(k string, serialFunc func() ([]byte, error), dataField *[]byte, changedField *bool) ([]byte, error) {
+	if !s.HasChanged(k) {
+		if dataField == nil {
+			return nil, nil
+		}
+		return *dataField, nil
 	}
-
-	if !s.svss.changed[k] {
-		return s.svss.serialised[k], nil
-	}
-
-	data, err := s.keyToSerialiser[k]()
+	data, err := serialFunc()
 	if err != nil {
 		return nil, err
 	}
-
-	s.svss.serialised[k] = data
-	s.svss.changed[k] = false
+	*dataField = data
+	*changedField = false
 	return data, nil
+}
+
+// get the serialised form and hash of the given key.
+func (s *StakeVerifier) serialise(k string) ([]byte, error) {
+	switch k {
+	case depositedKey:
+		return s.serialiseK(k, s.serialisePendingSD, &s.svss.serialisedDeposited, &s.svss.changedDeposited)
+	case removedKey:
+		return s.serialiseK(k, s.serialisePendingSR, &s.svss.serialisedRemoved, &s.svss.changedRemoved)
+	default:
+		return nil, types.ErrSnapshotKeyDoesNotExist
+	}
 }
 
 func (s *StakeVerifier) Namespace() types.SnapshotNamespace {
@@ -90,9 +98,14 @@ func (s *StakeVerifier) Stopped() bool {
 }
 
 func (s *StakeVerifier) HasChanged(k string) bool {
-	s.lock.RLock()
-	defer s.lock.RUnlock()
-	return s.svss.changed[k]
+	switch k {
+	case depositedKey:
+		return s.svss.changedDeposited
+	case removedKey:
+		return s.svss.changedRemoved
+	default:
+		return false
+	}
 }
 
 func (s *StakeVerifier) GetState(k string) ([]byte, []types.StateProvider, error) {
@@ -138,8 +151,8 @@ func (s *StakeVerifier) restorePendingSD(ctx context.Context, deposited []*types
 		evts = append(evts, events.NewStakeLinking(ctx, *pending.IntoStakeLinking()))
 	}
 	var err error
-	s.svss.changed[depositedKey] = false
-	s.svss.serialised[depositedKey], err = proto.Marshal(p.IntoProto())
+	s.svss.changedDeposited = false
+	s.svss.serialisedDeposited, err = proto.Marshal(p.IntoProto())
 	s.broker.SendBatch(evts)
 	return err
 }
@@ -167,8 +180,8 @@ func (s *StakeVerifier) restorePendingSR(ctx context.Context, removed []*types.S
 	}
 
 	var err error
-	s.svss.changed[removedKey] = false
-	s.svss.serialised[removedKey], err = proto.Marshal(p.IntoProto())
+	s.svss.changedRemoved = false
+	s.svss.serialisedRemoved, err = proto.Marshal(p.IntoProto())
 	s.broker.SendBatch(evts)
 	return err
 }
