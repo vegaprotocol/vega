@@ -4,7 +4,7 @@
 
 ### 🚨 Breaking changes
 - [518](https://github.com/vegaprotocol/data-node/issues/518) - Free-form properties are moved to rationale.
-- 
+-
 ### 🗑️  Deprecation
 - [](https://github.com/vegaprotocol/data-node/issues/xxx) -
 
@@ -17,12 +17,13 @@
 - [518](https://github.com/vegaprotocol/data-node/issues/518) - Add rationale to proposals
 - [526](https://github.com/vegaprotocol/data-node/issues/526) - Add market id and reward type to reward and market to transfer
 - [540](https://github.com/vegaprotocol/data-node/issues/540) - CI: trigger Devnet deployment on merges to develop branch
-- [546](https://github.com/vegaprotocol/data-node/issues/546) - Data retention for margin levels 
+- [546](https://github.com/vegaprotocol/data-node/issues/546) - Data retention for margin levels
 - [553](https://github.com/vegaprotocol/data-node/issues/553) - Update transfers API to expose dispatch strategy
 - [578](https://github.com/vegaprotocol/data-node/issues/578) - Add metrics for `SQL` queries
 - [582](https://github.com/vegaprotocol/data-node/issues/582) - Add a cache for assets
-- [548](https://github.com/vegaprotocol/data-node/issues/548) - Remove foreign key constraints on hyper tables 
-- [591](https://github.com/vegaprotocol/data-node/issues/591) - Optimise liquidity provision and margin levels data retention and storage 
+- [548](https://github.com/vegaprotocol/data-node/issues/548) - Remove foreign key constraints on hyper tables
+- [591](https://github.com/vegaprotocol/data-node/issues/591) - Optimise liquidity provision and margin levels data retention and storage
+- [588](https://github.com/vegaprotocol/data-node/issues/588) - Return correct error code when proposal not found
 
 ### 🐛 Fixes
 - [524](https://github.com/vegaprotocol/data-node/issues/524) - Fix for incorrect balances

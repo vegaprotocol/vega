@@ -421,7 +421,9 @@ func (t *tradingDataDelegator) GetProposalByID(ctx context.Context,
 	defer metrics.StartAPIRequestAndTimeGRPC("GetProposalByID SQL")()
 
 	proposal, err := t.proposalsStore.GetByID(ctx, req.ProposalId)
-	if err != nil {
+	if errors.Is(err, sqlstore.ErrProposalNotFound) {
+		return nil, apiError(codes.NotFound, ErrMissingProposalID, err)
+	} else if err != nil {
 		return nil, apiError(codes.Internal, ErrNotMapped, err)
 	}
 
@@ -439,7 +441,9 @@ func (t *tradingDataDelegator) GetProposalByReference(ctx context.Context,
 	defer metrics.StartAPIRequestAndTimeGRPC("GetProposalByID SQL")()
 
 	proposal, err := t.proposalsStore.GetByReference(ctx, req.Reference)
-	if err != nil {
+	if errors.Is(err, sqlstore.ErrProposalNotFound) {
+		return nil, apiError(codes.NotFound, ErrMissingProposalReference, err)
+	} else if err != nil {
 		return nil, apiError(codes.Internal, ErrNotMapped, err)
 	}
 
