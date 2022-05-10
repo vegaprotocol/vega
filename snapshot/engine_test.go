@@ -37,8 +37,11 @@ func getTestEngine(t *testing.T) *tstEngine {
 	time := mocks.NewMockTimeService(ctrl)
 	stats := mocks.NewMockStatsService(ctrl)
 	eng, err := snapshot.New(context.Background(), nil, snapshot.NewTestConfig(), logging.NewTestLogger(), time, stats)
-	eng.ClearAndInitialise()
 	require.NoError(t, err)
+
+	if err := eng.ClearAndInitialise(); err != nil {
+		t.Fatalf("couldn't clear and initialise snapshot engine for tests: %v", err)
+	}
 	ctx = vegactx.WithTraceID(vegactx.WithBlockHeight(ctx, 1), "0xDEADBEEF")
 	return &tstEngine{
 		ctx:    ctx,
@@ -106,7 +109,8 @@ func TestEngine(t *testing.T) {
 	t.Run("Adding provider with duplicate key in same namespace: first come, first serve", testAddProvidersDuplicateKeys)
 	t.Run("Create a snapshot, if nothing changes, we don't get the data and the hash remains unchanged", testTakeSnapshot)
 	t.Run("Rejecting a snapshot should return a Snapshot Retry Limit error if rejected too many times", testRejectSnapshot)
-	t.Run("Removing multiple keys within a single namespace", testRemovingMutlipleKeysSingleNamespace)
+	t.Run("Removing multiple keys within a single namespace", testRemovingMultipleKeysSingleNamespace)
+	t.Run("Closing the engine doesn't panic when not initialised", testClosingEngineDoesNotPanicWhenNotInitialised)
 }
 
 func TestRestore(t *testing.T) {
@@ -432,7 +436,7 @@ func testRejectSnapshot(t *testing.T) {
 	assert.ErrorIs(t, types.ErrSnapshotRetryLimit, err)
 }
 
-func testRemovingMutlipleKeysSingleNamespace(t *testing.T) {
+func testRemovingMultipleKeysSingleNamespace(t *testing.T) {
 	someState := []byte("hello-i-am-state")
 	engine := getTestEngine(t)
 	defer engine.Finish()
@@ -496,4 +500,24 @@ func testRemovingMutlipleKeysSingleNamespace(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, b5)
 	require.Equal(t, b4, b5)
+}
+
+func testClosingEngineDoesNotPanicWhenNotInitialised(t *testing.T) {
+	// given
+	ctrl := gomock.NewController(t)
+	timeSvc := mocks.NewMockTimeService(ctrl)
+	stats := mocks.NewMockStatsService(ctrl)
+	config := snapshot.NewTestConfig()
+	logger := logging.NewTestLogger()
+
+	// when
+	engine, err := snapshot.New(context.Background(), nil, config, logger, timeSvc, stats)
+
+	// then
+	require.NoError(t, err)
+
+	// when
+	require.NotPanics(t, func() {
+		require.NoError(t, engine.Close())
+	})
 }

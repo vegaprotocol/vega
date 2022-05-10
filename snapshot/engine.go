@@ -292,8 +292,8 @@ func (e *Engine) populateLocalVersions(versions []int) {
 	}
 }
 
-// Loaded will return whether we have loaded from a snapshot. If we have loaded
-// via stat-sync we will already know, if we are loading from local store then we do that
+// CheckLoaded will return whether we have loaded from a snapshot. If we have loaded
+// via stat-sync we will already know if we are loading from local store, then we do that
 // node.
 func (e *Engine) CheckLoaded() (bool, error) {
 	// if the avl has been initialised we must have loaded it earlier via using state-sync
@@ -1054,7 +1054,10 @@ func (e *Engine) Close() error {
 			p.Sync()
 		}
 	}
-	return e.db.Close()
+	if e.db != nil {
+		return e.db.Close()
+	}
+	return nil
 }
 
 func (e *Engine) OnSnapshotIntervalUpdate(ctx context.Context, interval int64) error {
