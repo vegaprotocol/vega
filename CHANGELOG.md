@@ -10,9 +10,10 @@
 
 ### 🛠 Improvements
 - [5318](https://github.com/vegaprotocol/vega/issues/5318) - Automatically dispatch reward pool into markets in recurring transfers
-- [5333](https://github.com/vegaprotocol/vega/issues/5333) - Run snapshot generation for all providers in parallel 
+- [5333](https://github.com/vegaprotocol/vega/issues/5333) - Run snapshot generation for all providers in parallel
 - [5343](https://github.com/vegaprotocol/vega/issues/5343) - Snapshot optimisation part II - get rid of `getHash`
 - [5324](https://github.com/vegaprotocol/vega/issues/5324) -  Send event when oracle data doesn't match
+- [5140](https://github.com/vegaprotocol/vega/issues/5140) - Move limits (enabled market / assets from) to network parameters
 
 ### 🐛 Fixes
 - [5338](https://github.com/vegaprotocol/vega/issues/5338) - Checking a transaction should return proper success code

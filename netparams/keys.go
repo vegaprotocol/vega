@@ -132,6 +132,10 @@ const (
 	SpamPoWHashFunction         = "spam.pow.hashFunction"
 	SpamPoWNumberOfTxPerBlock   = "spam.pow.numberOfTxPerBlock"
 	SpamPoWIncreasingDifficulty = "spam.pow.increaseDifficulty"
+
+	// limits.
+	LimitsProposeMarketEnabledFrom = "limits.markets.proposeEnabledFrom"
+	LimitsProposeAssetEnabledFrom  = "limits.assets.proposeEnabledFrom"
 )
 
 var AllKeys = map[string]struct{}{
@@ -234,4 +238,6 @@ var AllKeys = map[string]struct{}{
 	SpamPoWHashFunction:                                      {},
 	SpamPoWNumberOfTxPerBlock:                                {},
 	SpamPoWIncreasingDifficulty:                              {},
+	LimitsProposeMarketEnabledFrom:                           {},
+	LimitsProposeAssetEnabledFrom:                            {},
 }

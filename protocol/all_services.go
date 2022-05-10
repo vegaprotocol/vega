@@ -578,5 +578,13 @@ func (svcs *allServices) setupNetParameters() error {
 				svcs.ethConfirmations.UpdateConfirmations(ethCfg.Confirmations())
 				return nil
 			},
+		},
+		netparams.WatchParam{
+			Param:   netparams.LimitsProposeMarketEnabledFrom,
+			Watcher: svcs.limits.OnLimitsProposeMarketEnabledFromUpdate,
+		},
+		netparams.WatchParam{
+			Param:   netparams.LimitsProposeAssetEnabledFrom,
+			Watcher: svcs.limits.OnLimitsProposeAssetEnabledFromUpdate,
 		})
 }

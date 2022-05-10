@@ -138,11 +138,12 @@ func testMarketdisabledAssetenabled(t *testing.T) {
 func testDisabledUntilTimeIsReach(t *testing.T) {
 	lmts := getLimitsTest(t)
 	lmts.loadGenesisState(t, &limits.GenesisState{
-		ProposeAssetEnabled:      true,
-		ProposeMarketEnabled:     true,
-		ProposeAssetEnabledFrom:  timePtr(time.Unix(2000, 0)),
-		ProposeMarketEnabledFrom: timePtr(time.Unix(2000, 0)),
+		ProposeAssetEnabled:  true,
+		ProposeMarketEnabled: true,
 	})
+
+	lmts.OnLimitsProposeAssetEnabledFromUpdate(context.Background(), time.Unix(2000, 0).Format(time.RFC3339))
+	lmts.OnLimitsProposeMarketEnabledFromUpdate(context.Background(), time.Unix(2000, 0).Format(time.RFC3339))
 
 	// need to call onTick
 	lmts.OnTick(context.Background(), time.Unix(1000, 0))
@@ -162,11 +163,12 @@ func testDisabledUntilTimeIsReach(t *testing.T) {
 func testStayDisabledIfTimeIsReachedButEnabledIsFalse(t *testing.T) {
 	lmts := getLimitsTest(t)
 	lmts.loadGenesisState(t, &limits.GenesisState{
-		ProposeAssetEnabled:      false,
-		ProposeMarketEnabled:     false,
-		ProposeAssetEnabledFrom:  timePtr(time.Unix(2000, 0)),
-		ProposeMarketEnabledFrom: timePtr(time.Unix(2000, 0)),
+		ProposeAssetEnabled:  false,
+		ProposeMarketEnabled: false,
 	})
+
+	lmts.OnLimitsProposeAssetEnabledFromUpdate(context.Background(), time.Unix(2000, 0).Format(time.RFC3339))
+	lmts.OnLimitsProposeMarketEnabledFromUpdate(context.Background(), time.Unix(2000, 0).Format(time.RFC3339))
 
 	// need to call onTick
 	lmts.OnTick(context.Background(), time.Unix(1000, 0))
@@ -186,12 +188,13 @@ func testStayDisabledIfTimeIsReachedButEnabledIsFalse(t *testing.T) {
 func testBootstrapFinishedEnabledProposals(t *testing.T) {
 	lmts := getLimitsTest(t)
 	lmts.loadGenesisState(t, &limits.GenesisState{
-		ProposeAssetEnabled:      true,
-		ProposeMarketEnabled:     true,
-		ProposeAssetEnabledFrom:  timePtr(time.Unix(2000, 0)),
-		ProposeMarketEnabledFrom: timePtr(time.Unix(2000, 0)),
-		BootstrapBlockCount:      2,
+		ProposeAssetEnabled:  true,
+		ProposeMarketEnabled: true,
+		BootstrapBlockCount:  2,
 	})
+
+	lmts.OnLimitsProposeAssetEnabledFromUpdate(context.Background(), time.Unix(2000, 0).Format(time.RFC3339))
+	lmts.OnLimitsProposeMarketEnabledFromUpdate(context.Background(), time.Unix(2000, 0).Format(time.RFC3339))
 
 	// block count is 0 call on Tick once, it's should still
 	// be impossible to do anything, both boolean are OK
@@ -218,8 +221,4 @@ func testBootstrapFinishedEnabledProposals(t *testing.T) {
 	assert.True(t, lmts.CanProposeAsset())
 	assert.True(t, lmts.CanTrade())
 	assert.True(t, lmts.BootstrapFinished())
-}
-
-func timePtr(t time.Time) *time.Time {
-	return &t
 }
