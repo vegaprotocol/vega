@@ -12,14 +12,14 @@ import (
 	"sync/atomic"
 	"time"
 
+	"code.vegaprotocol.io/shared/libs/crypto"
 	vgfs "code.vegaprotocol.io/shared/libs/fs"
 	"code.vegaprotocol.io/shared/paths"
 	vegactx "code.vegaprotocol.io/vega/libs/context"
+	"code.vegaprotocol.io/vega/libs/proto"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/metrics"
 	"code.vegaprotocol.io/vega/types"
-
-	"code.vegaprotocol.io/vega/libs/proto"
 	"github.com/cosmos/iavl"
 	"github.com/tendermint/tendermint/libs/strings"
 	db "github.com/tendermint/tm-db"
@@ -292,8 +292,8 @@ func (e *Engine) populateLocalVersions(versions []int) {
 	}
 }
 
-// Loaded will return whether we have loaded from a snapshot. If we have loaded
-// via stat-sync we will already know, if we are loading from local store then we do that
+// CheckLoaded will return whether we have loaded from a snapshot. If we have loaded
+// via stat-sync we will already know if we are loading from local store, then we do that
 // node.
 func (e *Engine) CheckLoaded() (bool, error) {
 	// if the avl has been initialised we must have loaded it earlier via using state-sync
@@ -926,7 +926,7 @@ func worker(e *Engine, nsInputChan chan nsInput, resChan chan<- nsSnapResult, wg
 		}
 		e.log.Debug("State updated",
 			logging.String("node-key", treeKeyStr),
-			logging.String("hash", hex.EncodeToString(v)),
+			logging.String("hash", hex.EncodeToString(crypto.Hash(v))),
 			logging.Float64("took", time.Since(t0).Seconds()),
 		)
 
@@ -1054,7 +1054,10 @@ func (e *Engine) Close() error {
 			p.Sync()
 		}
 	}
-	return e.db.Close()
+	if e.db != nil {
+		return e.db.Close()
+	}
+	return nil
 }
 
 func (e *Engine) OnSnapshotIntervalUpdate(ctx context.Context, interval int64) error {
