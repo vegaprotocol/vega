@@ -127,15 +127,8 @@ func (e *Engine) serialiseWithdrawals() ([]byte, error) {
 	return proto.Marshal(payload.IntoProto())
 }
 
-func (e *Engine) serialiseSeen() ([]byte, error) {
-	seen := make([]*snapshot.TxRef, 0, len(e.seen))
-
-	e.log.Info("serialising seen", logging.Int("n", len(e.seen)))
-	for v := range e.seen {
-		seen = append(seen, v)
-	}
-
-	lsw := func(i, k, r, s int) bool {
+func SeenSortFunc(seen []*snapshot.TxRef) func(i, k, r, s int) bool {
+	return func(i, k, r, s int) bool {
 		if seen[i].Asset < seen[k].Asset { // strict comparator like < or >
 			if r != s {
 				seen[r], seen[s] = seen[s], seen[r]
@@ -149,11 +142,35 @@ func (e *Engine) serialiseSeen() ([]byte, error) {
 				}
 				return true
 			}
+
+			if seen[i].Hash == seen[k].Hash {
+				if seen[i].LogIndex < seen[k].LogIndex { // strict comparator like < or >
+					if r != s {
+						seen[r], seen[s] = seen[s], seen[r]
+					}
+					return true
+				}
+				if seen[i].LogIndex == seen[k].LogIndex {
+					if seen[i].BlockNr < seen[k].BlockNr { // strict comparator like < or >
+						if r != s {
+							seen[r], seen[s] = seen[s], seen[r]
+						}
+						return true
+					}
+				}
+			}
 		}
 		return false
 	}
+}
 
-	sorty.Sort(len(seen), lsw)
+func (e *Engine) serialiseSeen() ([]byte, error) {
+	seen := make([]*snapshot.TxRef, 0, len(e.seen))
+	e.log.Info("serialising seen", logging.Int("n", len(e.seen)))
+	for v := range e.seen {
+		seen = append(seen, v)
+	}
+	sorty.Sort(len(seen), SeenSortFunc(seen))
 
 	payload := types.Payload{
 		Data: &types.PayloadBankingSeen{
