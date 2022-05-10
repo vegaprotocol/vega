@@ -953,7 +953,7 @@ func (m *Market) cancelLiquidityProvision(
 	// now let's update the fee selection
 	m.updateLiquidityFee(ctx)
 	// and remove the party from the equity share like calculation
-	m.equityShares.SetPartyStake(party, num.Zero())
+	m.equityShares.SetPartyStake(party, nil)
 	// force update of shares so they are updated for all
 	_ = m.equityShares.SharesExcept(m.liquidity.GetInactiveParties())
 

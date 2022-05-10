@@ -381,15 +381,17 @@ type LimitState struct {
 
 type EquityShare struct {
 	Mvp                 num.Decimal
+	R                   num.Decimal
 	OpeningAuctionEnded bool
 	Lps                 []*EquityShareLP
 }
 
 type EquityShareLP struct {
-	ID    string
-	Stake num.Decimal
-	Share num.Decimal
-	Avg   num.Decimal
+	ID     string
+	Stake  num.Decimal
+	Share  num.Decimal
+	Avg    num.Decimal
+	VStake num.Decimal
 }
 
 type ActiveAssets struct {
@@ -2303,12 +2305,16 @@ func (m MatchingBook) IntoProto() *snapshot.MatchingBook {
 }
 
 func EquityShareFromProto(es *snapshot.EquityShare) *EquityShare {
-	var mvp num.Decimal
+	var mvp, r num.Decimal
 	if len(es.Mvp) > 0 {
 		mvp, _ = num.DecimalFromString(es.Mvp)
 	}
+	if len(es.R) > 0 {
+		r, _ = num.DecimalFromString(es.R)
+	}
 	ret := EquityShare{
 		Mvp:                 mvp,
+		R:                   r,
 		OpeningAuctionEnded: es.OpeningAuctionEnded,
 		Lps:                 make([]*EquityShareLP, 0, len(es.Lps)),
 	}
@@ -2321,6 +2327,7 @@ func EquityShareFromProto(es *snapshot.EquityShare) *EquityShare {
 func (e EquityShare) IntoProto() *snapshot.EquityShare {
 	ret := snapshot.EquityShare{
 		Mvp:                 e.Mvp.String(),
+		R:                   e.R.String(),
 		OpeningAuctionEnded: e.OpeningAuctionEnded,
 		Lps:                 make([]*snapshot.EquityShareLP, 0, len(e.Lps)),
 	}
@@ -2331,9 +2338,12 @@ func (e EquityShare) IntoProto() *snapshot.EquityShare {
 }
 
 func EquityShareLPFromProto(esl *snapshot.EquityShareLP) *EquityShareLP {
-	var stake, share, avg num.Decimal
+	var stake, vStake, share, avg num.Decimal
 	if len(esl.Stake) > 0 {
 		stake, _ = num.DecimalFromString(esl.Stake)
+	}
+	if len(esl.Vshare) > 0 {
+		vStake, _ = num.DecimalFromString(esl.Vshare)
 	}
 	if len(esl.Share) > 0 {
 		share, _ = num.DecimalFromString(esl.Share)
@@ -2342,19 +2352,21 @@ func EquityShareLPFromProto(esl *snapshot.EquityShareLP) *EquityShareLP {
 		avg, _ = num.DecimalFromString(esl.Avg)
 	}
 	return &EquityShareLP{
-		ID:    esl.Id,
-		Stake: stake,
-		Share: share,
-		Avg:   avg,
+		ID:     esl.Id,
+		Stake:  stake,
+		Share:  share,
+		Avg:    avg,
+		VStake: vStake,
 	}
 }
 
 func (e EquityShareLP) IntoProto() *snapshot.EquityShareLP {
 	return &snapshot.EquityShareLP{
-		Id:    e.ID,
-		Stake: e.Stake.String(),
-		Share: e.Share.String(),
-		Avg:   e.Avg.String(),
+		Id:     e.ID,
+		Stake:  e.Stake.String(),
+		Share:  e.Share.String(),
+		Avg:    e.Avg.String(),
+		Vshare: e.VStake.String(),
 	}
 }
 

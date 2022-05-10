@@ -732,6 +732,7 @@ func (m *Market) updateMarketValueProxy() {
 	// if windows length is reached, reset fee splitter
 	if mvwl := m.marketValueWindowLength; m.feeSplitter.Elapsed() > mvwl {
 		m.feeSplitter.TimeWindowStart(m.currentTime)
+		m.equityShares.UpdateVirtualStake() // this should always set the vStake >= physical stake?
 	}
 
 	// these need to happen every block
@@ -1582,6 +1583,8 @@ func (m *Market) handleConfirmation(ctx context.Context, conf *types.OrderConfir
 
 		// Insert all trades resulted from the executed order
 		tradeEvts := make([]events.Event, 0, len(conf.Trades))
+		tradedValue, _ := num.UintFromDecimal(
+			conf.TradedValue().ToDecimal().Div(m.positionFactor))
 		for idx, trade := range conf.Trades {
 			trade.SetIDs(m.idgen.NextID(), conf.Order, conf.PassiveOrdersAffected[idx])
 
@@ -1597,10 +1600,9 @@ func (m *Market) handleConfirmation(ctx context.Context, conf *types.OrderConfir
 			}
 			// add trade to settlement engine for correct MTM settlement of individual trades
 			m.settlement.AddTrade(trade)
-			tradeValue, _ := num.UintFromDecimal(num.DecimalFromInt64(int64(trade.Size)).Mul(trade.Price.ToDecimal()).Div(m.positionFactor))
-			m.feeSplitter.AddTradeValue(tradeValue)
-			m.marketActivityTracker.AddValueTraded(m.mkt.ID, tradeValue)
 		}
+		m.feeSplitter.AddTradeValue(tradedValue)
+		m.marketActivityTracker.AddValueTraded(m.mkt.ID, tradedValue)
 		m.broker.SendBatch(tradeEvts)
 
 		if !end {
@@ -1894,6 +1896,9 @@ func (m *Market) resolveClosedOutParties(ctx context.Context, distressedMarginEv
 	if len(confirmation.Trades) > 0 {
 		// Insert all trades resulted from the executed order
 		tradeEvts := make([]events.Event, 0, len(confirmation.Trades))
+		// get total traded volume
+		tradedValue, _ := num.UintFromDecimal(
+			confirmation.TradedValue().ToDecimal().Div(m.positionFactor))
 		for idx, trade := range confirmation.Trades {
 			trade.SetIDs(m.idgen.NextID(), &no, confirmation.PassiveOrdersAffected[idx])
 
@@ -1913,10 +1918,9 @@ func (m *Market) resolveClosedOutParties(ctx context.Context, distressedMarginEv
 			}
 
 			m.settlement.AddTrade(trade)
-			tradeValue, _ := num.UintFromDecimal(num.DecimalFromInt64(int64(trade.Size)).Mul(trade.Price.ToDecimal()).Div(m.positionFactor))
-			m.feeSplitter.AddTradeValue(tradeValue)
-			m.marketActivityTracker.AddValueTraded(m.mkt.ID, tradeValue)
 		}
+		m.feeSplitter.AddTradeValue(tradedValue)
+		m.marketActivityTracker.AddValueTraded(m.mkt.ID, tradedValue)
 		m.broker.SendBatch(tradeEvts)
 	}
 

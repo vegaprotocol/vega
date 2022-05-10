@@ -279,6 +279,15 @@ func (o *OrderConfirmation) IntoProto() *proto.OrderConfirmation {
 	}
 }
 
+func (o OrderConfirmation) TradedValue() *num.Uint {
+	total := num.Zero()
+	for _, t := range o.Trades {
+		size := num.NewUint(t.Size)
+		total.AddSum(size.Mul(size, t.Price))
+	}
+	return total
+}
+
 type OrderCancellationConfirmation struct {
 	Order *Order
 }
