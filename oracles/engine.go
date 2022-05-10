@@ -169,7 +169,13 @@ func (e *Engine) sendMatchedOracleData(ctx context.Context, data OracleData, spe
 
 // sendUnmatchedOracleData send an event to the broker to inform of
 // an unmatched oracle data.
+// If the oracle data has been emitted by an internal oracle, the sending
+// is skipped.
 func (e *Engine) sendUnmatchedOracleData(ctx context.Context, data OracleData) {
+	if data.FromInternalOracle() {
+		return
+	}
+
 	payload := make([]*oraclespb.Property, 0, len(data.Data))
 	for name, value := range data.Data {
 		payload = append(payload, &oraclespb.Property{
