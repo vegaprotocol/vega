@@ -130,7 +130,7 @@ func (e *Engine) distributeScheduledTransfers(ctx context.Context) error {
 	}
 
 	// at least 1 transfer updated, set to true
-	e.bss.changed[scheduledTransfersKey] = true
+	e.bss.changedScheduledTransfers = true
 
 	tresps, err := e.col.TransferFunds(
 		ctx, transfers, accountTypes, references, nil, nil, // no fees required there, they've been paid already
@@ -165,5 +165,5 @@ func (e *Engine) scheduleTransfer(
 		reference:   reference,
 	})
 	e.scheduledTransfers[deliverOn] = sts
-	e.bss.changed[scheduledTransfersKey] = true
+	e.bss.changedScheduledTransfers = true
 }

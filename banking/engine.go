@@ -125,11 +125,10 @@ type Engine struct {
 	withdrawalCnt *big.Int
 	deposits      map[string]*types.Deposit
 
-	currentEpoch    uint64
-	currentTime     time.Time
-	mu              sync.RWMutex
-	bss             *bankingSnapshotState
-	keyToSerialiser map[string]func() ([]byte, error)
+	currentEpoch uint64
+	currentTime  time.Time
+	mu           sync.RWMutex
+	bss          *bankingSnapshotState
 
 	marketActivityTracker MarketActivityTracker
 
@@ -140,7 +139,6 @@ type Engine struct {
 	// recurring transfers
 	// transfer id to recurringTransfers
 	recurringTransfers map[string]*types.RecurringTransfer
-	lock               sync.Mutex
 }
 
 type withdrawalRef struct {
@@ -183,31 +181,19 @@ func New(
 		deposits:      map[string]*types.Deposit{},
 		withdrawalCnt: big.NewInt(0),
 		bss: &bankingSnapshotState{
-			changed: map[string]bool{
-				withdrawalsKey:        true,
-				depositsKey:           true,
-				seenKey:               true,
-				assetActionsKey:       true,
-				recurringTransfersKey: true,
-				scheduledTransfersKey: true,
-			},
-			hash:       map[string][]byte{},
-			serialised: map[string][]byte{},
+			changedWithdrawals:        true,
+			changedDeposits:           true,
+			changedSeen:               true,
+			changedAssetActions:       true,
+			changedRecurringTransfers: true,
+			changedScheduledTransfers: true,
 		},
-		keyToSerialiser:            map[string]func() ([]byte, error){},
 		scheduledTransfers:         map[time.Time][]scheduledTransfer{},
 		recurringTransfers:         map[string]*types.RecurringTransfer{},
 		transferFeeFactor:          num.DecimalZero(),
 		minTransferQuantumMultiple: num.DecimalZero(),
 		marketActivityTracker:      marketActivityTracker,
 	}
-
-	e.keyToSerialiser[withdrawalsKey] = e.serialiseWithdrawals
-	e.keyToSerialiser[depositsKey] = e.serialiseDeposits
-	e.keyToSerialiser[seenKey] = e.serialiseSeen
-	e.keyToSerialiser[assetActionsKey] = e.serialiseAssetActions
-	e.keyToSerialiser[recurringTransfersKey] = e.serialiseRecurringTransfers
-	e.keyToSerialiser[scheduledTransfersKey] = e.serialiseScheduledTransfers
 	return e
 }
 
@@ -272,7 +258,7 @@ func (e *Engine) OnTick(ctx context.Context, t time.Time) {
 			} else {
 				// first time we seen this transaction, let's add iter
 				e.seen[&ref] = struct{}{}
-				e.bss.changed[seenKey] = true
+				e.bss.changedSeen = true
 				if err := e.finalizeAction(ctx, v); err != nil {
 					e.log.Error("unable to finalize action",
 						logging.String("action", v.String()),
@@ -293,7 +279,7 @@ func (e *Engine) OnTick(ctx context.Context, t time.Time) {
 		// us to recover for this event, so we have no real reason to keep
 		// it in memory
 		delete(e.assetActs, k)
-		e.bss.changed[assetActionsKey] = true
+		e.bss.changedAssetActions = true
 	}
 
 	// we may want a dedicated method on the snapshot engine at some
@@ -388,7 +374,7 @@ func (e *Engine) finalizeDeposit(ctx context.Context, d *types.Deposit) error {
 	d.Status = types.DepositStatusFinalized
 	d.CreditDate = e.currentTime.UnixNano()
 	e.broker.Send(events.NewTransferResponse(ctx, []*types.TransferResponse{res}))
-	e.bss.changed[depositsKey] = true
+	e.bss.changedDeposits = true
 	return nil
 }
 
@@ -408,7 +394,7 @@ func (e *Engine) finalizeWithdraw(
 	}
 
 	w.Status = types.WithdrawalStatusFinalized
-	e.bss.changed[withdrawalsKey] = true
+	e.bss.changedWithdrawals = true
 	e.broker.Send(events.NewTransferResponse(ctx, []*types.TransferResponse{res}))
 	return nil
 }
@@ -435,7 +421,7 @@ func (e *Engine) newWithdrawal(
 		CreationDate:   e.currentTime.UnixNano(),
 		Ref:            ref.String(),
 	}
-	e.bss.changed[withdrawalsKey] = true
+	e.bss.changedWithdrawals = true
 	return
 }
 
@@ -446,8 +432,8 @@ func (e *Engine) newDeposit(
 ) *types.Deposit {
 	partyID = strings.TrimPrefix(partyID, "0x")
 	asset = strings.TrimPrefix(asset, "0x")
-	e.bss.changed[depositsKey] = true
-	e.bss.changed[assetActionsKey] = true
+	e.bss.changedDeposits = true
+	e.bss.changedAssetActions = true
 	return &types.Deposit{
 		ID:           id,
 		Status:       types.DepositStatusOpen,

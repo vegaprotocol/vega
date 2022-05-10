@@ -11,6 +11,7 @@
 ### 🛠 Improvements
 - [5318](https://github.com/vegaprotocol/vega/issues/5318) - Automatically dispatch reward pool into markets in recurring transfers
 - [5333](https://github.com/vegaprotocol/vega/issues/5333) - Run snapshot generation for all providers in parallel 
+- [5343](https://github.com/vegaprotocol/vega/issues/5343) - Snapshot optimisation part II - get rid of `getHash`
 - [5324](https://github.com/vegaprotocol/vega/issues/5324) -  Send event when oracle data doesn't match
 
 ### 🐛 Fixes
@@ -23,6 +24,8 @@
 - [5322](https://github.com/vegaprotocol/vega/issues/5322) - Change vega pub key hashing in topology to fix key rotation submission.
 - [5313](https://github.com/vegaprotocol/vega/issues/5313) - Future update was using oracle spec for settlement price as trading termination spec
 - [5304](https://github.com/vegaprotocol/vega/issues/5304) - Fix bug causing trade events at auction end showing the wrong price.
+- [5345](https://github.com/vegaprotocol/vega/issues/5345) - Fix issue with state variable transactions assumed gone missing
+- [5351](https://github.com/vegaprotocol/vega/issues/5351) - Fix panic when node is interrupted before snapshot engine gets cleared and initialised
 
 ## 0.50.2
 

@@ -4,7 +4,6 @@ import (
 	"context"
 	"time"
 
-	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
 
@@ -28,22 +27,12 @@ func (e *Engine) Stopped() bool {
 func (e *Engine) setNextCP(t time.Time) {
 	e.nextCP = t
 	e.state.Checkpoint.NextCp = t.UnixNano()
-	// clear hash/data
-	e.hash = []byte{}
 	e.data = []byte{}
 	e.updated = true
 }
 
-func (e *Engine) GetHash(k string) ([]byte, error) {
-	if k != e.state.Key() {
-		return nil, types.ErrSnapshotKeyDoesNotExist
-	}
-	if len(e.hash) == 0 {
-		if err := e.serialiseState(); err != nil {
-			return nil, err
-		}
-	}
-	return e.hash, nil
+func (e *Engine) HasChanged(k string) bool {
+	return true
 }
 
 func (e *Engine) GetState(k string) ([]byte, []types.StateProvider, error) {
@@ -69,7 +58,6 @@ func (e *Engine) serialiseState() error {
 	}
 
 	e.data = data
-	e.hash = crypto.Hash(data)
 	return nil
 }
 

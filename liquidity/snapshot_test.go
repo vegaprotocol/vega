@@ -9,6 +9,7 @@ import (
 
 	snapshotpb "code.vegaprotocol.io/protos/vega/snapshot/v1"
 	"code.vegaprotocol.io/vega/idgeneration"
+	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
 
@@ -100,12 +101,12 @@ func TestSnapshotRoundTrip(t *testing.T) {
 	}
 
 	for _, key := range keys {
-		h, err := e1.engine.GetHash(key)
-		assert.NoError(t, err)
-		kToH[key] = h
 		s, _, err := e1.engine.GetState(key)
 		assert.NoError(t, err)
 		kToS[key] = s
+		h := crypto.Hash(s)
+		assert.NoError(t, err)
+		kToH[key] = h
 
 		// compare hashes to the expected ones
 		assert.Equalf(t, expectedHashes[key], hex.EncodeToString(h), "hashes for key %q does not match", key)
@@ -121,7 +122,8 @@ func TestSnapshotRoundTrip(t *testing.T) {
 
 	// now ensure both are producing same hashes
 	for k, e1h := range kToH {
-		e2h, err := e2.engine.GetHash(k)
+		e2s, _, err := e2.engine.GetState(k)
+		e2h := crypto.Hash(e2s)
 		assert.NoError(t, err)
 		assert.True(t, bytes.Equal(e1h, e2h))
 	}
@@ -193,11 +195,9 @@ func TestSnapshotRoundTrip(t *testing.T) {
 	require.NoError(t, err)
 
 	for _, key := range keys {
-		h, err := e2.engine.GetHash(key)
-		assert.NoError(t, err)
-
 		s, _, err := e2.engine.GetState(key)
 		assert.NoError(t, err)
+		h := crypto.Hash(s)
 
 		// compare hashes to the expected ones
 		assert.Equalf(t, expectedHashes2[key], hex.EncodeToString(h), "hashes for key %q does not match", key)
@@ -209,8 +209,9 @@ func TestSnapshotRoundTrip(t *testing.T) {
 	}
 
 	for _, key := range keys {
-		h, err := e3.engine.GetHash(key)
+		s, _, err := e3.engine.GetState(key)
 		assert.NoError(t, err)
+		h := crypto.Hash(s)
 		// compare hashes to the expected ones
 		assert.Equalf(t, expectedHashes2[key], hex.EncodeToString(h), "hashes for key %q does not match", key)
 	}
@@ -226,10 +227,6 @@ func TestStopSnapshotTaking(t *testing.T) {
 	s, _, err := te.engine.GetState(keys[0])
 	assert.NoError(t, err)
 	assert.Nil(t, s)
-
-	h, err := te.engine.GetHash(keys[0])
-	assert.NoError(t, err)
-	assert.Nil(t, h)
 	assert.True(t, te.engine.Stopped())
 }
 
@@ -268,9 +265,9 @@ func TestSnapshotChangeOnUpdate(t *testing.T) {
 	)
 
 	key := "provisions:market-id"
-	h1, err := e1.engine.GetHash(key)
+	s1, _, err := e1.engine.GetState(key)
 	assert.NoError(t, err)
-	assert.NotEmpty(t, h1)
+	assert.NotEmpty(t, s1)
 
 	repriceFN := func(
 		order *types.PeggedOrder, side types.Side,
@@ -298,8 +295,8 @@ func TestSnapshotChangeOnUpdate(t *testing.T) {
 	require.NoError(t, err)
 
 	// Get new hash, it should have changed
-	h2, err := e1.engine.GetHash(key)
+	s2, _, err := e1.engine.GetState(key)
 	require.NoError(t, err)
-	require.NotEmpty(t, h1)
-	require.NotEqual(t, h1, h2)
+	require.NotEmpty(t, s1)
+	require.False(t, bytes.Equal(s1, s2))
 }

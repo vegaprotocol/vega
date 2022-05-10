@@ -110,9 +110,6 @@ func TestSnapshot(t *testing.T) {
 	e.BeginBlock(102, "2E289FB9CEF7234E2C08F34CCD66B330229067CE47E22F76EF0595B3ABA9968F")
 
 	key := (&types.PayloadProofOfWork{}).Key()
-	hash1, err := e.GetHash(key)
-	require.NoError(t, err)
-
 	state1, _, err := e.GetState(key)
 	require.NoError(t, err)
 
@@ -125,10 +122,6 @@ func TestSnapshot(t *testing.T) {
 	pl := snapshotpb.Payload{}
 	require.NoError(t, proto.Unmarshal(state1, &pl))
 	eLoaded.LoadState(context.Background(), gtypes.PayloadFromProto(&pl))
-
-	hash2, err := eLoaded.GetHash(key)
-	require.NoError(t, err)
-	require.True(t, bytes.Equal(hash1, hash2))
 
 	state2, _, err := eLoaded.GetState(key)
 	require.NoError(t, err)

@@ -7,13 +7,18 @@ import (
 	"testing"
 	"time"
 
+	"code.vegaprotocol.io/shared/paths"
 	"code.vegaprotocol.io/vega/collateral"
 	"code.vegaprotocol.io/vega/config/encoding"
+	"code.vegaprotocol.io/vega/integration/stubs"
 	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/vega/stats"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
 
+	vgcontext "code.vegaprotocol.io/vega/libs/context"
 	"code.vegaprotocol.io/vega/libs/proto"
+	snp "code.vegaprotocol.io/vega/snapshot"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -232,36 +237,25 @@ func testSnapshotConsistentHash(t *testing.T) {
 		}
 	}
 	keys := eng.Keys()
-	hashes := make(map[string][]byte, len(keys))
 	data := make(map[string][]byte, len(keys))
 	for _, k := range keys {
-		hash, err := eng.GetHash(k)
-		require.NoError(t, err)
-		hashes[k] = hash
 		state, _, err := eng.GetState(k)
 		require.NoError(t, err)
 		data[k] = state
 	}
 	// now no changes, check hashes again:
-	for k, exp := range hashes {
-		got, err := eng.GetHash(k)
-		require.NoError(t, err)
-		require.EqualValues(t, exp, got)
+	for k, d := range data {
 		state, _, err := eng.GetState(k)
 		require.NoError(t, err)
-		require.EqualValues(t, data[k], state)
+		require.EqualValues(t, d, state)
 	}
 	// now change one account:
 	require.NoError(t, eng.IncrementBalance(ctx, last, inc))
 	changes := 0
-	for k, hash := range hashes {
-		got, err := eng.GetHash(k)
+	for k, d := range data {
+		got, _, err := eng.GetState(k)
 		require.NoError(t, err)
-		if !bytes.Equal(hash, got) {
-			// compare data
-			state, _, err := eng.GetState(k)
-			require.NoError(t, err)
-			require.NotEqualValues(t, data[k], state)
+		if !bytes.Equal(d, got) {
 			changes++
 		}
 	}
@@ -341,12 +335,8 @@ func testSnapshotRestore(t *testing.T) {
 	keys := eng.Keys()
 	payloads := make(map[string]*types.Payload, len(keys))
 	data := make(map[string][]byte, len(keys))
-	hashes := make(map[string][]byte, len(keys))
 	for _, k := range keys {
 		payloads[k] = &types.Payload{}
-		h, err := eng.GetHash(k)
-		require.NoError(t, err)
-		hashes[k] = h
 		s, _, err := eng.GetState(k)
 		require.NoError(t, err)
 		data[k] = s
@@ -365,18 +355,18 @@ func testSnapshotRestore(t *testing.T) {
 		_, err := newEng.LoadState(ctx, payloads[k])
 		require.NoError(t, err)
 	}
-	for k, exp := range hashes {
-		got, err := newEng.GetHash(k)
+	for k, d := range data {
+		got, _, err := newEng.GetState(k)
 		require.NoError(t, err)
-		require.EqualValues(t, exp, got)
+		require.EqualValues(t, d, got)
 	}
 	require.NoError(t, eng.IncrementBalance(ctx, last, inc))
 	// now we expect 1 different hash
 	diff := 0
-	for k, h := range hashes {
-		old, err := eng.GetHash(k)
+	for k, h := range data {
+		old, _, err := eng.GetState(k)
 		require.NoError(t, err)
-		reload, err := newEng.GetHash(k)
+		reload, _, err := newEng.GetState(k)
 		require.NoError(t, err)
 		if !bytes.Equal(h, old) {
 			diff++
@@ -386,11 +376,150 @@ func testSnapshotRestore(t *testing.T) {
 	require.Equal(t, 1, diff)
 	require.NoError(t, newEng.IncrementBalance(ctx, last, inc))
 	// now the state should match up once again
-	for k := range hashes {
-		old, err := eng.GetHash(k)
+	for k := range data {
+		old, _, err := eng.GetState(k)
 		require.NoError(t, err)
-		restore, err := newEng.GetHash(k)
+		restore, _, err := newEng.GetState(k)
 		require.NoError(t, err)
 		require.EqualValues(t, old, restore)
+	}
+}
+
+func TestSnapshotRoundtripViaEngine(t *testing.T) {
+	for i := 0; i < 100; i++ {
+		mkt := "market1"
+		ctx := vgcontext.WithTraceID(vgcontext.WithBlockHeight(context.Background(), 100), "0xDEADBEEF")
+		ctx = vgcontext.WithChainID(ctx, "chainid")
+
+		erc20 := types.AssetDetailsErc20{
+			Erc20: &types.ERC20{
+				ContractAddress: "nowhere",
+			},
+		}
+		asset := types.Asset{
+			ID: "foo",
+			Details: &types.AssetDetails{
+				Name:        "foo",
+				Symbol:      "FOO",
+				TotalSupply: num.NewUint(100000000),
+				Decimals:    5,
+				Quantum:     num.DecimalFromFloat(1),
+				Source:      erc20,
+			},
+		}
+		eng := getTestEngine(t, mkt)
+		defer eng.ctrl.Finish()
+		// create assets, accounts, and update balances
+		eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+		require.NoError(t, eng.EnableAsset(ctx, asset))
+		parties := []string{
+			"party1",
+			"party2",
+			"party3",
+		}
+		balances := map[string]map[types.AccountType]*num.Uint{
+			parties[0]: {
+				types.AccountTypeGeneral: num.NewUint(500),
+				types.AccountTypeMargin:  num.NewUint(500),
+			},
+			parties[1]: {
+				types.AccountTypeGeneral: num.NewUint(1000),
+			},
+			parties[2]: {
+				types.AccountTypeGeneral: num.NewUint(100000),
+				types.AccountTypeBond:    num.NewUint(100),
+				types.AccountTypeMargin:  num.NewUint(500),
+			},
+		}
+		for _, p := range parties {
+			// always create general account first
+			if gb, ok := balances[p][types.AccountTypeGeneral]; ok {
+				id, err := eng.CreatePartyGeneralAccount(ctx, p, asset.ID)
+				require.NoError(t, err)
+				require.NoError(t, eng.IncrementBalance(ctx, id, gb))
+			}
+			for tp, b := range balances[p] {
+				switch tp {
+				case types.AccountTypeGeneral:
+					continue
+				case types.AccountTypeMargin:
+					id, err := eng.CreatePartyMarginAccount(ctx, p, mkt, asset.ID)
+					require.NoError(t, err)
+					require.NoError(t, eng.IncrementBalance(ctx, id, b))
+				case types.AccountTypeBond:
+					id, err := eng.CreatePartyBondAccount(ctx, p, mkt, asset.ID)
+					require.NoError(t, err)
+					require.NoError(t, eng.IncrementBalance(ctx, id, b))
+				}
+			}
+		}
+
+		// setup snapshot engine
+		now := time.Now()
+		log := logging.NewTestLogger()
+		timeService := stubs.NewTimeStub()
+		timeService.SetTime(now)
+		statsData := stats.New(log, stats.NewDefaultConfig(), "", "")
+		config := snp.NewDefaultConfig()
+		config.Storage = "memory"
+		snapshotEngine, _ := snp.New(context.Background(), &paths.DefaultPaths{}, config, log, timeService, statsData.Blockchain)
+		snapshotEngine.AddProviders(eng.Engine)
+		snapshotEngine.ClearAndInitialise()
+		defer snapshotEngine.Close()
+
+		_, err := snapshotEngine.Snapshot(ctx)
+		require.NoError(t, err)
+		snaps, err := snapshotEngine.List()
+		require.NoError(t, err)
+		snap1 := snaps[0]
+
+		engLoad := getTestEngine(t, mkt)
+		engLoad.broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
+		engLoad.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+		snapshotEngineLoad, _ := snp.New(context.Background(), &paths.DefaultPaths{}, config, log, timeService, statsData.Blockchain)
+		snapshotEngineLoad.AddProviders(engLoad.Engine)
+		snapshotEngineLoad.ClearAndInitialise()
+		snapshotEngineLoad.ReceiveSnapshot(snap1)
+		snapshotEngineLoad.ApplySnapshot(ctx)
+		snapshotEngineLoad.CheckLoaded()
+		defer snapshotEngineLoad.Close()
+
+		// verify snapshot is equal right after loading
+		b, err := snapshotEngine.Snapshot(ctx)
+		require.NoError(t, err)
+		bLoad, err := snapshotEngineLoad.Snapshot(ctx)
+		require.NoError(t, err)
+		require.True(t, bytes.Equal(b, bLoad))
+
+		// now make some changes and recheck
+		newAsset := types.Asset{
+			ID: "foo2",
+			Details: &types.AssetDetails{
+				Name:        "foo2",
+				Symbol:      "FOO2",
+				TotalSupply: num.NewUint(200000000),
+				Decimals:    5,
+				Quantum:     num.DecimalFromFloat(2),
+				Source:      erc20,
+			},
+		}
+
+		require.NoError(t, eng.EnableAsset(ctx, newAsset))
+		require.NoError(t, engLoad.EnableAsset(ctx, newAsset))
+
+		id, err := eng.CreatePartyGeneralAccount(ctx, "party4", newAsset.ID)
+		require.NoError(t, err)
+		require.NoError(t, eng.IncrementBalance(ctx, id, num.NewUint(100)))
+
+		id2, err := engLoad.CreatePartyGeneralAccount(ctx, "party4", newAsset.ID)
+		require.NoError(t, err)
+		require.NoError(t, engLoad.IncrementBalance(ctx, id2, num.NewUint(100)))
+
+		// verify snapshot is equal right after changes made
+		b, err = snapshotEngine.Snapshot(ctx)
+		require.NoError(t, err)
+		bLoad, err = snapshotEngineLoad.Snapshot(ctx)
+		require.NoError(t, err)
+		require.True(t, bytes.Equal(b, bLoad))
 	}
 }

@@ -89,6 +89,7 @@ func TestSnapshotOraclesTerminatingMarketFromSnapshot(t *testing.T) {
 func TestLoadTerminatedMarketFromSnapshot(t *testing.T) {
 	now := time.Now()
 	exec := getEngine(t, now)
+	defer exec.snapshotEngine.Close()
 	ctx := vgcontext.WithTraceID(vgcontext.WithBlockHeight(context.Background(), 100), "0xDEADBEEF")
 	ctx = vgcontext.WithChainID(ctx, "chainid")
 
@@ -121,6 +122,7 @@ func TestLoadTerminatedMarketFromSnapshot(t *testing.T) {
 
 	// now let's start from this snapshot
 	exec2 := getEngine(t, now)
+	defer exec2.snapshotEngine.Close()
 	exec2.snapshotEngine.ReceiveSnapshot(snap1)
 	exec2.snapshotEngine.ApplySnapshot(ctx)
 	exec2.snapshotEngine.CheckLoaded()
@@ -299,7 +301,9 @@ func getEngine(t *testing.T, now time.Time) *snapshotTestData {
 	)
 
 	statsData := stats.New(log, stats.NewDefaultConfig(), "", "")
-	snapshotEngine, _ := snp.New(context.Background(), &paths.DefaultPaths{}, snp.NewDefaultConfig(), log, timeService, statsData.Blockchain)
+	config := snp.NewDefaultConfig()
+	config.Storage = "memory"
+	snapshotEngine, _ := snp.New(context.Background(), &paths.DefaultPaths{}, config, log, timeService, statsData.Blockchain)
 	snapshotEngine.AddProviders(eng)
 	snapshotEngine.ClearAndInitialise()
 

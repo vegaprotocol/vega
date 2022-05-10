@@ -8,7 +8,6 @@ import (
 
 	checkpoint "code.vegaprotocol.io/protos/vega/checkpoint/v1"
 	snapshot "code.vegaprotocol.io/protos/vega/snapshot/v1"
-	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/libs/proto"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
@@ -36,9 +35,18 @@ var (
 )
 
 type bankingSnapshotState struct {
-	changed    map[string]bool
-	hash       map[string][]byte
-	serialised map[string][]byte
+	changedWithdrawals           bool
+	changedDeposits              bool
+	changedSeen                  bool
+	changedAssetActions          bool
+	changedRecurringTransfers    bool
+	changedScheduledTransfers    bool
+	serialisedWithdrawals        []byte
+	serialisedDeposits           []byte
+	serialisedSeen               []byte
+	serialisedAssetActions       []byte
+	serialisedRecurringTransfers []byte
+	serialisedScheduledTransfers []byte
 }
 
 func (e *Engine) Namespace() types.SnapshotNamespace {
@@ -119,15 +127,8 @@ func (e *Engine) serialiseWithdrawals() ([]byte, error) {
 	return proto.Marshal(payload.IntoProto())
 }
 
-func (e *Engine) serialiseSeen() ([]byte, error) {
-	seen := make([]*snapshot.TxRef, 0, len(e.seen))
-
-	e.log.Info("serialising seen", logging.Int("n", len(e.seen)))
-	for v := range e.seen {
-		seen = append(seen, v)
-	}
-
-	lsw := func(i, k, r, s int) bool {
+func SeenSortFunc(seen []*snapshot.TxRef) func(i, k, r, s int) bool {
+	return func(i, k, r, s int) bool {
 		if seen[i].Asset < seen[k].Asset { // strict comparator like < or >
 			if r != s {
 				seen[r], seen[s] = seen[s], seen[r]
@@ -141,11 +142,35 @@ func (e *Engine) serialiseSeen() ([]byte, error) {
 				}
 				return true
 			}
+
+			if seen[i].Hash == seen[k].Hash {
+				if seen[i].LogIndex < seen[k].LogIndex { // strict comparator like < or >
+					if r != s {
+						seen[r], seen[s] = seen[s], seen[r]
+					}
+					return true
+				}
+				if seen[i].LogIndex == seen[k].LogIndex {
+					if seen[i].BlockNr < seen[k].BlockNr { // strict comparator like < or >
+						if r != s {
+							seen[r], seen[s] = seen[s], seen[r]
+						}
+						return true
+					}
+				}
+			}
 		}
 		return false
 	}
+}
 
-	sorty.Sort(len(seen), lsw)
+func (e *Engine) serialiseSeen() ([]byte, error) {
+	seen := make([]*snapshot.TxRef, 0, len(e.seen))
+	e.log.Info("serialising seen", logging.Int("n", len(e.seen)))
+	for v := range e.seen {
+		seen = append(seen, v)
+	}
+	sorty.Sort(len(seen), SeenSortFunc(seen))
 
 	payload := types.Payload{
 		Data: &types.PayloadBankingSeen{
@@ -184,37 +209,63 @@ func (e *Engine) serialiseDeposits() ([]byte, error) {
 	return proto.Marshal(payload.IntoProto())
 }
 
-// get the serialised form and hash of the given key.
-func (e *Engine) getSerialisedAndHash(k string) ([]byte, []byte, error) {
-	e.lock.Lock()
-	defer e.lock.Unlock()
-	if _, ok := e.keyToSerialiser[k]; !ok {
-		return nil, nil, ErrSnapshotKeyDoesNotExist
+func (e *Engine) serialiseK(k string, serialFunc func() ([]byte, error), dataField *[]byte, changedField *bool) ([]byte, error) {
+	if !e.HasChanged(k) {
+		if dataField == nil {
+			return nil, nil
+		}
+		return *dataField, nil
 	}
-
-	if !e.bss.changed[k] {
-		return e.bss.serialised[k], e.bss.hash[k], nil
-	}
-
-	data, err := e.keyToSerialiser[k]()
+	data, err := serialFunc()
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
-
-	hash := crypto.Hash(data)
-	e.bss.serialised[k] = data
-	e.bss.hash[k] = hash
-	e.bss.changed[k] = false
-	return data, hash, nil
+	*dataField = data
+	*changedField = false
+	return data, nil
 }
 
-func (e *Engine) GetHash(k string) ([]byte, error) {
-	_, hash, err := e.getSerialisedAndHash(k)
-	return hash, err
+// get the serialised form and hash of the given key.
+func (e *Engine) serialise(k string) ([]byte, error) {
+	switch k {
+	case depositsKey:
+		return e.serialiseK(k, e.serialiseDeposits, &e.bss.serialisedDeposits, &e.bss.changedDeposits)
+	case withdrawalsKey:
+		return e.serialiseK(k, e.serialiseWithdrawals, &e.bss.serialisedWithdrawals, &e.bss.changedWithdrawals)
+	case seenKey:
+		return e.serialiseK(k, e.serialiseSeen, &e.bss.serialisedSeen, &e.bss.changedSeen)
+	case assetActionsKey:
+		return e.serialiseK(k, e.serialiseAssetActions, &e.bss.serialisedAssetActions, &e.bss.changedAssetActions)
+	case recurringTransfersKey:
+		return e.serialiseK(k, e.serialiseRecurringTransfers, &e.bss.serialisedRecurringTransfers, &e.bss.changedRecurringTransfers)
+	case scheduledTransfersKey:
+		return e.serialiseK(k, e.serialiseScheduledTransfers, &e.bss.serialisedScheduledTransfers, &e.bss.changedScheduledTransfers)
+	default:
+		return nil, types.ErrSnapshotKeyDoesNotExist
+	}
+}
+
+func (e *Engine) HasChanged(k string) bool {
+	switch k {
+	case depositsKey:
+		return e.bss.changedDeposits
+	case withdrawalsKey:
+		return e.bss.changedWithdrawals
+	case seenKey:
+		return e.bss.changedSeen
+	case assetActionsKey:
+		return e.bss.changedAssetActions
+	case recurringTransfersKey:
+		return e.bss.changedRecurringTransfers
+	case scheduledTransfersKey:
+		return e.bss.changedScheduledTransfers
+	default:
+		return false
+	}
 }
 
 func (e *Engine) GetState(k string) ([]byte, []types.StateProvider, error) {
-	state, _, err := e.getSerialisedAndHash(k)
+	state, err := e.serialise(k)
 	return state, nil, err
 }
 
@@ -225,46 +276,59 @@ func (e *Engine) LoadState(ctx context.Context, p *types.Payload) ([]types.State
 	// see what we're reloading
 	switch pl := p.Data.(type) {
 	case *types.PayloadBankingDeposits:
-		return nil, e.restoreDeposits(ctx, pl.BankingDeposits)
+		return nil, e.restoreDeposits(ctx, pl.BankingDeposits, p)
 	case *types.PayloadBankingWithdrawals:
-		return nil, e.restoreWithdrawals(ctx, pl.BankingWithdrawals)
+		return nil, e.restoreWithdrawals(ctx, pl.BankingWithdrawals, p)
 	case *types.PayloadBankingSeen:
-		return nil, e.restoreSeen(ctx, pl.BankingSeen)
+		return nil, e.restoreSeen(ctx, pl.BankingSeen, p)
 	case *types.PayloadBankingAssetActions:
-		return nil, e.restoreAssetActions(ctx, pl.BankingAssetActions)
+		return nil, e.restoreAssetActions(ctx, pl.BankingAssetActions, p)
 	case *types.PayloadBankingRecurringTransfers:
-		return nil, e.restoreRecurringTransfers(ctx, pl.BankingRecurringTransfers)
+		return nil, e.restoreRecurringTransfers(ctx, pl.BankingRecurringTransfers, p)
 	case *types.PayloadBankingScheduledTransfers:
-		return nil, e.restoreScheduledTransfers(ctx, pl.BankingScheduledTransfers)
+		return nil, e.restoreScheduledTransfers(ctx, pl.BankingScheduledTransfers, p)
 	default:
 		return nil, types.ErrUnknownSnapshotType
 	}
 }
 
-func (e *Engine) restoreRecurringTransfers(ctx context.Context, transfers *checkpoint.RecurringTransfers) error {
+func (e *Engine) restoreRecurringTransfers(ctx context.Context, transfers *checkpoint.RecurringTransfers, p *types.Payload) error {
+	var err error
 	// ignore events here as we don't need to send them
 	_ = e.loadRecurringTransfers(ctx, transfers)
-	e.bss.changed[recurringTransfersKey] = true
-	return nil
-}
+	e.bss.changedRecurringTransfers = false
+	e.bss.serialisedRecurringTransfers, err = proto.Marshal(p.IntoProto())
 
-func (e *Engine) restoreScheduledTransfers(ctx context.Context, transfers []*checkpoint.ScheduledTransferAtTime) error {
-	// ignore events
-	_, err := e.loadScheduledTransfers(ctx, transfers)
-	e.bss.changed[scheduledTransfersKey] = true
 	return err
 }
 
-func (e *Engine) restoreDeposits(ctx context.Context, deposits *types.BankingDeposits) error {
+func (e *Engine) restoreScheduledTransfers(ctx context.Context, transfers []*checkpoint.ScheduledTransferAtTime, p *types.Payload) error {
+	var err error
+
+	// ignore events
+	_, err = e.loadScheduledTransfers(ctx, transfers)
+	if err != nil {
+		return err
+	}
+	e.bss.changedScheduledTransfers = false
+	e.bss.serialisedScheduledTransfers, err = proto.Marshal(p.IntoProto())
+	return err
+}
+
+func (e *Engine) restoreDeposits(ctx context.Context, deposits *types.BankingDeposits, p *types.Payload) error {
+	var err error
+
 	for _, d := range deposits.Deposit {
 		e.deposits[d.ID] = d.Deposit
 	}
 
-	e.bss.changed[depositsKey] = true
-	return nil
+	e.bss.serialisedDeposits, err = proto.Marshal(p.IntoProto())
+	e.bss.changedDeposits = false
+	return err
 }
 
-func (e *Engine) restoreWithdrawals(ctx context.Context, withdrawals *types.BankingWithdrawals) error {
+func (e *Engine) restoreWithdrawals(ctx context.Context, withdrawals *types.BankingWithdrawals, p *types.Payload) error {
+	var err error
 	for _, w := range withdrawals.Withdrawals {
 		ref := new(big.Int)
 		ref.SetString(w.Ref, 10)
@@ -275,20 +339,25 @@ func (e *Engine) restoreWithdrawals(ctx context.Context, withdrawals *types.Bank
 		}
 	}
 
-	e.bss.changed[withdrawalsKey] = true
-	return nil
+	e.bss.changedWithdrawals = false
+	e.bss.serialisedWithdrawals, err = proto.Marshal(p.IntoProto())
+
+	return err
 }
 
-func (e *Engine) restoreSeen(ctx context.Context, seen *types.BankingSeen) error {
+func (e *Engine) restoreSeen(ctx context.Context, seen *types.BankingSeen, p *types.Payload) error {
+	var err error
 	e.log.Info("restoring seen", logging.Int("n", len(seen.Refs)))
 	for _, s := range seen.Refs {
 		e.seen[s] = struct{}{}
 	}
-	e.bss.changed[seenKey] = true
-	return nil
+	e.bss.changedSeen = false
+	e.bss.serialisedSeen, err = proto.Marshal(p.IntoProto())
+	return err
 }
 
-func (e *Engine) restoreAssetActions(ctx context.Context, aa *types.BankingAssetActions) error {
+func (e *Engine) restoreAssetActions(ctx context.Context, aa *types.BankingAssetActions, p *types.Payload) error {
+	var err error
 	for _, v := range aa.AssetAction {
 		asset, err := e.assets.Get(v.Asset)
 		if err != nil {
@@ -312,8 +381,9 @@ func (e *Engine) restoreAssetActions(ctx context.Context, aa *types.BankingAsset
 		}
 	}
 
-	e.bss.changed[assetActionsKey] = true
-	return nil
+	e.bss.changedAssetActions = false
+	e.bss.serialisedAssetActions, err = proto.Marshal(p.IntoProto())
+	return err
 }
 
 func (e *Engine) OnEpochRestore(ctx context.Context, ep types.Epoch) {

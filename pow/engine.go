@@ -251,9 +251,9 @@ func (e *Engine) verify(tx abci.Tx) (byte, error) {
 	idx := tx.BlockHeight() % e.spamPoWNumberOfPastBlocks
 	if e.blockHeight[idx] != tx.BlockHeight() {
 		if e.log.IsDebug() {
-			e.log.Debug("unknown block height", logging.String("tx-hash", txHash), logging.String("tid", tx.GetPoWTID()), logging.Uint64("tx-block-height", tx.BlockHeight()), logging.Uint64("index", idx), logging.Uint64("indexed-height", e.blockHeight[idx]), logging.String("command", tx.Command().String()), logging.String("party", tx.Party()))
+			e.log.Debug("unknown block height", logging.Uint64("current-block-height", e.currentBlock), logging.String("tx-hash", txHash), logging.String("tid", tx.GetPoWTID()), logging.Uint64("tx-block-height", tx.BlockHeight()), logging.Uint64("index", idx), logging.Uint64("indexed-height", e.blockHeight[idx]), logging.String("command", tx.Command().String()), logging.String("party", tx.Party()))
 		}
-		return h, errors.New("unknown block height")
+		return h, errors.New("unknown block height for tx:" + txHash + ", command:" + tx.Command().String() + ", party:" + tx.Party())
 	}
 
 	if _, ok := e.seenTx[txHash]; ok {

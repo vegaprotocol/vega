@@ -40,15 +40,12 @@ type Service struct {
 	pamu          sync.RWMutex
 	pendingAssets map[string]*Asset
 
-	nodeWallets     *nodewallets.NodeWallets
-	ethClient       erc20.ETHClient
-	ass             *assetsSnapshotState
-	keyToSerialiser map[string]func() ([]byte, error)
-
-	ethToVega map[string]string
+	nodeWallets *nodewallets.NodeWallets
+	ethClient   erc20.ETHClient
+	ass         *assetsSnapshotState
+	ethToVega   map[string]string
 
 	isValidator bool
-	lock        sync.Mutex
 }
 
 func New(
@@ -70,17 +67,12 @@ func New(
 		nodeWallets:   nw,
 		ethClient:     ethClient,
 		ass: &assetsSnapshotState{
-			changed:    map[string]bool{activeKey: true, pendingKey: true},
-			hash:       map[string][]byte{},
-			serialised: map[string][]byte{},
+			changedActive:  true,
+			changedPending: true,
 		},
-		keyToSerialiser: map[string]func() ([]byte, error){},
-		isValidator:     isValidator,
-		ethToVega:       map[string]string{},
+		isValidator: isValidator,
+		ethToVega:   map[string]string{},
 	}
-
-	s.keyToSerialiser[activeKey] = s.serialiseActive
-	s.keyToSerialiser[pendingKey] = s.serialisePending
 	ts.NotifyOnTick(s.onTick)
 	return s
 }
@@ -118,8 +110,8 @@ func (s *Service) Enable(assetID string) error {
 			s.ethToVega[eth.ProtoAsset().GetDetails().GetErc20().GetContractAddress()] = assetID
 		}
 		delete(s.pendingAssets, assetID)
-		s.ass.changed[activeKey] = true
-		s.ass.changed[pendingKey] = true
+		s.ass.changedActive = true
+		s.ass.changedPending = true
 		return nil
 	}
 	return ErrAssetInvalid
@@ -176,7 +168,7 @@ func (s *Service) NewAsset(assetID string, assetDetails *types.AssetDetails) (st
 		return "", err
 	}
 	s.pendingAssets[assetID] = asset
-	s.ass.changed[pendingKey] = true
+	s.ass.changedPending = true
 	return assetID, err
 }
 

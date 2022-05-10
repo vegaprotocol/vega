@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"code.vegaprotocol.io/protos/vega"
-	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/types"
 
 	"code.vegaprotocol.io/vega/libs/proto"
@@ -23,7 +22,6 @@ func (s *Svc) serialise() error {
 	}
 
 	s.data = data
-	s.hash = crypto.Hash(data)
 	return nil
 }
 
@@ -39,12 +37,8 @@ func (s *Svc) Stopped() bool {
 	return false
 }
 
-func (s *Svc) GetHash(k string) ([]byte, error) {
-	if k != s.pl.Key() {
-		return nil, types.ErrSnapshotKeyDoesNotExist
-	}
-
-	return s.hash, nil
+func (s *Svc) HasChanged(k string) bool {
+	return true
 }
 
 func (s *Svc) GetState(k string) ([]byte, []types.StateProvider, error) {
