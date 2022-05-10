@@ -1607,6 +1607,23 @@ func (t *tradingDataDelegator) OracleDataBySpec(ctx context.Context, req *protoa
 	}, nil
 }
 
+func (t *tradingDataDelegator) ListOracleData(ctx context.Context, _ *protoapi.ListOracleDataRequest) (*protoapi.ListOracleDataResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("ListOracleData SQL")()
+	specs, err := t.oracleDataStore.ListOracleData(ctx, entities.Pagination{})
+	if err != nil {
+		return nil, apiError(codes.Internal, err)
+	}
+
+	out := make([]*oraclespb.OracleData, 0, len(specs))
+	for _, v := range specs {
+		out = append(out, v.ToProto())
+	}
+
+	return &protoapi.ListOracleDataResponse{
+		OracleData: out,
+	}, nil
+}
+
 func (t *tradingDataDelegator) LiquidityProvisions(ctx context.Context, req *protoapi.LiquidityProvisionsRequest) (*protoapi.LiquidityProvisionsResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("LiquidityProvisions")()
 

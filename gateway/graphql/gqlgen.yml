@@ -152,6 +152,9 @@ models:
     model: code.vegaprotocol.io/protos/vega/oracles/v1.Condition
   OracleData:
     model: code.vegaprotocol.io/protos/vega/oracles/v1.OracleData
+    fields:
+      broadcastAt:
+        resolver: true
   Property:
     model: code.vegaprotocol.io/protos/vega/oracles/v1.Property
   AuctionEvent:

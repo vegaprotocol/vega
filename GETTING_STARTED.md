@@ -79,7 +79,7 @@ https://github.com/settings/keys
 ## Get data node
 
 The `data-node` repo uses Vega's `protos` and `vega` repos. Ensure Go knows to use `ssh`
-instead of `https` when accessing `vegaprotocol` repositories on Github:
+instead of `https` when accessing `vegaprotocol` repositories on GitHub:
 
 ```bash
 git config --global url."git@github.com:vegaprotocol".insteadOf "https://github.com/vegaprotocol"
@@ -113,7 +113,7 @@ go install ./cmd/data-node
   data-node init -r ~/.data-node
   ```
 
-By running this command data node will initiates basic folder structure for data storage and creates default configuration file.
+By running this command data node will initiate basic folder structure for data storage and creates default configuration file.
 
 Configuration file can be find in:
 
@@ -123,7 +123,7 @@ cat ~/.data-node/config.toml
 
 * To remove data node store content then run a data node, use:
 
-  ```bash
+```bash
   rm -rf "~/.data-node"*[r,e]store
   data-node node -r ~/.data-node
 ```

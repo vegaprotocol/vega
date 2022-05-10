@@ -271,13 +271,27 @@ type Query {
   lastBlockHeight: String!
 
   "All registered oracle specs"
-  oracleSpecs: [OracleSpec!]
+  oracleSpecs(
+    "Pagination"
+    pagination: Pagination
+  ): [OracleSpec!]
 
   "An oracle spec for a given oracle spec ID"
   oracleSpec("ID for an oracle spec" oracleSpecID: String!): OracleSpec
 
   "All oracle data for a given oracle spec ID"
-  oracleDataBySpec("ID for an oracle spec" oracleSpecID: String!): [OracleData!]
+  oracleDataBySpec(
+    "ID for an oracle spec"
+    oracleSpecID: String!
+    "Pagination"
+    pagination: Pagination
+  ): [OracleData!]
+
+  "All registered oracle specs"
+  oracleData(
+    "Pagination"
+    pagination: Pagination
+  ): [OracleData!]
 
   "An order in the VEGA network found by orderID"
   orderByID(
@@ -525,14 +539,14 @@ type RecurringTransfer {
 }
 
 enum DispatchMetric {
-  
+
   MarketTradingValue
-  
+
   MakerFeesReceived
 
   TakerFeesPaid
 
-  LPFeesReceived 
+  LPFeesReceived
 }
 
 type DispatchStrategy {
@@ -1108,6 +1122,18 @@ type OracleData {
   pubKeys: [String!]
   "data contains all the properties send by an oracle"
   data: [Property!]
+
+  """
+  lists all the oracle specs that matched this oracle data.
+  When the array is empty, it means no oracle spec matched this oracle data.
+  """
+  matchedSpecIds: [String!]
+  """
+  RFC3339Nano formatted date and time for when the data was broadcast to the markets
+  with a matching oracle spec.
+  It has no value when the oracle date did not match any oracle spec.
+  """
+  broadcastAt:  String!
 }
 
 "A property associates a name to a value"
@@ -2989,4 +3015,16 @@ type NetworkLimits {
   proposeMarketEnabledFrom: Timestamp!
   "The date/timestamp in unix nanoseconds at which asset proposals will be enabled (0 indicates not set)"
   proposeAssetEnabledFrom: Timestamp!
+}
+
+input Pagination {
+  "Skip the number of records specified, default is 0"
+  skip: Int!
+  "Limit the number of returned records to the value specified, default is 50"
+  limit: Int!
+  """
+  Descending reverses the order of the records returned
+  default is true, if false the results will be returned in ascending order
+  """
+  descending: Boolean!
 }
