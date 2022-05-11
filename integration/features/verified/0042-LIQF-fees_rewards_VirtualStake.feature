@@ -391,4 +391,64 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
       | lp1   | 0.7267441860465116   | 10000                   |
       | lp2   | 0.2732558139534884   | 10000                   |
 
-  
+    Then time is updated to "2019-11-30T07:22:10Z"
+
+    Then the order book should have the following volumes for market "ETH/MAR22":
+      | side | price | volume |
+      | buy  | 898   | 52     |
+      | buy  | 900   | 1      |
+      | buy  | 999   | 10     |
+      | sell | 1102  | 43     |
+      | sell | 1100  | 1      |
+      | sell | 1001  | 10     |
+
+    Then the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     |
+      | party1 | ETH/MAR22 | sell | 5      | 999   | 1                | TYPE_LIMIT | TIF_GTC |
+
+    Then the order book should have the following volumes for market "ETH/MAR22":
+      | side | price | volume |
+      | buy  | 898   | 52     |
+      | buy  | 900   | 1      |
+      | buy  | 999   | 10     |
+      | sell | 1102  | 43     |
+      | sell | 1100  | 1      |
+      | sell | 1001  | 10     |
+
+    And the market data for the market "ETH/MAR22" should be:
+      | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
+      | 999        | TRADING_MODE_CONTINUOUS | 1       | 500       | 1498      | 6793         | 6880           | 63            |
+
+    And the liquidity provider fee shares for the market "ETH/MAR22" should be:
+      | party | equity like share    | average entry valuation |
+      | lp1   | 0.7267441860465116   | 10000                   |
+      | lp2   | 0.2732558139534884   | 10000                   |
+
+    Then time is updated to "2019-11-30T09:22:10Z"
+
+    Then the order book should have the following volumes for market "ETH/MAR22":
+      | side | price | volume |
+      | buy  | 898   | 52     |
+      | buy  | 900   | 1      |
+      | buy  | 999   | 10     |
+      | sell | 1102  | 43     |
+      | sell | 1100  | 1      |
+      | sell | 1001  | 10     |
+
+    And the market data for the market "ETH/MAR22" should be:
+      | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
+      | 999        | TRADING_MODE_CONTINUOUS | 1       | 500       | 1498      | 6793         | 6880           | 63            |
+
+    And the parties submit the following liquidity provision:
+      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
+      | lp2 | lp2   | ETH/MAR22 | 2000              | 0.001 | sell | ASK              | 1          | 2      | amendment  |
+      | lp2 | lp2   | ETH/MAR22 | 2000              | 0.001 | sell | MID              | 2          | 1      | amendment  |
+
+    And the market data for the market "ETH/MAR22" should be:
+      | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
+      | 999        | TRADING_MODE_CONTINUOUS | 1       | 500       | 1498      | 6793         | 7000           | 63            |
+
+    And the liquidity provider fee shares for the market "ETH/MAR22" should be:
+      | party | equity like share    | average entry valuation |
+      | lp1   | 0.5741197186667991   | 10000                   |
+      | lp2   | 0.4258802813332009   | 5289.1036809978886803   |
