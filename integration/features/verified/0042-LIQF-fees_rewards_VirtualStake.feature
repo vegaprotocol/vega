@@ -286,6 +286,7 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
       | party2 | ETH/MAR22 | sell | 60     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
 
     Then the opening auction period ends for market "ETH/MAR22"
+    #week1
 
     And the following trades should be executed:
       | buyer  | price | size | seller |
@@ -313,6 +314,7 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
       | sell | 1001  | 14     |
 
     Then time is updated to "2019-11-30T00:20:10Z"
+    #week2
   
     Then the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
@@ -333,6 +335,7 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
       | lp2   | 0.2857142857142857   | 10000                   |
 
     Then time is updated to "2019-11-30T04:20:10Z"
+    #week3
 
     Then the order book should have the following volumes for market "ETH/MAR22":
       | side | price | volume |
@@ -363,6 +366,7 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
       | lp2   | 0.2836676217765043   | 10000                   |
 
     Then time is updated to "2019-11-30T05:22:10Z"
+    #week4
 
     Then the order book should have the following volumes for market "ETH/MAR22":
       | side | price | volume |
@@ -392,6 +396,7 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
       | lp2   | 0.2732558139534884   | 10000                   |
 
     Then time is updated to "2019-11-30T07:22:10Z"
+    #week5, trade only, no change of LP commitment
 
     Then the order book should have the following volumes for market "ETH/MAR22":
       | side | price | volume |
@@ -404,7 +409,7 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
 
     Then the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
-      | party1 | ETH/MAR22 | sell | 5      | 999   | 1                | TYPE_LIMIT | TIF_GTC |
+      | party1 | ETH/MAR22 | sell | 3      | 999   | 1                | TYPE_LIMIT | TIF_GTC |
 
     Then the order book should have the following volumes for market "ETH/MAR22":
       | side | price | volume |
@@ -425,6 +430,7 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
       | lp2   | 0.2732558139534884   | 10000                   |
 
     Then time is updated to "2019-11-30T09:22:10Z"
+    #week6, change of LP commitment only,no trade 
 
     Then the order book should have the following volumes for market "ETH/MAR22":
       | side | price | volume |
@@ -443,6 +449,15 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
       | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
       | lp2 | lp2   | ETH/MAR22 | 2000              | 0.001 | sell | ASK              | 1          | 2      | amendment  |
       | lp2 | lp2   | ETH/MAR22 | 2000              | 0.001 | sell | MID              | 2          | 1      | amendment  |
+
+    Then the order book should have the following volumes for market "ETH/MAR22":
+      | side | price | volume |
+      | buy  | 898   | 53     |
+      | buy  | 900   | 1      |
+      | buy  | 999   | 10     |
+      | sell | 1102  | 44     |
+      | sell | 1100  | 1      |
+      | sell | 1001  | 10     |
 
     And the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
