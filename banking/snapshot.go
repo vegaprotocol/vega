@@ -7,11 +7,9 @@ import (
 	"sort"
 
 	checkpoint "code.vegaprotocol.io/protos/vega/checkpoint/v1"
-	snapshot "code.vegaprotocol.io/protos/vega/snapshot/v1"
 	"code.vegaprotocol.io/vega/libs/proto"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
-	"github.com/jfcg/sorty/v2"
 )
 
 var (
@@ -127,55 +125,11 @@ func (e *Engine) serialiseWithdrawals() ([]byte, error) {
 	return proto.Marshal(payload.IntoProto())
 }
 
-func SeenSortFunc(seen []*snapshot.TxRef) func(i, k, r, s int) bool {
-	return func(i, k, r, s int) bool {
-		if seen[i].Asset < seen[k].Asset { // strict comparator like < or >
-			if r != s {
-				seen[r], seen[s] = seen[s], seen[r]
-			}
-			return true
-		}
-		if seen[i].Asset == seen[k].Asset {
-			if seen[i].Hash < seen[k].Hash {
-				if r != s {
-					seen[r], seen[s] = seen[s], seen[r]
-				}
-				return true
-			}
-
-			if seen[i].Hash == seen[k].Hash {
-				if seen[i].LogIndex < seen[k].LogIndex { // strict comparator like < or >
-					if r != s {
-						seen[r], seen[s] = seen[s], seen[r]
-					}
-					return true
-				}
-				if seen[i].LogIndex == seen[k].LogIndex {
-					if seen[i].BlockNr < seen[k].BlockNr { // strict comparator like < or >
-						if r != s {
-							seen[r], seen[s] = seen[s], seen[r]
-						}
-						return true
-					}
-				}
-			}
-		}
-		return false
-	}
-}
-
 func (e *Engine) serialiseSeen() ([]byte, error) {
-	seen := make([]*snapshot.TxRef, 0, len(e.seen))
-	e.log.Info("serialising seen", logging.Int("n", len(e.seen)))
-	for v := range e.seen {
-		seen = append(seen, v)
-	}
-	sorty.Sort(len(seen), SeenSortFunc(seen))
-
 	payload := types.Payload{
 		Data: &types.PayloadBankingSeen{
 			BankingSeen: &types.BankingSeen{
-				Refs: seen,
+				Refs: e.seenSlice,
 			},
 		},
 	}
@@ -351,6 +305,7 @@ func (e *Engine) restoreSeen(ctx context.Context, seen *types.BankingSeen, p *ty
 	for _, s := range seen.Refs {
 		e.seen[s] = struct{}{}
 	}
+	e.seenSlice = seen.Refs
 	e.bss.changedSeen = false
 	e.bss.serialisedSeen, err = proto.Marshal(p.IntoProto())
 	return err

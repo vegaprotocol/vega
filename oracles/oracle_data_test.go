@@ -382,5 +382,4 @@ func testOracleDataDeterminingOriginSucceeds(t *testing.T) {
 			assert.Equal(tt, tc.isFromInternalOracle, data.FromInternalOracle())
 		})
 	}
-
 }
