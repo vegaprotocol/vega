@@ -3,7 +3,6 @@ package banking_test
 import (
 	"bytes"
 	"context"
-	"math/rand"
 	"strconv"
 	"testing"
 	"time"
@@ -12,7 +11,6 @@ import (
 	"code.vegaprotocol.io/shared/paths"
 	"code.vegaprotocol.io/vega/assets"
 	"code.vegaprotocol.io/vega/assets/builtin"
-	"code.vegaprotocol.io/vega/banking"
 	"code.vegaprotocol.io/vega/integration/stubs"
 	vgcontext "code.vegaprotocol.io/vega/libs/context"
 	"code.vegaprotocol.io/vega/libs/proto"
@@ -22,7 +20,6 @@ import (
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
 	"github.com/golang/mock/gomock"
-	"github.com/jfcg/sorty/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -40,38 +37,6 @@ func depositAt(eng *testEngine, asset, party string, amount *num.Uint, t time.Ti
 		VegaAssetID: asset,
 		PartyID:     party,
 		Amount:      amount,
-	}
-}
-
-func TestSort(t *testing.T) {
-	seen := []*snapshot.TxRef{
-		{Asset: "1", Hash: "a", LogIndex: 10, BlockNr: 1},
-		{Asset: "1", Hash: "a", LogIndex: 10, BlockNr: 2},
-		{Asset: "1", Hash: "a", LogIndex: 11, BlockNr: 1},
-		{Asset: "1", Hash: "b", LogIndex: 10, BlockNr: 1},
-		{Asset: "2", Hash: "a", LogIndex: 10, BlockNr: 1},
-	}
-	rand.Seed(time.Now().UnixNano())
-	rand.Shuffle(len(seen), func(i, j int) { seen[i], seen[j] = seen[j], seen[i] })
-	sorty.Sort(len(seen), banking.SeenSortFunc(seen))
-
-	for _, s := range seen {
-		println(s.String())
-	}
-
-	expected := []*snapshot.TxRef{
-		{Asset: "1", Hash: "a", LogIndex: 10, BlockNr: 1},
-		{Asset: "1", Hash: "a", LogIndex: 10, BlockNr: 2},
-		{Asset: "1", Hash: "a", LogIndex: 11, BlockNr: 1},
-		{Asset: "1", Hash: "b", LogIndex: 10, BlockNr: 1},
-		{Asset: "2", Hash: "a", LogIndex: 10, BlockNr: 1},
-	}
-
-	for i, s := range seen {
-		require.Equal(t, expected[i].Asset, s.Asset)
-		require.Equal(t, expected[i].Hash, s.Hash)
-		require.Equal(t, expected[i].LogIndex, s.LogIndex)
-		require.Equal(t, expected[i].BlockNr, s.BlockNr)
 	}
 }
 

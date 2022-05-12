@@ -121,6 +121,7 @@ type Engine struct {
 
 	assetActs     map[string]*assetAction
 	seen          map[*snapshot.TxRef]struct{}
+	seenSlice     []*snapshot.TxRef
 	withdrawals   map[string]withdrawalRef
 	withdrawalCnt *big.Int
 	deposits      map[string]*types.Deposit
@@ -177,6 +178,7 @@ func New(
 		top:           top,
 		assetActs:     map[string]*assetAction{},
 		seen:          map[*snapshot.TxRef]struct{}{},
+		seenSlice:     []*snapshot.TxRef{},
 		withdrawals:   map[string]withdrawalRef{},
 		deposits:      map[string]*types.Deposit{},
 		withdrawalCnt: big.NewInt(0),
@@ -258,6 +260,7 @@ func (e *Engine) OnTick(ctx context.Context, t time.Time) {
 			} else {
 				// first time we seen this transaction, let's add iter
 				e.seen[&ref] = struct{}{}
+				e.seenSlice = append(e.seenSlice, &ref)
 				e.bss.changedSeen = true
 				if err := e.finalizeAction(ctx, v); err != nil {
 					e.log.Error("unable to finalize action",

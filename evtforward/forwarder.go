@@ -55,9 +55,10 @@ type Forwarder struct {
 	cmd  Commander
 	self string
 
-	evtsmu    sync.Mutex
-	ackedEvts map[string]*commandspb.ChainEvent
-	evts      map[string]tsEvt
+	evtsmu         sync.Mutex
+	ackedEvts      map[string]*commandspb.ChainEvent
+	ackedEvtsSlice []*commandspb.ChainEvent
+	evts           map[string]tsEvt
 
 	mu               sync.RWMutex
 	bcQueueAllowlist atomic.Value // this is actually an map[string]struct{}
@@ -87,6 +88,7 @@ func New(log *logging.Logger, cfg Config, cmd Commander, time TimeService, top V
 		self:             top.SelfNodeID(),
 		currentTime:      time.GetTimeNow(),
 		ackedEvts:        map[string]*commandspb.ChainEvent{},
+		ackedEvtsSlice:   []*commandspb.ChainEvent{},
 		evts:             map[string]tsEvt{},
 		top:              top,
 		bcQueueAllowlist: allowlist,
@@ -158,6 +160,7 @@ func (f *Forwarder) Ack(evt *commandspb.ChainEvent) bool {
 
 	// now add it to the acknowledged evts
 	f.ackedEvts[key] = evt
+	f.ackedEvtsSlice = append(f.ackedEvtsSlice, evt)
 	f.efss.changed = true
 	f.log.Info("new event acknowledged", logging.String("event", evt.String()))
 	return true

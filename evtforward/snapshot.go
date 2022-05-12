@@ -5,7 +5,6 @@ import (
 
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	"code.vegaprotocol.io/vega/types"
-	"github.com/jfcg/sorty/v2"
 
 	"code.vegaprotocol.io/vega/libs/proto"
 )
@@ -36,31 +35,9 @@ func (f *Forwarder) Stopped() bool {
 }
 
 func (f *Forwarder) serialise() ([]byte, error) {
-	// this is done without the lock because nothing can be acked during the commit phase which is when the snapshot is taken
-	keys := make([]string, 0, len(f.ackedEvts))
-	events := make([]*commandspb.ChainEvent, 0, len(f.ackedEvts))
-	for key := range f.ackedEvts {
-		keys = append(keys, key)
-	}
-	lsw := func(i, k, r, s int) bool {
-		if keys[i] < keys[k] { // strict comparator like < or >
-			if r != s {
-				keys[r], keys[s] = keys[s], keys[r]
-			}
-			return true
-		}
-		return false
-	}
-
-	sorty.Sort(len(keys), lsw)
-
-	for _, key := range keys {
-		events = append(events, f.ackedEvts[key])
-	}
-
 	payload := types.Payload{
 		Data: &types.PayloadEventForwarder{
-			Events: events,
+			Events: f.ackedEvtsSlice,
 		},
 	}
 	return proto.Marshal(payload.IntoProto())
@@ -115,6 +92,7 @@ func (f *Forwarder) restore(ctx context.Context, events []*commandspb.ChainEvent
 		}
 		f.ackedEvts[key] = event
 	}
+	f.ackedEvtsSlice = events
 
 	var err error
 	f.efss.changed = false
