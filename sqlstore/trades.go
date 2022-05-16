@@ -23,7 +23,7 @@ func NewTrades(connectionSource *ConnectionSource) *Trades {
 	return t
 }
 
-func (ts *Trades) OnTimeUpdateEvent(ctx context.Context) error {
+func (ts *Trades) Flush(ctx context.Context) error {
 	var rows [][]interface{}
 	for _, t := range ts.trades {
 		rows = append(rows, []interface{}{

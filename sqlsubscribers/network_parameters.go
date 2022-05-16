@@ -2,7 +2,6 @@ package sqlsubscribers
 
 import (
 	"context"
-	"time"
 
 	"code.vegaprotocol.io/data-node/entities"
 	"code.vegaprotocol.io/data-node/logging"
@@ -21,9 +20,9 @@ type NetworkParameterStore interface {
 }
 
 type NetworkParameter struct {
-	store    NetworkParameterStore
-	log      *logging.Logger
-	vegaTime time.Time
+	subscriber
+	store NetworkParameterStore
+	log   *logging.Logger
 }
 
 func NewNetworkParameter(
@@ -42,16 +41,7 @@ func (n *NetworkParameter) Types() []events.Type {
 }
 
 func (n *NetworkParameter) Push(ctx context.Context, evt events.Event) error {
-	switch event := evt.(type) {
-	case TimeUpdateEvent:
-		n.vegaTime = event.Time()
-	case NetworkParameterEvent:
-		return n.consume(ctx, event)
-	default:
-		return errors.Errorf("unknown event type %s", event.Type().String())
-	}
-
-	return nil
+	return n.consume(ctx, evt.(NetworkParameterEvent))
 }
 
 func (n *NetworkParameter) consume(ctx context.Context, event NetworkParameterEvent) error {

@@ -129,7 +129,6 @@ func (l *NodeCommand) setupSQLSubscribers() {
 	l.accountSubSQL = sqlsubscribers.NewAccount(l.accountStoreSQL, l.balanceStoreSQL, l.Log)
 	l.assetSubSQL = sqlsubscribers.NewAsset(l.assetStoreSQL, l.Log)
 	l.partySubSQL = sqlsubscribers.NewParty(l.partyStoreSQL, l.Log)
-	l.timeSubSQL = sqlsubscribers.NewTimeSub(l.blockStoreSQL, l.Log)
 	l.transferResponseSubSQL = sqlsubscribers.NewTransferResponse(l.ledgerSQL, l.accountStoreSQL, l.Log)
 	l.orderSubSQL = sqlsubscribers.NewOrder(l.orderStoreSQL, l.Log)
 	l.networkLimitsSubSQL = sqlsubscribers.NewNetworkLimitSub(l.ctx, l.networkLimitsStoreSQL, l.Log)
@@ -304,7 +303,7 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 
 		l.sqlBroker = broker.NewSqlStoreBroker(l.Log, l.conf.Broker, l.chainInfoStore, eventSource,
 			l.transactionalConnectionSource,
-			l.timeSubSQL,
+			l.blockStoreSQL,
 			l.accountSubSQL,
 			l.assetSubSQL,
 			l.partySubSQL,

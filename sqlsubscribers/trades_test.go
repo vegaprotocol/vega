@@ -23,9 +23,7 @@ func TestSubscriberSequenceNumber(t *testing.T) {
 	now := time.Now()
 	nowPlusOne := time.Now().Add(time.Second)
 
-	timeEvent := events.NewTime(context.Background(), now)
-	timeEvent.SetSequenceID(0)
-	sub.Push(context.Background(), timeEvent)
+	sub.SetVegaTime(now)
 
 	tradeEvent := events.NewTradeEvent(context.Background(), newTrade())
 	tradeEvent.SetSequenceID(1)
@@ -35,9 +33,7 @@ func TestSubscriberSequenceNumber(t *testing.T) {
 	tradeEvent.SetSequenceID(2)
 	sub.Push(context.Background(), tradeEvent)
 
-	timeEvent = events.NewTime(context.Background(), nowPlusOne)
-	timeEvent.SetSequenceID(0)
-	sub.Push(context.Background(), timeEvent)
+	sub.SetVegaTime(nowPlusOne)
 
 	tradeEvent = events.NewTradeEvent(context.Background(), newTrade())
 	tradeEvent.SetSequenceID(1)
@@ -67,7 +63,7 @@ func (ts *testStore) Add(t *entities.Trade) error {
 	return nil
 }
 
-func (ts *testStore) OnTimeUpdateEvent(ctx context.Context) error {
+func (ts *testStore) Flush(ctx context.Context) error {
 	return nil
 }
 

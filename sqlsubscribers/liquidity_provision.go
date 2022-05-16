@@ -23,9 +23,9 @@ type LiquidityProvisionStore interface {
 }
 
 type LiquidityProvision struct {
-	store    LiquidityProvisionStore
-	log      *logging.Logger
-	vegaTime time.Time
+	subscriber
+	store LiquidityProvisionStore
+	log   *logging.Logger
 
 	eventDeduplicator *eventDeduplicator[string, *vega.LiquidityProvision]
 }
@@ -45,20 +45,17 @@ func (lp *LiquidityProvision) Types() []events.Type {
 	return []events.Type{events.LiquidityProvisionEvent}
 }
 
-func (lp *LiquidityProvision) Push(ctx context.Context, evt events.Event) error {
-	switch e := evt.(type) {
-	case TimeUpdateEvent:
-		err := lp.flush(ctx)
-		if err != nil {
-			return errors.Wrap(err, "flushing liquidity provisions")
-		}
-		lp.vegaTime = e.Time()
-		return nil
-	case LiquidityProvisionEvent:
-		return lp.consume(ctx, e)
-	default:
-		return errors.Errorf("unknown event type %s", e.Type().String())
+func (lp *LiquidityProvision) Flush(ctx context.Context) error {
+	err := lp.flush(ctx)
+	if err != nil {
+		return errors.Wrap(err, "flushing liquidity provisions")
 	}
+
+	return nil
+}
+
+func (lp *LiquidityProvision) Push(ctx context.Context, evt events.Event) error {
+	return lp.consume(ctx, evt.(LiquidityProvisionEvent))
 }
 
 func (lp *LiquidityProvision) flush(ctx context.Context) error {
@@ -66,6 +63,7 @@ func (lp *LiquidityProvision) flush(ctx context.Context) error {
 	updates := lp.eventDeduplicator.Flush()
 	for _, update := range updates {
 		entity, err := entities.LiquidityProvisionFromProto(update, lp.vegaTime)
+
 		if err != nil {
 			return errors.Wrap(err, "converting liquidity provision to database entity failed")
 		}

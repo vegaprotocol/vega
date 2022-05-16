@@ -24,6 +24,7 @@ type NotaryStore interface {
 }
 
 type Notary struct {
+	subscriber
 	store NotaryStore
 	log   *logging.Logger
 }
@@ -36,14 +37,7 @@ func NewNotary(store NotaryStore, log *logging.Logger) *Notary {
 }
 
 func (w *Notary) Push(ctx context.Context, evt events.Event) error {
-	switch e := evt.(type) {
-	case TimeUpdateEvent:
-		return nil // not needed but the broker pushes time events to all subscribers
-	case NodeSignatureEvent:
-		return w.consume(ctx, e)
-	default:
-		return errors.Errorf("unknown event type HERE %s", e.Type().String())
-	}
+	return w.consume(ctx, evt.(NodeSignatureEvent))
 }
 
 func (w *Notary) consume(ctx context.Context, event NodeSignatureEvent) error {

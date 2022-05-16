@@ -27,16 +27,16 @@ func TestMarginLevelsDuplicate_Push(t *testing.T) {
 	accountSource := TestAccountSource{}
 
 	subscriber := sqlsubscribers.NewMarginLevels(store, accountSource, logging.NewTestLogger())
-	subscriber.Push(context.Background(), events.NewTime(context.Background(), time.Now()))
+	subscriber.Flush(context.Background())
 	subscriber.Push(context.Background(), events.NewMarginLevelsEvent(context.Background(), types.MarginLevels{}))
-	subscriber.Push(context.Background(), events.NewTime(context.Background(), time.Now()))
+	subscriber.Flush(context.Background())
 	subscriber.Push(context.Background(), events.NewMarginLevelsEvent(context.Background(), types.MarginLevels{}))
-	subscriber.Push(context.Background(), events.NewTime(context.Background(), time.Now()))
+	subscriber.Flush(context.Background())
 
 	// Now push a non duplicate
 
 	subscriber.Push(context.Background(), events.NewMarginLevelsEvent(context.Background(), types.MarginLevels{InitialMargin: num.NewUint(6)}))
-	subscriber.Push(context.Background(), events.NewTime(context.Background(), time.Now()))
+	subscriber.Flush(context.Background())
 
 }
 
@@ -52,7 +52,7 @@ func TestMarginLevels_Push(t *testing.T) {
 	store.EXPECT().Add(gomock.Any()).Times(1)
 	store.EXPECT().Flush(gomock.Any()).Times(2)
 	subscriber := sqlsubscribers.NewMarginLevels(store, accountSource, logging.NewTestLogger())
-	subscriber.Push(context.Background(), events.NewTime(context.Background(), time.Now()))
+	subscriber.Flush(context.Background())
 	subscriber.Push(context.Background(), events.NewMarginLevelsEvent(context.Background(), types.MarginLevels{
 		MaintenanceMargin:      num.NewUint(1000),
 		SearchLevel:            num.NewUint(1000),
@@ -64,7 +64,7 @@ func TestMarginLevels_Push(t *testing.T) {
 		Timestamp:              time.Now().UnixNano(),
 	}))
 
-	subscriber.Push(context.Background(), events.NewTime(context.Background(), time.Now()))
+	subscriber.Flush(context.Background())
 }
 
 type TestAccountSource struct{}

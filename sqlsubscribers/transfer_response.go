@@ -25,9 +25,9 @@ type TransferResponseEvent interface {
 }
 
 type TransferResponse struct {
+	subscriber
 	ledger   Ledger
 	accounts AccountStore
-	vegaTime time.Time
 	balances BalanceStore
 	log      *logging.Logger
 }
@@ -48,17 +48,13 @@ func (t *TransferResponse) Types() []events.Type {
 	return []events.Type{events.TransferResponses}
 }
 
+func (t *TransferResponse) Flush(ctx context.Context) error {
+	err := t.ledger.Flush(ctx)
+	return errors.Wrap(err, "flushing ledger")
+}
+
 func (t *TransferResponse) Push(ctx context.Context, evt events.Event) error {
-	switch e := evt.(type) {
-	case TimeUpdateEvent:
-		t.vegaTime = e.Time()
-		err := t.ledger.Flush(ctx)
-		return errors.Wrap(err, "flushing ledger")
-	case TransferResponseEvent:
-		return t.consume(ctx, e)
-	default:
-		return errors.Errorf("unknown event type %s", e.Type().String())
-	}
+	return t.consume(ctx, evt.(TransferResponseEvent))
 }
 
 func (t *TransferResponse) consume(ctx context.Context, e TransferResponseEvent) error {

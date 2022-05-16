@@ -2,7 +2,6 @@ package sqlsubscribers
 
 import (
 	"context"
-	"time"
 
 	"code.vegaprotocol.io/data-node/entities"
 	"code.vegaprotocol.io/data-node/logging"
@@ -21,9 +20,9 @@ type PartyStore interface {
 }
 
 type Party struct {
-	store    PartyStore
-	log      *logging.Logger
-	vegaTime time.Time
+	subscriber
+	store PartyStore
+	log   *logging.Logger
 }
 
 func NewParty(
@@ -42,16 +41,7 @@ func (ps *Party) Types() []events.Type {
 }
 
 func (ps *Party) Push(ctx context.Context, evt events.Event) error {
-	switch event := evt.(type) {
-	case TimeUpdateEvent:
-		ps.vegaTime = event.Time()
-	case PartyEvent:
-		return ps.consume(ctx, event)
-	default:
-		return errors.Errorf("unknown event type %s", event.Type().String())
-	}
-
-	return nil
+	return ps.consume(ctx, evt.(PartyEvent))
 }
 
 func (ps *Party) consume(ctx context.Context, event PartyEvent) error {

@@ -25,9 +25,9 @@ type AssetStore interface {
 }
 
 type Asset struct {
-	store    AssetStore
-	log      *logging.Logger
-	vegaTime time.Time
+	subscriber
+	store AssetStore
+	log   *logging.Logger
 }
 
 func NewAsset(store AssetStore, log *logging.Logger) *Asset {
@@ -42,16 +42,7 @@ func (a *Asset) Types() []events.Type {
 }
 
 func (as *Asset) Push(ctx context.Context, evt events.Event) error {
-	switch e := evt.(type) {
-	case TimeUpdateEvent:
-		as.vegaTime = e.Time()
-	case AssetEvent:
-		return as.consume(ctx, e)
-	default:
-		return errors.Errorf("unknown event type %s", e.Type().String())
-	}
-
-	return nil
+	return as.consume(ctx, evt.(AssetEvent))
 }
 
 func (as *Asset) consume(ctx context.Context, ae AssetEvent) error {

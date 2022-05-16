@@ -263,7 +263,7 @@ func insertTestData(t *testing.T, tradeStore *sqlstore.Trades) {
 		seqNum++
 	}
 
-	tradeStore.OnTimeUpdateEvent(context.Background())
+	tradeStore.Flush(context.Background())
 }
 
 func TestTrades_CursorPagination(t *testing.T) {
@@ -437,7 +437,7 @@ func populateTestTrades(ctx context.Context, t *testing.T, bs *sqlstore.Blocks, 
 		time.Sleep(time.Microsecond * 100)
 	}
 
-	err := ts.OnTimeUpdateEvent(ctx)
+	err := ts.Flush(ctx)
 	require.NoError(t, err)
 }
 

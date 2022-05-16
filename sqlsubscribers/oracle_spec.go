@@ -2,7 +2,6 @@ package sqlsubscribers
 
 import (
 	"context"
-	"time"
 
 	"code.vegaprotocol.io/data-node/entities"
 	"code.vegaprotocol.io/data-node/logging"
@@ -22,9 +21,9 @@ type OracleSpecStore interface {
 }
 
 type OracleSpec struct {
-	store    OracleSpecStore
-	log      *logging.Logger
-	vegaTime time.Time
+	subscriber
+	store OracleSpecStore
+	log   *logging.Logger
 }
 
 func NewOracleSpec(store OracleSpecStore, log *logging.Logger) *OracleSpec {
@@ -39,16 +38,7 @@ func (od *OracleSpec) Types() []events.Type {
 }
 
 func (od *OracleSpec) Push(ctx context.Context, evt events.Event) error {
-	switch e := evt.(type) {
-	case TimeUpdateEvent:
-		od.vegaTime = e.Time()
-	case OracleSpecEvent:
-		return od.consume(ctx, e)
-	default:
-		return errors.Errorf("unknown event type %s", e.Type().String())
-	}
-
-	return nil
+	return od.consume(ctx, evt.(OracleSpecEvent))
 }
 
 func (od *OracleSpec) consume(ctx context.Context, event OracleSpecEvent) error {

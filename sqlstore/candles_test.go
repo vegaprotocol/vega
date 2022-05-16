@@ -290,7 +290,7 @@ func insertCandlesTestData(t *testing.T, tradeStore *sqlstore.Trades, startTime 
 		}
 	}
 
-	err := tradeStore.OnTimeUpdateEvent(context.Background())
+	err := tradeStore.Flush(context.Background())
 	assert.NoError(t, err)
 }
 
@@ -301,7 +301,7 @@ func insertTestTrade(t *testing.T, tradeStore *sqlstore.Trades, price int, size 
 
 func insertTrade(t *testing.T, tradeStore *sqlstore.Trades, trade *entities.Trade) *entities.Trade {
 	err := tradeStore.Add(trade)
-	tradeStore.OnTimeUpdateEvent(context.Background())
+	tradeStore.Flush(context.Background())
 	if err != nil {
 		t.Fatalf("failed to add trade to store:%s", err)
 	}

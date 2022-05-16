@@ -19,30 +19,22 @@ type MarketDataEvent interface {
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/market_data_mock.go -package mocks code.vegaprotocol.io/data-node/sqlsubscribers MarketDataStore
 type MarketDataStore interface {
 	Add(*entities.MarketData) error
-	OnTimeUpdateEvent(context.Context) error
+	Flush(context.Context) error
 }
 
 type MarketData struct {
+	subscriber
 	log       *logging.Logger
 	store     MarketDataStore
 	dbTimeout time.Duration
-	vegaTime  time.Time
-	seqNum    uint64
+}
+
+func (md *MarketData) Flush(ctx context.Context) error {
+	return md.store.Flush(ctx)
 }
 
 func (md *MarketData) Push(ctx context.Context, evt events.Event) error {
-	switch e := evt.(type) {
-	case TimeUpdateEvent:
-		md.vegaTime = e.Time()
-		md.store.OnTimeUpdateEvent(ctx)
-	case MarketDataEvent:
-		md.seqNum = e.Sequence()
-		return md.consume(e)
-	default:
-		return errors.Errorf("unknown event type %s", e.Type().String())
-	}
-
-	return nil
+	return md.consume(evt.(MarketDataEvent))
 }
 
 func (md *MarketData) Types() []events.Type {
@@ -57,18 +49,19 @@ func NewMarketData(store MarketDataStore, log *logging.Logger) *MarketData {
 }
 
 func (md *MarketData) consume(event MarketDataEvent) error {
+
 	var record *entities.MarketData
 	var err error
 	mdProto := event.MarketData()
 
-	if record, err = md.convertMarketDataProto(&mdProto); err != nil {
+	if record, err = md.convertMarketDataProto(&mdProto, event.Sequence()); err != nil {
 		errors.Wrap(err, "converting market data proto for persistence failed")
 	}
 
 	return errors.Wrap(md.store.Add(record), "inserting market data to SQL store failed")
 }
 
-func (md *MarketData) convertMarketDataProto(data *types.MarketData) (*entities.MarketData, error) {
+func (md *MarketData) convertMarketDataProto(data *types.MarketData, seqNum uint64) (*entities.MarketData, error) {
 	record, err := entities.MarketDataFromProto(data)
 	if err != nil {
 		return nil, err
@@ -76,7 +69,7 @@ func (md *MarketData) convertMarketDataProto(data *types.MarketData) (*entities.
 
 	record.SyntheticTime = md.vegaTime.Add(time.Duration(record.SeqNum) * time.Microsecond)
 	record.VegaTime = md.vegaTime
-	record.SeqNum = md.seqNum
+	record.SeqNum = seqNum
 
 	return record, nil
 }
