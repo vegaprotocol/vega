@@ -234,15 +234,15 @@ func TestNodesService_GetNodeData(t *testing.T) {
 	expectedData := &pb.NodeData{
 		StakedTotal:     "40",
 		TotalNodes:      10,
-		ValidatingNodes: 10,
+		ValidatingNodes: 5,
 		Uptime:          float32(time.Duration(10 * time.Hour).Minutes()),
 	}
 
 	testService.epochStore.EXPECT().GetTotalNodesUptime().Return(10 * time.Hour).Times(1)
 	testService.epochStore.EXPECT().GetEpochSeq().Return("epoch_1").Times(1)
 	testService.nodeStore.EXPECT().GetStakedTotal("epoch_1").Return("40").Times(1)
-	testService.nodeStore.EXPECT().GetTotalNodesNumber().Return(10).Times(1)
-	testService.nodeStore.EXPECT().GetValidatingNodesNumber().Return(10).Times(1)
+	testService.nodeStore.EXPECT().GetTotalNodesNumber(gomock.Any()).Return(10).Times(1)
+	testService.nodeStore.EXPECT().GetValidatingNodesNumber(gomock.Any()).Return(5).Times(1)
 
 	data, err := testService.GetNodeData(testService.ctx)
 	a.NoError(err)

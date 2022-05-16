@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"errors"
 	"fmt"
 	"math"
 	"strconv"
@@ -197,6 +198,10 @@ func (e *Epoch) epochProtoFromInternal(ie *epoch) (*pb.Epoch, error) {
 	validators := make([]*pb.Node, 0, len(ie.nodeIDs))
 	for _, id := range ie.nodeIDs {
 		node, err := e.nodeStore.GetByID(id, ie.seq)
+
+		if errors.Is(err, ErrNodeDoesNotExistInThisEpoch) {
+			continue // the node used to exist, was removed so we don't report it for this epoch
+		}
 		if err != nil {
 			e.log.Error("Failed to get node by id", logging.Error(err))
 			continue

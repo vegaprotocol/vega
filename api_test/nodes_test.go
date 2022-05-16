@@ -148,4 +148,33 @@ loop:
 
 	assert.NotNil(t, resp.Node)
 	assert.NotNil(t, resp.Node.RankingScore)
+
+	allNodes, err := client.GetNodes(ctx, &apipb.GetNodesRequest{})
+	assert.NoError(t, err)
+	assert.Len(t, allNodes.Nodes, 1)
+
+	// move the epoch along to one where the node hasn't got a ranking i.e it has been removed and check it is not returned in the node list
+	server.broker.Send(events.NewEpochEvent(ctx, &types.Epoch{Seq: 13}))
+	var resp2 *apipb.GetEpochResponse
+
+loop2:
+	for {
+		select {
+		case <-ctx.Done():
+			t.Fatalf("test timeout")
+		case <-time.Tick(50 * time.Millisecond):
+			resp2, err = client.GetEpoch(ctx, &apipb.GetEpochRequest{Id: 13})
+			if err == nil && resp2.Epoch != nil {
+				break loop2
+			}
+		}
+	}
+	assert.NotNil(t, resp2.Epoch)
+	assert.Len(t, resp2.Epoch.Validators, 0)
+	_, err = client.GetNodeByID(ctx, &apipb.GetNodeByIDRequest{Id: nodeID})
+	assert.Error(t, err) // because its not found
+
+	allNodes, err = client.GetNodes(ctx, &apipb.GetNodesRequest{})
+	assert.NoError(t, err)
+	assert.Len(t, allNodes.Nodes, 0)
 }

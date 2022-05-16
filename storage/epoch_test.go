@@ -151,12 +151,15 @@ func TestEpochs(t *testing.T) {
 			StakedTotal:       "0",
 			PendingStake:      "0",
 			Delegations:       nil,
+			RankingScore:      &pb.RankingScore{},
 		})
 	}
 
 	// Test epoch returns nodes
 	nodeStore.AddNode(*nodes[0])
 	nodeStore.AddNode(*nodes[1])
+	nodeStore.AddNodeRankingScore("0", "3", pb.RankingScore{})
+	nodeStore.AddNodeRankingScore("1", "3", pb.RankingScore{})
 
 	startTime = startTime.Add(24 * time.Hour)
 	expiryTime = expiryTime.Add(24 * time.Hour)

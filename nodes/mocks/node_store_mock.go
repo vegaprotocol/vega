@@ -107,29 +107,29 @@ func (mr *MockNodeStoreMockRecorder) GetStakedTotal(arg0 interface{}) *gomock.Ca
 }
 
 // GetTotalNodesNumber mocks base method.
-func (m *MockNodeStore) GetTotalNodesNumber() int {
+func (m *MockNodeStore) GetTotalNodesNumber(arg0 string) int {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetTotalNodesNumber")
+	ret := m.ctrl.Call(m, "GetTotalNodesNumber", arg0)
 	ret0, _ := ret[0].(int)
 	return ret0
 }
 
 // GetTotalNodesNumber indicates an expected call of GetTotalNodesNumber.
-func (mr *MockNodeStoreMockRecorder) GetTotalNodesNumber() *gomock.Call {
+func (mr *MockNodeStoreMockRecorder) GetTotalNodesNumber(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTotalNodesNumber", reflect.TypeOf((*MockNodeStore)(nil).GetTotalNodesNumber))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTotalNodesNumber", reflect.TypeOf((*MockNodeStore)(nil).GetTotalNodesNumber), arg0)
 }
 
 // GetValidatingNodesNumber mocks base method.
-func (m *MockNodeStore) GetValidatingNodesNumber() int {
+func (m *MockNodeStore) GetValidatingNodesNumber(arg0 string) int {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetValidatingNodesNumber")
+	ret := m.ctrl.Call(m, "GetValidatingNodesNumber", arg0)
 	ret0, _ := ret[0].(int)
 	return ret0
 }
 
 // GetValidatingNodesNumber indicates an expected call of GetValidatingNodesNumber.
-func (mr *MockNodeStoreMockRecorder) GetValidatingNodesNumber() *gomock.Call {
+func (mr *MockNodeStoreMockRecorder) GetValidatingNodesNumber(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetValidatingNodesNumber", reflect.TypeOf((*MockNodeStore)(nil).GetValidatingNodesNumber))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetValidatingNodesNumber", reflect.TypeOf((*MockNodeStore)(nil).GetValidatingNodesNumber), arg0)
 }

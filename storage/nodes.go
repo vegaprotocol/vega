@@ -14,7 +14,10 @@ import (
 	"github.com/pkg/errors"
 )
 
-var ErrNodeDoesNotExist = errors.New("node does not exist")
+var (
+	ErrNodeDoesNotExist            = errors.New("node does not exist")
+	ErrNodeDoesNotExistInThisEpoch = errors.New("node does not exist in this epoch")
+)
 
 type node struct {
 	n pb.Node
@@ -134,7 +137,11 @@ func (ns *Node) GetByID(id, epochID string) (*pb.Node, error) {
 
 	node, ok := ns.nodes[id]
 	if !ok {
-		return nil, fmt.Errorf("node %s not found", id)
+		return nil, ErrNodeDoesNotExist
+	}
+
+	if _, ok := node.rankingPerEpoch[epochID]; !ok {
+		return nil, ErrNodeDoesNotExistInThisEpoch
 	}
 
 	return ns.nodeProtoFromInternal(node, epochID), nil
@@ -147,12 +154,18 @@ func (ns *Node) GetAll(epochID string) []*pb.Node {
 
 	nodes := make([]*pb.Node, 0, len(ns.nodes))
 	for _, n := range ns.nodes {
+		if _, ok := n.rankingPerEpoch[epochID]; !ok {
+			// node was removed due to inactivity and so does not exist in this epoch
+			continue
+		}
 		nodes = append(nodes, ns.nodeProtoFromInternal(n, epochID))
 	}
 
 	return nodes
 }
 
+// GetAllIDs returns the ids of all nodes that ever existed. Appearing in this list
+// does not necessarily mean it is considered a node in the current epoch
 func (ns *Node) GetAllIDs() []string {
 	ns.mut.RLock()
 	defer ns.mut.RUnlock()
@@ -165,19 +178,37 @@ func (ns *Node) GetAllIDs() []string {
 	return ids
 }
 
-func (ns *Node) GetTotalNodesNumber() int {
+func (ns *Node) GetTotalNodesNumber(epochID string) int {
 	ns.mut.RLock()
 	defer ns.mut.RUnlock()
 
-	return len(ns.nodes)
+	count := 0
+	for _, n := range ns.nodes {
+		if _, ok := n.rankingPerEpoch[epochID]; !ok {
+			continue
+		}
+		count += 1
+	}
+	return count
 }
 
 // GetValidatingNodesNumber - for now this is the same as total nodes
-func (ns *Node) GetValidatingNodesNumber() int {
+func (ns *Node) GetValidatingNodesNumber(epochID string) int {
 	ns.mut.RLock()
 	defer ns.mut.RUnlock()
 
-	return len(ns.nodes)
+	count := 0
+	for _, n := range ns.nodes {
+		r, ok := n.rankingPerEpoch[epochID]
+		if !ok {
+			continue
+		}
+		if r.Status != vega.ValidatorNodeStatus_VALIDATOR_NODE_STATUS_TENDERMINT {
+			continue
+		}
+		count += 1
+	}
+	return count
 }
 
 // GetStakedTotal returns total stake across all nodes per epoch.
