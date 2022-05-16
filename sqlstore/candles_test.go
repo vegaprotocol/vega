@@ -68,7 +68,7 @@ func TestCandlesPagination(t *testing.T) {
 
 	_, candleId, _ := candleStore.GetCandleIdForIntervalAndMarket(context.Background(), "1 Minute", testMarket)
 	candles, err := candleStore.GetCandleDataForTimeSpan(context.Background(), candleId, nil,
-		nil, entities.Pagination{
+		nil, entities.OffsetPagination{
 			Skip:       0,
 			Limit:      10,
 			Descending: true,
@@ -81,7 +81,7 @@ func TestCandlesPagination(t *testing.T) {
 	lastCandle := candles[9]
 
 	candles, err = candleStore.GetCandleDataForTimeSpan(context.Background(), candleId, nil,
-		nil, entities.Pagination{
+		nil, entities.OffsetPagination{
 			Skip:       9,
 			Limit:      5,
 			Descending: true,
@@ -122,7 +122,7 @@ func TestCandlesGetForEmptyInterval(t *testing.T) {
 	}
 
 	candles, err := candleStore.GetCandleDataForTimeSpan(context.Background(), candleId, &startTime,
-		nil, entities.Pagination{})
+		nil, entities.OffsetPagination{})
 	if err != nil {
 		t.Fatalf("failed to get candles:%s", err)
 	}
@@ -153,7 +153,7 @@ func TestCandlesGetLatest(t *testing.T) {
 
 	_, candleId, _ := candleStore.GetCandleIdForIntervalAndMarket(context.Background(), "1 Minute", testMarket)
 	candles, err := candleStore.GetCandleDataForTimeSpan(context.Background(), candleId, &startTime,
-		nil, entities.Pagination{
+		nil, entities.OffsetPagination{
 			Skip:       0,
 			Limit:      1,
 			Descending: true,
@@ -201,12 +201,13 @@ func TestCandlesGetForDifferentIntervalAndTimeBounds(t *testing.T) {
 }
 
 func testInterval(t *testing.T, tradeDataStartTime time.Time, fromTime *time.Time, toTime *time.Time, candleStore *sqlstore.Candles, interval string,
-	intervalSeconds int) {
+	intervalSeconds int,
+) {
 	intervalDur := time.Duration(intervalSeconds) * time.Second
 
 	_, candleId, _ := candleStore.GetCandleIdForIntervalAndMarket(context.Background(), interval, testMarket)
 	candles, err := candleStore.GetCandleDataForTimeSpan(context.Background(), candleId, fromTime,
-		toTime, entities.Pagination{})
+		toTime, entities.OffsetPagination{})
 	if err != nil {
 		t.Fatalf("failed to get candles:%s", err)
 	}
@@ -269,7 +270,8 @@ func createCandle(periodStart time.Time, lastUpdate time.Time, open int, close i
 }
 
 func insertCandlesTestData(t *testing.T, tradeStore *sqlstore.Trades, startTime time.Time, numBlocks int,
-	tradePerBlock int, startPrice int, priceIncrement int, size int, blockIntervalDur time.Duration) {
+	tradePerBlock int, startPrice int, priceIncrement int, size int, blockIntervalDur time.Duration,
+) {
 	bs := sqlstore.NewBlocks(connectionSource)
 
 	var blocks []entities.Block

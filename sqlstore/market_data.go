@@ -24,7 +24,8 @@ var ErrInvalidDateRange = errors.New("invalid date range, end date must be after
 func NewMarketData(connectionSource *ConnectionSource) *MarketData {
 	return &MarketData{
 		ConnectionSource: connectionSource,
-		columns: []string{"synthetic_time", "vega_time", "seq_num",
+		columns: []string{
+			"synthetic_time", "vega_time", "seq_num",
 			"market", "mark_price", "best_bid_price", "best_bid_volume",
 			"best_offer_price", "best_offer_volume", "best_static_bid_price", "best_static_bid_volume",
 			"best_static_offer_price", "best_static_offer_volume", "mid_price", "static_mid_price",
@@ -38,14 +39,13 @@ func NewMarketData(connectionSource *ConnectionSource) *MarketData {
 func (md *MarketData) Add(data *entities.MarketData) error {
 	md.marketData = append(md.marketData, data)
 	return nil
-
 }
 
 func (md *MarketData) OnTimeUpdateEvent(ctx context.Context) error {
 	var rows [][]interface{}
 	for _, data := range md.marketData {
-
-		rows = append(rows, []interface{}{data.SyntheticTime, data.VegaTime, data.SeqNum,
+		rows = append(rows, []interface{}{
+			data.SyntheticTime, data.VegaTime, data.SeqNum,
 			data.Market, data.MarkPrice,
 			data.BestBidPrice, data.BestBidVolume, data.BestOfferPrice, data.BestOfferVolume,
 			data.BestStaticBidPrice, data.BestStaticBidVolume, data.BestStaticOfferPrice, data.BestStaticOfferVolume,
@@ -54,7 +54,6 @@ func (md *MarketData) OnTimeUpdateEvent(ctx context.Context) error {
 			data.AuctionTrigger, data.ExtensionTrigger, data.TargetStake, data.SuppliedStake,
 			data.PriceMonitoringBounds, data.MarketValueProxy, data.LiquidityProviderFeeShares,
 		})
-
 	}
 	defer metrics.StartSQLQuery("MarketData", "Flush")()
 	if rows != nil {
@@ -74,7 +73,6 @@ func (md *MarketData) OnTimeUpdateEvent(ctx context.Context) error {
 	md.marketData = nil
 
 	return nil
-
 }
 
 func (md *MarketData) GetMarketDataByID(ctx context.Context, marketID string) (entities.MarketData, error) {
@@ -83,7 +81,6 @@ func (md *MarketData) GetMarketDataByID(ctx context.Context, marketID string) (e
 	var marketData entities.MarketData
 	query := "select * from market_data_snapshot where market = $1"
 
-	defer metrics.StartSQLQuery("MarketData", "GetByID")()
 	err := pgxscan.Get(ctx, md.Connection, &marketData, query, entities.NewMarketID(marketID))
 
 	return marketData, err
@@ -101,7 +98,7 @@ func (md *MarketData) GetMarketsData(ctx context.Context) ([]entities.MarketData
 	return marketData, err
 }
 
-func (md *MarketData) GetBetweenDatesByID(ctx context.Context, marketID string, start, end time.Time, pagination entities.Pagination) ([]entities.MarketData, error) {
+func (md *MarketData) GetBetweenDatesByID(ctx context.Context, marketID string, start, end time.Time, pagination entities.OffsetPagination) ([]entities.MarketData, error) {
 	if end.Before(start) {
 		return nil, ErrInvalidDateRange
 	}
@@ -109,15 +106,15 @@ func (md *MarketData) GetBetweenDatesByID(ctx context.Context, marketID string, 
 	return md.getBetweenDatesByID(ctx, marketID, &start, &end, pagination)
 }
 
-func (md *MarketData) GetFromDateByID(ctx context.Context, marketID string, start time.Time, pagination entities.Pagination) ([]entities.MarketData, error) {
+func (md *MarketData) GetFromDateByID(ctx context.Context, marketID string, start time.Time, pagination entities.OffsetPagination) ([]entities.MarketData, error) {
 	return md.getBetweenDatesByID(ctx, marketID, &start, nil, pagination)
 }
 
-func (md *MarketData) GetToDateByID(ctx context.Context, marketID string, end time.Time, pagination entities.Pagination) ([]entities.MarketData, error) {
+func (md *MarketData) GetToDateByID(ctx context.Context, marketID string, end time.Time, pagination entities.OffsetPagination) ([]entities.MarketData, error) {
 	return md.getBetweenDatesByID(ctx, marketID, nil, &end, pagination)
 }
 
-func (md *MarketData) getBetweenDatesByID(ctx context.Context, marketID string, start, end *time.Time, pagination entities.Pagination) (results []entities.MarketData, err error) {
+func (md *MarketData) getBetweenDatesByID(ctx context.Context, marketID string, start, end *time.Time, pagination entities.OffsetPagination) (results []entities.MarketData, err error) {
 	defer metrics.StartSQLQuery("MarketData", "getBetweenDatesByID")()
 	market := entities.NewMarketID(marketID)
 

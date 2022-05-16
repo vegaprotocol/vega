@@ -226,6 +226,16 @@ type MarketTick struct {
 
 func (MarketTick) IsEvent() {}
 
+type OffsetPagination struct {
+	// Skip the number of records specified, default is 0
+	Skip int `json:"skip"`
+	// Limit the number of returned records to the value specified, default is 50
+	Limit int `json:"limit"`
+	// Descending reverses the order of the records returned
+	// default is true, if false the results will be returned in ascending order
+	Descending bool `json:"descending"`
+}
+
 // An estimate of the fee to be paid by the order
 type OrderEstimate struct {
 	// The estimated fee if the order was to trade
@@ -234,16 +244,6 @@ type OrderEstimate struct {
 	TotalFeeAmount string `json:"totalFeeAmount"`
 	// The margin requirement for this order
 	MarginLevels *vega.MarginLevels `json:"marginLevels"`
-}
-
-type Pagination struct {
-	// Skip the number of records specified, default is 0
-	Skip int `json:"skip"`
-	// Limit the number of returned records to the value specified, default is 50
-	Limit int `json:"limit"`
-	// Descending reverses the order of the records returned
-	// default is true, if false the results will be returned in ascending order
-	Descending bool `json:"descending"`
 }
 
 type PositionResolution struct {

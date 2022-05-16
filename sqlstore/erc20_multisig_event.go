@@ -42,7 +42,7 @@ func (m *ERC20MultiSigSignerEvent) Add(ctx context.Context, e *entities.ERC20Mul
 	return nil
 }
 
-func (m *ERC20MultiSigSignerEvent) GetByValidatorID(ctx context.Context, validatorID string, submitter string, eventType entities.ERC20MultiSigSignerEventType, epochID *int64, pagination entities.Pagination) ([]entities.ERC20MultiSigSignerEvent, error) {
+func (m *ERC20MultiSigSignerEvent) GetByValidatorID(ctx context.Context, validatorID string, submitter string, eventType entities.ERC20MultiSigSignerEventType, epochID *int64, pagination entities.OffsetPagination) ([]entities.ERC20MultiSigSignerEvent, error) {
 	out := []entities.ERC20MultiSigSignerEvent{}
 	prequery := `SELECT * FROM erc20_multisig_signer_events WHERE validator_id=$1`
 	query, args := orderAndPaginateQuery(prequery, nil, pagination, entities.NewNodeID(validatorID))
@@ -56,7 +56,7 @@ func (m *ERC20MultiSigSignerEvent) GetByValidatorID(ctx context.Context, validat
 	return out, err
 }
 
-func (m *ERC20MultiSigSignerEvent) GetAddedEvents(ctx context.Context, validatorID string, epochID *int64, pagination entities.Pagination) ([]entities.ERC20MultiSigSignerEvent, error) {
+func (m *ERC20MultiSigSignerEvent) GetAddedEvents(ctx context.Context, validatorID string, epochID *int64, pagination entities.OffsetPagination) ([]entities.ERC20MultiSigSignerEvent, error) {
 	out := []entities.ERC20MultiSigSignerEvent{}
 	prequery := `SELECT * FROM erc20_multisig_signer_events WHERE validator_id=$1 AND event=$2`
 	query, args := orderAndPaginateQuery(prequery, nil, pagination, entities.NewNodeID(validatorID), entities.ERC20MultiSigSignerEventTypeAdded)
@@ -71,7 +71,7 @@ func (m *ERC20MultiSigSignerEvent) GetAddedEvents(ctx context.Context, validator
 	return out, err
 }
 
-func (m *ERC20MultiSigSignerEvent) GetRemovedEvents(ctx context.Context, validatorID string, submitter string, epochID *int64, pagination entities.Pagination) ([]entities.ERC20MultiSigSignerEvent, error) {
+func (m *ERC20MultiSigSignerEvent) GetRemovedEvents(ctx context.Context, validatorID string, submitter string, epochID *int64, pagination entities.OffsetPagination) ([]entities.ERC20MultiSigSignerEvent, error) {
 	out := []entities.ERC20MultiSigSignerEvent{}
 	prequery := `SELECT * FROM erc20_multisig_signer_events WHERE validator_id=$1 AND submitter=$2 AND event=$3`
 	query, args := orderAndPaginateQuery(prequery, nil, pagination, entities.NewNodeID(validatorID), entities.NewEthereumAddress(submitter), entities.ERC20MultiSigSignerEventTypeRemoved)

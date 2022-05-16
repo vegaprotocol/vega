@@ -7,6 +7,7 @@ import (
 	"code.vegaprotocol.io/data-node/logging"
 	"code.vegaprotocol.io/data-node/vegatime"
 	protoapi "code.vegaprotocol.io/protos/data-node/api/v1"
+	v2 "code.vegaprotocol.io/protos/data-node/api/v2"
 	types "code.vegaprotocol.io/protos/vega"
 )
 
@@ -48,7 +49,8 @@ func (r *myMarketResolver) Data(ctx context.Context, market *types.Market) (*typ
 }
 
 func (r *myMarketResolver) Orders(ctx context.Context, market *types.Market,
-	skip, first, last *int) ([]*types.Order, error) {
+	skip, first, last *int,
+) ([]*types.Order, error) {
 	p := makePagination(skip, first, last)
 	req := protoapi.OrdersByMarketRequest{
 		MarketId:   market.Id,
@@ -63,7 +65,8 @@ func (r *myMarketResolver) Orders(ctx context.Context, market *types.Market,
 }
 
 func (r *myMarketResolver) Trades(ctx context.Context, market *types.Market,
-	skip, first, last *int) ([]*types.Trade, error) {
+	skip, first, last *int,
+) ([]*types.Trade, error) {
 	p := makePagination(skip, first, last)
 	req := protoapi.TradesByMarketRequest{
 		MarketId:   market.Id,
@@ -78,8 +81,20 @@ func (r *myMarketResolver) Trades(ctx context.Context, market *types.Market,
 	return res.Trades, nil
 }
 
-func (r *myMarketResolver) Depth(ctx context.Context, market *types.Market, maxDepth *int) (*types.MarketDepth, error) {
+func (r *myMarketResolver) TradesPaged(ctx context.Context, market *types.Market, pagination *v2.Pagination) (*v2.TradeConnection, error) {
+	req := v2.GetTradesByMarketRequest{
+		MarketId:   market.Id,
+		Pagination: pagination,
+	}
+	res, err := r.tradingDataClientV2.GetTradesByMarket(ctx, &req)
+	if err != nil {
+		r.log.Error("tradingData client", logging.Error(err))
+		return nil, customErrorFromStatus(err)
+	}
+	return res.Trades, nil
+}
 
+func (r *myMarketResolver) Depth(ctx context.Context, market *types.Market, maxDepth *int) (*types.MarketDepth, error) {
 	if market == nil {
 		return nil, errors.New("market missing or empty")
 	}
@@ -109,7 +124,8 @@ func (r *myMarketResolver) Depth(ctx context.Context, market *types.Market, maxD
 }
 
 func (r *myMarketResolver) Candles(ctx context.Context, market *types.Market,
-	sinceRaw string, interval Interval) ([]*types.Candle, error) {
+	sinceRaw string, interval Interval,
+) ([]*types.Candle, error) {
 	pinterval, err := convertIntervalToProto(interval)
 	if err != nil {
 		r.log.Debug("interval convert error", logging.Error(err))

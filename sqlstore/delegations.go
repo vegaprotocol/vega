@@ -47,7 +47,7 @@ func (ds *Delegations) Get(ctx context.Context,
 	partyIDHex *string,
 	nodeIDHex *string,
 	epochID *int64,
-	p *entities.Pagination,
+	p *entities.OffsetPagination,
 ) ([]entities.Delegation, error) {
 	query := `SELECT * from delegations`
 	args := []interface{}{}

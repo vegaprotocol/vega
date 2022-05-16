@@ -147,7 +147,7 @@ func testGetSpecs(t *testing.T) {
 	assert.NoError(t, conn.QueryRow(ctx, "select count(*) from oracle_specs").Scan(&rowCount))
 	assert.Equal(t, 3, rowCount)
 
-	got, err := os.GetSpecs(ctx, entities.Pagination{})
+	got, err := os.GetSpecs(ctx, entities.OffsetPagination{})
 	require.NoError(t, err)
 	assert.ElementsMatch(t, want, got)
 }

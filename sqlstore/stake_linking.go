@@ -54,7 +54,8 @@ set
 }
 
 func (s *StakeLinking) GetStake(ctx context.Context, partyID entities.PartyID,
-	pagination entities.Pagination) (*num.Uint, []entities.StakeLinking) {
+	pagination entities.OffsetPagination,
+) (*num.Uint, []entities.StakeLinking) {
 	var links []entities.StakeLinking
 	var bindVars []interface{}
 	// get the links from the database

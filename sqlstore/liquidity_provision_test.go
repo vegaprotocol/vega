@@ -125,7 +125,7 @@ func testGetLPByPartyOnly(t *testing.T) {
 
 	partyID := entities.NewPartyID("deadbaad")
 	marketID := entities.NewMarketID("")
-	got, err := lp.Get(ctx, partyID, marketID, entities.Pagination{})
+	got, err := lp.Get(ctx, partyID, marketID, entities.OffsetPagination{})
 	require.NoError(t, err)
 	assert.Equal(t, len(want), len(got))
 	assert.ElementsMatch(t, want, got)
@@ -172,7 +172,7 @@ func testGetLPByPartyAndMarket(t *testing.T) {
 
 	partyID := entities.NewPartyID("DEADBAAD")
 	marketID := entities.NewMarketID(wantMarketID)
-	got, err := lp.Get(ctx, partyID, marketID, entities.Pagination{})
+	got, err := lp.Get(ctx, partyID, marketID, entities.OffsetPagination{})
 	require.NoError(t, err)
 	assert.Equal(t, len(want), len(got))
 	assert.ElementsMatch(t, want, got)
@@ -186,7 +186,7 @@ func testGetLPNoPartyAndMarketErrors(t *testing.T) {
 	_, lp, _ := setupLPTests(t, ctx)
 	partyID := entities.NewPartyID("")
 	marketID := entities.NewMarketID("")
-	_, err := lp.Get(ctx, partyID, marketID, entities.Pagination{})
+	_, err := lp.Get(ctx, partyID, marketID, entities.OffsetPagination{})
 	assert.Error(t, err)
 }
 
@@ -228,7 +228,7 @@ func testGetLPNoPartyWithMarket(t *testing.T) {
 	assert.Equal(t, 3, rowCount)
 	partyID := entities.NewPartyID("")
 	marketID := entities.NewMarketID(wantMarketID)
-	got, err := lp.Get(ctx, partyID, marketID, entities.Pagination{})
+	got, err := lp.Get(ctx, partyID, marketID, entities.OffsetPagination{})
 	require.NoError(t, err)
 	assert.Equal(t, len(want), len(got))
 	assert.ElementsMatch(t, want, got)

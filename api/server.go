@@ -441,6 +441,8 @@ func (g *GRPCServer) Start(ctx context.Context, lis net.Listener) error {
 		notaryStore:              g.notaryStore,
 		assetStore:               g.assetStore,
 		candleServiceV2:          g.candleServiceV2,
+		marketsStore:             g.marketsStore,
+		partiesStore:             g.partyStore,
 	}
 	protoapi2.RegisterTradingDataServiceServer(g.srv, tradingDataSvcV2)
 

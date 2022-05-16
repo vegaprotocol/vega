@@ -77,6 +77,8 @@ type ResolverRoot interface {
 	OracleData() OracleDataResolver
 	OracleSpec() OracleSpecResolver
 	Order() OrderResolver
+	PaginatedMarket() PaginatedMarketResolver
+	PaginatedParty() PaginatedPartyResolver
 	Party() PartyResolver
 	PartyStake() PartyStakeResolver
 	PeggedOrder() PeggedOrderResolver
@@ -417,7 +419,14 @@ type ComplexityRoot struct {
 		State                         func(childComplexity int) int
 		TradableInstrument            func(childComplexity int) int
 		Trades                        func(childComplexity int, skip *int, first *int, last *int) int
+		TradesPaged                   func(childComplexity int, pagination *v2.Pagination) int
 		TradingMode                   func(childComplexity int) int
+	}
+
+	MarketConnection struct {
+		Edges      func(childComplexity int) int
+		PageInfo   func(childComplexity int) int
+		TotalCount func(childComplexity int) int
 	}
 
 	MarketData struct {
@@ -468,6 +477,11 @@ type ComplexityRoot struct {
 		Market         func(childComplexity int) int
 		Sell           func(childComplexity int) int
 		SequenceNumber func(childComplexity int) int
+	}
+
+	MarketEdge struct {
+		Cursor func(childComplexity int) int
+		Node   func(childComplexity int) int
 	}
 
 	MarketEvent struct {
@@ -626,6 +640,55 @@ type ComplexityRoot struct {
 		TotalFeeAmount func(childComplexity int) int
 	}
 
+	PageInfo struct {
+		EndCursor       func(childComplexity int) int
+		HasNextPage     func(childComplexity int) int
+		HasPreviousPage func(childComplexity int) int
+		StartCursor     func(childComplexity int) int
+	}
+
+	PaginatedMarket struct {
+		Accounts                      func(childComplexity int, partyID *string) int
+		Candles                       func(childComplexity int, since string, interval Interval) int
+		Data                          func(childComplexity int) int
+		DecimalPlaces                 func(childComplexity int) int
+		Depth                         func(childComplexity int, maxDepth *int) int
+		Fees                          func(childComplexity int) int
+		Id                            func(childComplexity int) int
+		LiquidityMonitoringParameters func(childComplexity int) int
+		LiquidityProvisions           func(childComplexity int, party *string) int
+		MarketTimestamps              func(childComplexity int) int
+		Name                          func(childComplexity int) int
+		OpeningAuction                func(childComplexity int) int
+		Orders                        func(childComplexity int, skip *int, first *int, last *int) int
+		PositionDecimalPlaces         func(childComplexity int) int
+		PriceMonitoringSettings       func(childComplexity int) int
+		Proposal                      func(childComplexity int) int
+		RiskFactors                   func(childComplexity int) int
+		State                         func(childComplexity int) int
+		TradableInstrument            func(childComplexity int) int
+		TradesPaged                   func(childComplexity int, pagination *v2.Pagination) int
+		TradingMode                   func(childComplexity int) int
+	}
+
+	PaginatedParty struct {
+		Accounts            func(childComplexity int, marketID *string, asset *string, typeArg *vega.AccountType) int
+		Delegations         func(childComplexity int, nodeID *string, skip *int, first *int, last *int) int
+		Deposits            func(childComplexity int) int
+		Id                  func(childComplexity int) int
+		LiquidityProvisions func(childComplexity int, market *string, reference *string) int
+		Margins             func(childComplexity int, marketID *string) int
+		Orders              func(childComplexity int, skip *int, first *int, last *int) int
+		Positions           func(childComplexity int) int
+		Proposals           func(childComplexity int, inState *ProposalState) int
+		RewardSummaries     func(childComplexity int, asset *string) int
+		Rewards             func(childComplexity int, asset *string, skip *int, first *int, last *int) int
+		Stake               func(childComplexity int) int
+		TradesPaged         func(childComplexity int, marketID *string, pagination *v2.Pagination) int
+		Votes               func(childComplexity int) int
+		Withdrawals         func(childComplexity int) int
+	}
+
 	Party struct {
 		Accounts            func(childComplexity int, marketID *string, asset *string, typeArg *vega.AccountType) int
 		Delegations         func(childComplexity int, nodeID *string, skip *int, first *int, last *int) int
@@ -641,8 +704,20 @@ type ComplexityRoot struct {
 		Rewards             func(childComplexity int, asset *string, skip *int, first *int, last *int) int
 		Stake               func(childComplexity int) int
 		Trades              func(childComplexity int, marketID *string, skip *int, first *int, last *int) int
+		TradesPaged         func(childComplexity int, marketID *string, pagination *v2.Pagination) int
 		Votes               func(childComplexity int) int
 		Withdrawals         func(childComplexity int) int
+	}
+
+	PartyConnection struct {
+		Edges      func(childComplexity int) int
+		PageInfo   func(childComplexity int) int
+		TotalCount func(childComplexity int) int
+	}
+
+	PartyEdge struct {
+		Cursor func(childComplexity int) int
+		Node   func(childComplexity int) int
 	}
 
 	PartyStake struct {
@@ -766,6 +841,7 @@ type ComplexityRoot struct {
 		LastBlockHeight            func(childComplexity int) int
 		Market                     func(childComplexity int, id string) int
 		Markets                    func(childComplexity int, id *string) int
+		MarketsPaged               func(childComplexity int, id *string, pagination *v2.Pagination) int
 		NetworkLimits              func(childComplexity int) int
 		NetworkParameters          func(childComplexity int) int
 		NetworkParametersProposals func(childComplexity int, inState *ProposalState) int
@@ -776,14 +852,15 @@ type ComplexityRoot struct {
 		NodeData                   func(childComplexity int) int
 		NodeSignatures             func(childComplexity int, resourceID string) int
 		Nodes                      func(childComplexity int) int
-		OracleData                 func(childComplexity int, pagination *Pagination) int
-		OracleDataBySpec           func(childComplexity int, oracleSpecID string, pagination *Pagination) int
+		OracleData                 func(childComplexity int, pagination *OffsetPagination) int
+		OracleDataBySpec           func(childComplexity int, oracleSpecID string, pagination *OffsetPagination) int
 		OracleSpec                 func(childComplexity int, oracleSpecID string) int
-		OracleSpecs                func(childComplexity int, pagination *Pagination) int
+		OracleSpecs                func(childComplexity int, pagination *OffsetPagination) int
 		OrderByID                  func(childComplexity int, orderID string, version *int) int
 		OrderByReference           func(childComplexity int, reference string) int
 		OrderVersions              func(childComplexity int, orderID string, skip *int, first *int, last *int) int
 		Parties                    func(childComplexity int, id *string) int
+		PartiesPaged               func(childComplexity int, id *string, pagination *v2.Pagination) int
 		Party                      func(childComplexity int, id string) int
 		Proposal                   func(childComplexity int, id *string, reference *string) int
 		Proposals                  func(childComplexity int, inState *ProposalState) int
@@ -964,6 +1041,17 @@ type ComplexityRoot struct {
 		SellerFee          func(childComplexity int) int
 		Size               func(childComplexity int) int
 		Type               func(childComplexity int) int
+	}
+
+	TradeConnection struct {
+		Edges      func(childComplexity int) int
+		PageInfo   func(childComplexity int) int
+		TotalCount func(childComplexity int) int
+	}
+
+	TradeEdge struct {
+		Cursor func(childComplexity int) int
+		Node   func(childComplexity int) int
 	}
 
 	TradeFee struct {
@@ -1175,6 +1263,7 @@ type MarketResolver interface {
 	Orders(ctx context.Context, obj *vega.Market, skip *int, first *int, last *int) ([]*vega.Order, error)
 	Accounts(ctx context.Context, obj *vega.Market, partyID *string) ([]*vega.Account, error)
 	Trades(ctx context.Context, obj *vega.Market, skip *int, first *int, last *int) ([]*vega.Trade, error)
+	TradesPaged(ctx context.Context, obj *vega.Market, pagination *v2.Pagination) (*v2.TradeConnection, error)
 	Depth(ctx context.Context, obj *vega.Market, maxDepth *int) (*vega.MarketDepth, error)
 	Candles(ctx context.Context, obj *vega.Market, since string, interval Interval) ([]*vega.Candle, error)
 	Data(ctx context.Context, obj *vega.Market) (*vega.MarketData, error)
@@ -1286,9 +1375,47 @@ type OrderResolver interface {
 
 	LiquidityProvision(ctx context.Context, obj *vega.Order) (*vega.LiquidityProvision, error)
 }
+type PaginatedMarketResolver interface {
+	Name(ctx context.Context, obj *vega.Market) (string, error)
+
+	DecimalPlaces(ctx context.Context, obj *vega.Market) (int, error)
+	PositionDecimalPlaces(ctx context.Context, obj *vega.Market) (int, error)
+	OpeningAuction(ctx context.Context, obj *vega.Market) (*AuctionDuration, error)
+	PriceMonitoringSettings(ctx context.Context, obj *vega.Market) (*PriceMonitoringSettings, error)
+	LiquidityMonitoringParameters(ctx context.Context, obj *vega.Market) (*LiquidityMonitoringParameters, error)
+	TradingMode(ctx context.Context, obj *vega.Market) (MarketTradingMode, error)
+	State(ctx context.Context, obj *vega.Market) (MarketState, error)
+	Proposal(ctx context.Context, obj *vega.Market) (*vega.GovernanceData, error)
+	Orders(ctx context.Context, obj *vega.Market, skip *int, first *int, last *int) ([]*vega.Order, error)
+	Accounts(ctx context.Context, obj *vega.Market, partyID *string) ([]*vega.Account, error)
+	TradesPaged(ctx context.Context, obj *vega.Market, pagination *v2.Pagination) (*v2.TradeConnection, error)
+	Depth(ctx context.Context, obj *vega.Market, maxDepth *int) (*vega.MarketDepth, error)
+	Candles(ctx context.Context, obj *vega.Market, since string, interval Interval) ([]*vega.Candle, error)
+	Data(ctx context.Context, obj *vega.Market) (*vega.MarketData, error)
+	LiquidityProvisions(ctx context.Context, obj *vega.Market, party *string) ([]*vega.LiquidityProvision, error)
+
+	RiskFactors(ctx context.Context, obj *vega.Market) (*vega.RiskFactor, error)
+}
+type PaginatedPartyResolver interface {
+	Orders(ctx context.Context, obj *vega.Party, skip *int, first *int, last *int) ([]*vega.Order, error)
+	TradesPaged(ctx context.Context, obj *vega.Party, marketID *string, pagination *v2.Pagination) (*v2.TradeConnection, error)
+	Accounts(ctx context.Context, obj *vega.Party, marketID *string, asset *string, typeArg *vega.AccountType) ([]*vega.Account, error)
+	Positions(ctx context.Context, obj *vega.Party) ([]*vega.Position, error)
+	Margins(ctx context.Context, obj *vega.Party, marketID *string) ([]*vega.MarginLevels, error)
+	Proposals(ctx context.Context, obj *vega.Party, inState *ProposalState) ([]*vega.GovernanceData, error)
+	Votes(ctx context.Context, obj *vega.Party) ([]*ProposalVote, error)
+	Withdrawals(ctx context.Context, obj *vega.Party) ([]*vega.Withdrawal, error)
+	Deposits(ctx context.Context, obj *vega.Party) ([]*vega.Deposit, error)
+	LiquidityProvisions(ctx context.Context, obj *vega.Party, market *string, reference *string) ([]*vega.LiquidityProvision, error)
+	Delegations(ctx context.Context, obj *vega.Party, nodeID *string, skip *int, first *int, last *int) ([]*vega.Delegation, error)
+	Stake(ctx context.Context, obj *vega.Party) (*v12.PartyStakeResponse, error)
+	Rewards(ctx context.Context, obj *vega.Party, asset *string, skip *int, first *int, last *int) ([]*vega.Reward, error)
+	RewardSummaries(ctx context.Context, obj *vega.Party, asset *string) ([]*vega.RewardSummary, error)
+}
 type PartyResolver interface {
 	Orders(ctx context.Context, obj *vega.Party, skip *int, first *int, last *int) ([]*vega.Order, error)
 	Trades(ctx context.Context, obj *vega.Party, marketID *string, skip *int, first *int, last *int) ([]*vega.Trade, error)
+	TradesPaged(ctx context.Context, obj *vega.Party, marketID *string, pagination *v2.Pagination) (*v2.TradeConnection, error)
 	Accounts(ctx context.Context, obj *vega.Party, marketID *string, asset *string, typeArg *vega.AccountType) ([]*vega.Account, error)
 	Positions(ctx context.Context, obj *vega.Party) ([]*vega.Position, error)
 	Margins(ctx context.Context, obj *vega.Party, marketID *string) ([]*vega.MarginLevels, error)
@@ -1343,14 +1470,16 @@ type ProposalTermsResolver interface {
 }
 type QueryResolver interface {
 	Markets(ctx context.Context, id *string) ([]*vega.Market, error)
+	MarketsPaged(ctx context.Context, id *string, pagination *v2.Pagination) (*v2.MarketConnection, error)
 	Market(ctx context.Context, id string) (*vega.Market, error)
 	Parties(ctx context.Context, id *string) ([]*vega.Party, error)
+	PartiesPaged(ctx context.Context, id *string, pagination *v2.Pagination) (*v2.PartyConnection, error)
 	Party(ctx context.Context, id string) (*vega.Party, error)
 	LastBlockHeight(ctx context.Context) (string, error)
-	OracleSpecs(ctx context.Context, pagination *Pagination) ([]*v11.OracleSpec, error)
+	OracleSpecs(ctx context.Context, pagination *OffsetPagination) ([]*v11.OracleSpec, error)
 	OracleSpec(ctx context.Context, oracleSpecID string) (*v11.OracleSpec, error)
-	OracleDataBySpec(ctx context.Context, oracleSpecID string, pagination *Pagination) ([]*v11.OracleData, error)
-	OracleData(ctx context.Context, pagination *Pagination) ([]*v11.OracleData, error)
+	OracleDataBySpec(ctx context.Context, oracleSpecID string, pagination *OffsetPagination) ([]*v11.OracleData, error)
+	OracleData(ctx context.Context, pagination *OffsetPagination) ([]*v11.OracleData, error)
 	OrderByID(ctx context.Context, orderID string, version *int) (*vega.Order, error)
 	OrderVersions(ctx context.Context, orderID string, skip *int, first *int, last *int) ([]*vega.Order, error)
 	OrderByReference(ctx context.Context, reference string) (*vega.Order, error)
@@ -2835,12 +2964,45 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Market.Trades(childComplexity, args["skip"].(*int), args["first"].(*int), args["last"].(*int)), true
 
+	case "Market.tradesPaged":
+		if e.complexity.Market.TradesPaged == nil {
+			break
+		}
+
+		args, err := ec.field_Market_tradesPaged_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Market.TradesPaged(childComplexity, args["pagination"].(*v2.Pagination)), true
+
 	case "Market.tradingMode":
 		if e.complexity.Market.TradingMode == nil {
 			break
 		}
 
 		return e.complexity.Market.TradingMode(childComplexity), true
+
+	case "MarketConnection.edges":
+		if e.complexity.MarketConnection.Edges == nil {
+			break
+		}
+
+		return e.complexity.MarketConnection.Edges(childComplexity), true
+
+	case "MarketConnection.pageInfo":
+		if e.complexity.MarketConnection.PageInfo == nil {
+			break
+		}
+
+		return e.complexity.MarketConnection.PageInfo(childComplexity), true
+
+	case "MarketConnection.totalCount":
+		if e.complexity.MarketConnection.TotalCount == nil {
+			break
+		}
+
+		return e.complexity.MarketConnection.TotalCount(childComplexity), true
 
 	case "MarketData.auctionEnd":
 		if e.complexity.MarketData.AuctionEnd == nil {
@@ -3107,6 +3269,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.MarketDepthUpdate.SequenceNumber(childComplexity), true
+
+	case "MarketEdge.cursor":
+		if e.complexity.MarketEdge.Cursor == nil {
+			break
+		}
+
+		return e.complexity.MarketEdge.Cursor(childComplexity), true
+
+	case "MarketEdge.node":
+		if e.complexity.MarketEdge.Node == nil {
+			break
+		}
+
+		return e.complexity.MarketEdge.Node(childComplexity), true
 
 	case "MarketEvent.marketId":
 		if e.complexity.MarketEvent.MarketID == nil {
@@ -3806,6 +3982,361 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.OrderEstimate.TotalFeeAmount(childComplexity), true
 
+	case "PageInfo.endCursor":
+		if e.complexity.PageInfo.EndCursor == nil {
+			break
+		}
+
+		return e.complexity.PageInfo.EndCursor(childComplexity), true
+
+	case "PageInfo.hasNextPage":
+		if e.complexity.PageInfo.HasNextPage == nil {
+			break
+		}
+
+		return e.complexity.PageInfo.HasNextPage(childComplexity), true
+
+	case "PageInfo.hasPreviousPage":
+		if e.complexity.PageInfo.HasPreviousPage == nil {
+			break
+		}
+
+		return e.complexity.PageInfo.HasPreviousPage(childComplexity), true
+
+	case "PageInfo.startCursor":
+		if e.complexity.PageInfo.StartCursor == nil {
+			break
+		}
+
+		return e.complexity.PageInfo.StartCursor(childComplexity), true
+
+	case "PaginatedMarket.accounts":
+		if e.complexity.PaginatedMarket.Accounts == nil {
+			break
+		}
+
+		args, err := ec.field_PaginatedMarket_accounts_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.PaginatedMarket.Accounts(childComplexity, args["partyId"].(*string)), true
+
+	case "PaginatedMarket.candles":
+		if e.complexity.PaginatedMarket.Candles == nil {
+			break
+		}
+
+		args, err := ec.field_PaginatedMarket_candles_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.PaginatedMarket.Candles(childComplexity, args["since"].(string), args["interval"].(Interval)), true
+
+	case "PaginatedMarket.data":
+		if e.complexity.PaginatedMarket.Data == nil {
+			break
+		}
+
+		return e.complexity.PaginatedMarket.Data(childComplexity), true
+
+	case "PaginatedMarket.decimalPlaces":
+		if e.complexity.PaginatedMarket.DecimalPlaces == nil {
+			break
+		}
+
+		return e.complexity.PaginatedMarket.DecimalPlaces(childComplexity), true
+
+	case "PaginatedMarket.depth":
+		if e.complexity.PaginatedMarket.Depth == nil {
+			break
+		}
+
+		args, err := ec.field_PaginatedMarket_depth_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.PaginatedMarket.Depth(childComplexity, args["maxDepth"].(*int)), true
+
+	case "PaginatedMarket.fees":
+		if e.complexity.PaginatedMarket.Fees == nil {
+			break
+		}
+
+		return e.complexity.PaginatedMarket.Fees(childComplexity), true
+
+	case "PaginatedMarket.id":
+		if e.complexity.PaginatedMarket.Id == nil {
+			break
+		}
+
+		return e.complexity.PaginatedMarket.Id(childComplexity), true
+
+	case "PaginatedMarket.liquidityMonitoringParameters":
+		if e.complexity.PaginatedMarket.LiquidityMonitoringParameters == nil {
+			break
+		}
+
+		return e.complexity.PaginatedMarket.LiquidityMonitoringParameters(childComplexity), true
+
+	case "PaginatedMarket.liquidityProvisions":
+		if e.complexity.PaginatedMarket.LiquidityProvisions == nil {
+			break
+		}
+
+		args, err := ec.field_PaginatedMarket_liquidityProvisions_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.PaginatedMarket.LiquidityProvisions(childComplexity, args["party"].(*string)), true
+
+	case "PaginatedMarket.marketTimestamps":
+		if e.complexity.PaginatedMarket.MarketTimestamps == nil {
+			break
+		}
+
+		return e.complexity.PaginatedMarket.MarketTimestamps(childComplexity), true
+
+	case "PaginatedMarket.name":
+		if e.complexity.PaginatedMarket.Name == nil {
+			break
+		}
+
+		return e.complexity.PaginatedMarket.Name(childComplexity), true
+
+	case "PaginatedMarket.openingAuction":
+		if e.complexity.PaginatedMarket.OpeningAuction == nil {
+			break
+		}
+
+		return e.complexity.PaginatedMarket.OpeningAuction(childComplexity), true
+
+	case "PaginatedMarket.orders":
+		if e.complexity.PaginatedMarket.Orders == nil {
+			break
+		}
+
+		args, err := ec.field_PaginatedMarket_orders_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.PaginatedMarket.Orders(childComplexity, args["skip"].(*int), args["first"].(*int), args["last"].(*int)), true
+
+	case "PaginatedMarket.positionDecimalPlaces":
+		if e.complexity.PaginatedMarket.PositionDecimalPlaces == nil {
+			break
+		}
+
+		return e.complexity.PaginatedMarket.PositionDecimalPlaces(childComplexity), true
+
+	case "PaginatedMarket.priceMonitoringSettings":
+		if e.complexity.PaginatedMarket.PriceMonitoringSettings == nil {
+			break
+		}
+
+		return e.complexity.PaginatedMarket.PriceMonitoringSettings(childComplexity), true
+
+	case "PaginatedMarket.proposal":
+		if e.complexity.PaginatedMarket.Proposal == nil {
+			break
+		}
+
+		return e.complexity.PaginatedMarket.Proposal(childComplexity), true
+
+	case "PaginatedMarket.riskFactors":
+		if e.complexity.PaginatedMarket.RiskFactors == nil {
+			break
+		}
+
+		return e.complexity.PaginatedMarket.RiskFactors(childComplexity), true
+
+	case "PaginatedMarket.state":
+		if e.complexity.PaginatedMarket.State == nil {
+			break
+		}
+
+		return e.complexity.PaginatedMarket.State(childComplexity), true
+
+	case "PaginatedMarket.tradableInstrument":
+		if e.complexity.PaginatedMarket.TradableInstrument == nil {
+			break
+		}
+
+		return e.complexity.PaginatedMarket.TradableInstrument(childComplexity), true
+
+	case "PaginatedMarket.tradesPaged":
+		if e.complexity.PaginatedMarket.TradesPaged == nil {
+			break
+		}
+
+		args, err := ec.field_PaginatedMarket_tradesPaged_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.PaginatedMarket.TradesPaged(childComplexity, args["pagination"].(*v2.Pagination)), true
+
+	case "PaginatedMarket.tradingMode":
+		if e.complexity.PaginatedMarket.TradingMode == nil {
+			break
+		}
+
+		return e.complexity.PaginatedMarket.TradingMode(childComplexity), true
+
+	case "PaginatedParty.accounts":
+		if e.complexity.PaginatedParty.Accounts == nil {
+			break
+		}
+
+		args, err := ec.field_PaginatedParty_accounts_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.PaginatedParty.Accounts(childComplexity, args["marketId"].(*string), args["asset"].(*string), args["type"].(*vega.AccountType)), true
+
+	case "PaginatedParty.delegations":
+		if e.complexity.PaginatedParty.Delegations == nil {
+			break
+		}
+
+		args, err := ec.field_PaginatedParty_delegations_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.PaginatedParty.Delegations(childComplexity, args["nodeId"].(*string), args["skip"].(*int), args["first"].(*int), args["last"].(*int)), true
+
+	case "PaginatedParty.deposits":
+		if e.complexity.PaginatedParty.Deposits == nil {
+			break
+		}
+
+		return e.complexity.PaginatedParty.Deposits(childComplexity), true
+
+	case "PaginatedParty.id":
+		if e.complexity.PaginatedParty.Id == nil {
+			break
+		}
+
+		return e.complexity.PaginatedParty.Id(childComplexity), true
+
+	case "PaginatedParty.liquidityProvisions":
+		if e.complexity.PaginatedParty.LiquidityProvisions == nil {
+			break
+		}
+
+		args, err := ec.field_PaginatedParty_liquidityProvisions_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.PaginatedParty.LiquidityProvisions(childComplexity, args["market"].(*string), args["reference"].(*string)), true
+
+	case "PaginatedParty.margins":
+		if e.complexity.PaginatedParty.Margins == nil {
+			break
+		}
+
+		args, err := ec.field_PaginatedParty_margins_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.PaginatedParty.Margins(childComplexity, args["marketId"].(*string)), true
+
+	case "PaginatedParty.orders":
+		if e.complexity.PaginatedParty.Orders == nil {
+			break
+		}
+
+		args, err := ec.field_PaginatedParty_orders_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.PaginatedParty.Orders(childComplexity, args["skip"].(*int), args["first"].(*int), args["last"].(*int)), true
+
+	case "PaginatedParty.positions":
+		if e.complexity.PaginatedParty.Positions == nil {
+			break
+		}
+
+		return e.complexity.PaginatedParty.Positions(childComplexity), true
+
+	case "PaginatedParty.proposals":
+		if e.complexity.PaginatedParty.Proposals == nil {
+			break
+		}
+
+		args, err := ec.field_PaginatedParty_proposals_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.PaginatedParty.Proposals(childComplexity, args["inState"].(*ProposalState)), true
+
+	case "PaginatedParty.rewardSummaries":
+		if e.complexity.PaginatedParty.RewardSummaries == nil {
+			break
+		}
+
+		args, err := ec.field_PaginatedParty_rewardSummaries_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.PaginatedParty.RewardSummaries(childComplexity, args["asset"].(*string)), true
+
+	case "PaginatedParty.rewards":
+		if e.complexity.PaginatedParty.Rewards == nil {
+			break
+		}
+
+		args, err := ec.field_PaginatedParty_rewards_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.PaginatedParty.Rewards(childComplexity, args["asset"].(*string), args["skip"].(*int), args["first"].(*int), args["last"].(*int)), true
+
+	case "PaginatedParty.stake":
+		if e.complexity.PaginatedParty.Stake == nil {
+			break
+		}
+
+		return e.complexity.PaginatedParty.Stake(childComplexity), true
+
+	case "PaginatedParty.tradesPaged":
+		if e.complexity.PaginatedParty.TradesPaged == nil {
+			break
+		}
+
+		args, err := ec.field_PaginatedParty_tradesPaged_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.PaginatedParty.TradesPaged(childComplexity, args["marketId"].(*string), args["pagination"].(*v2.Pagination)), true
+
+	case "PaginatedParty.votes":
+		if e.complexity.PaginatedParty.Votes == nil {
+			break
+		}
+
+		return e.complexity.PaginatedParty.Votes(childComplexity), true
+
+	case "PaginatedParty.withdrawals":
+		if e.complexity.PaginatedParty.Withdrawals == nil {
+			break
+		}
+
+		return e.complexity.PaginatedParty.Withdrawals(childComplexity), true
+
 	case "Party.accounts":
 		if e.complexity.Party.Accounts == nil {
 			break
@@ -3949,6 +4480,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Party.Trades(childComplexity, args["marketId"].(*string), args["skip"].(*int), args["first"].(*int), args["last"].(*int)), true
 
+	case "Party.tradesPaged":
+		if e.complexity.Party.TradesPaged == nil {
+			break
+		}
+
+		args, err := ec.field_Party_tradesPaged_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Party.TradesPaged(childComplexity, args["marketId"].(*string), args["pagination"].(*v2.Pagination)), true
+
 	case "Party.votes":
 		if e.complexity.Party.Votes == nil {
 			break
@@ -3962,6 +4505,41 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Party.Withdrawals(childComplexity), true
+
+	case "PartyConnection.edges":
+		if e.complexity.PartyConnection.Edges == nil {
+			break
+		}
+
+		return e.complexity.PartyConnection.Edges(childComplexity), true
+
+	case "PartyConnection.pageInfo":
+		if e.complexity.PartyConnection.PageInfo == nil {
+			break
+		}
+
+		return e.complexity.PartyConnection.PageInfo(childComplexity), true
+
+	case "PartyConnection.totalCount":
+		if e.complexity.PartyConnection.TotalCount == nil {
+			break
+		}
+
+		return e.complexity.PartyConnection.TotalCount(childComplexity), true
+
+	case "PartyEdge.cursor":
+		if e.complexity.PartyEdge.Cursor == nil {
+			break
+		}
+
+		return e.complexity.PartyEdge.Cursor(childComplexity), true
+
+	case "PartyEdge.node":
+		if e.complexity.PartyEdge.Node == nil {
+			break
+		}
+
+		return e.complexity.PartyEdge.Node(childComplexity), true
 
 	case "PartyStake.currentStakeAvailable":
 		if e.complexity.PartyStake.CurrentStakeAvailable == nil {
@@ -4496,6 +5074,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.Markets(childComplexity, args["id"].(*string)), true
 
+	case "Query.marketsPaged":
+		if e.complexity.Query.MarketsPaged == nil {
+			break
+		}
+
+		args, err := ec.field_Query_marketsPaged_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.MarketsPaged(childComplexity, args["id"].(*string), args["pagination"].(*v2.Pagination)), true
+
 	case "Query.networkLimits":
 		if e.complexity.Query.NetworkLimits == nil {
 			break
@@ -4606,7 +5196,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.OracleData(childComplexity, args["pagination"].(*Pagination)), true
+		return e.complexity.Query.OracleData(childComplexity, args["pagination"].(*OffsetPagination)), true
 
 	case "Query.oracleDataBySpec":
 		if e.complexity.Query.OracleDataBySpec == nil {
@@ -4618,7 +5208,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.OracleDataBySpec(childComplexity, args["oracleSpecID"].(string), args["pagination"].(*Pagination)), true
+		return e.complexity.Query.OracleDataBySpec(childComplexity, args["oracleSpecID"].(string), args["pagination"].(*OffsetPagination)), true
 
 	case "Query.oracleSpec":
 		if e.complexity.Query.OracleSpec == nil {
@@ -4642,7 +5232,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.OracleSpecs(childComplexity, args["pagination"].(*Pagination)), true
+		return e.complexity.Query.OracleSpecs(childComplexity, args["pagination"].(*OffsetPagination)), true
 
 	case "Query.orderByID":
 		if e.complexity.Query.OrderByID == nil {
@@ -4691,6 +5281,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.Parties(childComplexity, args["id"].(*string)), true
+
+	case "Query.partiesPaged":
+		if e.complexity.Query.PartiesPaged == nil {
+			break
+		}
+
+		args, err := ec.field_Query_partiesPaged_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.PartiesPaged(childComplexity, args["id"].(*string), args["pagination"].(*v2.Pagination)), true
 
 	case "Query.party":
 		if e.complexity.Query.Party == nil {
@@ -5658,6 +6260,41 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Trade.Type(childComplexity), true
 
+	case "TradeConnection.edges":
+		if e.complexity.TradeConnection.Edges == nil {
+			break
+		}
+
+		return e.complexity.TradeConnection.Edges(childComplexity), true
+
+	case "TradeConnection.pageInfo":
+		if e.complexity.TradeConnection.PageInfo == nil {
+			break
+		}
+
+		return e.complexity.TradeConnection.PageInfo(childComplexity), true
+
+	case "TradeConnection.totalCount":
+		if e.complexity.TradeConnection.TotalCount == nil {
+			break
+		}
+
+		return e.complexity.TradeConnection.TotalCount(childComplexity), true
+
+	case "TradeEdge.cursor":
+		if e.complexity.TradeEdge.Cursor == nil {
+			break
+		}
+
+		return e.complexity.TradeEdge.Cursor(childComplexity), true
+
+	case "TradeEdge.node":
+		if e.complexity.TradeEdge.Node == nil {
+			break
+		}
+
+		return e.complexity.TradeEdge.Node(childComplexity), true
+
 	case "TradeFee.infrastructureFee":
 		if e.complexity.TradeFee.InfrastructureFee == nil {
 			break
@@ -6117,7 +6754,6 @@ schema {
   subscription: Subscription
 }
 
-
 "Create an order linked to an index rather than a price"
 type PeggedOrder {
   "Index to link this order to"
@@ -6370,11 +7006,21 @@ type Query {
   "One or more instruments that are trading on the VEGA network"
   markets("ID of the market" id: ID): [Market!]
 
+  marketsPaged(
+    id: ID
+    pagination: Pagination
+  ): MarketConnection!
+
   "An instrument that is trading on the VEGA network"
   market("Optional ID of a market" id: ID!): Market
 
   "One or more entities that are trading on the VEGA network"
   parties("Optional ID of a party" id: ID): [Party!]
+
+  partiesPaged(
+    id: ID
+    pagination: Pagination
+  ): PartyConnection!
 
   "An entity that is trading on the VEGA network"
   party("ID of a party" id: ID!): Party
@@ -6385,7 +7031,7 @@ type Query {
   "All registered oracle specs"
   oracleSpecs(
     "Pagination"
-    pagination: Pagination
+    pagination: OffsetPagination
   ): [OracleSpec!]
 
   "An oracle spec for a given oracle spec ID"
@@ -6396,13 +7042,13 @@ type Query {
     "ID for an oracle spec"
     oracleSpecID: String!
     "Pagination"
-    pagination: Pagination
+    pagination: OffsetPagination
   ): [OracleData!]
 
   "All registered oracle specs"
   oracleData(
     "Pagination"
-    pagination: Pagination
+    pagination: OffsetPagination
   ): [OracleData!]
 
   "An order in the VEGA network found by orderID"
@@ -6558,23 +7204,23 @@ type Query {
 
   "get market data history for a specific market. If no dates are given, the latest snapshot will be returned. If only the start date is provided all history from the given date will be provided, and if only the end date is provided, all history from the start upto and including the end date will be provided."
   getMarketDataHistoryByID(
-    id: String!,
+    id: String!
     """
     Optional start date time for the historic data query.
     If both the start and end date is not provided, only the latest snapshot will be returned.
     If only the start date is provided, all market data for the market from the start date forward will be returned.
     """
-    start: Int,
+    start: Int
     """
     Optional end date time for the historic data query.
     If both the start and end date is not provided, only the latest snapshot will be returned.
     If only the end date is provided, all market data for the market up to and including the end date will be returned.
     """
-    end: Int,
+    end: Int
     "Pagination skip"
-    skip: Int,
+    skip: Int
     "Pagination first element"
-    first: Int,
+    first: Int
     "Pagination last element"
     last: Int): [MarketData]
 }
@@ -6719,9 +7365,9 @@ type Epoch {
 
   delegations(
     # Optional party id to filter on
-    partyId: String,
+    partyId: String
     # Optional node id to filter on
-    nodeId: String,
+    nodeId: String
     "Pagination skip"
     skip: Int
     "Pagination first element"
@@ -7020,7 +7666,6 @@ type Statistics {
 
   "Current chain id"
   chainId: String!
-
 }
 
 "A mode where Vega tries to execute orders as soon as they are received"
@@ -7036,7 +7681,6 @@ type DiscreteTrading {
   "Size of an increment in price in terms of the quote currency"
   tickSize: String!
 }
-
 
 "Parameters for the log normal risk model"
 type LogNormalModelParams {
@@ -7411,7 +8055,6 @@ type Market {
   "An instance of or reference to a tradable instrument."
   tradableInstrument: TradableInstrument!
 
-
   """
   decimalPlaces indicates the number of decimal places that an integer must be shifted by in order to get a correct
   number denominated in the currency of the Market. (uint64)
@@ -7482,7 +8125,9 @@ type Market {
     first: Int
     "Pagination last element"
     last: Int
-  ): [Trade!]
+  ): [Trade!] @deprecated(reason: "Use tradesPaged for cursor based pagination instead")
+
+  tradesPaged(pagination: Pagination): TradeConnection!
 
   "Current depth on the order book for this market"
   depth(
@@ -7617,7 +8262,9 @@ type Party {
     first: Int
     "Pagination last element"
     last: Int
-  ): [Trade!]
+  ): [Trade!] @deprecated(reason: "Use tradesPaged for cursor based pagination instead")
+
+  tradesPaged(marketId: ID, pagination: Pagination): TradeConnection!
 
   "Collateral accounts relating to a party"
   accounts(
@@ -7660,7 +8307,7 @@ type Party {
   ): [LiquidityProvision!]
 
   # All delegations for a party to a given node if node is specified, or all delegations if not
-  delegations (
+  delegations(
     "Optional node"
     nodeId: String
     "Pagination skip"
@@ -9129,7 +9776,7 @@ type NetworkLimits {
   proposeAssetEnabledFrom: Timestamp!
 }
 
-input Pagination {
+input OffsetPagination {
   "Skip the number of records specified, default is 0"
   skip: Int!
   "Limit the number of returned records to the value specified, default is 50"
@@ -9139,6 +9786,270 @@ input Pagination {
   default is true, if false the results will be returned in ascending order
   """
   descending: Boolean!
+}
+
+"""
+Pagination constructs to support cursor based pagination in the API
+"""
+input Pagination {
+  first: Int
+  after: String
+  last: Int
+  before: String
+}
+
+type PageInfo {
+  hasNextPage: Boolean!
+  hasPreviousPage: Boolean!
+  startCursor: String!
+  endCursor: String!
+}
+
+type TradeEdge {
+  node: Trade!
+  cursor: String!
+}
+
+type TradeConnection {
+  "The total number of trades in this connection"
+  totalCount: Int!
+  "The trade in this connection"
+  edges: [TradeEdge!]!
+  "The pagination information"
+  pageInfo: PageInfo!
+}
+
+"Represents a party on Vega, could be an ethereum wallet address in the future using a cursor pagination model"
+type PaginatedParty {
+  "Party identifier"
+  id: ID!
+
+  "Orders relating to a party"
+  orders(
+    "Pagination skip"
+    skip: Int
+    "Pagination first element"
+    first: Int
+    "Pagination last element"
+    last: Int
+  ): [Order!]
+
+  "Trades relating to a party (specifically where party is either buyer OR seller)"
+  tradesPaged(
+    "ID of the market we want to get trades for"
+    marketId: ID
+    pagination: Pagination
+  ): TradeConnection!
+
+  "Collateral accounts relating to a party"
+  accounts(
+    "Market ID - specify what market accounts for the party to return"
+    marketId: ID
+    "Asset (USD, EUR etc)"
+    asset: String
+    "Filter accounts by type (General account, margin account, etc...)"
+    type: AccountType
+  ): [Account!]
+
+  "Trading positions relating to a party"
+  positions: [Position!]
+
+  "marginLevels"
+  margins(
+    "market id off the margin to get, nil if all markets"
+    marketId: ID
+  ): [MarginLevels!]
+
+  proposals(
+    "Select only proposals in the specified state. Leave out to get all proposals"
+    inState: ProposalState
+  ): [Proposal]
+
+  votes: [ProposalVote]
+
+  "The list of all withdrawals initiated by the party"
+  withdrawals: [Withdrawal!]
+
+  "The list of all deposits for a party by the party"
+  deposits: [Deposit!]
+
+  "The list of the liquidity provision commitment from this party"
+  liquidityProvisions(
+    "An optional market id"
+    market: String
+    "An optional reference"
+    reference: String
+  ): [LiquidityProvision!]
+
+  # All delegations for a party to a given node if node is specified, or all delegations if not
+  delegations(
+    "Optional node"
+    nodeId: String
+    "Pagination skip"
+    skip: Int
+    "Pagination first element"
+    first: Int
+    "Pagination last element"
+    last: Int
+  ): [Delegation!]
+
+  "The staking information for this Party"
+  stake: PartyStake!
+
+  "return individual reward information"
+  rewards(
+    "An optional asset"
+    asset: String
+    "Pagination skip element"
+    skip: Int
+    "Pagination first element"
+    first: Int
+    "Pagination last element"
+    last: Int
+  ): [Reward]
+
+  "return net reward information"
+  rewardSummaries("An optional asset" asset: String): [RewardSummary]
+}
+
+type PartyEdge {
+  node: PaginatedParty!
+  cursor: String!
+}
+
+type PartyConnection {
+  "The total number of parties in this connection"
+  totalCount: Int!
+  "The parties in this connection"
+  edges: [PartyEdge!]!
+  "The pagination information"
+  pageInfo: PageInfo!
+}
+
+"Represents a product & associated parameters that can be traded on Vega, has an associated OrderBook and Trade history"
+type PaginatedMarket {
+  "Market ID"
+  id: ID!
+
+  "Market full name"
+  name: String!
+
+  "Fees related data"
+  fees: Fees!
+
+  "An instance of or reference to a tradable instrument."
+  tradableInstrument: TradableInstrument!
+
+  """
+  decimalPlaces indicates the number of decimal places that an integer must be shifted by in order to get a correct
+  number denominated in the currency of the Market. (uint64)
+
+  Examples:
+  Currency     Balance  decimalPlaces  Real Balance
+  GBP              100              0       GBP 100
+  GBP              100              2       GBP   1.00
+  GBP              100              4       GBP   0.01
+  GBP                1              4       GBP   0.0001   (  0.01p  )
+
+  GBX (pence)      100              0       GBP   1.00     (100p     )
+  GBX (pence)      100              2       GBP   0.01     (  1p     )
+  GBX (pence)      100              4       GBP   0.0001   (  0.01p  )
+  GBX (pence)        1              4       GBP   0.000001 (  0.0001p)
+  """
+  decimalPlaces: Int!
+
+  """
+  positionDecimalPlaces indicated the number of decimal places that an integer must be shifted in order to get a correct size (uint64).
+  i.e. 0 means there are no fractional orders for the market, and order sizes are always whole sizes.
+  2 means sizes given as 10^2 * desired size, e.g. a desired size of 1.23 is represented as 123 in this market.
+  """
+  positionDecimalPlaces: Int!
+
+  """
+  Auction duration specifies how long the opening auction will run (minimum
+  duration and optionally a minimum traded volume).
+  """
+  openingAuction: AuctionDuration!
+
+  "Price monitoring settings for the market"
+  priceMonitoringSettings: PriceMonitoringSettings!
+
+  "Liquidity monitoring parameters for the market"
+  liquidityMonitoringParameters: LiquidityMonitoringParameters!
+
+  "Current mode of execution of the market"
+  tradingMode: MarketTradingMode!
+
+  "Current state of the market"
+  state: MarketState!
+
+  "The proposal which initiated this market"
+  proposal: Proposal
+
+  "Orders on a market"
+  orders(
+    "Pagination skip"
+    skip: Int
+    "Pagination first element"
+    first: Int
+    "Pagination last element"
+    last: Int
+  ): [Order!]
+
+  "Get account for a party or market"
+  accounts(
+    "Id of the party to get the margin account for"
+    partyId: ID
+  ): [Account!]
+
+  "Trades on a market"
+  tradesPaged(
+    "Cursor based page information to retrieve"
+    pagination: Pagination
+  ): TradeConnection!
+
+  "Current depth on the order book for this market"
+  depth(
+    "Maximum market order book depth (returns whole order book if omitted)"
+    maxDepth: Int
+  ): MarketDepth!
+
+  "Candles on a market, for the 'last' n candles, at 'interval' seconds as specified by params"
+  candles(
+    "RFC3339Nano encoded time from when to get candles"
+    since: String!
+    "Interval of the candles"
+    interval: Interval!
+  ): [Candle]
+
+  "marketData for the given market"
+  data: MarketData
+
+  "The list of the liquidity provision commitment for this market"
+  liquidityProvisions(
+    "An optional party id"
+    party: String
+  ): [LiquidityProvision!]
+
+  "timestamps for state changes in the market"
+  marketTimestamps: MarketTimestamps!
+
+  "risk factors for the market"
+  riskFactors: RiskFactor
+}
+
+type MarketEdge {
+  node: PaginatedMarket!
+  cursor: String!
+}
+
+type MarketConnection {
+  "The total number of markets in this connection"
+  totalCount: Int!
+  "The markets in this connection"
+  edges: [MarketEdge!]!
+  "The pagination information"
+  pageInfo: PageInfo!
 }
 `, BuiltIn: false},
 }
@@ -9301,6 +10212,21 @@ func (ec *executionContext) field_Market_orders_args(ctx context.Context, rawArg
 	return args, nil
 }
 
+func (ec *executionContext) field_Market_tradesPaged_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *v2.Pagination
+	if tmp, ok := rawArgs["pagination"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pagination"))
+		arg0, err = ec.unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPagination(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["pagination"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field_Market_trades_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -9373,6 +10299,366 @@ func (ec *executionContext) field_Node_delegations_args(ctx context.Context, raw
 		}
 	}
 	args["last"] = arg3
+	return args, nil
+}
+
+func (ec *executionContext) field_PaginatedMarket_accounts_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *string
+	if tmp, ok := rawArgs["partyId"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("partyId"))
+		arg0, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["partyId"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_PaginatedMarket_candles_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["since"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("since"))
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["since"] = arg0
+	var arg1 Interval
+	if tmp, ok := rawArgs["interval"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("interval"))
+		arg1, err = ec.unmarshalNInterval2codeᚗvegaprotocolᚗioᚋdataᚑnodeᚋgatewayᚋgraphqlᚐInterval(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["interval"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_PaginatedMarket_depth_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *int
+	if tmp, ok := rawArgs["maxDepth"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("maxDepth"))
+		arg0, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["maxDepth"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_PaginatedMarket_liquidityProvisions_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *string
+	if tmp, ok := rawArgs["party"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("party"))
+		arg0, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["party"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_PaginatedMarket_orders_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *int
+	if tmp, ok := rawArgs["skip"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("skip"))
+		arg0, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["skip"] = arg0
+	var arg1 *int
+	if tmp, ok := rawArgs["first"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("first"))
+		arg1, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["first"] = arg1
+	var arg2 *int
+	if tmp, ok := rawArgs["last"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("last"))
+		arg2, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["last"] = arg2
+	return args, nil
+}
+
+func (ec *executionContext) field_PaginatedMarket_tradesPaged_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *v2.Pagination
+	if tmp, ok := rawArgs["pagination"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pagination"))
+		arg0, err = ec.unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPagination(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["pagination"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_PaginatedParty_accounts_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *string
+	if tmp, ok := rawArgs["marketId"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("marketId"))
+		arg0, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["marketId"] = arg0
+	var arg1 *string
+	if tmp, ok := rawArgs["asset"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("asset"))
+		arg1, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["asset"] = arg1
+	var arg2 *vega.AccountType
+	if tmp, ok := rawArgs["type"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("type"))
+		arg2, err = ec.unmarshalOAccountType2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐAccountType(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["type"] = arg2
+	return args, nil
+}
+
+func (ec *executionContext) field_PaginatedParty_delegations_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *string
+	if tmp, ok := rawArgs["nodeId"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("nodeId"))
+		arg0, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["nodeId"] = arg0
+	var arg1 *int
+	if tmp, ok := rawArgs["skip"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("skip"))
+		arg1, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["skip"] = arg1
+	var arg2 *int
+	if tmp, ok := rawArgs["first"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("first"))
+		arg2, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["first"] = arg2
+	var arg3 *int
+	if tmp, ok := rawArgs["last"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("last"))
+		arg3, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["last"] = arg3
+	return args, nil
+}
+
+func (ec *executionContext) field_PaginatedParty_liquidityProvisions_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *string
+	if tmp, ok := rawArgs["market"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("market"))
+		arg0, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["market"] = arg0
+	var arg1 *string
+	if tmp, ok := rawArgs["reference"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("reference"))
+		arg1, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["reference"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_PaginatedParty_margins_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *string
+	if tmp, ok := rawArgs["marketId"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("marketId"))
+		arg0, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["marketId"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_PaginatedParty_orders_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *int
+	if tmp, ok := rawArgs["skip"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("skip"))
+		arg0, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["skip"] = arg0
+	var arg1 *int
+	if tmp, ok := rawArgs["first"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("first"))
+		arg1, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["first"] = arg1
+	var arg2 *int
+	if tmp, ok := rawArgs["last"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("last"))
+		arg2, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["last"] = arg2
+	return args, nil
+}
+
+func (ec *executionContext) field_PaginatedParty_proposals_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *ProposalState
+	if tmp, ok := rawArgs["inState"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("inState"))
+		arg0, err = ec.unmarshalOProposalState2ᚖcodeᚗvegaprotocolᚗioᚋdataᚑnodeᚋgatewayᚋgraphqlᚐProposalState(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["inState"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_PaginatedParty_rewardSummaries_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *string
+	if tmp, ok := rawArgs["asset"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("asset"))
+		arg0, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["asset"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_PaginatedParty_rewards_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *string
+	if tmp, ok := rawArgs["asset"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("asset"))
+		arg0, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["asset"] = arg0
+	var arg1 *int
+	if tmp, ok := rawArgs["skip"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("skip"))
+		arg1, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["skip"] = arg1
+	var arg2 *int
+	if tmp, ok := rawArgs["first"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("first"))
+		arg2, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["first"] = arg2
+	var arg3 *int
+	if tmp, ok := rawArgs["last"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("last"))
+		arg3, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["last"] = arg3
+	return args, nil
+}
+
+func (ec *executionContext) field_PaginatedParty_tradesPaged_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *string
+	if tmp, ok := rawArgs["marketId"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("marketId"))
+		arg0, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["marketId"] = arg0
+	var arg1 *v2.Pagination
+	if tmp, ok := rawArgs["pagination"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pagination"))
+		arg1, err = ec.unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPagination(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["pagination"] = arg1
 	return args, nil
 }
 
@@ -9592,6 +10878,30 @@ func (ec *executionContext) field_Party_rewards_args(ctx context.Context, rawArg
 		}
 	}
 	args["last"] = arg3
+	return args, nil
+}
+
+func (ec *executionContext) field_Party_tradesPaged_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *string
+	if tmp, ok := rawArgs["marketId"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("marketId"))
+		arg0, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["marketId"] = arg0
+	var arg1 *v2.Pagination
+	if tmp, ok := rawArgs["pagination"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pagination"))
+		arg1, err = ec.unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPagination(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["pagination"] = arg1
 	return args, nil
 }
 
@@ -9904,6 +11214,30 @@ func (ec *executionContext) field_Query_market_args(ctx context.Context, rawArgs
 	return args, nil
 }
 
+func (ec *executionContext) field_Query_marketsPaged_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *string
+	if tmp, ok := rawArgs["id"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+		arg0, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["id"] = arg0
+	var arg1 *v2.Pagination
+	if tmp, ok := rawArgs["pagination"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pagination"))
+		arg1, err = ec.unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPagination(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["pagination"] = arg1
+	return args, nil
+}
+
 func (ec *executionContext) field_Query_markets_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -10021,10 +11355,10 @@ func (ec *executionContext) field_Query_oracleDataBySpec_args(ctx context.Contex
 		}
 	}
 	args["oracleSpecID"] = arg0
-	var arg1 *Pagination
+	var arg1 *OffsetPagination
 	if tmp, ok := rawArgs["pagination"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pagination"))
-		arg1, err = ec.unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋdataᚑnodeᚋgatewayᚋgraphqlᚐPagination(ctx, tmp)
+		arg1, err = ec.unmarshalOOffsetPagination2ᚖcodeᚗvegaprotocolᚗioᚋdataᚑnodeᚋgatewayᚋgraphqlᚐOffsetPagination(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -10036,10 +11370,10 @@ func (ec *executionContext) field_Query_oracleDataBySpec_args(ctx context.Contex
 func (ec *executionContext) field_Query_oracleData_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 *Pagination
+	var arg0 *OffsetPagination
 	if tmp, ok := rawArgs["pagination"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pagination"))
-		arg0, err = ec.unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋdataᚑnodeᚋgatewayᚋgraphqlᚐPagination(ctx, tmp)
+		arg0, err = ec.unmarshalOOffsetPagination2ᚖcodeᚗvegaprotocolᚗioᚋdataᚑnodeᚋgatewayᚋgraphqlᚐOffsetPagination(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -10066,10 +11400,10 @@ func (ec *executionContext) field_Query_oracleSpec_args(ctx context.Context, raw
 func (ec *executionContext) field_Query_oracleSpecs_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 *Pagination
+	var arg0 *OffsetPagination
 	if tmp, ok := rawArgs["pagination"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pagination"))
-		arg0, err = ec.unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋdataᚑnodeᚋgatewayᚋgraphqlᚐPagination(ctx, tmp)
+		arg0, err = ec.unmarshalOOffsetPagination2ᚖcodeᚗvegaprotocolᚗioᚋdataᚑnodeᚋgatewayᚋgraphqlᚐOffsetPagination(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -10156,6 +11490,30 @@ func (ec *executionContext) field_Query_orderVersions_args(ctx context.Context, 
 		}
 	}
 	args["last"] = arg3
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_partiesPaged_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *string
+	if tmp, ok := rawArgs["id"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+		arg0, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["id"] = arg0
+	var arg1 *v2.Pagination
+	if tmp, ok := rawArgs["pagination"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pagination"))
+		arg1, err = ec.unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPagination(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["pagination"] = arg1
 	return args, nil
 }
 
@@ -16805,6 +18163,48 @@ func (ec *executionContext) _Market_trades(ctx context.Context, field graphql.Co
 	return ec.marshalOTrade2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐTradeᚄ(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Market_tradesPaged(ctx context.Context, field graphql.CollectedField, obj *vega.Market) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Market",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Market_tradesPaged_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Market().TradesPaged(rctx, obj, args["pagination"].(*v2.Pagination))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*v2.TradeConnection)
+	fc.Result = res
+	return ec.marshalNTradeConnection2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐTradeConnection(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Market_depth(ctx context.Context, field graphql.CollectedField, obj *vega.Market) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -17022,6 +18422,111 @@ func (ec *executionContext) _Market_riskFactors(ctx context.Context, field graph
 	res := resTmp.(*vega.RiskFactor)
 	fc.Result = res
 	return ec.marshalORiskFactor2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐRiskFactor(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _MarketConnection_totalCount(ctx context.Context, field graphql.CollectedField, obj *v2.MarketConnection) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "MarketConnection",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TotalCount, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int64)
+	fc.Result = res
+	return ec.marshalNInt2int64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _MarketConnection_edges(ctx context.Context, field graphql.CollectedField, obj *v2.MarketConnection) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "MarketConnection",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Edges, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*v2.MarketEdge)
+	fc.Result = res
+	return ec.marshalNMarketEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐMarketEdgeᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _MarketConnection_pageInfo(ctx context.Context, field graphql.CollectedField, obj *v2.MarketConnection) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "MarketConnection",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PageInfo, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*v2.PageInfo)
+	fc.Result = res
+	return ec.marshalNPageInfo2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPageInfo(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _MarketData_market(ctx context.Context, field graphql.CollectedField, obj *vega.MarketData) (ret graphql.Marshaler) {
@@ -18299,6 +19804,76 @@ func (ec *executionContext) _MarketDepthUpdate_sequenceNumber(ctx context.Contex
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return ec.resolvers.MarketDepthUpdate().SequenceNumber(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _MarketEdge_node(ctx context.Context, field graphql.CollectedField, obj *v2.MarketEdge) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "MarketEdge",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Node, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*vega.Market)
+	fc.Result = res
+	return ec.marshalNPaginatedMarket2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐMarket(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _MarketEdge_cursor(ctx context.Context, field graphql.CollectedField, obj *v2.MarketEdge) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "MarketEdge",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Cursor, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -21688,6 +23263,1454 @@ func (ec *executionContext) _OrderEstimate_marginLevels(ctx context.Context, fie
 	return ec.marshalNMarginLevels2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐMarginLevels(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _PageInfo_hasNextPage(ctx context.Context, field graphql.CollectedField, obj *v2.PageInfo) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "PageInfo",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.HasNextPage, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PageInfo_hasPreviousPage(ctx context.Context, field graphql.CollectedField, obj *v2.PageInfo) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "PageInfo",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.HasPreviousPage, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PageInfo_startCursor(ctx context.Context, field graphql.CollectedField, obj *v2.PageInfo) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "PageInfo",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.StartCursor, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PageInfo_endCursor(ctx context.Context, field graphql.CollectedField, obj *v2.PageInfo) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "PageInfo",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.EndCursor, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PaginatedMarket_id(ctx context.Context, field graphql.CollectedField, obj *vega.Market) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "PaginatedMarket",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Id, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PaginatedMarket_name(ctx context.Context, field graphql.CollectedField, obj *vega.Market) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "PaginatedMarket",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.PaginatedMarket().Name(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PaginatedMarket_fees(ctx context.Context, field graphql.CollectedField, obj *vega.Market) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "PaginatedMarket",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Fees, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*vega.Fees)
+	fc.Result = res
+	return ec.marshalNFees2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐFees(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PaginatedMarket_tradableInstrument(ctx context.Context, field graphql.CollectedField, obj *vega.Market) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "PaginatedMarket",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TradableInstrument, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*vega.TradableInstrument)
+	fc.Result = res
+	return ec.marshalNTradableInstrument2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐTradableInstrument(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PaginatedMarket_decimalPlaces(ctx context.Context, field graphql.CollectedField, obj *vega.Market) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "PaginatedMarket",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.PaginatedMarket().DecimalPlaces(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PaginatedMarket_positionDecimalPlaces(ctx context.Context, field graphql.CollectedField, obj *vega.Market) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "PaginatedMarket",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.PaginatedMarket().PositionDecimalPlaces(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PaginatedMarket_openingAuction(ctx context.Context, field graphql.CollectedField, obj *vega.Market) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "PaginatedMarket",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.PaginatedMarket().OpeningAuction(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*AuctionDuration)
+	fc.Result = res
+	return ec.marshalNAuctionDuration2ᚖcodeᚗvegaprotocolᚗioᚋdataᚑnodeᚋgatewayᚋgraphqlᚐAuctionDuration(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PaginatedMarket_priceMonitoringSettings(ctx context.Context, field graphql.CollectedField, obj *vega.Market) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "PaginatedMarket",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.PaginatedMarket().PriceMonitoringSettings(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*PriceMonitoringSettings)
+	fc.Result = res
+	return ec.marshalNPriceMonitoringSettings2ᚖcodeᚗvegaprotocolᚗioᚋdataᚑnodeᚋgatewayᚋgraphqlᚐPriceMonitoringSettings(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PaginatedMarket_liquidityMonitoringParameters(ctx context.Context, field graphql.CollectedField, obj *vega.Market) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "PaginatedMarket",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.PaginatedMarket().LiquidityMonitoringParameters(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*LiquidityMonitoringParameters)
+	fc.Result = res
+	return ec.marshalNLiquidityMonitoringParameters2ᚖcodeᚗvegaprotocolᚗioᚋdataᚑnodeᚋgatewayᚋgraphqlᚐLiquidityMonitoringParameters(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PaginatedMarket_tradingMode(ctx context.Context, field graphql.CollectedField, obj *vega.Market) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "PaginatedMarket",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.PaginatedMarket().TradingMode(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(MarketTradingMode)
+	fc.Result = res
+	return ec.marshalNMarketTradingMode2codeᚗvegaprotocolᚗioᚋdataᚑnodeᚋgatewayᚋgraphqlᚐMarketTradingMode(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PaginatedMarket_state(ctx context.Context, field graphql.CollectedField, obj *vega.Market) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "PaginatedMarket",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.PaginatedMarket().State(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(MarketState)
+	fc.Result = res
+	return ec.marshalNMarketState2codeᚗvegaprotocolᚗioᚋdataᚑnodeᚋgatewayᚋgraphqlᚐMarketState(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PaginatedMarket_proposal(ctx context.Context, field graphql.CollectedField, obj *vega.Market) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "PaginatedMarket",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.PaginatedMarket().Proposal(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*vega.GovernanceData)
+	fc.Result = res
+	return ec.marshalOProposal2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐGovernanceData(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PaginatedMarket_orders(ctx context.Context, field graphql.CollectedField, obj *vega.Market) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "PaginatedMarket",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_PaginatedMarket_orders_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.PaginatedMarket().Orders(rctx, obj, args["skip"].(*int), args["first"].(*int), args["last"].(*int))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*vega.Order)
+	fc.Result = res
+	return ec.marshalOOrder2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐOrderᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PaginatedMarket_accounts(ctx context.Context, field graphql.CollectedField, obj *vega.Market) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "PaginatedMarket",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_PaginatedMarket_accounts_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.PaginatedMarket().Accounts(rctx, obj, args["partyId"].(*string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*vega.Account)
+	fc.Result = res
+	return ec.marshalOAccount2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐAccountᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PaginatedMarket_tradesPaged(ctx context.Context, field graphql.CollectedField, obj *vega.Market) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "PaginatedMarket",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_PaginatedMarket_tradesPaged_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.PaginatedMarket().TradesPaged(rctx, obj, args["pagination"].(*v2.Pagination))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*v2.TradeConnection)
+	fc.Result = res
+	return ec.marshalNTradeConnection2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐTradeConnection(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PaginatedMarket_depth(ctx context.Context, field graphql.CollectedField, obj *vega.Market) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "PaginatedMarket",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_PaginatedMarket_depth_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.PaginatedMarket().Depth(rctx, obj, args["maxDepth"].(*int))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*vega.MarketDepth)
+	fc.Result = res
+	return ec.marshalNMarketDepth2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐMarketDepth(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PaginatedMarket_candles(ctx context.Context, field graphql.CollectedField, obj *vega.Market) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "PaginatedMarket",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_PaginatedMarket_candles_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.PaginatedMarket().Candles(rctx, obj, args["since"].(string), args["interval"].(Interval))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*vega.Candle)
+	fc.Result = res
+	return ec.marshalOCandle2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐCandle(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PaginatedMarket_data(ctx context.Context, field graphql.CollectedField, obj *vega.Market) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "PaginatedMarket",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.PaginatedMarket().Data(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*vega.MarketData)
+	fc.Result = res
+	return ec.marshalOMarketData2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐMarketData(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PaginatedMarket_liquidityProvisions(ctx context.Context, field graphql.CollectedField, obj *vega.Market) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "PaginatedMarket",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_PaginatedMarket_liquidityProvisions_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.PaginatedMarket().LiquidityProvisions(rctx, obj, args["party"].(*string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*vega.LiquidityProvision)
+	fc.Result = res
+	return ec.marshalOLiquidityProvision2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐLiquidityProvisionᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PaginatedMarket_marketTimestamps(ctx context.Context, field graphql.CollectedField, obj *vega.Market) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "PaginatedMarket",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MarketTimestamps, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*vega.MarketTimestamps)
+	fc.Result = res
+	return ec.marshalNMarketTimestamps2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐMarketTimestamps(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PaginatedMarket_riskFactors(ctx context.Context, field graphql.CollectedField, obj *vega.Market) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "PaginatedMarket",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.PaginatedMarket().RiskFactors(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*vega.RiskFactor)
+	fc.Result = res
+	return ec.marshalORiskFactor2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐRiskFactor(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PaginatedParty_id(ctx context.Context, field graphql.CollectedField, obj *vega.Party) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "PaginatedParty",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Id, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PaginatedParty_orders(ctx context.Context, field graphql.CollectedField, obj *vega.Party) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "PaginatedParty",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_PaginatedParty_orders_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.PaginatedParty().Orders(rctx, obj, args["skip"].(*int), args["first"].(*int), args["last"].(*int))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*vega.Order)
+	fc.Result = res
+	return ec.marshalOOrder2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐOrderᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PaginatedParty_tradesPaged(ctx context.Context, field graphql.CollectedField, obj *vega.Party) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "PaginatedParty",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_PaginatedParty_tradesPaged_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.PaginatedParty().TradesPaged(rctx, obj, args["marketId"].(*string), args["pagination"].(*v2.Pagination))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*v2.TradeConnection)
+	fc.Result = res
+	return ec.marshalNTradeConnection2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐTradeConnection(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PaginatedParty_accounts(ctx context.Context, field graphql.CollectedField, obj *vega.Party) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "PaginatedParty",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_PaginatedParty_accounts_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.PaginatedParty().Accounts(rctx, obj, args["marketId"].(*string), args["asset"].(*string), args["type"].(*vega.AccountType))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*vega.Account)
+	fc.Result = res
+	return ec.marshalOAccount2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐAccountᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PaginatedParty_positions(ctx context.Context, field graphql.CollectedField, obj *vega.Party) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "PaginatedParty",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.PaginatedParty().Positions(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*vega.Position)
+	fc.Result = res
+	return ec.marshalOPosition2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐPositionᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PaginatedParty_margins(ctx context.Context, field graphql.CollectedField, obj *vega.Party) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "PaginatedParty",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_PaginatedParty_margins_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.PaginatedParty().Margins(rctx, obj, args["marketId"].(*string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*vega.MarginLevels)
+	fc.Result = res
+	return ec.marshalOMarginLevels2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐMarginLevelsᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PaginatedParty_proposals(ctx context.Context, field graphql.CollectedField, obj *vega.Party) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "PaginatedParty",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_PaginatedParty_proposals_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.PaginatedParty().Proposals(rctx, obj, args["inState"].(*ProposalState))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*vega.GovernanceData)
+	fc.Result = res
+	return ec.marshalOProposal2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐGovernanceData(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PaginatedParty_votes(ctx context.Context, field graphql.CollectedField, obj *vega.Party) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "PaginatedParty",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.PaginatedParty().Votes(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*ProposalVote)
+	fc.Result = res
+	return ec.marshalOProposalVote2ᚕᚖcodeᚗvegaprotocolᚗioᚋdataᚑnodeᚋgatewayᚋgraphqlᚐProposalVote(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PaginatedParty_withdrawals(ctx context.Context, field graphql.CollectedField, obj *vega.Party) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "PaginatedParty",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.PaginatedParty().Withdrawals(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*vega.Withdrawal)
+	fc.Result = res
+	return ec.marshalOWithdrawal2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐWithdrawalᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PaginatedParty_deposits(ctx context.Context, field graphql.CollectedField, obj *vega.Party) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "PaginatedParty",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.PaginatedParty().Deposits(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*vega.Deposit)
+	fc.Result = res
+	return ec.marshalODeposit2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐDepositᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PaginatedParty_liquidityProvisions(ctx context.Context, field graphql.CollectedField, obj *vega.Party) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "PaginatedParty",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_PaginatedParty_liquidityProvisions_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.PaginatedParty().LiquidityProvisions(rctx, obj, args["market"].(*string), args["reference"].(*string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*vega.LiquidityProvision)
+	fc.Result = res
+	return ec.marshalOLiquidityProvision2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐLiquidityProvisionᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PaginatedParty_delegations(ctx context.Context, field graphql.CollectedField, obj *vega.Party) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "PaginatedParty",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_PaginatedParty_delegations_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.PaginatedParty().Delegations(rctx, obj, args["nodeId"].(*string), args["skip"].(*int), args["first"].(*int), args["last"].(*int))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*vega.Delegation)
+	fc.Result = res
+	return ec.marshalODelegation2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐDelegationᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PaginatedParty_stake(ctx context.Context, field graphql.CollectedField, obj *vega.Party) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "PaginatedParty",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.PaginatedParty().Stake(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*v12.PartyStakeResponse)
+	fc.Result = res
+	return ec.marshalNPartyStake2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv1ᚐPartyStakeResponse(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PaginatedParty_rewards(ctx context.Context, field graphql.CollectedField, obj *vega.Party) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "PaginatedParty",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_PaginatedParty_rewards_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.PaginatedParty().Rewards(rctx, obj, args["asset"].(*string), args["skip"].(*int), args["first"].(*int), args["last"].(*int))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*vega.Reward)
+	fc.Result = res
+	return ec.marshalOReward2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐReward(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PaginatedParty_rewardSummaries(ctx context.Context, field graphql.CollectedField, obj *vega.Party) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "PaginatedParty",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_PaginatedParty_rewardSummaries_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.PaginatedParty().RewardSummaries(rctx, obj, args["asset"].(*string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*vega.RewardSummary)
+	fc.Result = res
+	return ec.marshalORewardSummary2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐRewardSummary(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Party_id(ctx context.Context, field graphql.CollectedField, obj *vega.Party) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -21799,6 +24822,48 @@ func (ec *executionContext) _Party_trades(ctx context.Context, field graphql.Col
 	res := resTmp.([]*vega.Trade)
 	fc.Result = res
 	return ec.marshalOTrade2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐTradeᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Party_tradesPaged(ctx context.Context, field graphql.CollectedField, obj *vega.Party) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Party",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Party_tradesPaged_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Party().TradesPaged(rctx, obj, args["marketId"].(*string), args["pagination"].(*v2.Pagination))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*v2.TradeConnection)
+	fc.Result = res
+	return ec.marshalNTradeConnection2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐTradeConnection(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Party_accounts(ctx context.Context, field graphql.CollectedField, obj *vega.Party) (ret graphql.Marshaler) {
@@ -22267,6 +25332,181 @@ func (ec *executionContext) _Party_rewardDetails(ctx context.Context, field grap
 	res := resTmp.([]*vega.RewardSummary)
 	fc.Result = res
 	return ec.marshalORewardPerAssetDetail2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐRewardSummary(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PartyConnection_totalCount(ctx context.Context, field graphql.CollectedField, obj *v2.PartyConnection) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "PartyConnection",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TotalCount, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int64)
+	fc.Result = res
+	return ec.marshalNInt2int64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PartyConnection_edges(ctx context.Context, field graphql.CollectedField, obj *v2.PartyConnection) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "PartyConnection",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Edges, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*v2.PartyEdge)
+	fc.Result = res
+	return ec.marshalNPartyEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPartyEdgeᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PartyConnection_pageInfo(ctx context.Context, field graphql.CollectedField, obj *v2.PartyConnection) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "PartyConnection",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PageInfo, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*v2.PageInfo)
+	fc.Result = res
+	return ec.marshalNPageInfo2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPageInfo(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PartyEdge_node(ctx context.Context, field graphql.CollectedField, obj *v2.PartyEdge) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "PartyEdge",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Node, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*vega.Party)
+	fc.Result = res
+	return ec.marshalNPaginatedParty2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐParty(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PartyEdge_cursor(ctx context.Context, field graphql.CollectedField, obj *v2.PartyEdge) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "PartyEdge",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Cursor, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _PartyStake_currentStakeAvailable(ctx context.Context, field graphql.CollectedField, obj *v12.PartyStakeResponse) (ret graphql.Marshaler) {
@@ -24267,6 +27507,48 @@ func (ec *executionContext) _Query_markets(ctx context.Context, field graphql.Co
 	return ec.marshalOMarket2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐMarketᚄ(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Query_marketsPaged(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_marketsPaged_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().MarketsPaged(rctx, args["id"].(*string), args["pagination"].(*v2.Pagination))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*v2.MarketConnection)
+	fc.Result = res
+	return ec.marshalNMarketConnection2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐMarketConnection(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Query_market(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -24343,6 +27625,48 @@ func (ec *executionContext) _Query_parties(ctx context.Context, field graphql.Co
 	res := resTmp.([]*vega.Party)
 	fc.Result = res
 	return ec.marshalOParty2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐPartyᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_partiesPaged(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_partiesPaged_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().PartiesPaged(rctx, args["id"].(*string), args["pagination"].(*v2.Pagination))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*v2.PartyConnection)
+	fc.Result = res
+	return ec.marshalNPartyConnection2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPartyConnection(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_party(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -24444,7 +27768,7 @@ func (ec *executionContext) _Query_oracleSpecs(ctx context.Context, field graphq
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().OracleSpecs(rctx, args["pagination"].(*Pagination))
+		return ec.resolvers.Query().OracleSpecs(rctx, args["pagination"].(*OffsetPagination))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -24522,7 +27846,7 @@ func (ec *executionContext) _Query_oracleDataBySpec(ctx context.Context, field g
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().OracleDataBySpec(rctx, args["oracleSpecID"].(string), args["pagination"].(*Pagination))
+		return ec.resolvers.Query().OracleDataBySpec(rctx, args["oracleSpecID"].(string), args["pagination"].(*OffsetPagination))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -24561,7 +27885,7 @@ func (ec *executionContext) _Query_oracleData(ctx context.Context, field graphql
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().OracleData(rctx, args["pagination"].(*Pagination))
+		return ec.resolvers.Query().OracleData(rctx, args["pagination"].(*OffsetPagination))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -29986,6 +33310,181 @@ func (ec *executionContext) _Trade_sellerAuctionBatch(ctx context.Context, field
 	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _TradeConnection_totalCount(ctx context.Context, field graphql.CollectedField, obj *v2.TradeConnection) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "TradeConnection",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TotalCount, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int64)
+	fc.Result = res
+	return ec.marshalNInt2int64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _TradeConnection_edges(ctx context.Context, field graphql.CollectedField, obj *v2.TradeConnection) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "TradeConnection",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Edges, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*v2.TradeEdge)
+	fc.Result = res
+	return ec.marshalNTradeEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐTradeEdgeᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _TradeConnection_pageInfo(ctx context.Context, field graphql.CollectedField, obj *v2.TradeConnection) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "TradeConnection",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PageInfo, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*v2.PageInfo)
+	fc.Result = res
+	return ec.marshalNPageInfo2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPageInfo(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _TradeEdge_node(ctx context.Context, field graphql.CollectedField, obj *v2.TradeEdge) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "TradeEdge",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Node, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*vega.Trade)
+	fc.Result = res
+	return ec.marshalNTrade2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐTrade(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _TradeEdge_cursor(ctx context.Context, field graphql.CollectedField, obj *v2.TradeEdge) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "TradeEdge",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Cursor, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _TradeFee_makerFee(ctx context.Context, field graphql.CollectedField, obj *TradeFee) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -33047,8 +36546,8 @@ func (ec *executionContext) unmarshalInputAccountFilter(ctx context.Context, obj
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputPagination(ctx context.Context, obj interface{}) (Pagination, error) {
-	var it Pagination
+func (ec *executionContext) unmarshalInputOffsetPagination(ctx context.Context, obj interface{}) (OffsetPagination, error) {
+	var it OffsetPagination
 	asMap := map[string]interface{}{}
 	for k, v := range obj.(map[string]interface{}) {
 		asMap[k] = v
@@ -33077,6 +36576,53 @@ func (ec *executionContext) unmarshalInputPagination(ctx context.Context, obj in
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("descending"))
 			it.Descending, err = ec.unmarshalNBoolean2bool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputPagination(ctx context.Context, obj interface{}) (v2.Pagination, error) {
+	var it v2.Pagination
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	for k, v := range asMap {
+		switch k {
+		case "first":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("first"))
+			it.First, err = ec.unmarshalOInt2ᚖint32(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "after":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("after"))
+			it.After, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "last":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("last"))
+			it.Last, err = ec.unmarshalOInt2ᚖint32(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "before":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("before"))
+			it.Before, err = ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -36634,6 +40180,26 @@ func (ec *executionContext) _Market(ctx context.Context, sel ast.SelectionSet, o
 				return innerFunc(ctx)
 
 			})
+		case "tradesPaged":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Market_tradesPaged(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
 		case "depth":
 			field := field
 
@@ -36732,6 +40298,57 @@ func (ec *executionContext) _Market(ctx context.Context, sel ast.SelectionSet, o
 				return innerFunc(ctx)
 
 			})
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var marketConnectionImplementors = []string{"MarketConnection"}
+
+func (ec *executionContext) _MarketConnection(ctx context.Context, sel ast.SelectionSet, obj *v2.MarketConnection) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, marketConnectionImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("MarketConnection")
+		case "totalCount":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._MarketConnection_totalCount(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "edges":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._MarketConnection_edges(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "pageInfo":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._MarketConnection_pageInfo(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -37367,6 +40984,47 @@ func (ec *executionContext) _MarketDepthUpdate(ctx context.Context, sel ast.Sele
 				return innerFunc(ctx)
 
 			})
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var marketEdgeImplementors = []string{"MarketEdge"}
+
+func (ec *executionContext) _MarketEdge(ctx context.Context, sel ast.SelectionSet, obj *v2.MarketEdge) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, marketEdgeImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("MarketEdge")
+		case "node":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._MarketEdge_node(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "cursor":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._MarketEdge_cursor(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -39088,6 +42746,722 @@ func (ec *executionContext) _OrderEstimate(ctx context.Context, sel ast.Selectio
 	return out
 }
 
+var pageInfoImplementors = []string{"PageInfo"}
+
+func (ec *executionContext) _PageInfo(ctx context.Context, sel ast.SelectionSet, obj *v2.PageInfo) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, pageInfoImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("PageInfo")
+		case "hasNextPage":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._PageInfo_hasNextPage(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "hasPreviousPage":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._PageInfo_hasPreviousPage(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "startCursor":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._PageInfo_startCursor(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "endCursor":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._PageInfo_endCursor(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var paginatedMarketImplementors = []string{"PaginatedMarket"}
+
+func (ec *executionContext) _PaginatedMarket(ctx context.Context, sel ast.SelectionSet, obj *vega.Market) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, paginatedMarketImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("PaginatedMarket")
+		case "id":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._PaginatedMarket_id(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "name":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._PaginatedMarket_name(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "fees":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._PaginatedMarket_fees(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "tradableInstrument":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._PaginatedMarket_tradableInstrument(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "decimalPlaces":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._PaginatedMarket_decimalPlaces(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "positionDecimalPlaces":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._PaginatedMarket_positionDecimalPlaces(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "openingAuction":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._PaginatedMarket_openingAuction(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "priceMonitoringSettings":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._PaginatedMarket_priceMonitoringSettings(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "liquidityMonitoringParameters":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._PaginatedMarket_liquidityMonitoringParameters(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "tradingMode":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._PaginatedMarket_tradingMode(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "state":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._PaginatedMarket_state(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "proposal":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._PaginatedMarket_proposal(ctx, field, obj)
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "orders":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._PaginatedMarket_orders(ctx, field, obj)
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "accounts":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._PaginatedMarket_accounts(ctx, field, obj)
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "tradesPaged":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._PaginatedMarket_tradesPaged(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "depth":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._PaginatedMarket_depth(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "candles":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._PaginatedMarket_candles(ctx, field, obj)
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "data":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._PaginatedMarket_data(ctx, field, obj)
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "liquidityProvisions":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._PaginatedMarket_liquidityProvisions(ctx, field, obj)
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "marketTimestamps":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._PaginatedMarket_marketTimestamps(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "riskFactors":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._PaginatedMarket_riskFactors(ctx, field, obj)
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var paginatedPartyImplementors = []string{"PaginatedParty"}
+
+func (ec *executionContext) _PaginatedParty(ctx context.Context, sel ast.SelectionSet, obj *vega.Party) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, paginatedPartyImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("PaginatedParty")
+		case "id":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._PaginatedParty_id(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "orders":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._PaginatedParty_orders(ctx, field, obj)
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "tradesPaged":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._PaginatedParty_tradesPaged(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "accounts":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._PaginatedParty_accounts(ctx, field, obj)
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "positions":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._PaginatedParty_positions(ctx, field, obj)
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "margins":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._PaginatedParty_margins(ctx, field, obj)
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "proposals":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._PaginatedParty_proposals(ctx, field, obj)
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "votes":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._PaginatedParty_votes(ctx, field, obj)
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "withdrawals":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._PaginatedParty_withdrawals(ctx, field, obj)
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "deposits":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._PaginatedParty_deposits(ctx, field, obj)
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "liquidityProvisions":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._PaginatedParty_liquidityProvisions(ctx, field, obj)
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "delegations":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._PaginatedParty_delegations(ctx, field, obj)
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "stake":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._PaginatedParty_stake(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "rewards":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._PaginatedParty_rewards(ctx, field, obj)
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "rewardSummaries":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._PaginatedParty_rewardSummaries(ctx, field, obj)
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
 var partyImplementors = []string{"Party", "Event"}
 
 func (ec *executionContext) _Party(ctx context.Context, sel ast.SelectionSet, obj *vega.Party) graphql.Marshaler {
@@ -39135,6 +43509,26 @@ func (ec *executionContext) _Party(ctx context.Context, sel ast.SelectionSet, ob
 					}
 				}()
 				res = ec._Party_trades(ctx, field, obj)
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "tradesPaged":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Party_tradesPaged(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
 				return res
 			}
 
@@ -39366,6 +43760,98 @@ func (ec *executionContext) _Party(ctx context.Context, sel ast.SelectionSet, ob
 				return innerFunc(ctx)
 
 			})
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var partyConnectionImplementors = []string{"PartyConnection"}
+
+func (ec *executionContext) _PartyConnection(ctx context.Context, sel ast.SelectionSet, obj *v2.PartyConnection) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, partyConnectionImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("PartyConnection")
+		case "totalCount":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._PartyConnection_totalCount(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "edges":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._PartyConnection_edges(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "pageInfo":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._PartyConnection_pageInfo(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var partyEdgeImplementors = []string{"PartyEdge"}
+
+func (ec *executionContext) _PartyEdge(ctx context.Context, sel ast.SelectionSet, obj *v2.PartyEdge) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, partyEdgeImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("PartyEdge")
+		case "node":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._PartyEdge_node(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "cursor":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._PartyEdge_cursor(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -40537,6 +45023,29 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			out.Concurrently(i, func() graphql.Marshaler {
 				return rrm(innerCtx)
 			})
+		case "marketsPaged":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_marketsPaged(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx, innerFunc)
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return rrm(innerCtx)
+			})
 		case "market":
 			field := field
 
@@ -40567,6 +45076,29 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_parties(ctx, field)
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx, innerFunc)
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return rrm(innerCtx)
+			})
+		case "partiesPaged":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_partiesPaged(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
 				return res
 			}
 
@@ -43213,6 +47745,98 @@ func (ec *executionContext) _Trade(ctx context.Context, sel ast.SelectionSet, ob
 	return out
 }
 
+var tradeConnectionImplementors = []string{"TradeConnection"}
+
+func (ec *executionContext) _TradeConnection(ctx context.Context, sel ast.SelectionSet, obj *v2.TradeConnection) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, tradeConnectionImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("TradeConnection")
+		case "totalCount":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._TradeConnection_totalCount(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "edges":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._TradeConnection_edges(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "pageInfo":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._TradeConnection_pageInfo(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var tradeEdgeImplementors = []string{"TradeEdge"}
+
+func (ec *executionContext) _TradeEdge(ctx context.Context, sel ast.SelectionSet, obj *v2.TradeEdge) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, tradeEdgeImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("TradeEdge")
+		case "node":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._TradeEdge_node(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "cursor":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._TradeEdge_cursor(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
 var tradeFeeImplementors = []string{"TradeFee"}
 
 func (ec *executionContext) _TradeFee(ctx context.Context, sel ast.SelectionSet, obj *TradeFee) graphql.Marshaler {
@@ -45212,6 +49836,21 @@ func (ec *executionContext) marshalNInt2int32(ctx context.Context, sel ast.Selec
 	return res
 }
 
+func (ec *executionContext) unmarshalNInt2int64(ctx context.Context, v interface{}) (int64, error) {
+	res, err := graphql.UnmarshalInt64(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNInt2int64(ctx context.Context, sel ast.SelectionSet, v int64) graphql.Marshaler {
+	res := graphql.MarshalInt64(v)
+	if res == graphql.Null {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+	}
+	return res
+}
+
 func (ec *executionContext) unmarshalNInt2uint32(ctx context.Context, v interface{}) (uint32, error) {
 	res, err := marshallers.UnmarshalUint32(v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -45403,6 +50042,20 @@ func (ec *executionContext) marshalNMarket2ᚖcodeᚗvegaprotocolᚗioᚋprotos�
 	return ec._Market(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalNMarketConnection2codeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐMarketConnection(ctx context.Context, sel ast.SelectionSet, v v2.MarketConnection) graphql.Marshaler {
+	return ec._MarketConnection(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNMarketConnection2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐMarketConnection(ctx context.Context, sel ast.SelectionSet, v *v2.MarketConnection) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._MarketConnection(ctx, sel, v)
+}
+
 func (ec *executionContext) marshalNMarketData2codeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐMarketData(ctx context.Context, sel ast.SelectionSet, v vega.MarketData) graphql.Marshaler {
 	return ec._MarketData(ctx, sel, &v)
 }
@@ -45457,6 +50110,60 @@ func (ec *executionContext) marshalNMarketDepthUpdate2ᚖcodeᚗvegaprotocolᚗi
 		return graphql.Null
 	}
 	return ec._MarketDepthUpdate(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNMarketEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐMarketEdgeᚄ(ctx context.Context, sel ast.SelectionSet, v []*v2.MarketEdge) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNMarketEdge2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐMarketEdge(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNMarketEdge2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐMarketEdge(ctx context.Context, sel ast.SelectionSet, v *v2.MarketEdge) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._MarketEdge(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNMarketState2codeᚗvegaprotocolᚗioᚋdataᚑnodeᚋgatewayᚋgraphqlᚐMarketState(ctx context.Context, v interface{}) (MarketState, error) {
@@ -45733,6 +50440,36 @@ func (ec *executionContext) marshalNOrderType2codeᚗvegaprotocolᚗioᚋdataᚑ
 	return v
 }
 
+func (ec *executionContext) marshalNPageInfo2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPageInfo(ctx context.Context, sel ast.SelectionSet, v *v2.PageInfo) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._PageInfo(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNPaginatedMarket2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐMarket(ctx context.Context, sel ast.SelectionSet, v *vega.Market) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._PaginatedMarket(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNPaginatedParty2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐParty(ctx context.Context, sel ast.SelectionSet, v *vega.Party) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._PaginatedParty(ctx, sel, v)
+}
+
 func (ec *executionContext) marshalNParty2codeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐParty(ctx context.Context, sel ast.SelectionSet, v vega.Party) graphql.Marshaler {
 	return ec._Party(ctx, sel, &v)
 }
@@ -45745,6 +50482,74 @@ func (ec *executionContext) marshalNParty2ᚖcodeᚗvegaprotocolᚗioᚋprotos�
 		return graphql.Null
 	}
 	return ec._Party(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNPartyConnection2codeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPartyConnection(ctx context.Context, sel ast.SelectionSet, v v2.PartyConnection) graphql.Marshaler {
+	return ec._PartyConnection(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNPartyConnection2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPartyConnection(ctx context.Context, sel ast.SelectionSet, v *v2.PartyConnection) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._PartyConnection(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNPartyEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPartyEdgeᚄ(ctx context.Context, sel ast.SelectionSet, v []*v2.PartyEdge) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNPartyEdge2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPartyEdge(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNPartyEdge2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPartyEdge(ctx context.Context, sel ast.SelectionSet, v *v2.PartyEdge) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._PartyEdge(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNPartyStake2codeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv1ᚐPartyStakeResponse(ctx context.Context, sel ast.SelectionSet, v v12.PartyStakeResponse) graphql.Marshaler {
@@ -46149,6 +50954,74 @@ func (ec *executionContext) marshalNTrade2ᚖcodeᚗvegaprotocolᚗioᚋprotos�
 		return graphql.Null
 	}
 	return ec._Trade(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNTradeConnection2codeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐTradeConnection(ctx context.Context, sel ast.SelectionSet, v v2.TradeConnection) graphql.Marshaler {
+	return ec._TradeConnection(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNTradeConnection2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐTradeConnection(ctx context.Context, sel ast.SelectionSet, v *v2.TradeConnection) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._TradeConnection(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNTradeEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐTradeEdgeᚄ(ctx context.Context, sel ast.SelectionSet, v []*v2.TradeEdge) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNTradeEdge2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐTradeEdge(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNTradeEdge2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐTradeEdge(ctx context.Context, sel ast.SelectionSet, v *v2.TradeEdge) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._TradeEdge(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNTradeFee2codeᚗvegaprotocolᚗioᚋdataᚑnodeᚋgatewayᚋgraphqlᚐTradeFee(ctx context.Context, sel ast.SelectionSet, v TradeFee) graphql.Marshaler {
@@ -47325,6 +52198,22 @@ func (ec *executionContext) marshalOInt2ᚖint(ctx context.Context, sel ast.Sele
 	return res
 }
 
+func (ec *executionContext) unmarshalOInt2ᚖint32(ctx context.Context, v interface{}) (*int32, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := graphql.UnmarshalInt32(v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOInt2ᚖint32(ctx context.Context, sel ast.SelectionSet, v *int32) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	res := graphql.MarshalInt32(*v)
+	return res
+}
+
 func (ec *executionContext) marshalOKeyRotation2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv1ᚐKeyRotationᚄ(ctx context.Context, sel ast.SelectionSet, v []*v12.KeyRotation) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
@@ -47962,6 +52851,14 @@ func (ec *executionContext) marshalONodeSignatureKind2ᚖcodeᚗvegaprotocolᚗi
 	return v
 }
 
+func (ec *executionContext) unmarshalOOffsetPagination2ᚖcodeᚗvegaprotocolᚗioᚋdataᚑnodeᚋgatewayᚋgraphqlᚐOffsetPagination(ctx context.Context, v interface{}) (*OffsetPagination, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputOffsetPagination(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) marshalOOracleData2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚋoraclesᚋv1ᚐOracleDataᚄ(ctx context.Context, sel ast.SelectionSet, v []*v11.OracleData) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
@@ -48149,7 +53046,7 @@ func (ec *executionContext) marshalOOrderType2ᚖcodeᚗvegaprotocolᚗioᚋdata
 	return v
 }
 
-func (ec *executionContext) unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋdataᚑnodeᚋgatewayᚋgraphqlᚐPagination(ctx context.Context, v interface{}) (*Pagination, error) {
+func (ec *executionContext) unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPagination(ctx context.Context, v interface{}) (*v2.Pagination, error) {
 	if v == nil {
 		return nil, nil
 	}

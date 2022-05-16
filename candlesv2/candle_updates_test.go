@@ -21,7 +21,8 @@ type testCandleSource struct {
 }
 
 func (t *testCandleSource) GetCandleDataForTimeSpan(ctx context.Context, candleId string, from *time.Time, to *time.Time,
-	p entities.Pagination) ([]entities.Candle, error) {
+	p entities.OffsetPagination,
+) ([]entities.Candle, error) {
 	select {
 	case c := <-t.candles:
 		return c, nil
@@ -31,7 +32,6 @@ func (t *testCandleSource) GetCandleDataForTimeSpan(ctx context.Context, candleI
 }
 
 func TestSubscribe(t *testing.T) {
-
 	testCandleSource := &testCandleSource{candles: make(chan []entities.Candle)}
 
 	updates, _ := candlesv2.NewCandleUpdates(context.Background(), logging.NewTestLogger(), "testCandles",
@@ -58,11 +58,9 @@ func TestSubscribe(t *testing.T) {
 
 	candle2 = <-out2
 	assert.Equal(t, expectedCandle, candle2)
-
 }
 
 func TestUnsubscribe(t *testing.T) {
-
 	testCandleSource := &testCandleSource{candles: make(chan []entities.Candle)}
 
 	updates, _ := candlesv2.NewCandleUpdates(context.Background(), logging.NewTestLogger(), "testCandles",
@@ -81,7 +79,6 @@ func TestUnsubscribe(t *testing.T) {
 
 	_, ok := <-out1
 	assert.False(t, ok, "candle should be closed")
-
 }
 
 func TestNewSubscriberAlwaysGetsLastCandle(t *testing.T) {

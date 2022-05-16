@@ -48,7 +48,7 @@ func (rs *Rewards) GetAll(ctx context.Context) ([]entities.Reward, error) {
 func (rs *Rewards) Get(ctx context.Context,
 	partyIDHex *string,
 	assetIDHex *string,
-	p *entities.Pagination,
+	p *entities.OffsetPagination,
 ) ([]entities.Reward, error) {
 	query := `SELECT * from rewards`
 	args := []interface{}{}
@@ -71,8 +71,8 @@ func (rs *Rewards) Get(ctx context.Context,
 }
 
 func (rs *Rewards) GetSummaries(ctx context.Context,
-	partyIDHex *string, assetIDHex *string) ([]entities.RewardSummary, error) {
-
+	partyIDHex *string, assetIDHex *string,
+) ([]entities.RewardSummary, error) {
 	query := `SELECT party_id, asset_id, sum(amount) as amount FROM rewards`
 	args := []interface{}{}
 	if err := addRewardWhereClause(&query, &args, partyIDHex, assetIDHex); err != nil {

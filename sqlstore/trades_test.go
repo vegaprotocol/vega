@@ -5,7 +5,10 @@ import (
 	"testing"
 	"time"
 
+	v2 "code.vegaprotocol.io/protos/data-node/api/v2"
 	types "code.vegaprotocol.io/protos/vega"
+	"github.com/shopspring/decimal"
+	"github.com/stretchr/testify/require"
 
 	"code.vegaprotocol.io/data-node/entities"
 	"code.vegaprotocol.io/data-node/sqlstore"
@@ -41,7 +44,7 @@ func GetTradesByOrderIdAndMarket(t *testing.T, market *string) {
 
 	insertTestData(t, tradeStore)
 
-	trades, err := tradeStore.GetByOrderID(context.Background(), orderAId, market, entities.Pagination{})
+	trades, err := tradeStore.GetByOrderID(context.Background(), orderAId, market, entities.OffsetPagination{})
 
 	assert.Nil(t, err)
 	assert.Equal(t, 6, len(trades))
@@ -72,7 +75,7 @@ func GetTradesByPartyAndMarketWithPagination(t *testing.T, market *string) {
 
 	// Expect 3 trades with descending trade-ids
 
-	trades, err := tradeStore.GetByParty(ctx, testPartyA, market, entities.Pagination{Limit: last, Descending: true})
+	trades, err := tradeStore.GetByParty(ctx, testPartyA, market, entities.OffsetPagination{Limit: last, Descending: true})
 	assert.Nil(t, err)
 	assert.Equal(t, 3, len(trades))
 	assert.Equal(t, tradeId6, trades[0].ID.String())
@@ -83,7 +86,7 @@ func GetTradesByPartyAndMarketWithPagination(t *testing.T, market *string) {
 	skip := uint64(2)
 
 	// Expect 3 trades with descending trade-ids
-	trades, err = tradeStore.GetByParty(ctx, testPartyA, market, entities.Pagination{Skip: skip, Limit: last, Descending: true})
+	trades, err = tradeStore.GetByParty(ctx, testPartyA, market, entities.OffsetPagination{Skip: skip, Limit: last, Descending: true})
 	assert.Nil(t, err)
 	assert.Equal(t, 3, len(trades))
 	assert.Equal(t, tradeId4, trades[0].ID.String())
@@ -101,14 +104,14 @@ func TestStorage_GetTradesByMarketWithPagination(t *testing.T) {
 	insertTestData(t, tradeStore)
 
 	// Expect 6 trades with no filtration/pagination
-	trades, err := tradeStore.GetByMarket(ctx, testMarket, entities.Pagination{})
+	trades, err := tradeStore.GetByMarket(ctx, testMarket, entities.OffsetPagination{})
 	assert.Nil(t, err)
 	assert.Equal(t, 6, len(trades))
 
 	// Want first 2 trades (timestamp ascending)
 	first := uint64(2)
 
-	trades, err = tradeStore.GetByMarket(ctx, testMarket, entities.Pagination{Limit: first})
+	trades, err = tradeStore.GetByMarket(ctx, testMarket, entities.OffsetPagination{Limit: first})
 	assert.Nil(t, err)
 	assert.Equal(t, 2, len(trades))
 	assert.Equal(t, tradeId1, trades[0].ID.String())
@@ -117,7 +120,7 @@ func TestStorage_GetTradesByMarketWithPagination(t *testing.T) {
 	// Want last 3 trades (timestamp descending)
 	last := uint64(3)
 
-	trades, err = tradeStore.GetByMarket(ctx, testMarket, entities.Pagination{Limit: last, Descending: true})
+	trades, err = tradeStore.GetByMarket(ctx, testMarket, entities.OffsetPagination{Limit: last, Descending: true})
 	assert.Nil(t, err)
 	assert.Equal(t, 3, len(trades))
 	assert.Equal(t, tradeId6, trades[0].ID.String())
@@ -127,13 +130,13 @@ func TestStorage_GetTradesByMarketWithPagination(t *testing.T) {
 	// Want first 2 trades after skipping 2
 	skip := uint64(2)
 
-	trades, err = tradeStore.GetByMarket(ctx, testMarket, entities.Pagination{Skip: skip, Limit: first})
+	trades, err = tradeStore.GetByMarket(ctx, testMarket, entities.OffsetPagination{Skip: skip, Limit: first})
 	assert.Nil(t, err)
 	assert.Equal(t, 2, len(trades))
 	assert.Equal(t, tradeId3, trades[0].ID.String())
 	assert.Equal(t, tradeId4, trades[1].ID.String())
 
-	trades, err = tradeStore.GetByMarket(ctx, testMarket, entities.Pagination{Skip: skip, Limit: last, Descending: true})
+	trades, err = tradeStore.GetByMarket(ctx, testMarket, entities.OffsetPagination{Skip: skip, Limit: last, Descending: true})
 	assert.Nil(t, err)
 	assert.Equal(t, 3, len(trades))
 	assert.Equal(t, tradeId4, trades[0].ID.String())
@@ -145,7 +148,7 @@ func TestStorage_GetTradesByMarketWithPagination(t *testing.T) {
 	// trades should be available at that offset
 	skip = uint64(50)
 
-	trades, err = tradeStore.GetByMarket(ctx, testMarket, entities.Pagination{Skip: skip, Limit: last, Descending: true})
+	trades, err = tradeStore.GetByMarket(ctx, testMarket, entities.OffsetPagination{Skip: skip, Limit: last, Descending: true})
 	assert.Nil(t, err)
 	assert.Equal(t, 0, len(trades))
 }
@@ -261,4 +264,673 @@ func insertTestData(t *testing.T, tradeStore *sqlstore.Trades) {
 	}
 
 	tradeStore.OnTimeUpdateEvent(context.Background())
+}
+
+func TestTrades_CursorPagination(t *testing.T) {
+	t.Run("Should return all trades for a given market when no cursor is given", testTradesCursorPaginationByMarketNoCursor)
+	t.Run("Should return all trades for a given party when no market and no cursor is given", testTradesCursorPaginationByPartyNoMarketNoCursor)
+	t.Run("Should return all trades for a given party and market when market ID and no cursor is given", testTradesCursorPaginationByPartyAndMarketNoCursor)
+	t.Run("Should return the first page of trades for a given market when a first cursor is set", testTradesCursorPaginationByMarketWithCursorFirst)
+	t.Run("Should return the first page of trades for a given party when a first cursor is set but not market", testTradesCursorPaginationByPartyWithCursorNoMarketFirst)
+	t.Run("Should return the first page of trades for a given party and market when a first cursor is set", testTradesCursorPaginationByPartyAndMarketWithCursorFirst)
+	t.Run("Should return the last page of trades for a given market when a last cursor is set", testTradesCursorPaginationByMarketWithCursorLast)
+	t.Run("Should return the last page of trades for a given party when a last cursor is set but not market", testTradesCursorPaginationByPartyWithCursorNoMarketLast)
+	t.Run("Should return the last page of trades for a given party and market when a last cursor is set", testTradesCursorPaginationByPartyAndMarketWithCursorLast)
+	t.Run("Should return the page of trades for a given market when a first and after cursor is set", testTradesCursorPaginationByMarketWithCursorForward)
+	t.Run("Should return the page of trades for a given party when a first and after cursor is set but not market", testTradesCursorPaginationByPartyWithCursorNoMarketForward)
+	t.Run("Should return the page of trades for a given party and market when a first and after cursor is set", testTradesCursorPaginationByPartyAndMarketWithCursorForward)
+	t.Run("Should return the page of trades for a given market when a last and before cursor is set", testTradesCursorPaginationByMarketWithCursorBackward)
+	t.Run("Should return the page of trades for a given party when a last and before cursor is set but not market", testTradesCursorPaginationByPartyWithCursorNoMarketBackward)
+	t.Run("Should return the page of trades for a given party and market when a last and before cursor is set", testTradesCursorPaginationByPartyAndMarketWithCursorBackward)
+}
+
+func setupTradesTest(t *testing.T) (*sqlstore.Blocks, *sqlstore.Trades, sqlstore.Config, func(t *testing.T)) {
+	t.Helper()
+	bs := sqlstore.NewBlocks(connectionSource)
+	ts := sqlstore.NewTrades(connectionSource)
+
+	DeleteEverything()
+
+	config := sqlstore.NewDefaultConfig()
+	config.ConnectionConfig.Port = testDBPort
+
+	return bs, ts, config, func(t *testing.T) {
+		t.Helper()
+		DeleteEverything()
+	}
+}
+
+func populateTestTrades(ctx context.Context, t *testing.T, bs *sqlstore.Blocks, ts *sqlstore.Trades, blockTimes map[string]time.Time) {
+	t.Helper()
+
+	trades := []entities.Trade{
+		{
+			SeqNum:    1,
+			ID:        entities.NewTradeID("02a16077"),
+			MarketID:  entities.NewMarketID("deadbeef"),
+			Price:     decimal.NewFromFloat(1.0),
+			Size:      1,
+			Buyer:     entities.NewPartyID("dabbad00"),
+			Seller:    entities.NewPartyID("facefeed"),
+			BuyOrder:  entities.NewOrderID("02a16077"),
+			SellOrder: entities.NewOrderID("fb1528a5"),
+			Type:      entities.TradeTypeDefault,
+		},
+		{
+			SeqNum:    2,
+			ID:        entities.NewTradeID("44eea1bc"),
+			MarketID:  entities.NewMarketID("deadbeef"),
+			Price:     decimal.NewFromFloat(2.0),
+			Size:      2,
+			Buyer:     entities.NewPartyID("dabbad00"),
+			Seller:    entities.NewPartyID("facefeed"),
+			BuyOrder:  entities.NewOrderID("44eea1bc"),
+			SellOrder: entities.NewOrderID("da8d1803"),
+			Type:      entities.TradeTypeDefault,
+		},
+		{
+			SeqNum:    3,
+			ID:        entities.NewTradeID("65be62cd"),
+			MarketID:  entities.NewMarketID("deadbeef"),
+			Price:     decimal.NewFromFloat(3.0),
+			Size:      3,
+			Buyer:     entities.NewPartyID("dabbad00"),
+			Seller:    entities.NewPartyID("facefeed"),
+			BuyOrder:  entities.NewOrderID("65be62cd"),
+			SellOrder: entities.NewOrderID("c8744329"),
+			Type:      entities.TradeTypeDefault,
+		},
+		{
+			SeqNum:    4,
+			ID:        entities.NewTradeID("7a797e0e"),
+			MarketID:  entities.NewMarketID("deadbeef"),
+			Price:     decimal.NewFromFloat(4.0),
+			Size:      4,
+			Buyer:     entities.NewPartyID("dabbad00"),
+			Seller:    entities.NewPartyID("facefeed"),
+			BuyOrder:  entities.NewOrderID("7a797e0e"),
+			SellOrder: entities.NewOrderID("c612300d"),
+			Type:      entities.TradeTypeDefault,
+		},
+		{
+			SeqNum:    5,
+			ID:        entities.NewTradeID("7bb2356e"),
+			MarketID:  entities.NewMarketID("cafed00d"),
+			Price:     decimal.NewFromFloat(5.0),
+			Size:      5,
+			Buyer:     entities.NewPartyID("dabbad00"),
+			Seller:    entities.NewPartyID("facefeed"),
+			BuyOrder:  entities.NewOrderID("7bb2356e"),
+			SellOrder: entities.NewOrderID("b7c84b8e"),
+			Type:      entities.TradeTypeDefault,
+		},
+		{
+			SeqNum:    6,
+			ID:        entities.NewTradeID("b7c84b8e"),
+			MarketID:  entities.NewMarketID("cafed00d"),
+			Price:     decimal.NewFromFloat(6.0),
+			Size:      6,
+			Buyer:     entities.NewPartyID("d0d0caca"),
+			Seller:    entities.NewPartyID("decafbad"),
+			BuyOrder:  entities.NewOrderID("b7c84b8e"),
+			SellOrder: entities.NewOrderID("7bb2356e"),
+			Type:      entities.TradeTypeDefault,
+		},
+		{
+			SeqNum:    7,
+			ID:        entities.NewTradeID("c612300d"),
+			MarketID:  entities.NewMarketID("cafed00d"),
+			Price:     decimal.NewFromFloat(7.0),
+			Size:      7,
+			Buyer:     entities.NewPartyID("d0d0caca"),
+			Seller:    entities.NewPartyID("decafbad"),
+			BuyOrder:  entities.NewOrderID("c612300d"),
+			SellOrder: entities.NewOrderID("7a797e0e"),
+			Type:      entities.TradeTypeDefault,
+		},
+		{
+			SeqNum:    8,
+			ID:        entities.NewTradeID("c8744329"),
+			MarketID:  entities.NewMarketID("cafed00d"),
+			Price:     decimal.NewFromFloat(8.0),
+			Size:      8,
+			Buyer:     entities.NewPartyID("d0d0caca"),
+			Seller:    entities.NewPartyID("decafbad"),
+			BuyOrder:  entities.NewOrderID("c8744329"),
+			SellOrder: entities.NewOrderID("65be62cd"),
+			Type:      entities.TradeTypeDefault,
+		},
+		{
+			SeqNum:    9,
+			ID:        entities.NewTradeID("da8d1803"),
+			MarketID:  entities.NewMarketID("deadbaad"),
+			Price:     decimal.NewFromFloat(9.0),
+			Size:      9,
+			Buyer:     entities.NewPartyID("baadf00d"),
+			Seller:    entities.NewPartyID("0d15ea5e"),
+			BuyOrder:  entities.NewOrderID("da8d1803"),
+			SellOrder: entities.NewOrderID("44eea1bc"),
+			Type:      entities.TradeTypeDefault,
+		},
+		{
+			SeqNum:    10,
+			ID:        entities.NewTradeID("fb1528a5"),
+			MarketID:  entities.NewMarketID("deadbaad"),
+			Price:     decimal.NewFromFloat(10.0),
+			Size:      10,
+			Buyer:     entities.NewPartyID("baadf00d"),
+			Seller:    entities.NewPartyID("0d15ea5e"),
+			BuyOrder:  entities.NewOrderID("fb1528a5"),
+			SellOrder: entities.NewOrderID("02a16077"),
+			Type:      entities.TradeTypeDefault,
+		},
+	}
+
+	for _, td := range trades {
+		trade := td
+		block := addTestBlock(t, bs)
+		trade.SyntheticTime = block.VegaTime
+		trade.VegaTime = block.VegaTime
+		blockTimes[trade.ID.String()] = block.VegaTime
+		err := ts.Add(&trade)
+		require.NoError(t, err)
+		time.Sleep(time.Microsecond * 100)
+	}
+
+	err := ts.OnTimeUpdateEvent(ctx)
+	require.NoError(t, err)
+}
+
+func testTradesCursorPaginationByMarketNoCursor(t *testing.T) {
+	bs, ts, _, teardown := setupTradesTest(t)
+	t.Logf("DB Port: %d", testDBPort)
+
+	defer teardown(t)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*60)
+	defer cancel()
+	blockTimes := make(map[string]time.Time)
+	populateTestTrades(ctx, t, bs, ts, blockTimes)
+	cursor, err := entities.PaginationFromProto(&v2.Pagination{
+		First:  nil,
+		After:  nil,
+		Last:   nil,
+		Before: nil,
+	})
+
+	require.NoError(t, err)
+
+	marketID := "deadbeef"
+	trades, pageInfo, err := ts.GetByMarketWithCursor(ctx, marketID, cursor)
+	require.NoError(t, err)
+
+	assert.Len(t, trades, 4)
+	assert.Equal(t, "02a16077", trades[0].ID.String())
+	assert.Equal(t, uint64(1), trades[0].Size)
+	assert.Equal(t, "7a797e0e", trades[3].ID.String())
+	assert.Equal(t, uint64(4), trades[3].Size)
+	assert.False(t, pageInfo.HasNextPage)
+	assert.False(t, pageInfo.HasPreviousPage)
+	assert.Equal(t, "02a16077", trades[0].ID.String())
+	assert.Equal(t, "7a797e0e", trades[3].ID.String())
+}
+
+func testTradesCursorPaginationByPartyNoMarketNoCursor(t *testing.T) {
+	bs, ts, _, teardown := setupTradesTest(t)
+	t.Logf("DB Port: %d", testDBPort)
+
+	defer teardown(t)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*60)
+	defer cancel()
+	blockTimes := make(map[string]time.Time)
+	populateTestTrades(ctx, t, bs, ts, blockTimes)
+	cursor, err := entities.PaginationFromProto(&v2.Pagination{
+		First:  nil,
+		After:  nil,
+		Last:   nil,
+		Before: nil,
+	})
+	require.NoError(t, err)
+
+	partyID := "dabbad00"
+	trades, pageInfo, err := ts.GetByPartyWithCursor(ctx, partyID, nil, cursor)
+	require.NoError(t, err)
+	assert.Len(t, trades, 5)
+
+	assert.Equal(t, "02a16077", trades[0].ID.String())
+	assert.Equal(t, uint64(1), trades[0].Size)
+	assert.Equal(t, "7bb2356e", trades[4].ID.String())
+	assert.Equal(t, uint64(5), trades[4].Size)
+
+	assert.False(t, pageInfo.HasNextPage)
+	assert.False(t, pageInfo.HasPreviousPage)
+	assert.Equal(t, "02a16077", trades[0].ID.String())
+	assert.Equal(t, "7bb2356e", trades[4].ID.String())
+}
+
+func testTradesCursorPaginationByPartyAndMarketNoCursor(t *testing.T) {
+	bs, ts, _, teardown := setupTradesTest(t)
+	t.Logf("DB Port: %d", testDBPort)
+
+	defer teardown(t)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*60)
+	defer cancel()
+	blockTimes := make(map[string]time.Time)
+	populateTestTrades(ctx, t, bs, ts, blockTimes)
+	cursor, err := entities.PaginationFromProto(&v2.Pagination{
+		First:  nil,
+		After:  nil,
+		Last:   nil,
+		Before: nil,
+	})
+
+	require.NoError(t, err)
+	partyID := "dabbad00"
+	marketID := "deadbeef"
+	trades, pageInfo, err := ts.GetByPartyWithCursor(ctx, partyID, &marketID, cursor)
+	require.NoError(t, err)
+	assert.Len(t, trades, 4)
+	assert.Equal(t, "02a16077", trades[0].ID.String())
+	assert.Equal(t, uint64(1), trades[0].Size)
+	assert.Equal(t, "7a797e0e", trades[3].ID.String())
+	assert.Equal(t, uint64(4), trades[3].Size)
+	assert.False(t, pageInfo.HasNextPage)
+	assert.False(t, pageInfo.HasPreviousPage)
+	assert.Equal(t, "02a16077", trades[0].ID.String())
+	assert.Equal(t, "7a797e0e", trades[3].ID.String())
+}
+
+func testTradesCursorPaginationByMarketWithCursorFirst(t *testing.T) {
+	bs, ts, _, teardown := setupTradesTest(t)
+	t.Logf("DB Port: %d", testDBPort)
+
+	defer teardown(t)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*60)
+	defer cancel()
+	blockTimes := make(map[string]time.Time)
+	populateTestTrades(ctx, t, bs, ts, blockTimes)
+	first := int32(2)
+	cursor, err := entities.PaginationFromProto(&v2.Pagination{
+		First:  &first,
+		After:  nil,
+		Last:   nil,
+		Before: nil,
+	})
+
+	require.NoError(t, err)
+	marketID := "deadbeef"
+	trades, pageInfo, err := ts.GetByMarketWithCursor(ctx, marketID, cursor)
+	require.NoError(t, err)
+
+	assert.Len(t, trades, 2)
+	assert.Equal(t, "02a16077", trades[0].ID.String())
+	assert.Equal(t, uint64(1), trades[0].Size)
+	assert.Equal(t, "44eea1bc", trades[1].ID.String())
+	assert.Equal(t, uint64(2), trades[1].Size)
+	assert.True(t, pageInfo.HasNextPage)
+	assert.False(t, pageInfo.HasPreviousPage)
+	assert.Equal(t, "02a16077", trades[0].ID.String())
+	assert.Equal(t, "44eea1bc", trades[1].ID.String())
+}
+
+func testTradesCursorPaginationByPartyWithCursorNoMarketFirst(t *testing.T) {
+	bs, ts, _, teardown := setupTradesTest(t)
+	t.Logf("DB Port: %d", testDBPort)
+
+	defer teardown(t)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*60)
+	defer cancel()
+	blockTimes := make(map[string]time.Time)
+	populateTestTrades(ctx, t, bs, ts, blockTimes)
+	first := int32(2)
+	cursor, err := entities.PaginationFromProto(&v2.Pagination{
+		First:  &first,
+		After:  nil,
+		Last:   nil,
+		Before: nil,
+	})
+
+	require.NoError(t, err)
+	partyID := "dabbad00"
+	trades, pageInfo, err := ts.GetByPartyWithCursor(ctx, partyID, nil, cursor)
+	require.NoError(t, err)
+	assert.Len(t, trades, 2)
+	assert.Equal(t, "02a16077", trades[0].ID.String())
+	assert.Equal(t, uint64(1), trades[0].Size)
+	assert.Equal(t, "44eea1bc", trades[1].ID.String())
+	assert.Equal(t, uint64(2), trades[1].Size)
+	assert.True(t, pageInfo.HasNextPage)
+	assert.False(t, pageInfo.HasPreviousPage)
+	assert.Equal(t, "02a16077", trades[0].ID.String())
+	assert.Equal(t, "44eea1bc", trades[1].ID.String())
+}
+
+func testTradesCursorPaginationByPartyAndMarketWithCursorFirst(t *testing.T) {
+	bs, ts, _, teardown := setupTradesTest(t)
+	t.Logf("DB Port: %d", testDBPort)
+
+	defer teardown(t)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*60)
+	defer cancel()
+	blockTimes := make(map[string]time.Time)
+	populateTestTrades(ctx, t, bs, ts, blockTimes)
+	first := int32(2)
+	cursor, err := entities.PaginationFromProto(&v2.Pagination{
+		First:  &first,
+		After:  nil,
+		Last:   nil,
+		Before: nil,
+	})
+
+	require.NoError(t, err)
+	partyID := "dabbad00"
+	marketID := "deadbeef"
+	trades, pageInfo, err := ts.GetByPartyWithCursor(ctx, partyID, &marketID, cursor)
+	require.NoError(t, err)
+	assert.Len(t, trades, 2)
+	assert.Equal(t, "02a16077", trades[0].ID.String())
+	assert.Equal(t, uint64(1), trades[0].Size)
+	assert.Equal(t, "44eea1bc", trades[1].ID.String())
+	assert.Equal(t, uint64(2), trades[1].Size)
+	assert.True(t, pageInfo.HasNextPage)
+	assert.False(t, pageInfo.HasPreviousPage)
+	assert.Equal(t, "02a16077", trades[0].ID.String())
+	assert.Equal(t, "44eea1bc", trades[1].ID.String())
+}
+
+func testTradesCursorPaginationByMarketWithCursorLast(t *testing.T) {
+	bs, ts, _, teardown := setupTradesTest(t)
+	t.Logf("DB Port: %d", testDBPort)
+
+	defer teardown(t)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*60)
+	defer cancel()
+	blockTimes := make(map[string]time.Time)
+	populateTestTrades(ctx, t, bs, ts, blockTimes)
+	last := int32(2)
+	cursor, err := entities.PaginationFromProto(&v2.Pagination{
+		First:  nil,
+		After:  nil,
+		Last:   &last,
+		Before: nil,
+	})
+
+	require.NoError(t, err)
+	marketID := "deadbeef"
+	trades, pageInfo, err := ts.GetByMarketWithCursor(ctx, marketID, cursor)
+	require.NoError(t, err)
+
+	assert.Len(t, trades, 2)
+	assert.Equal(t, "65be62cd", trades[0].ID.String())
+	assert.Equal(t, uint64(3), trades[0].Size)
+	assert.Equal(t, "7a797e0e", trades[1].ID.String())
+	assert.Equal(t, uint64(4), trades[1].Size)
+	assert.False(t, pageInfo.HasNextPage)
+	assert.True(t, pageInfo.HasPreviousPage)
+	assert.Equal(t, "65be62cd", trades[0].ID.String())
+	assert.Equal(t, "7a797e0e", trades[1].ID.String())
+}
+
+func testTradesCursorPaginationByPartyWithCursorNoMarketLast(t *testing.T) {
+	bs, ts, _, teardown := setupTradesTest(t)
+	t.Logf("DB Port: %d", testDBPort)
+
+	defer teardown(t)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*60)
+	defer cancel()
+	blockTimes := make(map[string]time.Time)
+	populateTestTrades(ctx, t, bs, ts, blockTimes)
+	last := int32(2)
+	cursor, err := entities.PaginationFromProto(&v2.Pagination{
+		First:  nil,
+		After:  nil,
+		Last:   &last,
+		Before: nil,
+	})
+
+	require.NoError(t, err)
+	partyID := "dabbad00"
+	trades, pageInfo, err := ts.GetByPartyWithCursor(ctx, partyID, nil, cursor)
+	require.NoError(t, err)
+	assert.Len(t, trades, 2)
+	assert.Equal(t, "7a797e0e", trades[0].ID.String())
+	assert.Equal(t, uint64(4), trades[0].Size)
+	assert.Equal(t, "7bb2356e", trades[1].ID.String())
+	assert.Equal(t, uint64(5), trades[1].Size)
+	assert.False(t, pageInfo.HasNextPage)
+	assert.True(t, pageInfo.HasPreviousPage)
+	assert.Equal(t, "7a797e0e", trades[0].ID.String())
+	assert.Equal(t, "7bb2356e", trades[1].ID.String())
+}
+
+func testTradesCursorPaginationByPartyAndMarketWithCursorLast(t *testing.T) {
+	bs, ts, _, teardown := setupTradesTest(t)
+	t.Logf("DB Port: %d", testDBPort)
+
+	defer teardown(t)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*60)
+	defer cancel()
+	blockTimes := make(map[string]time.Time)
+	last := int32(2)
+	populateTestTrades(ctx, t, bs, ts, blockTimes)
+	cursor, err := entities.PaginationFromProto(&v2.Pagination{
+		First:  nil,
+		After:  nil,
+		Last:   &last,
+		Before: nil,
+	})
+
+	require.NoError(t, err)
+	partyID := "dabbad00"
+	marketID := "deadbeef"
+	trades, pageInfo, err := ts.GetByPartyWithCursor(ctx, partyID, &marketID, cursor)
+	require.NoError(t, err)
+	assert.Len(t, trades, 2)
+	assert.Equal(t, "65be62cd", trades[0].ID.String())
+	assert.Equal(t, uint64(3), trades[0].Size)
+	assert.Equal(t, "7a797e0e", trades[1].ID.String())
+	assert.Equal(t, uint64(4), trades[1].Size)
+	assert.False(t, pageInfo.HasNextPage)
+	assert.True(t, pageInfo.HasPreviousPage)
+	assert.Equal(t, "65be62cd", trades[0].ID.String())
+	assert.Equal(t, "7a797e0e", trades[1].ID.String())
+}
+
+func testTradesCursorPaginationByMarketWithCursorForward(t *testing.T) {
+	bs, ts, _, teardown := setupTradesTest(t)
+	t.Logf("DB Port: %d", testDBPort)
+
+	defer teardown(t)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*60)
+	defer cancel()
+	blockTimes := make(map[string]time.Time)
+	populateTestTrades(ctx, t, bs, ts, blockTimes)
+	first := int32(2)
+	after := entities.NewCursor(blockTimes["02a16077"].Format(time.RFC3339Nano)).Encode()
+	cursor, err := entities.PaginationFromProto(&v2.Pagination{
+		First:  &first,
+		After:  &after,
+		Last:   nil,
+		Before: nil,
+	})
+
+	require.NoError(t, err)
+	marketID := "deadbeef"
+	trades, pageInfo, err := ts.GetByMarketWithCursor(ctx, marketID, cursor)
+	require.NoError(t, err)
+
+	assert.Len(t, trades, 2)
+	assert.Equal(t, "44eea1bc", trades[0].ID.String())
+	assert.Equal(t, uint64(2), trades[0].Size)
+	assert.Equal(t, "65be62cd", trades[1].ID.String())
+	assert.Equal(t, uint64(3), trades[1].Size)
+	assert.True(t, pageInfo.HasNextPage)
+	assert.True(t, pageInfo.HasPreviousPage)
+	assert.Equal(t, "44eea1bc", trades[0].ID.String())
+	assert.Equal(t, "65be62cd", trades[1].ID.String())
+}
+
+func testTradesCursorPaginationByPartyWithCursorNoMarketForward(t *testing.T) {
+	bs, ts, _, teardown := setupTradesTest(t)
+	t.Logf("DB Port: %d", testDBPort)
+
+	defer teardown(t)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*60)
+	defer cancel()
+	blockTimes := make(map[string]time.Time)
+	populateTestTrades(ctx, t, bs, ts, blockTimes)
+	first := int32(2)
+	after := entities.NewCursor(blockTimes["44eea1bc"].Format(time.RFC3339Nano)).Encode()
+	cursor, err := entities.PaginationFromProto(&v2.Pagination{
+		First:  &first,
+		After:  &after,
+		Last:   nil,
+		Before: nil,
+	})
+
+	require.NoError(t, err)
+	partyID := "dabbad00"
+	trades, pageInfo, err := ts.GetByPartyWithCursor(ctx, partyID, nil, cursor)
+	require.NoError(t, err)
+	assert.Len(t, trades, 2)
+	assert.Equal(t, "65be62cd", trades[0].ID.String())
+	assert.Equal(t, uint64(3), trades[0].Size)
+	assert.Equal(t, "7a797e0e", trades[1].ID.String())
+	assert.Equal(t, uint64(4), trades[1].Size)
+	assert.True(t, pageInfo.HasNextPage)
+	assert.True(t, pageInfo.HasPreviousPage)
+	assert.Equal(t, "65be62cd", trades[0].ID.String())
+	assert.Equal(t, "7a797e0e", trades[1].ID.String())
+}
+
+func testTradesCursorPaginationByPartyAndMarketWithCursorForward(t *testing.T) {
+	bs, ts, _, teardown := setupTradesTest(t)
+	t.Logf("DB Port: %d", testDBPort)
+
+	defer teardown(t)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*60)
+	defer cancel()
+	blockTimes := make(map[string]time.Time)
+	populateTestTrades(ctx, t, bs, ts, blockTimes)
+	first := int32(2)
+	after := entities.NewCursor(blockTimes["02a16077"].Format(time.RFC3339Nano)).Encode()
+	cursor, err := entities.PaginationFromProto(&v2.Pagination{
+		First:  &first,
+		After:  &after,
+		Last:   nil,
+		Before: nil,
+	})
+
+	require.NoError(t, err)
+	partyID := "dabbad00"
+	marketID := "deadbeef"
+	trades, pageInfo, err := ts.GetByPartyWithCursor(ctx, partyID, &marketID, cursor)
+	require.NoError(t, err)
+	assert.Len(t, trades, 2)
+	assert.Equal(t, "44eea1bc", trades[0].ID.String())
+	assert.Equal(t, uint64(2), trades[0].Size)
+	assert.Equal(t, "65be62cd", trades[1].ID.String())
+	assert.Equal(t, uint64(3), trades[1].Size)
+	assert.True(t, pageInfo.HasNextPage)
+	assert.True(t, pageInfo.HasPreviousPage)
+	assert.Equal(t, "44eea1bc", trades[0].ID.String())
+	assert.Equal(t, "65be62cd", trades[1].ID.String())
+}
+
+func testTradesCursorPaginationByMarketWithCursorBackward(t *testing.T) {
+	bs, ts, _, teardown := setupTradesTest(t)
+	t.Logf("DB Port: %d", testDBPort)
+
+	defer teardown(t)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*60)
+	defer cancel()
+	blockTimes := make(map[string]time.Time)
+	populateTestTrades(ctx, t, bs, ts, blockTimes)
+	last := int32(2)
+	before := entities.NewCursor(blockTimes["7a797e0e"].Format(time.RFC3339Nano)).Encode()
+	cursor, err := entities.PaginationFromProto(&v2.Pagination{
+		First:  nil,
+		After:  nil,
+		Last:   &last,
+		Before: &before,
+	})
+	require.NoError(t, err)
+	marketID := "deadbeef"
+	trades, pageInfo, err := ts.GetByMarketWithCursor(ctx, marketID, cursor)
+	require.NoError(t, err)
+	assert.Len(t, trades, 2)
+	assert.Equal(t, "44eea1bc", trades[0].ID.String())
+	assert.Equal(t, uint64(2), trades[0].Size)
+	assert.Equal(t, "65be62cd", trades[1].ID.String())
+	assert.Equal(t, uint64(3), trades[1].Size)
+	assert.True(t, pageInfo.HasNextPage)
+	assert.True(t, pageInfo.HasPreviousPage)
+	assert.Equal(t, "44eea1bc", trades[0].ID.String())
+	assert.Equal(t, "65be62cd", trades[1].ID.String())
+}
+
+func testTradesCursorPaginationByPartyWithCursorNoMarketBackward(t *testing.T) {
+	bs, ts, _, teardown := setupTradesTest(t)
+	t.Logf("DB Port: %d", testDBPort)
+
+	defer teardown(t)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*60)
+	defer cancel()
+	blockTimes := make(map[string]time.Time)
+	populateTestTrades(ctx, t, bs, ts, blockTimes)
+	last := int32(2)
+	before := entities.NewCursor(blockTimes["7bb2356e"].Format(time.RFC3339Nano)).Encode()
+	cursor, err := entities.PaginationFromProto(&v2.Pagination{
+		First:  nil,
+		After:  nil,
+		Last:   &last,
+		Before: &before,
+	})
+
+	require.NoError(t, err)
+	partyID := "dabbad00"
+	trades, pageInfo, err := ts.GetByPartyWithCursor(ctx, partyID, nil, cursor)
+	require.NoError(t, err)
+	assert.Len(t, trades, 2)
+	assert.Equal(t, "65be62cd", trades[0].ID.String())
+	assert.Equal(t, uint64(3), trades[0].Size)
+	assert.Equal(t, "7a797e0e", trades[1].ID.String())
+	assert.Equal(t, uint64(4), trades[1].Size)
+	assert.True(t, pageInfo.HasNextPage)
+	assert.True(t, pageInfo.HasPreviousPage)
+	assert.Equal(t, "65be62cd", trades[0].ID.String())
+	assert.Equal(t, "7a797e0e", trades[1].ID.String())
+}
+
+func testTradesCursorPaginationByPartyAndMarketWithCursorBackward(t *testing.T) {
+	bs, ts, _, teardown := setupTradesTest(t)
+	t.Logf("DB Port: %d", testDBPort)
+
+	defer teardown(t)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*60)
+	defer cancel()
+	blockTimes := make(map[string]time.Time)
+	populateTestTrades(ctx, t, bs, ts, blockTimes)
+	last := int32(2)
+	before := entities.NewCursor(blockTimes["7a797e0e"].Format(time.RFC3339Nano)).Encode()
+	cursor, err := entities.PaginationFromProto(&v2.Pagination{
+		First:  nil,
+		After:  nil,
+		Last:   &last,
+		Before: &before,
+	})
+
+	require.NoError(t, err)
+	partyID := "dabbad00"
+	marketID := "deadbeef"
+	trades, pageInfo, err := ts.GetByPartyWithCursor(ctx, partyID, &marketID, cursor)
+	require.NoError(t, err)
+	assert.Len(t, trades, 2)
+	assert.Equal(t, "44eea1bc", trades[0].ID.String())
+	assert.Equal(t, uint64(2), trades[0].Size)
+	assert.Equal(t, "65be62cd", trades[1].ID.String())
+	assert.Equal(t, uint64(3), trades[1].Size)
+	assert.True(t, pageInfo.HasNextPage)
+	assert.True(t, pageInfo.HasPreviousPage)
+	assert.Equal(t, "44eea1bc", trades[0].ID.String())
+	assert.Equal(t, "65be62cd", trades[1].ID.String())
 }

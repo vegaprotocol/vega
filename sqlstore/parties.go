@@ -11,8 +11,10 @@ import (
 	"github.com/georgysavva/scany/pgxscan"
 )
 
-var ErrPartyNotFound = errors.New("party not found")
-var ErrInvalidPartyID = errors.New("invalid hex id")
+var (
+	ErrPartyNotFound  = errors.New("party not found")
+	ErrInvalidPartyID = errors.New("invalid hex id")
+)
 
 type Parties struct {
 	*ConnectionSource
@@ -54,7 +56,7 @@ func (ps *Parties) GetByID(ctx context.Context, id string) (entities.Party, erro
 	err := pgxscan.Get(ctx, ps.Connection, &a,
 		`SELECT id, vega_time
 		 FROM parties WHERE id=$1`,
-		entities.NewOrderID(id))
+		entities.NewPartyID(id))
 
 	if pgxscan.NotFound(err) {
 		return a, fmt.Errorf("'%v': %w", id, ErrPartyNotFound)
@@ -74,4 +76,39 @@ func (ps *Parties) GetAll(ctx context.Context) ([]entities.Party, error) {
 		SELECT id, vega_time
 		FROM parties`)
 	return parties, err
+}
+
+func (ps *Parties) GetAllPaged(ctx context.Context, partyID string, pagination entities.Pagination) ([]entities.Party, entities.PageInfo, error) {
+	if partyID != "" {
+		party, err := ps.GetByID(ctx, partyID)
+		if err != nil {
+			return nil, entities.PageInfo{}, err
+		}
+
+		return []entities.Party{party}, entities.PageInfo{
+			HasNextPage:     false,
+			HasPreviousPage: false,
+			StartCursor:     party.Cursor().Encode(),
+			EndCursor:       party.Cursor().Encode(),
+		}, nil
+	}
+
+	parties := make([]entities.Party, 0)
+	args := make([]interface{}, 0)
+
+	query := `
+		SELECT id, vega_time
+		FROM parties
+	`
+
+	var pagedParties []entities.Party
+	var pageInfo entities.PageInfo
+
+	query, args = orderAndPaginateWithCursor(query, pagination, "vega_time", args...)
+	if err := pgxscan.Select(ctx, ps.Connection, &parties, query, args...); err != nil {
+		return pagedParties, pageInfo, err
+	}
+
+	pagedParties, pageInfo = entities.PageEntities(parties, pagination)
+	return pagedParties, pageInfo, nil
 }

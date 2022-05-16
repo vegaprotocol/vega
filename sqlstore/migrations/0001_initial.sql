@@ -374,6 +374,15 @@ create table if not exists markets (
     primary key (id, vega_time)
 );
 
+create view markets_current as (
+    select distinct on (id) id, vega_time, instrument_id, tradable_instrument,
+           decimal_places, fees, opening_auction, price_monitoring_settings,
+           liquidity_monitoring_parameters, trading_mode, state, market_timestamps,
+           position_decimal_places
+    from markets
+    order by id, vega_time desc
+);
+
 CREATE TABLE epochs(
   id           BIGINT                   NOT NULL,
   start_time   TIMESTAMP WITH TIME ZONE NOT NULL,
@@ -741,7 +750,8 @@ DROP TYPE IF EXISTS order_side;
 DROP TYPE IF EXISTS order_type;
 DROP TYPE IF EXISTS order_pegged_reference;
 
-DROP TABLE IF EXISTS markets;
+DROP VIEW IF EXISTS markets_current;
+DROP TABLE IF EXISTS markets CASCADE;
 DROP VIEW IF EXISTS market_data_snapshot;
 DROP TABLE IF EXISTS market_data;
 DROP TYPE IF EXISTS auction_trigger_type;

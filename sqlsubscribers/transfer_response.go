@@ -49,7 +49,6 @@ func (t *TransferResponse) Types() []events.Type {
 }
 
 func (t *TransferResponse) Push(ctx context.Context, evt events.Event) error {
-
 	switch e := evt.(type) {
 	case TimeUpdateEvent:
 		t.vegaTime = e.Time()
@@ -63,7 +62,6 @@ func (t *TransferResponse) Push(ctx context.Context, evt events.Event) error {
 }
 
 func (t *TransferResponse) consume(ctx context.Context, e TransferResponseEvent) error {
-
 	var errs strings.Builder
 	for _, tr := range e.TransferResponses() {
 		for _, vle := range tr.Transfers {

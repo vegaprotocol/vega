@@ -44,7 +44,7 @@ func (ml *MarginLevels) Flush(ctx context.Context) error {
 	return ml.batcher.Flush(ctx, ml.pool)
 }
 
-func (ml *MarginLevels) GetMarginLevelsByID(ctx context.Context, partyID, marketID string, pagination entities.Pagination) ([]entities.MarginLevels, error) {
+func (ml *MarginLevels) GetMarginLevelsByID(ctx context.Context, partyID, marketID string, pagination entities.OffsetPagination) ([]entities.MarginLevels, error) {
 	party := entities.NewPartyID(partyID)
 	market := entities.NewMarketID(marketID)
 

@@ -63,7 +63,7 @@ func (os *Orders) GetByOrderID(ctx context.Context, orderIdStr string, version *
 }
 
 // GetByMarket returns the last update of the all the orders in a particular market
-func (os *Orders) GetByMarket(ctx context.Context, marketIdStr string, p entities.Pagination) ([]entities.Order, error) {
+func (os *Orders) GetByMarket(ctx context.Context, marketIdStr string, p entities.OffsetPagination) ([]entities.Order, error) {
 	defer metrics.StartSQLQuery("Orders", "GetByMarket")()
 	marketId := entities.NewMarketID(marketIdStr)
 
@@ -73,7 +73,7 @@ func (os *Orders) GetByMarket(ctx context.Context, marketIdStr string, p entitie
 }
 
 // GetByParty returns the last update of the all the orders in a particular party
-func (os *Orders) GetByParty(ctx context.Context, partyIdStr string, p entities.Pagination) ([]entities.Order, error) {
+func (os *Orders) GetByParty(ctx context.Context, partyIdStr string, p entities.OffsetPagination) ([]entities.Order, error) {
 	defer metrics.StartSQLQuery("Orders", "GetByParty")()
 	partyId := entities.NewPartyID(partyIdStr)
 
@@ -83,7 +83,7 @@ func (os *Orders) GetByParty(ctx context.Context, partyIdStr string, p entities.
 }
 
 // GetByReference returns the last update of orders with the specified user-suppled reference
-func (os *Orders) GetByReference(ctx context.Context, reference string, p entities.Pagination) ([]entities.Order, error) {
+func (os *Orders) GetByReference(ctx context.Context, reference string, p entities.OffsetPagination) ([]entities.Order, error) {
 	defer metrics.StartSQLQuery("Orders", "GetByReference")()
 	query := `SELECT * from orders_current WHERE reference=$1`
 	args := []interface{}{reference}
@@ -92,7 +92,7 @@ func (os *Orders) GetByReference(ctx context.Context, reference string, p entiti
 
 // GetAllVersionsByOrderID the last update to all versions (e.g. manual changes that lead to
 // incrementing the version field) of a given order id.
-func (os *Orders) GetAllVersionsByOrderID(ctx context.Context, id string, p entities.Pagination) ([]entities.Order, error) {
+func (os *Orders) GetAllVersionsByOrderID(ctx context.Context, id string, p entities.OffsetPagination) ([]entities.Order, error) {
 	defer metrics.StartSQLQuery("Orders", "GetAllVersionsByOrderID")()
 	query := `SELECT * from orders_current_versions WHERE id=$1`
 	args := []interface{}{entities.NewOrderID(id)}
@@ -113,7 +113,7 @@ order by vega_time, seq_num`
 
 // -------------------------------------------- Utility Methods
 
-func (os *Orders) queryOrders(ctx context.Context, query string, args []interface{}, p *entities.Pagination) ([]entities.Order, error) {
+func (os *Orders) queryOrders(ctx context.Context, query string, args []interface{}, p *entities.OffsetPagination) ([]entities.Order, error) {
 	if p != nil {
 		query, args = paginateOrderQuery(query, args, *p)
 	}
@@ -126,7 +126,7 @@ func (os *Orders) queryOrders(ctx context.Context, query string, args []interfac
 	return orders, nil
 }
 
-func paginateOrderQuery(query string, args []interface{}, p entities.Pagination) (string, []interface{}) {
+func paginateOrderQuery(query string, args []interface{}, p entities.OffsetPagination) (string, []interface{}) {
 	dir := "ASC"
 	if p.Descending {
 		dir = "DESC"

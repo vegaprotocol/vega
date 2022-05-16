@@ -72,7 +72,6 @@ func GetAccountFromMarginLevel(ctx context.Context, margin *vega.MarginLevels, a
 }
 
 func (ml *MarginLevels) ToProto(accountSource AccountSource) (*vega.MarginLevels, error) {
-
 	marginAccount, err := accountSource.GetByID(ml.AccountID)
 	if err != nil {
 		return nil, fmt.Errorf("getting from account for transfer proto:%w", err)
@@ -83,10 +82,10 @@ func (ml *MarginLevels) ToProto(accountSource AccountSource) (*vega.MarginLevels
 		SearchLevel:            ml.SearchLevel.String(),
 		InitialMargin:          ml.InitialMargin.String(),
 		CollateralReleaseLevel: ml.CollateralReleaseLevel.String(),
-		PartyId:                marginAccount.String(),
-		MarketId:               marginAccount.String(),
-		Asset:                  marginAccount.String(),
-		Timestamp:              ml.VegaTime.UnixNano(),
+		PartyId:                marginAccount.PartyID.String(),
+		MarketId:               marginAccount.MarketID.String(),
+		Asset:                  marginAccount.AssetID.String(),
+		Timestamp:              ml.Timestamp.UnixNano(),
 	}, nil
 }
 

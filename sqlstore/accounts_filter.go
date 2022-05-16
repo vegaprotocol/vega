@@ -50,7 +50,7 @@ func filterAccountsQuery(af entities.AccountFilter) (string, []interface{}, erro
 	return query, args, nil
 }
 
-func filterAccountBalancesQuery(af entities.AccountFilter, pagination entities.Pagination) (string, []interface{}, error) {
+func filterAccountBalancesQuery(af entities.AccountFilter, pagination entities.OffsetPagination) (string, []interface{}, error) {
 	var args []interface{}
 
 	where := ""

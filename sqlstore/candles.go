@@ -40,7 +40,7 @@ func NewCandles(ctx context.Context, connectionSource *ConnectionSource, config 
 
 // GetCandleDataForTimeSpan gets the candles for a given interval, from and to are optional
 func (cs *Candles) GetCandleDataForTimeSpan(ctx context.Context, candleId string, from *time.Time, to *time.Time,
-	p entities.Pagination) ([]entities.Candle, error,
+	p entities.OffsetPagination) ([]entities.Candle, error,
 ) {
 	descriptor, err := candleDescriptorFromCandleId(candleId)
 	if err != nil {

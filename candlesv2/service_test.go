@@ -78,6 +78,6 @@ type testStore struct {
 	candles chan []entities.Candle
 }
 
-func (t *testStore) GetCandleDataForTimeSpan(ctx context.Context, candleId string, from *time.Time, to *time.Time, p entities.Pagination) ([]entities.Candle, error) {
+func (t *testStore) GetCandleDataForTimeSpan(ctx context.Context, candleId string, from *time.Time, to *time.Time, p entities.OffsetPagination) ([]entities.Candle, error) {
 	return <-t.candles, nil
 }

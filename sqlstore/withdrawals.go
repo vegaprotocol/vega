@@ -72,7 +72,7 @@ func (w *Withdrawals) GetByID(ctx context.Context, withdrawalID string) (entitie
 	return withdrawal, err
 }
 
-func (w *Withdrawals) GetByParty(ctx context.Context, partyID string, openOnly bool, pagination entities.Pagination) []entities.Withdrawal {
+func (w *Withdrawals) GetByParty(ctx context.Context, partyID string, openOnly bool, pagination entities.OffsetPagination) []entities.Withdrawal {
 	var withdrawals []entities.Withdrawal
 	prequery := `SELECT
 		distinct on (id) id, party_id, amount, asset, status, ref, expiry, tx_hash,

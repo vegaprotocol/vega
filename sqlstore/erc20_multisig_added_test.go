@@ -89,14 +89,14 @@ func testGetWithFilters(t *testing.T) {
 	err = ms.Add(ctx, getTestSignerEvent(t, vID2, vgcrypto.RandomHash(), "12", true))
 	require.NoError(t, err)
 
-	res, err := ms.GetAddedEvents(ctx, vID1, nil, entities.Pagination{})
+	res, err := ms.GetAddedEvents(ctx, vID1, nil, entities.OffsetPagination{})
 	require.NoError(t, err)
 	require.Len(t, res, 2)
 	assert.Equal(t, vID1, res[0].ValidatorID.String())
 	assert.Equal(t, vID1, res[1].ValidatorID.String())
 
 	epoch := int64(12)
-	res, err = ms.GetAddedEvents(ctx, vID1, &epoch, entities.Pagination{})
+	res, err = ms.GetAddedEvents(ctx, vID1, &epoch, entities.OffsetPagination{})
 	require.NoError(t, err)
 	require.Len(t, res, 1)
 	assert.Equal(t, vID1, res[0].ValidatorID.String())
@@ -131,17 +131,17 @@ func testGetWithAddAndRemoveEvents(t *testing.T) {
 	err = ms.Add(ctx, getTestSignerEvent(t, vID2, vgcrypto.RandomHash(), "12", true))
 	require.NoError(t, err)
 
-	res, err := ms.GetAddedEvents(ctx, vID1, nil, entities.Pagination{})
+	res, err := ms.GetAddedEvents(ctx, vID1, nil, entities.OffsetPagination{})
 	require.NoError(t, err)
 	require.Len(t, res, 1)
 	assert.Equal(t, vID1, res[0].ValidatorID.String())
 
-	res, err = ms.GetRemovedEvents(ctx, vID1, submitter, nil, entities.Pagination{})
+	res, err = ms.GetRemovedEvents(ctx, vID1, submitter, nil, entities.OffsetPagination{})
 	require.NoError(t, err)
 	require.Len(t, res, 1)
 	assert.Equal(t, vID1, res[0].ValidatorID.String())
 
-	res, err = ms.GetRemovedEvents(ctx, vID1, wrongSubmitter, nil, entities.Pagination{})
+	res, err = ms.GetRemovedEvents(ctx, vID1, wrongSubmitter, nil, entities.OffsetPagination{})
 	require.NoError(t, err)
 	require.Len(t, res, 0)
 }
