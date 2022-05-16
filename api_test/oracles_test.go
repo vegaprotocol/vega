@@ -14,7 +14,7 @@ import (
 	"code.vegaprotocol.io/vega/events"
 )
 
-func TestGetSpecs(t *testing.T) {
+func TestOracleSpecs(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), defaultTimout)
 	defer cancel()
 
