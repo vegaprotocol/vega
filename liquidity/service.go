@@ -27,9 +27,9 @@ type Svc struct {
 	log    *logging.Logger
 
 	// marketID -> partyID -> liquidityProvision
-	marketsLPs map[string]map[string]types.LiquidityProvision
+	marketsLPs map[string]map[string]*types.LiquidityProvision
 	mu         sync.RWMutex
-	ch         chan types.LiquidityProvision
+	ch         chan *types.LiquidityProvision
 }
 
 func NewService(ctx context.Context, log *logging.Logger, config Config) *Svc {
@@ -38,8 +38,8 @@ func NewService(ctx context.Context, log *logging.Logger, config Config) *Svc {
 		Base:       subscribers.NewBase(ctx, 10, true),
 		log:        log,
 		config:     config,
-		marketsLPs: map[string]map[string]types.LiquidityProvision{},
-		ch:         make(chan types.LiquidityProvision, 100),
+		marketsLPs: map[string]map[string]*types.LiquidityProvision{},
+		ch:         make(chan *types.LiquidityProvision, 100),
 	}
 
 	go svc.consume()
@@ -67,7 +67,7 @@ func (s *Svc) Push(evts ...events.Event) {
 			return
 		default:
 			if lpe, ok := e.(LiquidityProvisionEvent); ok {
-				s.ch <- *lpe.LiquidityProvision()
+				s.ch <- lpe.LiquidityProvision()
 			}
 		}
 	}
@@ -89,7 +89,7 @@ func (s *Svc) consume() {
 			s.mu.Lock()
 			partiesLPs, ok := s.marketsLPs[lp.MarketId]
 			if !ok {
-				partiesLPs = map[string]types.LiquidityProvision{}
+				partiesLPs = map[string]*types.LiquidityProvision{}
 				s.marketsLPs[lp.MarketId] = partiesLPs
 			}
 			partiesLPs[lp.PartyId] = lp
@@ -98,7 +98,7 @@ func (s *Svc) consume() {
 	}
 }
 
-func (s *Svc) Get(party, market string) ([]types.LiquidityProvision, error) {
+func (s *Svc) Get(party, market string) ([]*types.LiquidityProvision, error) {
 	if len(party) <= 0 && len(market) <= 0 {
 		return nil, ErrNoMarketOrPartyFilters
 	}
@@ -111,7 +111,7 @@ func (s *Svc) Get(party, market string) ([]types.LiquidityProvision, error) {
 	return s.getByParty(party), nil
 }
 
-func (s *Svc) getByMarket(market string, party string) []types.LiquidityProvision {
+func (s *Svc) getByMarket(market string, party string) []*types.LiquidityProvision {
 	partiesLPs, ok := s.marketsLPs[market]
 	if !ok {
 		return nil
@@ -122,18 +122,18 @@ func (s *Svc) getByMarket(market string, party string) []types.LiquidityProvisio
 		if !ok {
 			return nil
 		}
-		return []types.LiquidityProvision{partyLP}
+		return []*types.LiquidityProvision{partyLP}
 	}
 
-	out := make([]types.LiquidityProvision, 0, len(partiesLPs))
+	out := make([]*types.LiquidityProvision, 0, len(partiesLPs))
 	for _, v := range partiesLPs {
 		out = append(out, v)
 	}
 	return out
 }
 
-func (s *Svc) getByParty(party string) []types.LiquidityProvision {
-	out := []types.LiquidityProvision{}
+func (s *Svc) getByParty(party string) []*types.LiquidityProvision {
+	out := []*types.LiquidityProvision{}
 	for _, v := range s.marketsLPs {
 		if plp, ok := v[party]; ok {
 			out = append(out, plp)

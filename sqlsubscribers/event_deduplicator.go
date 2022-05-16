@@ -4,8 +4,8 @@ import (
 	"context"
 	"time"
 
-	"github.com/golang/protobuf/proto"
 	"github.com/pkg/errors"
+	"google.golang.org/protobuf/proto"
 )
 
 // Used to get the set of events that have changed between flushes.  If an event is the same when flushed as it was
@@ -25,6 +25,7 @@ func NewEventDeduplicator[K comparable, V proto.Message](getId func(context.Cont
 }
 
 func (e *eventDeduplicator[K, V]) AddEvent(ctx context.Context, event V, vegaTime time.Time) error {
+
 	id, err := e.getId(ctx, event, vegaTime)
 	if err != nil {
 		return errors.Wrap(err, "failed to add event to deduplicator")
