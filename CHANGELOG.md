@@ -1,12 +1,23 @@
 # Changelog
 
-## Unreleased (0.51.0)
+## Unreleased (0.52.0)
 
 ### 🚨 Breaking changes
-- [5192](https://github.com/vegaprotocol/vega/issues/5192) - Require a rationale on proposals
+- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 ### 🗑️ Deprecation
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+
+### 🛠 Improvements
+- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+
+### 🐛 Fixes
+- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+
+## 0.51.0
+
+### 🚨 Breaking changes
+- [5192](https://github.com/vegaprotocol/vega/issues/5192) - Require a rationale on proposals
 
 ### 🛠 Improvements
 - [5318](https://github.com/vegaprotocol/vega/issues/5318) - Automatically dispatch reward pool into markets in recurring transfers
