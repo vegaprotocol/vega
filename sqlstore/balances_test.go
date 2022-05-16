@@ -34,14 +34,14 @@ func assertBalanceCorrect(t *testing.T,
 }
 
 func TestBalances(t *testing.T) {
-	defer testStore.DeleteEverything()
+	defer DeleteEverything()
 	ctx := context.Background()
 
-	blockStore := sqlstore.NewBlocks(testStore)
-	assetStore := sqlstore.NewAssets(testStore)
-	accountStore := sqlstore.NewAccounts(testStore)
-	balanceStore := sqlstore.NewBalances(testStore)
-	partyStore := sqlstore.NewParties(testStore)
+	blockStore := sqlstore.NewBlocks(connectionSource)
+	assetStore := sqlstore.NewAssets(connectionSource)
+	accountStore := sqlstore.NewAccounts(connectionSource)
+	balanceStore := sqlstore.NewBalances(connectionSource)
+	partyStore := sqlstore.NewParties(connectionSource)
 
 	// Set up a test environment with a bunch of blocks/parties/accounts
 	asset := addTestAsset(t, assetStore, addTestBlock(t, blockStore))

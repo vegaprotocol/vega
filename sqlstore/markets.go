@@ -3,13 +3,17 @@ package sqlstore
 import (
 	"context"
 	"fmt"
+	"sync"
 
 	"code.vegaprotocol.io/data-node/entities"
+	"code.vegaprotocol.io/data-node/metrics"
 	"github.com/georgysavva/scany/pgxscan"
 )
 
 type Markets struct {
-	*SQLStore
+	*ConnectionSource
+	cache     map[string]entities.Market
+	cacheLock sync.Mutex
 }
 
 const (
@@ -18,15 +22,16 @@ const (
 		trading_mode, state, market_timestamps, position_decimal_places`
 )
 
-func NewMarkets(sqlStore *SQLStore) *Markets {
+func NewMarkets(connectionSource *ConnectionSource) *Markets {
 	return &Markets{
-		SQLStore: sqlStore,
+		ConnectionSource: connectionSource,
+		cache:            make(map[string]entities.Market),
 	}
 }
 
-func (m *Markets) Upsert(market *entities.Market) error {
-	ctx, cancel := context.WithTimeout(context.Background(), m.conf.Timeout.Duration)
-	defer cancel()
+func (m *Markets) Upsert(ctx context.Context, market *entities.Market) error {
+	m.cacheLock.Lock()
+	defer m.cacheLock.Unlock()
 
 	query := fmt.Sprintf(`insert into markets(%s) 
 values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
@@ -44,25 +49,39 @@ set
 	market_timestamps=EXCLUDED.market_timestamps,
 	position_decimal_places=EXCLUDED.position_decimal_places;`, sqlMarketsColumns)
 
-	if _, err := m.pool.Exec(ctx, query, market.ID, market.VegaTime, market.InstrumentID, market.TradableInstrument, market.DecimalPlaces,
+	defer metrics.StartSQLQuery("Markets", "Upsert")()
+	if _, err := m.Connection.Exec(ctx, query, market.ID, market.VegaTime, market.InstrumentID, market.TradableInstrument, market.DecimalPlaces,
 		market.Fees, market.OpeningAuction, market.PriceMonitoringSettings, market.LiquidityMonitoringParameters,
 		market.TradingMode, market.State, market.MarketTimestamps, market.PositionDecimalPlaces); err != nil {
 		err = fmt.Errorf("could not insert market into database: %w", err)
 		return err
 	}
 
+	m.cache[market.ID.String()] = *market
 	return nil
 }
 
 func (m *Markets) GetByID(ctx context.Context, marketID string) (entities.Market, error) {
+	m.cacheLock.Lock()
+	defer m.cacheLock.Unlock()
+
 	var market entities.Market
+
+	if market, ok := m.cache[marketID]; ok {
+		return market, nil
+	}
 
 	query := fmt.Sprintf(`select distinct on (id) %s 
 from markets 
 where id = $1
 order by id, vega_time desc
 `, sqlMarketsColumns)
-	err := pgxscan.Get(ctx, m.pool, &market, query, entities.NewMarketID(marketID))
+	defer metrics.StartSQLQuery("Markets", "GetByID")()
+	err := pgxscan.Get(ctx, m.Connection, &market, query, entities.NewMarketID(marketID))
+
+	if err == nil {
+		m.cache[marketID] = market
+	}
 
 	return market, err
 }
@@ -76,7 +95,8 @@ order by id, vega_time desc
 
 	query, _ = orderAndPaginateQuery(query, nil, pagination)
 
-	err := pgxscan.Select(ctx, m.pool, &markets, query)
+	defer metrics.StartSQLQuery("Markets", "GetAll")()
+	err := pgxscan.Select(ctx, m.Connection, &markets, query)
 
 	return markets, err
 }

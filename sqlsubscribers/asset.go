@@ -1,6 +1,7 @@
 package sqlsubscribers
 
 import (
+	"context"
 	"math"
 	"strconv"
 	"time"
@@ -20,7 +21,7 @@ type AssetEvent interface {
 }
 
 type AssetStore interface {
-	Add(entities.Asset) error
+	Add(context.Context, entities.Asset) error
 }
 
 type Asset struct {
@@ -40,12 +41,12 @@ func (a *Asset) Types() []events.Type {
 	return []events.Type{events.AssetEvent}
 }
 
-func (as *Asset) Push(evt events.Event) error {
+func (as *Asset) Push(ctx context.Context, evt events.Event) error {
 	switch e := evt.(type) {
 	case TimeUpdateEvent:
 		as.vegaTime = e.Time()
 	case AssetEvent:
-		return as.consume(e)
+		return as.consume(ctx, e)
 	default:
 		return errors.Errorf("unknown event type %s", e.Type().String())
 	}
@@ -53,8 +54,8 @@ func (as *Asset) Push(evt events.Event) error {
 	return nil
 }
 
-func (as *Asset) consume(ae AssetEvent) error {
-	err := as.addAsset(ae.Asset(), as.vegaTime)
+func (as *Asset) consume(ctx context.Context, ae AssetEvent) error {
+	err := as.addAsset(ctx, ae.Asset(), as.vegaTime)
 	if err != nil {
 		return errors.WithStack(err)
 	}
@@ -62,7 +63,7 @@ func (as *Asset) consume(ae AssetEvent) error {
 	return nil
 }
 
-func (as *Asset) addAsset(va vega.Asset, vegaTime time.Time) error {
+func (as *Asset) addAsset(ctx context.Context, va vega.Asset, vegaTime time.Time) error {
 	totalSupply, err := decimal.NewFromString(va.Details.TotalSupply)
 	if err != nil {
 		return errors.Errorf("bad total supply '%v'", va.Details.TotalSupply)
@@ -102,5 +103,5 @@ func (as *Asset) addAsset(va vega.Asset, vegaTime time.Time) error {
 		VegaTime:      vegaTime,
 	}
 
-	return errors.WithStack(as.store.Add(asset))
+	return errors.WithStack(as.store.Add(ctx, asset))
 }

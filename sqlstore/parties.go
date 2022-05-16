@@ -7,6 +7,7 @@ import (
 	"github.com/pkg/errors"
 
 	"code.vegaprotocol.io/data-node/entities"
+	"code.vegaprotocol.io/data-node/metrics"
 	"github.com/georgysavva/scany/pgxscan"
 )
 
@@ -14,12 +15,12 @@ var ErrPartyNotFound = errors.New("party not found")
 var ErrInvalidPartyID = errors.New("invalid hex id")
 
 type Parties struct {
-	*SQLStore
+	*ConnectionSource
 }
 
-func NewParties(sqlStore *SQLStore) *Parties {
+func NewParties(connectionSource *ConnectionSource) *Parties {
 	ps := &Parties{
-		SQLStore: sqlStore,
+		ConnectionSource: connectionSource,
 	}
 	return ps
 }
@@ -27,7 +28,8 @@ func NewParties(sqlStore *SQLStore) *Parties {
 // Initialise adds the built-in 'network' party which is never explicitly sent on the event
 // bus, but nonetheless is necessary.
 func (ps *Parties) Initialise() {
-	_, err := ps.pool.Exec(context.Background(),
+	defer metrics.StartSQLQuery("Parties", "Initialise")()
+	_, err := ps.Connection.Exec(context.Background(),
 		`INSERT INTO parties(id) VALUES ($1) ON CONFLICT (id) DO NOTHING`,
 		entities.NewPartyID("network"))
 	if err != nil {
@@ -36,7 +38,8 @@ func (ps *Parties) Initialise() {
 }
 
 func (ps *Parties) Add(ctx context.Context, p entities.Party) error {
-	_, err := ps.pool.Exec(ctx,
+	defer metrics.StartSQLQuery("Parties", "Add")()
+	_, err := ps.Connection.Exec(ctx,
 		`INSERT INTO parties(id, vega_time)
 		 VALUES ($1, $2)
 		 ON CONFLICT (id) DO NOTHING`,
@@ -47,7 +50,8 @@ func (ps *Parties) Add(ctx context.Context, p entities.Party) error {
 
 func (ps *Parties) GetByID(ctx context.Context, id string) (entities.Party, error) {
 	a := entities.Party{}
-	err := pgxscan.Get(ctx, ps.pool, &a,
+	defer metrics.StartSQLQuery("Parties", "GetByID")()
+	err := pgxscan.Get(ctx, ps.Connection, &a,
 		`SELECT id, vega_time
 		 FROM parties WHERE id=$1`,
 		entities.NewOrderID(id))
@@ -65,7 +69,8 @@ func (ps *Parties) GetByID(ctx context.Context, id string) (entities.Party, erro
 
 func (ps *Parties) GetAll(ctx context.Context) ([]entities.Party, error) {
 	parties := []entities.Party{}
-	err := pgxscan.Select(ctx, ps.pool, &parties, `
+	defer metrics.StartSQLQuery("Parties", "GetAll")()
+	err := pgxscan.Select(ctx, ps.Connection, &parties, `
 		SELECT id, vega_time
 		FROM parties`)
 	return parties, err

@@ -2,6 +2,7 @@ package subscribers
 
 import (
 	"context"
+	"sync"
 
 	"code.vegaprotocol.io/data-node/logging"
 	types "code.vegaprotocol.io/protos/vega"
@@ -34,23 +35,27 @@ type NodeStore interface {
 	AddNode(types.Node)
 	AddDelegation(types.Delegation)
 	GetAllIDs() []string
+	GetByID(id, epochID string) (*vegapb.Node, error)
 	AddNodeRewardScore(nodeID, epochID string, scoreData vegapb.RewardScore)
-	AddNodeRankingScore(nodeID, epochID string, scoreData vegapb.RankingScore)
+	AddNodeRankingScore(nodeID, epochID string, scoreData vegapb.RankingScore) error
 	PublickKeyChanged(nodeID, oldPubKey string, newPubKey string, blockHeight uint64)
 }
 
 type NodesSub struct {
 	*Base
-	nodeStore NodeStore
+	nodeStore           NodeStore
+	orphanRankingEvents map[string]eventspb.ValidatorRankingEvent
+	mu                  sync.Mutex
 
 	log *logging.Logger
 }
 
 func NewNodesSub(ctx context.Context, nodeStore NodeStore, log *logging.Logger, ack bool) *NodesSub {
 	sub := &NodesSub{
-		Base:      NewBase(ctx, 10, ack),
-		nodeStore: nodeStore,
-		log:       log,
+		Base:                NewBase(ctx, 10, ack),
+		nodeStore:           nodeStore,
+		log:                 log,
+		orphanRankingEvents: map[string]eventspb.ValidatorRankingEvent{},
 	}
 
 	if sub.isRunning() {
@@ -87,16 +92,29 @@ func validatorStatusToProto(vStatus string) vegapb.ValidatorNodeStatus {
 	}
 }
 
+func (ns *NodesSub) addNodeRankingScore(vre eventspb.ValidatorRankingEvent) error {
+	ranking := vegapb.RankingScore{
+		StakeScore:       vre.GetStakeScore(),
+		PerformanceScore: vre.GetPerformanceScore(),
+		PreviousStatus:   validatorStatusToProto(vre.PreviousStatus),
+		Status:           validatorStatusToProto(vre.NextStatus),
+		RankingScore:     vre.GetRankingScore(),
+		VotingPower:      vre.GetTmVotingPower(),
+	}
+
+	return ns.nodeStore.AddNodeRankingScore(vre.GetNodeId(), vre.GetEpochSeq(), ranking)
+}
+
 func (ns *NodesSub) Push(evts ...events.Event) {
 	if len(evts) == 0 {
 		return
 	}
-
+	ns.mu.Lock()
+	defer ns.mu.Unlock()
 	for _, e := range evts {
 		switch et := e.(type) {
 		case ValidatorUpdateEvent:
 			vue := et.Proto()
-
 			ns.nodeStore.AddNode(types.Node{
 				Id:               vue.GetNodeId(),
 				PubKey:           vue.GetVegaPubKey(),
@@ -108,6 +126,13 @@ func (ns *NodesSub) Push(evts ...events.Event) {
 				Name:             vue.GetName(),
 				AvatarUrl:        vue.GetAvatarUrl(),
 			})
+
+			// check if there are any orphaned ranking events that we can send now
+			if vre, ok := ns.orphanRankingEvents[vue.GetNodeId()]; ok {
+				ns.addNodeRankingScore(vre)
+				delete(ns.orphanRankingEvents, vue.GetNodeId())
+			}
+
 		case ValidatorScoreEvent:
 			vse := et.Proto()
 			scores := vegapb.RewardScore{
@@ -122,17 +147,12 @@ func (ns *NodesSub) Push(evts ...events.Event) {
 
 		case ValidatorRankingEvent:
 			vre := et.Proto()
-			ranking := vegapb.RankingScore{
-				StakeScore:       vre.GetStakeScore(),
-				PerformanceScore: vre.GetPerformanceScore(),
-				PreviousStatus:   validatorStatusToProto(vre.PreviousStatus),
-				Status:           validatorStatusToProto(vre.NextStatus),
-				RankingScore:     vre.GetRankingScore(),
-				VotingPower:      vre.GetTmVotingPower(),
+			nodeID := vre.GetNodeId()
+
+			if err := ns.addNodeRankingScore(vre); err != nil {
+				ns.log.Info("ranking event received before node was added -- try again later", logging.String("nodeID", nodeID))
+				ns.orphanRankingEvents[vre.GetNodeId()] = vre // we'll try to add it in a bit
 			}
-
-			ns.nodeStore.AddNodeRankingScore(vre.GetNodeId(), vre.GetEpochSeq(), ranking)
-
 		case KeyRotationEvent:
 			kre := et.Proto()
 

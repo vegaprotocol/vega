@@ -49,6 +49,20 @@ func (mr *MockPositionStoreMockRecorder) Add(arg0, arg1 interface{}) *gomock.Cal
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Add", reflect.TypeOf((*MockPositionStore)(nil).Add), arg0, arg1)
 }
 
+// Flush mocks base method.
+func (m *MockPositionStore) Flush(arg0 context.Context) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Flush", arg0)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Flush indicates an expected call of Flush.
+func (mr *MockPositionStoreMockRecorder) Flush(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Flush", reflect.TypeOf((*MockPositionStore)(nil).Flush), arg0)
+}
+
 // GetByMarket mocks base method.
 func (m *MockPositionStore) GetByMarket(arg0 context.Context, arg1 entities.MarketID) ([]entities.Position, error) {
 	m.ctrl.T.Helper()

@@ -194,7 +194,7 @@ func getTestGRPCServer(
 	candleService := candles.NewService(logger, conf.Candles, candleStore)
 	marketDataStore := storage.NewMarketData(logger, conf.Storage)
 
-	marketDepth := subscribers.NewMarketDepthBuilder(ctx, logger, true)
+	marketDepth := subscribers.NewMarketDepthBuilder(ctx, logger, nil, false, true)
 	if marketDepth == nil {
 		return
 	}
@@ -272,7 +272,7 @@ func getTestGRPCServer(
 
 	stakingService := staking.NewService(ctx, logger)
 
-	sqlStore := sqlstore.SQLStore{}
+	sqlStore := sqlstore.ConnectionSource{}
 	sqlBalanceStore := sqlstore.NewBalances(&sqlStore)
 	sqlOrderStore := sqlstore.NewOrders(&sqlStore)
 	sqlNetworkLimitsStore := sqlstore.NewNetworkLimits(&sqlStore)
@@ -308,6 +308,7 @@ func getTestGRPCServer(
 	sqlTransferStore := sqlstore.NewTransfers(&sqlStore)
 	sqlStakeLinkingStore := sqlstore.NewStakeLinking(&sqlStore)
 	sqlNotaryStore := sqlstore.NewNotary(&sqlStore)
+	sqlMultiSigSignerEventStore := sqlstore.NewERC20MultiSigSignerEvent(&sqlStore)
 
 	g := api.NewGRPCServer(
 		logger,
@@ -369,6 +370,7 @@ func getTestGRPCServer(
 		sqlTransferStore,
 		sqlStakeLinkingStore,
 		sqlNotaryStore,
+		sqlMultiSigSignerEventStore,
 	)
 	if g == nil {
 		err = fmt.Errorf("failed to create gRPC server")

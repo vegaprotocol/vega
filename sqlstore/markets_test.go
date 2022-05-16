@@ -22,7 +22,7 @@ func TestMarkets_Add(t *testing.T) {
 
 func shouldInsertAValidMarketRecord(t *testing.T) {
 	bs, md, config := setupMarketsTest(t)
-	connStr := connectionString(config)
+	connStr := config.ConnectionConfig.GetConnectionString()
 
 	testTimeout := time.Second * 10
 	ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
@@ -43,7 +43,7 @@ func shouldInsertAValidMarketRecord(t *testing.T) {
 	market, err := entities.NewMarketFromProto(marketProto, block.VegaTime)
 	require.NoError(t, err, "Converting market proto to database entity")
 
-	err = md.Upsert(market)
+	err = md.Upsert(context.Background(), market)
 	require.NoError(t, err, "Saving market entity to database")
 	err = conn.QueryRow(ctx, `select count(*) from markets`).Scan(&rowCount)
 	assert.NoError(t, err)
@@ -52,21 +52,20 @@ func shouldInsertAValidMarketRecord(t *testing.T) {
 
 func setupMarketsTest(t *testing.T) (*sqlstore.Blocks, *sqlstore.Markets, sqlstore.Config) {
 	t.Helper()
-	bs := sqlstore.NewBlocks(testStore)
-	md := sqlstore.NewMarkets(testStore)
+	bs := sqlstore.NewBlocks(connectionSource)
+	md := sqlstore.NewMarkets(connectionSource)
 
-	err := testStore.DeleteEverything()
-	require.NoError(t, err)
+	DeleteEverything()
 
 	config := sqlstore.NewDefaultConfig()
-	config.Port = testDBPort
+	config.ConnectionConfig.Port = testDBPort
 
 	return bs, md, config
 }
 
 func shouldUpdateAValidMarketRecord(t *testing.T) {
 	bs, md, config := setupMarketsTest(t)
-	connStr := connectionString(config)
+	connStr := config.ConnectionConfig.GetConnectionString()
 
 	testTimeout := time.Second * 10
 	ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
@@ -92,7 +91,7 @@ func shouldUpdateAValidMarketRecord(t *testing.T) {
 		market, err := entities.NewMarketFromProto(marketProto, block.VegaTime)
 		require.NoError(t, err, "Converting market proto to database entity")
 
-		err = md.Upsert(market)
+		err = md.Upsert(context.Background(), market)
 		require.NoError(t, err, "Saving market entity to database")
 
 		var got entities.Market
@@ -111,7 +110,7 @@ func shouldUpdateAValidMarketRecord(t *testing.T) {
 
 		require.NoError(t, err, "Converting market proto to database entity")
 
-		err = md.Upsert(market)
+		err = md.Upsert(context.Background(), market)
 		require.NoError(t, err, "Saving market entity to database")
 
 		var got entities.Market
@@ -131,7 +130,7 @@ func shouldUpdateAValidMarketRecord(t *testing.T) {
 		market, err := entities.NewMarketFromProto(newMarketProto, newBlock.VegaTime)
 		require.NoError(t, err, "Converting market proto to database entity")
 
-		err = md.Upsert(market)
+		err = md.Upsert(context.Background(), market)
 		require.NoError(t, err, "Saving market entity to database")
 
 		err = conn.QueryRow(ctx, `select count(*) from markets`).Scan(&rowCount)

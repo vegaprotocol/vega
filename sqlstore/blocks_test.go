@@ -1,6 +1,7 @@
 package sqlstore_test
 
 import (
+	"context"
 	"encoding/hex"
 	"testing"
 	"time"
@@ -27,14 +28,14 @@ func addTestBlockForTime(t *testing.T, bs *sqlstore.Blocks, vegaTime time.Time) 
 	}
 
 	// Add it to the database
-	err = bs.Add(block1)
+	err = bs.Add(context.Background(), block1)
 	assert.NoError(t, err)
 
 	return block1
 }
 
 func TestBlock(t *testing.T) {
-	bs := sqlstore.NewBlocks(testStore)
+	bs := sqlstore.NewBlocks(connectionSource)
 
 	// See how many we have right now (it's possible that other tests added some)
 	blocks, err := bs.GetAll()
@@ -44,7 +45,7 @@ func TestBlock(t *testing.T) {
 	block1 := addTestBlock(t, bs)
 
 	// Add it again, we should get a primary key violation
-	err = bs.Add(block1)
+	err = bs.Add(context.Background(), block1)
 	assert.Error(t, err)
 
 	// Query and check we've got back a block the same as the one we put in

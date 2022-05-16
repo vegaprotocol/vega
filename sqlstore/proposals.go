@@ -6,58 +6,75 @@ import (
 	"strings"
 
 	"code.vegaprotocol.io/data-node/entities"
+	"code.vegaprotocol.io/data-node/metrics"
 	"github.com/georgysavva/scany/pgxscan"
+	"github.com/pkg/errors"
 )
 
+var ErrProposalNotFound = errors.New("proposal not found")
+
 type Proposals struct {
-	*SQLStore
+	*ConnectionSource
 }
 
-func NewProposals(sqlStore *SQLStore) *Proposals {
+func NewProposals(connectionSource *ConnectionSource) *Proposals {
 	p := &Proposals{
-		SQLStore: sqlStore,
+		ConnectionSource: connectionSource,
 	}
 	return p
 }
 
 func (ps *Proposals) Add(ctx context.Context, r entities.Proposal) error {
-	_, err := ps.pool.Exec(ctx,
+	defer metrics.StartSQLQuery("Proposals", "Add")()
+	_, err := ps.Connection.Exec(ctx,
 		`INSERT INTO proposals(
 			id,
 			reference,
 			party_id,
 			state,
 			terms,
+			rationale,
 			reason,
 			error_details,
 			proposal_time,
 			vega_time)
-		 VALUES ($1,  $2,  $3,  $4,  $5,  $6, $7, $8, $9)
+		 VALUES ($1,  $2,  $3,  $4,  $5,  $6, $7, $8, $9, $10)
 		 ON CONFLICT (id, vega_time) DO UPDATE SET
 			reference = EXCLUDED.reference,
 			party_id = EXCLUDED.party_id,
 			state = EXCLUDED.state,
 			terms = EXCLUDED.terms,
+			rationale = EXCLUDED.rationale,
 			reason = EXCLUDED.reason,
 			error_details = EXCLUDED.error_details,
 			proposal_time = EXCLUDED.proposal_time
 			;
 		 `,
-		r.ID, r.Reference, r.PartyID, r.State, r.Terms, r.Reason, r.ErrorDetails, r.ProposalTime, r.VegaTime)
+		r.ID, r.Reference, r.PartyID, r.State, r.Terms, r.Rationale, r.Reason, r.ErrorDetails, r.ProposalTime, r.VegaTime)
 	return err
 }
 
 func (ps *Proposals) GetByID(ctx context.Context, id string) (entities.Proposal, error) {
+	defer metrics.StartSQLQuery("Proposals", "GetByID")()
 	var p entities.Proposal
 	query := `SELECT * FROM proposals_current WHERE id=$1`
-	err := pgxscan.Get(ctx, ps.pool, &p, query, entities.NewProposalID(id))
+	err := pgxscan.Get(ctx, ps.Connection, &p, query, entities.NewProposalID(id))
+	if pgxscan.NotFound(err) {
+		return p, fmt.Errorf("'%v': %w", id, ErrProposalNotFound)
+	}
+
 	return p, err
 }
 
 func (ps *Proposals) GetByReference(ctx context.Context, ref string) (entities.Proposal, error) {
+	defer metrics.StartSQLQuery("Proposals", "GetByReference")()
 	var p entities.Proposal
 	query := `SELECT * FROM proposals_current WHERE reference=$1 LIMIT 1`
-	err := pgxscan.Get(ctx, ps.pool, &p, query, ref)
+	err := pgxscan.Get(ctx, ps.Connection, &p, query, ref)
+	if pgxscan.NotFound(err) {
+		return p, fmt.Errorf("'%v': %w", ref, ErrProposalNotFound)
+	}
+
 	return p, err
 }
 
@@ -89,7 +106,8 @@ func (ps *Proposals) Get(ctx context.Context,
 	}
 
 	proposals := []entities.Proposal{}
-	err := pgxscan.Select(ctx, ps.pool, &proposals, query, args...)
+	defer metrics.StartSQLQuery("Proposals", "Get")()
+	err := pgxscan.Select(ctx, ps.Connection, &proposals, query, args...)
 	if err != nil {
 		return nil, fmt.Errorf("querying proposals: %w", err)
 	}

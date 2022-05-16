@@ -5,18 +5,19 @@ import (
 	"fmt"
 
 	"code.vegaprotocol.io/data-node/entities"
+	"code.vegaprotocol.io/data-node/metrics"
 	"github.com/georgysavva/scany/pgxscan"
 )
 
 type Balances struct {
-	*SQLStore
-	batcher Batcher[entities.BalanceKey, entities.Balance]
+	*ConnectionSource
+	batcher MapBatcher[entities.BalanceKey, entities.Balance]
 }
 
-func NewBalances(sqlStore *SQLStore) *Balances {
+func NewBalances(connectionSource *ConnectionSource) *Balances {
 	b := &Balances{
-		SQLStore: sqlStore,
-		batcher: NewBatcher[entities.BalanceKey, entities.Balance](
+		ConnectionSource: connectionSource,
+		batcher: NewMapBatcher[entities.BalanceKey, entities.Balance](
 			"balances",
 			entities.BalanceColumns),
 	}
@@ -24,7 +25,8 @@ func NewBalances(sqlStore *SQLStore) *Balances {
 }
 
 func (bs *Balances) Flush(ctx context.Context) error {
-	return bs.batcher.Flush(ctx, bs.pool)
+	defer metrics.StartSQLQuery("Balances", "Flush")()
+	return bs.batcher.Flush(ctx, bs.Connection)
 }
 
 // Add inserts a row to the balance table. If there's already a balance for this
@@ -93,7 +95,8 @@ func (bs *Balances) Query(filter entities.AccountFilter, groupBy []entities.Acco
 	}
 
 	query = fmt.Sprintf(query, assetsQuery, groups, groups, groups)
-	rows, err := bs.pool.Query(context.Background(), query, args...)
+	defer metrics.StartSQLQuery("Balances", "Query")()
+	rows, err := bs.Connection.Query(context.Background(), query, args...)
 	defer rows.Close()
 	if err != nil {
 		return nil, fmt.Errorf("querying balances: %w", err)

@@ -18,21 +18,32 @@ type MarginLevelsEvent interface {
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/margin_levels_mock.go -package mocks code.vegaprotocol.io/data-node/sqlsubscribers MarginLevelsStore
 type MarginLevelsStore interface {
-	Add(*entities.MarginLevels) error
-	OnTimeUpdateEvent(context.Context) error
+	Add(entities.MarginLevels) error
+	Flush(context.Context) error
 }
 
 type MarginLevels struct {
-	store    MarginLevelsStore
-	log      *logging.Logger
-	vegaTime time.Time
-	seqNum   uint64
+	store             MarginLevelsStore
+	accountSource     AccountSource
+	log               *logging.Logger
+	vegaTime          time.Time
+	eventDeduplicator *eventDeduplicator[int64, *vega.MarginLevels]
 }
 
-func NewMarginLevels(store MarginLevelsStore, log *logging.Logger) *MarginLevels {
+func NewMarginLevels(store MarginLevelsStore, accountSource AccountSource, log *logging.Logger) *MarginLevels {
 	return &MarginLevels{
-		store: store,
-		log:   log,
+		store:         store,
+		accountSource: accountSource,
+		log:           log,
+		eventDeduplicator: NewEventDeduplicator[int64, *vega.MarginLevels](func(ctx context.Context,
+			ml *vega.MarginLevels, vegaTime time.Time) (int64, error) {
+			a, err := entities.GetAccountFromMarginLevel(ctx, ml, accountSource, vegaTime)
+			if err != nil {
+				return 0, err
+			}
+
+			return a.ID, nil
+		}),
 	}
 }
 
@@ -40,33 +51,46 @@ func (ml *MarginLevels) Types() []events.Type {
 	return []events.Type{events.MarginLevelsEvent}
 }
 
-func (ml *MarginLevels) Push(evt events.Event) error {
+func (ml *MarginLevels) Push(ctx context.Context, evt events.Event) error {
 	switch e := evt.(type) {
 	case TimeUpdateEvent:
-		ml.vegaTime = e.Time()
-		err := ml.store.OnTimeUpdateEvent(e.Context())
+		err := ml.flush(ctx)
 		if err != nil {
-			ml.log.Error("inserting margin level events to Postgres failed", logging.Error(err))
+			return errors.Wrap(err, "flushing margin levels")
 		}
+		ml.vegaTime = e.Time()
+		return nil
 	case MarginLevelsEvent:
-		ml.seqNum = e.Sequence()
-		ml.consume(e)
+		return ml.consume(ctx, e)
 	default:
 		return errors.Errorf("unknown event type %s", e.Type().String())
 	}
-
-	return nil
 }
 
-func (ml *MarginLevels) consume(event MarginLevelsEvent) error {
-	marginLevels := event.MarginLevels()
-	record, err := entities.MarginLevelsFromProto(&marginLevels, ml.vegaTime)
-	if err != nil {
-		return errors.Wrap(err, "converting margin levels proto to database entity failed")
+func (ml *MarginLevels) flush(ctx context.Context) error {
+
+	updates := ml.eventDeduplicator.Flush()
+	for _, update := range updates {
+		entity, err := entities.MarginLevelsFromProto(ctx, update, ml.accountSource, ml.vegaTime)
+		if err != nil {
+			return errors.Wrap(err, "converting margin level to database entity failed")
+		}
+		err = ml.store.Add(entity)
+		if err != nil {
+			return errors.Wrap(err, "add margin level to store")
+		}
+
 	}
 
-	record.SyntheticTime = ml.vegaTime.Add(time.Duration(ml.seqNum) * time.Microsecond)
-	record.SeqNum = ml.seqNum
+	err := ml.store.Flush(ctx)
 
-	return errors.Wrap(ml.store.Add(record), "inserting margin levels to SQL store failed")
+	return errors.Wrap(err, "flushing margin levels")
+}
+
+func (ml *MarginLevels) consume(ctx context.Context, event MarginLevelsEvent) error {
+	marginLevel := event.MarginLevels()
+	marginLevel.Timestamp = 0
+	ml.eventDeduplicator.AddEvent(ctx, &marginLevel, ml.vegaTime)
+
+	return nil
 }

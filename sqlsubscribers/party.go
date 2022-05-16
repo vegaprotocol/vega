@@ -41,12 +41,12 @@ func (ps *Party) Types() []events.Type {
 	return []events.Type{events.PartyEvent}
 }
 
-func (ps *Party) Push(evt events.Event) error {
+func (ps *Party) Push(ctx context.Context, evt events.Event) error {
 	switch event := evt.(type) {
 	case TimeUpdateEvent:
 		ps.vegaTime = event.Time()
 	case PartyEvent:
-		return ps.consume(event)
+		return ps.consume(ctx, event)
 	default:
 		return errors.Errorf("unknown event type %s", event.Type().String())
 	}
@@ -54,11 +54,11 @@ func (ps *Party) Push(evt events.Event) error {
 	return nil
 }
 
-func (ps *Party) consume(event PartyEvent) error {
+func (ps *Party) consume(ctx context.Context, event PartyEvent) error {
 	pp := event.Party()
 	p := entities.PartyFromProto(&pp)
 	vt := ps.vegaTime
 	p.VegaTime = &vt
 
-	return errors.Wrap(ps.store.Add(context.Background(), p), "error adding party:%w")
+	return errors.Wrap(ps.store.Add(ctx, p), "error adding party:%w")
 }

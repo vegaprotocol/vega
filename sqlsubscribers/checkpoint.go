@@ -41,12 +41,12 @@ func (n *Checkpoint) Types() []events.Type {
 	return []events.Type{events.CheckpointEvent}
 }
 
-func (n *Checkpoint) Push(evt events.Event) error {
+func (n *Checkpoint) Push(ctx context.Context, evt events.Event) error {
 	switch event := evt.(type) {
 	case TimeUpdateEvent:
 		n.vegaTime = event.Time()
 	case CheckpointEvent:
-		return n.consume(event)
+		return n.consume(ctx, event)
 	default:
 		return errors.Errorf("unknown event type %s", event.Type().String())
 	}
@@ -54,7 +54,7 @@ func (n *Checkpoint) Push(evt events.Event) error {
 	return nil
 }
 
-func (n *Checkpoint) consume(event CheckpointEvent) error {
+func (n *Checkpoint) consume(ctx context.Context, event CheckpointEvent) error {
 	pnp := event.Proto()
 	np, err := entities.CheckpointFromProto(&pnp)
 	if err != nil {
@@ -62,7 +62,7 @@ func (n *Checkpoint) consume(event CheckpointEvent) error {
 	}
 	np.VegaTime = n.vegaTime
 
-	if err := n.store.Add(context.Background(), np); err != nil {
+	if err := n.store.Add(ctx, np); err != nil {
 		return errors.Wrap(err, "error adding checkpoint")
 	}
 

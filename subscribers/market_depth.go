@@ -6,7 +6,9 @@ import (
 	"fmt"
 	"sort"
 	"sync"
+	"time"
 
+	"code.vegaprotocol.io/data-node/entities"
 	"code.vegaprotocol.io/data-node/logging"
 	ptypes "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/events"
@@ -43,6 +45,11 @@ type MarketDepth struct {
 	sequenceNumber uint64
 }
 
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/market_depth_mock.go -package mocks code.vegaprotocol.io/data-node/subscribers SqlOrderStore
+type SqlOrderStore interface {
+	GetLiveOrders(ctx context.Context) ([]entities.Order, error)
+}
+
 // MarketDepthBuilder is a subscriber of order events
 // used to build the live market depth structure
 type MarketDepthBuilder struct {
@@ -55,22 +62,53 @@ type MarketDepthBuilder struct {
 	// Map of subscriberIds to their channels
 	subscribers map[uint64]chan<- *types.MarketDepthUpdate
 	// Logger
-	log *logging.Logger
+	log            *logging.Logger
+	orderStore     SqlOrderStore
+	vegaTime       time.Time
+	sequenceNumber uint64
 }
 
 // NewMarketDepthBuilder constructor to create a market depth subscriber
-func NewMarketDepthBuilder(ctx context.Context, log *logging.Logger, ack bool) *MarketDepthBuilder {
+func NewMarketDepthBuilder(ctx context.Context, log *logging.Logger, orderStore SqlOrderStore,
+	sqlStoreEnabled, ack bool) *MarketDepthBuilder {
 	mdb := MarketDepthBuilder{
 		Base:         NewBase(ctx, 10, ack),
 		log:          log,
 		marketDepths: map[string]*MarketDepth{},
 		subscribers:  map[uint64]chan<- *types.MarketDepthUpdate{},
+		orderStore:   orderStore,
+	}
+
+	if sqlStoreEnabled && orderStore != nil {
+		if err := initMarketDepths(ctx, &mdb); err != nil {
+			panic(fmt.Errorf("could not initialize market depths from SQL store: %w", err))
+		}
 	}
 
 	if mdb.isRunning() {
 		go mdb.loop(mdb.ctx)
 	}
+
 	return &mdb
+}
+
+func initMarketDepths(ctx context.Context, mdb *MarketDepthBuilder) error {
+	liveOrders, err := mdb.orderStore.GetLiveOrders(ctx)
+	if err != nil {
+		return err
+	}
+
+	// process the live orders and initialize market depths from database data
+	for _, liveOrder := range liveOrders {
+		order, err := types.OrderFromProto(liveOrder.ToProto())
+		if err != nil {
+			panic(err)
+		}
+		mdb.vegaTime = liveOrder.VegaTime
+		mdb.updateMarketDepth(order, liveOrder.SeqNum)
+	}
+
+	return nil
 }
 
 func (mdb *MarketDepthBuilder) loop(ctx context.Context) {
@@ -87,16 +125,20 @@ func (mdb *MarketDepthBuilder) loop(ctx context.Context) {
 	}
 }
 
-// Push takes order messages and applied them to the makret depth structure
+// Push takes order messages and applied them to the market depth structure
 func (mdb *MarketDepthBuilder) Push(evts ...events.Event) {
 	for _, e := range evts {
 		switch et := e.(type) {
+		case TimeEvent:
+			mdb.mu.Lock()
+			mdb.vegaTime = et.Time()
+			mdb.mu.Unlock()
 		case OE:
 			order, err := types.OrderFromProto(et.Order())
 			if err != nil {
 				panic(err)
 			}
-			mdb.updateMarketDepth(order)
+			mdb.updateMarketDepth(order, et.Sequence())
 		default:
 			mdb.log.Panic("Unknown event type in market depth builder", logging.String("Type", et.Type().String()))
 		}
@@ -106,6 +148,7 @@ func (mdb *MarketDepthBuilder) Push(evts ...events.Event) {
 // Types returns all the message types this subscriber wants to receive
 func (mdb *MarketDepthBuilder) Types() []events.Type {
 	return []events.Type{
+		events.TimeUpdate,
 		events.OrderEvent,
 	}
 }
@@ -249,7 +292,7 @@ func (md *MarketDepth) removePriceLevel(order *types.Order) {
 	}
 }
 
-func (mdb *MarketDepthBuilder) updateMarketDepth(order *types.Order) {
+func (mdb *MarketDepthBuilder) updateMarketDepth(order *types.Order, sequenceNumber uint64) {
 	mdb.mu.Lock()
 	defer mdb.mu.Unlock()
 
@@ -265,13 +308,28 @@ func (mdb *MarketDepthBuilder) updateMarketDepth(order *types.Order) {
 		return
 	}
 
+	// we truncate the vegaTime by microsecond because Postgres only supports microsecond
+	// granularity for time. In order to be able to reproduce the same sequence numbers regardless
+	// the source, we have to truncate the time to microsecond granularity
+	seqNum := uint64(mdb.vegaTime.Truncate(time.Microsecond).UnixNano()) + sequenceNumber
+
+	if mdb.sequenceNumber > seqNum {
+		// This update is older than the current MarketDepth
+		return
+	}
+
+	mdb.sequenceNumber = seqNum
+
 	// See if we already have a MarketDepth item for this market
 	md := mdb.marketDepths[order.MarketID]
 	if md == nil {
 		// First time we have an update for this market
 		// so we need to create a new MarketDepth
-		md = &MarketDepth{marketID: order.MarketID,
-			liveOrders: map[string]*types.Order{}}
+		md = &MarketDepth{
+			marketID:   order.MarketID,
+			liveOrders: map[string]*types.Order{},
+		}
+		md.sequenceNumber = mdb.sequenceNumber
 		mdb.marketDepths[order.MarketID] = md
 	}
 
@@ -303,7 +361,8 @@ func (mdb *MarketDepthBuilder) updateMarketDepth(order *types.Order) {
 	if len(md.changes) == 0 {
 		return
 	}
-	md.sequenceNumber++
+
+	md.sequenceNumber = mdb.sequenceNumber
 
 	buyPtr := []*types.PriceLevel{}
 	sellPtr := []*types.PriceLevel{}
@@ -375,14 +434,16 @@ func (mdb *MarketDepthBuilder) GetMarketDepth(ctx context.Context, market string
 
 	// Copy the data across
 	for index, pl := range md.buySide[:buyLimit] {
-		buyPtr[index] = &types.PriceLevel{Volume: pl.totalVolume,
+		buyPtr[index] = &types.PriceLevel{
+			Volume:         pl.totalVolume,
 			NumberOfOrders: pl.totalOrders,
 			Price:          pl.price.Clone(),
 		}
 	}
 
 	for index, pl := range md.sellSide[:sellLimit] {
-		sellPtr[index] = &types.PriceLevel{Volume: pl.totalVolume,
+		sellPtr[index] = &types.PriceLevel{
+			Volume:         pl.totalVolume,
 			NumberOfOrders: pl.totalOrders,
 			Price:          pl.price.Clone(),
 		}

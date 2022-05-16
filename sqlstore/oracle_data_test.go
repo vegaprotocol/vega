@@ -20,14 +20,13 @@ func TestOracleData(t *testing.T) {
 
 func setupOracleDataTest(t *testing.T, ctx context.Context) (*sqlstore.Blocks, *sqlstore.OracleData, *pgx.Conn) {
 	t.Helper()
-	err := testStore.DeleteEverything()
-	require.NoError(t, err)
+	DeleteEverything()
 
-	bs := sqlstore.NewBlocks(testStore)
-	od := sqlstore.NewOracleData(testStore)
+	bs := sqlstore.NewBlocks(connectionSource)
+	od := sqlstore.NewOracleData(connectionSource)
 
 	config := NewTestConfig(testDBPort)
-	conn, err := pgx.Connect(ctx, connectionString(config))
+	conn, err := pgx.Connect(ctx, config.ConnectionConfig.GetConnectionString())
 	require.NoError(t, err)
 
 	return bs, od, conn
@@ -50,7 +49,7 @@ func testAddOracleData(t *testing.T) {
 	for _, proto := range dataProtos {
 		data, err := entities.OracleDataFromProto(proto, block.VegaTime)
 		require.NoError(t, err)
-		assert.NoError(t, od.Add(data))
+		assert.NoError(t, od.Add(context.Background(), data))
 	}
 
 	assert.NoError(t, conn.QueryRow(ctx, "select count(*) from oracle_data").Scan(&rowCount))
@@ -75,7 +74,7 @@ func testGetOracleDataBySpecID(t *testing.T) {
 	for _, proto := range dataProtos {
 		data, err := entities.OracleDataFromProto(proto, block.VegaTime)
 		require.NoError(t, err)
-		err = od.Add(data)
+		err = od.Add(context.Background(), data)
 		require.NoError(t, err)
 	}
 

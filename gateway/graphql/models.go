@@ -95,6 +95,15 @@ type DiscreteTrading struct {
 	TickSize string `json:"tickSize"`
 }
 
+type DispatchStrategy struct {
+	// What to contribution is measured
+	DispatchMetric DispatchMetric `json:"dispatchMetric"`
+	// The asset to use for measuring contibution to the metric
+	DispatchMetricAssetID string `json:"dispatchMetricAssetId"`
+	// Scope the dispatch to this markets only under the metric asset
+	MarketIdsInScope []string `json:"marketIdsInScope"`
+}
+
 // An asset originated from an Ethereum ERC20 Token
 type Erc20 struct {
 	// The address of the erc20 contract
@@ -225,6 +234,16 @@ type OrderEstimate struct {
 	TotalFeeAmount string `json:"totalFeeAmount"`
 	// The margin requirement for this order
 	MarginLevels *vega.MarginLevels `json:"marginLevels"`
+}
+
+type Pagination struct {
+	// Skip the number of records specified, default is 0
+	Skip int `json:"skip"`
+	// Limit the number of returned records to the value specified, default is 50
+	Limit int `json:"limit"`
+	// Descending reverses the order of the records returned
+	// default is true, if false the results will be returned in ascending order
+	Descending bool `json:"descending"`
 }
 
 type PositionResolution struct {
@@ -657,6 +676,51 @@ func (e *DepositStatus) UnmarshalGQL(v interface{}) error {
 }
 
 func (e DepositStatus) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type DispatchMetric string
+
+const (
+	DispatchMetricMarketTradingValue DispatchMetric = "MarketTradingValue"
+	DispatchMetricMakerFeesReceived  DispatchMetric = "MakerFeesReceived"
+	DispatchMetricTakerFeesPaid      DispatchMetric = "TakerFeesPaid"
+	DispatchMetricLPFeesReceived     DispatchMetric = "LPFeesReceived"
+)
+
+var AllDispatchMetric = []DispatchMetric{
+	DispatchMetricMarketTradingValue,
+	DispatchMetricMakerFeesReceived,
+	DispatchMetricTakerFeesPaid,
+	DispatchMetricLPFeesReceived,
+}
+
+func (e DispatchMetric) IsValid() bool {
+	switch e {
+	case DispatchMetricMarketTradingValue, DispatchMetricMakerFeesReceived, DispatchMetricTakerFeesPaid, DispatchMetricLPFeesReceived:
+		return true
+	}
+	return false
+}
+
+func (e DispatchMetric) String() string {
+	return string(e)
+}
+
+func (e *DispatchMetric) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = DispatchMetric(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid DispatchMetric", str)
+	}
+	return nil
+}
+
+func (e DispatchMetric) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 

@@ -25,15 +25,14 @@ func TestDeposits(t *testing.T) {
 
 func setupDepositStoreTests(t *testing.T, ctx context.Context) (*sqlstore.Blocks, *sqlstore.Deposits, *pgx.Conn) {
 	t.Helper()
-	err := testStore.DeleteEverything()
-	require.NoError(t, err)
+	DeleteEverything()
 
-	bs := sqlstore.NewBlocks(testStore)
-	ds := sqlstore.NewDeposits(testStore)
+	bs := sqlstore.NewBlocks(connectionSource)
+	ds := sqlstore.NewDeposits(connectionSource)
 
 	config := NewTestConfig(testDBPort)
 
-	conn, err := pgx.Connect(ctx, connectionString(config))
+	conn, err := pgx.Connect(ctx, config.ConnectionConfig.GetConnectionString())
 	require.NoError(t, err)
 
 	return bs, ds, conn
@@ -58,7 +57,7 @@ func testAddDepositForNewBlock(t *testing.T) {
 	deposit, err := entities.DepositFromProto(depositProto, block.VegaTime)
 	require.NoError(t, err, "Converting market proto to database entity")
 
-	err = ds.Upsert(deposit)
+	err = ds.Upsert(context.Background(), deposit)
 	require.NoError(t, err)
 	err = conn.QueryRow(ctx, `select count(*) from deposits`).Scan(&rowCount)
 	assert.NoError(t, err)
@@ -84,7 +83,7 @@ func testErrorIfBlockDoesNotExist(t *testing.T) {
 	deposit, err := entities.DepositFromProto(depositProto, block.VegaTime.Add(time.Second))
 	require.NoError(t, err, "Converting market proto to database entity")
 
-	err = ds.Upsert(deposit)
+	err = ds.Upsert(context.Background(), deposit)
 	require.Error(t, err, "Should error if the block does not exist")
 }
 
@@ -107,7 +106,7 @@ func testUpdateDepositForBlockIfExists(t *testing.T) {
 	deposit, err := entities.DepositFromProto(depositProto, block.VegaTime)
 	require.NoError(t, err, "Converting market proto to database entity")
 
-	err = ds.Upsert(deposit)
+	err = ds.Upsert(context.Background(), deposit)
 	require.NoError(t, err)
 	err = conn.QueryRow(ctx, `select count(*) from deposits`).Scan(&rowCount)
 	assert.NoError(t, err)
@@ -115,7 +114,7 @@ func testUpdateDepositForBlockIfExists(t *testing.T) {
 
 	deposit.Status = entities.DepositStatus(vega.Deposit_STATUS_FINALIZED)
 
-	err = ds.Upsert(deposit)
+	err = ds.Upsert(context.Background(), deposit)
 	require.NoError(t, err)
 	err = conn.QueryRow(ctx, `select count(*) from deposits`).Scan(&rowCount)
 	assert.NoError(t, err)
@@ -146,7 +145,7 @@ func testInsertDepositUpdatesIfNewBlock(t *testing.T) {
 	deposit, err := entities.DepositFromProto(depositProto, block.VegaTime)
 	require.NoError(t, err, "Converting market proto to database entity")
 
-	err = ds.Upsert(deposit)
+	err = ds.Upsert(context.Background(), deposit)
 	require.NoError(t, err)
 	err = conn.QueryRow(ctx, `select count(*) from deposits`).Scan(&rowCount)
 	assert.NoError(t, err)
@@ -159,7 +158,7 @@ func testInsertDepositUpdatesIfNewBlock(t *testing.T) {
 	deposit, err = entities.DepositFromProto(depositProto, block.VegaTime)
 	require.NoError(t, err, "Converting market proto to database entity")
 
-	err = ds.Upsert(deposit)
+	err = ds.Upsert(context.Background(), deposit)
 	require.NoError(t, err)
 	err = conn.QueryRow(ctx, `select count(*) from deposits`).Scan(&rowCount)
 	assert.NoError(t, err)
@@ -190,7 +189,7 @@ func testDepositsGetByID(t *testing.T) {
 	deposit, err := entities.DepositFromProto(depositProto, block.VegaTime)
 	require.NoError(t, err, "Converting market proto to database entity")
 
-	err = ds.Upsert(deposit)
+	err = ds.Upsert(context.Background(), deposit)
 	require.NoError(t, err)
 	err = conn.QueryRow(ctx, `select count(*) from deposits`).Scan(&rowCount)
 	assert.NoError(t, err)
@@ -203,7 +202,7 @@ func testDepositsGetByID(t *testing.T) {
 	deposit, err = entities.DepositFromProto(depositProto, block.VegaTime)
 	require.NoError(t, err, "Converting market proto to database entity")
 
-	err = ds.Upsert(deposit)
+	err = ds.Upsert(context.Background(), deposit)
 	require.NoError(t, err)
 
 	got, err := ds.GetByID(ctx, depositProto.Id)
@@ -241,7 +240,7 @@ func testDepositsGetByParty(t *testing.T) {
 	deposit, err := entities.DepositFromProto(depositProto1, block.VegaTime)
 	require.NoError(t, err, "Converting market proto to database entity")
 
-	err = ds.Upsert(deposit)
+	err = ds.Upsert(context.Background(), deposit)
 	require.NoError(t, err)
 
 	time.Sleep(time.Millisecond * 500)
@@ -251,7 +250,7 @@ func testDepositsGetByParty(t *testing.T) {
 	deposit, err = entities.DepositFromProto(depositProto1, block.VegaTime)
 	require.NoError(t, err, "Converting market proto to database entity")
 
-	err = ds.Upsert(deposit)
+	err = ds.Upsert(context.Background(), deposit)
 	require.NoError(t, err)
 
 	deposit.CreatedTimestamp = deposit.CreatedTimestamp.Truncate(time.Microsecond)
@@ -265,7 +264,7 @@ func testDepositsGetByParty(t *testing.T) {
 	deposit, err = entities.DepositFromProto(depositProto2, block.VegaTime)
 	require.NoError(t, err, "Converting market proto to database entity")
 
-	err = ds.Upsert(deposit)
+	err = ds.Upsert(context.Background(), deposit)
 	require.NoError(t, err)
 
 	time.Sleep(time.Millisecond * 500)
@@ -275,7 +274,7 @@ func testDepositsGetByParty(t *testing.T) {
 	depositProto2.Status = vega.Deposit_STATUS_FINALIZED
 	require.NoError(t, err, "Converting market proto to database entity")
 
-	err = ds.Upsert(deposit)
+	err = ds.Upsert(context.Background(), deposit)
 	require.NoError(t, err)
 
 	deposit.CreatedTimestamp = deposit.CreatedTimestamp.Truncate(time.Microsecond)

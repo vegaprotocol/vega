@@ -17,7 +17,7 @@ type OrderEvent interface {
 }
 
 type OrderStore interface {
-	Add(context.Context, entities.Order) error
+	Add(entities.Order) error
 	Flush(ctx context.Context) error
 }
 
@@ -27,7 +27,7 @@ type Order struct {
 	vegaTime time.Time
 }
 
-func NewOrder(ctx context.Context, store OrderStore, blockStore BlockStore, log *logging.Logger) *Order {
+func NewOrder(store OrderStore, log *logging.Logger) *Order {
 	return &Order{
 		store: store,
 		log:   log,
@@ -38,26 +38,26 @@ func (os *Order) Types() []events.Type {
 	return []events.Type{events.OrderEvent}
 }
 
-func (os *Order) Push(evt events.Event) error {
+func (os *Order) Push(ctx context.Context, evt events.Event) error {
 	switch e := evt.(type) {
 	case TimeUpdateEvent:
 		os.vegaTime = e.Time()
-		return os.store.Flush(context.Background())
+		return os.store.Flush(ctx)
 	case OrderEvent:
-		return os.consume(e)
+		return os.consume(e, e.Sequence())
 	default:
 		return errors.Errorf("unknown event type %s", e.Type().String())
 	}
 }
 
-func (os *Order) consume(oe OrderEvent) error {
+func (os *Order) consume(oe OrderEvent, seqNum uint64) error {
 	protoOrder := oe.Order()
 
-	order, err := entities.OrderFromProto(protoOrder)
+	order, err := entities.OrderFromProto(protoOrder, seqNum)
 	if err != nil {
 		return errors.Wrap(err, "deserializing order")
 	}
 	order.VegaTime = os.vegaTime
 
-	return errors.Wrap(os.store.Add(context.Background(), order), "adding order to database")
+	return errors.Wrap(os.store.Add(order), "adding order to database")
 }

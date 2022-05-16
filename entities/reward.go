@@ -13,9 +13,11 @@ import (
 type Reward struct {
 	PartyID        PartyID
 	AssetID        AssetID
+	MarketID       MarketID
 	EpochID        int64
 	Amount         decimal.Decimal
 	PercentOfTotal float64
+	RewardType     string
 	VegaTime       time.Time
 }
 
@@ -32,6 +34,8 @@ func (r *Reward) ToProto() *vega.Reward {
 		Amount:            r.Amount.String(),
 		PercentageOfTotal: fmt.Sprintf("%v", r.PercentOfTotal),
 		ReceivedAt:        r.VegaTime.UnixNano(),
+		MarketId:          r.MarketID.String(),
+		RewardType:        r.RewardType,
 	}
 	return &protoReward
 }
@@ -61,6 +65,8 @@ func RewardFromProto(pr eventspb.RewardPayoutEvent) (Reward, error) {
 		Amount:         amount,
 		PercentOfTotal: percentOfTotal,
 		VegaTime:       time.Unix(0, pr.Timestamp),
+		MarketID:       NewMarketID(pr.Market),
+		RewardType:     pr.RewardType,
 	}
 
 	return reward, nil

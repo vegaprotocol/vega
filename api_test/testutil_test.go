@@ -129,7 +129,7 @@ func NewTestServer(t testing.TB, ctx context.Context, blocking bool) *TestServer
 
 	delegationStore := storage.NewDelegations(logger, conf.Storage)
 
-	marketDepth := subscribers.NewMarketDepthBuilder(ctx, logger, true)
+	marketDepth := subscribers.NewMarketDepthBuilder(ctx, logger, nil, false, true)
 
 	marketService := markets.NewService(logger, conf.Markets, marketStore, orderStore, marketDataStore, marketDepth)
 	newMarketSub := subscribers.NewMarketSub(ctx, marketStore, logger, true)
@@ -167,6 +167,7 @@ func NewTestServer(t testing.TB, ctx context.Context, blocking bool) *TestServer
 	nodesSub := subscribers.NewNodesSub(ctx, nodeStore, logger, true)
 
 	epochStore := storage.NewEpoch(logger, nodeStore, conf.Storage)
+	epochSub := subscribers.NewEpochUpdateSub(ctx, epochStore, logger, true)
 	delegationBalanceSub := subscribers.NewDelegationBalanceSub(ctx, nodeStore, epochStore, delegationStore, logger, true)
 
 	tradeService := trades.NewService(logger, conf.Trades, tradeStore, nil)
@@ -210,7 +211,7 @@ func NewTestServer(t testing.TB, ctx context.Context, blocking bool) *TestServer
 		t.Fatalf("failed to create chain info store: %v", err)
 	}
 
-	sqlStore := sqlstore.SQLStore{}
+	sqlStore := sqlstore.ConnectionSource{}
 	sqlBalanceStore := sqlstore.NewBalances(&sqlStore)
 	sqlMarketDataStore := sqlstore.NewMarketData(&sqlStore)
 
@@ -247,6 +248,7 @@ func NewTestServer(t testing.TB, ctx context.Context, blocking bool) *TestServer
 	sqlTransfersStore := sqlstore.NewTransfers(&sqlStore)
 	sqlStakeLinkingStore := sqlstore.NewStakeLinking(&sqlStore)
 	sqlNotaryStore := sqlstore.NewNotary(&sqlStore)
+	sqlMultiSigSignerEventStore := sqlstore.NewERC20MultiSigSignerEvent(&sqlStore)
 
 	eventSource, err := broker.NewEventSource(conf.Broker, logger)
 	if err != nil {
@@ -273,6 +275,7 @@ func NewTestServer(t testing.TB, ctx context.Context, blocking bool) *TestServer
 		delegationBalanceSub,
 		rewardsService,
 		nodesSub,
+		epochSub,
 	)
 
 	srv := api.NewGRPCServer(
@@ -335,6 +338,7 @@ func NewTestServer(t testing.TB, ctx context.Context, blocking bool) *TestServer
 		sqlTransfersStore,
 		sqlStakeLinkingStore,
 		sqlNotaryStore,
+		sqlMultiSigSignerEventStore,
 	)
 	if srv == nil {
 		t.Fatal("failed to create gRPC server")

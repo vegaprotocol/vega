@@ -5,24 +5,22 @@ import (
 	"fmt"
 
 	"code.vegaprotocol.io/data-node/entities"
+	"code.vegaprotocol.io/data-node/metrics"
 	"github.com/georgysavva/scany/pgxscan"
 )
 
 type Transfers struct {
-	*SQLStore
+	*ConnectionSource
 }
 
-func NewTransfers(sqlStore *SQLStore) *Transfers {
+func NewTransfers(connectionSource *ConnectionSource) *Transfers {
 	return &Transfers{
-		SQLStore: sqlStore,
+		ConnectionSource: connectionSource,
 	}
 }
 
-func (t *Transfers) Upsert(transfer *entities.Transfer) error {
-
-	ctx, cancel := context.WithTimeout(context.Background(), t.conf.Timeout.Duration)
-	defer cancel()
-
+func (t *Transfers) Upsert(ctx context.Context, transfer *entities.Transfer) error {
+	defer metrics.StartSQLQuery("Transfers", "Upsert")()
 	query := `insert into transfers(
 				id,
 				vega_time,
@@ -35,8 +33,13 @@ func (t *Transfers) Upsert(transfer *entities.Transfer) error {
 				transfer_type,
 				deliver_on,
 				start_epoch,
-				end_epoch,factor)
-					values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+				end_epoch,
+				factor,
+				dispatch_metric,
+				dispatch_metric_asset,
+				dispatch_markets			
+			)
+					values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
 					on conflict (id, vega_time) do update
 					set 
 				from_account_id=EXCLUDED.from_account_id,
@@ -49,12 +52,15 @@ func (t *Transfers) Upsert(transfer *entities.Transfer) error {
 				deliver_on=EXCLUDED.deliver_on,
 				start_epoch=EXCLUDED.start_epoch,
 				end_epoch=EXCLUDED.end_epoch,
-				factor=EXCLUDED.factor
+				factor=EXCLUDED.factor,
+				dispatch_metric=EXCLUDED.dispatch_metric,
+				dispatch_metric_asset=EXCLUDED.dispatch_metric_asset,
+				dispatch_markets=EXCLUDED.dispatch_markets
 				;`
 
-	if _, err := t.pool.Exec(ctx, query, transfer.ID, transfer.VegaTime, transfer.FromAccountId, transfer.ToAccountId,
+	if _, err := t.Connection.Exec(ctx, query, transfer.ID, transfer.VegaTime, transfer.FromAccountId, transfer.ToAccountId,
 		transfer.AssetId, transfer.Amount, transfer.Reference, transfer.Status, transfer.TransferType,
-		transfer.DeliverOn, transfer.StartEpoch, transfer.EndEpoch, transfer.Factor); err != nil {
+		transfer.DeliverOn, transfer.StartEpoch, transfer.EndEpoch, transfer.Factor, transfer.DispatchMetric, transfer.DispatchMetricAsset, transfer.DispatchMarkets); err != nil {
 		err = fmt.Errorf("could not insert transfer into database: %w", err)
 		return err
 	}
@@ -63,6 +69,7 @@ func (t *Transfers) Upsert(transfer *entities.Transfer) error {
 }
 
 func (t *Transfers) GetTransfersFromParty(ctx context.Context, partyId entities.PartyID) ([]*entities.Transfer, error) {
+	defer metrics.StartSQLQuery("Transfers", "GetTransfersFromParty")()
 	transfers, err := t.getTransfers(ctx,
 		"where transfers_current.from_account_id  in (select id from accounts where accounts.party_id=$1)", partyId)
 
@@ -74,6 +81,7 @@ func (t *Transfers) GetTransfersFromParty(ctx context.Context, partyId entities.
 }
 
 func (t *Transfers) GetTransfersToParty(ctx context.Context, partyId entities.PartyID) ([]*entities.Transfer, error) {
+	defer metrics.StartSQLQuery("Transfers", "GetTransfersToParty")()
 	transfers, err := t.getTransfers(ctx,
 		"where transfers_current.to_account_id  in (select id from accounts where accounts.party_id=$1)", partyId)
 
@@ -85,6 +93,7 @@ func (t *Transfers) GetTransfersToParty(ctx context.Context, partyId entities.Pa
 }
 
 func (t *Transfers) GetTransfersFromAccount(ctx context.Context, accountID int64) ([]*entities.Transfer, error) {
+	defer metrics.StartSQLQuery("Transfers", "GetTransfersFromAccount")()
 	transfers, err := t.getTransfers(ctx, "WHERE from_account_id = $1", accountID)
 
 	if err != nil {
@@ -95,6 +104,7 @@ func (t *Transfers) GetTransfersFromAccount(ctx context.Context, accountID int64
 }
 
 func (t *Transfers) GetTransfersToAccount(ctx context.Context, accountID int64) ([]*entities.Transfer, error) {
+	defer metrics.StartSQLQuery("Transfers", "GetTransfersToAccount")()
 	transfers, err := t.getTransfers(ctx, "WHERE to_account_id = $1", accountID)
 
 	if err != nil {
@@ -105,13 +115,14 @@ func (t *Transfers) GetTransfersToAccount(ctx context.Context, accountID int64) 
 }
 
 func (t *Transfers) GetAll(ctx context.Context) ([]*entities.Transfer, error) {
+	defer metrics.StartSQLQuery("Transfers", "GetAll")()
 	return t.getTransfers(ctx, "")
 }
 
 func (t *Transfers) getTransfers(ctx context.Context, where string, args ...interface{}) ([]*entities.Transfer, error) {
 	var transfers []*entities.Transfer
 	query := "select * from transfers_current " + where
-	err := pgxscan.Select(ctx, t.pool, &transfers, query, args...)
+	err := pgxscan.Select(ctx, t.Connection, &transfers, query, args...)
 	if err != nil {
 		return nil, fmt.Errorf("getting transfers:%w", err)
 	}

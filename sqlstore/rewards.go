@@ -5,37 +5,42 @@ import (
 	"fmt"
 
 	"code.vegaprotocol.io/data-node/entities"
+	"code.vegaprotocol.io/data-node/metrics"
 	"github.com/georgysavva/scany/pgxscan"
 )
 
 type Rewards struct {
-	*SQLStore
+	*ConnectionSource
 }
 
-func NewRewards(sqlStore *SQLStore) *Rewards {
+func NewRewards(connectionSource *ConnectionSource) *Rewards {
 	r := &Rewards{
-		SQLStore: sqlStore,
+		ConnectionSource: connectionSource,
 	}
 	return r
 }
 
 func (rs *Rewards) Add(ctx context.Context, r entities.Reward) error {
-	_, err := rs.pool.Exec(ctx,
+	defer metrics.StartSQLQuery("Rewards", "Add")()
+	_, err := rs.Connection.Exec(ctx,
 		`INSERT INTO rewards(
 			party_id,
 			asset_id,
+			market_id,
+			reward_type,
 			epoch_id,
 			amount,
 			percent_of_total,
 			vega_time)
-		 VALUES ($1,  $2,  $3,  $4,  $5,  $6);`,
-		r.PartyID, r.AssetID, r.EpochID, r.Amount, r.PercentOfTotal, r.VegaTime)
+		 VALUES ($1,  $2,  $3,  $4,  $5,  $6, $7, $8);`,
+		r.PartyID, r.AssetID, r.MarketID, r.RewardType, r.EpochID, r.Amount, r.PercentOfTotal, r.VegaTime)
 	return err
 }
 
 func (rs *Rewards) GetAll(ctx context.Context) ([]entities.Reward, error) {
+	defer metrics.StartSQLQuery("Rewards", "GetAll")()
 	rewards := []entities.Reward{}
-	err := pgxscan.Select(ctx, rs.pool, &rewards, `
+	err := pgxscan.Select(ctx, rs.Connection, &rewards, `
 		SELECT * from rewards;`)
 	return rewards, err
 }
@@ -57,7 +62,8 @@ func (rs *Rewards) Get(ctx context.Context,
 	}
 
 	rewards := []entities.Reward{}
-	err := pgxscan.Select(ctx, rs.pool, &rewards, query, args...)
+	defer metrics.StartSQLQuery("Rewards", "Get")()
+	err := pgxscan.Select(ctx, rs.Connection, &rewards, query, args...)
 	if err != nil {
 		return nil, fmt.Errorf("querying rewards: %w", err)
 	}
@@ -76,7 +82,8 @@ func (rs *Rewards) GetSummaries(ctx context.Context,
 	query = fmt.Sprintf("%s GROUP BY party_id, asset_id", query)
 
 	summaries := []entities.RewardSummary{}
-	err := pgxscan.Select(ctx, rs.pool, &summaries, query, args...)
+	defer metrics.StartSQLQuery("Rewards", "GetSummaries")()
+	err := pgxscan.Select(ctx, rs.Connection, &summaries, query, args...)
 	if err != nil {
 		return nil, fmt.Errorf("querying rewards: %w", err)
 	}

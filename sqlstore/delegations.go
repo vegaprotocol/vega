@@ -6,22 +6,24 @@ import (
 	"strings"
 
 	"code.vegaprotocol.io/data-node/entities"
+	"code.vegaprotocol.io/data-node/metrics"
 	"github.com/georgysavva/scany/pgxscan"
 )
 
 type Delegations struct {
-	*SQLStore
+	*ConnectionSource
 }
 
-func NewDelegations(sqlStore *SQLStore) *Delegations {
+func NewDelegations(connectionSource *ConnectionSource) *Delegations {
 	d := &Delegations{
-		SQLStore: sqlStore,
+		ConnectionSource: connectionSource,
 	}
 	return d
 }
 
 func (ds *Delegations) Add(ctx context.Context, d entities.Delegation) error {
-	_, err := ds.pool.Exec(ctx,
+	defer metrics.StartSQLQuery("Delegations", "Add")()
+	_, err := ds.Connection.Exec(ctx,
 		`INSERT INTO delegations(
 			party_id,
 			node_id,
@@ -34,8 +36,9 @@ func (ds *Delegations) Add(ctx context.Context, d entities.Delegation) error {
 }
 
 func (ds *Delegations) GetAll(ctx context.Context) ([]entities.Delegation, error) {
+	defer metrics.StartSQLQuery("Delegations", "GetAll")()
 	delegations := []entities.Delegation{}
-	err := pgxscan.Select(ctx, ds.pool, &delegations, `
+	err := pgxscan.Select(ctx, ds.Connection, &delegations, `
 		SELECT * from delegations;`)
 	return delegations, err
 }
@@ -74,8 +77,9 @@ func (ds *Delegations) Get(ctx context.Context,
 		query, args = orderAndPaginateQuery(query, order_cols, *p, args...)
 	}
 
+	defer metrics.StartSQLQuery("Delegations", "Get")()
 	delegations := []entities.Delegation{}
-	err := pgxscan.Select(ctx, ds.pool, &delegations, query, args...)
+	err := pgxscan.Select(ctx, ds.Connection, &delegations, query, args...)
 	if err != nil {
 		return nil, fmt.Errorf("querying delegations: %w", err)
 	}

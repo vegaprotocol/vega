@@ -5,17 +5,16 @@ import (
 	"fmt"
 
 	"github.com/jackc/pgx/v4"
-	"github.com/jackc/pgx/v4/pgxpool"
 )
 
-type Batcher[K entityKey, V entity[K]] struct {
+type MapBatcher[K entityKey, V entity[K]] struct {
 	pending     map[K]V
 	tableName   string
 	columnNames []string
 }
 
-func NewBatcher[K entityKey, V entity[K]](tableName string, columnNames []string) Batcher[K, V] {
-	return Batcher[K, V]{
+func NewMapBatcher[K entityKey, V entity[K]](tableName string, columnNames []string) MapBatcher[K, V] {
+	return MapBatcher[K, V]{
 		tableName:   tableName,
 		columnNames: columnNames,
 		pending:     make(map[K]V),
@@ -31,17 +30,21 @@ type entity[K entityKey] interface {
 	Key() K
 }
 
-func (b *Batcher[K, V]) Add(e V) {
+func (b *MapBatcher[K, V]) Add(e V) {
 	b.pending[e.Key()] = e
 }
 
-func (b *Batcher[K, V]) Flush(ctx context.Context, pool *pgxpool.Pool) error {
+func (b *MapBatcher[K, V]) Flush(ctx context.Context, connection Connection) error {
+	if len(b.pending) == 0 {
+		return nil
+	}
+
 	rows := make([][]interface{}, 0, len(b.pending))
 	for _, entity := range b.pending {
 		rows = append(rows, entity.ToRow())
 	}
 
-	copyCount, err := pool.CopyFrom(
+	copyCount, err := connection.CopyFrom(
 		ctx,
 		pgx.Identifier{b.tableName},
 		b.columnNames,
@@ -58,7 +61,9 @@ func (b *Batcher[K, V]) Flush(ctx context.Context, pool *pgxpool.Pool) error {
 			len(b.pending))
 	}
 
-	b.pending = make(map[K]V)
+	for k := range b.pending {
+		delete(b.pending, k)
+	}
 
 	return nil
 }

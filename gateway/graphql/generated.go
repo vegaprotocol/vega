@@ -74,6 +74,7 @@ type ResolverRoot interface {
 	NodeData() NodeDataResolver
 	NodeSignature() NodeSignatureResolver
 	OneOffTransfer() OneOffTransferResolver
+	OracleData() OracleDataResolver
 	OracleSpec() OracleSpecResolver
 	Order() OrderResolver
 	Party() PartyResolver
@@ -204,6 +205,12 @@ type ComplexityRoot struct {
 	DiscreteTrading struct {
 		Duration func(childComplexity int) int
 		TickSize func(childComplexity int) int
+	}
+
+	DispatchStrategy struct {
+		DispatchMetric        func(childComplexity int) int
+		DispatchMetricAssetID func(childComplexity int) int
+		MarketIdsInScope      func(childComplexity int) int
 	}
 
 	ERC20 struct {
@@ -507,9 +514,7 @@ type ComplexityRoot struct {
 	}
 
 	NewFreeform struct {
-		Description func(childComplexity int) int
-		Hash        func(childComplexity int) int
-		URL         func(childComplexity int) int
+		DoNotUse func(childComplexity int) int
 	}
 
 	NewMarket struct {
@@ -567,8 +572,10 @@ type ComplexityRoot struct {
 	}
 
 	OracleData struct {
-		Data    func(childComplexity int) int
-		PubKeys func(childComplexity int) int
+		BroadcastAt    func(childComplexity int) int
+		Data           func(childComplexity int) int
+		MatchedSpecIds func(childComplexity int) int
+		PubKeys        func(childComplexity int) int
 	}
 
 	OracleSpec struct {
@@ -709,11 +716,18 @@ type ComplexityRoot struct {
 		ErrorDetails    func(childComplexity int) int
 		ID              func(childComplexity int) int
 		Party           func(childComplexity int) int
+		Rationale       func(childComplexity int) int
 		Reference       func(childComplexity int) int
 		RejectionReason func(childComplexity int) int
 		State           func(childComplexity int) int
 		Terms           func(childComplexity int) int
 		Votes           func(childComplexity int) int
+	}
+
+	ProposalRationale struct {
+		Description func(childComplexity int) int
+		Hash        func(childComplexity int) int
+		Url         func(childComplexity int) int
 	}
 
 	ProposalTerms struct {
@@ -762,9 +776,10 @@ type ComplexityRoot struct {
 		NodeData                   func(childComplexity int) int
 		NodeSignatures             func(childComplexity int, resourceID string) int
 		Nodes                      func(childComplexity int) int
-		OracleDataBySpec           func(childComplexity int, oracleSpecID string) int
+		OracleData                 func(childComplexity int, pagination *Pagination) int
+		OracleDataBySpec           func(childComplexity int, oracleSpecID string, pagination *Pagination) int
 		OracleSpec                 func(childComplexity int, oracleSpecID string) int
-		OracleSpecs                func(childComplexity int) int
+		OracleSpecs                func(childComplexity int, pagination *Pagination) int
 		OrderByID                  func(childComplexity int, orderID string, version *int) int
 		OrderByReference           func(childComplexity int, reference string) int
 		OrderVersions              func(childComplexity int, orderID string, skip *int, first *int, last *int) int
@@ -788,18 +803,21 @@ type ComplexityRoot struct {
 	}
 
 	RecurringTransfer struct {
-		EndEpoch   func(childComplexity int) int
-		Factor     func(childComplexity int) int
-		StartEpoch func(childComplexity int) int
+		DispatchStrategy func(childComplexity int) int
+		EndEpoch         func(childComplexity int) int
+		Factor           func(childComplexity int) int
+		StartEpoch       func(childComplexity int) int
 	}
 
 	Reward struct {
 		Amount            func(childComplexity int) int
 		Asset             func(childComplexity int) int
 		Epoch             func(childComplexity int) int
+		MarketId          func(childComplexity int) int
 		Party             func(childComplexity int) int
 		PercentageOfTotal func(childComplexity int) int
 		ReceivedAt        func(childComplexity int) int
+		RewardType        func(childComplexity int) int
 	}
 
 	RewardPerAssetDetail struct {
@@ -1130,6 +1148,7 @@ type LiquidityProvisionResolver interface {
 	UpdatedAt(ctx context.Context, obj *vega.LiquidityProvision) (*string, error)
 	Market(ctx context.Context, obj *vega.LiquidityProvision) (*vega.Market, error)
 
+	Version(ctx context.Context, obj *vega.LiquidityProvision) (string, error)
 	Status(ctx context.Context, obj *vega.LiquidityProvision) (LiquidityProvisionStatus, error)
 }
 type MarginLevelsResolver interface {
@@ -1215,9 +1234,7 @@ type NewAssetResolver interface {
 	Source(ctx context.Context, obj *vega.NewAsset) (AssetSource, error)
 }
 type NewFreeformResolver interface {
-	URL(ctx context.Context, obj *vega.NewFreeform) (string, error)
-	Description(ctx context.Context, obj *vega.NewFreeform) (string, error)
-	Hash(ctx context.Context, obj *vega.NewFreeform) (string, error)
+	DoNotUse(ctx context.Context, obj *vega.NewFreeform) (*bool, error)
 }
 type NewMarketResolver interface {
 	Instrument(ctx context.Context, obj *vega.NewMarket) (*vega.InstrumentConfiguration, error)
@@ -1239,6 +1256,9 @@ type NodeSignatureResolver interface {
 }
 type OneOffTransferResolver interface {
 	DeliverOn(ctx context.Context, obj *v1.OneOffTransfer) (*string, error)
+}
+type OracleDataResolver interface {
+	BroadcastAt(ctx context.Context, obj *v11.OracleData) (string, error)
 }
 type OracleSpecResolver interface {
 	CreatedAt(ctx context.Context, obj *v11.OracleSpec) (string, error)
@@ -1310,6 +1330,7 @@ type ProposalResolver interface {
 	Party(ctx context.Context, obj *vega.GovernanceData) (*vega.Party, error)
 	State(ctx context.Context, obj *vega.GovernanceData) (ProposalState, error)
 	Datetime(ctx context.Context, obj *vega.GovernanceData) (string, error)
+	Rationale(ctx context.Context, obj *vega.GovernanceData) (*vega.ProposalRationale, error)
 	Terms(ctx context.Context, obj *vega.GovernanceData) (*vega.ProposalTerms, error)
 	Votes(ctx context.Context, obj *vega.GovernanceData) (*ProposalVotes, error)
 	RejectionReason(ctx context.Context, obj *vega.GovernanceData) (*ProposalRejectionReason, error)
@@ -1326,9 +1347,10 @@ type QueryResolver interface {
 	Parties(ctx context.Context, id *string) ([]*vega.Party, error)
 	Party(ctx context.Context, id string) (*vega.Party, error)
 	LastBlockHeight(ctx context.Context) (string, error)
-	OracleSpecs(ctx context.Context) ([]*v11.OracleSpec, error)
+	OracleSpecs(ctx context.Context, pagination *Pagination) ([]*v11.OracleSpec, error)
 	OracleSpec(ctx context.Context, oracleSpecID string) (*v11.OracleSpec, error)
-	OracleDataBySpec(ctx context.Context, oracleSpecID string) ([]*v11.OracleData, error)
+	OracleDataBySpec(ctx context.Context, oracleSpecID string, pagination *Pagination) ([]*v11.OracleData, error)
+	OracleData(ctx context.Context, pagination *Pagination) ([]*v11.OracleData, error)
 	OrderByID(ctx context.Context, orderID string, version *int) (*vega.Order, error)
 	OrderVersions(ctx context.Context, orderID string, skip *int, first *int, last *int) ([]*vega.Order, error)
 	OrderByReference(ctx context.Context, reference string) (*vega.Order, error)
@@ -1367,9 +1389,12 @@ type RankingScoreResolver interface {
 type RecurringTransferResolver interface {
 	StartEpoch(ctx context.Context, obj *v1.RecurringTransfer) (int, error)
 	EndEpoch(ctx context.Context, obj *v1.RecurringTransfer) (*int, error)
+
+	DispatchStrategy(ctx context.Context, obj *v1.RecurringTransfer) (*DispatchStrategy, error)
 }
 type RewardResolver interface {
 	Asset(ctx context.Context, obj *vega.Reward) (*vega.Asset, error)
+
 	Party(ctx context.Context, obj *vega.Reward) (*vega.Party, error)
 	Epoch(ctx context.Context, obj *vega.Reward) (*vega.Epoch, error)
 
@@ -1920,6 +1945,27 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.DiscreteTrading.TickSize(childComplexity), true
+
+	case "DispatchStrategy.dispatchMetric":
+		if e.complexity.DispatchStrategy.DispatchMetric == nil {
+			break
+		}
+
+		return e.complexity.DispatchStrategy.DispatchMetric(childComplexity), true
+
+	case "DispatchStrategy.dispatchMetricAssetId":
+		if e.complexity.DispatchStrategy.DispatchMetricAssetID == nil {
+			break
+		}
+
+		return e.complexity.DispatchStrategy.DispatchMetricAssetID(childComplexity), true
+
+	case "DispatchStrategy.marketIdsInScope":
+		if e.complexity.DispatchStrategy.MarketIdsInScope == nil {
+			break
+		}
+
+		return e.complexity.DispatchStrategy.MarketIdsInScope(childComplexity), true
 
 	case "ERC20.contractAddress":
 		if e.complexity.ERC20.ContractAddress == nil {
@@ -3237,26 +3283,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.NewAsset.TotalSupply(childComplexity), true
 
-	case "NewFreeform.description":
-		if e.complexity.NewFreeform.Description == nil {
+	case "NewFreeform._doNotUse":
+		if e.complexity.NewFreeform.DoNotUse == nil {
 			break
 		}
 
-		return e.complexity.NewFreeform.Description(childComplexity), true
-
-	case "NewFreeform.hash":
-		if e.complexity.NewFreeform.Hash == nil {
-			break
-		}
-
-		return e.complexity.NewFreeform.Hash(childComplexity), true
-
-	case "NewFreeform.url":
-		if e.complexity.NewFreeform.URL == nil {
-			break
-		}
-
-		return e.complexity.NewFreeform.URL(childComplexity), true
+		return e.complexity.NewFreeform.DoNotUse(childComplexity), true
 
 	case "NewMarket.commitment":
 		if e.complexity.NewMarket.Commitment == nil {
@@ -3515,12 +3547,26 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.OneOffTransfer.DeliverOn(childComplexity), true
 
+	case "OracleData.broadcastAt":
+		if e.complexity.OracleData.BroadcastAt == nil {
+			break
+		}
+
+		return e.complexity.OracleData.BroadcastAt(childComplexity), true
+
 	case "OracleData.data":
 		if e.complexity.OracleData.Data == nil {
 			break
 		}
 
 		return e.complexity.OracleData.Data(childComplexity), true
+
+	case "OracleData.matchedSpecIds":
+		if e.complexity.OracleData.MatchedSpecIds == nil {
+			break
+		}
+
+		return e.complexity.OracleData.MatchedSpecIds(childComplexity), true
 
 	case "OracleData.pubKeys":
 		if e.complexity.OracleData.PubKeys == nil {
@@ -4176,6 +4222,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Proposal.Party(childComplexity), true
 
+	case "Proposal.rationale":
+		if e.complexity.Proposal.Rationale == nil {
+			break
+		}
+
+		return e.complexity.Proposal.Rationale(childComplexity), true
+
 	case "Proposal.reference":
 		if e.complexity.Proposal.Reference == nil {
 			break
@@ -4210,6 +4263,27 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Proposal.Votes(childComplexity), true
+
+	case "ProposalRationale.description":
+		if e.complexity.ProposalRationale.Description == nil {
+			break
+		}
+
+		return e.complexity.ProposalRationale.Description(childComplexity), true
+
+	case "ProposalRationale.hash":
+		if e.complexity.ProposalRationale.Hash == nil {
+			break
+		}
+
+		return e.complexity.ProposalRationale.Hash(childComplexity), true
+
+	case "ProposalRationale.url":
+		if e.complexity.ProposalRationale.Url == nil {
+			break
+		}
+
+		return e.complexity.ProposalRationale.Url(childComplexity), true
 
 	case "ProposalTerms.change":
 		if e.complexity.ProposalTerms.Change == nil {
@@ -4522,6 +4596,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.Nodes(childComplexity), true
 
+	case "Query.oracleData":
+		if e.complexity.Query.OracleData == nil {
+			break
+		}
+
+		args, err := ec.field_Query_oracleData_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.OracleData(childComplexity, args["pagination"].(*Pagination)), true
+
 	case "Query.oracleDataBySpec":
 		if e.complexity.Query.OracleDataBySpec == nil {
 			break
@@ -4532,7 +4618,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.OracleDataBySpec(childComplexity, args["oracleSpecID"].(string)), true
+		return e.complexity.Query.OracleDataBySpec(childComplexity, args["oracleSpecID"].(string), args["pagination"].(*Pagination)), true
 
 	case "Query.oracleSpec":
 		if e.complexity.Query.OracleSpec == nil {
@@ -4551,7 +4637,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		return e.complexity.Query.OracleSpecs(childComplexity), true
+		args, err := ec.field_Query_oracleSpecs_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.OracleSpecs(childComplexity, args["pagination"].(*Pagination)), true
 
 	case "Query.orderByID":
 		if e.complexity.Query.OrderByID == nil {
@@ -4722,6 +4813,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.RankingScore.VotingPower(childComplexity), true
 
+	case "RecurringTransfer.dispatchStrategy":
+		if e.complexity.RecurringTransfer.DispatchStrategy == nil {
+			break
+		}
+
+		return e.complexity.RecurringTransfer.DispatchStrategy(childComplexity), true
+
 	case "RecurringTransfer.endEpoch":
 		if e.complexity.RecurringTransfer.EndEpoch == nil {
 			break
@@ -4764,6 +4862,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Reward.Epoch(childComplexity), true
 
+	case "Reward.marketID":
+		if e.complexity.Reward.MarketId == nil {
+			break
+		}
+
+		return e.complexity.Reward.MarketId(childComplexity), true
+
 	case "Reward.party":
 		if e.complexity.Reward.Party == nil {
 			break
@@ -4784,6 +4889,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Reward.ReceivedAt(childComplexity), true
+
+	case "Reward.rewardType":
+		if e.complexity.Reward.RewardType == nil {
+			break
+		}
+
+		return e.complexity.Reward.RewardType(childComplexity), true
 
 	case "RewardPerAssetDetail.asset":
 		if e.complexity.RewardPerAssetDetail.Asset == nil {
@@ -6271,13 +6383,27 @@ type Query {
   lastBlockHeight: String!
 
   "All registered oracle specs"
-  oracleSpecs: [OracleSpec!]
+  oracleSpecs(
+    "Pagination"
+    pagination: Pagination
+  ): [OracleSpec!]
 
   "An oracle spec for a given oracle spec ID"
   oracleSpec("ID for an oracle spec" oracleSpecID: String!): OracleSpec
 
   "All oracle data for a given oracle spec ID"
-  oracleDataBySpec("ID for an oracle spec" oracleSpecID: String!): [OracleData!]
+  oracleDataBySpec(
+    "ID for an oracle spec"
+    oracleSpecID: String!
+    "Pagination"
+    pagination: Pagination
+  ): [OracleData!]
+
+  "All registered oracle specs"
+  oracleData(
+    "Pagination"
+    pagination: Pagination
+  ): [OracleData!]
 
   "An order in the VEGA network found by orderID"
   orderByID(
@@ -6344,7 +6470,7 @@ type Query {
     inState: ProposalState
   ): [Proposal!]
 
-  "Governance proposals that aim to create new assets in Vega"
+  "Governance proposals that allows creation of free form proposals in Vega"
   newFreeformProposals(
     "Returns only proposals in the specified state. Leave out to get all proposals"
     inState: ProposalState
@@ -6425,7 +6551,7 @@ type Query {
   historicBalances(
     filter: AccountFilter,
     groupBy: [AccountField])
-    : [AggregatedBalance!]!
+  : [AggregatedBalance!]!
 
   "Current network limits"
   networkLimits: NetworkLimits
@@ -6520,6 +6646,30 @@ type RecurringTransfer {
   endEpoch: Int
   "The factor of the initial amount to be distributed"
   factor: String!
+  "An optional dispatch strategy for the recurring transfer"
+  dispatchStrategy: DispatchStrategy
+}
+
+enum DispatchMetric {
+
+  MarketTradingValue
+
+  MakerFeesReceived
+
+  TakerFeesPaid
+
+  LPFeesReceived
+}
+
+type DispatchStrategy {
+  "What to contribution is measured"
+  dispatchMetric: DispatchMetric!
+
+  "The asset to use for measuring contibution to the metric"
+  dispatchMetricAssetId: ID!
+
+  "Scope the dispatch to this markets only under the metric asset"
+  marketIdsInScope: [ID!]
 }
 
 enum NodeStatus {
@@ -6705,11 +6855,11 @@ type RankingScore {
   "The former validation status of teh validator"
   previousStatus: String!
   "The ranking score of the validator"
-  rankingScore: String! 
+  rankingScore: String!
   "The stake based score of the validator (no anti-whaling)"
   stakeScore: String!
   "The performance score of the validator"
-  performanceScore: String! 
+  performanceScore: String!
   "The tendermint voting power of the validator (uint32)"
   votingPower: String!
 }
@@ -7084,6 +7234,18 @@ type OracleData {
   pubKeys: [String!]
   "data contains all the properties send by an oracle"
   data: [Property!]
+
+  """
+  lists all the oracle specs that matched this oracle data.
+  When the array is empty, it means no oracle spec matched this oracle data.
+  """
+  matchedSpecIds: [String!]
+  """
+  RFC3339Nano formatted date and time for when the data was broadcast to the markets
+  with a matching oracle spec.
+  It has no value when the oracle date did not match any oracle spec.
+  """
+  broadcastAt:  String!
 }
 
 "A property associates a name to a value"
@@ -7270,8 +7432,8 @@ type Market {
 
   """
   positionDecimalPlaces indicated the number of decimal places that an integer must be shifted in order to get a correct size (uint64).
-  i.e. 0 means there are no fractional orders for the market, and order sizes are always whole sizes. 
-  2 means sizes given as 10^2 * desired size, e.g. a desired size of 1.23 is represented as 123 in this market. 
+  i.e. 0 means there are no fractional orders for the market, and order sizes are always whole sizes.
+  2 means sizes given as 10^2 * desired size, e.g. a desired size of 1.23 is represented as 123 in this market.
   """
   positionDecimalPlaces: Int!
 
@@ -8401,16 +8563,13 @@ type NewAsset {
   source: AssetSource!
 }
 
-"A new freeform proposal change"
+"""
+A new freeform proposal change. It has no properties on purpose. Use proposal
+rationale, instead.
+"""
 type NewFreeform {
-  "The URL containing content that describes the proposal"
-  url: String!
-
-  "A short description of what is being proposed"
-  description: String!
-
-  "The hash on the content of the URL"
-  hash: String!
+  "A placeholder to please graphQL"
+  _doNotUse: Boolean
 }
 
 "Allows submitting a proposal for changing network parameters"
@@ -8427,13 +8586,36 @@ type NetworkParameter {
 }
 
 union ProposalChange =
-    NewMarket
+  NewMarket
   | UpdateMarket
   | UpdateNetworkParameter
   | NewAsset
   | NewFreeform
 # there are no unions for input types as of today, see: https://github.com/graphql/graphql-spec/issues/488
 
+type ProposalRationale {
+  """
+  Description to show a short title / something in case the link goes offline.
+  This is to be between 0 and 1024 unicode characters.
+  This is mandatory for all proposal.
+  """
+  description: String!
+  """
+  Cryptographically secure hash (SHA3-512) of the text pointed by the ` + "`" + `url` + "`" + ` property
+  so that viewers can check that the text hasn't been changed over time.
+  Optional except for FreeFrom proposal where it's mandatory.
+  If set, the ` + "`" + `url` + "`" + ` property must be set.
+  """
+  hash: String
+  """
+  Link to a text file describing the proposal in depth.
+  Optional except for FreeFrom proposal where it's mandatory.
+  If set, the ` + "`" + `url` + "`" + ` property must be set.
+  """
+  url: String
+}
+
+"The rationale behind the proposal"
 type ProposalTerms {
   """
   RFC3339Nano time and date when voting closes for this proposal.
@@ -8485,6 +8667,8 @@ type Proposal {
   state: ProposalState!
   "RFC3339Nano time and date when the proposal reached Vega network"
   datetime: String!
+  "Rationale behind the proposal"
+  rationale: ProposalRationale!
   "Terms of the proposal"
   terms: ProposalTerms!
   "Votes cast for this proposal"
@@ -8737,7 +8921,7 @@ enum BusEventType {
 
 "union type for wrapped events in stream PROPOSAL is mapped to governance data, something to keep in mind"
 union Event =
-    TimeUpdate
+  TimeUpdate
   | MarketEvent
   | TransferResponses
   | PositionResolution
@@ -8851,8 +9035,12 @@ type LiquidityProvision {
 
 "Reward information for a single party"
 type Reward {
-  "The asset for which this reward is associated"
+  "The asset this reward is paid in"
   asset: Asset!
+  "The market for which this reward is paid if any"
+  marketID: String!
+  "The type of reward"
+  rewardType: String!
   "Party receiving the reward"
   party: Party!
   "Epoch for which this reward was distributed"
@@ -8921,24 +9109,36 @@ enum AccountField {
 
 "Information about whether proposals are enabled, if we are still bootstrapping etc.."
 type NetworkLimits {
-    "Are market proposals allowed at this point in time"
-		canProposeMarket: Boolean!
-    "Are asset proposals allowed at this point in time"
-		canProposeAsset: Boolean!
-    "True once block count > bootstrapBlockCount"
-		bootstrapFinished: Boolean!
-    "Are market proposals enabled on this chain"
-		proposeMarketEnabled: Boolean!
-    "Are asset proposals enabled on this chain"
-		proposeAssetEnabled: Boolean!
-    "How many blocks before the chain comes out of bootstrap mode"
-		bootstrapBlockCount: Int!
-    "True once the genesis file is loaded"
-		genesisLoaded: Boolean!
-    "The date/timestamp in unix nanoseconds at which market proposals will be enabled (0 indicates not set)"
-		proposeMarketEnabledFrom: Timestamp!
-    "The date/timestamp in unix nanoseconds at which asset proposals will be enabled (0 indicates not set)"
-		proposeAssetEnabledFrom: Timestamp!
+  "Are market proposals allowed at this point in time"
+  canProposeMarket: Boolean!
+  "Are asset proposals allowed at this point in time"
+  canProposeAsset: Boolean!
+  "True once block count > bootstrapBlockCount"
+  bootstrapFinished: Boolean!
+  "Are market proposals enabled on this chain"
+  proposeMarketEnabled: Boolean!
+  "Are asset proposals enabled on this chain"
+  proposeAssetEnabled: Boolean!
+  "How many blocks before the chain comes out of bootstrap mode"
+  bootstrapBlockCount: Int!
+  "True once the genesis file is loaded"
+  genesisLoaded: Boolean!
+  "The date/timestamp in unix nanoseconds at which market proposals will be enabled (0 indicates not set)"
+  proposeMarketEnabledFrom: Timestamp!
+  "The date/timestamp in unix nanoseconds at which asset proposals will be enabled (0 indicates not set)"
+  proposeAssetEnabledFrom: Timestamp!
+}
+
+input Pagination {
+  "Skip the number of records specified, default is 0"
+  skip: Int!
+  "Limit the number of returned records to the value specified, default is 50"
+  limit: Int!
+  """
+  Descending reverses the order of the records returned
+  default is true, if false the results will be returned in ascending order
+  """
+  descending: Boolean!
 }
 `, BuiltIn: false},
 }
@@ -9821,6 +10021,30 @@ func (ec *executionContext) field_Query_oracleDataBySpec_args(ctx context.Contex
 		}
 	}
 	args["oracleSpecID"] = arg0
+	var arg1 *Pagination
+	if tmp, ok := rawArgs["pagination"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pagination"))
+		arg1, err = ec.unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋdataᚑnodeᚋgatewayᚋgraphqlᚐPagination(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["pagination"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_oracleData_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *Pagination
+	if tmp, ok := rawArgs["pagination"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pagination"))
+		arg0, err = ec.unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋdataᚑnodeᚋgatewayᚋgraphqlᚐPagination(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["pagination"] = arg0
 	return args, nil
 }
 
@@ -9836,6 +10060,21 @@ func (ec *executionContext) field_Query_oracleSpec_args(ctx context.Context, raw
 		}
 	}
 	args["oracleSpecID"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_oracleSpecs_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *Pagination
+	if tmp, ok := rawArgs["pagination"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pagination"))
+		arg0, err = ec.unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋdataᚑnodeᚋgatewayᚋgraphqlᚐPagination(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["pagination"] = arg0
 	return args, nil
 }
 
@@ -12498,6 +12737,108 @@ func (ec *executionContext) _DiscreteTrading_tickSize(ctx context.Context, field
 	res := resTmp.(string)
 	fc.Result = res
 	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _DispatchStrategy_dispatchMetric(ctx context.Context, field graphql.CollectedField, obj *DispatchStrategy) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "DispatchStrategy",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.DispatchMetric, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(DispatchMetric)
+	fc.Result = res
+	return ec.marshalNDispatchMetric2codeᚗvegaprotocolᚗioᚋdataᚑnodeᚋgatewayᚋgraphqlᚐDispatchMetric(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _DispatchStrategy_dispatchMetricAssetId(ctx context.Context, field graphql.CollectedField, obj *DispatchStrategy) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "DispatchStrategy",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.DispatchMetricAssetID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _DispatchStrategy_marketIdsInScope(ctx context.Context, field graphql.CollectedField, obj *DispatchStrategy) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "DispatchStrategy",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MarketIdsInScope, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]string)
+	fc.Result = res
+	return ec.marshalOID2ᚕstringᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _ERC20_contractAddress(ctx context.Context, field graphql.CollectedField, obj *Erc20) (ret graphql.Marshaler) {
@@ -15209,14 +15550,14 @@ func (ec *executionContext) _LiquidityProvision_version(ctx context.Context, fie
 		Object:     "LiquidityProvision",
 		Field:      field,
 		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
+		IsMethod:   true,
+		IsResolver: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Version, nil
+		return ec.resolvers.LiquidityProvision().Version(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -18837,7 +19178,7 @@ func (ec *executionContext) _NewAsset_source(ctx context.Context, field graphql.
 	return ec.marshalNAssetSource2codeᚗvegaprotocolᚗioᚋdataᚑnodeᚋgatewayᚋgraphqlᚐAssetSource(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _NewFreeform_url(ctx context.Context, field graphql.CollectedField, obj *vega.NewFreeform) (ret graphql.Marshaler) {
+func (ec *executionContext) _NewFreeform__doNotUse(ctx context.Context, field graphql.CollectedField, obj *vega.NewFreeform) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -18855,91 +19196,18 @@ func (ec *executionContext) _NewFreeform_url(ctx context.Context, field graphql.
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.NewFreeform().URL(rctx, obj)
+		return ec.resolvers.NewFreeform().DoNotUse(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(*bool)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _NewFreeform_description(ctx context.Context, field graphql.CollectedField, obj *vega.NewFreeform) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "NewFreeform",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   true,
-		IsResolver: true,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.NewFreeform().Description(rctx, obj)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _NewFreeform_hash(ctx context.Context, field graphql.CollectedField, obj *vega.NewFreeform) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "NewFreeform",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   true,
-		IsResolver: true,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.NewFreeform().Hash(rctx, obj)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _NewMarket_instrument(ctx context.Context, field graphql.CollectedField, obj *vega.NewMarket) (ret graphql.Marshaler) {
@@ -20235,6 +20503,73 @@ func (ec *executionContext) _OracleData_data(ctx context.Context, field graphql.
 	res := resTmp.([]*v11.Property)
 	fc.Result = res
 	return ec.marshalOProperty2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚋoraclesᚋv1ᚐPropertyᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _OracleData_matchedSpecIds(ctx context.Context, field graphql.CollectedField, obj *v11.OracleData) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "OracleData",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MatchedSpecIds, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]string)
+	fc.Result = res
+	return ec.marshalOString2ᚕstringᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _OracleData_broadcastAt(ctx context.Context, field graphql.CollectedField, obj *v11.OracleData) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "OracleData",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.OracleData().BroadcastAt(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _OracleSpec_id(ctx context.Context, field graphql.CollectedField, obj *v11.OracleSpec) (ret graphql.Marshaler) {
@@ -23243,6 +23578,41 @@ func (ec *executionContext) _Proposal_datetime(ctx context.Context, field graphq
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Proposal_rationale(ctx context.Context, field graphql.CollectedField, obj *vega.GovernanceData) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Proposal",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Proposal().Rationale(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*vega.ProposalRationale)
+	fc.Result = res
+	return ec.marshalNProposalRationale2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐProposalRationale(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Proposal_terms(ctx context.Context, field graphql.CollectedField, obj *vega.GovernanceData) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -23375,6 +23745,105 @@ func (ec *executionContext) _Proposal_errorDetails(ctx context.Context, field gr
 	res := resTmp.(*string)
 	fc.Result = res
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ProposalRationale_description(ctx context.Context, field graphql.CollectedField, obj *vega.ProposalRationale) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "ProposalRationale",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Description, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ProposalRationale_hash(ctx context.Context, field graphql.CollectedField, obj *vega.ProposalRationale) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "ProposalRationale",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Hash, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalOString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ProposalRationale_url(ctx context.Context, field graphql.CollectedField, obj *vega.ProposalRationale) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "ProposalRationale",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Url, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalOString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _ProposalTerms_closingDatetime(ctx context.Context, field graphql.CollectedField, obj *vega.ProposalTerms) (ret graphql.Marshaler) {
@@ -23966,9 +24435,16 @@ func (ec *executionContext) _Query_oracleSpecs(ctx context.Context, field graphq
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_oracleSpecs_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().OracleSpecs(rctx)
+		return ec.resolvers.Query().OracleSpecs(rctx, args["pagination"].(*Pagination))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -24046,7 +24522,46 @@ func (ec *executionContext) _Query_oracleDataBySpec(ctx context.Context, field g
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().OracleDataBySpec(rctx, args["oracleSpecID"].(string))
+		return ec.resolvers.Query().OracleDataBySpec(rctx, args["oracleSpecID"].(string), args["pagination"].(*Pagination))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*v11.OracleData)
+	fc.Result = res
+	return ec.marshalOOracleData2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚋoraclesᚋv1ᚐOracleDataᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_oracleData(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_oracleData_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().OracleData(rctx, args["pagination"].(*Pagination))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -25514,6 +26029,38 @@ func (ec *executionContext) _RecurringTransfer_factor(ctx context.Context, field
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _RecurringTransfer_dispatchStrategy(ctx context.Context, field graphql.CollectedField, obj *v1.RecurringTransfer) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "RecurringTransfer",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.RecurringTransfer().DispatchStrategy(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*DispatchStrategy)
+	fc.Result = res
+	return ec.marshalODispatchStrategy2ᚖcodeᚗvegaprotocolᚗioᚋdataᚑnodeᚋgatewayᚋgraphqlᚐDispatchStrategy(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Reward_asset(ctx context.Context, field graphql.CollectedField, obj *vega.Reward) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -25547,6 +26094,76 @@ func (ec *executionContext) _Reward_asset(ctx context.Context, field graphql.Col
 	res := resTmp.(*vega.Asset)
 	fc.Result = res
 	return ec.marshalNAsset2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐAsset(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Reward_marketID(ctx context.Context, field graphql.CollectedField, obj *vega.Reward) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Reward",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MarketId, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Reward_rewardType(ctx context.Context, field graphql.CollectedField, obj *vega.Reward) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Reward",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.RewardType, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Reward_party(ctx context.Context, field graphql.CollectedField, obj *vega.Reward) (ret graphql.Marshaler) {
@@ -32430,6 +33047,45 @@ func (ec *executionContext) unmarshalInputAccountFilter(ctx context.Context, obj
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputPagination(ctx context.Context, obj interface{}) (Pagination, error) {
+	var it Pagination
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	for k, v := range asMap {
+		switch k {
+		case "skip":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("skip"))
+			it.Skip, err = ec.unmarshalNInt2int(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "limit":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("limit"))
+			it.Limit, err = ec.unmarshalNInt2int(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "descending":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("descending"))
+			it.Descending, err = ec.unmarshalNBoolean2bool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
 // endregion **************************** input.gotpl *****************************
 
 // region    ************************** interface.gotpl ***************************
@@ -33896,6 +34552,54 @@ func (ec *executionContext) _DiscreteTrading(ctx context.Context, sel ast.Select
 	return out
 }
 
+var dispatchStrategyImplementors = []string{"DispatchStrategy"}
+
+func (ec *executionContext) _DispatchStrategy(ctx context.Context, sel ast.SelectionSet, obj *DispatchStrategy) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, dispatchStrategyImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("DispatchStrategy")
+		case "dispatchMetric":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._DispatchStrategy_dispatchMetric(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "dispatchMetricAssetId":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._DispatchStrategy_dispatchMetricAssetId(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "marketIdsInScope":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._DispatchStrategy_marketIdsInScope(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
 var eRC20Implementors = []string{"ERC20", "AssetSource"}
 
 func (ec *executionContext) _ERC20(ctx context.Context, sel ast.SelectionSet, obj *Erc20) graphql.Marshaler {
@@ -35260,15 +35964,25 @@ func (ec *executionContext) _LiquidityProvision(ctx context.Context, sel ast.Sel
 				atomic.AddUint32(&invalids, 1)
 			}
 		case "version":
+			field := field
+
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._LiquidityProvision_version(ctx, field, obj)
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._LiquidityProvision_version(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
 			}
 
-			out.Values[i] = innerFunc(ctx)
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
 
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
-			}
+			})
 		case "status":
 			field := field
 
@@ -37138,7 +37852,7 @@ func (ec *executionContext) _NewFreeform(ctx context.Context, sel ast.SelectionS
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("NewFreeform")
-		case "url":
+		case "_doNotUse":
 			field := field
 
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
@@ -37147,50 +37861,7 @@ func (ec *executionContext) _NewFreeform(ctx context.Context, sel ast.SelectionS
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._NewFreeform_url(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
-			}
-
-			out.Concurrently(i, func() graphql.Marshaler {
-				return innerFunc(ctx)
-
-			})
-		case "description":
-			field := field
-
-			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._NewFreeform_description(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
-			}
-
-			out.Concurrently(i, func() graphql.Marshaler {
-				return innerFunc(ctx)
-
-			})
-		case "hash":
-			field := field
-
-			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._NewFreeform_hash(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
+				res = ec._NewFreeform__doNotUse(ctx, field, obj)
 				return res
 			}
 
@@ -37793,6 +38464,33 @@ func (ec *executionContext) _OracleData(ctx context.Context, sel ast.SelectionSe
 
 			out.Values[i] = innerFunc(ctx)
 
+		case "matchedSpecIds":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._OracleData_matchedSpecIds(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+		case "broadcastAt":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._OracleData_broadcastAt(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -39429,6 +40127,26 @@ func (ec *executionContext) _Proposal(ctx context.Context, sel ast.SelectionSet,
 				return innerFunc(ctx)
 
 			})
+		case "rationale":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Proposal_rationale(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
 		case "terms":
 			field := field
 
@@ -39503,6 +40221,51 @@ func (ec *executionContext) _Proposal(ctx context.Context, sel ast.SelectionSet,
 				return innerFunc(ctx)
 
 			})
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var proposalRationaleImplementors = []string{"ProposalRationale"}
+
+func (ec *executionContext) _ProposalRationale(ctx context.Context, sel ast.SelectionSet, obj *vega.ProposalRationale) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, proposalRationaleImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("ProposalRationale")
+		case "description":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._ProposalRationale_description(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "hash":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._ProposalRationale_hash(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+		case "url":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._ProposalRationale_url(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -39907,6 +40670,26 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_oracleDataBySpec(ctx, field)
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx, innerFunc)
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return rrm(innerCtx)
+			})
+		case "oracleData":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_oracleData(ctx, field)
 				return res
 			}
 
@@ -40691,6 +41474,23 @@ func (ec *executionContext) _RecurringTransfer(ctx context.Context, sel ast.Sele
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
+		case "dispatchStrategy":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._RecurringTransfer_dispatchStrategy(ctx, field, obj)
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -40732,6 +41532,26 @@ func (ec *executionContext) _Reward(ctx context.Context, sel ast.SelectionSet, o
 				return innerFunc(ctx)
 
 			})
+		case "marketID":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Reward_marketID(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "rewardType":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Reward_rewardType(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
 		case "party":
 			field := field
 
@@ -44224,6 +45044,16 @@ func (ec *executionContext) marshalNDepositStatus2codeᚗvegaprotocolᚗioᚋdat
 	return v
 }
 
+func (ec *executionContext) unmarshalNDispatchMetric2codeᚗvegaprotocolᚗioᚋdataᚑnodeᚋgatewayᚋgraphqlᚐDispatchMetric(ctx context.Context, v interface{}) (DispatchMetric, error) {
+	var res DispatchMetric
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNDispatchMetric2codeᚗvegaprotocolᚗioᚋdataᚑnodeᚋgatewayᚋgraphqlᚐDispatchMetric(ctx context.Context, sel ast.SelectionSet, v DispatchMetric) graphql.Marshaler {
+	return v
+}
+
 func (ec *executionContext) marshalNEpoch2codeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐEpoch(ctx context.Context, sel ast.SelectionSet, v vega.Epoch) graphql.Marshaler {
 	return ec._Epoch(ctx, sel, &v)
 }
@@ -45075,6 +45905,20 @@ func (ec *executionContext) marshalNProposalChange2codeᚗvegaprotocolᚗioᚋda
 		return graphql.Null
 	}
 	return ec._ProposalChange(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNProposalRationale2codeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐProposalRationale(ctx context.Context, sel ast.SelectionSet, v vega.ProposalRationale) graphql.Marshaler {
+	return ec._ProposalRationale(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNProposalRationale2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐProposalRationale(ctx context.Context, sel ast.SelectionSet, v *vega.ProposalRationale) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._ProposalRationale(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNProposalState2codeᚗvegaprotocolᚗioᚋdataᚑnodeᚋgatewayᚋgraphqlᚐProposalState(ctx context.Context, v interface{}) (ProposalState, error) {
@@ -46303,6 +47147,13 @@ func (ec *executionContext) marshalODeposit2ᚖcodeᚗvegaprotocolᚗioᚋprotos
 	return ec._Deposit(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalODispatchStrategy2ᚖcodeᚗvegaprotocolᚗioᚋdataᚑnodeᚋgatewayᚋgraphqlᚐDispatchStrategy(ctx context.Context, sel ast.SelectionSet, v *DispatchStrategy) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._DispatchStrategy(ctx, sel, v)
+}
+
 func (ec *executionContext) marshalOEpoch2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐEpoch(ctx context.Context, sel ast.SelectionSet, v *vega.Epoch) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
@@ -47296,6 +48147,14 @@ func (ec *executionContext) marshalOOrderType2ᚖcodeᚗvegaprotocolᚗioᚋdata
 		return graphql.Null
 	}
 	return v
+}
+
+func (ec *executionContext) unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋdataᚑnodeᚋgatewayᚋgraphqlᚐPagination(ctx context.Context, v interface{}) (*Pagination, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputPagination(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) marshalOParty2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐPartyᚄ(ctx context.Context, sel ast.SelectionSet, v []*vega.Party) graphql.Marshaler {

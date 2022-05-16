@@ -11,7 +11,6 @@ import (
 	"code.vegaprotocol.io/vega/types"
 )
 
-// TODO: These need to decode to upper case
 type OrderID struct{ ID }
 
 func NewOrderID(id string) OrderID {
@@ -40,6 +39,7 @@ type Order struct {
 	UpdatedAt       time.Time
 	ExpiresAt       time.Time
 	VegaTime        time.Time
+	SeqNum          uint64
 }
 
 func (o *Order) ToProto() *vega.Order {
@@ -47,7 +47,8 @@ func (o *Order) ToProto() *vega.Order {
 	if o.PeggedReference != types.PeggedReferenceUnspecified {
 		peggedOrder = &vega.PeggedOrder{
 			Reference: o.PeggedReference,
-			Offset:    fmt.Sprint(o.PeggedOffset)}
+			Offset:    fmt.Sprint(o.PeggedOffset),
+		}
 	}
 
 	vo := vega.Order{
@@ -74,7 +75,7 @@ func (o *Order) ToProto() *vega.Order {
 	return &vo
 }
 
-func OrderFromProto(po *vega.Order) (Order, error) {
+func OrderFromProto(po *vega.Order, seqNum uint64) (Order, error) {
 	price, err := strconv.ParseInt(po.Price, 10, 64)
 	if err != nil {
 		return Order{}, fmt.Errorf("Price is not a valid integer: %v", po.Price)
@@ -137,6 +138,7 @@ func OrderFromProto(po *vega.Order) (Order, error) {
 		CreatedAt:       time.Unix(0, po.CreatedAt),
 		UpdatedAt:       time.Unix(0, po.ExpiresAt),
 		ExpiresAt:       time.Unix(0, po.ExpiresAt),
+		SeqNum:          seqNum,
 	}
 
 	return o, nil
@@ -158,12 +160,14 @@ func (o Order) ToRow() []interface{} {
 		o.Size, o.Remaining, o.TimeInForce, o.Type, o.Status,
 		o.Reference, o.Reason, o.Version, o.PeggedOffset, o.BatchID,
 		o.PeggedReference, o.LpID, o.CreatedAt, o.UpdatedAt, o.ExpiresAt,
-		o.VegaTime}
+		o.VegaTime, o.SeqNum,
+	}
 }
 
-var OrderColumns = []string{"id", "market_id", "party_id", "side", "price",
+var OrderColumns = []string{
+	"id", "market_id", "party_id", "side", "price",
 	"size", "remaining", "time_in_force", "type", "status",
 	"reference", "reason", "version", "pegged_offset", "batch_id",
 	"pegged_reference", "lp_id", "created_at", "updated_at", "expires_at",
-	"vega_time",
+	"vega_time", "seq_num",
 }

@@ -6,6 +6,7 @@ import (
 
 	"code.vegaprotocol.io/data-node/entities"
 	"code.vegaprotocol.io/data-node/sqlstore"
+	"code.vegaprotocol.io/protos/vega"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/shopspring/decimal"
@@ -46,18 +47,18 @@ func assertVotesMatch(t *testing.T, expected, actual []entities.Vote) {
 }
 
 func TestVotes(t *testing.T) {
-	defer testStore.DeleteEverything()
-	partyStore := sqlstore.NewParties(testStore)
-	propStore := sqlstore.NewProposals(testStore)
-	voteStore := sqlstore.NewVotes(testStore)
-	blockStore := sqlstore.NewBlocks(testStore)
+	defer DeleteEverything()
+	partyStore := sqlstore.NewParties(connectionSource)
+	propStore := sqlstore.NewProposals(connectionSource)
+	voteStore := sqlstore.NewVotes(connectionSource)
+	blockStore := sqlstore.NewBlocks(connectionSource)
 	block1 := addTestBlock(t, blockStore)
 	block2 := addTestBlock(t, blockStore)
 
 	party1 := addTestParty(t, partyStore, block1)
 	party2 := addTestParty(t, partyStore, block1)
-	prop1 := addTestProposal(t, propStore, party1, block1)
-	prop2 := addTestProposal(t, propStore, party1, block1)
+	prop1 := addTestProposal(t, propStore, party1, block1, entities.ProposalRationale{ProposalRationale: &vega.ProposalRationale{Url: "myurl1.com"}})
+	prop2 := addTestProposal(t, propStore, party1, block1, entities.ProposalRationale{ProposalRationale: &vega.ProposalRationale{Url: "myurl2.com"}})
 
 	party1ID := party1.ID.String()
 	prop1ID := prop1.ID.String()

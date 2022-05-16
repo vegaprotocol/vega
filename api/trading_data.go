@@ -157,8 +157,9 @@ type WithdrawalService interface {
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/oracle_service_mock.go -package mocks code.vegaprotocol.io/data-node/api  OracleService
 type OracleService interface {
 	GetSpecByID(id string) (oraclespb.OracleSpec, error)
-	GetSpecs() []oraclespb.OracleSpec
-	GetOracleDataBySpecID(string) ([]oraclespb.OracleData, error)
+	ListOracleSpecs(protoapi.Pagination) []oraclespb.OracleSpec
+	GetOracleDataBySpecID(string, protoapi.Pagination) ([]oraclespb.OracleData, error)
+	ListOracleData(protoapi.Pagination) []oraclespb.OracleData
 }
 
 // DepositService ...
@@ -586,14 +587,18 @@ func (t *tradingDataService) ERC20WithdrawalApproval(ctx context.Context, req *p
 		return nil, fmt.Errorf("invalid erc20 token contract address")
 	}
 
-	return &protoapi.ERC20WithdrawalApprovalResponse{
+	resp := protoapi.ERC20WithdrawalApprovalResponse{
 		AssetSource:   address,
 		Amount:        fmt.Sprintf("%v", withdrawal.Amount),
 		Expiry:        withdrawal.Expiry,
 		Nonce:         withdrawal.Ref,
 		TargetAddress: withdrawal.Ext.GetErc20().ReceiverAddress,
 		Signatures:    pack,
-	}, nil
+		// timestamps is unix nano, contract needs unix. So load if first, and cut nanos
+		Creation: time.Unix(0, withdrawal.CreatedTimestamp).Unix(),
+	}
+
+	return &resp, nil
 }
 
 func (t *tradingDataService) Withdrawal(ctx context.Context, req *protoapi.WithdrawalRequest) (*protoapi.WithdrawalResponse, error) {
@@ -640,9 +645,15 @@ func (t *tradingDataService) OracleSpec(_ context.Context, req *protoapi.OracleS
 	}, nil
 }
 
-func (t *tradingDataService) OracleSpecs(_ context.Context, _ *protoapi.OracleSpecsRequest) (*protoapi.OracleSpecsResponse, error) {
+func (t *tradingDataService) OracleSpecs(_ context.Context, req *protoapi.OracleSpecsRequest) (*protoapi.OracleSpecsResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("OracleSpecs")()
-	specs := t.oracleService.GetSpecs()
+
+	p := defaultPagination
+	if req.Pagination != nil {
+		p = *req.Pagination
+	}
+
+	specs := t.oracleService.ListOracleSpecs(p)
 	out := make([]*oraclespb.OracleSpec, 0, len(specs))
 	for _, v := range specs {
 		v := v
@@ -658,7 +669,13 @@ func (t *tradingDataService) OracleDataBySpec(_ context.Context, req *protoapi.O
 	if len(req.Id) <= 0 {
 		return nil, ErrMissingOracleSpecID
 	}
-	data, err := t.oracleService.GetOracleDataBySpecID(req.Id)
+
+	p := defaultPagination
+	if req.Pagination != nil {
+		p = *req.Pagination
+	}
+
+	data, err := t.oracleService.GetOracleDataBySpecID(req.Id, p)
 	if err != nil {
 		return nil, apiError(codes.NotFound, err)
 	}
@@ -668,6 +685,25 @@ func (t *tradingDataService) OracleDataBySpec(_ context.Context, req *protoapi.O
 		out = append(out, &v)
 	}
 	return &protoapi.OracleDataBySpecResponse{
+		OracleData: out,
+	}, nil
+}
+
+func (t *tradingDataService) ListOracleData(_ context.Context, req *protoapi.ListOracleDataRequest) (*protoapi.ListOracleDataResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("ListOracleData")()
+
+	p := defaultPagination
+	if req.Pagination != nil {
+		p = *req.Pagination
+	}
+
+	data := t.oracleService.ListOracleData(p)
+	out := make([]*oraclespb.OracleData, 0, len(data))
+	for _, v := range data {
+		v := v
+		out = append(out, &v)
+	}
+	return &protoapi.ListOracleDataResponse{
 		OracleData: out,
 	}, nil
 }

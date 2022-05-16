@@ -7,54 +7,42 @@ import (
 	"sync"
 
 	"code.vegaprotocol.io/data-node/entities"
+	"code.vegaprotocol.io/data-node/metrics"
 	"github.com/georgysavva/scany/pgxscan"
 )
 
 var ErrPositionNotFound = errors.New("party not found")
 
 type Positions struct {
-	*SQLStore
+	*ConnectionSource
 	cache     map[entities.MarketID]map[entities.PartyID]entities.Position
 	cacheLock sync.Mutex
+	batcher   MapBatcher[entities.PositionKey, entities.Position]
 }
 
-func NewPositions(sqlStore *SQLStore) *Positions {
+func NewPositions(connectionSource *ConnectionSource) *Positions {
 	a := &Positions{
-		SQLStore:  sqlStore,
-		cache:     map[entities.MarketID]map[entities.PartyID]entities.Position{},
-		cacheLock: sync.Mutex{},
+		ConnectionSource: connectionSource,
+		cache:            map[entities.MarketID]map[entities.PartyID]entities.Position{},
+		cacheLock:        sync.Mutex{},
+		batcher: NewMapBatcher[entities.PositionKey, entities.Position](
+			"positions",
+			entities.PositionColumns),
 	}
 	return a
+}
+
+func (ps *Positions) Flush(ctx context.Context) error {
+	defer metrics.StartSQLQuery("Positions", "FlushTest")()
+	return ps.batcher.Flush(ctx, ps.pool)
 }
 
 func (ps *Positions) Add(ctx context.Context, p entities.Position) error {
 	ps.cacheLock.Lock()
 	defer ps.cacheLock.Unlock()
-
-	_, err := ps.pool.Exec(ctx,
-		`INSERT INTO positions(market_id, party_id, open_volume, realised_pnl, unrealised_pnl, average_entry_price, loss, adjustment, vega_time)
-		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-		 ON CONFLICT(market_id, party_id, vega_time)
-		 DO UPDATE SET
-		    open_volume=EXCLUDED.open_volume,
-		    realised_pnl=EXCLUDED.realised_pnl,
-		    unrealised_pnl=EXCLUDED.unrealised_pnl,
-		    average_entry_price=EXCLUDED.average_entry_price,
-			loss=EXCLUDED.loss,
-			adjustment=EXCLUDED.adjustment
-		 `,
-		p.MarketID,
-		p.PartyID,
-		p.OpenVolume,
-		p.RealisedPnl,
-		p.UnrealisedPnl,
-		p.AverageEntryPrice,
-		p.Loss,
-		p.Adjustment,
-		p.VegaTime)
-
+	ps.batcher.Add(p)
 	ps.updateCache(p)
-	return err
+	return nil
 }
 
 func (ps *Positions) GetByMarketAndParty(ctx context.Context,
@@ -69,7 +57,8 @@ func (ps *Positions) GetByMarketAndParty(ctx context.Context,
 		return position, nil
 	}
 
-	err := pgxscan.Get(ctx, ps.pool, &position,
+	defer metrics.StartSQLQuery("Positions", "GetByMarketAndParty")()
+	err := pgxscan.Get(ctx, ps.Connection, &position,
 		`SELECT * FROM positions_current WHERE market_id=$1 AND party_id=$2`,
 		marketID, partyID)
 
@@ -85,24 +74,27 @@ func (ps *Positions) GetByMarketAndParty(ctx context.Context,
 }
 
 func (ps *Positions) GetByMarket(ctx context.Context, marketID entities.MarketID) ([]entities.Position, error) {
+	defer metrics.StartSQLQuery("Positions", "GetByMarket")()
 	positions := []entities.Position{}
-	err := pgxscan.Select(ctx, ps.pool, &positions,
+	err := pgxscan.Select(ctx, ps.Connection, &positions,
 		`SELECT * FROM positions_current WHERE market_id=$1`,
 		marketID)
 	return positions, err
 }
 
 func (ps *Positions) GetByParty(ctx context.Context, partyID entities.PartyID) ([]entities.Position, error) {
+	defer metrics.StartSQLQuery("Positions", "GetByParty")()
 	positions := []entities.Position{}
-	err := pgxscan.Select(ctx, ps.pool, &positions,
+	err := pgxscan.Select(ctx, ps.Connection, &positions,
 		`SELECT * FROM positions_current WHERE party_id=$1`,
 		partyID)
 	return positions, err
 }
 
 func (ps *Positions) GetAll(ctx context.Context) ([]entities.Position, error) {
+	defer metrics.StartSQLQuery("Positions", "GetAll")()
 	positions := []entities.Position{}
-	err := pgxscan.Select(ctx, ps.pool, &positions,
+	err := pgxscan.Select(ctx, ps.Connection, &positions,
 		`SELECT * FROM positions_current`)
 	return positions, err
 }

@@ -28,6 +28,7 @@ type Proposal struct {
 	Reference    string
 	PartyID      PartyID
 	State        ProposalState
+	Rationale    ProposalRationale
 	Terms        ProposalTerms
 	Reason       ProposalError
 	ErrorDetails string
@@ -55,12 +56,26 @@ func ProposalFromProto(pp *vega.Proposal) (Proposal, error) {
 		Reference:    pp.Reference,
 		PartyID:      NewPartyID(pp.PartyId),
 		State:        ProposalState(pp.State),
+		Rationale:    ProposalRationale{pp.Rationale},
 		Terms:        ProposalTerms{pp.Terms},
 		Reason:       ProposalError(pp.Reason),
 		ErrorDetails: pp.ErrorDetails,
 		ProposalTime: time.Unix(0, pp.Timestamp),
 	}
 	return p, nil
+}
+
+type ProposalRationale struct {
+	*vega.ProposalRationale
+}
+
+func (pt ProposalRationale) MarshalJSON() ([]byte, error) {
+	return protojson.Marshal(pt)
+}
+
+func (pt *ProposalRationale) UnmarshalJSON(b []byte) error {
+	pt.ProposalRationale = &vega.ProposalRationale{}
+	return protojson.Unmarshal(b, pt)
 }
 
 type ProposalTerms struct {

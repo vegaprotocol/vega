@@ -46,25 +46,25 @@ type LiquidityProvision struct {
 	Fee              decimal.Decimal
 	Sells            []LiquidityOrderReference
 	Buys             []LiquidityOrderReference
-	Version          string
+	Version          int64
 	Status           LiquidityProvisionStatus
 	Reference        string
 	VegaTime         time.Time
 }
 
-func LiquidityProvisionFromProto(lpProto *vega.LiquidityProvision, vegaTime time.Time) (*LiquidityProvision, error) {
+func LiquidityProvisionFromProto(lpProto *vega.LiquidityProvision, vegaTime time.Time) (LiquidityProvision, error) {
 	lpID := NewLiquidityProvisionID(lpProto.Id)
 	partyID := NewPartyID(lpProto.PartyId)
 	marketID := NewMarketID(lpProto.MarketId)
 
 	commitmentAmount, err := decimal.NewFromString(lpProto.CommitmentAmount)
 	if err != nil {
-		return nil, fmt.Errorf("liquidity provision has invalid commitement amount: %w", err)
+		return LiquidityProvision{}, fmt.Errorf("liquidity provision has invalid commitement amount: %w", err)
 	}
 
 	fee, err := decimal.NewFromString(lpProto.Fee)
 	if err != nil {
-		return nil, fmt.Errorf("liquidity provision has invalid fee amount: %w", err)
+		return LiquidityProvision{}, fmt.Errorf("liquidity provision has invalid fee amount: %w", err)
 	}
 
 	sells := make([]LiquidityOrderReference, 0, len(lpProto.Sells))
@@ -78,7 +78,7 @@ func LiquidityProvisionFromProto(lpProto *vega.LiquidityProvision, vegaTime time
 		buys = append(buys, LiquidityOrderReference{buy})
 	}
 
-	return &LiquidityProvision{
+	return LiquidityProvision{
 		ID:               lpID,
 		PartyID:          partyID,
 		CreatedAt:        time.Unix(0, lpProto.CreatedAt),
@@ -88,7 +88,7 @@ func LiquidityProvisionFromProto(lpProto *vega.LiquidityProvision, vegaTime time
 		Fee:              fee,
 		Sells:            sells,
 		Buys:             buys,
-		Version:          lpProto.Version,
+		Version:          int64(lpProto.Version),
 		Status:           LiquidityProvisionStatus(lpProto.Status),
 		Reference:        lpProto.Reference,
 		VegaTime:         vegaTime,
@@ -116,8 +116,29 @@ func (lp *LiquidityProvision) ToProto() *vega.LiquidityProvision {
 		Fee:              lp.Fee.String(),
 		Sells:            sells,
 		Buys:             buys,
-		Version:          lp.Version,
+		Version:          uint64(lp.Version),
 		Status:           vega.LiquidityProvision_Status(lp.Status),
 		Reference:        lp.Reference,
 	}
+}
+
+type LiquidityProvisionKey struct {
+	ID       LiquidityProvisionID
+	VegaTime time.Time
+}
+
+func (lp LiquidityProvision) Key() LiquidityProvisionKey {
+	return LiquidityProvisionKey{lp.ID, lp.VegaTime}
+}
+
+var LiquidityProvisionColumns = []string{
+	"id", "party_id", "created_at", "updated_at", "market_id",
+	"commitment_amount", "fee", "sells", "buys", "version",
+	"status", "reference", "vega_time"}
+
+func (lp LiquidityProvision) ToRow() []interface{} {
+	return []interface{}{
+		lp.ID, lp.PartyID, lp.CreatedAt, lp.UpdatedAt, lp.MarketID,
+		lp.CommitmentAmount, lp.Fee, lp.Sells, lp.Buys, lp.Version,
+		lp.Status, lp.Reference, lp.VegaTime}
 }

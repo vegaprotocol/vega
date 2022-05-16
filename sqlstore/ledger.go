@@ -4,24 +4,26 @@ import (
 	"context"
 
 	"code.vegaprotocol.io/data-node/entities"
+	"code.vegaprotocol.io/data-node/metrics"
 	"github.com/georgysavva/scany/pgxscan"
 )
 
 type Ledger struct {
-	*SQLStore
-	batcher SimpleBatcher
+	*ConnectionSource
+	batcher ListBatcher
 }
 
-func NewLedger(sqlStore *SQLStore) *Ledger {
+func NewLedger(connectionSource *ConnectionSource) *Ledger {
 	a := &Ledger{
-		SQLStore: sqlStore,
-		batcher:  NewSimpleBatcher("ledger", entities.LedgerEntryColumns),
+		ConnectionSource: connectionSource,
+		batcher:          NewListBatcher("ledger", entities.LedgerEntryColumns),
 	}
 	return a
 }
 
 func (ls *Ledger) Flush(ctx context.Context) error {
-	return ls.batcher.Flush(ctx, ls.pool)
+	defer metrics.StartSQLQuery("Ledger", "Flush")()
+	return ls.batcher.Flush(ctx, ls.Connection)
 }
 
 func (ls *Ledger) Add(le *entities.LedgerEntry) error {
@@ -30,9 +32,10 @@ func (ls *Ledger) Add(le *entities.LedgerEntry) error {
 }
 
 func (ls *Ledger) GetByID(id int64) (entities.LedgerEntry, error) {
+	defer metrics.StartSQLQuery("Ledger", "GetByID")()
 	le := entities.LedgerEntry{}
 	ctx := context.Background()
-	err := pgxscan.Get(ctx, ls.pool, &le,
+	err := pgxscan.Get(ctx, ls.Connection, &le,
 		`SELECT id, account_from_id, account_to_id, quantity, vega_time, transfer_time, reference, type
 		 FROM ledger WHERE id=$1`,
 		id)
@@ -40,9 +43,10 @@ func (ls *Ledger) GetByID(id int64) (entities.LedgerEntry, error) {
 }
 
 func (ls *Ledger) GetAll() ([]entities.LedgerEntry, error) {
+	defer metrics.StartSQLQuery("Ledger", "GetAll")()
 	ctx := context.Background()
 	ledgerEntries := []entities.LedgerEntry{}
-	err := pgxscan.Select(ctx, ls.pool, &ledgerEntries, `
+	err := pgxscan.Select(ctx, ls.Connection, &ledgerEntries, `
 		SELECT id, account_from_id, account_to_id, quantity, vega_time, transfer_time, reference, type
 		FROM ledger`)
 	return ledgerEntries, err

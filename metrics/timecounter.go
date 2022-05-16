@@ -43,3 +43,11 @@ func (tc *TimeCounter) EventTimeCounterAdd() {
 	}
 	eventHandlingTime.WithLabelValues(tc.labelValues...).Add(time.Since(tc.start).Seconds())
 }
+
+func (tc *TimeCounter) SQLQueryTimeCounterAdd() {
+	// Check that the metric has been set up. (Testing does not use metrics.)
+	if sqlQueryTime == nil {
+		return
+	}
+	sqlQueryTime.WithLabelValues(tc.labelValues...).Add(time.Since(tc.start).Seconds())
+}

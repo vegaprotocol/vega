@@ -2,7 +2,6 @@ package entities
 
 import (
 	"fmt"
-	"strings"
 	"time"
 
 	"code.vegaprotocol.io/protos/vega"
@@ -42,15 +41,15 @@ type Trade struct {
 
 func (t *Trade) ToProto() *vega.Trade {
 	return &vega.Trade{
-		Id:        strings.ToUpper(t.ID.String()),
+		Id:        t.ID.String(),
 		MarketId:  t.MarketID.String(),
 		Price:     t.Price.String(),
 		Size:      t.Size,
 		Buyer:     t.Buyer.String(),
 		Seller:    t.Seller.String(),
 		Aggressor: t.Aggressor,
-		BuyOrder:  strings.ToUpper(t.BuyOrder.String()),
-		SellOrder: strings.ToUpper(t.SellOrder.String()),
+		BuyOrder:  t.BuyOrder.String(),
+		SellOrder: t.SellOrder.String(),
 		Timestamp: t.VegaTime.UnixNano(),
 		Type:      t.Type,
 		BuyerFee: &vega.Fee{

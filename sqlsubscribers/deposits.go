@@ -1,6 +1,7 @@
 package sqlsubscribers
 
 import (
+	"context"
 	"time"
 
 	"code.vegaprotocol.io/data-node/entities"
@@ -17,7 +18,7 @@ type DepositEvent interface {
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/deposits_mock.go -package mocks code.vegaprotocol.io/data-node/sqlsubscribers DepositStore
 type DepositStore interface {
-	Upsert(*entities.Deposit) error
+	Upsert(context.Context, *entities.Deposit) error
 }
 
 type Deposit struct {
@@ -37,12 +38,12 @@ func (d *Deposit) Types() []events.Type {
 	return []events.Type{events.DepositEvent}
 }
 
-func (d *Deposit) Push(evt events.Event) error {
+func (d *Deposit) Push(ctx context.Context, evt events.Event) error {
 	switch e := evt.(type) {
 	case TimeUpdateEvent:
 		d.vegaTime = e.Time()
 	case DepositEvent:
-		return d.consume(e)
+		return d.consume(ctx, e)
 	default:
 		return errors.Errorf("unknown event type %s", e.Type().String())
 	}
@@ -50,12 +51,12 @@ func (d *Deposit) Push(evt events.Event) error {
 	return nil
 }
 
-func (d *Deposit) consume(event DepositEvent) error {
+func (d *Deposit) consume(ctx context.Context, event DepositEvent) error {
 	deposit := event.Deposit()
 	record, err := entities.DepositFromProto(&deposit, d.vegaTime)
 	if err != nil {
 		return errors.Wrap(err, "converting deposit proto to database entity failed")
 	}
 
-	return errors.Wrap(d.store.Upsert(record), "inserting deposit to SQL store failed")
+	return errors.Wrap(d.store.Upsert(ctx, record), "inserting deposit to SQL store failed")
 }

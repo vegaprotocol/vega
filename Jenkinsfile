@@ -164,12 +164,6 @@ pipeline {
 
         stage('Run linters') {
             parallel {
-                stage('check print') {
-                    options { retry(3) }
-                    steps {
-                        sh 'make print_check'
-                    }
-                }
                 stage('shellcheck') {
                     options { retry(3) }
                     steps {
@@ -234,21 +228,6 @@ pipeline {
                         junit checksName: 'Unit Tests with Race', testResults: 'vega-unit-test-race-report.xml'
                     }
                 }
-                stage('System Tests') {
-                    steps {
-                        script {
-                            systemTests ignoreFailure: !isPRBuild(),
-                                vegaCore: params.VEGA_CORE_BRANCH,
-                                dataNode: commitHash,
-                                vegawallet: params.VEGAWALLET_BRANCH,
-                                ethereumEventForwarder: params.ETHEREUM_EVENT_FORWARDER_BRANCH,
-                                devopsInfra: params.DEVOPS_INFRA_BRANCH,
-                                vegatools: params.VEGATOOLS_BRANCH,
-                                systemTests: params.SYSTEM_TESTS_BRANCH,
-                                protos: params.PROTOS_BRANCH
-                        }
-                    }
-                }
                 stage('LNL System Tests') {
                     steps {
                         script {
@@ -264,20 +243,20 @@ pipeline {
                         }
                     }
                 }
-		stage('Capsule System Tests') {
-                        steps {
-                            script {
-                                systemTestsCapsule vegaCore: params.VEGA_CORE_BRANCH,
-                                    dataNode: commitHash,
-                                    vegawallet: params.VEGAWALLET_BRANCH,
-                                    devopsInfra: params.DEVOPS_INFRA_BRANCH,
-                                    vegatools: params.VEGATOOLS_BRANCH,
-                                    systemTests: params.SYSTEM_TESTS_BRANCH,
-                                    protos: params.PROTOS_BRANCH,
-                                    ignoreFailure: true // Will be changed when stable
+                stage('Capsule System Tests') {
+                    steps {
+                        script {
+                            systemTestsCapsule vegaCore: params.VEGA_CORE_BRANCH,
+                                dataNode: commitHash,
+                                vegawallet: params.VEGAWALLET_BRANCH,
+                                devopsInfra: params.DEVOPS_INFRA_BRANCH,
+                                vegatools: params.VEGATOOLS_BRANCH,
+                                systemTests: params.SYSTEM_TESTS_BRANCH,
+                                protos: params.PROTOS_BRANCH,
+                                ignoreFailure: !isPRBuild()
 
-                            }
                         }
+                    }
                 }
             }
         }
@@ -358,19 +337,17 @@ pipeline {
                         }
                     }
                 }
-
-                stage('[TODO] deploy to Devnet') {
-                    when {
-                        branch 'develop'
-                    }
-                    steps {
-                        echo 'Deploying to Devnet....'
-                        echo 'Run basic tests on Devnet network ...'
-                    }
-                }
             }
         }
 
+        stage('Deploy to Devnet') {
+            when {
+                branch 'develop'
+            }
+            steps {
+                devnetDeploy wait: false
+            }
+        }
     }
     post {
         success {

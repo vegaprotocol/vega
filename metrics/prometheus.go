@@ -34,6 +34,8 @@ var (
 	engineTime         *prometheus.CounterVec
 	eventHandlingTime  *prometheus.CounterVec
 	eventCounter       *prometheus.CounterVec
+	sqlQueryTime       *prometheus.CounterVec
+	sqlQueryCounter    *prometheus.CounterVec
 	blockCounter       prometheus.Counter
 	orderCounter       *prometheus.CounterVec
 	ethCallCounter     *prometheus.CounterVec
@@ -371,6 +373,39 @@ func setupMetrics() error {
 	}
 	eventCounter = ec
 
+	//sqlQueryTime
+	h, err = AddInstrument(
+		Counter,
+		"sql_query_seconds_total",
+		Namespace("vega"),
+		Vectors("store", "query"),
+	)
+	if err != nil {
+		return err
+	}
+	sqt, err := h.CounterVec()
+	if err != nil {
+		return err
+	}
+	sqlQueryTime = sqt
+
+	//sqlQueryCounter
+	h, err = AddInstrument(
+		Counter,
+		"sql_query_count",
+		Namespace("vega"),
+		Vectors("store", "query"),
+	)
+	if err != nil {
+		return err
+	}
+	qc, err := h.CounterVec()
+	if err != nil {
+		return err
+	}
+	sqlQueryCounter = qc
+
+	// order counter
 	h, err = AddInstrument(
 		Counter,
 		"orders_total",
@@ -535,6 +570,13 @@ func EventCounterInc(labelValues ...string) {
 	eventCounter.WithLabelValues(labelValues...).Inc()
 }
 
+func SQLQueryCounterInc(labelValues ...string) {
+	if sqlQueryCounter == nil {
+		return
+	}
+	sqlQueryCounter.WithLabelValues(labelValues...).Inc()
+}
+
 // EthCallInc increments the eth call counter
 func EthCallInc(labelValues ...string) {
 	if ethCallCounter == nil {
@@ -605,5 +647,17 @@ func StartAPIRequestAndTimeGRPC(request string) func() {
 		apiRequestCallCounter.WithLabelValues("GRPC", request).Inc()
 		duration := time.Since(startTime).Seconds()
 		apiRequestTimeCounter.WithLabelValues("GRPC", request).Add(duration)
+	}
+}
+
+func StartSQLQuery(store string, query string) func() {
+	startTime := time.Now()
+	return func() {
+		if sqlQueryTime == nil || sqlQueryCounter == nil {
+			return
+		}
+		sqlQueryCounter.WithLabelValues(store, query).Inc()
+		duration := time.Since(startTime).Seconds()
+		sqlQueryTime.WithLabelValues(store, query).Add(duration)
 	}
 }

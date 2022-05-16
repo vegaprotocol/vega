@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/data-node/candlesv2"
+	"code.vegaprotocol.io/data-node/metrics"
 
 	"github.com/shopspring/decimal"
 
@@ -21,17 +22,17 @@ const (
 )
 
 type Candles struct {
-	*SQLStore
+	*ConnectionSource
 
 	config candlesv2.CandleStoreConfig
 	ctx    context.Context
 }
 
-func NewCandles(ctx context.Context, sqlStore *SQLStore, config candlesv2.CandleStoreConfig) (*Candles, error) {
+func NewCandles(ctx context.Context, connectionSource *ConnectionSource, config candlesv2.CandleStoreConfig) (*Candles, error) {
 	cs := &Candles{
-		SQLStore: sqlStore,
-		ctx:      ctx,
-		config:   config,
+		ConnectionSource: connectionSource,
+		ctx:              ctx,
+		config:           config,
 	}
 
 	return cs, nil
@@ -77,7 +78,8 @@ func (cs *Candles) GetCandleDataForTimeSpan(ctx context.Context, candleId string
 
 	query, args = orderAndPaginateQuery(query, []string{"period_start"}, p, args...)
 
-	err = pgxscan.Select(ctx, cs.pool, &candles, query, args...)
+	defer metrics.StartSQLQuery("Candles", "GetCandleDataForTimeSpan")()
+	err = pgxscan.Select(ctx, cs.Connection, &candles, query, args...)
 	if err != nil {
 		return nil, fmt.Errorf("querying candles: %w", err)
 	}
@@ -121,7 +123,8 @@ func (cs *Candles) GetCandleIdForIntervalAndMarket(ctx context.Context, interval
 func (cs *Candles) getIntervalToView(ctx context.Context) (map[string]string, error) {
 	query := fmt.Sprintf("SELECT view_name FROM timescaledb_information.continuous_aggregates where view_name like '%s%%'",
 		candlesViewNamePrePend)
-	rows, err := cs.pool.Query(ctx, query)
+	defer metrics.StartSQLQuery("Candles", "GetIntervalToView")()
+	rows, err := cs.Connection.Query(ctx, query)
 	if err != nil {
 		return nil, fmt.Errorf("fetching existing views for interval: %w", err)
 	}
@@ -197,13 +200,14 @@ func (cs *Candles) viewExistsForInterval(ctx context.Context, interval string) (
 func (cs *Candles) normaliseInterval(ctx context.Context, interval string) (string, error) {
 	var normalizedInterval string
 
-	_, err := cs.pool.Exec(ctx, "SET intervalstyle = 'postgres_verbose' ")
+	defer metrics.StartSQLQuery("Candles", "normaliseInterval")()
+	_, err := cs.Connection.Exec(ctx, "SET intervalstyle = 'postgres_verbose' ")
 	if err != nil {
 		return "", fmt.Errorf("normalising interval, failed to set interval style:%w", err)
 	}
 
 	query := fmt.Sprintf("select cast( INTERVAL '%s' as text)", interval)
-	row := cs.pool.QueryRow(ctx, query)
+	row := cs.Connection.QueryRow(ctx, query)
 
 	err = row.Scan(&normalizedInterval)
 	if err != nil {
@@ -218,8 +222,9 @@ func (cs *Candles) normaliseInterval(ctx context.Context, interval string) (stri
 func (cs *Candles) getIntervalSeconds(ctx context.Context, interval string) (int64, error) {
 	var seconds decimal.Decimal
 
+	defer metrics.StartSQLQuery("Candles", "getIntervalSeconds")()
 	query := fmt.Sprintf("SELECT EXTRACT(epoch FROM INTERVAL '%s')", interval)
-	row := cs.pool.QueryRow(ctx, query)
+	row := cs.Connection.QueryRow(ctx, query)
 
 	err := row.Scan(&seconds)
 	if err != nil {

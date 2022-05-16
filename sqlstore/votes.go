@@ -6,22 +6,24 @@ import (
 	"strings"
 
 	"code.vegaprotocol.io/data-node/entities"
+	"code.vegaprotocol.io/data-node/metrics"
 	"github.com/georgysavva/scany/pgxscan"
 )
 
 type Votes struct {
-	*SQLStore
+	*ConnectionSource
 }
 
-func NewVotes(sqlStore *SQLStore) *Votes {
+func NewVotes(connectionSource *ConnectionSource) *Votes {
 	d := &Votes{
-		SQLStore: sqlStore,
+		ConnectionSource: connectionSource,
 	}
 	return d
 }
 
 func (vs *Votes) Add(ctx context.Context, v entities.Vote) error {
-	_, err := vs.pool.Exec(ctx,
+	defer metrics.StartSQLQuery("Votes", "Add")()
+	_, err := vs.Connection.Exec(ctx,
 		`INSERT INTO votes(
 			proposal_id,
 			party_id,
@@ -45,16 +47,19 @@ func (vs *Votes) Add(ctx context.Context, v entities.Vote) error {
 }
 
 func (rs *Votes) GetYesVotesForProposal(ctx context.Context, proposalIDStr string) ([]entities.Vote, error) {
+	defer metrics.StartSQLQuery("Votes", "GetYesVotesForProposal")()
 	yes := entities.VoteValueYes
 	return rs.Get(ctx, &proposalIDStr, nil, &yes)
 }
 
 func (rs *Votes) GetNoVotesForProposal(ctx context.Context, proposalIDStr string) ([]entities.Vote, error) {
+	defer metrics.StartSQLQuery("Votes", "GetNoVotesForProposal")()
 	no := entities.VoteValueNo
 	return rs.Get(ctx, &proposalIDStr, nil, &no)
 }
 
 func (rs *Votes) GetByParty(ctx context.Context, partyIDStr string) ([]entities.Vote, error) {
+	defer metrics.StartSQLQuery("Votes", "GetByParty")()
 	return rs.Get(ctx, nil, &partyIDStr, nil)
 }
 
@@ -87,7 +92,7 @@ func (rs *Votes) Get(ctx context.Context,
 	}
 
 	votes := []entities.Vote{}
-	err := pgxscan.Select(ctx, rs.pool, &votes, query, args...)
+	err := pgxscan.Select(ctx, rs.Connection, &votes, query, args...)
 	if err != nil {
 		return nil, fmt.Errorf("querying votes: %w", err)
 	}

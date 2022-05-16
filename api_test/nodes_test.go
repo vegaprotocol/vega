@@ -10,6 +10,7 @@ import (
 
 	apipb "code.vegaprotocol.io/protos/data-node/api/v1"
 	"code.vegaprotocol.io/vega/events"
+	"code.vegaprotocol.io/vega/types"
 )
 
 func TestGetKeyRotations(t *testing.T) {
@@ -94,4 +95,57 @@ loop:
 	assert.Equal(t, uint64(12), resp.Rotations[1].BlockHeight)
 	assert.Equal(t, "new-vega-pub-key", resp.Rotations[1].OldPubKey)
 	assert.Equal(t, "new-vega-pub-key-2", resp.Rotations[1].NewPubKey)
+}
+
+func TestNewNodeEvent(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), defaultTimout)
+	defer cancel()
+
+	server := NewTestServer(t, ctx, true)
+	defer server.ctrl.Finish()
+
+	server.broker.Send(events.NewEpochEvent(ctx, &types.Epoch{Seq: 12}))
+	server.broker.Send(events.NewValidatorRanking(ctx, "12", "node-1", "1", "1", "1", "VALIDATOR_STATUS_PENDING", "VALIDATOR_STATUS_PENDING", 10))
+	time.Sleep(20 * time.Millisecond) // we want to make sure the ranking gets sent first and the we keep it at hand until the node event comes through
+	server.broker.Send(events.NewValidatorUpdateEvent(
+		ctx,
+		"node-1",
+		"vega-pub-key",
+		1,
+		"eth-address",
+		"tm-pub-key",
+		"http://info.url",
+		"GB",
+		"Validator",
+		"",
+		1,
+		true,
+	))
+
+	now := time.Now()
+	// the broker reacts to Time events to trigger writes the data stores
+	tue := events.NewTime(ctx, now)
+	server.broker.Send(tue)
+
+	client := apipb.NewTradingDataServiceClient(server.clientConn)
+	require.NotNil(t, client)
+
+	nodeID := "node-1"
+	var resp *apipb.GetNodeByIDResponse
+	var err error
+loop:
+	for {
+		select {
+		case <-ctx.Done():
+			t.Fatalf("test timeout")
+		case <-time.Tick(50 * time.Millisecond):
+			resp, err = client.GetNodeByID(ctx, &apipb.GetNodeByIDRequest{Id: nodeID})
+			if err == nil && resp.Node != nil {
+				break loop
+			}
+		}
+	}
+
+	assert.NotNil(t, resp.Node)
+	assert.NotNil(t, resp.Node.RankingScore)
 }

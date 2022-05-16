@@ -30,11 +30,11 @@ type MarketData struct {
 	seqNum    uint64
 }
 
-func (md *MarketData) Push(evt events.Event) error {
+func (md *MarketData) Push(ctx context.Context, evt events.Event) error {
 	switch e := evt.(type) {
 	case TimeUpdateEvent:
 		md.vegaTime = e.Time()
-		md.store.OnTimeUpdateEvent(e.Context())
+		md.store.OnTimeUpdateEvent(ctx)
 	case MarketDataEvent:
 		md.seqNum = e.Sequence()
 		return md.consume(e)
@@ -49,11 +49,10 @@ func (md *MarketData) Types() []events.Type {
 	return []events.Type{events.MarketDataEvent}
 }
 
-func NewMarketData(store MarketDataStore, log *logging.Logger, dbTimeout time.Duration) *MarketData {
+func NewMarketData(store MarketDataStore, log *logging.Logger) *MarketData {
 	return &MarketData{
-		log:       log,
-		store:     store,
-		dbTimeout: dbTimeout,
+		log:   log,
+		store: store,
 	}
 }
 

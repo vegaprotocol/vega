@@ -7,8 +7,8 @@ import (
 	"context"
 	"testing"
 
-	"code.vegaprotocol.io/data-node/plugins"
 	"code.vegaprotocol.io/vega/events"
+	"code.vegaprotocol.io/vega/plugins"
 	"code.vegaprotocol.io/vega/types/num"
 
 	"github.com/golang/mock/gomock"
@@ -25,80 +25,6 @@ type posPluginTst struct {
 	ctrl  *gomock.Controller
 	ctx   context.Context
 	cfunc context.CancelFunc
-}
-
-type marketPosition struct {
-	party  string
-	size   int64
-	buy    int64
-	sell   int64
-	price  *num.Uint
-	vwBuy  *num.Uint
-	vwSell *num.Uint
-}
-
-func (mp marketPosition) Buy() int64 {
-	return mp.buy
-}
-func (mp marketPosition) Sell() int64 {
-	return mp.sell
-}
-func (mp marketPosition) Party() string {
-	return mp.party
-}
-func (mp marketPosition) Size() int64 {
-	return mp.size
-}
-func (mp marketPosition) Price() *num.Uint {
-	return mp.price
-}
-func (mp marketPosition) VWBuy() *num.Uint {
-	return mp.vwBuy
-}
-func (mp marketPosition) VWSell() *num.Uint {
-	return mp.vwSell
-}
-
-func TestNewState(t *testing.T) {
-	position := getPosPlugin(t)
-	defer position.Finish()
-	market := "market-id"
-	mp := marketPosition{party: "party1",
-		size:   0,
-		buy:    10,
-		sell:   0,
-		price:  num.Zero(),
-		vwBuy:  num.Zero(),
-		vwSell: num.Zero()}
-	ps := events.NewPositionStateEvent(position.ctx, mp, market)
-	position.Push(ps)
-	pp, err := position.GetPositionsByMarket(market)
-	assert.NoError(t, err)
-	assert.NotZero(t, len(pp))
-	// This is an position with no values yet as nothing had traded
-	assert.Equal(t, market, pp[0].MarketId)
-	assert.Equal(t, "party1", pp[0].PartyId)
-	assert.EqualValues(t, 0, pp[0].OpenVolume)
-	assert.Equal(t, num.Zero(), pp[0].AverageEntryPrice)
-	assert.Equal(t, "0", pp[0].RealisedPnl.String())
-	assert.Equal(t, "0", pp[0].UnrealisedPnl.String())
-	assert.EqualValues(t, 0, pp[0].UpdatedAt)
-
-	mp.sell = 50
-	ps2 := events.NewPositionStateEvent(position.ctx, mp, market)
-	position.Push(ps2)
-
-	pp, err = position.GetPositionsByMarket(market)
-	assert.NoError(t, err)
-	assert.NotZero(t, len(pp))
-	// This is an position with no values yet as nothing had traded
-	assert.Equal(t, market, pp[0].MarketId)
-	assert.Equal(t, "party1", pp[0].PartyId)
-	assert.EqualValues(t, 0, pp[0].OpenVolume)
-	assert.Equal(t, num.Zero(), pp[0].AverageEntryPrice)
-	assert.Equal(t, "0", pp[0].RealisedPnl.String())
-	assert.Equal(t, "0", pp[0].UnrealisedPnl.String())
-	assert.EqualValues(t, 0, pp[0].UpdatedAt)
 }
 
 func TestMultipleTradesOfSameSize(t *testing.T) {

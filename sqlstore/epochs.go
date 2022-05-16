@@ -5,22 +5,24 @@ import (
 	"fmt"
 
 	"code.vegaprotocol.io/data-node/entities"
+	"code.vegaprotocol.io/data-node/metrics"
 	"github.com/georgysavva/scany/pgxscan"
 )
 
 type Epochs struct {
-	*SQLStore
+	*ConnectionSource
 }
 
-func NewEpochs(sqlStore *SQLStore) *Epochs {
+func NewEpochs(connectionSource *ConnectionSource) *Epochs {
 	e := &Epochs{
-		SQLStore: sqlStore,
+		ConnectionSource: connectionSource,
 	}
 	return e
 }
 
 func (es *Epochs) Add(ctx context.Context, r entities.Epoch) error {
-	_, err := es.pool.Exec(ctx,
+	defer metrics.StartSQLQuery("Epochs", "Add")()
+	_, err := es.Connection.Exec(ctx,
 		`INSERT INTO epochs(
 			id,
 			start_time,
@@ -38,17 +40,19 @@ func (es *Epochs) Add(ctx context.Context, r entities.Epoch) error {
 }
 
 func (rs *Epochs) GetAll(ctx context.Context) ([]entities.Epoch, error) {
+	defer metrics.StartSQLQuery("Epochs", "GetAll")()
 	epochs := []entities.Epoch{}
-	err := pgxscan.Select(ctx, rs.pool, &epochs, `
+	err := pgxscan.Select(ctx, rs.Connection, &epochs, `
 		SELECT DISTINCT ON (id) * from epochs ORDER BY id, vega_time desc;`)
 	return epochs, err
 }
 
 func (rs *Epochs) Get(ctx context.Context, ID int64) (entities.Epoch, error) {
+	defer metrics.StartSQLQuery("Epochs", "Get")()
 	query := `SELECT DISTINCT ON (id) * FROM epochs WHERE id=$1 ORDER BY id, vega_time desc;`
 
 	epoch := entities.Epoch{}
-	err := pgxscan.Get(ctx, rs.pool, &epoch, query, ID)
+	err := pgxscan.Get(ctx, rs.Connection, &epoch, query, ID)
 	if err != nil {
 		return entities.Epoch{}, fmt.Errorf("querying epochs: %w", err)
 	}
@@ -59,9 +63,10 @@ func (rs *Epochs) GetCurrent(ctx context.Context) (entities.Epoch, error) {
 	query := `SELECT * FROM epochs ORDER BY id desc, vega_time desc FETCH FIRST ROW ONLY;`
 
 	epoch := entities.Epoch{}
-	err := pgxscan.Get(ctx, rs.pool, &epoch, query)
+	defer metrics.StartSQLQuery("Epochs", "GetCurrent")()
+	err := pgxscan.Get(ctx, rs.Connection, &epoch, query)
 	if err != nil {
-		return entities.Epoch{}, fmt.Errorf("querying epocs: %w", err)
+		return entities.Epoch{}, fmt.Errorf("querying epochs: %w", err)
 	}
 	return epoch, nil
 }

@@ -35,9 +35,9 @@ func TestStorage_GetTradesByOrderId(t *testing.T) {
 }
 
 func GetTradesByOrderIdAndMarket(t *testing.T, market *string) {
-	defer testStore.DeleteEverything()
+	defer DeleteEverything()
 
-	tradeStore := sqlstore.NewTrades(testStore)
+	tradeStore := sqlstore.NewTrades(connectionSource)
 
 	insertTestData(t, tradeStore)
 
@@ -61,9 +61,9 @@ func TestStorage_GetTradesByPartyWithPagination(t *testing.T) {
 
 func GetTradesByPartyAndMarketWithPagination(t *testing.T, market *string) {
 	ctx := context.Background()
-	defer testStore.DeleteEverything()
+	defer DeleteEverything()
 
-	tradeStore := sqlstore.NewTrades(testStore)
+	tradeStore := sqlstore.NewTrades(connectionSource)
 
 	insertTestData(t, tradeStore)
 
@@ -94,9 +94,9 @@ func GetTradesByPartyAndMarketWithPagination(t *testing.T, market *string) {
 func TestStorage_GetTradesByMarketWithPagination(t *testing.T) {
 	ctx := context.Background()
 
-	defer testStore.DeleteEverything()
+	defer DeleteEverything()
 
-	tradeStore := sqlstore.NewTrades(testStore)
+	tradeStore := sqlstore.NewTrades(connectionSource)
 
 	insertTestData(t, tradeStore)
 
@@ -151,7 +151,7 @@ func TestStorage_GetTradesByMarketWithPagination(t *testing.T) {
 }
 
 func insertTestData(t *testing.T, tradeStore *sqlstore.Trades) {
-	bs := sqlstore.NewBlocks(testStore)
+	bs := sqlstore.NewBlocks(connectionSource)
 	now := time.Now()
 	block1 := addTestBlockForTime(t, bs, now)
 	block2 := addTestBlockForTime(t, bs, now.Add(time.Second))

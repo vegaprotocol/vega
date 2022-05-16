@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"code.vegaprotocol.io/data-node/candlesv2"
+	"code.vegaprotocol.io/shared/paths"
 
 	"code.vegaprotocol.io/data-node/accounts"
 	"code.vegaprotocol.io/data-node/assets"
@@ -110,7 +111,7 @@ func (l *NodeCommand) setupSubscribers() {
 	l.newMarketSub = subscribers.NewMarketSub(l.ctx, l.marketStore, l.Log, true)
 	l.marketUpdatedSub = subscribers.NewMarketUpdatedSub(l.ctx, l.marketStore, l.Log, true)
 	l.candleSub = subscribers.NewCandleSub(l.ctx, l.candleStore, l.Log, true)
-	l.marketDepthSub = subscribers.NewMarketDepthBuilder(l.ctx, l.Log, true)
+	l.marketDepthSub = subscribers.NewMarketDepthBuilder(l.ctx, l.Log, l.orderStoreSQL, bool(l.conf.SQLStore.Enabled), true)
 	l.riskFactorSub = subscribers.NewRiskFactorSub(l.ctx, l.riskStore, l.Log, true)
 	l.nodesSub = subscribers.NewNodesSub(l.ctx, l.nodeStore, l.Log, true)
 	l.delegationBalanceSub = subscribers.NewDelegationBalanceSub(l.ctx, l.nodeStore, l.epochStore, l.delegationStore, l.Log, true)
@@ -125,13 +126,14 @@ func (l *NodeCommand) setupSQLSubscribers() {
 		return
 	}
 
+	l.accountSubSQL = sqlsubscribers.NewAccount(l.accountStoreSQL, l.balanceStoreSQL, l.Log)
 	l.assetSubSQL = sqlsubscribers.NewAsset(l.assetStoreSQL, l.Log)
 	l.partySubSQL = sqlsubscribers.NewParty(l.partyStoreSQL, l.Log)
 	l.timeSubSQL = sqlsubscribers.NewTimeSub(l.blockStoreSQL, l.Log)
-	l.transferResponseSubSQL = sqlsubscribers.NewTransferResponse(l.ledgerSQL, l.accountStoreSQL, l.balanceStoreSQL, l.partyStoreSQL, l.Log)
-	l.orderSubSQL = sqlsubscribers.NewOrder(l.ctx, l.orderStoreSQL, l.blockStoreSQL, l.Log)
+	l.transferResponseSubSQL = sqlsubscribers.NewTransferResponse(l.ledgerSQL, l.accountStoreSQL, l.Log)
+	l.orderSubSQL = sqlsubscribers.NewOrder(l.orderStoreSQL, l.Log)
 	l.networkLimitsSubSQL = sqlsubscribers.NewNetworkLimitSub(l.ctx, l.networkLimitsStoreSQL, l.Log)
-	l.marketDataSubSQL = sqlsubscribers.NewMarketData(l.marketDataStoreSQL, l.Log, l.conf.SQLStore.Timeout.Duration)
+	l.marketDataSubSQL = sqlsubscribers.NewMarketData(l.marketDataStoreSQL, l.Log)
 	l.tradesSubSQL = sqlsubscribers.NewTradesSubscriber(l.tradeStoreSQL, l.Log)
 	l.rewardsSubSQL = sqlsubscribers.NewReward(l.rewardStoreSQL, l.Log)
 	l.marketCreatedSubSQL = sqlsubscribers.NewMarketCreated(l.marketsStoreSQL, l.Log)
@@ -142,7 +144,7 @@ func (l *NodeCommand) setupSQLSubscribers() {
 	l.withdrawalSubSQL = sqlsubscribers.NewWithdrawal(l.withdrawalsStoreSQL, l.Log)
 	l.proposalsSubSQL = sqlsubscribers.NewProposal(l.proposalStoreSQL, l.Log)
 	l.votesSubSQL = sqlsubscribers.NewVote(l.voteStoreSQL, l.Log)
-	l.marginLevelsSubSQL = sqlsubscribers.NewMarginLevels(l.marginLevelsStoreSQL, l.Log)
+	l.marginLevelsSubSQL = sqlsubscribers.NewMarginLevels(l.marginLevelsStoreSQL, l.accountStoreSQL, l.Log)
 	l.riskFactorSubSQL = sqlsubscribers.NewRiskFactor(l.riskFactorStoreSQL, l.Log)
 	l.netParamSubSQL = sqlsubscribers.NewNetworkParameter(l.netParamStoreSQL, l.Log)
 	l.checkpointSubSQL = sqlsubscribers.NewCheckpoint(l.checkpointStoreSQL, l.Log)
@@ -153,6 +155,7 @@ func (l *NodeCommand) setupSQLSubscribers() {
 	l.transferSubSQL = sqlsubscribers.NewTransfer(l.transfersStoreSQL, l.accountStoreSQL, l.Log)
 	l.stakeLinkingSubSQL = sqlsubscribers.NewStakeLinking(l.stakeLinkingStoreSQL, l.Log)
 	l.notarySubSQL = sqlsubscribers.NewNotary(l.notaryStoreSQL, l.Log)
+	l.multiSigSignerEventSubSQL = sqlsubscribers.NewERC20MultiSigSignerEvent(l.multiSigSignerAddedStoreSQL, l.Log)
 }
 
 func (l *NodeCommand) setupStorages() error {
@@ -173,49 +176,66 @@ func (l *NodeCommand) setupStorages() error {
 	}
 
 	if l.conf.SQLStore.Enabled {
-		sqlStore, err := sqlstore.InitialiseStorage(l.Log, l.conf.SQLStore, l.vegaPaths)
-		if err != nil {
-			return fmt.Errorf("couldn't initialise sql storage: %w", err)
+
+		if l.conf.SQLStore.UseEmbedded {
+			l.embeddedPostgres, err = sqlstore.StartEmbeddedPostgres(l.Log, l.conf.SQLStore,
+				l.vegaPaths.StatePathFor(paths.DataNodeStorageHome))
+			if err != nil {
+				return fmt.Errorf("failed to start embedded postgres: %w", err)
+			}
 		}
 
-		l.assetStoreSQL = sqlstore.NewAssets(sqlStore)
-		l.blockStoreSQL = sqlstore.NewBlocks(sqlStore)
-		l.partyStoreSQL = sqlstore.NewParties(sqlStore)
-		l.partyStoreSQL.Initialise()
-		l.accountStoreSQL = sqlstore.NewAccounts(sqlStore)
-		l.balanceStoreSQL = sqlstore.NewBalances(sqlStore)
-		l.ledgerSQL = sqlstore.NewLedger(sqlStore)
-		l.orderStoreSQL = sqlstore.NewOrders(sqlStore)
-		l.networkLimitsStoreSQL = sqlstore.NewNetworkLimits(sqlStore)
-		l.marketDataStoreSQL = sqlstore.NewMarketData(sqlStore)
-		l.rewardStoreSQL = sqlstore.NewRewards(sqlStore)
-		l.marketsStoreSQL = sqlstore.NewMarkets(sqlStore)
-		l.delegationStoreSQL = sqlstore.NewDelegations(sqlStore)
-		l.epochStoreSQL = sqlstore.NewEpochs(sqlStore)
-		l.depositStoreSQL = sqlstore.NewDeposits(sqlStore)
-		l.withdrawalsStoreSQL = sqlstore.NewWithdrawals(sqlStore)
-		l.proposalStoreSQL = sqlstore.NewProposals(sqlStore)
-		l.voteStoreSQL = sqlstore.NewVotes(sqlStore)
-		l.marginLevelsStoreSQL = sqlstore.NewMarginLevels(sqlStore)
-		l.riskFactorStoreSQL = sqlstore.NewRiskFactors(sqlStore)
-		l.netParamStoreSQL = sqlstore.NewNetworkParameters(sqlStore)
-		l.checkpointStoreSQL = sqlstore.NewCheckpoints(sqlStore)
-		l.positionStoreSQL = sqlstore.NewPositions(sqlStore)
-		l.oracleSpecStoreSQL = sqlstore.NewOracleSpec(sqlStore)
-		l.oracleDataStoreSQL = sqlstore.NewOracleData(sqlStore)
-		l.liquidityProvisionStoreSQL = sqlstore.NewLiquidityProvision(sqlStore)
-		l.transfersStoreSQL = sqlstore.NewTransfers(sqlStore)
-		l.stakeLinkingStoreSQL = sqlstore.NewStakeLinking(sqlStore)
-		l.notaryStoreSQL = sqlstore.NewNotary(sqlStore)
+		err = sqlstore.MigrateToLatestSchema(l.Log, l.conf.SQLStore)
+		if err != nil {
+			return fmt.Errorf("failed to migrate to latest schema:%w", err)
+		}
 
-		candleStore, err := sqlstore.NewCandles(l.ctx, sqlStore, l.conf.CandlesV2.CandleStore)
+		transactionalConnectionSource, err := sqlstore.NewTransactionalConnectionSource(l.Log, l.conf.SQLStore.ConnectionConfig)
+		if err != nil {
+			return fmt.Errorf("failed to create connection source:%w", err)
+		}
+
+		l.transactionalConnectionSource = transactionalConnectionSource
+
+		l.assetStoreSQL = sqlstore.NewAssets(transactionalConnectionSource)
+		l.blockStoreSQL = sqlstore.NewBlocks(transactionalConnectionSource)
+		l.partyStoreSQL = sqlstore.NewParties(transactionalConnectionSource)
+		l.partyStoreSQL.Initialise()
+		l.accountStoreSQL = sqlstore.NewAccounts(transactionalConnectionSource)
+		l.balanceStoreSQL = sqlstore.NewBalances(transactionalConnectionSource)
+		l.ledgerSQL = sqlstore.NewLedger(transactionalConnectionSource)
+		l.orderStoreSQL = sqlstore.NewOrders(transactionalConnectionSource)
+		l.networkLimitsStoreSQL = sqlstore.NewNetworkLimits(transactionalConnectionSource)
+		l.marketDataStoreSQL = sqlstore.NewMarketData(transactionalConnectionSource)
+		l.rewardStoreSQL = sqlstore.NewRewards(transactionalConnectionSource)
+		l.marketsStoreSQL = sqlstore.NewMarkets(transactionalConnectionSource)
+		l.delegationStoreSQL = sqlstore.NewDelegations(transactionalConnectionSource)
+		l.epochStoreSQL = sqlstore.NewEpochs(transactionalConnectionSource)
+		l.depositStoreSQL = sqlstore.NewDeposits(transactionalConnectionSource)
+		l.withdrawalsStoreSQL = sqlstore.NewWithdrawals(transactionalConnectionSource)
+		l.proposalStoreSQL = sqlstore.NewProposals(transactionalConnectionSource)
+		l.voteStoreSQL = sqlstore.NewVotes(transactionalConnectionSource)
+		l.marginLevelsStoreSQL = sqlstore.NewMarginLevels(transactionalConnectionSource)
+		l.riskFactorStoreSQL = sqlstore.NewRiskFactors(transactionalConnectionSource)
+		l.netParamStoreSQL = sqlstore.NewNetworkParameters(transactionalConnectionSource)
+		l.checkpointStoreSQL = sqlstore.NewCheckpoints(transactionalConnectionSource)
+		l.positionStoreSQL = sqlstore.NewPositions(transactionalConnectionSource)
+		l.oracleSpecStoreSQL = sqlstore.NewOracleSpec(transactionalConnectionSource)
+		l.oracleDataStoreSQL = sqlstore.NewOracleData(transactionalConnectionSource)
+		l.liquidityProvisionStoreSQL = sqlstore.NewLiquidityProvision(transactionalConnectionSource)
+		l.transfersStoreSQL = sqlstore.NewTransfers(transactionalConnectionSource)
+		l.stakeLinkingStoreSQL = sqlstore.NewStakeLinking(transactionalConnectionSource)
+		l.notaryStoreSQL = sqlstore.NewNotary(transactionalConnectionSource)
+		l.multiSigSignerAddedStoreSQL = sqlstore.NewERC20MultiSigSignerEvent(transactionalConnectionSource)
+
+		candleStore, err := sqlstore.NewCandles(l.ctx, transactionalConnectionSource, l.conf.CandlesV2.CandleStore)
 		if err != nil {
 			return fmt.Errorf("failed to create candles store: %w", err)
 		}
 		l.candleServiceV2 = candlesv2.NewService(l.ctx, l.Log, l.conf.CandlesV2, candleStore)
 
-		l.tradeStoreSQL = sqlstore.NewTrades(sqlStore)
-		l.sqlStore = sqlStore
+		l.tradeStoreSQL = sqlstore.NewTrades(transactionalConnectionSource)
+
 	}
 
 	st, err := storage.InitialiseStorage(l.vegaPaths)
@@ -283,8 +303,9 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 		eventSource = broker.NewFanOutEventSource(eventSource, l.conf.SQLStore.FanOutBufferSize, 2)
 
 		l.sqlBroker = broker.NewSqlStoreBroker(l.Log, l.conf.Broker, l.chainInfoStore, eventSource,
-			l.conf.SQLStore.SqlEventBrokerBufferSize,
+			l.transactionalConnectionSource,
 			l.timeSubSQL,
+			l.accountSubSQL,
 			l.assetSubSQL,
 			l.partySubSQL,
 			l.transferResponseSubSQL,
@@ -314,6 +335,7 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 			l.transferSubSQL,
 			l.stakeLinkingSubSQL,
 			l.notarySubSQL,
+			l.multiSigSignerEventSubSQL,
 		)
 	}
 

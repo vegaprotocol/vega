@@ -22,14 +22,13 @@ func TestStakeLinkingStore(t *testing.T) {
 
 func setupStakeLinkingTest(t *testing.T, ctx context.Context) (*sqlstore.Blocks, *sqlstore.StakeLinking, *pgx.Conn) {
 	t.Helper()
-	err := testStore.DeleteEverything()
-	require.NoError(t, err)
+	DeleteEverything()
 
-	bs := sqlstore.NewBlocks(testStore)
-	sl := sqlstore.NewStakeLinking(testStore)
+	bs := sqlstore.NewBlocks(connectionSource)
+	sl := sqlstore.NewStakeLinking(connectionSource)
 
 	config := NewTestConfig(testDBPort)
-	conn, err := pgx.Connect(ctx, connectionString(config))
+	conn, err := pgx.Connect(ctx, config.ConnectionConfig.GetConnectionString())
 	require.NoError(t, err)
 
 	return bs, sl, conn
@@ -52,7 +51,7 @@ func testUpsertShouldAddNewInBlock(t *testing.T) {
 	proto := stakingProtos[0]
 	data, err := entities.StakeLinkingFromProto(proto, block.VegaTime)
 	require.NoError(t, err)
-	assert.NoError(t, sl.Upsert(data))
+	assert.NoError(t, sl.Upsert(context.Background(), data))
 
 	assert.NoError(t, conn.QueryRow(ctx, "select count(*) from stake_linking").Scan(&rowCount))
 	assert.Equal(t, 1, rowCount)
@@ -75,7 +74,7 @@ func testUpsertShouldUpdateExistingInBlock(t *testing.T) {
 	for _, proto := range stakingProtos {
 		data, err := entities.StakeLinkingFromProto(proto, block.VegaTime)
 		require.NoError(t, err)
-		assert.NoError(t, sl.Upsert(data))
+		assert.NoError(t, sl.Upsert(context.Background(), data))
 	}
 
 	assert.NoError(t, conn.QueryRow(ctx, "select count(*) from stake_linking").Scan(&rowCount))
@@ -99,7 +98,7 @@ func testGetStake(t *testing.T) {
 	for _, proto := range stakingProtos {
 		data, err := entities.StakeLinkingFromProto(proto, block.VegaTime)
 		require.NoError(t, err)
-		assert.NoError(t, sl.Upsert(data))
+		assert.NoError(t, sl.Upsert(context.Background(), data))
 	}
 
 	assert.NoError(t, conn.QueryRow(ctx, "select count(*) from stake_linking").Scan(&rowCount))

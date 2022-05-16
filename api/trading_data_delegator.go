@@ -78,6 +78,12 @@ func (t *tradingDataDelegator) PositionsByParty(ctx context.Context, request *pr
 		positions[0], err = t.positionStore.GetByMarketAndParty(ctx,
 			entities.NewMarketID(request.MarketId),
 			entities.NewPartyID(request.PartyId))
+
+		// Don't error if there's no position for this party/market
+		if errors.Is(err, sqlstore.ErrPositionNotFound) {
+			err = nil
+			positions = []entities.Position{}
+		}
 	}
 
 	if err != nil {
@@ -415,7 +421,9 @@ func (t *tradingDataDelegator) GetProposalByID(ctx context.Context,
 	defer metrics.StartAPIRequestAndTimeGRPC("GetProposalByID SQL")()
 
 	proposal, err := t.proposalsStore.GetByID(ctx, req.ProposalId)
-	if err != nil {
+	if errors.Is(err, sqlstore.ErrProposalNotFound) {
+		return nil, apiError(codes.NotFound, ErrMissingProposalID, err)
+	} else if err != nil {
 		return nil, apiError(codes.Internal, ErrNotMapped, err)
 	}
 
@@ -433,7 +441,9 @@ func (t *tradingDataDelegator) GetProposalByReference(ctx context.Context,
 	defer metrics.StartAPIRequestAndTimeGRPC("GetProposalByID SQL")()
 
 	proposal, err := t.proposalsStore.GetByReference(ctx, req.Reference)
-	if err != nil {
+	if errors.Is(err, sqlstore.ErrProposalNotFound) {
+		return nil, apiError(codes.NotFound, ErrMissingProposalReference, err)
+	} else if err != nil {
 		return nil, apiError(codes.Internal, ErrNotMapped, err)
 	}
 
@@ -1415,7 +1425,11 @@ func (t *tradingDataDelegator) MarginLevels(ctx context.Context, req *protoapi.M
 	}
 	levels := make([]*vega.MarginLevels, 0, len(mls))
 	for _, v := range mls {
-		levels = append(levels, v.ToProto())
+		proto, err := v.ToProto(t.accountStore)
+		if err != nil {
+			return nil, apiError(codes.Internal, ErrRiskServiceGetMarginLevelsByID, err)
+		}
+		levels = append(levels, proto)
 	}
 	return &protoapi.MarginLevelsResponse{
 		MarginLevels: levels,
@@ -1515,6 +1529,8 @@ func (t *tradingDataDelegator) ERC20WithdrawalApproval(ctx context.Context, req 
 		Nonce:         w.Ref,
 		TargetAddress: w.Ext.GetErc20().ReceiverAddress,
 		Signatures:    pack,
+		// timestamps is unix nano, contract needs unix. So load if first, and cut nanos
+		Creation: w.CreatedTimestamp.Unix(),
 	}, nil
 }
 
@@ -1587,6 +1603,23 @@ func (t *tradingDataDelegator) OracleDataBySpec(ctx context.Context, req *protoa
 		out = append(out, v.ToProto())
 	}
 	return &protoapi.OracleDataBySpecResponse{
+		OracleData: out,
+	}, nil
+}
+
+func (t *tradingDataDelegator) ListOracleData(ctx context.Context, _ *protoapi.ListOracleDataRequest) (*protoapi.ListOracleDataResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("ListOracleData SQL")()
+	specs, err := t.oracleDataStore.ListOracleData(ctx, entities.Pagination{})
+	if err != nil {
+		return nil, apiError(codes.Internal, err)
+	}
+
+	out := make([]*oraclespb.OracleData, 0, len(specs))
+	for _, v := range specs {
+		out = append(out, v.ToProto())
+	}
+
+	return &protoapi.ListOracleDataResponse{
 		OracleData: out,
 	}, nil
 }

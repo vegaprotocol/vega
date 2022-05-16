@@ -776,6 +776,26 @@ func (mr *MockTradingDataServiceClientMockRecorder) LiquidityProvisions(arg0, ar
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LiquidityProvisions", reflect.TypeOf((*MockTradingDataServiceClient)(nil).LiquidityProvisions), varargs...)
 }
 
+// ListOracleData mocks base method.
+func (m *MockTradingDataServiceClient) ListOracleData(arg0 context.Context, arg1 *v1.ListOracleDataRequest, arg2 ...grpc.CallOption) (*v1.ListOracleDataResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "ListOracleData", varargs...)
+	ret0, _ := ret[0].(*v1.ListOracleDataResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListOracleData indicates an expected call of ListOracleData.
+func (mr *MockTradingDataServiceClientMockRecorder) ListOracleData(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListOracleData", reflect.TypeOf((*MockTradingDataServiceClient)(nil).ListOracleData), varargs...)
+}
+
 // MarginLevels mocks base method.
 func (m *MockTradingDataServiceClient) MarginLevels(arg0 context.Context, arg1 *v1.MarginLevelsRequest, arg2 ...grpc.CallOption) (*v1.MarginLevelsResponse, error) {
 	m.ctrl.T.Helper()

@@ -1,18 +1,49 @@
 # Changelog
 
-## Unreleased (0.51.0)
+## Unreleased (0.52.0)
 
 ### 🚨 Breaking changes
-- [](https://github.com/vegaprotocol/data-node/pull/xxx) -
+- [](https://github.com/vegaprotocol/data-node/issues/xxx) -
 
 ### 🗑️  Deprecation
-- [](https://github.com/vegaprotocol/data-node/pull/xxx) -
+- [](https://github.com/vegaprotocol/data-node/issues/xxx) -
 
 ### 🛠  Improvements
-- [](https://github.com/vegaprotocol/data-node/pull/xxx) -
+- [](https://github.com/vegaprotocol/data-node/issues/xxx) -
 
 ### 🐛 Fixes
-- [](https://github.com/vegaprotocol/data-node/pull/xxx) -
+- [](https://github.com/vegaprotocol/data-node/issues/xxx) -
+
+## 0.51.0
+
+### 🚨 Breaking changes
+- [518](https://github.com/vegaprotocol/data-node/issues/518) - Free-form properties are moved to rationale.
+
+
+### 🛠  Improvements
+- [491](https://github.com/vegaprotocol/data-node/issues/491) - Expose bundle for asset
+- [414](https://github.com/vegaprotocol/data-node/issues/414) - Migrate market depth to retrieve data from `Postgres`
+- [495](https://github.com/vegaprotocol/data-node/issues/495) - Remove deprecated `PositionState` event handling, general fixes to `SettlePosition` event handling
+- [498](https://github.com/vegaprotocol/data-node/issues/498) - Transaction event broker
+- [521](https://github.com/vegaprotocol/data-node/issues/521) - Refactor margin levels to use account id
+- [518](https://github.com/vegaprotocol/data-node/issues/518) - Add rationale to proposals
+- [526](https://github.com/vegaprotocol/data-node/issues/526) - Add market id and reward type to reward and market to transfer
+- [540](https://github.com/vegaprotocol/data-node/issues/540) - CI: trigger Devnet deployment on merges to develop branch
+- [546](https://github.com/vegaprotocol/data-node/issues/546) - Data retention for margin levels
+- [553](https://github.com/vegaprotocol/data-node/issues/553) - Update transfers API to expose dispatch strategy
+- [578](https://github.com/vegaprotocol/data-node/issues/578) - Add metrics for `SQL` queries
+- [582](https://github.com/vegaprotocol/data-node/issues/582) - Add a cache for assets
+- [548](https://github.com/vegaprotocol/data-node/issues/548) - Remove foreign key constraints on hyper tables
+- [591](https://github.com/vegaprotocol/data-node/issues/591) - Optimise liquidity provision and margin levels data retention and storage
+- [588](https://github.com/vegaprotocol/data-node/issues/588) - Return correct error code when proposal not found
+- [556](https://github.com/vegaprotocol/data-node/issues/556) - Expose an endpoint to list oracle data
+
+### 🐛 Fixes
+- [524](https://github.com/vegaprotocol/data-node/issues/524) - Fix for incorrect balances
+- [520](https://github.com/vegaprotocol/data-node/issues/520) - Fix event race where a ranking event can come in before the new node event
+- [519](https://github.com/vegaprotocol/data-node/issues/519) - Fix market depth update subscriptions streaming events for all markets.
+- [551](https://github.com/vegaprotocol/data-node/issues/551) - Shut down cleanly on `SIGINT` or `SIGTERM`
+- [585](https://github.com/vegaprotocol/data-node/issues/585) - Fix issue which was stopping asset cache from working properly
 
 
 ## 0.50.0
@@ -26,10 +57,12 @@
 - [467](https://github.com/vegaprotocol/data-node/pull/467) - Migrate transfers API to retrieve data from `Postgres`
 - [469](https://github.com/vegaprotocol/data-node/issues/469) - Migrate existing stake linking API to new `Postgres` database.
 - [496](https://github.com/vegaprotocol/data-node/issues/496) - Migrate `ERC20WithdrawlApproval` and `NodeSignaturesAggregate` API to new `Postgres` database.
+- [496](https://github.com/vegaprotocol/data-node/issues/496) - Add API to get `multisig` signer bundles.
 - [474](https://github.com/vegaprotocol/data-node/pull/474) - Clean up error handling in subscribers and make action on error configurable
 - [487](https://github.com/vegaprotocol/data-node/pull/487) - Trade data retention
 - [495](https://github.com/vegaprotocol/data-node/pull/495) - Account for `SettlePosition` events reaching the positions plug-in before the `PositionState` event.
 - [495](https://github.com/vegaprotocol/data-node/pull/495) - Make sure `SettlePosition` does not result in a division by zero panic.
+- [495](https://github.com/vegaprotocol/data-node/pull/495) - Fix panic caused by incorrect/missing initialisation of `AverageEntryPrice` field.
 - [](https://github.com/vegaprotocol/data-node/pull/xxx) -
 
 ### 🐛 Fixes

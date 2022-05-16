@@ -6,11 +6,13 @@ import (
 	"fmt"
 
 	"code.vegaprotocol.io/data-node/entities"
+	"code.vegaprotocol.io/data-node/metrics"
 	"github.com/georgysavva/scany/pgxscan"
 )
 
 type LiquidityProvision struct {
-	*SQLStore
+	*ConnectionSource
+	batcher MapBatcher[entities.LiquidityProvisionKey, entities.LiquidityProvision]
 }
 
 const (
@@ -18,39 +20,21 @@ const (
 		commitment_amount, fee, sells, buys, version, status, reference, vega_time`
 )
 
-func NewLiquidityProvision(sqlStore *SQLStore) *LiquidityProvision {
+func NewLiquidityProvision(connectionSource *ConnectionSource) *LiquidityProvision {
 	return &LiquidityProvision{
-		SQLStore: sqlStore,
+		ConnectionSource: connectionSource,
+		batcher: NewMapBatcher[entities.LiquidityProvisionKey, entities.LiquidityProvision](
+			"liquidity_provisions", entities.LiquidityProvisionColumns),
 	}
 }
 
-func (lp *LiquidityProvision) Upsert(liquidityProvision *entities.LiquidityProvision) error {
-	ctx, cancel := context.WithTimeout(context.Background(), lp.conf.Timeout.Duration)
-	defer cancel()
+func (lp *LiquidityProvision) Flush(ctx context.Context) error {
+	defer metrics.StartSQLQuery("LiquidityProvision", "Flush")()
+	return lp.batcher.Flush(ctx, lp.pool)
+}
 
-	query := fmt.Sprintf(`insert into liquidity_provisions (%s)
-values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
-on conflict (id, vega_time) do update
-set 
-	party_id=EXCLUDED.party_id,
-	created_at=EXCLUDED.created_at,
-	updated_at=EXCLUDED.updated_at,
-	market_id=EXCLUDED.market_id,
-	commitment_amount=EXCLUDED.commitment_amount,
-	fee=EXCLUDED.fee,
-	sells=EXCLUDED.sells,
-	buys=EXCLUDED.buys,
-	version=EXCLUDED.version,
-	status=EXCLUDED.status,
-	reference=EXCLUDED.reference`, sqlOracleLiquidityProvisionColumns)
-
-	if _, err := lp.pool.Exec(ctx, query, liquidityProvision.ID, liquidityProvision.PartyID,
-		liquidityProvision.CreatedAt, liquidityProvision.UpdatedAt, liquidityProvision.MarketID,
-		liquidityProvision.CommitmentAmount, liquidityProvision.Fee, liquidityProvision.Sells,
-		liquidityProvision.Buys, liquidityProvision.Version, liquidityProvision.Status,
-		liquidityProvision.Reference, liquidityProvision.VegaTime); err != nil {
-		return err
-	}
+func (lp *LiquidityProvision) Upsert(ctx context.Context, liquidityProvision entities.LiquidityProvision) error {
+	lp.batcher.Add(liquidityProvision)
 	return nil
 }
 
@@ -86,6 +70,7 @@ order by id, vega_time desc`, selectSql, where)
 
 	var liquidityProvisions []entities.LiquidityProvision
 
-	err := pgxscan.Select(ctx, lp.pool, &liquidityProvisions, query, bindVars...)
+	defer metrics.StartSQLQuery("LiquidityProvision", "Get")()
+	err := pgxscan.Select(ctx, lp.Connection, &liquidityProvisions, query, bindVars...)
 	return liquidityProvisions, err
 }

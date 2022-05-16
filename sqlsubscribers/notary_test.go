@@ -20,9 +20,9 @@ func TestNotary_Push(t *testing.T) {
 
 	store := mocks.NewMockNotaryStore(ctrl)
 
-	store.EXPECT().Add(gomock.Any()).Times(1)
+	store.EXPECT().Add(context.Background(), gomock.Any()).Times(1)
 	subscriber := sqlsubscribers.NewNotary(store, logging.NewTestLogger())
-	err := subscriber.Push(
+	err := subscriber.Push(context.Background(),
 		events.NewNodeSignatureEvent(context.Background(),
 			v1.NodeSignature{
 				Id:   "someid",
@@ -40,6 +40,6 @@ func TestNotary_PushWrongEvent(t *testing.T) {
 
 	store := mocks.NewMockNotaryStore(ctrl)
 	subscriber := sqlsubscribers.NewNotary(store, logging.NewTestLogger())
-	err := subscriber.Push(events.NewOracleDataEvent(context.Background(), oraclespb.OracleData{}))
+	err := subscriber.Push(context.Background(), events.NewOracleDataEvent(context.Background(), oraclespb.OracleData{}))
 	require.Error(t, err)
 }

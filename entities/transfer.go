@@ -1,6 +1,7 @@
 package entities
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -10,7 +11,7 @@ import (
 )
 
 type AccountSource interface {
-	Obtain(a *Account) error
+	Obtain(ctx context.Context, a *Account) error
 	GetByID(id int64) (Account, error)
 }
 
@@ -21,19 +22,22 @@ func NewTransferID(id string) TransferID {
 }
 
 type Transfer struct {
-	ID            TransferID
-	VegaTime      time.Time
-	FromAccountId int64
-	ToAccountId   int64
-	AssetId       AssetID
-	Amount        decimal.Decimal
-	Reference     string
-	Status        TransferStatus
-	TransferType  TransferType
-	DeliverOn     *time.Time
-	StartEpoch    *uint64
-	EndEpoch      *uint64
-	Factor        *decimal.Decimal
+	ID                  TransferID
+	VegaTime            time.Time
+	FromAccountId       int64
+	ToAccountId         int64
+	AssetId             AssetID
+	Amount              decimal.Decimal
+	Reference           string
+	Status              TransferStatus
+	TransferType        TransferType
+	DeliverOn           *time.Time
+	StartEpoch          *uint64
+	EndEpoch            *uint64
+	Factor              *decimal.Decimal
+	DispatchMetric      *vega.DispatchMetric
+	DispatchMetricAsset *string
+	DispatchMarkets     []string
 }
 
 func (t *Transfer) ToProto(accountSource AccountSource) (*eventspb.Transfer, error) {
@@ -66,9 +70,17 @@ func (t *Transfer) ToProto(accountSource AccountSource) (*eventspb.Transfer, err
 	case OneOff:
 		proto.Kind = &eventspb.Transfer_OneOff{OneOff: &eventspb.OneOffTransfer{DeliverOn: t.DeliverOn.Unix()}}
 	case Recurring:
+
 		recurringTransfer := &eventspb.RecurringTransfer{
 			StartEpoch: *t.StartEpoch,
 			Factor:     t.Factor.String(),
+		}
+		if t.DispatchMetricAsset != nil {
+			recurringTransfer.DispatchStrategy = &vega.DispatchStrategy{
+				AssetForMetric: *t.DispatchMetricAsset,
+				Metric:         vega.DispatchMetric(*t.DispatchMetric),
+				Markets:        t.DispatchMarkets,
+			}
 		}
 
 		if t.EndEpoch != nil {
@@ -84,18 +96,17 @@ func (t *Transfer) ToProto(accountSource AccountSource) (*eventspb.Transfer, err
 	return &proto, nil
 }
 
-func TransferFromProto(t *eventspb.Transfer, vegaTime time.Time, accountSource AccountSource) (*Transfer, error) {
+func TransferFromProto(ctx context.Context, t *eventspb.Transfer, vegaTime time.Time, accountSource AccountSource) (*Transfer, error) {
 
 	fromAcc := Account{
 		ID:       0,
 		PartyID:  PartyID{ID(t.From)},
 		AssetID:  AssetID{ID(t.Asset)},
-		MarketID: MarketID{},
 		Type:     t.FromAccountType,
 		VegaTime: vegaTime,
 	}
 
-	err := accountSource.Obtain(&fromAcc)
+	err := accountSource.Obtain(ctx, &fromAcc)
 
 	if err != nil {
 		return nil, fmt.Errorf("obtaining from account id for transfer:%w", err)
@@ -105,12 +116,11 @@ func TransferFromProto(t *eventspb.Transfer, vegaTime time.Time, accountSource A
 		ID:       0,
 		PartyID:  PartyID{ID: ID(t.To)},
 		AssetID:  AssetID{ID: ID(t.Asset)},
-		MarketID: MarketID{},
 		Type:     t.ToAccountType,
 		VegaTime: vegaTime,
 	}
 
-	err = accountSource.Obtain(&toAcc)
+	err = accountSource.Obtain(ctx, &toAcc)
 
 	if err != nil {
 		return nil, fmt.Errorf("obtaining to account id for transfer:%w", err)
@@ -145,6 +155,12 @@ func TransferFromProto(t *eventspb.Transfer, vegaTime time.Time, accountSource A
 	case *eventspb.Transfer_Recurring:
 		transfer.TransferType = Recurring
 		transfer.StartEpoch = &v.Recurring.StartEpoch
+		if v.Recurring.DispatchStrategy != nil {
+			transfer.DispatchMetric = &v.Recurring.DispatchStrategy.Metric
+			transfer.DispatchMetricAsset = &v.Recurring.DispatchStrategy.AssetForMetric
+			transfer.DispatchMarkets = v.Recurring.DispatchStrategy.Markets
+		}
+
 		if v.Recurring.EndEpoch != nil {
 			transfer.EndEpoch = &v.Recurring.EndEpoch.Value
 		}

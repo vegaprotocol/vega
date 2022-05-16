@@ -19,8 +19,8 @@ func TestStakeLinking_Push(t *testing.T) {
 
 	store := mocks.NewMockStakeLinkingStore(ctrl)
 
-	store.EXPECT().Upsert(gomock.Any()).Times(1)
+	store.EXPECT().Upsert(context.Background(), gomock.Any()).Times(1)
 	subscriber := sqlsubscribers.NewStakeLinking(store, logging.NewTestLogger())
-	subscriber.Push(events.NewTime(context.Background(), time.Now()))
-	subscriber.Push(events.NewStakeLinking(context.Background(), types.StakeLinking{}))
+	subscriber.Push(context.Background(), events.NewTime(context.Background(), time.Now()))
+	subscriber.Push(context.Background(), events.NewStakeLinking(context.Background(), types.StakeLinking{}))
 }

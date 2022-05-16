@@ -5,23 +5,22 @@ import (
 	"fmt"
 
 	"code.vegaprotocol.io/data-node/entities"
+	"code.vegaprotocol.io/data-node/metrics"
 	"github.com/georgysavva/scany/pgxscan"
 )
 
 type Withdrawals struct {
-	*SQLStore
+	*ConnectionSource
 }
 
-func NewWithdrawals(sqlStore *SQLStore) *Withdrawals {
+func NewWithdrawals(connectionSource *ConnectionSource) *Withdrawals {
 	return &Withdrawals{
-		SQLStore: sqlStore,
+		ConnectionSource: connectionSource,
 	}
 }
 
-func (w *Withdrawals) Upsert(withdrawal *entities.Withdrawal) error {
-	ctx, cancel := context.WithTimeout(context.Background(), w.conf.Timeout.Duration)
-	defer cancel()
-
+func (w *Withdrawals) Upsert(ctx context.Context, withdrawal *entities.Withdrawal) error {
+	defer metrics.StartSQLQuery("Withdrawals", "Upsert")()
 	query := `insert into withdrawals(
 		id, party_id, amount, asset, status, ref, expiry, tx_hash,
 		created_timestamp, withdrawn_timestamp, ext, vega_time
@@ -40,7 +39,7 @@ func (w *Withdrawals) Upsert(withdrawal *entities.Withdrawal) error {
 			withdrawn_timestamp=EXCLUDED.withdrawn_timestamp,
 			ext=EXCLUDED.ext`
 
-	if _, err := w.pool.Exec(ctx, query,
+	if _, err := w.Connection.Exec(ctx, query,
 		withdrawal.ID,
 		withdrawal.PartyID,
 		withdrawal.Amount,
@@ -61,6 +60,7 @@ func (w *Withdrawals) Upsert(withdrawal *entities.Withdrawal) error {
 }
 
 func (w *Withdrawals) GetByID(ctx context.Context, withdrawalID string) (entities.Withdrawal, error) {
+	defer metrics.StartSQLQuery("Withdrawals", "GetByID")()
 	var withdrawal entities.Withdrawal
 
 	query := `select distinct on (id) id, party_id, amount, asset, status, ref, expiry, tx_hash, created_timestamp, withdrawn_timestamp, ext, vega_time
@@ -68,7 +68,7 @@ func (w *Withdrawals) GetByID(ctx context.Context, withdrawalID string) (entitie
 		where id = $1
 		order by id, vega_time desc`
 
-	err := pgxscan.Get(ctx, w.pool, &withdrawal, query, entities.NewWithdrawalID(withdrawalID))
+	err := pgxscan.Get(ctx, w.Connection, &withdrawal, query, entities.NewWithdrawalID(withdrawalID))
 	return withdrawal, err
 }
 
@@ -86,7 +86,8 @@ func (w *Withdrawals) GetByParty(ctx context.Context, partyID string, openOnly b
 
 	query, args = orderAndPaginateQuery(prequery, nil, pagination, entities.NewPartyID(partyID))
 
-	if err := pgxscan.Select(ctx, w.pool, &withdrawals, query, args...); err != nil {
+	defer metrics.StartSQLQuery("Withdrawals", "GetByParty")()
+	if err := pgxscan.Select(ctx, w.Connection, &withdrawals, query, args...); err != nil {
 		return nil
 	}
 
