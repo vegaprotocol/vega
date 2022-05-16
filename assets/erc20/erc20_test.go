@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"math/big"
 	"testing"
+	"time"
 
 	"code.vegaprotocol.io/vega/assets/erc20"
 	vcrypto "code.vegaprotocol.io/vega/crypto"
@@ -37,7 +38,9 @@ var token = &types.AssetDetails{
 	Quantum:     num.DecimalFromFloat(1),
 	Source: &types.AssetDetailsErc20{
 		Erc20: &types.ERC20{
-			ContractAddress: "0x1FaA74E181092A97Fecc923015293ce57eE1208A",
+			ContractAddress:   "0x1FaA74E181092A97Fecc923015293ce57eE1208A",
+			WithdrawThreshold: num.NewUint(1000),
+			LifetimeLimit:     num.NewUint(42),
 		},
 	},
 }
@@ -69,10 +72,12 @@ func TestERC20Signatures(t *testing.T) {
 
 func testWithdrawAsset(t *testing.T) {
 	token := newTestERC20(t)
+	now := time.Unix(10000, 0)
 	msg, sig, err := token.SignWithdrawal(
 		num.NewUint(42),
 		ethPartyAddr,
 		big.NewInt(84),
+		now,
 	)
 
 	assert.NoError(t, err)
@@ -80,7 +85,7 @@ func testWithdrawAsset(t *testing.T) {
 	assert.NotNil(t, sig)
 	assert.True(t, verifySignature(msg, sig))
 	assert.Equal(t,
-		"c888ddbca11784c473c7a8dd5f5ff6f17aa5d229d7e8e1642bb3008474330e8a8a536cf0a501bc2c690ccf8cd5cbe8ec08ddb9328787407276a7d01685d51903",
+		"68154aa30a66d8546a338e2f50ac3e0bde710975755562e12c8508c5e4e43aa741b98d1f7384d8cf6a33e86fc1ed6f833ad627a9fb9b5a56aaaf0024511a2402",
 		hex.EncodeToString(sig),
 	)
 }
@@ -94,7 +99,7 @@ func testListAsset(t *testing.T) {
 	assert.NotNil(t, sig)
 	assert.True(t, verifySignature(msg, sig))
 	assert.Equal(t,
-		"f754629dd9489307abf772831957f1da5f686e7c78ea55c71fb718062fd718fe09a217b1939c4f34ad32f214256d79c7c85dfa461efdd22d3a0a24c61e821e03",
+		"e6048f597145d7d1e1ddfe41abf9ae950e9b6e93598c8b1e4fe2d9af8493b240a4d85322eb40c6bf76b0eac2481fa42014956f10a38675769b0c995e191d650b",
 		hex.EncodeToString(sig),
 	)
 }

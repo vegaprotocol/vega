@@ -72,8 +72,7 @@ type StakeVerifier struct {
 	hashes map[string]struct{}
 
 	// snapshot data
-	svss            *stakeVerifierSnapshotState
-	keyToSerialiser map[string]func() ([]byte, error)
+	svss *stakeVerifierSnapshotState
 }
 
 type pendingSD struct {
@@ -115,16 +114,10 @@ func NewStakeVerifier(
 		ids:     map[string]struct{}{},
 		hashes:  map[string]struct{}{},
 		svss: &stakeVerifierSnapshotState{
-			changed:    map[string]bool{depositedKey: true, removedKey: true},
-			serialised: map[string][]byte{},
-			hash:       map[string][]byte{},
+			changedDeposited: true,
+			changedRemoved:   true,
 		},
-		keyToSerialiser: map[string]func() ([]byte, error){},
 	}
-
-	s.keyToSerialiser[depositedKey] = s.serialisePendingSD
-	s.keyToSerialiser[removedKey] = s.serialisePendingSR
-
 	return s
 }
 
@@ -163,7 +156,7 @@ func (s *StakeVerifier) ProcessStakeRemoved(
 		StakeRemoved: event,
 		check:        func() error { return s.ocv.CheckStakeRemoved(event) },
 	}
-	s.svss.changed[removedKey] = true
+	s.svss.changedRemoved = true
 
 	s.pendingSRs = append(s.pendingSRs, pending)
 	evt := pending.IntoStakeLinking()
@@ -192,7 +185,7 @@ func (s *StakeVerifier) ProcessStakeDeposited(
 	}
 
 	s.pendingSDs = append(s.pendingSDs, pending)
-	s.svss.changed[depositedKey] = true
+	s.svss.changedDeposited = true
 
 	evt := pending.IntoStakeLinking()
 	evt.Status = types.StakeLinkingStatusPending
@@ -209,7 +202,7 @@ func (s *StakeVerifier) removePendingStakeDeposited(id string) error {
 	for i, v := range s.pendingSDs {
 		if v.ID == id {
 			s.pendingSDs = s.pendingSDs[:i+copy(s.pendingSDs[i:], s.pendingSDs[i+1:])]
-			s.svss.changed[depositedKey] = true
+			s.svss.changedDeposited = true
 			return nil
 		}
 	}
@@ -220,7 +213,7 @@ func (s *StakeVerifier) removePendingStakeRemoved(id string) error {
 	for i, v := range s.pendingSRs {
 		if v.ID == id {
 			s.pendingSRs = s.pendingSRs[:i+copy(s.pendingSRs[i:], s.pendingSRs[i+1:])]
-			s.svss.changed[removedKey] = true
+			s.svss.changedRemoved = true
 			return nil
 		}
 	}

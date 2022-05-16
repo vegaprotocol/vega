@@ -56,7 +56,7 @@ func (e *Engine) ensureMinimalTransferAmount(a *assets.Asset, amount *num.Uint) 
 
 func (e *Engine) processTransfer(
 	ctx context.Context,
-	from, to, asset string,
+	from, to, asset, market string,
 	fromAcc, toAcc types.AccountType,
 	amount *num.Uint,
 	reference string,
@@ -72,7 +72,7 @@ func (e *Engine) processTransfer(
 	}
 	feeTransferAccountType := []types.AccountType{fromAcc}
 
-	fromTransfer, toTransfer := e.makeTransfers(from, to, asset, amount)
+	fromTransfer, toTransfer := e.makeTransfers(from, to, asset, market, amount)
 	transfers := []*types.Transfer{fromTransfer}
 	accountTypes := []types.AccountType{fromAcc}
 	references := []string{reference}
@@ -107,7 +107,7 @@ func (e *Engine) processTransfer(
 }
 
 func (e *Engine) makeTransfers(
-	from, to, asset string,
+	from, to, asset, market string,
 	amount *num.Uint,
 ) (*types.Transfer, *types.Transfer) {
 	return &types.Transfer{
@@ -118,6 +118,7 @@ func (e *Engine) makeTransfers(
 			},
 			Type:      types.TransferTypeTransferFundsSend,
 			MinAmount: amount.Clone(),
+			Market:    market,
 		}, &types.Transfer{
 			Owner: to,
 			Amount: &types.FinancialAmount{
@@ -126,6 +127,7 @@ func (e *Engine) makeTransfers(
 			},
 			Type:      types.TransferTypeTransferFundsDistribute,
 			MinAmount: amount.Clone(),
+			Market:    market,
 		}
 }
 

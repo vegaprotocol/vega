@@ -20,18 +20,19 @@ var (
 type CheckpointName string
 
 const (
-	GovernanceCheckpoint      CheckpointName = "governance"
-	AssetsCheckpoint          CheckpointName = "assets"
-	CollateralCheckpoint      CheckpointName = "collateral"
-	NetParamsCheckpoint       CheckpointName = "netparams"
-	DelegationCheckpoint      CheckpointName = "delegation"
-	EpochCheckpoint           CheckpointName = "epoch"
-	BlockCheckpoint           CheckpointName = "block" // pseudo-checkpoint, really...
-	PendingRewardsCheckpoint  CheckpointName = "rewards"
-	BankingCheckpoint         CheckpointName = "banking"
-	ValidatorsCheckpoint      CheckpointName = "validators"
-	StakingCheckpoint         CheckpointName = "staking"
-	MultisigControlCheckpoint CheckpointName = "multisigControl"
+	GovernanceCheckpoint            CheckpointName = "governance"
+	AssetsCheckpoint                CheckpointName = "assets"
+	CollateralCheckpoint            CheckpointName = "collateral"
+	NetParamsCheckpoint             CheckpointName = "netparams"
+	DelegationCheckpoint            CheckpointName = "delegation"
+	EpochCheckpoint                 CheckpointName = "epoch"
+	BlockCheckpoint                 CheckpointName = "block" // pseudo-checkpoint, really...
+	MarketActivityTrackerCheckpoint CheckpointName = "marketActivity"
+	PendingRewardsCheckpoint        CheckpointName = "rewards"
+	BankingCheckpoint               CheckpointName = "banking"
+	ValidatorsCheckpoint            CheckpointName = "validators"
+	StakingCheckpoint               CheckpointName = "staking"
+	MultisigControlCheckpoint       CheckpointName = "multisigControl"
 )
 
 type Block struct {
@@ -44,18 +45,19 @@ type CheckpointState struct {
 }
 
 type Checkpoint struct {
-	Governance        []byte
-	Assets            []byte
-	Collateral        []byte
-	NetworkParameters []byte
-	Delegation        []byte
-	Epoch             []byte
-	Block             []byte
-	Rewards           []byte
-	Validators        []byte
-	Banking           []byte
-	Staking           []byte
-	MultisigControl   []byte
+	Governance            []byte
+	Assets                []byte
+	Collateral            []byte
+	NetworkParameters     []byte
+	Delegation            []byte
+	Epoch                 []byte
+	Block                 []byte
+	Rewards               []byte
+	Validators            []byte
+	Banking               []byte
+	Staking               []byte
+	MultisigControl       []byte
+	MarketActivityTracker []byte
 }
 
 type DelegationEntry struct {
@@ -142,18 +144,19 @@ func (s CheckpointState) Validate() error {
 
 func NewCheckpointFromProto(pc *checkpoint.Checkpoint) *Checkpoint {
 	return &Checkpoint{
-		Governance:        pc.Governance,
-		Assets:            pc.Assets,
-		Collateral:        pc.Collateral,
-		NetworkParameters: pc.NetworkParameters,
-		Delegation:        pc.Delegation,
-		Epoch:             pc.Epoch,
-		Block:             pc.Block,
-		Rewards:           pc.Rewards,
-		Validators:        pc.Validators,
-		Banking:           pc.Banking,
-		Staking:           pc.Staking,
-		MultisigControl:   pc.MultisigControl,
+		Governance:            pc.Governance,
+		Assets:                pc.Assets,
+		Collateral:            pc.Collateral,
+		NetworkParameters:     pc.NetworkParameters,
+		Delegation:            pc.Delegation,
+		Epoch:                 pc.Epoch,
+		Block:                 pc.Block,
+		Rewards:               pc.Rewards,
+		Validators:            pc.Validators,
+		Banking:               pc.Banking,
+		Staking:               pc.Staking,
+		MultisigControl:       pc.MultisigControl,
+		MarketActivityTracker: pc.MarketTracker,
 	}
 }
 
@@ -171,6 +174,7 @@ func (c Checkpoint) IntoProto() *checkpoint.Checkpoint {
 		Banking:           c.Banking,
 		Staking:           c.Staking,
 		MultisigControl:   c.MultisigControl,
+		MarketTracker:     c.MarketActivityTracker,
 	}
 }
 
@@ -202,6 +206,7 @@ func (c Checkpoint) HashBytes() []byte {
 	ret = append(ret, c.Banking...)
 	ret = append(ret, c.Validators...)
 	ret = append(ret, c.Staking...)
+	ret = append(ret, c.MarketActivityTracker...)
 	return append(ret, c.MultisigControl...)
 }
 
@@ -232,6 +237,8 @@ func (c *Checkpoint) Set(name CheckpointName, val []byte) {
 		c.Staking = val
 	case MultisigControlCheckpoint:
 		c.MultisigControl = val
+	case MarketActivityTrackerCheckpoint:
+		c.MarketActivityTracker = val
 	}
 }
 
@@ -262,6 +269,8 @@ func (c Checkpoint) Get(name CheckpointName) []byte {
 		return c.Staking
 	case MultisigControlCheckpoint:
 		return c.MultisigControl
+	case MarketActivityTrackerCheckpoint:
+		return c.MarketActivityTracker
 	}
 	return nil
 }

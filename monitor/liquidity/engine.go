@@ -33,23 +33,23 @@ type Engine struct {
 }
 
 func NewMonitor(tsCalc TargetStakeCalculator, params *types.LiquidityMonitoringParameters) *Engine {
-	// temp hard-coded duration of 1 until we can make these parameters required
-	if params.AuctionExtension == 0 {
-		params.AuctionExtension = 1
-	}
 	e := &Engine{
 		mu:     &sync.Mutex{},
-		params: params,
 		tsCalc: tsCalc,
 	}
+	e.UpdateParameters(params)
 	if e.minDuration < 1 {
 		e.minDuration = time.Second
 	}
 	return e
 }
 
-func (e *Engine) UpdateParameters(parameters *types.LiquidityMonitoringParameters) {
-	e.params = parameters
+func (e *Engine) UpdateParameters(params *types.LiquidityMonitoringParameters) {
+	// temp hard-coded duration of 1 until we can make these parameters required
+	if params.AuctionExtension == 0 {
+		params.AuctionExtension = 1
+	}
+	e.params = params
 }
 
 func (e *Engine) SetMinDuration(d time.Duration) {

@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"code.vegaprotocol.io/protos/vega"
-	checkpoint "code.vegaprotocol.io/protos/vega/checkpoint/v1"
+	checkpointpb "code.vegaprotocol.io/protos/vega/checkpoint/v1"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/types"
 
@@ -19,14 +19,14 @@ func (e *Engine) Checkpoint() ([]byte, error) {
 	if len(e.enactedProposals) == 0 {
 		return nil, nil
 	}
-	snap := &checkpoint.Proposals{
+	snap := &checkpointpb.Proposals{
 		Proposals: e.getCheckpointProposals(),
 	}
 	return proto.Marshal(snap)
 }
 
 func (e *Engine) Load(ctx context.Context, data []byte) error {
-	snap := &checkpoint.Proposals{}
+	snap := &checkpointpb.Proposals{}
 	if err := proto.Unmarshal(data, snap); err != nil {
 		return err
 	}
@@ -38,13 +38,16 @@ func (e *Engine) Load(ctx context.Context, data []byte) error {
 			// the proposal in question has expired, ignore it
 			continue
 		}
-		prop := types.ProposalFromProto(p)
+		prop, err := types.ProposalFromProto(p)
+		if err != nil {
+			return err
+		}
 		evts = append(evts, events.NewProposalEvent(ctx, *prop))
 		e.activeProposals = append(e.activeProposals, &proposal{
 			Proposal: prop,
 		})
 	}
-	// sned events for restored proposals
+	// send events for restored proposals
 	e.broker.SendBatch(evts)
 	// @TODO ensure OnChainTimeUpdate is called
 	return nil

@@ -7,14 +7,12 @@ import (
 
 	vgrand "code.vegaprotocol.io/shared/libs/rand"
 	"code.vegaprotocol.io/vega/governance"
-	"code.vegaprotocol.io/vega/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestFreeformProposal(t *testing.T) {
 	t.Run("Submitting a freeform proposal succeeds", testSubmittingFreeformProposalSucceeds)
-	t.Run("Submitting an invalid freeform proposal fails", testSubmittingInvalidFreeformProposalFails)
 	t.Run("Freeform proposal does not wait for enactment timestamp", testFreeformProposalDoesNotWaitToEnact)
 }
 
@@ -35,46 +33,6 @@ func testSubmittingFreeformProposalSucceeds(t *testing.T) {
 	// then
 	require.NoError(t, err)
 	require.NotNil(t, toSubmit)
-}
-
-func testSubmittingInvalidFreeformProposalFails(t *testing.T) {
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
-
-	// given
-	id := eng.newProposalID()
-	now := time.Now()
-	d := "I am much too long I am much too long I am much too long I am much too long I am much too long"
-	party := eng.newValidParty("a-valid-party", 123456789)
-	proposal := types.Proposal{
-		ID:        id,
-		Reference: "ref-" + id,
-		Party:     "a-valid-party",
-		State:     types.ProposalStateOpen,
-		Terms: &types.ProposalTerms{
-			ClosingTimestamp:    now.Add(48 * time.Hour).Unix(),
-			ValidationTimestamp: now.Add(1 * time.Hour).Unix(),
-			Change: &types.ProposalTermsNewFreeform{
-				NewFreeform: &types.NewFreeform{
-					Changes: &types.NewFreeformDetails{
-						URL:         "https://example.com",
-						Description: d + d + d,
-						Hash:        "2fb572edea4af9154edeff680e23689ed076d08934c60f8a4c1f5743a614954e",
-					},
-				},
-			},
-		},
-	}
-
-	// setup
-	eng.expectRejectedProposalEvent(t, party.Id, proposal.ID, types.ProposalErrorInvalidFreeform)
-
-	// when
-	toSubmit, err := eng.submitProposal(t, proposal)
-
-	// then
-	assert.ErrorIs(t, err, governance.ErrFreeformDescriptionTooLong)
-	assert.Nil(t, toSubmit)
 }
 
 func testFreeformProposalDoesNotWaitToEnact(t *testing.T) {

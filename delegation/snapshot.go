@@ -5,7 +5,6 @@ import (
 	"strconv"
 	"time"
 
-	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
 
@@ -20,9 +19,14 @@ var hashKeys = []string{
 }
 
 type delegationSnapshotState struct {
-	changed    map[string]bool
-	hash       map[string][]byte
-	serialised map[string][]byte
+	changedActive       bool
+	changedPending      bool
+	changedAuto         bool
+	changedLastRecon    bool
+	serialisedActive    []byte
+	serialisedPending   []byte
+	serialisedAuto      []byte
+	serialisedLastRecon []byte
 }
 
 func (e *Engine) Namespace() types.SnapshotNamespace {
@@ -107,35 +111,55 @@ func (e *Engine) serialiseAuto() ([]byte, error) {
 	return proto.Marshal(payload.IntoProto())
 }
 
-// get the serialised form and hash of the given key.
-func (e *Engine) getSerialisedAndHash(k string) ([]byte, []byte, error) {
-	if _, ok := e.keyToSerialiser[k]; !ok {
-		return nil, nil, types.ErrSnapshotKeyDoesNotExist
+func (e *Engine) serialiseK(k string, serialFunc func() ([]byte, error), dataField *[]byte, changedField *bool) ([]byte, error) {
+	if !e.HasChanged(k) {
+		if dataField == nil {
+			return nil, nil
+		}
+		return *dataField, nil
 	}
-
-	if !e.dss.changed[k] {
-		return e.dss.serialised[k], e.dss.hash[k], nil
-	}
-
-	data, err := e.keyToSerialiser[k]()
+	data, err := serialFunc()
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
-
-	hash := crypto.Hash(data)
-	e.dss.serialised[k] = data
-	e.dss.hash[k] = hash
-	e.dss.changed[k] = false
-	return data, hash, nil
+	*dataField = data
+	*changedField = false
+	return data, nil
 }
 
-func (e *Engine) GetHash(k string) ([]byte, error) {
-	_, hash, err := e.getSerialisedAndHash(k)
-	return hash, err
+// get the serialised form and hash of the given key.
+func (e *Engine) serialise(k string) ([]byte, error) {
+	switch k {
+	case activeKey:
+		return e.serialiseK(k, e.serialiseActive, &e.dss.serialisedActive, &e.dss.changedActive)
+	case pendingKey:
+		return e.serialiseK(k, e.serialisePending, &e.dss.serialisedPending, &e.dss.changedPending)
+	case autoKey:
+		return e.serialiseK(k, e.serialiseAuto, &e.dss.serialisedAuto, &e.dss.changedAuto)
+	case lastReconKey:
+		return e.serialiseK(k, e.serialiseLastReconTime, &e.dss.serialisedLastRecon, &e.dss.changedLastRecon)
+	default:
+		return nil, types.ErrSnapshotKeyDoesNotExist
+	}
+}
+
+func (e *Engine) HasChanged(k string) bool {
+	switch k {
+	case activeKey:
+		return e.dss.changedActive
+	case pendingKey:
+		return e.dss.changedPending
+	case autoKey:
+		return e.dss.changedAuto
+	case lastReconKey:
+		return e.dss.changedLastRecon
+	default:
+		return false
+	}
 }
 
 func (e *Engine) GetState(k string) ([]byte, []types.StateProvider, error) {
-	state, _, err := e.getSerialisedAndHash(k)
+	state, err := e.serialise(k)
 	return state, nil, err
 }
 
@@ -146,24 +170,28 @@ func (e *Engine) LoadState(ctx context.Context, p *types.Payload) ([]types.State
 	// see what we're reloading
 	switch pl := p.Data.(type) {
 	case *types.PayloadDelegationActive:
-		return nil, e.restoreActive(ctx, pl.DelegationActive)
+		return nil, e.restoreActive(ctx, pl.DelegationActive, p)
 	case *types.PayloadDelegationPending:
-		return nil, e.restorePending(ctx, pl.DelegationPending)
+		return nil, e.restorePending(ctx, pl.DelegationPending, p)
 	case *types.PayloadDelegationAuto:
-		return nil, e.restoreAuto(pl.DelegationAuto)
+		return nil, e.restoreAuto(pl.DelegationAuto, p)
 	case *types.PayloadDelegationLastReconTime:
-		return nil, e.restoreLastReconTime(ctx, pl.LastReconcilicationTime)
+		return nil, e.restoreLastReconTime(ctx, pl.LastReconcilicationTime, p)
 	default:
 		return nil, types.ErrUnknownSnapshotType
 	}
 }
 
-func (e *Engine) restoreLastReconTime(ctx context.Context, t time.Time) error {
+func (e *Engine) restoreLastReconTime(ctx context.Context, t time.Time, p *types.Payload) error {
+	var err error
 	e.lastReconciliation = t
-	return nil
+	e.dss.changedLastRecon = false
+	e.dss.serialisedLastRecon, err = proto.Marshal(p.IntoProto())
+
+	return err
 }
 
-func (e *Engine) restoreActive(ctx context.Context, delegations *types.DelegationActive) error {
+func (e *Engine) restoreActive(ctx context.Context, delegations *types.DelegationActive, p *types.Payload) error {
 	e.partyDelegationState = map[string]*partyDelegation{}
 	entries := make([]*types.DelegationEntry, 0, len(delegations.Delegations))
 	for _, d := range delegations.Delegations {
@@ -176,12 +204,13 @@ func (e *Engine) restoreActive(ctx context.Context, delegations *types.Delegatio
 		})
 	}
 	e.setActive(ctx, entries)
-	// after reloading we need to set the dirty flag to true so that we know next time to recalc the hash/serialise
-	e.dss.changed[activeKey] = true
-	return nil
+	var err error
+	e.dss.changedActive = false
+	e.dss.serialisedActive, err = proto.Marshal(p.IntoProto())
+	return err
 }
 
-func (e *Engine) restorePending(ctx context.Context, delegations *types.DelegationPending) error {
+func (e *Engine) restorePending(ctx context.Context, delegations *types.DelegationPending, p *types.Payload) error {
 	e.nextPartyDelegationState = map[string]*partyDelegation{}
 	entries := make([]*types.DelegationEntry, 0, len(delegations.Delegations))
 	for _, d := range delegations.Delegations {
@@ -194,17 +223,19 @@ func (e *Engine) restorePending(ctx context.Context, delegations *types.Delegati
 		})
 	}
 	e.setPendingNew(ctx, entries)
-	// after reloading we need to set the dirty flag to true so that we know next time to recalc the hash/serialise
-	e.dss.changed[pendingKey] = true
-	return nil
+	var err error
+	e.dss.changedPending = false
+	e.dss.serialisedPending, err = proto.Marshal(p.IntoProto())
+	return err
 }
 
-func (e *Engine) restoreAuto(delegations *types.DelegationAuto) error {
+func (e *Engine) restoreAuto(delegations *types.DelegationAuto, p *types.Payload) error {
 	e.autoDelegationMode = map[string]struct{}{}
 	e.setAuto(delegations.Parties)
-	// after reloading we need to set the dirty flag to true so that we know next time to recalc the hash/serialise
-	e.dss.changed[autoKey] = true
-	return nil
+	var err error
+	e.dss.changedAuto = false
+	e.dss.serialisedAuto, err = proto.Marshal(p.IntoProto())
+	return err
 }
 
 func (e *Engine) onEpochRestore(ctx context.Context, epoch types.Epoch) {

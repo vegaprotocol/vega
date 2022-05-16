@@ -3,8 +3,9 @@ package events
 import (
 	"context"
 
+	vegapb "code.vegaprotocol.io/protos/vega"
 	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
-
+	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
 )
 
@@ -13,12 +14,14 @@ type RewardPayout struct {
 	Party                   string
 	EpochSeq                string
 	Asset                   string
+	Market                  string
 	PercentageOfTotalReward string
 	Amount                  *num.Uint
 	Timestamp               int64
+	RewardType              types.AccountType
 }
 
-func NewRewardPayout(ctx context.Context, timestamp int64, party, epochSeq string, asset string, amount *num.Uint, percentageOfTotalReward num.Decimal) *RewardPayout {
+func NewRewardPayout(ctx context.Context, timestamp int64, party, epochSeq string, asset string, amount *num.Uint, percentageOfTotalReward num.Decimal, rewardType types.AccountType, market string) *RewardPayout {
 	return &RewardPayout{
 		Base:                    newBase(ctx, RewardPayoutEvent),
 		Party:                   party,
@@ -27,6 +30,8 @@ func NewRewardPayout(ctx context.Context, timestamp int64, party, epochSeq strin
 		PercentageOfTotalReward: percentageOfTotalReward.String(),
 		Amount:                  amount,
 		Timestamp:               timestamp,
+		RewardType:              rewardType,
+		Market:                  market,
 	}
 }
 
@@ -42,6 +47,8 @@ func (rp RewardPayout) Proto() eventspb.RewardPayoutEvent {
 		Amount:               rp.Amount.String(),
 		PercentOfTotalReward: rp.PercentageOfTotalReward,
 		Timestamp:            rp.Timestamp,
+		RewardType:           vegapb.AccountType_name[int32(rp.RewardType)],
+		Market:               rp.Market,
 	}
 }
 
@@ -70,5 +77,7 @@ func RewardPayoutEventFromStream(ctx context.Context, be *eventspb.BusEvent) *Re
 		PercentageOfTotalReward: rp.PercentOfTotalReward,
 		Amount:                  amount,
 		Timestamp:               rp.Timestamp,
+		Market:                  rp.Market,
+		RewardType:              types.AccountType(vegapb.AccountType_value[rp.RewardType]),
 	}
 }

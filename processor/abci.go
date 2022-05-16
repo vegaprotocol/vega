@@ -334,7 +334,7 @@ func (app *App) SendEventOnError(
 ) func(context.Context, abci.Tx) error {
 	return func(ctx context.Context, tx abci.Tx) error {
 		if err := f(ctx, tx); err != nil {
-			app.broker.Send(events.NewTxErrEvent(ctx, err, tx.Party(), tx.GetCmd()))
+			app.broker.Send(events.NewTxErrEvent(ctx, err, tx.Party(), tx.GetCmd(), tx.Command().String()))
 			return err
 		}
 		return nil
@@ -710,7 +710,9 @@ func (app *App) OnCheckTxSpam(tx abci.Tx) tmtypes.ResponseCheckTx {
 	// verify proof of work and replay
 	if app.pow != nil {
 		if err := app.pow.CheckTx(tx); err != nil {
-			app.log.Error(err.Error())
+			if app.log.IsDebug() {
+				app.log.Debug(err.Error())
+			}
 			resp.Code = abci.AbciSpamError
 			resp.Data = []byte(err.Error())
 			return resp
@@ -873,7 +875,10 @@ func (app *App) canSubmitTx(tx abci.Tx) (err error) {
 		if err := tx.Unmarshal(praw); err != nil {
 			return fmt.Errorf("could not unmarshal proposal submission: %w", err)
 		}
-		p := types.NewProposalSubmissionFromProto(praw)
+		p, err := types.NewProposalSubmissionFromProto(praw)
+		if err != nil {
+			return fmt.Errorf("invalid proposal submission: %w", err)
+		}
 		if p.Terms == nil {
 			return errors.New("invalid proposal submission")
 		}
@@ -1118,7 +1123,10 @@ func (app *App) DeliverPropose(ctx context.Context, tx abci.Tx, deterministicId 
 			logging.String("proposal-terms", prop.Terms.String()))
 	}
 
-	propSubmission := types.NewProposalSubmissionFromProto(prop)
+	propSubmission, err := types.NewProposalSubmissionFromProto(prop)
+	if err != nil {
+		return err
+	}
 	toSubmit, err := app.gov.SubmitProposal(ctx, *propSubmission, deterministicId, party)
 	if err != nil {
 		app.log.Debug("could not submit proposal",

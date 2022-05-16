@@ -8,7 +8,7 @@ import (
 )
 
 // calculateRewardsByContribution calculates the reward based on the fee contribution (whether paid or received) of the parties in the asset.
-func calculateRewardsByContribution(epochSeq, asset, accountID string, rewardType types.AccountType, balance *num.Uint, participation []*types.FeePartyScore, timestamp time.Time) *payout {
+func calculateRewardsByContribution(epochSeq, asset, accountID string, rewardType types.AccountType, balance *num.Uint, participation []*types.PartyContibutionScore, timestamp time.Time) *payout {
 	po := &payout{
 		asset:         asset,
 		fromAccount:   accountID,

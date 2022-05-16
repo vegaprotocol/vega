@@ -36,12 +36,6 @@ func TestConversions(t *testing.T) {
 	for i, v := range p.BlockHash {
 		require.Equal(t, v, pp.ProofOfWork.BlockHash[i])
 	}
-	require.Equal(t, "1", pp.ProofOfWork.SeenTx[0])
-	require.Equal(t, "2", pp.ProofOfWork.SeenTx[1])
-	require.Equal(t, "3", pp.ProofOfWork.SeenTx[2])
-	require.Equal(t, "100", pp.ProofOfWork.SeenTid[0])
-	require.Equal(t, "200", pp.ProofOfWork.SeenTid[1])
-	require.Equal(t, "300", pp.ProofOfWork.SeenTid[2])
 	require.Equal(t, 2, len(pp.ProofOfWork.TxAtHeight))
 	require.Equal(t, 2, len(pp.ProofOfWork.TidAtHeight))
 	require.Equal(t, uint64(100), pp.ProofOfWork.TxAtHeight[0].Height)
@@ -116,9 +110,6 @@ func TestSnapshot(t *testing.T) {
 	e.BeginBlock(102, "2E289FB9CEF7234E2C08F34CCD66B330229067CE47E22F76EF0595B3ABA9968F")
 
 	key := (&types.PayloadProofOfWork{}).Key()
-	hash1, err := e.GetHash(key)
-	require.NoError(t, err)
-
 	state1, _, err := e.GetState(key)
 	require.NoError(t, err)
 
@@ -131,10 +122,6 @@ func TestSnapshot(t *testing.T) {
 	pl := snapshotpb.Payload{}
 	require.NoError(t, proto.Unmarshal(state1, &pl))
 	eLoaded.LoadState(context.Background(), gtypes.PayloadFromProto(&pl))
-
-	hash2, err := eLoaded.GetHash(key)
-	require.NoError(t, err)
-	require.True(t, bytes.Equal(hash1, hash2))
 
 	state2, _, err := eLoaded.GetState(key)
 	require.NoError(t, err)

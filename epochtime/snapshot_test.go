@@ -9,6 +9,7 @@ import (
 	snapshot "code.vegaprotocol.io/protos/vega/snapshot/v1"
 	"code.vegaprotocol.io/vega/types"
 
+	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/libs/proto"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
@@ -90,24 +91,24 @@ func TestEpochSnapshotHash(t *testing.T) {
 	service.broker.EXPECT().Send(gomock.Any()).Times(3)
 	// Trigger initial block
 	service.cb(ctx, now)
-	h, err := service.GetHash("all")
+	s, _, err := service.GetState("all")
 	require.Nil(t, err)
-	require.Equal(t, "41a9839f4dc60ac14461f58658c0e1bf7542bd54cbd635f3c0402bef2f07f60f", hex.EncodeToString(h))
+	require.Equal(t, "41a9839f4dc60ac14461f58658c0e1bf7542bd54cbd635f3c0402bef2f07f60f", hex.EncodeToString(crypto.Hash(s)))
 
 	// Shuffle time along
 	now = now.Add(25 * time.Hour)
 	service.cb(ctx, now)
 	service.OnBlockEnd(ctx)
-	h, err = service.GetHash("all")
+	s, _, err = service.GetState("all")
 	require.Nil(t, err)
-	require.Equal(t, "074677210f20ebb3427064339ebbd46dbfd5d2381bcd3b3fd126bbdcb05b6697", hex.EncodeToString(h))
+	require.Equal(t, "074677210f20ebb3427064339ebbd46dbfd5d2381bcd3b3fd126bbdcb05b6697", hex.EncodeToString(crypto.Hash(s)))
 
 	// Shuffle time a bit more
 	now = now.Add(25 * time.Hour)
 	service.cb(ctx, now)
-	h, err = service.GetHash("all")
+	s, _, err = service.GetState("all")
 	require.Nil(t, err)
-	require.Equal(t, "2fb572edea4af9154edeff680e23689ed076d08934c60f8a4c1f5743a614954e", hex.EncodeToString(h))
+	require.Equal(t, "2fb572edea4af9154edeff680e23689ed076d08934c60f8a4c1f5743a614954e", hex.EncodeToString(crypto.Hash(s)))
 }
 
 func TestEpochSnapshotCompare(t *testing.T) {
@@ -143,12 +144,4 @@ func TestEpochSnapshotCompare(t *testing.T) {
 	newData, _, err := service.GetState("all")
 	require.Nil(t, err)
 	require.Equal(t, data, newData)
-
-	h1, err := service.GetHash("all")
-	require.Nil(t, err)
-	h2, err := snapService.GetHash("all")
-	require.Nil(t, err)
-
-	// Compare hashes
-	require.Equal(t, h1, h2)
 }

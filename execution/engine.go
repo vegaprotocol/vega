@@ -85,11 +85,10 @@ type Engine struct {
 	collateral Collateral
 	assets     Assets
 
-	broker         Broker
-	time           TimeService
-	stateVarEngine StateVarEngine
-	feesTracker    *FeesTracker
-	marketTracker  *MarketTracker
+	broker                Broker
+	time                  TimeService
+	stateVarEngine        StateVarEngine
+	marketActivityTracker *MarketActivityTracker
 
 	oracle OracleEngine
 
@@ -98,7 +97,6 @@ type Engine struct {
 	// Snapshot
 	stateChanged          bool
 	snapshotSerialised    []byte
-	snapshotHash          []byte
 	newGeneratedProviders []types.StateProvider // new providers generated during the last state change
 
 	// Map of all active snapshot providers that the execution engine has generated
@@ -155,34 +153,32 @@ func NewEngine(
 	oracle OracleEngine,
 	broker Broker,
 	stateVarEngine StateVarEngine,
-	feesTracker *FeesTracker,
-	marketTracker *MarketTracker,
+	marketActivityTracker *MarketActivityTracker,
 	assets Assets,
 ) *Engine {
 	// setup logger
 	log = log.Named(namedLogger)
 	log.SetLevel(executionConfig.Level.Get())
 	e := &Engine{
-		log:                log,
-		Config:             executionConfig,
-		markets:            map[string]*Market{},
-		time:               ts,
-		collateral:         collateral,
-		assets:             assets,
-		broker:             broker,
-		oracle:             oracle,
-		npv:                defaultNetParamsValues(),
-		generatedProviders: map[string]struct{}{},
-		stateVarEngine:     stateVarEngine,
-		feesTracker:        feesTracker,
-		marketTracker:      marketTracker,
+		log:                   log,
+		Config:                executionConfig,
+		markets:               map[string]*Market{},
+		time:                  ts,
+		collateral:            collateral,
+		assets:                assets,
+		broker:                broker,
+		oracle:                oracle,
+		npv:                   defaultNetParamsValues(),
+		generatedProviders:    map[string]struct{}{},
+		stateVarEngine:        stateVarEngine,
+		marketActivityTracker: marketActivityTracker,
 	}
 
 	// Add time change event handler
 	e.time.NotifyOnTick(e.onChainTimeUpdate)
 
 	// set the eligibility for proposer bonus checker
-	marketTracker.SetEligibilityChecker(e)
+	e.marketActivityTracker.SetEligibilityChecker(e)
 
 	return e
 }
@@ -296,7 +292,11 @@ func (e *Engine) SubmitMarketWithLiquidityProvision(ctx context.Context, marketC
 	}
 
 	mkt := e.markets[marketConfig.ID]
-	e.marketTracker.MarketProposed(marketConfig.ID, party)
+	asset, err := marketConfig.GetAsset()
+	if err != nil {
+		e.log.Panic("failed to get asset from market config", logging.String("market", mkt.GetID()), logging.String("error", err.Error()))
+	}
+	e.marketActivityTracker.MarketProposed(asset, marketConfig.ID, party)
 
 	// publish market data anyway initially
 	e.publishNewMarketInfos(ctx, mkt)
@@ -311,7 +311,7 @@ func (e *Engine) SubmitMarketWithLiquidityProvision(ctx context.Context, marketC
 }
 
 // SubmitMarket will submit a new market configuration to the network.
-func (e *Engine) SubmitMarket(ctx context.Context, marketConfig *types.Market) error {
+func (e *Engine) SubmitMarket(ctx context.Context, marketConfig *types.Market, proposer string) error {
 	if e.log.IsDebug() {
 		e.log.Debug("submit market", logging.Market(*marketConfig))
 	}
@@ -319,6 +319,12 @@ func (e *Engine) SubmitMarket(ctx context.Context, marketConfig *types.Market) e
 	if err := e.submitMarket(ctx, marketConfig); err != nil {
 		return err
 	}
+
+	asset, err := marketConfig.GetAsset()
+	if err != nil {
+		e.log.Panic("failed to get asset from market config", logging.String("market", marketConfig.ID), logging.String("error", err.Error()))
+	}
+	e.marketActivityTracker.MarketProposed(asset, marketConfig.ID, proposer)
 
 	// here straight away we start the OPENING_AUCTION
 	mkt := e.markets[marketConfig.ID]
@@ -403,9 +409,8 @@ func (e *Engine) submitMarket(ctx context.Context, marketConfig *types.Market) e
 		e.broker,
 		mas,
 		e.stateVarEngine,
-		e.feesTracker,
+		e.marketActivityTracker,
 		ad,
-		e.marketTracker,
 	)
 	if err != nil {
 		e.log.Error("failed to instantiate market",
@@ -514,7 +519,7 @@ func (e *Engine) removeMarket(mktID string) {
 			copy(e.marketsCpy[i:], e.marketsCpy[i+1:])
 			e.marketsCpy[len(e.marketsCpy)-1] = nil
 			e.marketsCpy = e.marketsCpy[:len(e.marketsCpy)-1]
-			e.marketTracker.removeMarket(mktID)
+			e.marketActivityTracker.RemoveMarket(mktID)
 			e.log.Debug("removed in total", logging.String("id", mktID))
 			return
 		}

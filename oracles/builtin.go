@@ -33,7 +33,7 @@ func (b *Builtin) BroadcastInternalTimestamp(ctx context.Context, ts time.Time) 
 	data := OracleData{
 		PubKeys: nil,
 		Data: map[string]string{
-			BuiltinOracleTimestamp: fmt.Sprintf("%d", ts.UnixNano()),
+			BuiltinOracleTimestamp: fmt.Sprintf("%d", ts.Unix()),
 		},
 	}
 

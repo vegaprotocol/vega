@@ -172,6 +172,7 @@ func getHBTestTopology(t *testing.T) *Topology {
 	t.Helper()
 	topology := &Topology{}
 	topology.validators = map[string]*valState{}
+	topology.OnEpochLengthUpdate(context.Background(), 100000*time.Second)
 	for i := 0; i < 13; i++ {
 		index := strconv.Itoa(i)
 		topology.validators["node"+index] = &valState{

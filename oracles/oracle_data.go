@@ -72,6 +72,12 @@ func (d OracleData) GetTimestamp(propertyName string) (int64, error) {
 	return toTimestamp(value)
 }
 
+// FromInternalOracle returns true if the oracle data has been emitted by an
+// internal oracle.
+func (d OracleData) FromInternalOracle() bool {
+	return len(d.PubKeys) == 0
+}
+
 func (d OracleData) Debug() []zap.Field {
 	keys := ""
 	for _, key := range d.PubKeys {

@@ -209,14 +209,9 @@ type PayloadFloatingPointConsensus struct {
 	ConsensusData []*snapshot.NextTimeTrigger
 }
 
-type PayloadFeeTracker struct {
-	FeeTrackerData *snapshot.FeesTracker
+type PayloadMarketActivityTracker struct {
+	MarketActivityData *snapshot.MarketTracker
 }
-
-type PayloadMarketTracker struct {
-	MarketTracker []*snapshot.MarketVolumeTracker
-}
-
 type Witness struct {
 	NeedResendResources []string
 	Resources           []*Resource
@@ -386,15 +381,17 @@ type LimitState struct {
 
 type EquityShare struct {
 	Mvp                 num.Decimal
+	R                   num.Decimal
 	OpeningAuctionEnded bool
 	Lps                 []*EquityShareLP
 }
 
 type EquityShareLP struct {
-	ID    string
-	Stake num.Decimal
-	Share num.Decimal
-	Avg   num.Decimal
+	ID     string
+	Stake  num.Decimal
+	Share  num.Decimal
+	Avg    num.Decimal
+	VStake num.Decimal
 }
 
 type ActiveAssets struct {
@@ -424,14 +421,7 @@ type BDeposit struct {
 }
 
 type BankingSeen struct {
-	Refs []*TxRef
-}
-
-type TxRef struct {
-	Asset    string
-	BlockNr  uint64
-	Hash     string
-	LogIndex uint64
+	Refs []*snapshot.TxRef
 }
 
 type BankingAssetActions struct {
@@ -719,10 +709,8 @@ func PayloadFromProto(p *snapshot.Payload) *Payload {
 		ret.Data = PayloadFutureStateFromProto(dt)
 	case *snapshot.Payload_FloatingPointConsensus:
 		ret.Data = PayloadFloatingPointConsensusFromProto(dt)
-	case *snapshot.Payload_FeesTracker:
-		ret.Data = PayloadFeeTrackerFromProto(dt)
 	case *snapshot.Payload_MarketTracker:
-		ret.Data = PayloadMarketTrackerFromProto(dt)
+		ret.Data = PayloadMarketActivityTrackerFromProto(dt)
 	case *snapshot.Payload_BankingRecurringTransfers:
 		ret.Data = PayloadBankingRecurringTransfersFromProto(dt)
 	case *snapshot.Payload_BankingScheduledTransfers:
@@ -851,8 +839,6 @@ func (p Payload) IntoProto() *snapshot.Payload {
 	case *snapshot.Payload_LiquidityTarget:
 		ret.Data = dt
 	case *snapshot.Payload_FloatingPointConsensus:
-		ret.Data = dt
-	case *snapshot.Payload_FeesTracker:
 		ret.Data = dt
 	case *snapshot.Payload_MarketTracker:
 		ret.Data = dt
@@ -1777,7 +1763,11 @@ func ActiveAssetsFromProto(aa *snapshot.ActiveAssets) *ActiveAssets {
 		Assets: make([]*Asset, 0, len(aa.Assets)),
 	}
 	for _, a := range aa.Assets {
-		ret.Assets = append(ret.Assets, AssetFromProto(a))
+		aa, err := AssetFromProto(a)
+		if err != nil {
+			panic(err)
+		}
+		ret.Assets = append(ret.Assets, aa)
 	}
 	return &ret
 }
@@ -1797,7 +1787,11 @@ func PendingAssetsFromProto(aa *snapshot.PendingAssets) *PendingAssets {
 		Assets: make([]*Asset, 0, len(aa.Assets)),
 	}
 	for _, a := range aa.Assets {
-		ret.Assets = append(ret.Assets, AssetFromProto(a))
+		pa, err := AssetFromProto(a)
+		if err != nil {
+			panic(err)
+		}
+		ret.Assets = append(ret.Assets, pa)
 	}
 	return &ret
 }
@@ -1882,20 +1876,14 @@ func (b BDeposit) IntoProto() *snapshot.Deposit {
 
 func BankingSeenFromProto(bs *snapshot.BankingSeen) *BankingSeen {
 	ret := BankingSeen{
-		Refs: make([]*TxRef, 0, len(bs.Refs)),
-	}
-	for _, r := range bs.Refs {
-		ret.Refs = append(ret.Refs, TxRefFromProto(r))
+		Refs: bs.Refs,
 	}
 	return &ret
 }
 
 func (b BankingSeen) IntoProto() *snapshot.BankingSeen {
 	ret := snapshot.BankingSeen{
-		Refs: make([]*snapshot.TxRef, 0, len(b.Refs)),
-	}
-	for _, r := range b.Refs {
-		ret.Refs = append(ret.Refs, r.IntoProto())
+		Refs: b.Refs,
 	}
 	return &ret
 }
@@ -1970,24 +1958,6 @@ func AssetActionFromProto(a *snapshot.AssetAction) *AssetAction {
 	return aa
 }
 
-func TxRefFromProto(t *snapshot.TxRef) *TxRef {
-	return &TxRef{
-		Asset:    t.Asset,
-		BlockNr:  t.BlockNr,
-		Hash:     t.Hash,
-		LogIndex: t.LogIndex,
-	}
-}
-
-func (t TxRef) IntoProto() *snapshot.TxRef {
-	return &snapshot.TxRef{
-		Asset:    t.Asset,
-		BlockNr:  t.BlockNr,
-		Hash:     t.Hash,
-		LogIndex: t.LogIndex,
-	}
-}
-
 func CheckpointFromProto(c *snapshot.Checkpoint) *CPState {
 	return &CPState{
 		NextCp: c.NextCp,
@@ -2022,7 +1992,12 @@ func CollateralAssetsFromProto(ca *snapshot.CollateralAssets) *CollateralAssets 
 		Assets: make([]*Asset, 0, len(ca.Assets)),
 	}
 	for _, a := range ca.Assets {
-		ret.Assets = append(ret.Assets, AssetFromProto(a))
+		ca, err := AssetFromProto(a)
+		if err != nil {
+			panic(err)
+		}
+
+		ret.Assets = append(ret.Assets, ca)
 	}
 	return &ret
 }
@@ -2140,7 +2115,8 @@ func GovernanceEnactedFromProto(ge *snapshot.GovernanceEnacted) *GovernanceEnact
 		Proposals: make([]*ProposalData, 0, len(ge.Proposals)),
 	}
 	for _, p := range ge.Proposals {
-		ret.Proposals = append(ret.Proposals, ProposalDataFromProto(p))
+		ep := ProposalDataFromProto(p)
+		ret.Proposals = append(ret.Proposals, ep)
 	}
 	return &ret
 }
@@ -2160,7 +2136,8 @@ func GovernanceNodeFromProto(ge *snapshot.GovernanceNode) *GovernanceNode {
 		Proposals: make([]*Proposal, 0, len(ge.Proposals)),
 	}
 	for _, p := range ge.Proposals {
-		ret.Proposals = append(ret.Proposals, ProposalFromProto(p))
+		gn, _ := ProposalFromProto(p)
+		ret.Proposals = append(ret.Proposals, gn)
 	}
 	return &ret
 }
@@ -2176,8 +2153,9 @@ func (g GovernanceNode) IntoProto() *snapshot.GovernanceNode {
 }
 
 func ProposalDataFromProto(pp *snapshot.ProposalData) *ProposalData {
+	p, _ := ProposalFromProto(pp.Proposal)
 	ret := ProposalData{
-		Proposal: ProposalFromProto(pp.Proposal),
+		Proposal: p,
 		Yes:      make([]*Vote, 0, len(pp.Yes)),
 		No:       make([]*Vote, 0, len(pp.No)),
 		Invalid:  make([]*Vote, 0, len(pp.Invalid)),
@@ -2327,12 +2305,16 @@ func (m MatchingBook) IntoProto() *snapshot.MatchingBook {
 }
 
 func EquityShareFromProto(es *snapshot.EquityShare) *EquityShare {
-	var mvp num.Decimal
+	var mvp, r num.Decimal
 	if len(es.Mvp) > 0 {
 		mvp, _ = num.DecimalFromString(es.Mvp)
 	}
+	if len(es.R) > 0 {
+		r, _ = num.DecimalFromString(es.R)
+	}
 	ret := EquityShare{
 		Mvp:                 mvp,
+		R:                   r,
 		OpeningAuctionEnded: es.OpeningAuctionEnded,
 		Lps:                 make([]*EquityShareLP, 0, len(es.Lps)),
 	}
@@ -2345,6 +2327,7 @@ func EquityShareFromProto(es *snapshot.EquityShare) *EquityShare {
 func (e EquityShare) IntoProto() *snapshot.EquityShare {
 	ret := snapshot.EquityShare{
 		Mvp:                 e.Mvp.String(),
+		R:                   e.R.String(),
 		OpeningAuctionEnded: e.OpeningAuctionEnded,
 		Lps:                 make([]*snapshot.EquityShareLP, 0, len(e.Lps)),
 	}
@@ -2355,9 +2338,12 @@ func (e EquityShare) IntoProto() *snapshot.EquityShare {
 }
 
 func EquityShareLPFromProto(esl *snapshot.EquityShareLP) *EquityShareLP {
-	var stake, share, avg num.Decimal
+	var stake, vStake, share, avg num.Decimal
 	if len(esl.Stake) > 0 {
 		stake, _ = num.DecimalFromString(esl.Stake)
+	}
+	if len(esl.Vshare) > 0 {
+		vStake, _ = num.DecimalFromString(esl.Vshare)
 	}
 	if len(esl.Share) > 0 {
 		share, _ = num.DecimalFromString(esl.Share)
@@ -2366,19 +2352,21 @@ func EquityShareLPFromProto(esl *snapshot.EquityShareLP) *EquityShareLP {
 		avg, _ = num.DecimalFromString(esl.Avg)
 	}
 	return &EquityShareLP{
-		ID:    esl.Id,
-		Stake: stake,
-		Share: share,
-		Avg:   avg,
+		ID:     esl.Id,
+		Stake:  stake,
+		Share:  share,
+		Avg:    avg,
+		VStake: vStake,
 	}
 }
 
 func (e EquityShareLP) IntoProto() *snapshot.EquityShareLP {
 	return &snapshot.EquityShareLP{
-		Id:    e.ID,
-		Stake: e.Stake.String(),
-		Share: e.Share.String(),
-		Avg:   e.Avg.String(),
+		Id:     e.ID,
+		Stake:  e.Stake.String(),
+		Share:  e.Share.String(),
+		Avg:    e.Avg.String(),
+		Vshare: e.VStake.String(),
 	}
 }
 
@@ -3503,58 +3491,30 @@ func (*PayloadFloatingPointConsensus) Namespace() SnapshotNamespace {
 	return FloatingPointConsensusSnapshot
 }
 
-func (*PayloadFeeTracker) isPayload() {}
+func (*PayloadMarketActivityTracker) isPayload() {}
 
-func PayloadFeeTrackerFromProto(t *snapshot.Payload_FeesTracker) *PayloadFeeTracker {
-	return &PayloadFeeTracker{
-		FeeTrackerData: t.FeesTracker,
+func PayloadMarketActivityTrackerFromProto(t *snapshot.Payload_MarketTracker) *PayloadMarketActivityTracker {
+	return &PayloadMarketActivityTracker{
+		MarketActivityData: t.MarketTracker,
 	}
 }
 
-func (p *PayloadFeeTracker) IntoProto() *snapshot.Payload_FeesTracker {
-	return &snapshot.Payload_FeesTracker{
-		FeesTracker: p.FeeTrackerData,
-	}
-}
-
-func (p *PayloadFeeTracker) plToProto() interface{} {
-	return p.IntoProto()
-}
-
-func (*PayloadFeeTracker) Key() string {
-	return "feesTracker"
-}
-
-func (*PayloadFeeTracker) Namespace() SnapshotNamespace {
-	return FeeTrackerSnapshot
-}
-
-func (*PayloadMarketTracker) isPayload() {}
-
-func PayloadMarketTrackerFromProto(t *snapshot.Payload_MarketTracker) *PayloadMarketTracker {
-	return &PayloadMarketTracker{
-		MarketTracker: t.MarketTracker.MarketTracker,
-	}
-}
-
-func (p *PayloadMarketTracker) IntoProto() *snapshot.Payload_MarketTracker {
+func (p *PayloadMarketActivityTracker) IntoProto() *snapshot.Payload_MarketTracker {
 	return &snapshot.Payload_MarketTracker{
-		MarketTracker: &snapshot.MarketTracker{
-			MarketTracker: p.MarketTracker,
-		},
+		MarketTracker: p.MarketActivityData,
 	}
 }
 
-func (p *PayloadMarketTracker) plToProto() interface{} {
+func (p *PayloadMarketActivityTracker) plToProto() interface{} {
 	return p.IntoProto()
 }
 
-func (*PayloadMarketTracker) Key() string {
-	return "marketTracker"
+func (*PayloadMarketActivityTracker) Key() string {
+	return "marketActivityTracker"
 }
 
-func (*PayloadMarketTracker) Namespace() SnapshotNamespace {
-	return MarketTrackerSnapshot
+func (*PayloadMarketActivityTracker) Namespace() SnapshotNamespace {
+	return MarketActivityTrackerSnapshot
 }
 
 func (*PayloadTopology) isPayload() {}
@@ -3676,37 +3636,25 @@ func PayloadProofOfWorkFromProto(s *snapshot.Payload_ProofOfWork) *PayloadProofO
 		HeightToTx:    make(map[uint64][]string, len(s.ProofOfWork.TxAtHeight)),
 		HeightToTid:   make(map[uint64][]string, len(s.ProofOfWork.TidAtHeight)),
 	}
-	for _, v := range s.ProofOfWork.SeenTx {
-		pow.SeenTx[v] = struct{}{}
-	}
-	for _, v := range s.ProofOfWork.SeenTid {
-		pow.SeenTid[v] = struct{}{}
-	}
 	for _, bp := range s.ProofOfWork.Banned {
 		pow.BannedParties[bp.Party] = bp.UntilEpoch
 	}
 	for _, tah := range s.ProofOfWork.TxAtHeight {
 		pow.HeightToTx[tah.Height] = tah.Transactions
+		for _, t := range tah.Transactions {
+			pow.SeenTx[t] = struct{}{}
+		}
 	}
 	for _, tah := range s.ProofOfWork.TidAtHeight {
 		pow.HeightToTid[tah.Height] = tah.Transactions
+		for _, t := range tah.Transactions {
+			pow.SeenTid[t] = struct{}{}
+		}
 	}
 	return pow
 }
 
 func (p *PayloadProofOfWork) IntoProto() *snapshot.Payload_ProofOfWork {
-	seenTx := make([]string, 0, len(p.SeenTx))
-	for k := range p.SeenTx {
-		seenTx = append(seenTx, k)
-	}
-	sort.Strings(seenTx)
-
-	seenTid := make([]string, 0, len(p.SeenTid))
-	for k := range p.SeenTid {
-		seenTid = append(seenTid, k)
-	}
-	sort.Strings(seenTid)
-
 	banned := make([]*snapshot.BannedParty, 0, len(p.BannedParties))
 	for k, v := range p.BannedParties {
 		banned = append(banned, &snapshot.BannedParty{Party: k, UntilEpoch: v})
@@ -3724,13 +3672,10 @@ func (p *PayloadProofOfWork) IntoProto() *snapshot.Payload_ProofOfWork {
 		tidAtHeight = append(tidAtHeight, &snapshot.TransactionsAtHeight{Height: k, Transactions: v})
 	}
 	sort.Slice(tidAtHeight, func(i, j int) bool { return tidAtHeight[i].Height < tidAtHeight[j].Height })
-
 	return &snapshot.Payload_ProofOfWork{
 		ProofOfWork: &snapshot.ProofOfWork{
 			BlockHeight: p.BlockHeight,
 			BlockHash:   p.BlockHash,
-			SeenTx:      seenTx,
-			SeenTid:     seenTid,
 			Banned:      banned,
 			TxAtHeight:  txAtHeight,
 			TidAtHeight: tidAtHeight,

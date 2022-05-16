@@ -244,7 +244,7 @@ func (e *Engine) EnableAsset(ctx context.Context, asset types.Asset) error {
 	}
 
 	// when an asset is enabled a global reward account (aka network treasury) is created for it along with the other 4 types of rewards
-	rewardAccountTypes := []vega.AccountType{types.AccountTypeGlobalReward, types.AccountTypeMakerFeeReward, types.AccountTypeTakerFeeReward, types.AccountTypeMarketProposerReward, types.AccountTypeLPFeeReward}
+	rewardAccountTypes := []vega.AccountType{types.AccountTypeGlobalReward}
 	for _, rewardAccountType := range rewardAccountTypes {
 		rewardID := e.accountID(noMarket, systemOwner, asset.ID, rewardAccountType)
 		if _, ok := e.accs[rewardID]; !ok {
@@ -1516,7 +1516,11 @@ func (e *Engine) getTransferFundsTransferRequest(
 
 		// this could not exists as well, let's just create in this case
 		case types.AccountTypeGlobalReward, types.AccountTypeLPFeeReward, types.AccountTypeMakerFeeReward, types.AccountTypeTakerFeeReward, types.AccountTypeMarketProposerReward:
-			toAcc, err = e.GetRewardAccount(t.Amount.Asset, accountType)
+			market := noMarket
+			if len(t.Market) > 0 {
+				market = t.Market
+			}
+			toAcc, err = e.GetOrCreateRewardAccount(ctx, t.Amount.Asset, market, accountType)
 			if err != nil {
 				// shouldn't happen, we just created it...
 				return nil, err
@@ -2615,9 +2619,27 @@ func (e *Engine) GetGlobalRewardAccount(asset string) (*types.Account, error) {
 }
 
 // GetRewardAccount returns a reward accound by asset and type.
-func (e *Engine) GetRewardAccount(asset string, rewardAcccountType types.AccountType) (*types.Account, error) {
-	rewardAccID := e.accountID(noMarket, systemOwner, asset, rewardAcccountType)
-	return e.GetAccountByID(rewardAccID)
+func (e *Engine) GetOrCreateRewardAccount(ctx context.Context, asset string, market string, rewardAcccountType types.AccountType) (*types.Account, error) {
+	rewardID := e.accountID(market, systemOwner, asset, rewardAcccountType)
+	acc, err := e.GetAccountByID(rewardID)
+	if err == nil {
+		return acc, nil
+	}
+
+	if _, ok := e.accs[rewardID]; !ok {
+		rewardAcc := &types.Account{
+			ID:       rewardID,
+			Asset:    asset,
+			Owner:    systemOwner,
+			Balance:  num.Zero(),
+			MarketID: market,
+			Type:     rewardAcccountType,
+		}
+		e.accs[rewardID] = rewardAcc
+		e.addAccountToHashableSlice(rewardAcc)
+		e.broker.Send(events.NewAccountEvent(ctx, *rewardAcc))
+	}
+	return e.GetAccountByID(rewardID)
 }
 
 func (e *Engine) GetAssetQuantum(asset string) (num.Decimal, error) {
@@ -2625,4 +2647,14 @@ func (e *Engine) GetAssetQuantum(asset string) (num.Decimal, error) {
 		return num.DecimalZero(), ErrInvalidAssetID
 	}
 	return e.enabledAssets[asset].Details.Quantum, nil
+}
+
+func (e *Engine) GetRewardAccountsByType(rewardAcccountType types.AccountType) []*types.Account {
+	accounts := []*types.Account{}
+	for _, a := range e.hashableAccs {
+		if a.Type == rewardAcccountType {
+			accounts = append(accounts, a.Clone())
+		}
+	}
+	return accounts
 }

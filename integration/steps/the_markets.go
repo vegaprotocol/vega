@@ -43,7 +43,7 @@ func TheMarkets(
 
 func submitMarkets(markets []types.Market, executionEngine Execution) error {
 	for i := range markets {
-		err := executionEngine.SubmitMarket(context.Background(), &markets[i])
+		err := executionEngine.SubmitMarket(context.Background(), &markets[i], "proposerID")
 		if err != nil {
 			return fmt.Errorf("couldn't submit market(%s): %v", markets[i].ID, err)
 		}
@@ -148,9 +148,9 @@ func newMarket(config *market.Config, row marketRow) types.Market {
 					Future: &types.Future{
 						SettlementAsset:                 row.asset(),
 						QuoteName:                       row.quoteName(),
-						OracleSpecForSettlementPrice:    oracleConfigForSettlement.Spec,
-						OracleSpecForTradingTermination: oracleConfigForTradingTermination.Spec,
-						OracleSpecBinding:               types.OracleSpecToFutureBindingFromProto(&binding),
+						OracleSpecForSettlementPrice:    types.OracleSpecFromProto(oracleConfigForSettlement.Spec),
+						OracleSpecForTradingTermination: types.OracleSpecFromProto(oracleConfigForTradingTermination.Spec),
+						OracleSpecBinding:               types.OracleSpecBindingForFutureFromProto(&binding),
 						SettlementPriceDecimals:         settlementPriceDecimals,
 					},
 				},

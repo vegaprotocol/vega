@@ -5,7 +5,6 @@ import (
 	"time"
 
 	snapshot "code.vegaprotocol.io/protos/vega/snapshot/v1"
-	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/libs/proto"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
@@ -27,7 +26,6 @@ func (toi timestampedOI) toSnapshotProto() *snapshot.TimestampedOpenInterest {
 
 type SnapshotEngine struct {
 	*Engine
-	hash    []byte
 	data    []byte
 	stopped bool
 	changed bool
@@ -102,13 +100,8 @@ func (e *SnapshotEngine) Stopped() bool {
 	return e.stopped
 }
 
-func (e *SnapshotEngine) GetHash(k string) ([]byte, error) {
-	if k != e.key {
-		return nil, types.ErrSnapshotKeyDoesNotExist
-	}
-
-	_, hash, err := e.serialise()
-	return hash, err
+func (e *SnapshotEngine) HasChanged(k string) bool {
+	return e.changed
 }
 
 func (e *SnapshotEngine) GetState(k string) ([]byte, []types.StateProvider, error) {
@@ -116,7 +109,7 @@ func (e *SnapshotEngine) GetState(k string) ([]byte, []types.StateProvider, erro
 		return nil, nil, types.ErrSnapshotKeyDoesNotExist
 	}
 
-	state, _, err := e.serialise()
+	state, err := e.serialise()
 	return state, nil, err
 }
 
@@ -143,8 +136,10 @@ func (e *SnapshotEngine) LoadState(_ context.Context, payload *types.Payload) ([
 			e.previous = append(e.previous, newTimestampedOISnapshotFromProto(poi))
 		}
 
-		e.changed = true
-		return nil, nil
+		var err error
+		e.data, err = proto.Marshal(payload.IntoProto())
+		e.changed = false
+		return nil, err
 
 	default:
 		return nil, types.ErrUnknownSnapshotType
@@ -159,15 +154,15 @@ func (e *SnapshotEngine) serialisePrevious() []*snapshot.TimestampedOpenInterest
 	return poi
 }
 
-// serialise marshal the snapshot state, populating the data and hash fields
+// serialise marshal the snapshot state, populating the data fields
 // with updated values.
-func (e *SnapshotEngine) serialise() ([]byte, []byte, error) {
+func (e *SnapshotEngine) serialise() ([]byte, error) {
 	if e.stopped {
-		return nil, nil, nil
+		return nil, nil
 	}
 
 	if !e.changed {
-		return e.data, e.hash, nil // we already have what we need
+		return e.data, nil // we already have what we need
 	}
 
 	p := &snapshot.Payload{
@@ -186,11 +181,10 @@ func (e *SnapshotEngine) serialise() ([]byte, []byte, error) {
 	var err error
 	e.data, err = proto.Marshal(p)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
-	e.hash = crypto.Hash(e.data)
 	e.changed = false
 
-	return e.data, e.hash, nil
+	return e.data, nil
 }

@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	oraclesv1 "code.vegaprotocol.io/protos/vega/oracles/v1"
+	oraclespb "code.vegaprotocol.io/protos/vega/oracles/v1"
 	snapshot "code.vegaprotocol.io/protos/vega/snapshot/v1"
 	"code.vegaprotocol.io/shared/paths"
 	"code.vegaprotocol.io/vega/collateral"
@@ -37,7 +37,7 @@ type snapshotTestData struct {
 func TestSnapshotOraclesTerminatingMarketFromSnapshot(t *testing.T) {
 	now := time.Now()
 	exec := getEngine(t, now)
-	err := exec.engine.SubmitMarket(context.Background(), newMarket("MarketID", "0xDEADBEEF"))
+	err := exec.engine.SubmitMarket(context.Background(), newMarket("MarketID", "0xDEADBEEF"), "")
 	require.NoError(t, err)
 
 	state, _, _ := exec.engine.GetState("")
@@ -89,6 +89,7 @@ func TestSnapshotOraclesTerminatingMarketFromSnapshot(t *testing.T) {
 func TestLoadTerminatedMarketFromSnapshot(t *testing.T) {
 	now := time.Now()
 	exec := getEngine(t, now)
+	defer exec.snapshotEngine.Close()
 	ctx := vgcontext.WithTraceID(vgcontext.WithBlockHeight(context.Background(), 100), "0xDEADBEEF")
 	ctx = vgcontext.WithChainID(ctx, "chainid")
 
@@ -97,7 +98,7 @@ func TestLoadTerminatedMarketFromSnapshot(t *testing.T) {
 
 	// submit and terminate all markets
 	for i := 0; i < 3; i++ {
-		err := exec.engine.SubmitMarket(ctx, newMarket(marketIDs[i], pubKeys[i]))
+		err := exec.engine.SubmitMarket(ctx, newMarket(marketIDs[i], pubKeys[i]), "")
 		require.NoError(t, err)
 
 		// terminate all markets
@@ -121,6 +122,7 @@ func TestLoadTerminatedMarketFromSnapshot(t *testing.T) {
 
 	// now let's start from this snapshot
 	exec2 := getEngine(t, now)
+	defer exec2.snapshotEngine.Close()
 	exec2.snapshotEngine.ReceiveSnapshot(snap1)
 	exec2.snapshotEngine.ApplySnapshot(ctx)
 	exec2.snapshotEngine.CheckLoaded()
@@ -213,33 +215,33 @@ func newMarket(ID, pubKey string) *types.Market {
 				Product: &types.InstrumentFuture{
 					Future: &types.Future{
 						SettlementAsset: "Ethereum/Ether",
-						OracleSpecForSettlementPrice: &oraclesv1.OracleSpec{
-							Id:      hex.EncodeToString(crypto.Hash([]byte(ID + "price"))),
+						OracleSpecForSettlementPrice: &types.OracleSpec{
+							ID:      hex.EncodeToString(crypto.Hash([]byte(ID + "price"))),
 							PubKeys: []string{pubKey},
-							Filters: []*oraclesv1.Filter{
+							Filters: []*types.OracleSpecFilter{
 								{
-									Key: &oraclesv1.PropertyKey{
+									Key: &types.OracleSpecPropertyKey{
 										Name: "prices.ETH.value",
-										Type: oraclesv1.PropertyKey_TYPE_INTEGER,
+										Type: oraclespb.PropertyKey_TYPE_INTEGER,
 									},
-									Conditions: []*oraclesv1.Condition{},
+									Conditions: []*types.OracleSpecCondition{},
 								},
 							},
 						},
-						OracleSpecForTradingTermination: &oraclesv1.OracleSpec{
-							Id:      hex.EncodeToString(crypto.Hash([]byte(ID + "tt"))),
+						OracleSpecForTradingTermination: &types.OracleSpec{
+							ID:      hex.EncodeToString(crypto.Hash([]byte(ID + "tt"))),
 							PubKeys: []string{pubKey},
-							Filters: []*oraclesv1.Filter{
+							Filters: []*types.OracleSpecFilter{
 								{
-									Key: &oraclesv1.PropertyKey{
+									Key: &types.OracleSpecPropertyKey{
 										Name: "trading.terminated",
-										Type: oraclesv1.PropertyKey_TYPE_BOOLEAN,
+										Type: oraclespb.PropertyKey_TYPE_BOOLEAN,
 									},
-									Conditions: []*oraclesv1.Condition{},
+									Conditions: []*types.OracleSpecCondition{},
 								},
 							},
 						},
-						OracleSpecBinding: &types.OracleSpecToFutureBinding{
+						OracleSpecBinding: &types.OracleSpecBindingForFuture{
 							SettlementPriceProperty:    "prices.ETH.value",
 							TradingTerminationProperty: "trading.terminated",
 						},
@@ -275,8 +277,7 @@ func getEngine(t *testing.T, now time.Time) *snapshotTestData {
 	oracleEngine := oracles.NewEngine(log, oracles.NewDefaultConfig(), currentTime, broker, timeService)
 
 	epochEngine := epochtime.NewService(log, epochtime.NewDefaultConfig(), timeService, broker)
-	feesTracker := execution.NewFeesTracker(epochEngine)
-	marketTracker := execution.NewMarketTracker()
+	marketActivityTracker := execution.NewMarketActivityTracker(logging.NewTestLogger(), epochEngine)
 
 	ethAsset := types.Asset{
 		ID: "Ethereum/Ether",
@@ -295,13 +296,14 @@ func getEngine(t *testing.T, now time.Time) *snapshotTestData {
 		oracleEngine,
 		broker,
 		stubs.NewStateVar(),
-		feesTracker,
-		marketTracker,
+		marketActivityTracker,
 		stubs.NewAssetStub(),
 	)
 
 	statsData := stats.New(log, stats.NewDefaultConfig(), "", "")
-	snapshotEngine, _ := snp.New(context.Background(), &paths.DefaultPaths{}, snp.NewDefaultConfig(), log, timeService, statsData.Blockchain)
+	config := snp.NewDefaultConfig()
+	config.Storage = "memory"
+	snapshotEngine, _ := snp.New(context.Background(), &paths.DefaultPaths{}, config, log, timeService, statsData.Blockchain)
 	snapshotEngine.AddProviders(eng)
 	snapshotEngine.ClearAndInitialise()
 

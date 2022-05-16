@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased (0.51.0)
+## Unreleased (0.52.0)
 
 ### 🚨 Breaking changes
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
@@ -14,6 +14,31 @@
 ### 🐛 Fixes
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
+## 0.51.0
+
+### 🚨 Breaking changes
+- [5192](https://github.com/vegaprotocol/vega/issues/5192) - Require a rationale on proposals
+
+### 🛠 Improvements
+- [5318](https://github.com/vegaprotocol/vega/issues/5318) - Automatically dispatch reward pool into markets in recurring transfers
+- [5333](https://github.com/vegaprotocol/vega/issues/5333) - Run snapshot generation for all providers in parallel
+- [5343](https://github.com/vegaprotocol/vega/issues/5343) - Snapshot optimisation part II - get rid of `getHash`
+- [5324](https://github.com/vegaprotocol/vega/issues/5324) -  Send event when oracle data doesn't match
+- [5140](https://github.com/vegaprotocol/vega/issues/5140) - Move limits (enabled market / assets from) to network parameters
+
+### 🐛 Fixes
+- [5338](https://github.com/vegaprotocol/vega/issues/5338) - Checking a transaction should return proper success code
+- [5277](https://github.com/vegaprotocol/vega/issues/5277) - Updating a market should default auction extension to 1
+- [5284](https://github.com/vegaprotocol/vega/issues/5284) - price monitoring past prices are now included in the snapshot
+- [5294](https://github.com/vegaprotocol/vega/issues/5294) - Parse timestamps oracle in market proposal validation
+- [5292](https://github.com/vegaprotocol/vega/issues/5292) - Internal time oracle broadcasts timestamp without nanoseconds
+- [5297](https://github.com/vegaprotocol/vega/issues/5297) - Assure min/max price always accurate
+- [5286](https://github.com/vegaprotocol/vega/issues/5286) - Ensure liquidity fees are updated when updating the market
+- [5322](https://github.com/vegaprotocol/vega/issues/5322) - Change vega pub key hashing in topology to fix key rotation submission.
+- [5313](https://github.com/vegaprotocol/vega/issues/5313) - Future update was using oracle spec for settlement price as trading termination spec
+- [5304](https://github.com/vegaprotocol/vega/issues/5304) - Fix bug causing trade events at auction end showing the wrong price.
+- [5345](https://github.com/vegaprotocol/vega/issues/5345) - Fix issue with state variable transactions assumed gone missing
+- [5351](https://github.com/vegaprotocol/vega/issues/5351) - Fix panic when node is interrupted before snapshot engine gets cleared and initialised
 
 ## 0.50.2
 
@@ -22,6 +47,10 @@
 - [5001](https://github.com/vegaprotocol/vega/issues/5001) - Add integration test for LP versioning
 - [3372](https://github.com/vegaprotocol/vega/issues/3372) - Add integration test making sure margin is released when an LP is cancelled.
 - [5235](https://github.com/vegaprotocol/vega/issues/5235) - Use `BroadcastTxSync` instead of async for submitting transactions to `tendermint`
+- [5268](https://github.com/vegaprotocol/vega/issues/5268) - Make validator heartbeat frequency a function of the epoch duration.
+- [5271](https://github.com/vegaprotocol/vega/issues/5271) - Make generated hex IDs lower case
+- [5273](https://github.com/vegaprotocol/vega/issues/5273) - Reward / Transfer to allow payout of reward in an arbitrary asset unrelated to the settlement and by market.
+- [5243](https://github.com/vegaprotocol/vega/issues/5243) - Update equity like share according to spec changes.
 
 ### 🐛 Fixes
 - [4798](https://github.com/vegaprotocol/vega/issues/4978) - Set market pending timestamp to the time at which the market is created.
@@ -34,6 +63,7 @@
 - [5250](https://github.com/vegaprotocol/vega/issues/5250) - Fixed panic in loading validator checkpoint
 - [5260](https://github.com/vegaprotocol/vega/issues/5260) - Process recurring transfer before rewards
 - [5262](https://github.com/vegaprotocol/vega/issues/5262) - Allow recurring transfers to start during the current epoch
+- [5267](https://github.com/vegaprotocol/vega/issues/5267) - Do not check commitment on `UpdateMarket` proposals
 
 ## 0.50.1
 
@@ -76,7 +106,6 @@
 - [5144](https://github.com/vegaprotocol/vega/issues/5144) - Fixed the default voting power in case there is stake in the network
 - [5124](https://github.com/vegaprotocol/vega/issues/5124) - Add proto serialization for update market proposal
 - [5124](https://github.com/vegaprotocol/vega/issues/5124) - Ensure update market proposal compute a proper auction duration
-- [5259](https://github.com/vegaprotocol/vega/issues/5259) - Give pending validators a chance to get a positive performance score before removing them
 - [5172](https://github.com/vegaprotocol/vega/issues/5172) - Add replay protection for validator commands
 - [5181](https://github.com/vegaprotocol/vega/issues/5181) - Ensure Oracle specs handle numbers using `num.Decimal` and `num.Int`
 - [5059](https://github.com/vegaprotocol/vega/issues/5059) - Validators without tendermint status vote in the witness and notary engine but their votes do not count

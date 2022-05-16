@@ -3,6 +3,7 @@ package steps
 import (
 	"context"
 	"errors"
+	"strings"
 	"time"
 
 	proto "code.vegaprotocol.io/protos/vega"
@@ -43,7 +44,7 @@ func PartiesSubmitTransfers(
 func parseOneOffTransferTable(table *godog.Table) []RowWrapper {
 	return StrictParseTable(table, []string{
 		"id", "from", "from_account_type", "to", "to_account_type", "asset", "amount", "delivery_time",
-	}, []string{"error"})
+	}, []string{"market", "error"})
 }
 
 func rowToOneOffTransfer(r RowWrapper) (*types.OneOffTransfer, error) {
@@ -108,7 +109,7 @@ func PartiesSubmitRecurringTransfers(
 func parseRecurringTransferTable(table *godog.Table) []RowWrapper {
 	return StrictParseTable(table, []string{
 		"id", "from", "from_account_type", "to", "to_account_type", "asset", "amount", "start_epoch", "end_epoch", "factor",
-	}, []string{"error"})
+	}, []string{"metric", "metric_asset", "markets", "error"})
 }
 
 func rowToRecurringTransfer(r RowWrapper) (*types.RecurringTransfer, error) {
@@ -130,6 +131,20 @@ func rowToRecurringTransfer(r RowWrapper) (*types.RecurringTransfer, error) {
 		end_epoch_uint64 := end_epoch_uint.Uint64()
 		end_epoch_ptr = &end_epoch_uint64
 	}
+
+	var dispatchStrategy *proto.DispatchStrategy
+	if len(r.Str("metric")) > 0 {
+		mkts := strings.Split(r.MustStr("markets"), ",")
+		if len(mkts) == 1 && mkts[0] == "" {
+			mkts = []string{}
+		}
+		dispatchStrategy = &proto.DispatchStrategy{
+			AssetForMetric: r.MustStr("metric_asset"),
+			Markets:        mkts,
+			Metric:         proto.DispatchMetric(proto.DispatchMetric_value[r.MustStr("metric")]),
+		}
+	}
+
 	factor := num.MustDecimalFromString(r.MustStr("factor"))
 	recurring := &types.RecurringTransfer{
 		TransferBase: &types.TransferBase{
@@ -141,9 +156,10 @@ func rowToRecurringTransfer(r RowWrapper) (*types.RecurringTransfer, error) {
 			Asset:           asset,
 			Amount:          amountUint,
 		},
-		StartEpoch: start_epoch.Uint64(),
-		EndEpoch:   end_epoch_ptr,
-		Factor:     factor,
+		StartEpoch:       start_epoch.Uint64(),
+		EndEpoch:         end_epoch_ptr,
+		Factor:           factor,
+		DispatchStrategy: dispatchStrategy,
 	}
 	return recurring, nil
 }

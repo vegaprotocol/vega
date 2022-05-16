@@ -154,5 +154,19 @@ func defaultNetParams() map[string]value {
 		SpamPoWHashFunction:         NewString().Mutable(true).MustUpdate(crypto.Sha3),
 		SpamPoWNumberOfTxPerBlock:   NewUint(UintGTE(num.NewUint(1)), UintLTE(num.NewUint(1000))).Mutable(true).MustUpdate("2"),
 		SpamPoWIncreasingDifficulty: NewUint(UintGTE(num.Zero()), UintLTE(num.NewUint(1))).Mutable(true).MustUpdate("0"),
+
+		LimitsProposeMarketEnabledFrom: NewString(checkOptionalRFC3339Date).Mutable(true).MustUpdate(""), // none by default
+		LimitsProposeAssetEnabledFrom:  NewString(checkOptionalRFC3339Date).Mutable(true).MustUpdate(""), // none by default
 	}
+}
+
+func checkOptionalRFC3339Date(d string) error {
+	if len(d) <= 0 {
+		// an empty string is correct, it just disable the value.
+		return nil
+	}
+
+	// now let's just try to parse and see
+	_, err := time.Parse(time.RFC3339, d)
+	return err
 }

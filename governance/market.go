@@ -109,14 +109,9 @@ func buildMarketFromProposal(
 	marketID string,
 	definition *types.NewMarket,
 	netp NetParams,
-	assets Assets,
 	openingAuctionDuration time.Duration,
 ) (*types.Market, types.ProposalError, error) {
-	if perr, err := validateNewMarketChange(definition, assets, true, netp, openingAuctionDuration); err != nil {
-		return nil, perr, err
-	}
-	instrument, perr, err := createInstrument(
-		definition.Changes.Instrument, definition.Changes.Metadata)
+	instrument, perr, err := createInstrument(definition.Changes.Instrument, definition.Changes.Metadata)
 	if err != nil {
 		return nil, perr, err
 	}
@@ -244,8 +239,15 @@ func validateFuture(future *types.FutureProduct, decimals uint64, assets Assets,
 		return types.ProposalErrorInvalidFutureProduct, err
 	}
 
-	if err := ospec.EnsureBoundableProperty(future.OracleSpecBinding.TradingTerminationProperty, oraclespb.PropertyKey_TYPE_BOOLEAN); err != nil {
-		return types.ProposalErrorInvalidFutureProduct, fmt.Errorf("invalid oracle spec binding for trading termination: %w", err)
+	switch future.OracleSpecBinding.TradingTerminationProperty {
+	case oracles.BuiltinOracleTimestamp:
+		if err := ospec.EnsureBoundableProperty(future.OracleSpecBinding.TradingTerminationProperty, oraclespb.PropertyKey_TYPE_TIMESTAMP); err != nil {
+			return types.ProposalErrorInvalidFutureProduct, fmt.Errorf("invalid oracle spec binding for trading termination: %w", err)
+		}
+	default:
+		if err := ospec.EnsureBoundableProperty(future.OracleSpecBinding.TradingTerminationProperty, oraclespb.PropertyKey_TYPE_BOOLEAN); err != nil {
+			return types.ProposalErrorInvalidFutureProduct, fmt.Errorf("invalid oracle spec binding for trading termination: %w", err)
+		}
 	}
 
 	return validateAsset(future.SettlementAsset, decimals, assets, deepCheck)
@@ -403,14 +405,11 @@ func validateNewMarketChange(
 }
 
 // validateUpdateMarketChange checks market update proposal terms.
-func validateUpdateMarketChange(terms *types.UpdateMarket, netp NetParams, openingAuctionDuration time.Duration) (types.ProposalError, error) {
+func validateUpdateMarketChange(terms *types.UpdateMarket) (types.ProposalError, error) {
 	if perr, err := validateUpdateInstrument(terms.Changes.Instrument); err != nil {
 		return perr, err
 	}
 	if perr, err := validateRiskParameters(terms.Changes.RiskParameters); err != nil {
-		return perr, err
-	}
-	if perr, err := validateAuctionDuration(openingAuctionDuration, netp); err != nil {
 		return perr, err
 	}
 
@@ -455,8 +454,15 @@ func validateUpdateFuture(future *types.UpdateFutureProduct) (types.ProposalErro
 		return types.ProposalErrorInvalidFutureProduct, err
 	}
 
-	if err := ospec.EnsureBoundableProperty(future.OracleSpecBinding.TradingTerminationProperty, oraclespb.PropertyKey_TYPE_BOOLEAN); err != nil {
-		return types.ProposalErrorInvalidFutureProduct, fmt.Errorf("invalid oracle spec binding for trading termination: %w", err)
+	switch future.OracleSpecBinding.TradingTerminationProperty {
+	case oracles.BuiltinOracleTimestamp:
+		if err := ospec.EnsureBoundableProperty(future.OracleSpecBinding.TradingTerminationProperty, oraclespb.PropertyKey_TYPE_TIMESTAMP); err != nil {
+			return types.ProposalErrorInvalidFutureProduct, fmt.Errorf("invalid oracle spec binding for trading termination: %w", err)
+		}
+	default:
+		if err := ospec.EnsureBoundableProperty(future.OracleSpecBinding.TradingTerminationProperty, oraclespb.PropertyKey_TYPE_BOOLEAN); err != nil {
+			return types.ProposalErrorInvalidFutureProduct, fmt.Errorf("invalid oracle spec binding for trading termination: %w", err)
+		}
 	}
 
 	return types.ProposalErrorUnspecified, nil

@@ -20,9 +20,9 @@ var allKey = (&types.PayloadLimitState{}).Key()
 func TestLimitSnapshotEmpty(t *testing.T) {
 	l := getLimitsTest(t)
 
-	h, err := l.GetHash(allKey)
+	s, _, err := l.GetState(allKey)
 	require.Nil(t, err)
-	require.NotNil(t, h)
+	require.NotNil(t, s)
 }
 
 func TestLimitSnapshotWrongPayLoad(t *testing.T) {
@@ -37,14 +37,14 @@ func TestLimitSnapshotGenesisState(t *testing.T) {
 		BootstrapBlockCount: 1,
 	}
 	lmt := getLimitsTest(t)
-	h1, err := lmt.GetHash(allKey)
+	s1, _, err := lmt.GetState(allKey)
 	require.Nil(t, err)
 
 	lmt.loadGenesisState(t, gs)
 
-	h2, err := lmt.GetHash(allKey)
+	s2, _, err := lmt.GetState(allKey)
 	require.Nil(t, err)
-	require.False(t, bytes.Equal(h1, h2))
+	require.False(t, bytes.Equal(s1, s2))
 }
 
 func TestLimitSnapshotBlockCount(t *testing.T) {
@@ -55,16 +55,16 @@ func TestLimitSnapshotBlockCount(t *testing.T) {
 	lmt := getLimitsTest(t)
 	lmt.loadGenesisState(t, gs)
 
-	h1, err := lmt.GetHash(allKey)
+	s1, _, err := lmt.GetState(allKey)
 	require.Nil(t, err)
 
-	// increase block count and hash should change
+	// increase block count and state should change
 	lmt.OnTick(ctx, time.Unix(3000, 0))
 	require.False(t, lmt.BootstrapFinished())
 
-	h2, err := lmt.GetHash(allKey)
+	s2, _, err := lmt.GetState(allKey)
 	require.Nil(t, err)
-	require.False(t, bytes.Equal(h1, h2))
+	require.False(t, bytes.Equal(s1, s2))
 
 	state, _, err := lmt.GetState(allKey)
 	require.Nil(t, err)
@@ -117,9 +117,9 @@ func TestLimitSnapshotBootstrapFinished(t *testing.T) {
 	require.True(t, lmt.CanProposeMarket())
 	require.True(t, lmt.BootstrapFinished())
 
-	h1, err := lmt.GetHash(allKey)
+	s1, _, err := lmt.GetState(allKey)
 	require.Nil(t, err)
-	h2, err := snapLmt.GetHash(allKey)
+	s2, _, err := snapLmt.GetState(allKey)
 	require.Nil(t, err)
-	require.True(t, bytes.Equal(h1, h2))
+	require.True(t, bytes.Equal(s1, s2))
 }

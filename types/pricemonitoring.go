@@ -3,6 +3,7 @@ package types
 import (
 	"errors"
 	"fmt"
+	"strings"
 
 	proto "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/types/num"
@@ -17,11 +18,17 @@ type PriceMonitoringParameters struct {
 	Triggers []*PriceMonitoringTrigger
 }
 
-type PriceMonitoringTrigger struct {
-	Horizon          int64
-	HorizonDec       num.Decimal
-	Probability      num.Decimal
-	AuctionExtension int64
+type PriceMonitoringBoundsList []*PriceMonitoringBounds
+
+func (ls PriceMonitoringBoundsList) String() string {
+	if ls == nil {
+		return "[]"
+	}
+	strs := make([]string, 0, len(ls))
+	for _, l := range ls {
+		strs = append(strs, l.String())
+	}
+	return "[" + strings.Join(strs, ", ") + "]"
 }
 
 type PriceMonitoringBounds struct {
@@ -29,6 +36,16 @@ type PriceMonitoringBounds struct {
 	MaxValidPrice  *num.Uint
 	Trigger        *PriceMonitoringTrigger
 	ReferencePrice num.Decimal
+}
+
+func (p PriceMonitoringBounds) String() string {
+	return fmt.Sprintf(
+		"minValidPrice(%s) maxValidPrice(%s) trigger(%s) referencePrice(%s)",
+		uintPointerToString(p.MinValidPrice),
+		uintPointerToString(p.MaxValidPrice),
+		reflectPointerToString(p.Trigger),
+		p.ReferencePrice.String(),
+	)
 }
 
 func (p PriceMonitoringSettings) IntoProto() *proto.PriceMonitoringSettings {
@@ -47,6 +64,14 @@ func (p PriceMonitoringSettings) DeepClone() *PriceMonitoringSettings {
 		Parameters:      p.Parameters.DeepClone(),
 		UpdateFrequency: p.UpdateFrequency,
 	}
+}
+
+func (p PriceMonitoringSettings) String() string {
+	return fmt.Sprintf(
+		"parameters(%s) updateFrequency(%v)",
+		reflectPointerToString(p.Parameters),
+		p.UpdateFrequency,
+	)
 }
 
 func PriceMonitoringSettingsFromProto(pr *proto.PriceMonitoringSettings) *PriceMonitoringSettings {
@@ -94,6 +119,13 @@ func (p PriceMonitoringParameters) DeepClone() *PriceMonitoringParameters {
 
 func (p *PriceMonitoringParameters) Reset() {
 	*p = PriceMonitoringParameters{}
+}
+
+func (p PriceMonitoringParameters) String() string {
+	return fmt.Sprintf(
+		"triggers(%v)",
+		PriceMonitoringTriggers(p.Triggers).String(),
+	)
 }
 
 func (p PriceMonitoringBounds) IntoProto() *proto.PriceMonitoringBounds {
@@ -155,6 +187,36 @@ func PriceMonitoringTriggerFromProto(p *proto.PriceMonitoringTrigger) *PriceMoni
 		Probability:      probability,
 		AuctionExtension: p.AuctionExtension,
 	}
+}
+
+type PriceMonitoringTriggers []*PriceMonitoringTrigger
+
+func (ts PriceMonitoringTriggers) String() string {
+	if ts == nil {
+		return "[]"
+	}
+	strs := make([]string, 0, len(ts))
+	for _, t := range ts {
+		strs = append(strs, t.String())
+	}
+	return "[" + strings.Join(strs, ", ") + "]"
+}
+
+type PriceMonitoringTrigger struct {
+	Horizon          int64
+	HorizonDec       num.Decimal
+	Probability      num.Decimal
+	AuctionExtension int64
+}
+
+func (p PriceMonitoringTrigger) String() string {
+	return fmt.Sprintf(
+		"horizonDec(%s) horizon(%v) probability(%s), auctionExtension(%v)",
+		p.HorizonDec.String(),
+		p.Horizon,
+		p.Probability.String(),
+		p.AuctionExtension,
+	)
 }
 
 // IntoProto return proto version of the PriceMonitoringTrigger.

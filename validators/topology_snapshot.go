@@ -11,7 +11,6 @@ import (
 	snapshot "code.vegaprotocol.io/protos/vega/snapshot/v1"
 	"code.vegaprotocol.io/vega/events"
 	vegactx "code.vegaprotocol.io/vega/libs/context"
-	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
@@ -30,7 +29,6 @@ var (
 
 type topologySnapshotState struct {
 	changed    bool
-	hash       []byte
 	serialised []byte
 }
 
@@ -133,7 +131,19 @@ func (t *Topology) serialisePendingEthereumKeyRotation() []*snapshot.PendingEthe
 	return pkrs
 }
 
-func (t *Topology) serialise() ([]byte, error) {
+// serialise gets the serialised form of the given key.
+func (t *Topology) serialise(k string) ([]byte, error) {
+	if k != topKey {
+		return nil, ErrSnapshotKeyDoesNotExist
+	}
+
+	t.mu.Lock()
+	defer t.mu.Unlock()
+
+	if !t.tss.changed {
+		return t.tss.serialised, nil
+	}
+
 	payload := types.Payload{
 		Data: &types.PayloadTopology{
 			Topology: &types.Topology{
@@ -145,42 +155,24 @@ func (t *Topology) serialise() ([]byte, error) {
 			},
 		},
 	}
-	x := payload.IntoProto()
-	return proto.Marshal(x)
-}
-
-// get the serialised form and hash of the given key.
-func (t *Topology) getSerialisedAndHash(k string) ([]byte, []byte, error) {
-	if k != topKey {
-		return nil, nil, ErrSnapshotKeyDoesNotExist
-	}
-
-	t.mu.Lock()
-	defer t.mu.Unlock()
-
-	if !t.tss.changed {
-		return t.tss.serialised, t.tss.hash, nil
-	}
-
-	data, err := t.serialise()
+	data, err := proto.Marshal(payload.IntoProto())
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
-	hash := crypto.Hash(data)
 	t.tss.serialised = data
-	t.tss.hash = hash
 	t.tss.changed = false
-	return data, hash, nil
+	return data, nil
 }
 
-func (t *Topology) GetHash(k string) ([]byte, error) {
-	_, hash, err := t.getSerialisedAndHash(k)
-	return hash, err
+func (t *Topology) HasChanged(k string) bool {
+	t.mu.RLock()
+	defer t.mu.RUnlock()
+	return t.tss.changed
 }
 
 func (t *Topology) GetState(k string) ([]byte, []types.StateProvider, error) {
-	state, _, err := t.getSerialisedAndHash(k)
+	state, err := t.serialise(k)
 	return state, nil, err
 }
 
@@ -191,7 +183,7 @@ func (t *Topology) LoadState(ctx context.Context, p *types.Payload) ([]types.Sta
 	// see what we're reloading
 	switch pl := p.Data.(type) {
 	case *types.PayloadTopology:
-		return nil, t.restore(ctx, pl.Topology)
+		return nil, t.restore(ctx, pl.Topology, p)
 	default:
 		return nil, types.ErrUnknownSnapshotType
 	}
@@ -219,7 +211,7 @@ func (t *Topology) restorePendingEthereumKeyRotations(ctx context.Context, pkrs 
 	}
 }
 
-func (t *Topology) restore(ctx context.Context, topology *types.Topology) error {
+func (t *Topology) restore(ctx context.Context, topology *types.Topology, p *types.Payload) error {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 	t.log.Debug("restoring topology snapshot")
@@ -291,19 +283,22 @@ func (t *Topology) restore(ctx context.Context, topology *types.Topology) error 
 
 	t.currentBlockHeight = uint64(bh)
 	t.validatorPowerUpdates = vUpdates
-	t.newEpochStarted = true
 	t.chainValidators = topology.ChainValidators[:]
 	t.restorePendingKeyRotations(ctx, topology.PendingPubKeyRotations)
 	t.restorePendingEthereumKeyRotations(ctx, topology.PendingEthereumKeyRotations)
 	t.validatorPerformance.Deserialize(topology.ValidatorPerformance)
-	t.tss.changed = true
-	return nil
+	t.tss.serialised, err = proto.Marshal(p.IntoProto())
+	t.tss.changed = false
+	return err
 }
 
 // OnEpochRestore is the epochtime service telling us the restored epoch data.
 func (t *Topology) OnEpochRestore(_ context.Context, epoch types.Epoch) {
 	t.log.Debug("epoch restoration notification received", logging.String("epoch", epoch.String()))
 	t.epochSeq = epoch.Seq
-	t.newEpochStarted = true
+	// we always take at snapshot at commit-time after the end of a block, so newEpochStarted will always be false when we restore because either
+	// 1) we aren't at the start of an epoch and so newEpochStarted is obviously false
+	// 2) we are at the start of an epoch, but at the end of the block *before* we take the snapshot we reset the powers and set newEpochStarted to false
+	t.newEpochStarted = false
 	t.rng = rand.New(rand.NewSource(epoch.StartTime.Unix()))
 }

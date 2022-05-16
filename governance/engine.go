@@ -22,6 +22,7 @@ import (
 var (
 	ErrProposalDoesNotExist                      = errors.New("proposal does not exist")
 	ErrMarketDoesNotExist                        = errors.New("market does not exist")
+	ErrMarketNotEnactedYet                       = errors.New("market has been enacted yet")
 	ErrProposalNotOpenForVotes                   = errors.New("proposal is not open for votes")
 	ErrProposalIsDuplicate                       = errors.New("proposal with given ID already exists")
 	ErrVoterInsufficientTokensAndEquityLikeShare = errors.New("vote requires tokens or equity-like share")
@@ -101,8 +102,7 @@ type Engine struct {
 	netp                   NetParams
 
 	// snapshot state
-	gss             *governanceSnapshotState
-	keyToSerialiser map[string]func() ([]byte, error)
+	gss *governanceSnapshotState
 }
 
 func NewEngine(
@@ -132,16 +132,11 @@ func NewEngine(
 		markets:                markets,
 		netp:                   netp,
 		gss: &governanceSnapshotState{
-			changed:    map[string]bool{activeKey: true, enactedKey: true, nodeValidationKey: true},
-			hash:       map[string][]byte{},
-			serialised: map[string][]byte{},
+			changedActive:         true,
+			changedEnacted:        true,
+			changedNodeValidation: true,
 		},
-		keyToSerialiser: map[string]func() ([]byte, error){},
 	}
-
-	e.keyToSerialiser[activeKey] = e.serialiseActiveProposals
-	e.keyToSerialiser[enactedKey] = e.serialiseEnactedProposals
-	e.keyToSerialiser[nodeValidationKey] = e.serialiseNodeProposals
 	return e
 }
 
@@ -247,8 +242,7 @@ func (e *Engine) preVoteClosedProposal(p *proposal) *VoteClosed {
 			// this proposal needs to be included in the checkpoint but we don't need to copy
 			// the proposal here, as it may reach the enacted state shortly
 			e.enactedProposals = append(e.enactedProposals, p)
-
-			e.gss.changed[enactedKey] = true
+			e.gss.changedEnacted = true
 		}
 		vc.m = &NewMarketVoteClosed{
 			startAuction: startAuction,
@@ -264,7 +258,7 @@ func (e *Engine) removeProposal(id string) {
 			e.activeProposals[len(e.activeProposals)-1] = nil
 			e.activeProposals = e.activeProposals[:len(e.activeProposals)-1]
 
-			e.gss.changed[activeKey] = true
+			e.gss.changedActive = true
 			return
 		}
 	}
@@ -326,7 +320,7 @@ func (e *Engine) OnChainTimeUpdate(ctx context.Context, t time.Time) ([]*ToEnact
 	}
 
 	if len(accepted) != 0 || len(rejected) != 0 {
-		e.gss.changed[nodeValidationKey] = true
+		e.gss.changedNodeValidation = true
 	}
 
 	for _, ep := range toBeEnacted {
@@ -352,7 +346,7 @@ func (e *Engine) OnChainTimeUpdate(ctx context.Context, t time.Time) ([]*ToEnact
 	}
 
 	if len(toBeEnacted) != 0 {
-		e.gss.changed[enactedKey] = true
+		e.gss.changedEnacted = true
 	}
 
 	// flush here for now
@@ -392,6 +386,7 @@ func (e *Engine) SubmitProposal(
 		State:     types.ProposalStateOpen,
 		Terms:     psub.Terms,
 		Reference: psub.Reference,
+		Rationale: psub.Rationale,
 	}
 
 	defer func() {
@@ -403,7 +398,7 @@ func (e *Engine) SubmitProposal(
 		if e.log.IsDebug() {
 			e.log.Debug("Proposal rejected",
 				logging.String("proposal-id", p.ID),
-				logging.String("proposal details", p.IntoProto().String()),
+				logging.String("proposal details", p.String()),
 			)
 		}
 		return nil, err
@@ -468,7 +463,13 @@ func (e *Engine) intoToSubmit(p *types.Proposal) (*ToSubmit, error) {
 		closeTime := e.currentTime
 		enactTime := time.Unix(p.Terms.EnactmentTimestamp, 0)
 		newMarket := p.Terms.GetNewMarket()
-		mkt, perr, err := buildMarketFromProposal(p.ID, newMarket, e.netp, e.assets, enactTime.Sub(closeTime))
+
+		auctionDuration := enactTime.Sub(closeTime)
+		if perr, err := validateNewMarketChange(newMarket, e.assets, true, e.netp, auctionDuration); err != nil {
+			e.rejectProposal(p, perr, err)
+			return nil, fmt.Errorf("%w, %v", err, perr)
+		}
+		mkt, perr, err := buildMarketFromProposal(p.ID, newMarket, e.netp, auctionDuration)
 		if err != nil {
 			e.rejectProposal(p, perr, err)
 			return nil, fmt.Errorf("%w, %v", err, perr)
@@ -491,16 +492,16 @@ func (e *Engine) startProposal(p *types.Proposal) {
 		invalidVotes: map[string]*types.Vote{},
 	})
 
-	e.gss.changed[activeKey] = true
+	e.gss.changedActive = true
 }
 
 func (e *Engine) startValidatedProposal(p *proposal) {
 	e.activeProposals = append(e.activeProposals, p)
-	e.gss.changed[activeKey] = true
+	e.gss.changedActive = true
 }
 
 func (e *Engine) startTwoStepsProposal(p *types.Proposal) error {
-	e.gss.changed[nodeValidationKey] = true
+	e.gss.changedNodeValidation = true
 	return e.nodeProposalValidation.Start(p)
 }
 
@@ -723,6 +724,12 @@ func (e *Engine) validateMarketUpdate(proposal *types.Proposal, params *Proposal
 			logging.ProposalID(proposal.ID))
 		return types.ProposalErrorInvalidMarket, ErrMarketDoesNotExist
 	}
+	for _, p := range e.activeProposals {
+		if p.ID == updateMarket.MarketID {
+			return types.ProposalErrorInvalidMarket, ErrMarketNotEnactedYet
+		}
+	}
+
 	partyELS, _ := e.markets.GetEquityLikeShareForMarketAndParty(updateMarket.MarketID, proposal.Party)
 	if partyELS.LessThan(params.MinEquityLikeShare) {
 		e.log.Debug("proposer have insufficient equity-like share",
@@ -746,15 +753,11 @@ func (e *Engine) validateChange(terms *types.ProposalTerms) (types.ProposalError
 		enactTime := time.Unix(terms.EnactmentTimestamp, 0)
 		return validateNewMarketChange(terms.GetNewMarket(), e.assets, true, e.netp, enactTime.Sub(closeTime))
 	case types.ProposalTermsTypeUpdateMarket:
-		closeTime := time.Unix(terms.ClosingTimestamp, 0)
-		enactTime := time.Unix(terms.EnactmentTimestamp, 0)
-		return validateUpdateMarketChange(terms.GetUpdateMarket(), e.netp, enactTime.Sub(closeTime))
+		return validateUpdateMarketChange(terms.GetUpdateMarket())
 	case types.ProposalTermsTypeNewAsset:
 		return validateNewAsset(terms.GetNewAsset().Changes)
 	case types.ProposalTermsTypeUpdateNetworkParameter:
 		return validateNetworkParameterUpdate(e.netp, terms.GetUpdateNetworkParameter().Changes)
-	case types.ProposalTermsTypeNewFreeform:
-		return validateNewFreeform(terms.GetNewFreeform())
 	default:
 		return types.ProposalErrorUnspecified, nil
 	}
@@ -772,7 +775,7 @@ func (e *Engine) closeProposal(ctx context.Context, proposal *proposal) {
 	if proposal.IsPassed() {
 		e.log.Debug("Proposal passed", logging.ProposalID(proposal.ID))
 	} else if proposal.IsDeclined() {
-		e.log.Debug("Proposal declined", logging.ProposalID(proposal.ID))
+		e.log.Debug("Proposal declined", logging.ProposalID(proposal.ID), logging.String("details", proposal.ErrorDetails), logging.String("reason", proposal.Reason.String()))
 	}
 
 	e.broker.Send(events.NewProposalEvent(ctx, *proposal.Proposal))
@@ -824,27 +827,42 @@ func (e *Engine) updateValidatorKey(ctx context.Context, m map[string]*types.Vot
 }
 
 func (e *Engine) updatedMarketFromProposal(p *proposal) (*types.Market, types.ProposalError, error) {
-	change := p.Terms.GetUpdateMarket()
-	existingMarket, exists := e.markets.GetMarket(change.MarketID)
+	terms := p.Terms.GetUpdateMarket()
+	existingMarket, exists := e.markets.GetMarket(terms.MarketID)
 	if !exists {
-		return nil, types.ProposalErrorInvalidMarket, fmt.Errorf("market \"%s\" doesn't exist anymore", change.MarketID)
+		return nil, types.ProposalErrorInvalidMarket, fmt.Errorf("market \"%s\" doesn't exist anymore", terms.MarketID)
 	}
 
 	newMarket := &types.NewMarket{
 		Changes: &types.NewMarketConfiguration{
 			Instrument: &types.InstrumentConfiguration{
 				Name: existingMarket.TradableInstrument.Instrument.Name,
-				Code: change.Changes.Instrument.Code,
+				Code: terms.Changes.Instrument.Code,
 			},
 			DecimalPlaces:                 existingMarket.DecimalPlaces,
-			Metadata:                      change.Changes.Metadata,
-			PriceMonitoringParameters:     change.Changes.PriceMonitoringParameters,
-			LiquidityMonitoringParameters: change.Changes.LiquidityMonitoringParameters,
-			RiskParameters:                change.Changes.RiskParameters,
+			PositionDecimalPlaces:         existingMarket.PositionDecimalPlaces,
+			Metadata:                      terms.Changes.Metadata,
+			PriceMonitoringParameters:     terms.Changes.PriceMonitoringParameters,
+			LiquidityMonitoringParameters: terms.Changes.LiquidityMonitoringParameters,
 		},
 	}
 
-	switch product := change.Changes.Instrument.Product.(type) {
+	switch riskModel := terms.Changes.RiskParameters.(type) {
+	case nil:
+		return nil, types.ProposalErrorNoRiskParameters, ErrMissingRiskParameters
+	case *types.UpdateMarketConfigurationSimple:
+		newMarket.Changes.RiskParameters = &types.NewMarketConfigurationSimple{
+			Simple: riskModel.Simple,
+		}
+	case *types.UpdateMarketConfigurationLogNormal:
+		newMarket.Changes.RiskParameters = &types.NewMarketConfigurationLogNormal{
+			LogNormal: riskModel.LogNormal,
+		}
+	default:
+		return nil, types.ProposalErrorUnknownRiskParameterType, ErrUnsupportedRiskParameters
+	}
+
+	switch product := terms.Changes.Instrument.Product.(type) {
 	case nil:
 		return nil, types.ProposalErrorNoProduct, ErrMissingProduct
 	case *types.UpdateInstrumentConfigurationFuture:
@@ -863,9 +881,12 @@ func (e *Engine) updatedMarketFromProposal(p *proposal) (*types.Market, types.Pr
 		return nil, types.ProposalErrorUnsupportedProduct, ErrUnsupportedProduct
 	}
 
-	closeTime := time.Unix(p.Terms.ClosingTimestamp, 0)
-	enactTime := time.Unix(p.Terms.EnactmentTimestamp, 0)
-	return buildMarketFromProposal(p.ID, newMarket, e.netp, e.assets, enactTime.Sub(closeTime))
+	if perr, err := validateUpdateMarketChange(terms); err != nil {
+		return nil, perr, err
+	}
+
+	previousAuctionDuration := time.Duration(existingMarket.OpeningAuction.Duration) * time.Second
+	return buildMarketFromProposal(existingMarket.ID, newMarket, e.netp, previousAuctionDuration)
 }
 
 type proposal struct {

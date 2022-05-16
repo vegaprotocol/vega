@@ -163,9 +163,10 @@ func (t *OneOffTransfer) IntoEvent() *eventspb.Transfer {
 
 type RecurringTransfer struct {
 	*TransferBase
-	StartEpoch uint64
-	EndEpoch   *uint64
-	Factor     num.Decimal
+	StartEpoch       uint64
+	EndEpoch         *uint64
+	Factor           num.Decimal
+	DispatchStrategy *vegapb.DispatchStrategy
 }
 
 func (r *RecurringTransfer) IsValid() error {
@@ -212,9 +213,10 @@ func (t *RecurringTransfer) IntoEvent() *eventspb.Transfer {
 		Timestamp:       t.Timestamp.UnixNano(),
 		Kind: &eventspb.Transfer_Recurring{
 			Recurring: &eventspb.RecurringTransfer{
-				StartEpoch: t.StartEpoch,
-				EndEpoch:   endEpoch,
-				Factor:     t.Factor.String(),
+				StartEpoch:       t.StartEpoch,
+				EndEpoch:         endEpoch,
+				Factor:           t.Factor.String(),
+				DispatchStrategy: t.DispatchStrategy,
 			},
 		},
 	}
@@ -303,10 +305,11 @@ func newRecurringTransfer(base *TransferBase, tf *commandspb.Transfer) (*Transfe
 	return &TransferFunds{
 		Kind: TransferCommandKindRecurring,
 		Recurring: &RecurringTransfer{
-			TransferBase: base,
-			StartEpoch:   tf.GetRecurring().GetStartEpoch(),
-			EndEpoch:     endEpoch,
-			Factor:       factor,
+			TransferBase:     base,
+			StartEpoch:       tf.GetRecurring().GetStartEpoch(),
+			EndEpoch:         endEpoch,
+			Factor:           factor,
+			DispatchStrategy: tf.GetRecurring().DispatchStrategy,
 		},
 	}, nil
 }
@@ -344,9 +347,10 @@ func RecurringTransferFromEvent(p *eventspb.Transfer) *RecurringTransfer {
 			Status:          p.Status,
 			Timestamp:       time.Unix(p.Timestamp/int64(time.Second), p.Timestamp%int64(time.Second)),
 		},
-		StartEpoch: p.GetRecurring().GetStartEpoch(),
-		EndEpoch:   endEpoch,
-		Factor:     factor,
+		StartEpoch:       p.GetRecurring().GetStartEpoch(),
+		EndEpoch:         endEpoch,
+		Factor:           factor,
+		DispatchStrategy: p.GetRecurring().DispatchStrategy,
 	}
 }
 

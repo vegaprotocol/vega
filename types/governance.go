@@ -2,11 +2,12 @@ package types
 
 import (
 	"errors"
+	"fmt"
+	"strings"
 
+	proto "code.vegaprotocol.io/protos/vega"
 	vegapb "code.vegaprotocol.io/protos/vega"
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
-	oraclespb "code.vegaprotocol.io/protos/vega/oracles/v1"
-
 	"code.vegaprotocol.io/vega/types/num"
 )
 
@@ -95,7 +96,7 @@ const (
 	ProposalErrorInsufficientEquityLikeShare ProposalError = vegapb.ProposalError_PROPOSAL_ERROR_INSUFFICIENT_EQUITY_LIKE_SHARE
 	// ProposalErrorInvalidMarket The market targeted by the proposal does not exist or is not eligible to modification.
 	ProposalErrorInvalidMarket ProposalError = vegapb.ProposalError_PROPOSAL_ERROR_INVALID_MARKET
-	// ProposalErrorTooManyMarketDecimalPlace the market uses more decimal places than the settlement asset.
+	// ProposalErrorTooManyMarketDecimalPlaces the market uses more decimal places than the settlement asset.
 	ProposalErrorTooManyMarketDecimalPlaces ProposalError = vegapb.ProposalError_PROPOSAL_ERROR_TOO_MANY_MARKET_DECIMAL_PLACES
 	// ProposalErrorTooManyPriceMonitoringTriggers the market price monitoring setting uses too many triggers.
 	ProposalErrorTooManyPriceMonitoringTriggers ProposalError = vegapb.ProposalError_PROPOSAL_ERROR_TOO_MANY_PRICE_MONITORING_TRIGGERS
@@ -176,7 +177,11 @@ func (v VoteSubmission) IntoProto() *commandspb.VoteSubmission {
 }
 
 func (v VoteSubmission) String() string {
-	return v.IntoProto().String()
+	return fmt.Sprintf(
+		"proposalID(%s) value(%s)",
+		v.ProposalID,
+		v.Value.String(),
+	)
 }
 
 type ProposalSubmission struct {
@@ -184,24 +189,36 @@ type ProposalSubmission struct {
 	Reference string
 	// Proposal configuration and the actual change that is meant to be executed when proposal is enacted
 	Terms *ProposalTerms
+	// Rationale behind the proposal change.
+	Rationale *ProposalRationale
 }
 
 func ProposalSubmissionFromProposal(p *Proposal) *ProposalSubmission {
 	return &ProposalSubmission{
 		Reference: p.Reference,
 		Terms:     p.Terms,
+		Rationale: p.Rationale,
 	}
 }
 
-func NewProposalSubmissionFromProto(p *commandspb.ProposalSubmission) *ProposalSubmission {
+func NewProposalSubmissionFromProto(p *commandspb.ProposalSubmission) (*ProposalSubmission, error) {
 	var pterms *ProposalTerms
 	if p.Terms != nil {
-		pterms = ProposalTermsFromProto(p.Terms)
+		var err error
+		pterms, err = ProposalTermsFromProto(p.Terms)
+		if err != nil {
+			return nil, err
+		}
 	}
 	return &ProposalSubmission{
 		Reference: p.Reference,
 		Terms:     pterms,
-	}
+		Rationale: &ProposalRationale{
+			Description: p.Rationale.Description,
+			Hash:        p.Rationale.Hash,
+			URL:         p.Rationale.Url,
+		},
+	}, nil
 }
 
 func (p ProposalSubmission) IntoProto() *commandspb.ProposalSubmission {
@@ -212,6 +229,11 @@ func (p ProposalSubmission) IntoProto() *commandspb.ProposalSubmission {
 	return &commandspb.ProposalSubmission{
 		Reference: p.Reference,
 		Terms:     terms,
+		Rationale: &vegapb.ProposalRationale{
+			Description: p.Rationale.Description,
+			Hash:        p.Rationale.Hash,
+			Url:         p.Rationale.URL,
+		},
 	}
 }
 
@@ -222,6 +244,7 @@ type Proposal struct {
 	State        ProposalState
 	Timestamp    int64
 	Terms        *ProposalTerms
+	Rationale    *ProposalRationale
 	Reason       ProposalError
 	ErrorDetails string
 }
@@ -281,17 +304,37 @@ func (p Proposal) DeepClone() *Proposal {
 	return &cpy
 }
 
-func ProposalFromProto(pp *vegapb.Proposal) *Proposal {
+func ProposalFromProto(pp *proto.Proposal) (*Proposal, error) {
+	terms, err := ProposalTermsFromProto(pp.Terms)
+	if err != nil {
+		return nil, err
+	}
+
 	return &Proposal{
 		ID:           pp.Id,
 		Reference:    pp.Reference,
 		Party:        pp.PartyId,
 		State:        pp.State,
 		Timestamp:    pp.Timestamp,
-		Terms:        ProposalTermsFromProto(pp.Terms),
+		Terms:        terms,
 		Reason:       pp.Reason,
+		Rationale:    ProposalRationaleFromProto(pp.Rationale),
 		ErrorDetails: pp.ErrorDetails,
-	}
+	}, nil
+}
+
+func (p Proposal) String() string {
+	return fmt.Sprintf(
+		"id(%s) reference(%s) party(%s) state(%s) timestamp(%v) terms(%s) reason(%s) errorDetails(%s)",
+		p.ID,
+		p.Reference,
+		p.Party,
+		p.State.String(),
+		p.Timestamp,
+		reflectPointerToString(p.Terms),
+		p.Reason.String(),
+		p.ErrorDetails,
+	)
 }
 
 func (p Proposal) IntoProto() *vegapb.Proposal {
@@ -299,7 +342,7 @@ func (p Proposal) IntoProto() *vegapb.Proposal {
 	if p.Terms != nil {
 		terms = p.Terms.IntoProto()
 	}
-	return &vegapb.Proposal{
+	proposal := &vegapb.Proposal{
 		Id:           p.ID,
 		Reference:    p.Reference,
 		PartyId:      p.Party,
@@ -309,6 +352,16 @@ func (p Proposal) IntoProto() *vegapb.Proposal {
 		Reason:       p.Reason,
 		ErrorDetails: p.ErrorDetails,
 	}
+
+	if p.Rationale != nil {
+		proposal.Rationale = &vegapb.ProposalRationale{
+			Description: p.Rationale.Description,
+			Hash:        p.Rationale.Hash,
+			Url:         p.Rationale.URL,
+		}
+	}
+
+	return proposal
 }
 
 func (v Vote) IntoProto() *vegapb.Vote {
@@ -414,6 +467,12 @@ func (n NewMarketCommitment) DeepClone() *NewMarketCommitment {
 	return cpy
 }
 
+type ProposalRationale struct {
+	Description string
+	Hash        string
+	URL         string
+}
+
 type ProposalTerms struct {
 	ClosingTimestamp    int64
 	EnactmentTimestamp  int64
@@ -437,7 +496,7 @@ type NewMarketConfiguration struct {
 	Metadata                      []string
 	PriceMonitoringParameters     *PriceMonitoringParameters
 	LiquidityMonitoringParameters *LiquidityMonitoringParameters
-	RiskParameters                riskParams
+	RiskParameters                newRiskParams
 	// New market risk model parameters
 	//
 	// Types that are valid to be assigned to RiskParameters:
@@ -452,9 +511,10 @@ type NewMarketConfiguration struct {
 	// TradingMode          isNewMarketConfiguration_TradingMode `protobuf_oneof:"trading_mode"`
 }
 
-type riskParams interface {
-	rpIntoProto() interface{}
-	DeepClone() riskParams
+type newRiskParams interface {
+	newRiskParamsIntoProto() interface{}
+	DeepClone() newRiskParams
+	String() string
 }
 
 type ProposalTermsNewMarket struct {
@@ -477,15 +537,7 @@ type ProposalTermsNewAsset struct {
 	NewAsset *NewAsset
 }
 
-type NewFreeformDetails struct {
-	URL         string
-	Description string
-	Hash        string
-}
-
-type NewFreeform struct {
-	Changes *NewFreeformDetails
-}
+type NewFreeform struct{}
 
 type ProposalTermsNewFreeform struct {
 	NewFreeform *NewFreeform
@@ -496,6 +548,7 @@ type proposalTerm interface {
 	oneOfProto() interface{} // calls IntoProto
 	DeepClone() proposalTerm
 	GetTermType() ProposalTermsType
+	String() string
 }
 
 func (n *NewAsset) GetChanges() *AssetDetails {
@@ -531,8 +584,16 @@ func (n NewMarket) DeepClone() *NewMarket {
 	return &cpy
 }
 
+func (n NewMarket) String() string {
+	return fmt.Sprintf(
+		"changes(%s) liquidityCommitment(%s)",
+		reflectPointerToString(n.Changes),
+		reflectPointerToString(n.LiquidityCommitment),
+	)
+}
+
 func (n NewMarketConfiguration) IntoProto() *vegapb.NewMarketConfiguration {
-	riskParams := n.RiskParameters.rpIntoProto()
+	riskParams := n.RiskParameters.newRiskParamsIntoProto()
 	md := make([]string, 0, len(n.Metadata))
 	md = append(md, n.Metadata...)
 
@@ -588,6 +649,19 @@ func (n NewMarketConfiguration) DeepClone() *NewMarketConfiguration {
 	return cpy
 }
 
+func (n NewMarketConfiguration) String() string {
+	return fmt.Sprintf(
+		"decimalPlaces(%v) positionDecimalPlaces(%v) metadata(%v) instrument(%s) priceMonitoring(%s) liquidityMonitoring(%s) risk(%s)",
+		n.Metadata,
+		n.DecimalPlaces,
+		n.PositionDecimalPlaces,
+		reflectPointerToString(n.Instrument),
+		reflectPointerToString(n.PriceMonitoringParameters),
+		reflectPointerToString(n.LiquidityMonitoringParameters),
+		reflectPointerToString(n.RiskParameters),
+	)
+}
+
 func NewMarketConfigurationFromProto(p *vegapb.NewMarketConfiguration) *NewMarketConfiguration {
 	md := make([]string, 0, len(p.Metadata))
 	md = append(md, p.Metadata...)
@@ -625,21 +699,27 @@ func NewMarketConfigurationFromProto(p *vegapb.NewMarketConfiguration) *NewMarke
 	return r
 }
 
-func ProposalTermsFromProto(p *vegapb.ProposalTerms) *ProposalTerms {
-	var change proposalTerm
+func ProposalTermsFromProto(p *vegapb.ProposalTerms) (*ProposalTerms, error) {
+	var (
+		change proposalTerm
+		err    error
+	)
 	if p.Change != nil {
 		switch ch := p.Change.(type) {
 		case *vegapb.ProposalTerms_NewMarket:
-			change = NewNewMarketFromProto(ch)
+			change, err = NewNewMarketFromProto(ch)
 		case *vegapb.ProposalTerms_UpdateMarket:
 			change = UpdateMarketFromProto(ch)
 		case *vegapb.ProposalTerms_UpdateNetworkParameter:
 			change = NewUpdateNetworkParameterFromProto(ch)
 		case *vegapb.ProposalTerms_NewAsset:
-			change = NewNewAssetFromProto(ch)
+			change, err = NewNewAssetFromProto(ch)
 		case *vegapb.ProposalTerms_NewFreeform:
 			change = NewNewFreeformFromProto(ch)
 		}
+	}
+	if err != nil {
+		return nil, err
 	}
 
 	return &ProposalTerms{
@@ -647,10 +727,21 @@ func ProposalTermsFromProto(p *vegapb.ProposalTerms) *ProposalTerms {
 		EnactmentTimestamp:  p.EnactmentTimestamp,
 		ValidationTimestamp: p.ValidationTimestamp,
 		Change:              change,
+	}, nil
+}
+
+func ProposalRationaleFromProto(p *vegapb.ProposalRationale) *ProposalRationale {
+	if p == nil {
+		return nil
+	}
+	return &ProposalRationale{
+		Description: p.Description,
+		Hash:        p.Hash,
+		URL:         p.Url,
 	}
 }
 
-func NewNewMarketFromProto(p *vegapb.ProposalTerms_NewMarket) *ProposalTermsNewMarket {
+func NewNewMarketFromProto(p *vegapb.ProposalTerms_NewMarket) (*ProposalTermsNewMarket, error) {
 	var newMarket *NewMarket
 	if p.NewMarket != nil {
 		newMarket = &NewMarket{}
@@ -659,13 +750,17 @@ func NewNewMarketFromProto(p *vegapb.ProposalTerms_NewMarket) *ProposalTermsNewM
 			newMarket.Changes = NewMarketConfigurationFromProto(p.NewMarket.Changes)
 		}
 		if p.NewMarket.LiquidityCommitment != nil {
-			newMarket.LiquidityCommitment, _ = NewMarketCommitmentFromProto(p.NewMarket.LiquidityCommitment)
+			var err error
+			newMarket.LiquidityCommitment, err = NewMarketCommitmentFromProto(p.NewMarket.LiquidityCommitment)
+			if err != nil {
+				return nil, err
+			}
 		}
 	}
 
 	return &ProposalTermsNewMarket{
 		NewMarket: newMarket,
-	}
+	}, nil
 }
 
 func NewUpdateNetworkParameterFromProto(
@@ -685,35 +780,28 @@ func NewUpdateNetworkParameterFromProto(
 	}
 }
 
-func NewNewAssetFromProto(p *vegapb.ProposalTerms_NewAsset) *ProposalTermsNewAsset {
+func NewNewAssetFromProto(p *vegapb.ProposalTerms_NewAsset) (*ProposalTermsNewAsset, error) {
 	var newAsset *NewAsset
 	if p.NewAsset != nil {
 		newAsset = &NewAsset{}
 
 		if p.NewAsset.Changes != nil {
-			newAsset.Changes = AssetDetailsFromProto(p.NewAsset.Changes)
+			var err error
+			newAsset.Changes, err = AssetDetailsFromProto(p.NewAsset.Changes)
+			if err != nil {
+				return nil, err
+			}
 		}
 	}
 
 	return &ProposalTermsNewAsset{
 		NewAsset: newAsset,
-	}
+	}, nil
 }
 
-func NewNewFreeformFromProto(p *vegapb.ProposalTerms_NewFreeform) *ProposalTermsNewFreeform {
-	var newFreeform *NewFreeform
-	if p.NewFreeform != nil && p.NewFreeform.Changes != nil {
-		newFreeform = &NewFreeform{
-			Changes: &NewFreeformDetails{
-				URL:         p.NewFreeform.Changes.Url,
-				Description: p.NewFreeform.Changes.Description,
-				Hash:        p.NewFreeform.Changes.Hash,
-			},
-		}
-	}
-
+func NewNewFreeformFromProto(_ *vegapb.ProposalTerms_NewFreeform) *ProposalTermsNewFreeform {
 	return &ProposalTermsNewFreeform{
-		NewFreeform: newFreeform,
+		NewFreeform: &NewFreeform{},
 	}
 }
 
@@ -724,6 +812,7 @@ func (p ProposalTerms) IntoProto() *vegapb.ProposalTerms {
 		EnactmentTimestamp:  p.EnactmentTimestamp,
 		ValidationTimestamp: p.ValidationTimestamp,
 	}
+
 	switch ch := change.(type) {
 	case *vegapb.ProposalTerms_NewMarket:
 		r.Change = ch
@@ -746,7 +835,13 @@ func (p ProposalTerms) DeepClone() *ProposalTerms {
 }
 
 func (p ProposalTerms) String() string {
-	return p.IntoProto().String()
+	return fmt.Sprintf(
+		"validationTs(%v) closingTs(%v) enactmentTs(%v) change(%s)",
+		p.ValidationTimestamp,
+		p.ClosingTimestamp,
+		p.EnactmentTimestamp,
+		reflectPointerToString(p.Change),
+	)
 }
 
 func (p *ProposalTerms) GetNewAsset() *NewAsset {
@@ -794,6 +889,13 @@ func (p *ProposalTerms) GetNewFreeform() *NewFreeform {
 	}
 }
 
+func (a ProposalTermsNewMarket) String() string {
+	return fmt.Sprintf(
+		"newMarket(%s)",
+		reflectPointerToString(a.NewMarket),
+	)
+}
+
 func (a ProposalTermsNewMarket) IntoProto() *vegapb.ProposalTerms_NewMarket {
 	return &vegapb.ProposalTerms_NewMarket{
 		NewMarket: a.NewMarket.IntoProto(),
@@ -816,6 +918,13 @@ func (a ProposalTermsNewMarket) DeepClone() proposalTerm {
 	return &ProposalTermsNewMarket{
 		NewMarket: a.NewMarket.DeepClone(),
 	}
+}
+
+func (a ProposalTermsUpdateNetworkParameter) String() string {
+	return fmt.Sprintf(
+		"updateNetworkParameter(%s)",
+		reflectPointerToString(a.UpdateNetworkParameter),
+	)
 }
 
 func (a ProposalTermsUpdateNetworkParameter) IntoProto() *vegapb.ProposalTerms_UpdateNetworkParameter {
@@ -849,7 +958,10 @@ func (n UpdateNetworkParameter) IntoProto() *vegapb.UpdateNetworkParameter {
 }
 
 func (n UpdateNetworkParameter) String() string {
-	return n.IntoProto().String()
+	return fmt.Sprintf(
+		"changes(%s)",
+		reflectPointerToString(n.Changes),
+	)
 }
 
 func (n UpdateNetworkParameter) DeepClone() *UpdateNetworkParameter {
@@ -859,6 +971,13 @@ func (n UpdateNetworkParameter) DeepClone() *UpdateNetworkParameter {
 	return &UpdateNetworkParameter{
 		Changes: n.Changes.DeepClone(),
 	}
+}
+
+func (a ProposalTermsNewAsset) String() string {
+	return fmt.Sprintf(
+		"newAsset(%v)",
+		reflectPointerToString(a.NewAsset),
+	)
 }
 
 func (a ProposalTermsNewAsset) IntoProto() *vegapb.ProposalTerms_NewAsset {
@@ -900,7 +1019,10 @@ func (n NewAsset) IntoProto() *vegapb.NewAsset {
 }
 
 func (n NewAsset) String() string {
-	return n.IntoProto().String()
+	return fmt.Sprintf(
+		"changes(%s)",
+		reflectPointerToString(n.Changes),
+	)
 }
 
 func (n NewAsset) DeepClone() *NewAsset {
@@ -930,21 +1052,80 @@ func (n NewMarketCommitment) IntoProto() *vegapb.NewMarketCommitment {
 }
 
 func (n NewMarketCommitment) String() string {
-	return n.IntoProto().String()
-}
-
-type NewMarketConfigurationLogNormal struct {
-	LogNormal *LogNormalRiskModel
+	return fmt.Sprintf(
+		"reference(%s) commitmentAmount(%s) fee(%s) sells(%v) buys(%v)",
+		n.Reference,
+		uintPointerToString(n.CommitmentAmount),
+		n.Fee.String(),
+		LiquidityOrders(n.Sells).String(),
+		LiquidityOrders(n.Buys).String(),
+	)
 }
 
 type NewMarketConfigurationSimple struct {
 	Simple *SimpleModelParams
 }
 
+func (n NewMarketConfigurationSimple) String() string {
+	return fmt.Sprintf(
+		"simple(%s)",
+		reflectPointerToString(n.Simple),
+	)
+}
+
+func (n NewMarketConfigurationSimple) IntoProto() *vegapb.NewMarketConfiguration_Simple {
+	return &vegapb.NewMarketConfiguration_Simple{
+		Simple: n.Simple.IntoProto(),
+	}
+}
+
+func (n NewMarketConfigurationSimple) DeepClone() newRiskParams {
+	if n.Simple == nil {
+		return &NewMarketConfigurationSimple{}
+	}
+	return &NewMarketConfigurationSimple{
+		Simple: n.Simple.DeepClone(),
+	}
+}
+
+func (n NewMarketConfigurationSimple) newRiskParamsIntoProto() interface{} {
+	return n.IntoProto()
+}
+
+func NewMarketConfigurationSimpleFromProto(p *vegapb.NewMarketConfiguration_Simple) *NewMarketConfigurationSimple {
+	return &NewMarketConfigurationSimple{
+		Simple: SimpleModelParamsFromProto(p.Simple),
+	}
+}
+
+type NewMarketConfigurationLogNormal struct {
+	LogNormal *LogNormalRiskModel
+}
+
 func (n NewMarketConfigurationLogNormal) IntoProto() *vegapb.NewMarketConfiguration_LogNormal {
 	return &vegapb.NewMarketConfiguration_LogNormal{
 		LogNormal: n.LogNormal.IntoProto(),
 	}
+}
+
+func (n NewMarketConfigurationLogNormal) DeepClone() newRiskParams {
+	if n.LogNormal == nil {
+		return &NewMarketConfigurationLogNormal{}
+	}
+	return &NewMarketConfigurationLogNormal{
+		LogNormal: n.LogNormal.DeepClone(),
+	}
+}
+
+func (n NewMarketConfigurationLogNormal) newRiskParamsIntoProto() interface{} {
+	return n.IntoProto()
+}
+
+func (n NewMarketConfigurationLogNormal) String() string {
+	return fmt.Sprintf(
+		"logNormal(%s)",
+		reflectPointerToString(n.LogNormal),
+	)
 }
 
 func NewMarketConfigurationLogNormalFromProto(p *vegapb.NewMarketConfiguration_LogNormal) *NewMarketConfigurationLogNormal {
@@ -957,69 +1138,23 @@ func NewMarketConfigurationLogNormalFromProto(p *vegapb.NewMarketConfiguration_L
 	}
 }
 
-func (n NewMarketConfigurationLogNormal) DeepClone() riskParams {
-	if n.LogNormal == nil {
-		return &NewMarketConfigurationLogNormal{}
-	}
-	return &NewMarketConfigurationLogNormal{
-		LogNormal: n.LogNormal.DeepClone(),
-	}
-}
-
-func (n NewMarketConfigurationLogNormal) rpIntoProto() interface{} {
-	return n.IntoProto()
-}
-
-func (n NewMarketConfigurationSimple) IntoProto() *vegapb.NewMarketConfiguration_Simple {
-	return &vegapb.NewMarketConfiguration_Simple{
-		Simple: n.Simple.IntoProto(),
-	}
-}
-
-func NewMarketConfigurationSimpleFromProto(p *vegapb.NewMarketConfiguration_Simple) *NewMarketConfigurationSimple {
-	return &NewMarketConfigurationSimple{
-		Simple: SimpleModelParamsFromProto(p.Simple),
-	}
-}
-
-func (n NewMarketConfigurationSimple) DeepClone() riskParams {
-	if n.Simple == nil {
-		return &NewMarketConfigurationSimple{}
-	}
-	return &NewMarketConfigurationSimple{
-		Simple: n.Simple.DeepClone(),
-	}
-}
-
-func (n NewMarketConfigurationSimple) rpIntoProto() interface{} {
-	return n.IntoProto()
-}
-
-type InstrumentConfiguration struct {
-	Name string
-	Code string
-	// *InstrumentConfigurationFuture
-	Product instrumentConfigurationProduct
-}
-
 type instrumentConfigurationProduct interface {
 	isInstrumentConfigurationProduct()
 	icpIntoProto() interface{}
 	Asset() string
 	DeepClone() instrumentConfigurationProduct
+	String() string
 }
 
 type InstrumentConfigurationFuture struct {
 	Future *FutureProduct
 }
 
-type FutureProduct struct {
-	SettlementAsset                 string
-	QuoteName                       string
-	OracleSpecForSettlementPrice    *oraclespb.OracleSpecConfiguration
-	OracleSpecForTradingTermination *oraclespb.OracleSpecConfiguration
-	OracleSpecBinding               *OracleSpecToFutureBinding
-	SettlementPriceDecimalPlaces    uint32
+func (i InstrumentConfigurationFuture) String() string {
+	return fmt.Sprintf(
+		"future(%s)",
+		reflectPointerToString(i.Future),
+	)
 }
 
 func (i InstrumentConfigurationFuture) DeepClone() instrumentConfigurationProduct {
@@ -1033,6 +1168,13 @@ func (i InstrumentConfigurationFuture) DeepClone() instrumentConfigurationProduc
 
 func (i InstrumentConfigurationFuture) Asset() string {
 	return i.Future.SettlementAsset
+}
+
+type InstrumentConfiguration struct {
+	Name string
+	Code string
+	// *InstrumentConfigurationFuture
+	Product instrumentConfigurationProduct
 }
 
 func (i InstrumentConfiguration) DeepClone() *InstrumentConfiguration {
@@ -1059,6 +1201,15 @@ func (i InstrumentConfiguration) IntoProto() *vegapb.InstrumentConfiguration {
 	return r
 }
 
+func (i InstrumentConfiguration) String() string {
+	return fmt.Sprintf(
+		"name(%s) code(%s) product(%s)",
+		i.Name,
+		i.Code,
+		reflectPointerToString(i.Product),
+	)
+}
+
 func InstrumentConfigurationFromProto(
 	p *vegapb.InstrumentConfiguration,
 ) *InstrumentConfiguration {
@@ -1073,11 +1224,10 @@ func InstrumentConfigurationFromProto(
 			Future: &FutureProduct{
 				SettlementAsset:                 pr.Future.SettlementAsset,
 				QuoteName:                       pr.Future.QuoteName,
-				OracleSpecForSettlementPrice:    pr.Future.OracleSpecForSettlementPrice.DeepClone(),
-				OracleSpecForTradingTermination: pr.Future.OracleSpecForTradingTermination.DeepClone(),
+				OracleSpecForSettlementPrice:    OracleSpecConfigurationFromProto(pr.Future.OracleSpecForSettlementPrice),
+				OracleSpecForTradingTermination: OracleSpecConfigurationFromProto(pr.Future.OracleSpecForTradingTermination),
 				SettlementPriceDecimalPlaces:    pr.Future.SettlementPriceDecimals,
-				OracleSpecBinding: OracleSpecToFutureBindingFromProto(
-					pr.Future.OracleSpecBinding),
+				OracleSpecBinding:               OracleSpecBindingForFutureFromProto(pr.Future.OracleSpecBinding),
 			},
 		}
 	}
@@ -1096,12 +1246,21 @@ func (i InstrumentConfigurationFuture) icpIntoProto() interface{} {
 
 func (InstrumentConfigurationFuture) isInstrumentConfigurationProduct() {}
 
+type FutureProduct struct {
+	SettlementAsset                 string
+	QuoteName                       string
+	OracleSpecForSettlementPrice    *OracleSpecConfiguration
+	OracleSpecForTradingTermination *OracleSpecConfiguration
+	OracleSpecBinding               *OracleSpecBindingForFuture
+	SettlementPriceDecimalPlaces    uint32
+}
+
 func (f FutureProduct) IntoProto() *vegapb.FutureProduct {
 	return &vegapb.FutureProduct{
 		SettlementAsset:                 f.SettlementAsset,
 		QuoteName:                       f.QuoteName,
-		OracleSpecForSettlementPrice:    f.OracleSpecForSettlementPrice.DeepClone(),
-		OracleSpecForTradingTermination: f.OracleSpecForTradingTermination.DeepClone(),
+		OracleSpecForSettlementPrice:    f.OracleSpecForSettlementPrice.IntoProto(),
+		OracleSpecForTradingTermination: f.OracleSpecForTradingTermination.IntoProto(),
 		SettlementPriceDecimals:         f.SettlementPriceDecimalPlaces,
 		OracleSpecBinding:               f.OracleSpecBinding.IntoProto(),
 	}
@@ -1118,11 +1277,26 @@ func (f FutureProduct) DeepClone() *FutureProduct {
 }
 
 func (f FutureProduct) String() string {
-	return f.IntoProto().String()
+	return fmt.Sprintf(
+		"quote(%s) settlementAsset(%s) settlementPriceDecimalPlaces(%v) oracleSpec(settlementPrice(%s) tradingTermination(%s) binding(%s))",
+		f.QuoteName,
+		f.SettlementAsset,
+		f.SettlementPriceDecimalPlaces,
+		reflectPointerToString(f.OracleSpecForSettlementPrice),
+		reflectPointerToString(f.OracleSpecForTradingTermination),
+		reflectPointerToString(f.OracleSpecBinding),
+	)
 }
 
 func (f FutureProduct) Asset() string {
 	return f.SettlementAsset
+}
+
+func (f ProposalTermsNewFreeform) String() string {
+	return fmt.Sprintf(
+		"newFreeForm(%s)",
+		reflectPointerToString(f.NewFreeform),
+	)
 }
 
 func (f ProposalTermsNewFreeform) IntoProto() *vegapb.ProposalTerms_NewFreeform {
@@ -1154,27 +1328,15 @@ func (f ProposalTermsNewFreeform) DeepClone() proposalTerm {
 }
 
 func (n NewFreeform) IntoProto() *vegapb.NewFreeform {
-	return &vegapb.NewFreeform{
-		Changes: &vegapb.NewFreeformDetails{
-			Url:         n.Changes.URL,
-			Description: n.Changes.Description,
-			Hash:        n.Changes.Hash,
-		},
-	}
+	return &vegapb.NewFreeform{}
 }
 
 func (n NewFreeform) String() string {
-	return n.IntoProto().String()
+	return ""
 }
 
 func (n NewFreeform) DeepClone() *NewFreeform {
-	return &NewFreeform{
-		Changes: &NewFreeformDetails{
-			URL:         n.Changes.URL,
-			Description: n.Changes.Description,
-			Hash:        n.Changes.Hash,
-		},
-	}
+	return &NewFreeform{}
 }
 
 func UpdateMarketFromProto(p *vegapb.ProposalTerms_UpdateMarket) *ProposalTermsUpdateMarket {
@@ -1239,10 +1401,10 @@ func UpdateInstrumentConfigurationFromProto(p *vegapb.UpdateInstrumentConfigurat
 		r.Product = &UpdateInstrumentConfigurationFuture{
 			Future: &UpdateFutureProduct{
 				QuoteName:                       pr.Future.QuoteName,
-				OracleSpecForSettlementPrice:    pr.Future.OracleSpecForSettlementPrice.DeepClone(),
-				OracleSpecForTradingTermination: pr.Future.OracleSpecForTradingTermination.DeepClone(),
+				OracleSpecForSettlementPrice:    OracleSpecConfigurationFromProto(pr.Future.OracleSpecForSettlementPrice),
+				OracleSpecForTradingTermination: OracleSpecConfigurationFromProto(pr.Future.OracleSpecForTradingTermination),
 				SettlementPriceDecimals:         pr.Future.SettlementPriceDecimals,
-				OracleSpecBinding:               OracleSpecToFutureBindingFromProto(pr.Future.OracleSpecBinding),
+				OracleSpecBinding:               OracleSpecBindingForFutureFromProto(pr.Future.OracleSpecBinding),
 			},
 		}
 	}
@@ -1263,6 +1425,13 @@ func UpdateMarketConfigurationLogNormalFromProto(p *vegapb.UpdateMarketConfigura
 			Params:                LogNormalParamsFromProto(p.LogNormal.Params),
 		},
 	}
+}
+
+func (a ProposalTermsUpdateMarket) String() string {
+	return fmt.Sprintf(
+		"updateMarket(%s)",
+		reflectPointerToString(a.UpdateMarket),
+	)
 }
 
 func (a ProposalTermsUpdateMarket) IntoProto() *vegapb.ProposalTerms_UpdateMarket {
@@ -1299,6 +1468,14 @@ type UpdateMarket struct {
 	Changes  *UpdateMarketConfiguration
 }
 
+func (n UpdateMarket) String() string {
+	return fmt.Sprintf(
+		"marketID(%s) changes(%s)",
+		n.MarketID,
+		reflectPointerToString(n.Changes),
+	)
+}
+
 func (n UpdateMarket) IntoProto() *vegapb.UpdateMarket {
 	var changes *vegapb.UpdateMarketConfiguration
 	if n.Changes != nil {
@@ -1319,12 +1496,29 @@ func (n UpdateMarket) DeepClone() *UpdateMarket {
 	return &cpy
 }
 
+type updateRiskParams interface {
+	updateRiskParamsIntoProto() interface{}
+	DeepClone() updateRiskParams
+	String() string
+}
+
 type UpdateMarketConfiguration struct {
 	Instrument                    *UpdateInstrumentConfiguration
 	Metadata                      []string
 	PriceMonitoringParameters     *PriceMonitoringParameters
 	LiquidityMonitoringParameters *LiquidityMonitoringParameters
-	RiskParameters                riskParams
+	RiskParameters                updateRiskParams
+}
+
+func (n UpdateMarketConfiguration) String() string {
+	return fmt.Sprintf(
+		"instrument(%s) metadata(%v) priceMonitoring(%s) liquidityMonitoring(%s) risk(%s)",
+		reflectPointerToString(n.Instrument),
+		MetadataList(n.Metadata).String(),
+		reflectPointerToString(n.PriceMonitoringParameters),
+		reflectPointerToString(n.LiquidityMonitoringParameters),
+		reflectPointerToString(n.RiskParameters),
+	)
 }
 
 func (n UpdateMarketConfiguration) DeepClone() *UpdateMarketConfiguration {
@@ -1348,7 +1542,7 @@ func (n UpdateMarketConfiguration) DeepClone() *UpdateMarketConfiguration {
 }
 
 func (n UpdateMarketConfiguration) IntoProto() *vegapb.UpdateMarketConfiguration {
-	riskParams := n.RiskParameters.rpIntoProto()
+	riskParams := n.RiskParameters.updateRiskParamsIntoProto()
 	md := make([]string, 0, len(n.Metadata))
 	md = append(md, n.Metadata...)
 
@@ -1408,10 +1602,19 @@ func (i UpdateInstrumentConfiguration) IntoProto() *vegapb.UpdateInstrumentConfi
 	return r
 }
 
+func (i UpdateInstrumentConfiguration) String() string {
+	return fmt.Sprintf(
+		"code(%s) product(%s)",
+		i.Code,
+		reflectPointerToString(i.Product),
+	)
+}
+
 type updateInstrumentConfigurationProduct interface {
 	isUpdateInstrumentConfigurationProduct()
 	icpIntoProto() interface{}
 	DeepClone() updateInstrumentConfigurationProduct
+	String() string
 }
 
 type UpdateInstrumentConfigurationFuture struct {
@@ -1433,6 +1636,13 @@ func (i UpdateInstrumentConfigurationFuture) DeepClone() updateInstrumentConfigu
 	}
 }
 
+func (i UpdateInstrumentConfigurationFuture) String() string {
+	return fmt.Sprintf(
+		"future(%s)",
+		reflectPointerToString(i.Future),
+	)
+}
+
 func (i UpdateInstrumentConfigurationFuture) IntoProto() *vegapb.UpdateInstrumentConfiguration_Future {
 	return &vegapb.UpdateInstrumentConfiguration_Future{
 		Future: i.Future.IntoProto(),
@@ -1441,17 +1651,17 @@ func (i UpdateInstrumentConfigurationFuture) IntoProto() *vegapb.UpdateInstrumen
 
 type UpdateFutureProduct struct {
 	QuoteName                       string
-	OracleSpecForSettlementPrice    *oraclespb.OracleSpecConfiguration
-	OracleSpecForTradingTermination *oraclespb.OracleSpecConfiguration
-	OracleSpecBinding               *OracleSpecToFutureBinding
+	OracleSpecForSettlementPrice    *OracleSpecConfiguration
+	OracleSpecForTradingTermination *OracleSpecConfiguration
+	OracleSpecBinding               *OracleSpecBindingForFuture
 	SettlementPriceDecimals         uint32
 }
 
 func (f UpdateFutureProduct) IntoProto() *vegapb.UpdateFutureProduct {
 	return &vegapb.UpdateFutureProduct{
 		QuoteName:                       f.QuoteName,
-		OracleSpecForSettlementPrice:    f.OracleSpecForSettlementPrice.DeepClone(),
-		OracleSpecForTradingTermination: f.OracleSpecForTradingTermination.DeepClone(),
+		OracleSpecForSettlementPrice:    f.OracleSpecForSettlementPrice.IntoProto(),
+		OracleSpecForTradingTermination: f.OracleSpecForTradingTermination.IntoProto(),
 		OracleSpecBinding:               f.OracleSpecBinding.IntoProto(),
 		SettlementPriceDecimals:         f.SettlementPriceDecimals,
 	}
@@ -1468,18 +1678,31 @@ func (f UpdateFutureProduct) DeepClone() *UpdateFutureProduct {
 }
 
 func (f UpdateFutureProduct) String() string {
-	return f.IntoProto().String()
+	return fmt.Sprintf(
+		"quoteName(%s) oracleSpec(settlementPrice(%s) tradingTermination(%s) binding(%s))",
+		f.QuoteName,
+		reflectPointerToString(f.OracleSpecForSettlementPrice),
+		reflectPointerToString(f.OracleSpecForTradingTermination),
+		reflectPointerToString(f.OracleSpecBinding),
+	)
 }
 
 type UpdateMarketConfigurationSimple struct {
 	Simple *SimpleModelParams
 }
 
-func (n UpdateMarketConfigurationSimple) rpIntoProto() interface{} {
+func (n UpdateMarketConfigurationSimple) String() string {
+	return fmt.Sprintf(
+		"simple(%s)",
+		reflectPointerToString(n.Simple),
+	)
+}
+
+func (n UpdateMarketConfigurationSimple) updateRiskParamsIntoProto() interface{} {
 	return n.IntoProto()
 }
 
-func (n UpdateMarketConfigurationSimple) DeepClone() riskParams {
+func (n UpdateMarketConfigurationSimple) DeepClone() updateRiskParams {
 	if n.Simple == nil {
 		return &UpdateMarketConfigurationSimple{}
 	}
@@ -1498,11 +1721,18 @@ type UpdateMarketConfigurationLogNormal struct {
 	LogNormal *LogNormalRiskModel
 }
 
-func (n UpdateMarketConfigurationLogNormal) rpIntoProto() interface{} {
+func (n UpdateMarketConfigurationLogNormal) String() string {
+	return fmt.Sprintf(
+		"logNormal(%s)",
+		reflectPointerToString(n.LogNormal),
+	)
+}
+
+func (n UpdateMarketConfigurationLogNormal) updateRiskParamsIntoProto() interface{} {
 	return n.IntoProto()
 }
 
-func (n UpdateMarketConfigurationLogNormal) DeepClone() riskParams {
+func (n UpdateMarketConfigurationLogNormal) DeepClone() updateRiskParams {
 	if n.LogNormal == nil {
 		return &UpdateMarketConfigurationLogNormal{}
 	}
@@ -1515,4 +1745,13 @@ func (n UpdateMarketConfigurationLogNormal) IntoProto() *vegapb.UpdateMarketConf
 	return &vegapb.UpdateMarketConfiguration_LogNormal{
 		LogNormal: n.LogNormal.IntoProto(),
 	}
+}
+
+type MetadataList []string
+
+func (m MetadataList) String() string {
+	if m == nil {
+		return "[]"
+	}
+	return "[" + strings.Join(m, ", ") + "]"
 }
