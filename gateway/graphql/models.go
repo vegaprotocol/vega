@@ -108,6 +108,12 @@ type DispatchStrategy struct {
 type Erc20 struct {
 	// The address of the erc20 contract
 	ContractAddress string `json:"contractAddress"`
+	// The lifetime limits deposit per address
+	// Note: this is a temporary measure for restricted mainnet
+	LifetimeLimit string `json:"lifetimeLimit"`
+	// The maximum allowed per withdraw
+	// Note: this is a temporary measure for restricted mainnet
+	WithdrawThreshold string `json:"withdrawThreshold"`
 }
 
 func (Erc20) IsAssetSource() {}

@@ -15,15 +15,17 @@ func NewAssetID(id string) AssetID {
 }
 
 type Asset struct {
-	ID            AssetID
-	Name          string
-	Symbol        string
-	TotalSupply   decimal.Decimal // Maybe num.Uint if we can figure out how to add support to pgx
-	Decimals      int
-	Quantum       int
-	Source        string
-	ERC20Contract string
-	VegaTime      time.Time
+	ID                AssetID
+	Name              string
+	Symbol            string
+	TotalSupply       decimal.Decimal // Maybe num.Uint if we can figure out how to add support to pgx
+	Decimals          int
+	Quantum           int
+	Source            string
+	ERC20Contract     string
+	VegaTime          time.Time
+	LifetimeLimit     string
+	WithdrawThreshold string
 }
 
 func (a Asset) ToProto() *pb.Asset {
@@ -46,7 +48,9 @@ func (a Asset) ToProto() *pb.Asset {
 	} else if a.ERC20Contract != "" {
 		pbAsset.Details.Source = &pb.AssetDetails_Erc20{
 			Erc20: &pb.ERC20{
-				ContractAddress: a.ERC20Contract,
+				ContractAddress:   a.ERC20Contract,
+				LifetimeLimit:     a.LifetimeLimit,
+				WithdrawThreshold: a.WithdrawThreshold,
 			},
 		}
 	}
