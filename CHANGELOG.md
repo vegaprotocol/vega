@@ -1,12 +1,24 @@
 # Changelog
 
-## Unreleased (0.51.0)
+## Unreleased (0.52.0)
+
+### 🚨 Breaking changes
+- [](https://github.com/vegaprotocol/data-node/issues/xxx) -
+
+### 🗑️  Deprecation
+- [](https://github.com/vegaprotocol/data-node/issues/xxx) -
+
+### 🛠  Improvements
+- [](https://github.com/vegaprotocol/data-node/issues/xxx) -
+
+### 🐛 Fixes
+- [](https://github.com/vegaprotocol/data-node/issues/xxx) -
+
+## 0.51.0
 
 ### 🚨 Breaking changes
 - [518](https://github.com/vegaprotocol/data-node/issues/518) - Free-form properties are moved to rationale.
--
-### 🗑️  Deprecation
-- [](https://github.com/vegaprotocol/data-node/issues/xxx) -
+
 
 ### 🛠  Improvements
 - [491](https://github.com/vegaprotocol/data-node/issues/491) - Expose bundle for asset
@@ -32,8 +44,6 @@
 - [519](https://github.com/vegaprotocol/data-node/issues/519) - Fix market depth update subscriptions streaming events for all markets.
 - [551](https://github.com/vegaprotocol/data-node/issues/551) - Shut down cleanly on `SIGINT` or `SIGTERM`
 - [585](https://github.com/vegaprotocol/data-node/issues/585) - Fix issue which was stopping asset cache from working properly
-
-- [](https://github.com/vegaprotocol/data-node/issues/xxx) -
 
 
 ## 0.50.0
