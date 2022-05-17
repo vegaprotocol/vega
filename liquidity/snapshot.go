@@ -76,11 +76,9 @@ func NewSnapshotEngine(config Config,
 	return se
 }
 
-// ReconcileWithOrderBook ensures that when restoring state from a snapshot the orders in the matching engine and
-// liquidity engine are pointers to the same underlying order struct.
-func (e *SnapshotEngine) ReconcileWithOrderBook(orderbook OrderBook) error {
+func reconcileOrders(orders *SnapshotablePartiesOrders, orderbook OrderBook) *SnapshotablePartiesOrders {
 	newOrders := newSnapshotablePartiesOrders()
-	for _, v := range e.orders.m {
+	for _, v := range orders.m {
 		for _, o := range v {
 			order, err := orderbook.GetOrderByID(o.ID)
 			if err != nil {
@@ -91,27 +89,15 @@ func (e *SnapshotEngine) ReconcileWithOrderBook(orderbook OrderBook) error {
 			newOrders.Add(order.Party, order)
 		}
 	}
-	// Add sets update to true, but we're just filling in from a restore so we don't want to do that
 	newOrders.updated = false
-	e.orders = newOrders
+	return newOrders
+}
 
-	// Now liquidity orders
-	newLiquidityOrders := newSnapshotablePartiesOrders()
-	for _, v := range e.liquidityOrders.m {
-		for _, o := range v {
-			order, err := orderbook.GetOrderByID(o.ID)
-			if err != nil {
-				// if not in the order book we just add the original
-				newLiquidityOrders.Add(o.Party, o)
-				continue
-			}
-			newLiquidityOrders.Add(order.Party, order)
-		}
-	}
-	// Add sets update to true, but we're just filling in from a restore so we don't want to do that
-	newLiquidityOrders.updated = false
-	e.liquidityOrders = newLiquidityOrders
-	return nil
+// ReconcileWithOrderBook ensures that when restoring state from a snapshot the orders in the matching engine and
+// liquidity engine are pointers to the same underlying order struct.
+func (e *SnapshotEngine) ReconcileWithOrderBook(orderbook OrderBook) {
+	e.orders = reconcileOrders(e.orders, orderbook)
+	e.liquidityOrders = reconcileOrders(e.liquidityOrders, orderbook)
 }
 
 func (e *SnapshotEngine) UpdateMarketConfig(model risk.Model, monitor PriceMonitor) {

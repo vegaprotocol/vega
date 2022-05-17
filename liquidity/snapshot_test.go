@@ -235,8 +235,7 @@ func TestSnapshotRoundTrip(t *testing.T) {
 			return nil, errors.New("not gound")
 		},
 	)
-	err = e3.engine.ReconcileWithOrderBook(e3.orderbook)
-	require.NoError(t, err)
+	e3.engine.ReconcileWithOrderBook(e3.orderbook)
 
 	// change a value and check the orders in the engine also change i.e they both point to the same order
 	now := time.Now().UnixNano()

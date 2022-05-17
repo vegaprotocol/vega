@@ -649,11 +649,9 @@ func (m *Market) GetID() string {
 func (m *Market) PostRestore(ctx context.Context) error {
 	m.settlement.Update(m.position.Positions())
 
-	if err := m.peggedOrders.ReconcileWithOrderBook(m.matching); err != nil {
-		return err
-	}
+	m.liquidity.ReconcileWithOrderBook(m.matching)
 
-	if err := m.liquidity.ReconcileWithOrderBook(m.matching); err != nil {
+	if err := m.peggedOrders.ReconcileWithOrderBook(m.matching); err != nil {
 		return err
 	}
 
