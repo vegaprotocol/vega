@@ -17,6 +17,8 @@ models:
       - code.vegaprotocol.io/data-node/gateway/graphql/marshallers.Uint32
   Order:
     model: code.vegaprotocol.io/protos/vega.Order
+  PaginatedOrder:
+    model: code.vegaprotocol.io/protos/vega.Order
   Trade:
     model: code.vegaprotocol.io/protos/vega.Trade
   PriceLevel:
@@ -72,8 +74,6 @@ models:
         resolver: true
       trades:
         resolver: true
-      pagedTrades:
-        resolver: true
       depth:
         resolver: true
       data:
@@ -125,9 +125,9 @@ models:
   PaginatedParty:
     model: code.vegaprotocol.io/protos/vega.Party
     fields:
-      orders:
+      ordersPaged:
         resolver: true
-      trades:
+      tradesPaged:
         resolver: true
       positions:
         resolver: true
@@ -285,3 +285,7 @@ models:
     model: code.vegaprotocol.io/protos/data-node/api/v2.PartyEdge
   Pagination:
     model: code.vegaprotocol.io/protos/data-node/api/v2.Pagination
+  OrderEdge:
+    model: code.vegaprotocol.io/protos/data-node/api/v2.OrderEdge
+  OrderConnection:
+    model: code.vegaprotocol.io/protos/data-node/api/v2.OrderConnection

@@ -322,7 +322,15 @@ type Query {
     first: Int
     "Pagination last element"
     last: Int
-  ): [Order!]
+  ): [Order!] @deprecated(reason: "Use orderVersionsPaged instead")
+
+  "Order versions (created via amendments if any) found by orderID"
+  orderVersionsPaged(
+    "ID for an order"
+    orderId: ID
+    "Pagination information"
+    pagination: Pagination
+  ): OrderConnection!
 
   "An order in the VEGA network found by referenceID"
   orderByReference("Reference for an order" reference: String!): Order!
@@ -1370,7 +1378,13 @@ type Market {
     first: Int
     "Pagination last element"
     last: Int
-  ): [Order!]
+  ): [Order!] @deprecated(reason: "Use the 'ordersPaged' field instead")
+
+  "Orders on a market"
+  ordersPaged(
+    "Pagination information"
+    pagination: Pagination
+  ): OrderConnection!
 
   "Get account for a party or market"
   accounts(
@@ -1511,7 +1525,13 @@ type Party {
     first: Int
     "Pagination last element"
     last: Int
-  ): [Order!]
+  ): [Order!] @deprecated(reason: "Use ordersPaged instead")
+
+  "Orders relating to a party"
+  ordersPaged(
+    "Pagination information"
+    pagination: Pagination
+  ): OrderConnection!
 
   "Trades relating to a party (specifically where party is either buyer OR seller)"
   trades(
@@ -1727,7 +1747,10 @@ type Order {
   reference: String!
 
   "Trades relating to this order"
-  trades: [Trade!]
+  trades: [Trade!] @deprecated(reason: "Use tradesPaged instead")
+
+  "Trades relating to this order"
+  tradesPaged(pagination: Pagination): TradeConnection!
 
   "Type the order type (defaults to PARTY)"
   type: OrderType
@@ -3086,14 +3109,10 @@ type PaginatedParty {
   id: ID!
 
   "Orders relating to a party"
-  orders(
-    "Pagination skip"
-    skip: Int
-    "Pagination first element"
-    first: Int
-    "Pagination last element"
-    last: Int
-  ): [Order!]
+  ordersPaged(
+    "Pagination"
+    pagination: Pagination
+  ): OrderConnection!
 
   "Trades relating to a party (specifically where party is either buyer OR seller)"
   tradesPaged(
@@ -3248,14 +3267,10 @@ type PaginatedMarket {
   proposal: Proposal
 
   "Orders on a market"
-  orders(
-    "Pagination skip"
-    skip: Int
-    "Pagination first element"
-    first: Int
-    "Pagination last element"
-    last: Int
-  ): [Order!]
+  ordersPaged(
+    "Pagination information"
+    pagination: Pagination
+  ): OrderConnection
 
   "Get account for a party or market"
   accounts(
@@ -3311,4 +3326,80 @@ type MarketConnection {
   edges: [MarketEdge!]!
   "The pagination information"
   pageInfo: PageInfo!
+}
+
+"""
+An order in Vega, if active it will be on the OrderBook for the market, this version supports cursor based
+pagination in sub-queries for trades"""
+type PaginatedOrder {
+  "Hash of the order data"
+  id: ID!
+
+  "The worst price the order will trade at (e.g. buy for price or less, sell for price or more) (uint64)"
+  price: String!
+
+  "The timeInForce of order (determines how and if it executes, and whether it persists on the book)"
+  timeInForce: OrderTimeInForce!
+
+  "Whether the order is to buy or sell"
+  side: Side!
+
+  "The market the order is trading on (probably stored internally as a hash of the market details)"
+  market: Market
+
+  "Total number of contracts that may be bought or sold (immutable) (uint64)"
+  size: String!
+
+  "Number of contracts remaining of the total that have not yet been bought or sold (uint64)"
+  remaining: String!
+
+  "The party who place the order (probably stored internally as the party's public key)"
+  party: Party!
+
+  "RFC3339Nano formatted date and time for when the order was created (timestamp)"
+  createdAt: String!
+
+  "Expiration time of this order (ISO-8601 RFC3339+Nano formatted date)"
+  expiresAt: String
+
+  "The status of an order, for example 'Active'"
+  status: OrderStatus!
+
+  "The external reference (if available) for the order"
+  reference: String!
+
+  "Trades relating to this order"
+  tradesPaged(pagination: Pagination): TradeConnection!
+
+  "Type the order type (defaults to PARTY)"
+  type: OrderType
+
+  "Reason for the order to be rejected"
+  rejectionReason: OrderRejectionReason
+
+  "Version of this order, counts the number of amends"
+  version: String!
+
+  "RFC3339Nano time the order was altered"
+  updatedAt: String
+
+  "PeggedOrder contains the details about a pegged order"
+  peggedOrder: PeggedOrder
+
+  "The liquidity provision this order was created from"
+  liquidityProvision: LiquidityProvision
+}
+
+type OrderEdge {
+  node: PaginatedOrder!
+  cursor: String
+}
+
+type OrderConnection {
+  "The total number of orders in this connection"
+  totalCount: Int
+  "The orders in this connection"
+  edges: [OrderEdge!]
+  "The pagination information"
+  pageInfo: PageInfo
 }

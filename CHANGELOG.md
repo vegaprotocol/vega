@@ -10,6 +10,9 @@
 
 ### 🛠  Improvements
 - [609](https://github.com/vegaprotocol/data-node/issues/609) - Add fields related to network limit for ERC20 asset
+- [590](https://github.com/vegaprotocol/data-node/pull/590) - Implement pagination for `Data-Node V2 APIs` for Trades, Parties and Markets
+- [560](https://github.com/vegaprotocol/data-node/issues/560) - Implement pagination for `Data-Node V2 APIs` for Orders
+- [](https://github.com/vegaprotocol/data-node/issues/xxx) -
 
 ### 🐛 Fixes
 - [](https://github.com/vegaprotocol/data-node/issues/xxx) -
@@ -37,7 +40,6 @@
 - [591](https://github.com/vegaprotocol/data-node/issues/591) - Optimise liquidity provision and margin levels data retention and storage
 - [588](https://github.com/vegaprotocol/data-node/issues/588) - Return correct error code when proposal not found
 - [556](https://github.com/vegaprotocol/data-node/issues/556) - Expose an endpoint to list oracle data
-- [590](https://github.com/vegaprotocol/data-node/pull/590) - Implement pagination for `Data-Node V2 APIs` for Trades, Parties and Markets
 
 ### 🐛 Fixes
 - [524](https://github.com/vegaprotocol/data-node/issues/524) - Fix for incorrect balances

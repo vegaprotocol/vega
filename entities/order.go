@@ -2,6 +2,7 @@ package entities
 
 import (
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"math"
 	"strconv"
@@ -170,4 +171,36 @@ var OrderColumns = []string{
 	"reference", "reason", "version", "pegged_offset", "batch_id",
 	"pegged_reference", "lp_id", "created_at", "updated_at", "expires_at",
 	"vega_time", "seq_num",
+}
+
+type OrderCursor struct {
+	VegaTime time.Time `json:"vegaTime"`
+	SeqNum   uint64    `json:"seqNum"`
+}
+
+func (oc OrderCursor) String() string {
+	bs, err := json.Marshal(oc)
+	if err != nil {
+		return fmt.Sprintf(`{"vegaTime":"%s","seqNum":%d}`, oc.VegaTime.Format(time.RFC3339), oc.SeqNum)
+	}
+	return string(bs)
+}
+
+func (o Order) Cursor() *Cursor {
+	cursor := OrderCursor{
+		VegaTime: o.VegaTime,
+		SeqNum:   o.SeqNum,
+	}
+
+	return NewCursor(cursor.String())
+}
+
+func ParseOrderCursor(cursor string) (time.Time, uint64, error) {
+	var oc OrderCursor
+
+	if err := json.Unmarshal([]byte(cursor), &oc); err != nil {
+		return time.Time{}, 0, err
+	}
+
+	return oc.VegaTime, oc.SeqNum, nil
 }

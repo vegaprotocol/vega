@@ -1,7 +1,7 @@
 package entities
 
 type PagedEntity interface {
-	Market | Party | Trade
+	Market | Party | Trade | Order
 	Cursor() *Cursor
 }
 

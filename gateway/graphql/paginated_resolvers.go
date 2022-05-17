@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strconv"
 
 	"code.vegaprotocol.io/data-node/logging"
 	"code.vegaprotocol.io/data-node/vegatime"
@@ -62,6 +63,21 @@ func (r *myPaginatedMarketResolver) Orders(ctx context.Context, market *types.Ma
 		r.log.Error("tradingData client", logging.Error(err))
 		return nil, customErrorFromStatus(err)
 	}
+	return res.Orders, nil
+}
+
+func (r *myPaginatedMarketResolver) OrdersPaged(ctx context.Context, market *types.Market, pagination *v2.Pagination) (*v2.OrderConnection, error) {
+	req := v2.GetOrdersByMarketPagedRequest{
+		MarketId:   market.Id,
+		Pagination: pagination,
+	}
+
+	res, err := r.tradingDataClientV2.GetOrdersByMarketPaged(ctx, &req)
+	if err != nil {
+		r.log.Error("tradingData client", logging.Error(err))
+		return nil, customErrorFromStatus(err)
+	}
+
 	return res.Orders, nil
 }
 
@@ -369,6 +385,20 @@ func (r *myPaginatedPartyResolver) Orders(ctx context.Context, party *types.Part
 	return []*types.Order{}, nil
 }
 
+func (r *myPaginatedPartyResolver) OrdersPaged(ctx context.Context, party *types.Party, pagination *v2.Pagination) (*v2.OrderConnection, error) {
+	req := v2.GetOrdersByPartyPagedRequest{
+		PartyId:    party.Id,
+		Pagination: pagination,
+	}
+	res, err := r.tradingDataClientV2.GetOrdersByPartyPaged(ctx, &req)
+	if err != nil {
+		r.log.Error("tradingData client", logging.Error(err))
+		return nil, customErrorFromStatus(err)
+	}
+
+	return res.Orders, nil
+}
+
 func (r *myPaginatedPartyResolver) TradesPaged(ctx context.Context, party *types.Party, market *string, pagination *v2.Pagination,
 ) (*v2.TradeConnection, error) {
 	var mkt string
@@ -535,3 +565,147 @@ func (r *myPaginatedPartyResolver) Delegations(
 }
 
 // END: Party Resolver
+
+// START: Paginated Order Resolver
+
+type myPaginatedOrderResolver VegaResolverRoot
+
+func (r *myPaginatedOrderResolver) RejectionReason(_ context.Context, o *types.Order) (*OrderRejectionReason, error) {
+	if o.Reason == types.OrderError_ORDER_ERROR_UNSPECIFIED {
+		return nil, nil
+	}
+	reason, err := convertOrderRejectionReasonFromProto(o.Reason)
+	if err != nil {
+		return nil, err
+	}
+	return &reason, nil
+}
+
+func (r *myPaginatedOrderResolver) Price(ctx context.Context, obj *types.Order) (string, error) {
+	return obj.Price, nil
+}
+
+func (r *myPaginatedOrderResolver) TimeInForce(ctx context.Context, obj *types.Order) (OrderTimeInForce, error) {
+	return convertOrderTimeInForceFromProto(obj.TimeInForce)
+}
+
+func (r *myPaginatedOrderResolver) Type(ctx context.Context, obj *types.Order) (*OrderType, error) {
+	t, err := convertOrderTypeFromProto(obj.Type)
+	if err != nil {
+		return nil, err
+	}
+	return &t, nil
+}
+
+func (r *myPaginatedOrderResolver) Side(ctx context.Context, obj *types.Order) (Side, error) {
+	return convertSideFromProto(obj.Side)
+}
+
+func (r *myPaginatedOrderResolver) Market(ctx context.Context, obj *types.Order) (*types.Market, error) {
+	return r.r.getMarketByID(ctx, obj.MarketId)
+}
+
+func (r *myPaginatedOrderResolver) Size(ctx context.Context, obj *types.Order) (string, error) {
+	return strconv.FormatUint(obj.Size, 10), nil
+}
+
+func (r *myPaginatedOrderResolver) Remaining(ctx context.Context, obj *types.Order) (string, error) {
+	return strconv.FormatUint(obj.Remaining, 10), nil
+}
+
+func (r *myPaginatedOrderResolver) Status(ctx context.Context, obj *types.Order) (OrderStatus, error) {
+	return convertOrderStatusFromProto(obj.Status)
+}
+
+func (r *myPaginatedOrderResolver) CreatedAt(ctx context.Context, obj *types.Order) (string, error) {
+	return vegatime.Format(vegatime.UnixNano(obj.CreatedAt)), nil
+}
+
+func (r *myPaginatedOrderResolver) UpdatedAt(ctx context.Context, obj *types.Order) (*string, error) {
+	var updatedAt *string
+	if obj.UpdatedAt > 0 {
+		t := vegatime.Format(vegatime.UnixNano(obj.UpdatedAt))
+		updatedAt = &t
+	}
+	return updatedAt, nil
+}
+
+func (r *myPaginatedOrderResolver) Version(ctx context.Context, obj *types.Order) (string, error) {
+	return strconv.FormatUint(obj.Version, 10), nil
+}
+
+func (r *myPaginatedOrderResolver) ExpiresAt(ctx context.Context, obj *types.Order) (*string, error) {
+	if obj.ExpiresAt <= 0 {
+		return nil, nil
+	}
+	expiresAt := vegatime.Format(vegatime.UnixNano(obj.ExpiresAt))
+	return &expiresAt, nil
+}
+
+func (r *myPaginatedOrderResolver) Trades(ctx context.Context, ord *types.Order) ([]*types.Trade, error) {
+	if ord == nil {
+		return nil, errors.New("nil order")
+	}
+	req := protoapi.TradesByOrderRequest{OrderId: ord.Id}
+	res, err := r.tradingDataClient.TradesByOrder(ctx, &req)
+	if err != nil {
+		r.log.Error("tradingData client", logging.Error(err))
+		return nil, customErrorFromStatus(err)
+	}
+	return res.Trades, nil
+}
+
+func (r *myPaginatedOrderResolver) TradesPaged(ctx context.Context, ord *types.Order, pagination *v2.Pagination) (*v2.TradeConnection, error) {
+	if ord == nil {
+		return nil, errors.New("nil order")
+	}
+	req := v2.GetTradesByOrderIDRequest{
+		OrderId:    ord.Id,
+		MarketId:   ord.MarketId,
+		Pagination: pagination,
+	}
+
+	res, err := r.tradingDataClientV2.GetTradesByOrderID(ctx, &req)
+	if err != nil {
+		r.log.Error("tradingData client", logging.Error(err))
+		return nil, customErrorFromStatus(err)
+	}
+	return res.Trades, nil
+}
+
+func (r *myPaginatedOrderResolver) Party(ctx context.Context, order *types.Order) (*types.Party, error) {
+	if order == nil {
+		return nil, errors.New("nil order")
+	}
+	if len(order.PartyId) == 0 {
+		return nil, errors.New("invalid party")
+	}
+	return &types.Party{Id: order.PartyId}, nil
+}
+
+func (r *myPaginatedOrderResolver) PeggedOrder(ctx context.Context, order *types.Order) (*types.PeggedOrder, error) {
+	return order.PeggedOrder, nil
+}
+
+func (r *myPaginatedOrderResolver) LiquidityProvision(ctx context.Context, obj *types.Order) (*types.LiquidityProvision, error) {
+	if len(obj.LiquidityProvisionId) <= 0 {
+		return nil, nil
+	}
+	req := protoapi.LiquidityProvisionsRequest{
+		Party:  obj.PartyId,
+		Market: obj.MarketId,
+	}
+	res, err := r.tradingDataClient.LiquidityProvisions(ctx, &req)
+	if err != nil {
+		r.log.Error("tradingData client", logging.Error(err))
+		return nil, customErrorFromStatus(err)
+	}
+
+	if len(res.LiquidityProvisions) <= 0 {
+		return nil, nil
+	}
+
+	return res.LiquidityProvisions[0], nil
+}
+
+// END: Paginated Order Resolver

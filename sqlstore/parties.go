@@ -104,7 +104,10 @@ func (ps *Parties) GetAllPaged(ctx context.Context, partyID string, pagination e
 	var pagedParties []entities.Party
 	var pageInfo entities.PageInfo
 
-	query, args = orderAndPaginateWithCursor(query, pagination, "vega_time", args...)
+	sorting, cmp, cursor := extractPaginationInfo(pagination)
+	cursors := []CursorBuilder{NewCursorBuilder("vega_time", sorting, cmp, cursor)}
+	query, args = orderAndPaginateWithCursor(query, pagination, cursors, args...)
+
 	if err := pgxscan.Select(ctx, ps.Connection, &parties, query, args...); err != nil {
 		return pagedParties, pageInfo, err
 	}

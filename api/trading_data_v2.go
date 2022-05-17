@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/data-node/candlesv2"
-
 	"code.vegaprotocol.io/data-node/entities"
 	"code.vegaprotocol.io/data-node/logging"
 	"code.vegaprotocol.io/data-node/sqlstore"
@@ -496,12 +495,12 @@ func (t *tradingDataServiceV2) GetTradesByMarket(ctx context.Context, in *v2.Get
 		return nil, apiError(codes.InvalidArgument, fmt.Errorf("marketId must be supplied"))
 	}
 
-	cursor, err := entities.PaginationFromProto(in.Pagination)
+	pagination, err := entities.PaginationFromProto(in.Pagination)
 	if err != nil {
 		return nil, apiError(codes.InvalidArgument, err)
 	}
 
-	trades, pageInfo, err := t.tradeStore.GetByMarketWithCursor(ctx, market, cursor)
+	trades, pageInfo, err := t.tradeStore.GetByMarketWithCursor(ctx, market, pagination)
 	if err != nil {
 		return nil, apiError(codes.Internal, err)
 	}
@@ -530,12 +529,12 @@ func (t *tradingDataServiceV2) GetTradesByParty(ctx context.Context, in *v2.GetT
 		market = &in.MarketId
 	}
 
-	cursor, err := entities.PaginationFromProto(in.Pagination)
+	pagination, err := entities.PaginationFromProto(in.Pagination)
 	if err != nil {
 		return nil, apiError(codes.InvalidArgument, err)
 	}
 
-	trades, pageInfo, err := t.tradeStore.GetByPartyWithCursor(ctx, party, market, cursor)
+	trades, pageInfo, err := t.tradeStore.GetByPartyWithCursor(ctx, party, market, pagination)
 	if err != nil {
 		return nil, apiError(codes.Internal, err)
 	}
@@ -547,6 +546,39 @@ func (t *tradingDataServiceV2) GetTradesByParty(ctx context.Context, in *v2.GetT
 	}
 
 	resp := &v2.GetTradesByPartyResponse{
+		Trades: tradesConnection,
+	}
+
+	return resp, nil
+}
+
+func (t *tradingDataServiceV2) GetTradesByOrderID(ctx context.Context, in *v2.GetTradesByOrderIDRequest) (*v2.GetTradesByOrderIDResponse, error) {
+	orderID := in.GetOrderId()
+	if len(orderID) == 0 {
+		return nil, apiError(codes.InvalidArgument, fmt.Errorf("orderId must be supplied"))
+	}
+	var market *string
+	if len(in.GetMarketId()) > 0 {
+		market = &in.MarketId
+	}
+
+	pagination, err := entities.PaginationFromProto(in.Pagination)
+	if err != nil {
+		return nil, apiError(codes.InvalidArgument, err)
+	}
+
+	trades, pageInfo, err := t.tradeStore.GetByOrderIDWithCursor(ctx, orderID, market, pagination)
+	if err != nil {
+		return nil, apiError(codes.Internal, err)
+	}
+
+	tradesConnection := &v2.TradeConnection{
+		TotalCount: 0, // TODO: implement total count
+		Edges:      makeTradeEdges(trades),
+		PageInfo:   pageInfo.ToProto(),
+	}
+
+	resp := &v2.GetTradesByOrderIDResponse{
 		Trades: tradesConnection,
 	}
 
@@ -566,11 +598,11 @@ func makeTradeEdges(trades []entities.Trade) []*v2.TradeEdge {
 
 // Get all markets using a cursor based pagination model
 func (t *tradingDataServiceV2) GetMarkets(ctx context.Context, in *v2.GetMarketsRequest) (*v2.GetMarketsResponse, error) {
-	cursor, err := entities.PaginationFromProto(in.Pagination)
+	pagination, err := entities.PaginationFromProto(in.Pagination)
 	if err != nil {
 		return nil, apiError(codes.InvalidArgument, err)
 	}
-	markets, pageInfo, err := t.marketsStore.GetAllPaged(ctx, in.MarketId, cursor)
+	markets, pageInfo, err := t.marketsStore.GetAllPaged(ctx, in.MarketId, pagination)
 	if err != nil {
 		return nil, apiError(codes.Internal, err)
 	}
@@ -605,11 +637,11 @@ func makeMarketEdges(markets []entities.Market) []*v2.MarketEdge {
 
 // Get Parties using a cursor based pagination model
 func (t *tradingDataServiceV2) GetParties(ctx context.Context, in *v2.GetPartiesRequest) (*v2.GetPartiesResponse, error) {
-	cursor, err := entities.PaginationFromProto(in.Pagination)
+	pagination, err := entities.PaginationFromProto(in.Pagination)
 	if err != nil {
 		return nil, apiError(codes.InvalidArgument, err)
 	}
-	parties, pageInfo, err := t.partiesStore.GetAllPaged(ctx, in.PartyId, cursor)
+	parties, pageInfo, err := t.partiesStore.GetAllPaged(ctx, in.PartyId, pagination)
 	if err != nil {
 		return nil, apiError(codes.Internal, err)
 	}
@@ -631,6 +663,65 @@ func makePartyEdges(parties []entities.Party) []*v2.PartyEdge {
 		edges[i] = &v2.PartyEdge{
 			Node:   p.ToProto(),
 			Cursor: p.Cursor().Encode(),
+		}
+	}
+	return edges
+}
+
+func (t *tradingDataServiceV2) GetOrdersByMarketPaged(ctx context.Context, in *v2.GetOrdersByMarketPagedRequest) (*v2.GetOrdersByMarketPagedResponse, error) {
+	pagination, err := entities.PaginationFromProto(in.Pagination)
+	if err != nil {
+		return nil, apiError(codes.InvalidArgument, err)
+	}
+	orders, pageInfo, err := t.orderStore.GetByMarketPaged(ctx, in.MarketId, pagination)
+	if err != nil {
+		return nil, apiError(codes.Internal, err)
+	}
+	ordersConnection := &v2.OrderConnection{
+		TotalCount: 0, // TODO: implement total count
+		Edges:      makeOrderEdges(orders),
+		PageInfo:   pageInfo.ToProto(),
+	}
+
+	resp := &v2.GetOrdersByMarketPagedResponse{
+		Orders: ordersConnection,
+	}
+
+	return resp, nil
+}
+
+func (t *tradingDataServiceV2) GetOrderVersionsByIDPaged(ctx context.Context, in *v2.GetOrderVersionsByIDPagedRequest) (*v2.GetOrderVersionsByIDPagedResponse, error) {
+	pagination, err := entities.PaginationFromProto(in.Pagination)
+	if err != nil {
+		return nil, apiError(codes.InvalidArgument, err)
+	}
+
+	orders, pageInfo, err := t.orderStore.GetOrderVersionsByIDPaged(ctx, in.OrderId, pagination)
+	if err != nil {
+		return nil, apiError(codes.Internal, err)
+	}
+	ordersConnection := &v2.OrderConnection{
+		TotalCount: 0, // TODO: implement total count
+		Edges:      makeOrderEdges(orders),
+		PageInfo:   pageInfo.ToProto(),
+	}
+
+	resp := &v2.GetOrderVersionsByIDPagedResponse{
+		Orders: ordersConnection,
+	}
+	return resp, nil
+}
+
+func (t *tradingDataServiceV2) GetOrdersByPartyPaged(context.Context, *v2.GetOrdersByPartyPagedRequest) (*v2.GetOrdersByPartyPagedResponse, error) {
+	return nil, errors.New("not implemented")
+}
+
+func makeOrderEdges(orders []entities.Order) []*v2.OrderEdge {
+	edges := make([]*v2.OrderEdge, len(orders))
+	for i, o := range orders {
+		edges[i] = &v2.OrderEdge{
+			Node:   o.ToProto(),
+			Cursor: o.Cursor().Encode(),
 		}
 	}
 	return edges

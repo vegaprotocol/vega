@@ -78,6 +78,7 @@ type ResolverRoot interface {
 	OracleSpec() OracleSpecResolver
 	Order() OrderResolver
 	PaginatedMarket() PaginatedMarketResolver
+	PaginatedOrder() PaginatedOrderResolver
 	PaginatedParty() PaginatedPartyResolver
 	Party() PartyResolver
 	PartyStake() PartyStakeResolver
@@ -414,6 +415,7 @@ type ComplexityRoot struct {
 		Name                          func(childComplexity int) int
 		OpeningAuction                func(childComplexity int) int
 		Orders                        func(childComplexity int, skip *int, first *int, last *int) int
+		OrdersPaged                   func(childComplexity int, pagination *v2.Pagination) int
 		PositionDecimalPlaces         func(childComplexity int) int
 		PriceMonitoringSettings       func(childComplexity int) int
 		Proposal                      func(childComplexity int) int
@@ -631,9 +633,21 @@ type ComplexityRoot struct {
 		Status             func(childComplexity int) int
 		TimeInForce        func(childComplexity int) int
 		Trades             func(childComplexity int) int
+		TradesPaged        func(childComplexity int, pagination *v2.Pagination) int
 		Type               func(childComplexity int) int
 		UpdatedAt          func(childComplexity int) int
 		Version            func(childComplexity int) int
+	}
+
+	OrderConnection struct {
+		Edges      func(childComplexity int) int
+		PageInfo   func(childComplexity int) int
+		TotalCount func(childComplexity int) int
+	}
+
+	OrderEdge struct {
+		Cursor func(childComplexity int) int
+		Node   func(childComplexity int) int
 	}
 
 	OrderEstimate struct {
@@ -662,7 +676,7 @@ type ComplexityRoot struct {
 		MarketTimestamps              func(childComplexity int) int
 		Name                          func(childComplexity int) int
 		OpeningAuction                func(childComplexity int) int
-		Orders                        func(childComplexity int, skip *int, first *int, last *int) int
+		OrdersPaged                   func(childComplexity int, pagination *v2.Pagination) int
 		PositionDecimalPlaces         func(childComplexity int) int
 		PriceMonitoringSettings       func(childComplexity int) int
 		Proposal                      func(childComplexity int) int
@@ -673,6 +687,28 @@ type ComplexityRoot struct {
 		TradingMode                   func(childComplexity int) int
 	}
 
+	PaginatedOrder struct {
+		CreatedAt          func(childComplexity int) int
+		ExpiresAt          func(childComplexity int) int
+		Id                 func(childComplexity int) int
+		LiquidityProvision func(childComplexity int) int
+		Market             func(childComplexity int) int
+		Party              func(childComplexity int) int
+		PeggedOrder        func(childComplexity int) int
+		Price              func(childComplexity int) int
+		Reference          func(childComplexity int) int
+		RejectionReason    func(childComplexity int) int
+		Remaining          func(childComplexity int) int
+		Side               func(childComplexity int) int
+		Size               func(childComplexity int) int
+		Status             func(childComplexity int) int
+		TimeInForce        func(childComplexity int) int
+		TradesPaged        func(childComplexity int, pagination *v2.Pagination) int
+		Type               func(childComplexity int) int
+		UpdatedAt          func(childComplexity int) int
+		Version            func(childComplexity int) int
+	}
+
 	PaginatedParty struct {
 		Accounts            func(childComplexity int, marketID *string, asset *string, typeArg *vega.AccountType) int
 		Delegations         func(childComplexity int, nodeID *string, skip *int, first *int, last *int) int
@@ -680,7 +716,7 @@ type ComplexityRoot struct {
 		Id                  func(childComplexity int) int
 		LiquidityProvisions func(childComplexity int, market *string, reference *string) int
 		Margins             func(childComplexity int, marketID *string) int
-		Orders              func(childComplexity int, skip *int, first *int, last *int) int
+		OrdersPaged         func(childComplexity int, pagination *v2.Pagination) int
 		Positions           func(childComplexity int) int
 		Proposals           func(childComplexity int, inState *ProposalState) int
 		RewardSummaries     func(childComplexity int, asset *string) int
@@ -699,6 +735,7 @@ type ComplexityRoot struct {
 		LiquidityProvisions func(childComplexity int, market *string, reference *string) int
 		Margins             func(childComplexity int, marketID *string) int
 		Orders              func(childComplexity int, skip *int, first *int, last *int) int
+		OrdersPaged         func(childComplexity int, pagination *v2.Pagination) int
 		Positions           func(childComplexity int) int
 		Proposals           func(childComplexity int, inState *ProposalState) int
 		RewardDetails       func(childComplexity int) int
@@ -861,6 +898,7 @@ type ComplexityRoot struct {
 		OrderByID                  func(childComplexity int, orderID string, version *int) int
 		OrderByReference           func(childComplexity int, reference string) int
 		OrderVersions              func(childComplexity int, orderID string, skip *int, first *int, last *int) int
+		OrderVersionsPaged         func(childComplexity int, orderID *string, pagination *v2.Pagination) int
 		Parties                    func(childComplexity int, id *string) int
 		PartiesPaged               func(childComplexity int, id *string, pagination *v2.Pagination) int
 		Party                      func(childComplexity int, id string) int
@@ -1263,6 +1301,7 @@ type MarketResolver interface {
 	State(ctx context.Context, obj *vega.Market) (MarketState, error)
 	Proposal(ctx context.Context, obj *vega.Market) (*vega.GovernanceData, error)
 	Orders(ctx context.Context, obj *vega.Market, skip *int, first *int, last *int) ([]*vega.Order, error)
+	OrdersPaged(ctx context.Context, obj *vega.Market, pagination *v2.Pagination) (*v2.OrderConnection, error)
 	Accounts(ctx context.Context, obj *vega.Market, partyID *string) ([]*vega.Account, error)
 	Trades(ctx context.Context, obj *vega.Market, skip *int, first *int, last *int) ([]*vega.Trade, error)
 	TradesPaged(ctx context.Context, obj *vega.Market, pagination *v2.Pagination) (*v2.TradeConnection, error)
@@ -1370,6 +1409,7 @@ type OrderResolver interface {
 	Status(ctx context.Context, obj *vega.Order) (OrderStatus, error)
 
 	Trades(ctx context.Context, obj *vega.Order) ([]*vega.Trade, error)
+	TradesPaged(ctx context.Context, obj *vega.Order, pagination *v2.Pagination) (*v2.TradeConnection, error)
 	Type(ctx context.Context, obj *vega.Order) (*OrderType, error)
 	RejectionReason(ctx context.Context, obj *vega.Order) (*OrderRejectionReason, error)
 	Version(ctx context.Context, obj *vega.Order) (string, error)
@@ -1388,7 +1428,7 @@ type PaginatedMarketResolver interface {
 	TradingMode(ctx context.Context, obj *vega.Market) (MarketTradingMode, error)
 	State(ctx context.Context, obj *vega.Market) (MarketState, error)
 	Proposal(ctx context.Context, obj *vega.Market) (*vega.GovernanceData, error)
-	Orders(ctx context.Context, obj *vega.Market, skip *int, first *int, last *int) ([]*vega.Order, error)
+	OrdersPaged(ctx context.Context, obj *vega.Market, pagination *v2.Pagination) (*v2.OrderConnection, error)
 	Accounts(ctx context.Context, obj *vega.Market, partyID *string) ([]*vega.Account, error)
 	TradesPaged(ctx context.Context, obj *vega.Market, pagination *v2.Pagination) (*v2.TradeConnection, error)
 	Depth(ctx context.Context, obj *vega.Market, maxDepth *int) (*vega.MarketDepth, error)
@@ -1398,8 +1438,27 @@ type PaginatedMarketResolver interface {
 
 	RiskFactors(ctx context.Context, obj *vega.Market) (*vega.RiskFactor, error)
 }
+type PaginatedOrderResolver interface {
+	TimeInForce(ctx context.Context, obj *vega.Order) (OrderTimeInForce, error)
+	Side(ctx context.Context, obj *vega.Order) (Side, error)
+	Market(ctx context.Context, obj *vega.Order) (*vega.Market, error)
+	Size(ctx context.Context, obj *vega.Order) (string, error)
+	Remaining(ctx context.Context, obj *vega.Order) (string, error)
+	Party(ctx context.Context, obj *vega.Order) (*vega.Party, error)
+	CreatedAt(ctx context.Context, obj *vega.Order) (string, error)
+	ExpiresAt(ctx context.Context, obj *vega.Order) (*string, error)
+	Status(ctx context.Context, obj *vega.Order) (OrderStatus, error)
+
+	TradesPaged(ctx context.Context, obj *vega.Order, pagination *v2.Pagination) (*v2.TradeConnection, error)
+	Type(ctx context.Context, obj *vega.Order) (*OrderType, error)
+	RejectionReason(ctx context.Context, obj *vega.Order) (*OrderRejectionReason, error)
+	Version(ctx context.Context, obj *vega.Order) (string, error)
+	UpdatedAt(ctx context.Context, obj *vega.Order) (*string, error)
+
+	LiquidityProvision(ctx context.Context, obj *vega.Order) (*vega.LiquidityProvision, error)
+}
 type PaginatedPartyResolver interface {
-	Orders(ctx context.Context, obj *vega.Party, skip *int, first *int, last *int) ([]*vega.Order, error)
+	OrdersPaged(ctx context.Context, obj *vega.Party, pagination *v2.Pagination) (*v2.OrderConnection, error)
 	TradesPaged(ctx context.Context, obj *vega.Party, marketID *string, pagination *v2.Pagination) (*v2.TradeConnection, error)
 	Accounts(ctx context.Context, obj *vega.Party, marketID *string, asset *string, typeArg *vega.AccountType) ([]*vega.Account, error)
 	Positions(ctx context.Context, obj *vega.Party) ([]*vega.Position, error)
@@ -1416,6 +1475,7 @@ type PaginatedPartyResolver interface {
 }
 type PartyResolver interface {
 	Orders(ctx context.Context, obj *vega.Party, skip *int, first *int, last *int) ([]*vega.Order, error)
+	OrdersPaged(ctx context.Context, obj *vega.Party, pagination *v2.Pagination) (*v2.OrderConnection, error)
 	Trades(ctx context.Context, obj *vega.Party, marketID *string, skip *int, first *int, last *int) ([]*vega.Trade, error)
 	TradesPaged(ctx context.Context, obj *vega.Party, marketID *string, pagination *v2.Pagination) (*v2.TradeConnection, error)
 	Accounts(ctx context.Context, obj *vega.Party, marketID *string, asset *string, typeArg *vega.AccountType) ([]*vega.Account, error)
@@ -1484,6 +1544,7 @@ type QueryResolver interface {
 	OracleData(ctx context.Context, pagination *OffsetPagination) ([]*v11.OracleData, error)
 	OrderByID(ctx context.Context, orderID string, version *int) (*vega.Order, error)
 	OrderVersions(ctx context.Context, orderID string, skip *int, first *int, last *int) ([]*vega.Order, error)
+	OrderVersionsPaged(ctx context.Context, orderID *string, pagination *v2.Pagination) (*v2.OrderConnection, error)
 	OrderByReference(ctx context.Context, reference string) (*vega.Order, error)
 	Proposals(ctx context.Context, inState *ProposalState) ([]*vega.GovernanceData, error)
 	Proposal(ctx context.Context, id *string, reference *string) (*vega.GovernanceData, error)
@@ -2926,6 +2987,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Market.Orders(childComplexity, args["skip"].(*int), args["first"].(*int), args["last"].(*int)), true
 
+	case "Market.ordersPaged":
+		if e.complexity.Market.OrdersPaged == nil {
+			break
+		}
+
+		args, err := ec.field_Market_ordersPaged_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Market.OrdersPaged(childComplexity, args["pagination"].(*v2.Pagination)), true
+
 	case "Market.positionDecimalPlaces":
 		if e.complexity.Market.PositionDecimalPlaces == nil {
 			break
@@ -3956,6 +4029,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Order.Trades(childComplexity), true
 
+	case "Order.tradesPaged":
+		if e.complexity.Order.TradesPaged == nil {
+			break
+		}
+
+		args, err := ec.field_Order_tradesPaged_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Order.TradesPaged(childComplexity, args["pagination"].(*v2.Pagination)), true
+
 	case "Order.type":
 		if e.complexity.Order.Type == nil {
 			break
@@ -3976,6 +4061,41 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Order.Version(childComplexity), true
+
+	case "OrderConnection.edges":
+		if e.complexity.OrderConnection.Edges == nil {
+			break
+		}
+
+		return e.complexity.OrderConnection.Edges(childComplexity), true
+
+	case "OrderConnection.pageInfo":
+		if e.complexity.OrderConnection.PageInfo == nil {
+			break
+		}
+
+		return e.complexity.OrderConnection.PageInfo(childComplexity), true
+
+	case "OrderConnection.totalCount":
+		if e.complexity.OrderConnection.TotalCount == nil {
+			break
+		}
+
+		return e.complexity.OrderConnection.TotalCount(childComplexity), true
+
+	case "OrderEdge.cursor":
+		if e.complexity.OrderEdge.Cursor == nil {
+			break
+		}
+
+		return e.complexity.OrderEdge.Cursor(childComplexity), true
+
+	case "OrderEdge.node":
+		if e.complexity.OrderEdge.Node == nil {
+			break
+		}
+
+		return e.complexity.OrderEdge.Node(childComplexity), true
 
 	case "OrderEstimate.fee":
 		if e.complexity.OrderEstimate.Fee == nil {
@@ -4130,17 +4250,17 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.PaginatedMarket.OpeningAuction(childComplexity), true
 
-	case "PaginatedMarket.orders":
-		if e.complexity.PaginatedMarket.Orders == nil {
+	case "PaginatedMarket.ordersPaged":
+		if e.complexity.PaginatedMarket.OrdersPaged == nil {
 			break
 		}
 
-		args, err := ec.field_PaginatedMarket_orders_args(context.TODO(), rawArgs)
+		args, err := ec.field_PaginatedMarket_ordersPaged_args(context.TODO(), rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
-		return e.complexity.PaginatedMarket.Orders(childComplexity, args["skip"].(*int), args["first"].(*int), args["last"].(*int)), true
+		return e.complexity.PaginatedMarket.OrdersPaged(childComplexity, args["pagination"].(*v2.Pagination)), true
 
 	case "PaginatedMarket.positionDecimalPlaces":
 		if e.complexity.PaginatedMarket.PositionDecimalPlaces == nil {
@@ -4202,6 +4322,144 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.PaginatedMarket.TradingMode(childComplexity), true
+
+	case "PaginatedOrder.createdAt":
+		if e.complexity.PaginatedOrder.CreatedAt == nil {
+			break
+		}
+
+		return e.complexity.PaginatedOrder.CreatedAt(childComplexity), true
+
+	case "PaginatedOrder.expiresAt":
+		if e.complexity.PaginatedOrder.ExpiresAt == nil {
+			break
+		}
+
+		return e.complexity.PaginatedOrder.ExpiresAt(childComplexity), true
+
+	case "PaginatedOrder.id":
+		if e.complexity.PaginatedOrder.Id == nil {
+			break
+		}
+
+		return e.complexity.PaginatedOrder.Id(childComplexity), true
+
+	case "PaginatedOrder.liquidityProvision":
+		if e.complexity.PaginatedOrder.LiquidityProvision == nil {
+			break
+		}
+
+		return e.complexity.PaginatedOrder.LiquidityProvision(childComplexity), true
+
+	case "PaginatedOrder.market":
+		if e.complexity.PaginatedOrder.Market == nil {
+			break
+		}
+
+		return e.complexity.PaginatedOrder.Market(childComplexity), true
+
+	case "PaginatedOrder.party":
+		if e.complexity.PaginatedOrder.Party == nil {
+			break
+		}
+
+		return e.complexity.PaginatedOrder.Party(childComplexity), true
+
+	case "PaginatedOrder.peggedOrder":
+		if e.complexity.PaginatedOrder.PeggedOrder == nil {
+			break
+		}
+
+		return e.complexity.PaginatedOrder.PeggedOrder(childComplexity), true
+
+	case "PaginatedOrder.price":
+		if e.complexity.PaginatedOrder.Price == nil {
+			break
+		}
+
+		return e.complexity.PaginatedOrder.Price(childComplexity), true
+
+	case "PaginatedOrder.reference":
+		if e.complexity.PaginatedOrder.Reference == nil {
+			break
+		}
+
+		return e.complexity.PaginatedOrder.Reference(childComplexity), true
+
+	case "PaginatedOrder.rejectionReason":
+		if e.complexity.PaginatedOrder.RejectionReason == nil {
+			break
+		}
+
+		return e.complexity.PaginatedOrder.RejectionReason(childComplexity), true
+
+	case "PaginatedOrder.remaining":
+		if e.complexity.PaginatedOrder.Remaining == nil {
+			break
+		}
+
+		return e.complexity.PaginatedOrder.Remaining(childComplexity), true
+
+	case "PaginatedOrder.side":
+		if e.complexity.PaginatedOrder.Side == nil {
+			break
+		}
+
+		return e.complexity.PaginatedOrder.Side(childComplexity), true
+
+	case "PaginatedOrder.size":
+		if e.complexity.PaginatedOrder.Size == nil {
+			break
+		}
+
+		return e.complexity.PaginatedOrder.Size(childComplexity), true
+
+	case "PaginatedOrder.status":
+		if e.complexity.PaginatedOrder.Status == nil {
+			break
+		}
+
+		return e.complexity.PaginatedOrder.Status(childComplexity), true
+
+	case "PaginatedOrder.timeInForce":
+		if e.complexity.PaginatedOrder.TimeInForce == nil {
+			break
+		}
+
+		return e.complexity.PaginatedOrder.TimeInForce(childComplexity), true
+
+	case "PaginatedOrder.tradesPaged":
+		if e.complexity.PaginatedOrder.TradesPaged == nil {
+			break
+		}
+
+		args, err := ec.field_PaginatedOrder_tradesPaged_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.PaginatedOrder.TradesPaged(childComplexity, args["pagination"].(*v2.Pagination)), true
+
+	case "PaginatedOrder.type":
+		if e.complexity.PaginatedOrder.Type == nil {
+			break
+		}
+
+		return e.complexity.PaginatedOrder.Type(childComplexity), true
+
+	case "PaginatedOrder.updatedAt":
+		if e.complexity.PaginatedOrder.UpdatedAt == nil {
+			break
+		}
+
+		return e.complexity.PaginatedOrder.UpdatedAt(childComplexity), true
+
+	case "PaginatedOrder.version":
+		if e.complexity.PaginatedOrder.Version == nil {
+			break
+		}
+
+		return e.complexity.PaginatedOrder.Version(childComplexity), true
 
 	case "PaginatedParty.accounts":
 		if e.complexity.PaginatedParty.Accounts == nil {
@@ -4265,17 +4523,17 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.PaginatedParty.Margins(childComplexity, args["marketId"].(*string)), true
 
-	case "PaginatedParty.orders":
-		if e.complexity.PaginatedParty.Orders == nil {
+	case "PaginatedParty.ordersPaged":
+		if e.complexity.PaginatedParty.OrdersPaged == nil {
 			break
 		}
 
-		args, err := ec.field_PaginatedParty_orders_args(context.TODO(), rawArgs)
+		args, err := ec.field_PaginatedParty_ordersPaged_args(context.TODO(), rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
-		return e.complexity.PaginatedParty.Orders(childComplexity, args["skip"].(*int), args["first"].(*int), args["last"].(*int)), true
+		return e.complexity.PaginatedParty.OrdersPaged(childComplexity, args["pagination"].(*v2.Pagination)), true
 
 	case "PaginatedParty.positions":
 		if e.complexity.PaginatedParty.Positions == nil {
@@ -4426,6 +4684,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Party.Orders(childComplexity, args["skip"].(*int), args["first"].(*int), args["last"].(*int)), true
+
+	case "Party.ordersPaged":
+		if e.complexity.Party.OrdersPaged == nil {
+			break
+		}
+
+		args, err := ec.field_Party_ordersPaged_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Party.OrdersPaged(childComplexity, args["pagination"].(*v2.Pagination)), true
 
 	case "Party.positions":
 		if e.complexity.Party.Positions == nil {
@@ -5285,6 +5555,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.OrderVersions(childComplexity, args["orderId"].(string), args["skip"].(*int), args["first"].(*int), args["last"].(*int)), true
+
+	case "Query.orderVersionsPaged":
+		if e.complexity.Query.OrderVersionsPaged == nil {
+			break
+		}
+
+		args, err := ec.field_Query_orderVersionsPaged_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.OrderVersionsPaged(childComplexity, args["orderId"].(*string), args["pagination"].(*v2.Pagination)), true
 
 	case "Query.parties":
 		if e.complexity.Query.Parties == nil {
@@ -7087,7 +7369,15 @@ type Query {
     first: Int
     "Pagination last element"
     last: Int
-  ): [Order!]
+  ): [Order!] @deprecated(reason: "Use orderVersionsPaged instead")
+
+  "Order versions (created via amendments if any) found by orderID"
+  orderVersionsPaged(
+    "ID for an order"
+    orderId: ID
+    "Pagination information"
+    pagination: Pagination
+  ): OrderConnection!
 
   "An order in the VEGA network found by referenceID"
   orderByReference("Reference for an order" reference: String!): Order!
@@ -8135,7 +8425,13 @@ type Market {
     first: Int
     "Pagination last element"
     last: Int
-  ): [Order!]
+  ): [Order!] @deprecated(reason: "Use the 'ordersPaged' field instead")
+
+  "Orders on a market"
+  ordersPaged(
+    "Pagination information"
+    pagination: Pagination
+  ): OrderConnection!
 
   "Get account for a party or market"
   accounts(
@@ -8276,7 +8572,13 @@ type Party {
     first: Int
     "Pagination last element"
     last: Int
-  ): [Order!]
+  ): [Order!] @deprecated(reason: "Use ordersPaged instead")
+
+  "Orders relating to a party"
+  ordersPaged(
+    "Pagination information"
+    pagination: Pagination
+  ): OrderConnection!
 
   "Trades relating to a party (specifically where party is either buyer OR seller)"
   trades(
@@ -8492,7 +8794,10 @@ type Order {
   reference: String!
 
   "Trades relating to this order"
-  trades: [Trade!]
+  trades: [Trade!] @deprecated(reason: "Use tradesPaged instead")
+
+  "Trades relating to this order"
+  tradesPaged(pagination: Pagination): TradeConnection!
 
   "Type the order type (defaults to PARTY)"
   type: OrderType
@@ -9851,14 +10156,10 @@ type PaginatedParty {
   id: ID!
 
   "Orders relating to a party"
-  orders(
-    "Pagination skip"
-    skip: Int
-    "Pagination first element"
-    first: Int
-    "Pagination last element"
-    last: Int
-  ): [Order!]
+  ordersPaged(
+    "Pagination"
+    pagination: Pagination
+  ): OrderConnection!
 
   "Trades relating to a party (specifically where party is either buyer OR seller)"
   tradesPaged(
@@ -10013,14 +10314,10 @@ type PaginatedMarket {
   proposal: Proposal
 
   "Orders on a market"
-  orders(
-    "Pagination skip"
-    skip: Int
-    "Pagination first element"
-    first: Int
-    "Pagination last element"
-    last: Int
-  ): [Order!]
+  ordersPaged(
+    "Pagination information"
+    pagination: Pagination
+  ): OrderConnection
 
   "Get account for a party or market"
   accounts(
@@ -10076,6 +10373,82 @@ type MarketConnection {
   edges: [MarketEdge!]!
   "The pagination information"
   pageInfo: PageInfo!
+}
+
+"""
+An order in Vega, if active it will be on the OrderBook for the market, this version supports cursor based
+pagination in sub-queries for trades"""
+type PaginatedOrder {
+  "Hash of the order data"
+  id: ID!
+
+  "The worst price the order will trade at (e.g. buy for price or less, sell for price or more) (uint64)"
+  price: String!
+
+  "The timeInForce of order (determines how and if it executes, and whether it persists on the book)"
+  timeInForce: OrderTimeInForce!
+
+  "Whether the order is to buy or sell"
+  side: Side!
+
+  "The market the order is trading on (probably stored internally as a hash of the market details)"
+  market: Market
+
+  "Total number of contracts that may be bought or sold (immutable) (uint64)"
+  size: String!
+
+  "Number of contracts remaining of the total that have not yet been bought or sold (uint64)"
+  remaining: String!
+
+  "The party who place the order (probably stored internally as the party's public key)"
+  party: Party!
+
+  "RFC3339Nano formatted date and time for when the order was created (timestamp)"
+  createdAt: String!
+
+  "Expiration time of this order (ISO-8601 RFC3339+Nano formatted date)"
+  expiresAt: String
+
+  "The status of an order, for example 'Active'"
+  status: OrderStatus!
+
+  "The external reference (if available) for the order"
+  reference: String!
+
+  "Trades relating to this order"
+  tradesPaged(pagination: Pagination): TradeConnection!
+
+  "Type the order type (defaults to PARTY)"
+  type: OrderType
+
+  "Reason for the order to be rejected"
+  rejectionReason: OrderRejectionReason
+
+  "Version of this order, counts the number of amends"
+  version: String!
+
+  "RFC3339Nano time the order was altered"
+  updatedAt: String
+
+  "PeggedOrder contains the details about a pegged order"
+  peggedOrder: PeggedOrder
+
+  "The liquidity provision this order was created from"
+  liquidityProvision: LiquidityProvision
+}
+
+type OrderEdge {
+  node: PaginatedOrder!
+  cursor: String
+}
+
+type OrderConnection {
+  "The total number of orders in this connection"
+  totalCount: Int
+  "The orders in this connection"
+  edges: [OrderEdge!]
+  "The pagination information"
+  pageInfo: PageInfo
 }
 `, BuiltIn: false},
 }
@@ -10205,6 +10578,21 @@ func (ec *executionContext) field_Market_liquidityProvisions_args(ctx context.Co
 	return args, nil
 }
 
+func (ec *executionContext) field_Market_ordersPaged_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *v2.Pagination
+	if tmp, ok := rawArgs["pagination"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pagination"))
+		arg0, err = ec.unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPagination(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["pagination"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field_Market_orders_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -10328,6 +10716,21 @@ func (ec *executionContext) field_Node_delegations_args(ctx context.Context, raw
 	return args, nil
 }
 
+func (ec *executionContext) field_Order_tradesPaged_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *v2.Pagination
+	if tmp, ok := rawArgs["pagination"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pagination"))
+		arg0, err = ec.unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPagination(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["pagination"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field_PaginatedMarket_accounts_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -10397,40 +10800,37 @@ func (ec *executionContext) field_PaginatedMarket_liquidityProvisions_args(ctx c
 	return args, nil
 }
 
-func (ec *executionContext) field_PaginatedMarket_orders_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+func (ec *executionContext) field_PaginatedMarket_ordersPaged_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 *int
-	if tmp, ok := rawArgs["skip"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("skip"))
-		arg0, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
+	var arg0 *v2.Pagination
+	if tmp, ok := rawArgs["pagination"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pagination"))
+		arg0, err = ec.unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPagination(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["skip"] = arg0
-	var arg1 *int
-	if tmp, ok := rawArgs["first"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("first"))
-		arg1, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["first"] = arg1
-	var arg2 *int
-	if tmp, ok := rawArgs["last"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("last"))
-		arg2, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["last"] = arg2
+	args["pagination"] = arg0
 	return args, nil
 }
 
 func (ec *executionContext) field_PaginatedMarket_tradesPaged_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *v2.Pagination
+	if tmp, ok := rawArgs["pagination"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pagination"))
+		arg0, err = ec.unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPagination(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["pagination"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_PaginatedOrder_tradesPaged_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
 	var arg0 *v2.Pagination
@@ -10559,36 +10959,18 @@ func (ec *executionContext) field_PaginatedParty_margins_args(ctx context.Contex
 	return args, nil
 }
 
-func (ec *executionContext) field_PaginatedParty_orders_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+func (ec *executionContext) field_PaginatedParty_ordersPaged_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 *int
-	if tmp, ok := rawArgs["skip"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("skip"))
-		arg0, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
+	var arg0 *v2.Pagination
+	if tmp, ok := rawArgs["pagination"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pagination"))
+		arg0, err = ec.unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPagination(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["skip"] = arg0
-	var arg1 *int
-	if tmp, ok := rawArgs["first"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("first"))
-		arg1, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["first"] = arg1
-	var arg2 *int
-	if tmp, ok := rawArgs["last"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("last"))
-		arg2, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["last"] = arg2
+	args["pagination"] = arg0
 	return args, nil
 }
 
@@ -10799,6 +11181,21 @@ func (ec *executionContext) field_Party_margins_args(ctx context.Context, rawArg
 		}
 	}
 	args["marketId"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Party_ordersPaged_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *v2.Pagination
+	if tmp, ok := rawArgs["pagination"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pagination"))
+		arg0, err = ec.unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPagination(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["pagination"] = arg0
 	return args, nil
 }
 
@@ -11474,6 +11871,30 @@ func (ec *executionContext) field_Query_orderByReference_args(ctx context.Contex
 		}
 	}
 	args["reference"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_orderVersionsPaged_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *string
+	if tmp, ok := rawArgs["orderId"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("orderId"))
+		arg0, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["orderId"] = arg0
+	var arg1 *v2.Pagination
+	if tmp, ok := rawArgs["pagination"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pagination"))
+		arg1, err = ec.unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPagination(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["pagination"] = arg1
 	return args, nil
 }
 
@@ -18181,6 +18602,48 @@ func (ec *executionContext) _Market_orders(ctx context.Context, field graphql.Co
 	return ec.marshalOOrder2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐOrderᚄ(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Market_ordersPaged(ctx context.Context, field graphql.CollectedField, obj *vega.Market) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Market",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Market_ordersPaged_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Market().OrdersPaged(rctx, obj, args["pagination"].(*v2.Pagination))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*v2.OrderConnection)
+	fc.Result = res
+	return ec.marshalNOrderConnection2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐOrderConnection(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Market_accounts(ctx context.Context, field graphql.CollectedField, obj *vega.Market) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -23059,6 +23522,48 @@ func (ec *executionContext) _Order_trades(ctx context.Context, field graphql.Col
 	return ec.marshalOTrade2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐTradeᚄ(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Order_tradesPaged(ctx context.Context, field graphql.CollectedField, obj *vega.Order) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Order",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Order_tradesPaged_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Order().TradesPaged(rctx, obj, args["pagination"].(*v2.Pagination))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*v2.TradeConnection)
+	fc.Result = res
+	return ec.marshalNTradeConnection2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐTradeConnection(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Order_type(ctx context.Context, field graphql.CollectedField, obj *vega.Order) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -23252,6 +23757,169 @@ func (ec *executionContext) _Order_liquidityProvision(ctx context.Context, field
 	res := resTmp.(*vega.LiquidityProvision)
 	fc.Result = res
 	return ec.marshalOLiquidityProvision2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐLiquidityProvision(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _OrderConnection_totalCount(ctx context.Context, field graphql.CollectedField, obj *v2.OrderConnection) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "OrderConnection",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TotalCount, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(int64)
+	fc.Result = res
+	return ec.marshalOInt2int64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _OrderConnection_edges(ctx context.Context, field graphql.CollectedField, obj *v2.OrderConnection) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "OrderConnection",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Edges, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*v2.OrderEdge)
+	fc.Result = res
+	return ec.marshalOOrderEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐOrderEdgeᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _OrderConnection_pageInfo(ctx context.Context, field graphql.CollectedField, obj *v2.OrderConnection) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "OrderConnection",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PageInfo, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*v2.PageInfo)
+	fc.Result = res
+	return ec.marshalOPageInfo2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPageInfo(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _OrderEdge_node(ctx context.Context, field graphql.CollectedField, obj *v2.OrderEdge) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "OrderEdge",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Node, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*vega.Order)
+	fc.Result = res
+	return ec.marshalNPaginatedOrder2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐOrder(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _OrderEdge_cursor(ctx context.Context, field graphql.CollectedField, obj *v2.OrderEdge) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "OrderEdge",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Cursor, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalOString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _OrderEstimate_fee(ctx context.Context, field graphql.CollectedField, obj *OrderEstimate) (ret graphql.Marshaler) {
@@ -23916,7 +24584,7 @@ func (ec *executionContext) _PaginatedMarket_proposal(ctx context.Context, field
 	return ec.marshalOProposal2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐGovernanceData(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _PaginatedMarket_orders(ctx context.Context, field graphql.CollectedField, obj *vega.Market) (ret graphql.Marshaler) {
+func (ec *executionContext) _PaginatedMarket_ordersPaged(ctx context.Context, field graphql.CollectedField, obj *vega.Market) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -23933,7 +24601,7 @@ func (ec *executionContext) _PaginatedMarket_orders(ctx context.Context, field g
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_PaginatedMarket_orders_args(ctx, rawArgs)
+	args, err := ec.field_PaginatedMarket_ordersPaged_args(ctx, rawArgs)
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
@@ -23941,7 +24609,7 @@ func (ec *executionContext) _PaginatedMarket_orders(ctx context.Context, field g
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.PaginatedMarket().Orders(rctx, obj, args["skip"].(*int), args["first"].(*int), args["last"].(*int))
+		return ec.resolvers.PaginatedMarket().OrdersPaged(rctx, obj, args["pagination"].(*v2.Pagination))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -23950,9 +24618,9 @@ func (ec *executionContext) _PaginatedMarket_orders(ctx context.Context, field g
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.([]*vega.Order)
+	res := resTmp.(*v2.OrderConnection)
 	fc.Result = res
-	return ec.marshalOOrder2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐOrderᚄ(ctx, field.Selections, res)
+	return ec.marshalOOrderConnection2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐOrderConnection(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _PaginatedMarket_accounts(ctx context.Context, field graphql.CollectedField, obj *vega.Market) (ret graphql.Marshaler) {
@@ -24255,6 +24923,657 @@ func (ec *executionContext) _PaginatedMarket_riskFactors(ctx context.Context, fi
 	return ec.marshalORiskFactor2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐRiskFactor(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _PaginatedOrder_id(ctx context.Context, field graphql.CollectedField, obj *vega.Order) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "PaginatedOrder",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Id, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PaginatedOrder_price(ctx context.Context, field graphql.CollectedField, obj *vega.Order) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "PaginatedOrder",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Price, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PaginatedOrder_timeInForce(ctx context.Context, field graphql.CollectedField, obj *vega.Order) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "PaginatedOrder",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.PaginatedOrder().TimeInForce(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(OrderTimeInForce)
+	fc.Result = res
+	return ec.marshalNOrderTimeInForce2codeᚗvegaprotocolᚗioᚋdataᚑnodeᚋgatewayᚋgraphqlᚐOrderTimeInForce(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PaginatedOrder_side(ctx context.Context, field graphql.CollectedField, obj *vega.Order) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "PaginatedOrder",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.PaginatedOrder().Side(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(Side)
+	fc.Result = res
+	return ec.marshalNSide2codeᚗvegaprotocolᚗioᚋdataᚑnodeᚋgatewayᚋgraphqlᚐSide(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PaginatedOrder_market(ctx context.Context, field graphql.CollectedField, obj *vega.Order) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "PaginatedOrder",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.PaginatedOrder().Market(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*vega.Market)
+	fc.Result = res
+	return ec.marshalOMarket2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐMarket(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PaginatedOrder_size(ctx context.Context, field graphql.CollectedField, obj *vega.Order) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "PaginatedOrder",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.PaginatedOrder().Size(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PaginatedOrder_remaining(ctx context.Context, field graphql.CollectedField, obj *vega.Order) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "PaginatedOrder",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.PaginatedOrder().Remaining(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PaginatedOrder_party(ctx context.Context, field graphql.CollectedField, obj *vega.Order) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "PaginatedOrder",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.PaginatedOrder().Party(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*vega.Party)
+	fc.Result = res
+	return ec.marshalNParty2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐParty(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PaginatedOrder_createdAt(ctx context.Context, field graphql.CollectedField, obj *vega.Order) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "PaginatedOrder",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.PaginatedOrder().CreatedAt(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PaginatedOrder_expiresAt(ctx context.Context, field graphql.CollectedField, obj *vega.Order) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "PaginatedOrder",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.PaginatedOrder().ExpiresAt(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PaginatedOrder_status(ctx context.Context, field graphql.CollectedField, obj *vega.Order) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "PaginatedOrder",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.PaginatedOrder().Status(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(OrderStatus)
+	fc.Result = res
+	return ec.marshalNOrderStatus2codeᚗvegaprotocolᚗioᚋdataᚑnodeᚋgatewayᚋgraphqlᚐOrderStatus(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PaginatedOrder_reference(ctx context.Context, field graphql.CollectedField, obj *vega.Order) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "PaginatedOrder",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Reference, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PaginatedOrder_tradesPaged(ctx context.Context, field graphql.CollectedField, obj *vega.Order) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "PaginatedOrder",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_PaginatedOrder_tradesPaged_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.PaginatedOrder().TradesPaged(rctx, obj, args["pagination"].(*v2.Pagination))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*v2.TradeConnection)
+	fc.Result = res
+	return ec.marshalNTradeConnection2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐTradeConnection(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PaginatedOrder_type(ctx context.Context, field graphql.CollectedField, obj *vega.Order) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "PaginatedOrder",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.PaginatedOrder().Type(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*OrderType)
+	fc.Result = res
+	return ec.marshalOOrderType2ᚖcodeᚗvegaprotocolᚗioᚋdataᚑnodeᚋgatewayᚋgraphqlᚐOrderType(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PaginatedOrder_rejectionReason(ctx context.Context, field graphql.CollectedField, obj *vega.Order) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "PaginatedOrder",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.PaginatedOrder().RejectionReason(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*OrderRejectionReason)
+	fc.Result = res
+	return ec.marshalOOrderRejectionReason2ᚖcodeᚗvegaprotocolᚗioᚋdataᚑnodeᚋgatewayᚋgraphqlᚐOrderRejectionReason(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PaginatedOrder_version(ctx context.Context, field graphql.CollectedField, obj *vega.Order) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "PaginatedOrder",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.PaginatedOrder().Version(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PaginatedOrder_updatedAt(ctx context.Context, field graphql.CollectedField, obj *vega.Order) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "PaginatedOrder",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.PaginatedOrder().UpdatedAt(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PaginatedOrder_peggedOrder(ctx context.Context, field graphql.CollectedField, obj *vega.Order) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "PaginatedOrder",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PeggedOrder, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*vega.PeggedOrder)
+	fc.Result = res
+	return ec.marshalOPeggedOrder2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐPeggedOrder(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PaginatedOrder_liquidityProvision(ctx context.Context, field graphql.CollectedField, obj *vega.Order) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "PaginatedOrder",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.PaginatedOrder().LiquidityProvision(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*vega.LiquidityProvision)
+	fc.Result = res
+	return ec.marshalOLiquidityProvision2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐLiquidityProvision(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _PaginatedParty_id(ctx context.Context, field graphql.CollectedField, obj *vega.Party) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -24290,7 +25609,7 @@ func (ec *executionContext) _PaginatedParty_id(ctx context.Context, field graphq
 	return ec.marshalNID2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _PaginatedParty_orders(ctx context.Context, field graphql.CollectedField, obj *vega.Party) (ret graphql.Marshaler) {
+func (ec *executionContext) _PaginatedParty_ordersPaged(ctx context.Context, field graphql.CollectedField, obj *vega.Party) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -24307,7 +25626,7 @@ func (ec *executionContext) _PaginatedParty_orders(ctx context.Context, field gr
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_PaginatedParty_orders_args(ctx, rawArgs)
+	args, err := ec.field_PaginatedParty_ordersPaged_args(ctx, rawArgs)
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
@@ -24315,18 +25634,21 @@ func (ec *executionContext) _PaginatedParty_orders(ctx context.Context, field gr
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.PaginatedParty().Orders(rctx, obj, args["skip"].(*int), args["first"].(*int), args["last"].(*int))
+		return ec.resolvers.PaginatedParty().OrdersPaged(rctx, obj, args["pagination"].(*v2.Pagination))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
-	res := resTmp.([]*vega.Order)
+	res := resTmp.(*v2.OrderConnection)
 	fc.Result = res
-	return ec.marshalOOrder2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐOrderᚄ(ctx, field.Selections, res)
+	return ec.marshalNOrderConnection2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐOrderConnection(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _PaginatedParty_tradesPaged(ctx context.Context, field graphql.CollectedField, obj *vega.Party) (ret graphql.Marshaler) {
@@ -24879,6 +26201,48 @@ func (ec *executionContext) _Party_orders(ctx context.Context, field graphql.Col
 	res := resTmp.([]*vega.Order)
 	fc.Result = res
 	return ec.marshalOOrder2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐOrderᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Party_ordersPaged(ctx context.Context, field graphql.CollectedField, obj *vega.Party) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Party",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Party_ordersPaged_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Party().OrdersPaged(rctx, obj, args["pagination"].(*v2.Pagination))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*v2.OrderConnection)
+	fc.Result = res
+	return ec.marshalNOrderConnection2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐOrderConnection(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Party_trades(ctx context.Context, field graphql.CollectedField, obj *vega.Party) (ret graphql.Marshaler) {
@@ -28074,6 +29438,48 @@ func (ec *executionContext) _Query_orderVersions(ctx context.Context, field grap
 	res := resTmp.([]*vega.Order)
 	fc.Result = res
 	return ec.marshalOOrder2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐOrderᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_orderVersionsPaged(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_orderVersionsPaged_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().OrderVersionsPaged(rctx, args["orderId"].(*string), args["pagination"].(*v2.Pagination))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*v2.OrderConnection)
+	fc.Result = res
+	return ec.marshalNOrderConnection2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐOrderConnection(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_orderByReference(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -40262,6 +41668,26 @@ func (ec *executionContext) _Market(ctx context.Context, sel ast.SelectionSet, o
 				return innerFunc(ctx)
 
 			})
+		case "ordersPaged":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Market_ordersPaged(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
 		case "accounts":
 			field := field
 
@@ -42705,6 +44131,26 @@ func (ec *executionContext) _Order(ctx context.Context, sel ast.SelectionSet, ob
 				return innerFunc(ctx)
 
 			})
+		case "tradesPaged":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Order_tradesPaged(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
 		case "type":
 			field := field
 
@@ -42800,6 +44246,86 @@ func (ec *executionContext) _Order(ctx context.Context, sel ast.SelectionSet, ob
 				return innerFunc(ctx)
 
 			})
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var orderConnectionImplementors = []string{"OrderConnection"}
+
+func (ec *executionContext) _OrderConnection(ctx context.Context, sel ast.SelectionSet, obj *v2.OrderConnection) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, orderConnectionImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("OrderConnection")
+		case "totalCount":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._OrderConnection_totalCount(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+		case "edges":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._OrderConnection_edges(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+		case "pageInfo":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._OrderConnection_pageInfo(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var orderEdgeImplementors = []string{"OrderEdge"}
+
+func (ec *executionContext) _OrderEdge(ctx context.Context, sel ast.SelectionSet, obj *v2.OrderEdge) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, orderEdgeImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("OrderEdge")
+		case "node":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._OrderEdge_node(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "cursor":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._OrderEdge_cursor(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -43140,7 +44666,7 @@ func (ec *executionContext) _PaginatedMarket(ctx context.Context, sel ast.Select
 				return innerFunc(ctx)
 
 			})
-		case "orders":
+		case "ordersPaged":
 			field := field
 
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
@@ -43149,7 +44675,7 @@ func (ec *executionContext) _PaginatedMarket(ctx context.Context, sel ast.Select
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._PaginatedMarket_orders(ctx, field, obj)
+				res = ec._PaginatedMarket_ordersPaged(ctx, field, obj)
 				return res
 			}
 
@@ -43303,6 +44829,346 @@ func (ec *executionContext) _PaginatedMarket(ctx context.Context, sel ast.Select
 	return out
 }
 
+var paginatedOrderImplementors = []string{"PaginatedOrder"}
+
+func (ec *executionContext) _PaginatedOrder(ctx context.Context, sel ast.SelectionSet, obj *vega.Order) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, paginatedOrderImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("PaginatedOrder")
+		case "id":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._PaginatedOrder_id(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "price":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._PaginatedOrder_price(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "timeInForce":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._PaginatedOrder_timeInForce(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "side":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._PaginatedOrder_side(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "market":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._PaginatedOrder_market(ctx, field, obj)
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "size":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._PaginatedOrder_size(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "remaining":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._PaginatedOrder_remaining(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "party":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._PaginatedOrder_party(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "createdAt":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._PaginatedOrder_createdAt(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "expiresAt":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._PaginatedOrder_expiresAt(ctx, field, obj)
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "status":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._PaginatedOrder_status(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "reference":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._PaginatedOrder_reference(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "tradesPaged":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._PaginatedOrder_tradesPaged(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "type":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._PaginatedOrder_type(ctx, field, obj)
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "rejectionReason":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._PaginatedOrder_rejectionReason(ctx, field, obj)
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "version":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._PaginatedOrder_version(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "updatedAt":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._PaginatedOrder_updatedAt(ctx, field, obj)
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "peggedOrder":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._PaginatedOrder_peggedOrder(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+		case "liquidityProvision":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._PaginatedOrder_liquidityProvision(ctx, field, obj)
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
 var paginatedPartyImplementors = []string{"PaginatedParty"}
 
 func (ec *executionContext) _PaginatedParty(ctx context.Context, sel ast.SelectionSet, obj *vega.Party) graphql.Marshaler {
@@ -43323,7 +45189,7 @@ func (ec *executionContext) _PaginatedParty(ctx context.Context, sel ast.Selecti
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
-		case "orders":
+		case "ordersPaged":
 			field := field
 
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
@@ -43332,7 +45198,10 @@ func (ec *executionContext) _PaginatedParty(ctx context.Context, sel ast.Selecti
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._PaginatedParty_orders(ctx, field, obj)
+				res = ec._PaginatedParty_ordersPaged(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
 				return res
 			}
 
@@ -43608,6 +45477,26 @@ func (ec *executionContext) _Party(ctx context.Context, sel ast.SelectionSet, ob
 					}
 				}()
 				res = ec._Party_orders(ctx, field, obj)
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "ordersPaged":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Party_ordersPaged(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
 				return res
 			}
 
@@ -45381,6 +47270,29 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_orderVersions(ctx, field)
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx, innerFunc)
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return rrm(innerCtx)
+			})
+		case "orderVersionsPaged":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_orderVersionsPaged(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
 				return res
 			}
 
@@ -50512,6 +52424,30 @@ func (ec *executionContext) marshalNOrder2ᚖcodeᚗvegaprotocolᚗioᚋprotos�
 	return ec._Order(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalNOrderConnection2codeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐOrderConnection(ctx context.Context, sel ast.SelectionSet, v v2.OrderConnection) graphql.Marshaler {
+	return ec._OrderConnection(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNOrderConnection2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐOrderConnection(ctx context.Context, sel ast.SelectionSet, v *v2.OrderConnection) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._OrderConnection(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNOrderEdge2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐOrderEdge(ctx context.Context, sel ast.SelectionSet, v *v2.OrderEdge) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._OrderEdge(ctx, sel, v)
+}
+
 func (ec *executionContext) marshalNOrderEstimate2codeᚗvegaprotocolᚗioᚋdataᚑnodeᚋgatewayᚋgraphqlᚐOrderEstimate(ctx context.Context, sel ast.SelectionSet, v OrderEstimate) graphql.Marshaler {
 	return ec._OrderEstimate(ctx, sel, &v)
 }
@@ -50574,6 +52510,16 @@ func (ec *executionContext) marshalNPaginatedMarket2ᚖcodeᚗvegaprotocolᚗio�
 		return graphql.Null
 	}
 	return ec._PaginatedMarket(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNPaginatedOrder2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐOrder(ctx context.Context, sel ast.SelectionSet, v *vega.Order) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._PaginatedOrder(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNPaginatedParty2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐParty(ctx context.Context, sel ast.SelectionSet, v *vega.Party) graphql.Marshaler {
@@ -52298,6 +54244,16 @@ func (ec *executionContext) marshalOID2ᚖstring(ctx context.Context, sel ast.Se
 	return res
 }
 
+func (ec *executionContext) unmarshalOInt2int64(ctx context.Context, v interface{}) (int64, error) {
+	res, err := graphql.UnmarshalInt64(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOInt2int64(ctx context.Context, sel ast.SelectionSet, v int64) graphql.Marshaler {
+	res := graphql.MarshalInt64(v)
+	return res
+}
+
 func (ec *executionContext) unmarshalOInt2ᚖint(ctx context.Context, v interface{}) (*int, error) {
 	if v == nil {
 		return nil, nil
@@ -53130,6 +55086,60 @@ func (ec *executionContext) marshalOOrder2ᚖcodeᚗvegaprotocolᚗioᚋprotos�
 	return ec._Order(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalOOrderConnection2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐOrderConnection(ctx context.Context, sel ast.SelectionSet, v *v2.OrderConnection) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._OrderConnection(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOOrderEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐOrderEdgeᚄ(ctx context.Context, sel ast.SelectionSet, v []*v2.OrderEdge) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNOrderEdge2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐOrderEdge(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
 func (ec *executionContext) unmarshalOOrderRejectionReason2ᚖcodeᚗvegaprotocolᚗioᚋdataᚑnodeᚋgatewayᚋgraphqlᚐOrderRejectionReason(ctx context.Context, v interface{}) (*OrderRejectionReason, error) {
 	if v == nil {
 		return nil, nil
@@ -53160,6 +55170,13 @@ func (ec *executionContext) marshalOOrderType2ᚖcodeᚗvegaprotocolᚗioᚋdata
 		return graphql.Null
 	}
 	return v
+}
+
+func (ec *executionContext) marshalOPageInfo2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPageInfo(ctx context.Context, sel ast.SelectionSet, v *v2.PageInfo) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._PageInfo(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPagination(ctx context.Context, v interface{}) (*v2.Pagination, error) {

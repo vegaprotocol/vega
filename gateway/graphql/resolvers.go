@@ -120,6 +120,7 @@ func (r *VegaResolverRoot) Market() MarketResolver {
 	return (*myMarketResolver)(r)
 }
 
+// PaginatedMarket returns the paginated markets resolver
 func (r *VegaResolverRoot) PaginatedMarket() PaginatedMarketResolver {
 	return (*myPaginatedMarketResolver)(r)
 }
@@ -127,6 +128,11 @@ func (r *VegaResolverRoot) PaginatedMarket() PaginatedMarketResolver {
 // Order returns the order resolver
 func (r *VegaResolverRoot) Order() OrderResolver {
 	return (*myOrderResolver)(r)
+}
+
+// PaginatedOrder returns the order resolver
+func (r *VegaResolverRoot) PaginatedOrder() PaginatedOrderResolver {
+	return (*myPaginatedOrderResolver)(r)
 }
 
 // Trade returns the trades resolver
@@ -144,6 +150,7 @@ func (r *VegaResolverRoot) Party() PartyResolver {
 	return (*myPartyResolver)(r)
 }
 
+// PaginatedParty returns the parties resolver
 func (r *VegaResolverRoot) PaginatedParty() PaginatedPartyResolver {
 	return (*myPaginatedPartyResolver)(r)
 }
@@ -760,6 +767,23 @@ func (r *myQueryResolver) OrderVersions(
 	return res.Orders, nil
 }
 
+func (r *myQueryResolver) OrderVersionsPaged(ctx context.Context, orderID *string, pagination *v2.Pagination) (*v2.OrderConnection, error) {
+	if orderID == nil {
+		return nil, ErrMissingIDOrReference
+	}
+	req := &v2.GetOrderVersionsByIDPagedRequest{
+		OrderId:    *orderID,
+		Pagination: pagination,
+	}
+
+	resp, err := r.tradingDataClientV2.GetOrderVersionsByIDPaged(ctx, req)
+	if err != nil {
+		r.log.Error("tradingData client", logging.Error(err))
+		return nil, customErrorFromStatus(err)
+	}
+	return resp.Orders, nil
+}
+
 func (r *myQueryResolver) OrderByReference(ctx context.Context, reference string) (*types.Order, error) {
 	req := &protoapi.OrderByReferenceRequest{
 		Reference: reference,
@@ -1180,6 +1204,22 @@ func (r *myPartyResolver) Orders(ctx context.Context, party *types.Party,
 	}
 	// mandatory return field in schema
 	return []*types.Order{}, nil
+}
+
+func (r *myPartyResolver) OrdersPaged(ctx context.Context, party *types.Party, pagination *v2.Pagination) (*v2.OrderConnection, error) {
+	if party == nil {
+		return nil, errors.New("party is required")
+	}
+	req := v2.GetOrdersByPartyPagedRequest{
+		PartyId:    party.Id,
+		Pagination: pagination,
+	}
+	res, err := r.tradingDataClientV2.GetOrdersByPartyPaged(ctx, &req)
+	if err != nil {
+		r.log.Error("tradingData client", logging.Error(err))
+		return nil, customErrorFromStatus(err)
+	}
+	return res.Orders, nil
 }
 
 func (r *myPartyResolver) Trades(ctx context.Context, party *types.Party,
@@ -1716,6 +1756,19 @@ func (r *myOrderResolver) Trades(ctx context.Context, ord *types.Order) ([]*type
 	}
 	req := protoapi.TradesByOrderRequest{OrderId: ord.Id}
 	res, err := r.tradingDataClient.TradesByOrder(ctx, &req)
+	if err != nil {
+		r.log.Error("tradingData client", logging.Error(err))
+		return nil, customErrorFromStatus(err)
+	}
+	return res.Trades, nil
+}
+
+func (r *myOrderResolver) TradesPaged(ctx context.Context, ord *types.Order, pagination *v2.Pagination) (*v2.TradeConnection, error) {
+	if ord == nil {
+		return nil, errors.New("nil order")
+	}
+	req := v2.GetTradesByOrderIDRequest{OrderId: ord.Id, Pagination: pagination}
+	res, err := r.tradingDataClientV2.GetTradesByOrderID(ctx, &req)
 	if err != nil {
 		r.log.Error("tradingData client", logging.Error(err))
 		return nil, customErrorFromStatus(err)

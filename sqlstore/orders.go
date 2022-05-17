@@ -2,7 +2,9 @@ package sqlstore
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"time"
 
 	"code.vegaprotocol.io/data-node/entities"
 	"code.vegaprotocol.io/data-node/metrics"
@@ -126,6 +128,43 @@ func (os *Orders) queryOrders(ctx context.Context, query string, args []interfac
 	return orders, nil
 }
 
+func (os *Orders) queryOrdersWithCursorPagination(ctx context.Context, query string, args []interface{},
+	pagination entities.Pagination,
+) ([]entities.Order, entities.PageInfo, error) {
+	var (
+		err      error
+		vegaTime time.Time
+		seqNum   uint64
+	)
+
+	sorting, cmp, cursor := extractPaginationInfo(pagination)
+	var builders CursorBuilders
+
+	if cursor != "" {
+		vegaTime, seqNum, err = entities.ParseOrderCursor(cursor)
+		if err != nil {
+			return nil, entities.PageInfo{}, fmt.Errorf("parsing cursor: %w", err)
+		}
+	}
+
+	builders = []CursorBuilder{
+		NewCursorBuilder("vega_time", sorting, cmp, vegaTime),
+		NewCursorBuilder("seq_num", sorting, cmp, seqNum),
+	}
+
+	query, args = orderAndPaginateWithCursor(query, pagination, builders, args...)
+	var orders []entities.Order
+	var pageInfo entities.PageInfo
+	var pagedOrders []entities.Order
+	err = pgxscan.Select(ctx, os.Connection, &orders, query, args...)
+	if err != nil {
+		return nil, pageInfo, fmt.Errorf("querying orders: %w", err)
+	}
+
+	pagedOrders, pageInfo = entities.PageEntities(orders, pagination)
+	return pagedOrders, pageInfo, nil
+}
+
 func paginateOrderQuery(query string, args []interface{}, p entities.OffsetPagination) (string, []interface{}) {
 	dir := "ASC"
 	if p.Descending {
@@ -141,4 +180,64 @@ func paginateOrderQuery(query string, args []interface{}, p entities.OffsetPagin
 		query, dir, dir, nextBindVar(&args, limit), nextBindVar(&args, p.Skip))
 
 	return query, args
+}
+
+func (os *Orders) GetByMarketPaged(ctx context.Context, marketIDStr string, p entities.Pagination) ([]entities.Order, entities.PageInfo, error) {
+	if marketIDStr == "" {
+		return nil, entities.PageInfo{}, errors.New("marketID is required")
+	}
+
+	marketID := entities.NewMarketID(marketIDStr)
+
+	query := `SELECT * from orders_current WHERE market_id=$1`
+	defer metrics.StartSQLQuery("Orders", "GetByMarketPaged")()
+
+	return os.queryOrdersWithCursorPagination(ctx, query, []interface{}{marketID}, p)
+}
+
+func (os *Orders) GetByPartyPaged(ctx context.Context, partyIDStr string, p entities.Pagination) ([]entities.Order, entities.PageInfo, error) {
+	if partyIDStr == "" {
+		return nil, entities.PageInfo{}, errors.New("partyID is required")
+	}
+
+	partyID := entities.NewPartyID(partyIDStr)
+
+	query := `SELECT * from orders_current WHERE party_id=$1`
+	defer metrics.StartSQLQuery("Orders", "GetByPartyPaged")()
+
+	return os.queryOrdersWithCursorPagination(ctx, query, []interface{}{partyID}, p)
+}
+
+func (os *Orders) GetOrderVersionsByIDPaged(ctx context.Context, orderIDStr string, p entities.Pagination) ([]entities.Order, entities.PageInfo, error) {
+	if orderIDStr == "" {
+		return nil, entities.PageInfo{}, errors.New("orderID is required")
+	}
+	orderID := entities.NewOrderID(orderIDStr)
+	query := `SELECT * from orders_current_versions WHERE id=$1`
+	defer metrics.StartSQLQuery("Orders", "GetByOrderIDPaged")()
+
+	return os.queryOrdersWithCursorPagination(ctx, query, []interface{}{orderID}, p)
+}
+
+func (os *Orders) GetByPartyAndMarketPaged(ctx context.Context, partyIDStr, marketIDStr string, p entities.Pagination) ([]entities.Order, entities.PageInfo, error) {
+	if partyIDStr == "" {
+		return nil, entities.PageInfo{}, errors.New("partyID is required")
+	}
+
+	partyID := entities.NewPartyID(partyIDStr)
+
+	args := make([]interface{}, 0)
+	args = append(args, partyID)
+
+	query := `SELECT * from orders_current WHERE party_id=$1`
+
+	if marketIDStr != "" {
+		marketID := entities.NewMarketID(marketIDStr)
+		args = append(args, marketID)
+		query = fmt.Sprintf("%s AND market_id=$2", query)
+	}
+
+	defer metrics.StartSQLQuery("Orders", "GetByPartyAndMarketID")()
+
+	return os.queryOrdersWithCursorPagination(ctx, query, args, p)
 }
