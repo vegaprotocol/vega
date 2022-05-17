@@ -197,7 +197,7 @@ type EventService interface {
 // LiquidityService ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/liquidity_service_mock.go -package mocks code.vegaprotocol.io/data-node/api LiquidityService
 type LiquidityService interface {
-	Get(party, market string) ([]pbtypes.LiquidityProvision, error)
+	Get(party, market string) ([]*pbtypes.LiquidityProvision, error)
 }
 
 // NodeService ...
@@ -489,7 +489,7 @@ func (t *tradingDataService) LiquidityProvisions(ctx context.Context, req *proto
 	out := make([]*pbtypes.LiquidityProvision, 0, len(lps))
 	for _, v := range lps {
 		v := v
-		out = append(out, &v)
+		out = append(out, v)
 	}
 	return &protoapi.LiquidityProvisionsResponse{
 		LiquidityProvisions: out,
