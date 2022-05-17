@@ -18,8 +18,8 @@ create table assets
     quantum             INT,
     source              TEXT,
     erc20_contract      TEXT,
-    lifetime_limit      TEXT,
-    withdraw_threshold  TEXT,
+    lifetime_limit      NUMERIC(32, 0) NOT NULL,
+    withdraw_threshold  NUMERIC(32, 0) NOT NULL,
     vega_time           TIMESTAMP WITH TIME ZONE NOT NULL REFERENCES blocks (vega_time)
 );
 

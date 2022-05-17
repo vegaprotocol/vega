@@ -24,8 +24,8 @@ type Asset struct {
 	Source            string
 	ERC20Contract     string
 	VegaTime          time.Time
-	LifetimeLimit     string
-	WithdrawThreshold string
+	LifetimeLimit     decimal.Decimal
+	WithdrawThreshold decimal.Decimal
 }
 
 func (a Asset) ToProto() *pb.Asset {
@@ -49,8 +49,8 @@ func (a Asset) ToProto() *pb.Asset {
 		pbAsset.Details.Source = &pb.AssetDetails_Erc20{
 			Erc20: &pb.ERC20{
 				ContractAddress:   a.ERC20Contract,
-				LifetimeLimit:     a.LifetimeLimit,
-				WithdrawThreshold: a.WithdrawThreshold,
+				LifetimeLimit:     a.LifetimeLimit.String(),
+				WithdrawThreshold: a.WithdrawThreshold.String(),
 			},
 		}
 	}
