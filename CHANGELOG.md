@@ -9,7 +9,7 @@
 - [](https://github.com/vegaprotocol/data-node/issues/xxx) -
 
 ### 🛠  Improvements
-- [](https://github.com/vegaprotocol/data-node/issues/xxx) -
+- [609](https://github.com/vegaprotocol/data-node/issues/609) - Add fields related to network limit for ERC20 asset
 
 ### 🐛 Fixes
 - [](https://github.com/vegaprotocol/data-node/issues/xxx) -

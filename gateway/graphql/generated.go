@@ -216,7 +216,9 @@ type ComplexityRoot struct {
 	}
 
 	ERC20 struct {
-		ContractAddress func(childComplexity int) int
+		ContractAddress   func(childComplexity int) int
+		LifetimeLimit     func(childComplexity int) int
+		WithdrawThreshold func(childComplexity int) int
 	}
 
 	Epoch struct {
@@ -2102,6 +2104,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.ERC20.ContractAddress(childComplexity), true
+
+	case "ERC20.lifetimeLimit":
+		if e.complexity.ERC20.LifetimeLimit == nil {
+			break
+		}
+
+		return e.complexity.ERC20.LifetimeLimit(childComplexity), true
+
+	case "ERC20.withdrawThreshold":
+		if e.complexity.ERC20.WithdrawThreshold == nil {
+			break
+		}
+
+		return e.complexity.ERC20.WithdrawThreshold(childComplexity), true
 
 	case "Epoch.delegations":
 		if e.complexity.Epoch.Delegations == nil {
@@ -7561,6 +7577,16 @@ union AssetSource = BuiltinAsset | ERC20
 type ERC20 {
   "The address of the erc20 contract"
   contractAddress: String!
+  """
+  The lifetime limits deposit per address
+  Note: this is a temporary measure for restricted mainnet
+  """
+  lifetimeLimit: String!
+  """
+  The maximum allowed per withdraw
+  Note: this is a temporary measure for restricted mainnet
+  """
+  withdrawThreshold: String!
 }
 
 "A vega builtin asset, mostly for testing purpose"
@@ -14218,6 +14244,76 @@ func (ec *executionContext) _ERC20_contractAddress(ctx context.Context, field gr
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.ContractAddress, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ERC20_lifetimeLimit(ctx context.Context, field graphql.CollectedField, obj *Erc20) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "ERC20",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.LifetimeLimit, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ERC20_withdrawThreshold(ctx context.Context, field graphql.CollectedField, obj *Erc20) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "ERC20",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.WithdrawThreshold, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -38159,6 +38255,26 @@ func (ec *executionContext) _ERC20(ctx context.Context, sel ast.SelectionSet, ob
 		case "contractAddress":
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._ERC20_contractAddress(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "lifetimeLimit":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._ERC20_lifetimeLimit(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "withdrawThreshold":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._ERC20_withdrawThreshold(ctx, field, obj)
 			}
 
 			out.Values[i] = innerFunc(ctx)

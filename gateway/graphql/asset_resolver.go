@@ -95,6 +95,8 @@ func BuiltinAssetFromProto(ba *types.BuiltinAsset) *BuiltinAsset {
 
 func ERC20FromProto(ea *types.ERC20) *Erc20 {
 	return &Erc20{
-		ContractAddress: ea.ContractAddress,
+		ContractAddress:   ea.ContractAddress,
+		LifetimeLimit:     ea.LifetimeLimit,
+		WithdrawThreshold: ea.WithdrawThreshold,
 	}
 }

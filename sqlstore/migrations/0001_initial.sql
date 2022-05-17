@@ -10,15 +10,17 @@ create table blocks
 
 create table assets
 (
-    id             BYTEA NOT NULL PRIMARY KEY,
-    name           TEXT NOT NULL,
-    symbol         TEXT NOT NULL,
-    total_supply   NUMERIC(32, 0),
-    decimals       INT,
-    quantum        INT,
-    source         TEXT,
-    erc20_contract TEXT,
-    vega_time      TIMESTAMP WITH TIME ZONE NOT NULL REFERENCES blocks (vega_time)
+    id                  BYTEA NOT NULL PRIMARY KEY,
+    name                TEXT NOT NULL,
+    symbol              TEXT NOT NULL,
+    total_supply        NUMERIC(32, 0),
+    decimals            INT,
+    quantum             INT,
+    source              TEXT,
+    erc20_contract      TEXT,
+    lifetime_limit      TEXT,
+    withdraw_threshold  TEXT,
+    vega_time           TIMESTAMP WITH TIME ZONE NOT NULL REFERENCES blocks (vega_time)
 );
 
 create table parties

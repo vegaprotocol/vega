@@ -812,6 +812,16 @@ union AssetSource = BuiltinAsset | ERC20
 type ERC20 {
   "The address of the erc20 contract"
   contractAddress: String!
+  """
+  The lifetime limits deposit per address
+  Note: this is a temporary measure for restricted mainnet
+  """
+  lifetimeLimit: String!
+  """
+  The maximum allowed per withdraw
+  Note: this is a temporary measure for restricted mainnet
+  """
+  withdrawThreshold: String!
 }
 
 "A vega builtin asset, mostly for testing purpose"

@@ -74,13 +74,14 @@ func (as *Asset) addAsset(ctx context.Context, va vega.Asset, vegaTime time.Time
 		return errors.Errorf("bad quantum '%v'", va.Details.Quantum)
 	}
 
-	var source, erc20Contract string
-
+	var source, erc20Contract, lifetimeLimit, withdrawalThreshold string
 	switch src := va.Details.Source.(type) {
 	case *vega.AssetDetails_BuiltinAsset:
 		source = src.BuiltinAsset.MaxFaucetAmountMint
 	case *vega.AssetDetails_Erc20:
 		erc20Contract = src.Erc20.ContractAddress
+		lifetimeLimit = src.Erc20.LifetimeLimit
+		withdrawalThreshold = src.Erc20.WithdrawThreshold
 	default:
 		return errors.Errorf("unknown asset source: %v", source)
 	}
@@ -92,15 +93,17 @@ func (as *Asset) addAsset(ctx context.Context, va vega.Asset, vegaTime time.Time
 	decimals := int(va.Details.Decimals)
 
 	asset := entities.Asset{
-		ID:            entities.NewAssetID(va.Id),
-		Name:          va.Details.Name,
-		Symbol:        va.Details.Symbol,
-		TotalSupply:   totalSupply,
-		Decimals:      decimals,
-		Quantum:       quantum,
-		Source:        source,
-		ERC20Contract: erc20Contract,
-		VegaTime:      vegaTime,
+		ID:                entities.NewAssetID(va.Id),
+		Name:              va.Details.Name,
+		Symbol:            va.Details.Symbol,
+		TotalSupply:       totalSupply,
+		Decimals:          decimals,
+		Quantum:           quantum,
+		Source:            source,
+		ERC20Contract:     erc20Contract,
+		VegaTime:          vegaTime,
+		LifetimeLimit:     lifetimeLimit,
+		WithdrawThreshold: withdrawalThreshold,
 	}
 
 	return errors.WithStack(as.store.Add(ctx, asset))
