@@ -15,6 +15,11 @@ import (
 	"code.vegaprotocol.io/vega/types/num"
 )
 
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/orderbook_mock.go -package mocks code.vegaprotocol.io/vega/liquidity OrderBook
+type OrderBook interface {
+	GetOrderByID(orderID string) (*types.Order, error)
+}
+
 type SnapshotEngine struct {
 	*Engine
 	pl     types.Payload
@@ -69,6 +74,30 @@ func NewSnapshotEngine(config Config,
 	se.buildHashKeys(market)
 
 	return se
+}
+
+func reconcileOrders(orders *SnapshotablePartiesOrders, orderbook OrderBook) *SnapshotablePartiesOrders {
+	newOrders := newSnapshotablePartiesOrders()
+	for _, v := range orders.m {
+		for _, o := range v {
+			order, err := orderbook.GetOrderByID(o.ID)
+			if err != nil {
+				// if not in the order book we just add the original
+				newOrders.Add(o.Party, o)
+				continue
+			}
+			newOrders.Add(order.Party, order)
+		}
+	}
+	newOrders.updated = false
+	return newOrders
+}
+
+// ReconcileWithOrderBook ensures that when restoring state from a snapshot the orders in the matching engine and
+// liquidity engine are pointers to the same underlying order struct.
+func (e *SnapshotEngine) ReconcileWithOrderBook(orderbook OrderBook) {
+	e.orders = reconcileOrders(e.orders, orderbook)
+	e.liquidityOrders = reconcileOrders(e.liquidityOrders, orderbook)
 }
 
 func (e *SnapshotEngine) UpdateMarketConfig(model risk.Model, monitor PriceMonitor) {
