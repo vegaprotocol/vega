@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/hex"
+	"errors"
 	"testing"
 	"time"
 
@@ -214,6 +215,39 @@ func TestSnapshotRoundTrip(t *testing.T) {
 		h := crypto.Hash(s)
 		// compare hashes to the expected ones
 		assert.Equalf(t, expectedHashes2[key], hex.EncodeToString(h), "hashes for key %q does not match", key)
+	}
+
+	// now reconcile with orderbook
+	orders := e3.engine.GetLiquidityOrders(party1)
+	require.Len(t, orders, 2)
+
+	// create copies of the orders
+	idToOrder := map[string]*types.Order{
+		orders[0].ID: orders[0].Clone(),
+		orders[1].ID: orders[1].Clone(),
+	}
+
+	e3.orderbook.EXPECT().GetOrderByID(gomock.Any()).AnyTimes().DoAndReturn(
+		func(orderID string) (*types.Order, error) {
+			if o, ok := idToOrder[orderID]; ok {
+				return o, nil
+			}
+			return nil, errors.New("not gound")
+		},
+	)
+	err = e3.engine.ReconcileWithOrderBook(e3.orderbook)
+	require.NoError(t, err)
+
+	// change a value and check the orders in the engine also change i.e they both point to the same order
+	now := time.Now().UnixNano()
+	for _, o := range idToOrder {
+		o.UpdatedAt = now
+	}
+
+	orders = e3.engine.GetLiquidityOrders(party1)
+	require.Len(t, orders, 2)
+	for _, o := range orders {
+		assert.Equal(t, now, o.UpdatedAt)
 	}
 }
 

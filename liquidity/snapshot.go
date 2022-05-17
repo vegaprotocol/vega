@@ -15,6 +15,11 @@ import (
 	"code.vegaprotocol.io/vega/types/num"
 )
 
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/orderbook_mock.go -package mocks code.vegaprotocol.io/vega/liquidity OrderBook
+type OrderBook interface {
+	GetOrderByID(orderID string) (*types.Order, error)
+}
+
 type SnapshotEngine struct {
 	*Engine
 	pl     types.Payload
@@ -69,6 +74,44 @@ func NewSnapshotEngine(config Config,
 	se.buildHashKeys(market)
 
 	return se
+}
+
+// ReconcileWithOrderBook ensures that when restoring state from a snapshot the orders in the matching engine and
+// liquidity engine are pointers to the same underlying order struct.
+func (e *SnapshotEngine) ReconcileWithOrderBook(orderbook OrderBook) error {
+	newOrders := newSnapshotablePartiesOrders()
+	for _, v := range e.orders.m {
+		for _, o := range v {
+			order, err := orderbook.GetOrderByID(o.ID)
+			if err != nil {
+				// if not in the order book we just add the original
+				newOrders.Add(o.Party, o)
+				continue
+			}
+			newOrders.Add(order.Party, order)
+		}
+	}
+	// Add sets update to true, but we're just filling in from a restore so we don't want to do that
+	newOrders.updated = false
+	e.orders = newOrders
+
+	// Now liquidity orders
+	newLiquidityOrders := newSnapshotablePartiesOrders()
+	for _, v := range e.liquidityOrders.m {
+		for _, o := range v {
+			order, err := orderbook.GetOrderByID(o.ID)
+			if err != nil {
+				// if not in the order book we just add the original
+				newLiquidityOrders.Add(o.Party, o)
+				continue
+			}
+			newLiquidityOrders.Add(order.Party, order)
+		}
+	}
+	// Add sets update to true, but we're just filling in from a restore so we don't want to do that
+	newLiquidityOrders.updated = false
+	e.liquidityOrders = newLiquidityOrders
+	return nil
 }
 
 func (e *SnapshotEngine) UpdateMarketConfig(model risk.Model, monitor PriceMonitor) {
