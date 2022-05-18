@@ -85,6 +85,7 @@ type Snapshot interface {
 
 type StateVarEngine interface {
 	ProposedValueReceived(ctx context.Context, ID, nodeID, eventID string, bundle *statevar.KeyValueBundle) error
+	OnBlockEnd(ctx context.Context)
 }
 
 type BlockchainClient interface {
@@ -568,6 +569,8 @@ func (app *App) OnEndBlock(req tmtypes.RequestEndBlock) (ctx context.Context, re
 	if app.spam != nil {
 		app.spam.EndOfBlock(uint64(req.Height))
 	}
+
+	app.stateVar.OnBlockEnd(ctx)
 
 	powerUpdates := app.top.GetValidatorPowerUpdates()
 	if len(powerUpdates) > 0 {

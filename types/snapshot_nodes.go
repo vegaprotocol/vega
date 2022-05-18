@@ -206,7 +206,8 @@ type Topology struct {
 }
 
 type PayloadFloatingPointConsensus struct {
-	ConsensusData []*snapshot.NextTimeTrigger
+	ConsensusData               []*snapshot.NextTimeTrigger
+	StateVariablesInternalState []*snapshot.StateVarInternalState
 }
 
 type PayloadMarketActivityTracker struct {
