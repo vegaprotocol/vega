@@ -132,7 +132,8 @@ func newMarket(config *market.Config, netparams *netparams.Store, row marketRow)
 	// the governance engine would fill in the liquidity monitor parameters from the network parameters (unless set explicitly)
 	// so we need to do this here by hand. If the network parameters weren't set we use the below defaults
 	timeWindow := int64(3600)
-	scalingFactor := num.MustDecimalFromString("10")
+	scalingFactor := num.DecimalFromInt64(10)
+	triggeringRatio := num.DecimalFromInt64(0)
 
 	if tw, err := netparams.GetDuration("market.stake.target.timeWindow"); err == nil {
 		timeWindow = int64(tw.Seconds())
@@ -140,6 +141,10 @@ func newMarket(config *market.Config, netparams *netparams.Store, row marketRow)
 
 	if sf, err := netparams.GetDecimal("market.stake.target.scalingFactor"); err == nil {
 		scalingFactor = sf
+	}
+
+	if tr, err := netparams.GetDecimal("market.liquidity.targetstake.triggering.ratio"); err == nil {
+		triggeringRatio = tr
 	}
 
 	m := types.Market{
@@ -180,7 +185,7 @@ func newMarket(config *market.Config, netparams *netparams.Store, row marketRow)
 				TimeWindow:    timeWindow,
 				ScalingFactor: scalingFactor,
 			},
-			TriggeringRatio: num.DecimalFromInt64(0),
+			TriggeringRatio: triggeringRatio,
 		},
 	}
 
