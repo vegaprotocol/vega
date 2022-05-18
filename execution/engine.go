@@ -453,12 +453,6 @@ func (e *Engine) propagateInitialNetParams(ctx context.Context, mkt *Market) err
 		}
 	}
 
-	if !e.npv.targetStakeScalingFactor.Equal(num.DecimalFromInt64(-1)) {
-		if err := mkt.OnMarketTargetStakeScalingFactorUpdate(e.npv.targetStakeScalingFactor); err != nil {
-			return err
-		}
-	}
-
 	if !e.npv.infrastructureFee.Equal(num.DecimalFromInt64(-1)) {
 		if err := mkt.OnFeeFactorsInfrastructureFeeUpdate(ctx, e.npv.infrastructureFee); err != nil {
 			return err
@@ -479,10 +473,6 @@ func (e *Engine) propagateInitialNetParams(ctx context.Context, mkt *Market) err
 
 	if e.npv.feeDistributionTimeStep != -1 {
 		mkt.OnMarketLiquidityProvidersFeeDistribitionTimeStep(e.npv.feeDistributionTimeStep)
-	}
-
-	if e.npv.timeWindowUpdate != -1 {
-		mkt.OnMarketTargetStakeTimeWindowUpdate(e.npv.timeWindowUpdate)
 	}
 
 	if e.npv.marketValueWindowLength != -1 {

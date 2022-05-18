@@ -125,7 +125,7 @@ func InitializeScenario(s *godog.ScenarioContext) {
 		return steps.TheMarginCalculator(marketConfig, name, table)
 	})
 	s.Step(`^the markets:$`, func(table *godog.Table) error {
-		markets, err := steps.TheMarkets(marketConfig, execsetup.executionEngine, execsetup.collateralEngine, table)
+		markets, err := steps.TheMarkets(marketConfig, execsetup.executionEngine, execsetup.collateralEngine, execsetup.netParams, table)
 		execsetup.markets = markets
 		return err
 	})
