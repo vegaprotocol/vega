@@ -4,7 +4,9 @@ import (
 	"context"
 
 	checkpoint "code.vegaprotocol.io/protos/vega/checkpoint/v1"
-	events "code.vegaprotocol.io/protos/vega/events/v1"
+	pbevents "code.vegaprotocol.io/protos/vega/events/v1"
+	"code.vegaprotocol.io/vega/events"
+
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
 
@@ -54,8 +56,11 @@ func (c *Checkpoint) Load(ctx context.Context, data []byte) error {
 		return err
 	}
 
+	stakeLinkingEvents := make([]events.Event, 0, len(b.Accepted))
+
 	for _, evt := range b.Accepted {
 		stakeLinking := types.StakeLinkingFromProto(evt)
+		stakeLinkingEvents = append(stakeLinkingEvents, events.NewStakeLinking(ctx, *stakeLinking))
 		// this will send all necessary events as well
 		c.accounting.AddEvent(ctx, stakeLinking)
 		// now add event to the hash mapping
@@ -66,6 +71,8 @@ func (c *Checkpoint) Load(ctx context.Context, data []byte) error {
 		}
 	}
 
+	c.accounting.broker.SendBatch(stakeLinkingEvents)
+
 	// 0 is default value, we assume that it was then not set
 	if b.LastBlockSeen != 0 {
 		c.ethEventSource.UpdateStakingStartingBlock(b.LastBlockSeen)
@@ -74,8 +81,8 @@ func (c *Checkpoint) Load(ctx context.Context, data []byte) error {
 	return nil
 }
 
-func (c *Checkpoint) getAcceptedEvents() []*events.StakeLinking {
-	out := make([]*events.StakeLinking, 0, len(c.accounting.hashableAccounts))
+func (c *Checkpoint) getAcceptedEvents() []*pbevents.StakeLinking {
+	out := make([]*pbevents.StakeLinking, 0, len(c.accounting.hashableAccounts))
 
 	for _, acc := range c.accounting.hashableAccounts {
 		for _, evt := range acc.Events {
