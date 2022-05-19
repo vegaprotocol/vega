@@ -63,7 +63,7 @@ Feature: Staking & Delegation
     #complete the first epoch for the self delegation to take effect
     Then the network moves ahead "7" blocks
 
-  Scenario: Parties get rewarded for a full epoch of having delegated stake
+  Scenario: Parties get rewarded for a full epoch of having delegated stake (0061-REWP-006)
     Desciption: Parties have had their tokens delegated to nodes for a full epoch and get rewarded for the full epoch. 
 
     #advance to the end of the epoch / start next epoch
@@ -77,7 +77,7 @@ Feature: Staking & Delegation
     |  node3  |      0.07887     |     0.07887      | 
     |  node4  |      0.07657     |     0.07657      | 
 
-  Scenario: No funds in reward account however validator scores get published
+  Scenario: No funds in reward account however validator scores get published (0061-REWP-additional-tests)
     Desciption: Parties have had their tokens delegated to nodes for a full epoch but the reward account balance is 0
 
     #advance to the end of the epoch / start next epoch
@@ -91,7 +91,7 @@ Feature: Staking & Delegation
     |  node3  |      0.07887     |     0.07887      | 
     |  node4  |      0.07657     |     0.07657      | 
 
-  Scenario: Parties get rewarded for a full epoch of having delegated stake - the reward amount is capped 
+  Scenario: Parties get rewarded for a full epoch of having delegated stake - the reward amount is capped (0061-REWP-additional-tests) 
     Desciption: Parties have had their tokens delegated to nodes for a full epoch and get rewarded for the full epoch. 
     
     #the available amount for the epoch is 50k
@@ -134,7 +134,7 @@ Feature: Staking & Delegation
     | node12 | VEGA  |  3828  | 
     | node13 | VEGA  |  3828  | 
 
-  Scenario: Parties request to undelegate at the end of the epoch. They get fully rewarded for the current epoch and not get rewarded in the following epoch for the undelegated stake
+  Scenario: Parties request to undelegate at the end of the epoch. They get fully rewarded for the current epoch and not get rewarded in the following epoch for the undelegated stake (0061-REWP-additional-tests)
     Desciption: Parties have had their tokens delegated to nodes for a full epoch and get rewarded for the full epoch. During the epoch however they request to undelegate at the end of the epoch part of their stake. On the following epoch they are not rewarded for the undelegated stake. 
 
     Then the parties submit the following undelegations:
@@ -212,7 +212,7 @@ Feature: Staking & Delegation
     | node12 | VEGA  |  1921  | 
     | node13 | VEGA  |  1921  | 
 
-  Scenario: Parties request to undelegate now during the epoch. They only get rewarded for the current epoch for the fraction that remained for the whole duration 
+  Scenario: Parties request to undelegate now during the epoch. They only get rewarded for the current epoch for the fraction that remained for the whole duration (0061-REWP-additional-tests)
     Desciption: Parties have had their tokens delegated to nodes for a full epoch and get rewarded for the full epoch. During the epoch however they request to undelegate at the end of the epoch part of their stake. On the following epoch they are not rewarded for the undelegated stake. 
 
     Then the parties submit the following undelegations:
@@ -259,7 +259,7 @@ Feature: Staking & Delegation
     | node12 | VEGA  |  3841  | 
     | node13 | VEGA  |  3841  | 
 
-  Scenario: Parties withdraw from their staking account during an epoch once having active delegations - they should not get rewarded for those uncovered delegations 
+  Scenario: Parties withdraw from their staking account during an epoch once having active delegations - they should not get rewarded for those uncovered delegations (0061-REWP-additional-tests)
     Desciption: Parties have active delegations on epoch 1 and withdraw stake from the staking account. They should only get rewarded for any delegation that still has cover 
 
     #party1 has a balance of 10k tokens in their staking account and an active delegation in this epoch of 600. By withdrawing 9850, 450 of their delegation needs to be revoked and they should only get rewarded for the 150 tokens
@@ -315,7 +315,7 @@ Feature: Staking & Delegation
     Then "party1" should have general account balance of "49" for asset "VEGA"
     Then "node1" should have general account balance of "3842" for asset "VEGA"
   
-  Scenario: Party has delegation unfunded for majority of the epoch (except for begining and end) - should get no rewards.
+  Scenario: Party has delegation unfunded for majority of the epoch (except for begining and end) - should get no rewards (0061-REWP-additional-tests)
     Given the parties withdraw from staking account the following amount:  
       | party  | asset | amount |
       | party1 | VEGA  |  9999  |
@@ -433,7 +433,7 @@ Feature: Staking & Delegation
     | node12 | VEGA  |  958   | 
     | node13 | VEGA  |  958   | 
   
-  Scenario: A party can request delegate and undelegate from the same node at the same epoch such that the request can balance each other without affecting the actual delegate balance
+  Scenario: A party can request delegate and undelegate from the same node at the same epoch such that the request can balance each other without affecting the actual delegate balance (0061-REWP-additional-tests)
     Description: party requests to delegate to node1 at the end of the epoch and regrets it and undelegate the whole amount to delegate it to another node
     And the parties submit the following undelegations:
     | party  | node id  | amount |    when      |
@@ -518,7 +518,7 @@ Feature: Staking & Delegation
     | node12 | VEGA  |  1914  | 
     | node13 | VEGA  |  1914  | 
   
-  Scenario: A party has active delegations and submits an undelegate request followed by a delegation request that covers only part of the undelegation such that the undelegation still takes place
+  Scenario: A party has active delegations and submits an undelegate request followed by a delegation request that covers only part of the undelegation such that the undelegation still takes place (0061-REWP-additional-tests)
     Description: A party delegated tokens to node1 at previous epoch such that the delegations is now active and is requesting to undelegate some of the tokens at the end of the current epoch. Then regret some of it and submit a delegation request that undoes some of the undelegation but still some of it remains.
 
     #advance to the end of the epoch
@@ -610,7 +610,7 @@ Feature: Staking & Delegation
     | node12 | VEGA  |  958   | 
     | node13 | VEGA  |  958   | 
   
-  Scenario: Parties get rewarded for a full epoch of having delegated stake - the reward amount is capped per participant
+  Scenario: Parties get rewarded for a full epoch of having delegated stake - the reward amount is capped per participant (0061-REWP-additional-tests)
    Description: Parties have had their tokens delegated to nodes for a full epoch and get rewarded for the full epoch and the reward amount per participant is capped
   
     Given the following network parameters are set:
@@ -655,7 +655,7 @@ Feature: Staking & Delegation
     | node12 | VEGA  |  3000  | 
     | node13 | VEGA  |  3000  |
 
-  Scenario: Topping up the reward account and confirming reward transfers are correctly refelected in parties account balances
+  Scenario: Topping up the reward account and confirming reward transfers are correctly refelected in parties account balances (0061-REWP-additional-tests)
     Description: Topping up the reward account and confirming reward transfers are correctly refelected in parties account balances when they get rewarded for a full epoch of having delegated stake
     #advance to the end of the epoch
     Given the global reward account gets the following deposits:
@@ -743,7 +743,7 @@ Feature: Staking & Delegation
     Then "party1" should have general account balance of "300" for asset "VEGA"
     Then "node1" should have general account balance of "5748" for asset "VEGA"
 
-  Scenario: Parties get the smallest reward amount of 1 when the reward pot is smallest
+  Scenario: Parties get the smallest reward amount of 1 when the reward pot is smallest (0061-REWP-additional-tests)
     Description:  Validators get the smallest reward amount of 1 and delegator earns nothing
     # Explanation - 1 vega is actually 1000000000000000000 so when reward account = 27 then that’s a very very very small fraction of a vega. Hence noone gets anything because the calculation is made in integers so anything that ends up being less than one is 0
 
