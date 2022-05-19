@@ -2,6 +2,7 @@ package sqlsubscribers
 
 import (
 	"context"
+	"fmt"
 	"math"
 	"strconv"
 	"time"
@@ -74,14 +75,28 @@ func (as *Asset) addAsset(ctx context.Context, va vega.Asset, vegaTime time.Time
 		return errors.Errorf("bad quantum '%v'", va.Details.Quantum)
 	}
 
-	var source, erc20Contract, lifetimeLimit, withdrawalThreshold string
+	var source, erc20Contract string
+	lifetimeLimit := decimal.Zero
+	withdrawalThreshold := decimal.Zero
 	switch src := va.Details.Source.(type) {
 	case *vega.AssetDetails_BuiltinAsset:
 		source = src.BuiltinAsset.MaxFaucetAmountMint
 	case *vega.AssetDetails_Erc20:
 		erc20Contract = src.Erc20.ContractAddress
-		lifetimeLimit = src.Erc20.LifetimeLimit
-		withdrawalThreshold = src.Erc20.WithdrawThreshold
+		if src.Erc20.LifetimeLimit != "" {
+			res, err := decimal.NewFromString(src.Erc20.LifetimeLimit)
+			if err != nil {
+				return fmt.Errorf("couldn't parse lifetime_limit: %w", err)
+			}
+			lifetimeLimit = res
+		}
+		if src.Erc20.WithdrawThreshold != "" {
+			res, err := decimal.NewFromString(src.Erc20.WithdrawThreshold)
+			if err != nil {
+				return fmt.Errorf("couldn't parse withdraw_threshold: %w", err)
+			}
+			withdrawalThreshold = res
+		}
 	default:
 		return errors.Errorf("unknown asset source: %v", source)
 	}
