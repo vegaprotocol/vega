@@ -3,7 +3,6 @@ package banking_test
 import (
 	"bytes"
 	"context"
-	"math/rand"
 	"strconv"
 	"testing"
 	"time"
@@ -12,7 +11,6 @@ import (
 	"code.vegaprotocol.io/shared/paths"
 	"code.vegaprotocol.io/vega/assets"
 	"code.vegaprotocol.io/vega/assets/builtin"
-	"code.vegaprotocol.io/vega/banking"
 	"code.vegaprotocol.io/vega/integration/stubs"
 	vgcontext "code.vegaprotocol.io/vega/libs/context"
 	"code.vegaprotocol.io/vega/libs/proto"
@@ -22,7 +20,6 @@ import (
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
 	"github.com/golang/mock/gomock"
-	"github.com/jfcg/sorty/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
