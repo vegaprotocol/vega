@@ -75,6 +75,7 @@ func mapToResults(m map[string]*statevar.KeyValueBundle) []*snapshot.FloatingPoi
 
 func (sv *StateVariable) serialise() *snapshot.StateVarInternalState {
 	return &snapshot.StateVarInternalState{
+		Id:                          sv.ID,
 		EventId:                     sv.eventID,
 		State:                       int32(sv.state),
 		ValidatorsResults:           mapToResults(sv.validatorResults),
@@ -148,6 +149,7 @@ func (e *Engine) postRestore(stateVariablesInternalState []*snapshot.StateVarInt
 	for _, svis := range stateVariablesInternalState {
 		sv, ok := e.stateVars[svis.Id]
 		if !ok {
+			e.log.Panic("expecting a state variable with id to exist during post restore", logging.String("ID", svis.Id))
 			continue
 		}
 		sv.eventID = svis.EventId
