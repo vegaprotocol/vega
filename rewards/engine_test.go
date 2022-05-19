@@ -95,6 +95,7 @@ func testCalculateRewards(t *testing.T) {
 	err = testEngine.collateral.IncrementBalance(context.Background(), rewardAccount.ID, num.NewUint(1000000))
 	require.Nil(t, err)
 
+	engine.currentTime = epoch.EndTime
 	payouts := engine.calculateRewardPayouts(context.Background(), epoch)
 	primary := payouts[0]
 	ersatz := payouts[1]
@@ -148,6 +149,7 @@ func testCalculateRewardsWithMaxPerParticipant(t *testing.T) {
 	engine.UpdateErsatzRewardFactor(context.Background(), num.DecimalFromFloat(0.5))
 
 	epoch := types.Epoch{EndTime: time.Now()}
+	testEngine.engine.currentTime = epoch.EndTime
 	rewardAccount, err := testEngine.collateral.GetGlobalRewardAccount("VEGA")
 	require.NoError(t, err)
 	testEngine.delegation.EXPECT().ProcessEpochDelegations(gomock.Any(), gomock.Any()).Return(testEngine.validatorData)

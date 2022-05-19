@@ -78,6 +78,7 @@ type Engine struct {
 	newEpochStarted       bool // flag to signal new epoch so we can update the voting power at the end of the block
 	epochSeq              string
 	ersatzRewardFactor    num.Decimal
+	currentTime           time.Time
 }
 
 type globalRewardParams struct {
@@ -179,6 +180,7 @@ func (e *Engine) onChainTimeUpdate(ctx context.Context, t time.Time) {
 	// resetting the seed every block, to both get some more unpredictability and still deterministic
 	// and play nicely with snapshot
 	e.rng = rand.New(rand.NewSource(t.Unix()))
+	e.currentTime = t
 }
 
 // OnEpochEvent calculates the reward amounts parties get for available reward schemes.
@@ -289,9 +291,9 @@ func (e *Engine) calculateRewardPayouts(ctx context.Context, epoch types.Epoch) 
 				if po != nil && !po.totalReward.IsZero() && !po.totalReward.IsNegative() {
 					po.rewardType = rewardType
 					po.market = account.MarketID
-					po.timestamp = epoch.EndTime.UnixNano()
+					po.timestamp = e.currentTime.UnixNano()
 					payouts = append(payouts, po)
-					e.emitEventsForPayout(ctx, epoch.EndTime, po)
+					e.emitEventsForPayout(ctx, e.currentTime, po)
 					e.distributePayout(ctx, po)
 				}
 			}
