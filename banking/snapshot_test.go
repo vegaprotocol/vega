@@ -43,38 +43,6 @@ func depositAt(eng *testEngine, asset, party string, amount *num.Uint, t time.Ti
 	}
 }
 
-func TestSort(t *testing.T) {
-	seen := []*snapshot.TxRef{
-		{Asset: "1", Hash: "a", LogIndex: 10, BlockNr: 1},
-		{Asset: "1", Hash: "a", LogIndex: 10, BlockNr: 2},
-		{Asset: "1", Hash: "a", LogIndex: 11, BlockNr: 1},
-		{Asset: "1", Hash: "b", LogIndex: 10, BlockNr: 1},
-		{Asset: "2", Hash: "a", LogIndex: 10, BlockNr: 1},
-	}
-	rand.Seed(time.Now().UnixNano())
-	rand.Shuffle(len(seen), func(i, j int) { seen[i], seen[j] = seen[j], seen[i] })
-	sorty.Sort(len(seen), banking.SeenSortFunc(seen))
-
-	for _, s := range seen {
-		println(s.String())
-	}
-
-	expected := []*snapshot.TxRef{
-		{Asset: "1", Hash: "a", LogIndex: 10, BlockNr: 1},
-		{Asset: "1", Hash: "a", LogIndex: 10, BlockNr: 2},
-		{Asset: "1", Hash: "a", LogIndex: 11, BlockNr: 1},
-		{Asset: "1", Hash: "b", LogIndex: 10, BlockNr: 1},
-		{Asset: "2", Hash: "a", LogIndex: 10, BlockNr: 1},
-	}
-
-	for i, s := range seen {
-		require.Equal(t, expected[i].Asset, s.Asset)
-		require.Equal(t, expected[i].Hash, s.Hash)
-		require.Equal(t, expected[i].LogIndex, s.LogIndex)
-		require.Equal(t, expected[i].BlockNr, s.BlockNr)
-	}
-}
-
 func testEngineAndSnapshot(t *testing.T) (*testEngine, *snp.Engine) {
 	t.Helper()
 	eng := getTestEngine(t)
