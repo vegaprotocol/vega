@@ -1,20 +1,37 @@
 # Changelog
 
-## Unreleased (0.51.0)
+## Unreleased (0.52.0)
 
 ### 🚨 Breaking changes
-- [5192](https://github.com/vegaprotocol/vega/issues/5192) - Require a rationale on proposals
+- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 ### 🗑️ Deprecation
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 ### 🛠 Improvements
-- [5318](https://github.com/vegaprotocol/vega/issues/5318) - Automatically dispatch reward pool into markets in recurring transfers
-- [5333](https://github.com/vegaprotocol/vega/issues/5333) - Run snapshot generation for all providers in parallel 
-- [5343](https://github.com/vegaprotocol/vega/issues/5343) - Snapshot optimisation part II - get rid of `getHash`
-- [5324](https://github.com/vegaprotocol/vega/issues/5324) -  Send event when oracle data doesn't match
+- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 ### 🐛 Fixes
+- [5362](https://github.com/vegaprotocol/vega/issues/5362) - Liquidity and order book point to same underlying order after restore
+- [5367](https://github.com/vegaprotocol/vega/issues/5367) - better serialisation for party orders in liquidity snapshot
+- [5377](https://github.com/vegaprotocol/vega/issues/5377) - Serialise state var internal state 
+- [5203](https://github.com/vegaprotocol/vega/issues/5203) - Market liquidity monitor parameters trump network parameters on market creation
+
+## 0.51.0
+
+### 🚨 Breaking changes
+- [5192](https://github.com/vegaprotocol/vega/issues/5192) - Require a rationale on proposals
+
+### 🛠 Improvements
+- [5318](https://github.com/vegaprotocol/vega/issues/5318) - Automatically dispatch reward pool into markets in recurring transfers
+- [5333](https://github.com/vegaprotocol/vega/issues/5333) - Run snapshot generation for all providers in parallel
+- [5343](https://github.com/vegaprotocol/vega/issues/5343) - Snapshot optimisation part II - get rid of `getHash`
+- [5324](https://github.com/vegaprotocol/vega/issues/5324) -  Send event when oracle data doesn't match
+- [5140](https://github.com/vegaprotocol/vega/issues/5140) - Move limits (enabled market / assets from) to network parameters
+- [5360](https://github.com/vegaprotocol/vega/issues/5360) - rewards test coverage
+
+### 🐛 Fixes
+- [5338](https://github.com/vegaprotocol/vega/issues/5338) - Checking a transaction should return proper success code
 - [5277](https://github.com/vegaprotocol/vega/issues/5277) - Updating a market should default auction extension to 1
 - [5284](https://github.com/vegaprotocol/vega/issues/5284) - price monitoring past prices are now included in the snapshot
 - [5294](https://github.com/vegaprotocol/vega/issues/5294) - Parse timestamps oracle in market proposal validation
@@ -38,6 +55,7 @@
 - [5271](https://github.com/vegaprotocol/vega/issues/5271) - Make generated hex IDs lower case
 - [5273](https://github.com/vegaprotocol/vega/issues/5273) - Reward / Transfer to allow payout of reward in an arbitrary asset unrelated to the settlement and by market.
 - [5207](https://github.com/vegaprotocol/vega/issues/5206) - Add integration tests to ensure price bounds and decimal places work as expected
+- [5243](https://github.com/vegaprotocol/vega/issues/5243) - Update equity like share according to spec changes.
 
 ### 🐛 Fixes
 - [4798](https://github.com/vegaprotocol/vega/issues/4978) - Set market pending timestamp to the time at which the market is created.

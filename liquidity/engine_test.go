@@ -49,6 +49,7 @@ type testEngine struct {
 	broker       *bmock.MockBroker
 	riskModel    *mocks.MockRiskModel
 	priceMonitor *mocks.MockPriceMonitor
+	orderbook    *mocks.MockOrderBook
 	engine       *liquidity.SnapshotEngine
 }
 
@@ -60,6 +61,7 @@ func newTestEngine(t *testing.T, now time.Time) *testEngine {
 	broker := bmock.NewMockBroker(ctrl)
 	risk := mocks.NewMockRiskModel(ctrl)
 	monitor := mocks.NewMockPriceMonitor(ctrl)
+	orderbook := mocks.NewMockOrderBook(ctrl)
 	market := "market-id"
 	asset := "asset-id"
 	liquidityConfig := liquidity.NewDefaultConfig()
@@ -77,6 +79,7 @@ func newTestEngine(t *testing.T, now time.Time) *testEngine {
 		broker:       broker,
 		riskModel:    risk,
 		priceMonitor: monitor,
+		orderbook:    orderbook,
 		engine:       engine,
 	}
 }

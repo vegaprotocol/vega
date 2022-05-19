@@ -1,4 +1,6 @@
 # Vega specific entries
+build/
+bin/
 cmd/*/*-dbg
 cmd/vega/vega*
 cmd/vegabenchmark/vegabenchmark*

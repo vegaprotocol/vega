@@ -196,7 +196,7 @@ func (s *coreService) CheckTransaction(ctx context.Context, req *protoapi.CheckT
 
 	return &protoapi.CheckTransactionResponse{
 		Code:      checkResult.Code,
-		Success:   true,
+		Success:   checkResult.IsOK(),
 		GasWanted: checkResult.GasWanted,
 		GasUsed:   checkResult.GasUsed,
 	}, nil
@@ -236,7 +236,7 @@ func (s *coreService) CheckRawTransaction(ctx context.Context, req *protoapi.Che
 
 	return &protoapi.CheckRawTransactionResponse{
 		Code:      checkResult.Code,
-		Success:   true,
+		Success:   checkResult.IsOK(),
 		GasWanted: checkResult.GasWanted,
 		GasUsed:   checkResult.GasUsed,
 	}, nil

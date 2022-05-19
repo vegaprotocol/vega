@@ -48,16 +48,9 @@ func (fs *FeeSplitter) Elapsed() time.Duration {
 	return fs.currentTime.Sub(fs.timeWindowStart)
 }
 
-func maxDuration(a, b time.Duration) time.Duration {
-	if a > b {
-		return a
-	}
-	return b
-}
-
 func (fs *FeeSplitter) activeWindowLength(mvw time.Duration) time.Duration {
 	t := fs.Elapsed()
-	return t - maxDuration(t-mvw, 0)
+	return t - num.MaxV(t-mvw, 0)
 }
 
 // MarketValueProxy returns the market value proxy according to the spec:

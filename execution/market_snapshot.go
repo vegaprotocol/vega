@@ -105,7 +105,7 @@ func NewMarketFromSnapshot(
 
 	liqEngine := liquidity.NewSnapshotEngine(liquidityConfig, log, broker, tradableInstrument.RiskModel, pMonitor, asset, mkt.ID, stateVarEngine, mkt.TickSize(), priceFactor.Clone(), positionFactor)
 	// call on chain time update straight away, so
-	// the time in the engine is being updatedat creation
+	// the time in the engine is being updated at creation
 	liqEngine.OnChainTimeUpdate(ctx, now)
 
 	market := &Market{
