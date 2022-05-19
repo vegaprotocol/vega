@@ -125,7 +125,6 @@ func (e *Engine) serialiseWithdrawals() ([]byte, error) {
 	return proto.Marshal(payload.IntoProto())
 }
 
-
 func (e *Engine) serialiseSeen() ([]byte, error) {
 	payload := types.Payload{
 		Data: &types.PayloadBankingSeen{
