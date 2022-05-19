@@ -144,7 +144,7 @@ Scenario: 001: 0070-MKTD-007, 0042-LIQF-001, 0018-RSKM-005, 0018-RSKM-008
       | party2 | ETH   | USD/DEC19 | 4815112741   | 9985554661777  |            |
       | party2 | USD   | USD/DEC19 | 4815112741   | 10000000000    |            |
 
-  Scenario: 002: 0070-MKTD-007, 0042-LIQF-001, 0038-OLIQ-002; 0052-FPOS-002, check updated version of dpd feature in 0038-OLIQ-liquidity_provision_order_type.md
+  Scenario: 002: 0070-MKTD-007, 0042-LIQF-001, 0038-OLIQ-002; 0038-OLIQ-006; 0052-FPOS-002, check updated version of dpd feature in 0038-OLIQ-liquidity_provision_order_type.md
  
   Background:
 
