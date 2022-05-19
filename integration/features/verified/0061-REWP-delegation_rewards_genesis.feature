@@ -32,7 +32,7 @@ Feature: Staking & Delegation - scenarios focusing on initial epoch
       | node12 |         1000000         |
       | node13 |         1000000         |
 
-  Scenario: No delegation in the first epoch
+  Scenario: No delegation in the first epoch (0061-REWP-additional-tests)
 
     
     Then the network moves ahead "172804" blocks
@@ -145,7 +145,7 @@ Feature: Staking & Delegation - scenarios focusing on initial epoch
       | node12 | VEGA  |     0   | 
       | node13 | VEGA  |     0   | 
 
-  Scenario: Only a few validators self-delegate, no delegation
+  Scenario: Only a few validators self-delegate, no delegation (0061-REWP-additional-tests)
 
     #set up the self delegation of the validators (number of validators = min. validators parameter)
     Then the parties submit the following delegations:
@@ -201,7 +201,7 @@ Feature: Staking & Delegation - scenarios focusing on initial epoch
       | node12 | VEGA  |     0  | 
       | node13 | VEGA  |     0  | 
 
-  Scenario: Only a few validators self-delegate, small delegation to a single validator (with own stake). Some validators delegate over max delegatable amount.
+  Scenario: Only a few validators self-delegate, small delegation to a single validator (with own stake). Some validators delegate over max delegatable amount (0061-REWP-additional-tests)
 
     And the parties deposit on asset's general account the following amount:
       | party  | asset  | amount |
@@ -297,7 +297,7 @@ Feature: Staking & Delegation - scenarios focusing on initial epoch
       | node12 | VEGA  | 0      | 
       | node13 | VEGA  | 0      | 
 
-  Scenario: Only a few validators self-delegate, significant delegation to a three validators only (one w/o own stake)
+  Scenario: Only a few validators self-delegate, significant delegation to a three validators only (one w/o own stake) (0061-REWP-additional-tests)
 
     And the parties deposit on asset's general account the following amount:
       | party  | asset  | amount |
@@ -426,7 +426,7 @@ Feature: Staking & Delegation - scenarios focusing on initial epoch
       | node12 | VEGA  | 0      | 
       | node13 | VEGA  | 0      | 
 
-  Scenario: Validator owns more tokens than the minimumValidatorStake, but most of them are delegated to a different validator, then withdraws so that he owns less than minimumValidatorStake
+  Scenario: Validator owns more tokens than the minimumValidatorStake, but most of them are delegated to a different validator, then withdraws so that he owns less than minimumValidatorStake (0061-REWP-additional-tests)
 
     And the parties deposit on asset's general account the following amount:
       | party  | asset  | amount |
@@ -578,7 +578,7 @@ Feature: Staking & Delegation - scenarios focusing on initial epoch
       | party1 |  node1   |  111000 | 
       | party2 |  node2   |  222000 | 
 
-  Scenario: In presence of max delegation cap self-delegation gets priorities even if submitted later
+  Scenario: In presence of max delegation cap self-delegation gets priorities even if submitted later (0061-REWP-additional-tests)
 
     Given the parties deposit on asset's general account the following amount:
       | party  | asset  | amount |
@@ -679,7 +679,7 @@ Feature: Staking & Delegation - scenarios focusing on initial epoch
         | node12 | VEGA  | 0      | 
         | node13 | VEGA  | 0      | 
 
-  Scenario: Validator subset can self-delegate as to push themselves below min validator stake due to max delegatable amount cap
+  Scenario: Validator subset can self-delegate as to push themselves below min validator stake due to max delegatable amount cap (0061-REWP-additional-tests)
 
     Then the parties submit the following delegations:
       | party  | node id  | amount |

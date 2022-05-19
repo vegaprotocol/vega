@@ -27,6 +27,7 @@
 - [5343](https://github.com/vegaprotocol/vega/issues/5343) - Snapshot optimisation part II - get rid of `getHash`
 - [5324](https://github.com/vegaprotocol/vega/issues/5324) -  Send event when oracle data doesn't match
 - [5140](https://github.com/vegaprotocol/vega/issues/5140) - Move limits (enabled market / assets from) to network parameters
+- [5360](https://github.com/vegaprotocol/vega/issues/5360) - rewards test coverage
 
 ### 🐛 Fixes
 - [5338](https://github.com/vegaprotocol/vega/issues/5338) - Checking a transaction should return proper success code
