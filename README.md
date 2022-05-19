@@ -135,18 +135,6 @@ Example of import:
 vega nodewallet import --chain=ethereum --eth.clef-address=http://clef-address:port
 ```
 
-## API
-
-Prior to version 0.40.0, Vega Core hosted API endpoints for clients. The majority of this has since migrated to the [data-node](https://github.com/vegaprotocol/data-node).
-## Provisioning
-
-The proposal and creation of new markets is handled by the [Governance engine](./governance/README.md).
-
-Vega supports a single fixed market with ID `BTC/DEC20` which can be passed to APIs as the field `Market` in protobuf / REST / GraphQL requests.
-
-
-Cancellations typically go via consensus so the `OrderResponse` will only indicate that the message was accepted and sent out onto the blockchain to be included in a block. It could be rejected at a later stage of processing.
-
 
 ## Troubleshooting & debugging
 
