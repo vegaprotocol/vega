@@ -364,6 +364,34 @@ func (r *myPaginatedPartyResolver) Margins(ctx context.Context,
 	return out, nil
 }
 
+func (r *myPaginatedPartyResolver) MarginsPaged(ctx context.Context, party *types.Party, marketID *string,
+	pagination *v2.Pagination,
+) (*v2.MarginConnection, error) {
+	if party == nil {
+		return nil, errors.New("party is nil")
+	}
+
+	market := ""
+
+	if marketID != nil {
+		market = *marketID
+	}
+
+	req := v2.GetMarginLevelsRequest{
+		PartyId:    party.Id,
+		MarketId:   market,
+		Pagination: pagination,
+	}
+
+	res, err := r.tradingDataClientV2.GetMarginLevels(ctx, &req)
+	if err != nil {
+		r.log.Error("tradingData client", logging.Error(err))
+		return nil, customErrorFromStatus(err)
+	}
+
+	return res.MarginLevels, nil
+}
+
 func (r *myPaginatedPartyResolver) Orders(ctx context.Context, party *types.Party,
 	skip, first, last *int) ([]*types.Order, error,
 ) {

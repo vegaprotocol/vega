@@ -18,8 +18,8 @@ create table assets
     quantum             INT,
     source              TEXT,
     erc20_contract      TEXT,
-    lifetime_limit      TEXT,
-    withdraw_threshold  TEXT,
+    lifetime_limit      NUMERIC(32, 0) NOT NULL,
+    withdraw_threshold  NUMERIC(32, 0) NOT NULL,
     vega_time           TIMESTAMP WITH TIME ZONE NOT NULL REFERENCES blocks (vega_time)
 );
 
@@ -64,8 +64,7 @@ create table ledger
 SELECT create_hypertable('ledger', 'vega_time', chunk_time_interval => INTERVAL '1 day');
 SELECT add_retention_policy('ledger', INTERVAL '7 days');
 
-
-CREATE TABLE orders (
+CREATE TABLE orders_history (
     id                BYTEA                     NOT NULL,
     market_id         BYTEA                     NOT NULL,
     party_id          BYTEA                     NOT NULL, -- at some point add REFERENCES parties(id),
@@ -87,19 +86,119 @@ CREATE TABLE orders (
     updated_at        TIMESTAMP WITH TIME ZONE,
     expires_at        TIMESTAMP WITH TIME ZONE,
     vega_time         TIMESTAMP WITH TIME ZONE NOT NULL,
-    seq_num           BIGINT NOT NULL -- event sequence number in the block
-    -- PRIMARY key(vega_time, id, version)
+    seq_num           BIGINT NOT NULL,
+    vega_time_to      TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT 'infinity'
 );
 
-SELECT create_hypertable('orders', 'vega_time', chunk_time_interval => INTERVAL '1 day');
-CREATE INDEX ON orders (market_id, vega_time DESC);
-CREATE INDEX ON orders (party_id, vega_time DESC);
+SELECT create_hypertable('orders_history', 'vega_time', chunk_time_interval => INTERVAL '1 day');
+CREATE INDEX ON orders_history (market_id, vega_time DESC);
+CREATE INDEX ON orders_history (party_id, vega_time DESC);
+CREATE INDEX ON orders_history (id, vega_time_to);
+-- todo: index on vega_time_to?
+
+CREATE TABLE orders_live (
+    id                BYTEA                     NOT NULL,
+    market_id         BYTEA                     NOT NULL,
+    party_id          BYTEA                     NOT NULL, -- at some point add REFERENCES parties(id),
+    side              SMALLINT                  NOT NULL,
+    price             BIGINT                    NOT NULL,
+    size              BIGINT                    NOT NULL,
+    remaining         BIGINT                    NOT NULL,
+    time_in_force     SMALLINT                  NOT NULL,
+    type              SMALLINT                  NOT NULL,
+    status            SMALLINT                  NOT NULL,
+    reference         TEXT,
+    reason            SMALLINT,
+    version           INT                       NOT NULL,
+    batch_id          INT                       NOT NULL,
+    pegged_offset     INT,
+    pegged_reference  SMALLINT,
+    lp_id             BYTEA,
+    created_at        TIMESTAMP WITH TIME ZONE NOT NULL,
+    updated_at        TIMESTAMP WITH TIME ZONE,
+    expires_at        TIMESTAMP WITH TIME ZONE,
+    vega_time         TIMESTAMP WITH TIME ZONE NOT NULL,
+    seq_num           BIGINT NOT NULL, -- event sequence number in the block
+    vega_time_to      TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT 'infinity'
+);
+
+CREATE INDEX ON orders_live (market_id, vega_time DESC);
+CREATE INDEX ON orders_live (party_id, vega_time DESC);
+CREATE INDEX ON orders_live USING HASH (id);
+
+-- Orders is an updatable view (via the trigger below) which handles moving rows between orders_history and orders_live
+CREATE VIEW orders AS (
+  SELECT * FROM orders_live
+  UNION ALL
+  SELECT * FROM orders_history
+);
+
+-- +goose StatementBegin
+
+CREATE OR REPLACE FUNCTION archive_orders()
+   RETURNS TRIGGER
+   LANGUAGE PLPGSQL AS
+$$
+    BEGIN
+    -- It is permitted by core to re-use order IDs and 'resurrect' done orders (specifically,
+    -- LP orders do this, so we need to check our history table to see if we need to updated
+    -- vega_time_to on any most-recent-version-of an order.
+    UPDATE orders_history
+       SET vega_time_to = NEW.vega_time
+     WHERE vega_time_to = 'infinity'
+       AND id = NEW.id;
+
+    -- If we're 'updating' an order in orders_live (by adding a row with a matching id),
+    -- move the old one into order_history, updating it's vega_time_to from infinity to the new
+    -- row's vega_time
+    INSERT INTO orders_history
+         SELECT id, market_id, party_id, side, price,
+                size, remaining, time_in_force, type, status,
+                reference, reason, version, batch_id, pegged_offset,
+                pegged_reference, lp_id, created_at, updated_at, expires_at,
+                vega_time, seq_num, NEW.vega_time as vega_time_to
+           FROM orders_live
+        WHERE id = NEW.id;
+    DELETE from orders_live
+        WHERE id = NEW.id;
+
+    -- As per https://github.com/vegaprotocol/specs-internal/blob/master/protocol/0024-OSTA-order_status.md
+    -- we consider an order 'live' if it either ACTIVE (status=1) or PARKED (status=8). Orders
+    -- with statuses other than this are discarded by core, so we consider them candidates for
+    -- eventual deletion according to the data retention policy by placing them in orders_history.
+    IF NEW.status IN (1, 8)
+    THEN
+       INSERT INTO orders_live
+       VALUES(new.id, new.market_id, new.party_id, new.side, new.price,
+              new.size, new.remaining, new.time_in_force, new.type, new.status,
+              new.reference, new.reason, new.version, new.batch_id, new.pegged_offset,
+              new.pegged_reference, new.lp_id, new.created_at, new.updated_at, new.expires_at,
+              new.vega_time, new.seq_num, 'infinity');
+       RETURN NULL;
+    ELSE
+       INSERT INTO orders_history
+       VALUES(new.id, new.market_id, new.party_id, new.side, new.price,
+              new.size, new.remaining, new.time_in_force, new.type, new.status,
+              new.reference, new.reason, new.version, new.batch_id, new.pegged_offset,
+              new.pegged_reference, new.lp_id, new.created_at, new.updated_at, new.expires_at,
+              new.vega_time, new.seq_num, 'infinity');
+       RETURN NULL;
+    END IF;
+    END;
+$$;
+
+-- +goose StatementEnd
+
+CREATE TRIGGER archive_orders INSTEAD OF INSERT ON orders FOR EACH ROW EXECUTE function archive_orders();
+
 
 -- Orders contains all the historical changes to each order (as of the end of the block),
 -- this view contains the *current* state of the latest version each order
 --  (e.g. it's unique on order ID)
 CREATE VIEW orders_current AS (
-  SELECT DISTINCT ON (id) * FROM orders ORDER BY id, version DESC, vega_time DESC
+  SELECT * FROM orders_live WHERE vega_time_to = 'infinity'
+  UNION ALL
+  SELECT * FROM orders_history WHERE vega_time_to = 'infinity'
 );
 
 -- Manual updates to the order (e.g. user changing price level) increment the 'version'
@@ -752,7 +851,13 @@ DROP TYPE IF EXISTS deposit_status;
 DROP TABLE IF EXISTS withdrawals;
 DROP TYPE IF EXISTS withdrawal_status;
 
-DROP TABLE IF EXISTS orders;
+
+DROP TRIGGER IF EXISTS archive_orders ON orders;
+DROP FUNCTION IF EXISTS archive_orders;
+DROP VIEW IF EXISTS orders;
+DROP TABLE IF EXISTS orders_live;
+DROP TABLE IF EXISTS orders_history;
+
 DROP TYPE IF EXISTS order_time_in_force;
 DROP TYPE IF EXISTS order_status;
 DROP TYPE IF EXISTS order_side;

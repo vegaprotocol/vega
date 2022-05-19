@@ -74,8 +74,8 @@ func TestOrders(t *testing.T) {
 	}
 
 	// Make some orders
-	orders := []entities.Order{}
-	updatedOrders := []entities.Order{}
+	orders := make([]entities.Order, numTestOrders)
+	updatedOrders := make([]entities.Order, numTestOrders)
 	numOrdersUpdatedInDifferentBlock := 0
 	version := int32(1)
 	for i := 0; i < numTestOrders; i++ {
@@ -95,43 +95,52 @@ func TestOrders(t *testing.T) {
 			uint64(i),
 			version,
 		)
-		orders = append(orders, order)
+		orders[i] = order
 
 		// Don't update 1/4 of the orders
-		updatedOrder := order
+		if i%4 == 0 {
+			updatedOrders[i] = order
+		}
 
 		// Update 1/4 of the orders in the same block
 		if i%4 == 1 {
-			updatedOrder = order
+			updatedOrder := order
 			updatedOrder.Remaining = 50
 			err = os.Add(updatedOrder)
 			require.NoError(t, err)
+			updatedOrders[i] = updatedOrder
 		}
+	}
 
+	// Flush everything from the first block
+	os.Flush(ctx)
+
+	for i := 0; i < numTestOrders; i++ {
 		// Update Another 1/4 of the orders in the next block
 		if i%4 == 2 {
-			updatedOrder = order
+			updatedOrder := orders[i]
 			updatedOrder.Remaining = 25
 			updatedOrder.VegaTime = block2.VegaTime
 			err = os.Add(updatedOrder)
 			require.NoError(t, err)
 			numOrdersUpdatedInDifferentBlock++
+			updatedOrders[i] = updatedOrder
 		}
 
 		// Update Another 1/4 of the orders in the next block with an incremented version
 		if i%4 == 3 {
-			updatedOrder = order
+			updatedOrder := orders[i]
 			updatedOrder.Remaining = 10
 			updatedOrder.VegaTime = block2.VegaTime
 			updatedOrder.Version++
 			err = os.Add(updatedOrder)
 			require.NoError(t, err)
 			numOrdersUpdatedInDifferentBlock++
+			updatedOrders[i] = updatedOrder
 		}
-
-		updatedOrders = append(updatedOrders, updatedOrder)
 	}
 
+	// Flush everything from the second block
 	os.Flush(ctx)
 
 	t.Run("GetAll", func(t *testing.T) {
@@ -382,7 +391,14 @@ func generateTestOrders(t *testing.T, blocks []entities.Block, parties []entitie
 
 	orders := make([]entities.Order, len(testOrders))
 
+	lastBlockTime := blocks[0].VegaTime
 	for i, to := range testOrders {
+		// It's important for order triggers that orders are inserted in order. The batcher in the
+		// order store does not preserve insert order, so manually flush each block.
+		if to.block.VegaTime != lastBlockTime {
+			os.Flush(context.Background())
+			lastBlockTime = to.block.VegaTime
+		}
 		ref := fmt.Sprintf("reference-%d", i)
 		orders[i] = addTestOrder(t, os, to.id, to.block, to.party, to.market, ref, to.side,
 			to.timeInForce, to.orderType, to.status, to.price, to.size, to.remaining, uint64(i), int32(1))
@@ -735,7 +751,15 @@ func generateTestOrdersForCursorPagination(t *testing.T, stores *orderTestStores
 	orders := make([]entities.Order, len(testOrders))
 	cursors := make([]*entities.Cursor, len(testOrders))
 
+	lastBlockTime := testOrders[0].block.VegaTime
 	for i, order := range testOrders {
+		// It's important for order triggers that orders are inserted in order. The batcher in the
+		// order store does not preserve insert order, so manually flush each block.
+		if order.block.VegaTime != lastBlockTime {
+			stores.os.Flush(context.Background())
+			lastBlockTime = order.block.VegaTime
+		}
+
 		seqNum := uint64(i)
 		orderCursor := entities.OrderCursor{
 			VegaTime: order.block.VegaTime,

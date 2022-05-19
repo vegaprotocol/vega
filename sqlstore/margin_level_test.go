@@ -9,6 +9,7 @@ import (
 
 	"code.vegaprotocol.io/data-node/entities"
 	"code.vegaprotocol.io/data-node/sqlstore"
+	v2 "code.vegaprotocol.io/protos/data-node/api/v2"
 	"code.vegaprotocol.io/protos/vega"
 	"github.com/jackc/pgx/v4"
 	"github.com/shopspring/decimal"
@@ -25,6 +26,17 @@ func TestMarginLevels(t *testing.T) {
 	t.Run("GetMarginLevelsByID should return the latest state of margin levels for all parties if only market ID is provided", testGetMarginLevelsByMarketID)
 	t.Run("GetMarginLevelsByID should return the latest state of margin levels for the given party/market ID", testGetMarginLevelsByID)
 	t.Run("GetMarginLevelsByID should return use conflated data where raw data is not available", testMarginLevelsDataRetention)
+
+	t.Run("GetMarginLevelsByIDWithCursorPagination should return all margin levels for a given party if no pagination is provided", testGetMarginLevelsByIDPaginationWithPartyNoCursor)
+	t.Run("GetMarginLevelsByIDWithCursorPagination should return all margin levels for a given market if no pagination is provided", testGetMarginLevelsByIDPaginationWithMarketNoCursor)
+	t.Run("GetMarginLevelsByIDWithCursorPagination should return the first page of margin levels for a given party if first is set with no after cursor", testGetMarginLevelsByIDPaginationWithPartyFirstNoAfterCursor)
+	t.Run("GetMarginLevelsByIDWithCursorPagination should return the first page of margin levels for a given market if first is set with no after cursor", testGetMarginLevelsByIDPaginationWithMarketFirstNoAfterCursor)
+	t.Run("GetMarginLevelsByIDWithCursorPagination should return the last page of margin levels for a given party if last is set with no before cursor", testGetMarginLevelsByIDPaginationWithPartyLastNoBeforeCursor)
+	t.Run("GetMarginLevelsByIDWithCursorPagination should return the last page of margin levels for a given market if last is set with no before cursor", testGetMarginLevelsByIDPaginationWithMarketLastNoBeforeCursor)
+	t.Run("GetMarginLevelsByIDWithCursorPagination should return the requested page of margin levels for a given party if first is set with after cursor", testGetMarginLevelsByIDPaginationWithPartyFirstAndAfterCursor)
+	t.Run("GetMarginLevelsByIDWithCursorPagination should return the requested page of margin levels for a given market if first is set with after cursor", testGetMarginLevelsByIDPaginationWithMarketFirstAndAfterCursor)
+	t.Run("GetMarginLevelsByIDWithCursorPagination should return the requested page of margin levels for a given party if last is set with before cursor", testGetMarginLevelsByIDPaginationWithPartyLastAndBeforeCursor)
+	t.Run("GetMarginLevelsByIDWithCursorPagination should return the requested page of margin levels for a given market if last is set with before cursor", testGetMarginLevelsByIDPaginationWithMarketLastAndBeforeCursor)
 }
 
 type testBlockSource struct {
@@ -474,4 +486,508 @@ func testGetMarginLevelsByID(t *testing.T) {
 	want := []entities.MarginLevels{want1}
 
 	assert.ElementsMatch(t, want, got)
+}
+
+func populateMarginLevelPaginationTestData(t *testing.T, ctx context.Context) (*sqlstore.MarginLevels, map[int]entities.Block, map[int]entities.MarginLevels) {
+	t.Helper()
+	DeleteEverything()
+
+	blockSource, mlStore, accountStore, _ := setupMarginLevelTests(t, ctx)
+
+	margins := []struct {
+		maintenanceMargin string
+		partyID           string
+		marketID          string
+	}{
+		{
+			// 0
+			maintenanceMargin: "1000",
+			partyID:           "DEADBEEF",
+			marketID:          "DEADBAAD",
+		},
+		{
+			// 1
+			maintenanceMargin: "1001",
+			partyID:           "DEADBEEF",
+			marketID:          "0FF1CE",
+		},
+		{
+			// 2
+			maintenanceMargin: "1002",
+			partyID:           "DEADBAAD",
+			marketID:          "DEADBEEF",
+		},
+		{
+			// 3
+			maintenanceMargin: "1003",
+			partyID:           "DEADBAAD",
+			marketID:          "DEADBAAD",
+		},
+		{
+			// 4
+			maintenanceMargin: "1004",
+			partyID:           "DEADBEEF",
+			marketID:          "DEADC0DE",
+		},
+		{
+			// 5
+			maintenanceMargin: "1005",
+			partyID:           "0FF1CE",
+			marketID:          "DEADBEEF",
+		},
+		{
+			// 6
+			maintenanceMargin: "1006",
+			partyID:           "DEADC0DE",
+			marketID:          "DEADBEEF",
+		},
+		{
+			// 7
+			maintenanceMargin: "1007",
+			partyID:           "DEADBEEF",
+			marketID:          "CAFED00D",
+		},
+		{
+			// 8
+			maintenanceMargin: "1008",
+			partyID:           "CAFED00D",
+			marketID:          "DEADBEEF",
+		},
+		{
+			// 9
+			maintenanceMargin: "1009",
+			partyID:           "DEADBAAD",
+			marketID:          "DEADBAAD",
+		},
+		{
+			// 10
+			maintenanceMargin: "1010",
+			partyID:           "DEADBEEF",
+			marketID:          "CAFEB0BA",
+		},
+		{
+			// 11
+			maintenanceMargin: "1011",
+			partyID:           "CAFEB0BA",
+			marketID:          "DEADBEEF",
+		},
+		{
+			// 12
+			maintenanceMargin: "1012",
+			partyID:           "DEADBAAD",
+			marketID:          "DEADBAAD",
+		},
+		{
+			// 13
+			maintenanceMargin: "1013",
+			partyID:           "0D15EA5E",
+			marketID:          "DEADBEEF",
+		},
+		{
+			// 14
+			maintenanceMargin: "1014",
+			partyID:           "DEADBEEF",
+			marketID:          "0D15EA5E",
+		},
+	}
+
+	blocks := make(map[int]entities.Block)
+	marginLevels := make(map[int]entities.MarginLevels)
+
+	for i, ml := range margins {
+		block := blockSource.getNextBlock(t)
+		mlProto := getMarginLevelWithMaintenanceProto(ml.maintenanceMargin, ml.partyID, ml.marketID, block.VegaTime.UnixNano())
+		mlEntity, err := entities.MarginLevelsFromProto(ctx, mlProto, accountStore, block.VegaTime)
+		require.NoError(t, err, "Converting margin levels proto to database entity")
+		err = mlStore.Add(mlEntity)
+		require.NoError(t, err)
+
+		blocks[i] = block
+		marginLevels[i] = mlEntity
+	}
+
+	err := mlStore.Flush(ctx)
+	require.NoError(t, err)
+
+	return mlStore, blocks, marginLevels
+}
+
+func testGetMarginLevelsByIDPaginationWithPartyNoCursor(t *testing.T) {
+	testTimeout := time.Second * 5
+	testCtx, cancel := context.WithTimeout(context.Background(), testTimeout)
+	defer cancel()
+	defer DeleteEverything()
+
+	t.Logf("DB Port: %d", testDBPort)
+	mls, blocks, marginLevels := populateMarginLevelPaginationTestData(t, context.Background())
+	pagination, err := entities.PaginationFromProto(&v2.Pagination{})
+	require.NoError(t, err)
+	results, pageInfo, err := mls.GetMarginLevelsByIDWithCursorPagination(testCtx, "DEADBEEF", "", pagination)
+	require.NoError(t, err)
+	assert.Len(t, results, 6)
+	wantMarginLevels := []entities.MarginLevels{
+		marginLevels[0],
+		marginLevels[1],
+		marginLevels[4],
+		marginLevels[7],
+		marginLevels[10],
+		marginLevels[14],
+	}
+	assert.Equal(t, wantMarginLevels, results)
+	assert.False(t, pageInfo.HasNextPage)
+	assert.False(t, pageInfo.HasPreviousPage)
+	wantStartCursor := entities.MarginCursor{
+		VegaTime:  blocks[0].VegaTime,
+		AccountID: marginLevels[0].AccountID,
+	}
+	wantEndCursor := entities.MarginCursor{
+		VegaTime:  blocks[14].VegaTime,
+		AccountID: marginLevels[14].AccountID,
+	}
+	assert.Equal(t, entities.NewCursor(wantStartCursor.String()).Encode(), pageInfo.StartCursor)
+	assert.Equal(t, entities.NewCursor(wantEndCursor.String()).Encode(), pageInfo.EndCursor)
+}
+
+func testGetMarginLevelsByIDPaginationWithMarketNoCursor(t *testing.T) {
+	testTimeout := time.Second * 5
+	testCtx, cancel := context.WithTimeout(context.Background(), testTimeout)
+	defer cancel()
+	defer DeleteEverything()
+
+	t.Logf("DB Port: %d", testDBPort)
+	mls, blocks, marginLevels := populateMarginLevelPaginationTestData(t, context.Background())
+	pagination, err := entities.PaginationFromProto(&v2.Pagination{})
+	require.NoError(t, err)
+	results, pageInfo, err := mls.GetMarginLevelsByIDWithCursorPagination(testCtx, "", "DEADBEEF", pagination)
+	require.NoError(t, err)
+	assert.Len(t, results, 6)
+	wantMarginLevels := []entities.MarginLevels{
+		marginLevels[2],
+		marginLevels[5],
+		marginLevels[6],
+		marginLevels[8],
+		marginLevels[11],
+		marginLevels[13],
+	}
+	assert.Equal(t, wantMarginLevels, results)
+	assert.False(t, pageInfo.HasNextPage)
+	assert.False(t, pageInfo.HasPreviousPage)
+	wantStartCursor := entities.MarginCursor{
+		VegaTime:  blocks[2].VegaTime,
+		AccountID: marginLevels[2].AccountID,
+	}
+	wantEndCursor := entities.MarginCursor{
+		VegaTime:  blocks[13].VegaTime,
+		AccountID: marginLevels[13].AccountID,
+	}
+	assert.Equal(t, entities.NewCursor(wantStartCursor.String()).Encode(), pageInfo.StartCursor)
+	assert.Equal(t, entities.NewCursor(wantEndCursor.String()).Encode(), pageInfo.EndCursor)
+}
+
+func testGetMarginLevelsByIDPaginationWithPartyFirstNoAfterCursor(t *testing.T) {
+	testTimeout := time.Second * 5
+	testCtx, cancel := context.WithTimeout(context.Background(), testTimeout)
+	defer cancel()
+	defer DeleteEverything()
+
+	t.Logf("DB Port: %d", testDBPort)
+	mls, blocks, marginLevels := populateMarginLevelPaginationTestData(t, context.Background())
+	first := int32(3)
+	pagination, err := entities.PaginationFromProto(&v2.Pagination{
+		First: &first,
+	})
+	require.NoError(t, err)
+	results, pageInfo, err := mls.GetMarginLevelsByIDWithCursorPagination(testCtx, "DEADBEEF", "", pagination)
+	require.NoError(t, err)
+	assert.Len(t, results, 3)
+	wantMarginLevels := []entities.MarginLevels{
+		marginLevels[0],
+		marginLevels[1],
+		marginLevels[4],
+	}
+	assert.Equal(t, wantMarginLevels, results)
+	assert.True(t, pageInfo.HasNextPage)
+	assert.False(t, pageInfo.HasPreviousPage)
+	wantStartCursor := entities.MarginCursor{
+		VegaTime:  blocks[0].VegaTime,
+		AccountID: marginLevels[0].AccountID,
+	}
+	wantEndCursor := entities.MarginCursor{
+		VegaTime:  blocks[4].VegaTime,
+		AccountID: marginLevels[4].AccountID,
+	}
+	assert.Equal(t, entities.NewCursor(wantStartCursor.String()).Encode(), pageInfo.StartCursor)
+	assert.Equal(t, entities.NewCursor(wantEndCursor.String()).Encode(), pageInfo.EndCursor)
+}
+
+func testGetMarginLevelsByIDPaginationWithMarketFirstNoAfterCursor(t *testing.T) {
+	testTimeout := time.Second * 5
+	testCtx, cancel := context.WithTimeout(context.Background(), testTimeout)
+	defer cancel()
+	defer DeleteEverything()
+
+	t.Logf("DB Port: %d", testDBPort)
+	mls, blocks, marginLevels := populateMarginLevelPaginationTestData(t, context.Background())
+	first := int32(3)
+	pagination, err := entities.PaginationFromProto(&v2.Pagination{
+		First: &first,
+	})
+	require.NoError(t, err)
+	results, pageInfo, err := mls.GetMarginLevelsByIDWithCursorPagination(testCtx, "", "DEADBEEF", pagination)
+	require.NoError(t, err)
+	assert.Len(t, results, 3)
+	wantMarginLevels := []entities.MarginLevels{
+		marginLevels[2],
+		marginLevels[5],
+		marginLevels[6],
+	}
+	assert.Equal(t, wantMarginLevels, results)
+	assert.True(t, pageInfo.HasNextPage)
+	assert.False(t, pageInfo.HasPreviousPage)
+	wantStartCursor := entities.MarginCursor{
+		VegaTime:  blocks[2].VegaTime,
+		AccountID: marginLevels[2].AccountID,
+	}
+	wantEndCursor := entities.MarginCursor{
+		VegaTime:  blocks[6].VegaTime,
+		AccountID: marginLevels[6].AccountID,
+	}
+	assert.Equal(t, entities.NewCursor(wantStartCursor.String()).Encode(), pageInfo.StartCursor)
+	assert.Equal(t, entities.NewCursor(wantEndCursor.String()).Encode(), pageInfo.EndCursor)
+}
+
+func testGetMarginLevelsByIDPaginationWithPartyLastNoBeforeCursor(t *testing.T) {
+	testTimeout := time.Second * 5
+	testCtx, cancel := context.WithTimeout(context.Background(), testTimeout)
+	defer cancel()
+	defer DeleteEverything()
+
+	t.Logf("DB Port: %d", testDBPort)
+	mls, blocks, marginLevels := populateMarginLevelPaginationTestData(t, context.Background())
+	last := int32(3)
+	pagination, err := entities.PaginationFromProto(&v2.Pagination{
+		Last: &last,
+	})
+	require.NoError(t, err)
+	results, pageInfo, err := mls.GetMarginLevelsByIDWithCursorPagination(testCtx, "DEADBEEF", "", pagination)
+	require.NoError(t, err)
+	assert.Len(t, results, 3)
+	wantMarginLevels := []entities.MarginLevels{
+		marginLevels[7],
+		marginLevels[10],
+		marginLevels[14],
+	}
+	assert.Equal(t, wantMarginLevels, results)
+	assert.False(t, pageInfo.HasNextPage)
+	assert.True(t, pageInfo.HasPreviousPage)
+	wantStartCursor := entities.MarginCursor{
+		VegaTime:  blocks[7].VegaTime,
+		AccountID: marginLevels[7].AccountID,
+	}
+	wantEndCursor := entities.MarginCursor{
+		VegaTime:  blocks[14].VegaTime,
+		AccountID: marginLevels[14].AccountID,
+	}
+	assert.Equal(t, entities.NewCursor(wantStartCursor.String()).Encode(), pageInfo.StartCursor)
+	assert.Equal(t, entities.NewCursor(wantEndCursor.String()).Encode(), pageInfo.EndCursor)
+}
+
+func testGetMarginLevelsByIDPaginationWithMarketLastNoBeforeCursor(t *testing.T) {
+	testTimeout := time.Second * 5
+	testCtx, cancel := context.WithTimeout(context.Background(), testTimeout)
+	defer cancel()
+	defer DeleteEverything()
+
+	t.Logf("DB Port: %d", testDBPort)
+	mls, blocks, marginLevels := populateMarginLevelPaginationTestData(t, context.Background())
+	last := int32(3)
+	pagination, err := entities.PaginationFromProto(&v2.Pagination{
+		Last: &last,
+	})
+	require.NoError(t, err)
+	results, pageInfo, err := mls.GetMarginLevelsByIDWithCursorPagination(testCtx, "", "DEADBEEF", pagination)
+	require.NoError(t, err)
+	assert.Len(t, results, 3)
+	wantMarginLevels := []entities.MarginLevels{
+		marginLevels[8],
+		marginLevels[11],
+		marginLevels[13],
+	}
+	assert.Equal(t, wantMarginLevels, results)
+	assert.False(t, pageInfo.HasNextPage)
+	assert.True(t, pageInfo.HasPreviousPage)
+	wantStartCursor := entities.MarginCursor{
+		VegaTime:  blocks[8].VegaTime,
+		AccountID: marginLevels[8].AccountID,
+	}
+	wantEndCursor := entities.MarginCursor{
+		VegaTime:  blocks[13].VegaTime,
+		AccountID: marginLevels[13].AccountID,
+	}
+	assert.Equal(t, entities.NewCursor(wantStartCursor.String()).Encode(), pageInfo.StartCursor)
+	assert.Equal(t, entities.NewCursor(wantEndCursor.String()).Encode(), pageInfo.EndCursor)
+}
+
+func testGetMarginLevelsByIDPaginationWithPartyFirstAndAfterCursor(t *testing.T) {
+	testTimeout := time.Second * 5
+	testCtx, cancel := context.WithTimeout(context.Background(), testTimeout)
+	defer cancel()
+	defer DeleteEverything()
+
+	t.Logf("DB Port: %d", testDBPort)
+	mls, blocks, marginLevels := populateMarginLevelPaginationTestData(t, context.Background())
+	first := int32(3)
+	after := entities.NewCursor(entities.MarginCursor{
+		VegaTime:  blocks[1].VegaTime,
+		AccountID: marginLevels[1].AccountID,
+	}.String()).Encode()
+	pagination, err := entities.PaginationFromProto(&v2.Pagination{
+		First: &first,
+		After: &after,
+	})
+	require.NoError(t, err)
+	results, pageInfo, err := mls.GetMarginLevelsByIDWithCursorPagination(testCtx, "DEADBEEF", "", pagination)
+	require.NoError(t, err)
+	assert.Len(t, results, 3)
+	wantMarginLevels := []entities.MarginLevels{
+		marginLevels[4],
+		marginLevels[7],
+		marginLevels[10],
+	}
+	assert.Equal(t, wantMarginLevels, results)
+	assert.True(t, pageInfo.HasNextPage)
+	assert.True(t, pageInfo.HasPreviousPage)
+	wantStartCursor := entities.MarginCursor{
+		VegaTime:  blocks[4].VegaTime,
+		AccountID: marginLevels[4].AccountID,
+	}
+	wantEndCursor := entities.MarginCursor{
+		VegaTime:  blocks[10].VegaTime,
+		AccountID: marginLevels[10].AccountID,
+	}
+	assert.Equal(t, entities.NewCursor(wantStartCursor.String()).Encode(), pageInfo.StartCursor)
+	assert.Equal(t, entities.NewCursor(wantEndCursor.String()).Encode(), pageInfo.EndCursor)
+}
+
+func testGetMarginLevelsByIDPaginationWithMarketFirstAndAfterCursor(t *testing.T) {
+	testTimeout := time.Second * 5
+	testCtx, cancel := context.WithTimeout(context.Background(), testTimeout)
+	defer cancel()
+	defer DeleteEverything()
+
+	t.Logf("DB Port: %d", testDBPort)
+	mls, blocks, marginLevels := populateMarginLevelPaginationTestData(t, context.Background())
+	first := int32(3)
+	after := entities.NewCursor(entities.MarginCursor{
+		VegaTime:  blocks[5].VegaTime,
+		AccountID: marginLevels[5].AccountID,
+	}.String()).Encode()
+	pagination, err := entities.PaginationFromProto(&v2.Pagination{
+		First: &first,
+		After: &after,
+	})
+	require.NoError(t, err)
+	results, pageInfo, err := mls.GetMarginLevelsByIDWithCursorPagination(testCtx, "", "DEADBEEF", pagination)
+	require.NoError(t, err)
+	assert.Len(t, results, 3)
+	wantMarginLevels := []entities.MarginLevels{
+		marginLevels[6],
+		marginLevels[8],
+		marginLevels[11],
+	}
+	assert.Equal(t, wantMarginLevels, results)
+	assert.True(t, pageInfo.HasNextPage)
+	assert.True(t, pageInfo.HasPreviousPage)
+	wantStartCursor := entities.MarginCursor{
+		VegaTime:  blocks[6].VegaTime,
+		AccountID: marginLevels[6].AccountID,
+	}
+	wantEndCursor := entities.MarginCursor{
+		VegaTime:  blocks[11].VegaTime,
+		AccountID: marginLevels[11].AccountID,
+	}
+	assert.Equal(t, entities.NewCursor(wantStartCursor.String()).Encode(), pageInfo.StartCursor)
+	assert.Equal(t, entities.NewCursor(wantEndCursor.String()).Encode(), pageInfo.EndCursor)
+}
+
+func testGetMarginLevelsByIDPaginationWithPartyLastAndBeforeCursor(t *testing.T) {
+	testTimeout := time.Second * 5
+	testCtx, cancel := context.WithTimeout(context.Background(), testTimeout)
+	defer cancel()
+	defer DeleteEverything()
+
+	t.Logf("DB Port: %d", testDBPort)
+	mls, blocks, marginLevels := populateMarginLevelPaginationTestData(t, context.Background())
+	last := int32(3)
+	before := entities.NewCursor(entities.MarginCursor{
+		VegaTime:  blocks[10].VegaTime,
+		AccountID: marginLevels[10].AccountID,
+	}.String()).Encode()
+	pagination, err := entities.PaginationFromProto(&v2.Pagination{
+		Last:   &last,
+		Before: &before,
+	})
+	require.NoError(t, err)
+	results, pageInfo, err := mls.GetMarginLevelsByIDWithCursorPagination(testCtx, "DEADBEEF", "", pagination)
+	require.NoError(t, err)
+	assert.Len(t, results, 3)
+	wantMarginLevels := []entities.MarginLevels{
+		marginLevels[1],
+		marginLevels[4],
+		marginLevels[7],
+	}
+	assert.Equal(t, wantMarginLevels, results)
+	assert.True(t, pageInfo.HasNextPage)
+	assert.True(t, pageInfo.HasPreviousPage)
+	wantStartCursor := entities.MarginCursor{
+		VegaTime:  blocks[1].VegaTime,
+		AccountID: marginLevels[1].AccountID,
+	}
+	wantEndCursor := entities.MarginCursor{
+		VegaTime:  blocks[7].VegaTime,
+		AccountID: marginLevels[7].AccountID,
+	}
+	assert.Equal(t, entities.NewCursor(wantStartCursor.String()).Encode(), pageInfo.StartCursor)
+	assert.Equal(t, entities.NewCursor(wantEndCursor.String()).Encode(), pageInfo.EndCursor)
+}
+
+func testGetMarginLevelsByIDPaginationWithMarketLastAndBeforeCursor(t *testing.T) {
+	testTimeout := time.Second * 5
+	testCtx, cancel := context.WithTimeout(context.Background(), testTimeout)
+	defer cancel()
+	defer DeleteEverything()
+
+	t.Logf("DB Port: %d", testDBPort)
+	mls, blocks, marginLevels := populateMarginLevelPaginationTestData(t, context.Background())
+	last := int32(3)
+	before := entities.NewCursor(entities.MarginCursor{
+		VegaTime:  blocks[11].VegaTime,
+		AccountID: marginLevels[11].AccountID,
+	}.String()).Encode()
+	pagination, err := entities.PaginationFromProto(&v2.Pagination{
+		Last:   &last,
+		Before: &before,
+	})
+	require.NoError(t, err)
+	results, pageInfo, err := mls.GetMarginLevelsByIDWithCursorPagination(testCtx, "", "DEADBEEF", pagination)
+	require.NoError(t, err)
+	assert.Len(t, results, 3)
+	wantMarginLevels := []entities.MarginLevels{
+		marginLevels[5],
+		marginLevels[6],
+		marginLevels[8],
+	}
+	assert.Equal(t, wantMarginLevels, results)
+	assert.True(t, pageInfo.HasNextPage)
+	assert.True(t, pageInfo.HasPreviousPage)
+	wantStartCursor := entities.MarginCursor{
+		VegaTime:  blocks[5].VegaTime,
+		AccountID: marginLevels[5].AccountID,
+	}
+	wantEndCursor := entities.MarginCursor{
+		VegaTime:  blocks[8].VegaTime,
+		AccountID: marginLevels[8].AccountID,
+	}
+	assert.Equal(t, entities.NewCursor(wantStartCursor.String()).Encode(), pageInfo.StartCursor)
+	assert.Equal(t, entities.NewCursor(wantEndCursor.String()).Encode(), pageInfo.EndCursor)
 }

@@ -22,15 +22,15 @@ const (
 	LE Compare = "<="
 )
 
-type CursorBuilder struct {
+type CursorQueryParameter struct {
 	ColumnName string
 	Sort       Sorting
 	Cmp        Compare
 	Value      any
 }
 
-func NewCursorBuilder(columnName string, sort Sorting, cmp Compare, value any) CursorBuilder {
-	return CursorBuilder{
+func NewCursorQueryParameter(columnName string, sort Sorting, cmp Compare, value any) CursorQueryParameter {
+	return CursorQueryParameter{
 		ColumnName: columnName,
 		Sort:       sort,
 		Cmp:        cmp,
@@ -38,7 +38,7 @@ func NewCursorBuilder(columnName string, sort Sorting, cmp Compare, value any) C
 	}
 }
 
-func (c CursorBuilder) Where(args ...interface{}) (string, []interface{}) {
+func (c CursorQueryParameter) Where(args ...interface{}) (string, []interface{}) {
 	if c.Cmp == "" || c.Value == nil {
 		return "", args
 	}
@@ -47,13 +47,13 @@ func (c CursorBuilder) Where(args ...interface{}) (string, []interface{}) {
 	return where, args
 }
 
-func (c CursorBuilder) OrderBy() string {
+func (c CursorQueryParameter) OrderBy() string {
 	return fmt.Sprintf("%s %s", c.ColumnName, c.Sort)
 }
 
-type CursorBuilders []CursorBuilder
+type CursorQueryParameters []CursorQueryParameter
 
-func (c CursorBuilders) Where(args ...interface{}) (string, []interface{}) {
+func (c CursorQueryParameters) Where(args ...interface{}) (string, []interface{}) {
 	var where string
 
 	for i, cursor := range c {
@@ -68,7 +68,7 @@ func (c CursorBuilders) Where(args ...interface{}) (string, []interface{}) {
 	return strings.TrimSpace(where), args
 }
 
-func (c CursorBuilders) OrderBy() string {
+func (c CursorQueryParameters) OrderBy() string {
 	var orderBy string
 
 	for i, cursor := range c {
