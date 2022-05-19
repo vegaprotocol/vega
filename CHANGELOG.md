@@ -38,6 +38,7 @@
 - [578](https://github.com/vegaprotocol/data-node/issues/578) - Add metrics for `SQL` queries
 - [582](https://github.com/vegaprotocol/data-node/issues/582) - Add a cache for assets
 - [548](https://github.com/vegaprotocol/data-node/issues/548) - Remove foreign key constraints on hyper tables
+- [596](https://github.com/vegaprotocol/data-node/issues/596) - Speed up querying of orders
 - [591](https://github.com/vegaprotocol/data-node/issues/591) - Optimise liquidity provision and margin levels data retention and storage
 - [588](https://github.com/vegaprotocol/data-node/issues/588) - Return correct error code when proposal not found
 - [556](https://github.com/vegaprotocol/data-node/issues/556) - Expose an endpoint to list oracle data
