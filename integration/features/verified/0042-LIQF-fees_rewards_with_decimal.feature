@@ -164,6 +164,7 @@ Scenario: 001: 0070-MKTD-007, 0042-LIQF-001, 0018-RSKM-005, 0018-RSKM-008
     And the log normal risk model named "log-normal-risk-model-1":
       | risk aversion | tau | mu | r | sigma |
       | 0.000001      | 0.1 | 0  | 0 | 1.0   |
+      #risk factor: 4.556903591579
     And the fees configuration named "fees-config-1":
       | maker fee | infrastructure fee |
       | 0.0004    | 0.001              |
@@ -300,14 +301,25 @@ Scenario: 001: 0070-MKTD-007, 0042-LIQF-001, 0018-RSKM-005, 0018-RSKM-008
     Then the parties place the following orders:
       | party  | market id | side | volume | price      | resulting trades | type       | tif     |
       | party1 | USD/DEC20 | buy  | 5      | 100100000  | 1                | TYPE_LIMIT | TIF_GTC |
-     And the accumulated liquidity fees should be "6" for the market "USD/DEC20"
+    And the accumulated liquidity fees should be "6" for the market "USD/DEC20"
      # liquidity fee = 5 * 100100000 * 0.001 which means actual number without decimal is 0.00005*1001*0.001 = 0.00005005, and translate back into asset decimal 5.005 (given fee is rounded up in vega, so it should be 6) given asset decimal 5, market decimal 5, position decimal 5
 
     Then the parties place the following orders:
       | party  | market id | side | volume | price      | resulting trades | type       | tif     |
       | party1 | USD/DEC21 | buy  | 1      | 100100000  | 1                | TYPE_LIMIT | TIF_GTC |
-     And the accumulated liquidity fees should be "101" for the market "USD/DEC21"
+    And the accumulated liquidity fees should be "101" for the market "USD/DEC21"
      # liquidity fee = 1 * 100100000 * 0.001 which means actual number without decimal is 0.001*1001*0.001 = 0.001001, and translate back into asset decimal 100.1 (given fee is rounded up in vega, so it should be 101) given asset decimal 5, market decimal 5, position decimal 3
+
+      #check MTM settlement with correct PDP 
+    And the market data for the market "USD/DEC21" should be:
+      | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
+      | 100100000  | TRADING_MODE_CONTINUOUS | 100000  | 86365368  | 115420826 | 3560812945   | 1000000        | 10001         |
+      # target_stake = mark_price x max_oi x target_stake_scaling_factor x rf = 1001 x 10.001 x 1 x 3.5569=35608.1294569, which is 3560812945 in asset decimal (which is 5)
+
+    And the parties should have the following account balances:
+      | party  | asset | market id | margin       | general        | bond    |
+      | lp1    | ETH   | USD/DEC21 | 9411496      | 99999968101213 | 1000000 |
+      | lp1    | USD   | USD/DEC21 | 9411496      | 100000000000   |         |
       
   Scenario: 003, no decimal, 0042-LIQF-001
 
