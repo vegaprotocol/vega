@@ -570,7 +570,7 @@ func (app *App) OnEndBlock(req tmtypes.RequestEndBlock) (ctx context.Context, re
 		app.spam.EndOfBlock(uint64(req.Height))
 	}
 
-	app.stateVar.OnBlockEnd(ctx)
+	app.stateVar.OnBlockEnd(app.blockCtx)
 
 	powerUpdates := app.top.GetValidatorPowerUpdates()
 	if len(powerUpdates) > 0 {
