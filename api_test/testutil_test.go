@@ -406,9 +406,8 @@ func PublishEvents(
 		jsonBytes := scanner.Bytes()
 		var be eventspb.BusEvent
 		unmarshaller := &jsonpb.Unmarshaler{AllowUnknownFields: true}
-		err = unmarshaller.Unmarshal(bytes.NewReader(jsonBytes), &be)
-		if err != nil {
-			t.Fatal(err)
+		if err := unmarshaller.Unmarshal(bytes.NewReader(jsonBytes), &be); err != nil {
+			t.Fatalf("couldn't unmarshal JSON: %v", err)
 		}
 		e, err := convertEvt(&be)
 		if err != nil {
