@@ -91,9 +91,7 @@ func New(log *logging.Logger, config Config, broker Broker, top Topology, cmd Co
 		seq:                 0,
 		readyForTimeTrigger: map[string]struct{}{},
 		stateVarToNextCalc:  map[string]time.Time{},
-		ss: &snapshotState{
-			changed: true,
-		},
+		ss:                  &snapshotState{},
 	}
 	ts.NotifyOnTick(e.OnTimeTick)
 
@@ -152,8 +150,20 @@ func (e *Engine) NewEvent(asset, market string, eventType statevar.StateVarEvent
 		// if the sv is time triggered - reset the next run to be now + frequency
 		if _, ok := e.stateVarToNextCalc[sv.ID]; ok {
 			e.stateVarToNextCalc[sv.ID] = e.currentTime.Add(e.updateFrequency)
-			e.ss.changed = true
 		}
+	}
+}
+
+// OnBlockEnd calls all state vars to notify them that the block ended and its time to flush events.
+func (e *Engine) OnBlockEnd(ctx context.Context) {
+	allStateVarIDs := make([]string, 0, len(e.stateVars))
+	for ID := range e.stateVars {
+		allStateVarIDs = append(allStateVarIDs, ID)
+	}
+	sort.Strings(allStateVarIDs)
+
+	for _, ID := range allStateVarIDs {
+		e.stateVars[ID].endBlock(ctx)
 	}
 }
 
@@ -191,7 +201,6 @@ func (e *Engine) OnTimeTick(ctx context.Context, t time.Time) {
 		}
 		sv.eventTriggered(eventID)
 		e.stateVarToNextCalc[ID] = t.Add(e.updateFrequency)
-		e.ss.changed = true
 	}
 }
 
@@ -206,7 +215,6 @@ func (e *Engine) ReadyForTimeTrigger(asset, mktID string) {
 		for _, sv := range e.eventTypeToStateVar[statevar.StateVarEventTypeTimeTrigger] {
 			if sv.asset == asset && sv.market == mktID {
 				e.stateVarToNextCalc[sv.ID] = e.currentTime.Add(e.updateFrequency)
-				e.ss.changed = true
 			}
 		}
 	}
@@ -260,7 +268,6 @@ func (e *Engine) RemoveTimeTriggers(asset, market string) {
 		// and then in the subsequent snapshot things go awry because we don't have an entry for `stateVar[ID]`.
 		delete(e.stateVarToNextCalc, id)
 	}
-	e.ss.changed = true
 }
 
 // ProposedValueReceived is called when we receive a result from another node with a proposed result for the calculation triggered by an event.

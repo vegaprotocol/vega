@@ -108,8 +108,8 @@ func (sv *StateVariable) GetMarket() string {
 	return sv.market
 }
 
-// startBlock flushes the pending events.
-func (sv *StateVariable) startBlock(ctx context.Context, t time.Time) {
+// endBlock is called at the end of the block to flush the event. This is snapshot-friendly so that at the end of the block we clear all events as opposed to doing the same at the beginning of the block.
+func (sv *StateVariable) endBlock(ctx context.Context) {
 	sv.lock.Lock()
 	evts := make([]events.Event, 0, len(sv.pendingEvents))
 	for _, pending := range sv.pendingEvents {
@@ -121,6 +121,12 @@ func (sv *StateVariable) startBlock(ctx context.Context, t time.Time) {
 		}
 	}
 	sv.pendingEvents = []pendingEvent{}
+	sv.lock.Unlock()
+	sv.broker.SendBatch(evts)
+}
+
+func (sv *StateVariable) startBlock(ctx context.Context, t time.Time) {
+	sv.lock.Lock()
 	sv.currentTime = t
 
 	// if we have an active event, and we sent the bundle and we're 5 seconds after sending the bundle and haven't received our self bundle
@@ -134,8 +140,6 @@ func (sv *StateVariable) startBlock(ctx context.Context, t time.Time) {
 	if needsResend {
 		sv.logAndRetry(errors.New("timeout expired"), sv.lastSentSelfBundle)
 	}
-
-	sv.broker.SendBatch(evts)
 }
 
 // calculation is required for the state variable for the given event id.

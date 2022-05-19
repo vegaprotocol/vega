@@ -14,6 +14,8 @@
 ### 🐛 Fixes
 - [5362](https://github.com/vegaprotocol/vega/issues/5362) - Liquidity and order book point to same underlying order after restore
 - [5367](https://github.com/vegaprotocol/vega/issues/5367) - better serialisation for party orders in liquidity snapshot
+- [5377](https://github.com/vegaprotocol/vega/issues/5377) - Serialise state var internal state 
+
 ## 0.51.0
 
 ### 🚨 Breaking changes
