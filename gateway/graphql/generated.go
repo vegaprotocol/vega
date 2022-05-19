@@ -390,6 +390,17 @@ type ComplexityRoot struct {
 		ScalingFactors func(childComplexity int) int
 	}
 
+	MarginConnection struct {
+		Edges      func(childComplexity int) int
+		PageInfo   func(childComplexity int) int
+		TotalCount func(childComplexity int) int
+	}
+
+	MarginEdge struct {
+		Cursor func(childComplexity int) int
+		Node   func(childComplexity int) int
+	}
+
 	MarginLevels struct {
 		Asset                  func(childComplexity int) int
 		CollateralReleaseLevel func(childComplexity int) int
@@ -715,7 +726,7 @@ type ComplexityRoot struct {
 		Deposits            func(childComplexity int) int
 		Id                  func(childComplexity int) int
 		LiquidityProvisions func(childComplexity int, market *string, reference *string) int
-		Margins             func(childComplexity int, marketID *string) int
+		MarginsPaged        func(childComplexity int, marketID *string, pagination *v2.Pagination) int
 		OrdersPaged         func(childComplexity int, pagination *v2.Pagination) int
 		Positions           func(childComplexity int) int
 		Proposals           func(childComplexity int, inState *ProposalState) int
@@ -734,6 +745,7 @@ type ComplexityRoot struct {
 		Id                  func(childComplexity int) int
 		LiquidityProvisions func(childComplexity int, market *string, reference *string) int
 		Margins             func(childComplexity int, marketID *string) int
+		MarginsPaged        func(childComplexity int, marketID *string, pagination *v2.Pagination) int
 		Orders              func(childComplexity int, skip *int, first *int, last *int) int
 		OrdersPaged         func(childComplexity int, pagination *v2.Pagination) int
 		Positions           func(childComplexity int) int
@@ -772,6 +784,7 @@ type ComplexityRoot struct {
 	Position struct {
 		AverageEntryPrice func(childComplexity int) int
 		Margins           func(childComplexity int) int
+		MarginsPaged      func(childComplexity int, pagination *v2.Pagination) int
 		Market            func(childComplexity int) int
 		OpenVolume        func(childComplexity int) int
 		Party             func(childComplexity int) int
@@ -1462,7 +1475,7 @@ type PaginatedPartyResolver interface {
 	TradesPaged(ctx context.Context, obj *vega.Party, marketID *string, pagination *v2.Pagination) (*v2.TradeConnection, error)
 	Accounts(ctx context.Context, obj *vega.Party, marketID *string, asset *string, typeArg *vega.AccountType) ([]*vega.Account, error)
 	Positions(ctx context.Context, obj *vega.Party) ([]*vega.Position, error)
-	Margins(ctx context.Context, obj *vega.Party, marketID *string) ([]*vega.MarginLevels, error)
+	MarginsPaged(ctx context.Context, obj *vega.Party, marketID *string, pagination *v2.Pagination) (*v2.MarginConnection, error)
 	Proposals(ctx context.Context, obj *vega.Party, inState *ProposalState) ([]*vega.GovernanceData, error)
 	Votes(ctx context.Context, obj *vega.Party) ([]*ProposalVote, error)
 	Withdrawals(ctx context.Context, obj *vega.Party) ([]*vega.Withdrawal, error)
@@ -1481,6 +1494,7 @@ type PartyResolver interface {
 	Accounts(ctx context.Context, obj *vega.Party, marketID *string, asset *string, typeArg *vega.AccountType) ([]*vega.Account, error)
 	Positions(ctx context.Context, obj *vega.Party) ([]*vega.Position, error)
 	Margins(ctx context.Context, obj *vega.Party, marketID *string) ([]*vega.MarginLevels, error)
+	MarginsPaged(ctx context.Context, obj *vega.Party, marketID *string, pagination *v2.Pagination) (*v2.MarginConnection, error)
 	Proposals(ctx context.Context, obj *vega.Party, inState *ProposalState) ([]*vega.GovernanceData, error)
 	Votes(ctx context.Context, obj *vega.Party) ([]*ProposalVote, error)
 	Withdrawals(ctx context.Context, obj *vega.Party) ([]*vega.Withdrawal, error)
@@ -1504,6 +1518,7 @@ type PositionResolver interface {
 	OpenVolume(ctx context.Context, obj *vega.Position) (string, error)
 
 	Margins(ctx context.Context, obj *vega.Position) ([]*vega.MarginLevels, error)
+	MarginsPaged(ctx context.Context, obj *vega.Position, pagination *v2.Pagination) (*v2.MarginConnection, error)
 	UpdatedAt(ctx context.Context, obj *vega.Position) (*string, error)
 }
 type PriceLevelResolver interface {
@@ -2814,6 +2829,41 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.MarginCalculator.ScalingFactors(childComplexity), true
+
+	case "MarginConnection.edges":
+		if e.complexity.MarginConnection.Edges == nil {
+			break
+		}
+
+		return e.complexity.MarginConnection.Edges(childComplexity), true
+
+	case "MarginConnection.pageInfo":
+		if e.complexity.MarginConnection.PageInfo == nil {
+			break
+		}
+
+		return e.complexity.MarginConnection.PageInfo(childComplexity), true
+
+	case "MarginConnection.totalCount":
+		if e.complexity.MarginConnection.TotalCount == nil {
+			break
+		}
+
+		return e.complexity.MarginConnection.TotalCount(childComplexity), true
+
+	case "MarginEdge.cursor":
+		if e.complexity.MarginEdge.Cursor == nil {
+			break
+		}
+
+		return e.complexity.MarginEdge.Cursor(childComplexity), true
+
+	case "MarginEdge.node":
+		if e.complexity.MarginEdge.Node == nil {
+			break
+		}
+
+		return e.complexity.MarginEdge.Node(childComplexity), true
 
 	case "MarginLevels.asset":
 		if e.complexity.MarginLevels.Asset == nil {
@@ -4511,17 +4561,17 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.PaginatedParty.LiquidityProvisions(childComplexity, args["market"].(*string), args["reference"].(*string)), true
 
-	case "PaginatedParty.margins":
-		if e.complexity.PaginatedParty.Margins == nil {
+	case "PaginatedParty.marginsPaged":
+		if e.complexity.PaginatedParty.MarginsPaged == nil {
 			break
 		}
 
-		args, err := ec.field_PaginatedParty_margins_args(context.TODO(), rawArgs)
+		args, err := ec.field_PaginatedParty_marginsPaged_args(context.TODO(), rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
-		return e.complexity.PaginatedParty.Margins(childComplexity, args["marketId"].(*string)), true
+		return e.complexity.PaginatedParty.MarginsPaged(childComplexity, args["marketId"].(*string), args["pagination"].(*v2.Pagination)), true
 
 	case "PaginatedParty.ordersPaged":
 		if e.complexity.PaginatedParty.OrdersPaged == nil {
@@ -4672,6 +4722,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Party.Margins(childComplexity, args["marketId"].(*string)), true
+
+	case "Party.marginsPaged":
+		if e.complexity.Party.MarginsPaged == nil {
+			break
+		}
+
+		args, err := ec.field_Party_marginsPaged_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Party.MarginsPaged(childComplexity, args["marketId"].(*string), args["pagination"].(*v2.Pagination)), true
 
 	case "Party.orders":
 		if e.complexity.Party.Orders == nil {
@@ -4868,6 +4930,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Position.Margins(childComplexity), true
+
+	case "Position.marginsPaged":
+		if e.complexity.Position.MarginsPaged == nil {
+			break
+		}
+
+		args, err := ec.field_Position_marginsPaged_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Position.MarginsPaged(childComplexity, args["pagination"].(*v2.Pagination)), true
 
 	case "Position.market":
 		if e.complexity.Position.Market == nil {
@@ -8611,7 +8685,15 @@ type Party {
   margins(
     "market id off the margin to get, nil if all markets"
     marketId: ID
-  ): [MarginLevels!]
+  ): [MarginLevels!] @deprecated(reason: "Use marginsPaged instead")
+
+  "Margin level for a market"
+  marginsPaged(
+    "market id off the margin to get, nil if all markets"
+    marketId: ID
+    "Pagination information"
+    pagination: Pagination
+  ): MarginConnection!
 
   proposals(
     "Select only proposals in the specified state. Leave out to get all proposals"
@@ -8750,6 +8832,9 @@ type Position {
 
   "margins of the party for the given position"
   margins: [MarginLevels!]
+
+  "margins of the party for the given position"
+  marginsPaged(pagination: Pagination): MarginConnection!
 
   "RFC3339Nano time the position was updated"
   updatedAt: String
@@ -10182,10 +10267,12 @@ type PaginatedParty {
   positions: [Position!]
 
   "marginLevels"
-  margins(
+  marginsPaged(
     "market id off the margin to get, nil if all markets"
     marketId: ID
-  ): [MarginLevels!]
+    "Pagination"
+    pagination: Pagination
+  ): MarginConnection!
 
   proposals(
     "Select only proposals in the specified state. Leave out to get all proposals"
@@ -10447,6 +10534,20 @@ type OrderConnection {
   totalCount: Int
   "The orders in this connection"
   edges: [OrderEdge!]
+  "The pagination information"
+  pageInfo: PageInfo
+}
+
+type MarginEdge {
+  node: MarginLevels!
+  cursor: String
+}
+
+type MarginConnection {
+  "The total number of margin levels in this connection"
+  totalCount: Int
+  "The margin levels in this connection"
+  edges: [MarginEdge!]
   "The pagination information"
   pageInfo: PageInfo
 }
@@ -10944,7 +11045,7 @@ func (ec *executionContext) field_PaginatedParty_liquidityProvisions_args(ctx co
 	return args, nil
 }
 
-func (ec *executionContext) field_PaginatedParty_margins_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+func (ec *executionContext) field_PaginatedParty_marginsPaged_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
 	var arg0 *string
@@ -10956,6 +11057,15 @@ func (ec *executionContext) field_PaginatedParty_margins_args(ctx context.Contex
 		}
 	}
 	args["marketId"] = arg0
+	var arg1 *v2.Pagination
+	if tmp, ok := rawArgs["pagination"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pagination"))
+		arg1, err = ec.unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPagination(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["pagination"] = arg1
 	return args, nil
 }
 
@@ -11169,6 +11279,30 @@ func (ec *executionContext) field_Party_liquidityProvisions_args(ctx context.Con
 	return args, nil
 }
 
+func (ec *executionContext) field_Party_marginsPaged_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *string
+	if tmp, ok := rawArgs["marketId"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("marketId"))
+		arg0, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["marketId"] = arg0
+	var arg1 *v2.Pagination
+	if tmp, ok := rawArgs["pagination"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pagination"))
+		arg1, err = ec.unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPagination(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["pagination"] = arg1
+	return args, nil
+}
+
 func (ec *executionContext) field_Party_margins_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -11367,6 +11501,21 @@ func (ec *executionContext) field_Party_trades_args(ctx context.Context, rawArgs
 		}
 	}
 	args["last"] = arg3
+	return args, nil
+}
+
+func (ec *executionContext) field_Position_marginsPaged_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *v2.Pagination
+	if tmp, ok := rawArgs["pagination"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pagination"))
+		arg0, err = ec.unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPagination(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["pagination"] = arg0
 	return args, nil
 }
 
@@ -17864,6 +18013,169 @@ func (ec *executionContext) _MarginCalculator_scalingFactors(ctx context.Context
 	res := resTmp.(*vega.ScalingFactors)
 	fc.Result = res
 	return ec.marshalNScalingFactors2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐScalingFactors(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _MarginConnection_totalCount(ctx context.Context, field graphql.CollectedField, obj *v2.MarginConnection) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "MarginConnection",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TotalCount, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(int64)
+	fc.Result = res
+	return ec.marshalOInt2int64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _MarginConnection_edges(ctx context.Context, field graphql.CollectedField, obj *v2.MarginConnection) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "MarginConnection",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Edges, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*v2.MarginEdge)
+	fc.Result = res
+	return ec.marshalOMarginEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐMarginEdgeᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _MarginConnection_pageInfo(ctx context.Context, field graphql.CollectedField, obj *v2.MarginConnection) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "MarginConnection",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PageInfo, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*v2.PageInfo)
+	fc.Result = res
+	return ec.marshalOPageInfo2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPageInfo(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _MarginEdge_node(ctx context.Context, field graphql.CollectedField, obj *v2.MarginEdge) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "MarginEdge",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Node, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*vega.MarginLevels)
+	fc.Result = res
+	return ec.marshalNMarginLevels2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐMarginLevels(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _MarginEdge_cursor(ctx context.Context, field graphql.CollectedField, obj *v2.MarginEdge) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "MarginEdge",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Cursor, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalOString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _MarginLevels_market(ctx context.Context, field graphql.CollectedField, obj *vega.MarginLevels) (ret graphql.Marshaler) {
@@ -25764,7 +26076,7 @@ func (ec *executionContext) _PaginatedParty_positions(ctx context.Context, field
 	return ec.marshalOPosition2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐPositionᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _PaginatedParty_margins(ctx context.Context, field graphql.CollectedField, obj *vega.Party) (ret graphql.Marshaler) {
+func (ec *executionContext) _PaginatedParty_marginsPaged(ctx context.Context, field graphql.CollectedField, obj *vega.Party) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -25781,7 +26093,7 @@ func (ec *executionContext) _PaginatedParty_margins(ctx context.Context, field g
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_PaginatedParty_margins_args(ctx, rawArgs)
+	args, err := ec.field_PaginatedParty_marginsPaged_args(ctx, rawArgs)
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
@@ -25789,18 +26101,21 @@ func (ec *executionContext) _PaginatedParty_margins(ctx context.Context, field g
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.PaginatedParty().Margins(rctx, obj, args["marketId"].(*string))
+		return ec.resolvers.PaginatedParty().MarginsPaged(rctx, obj, args["marketId"].(*string), args["pagination"].(*v2.Pagination))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
-	res := resTmp.([]*vega.MarginLevels)
+	res := resTmp.(*v2.MarginConnection)
 	fc.Result = res
-	return ec.marshalOMarginLevels2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐMarginLevelsᚄ(ctx, field.Selections, res)
+	return ec.marshalNMarginConnection2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐMarginConnection(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _PaginatedParty_proposals(ctx context.Context, field graphql.CollectedField, obj *vega.Party) (ret graphql.Marshaler) {
@@ -26434,6 +26749,48 @@ func (ec *executionContext) _Party_margins(ctx context.Context, field graphql.Co
 	res := resTmp.([]*vega.MarginLevels)
 	fc.Result = res
 	return ec.marshalOMarginLevels2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐMarginLevelsᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Party_marginsPaged(ctx context.Context, field graphql.CollectedField, obj *vega.Party) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Party",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Party_marginsPaged_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Party().MarginsPaged(rctx, obj, args["marketId"].(*string), args["pagination"].(*v2.Pagination))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*v2.MarginConnection)
+	fc.Result = res
+	return ec.marshalNMarginConnection2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐMarginConnection(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Party_proposals(ctx context.Context, field graphql.CollectedField, obj *vega.Party) (ret graphql.Marshaler) {
@@ -27346,6 +27703,48 @@ func (ec *executionContext) _Position_margins(ctx context.Context, field graphql
 	res := resTmp.([]*vega.MarginLevels)
 	fc.Result = res
 	return ec.marshalOMarginLevels2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐMarginLevelsᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Position_marginsPaged(ctx context.Context, field graphql.CollectedField, obj *vega.Position) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Position",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Position_marginsPaged_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Position().MarginsPaged(rctx, obj, args["pagination"].(*v2.Pagination))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*v2.MarginConnection)
+	fc.Result = res
+	return ec.marshalNMarginConnection2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐMarginConnection(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Position_updatedAt(ctx context.Context, field graphql.CollectedField, obj *vega.Position) (ret graphql.Marshaler) {
@@ -41273,6 +41672,86 @@ func (ec *executionContext) _MarginCalculator(ctx context.Context, sel ast.Selec
 	return out
 }
 
+var marginConnectionImplementors = []string{"MarginConnection"}
+
+func (ec *executionContext) _MarginConnection(ctx context.Context, sel ast.SelectionSet, obj *v2.MarginConnection) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, marginConnectionImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("MarginConnection")
+		case "totalCount":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._MarginConnection_totalCount(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+		case "edges":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._MarginConnection_edges(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+		case "pageInfo":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._MarginConnection_pageInfo(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var marginEdgeImplementors = []string{"MarginEdge"}
+
+func (ec *executionContext) _MarginEdge(ctx context.Context, sel ast.SelectionSet, obj *v2.MarginEdge) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, marginEdgeImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("MarginEdge")
+		case "node":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._MarginEdge_node(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "cursor":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._MarginEdge_cursor(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
 var marginLevelsImplementors = []string{"MarginLevels", "Event"}
 
 func (ec *executionContext) _MarginLevels(ctx context.Context, sel ast.SelectionSet, obj *vega.MarginLevels) graphql.Marshaler {
@@ -45263,7 +45742,7 @@ func (ec *executionContext) _PaginatedParty(ctx context.Context, sel ast.Selecti
 				return innerFunc(ctx)
 
 			})
-		case "margins":
+		case "marginsPaged":
 			field := field
 
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
@@ -45272,7 +45751,10 @@ func (ec *executionContext) _PaginatedParty(ctx context.Context, sel ast.Selecti
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._PaginatedParty_margins(ctx, field, obj)
+				res = ec._PaginatedParty_marginsPaged(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
 				return res
 			}
 
@@ -45585,6 +46067,26 @@ func (ec *executionContext) _Party(ctx context.Context, sel ast.SelectionSet, ob
 					}
 				}()
 				res = ec._Party_margins(ctx, field, obj)
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "marginsPaged":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Party_marginsPaged(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
 				return res
 			}
 
@@ -46077,6 +46579,26 @@ func (ec *executionContext) _Position(ctx context.Context, sel ast.SelectionSet,
 					}
 				}()
 				res = ec._Position_margins(ctx, field, obj)
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "marginsPaged":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Position_marginsPaged(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
 				return res
 			}
 
@@ -52042,6 +52564,30 @@ func (ec *executionContext) marshalNLogNormalModelParams2ᚖcodeᚗvegaprotocol�
 	return ec._LogNormalModelParams(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalNMarginConnection2codeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐMarginConnection(ctx context.Context, sel ast.SelectionSet, v v2.MarginConnection) graphql.Marshaler {
+	return ec._MarginConnection(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNMarginConnection2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐMarginConnection(ctx context.Context, sel ast.SelectionSet, v *v2.MarginConnection) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._MarginConnection(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNMarginEdge2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐMarginEdge(ctx context.Context, sel ast.SelectionSet, v *v2.MarginEdge) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._MarginEdge(ctx, sel, v)
+}
+
 func (ec *executionContext) marshalNMarginLevels2codeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐMarginLevels(ctx context.Context, sel ast.SelectionSet, v vega.MarginLevels) graphql.Marshaler {
 	return ec._MarginLevels(ctx, sel, &v)
 }
@@ -54587,6 +55133,53 @@ func (ec *executionContext) marshalOMarginCalculator2ᚖcodeᚗvegaprotocolᚗio
 		return graphql.Null
 	}
 	return ec._MarginCalculator(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOMarginEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐMarginEdgeᚄ(ctx context.Context, sel ast.SelectionSet, v []*v2.MarginEdge) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNMarginEdge2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐMarginEdge(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
 }
 
 func (ec *executionContext) marshalOMarginLevels2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐMarginLevelsᚄ(ctx context.Context, sel ast.SelectionSet, v []*vega.MarginLevels) graphql.Marshaler {

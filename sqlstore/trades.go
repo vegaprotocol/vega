@@ -185,7 +185,7 @@ func (ts *Trades) queryTradesWithCursorPagination(ctx context.Context, query str
 	var err error
 
 	sorting, cmp, cursor := extractPaginationInfo(pagination)
-	cursors := []CursorBuilder{NewCursorBuilder("synthetic_time", sorting, cmp, cursor)}
+	cursors := []CursorQueryParameter{NewCursorQueryParameter("synthetic_time", sorting, cmp, cursor)}
 
 	query, args = orderAndPaginateWithCursor(query, pagination, cursors, args...)
 

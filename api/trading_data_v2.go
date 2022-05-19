@@ -39,6 +39,8 @@ type tradingDataServiceV2 struct {
 	candleServiceV2          *candlesv2.Svc
 	marketsStore             *sqlstore.Markets
 	partiesStore             *sqlstore.Parties
+	marginLevelsStore        *sqlstore.MarginLevels
+	accountStore             *sqlstore.Accounts
 }
 
 func (t *tradingDataServiceV2) GetBalanceHistory(ctx context.Context, req *v2.GetBalanceHistoryRequest) (*v2.GetBalanceHistoryResponse, error) {
@@ -712,8 +714,27 @@ func (t *tradingDataServiceV2) GetOrderVersionsByIDPaged(ctx context.Context, in
 	return resp, nil
 }
 
-func (t *tradingDataServiceV2) GetOrdersByPartyPaged(context.Context, *v2.GetOrdersByPartyPagedRequest) (*v2.GetOrdersByPartyPagedResponse, error) {
-	return nil, errors.New("not implemented")
+func (t *tradingDataServiceV2) GetOrdersByPartyPaged(ctx context.Context, in *v2.GetOrdersByPartyPagedRequest) (*v2.GetOrdersByPartyPagedResponse, error) {
+	pagination, err := entities.PaginationFromProto(in.Pagination)
+	if err != nil {
+		return nil, apiError(codes.InvalidArgument, err)
+	}
+
+	orders, pageInfo, err := t.orderStore.GetByPartyPaged(ctx, in.PartyId, pagination)
+	if err != nil {
+		return nil, apiError(codes.Internal, err)
+	}
+	ordersConnection := &v2.OrderConnection{
+		TotalCount: 0, // TODO: implement total count
+		Edges:      makeOrderEdges(orders),
+		PageInfo:   pageInfo.ToProto(),
+	}
+
+	resp := &v2.GetOrdersByPartyPagedResponse{
+		Orders: ordersConnection,
+	}
+
+	return resp, nil
 }
 
 func makeOrderEdges(orders []entities.Order) []*v2.OrderEdge {
@@ -722,6 +743,45 @@ func makeOrderEdges(orders []entities.Order) []*v2.OrderEdge {
 		edges[i] = &v2.OrderEdge{
 			Node:   o.ToProto(),
 			Cursor: o.Cursor().Encode(),
+		}
+	}
+	return edges
+}
+
+func (t *tradingDataServiceV2) GetMarginLevels(ctx context.Context, in *v2.GetMarginLevelsRequest) (*v2.GetMarginLevelsResponse, error) {
+	pagination, err := entities.PaginationFromProto(in.Pagination)
+	if err != nil {
+		return nil, apiError(codes.InvalidArgument, err)
+	}
+
+	marginLevels, pageInfo, err := t.marginLevelsStore.GetMarginLevelsByIDWithCursorPagination(ctx, in.PartyId, in.MarketId, pagination)
+	if err != nil {
+		return nil, apiError(codes.Internal, err)
+	}
+
+	marginLevelsConnection := &v2.MarginConnection{
+		TotalCount: 0, // TODO: implement total count
+		Edges:      makeMarginLevelEdges(t.accountStore, marginLevels),
+		PageInfo:   pageInfo.ToProto(),
+	}
+
+	resp := &v2.GetMarginLevelsResponse{
+		MarginLevels: marginLevelsConnection,
+	}
+
+	return resp, nil
+}
+
+func makeMarginLevelEdges(accountStore *sqlstore.Accounts, marginLevels []entities.MarginLevels) []*v2.MarginEdge {
+	edges := make([]*v2.MarginEdge, len(marginLevels))
+	for i, ml := range marginLevels {
+		mlProto, err := ml.ToProto(accountStore)
+		if err != nil {
+			continue
+		}
+		edges[i] = &v2.MarginEdge{
+			Node:   mlProto,
+			Cursor: ml.Cursor().Encode(),
 		}
 	}
 	return edges

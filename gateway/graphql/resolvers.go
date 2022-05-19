@@ -1185,6 +1185,34 @@ func (r *myPartyResolver) Margins(ctx context.Context,
 	return out, nil
 }
 
+func (r *myPartyResolver) MarginsPaged(ctx context.Context, party *types.Party, marketID *string,
+	pagination *v2.Pagination,
+) (*v2.MarginConnection, error) {
+	if party == nil {
+		return nil, errors.New("party is nil")
+	}
+
+	market := ""
+
+	if marketID != nil {
+		market = *marketID
+	}
+
+	req := v2.GetMarginLevelsRequest{
+		PartyId:    party.Id,
+		MarketId:   market,
+		Pagination: pagination,
+	}
+
+	res, err := r.tradingDataClientV2.GetMarginLevels(ctx, &req)
+	if err != nil {
+		r.log.Error("tradingData client", logging.Error(err))
+		return nil, customErrorFromStatus(err)
+	}
+
+	return res.MarginLevels, nil
+}
+
 func (r *myPartyResolver) Orders(ctx context.Context, party *types.Party,
 	skip, first, last *int,
 ) ([]*types.Order, error) {
@@ -2032,6 +2060,22 @@ func (r *myPositionResolver) Margins(ctx context.Context, obj *types.Position) (
 		r.log.Error("tradingData client", logging.Error(err))
 		return nil, customErrorFromStatus(err)
 	}
+	return res.MarginLevels, nil
+}
+
+func (r *myPositionResolver) MarginsPaged(ctx context.Context, pos *types.Position, pagination *v2.Pagination) (*v2.MarginConnection, error) {
+	req := v2.GetMarginLevelsRequest{
+		PartyId:    pos.PartyId,
+		MarketId:   pos.MarketId,
+		Pagination: pagination,
+	}
+
+	res, err := r.tradingDataClientV2.GetMarginLevels(ctx, &req)
+	if err != nil {
+		r.log.Error("tradingData client", logging.Error(err))
+		return nil, customErrorFromStatus(err)
+	}
+
 	return res.MarginLevels, nil
 }
 

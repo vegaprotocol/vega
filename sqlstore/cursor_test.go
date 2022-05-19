@@ -15,14 +15,14 @@ func TestCursor_Where(t *testing.T) {
 
 	testCases := []struct {
 		name      string
-		cursor    CursorBuilder
+		cursor    CursorQueryParameter
 		args      args
 		wantWhere string
 		wantArgs  []interface{}
 	}{
 		{
 			name: "Equal",
-			cursor: CursorBuilder{
+			cursor: CursorQueryParameter{
 				ColumnName: "vega_time",
 				Sort:       ASC,
 				Cmp:        EQ,
@@ -36,7 +36,7 @@ func TestCursor_Where(t *testing.T) {
 		},
 		{
 			name: "Less than or equal",
-			cursor: CursorBuilder{
+			cursor: CursorQueryParameter{
 				ColumnName: "vega_time",
 				Sort:       ASC,
 				Cmp:        LE,
@@ -50,7 +50,7 @@ func TestCursor_Where(t *testing.T) {
 		},
 		{
 			name: "Greater than or equal",
-			cursor: CursorBuilder{
+			cursor: CursorQueryParameter{
 				ColumnName: "vega_time",
 				Sort:       ASC,
 				Cmp:        GE,
@@ -76,12 +76,12 @@ func TestCursor_Where(t *testing.T) {
 func TestCursor_OrderBy(t *testing.T) {
 	testCases := []struct {
 		name      string
-		cursor    CursorBuilder
+		cursor    CursorQueryParameter
 		wantOrder string
 	}{
 		{
 			name: "Ascending",
-			cursor: CursorBuilder{
+			cursor: CursorQueryParameter{
 				ColumnName: "vega_time",
 				Sort:       ASC,
 				Value:      time.Date(2022, 5, 9, 9, 0, 0, 0, time.UTC),
@@ -90,7 +90,7 @@ func TestCursor_OrderBy(t *testing.T) {
 		},
 		{
 			name: "Descending",
-			cursor: CursorBuilder{
+			cursor: CursorQueryParameter{
 				ColumnName: "vega_time",
 				Sort:       DESC,
 				Value:      time.Date(2022, 5, 9, 9, 0, 0, 0, time.UTC),
@@ -110,14 +110,14 @@ func TestCursor_OrderBy(t *testing.T) {
 func TestCursors_Where(t *testing.T) {
 	testCases := []struct {
 		name      string
-		cursors   CursorBuilders
+		cursors   CursorQueryParameters
 		wantWhere string
 		wantArgs  []interface{}
 	}{
 		{
 			name: "One cursor",
-			cursors: CursorBuilders{
-				CursorBuilder{
+			cursors: CursorQueryParameters{
+				CursorQueryParameter{
 					ColumnName: "vega_time",
 					Sort:       ASC,
 					Cmp:        EQ,
@@ -129,8 +129,8 @@ func TestCursors_Where(t *testing.T) {
 		},
 		{
 			name: "Two cursors",
-			cursors: CursorBuilders{
-				CursorBuilder{
+			cursors: CursorQueryParameters{
+				CursorQueryParameter{
 					ColumnName: "vega_time",
 					Sort:       ASC,
 					Cmp:        EQ,
@@ -160,13 +160,13 @@ func TestCursors_Where(t *testing.T) {
 func TestCursors_OrderBy(t *testing.T) {
 	testCases := []struct {
 		name      string
-		cursors   CursorBuilders
+		cursors   CursorQueryParameters
 		wantOrder string
 	}{
 		{
 			name: "One cursor",
-			cursors: CursorBuilders{
-				CursorBuilder{
+			cursors: CursorQueryParameters{
+				CursorQueryParameter{
 					ColumnName: "vega_time",
 					Sort:       ASC,
 					Cmp:        EQ,
@@ -177,7 +177,7 @@ func TestCursors_OrderBy(t *testing.T) {
 		},
 		{
 			name: "Two cursors",
-			cursors: CursorBuilders{
+			cursors: CursorQueryParameters{
 				{
 					ColumnName: "vega_time",
 					Sort:       ASC,

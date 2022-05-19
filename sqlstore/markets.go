@@ -126,7 +126,7 @@ func (m *Markets) GetAllPaged(ctx context.Context, marketID string, pagination e
 	var pageInfo entities.PageInfo
 
 	sorting, cmp, cursor := extractPaginationInfo(pagination)
-	cursors := []CursorBuilder{NewCursorBuilder("vega_time", sorting, cmp, cursor)}
+	cursors := []CursorQueryParameter{NewCursorQueryParameter("vega_time", sorting, cmp, cursor)}
 	query, args = orderAndPaginateWithCursor(query, pagination, cursors, args...)
 
 	if err := pgxscan.Select(ctx, m.Connection, &markets, query, args...); err != nil {

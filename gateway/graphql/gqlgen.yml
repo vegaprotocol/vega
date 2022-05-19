@@ -289,3 +289,7 @@ models:
     model: code.vegaprotocol.io/protos/data-node/api/v2.OrderEdge
   OrderConnection:
     model: code.vegaprotocol.io/protos/data-node/api/v2.OrderConnection
+  MarginEdge:
+    model: code.vegaprotocol.io/protos/data-node/api/v2.MarginEdge
+  MarginConnection:
+    model: code.vegaprotocol.io/protos/data-node/api/v2.MarginConnection

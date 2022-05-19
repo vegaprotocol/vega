@@ -443,6 +443,8 @@ func (g *GRPCServer) Start(ctx context.Context, lis net.Listener) error {
 		candleServiceV2:          g.candleServiceV2,
 		marketsStore:             g.marketsStore,
 		partiesStore:             g.partyStore,
+		marginLevelsStore:        g.marginLevelsStore,
+		accountStore:             g.accountStore,
 	}
 	protoapi2.RegisterTradingDataServiceServer(g.srv, tradingDataSvcV2)
 

@@ -138,7 +138,7 @@ func (os *Orders) queryOrdersWithCursorPagination(ctx context.Context, query str
 	)
 
 	sorting, cmp, cursor := extractPaginationInfo(pagination)
-	var builders CursorBuilders
+	var builders CursorQueryParameters
 
 	if cursor != "" {
 		vegaTime, seqNum, err = entities.ParseOrderCursor(cursor)
@@ -147,9 +147,9 @@ func (os *Orders) queryOrdersWithCursorPagination(ctx context.Context, query str
 		}
 	}
 
-	builders = []CursorBuilder{
-		NewCursorBuilder("vega_time", sorting, cmp, vegaTime),
-		NewCursorBuilder("seq_num", sorting, cmp, seqNum),
+	builders = []CursorQueryParameter{
+		NewCursorQueryParameter("vega_time", sorting, cmp, vegaTime),
+		NewCursorQueryParameter("seq_num", sorting, cmp, seqNum),
 	}
 
 	query, args = orderAndPaginateWithCursor(query, pagination, builders, args...)
