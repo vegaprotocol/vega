@@ -15,6 +15,7 @@
 - [](https://github.com/vegaprotocol/data-node/issues/xxx) -
 
 ### 🐛 Fixes
+- [616](https://github.com/vegaprotocol/data-node/pull/616) - Don't return multiple delegations per epoch/party/node
 - [](https://github.com/vegaprotocol/data-node/issues/xxx) -
 
 ## 0.51.0

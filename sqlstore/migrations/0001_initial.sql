@@ -359,6 +359,12 @@ CREATE TABLE delegations(
   vega_time        TIMESTAMP WITH TIME ZONE NOT NULL
 );
 
+CREATE VIEW delegations_current AS (
+    SELECT DISTINCT ON (party_id, node_id, epoch_id) *
+    FROM delegations
+    ORDER BY party_id, node_id, epoch_id, vega_time DESC
+);
+
 create table if not exists markets (
     id bytea not null,
     vega_time timestamp with time zone not null references blocks(vega_time),
@@ -729,6 +735,7 @@ DROP TYPE IF EXISTS proposal_error;
 DROP TYPE IF EXISTS proposal_state;
 
 DROP TABLE IF EXISTS epochs;
+DROP VIEW IF EXISTS delegations_current;
 DROP TABLE IF EXISTS delegations;
 DROP TABLE IF EXISTS rewards;
 
