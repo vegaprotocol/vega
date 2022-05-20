@@ -32,6 +32,7 @@ func (e *Engine) CancelTransferFunds(
 
 	// all good, let's delete
 	delete(e.recurringTransfers, cancel.TransferID)
+	e.bss.changedRecurringTransfers = true
 
 	// send an event because we are nice with the data-node
 	transfer.Status = types.TransferStatusCancelled
