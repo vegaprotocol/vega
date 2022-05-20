@@ -84,3 +84,11 @@ func testVersionInvalidFormat(t *testing.T) {
 	assert.NotNil(t, err)
 	assert.Equal(t, "No Major.Minor.Patch elements found", err.Error())
 }
+
+func TestVersionWithSuffix(t *testing.T) {
+	c := newTestChainVersion()
+
+	koVersion := "0.1.3-sometext"
+	err := c.Check(koVersion)
+	assert.Nil(t, err)
+}
