@@ -622,7 +622,6 @@ func (m *Market) CanLeaveOpeningAuction() bool {
 }
 
 func (m *Market) StartOpeningAuction(ctx context.Context) error {
-	m.log.Info("starting opening auction for market", logging.String("id", m.GetID()))
 	if m.mkt.State != types.MarketStateProposed {
 		return ErrCannotStartOpeningAuctionForMarketNotInProposedState
 	}
