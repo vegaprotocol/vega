@@ -438,3 +438,79 @@ And the liquidity provider fee shares for the market "ETH/MAR22" should be:
 
     And the liquidity fee factor should "0.001" for the market "ETH/MAR22"
 
+Scenario: 004: 0038-OLIQ-006; check market.liquidity.targetstake.triggering.ratio 
+ 
+  Background:
+
+    Given the following network parameters are set:
+      | name                                                | value |
+      | market.value.windowLength                           | 1h    |
+      | market.stake.target.timeWindow                      | 24h   |
+      | market.stake.target.scalingFactor                   | 1     |
+      | market.liquidity.targetstake.triggering.ratio       | 0.1   |
+      | market.liquidity.providers.fee.distributionTimeStep | 10m   |
+    And the following assets are registered:
+      | id  | decimal places |
+      | ETH | 5              |
+
+    And the average block duration is "2"
+
+    And the log normal risk model named "log-normal-risk-model-1":
+      | risk aversion | tau | mu | r | sigma |
+      | 0.000001      | 0.1 | 0  | 0 | 1.0   |
+      #risk factor: 4.556903591579
+    And the fees configuration named "fees-config-1":
+      | maker fee | infrastructure fee |
+      | 0.0004    | 0.001              |
+    And the price monitoring updated every "1" seconds named "price-monitoring-1":
+      | horizon | probability | auction extension |
+      | 100000  | 0.99        | 3                 |
+    
+    And the markets:
+      | id        | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | oracle config          | decimal places | position decimal places |
+      | USD/DEC19 | USD        | ETH   | log-normal-risk-model-1 | default-margin-calculator | 1                | default-none  | price-monitoring-1 | default-usd-for-future | 3              | 3                       |
+      
+    Given the parties deposit on asset's general account the following amount:
+      | party  | asset | amount          |
+      | lp1    | ETH   | 100000000000000 |
+      | party1 | ETH   | 10000000000000  |
+      | party2 | ETH   | 10000000000000  |
+
+      And the parties submit the following liquidity provision:
+      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
+      | lp1 | lp1   | USD/DEC19 | 1000000           | 0.001 | buy  | BID              | 1          | 2000   | submission |
+      | lp1 | lp1   | USD/DEC19 | 1000000           | 0.001 | buy  | MID              | 2          | 1000   | amendment  |
+      | lp1 | lp1   | USD/DEC19 | 1000000           | 0.001 | sell | ASK              | 1          | 2000   | amendment  |
+      | lp1 | lp1   | USD/DEC19 | 1000000           | 0.001 | sell | MID              | 2          | 1000   | amendment  |
+     
+    Then the parties place the following orders:
+      | party  | market id | side | volume | price    | resulting trades | type       | tif     |
+      | party1 | USD/DEC19 | buy  | 1000   | 900000   | 0                | TYPE_LIMIT | TIF_GTC |
+      | party1 | USD/DEC19 | buy  | 10000  | 1000000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party2 | USD/DEC19 | sell | 1000   | 1100000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party2 | USD/DEC19 | sell | 10000  | 1000000  | 0                | TYPE_LIMIT | TIF_GTC |
+    
+     Then the opening auction period ends for market "USD/DEC19"
+     When the network moves ahead "2" blocks
+
+     And the market data for the market "USD/DEC19" should be:
+      | mark price | trading mode                    | horizon | min bound | max bound | target stake | supplied stake | open interest |
+      | 1000000    | TRADING_MODE_MONITORING_AUCTION | 100000  | 863654    | 1154208   | 3556900000   | 1000000        | 10000         |
+    # target_stake = mark_price x max_oi x target_stake_scaling_factor x rf = 1000 x 10 x 1 x 3.5569 *100000 = 3556900000 (using asset decimal)
+
+    And the parties submit the following liquidity provision:
+      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
+      | lp1 | lp1   | USD/DEC19 | 355690001        | 0.001 | buy  | MID              | 2          | 1000   | amendment  |
+      | lp1 | lp1   | USD/DEC19 | 355690001        | 0.001 | sell | ASK              | 1          | 2000   | amendment  |
+    And the market data for the market "USD/DEC19" should be:
+      | mark price | trading mode                    | horizon | min bound | max bound | target stake | supplied stake | open interest |
+      | 1000000    | TRADING_MODE_MONITORING_AUCTION | 100000  | 863654    | 1154208   | 3556900000   | 355690001      | 10000         |
+
+    When the network moves ahead "2" blocks
+
+    And the market data for the market "USD/DEC19" should be:
+      | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
+      | 1000000    | TRADING_MODE_MONITORING_AUCTION | 100000  | 863654    | 1154208   | 3556900000   | 355690001      | 10000         |
+
+    
+   
