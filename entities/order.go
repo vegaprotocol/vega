@@ -137,7 +137,7 @@ func OrderFromProto(po *vega.Order, seqNum uint64) (Order, error) {
 		PeggedReference: peggedReference,
 		LpID:            lpID,
 		CreatedAt:       time.Unix(0, po.CreatedAt),
-		UpdatedAt:       time.Unix(0, po.ExpiresAt),
+		UpdatedAt:       time.Unix(0, po.UpdatedAt),
 		ExpiresAt:       time.Unix(0, po.ExpiresAt),
 		SeqNum:          seqNum,
 	}
