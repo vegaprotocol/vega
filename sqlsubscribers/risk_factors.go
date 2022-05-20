@@ -2,7 +2,6 @@ package sqlsubscribers
 
 import (
 	"context"
-	"time"
 
 	"code.vegaprotocol.io/data-node/entities"
 	"code.vegaprotocol.io/data-node/logging"
@@ -22,9 +21,9 @@ type RiskFactorStore interface {
 }
 
 type RiskFactor struct {
-	store    RiskFactorStore
-	log      *logging.Logger
-	vegaTime time.Time
+	subscriber
+	store RiskFactorStore
+	log   *logging.Logger
 }
 
 func NewRiskFactor(store RiskFactorStore, log *logging.Logger) *RiskFactor {
@@ -39,16 +38,7 @@ func (rf *RiskFactor) Types() []events.Type {
 }
 
 func (rf *RiskFactor) Push(ctx context.Context, evt events.Event) error {
-	switch e := evt.(type) {
-	case TimeUpdateEvent:
-		rf.vegaTime = e.Time()
-	case RiskFactorEvent:
-		return rf.consume(ctx, e)
-	default:
-		return errors.Errorf("unknown event type %s", e.Type().String())
-	}
-
-	return nil
+	return rf.consume(ctx, evt.(RiskFactorEvent))
 }
 
 func (rf *RiskFactor) consume(ctx context.Context, event RiskFactorEvent) error {

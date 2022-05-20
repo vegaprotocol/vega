@@ -2,7 +2,6 @@ package sqlsubscribers
 
 import (
 	"context"
-	"time"
 
 	"code.vegaprotocol.io/data-node/entities"
 	"code.vegaprotocol.io/data-node/logging"
@@ -22,9 +21,9 @@ type StakeLinkingStore interface {
 }
 
 type StakeLinking struct {
-	store    StakeLinkingStore
-	log      *logging.Logger
-	vegaTime time.Time
+	subscriber
+	store StakeLinkingStore
+	log   *logging.Logger
 }
 
 func NewStakeLinking(store StakeLinkingStore, log *logging.Logger) *StakeLinking {
@@ -39,14 +38,7 @@ func (sl *StakeLinking) Types() []events.Type {
 }
 
 func (sl *StakeLinking) Push(ctx context.Context, evt events.Event) error {
-	switch e := evt.(type) {
-	case TimeUpdateEvent:
-		sl.vegaTime = e.Time()
-	case StakeLinkingEvent:
-		return sl.consume(ctx, e)
-	}
-
-	return nil
+	return sl.consume(ctx, evt.(StakeLinkingEvent))
 }
 
 func (sl StakeLinking) consume(ctx context.Context, event StakeLinkingEvent) error {

@@ -41,7 +41,7 @@ func (md *MarketData) Add(data *entities.MarketData) error {
 	return nil
 }
 
-func (md *MarketData) OnTimeUpdateEvent(ctx context.Context) error {
+func (md *MarketData) Flush(ctx context.Context) error {
 	var rows [][]interface{}
 	for _, data := range md.marketData {
 		rows = append(rows, []interface{}{

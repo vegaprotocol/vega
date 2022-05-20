@@ -168,7 +168,6 @@ type NodeCommand struct {
 	accountSubSQL             *sqlsubscribers.Account
 	assetSubSQL               *sqlsubscribers.Asset
 	partySubSQL               *sqlsubscribers.Party
-	timeSubSQL                *sqlsubscribers.Time
 	transferResponseSubSQL    *sqlsubscribers.TransferResponse
 	orderSubSQL               *sqlsubscribers.Order
 	networkLimitsSubSQL       *sqlsubscribers.NetworkLimits

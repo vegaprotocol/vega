@@ -3,7 +3,6 @@ package sqlsubscribers_test
 import (
 	"context"
 	"testing"
-	"time"
 
 	"code.vegaprotocol.io/data-node/logging"
 	"code.vegaprotocol.io/data-node/sqlsubscribers"
@@ -22,7 +21,7 @@ func TestWithdrawal_Push(t *testing.T) {
 
 	store.EXPECT().Upsert(context.Background(), gomock.Any()).Times(1)
 	subscriber := sqlsubscribers.NewWithdrawal(store, logging.NewTestLogger())
-	subscriber.Push(context.Background(), events.NewTime(context.Background(), time.Now()))
+	subscriber.Flush(context.Background())
 	subscriber.Push(context.Background(), events.NewWithdrawalEvent(context.Background(), types.Withdrawal{
 		ID:             "DEADBEEF",
 		PartyID:        "DEADBEEF",

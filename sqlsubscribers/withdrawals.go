@@ -2,7 +2,6 @@ package sqlsubscribers
 
 import (
 	"context"
-	"time"
 
 	"code.vegaprotocol.io/data-node/entities"
 	"code.vegaprotocol.io/data-node/logging"
@@ -22,9 +21,9 @@ type WithdrawalStore interface {
 }
 
 type Withdrawal struct {
-	store    WithdrawalStore
-	log      *logging.Logger
-	vegaTime time.Time
+	subscriber
+	store WithdrawalStore
+	log   *logging.Logger
 }
 
 func NewWithdrawal(store WithdrawalStore, log *logging.Logger) *Withdrawal {
@@ -39,16 +38,7 @@ func (w *Withdrawal) Types() []events.Type {
 }
 
 func (w *Withdrawal) Push(ctx context.Context, evt events.Event) error {
-	switch e := evt.(type) {
-	case TimeUpdateEvent:
-		w.vegaTime = e.Time()
-	case WithdrawalEvent:
-		return w.consume(ctx, e)
-	default:
-		return errors.Errorf("unknown event type %s", e.Type().String())
-	}
-
-	return nil
+	return w.consume(ctx, evt.(WithdrawalEvent))
 }
 
 func (w *Withdrawal) consume(ctx context.Context, event WithdrawalEvent) error {

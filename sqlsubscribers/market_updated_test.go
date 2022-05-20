@@ -3,7 +3,6 @@ package sqlsubscribers_test
 import (
 	"context"
 	"testing"
-	"time"
 
 	"code.vegaprotocol.io/data-node/logging"
 	"code.vegaprotocol.io/data-node/sqlsubscribers"
@@ -24,6 +23,6 @@ func shouldCallMarketSQLStoreUpdate(t *testing.T) {
 
 	store.EXPECT().Upsert(context.Background(), gomock.Any()).Times(1)
 	subscriber := sqlsubscribers.NewMarketUpdated(store, logging.NewTestLogger())
-	subscriber.Push(context.Background(), events.NewTime(context.Background(), time.Now()))
+	subscriber.Flush(context.Background())
 	subscriber.Push(context.Background(), events.NewMarketCreatedEvent(context.Background(), getTestMarket()))
 }

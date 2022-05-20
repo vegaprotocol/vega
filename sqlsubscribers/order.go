@@ -2,7 +2,6 @@ package sqlsubscribers
 
 import (
 	"context"
-	"time"
 
 	"code.vegaprotocol.io/data-node/entities"
 	"code.vegaprotocol.io/data-node/logging"
@@ -22,9 +21,9 @@ type OrderStore interface {
 }
 
 type Order struct {
-	store    OrderStore
-	log      *logging.Logger
-	vegaTime time.Time
+	subscriber
+	store OrderStore
+	log   *logging.Logger
 }
 
 func NewOrder(store OrderStore, log *logging.Logger) *Order {
@@ -39,15 +38,11 @@ func (os *Order) Types() []events.Type {
 }
 
 func (os *Order) Push(ctx context.Context, evt events.Event) error {
-	switch e := evt.(type) {
-	case TimeUpdateEvent:
-		os.vegaTime = e.Time()
-		return os.store.Flush(ctx)
-	case OrderEvent:
-		return os.consume(e, e.Sequence())
-	default:
-		return errors.Errorf("unknown event type %s", e.Type().String())
-	}
+	return os.consume(evt.(OrderEvent), evt.Sequence())
+}
+
+func (os *Order) Flush(ctx context.Context) error {
+	return os.store.Flush(ctx)
 }
 
 func (os *Order) consume(oe OrderEvent, seqNum uint64) error {

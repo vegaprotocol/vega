@@ -3,7 +3,6 @@ package sqlsubscribers_test
 import (
 	"context"
 	"testing"
-	"time"
 
 	"code.vegaprotocol.io/data-node/logging"
 	"code.vegaprotocol.io/data-node/sqlsubscribers"
@@ -21,7 +20,7 @@ func TestOracleData_Push(t *testing.T) {
 
 	store.EXPECT().Add(context.Background(), gomock.Any()).Times(1)
 	subscriber := sqlsubscribers.NewOracleData(store, logging.NewTestLogger())
-	subscriber.Push(context.Background(), events.NewTime(context.Background(), time.Now()))
+	subscriber.Flush(context.Background())
 	subscriber.Push(context.Background(), events.NewOracleDataEvent(context.Background(), oraclespb.OracleData{
 		PubKeys:        nil,
 		Data:           nil,

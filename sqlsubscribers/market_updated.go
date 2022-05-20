@@ -2,7 +2,6 @@ package sqlsubscribers
 
 import (
 	"context"
-	"time"
 
 	"code.vegaprotocol.io/data-node/entities"
 	"code.vegaprotocol.io/data-node/logging"
@@ -17,9 +16,9 @@ type MarketUpdatedEvent interface {
 }
 
 type MarketUpdated struct {
-	store    MarketsStore
-	log      *logging.Logger
-	vegaTime time.Time
+	subscriber
+	store MarketsStore
+	log   *logging.Logger
 }
 
 func NewMarketUpdated(store MarketsStore, log *logging.Logger) *MarketUpdated {
@@ -34,16 +33,7 @@ func (m *MarketUpdated) Types() []events.Type {
 }
 
 func (m *MarketUpdated) Push(ctx context.Context, evt events.Event) error {
-	switch e := evt.(type) {
-	case TimeUpdateEvent:
-		m.vegaTime = e.Time()
-	case MarketUpdatedEvent:
-		return m.consume(ctx, e)
-	default:
-		return errors.Errorf("unknown event type %s", e.Type().String())
-	}
-
-	return nil
+	return m.consume(ctx, evt.(MarketUpdatedEvent))
 }
 
 func (m *MarketUpdated) consume(ctx context.Context, event MarketUpdatedEvent) error {

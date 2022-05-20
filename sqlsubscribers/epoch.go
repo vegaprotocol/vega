@@ -2,7 +2,6 @@ package sqlsubscribers
 
 import (
 	"context"
-	"time"
 
 	"code.vegaprotocol.io/data-node/entities"
 	"code.vegaprotocol.io/data-node/logging"
@@ -21,9 +20,9 @@ type EpochStore interface {
 }
 
 type Epoch struct {
-	store    EpochStore
-	log      *logging.Logger
-	vegaTime time.Time
+	subscriber
+	store EpochStore
+	log   *logging.Logger
 }
 
 func NewEpoch(
@@ -42,16 +41,7 @@ func (es *Epoch) Types() []events.Type {
 }
 
 func (es *Epoch) Push(ctx context.Context, evt events.Event) error {
-	switch event := evt.(type) {
-	case TimeUpdateEvent:
-		es.vegaTime = event.Time()
-	case EpochUpdateEvent:
-		return es.consume(ctx, event)
-	default:
-		return errors.Errorf("unknown event type %s", evt.Type().String())
-	}
-
-	return nil
+	return es.consume(ctx, evt.(EpochUpdateEvent))
 }
 
 func (es *Epoch) consume(ctx context.Context, event EpochUpdateEvent) error {

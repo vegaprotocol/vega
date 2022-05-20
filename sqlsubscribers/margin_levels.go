@@ -23,10 +23,10 @@ type MarginLevelsStore interface {
 }
 
 type MarginLevels struct {
+	subscriber
 	store             MarginLevelsStore
 	accountSource     AccountSource
 	log               *logging.Logger
-	vegaTime          time.Time
 	eventDeduplicator *eventDeduplicator[int64, *vega.MarginLevels]
 }
 
@@ -51,20 +51,17 @@ func (ml *MarginLevels) Types() []events.Type {
 	return []events.Type{events.MarginLevelsEvent}
 }
 
-func (ml *MarginLevels) Push(ctx context.Context, evt events.Event) error {
-	switch e := evt.(type) {
-	case TimeUpdateEvent:
-		err := ml.flush(ctx)
-		if err != nil {
-			return errors.Wrap(err, "flushing margin levels")
-		}
-		ml.vegaTime = e.Time()
-		return nil
-	case MarginLevelsEvent:
-		return ml.consume(ctx, e)
-	default:
-		return errors.Errorf("unknown event type %s", e.Type().String())
+func (ml *MarginLevels) Flush(ctx context.Context) error {
+	err := ml.flush(ctx)
+	if err != nil {
+		return errors.Wrap(err, "flushing margin levels")
 	}
+
+	return nil
+}
+
+func (ml *MarginLevels) Push(ctx context.Context, evt events.Event) error {
+	return ml.consume(ctx, evt.(MarginLevelsEvent))
 }
 
 func (ml *MarginLevels) flush(ctx context.Context) error {
