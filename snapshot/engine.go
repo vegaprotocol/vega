@@ -507,7 +507,7 @@ func (e *Engine) applySnap(ctx context.Context) error {
 	ctx = vegactx.WithTraceID(vegactx.WithBlockHeight(ctx, int64(e.app.Height)), e.app.Block)
 	ctx = vegactx.WithChainID(ctx, e.app.ChainID)
 	// we're done restoring, now save the snapshot locally, so we can provide it moving forwards
-	now := time.Unix(e.app.Time, 0)
+	now := time.Unix(0, e.app.Time)
 	// restore app state
 	e.timeService.SetTimeNow(ctx, now)
 	e.statsService.SetHeight(e.app.Height)
@@ -781,7 +781,7 @@ func (e *Engine) Snapshot(ctx context.Context) (b []byte, errlol error) {
 		appUpdate = true
 		e.app.Block = block
 	}
-	vNow := e.timeService.GetTimeNow().Unix()
+	vNow := e.timeService.GetTimeNow().UnixNano()
 	if e.app.Time != vNow {
 		e.app.Time = vNow
 		appUpdate = true
