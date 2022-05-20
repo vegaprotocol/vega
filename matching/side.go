@@ -199,9 +199,9 @@ func (s *OrderBookSide) ExtractOrders(price *num.Uint, volume uint64, removeOrde
 				break
 			}
 		}
+
 		if removeOrders {
-			for toRemove > 0 {
-				toRemove--
+			for ; toRemove > 0; toRemove-- {
 				pricelevel.removeOrder(0)
 			}
 			// Erase this price level which will be at the end of the slice
