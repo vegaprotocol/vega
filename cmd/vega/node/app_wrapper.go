@@ -25,10 +25,6 @@ func (app *appW) Info(req types.RequestInfo) types.ResponseInfo {
 	return app.impl.Info(req)
 }
 
-func (app *appW) SetOption(req types.RequestSetOption) types.ResponseSetOption {
-	return app.impl.SetOption(req)
-}
-
 func (app *appW) DeliverTx(req types.RequestDeliverTx) types.ResponseDeliverTx {
 	return app.impl.DeliverTx(req)
 }
