@@ -14,6 +14,7 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestCancelTransfer(t *testing.T) {
@@ -126,12 +127,19 @@ func TestCancelTransfer(t *testing.T) {
 		})
 	})
 
+	// Get the state of transfers so hasChanged flag is false
+	key := (&types.PayloadBankingRecurringTransfers{}).Key()
+	_, _, err := e.GetState(key)
+	require.NoError(t, err)
+	require.False(t, e.HasChanged(key))
+
 	assert.NoError(t,
 		e.CancelTransferFunds(ctx, &types.CancelTransferFunds{
 			TransferID: transferID,
 			Party:      partyID,
 		}),
 	)
+	require.True(t, e.HasChanged(key))
 
 	// now we move in time, the recurring transfer was suppose to go
 	// 'til epoch 11, but it's not cancelled, and nothing should happen
