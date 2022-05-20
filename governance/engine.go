@@ -780,6 +780,7 @@ func (e *Engine) closeProposal(ctx context.Context, proposal *proposal) {
 
 	e.broker.Send(events.NewProposalEvent(ctx, *proposal.Proposal))
 	e.broker.SendBatch(newUpdatedProposalEvents(ctx, proposal))
+	e.log.Info("proposal passed - event sent", logging.ProposalID(proposal.ID), logging.String("proposal-state", proposal.Proposal.State.String()))
 }
 
 func newUpdatedProposalEvents(ctx context.Context, proposal *proposal) []events.Event {
