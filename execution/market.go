@@ -666,6 +666,7 @@ func (m *Market) PostRestore(ctx context.Context) error {
 	for _, o := range m.peggedOrders.GetAll() {
 		parties[o.Party] = struct{}{}
 	}
+	m.parties = parties
 	return nil
 }
 

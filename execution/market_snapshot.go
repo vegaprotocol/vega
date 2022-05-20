@@ -122,7 +122,7 @@ func NewMarketFromSnapshot(
 		broker:                     broker,
 		fee:                        feeEngine,
 		liquidity:                  liqEngine,
-		parties:                    map[string]struct{}{}, // parties will be restored on chain time update
+		parties:                    map[string]struct{}{}, // parties will be restored on PostRestore
 		lMonitor:                   lMonitor,
 		tsCalc:                     tsCalc,
 		feeSplitter:                NewFeeSplitterFromSnapshot(em.FeeSplitter, now),
