@@ -49,7 +49,7 @@ func (ds *Delegations) Get(ctx context.Context,
 	epochID *int64,
 	p *entities.OffsetPagination,
 ) ([]entities.Delegation, error) {
-	query := `SELECT * from delegations`
+	query := `SELECT * from delegations_current`
 	args := []interface{}{}
 
 	conditions := []string{}
