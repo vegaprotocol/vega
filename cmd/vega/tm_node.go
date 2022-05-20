@@ -1,10 +1,10 @@
 package main
-
 import (
 	"context"
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"strings"
 	"time"
 
 	"code.vegaprotocol.io/vega/genesis"
@@ -17,7 +17,7 @@ import (
 	tmnode "github.com/tendermint/tendermint/node"
 	tmtypes "github.com/tendermint/tendermint/types"
 )
-
+  
 var (
 	networkSelect        string
 	networkSelectFromURL string
@@ -53,12 +53,33 @@ func customNewNode(config *tmcfg.Config, logger tmlog.Logger) (tmservice.Service
 
 func getGenesisDoc(config *tmcfg.Config) (*tmtypes.GenesisDoc, error) {
 	if len(networkSelect) > 0 {
-		return httpGenesisDocProvider()
+		return genesisDocFromHTTP()
 	} else if len(networkSelectFromURL) > 0 {
 		return genesisDocHTTPFromURL()
 	}
 
 	return tmtypes.GenesisDocFromFile(config.GenesisFile())
+}
+
+func genesisDocFromHTTP() (*tmtypes.GenesisDoc, error) {
+	genesisFilesRootPath := fmt.Sprintf("https://raw.githubusercontent.com/vegaprotocol/networks/master/%s", networkSelect)
+
+	doc, state, err := getGenesisFromRemote(genesisFilesRootPath)
+	if err != nil {
+		return nil, err
+	}
+	sig, err := getSignatureFromRemote(genesisFilesRootPath)
+	if err != nil {
+		return nil, err
+	}
+	validSignature, err := genesis.VerifyGenesisStateSignature(state, sig)
+	if err != nil {
+		return nil, fmt.Errorf("couldn't verify the genesis state signature: %s", err)
+	}
+	if !validSignature {
+		return nil, fmt.Errorf("genesis state doesn't match the signature: %s", sig)
+	}
+	return doc, nil
 }
 
 func genesisDocHTTPFromURL() (*tmtypes.GenesisDoc, error) {
@@ -88,37 +109,24 @@ func genesisDocHTTPFromURL() (*tmtypes.GenesisDoc, error) {
 	return doc, nil
 }
 
-func httpGenesisDocProvider() (*tmtypes.GenesisDoc, error) {
-	genesisFilesRootPath := fmt.Sprintf("https://raw.githubusercontent.com/vegaprotocol/networks/master/%s", networkSelect)
-
-	doc, _, err := getGenesisFromRemote(genesisFilesRootPath)
-
-	return doc, err
-}
-
 func getGenesisFromRemote(genesisFilesRootPath string) (*tmtypes.GenesisDoc, *genesis.GenesisState, error) {
-	genesisFilePath := fmt.Sprintf("%s/genesis.json", genesisFilesRootPath)
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-	req, err := http.NewRequestWithContext(ctx, "GET", genesisFilePath, nil)
+	jsonGenesis, err := fetchData(fmt.Sprintf("%s/genesis.json", genesisFilesRootPath))
 	if err != nil {
-		return nil, nil, fmt.Errorf("couldn't load genesis file from %s: %w", genesisFilePath, err)
+		return nil, nil, fmt.Errorf("couldn't get remote genesis file: %w", err)
 	}
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return nil, nil, fmt.Errorf("couldn't load genesis file from %s: %w", genesisFilePath, err)
-	}
-	defer resp.Body.Close()
-	jsonGenesis, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return nil, nil, err
-	}
-
 	doc, state, err := genesis.GenesisFromJSON(jsonGenesis)
 	if err != nil {
-		return nil, nil, fmt.Errorf("invalid genesis file from %s: %w", genesisFilePath, err)
+		return nil, nil, fmt.Errorf("couldn't parse genesis file: %w", err)
 	}
 	return doc, state, nil
+}
+
+func getSignatureFromRemote(genesisFilesRootPath string) (string, error) {
+	sig, err := fetchData(fmt.Sprintf("%s/signature.txt", genesisFilesRootPath))
+	if err != nil {
+		return "", fmt.Errorf("couldn't get remote signature: %w", err)
+	}
+	return strings.Trim(string(sig), "\n"), nil
 }
 
 func fetchData(path string) ([]byte, error) {
