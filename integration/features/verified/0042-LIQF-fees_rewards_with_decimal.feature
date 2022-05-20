@@ -144,7 +144,7 @@ Scenario: 001: 0070-MKTD-007, 0042-LIQF-001, 0018-RSKM-005, 0018-RSKM-008
       | party2 | ETH   | USD/DEC19 | 4815112741   | 9985554661777  |            |
       | party2 | USD   | USD/DEC19 | 4815112741   | 10000000000    |            |
 
-  Scenario: 002: 0070-MKTD-007, 0042-LIQF-001, 0038-OLIQ-002; 0038-OLIQ-006; 0029-FEES-013; 0001-MKTF-001; 0019-MCAL-008, check updated version of dpd feature in 0038-OLIQ-liquidity_provision_order_type.md
+  Scenario: 002: 0070-MKTD-007, 0042-LIQF-001, 0038-OLIQ-002; 0038-OLIQ-006; 0019-MCAL-008, check updated version of dpd feature in 0038-OLIQ-liquidity_provision_order_type.md
  
   Background:
 
@@ -225,17 +225,17 @@ Scenario: 001: 0070-MKTD-007, 0042-LIQF-001, 0018-RSKM-005, 0018-RSKM-008
      And the market data for the market "USD/DEC19" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
       | 1000000    | TRADING_MODE_CONTINUOUS | 100000  | 863654    | 1154208   | 3556900000   | 1000000        | 10000         |
-    # target_stake = mark_price x max_oi x target_stake_scaling_factor x rf = 1000 x 10 x 1 x 3.5569 *100 = 3556900 (using asset decimal)
+    # target_stake = mark_price x max_oi x target_stake_scaling_factor x rf = 1000 x 10 x 1 x 3.5569 *100000 = 3556900000 (using asset decimal)
 
     And the market data for the market "USD/DEC20" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
       | 100000000  | TRADING_MODE_CONTINUOUS | 100000  | 86365368  | 115420826 | 3556900000   | 1000000        | 1000000       |
-    # target_stake = mark_price x max_oi x target_stake_scaling_factor x rf = 1000 x 10 x 1 x 3.5569
+    # target_stake = mark_price x max_oi x target_stake_scaling_factor x rf = 1000 x 10 x 1 x 3.5569 *100000 =3556900000 (using asset decimal)
 
     And the market data for the market "USD/DEC21" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
       | 100000000  | TRADING_MODE_CONTINUOUS | 100000  | 86365368  | 115420826 | 3556900000   | 1000000        | 10000         |
-    # target_stake = mark_price x max_oi x target_stake_scaling_factor x rf = 1000 x 10 x 1 x 3.5569
+    # target_stake = mark_price x max_oi x target_stake_scaling_factor x rf = 1000 x 10 x 1 x 3.5569 =3556900000 (using asset decimal)
     # max_oi: max open interest
 
     # could be improved: as we do have fractional order, if we do the position scaling before we divide by price we can get a more sensible result
@@ -272,7 +272,7 @@ Scenario: 001: 0070-MKTD-007, 0042-LIQF-001, 0018-RSKM-005, 0018-RSKM-008
 
     And the liquidity provider fee shares for the market "USD/DEC20" should be:
       | party | equity like share | average entry valuation |
-      | lp1   | 1                 | 1000000              |
+      | lp1   | 1                 | 1000000                 |
 
     And the liquidity provider fee shares for the market "USD/DEC21" should be:
       | party | equity like share | average entry valuation |
@@ -320,6 +320,37 @@ Scenario: 001: 0070-MKTD-007, 0042-LIQF-001, 0018-RSKM-005, 0018-RSKM-008
       | party  | asset | market id | margin       | general        | bond    |
       | lp1    | ETH   | USD/DEC21 | 9411496      | 99999968101213 | 1000000 |
       | lp1    | USD   | USD/DEC21 | 9411496      | 100000000000   |         |
+
+    # amend LP commintment amount
+    And the parties submit the following liquidity provision:
+      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
+      | lp1 | lp1   | USD/DEC19 | 2000000           | 0.001 | buy  | MID              | 2          | 100000 | amendment  |
+      | lp1 | lp1   | USD/DEC19 | 2000000           | 0.001 | sell | ASK              | 1          | 200000 | amendment  |
+
+    And the market data for the market "USD/DEC19" should be:
+      | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
+      | 1001000    | TRADING_MODE_CONTINUOUS | 100000  | 863654    | 1154208   | 3562237128   | 2000000        | 10005         |
+
+    And the parties submit the following liquidity provision:
+      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
+      | lp1 | lp1   | USD/DEC19 | 4000000000           | 0.001 | buy  | MID              | 2          | 100000 | amendment  |
+      | lp1 | lp1   | USD/DEC19 | 4000000000           | 0.001 | sell | ASK              | 1          | 200000 | amendment  |
+
+    And the market data for the market "USD/DEC19" should be:
+      | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
+      | 1001000    | TRADING_MODE_CONTINUOUS | 100000  | 863654    | 1154208   | 3562237128   | 4000000000     | 10005         |
+
+    #reduce LP commitment amount 
+    And the parties submit the following liquidity provision:
+      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
+      | lp1 | lp1   | USD/DEC19 | 3600000000           | 0.001 | buy  | MID              | 2          | 100000 | amendment  |
+      | lp1 | lp1   | USD/DEC19 | 3600000000           | 0.001 | sell | ASK              | 1          | 200000 | amendment  |
+
+    And the market data for the market "USD/DEC19" should be:
+      | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
+      | 1001000    | TRADING_MODE_CONTINUOUS | 100000  | 863654    | 1154208   | 3562237128   | 3600000000     | 10005         |
+
+
       
   Scenario: 003, no decimal, 0042-LIQF-001
 
