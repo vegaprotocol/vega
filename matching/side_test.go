@@ -295,7 +295,7 @@ func TestExtractOrdersFullLevel(t *testing.T) {
 
 	assert.Len(t, side.levels, 2)
 
-	orders := side.ExtractOrders(num.NewUint(100), 3)
+	orders := side.ExtractOrders(num.NewUint(100), 3, true)
 	assert.Len(t, side.levels, 1)
 	assert.Len(t, orders, 3)
 	assert.EqualValues(t, 3, side.getOrderCount())
@@ -306,7 +306,7 @@ func TestExtractOrdersPartialLevel(t *testing.T) {
 
 	assert.Len(t, side.levels, 2)
 
-	orders := side.ExtractOrders(num.NewUint(100), 2)
+	orders := side.ExtractOrders(num.NewUint(100), 2, true)
 	assert.Len(t, side.levels, 2)
 	assert.Len(t, orders, 2)
 	assert.EqualValues(t, 4, side.getOrderCount())
@@ -317,7 +317,7 @@ func TestExtractOrdersCrossLevel(t *testing.T) {
 
 	assert.Len(t, side.levels, 2)
 
-	orders := side.ExtractOrders(num.NewUint(101), 5)
+	orders := side.ExtractOrders(num.NewUint(101), 5, true)
 	assert.Len(t, side.levels, 1)
 	assert.Len(t, orders, 5)
 	assert.EqualValues(t, 1, side.getOrderCount())
@@ -326,11 +326,11 @@ func TestExtractOrdersCrossLevel(t *testing.T) {
 func TestExtractOrdersWrongVolume(t *testing.T) {
 	// Attempt to extract more volume than we have on the book
 	side := getPopulatedTestSide(types.SideSell)
-	assert.Panics(t, func() { side.ExtractOrders(num.NewUint(101), 30) })
+	assert.Panics(t, func() { side.ExtractOrders(num.NewUint(101), 30, true) })
 
 	// Attempt to extract more than we have at this price level
 	side = getPopulatedTestSide(types.SideSell)
-	assert.Panics(t, func() { side.ExtractOrders(num.NewUint(100), 4) })
+	assert.Panics(t, func() { side.ExtractOrders(num.NewUint(100), 4, true) })
 }
 
 func TestBestStatic(t *testing.T) {

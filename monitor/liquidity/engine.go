@@ -12,6 +12,7 @@ import (
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/auction_state_mock.go -package mocks code.vegaprotocol.io/vega/monitor/liquidity AuctionState
 type AuctionState interface {
 	IsLiquidityAuction() bool
+	IsLiquidityExtension() bool
 	StartLiquidityAuction(t time.Time, d *types.AuctionDuration)
 	SetReadyToLeave()
 	InAuction() bool
@@ -66,47 +67,54 @@ func (e *Engine) UpdateTargetStakeTriggerRatio(ctx context.Context, ratio num.De
 }
 
 // CheckLiquidity Starts or Ends a Liquidity auction given the current and target stakes along with best static bid and ask volumes.
-// The constant c1 represents the netparam `MarketLiquidityTargetStakeTriggeringRatio`.
+// The constant c1 represents the netparam `MarketLiquidityTargetStakeTriggeringRatio`,
+// "true" gets returned if non-persistent order should be rejected.
 func (e *Engine) CheckLiquidity(as AuctionState, t time.Time, currentStake *num.Uint, trades []*types.Trade,
-	rf types.RiskFactor, markPrice *num.Uint, bestStaticBidVolume, bestStaticAskVolume uint64,
-) {
+	rf types.RiskFactor, refPrice *num.Uint, bestStaticBidVolume, bestStaticAskVolume uint64, persistent bool,
+) bool {
 	exp := as.ExpiresAt()
 	if exp != nil && exp.After(t) {
 		// we're in auction, and the auction isn't expiring yet, so we don't have to do anything yet
-		return
+		return false
 	}
 	e.mu.Lock()
 	c1 := e.params.TriggeringRatio
 	md := int64(e.minDuration / time.Second)
 	e.mu.Unlock()
-	targetStake := e.tsCalc.GetTheoreticalTargetStake(rf, t, markPrice.Clone(), trades)
+	targetStake := e.tsCalc.GetTheoreticalTargetStake(rf, t, refPrice.Clone(), trades)
 	ext := types.AuctionDuration{
 		Duration: e.params.AuctionExtension,
 	}
 	// if we're in liquidity auction already, the auction has expired, and we can end/extend the auction
 	// @TODO we don't have the ability to support volume limited auctions yet
-	if exp != nil && as.IsLiquidityAuction() {
+
+	if exp != nil && as.IsLiquidityAuction() || as.IsLiquidityExtension() {
 		if currentStake.GTE(targetStake) && bestStaticBidVolume > 0 && bestStaticAskVolume > 0 {
 			as.SetReadyToLeave()
-
-			return // all done
+			return false // all done
 		}
 		// we're still in trouble, extend the auction
 		as.ExtendAuctionLiquidity(ext)
-
-		return
+		return false
 	}
 	// multiply target stake by triggering ratio
 	scaledTargetStakeDec := targetStake.ToDecimal().Mul(c1)
 	scaledTargetStake, _ := num.UintFromDecimal(scaledTargetStakeDec)
-	if currentStake.LT(scaledTargetStake) || bestStaticBidVolume == 0 || bestStaticAskVolume == 0 {
+	stakeUndersupplied := currentStake.LT(scaledTargetStake)
+	if stakeUndersupplied || bestStaticBidVolume == 0 || bestStaticAskVolume == 0 {
+		if stakeUndersupplied && len(trades) > 0 && !persistent {
+			// non-persistent order cannot trigger auction by raising target stake
+			// we're going to stay in continuous trading
+			return true
+		}
 		if exp != nil {
 			as.ExtendAuctionLiquidity(ext)
 
-			return
+			return false
 		}
 		as.StartLiquidityAuction(t, &types.AuctionDuration{
 			Duration: md, // we multiply this by a second later on
 		})
 	}
+	return false
 }

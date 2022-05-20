@@ -415,6 +415,41 @@ func (b *OrderBook) GetIndicativePrice() (retprice *num.Uint) {
 	return num.Zero()
 }
 
+func (b *OrderBook) GetIndicativeTrades() ([]*types.Trade, error) {
+	// Get the uncrossing price and which side has the most volume at that price
+	price, volume, uncrossSide := b.GetIndicativePriceAndVolume()
+
+	// If we have no uncrossing price, we have nothing to do
+	if price.IsZero() && volume == 0 {
+		return nil, nil
+	}
+
+	var (
+		uncrossOrders  []*types.Order
+		uncrossingSide *OrderBookSide
+	)
+
+	if uncrossSide == types.SideBuy {
+		uncrossingSide = b.buy
+	} else {
+		uncrossingSide = b.sell
+	}
+
+	// Remove all the orders from that side of the book up to the given volume
+	uncrossOrders = uncrossingSide.ExtractOrders(price, volume, false)
+	opSide := b.getOppositeSide(uncrossSide)
+	output := make([]*types.Trade, 0, len(uncrossOrders))
+	for _, o := range uncrossOrders {
+		trades, err := opSide.fakeUncross(o)
+		if err != nil {
+			return nil, err
+		}
+		output = append(output, trades...)
+	}
+
+	return output, nil
+}
+
 // buildCumulativePriceLevels this returns a slice of all the price levels with the
 // cumulative volume for each level. Also returns the max tradable size.
 func (b *OrderBook) buildCumulativePriceLevels() ([]CumulativeVolumeLevel, uint64, error) {
@@ -436,7 +471,8 @@ func (b *OrderBook) buildCumulativePriceLevels() ([]CumulativeVolumeLevel, uint6
 	return volume, maxTradableAmount, nil
 }
 
-// Uncrosses the book to generate the maximum volume set of trades.
+// Uncrosses the book to generate the maximum volume set of trades
+// if removeOrders is set to true then matched orders get removed from the book.
 func (b *OrderBook) uncrossBook() ([]*types.OrderConfirmation, error) {
 	// Get the uncrossing price and which side has the most volume at that price
 	price, volume, uncrossSide := b.GetIndicativePriceAndVolume()
@@ -458,7 +494,7 @@ func (b *OrderBook) uncrossBook() ([]*types.OrderConfirmation, error) {
 	}
 
 	// Remove all the orders from that side of the book up to the given volume
-	uncrossOrders = uncrossingSide.ExtractOrders(price, volume)
+	uncrossOrders = uncrossingSide.ExtractOrders(price, volume, true)
 	return b.uncrossBookSide(uncrossOrders, b.getOppositeSide(uncrossSide), price.Clone())
 }
 

@@ -98,7 +98,7 @@ var (
 // @TODO the interface shouldn't be imported here.
 type PriceMonitor interface {
 	OnTimeUpdate(now time.Time)
-	CheckPrice(ctx context.Context, as price.AuctionState, p *num.Uint, v uint64, persistent bool) error
+	CheckPrice(ctx context.Context, as price.AuctionState, p *num.Uint, v uint64, persistent bool) bool
 	GetCurrentBounds() []*types.PriceMonitoringBounds
 	SetMinDuration(d time.Duration)
 	GetValidPriceRange() (num.WrappedDecimal, num.WrappedDecimal)
@@ -106,12 +106,13 @@ type PriceMonitor interface {
 	GetState() *types.PriceMonitor
 	Changed() bool
 	IsBoundFactorsInitialised() bool
+	Initialised() bool
 	UpdateSettings(risk.Model, *types.PriceMonitoringSettings)
 }
 
 // LiquidityMonitor.
 type LiquidityMonitor interface {
-	CheckLiquidity(as lmon.AuctionState, t time.Time, currentStake *num.Uint, trades []*types.Trade, rf types.RiskFactor, markPrice *num.Uint, bestStaticBidVolume, bestStaticAskVolume uint64)
+	CheckLiquidity(as lmon.AuctionState, t time.Time, currentStake *num.Uint, trades []*types.Trade, rf types.RiskFactor, markPrice *num.Uint, bestStaticBidVolume, bestStaticAskVolume uint64, persistent bool) bool
 	SetMinDuration(d time.Duration)
 	UpdateTargetStakeTriggerRatio(ctx context.Context, ratio num.Decimal)
 	UpdateParameters(*types.LiquidityMonitoringParameters)
@@ -1013,14 +1014,7 @@ func (m *Market) leaveAuction(ctx context.Context, now time.Time) {
 		if !isOpening {
 			// @TODO we should update this once
 			for _, trade := range uncrossedOrder.Trades {
-				err := m.pMonitor.CheckPrice(
-					ctx, m.as, trade.Price.Clone(), trade.Size, true,
-				)
-				if err != nil {
-					m.log.Panic("unable to run check price with price monitor",
-						logging.String("market-id", m.GetID()),
-						logging.Error(err))
-				}
+				m.pMonitor.CheckPrice(ctx, m.as, trade.Price.Clone(), trade.Size, true)
 			}
 		}
 
@@ -1032,7 +1026,7 @@ func (m *Market) leaveAuction(ctx context.Context, now time.Time) {
 	// Send an event bus update
 	m.broker.Send(endEvt)
 	m.checkForReferenceMoves(ctx, updatedOrders, true)
-	m.checkLiquidity(ctx, nil)
+	m.checkLiquidity(ctx, nil, true)
 	m.commandLiquidityAuction(ctx)
 	m.updateLiquidityFee(ctx)
 	m.OnAuctionEnded()
@@ -1260,10 +1254,12 @@ func (m *Market) SubmitOrder(
 		[]*types.Order{conf.Order}, conf.PassiveOrdersAffected...)
 	allUpdatedOrders = append(allUpdatedOrders, orderUpdates...)
 
-	m.checkForReferenceMoves(
-		ctx, allUpdatedOrders, false)
-	m.checkLiquidity(ctx, nil)
-	m.commandLiquidityAuction(ctx)
+	if !m.as.InAuction() {
+		m.checkForReferenceMoves(
+			ctx, allUpdatedOrders, false)
+		m.checkLiquidity(ctx, nil, true)
+		m.commandLiquidityAuction(ctx)
+	}
 
 	return conf, nil
 }
@@ -1436,21 +1432,17 @@ func (m *Market) checkPriceAndGetTrades(ctx context.Context, order *types.Order)
 	}
 
 	for _, t := range trades {
-		if merr := m.pMonitor.CheckPrice(ctx, m.as, t.Price.Clone(), t.Size, persistent); merr != nil {
-			// a specific order error
-			if err, ok := merr.(types.OrderError); ok {
-				return nil, err
-			}
-			m.log.Panic("unable to run check price with price monitor",
-				logging.String("market-id", m.GetID()),
-				logging.Error(merr))
+		if m.pMonitor.CheckPrice(ctx, m.as, t.Price.Clone(), t.Size, persistent) {
+			return nil, types.OrderErrorNonPersistentOrderOutOfPriceBounds
 		}
+	}
+	if m.checkLiquidity(ctx, trades, persistent) {
+		return nil, types.OrderErrorInvalidPersistance
 	}
 
 	if evt := m.as.AuctionExtended(ctx, m.currentTime); evt != nil {
 		m.broker.Send(evt)
 	}
-	m.checkLiquidity(ctx, trades)
 
 	// start the  monitoring auction if required?
 	if m.as.AuctionStart() {
@@ -2261,7 +2253,7 @@ func (m *Market) CancelAllOrders(ctx context.Context, partyID string) ([]*types.
 	}
 
 	m.checkForReferenceMoves(ctx, cancelledOrders, false)
-	m.checkLiquidity(ctx, nil)
+	m.checkLiquidity(ctx, nil, true)
 	m.commandLiquidityAuction(ctx)
 
 	return cancellations, nil
@@ -2285,9 +2277,11 @@ func (m *Market) CancelOrder(ctx context.Context, partyID, orderID string, deter
 		return conf, err
 	}
 
-	m.checkForReferenceMoves(ctx, []*types.Order{conf.Order}, false)
-	m.checkLiquidity(ctx, nil)
-	m.commandLiquidityAuction(ctx)
+	if !m.as.InAuction() {
+		m.checkForReferenceMoves(ctx, []*types.Order{conf.Order}, false)
+		m.checkLiquidity(ctx, nil, true)
+		m.commandLiquidityAuction(ctx)
+	}
 
 	return conf, nil
 }
@@ -2396,9 +2390,11 @@ func (m *Market) AmendOrder(ctx context.Context, orderAmendment *types.OrderAmen
 		allUpdatedOrders,
 		updatedOrders...,
 	)
-	m.checkForReferenceMoves(ctx, allUpdatedOrders, false)
-	m.checkLiquidity(ctx, nil)
-	m.commandLiquidityAuction(ctx)
+	if !m.as.InAuction() {
+		m.checkForReferenceMoves(ctx, allUpdatedOrders, false)
+		m.checkLiquidity(ctx, nil, true)
+		m.commandLiquidityAuction(ctx)
+	}
 
 	return conf, nil
 }
@@ -2959,9 +2955,9 @@ func (m *Market) RemoveExpiredOrders(
 
 	// If we have removed an expired order, do we need to reprice any
 	// or maybe notify the liquidity engine
-	if len(expired) > 0 {
+	if len(expired) > 0 && !m.as.InAuction() {
 		m.checkForReferenceMoves(ctx, expired, false)
-		m.checkLiquidity(ctx, nil)
+		m.checkLiquidity(ctx, nil, true)
 		m.commandLiquidityAuction(ctx)
 	}
 
@@ -3065,8 +3061,12 @@ func (m *Market) getTheoreticalTargetStake() *num.Uint {
 		m.log.Debug("unable to get risk factors, can't calculate target")
 		return num.Zero()
 	}
+
+	// Ignoring the error as GetTheoreticalTargetStake handles trades==nil and len(trades)==0
+	trades, _ := m.matching.OrderBook.GetIndicativeTrades()
+
 	return m.tsCalc.GetTheoreticalTargetStake(
-		*rf, m.currentTime, m.getCurrentMarkPrice(), nil)
+		*rf, m.currentTime, m.getReferencePrice(), trades)
 }
 
 func (m *Market) getTargetStake() *num.Uint {
@@ -3083,12 +3083,15 @@ func (m *Market) getSuppliedStake() *num.Uint {
 	return m.liquidity.CalculateSuppliedStake()
 }
 
-func (m *Market) checkLiquidity(ctx context.Context, trades []*types.Trade) {
+func (m *Market) checkLiquidity(ctx context.Context, trades []*types.Trade, persistentOrder bool) bool {
 	// before we check liquidity, ensure we've moved all funds that can go towards
 	// provided stake to the bond accounts so we don't trigger liquidity auction for no reason
 	m.checkBondBalance(ctx)
-	_, vBid, _ := m.getBestStaticBidPriceAndVolume()
-	_, vAsk, _ := m.getBestStaticAskPriceAndVolume()
+	var vBid, vAsk uint64
+	if !m.as.InAuction() || m.matching.BidAndAskPresentAfterAuction() {
+		_, vBid, _ = m.getBestStaticBidPriceAndVolume()
+		_, vAsk, _ = m.getBestStaticAskPriceAndVolume()
+	}
 
 	rf, err := m.getRiskFactors()
 	if err != nil {
@@ -3097,16 +3100,14 @@ func (m *Market) checkLiquidity(ctx context.Context, trades []*types.Trade) {
 			logging.Error(err))
 	}
 
-	m.lMonitor.CheckLiquidity(
+	return m.lMonitor.CheckLiquidity(
 		m.as, m.currentTime,
 		m.getSuppliedStake(),
 		trades,
 		*rf,
-		m.getCurrentMarkPrice(),
-		vBid, vAsk)
-	if evt := m.as.AuctionExtended(ctx, m.currentTime); evt != nil {
-		m.broker.Send(evt)
-	}
+		m.getReferencePrice(),
+		vBid, vAsk,
+		persistentOrder)
 }
 
 // command liquidity auction checks if liquidity auction should be entered and if it can end.
@@ -3119,11 +3120,7 @@ func (m *Market) commandLiquidityAuction(ctx context.Context) {
 	if m.as.InAuction() && m.as.CanLeave() && !m.as.IsOpeningAuction() {
 		p, v, _ := m.matching.GetIndicativePriceAndVolume()
 		// no need to clone here, we're getting indicative price once for this call
-		if err := m.pMonitor.CheckPrice(ctx, m.as, p, v, true); err != nil {
-			m.log.Panic("unable to run check price with price monitor",
-				logging.String("market-id", m.GetID()),
-				logging.Error(err))
-		}
+		m.pMonitor.CheckPrice(ctx, m.as, p, v, true)
 		// TODO: Need to also get indicative trades and check how they'd impact target stake,
 		// see  https://github.com/vegaprotocol/vega/issues/3047
 		// If price monitoring doesn't trigger auction than leave it
@@ -3292,4 +3289,16 @@ func (m *Market) distributeLiquidityFees(ctx context.Context) error {
 
 	m.broker.Send(events.NewTransferResponse(ctx, resp))
 	return nil
+}
+
+// Mark price gets returned when market is not in auction, otherwise indicative uncrossing price gets returned.
+func (m *Market) getReferencePrice() *num.Uint {
+	if !m.as.InAuction() {
+		return m.getCurrentMarkPrice()
+	}
+	ip := m.matching.GetIndicativePrice() // can be zero
+	if ip.IsZero() {
+		return m.getCurrentMarkPrice()
+	}
+	return ip
 }

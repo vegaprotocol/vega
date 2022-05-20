@@ -127,7 +127,7 @@ func newEquityShareMarket(t *testing.T) *equityShareMarket {
 
 	return &equityShareMarket{
 		t:         t,
-		tm:        getTestMarket(t, now, nil, nil),
+		tm:        getTestMarket(t, now, nil, &types.AuctionDuration{Duration: 1}),
 		parties:   map[string]struct{}{},
 		Now:       now,
 		ClosingAt: closingAt,
@@ -222,6 +222,8 @@ func testWithinMarket(t *testing.T) {
 	esm := newEquityShareMarket(t).
 		WithSubmittedOrder(t, "some-id-1", "party1", types.SideSell, matchingPrice+one).
 		WithSubmittedOrder(t, "some-id-2", "party2", types.SideBuy, matchingPrice-one).
+		WithSubmittedOrder(t, "some-id-3", "party1", types.SideSell, matchingPrice).
+		WithSubmittedOrder(t, "some-id-4", "party2", types.SideBuy, matchingPrice). // Need to generate a trade to leave opening auction
 		// party1 (commitment: 2000) should get 2/3 of the fee
 		WithSubmittedLiquidityProvision(t, "party1", "lp-id-1", 2000, "0.5", []*types.LiquidityOrder{
 			newLiquidityOrder(types.PeggedReferenceBestBid, 11, 1),
@@ -240,6 +242,14 @@ func testWithinMarket(t *testing.T) {
 		tm      = esm.TestMarket()
 		curTime = esm.Now
 	)
+
+	// End opening auction
+	curTime = curTime.Add(2 * time.Second)
+	tm.market.OnChainTimeUpdate(ctx, curTime)
+
+	md := esm.tm.market.GetMarketData()
+	require.NotNil(t, md)
+	require.Equal(t, types.MarketTradingModeContinuous, md.MarketTradingMode)
 
 	t.Run("WhenNoTrades", func(t *testing.T) {
 		// clean up previous events

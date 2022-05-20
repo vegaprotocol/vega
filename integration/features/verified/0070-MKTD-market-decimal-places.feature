@@ -37,13 +37,12 @@ Feature: Allow markets to be specified with a smaller number of decimal places t
             | party2 | ETH   | 100000000 |
             | party3 | USD   | 100000000 |
 
-
     Scenario: Markets with different precisions trade at the same price
 
         Given  the parties submit the following liquidity provision:
             | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-            | lp1 | party0 | USD/DEC20 | 1000              | 0.001 | sell | ASK              | 100        | 20     | submission |
-            | lp1 | party0 | USD/DEC20 | 1000              | 0.001 | buy  | BID              | 100        | -20    | amendment  |
+            | lp0 | party0 | USD/DEC20 | 1000              | 0.001 | sell | ASK              | 100        | 20     | submission |
+            | lp0 | party0 | USD/DEC20 | 1000              | 0.001 | buy  | BID              | 100        | -20    | amendment  |
             | lp1 | party0 | USD/DEC21 | 1000              | 0.001 | sell | ASK              | 100        | 20     | submission |
             | lp1 | party0 | USD/DEC21 | 1000              | 0.001 | buy  | BID              | 100        | -20    | amendment  |
             | lp2 | party0 | USD/DEC19 | 1000              | 0.001 | sell | ASK              | 100        | 20     | submission |
@@ -64,26 +63,31 @@ Feature: Allow markets to be specified with a smaller number of decimal places t
             | party0 | USD/DEC19 | buy  | 1      | 900    | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-1a  |
             | party0 | USD/DEC19 | sell | 1      | 1100   | 0                | TYPE_LIMIT | TIF_GTC | sell-ref-2a |
 
-        When the opening auction period ends for market "USD/DEC20"
+        When the opening auction period ends for market "USD/DEC21"
+        And the opening auction period ends for market "USD/DEC20"
         And the opening auction period ends for market "USD/DEC19"
+
+        Then the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "USD/DEC21"
+        And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "USD/DEC20"
+        And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "USD/DEC19"
 
         Then the parties should have the following account balances:
             | party  | asset | market id | margin | general  | bond |
-            | party0 | ETH   | USD/DEC21 | 427    | 4981264  | 1000 |
+            | party0 | ETH   | USD/DEC21 | 8536   | 4972160  | 1000 |
             | party1 | ETH   | USD/DEC21 | 1081   | 99996757 | 0    |
             | party2 | ETH   | USD/DEC21 | 4388   | 99986836 | 0    |
-            | party0 | ETH   | USD/DEC20 | 7773   | 4981264  | 1000 |
+            | party0 | ETH   | USD/DEC20 | 7768   | 4972160  | 1000 |
             | party1 | ETH   | USD/DEC20 | 1081   | 99996757 | 0    |
             | party2 | ETH   | USD/DEC20 | 4388   | 99986836 | 0    |
-            | party0 | ETH   | USD/DEC19 | 8536   | 4981264  | 1000 |
+            | party0 | ETH   | USD/DEC19 | 8536   | 4972160  | 1000 |
             | party1 | ETH   | USD/DEC19 | 1081   | 99996757 | 0    |
             | party2 | ETH   | USD/DEC19 | 4388   | 99986836 | 0    |
 
     Scenario: Users engage in a USD market auction, (0070-MKTD-003, 0070-MKTD-008)
         Given the parties submit the following liquidity provision:
             | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-            | lp1 | party0 | ETH/MAR22 | 500               | 0.001 | sell | ASK              | 500        | 20     | submission |
-            | lp1 | party0 | ETH/MAR22 | 500               | 0.001 | buy  | BID              | 500        | -20    | amendment  |
+            | lp1 | party0 | ETH/MAR22 | 35569             | 0.001 | sell | ASK              | 500        | 20     | submission |
+            | lp1 | party0 | ETH/MAR22 | 35569             | 0.001 | buy  | BID              | 500        | -20    | amendment  |
 
         And the parties place the following orders:
             | party  | market id | side | volume | price | resulting trades | type       | tif     | reference  |
@@ -95,10 +99,11 @@ Feature: Allow markets to be specified with a smaller number of decimal places t
             | party2 | ETH/MAR22 | sell | 1      | 11    | 0                | TYPE_LIMIT | TIF_GTC | sell-ref-2 |
 
         When the opening auction period ends for market "ETH/MAR22"
-        Then the auction ends with a traded volume of "10" at a price of "10"
+        Then the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/MAR22"
+        And the auction ends with a traded volume of "10" at a price of "10"
         And the parties should have the following account balances:
             | party  | asset | market id | margin | general  | bond |
-            | party0 | USD   | ETH/MAR22 | 1922   | 4997578  | 500  |
+            | party0 | USD   | ETH/MAR22 | 307317 | 4657114  | 35569  |
             | party1 | USD   | ETH/MAR22 | 12730  | 99987270 | 0    |
             | party2 | USD   | ETH/MAR22 | 51819  | 99948181 | 0    |
         And the following trades should be executed:
@@ -276,7 +281,6 @@ Feature: Allow markets to be specified with a smaller number of decimal places t
             | party1 | USD/DEC19 | sell | 5      | ASK       | 5      | 1015   | STATUS_ACTIVE |
 
     Scenario: Price monitoring bounds are calculated at asset precision but displayed rounded, (0070-MKTD-006)
-
 
         Given  the parties submit the following liquidity provision:
             | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
