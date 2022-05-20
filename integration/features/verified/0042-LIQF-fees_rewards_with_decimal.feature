@@ -500,8 +500,8 @@ Scenario: 004: 0038-OLIQ-006; check market.liquidity.targetstake.triggering.rati
 
     And the parties submit the following liquidity provision:
       | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | lp1   | USD/DEC19 | 355690001        | 0.001 | buy  | MID              | 2          | 1000   | amendment  |
-      | lp1 | lp1   | USD/DEC19 | 355690001        | 0.001 | sell | ASK              | 1          | 2000   | amendment  |
+      | lp1 | lp1   | USD/DEC19 | 355690001         | 0.001 | buy  | MID              | 2          | 1000   | amendment  |
+      | lp1 | lp1   | USD/DEC19 | 355690001         | 0.001 | sell | ASK              | 1          | 2000   | amendment  |
     And the market data for the market "USD/DEC19" should be:
       | mark price | trading mode                    | horizon | min bound | max bound | target stake | supplied stake | open interest |
       | 1000000    | TRADING_MODE_MONITORING_AUCTION | 100000  | 863654    | 1154208   | 3556900000   | 355690001      | 10000         |
@@ -509,7 +509,7 @@ Scenario: 004: 0038-OLIQ-006; check market.liquidity.targetstake.triggering.rati
     When the network moves ahead "2" blocks
 
     And the market data for the market "USD/DEC19" should be:
-      | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
+      | mark price | trading mode                    | horizon | min bound | max bound | target stake | supplied stake | open interest |
       | 1000000    | TRADING_MODE_MONITORING_AUCTION | 100000  | 863654    | 1154208   | 3556900000   | 355690001      | 10000         |
 
     
