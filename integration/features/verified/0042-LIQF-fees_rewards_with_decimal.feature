@@ -230,12 +230,12 @@ Scenario: 001: 0070-MKTD-007, 0042-LIQF-001, 0018-RSKM-005, 0018-RSKM-008
     And the market data for the market "USD/DEC20" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
       | 100000000  | TRADING_MODE_CONTINUOUS | 100000  | 86365368  | 115420826 | 3556900000   | 1000000        | 1000000       |
-    # target_stake = mark_price x max_oi x target_stake_scaling_factor x rf = 1000 x 10 x 1 x 3.5569 *100000 =3556900000 (using asset decimal)
+    # target_stake = mark_price x max_oi x target_stake_scaling_factor x rf = 1000 x 10 x 1 x 3.5569 *100000 = 3556900000 (using asset decimal)
 
     And the market data for the market "USD/DEC21" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
       | 100000000  | TRADING_MODE_CONTINUOUS | 100000  | 86365368  | 115420826 | 3556900000   | 1000000        | 10000         |
-    # target_stake = mark_price x max_oi x target_stake_scaling_factor x rf = 1000 x 10 x 1 x 3.5569 =3556900000 (using asset decimal)
+    # target_stake = mark_price x max_oi x target_stake_scaling_factor x rf = 1000 x 10 x 1 x 3.5569 *100000 = 3556900000 (using asset decimal)
     # max_oi: max open interest
 
     # could be improved: as we do have fractional order, if we do the position scaling before we divide by price we can get a more sensible result
@@ -333,8 +333,8 @@ Scenario: 001: 0070-MKTD-007, 0042-LIQF-001, 0018-RSKM-005, 0018-RSKM-008
 
     And the parties submit the following liquidity provision:
       | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | lp1   | USD/DEC19 | 4000000000           | 0.001 | buy  | MID              | 2          | 100000 | amendment  |
-      | lp1 | lp1   | USD/DEC19 | 4000000000           | 0.001 | sell | ASK              | 1          | 200000 | amendment  |
+      | lp1 | lp1   | USD/DEC19 | 4000000000        | 0.001 | buy  | MID              | 2          | 100000 | amendment  |
+      | lp1 | lp1   | USD/DEC19 | 4000000000        | 0.001 | sell | ASK              | 1          | 200000 | amendment  |
 
     And the market data for the market "USD/DEC19" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
@@ -343,20 +343,29 @@ Scenario: 001: 0070-MKTD-007, 0042-LIQF-001, 0018-RSKM-005, 0018-RSKM-008
     #reduce LP commitment amount 
     And the parties submit the following liquidity provision:
       | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | lp1   | USD/DEC19 | 3600000000           | 0.001 | buy  | MID              | 2          | 100000 | amendment  |
-      | lp1 | lp1   | USD/DEC19 | 3600000000           | 0.001 | sell | ASK              | 1          | 200000 | amendment  |
+      | lp1 | lp1   | USD/DEC19 | 3600000000        | 0.001 | buy  | MID              | 2          | 100000 | amendment  |
+      | lp1 | lp1   | USD/DEC19 | 3600000000        | 0.001 | sell | ASK              | 1          | 200000 | amendment  |
 
     And the market data for the market "USD/DEC19" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
       | 1001000    | TRADING_MODE_CONTINUOUS | 100000  | 863654    | 1154208   | 3562237128   | 3600000000     | 10005         |
+                                                                                 
+    # 0038-OLIQ-006 assure that amendment bringing supplied stake < target stake gets rejected
+    And the parties submit the following liquidity provision:
+      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type   | reference        | error                                            |
+      | lp1 | lp1   | USD/DEC19 | 3562237127        | 0.001 | buy  | MID              | 2          | 100000 | amendment | failing_amedment | commitment submission rejected, not enough stake |
+      | lp1 | lp1   | USD/DEC19 | 3562237127        | 0.001 | sell | ASK              | 1          | 200000 | amendment |                  |                                                  |
 
+    And the parties submit the following liquidity provision: 
+      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type      | reference            | error                                            |
+      | lp1 | lp1   | USD/DEC19 | 3562237127        | 0.001 | buy  | MID              | 2          | 100000 | cancellation | failing_cancellation | commitment submission rejected, not enough stake |
+      | lp1 | lp1   | USD/DEC19 | 3562237127        | 0.001 | sell | ASK              | 1          | 200000 | cancellation |                      |                                                  |
 
-      
   Scenario: 003, no decimal, 0042-LIQF-001
 
   Background:
 
-    Given the log normal risk model named "log-normal-risk-model-1":
+    Given the log normal risk model named "log-normal-risk-model-1": 
       | risk aversion | tau | mu | r | sigma |
       | 0.000001      | 0.1 | 0  | 0 | 1.0   |
     And the fees configuration named "fees-config-1":
