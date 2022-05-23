@@ -178,11 +178,6 @@ func (sv *StateVariable) eventTriggered(eventID string) error {
 	sv.state = StateVarConsensusStateCalculationStarted
 	sv.addEventLocked()
 
-	if !sv.top.IsValidator() {
-		sv.lock.Unlock()
-		return nil
-	}
-
 	sv.lock.Unlock()
 
 	// kickoff calculation
@@ -202,6 +197,13 @@ func (sv *StateVariable) CalculationFinished(eventID string, result statevar.Sta
 		sv.state = StateVarConsensusStateError
 		sv.addEventLocked()
 		sv.eventID = ""
+		sv.lock.Unlock()
+		return
+	}
+
+	if !sv.top.IsValidator() {
+		// if we're a non-validator we still need to do the calculation so that the snapshot will be in sync with
+		// a validators, but now we're here we do not need to actually send in our results.
 		sv.lock.Unlock()
 		return
 	}
