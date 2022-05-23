@@ -26,7 +26,7 @@ func PartiesPlaceTheFollowingPeggedOrders(exec Execution, table *godog.Table) er
 			},
 		}
 		_, err := exec.SubmitOrder(context.Background(), orderSubmission, row.Party())
-		if err := checkExpectedError(row, err); err != nil {
+		if err := checkExpectedError(row, err, nil); err != nil {
 			return err
 		}
 	}

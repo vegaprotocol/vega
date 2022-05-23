@@ -30,7 +30,7 @@ func PartiesPlaceTheFollowingOrders(
 		}
 
 		resp, err := exec.SubmitOrder(context.Background(), &orderSubmission, row.Party())
-		if ceerr := checkExpectedError(row, err); ceerr != nil {
+		if ceerr := checkExpectedError(row, err, nil); ceerr != nil {
 			return ceerr
 		}
 
