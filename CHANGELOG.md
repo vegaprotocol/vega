@@ -3,7 +3,15 @@
 ## Unreleased 0.54.0
 
 ### 🚨 Breaking changes
-- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+With this release a few breaking changes are introduced.
+The Vega application is now a built-in application. This means that Tendermint doesn't need to be started separately any more.
+The `vega node` command has been renamed `vega start`.
+The `vega tm` command has been renamed `vega tendermint`.
+The `Blockchain.Tendermint.ClientAddr` configuration field have been renamed `Blockchain.Tendermint.RPCAddr`.
+The init command now also generate the configuration for tendermint, the flags `--no-tendermint`, `--tendermint-home` and `--tendermint-key` have been introduced
+
+- [5579](https://github.com/vegaprotocol/vega/issues/5579) - Make vega a built-in Tendermint application
+- [5249](https://github.com/vegaprotocol/vega/issues/5249) - Migrate to Tendermint version 0.35.8
 
 ### 🗑️ Deprecation
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -

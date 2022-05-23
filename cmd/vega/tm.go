@@ -27,8 +27,19 @@ import (
 func Tm(_ context.Context, parser *flags.Parser) error {
 	_, err := parser.AddCommand(
 		"tm",
-		"Run tendermint nodes",
-		"Run a tendermint node",
+		"deprecated, see vega tendermint instead",
+		"deprecated, see vega tendermint instead",
+		&tmCmd{},
+	)
+
+	return err
+}
+
+func Tendermint(_ context.Context, parser *flags.Parser) error {
+	_, err := parser.AddCommand(
+		"tendermint",
+		"Run tendermint commands",
+		"Run tendermint commands",
 		&tmCmd{},
 	)
 
@@ -60,8 +71,6 @@ func (opts *tmCmd) Execute(_ []string) error {
 		tmdebug.DebugCmd,
 		tmcli.NewCompletionCmd(rootCmd, true),
 	)
-
-	rootCmd.AddCommand(NewRunNodeCmd())
 
 	baseCmd := tmcli.PrepareBaseCmd(rootCmd, "TM", os.ExpandEnv(filepath.Join("$HOME", tmcfg.DefaultTendermintDir)))
 	if err := baseCmd.Execute(); err != nil {

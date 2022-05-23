@@ -10,7 +10,7 @@
 // of this software will be governed by version 3 or later of the GNU General
 // Public License.
 
-package main
+package node
 
 import (
 	"context"
@@ -20,62 +20,10 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/genesis"
-	"github.com/spf13/cobra"
-	tmabciclient "github.com/tendermint/tendermint/abci/client"
-	tmcmd "github.com/tendermint/tendermint/cmd/tendermint/commands"
-	tmcfg "github.com/tendermint/tendermint/config"
-	tmlog "github.com/tendermint/tendermint/libs/log"
-	tmservice "github.com/tendermint/tendermint/libs/service"
-	tmnode "github.com/tendermint/tendermint/node"
 	tmtypes "github.com/tendermint/tendermint/types"
 )
 
-var (
-	networkSelect        string
-	networkSelectFromURL string
-)
-
-func NewRunNodeCmd() *cobra.Command {
-	cmd := tmcmd.NewRunNodeCmd(customNewNode)
-
-	cmd.Flags().StringVar(
-		&networkSelectFromURL,
-		"network-url",
-		"",
-		"The URL to a genesis file to start this node with")
-	cmd.Flags().StringVar(
-		&networkSelect,
-		"network",
-		"",
-		"The network to start this node with",
-	)
-
-	return cmd
-}
-
-func customNewNode(config *tmcfg.Config, logger tmlog.Logger) (tmservice.Service, error) {
-	doc, err := getGenesisDoc(config)
-	if err != nil {
-		return nil, fmt.Errorf("couldn't get genesis document: %w", err)
-	}
-	// We are using tendermint as an external app, so remote create it is.
-	remoteCreator := tmabciclient.NewRemoteCreator(config.ProxyApp, config.ABCI, false)
-	return tmnode.New(config, logger, remoteCreator, doc)
-}
-
-func getGenesisDoc(config *tmcfg.Config) (*tmtypes.GenesisDoc, error) {
-	if len(networkSelect) > 0 {
-		return httpGenesisDocProvider()
-	} else if len(networkSelectFromURL) > 0 {
-		return genesisDocHTTPFromURL()
-	}
-
-	return tmtypes.GenesisDocFromFile(config.GenesisFile())
-}
-
-func genesisDocHTTPFromURL() (*tmtypes.GenesisDoc, error) {
-	genesisFilePath := networkSelectFromURL
-
+func genesisDocHTTPFromURL(genesisFilePath string) (*tmtypes.GenesisDoc, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	req, err := http.NewRequestWithContext(ctx, "GET", genesisFilePath, nil)
@@ -100,7 +48,7 @@ func genesisDocHTTPFromURL() (*tmtypes.GenesisDoc, error) {
 	return doc, nil
 }
 
-func httpGenesisDocProvider() (*tmtypes.GenesisDoc, error) {
+func httpGenesisDocProvider(networkSelect string) (*tmtypes.GenesisDoc, error) {
 	genesisFilesRootPath := fmt.Sprintf("https://raw.githubusercontent.com/vegaprotocol/networks/master/%s", networkSelect)
 
 	doc, _, err := getGenesisFromRemote(genesisFilesRootPath)

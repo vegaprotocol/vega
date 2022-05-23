@@ -14,10 +14,10 @@ package abci
 
 import (
 	"context"
-	"time"
 
 	"code.vegaprotocol.io/vega/txn"
 	"code.vegaprotocol.io/vega/types"
+
 	lru "github.com/hashicorp/golang-lru"
 	abci "github.com/tendermint/tendermint/abci/types"
 )
@@ -65,9 +65,6 @@ type App struct {
 
 	// the current block context
 	ctx context.Context
-
-	blockStartTime time.Time
-	numTx          uint64
 }
 
 func New(codec Codec) *App {

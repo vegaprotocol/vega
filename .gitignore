@@ -11,11 +11,12 @@
 build/
 bin/
 *.exe
-cmd/vega/vega*
+vegawallet
+vega
 cmd/vegawallet/vegawallet*
 cmd/vegabenchmark/vegabenchmark*
 cmd/examples/nullchain/nullchain*
-cmd/*/*-dbg
+#cmd/*/*-dbg
 
 # Exclude files related to tests
 integration.test
@@ -37,4 +38,3 @@ data/
 *.log
 *.patch
 .metals
-

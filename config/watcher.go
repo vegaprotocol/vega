@@ -93,9 +93,6 @@ func NewWatcher(ctx context.Context, log *logging.Logger, vegaPaths paths.Paths,
 		return nil, err
 	}
 
-	w.log.Info("config watcher started successfully",
-		logging.String("config", w.configFilePath))
-
 	go w.watch(ctx, watcher)
 
 	return w, nil
