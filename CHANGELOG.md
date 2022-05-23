@@ -10,11 +10,12 @@
 
 ### 🛠 Improvements
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+- [5395](https://github.com/vegaprotocol/vega/issues/5395) - Add `burn_nonce` bridge tool
 
 ### 🐛 Fixes
 - [5362](https://github.com/vegaprotocol/vega/issues/5362) - Liquidity and order book point to same underlying order after restore
 - [5367](https://github.com/vegaprotocol/vega/issues/5367) - better serialisation for party orders in liquidity snapshot
-- [5377](https://github.com/vegaprotocol/vega/issues/5377) - Serialise state var internal state 
+- [5377](https://github.com/vegaprotocol/vega/issues/5377) - Serialise state var internal state
 - [5388](https://github.com/vegaprotocol/vega/issues/5388) - State variable snapshot now works as intended
 - [5203](https://github.com/vegaprotocol/vega/issues/5203) - Market liquidity monitor parameters trump network parameters on market creation
 - [5297](https://github.com/vegaprotocol/vega/issues/5297) - Assure min/max price always accurate

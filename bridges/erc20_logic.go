@@ -269,7 +269,7 @@ func (e ERC20Logic) SetAssetLimits(
 		lifetimeLimit.BigInt(),
 		withdrawThreshold.BigInt(),
 		nonce.BigInt(),
-		"set_lifetime_deposit_max",
+		"set_asset_limits",
 	}...)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't pack abi message: %w", err)
