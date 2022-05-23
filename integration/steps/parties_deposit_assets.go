@@ -28,7 +28,7 @@ func PartiesDepositTheFollowingAssets(
 			row.Asset(),
 			amount,
 		)
-		if err := checkExpectedError(row, err); err != nil {
+		if err := checkExpectedError(row, err, nil); err != nil {
 			return err
 		}
 

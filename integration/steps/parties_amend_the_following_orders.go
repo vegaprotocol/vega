@@ -49,7 +49,7 @@ func PartiesAmendTheFollowingOrders(
 		}
 
 		_, err = exec.AmendOrder(context.Background(), &amend, o.PartyId)
-		if err := checkExpectedError(row, err); err != nil {
+		if err := checkExpectedError(row, err, nil); err != nil {
 			return err
 		}
 	}
