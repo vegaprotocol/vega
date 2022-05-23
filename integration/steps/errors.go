@@ -37,7 +37,7 @@ func DebugLPSTxErrors(broker *stubs.BrokerStub, log *logging.Logger) {
 
 // checkExpectedError checks if expected error has been returned,
 // if no expecteation has been set a regular error check is carried out,
-// unexpectedErrDetail is an optional parameter that can be used to return a more detailed error when an unexpected error is encoutered
+// unexpectedErrDetail is an optional parameter that can be used to return a more detailed error when an unexpected error is encoutered.
 func checkExpectedError(row ErroneousRow, returnedErr, unexpectedErrDetail error) error {
 	if row.ExpectError() && returnedErr == nil {
 		return fmt.Errorf("action on \"%s\" should have fail", row.Reference())
