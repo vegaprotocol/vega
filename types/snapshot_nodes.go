@@ -2539,14 +2539,14 @@ func (cp CurrentPrice) IntoProto() *snapshot.CurrentPrice {
 func PastPriceFromProto(spp *snapshot.PastPrice) *PastPrice {
 	vwp, _ := num.DecimalFromString(spp.VolumeWeightedPrice)
 	return &PastPrice{
-		Time:                time.Unix(spp.Time, 0).UTC(),
+		Time:                time.Unix(0, spp.Time).UTC(),
 		VolumeWeightedPrice: vwp,
 	}
 }
 
 func (pp PastPrice) IntoProto() *snapshot.PastPrice {
 	return &snapshot.PastPrice{
-		Time:                pp.Time.Unix(),
+		Time:                pp.Time.UnixNano(),
 		VolumeWeightedPrice: pp.VolumeWeightedPrice.String(),
 	}
 }
@@ -2555,14 +2555,14 @@ func PriceMonitorFromProto(pm *snapshot.PriceMonitor) *PriceMonitor {
 	ret := PriceMonitor{
 		Initialised:                 pm.Initialised,
 		FPHorizons:                  make([]*KeyDecimalPair, 0, len(pm.FpHorizons)),
-		Now:                         time.Unix(pm.Now, 0).UTC(),
-		Update:                      time.Unix(pm.Update, 0).UTC(),
+		Now:                         time.Unix(0, pm.Now).UTC(),
+		Update:                      time.Unix(0, pm.Update).UTC(),
 		Bounds:                      make([]*PriceBound, 0, len(pm.Bounds)),
-		PriceRangeCacheTime:         time.Unix(pm.PriceRangeCacheTime, 0).UTC(),
+		PriceRangeCacheTime:         time.Unix(0, pm.PriceRangeCacheTime).UTC(),
 		PriceRangeCache:             make([]*PriceRangeCache, 0, len(pm.PriceRangeCache)),
 		PricesNow:                   make([]*CurrentPrice, 0, len(pm.PricesNow)),
 		PricesPast:                  make([]*PastPrice, 0, len(pm.PricesPast)),
-		RefPriceCacheTime:           time.Unix(pm.RefPriceCacheTime, 0).UTC(),
+		RefPriceCacheTime:           time.Unix(0, pm.RefPriceCacheTime).UTC(),
 		RefPriceCache:               make([]*KeyDecimalPair, 0, len(pm.RefPriceCache)),
 		PriceBoundsConsensusReached: pm.ConsensusReached,
 	}
@@ -2591,14 +2591,14 @@ func (p PriceMonitor) IntoProto() *snapshot.PriceMonitor {
 	ret := snapshot.PriceMonitor{
 		Initialised:         p.Initialised,
 		FpHorizons:          make([]*snapshot.DecimalMap, 0, len(p.FPHorizons)),
-		Now:                 p.Now.Unix(),
-		Update:              p.Update.Unix(),
+		Now:                 p.Now.UnixNano(),
+		Update:              p.Update.UnixNano(),
 		Bounds:              make([]*snapshot.PriceBound, 0, len(p.Bounds)),
-		PriceRangeCacheTime: p.PriceRangeCacheTime.Unix(),
+		PriceRangeCacheTime: p.PriceRangeCacheTime.UnixNano(),
 		PriceRangeCache:     make([]*snapshot.PriceRangeCache, 0, len(p.PriceRangeCache)),
 		PricesNow:           make([]*snapshot.CurrentPrice, 0, len(p.PricesNow)),
 		PricesPast:          make([]*snapshot.PastPrice, 0, len(p.PricesPast)),
-		RefPriceCacheTime:   p.RefPriceCacheTime.Unix(),
+		RefPriceCacheTime:   p.RefPriceCacheTime.UnixNano(),
 		RefPriceCache:       make([]*snapshot.DecimalMap, 0, len(p.RefPriceCache)),
 		ConsensusReached:    p.PriceBoundsConsensusReached,
 	}
