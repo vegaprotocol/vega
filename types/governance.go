@@ -1482,7 +1482,8 @@ func (n UpdateMarket) IntoProto() *vegapb.UpdateMarket {
 		changes = n.Changes.IntoProto()
 	}
 	return &vegapb.UpdateMarket{
-		Changes: changes,
+		MarketId: n.MarketID,
+		Changes:  changes,
 	}
 }
 
