@@ -5917,11 +5917,14 @@ func Test3045DistributeFeesToManyProviders(t *testing.T) {
 
 	tm.market.OnChainTimeUpdate(ctx, now.Add(10011*time.Second))
 
+	md := tm.market.GetMarketData()
+	require.NotNil(t, md)
+
 	newOrder := tpl.New(types.Order{
 		MarketID:    tm.market.GetID(),
-		Size:        20,
-		Remaining:   20,
-		Price:       num.NewUint(5250),
+		Size:        2,
+		Remaining:   2,
+		Price:       md.PriceMonitoringBounds[0].MaxValidPrice,
 		Side:        types.SideBuy,
 		Party:       "party-0",
 		TimeInForce: types.OrderTimeInForceGTC,

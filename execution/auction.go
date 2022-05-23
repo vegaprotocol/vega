@@ -17,10 +17,13 @@ func (m *Market) checkAuction(ctx context.Context, now time.Time) {
 
 	// as soon as we have an indicative uncrossing price in opening auction it needs to be passed into the price monitoring engine so statevar calculation can start
 	if m.as.IsOpeningAuction() && !m.pMonitor.Initialised() {
-		p, v, _ := m.matching.GetIndicativePriceAndVolume()
-		if v > 0 {
+		trades, err := m.matching.OrderBook.GetIndicativeTrades()
+		if err != nil {
+			m.log.Panic("Can't get indicative trades")
+		}
+		if len(trades) > 0 {
 			// pass the first uncrossing price to price engine so state variables depending on it can be initialised
-			m.pMonitor.CheckPrice(ctx, m.as, p.Clone(), v, true)
+			m.pMonitor.CheckPrice(ctx, m.as, trades, true)
 			m.OnOpeningAuctionFirstUncrossingPrice()
 		}
 	}
@@ -45,8 +48,7 @@ func (m *Market) checkAuction(ctx context.Context, now time.Time) {
 		if !m.as.CanLeave() {
 			return
 		}
-		p, v, _ := m.matching.GetIndicativePriceAndVolume()
-		m.pMonitor.CheckPrice(ctx, m.as, p.Clone(), v, true)
+		m.pMonitor.CheckPrice(ctx, m.as, trades, true)
 		if m.as.ExtensionTrigger() == types.AuctionTriggerPrice {
 			// this should never, ever happen
 			m.log.Panic("Leaving opening auction somehow triggered price monitoring to extend the auction")
@@ -78,9 +80,8 @@ func (m *Market) checkAuction(ctx context.Context, now time.Time) {
 	if !isPrice {
 		m.checkLiquidity(ctx, trades, true)
 	}
-	p, v, _ := m.matching.GetIndicativePriceAndVolume()
 	if isPrice || m.as.CanLeave() {
-		m.pMonitor.CheckPrice(ctx, m.as, p.Clone(), v, true)
+		m.pMonitor.CheckPrice(ctx, m.as, trades, true)
 	}
 	end := m.as.CanLeave()
 	if isPrice && end {
