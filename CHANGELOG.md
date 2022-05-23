@@ -23,6 +23,7 @@
 - [3047](https://github.com/vegaprotocol/vega/issues/3047) - Improve interaction between liquidity and price monitoring auctions
 - [3570](https://github.com/vegaprotocol/vega/issues/3570) - Set extension trigger during opening auction with insufficient liquidity
 - [3362](https://github.com/vegaprotocol/vega/issues/3362) - Stop non-persistent orders from triggering auctions
+- [5388](https://github.com/vegaprotocol/vega/issues/5388) - Use `UnixNano()` to snapshot price monitor times
 - [5237](https://github.com/vegaprotocol/vega/issues/5237) - Trigger state variable calculation first time indicative uncrossing price is available
 
 ## 0.51.0

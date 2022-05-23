@@ -131,4 +131,12 @@ func TestChangedState(t *testing.T) {
 	state2 := pm1.GetState()
 	assert.Len(t, state2.PricesNow, 1)
 	assert.Len(t, state2.PricesPast, 9)
+
+	asProto := state2.IntoProto()
+	state3 := types.PriceMonitorFromProto(asProto)
+	assert.Len(t, state3.PricesNow, 1)
+	assert.Len(t, state3.PricesPast, 9)
+	assert.Equal(t, state2.Now.UnixNano(), state3.Now.UnixNano())
+	assert.Equal(t, state2.Update.UnixNano(), state3.Update.UnixNano())
+	assert.Equal(t, state2.PricesPast[0].Time.UnixNano(), state3.PricesPast[0].Time.UnixNano())
 }
