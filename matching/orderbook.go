@@ -437,12 +437,25 @@ func (b *OrderBook) GetIndicativeTrades() ([]*types.Trade, error) {
 
 	// Remove all the orders from that side of the book up to the given volume
 	uncrossOrders = uncrossingSide.ExtractOrders(price, volume, false)
+	if len(uncrossOrders) == 0 {
+		return nil, nil
+	}
+	// get price factor, if price is 10,000, but market price is 100, this is 10,000/100 -> 100
+	// so we can get the market price simply by doing price / (order.Price/ order.OriginalPrice)
+	mPrice := num.Zero().Div(uncrossOrders[0].Price, uncrossOrders[0].OriginalPrice)
+	mPrice.Div(price, mPrice)
+
 	opSide := b.getOppositeSide(uncrossSide)
 	output := make([]*types.Trade, 0, len(uncrossOrders))
 	for _, o := range uncrossOrders {
 		trades, err := opSide.fakeUncross(o)
 		if err != nil {
 			return nil, err
+		}
+		// Update all the trades to have the correct uncrossing price
+		for index := 0; index < len(trades); index++ {
+			trades[index].Price = price.Clone()
+			trades[index].MarketPrice = mPrice.Clone()
 		}
 		output = append(output, trades...)
 	}
