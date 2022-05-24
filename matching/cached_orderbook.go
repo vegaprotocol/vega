@@ -1,6 +1,7 @@
 package matching
 
 import (
+	"context"
 	"time"
 
 	"code.vegaprotocol.io/vega/events"
@@ -21,6 +22,20 @@ func NewCachedOrderBook(
 		OrderBook: NewOrderBook(log, config, market, auction),
 		cache:     NewBookCache(),
 	}
+}
+
+func (b *CachedOrderBook) LoadState(ctx context.Context, payload *types.Payload) ([]types.StateProvider, error) {
+	providers, err := b.OrderBook.LoadState(ctx, payload)
+	if err != nil {
+		return providers, err
+	}
+
+	// when a market is restored we call `GetMarketData` which fills this cache based on an unrestored orderbook,
+	// now we have restored we need to recalculate.
+	b.log.Info("restoring orderbook cache for", logging.String("marketID", b.marketID))
+	b.cache.Invalidate()
+	b.GetIndicativePriceAndVolume()
+	return providers, err
 }
 
 func (b *CachedOrderBook) EnterAuction() []*types.Order {

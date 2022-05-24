@@ -1046,6 +1046,10 @@ func (e *Engine) AddProviders(provs ...types.StateProvider) {
 }
 
 func (e *Engine) Close() error {
+	// we need to lock incase a snapshot-write is still happening when we try to close the DB
+	e.avlLock.Lock()
+	defer e.avlLock.Unlock()
+
 	// keeps linters happy for now
 	if e.pollCfunc != nil {
 		e.pollCfunc()

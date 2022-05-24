@@ -17,6 +17,7 @@
 - [5367](https://github.com/vegaprotocol/vega/issues/5367) - better serialisation for party orders in liquidity snapshot
 - [5377](https://github.com/vegaprotocol/vega/issues/5377) - Serialise state var internal state
 - [5388](https://github.com/vegaprotocol/vega/issues/5388) - State variable snapshot now works as intended
+- [5388](https://github.com/vegaprotocol/vega/issues/5388) - Repopulate cached order-book after snapshot restore
 - [5203](https://github.com/vegaprotocol/vega/issues/5203) - Market liquidity monitor parameters trump network parameters on market creation
 - [5297](https://github.com/vegaprotocol/vega/issues/5297) - Assure min/max price always accurate
 - [4223](https://github.com/vegaprotocol/vega/issues/4223) - Use uncrossing price for target stake calculation during auction
