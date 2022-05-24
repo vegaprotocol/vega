@@ -189,6 +189,11 @@ func (l *NodeCommand) setupStorages() error {
 			return fmt.Errorf("failed to migrate to latest schema:%w", err)
 		}
 
+		err = sqlstore.ApplyDataRetentionPolicies(l.conf.SQLStore)
+		if err != nil {
+			return fmt.Errorf("failed to apply data retention policies:%w", err)
+		}
+
 		transactionalConnectionSource, err := sqlstore.NewTransactionalConnectionSource(l.Log, l.conf.SQLStore.ConnectionConfig)
 		if err != nil {
 			return fmt.Errorf("failed to create connection source:%w", err)

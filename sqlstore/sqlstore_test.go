@@ -86,6 +86,10 @@ func TestMain(m *testing.M) {
 			panic(err)
 		}
 
+		if err = sqlstore.ApplyDataRetentionPolicies(sqlConfig); err != nil {
+			panic(err)
+		}
+
 		m.Run()
 	}
 }

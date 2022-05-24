@@ -2,7 +2,9 @@ package sqlstore_test
 
 import (
 	"context"
+	"fmt"
 	"testing"
+	"time"
 
 	"code.vegaprotocol.io/data-node/entities"
 	"code.vegaprotocol.io/data-node/sqlstore"
@@ -47,8 +49,9 @@ func TestPosition(t *testing.T) {
 	qs := sqlstore.NewParties(connectionSource)
 	bs := sqlstore.NewBlocks(connectionSource)
 
-	block1 := addTestBlock(t, bs)
-	block2 := addTestBlock(t, bs)
+	block1 := addTestBlockForTime(t, bs, time.Now().Add((-26*time.Hour)-(2*time.Second)))
+	block2 := addTestBlockForTime(t, bs, time.Now().Add((-26*time.Hour)-(1*time.Second)))
+	block3 := addTestBlockForTime(t, bs, time.Now().Add(-26*time.Hour))
 
 	market1 := entities.Market{ID: entities.NewMarketID("dead")}
 	market2 := entities.Market{ID: entities.NewMarketID("beef")}
@@ -57,13 +60,38 @@ func TestPosition(t *testing.T) {
 
 	pos1a := addTestPosition(t, ps, market1, party1, 100, block1)
 	pos1b := addTestPosition(t, ps, market1, party1, 200, block1)
-	pos1c := addTestPosition(t, ps, market1, party1, 200, block2)
+
 	pos2 := addTestPosition(t, ps, market1, party2, 300, block2)
 	pos3 := addTestPosition(t, ps, market2, party1, 400, block2)
-	pos4 := addTestPosition(t, ps, market2, party2, 500, block2)
 
 	ps.Flush(ctx)
 	_, _ = pos1a, pos1b
+
+	// Conflate the data and add some new positions so all tests run against a mix of conflated and non-conflated data
+	now := time.Now()
+	_, err := connectionSource.Connection.Exec(context.Background(), fmt.Sprintf("CALL refresh_continuous_aggregate('conflated_positions', '%s', '%s');",
+		now.Add(-48*time.Hour).Format("2006-01-02"),
+		time.Now().Format("2006-01-02")))
+
+	assert.NoError(t, err)
+
+	// The refresh of the continuous aggregate completes asynchronously so the following loop is necessary to ensure the data has been materialized
+	// before the test continues
+	for {
+		var counter int
+		connectionSource.Connection.QueryRow(context.Background(), "SELECT count(*) FROM conflated_positions").Scan(&counter)
+		if counter == 3 {
+			break
+		}
+	}
+
+	_, err = connectionSource.Connection.Exec(context.Background(), "delete from positions")
+	assert.NoError(t, err)
+
+	// Add some new positions to the non-conflated data
+	pos1c := addTestPosition(t, ps, market1, party1, 200, block3)
+	pos4 := addTestPosition(t, ps, market2, party2, 500, block3)
+	ps.Flush(ctx)
 
 	t.Run("GetAll", func(t *testing.T) {
 		expected := []entities.Position{pos1c, pos2, pos3, pos4}
@@ -97,4 +125,5 @@ func TestPosition(t *testing.T) {
 		_, err := ps.GetByMarketAndParty(ctx, market2.ID, entities.NewPartyID("ffff"))
 		assert.ErrorIs(t, err, sqlstore.ErrPositionNotFound)
 	})
+
 }
