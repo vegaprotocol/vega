@@ -3,6 +3,7 @@ package abci
 import (
 	"encoding/hex"
 	"errors"
+	"time"
 
 	vgcontext "code.vegaprotocol.io/vega/libs/context"
 
@@ -46,6 +47,7 @@ func (app *App) InitChain(req types.RequestInitChain) (resp types.ResponseInitCh
 }
 
 func (app *App) BeginBlock(req types.RequestBeginBlock) (resp types.ResponseBeginBlock) {
+	app.blockStartTime = time.Now()
 	if fn := app.OnBeginBlock; fn != nil {
 		app.ctx, resp = fn(req)
 	}
@@ -56,6 +58,7 @@ func (app *App) EndBlock(req types.RequestEndBlock) (resp types.ResponseEndBlock
 	if fn := app.OnEndBlock; fn != nil {
 		app.ctx, resp = fn(req)
 	}
+	println("begin block to end block ==> ", req.Height, "took", time.Since(app.blockStartTime))
 	return
 }
 

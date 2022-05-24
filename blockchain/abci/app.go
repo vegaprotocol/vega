@@ -2,6 +2,7 @@ package abci
 
 import (
 	"context"
+	"time"
 
 	"code.vegaprotocol.io/vega/txn"
 	"code.vegaprotocol.io/vega/types"
@@ -52,6 +53,8 @@ type App struct {
 
 	// the current block context
 	ctx context.Context
+
+	blockStartTime time.Time
 }
 
 func New(codec Codec) *App {
