@@ -19,13 +19,13 @@ func PartiesUndelegateTheFollowingStake(
 		if row.When() == "now" {
 			err := engine.UndelegateNow(context.Background(), row.Party(), row.NodeID(), num.NewUint(row.Amount()))
 
-			if err := checkExpectedError(row, err); err != nil {
+			if err := checkExpectedError(row, err, nil); err != nil {
 				return err
 			}
 		} else {
 			err := engine.UndelegateAtEndOfEpoch(context.Background(), row.Party(), row.NodeID(), num.NewUint(row.Amount()))
 
-			if err := checkExpectedError(row, err); err != nil {
+			if err := checkExpectedError(row, err, nil); err != nil {
 				return err
 			}
 		}

@@ -16,7 +16,7 @@ func PartiesDelegateTheFollowingStake(
 	for _, r := range parseDelegationTable(table) {
 		row := newDelegationRow(r)
 		err := engine.Delegate(context.Background(), row.Party(), row.NodeID(), num.NewUint(row.Amount()))
-		if err := checkExpectedError(row, err); err != nil {
+		if err := checkExpectedError(row, err, nil); err != nil {
 			return err
 		}
 	}

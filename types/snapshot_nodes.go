@@ -3468,7 +3468,8 @@ func (*PayloadFloatingPointConsensus) isPayload() {}
 
 func PayloadFloatingPointConsensusFromProto(t *snapshot.Payload_FloatingPointConsensus) *PayloadFloatingPointConsensus {
 	return &PayloadFloatingPointConsensus{
-		ConsensusData: t.FloatingPointConsensus.NextTimeTrigger,
+		ConsensusData:               t.FloatingPointConsensus.NextTimeTrigger,
+		StateVariablesInternalState: t.FloatingPointConsensus.StateVariables,
 	}
 }
 
@@ -3476,6 +3477,7 @@ func (p *PayloadFloatingPointConsensus) IntoProto() *snapshot.Payload_FloatingPo
 	return &snapshot.Payload_FloatingPointConsensus{
 		FloatingPointConsensus: &snapshot.FloatingPointConsensus{
 			NextTimeTrigger: p.ConsensusData,
+			StateVariables:  p.StateVariablesInternalState,
 		},
 	}
 }
