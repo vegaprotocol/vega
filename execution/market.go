@@ -667,6 +667,10 @@ func (m *Market) PostRestore(ctx context.Context) error {
 	for _, o := range m.peggedOrders.GetAll() {
 		parties[o.Party] = struct{}{}
 	}
+
+	for _, p := range m.liquidity.GetPending() {
+		parties[p] = struct{}{}
+	}
 	m.parties = parties
 	return nil
 }
@@ -3163,7 +3167,6 @@ func (m *Market) settlementPriceWithLock(ctx context.Context, settlementPrice *n
 			m.log.Error("could not close market", logging.Error(err))
 		}
 		m.closed = m.mkt.State == types.MarketStateSettled
-
 		settlementPriceInAsset, err := m.tradableInstrument.Instrument.Product.ScaleSettlementPriceToDecimalPlaces(settlementPrice, m.assetDP)
 		if err == nil {
 			m.markPrice = settlementPriceInAsset.Clone()
