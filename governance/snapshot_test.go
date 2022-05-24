@@ -8,6 +8,7 @@ import (
 	"time"
 
 	snapshot "code.vegaprotocol.io/protos/vega/snapshot/v1"
+	vgrand "code.vegaprotocol.io/shared/libs/rand"
 	"code.vegaprotocol.io/vega/libs/proto"
 	"code.vegaprotocol.io/vega/types"
 	"github.com/golang/mock/gomock"
@@ -183,6 +184,18 @@ func TestGovernanceSnapshotRoundTrip(t *testing.T) {
 	require.Nil(t, err)
 	assert.False(t, bytes.Equal(emptyState, s1))
 
+	// given
+	voter1 := vgrand.RandomStr(5)
+	eng.ensureTokenBalanceForParty(t, voter1, 1)
+	eng.expectVoteEvent(t, voter1, proposal.ID)
+	err = eng.addYesVote(t, voter1, proposal.ID)
+	require.NoError(t, err)
+	require.True(t, eng.HasChanged(activeKey))
+
+	s2, _, err := eng.GetState(activeKey)
+	require.Nil(t, err)
+	assert.False(t, bytes.Equal(s1, s2))
+
 	snapEng := getTestEngine(t)
 	defer snapEng.ctrl.Finish()
 
@@ -197,9 +210,9 @@ func TestGovernanceSnapshotRoundTrip(t *testing.T) {
 	_, err = snapEng.LoadState(ctx, types.PayloadFromProto(snap))
 	require.Nil(t, err)
 
-	s2, _, err := snapEng.GetState(activeKey)
+	s3, _, err := snapEng.GetState(activeKey)
 	require.Nil(t, err)
-	require.True(t, bytes.Equal(s1, s2))
+	require.True(t, bytes.Equal(s2, s3))
 }
 
 func TestGovernanceSnapshotEmpty(t *testing.T) {
