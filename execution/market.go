@@ -788,8 +788,8 @@ func (m *Market) closeMarket(ctx context.Context, t time.Time) error {
 		return err
 	}
 
-	// stop time triggered events in the statevar engine
-	m.stateVarEngine.RemoveTimeTriggers(asset, m.mkt.ID)
+	// unregister state-variables
+	m.stateVarEngine.UnregisterStateVariable(asset, m.mkt.ID)
 
 	m.broker.Send(events.NewTransferResponse(ctx, clearMarketTransfers))
 	m.mkt.State = types.MarketStateSettled

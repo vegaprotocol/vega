@@ -73,14 +73,14 @@ func (mr *MockStateVarEngineMockRecorder) RegisterStateVariable(arg0, arg1, arg2
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RegisterStateVariable", reflect.TypeOf((*MockStateVarEngine)(nil).RegisterStateVariable), arg0, arg1, arg2, arg3, arg4, arg5, arg6)
 }
 
-// RemoveTimeTriggers mocks base method.
-func (m *MockStateVarEngine) RemoveTimeTriggers(arg0, arg1 string) {
+// UnregisterStateVariable mocks base method.
+func (m *MockStateVarEngine) UnregisterStateVariable(arg0, arg1 string) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "RemoveTimeTriggers", arg0, arg1)
+	m.ctrl.Call(m, "UnregisterStateVariable", arg0, arg1)
 }
 
-// RemoveTimeTriggers indicates an expected call of RemoveTimeTriggers.
-func (mr *MockStateVarEngineMockRecorder) RemoveTimeTriggers(arg0, arg1 interface{}) *gomock.Call {
+// UnregisterStateVariable indicates an expected call of UnregisterStateVariable.
+func (mr *MockStateVarEngineMockRecorder) UnregisterStateVariable(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveTimeTriggers", reflect.TypeOf((*MockStateVarEngine)(nil).RemoveTimeTriggers), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UnregisterStateVariable", reflect.TypeOf((*MockStateVarEngine)(nil).UnregisterStateVariable), arg0, arg1)
 }

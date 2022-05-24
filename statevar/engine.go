@@ -248,11 +248,11 @@ func (e *Engine) RegisterStateVariable(asset, market, name string, converter sta
 	return nil
 }
 
-// RemoveTimeTriggers when a market is settled it no longer exists in the execution engine, and so we don't need to keep setting off
+// UnregisterStateVariable when a market is settled it no longer exists in the execution engine, and so we don't need to keep setting off
 // the time triggered events for it anymore.
-func (e *Engine) RemoveTimeTriggers(asset, market string) {
+func (e *Engine) UnregisterStateVariable(asset, market string) {
 	if e.log.IsDebug() {
-		e.log.Debug("removing time triggers for", logging.String("market", market))
+		e.log.Debug("unregistering state-variables for", logging.String("market", market))
 	}
 	prefix := e.generateID(asset, market, "")
 
@@ -264,9 +264,10 @@ func (e *Engine) RemoveTimeTriggers(asset, market string) {
 	}
 
 	for _, id := range toRemove {
-		// removing this is also necessary for snapshots. If it stays in we restore a time trigger for a market/asset we don't have
-		// and then in the subsequent snapshot things go awry because we don't have an entry for `stateVar[ID]`.
+		// removing this is also necessary for snapshots. Otherwise the statevars will be included in the snapshot for markets that no longer exist
+		// then when we come to restore the snapshot we will have state-vars in the snapshot that are not registered.
 		delete(e.stateVarToNextCalc, id)
+		delete(e.stateVars, id)
 	}
 }
 

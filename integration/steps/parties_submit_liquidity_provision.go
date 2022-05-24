@@ -41,9 +41,12 @@ func PartiesSubmitLiquidityProvision(exec Execution, table *godog.Table) error {
 
 	// var clp *types.LiquidityProvisionSubmission
 	// checkAmt := num.NewUint(50000000)
+	var errRow ErroneousRow
 	for _, r := range parseSubmitLiquidityProvisionTable(table) {
 		row := submitLiquidityProvisionRow{row: r}
-
+		if errRow == nil || row.ExpectError() {
+			errRow = row
+		}
 		id := row.ID()
 		ref := id
 
@@ -94,8 +97,10 @@ func PartiesSubmitLiquidityProvision(exec Execution, table *godog.Table) error {
 				Buys:             lp.Buys,
 				Reference:        lp.Reference,
 			}
-			if err := exec.AmendLiquidityProvision(context.Background(), lpa, party); err != nil {
-				return errAmendingLiquidityProvision(lpa, party, err)
+
+			err := exec.AmendLiquidityProvision(context.Background(), lpa, party)
+			if ceerr := checkExpectedError(errRow, err, errAmendingLiquidityProvision(lpa, party, err)); ceerr != nil {
+				return ceerr
 			}
 		} else if lp.LpType == "submission" {
 			sub := &types.LiquidityProvisionSubmission{
@@ -107,8 +112,17 @@ func PartiesSubmitLiquidityProvision(exec Execution, table *godog.Table) error {
 				Reference:        lp.Reference,
 			}
 			deterministicId := hex.EncodeToString(crypto.Hash([]byte(id + party + lp.MarketID)))
-			if err := exec.SubmitLiquidityProvision(context.Background(), sub, party, id, deterministicId); err != nil {
-				return errSubmittingLiquidityProvision(sub, party, id, err)
+			err := exec.SubmitLiquidityProvision(context.Background(), sub, party, id, deterministicId)
+			if ceerr := checkExpectedError(errRow, err, errSubmittingLiquidityProvision(sub, party, id, err)); ceerr != nil {
+				return ceerr
+			}
+		} else if lp.LpType == "cancellation" {
+			cancel := types.LiquidityProvisionCancellation{
+				MarketID: lp.MarketID,
+			}
+			err := exec.CancelLiquidityProvision(context.Background(), &cancel, party)
+			if ceerr := checkExpectedError(errRow, err, errCancelLiquidityProvision(party, lp.MarketID, err)); ceerr != nil {
+				return ceerr
 			}
 		}
 	}
@@ -141,6 +155,7 @@ func parseSubmitLiquidityProvisionTable(table *godog.Table) []RowWrapper {
 		"lp type",
 	}, []string{
 		"reference",
+		"error",
 	})
 }
 
@@ -190,4 +205,12 @@ func (r submitLiquidityProvisionRow) PeggedReference() types.PeggedReference {
 
 func (r submitLiquidityProvisionRow) Reference() string {
 	return r.row.Str("reference")
+}
+
+func (r submitLiquidityProvisionRow) Error() string {
+	return r.row.Str("error")
+}
+
+func (r submitLiquidityProvisionRow) ExpectError() bool {
+	return r.row.HasColumn("error")
 }

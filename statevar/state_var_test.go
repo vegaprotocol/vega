@@ -608,7 +608,7 @@ func testTimeBasedEvent(t *testing.T) {
 
 	// Remove time trigger events
 	for _, v := range validators {
-		v.engine.RemoveTimeTriggers("asset", "market")
+		v.engine.UnregisterStateVariable("asset", "market")
 	}
 
 	// advance even more to when we should have triggered

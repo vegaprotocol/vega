@@ -15,7 +15,7 @@ func PartiesTransferToStakingAccount(
 	for _, r := range parseDepositAssetTable(table) {
 		row := depositAssetRow{row: r}
 		err := stakingAccountStub.IncrementBalance(row.Party(), row.Amount())
-		if err := checkExpectedError(row, err); err != nil {
+		if err := checkExpectedError(row, err, nil); err != nil {
 			return err
 		}
 	}

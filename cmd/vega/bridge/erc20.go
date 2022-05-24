@@ -22,6 +22,7 @@ type ERC20Cmd struct {
 	AddSigner        ERC20AddSignerCmd        `command:"add_signer" description:"Create signature to add a new signer to the erc20 bridge"`
 	RemoveSigner     ERC20RemoveSignerCmd     `command:"remove_signer" description:"Create signature to remove a signer from the erc20 bridge"`
 	SetThreshold     ERC20SetThresholdCmd     `command:"set_threshold" description:"Create signature to change the threshold of required signature to apply changes to the bridge"`
+	BurnNonce        ERC20BurnNonceCmd        `command:"burn_nonce" description:"Create signature to burn and existing nonce in order to prevent it to be used on the bridge"`
 	ListAsset        ERC20ListAssetCmd        `command:"list_asset" description:"Add a new erc20 asset to the erc20 bridge"`
 	RemoveAsset      ERC20RemoveAssetCmd      `command:"remove_asset" description:"Remove an erc20 asset from the erc20 bridge"`
 	WithdrawAsset    ERC20WithdrawAssetCmd    `command:"withdraw_asset" description:"Withdraw ERC20 from the bridge"`
@@ -78,6 +79,7 @@ func ERC20() *ERC20Cmd {
 		GlobalResume:     ERC20GlobalResumeCmd{},
 		GlobalStop:       ERC20GlobalStopCmd{},
 		SetWithdrawDelay: ERC20SetWithdrawDelayCmd{},
+		BurnNonce:        ERC20BurnNonceCmd{},
 	}
 	return erc20Cmd
 }
@@ -297,6 +299,36 @@ func (opts *ERC20SetThresholdCmd) Execute(_ []string) error {
 	bundle, err := multiSigControl.SetThreshold(
 		opts.NewThreshold, opts.Submitter, nonce,
 	)
+	if err != nil {
+		return fmt.Errorf("unable to generate signature: %w", err)
+	}
+
+	fmt.Printf("0x%v\n", bundle.Signature.Hex())
+	return nil
+}
+
+type ERC20BurnNonceCmd struct {
+	Submitter string `long:"submitter" required:"true" description:"Ethereum address of the submitter of the transaction"`
+	Nonce     string `long:"nonce" required:"true" description:"A nonce for this signature"`
+}
+
+func (opts *ERC20BurnNonceCmd) Execute(_ []string) error {
+	if _, err := flags.NewParser(opts, flags.Default|flags.IgnoreUnknown).Parse(); err != nil {
+		return err
+	}
+
+	w, err := erc20Cmd.GetSigner()
+	if err != nil {
+		return err
+	}
+
+	nonce, overflowed := num.UintFromString(opts.Nonce, 10)
+	if overflowed {
+		return errors.New("invalid nonce, needs to be base 10 and not overflow")
+	}
+
+	multiSigControl := bridges.NewERC20MultiSigControl(w)
+	bundle, err := multiSigControl.BurnNonce(opts.Submitter, nonce)
 	if err != nil {
 		return fmt.Errorf("unable to generate signature: %w", err)
 	}
