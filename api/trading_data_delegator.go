@@ -645,7 +645,17 @@ func (t *tradingDataDelegator) GetEpoch(ctx context.Context, req *protoapi.GetEp
 	}
 	protoEpoch.Delegations = protoDelegations
 
-	// TODO: Add in nodes once we've got them in the sql store too
+	nodes, err := t.nodeStore.GetNodes(ctx, uint64(epoch.ID))
+	if err != nil {
+		return nil, apiError(codes.Internal, err)
+	}
+
+	protoNodes := make([]*vega.Node, len(nodes))
+	for i, node := range nodes {
+		protoNodes[i] = node.ToProto()
+	}
+
+	protoEpoch.Validators = protoNodes
 
 	return &protoapi.GetEpochResponse{
 		Epoch: protoEpoch,
@@ -1721,7 +1731,13 @@ func (t *tradingDataDelegator) GetNodeData(ctx context.Context, req *protoapi.Ge
 func (t *tradingDataDelegator) GetNodes(ctx context.Context, req *protoapi.GetNodesRequest) (*protoapi.GetNodesResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("GetNodes")()
 
-	nodes, err := t.nodeStore.GetNodes(ctx)
+	epoch, err := t.epochStore.GetCurrent(ctx)
+	if err != nil {
+		fmt.Printf("%v", err)
+		return nil, apiError(codes.Internal, err)
+	}
+
+	nodes, err := t.nodeStore.GetNodes(ctx, uint64(epoch.ID))
 	if err != nil {
 		fmt.Printf("%v", err)
 		return nil, apiError(codes.Internal, err)
@@ -1744,7 +1760,13 @@ func (t *tradingDataDelegator) GetNodeByID(ctx context.Context, req *protoapi.Ge
 		return nil, apiError(codes.InvalidArgument, errors.New("missing node ID parameter"))
 	}
 
-	node, err := t.nodeStore.GetNodeByID(ctx, req.GetId())
+	epoch, err := t.epochStore.GetCurrent(ctx)
+	if err != nil {
+		fmt.Printf("%v", err)
+		return nil, apiError(codes.Internal, err)
+	}
+
+	node, err := t.nodeStore.GetNodeByID(ctx, req.GetId(), uint64(epoch.ID))
 	if err != nil {
 		fmt.Printf("%v", err)
 		return nil, apiError(codes.NotFound, err)

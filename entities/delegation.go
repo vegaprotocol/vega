@@ -11,10 +11,10 @@ import (
 )
 
 type Delegation struct {
-	PartyID  PartyID
-	NodeID   NodeID
-	EpochID  int64
-	Amount   decimal.Decimal
+	PartyID  PartyID         `json:"party_id"`
+	NodeID   NodeID          `json:"node_id"`
+	EpochID  int64           `json:"epoch_id"`
+	Amount   decimal.Decimal `json:"amount"`
 	VegaTime time.Time
 }
 

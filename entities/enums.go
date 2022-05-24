@@ -696,3 +696,12 @@ func (ns *ValidatorNodeStatus) DecodeText(_ *pgtype.ConnInfo, src []byte) error 
 	*ns = ValidatorNodeStatus(val)
 	return nil
 }
+
+func (ns *ValidatorNodeStatus) UnmarshalJSON(src []byte) error {
+	val, ok := vega.ValidatorNodeStatus_value[string(src)]
+	if !ok {
+		return fmt.Errorf("unknown validator node status: %s", src)
+	}
+	*ns = ValidatorNodeStatus(val)
+	return nil
+}

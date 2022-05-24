@@ -85,3 +85,13 @@ func (id *ID) DecodeBinary(ci *pgtype.ConnInfo, src []byte) error {
 	*id = ID(strID)
 	return nil
 }
+
+func (id *ID) UnmarshalJSON(src []byte) error {
+	// Unmarshal ID from pg JSONB which is already a JSON string
+	if n := len(src); n > 1 && src[0] == '"' && src[n-1] == '"' {
+		*id = ID(string(src[1 : n-1]))
+		return nil
+	}
+
+	return nil
+}
