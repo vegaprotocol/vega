@@ -156,8 +156,8 @@ func TestEpochs(t *testing.T) {
 	}
 
 	// Test epoch returns nodes
-	nodeStore.AddNode(*nodes[0])
-	nodeStore.AddNode(*nodes[1])
+	nodeStore.AddNode(*nodes[0], true, 3)
+	nodeStore.AddNode(*nodes[1], true, 3)
 	nodeStore.AddNodeRankingScore("0", "3", pb.RankingScore{})
 	nodeStore.AddNodeRankingScore("1", "3", pb.RankingScore{})
 
@@ -166,7 +166,6 @@ func TestEpochs(t *testing.T) {
 	endTime = endTime.Add(24 * time.Hour)
 
 	epochStore.AddEpoch(3, startTime.UnixNano(), expiryTime.UnixNano(), endTime.UnixNano())
-
 	delegations[0].EpochSeq = "3"
 	delegations[1].EpochSeq = "3"
 	epochStore.AddDelegation(*delegations[0])

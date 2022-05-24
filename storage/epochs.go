@@ -110,6 +110,9 @@ func (e *Epoch) addEpoch(seq string, startTime, expiryTime, endTime int64) {
 			epoch.delegationsPerNodePerParty = map[string]map[string]pb.Delegation{}
 		}
 	})
+
+	// tell the node store we're in a new epoch
+	e.nodeStore.AddEpoch(seq)
 }
 
 func (e *Epoch) AddDelegation(de pb.Delegation) {

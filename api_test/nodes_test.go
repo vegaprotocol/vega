@@ -118,7 +118,7 @@ func TestNewNodeEvent(t *testing.T) {
 		"GB",
 		"Validator",
 		"",
-		1,
+		12,
 		true,
 	))
 
@@ -153,8 +153,98 @@ loop:
 	assert.NoError(t, err)
 	assert.Len(t, allNodes.Nodes, 1)
 
-	// move the epoch along to one where the node hasn't got a ranking i.e it has been removed and check it is not returned in the node list
+	// move the epoch along to one and check the node still exists
 	server.broker.Send(events.NewEpochEvent(ctx, &types.Epoch{Seq: 13}))
+	var resp2 *apipb.GetEpochResponse
+
+loop2:
+	for {
+		select {
+		case <-ctx.Done():
+			t.Fatalf("test timeout")
+		case <-time.Tick(50 * time.Millisecond):
+			resp2, err = client.GetEpoch(ctx, &apipb.GetEpochRequest{Id: 13})
+			if err == nil && resp2.Epoch != nil {
+				break loop2
+			}
+		}
+	}
+	assert.NotNil(t, resp2.Epoch)
+	assert.Len(t, resp2.Epoch.Validators, 1)
+
+	allNodes, err = client.GetNodes(ctx, &apipb.GetNodesRequest{})
+	assert.NoError(t, err)
+	assert.Len(t, allNodes.Nodes, 1)
+}
+
+func TestRemoveNode(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), defaultTimout)
+	defer cancel()
+
+	server := NewTestServer(t, ctx, true)
+	defer server.ctrl.Finish()
+
+	server.broker.Send(events.NewEpochEvent(ctx, &types.Epoch{Seq: 12}))
+	server.broker.Send(events.NewValidatorUpdateEvent(
+		ctx,
+		"node-1",
+		"vega-pub-key",
+		1,
+		"eth-address",
+		"tm-pub-key",
+		"http://info.url",
+		"GB",
+		"Validator",
+		"",
+		12,
+		true,
+	))
+
+	now := time.Now()
+	// the broker reacts to Time events to trigger writes the data stores
+	tue := events.NewTime(ctx, now)
+	server.broker.Send(tue)
+
+	client := apipb.NewTradingDataServiceClient(server.clientConn)
+	require.NotNil(t, client)
+
+	nodeID := "node-1"
+	var resp *apipb.GetNodeByIDResponse
+	var err error
+loop:
+	for {
+		select {
+		case <-ctx.Done():
+			t.Fatalf("test timeout")
+		case <-time.Tick(50 * time.Millisecond):
+			resp, err = client.GetNodeByID(ctx, &apipb.GetNodeByIDRequest{Id: nodeID})
+			if err == nil && resp.Node != nil {
+				break loop
+			}
+		}
+	}
+
+	assert.NotNil(t, resp.Node)
+	allNodes, err := client.GetNodes(ctx, &apipb.GetNodesRequest{})
+	assert.NoError(t, err)
+	assert.Len(t, allNodes.Nodes, 1)
+
+	// move the epoch along to one and then send in a removal event
+	server.broker.Send(events.NewEpochEvent(ctx, &types.Epoch{Seq: 13}))
+	server.broker.Send(events.NewValidatorUpdateEvent(
+		ctx,
+		"node-1",
+		"vega-pub-key",
+		1,
+		"eth-address",
+		"tm-pub-key",
+		"http://info.url",
+		"GB",
+		"Validator",
+		"",
+		13,
+		false,
+	))
 	var resp2 *apipb.GetEpochResponse
 
 loop2:

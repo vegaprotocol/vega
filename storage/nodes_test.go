@@ -49,11 +49,9 @@ func TestCleanupOldEpochsFromNodes(t *testing.T) {
 		Location:         "UK",
 		Status:           pb.NodeStatus_NODE_STATUS_VALIDATOR,
 	}
-	nodeStore.AddNode(testNode1)
-	nodeStore.AddNode(testNode2)
+	nodeStore.AddNode(testNode1, true, 0)
+	nodeStore.AddNode(testNode2, true, 0)
 	for i := 0; i < 30; i++ {
-		nodeStore.AddNodeRankingScore("pub_key_1", strconv.Itoa(i), pb.RankingScore{})
-		nodeStore.AddNodeRankingScore("pub_key_2", strconv.Itoa(i), pb.RankingScore{})
 		nodeStore.AddDelegation(pb.Delegation{
 			Party:    "party1",
 			NodeId:   "pub_key_1",
@@ -67,6 +65,8 @@ func TestCleanupOldEpochsFromNodes(t *testing.T) {
 			Amount:   "200",
 		})
 		epochSeq := strconv.Itoa(i)
+		nodeStore.AddEpoch(epochSeq)
+
 		node1, err := nodeStore.GetByID("pub_key_1", epochSeq)
 		require.NoError(t, err)
 		require.Equal(t, "100", node1.StakedByDelegates)
@@ -76,8 +76,6 @@ func TestCleanupOldEpochsFromNodes(t *testing.T) {
 		require.Equal(t, "200", node2.StakedByDelegates)
 	}
 	for i := 30; i < 40; i++ {
-		nodeStore.AddNodeRankingScore("pub_key_1", strconv.Itoa(i), pb.RankingScore{})
-		nodeStore.AddNodeRankingScore("pub_key_2", strconv.Itoa(i), pb.RankingScore{})
 		nodeStore.AddDelegation(pb.Delegation{
 			Party:    "party1",
 			NodeId:   "pub_key_1",
@@ -90,6 +88,7 @@ func TestCleanupOldEpochsFromNodes(t *testing.T) {
 			EpochSeq: strconv.Itoa(i),
 			Amount:   "200",
 		})
+		nodeStore.AddEpoch(strconv.Itoa(i))
 		// we don't have delegations for the 31st past epoch
 		epochSeqMinus30 := strconv.Itoa(i - 30)
 		node1, _ := nodeStore.GetByID("pub_key_1", epochSeqMinus30)
@@ -144,7 +143,7 @@ func TestNodes(t *testing.T) {
 		RankingScore:      &pb.RankingScore{},
 	}
 
-	nodeStore.AddNode(testNode)
+	nodeStore.AddNode(testNode, true, 1)
 	nodeStore.AddNodeRankingScore("pub_key_1", "1", pb.RankingScore{})
 
 	actualNode, err := nodeStore.GetByID("pub_key_1", "1")
@@ -189,7 +188,7 @@ func TestNodes(t *testing.T) {
 		InfoUrl:          "http://info-node-2.vega",
 		Location:         "UK",
 		Status:           pb.NodeStatus_NODE_STATUS_VALIDATOR,
-	})
+	}, true, 1)
 
 	rs1 := pb.RewardScore{
 		RawValidatorScore: "20",
@@ -220,6 +219,7 @@ func TestNodes(t *testing.T) {
 	}
 	nodeStore.AddNodeRankingScore("pub_key_2", "2", rankScore2)
 	nodeStore.AddNodeRankingScore("pub_key_2", "1", rankScore2)
+	nodeStore.AddEpoch("2")
 
 	delegations = []*pb.Delegation{
 		{

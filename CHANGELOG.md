@@ -17,6 +17,7 @@
 
 ### 🐛 Fixes
 - [616](https://github.com/vegaprotocol/data-node/pull/616) - Don't return multiple delegations per epoch/party/node
+- [627](https://github.com/vegaprotocol/data-node/issues/627) - User `from_epoch` in update event to determine if node exists
 - [](https://github.com/vegaprotocol/data-node/issues/xxx) -
 
 ## 0.51.0
