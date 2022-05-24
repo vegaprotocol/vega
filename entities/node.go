@@ -30,9 +30,9 @@ type Node struct {
 	PendingStake      decimal.Decimal
 	EpochData         EpochData
 	Status            NodeStatus
-	Delegations       []Delegation
-	RewardScore       RewardScore
-	RankingScore      RankingScore
+	Delegations       []Delegation  `json:""`
+	RewardScore       *RewardScore  `json:""`
+	RankingScore      *RankingScore `json:""`
 	Name              string
 	AvatarUrl         string
 	VegaTime          time.Time
@@ -49,13 +49,13 @@ type EpochData struct {
 }
 
 type RewardScore struct {
-	RawValidatorScore   decimal.Decimal
-	PerformanceScore    decimal.Decimal
-	MultisigScore       decimal.Decimal
-	ValidatorScore      decimal.Decimal
-	NormalisedScore     decimal.Decimal
-	ValidatorNodeStatus ValidatorNodeStatus
-	VegaTime            time.Time
+	RawValidatorScore   decimal.Decimal     `json:"raw_validator_score"`
+	PerformanceScore    decimal.Decimal     `json:"performance_score"`
+	MultisigScore       decimal.Decimal     `json:"multisig_score"`
+	ValidatorScore      decimal.Decimal     `json:"validator_score"`
+	NormalisedScore     decimal.Decimal     `json:"normalised_score"`
+	ValidatorNodeStatus ValidatorNodeStatus `json:"validator_node_status,string"`
+	VegaTime            time.Time           `json:"vega_time"`
 	EpochSeq            uint64
 }
 
@@ -65,13 +65,13 @@ type RewardScoreAux struct {
 }
 
 type RankingScore struct {
-	StakeScore       decimal.Decimal
-	PerformanceScore decimal.Decimal
-	PreviousStatus   ValidatorNodeStatus
-	Status           ValidatorNodeStatus
-	VotingPower      uint32
-	RankingScore     decimal.Decimal
-	VegaTime         time.Time
+	StakeScore       decimal.Decimal     `json:"stake_score"`
+	PerformanceScore decimal.Decimal     `json:"performance_score"`
+	PreviousStatus   ValidatorNodeStatus `json:"previous_status,string"`
+	Status           ValidatorNodeStatus `json:",string"`
+	VotingPower      uint32              `json:"voting_power"`
+	RankingScore     decimal.Decimal     `json:"ranking_score"`
+	VegaTime         time.Time           `json:"vega_time"`
 	EpochSeq         uint64
 }
 
@@ -110,8 +110,8 @@ func NodeFromValidatorUpdateEvent(evt eventspb.ValidatorUpdate, vegaTime time.Ti
 			PendingStake:      decimal.Zero,
 			EpochData:         EpochData{},
 			Delegations:       []Delegation{},
-			RewardScore:       RewardScore{},
-			RankingScore:      RankingScore{},
+			RewardScore:       nil,
+			RankingScore:      nil,
 		}, ValidatorUpdateAux{
 			Added:           evt.Added,
 			FromEpoch:       evt.FromEpoch,
@@ -301,7 +301,7 @@ func (node *Node) ToProto() *vega.Node {
 		protoDelegations[i] = delegation.ToProto()
 	}
 
-	return &vega.Node{
+	res := &vega.Node{
 		Id:                node.ID.String(),
 		PubKey:            node.PubKey.String(),
 		TmPubKey:          node.TmPubKey.String(),
@@ -316,11 +316,19 @@ func (node *Node) ToProto() *vega.Node {
 		EpochData:         node.EpochData.EpochData,
 		Status:            vega.NodeStatus(node.Status),
 		Delegations:       protoDelegations,
-		RewardScore:       node.RewardScore.ToProto(),
-		RankingScore:      node.RankingScore.ToProto(),
 		Name:              node.Name,
 		AvatarUrl:         node.AvatarUrl,
 	}
+
+	if node.RewardScore != nil {
+		res.RewardScore = node.RewardScore.ToProto()
+	}
+
+	if node.RankingScore != nil {
+		res.RankingScore = node.RankingScore.ToProto()
+	}
+
+	return res
 }
 
 func (ed EpochData) MarshalJSON() ([]byte, error) {

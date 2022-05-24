@@ -63,7 +63,29 @@ func (store *Node) UpsertNode(ctx context.Context, node *entities.Node) error {
 func (store *Node) UpsertRanking(ctx context.Context, rs *entities.RankingScore, aux *entities.RankingScoreAux) error {
 	defer metrics.StartSQLQuery("Node", "UpsertRanking")()
 
-	_, err := store.pool.Exec(ctx, `UPDATE nodes SET ranking_score = $1 WHERE id = $2`, rs, aux.NodeId)
+	_, err := store.pool.Exec(ctx, `
+		INSERT INTO ranking_scores (
+			node_id,
+			epoch_seq,
+			stake_score,
+			performance_score,
+			ranking_score,
+			voting_power,
+			previous_status,
+			status,
+			vega_time)
+		VALUES
+			($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+		aux.NodeId,
+		rs.EpochSeq,
+		rs.StakeScore,
+		rs.PerformanceScore,
+		rs.RankingScore,
+		rs.VotingPower,
+		rs.PreviousStatus,
+		rs.Status,
+		rs.VegaTime,
+	)
 
 	return err
 }
@@ -71,7 +93,29 @@ func (store *Node) UpsertRanking(ctx context.Context, rs *entities.RankingScore,
 func (store *Node) UpsertScore(ctx context.Context, rs *entities.RewardScore, aux *entities.RewardScoreAux) error {
 	defer metrics.StartSQLQuery("Node", "UpsertScore")()
 
-	_, err := store.pool.Exec(ctx, `UPDATE nodes SET reward_score = $1 WHERE id = $2`, rs, aux.NodeId)
+	_, err := store.pool.Exec(ctx, `
+		INSERT INTO reward_scores (
+			node_id,
+			epoch_seq,
+			validator_node_status,
+			raw_validator_score,
+			performance_score,
+			multisig_score,
+			validator_score,
+			normalised_score,
+			vega_time) 
+		VALUES 
+			($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+		aux.NodeId,
+		rs.EpochSeq,
+		rs.ValidatorNodeStatus,
+		rs.RawValidatorScore,
+		rs.PerformanceScore,
+		rs.MultisigScore,
+		rs.ValidatorScore,
+		rs.NormalisedScore,
+		rs.VegaTime,
+	)
 
 	return err
 }
@@ -165,14 +209,16 @@ func (store *Node) GetNodes(ctx context.Context) ([]entities.Node, error) {
 		nodes.avatar_url,
 		nodes.status,
 	
-		(CASE WHEN (nodes.reward_score->>'EpochSeq')::BIGINT = (SELECT id FROM current_epoch) THEN nodes.reward_score END) AS reward_score,
-		(CASE WHEN (nodes.ranking_score->>'EpochSeq')::BIGINT = (SELECT id FROM current_epoch) THEN nodes.ranking_score END) AS ranking_score,
+		FIRST(ROW_TO_JSON(reward_scores.*))::JSONB AS "reward_score",
+		FIRST(ROW_TO_JSON(ranking_scores.*))::JSONB AS "ranking_score",
+		JSON_AGG(JSON_BUILD_OBJECT(
 		
 		COALESCE(SUM(delegations.amount) FILTER (WHERE delegations.party_id = nodes.vega_pub_key), 0) AS staked_by_operator,
 		COALESCE(SUM(delegations.amount) FILTER (WHERE delegations.party_id != nodes.vega_pub_key), 0) AS staked_by_delegates,
 		COALESCE(SUM(delegations.amount), 0) AS staked_total
 	FROM nodes
-	JOIN delegations ON delegations.node_id = nodes.id
+	LEFT JOIN ranking_scores ON ranking_scores.node_id = nodes.id AND ranking_scores.epoch_seq = $1
+	LEFT JOIN reward_scores ON reward_scores.node_id = nodes.id AND reward_scores.epoch_seq = $1
 	GROUP BY nodes.id`
 
 	err := pgxscan.Select(ctx, store.pool, &nodes, query)
@@ -205,14 +251,16 @@ func (store *Node) GetNodeByID(ctx context.Context, nodeId string) (entities.Nod
 		nodes.avatar_url,
 		nodes.status,
 	
-		(CASE WHEN (nodes.reward_score->>'EpochSeq')::BIGINT = (SELECT id FROM current_epoch) THEN nodes.reward_score END) AS reward_score,
-		(CASE WHEN (nodes.ranking_score->>'EpochSeq')::BIGINT = (SELECT id FROM current_epoch) THEN nodes.ranking_score END) AS ranking_score,
+		FIRST(ROW_TO_JSON(reward_scores.*))::JSONB AS "reward_score",
+		FIRST(ROW_TO_JSON(ranking_scores.*))::JSONB AS "ranking_score",
+		JSON_AGG(JSON_BUILD_OBJECT(
 		
 		COALESCE(SUM(delegations.amount) FILTER (WHERE delegations.party_id = nodes.vega_pub_key), 0) AS staked_by_operator,
 		COALESCE(SUM(delegations.amount) FILTER (WHERE delegations.party_id != nodes.vega_pub_key), 0) AS staked_by_delegates,
 		COALESCE(SUM(delegations.amount), 0) AS staked_total
 	FROM nodes
-	JOIN delegations ON delegations.node_id = nodes.id
+	LEFT JOIN ranking_scores ON ranking_scores.node_id = nodes.id AND ranking_scores.epoch_seq = $2
+	LEFT JOIN reward_scores ON reward_scores.node_id = nodes.id AND reward_scores.epoch_seq = $2
 	WHERE nodes.id = $1
 	GROUP BY nodes.id`
 

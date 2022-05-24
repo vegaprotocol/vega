@@ -449,12 +449,51 @@ CREATE TABLE IF NOT EXISTS nodes (
   info_url              TEXT NOT NULL,
   location              TEXT NOT NULL,
   status                node_status NOT NULL,
-  reward_score          JSONB,
-  ranking_score         JSONB,
   name                  TEXT NOT NULL,
   avatar_url            TEXT NOT NULL,
   vega_time             TIMESTAMP WITH TIME ZONE NOT NULL,
   PRIMARY KEY(id)
+);
+
+CREATE TYPE validator_node_status as enum(
+  'VALIDATOR_NODE_STATUS_UNSPECIFIED',
+  'VALIDATOR_NODE_STATUS_TENDERMINT',
+  'VALIDATOR_NODE_STATUS_ERSATZ',
+  'VALIDATOR_NODE_STATUS_PENDING'
+);
+
+CREATE TABLE IF NOT EXISTS ranking_scores (
+  node_id           BYTEA NOT NULL REFERENCES nodes(id),
+  epoch_seq         BIGINT NOT NULL,
+
+  stake_score       NUMERIC NOT NULL,
+  performance_score NUMERIC NOT NULL,
+  ranking_score     NUMERIC NOT NULL,
+  voting_power      INT NOT NULL,
+
+  previous_status   validator_node_status NOT NULL,
+  status            validator_node_status NOT NULL,
+
+  vega_time         TIMESTAMP WITH TIME ZONE NOT NULL,
+
+  PRIMARY KEY (node_id, epoch_seq)
+);
+
+CREATE TABLE IF NOT EXISTS reward_scores (
+  node_id                 BYTEA NOT NULL REFERENCES nodes(id),
+  epoch_seq               BIGINT NOT NULL,
+
+  validator_node_status   validator_node_status NOT NULL,
+
+  raw_validator_score     NUMERIC NOT NULL,
+  performance_score       NUMERIC NOT NULL,
+  multisig_score          NUMERIC NOT NULL,
+  validator_score         NUMERIC NOT NULL,
+  normalised_score        NUMERIC NOT NULL,
+
+  vega_time               TIMESTAMP WITH TIME ZONE NOT NULL,
+
+  PRIMARY KEY (node_id, epoch_seq)
 );
 
 CREATE TABLE rewards(
@@ -892,6 +931,10 @@ DROP TYPE IF EXISTS order_status;
 DROP TYPE IF EXISTS order_side;
 DROP TYPE IF EXISTS order_type;
 DROP TYPE IF EXISTS order_pegged_reference;
+
+DROP TABLE IF EXISTS ranking_scores;
+DROP TABLE IF EXISTS reward_scores;
+DROP TYPE IF EXISTS validator_node_status;
 
 DROP TABLE IF EXISTS nodes;
 DROP TYPE IF EXISTS node_status;
