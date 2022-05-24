@@ -58,7 +58,7 @@ func (app *App) EndBlock(req types.RequestEndBlock) (resp types.ResponseEndBlock
 	if fn := app.OnEndBlock; fn != nil {
 		app.ctx, resp = fn(req)
 	}
-	println("begin block to end block ==> ", req.Height, "took", time.Since(app.blockStartTime))
+	println("begin block to end block ==> ", req.Height, "took", time.Since(app.blockStartTime).Seconds())
 	return
 }
 
