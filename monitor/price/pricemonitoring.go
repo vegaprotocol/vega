@@ -167,6 +167,10 @@ func NewMonitor(asset, mktID string, riskModel RangeProvider, settings *types.Pr
 	}
 
 	stateVarEngine.RegisterStateVariable(asset, mktID, "bound-factors", boundFactorsConverter{}, e.startCalcPriceRanges, []statevar.StateVarEventType{statevar.StateVarEventTypeTimeTrigger, statevar.StateVarEventTypeAuctionEnded, statevar.StateVarEventTypeOpeningAuctionFirstUncrossingPrice}, e.updatePriceBounds)
+
+	e.pricesNow = []currentPrice{}
+	e.pricesPast = []pastPrice{}
+
 	return e, nil
 }
 
@@ -243,7 +247,7 @@ func (e *Engine) CheckPrice(ctx context.Context, as AuctionState, trades []*type
 		if len(trades) == 0 {
 			return false
 		}
-		e.resetPriceHistory(trades)
+		e.recordPriceChanges(trades)
 		e.initialised = true
 	}
 	// market is not in auction, or in batch auction
@@ -278,10 +282,11 @@ func (e *Engine) CheckPrice(ctx context.Context, as AuctionState, trades []*type
 		as.StartPriceAuction(e.now, &duration)
 		return false
 	}
+
 	// market is in auction
+
 	// opening auction -> ignore
 	if as.IsOpeningAuction() {
-		e.resetPriceHistory(trades)
 		return false
 	}
 
@@ -296,13 +301,7 @@ func (e *Engine) CheckPrice(ctx context.Context, as AuctionState, trades []*type
 			}
 			// auction can be terminated
 			as.SetReadyToLeave()
-			// reset the engine
-			e.resetPriceHistory(trades)
 			return false
-		}
-		// liquidity auction, and it was safe to end -> book is OK, price was OK, reset the engine
-		if as.CanLeave() {
-			e.reactivateBounds()
 		}
 		return false
 	}
@@ -320,8 +319,8 @@ func (e *Engine) CheckPrice(ctx context.Context, as AuctionState, trades []*type
 	return false
 }
 
-// resetPriceHistory deletes existing price history and starts it afresh with the supplied value.
-func (e *Engine) resetPriceHistory(trades []*types.Trade) {
+// ResetPriceHistory deletes existing price history and starts it afresh with the supplied values.
+func (e *Engine) ResetPriceHistory(trades []*types.Trade) {
 	e.update = e.now
 	if len(trades) > 0 {
 		pricesNow := make([]currentPrice, 0, len(trades))

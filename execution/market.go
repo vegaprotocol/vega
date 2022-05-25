@@ -100,6 +100,7 @@ type PriceMonitor interface {
 	OnTimeUpdate(now time.Time)
 	CheckPrice(ctx context.Context, as price.AuctionState, trades []*types.Trade, persistent bool) bool
 	GetCurrentBounds() []*types.PriceMonitoringBounds
+	ResetPriceHistory(trades []*types.Trade)
 	SetMinDuration(d time.Duration)
 	GetValidPriceRange() (num.WrappedDecimal, num.WrappedDecimal)
 	// Snapshot
@@ -1009,18 +1010,10 @@ func (m *Market) leaveAuction(ctx context.Context, now time.Time) {
 		OriginalPrice: mcmp,
 	})
 
-	// keep var to see if we're leaving opening auction
-	isOpening := m.as.IsOpeningAuction()
 	// update auction state, so we know what the new tradeMode ought to be
 	endEvt := m.as.Left(ctx, now)
 
 	for _, uncrossedOrder := range uncrossedOrders {
-		if !isOpening {
-			// @TODO we should update this once
-			// TODO (WG): Do we really need this??
-			m.pMonitor.CheckPrice(ctx, m.as, uncrossedOrder.Trades, true)
-		}
-
 		updatedOrders = append(updatedOrders, uncrossedOrder.Order)
 		updatedOrders = append(
 			updatedOrders, uncrossedOrder.PassiveOrdersAffected...)

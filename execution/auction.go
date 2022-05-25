@@ -48,11 +48,11 @@ func (m *Market) checkAuction(ctx context.Context, now time.Time) {
 		if !m.as.CanLeave() {
 			return
 		}
-		m.pMonitor.CheckPrice(ctx, m.as, trades, true)
-		if m.as.ExtensionTrigger() == types.AuctionTriggerPrice {
-			// this should never, ever happen
-			m.log.Panic("Leaving opening auction somehow triggered price monitoring to extend the auction")
-		}
+		// m.pMonitor.CheckPrice(ctx, m.as, trades, true)
+		// if m.as.ExtensionTrigger() == types.AuctionTriggerPrice {
+		// 	// this should never, ever happen
+		// 	m.log.Panic("Leaving opening auction somehow triggered price monitoring to extend the auction")
+		// }
 
 		// if we don't have yet consensus for the floating point parameters, stay in the opening auction
 		if !m.CanLeaveOpeningAuction() {
@@ -61,6 +61,7 @@ func (m *Market) checkAuction(ctx context.Context, now time.Time) {
 		}
 		m.log.Info("leaving opening auction for market", logging.String("market-id", m.mkt.ID))
 		m.leaveAuction(ctx, now)
+		m.pMonitor.ResetPriceHistory(trades)
 		// the market is now in a ACTIVE state
 		m.mkt.State = types.MarketStateActive
 		// the market is now properly open, so set the timestamp to when the opening auction actually ended
@@ -95,6 +96,7 @@ func (m *Market) checkAuction(ctx context.Context, now time.Time) {
 	if end {
 		// can we leave based on the book state?
 		m.leaveAuction(ctx, now)
+		m.pMonitor.ResetPriceHistory(trades)
 	}
 
 	// This is where FBA handling will go
