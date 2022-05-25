@@ -2,11 +2,15 @@ package sqlstore
 
 import (
 	"context"
+	"errors"
+	"fmt"
 
 	"code.vegaprotocol.io/data-node/entities"
 	"code.vegaprotocol.io/data-node/metrics"
 	"github.com/georgysavva/scany/pgxscan"
 )
+
+var ErrNodeNotFound = errors.New("node not found")
 
 type Node struct {
 	*ConnectionSource
@@ -286,5 +290,8 @@ func (store *Node) GetNodeByID(ctx context.Context, nodeId string, epochSeq uint
 	GROUP BY nodes.id`
 
 	err := pgxscan.Get(ctx, store.pool, &node, query, id, epochSeq)
+	if pgxscan.NotFound(err) {
+		return node, fmt.Errorf("'%v': %w", nodeId, ErrNodeNotFound)
+	}
 	return node, err
 }
