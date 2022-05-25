@@ -173,12 +173,13 @@ func NewApp(
 	blockchainClient BlockchainClient,
 	erc20MultiSigTopology ERC20MultiSigTopology,
 	version string, // we need the version for snapshot reload
+	codec abci.Codec,
 ) *App {
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
 
 	app := &App{
-		abci: abci.New(&codec{}),
+		abci: abci.New(codec),
 
 		log:       log,
 		vegaPaths: vegaPaths,
