@@ -129,7 +129,7 @@ func ValidatorNodeStatusFromString(status string) ValidatorNodeStatus {
 		return ValidatorNodeStatusPending
 	case "unspecified":
 		fallthrough
-	default: // Is this appropiate behaviour? Should we error on the default case?
+	default: // Is this appropriate behaviour? Should we error on the default case?
 		return ValidatorNodeStatusUnspecified
 	}
 }
