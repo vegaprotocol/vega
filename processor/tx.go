@@ -26,6 +26,26 @@ type Tx struct {
 	version    uint32
 }
 
+func DecodeTxNoValidation(payload []byte) (*Tx, error) {
+	tx := &commandspb.Transaction{}
+	if err := proto.Unmarshal(payload, tx); err != nil {
+		return nil, fmt.Errorf("unable to unmarshal transaction: %w", err)
+	}
+	input := commandspb.InputData{}
+	if err := proto.Unmarshal(tx.InputData, &input); err != nil {
+		return nil, fmt.Errorf("unable to unmarshal input data: %w", err)
+	}
+
+	return &Tx{
+		originalTx: payload,
+		tx:         tx,
+		inputData:  &input,
+		err:        nil,
+		pow:        tx.Pow,
+		version:    tx.Version,
+	}, nil
+}
+
 func DecodeTx(payload []byte) (*Tx, error) {
 	tx := &commandspb.Transaction{}
 	if err := proto.Unmarshal(payload, tx); err != nil {
