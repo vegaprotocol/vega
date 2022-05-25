@@ -84,12 +84,20 @@ func (m *Market) checkAuction(ctx context.Context, now time.Time) {
 	}
 	end := m.as.CanLeave()
 	if isPrice && end {
+		// we can leave a price auction, but lets check what liquidity is sayin'
 		m.checkLiquidity(ctx, trades, true)
+		end = m.as.CanLeave()
 	}
-	if evt := m.as.AuctionExtended(ctx, m.currentTime); evt != nil {
-		m.broker.Send(evt)
-		end = false
+
+	if !end {
+		evt := m.as.AuctionExtended(ctx, m.currentTime)
+
+		// this may be nil if we have already called AuctionExtended earlier and we do not want to resend the event
+		if evt != nil {
+			m.broker.Send(evt)
+		}
 	}
+
 	// price monitoring engine and liquidity monitoring engine both indicated auction can end
 	if end {
 		// can we leave based on the book state?
