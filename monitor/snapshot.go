@@ -6,14 +6,15 @@ import (
 
 func NewAuctionStateFromSnapshot(mkt *types.Market, as *types.AuctionState) *AuctionState {
 	s := AuctionState{
-		mode:         as.Mode,
-		defMode:      as.DefaultMode,
-		trigger:      as.Trigger,
-		end:          as.End,
-		start:        as.Start,
-		stop:         as.Stop,
-		m:            mkt,
-		stateChanged: true,
+		mode:               as.Mode,
+		defMode:            as.DefaultMode,
+		trigger:            as.Trigger,
+		end:                as.End,
+		start:              as.Start,
+		stop:               as.Stop,
+		m:                  mkt,
+		stateChanged:       true,
+		extensionEventSent: as.ExtensionEventSent,
 	}
 
 	if as.Begin.IsZero() {
@@ -36,12 +37,13 @@ func (a AuctionState) Changed() bool {
 
 func (a *AuctionState) GetState() *types.AuctionState {
 	as := &types.AuctionState{
-		Mode:        a.mode,
-		DefaultMode: a.defMode,
-		End:         a.end,
-		Start:       a.start,
-		Stop:        a.stop,
-		Trigger:     a.trigger,
+		Mode:               a.mode,
+		DefaultMode:        a.defMode,
+		End:                a.end,
+		Start:              a.start,
+		Stop:               a.stop,
+		Trigger:            a.trigger,
+		ExtensionEventSent: a.extensionEventSent,
 	}
 	if a.extension != nil {
 		as.Extension = *a.extension
