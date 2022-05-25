@@ -103,6 +103,7 @@ func (e *Engine) ERC20WithdrawalEvent(
 
 	withd.WithdrawalDate = e.currentTime.UnixNano()
 	withd.TxHash = txHash
+	e.bss.changedWithdrawals = true
 	e.broker.Send(events.NewWithdrawalEvent(ctx, *withd))
 
 	return nil
