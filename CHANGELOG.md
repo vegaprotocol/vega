@@ -9,6 +9,14 @@
 - [](https://github.com/vegaprotocol/data-node/issues/xxx) -
 
 ### 🛠  Improvements
+- [](https://github.com/vegaprotocol/data-node/issues/xxx) -
+
+### 🐛 Fixes
+- [](https://github.com/vegaprotocol/data-node/issues/xxx) -
+
+## 0.51.1
+
+### 🛠  Improvements
 - [632](https://github.com/vegaprotocol/data-node/issues/632) - Rename method for listing asset bundle
 - [609](https://github.com/vegaprotocol/data-node/issues/609) - Add fields related to network limit for ERC20 asset
 - [609](https://github.com/vegaprotocol/data-node/issues/384) - Migrate node data to V2
@@ -20,7 +28,6 @@
 ### 🐛 Fixes
 - [616](https://github.com/vegaprotocol/data-node/pull/616) - Don't return multiple delegations per epoch/party/node
 - [627](https://github.com/vegaprotocol/data-node/issues/627) - User `from_epoch` in update event to determine if node exists
-- [](https://github.com/vegaprotocol/data-node/issues/xxx) -
 
 ## 0.51.0
 
