@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"path/filepath"
+	"reflect"
 	"time"
 
 	"code.vegaprotocol.io/protos/commands"
@@ -139,6 +140,9 @@ type App struct {
 	stateVar              StateVarEngine
 	cpt                   abci.Tx
 	erc20MultiSigTopology ERC20MultiSigTopology
+
+	nilPow  bool
+	nilSpam bool
 }
 
 func NewApp(
@@ -293,6 +297,9 @@ func NewApp(
 			app.RequireValidatorPubKeyW(app.DeliverEthereumKeyRotateSubmission))
 
 	app.time.NotifyOnTick(app.onTick)
+
+	app.nilPow = app.pow == nil || reflect.ValueOf(app.pow).IsNil()
+	app.nilSpam = app.spam == nil || reflect.ValueOf(app.spam).IsNil()
 
 	return app
 }
@@ -563,11 +570,11 @@ func (app *App) OnEndBlock(req tmtypes.RequestEndBlock) (ctx context.Context, re
 	)
 
 	app.epoch.OnBlockEnd(ctx)
-	if app.pow != nil {
+	if !app.nilPow {
 		app.pow.EndOfBlock()
 	}
 
-	if app.spam != nil {
+	if !app.nilSpam {
 		app.spam.EndOfBlock(uint64(req.Height))
 	}
 
@@ -591,7 +598,7 @@ func (app *App) OnBeginBlock(req tmtypes.RequestBeginBlock) (ctx context.Context
 	app.cBlock = hash
 
 	// update pow engine on a new block
-	if app.pow != nil {
+	if !app.nilPow {
 		app.pow.BeginBlock(uint64(req.Header.Height), hash)
 	}
 
@@ -712,7 +719,7 @@ func (app *App) OnCheckTxSpam(tx abci.Tx) tmtypes.ResponseCheckTx {
 	resp := tmtypes.ResponseCheckTx{}
 
 	// verify proof of work and replay
-	if app.pow != nil {
+	if !app.nilPow {
 		if err := app.pow.CheckTx(tx); err != nil {
 			if app.log.IsDebug() {
 				app.log.Debug(err.Error())
@@ -723,7 +730,7 @@ func (app *App) OnCheckTxSpam(tx abci.Tx) tmtypes.ResponseCheckTx {
 		}
 	}
 	// additional spam checks
-	if app.spam != nil {
+	if !app.nilSpam {
 		if _, err := app.spam.PreBlockAccept(tx); err != nil {
 			app.log.Error(err.Error())
 			resp.Code = abci.AbciSpamError
@@ -905,7 +912,7 @@ func (app *App) OnDeliverTXSpam(tx abci.Tx) tmtypes.ResponseDeliverTx {
 	var resp tmtypes.ResponseDeliverTx
 
 	// verify proof of work
-	if app.pow != nil {
+	if !app.nilPow {
 		if err := app.pow.DeliverTx(tx); err != nil {
 			app.log.Error(err.Error())
 			resp.Code = abci.AbciSpamError
@@ -913,7 +920,7 @@ func (app *App) OnDeliverTXSpam(tx abci.Tx) tmtypes.ResponseDeliverTx {
 			return resp
 		}
 	}
-	if app.spam != nil {
+	if !app.nilSpam {
 		if _, err := app.spam.PostBlockAccept(tx); err != nil {
 			app.log.Error(err.Error())
 			resp.Code = abci.AbciSpamError
