@@ -80,7 +80,7 @@ type allServices struct {
 	rewards               *rewards.Engine
 	checkpoint            *checkpoint.Engine
 	spam                  *spam.Engine
-	pow                   *pow.Engine
+	pow                   processor.PoWEngine
 	builtinOracle         *oracles.Builtin
 	codec                 abci.Codec
 
@@ -227,7 +227,6 @@ func newServices(
 		svcs.delegation = delegation.New(svcs.log, svcs.conf.Delegation, svcs.broker, svcs.topology, stakingLoop, svcs.epochService, svcs.timeService)
 	} else {
 		svcs.codec = &processor.TxCodec{}
-		svcs.pow = pow.New(svcs.log, svcs.conf.PoW, svcs.epochService)
 		svcs.spam = spam.New(svcs.log, svcs.conf.Spam, svcs.epochService, svcs.stakingAccounts)
 		svcs.governance = governance.NewEngine(svcs.log, svcs.conf.Governance, svcs.stakingAccounts, svcs.broker, svcs.assets, svcs.witness, svcs.executionEngine, svcs.netParams, now)
 		svcs.delegation = delegation.New(svcs.log, svcs.conf.Delegation, svcs.broker, svcs.topology, svcs.stakingAccounts, svcs.epochService, svcs.timeService)
@@ -285,8 +284,36 @@ func newServices(
 	if svcs.spam != nil {
 		svcs.snapshot.AddProviders(svcs.spam)
 	}
-	if svcs.pow != nil {
-		svcs.snapshot.AddProviders(svcs.pow)
+	powWatchers := []netparams.WatchParam{}
+
+	if svcs.conf.Blockchain.ChainProvider == blockchain.ProviderNullChain {
+		svcs.pow = pow.NewNoop()
+	} else {
+		pow := pow.New(svcs.log, svcs.conf.PoW, svcs.epochService)
+		svcs.pow = pow
+		svcs.snapshot.AddProviders(pow)
+		powWatchers = []netparams.WatchParam{
+			{
+				Param:   netparams.SpamPoWNumberOfPastBlocks,
+				Watcher: pow.UpdateSpamPoWNumberOfPastBlocks,
+			},
+			{
+				Param:   netparams.SpamPoWDifficulty,
+				Watcher: pow.UpdateSpamPoWDifficulty,
+			},
+			{
+				Param:   netparams.SpamPoWHashFunction,
+				Watcher: pow.UpdateSpamPoWHashFunction,
+			},
+			{
+				Param:   netparams.SpamPoWIncreasingDifficulty,
+				Watcher: pow.UpdateSpamPoWIncreasingDifficulty,
+			},
+			{
+				Param:   netparams.SpamPoWNumberOfTxPerBlock,
+				Watcher: pow.UpdateSpamPoWNumberOfTxPerBlock,
+			},
+		}
 	}
 
 	// setup config reloads for all engines / services /etc
@@ -295,7 +322,7 @@ func newServices(
 	// setup some network parameters runtime validations and network parameters
 	// updates dispatches this must come before we try to load from a snapshot,
 	// which happens in startBlockchain
-	if err := svcs.setupNetParameters(); err != nil {
+	if err := svcs.setupNetParameters(powWatchers); err != nil {
 		return nil, err
 	}
 
@@ -324,7 +351,7 @@ func (svcs *allServices) registerConfigWatchers() {
 	svcs.timeService.NotifyOnTick(svcs.confWatcher.OnTimeUpdate)
 }
 
-func (svcs *allServices) setupNetParameters() error {
+func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) error {
 	// now we are going to setup some network parameters which can be done
 	// through runtime checks
 	// e.g: changing the governance asset require the Assets and Collateral engines, so we can ensure any changes there are made for a valid asset
@@ -336,32 +363,6 @@ func (svcs *allServices) setupNetParameters() error {
 		),
 	); err != nil {
 		return err
-	}
-
-	powWatchers := []netparams.WatchParam{}
-	if svcs.pow != nil {
-		powWatchers = []netparams.WatchParam{
-			{
-				Param:   netparams.SpamPoWNumberOfPastBlocks,
-				Watcher: svcs.pow.UpdateSpamPoWNumberOfPastBlocks,
-			},
-			{
-				Param:   netparams.SpamPoWDifficulty,
-				Watcher: svcs.pow.UpdateSpamPoWDifficulty,
-			},
-			{
-				Param:   netparams.SpamPoWHashFunction,
-				Watcher: svcs.pow.UpdateSpamPoWHashFunction,
-			},
-			{
-				Param:   netparams.SpamPoWIncreasingDifficulty,
-				Watcher: svcs.pow.UpdateSpamPoWIncreasingDifficulty,
-			},
-			{
-				Param:   netparams.SpamPoWNumberOfTxPerBlock,
-				Watcher: svcs.pow.UpdateSpamPoWNumberOfTxPerBlock,
-			},
-		}
 	}
 
 	spamWatchers := []netparams.WatchParam{}
