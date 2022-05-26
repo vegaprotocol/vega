@@ -9,6 +9,15 @@
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 ### 🛠 Improvements
+- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+
+### 🐛 Fixes
+- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+
+
+## 0.51.1
+
+### 🛠 Improvements
 - [5395](https://github.com/vegaprotocol/vega/issues/5395) - Add `burn_nonce` bridge tool
 - [5403](https://github.com/vegaprotocol/vega/issues/5403) - Allow spam free / proof of work free running of null blockchain
 - [5175](https://github.com/vegaprotocol/vega/issues/5175) - Validation free transactions (including signature verification) for null blockchain

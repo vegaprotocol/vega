@@ -1,6 +1,6 @@
 # Vega
 
-Version 0.50.2
+Version 0.51.1
 
 A decentralised trading platform that allows pseudo-anonymous trading of derivatives on a blockchain.
 
