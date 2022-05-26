@@ -20,6 +20,7 @@ func NewEquitySharesFromSnapshot(state *types.EquityShare) *EquityShares {
 
 	return &EquityShares{
 		mvp:                 state.Mvp,
+		pMvp:                state.PMvp,
 		r:                   state.R,
 		openingAuctionEnded: state.OpeningAuctionEnded,
 		lps:                 lps,
@@ -52,6 +53,7 @@ func (es *EquityShares) GetState() *types.EquityShare {
 
 	return &types.EquityShare{
 		Mvp:                 es.mvp,
+		PMvp:                es.pMvp,
 		R:                   es.r,
 		OpeningAuctionEnded: es.openingAuctionEnded,
 		Lps:                 lps,
