@@ -84,6 +84,8 @@ func (es *EquityShares) UpdateVirtualStake() {
 }
 
 func (es *EquityShares) WithMVP(mvp num.Decimal) *EquityShares {
+	// growth always defaults to 0
+	es.r = num.DecimalZero()
 	if !es.mvp.IsZero() && !mvp.IsZero() {
 		// Spec notation: r = (A(n) - A(n-1))/A(n-1)
 		growth := mvp.Sub(es.mvp).Div(es.mvp)
