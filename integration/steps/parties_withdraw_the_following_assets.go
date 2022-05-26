@@ -18,7 +18,7 @@ func PartiesWithdrawTheFollowingAssets(
 		row := withdrawAssetRow{row: r}
 		amount := row.Amount()
 		_, err := collateral.Withdraw(context.Background(), row.Party(), row.Asset(), amount)
-		if err := checkExpectedError(row, err); err != nil {
+		if err := checkExpectedError(row, err, nil); err != nil {
 			return err
 		}
 		netDeposits = netDeposits.Sub(netDeposits, amount)

@@ -17,6 +17,43 @@ func NewERC20MultiSigControl(signer Signer) *ERC20MultiSigControl {
 	}
 }
 
+func (e *ERC20MultiSigControl) BurnNonce(
+	submitter string,
+	nonce *num.Uint,
+) (*SignaturePayload, error) {
+	typString, err := abi.NewType("string", "", nil)
+	if err != nil {
+		return nil, err
+	}
+	typU256, err := abi.NewType("uint256", "", nil)
+	if err != nil {
+		return nil, err
+	}
+
+	args := abi.Arguments([]abi.Argument{
+		{
+			Name: "nonce",
+			Type: typU256,
+		},
+		{
+			Name: "func_name",
+			Type: typString,
+		},
+	})
+
+	buf, err := args.Pack([]interface{}{nonce.BigInt(), "set_threshold"}...)
+	if err != nil {
+		return nil, err
+	}
+
+	msg, err := packBufAndSubmitter(buf, submitter)
+	if err != nil {
+		return nil, err
+	}
+
+	return sign(e.signer, msg)
+}
+
 func (e *ERC20MultiSigControl) SetThreshold(
 	newThreshold uint16,
 	submitter string,

@@ -103,6 +103,7 @@ func (e *Engine) ERC20WithdrawalEvent(
 
 	withd.WithdrawalDate = e.currentTime.UnixNano()
 	withd.TxHash = txHash
+	e.bss.changedWithdrawals = true
 	e.broker.Send(events.NewWithdrawalEvent(ctx, *withd))
 
 	return nil
@@ -135,10 +136,22 @@ func (e *Engine) WithdrawERC20(
 		return err
 	}
 
-	if !asset.IsERC20() {
+	if a, ok := asset.ERC20(); !ok {
 		w.Status = types.WithdrawalStatusRejected
 		e.broker.Send(events.NewWithdrawalEvent(ctx, *w))
 		return ErrWrongAssetUsedForERC20Withdraw
+	} else if threshold := a.Type().Details.GetErc20().WithdrawThreshold; threshold != nil && threshold.NEQ(num.Zero()) {
+		if threshold.LT(amount) {
+			w.Status = types.WithdrawalStatusRejected
+			e.broker.Send(events.NewWithdrawalEvent(ctx, *w))
+			e.log.Debug("withdraw threshold breached",
+				logging.PartyID(party),
+				logging.BigUint("threshold", threshold),
+				logging.BigUint("amount", amount),
+				logging.AssetID(assetID),
+				logging.Error(err))
+			return fmt.Errorf("witdrawal threshold breached, requested(%d), threshold(%d)", amount, threshold)
+		}
 	}
 
 	// try to withdraw if no error, this'll just abort

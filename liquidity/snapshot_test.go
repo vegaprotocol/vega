@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/hex"
+	"errors"
 	"testing"
 	"time"
 
@@ -93,8 +94,8 @@ func TestSnapshotRoundTrip(t *testing.T) {
 
 	expectedHashes := map[string]string{
 		"parameters:market-id":             "d663375fd6843a0807d17b10ad8425a6ba45c8c2dd6339f400c5b2426f900c13",
-		"partiesLiquidityOrders:market-id": "0254d8b74441ca3bac8f9b141408502d9b1f297e8ef1054d45775566677a8072",
-		"partiesOrders:market-id":          "f9cb31b1c4c8df91f6a348d43978c302c8887336107c265259bc74fdddf00e19",
+		"partiesLiquidityOrders:market-id": "bfe546e1a60738daedbfd2edb54738dd19bf9ac154490d13395bc0f30d2b120c",
+		"partiesOrders:market-id":          "9bac769916db894ee5f1f78291e7b793a58a9362e6994fc93f1aa3441ad40e4b",
 		"pendingProvisions:market-id":      "6cc4d407a2ea45e37e27993eb6f94134b3f906d080777d94bf99551aa82dc461",
 		"provisions:market-id":             "7c76902e145d0eaf0abb83382575c027097abdb418364c351e2ad085e1c69c3e",
 		"liquiditySupplied:market-id":      "3276bba2a77778ba710ec29e3a6e59212452dbda69eaac8f9160930d1270da1d",
@@ -132,8 +133,8 @@ func TestSnapshotRoundTrip(t *testing.T) {
 
 	expectedHashes2 := map[string]string{
 		"parameters:market-id":             "b5eec91c297baf1f06830350dbcb37d79937561ae605d2304eb12680e443775c",
-		"partiesLiquidityOrders:market-id": "c29d0b4d9265cf7951cc396ce8d6350ab7b2e978782423c4090842cbb2619f76",
-		"partiesOrders:market-id":          "f9cb31b1c4c8df91f6a348d43978c302c8887336107c265259bc74fdddf00e19",
+		"partiesLiquidityOrders:market-id": "234f3b3010c174f180fc8a12060b3feb93eefa4026055371843f50cc77676c4b",
+		"partiesOrders:market-id":          "03c49ce221938e53db03110ac4a377de0bd6bc1f8feffbafeec4ddbde11cb247",
 		"pendingProvisions:market-id":      "627ef55af7f36bea0d09b0081b85d66531a01df060d8e9447e17049a4e152b12",
 		"provisions:market-id":             "89335d14e98ca80b144cb6502e9b508d97d63027ba0c7733d6024030cdf102ed",
 		"liquiditySupplied:market-id":      "3276bba2a77778ba710ec29e3a6e59212452dbda69eaac8f9160930d1270da1d",
@@ -214,6 +215,38 @@ func TestSnapshotRoundTrip(t *testing.T) {
 		h := crypto.Hash(s)
 		// compare hashes to the expected ones
 		assert.Equalf(t, expectedHashes2[key], hex.EncodeToString(h), "hashes for key %q does not match", key)
+	}
+
+	// now reconcile with orderbook
+	orders := e3.engine.GetLiquidityOrders(party1)
+	require.Len(t, orders, 2)
+
+	// create copies of the orders
+	idToOrder := map[string]*types.Order{
+		orders[0].ID: orders[0].Clone(),
+		orders[1].ID: orders[1].Clone(),
+	}
+
+	e3.orderbook.EXPECT().GetOrderByID(gomock.Any()).AnyTimes().DoAndReturn(
+		func(orderID string) (*types.Order, error) {
+			if o, ok := idToOrder[orderID]; ok {
+				return o, nil
+			}
+			return nil, errors.New("not gound")
+		},
+	)
+	e3.engine.ReconcileWithOrderBook(e3.orderbook)
+
+	// change a value and check the orders in the engine also change i.e they both point to the same order
+	now := time.Now().UnixNano()
+	for _, o := range idToOrder {
+		o.UpdatedAt = now
+	}
+
+	orders = e3.engine.GetLiquidityOrders(party1)
+	require.Len(t, orders, 2)
+	for _, o := range orders {
+		assert.Equal(t, now, o.UpdatedAt)
 	}
 }
 

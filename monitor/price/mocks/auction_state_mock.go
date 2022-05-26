@@ -146,6 +146,20 @@ func (mr *MockAuctionStateMockRecorder) IsLiquidityAuction() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsLiquidityAuction", reflect.TypeOf((*MockAuctionState)(nil).IsLiquidityAuction))
 }
 
+// IsLiquidityExtension mocks base method.
+func (m *MockAuctionState) IsLiquidityExtension() bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsLiquidityExtension")
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// IsLiquidityExtension indicates an expected call of IsLiquidityExtension.
+func (mr *MockAuctionStateMockRecorder) IsLiquidityExtension() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsLiquidityExtension", reflect.TypeOf((*MockAuctionState)(nil).IsLiquidityExtension))
+}
+
 // IsOpeningAuction mocks base method.
 func (m *MockAuctionState) IsOpeningAuction() bool {
 	m.ctrl.T.Helper()
@@ -172,6 +186,20 @@ func (m *MockAuctionState) IsPriceAuction() bool {
 func (mr *MockAuctionStateMockRecorder) IsPriceAuction() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsPriceAuction", reflect.TypeOf((*MockAuctionState)(nil).IsPriceAuction))
+}
+
+// IsPriceExtension mocks base method.
+func (m *MockAuctionState) IsPriceExtension() bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsPriceExtension")
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// IsPriceExtension indicates an expected call of IsPriceExtension.
+func (mr *MockAuctionStateMockRecorder) IsPriceExtension() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsPriceExtension", reflect.TypeOf((*MockAuctionState)(nil).IsPriceExtension))
 }
 
 // Mode mocks base method.

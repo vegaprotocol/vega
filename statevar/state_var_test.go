@@ -182,7 +182,7 @@ func testEventTriggeredNoPreviousEvent(t *testing.T) {
 
 	time.Sleep(10 * time.Millisecond)
 	for _, v := range validators {
-		v.engine.OnTimeTick(context.Background(), now.Add(1*time.Second))
+		v.engine.OnBlockEnd(context.Background())
 	}
 
 	require.Equal(t, len(validators), len(brokerEvents))
@@ -209,6 +209,7 @@ func testEventTriggeredWithPreviousEvent(t *testing.T) {
 
 	time.Sleep(10 * time.Millisecond)
 	for _, v := range validators {
+		v.engine.OnBlockEnd(context.Background())
 		v.engine.OnTimeTick(context.Background(), now.Add(1*time.Second))
 	}
 
@@ -225,6 +226,7 @@ func testEventTriggeredWithPreviousEvent(t *testing.T) {
 
 	time.Sleep(100 * time.Millisecond)
 	for _, v := range validators {
+		v.engine.OnBlockEnd(context.Background())
 		v.engine.OnTimeTick(context.Background(), now.Add(2*time.Second))
 	}
 
@@ -260,6 +262,7 @@ func testEventTriggeredCalculationError(t *testing.T) {
 
 	time.Sleep(10 * time.Millisecond)
 	for _, v := range validators {
+		v.engine.OnBlockEnd(context.Background())
 		v.engine.OnTimeTick(context.Background(), now.Add(1*time.Second))
 	}
 
@@ -340,6 +343,7 @@ func testBundleReceivedPerfectMatchOfQuorum(t *testing.T) {
 
 	time.Sleep(10 * time.Millisecond)
 	for _, v := range validators {
+		v.engine.OnBlockEnd(context.Background())
 		v.engine.OnTimeTick(context.Background(), now.Add(1*time.Second))
 	}
 
@@ -412,6 +416,7 @@ func testBundleReceivedReachingConsensusSuccessfuly(t *testing.T) {
 
 	time.Sleep(10 * time.Millisecond)
 	for _, v := range validators {
+		v.engine.OnBlockEnd(context.Background())
 		v.engine.OnTimeTick(context.Background(), now.Add(1*time.Second))
 	}
 
@@ -480,6 +485,7 @@ func testBundleReceivedReachingConsensusNotSuccessful(t *testing.T) {
 
 	time.Sleep(10 * time.Millisecond)
 	for _, v := range validators {
+		v.engine.OnBlockEnd(context.Background())
 		v.engine.OnTimeTick(context.Background(), now.Add(1*time.Second))
 	}
 
@@ -537,6 +543,7 @@ func testTimeBasedEvent(t *testing.T) {
 
 	now = now.Add(time.Second * 10)
 	for _, v := range validators {
+		v.engine.OnBlockEnd(context.Background())
 		v.engine.OnTimeTick(context.Background(), now)
 	}
 	time.Sleep(10 * time.Millisecond)
@@ -555,6 +562,7 @@ func testTimeBasedEvent(t *testing.T) {
 	now = now.Add(time.Second * 1)
 
 	for _, v := range validators {
+		v.engine.OnBlockEnd(context.Background())
 		v.engine.OnTimeTick(context.Background(), now)
 	}
 
@@ -578,6 +586,7 @@ func testTimeBasedEvent(t *testing.T) {
 	// advance 9 more seconds to get another time trigger
 	now = now.Add(time.Second * 9)
 	for _, v := range validators {
+		v.engine.OnBlockEnd(context.Background())
 		v.engine.OnTimeTick(context.Background(), now)
 	}
 	brokerEvents = []events.Event{}
@@ -585,6 +594,7 @@ func testTimeBasedEvent(t *testing.T) {
 	// start another block for events to be emitted
 	now = now.Add(time.Second * 1)
 	for _, v := range validators {
+		v.engine.OnBlockEnd(context.Background())
 		v.engine.OnTimeTick(context.Background(), now)
 	}
 	time.Sleep(10 * time.Millisecond)
@@ -598,13 +608,14 @@ func testTimeBasedEvent(t *testing.T) {
 
 	// Remove time trigger events
 	for _, v := range validators {
-		v.engine.RemoveTimeTriggers("asset", "market")
+		v.engine.UnregisterStateVariable("asset", "market")
 	}
 
 	// advance even more to when we should have triggered
 	brokerEvents = []events.Event{}
 	now = now.Add(time.Second * 9)
 	for _, v := range validators {
+		v.engine.OnBlockEnd(context.Background())
 		v.engine.OnTimeTick(context.Background(), now)
 	}
 

@@ -14,6 +14,31 @@
 ### 🐛 Fixes
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
+
+## 0.51.1
+
+### 🛠 Improvements
+- [5395](https://github.com/vegaprotocol/vega/issues/5395) - Add `burn_nonce` bridge tool
+- [5403](https://github.com/vegaprotocol/vega/issues/5403) - Allow spam free / proof of work free running of null blockchain
+- [5175](https://github.com/vegaprotocol/vega/issues/5175) - Validation free transactions (including signature verification) for null blockchain
+- [5371](https://github.com/vegaprotocol/vega/issues/5371) - Ensure threshold is not breached in ERC20 withdrawal
+- [5358](https://github.com/vegaprotocol/vega/issues/5358) - Update equity shares following updated spec.
+
+### 🐛 Fixes
+- [5362](https://github.com/vegaprotocol/vega/issues/5362) - Liquidity and order book point to same underlying order after restore
+- [5367](https://github.com/vegaprotocol/vega/issues/5367) - better serialisation for party orders in liquidity snapshot
+- [5377](https://github.com/vegaprotocol/vega/issues/5377) - Serialise state var internal state
+- [5388](https://github.com/vegaprotocol/vega/issues/5388) - State variable snapshot now works as intended
+- [5388](https://github.com/vegaprotocol/vega/issues/5388) - Repopulate cached order-book after snapshot restore
+- [5203](https://github.com/vegaprotocol/vega/issues/5203) - Market liquidity monitor parameters trump network parameters on market creation
+- [5297](https://github.com/vegaprotocol/vega/issues/5297) - Assure min/max price always accurate
+- [4223](https://github.com/vegaprotocol/vega/issues/4223) - Use uncrossing price for target stake calculation during auction
+- [3047](https://github.com/vegaprotocol/vega/issues/3047) - Improve interaction between liquidity and price monitoring auctions
+- [3570](https://github.com/vegaprotocol/vega/issues/3570) - Set extension trigger during opening auction with insufficient liquidity
+- [3362](https://github.com/vegaprotocol/vega/issues/3362) - Stop non-persistent orders from triggering auctions
+- [5388](https://github.com/vegaprotocol/vega/issues/5388) - Use `UnixNano()` to snapshot price monitor times
+- [5237](https://github.com/vegaprotocol/vega/issues/5237) - Trigger state variable calculation first time indicative uncrossing price is available
+
 ## 0.51.0
 
 ### 🚨 Breaking changes
@@ -25,6 +50,7 @@
 - [5343](https://github.com/vegaprotocol/vega/issues/5343) - Snapshot optimisation part II - get rid of `getHash`
 - [5324](https://github.com/vegaprotocol/vega/issues/5324) -  Send event when oracle data doesn't match
 - [5140](https://github.com/vegaprotocol/vega/issues/5140) - Move limits (enabled market / assets from) to network parameters
+- [5360](https://github.com/vegaprotocol/vega/issues/5360) - rewards test coverage
 
 ### 🐛 Fixes
 - [5338](https://github.com/vegaprotocol/vega/issues/5338) - Checking a transaction should return proper success code

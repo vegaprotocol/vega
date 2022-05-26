@@ -73,6 +73,7 @@ func TestCheckpoint(t *testing.T) {
 		},
 	)
 
+	cptest2.acc.broker.EXPECT().SendBatch(gomock.Any()).Times(1)
 	assert.NoError(t, cptest2.Load(context.Background(), cp))
 
 	bal, err := cptest2.acc.GetAvailableBalance(testParty)

@@ -9,6 +9,7 @@ import (
 	snapshot "code.vegaprotocol.io/protos/vega/snapshot/v1"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/types/statevar"
 
 	"code.vegaprotocol.io/vega/libs/proto"
 )
@@ -20,7 +21,6 @@ var (
 )
 
 type snapshotState struct {
-	changed    bool
 	serialised []byte
 }
 
@@ -61,19 +61,44 @@ func (e *Engine) serialiseNextTimeTrigger() []*snapshot.NextTimeTrigger {
 	return timeTriggers
 }
 
+func mapToResults(m map[string]*statevar.KeyValueBundle) []*snapshot.FloatingPointValidatorResult {
+	if m == nil {
+		return []*snapshot.FloatingPointValidatorResult{}
+	}
+	res := make([]*snapshot.FloatingPointValidatorResult, 0, len(m))
+	for k, kvb := range m {
+		res = append(res, &snapshot.FloatingPointValidatorResult{Id: k, Bundle: kvb.ToProto()})
+	}
+	sort.Slice(res, func(i, j int) bool { return res[i].Id < res[j].Id })
+	return res
+}
+
+func (sv *StateVariable) serialise() *snapshot.StateVarInternalState {
+	return &snapshot.StateVarInternalState{
+		Id:                          sv.ID,
+		EventId:                     sv.eventID,
+		State:                       int32(sv.state),
+		ValidatorsResults:           mapToResults(sv.validatorResults),
+		RoundsSinceMeaningfulUpdate: int32(sv.roundsSinceMeaningfulUpdate),
+	}
+}
+
 // get the serialised form of the given key.
 func (e *Engine) serialise(k string) ([]byte, error) {
 	if k != key {
 		return nil, ErrSnapshotKeyDoesNotExist
 	}
 
-	if !e.ss.changed {
-		return e.ss.serialised, nil
+	stateVariablesState := make([]*snapshot.StateVarInternalState, 0, len(e.stateVars))
+	for _, sv := range e.stateVars {
+		stateVariablesState = append(stateVariablesState, sv.serialise())
 	}
+	sort.SliceStable(stateVariablesState, func(i, j int) bool { return stateVariablesState[i].Id < stateVariablesState[j].Id })
 
 	payload := types.Payload{
 		Data: &types.PayloadFloatingPointConsensus{
-			ConsensusData: e.serialiseNextTimeTrigger(),
+			ConsensusData:               e.serialiseNextTimeTrigger(),
+			StateVariablesInternalState: stateVariablesState,
 		},
 	}
 	data, err := proto.Marshal(payload.IntoProto())
@@ -82,12 +107,11 @@ func (e *Engine) serialise(k string) ([]byte, error) {
 	}
 
 	e.ss.serialised = data
-	e.ss.changed = false
 	return data, nil
 }
 
 func (e *Engine) HasChanged(k string) bool {
-	return e.ss.changed
+	return true
 }
 
 func (e *Engine) GetState(k string) ([]byte, []types.StateProvider, error) {
@@ -116,7 +140,46 @@ func (e *Engine) restore(ctx context.Context, nextTimeTrigger []*snapshot.NextTi
 		e.log.Debug("restoring", logging.String("id", data.Id), logging.Time("time", time.Unix(0, data.NextTrigger)))
 	}
 	var err error
-	e.ss.changed = false
 	e.ss.serialised, err = proto.Marshal(p.IntoProto())
 	return err
+}
+
+// postRestore sets the internal state of all state variables from a snapshot. If there is an active event it will initiate the calculation.
+func (e *Engine) postRestore(stateVariablesInternalState []*snapshot.StateVarInternalState) {
+	for _, svis := range stateVariablesInternalState {
+		sv, ok := e.stateVars[svis.Id]
+		if !ok {
+			e.log.Panic("expecting a state variable with id to exist during post restore", logging.String("ID", svis.Id))
+			continue
+		}
+		sv.eventID = svis.EventId
+		sv.state = StateVarConsensusState(svis.State)
+		sv.roundsSinceMeaningfulUpdate = uint(svis.RoundsSinceMeaningfulUpdate)
+		if len(svis.ValidatorsResults) > 0 {
+			sv.validatorResults = make(map[string]*statevar.KeyValueBundle, len(svis.ValidatorsResults))
+		}
+		for _, fpvr := range svis.ValidatorsResults {
+			kvb, _ := statevar.KeyValueBundleFromProto(fpvr.Bundle)
+			sv.validatorResults[fpvr.Id] = kvb
+		}
+		if sv.eventID != "" {
+			sv.startCalculation(sv.eventID, sv)
+		}
+	}
+}
+
+// OnStateLoaded is called after all snapshots have been loaded and hence all state variables have been created and sets the internal state for all state variables.
+func (e *Engine) OnStateLoaded(ctx context.Context) error {
+	var p snapshot.Payload
+	err := proto.Unmarshal(e.ss.serialised, &p)
+	if err != nil {
+		e.log.Error("failed to deserialise state var payload", logging.String("error", err.Error()))
+		return err
+	}
+	payload := types.PayloadFromProto(&p)
+	switch pl := payload.Data.(type) {
+	case *types.PayloadFloatingPointConsensus:
+		e.postRestore(pl.StateVariablesInternalState)
+	}
+	return nil
 }

@@ -91,9 +91,7 @@ func New(log *logging.Logger, config Config, broker Broker, top Topology, cmd Co
 		seq:                 0,
 		readyForTimeTrigger: map[string]struct{}{},
 		stateVarToNextCalc:  map[string]time.Time{},
-		ss: &snapshotState{
-			changed: true,
-		},
+		ss:                  &snapshotState{},
 	}
 	ts.NotifyOnTick(e.OnTimeTick)
 
@@ -152,8 +150,20 @@ func (e *Engine) NewEvent(asset, market string, eventType statevar.StateVarEvent
 		// if the sv is time triggered - reset the next run to be now + frequency
 		if _, ok := e.stateVarToNextCalc[sv.ID]; ok {
 			e.stateVarToNextCalc[sv.ID] = e.currentTime.Add(e.updateFrequency)
-			e.ss.changed = true
 		}
+	}
+}
+
+// OnBlockEnd calls all state vars to notify them that the block ended and its time to flush events.
+func (e *Engine) OnBlockEnd(ctx context.Context) {
+	allStateVarIDs := make([]string, 0, len(e.stateVars))
+	for ID := range e.stateVars {
+		allStateVarIDs = append(allStateVarIDs, ID)
+	}
+	sort.Strings(allStateVarIDs)
+
+	for _, ID := range allStateVarIDs {
+		e.stateVars[ID].endBlock(ctx)
 	}
 }
 
@@ -191,7 +201,6 @@ func (e *Engine) OnTimeTick(ctx context.Context, t time.Time) {
 		}
 		sv.eventTriggered(eventID)
 		e.stateVarToNextCalc[ID] = t.Add(e.updateFrequency)
-		e.ss.changed = true
 	}
 }
 
@@ -206,7 +215,6 @@ func (e *Engine) ReadyForTimeTrigger(asset, mktID string) {
 		for _, sv := range e.eventTypeToStateVar[statevar.StateVarEventTypeTimeTrigger] {
 			if sv.asset == asset && sv.market == mktID {
 				e.stateVarToNextCalc[sv.ID] = e.currentTime.Add(e.updateFrequency)
-				e.ss.changed = true
 			}
 		}
 	}
@@ -240,11 +248,11 @@ func (e *Engine) RegisterStateVariable(asset, market, name string, converter sta
 	return nil
 }
 
-// RemoveTimeTriggers when a market is settled it no longer exists in the execution engine, and so we don't need to keep setting off
+// UnregisterStateVariable when a market is settled it no longer exists in the execution engine, and so we don't need to keep setting off
 // the time triggered events for it anymore.
-func (e *Engine) RemoveTimeTriggers(asset, market string) {
+func (e *Engine) UnregisterStateVariable(asset, market string) {
 	if e.log.IsDebug() {
-		e.log.Debug("removing time triggers for", logging.String("market", market))
+		e.log.Debug("unregistering state-variables for", logging.String("market", market))
 	}
 	prefix := e.generateID(asset, market, "")
 
@@ -256,11 +264,11 @@ func (e *Engine) RemoveTimeTriggers(asset, market string) {
 	}
 
 	for _, id := range toRemove {
-		// removing this is also necessary for snapshots. If it stays in we restore a time trigger for a market/asset we don't have
-		// and then in the subsequent snapshot things go awry because we don't have an entry for `stateVar[ID]`.
+		// removing this is also necessary for snapshots. Otherwise the statevars will be included in the snapshot for markets that no longer exist
+		// then when we come to restore the snapshot we will have state-vars in the snapshot that are not registered.
 		delete(e.stateVarToNextCalc, id)
+		delete(e.stateVars, id)
 	}
-	e.ss.changed = true
 }
 
 // ProposedValueReceived is called when we receive a result from another node with a proposed result for the calculation triggered by an event.

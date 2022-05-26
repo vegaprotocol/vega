@@ -105,7 +105,7 @@ func NewMarketFromSnapshot(
 
 	liqEngine := liquidity.NewSnapshotEngine(liquidityConfig, log, broker, tradableInstrument.RiskModel, pMonitor, asset, mkt.ID, stateVarEngine, mkt.TickSize(), priceFactor.Clone(), positionFactor)
 	// call on chain time update straight away, so
-	// the time in the engine is being updatedat creation
+	// the time in the engine is being updated at creation
 	liqEngine.OnChainTimeUpdate(ctx, now)
 
 	market := &Market{
@@ -122,7 +122,7 @@ func NewMarketFromSnapshot(
 		broker:                     broker,
 		fee:                        feeEngine,
 		liquidity:                  liqEngine,
-		parties:                    map[string]struct{}{}, // parties will be restored on chain time update
+		parties:                    map[string]struct{}{}, // parties will be restored on PostRestore
 		lMonitor:                   lMonitor,
 		tsCalc:                     tsCalc,
 		feeSplitter:                NewFeeSplitterFromSnapshot(em.FeeSplitter, now),
@@ -149,6 +149,11 @@ func NewMarketFromSnapshot(
 	market.tradableInstrument.Instrument.Product.NotifyOnTradingTerminated(market.tradingTerminated)
 	market.tradableInstrument.Instrument.Product.NotifyOnSettlementPrice(market.settlementPrice)
 	liqEngine.SetGetStaticPricesFunc(market.getBestStaticPricesDecimal)
+
+	if mkt.State == types.MarketStateSettled {
+		market.closed = true
+		stateVarEngine.UnregisterStateVariable(asset, mkt.ID)
+	}
 	return market, nil
 }
 

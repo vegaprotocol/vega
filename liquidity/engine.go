@@ -174,6 +174,15 @@ func (e *Engine) RemovePending(party string) {
 	e.pendings.Delete(party)
 }
 
+func (e *Engine) GetPending() []string {
+	pending := make([]string, 0, len(e.pendings.m))
+	for v := range e.pendings.m {
+		pending = append(pending, v)
+	}
+	sort.Strings(pending)
+	return pending
+}
+
 func (e *Engine) GetAllLiquidityOrders() []*types.Order {
 	orders := []*types.Order{}
 	for _, v := range e.liquidityOrders.m {

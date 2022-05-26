@@ -9,6 +9,7 @@ import (
 	proto "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/collateral"
 	"code.vegaprotocol.io/vega/integration/steps/market"
+	"code.vegaprotocol.io/vega/netparams"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
 )
@@ -17,12 +18,14 @@ func TheMarkets(
 	config *market.Config,
 	executionEngine Execution,
 	collateralEngine *collateral.Engine,
+	netparams *netparams.Store,
 	table *godog.Table,
 ) ([]types.Market, error) {
 	rows := parseMarketsTable(table)
 	markets := make([]types.Market, 0, len(rows))
+
 	for _, row := range rows {
-		mkt := newMarket(config, marketRow{row: row})
+		mkt := newMarket(config, netparams, marketRow{row: row})
 		markets = append(markets, mkt)
 	}
 
@@ -95,7 +98,7 @@ func enableVoteAsset(collateralEngine *collateral.Engine) error {
 	return nil
 }
 
-func newMarket(config *market.Config, row marketRow) types.Market {
+func newMarket(config *market.Config, netparams *netparams.Store, row marketRow) types.Market {
 	fees, err := config.FeesConfig.Get(row.fees())
 	if err != nil {
 		panic(err)
@@ -124,6 +127,24 @@ func newMarket(config *market.Config, row marketRow) types.Market {
 	marginCalculator, err := config.MarginCalculators.Get(row.marginCalculator())
 	if err != nil {
 		panic(err)
+	}
+
+	// the governance engine would fill in the liquidity monitor parameters from the network parameters (unless set explicitly)
+	// so we need to do this here by hand. If the network parameters weren't set we use the below defaults
+	timeWindow := int64(3600)
+	scalingFactor := num.DecimalFromInt64(10)
+	triggeringRatio := num.DecimalFromInt64(0)
+
+	if tw, err := netparams.GetDuration("market.stake.target.timeWindow"); err == nil {
+		timeWindow = int64(tw.Seconds())
+	}
+
+	if sf, err := netparams.GetDecimal("market.stake.target.scalingFactor"); err == nil {
+		scalingFactor = sf
+	}
+
+	if tr, err := netparams.GetDecimal("market.liquidity.targetstake.triggering.ratio"); err == nil {
+		triggeringRatio = tr
 	}
 
 	m := types.Market{
@@ -161,10 +182,10 @@ func newMarket(config *market.Config, row marketRow) types.Market {
 		PriceMonitoringSettings: types.PriceMonitoringSettingsFromProto(priceMonitoring),
 		LiquidityMonitoringParameters: &types.LiquidityMonitoringParameters{
 			TargetStakeParameters: &types.TargetStakeParameters{
-				TimeWindow:    3600,
-				ScalingFactor: num.DecimalFromInt64(10),
+				TimeWindow:    timeWindow,
+				ScalingFactor: scalingFactor,
 			},
-			TriggeringRatio: num.DecimalFromInt64(0),
+			TriggeringRatio: triggeringRatio,
 		},
 	}
 

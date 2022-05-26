@@ -29,6 +29,7 @@ func createEngine(t *testing.T) (*execution.Engine, *gomock.Controller) {
 	executionConfig := execution.NewDefaultConfig()
 	broker := bmock.NewMockBroker(ctrl)
 	broker.EXPECT().Send(gomock.Any()).AnyTimes()
+	broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
 	timeService := mocks.NewMockTimeService(ctrl)
 	timeService.EXPECT().NotifyOnTick(gomock.Any()).Times(1)
 	timeService.EXPECT().GetTimeNow().AnyTimes()
@@ -86,7 +87,7 @@ func getMarketConfig() *types.Market {
 		},
 		LiquidityMonitoringParameters: &types.LiquidityMonitoringParameters{
 			TargetStakeParameters: &types.TargetStakeParameters{
-				TimeWindow:    100,
+				TimeWindow:    101,
 				ScalingFactor: num.DecimalFromFloat(1.0),
 			},
 			TriggeringRatio:  num.DecimalFromFloat(0.9),
@@ -185,12 +186,13 @@ func TestEmptyExecEngineSnapshot(t *testing.T) {
 }
 
 func TestValidMarketSnapshot(t *testing.T) {
+	ctx := context.Background()
 	engine, ctrl := createEngine(t)
 	defer ctrl.Finish()
 	assert.NotNil(t, engine)
 
 	marketConfig := getMarketConfig()
-	err := engine.SubmitMarket(context.TODO(), marketConfig, "")
+	err := engine.SubmitMarket(ctx, marketConfig, "")
 	assert.NoError(t, err)
 
 	keys := engine.Keys()
@@ -209,18 +211,45 @@ func TestValidMarketSnapshot(t *testing.T) {
 
 	// Turn the bytes back into a payload and restore to a new engine
 	engine2, ctrl := createEngine(t)
+
 	defer ctrl.Finish()
 	assert.NotNil(t, engine2)
 	snap := &snapshot.Payload{}
 	err = proto.Unmarshal(b, snap)
 	assert.NoError(t, err)
-	loadStateProviders, err := engine2.LoadState(context.Background(), types.PayloadFromProto(snap))
+	loadStateProviders, err := engine2.LoadState(ctx, types.PayloadFromProto(snap))
 	assert.Len(t, loadStateProviders, 4)
-
 	assert.NoError(t, err)
+
+	providerMap := map[string]map[string]types.StateProvider{}
+	for _, p := range loadStateProviders {
+		providerMap[p.Namespace().String()] = map[string]types.StateProvider{}
+		for _, k := range p.Keys() {
+			providerMap[p.Namespace().String()][k] = p
+		}
+	}
 
 	// Check the hashes are the same
 	state2, _, err := engine2.GetState(key)
 	assert.NoError(t, err)
 	assert.True(t, bytes.Equal(state1, state2))
+
+	// now load the providers state
+	for _, p := range providers {
+		for _, k := range p.Keys() {
+			b, _, err := p.GetState(k)
+			require.NoError(t, err)
+
+			snap := &snapshot.Payload{}
+			err = proto.Unmarshal(b, snap)
+			assert.NoError(t, err)
+
+			toRestore := providerMap[p.Namespace().String()][k]
+			_, err = toRestore.LoadState(ctx, types.PayloadFromProto(snap))
+			require.NoError(t, err)
+			b2, _, err := toRestore.GetState(k)
+			require.NoError(t, err)
+			assert.True(t, bytes.Equal(b, b2))
+		}
+	}
 }

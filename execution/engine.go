@@ -61,7 +61,7 @@ type Collateral interface {
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/state_var_engine_mock.go -package mocks code.vegaprotocol.io/vega/execution StateVarEngine
 type StateVarEngine interface {
 	RegisterStateVariable(asset, market, name string, converter statevar.Converter, startCalculation func(string, statevar.FinaliseCalculation), trigger []statevar.StateVarEventType, result func(context.Context, statevar.StateVariableResult) error) error
-	RemoveTimeTriggers(asset, market string)
+	UnregisterStateVariable(asset, market string)
 	NewEvent(asset, market string, eventType statevar.StateVarEventType)
 	ReadyForTimeTrigger(asset, mktID string)
 }
@@ -106,8 +106,6 @@ type Engine struct {
 type netParamsValues struct {
 	shapesMaxSize                   int64
 	feeDistributionTimeStep         time.Duration
-	timeWindowUpdate                time.Duration
-	targetStakeScalingFactor        num.Decimal
 	marketValueWindowLength         time.Duration
 	suppliedStakeToObligationFactor num.Decimal
 	infrastructureFee               num.Decimal
@@ -115,7 +113,6 @@ type netParamsValues struct {
 	scalingFactors                  *types.ScalingFactors
 	maxLiquidityFee                 num.Decimal
 	bondPenaltyFactor               num.Decimal
-	targetStakeTriggeringRatio      num.Decimal
 	auctionMinDuration              time.Duration
 	probabilityOfTradingTauScaling  num.Decimal
 	minProbabilityOfTradingLPOrders num.Decimal
@@ -126,8 +123,6 @@ func defaultNetParamsValues() netParamsValues {
 	return netParamsValues{
 		shapesMaxSize:                   -1,
 		feeDistributionTimeStep:         -1,
-		timeWindowUpdate:                -1,
-		targetStakeScalingFactor:        num.DecimalFromInt64(-1),
 		marketValueWindowLength:         -1,
 		suppliedStakeToObligationFactor: num.DecimalFromInt64(-1),
 		infrastructureFee:               num.DecimalFromInt64(-1),
@@ -135,7 +130,6 @@ func defaultNetParamsValues() netParamsValues {
 		scalingFactors:                  nil,
 		maxLiquidityFee:                 num.DecimalFromInt64(-1),
 		bondPenaltyFactor:               num.DecimalFromInt64(-1),
-		targetStakeTriggeringRatio:      num.DecimalFromInt64(-1),
 		auctionMinDuration:              -1,
 		probabilityOfTradingTauScaling:  num.DecimalFromInt64(-1),
 		minProbabilityOfTradingLPOrders: num.DecimalFromInt64(-1),
@@ -453,12 +447,6 @@ func (e *Engine) propagateInitialNetParams(ctx context.Context, mkt *Market) err
 		}
 	}
 
-	if !e.npv.targetStakeScalingFactor.Equal(num.DecimalFromInt64(-1)) {
-		if err := mkt.OnMarketTargetStakeScalingFactorUpdate(e.npv.targetStakeScalingFactor); err != nil {
-			return err
-		}
-	}
-
 	if !e.npv.infrastructureFee.Equal(num.DecimalFromInt64(-1)) {
 		if err := mkt.OnFeeFactorsInfrastructureFeeUpdate(ctx, e.npv.infrastructureFee); err != nil {
 			return err
@@ -481,10 +469,6 @@ func (e *Engine) propagateInitialNetParams(ctx context.Context, mkt *Market) err
 		mkt.OnMarketLiquidityProvidersFeeDistribitionTimeStep(e.npv.feeDistributionTimeStep)
 	}
 
-	if e.npv.timeWindowUpdate != -1 {
-		mkt.OnMarketTargetStakeTimeWindowUpdate(e.npv.timeWindowUpdate)
-	}
-
 	if e.npv.marketValueWindowLength != -1 {
 		mkt.OnMarketValueWindowLengthUpdate(e.npv.marketValueWindowLength)
 	}
@@ -495,9 +479,7 @@ func (e *Engine) propagateInitialNetParams(ctx context.Context, mkt *Market) err
 	if !e.npv.bondPenaltyFactor.Equal(num.DecimalFromInt64(-1)) {
 		mkt.BondPenaltyFactorUpdate(ctx, e.npv.bondPenaltyFactor)
 	}
-	if !e.npv.targetStakeTriggeringRatio.Equal(num.DecimalFromInt64(-1)) {
-		mkt.OnMarketLiquidityTargetStakeTriggeringRatio(ctx, e.npv.targetStakeTriggeringRatio)
-	}
+
 	if !e.npv.maxLiquidityFee.Equal(num.DecimalFromInt64(-1)) {
 		mkt.OnMarketLiquidityMaximumLiquidityFeeFactorLevelUpdate(e.npv.maxLiquidityFee)
 	}
@@ -958,9 +940,6 @@ func (e *Engine) OnMarketTargetStakeScalingFactorUpdate(_ context.Context, d num
 			return err
 		}
 	}
-
-	e.npv.targetStakeScalingFactor = d
-
 	return nil
 }
 
@@ -974,9 +953,6 @@ func (e *Engine) OnMarketTargetStakeTimeWindowUpdate(_ context.Context, d time.D
 	for _, mkt := range e.marketsCpy {
 		mkt.OnMarketTargetStakeTimeWindowUpdate(d)
 	}
-
-	e.npv.timeWindowUpdate = d
-
 	return nil
 }
 
@@ -1042,9 +1018,6 @@ func (e *Engine) OnMarketLiquidityTargetStakeTriggeringRatio(ctx context.Context
 	for _, mkt := range e.marketsCpy {
 		mkt.OnMarketLiquidityTargetStakeTriggeringRatio(ctx, d)
 	}
-
-	e.npv.targetStakeTriggeringRatio = d
-
 	return nil
 }
 

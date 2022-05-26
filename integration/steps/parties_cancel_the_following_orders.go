@@ -30,7 +30,7 @@ func PartiesCancelTheFollowingOrders(
 		}
 
 		_, err = exec.CancelOrder(context.Background(), &cancel, party)
-		err = checkExpectedError(row, err)
+		err = checkExpectedError(row, err, nil)
 		if err != nil {
 			return err
 		}

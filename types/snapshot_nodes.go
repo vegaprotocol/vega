@@ -206,7 +206,8 @@ type Topology struct {
 }
 
 type PayloadFloatingPointConsensus struct {
-	ConsensusData []*snapshot.NextTimeTrigger
+	ConsensusData               []*snapshot.NextTimeTrigger
+	StateVariablesInternalState []*snapshot.StateVarInternalState
 }
 
 type PayloadMarketActivityTracker struct {
@@ -345,14 +346,15 @@ type KeyDecimalPair struct {
 }
 
 type AuctionState struct {
-	Mode        MarketTradingMode
-	DefaultMode MarketTradingMode
-	Trigger     AuctionTrigger
-	Begin       time.Time
-	End         *AuctionDuration
-	Start       bool
-	Stop        bool
-	Extension   AuctionTrigger
+	Mode               MarketTradingMode
+	DefaultMode        MarketTradingMode
+	Trigger            AuctionTrigger
+	Begin              time.Time
+	End                *AuctionDuration
+	Start              bool
+	Stop               bool
+	Extension          AuctionTrigger
+	ExtensionEventSent bool
 }
 
 type FeeSplitter struct {
@@ -381,6 +383,7 @@ type LimitState struct {
 
 type EquityShare struct {
 	Mvp                 num.Decimal
+	PMvp                num.Decimal
 	R                   num.Decimal
 	OpeningAuctionEnded bool
 	Lps                 []*EquityShareLP
@@ -2305,15 +2308,19 @@ func (m MatchingBook) IntoProto() *snapshot.MatchingBook {
 }
 
 func EquityShareFromProto(es *snapshot.EquityShare) *EquityShare {
-	var mvp, r num.Decimal
+	var mvp, r, pMvp num.Decimal
 	if len(es.Mvp) > 0 {
 		mvp, _ = num.DecimalFromString(es.Mvp)
 	}
 	if len(es.R) > 0 {
 		r, _ = num.DecimalFromString(es.R)
 	}
+	if len(es.PMvp) > 0 {
+		pMvp, _ = num.DecimalFromString(es.PMvp)
+	}
 	ret := EquityShare{
 		Mvp:                 mvp,
+		PMvp:                pMvp,
 		R:                   r,
 		OpeningAuctionEnded: es.OpeningAuctionEnded,
 		Lps:                 make([]*EquityShareLP, 0, len(es.Lps)),
@@ -2327,6 +2334,7 @@ func EquityShareFromProto(es *snapshot.EquityShare) *EquityShare {
 func (e EquityShare) IntoProto() *snapshot.EquityShare {
 	ret := snapshot.EquityShare{
 		Mvp:                 e.Mvp.String(),
+		PMvp:                e.PMvp.String(),
 		R:                   e.R.String(),
 		OpeningAuctionEnded: e.OpeningAuctionEnded,
 		Lps:                 make([]*snapshot.EquityShareLP, 0, len(e.Lps)),
@@ -2376,14 +2384,15 @@ func AuctionStateFromProto(as *snapshot.AuctionState) *AuctionState {
 		end = AuctionDurationFromProto(as.End)
 	}
 	return &AuctionState{
-		Mode:        as.Mode,
-		DefaultMode: as.DefaultMode,
-		Begin:       time.Unix(0, as.Begin).UTC(),
-		Trigger:     as.Trigger,
-		End:         end,
-		Start:       as.Start,
-		Stop:        as.Stop,
-		Extension:   as.Extension,
+		Mode:               as.Mode,
+		DefaultMode:        as.DefaultMode,
+		Begin:              time.Unix(0, as.Begin).UTC(),
+		Trigger:            as.Trigger,
+		End:                end,
+		Start:              as.Start,
+		Stop:               as.Stop,
+		Extension:          as.Extension,
+		ExtensionEventSent: as.ExtensionEventSent,
 	}
 }
 
@@ -2393,14 +2402,15 @@ func (a AuctionState) IntoProto() *snapshot.AuctionState {
 		end = a.End.IntoProto()
 	}
 	return &snapshot.AuctionState{
-		Mode:        a.Mode,
-		DefaultMode: a.DefaultMode,
-		Trigger:     a.Trigger,
-		Begin:       a.Begin.UnixNano(),
-		End:         end,
-		Start:       a.Start,
-		Stop:        a.Stop,
-		Extension:   a.Extension,
+		Mode:               a.Mode,
+		DefaultMode:        a.DefaultMode,
+		Trigger:            a.Trigger,
+		Begin:              a.Begin.UnixNano(),
+		End:                end,
+		Start:              a.Start,
+		Stop:               a.Stop,
+		Extension:          a.Extension,
+		ExtensionEventSent: a.ExtensionEventSent,
 	}
 }
 
@@ -2538,14 +2548,14 @@ func (cp CurrentPrice) IntoProto() *snapshot.CurrentPrice {
 func PastPriceFromProto(spp *snapshot.PastPrice) *PastPrice {
 	vwp, _ := num.DecimalFromString(spp.VolumeWeightedPrice)
 	return &PastPrice{
-		Time:                time.Unix(spp.Time, 0).UTC(),
+		Time:                time.Unix(0, spp.Time).UTC(),
 		VolumeWeightedPrice: vwp,
 	}
 }
 
 func (pp PastPrice) IntoProto() *snapshot.PastPrice {
 	return &snapshot.PastPrice{
-		Time:                pp.Time.Unix(),
+		Time:                pp.Time.UnixNano(),
 		VolumeWeightedPrice: pp.VolumeWeightedPrice.String(),
 	}
 }
@@ -2554,14 +2564,14 @@ func PriceMonitorFromProto(pm *snapshot.PriceMonitor) *PriceMonitor {
 	ret := PriceMonitor{
 		Initialised:                 pm.Initialised,
 		FPHorizons:                  make([]*KeyDecimalPair, 0, len(pm.FpHorizons)),
-		Now:                         time.Unix(pm.Now, 0).UTC(),
-		Update:                      time.Unix(pm.Update, 0).UTC(),
+		Now:                         time.Unix(0, pm.Now).UTC(),
+		Update:                      time.Unix(0, pm.Update).UTC(),
 		Bounds:                      make([]*PriceBound, 0, len(pm.Bounds)),
-		PriceRangeCacheTime:         time.Unix(pm.PriceRangeCacheTime, 0).UTC(),
+		PriceRangeCacheTime:         time.Unix(0, pm.PriceRangeCacheTime).UTC(),
 		PriceRangeCache:             make([]*PriceRangeCache, 0, len(pm.PriceRangeCache)),
 		PricesNow:                   make([]*CurrentPrice, 0, len(pm.PricesNow)),
 		PricesPast:                  make([]*PastPrice, 0, len(pm.PricesPast)),
-		RefPriceCacheTime:           time.Unix(pm.RefPriceCacheTime, 0).UTC(),
+		RefPriceCacheTime:           time.Unix(0, pm.RefPriceCacheTime).UTC(),
 		RefPriceCache:               make([]*KeyDecimalPair, 0, len(pm.RefPriceCache)),
 		PriceBoundsConsensusReached: pm.ConsensusReached,
 	}
@@ -2590,14 +2600,14 @@ func (p PriceMonitor) IntoProto() *snapshot.PriceMonitor {
 	ret := snapshot.PriceMonitor{
 		Initialised:         p.Initialised,
 		FpHorizons:          make([]*snapshot.DecimalMap, 0, len(p.FPHorizons)),
-		Now:                 p.Now.Unix(),
-		Update:              p.Update.Unix(),
+		Now:                 p.Now.UnixNano(),
+		Update:              p.Update.UnixNano(),
 		Bounds:              make([]*snapshot.PriceBound, 0, len(p.Bounds)),
-		PriceRangeCacheTime: p.PriceRangeCacheTime.Unix(),
+		PriceRangeCacheTime: p.PriceRangeCacheTime.UnixNano(),
 		PriceRangeCache:     make([]*snapshot.PriceRangeCache, 0, len(p.PriceRangeCache)),
 		PricesNow:           make([]*snapshot.CurrentPrice, 0, len(p.PricesNow)),
 		PricesPast:          make([]*snapshot.PastPrice, 0, len(p.PricesPast)),
-		RefPriceCacheTime:   p.RefPriceCacheTime.Unix(),
+		RefPriceCacheTime:   p.RefPriceCacheTime.UnixNano(),
 		RefPriceCache:       make([]*snapshot.DecimalMap, 0, len(p.RefPriceCache)),
 		ConsensusReached:    p.PriceBoundsConsensusReached,
 	}
@@ -3467,7 +3477,8 @@ func (*PayloadFloatingPointConsensus) isPayload() {}
 
 func PayloadFloatingPointConsensusFromProto(t *snapshot.Payload_FloatingPointConsensus) *PayloadFloatingPointConsensus {
 	return &PayloadFloatingPointConsensus{
-		ConsensusData: t.FloatingPointConsensus.NextTimeTrigger,
+		ConsensusData:               t.FloatingPointConsensus.NextTimeTrigger,
+		StateVariablesInternalState: t.FloatingPointConsensus.StateVariables,
 	}
 }
 
@@ -3475,6 +3486,7 @@ func (p *PayloadFloatingPointConsensus) IntoProto() *snapshot.Payload_FloatingPo
 	return &snapshot.Payload_FloatingPointConsensus{
 		FloatingPointConsensus: &snapshot.FloatingPointConsensus{
 			NextTimeTrigger: p.ConsensusData,
+			StateVariables:  p.StateVariablesInternalState,
 		},
 	}
 }
