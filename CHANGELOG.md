@@ -9,8 +9,10 @@
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 ### 🛠 Improvements
-- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 - [5395](https://github.com/vegaprotocol/vega/issues/5395) - Add `burn_nonce` bridge tool
+- [5403](https://github.com/vegaprotocol/vega/issues/5403) - Allow spam free / proof of work free running of null blockchain
+- [5175](https://github.com/vegaprotocol/vega/issues/5175) - Validation free transactions (including signature verification) for null blockchain
+- [5371](https://github.com/vegaprotocol/vega/issues/5371) - Ensure threshold is not breached in ERC20 withdrawal
 
 ### 🐛 Fixes
 - [5362](https://github.com/vegaprotocol/vega/issues/5362) - Liquidity and order book point to same underlying order after restore

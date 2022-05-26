@@ -346,14 +346,15 @@ type KeyDecimalPair struct {
 }
 
 type AuctionState struct {
-	Mode        MarketTradingMode
-	DefaultMode MarketTradingMode
-	Trigger     AuctionTrigger
-	Begin       time.Time
-	End         *AuctionDuration
-	Start       bool
-	Stop        bool
-	Extension   AuctionTrigger
+	Mode               MarketTradingMode
+	DefaultMode        MarketTradingMode
+	Trigger            AuctionTrigger
+	Begin              time.Time
+	End                *AuctionDuration
+	Start              bool
+	Stop               bool
+	Extension          AuctionTrigger
+	ExtensionEventSent bool
 }
 
 type FeeSplitter struct {
@@ -2377,14 +2378,15 @@ func AuctionStateFromProto(as *snapshot.AuctionState) *AuctionState {
 		end = AuctionDurationFromProto(as.End)
 	}
 	return &AuctionState{
-		Mode:        as.Mode,
-		DefaultMode: as.DefaultMode,
-		Begin:       time.Unix(0, as.Begin).UTC(),
-		Trigger:     as.Trigger,
-		End:         end,
-		Start:       as.Start,
-		Stop:        as.Stop,
-		Extension:   as.Extension,
+		Mode:               as.Mode,
+		DefaultMode:        as.DefaultMode,
+		Begin:              time.Unix(0, as.Begin).UTC(),
+		Trigger:            as.Trigger,
+		End:                end,
+		Start:              as.Start,
+		Stop:               as.Stop,
+		Extension:          as.Extension,
+		ExtensionEventSent: as.ExtensionEventSent,
 	}
 }
 
@@ -2394,14 +2396,15 @@ func (a AuctionState) IntoProto() *snapshot.AuctionState {
 		end = a.End.IntoProto()
 	}
 	return &snapshot.AuctionState{
-		Mode:        a.Mode,
-		DefaultMode: a.DefaultMode,
-		Trigger:     a.Trigger,
-		Begin:       a.Begin.UnixNano(),
-		End:         end,
-		Start:       a.Start,
-		Stop:        a.Stop,
-		Extension:   a.Extension,
+		Mode:               a.Mode,
+		DefaultMode:        a.DefaultMode,
+		Trigger:            a.Trigger,
+		Begin:              a.Begin.UnixNano(),
+		End:                end,
+		Start:              a.Start,
+		Stop:               a.Stop,
+		Extension:          a.Extension,
+		ExtensionEventSent: a.ExtensionEventSent,
 	}
 }
 

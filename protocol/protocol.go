@@ -96,6 +96,7 @@ func New(
 			svcs.blockchainClient,
 			svcs.erc20MultiSigTopology,
 			stats.GetVersion(),
+			svcs.codec,
 		),
 		log:         log,
 		confWatcher: confWatcher,
