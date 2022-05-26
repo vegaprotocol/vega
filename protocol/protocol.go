@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"code.vegaprotocol.io/shared/paths"
+	"code.vegaprotocol.io/vega/api"
 	"code.vegaprotocol.io/vega/blockchain"
 	"code.vegaprotocol.io/vega/broker"
 	ethclient "code.vegaprotocol.io/vega/client/eth"
@@ -11,7 +12,6 @@ import (
 	"code.vegaprotocol.io/vega/evtforward"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/nodewallets"
-	"code.vegaprotocol.io/vega/pow"
 	"code.vegaprotocol.io/vega/processor"
 	"code.vegaprotocol.io/vega/stats"
 	"code.vegaprotocol.io/vega/subscribers"
@@ -139,6 +139,6 @@ func (n *Protocol) GetBroker() *broker.Broker {
 	return n.services.broker
 }
 
-func (n *Protocol) GetPoW() *pow.Engine {
+func (n *Protocol) GetPoW() api.ProofOfWorkParams {
 	return n.services.pow
 }
