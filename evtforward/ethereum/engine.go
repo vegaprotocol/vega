@@ -24,7 +24,7 @@ type Filterer interface {
 	FilterCollateralEvents(ctx context.Context, startAt, stopAt uint64, cb OnEventFound)
 	FilterStakingEvents(ctx context.Context, startAt, stopAt uint64, cb OnEventFound)
 	FilterVestingEvents(ctx context.Context, startAt, stopAt uint64, cb OnEventFound)
-	FilterMultiSigControlEvents(ctx context.Context, startAt, stopAt uint64, cb OnEventFound)
+	FilterMultisigControlEvents(ctx context.Context, startAt, stopAt uint64, cb OnEventFound)
 	CurrentHeight(context.Context) uint64
 }
 
@@ -145,7 +145,7 @@ func (e *Engine) gatherEvents(ctx context.Context) {
 
 	// Ensure we are not issuing a filtering request for non-existing block.
 	if e.nextMultiSigControlBlockNumber <= currentHeight {
-		e.filterer.FilterMultiSigControlEvents(ctx, e.nextMultiSigControlBlockNumber, currentHeight, func(event *commandspb.ChainEvent) {
+		e.filterer.FilterMultisigControlEvents(ctx, e.nextMultiSigControlBlockNumber, currentHeight, func(event *commandspb.ChainEvent) {
 			e.forwarder.ForwardFromSelf(event)
 		})
 		e.nextMultiSigControlBlockNumber = currentHeight + 1
