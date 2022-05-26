@@ -217,9 +217,6 @@ models:
     model: code.vegaprotocol.io/protos/vega.Delegation
   Node:
     model: code.vegaprotocol.io/protos/vega.Node
-    fields:
-      delegations:
-        resolver: true
   Epoch:
     model: code.vegaprotocol.io/protos/vega.Epoch
   EpochTimestamps:

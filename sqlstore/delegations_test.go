@@ -54,13 +54,15 @@ func TestDelegations(t *testing.T) {
 	ps := sqlstore.NewParties(connectionSource)
 	ds := sqlstore.NewDelegations(connectionSource)
 	bs := sqlstore.NewBlocks(connectionSource)
+	ns := sqlstore.NewNode(connectionSource)
 	block := addTestBlock(t, bs)
 
-	node1ID := "dead"
-	node2ID := "beef"
+	node1 := addTestNode(t, ns, block)
+	node2 := addTestNode(t, ns, block)
 
-	node1 := entities.Node{ID: entities.NewNodeID(node1ID)}
-	node2 := entities.Node{ID: entities.NewNodeID(node2ID)}
+	node1ID := node1.ID.String()
+	node2ID := node2.ID.String()
+
 	party1 := addTestParty(t, ps, block)
 	party2 := addTestParty(t, ps, block)
 

@@ -1388,7 +1388,6 @@ type NewMarketResolver interface {
 }
 type NodeResolver interface {
 	Status(ctx context.Context, obj *vega.Node) (NodeStatus, error)
-	Delegations(ctx context.Context, obj *vega.Node, partyID *string, skip *int, first *int, last *int) ([]*vega.Delegation, error)
 }
 type NodeDataResolver interface {
 	Uptime(ctx context.Context, obj *vega.NodeData) (float64, error)
@@ -22419,8 +22418,8 @@ func (ec *executionContext) _Node_delegations(ctx context.Context, field graphql
 		Object:     "Node",
 		Field:      field,
 		Args:       nil,
-		IsMethod:   true,
-		IsResolver: true,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -22433,7 +22432,7 @@ func (ec *executionContext) _Node_delegations(ctx context.Context, field graphql
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Node().Delegations(rctx, obj, args["partyId"].(*string), args["skip"].(*int), args["first"].(*int), args["last"].(*int))
+		return obj.Delegations, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -43874,22 +43873,12 @@ func (ec *executionContext) _Node(ctx context.Context, sel ast.SelectionSet, obj
 
 			})
 		case "delegations":
-			field := field
-
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Node_delegations(ctx, field, obj)
-				return res
+				return ec._Node_delegations(ctx, field, obj)
 			}
 
-			out.Concurrently(i, func() graphql.Marshaler {
-				return innerFunc(ctx)
+			out.Values[i] = innerFunc(ctx)
 
-			})
 		case "rewardScore":
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Node_rewardScore(ctx, field, obj)
