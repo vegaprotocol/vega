@@ -3,7 +3,6 @@ package sqlsubscribers
 import (
 	"context"
 	"sync"
-	"time"
 
 	"code.vegaprotocol.io/data-node/entities"
 	"code.vegaprotocol.io/data-node/logging"
@@ -46,10 +45,10 @@ type PositionStore interface {
 }
 
 type Position struct {
-	store    PositionStore
-	log      *logging.Logger
-	vegaTime time.Time
-	mutex    sync.Mutex
+	subscriber
+	store PositionStore
+	log   *logging.Logger
+	mutex sync.Mutex
 }
 
 func NewPosition(
@@ -71,12 +70,13 @@ func (t *Position) Types() []events.Type {
 	}
 }
 
+func (nl *Position) Flush(ctx context.Context) error {
+	err := nl.store.Flush(ctx)
+	return errors.Wrap(err, "flushing positions")
+}
+
 func (nl *Position) Push(ctx context.Context, evt events.Event) error {
 	switch event := evt.(type) {
-	case TimeUpdateEvent:
-		nl.vegaTime = event.Time()
-		err := nl.store.Flush(ctx)
-		return errors.Wrap(err, "flushing positions")
 	case positionSettlement:
 		return nl.handlePositionSettlement(ctx, event)
 	case lossSocialization:

@@ -12,7 +12,7 @@ import (
 
 type candleSource interface {
 	GetCandleDataForTimeSpan(ctx context.Context, candleId string, from *time.Time, to *time.Time,
-		p entities.Pagination) ([]entities.Candle, error)
+		p entities.OffsetPagination) ([]entities.Candle, error)
 }
 
 type subscribeRequest struct {
@@ -126,7 +126,7 @@ func (s *candleUpdates) getCandleUpdates(ctx context.Context, lastCandle *entiti
 	if lastCandle != nil {
 		start := lastCandle.PeriodStart
 		var candles []entities.Candle
-		candles, err = s.candleSource.GetCandleDataForTimeSpan(ctx, s.candleId, &start, nil, entities.Pagination{})
+		candles, err = s.candleSource.GetCandleDataForTimeSpan(ctx, s.candleId, &start, nil, entities.OffsetPagination{})
 
 		for _, candle := range candles {
 			if candle.LastUpdateInPeriod.After(lastCandle.LastUpdateInPeriod) {
@@ -134,7 +134,7 @@ func (s *candleUpdates) getCandleUpdates(ctx context.Context, lastCandle *entiti
 			}
 		}
 	} else {
-		pagination := entities.Pagination{Skip: 0, Limit: 1, Descending: true}
+		pagination := entities.OffsetPagination{Skip: 0, Limit: 1, Descending: true}
 		updates, err = s.candleSource.GetCandleDataForTimeSpan(ctx, s.candleId, nil, nil, pagination)
 	}
 
@@ -163,5 +163,4 @@ func (s *candleUpdates) sendCandles(candles []entities.Candle, subscriptions map
 		s.log.Warningf("slow consumer detected, removing subscription %s", slowConsumerId)
 		removeSubscription(subscriptions, slowConsumerId)
 	}
-
 }

@@ -2,7 +2,6 @@ package sqlsubscribers
 
 import (
 	"context"
-	"time"
 
 	"code.vegaprotocol.io/data-node/entities"
 	"code.vegaprotocol.io/data-node/logging"
@@ -23,9 +22,9 @@ type ProposalStore interface {
 }
 
 type Proposal struct {
-	store    ProposalStore
-	log      *logging.Logger
-	vegaTime time.Time
+	subscriber
+	store ProposalStore
+	log   *logging.Logger
 }
 
 func NewProposal(
@@ -44,16 +43,7 @@ func (ps *Proposal) Types() []events.Type {
 }
 
 func (ps *Proposal) Push(ctx context.Context, evt events.Event) error {
-	switch event := evt.(type) {
-	case TimeUpdateEvent:
-		ps.vegaTime = event.Time()
-	case ProposalEvent:
-		return ps.consume(ctx, event)
-	default:
-		return errors.Errorf("unknown event type %s", event.Type().String())
-	}
-
-	return nil
+	return ps.consume(ctx, evt.(ProposalEvent))
 }
 
 func (ps *Proposal) consume(ctx context.Context, event ProposalEvent) error {

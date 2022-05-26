@@ -3,7 +3,6 @@ package sqlsubscribers_test
 import (
 	"context"
 	"testing"
-	"time"
 
 	"code.vegaprotocol.io/data-node/logging"
 	"code.vegaprotocol.io/data-node/sqlsubscribers"
@@ -22,7 +21,6 @@ func TestDeposit_Push(t *testing.T) {
 
 	store.EXPECT().Upsert(context.Background(), gomock.Any()).Times(1)
 	subscriber := sqlsubscribers.NewDeposit(store, logging.NewTestLogger())
-	subscriber.Push(context.Background(), events.NewTime(context.Background(), time.Now()))
 	subscriber.Push(context.Background(), events.NewDepositEvent(context.Background(), types.Deposit{
 		ID:           "DEADBEEF",
 		Status:       types.DepositStatusOpen,

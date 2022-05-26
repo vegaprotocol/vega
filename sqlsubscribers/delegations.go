@@ -2,7 +2,6 @@ package sqlsubscribers
 
 import (
 	"context"
-	"time"
 
 	"code.vegaprotocol.io/data-node/entities"
 	"code.vegaprotocol.io/data-node/logging"
@@ -21,9 +20,9 @@ type DelegationStore interface {
 }
 
 type Delegation struct {
-	store    DelegationStore
-	log      *logging.Logger
-	vegaTime time.Time
+	subscriber
+	store DelegationStore
+	log   *logging.Logger
 }
 
 func NewDelegation(
@@ -41,22 +40,13 @@ func (ds *Delegation) Types() []events.Type {
 	return []events.Type{events.DelegationBalanceEvent}
 }
 
-func (ds *Delegation) Push(ctx context.Context, e events.Event) error {
-	switch event := e.(type) {
-	case TimeUpdateEvent:
-		ds.vegaTime = event.Time()
-	case DelegationBalanceEvent:
-		return ds.consume(ctx, event)
-	default:
-		return errors.Errorf("unknown event type %s", e.Type().String())
-	}
-
-	return nil
+func (ds *Delegation) Push(ctx context.Context, evt events.Event) error {
+	return ds.consume(ctx, evt.(DelegationBalanceEvent))
 }
 
 func (ds *Delegation) consume(ctx context.Context, event DelegationBalanceEvent) error {
 	protoDBE := event.Proto()
-	delegation, err := entities.DelegationFromProto(&protoDBE)
+	delegation, err := entities.DelegationFromEventProto(&protoDBE)
 	if err != nil {
 		return errors.Wrap(err, "unable to parse delegation")
 	}

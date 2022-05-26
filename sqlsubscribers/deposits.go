@@ -2,7 +2,6 @@ package sqlsubscribers
 
 import (
 	"context"
-	"time"
 
 	"code.vegaprotocol.io/data-node/entities"
 	"code.vegaprotocol.io/data-node/logging"
@@ -22,9 +21,9 @@ type DepositStore interface {
 }
 
 type Deposit struct {
-	store    DepositStore
-	log      *logging.Logger
-	vegaTime time.Time
+	subscriber
+	store DepositStore
+	log   *logging.Logger
 }
 
 func NewDeposit(store DepositStore, log *logging.Logger) *Deposit {
@@ -39,16 +38,7 @@ func (d *Deposit) Types() []events.Type {
 }
 
 func (d *Deposit) Push(ctx context.Context, evt events.Event) error {
-	switch e := evt.(type) {
-	case TimeUpdateEvent:
-		d.vegaTime = e.Time()
-	case DepositEvent:
-		return d.consume(ctx, e)
-	default:
-		return errors.Errorf("unknown event type %s", e.Type().String())
-	}
-
-	return nil
+	return d.consume(ctx, evt.(DepositEvent))
 }
 
 func (d *Deposit) consume(ctx context.Context, event DepositEvent) error {

@@ -66,7 +66,7 @@ func (c *ChainInfo) SetChainID(chainID string) error {
 		c.onCriticalError()
 	}
 
-	err = ioutil.WriteFile(c.jsonFile, jsonData, 0644)
+	err = ioutil.WriteFile(c.jsonFile, jsonData, 0o644)
 	if err != nil {
 		c.log.Error("Unable to write chain info file: ",
 			logging.String("file", c.jsonFile),

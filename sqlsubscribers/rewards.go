@@ -2,7 +2,6 @@ package sqlsubscribers
 
 import (
 	"context"
-	"time"
 
 	"code.vegaprotocol.io/data-node/entities"
 	"code.vegaprotocol.io/data-node/logging"
@@ -21,9 +20,9 @@ type RewardStore interface {
 }
 
 type Reward struct {
-	store    RewardStore
-	log      *logging.Logger
-	vegaTime time.Time
+	subscriber
+	store RewardStore
+	log   *logging.Logger
 }
 
 func NewReward(
@@ -42,16 +41,7 @@ func (rs *Reward) Types() []events.Type {
 }
 
 func (rs *Reward) Push(ctx context.Context, evt events.Event) error {
-	switch event := evt.(type) {
-	case TimeUpdateEvent:
-		rs.vegaTime = event.Time()
-	case RewardPayoutEvent:
-		return rs.consume(ctx, event)
-	default:
-		return errors.Errorf("unknown event type %s", event.Type().String())
-	}
-
-	return nil
+	return rs.consume(ctx, evt.(RewardPayoutEvent))
 }
 
 func (rs *Reward) consume(ctx context.Context, event RewardPayoutEvent) error {

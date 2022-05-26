@@ -39,7 +39,8 @@ func (lp *LiquidityProvision) Upsert(ctx context.Context, liquidityProvision ent
 }
 
 func (lp *LiquidityProvision) Get(ctx context.Context, partyID entities.PartyID, marketID entities.MarketID,
-	pagination entities.Pagination) ([]entities.LiquidityProvision, error) {
+	pagination entities.OffsetPagination,
+) ([]entities.LiquidityProvision, error) {
 	if len(partyID.ID) == 0 && len(marketID.ID) == 0 {
 		return nil, errors.New("market or party filters are required")
 	}

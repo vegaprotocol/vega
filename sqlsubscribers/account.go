@@ -27,8 +27,8 @@ type BalanceStore interface {
 }
 
 type Account struct {
+	subscriber
 	accounts AccountStore
-	vegaTime time.Time
 	balances BalanceStore
 	log      *logging.Logger
 }
@@ -49,17 +49,13 @@ func (as *Account) Types() []events.Type {
 	return []events.Type{events.AccountEvent}
 }
 
+func (as *Account) Flush(ctx context.Context) error {
+	err := as.balances.Flush(ctx)
+	return errors.Wrap(err, "flushing balances")
+}
+
 func (as *Account) Push(ctx context.Context, evt events.Event) error {
-	switch e := evt.(type) {
-	case TimeUpdateEvent:
-		as.vegaTime = e.Time()
-		err := as.balances.Flush(ctx)
-		return errors.Wrap(err, "flushing balances")
-	case AccountEvent:
-		return as.consume(ctx, e)
-	default:
-		return errors.Errorf("unknown event type %s", e.Type().String())
-	}
+	return as.consume(ctx, evt.(AccountEvent))
 }
 
 func (as *Account) consume(ctx context.Context, evt AccountEvent) error {

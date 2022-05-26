@@ -22,7 +22,7 @@ func nextBindVar(args *[]interface{}, value interface{}) string {
 
 // orderAndPaginateQuery is a helper function to simplify adding ordering and pagination statements to the end of a query
 // with the appropriate binding variables amd returns the query string and list of arguments to pass to the query execution handler
-func orderAndPaginateQuery(query string, orderColumns []string, pagination entities.Pagination, args ...interface{}) (string, []interface{}) {
+func orderAndPaginateQuery(query string, orderColumns []string, pagination entities.OffsetPagination, args ...interface{}) (string, []interface{}) {
 	ordering := "ASC"
 
 	if pagination.Descending {
@@ -55,4 +55,68 @@ func orderAndPaginateQuery(query string, orderColumns []string, pagination entit
 	query = fmt.Sprintf("%s %s %s", query, sbOrderBy.String(), paging)
 
 	return query, args
+}
+
+func orderAndPaginateWithCursor(query string, pagination entities.Pagination, cursors CursorQueryParameters,
+	args ...interface{}) (string, []interface{},
+) {
+	var limit int32
+	var order string
+
+	whereOrAnd := "WHERE"
+
+	if strings.Contains(strings.ToUpper(query), "WHERE") {
+		whereOrAnd = "AND"
+	}
+
+	var cursor string
+	cursor, args = cursors.Where(args...)
+	if cursor != "" {
+		query = fmt.Sprintf("%s %s %s", query, whereOrAnd, cursor)
+	}
+
+	if pagination.HasForward() && pagination.Forward.Limit != nil {
+		limit = *pagination.Forward.Limit + 1
+		if pagination.Forward.HasCursor() {
+			limit = *pagination.Forward.Limit + 2 // +2 to make sure we get the previous and next cursor
+		}
+	} else if pagination.HasBackward() && pagination.Backward.Limit != nil {
+		limit = *pagination.Backward.Limit + 1
+		if pagination.Backward.HasCursor() {
+			limit = *pagination.Backward.Limit + 2 // +2 to make sure we get the previous and next cursor
+		}
+	} else {
+		// return everything ordered by the cursor column ordered ascending
+		order = cursors.OrderBy()
+		query = fmt.Sprintf("%s ORDER BY %s", query, order)
+		return query, args
+	}
+
+	order = cursors.OrderBy()
+	query = fmt.Sprintf("%s ORDER BY %s", query, order)
+	query = fmt.Sprintf("%s LIMIT %d", query, limit)
+
+	return query, args
+}
+
+func extractPaginationInfo(pagination entities.Pagination) (Sorting, Compare, string) {
+	var sort Sorting
+	var cmp Compare
+	var value string
+
+	if pagination.HasForward() {
+		sort = ASC
+		if pagination.Forward.HasCursor() {
+			cmp = GE
+			value = pagination.Forward.Cursor.Value()
+		}
+	} else if pagination.HasBackward() {
+		sort = DESC
+		if pagination.Backward.HasCursor() {
+			cmp = LE
+			value = pagination.Backward.Cursor.Value()
+		}
+	}
+
+	return sort, cmp, value
 }

@@ -2,7 +2,6 @@ package sqlsubscribers
 
 import (
 	"context"
-	"time"
 
 	"code.vegaprotocol.io/data-node/entities"
 	"code.vegaprotocol.io/data-node/logging"
@@ -24,9 +23,9 @@ type VoteStore interface {
 }
 
 type Vote struct {
-	store    VoteStore
-	log      *logging.Logger
-	vegaTime time.Time
+	subscriber
+	store VoteStore
+	log   *logging.Logger
 }
 
 func NewVote(
@@ -45,16 +44,7 @@ func (vs *Vote) Types() []events.Type {
 }
 
 func (vs *Vote) Push(ctx context.Context, evt events.Event) error {
-	switch event := evt.(type) {
-	case TimeUpdateEvent:
-		vs.vegaTime = event.Time()
-	case VoteEvent:
-		return vs.consume(ctx, event)
-	default:
-		return errors.Errorf("unknown event type %s", event.Type().String())
-	}
-
-	return nil
+	return vs.consume(ctx, evt.(VoteEvent))
 }
 
 func (vs *Vote) consume(ctx context.Context, event VoteEvent) error {

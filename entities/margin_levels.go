@@ -2,6 +2,7 @@ package entities
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -72,7 +73,6 @@ func GetAccountFromMarginLevel(ctx context.Context, margin *vega.MarginLevels, a
 }
 
 func (ml *MarginLevels) ToProto(accountSource AccountSource) (*vega.MarginLevels, error) {
-
 	marginAccount, err := accountSource.GetByID(ml.AccountID)
 	if err != nil {
 		return nil, fmt.Errorf("getting from account for transfer proto:%w", err)
@@ -83,10 +83,10 @@ func (ml *MarginLevels) ToProto(accountSource AccountSource) (*vega.MarginLevels
 		SearchLevel:            ml.SearchLevel.String(),
 		InitialMargin:          ml.InitialMargin.String(),
 		CollateralReleaseLevel: ml.CollateralReleaseLevel.String(),
-		PartyId:                marginAccount.String(),
-		MarketId:               marginAccount.String(),
-		Asset:                  marginAccount.String(),
-		Timestamp:              ml.VegaTime.UnixNano(),
+		PartyId:                marginAccount.PartyID.String(),
+		MarketId:               marginAccount.MarketID.String(),
+		Asset:                  marginAccount.AssetID.String(),
+		Timestamp:              ml.Timestamp.UnixNano(),
 	}, nil
 }
 
@@ -109,4 +109,33 @@ func (ml MarginLevels) ToRow() []interface{} {
 var MarginLevelsColumns = []string{
 	"account_id", "timestamp", "maintenance_margin",
 	"search_level", "initial_margin", "collateral_release_level", "vega_time",
+}
+
+type MarginCursor struct {
+	VegaTime  time.Time
+	AccountID int64
+}
+
+func (mc MarginCursor) String() string {
+	bs, err := json.Marshal(mc)
+	if err != nil {
+		return fmt.Sprintf(`{"vegaTime":"%s","accountID":%d}`, mc.VegaTime, mc.AccountID)
+	}
+	return string(bs)
+}
+
+func (ml MarginLevels) Cursor() *Cursor {
+	cursor := MarginCursor{
+		VegaTime:  ml.VegaTime,
+		AccountID: ml.AccountID,
+	}
+	return NewCursor(cursor.String())
+}
+
+func ParseMarginLevelCursor(cursor string) (time.Time, int64, error) {
+	var mc MarginCursor
+	if err := json.Unmarshal([]byte(cursor), &mc); err != nil {
+		return time.Time{}, 0, fmt.Errorf("parsing margin cursor: %w", err)
+	}
+	return mc.VegaTime, mc.AccountID, nil
 }

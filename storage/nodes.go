@@ -14,7 +14,10 @@ import (
 	"github.com/pkg/errors"
 )
 
-var ErrNodeDoesNotExist = errors.New("node does not exist")
+var (
+	ErrNodeDoesNotExist            = errors.New("node does not exist")
+	ErrNodeDoesNotExistInThisEpoch = errors.New("node does not exist in this epoch")
+)
 
 type node struct {
 	n pb.Node
@@ -22,7 +25,13 @@ type node struct {
 	delegationsPerEpochPerParty map[string]map[string]pb.Delegation
 	rewardScoresPerEpoch        map[string]pb.RewardScore
 	rankingPerEpoch             map[string]pb.RankingScore
+	existsPerEpoch              map[string]bool // tells us whether this node existed in the given epoch
+	lastChangeAdded             bool            // the last state change (added/removed) experienced by this node
 	minEpoch                    *uint64
+}
+
+func (n *node) exists(epoch string) bool {
+	return n.existsPerEpoch[epoch]
 }
 
 type keyRotation struct {
@@ -68,15 +77,48 @@ func (ns *Node) ReloadConf(cfg Config) {
 	ns.Config = cfg
 }
 
-func (ns *Node) AddNode(n pb.Node) {
+// AddEpoch when we enter a new epoch we need to update the exists map for each node
+func (ns *Node) AddEpoch(epoch string) {
 	ns.mut.Lock()
 	defer ns.mut.Unlock()
+	// for all nodes copy their existence flags from the last known state change
+	for _, n := range ns.nodes {
+
+		if _, ok := n.existsPerEpoch[epoch]; ok {
+			// if we already know just move on, ValidatorUpdate event may have come through before the epoch event
+			continue
+		}
+		n.existsPerEpoch[epoch] = n.lastChangeAdded
+	}
+}
+
+func (ns *Node) AddNode(n pb.Node, added bool, fromEpoch uint64) {
+	ns.mut.Lock()
+	defer ns.mut.Unlock()
+
+	ns.log.Info("adding node", logging.String("nodeid", n.Id), logging.Bool("added", added), logging.Uint64("from", fromEpoch))
+	epochSeq := strconv.FormatUint(fromEpoch, 10)
+	haveNode, ok := ns.nodes[n.GetId()]
+	if ok {
+		// node already exists in our store just update its existence flag
+		ns.log.Info("aleady existss just update", logging.String("nodeid", n.Id), logging.Bool("added", added), logging.Uint64("from", fromEpoch))
+		haveNode.existsPerEpoch[epochSeq] = added
+		haveNode.lastChangeAdded = added
+		return
+	}
+
+	if !added && !ok {
+		ns.log.Error("node has been removed despite never existing", logging.String("nodeID", n.GetId()))
+		return
+	}
 
 	nd := node{
 		n:                           n,
 		rewardScoresPerEpoch:        map[string]vega.RewardScore{},
 		rankingPerEpoch:             map[string]vega.RankingScore{},
 		delegationsPerEpochPerParty: map[string]map[string]pb.Delegation{},
+		existsPerEpoch:              map[string]bool{epochSeq: true},
+		lastChangeAdded:             true,
 		minEpoch:                    new(uint64),
 	}
 	*nd.minEpoch = math.MaxUint64
@@ -134,7 +176,11 @@ func (ns *Node) GetByID(id, epochID string) (*pb.Node, error) {
 
 	node, ok := ns.nodes[id]
 	if !ok {
-		return nil, fmt.Errorf("node %s not found", id)
+		return nil, ErrNodeDoesNotExist
+	}
+
+	if !node.exists(epochID) {
+		return nil, ErrNodeDoesNotExistInThisEpoch
 	}
 
 	return ns.nodeProtoFromInternal(node, epochID), nil
@@ -147,12 +193,18 @@ func (ns *Node) GetAll(epochID string) []*pb.Node {
 
 	nodes := make([]*pb.Node, 0, len(ns.nodes))
 	for _, n := range ns.nodes {
+		if !n.exists(epochID) {
+			// node was removed due to inactivity and so does not exist in this epoch
+			continue
+		}
 		nodes = append(nodes, ns.nodeProtoFromInternal(n, epochID))
 	}
 
 	return nodes
 }
 
+// GetAllIDs returns the ids of all nodes that ever existed. Appearing in this list
+// does not necessarily mean it is considered a node in the current epoch
 func (ns *Node) GetAllIDs() []string {
 	ns.mut.RLock()
 	defer ns.mut.RUnlock()
@@ -165,19 +217,37 @@ func (ns *Node) GetAllIDs() []string {
 	return ids
 }
 
-func (ns *Node) GetTotalNodesNumber() int {
+func (ns *Node) GetTotalNodesNumber(epochID string) int {
 	ns.mut.RLock()
 	defer ns.mut.RUnlock()
 
-	return len(ns.nodes)
+	count := 0
+	for _, n := range ns.nodes {
+		if !n.exists(epochID) {
+			continue
+		}
+		count += 1
+	}
+	return count
 }
 
 // GetValidatingNodesNumber - for now this is the same as total nodes
-func (ns *Node) GetValidatingNodesNumber() int {
+func (ns *Node) GetValidatingNodesNumber(epochID string) int {
 	ns.mut.RLock()
 	defer ns.mut.RUnlock()
 
-	return len(ns.nodes)
+	count := 0
+	for _, n := range ns.nodes {
+		r, ok := n.rankingPerEpoch[epochID]
+		if !ok {
+			continue
+		}
+		if r.Status != vega.ValidatorNodeStatus_VALIDATOR_NODE_STATUS_TENDERMINT {
+			continue
+		}
+		count += 1
+	}
+	return count
 }
 
 // GetStakedTotal returns total stake across all nodes per epoch.

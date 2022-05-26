@@ -49,16 +49,16 @@ func (mr *MockMarketDataStoreMockRecorder) Add(arg0 interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Add", reflect.TypeOf((*MockMarketDataStore)(nil).Add), arg0)
 }
 
-// OnTimeUpdateEvent mocks base method.
-func (m *MockMarketDataStore) OnTimeUpdateEvent(arg0 context.Context) error {
+// Flush mocks base method.
+func (m *MockMarketDataStore) Flush(arg0 context.Context) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "OnTimeUpdateEvent", arg0)
+	ret := m.ctrl.Call(m, "Flush", arg0)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// OnTimeUpdateEvent indicates an expected call of OnTimeUpdateEvent.
-func (mr *MockMarketDataStoreMockRecorder) OnTimeUpdateEvent(arg0 interface{}) *gomock.Call {
+// Flush indicates an expected call of Flush.
+func (mr *MockMarketDataStoreMockRecorder) Flush(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OnTimeUpdateEvent", reflect.TypeOf((*MockMarketDataStore)(nil).OnTimeUpdateEvent), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Flush", reflect.TypeOf((*MockMarketDataStore)(nil).Flush), arg0)
 }

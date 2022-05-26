@@ -26,7 +26,6 @@ func NewDeposits(connectionSource *ConnectionSource) *Deposits {
 }
 
 func (d *Deposits) Upsert(ctx context.Context, deposit *entities.Deposit) error {
-
 	query := fmt.Sprintf(`insert into deposits(%s)
 values ($1, $2, $3, $4, $5, $6, $7, $8, $9)
 on conflict (id, party_id, vega_time) do update
@@ -61,7 +60,7 @@ func (d *Deposits) GetByID(ctx context.Context, depositID string) (entities.Depo
 	return deposit, err
 }
 
-func (d *Deposits) GetByParty(ctx context.Context, party string, openOnly bool, pagination entities.Pagination) []entities.Deposit {
+func (d *Deposits) GetByParty(ctx context.Context, party string, openOnly bool, pagination entities.OffsetPagination) []entities.Deposit {
 	var deposits []entities.Deposit
 	var args []interface{}
 

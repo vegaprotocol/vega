@@ -38,8 +38,13 @@ func TestNotary_PushWrongEvent(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
+	defer func() {
+		if r := recover(); r == nil {
+			t.Errorf("The code did not panic")
+		}
+	}()
+
 	store := mocks.NewMockNotaryStore(ctrl)
 	subscriber := sqlsubscribers.NewNotary(store, logging.NewTestLogger())
-	err := subscriber.Push(context.Background(), events.NewOracleDataEvent(context.Background(), oraclespb.OracleData{}))
-	require.Error(t, err)
+	subscriber.Push(context.Background(), events.NewOracleDataEvent(context.Background(), oraclespb.OracleData{}))
 }

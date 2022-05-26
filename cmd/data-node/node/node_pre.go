@@ -129,7 +129,6 @@ func (l *NodeCommand) setupSQLSubscribers() {
 	l.accountSubSQL = sqlsubscribers.NewAccount(l.accountStoreSQL, l.balanceStoreSQL, l.Log)
 	l.assetSubSQL = sqlsubscribers.NewAsset(l.assetStoreSQL, l.Log)
 	l.partySubSQL = sqlsubscribers.NewParty(l.partyStoreSQL, l.Log)
-	l.timeSubSQL = sqlsubscribers.NewTimeSub(l.blockStoreSQL, l.Log)
 	l.transferResponseSubSQL = sqlsubscribers.NewTransferResponse(l.ledgerSQL, l.accountStoreSQL, l.Log)
 	l.orderSubSQL = sqlsubscribers.NewOrder(l.orderStoreSQL, l.Log)
 	l.networkLimitsSubSQL = sqlsubscribers.NewNetworkLimitSub(l.ctx, l.networkLimitsStoreSQL, l.Log)
@@ -156,6 +155,8 @@ func (l *NodeCommand) setupSQLSubscribers() {
 	l.stakeLinkingSubSQL = sqlsubscribers.NewStakeLinking(l.stakeLinkingStoreSQL, l.Log)
 	l.notarySubSQL = sqlsubscribers.NewNotary(l.notaryStoreSQL, l.Log)
 	l.multiSigSignerEventSubSQL = sqlsubscribers.NewERC20MultiSigSignerEvent(l.multiSigSignerAddedStoreSQL, l.Log)
+	l.keyRotationsSubSQL = sqlsubscribers.NewKeyRotation(l.keyRotationsStoreSQL, l.Log)
+	l.nodeSubSQL = sqlsubscribers.NewNode(l.nodeStoreSQL, l.Log)
 }
 
 func (l *NodeCommand) setupStorages() error {
@@ -188,6 +189,11 @@ func (l *NodeCommand) setupStorages() error {
 		err = sqlstore.MigrateToLatestSchema(l.Log, l.conf.SQLStore)
 		if err != nil {
 			return fmt.Errorf("failed to migrate to latest schema:%w", err)
+		}
+
+		err = sqlstore.ApplyDataRetentionPolicies(l.conf.SQLStore)
+		if err != nil {
+			return fmt.Errorf("failed to apply data retention policies:%w", err)
 		}
 
 		transactionalConnectionSource, err := sqlstore.NewTransactionalConnectionSource(l.Log, l.conf.SQLStore.ConnectionConfig)
@@ -227,6 +233,8 @@ func (l *NodeCommand) setupStorages() error {
 		l.stakeLinkingStoreSQL = sqlstore.NewStakeLinking(transactionalConnectionSource)
 		l.notaryStoreSQL = sqlstore.NewNotary(transactionalConnectionSource)
 		l.multiSigSignerAddedStoreSQL = sqlstore.NewERC20MultiSigSignerEvent(transactionalConnectionSource)
+		l.keyRotationsStoreSQL = sqlstore.NewKeyRotations(transactionalConnectionSource)
+		l.nodeStoreSQL = sqlstore.NewNode(transactionalConnectionSource)
 
 		candleStore, err := sqlstore.NewCandles(l.ctx, transactionalConnectionSource, l.conf.CandlesV2.CandleStore)
 		if err != nil {
@@ -304,7 +312,7 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 
 		l.sqlBroker = broker.NewSqlStoreBroker(l.Log, l.conf.Broker, l.chainInfoStore, eventSource,
 			l.transactionalConnectionSource,
-			l.timeSubSQL,
+			l.blockStoreSQL,
 			l.accountSubSQL,
 			l.assetSubSQL,
 			l.partySubSQL,
@@ -336,6 +344,8 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 			l.stakeLinkingSubSQL,
 			l.notarySubSQL,
 			l.multiSigSignerEventSubSQL,
+			l.keyRotationsSubSQL,
+			l.nodeSubSQL,
 		)
 	}
 

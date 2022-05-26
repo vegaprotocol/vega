@@ -54,13 +54,15 @@ func TestDelegations(t *testing.T) {
 	ps := sqlstore.NewParties(connectionSource)
 	ds := sqlstore.NewDelegations(connectionSource)
 	bs := sqlstore.NewBlocks(connectionSource)
+	ns := sqlstore.NewNode(connectionSource)
 	block := addTestBlock(t, bs)
 
-	node1ID := "dead"
-	node2ID := "beef"
+	node1 := addTestNode(t, ns, block)
+	node2 := addTestNode(t, ns, block)
 
-	node1 := entities.Node{ID: entities.NewNodeID(node1ID)}
-	node2 := entities.Node{ID: entities.NewNodeID(node2ID)}
+	node1ID := node1.ID.String()
+	node2ID := node2.ID.String()
+
 	party1 := addTestParty(t, ps, block)
 	party2 := addTestParty(t, ps, block)
 
@@ -119,7 +121,7 @@ func TestDelegations(t *testing.T) {
 
 	t.Run("GetPagination", func(t *testing.T) {
 		expected := []entities.Delegation{delegation4, delegation3, delegation2}
-		p := entities.Pagination{Skip: 1, Limit: 3, Descending: true}
+		p := entities.OffsetPagination{Skip: 1, Limit: 3, Descending: true}
 		actual, err := ds.Get(context.Background(), nil, nil, nil, &p)
 		require.NoError(t, err)
 		assert.Equal(t, expected, actual) // Explicitly check the order on this one

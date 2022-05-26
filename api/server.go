@@ -116,6 +116,8 @@ type GRPCServer struct {
 	stakeLinkingStore        *sqlstore.StakeLinking
 	notaryStore              *sqlstore.Notary
 	multiSigSignerEventStore *sqlstore.ERC20MultiSigSignerEvent
+	keyRotationsStore        *sqlstore.KeyRotations
+	nodeStore                *sqlstore.Node
 	eventObserver            *eventObserver
 
 	// used in order to gracefully close streams
@@ -185,6 +187,8 @@ func NewGRPCServer(
 	stakeLinkingStore *sqlstore.StakeLinking,
 	notaryStore *sqlstore.Notary,
 	multiSigSignerEventStore *sqlstore.ERC20MultiSigSignerEvent,
+	keyRotationsStore *sqlstore.KeyRotations,
+	nodeStore *sqlstore.Node,
 ) *GRPCServer {
 	// setup logger
 	log = log.Named(namedLogger)
@@ -252,6 +256,8 @@ func NewGRPCServer(
 		transfersStore:           transfersStore,
 		stakeLinkingStore:        stakeLinkingStore,
 		notaryStore:              notaryStore,
+		keyRotationsStore:        keyRotationsStore,
+		nodeStore:                nodeStore,
 		eventObserver: &eventObserver{
 			log:          log,
 			eventService: eventService,
@@ -423,6 +429,8 @@ func (g *GRPCServer) Start(ctx context.Context, lis net.Listener) error {
 			transfersStore:          g.transfersStore,
 			stakingStore:            g.stakeLinkingStore,
 			notaryStore:             g.notaryStore,
+			keyRotationsStore:       g.keyRotationsStore,
+			nodeStore:               g.nodeStore,
 		}
 	} else {
 		g.tradingDataService = tradingDataSvc
@@ -441,6 +449,10 @@ func (g *GRPCServer) Start(ctx context.Context, lis net.Listener) error {
 		notaryStore:              g.notaryStore,
 		assetStore:               g.assetStore,
 		candleServiceV2:          g.candleServiceV2,
+		marketsStore:             g.marketsStore,
+		partiesStore:             g.partyStore,
+		marginLevelsStore:        g.marginLevelsStore,
+		accountStore:             g.accountStore,
 	}
 	protoapi2.RegisterTradingDataServiceServer(g.srv, tradingDataSvcV2)
 

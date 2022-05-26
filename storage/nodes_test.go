@@ -49,8 +49,8 @@ func TestCleanupOldEpochsFromNodes(t *testing.T) {
 		Location:         "UK",
 		Status:           pb.NodeStatus_NODE_STATUS_VALIDATOR,
 	}
-	nodeStore.AddNode(testNode1)
-	nodeStore.AddNode(testNode2)
+	nodeStore.AddNode(testNode1, true, 0)
+	nodeStore.AddNode(testNode2, true, 0)
 	for i := 0; i < 30; i++ {
 		nodeStore.AddDelegation(pb.Delegation{
 			Party:    "party1",
@@ -65,10 +65,14 @@ func TestCleanupOldEpochsFromNodes(t *testing.T) {
 			Amount:   "200",
 		})
 		epochSeq := strconv.Itoa(i)
-		node1, _ := nodeStore.GetByID("pub_key_1", epochSeq)
+		nodeStore.AddEpoch(epochSeq)
+
+		node1, err := nodeStore.GetByID("pub_key_1", epochSeq)
+		require.NoError(t, err)
 		require.Equal(t, "100", node1.StakedByDelegates)
 
-		node2, _ := nodeStore.GetByID("pub_key_2", epochSeq)
+		node2, err := nodeStore.GetByID("pub_key_2", epochSeq)
+		require.NoError(t, err)
 		require.Equal(t, "200", node2.StakedByDelegates)
 	}
 	for i := 30; i < 40; i++ {
@@ -84,6 +88,7 @@ func TestCleanupOldEpochsFromNodes(t *testing.T) {
 			EpochSeq: strconv.Itoa(i),
 			Amount:   "200",
 		})
+		nodeStore.AddEpoch(strconv.Itoa(i))
 		// we don't have delegations for the 31st past epoch
 		epochSeqMinus30 := strconv.Itoa(i - 30)
 		node1, _ := nodeStore.GetByID("pub_key_1", epochSeqMinus30)
@@ -135,9 +140,11 @@ func TestNodes(t *testing.T) {
 		StakedByDelegates: "0",
 		StakedTotal:       "0",
 		PendingStake:      "0",
+		RankingScore:      &pb.RankingScore{},
 	}
 
-	nodeStore.AddNode(testNode)
+	nodeStore.AddNode(testNode, true, 1)
+	nodeStore.AddNodeRankingScore("pub_key_1", "1", pb.RankingScore{})
 
 	actualNode, err := nodeStore.GetByID("pub_key_1", "1")
 	a.NoError(err)
@@ -181,7 +188,7 @@ func TestNodes(t *testing.T) {
 		InfoUrl:          "http://info-node-2.vega",
 		Location:         "UK",
 		Status:           pb.NodeStatus_NODE_STATUS_VALIDATOR,
-	})
+	}, true, 1)
 
 	rs1 := pb.RewardScore{
 		RawValidatorScore: "20",
@@ -189,7 +196,8 @@ func TestNodes(t *testing.T) {
 		MultisigScore:     "1",
 		ValidatorScore:    "25",
 		NormalisedScore:   "0.8",
-		ValidatorStatus:   pb.ValidatorNodeStatus_VALIDATOR_NODE_STATUS_TENDERMINT}
+		ValidatorStatus:   pb.ValidatorNodeStatus_VALIDATOR_NODE_STATUS_TENDERMINT,
+	}
 
 	nodeStore.AddNodeRewardScore("pub_key_2", "1", rs1)
 
@@ -198,8 +206,20 @@ func TestNodes(t *testing.T) {
 		PerformanceScore:  "0.9",
 		ValidatorScore:    "40",
 		MultisigScore:     "1",
-		ValidatorStatus:   pb.ValidatorNodeStatus_VALIDATOR_NODE_STATUS_ERSATZ}
+		ValidatorStatus:   pb.ValidatorNodeStatus_VALIDATOR_NODE_STATUS_ERSATZ,
+	}
 	nodeStore.AddNodeRewardScore("pub_key_2", "2", rs2)
+
+	rankScore1 := pb.RankingScore{
+		Status: pb.ValidatorNodeStatus_VALIDATOR_NODE_STATUS_TENDERMINT,
+	}
+	nodeStore.AddNodeRankingScore("pub_key_1", "2", rankScore1)
+	rankScore2 := pb.RankingScore{
+		Status: pb.ValidatorNodeStatus_VALIDATOR_NODE_STATUS_ERSATZ,
+	}
+	nodeStore.AddNodeRankingScore("pub_key_2", "2", rankScore2)
+	nodeStore.AddNodeRankingScore("pub_key_2", "1", rankScore2)
+	nodeStore.AddEpoch("2")
 
 	delegations = []*pb.Delegation{
 		{
@@ -253,8 +273,8 @@ func TestNodes(t *testing.T) {
 	nodes = nodeStore.GetAll("2")
 	a.Equal(2, len(nodes))
 
-	a.Equal(2, nodeStore.GetTotalNodesNumber())
-	a.Equal(2, nodeStore.GetValidatingNodesNumber())
+	a.Equal(2, nodeStore.GetTotalNodesNumber("2"))
+	a.Equal(1, nodeStore.GetValidatingNodesNumber("2"))
 
 	a.Equal("105", nodeStore.GetStakedTotal("1"))
 	a.Equal("60", nodeStore.GetStakedTotal("2"))

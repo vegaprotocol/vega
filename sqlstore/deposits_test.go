@@ -282,7 +282,7 @@ func testDepositsGetByParty(t *testing.T) {
 
 	want = append(want, *deposit)
 
-	got := ds.GetByParty(ctx, depositProto1.PartyId, false, entities.Pagination{})
+	got := ds.GetByParty(ctx, depositProto1.PartyId, false, entities.OffsetPagination{})
 
 	assert.Equal(t, want, got)
 }

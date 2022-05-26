@@ -249,6 +249,8 @@ func NewTestServer(t testing.TB, ctx context.Context, blocking bool) *TestServer
 	sqlStakeLinkingStore := sqlstore.NewStakeLinking(&sqlStore)
 	sqlNotaryStore := sqlstore.NewNotary(&sqlStore)
 	sqlMultiSigSignerEventStore := sqlstore.NewERC20MultiSigSignerEvent(&sqlStore)
+	sqlKeyRotationsStore := sqlstore.NewKeyRotations(&sqlStore)
+	sqlNodeStore := sqlstore.NewNode(&sqlStore)
 
 	eventSource, err := broker.NewEventSource(conf.Broker, logger)
 	if err != nil {
@@ -339,6 +341,8 @@ func NewTestServer(t testing.TB, ctx context.Context, blocking bool) *TestServer
 		sqlStakeLinkingStore,
 		sqlNotaryStore,
 		sqlMultiSigSignerEventStore,
+		sqlKeyRotationsStore,
+		sqlNodeStore,
 	)
 	if srv == nil {
 		t.Fatal("failed to create gRPC server")
@@ -406,9 +410,8 @@ func PublishEvents(
 		jsonBytes := scanner.Bytes()
 		var be eventspb.BusEvent
 		unmarshaller := &jsonpb.Unmarshaler{AllowUnknownFields: true}
-		err = unmarshaller.Unmarshal(bytes.NewReader(jsonBytes), &be)
-		if err != nil {
-			t.Fatal(err)
+		if err := unmarshaller.Unmarshal(bytes.NewReader(jsonBytes), &be); err != nil {
+			t.Fatalf("couldn't unmarshal JSON: %v", err)
 		}
 		e, err := convertEvt(&be)
 		if err != nil {

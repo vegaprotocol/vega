@@ -17,6 +17,8 @@ models:
       - code.vegaprotocol.io/data-node/gateway/graphql/marshallers.Uint32
   Order:
     model: code.vegaprotocol.io/protos/vega.Order
+  PaginatedOrder:
+    model: code.vegaprotocol.io/protos/vega.Order
   Trade:
     model: code.vegaprotocol.io/protos/vega.Trade
   PriceLevel:
@@ -84,12 +86,48 @@ models:
         resolver: true
       liquidityProvisions:
         resolver: true
+  PaginatedMarket:
+    model: code.vegaprotocol.io/protos/vega.Market
+    fields:
+      orders:
+        resolver: true
+      trades:
+        resolver: true
+      depth:
+        resolver: true
+      data:
+        resolver: true
+      candles:
+        resolver: true
+      accounts:
+        resolver: true
+      orderByReference:
+        resolver: true
+      liquidityProvisions:
+        resolver: true
   Party:
     model: code.vegaprotocol.io/protos/vega.Party
     fields:
       orders:
         resolver: true
       trades:
+        resolver: true
+      tradesPaged:
+        resolver: true
+      positions:
+        resolver: true
+      accounts:
+        resolver: true
+      margins:
+        resolver: true
+      delegations:
+        resolver: true
+  PaginatedParty:
+    model: code.vegaprotocol.io/protos/vega.Party
+    fields:
+      ordersPaged:
+        resolver: true
+      tradesPaged:
         resolver: true
       positions:
         resolver: true
@@ -179,9 +217,6 @@ models:
     model: code.vegaprotocol.io/protos/vega.Delegation
   Node:
     model: code.vegaprotocol.io/protos/vega.Node
-    fields:
-      delegations:
-        resolver: true
   Epoch:
     model: code.vegaprotocol.io/protos/vega.Epoch
   EpochTimestamps:
@@ -231,3 +266,27 @@ models:
     model: code.vegaprotocol.io/protos/vega.UpdateMarketConfiguration_LogNormal
   UpdateFutureProduct:
     model: code.vegaprotocol.io/protos/vega.UpdateFutureProduct
+  TradeConnection:
+    model: code.vegaprotocol.io/protos/data-node/api/v2.TradeConnection
+  TradeEdge:
+    model: code.vegaprotocol.io/protos/data-node/api/v2.TradeEdge
+  PageInfo:
+    model: code.vegaprotocol.io/protos/data-node/api/v2.PageInfo
+  MarketConnection:
+    model: code.vegaprotocol.io/protos/data-node/api/v2.MarketConnection
+  MarketEdge:
+    model: code.vegaprotocol.io/protos/data-node/api/v2.MarketEdge
+  PartyConnection:
+    model: code.vegaprotocol.io/protos/data-node/api/v2.PartyConnection
+  PartyEdge:
+    model: code.vegaprotocol.io/protos/data-node/api/v2.PartyEdge
+  Pagination:
+    model: code.vegaprotocol.io/protos/data-node/api/v2.Pagination
+  OrderEdge:
+    model: code.vegaprotocol.io/protos/data-node/api/v2.OrderEdge
+  OrderConnection:
+    model: code.vegaprotocol.io/protos/data-node/api/v2.OrderConnection
+  MarginEdge:
+    model: code.vegaprotocol.io/protos/data-node/api/v2.MarginEdge
+  MarginConnection:
+    model: code.vegaprotocol.io/protos/data-node/api/v2.MarginConnection

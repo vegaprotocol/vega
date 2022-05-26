@@ -2,6 +2,7 @@ package sqlsubscribers
 
 import (
 	"context"
+	"fmt"
 	"math"
 	"strconv"
 	"time"
@@ -25,9 +26,9 @@ type AssetStore interface {
 }
 
 type Asset struct {
-	store    AssetStore
-	log      *logging.Logger
-	vegaTime time.Time
+	subscriber
+	store AssetStore
+	log   *logging.Logger
 }
 
 func NewAsset(store AssetStore, log *logging.Logger) *Asset {
@@ -42,16 +43,7 @@ func (a *Asset) Types() []events.Type {
 }
 
 func (as *Asset) Push(ctx context.Context, evt events.Event) error {
-	switch e := evt.(type) {
-	case TimeUpdateEvent:
-		as.vegaTime = e.Time()
-	case AssetEvent:
-		return as.consume(ctx, e)
-	default:
-		return errors.Errorf("unknown event type %s", e.Type().String())
-	}
-
-	return nil
+	return as.consume(ctx, evt.(AssetEvent))
 }
 
 func (as *Asset) consume(ctx context.Context, ae AssetEvent) error {
@@ -75,12 +67,27 @@ func (as *Asset) addAsset(ctx context.Context, va vega.Asset, vegaTime time.Time
 	}
 
 	var source, erc20Contract string
-
+	lifetimeLimit := decimal.Zero
+	withdrawalThreshold := decimal.Zero
 	switch src := va.Details.Source.(type) {
 	case *vega.AssetDetails_BuiltinAsset:
 		source = src.BuiltinAsset.MaxFaucetAmountMint
 	case *vega.AssetDetails_Erc20:
 		erc20Contract = src.Erc20.ContractAddress
+		if src.Erc20.LifetimeLimit != "" {
+			res, err := decimal.NewFromString(src.Erc20.LifetimeLimit)
+			if err != nil {
+				return fmt.Errorf("couldn't parse lifetime_limit: %w", err)
+			}
+			lifetimeLimit = res
+		}
+		if src.Erc20.WithdrawThreshold != "" {
+			res, err := decimal.NewFromString(src.Erc20.WithdrawThreshold)
+			if err != nil {
+				return fmt.Errorf("couldn't parse withdraw_threshold: %w", err)
+			}
+			withdrawalThreshold = res
+		}
 	default:
 		return errors.Errorf("unknown asset source: %v", source)
 	}
@@ -92,15 +99,17 @@ func (as *Asset) addAsset(ctx context.Context, va vega.Asset, vegaTime time.Time
 	decimals := int(va.Details.Decimals)
 
 	asset := entities.Asset{
-		ID:            entities.NewAssetID(va.Id),
-		Name:          va.Details.Name,
-		Symbol:        va.Details.Symbol,
-		TotalSupply:   totalSupply,
-		Decimals:      decimals,
-		Quantum:       quantum,
-		Source:        source,
-		ERC20Contract: erc20Contract,
-		VegaTime:      vegaTime,
+		ID:                entities.NewAssetID(va.Id),
+		Name:              va.Details.Name,
+		Symbol:            va.Details.Symbol,
+		TotalSupply:       totalSupply,
+		Decimals:          decimals,
+		Quantum:           quantum,
+		Source:            source,
+		ERC20Contract:     erc20Contract,
+		VegaTime:          vegaTime,
+		LifetimeLimit:     lifetimeLimit,
+		WithdrawThreshold: withdrawalThreshold,
 	}
 
 	return errors.WithStack(as.store.Add(ctx, asset))

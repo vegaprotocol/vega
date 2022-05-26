@@ -82,7 +82,7 @@ func testGetOracleDataBySpecID(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, len(dataProtos), rowCount)
 
-	got, err := od.GetOracleDataBySpecID(ctx, "DEADBEEF", entities.Pagination{})
+	got, err := od.GetOracleDataBySpecID(ctx, "DEADBEEF", entities.OffsetPagination{})
 	require.NoError(t, err)
 	assert.Equal(t, 2, len(got))
 }

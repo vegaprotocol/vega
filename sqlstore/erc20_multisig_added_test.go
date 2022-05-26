@@ -46,7 +46,7 @@ func testAddSigner(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, 0, rowCount)
 
-	sa := getTestSignerEvent(t, "fc677151d0c93726", vgcrypto.RandomHash(), "12", true)
+	sa := getTestSignerEvent(t, "fc677151d0c93726", generateEthereumAddress(), "12", true)
 	err = ms.Add(ctx, sa)
 	require.NoError(t, err)
 
@@ -78,25 +78,25 @@ func testGetWithFilters(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, 0, rowCount)
 
-	err = ms.Add(ctx, getTestSignerEvent(t, vID1, vgcrypto.RandomHash(), "12", true))
+	err = ms.Add(ctx, getTestSignerEvent(t, vID1, generateEthereumAddress(), "12", true))
 	require.NoError(t, err)
 
 	// same validator different epoch
-	err = ms.Add(ctx, getTestSignerEvent(t, vID1, vgcrypto.RandomHash(), "24", true))
+	err = ms.Add(ctx, getTestSignerEvent(t, vID1, generateEthereumAddress(), "24", true))
 	require.NoError(t, err)
 
 	// same epoch different validator
-	err = ms.Add(ctx, getTestSignerEvent(t, vID2, vgcrypto.RandomHash(), "12", true))
+	err = ms.Add(ctx, getTestSignerEvent(t, vID2, generateEthereumAddress(), "12", true))
 	require.NoError(t, err)
 
-	res, err := ms.GetAddedEvents(ctx, vID1, nil, entities.Pagination{})
+	res, err := ms.GetAddedEvents(ctx, vID1, nil, entities.OffsetPagination{})
 	require.NoError(t, err)
 	require.Len(t, res, 2)
 	assert.Equal(t, vID1, res[0].ValidatorID.String())
 	assert.Equal(t, vID1, res[1].ValidatorID.String())
 
 	epoch := int64(12)
-	res, err = ms.GetAddedEvents(ctx, vID1, &epoch, entities.Pagination{})
+	res, err = ms.GetAddedEvents(ctx, vID1, &epoch, entities.OffsetPagination{})
 	require.NoError(t, err)
 	require.Len(t, res, 1)
 	assert.Equal(t, vID1, res[0].ValidatorID.String())
@@ -113,14 +113,14 @@ func testGetWithAddAndRemoveEvents(t *testing.T) {
 	var rowCount int
 	vID1 := "fc677151d0c93726"
 	vID2 := "15d1d5fefa8988eb"
-	submitter := "15d1d5fefa8988bb"
-	wrongSubmitter := "15d155fefa8988bb"
+	submitter := generateEthereumAddress()
+	wrongSubmitter := generateEthereumAddress()
 
 	err := conn.QueryRow(ctx, `select count(*) from erc20_multisig_signer_events`).Scan(&rowCount)
 	require.NoError(t, err)
 	assert.Equal(t, 0, rowCount)
 
-	err = ms.Add(ctx, getTestSignerEvent(t, vID1, vgcrypto.RandomHash(), "12", true))
+	err = ms.Add(ctx, getTestSignerEvent(t, vID1, generateEthereumAddress(), "12", true))
 	require.NoError(t, err)
 
 	// same validator different epoch
@@ -128,20 +128,20 @@ func testGetWithAddAndRemoveEvents(t *testing.T) {
 	require.NoError(t, err)
 
 	// same epoch different validator
-	err = ms.Add(ctx, getTestSignerEvent(t, vID2, vgcrypto.RandomHash(), "12", true))
+	err = ms.Add(ctx, getTestSignerEvent(t, vID2, generateEthereumAddress(), "12", true))
 	require.NoError(t, err)
 
-	res, err := ms.GetAddedEvents(ctx, vID1, nil, entities.Pagination{})
-	require.NoError(t, err)
-	require.Len(t, res, 1)
-	assert.Equal(t, vID1, res[0].ValidatorID.String())
-
-	res, err = ms.GetRemovedEvents(ctx, vID1, submitter, nil, entities.Pagination{})
+	res, err := ms.GetAddedEvents(ctx, vID1, nil, entities.OffsetPagination{})
 	require.NoError(t, err)
 	require.Len(t, res, 1)
 	assert.Equal(t, vID1, res[0].ValidatorID.String())
 
-	res, err = ms.GetRemovedEvents(ctx, vID1, wrongSubmitter, nil, entities.Pagination{})
+	res, err = ms.GetRemovedEvents(ctx, vID1, submitter, nil, entities.OffsetPagination{})
+	require.NoError(t, err)
+	require.Len(t, res, 1)
+	assert.Equal(t, vID1, res[0].ValidatorID.String())
+
+	res, err = ms.GetRemovedEvents(ctx, vID1, wrongSubmitter, nil, entities.OffsetPagination{})
 	require.NoError(t, err)
 	require.Len(t, res, 0)
 }
@@ -158,7 +158,7 @@ func getTestSignerEvent(t *testing.T, validatorID string, submitter string, epoc
 			&eventspb.ERC20MultiSigSignerAdded{
 				SignatureId: vgcrypto.RandomHash(),
 				ValidatorId: validatorID,
-				NewSigner:   vgcrypto.RandomHash(),
+				NewSigner:   generateEthereumAddress(),
 				Submitter:   submitter,
 				Nonce:       "nonce",
 				EpochSeq:    epochSeq,
@@ -176,7 +176,7 @@ func getTestSignerEvent(t *testing.T, validatorID string, submitter string, epoc
 					},
 				},
 				ValidatorId: validatorID,
-				OldSigner:   vgcrypto.RandomHash(),
+				OldSigner:   generateEthereumAddress(),
 				Nonce:       "nonce",
 				EpochSeq:    epochSeq,
 				Timestamp:   time.Unix(10000, 13).UnixNano(),

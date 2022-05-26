@@ -111,7 +111,7 @@ func TestRewards(t *testing.T) {
 
 	t.Run("GetPagination", func(t *testing.T) {
 		expected := []entities.Reward{reward4, reward3, reward2}
-		p := entities.Pagination{Skip: 1, Limit: 3, Descending: true}
+		p := entities.OffsetPagination{Skip: 1, Limit: 3, Descending: true}
 		actual, err := rs.Get(context.Background(), nil, nil, &p)
 		require.NoError(t, err)
 		assert.Equal(t, expected, actual) // Explicitly check the order on this one
@@ -121,7 +121,8 @@ func TestRewards(t *testing.T) {
 		expected := []entities.RewardSummary{{
 			AssetID: asset2.ID,
 			PartyID: party2.ID,
-			Amount:  decimal.NewFromInt(200)}}
+			Amount:  decimal.NewFromInt(200),
+		}}
 		actual, err := rs.GetSummaries(context.Background(), &party2ID, &asset2ID)
 		require.NoError(t, err)
 		assert.Equal(t, expected, actual)

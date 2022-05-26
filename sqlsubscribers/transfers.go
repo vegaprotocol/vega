@@ -2,7 +2,6 @@ package sqlsubscribers
 
 import (
 	"context"
-	"time"
 
 	"code.vegaprotocol.io/data-node/entities"
 	"code.vegaprotocol.io/data-node/logging"
@@ -28,10 +27,10 @@ type AccountSource interface {
 }
 
 type Transfer struct {
+	subscriber
 	store         TransferStore
 	accountSource AccountSource
 	log           *logging.Logger
-	vegaTime      time.Time
 }
 
 func NewTransfer(store TransferStore, accountSource AccountSource, log *logging.Logger) *Transfer {
@@ -47,16 +46,7 @@ func (rf *Transfer) Types() []events.Type {
 }
 
 func (rf *Transfer) Push(ctx context.Context, evt events.Event) error {
-	switch e := evt.(type) {
-	case TimeUpdateEvent:
-		rf.vegaTime = e.Time()
-	case TransferEvent:
-		return rf.consume(ctx, e)
-	default:
-		return errors.Errorf("unknown event type %s", e.Type().String())
-	}
-
-	return nil
+	return rf.consume(ctx, evt.(TransferEvent))
 }
 
 func (rf *Transfer) consume(ctx context.Context, event TransferEvent) error {

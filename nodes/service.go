@@ -14,8 +14,8 @@ import (
 type NodeStore interface {
 	GetByID(id, epochSeq string) (*pb.Node, error)
 	GetAll(epochSeq string) []*pb.Node
-	GetTotalNodesNumber() int
-	GetValidatingNodesNumber() int
+	GetTotalNodesNumber(epochSeq string) int
+	GetValidatingNodesNumber(epochSeq string) int
 	GetStakedTotal(epochSeq string) string
 	GetAllPubKeyRotations() []*protoapi.KeyRotation
 	GetPubKeyRotationsPerNode(nodeID string) []*protoapi.KeyRotation
@@ -75,8 +75,8 @@ func (s *Service) GetNodeData(ctx context.Context) (*pb.NodeData, error) {
 
 	return &pb.NodeData{
 		StakedTotal:     s.nodeStore.GetStakedTotal(currentEpoch),
-		TotalNodes:      uint32(s.nodeStore.GetTotalNodesNumber()),
-		ValidatingNodes: uint32(s.nodeStore.GetValidatingNodesNumber()),
+		TotalNodes:      uint32(s.nodeStore.GetTotalNodesNumber(currentEpoch)),
+		ValidatingNodes: uint32(s.nodeStore.GetValidatingNodesNumber(currentEpoch)),
 		Uptime:          float32(s.epochStore.GetTotalNodesUptime().Minutes()),
 	}, nil
 }

@@ -7,6 +7,7 @@ import (
 
 	"code.vegaprotocol.io/data-node/entities"
 	"code.vegaprotocol.io/data-node/sqlstore"
+	v2 "code.vegaprotocol.io/protos/data-node/api/v2"
 	"code.vegaprotocol.io/protos/vega"
 	v1 "code.vegaprotocol.io/protos/vega/oracles/v1"
 	"github.com/georgysavva/scany/pgxscan"
@@ -252,4 +253,263 @@ func getTestMarket() *vega.Market {
 		},
 		PositionDecimalPlaces: 8,
 	}
+}
+
+func populateTestMarkets(ctx context.Context, t *testing.T, bs *sqlstore.Blocks, md *sqlstore.Markets, blockTimes map[string]time.Time) {
+	t.Helper()
+
+	markets := []entities.Market{
+		{
+			ID:           entities.NewMarketID("02a16077"),
+			InstrumentID: "AAA",
+		},
+		{
+			ID:           entities.NewMarketID("44eea1bc"),
+			InstrumentID: "BBB",
+		},
+		{
+			ID:           entities.NewMarketID("65be62cd"),
+			InstrumentID: "CCC",
+		},
+		{
+			ID:           entities.NewMarketID("7a797e0e"),
+			InstrumentID: "DDD",
+		},
+		{
+			ID:           entities.NewMarketID("7bb2356e"),
+			InstrumentID: "EEE",
+		},
+		{
+			ID:           entities.NewMarketID("b7c84b8e"),
+			InstrumentID: "FFF",
+		},
+		{
+			ID:           entities.NewMarketID("c612300d"),
+			InstrumentID: "GGG",
+		},
+		{
+			ID:           entities.NewMarketID("c8744329"),
+			InstrumentID: "HHH",
+		},
+		{
+			ID:           entities.NewMarketID("da8d1803"),
+			InstrumentID: "III",
+		},
+		{
+			ID:           entities.NewMarketID("fb1528a5"),
+			InstrumentID: "JJJ",
+		},
+	}
+
+	for _, market := range markets {
+		block := addTestBlock(t, bs)
+		market.VegaTime = block.VegaTime
+		blockTimes[market.ID.String()] = block.VegaTime
+		err := md.Upsert(ctx, &market)
+		require.NoError(t, err)
+		time.Sleep(time.Microsecond * 100)
+	}
+}
+
+func TestMarketsCursorPagination(t *testing.T) {
+	t.Run("Should return the market if Market ID is provided", testCursorPaginationReturnsTheSpecifiedMarket)
+	t.Run("Should return all markets if no market ID and no cursor is provided", testCursorPaginationReturnsAllMarkets)
+	t.Run("Should return the first page when first limit is provided with no after cursor", testCursorPaginationReturnsFirstPage)
+	t.Run("Should return the last page when last limit is provided with first before cursor", testCursorPaginationReturnsLastPage)
+	t.Run("Should return the page specified by the first limit and after cursor", testCursorPaginationReturnsPageTraversingForward)
+	t.Run("Should return the page specified by the last limit and before cursor", testCursorPaginationReturnsPageTraversingBackward)
+}
+
+func testCursorPaginationReturnsTheSpecifiedMarket(t *testing.T) {
+	bs, md, _ := setupMarketsTest(t)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+	defer cancel()
+	blockTimes := make(map[string]time.Time)
+	populateTestMarkets(ctx, t, bs, md, blockTimes)
+	cursor, err := entities.PaginationFromProto(&v2.Pagination{
+		First:  nil,
+		After:  nil,
+		Last:   nil,
+		Before: nil,
+	})
+
+	require.NoError(t, err)
+
+	markets, pageInfo, err := md.GetAllPaged(ctx, "c612300d", cursor)
+	require.NoError(t, err)
+	assert.Equal(t, 1, len(markets))
+	assert.Equal(t, "c612300d", markets[0].ID.String())
+	assert.Equal(t, "GGG", markets[0].InstrumentID)
+
+	wantStartCursor := entities.NewCursor(blockTimes["c612300d"].Format(time.RFC3339Nano)).Encode()
+	wantEndCursor := entities.NewCursor(blockTimes["c612300d"].Format(time.RFC3339Nano)).Encode()
+	assert.False(t, pageInfo.HasNextPage)
+	assert.False(t, pageInfo.HasPreviousPage)
+	assert.Equal(t, wantStartCursor, pageInfo.StartCursor)
+	assert.Equal(t, wantEndCursor, pageInfo.EndCursor)
+}
+
+func testCursorPaginationReturnsAllMarkets(t *testing.T) {
+	bs, md, _ := setupMarketsTest(t)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*60)
+	defer cancel()
+	blockTimes := make(map[string]time.Time)
+	populateTestMarkets(ctx, t, bs, md, blockTimes)
+	cursor, err := entities.PaginationFromProto(&v2.Pagination{
+		First:  nil,
+		After:  nil,
+		Last:   nil,
+		Before: nil,
+	})
+
+	require.NoError(t, err)
+
+	markets, pageInfo, err := md.GetAllPaged(ctx, "", cursor)
+	require.NoError(t, err)
+	assert.Equal(t, 10, len(markets))
+	assert.Equal(t, "02a16077", markets[0].ID.String())
+	assert.Equal(t, "fb1528a5", markets[9].ID.String())
+	assert.Equal(t, "AAA", markets[0].InstrumentID)
+	assert.Equal(t, "JJJ", markets[9].InstrumentID)
+
+	wantStartCursor := entities.NewCursor(blockTimes["02a16077"].Format(time.RFC3339Nano)).Encode()
+	wantEndCursor := entities.NewCursor(blockTimes["fb1528a5"].Format(time.RFC3339Nano)).Encode()
+	assert.False(t, pageInfo.HasNextPage)
+	assert.False(t, pageInfo.HasPreviousPage)
+	assert.Equal(t, wantStartCursor, pageInfo.StartCursor)
+	assert.Equal(t, wantEndCursor, pageInfo.EndCursor)
+}
+
+func testCursorPaginationReturnsFirstPage(t *testing.T) {
+	bs, md, _ := setupMarketsTest(t)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*60)
+	defer cancel()
+	blockTimes := make(map[string]time.Time)
+	populateTestMarkets(ctx, t, bs, md, blockTimes)
+	first := int32(3)
+	cursor, err := entities.PaginationFromProto(&v2.Pagination{
+		First:  &first,
+		After:  nil,
+		Last:   nil,
+		Before: nil,
+	})
+
+	require.NoError(t, err)
+
+	markets, pageInfo, err := md.GetAllPaged(ctx, "", cursor)
+	require.NoError(t, err)
+
+	assert.Equal(t, 3, len(markets))
+	assert.Equal(t, "02a16077", markets[0].ID.String())
+	assert.Equal(t, "65be62cd", markets[2].ID.String())
+	assert.Equal(t, "AAA", markets[0].InstrumentID)
+	assert.Equal(t, "CCC", markets[2].InstrumentID)
+
+	wantStartCursor := entities.NewCursor(blockTimes["02a16077"].Format(time.RFC3339Nano)).Encode()
+	wantEndCursor := entities.NewCursor(blockTimes["65be62cd"].Format(time.RFC3339Nano)).Encode()
+	assert.True(t, pageInfo.HasNextPage)
+	assert.False(t, pageInfo.HasPreviousPage)
+	assert.Equal(t, wantStartCursor, pageInfo.StartCursor)
+	assert.Equal(t, wantEndCursor, pageInfo.EndCursor)
+}
+
+func testCursorPaginationReturnsLastPage(t *testing.T) {
+	bs, md, _ := setupMarketsTest(t)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*60)
+	defer cancel()
+	blockTimes := make(map[string]time.Time)
+	populateTestMarkets(ctx, t, bs, md, blockTimes)
+	last := int32(3)
+	cursor, err := entities.PaginationFromProto(&v2.Pagination{
+		First:  nil,
+		After:  nil,
+		Last:   &last,
+		Before: nil,
+	})
+
+	require.NoError(t, err)
+
+	markets, pageInfo, err := md.GetAllPaged(ctx, "", cursor)
+	require.NoError(t, err)
+
+	assert.Equal(t, 3, len(markets))
+	assert.Equal(t, "c8744329", markets[0].ID.String())
+	assert.Equal(t, "fb1528a5", markets[2].ID.String())
+	assert.Equal(t, "HHH", markets[0].InstrumentID)
+	assert.Equal(t, "JJJ", markets[2].InstrumentID)
+
+	wantStartCursor := entities.NewCursor(blockTimes["c8744329"].Format(time.RFC3339Nano)).Encode()
+	wantEndCursor := entities.NewCursor(blockTimes["fb1528a5"].Format(time.RFC3339Nano)).Encode()
+	assert.False(t, pageInfo.HasNextPage)
+	assert.True(t, pageInfo.HasPreviousPage)
+	assert.Equal(t, wantStartCursor, pageInfo.StartCursor)
+	assert.Equal(t, wantEndCursor, pageInfo.EndCursor)
+}
+
+func testCursorPaginationReturnsPageTraversingForward(t *testing.T) {
+	bs, md, _ := setupMarketsTest(t)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*60)
+	defer cancel()
+	blockTimes := make(map[string]time.Time)
+	populateTestMarkets(ctx, t, bs, md, blockTimes)
+	first := int32(3)
+	after := entities.NewCursor(blockTimes["65be62cd"].Format(time.RFC3339Nano)).Encode()
+	cursor, err := entities.PaginationFromProto(&v2.Pagination{
+		First:  &first,
+		After:  &after,
+		Last:   nil,
+		Before: nil,
+	})
+
+	require.NoError(t, err)
+
+	markets, pageInfo, err := md.GetAllPaged(ctx, "", cursor)
+	require.NoError(t, err)
+
+	assert.Equal(t, 3, len(markets))
+	assert.Equal(t, "7a797e0e", markets[0].ID.String())
+	assert.Equal(t, "b7c84b8e", markets[2].ID.String())
+	assert.Equal(t, "DDD", markets[0].InstrumentID)
+	assert.Equal(t, "FFF", markets[2].InstrumentID)
+
+	wantStartCursor := entities.NewCursor(blockTimes["7a797e0e"].Format(time.RFC3339Nano)).Encode()
+	wantEndCursor := entities.NewCursor(blockTimes["b7c84b8e"].Format(time.RFC3339Nano)).Encode()
+	assert.True(t, pageInfo.HasNextPage)
+	assert.True(t, pageInfo.HasPreviousPage)
+	assert.Equal(t, wantStartCursor, pageInfo.StartCursor)
+	assert.Equal(t, wantEndCursor, pageInfo.EndCursor)
+}
+
+func testCursorPaginationReturnsPageTraversingBackward(t *testing.T) {
+	bs, md, _ := setupMarketsTest(t)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*60)
+	defer cancel()
+	blockTimes := make(map[string]time.Time)
+	populateTestMarkets(ctx, t, bs, md, blockTimes)
+	last := int32(3)
+	before := entities.NewCursor(blockTimes["c8744329"].Format(time.RFC3339Nano)).Encode()
+	cursor, err := entities.PaginationFromProto(&v2.Pagination{
+		First:  nil,
+		After:  nil,
+		Last:   &last,
+		Before: &before,
+	})
+
+	require.NoError(t, err)
+
+	markets, pageInfo, err := md.GetAllPaged(ctx, "", cursor)
+	require.NoError(t, err)
+
+	assert.Equal(t, 3, len(markets))
+	assert.Equal(t, "7bb2356e", markets[0].ID.String())
+	assert.Equal(t, "c612300d", markets[2].ID.String())
+	assert.Equal(t, "EEE", markets[0].InstrumentID)
+	assert.Equal(t, "GGG", markets[2].InstrumentID)
+
+	wantStartCursor := entities.NewCursor(blockTimes["7bb2356e"].Format(time.RFC3339Nano)).Encode()
+	wantEndCursor := entities.NewCursor(blockTimes["c612300d"].Format(time.RFC3339Nano)).Encode()
+	assert.True(t, pageInfo.HasNextPage)
+	assert.True(t, pageInfo.HasPreviousPage)
+	assert.Equal(t, wantStartCursor, pageInfo.StartCursor)
+	assert.Equal(t, wantEndCursor, pageInfo.EndCursor)
 }

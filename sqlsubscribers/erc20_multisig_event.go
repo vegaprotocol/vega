@@ -26,6 +26,7 @@ type ERC20MultiSigSignerEventStore interface {
 }
 
 type ERC20MultiSigSignerEvent struct {
+	subscriber
 	store ERC20MultiSigSignerEventStore
 	log   *logging.Logger
 }
@@ -46,8 +47,6 @@ func (t *ERC20MultiSigSignerEvent) Types() []events.Type {
 
 func (m *ERC20MultiSigSignerEvent) Push(ctx context.Context, evt events.Event) error {
 	switch e := evt.(type) {
-	case TimeUpdateEvent:
-		return nil // we have a timestamp in the event so we don't need to do anything here
 	case ERC20MultiSigSignerAddedEvent:
 		return m.consumeAddedEvent(ctx, e)
 	case ERC20MultiSigSignerRemovedEvent:

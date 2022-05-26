@@ -3,10 +3,10 @@ module code.vegaprotocol.io/data-node
 go 1.18
 
 require (
-	code.vegaprotocol.io/protos v0.51.0
+	code.vegaprotocol.io/protos v0.51.1
 	code.vegaprotocol.io/quant v0.2.5
 	code.vegaprotocol.io/shared v0.0.0-20220321185018-3b5684b00533
-	code.vegaprotocol.io/vega v0.51.0
+	code.vegaprotocol.io/vega v0.51.1
 	github.com/99designs/gqlgen v0.16.0
 	github.com/cenkalti/backoff/v4 v4.1.2
 	github.com/dgraph-io/badger/v2 v2.2007.3
@@ -43,7 +43,7 @@ require (
 )
 
 require (
-	code.vegaprotocol.io/vegawallet v0.15.0 // indirect
+	code.vegaprotocol.io/vegawallet v0.15.1 // indirect
 	github.com/BurntSushi/toml v1.1.0 // indirect
 	github.com/DataDog/zstd v1.4.1 // indirect
 	github.com/adrg/xdg v0.4.0 // indirect
@@ -103,9 +103,9 @@ require (
 	go.etcd.io/bbolt v1.3.6 // indirect
 	go.uber.org/atomic v1.9.0 // indirect
 	go.uber.org/multierr v1.8.0 // indirect
-	golang.org/x/exp v0.0.0-20200331195152-e8c3332aa8e5 // indirect
+	golang.org/x/exp v0.0.0-20220428152302-39d4317da171 // indirect
 	golang.org/x/lint v0.0.0-20210508222113-6edffad5e616 // indirect
-	golang.org/x/mod v0.5.1 // indirect
+	golang.org/x/mod v0.6.0-dev.0.20211013180041-c96bc1413d57 // indirect
 	golang.org/x/net v0.0.0-20220225172249-27dd8689420f // indirect
 	golang.org/x/sys v0.0.0-20220318055525-2edf467146b5 // indirect
 	golang.org/x/term v0.0.0-20210927222741-03fcf44c2211 // indirect

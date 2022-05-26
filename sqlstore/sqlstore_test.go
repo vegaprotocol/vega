@@ -3,6 +3,7 @@ package sqlstore_test
 import (
 	"context"
 	"crypto/sha256"
+	"encoding/base64"
 	"encoding/hex"
 	"fmt"
 	"io/ioutil"
@@ -29,8 +30,12 @@ var (
 	maxPort               = 40000
 	testDBPort       int
 
-	tableNames = [...]string{"ledger", "accounts", "parties", "assets", "blocks", "node_signatures",
-		"erc20_multisig_signer_events", "trades", "market_data", "orders", "margin_levels", "liquidity_provisions"}
+	tableNames = [...]string{
+		"ledger", "accounts", "parties", "assets", "blocks", "node_signatures",
+		"erc20_multisig_signer_events", "trades", "market_data", "orders_live", "orders_history",
+		"margin_levels", "liquidity_provisions", "nodes", "ranking_scores", "reward_scores", "delegations", "rewards",
+	}
+
 	postgresServerTimeout = time.Second * 10
 )
 
@@ -84,6 +89,10 @@ func TestMain(m *testing.M) {
 			panic(err)
 		}
 
+		if err = sqlstore.ApplyDataRetentionPolicies(sqlConfig); err != nil {
+			panic(err)
+		}
+
 		m.Run()
 	}
 }
@@ -112,6 +121,20 @@ func generateID() string {
 	currentTimeString := strconv.FormatInt(currentTime, 10)
 	hash := sha256.Sum256([]byte(currentTimeString))
 	return hex.EncodeToString(hash[:])
+}
+
+func generateEthereumAddress() string {
+	currentTime := time.Now().UnixNano()
+	currentTimeString := strconv.FormatInt(currentTime, 10)
+	hash := sha256.Sum256([]byte(currentTimeString))
+	return "0x" + hex.EncodeToString(hash[1:21])
+}
+
+func generateTendermintPublicKey() string {
+	currentTime := time.Now().UnixNano()
+	currentTimeString := strconv.FormatInt(currentTime, 10)
+	hash := sha256.Sum256([]byte(currentTimeString))
+	return base64.StdEncoding.EncodeToString(hash[:])
 }
 
 func NewTestConfig(port int) sqlstore.Config {

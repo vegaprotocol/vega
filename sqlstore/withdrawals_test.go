@@ -285,7 +285,7 @@ func testWithdrawalsGetByParty(t *testing.T) {
 
 	want = append(want, *withdrawal)
 
-	got := ws.GetByParty(ctx, withdrawalProto1.PartyId, false, entities.Pagination{})
+	got := ws.GetByParty(ctx, withdrawalProto1.PartyId, false, entities.OffsetPagination{})
 
 	assert.Equal(t, want, got)
 }

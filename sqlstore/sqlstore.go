@@ -31,6 +31,7 @@ func MigrateToLatestSchema(log *logging.Logger, config Config) error {
 	}
 
 	db := stdlib.OpenDB(*poolConfig.ConnConfig)
+	defer db.Close()
 
 	currentVersion, err := goose.GetDBVersion(db)
 	if err != nil {
@@ -46,6 +47,28 @@ func MigrateToLatestSchema(log *logging.Logger, config Config) error {
 	if err := goose.Up(db, "migrations"); err != nil {
 		return fmt.Errorf("error migrating sql schema: %w", err)
 	}
+	return nil
+}
+
+func ApplyDataRetentionPolicies(config Config) error {
+	poolConfig, err := config.ConnectionConfig.GetPoolConfig()
+	if err != nil {
+		return errors.Wrap(err, "applying data retention policy")
+	}
+
+	db := stdlib.OpenDB(*poolConfig.ConnConfig)
+	defer db.Close()
+
+	for _, policy := range config.RetentionPolicies {
+		if _, err := db.Exec(fmt.Sprintf("SELECT remove_retention_policy('%s', true);", policy.HypertableOrCaggName)); err != nil {
+			return errors.Wrapf(err, "removing retention policy from %s", policy.HypertableOrCaggName)
+		}
+
+		if _, err := db.Exec(fmt.Sprintf("SELECT add_retention_policy('%s', INTERVAL '%s');", policy.HypertableOrCaggName, policy.DataRetentionPeriod)); err != nil {
+			return errors.Wrapf(err, "adding retention policy to %s", policy.HypertableOrCaggName)
+		}
+	}
+
 	return nil
 }
 

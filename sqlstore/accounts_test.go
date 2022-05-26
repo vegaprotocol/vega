@@ -89,6 +89,6 @@ func TestAccount(t *testing.T) {
 
 	// QueryBalance correctly filters on marketID
 	filter = entities.AccountFilter{Asset: asset, Markets: []entities.Market{{ID: entities.NewMarketID(account.MarketID.String())}}}
-	_, err = accountStore.QueryBalances(context.Background(), filter, entities.Pagination{})
+	_, err = accountStore.QueryBalances(context.Background(), filter, entities.OffsetPagination{})
 	require.NoError(t, err)
 }

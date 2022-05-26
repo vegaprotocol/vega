@@ -150,7 +150,7 @@ func (as *Accounts) Query(filter entities.AccountFilter) ([]entities.Account, er
 	return accs, nil
 }
 
-func (as *Accounts) QueryBalances(ctx context.Context, filter entities.AccountFilter, pagination entities.Pagination) ([]entities.AccountBalance, error) {
+func (as *Accounts) QueryBalances(ctx context.Context, filter entities.AccountFilter, pagination entities.OffsetPagination) ([]entities.AccountBalance, error) {
 	query, args, err := filterAccountBalancesQuery(filter, pagination)
 	if err != nil {
 		return nil, fmt.Errorf("querying account balances: %w", err)

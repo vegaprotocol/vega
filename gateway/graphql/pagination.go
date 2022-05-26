@@ -11,7 +11,7 @@ var defaultPagination = protoapi.Pagination{
 	Descending: true,
 }
 
-func (p *Pagination) ToProto() (protoapi.Pagination, error) {
+func (p *OffsetPagination) ToProto() (protoapi.Pagination, error) {
 	if p == nil {
 		return defaultPagination, nil
 	}

@@ -108,6 +108,10 @@ func (m Market) ToProto() (*vega.Market, error) {
 	}, nil
 }
 
+func (m Market) Cursor() *Cursor {
+	return NewCursor(m.VegaTime.Format(time.RFC3339Nano))
+}
+
 type MarketTimestamps struct {
 	Proposed int64 `json:"proposed,omitempty"`
 	Pending  int64 `json:"pending,omitempty"`
@@ -156,6 +160,9 @@ type LiquidityMonitoringParameters struct {
 }
 
 func (lmp LiquidityMonitoringParameters) ToProto() *vega.LiquidityMonitoringParameters {
+	if lmp.TargetStakeParameters == nil {
+		return nil
+	}
 	return &vega.LiquidityMonitoringParameters{
 		TargetStakeParameters: lmp.TargetStakeParameters.ToProto(),
 		TriggeringRatio:       lmp.TriggeringRatio,
@@ -215,6 +222,9 @@ type PriceMonitoringSettings struct {
 }
 
 func (s PriceMonitoringSettings) ToProto() *vega.PriceMonitoringSettings {
+	if s.Parameters == nil {
+		return nil
+	}
 	triggers := make([]*vega.PriceMonitoringTrigger, 0, len(s.Parameters.Triggers))
 
 	if len(s.Parameters.Triggers) > 0 {
@@ -259,6 +269,10 @@ type Fees struct {
 }
 
 func (f Fees) ToProto() *vega.Fees {
+	if f.Factors == nil {
+		return nil
+	}
+
 	return &vega.Fees{
 		Factors: &vega.FeeFactors{
 			MakerFee:          f.Factors.MakerFee,

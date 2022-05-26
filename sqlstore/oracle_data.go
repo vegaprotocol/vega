@@ -35,7 +35,7 @@ func (od *OracleData) Add(ctx context.Context, data *entities.OracleData) error 
 	return nil
 }
 
-func (od *OracleData) GetOracleDataBySpecID(ctx context.Context, id string, pagination entities.Pagination) ([]entities.OracleData, error) {
+func (od *OracleData) GetOracleDataBySpecID(ctx context.Context, id string, pagination entities.OffsetPagination) ([]entities.OracleData, error) {
 	specID := entities.NewSpecID(id)
 	var bindVars []interface{}
 
@@ -51,7 +51,7 @@ func (od *OracleData) GetOracleDataBySpecID(ctx context.Context, id string, pagi
 	return oracleData, err
 }
 
-func (od *OracleData) ListOracleData(ctx context.Context, pagination entities.Pagination) ([]entities.OracleData, error) {
+func (od *OracleData) ListOracleData(ctx context.Context, pagination entities.OffsetPagination) ([]entities.OracleData, error) {
 	var data []entities.OracleData
 	query := fmt.Sprintf(`select distinct on (id) %s
 from oracle_data

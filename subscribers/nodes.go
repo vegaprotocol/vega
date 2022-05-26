@@ -32,7 +32,7 @@ type KeyRotationEvent interface {
 }
 
 type NodeStore interface {
-	AddNode(types.Node)
+	AddNode(types.Node, bool, uint64)
 	AddDelegation(types.Delegation)
 	GetAllIDs() []string
 	GetByID(id, epochID string) (*vegapb.Node, error)
@@ -125,7 +125,10 @@ func (ns *NodesSub) Push(evts ...events.Event) {
 				Status:           types.NodeStatus_NODE_STATUS_VALIDATOR,
 				Name:             vue.GetName(),
 				AvatarUrl:        vue.GetAvatarUrl(),
-			})
+			},
+				vue.Added,
+				vue.FromEpoch,
+			)
 
 			// check if there are any orphaned ranking events that we can send now
 			if vre, ok := ns.orphanRankingEvents[vue.GetNodeId()]; ok {

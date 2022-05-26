@@ -24,7 +24,6 @@ func NewOracleSpec(connectionSource *ConnectionSource) *OracleSpec {
 }
 
 func (os *OracleSpec) Upsert(ctx context.Context, spec *entities.OracleSpec) error {
-
 	query := fmt.Sprintf(`insert into oracle_specs(%s)
 values ($1, $2, $3, $4, $5, $6, $7)
 on conflict (id, vega_time) do update
@@ -56,7 +55,7 @@ order by id, vega_time desc`, sqlOracleSpecColumns)
 	return spec, err
 }
 
-func (os *OracleSpec) GetSpecs(ctx context.Context, pagination entities.Pagination) ([]entities.OracleSpec, error) {
+func (os *OracleSpec) GetSpecs(ctx context.Context, pagination entities.OffsetPagination) ([]entities.OracleSpec, error) {
 	var specs []entities.OracleSpec
 	query := fmt.Sprintf(`select distinct on (id) %s
 from oracle_specs
