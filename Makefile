@@ -29,9 +29,13 @@ mocks: ## Make mocks
 
 .PHONY: build
 build: ## install the binaries in cmd/{progname}/
-	go build -o cmd/vega ./cmd/vega 
+	go build -o cmd/vega ./cmd/vega
 	go build -o cmd/vega ./cmd/vegabenchmark
 
+
+.PHONY: gen-contracts-code
+gen-contracts-code:
+	cd contracts && ./gen.sh
 .PHONY: install
 install: ## install the binaries in GOPATH/bin
 	go install ./...
