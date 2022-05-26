@@ -15,6 +15,7 @@ import (
 	vgfs "code.vegaprotocol.io/shared/libs/fs"
 	"code.vegaprotocol.io/shared/paths"
 
+	"code.vegaprotocol.io/vega/api"
 	"code.vegaprotocol.io/vega/blockchain/abci"
 	"code.vegaprotocol.io/vega/checkpoint"
 	"code.vegaprotocol.io/vega/crypto"
@@ -61,6 +62,7 @@ type SpamEngine interface {
 }
 
 type PoWEngine interface {
+	api.ProofOfWorkParams
 	BeginBlock(blockHeight uint64, blockHash string)
 	EndOfBlock()
 	CheckTx(tx abci.Tx) error
@@ -300,7 +302,6 @@ func NewApp(
 
 	app.nilPow = app.pow == nil || reflect.ValueOf(app.pow).IsNil()
 	app.nilSpam = app.spam == nil || reflect.ValueOf(app.spam).IsNil()
-
 	return app
 }
 
