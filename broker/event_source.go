@@ -26,7 +26,7 @@ func NewEventSource(config Config, log *logging.Logger) (eventSource, error) {
 		}
 
 	} else {
-		eventsource, err = newSocketServer(log, &config.SocketConfig)
+		eventsource, err = newSocketServer(log, &config)
 		if err != nil {
 			return nil, fmt.Errorf("failed to initialise underlying socket receiver: %w", err)
 		}

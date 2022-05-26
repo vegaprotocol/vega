@@ -11,12 +11,14 @@ const namedLogger = "broker"
 
 // Config represents the configuration of the broker.
 type Config struct {
-	Level                  encoding.LogLevel     `long:"log-level"`
-	SocketConfig           SocketConfig          `group:"Socket" namespace:"socket"`
-	FileEventSourceConfig  FileEventSourceConfig `group:"FileEventSourceConfig" namespace:"fileeventsource"`
-	UseEventFile           encoding.Bool         `long:"use-event-file" description:"set to true to source events from a file"`
-	PanicOnError           encoding.Bool         `long:"panic-on-error" description:"if an error occurs on event push the broker will panic, else log the error"`
-	BlockProcessingTimeout encoding.Duration     `long:"block-processing-timeout" description:"The maximum time permitted for a block of events to be processed"`
+	Level                          encoding.LogLevel     `long:"log-level"`
+	SocketConfig                   SocketConfig          `group:"Socket" namespace:"socket"`
+	SocketServerInboundBufferSize  int                   `long:"socket-server-inbound-buffer-size"`
+	SocketServerOutboundBufferSize int                   `long:"socket-server-outbound-buffer-size"`
+	FileEventSourceConfig          FileEventSourceConfig `group:"FileEventSourceConfig" namespace:"fileeventsource"`
+	UseEventFile                   encoding.Bool         `long:"use-event-file" description:"set to true to source events from a file"`
+	PanicOnError                   encoding.Bool         `long:"panic-on-error" description:"if an error occurs on event push the broker will panic, else log the error"`
+	BlockProcessingTimeout         encoding.Duration     `long:"block-processing-timeout" description:"The maximum time permitted for a block of events to be processed"`
 }
 
 // NewDefaultConfig creates an instance of config with default values.
@@ -29,6 +31,8 @@ func NewDefaultConfig() Config {
 			MaxReceiveTimeouts: 3,
 			TransportType:      "tcp",
 		},
+		SocketServerInboundBufferSize:  10000,
+		SocketServerOutboundBufferSize: 10000,
 		FileEventSourceConfig: FileEventSourceConfig{
 			File:                  "vega.evt",
 			TimeBetweenBlocks:     encoding.Duration{Duration: 1 * time.Second},
