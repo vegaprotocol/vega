@@ -35,6 +35,7 @@ func addTestBlockForTime(t *testing.T, bs *sqlstore.Blocks, vegaTime time.Time) 
 }
 
 func TestBlock(t *testing.T) {
+	defer DeleteEverything()
 	bs := sqlstore.NewBlocks(connectionSource)
 
 	// See how many we have right now (it's possible that other tests added some)
@@ -53,4 +54,46 @@ func TestBlock(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Len(t, blocks, blocks_len+1)
 	assert.Equal(t, blocks[0], block1)
+}
+
+func TestGetLastBlock(t *testing.T) {
+	defer DeleteEverything()
+	bs := sqlstore.NewBlocks(connectionSource)
+
+	now := time.Now()
+
+	addTestBlockForTime(t, bs, now)
+	block2 := addTestBlockForTime(t, bs, now.Add(1*time.Second))
+
+	// Query the last block
+	block, err := bs.GetLastBlock(context.Background())
+	assert.NoError(t, err)
+	assert.Equal(t, block2, block)
+}
+
+func TestGetLastBlockAfterRecovery(t *testing.T) {
+	defer DeleteEverything()
+	bs := sqlstore.NewBlocks(connectionSource)
+
+	now := time.Now()
+
+	addTestBlockForTime(t, bs, now)
+	block2 := addTestBlockForTime(t, bs, now.Add(1*time.Second))
+
+	// Recreate the store
+	bs = sqlstore.NewBlocks(connectionSource)
+
+	// Query the last block
+	block, err := bs.GetLastBlock(context.Background())
+	assert.NoError(t, err)
+	assert.Equal(t, block2, block)
+}
+
+func TestGetLastBlockWhenNoBlocks(t *testing.T) {
+	defer DeleteEverything()
+	bs := sqlstore.NewBlocks(connectionSource)
+
+	// Query the last block
+	_, err := bs.GetLastBlock(context.Background())
+	assert.Equal(t, sqlstore.ErrNoLastBlock, err)
 }

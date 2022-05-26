@@ -146,7 +146,7 @@ func (t *tradingDataDelegator) PartyByID(ctx context.Context, req *protoapi.Part
 
 func (t *tradingDataDelegator) GetVegaTime(ctx context.Context, _ *protoapi.GetVegaTimeRequest) (*protoapi.GetVegaTimeResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("GetVegaTime SQL")()
-	b, err := t.blockStore.GetLastBlock()
+	b, err := t.blockStore.GetLastBlock(ctx)
 	if err != nil {
 		return nil, apiError(codes.Internal, ErrTimeServiceGetTimeNow, err)
 	}
