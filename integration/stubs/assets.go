@@ -67,6 +67,10 @@ func (AssetStub) Enable(_ context.Context, assetID string) error {
 	return nil
 }
 
+func (a *AssetStub) ApplyAssetUpdate(assetID string) error {
+	return nil
+}
+
 type isAssetStub struct {
 	ID            string
 	DecimalPlaces uint64

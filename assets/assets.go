@@ -15,6 +15,7 @@ package assets
 import (
 	"context"
 	"errors"
+	"fmt"
 	"sync"
 
 	"code.vegaprotocol.io/vega/assets/builtin"
@@ -46,14 +47,15 @@ type Service struct {
 	// this is a list of pending asset which are currently going through
 	// proposal, they can later on be promoted to the asset lists once
 	// the proposal is accepted by both the nodes and the users
-	pamu          sync.RWMutex
-	pendingAssets map[string]*Asset
+	pamu                sync.RWMutex
+	pendingAssets       map[string]*Asset
+	pendingAssetUpdates map[string]*Asset
 
 	nodeWallets *nodewallets.NodeWallets
 	ethClient   erc20.ETHClient
 	ass         *assetsSnapshotState
-	ethToVega   map[string]string
 
+	ethToVega   map[string]string
 	isValidator bool
 }
 
@@ -69,13 +71,14 @@ func New(
 	log.SetLevel(cfg.Level.Get())
 
 	return &Service{
-		log:           log,
-		cfg:           cfg,
-		broker:        broker,
-		assets:        map[string]*Asset{},
-		pendingAssets: map[string]*Asset{},
-		nodeWallets:   nw,
-		ethClient:     ethClient,
+		log:                 log,
+		cfg:                 cfg,
+		broker:              broker,
+		assets:              map[string]*Asset{},
+		pendingAssets:       map[string]*Asset{},
+		pendingAssetUpdates: map[string]*Asset{},
+		nodeWallets:         nw,
+		ethClient:           ethClient,
 		ass: &assetsSnapshotState{
 			changedActive:  true,
 			changedPending: true,
@@ -199,21 +202,93 @@ func (s *Service) assetFromDetails(assetID string, assetDetails *types.AssetDeta
 	}
 }
 
+func (s *Service) buildAssetFromProto(asset *types.Asset) (*Asset, error) {
+	switch asset.Details.Source.(type) {
+	case *types.AssetDetailsBuiltinAsset:
+		return &Asset{
+			builtin.New(asset.ID, asset.Details),
+		}, nil
+	case *types.AssetDetailsErc20:
+		// TODO(): fix once the ethereum wallet and client are not required
+		// anymore to construct assets
+		var (
+			erc20Asset *erc20.ERC20
+			err        error
+		)
+		if s.isValidator {
+			erc20Asset, err = erc20.New(asset.ID, asset.Details, s.nodeWallets.Ethereum, s.ethClient)
+		} else {
+			erc20Asset, err = erc20.New(asset.ID, asset.Details, nil, nil)
+		}
+		if err != nil {
+			return nil, err
+		}
+		return &Asset{erc20Asset}, nil
+	default:
+		return nil, ErrUnknownAssetSource
+	}
+}
+
 // NewAsset add a new asset to the pending list of assets
 // the ref is the reference of proposal which submitted the new asset
 // returns the assetID and an error.
-func (s *Service) NewAsset(ctx context.Context, assetID string, assetDetails *types.AssetDetails) (string, error) {
+func (s *Service) NewAsset(ctx context.Context, proposalID string, assetDetails *types.AssetDetails) (string, error) {
 	s.pamu.Lock()
 	defer s.pamu.Unlock()
-	asset, err := s.assetFromDetails(assetID, assetDetails)
+	asset, err := s.assetFromDetails(proposalID, assetDetails)
 	if err != nil {
 		return "", err
 	}
-	s.pendingAssets[assetID] = asset
+	s.pendingAssets[proposalID] = asset
 	s.ass.changedPending = true
 	s.broker.Send(events.NewAssetEvent(ctx, *asset.Type()))
 
-	return assetID, err
+	return proposalID, err
+}
+
+func (s *Service) StageAssetUpdate(updatedAssetProto *types.Asset) error {
+	s.pamu.Lock()
+	defer s.pamu.Unlock()
+	if _, ok := s.assets[updatedAssetProto.ID]; !ok {
+		return ErrAssetDoesNotExist
+	}
+
+	updatedAsset, err := s.buildAssetFromProto(updatedAssetProto)
+	if err != nil {
+		return fmt.Errorf("couldn't update asset: %w", err)
+	}
+	s.pendingAssetUpdates[updatedAssetProto.ID] = updatedAsset
+	s.ass.changedPendingUpdates = true
+	return nil
+}
+
+func (s *Service) ApplyAssetUpdate(assetID string) error {
+	s.pamu.Lock()
+	defer s.pamu.Unlock()
+
+	updatedAsset, ok := s.pendingAssetUpdates[assetID]
+	if !ok {
+		return ErrAssetDoesNotExist
+	}
+
+	if !updatedAsset.IsValid() {
+		return ErrAssetInvalid
+	}
+
+	s.amu.Lock()
+	defer s.amu.Unlock()
+
+	currentAsset, ok := s.assets[assetID]
+	if !ok {
+		return ErrAssetDoesNotExist
+	}
+	if err := currentAsset.Update(updatedAsset); err != nil {
+		s.log.Panic("couldn't update the asset", logging.Error(err))
+	}
+	delete(s.pendingAssetUpdates, assetID)
+	s.ass.changedActive = true
+	s.ass.changedPendingUpdates = true
+	return nil
 }
 
 func (s *Service) GetEnabledAssets() []*types.Asset {
@@ -231,6 +306,16 @@ func (s *Service) getPendingAssets() []*types.Asset {
 	defer s.pamu.RUnlock()
 	ret := make([]*types.Asset, 0, len(s.assets))
 	for _, a := range s.pendingAssets {
+		ret = append(ret, a.ToAssetType())
+	}
+	return ret
+}
+
+func (s *Service) getPendingAssetUpdates() []*types.Asset {
+	s.pamu.RLock()
+	defer s.pamu.RUnlock()
+	ret := make([]*types.Asset, 0, len(s.assets))
+	for _, a := range s.pendingAssetUpdates {
 		ret = append(ret, a.ToAssetType())
 	}
 	return ret

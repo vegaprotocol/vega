@@ -81,6 +81,20 @@ func (mr *MockCollateralMockRecorder) GetPartyGeneralAccount(arg0, arg1 interfac
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPartyGeneralAccount", reflect.TypeOf((*MockCollateral)(nil).GetPartyGeneralAccount), arg0, arg1)
 }
 
+// PropagateAssetUpdate mocks base method.
+func (m *MockCollateral) PropagateAssetUpdate(arg0 context.Context, arg1 types.Asset) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "PropagateAssetUpdate", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// PropagateAssetUpdate indicates an expected call of PropagateAssetUpdate.
+func (mr *MockCollateralMockRecorder) PropagateAssetUpdate(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PropagateAssetUpdate", reflect.TypeOf((*MockCollateral)(nil).PropagateAssetUpdate), arg0, arg1)
+}
+
 // TransferFunds mocks base method.
 func (m *MockCollateral) TransferFunds(arg0 context.Context, arg1 []*types.Transfer, arg2 []vega.AccountType, arg3 []string, arg4 []*types.Transfer, arg5 []vega.AccountType) ([]*types.TransferResponse, error) {
 	m.ctrl.T.Helper()

@@ -23,10 +23,12 @@ type NodeSignature = commandspb.NodeSignature
 type NodeSignatureKind = commandspb.NodeSignatureKind
 
 const (
-	// Represents an unspecified or missing value from the input.
+	// NodeSignatureKindUnspecified represents an unspecified or missing value from the input.
 	NodeSignatureKindUnspecified NodeSignatureKind = commandspb.NodeSignatureKind_NODE_SIGNATURE_KIND_UNSPECIFIED
-	// Represents a signature for a new asset allow-listing.
+	// NodeSignatureKindAssetNew represents a signature for a new asset allow-listing.
 	NodeSignatureKindAssetNew NodeSignatureKind = commandspb.NodeSignatureKind_NODE_SIGNATURE_KIND_ASSET_NEW
+	// NodeSignatureKindAssetUpdate represents a signature for an asset update allow-listing.
+	NodeSignatureKindAssetUpdate NodeSignatureKind = commandspb.NodeSignatureKind_NODE_SIGNATURE_KIND_ASSET_UPDATE
 	// Represents a signature for an asset withdrawal.
 	NodeSignatureKindAssetWithdrawal            NodeSignatureKind = commandspb.NodeSignatureKind_NODE_SIGNATURE_KIND_ASSET_WITHDRAWAL
 	NodeSignatureKindERC20MultiSigSignerAdded   NodeSignatureKind = commandspb.NodeSignatureKind_NODE_SIGNATURE_KIND_ERC20_MULTISIG_SIGNER_ADDED

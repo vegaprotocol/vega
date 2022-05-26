@@ -278,7 +278,7 @@ func testSnapshotRestore(t *testing.T) {
 	mkt := "market1"
 	ctx := context.Background()
 	erc20 := types.AssetDetailsErc20{
-		Erc20: &types.ERC20{
+		ERC20: &types.ERC20{
 			ContractAddress: "0x6d53C489bbda35B8096C8b4Cb362e2889F82E19B",
 		},
 	}
@@ -404,7 +404,7 @@ func TestSnapshotRoundtripViaEngine(t *testing.T) {
 		ctx = vgcontext.WithChainID(ctx, "chainid")
 
 		erc20 := types.AssetDetailsErc20{
-			Erc20: &types.ERC20{
+			ERC20: &types.ERC20{
 				ContractAddress: "0x6d53C489bbda35B8096C8b4Cb362e2889F82E19B",
 			},
 		}

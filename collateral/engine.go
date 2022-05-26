@@ -55,7 +55,8 @@ var (
 	ErrPartyHasNoTokenAccount                  = errors.New("no token account for party")
 	ErrSettlementBalanceNotZero                = errors.New("settlement balance should be zero") // E991 YOU HAVE TOO MUCH ROPE TO HANG YOURSELF
 	// ErrAssetAlreadyEnabled signals the given asset has already been enabled in this engine.
-	ErrAssetAlreadyEnabled = errors.New("asset already enabled")
+	ErrAssetAlreadyEnabled    = errors.New("asset already enabled")
+	ErrAssetHasNotBeenEnabled = errors.New("asset has not been enabled")
 	// ErrInvalidAssetID signals that an asset id does not exists.
 	ErrInvalidAssetID = errors.New("invalid asset ID")
 	// ErrInsufficientFundsToPayFees the party do not have enough funds to pay the feeds.
@@ -290,8 +291,18 @@ func (e *Engine) EnableAsset(ctx context.Context, asset types.Asset) error {
 	}
 
 	e.log.Info("new asset added successfully",
-		logging.String("asset-id", asset.ID),
+		logging.AssetID(asset.ID),
 	)
+	return nil
+}
+
+func (e *Engine) PropagateAssetUpdate(ctx context.Context, asset types.Asset) error {
+	if !e.AssetExists(asset.ID) {
+		return ErrAssetHasNotBeenEnabled
+	}
+	e.enabledAssets[asset.ID] = asset
+	e.state.updateAsset(asset)
+	e.broker.Send(events.NewAssetEvent(ctx, asset))
 	return nil
 }
 

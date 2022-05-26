@@ -14,7 +14,6 @@ package banking
 
 import (
 	"context"
-	"errors"
 	"math/big"
 	"sort"
 
@@ -40,8 +39,6 @@ var (
 		recurringTransfersKey,
 		scheduledTransfersKey,
 	}
-
-	ErrSnapshotKeyDoesNotExist = errors.New("unknown key for banking snapshot")
 )
 
 type bankingSnapshotState struct {
@@ -95,15 +92,16 @@ func (e *Engine) serialiseAssetActions() ([]byte, error) {
 	aa := make([]*types.AssetAction, 0, len(e.assetActs))
 	for _, v := range e.assetActs {
 		aa = append(aa, &types.AssetAction{
-			ID:          v.id,
-			State:       v.state,
-			BlockNumber: v.blockNumber,
-			Asset:       v.asset.ToAssetType().ID,
-			TxIndex:     v.txIndex,
-			Hash:        v.hash,
-			BuiltinD:    v.builtinD,
-			Erc20AL:     v.erc20AL,
-			Erc20D:      v.erc20D,
+			ID:                      v.id,
+			State:                   v.state,
+			BlockNumber:             v.blockNumber,
+			Asset:                   v.asset.ToAssetType().ID,
+			TxIndex:                 v.txIndex,
+			Hash:                    v.hash,
+			BuiltinD:                v.builtinD,
+			Erc20AL:                 v.erc20AL,
+			Erc20D:                  v.erc20D,
+			ERC20AssetLimitsUpdated: v.erc20AssetLimitsUpdated,
 		})
 	}
 
@@ -333,15 +331,16 @@ func (e *Engine) restoreAssetActions(ctx context.Context, aa *types.BankingAsset
 		}
 
 		aa := &assetAction{
-			id:          v.ID,
-			state:       v.State,
-			blockNumber: v.BlockNumber,
-			asset:       asset,
-			txIndex:     v.TxIndex,
-			hash:        v.Hash,
-			builtinD:    v.BuiltinD,
-			erc20AL:     v.Erc20AL,
-			erc20D:      v.Erc20D,
+			id:                      v.ID,
+			state:                   v.State,
+			blockNumber:             v.BlockNumber,
+			asset:                   asset,
+			txIndex:                 v.TxIndex,
+			hash:                    v.Hash,
+			builtinD:                v.BuiltinD,
+			erc20AL:                 v.Erc20AL,
+			erc20D:                  v.Erc20D,
+			erc20AssetLimitsUpdated: v.ERC20AssetLimitsUpdated,
 		}
 		e.assetActs[v.ID] = aa
 		if err := e.witness.RestoreResource(aa, e.onCheckDone); err != nil {

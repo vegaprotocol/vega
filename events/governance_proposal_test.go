@@ -44,7 +44,7 @@ func TestAssetProposalNewAssetDeepClone(t *testing.T) {
 				NewAsset: &types.NewAsset{
 					Changes: &types.AssetDetails{
 						Source: &types.AssetDetailsErc20{
-							Erc20: &types.ERC20{
+							ERC20: &types.ERC20{
 								ContractAddress: "Address",
 							},
 						},
@@ -72,7 +72,7 @@ func TestAssetProposalNewAssetDeepClone(t *testing.T) {
 
 	na := p.Terms.Change.(*types.ProposalTermsNewAsset)
 	erc := na.NewAsset.Changes.Source.(*types.AssetDetailsErc20)
-	erc.Erc20.ContractAddress = "Changed"
+	erc.ERC20.ContractAddress = "Changed"
 
 	assert.NotEqual(t, p.ID, p2.Id)
 	assert.NotEqual(t, p.Reference, p2.Reference)
@@ -94,5 +94,5 @@ func TestAssetProposalNewAssetDeepClone(t *testing.T) {
 
 	na2 := p2.Terms.Change.(*proto.ProposalTerms_NewAsset)
 	erc2 := na2.NewAsset.Changes.Source.(*proto.AssetDetails_Erc20)
-	assert.NotEqual(t, erc.Erc20.ContractAddress, erc2.Erc20.ContractAddress)
+	assert.NotEqual(t, erc.ERC20.ContractAddress, erc2.Erc20.ContractAddress)
 }

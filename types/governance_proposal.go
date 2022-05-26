@@ -387,6 +387,15 @@ func (p *ProposalTerms) GetNewAsset() *NewAsset {
 	}
 }
 
+func (p *ProposalTerms) GetUpdateAsset() *UpdateAsset {
+	switch c := p.Change.(type) {
+	case *ProposalTermsUpdateAsset:
+		return c.UpdateAsset
+	default:
+		return nil
+	}
+}
+
 func (p *ProposalTerms) GetNewMarket() *NewMarket {
 	switch c := p.Change.(type) {
 	case *ProposalTermsNewMarket:

@@ -13,11 +13,15 @@
 package assets
 
 import (
+	"errors"
+
 	"code.vegaprotocol.io/vega/assets/builtin"
 	"code.vegaprotocol.io/vega/assets/common"
 	"code.vegaprotocol.io/vega/assets/erc20"
 	"code.vegaprotocol.io/vega/types"
 )
+
+var ErrUpdatingAssetWithDifferentTypeOfAsset = errors.New("updating asset with different type of asset")
 
 type isAsset interface {
 	// Type get information about the asset itself
@@ -76,4 +80,13 @@ func (a *Asset) ToAssetType() *types.Asset {
 
 func (a *Asset) DecimalPlaces() uint64 {
 	return a.ToAssetType().Details.Decimals
+}
+
+func (a *Asset) Update(updatedAsset *Asset) error {
+	if updatedAsset.IsERC20() && a.IsERC20() {
+		eth, _ := a.ERC20()
+		eth.Update(updatedAsset.Type())
+		return nil
+	}
+	return ErrUpdatingAssetWithDifferentTypeOfAsset
 }

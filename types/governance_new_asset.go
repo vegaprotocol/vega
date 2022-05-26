@@ -81,6 +81,19 @@ type NewAsset struct {
 	Changes *AssetDetails
 }
 
+func (n *NewAsset) Validate() (ProposalError, error) {
+	if n.Changes == nil {
+		return ProposalErrorInvalidAssetDetails, ErrChangesAreRequired
+	}
+	if perr, err := n.Changes.Validate(); err != nil {
+		return perr, err
+	}
+	if n.Changes.Source == nil {
+		return ProposalErrorInvalidAsset, ErrSourceIsRequired
+	}
+	return n.Changes.Source.Validate()
+}
+
 func (n *NewAsset) GetChanges() *AssetDetails {
 	if n != nil {
 		return n.Changes

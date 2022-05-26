@@ -49,7 +49,7 @@ var token = &types.AssetDetails{
 	Decimals:    18,
 	Quantum:     num.DecimalFromFloat(1),
 	Source: &types.AssetDetailsErc20{
-		Erc20: &types.ERC20{
+		ERC20: &types.ERC20{
 			ContractAddress:   "0x1FaA74E181092A97Fecc923015293ce57eE1208A",
 			WithdrawThreshold: num.NewUint(1000),
 			LifetimeLimit:     num.NewUint(42),
@@ -104,7 +104,7 @@ func testWithdrawAsset(t *testing.T) {
 
 func testListAsset(t *testing.T) {
 	token := newTestERC20(t)
-	msg, sig, err := token.SignBridgeListing()
+	msg, sig, err := token.SignListAsset()
 
 	assert.NoError(t, err)
 	assert.NotNil(t, msg)

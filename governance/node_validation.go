@@ -240,18 +240,17 @@ func (n *NodeValidation) restore(ctx context.Context, p *types.Proposal) error {
 func (n *NodeValidation) getChecker(ctx context.Context, p *types.Proposal) (func() error, error) {
 	switch change := p.Terms.Change.(type) {
 	case *types.ProposalTermsNewAsset:
-		assetID, err := n.assets.NewAsset(ctx, p.ID,
-			change.NewAsset.GetChanges())
+		assetID, err := n.assets.NewAsset(ctx, p.ID, change.NewAsset.GetChanges())
 		if err != nil {
 			n.log.Error("unable to instantiate asset",
-				logging.String("asset-id", assetID),
+				logging.AssetID(assetID),
 				logging.Error(err))
 			return nil, err
 		}
 		return func() error {
 			return n.checkAsset(p.ID)
 		}, nil
-	default: // this should have been check earlier but in case of.
+	default: // this should have been checked earlier but in case of.
 		return nil, ErrNoNodeValidationRequired
 	}
 }
@@ -263,7 +262,7 @@ func (n *NodeValidation) checkAsset(assetID string) error {
 	// so it will be dismissed later on by all the whole network
 	if err != nil || asset == nil {
 		n.log.Error("Validating asset, unable to get the asset",
-			logging.String("id", assetID),
+			logging.AssetID(assetID),
 			logging.Error(err),
 		)
 		return errors.New("invalid asset ID")

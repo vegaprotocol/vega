@@ -137,7 +137,7 @@ func (app *App) processChainEvent(
 }
 
 func (app *App) processChainEventBuiltinAsset(ctx context.Context, ce *types.ChainEvent_Builtin, id string, nonce uint64) error {
-	evt := ce.Builtin //nolint
+	evt := ce.Builtin // nolint
 	if evt == nil {
 		return ErrNotABuiltinAssetEvent
 	}
@@ -161,7 +161,7 @@ func (app *App) processChainEventBuiltinAsset(ctx context.Context, ce *types.Cha
 func (app *App) processChainEventERC20(
 	ctx context.Context, ce *types.ChainEventERC20, id, txID string,
 ) error {
-	evt := ce.ERC20 //nolint
+	evt := ce.ERC20 // nolint
 	if evt == nil {
 		return ErrNotAnERC20Event
 	}
@@ -185,7 +185,6 @@ func (app *App) processChainEventERC20(
 		return errors.New("ERC20.AssetDelist not implemented")
 	case *types.ERC20EventDeposit:
 		act.Deposit.VegaAssetID = strings.TrimPrefix(act.Deposit.VegaAssetID, "0x")
-
 		if err := app.checkVegaAssetID(act.Deposit, "ERC20.AssetDeposit"); err != nil {
 			return err
 		}
@@ -196,6 +195,12 @@ func (app *App) processChainEventERC20(
 			return err
 		}
 		return app.banking.ERC20WithdrawalEvent(ctx, act.Withdrawal, evt.Block, evt.Index, txID)
+	case *types.ERC20EventAssetLimitsUpdated:
+		act.AssetLimitsUpdated.VegaAssetID = strings.TrimPrefix(act.AssetLimitsUpdated.VegaAssetID, "0x")
+		if err := app.checkVegaAssetID(act.AssetLimitsUpdated, "ERC20.AssetLimitsUpdated"); err != nil {
+			return err
+		}
+		return app.banking.UpdateERC20(ctx, act.AssetLimitsUpdated, id, evt.Block, evt.Index, txID)
 	default:
 		return ErrUnsupportedEventAction
 	}
