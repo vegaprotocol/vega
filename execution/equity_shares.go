@@ -78,7 +78,7 @@ func (es *EquityShares) UpdateVirtualStake() {
 			vStake = num.MaxD(v.stake, growth.Mul(v.vStake))
 		}
 		// if virtual stake doesn't change, then stateChanged shouldn't be toggled
-		es.stateChanged = (es.stateChanged || !vStake.Euals(v.vStake))
+		es.stateChanged = (es.stateChanged || !vStake.Equals(v.vStake))
 		v.vStake = vStake
 	}
 }
