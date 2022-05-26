@@ -310,6 +310,14 @@ type Delegation struct {
 	Epoch  int
 }
 
+type NodeData struct {
+	StakedTotal     string
+	TotalNodes      uint32
+	InactiveNodes   uint32
+	ValidatingNodes uint32
+	Uptime          float64
+}
+
 type Node struct {
 	Id                HexString
 	Pubkey            string
@@ -326,15 +334,34 @@ type Node struct {
 	Delegations       []Delegation
 	Name              string
 	AvatarUrl         string
-	// TODO
-	// RewardScore RewardScore
-	// RankingScore RankingScore
+	RewardScore       RewardScore
+	RankingScore      RankingScore
 }
 
 type EpochData struct {
 	Total   int
 	Offline int
 	Online  int
+}
+
+type RewardScore struct {
+	ValidatorNodeStatus string
+
+	PerformanceScore  string
+	MultisigScore     string
+	RawValidatorScore string
+	ValidatorScore    string
+	NormalisedScore   string
+}
+
+type RankingScore struct {
+	Status         string
+	PreviousStatus string
+
+	VotingPower      string
+	StakeScore       string
+	PerformanceScore string
+	RankingScore     string
 }
 
 type Withdrawal struct {

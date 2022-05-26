@@ -52,6 +52,8 @@ type tradingDataDelegator struct {
 	transfersStore          *sqlstore.Transfers
 	stakingStore            *sqlstore.StakeLinking
 	notaryStore             *sqlstore.Notary
+	keyRotationsStore       *sqlstore.KeyRotations
+	nodeStore               *sqlstore.Node
 }
 
 var defaultEntityPagination = entities.OffsetPagination{
@@ -643,7 +645,17 @@ func (t *tradingDataDelegator) GetEpoch(ctx context.Context, req *protoapi.GetEp
 	}
 	protoEpoch.Delegations = protoDelegations
 
-	// TODO: Add in nodes once we've got them in the sql store too
+	nodes, err := t.nodeStore.GetNodes(ctx, uint64(epoch.ID))
+	if err != nil {
+		return nil, apiError(codes.Internal, err)
+	}
+
+	protoNodes := make([]*vega.Node, len(nodes))
+	for i, node := range nodes {
+		protoNodes[i] = node.ToProto()
+	}
+
+	protoEpoch.Validators = protoNodes
 
 	return &protoapi.GetEpochResponse{
 		Epoch: protoEpoch,
@@ -1660,5 +1672,107 @@ func (t *tradingDataDelegator) PartyStake(ctx context.Context, req *protoapi.Par
 	return &protoapi.PartyStakeResponse{
 		CurrentStakeAvailable: num.UintToString(stake),
 		StakeLinkings:         outStakeLinkings,
+	}, nil
+}
+
+func (t *tradingDataDelegator) GetKeyRotations(ctx context.Context, req *protoapi.GetKeyRotationsRequest) (*protoapi.GetKeyRotationsResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("GetKeyRotations")()
+
+	rotations, err := t.keyRotationsStore.GetAllPubKeyRotations(ctx)
+	if err != nil {
+		return nil, apiError(codes.Internal, err)
+	}
+
+	protoRotations := make([]*protoapi.KeyRotation, len(rotations))
+	for i, v := range rotations {
+		protoRotations[i] = v.ToProto()
+	}
+
+	return &protoapi.GetKeyRotationsResponse{
+		Rotations: protoRotations,
+	}, nil
+}
+
+func (t *tradingDataDelegator) GetKeyRotationsByNode(ctx context.Context, req *protoapi.GetKeyRotationsByNodeRequest) (*protoapi.GetKeyRotationsByNodeResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("GetKeyRotationsByNode")()
+
+	if req.GetNodeId() == "" {
+		return nil, apiError(codes.InvalidArgument, errors.New("missing node ID parameter"))
+	}
+
+	rotations, err := t.keyRotationsStore.GetPubKeyRotationsPerNode(ctx, req.GetNodeId())
+	if err != nil {
+		return nil, apiError(codes.Internal, err)
+	}
+
+	protoRotations := make([]*protoapi.KeyRotation, len(rotations))
+	for i, v := range rotations {
+		protoRotations[i] = v.ToProto()
+	}
+
+	return &protoapi.GetKeyRotationsByNodeResponse{
+		Rotations: protoRotations,
+	}, nil
+}
+
+func (t *tradingDataDelegator) GetNodeData(ctx context.Context, req *protoapi.GetNodeDataRequest) (*protoapi.GetNodeDataResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("GetNodeData")()
+
+	nodeData, err := t.nodeStore.GetNodeData(ctx)
+	if err != nil {
+		return nil, apiError(codes.Internal, err)
+	}
+
+	return &protoapi.GetNodeDataResponse{
+		NodeData: nodeData.ToProto(),
+	}, nil
+}
+
+func (t *tradingDataDelegator) GetNodes(ctx context.Context, req *protoapi.GetNodesRequest) (*protoapi.GetNodesResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("GetNodes")()
+
+	epoch, err := t.epochStore.GetCurrent(ctx)
+	if err != nil {
+		fmt.Printf("%v", err)
+		return nil, apiError(codes.Internal, err)
+	}
+
+	nodes, err := t.nodeStore.GetNodes(ctx, uint64(epoch.ID))
+	if err != nil {
+		fmt.Printf("%v", err)
+		return nil, apiError(codes.Internal, err)
+	}
+
+	protoNodes := make([]*vega.Node, len(nodes))
+	for i, v := range nodes {
+		protoNodes[i] = v.ToProto()
+	}
+
+	return &protoapi.GetNodesResponse{
+		Nodes: protoNodes,
+	}, nil
+}
+
+func (t *tradingDataDelegator) GetNodeByID(ctx context.Context, req *protoapi.GetNodeByIDRequest) (*protoapi.GetNodeByIDResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("GetNodeByID")()
+
+	if req.GetId() == "" {
+		return nil, apiError(codes.InvalidArgument, errors.New("missing node ID parameter"))
+	}
+
+	epoch, err := t.epochStore.GetCurrent(ctx)
+	if err != nil {
+		fmt.Printf("%v", err)
+		return nil, apiError(codes.Internal, err)
+	}
+
+	node, err := t.nodeStore.GetNodeByID(ctx, req.GetId(), uint64(epoch.ID))
+	if err != nil {
+		fmt.Printf("%v", err)
+		return nil, apiError(codes.NotFound, err)
+	}
+
+	return &protoapi.GetNodeByIDResponse{
+		Node: node.ToProto(),
 	}, nil
 }

@@ -3,7 +3,6 @@ package entities
 import (
 	"fmt"
 	"strconv"
-	"strings"
 	"time"
 
 	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
@@ -41,8 +40,8 @@ func ERC20MultiSigSignerEventFromAddedProto(e *eventspb.ERC20MultiSigSignerAdded
 	return &ERC20MultiSigSignerEvent{
 		ID:           NewERC20MultiSigSignerEventID(e.SignatureId),
 		ValidatorID:  NewNodeID(e.ValidatorId),
-		SignerChange: NewEthereumAddress(strings.TrimPrefix(e.NewSigner, "0x")),
-		Submitter:    NewEthereumAddress(strings.TrimPrefix(e.Submitter, "0x")),
+		SignerChange: EthereumAddress(e.NewSigner),
+		Submitter:    EthereumAddress(e.Submitter),
 		Nonce:        e.Nonce,
 		VegaTime:     time.Unix(0, e.Timestamp),
 		EpochID:      epochID,
@@ -60,8 +59,8 @@ func ERC20MultiSigSignerEventFromRemovedProto(e *eventspb.ERC20MultiSigSignerRem
 	for _, s := range e.SignatureSubmitters {
 		ents = append(ents, &ERC20MultiSigSignerEvent{
 			ID:           NewERC20MultiSigSignerEventID(s.SignatureId),
-			Submitter:    NewEthereumAddress(strings.TrimPrefix(s.Submitter, "0x")),
-			SignerChange: NewEthereumAddress(strings.TrimPrefix(e.OldSigner, "0x")),
+			Submitter:    EthereumAddress(s.Submitter),
+			SignerChange: EthereumAddress(e.OldSigner),
 			ValidatorID:  NewNodeID(e.ValidatorId),
 			Nonce:        e.Nonce,
 			VegaTime:     time.Unix(0, e.Timestamp),

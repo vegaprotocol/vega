@@ -74,11 +74,11 @@ func (m *ERC20MultiSigSignerEvent) GetAddedEvents(ctx context.Context, validator
 func (m *ERC20MultiSigSignerEvent) GetRemovedEvents(ctx context.Context, validatorID string, submitter string, epochID *int64, pagination entities.OffsetPagination) ([]entities.ERC20MultiSigSignerEvent, error) {
 	out := []entities.ERC20MultiSigSignerEvent{}
 	prequery := `SELECT * FROM erc20_multisig_signer_events WHERE validator_id=$1 AND submitter=$2 AND event=$3`
-	query, args := orderAndPaginateQuery(prequery, nil, pagination, entities.NewNodeID(validatorID), entities.NewEthereumAddress(submitter), entities.ERC20MultiSigSignerEventTypeRemoved)
+	query, args := orderAndPaginateQuery(prequery, nil, pagination, entities.NewNodeID(validatorID), entities.EthereumAddress(submitter), entities.ERC20MultiSigSignerEventTypeRemoved)
 
 	if epochID != nil {
 		prequery += " AND epoch_id=$4"
-		query, args = orderAndPaginateQuery(prequery, nil, pagination, entities.NewNodeID(validatorID), entities.NewEthereumAddress(submitter), entities.ERC20MultiSigSignerEventTypeRemoved, *epochID)
+		query, args = orderAndPaginateQuery(prequery, nil, pagination, entities.NewNodeID(validatorID), entities.EthereumAddress(submitter), entities.ERC20MultiSigSignerEventTypeRemoved, *epochID)
 	}
 
 	defer metrics.StartSQLQuery("ERC20MultiSigSignerEvent", "GetRemovedEvents")()

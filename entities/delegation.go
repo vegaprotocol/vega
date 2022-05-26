@@ -11,10 +11,10 @@ import (
 )
 
 type Delegation struct {
-	PartyID  PartyID
-	NodeID   NodeID
-	EpochID  int64
-	Amount   decimal.Decimal
+	PartyID  PartyID         `json:"party_id"`
+	NodeID   NodeID          `json:"node_id"`
+	EpochID  int64           `json:"epoch_id"`
+	Amount   decimal.Decimal `json:"amount"`
 	VegaTime time.Time
 }
 
@@ -33,7 +33,29 @@ func (d *Delegation) ToProto() *vega.Delegation {
 	return &protoDelegation
 }
 
-func DelegationFromProto(pd *eventspb.DelegationBalanceEvent) (Delegation, error) {
+func DelegationFromProto(pd *vega.Delegation) (Delegation, error) {
+	epochID, err := strconv.ParseInt(pd.EpochSeq, 10, 64)
+	if err != nil {
+		return Delegation{}, fmt.Errorf("parsing epoch '%v': %w", pd.EpochSeq, err)
+	}
+
+	amount, err := decimal.NewFromString(pd.Amount)
+	if err != nil {
+		return Delegation{}, fmt.Errorf("parsing amount of delegation: '%v': %w",
+			pd.Amount, err)
+	}
+
+	delegation := Delegation{
+		PartyID: NewPartyID(pd.Party),
+		NodeID:  NewNodeID(pd.NodeId),
+		EpochID: epochID,
+		Amount:  amount,
+	}
+
+	return delegation, nil
+}
+
+func DelegationFromEventProto(pd *eventspb.DelegationBalanceEvent) (Delegation, error) {
 	epochID, err := strconv.ParseInt(pd.EpochSeq, 10, 64)
 	if err != nil {
 		return Delegation{}, fmt.Errorf("parsing epoch '%v': %w", pd.EpochSeq, err)
