@@ -43,12 +43,46 @@ create table accounts
 
 create table balances
 (
-    account_id INT                      NOT NULL REFERENCES accounts(id),
-    vega_time  TIMESTAMP WITH TIME ZONE NOT NULL REFERENCES blocks(vega_time),
+    account_id INT                      NOT NULL,
+    vega_time  TIMESTAMP WITH TIME ZONE NOT NULL,
     balance    NUMERIC(32, 0)           NOT NULL,
 
     PRIMARY KEY(vega_time, account_id)
 );
+
+select create_hypertable('balances', 'vega_time', chunk_time_interval => INTERVAL '1 day');
+create index on balances (vega_time, account_id);
+
+CREATE MATERIALIZED VIEW conflated_balances
+            WITH (timescaledb.continuous, timescaledb.materialized_only = true) AS
+SELECT account_id, time_bucket('1 hour', vega_time) AS bucket,
+       last(balance, vega_time) AS balance,
+       last(vega_time, vega_time) AS vega_time
+FROM balances
+GROUP BY account_id, bucket WITH NO DATA;
+
+-- start_offset is set to a day, as data is append only this does not impact the processing time and ensures
+-- that the CAGG data will be correct on recovery in the event of a transient outage ( < 1 day )
+SELECT add_continuous_aggregate_policy('conflated_balances', start_offset => INTERVAL '1 day',
+                                       end_offset => INTERVAL '1 hour', schedule_interval => INTERVAL '1 hour');
+
+CREATE VIEW all_balances AS
+(
+SELECT
+    balances.account_id,
+    balances.vega_time,
+    balances.balance
+FROM balances
+UNION ALL
+SELECT
+    conflated_balances.account_id,
+    conflated_balances.vega_time,
+    conflated_balances.balance
+FROM conflated_balances
+WHERE conflated_balances.vega_time < ( SELECT min(balances.vega_time) FROM balances) OR
+        0 = (select count(*) from balances));
+
+
 
 create table ledger
 (
@@ -62,7 +96,6 @@ create table ledger
     type            TEXT
 );
 SELECT create_hypertable('ledger', 'vega_time', chunk_time_interval => INTERVAL '1 day');
-SELECT add_retention_policy('ledger', INTERVAL '7 days');
 
 CREATE TABLE orders_history (
     id                BYTEA                     NOT NULL,
@@ -235,7 +268,6 @@ create table trades
 
 SELECT create_hypertable('trades', 'synthetic_time', chunk_time_interval => INTERVAL '1 day');
 CREATE INDEX ON trades (market_id, synthetic_time DESC);
-SELECT add_retention_policy('trades', INTERVAL '7 days');
 
 CREATE MATERIALIZED VIEW trades_candle_1_minute
             WITH (timescaledb.continuous) AS
@@ -253,7 +285,6 @@ GROUP BY market_id, period_start WITH NO DATA;
 -- start_offset is set to a day, as data is append only this does not impact the processing time and ensures
 -- that the CAGG data will be correct on recovery in the event of a transient outage ( < 1 day )
 SELECT add_continuous_aggregate_policy('trades_candle_1_minute', start_offset => INTERVAL '1 day', end_offset => INTERVAL '1 minute', schedule_interval => INTERVAL '1 minute');
-SELECT add_retention_policy('trades_candle_1_minute', INTERVAL '1 month');
 
 CREATE MATERIALIZED VIEW trades_candle_5_minutes
             WITH (timescaledb.continuous) AS
@@ -271,7 +302,6 @@ GROUP BY market_id, period_start WITH NO DATA;
 -- start_offset is set to a day, as data is append only this does not impact the processing time and ensures
 -- that the CAGG data will be correct on recovery in the event of a transient outage ( < 1 day )
 SELECT add_continuous_aggregate_policy('trades_candle_5_minutes', start_offset => INTERVAL '1 day', end_offset => INTERVAL '5 minutes', schedule_interval => INTERVAL '5 minutes');
-SELECT add_retention_policy('trades_candle_5_minutes', INTERVAL '1 month');
 
 CREATE MATERIALIZED VIEW trades_candle_15_minutes
             WITH (timescaledb.continuous) AS
@@ -289,7 +319,6 @@ GROUP BY market_id, period_start WITH NO DATA;
 -- start_offset is set to a day, as data is append only this does not impact the processing time and ensures
 -- that the CAGG data will be correct on recovery in the event of a transient outage ( < 1 day )
 SELECT add_continuous_aggregate_policy('trades_candle_15_minutes', start_offset => INTERVAL '1 day', end_offset => INTERVAL '15 minutes', schedule_interval => INTERVAL '15 minutes');
-SELECT add_retention_policy('trades_candle_15_minutes', INTERVAL '1 month');
 
 CREATE MATERIALIZED VIEW trades_candle_1_hour
             WITH (timescaledb.continuous) AS
@@ -307,7 +336,6 @@ GROUP BY market_id, period_start WITH NO DATA;
 -- start_offset is set to a day, as data is append only this does not impact the processing time and ensures
 -- that the CAGG data will be correct on recovery in the event of a transient outage ( < 1 day )
 SELECT add_continuous_aggregate_policy('trades_candle_1_hour', start_offset => INTERVAL '1 day', end_offset => INTERVAL '1 hour', schedule_interval => INTERVAL '1 hour');
-SELECT add_retention_policy('trades_candle_1_hour', INTERVAL '1 year');
 
 CREATE MATERIALIZED VIEW trades_candle_6_hours
             WITH (timescaledb.continuous) AS
@@ -325,7 +353,6 @@ GROUP BY market_id, period_start WITH NO DATA;
 -- start_offset is set to a day, as data is append only this does not impact the processing time and ensures
 -- that the CAGG data will be correct on recovery in the event of a transient outage ( < 1 day )
 SELECT add_continuous_aggregate_policy('trades_candle_6_hours', start_offset => INTERVAL '1 day', end_offset => INTERVAL '6 hours', schedule_interval => INTERVAL '6 hours');
-SELECT add_retention_policy('trades_candle_6_hours', INTERVAL '1 year');
 
 CREATE MATERIALIZED VIEW trades_candle_1_day
             WITH (timescaledb.continuous) AS
@@ -418,7 +445,6 @@ create table market_data (
 );
 
 select create_hypertable('market_data', 'synthetic_time', chunk_time_interval => INTERVAL '1 day');
-SELECT add_retention_policy('market_data', INTERVAL '7 days');
 
 create index on market_data (market, vega_time);
 
@@ -638,11 +664,10 @@ create table if not exists margin_levels (
 );
 
 select create_hypertable('margin_levels', 'vega_time', chunk_time_interval => INTERVAL '1 day');
-SELECT add_retention_policy('margin_levels', INTERVAL '7 days');
 create index on margin_levels (account_id, vega_time);
 
 CREATE MATERIALIZED VIEW conflated_margin_levels
-            WITH (timescaledb.continuous) AS
+            WITH (timescaledb.continuous, timescaledb.materialized_only = true) AS
 SELECT account_id, time_bucket('1 minute', vega_time) AS bucket,
        last(maintenance_margin, vega_time) AS maintenance_margin,
        last(search_level, vega_time) AS search_level,
@@ -657,7 +682,6 @@ GROUP BY account_id, bucket WITH NO DATA;
 -- that the CAGG data will be correct on recovery in the event of a transient outage ( < 1 day )
 SELECT add_continuous_aggregate_policy('conflated_margin_levels', start_offset => INTERVAL '1 day',
     end_offset => INTERVAL '1 minute', schedule_interval => INTERVAL '1 minute');
-SELECT add_retention_policy('conflated_margin_levels', INTERVAL '1 year');
 
 CREATE VIEW all_margin_levels AS
 (
@@ -705,22 +729,70 @@ CREATE TABLE checkpoints(
 );
 
 CREATE TABLE positions(
-  market_id           BYTEA NOT NULL, -- TODO REFERENCES market(id),
-  party_id            BYTEA NOT NULL, -- TODO REFERENCES parties(id),
+  market_id           BYTEA NOT NULL,
+  party_id            BYTEA NOT NULL,
   open_volume         BIGINT NOT NULL,
   realised_pnl        NUMERIC NOT NULL,
   unrealised_pnl      NUMERIC NOT NULL,
   average_entry_price NUMERIC NOT NULL,
   loss                NUMERIC NOT NULL,
   adjustment          NUMERIC NOT NULL,
-  vega_time           TIMESTAMP WITH TIME ZONE NOT NULL REFERENCES blocks(vega_time),
-  PRIMARY KEY (party_id, market_id, vega_time)
+  vega_time           TIMESTAMP WITH TIME ZONE NOT NULL
 );
+
+select create_hypertable('positions', 'vega_time', chunk_time_interval => INTERVAL '1 day');
+create index on positions (party_id, market_id, vega_time);
+
+
+CREATE MATERIALIZED VIEW conflated_positions
+            WITH (timescaledb.continuous, timescaledb.materialized_only = true) AS
+SELECT market_id, party_id, time_bucket('1 hour', vega_time) AS bucket,
+ last(open_volume, vega_time) AS open_volume,
+ last(realised_pnl, vega_time) AS realised_pnl,
+ last(unrealised_pnl, vega_time) AS unrealised_pnl,
+ last(average_entry_price, vega_time) AS average_entry_price,
+ last(loss, vega_time) AS loss,
+ last(adjustment, vega_time) AS adjustment,
+ last(vega_time, vega_time) AS vega_time
+FROM positions
+GROUP BY market_id, party_id, bucket WITH NO DATA;
+
+-- start_offset is set to a day, as data is append only this does not impact the processing time and ensures
+-- that the CAGG data will be correct on recovery in the event of a transient outage ( < 1 day )
+SELECT add_continuous_aggregate_policy('conflated_positions', start_offset => INTERVAL '1 day',
+                                       end_offset => INTERVAL '1 hour', schedule_interval => INTERVAL '1 hour');
+
+CREATE VIEW all_positions AS
+(
+SELECT
+  positions.market_id,
+  positions.party_id,
+  positions.open_volume,
+  positions.realised_pnl,
+  positions.unrealised_pnl,
+  positions.average_entry_price,
+  positions.loss,
+  positions.adjustment,
+  positions.vega_time
+FROM positions
+UNION ALL
+SELECT
+    conflated_positions.market_id,
+    conflated_positions.party_id,
+    conflated_positions.open_volume,
+    conflated_positions.realised_pnl,
+    conflated_positions.unrealised_pnl,
+    conflated_positions.average_entry_price,
+    conflated_positions.loss,
+    conflated_positions.adjustment,
+    conflated_positions.vega_time
+FROM conflated_positions
+WHERE conflated_positions.vega_time < ( SELECT min(positions.vega_time) FROM positions) OR
+        0 = (select count(*) from positions));
 
 CREATE VIEW positions_current AS (
-  SELECT DISTINCT ON (party_id, market_id) * FROM positions ORDER BY party_id, market_id, vega_time DESC
+ SELECT DISTINCT ON (party_id, market_id) * FROM all_positions ORDER BY party_id, market_id, vega_time DESC
 );
-
 
 create type oracle_spec_status as enum('STATUS_UNSPECIFIED', 'STATUS_ACTIVE', 'STATUS_DEACTIVATED');
 
@@ -766,7 +838,6 @@ create table if not exists liquidity_provisions (
 );
 
 select create_hypertable('liquidity_provisions', 'vega_time', chunk_time_interval => INTERVAL '1 day');
-SELECT add_retention_policy('liquidity_provisions', INTERVAL '1 year');
 
 CREATE TYPE transfer_type AS enum('OneOff','Recurring','Unknown');
 CREATE TYPE transfer_status AS enum('STATUS_UNSPECIFIED','STATUS_PENDING','STATUS_DONE','STATUS_REJECTED','STATUS_STOPPED','STATUS_CANCELLED');
@@ -891,7 +962,7 @@ DROP TABLE IF EXISTS oracle_specs;
 DROP TYPE IF EXISTS oracle_spec_status;
 
 DROP VIEW IF EXISTS positions_current;
-DROP TABLE IF EXISTS positions;
+DROP TABLE IF EXISTS positions cascade;
 
 DROP VIEW IF EXISTS votes_current;
 DROP TABLE IF EXISTS votes;
@@ -953,7 +1024,7 @@ DROP TABLE IF EXISTS erc20_multisig_signer_events;
 DROP TYPE IF EXISTS erc20_multisig_signer_event;
 
 DROP TABLE IF EXISTS ledger;
-DROP TABLE IF EXISTS balances;
+DROP TABLE IF EXISTS balances cascade;
 DROP TABLE IF EXISTS accounts;
 DROP TABLE IF EXISTS parties;
 DROP TABLE IF EXISTS assets;

@@ -97,15 +97,15 @@ func filterAccountBalancesQuery(af entities.AccountFilter, pagination entities.O
 	}
 
 	query := `SELECT DISTINCT ON (ACCOUNTS.id) ACCOUNTS.id, ACCOUNTS.party_id, ACCOUNTS.asset_id, ACCOUNTS.market_id, ACCOUNTS.type, 
-				BALANCES.balance, BALANCES.vega_time
-	          FROM ACCOUNTS JOIN BALANCES ON ACCOUNTS.id = BALANCES.account_id `
+				all_balances.balance, all_balances.vega_time
+	          FROM ACCOUNTS JOIN all_balances ON ACCOUNTS.id = all_balances.account_id `
 
 	if where != "" {
 		query = fmt.Sprintf("%s WHERE %s", query, where)
 	}
 
 	// We are adding a custom ordering to ensure we're getting the latest balances for each account from our query
-	query = fmt.Sprintf("%s ORDER BY ACCOUNTS.id, BALANCES.vega_time DESC", query)
+	query = fmt.Sprintf("%s ORDER BY ACCOUNTS.id, all_balances.vega_time DESC", query)
 
 	// and we're calling the order and paginate query method so that we can paginate later as it is a requirement for
 	// data-node API v2, but pass no ordering columns as we've already defined the ordering we want for this query.

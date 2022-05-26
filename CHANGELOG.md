@@ -15,7 +15,7 @@
 - [590](https://github.com/vegaprotocol/data-node/pull/590) - Implement pagination for `Data-Node V2 APIs` for Trades, Parties and Markets
 - [560](https://github.com/vegaprotocol/data-node/issues/560) - Implement pagination for `Data-Node V2 APIs` for Orders
 - [562](https://github.com/vegaprotocol/data-node/issues/560) - Implement pagination for `Data-Node V2 APIs` for Margin Levels
-- [](https://github.com/vegaprotocol/data-node/issues/xxx) -
+- [630](https://github.com/vegaprotocol/data-node/issues/630) - Data retention across all historical data tables
 
 ### 🐛 Fixes
 - [616](https://github.com/vegaprotocol/data-node/pull/616) - Don't return multiple delegations per epoch/party/node
