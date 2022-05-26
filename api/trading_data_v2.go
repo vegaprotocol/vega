@@ -440,7 +440,7 @@ func (t *tradingDataServiceV2) GetERC20MultiSigSignerRemovedBundles(ctx context.
 	}, nil
 }
 
-func (t *tradingDataServiceV2) GetERC20AssetBundle(ctx context.Context, req *v2.GetERC20AssetBundleRequest) (*v2.GetERC20AssetBundleResponse, error) {
+func (t *tradingDataServiceV2) GetERC20ListAssetBundle(ctx context.Context, req *v2.GetERC20ListAssetBundleRequest) (*v2.GetERC20ListAssetBundleResponse, error) {
 	if len(req.AssetId) <= 0 {
 		return nil, ErrMissingAssetID
 	}
@@ -482,7 +482,7 @@ func (t *tradingDataServiceV2) GetERC20AssetBundle(ctx context.Context, req *v2.
 		return nil, fmt.Errorf("invalid erc20 token contract address")
 	}
 
-	return &v2.GetERC20AssetBundleResponse{
+	return &v2.GetERC20ListAssetBundleResponse{
 		AssetSource: address,
 		Nonce:       req.AssetId,
 		VegaAssetId: asset.ID.String(),
