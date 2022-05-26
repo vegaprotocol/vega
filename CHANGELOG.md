@@ -9,7 +9,7 @@
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 ### 🛠 Improvements
-- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+- [5415](https://github.com/vegaprotocol/vega/issues/5415) - Regenerate smart contracts code
 
 ### 🐛 Fixes
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -

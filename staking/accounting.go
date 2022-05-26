@@ -9,7 +9,7 @@ import (
 
 	vgproto "code.vegaprotocol.io/protos/vega"
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
-	"code.vegaprotocol.io/vega/assets/erc20"
+	"code.vegaprotocol.io/vega/contracts/erc20"
 	"code.vegaprotocol.io/vega/events"
 	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/logging"

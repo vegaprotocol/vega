@@ -7,7 +7,7 @@ import (
 	"sync"
 	"time"
 
-	"code.vegaprotocol.io/vega/bridges/multisig"
+	multisig "code.vegaprotocol.io/vega/contracts/multisig_control"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
 
@@ -80,7 +80,7 @@ func (o *OnChainVerifier) CheckSignerEvent(event *types.SignerEvent) error {
 		)
 	}
 
-	filterer, err := multisig.NewMultiSigControlFilterer(
+	filterer, err := multisig.NewMultisigControlFilterer(
 		o.multiSigAddress,
 		o.ethClient,
 	)
@@ -116,7 +116,7 @@ func (o *OnChainVerifier) CheckThresholdSetEvent(
 		)
 	}
 
-	filterer, err := multisig.NewMultiSigControlFilterer(
+	filterer, err := multisig.NewMultisigControlFilterer(
 		o.multiSigAddress,
 		o.ethClient,
 	)
@@ -166,7 +166,7 @@ func (o *OnChainVerifier) CheckThresholdSetEvent(
 
 func (o *OnChainVerifier) filterSignerAdded(
 	ctx context.Context,
-	filterer *multisig.MultiSigControlFilterer,
+	filterer *multisig.MultisigControlFilterer,
 	event *types.SignerEvent,
 ) error {
 	iter, err := filterer.FilterSignerAdded(
@@ -206,7 +206,7 @@ func (o *OnChainVerifier) filterSignerAdded(
 
 func (o *OnChainVerifier) filterSignerRemoved(
 	ctx context.Context,
-	filterer *multisig.MultiSigControlFilterer,
+	filterer *multisig.MultisigControlFilterer,
 	event *types.SignerEvent,
 ) error {
 	iter, err := filterer.FilterSignerRemoved(
