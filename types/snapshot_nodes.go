@@ -383,6 +383,7 @@ type LimitState struct {
 
 type EquityShare struct {
 	Mvp                 num.Decimal
+	PMvp                num.Decimal
 	R                   num.Decimal
 	OpeningAuctionEnded bool
 	Lps                 []*EquityShareLP
@@ -2307,15 +2308,19 @@ func (m MatchingBook) IntoProto() *snapshot.MatchingBook {
 }
 
 func EquityShareFromProto(es *snapshot.EquityShare) *EquityShare {
-	var mvp, r num.Decimal
+	var mvp, r, pMvp num.Decimal
 	if len(es.Mvp) > 0 {
 		mvp, _ = num.DecimalFromString(es.Mvp)
 	}
 	if len(es.R) > 0 {
 		r, _ = num.DecimalFromString(es.R)
 	}
+	if len(es.PMvp) > 0 {
+		pMvp, _ = num.DecimalFromString(es.PMvp)
+	}
 	ret := EquityShare{
 		Mvp:                 mvp,
+		PMvp:                pMvp,
 		R:                   r,
 		OpeningAuctionEnded: es.OpeningAuctionEnded,
 		Lps:                 make([]*EquityShareLP, 0, len(es.Lps)),
@@ -2329,6 +2334,7 @@ func EquityShareFromProto(es *snapshot.EquityShare) *EquityShare {
 func (e EquityShare) IntoProto() *snapshot.EquityShare {
 	ret := snapshot.EquityShare{
 		Mvp:                 e.Mvp.String(),
+		PMvp:                e.PMvp.String(),
 		R:                   e.R.String(),
 		OpeningAuctionEnded: e.OpeningAuctionEnded,
 		Lps:                 make([]*snapshot.EquityShareLP, 0, len(e.Lps)),
