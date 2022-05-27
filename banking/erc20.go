@@ -34,6 +34,7 @@ func (e *Engine) EnableERC20(
 		hash:        txHash,
 	}
 	e.assetActs[aa.id] = aa
+	e.bss.changedAssetActions = true
 	return e.witness.StartCheck(aa, e.onCheckDone, e.currentTime.Add(defaultValidationDuration))
 }
 
