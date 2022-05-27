@@ -9,6 +9,7 @@
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 ### 🛠 Improvements
+- [5415](https://github.com/vegaprotocol/vega/issues/5421) - Fix notary snapshot determinism when no signature are generated yet
 - [5415](https://github.com/vegaprotocol/vega/issues/5415) - Regenerate smart contracts code
 
 ### 🐛 Fixes
