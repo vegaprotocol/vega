@@ -20,6 +20,7 @@
 - [632](https://github.com/vegaprotocol/data-node/issues/632) - Rename method for listing asset bundle
 - [609](https://github.com/vegaprotocol/data-node/issues/609) - Add fields related to network limit for ERC20 asset
 - [609](https://github.com/vegaprotocol/data-node/issues/384) - Migrate node data to V2
+- [635](https://github.com/vegaprotocol/data-node/issues/635) - V2 code path returns only nodes that exist in a particular epoch
 - [590](https://github.com/vegaprotocol/data-node/pull/590) - Implement pagination for `Data-Node V2 APIs` for Trades, Parties and Markets
 - [560](https://github.com/vegaprotocol/data-node/issues/560) - Implement pagination for `Data-Node V2 APIs` for Orders
 - [562](https://github.com/vegaprotocol/data-node/issues/560) - Implement pagination for `Data-Node V2 APIs` for Margin Levels

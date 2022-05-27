@@ -481,6 +481,14 @@ CREATE TABLE IF NOT EXISTS nodes (
   PRIMARY KEY(id)
 );
 
+
+CREATE TABLE IF NOT EXISTS nodes_announced (
+  node_id               BYTEA NOT NULL,
+  epoch_seq             BIGINT NOT NULL,
+  added                 BOOLEAN NOT NULL,
+  PRIMARY KEY(node_id, epoch_seq)
+);
+
 CREATE TYPE validator_node_status as enum(
   'VALIDATOR_NODE_STATUS_UNSPECIFIED',
   'VALIDATOR_NODE_STATUS_TENDERMINT',
@@ -1008,6 +1016,7 @@ DROP TABLE IF EXISTS reward_scores;
 DROP TYPE IF EXISTS validator_node_status;
 
 DROP TABLE IF EXISTS nodes;
+DROP TABLE IF EXISTS nodes_announced;
 DROP TYPE IF EXISTS node_status;
 
 DROP VIEW IF EXISTS markets_current;

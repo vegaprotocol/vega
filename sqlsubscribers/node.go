@@ -31,6 +31,7 @@ type NodeStore interface {
 	UpsertRanking(context.Context, *entities.RankingScore, *entities.RankingScoreAux) error
 	UpsertScore(context.Context, *entities.RewardScore, *entities.RewardScoreAux) error
 	UpdatePublicKey(context.Context, *entities.KeyRotation) error
+	AddNodeAnnoucedEvent(context.Context, entities.NodeID, *entities.ValidatorUpdateAux) error
 }
 
 type Node struct {
@@ -66,26 +67,28 @@ func (n *Node) Push(ctx context.Context, evt events.Event) error {
 }
 
 func (n *Node) consumeUpdate(ctx context.Context, event ValidatorUpdateEvent) error {
-	node, _, err := entities.NodeFromValidatorUpdateEvent(event.ValidatorUpdate(), n.vegaTime)
-
+	node, aux, err := entities.NodeFromValidatorUpdateEvent(event.ValidatorUpdate(), n.vegaTime)
 	if err != nil {
 		return errors.Wrap(err, "converting validator update event proto to database entity failed")
 	}
 
-	return errors.Wrap(n.store.UpsertNode(ctx, &node), "inserting node to SQL store failed")
+	if err := errors.Wrap(n.store.UpsertNode(ctx, &node), "inserting node to SQL store failed"); err != nil {
+		return err
+	}
+	return errors.Wrap(n.store.AddNodeAnnoucedEvent(ctx, node.ID, &aux), "inserting node to SQL store failed")
 }
+
 func (n *Node) consumeRankingScore(ctx context.Context, event ValidatorRankingScoreEvent) error {
 	ranking, aux, err := entities.RankingScoreFromRankingEvent(event.ValidatorRankingEvent(), n.vegaTime)
-
 	if err != nil {
 		return errors.Wrap(err, "converting ranking score event proto to database entity failed")
 	}
 
 	return errors.Wrap(n.store.UpsertRanking(ctx, &ranking, &aux), "inserting ranking score to SQL store failed")
 }
+
 func (n *Node) consumeRewardScore(ctx context.Context, event ValidatorRewardScoreEvent) error {
 	reward, aux, err := entities.RewardScoreFromScoreEvent(event.ValidatorScoreEvent(), n.vegaTime)
-
 	if err != nil {
 		return errors.Wrap(err, "converting reward score event proto to database entity failed")
 	}
