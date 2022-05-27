@@ -25,6 +25,7 @@
 - [560](https://github.com/vegaprotocol/data-node/issues/560) - Implement pagination for `Data-Node V2 APIs` for Orders
 - [562](https://github.com/vegaprotocol/data-node/issues/560) - Implement pagination for `Data-Node V2 APIs` for Margin Levels
 - [630](https://github.com/vegaprotocol/data-node/issues/630) - Data retention across all historical data tables
+- [427](https://github.com/vegaprotocol/data-node/issues/427) - Handle recovery from snapshots 
 
 ### 🐛 Fixes
 - [616](https://github.com/vegaprotocol/data-node/pull/616) - Don't return multiple delegations per epoch/party/node
