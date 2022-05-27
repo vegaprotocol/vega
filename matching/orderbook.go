@@ -444,6 +444,10 @@ func (b *OrderBook) GetIndicativeTrades() ([]*types.Trade, error) {
 		if err != nil {
 			return nil, err
 		}
+		// Update all the trades to have the correct uncrossing price
+		for index := 0; index < len(trades); index++ {
+			trades[index].Price = price.Clone()
+		}
 		output = append(output, trades...)
 	}
 

@@ -38,6 +38,7 @@
 - [3362](https://github.com/vegaprotocol/vega/issues/3362) - Stop non-persistent orders from triggering auctions
 - [5388](https://github.com/vegaprotocol/vega/issues/5388) - Use `UnixNano()` to snapshot price monitor times
 - [5237](https://github.com/vegaprotocol/vega/issues/5237) - Trigger state variable calculation first time indicative uncrossing price is available
+- [5397](https://github.com/vegaprotocol/vega/issues/5397) - Bring indicative trades price inline with that of actual auction uncrossing trades
 
 ## 0.51.0
 
