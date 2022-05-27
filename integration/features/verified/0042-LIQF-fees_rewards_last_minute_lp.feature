@@ -63,14 +63,6 @@ Feature: Test if a LP comes in the last second before LP fee gets distributed.li
       | sell | 1100  | 1      |
       | sell | 1001  | 14     |
 
-    #volume = ceiling(liquidity_obligation x liquidity-normalised-proportion / probability_of_trading / price)
-    #for any price better than the bid price or better than the ask price it returns 0.5
-    #for any price in within 500 price ticks from the best bid/ask (i.e. worse than) it returns the probability as returned by the risk model (in this case 0.1 scaled by 0.5.
-    #priceLvel at 898:10000*(1/3)/0.05/898=74.23
-    #priceLvel at 999:10000*(2/3)/0.5/999=13.34
-    #priceLvel at 1102:10000*(1/3)/0.05/1102=60.49
-    #priceLvel at 1001:10000*(2/3)/0.5/1001=13.32
-
     And the liquidity provider fee shares for the market "ETH/MAR22" should be:
       | party | equity like share | average entry valuation |
       | lp1   | 1                 | 10000                   |
