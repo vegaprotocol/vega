@@ -172,7 +172,10 @@ func testObserveTradesSuccess(t *testing.T) {
 	svc.trade.EXPECT().Unsubscribe(ref).Times(1).Return(nil).Do(func(_ uint64) {
 		wg.Done()
 	})
-	ch, rref := svc.ObserveTrades(ctx, 0, nil, nil)
+
+	// we need to set retries because *sometimes* `ObserveTrades` can get to the point where
+	// it is trying to write `ch`` before we get to the line below where we start reading from it
+	ch, rref := svc.ObserveTrades(ctx, 1, nil, nil)
 	// wait for data on channel
 	gotTrades := <-ch
 	// ensure we got the data we expected
