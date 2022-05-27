@@ -13,8 +13,9 @@ import (
 
 	typespb "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/assets/common"
-	"code.vegaprotocol.io/vega/assets/erc20/bridge"
 	"code.vegaprotocol.io/vega/bridges"
+	"code.vegaprotocol.io/vega/contracts/erc20"
+	bridge "code.vegaprotocol.io/vega/contracts/erc20_bridge_logic_restricted"
 	vgerrors "code.vegaprotocol.io/vega/libs/errors"
 	"code.vegaprotocol.io/vega/metrics"
 	ethnw "code.vegaprotocol.io/vega/nodewallets/eth"
@@ -97,7 +98,7 @@ func (e *ERC20) SetValidNonValidator() {
 }
 
 func (e *ERC20) Validate() error {
-	t, err := NewErc20(ethcommon.HexToAddress(e.address), e.ethClient)
+	t, err := erc20.NewErc20(ethcommon.HexToAddress(e.address), e.ethClient)
 	if err != nil {
 		return err
 	}
@@ -161,7 +162,8 @@ func (e *ERC20) SignBridgeListing() (msg []byte, sig []byte, err error) {
 }
 
 func (e *ERC20) ValidateAssetList(w *types.ERC20AssetList, blockNumber, txIndex uint64) error {
-	bf, err := bridge.NewBridgeFilterer(e.ethClient.CollateralBridgeAddress(), e.ethClient)
+	bf, err := bridge.NewErc20BridgeLogicRestrictedFilterer(
+		e.ethClient.CollateralBridgeAddress(), e.ethClient)
 	if err != nil {
 		return err
 	}
@@ -187,7 +189,7 @@ func (e *ERC20) ValidateAssetList(w *types.ERC20AssetList, blockNumber, txIndex 
 	}
 
 	defer iter.Close()
-	var event *bridge.BridgeAssetListed
+	var event *bridge.Erc20BridgeLogicRestrictedAssetListed
 
 	assetID := strings.TrimPrefix(w.VegaAssetID, "0x")
 	for iter.Next() {
@@ -228,7 +230,8 @@ func (e *ERC20) SignWithdrawal(
 }
 
 func (e *ERC20) ValidateWithdrawal(w *types.ERC20Withdrawal, blockNumber, txIndex uint64) (*big.Int, string, uint, error) {
-	bf, err := bridge.NewBridgeFilterer(e.ethClient.CollateralBridgeAddress(), e.ethClient)
+	bf, err := bridge.NewErc20BridgeLogicRestrictedFilterer(
+		e.ethClient.CollateralBridgeAddress(), e.ethClient)
 	if err != nil {
 		return nil, "", 0, err
 	}
@@ -255,7 +258,7 @@ func (e *ERC20) ValidateWithdrawal(w *types.ERC20Withdrawal, blockNumber, txInde
 	}
 
 	defer iter.Close()
-	var event *bridge.BridgeAssetWithdrawn
+	var event *bridge.Erc20BridgeLogicRestrictedAssetWithdrawn
 	nonce := &big.Int{}
 	_, ok := nonce.SetString(w.ReferenceNonce, 10)
 	if !ok {
@@ -284,7 +287,8 @@ func (e *ERC20) ValidateWithdrawal(w *types.ERC20Withdrawal, blockNumber, txInde
 }
 
 func (e *ERC20) ValidateDeposit(d *types.ERC20Deposit, blockNumber, txIndex uint64) error {
-	bf, err := bridge.NewBridgeFilterer(e.ethClient.CollateralBridgeAddress(), e.ethClient)
+	bf, err := bridge.NewErc20BridgeLogicRestrictedFilterer(
+		e.ethClient.CollateralBridgeAddress(), e.ethClient)
 	if err != nil {
 		return err
 	}
@@ -312,7 +316,7 @@ func (e *ERC20) ValidateDeposit(d *types.ERC20Deposit, blockNumber, txIndex uint
 
 	depamount := d.Amount.BigInt()
 	defer iter.Close()
-	var event *bridge.BridgeAssetDeposited
+	var event *bridge.Erc20BridgeLogicRestrictedAssetDeposited
 	targetPartyID := strings.TrimPrefix(d.TargetPartyID, "0x")
 	for iter.Next() {
 		if hex.EncodeToString(iter.Event.VegaPublicKey[:]) == targetPartyID &&
