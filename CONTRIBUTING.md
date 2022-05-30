@@ -8,7 +8,7 @@ Please read the [Code of Conduct](./CODE_OF_CONDUCT.md); it is expected all proj
 
 ### Open development
 
-The Vega project team development follows the Vega Protocol [engineering roadmap](https://github.com/vegaprotocol/roadmap). All engineering work happens directly in GitHub. Bugs committed to be resolved are triaged, assigned to a developer and are in the current, or next, iteration. This can be seen on the [team project board](https://github.com/orgs/vegaprotocol/projects/106/views/4). 
+The project development follows the Vega Protocol [engineering roadmap](https://github.com/vegaprotocol/roadmap). All engineering work happens directly in GitHub. Bugs committed to be resolved are triaged, assigned to a developer and are in the current, or next, iteration. This can be seen on the [team project board](https://github.com/orgs/vegaprotocol/projects/106/views/4). 
 
 Other bugs are fair game, however, if you are not familiar with the project get up-to-speed with the: 
 
@@ -22,7 +22,7 @@ Once up-to-speed with the protocol, fork the repositories (as per the [git workf
 
 ### Contributing to the project
 
-Create an issue for the feature, bugfix or enhancement. Assign yourself. Start a discussion, pull in relevant people, build a technical design.
+Create an issue for the feature, bugfix or enhancement and assign to yourself. Start a discussion, pull in relevant people and build a technical design.
 
 If possible, issues should be linked back to a feature in the protocol specs repo.
 
@@ -34,9 +34,7 @@ If possible, issues should be linked back to a feature in the protocol specs rep
 - When the change has been sufficiently self-tested file a pull request with the main repository
 - Ask for review on Discord, discuss suggestions and get the branch merged.
 
-This flow allows the project team to know that an update is ready to be integrated.
-
-**Pairing and early review is highly encouraged.**
+This flow allows the project team to know that an update is ready to be integrated. **Pairing and early review is highly encouraged.**
 
 > Policy: If work is being started on a new engine, have a short workshop so that questions (on technical implementation) can be asked. The output of the workshop is a README, to go in the engine subdirectory, containing the questions and answers that came up during the workshop.
 
