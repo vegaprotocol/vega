@@ -25,7 +25,7 @@ If possible, issues should be linked back to a feature in the protocol specs rep
 - Fork the repositories required
 - Perform a `git clone` to get a copy on your local machine
 - When ready publish a local commit to your own public repository
-- When the change has been sufficantly self-tested file a pull request with the main repository
+- When the change has been sufficiently self-tested file a pull request with the main repository
 - Ask for review on Discord, discuss suggestions and get the branch merged.
 
 This flow allows the project team to know that an update is ready to be integrated.
@@ -44,6 +44,6 @@ All software development work should be tested locally and at a bare minimum uni
 
 #### Before merge
 
-Before code changes are accepted the project team will conduct a ful code review.
+Before code changes are accepted the project team will conduct a full code review.
 
 > Policy: For contributors outside of the project team before any pull requests can be accepted you will need to sign a Contributor Licence Agreement (CLA) or something similar.

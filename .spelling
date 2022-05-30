@@ -13,6 +13,7 @@ assetActions
 async
 barnabee
 base64
+behaviour
 blockchain
 Buf
 CGO
@@ -70,6 +71,7 @@ mutex
 mutexes
 nodewallet
 notarising
+phish
 Prometheus
 proto
 protobuf

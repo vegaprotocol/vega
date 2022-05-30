@@ -106,4 +106,4 @@ There is also a `Makefile` which contain the above commands and also some other 
 
 With vega built it is technically possible to run the node locally, but it is a bit cumbersome. The steps are here if you are feeling brave: https://github.com/vegaprotocol/networks
 
-An alternative is to use `VegaCapsule` (VC) which will allow you to confuigure and run a network locally. For more information and  detailed information to get started see the [VC repo](https://github.com/vegaprotocol/vegacapsule)
+An alternative is to use `VegaCapsule` (VC) which will allow you to configure and run a Vega network locally. For more information and  detailed information to get started see the [VC repo](https://github.com/vegaprotocol/vegacapsule)
