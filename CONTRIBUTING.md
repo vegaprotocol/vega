@@ -10,7 +10,13 @@ Please read the [Code of Conduct](./CODE_OF_CONDUCT.md); it is expected all proj
 
 The Vega project team development follows the Vega Protocol [engineering roadmap](https://github.com/vegaprotocol/roadmap). All engineering work happens directly in GitHub. Bugs committed to be resolved are triaged, assigned to a developer and are in the current, or next, iteration. This can be seen on the [team project board](https://github.com/orgs/vegaprotocol/projects/106/views/4). 
 
-Other bugs are fair game, however, if you are not familiar with the project get up-to-speed with the [white papers](https://vega.xyz/papers/), [protocol specifications](https://github.com/vegaprotocol/specs), current [documentation](https://docs.vega.xyz/) and ask in [Discord](https://discord.com/invite/3hQyGgZ) or [Discussions](https://github.com/vegaprotocol/feedback) before working on a particular bug.
+Other bugs are fair game, however, if you are not familiar with the project get up-to-speed with the: 
+
+- [White papers](https://vega.xyz/papers/)
+- [Protocol specifications](https://github.com/vegaprotocol/specs)
+- [Documentation](https://docs.vega.xyz/)
+
+Also ask in [Discord](https://discord.com/invite/3hQyGgZ) or [Discussions](https://github.com/vegaprotocol/feedback) before working on a particular bug.
 
 Once up-to-speed with the protocol, fork the repositories (as per the [git workflow](./CONTRIBUTING.md#git-workflow)) and get set up using the [getting started](./GETTING_STARTED.md) information.
 
