@@ -1,10 +1,12 @@
 Feature: Set up a market, create indiciative price different to actual opening auction uncross price
 
   Background:
-
+    Given the simple risk model named "my-simple-risk-model":
+      | long | short | max move up | min move down | probability of trading |
+      | 0.1  | 0.1   | 2           | -3            | 0.2                    |
     Given the markets:
-      | id        | quote name | asset | risk model                  | margin calculator         | auction duration | fees         | price monitoring | oracle config          |
-      | ETH/DEC19 | BTC        | BTC   | default-simple-risk-model-4 | default-margin-calculator | 5                | default-none | default-basic    | default-eth-for-future |
+      | id        | quote name | asset | risk model           | margin calculator         | auction duration | fees         | price monitoring | oracle config          |
+      | ETH/DEC19 | BTC        | BTC   | my-simple-risk-model | default-margin-calculator | 5                | default-none | default-basic    | default-eth-for-future |
     And the following network parameters are set:
       | name                               | value |
       | market.auction.minimumDuration     | 5     |
@@ -96,7 +98,7 @@ Feature: Set up a market, create indiciative price different to actual opening a
       #| party1 | BTC   | ETH/DEC19 | 30241  | 0       |
     And the market data for the market "ETH/DEC19" should be:
       | mark price | trading mode            | horizon | min bound | max bound | ref price |
-      | 10000      | TRADING_MODE_CONTINUOUS | 5       | 9999      | 9999      | 10000     |
+      | 10000      | TRADING_MODE_CONTINUOUS | 5       | 7000      | 12000     | 10000     |
 
   @OpenIP
   Scenario: Same test as above, but without the initial indicative price/volume
@@ -161,7 +163,7 @@ Feature: Set up a market, create indiciative price different to actual opening a
       #| party1 | BTC   | ETH/DEC19 | 30241  | 0       |
     And the market data for the market "ETH/DEC19" should be:
       | mark price | trading mode            | horizon | min bound | max bound | ref price |
-      | 10000      | TRADING_MODE_CONTINUOUS | 5       | 9999      | 9999      | 10000     |
+      | 10000      | TRADING_MODE_CONTINUOUS | 5       | 9997      | 10002     | 10000     |
 
   @OpenIPT
   Scenario: Simple test with different indicative price before auction uncross
@@ -241,8 +243,7 @@ Feature: Set up a market, create indiciative price different to actual opening a
       #| party1 | BTC   | ETH/DEC19 | 30241  | 0       |
     And the market data for the market "ETH/DEC19" should be:
       | mark price | trading mode            | horizon | min bound | max bound | ref price |
-      | 10000      | TRADING_MODE_CONTINUOUS | 5       | 9999      | 9999      | 10000     |
-
+      | 10000      | TRADING_MODE_CONTINUOUS | 5       | 7000      | 12000     | 10000     |
 
   @OpenIPO
   Scenario: Same again, but higher indicative price
@@ -328,5 +329,5 @@ Feature: Set up a market, create indiciative price different to actual opening a
       #| party1 | BTC   | ETH/DEC19 | 30241  | 0       |
     And the market data for the market "ETH/DEC19" should be:
       | mark price | trading mode            | horizon | min bound | max bound | ref price |
-      | 10000      | TRADING_MODE_CONTINUOUS | 5       | 9999      | 9999      | 10000     |
+      | 10000      | TRADING_MODE_CONTINUOUS | 5       | 9998      | 10001     | 10000     |
 

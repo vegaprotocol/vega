@@ -232,4 +232,4 @@ Feature: Replicate issue 3528, where price monitoring continuously extended liqu
     # price auction ends as expected event though uncrossing price is outwith the previous bounds (price extension can be called at most once per trigger)
     Then the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            | auction trigger             | extension trigger           | horizon | min bound | max bound | target stake | supplied stake | open interest | auction end |
-      | 1025       | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | AUCTION_TRIGGER_UNSPECIFIED | 1       | 1016      | 1034      | 2050         | 10000          | 20            | 0           |
+      | 1025       | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | AUCTION_TRIGGER_UNSPECIFIED | 1       | 1015      | 1035      | 2050         | 10000          | 20            | 0           |
