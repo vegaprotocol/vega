@@ -291,7 +291,6 @@ func (t *Topology) restore(ctx context.Context, topology *types.Topology) error 
 
 	t.currentBlockHeight = uint64(bh)
 	t.validatorPowerUpdates = vUpdates
-	t.newEpochStarted = true
 	t.chainValidators = topology.ChainValidators[:]
 	t.restorePendingKeyRotations(ctx, topology.PendingPubKeyRotations)
 	t.restorePendingEthereumKeyRotations(ctx, topology.PendingEthereumKeyRotations)
@@ -304,6 +303,9 @@ func (t *Topology) restore(ctx context.Context, topology *types.Topology) error 
 func (t *Topology) OnEpochRestore(_ context.Context, epoch types.Epoch) {
 	t.log.Debug("epoch restoration notification received", logging.String("epoch", epoch.String()))
 	t.epochSeq = epoch.Seq
-	t.newEpochStarted = true
+	// we always take at snapshot at commit-time after the end of a block, so newEpochStarted will always be false when we restore because either
+	// 1) we aren't at the start of an epoch and so newEpochStarted is obviously false
+	// 2) we are at the start of an epoch, but at the end of the block *before* we take the snapshot we reset the powers and set newEpochStarted to false
+	t.newEpochStarted = false
 	t.rng = rand.New(rand.NewSource(epoch.StartTime.Unix()))
 }

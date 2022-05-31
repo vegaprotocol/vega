@@ -166,6 +166,14 @@ func (n *SnapshotNotary) serialiseNotary() ([]byte, error) {
 	}
 
 	sort.SliceStable(sigs, func(i, j int) bool {
+		// sigs could be "" so we need to sort on ID as well
+		switch strings.Compare(sigs[i].ID, sigs[j].ID) {
+		case -1:
+			return true
+		case 1:
+			return false
+		}
+
 		return sigs[i].Sig < sigs[j].Sig
 	})
 

@@ -673,6 +673,7 @@ func (e *Engine) AddVote(ctx context.Context, cmd types.VoteSubmission, party st
 		)
 	}
 
+	e.gss.changed[activeKey] = true
 	e.broker.Send(events.NewVoteEvent(ctx, vote))
 	return nil
 }
