@@ -190,7 +190,7 @@ func (es *EquityShares) AvgEntryValuation(id string) num.Decimal {
 		avg := v.vStake.Mul(es.totalPStake.Div(es.totalVStake))
 		if !avg.Equal(v.avg) {
 			v.avg = avg
-			e.stateChanged = true
+			es.stateChanged = true
 		}
 		return v.avg
 	}
@@ -229,7 +229,7 @@ func (es *EquityShares) AllShares() map[string]num.Decimal {
 
 // SharesFromParty returns the equity-like shares of a given party on the market.
 func (es *EquityShares) SharesFromParty(party string) num.Decimal {
-	eq, err := es.equity(id)
+	eq, err := es.equity(party)
 	if err != nil {
 		panic(err)
 	}

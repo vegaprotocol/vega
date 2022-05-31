@@ -30,7 +30,7 @@ func NewEquitySharesFromSnapshot(state *types.EquityShare) *EquityShares {
 			avg:    slp.Avg,
 			vStake: slp.VStake,
 		}
-		totalV = total.Add(slp.VStake)
+		totalV = totalV.Add(slp.VStake)
 		totalP = totalP.Add(slp.Stake)
 	}
 
