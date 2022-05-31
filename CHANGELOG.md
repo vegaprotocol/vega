@@ -24,6 +24,7 @@
 - [590](https://github.com/vegaprotocol/data-node/pull/590) - Implement pagination for `Data-Node V2 APIs` for Trades, Parties and Markets
 - [560](https://github.com/vegaprotocol/data-node/issues/560) - Implement pagination for `Data-Node V2 APIs` for Orders
 - [562](https://github.com/vegaprotocol/data-node/issues/560) - Implement pagination for `Data-Node V2 APIs` for Margin Levels
+- [621](https://github.com/vegaprotocol/data-node/issues/621) - Reserve database connection for data ingestion
 - [630](https://github.com/vegaprotocol/data-node/issues/630) - Data retention across all historical data tables
 - [427](https://github.com/vegaprotocol/data-node/issues/427) - Handle recovery from snapshots 
 

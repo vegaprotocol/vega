@@ -26,6 +26,7 @@ type SqlStoreEventBroker interface {
 }
 
 type TransactionManager interface {
+	WithConnection(ctx context.Context) (context.Context, error)
 	WithTransaction(ctx context.Context) (context.Context, error)
 	Commit(ctx context.Context) error
 }
@@ -83,8 +84,13 @@ func (b *sqlStoreBroker) Receive(ctx context.Context) error {
 		return err
 	}
 
+	dbContext, err := b.transactionManager.WithConnection(context.Background())
+	if err != nil {
+		return err
+	}
+
 	for {
-		if nextBlock, err = b.processBlock(ctx, nextBlock, receiveCh, errCh); err != nil {
+		if nextBlock, err = b.processBlock(ctx, dbContext, nextBlock, receiveCh, errCh); err != nil {
 			return err
 		}
 	}
@@ -134,7 +140,7 @@ func (b *sqlStoreBroker) waitForFirstBlock(ctx context.Context, errCh <-chan err
 }
 
 // processBlock processes all events in the current block up to the next time update.  The next time block is returned when processing of the block is done.
-func (b *sqlStoreBroker) processBlock(ctx context.Context, block *entities.Block, eventsCh <-chan events.Event, errCh <-chan error) (*entities.Block, error) {
+func (b *sqlStoreBroker) processBlock(ctx context.Context, dbContext context.Context, block *entities.Block, eventsCh <-chan events.Event, errCh <-chan error) (*entities.Block, error) {
 
 	metrics.BlockCounterInc()
 
@@ -146,7 +152,7 @@ func (b *sqlStoreBroker) processBlock(ctx context.Context, block *entities.Block
 	// by e.g. a shutdown request then let the last database operation complete.
 	var blockCtx context.Context
 	var cancel context.CancelFunc
-	blockCtx, cancel = context.WithTimeout(context.Background(), b.config.BlockProcessingTimeout.Duration)
+	blockCtx, cancel = context.WithTimeout(dbContext, b.config.BlockProcessingTimeout.Duration)
 	defer cancel()
 
 	blockCtx, err := b.transactionManager.WithTransaction(blockCtx)
