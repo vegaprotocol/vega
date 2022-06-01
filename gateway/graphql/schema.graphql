@@ -2985,7 +2985,7 @@ type Reward {
   "The market for which this reward is paid if any"
   marketID: String!
   "The type of reward"
-  rewardType: String!
+  rewardType: AccountType!
   "Party receiving the reward"
   party: Party!
   "Epoch for which this reward was distributed"

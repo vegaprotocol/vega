@@ -1603,6 +1603,7 @@ type RecurringTransferResolver interface {
 type RewardResolver interface {
 	Asset(ctx context.Context, obj *vega.Reward) (*vega.Asset, error)
 
+	RewardType(ctx context.Context, obj *vega.Reward) (vega.AccountType, error)
 	Party(ctx context.Context, obj *vega.Reward) (*vega.Party, error)
 	Epoch(ctx context.Context, obj *vega.Reward) (*vega.Epoch, error)
 
@@ -10114,7 +10115,7 @@ type Reward {
   "The market for which this reward is paid if any"
   marketID: String!
   "The type of reward"
-  rewardType: String!
+  rewardType: AccountType!
   "Party receiving the reward"
   party: Party!
   "Epoch for which this reward was distributed"
@@ -31413,14 +31414,14 @@ func (ec *executionContext) _Reward_rewardType(ctx context.Context, field graphq
 		Object:     "Reward",
 		Field:      field,
 		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
+		IsMethod:   true,
+		IsResolver: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.RewardType, nil
+		return ec.resolvers.Reward().RewardType(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -31432,9 +31433,9 @@ func (ec *executionContext) _Reward_rewardType(ctx context.Context, field graphq
 		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(vega.AccountType)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNAccountType2codeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐAccountType(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Reward_party(ctx context.Context, field graphql.CollectedField, obj *vega.Reward) (ret graphql.Marshaler) {
@@ -48681,15 +48682,25 @@ func (ec *executionContext) _Reward(ctx context.Context, sel ast.SelectionSet, o
 				atomic.AddUint32(&invalids, 1)
 			}
 		case "rewardType":
+			field := field
+
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._Reward_rewardType(ctx, field, obj)
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Reward_rewardType(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
 			}
 
-			out.Values[i] = innerFunc(ctx)
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
 
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
-			}
+			})
 		case "party":
 			field := field
 
