@@ -173,6 +173,7 @@ func (es *EquityShares) SetPartyStake(id string, newStakeU *num.Uint) {
 	// delta will allways be > 0 at this point
 	if es.openingAuctionEnded {
 		eq := es.mustEquity(id)
+		v.share = eq
 		// v.avg = ((eq * v.avg) + (delta * es.mvp)) / (eq + v.stake)
 		v.avg = (eq.Mul(v.avg).Add(delta.Mul(es.mvp))).Div(eq.Add(v.stake))
 	}
@@ -240,7 +241,7 @@ func (es *EquityShares) SharesFromParty(party string) num.Decimal {
 // the ones listed in parameter.
 func (es *EquityShares) SharesExcept(except map[string]struct{}) map[string]num.Decimal {
 	shares := make(map[string]num.Decimal, len(es.lps)-len(except))
-	for id := range es.lps {
+	for id, v := range es.lps {
 		if _, ok := except[id]; ok {
 			continue
 		}
@@ -249,6 +250,10 @@ func (es *EquityShares) SharesExcept(except map[string]struct{}) map[string]num.
 			panic(err)
 		}
 		shares[id] = eq
+		if !v.share.Equals(eq) {
+			v.share = eq
+			es.stateChanged = true
+		}
 	}
 	return shares
 }

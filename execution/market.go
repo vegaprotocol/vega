@@ -560,6 +560,8 @@ func (m *Market) GetMarketData() types.MarketData {
 			b.MinValidPrice.AddSum(one) // ceil
 		}
 	}
+	// ensure equity share values are set
+	_ = m.equityShares.AllShares()
 
 	return types.MarketData{
 		Market:                    m.GetID(),
