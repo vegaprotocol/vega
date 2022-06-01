@@ -20,9 +20,7 @@ func TestConversions(t *testing.T) {
 	p := &types.PayloadProofOfWork{
 		BlockHeight:   []uint64{100, 101, 102},
 		BlockHash:     []string{"94A9CB1532011081B013CCD8E6AAA832CAB1CBA603F0C5A093B14C4961E5E7F0", "DC911C0EA95545441F3E1182DD25D973764395A7E75CBDBC086F1C6F7075AED6", "2E4F2967AA904F9A952BB4813EC6BBB3730B9FFFEC44106B89F0A1958547733C"},
-		SeenTx:        map[string]struct{}{"1": {}, "2": {}, "3": {}},
 		HeightToTx:    map[uint64][]string{100: {"1", "2"}, 101: {"3"}},
-		SeenTid:       map[string]struct{}{"100": {}, "200": {}, "300": {}},
 		HeightToTid:   map[uint64][]string{100: {"100", "200"}, 101: {"300"}},
 		BannedParties: map[string]uint64{"party1": 105, "party2": 104},
 	}
@@ -65,14 +63,6 @@ func TestConversions(t *testing.T) {
 	for i, v := range ppp.BlockHash {
 		require.Equal(t, v, pp.ProofOfWork.BlockHash[i])
 	}
-	require.Equal(t, 3, len(ppp.SeenTx))
-	require.Equal(t, p.SeenTx["1"], ppp.SeenTx["1"])
-	require.Equal(t, p.SeenTx["2"], ppp.SeenTx["2"])
-	require.Equal(t, p.SeenTx["3"], ppp.SeenTx["3"])
-	require.Equal(t, p.SeenTid["100"], ppp.SeenTid["100"])
-	require.Equal(t, p.SeenTid["200"], ppp.SeenTid["200"])
-	require.Equal(t, p.SeenTid["300"], ppp.SeenTid["300"])
-
 	require.Equal(t, 2, len(ppp.HeightToTx))
 	require.Equal(t, 2, len(ppp.HeightToTid))
 	require.Equal(t, 2, len(ppp.HeightToTx[100]))
@@ -100,6 +90,13 @@ func TestSnapshot(t *testing.T) {
 	e.OnEpochEvent(context.Background(), types.Epoch{Seq: 1, Action: vega.EpochAction_EPOCH_ACTION_START})
 	e.BeginBlock(100, "2E7A16D9EF690F0D2BEED115FBA13BA2AAA16C8F971910AD88C72B9DB010C7D4")
 
+	// add a new set of configuration which becomes active at block 101
+	e.UpdateSpamPoWNumberOfPastBlocks(context.Background(), num.NewUint(5))
+	e.UpdateSpamPoWDifficulty(context.Background(), num.NewUint(25))
+	e.UpdateSpamPoWHashFunction(context.Background(), crypto.Sha3)
+	e.UpdateSpamPoWNumberOfTxPerBlock(context.Background(), num.NewUint(2))
+	e.UpdateSpamPoWIncreasingDifficulty(context.Background(), num.NewUint(0))
+
 	party := crypto.RandomHash()
 
 	require.NoError(t, e.DeliverTx(&testTx{txID: "1", party: party, blockHeight: 100, powTxID: "DFE522E234D67E6AE3F017859F898E576B3928EA57310B765398615A0D3FDE2F", powNonce: 424517}))
@@ -126,4 +123,6 @@ func TestSnapshot(t *testing.T) {
 	state2, _, err := eLoaded.GetState(key)
 	require.NoError(t, err)
 	require.True(t, bytes.Equal(state1, state2))
+
+	require.Equal(t, 2, len(eLoaded.activeParams))
 }
