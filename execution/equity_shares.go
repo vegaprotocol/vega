@@ -96,6 +96,8 @@ func (es *EquityShares) UpdateVirtualStake() {
 		}
 		// if virtual stake doesn't change, then stateChanged shouldn't be toggled
 		es.stateChanged = (es.stateChanged || !vStake.Equals(v.vStake))
+		// update total
+		es.totalVStake = es.totalVStake.Sub(v.vStake).Add(vStake)
 		v.vStake = vStake
 	}
 }
