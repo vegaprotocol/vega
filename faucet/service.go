@@ -106,7 +106,14 @@ func NewService(log *logging.Logger, vegaPaths paths.Paths, cfg Config, passphra
 	}
 
 	f.POST("/api/v1/mint", f.Mint)
+	f.GET("/-/health", f.Health)
 	return f, nil
+}
+
+func (f *Faucet) Health(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	var healthyRespone MintResponse
+	healthyResponse = MintResponse{true}
+	writeSuccess(w, healthyResponse, http.StatusOK)
 }
 
 func (f *Faucet) Mint(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
