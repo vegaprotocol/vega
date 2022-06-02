@@ -33,6 +33,10 @@ var (
 
 	// ErrInvalidMintAmount is raised when the mint amount is too high.
 	ErrInvalidMintAmount = errors.New("mint amount is invalid")
+
+	HealthCheckResponse = struct {
+		Success bool `json:"success"`
+	}{true}
 )
 
 type Faucet struct {
@@ -106,7 +110,12 @@ func NewService(log *logging.Logger, vegaPaths paths.Paths, cfg Config, passphra
 	}
 
 	f.POST("/api/v1/mint", f.Mint)
+	f.GET("/-/v1/health", f.Health)
 	return f, nil
+}
+
+func (f *Faucet) Health(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	writeSuccess(w, HealthCheckResponse, http.StatusOK)
 }
 
 func (f *Faucet) Mint(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
