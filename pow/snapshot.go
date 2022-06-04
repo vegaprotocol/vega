@@ -116,9 +116,11 @@ func (e *Engine) LoadState(ctx context.Context, p *types.Payload) ([]types.State
 	}
 	e.activeParams = e.snapshotParamsToParams(pl.ActiveParams)
 	e.activeStates = make([]*state, 0, len(e.activeParams))
-	for _, s := range e.activeStates {
+	for i := 0; i < len(e.activeParams); i++ {
+		s := state{}
 		s.blockPartyToObservedDifficulty = map[string]uint{}
 		s.blockPartyToSeenCount = map[string]uint{}
+		e.activeStates = append(e.activeStates, &s)
 	}
 	return nil, nil
 }
