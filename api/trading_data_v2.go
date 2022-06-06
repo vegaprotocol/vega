@@ -28,6 +28,7 @@ var defaultPaginationV2 = entities.OffsetPagination{
 type tradingDataServiceV2 struct {
 	v2.UnimplementedTradingDataServiceServer
 	log                      *logging.Logger
+	v2ApiEnabled             bool
 	balanceStore             *sqlstore.Balances
 	orderStore               *sqlstore.Orders
 	networkLimitsStore       *sqlstore.NetworkLimits
@@ -43,7 +44,19 @@ type tradingDataServiceV2 struct {
 	accountStore             *sqlstore.Accounts
 }
 
+func (t *tradingDataServiceV2) checkV2ApiEnabled() error {
+	if !t.v2ApiEnabled {
+		return fmt.Errorf("this API requires V2 datanode to be enabled")
+	}
+
+	return nil
+}
+
 func (t *tradingDataServiceV2) GetBalanceHistory(ctx context.Context, req *v2.GetBalanceHistoryRequest) (*v2.GetBalanceHistoryResponse, error) {
+	if err := t.checkV2ApiEnabled(); err != nil {
+		return nil, err
+	}
+
 	if t.balanceStore == nil {
 		return nil, fmt.Errorf("sql balance store not available")
 	}
@@ -77,6 +90,10 @@ func (t *tradingDataServiceV2) GetBalanceHistory(ctx context.Context, req *v2.Ge
 }
 
 func (t *tradingDataServiceV2) GetOrdersByMarket(ctx context.Context, req *v2.GetOrdersByMarketRequest) (*v2.GetOrdersByMarketResponse, error) {
+	if err := t.checkV2ApiEnabled(); err != nil {
+		return nil, err
+	}
+
 	if t.orderStore == nil {
 		return nil, errors.New("sql order store not available")
 	}
@@ -116,6 +133,10 @@ func entityMarketDataListToProtoList(list []entities.MarketData) []*vega.MarketD
 }
 
 func (t *tradingDataServiceV2) GetMarketDataHistoryByID(ctx context.Context, req *v2.GetMarketDataHistoryByIDRequest) (*v2.GetMarketDataHistoryByIDResponse, error) {
+	if err := t.checkV2ApiEnabled(); err != nil {
+		return nil, err
+	}
+
 	if t.marketDataStore == nil {
 		return nil, errors.New("sql market data store not available")
 	}
@@ -195,6 +216,10 @@ func (t *tradingDataServiceV2) getMarketDataHistoryToDateByID(ctx context.Contex
 }
 
 func (t *tradingDataServiceV2) GetNetworkLimits(ctx context.Context, req *v2.GetNetworkLimitsRequest) (*v2.GetNetworkLimitsResponse, error) {
+	if err := t.checkV2ApiEnabled(); err != nil {
+		return nil, err
+	}
+
 	if t.networkLimitsStore == nil {
 		return nil, errors.New("sql network limits store is not available")
 	}
@@ -209,6 +234,10 @@ func (t *tradingDataServiceV2) GetNetworkLimits(ctx context.Context, req *v2.Get
 
 // GetCandleData for a given market, time range and interval.  Interval must be a valid postgres interval value
 func (t *tradingDataServiceV2) GetCandleData(ctx context.Context, req *v2.GetCandleDataRequest) (*v2.GetCandleDataResponse, error) {
+	if err := t.checkV2ApiEnabled(); err != nil {
+		return nil, err
+	}
+
 	if t.candleServiceV2 == nil {
 		return nil, errors.New("sql candle service not available")
 	}
@@ -236,6 +265,10 @@ func (t *tradingDataServiceV2) GetCandleData(ctx context.Context, req *v2.GetCan
 
 // SubscribeToCandleData subscribes to candle updates for a given market and interval.  Interval must be a valid postgres interval value
 func (t *tradingDataServiceV2) SubscribeToCandleData(req *v2.SubscribeToCandleDataRequest, srv v2.TradingDataService_SubscribeToCandleDataServer) error {
+	if err := t.checkV2ApiEnabled(); err != nil {
+		return err
+	}
+
 	if t.candleServiceV2 == nil {
 		return errors.New("sql candle service not available")
 	}
@@ -279,6 +312,10 @@ func (t *tradingDataServiceV2) SubscribeToCandleData(req *v2.SubscribeToCandleDa
 
 // GetCandlesForMarket gets all available intervals for a given market along with the corresponding candle id
 func (t *tradingDataServiceV2) GetCandlesForMarket(ctx context.Context, req *v2.GetCandlesForMarketRequest) (*v2.GetCandlesForMarketResponse, error) {
+	if err := t.checkV2ApiEnabled(); err != nil {
+		return nil, err
+	}
+
 	if t.candleServiceV2 == nil {
 		return nil, errors.New("sql candle service not available")
 	}
@@ -303,6 +340,10 @@ func (t *tradingDataServiceV2) GetCandlesForMarket(ctx context.Context, req *v2.
 
 // GetERC20MutlsigSignerAddedBundles return the signature bundles needed to add a new validator to the multisig control ERC20 contract
 func (t *tradingDataServiceV2) GetERC20MultiSigSignerAddedBundles(ctx context.Context, req *v2.GetERC20MultiSigSignerAddedBundlesRequest) (*v2.GetERC20MultiSigSignerAddedBundlesResponse, error) {
+	if err := t.checkV2ApiEnabled(); err != nil {
+		return nil, err
+	}
+
 	if t.notaryStore == nil {
 		return nil, errors.New("sql notary store not available")
 	}
@@ -373,6 +414,10 @@ func (t *tradingDataServiceV2) GetERC20MultiSigSignerAddedBundles(ctx context.Co
 
 // GetERC20MutlsigSignerAddedBundles return the signature bundles needed to add a new validator to the multisig control ERC20 contract
 func (t *tradingDataServiceV2) GetERC20MultiSigSignerRemovedBundles(ctx context.Context, req *v2.GetERC20MultiSigSignerRemovedBundlesRequest) (*v2.GetERC20MultiSigSignerRemovedBundlesResponse, error) {
+	if err := t.checkV2ApiEnabled(); err != nil {
+		return nil, err
+	}
+
 	if t.notaryStore == nil {
 		return nil, errors.New("sql notary store not available")
 	}
@@ -441,6 +486,10 @@ func (t *tradingDataServiceV2) GetERC20MultiSigSignerRemovedBundles(ctx context.
 }
 
 func (t *tradingDataServiceV2) GetERC20ListAssetBundle(ctx context.Context, req *v2.GetERC20ListAssetBundleRequest) (*v2.GetERC20ListAssetBundleResponse, error) {
+	if err := t.checkV2ApiEnabled(); err != nil {
+		return nil, err
+	}
+
 	if len(req.AssetId) <= 0 {
 		return nil, ErrMissingAssetID
 	}
@@ -492,6 +541,10 @@ func (t *tradingDataServiceV2) GetERC20ListAssetBundle(ctx context.Context, req 
 
 // Get trades by market using a cursor based pagination model
 func (t *tradingDataServiceV2) GetTradesByMarket(ctx context.Context, in *v2.GetTradesByMarketRequest) (*v2.GetTradesByMarketResponse, error) {
+	if err := t.checkV2ApiEnabled(); err != nil {
+		return nil, err
+	}
+
 	market := in.GetMarketId()
 	if len(market) == 0 {
 		return nil, apiError(codes.InvalidArgument, fmt.Errorf("marketId must be supplied"))
@@ -522,6 +575,10 @@ func (t *tradingDataServiceV2) GetTradesByMarket(ctx context.Context, in *v2.Get
 
 // Get trades by party using a cursor based pagination model
 func (t *tradingDataServiceV2) GetTradesByParty(ctx context.Context, in *v2.GetTradesByPartyRequest) (*v2.GetTradesByPartyResponse, error) {
+	if err := t.checkV2ApiEnabled(); err != nil {
+		return nil, err
+	}
+
 	party := in.GetPartyId()
 	if len(party) == 0 {
 		return nil, apiError(codes.InvalidArgument, fmt.Errorf("partyId must be supplied"))
@@ -555,6 +612,10 @@ func (t *tradingDataServiceV2) GetTradesByParty(ctx context.Context, in *v2.GetT
 }
 
 func (t *tradingDataServiceV2) GetTradesByOrderID(ctx context.Context, in *v2.GetTradesByOrderIDRequest) (*v2.GetTradesByOrderIDResponse, error) {
+	if err := t.checkV2ApiEnabled(); err != nil {
+		return nil, err
+	}
+
 	orderID := in.GetOrderId()
 	if len(orderID) == 0 {
 		return nil, apiError(codes.InvalidArgument, fmt.Errorf("orderId must be supplied"))
@@ -600,6 +661,10 @@ func makeTradeEdges(trades []entities.Trade) []*v2.TradeEdge {
 
 // Get all markets using a cursor based pagination model
 func (t *tradingDataServiceV2) GetMarkets(ctx context.Context, in *v2.GetMarketsRequest) (*v2.GetMarketsResponse, error) {
+	if err := t.checkV2ApiEnabled(); err != nil {
+		return nil, err
+	}
+
 	pagination, err := entities.PaginationFromProto(in.Pagination)
 	if err != nil {
 		return nil, apiError(codes.InvalidArgument, err)
@@ -639,6 +704,10 @@ func makeMarketEdges(markets []entities.Market) []*v2.MarketEdge {
 
 // Get Parties using a cursor based pagination model
 func (t *tradingDataServiceV2) GetParties(ctx context.Context, in *v2.GetPartiesRequest) (*v2.GetPartiesResponse, error) {
+	if err := t.checkV2ApiEnabled(); err != nil {
+		return nil, err
+	}
+
 	pagination, err := entities.PaginationFromProto(in.Pagination)
 	if err != nil {
 		return nil, apiError(codes.InvalidArgument, err)
@@ -671,6 +740,10 @@ func makePartyEdges(parties []entities.Party) []*v2.PartyEdge {
 }
 
 func (t *tradingDataServiceV2) GetOrdersByMarketPaged(ctx context.Context, in *v2.GetOrdersByMarketPagedRequest) (*v2.GetOrdersByMarketPagedResponse, error) {
+	if err := t.checkV2ApiEnabled(); err != nil {
+		return nil, err
+	}
+
 	pagination, err := entities.PaginationFromProto(in.Pagination)
 	if err != nil {
 		return nil, apiError(codes.InvalidArgument, err)
@@ -693,6 +766,10 @@ func (t *tradingDataServiceV2) GetOrdersByMarketPaged(ctx context.Context, in *v
 }
 
 func (t *tradingDataServiceV2) GetOrderVersionsByIDPaged(ctx context.Context, in *v2.GetOrderVersionsByIDPagedRequest) (*v2.GetOrderVersionsByIDPagedResponse, error) {
+	if err := t.checkV2ApiEnabled(); err != nil {
+		return nil, err
+	}
+
 	pagination, err := entities.PaginationFromProto(in.Pagination)
 	if err != nil {
 		return nil, apiError(codes.InvalidArgument, err)
@@ -715,6 +792,10 @@ func (t *tradingDataServiceV2) GetOrderVersionsByIDPaged(ctx context.Context, in
 }
 
 func (t *tradingDataServiceV2) GetOrdersByPartyPaged(ctx context.Context, in *v2.GetOrdersByPartyPagedRequest) (*v2.GetOrdersByPartyPagedResponse, error) {
+	if err := t.checkV2ApiEnabled(); err != nil {
+		return nil, err
+	}
+
 	pagination, err := entities.PaginationFromProto(in.Pagination)
 	if err != nil {
 		return nil, apiError(codes.InvalidArgument, err)
@@ -749,6 +830,10 @@ func makeOrderEdges(orders []entities.Order) []*v2.OrderEdge {
 }
 
 func (t *tradingDataServiceV2) GetMarginLevels(ctx context.Context, in *v2.GetMarginLevelsRequest) (*v2.GetMarginLevelsResponse, error) {
+	if err := t.checkV2ApiEnabled(); err != nil {
+		return nil, err
+	}
+
 	pagination, err := entities.PaginationFromProto(in.Pagination)
 	if err != nil {
 		return nil, apiError(codes.InvalidArgument, err)
