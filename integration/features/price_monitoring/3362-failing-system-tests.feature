@@ -60,8 +60,6 @@ Feature: Replicate failing system tests after changes to price monitoring (not t
     Then the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
     # Now place a FOK order that would trigger a price auction (party 1 has a buy at 95,000 on the book 
 
-    Then debug detailed orderbook volumes for market "ETH/DEC20"
-
     And the order book should have the following volumes for market "ETH/DEC20":
       | side | price  | volume |
       | sell | 107000 | 306    |
