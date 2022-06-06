@@ -412,7 +412,7 @@ func (app *App) Info(_ tmtypes.RequestInfo) tmtypes.ResponseInfo {
 
 	app.log.Info("ABCI service INFO requested",
 		logging.String("version", resp.Version),
-		logging.Uint64("app-vesion", resp.AppVersion),
+		logging.Uint64("app-version", resp.AppVersion),
 		logging.Int64("height", resp.LastBlockHeight),
 		logging.String("hash", hex.EncodeToString(resp.LastBlockAppHash)),
 	)
