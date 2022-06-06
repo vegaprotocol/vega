@@ -4,7 +4,7 @@ go 1.18
 
 require (
 	code.vegaprotocol.io/oracles-relay v0.0.0-20210201140234-f047e1bf6df3
-	code.vegaprotocol.io/protos v0.51.2-0.20220526145408-f303ea3fa4b0
+	code.vegaprotocol.io/protos v0.51.2-0.20220606074750-c2c2c20d06bc
 	code.vegaprotocol.io/quant v0.2.5
 	code.vegaprotocol.io/shared v0.0.0-20220321185018-3b5684b00533
 	code.vegaprotocol.io/vegawallet v0.15.2-0.20220529200156-cb58876f94ed

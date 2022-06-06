@@ -66,11 +66,10 @@ type isPayload interface {
 type PayloadProofOfWork struct {
 	BlockHeight   []uint64
 	BlockHash     []string
-	SeenTx        map[string]struct{}
 	HeightToTx    map[uint64][]string
-	SeenTid       map[string]struct{}
 	HeightToTid   map[uint64][]string
 	BannedParties map[string]uint64
+	ActiveParams  []*snapshot.ProofOfWorkParams
 }
 
 type PayloadActiveAssets struct {
@@ -3642,26 +3641,20 @@ func PayloadProofOfWorkFromProto(s *snapshot.Payload_ProofOfWork) *PayloadProofO
 	pow := &PayloadProofOfWork{
 		BlockHeight:   s.ProofOfWork.BlockHeight,
 		BlockHash:     s.ProofOfWork.BlockHash,
-		SeenTx:        make(map[string]struct{}, len(s.ProofOfWork.SeenTx)),
-		SeenTid:       make(map[string]struct{}, len(s.ProofOfWork.SeenTid)),
 		BannedParties: make(map[string]uint64, len(s.ProofOfWork.Banned)),
 		HeightToTx:    make(map[uint64][]string, len(s.ProofOfWork.TxAtHeight)),
 		HeightToTid:   make(map[uint64][]string, len(s.ProofOfWork.TidAtHeight)),
+		ActiveParams:  s.ProofOfWork.PowParams,
 	}
+
 	for _, bp := range s.ProofOfWork.Banned {
 		pow.BannedParties[bp.Party] = bp.UntilEpoch
 	}
 	for _, tah := range s.ProofOfWork.TxAtHeight {
 		pow.HeightToTx[tah.Height] = tah.Transactions
-		for _, t := range tah.Transactions {
-			pow.SeenTx[t] = struct{}{}
-		}
 	}
 	for _, tah := range s.ProofOfWork.TidAtHeight {
 		pow.HeightToTid[tah.Height] = tah.Transactions
-		for _, t := range tah.Transactions {
-			pow.SeenTid[t] = struct{}{}
-		}
 	}
 	return pow
 }
@@ -3691,6 +3684,7 @@ func (p *PayloadProofOfWork) IntoProto() *snapshot.Payload_ProofOfWork {
 			Banned:      banned,
 			TxAtHeight:  txAtHeight,
 			TidAtHeight: tidAtHeight,
+			PowParams:   p.ActiveParams,
 		},
 	}
 }
