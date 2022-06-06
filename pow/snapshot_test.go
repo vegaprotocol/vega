@@ -13,10 +13,9 @@ import (
 	"code.vegaprotocol.io/vega/integration/stubs"
 	vgcontext "code.vegaprotocol.io/vega/libs/context"
 	"code.vegaprotocol.io/vega/logging"
-	snp "code.vegaprotocol.io/vega/snapshot"
+	"code.vegaprotocol.io/vega/snapshot"
 	"code.vegaprotocol.io/vega/stats"
 	"code.vegaprotocol.io/vega/types"
-	gtypes "code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
 	"github.com/golang/protobuf/proto"
 	"github.com/stretchr/testify/require"
@@ -124,7 +123,7 @@ func TestSnapshot(t *testing.T) {
 
 	pl := snapshotpb.Payload{}
 	require.NoError(t, proto.Unmarshal(state1, &pl))
-	eLoaded.LoadState(context.Background(), gtypes.PayloadFromProto(&pl))
+	eLoaded.LoadState(context.Background(), types.PayloadFromProto(&pl))
 
 	state2, _, err := eLoaded.GetState(key)
 	require.NoError(t, err)
@@ -140,9 +139,9 @@ func TestSnapshotViaEngine(t *testing.T) {
 	timeService := stubs.NewTimeStub()
 	timeService.SetTime(now)
 	statsData := stats.New(log, stats.NewDefaultConfig(), "", "")
-	config := snp.NewDefaultConfig()
+	config := snapshot.NewDefaultConfig()
 	config.Storage = "memory"
-	snap, _ := snp.New(context.Background(), &paths.DefaultPaths{}, config, log, timeService, statsData.Blockchain)
+	snap, _ := snapshot.New(context.Background(), &paths.DefaultPaths{}, config, log, timeService, statsData.Blockchain)
 	snap.AddProviders(e)
 	snap.ClearAndInitialise()
 	defer snap.Close()
@@ -182,7 +181,7 @@ func TestSnapshotViaEngine(t *testing.T) {
 	eLoaded := New(logging.NewTestLogger(), NewDefaultConfig(), &TestEpochEngine{})
 	timeServiceLoaded := stubs.NewTimeStub()
 	timeServiceLoaded.SetTime(now)
-	snapLoad, _ := snp.New(context.Background(), &paths.DefaultPaths{}, config, log, timeServiceLoaded, statsData.Blockchain)
+	snapLoad, _ := snapshot.New(context.Background(), &paths.DefaultPaths{}, config, log, timeServiceLoaded, statsData.Blockchain)
 	snapLoad.AddProviders(eLoaded)
 	snapLoad.ClearAndInitialise()
 	defer snapLoad.Close()
