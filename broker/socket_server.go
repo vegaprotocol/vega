@@ -20,13 +20,11 @@ import (
 	_ "go.nanomsg.org/mangos/v3/transport/tcp"
 )
 
-const defaultEventChannelBufferSize = 256
-
 // socketServer receives events from a remote broker.
 // This is used by the data node to receive events from a non-validating core node.
 type socketServer struct {
 	log    *logging.Logger
-	config *SocketConfig
+	config *Config
 
 	sock protocol.Socket
 }
@@ -42,7 +40,7 @@ func pipeEventToString(pe mangos.PipeEvent) string {
 	}
 }
 
-func newSocketServer(log *logging.Logger, config *SocketConfig) (*socketServer, error) {
+func newSocketServer(log *logging.Logger, config *Config) (*socketServer, error) {
 	sock, err := pull.NewSocket()
 	if err != nil {
 		return nil, fmt.Errorf("failed to create new socket: %w", err)
@@ -58,15 +56,16 @@ func newSocketServer(log *logging.Logger, config *SocketConfig) (*socketServer, 
 func (s socketServer) Listen() error {
 	addr := fmt.Sprintf(
 		"%s://%s",
-		strings.ToLower(s.config.TransportType),
-		net.JoinHostPort(s.config.IP, fmt.Sprintf("%d", s.config.Port)),
+		strings.ToLower(s.config.SocketConfig.TransportType),
+		net.JoinHostPort(s.config.SocketConfig.IP, fmt.Sprintf("%d", s.config.SocketConfig.Port)),
 	)
 
 	if err := s.sock.Listen(addr); err != nil {
 		return fmt.Errorf("failed to listen on %v: %w", addr, err)
 	}
 
-	s.log.Info("Starting broker socket server", logging.String("addr", s.config.IP), logging.Int("port", s.config.Port))
+	s.log.Info("Starting broker socket server", logging.String("addr", s.config.SocketConfig.IP),
+		logging.Int("port", s.config.SocketConfig.Port))
 
 	s.sock.SetPipeEventHook(func(pe mangos.PipeEvent, p mangos.Pipe) {
 		s.log.Info(
@@ -81,9 +80,9 @@ func (s socketServer) Listen() error {
 }
 
 func (s socketServer) Receive(ctx context.Context) (<-chan events.Event, <-chan error) {
-	receiveCh := make(chan events.Event, defaultEventChannelBufferSize)
+	outboundCh := make(chan events.Event, s.config.SocketServerOutboundBufferSize)
 	// channel onto which we push the raw messages from the queue
-	rawCh := make(chan []byte, defaultEventChannelBufferSize)
+	inboundCh := make(chan []byte, s.config.SocketServerInboundBufferSize)
 	errCh := make(chan error, 1)
 
 	eg, ctx := errgroup.WithContext(ctx)
@@ -97,9 +96,9 @@ func (s socketServer) Receive(ctx context.Context) (<-chan events.Event, <-chan 
 	})
 
 	eg.Go(func() error {
-		defer close(receiveCh)
+		defer close(outboundCh)
 
-		for msg := range rawCh {
+		for msg := range inboundCh {
 			var be eventspb.BusEvent
 			if err := proto.Unmarshal(msg, &be); err != nil {
 				// surely we should stop if this happens?
@@ -118,7 +117,7 @@ func (s socketServer) Receive(ctx context.Context) (<-chan events.Event, <-chan 
 
 			// Listen for context cancels, even if we're blocked sending events
 			select {
-			case receiveCh <- evt:
+			case outboundCh <- evt:
 			case <-ctx.Done():
 				return ctx.Err()
 			}
@@ -130,7 +129,7 @@ func (s socketServer) Receive(ctx context.Context) (<-chan events.Event, <-chan 
 
 	eg.Go(func() error {
 		var recvTimeouts int
-		defer close(rawCh)
+		defer close(inboundCh)
 		for {
 			msg, err := s.sock.Recv()
 			if err != nil {
@@ -138,7 +137,7 @@ func (s socketServer) Receive(ctx context.Context) (<-chan events.Event, <-chan 
 				case mangosErr.ErrRecvTimeout:
 					s.log.Warn("Receive socket timeout", logging.Error(err))
 					recvTimeouts++
-					if recvTimeouts > s.config.MaxReceiveTimeouts {
+					if recvTimeouts > s.config.SocketConfig.MaxReceiveTimeouts {
 						return fmt.Errorf("more then a 3 socket timeouts occurred: %w", err)
 					}
 				case mangosErr.ErrBadVersion:
@@ -151,7 +150,7 @@ func (s socketServer) Receive(ctx context.Context) (<-chan events.Event, <-chan 
 				}
 			}
 
-			rawCh <- msg
+			inboundCh <- msg
 			recvTimeouts = 0
 		}
 	})
@@ -166,7 +165,7 @@ func (s socketServer) Receive(ctx context.Context) (<-chan events.Event, <-chan 
 		}
 	}()
 
-	return receiveCh, errCh
+	return outboundCh, errCh
 }
 
 func (s socketServer) close() error {
