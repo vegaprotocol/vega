@@ -98,7 +98,7 @@ Feature: Set up a market, create indiciative price different to actual opening a
       #| party1 | BTC   | ETH/DEC19 | 30241  | 0       |
     And the market data for the market "ETH/DEC19" should be:
       | mark price | trading mode            | horizon | min bound | max bound | ref price |
-      | 10000      | TRADING_MODE_CONTINUOUS | 5       | 7000      | 12000     | 10000     |
+      | 10000      | TRADING_MODE_CONTINUOUS | 5       | 9997      | 10002     | 10000     |
 
   @OpenIP
   Scenario: Same test as above, but without the initial indicative price/volume
@@ -243,7 +243,7 @@ Feature: Set up a market, create indiciative price different to actual opening a
       #| party1 | BTC   | ETH/DEC19 | 30241  | 0       |
     And the market data for the market "ETH/DEC19" should be:
       | mark price | trading mode            | horizon | min bound | max bound | ref price |
-      | 10000      | TRADING_MODE_CONTINUOUS | 5       | 7000      | 12000     | 10000     |
+      | 10000      | TRADING_MODE_CONTINUOUS | 5       | 9997      | 10002     | 10000     |
 
   @OpenIPO
   Scenario: Same again, but higher indicative price
@@ -329,5 +329,5 @@ Feature: Set up a market, create indiciative price different to actual opening a
       #| party1 | BTC   | ETH/DEC19 | 30241  | 0       |
     And the market data for the market "ETH/DEC19" should be:
       | mark price | trading mode            | horizon | min bound | max bound | ref price |
-      | 10000      | TRADING_MODE_CONTINUOUS | 5       | 9998      | 10001     | 10000     |
+      | 10000      | TRADING_MODE_CONTINUOUS | 5       | 9997      | 10002     | 10000     |
 
