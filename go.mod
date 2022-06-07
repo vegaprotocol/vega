@@ -19,8 +19,8 @@ require (
 	github.com/google/go-cmp v0.5.7
 	github.com/gorilla/websocket v1.5.0
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.9.0
-	github.com/jackc/pgconn v1.10.1
-	github.com/jackc/pgtype v1.10.0
+	github.com/jackc/pgconn v1.12.1
+	github.com/jackc/pgtype v1.11.0
 	github.com/jackc/pgx/v4 v4.14.1
 	github.com/jessevdk/go-flags v1.4.0
 	github.com/machinebox/graphql v0.2.2
@@ -76,9 +76,9 @@ require (
 	github.com/jackc/chunkreader/v2 v2.0.1 // indirect
 	github.com/jackc/pgio v1.0.0 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
-	github.com/jackc/pgproto3/v2 v2.2.0 // indirect
+	github.com/jackc/pgproto3/v2 v2.3.0 // indirect
 	github.com/jackc/pgservicefile v0.0.0-20200714003250-2b9c44734f2b // indirect
-	github.com/jackc/puddle v1.2.0 // indirect
+	github.com/jackc/puddle v1.2.1 // indirect
 	github.com/jhump/protoreflect v1.10.1 // indirect
 	github.com/jmhodges/levigo v1.0.0 // indirect
 	github.com/joeshaw/multierror v0.0.0-20140124173710-69b34d4ec901 // indirect
@@ -122,4 +122,6 @@ require (
 
 replace github.com/shopspring/decimal => github.com/vegaprotocol/decimal v1.2.1-0.20210705145732-aaa563729a0a
 
+
 replace github.com/fergusstrange/embedded-postgres => github.com/vegaprotocol/embedded-postgres v1.13.1-0.20220607151211-5f2f488de508
+replace github.com/jackc/pgx/v4 v4.14.1 => github.com/pscott31/pgx/v4 v4.16.2-0.20220531164027-bd666b84b61f

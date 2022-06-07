@@ -284,6 +284,7 @@ func TestSqlBrokerSubscriberCallbacks(t *testing.T) {
 
 	transactionManager := newTestTransactionManager()
 	transactionManager.withTransactionCalls = make(chan bool, 0)
+	transactionManager.withConnectionCalls = make(chan bool, 1)
 	transactionManager.commitCall = make(chan bool, 0)
 
 	blockStore := newTestBlockStore()
@@ -301,6 +302,7 @@ func TestSqlBrokerSubscriberCallbacks(t *testing.T) {
 
 	assert.Equal(t, timeEvent.Time(), <-s1.vegaTimeCh)
 	assert.Equal(t, true, <-transactionManager.withTransactionCalls)
+	assert.Equal(t, true, <-transactionManager.withConnectionCalls)
 
 	hash, _ := hex.DecodeString(timeEvent.TraceID())
 	expectedBlock := entities.Block{
@@ -440,18 +442,25 @@ func (t *testBlockStore) GetLastBlock(ctx context.Context) (entities.Block, erro
 
 type testTransactionManager struct {
 	withTransactionCalls chan bool
+	withConnectionCalls  chan bool
 	commitCall           chan bool
 }
 
 func newTestTransactionManager() *testTransactionManager {
 	return &testTransactionManager{
 		withTransactionCalls: make(chan bool, 100),
+		withConnectionCalls:  make(chan bool, 100),
 		commitCall:           make(chan bool, 100),
 	}
 }
 
 func (t *testTransactionManager) WithTransaction(ctx context.Context) (context.Context, error) {
 	t.withTransactionCalls <- true
+	return ctx, nil
+}
+
+func (t *testTransactionManager) WithConnection(ctx context.Context) (context.Context, error) {
+	t.withConnectionCalls <- true
 	return ctx, nil
 }
 
