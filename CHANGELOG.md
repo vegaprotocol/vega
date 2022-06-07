@@ -9,6 +9,7 @@
 - [](https://github.com/vegaprotocol/data-node/issues/xxx) -
 
 ### 🛠  Improvements
+- [624](https://github.com/vegaprotocol/data-node/issues/624) - Support subscriptions in new `API`
 - [](https://github.com/vegaprotocol/data-node/issues/xxx) -
 
 ### 🐛 Fixes
@@ -25,12 +26,14 @@
 - [590](https://github.com/vegaprotocol/data-node/pull/590) - Implement pagination for `Data-Node V2 APIs` for Trades, Parties and Markets
 - [560](https://github.com/vegaprotocol/data-node/issues/560) - Implement pagination for `Data-Node V2 APIs` for Orders
 - [562](https://github.com/vegaprotocol/data-node/issues/560) - Implement pagination for `Data-Node V2 APIs` for Margin Levels
+- [625](https://github.com/vegaprotocol/data-node/issues/625) - Make socket server buffer size configurable
 - [630](https://github.com/vegaprotocol/data-node/issues/630) - Data retention across all historical data tables
 - [427](https://github.com/vegaprotocol/data-node/issues/427) - Handle recovery from snapshots 
 
 ### 🐛 Fixes
 - [616](https://github.com/vegaprotocol/data-node/pull/616) - Don't return multiple delegations per epoch/party/node
 - [627](https://github.com/vegaprotocol/data-node/issues/627) - User `from_epoch` in update event to determine if node exists
+- [651](https://github.com/vegaprotocol/data-node/issues/651) - Hide the `V2 grpc API` if V2 not enabled
 
 ## 0.51.0
 

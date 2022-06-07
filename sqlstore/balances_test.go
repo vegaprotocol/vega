@@ -15,10 +15,10 @@ import (
 )
 
 func addTestBalance(t *testing.T, store *sqlstore.Balances, block entities.Block, acc entities.Account, balance int64) {
-	bal := entities.Balance{
-		AccountID: acc.ID,
-		VegaTime:  block.VegaTime,
-		Balance:   decimal.NewFromInt(balance),
+	bal := entities.AccountBalance{
+		Account:  &acc,
+		VegaTime: block.VegaTime,
+		Balance:  decimal.NewFromInt(balance),
 	}
 
 	err := store.Add(bal)

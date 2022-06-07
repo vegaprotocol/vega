@@ -1696,6 +1696,10 @@ func (r *myMarketDepthUpdateResolver) SequenceNumber(ctx context.Context, md *ty
 	return strconv.FormatUint(md.SequenceNumber, 10), nil
 }
 
+func (r *myMarketDepthUpdateResolver) PreviousSequenceNumber(ctx context.Context, md *types.MarketDepthUpdate) (string, error) {
+	return strconv.FormatUint(md.PreviousSequenceNumber, 10), nil
+}
+
 func (r *myMarketDepthUpdateResolver) Market(ctx context.Context, md *types.MarketDepthUpdate) (*types.Market, error) {
 	return r.r.getMarketByID(ctx, md.MarketId)
 }
@@ -2623,9 +2627,9 @@ func (r *mySubscriptionResolver) subscribePartyVotes(ctx context.Context, partyI
 }
 
 func (r *mySubscriptionResolver) Votes(ctx context.Context, proposalID *string, partyID *string) (<-chan *ProposalVote, error) {
-	if proposalID != nil && len(*proposalID) == 0 {
+	if proposalID != nil && len(*proposalID) != 0 {
 		return r.subscribeProposalVotes(ctx, *proposalID)
-	} else if partyID != nil && len(*partyID) == 0 {
+	} else if partyID != nil && len(*partyID) != 0 {
 		return r.subscribePartyVotes(ctx, *partyID)
 	}
 	return nil, ErrInvalidVotesSubscription

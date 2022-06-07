@@ -30,7 +30,8 @@ func NewLiquidityProvision(connectionSource *ConnectionSource) *LiquidityProvisi
 
 func (lp *LiquidityProvision) Flush(ctx context.Context) error {
 	defer metrics.StartSQLQuery("LiquidityProvision", "Flush")()
-	return lp.batcher.Flush(ctx, lp.pool)
+	_, err := lp.batcher.Flush(ctx, lp.pool)
+	return err
 }
 
 func (lp *LiquidityProvision) Upsert(ctx context.Context, liquidityProvision entities.LiquidityProvision) error {

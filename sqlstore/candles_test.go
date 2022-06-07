@@ -32,10 +32,7 @@ const (
 func TestGetExistingCandles(t *testing.T) {
 	defer DeleteEverything()
 
-	candleStore, err := sqlstore.NewCandles(context.Background(), connectionSource, candlesv2.NewDefaultConfig().CandleStore)
-	if err != nil {
-		t.Fatalf("failed to create candleDescriptor store:%s", err)
-	}
+	candleStore := sqlstore.NewCandles(context.Background(), connectionSource, candlesv2.NewDefaultConfig().CandleStore)
 
 	candles, err := candleStore.GetCandlesForMarket(context.Background(), testMarket)
 	if err != nil {
@@ -56,10 +53,7 @@ func TestGetExistingCandles(t *testing.T) {
 func TestCandlesPagination(t *testing.T) {
 	defer DeleteEverything()
 
-	candleStore, err := sqlstore.NewCandles(context.Background(), connectionSource, candlesv2.NewDefaultConfig().CandleStore)
-	if err != nil {
-		t.Fatalf("failed to create candles store:%s", err)
-	}
+	candleStore := sqlstore.NewCandles(context.Background(), connectionSource, candlesv2.NewDefaultConfig().CandleStore)
 
 	tradeStore := sqlstore.NewTrades(connectionSource)
 
@@ -98,10 +92,7 @@ func TestCandlesPagination(t *testing.T) {
 func TestCandlesGetForEmptyInterval(t *testing.T) {
 	defer DeleteEverything()
 
-	candleStore, err := sqlstore.NewCandles(context.Background(), connectionSource, candlesv2.NewDefaultConfig().CandleStore)
-	if err != nil {
-		t.Fatalf("failed to created candleDescriptor store:%s", err)
-	}
+	candleStore := sqlstore.NewCandles(context.Background(), connectionSource, candlesv2.NewDefaultConfig().CandleStore)
 	tradeStore := sqlstore.NewTrades(connectionSource)
 	bs := sqlstore.NewBlocks(connectionSource)
 
@@ -141,10 +132,7 @@ func TestCandlesGetForEmptyInterval(t *testing.T) {
 func TestCandlesGetLatest(t *testing.T) {
 	defer DeleteEverything()
 
-	candleStore, err := sqlstore.NewCandles(context.Background(), connectionSource, candlesv2.NewDefaultConfig().CandleStore)
-	if err != nil {
-		t.Fatalf("failed to create candleDescriptor store:%s", err)
-	}
+	candleStore := sqlstore.NewCandles(context.Background(), connectionSource, candlesv2.NewDefaultConfig().CandleStore)
 	tradeStore := sqlstore.NewTrades(connectionSource)
 
 	startTime := time.Unix(StartTime, 0)
@@ -173,10 +161,7 @@ func TestCandlesGetLatest(t *testing.T) {
 func TestCandlesGetForDifferentIntervalAndTimeBounds(t *testing.T) {
 	defer DeleteEverything()
 
-	candleStore, err := sqlstore.NewCandles(context.Background(), connectionSource, candlesv2.NewDefaultConfig().CandleStore)
-	if err != nil {
-		t.Fatalf("failed to create candleDescriptor store:%s", err)
-	}
+	candleStore := sqlstore.NewCandles(context.Background(), connectionSource, candlesv2.NewDefaultConfig().CandleStore)
 	tradeStore := sqlstore.NewTrades(connectionSource)
 
 	startTime := time.Unix(StartTime, 0)
@@ -290,7 +275,7 @@ func insertCandlesTestData(t *testing.T, tradeStore *sqlstore.Trades, startTime 
 		}
 	}
 
-	err := tradeStore.Flush(context.Background())
+	_, err := tradeStore.Flush(context.Background())
 	assert.NoError(t, err)
 }
 

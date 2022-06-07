@@ -17,30 +17,24 @@ type AccountEvent interface {
 	Account() vega.Account
 }
 
-type AccountStore interface {
+type AccountService interface {
 	Obtain(ctx context.Context, a *entities.Account) error
-}
-
-type BalanceStore interface {
-	Add(b entities.Balance) error
+	AddAccountBalance(b entities.AccountBalance) error
 	Flush(ctx context.Context) error
 }
 
 type Account struct {
 	subscriber
-	accounts AccountStore
-	balances BalanceStore
+	accounts AccountService
 	log      *logging.Logger
 }
 
 func NewAccount(
-	accounts AccountStore,
-	balances BalanceStore,
+	accounts AccountService,
 	log *logging.Logger,
 ) *Account {
 	return &Account{
 		accounts: accounts,
-		balances: balances,
 		log:      log,
 	}
 }
@@ -50,7 +44,7 @@ func (as *Account) Types() []events.Type {
 }
 
 func (as *Account) Flush(ctx context.Context) error {
-	err := as.balances.Flush(ctx)
+	err := as.accounts.Flush(ctx)
 	return errors.Wrap(err, "flushing balances")
 }
 
@@ -70,13 +64,13 @@ func (as *Account) consume(ctx context.Context, evt AccountEvent) error {
 		return errors.Wrap(err, "parsing account balance")
 	}
 
-	b := entities.Balance{
-		AccountID: acc.ID,
-		Balance:   balance,
-		VegaTime:  as.vegaTime,
+	ab := entities.AccountBalance{
+		Balance: balance,
+		Account: &acc,
 	}
+	ab.VegaTime = as.vegaTime
 
-	err = as.balances.Add(b)
+	err = as.accounts.AddAccountBalance(ab)
 	if err != nil {
 		return errors.Wrap(err, "adding balance to store")
 	}

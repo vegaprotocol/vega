@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/data-node/candlesv2"
+	"code.vegaprotocol.io/data-node/service"
 
 	"code.vegaprotocol.io/data-node/accounts"
 	"code.vegaprotocol.io/data-node/api"
@@ -194,7 +195,7 @@ func getTestGRPCServer(
 	candleService := candles.NewService(logger, conf.Candles, candleStore)
 	marketDataStore := storage.NewMarketData(logger, conf.Storage)
 
-	marketDepth := subscribers.NewMarketDepthBuilder(ctx, logger, nil, false, true)
+	marketDepth := subscribers.NewMarketDepthBuilder(ctx, logger, true)
 	if marketDepth == nil {
 		return
 	}
@@ -272,45 +273,44 @@ func getTestGRPCServer(
 
 	stakingService := staking.NewService(ctx, logger)
 
-	sqlStore := sqlstore.ConnectionSource{}
-	sqlBalanceStore := sqlstore.NewBalances(&sqlStore)
-	sqlOrderStore := sqlstore.NewOrders(&sqlStore)
-	sqlNetworkLimitsStore := sqlstore.NewNetworkLimits(&sqlStore)
-	sqlMarketDataStore := sqlstore.NewMarketData(&sqlStore)
 	conf.CandlesV2.CandleStore.DefaultCandleIntervals = ""
-	sqlCandleStore, err := sqlstore.NewCandles(ctx, &sqlStore, conf.CandlesV2.CandleStore)
-	if err != nil {
-		t.Fatalf("failed to create candle store: %v", err)
-	}
-	candlesServiceV2 := candlesv2.NewService(ctx, logger, conf.CandlesV2, sqlCandleStore)
 
-	sqlTradeStore := sqlstore.NewTrades(&sqlStore)
-	sqlPositionStore := sqlstore.NewPositions(&sqlStore)
-	sqlAssetStore := sqlstore.NewAssets(&sqlStore)
-	sqlAccountStore := sqlstore.NewAccounts(&sqlStore)
-	sqlRewardsStore := sqlstore.NewRewards(&sqlStore)
-	sqlMarketsStore := sqlstore.NewMarkets(&sqlStore)
-	sqlDelegationStore := sqlstore.NewDelegations(&sqlStore)
-	sqlEpochStore := sqlstore.NewEpochs(&sqlStore)
-	sqlDepositStore := sqlstore.NewDeposits(&sqlStore)
-	sqlWithdrawalStore := sqlstore.NewWithdrawals(&sqlStore)
-	sqlProposalStore := sqlstore.NewProposals(&sqlStore)
-	sqlVoteStore := sqlstore.NewVotes(&sqlStore)
-	sqlRiskFactorsStore := sqlstore.NewRiskFactors(&sqlStore)
-	sqlMarginLevelsStore := sqlstore.NewMarginLevels(&sqlStore)
-	sqlNetParamStore := sqlstore.NewNetworkParameters(&sqlStore)
-	sqlBlockStore := sqlstore.NewBlocks(&sqlStore)
-	sqlCheckpointStore := sqlstore.NewCheckpoints(&sqlStore)
-	sqlPartyStore := sqlstore.NewParties(&sqlStore)
-	sqlOracleSpecStore := sqlstore.NewOracleSpec(&sqlStore)
-	sqlOracleDataStore := sqlstore.NewOracleData(&sqlStore)
-	sqlLPDataStore := sqlstore.NewLiquidityProvision(&sqlStore)
-	sqlTransferStore := sqlstore.NewTransfers(&sqlStore)
-	sqlStakeLinkingStore := sqlstore.NewStakeLinking(&sqlStore)
-	sqlNotaryStore := sqlstore.NewNotary(&sqlStore)
-	sqlMultiSigSignerEventStore := sqlstore.NewERC20MultiSigSignerEvent(&sqlStore)
-	sqlKeyRotationsStore := sqlstore.NewKeyRotations(&sqlStore)
-	sqlNodeStore := sqlstore.NewNode(&sqlStore)
+	sqlConn := &sqlstore.ConnectionSource{}
+
+	sqlOrderStore := sqlstore.NewOrders(sqlConn, logger)
+	sqlOrderService := service.NewOrder(sqlOrderStore, logger)
+	sqlNetworkLimitsService := service.NewNetworkLimits(sqlstore.NewNetworkLimits(sqlConn), logger)
+	sqlMarketDataService := service.NewMarketData(sqlstore.NewMarketData(sqlConn), logger)
+	sqlCandleStore := sqlstore.NewCandles(ctx, sqlConn, conf.CandlesV2.CandleStore)
+	sqlCandlesService := candlesv2.NewService(ctx, logger, conf.CandlesV2, sqlCandleStore)
+	sqlTradeService := service.NewTrade(sqlstore.NewTrades(sqlConn), logger)
+	sqlPositionService := service.NewPosition(sqlstore.NewPositions(sqlConn), logger)
+	sqlAssetService := service.NewAsset(sqlstore.NewAssets(sqlConn), logger)
+	sqlAccountService := service.NewAccount(sqlstore.NewAccounts(sqlConn), sqlstore.NewBalances(sqlConn), logger)
+	sqlRewardsService := service.NewReward(sqlstore.NewRewards(sqlConn), logger)
+	sqlMarketsService := service.NewMarkets(sqlstore.NewMarkets(sqlConn), logger)
+	sqlDelegationService := service.NewDelegation(sqlstore.NewDelegations(sqlConn), logger)
+	sqlEpochService := service.NewEpoch(sqlstore.NewEpochs(sqlConn), logger)
+	sqlDepositService := service.NewDeposit(sqlstore.NewDeposits(sqlConn), logger)
+	sqlWithdrawalService := service.NewWithdrawal(sqlstore.NewWithdrawals(sqlConn), logger)
+	sqlGovernanceService := service.NewGovernance(sqlstore.NewProposals(sqlConn), sqlstore.NewVotes(sqlConn), logger)
+	sqlRiskFactorsService := service.NewRiskFactor(sqlstore.NewRiskFactors(sqlConn), logger)
+	sqlMarginLevelsService := service.NewRisk(sqlstore.NewMarginLevels(sqlConn), sqlAccountService, logger)
+	sqlNetParamService := service.NewNetworkParameter(sqlstore.NewNetworkParameters(sqlConn), logger)
+	sqlBlockService := service.NewBlock(sqlstore.NewBlocks(sqlConn), logger)
+	sqlCheckpointService := service.NewCheckpoint(sqlstore.NewCheckpoints(sqlConn), logger)
+	sqlPartyService := service.NewParty(sqlstore.NewParties(sqlConn), logger)
+	sqlOracleSpecService := service.NewOracleSpec(sqlstore.NewOracleSpec(sqlConn), logger)
+	sqlOracleDataService := service.NewOracleData(sqlstore.NewOracleData(sqlConn), logger)
+	sqlLPDataService := service.NewLiquidityProvision(sqlstore.NewLiquidityProvision(sqlConn), logger)
+	sqlTransferService := service.NewTransfer(sqlstore.NewTransfers(sqlConn), logger)
+	sqlStakeLinkingService := service.NewStakeLinking(sqlstore.NewStakeLinking(sqlConn), logger)
+	sqlNotaryService := service.NewNotary(sqlstore.NewNotary(sqlConn), logger)
+	sqlMultiSigService := service.NewMultiSig(sqlstore.NewERC20MultiSigSignerEvent(sqlConn), logger)
+	sqlKeyRotationsService := service.NewKeyRotations(sqlstore.NewKeyRotations(sqlConn), logger)
+	sqlNodeService := service.NewNode(sqlstore.NewNode(sqlConn), logger)
+	sqlMarketDepthService := service.NewMarketDepth(sqlOrderService, logger)
+	sqlLedgerService := service.NewLedger(sqlstore.NewLedger(sqlConn), logger)
 
 	g := api.NewGRPCServer(
 		logger,
@@ -343,38 +343,38 @@ func getTestGRPCServer(
 		rewardsService,
 		stakingService,
 		checkpointSvc,
-		sqlBalanceStore,
-		sqlOrderStore,
-		sqlNetworkLimitsStore,
-		sqlMarketDataStore,
-		sqlTradeStore,
-		sqlAssetStore,
-		sqlAccountStore,
-		sqlRewardsStore,
-		sqlMarketsStore,
-		sqlDelegationStore,
-		sqlEpochStore,
-		sqlDepositStore,
-		sqlWithdrawalStore,
-		sqlProposalStore,
-		sqlVoteStore,
-		sqlRiskFactorsStore,
-		sqlMarginLevelsStore,
-		sqlNetParamStore,
-		sqlBlockStore,
-		sqlCheckpointStore,
-		sqlPartyStore,
-		candlesServiceV2,
-		sqlOracleSpecStore,
-		sqlOracleDataStore,
-		sqlLPDataStore,
-		sqlPositionStore,
-		sqlTransferStore,
-		sqlStakeLinkingStore,
-		sqlNotaryStore,
-		sqlMultiSigSignerEventStore,
-		sqlKeyRotationsStore,
-		sqlNodeStore,
+		sqlOrderService,
+		sqlNetworkLimitsService,
+		sqlMarketDataService,
+		sqlTradeService,
+		sqlAssetService,
+		sqlAccountService,
+		sqlRewardsService,
+		sqlMarketsService,
+		sqlDelegationService,
+		sqlEpochService,
+		sqlDepositService,
+		sqlWithdrawalService,
+		sqlGovernanceService,
+		sqlRiskFactorsService,
+		sqlMarginLevelsService,
+		sqlNetParamService,
+		sqlBlockService,
+		sqlCheckpointService,
+		sqlPartyService,
+		sqlCandlesService,
+		sqlOracleSpecService,
+		sqlOracleDataService,
+		sqlLPDataService,
+		sqlPositionService,
+		sqlTransferService,
+		sqlStakeLinkingService,
+		sqlNotaryService,
+		sqlMultiSigService,
+		sqlKeyRotationsService,
+		sqlNodeService,
+		sqlMarketDepthService,
+		sqlLedgerService,
 	)
 	if g == nil {
 		err = fmt.Errorf("failed to create gRPC server")

@@ -24,7 +24,7 @@ func NewProposals(connectionSource *ConnectionSource) *Proposals {
 	return p
 }
 
-func (ps *Proposals) Add(ctx context.Context, r entities.Proposal) error {
+func (ps *Proposals) Add(ctx context.Context, p entities.Proposal) error {
 	defer metrics.StartSQLQuery("Proposals", "Add")()
 	_, err := ps.Connection.Exec(ctx,
 		`INSERT INTO proposals(
@@ -50,7 +50,7 @@ func (ps *Proposals) Add(ctx context.Context, r entities.Proposal) error {
 			proposal_time = EXCLUDED.proposal_time
 			;
 		 `,
-		r.ID, r.Reference, r.PartyID, r.State, r.Terms, r.Rationale, r.Reason, r.ErrorDetails, r.ProposalTime, r.VegaTime)
+		p.ID, p.Reference, p.PartyID, p.State, p.Terms, p.Rationale, p.Reason, p.ErrorDetails, p.ProposalTime, p.VegaTime)
 	return err
 }
 

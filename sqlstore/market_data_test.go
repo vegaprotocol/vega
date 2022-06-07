@@ -95,7 +95,7 @@ func shouldInsertAValidMarketDataRecord(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	err = md.Flush(context.Background())
+	_, err = md.Flush(context.Background())
 	require.NoError(t, err)
 
 	err = conn.QueryRow(ctx, `select count(*) from market_data`).Scan(&rowCount)
@@ -296,7 +296,7 @@ func setupMarketData(t *testing.T) (*sqlstore.MarketData, error) {
 		err = md.Add(marketData)
 		require.NoError(t, err)
 	}
-	err = md.Flush(context.Background())
+	_, err = md.Flush(context.Background())
 	require.NoError(t, err)
 
 	return md, nil

@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/data-node/entities"
+	"code.vegaprotocol.io/data-node/logging"
 	"code.vegaprotocol.io/data-node/metrics"
 	"github.com/georgysavva/scany/pgxscan"
 )
@@ -24,7 +25,7 @@ type Orders struct {
 	batcher MapBatcher[entities.OrderKey, entities.Order]
 }
 
-func NewOrders(connectionSource *ConnectionSource) *Orders {
+func NewOrders(connectionSource *ConnectionSource, logger *logging.Logger) *Orders {
 	a := &Orders{
 		ConnectionSource: connectionSource,
 		batcher: NewMapBatcher[entities.OrderKey, entities.Order](
@@ -34,7 +35,7 @@ func NewOrders(connectionSource *ConnectionSource) *Orders {
 	return a
 }
 
-func (os *Orders) Flush(ctx context.Context) error {
+func (os *Orders) Flush(ctx context.Context) ([]entities.Order, error) {
 	defer metrics.StartSQLQuery("Orders", "Flush")()
 	return os.batcher.Flush(ctx, os.Connection)
 }
