@@ -1469,8 +1469,11 @@ type MarketDepthUpdate {
   "Sell side price levels (if available)"
   sell: [PriceLevel!]
 
-  "Sequence number for the current snapshot of the market depth"
+  "Sequence number for the current snapshot of the market depth. It is always increasing but not monotonic."
   sequenceNumber: String!
+
+  "Sequence number of the last update sent; useful for checking that no updates were missed."
+  previousSequenceNumber: String!
 }
 
 "Represents a price on either the buy or sell side and all the orders at that price"

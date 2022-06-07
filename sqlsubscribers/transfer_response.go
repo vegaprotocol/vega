@@ -15,7 +15,8 @@ import (
 )
 
 type Ledger interface {
-	Add(*entities.LedgerEntry) error
+	AddLedgerEntry(entities.LedgerEntry) error
+	AddTransferResponse(*vega.TransferResponse)
 	Flush(ctx context.Context) error
 }
 
@@ -27,14 +28,13 @@ type TransferResponseEvent interface {
 type TransferResponse struct {
 	subscriber
 	ledger   Ledger
-	accounts AccountStore
-	balances BalanceStore
+	accounts AccountService
 	log      *logging.Logger
 }
 
 func NewTransferResponse(
 	ledger Ledger,
-	accounts AccountStore,
+	accounts AccountService,
 	log *logging.Logger,
 ) *TransferResponse {
 	return &TransferResponse{
@@ -60,6 +60,7 @@ func (t *TransferResponse) Push(ctx context.Context, evt events.Event) error {
 func (t *TransferResponse) consume(ctx context.Context, e TransferResponseEvent) error {
 	var errs strings.Builder
 	for _, tr := range e.TransferResponses() {
+		t.ledger.AddTransferResponse(tr)
 		for _, vle := range tr.Transfers {
 			if err := t.addLedgerEntry(ctx, vle, t.vegaTime); err != nil {
 				errs.WriteString(fmt.Sprintf("couldn't add ledger entry: %v, error:%s\n", vle, err))
@@ -100,7 +101,7 @@ func (t *TransferResponse) addLedgerEntry(ctx context.Context, vle *vega.LedgerE
 		Type:          vle.Type,
 	}
 
-	err = t.ledger.Add(&le)
+	err = t.ledger.AddLedgerEntry(le)
 	if err != nil {
 		return errors.Wrap(err, "adding to store")
 	}

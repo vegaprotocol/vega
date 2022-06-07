@@ -41,7 +41,7 @@ func (md *MarketData) Add(data *entities.MarketData) error {
 	return nil
 }
 
-func (md *MarketData) Flush(ctx context.Context) error {
+func (md *MarketData) Flush(ctx context.Context) ([]*entities.MarketData, error) {
 	var rows [][]interface{}
 	for _, data := range md.marketData {
 		rows = append(rows, []interface{}{
@@ -62,17 +62,18 @@ func (md *MarketData) Flush(ctx context.Context) error {
 			pgx.Identifier{"market_data"}, md.columns, pgx.CopyFromRows(rows),
 		)
 		if err != nil {
-			return fmt.Errorf("failed to copy market data into database:%w", err)
+			return nil, fmt.Errorf("failed to copy market data into database:%w", err)
 		}
 
 		if copyCount != int64(len(rows)) {
-			return fmt.Errorf("copied %d market data rows into the database, expected to copy %d", copyCount, len(rows))
+			return nil, fmt.Errorf("copied %d market data rows into the database, expected to copy %d", copyCount, len(rows))
 		}
 	}
 
+	flushed := md.marketData
 	md.marketData = nil
 
-	return nil
+	return flushed, nil
 }
 
 func (md *MarketData) GetMarketDataByID(ctx context.Context, marketID string) (entities.MarketData, error) {

@@ -10,23 +10,23 @@ import (
 
 type Ledger struct {
 	*ConnectionSource
-	batcher ListBatcher
+	batcher ListBatcher[entities.LedgerEntry]
 }
 
 func NewLedger(connectionSource *ConnectionSource) *Ledger {
 	a := &Ledger{
 		ConnectionSource: connectionSource,
-		batcher:          NewListBatcher("ledger", entities.LedgerEntryColumns),
+		batcher:          NewListBatcher[entities.LedgerEntry]("ledger", entities.LedgerEntryColumns),
 	}
 	return a
 }
 
-func (ls *Ledger) Flush(ctx context.Context) error {
+func (ls *Ledger) Flush(ctx context.Context) ([]entities.LedgerEntry, error) {
 	defer metrics.StartSQLQuery("Ledger", "Flush")()
 	return ls.batcher.Flush(ctx, ls.Connection)
 }
 
-func (ls *Ledger) Add(le *entities.LedgerEntry) error {
+func (ls *Ledger) Add(le entities.LedgerEntry) error {
 	ls.batcher.Add(le)
 	return nil
 }

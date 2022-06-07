@@ -9,6 +9,7 @@ import (
 	"syscall"
 
 	"code.vegaprotocol.io/data-node/candlesv2"
+	"code.vegaprotocol.io/data-node/service"
 	embeddedpostgres "github.com/fergusstrange/embedded-postgres"
 
 	"code.vegaprotocol.io/data-node/api"
@@ -105,6 +106,7 @@ type NodeCommand struct {
 	embeddedPostgres              *embeddedpostgres.EmbeddedPostgres
 	transactionalConnectionSource *sqlstore.ConnectionSource
 
+	// SQL Stores
 	assetStoreSQL               *sqlstore.Assets
 	blockStoreSQL               *sqlstore.Blocks
 	accountStoreSQL             *sqlstore.Accounts
@@ -112,7 +114,6 @@ type NodeCommand struct {
 	ledgerSQL                   *sqlstore.Ledger
 	partyStoreSQL               *sqlstore.Parties
 	orderStoreSQL               *sqlstore.Orders
-	candleServiceV2             *candlesv2.Svc
 	tradeStoreSQL               *sqlstore.Trades
 	networkLimitsStoreSQL       *sqlstore.NetworkLimits
 	marketDataStoreSQL          *sqlstore.MarketData
@@ -138,6 +139,41 @@ type NodeCommand struct {
 	multiSigSignerAddedStoreSQL *sqlstore.ERC20MultiSigSignerEvent
 	keyRotationsStoreSQL        *sqlstore.KeyRotations
 	nodeStoreSQL                *sqlstore.Node
+	candleStoreSQL              *sqlstore.Candles
+
+	// SQL Services
+	candleServiceV2             *candlesv2.Svc
+	marketDepthServiceV2        *service.MarketDepth
+	riskServiceV2               *service.Risk
+	marketDataServiceV2         *service.MarketData
+	positionServiceV2           *service.Position
+	tradeServiceV2              *service.Trade
+	ledgerServiceV2             *service.Ledger
+	rewardServiceV2             *service.Reward
+	delegationServiceV2         *service.Delegation
+	assetServiceV2              *service.Asset
+	blockServiceV2              *service.Block
+	partyServiceV2              *service.Party
+	accountServiceV2            *service.Account
+	orderServiceV2              *service.Order
+	networkLimitsServiceV2      *service.NetworkLimits
+	marketsServiceV2            *service.Markets
+	epochServiceV2              *service.Epoch
+	depositServiceV2            *service.Deposit
+	withdrawalServiceV2         *service.Withdrawal
+	governanceServiceV2         *service.Governance
+	riskFactorServiceV2         *service.RiskFactor
+	networkParameterServiceV2   *service.NetworkParameter
+	checkpointServiceV2         *service.Checkpoint
+	oracleSpecServiceV2         *service.OracleSpec
+	oracleDataServiceV2         *service.OracleData
+	liquidityProvisionServiceV2 *service.LiquidityProvision
+	transferServiceV2           *service.Transfer
+	stakeLinkingServiceV2       *service.StakeLinking
+	notaryServiceV2             *service.Notary
+	multiSigServiceV2           *service.MultiSig
+	keyRotationsServiceV2       *service.KeyRotations
+	nodeServiceV2               *service.Node
 
 	vegaCoreServiceClient vegaprotoapi.CoreServiceClient
 
@@ -198,6 +234,7 @@ type NodeCommand struct {
 	multiSigSignerEventSubSQL *sqlsubscribers.ERC20MultiSigSignerEvent
 	keyRotationsSubSQL        *sqlsubscribers.KeyRotation
 	nodeSubSQL                *sqlsubscribers.Node
+	marketDepthSubSQL         *sqlsubscribers.MarketDepth
 
 	candleService     *candles.Svc
 	tradeService      *trades.Svc
@@ -380,38 +417,39 @@ func (l *NodeCommand) createGRPCServer(config api.Config, useSQLStores bool) *ap
 		l.rewardsSub,
 		l.stakingService,
 		l.checkpointSvc,
-		l.balanceStoreSQL,
-		l.orderStoreSQL,
-		l.networkLimitsStoreSQL,
-		l.marketDataStoreSQL,
-		l.tradeStoreSQL,
-		l.assetStoreSQL,
-		l.accountStoreSQL,
-		l.rewardStoreSQL,
-		l.marketsStoreSQL,
-		l.delegationStoreSQL,
-		l.epochStoreSQL,
-		l.depositStoreSQL,
-		l.withdrawalsStoreSQL,
-		l.proposalStoreSQL,
-		l.voteStoreSQL,
-		l.riskFactorStoreSQL,
-		l.marginLevelsStoreSQL,
-		l.netParamStoreSQL,
-		l.blockStoreSQL,
-		l.checkpointStoreSQL,
-		l.partyStoreSQL,
+
+		l.orderServiceV2,
+		l.networkLimitsServiceV2,
+		l.marketDataServiceV2,
+		l.tradeServiceV2,
+		l.assetServiceV2,
+		l.accountServiceV2,
+		l.rewardServiceV2,
+		l.marketsServiceV2,
+		l.delegationServiceV2,
+		l.epochServiceV2,
+		l.depositServiceV2,
+		l.withdrawalServiceV2,
+		l.governanceServiceV2,
+		l.riskFactorServiceV2,
+		l.riskServiceV2,
+		l.networkParameterServiceV2,
+		l.blockServiceV2,
+		l.checkpointServiceV2,
+		l.partyServiceV2,
 		l.candleServiceV2,
-		l.oracleSpecStoreSQL,
-		l.oracleDataStoreSQL,
-		l.liquidityProvisionStoreSQL,
-		l.positionStoreSQL,
-		l.transfersStoreSQL,
-		l.stakeLinkingStoreSQL,
-		l.notaryStoreSQL,
-		l.multiSigSignerAddedStoreSQL,
-		l.keyRotationsStoreSQL,
-		l.nodeStoreSQL,
+		l.oracleSpecServiceV2,
+		l.oracleDataServiceV2,
+		l.liquidityProvisionServiceV2,
+		l.positionServiceV2,
+		l.transferServiceV2,
+		l.stakeLinkingServiceV2,
+		l.notaryServiceV2,
+		l.multiSigServiceV2,
+		l.keyRotationsServiceV2,
+		l.nodeServiceV2,
+		l.marketDepthServiceV2,
+		l.ledgerServiceV2,
 	)
 	return grpcServer
 }
