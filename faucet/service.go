@@ -110,7 +110,7 @@ func NewService(log *logging.Logger, vegaPaths paths.Paths, cfg Config, passphra
 	}
 
 	f.POST("/api/v1/mint", f.Mint)
-	f.GET("/-/v1/health", f.Health)
+	f.GET("/api/v1/health", f.Health)
 	return f, nil
 }
 
