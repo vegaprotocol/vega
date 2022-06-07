@@ -115,7 +115,7 @@ func AssetFromProto(p *proto.Asset) (*Asset, error) {
 
 func (a AssetDetails) String() string {
 	return fmt.Sprintf(
-		"name(%s) symbol(%s) quantum(%s) totalSupply(%s) decimals(%u) source(%s)",
+		"name(%s) symbol(%s) quantum(%s) totalSupply(%s) decimals(%d) source(%s)",
 		a.Name,
 		a.Symbol,
 		a.Quantum.String(),
