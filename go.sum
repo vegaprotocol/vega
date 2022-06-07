@@ -46,8 +46,6 @@ cloud.google.com/go/storage v1.5.0/go.mod h1:tpKbwo567HUNpVclU5sGELwQWBDZ8gh0Zeo
 cloud.google.com/go/storage v1.6.0/go.mod h1:N7U0C8pVQ/+NIKOBQyamJIeKQKkZ+mxpohlUTyfDhBk=
 cloud.google.com/go/storage v1.8.0/go.mod h1:Wv1Oy7z6Yz3DshWRJFhqM/UCfaWIRTdp0RXyy7KQOVs=
 cloud.google.com/go/storage v1.10.0/go.mod h1:FLPqc6j+Ki4BU591ie1oL6qBQGu2Bl/tZ9ullr3+Kg0=
-code.vegaprotocol.io/protos v0.51.1-0.20220526082419-03fc1f432a63 h1:wyXSyZG3OOMS5YMlM8fLSsPKC4TXRFfAqdBIcoQIGBQ=
-code.vegaprotocol.io/protos v0.51.1-0.20220526082419-03fc1f432a63/go.mod h1:4BqwDw6jhc/mnwbXq8ZFUtYBFCnk8tBW6zuPsBt8OrQ=
 code.vegaprotocol.io/protos v0.51.2-0.20220526145408-f303ea3fa4b0 h1:EtgsC6lNbksk/trcuKABEtSZkwwaIqNNPUbMLIn0ZRc=
 code.vegaprotocol.io/protos v0.51.2-0.20220526145408-f303ea3fa4b0/go.mod h1:4BqwDw6jhc/mnwbXq8ZFUtYBFCnk8tBW6zuPsBt8OrQ=
 code.vegaprotocol.io/quant v0.2.5 h1:8h+TTHdz1LCO4oGXt8mbowXszd8CQP1MHlJOkthUp1E=
@@ -1089,8 +1087,8 @@ github.com/valyala/fasttemplate v1.0.1/go.mod h1:UQGH1tvbgY+Nz5t2n7tXsz52dQxojPU
 github.com/valyala/fasttemplate v1.2.1/go.mod h1:KHLXt3tVN2HBp8eijSv/kGJopbvo7S+qRAEEKiv+SiQ=
 github.com/vegaprotocol/decimal v1.2.1-0.20210705145732-aaa563729a0a h1:Ee7N99nGQCl0uGfT2Lea0q/BlLo7r1m/DGf7PbQdoB4=
 github.com/vegaprotocol/decimal v1.2.1-0.20210705145732-aaa563729a0a/go.mod h1:tTrKXoJwKjjYYCku9qigFo0fbZB9vbsXhAnjfwheAgY=
-github.com/vegaprotocol/embedded-postgres v1.13.1-0.20220307182735-e7d70067af91 h1:cCjuwMBbSnzBfliDCSAdijIPrK/HCe6wcMUExuPRie0=
-github.com/vegaprotocol/embedded-postgres v1.13.1-0.20220307182735-e7d70067af91/go.mod h1:961LFMWKrqeNMTK/KSmIosLErKlH8vgwqLOX4gBIZdY=
+github.com/vegaprotocol/embedded-postgres v1.13.1-0.20220607151211-5f2f488de508 h1:MIxj0xPao8eC53F/oU1zAhzI68smpuaOL5UjnxNvmng=
+github.com/vegaprotocol/embedded-postgres v1.13.1-0.20220607151211-5f2f488de508/go.mod h1:961LFMWKrqeNMTK/KSmIosLErKlH8vgwqLOX4gBIZdY=
 github.com/vektah/gqlparser/v2 v2.2.0 h1:bAc3slekAAJW6sZTi07aGq0OrfaCjj4jxARAaC7g2EM=
 github.com/vektah/gqlparser/v2 v2.2.0/go.mod h1:i3mQIGIrbK2PD1RrCeMTlVbkF2FJ6WkU1KJlJlC+3F4=
 github.com/vishvananda/netlink v1.1.0/go.mod h1:cTgwzPIzzgDAYoQrMm0EdrjRUBkTqKYppBueQtXaqoE=
