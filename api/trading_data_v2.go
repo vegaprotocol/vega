@@ -397,8 +397,8 @@ func (t *tradingDataServiceV2) GetERC20MultiSigSignerAddedBundles(ctx context.Co
 
 		bundles = append(bundles,
 			&v2.ERC20MultiSigSignerAddedBundle{
-				NewSigner:  "0x" + b.SignerChange.String(),
-				Submitter:  "0x" + b.Submitter.String(),
+				NewSigner:  b.SignerChange.String(),
+				Submitter:  b.Submitter.String(),
 				Nonce:      b.Nonce,
 				Timestamp:  b.VegaTime.UnixNano(),
 				Signatures: pack,
@@ -471,8 +471,8 @@ func (t *tradingDataServiceV2) GetERC20MultiSigSignerRemovedBundles(ctx context.
 		}
 
 		bundles = append(bundles, &v2.ERC20MultiSigSignerRemovedBundle{
-			OldSigner:  "0x" + b.SignerChange.String(),
-			Submitter:  "0x" + b.Submitter.String(),
+			OldSigner:  b.SignerChange.String(),
+			Submitter:  b.Submitter.String(),
 			Nonce:      b.Nonce,
 			Timestamp:  b.VegaTime.UnixNano(),
 			Signatures: pack,

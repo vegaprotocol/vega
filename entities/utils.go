@@ -86,7 +86,7 @@ type EthereumAddress string
 func (addr *EthereumAddress) Bytes() ([]byte, error) {
 	strAddr := addr.String()
 
-	if strings.HasPrefix(strAddr, "0x") == false {
+	if !strings.HasPrefix(strAddr, "0x") {
 		return nil, fmt.Errorf("invalid '%v': %w", string(addr.String()), ErrInvalidID)
 	}
 
