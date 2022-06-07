@@ -1,10 +1,13 @@
 package assets
 
 import (
+	"bytes"
 	"context"
 	"sort"
 
 	checkpoint "code.vegaprotocol.io/protos/vega/checkpoint/v1"
+	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
+	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
 
 	"code.vegaprotocol.io/vega/libs/proto"
@@ -29,11 +32,27 @@ func (s *Service) Load(_ context.Context, cp []byte) error {
 	s.amu.Lock()
 	s.pamu.Lock()
 	s.pendingAssets = map[string]*Asset{}
-	s.assets = map[string]*Asset{}
 	s.pamu.Unlock()
 	s.amu.Unlock()
 	for _, a := range data.Assets {
 		details, _ := types.AssetDetailsFromProto(a.AssetDetails)
+		// first check if the asset did get loaded from genesis
+		// if yes and the details + IDs are same, then all good
+		if existing, ok := s.assets[a.Id]; ok {
+			// we know this ID, are the details the same
+			// if not, then  there's an error, and we should not overwrite an existing
+			// asset, only new ones can be added
+			if !bytes.Equal(vgcrypto.Hash([]byte(details.String())), vgcrypto.Hash([]byte(existing.String()))) {
+				s.log.Panic("invalid asset loaded from genesis",
+					logging.String("id", a.Id),
+					logging.String("details-genesis", existing.String()),
+					logging.String("details-checkpoint", details.String()))
+			}
+			continue
+		}
+
+		// asset didn't match anything, we need to go through the process to add it.
+
 		id, err := s.NewAsset(a.Id, details)
 		if err != nil {
 			return err
@@ -50,6 +69,7 @@ func (s *Service) Load(_ context.Context, cp []byte) error {
 			return err
 		}
 	}
+
 	return nil
 }
 
