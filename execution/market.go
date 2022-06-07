@@ -3116,7 +3116,6 @@ func (m *Market) commandLiquidityAuction(ctx context.Context) {
 		if err != nil {
 			m.log.Panic("Can't get indicative trades")
 		}
-		// no need to clone here, we're getting indicative price once for this call
 		m.pMonitor.CheckPrice(ctx, m.as, trades, true)
 		// TODO: Need to also get indicative trades and check how they'd impact target stake,
 		// see  https://github.com/vegaprotocol/vega/issues/3047

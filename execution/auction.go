@@ -22,7 +22,7 @@ func (m *Market) checkAuction(ctx context.Context, now time.Time) {
 			m.log.Panic("Can't get indicative trades")
 		}
 		if len(trades) > 0 {
-			// pass the first uncrossing price to price engine so state variables depending on it can be initialised
+			// pass the first uncrossing trades to price engine so state variables depending on it can be initialised
 			m.pMonitor.CheckPrice(ctx, m.as, trades, true)
 			m.OnOpeningAuctionFirstUncrossingPrice()
 		}
