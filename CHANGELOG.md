@@ -9,6 +9,7 @@
 - [](https://github.com/vegaprotocol/data-node/issues/xxx) -
 
 ### 🛠  Improvements
+- [624](https://github.com/vegaprotocol/data-node/issues/624) - Support subscriptions in new `API`
 - [](https://github.com/vegaprotocol/data-node/issues/xxx) -
 
 ### 🐛 Fixes

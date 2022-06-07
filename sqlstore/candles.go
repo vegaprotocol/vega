@@ -28,14 +28,12 @@ type Candles struct {
 	ctx    context.Context
 }
 
-func NewCandles(ctx context.Context, connectionSource *ConnectionSource, config candlesv2.CandleStoreConfig) (*Candles, error) {
-	cs := &Candles{
+func NewCandles(ctx context.Context, connectionSource *ConnectionSource, config candlesv2.CandleStoreConfig) *Candles {
+	return &Candles{
 		ConnectionSource: connectionSource,
 		ctx:              ctx,
 		config:           config,
 	}
-
-	return cs, nil
 }
 
 // GetCandleDataForTimeSpan gets the candles for a given interval, from and to are optional

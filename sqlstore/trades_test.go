@@ -437,7 +437,7 @@ func populateTestTrades(ctx context.Context, t *testing.T, bs *sqlstore.Blocks, 
 		time.Sleep(time.Microsecond * 100)
 	}
 
-	err := ts.Flush(ctx)
+	_, err := ts.Flush(ctx)
 	require.NoError(t, err)
 }
 

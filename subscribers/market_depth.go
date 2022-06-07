@@ -8,7 +8,6 @@ import (
 	"sync"
 	"time"
 
-	"code.vegaprotocol.io/data-node/entities"
 	"code.vegaprotocol.io/data-node/logging"
 	ptypes "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/events"
@@ -45,11 +44,6 @@ type MarketDepth struct {
 	sequenceNumber uint64
 }
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/market_depth_mock.go -package mocks code.vegaprotocol.io/data-node/subscribers SqlOrderStore
-type SqlOrderStore interface {
-	GetLiveOrders(ctx context.Context) ([]entities.Order, error)
-}
-
 // MarketDepthBuilder is a subscriber of order events
 // used to build the live market depth structure
 type MarketDepthBuilder struct {
@@ -63,26 +57,17 @@ type MarketDepthBuilder struct {
 	subscribers map[uint64]chan<- *types.MarketDepthUpdate
 	// Logger
 	log            *logging.Logger
-	orderStore     SqlOrderStore
 	vegaTime       time.Time
 	sequenceNumber uint64
 }
 
 // NewMarketDepthBuilder constructor to create a market depth subscriber
-func NewMarketDepthBuilder(ctx context.Context, log *logging.Logger, orderStore SqlOrderStore,
-	sqlStoreEnabled, ack bool) *MarketDepthBuilder {
+func NewMarketDepthBuilder(ctx context.Context, log *logging.Logger, ack bool) *MarketDepthBuilder {
 	mdb := MarketDepthBuilder{
 		Base:         NewBase(ctx, 10, ack),
 		log:          log,
 		marketDepths: map[string]*MarketDepth{},
 		subscribers:  map[uint64]chan<- *types.MarketDepthUpdate{},
-		orderStore:   orderStore,
-	}
-
-	if sqlStoreEnabled && orderStore != nil {
-		if err := initMarketDepths(ctx, &mdb); err != nil {
-			panic(fmt.Errorf("could not initialize market depths from SQL store: %w", err))
-		}
 	}
 
 	if mdb.isRunning() {
@@ -90,25 +75,6 @@ func NewMarketDepthBuilder(ctx context.Context, log *logging.Logger, orderStore 
 	}
 
 	return &mdb
-}
-
-func initMarketDepths(ctx context.Context, mdb *MarketDepthBuilder) error {
-	liveOrders, err := mdb.orderStore.GetLiveOrders(ctx)
-	if err != nil {
-		return err
-	}
-
-	// process the live orders and initialize market depths from database data
-	for _, liveOrder := range liveOrders {
-		order, err := types.OrderFromProto(liveOrder.ToProto())
-		if err != nil {
-			panic(err)
-		}
-		mdb.vegaTime = liveOrder.VegaTime
-		mdb.updateMarketDepth(order, liveOrder.SeqNum)
-	}
-
-	return nil
 }
 
 func (mdb *MarketDepthBuilder) loop(ctx context.Context) {

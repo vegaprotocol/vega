@@ -12,7 +12,7 @@ import (
 	"code.vegaprotocol.io/data-node/candlesv2"
 	"code.vegaprotocol.io/data-node/entities"
 	"code.vegaprotocol.io/data-node/logging"
-	"code.vegaprotocol.io/data-node/sqlstore"
+	"code.vegaprotocol.io/data-node/service"
 	"code.vegaprotocol.io/data-node/vegatime"
 	v2 "code.vegaprotocol.io/protos/data-node/api/v2"
 	"code.vegaprotocol.io/protos/vega"
@@ -27,21 +27,20 @@ var defaultPaginationV2 = entities.OffsetPagination{
 
 type tradingDataServiceV2 struct {
 	v2.UnimplementedTradingDataServiceServer
-	log                      *logging.Logger
-	v2ApiEnabled             bool
-	balanceStore             *sqlstore.Balances
-	orderStore               *sqlstore.Orders
-	networkLimitsStore       *sqlstore.NetworkLimits
-	marketDataStore          *sqlstore.MarketData
-	tradeStore               *sqlstore.Trades
-	multiSigSignerEventStore *sqlstore.ERC20MultiSigSignerEvent
-	notaryStore              *sqlstore.Notary
-	assetStore               *sqlstore.Assets
-	candleServiceV2          *candlesv2.Svc
-	marketsStore             *sqlstore.Markets
-	partiesStore             *sqlstore.Parties
-	marginLevelsStore        *sqlstore.MarginLevels
-	accountStore             *sqlstore.Accounts
+	v2ApiEnabled         bool
+	log                  *logging.Logger
+	orderService         *service.Order
+	networkLimitsService *service.NetworkLimits
+	marketDataService    *service.MarketData
+	tradeService         *service.Trade
+	multiSigService      *service.MultiSig
+	notaryService        *service.Notary
+	assetService         *service.Asset
+	candleService        *candlesv2.Svc
+	marketsService       *service.Markets
+	partyService         *service.Party
+	riskService          *service.Risk
+	accountService       *service.Account
 }
 
 func (t *tradingDataServiceV2) checkV2ApiEnabled() error {
@@ -57,7 +56,7 @@ func (t *tradingDataServiceV2) GetBalanceHistory(ctx context.Context, req *v2.Ge
 		return nil, err
 	}
 
-	if t.balanceStore == nil {
+	if t.accountService == nil {
 		return nil, fmt.Errorf("sql balance store not available")
 	}
 
@@ -75,7 +74,7 @@ func (t *tradingDataServiceV2) GetBalanceHistory(ctx context.Context, req *v2.Ge
 		groupBy = append(groupBy, field)
 	}
 
-	balances, err := t.balanceStore.Query(filter, groupBy)
+	balances, err := t.accountService.QueryAggregatedBalances(filter, groupBy)
 	if err != nil {
 		return nil, fmt.Errorf("querying balances: %w", err)
 	}
@@ -94,7 +93,7 @@ func (t *tradingDataServiceV2) GetOrdersByMarket(ctx context.Context, req *v2.Ge
 		return nil, err
 	}
 
-	if t.orderStore == nil {
+	if t.orderService == nil {
 		return nil, errors.New("sql order store not available")
 	}
 
@@ -103,7 +102,7 @@ func (t *tradingDataServiceV2) GetOrdersByMarket(ctx context.Context, req *v2.Ge
 		p = entities.OffsetPaginationFromProto(req.Pagination)
 	}
 
-	orders, err := t.orderStore.GetByMarket(ctx, req.MarketId, p)
+	orders, err := t.orderService.GetByMarket(ctx, req.MarketId, p)
 	if err != nil {
 		return nil, apiError(codes.InvalidArgument, ErrOrderServiceGetByParty, err)
 	}
@@ -137,8 +136,8 @@ func (t *tradingDataServiceV2) GetMarketDataHistoryByID(ctx context.Context, req
 		return nil, err
 	}
 
-	if t.marketDataStore == nil {
-		return nil, errors.New("sql market data store not available")
+	if t.marketDataService == nil {
+		return nil, errors.New("sql market data service not available")
 	}
 
 	var startTime, endTime time.Time
@@ -180,7 +179,7 @@ func parseMarketDataResults(results []entities.MarketData) (*v2.GetMarketDataHis
 }
 
 func (t *tradingDataServiceV2) getMarketDataHistoryByID(ctx context.Context, id string, start, end time.Time, pagination entities.OffsetPagination) (*v2.GetMarketDataHistoryByIDResponse, error) {
-	results, err := t.marketDataStore.GetBetweenDatesByID(ctx, id, start, end, pagination)
+	results, err := t.marketDataService.GetBetweenDatesByID(ctx, id, start, end, pagination)
 	if err != nil {
 		return nil, fmt.Errorf("could not retrieve market data history for market id: %w", err)
 	}
@@ -189,7 +188,7 @@ func (t *tradingDataServiceV2) getMarketDataHistoryByID(ctx context.Context, id 
 }
 
 func (t *tradingDataServiceV2) getMarketDataByID(ctx context.Context, id string) (*v2.GetMarketDataHistoryByIDResponse, error) {
-	results, err := t.marketDataStore.GetMarketDataByID(ctx, id)
+	results, err := t.marketDataService.GetMarketDataByID(ctx, id)
 	if err != nil {
 		return nil, fmt.Errorf("could not retrieve market data history for market id: %w", err)
 	}
@@ -198,7 +197,7 @@ func (t *tradingDataServiceV2) getMarketDataByID(ctx context.Context, id string)
 }
 
 func (t *tradingDataServiceV2) getMarketDataHistoryFromDateByID(ctx context.Context, id string, start time.Time, pagination entities.OffsetPagination) (*v2.GetMarketDataHistoryByIDResponse, error) {
-	results, err := t.marketDataStore.GetFromDateByID(ctx, id, start, pagination)
+	results, err := t.marketDataService.GetFromDateByID(ctx, id, start, pagination)
 	if err != nil {
 		return nil, fmt.Errorf("could not retrieve market data history for market id: %w", err)
 	}
@@ -207,7 +206,7 @@ func (t *tradingDataServiceV2) getMarketDataHistoryFromDateByID(ctx context.Cont
 }
 
 func (t *tradingDataServiceV2) getMarketDataHistoryToDateByID(ctx context.Context, id string, end time.Time, pagination entities.OffsetPagination) (*v2.GetMarketDataHistoryByIDResponse, error) {
-	results, err := t.marketDataStore.GetToDateByID(ctx, id, end, pagination)
+	results, err := t.marketDataService.GetToDateByID(ctx, id, end, pagination)
 	if err != nil {
 		return nil, fmt.Errorf("could not retrieve market data history for market id: %w", err)
 	}
@@ -220,11 +219,11 @@ func (t *tradingDataServiceV2) GetNetworkLimits(ctx context.Context, req *v2.Get
 		return nil, err
 	}
 
-	if t.networkLimitsStore == nil {
+	if t.networkLimitsService == nil {
 		return nil, errors.New("sql network limits store is not available")
 	}
 
-	limits, err := t.networkLimitsStore.GetLatest(ctx)
+	limits, err := t.networkLimitsService.GetLatest(ctx)
 	if err != nil {
 		return nil, apiError(codes.Unknown, ErrGetNetworkLimits, err)
 	}
@@ -238,7 +237,7 @@ func (t *tradingDataServiceV2) GetCandleData(ctx context.Context, req *v2.GetCan
 		return nil, err
 	}
 
-	if t.candleServiceV2 == nil {
+	if t.candleService == nil {
 		return nil, errors.New("sql candle service not available")
 	}
 
@@ -250,7 +249,7 @@ func (t *tradingDataServiceV2) GetCandleData(ctx context.Context, req *v2.GetCan
 		pagination = entities.OffsetPaginationFromProto(req.Pagination)
 	}
 
-	candles, err := t.candleServiceV2.GetCandleDataForTimeSpan(ctx, req.CandleId, &from, &to, pagination)
+	candles, err := t.candleService.GetCandleDataForTimeSpan(ctx, req.CandleId, &from, &to, pagination)
 	if err != nil {
 		return nil, apiError(codes.Internal, ErrCandleServiceGetCandleData, err)
 	}
@@ -269,14 +268,14 @@ func (t *tradingDataServiceV2) SubscribeToCandleData(req *v2.SubscribeToCandleDa
 		return err
 	}
 
-	if t.candleServiceV2 == nil {
+	if t.candleService == nil {
 		return errors.New("sql candle service not available")
 	}
 
 	ctx, cancel := context.WithCancel(srv.Context())
 	defer cancel()
 
-	subscriptionId, candlesChan, err := t.candleServiceV2.Subscribe(ctx, req.CandleId)
+	subscriptionId, candlesChan, err := t.candleService.Subscribe(ctx, req.CandleId)
 	if err != nil {
 		return apiError(codes.Internal, ErrCandleServiceSubscribeToCandles, err)
 	}
@@ -296,7 +295,7 @@ func (t *tradingDataServiceV2) SubscribeToCandleData(req *v2.SubscribeToCandleDa
 					fmt.Errorf("sending candles:%w", err))
 			}
 		case <-ctx.Done():
-			err := t.candleServiceV2.Unsubscribe(subscriptionId)
+			err := t.candleService.Unsubscribe(subscriptionId)
 			if err != nil {
 				t.log.Errorf("failed to unsubscribe from candle updates:%s", err)
 			}
@@ -316,11 +315,11 @@ func (t *tradingDataServiceV2) GetCandlesForMarket(ctx context.Context, req *v2.
 		return nil, err
 	}
 
-	if t.candleServiceV2 == nil {
+	if t.candleService == nil {
 		return nil, errors.New("sql candle service not available")
 	}
 
-	mappings, err := t.candleServiceV2.GetCandlesForMarket(ctx, req.MarketId)
+	mappings, err := t.candleService.GetCandlesForMarket(ctx, req.MarketId)
 	if err != nil {
 		return nil, apiError(codes.Internal, ErrCandleServiceGetCandlesForMarket, err)
 	}
@@ -344,11 +343,11 @@ func (t *tradingDataServiceV2) GetERC20MultiSigSignerAddedBundles(ctx context.Co
 		return nil, err
 	}
 
-	if t.notaryStore == nil {
-		return nil, errors.New("sql notary store not available")
+	if t.notaryService == nil {
+		return nil, errors.New("sql notary service not available")
 	}
 
-	if t.multiSigSignerEventStore == nil {
+	if t.multiSigService == nil {
 		return nil, errors.New("sql multisig event store not available")
 	}
 
@@ -371,7 +370,7 @@ func (t *tradingDataServiceV2) GetERC20MultiSigSignerAddedBundles(ctx context.Co
 		p = entities.OffsetPaginationFromProto(req.Pagination)
 	}
 
-	res, err := t.multiSigSignerEventStore.GetAddedEvents(ctx, nodeID, epochID, p)
+	res, err := t.multiSigService.GetAddedEvents(ctx, nodeID, epochID, p)
 	if err != nil {
 		c := codes.Internal
 		if errors.Is(err, entities.ErrInvalidID) {
@@ -385,7 +384,7 @@ func (t *tradingDataServiceV2) GetERC20MultiSigSignerAddedBundles(ctx context.Co
 	bundles := []*v2.ERC20MultiSigSignerAddedBundle{}
 	for _, b := range res {
 
-		signatures, err := t.notaryStore.GetByResourceID(ctx, b.ID.String())
+		signatures, err := t.notaryService.GetByResourceID(ctx, b.ID.String())
 		if err != nil {
 			return nil, apiError(codes.Internal, err)
 		}
@@ -418,11 +417,11 @@ func (t *tradingDataServiceV2) GetERC20MultiSigSignerRemovedBundles(ctx context.
 		return nil, err
 	}
 
-	if t.notaryStore == nil {
+	if t.notaryService == nil {
 		return nil, errors.New("sql notary store not available")
 	}
 
-	if t.multiSigSignerEventStore == nil {
+	if t.multiSigService == nil {
 		return nil, errors.New("sql multisig event store not available")
 	}
 
@@ -447,7 +446,7 @@ func (t *tradingDataServiceV2) GetERC20MultiSigSignerRemovedBundles(ctx context.
 		p = entities.OffsetPaginationFromProto(req.Pagination)
 	}
 
-	res, err := t.multiSigSignerEventStore.GetRemovedEvents(ctx, nodeID, strings.TrimPrefix(submitter, "0x"), epochID, p)
+	res, err := t.multiSigService.GetRemovedEvents(ctx, nodeID, strings.TrimPrefix(submitter, "0x"), epochID, p)
 	if err != nil {
 		c := codes.Internal
 		if errors.Is(err, entities.ErrInvalidID) {
@@ -460,7 +459,7 @@ func (t *tradingDataServiceV2) GetERC20MultiSigSignerRemovedBundles(ctx context.
 	bundles := []*v2.ERC20MultiSigSignerRemovedBundle{}
 	for _, b := range res {
 
-		signatures, err := t.notaryStore.GetByResourceID(ctx, b.ID.String())
+		signatures, err := t.notaryService.GetByResourceID(ctx, b.ID.String())
 		if err != nil {
 			return nil, apiError(codes.Internal, err)
 		}
@@ -494,22 +493,22 @@ func (t *tradingDataServiceV2) GetERC20ListAssetBundle(ctx context.Context, req 
 		return nil, ErrMissingAssetID
 	}
 
-	if t.assetStore == nil {
+	if t.assetService == nil {
 		return nil, errors.New("sql asset store not available")
 	}
 
 	// first here we gonna get the proposal by its ID,
-	asset, err := t.assetStore.GetByID(ctx, req.AssetId)
+	asset, err := t.assetService.GetByID(ctx, req.AssetId)
 	if err != nil {
 		return nil, apiError(codes.NotFound, err)
 	}
 
-	if t.notaryStore == nil {
+	if t.notaryService == nil {
 		return nil, errors.New("sql notary store not available")
 	}
 
 	// then we get the signature and pack them altogether
-	signatures, err := t.notaryStore.GetByResourceID(ctx, req.AssetId)
+	signatures, err := t.notaryService.GetByResourceID(ctx, req.AssetId)
 	if err != nil {
 		return nil, apiError(codes.Internal, err)
 	}
@@ -555,7 +554,7 @@ func (t *tradingDataServiceV2) GetTradesByMarket(ctx context.Context, in *v2.Get
 		return nil, apiError(codes.InvalidArgument, err)
 	}
 
-	trades, pageInfo, err := t.tradeStore.GetByMarketWithCursor(ctx, market, pagination)
+	trades, pageInfo, err := t.tradeService.GetByMarketWithCursor(ctx, market, pagination)
 	if err != nil {
 		return nil, apiError(codes.Internal, err)
 	}
@@ -593,7 +592,7 @@ func (t *tradingDataServiceV2) GetTradesByParty(ctx context.Context, in *v2.GetT
 		return nil, apiError(codes.InvalidArgument, err)
 	}
 
-	trades, pageInfo, err := t.tradeStore.GetByPartyWithCursor(ctx, party, market, pagination)
+	trades, pageInfo, err := t.tradeService.GetByPartyWithCursor(ctx, party, market, pagination)
 	if err != nil {
 		return nil, apiError(codes.Internal, err)
 	}
@@ -630,7 +629,7 @@ func (t *tradingDataServiceV2) GetTradesByOrderID(ctx context.Context, in *v2.Ge
 		return nil, apiError(codes.InvalidArgument, err)
 	}
 
-	trades, pageInfo, err := t.tradeStore.GetByOrderIDWithCursor(ctx, orderID, market, pagination)
+	trades, pageInfo, err := t.tradeService.GetByOrderIDWithCursor(ctx, orderID, market, pagination)
 	if err != nil {
 		return nil, apiError(codes.Internal, err)
 	}
@@ -669,7 +668,7 @@ func (t *tradingDataServiceV2) GetMarkets(ctx context.Context, in *v2.GetMarkets
 	if err != nil {
 		return nil, apiError(codes.InvalidArgument, err)
 	}
-	markets, pageInfo, err := t.marketsStore.GetAllPaged(ctx, in.MarketId, pagination)
+	markets, pageInfo, err := t.marketsService.GetAllPaged(ctx, in.MarketId, pagination)
 	if err != nil {
 		return nil, apiError(codes.Internal, err)
 	}
@@ -712,7 +711,7 @@ func (t *tradingDataServiceV2) GetParties(ctx context.Context, in *v2.GetParties
 	if err != nil {
 		return nil, apiError(codes.InvalidArgument, err)
 	}
-	parties, pageInfo, err := t.partiesStore.GetAllPaged(ctx, in.PartyId, pagination)
+	parties, pageInfo, err := t.partyService.GetAllPaged(ctx, in.PartyId, pagination)
 	if err != nil {
 		return nil, apiError(codes.Internal, err)
 	}
@@ -748,7 +747,7 @@ func (t *tradingDataServiceV2) GetOrdersByMarketPaged(ctx context.Context, in *v
 	if err != nil {
 		return nil, apiError(codes.InvalidArgument, err)
 	}
-	orders, pageInfo, err := t.orderStore.GetByMarketPaged(ctx, in.MarketId, pagination)
+	orders, pageInfo, err := t.orderService.GetByMarketPaged(ctx, in.MarketId, pagination)
 	if err != nil {
 		return nil, apiError(codes.Internal, err)
 	}
@@ -775,7 +774,7 @@ func (t *tradingDataServiceV2) GetOrderVersionsByIDPaged(ctx context.Context, in
 		return nil, apiError(codes.InvalidArgument, err)
 	}
 
-	orders, pageInfo, err := t.orderStore.GetOrderVersionsByIDPaged(ctx, in.OrderId, pagination)
+	orders, pageInfo, err := t.orderService.GetOrderVersionsByIDPaged(ctx, in.OrderId, pagination)
 	if err != nil {
 		return nil, apiError(codes.Internal, err)
 	}
@@ -801,7 +800,7 @@ func (t *tradingDataServiceV2) GetOrdersByPartyPaged(ctx context.Context, in *v2
 		return nil, apiError(codes.InvalidArgument, err)
 	}
 
-	orders, pageInfo, err := t.orderStore.GetByPartyPaged(ctx, in.PartyId, pagination)
+	orders, pageInfo, err := t.orderService.GetByPartyPaged(ctx, in.PartyId, pagination)
 	if err != nil {
 		return nil, apiError(codes.Internal, err)
 	}
@@ -839,14 +838,14 @@ func (t *tradingDataServiceV2) GetMarginLevels(ctx context.Context, in *v2.GetMa
 		return nil, apiError(codes.InvalidArgument, err)
 	}
 
-	marginLevels, pageInfo, err := t.marginLevelsStore.GetMarginLevelsByIDWithCursorPagination(ctx, in.PartyId, in.MarketId, pagination)
+	marginLevels, pageInfo, err := t.riskService.GetMarginLevelsByIDWithCursorPagination(ctx, in.PartyId, in.MarketId, pagination)
 	if err != nil {
 		return nil, apiError(codes.Internal, err)
 	}
 
 	marginLevelsConnection := &v2.MarginConnection{
 		TotalCount: 0, // TODO: implement total count
-		Edges:      makeMarginLevelEdges(t.accountStore, marginLevels),
+		Edges:      makeMarginLevelEdges(t.accountService, marginLevels),
 		PageInfo:   pageInfo.ToProto(),
 	}
 
@@ -857,10 +856,10 @@ func (t *tradingDataServiceV2) GetMarginLevels(ctx context.Context, in *v2.GetMa
 	return resp, nil
 }
 
-func makeMarginLevelEdges(accountStore *sqlstore.Accounts, marginLevels []entities.MarginLevels) []*v2.MarginEdge {
+func makeMarginLevelEdges(accountService *service.Account, marginLevels []entities.MarginLevels) []*v2.MarginEdge {
 	edges := make([]*v2.MarginEdge, len(marginLevels))
 	for i, ml := range marginLevels {
-		mlProto, err := ml.ToProto(accountStore)
+		mlProto, err := ml.ToProto(accountService)
 		if err != nil {
 			continue
 		}

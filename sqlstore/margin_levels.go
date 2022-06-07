@@ -40,7 +40,7 @@ func (ml *MarginLevels) Add(marginLevel entities.MarginLevels) error {
 	return nil
 }
 
-func (ml *MarginLevels) Flush(ctx context.Context) error {
+func (ml *MarginLevels) Flush(ctx context.Context) ([]entities.MarginLevels, error) {
 	defer metrics.StartSQLQuery("MarginLevels", "Flush")()
 	return ml.batcher.Flush(ctx, ml.pool)
 }

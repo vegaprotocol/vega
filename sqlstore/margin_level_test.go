@@ -177,7 +177,7 @@ func testInsertMarginLevels(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, 0, rowCount)
 
-	err = ml.Flush(ctx)
+	_, err = ml.Flush(ctx)
 	assert.NoError(t, err)
 
 	err = conn.QueryRow(ctx, `select count(*) from margin_levels`).Scan(&rowCount)
@@ -211,7 +211,7 @@ func testDuplicateMarginLevelInSameBlock(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, 0, rowCount)
 
-	err = ml.Flush(ctx)
+	_, err = ml.Flush(ctx)
 	assert.NoError(t, err)
 
 	err = conn.QueryRow(ctx, `select count(*) from margin_levels`).Scan(&rowCount)
@@ -276,7 +276,7 @@ func testGetMarginLevelsByPartyID(t *testing.T) {
 	err = ml.Add(marginLevel2)
 	require.NoError(t, err)
 
-	err = ml.Flush(ctx)
+	_, err = ml.Flush(ctx)
 	require.NoError(t, err)
 
 	err = conn.QueryRow(ctx, `select count(*) from margin_levels`).Scan(&rowCount)
@@ -295,7 +295,7 @@ func testGetMarginLevelsByPartyID(t *testing.T) {
 	err = ml.Add(marginLevel4)
 	require.NoError(t, err)
 
-	err = ml.Flush(ctx)
+	_, err = ml.Flush(ctx)
 	require.NoError(t, err)
 
 	err = conn.QueryRow(ctx, `select count(*) from margin_levels`).Scan(&rowCount)
@@ -360,7 +360,7 @@ func testGetMarginLevelsByMarketID(t *testing.T) {
 	err = ml.Add(marginLevel2)
 	require.NoError(t, err)
 
-	err = ml.Flush(ctx)
+	_, err = ml.Flush(ctx)
 	assert.NoError(t, err)
 
 	err = conn.QueryRow(ctx, `select count(*) from margin_levels`).Scan(&rowCount)
@@ -381,7 +381,7 @@ func testGetMarginLevelsByMarketID(t *testing.T) {
 	err = ml.Add(marginLevel4)
 	require.NoError(t, err)
 
-	err = ml.Flush(ctx)
+	_, err = ml.Flush(ctx)
 	assert.NoError(t, err)
 
 	err = conn.QueryRow(ctx, `select count(*) from margin_levels`).Scan(&rowCount)
@@ -446,7 +446,7 @@ func testGetMarginLevelsByID(t *testing.T) {
 	err = ml.Add(marginLevel2)
 	require.NoError(t, err)
 
-	err = ml.Flush(ctx)
+	_, err = ml.Flush(ctx)
 	assert.NoError(t, err)
 
 	err = conn.QueryRow(ctx, `select count(*) from margin_levels`).Scan(&rowCount)
@@ -467,7 +467,7 @@ func testGetMarginLevelsByID(t *testing.T) {
 	err = ml.Add(marginLevel4)
 	require.NoError(t, err)
 
-	err = ml.Flush(ctx)
+	_, err = ml.Flush(ctx)
 	assert.NoError(t, err)
 
 	err = conn.QueryRow(ctx, `select count(*) from margin_levels`).Scan(&rowCount)
@@ -606,7 +606,7 @@ func populateMarginLevelPaginationTestData(t *testing.T, ctx context.Context) (*
 		marginLevels[i] = mlEntity
 	}
 
-	err := mlStore.Flush(ctx)
+	_, err := mlStore.Flush(ctx)
 	require.NoError(t, err)
 
 	return mlStore, blocks, marginLevels

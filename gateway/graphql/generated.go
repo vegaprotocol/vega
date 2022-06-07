@@ -488,10 +488,11 @@ type ComplexityRoot struct {
 	}
 
 	MarketDepthUpdate struct {
-		Buy            func(childComplexity int) int
-		Market         func(childComplexity int) int
-		Sell           func(childComplexity int) int
-		SequenceNumber func(childComplexity int) int
+		Buy                    func(childComplexity int) int
+		Market                 func(childComplexity int) int
+		PreviousSequenceNumber func(childComplexity int) int
+		Sell                   func(childComplexity int) int
+		SequenceNumber         func(childComplexity int) int
 	}
 
 	MarketEdge struct {
@@ -1361,6 +1362,7 @@ type MarketDepthUpdateResolver interface {
 	Market(ctx context.Context, obj *vega.MarketDepthUpdate) (*vega.Market, error)
 
 	SequenceNumber(ctx context.Context, obj *vega.MarketDepthUpdate) (string, error)
+	PreviousSequenceNumber(ctx context.Context, obj *vega.MarketDepthUpdate) (string, error)
 }
 type MarketTimestampsResolver interface {
 	Proposed(ctx context.Context, obj *vega.MarketTimestamps) (*string, error)
@@ -3393,6 +3395,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.MarketDepthUpdate.Market(childComplexity), true
+
+	case "MarketDepthUpdate.previousSequenceNumber":
+		if e.complexity.MarketDepthUpdate.PreviousSequenceNumber == nil {
+			break
+		}
+
+		return e.complexity.MarketDepthUpdate.PreviousSequenceNumber(childComplexity), true
 
 	case "MarketDepthUpdate.sell":
 		if e.complexity.MarketDepthUpdate.Sell == nil {
@@ -8589,8 +8598,11 @@ type MarketDepthUpdate {
   "Sell side price levels (if available)"
   sell: [PriceLevel!]
 
-  "Sequence number for the current snapshot of the market depth"
+  "Sequence number for the current snapshot of the market depth. It is always increasing but not monotonic."
   sequenceNumber: String!
+
+  "Sequence number of the last update sent; useful for checking that no updates were missed."
+  previousSequenceNumber: String!
 }
 
 "Represents a price on either the buy or sell side and all the orders at that price"
@@ -20674,6 +20686,41 @@ func (ec *executionContext) _MarketDepthUpdate_sequenceNumber(ctx context.Contex
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return ec.resolvers.MarketDepthUpdate().SequenceNumber(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _MarketDepthUpdate_previousSequenceNumber(ctx context.Context, field graphql.CollectedField, obj *vega.MarketDepthUpdate) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "MarketDepthUpdate",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.MarketDepthUpdate().PreviousSequenceNumber(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -42994,6 +43041,26 @@ func (ec *executionContext) _MarketDepthUpdate(ctx context.Context, sel ast.Sele
 					}
 				}()
 				res = ec._MarketDepthUpdate_sequenceNumber(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "previousSequenceNumber":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._MarketDepthUpdate_previousSequenceNumber(ctx, field, obj)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}

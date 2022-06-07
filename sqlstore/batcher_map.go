@@ -34,14 +34,16 @@ func (b *MapBatcher[K, V]) Add(e V) {
 	b.pending[e.Key()] = e
 }
 
-func (b *MapBatcher[K, V]) Flush(ctx context.Context, connection Connection) error {
+func (b *MapBatcher[K, V]) Flush(ctx context.Context, connection Connection) ([]V, error) {
 	if len(b.pending) == 0 {
-		return nil
+		return nil, nil
 	}
 
 	rows := make([][]interface{}, 0, len(b.pending))
+	values := make([]V, 0, len(b.pending))
 	for _, entity := range b.pending {
 		rows = append(rows, entity.ToRow())
+		values = append(values, entity)
 	}
 
 	copyCount, err := connection.CopyFrom(
@@ -51,11 +53,11 @@ func (b *MapBatcher[K, V]) Flush(ctx context.Context, connection Connection) err
 		pgx.CopyFromRows(rows),
 	)
 	if err != nil {
-		return fmt.Errorf("failed to copy %s entries into database:%w", b.tableName, err)
+		return nil, fmt.Errorf("failed to copy %s entries into database:%w", b.tableName, err)
 	}
 
 	if copyCount != int64(len(b.pending)) {
-		return fmt.Errorf("copied %d %s rows into the database, expected to copy %d",
+		return nil, fmt.Errorf("copied %d %s rows into the database, expected to copy %d",
 			copyCount,
 			b.tableName,
 			len(b.pending))
@@ -65,5 +67,5 @@ func (b *MapBatcher[K, V]) Flush(ctx context.Context, connection Connection) err
 		delete(b.pending, k)
 	}
 
-	return nil
+	return values, nil
 }

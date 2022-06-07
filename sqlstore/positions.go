@@ -32,7 +32,7 @@ func NewPositions(connectionSource *ConnectionSource) *Positions {
 	return a
 }
 
-func (ps *Positions) Flush(ctx context.Context) error {
+func (ps *Positions) Flush(ctx context.Context) ([]entities.Position, error) {
 	defer metrics.StartSQLQuery("Positions", "FlushTest")()
 	return ps.batcher.Flush(ctx, ps.pool)
 }

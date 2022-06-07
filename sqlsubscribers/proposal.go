@@ -17,18 +17,18 @@ type ProposalEvent interface {
 	Proposal() vega.Proposal
 }
 
-type ProposalStore interface {
-	Add(context.Context, entities.Proposal) error
+type proposalAdder interface {
+	AddProposal(context.Context, entities.Proposal) error
 }
 
 type Proposal struct {
 	subscriber
-	store ProposalStore
+	store proposalAdder
 	log   *logging.Logger
 }
 
 func NewProposal(
-	store ProposalStore,
+	store proposalAdder,
 	log *logging.Logger,
 ) *Proposal {
 	ps := &Proposal{
@@ -56,5 +56,5 @@ func (ps *Proposal) consume(ctx context.Context, event ProposalEvent) error {
 		return errors.Wrap(err, "unable to parse proposal")
 	}
 
-	return errors.Wrap(ps.store.Add(ctx, proposal), "error adding proposal")
+	return errors.Wrap(ps.store.AddProposal(ctx, proposal), "error adding proposal")
 }

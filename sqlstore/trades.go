@@ -23,7 +23,7 @@ func NewTrades(connectionSource *ConnectionSource) *Trades {
 	return t
 }
 
-func (ts *Trades) Flush(ctx context.Context) error {
+func (ts *Trades) Flush(ctx context.Context) ([]*entities.Trade, error) {
 	var rows [][]interface{}
 	for _, t := range ts.trades {
 		rows = append(rows, []interface{}{
@@ -66,17 +66,18 @@ func (ts *Trades) Flush(ctx context.Context) error {
 			pgx.CopyFromRows(rows),
 		)
 		if err != nil {
-			return fmt.Errorf("failed to copy trades into database:%w", err)
+			return nil, fmt.Errorf("failed to copy trades into database:%w", err)
 		}
 
 		if copyCount != int64(len(rows)) {
-			return fmt.Errorf("copied %d trade rows into the database, expected to copy %d", copyCount, len(rows))
+			return nil, fmt.Errorf("copied %d trade rows into the database, expected to copy %d", copyCount, len(rows))
 		}
 	}
 
+	flushed := ts.trades
 	ts.trades = nil
 
-	return nil
+	return flushed, nil
 }
 
 func (ts *Trades) Add(t *entities.Trade) error {
