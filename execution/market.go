@@ -98,7 +98,7 @@ var (
 // @TODO the interface shouldn't be imported here.
 type PriceMonitor interface {
 	OnTimeUpdate(now time.Time)
-	CheckPrice(ctx context.Context, as price.AuctionState, p *num.Uint, v uint64, persistent bool) bool
+	CheckPrice(ctx context.Context, as price.AuctionState, trades []*types.Trade, persistent bool) bool
 	GetCurrentBounds() []*types.PriceMonitoringBounds
 	SetMinDuration(d time.Duration)
 	GetValidPriceRange() (num.WrappedDecimal, num.WrappedDecimal)
@@ -1009,19 +1009,10 @@ func (m *Market) leaveAuction(ctx context.Context, now time.Time) {
 		OriginalPrice: mcmp,
 	})
 
-	// keep var to see if we're leaving opening auction
-	isOpening := m.as.IsOpeningAuction()
 	// update auction state, so we know what the new tradeMode ought to be
 	endEvt := m.as.Left(ctx, now)
 
 	for _, uncrossedOrder := range uncrossedOrders {
-		if !isOpening {
-			// @TODO we should update this once
-			for _, trade := range uncrossedOrder.Trades {
-				m.pMonitor.CheckPrice(ctx, m.as, trade.Price.Clone(), trade.Size, true)
-			}
-		}
-
 		updatedOrders = append(updatedOrders, uncrossedOrder.Order)
 		updatedOrders = append(
 			updatedOrders, uncrossedOrder.PassiveOrdersAffected...)
@@ -1435,11 +1426,10 @@ func (m *Market) checkPriceAndGetTrades(ctx context.Context, order *types.Order)
 		persistent = false
 	}
 
-	for _, t := range trades {
-		if m.pMonitor.CheckPrice(ctx, m.as, t.Price.Clone(), t.Size, persistent) {
-			return nil, types.OrderErrorNonPersistentOrderOutOfPriceBounds
-		}
+	if m.pMonitor.CheckPrice(ctx, m.as, trades, persistent) {
+		return nil, types.OrderErrorNonPersistentOrderOutOfPriceBounds
 	}
+
 	if m.checkLiquidity(ctx, trades, persistent) {
 		return nil, types.OrderErrorInvalidPersistance
 	}
@@ -3122,9 +3112,11 @@ func (m *Market) commandLiquidityAuction(ctx context.Context) {
 	}
 	// end the liquidity monitoring auction if possible
 	if m.as.InAuction() && m.as.CanLeave() && !m.as.IsOpeningAuction() {
-		p, v, _ := m.matching.GetIndicativePriceAndVolume()
-		// no need to clone here, we're getting indicative price once for this call
-		m.pMonitor.CheckPrice(ctx, m.as, p, v, true)
+		trades, err := m.matching.OrderBook.GetIndicativeTrades()
+		if err != nil {
+			m.log.Panic("Can't get indicative trades")
+		}
+		m.pMonitor.CheckPrice(ctx, m.as, trades, true)
 		// TODO: Need to also get indicative trades and check how they'd impact target stake,
 		// see  https://github.com/vegaprotocol/vega/issues/3047
 		// If price monitoring doesn't trigger auction than leave it

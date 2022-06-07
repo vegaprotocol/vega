@@ -5500,8 +5500,8 @@ func Test3008And3007CancelLiquidityProvision(t *testing.T) {
 		MarketID:    tm.market.GetID(),
 		Size:        20,
 		Remaining:   20,
-		Price:       num.NewUint(5250),
-		Side:        types.SideBuy,
+		Price:       num.NewUint(3500),
+		Side:        types.SideSell,
 		Party:       "party-0",
 		TimeInForce: types.OrderTimeInForceGTC,
 	})
@@ -5921,8 +5921,8 @@ func Test3045DistributeFeesToManyProviders(t *testing.T) {
 		MarketID:    tm.market.GetID(),
 		Size:        20,
 		Remaining:   20,
-		Price:       num.NewUint(5250),
-		Side:        types.SideBuy,
+		Price:       num.NewUint(3500),
+		Side:        types.SideSell,
 		Party:       "party-0",
 		TimeInForce: types.OrderTimeInForceGTC,
 	})
