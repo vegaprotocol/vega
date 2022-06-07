@@ -72,7 +72,7 @@ func TestCannotSend(t *testing.T) {
 	o.Notify([]int{1, 2, 3})
 
 	// The observer goroutine should try 3 times with a short delay between and eventually give up.
-	time.Sleep(50 * time.Millisecond)
+	time.Sleep(100 * time.Millisecond)
 	assert.Equal(t, 2, logs.FilterMessageSnippet("retrying").Len())
 	assert.Equal(t, 1, logs.FilterMessageSnippet("retry limit").Len())
 

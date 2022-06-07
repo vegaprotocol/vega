@@ -3,6 +3,7 @@ package sqlstore
 import (
 	"context"
 	"fmt"
+	"strconv"
 
 	"code.vegaprotocol.io/data-node/logging"
 	"github.com/jackc/pgconn"
@@ -39,6 +40,7 @@ func NewTransactionalConnectionSource(log *logging.Logger, conf ConnectionConfig
 		return nil, errors.Wrap(err, "creating connection source")
 	}
 
+	setMaxPoolSize(context.Background(), poolConfig)
 	registerNumericType(poolConfig)
 
 	pool, err := pgxpool.ConnectConfig(context.Background(), poolConfig)
@@ -54,6 +56,31 @@ func NewTransactionalConnectionSource(log *logging.Logger, conf ConnectionConfig
 	}
 
 	return connectionSource, nil
+}
+
+func setMaxPoolSize(ctx context.Context, poolConfig *pgxpool.Config) error {
+	conn, err := pgx.Connect(ctx, poolConfig.ConnString())
+	if err != nil {
+		return fmt.Errorf("connecting to db: %w", err)
+	}
+	defer conn.Close(ctx)
+
+	var maxConnectionsStr string
+	if err := conn.QueryRow(ctx, "SHOW max_connections;").Scan(&maxConnectionsStr); err != nil {
+		return fmt.Errorf("querying max_connections: %w", err)
+	}
+
+	maxConnections, err := strconv.Atoi(maxConnectionsStr)
+	if err != nil {
+		return fmt.Errorf("max_connections was not an integer: %w", err)
+	}
+
+	if maxConnections < 6 {
+		maxConnections = 6
+	}
+
+	poolConfig.MaxConns = int32(maxConnections) - 5
+	return nil
 }
 
 func (s *ConnectionSource) WithConnection(ctx context.Context) (context.Context, error) {

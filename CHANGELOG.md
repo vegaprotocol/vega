@@ -18,6 +18,7 @@
 ## 0.51.1
 
 ### 🛠  Improvements
+- [615](https://github.com/vegaprotocol/data-node/issues/615) - Ensure pool size less than maximum number of `postgres` connections
 - [632](https://github.com/vegaprotocol/data-node/issues/632) - Rename method for listing asset bundle
 - [609](https://github.com/vegaprotocol/data-node/issues/609) - Add fields related to network limit for ERC20 asset
 - [609](https://github.com/vegaprotocol/data-node/issues/384) - Migrate node data to V2
