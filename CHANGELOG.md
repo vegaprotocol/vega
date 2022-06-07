@@ -30,6 +30,7 @@
 - [621](https://github.com/vegaprotocol/data-node/issues/621) - Reserve database connection for data ingestion
 - [625](https://github.com/vegaprotocol/data-node/issues/625) - Make socket server buffer size configurable
 - [630](https://github.com/vegaprotocol/data-node/issues/630) - Data retention across all historical data tables
+- [645](https://github.com/vegaprotocol/data-node/issues/645) - Make `rewardType` an `enum` in `GraphQL API`
 - [427](https://github.com/vegaprotocol/data-node/issues/427) - Handle recovery from snapshots 
 
 ### 🐛 Fixes
