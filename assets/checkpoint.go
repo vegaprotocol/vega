@@ -42,7 +42,7 @@ func (s *Service) Load(_ context.Context, cp []byte) error {
 			// we know this ID, are the details the same
 			// if not, then  there's an error, and we should not overwrite an existing
 			// asset, only new ones can be added
-			if !bytes.Equal(vgcrypto.Hash([]byte(details.String())), vgcrypto.Hash([]byte(existing.String()))) {
+			if !bytes.Equal(vgcrypto.Hash([]byte(details.String())), vgcrypto.Hash([]byte(existing.Type().Details.String()))) {
 				s.log.Panic("invalid asset loaded from genesis",
 					logging.String("id", a.Id),
 					logging.String("details-genesis", existing.String()),
