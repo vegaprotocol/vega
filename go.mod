@@ -37,11 +37,12 @@ require (
 	go.nanomsg.org/mangos/v3 v3.2.1
 	go.uber.org/zap v1.21.0
 	golang.org/x/crypto v0.0.0-20220315160706-3147a52a75dd
-	golang.org/x/exp v0.0.0-20220428152302-39d4317da171
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
 	google.golang.org/grpc v1.45.0
 	google.golang.org/protobuf v1.27.1
 )
+
+require golang.org/x/exp v0.0.0-20220428152302-39d4317da171 // indirect
 
 require (
 	code.vegaprotocol.io/vegawallet v0.15.1 // indirect
@@ -121,4 +122,4 @@ require (
 
 replace github.com/shopspring/decimal => github.com/vegaprotocol/decimal v1.2.1-0.20210705145732-aaa563729a0a
 
-replace github.com/fergusstrange/embedded-postgres => github.com/vegaprotocol/embedded-postgres v1.13.1-0.20220307182735-e7d70067af91
+replace github.com/fergusstrange/embedded-postgres => github.com/vegaprotocol/embedded-postgres v1.13.1-0.20220607151211-5f2f488de508
