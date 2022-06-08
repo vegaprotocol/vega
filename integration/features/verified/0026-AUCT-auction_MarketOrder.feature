@@ -67,18 +67,18 @@ Feature: Test interactions between different auction types with Market Orders
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference | error                           |
       | party1 | ETH/DEC21 | buy  | 20     | 1010  | 0                | TYPE_LIMIT | TIF_GFN | ref-ref   | OrderError: Invalid Persistence |
 
+   # is there supposed to be some vol on line 75 and 79?
    And the order book should have the following volumes for market "ETH/DEC21":
       | side | price | volume |
-      | buy  | 900   | 1      |
-      | buy  | 990   | 2      |
-      | buy  | 989   | 0      |
       | buy  | 999   | 2      |
-      | sell | 1002  | 0      |
+      | buy  | 990   | 2      |
+      | buy  | 988   | 0      |
+      | buy  | 900   | 1      |
+      | sell | 1001  | 2      |
       | sell | 1010  | 2      |
+      | sell | 1012  | 0      |
       | sell | 1100  | 1      |
-      | sell | 1011  | 0      |
-      | sell | 1100  | 1      |
-
+  
    #increaase supply stake
    And the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
