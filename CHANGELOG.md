@@ -11,6 +11,7 @@
 ### 🛠 Improvements
 - [5421](https://github.com/vegaprotocol/vega/issues/5421) - Fix notary snapshot determinism when no signature are generated yet
 - [5415](https://github.com/vegaprotocol/vega/issues/5415) - Regenerate smart contracts code
+- [5434](https://github.com/vegaprotocol/vega/issues/5434) - Add health check for faucet
 - [5412](https://github.com/vegaprotocol/vega/issues/5412) - Proof of work improvement to support history of changes to network parameters
 
 ### 🐛 Fixes
