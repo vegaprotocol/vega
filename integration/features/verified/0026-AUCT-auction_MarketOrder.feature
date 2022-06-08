@@ -65,18 +65,15 @@ Feature: Test interactions between different auction types with Market Orders
 
     Then the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference | error                           |
-      | party1 | ETH/DEC21 | buy  | 20     | 1010  | 0                | TYPE_LIMIT | TIF_GFN | ref-ref   | OrderError: Invalid Persistence |
+      | party1 | ETH/DEC21 | buy  | 3      | 1010  | 0                | TYPE_MARKET | TIF_GFN | ref-ref   | OrderError: Invalid Persistence |
 
-   # is there supposed to be some vol on line 75 and 79?
    And the order book should have the following volumes for market "ETH/DEC21":
       | side | price | volume |
       | buy  | 999   | 2      |
       | buy  | 990   | 2      |
-      | buy  | 988   | 0      |
       | buy  | 900   | 1      |
       | sell | 1001  | 2      |
       | sell | 1010  | 2      |
-      | sell | 1012  | 0      |
       | sell | 1100  | 1      |
   
    #increaase supply stake
@@ -93,7 +90,7 @@ Feature: Test interactions between different auction types with Market Orders
 
    Then the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference | 
-      | party1 | ETH/DEC21 | buy  | 20     | 1010  | 3                | TYPE_LIMIT | TIF_GFN | ref-ref   | 
+      | party1 | ETH/DEC21 | buy  | 20     | 1010  | 3                | TYPE_MARKET | TIF_GFN | ref-ref   | 
 
    And the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
@@ -107,4 +104,5 @@ Feature: Test interactions between different auction types with Market Orders
   #  And the market data for the market "ETH/DEC21" should be:
   #     | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
   #     | 1001       | TRADING_MODE_CONTINUOUS | 1       | 990       | 1010      | 1201         | 1000           | 12            |
+
 
