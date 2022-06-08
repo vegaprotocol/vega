@@ -575,6 +575,7 @@ func (r *myQueryResolver) Erc20WithdrawalApproval(ctx context.Context, wid strin
 		Nonce:         res.Nonce,
 		Signatures:    res.Signatures,
 		TargetAddress: res.TargetAddress,
+		Creation:      fmt.Sprintf("%d", res.Creation),
 	}, nil
 }
 

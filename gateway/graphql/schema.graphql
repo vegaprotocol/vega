@@ -1898,6 +1898,8 @@ type Erc20WithdrawalApproval {
   signatures: String!
   "The target address which will receive the funds"
   targetAddress: String!
+  "Timestamp at which the withdrawal was created"
+  creation: String!
 }
 
 "The details of a withdrawal processed by vega"
