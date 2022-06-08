@@ -1,6 +1,8 @@
 -- +goose Up
 create extension if not exists timescaledb;
 
+CREATE DOMAIN HUGEINT AS NUMERIC(1000, 0);
+
 create table blocks
 (
     vega_time     TIMESTAMP WITH TIME ZONE NOT NULL PRIMARY KEY,
@@ -13,13 +15,13 @@ create table assets
     id                  BYTEA NOT NULL PRIMARY KEY,
     name                TEXT NOT NULL,
     symbol              TEXT NOT NULL,
-    total_supply        NUMERIC(32, 0),
+    total_supply        HUGEINT,
     decimals            INT,
     quantum             INT,
     source              TEXT,
     erc20_contract      TEXT,
-    lifetime_limit      NUMERIC(32, 0) NOT NULL,
-    withdraw_threshold  NUMERIC(32, 0) NOT NULL,
+    lifetime_limit      HUGEINT NOT NULL,
+    withdraw_threshold  HUGEINT NOT NULL,
     vega_time           TIMESTAMP WITH TIME ZONE NOT NULL REFERENCES blocks (vega_time)
 );
 
@@ -45,7 +47,7 @@ create table balances
 (
     account_id INT                      NOT NULL,
     vega_time  TIMESTAMP WITH TIME ZONE NOT NULL,
-    balance    NUMERIC(32, 0)           NOT NULL,
+    balance    HUGEINT           NOT NULL,
 
     PRIMARY KEY(vega_time, account_id)
 );
@@ -89,7 +91,7 @@ create table ledger
     id              SERIAL                   ,--PRIMARY KEY,
     account_from_id INT                      NOT NULL,
     account_to_id   INT                      NOT NULL,
-    quantity        NUMERIC(32, 0)           NOT NULL,
+    quantity        HUGEINT           NOT NULL,
     vega_time       TIMESTAMP WITH TIME ZONE NOT NULL,
     transfer_time   TIMESTAMP WITH TIME ZONE NOT NULL,
     reference       TEXT,
@@ -248,7 +250,7 @@ create table trades
     seq_num    BIGINT NOT NULL,
     id     BYTEA NOT NULL,
     market_id BYTEA NOT NULL,
-    price     NUMERIC(32, 0) NOT NULL,
+    price     HUGEINT NOT NULL,
     size      BIGINT NOT NULL,
     buyer     BYTEA NOT NULL,
     seller    BYTEA NOT NULL,
@@ -256,12 +258,12 @@ create table trades
     buy_order BYTEA NOT NULL,
     sell_order BYTEA NOT NULL,
     type       SMALLINT NOT NULL,
-    buyer_maker_fee NUMERIC(32, 0),
-    buyer_infrastructure_fee NUMERIC(32, 0),
-    buyer_liquidity_fee NUMERIC(32, 0),
-    seller_maker_fee NUMERIC(32, 0),
-    seller_infrastructure_fee NUMERIC(32, 0),
-    seller_liquidity_fee NUMERIC(32, 0),
+    buyer_maker_fee HUGEINT,
+    buyer_infrastructure_fee HUGEINT,
+    buyer_liquidity_fee HUGEINT,
+    seller_maker_fee HUGEINT,
+    seller_infrastructure_fee HUGEINT,
+    seller_liquidity_fee HUGEINT,
     buyer_auction_batch BIGINT,
     seller_auction_batch BIGINT
 );
@@ -418,27 +420,27 @@ create table market_data (
     vega_time timestamp with time zone not null,
     seq_num    BIGINT NOT NULL,
     market bytea not null,
-    mark_price numeric(32),
-    best_bid_price numeric(32),
+    mark_price HUGEINT,
+    best_bid_price HUGEINT,
     best_bid_volume bigint,
-    best_offer_price numeric(32),
+    best_offer_price HUGEINT,
     best_offer_volume bigint,
-    best_static_bid_price numeric(32),
+    best_static_bid_price HUGEINT,
     best_static_bid_volume bigint,
-    best_static_offer_price numeric(32),
+    best_static_offer_price HUGEINT,
     best_static_offer_volume bigint,
-    mid_price numeric(32),
-    static_mid_price numeric(32),
+    mid_price HUGEINT,
+    static_mid_price HUGEINT,
     open_interest bigint,
     auction_end bigint,
     auction_start bigint,
-    indicative_price numeric(32),
+    indicative_price HUGEINT,
     indicative_volume bigint,
     market_trading_mode market_trading_mode_type,
     auction_trigger auction_trigger_type,
     extension_trigger auction_trigger_type,
-    target_stake numeric(32),
-    supplied_stake numeric(32),
+    target_stake HUGEINT,
+    supplied_stake HUGEINT,
     price_monitoring_bounds jsonb,
     market_value_proxy text,
     liquidity_provider_fee_shares jsonb
@@ -536,7 +538,7 @@ CREATE TABLE rewards(
   market_id        BYTEA NOT NULL,
   reward_type      TEXT NOT NULL,
   epoch_id         BIGINT NOT NULL,
-  amount           NUMERIC(32, 0),
+  amount           HUGEINT,
   percent_of_total FLOAT,
   vega_time        TIMESTAMP WITH TIME ZONE NOT NULL
 );
@@ -545,7 +547,7 @@ CREATE TABLE delegations(
   party_id         BYTEA NOT NULL, -- REFERENCES parties(id), TODO once parties table is populated
   node_id          BYTEA NOT NULL REFERENCES nodes(id),
   epoch_id         BIGINT NOT NULL,
-  amount           NUMERIC(32, 0),
+  amount           HUGEINT,
   vega_time        TIMESTAMP WITH TIME ZONE NOT NULL
 );
 
@@ -597,7 +599,7 @@ create table if not exists deposits (
     status deposit_status not null,
     party_id bytea not null,
     asset bytea not null,
-    amount numeric(32, 0),
+    amount HUGEINT,
     tx_hash text not null,
     credited_timestamp timestamp with time zone not null,
     created_timestamp timestamp with time zone not null,
@@ -649,9 +651,9 @@ CREATE TABLE votes(
   proposal_id                    BYTEA                    NOT NULL, -- TODO think about this REFERENCES proposals(id),
   party_id                       BYTEA                    NOT NULL, -- TODO, once parties is properly populated REFERENCES parties(id),
   value                          vote_value               NOT NULL,
-  total_governance_token_balance NUMERIC(32, 0)           NOT NULL,
-  total_governance_token_weight  NUMERIC(32, 16)           NOT NULL,
-  total_equity_like_share_weight NUMERIC(32, 16)           NOT NULL,
+  total_governance_token_balance HUGEINT           NOT NULL,
+  total_governance_token_weight  NUMERIC(1000, 16)           NOT NULL,
+  total_equity_like_share_weight NUMERIC(1000, 16)           NOT NULL,
   vega_time                      TIMESTAMP WITH TIME ZONE NOT NULL REFERENCES blocks(vega_time),
   initial_time                   TIMESTAMP WITH TIME ZONE,
   PRIMARY KEY (proposal_id, party_id, vega_time)
@@ -664,10 +666,10 @@ CREATE VIEW votes_current AS (
 create table if not exists margin_levels (
     account_id INT NOT NULL,
     timestamp timestamp with time zone not null,
-    maintenance_margin numeric(32, 0),
-    search_level numeric(32, 0),
-    initial_margin numeric(32, 0),
-    collateral_release_level numeric(32, 0),
+    maintenance_margin HUGEINT,
+    search_level HUGEINT,
+    initial_margin HUGEINT,
+    collateral_release_level HUGEINT,
     vega_time timestamp with time zone not null
 );
 
@@ -715,8 +717,8 @@ WHERE conflated_margin_levels.vega_time < ( SELECT min(margin_levels.vega_time) 
 
 create table if not exists risk_factors (
     market_id bytea not null,
-    short numeric(32, 16) not null,
-    long numeric(32, 16) not null,
+    short NUMERIC(1000, 16) not null,
+    long NUMERIC(1000, 16) not null,
     vega_time timestamp with time zone not null references blocks(vega_time),
     primary key (market_id, vega_time)
 );
@@ -834,8 +836,8 @@ create table if not exists liquidity_provisions (
     created_at timestamp with time zone not null,
     updated_at timestamp with time zone not null,
     market_id bytea,
-    commitment_amount numeric(32, 0),
-    fee numeric(32, 16),
+    commitment_amount HUGEINT,
+    fee NUMERIC(1000, 16),
     sells jsonb,
     buys jsonb,
     version bigint,
@@ -856,14 +858,14 @@ create table if not exists transfers (
          from_account_id INT NOT NULL REFERENCES accounts(id),
          to_account_id INT NOT NULL REFERENCES accounts(id),
          asset_id bytea not null,
-         amount        NUMERIC(32, 0)           NOT NULL,
+         amount        HUGEINT           NOT NULL,
          reference       TEXT,
          status           transfer_status NOT NULL,
          transfer_type   transfer_type NOT NULL,
          deliver_on      TIMESTAMP WITH TIME ZONE,
          start_epoch     BIGINT,
          end_epoch       BIGINT,
-         factor        NUMERIC(32, 16) ,
+         factor        NUMERIC(1000, 16) ,
          dispatch_metric INT,
          dispatch_metric_asset bytea,
          dispatch_markets bytea[],
@@ -907,7 +909,7 @@ create table if not exists stake_linking(
     stake_linking_type stake_linking_type not null,
     ethereum_timestamp timestamp with time zone not null,
     party_id bytea not null,
-    amount numeric(32, 0),
+    amount HUGEINT,
     stake_linking_status stake_linking_status not null,
     finalized_at timestamp with time zone,
     tx_hash text not null,
@@ -1039,4 +1041,6 @@ DROP TABLE IF EXISTS parties;
 DROP TABLE IF EXISTS assets;
 DROP TABLE IF EXISTS trades cascade;
 DROP TABLE IF EXISTS blocks cascade;
+
+DROP DOMAIN IF EXISTS HUGEINT;
 
