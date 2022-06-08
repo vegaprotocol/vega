@@ -145,7 +145,6 @@ type App struct {
 
 	nilPow  bool
 	nilSpam bool
-	ctx     context.Context
 }
 
 func NewApp(
@@ -224,7 +223,6 @@ func NewApp(
 		version:               version,
 		blockchainClient:      blockchainClient,
 		erc20MultiSigTopology: erc20MultiSigTopology,
-		ctx:                   context.Background(),
 	}
 
 	// setup handlers
@@ -911,9 +909,9 @@ func (app *App) canSubmitTx(tx abci.Tx) (err error) {
 }
 
 // OnDeliverTXSpam checks spam and replay.
-func (app *App) OnDeliverTXSpam(tx abci.Tx) tmtypes.ResponseDeliverTx {
+func (app *App) OnDeliverTXSpam(ctx context.Context, tx abci.Tx) tmtypes.ResponseDeliverTx {
 	var resp tmtypes.ResponseDeliverTx
-	ctx := vgcontext.WithTxHash(app.ctx, hex.EncodeToString(tx.Hash()))
+	ctxWithHash := vgcontext.WithTxHash(ctx, hex.EncodeToString(tx.Hash()))
 
 	// verify proof of work
 	if !app.nilPow {
@@ -921,7 +919,7 @@ func (app *App) OnDeliverTXSpam(tx abci.Tx) tmtypes.ResponseDeliverTx {
 			app.log.Error(err.Error())
 			resp.Code = abci.AbciSpamError
 			resp.Data = []byte(err.Error())
-			app.broker.Send(events.NewTxErrEvent(ctx, err, tx.Party(), tx.GetCmd(), tx.Command().String()))
+			app.broker.Send(events.NewTxErrEvent(ctxWithHash, err, tx.Party(), tx.GetCmd(), tx.Command().String()))
 			return resp
 		}
 	}
@@ -930,7 +928,7 @@ func (app *App) OnDeliverTXSpam(tx abci.Tx) tmtypes.ResponseDeliverTx {
 			app.log.Error(err.Error())
 			resp.Code = abci.AbciSpamError
 			resp.Data = []byte(err.Error())
-			evt := events.NewTxErrEvent(ctx, err, tx.Party(), tx.GetCmd(), tx.Command().String())
+			evt := events.NewTxErrEvent(ctxWithHash, err, tx.Party(), tx.GetCmd(), tx.Command().String())
 			app.log.Info("sending event for spam post block", logging.String("event", evt.StreamMessage().String()))
 			app.broker.Send(evt)
 			return resp

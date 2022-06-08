@@ -122,7 +122,7 @@ func (app *App) DeliverTx(req types.RequestDeliverTx) (resp types.ResponseDelive
 
 	// check for spam and replay
 	if fn := app.OnDeliverTxSpam; fn != nil {
-		resp = fn(tx)
+		resp = fn(app.ctx, tx)
 		if resp.IsErr() {
 			return AddCommonDeliverTxEvents(resp, tx)
 		}
