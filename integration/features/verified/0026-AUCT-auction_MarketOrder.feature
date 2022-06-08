@@ -83,6 +83,15 @@ Feature: Test interactions between different auction types with Market Orders
       | lp1 | party0 | ETH/DEC21 | 10000              | 0.001 | buy  | MID              | 2          | 1      | amendment |
       | lp1 | party0 | ETH/DEC21 | 10000              | 0.001 | sell | ASK              | 1          | 2      | amendment |
       | lp1 | party0 | ETH/DEC21 | 10000              | 0.001 | sell | MID              | 2          | 1      | amendment |
+
+   And the order book should have the following volumes for market "ETH/DEC21":
+      | side | price | volume |
+      | buy  | 999   | 14     |
+      | buy  | 990   | 8      |
+      | buy  | 900   | 1      |
+      | sell | 1001  | 14     |
+      | sell | 1010  | 8      |
+      | sell | 1100  | 1      |
     
    And the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
@@ -90,7 +99,7 @@ Feature: Test interactions between different auction types with Market Orders
 
    Then the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference | 
-      | party1 | ETH/DEC21 | buy  | 20     | 1010  | 3                | TYPE_MARKET | TIF_GFN | ref-ref   | 
+      | party1 | ETH/DEC21 | buy  | 22     | 1010  | 3                | TYPE_MARKET | TIF_GFN | ref-ref   | 
 
    And the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
@@ -104,5 +113,6 @@ Feature: Test interactions between different auction types with Market Orders
   #  And the market data for the market "ETH/DEC21" should be:
   #     | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
   #     | 1001       | TRADING_MODE_CONTINUOUS | 1       | 990       | 1010      | 1201         | 1000           | 12            |
+
 
 
