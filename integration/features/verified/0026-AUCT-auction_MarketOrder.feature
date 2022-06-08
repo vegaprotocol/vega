@@ -79,27 +79,32 @@ Feature: Test interactions between different auction types with Market Orders
       | sell | 1011  | 0      |
       | sell | 1100  | 1      |
 
+   #increaase supply stake
+   And the parties submit the following liquidity provision:
+      | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
+      | lp1 | party0 | ETH/DEC21 | 10000              | 0.001 | buy  | BID              | 1          | 2      | amendment |
+      | lp1 | party0 | ETH/DEC21 | 10000              | 0.001 | buy  | MID              | 2          | 1      | amendment |
+      | lp1 | party0 | ETH/DEC21 | 10000              | 0.001 | sell | ASK              | 1          | 2      | amendment |
+      | lp1 | party0 | ETH/DEC21 | 10000              | 0.001 | sell | MID              | 2          | 1      | amendment |
     
-    #try different trader
+   And the market data for the market "ETH/DEC21" should be:
+      | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
+      | 1000       | TRADING_MODE_CONTINUOUS | 1       | 990       | 1010      | 1000         | 10000           | 10            |
 
-    # Then the parties place the following orders:
-    #   | party  | market id | side | volume | price | resulting trades | type       | tif     | reference | error                           |
-    #   | party3 | ETH/DEC21 | buy  | 20     | 1010  | 0                | TYPE_LIMIT | TIF_GFN | ref-ref   | OrderError: Invalid Persistence |
+   Then the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference | 
+      | party1 | ETH/DEC21 | buy  | 20     | 1010  | 3                | TYPE_LIMIT | TIF_GFN | ref-ref   | 
 
-    # And the market data for the market "ETH/DEC21" should be:
-    #   | trading mode            | auction trigger             | target stake | supplied stake | open interest |
-    #   | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 1000         | 1000           | 10            |
-  
-    # And the market data for the market "ETH/DEC21" should be:
-    #   | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-    #   | 1000       | TRADING_MODE_CONTINUOUS | 1       | 990       | 1010      | 1000         | 1000           | 10            |
+   And the market data for the market "ETH/DEC21" should be:
+      | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
+      | 1010       | TRADING_MODE_CONTINUOUS | 1       | 990       | 1010      | 3030         | 10000           | 30            |
 
     # try different price 
-      Then the parties place the following orders:
-      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference | 
-      | party1 | ETH/DEC21 | buy  | 20     | 1005  | 1                | TYPE_LIMIT | TIF_GFN | ref-ref   | 
+  #  Then the parties place the following orders:
+  #     | party  | market id | side | volume | price | resulting trades | type       | tif     | reference | 
+  #     | party1 | ETH/DEC21 | buy  | 20     | 1005  | 0                | TYPE_LIMIT | TIF_GFN | ref-ref   | 
 
-    And the market data for the market "ETH/DEC21" should be:
-      | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 1001       | TRADING_MODE_CONTINUOUS | 1       | 990       | 1010      | 1201         | 1000           | 12            |
+  #  And the market data for the market "ETH/DEC21" should be:
+  #     | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
+  #     | 1001       | TRADING_MODE_CONTINUOUS | 1       | 990       | 1010      | 1201         | 1000           | 12            |
 
