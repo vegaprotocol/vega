@@ -17,6 +17,12 @@
 
 ## 0.51.1
 
+### 🐛 Fixes
+- [5444](https://github.com/vegaprotocol/vega/issues/5444) - Merge both checkpoints and genesis asset on startup
+
+
+## 0.51.1
+
 ### 🛠 Improvements
 - [5395](https://github.com/vegaprotocol/vega/issues/5395) - Add `burn_nonce` bridge tool
 - [5403](https://github.com/vegaprotocol/vega/issues/5403) - Allow spam free / proof of work free running of null blockchain
