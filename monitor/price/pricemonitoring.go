@@ -235,39 +235,30 @@ func (e *Engine) OnTimeUpdate(now time.Time) {
 
 // CheckPrice checks how current price, volume and time should impact the auction state and modifies it accordingly: start auction, end auction, extend ongoing auction,
 // "true" gets returned if non-persistent order should be rejected.
-func (e *Engine) CheckPrice(ctx context.Context, as AuctionState, p *num.Uint, v uint64, persistent bool) bool {
+func (e *Engine) CheckPrice(ctx context.Context, as AuctionState, trades []*types.Trade, persistent bool) bool {
 	// initialise with the first price & time provided, otherwise there won't be any bounds
 	wasInitialised := e.initialised
 	if !wasInitialised {
 		// Volume of 0, do nothing
-		if v == 0 {
+		if len(trades) == 0 {
 			return false
 		}
-		e.resetPriceHistory(p, v)
+		e.resetPriceHistory(trades)
 		e.initialised = true
 	}
-
-	last := currentPrice{
-		Price:  p.Clone(),
-		Volume: v,
-	}
-	if len(e.pricesNow) > 0 {
-		last = e.pricesNow[len(e.pricesNow)-1]
-	}
-
 	// market is not in auction, or in batch auction
 	if fba := as.IsFBA(); !as.InAuction() || fba {
-		bounds := e.checkBounds(ctx, p, v)
+		bounds := e.checkBounds(ctx, trades)
 		// no bounds violations - update price, and we're done (unless we initialised as part of this call, then price has alrady been updated)
 		if len(bounds) == 0 {
 			if wasInitialised {
-				e.recordPriceChange(p, v)
+				e.recordPriceChanges(trades)
 			}
 			return false
 		}
 		if !persistent {
 			// we're going to stay in continuous trading, make sure we still have bounds
-			e.resetPriceHistory(last.Price, last.Volume)
+			e.reactivateBounds()
 			return true
 		}
 		duration := types.AuctionDuration{}
@@ -290,11 +281,11 @@ func (e *Engine) CheckPrice(ctx context.Context, as AuctionState, p *num.Uint, v
 	// market is in auction
 	// opening auction -> ignore
 	if as.IsOpeningAuction() {
-		e.resetPriceHistory(p, v)
+		e.resetPriceHistory(trades)
 		return false
 	}
 
-	bounds := e.checkBounds(ctx, p, v)
+	bounds := e.checkBounds(ctx, trades)
 	if len(bounds) == 0 {
 		// current auction is price monitoring
 		// check for end of auction, reset monitoring, and end auction
@@ -306,7 +297,7 @@ func (e *Engine) CheckPrice(ctx context.Context, as AuctionState, p *num.Uint, v
 			// auction can be terminated
 			as.SetReadyToLeave()
 			// reset the engine
-			e.resetPriceHistory(p, v)
+			e.resetPriceHistory(trades)
 			return false
 		}
 		// liquidity auction, and it was safe to end -> book is OK, price was OK, reset the engine
@@ -330,10 +321,14 @@ func (e *Engine) CheckPrice(ctx context.Context, as AuctionState, p *num.Uint, v
 }
 
 // resetPriceHistory deletes existing price history and starts it afresh with the supplied value.
-func (e *Engine) resetPriceHistory(price *num.Uint, volume uint64) {
+func (e *Engine) resetPriceHistory(trades []*types.Trade) {
 	e.update = e.now
-	if volume > 0 {
-		e.pricesNow = []currentPrice{{Price: price, Volume: volume}}
+	if len(trades) > 0 {
+		pricesNow := make([]currentPrice, 0, len(trades))
+		for _, t := range trades {
+			pricesNow = append(pricesNow, currentPrice{Price: t.Price, Volume: t.Size})
+		}
+		e.pricesNow = pricesNow
 		e.pricesPast = []pastPrice{}
 	} else {
 		// If there's a price history than use the most recent
@@ -364,10 +359,12 @@ func (e *Engine) reactivateBounds() {
 }
 
 // recordPriceChange informs price monitoring module of a price change within the same instance as specified by the last call to UpdateTime.
-func (e *Engine) recordPriceChange(price *num.Uint, volume uint64) {
-	if volume > 0 {
-		e.pricesNow = append(e.pricesNow, currentPrice{Price: price.Clone(), Volume: volume})
-		e.stateChanged = true
+func (e *Engine) recordPriceChanges(trades []*types.Trade) {
+	for _, t := range trades {
+		if t.Size > 0 {
+			e.pricesNow = append(e.pricesNow, currentPrice{Price: t.Price.Clone(), Volume: t.Size})
+			e.stateChanged = true
+		}
 	}
 }
 
@@ -401,21 +398,27 @@ func (e *Engine) recordTimeChange(now time.Time) {
 }
 
 // checkBounds checks if the price is within price range for each of the bound and return trigger for each bound that it's not.
-func (e *Engine) checkBounds(ctx context.Context, p *num.Uint, v uint64) []*types.PriceMonitoringTrigger {
+func (e *Engine) checkBounds(ctx context.Context, trades []*types.Trade) []*types.PriceMonitoringTrigger {
 	ret := []*types.PriceMonitoringTrigger{} // returned price projections, empty if all good
-	if v == 0 {
+	if len(trades) == 0 {
 		return ret // volume 0 so no bounds violated
 	}
 	priceRanges := e.getCurrentPriceRanges(false)
-	for _, b := range e.bounds {
-		if !b.Active {
+	for _, t := range trades {
+		if t.Size == 0 {
 			continue
 		}
-		priceRange := priceRanges[b]
-		if p.LT(priceRange.MinPrice.Representation()) || p.GT(priceRange.MaxPrice.Representation()) {
-			ret = append(ret, b.Trigger)
-			// deactivate the bound that just got violated so it doesn't prevent auction from terminating
-			b.Active = false
+		for _, b := range e.bounds {
+			if !b.Active {
+				continue
+			}
+			p := t.Price
+			priceRange := priceRanges[b]
+			if p.LT(priceRange.MinPrice.Representation()) || p.GT(priceRange.MaxPrice.Representation()) {
+				ret = append(ret, b.Trigger)
+				// deactivate the bound that just got violated so it doesn't prevent auction from terminating
+				b.Active = false
+			}
 		}
 	}
 	return ret

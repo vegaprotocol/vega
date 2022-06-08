@@ -101,7 +101,8 @@ func TestChangedState(t *testing.T) {
 
 	for i := 0; i < 10; i++ {
 		pm1.OnTimeUpdate(now)
-		b := pm1.CheckPrice(context.Background(), as, num.NewUint(uint64(100+i)), uint64(100+i), true)
+		p := []*types.Trade{{Price: num.NewUint(uint64(100 + i)), Size: uint64(100 + i)}}
+		b := pm1.CheckPrice(context.Background(), as, p, true)
 		now = now.Add(time.Minute * 1)
 		require.False(t, b)
 	}

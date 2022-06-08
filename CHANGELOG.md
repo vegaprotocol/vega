@@ -15,7 +15,8 @@
 - [5412](https://github.com/vegaprotocol/vega/issues/5412) - Proof of work improvement to support history of changes to network parameters
 
 ### 🐛 Fixes
-- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+- [5438](https://github.com/vegaprotocol/vega/issues/5438) - Evaluate all trades resulting from an aggressive orders in one call to price monitoring engine
+- [5444](https://github.com/vegaprotocol/vega/issues/5444) - Merge both checkpoints and genesis asset on startup
 
 
 ## 0.51.1
