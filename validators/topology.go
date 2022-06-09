@@ -176,7 +176,6 @@ func (t *Topology) OnEpochEvent(ctx context.Context, epoch types.Epoch) {
 	t.epochSeq = epoch.Seq
 	if epoch.Action == proto.EpochAction_EPOCH_ACTION_START {
 		t.newEpochStarted = true
-		t.rng = rand.New(rand.NewSource(epoch.StartTime.Unix()))
 	}
 	// this is a workaround to the topology loaded from checkpoint before the epoch.
 	if t.checkpointLoaded {
@@ -401,7 +400,7 @@ func (t *Topology) BeginBlock(ctx context.Context, req abcitypes.RequestBeginBlo
 	t.currentTime = req.Header.Time
 	// resetting the seed every block, to both get some more unpredictability and still deterministic
 	// and play nicely with snapshot
-	t.rng = rand.New(rand.NewSource(req.Header.Time.Unix()))
+	t.rng = rand.New(rand.NewSource(t.currentTime.Unix()))
 
 	t.checkHeartbeat(ctx)
 	t.validatorPerformance.BeginBlock(ctx, hex.EncodeToString(req.Header.ProposerAddress))

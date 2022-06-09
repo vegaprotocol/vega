@@ -929,7 +929,6 @@ func (app *App) OnDeliverTXSpam(ctx context.Context, tx abci.Tx) tmtypes.Respons
 			resp.Code = abci.AbciSpamError
 			resp.Data = []byte(err.Error())
 			evt := events.NewTxErrEvent(ctxWithHash, err, tx.Party(), tx.GetCmd(), tx.Command().String())
-			app.log.Info("sending event for spam post block", logging.String("event", evt.StreamMessage().String()))
 			app.broker.Send(evt)
 			return resp
 		}
