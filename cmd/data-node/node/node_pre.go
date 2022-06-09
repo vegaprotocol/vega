@@ -428,10 +428,17 @@ func (l *NodeCommand) setupV2Services() error {
 	l.transferServiceV2 = service.NewTransfer(l.transfersStoreSQL, l.Log)
 	l.withdrawalServiceV2 = service.NewWithdrawal(l.withdrawalsStoreSQL, l.Log)
 
-	err := l.marketDepthServiceV2.Initialise(l.ctx)
-	if err != nil {
-		return err
+	toInit := []interface{ Initialise(context.Context) error }{
+		l.marketDepthServiceV2,
+		l.marketDataServiceV2,
 	}
+
+	for _, svc := range toInit {
+		if err := svc.Initialise(l.ctx); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 

@@ -82,6 +82,7 @@ func (md *MarketData) GetMarketDataByID(ctx context.Context, marketID string) (e
 	var marketData entities.MarketData
 	query := "select * from market_data_snapshot where market = $1"
 
+	defer metrics.StartSQLQuery("MarketData", "GetMarketDataByID")()
 	err := pgxscan.Get(ctx, md.Connection, &marketData, query, entities.NewMarketID(marketID))
 
 	return marketData, err

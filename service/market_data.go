@@ -2,6 +2,8 @@ package service
 
 import (
 	"context"
+	"fmt"
+	"sync"
 	"time"
 
 	"code.vegaprotocol.io/data-node/entities"
@@ -9,6 +11,7 @@ import (
 	"code.vegaprotocol.io/data-node/utils"
 )
 
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/market_data_mock.go -package mocks code.vegaprotocol.io/data-node/service MarketDataStore
 type MarketDataStore interface {
 	Add(data *entities.MarketData) error
 	Flush(ctx context.Context) ([]*entities.MarketData, error)
@@ -20,9 +23,11 @@ type MarketDataStore interface {
 }
 
 type MarketData struct {
-	store    MarketDataStore
-	log      *logging.Logger
-	observer utils.Observer[*entities.MarketData]
+	store     MarketDataStore
+	log       *logging.Logger
+	observer  utils.Observer[*entities.MarketData]
+	cache     map[entities.MarketID]*entities.MarketData
+	cacheLock sync.RWMutex
 }
 
 func NewMarketData(store MarketDataStore, log *logging.Logger) *MarketData {
@@ -30,11 +35,18 @@ func NewMarketData(store MarketDataStore, log *logging.Logger) *MarketData {
 		log:      log,
 		store:    store,
 		observer: utils.NewObserver[*entities.MarketData]("market_data", log, 0, 0),
+		cache:    make(map[entities.MarketID]*entities.MarketData),
 	}
 }
 
 func (m *MarketData) Add(data *entities.MarketData) error {
-	return m.store.Add(data)
+	if err := m.store.Add(data); err != nil {
+		return err
+	}
+	m.cacheLock.Lock()
+	m.cache[data.Market] = data
+	m.cacheLock.Unlock()
+	return nil
 }
 
 func (m *MarketData) Flush(ctx context.Context) error {
@@ -46,12 +58,40 @@ func (m *MarketData) Flush(ctx context.Context) error {
 	return nil
 }
 
+func (m *MarketData) Initialise(ctx context.Context) error {
+	m.cacheLock.Lock()
+	defer m.cacheLock.Unlock()
+
+	all, err := m.store.GetMarketsData(ctx)
+	if err != nil {
+		return err
+	}
+	for i := 0; i < len(all); i++ {
+		m.cache[all[i].Market] = &all[i]
+	}
+	return nil
+}
+
 func (m *MarketData) GetMarketDataByID(ctx context.Context, marketID string) (entities.MarketData, error) {
-	return m.store.GetMarketDataByID(ctx, marketID)
+	m.cacheLock.RLock()
+	defer m.cacheLock.RUnlock()
+
+	data, ok := m.cache[entities.NewMarketID(marketID)]
+	if !ok {
+		return entities.MarketData{}, fmt.Errorf("no market data for market: %v", marketID)
+	}
+	return *data, nil
 }
 
 func (m *MarketData) GetMarketsData(ctx context.Context) ([]entities.MarketData, error) {
-	return m.store.GetMarketsData(ctx)
+	m.cacheLock.RLock()
+	defer m.cacheLock.RUnlock()
+
+	data := make([]entities.MarketData, 0, len(m.cache))
+	for _, v := range m.cache {
+		data = append(data, *v)
+	}
+	return data, nil
 }
 
 func (m *MarketData) GetBetweenDatesByID(ctx context.Context, marketID string, start, end time.Time, pagination entities.OffsetPagination) ([]entities.MarketData, error) {

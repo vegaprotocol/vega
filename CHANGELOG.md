@@ -10,6 +10,7 @@
 
 ### 🛠  Improvements
 - [624](https://github.com/vegaprotocol/data-node/issues/624) - Support subscriptions in new `API`
+- [666](https://github.com/vegaprotocol/data-node/issues/666) - Cache latest market data
 
 ### 🐛 Fixes
 - [657](https://github.com/vegaprotocol/data-node/issues/657) - Add missing creation field in `ERC20` withdrawal bundle
