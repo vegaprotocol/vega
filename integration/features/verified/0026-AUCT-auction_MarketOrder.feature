@@ -32,8 +32,8 @@ Feature: Test interactions between different auction types with Market Orders
       | party3 | ETH   | 10000000000000  |
       | party_a1 | ETH | 10000000000000  |
       | party_a2 | ETH | 10000000000000  |
-      | party_r  | ETH | 10000000000000  |
-  
+      | party_r  | ETH | 10000000000000000  |
+      | party_r1 | ETH | 10000000000000000  |
 
   Scenario: 001 Once market is in continuous trading mode: post a non-persistent order that should trigger liquidity auction (not enough target stake), appropriate event is sent and market remains in TRADING_MODE_CONTINUOUS (0026-AUCT-001, 0026-AUCT-005)
 
@@ -72,12 +72,10 @@ Feature: Test interactions between different auction types with Market Orders
 
 Scenario: 002 replicate bug from Galen
 
-    # And the parties submit the following liquidity provision:
-    #   | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-    #   | lp1 | party0 | ETH/DEC21 | 100000000         | 0.001 | buy  | BID              | 1          | 200000 | submission |
-    #   | lp1 | party0 | ETH/DEC21 | 100000000         | 0.001 | buy  | MID              | 2          | 100000 | submission |
-    #   | lp1 | party0 | ETH/DEC21 | 100000000         | 0.001 | sell | ASK              | 1          | 200000 | submission |
-    #   | lp1 | party0 | ETH/DEC21 | 100000000         | 0.001 | sell | MID              | 2          | 100000 | submission |
+    And the parties submit the following liquidity provision:
+      | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
+      | lp1 | party0 | ETH/DEC21 | 200000000         | 0.001 | buy  | MID              | 2          | 205    | submission |
+      | lp1 | party0 | ETH/DEC21 | 200000000         | 0.001 | sell | MID              | 2          | 205    | submission |
 
     And the parties place the following orders:
       | party    | market id | side | volume | price    | resulting trades | type       | tif     |
@@ -91,6 +89,36 @@ Scenario: 002 replicate bug from Galen
 
     And the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 30000       | TRADING_MODE_CONTINUOUS | 43200   | 24617     | 36510     | 1626        | 100000000           | 100000            |
+      | 30000       | TRADING_MODE_CONTINUOUS | 43200   | 24617     | 36510     | 1626        | 200000000      | 100000        |
 
+   And the parties place the following orders: 
+     | party    | market id | side | volume | price    | resulting trades | type       | tif     |
+     | party_r  | ETH/DEC21 | buy  | 100000 | 29987    | 0                | TYPE_LIMIT | TIF_GTC |
+     | party_r  | ETH/DEC21 | buy  | 100000 | 29977    | 0                | TYPE_LIMIT | TIF_GTC |
+     | party_r  | ETH/DEC21 | buy  | 100000 | 29967    | 0                | TYPE_LIMIT | TIF_GTC |
+     | party_r  | ETH/DEC21 | buy  | 100000 | 29957    | 0                | TYPE_LIMIT | TIF_GTC |
+     | party_r  | ETH/DEC21 | sell | 100000 | 30210    | 0                | TYPE_LIMIT | TIF_GTC |
+    
+    And the market data for the market "ETH/DEC21" should be:
+      | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
+      | 30000      | TRADING_MODE_CONTINUOUS | 43200   | 24617     | 36510     | 1626         | 200000000      | 100000        |
 
+    And the parties place the following orders: 
+     | party    | market id | side | volume  | price   |resulting trades | type       | tif     | error                           |
+     | party_r1 | ETH/DEC21 | buy  | 300000  | 400000  |       0         | TYPE_MARKET| TIF_GTC | OrderError: Invalid Persistence |
+
+    And the parties place the following orders: 
+     | party    | market id | side | volume  | price   |resulting trades | type       | tif     | error                           |
+     | party_r1 | ETH/DEC21 | sell | 300000  | 200000  |       0         | TYPE_MARKET| TIF_GTC | OrderError: Invalid Persistence |
+
+     And the order book should have the following volumes for market "ETH/DEC21":
+      | side | price  | volume      |
+      | buy  | 29998  | 100000      |
+      | buy  | 29987  | 100000      |
+      | buy  | 29977  | 100000      |
+      | buy  | 29967  | 100000      |
+      | buy  | 29957  | 100000      |
+      | buy  | 29795  | 1345237966  |
+      | sell | 30002  | 100000      |
+      | sell | 30205  | 1326977824  |
+      | sell | 30210  | 100000      |
