@@ -1044,7 +1044,7 @@ func (app *App) DeliverSubmitOrder(ctx context.Context, tx abci.Tx, deterministi
 			logging.Error(err))
 	}
 
-	return nil
+	return err
 }
 
 func (app *App) DeliverCancelOrder(ctx context.Context, tx abci.Tx, deterministicId string) error {
