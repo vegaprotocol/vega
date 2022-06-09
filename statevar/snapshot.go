@@ -162,9 +162,6 @@ func (e *Engine) postRestore(stateVariablesInternalState []*snapshot.StateVarInt
 			kvb, _ := statevar.KeyValueBundleFromProto(fpvr.Bundle)
 			sv.validatorResults[fpvr.Id] = kvb
 		}
-		if sv.eventID != "" {
-			sv.startCalculation(sv.eventID, sv)
-		}
 	}
 }
 
