@@ -41,8 +41,8 @@ func DepositFromProto(deposit *vega.Deposit, vegaTime time.Time) (*Deposit, erro
 		Asset:             NewAssetID(deposit.Asset),
 		Amount:            amount,
 		TxHash:            deposit.TxHash,
-		CreditedTimestamp: time.Unix(0, deposit.CreditedTimestamp),
-		CreatedTimestamp:  time.Unix(0, deposit.CreatedTimestamp),
+		CreditedTimestamp: NanosToPostgresTimestamp(deposit.CreditedTimestamp),
+		CreatedTimestamp:  NanosToPostgresTimestamp(deposit.CreatedTimestamp),
 		VegaTime:          vegaTime,
 	}, nil
 }

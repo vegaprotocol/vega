@@ -136,9 +136,9 @@ func OrderFromProto(po *vega.Order, seqNum uint64) (Order, error) {
 		BatchID:         batchID,
 		PeggedReference: peggedReference,
 		LpID:            lpID,
-		CreatedAt:       time.Unix(0, po.CreatedAt),
-		UpdatedAt:       time.Unix(0, po.UpdatedAt),
-		ExpiresAt:       time.Unix(0, po.ExpiresAt),
+		CreatedAt:       NanosToPostgresTimestamp(po.CreatedAt),
+		UpdatedAt:       NanosToPostgresTimestamp(po.UpdatedAt),
+		ExpiresAt:       NanosToPostgresTimestamp(po.ExpiresAt),
 		SeqNum:          seqNum,
 	}
 

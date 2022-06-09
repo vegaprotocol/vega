@@ -3,6 +3,7 @@ package sqlstore_test
 import (
 	"context"
 	"testing"
+	"time"
 
 	"code.vegaprotocol.io/data-node/entities"
 	"code.vegaprotocol.io/data-node/sqlstore"
@@ -19,6 +20,7 @@ func addTestReward(t *testing.T, rs *sqlstore.Rewards,
 	marketID entities.MarketID,
 	epochID int64,
 	rewardType string,
+	timestamp time.Time,
 	block entities.Block,
 ) entities.Reward {
 	r := entities.Reward{
@@ -29,6 +31,7 @@ func addTestReward(t *testing.T, rs *sqlstore.Rewards,
 		EpochID:        epochID,
 		Amount:         decimal.NewFromInt(100),
 		PercentOfTotal: 0.2,
+		Timestamp:      timestamp.Truncate(time.Microsecond),
 		VegaTime:       block.VegaTime,
 	}
 	err := rs.Add(context.Background(), r)
@@ -75,11 +78,12 @@ func TestRewards(t *testing.T) {
 	party2ID := party2.ID.String()
 	asset2ID := asset2.ID.String()
 
-	reward1 := addTestReward(t, rs, party1, asset1, market1, 1, "RewardTakerPaidFees", block)
-	reward2 := addTestReward(t, rs, party1, asset2, market1, 2, "RewardMakerReceivedFees", block)
-	reward3 := addTestReward(t, rs, party2, asset1, market2, 3, "GlobalReward", block)
-	reward4 := addTestReward(t, rs, party2, asset2, market2, 4, "GlobalReward", block)
-	reward5 := addTestReward(t, rs, party2, asset2, market2, 5, "GlobalReward", block)
+	now := time.Now()
+	reward1 := addTestReward(t, rs, party1, asset1, market1, 1, "RewardTakerPaidFees", now, block)
+	reward2 := addTestReward(t, rs, party1, asset2, market1, 2, "RewardMakerReceivedFees", now, block)
+	reward3 := addTestReward(t, rs, party2, asset1, market2, 3, "GlobalReward", now, block)
+	reward4 := addTestReward(t, rs, party2, asset2, market2, 4, "GlobalReward", now, block)
+	reward5 := addTestReward(t, rs, party2, asset2, market2, 5, "GlobalReward", now, block)
 
 	t.Run("GetAll", func(t *testing.T) {
 		expected := []entities.Reward{reward1, reward2, reward3, reward4, reward5}

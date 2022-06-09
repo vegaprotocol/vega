@@ -540,6 +540,7 @@ CREATE TABLE rewards(
   epoch_id         BIGINT NOT NULL,
   amount           HUGEINT,
   percent_of_total FLOAT,
+  timestamp        TIMESTAMP WITH TIME ZONE NOT NULL,
   vega_time        TIMESTAMP WITH TIME ZONE NOT NULL
 );
 

@@ -32,13 +32,13 @@ func (e *Epoch) ToProto() *vega.Epoch {
 func EpochFromProto(ee eventspb.EpochEvent) Epoch {
 	var endTime *time.Time
 	if ee.Action == vega.EpochAction_EPOCH_ACTION_END {
-		t := time.Unix(0, ee.EndTime)
+		t := NanosToPostgresTimestamp(ee.EndTime)
 		endTime = &t
 	}
 	epoch := Epoch{
 		ID:         int64(ee.Seq),
-		StartTime:  time.Unix(0, ee.StartTime),
-		ExpireTime: time.Unix(0, ee.ExpireTime),
+		StartTime:  NanosToPostgresTimestamp(ee.StartTime),
+		ExpireTime: NanosToPostgresTimestamp(ee.ExpireTime),
 		EndTime:    endTime,
 	}
 	return epoch

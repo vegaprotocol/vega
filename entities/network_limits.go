@@ -28,8 +28,8 @@ func NetworkLimitsFromProto(vn *vega.NetworkLimits) NetworkLimits {
 		ProposeAssetEnabled:      vn.ProposeAssetEnabled,
 		BootstrapBlockCount:      int32(vn.BootstrapBlockCount),
 		GenesisLoaded:            vn.GenesisLoaded,
-		ProposeMarketEnabledFrom: time.Unix(0, vn.ProposeMarketEnabledFrom),
-		ProposeAssetEnabledFrom:  time.Unix(0, vn.ProposeAssetEnabledFrom),
+		ProposeMarketEnabledFrom: NanosToPostgresTimestamp(vn.ProposeMarketEnabledFrom),
+		ProposeAssetEnabledFrom:  NanosToPostgresTimestamp(vn.ProposeAssetEnabledFrom),
 	}
 }
 
