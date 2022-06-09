@@ -7,7 +7,7 @@ Feature: Test interactions between different auction types with Market Orders
       | market.stake.target.scalingFactor             | 1     |
       | market.liquidity.targetstake.triggering.ratio | 1     |
       | network.floatingPointUpdates.delay            | 5s    |
-      | market.auction.minimumDuration                | 10    |
+      | market.auction.minimumDuration                | 1    |
     And the following assets are registered:
       | id  | decimal places |
       | ETH | 5              |
@@ -89,7 +89,7 @@ Scenario: 002 replicate bug from Galen
 
     And the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 30000       | TRADING_MODE_CONTINUOUS | 43200   | 24617     | 36510     | 1626        | 200000000      | 100000        |
+      | 30000      | TRADING_MODE_CONTINUOUS | 43200   | 24617     | 36510     | 1626        | 200000000      | 100000        |
 
    And the parties place the following orders: 
      | party    | market id | side | volume | price    | resulting trades | type       | tif     |
@@ -97,21 +97,46 @@ Scenario: 002 replicate bug from Galen
      | party_r  | ETH/DEC21 | buy  | 100000 | 29977    | 0                | TYPE_LIMIT | TIF_GTC |
      | party_r  | ETH/DEC21 | buy  | 100000 | 29967    | 0                | TYPE_LIMIT | TIF_GTC |
      | party_r  | ETH/DEC21 | buy  | 100000 | 29957    | 0                | TYPE_LIMIT | TIF_GTC |
-     | party_r  | ETH/DEC21 | sell | 100000 | 30210    | 0                | TYPE_LIMIT | TIF_GTC |
+     #| party_r  | ETH/DEC21 | sell | 100000 | 30210    | 0                | TYPE_LIMIT | TIF_GTC |
+
+    Then the market state should be "STATE_ACTIVE" for the market "ETH/DEC21"
     
     And the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
       | 30000      | TRADING_MODE_CONTINUOUS | 43200   | 24617     | 36510     | 1626         | 200000000      | 100000        |
 
     And the parties place the following orders: 
-     | party    | market id | side | volume  | price   |resulting trades | type       | tif     | error                           |
-     | party_r1 | ETH/DEC21 | buy  | 300000  | 400000  |       0         | TYPE_MARKET| TIF_GTC | OrderError: Invalid Persistence |
+     | party    | market id | side | volume  | price   |resulting trades | type       | tif     | 
+     | party_r1 | ETH/DEC21 | buy  | 300000  | 400000  |       2         | TYPE_MARKET| TIF_IOC | 
 
-    And the parties place the following orders: 
-     | party    | market id | side | volume  | price   |resulting trades | type       | tif     | error                           |
-     | party_r1 | ETH/DEC21 | sell | 300000  | 200000  |       0         | TYPE_MARKET| TIF_GTC | OrderError: Invalid Persistence |
+    # And the parties place the following orders: 
+    #  | party    | market id | side | volume  | price   |resulting trades | type       | tif     | error                           |
+    #  | party_r1 | ETH/DEC21 | sell | 300000  | 200000  |       0         | TYPE_MARKET| TIF_IOC | OrderError: Invalid Persistence |
 
-     And the order book should have the following volumes for market "ETH/DEC21":
+    And the order book should have the following volumes for market "ETH/DEC21":
+      | side | price  | volume      |
+      | buy  | 29998  | 100000      |
+      | buy  | 29987  | 100000      |
+      | buy  | 29977  | 100000      |
+      | buy  | 29967  | 100000      |
+      | buy  | 29957  | 100000      |
+      | buy  | 29795  | 0           |
+      | sell | 30002  | 0           |
+      | sell | 30205  | 0           |
+    
+    Then the market state should be "STATE_SUSPENDED" for the market "ETH/DEC21"
+
+   And the parties place the following orders: 
+     | party    | market id | side | volume  | price   |resulting trades | type       | tif     | 
+     | party_r  | ETH/DEC21 | sell | 100000  | 30002  |       0         | TYPE_LIMIT| TIF_GTC | 
+
+   Then the network moves ahead "10" blocks
+
+   Then the market state should be "STATE_ACTIVE" for the market "ETH/DEC21"
+
+  #Then the network moves ahead "1" blocks
+
+   And the order book should have the following volumes for market "ETH/DEC21":
       | side | price  | volume      |
       | buy  | 29998  | 100000      |
       | buy  | 29987  | 100000      |
@@ -121,4 +146,16 @@ Scenario: 002 replicate bug from Galen
       | buy  | 29795  | 1345237966  |
       | sell | 30002  | 100000      |
       | sell | 30205  | 1326977824  |
-      | sell | 30210  | 100000      |
+
+   And the parties place the following orders: 
+     | party    | market id | side | volume  | price   |resulting trades | type       | tif     | 
+     | party_r  | ETH/DEC21 | buy  | 100000  | 29700   |       0         | TYPE_LIMIT| TIF_GTC | 
+
+   And the parties place the following orders: 
+     | party    | market id | side | volume  | price   |resulting trades | type       | tif     | error                           |
+     | party_r1 | ETH/DEC21 | sell | 600000  | 20000   |       0         | TYPE_MARKET| TIF_IOC | OrderError: Invalid Persistence |
+
+ 
+
+     
+      
