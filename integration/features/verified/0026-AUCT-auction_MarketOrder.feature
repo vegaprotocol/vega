@@ -107,7 +107,7 @@ Scenario: 002 replicate bug from Galen
 
     And the parties place the following orders: 
      | party    | market id | side | volume  | price   |resulting trades | type       | tif     | 
-     | party_r1 | ETH/DEC21 | buy  | 300000  | 400000  |       2         | TYPE_MARKET| TIF_IOC | 
+     | party_r1 | ETH/DEC21 | buy  | 300000  | 400000  |       2         | TYPE_MARKET | TIF_IOC | 
 
     # And the parties place the following orders: 
     #  | party    | market id | side | volume  | price   |resulting trades | type       | tif     | error                           |
@@ -151,11 +151,25 @@ Scenario: 002 replicate bug from Galen
      | party    | market id | side | volume  | price   |resulting trades | type       | tif     | 
      | party_r  | ETH/DEC21 | buy  | 100000  | 29700   |       0         | TYPE_LIMIT| TIF_GTC | 
 
+  And the order book should have the following volumes for market "ETH/DEC21":
+      | side | price  | volume      |
+      | buy  | 29998  | 100000      |
+      | buy  | 29987  | 100000      |
+      | buy  | 29977  | 100000      |
+      | buy  | 29967  | 100000      |
+      | buy  | 29957  | 100000      |
+      | buy  | 29795  | 1345237966  |
+      | buy  | 400000 | 0           |
+      | buy  | 29700  | 100000      |
+      | sell | 30002  | 100000      |
+      | sell | 30205  | 1326977824  |
+
    And the parties place the following orders: 
      | party    | market id | side | volume  | price   |resulting trades | type       | tif     | error                           |
-     | party_r1 | ETH/DEC21 | sell | 600000  | 20000   |       0         | TYPE_MARKET| TIF_IOC | OrderError: Invalid Persistence |
+     | party_r1 | ETH/DEC21 | sell | 600000  | 29000   |       0         | TYPE_MARKET| TIF_IOC | OrderError: Invalid Persistence |
 
- 
+   And the parties place the following orders: 
+     | party    | market id | side | volume  | price   |resulting trades | type       | tif     | 
+     | party_r1 | ETH/DEC21 | sell | 600000  | 20000   |       0         | TYPE_LIMIT | TIF_GTC |
 
-     
-      
+  
