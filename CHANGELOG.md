@@ -13,6 +13,7 @@
 
 ### 🐛 Fixes
 - [657](https://github.com/vegaprotocol/data-node/issues/657) - Add missing creation field in `ERC20` withdrawal bundle
+- [662](https://github.com/vegaprotocol/data-node/issues/662) - Fix auction trigger enum lookup
 
 ## 0.51.1
 
