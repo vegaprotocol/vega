@@ -176,6 +176,11 @@ func (t *Topology) OnEpochEvent(ctx context.Context, epoch types.Epoch) {
 	t.epochSeq = epoch.Seq
 	if epoch.Action == proto.EpochAction_EPOCH_ACTION_START {
 		t.newEpochStarted = true
+		// this is needed because when we load a checkpoint on genesis t.rng is not initialised as it's done before calling beginBlock
+		// so we need to initialise the rng to something.
+		if t.rng == nil {
+			t.rng = rand.New(rand.NewSource(epoch.StartTime.Unix()))
+		}
 	}
 	// this is a workaround to the topology loaded from checkpoint before the epoch.
 	if t.checkpointLoaded {
