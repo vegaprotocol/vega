@@ -471,6 +471,10 @@ func (e *Engine) getActiveParams() *params {
 	return e.activeParams[len(e.activeParams)-1]
 }
 
+func (e *Engine) IsReady() bool {
+	return len(e.activeParams) > 0
+}
+
 func (e *Engine) SpamPoWNumberOfPastBlocks() uint32 {
 	return uint32(e.getActiveParams().spamPoWNumberOfPastBlocks)
 }
