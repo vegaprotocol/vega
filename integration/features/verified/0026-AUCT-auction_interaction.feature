@@ -297,17 +297,17 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
       | trading mode            | auction trigger             | target stake | supplied stake | open interest |
       | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 1000         | 1000           | 10            |
 
-  Scenario: Once market is in continuous trading mode: post a non-persistent order that should trigger liquidity auction (no best ask), appropriate event is sent and market goes into TRADING_MODE_MONITORING_AUCTION
+  Scenario: Once market is in continuous trading mode: post a non-persistent order that should trigger liquidity auction (no best ask), the order trades, market goes into auction mode and an appropriate event is sent and market goes into TRADING_MODE_MONITORING_AUCTION (0035-LIQM-002)
     Given the following network parameters are set:
       | name                                          | value |
       | market.liquidity.targetstake.triggering.ratio | 0.8   |
 
     And the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | buy  | BID              | 1          | 2      | submission |
-      | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | buy  | MID              | 2          | 1      | submission |
-      | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | sell | ASK              | 1          | 2      | submission |
-      | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | sell | MID              | 2          | 1      | submission |
+      | lp1 | party0 | ETH/DEC21 | 2000              | 0.001 | buy  | BID              | 1          | 2      | submission |
+      | lp1 | party0 | ETH/DEC21 | 2000              | 0.001 | buy  | MID              | 2          | 1      | submission |
+      | lp1 | party0 | ETH/DEC21 | 2000              | 0.001 | sell | ASK              | 1          | 2      | submission |
+      | lp1 | party0 | ETH/DEC21 | 2000              | 0.001 | sell | MID              | 2          | 1      | submission |
 
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
@@ -320,15 +320,32 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
     Then the auction ends with a traded volume of "1" at a price of "1000"
     And the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 1000       | TRADING_MODE_CONTINUOUS | 1       | 990       | 1010      | 100          | 1000           | 1             |
+      | 1000       | TRADING_MODE_CONTINUOUS | 1       | 990       | 1010      | 100          | 2000           | 1             |
+
+    Then the parties should have the following profit and loss:
+      | party    | volume | unrealised pnl | realised pnl |
+      | party1   | 1      | 0              | 0            |
+
+    And the order book should have the following volumes for market "ETH/DEC21":
+      | side | price | volume |
+      | sell | 1010  | 14     |
+      | sell | 1009  | 1      |
+      | sell | 1001  | 3      |
+      | buy  | 999   | 3      |
+      | buy  | 991   | 1      |
+      | buy  | 990   | 14     |
 
     Then the parties place the following orders:
-      | party  | market id | side | volume | price | resulting trades | type       | tif     |
-      | party1 | ETH/DEC21 | buy  | 20     | 1010  | 3                | TYPE_LIMIT | TIF_GFN |
+      | party  | market id | side | volume | price | resulting trades | type        | tif     |
+      | party1 | ETH/DEC21 | buy  | 10     | 1010  | 3                | TYPE_MARKET | TIF_IOC |
+
+    Then the parties should have the following profit and loss:
+      | party  | volume | unrealised pnl | realised pnl |
+      | party1 | 11     | 38             | 0            |
 
     And the market data for the market "ETH/DEC21" should be:
-      | trading mode                    | auction trigger           | target stake | supplied stake | open interest |
-      | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY | 1111         | 1000           | 11            |
+      | mark price | trading mode                    | auction trigger           | target stake | supplied stake | open interest |
+      | 1010       | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY | 1111         | 2000           | 11            |
 
   Scenario: Once market is in continuous trading mode: post a non-persistent order that should trigger price auction, check that the order gets stopped, appropriate event is sent and market remains in TRADING_MODE_CONTINUOUS
     Given the following network parameters are set:
