@@ -1,4 +1,4 @@
-Feature: Test interactions between different auction types with Market Orders
+Feature: Test for issue 5460
 
   Background:
     Given the following network parameters are set:
@@ -35,7 +35,7 @@ Feature: Test interactions between different auction types with Market Orders
       | party_r  | ETH | 10000000000000000  |
       | party_r1 | ETH | 10000000000000000  |
 
-  Scenario: 001 Once market is in continuous trading mode: post a non-persistent order that should trigger liquidity auction (not enough target stake), appropriate event is sent and market remains in TRADING_MODE_CONTINUOUS (0026-AUCT-001, 0026-AUCT-005)
+  Scenario: 001 post market order
 
     And the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
@@ -60,17 +60,17 @@ Feature: Test interactions between different auction types with Market Orders
     
     And the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 100000000  | TRADING_MODE_CONTINUOUS | 43200   | 82056031  | 121701233 | 54210000     | 100000000      | 1000000            |
+      | 100000000  | TRADING_MODE_CONTINUOUS | 43200   | 82056031  | 121701233 | 54210000     | 100000000      | 1000000       |
 
     Then the parties place the following orders:
-      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference | 
-      | party1 | ETH/DEC21 | buy  | 2000000| 101000000  | 4           | TYPE_MARKET| TIF_GFN | ref-ref   | 
+      | party  | market id | side | volume | price     | resulting trades | type        | tif     | reference | 
+      | party1 | ETH/DEC21 | buy  | 2000000| 101000000 | 4                | TYPE_MARKET | TIF_GFN | ref-ref   | 
 
     And the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode                    | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 110000000  | TRADING_MODE_MONITORING_AUCTION | 43200   | 82056031  | 121701233      | 84115906        | 100000000           | 1410607            |
+      | 110000000  | TRADING_MODE_MONITORING_AUCTION | 43200   | 82056031  | 121701233 | 84115906     | 100000000      | 1410607       |
 
-Scenario: 002 replicate bug from Galen
+Scenario: 002 replicate bug
 
     And the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
@@ -97,7 +97,6 @@ Scenario: 002 replicate bug from Galen
      | party_r  | ETH/DEC21 | buy  | 100000 | 29977    | 0                | TYPE_LIMIT | TIF_GTC |
      | party_r  | ETH/DEC21 | buy  | 100000 | 29967    | 0                | TYPE_LIMIT | TIF_GTC |
      | party_r  | ETH/DEC21 | buy  | 100000 | 29957    | 0                | TYPE_LIMIT | TIF_GTC |
-     #| party_r  | ETH/DEC21 | sell | 100000 | 30210    | 0                | TYPE_LIMIT | TIF_GTC |
 
     Then the market state should be "STATE_ACTIVE" for the market "ETH/DEC21"
     
@@ -106,12 +105,8 @@ Scenario: 002 replicate bug from Galen
       | 30000      | TRADING_MODE_CONTINUOUS | 43200   | 24617     | 36510     | 1626         | 200000000      | 100000        |
 
     And the parties place the following orders: 
-     | party    | market id | side | volume  | price   |resulting trades | type       | tif     | 
-     | party_r1 | ETH/DEC21 | buy  | 300000  | 400000  |       2         | TYPE_MARKET | TIF_IOC | 
-
-    # And the parties place the following orders: 
-    #  | party    | market id | side | volume  | price   |resulting trades | type       | tif     | error                           |
-    #  | party_r1 | ETH/DEC21 | sell | 300000  | 200000  |       0         | TYPE_MARKET| TIF_IOC | OrderError: Invalid Persistence |
+     | party    | market id | side | volume  | price   | resulting trades | type        | tif     | 
+     | party_r1 | ETH/DEC21 | buy  | 300000  | 400000  | 2                | TYPE_MARKET | TIF_IOC | 
 
     And the order book should have the following volumes for market "ETH/DEC21":
       | side | price  | volume      |
@@ -127,14 +122,12 @@ Scenario: 002 replicate bug from Galen
     Then the market state should be "STATE_SUSPENDED" for the market "ETH/DEC21"
 
    And the parties place the following orders: 
-     | party    | market id | side | volume  | price   |resulting trades | type       | tif     | 
-     | party_r  | ETH/DEC21 | sell | 100000  | 30002  |       0         | TYPE_LIMIT| TIF_GTC | 
+     | party    | market id | side | volume  | price  | resulting trades | type       | tif     | 
+     | party_r  | ETH/DEC21 | sell | 100000  | 30002  | 0                | TYPE_LIMIT | TIF_GTC | 
 
    Then the network moves ahead "10" blocks
 
    Then the market state should be "STATE_ACTIVE" for the market "ETH/DEC21"
-
-  #Then the network moves ahead "1" blocks
 
    And the order book should have the following volumes for market "ETH/DEC21":
       | side | price  | volume      |
@@ -149,7 +142,7 @@ Scenario: 002 replicate bug from Galen
 
    And the parties place the following orders: 
      | party    | market id | side | volume  | price   |resulting trades | type       | tif     | 
-     | party_r  | ETH/DEC21 | buy  | 100000  | 29700   |       0         | TYPE_LIMIT| TIF_GTC | 
+     | party_r  | ETH/DEC21 | buy  | 100000  | 29700   |       0         | TYPE_LIMIT | TIF_GTC | 
 
   And the order book should have the following volumes for market "ETH/DEC21":
       | side | price  | volume      |
@@ -169,8 +162,8 @@ Scenario: 002 replicate bug from Galen
      | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 6549         | 200000000      | 400000        |
 
    And the parties place the following orders: 
-     | party    | market id | side | volume  | price   | resulting trades | type       | tif     |
-     | party_r1 | ETH/DEC21 | sell | 600000  | 29000   | 6                | TYPE_MARKET| TIF_IOC |
+     | party    | market id | side | volume  | price   | resulting trades | type        | tif     |
+     | party_r1 | ETH/DEC21 | sell | 600000  | 29000   | 6                | TYPE_MARKET | TIF_IOC |
 
   And the market data for the market "ETH/DEC21" should be:
      | trading mode            | auction trigger             | target stake | supplied stake | open interest |
