@@ -43,10 +43,12 @@ func (m *Market) checkAuction(ctx context.Context, now time.Time) {
 			return
 		}
 		// opening auction requirements satisfied at this point, other requirements still need to be checked downstream though
+		m.log.Info("opening auction uncrossing criteria met", logging.String("market-id", m.mkt.ID))
 		m.as.SetReadyToLeave()
 
 		m.checkLiquidity(ctx, trades, true)
 		if !m.as.CanLeave() {
+			m.log.Info("cannot leave opening auction - liquidity check failed", logging.String("market-id", m.mkt.ID))
 			return
 		}
 		m.pMonitor.CheckPrice(ctx, m.as, trades, true)
