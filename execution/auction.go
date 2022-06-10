@@ -39,6 +39,7 @@ func (m *Market) checkAuction(ctx context.Context, now time.Time) {
 	// opening auction
 	if m.as.IsOpeningAuction() {
 		if len(trades) == 0 {
+			m.log.Info("cannot leave opening auction - no trades", logging.String("market-id", m.mkt.ID))
 			return
 		}
 		// opening auction requirements satisfied at this point, other requirements still need to be checked downstream though
