@@ -56,7 +56,7 @@ func (m *Market) checkAuction(ctx context.Context, now time.Time) {
 
 		// if we don't have yet consensus for the floating point parameters, stay in the opening auction
 		if !m.CanLeaveOpeningAuction() {
-			m.log.Info("cannot leave opening auction - waiting for floating point to complete the first round")
+			m.log.Info("cannot leave opening auction - waiting for floating point to complete the first round", logging.String("market-id", m.mkt.ID))
 			return
 		}
 		m.log.Info("leaving opening auction for market", logging.String("market-id", m.mkt.ID))
