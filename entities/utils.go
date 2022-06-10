@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/jackc/pgtype"
 )
@@ -119,4 +120,9 @@ func (addr *EthereumAddress) DecodeBinary(ci *pgtype.ConnInfo, src []byte) error
 
 	*addr = EthereumAddress(strAddr)
 	return nil
+}
+
+// NanosToPostgresTimestamp postgres stores timestamps in microsecond resolution
+func NanosToPostgresTimestamp(nanos int64) time.Time {
+	return time.Unix(0, nanos).Truncate(time.Microsecond)
 }
