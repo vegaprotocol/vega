@@ -459,6 +459,65 @@ func TestGetOpenInterestGivenTrades(t *testing.T) {
 			},
 			ExpectedOI: 300,
 		},
+		{
+			ExistingPositions: []*types.Trade{
+				{Seller: "A", Buyer: "C", Size: 100, Price: num.Zero()},
+				{Seller: "C", Buyer: "B", Size: 300, Price: num.Zero()},
+			},
+			Trades: []*types.Trade{
+				{Seller: "B", Buyer: "A", Size: 100, Price: num.Zero()},
+				{Seller: "B", Buyer: "A", Size: 100, Price: num.Zero()},
+				{Seller: "B", Buyer: "A", Size: 100, Price: num.Zero()},
+				{Seller: "B", Buyer: "A", Size: 100, Price: num.Zero()},
+			},
+			ExpectedOI: 300,
+		},
+		{
+			ExistingPositions: []*types.Trade{
+				{Seller: "A", Buyer: "C", Size: 100, Price: num.Zero()},
+				{Seller: "C", Buyer: "B", Size: 300, Price: num.Zero()},
+			},
+			Trades: []*types.Trade{
+				{Seller: "B", Buyer: "A", Size: 100, Price: num.Zero()},
+				{Seller: "B", Buyer: "A", Size: 100, Price: num.Zero()},
+				{Seller: "B", Buyer: "A", Size: 100, Price: num.Zero()},
+				{Seller: "B", Buyer: "A", Size: 100, Price: num.Zero()},
+				{Seller: "B", Buyer: "A", Size: 100, Price: num.Zero()},
+			},
+			ExpectedOI: 400,
+		},
+		{
+			ExistingPositions: []*types.Trade{
+				{Seller: "A", Buyer: "C", Size: 100, Price: num.Zero()},
+				{Seller: "C", Buyer: "B", Size: 300, Price: num.Zero()},
+			},
+			Trades: []*types.Trade{
+				{Seller: "B", Buyer: "A", Size: 100, Price: num.Zero()},
+				{Seller: "B", Buyer: "A", Size: 100, Price: num.Zero()},
+				{Seller: "B", Buyer: "A", Size: 100, Price: num.Zero()},
+				{Seller: "B", Buyer: "A", Size: 100, Price: num.Zero()},
+				{Seller: "A", Buyer: "B", Size: 100, Price: num.Zero()},
+				{Seller: "B", Buyer: "A", Size: 100, Price: num.Zero()},
+				{Seller: "B", Buyer: "A", Size: 100, Price: num.Zero()},
+			},
+			ExpectedOI: 400,
+		},
+		{
+			ExistingPositions: []*types.Trade{
+				{Seller: "A", Buyer: "C", Size: 100, Price: num.Zero()},
+				{Seller: "C", Buyer: "B", Size: 300, Price: num.Zero()},
+			},
+			Trades: []*types.Trade{
+				{Seller: "B", Buyer: "A", Size: 100, Price: num.Zero()},
+				{Seller: "B", Buyer: "A", Size: 100, Price: num.Zero()},
+				{Seller: "B", Buyer: "A", Size: 100, Price: num.Zero()},
+				{Seller: "B", Buyer: "A", Size: 100, Price: num.Zero()},
+				{Seller: "A", Buyer: "C", Size: 100, Price: num.Zero()},
+				{Seller: "D", Buyer: "A", Size: 100, Price: num.Zero()},
+				{Seller: "B", Buyer: "A", Size: 100, Price: num.Zero()},
+			},
+			ExpectedOI: 400,
+		},
 	}
 
 	for _, tc := range cases {
@@ -478,7 +537,7 @@ func TestGetOpenInterestGivenTrades(t *testing.T) {
 			e.Update(context.Background(), tr)
 		}
 
-		// Now check it matches ones those trades are registered as positions
+		// Now check it matches once those trades are registered as positions
 		oiAfterUpdatingPositions := e.GetOpenInterest()
 		t.Run("", func(t *testing.T) {
 			require.Equal(t, tc.ExpectedOI, oiGivenTrades)
