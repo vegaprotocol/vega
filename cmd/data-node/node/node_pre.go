@@ -431,6 +431,7 @@ func (l *NodeCommand) setupV2Services() error {
 	toInit := []interface{ Initialise(context.Context) error }{
 		l.marketDepthServiceV2,
 		l.marketDataServiceV2,
+		l.marketsServiceV2,
 	}
 
 	for _, svc := range toInit {

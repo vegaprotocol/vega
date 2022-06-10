@@ -9,7 +9,6 @@ type Asset struct{ *sqlstore.Assets }
 type Block struct{ *sqlstore.Blocks }
 type Party struct{ *sqlstore.Parties }
 type NetworkLimits struct{ *sqlstore.NetworkLimits }
-type Markets struct{ *sqlstore.Markets }
 type Epoch struct{ *sqlstore.Epochs }
 type Deposit struct{ *sqlstore.Deposits }
 type Withdrawal struct{ *sqlstore.Withdrawals }
@@ -42,10 +41,6 @@ func NewParty(store *sqlstore.Parties, log *logging.Logger) *Party {
 
 func NewNetworkLimits(store *sqlstore.NetworkLimits, log *logging.Logger) *NetworkLimits {
 	return &NetworkLimits{NetworkLimits: store}
-}
-
-func NewMarkets(store *sqlstore.Markets, log *logging.Logger) *Markets {
-	return &Markets{Markets: store}
 }
 
 func NewEpoch(store *sqlstore.Epochs, log *logging.Logger) *Epoch {

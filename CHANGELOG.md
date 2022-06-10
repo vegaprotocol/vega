@@ -12,6 +12,7 @@
 - [624](https://github.com/vegaprotocol/data-node/issues/624) - Support subscriptions in new `API`
 - [666](https://github.com/vegaprotocol/data-node/issues/666) - Cache latest market data
 - [564](https://github.com/vegaprotocol/data-node/issues/564) - Add cursor based pagination to market data requests
+- [619](https://github.com/vegaprotocol/data-node/issues/619) - Cache markets
 - [](https://github.com/vegaprotocol/data-node/issues/xxx) -
 
 ### 🐛 Fixes
