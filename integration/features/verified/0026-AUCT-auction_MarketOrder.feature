@@ -164,12 +164,14 @@ Scenario: 002 replicate bug from Galen
       | sell | 30002  | 100000      |
       | sell | 30205  | 1326977824  |
 
-   And the parties place the following orders: 
-     | party    | market id | side | volume  | price   |resulting trades | type       | tif     | error                           |
-     | party_r1 | ETH/DEC21 | sell | 600000  | 29000   |       0         | TYPE_MARKET| TIF_IOC | OrderError: Invalid Persistence |
+   And the market data for the market "ETH/DEC21" should be:
+     | trading mode            | auction trigger             | target stake | supplied stake | open interest |
+     | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 6549         | 200000000      | 400000        |
 
    And the parties place the following orders: 
-     | party    | market id | side | volume  | price   |resulting trades | type       | tif     | 
-     | party_r1 | ETH/DEC21 | sell | 600000  | 20000   |       0         | TYPE_LIMIT | TIF_GTC |
+     | party    | market id | side | volume  | price   | resulting trades | type       | tif     |
+     | party_r1 | ETH/DEC21 | sell | 600000  | 29000   | 6                | TYPE_MARKET| TIF_IOC |
 
-  
+  And the market data for the market "ETH/DEC21" should be:
+     | trading mode            | auction trigger             | target stake | supplied stake | open interest |
+     | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 8075         | 200000000      | 500000        |
