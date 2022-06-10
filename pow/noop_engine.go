@@ -28,6 +28,7 @@ func (e *NoopEngine) DeliverTx(tx abci.Tx) error {
 	return nil
 }
 
+func (e *NoopEngine) IsReady() bool                     { return true }
 func (e *NoopEngine) SpamPoWNumberOfPastBlocks() uint32 { return uint32(0) }
 func (e *NoopEngine) SpamPoWDifficulty() uint32         { return uint32(0) }
 func (e *NoopEngine) SpamPoWHashFunction() string       { return "" }
