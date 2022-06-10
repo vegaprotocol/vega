@@ -17,9 +17,9 @@ type MarketDataStore interface {
 	Flush(ctx context.Context) ([]*entities.MarketData, error)
 	GetMarketDataByID(ctx context.Context, marketID string) (entities.MarketData, error)
 	GetMarketsData(ctx context.Context) ([]entities.MarketData, error)
-	GetBetweenDatesByID(ctx context.Context, marketID string, start, end time.Time, pagination entities.OffsetPagination) ([]entities.MarketData, error)
-	GetFromDateByID(ctx context.Context, marketID string, start time.Time, pagination entities.OffsetPagination) ([]entities.MarketData, error)
-	GetToDateByID(ctx context.Context, marketID string, end time.Time, pagination entities.OffsetPagination) ([]entities.MarketData, error)
+	GetBetweenDatesByID(ctx context.Context, marketID string, start, end time.Time, pagination entities.Pagination) ([]entities.MarketData, entities.PageInfo, error)
+	GetFromDateByID(ctx context.Context, marketID string, start time.Time, pagination entities.Pagination) ([]entities.MarketData, entities.PageInfo, error)
+	GetToDateByID(ctx context.Context, marketID string, end time.Time, pagination entities.Pagination) ([]entities.MarketData, entities.PageInfo, error)
 }
 
 type MarketData struct {
@@ -94,15 +94,15 @@ func (m *MarketData) GetMarketsData(ctx context.Context) ([]entities.MarketData,
 	return data, nil
 }
 
-func (m *MarketData) GetBetweenDatesByID(ctx context.Context, marketID string, start, end time.Time, pagination entities.OffsetPagination) ([]entities.MarketData, error) {
+func (m *MarketData) GetBetweenDatesByID(ctx context.Context, marketID string, start, end time.Time, pagination entities.Pagination) ([]entities.MarketData, entities.PageInfo, error) {
 	return m.store.GetBetweenDatesByID(ctx, marketID, start, end, pagination)
 }
 
-func (m *MarketData) GetFromDateByID(ctx context.Context, marketID string, start time.Time, pagination entities.OffsetPagination) ([]entities.MarketData, error) {
+func (m *MarketData) GetFromDateByID(ctx context.Context, marketID string, start time.Time, pagination entities.Pagination) ([]entities.MarketData, entities.PageInfo, error) {
 	return m.store.GetFromDateByID(ctx, marketID, start, pagination)
 }
 
-func (m *MarketData) GetToDateByID(ctx context.Context, marketID string, end time.Time, pagination entities.OffsetPagination) ([]entities.MarketData, error) {
+func (m *MarketData) GetToDateByID(ctx context.Context, marketID string, end time.Time, pagination entities.Pagination) ([]entities.MarketData, entities.PageInfo, error) {
 	return m.store.GetToDateByID(ctx, marketID, end, pagination)
 }
 

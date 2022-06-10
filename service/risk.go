@@ -12,7 +12,7 @@ type MarginLevelsStore interface {
 	Add(marginLevel entities.MarginLevels) error
 	Flush(ctx context.Context) ([]entities.MarginLevels, error)
 	GetMarginLevelsByID(ctx context.Context, partyID, marketID string, pagination entities.OffsetPagination) ([]entities.MarginLevels, error)
-	GetMarginLevelsByIDWithCursorPagination(ctx context.Context, partyID, marketID string, pagination entities.Pagination) ([]entities.MarginLevels, entities.PageInfo, error)
+	GetMarginLevelsByIDWithCursorPagination(ctx context.Context, partyID, marketID string, pagination entities.CursorPagination) ([]entities.MarginLevels, entities.PageInfo, error)
 }
 
 type AccountSource interface {
@@ -52,7 +52,7 @@ func (r *Risk) GetMarginLevelsByID(ctx context.Context, partyID, marketID string
 	return r.mlStore.GetMarginLevelsByID(ctx, partyID, marketID, pagination)
 }
 
-func (r *Risk) GetMarginLevelsByIDWithCursorPagination(ctx context.Context, partyID, marketID string, pagination entities.Pagination) ([]entities.MarginLevels, entities.PageInfo, error) {
+func (r *Risk) GetMarginLevelsByIDWithCursorPagination(ctx context.Context, partyID, marketID string, pagination entities.CursorPagination) ([]entities.MarginLevels, entities.PageInfo, error) {
 	return r.mlStore.GetMarginLevelsByIDWithCursorPagination(ctx, partyID, marketID, pagination)
 }
 

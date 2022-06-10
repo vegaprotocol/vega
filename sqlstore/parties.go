@@ -78,7 +78,7 @@ func (ps *Parties) GetAll(ctx context.Context) ([]entities.Party, error) {
 	return parties, err
 }
 
-func (ps *Parties) GetAllPaged(ctx context.Context, partyID string, pagination entities.Pagination) ([]entities.Party, entities.PageInfo, error) {
+func (ps *Parties) GetAllPaged(ctx context.Context, partyID string, pagination entities.CursorPagination) ([]entities.Party, entities.PageInfo, error) {
 	if partyID != "" {
 		party, err := ps.GetByID(ctx, partyID)
 		if err != nil {

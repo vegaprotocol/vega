@@ -18,10 +18,10 @@ type orderStore interface {
 	GetByReference(ctx context.Context, reference string, p entities.OffsetPagination) ([]entities.Order, error)
 	GetAllVersionsByOrderID(ctx context.Context, id string, p entities.OffsetPagination) ([]entities.Order, error)
 	GetLiveOrders(ctx context.Context) ([]entities.Order, error)
-	GetByMarketPaged(ctx context.Context, marketIDStr string, p entities.Pagination) ([]entities.Order, entities.PageInfo, error)
-	GetByPartyPaged(ctx context.Context, partyIDStr string, p entities.Pagination) ([]entities.Order, entities.PageInfo, error)
-	GetOrderVersionsByIDPaged(ctx context.Context, orderIDStr string, p entities.Pagination) ([]entities.Order, entities.PageInfo, error)
-	GetByPartyAndMarketPaged(ctx context.Context, partyIDStr, marketIDStr string, p entities.Pagination) ([]entities.Order, entities.PageInfo, error)
+	GetByMarketPaged(ctx context.Context, marketIDStr string, p entities.CursorPagination) ([]entities.Order, entities.PageInfo, error)
+	GetByPartyPaged(ctx context.Context, partyIDStr string, p entities.CursorPagination) ([]entities.Order, entities.PageInfo, error)
+	GetOrderVersionsByIDPaged(ctx context.Context, orderIDStr string, p entities.CursorPagination) ([]entities.Order, entities.PageInfo, error)
+	GetByPartyAndMarketPaged(ctx context.Context, partyIDStr, marketIDStr string, p entities.CursorPagination) ([]entities.Order, entities.PageInfo, error)
 }
 
 type Order struct {
@@ -90,18 +90,18 @@ func (o *Order) GetLiveOrders(ctx context.Context) ([]entities.Order, error) {
 	return o.store.GetLiveOrders(ctx)
 }
 
-func (o *Order) GetByMarketPaged(ctx context.Context, marketID string, p entities.Pagination) ([]entities.Order, entities.PageInfo, error) {
+func (o *Order) GetByMarketPaged(ctx context.Context, marketID string, p entities.CursorPagination) ([]entities.Order, entities.PageInfo, error) {
 	return o.store.GetByMarketPaged(ctx, marketID, p)
 }
 
-func (o *Order) GetByPartyPaged(ctx context.Context, partyID string, p entities.Pagination) ([]entities.Order, entities.PageInfo, error) {
+func (o *Order) GetByPartyPaged(ctx context.Context, partyID string, p entities.CursorPagination) ([]entities.Order, entities.PageInfo, error) {
 	return o.store.GetByPartyPaged(ctx, partyID, p)
 }
 
-func (o *Order) GetOrderVersionsByIDPaged(ctx context.Context, orderID string, p entities.Pagination) ([]entities.Order, entities.PageInfo, error) {
+func (o *Order) GetOrderVersionsByIDPaged(ctx context.Context, orderID string, p entities.CursorPagination) ([]entities.Order, entities.PageInfo, error) {
 	return o.store.GetOrderVersionsByIDPaged(ctx, orderID, p)
 }
 
-func (o *Order) GetByPartyAndMarketPaged(ctx context.Context, partyID, marketID string, p entities.Pagination) ([]entities.Order, entities.PageInfo, error) {
+func (o *Order) GetByPartyAndMarketPaged(ctx context.Context, partyID, marketID string, p entities.CursorPagination) ([]entities.Order, entities.PageInfo, error) {
 	return o.store.GetByPartyAndMarketPaged(ctx, partyID, marketID, p)
 }

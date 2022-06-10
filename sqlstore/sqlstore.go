@@ -14,9 +14,7 @@ import (
 	"github.com/pressly/goose/v3"
 )
 
-var (
-	ErrBadID = errors.New("Bad ID (must be hex string)")
-)
+var ErrBadID = errors.New("Bad ID (must be hex string)")
 
 //go:embed migrations/*.sql
 var embedMigrations embed.FS
@@ -73,7 +71,6 @@ func ApplyDataRetentionPolicies(config Config) error {
 }
 
 func StartEmbeddedPostgres(log *logging.Logger, config Config, stateDir string) (*embeddedpostgres.EmbeddedPostgres, error) {
-
 	embeddedPostgresRuntimePath := paths.JoinStatePath(paths.StatePath(stateDir), "sqlstore")
 	embeddedPostgresDataPath := paths.JoinStatePath(paths.StatePath(stateDir), "sqlstore", "node-data")
 

@@ -450,7 +450,7 @@ func testTradesCursorPaginationByMarketNoCursor(t *testing.T) {
 	defer cancel()
 	blockTimes := make(map[string]time.Time)
 	populateTestTrades(ctx, t, bs, ts, blockTimes)
-	cursor, err := entities.PaginationFromProto(&v2.Pagination{
+	cursor, err := entities.CursorPaginationFromProto(&v2.Pagination{
 		First:  nil,
 		After:  nil,
 		Last:   nil,
@@ -483,7 +483,7 @@ func testTradesCursorPaginationByPartyNoMarketNoCursor(t *testing.T) {
 	defer cancel()
 	blockTimes := make(map[string]time.Time)
 	populateTestTrades(ctx, t, bs, ts, blockTimes)
-	cursor, err := entities.PaginationFromProto(&v2.Pagination{
+	cursor, err := entities.CursorPaginationFromProto(&v2.Pagination{
 		First:  nil,
 		After:  nil,
 		Last:   nil,
@@ -516,7 +516,7 @@ func testTradesCursorPaginationByPartyAndMarketNoCursor(t *testing.T) {
 	defer cancel()
 	blockTimes := make(map[string]time.Time)
 	populateTestTrades(ctx, t, bs, ts, blockTimes)
-	cursor, err := entities.PaginationFromProto(&v2.Pagination{
+	cursor, err := entities.CursorPaginationFromProto(&v2.Pagination{
 		First:  nil,
 		After:  nil,
 		Last:   nil,
@@ -549,7 +549,7 @@ func testTradesCursorPaginationByMarketWithCursorFirst(t *testing.T) {
 	blockTimes := make(map[string]time.Time)
 	populateTestTrades(ctx, t, bs, ts, blockTimes)
 	first := int32(2)
-	cursor, err := entities.PaginationFromProto(&v2.Pagination{
+	cursor, err := entities.CursorPaginationFromProto(&v2.Pagination{
 		First:  &first,
 		After:  nil,
 		Last:   nil,
@@ -582,7 +582,7 @@ func testTradesCursorPaginationByPartyWithCursorNoMarketFirst(t *testing.T) {
 	blockTimes := make(map[string]time.Time)
 	populateTestTrades(ctx, t, bs, ts, blockTimes)
 	first := int32(2)
-	cursor, err := entities.PaginationFromProto(&v2.Pagination{
+	cursor, err := entities.CursorPaginationFromProto(&v2.Pagination{
 		First:  &first,
 		After:  nil,
 		Last:   nil,
@@ -614,7 +614,7 @@ func testTradesCursorPaginationByPartyAndMarketWithCursorFirst(t *testing.T) {
 	blockTimes := make(map[string]time.Time)
 	populateTestTrades(ctx, t, bs, ts, blockTimes)
 	first := int32(2)
-	cursor, err := entities.PaginationFromProto(&v2.Pagination{
+	cursor, err := entities.CursorPaginationFromProto(&v2.Pagination{
 		First:  &first,
 		After:  nil,
 		Last:   nil,
@@ -647,7 +647,7 @@ func testTradesCursorPaginationByMarketWithCursorLast(t *testing.T) {
 	blockTimes := make(map[string]time.Time)
 	populateTestTrades(ctx, t, bs, ts, blockTimes)
 	last := int32(2)
-	cursor, err := entities.PaginationFromProto(&v2.Pagination{
+	cursor, err := entities.CursorPaginationFromProto(&v2.Pagination{
 		First:  nil,
 		After:  nil,
 		Last:   &last,
@@ -680,7 +680,7 @@ func testTradesCursorPaginationByPartyWithCursorNoMarketLast(t *testing.T) {
 	blockTimes := make(map[string]time.Time)
 	populateTestTrades(ctx, t, bs, ts, blockTimes)
 	last := int32(2)
-	cursor, err := entities.PaginationFromProto(&v2.Pagination{
+	cursor, err := entities.CursorPaginationFromProto(&v2.Pagination{
 		First:  nil,
 		After:  nil,
 		Last:   &last,
@@ -712,7 +712,7 @@ func testTradesCursorPaginationByPartyAndMarketWithCursorLast(t *testing.T) {
 	blockTimes := make(map[string]time.Time)
 	last := int32(2)
 	populateTestTrades(ctx, t, bs, ts, blockTimes)
-	cursor, err := entities.PaginationFromProto(&v2.Pagination{
+	cursor, err := entities.CursorPaginationFromProto(&v2.Pagination{
 		First:  nil,
 		After:  nil,
 		Last:   &last,
@@ -746,7 +746,7 @@ func testTradesCursorPaginationByMarketWithCursorForward(t *testing.T) {
 	populateTestTrades(ctx, t, bs, ts, blockTimes)
 	first := int32(2)
 	after := entities.NewCursor(blockTimes["02a16077"].Format(time.RFC3339Nano)).Encode()
-	cursor, err := entities.PaginationFromProto(&v2.Pagination{
+	cursor, err := entities.CursorPaginationFromProto(&v2.Pagination{
 		First:  &first,
 		After:  &after,
 		Last:   nil,
@@ -780,7 +780,7 @@ func testTradesCursorPaginationByPartyWithCursorNoMarketForward(t *testing.T) {
 	populateTestTrades(ctx, t, bs, ts, blockTimes)
 	first := int32(2)
 	after := entities.NewCursor(blockTimes["44eea1bc"].Format(time.RFC3339Nano)).Encode()
-	cursor, err := entities.PaginationFromProto(&v2.Pagination{
+	cursor, err := entities.CursorPaginationFromProto(&v2.Pagination{
 		First:  &first,
 		After:  &after,
 		Last:   nil,
@@ -813,7 +813,7 @@ func testTradesCursorPaginationByPartyAndMarketWithCursorForward(t *testing.T) {
 	populateTestTrades(ctx, t, bs, ts, blockTimes)
 	first := int32(2)
 	after := entities.NewCursor(blockTimes["02a16077"].Format(time.RFC3339Nano)).Encode()
-	cursor, err := entities.PaginationFromProto(&v2.Pagination{
+	cursor, err := entities.CursorPaginationFromProto(&v2.Pagination{
 		First:  &first,
 		After:  &after,
 		Last:   nil,
@@ -847,7 +847,7 @@ func testTradesCursorPaginationByMarketWithCursorBackward(t *testing.T) {
 	populateTestTrades(ctx, t, bs, ts, blockTimes)
 	last := int32(2)
 	before := entities.NewCursor(blockTimes["7a797e0e"].Format(time.RFC3339Nano)).Encode()
-	cursor, err := entities.PaginationFromProto(&v2.Pagination{
+	cursor, err := entities.CursorPaginationFromProto(&v2.Pagination{
 		First:  nil,
 		After:  nil,
 		Last:   &last,
@@ -879,7 +879,7 @@ func testTradesCursorPaginationByPartyWithCursorNoMarketBackward(t *testing.T) {
 	populateTestTrades(ctx, t, bs, ts, blockTimes)
 	last := int32(2)
 	before := entities.NewCursor(blockTimes["7bb2356e"].Format(time.RFC3339Nano)).Encode()
-	cursor, err := entities.PaginationFromProto(&v2.Pagination{
+	cursor, err := entities.CursorPaginationFromProto(&v2.Pagination{
 		First:  nil,
 		After:  nil,
 		Last:   &last,
@@ -912,7 +912,7 @@ func testTradesCursorPaginationByPartyAndMarketWithCursorBackward(t *testing.T) 
 	populateTestTrades(ctx, t, bs, ts, blockTimes)
 	last := int32(2)
 	before := entities.NewCursor(blockTimes["7a797e0e"].Format(time.RFC3339Nano)).Encode()
-	cursor, err := entities.PaginationFromProto(&v2.Pagination{
+	cursor, err := entities.CursorPaginationFromProto(&v2.Pagination{
 		First:  nil,
 		After:  nil,
 		Last:   &last,

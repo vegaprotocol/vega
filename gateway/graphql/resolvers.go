@@ -2778,31 +2778,21 @@ func getParty(ctx context.Context, log *logging.Logger, client TradingDataServic
 
 // GetMarketDataHistoryByID returns all the market data information for a given market between the dates specified.
 func (r *myQueryResolver) GetMarketDataHistoryByID(ctx context.Context, id string, start, end, skip, first, last *int) ([]*types.MarketData, error) {
-	var startTime, endTime int64
+	var startTime, endTime *int64
 
 	if start != nil {
-		startTime = int64(*start)
+		s := int64(*start)
+		startTime = &s
 	}
 
 	if end != nil {
-		endTime = int64(*end)
+		e := int64(*end)
+		endTime = &e
 	}
 
 	pagination := makeApiV2Pagination(skip, first, last)
 
-	if startTime > 0 && endTime > 0 {
-		return r.getMarketDataHistoryByID(ctx, id, startTime, endTime, pagination)
-	}
-
-	if startTime > 0 {
-		return r.getMarketDataHistoryFromDateByID(ctx, id, startTime, pagination)
-	}
-
-	if endTime > 0 {
-		return r.getMarketDataHistoryToDateByID(ctx, id, endTime, pagination)
-	}
-
-	return r.getMarketDataByID(ctx, id)
+	return r.getMarketDataHistoryByID(ctx, id, startTime, endTime, pagination)
 }
 
 func (r *myQueryResolver) getMarketData(ctx context.Context, req *v2.GetMarketDataHistoryByIDRequest) ([]*types.MarketData, error) {
@@ -2811,7 +2801,17 @@ func (r *myQueryResolver) getMarketData(ctx context.Context, req *v2.GetMarketDa
 		return nil, err
 	}
 
-	return resp.GetMarketData(), nil
+	if resp.MarketData == nil {
+		return nil, errors.New("no market data not found")
+	}
+
+	results := make([]*types.MarketData, 0, len(resp.MarketData.Edges))
+
+	for _, edge := range resp.MarketData.Edges {
+		results = append(results, edge.Node)
+	}
+
+	return results, nil
 }
 
 func (r *myQueryResolver) getMarketDataByID(ctx context.Context, id string) ([]*types.MarketData, error) {
@@ -2822,42 +2822,56 @@ func (r *myQueryResolver) getMarketDataByID(ctx context.Context, id string) ([]*
 	return r.getMarketData(ctx, &req)
 }
 
-func (r *myQueryResolver) getMarketDataHistoryByID(ctx context.Context, id string, start, end int64, pagination *v2.OffsetPagination) ([]*types.MarketData, error) {
-	startTime := time.Unix(start, 0).UnixNano()
-	endTime := time.Unix(end, 0).UnixNano()
+func (r *myQueryResolver) getMarketDataHistoryByID(ctx context.Context, id string, start, end *int64, pagination *v2.OffsetPagination) ([]*types.MarketData, error) {
+	var startTime, endTime *int64
+
+	if start != nil {
+		s := time.Unix(*start, 0).UnixNano()
+		startTime = &s
+	}
+
+	if end != nil {
+		e := time.Unix(*end, 0).UnixNano()
+		endTime = &e
+	}
 
 	req := v2.GetMarketDataHistoryByIDRequest{
-		MarketId:       id,
-		StartTimestamp: &startTime,
-		EndTimestamp:   &endTime,
-		Pagination:     pagination,
+		MarketId:         id,
+		StartTimestamp:   startTime,
+		EndTimestamp:     endTime,
+		OffsetPagination: pagination,
 	}
 
 	return r.getMarketData(ctx, &req)
 }
 
-func (r *myQueryResolver) getMarketDataHistoryFromDateByID(ctx context.Context, id string, start int64, pagination *v2.OffsetPagination) ([]*types.MarketData, error) {
-	startTime := time.Unix(start, 0).UnixNano()
+func (r *myQueryResolver) GetMarketDataHistoryConnectionByID(ctx context.Context, marketID string, start *int, end *int, pagination *v2.Pagination) (*v2.MarketDataConnection, error) {
+	var startTime, endTime *int64
+
+	if start != nil {
+		s := int64(*start)
+		startTime = &s
+	}
+
+	if end != nil {
+		e := int64(*end)
+		endTime = &e
+	}
 
 	req := v2.GetMarketDataHistoryByIDRequest{
-		MarketId:       id,
-		StartTimestamp: &startTime,
+		MarketId:       marketID,
+		StartTimestamp: startTime,
+		EndTimestamp:   endTime,
 		Pagination:     pagination,
 	}
 
-	return r.getMarketData(ctx, &req)
-}
-
-func (r *myQueryResolver) getMarketDataHistoryToDateByID(ctx context.Context, id string, end int64, pagination *v2.OffsetPagination) ([]*types.MarketData, error) {
-	endTime := time.Unix(end, 0).UnixNano()
-
-	req := v2.GetMarketDataHistoryByIDRequest{
-		MarketId:     id,
-		EndTimestamp: &endTime,
-		Pagination:   pagination,
+	resp, err := r.tradingDataClientV2.GetMarketDataHistoryByID(ctx, &req)
+	if err != nil {
+		r.log.Error("tradingData client", logging.Error(err))
+		return nil, customErrorFromStatus(err)
 	}
 
-	return r.getMarketData(ctx, &req)
+	return resp.GetMarketData(), nil
 }
 
 func (r *myQueryResolver) MarketsPaged(ctx context.Context, id *string, pagination *v2.Pagination) (*v2.MarketConnection, error) {

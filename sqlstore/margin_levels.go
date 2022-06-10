@@ -90,7 +90,7 @@ func buildAccountWhereClause(partyID, marketID string) (string, []interface{}) {
 	return fmt.Sprintf("where all_margin_levels.account_id  in (select id from accounts %s)", accountsWhereClause), bindVars
 }
 
-func (ml *MarginLevels) GetMarginLevelsByIDWithCursorPagination(ctx context.Context, partyID, marketID string, pagination entities.Pagination) ([]entities.MarginLevels, entities.PageInfo, error) {
+func (ml *MarginLevels) GetMarginLevelsByIDWithCursorPagination(ctx context.Context, partyID, marketID string, pagination entities.CursorPagination) ([]entities.MarginLevels, entities.PageInfo, error) {
 	whereClause, bindVars := buildAccountWhereClause(partyID, marketID)
 
 	query := fmt.Sprintf(`select distinct on (account_id) %s

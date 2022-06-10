@@ -7,7 +7,10 @@ import (
 	"github.com/pkg/errors"
 )
 
+type Pagination interface{}
+
 type OffsetPagination struct {
+	Pagination
 	Skip       uint64
 	Limit      uint64
 	Descending bool
@@ -62,22 +65,23 @@ func OffsetPaginationFromProto(pp *v2.OffsetPagination) OffsetPagination {
 	}
 }
 
-type Pagination struct {
+type CursorPagination struct {
+	Pagination
 	Forward  *offset
 	Backward *offset
 }
 
-func (p Pagination) HasForward() bool {
+func (p CursorPagination) HasForward() bool {
 	return p.Forward != nil
 }
 
-func (p Pagination) HasBackward() bool {
+func (p CursorPagination) HasBackward() bool {
 	return p.Backward != nil
 }
 
-func PaginationFromProto(cp *v2.Pagination) (Pagination, error) {
+func CursorPaginationFromProto(cp *v2.Pagination) (CursorPagination, error) {
 	if cp == nil {
-		return Pagination{}, nil
+		return CursorPagination{}, nil
 	}
 
 	var after, before Cursor
@@ -91,7 +95,7 @@ func PaginationFromProto(cp *v2.Pagination) (Pagination, error) {
 		// Proto cursors should be encoded values, so we want to decode them in order to use them
 		if cp.After != nil {
 			if err = after.Decode(*cp.After); err != nil {
-				return Pagination{}, errors.Wrap(err, "failed to decode after cursor")
+				return CursorPagination{}, errors.Wrap(err, "failed to decode after cursor")
 			}
 
 			forwardOffset.Cursor = &after
@@ -103,19 +107,19 @@ func PaginationFromProto(cp *v2.Pagination) (Pagination, error) {
 		// Proto cursors should be encoded values, so we want to decode them in order to use them
 		if cp.Before != nil {
 			if err = before.Decode(*cp.Before); err != nil {
-				return Pagination{}, errors.Wrap(err, "failed to decode before cursor")
+				return CursorPagination{}, errors.Wrap(err, "failed to decode before cursor")
 			}
 			backwardOffset.Cursor = &before
 		}
 	}
 
-	pagination := Pagination{
+	pagination := CursorPagination{
 		Forward:  forwardOffset,
 		Backward: backwardOffset,
 	}
 
 	if err = validatePagination(pagination); err != nil {
-		return Pagination{}, err
+		return CursorPagination{}, err
 	}
 
 	return pagination, nil
@@ -134,7 +138,7 @@ func (o offset) HasCursor() bool {
 	return o.Cursor != nil && o.Cursor.IsSet()
 }
 
-func validatePagination(pagination Pagination) error {
+func validatePagination(pagination CursorPagination) error {
 	if pagination.HasForward() && pagination.HasBackward() {
 		return errors.New("cannot provide both forward and backward cursors")
 	}

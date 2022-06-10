@@ -122,12 +122,12 @@ func populateTestParties(ctx context.Context, t *testing.T, bs *sqlstore.Blocks,
 }
 
 func TestPartyPagination(t *testing.T) {
-	t.Run("Pagination should return the part if Party ID is provided", testPartyPaginationReturnsTheSpecifiedParty)
-	t.Run("Pagination should return all parties if no party ID and no cursor is provided", testPartyPaginationReturnAllParties)
-	t.Run("Pagination should return the first page when first limit is provided with no after cursor", testPartyPaginationReturnsFirstPage)
-	t.Run("Pagination should return the last page when last limit is provided with no before cursor", testPartyPaginationReturnsLastPage)
-	t.Run("Pagination should return the page specified by the first limit and after cursor", testPartyPaginationReturnsPageTraversingForward)
-	t.Run("Pagination should return the page specified by the last limit and before cursor", testPartyPaginationReturnsPageTraversingBackward)
+	t.Run("CursorPagination should return the party if Party ID is provided", testPartyPaginationReturnsTheSpecifiedParty)
+	t.Run("CursorPagination should return all parties if no party ID and no cursor is provided", testPartyPaginationReturnAllParties)
+	t.Run("CursorPagination should return the first page when first limit is provided with no after cursor", testPartyPaginationReturnsFirstPage)
+	t.Run("CursorPagination should return the last page when last limit is provided with no before cursor", testPartyPaginationReturnsLastPage)
+	t.Run("CursorPagination should return the page specified by the first limit and after cursor", testPartyPaginationReturnsPageTraversingForward)
+	t.Run("CursorPagination should return the page specified by the last limit and before cursor", testPartyPaginationReturnsPageTraversingBackward)
 }
 
 func testPartyPaginationReturnsTheSpecifiedParty(t *testing.T) {
@@ -138,7 +138,7 @@ func testPartyPaginationReturnsTheSpecifiedParty(t *testing.T) {
 
 	blockTimes := make(map[string]time.Time)
 	populateTestParties(ctx, t, bs, pt, blockTimes)
-	cursor, err := entities.PaginationFromProto(&v2.Pagination{
+	cursor, err := entities.CursorPaginationFromProto(&v2.Pagination{
 		First:  nil,
 		After:  nil,
 		Last:   nil,
@@ -151,8 +151,8 @@ func testPartyPaginationReturnsTheSpecifiedParty(t *testing.T) {
 	assert.Len(t, parties, 1)
 	assert.Equal(t, "c612300d", parties[0].ID.String())
 
-	wantStartCursor := entities.NewCursor(blockTimes["c612300d"].Format(time.RFC3339Nano)).Encode()
-	wantEndCursor := entities.NewCursor(blockTimes["c612300d"].Format(time.RFC3339Nano)).Encode()
+	wantStartCursor := entities.NewCursor(blockTimes["c612300d"].UTC().Format(time.RFC3339Nano)).Encode()
+	wantEndCursor := entities.NewCursor(blockTimes["c612300d"].UTC().Format(time.RFC3339Nano)).Encode()
 	assert.False(t, pageInfo.HasNextPage)
 	assert.False(t, pageInfo.HasPreviousPage)
 	assert.Equal(t, wantStartCursor, pageInfo.EndCursor)
@@ -167,7 +167,7 @@ func testPartyPaginationReturnAllParties(t *testing.T) {
 
 	blockTimes := make(map[string]time.Time)
 	populateTestParties(ctx, t, bs, pt, blockTimes)
-	cursor, err := entities.PaginationFromProto(&v2.Pagination{
+	cursor, err := entities.CursorPaginationFromProto(&v2.Pagination{
 		First:  nil,
 		After:  nil,
 		Last:   nil,
@@ -181,8 +181,8 @@ func testPartyPaginationReturnAllParties(t *testing.T) {
 	assert.Equal(t, "02a16077", parties[0].ID.String())
 	assert.Equal(t, "fb1528a5", parties[9].ID.String())
 
-	wantStartCursor := entities.NewCursor(blockTimes["02a16077"].Format(time.RFC3339Nano)).Encode()
-	wantEndCursor := entities.NewCursor(blockTimes["fb1528a5"].Format(time.RFC3339Nano)).Encode()
+	wantStartCursor := entities.NewCursor(blockTimes["02a16077"].UTC().Format(time.RFC3339Nano)).Encode()
+	wantEndCursor := entities.NewCursor(blockTimes["fb1528a5"].UTC().Format(time.RFC3339Nano)).Encode()
 	assert.False(t, pageInfo.HasNextPage)
 	assert.False(t, pageInfo.HasPreviousPage)
 	assert.Equal(t, wantStartCursor, pageInfo.StartCursor)
@@ -198,7 +198,7 @@ func testPartyPaginationReturnsFirstPage(t *testing.T) {
 	blockTimes := make(map[string]time.Time)
 	populateTestParties(ctx, t, bs, pt, blockTimes)
 	first := int32(3)
-	cursor, err := entities.PaginationFromProto(&v2.Pagination{
+	cursor, err := entities.CursorPaginationFromProto(&v2.Pagination{
 		First:  &first,
 		After:  nil,
 		Last:   nil,
@@ -213,8 +213,8 @@ func testPartyPaginationReturnsFirstPage(t *testing.T) {
 	assert.Equal(t, "02a16077", parties[0].ID.String())
 	assert.Equal(t, "65be62cd", parties[2].ID.String())
 
-	wantStartCursor := entities.NewCursor(blockTimes["02a16077"].Format(time.RFC3339Nano)).Encode()
-	wantEndCursor := entities.NewCursor(blockTimes["65be62cd"].Format(time.RFC3339Nano)).Encode()
+	wantStartCursor := entities.NewCursor(blockTimes["02a16077"].UTC().Format(time.RFC3339Nano)).Encode()
+	wantEndCursor := entities.NewCursor(blockTimes["65be62cd"].UTC().Format(time.RFC3339Nano)).Encode()
 	assert.True(t, pageInfo.HasNextPage)
 	assert.False(t, pageInfo.HasPreviousPage)
 	assert.Equal(t, wantStartCursor, pageInfo.StartCursor)
@@ -230,7 +230,7 @@ func testPartyPaginationReturnsLastPage(t *testing.T) {
 	blockTimes := make(map[string]time.Time)
 	populateTestParties(ctx, t, bs, pt, blockTimes)
 	last := int32(3)
-	cursor, err := entities.PaginationFromProto(&v2.Pagination{
+	cursor, err := entities.CursorPaginationFromProto(&v2.Pagination{
 		First:  nil,
 		After:  nil,
 		Last:   &last,
@@ -245,8 +245,8 @@ func testPartyPaginationReturnsLastPage(t *testing.T) {
 	assert.Equal(t, "c8744329", parties[0].ID.String())
 	assert.Equal(t, "fb1528a5", parties[2].ID.String())
 
-	wantStartCursor := entities.NewCursor(blockTimes["c8744329"].Format(time.RFC3339Nano)).Encode()
-	wantEndCursor := entities.NewCursor(blockTimes["fb1528a5"].Format(time.RFC3339Nano)).Encode()
+	wantStartCursor := entities.NewCursor(blockTimes["c8744329"].UTC().Format(time.RFC3339Nano)).Encode()
+	wantEndCursor := entities.NewCursor(blockTimes["fb1528a5"].UTC().Format(time.RFC3339Nano)).Encode()
 	assert.False(t, pageInfo.HasNextPage)
 	assert.True(t, pageInfo.HasPreviousPage)
 	assert.Equal(t, wantStartCursor, pageInfo.StartCursor)
@@ -263,7 +263,7 @@ func testPartyPaginationReturnsPageTraversingForward(t *testing.T) {
 	populateTestParties(ctx, t, bs, pt, blockTimes)
 	first := int32(3)
 	after := entities.NewCursor(blockTimes["65be62cd"].Format(time.RFC3339Nano)).Encode()
-	cursor, err := entities.PaginationFromProto(&v2.Pagination{
+	cursor, err := entities.CursorPaginationFromProto(&v2.Pagination{
 		First:  &first,
 		After:  &after,
 		Last:   nil,
@@ -278,8 +278,8 @@ func testPartyPaginationReturnsPageTraversingForward(t *testing.T) {
 	assert.Equal(t, "7a797e0e", parties[0].ID.String())
 	assert.Equal(t, "b7c84b8e", parties[2].ID.String())
 
-	wantStartCursor := entities.NewCursor(blockTimes["7a797e0e"].Format(time.RFC3339Nano)).Encode()
-	wantEndCursor := entities.NewCursor(blockTimes["b7c84b8e"].Format(time.RFC3339Nano)).Encode()
+	wantStartCursor := entities.NewCursor(blockTimes["7a797e0e"].UTC().Format(time.RFC3339Nano)).Encode()
+	wantEndCursor := entities.NewCursor(blockTimes["b7c84b8e"].UTC().Format(time.RFC3339Nano)).Encode()
 	assert.True(t, pageInfo.HasNextPage)
 	assert.True(t, pageInfo.HasPreviousPage)
 	assert.Equal(t, wantStartCursor, pageInfo.StartCursor)
@@ -296,7 +296,7 @@ func testPartyPaginationReturnsPageTraversingBackward(t *testing.T) {
 	populateTestParties(ctx, t, bs, pt, blockTimes)
 	last := int32(3)
 	before := entities.NewCursor(blockTimes["c8744329"].Format(time.RFC3339Nano)).Encode()
-	cursor, err := entities.PaginationFromProto(&v2.Pagination{
+	cursor, err := entities.CursorPaginationFromProto(&v2.Pagination{
 		First:  nil,
 		After:  nil,
 		Last:   &last,
@@ -311,8 +311,8 @@ func testPartyPaginationReturnsPageTraversingBackward(t *testing.T) {
 	assert.Equal(t, "7bb2356e", parties[0].ID.String())
 	assert.Equal(t, "c612300d", parties[2].ID.String())
 
-	wantStartCursor := entities.NewCursor(blockTimes["7bb2356e"].Format(time.RFC3339Nano)).Encode()
-	wantEndCursor := entities.NewCursor(blockTimes["c612300d"].Format(time.RFC3339Nano)).Encode()
+	wantStartCursor := entities.NewCursor(blockTimes["7bb2356e"].UTC().Format(time.RFC3339Nano)).Encode()
+	wantEndCursor := entities.NewCursor(blockTimes["c612300d"].UTC().Format(time.RFC3339Nano)).Encode()
 	assert.True(t, pageInfo.HasNextPage)
 	assert.True(t, pageInfo.HasPreviousPage)
 	assert.Equal(t, wantStartCursor, pageInfo.StartCursor)

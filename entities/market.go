@@ -109,7 +109,7 @@ func (m Market) ToProto() (*vega.Market, error) {
 }
 
 func (m Market) Cursor() *Cursor {
-	return NewCursor(m.VegaTime.Format(time.RFC3339Nano))
+	return NewCursor(m.VegaTime.In(time.UTC).Format(time.RFC3339Nano))
 }
 
 type MarketTimestamps struct {

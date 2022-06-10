@@ -51,10 +51,10 @@ func (rs *Reward) consume(ctx context.Context, event RewardPayoutEvent) error {
 		return errors.Wrap(err, "unable to parse reward")
 	}
 
-	if reward.VegaTime != rs.vegaTime {
-		return errors.Errorf("reward timestamp does not match current VegaTime. Reward:%v",
-			protoRewardPayoutEvent)
-	}
+	//if reward.VegaTime != rs.vegaTime {
+	//	return errors.Errorf("reward timestamp does not match current VegaTime. Reward:%v",
+	//		protoRewardPayoutEvent)
+	//}
 
 	return errors.Wrap(rs.store.Add(ctx, reward), "error adding reward payout")
 }

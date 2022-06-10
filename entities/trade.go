@@ -68,7 +68,7 @@ func (t *Trade) ToProto() *vega.Trade {
 }
 
 func (t Trade) Cursor() *Cursor {
-	return NewCursor(t.SyntheticTime.Format(time.RFC3339Nano))
+	return NewCursor(t.SyntheticTime.In(time.UTC).Format(time.RFC3339Nano))
 }
 
 func TradeFromProto(t *vega.Trade, vegaTime time.Time, sequenceNumber uint64) (*Trade, error) {

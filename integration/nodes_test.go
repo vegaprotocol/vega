@@ -10,7 +10,7 @@ func TestNodes(t *testing.T) {
 	for name, query := range queries {
 		t.Run(name, func(t *testing.T) {
 			var new, old struct{ Nodes []Node }
-			assertGraphQLQueriesReturnSame(t, query, &new, &old)
+			assertGraphQLQueriesReturnSame(t, query, &old, &new)
 		})
 	}
 }
@@ -23,7 +23,7 @@ func TestNodeData(t *testing.T) {
 	for name, query := range queries {
 		t.Run(name, func(t *testing.T) {
 			var new, old struct{ NodeData NodeData }
-			assertGraphQLQueriesReturnSame(t, query, &new, &old)
+			assertGraphQLQueriesReturnSame(t, query, &old, &new)
 		})
 	}
 }

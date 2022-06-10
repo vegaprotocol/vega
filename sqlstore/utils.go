@@ -57,7 +57,7 @@ func orderAndPaginateQuery(query string, orderColumns []string, pagination entit
 	return query, args
 }
 
-func orderAndPaginateWithCursor(query string, pagination entities.Pagination, cursors CursorQueryParameters,
+func orderAndPaginateWithCursor(query string, pagination entities.CursorPagination, cursors CursorQueryParameters,
 	args ...interface{}) (string, []interface{},
 ) {
 	var limit int32
@@ -99,7 +99,7 @@ func orderAndPaginateWithCursor(query string, pagination entities.Pagination, cu
 	return query, args
 }
 
-func extractPaginationInfo(pagination entities.Pagination) (Sorting, Compare, string) {
+func extractPaginationInfo(pagination entities.CursorPagination) (Sorting, Compare, string) {
 	var sort Sorting
 	var cmp Compare
 	var value string

@@ -17,6 +17,7 @@ import (
 
 	"code.vegaprotocol.io/data-node/entities"
 	"code.vegaprotocol.io/data-node/sqlstore"
+	v2 "code.vegaprotocol.io/protos/data-node/api/v2"
 	"github.com/jackc/pgx/v4"
 	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/assert"
@@ -177,21 +178,99 @@ func getAllForMarketBetweenDates(t *testing.T) {
 	startDate := time.Date(2022, 2, 11, 10, 5, 30, 0, time.UTC)
 	endDate := time.Date(2022, 2, 11, 10, 6, 0, 0, time.UTC)
 
-	pagination := entities.OffsetPagination{}
+	offsetPagination := entities.OffsetPagination{}
 
-	t.Run("should return all results if no pagination is provided", func(t *testing.T) {
-		got, err := store.GetBetweenDatesByID(ctx, market, startDate, endDate, pagination)
+	t.Run("should return all results if no offset pagination is provided", func(t *testing.T) {
+		got, _, err := store.GetBetweenDatesByID(ctx, market, startDate, endDate, offsetPagination)
 		assert.NoError(t, err)
 		assert.Equal(t, 9, len(got))
 	})
 
-	t.Run("should return page of results if pagination is provided", func(t *testing.T) {
-		pagination.Skip = 5
-		pagination.Limit = 5
+	t.Run("should return all results if no cursor pagination is provided", func(t *testing.T) {
+		got, _, err := store.GetBetweenDatesByID(ctx, market, startDate, endDate, entities.CursorPagination{})
+		assert.NoError(t, err)
+		assert.Equal(t, 9, len(got))
+	})
 
-		got, err := store.GetBetweenDatesByID(ctx, market, startDate, endDate, pagination)
+	t.Run("should return page of results if offset pagination is provided", func(t *testing.T) {
+		offsetPagination.Skip = 5
+		offsetPagination.Limit = 5
+
+		got, _, err := store.GetBetweenDatesByID(ctx, market, startDate, endDate, offsetPagination)
 		assert.NoError(t, err)
 		assert.Equal(t, 4, len(got))
+	})
+
+	t.Run("should return page of results if cursor pagination is provided with first", func(t *testing.T) {
+		first := int32(5)
+		page := &v2.Pagination{
+			First: &first,
+		}
+
+		pagination, err := entities.CursorPaginationFromProto(page)
+		require.NoError(t, err)
+		got, pageInfo, err := store.GetBetweenDatesByID(ctx, market, startDate, endDate, pagination)
+		require.NoError(t, err)
+		assert.Equal(t, 5, len(got))
+		assert.False(t, pageInfo.HasPreviousPage)
+		assert.True(t, pageInfo.HasNextPage)
+		assert.Equal(t, entities.NewCursor("2022-02-11T10:05:31.000175Z").Encode(), pageInfo.StartCursor)
+		assert.Equal(t, entities.NewCursor("2022-02-11T10:05:36.000179Z").Encode(), pageInfo.EndCursor)
+	})
+
+	t.Run("should return page of results if forward cursor pagination is provided with first and after parameter", func(t *testing.T) {
+		first := int32(5)
+		after := entities.NewCursor("2022-02-11T10:05:32.000176Z").Encode()
+		page := &v2.Pagination{
+			First: &first,
+			After: &after,
+		}
+
+		pagination, err := entities.CursorPaginationFromProto(page)
+		require.NoError(t, err)
+		got, pageInfo, err := store.GetBetweenDatesByID(ctx, market, startDate, endDate, pagination)
+		require.NoError(t, err)
+		assert.Equal(t, 5, len(got))
+		assert.True(t, pageInfo.HasPreviousPage)
+		assert.True(t, pageInfo.HasNextPage)
+		assert.Equal(t, entities.NewCursor("2022-02-11T10:05:33.000177Z").Encode(), pageInfo.StartCursor)
+		assert.Equal(t, entities.NewCursor("2022-02-11T10:05:39.000181Z").Encode(), pageInfo.EndCursor)
+	})
+
+	t.Run("should return page of results if cursor pagination is provided with last", func(t *testing.T) {
+		last := int32(5)
+		page := &v2.Pagination{
+			Last: &last,
+		}
+
+		pagination, err := entities.CursorPaginationFromProto(page)
+		require.NoError(t, err)
+		got, pageInfo, err := store.GetBetweenDatesByID(ctx, market, startDate, endDate, pagination)
+		require.NoError(t, err)
+		assert.Equal(t, 5, len(got))
+		assert.True(t, pageInfo.HasPreviousPage)
+		assert.False(t, pageInfo.HasNextPage)
+		assert.Equal(t, entities.NewCursor("2022-02-11T10:05:36.000179Z").Encode(), pageInfo.StartCursor)
+		assert.Equal(t, entities.NewCursor("2022-02-11T10:05:41.000183Z").Encode(), pageInfo.EndCursor)
+	})
+
+	t.Run("should return page of results if forward cursor pagination is provided with last and before parameter", func(t *testing.T) {
+		last := int32(5)
+		before := entities.NewCursor("2022-02-11T10:05:40.000182Z").Encode()
+		page := &v2.Pagination{
+			Last:   &last,
+			Before: &before,
+		}
+
+		pagination, err := entities.CursorPaginationFromProto(page)
+		require.NoError(t, err)
+		got, pageInfo, err := store.GetBetweenDatesByID(ctx, market, startDate, endDate, pagination)
+		require.NoError(t, err)
+		assert.Equal(t, 5, len(got))
+		assert.True(t, pageInfo.HasPreviousPage)
+		assert.True(t, pageInfo.HasNextPage)
+		assert.Equal(t, entities.NewCursor("2022-02-11T10:05:33.000177Z").Encode(), pageInfo.StartCursor)
+		assert.Equal(t, entities.NewCursor("2022-02-11T10:05:39.000181Z").Encode(), pageInfo.EndCursor)
 	})
 }
 
@@ -208,18 +287,92 @@ func getForMarketFromDate(t *testing.T) {
 
 	pagination := entities.OffsetPagination{}
 
-	t.Run("should return all results if no pagination is provided", func(t *testing.T) {
-		got, err := store.GetFromDateByID(ctx, market, startDate, pagination)
+	t.Run("should return all results if no offset pagination is provided", func(t *testing.T) {
+		got, _, err := store.GetFromDateByID(ctx, market, startDate, pagination)
 		assert.NoError(t, err)
 		assert.Equal(t, 32, len(got))
 	})
 
-	t.Run("should return a page of results if pagination is provided", func(t *testing.T) {
+	t.Run("should return all results if no cursor pagination is provided", func(t *testing.T) {
+		got, _, err := store.GetFromDateByID(ctx, market, startDate, entities.CursorPagination{})
+		assert.NoError(t, err)
+		assert.Equal(t, 32, len(got))
+	})
+
+	t.Run("should return a page of results if offset pagination is provided", func(t *testing.T) {
 		pagination.Skip = 5
 		pagination.Limit = 5
-		got, err := store.GetFromDateByID(ctx, market, startDate, pagination)
+		got, _, err := store.GetFromDateByID(ctx, market, startDate, pagination)
 		assert.NoError(t, err)
 		assert.Equal(t, 5, len(got))
+	})
+
+	t.Run("should return a page of results if cursor pagination is provided with first", func(t *testing.T) {
+		first := int32(5)
+		protoPagination := &v2.Pagination{
+			First: &first,
+		}
+		pagination, err := entities.CursorPaginationFromProto(protoPagination)
+		require.NoError(t, err)
+		got, pageInfo, err := store.GetFromDateByID(ctx, market, startDate, pagination)
+		assert.NoError(t, err)
+		assert.Equal(t, 5, len(got))
+		assert.False(t, pageInfo.HasPreviousPage)
+		assert.True(t, pageInfo.HasNextPage)
+		assert.Equal(t, entities.NewCursor("2022-02-11T10:05:00.000152Z").Encode(), pageInfo.StartCursor)
+		assert.Equal(t, entities.NewCursor("2022-02-11T10:05:05.000156Z").Encode(), pageInfo.EndCursor)
+	})
+
+	t.Run("should return a page of results if cursor pagination is provided with first and after", func(t *testing.T) {
+		first := int32(5)
+		after := entities.NewCursor("2022-02-11T10:05:09.000159Z").Encode()
+		protoPagination := &v2.Pagination{
+			First: &first,
+			After: &after,
+		}
+		pagination, err := entities.CursorPaginationFromProto(protoPagination)
+		require.NoError(t, err)
+		got, pageInfo, err := store.GetFromDateByID(ctx, market, startDate, pagination)
+		assert.NoError(t, err)
+		assert.Equal(t, 5, len(got))
+		assert.True(t, pageInfo.HasPreviousPage)
+		assert.True(t, pageInfo.HasNextPage)
+		assert.Equal(t, entities.NewCursor("2022-02-11T10:05:11.00016Z").Encode(), pageInfo.StartCursor)
+		assert.Equal(t, entities.NewCursor("2022-02-11T10:05:16.000164Z").Encode(), pageInfo.EndCursor)
+	})
+
+	t.Run("should return a page of results if cursor pagination is provided with last", func(t *testing.T) {
+		last := int32(5)
+		protoPagination := &v2.Pagination{
+			Last: &last,
+		}
+		pagination, err := entities.CursorPaginationFromProto(protoPagination)
+		require.NoError(t, err)
+		got, pageInfo, err := store.GetFromDateByID(ctx, market, startDate, pagination)
+		assert.NoError(t, err)
+		assert.Equal(t, 5, len(got))
+		assert.True(t, pageInfo.HasPreviousPage)
+		assert.False(t, pageInfo.HasNextPage)
+		assert.Equal(t, entities.NewCursor("2022-02-11T10:05:36.000179Z").Encode(), pageInfo.StartCursor)
+		assert.Equal(t, entities.NewCursor("2022-02-11T10:05:41.000183Z").Encode(), pageInfo.EndCursor)
+	})
+
+	t.Run("should return a page of results if cursor pagination is provided with last and before", func(t *testing.T) {
+		last := int32(5)
+		before := entities.NewCursor("2022-02-11T10:05:37.00018Z").Encode()
+		protoPagination := &v2.Pagination{
+			Last:   &last,
+			Before: &before,
+		}
+		pagination, err := entities.CursorPaginationFromProto(protoPagination)
+		require.NoError(t, err)
+		got, pageInfo, err := store.GetFromDateByID(ctx, market, startDate, pagination)
+		assert.NoError(t, err)
+		assert.Equal(t, 5, len(got))
+		assert.True(t, pageInfo.HasPreviousPage)
+		assert.True(t, pageInfo.HasNextPage)
+		assert.Equal(t, entities.NewCursor("2022-02-11T10:05:31.000175Z").Encode(), pageInfo.StartCursor)
+		assert.Equal(t, entities.NewCursor("2022-02-11T10:05:36.000179Z").Encode(), pageInfo.EndCursor)
 	})
 }
 
@@ -237,17 +390,95 @@ func getForMarketToDate(t *testing.T) {
 	pagination := entities.OffsetPagination{}
 
 	t.Run("should return all results if no pagination is provided", func(t *testing.T) {
-		got, err := store.GetToDateByID(ctx, market, startDate, pagination)
+		got, _, err := store.GetToDateByID(ctx, market, startDate, pagination)
 		assert.NoError(t, err)
 		assert.Equal(t, 18, len(got))
 	})
 
-	t.Run("should return a page of results if pagination is provided", func(t *testing.T) {
+	t.Run("should return all results if no cursor pagination is provided", func(t *testing.T) {
+		got, _, err := store.GetToDateByID(ctx, market, startDate, entities.CursorPagination{})
+		assert.NoError(t, err)
+		assert.Equal(t, 18, len(got))
+	})
+
+	t.Run("should return a page of results if offset pagination is provided", func(t *testing.T) {
 		pagination.Skip = 10
 		pagination.Limit = 10
-		got, err := store.GetToDateByID(ctx, market, startDate, pagination)
+		got, _, err := store.GetToDateByID(ctx, market, startDate, pagination)
 		assert.NoError(t, err)
 		assert.Equal(t, 8, len(got))
+	})
+
+	t.Run("should return a page of results if cursor pagination is provided with first", func(t *testing.T) {
+		first := int32(10)
+		protoPagination := &v2.Pagination{
+			First: &first,
+		}
+
+		pagination, err := entities.CursorPaginationFromProto(protoPagination)
+		require.NoError(t, err)
+		got, pageInfo, err := store.GetToDateByID(ctx, market, startDate, pagination)
+		assert.NoError(t, err)
+		assert.Equal(t, 10, len(got))
+		assert.False(t, pageInfo.HasPreviousPage)
+		assert.True(t, pageInfo.HasNextPage)
+		assert.Equal(t, entities.NewCursor("2022-02-11T10:01:35Z").Encode(), pageInfo.StartCursor)
+		assert.Equal(t, entities.NewCursor("2022-02-11T10:01:49.000009Z").Encode(), pageInfo.EndCursor)
+	})
+
+	t.Run("should return a page of results if cursor pagination is provided with first and after", func(t *testing.T) {
+		first := int32(10)
+		after := entities.NewCursor("2022-02-11T10:01:49.000009Z").Encode()
+		protoPagination := &v2.Pagination{
+			First: &first,
+			After: &after,
+		}
+
+		pagination, err := entities.CursorPaginationFromProto(protoPagination)
+		require.NoError(t, err)
+		got, pageInfo, err := store.GetToDateByID(ctx, market, startDate, pagination)
+		assert.NoError(t, err)
+		assert.Equal(t, 8, len(got))
+		assert.True(t, pageInfo.HasPreviousPage)
+		assert.False(t, pageInfo.HasNextPage)
+		assert.Equal(t, entities.NewCursor("2022-02-11T10:01:50.00001Z").Encode(), pageInfo.StartCursor)
+		assert.Equal(t, entities.NewCursor("2022-02-11T10:02:00.000017Z").Encode(), pageInfo.EndCursor)
+	})
+
+	t.Run("should return a page of results if cursor pagination is provided with last", func(t *testing.T) {
+		last := int32(10)
+		protoPagination := &v2.Pagination{
+			Last: &last,
+		}
+
+		pagination, err := entities.CursorPaginationFromProto(protoPagination)
+		require.NoError(t, err)
+		got, pageInfo, err := store.GetToDateByID(ctx, market, startDate, pagination)
+		assert.NoError(t, err)
+		assert.Equal(t, 10, len(got))
+		assert.True(t, pageInfo.HasPreviousPage)
+		assert.False(t, pageInfo.HasNextPage)
+		assert.Equal(t, entities.NewCursor("2022-02-11T10:01:47.000008Z").Encode(), pageInfo.StartCursor)
+		assert.Equal(t, entities.NewCursor("2022-02-11T10:02:00.000017Z").Encode(), pageInfo.EndCursor)
+	})
+
+	t.Run("should return a page of results if cursor pagination is provided with last and before", func(t *testing.T) {
+		last := int32(10)
+		before := entities.NewCursor("2022-02-11T10:01:49.000009Z").Encode()
+		protoPagination := &v2.Pagination{
+			Last:   &last,
+			Before: &before,
+		}
+
+		pagination, err := entities.CursorPaginationFromProto(protoPagination)
+		require.NoError(t, err)
+		got, pageInfo, err := store.GetToDateByID(ctx, market, startDate, pagination)
+		assert.NoError(t, err)
+		assert.Equal(t, 9, len(got))
+		assert.False(t, pageInfo.HasPreviousPage)
+		assert.True(t, pageInfo.HasNextPage)
+		assert.Equal(t, entities.NewCursor("2022-02-11T10:01:35Z").Encode(), pageInfo.StartCursor)
+		assert.Equal(t, entities.NewCursor("2022-02-11T10:01:47.000008Z").Encode(), pageInfo.EndCursor)
 	})
 }
 
@@ -272,6 +503,7 @@ func setupMarketData(t *testing.T) (*sqlstore.MarketData, error) {
 	hash, err = hex.DecodeString("deadbeef")
 	assert.NoError(t, err)
 
+	seqNum := 0
 	for {
 		line, err := reader.Read()
 		if err == io.EOF {
@@ -281,7 +513,8 @@ func setupMarketData(t *testing.T) (*sqlstore.MarketData, error) {
 			return nil, err
 		}
 
-		marketData := csvToMarketData(t, line)
+		marketData := csvToMarketData(t, line, seqNum)
+		seqNum++
 
 		// Postgres only stores timestamps in microsecond resolution
 		block := entities.Block{
@@ -360,10 +593,9 @@ func mustParseLiquidity(t *testing.T, value string) []*entities.LiquidityProvide
 	return liquidity
 }
 
-func csvToMarketData(t *testing.T, line []string) *entities.MarketData {
+func csvToMarketData(t *testing.T, line []string, seqNum int) *entities.MarketData {
 	t.Helper()
 
-	seqNum := 0
 	vegaTime := mustParseTimestamp(t, line[csvColumnVegaTime])
 	syntheticTime := vegaTime.Add(time.Duration(seqNum) * time.Microsecond)
 

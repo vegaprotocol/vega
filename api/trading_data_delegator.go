@@ -1630,7 +1630,7 @@ func (t *tradingDataDelegator) OrdersByParty(ctx context.Context,
 }
 
 // OrdersByMarket provides a list of orders for a given market.
-// Pagination: Optional. If not provided, defaults are used.
+// CursorPagination: Optional. If not provided, defaults are used.
 // Returns a list of orders sorted by timestamp descending (most recent first).
 func (t *tradingDataDelegator) OrdersByMarket(ctx context.Context,
 	request *protoapi.OrdersByMarketRequest,

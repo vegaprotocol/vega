@@ -12,11 +12,11 @@ type tradeStore interface {
 	Flush(ctx context.Context) ([]*entities.Trade, error)
 	Add(t *entities.Trade) error
 	GetByMarket(ctx context.Context, market string, p entities.OffsetPagination) ([]entities.Trade, error)
-	GetByMarketWithCursor(ctx context.Context, market string, pagination entities.Pagination) ([]entities.Trade, entities.PageInfo, error)
+	GetByMarketWithCursor(ctx context.Context, market string, pagination entities.CursorPagination) ([]entities.Trade, entities.PageInfo, error)
 	GetByParty(ctx context.Context, party string, market *string, pagination entities.OffsetPagination) ([]entities.Trade, error)
-	GetByPartyWithCursor(ctx context.Context, party string, market *string, pagination entities.Pagination) ([]entities.Trade, entities.PageInfo, error)
+	GetByPartyWithCursor(ctx context.Context, party string, market *string, pagination entities.CursorPagination) ([]entities.Trade, entities.PageInfo, error)
 	GetByOrderID(ctx context.Context, order string, market *string, pagination entities.OffsetPagination) ([]entities.Trade, error)
-	GetByOrderIDWithCursor(ctx context.Context, order string, market *string, pagination entities.Pagination) ([]entities.Trade, entities.PageInfo, error)
+	GetByOrderIDWithCursor(ctx context.Context, order string, market *string, pagination entities.CursorPagination) ([]entities.Trade, entities.PageInfo, error)
 }
 
 type Trade struct {
@@ -50,7 +50,7 @@ func (t *Trade) GetByMarket(ctx context.Context, market string, p entities.Offse
 	return t.store.GetByMarket(ctx, market, p)
 }
 
-func (t *Trade) GetByMarketWithCursor(ctx context.Context, market string, pagination entities.Pagination) ([]entities.Trade, entities.PageInfo, error) {
+func (t *Trade) GetByMarketWithCursor(ctx context.Context, market string, pagination entities.CursorPagination) ([]entities.Trade, entities.PageInfo, error) {
 	return t.store.GetByMarketWithCursor(ctx, market, pagination)
 }
 
@@ -58,7 +58,7 @@ func (t *Trade) GetByParty(ctx context.Context, party string, market *string, pa
 	return t.store.GetByParty(ctx, party, market, pagination)
 }
 
-func (t *Trade) GetByPartyWithCursor(ctx context.Context, party string, market *string, pagination entities.Pagination) ([]entities.Trade, entities.PageInfo, error) {
+func (t *Trade) GetByPartyWithCursor(ctx context.Context, party string, market *string, pagination entities.CursorPagination) ([]entities.Trade, entities.PageInfo, error) {
 	return t.store.GetByPartyWithCursor(ctx, party, market, pagination)
 }
 
@@ -66,7 +66,7 @@ func (t *Trade) GetByOrderID(ctx context.Context, order string, market *string, 
 	return t.store.GetByOrderID(ctx, order, market, pagination)
 }
 
-func (t *Trade) GetByOrderIDWithCursor(ctx context.Context, order string, market *string, pagination entities.Pagination) ([]entities.Trade, entities.PageInfo, error) {
+func (t *Trade) GetByOrderIDWithCursor(ctx context.Context, order string, market *string, pagination entities.CursorPagination) ([]entities.Trade, entities.PageInfo, error) {
 	return t.store.GetByOrderIDWithCursor(ctx, order, market, pagination)
 }
 

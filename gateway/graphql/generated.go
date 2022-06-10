@@ -480,6 +480,17 @@ type ComplexityRoot struct {
 		Sells func(childComplexity int) int
 	}
 
+	MarketDataConnection struct {
+		Edges      func(childComplexity int) int
+		PageInfo   func(childComplexity int) int
+		TotalCount func(childComplexity int) int
+	}
+
+	MarketDataEdge struct {
+		Cursor func(childComplexity int) int
+		Node   func(childComplexity int) int
+	}
+
 	MarketDepth struct {
 		Buy            func(childComplexity int) int
 		LastTrade      func(childComplexity int) int
@@ -883,46 +894,47 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		Asset                      func(childComplexity int, assetID string) int
-		Assets                     func(childComplexity int) int
-		Deposit                    func(childComplexity int, id string) int
-		Epoch                      func(childComplexity int, id *string) int
-		Erc20WithdrawalApproval    func(childComplexity int, withdrawalID string) int
-		EstimateOrder              func(childComplexity int, marketID string, partyID string, price *string, size string, side Side, timeInForce OrderTimeInForce, expiration *string, typeArg OrderType) int
-		GetMarketDataHistoryByID   func(childComplexity int, id string, start *int, end *int, skip *int, first *int, last *int) int
-		HistoricBalances           func(childComplexity int, filter *v2.AccountFilter, groupBy []*v2.AccountField) int
-		KeyRotations               func(childComplexity int, id *string) int
-		LastBlockHeight            func(childComplexity int) int
-		Market                     func(childComplexity int, id string) int
-		Markets                    func(childComplexity int, id *string) int
-		MarketsPaged               func(childComplexity int, id *string, pagination *v2.Pagination) int
-		NetworkLimits              func(childComplexity int) int
-		NetworkParameters          func(childComplexity int) int
-		NetworkParametersProposals func(childComplexity int, inState *ProposalState) int
-		NewAssetProposals          func(childComplexity int, inState *ProposalState) int
-		NewFreeformProposals       func(childComplexity int, inState *ProposalState) int
-		NewMarketProposals         func(childComplexity int, inState *ProposalState) int
-		Node                       func(childComplexity int, id string) int
-		NodeData                   func(childComplexity int) int
-		NodeSignatures             func(childComplexity int, resourceID string) int
-		Nodes                      func(childComplexity int) int
-		OracleData                 func(childComplexity int, pagination *OffsetPagination) int
-		OracleDataBySpec           func(childComplexity int, oracleSpecID string, pagination *OffsetPagination) int
-		OracleSpec                 func(childComplexity int, oracleSpecID string) int
-		OracleSpecs                func(childComplexity int, pagination *OffsetPagination) int
-		OrderByID                  func(childComplexity int, orderID string, version *int) int
-		OrderByReference           func(childComplexity int, reference string) int
-		OrderVersions              func(childComplexity int, orderID string, skip *int, first *int, last *int) int
-		OrderVersionsPaged         func(childComplexity int, orderID *string, pagination *v2.Pagination) int
-		Parties                    func(childComplexity int, id *string) int
-		PartiesPaged               func(childComplexity int, id *string, pagination *v2.Pagination) int
-		Party                      func(childComplexity int, id string) int
-		Proposal                   func(childComplexity int, id *string, reference *string) int
-		Proposals                  func(childComplexity int, inState *ProposalState) int
-		Statistics                 func(childComplexity int) int
-		Transfers                  func(childComplexity int, pubkey string, isFrom *bool, isTo *bool) int
-		UpdateMarketProposals      func(childComplexity int, marketID *string, inState *ProposalState) int
-		Withdrawal                 func(childComplexity int, id string) int
+		Asset                              func(childComplexity int, assetID string) int
+		Assets                             func(childComplexity int) int
+		Deposit                            func(childComplexity int, id string) int
+		Epoch                              func(childComplexity int, id *string) int
+		Erc20WithdrawalApproval            func(childComplexity int, withdrawalID string) int
+		EstimateOrder                      func(childComplexity int, marketID string, partyID string, price *string, size string, side Side, timeInForce OrderTimeInForce, expiration *string, typeArg OrderType) int
+		GetMarketDataHistoryByID           func(childComplexity int, id string, start *int, end *int, skip *int, first *int, last *int) int
+		GetMarketDataHistoryConnectionByID func(childComplexity int, id string, start *int, end *int, pagination *v2.Pagination) int
+		HistoricBalances                   func(childComplexity int, filter *v2.AccountFilter, groupBy []*v2.AccountField) int
+		KeyRotations                       func(childComplexity int, id *string) int
+		LastBlockHeight                    func(childComplexity int) int
+		Market                             func(childComplexity int, id string) int
+		Markets                            func(childComplexity int, id *string) int
+		MarketsPaged                       func(childComplexity int, id *string, pagination *v2.Pagination) int
+		NetworkLimits                      func(childComplexity int) int
+		NetworkParameters                  func(childComplexity int) int
+		NetworkParametersProposals         func(childComplexity int, inState *ProposalState) int
+		NewAssetProposals                  func(childComplexity int, inState *ProposalState) int
+		NewFreeformProposals               func(childComplexity int, inState *ProposalState) int
+		NewMarketProposals                 func(childComplexity int, inState *ProposalState) int
+		Node                               func(childComplexity int, id string) int
+		NodeData                           func(childComplexity int) int
+		NodeSignatures                     func(childComplexity int, resourceID string) int
+		Nodes                              func(childComplexity int) int
+		OracleData                         func(childComplexity int, pagination *OffsetPagination) int
+		OracleDataBySpec                   func(childComplexity int, oracleSpecID string, pagination *OffsetPagination) int
+		OracleSpec                         func(childComplexity int, oracleSpecID string) int
+		OracleSpecs                        func(childComplexity int, pagination *OffsetPagination) int
+		OrderByID                          func(childComplexity int, orderID string, version *int) int
+		OrderByReference                   func(childComplexity int, reference string) int
+		OrderVersions                      func(childComplexity int, orderID string, skip *int, first *int, last *int) int
+		OrderVersionsPaged                 func(childComplexity int, orderID *string, pagination *v2.Pagination) int
+		Parties                            func(childComplexity int, id *string) int
+		PartiesPaged                       func(childComplexity int, id *string, pagination *v2.Pagination) int
+		Party                              func(childComplexity int, id string) int
+		Proposal                           func(childComplexity int, id *string, reference *string) int
+		Proposals                          func(childComplexity int, inState *ProposalState) int
+		Statistics                         func(childComplexity int) int
+		Transfers                          func(childComplexity int, pubkey string, isFrom *bool, isTo *bool) int
+		UpdateMarketProposals              func(childComplexity int, marketID *string, inState *ProposalState) int
+		Withdrawal                         func(childComplexity int, id string) int
 	}
 
 	RankingScore struct {
@@ -1588,6 +1600,7 @@ type QueryResolver interface {
 	HistoricBalances(ctx context.Context, filter *v2.AccountFilter, groupBy []*v2.AccountField) ([]*v2.AggregatedBalance, error)
 	NetworkLimits(ctx context.Context) (*vega.NetworkLimits, error)
 	GetMarketDataHistoryByID(ctx context.Context, id string, start *int, end *int, skip *int, first *int, last *int) ([]*vega.MarketData, error)
+	GetMarketDataHistoryConnectionByID(ctx context.Context, id string, start *int, end *int, pagination *v2.Pagination) (*v2.MarketDataConnection, error)
 }
 type RankingScoreResolver interface {
 	Status(ctx context.Context, obj *vega.RankingScore) (string, error)
@@ -3355,6 +3368,41 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.MarketDataCommitments.Sells(childComplexity), true
+
+	case "MarketDataConnection.edges":
+		if e.complexity.MarketDataConnection.Edges == nil {
+			break
+		}
+
+		return e.complexity.MarketDataConnection.Edges(childComplexity), true
+
+	case "MarketDataConnection.pageInfo":
+		if e.complexity.MarketDataConnection.PageInfo == nil {
+			break
+		}
+
+		return e.complexity.MarketDataConnection.PageInfo(childComplexity), true
+
+	case "MarketDataConnection.totalCount":
+		if e.complexity.MarketDataConnection.TotalCount == nil {
+			break
+		}
+
+		return e.complexity.MarketDataConnection.TotalCount(childComplexity), true
+
+	case "MarketDataEdge.cursor":
+		if e.complexity.MarketDataEdge.Cursor == nil {
+			break
+		}
+
+		return e.complexity.MarketDataEdge.Cursor(childComplexity), true
+
+	case "MarketDataEdge.node":
+		if e.complexity.MarketDataEdge.Node == nil {
+			break
+		}
+
+		return e.complexity.MarketDataEdge.Node(childComplexity), true
 
 	case "MarketDepth.buy":
 		if e.complexity.MarketDepth.Buy == nil {
@@ -5395,6 +5443,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.GetMarketDataHistoryByID(childComplexity, args["id"].(string), args["start"].(*int), args["end"].(*int), args["skip"].(*int), args["first"].(*int), args["last"].(*int)), true
+
+	case "Query.getMarketDataHistoryConnectionByID":
+		if e.complexity.Query.GetMarketDataHistoryConnectionByID == nil {
+			break
+		}
+
+		args, err := ec.field_Query_getMarketDataHistoryConnectionByID_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.GetMarketDataHistoryConnectionByID(childComplexity, args["id"].(string), args["start"].(*int), args["end"].(*int), args["pagination"].(*v2.Pagination)), true
 
 	case "Query.historicBalances":
 		if e.complexity.Query.HistoricBalances == nil {
@@ -7619,7 +7679,26 @@ type Query {
     "Pagination first element"
     first: Int
     "Pagination last element"
-    last: Int): [MarketData]
+    last: Int): [MarketData] @deprecated(reason: "Use getMarketDataHistoryConnectionByID instead")
+
+
+  "get market data history for a specific market. If no dates are given, the latest snapshot will be returned. If only the start date is provided all history from the given date will be provided, and if only the end date is provided, all history from the start upto and including the end date will be provided. Pagination is provided using a cursor based pagination model"
+  getMarketDataHistoryConnectionByID(
+    id: String!
+    """
+    Optional start date time for the historic data query.
+    If both the start and end date is not provided, only the latest snapshot will be returned.
+    If only the start date is provided, all market data for the market from the start date forward will be returned.
+    """
+    start: Int
+    """
+    Optional end date time for the historic data query.
+    If both the start and end date is not provided, only the latest snapshot will be returned.
+    If only the end date is provided, all market data for the market up to and including the end date will be returned.
+    """
+    end: Int
+    "Optional Pagination"
+    pagination: Pagination): MarketDataConnection!
 }
 
 enum TransferStatus {
@@ -10573,6 +10652,20 @@ type MarginConnection {
   "The pagination information"
   pageInfo: PageInfo
 }
+
+type MarketDataEdge {
+  node: MarketData!
+  cursor: String
+}
+
+type MarketDataConnection {
+  "The total number of market data elements available with this connection"
+  totalCount: Int
+  "The market data elements for the requested page"
+  edges: [MarketDataEdge]
+  "The pagination information"
+  pageInfo: PageInfo
+}
 `, BuiltIn: false},
 }
 var parsedSchema = gqlparser.MustLoadSchema(sources...)
@@ -11751,6 +11844,48 @@ func (ec *executionContext) field_Query_getMarketDataHistoryByID_args(ctx contex
 		}
 	}
 	args["last"] = arg5
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_getMarketDataHistoryConnectionByID_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["id"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["id"] = arg0
+	var arg1 *int
+	if tmp, ok := rawArgs["start"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("start"))
+		arg1, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["start"] = arg1
+	var arg2 *int
+	if tmp, ok := rawArgs["end"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("end"))
+		arg2, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["end"] = arg2
+	var arg3 *v2.Pagination
+	if tmp, ok := rawArgs["pagination"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pagination"))
+		arg3, err = ec.unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPagination(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["pagination"] = arg3
 	return args, nil
 }
 
@@ -20446,6 +20581,169 @@ func (ec *executionContext) _MarketDataCommitments_buys(ctx context.Context, fie
 	res := resTmp.([]*vega.LiquidityOrderReference)
 	fc.Result = res
 	return ec.marshalOLiquidityOrderReference2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐLiquidityOrderReferenceᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _MarketDataConnection_totalCount(ctx context.Context, field graphql.CollectedField, obj *v2.MarketDataConnection) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "MarketDataConnection",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TotalCount, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(int64)
+	fc.Result = res
+	return ec.marshalOInt2int64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _MarketDataConnection_edges(ctx context.Context, field graphql.CollectedField, obj *v2.MarketDataConnection) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "MarketDataConnection",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Edges, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*v2.MarketDataEdge)
+	fc.Result = res
+	return ec.marshalOMarketDataEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐMarketDataEdge(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _MarketDataConnection_pageInfo(ctx context.Context, field graphql.CollectedField, obj *v2.MarketDataConnection) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "MarketDataConnection",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PageInfo, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*v2.PageInfo)
+	fc.Result = res
+	return ec.marshalOPageInfo2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPageInfo(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _MarketDataEdge_node(ctx context.Context, field graphql.CollectedField, obj *v2.MarketDataEdge) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "MarketDataEdge",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Node, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*vega.MarketData)
+	fc.Result = res
+	return ec.marshalNMarketData2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐMarketData(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _MarketDataEdge_cursor(ctx context.Context, field graphql.CollectedField, obj *v2.MarketDataEdge) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "MarketDataEdge",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Cursor, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalOString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _MarketDepth_market(ctx context.Context, field graphql.CollectedField, obj *vega.MarketDepth) (ret graphql.Marshaler) {
@@ -30961,6 +31259,48 @@ func (ec *executionContext) _Query_getMarketDataHistoryByID(ctx context.Context,
 	res := resTmp.([]*vega.MarketData)
 	fc.Result = res
 	return ec.marshalOMarketData2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐMarketData(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_getMarketDataHistoryConnectionByID(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_getMarketDataHistoryConnectionByID_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().GetMarketDataHistoryConnectionByID(rctx, args["id"].(string), args["start"].(*int), args["end"].(*int), args["pagination"].(*v2.Pagination))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*v2.MarketDataConnection)
+	fc.Result = res
+	return ec.marshalNMarketDataConnection2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐMarketDataConnection(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query___type(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -42951,6 +43291,86 @@ func (ec *executionContext) _MarketDataCommitments(ctx context.Context, sel ast.
 	return out
 }
 
+var marketDataConnectionImplementors = []string{"MarketDataConnection"}
+
+func (ec *executionContext) _MarketDataConnection(ctx context.Context, sel ast.SelectionSet, obj *v2.MarketDataConnection) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, marketDataConnectionImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("MarketDataConnection")
+		case "totalCount":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._MarketDataConnection_totalCount(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+		case "edges":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._MarketDataConnection_edges(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+		case "pageInfo":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._MarketDataConnection_pageInfo(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var marketDataEdgeImplementors = []string{"MarketDataEdge"}
+
+func (ec *executionContext) _MarketDataEdge(ctx context.Context, sel ast.SelectionSet, obj *v2.MarketDataEdge) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, marketDataEdgeImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("MarketDataEdge")
+		case "node":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._MarketDataEdge_node(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "cursor":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._MarketDataEdge_cursor(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
 var marketDepthImplementors = []string{"MarketDepth"}
 
 func (ec *executionContext) _MarketDepth(ctx context.Context, sel ast.SelectionSet, obj *vega.MarketDepth) graphql.Marshaler {
@@ -48475,6 +48895,29 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			out.Concurrently(i, func() graphql.Marshaler {
 				return rrm(innerCtx)
 			})
+		case "getMarketDataHistoryConnectionByID":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_getMarketDataHistoryConnectionByID(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx, innerFunc)
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return rrm(innerCtx)
+			})
 		case "__type":
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Query___type(ctx, field)
@@ -52780,6 +53223,20 @@ func (ec *executionContext) marshalNMarketDataCommitments2ᚖcodeᚗvegaprotocol
 	return ec._MarketDataCommitments(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalNMarketDataConnection2codeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐMarketDataConnection(ctx context.Context, sel ast.SelectionSet, v v2.MarketDataConnection) graphql.Marshaler {
+	return ec._MarketDataConnection(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNMarketDataConnection2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐMarketDataConnection(ctx context.Context, sel ast.SelectionSet, v *v2.MarketDataConnection) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._MarketDataConnection(ctx, sel, v)
+}
+
 func (ec *executionContext) marshalNMarketDepth2codeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐMarketDepth(ctx context.Context, sel ast.SelectionSet, v vega.MarketDepth) graphql.Marshaler {
 	return ec._MarketDepth(ctx, sel, &v)
 }
@@ -55451,6 +55908,54 @@ func (ec *executionContext) marshalOMarketData2ᚖcodeᚗvegaprotocolᚗioᚋpro
 		return graphql.Null
 	}
 	return ec._MarketData(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOMarketDataEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐMarketDataEdge(ctx context.Context, sel ast.SelectionSet, v []*v2.MarketDataEdge) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalOMarketDataEdge2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐMarketDataEdge(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	return ret
+}
+
+func (ec *executionContext) marshalOMarketDataEdge2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐMarketDataEdge(ctx context.Context, sel ast.SelectionSet, v *v2.MarketDataEdge) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._MarketDataEdge(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalONetworkLimits2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐNetworkLimits(ctx context.Context, sel ast.SelectionSet, v *vega.NetworkLimits) graphql.Marshaler {

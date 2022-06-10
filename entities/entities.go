@@ -1,11 +1,11 @@
 package entities
 
 type PagedEntity interface {
-	Market | Party | Trade | Order | MarginLevels
+	Market | Party | Trade | Order | MarginLevels | MarketData
 	Cursor() *Cursor
 }
 
-func PageEntities[T PagedEntity](items []T, pagination Pagination) ([]T, PageInfo) {
+func PageEntities[T PagedEntity](items []T, pagination CursorPagination) ([]T, PageInfo) {
 	var pagedItems []T
 	var limit int
 	var pageInfo PageInfo
@@ -61,12 +61,12 @@ func PageEntities[T PagedEntity](items []T, pagination Pagination) ([]T, PageInf
 				pageInfo.HasPreviousPage = false
 			}
 		default:
-			pagedItems = reverseSlice(items)
-			if pagination.HasBackward() && pagination.Backward.HasCursor() && pagination.Backward.Cursor.Value() == pagedItems[0].Cursor().Value() {
-				pagedItems = pagedItems[1:]
+			if pagination.HasBackward() && pagination.Backward.HasCursor() && pagination.Backward.Cursor.Value() == items[0].Cursor().Value() {
+				pagedItems = reverseSlice(items[1:])
 				pageInfo.HasNextPage = true
 				pageInfo.HasPreviousPage = false
 			} else {
+				pagedItems = reverseSlice(items)
 				pageInfo.HasNextPage = false
 				pageInfo.HasPreviousPage = false
 			}
@@ -78,8 +78,10 @@ func PageEntities[T PagedEntity](items []T, pagination Pagination) ([]T, PageInf
 	}
 
 	if len(pagedItems) > 0 {
-		pageInfo.StartCursor = pagedItems[0].Cursor().Encode()
-		pageInfo.EndCursor = pagedItems[len(pagedItems)-1].Cursor().Encode()
+		startCursor := pagedItems[0].Cursor()
+		endCursor := pagedItems[len(pagedItems)-1].Cursor()
+		pageInfo.StartCursor = startCursor.Encode()
+		pageInfo.EndCursor = endCursor.Encode()
 	}
 
 	return pagedItems, pageInfo

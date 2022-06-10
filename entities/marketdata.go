@@ -425,3 +425,9 @@ func priceMonitoringTriggerToProto(trigger PriceMonitoringTrigger) *types.PriceM
 		AuctionExtension: int64(trigger.AuctionExtension),
 	}
 }
+
+func (md MarketData) Cursor() *Cursor {
+	// NOTE: We need to force the time into a specific timezone or the formatting will reflect the time based on the timezone
+	// of the database that returns the data if the postgres server has a timezone that is not set to UTC
+	return NewCursor(md.SyntheticTime.In(time.UTC).Format(time.RFC3339Nano))
+}

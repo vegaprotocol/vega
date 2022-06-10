@@ -481,7 +481,26 @@ type Query {
     "Pagination first element"
     first: Int
     "Pagination last element"
-    last: Int): [MarketData]
+    last: Int): [MarketData] @deprecated(reason: "Use getMarketDataHistoryConnectionByID instead")
+
+
+  "get market data history for a specific market. If no dates are given, the latest snapshot will be returned. If only the start date is provided all history from the given date will be provided, and if only the end date is provided, all history from the start upto and including the end date will be provided. Pagination is provided using a cursor based pagination model"
+  getMarketDataHistoryConnectionByID(
+    id: String!
+    """
+    Optional start date time for the historic data query.
+    If both the start and end date is not provided, only the latest snapshot will be returned.
+    If only the start date is provided, all market data for the market from the start date forward will be returned.
+    """
+    start: Int
+    """
+    Optional end date time for the historic data query.
+    If both the start and end date is not provided, only the latest snapshot will be returned.
+    If only the end date is provided, all market data for the market up to and including the end date will be returned.
+    """
+    end: Int
+    "Optional Pagination"
+    pagination: Pagination): MarketDataConnection!
 }
 
 enum TransferStatus {
@@ -3432,6 +3451,20 @@ type MarginConnection {
   totalCount: Int
   "The margin levels in this connection"
   edges: [MarginEdge!]
+  "The pagination information"
+  pageInfo: PageInfo
+}
+
+type MarketDataEdge {
+  node: MarketData!
+  cursor: String
+}
+
+type MarketDataConnection {
+  "The total number of market data elements available with this connection"
+  totalCount: Int
+  "The market data elements for the requested page"
+  edges: [MarketDataEdge]
   "The pagination information"
   pageInfo: PageInfo
 }

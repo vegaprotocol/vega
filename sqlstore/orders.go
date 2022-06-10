@@ -140,7 +140,7 @@ func (os *Orders) queryOrders(ctx context.Context, query string, args []interfac
 }
 
 func (os *Orders) queryOrdersWithCursorPagination(ctx context.Context, query string, args []interface{},
-	pagination entities.Pagination,
+	pagination entities.CursorPagination,
 ) ([]entities.Order, entities.PageInfo, error) {
 	var (
 		err      error
@@ -193,7 +193,7 @@ func paginateOrderQuery(query string, args []interface{}, p entities.OffsetPagin
 	return query, args
 }
 
-func (os *Orders) GetByMarketPaged(ctx context.Context, marketIDStr string, p entities.Pagination) ([]entities.Order, entities.PageInfo, error) {
+func (os *Orders) GetByMarketPaged(ctx context.Context, marketIDStr string, p entities.CursorPagination) ([]entities.Order, entities.PageInfo, error) {
 	if marketIDStr == "" {
 		return nil, entities.PageInfo{}, errors.New("marketID is required")
 	}
@@ -206,7 +206,7 @@ func (os *Orders) GetByMarketPaged(ctx context.Context, marketIDStr string, p en
 	return os.queryOrdersWithCursorPagination(ctx, query, []interface{}{marketID}, p)
 }
 
-func (os *Orders) GetByPartyPaged(ctx context.Context, partyIDStr string, p entities.Pagination) ([]entities.Order, entities.PageInfo, error) {
+func (os *Orders) GetByPartyPaged(ctx context.Context, partyIDStr string, p entities.CursorPagination) ([]entities.Order, entities.PageInfo, error) {
 	if partyIDStr == "" {
 		return nil, entities.PageInfo{}, errors.New("partyID is required")
 	}
@@ -219,7 +219,7 @@ func (os *Orders) GetByPartyPaged(ctx context.Context, partyIDStr string, p enti
 	return os.queryOrdersWithCursorPagination(ctx, query, []interface{}{partyID}, p)
 }
 
-func (os *Orders) GetOrderVersionsByIDPaged(ctx context.Context, orderIDStr string, p entities.Pagination) ([]entities.Order, entities.PageInfo, error) {
+func (os *Orders) GetOrderVersionsByIDPaged(ctx context.Context, orderIDStr string, p entities.CursorPagination) ([]entities.Order, entities.PageInfo, error) {
 	if orderIDStr == "" {
 		return nil, entities.PageInfo{}, errors.New("orderID is required")
 	}
@@ -230,7 +230,7 @@ func (os *Orders) GetOrderVersionsByIDPaged(ctx context.Context, orderIDStr stri
 	return os.queryOrdersWithCursorPagination(ctx, query, []interface{}{orderID}, p)
 }
 
-func (os *Orders) GetByPartyAndMarketPaged(ctx context.Context, partyIDStr, marketIDStr string, p entities.Pagination) ([]entities.Order, entities.PageInfo, error) {
+func (os *Orders) GetByPartyAndMarketPaged(ctx context.Context, partyIDStr, marketIDStr string, p entities.CursorPagination) ([]entities.Order, entities.PageInfo, error) {
 	if partyIDStr == "" {
 		return nil, entities.PageInfo{}, errors.New("partyID is required")
 	}
