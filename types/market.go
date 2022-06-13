@@ -106,6 +106,8 @@ const (
 	MarketTradingModeOpeningAuction MarketTradingMode = proto.Market_TRADING_MODE_OPENING_AUCTION
 	// Auction triggered by monitoring.
 	MarketTradingModeMonitoringAuction MarketTradingMode = proto.Market_TRADING_MODE_MONITORING_AUCTION
+	// No trading allowed.
+	MarketTradingModeNoTrading MarketTradingMode = proto.Market_TRADING_MODE_NO_TRADING
 )
 
 type MarketState = proto.Market_State
