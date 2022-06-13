@@ -90,9 +90,10 @@ func (n *NodeValidation) Hash() []byte {
 func (n *NodeValidation) onResChecked(i interface{}, valid bool) {
 	np, ok := i.(*nodeProposal)
 	if !ok {
-		n.log.Error("not an node proposal received from ext check")
-		return
+		n.log.Panic("not an node proposal received from ext check")
 	}
+
+	n.log.Debug("node validation result received", logging.String("proposal-id", np.ID), logging.Bool("result", valid))
 
 	newState := rejectedProposal
 	if valid {
@@ -154,6 +155,20 @@ func (n *NodeValidation) OnChainTimeUpdate(t time.Time) (accepted []*proposal, r
 		n.removeProposal(id)
 	}
 
+	if n.log.GetLevel() == logging.DebugLevel {
+		acceptedIDs := []string{}
+		for _, v := range accepted {
+			acceptedIDs = append(acceptedIDs, v.ID)
+		}
+		rejectedIDs := []string{}
+		for _, v := range rejected {
+			rejectedIDs = append(rejectedIDs, v.ID)
+		}
+
+		n.log.Debug("accepted proposals", logging.Strings("ids", acceptedIDs))
+		n.log.Debug("rejected proposals", logging.Strings("ids", rejectedIDs))
+	}
+
 	return accepted, rejected
 }
 
@@ -161,6 +176,7 @@ func (n *NodeValidation) OnChainTimeUpdate(t time.Time) (accepted []*proposal, r
 func (n *NodeValidation) IsNodeValidationRequired(p *types.Proposal) bool {
 	switch p.Terms.Change.(type) {
 	case *types.ProposalTermsNewAsset:
+		n.log.Debug("starting node validation for proposal", logging.String("proposal", p.String()))
 		return true
 	default:
 		return false
@@ -184,7 +200,7 @@ func (n *NodeValidation) Start(p *types.Proposal) error {
 
 	checker, err := n.getChecker(p)
 	if err != nil {
-		return err
+		n.log.Panic("no node validation required", logging.String("proposal", p.String()))
 	}
 	np := &nodeProposal{
 		proposal: &proposal{
