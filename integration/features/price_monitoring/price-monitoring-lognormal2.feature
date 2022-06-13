@@ -187,7 +187,7 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
 
     And the mark price should be "104252" for the market "ETH/DEC20"
 
-  Scenario: Non-opening auction can end with washtrades
+  Scenario: Non-opening auction can end with wash trades
     Given the parties deposit on asset's general account the following amount:
       | party  | asset | amount       |
       | party1 | ETH   | 10000000000  |
