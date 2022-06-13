@@ -314,25 +314,33 @@ func (e *Engine) GetOpenInterest() uint64 {
 func (e *Engine) GetOpenInterestGivenTrades(trades []*types.Trade) uint64 {
 	oi := e.GetOpenInterest()
 	d := int64(0)
+	// Store changes to positions across trades locally
+	posLocal := make(map[string]int64)
+	var ok bool
 	for _, t := range trades {
-		bSize, sSize := int64(0), int64(0)
-		if p, ok := e.positions[t.Buyer]; ok {
-			bSize = p.size
+		bPos, sPos := int64(0), int64(0)
+		if bPos, ok = posLocal[t.Buyer]; !ok {
+			if p, ok := e.positions[t.Buyer]; ok {
+				bPos = p.size
+			}
 		}
-		if p, ok := e.positions[t.Seller]; ok {
-			sSize = p.size
+		if sPos, ok = posLocal[t.Seller]; !ok {
+			if p, ok := e.positions[t.Seller]; ok {
+				sPos = p.size
+			}
 		}
-		// Change in open interest due to trades equals change in longs
-		d += max(0, bSize+int64(t.Size)) - max(0, bSize) + max(0, sSize-int64(t.Size)) - max(0, sSize)
-	}
-	if d > 0 {
-		oi += uint64(d)
+
+		bPosNew := bPos + int64(t.Size)
+		sPosNew := sPos - int64(t.Size)
+		posLocal[t.Buyer] = bPosNew
+		posLocal[t.Seller] = sPosNew
+		// Change in open interest due to trades equals change in longs for both parties
+		d += max(0, bPosNew) - max(0, bPos) + max(0, sPosNew) - max(0, sPos)
 	}
 	if d < 0 {
-		oi -= uint64(-d)
+		return oi - uint64(-d)
 	}
-
-	return oi
+	return oi + uint64(d)
 }
 
 func max(a int64, b int64) int64 {
