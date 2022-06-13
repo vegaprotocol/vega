@@ -3278,7 +3278,6 @@ func TestOrderBook_AuctionUncrossWashTrades(t *testing.T) {
 
 	// Assure trade is indeed a wash trade
 	assert.Equal(t, trades[0].Buyer, trades[0].Seller)
-
 }
 
 func TestOrderBook_AuctionUncrossTamlyn(t *testing.T) {

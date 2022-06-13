@@ -324,7 +324,7 @@ func (s *OrderBookSide) GetVolume(price *num.Uint) (uint64, error) {
 }
 
 // fakeUncross returns hypotehetical trades if the order book side were to be uncrossed with the agg order supplied,
-// checkWashTrades checks non-FOK orders for wash trades if set to true (FOK orders are always checked for wash trades)
+// checkWashTrades checks non-FOK orders for wash trades if set to true (FOK orders are always checked for wash trades).
 func (s *OrderBookSide) fakeUncross(agg *types.Order, checkWashTrades bool) ([]*types.Trade, error) {
 	var (
 		trades            []*types.Trade
@@ -402,7 +402,7 @@ func (s *OrderBookSide) fakeUncross(agg *types.Order, checkWashTrades bool) ([]*
 }
 
 // uncross returns trades after order book side gets uncrossed with the agg order supplied,
-// checkWashTrades checks non-FOK orders for wash trades if set to true (FOK orders are always checked for wash trades)
+// checkWashTrades checks non-FOK orders for wash trades if set to true (FOK orders are always checked for wash trades).
 func (s *OrderBookSide) uncross(agg *types.Order, checkWashTrades bool) ([]*types.Trade, []*types.Order, *num.Uint, error) {
 	var (
 		trades            []*types.Trade
