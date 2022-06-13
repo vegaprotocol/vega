@@ -56,7 +56,6 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
       | party1 | ETH/DEC21 | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC | sell-ref-2 |
 
     When the opening auction period ends for market "ETH/DEC21"
-    # Then the auction ends with a traded volume of "10" at a price of "1000"
     # auction can not end becuase wash trade (between party1 and party1 at price 1000) is prehibited
 
     And the parties place the following orders:
