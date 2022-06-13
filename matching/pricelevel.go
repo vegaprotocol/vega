@@ -72,7 +72,7 @@ func (l *PriceLevel) fakeUncross(o *types.Order, checkWashTrades bool) (agg *typ
 		if checkWashTrades {
 			if order.Party == agg.Party {
 				err = ErrWashTrade
-				break
+				return
 			}
 		}
 
