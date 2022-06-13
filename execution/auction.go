@@ -28,21 +28,16 @@ func (m *Market) checkAuction(ctx context.Context, now time.Time) {
 	}
 
 	// as soon as we have an indicative uncrossing price in opening auction it needs to be passed into the price monitoring engine so statevar calculation can start
-	if m.as.IsOpeningAuction() && !m.pMonitor.Initialised() {
+	isOpening := m.as.IsOpeningAuction()
+	if isOpening && !m.pMonitor.Initialised() {
 		trades, err := m.matching.OrderBook.GetIndicativeTrades()
 		if err != nil {
 			m.log.Panic("Can't get indicative trades")
 		}
 		if len(trades) > 0 {
-			if !m.pMonitor.Initialised() {
-				// pass the first uncrossing trades to price engine so state variables depending on it can be initialised
-				m.pMonitor.CheckPrice(ctx, m.as, trades, true)
-				m.OnOpeningAuctionFirstUncrossingPrice()
-			}
-			m.checkLiquidity(ctx, trades, true)
-			if !m.as.CanLeave() {
-				return
-			}
+			// pass the first uncrossing trades to price engine so state variables depending on it can be initialised
+			m.pMonitor.CheckPrice(ctx, m.as, trades, true)
+			m.OnOpeningAuctionFirstUncrossingPrice()
 		}
 	}
 
@@ -55,7 +50,7 @@ func (m *Market) checkAuction(ctx context.Context, now time.Time) {
 	}
 
 	// opening auction
-	if m.as.IsOpeningAuction() {
+	if isOpening {
 		if len(trades) == 0 {
 			return
 		}
