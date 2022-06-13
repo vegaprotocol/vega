@@ -627,7 +627,7 @@ func (m *Market) CanLeaveOpeningAuction() bool {
 	boundFactorsInitialised := m.pMonitor.IsBoundFactorsInitialised()
 	potInitialised := m.liquidity.IsPoTInitialised()
 	riskFactorsInitialised := m.risk.IsRiskFactorInitialised()
-	canLeave := boundFactorsInitialised && potInitialised && riskFactorsInitialised
+	canLeave := boundFactorsInitialised && potInitialised && riskFactorsInitialised && m.getSuppliedStake().GT(num.Zero())
 	if !canLeave {
 		m.log.Info("Cannot leave opening auction", logging.String("market", m.mkt.ID), logging.Bool("bound-factors-initialised", boundFactorsInitialised), logging.Bool("pot-initialised", potInitialised), logging.Bool("risk-factors-initialised", riskFactorsInitialised))
 	}
