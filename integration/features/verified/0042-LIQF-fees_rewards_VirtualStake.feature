@@ -421,7 +421,6 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
 
     Then time is updated to "2019-11-30T10:22:10Z"
     #week6
-
     And the parties submit the following liquidity provision:
       | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
       | lp2 | lp2   | ETH/MAR22 | 2000              | 0.001 | sell | ASK              | 1          | 2      | amendment  |
@@ -433,8 +432,8 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
 
     And the liquidity provider fee shares for the market "ETH/MAR22" should be:
       | party | equity like share    | average entry valuation |
-      | lp1   | 0.5741197186667991   | 10000                   |
-      | lp2   | 0.4258802813332009   | 5289.1036809978886803                   |
+      | lp1   | 0.7182132526872552   | 10000                   |
+      | lp2   | 0.2817867473127448   | 421.3495683743868003    |
 
     Then the order book should have the following volumes for market "ETH/MAR22":
       | side | price | volume |
@@ -463,8 +462,8 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
 
     And the liquidity provider fee shares for the market "ETH/MAR22" should be:
       | party | equity like share    | average entry valuation |
-      | lp1   | 0.4815883179471518   | 10000                   |
-      | lp2   | 0.5184116820528482   | 4888.3294936902718353   |
+      | lp1   | 0.6552177177520024   | 10000                   |
+      | lp2   | 0.3447822822479976   | 2666.4086478022710885   |
 
 
   

@@ -48,17 +48,17 @@ func testAverageEntryValuation(t *testing.T) {
 	es.OpeningAuctionEnded()
 
 	es.SetPartyStake("LP1", num.NewUint(200))
-	require.True(t, num.DecimalFromFloat(100).Equal(es.AvgEntryValuation("LP1")))
+	require.True(t, num.DecimalFromFloat(200).Equal(es.AvgEntryValuation("LP1")))
 
 	es.WithMVP(num.DecimalFromFloat(200)).SetPartyStake("LP2", num.NewUint(200))
 	require.True(t, num.DecimalFromFloat(200).Equal(es.AvgEntryValuation("LP2")))
-	require.True(t, num.DecimalFromFloat(100).Equal(es.AvgEntryValuation("LP1")))
+	require.True(t, num.DecimalFromFloat(200).Equal(es.AvgEntryValuation("LP1")))
 
 	es.WithMVP(num.DecimalFromFloat(400)).SetPartyStake("LP1", num.NewUint(300))
-	require.True(t, num.DecimalFromFloat(120).Equal(es.AvgEntryValuation("LP1")))
+	require.True(t, num.DecimalFromFloat(300).Equal(es.AvgEntryValuation("LP1")))
 
 	es.SetPartyStake("LP1", num.NewUint(1))
-	require.True(t, num.DecimalFromFloat(120).Equal(es.AvgEntryValuation("LP1")))
+	require.True(t, num.DecimalFromFloat(0.99999999999999).Equal(es.AvgEntryValuation("LP1")))
 	require.True(t, num.DecimalFromFloat(200).Equal(es.AvgEntryValuation("LP2")))
 }
 
@@ -116,10 +116,10 @@ func testShares(t *testing.T) {
 		_, ok := s["LP2"]
 		assert.False(t, ok)
 
-		assert.Equal(t, oneFourth, lp1)
-		// assert.Equal(t, oneThird, lp2)
-		assert.Equal(t, threeFourth, lp3)
-		assert.True(t, one.Equal(lp1.Add(lp3)))
+		assert.Equal(t, oneFourth, lp1, lp1.String())
+		// assert.Equal(t, oneThird, lp2, lp2.String())
+		assert.Equal(t, threeFourth, lp3, lp3.String())
+		assert.True(t, one.Equal(lp1.Add(lp3)), lp1.Add(lp3).String())
 	})
 }
 

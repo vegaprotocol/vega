@@ -144,10 +144,7 @@ func (es *EquityShares) SetPartyStake(id string, newStakeU *num.Uint) {
 	newStake := num.DecimalFromUint(newStakeU)
 	// first time we set the newStake and mvp as avg.
 	if !found {
-		avg := num.DecimalZero()
-		if es.openingAuctionEnded {
-			avg = es.mvp
-		}
+		avg := es.mvp
 		es.lps[id] = &lp{
 			stake:  newStake,
 			avg:    avg,
@@ -155,6 +152,9 @@ func (es *EquityShares) SetPartyStake(id string, newStakeU *num.Uint) {
 		}
 		es.totalVStake = es.totalVStake.Add(newStake)
 		es.totalPStake = es.totalPStake.Add(newStake)
+		if es.openingAuctionEnded {
+			es.lps[id].avg = es.AvgEntryValuation(id)
+		}
 		return
 	}
 
@@ -172,6 +172,11 @@ func (es *EquityShares) SetPartyStake(id string, newStakeU *num.Uint) {
 		return
 	}
 
+	// update totals
+	es.totalVStake = es.totalVStake.Add(delta)
+	es.totalPStake = es.totalPStake.Sub(v.stake).Add(newStake)
+	v.vStake = v.vStake.Add(delta) // increase
+	v.stake = newStake
 	// delta will allways be > 0 at this point
 	if es.openingAuctionEnded {
 		eq := es.mustEquity(id)
@@ -179,11 +184,6 @@ func (es *EquityShares) SetPartyStake(id string, newStakeU *num.Uint) {
 		// v.avg = ((eq * v.avg) + (delta * es.mvp)) / (eq + v.stake)
 		v.avg = (eq.Mul(v.avg).Add(delta.Mul(es.mvp))).Div(eq.Add(v.stake))
 	}
-	// update totals
-	es.totalVStake = es.totalVStake.Add(delta)
-	es.totalPStake = es.totalPStake.Sub(v.stake).Add(newStake)
-	v.vStake = v.vStake.Add(delta) // increase
-	v.stake = newStake
 }
 
 // AvgEntryValuation returns the Average Entry Valuation for a given party.
@@ -243,6 +243,15 @@ func (es *EquityShares) SharesFromParty(party string) num.Decimal {
 // the ones listed in parameter.
 func (es *EquityShares) SharesExcept(except map[string]struct{}) map[string]num.Decimal {
 	shares := make(map[string]num.Decimal, len(es.lps)-len(except))
+	allTotal, allTotalV := es.totalPStake, es.totalVStake
+	all := true
+	for k := range except {
+		if v, ok := es.lps[k]; ok {
+			es.totalPStake = es.totalPStake.Sub(v.stake)
+			es.totalVStake = es.totalVStake.Sub(v.vStake)
+			all = false
+		}
+	}
 	for id, v := range es.lps {
 		if _, ok := except[id]; ok {
 			continue
@@ -252,10 +261,14 @@ func (es *EquityShares) SharesExcept(except map[string]struct{}) map[string]num.
 			panic(err)
 		}
 		shares[id] = eq
-		if !v.share.Equals(eq) {
+		if all && !v.share.Equals(eq) {
 			v.share = eq
 			es.stateChanged = true
 		}
+	}
+	if !all {
+		es.totalPStake = allTotal
+		es.totalVStake = allTotalV
 	}
 	return shares
 }
