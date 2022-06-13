@@ -30,17 +30,19 @@ var (
 )
 
 var (
-	unconfirmedTxGauge prometheus.Gauge
-	engineTime         *prometheus.CounterVec
-	eventHandlingTime  *prometheus.CounterVec
-	eventCounter       *prometheus.CounterVec
-	sqlQueryTime       *prometheus.CounterVec
-	sqlQueryCounter    *prometheus.CounterVec
-	blockCounter       prometheus.Counter
-	orderCounter       *prometheus.CounterVec
-	ethCallCounter     *prometheus.CounterVec
-	evtForwardCounter  *prometheus.CounterVec
-	orderGauge         *prometheus.GaugeVec
+	engineTime        *prometheus.CounterVec
+	eventHandlingTime *prometheus.CounterVec
+	eventCounter      *prometheus.CounterVec
+	sqlQueryTime      *prometheus.CounterVec
+	sqlQueryCounter   *prometheus.CounterVec
+	blockCounter      prometheus.Counter
+	orderCounter      *prometheus.CounterVec
+	evtForwardCounter *prometheus.CounterVec
+	orderGauge        *prometheus.GaugeVec
+
+	// Subscription gauge for each type
+	subscriptionGauge *prometheus.GaugeVec
+
 	// Call counters for each request type per API
 	apiRequestCallCounter *prometheus.CounterVec
 	// Total time counters for each request type per API
@@ -440,22 +442,6 @@ func setupMetrics() error {
 
 	h, err = AddInstrument(
 		Counter,
-		"eth_calls_total",
-		Namespace("vega"),
-		Vectors("func", "asset", "respcode"),
-		Help("Number of call made to the ethereum node"),
-	)
-	if err != nil {
-		return err
-	}
-	ethCalls, err := h.CounterVec()
-	if err != nil {
-		return err
-	}
-	ethCallCounter = ethCalls
-
-	h, err = AddInstrument(
-		Counter,
 		"evt_forward_total",
 		Namespace("vega"),
 		Vectors("func", "res"),
@@ -490,24 +476,23 @@ func setupMetrics() error {
 	// e.orderGauge.WithLabelValues(mkt.Name).Add(float64(len(orders)))
 	// e.orderGauge.WithLabelValues(mkt.Name).Sub(float64(len(completedOrders)))
 
-	h, err = AddInstrument(
-		Gauge,
-		"unconfirmedtx",
-		Namespace("vega"),
-		Help("Number of transactions waiting to be processed"),
-	)
-	if err != nil {
-		return err
-	}
-	utxg, err := h.Gauge()
-	if err != nil {
-		return err
-	}
-	unconfirmedTxGauge = utxg
-
 	//
 	// API usage metrics start here
 	//
+
+	if h, err = AddInstrument(
+		Gauge,
+		"active_subscriptions",
+		Namespace("vega"),
+		Vectors("apiType", "subscribedToType"),
+		Help("Number of active subscriptions"),
+	); err != nil {
+		return err
+	}
+
+	if subscriptionGauge, err = h.GaugeVec(); err != nil {
+		return err
+	}
 
 	// Number of calls to each request type
 	h, err = AddInstrument(
@@ -577,14 +562,6 @@ func SQLQueryCounterInc(labelValues ...string) {
 	sqlQueryCounter.WithLabelValues(labelValues...).Inc()
 }
 
-// EthCallInc increments the eth call counter
-func EthCallInc(labelValues ...string) {
-	if ethCallCounter == nil {
-		return
-	}
-	ethCallCounter.WithLabelValues(labelValues...).Inc()
-}
-
 // EvtForwardInc increments the evt forward counter
 func EvtForwardInc(labelValues ...string) {
 	if evtForwardCounter == nil {
@@ -599,14 +576,6 @@ func OrderGaugeAdd(n int, labelValues ...string) {
 		return
 	}
 	orderGauge.WithLabelValues(labelValues...).Add(float64(n))
-}
-
-// UnconfirmedTxGaugeSet update the number of unconfirmed transactions
-func UnconfirmedTxGaugeSet(n int) {
-	if unconfirmedTxGauge == nil {
-		return
-	}
-	unconfirmedTxGauge.Set(float64(n))
 }
 
 // APIRequestAndTimeREST updates the metrics for REST API calls
@@ -659,5 +628,16 @@ func StartSQLQuery(store string, query string) func() {
 		sqlQueryCounter.WithLabelValues(store, query).Inc()
 		duration := time.Since(startTime).Seconds()
 		sqlQueryTime.WithLabelValues(store, query).Add(duration)
+	}
+}
+
+func StartActiveSubscriptionCountGRPC(subscribedToType string) func() {
+	if subscriptionGauge == nil {
+		return func() {}
+	}
+
+	subscriptionGauge.WithLabelValues("GRPC", subscribedToType).Inc()
+	return func() {
+		subscriptionGauge.WithLabelValues("GRPC", subscribedToType).Dec()
 	}
 }
