@@ -7,6 +7,7 @@ import (
 	"os"
 
 	"code.vegaprotocol.io/data-node/candlesv2"
+	"code.vegaprotocol.io/data-node/service"
 
 	"code.vegaprotocol.io/data-node/accounts"
 	"code.vegaprotocol.io/data-node/api"
@@ -72,7 +73,8 @@ type Config struct {
 	Epochs            epochs.Config      `group:"Epochs" namespace:"epochs"`
 	Delegations       delegations.Config `group:"Delegations" namespace:"delegations"`
 	Checkpoint        checkpoint.Config  `group:"Checkpoint" namespace:"checkpoint"`
-	NetworkParameters netparams.Config
+	NetworkParameters netparams.Config   `group:"NetworkParameters" namespace:"network_parameters"`
+	Service           service.Config     `group:"Service" namespace:"service"`
 
 	Pprof          pprof.Config  `group:"Pprof" namespace:"pprof"`
 	GatewayEnabled encoding.Bool `long:"gateway-enabled" choice:"true" choice:"false" description:" "`
@@ -112,6 +114,7 @@ func NewDefaultConfig() Config {
 		Epochs:            epochs.NewDefaultConfig(),
 		Nodes:             nodes.NewDefaultConfig(),
 		Delegations:       delegations.NewDefaultConfig(),
+		Service:           service.NewDefaultConfig(),
 		GatewayEnabled:    true,
 		UlimitNOFile:      8192,
 	}
