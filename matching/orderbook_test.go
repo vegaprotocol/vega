@@ -3464,3 +3464,89 @@ func TestOrderBook_BidAndAskPresentAfterAuction(t *testing.T) {
 	require.Equal(t, false, book.ob.BidAndAskPresentAfterAuction())
 	require.Equal(t, false, book.ob.CanUncross())
 }
+
+func TestOrderBook_AuctionUncrossWashTrades2(t *testing.T) {
+	market := "testOrderbook"
+	book := getTestOrderBook(t, market)
+	defer book.Finish()
+
+	logger := logging.NewTestLogger()
+	defer logger.Sync()
+
+	// Switch to auction mode
+	book.ob.EnterAuction()
+
+	tt_0_0 := getOrder(t, book, market, "tt_0_0", types.SideBuy, 90, "tt_0", 1000)
+	_, err := book.ob.SubmitOrder(tt_0_0)
+	require.NoError(t, err)
+	tt_0_1 := getOrder(t, book, market, "tt_0_1", types.SideSell, 200, "tt_0", 1000)
+	_, err = book.ob.SubmitOrder(tt_0_1)
+	require.NoError(t, err)
+
+	tt_1_0 := getOrder(t, book, market, "tt_1_0", types.SideSell, 110, "tt_1", 50)
+	_, err = book.ob.SubmitOrder(tt_1_0)
+	require.NoError(t, err)
+	tt_2_0 := getOrder(t, book, market, "tt_2_0", types.SideBuy, 110, "tt_2", 20)
+	_, err = book.ob.SubmitOrder(tt_2_0)
+	require.NoError(t, err)
+	tt_3_0 := getOrder(t, book, market, "tt_3_0", types.SideBuy, 110, "tt_3", 30)
+	_, err = book.ob.SubmitOrder(tt_3_0)
+	require.NoError(t, err)
+
+	indicativeTrades, err := book.ob.GetIndicativeTrades()
+	require.NoError(t, err)
+	require.Equal(t, 2, len(indicativeTrades))
+
+	require.Equal(t, tt_1_0.Party, indicativeTrades[0].Seller)
+	require.Equal(t, tt_2_0.Party, indicativeTrades[0].Buyer)
+	require.Equal(t, tt_2_0.Size, indicativeTrades[0].Size)
+	require.Equal(t, tt_2_0.Price, indicativeTrades[0].Price)
+
+	require.Equal(t, tt_1_0.Party, indicativeTrades[1].Seller)
+	require.Equal(t, tt_3_0.Party, indicativeTrades[1].Buyer)
+	require.Equal(t, tt_3_0.Size, indicativeTrades[1].Size)
+	require.Equal(t, tt_3_0.Price, indicativeTrades[1].Price)
+
+	// Add wash trades
+	tt_4_0 := getOrder(t, book, market, "tt_4_0", types.SideSell, 110, "tt_4", 40)
+	_, err = book.ob.SubmitOrder(tt_4_0)
+	require.NoError(t, err)
+	tt_4_1 := getOrder(t, book, market, "tt_4_1", types.SideBuy, 110, "tt_4", 40)
+	_, err = book.ob.SubmitOrder(tt_4_1)
+	require.NoError(t, err)
+
+	indicativeTrades, err = book.ob.GetIndicativeTrades()
+	require.NoError(t, err)
+	// Expecting one more indicative trade now
+	require.Equal(t, 3, len(indicativeTrades))
+
+	// The first two should stay as they were
+	require.Equal(t, tt_1_0.Party, indicativeTrades[0].Seller)
+	require.Equal(t, tt_2_0.Party, indicativeTrades[0].Buyer)
+	require.Equal(t, tt_2_0.Size, indicativeTrades[0].Size)
+	require.Equal(t, tt_2_0.Price, indicativeTrades[0].Price)
+
+	require.Equal(t, tt_1_0.Party, indicativeTrades[1].Seller)
+	require.Equal(t, tt_3_0.Party, indicativeTrades[1].Buyer)
+	require.Equal(t, tt_3_0.Size, indicativeTrades[1].Size)
+	require.Equal(t, tt_3_0.Price, indicativeTrades[1].Price)
+
+	// The third one should be the wash trade
+	require.Equal(t, tt_4_0.Party, indicativeTrades[2].Seller)
+	require.Equal(t, tt_4_1.Party, indicativeTrades[2].Buyer)
+	require.Equal(t, tt_4_0.Size, indicativeTrades[2].Size)
+	require.Equal(t, tt_4_0.Price, indicativeTrades[2].Price)
+
+	confs, ordersToCancel, err := book.ob.LeaveAuction(time.Now())
+	require.NoError(t, err)
+	require.Equal(t, 3, len(confs))
+	require.Equal(t, 0, len(ordersToCancel))
+
+	for i, c := range confs {
+		require.Equal(t, 1, len(c.Trades))
+		require.Equal(t, c.Trades[0].Buyer, indicativeTrades[i].Buyer)
+		require.Equal(t, c.Trades[0].Seller, indicativeTrades[i].Seller)
+		require.Equal(t, c.Trades[0].Size, indicativeTrades[i].Size)
+		require.Equal(t, c.Trades[0].Price, indicativeTrades[i].Price)
+	}
+}
