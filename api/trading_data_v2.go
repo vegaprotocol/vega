@@ -41,6 +41,7 @@ type tradingDataServiceV2 struct {
 	partyService         *service.Party
 	riskService          *service.Risk
 	accountService       *service.Account
+	rewardService        *service.Reward
 }
 
 func (t *tradingDataServiceV2) checkV2ApiEnabled() error {
@@ -911,6 +912,64 @@ func makeMarketDataHistoryEdges(history []entities.MarketData) []*v2.MarketDataE
 		edges[i] = &v2.MarketDataEdge{
 			Node:   md.ToProto(),
 			Cursor: md.Cursor().Encode(),
+		}
+	}
+	return edges
+}
+
+// Get rewards
+func (t *tradingDataServiceV2) GetRewards(ctx context.Context, in *v2.GetRewardsRequest) (*v2.GetRewardsResponse, error) {
+	if err := t.checkV2ApiEnabled(); err != nil {
+		return nil, err
+	}
+
+	pagination, err := entities.CursorPaginationFromProto(in.Pagination)
+	if err != nil {
+		return nil, apiError(codes.InvalidArgument, err)
+	}
+
+	rewards, pageInfo, err := t.rewardService.GetByCursor(ctx, &in.PartyId, &in.AssetId, pagination)
+	if err != nil {
+		return nil, apiError(codes.Internal, err)
+	}
+
+	rewardsConnection := &v2.RewardsConnection{
+		TotalCount: 0, // TODO: implement total count
+		Edges:      makeRewardEdges(rewards),
+		PageInfo:   pageInfo.ToProto(),
+	}
+
+	resp := v2.GetRewardsResponse{Rewards: rewardsConnection}
+	return &resp, nil
+}
+
+// Get reward summaries
+func (t *tradingDataServiceV2) GetRewardSummaries(ctx context.Context, in *v2.GetRewardSummariesRequest) (*v2.GetRewardSummariesResponse, error) {
+	if err := t.checkV2ApiEnabled(); err != nil {
+		return nil, err
+	}
+
+	summaries, err := t.rewardService.GetSummaries(ctx, &in.PartyId, &in.AssetId)
+	if err != nil {
+		return nil, apiError(codes.Internal, err)
+	}
+
+	summaryProtos := make([]*vega.RewardSummary, len(summaries))
+
+	for i, summary := range summaries {
+		summaryProtos[i] = summary.ToProto()
+	}
+
+	resp := v2.GetRewardSummariesResponse{Summaries: summaryProtos}
+	return &resp, nil
+}
+
+func makeRewardEdges(rewards []entities.Reward) []*v2.RewardEdge {
+	edges := make([]*v2.RewardEdge, len(rewards))
+	for i, r := range rewards {
+		edges[i] = &v2.RewardEdge{
+			Node:   r.ToProto(),
+			Cursor: r.Cursor().Encode(),
 		}
 	}
 	return edges

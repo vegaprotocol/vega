@@ -1641,7 +1641,14 @@ type Party {
     first: Int
     "Pagination last element"
     last: Int
-  ): [Reward]
+  ): [Reward] @deprecated(reason: "Use rewardsConnection instead")
+
+  rewardsConnection(
+    "An optional asset"
+    asset: String
+    "Cursor pagination information"
+    pagination: Pagination
+  ): RewardsConnection
 
   "return net reward information"
   rewardSummaries(
@@ -3031,7 +3038,14 @@ type RewardSummary {
     "Pagination first element"
     first: Int
     "Pagination last element"
-    last: Int): [Reward]
+    last: Int): [Reward] @deprecated(reason: "Use rewardsConnection instead")
+  "List of individual reward payouts, ordered by epoch"
+  rewardsConnection(
+    "An optional asset"
+    asset: String
+    "Cursor pagination information"
+    pagination: Pagination
+  ): RewardsConnection
 }
 
 "RewardPerAssetDetail is depricated, use RewardSummmary instead "
@@ -3223,7 +3237,14 @@ type PaginatedParty {
     first: Int
     "Pagination last element"
     last: Int
-  ): [Reward]
+  ): [Reward] @deprecated(reason: "Use rewardsConnection instead")
+  "List of individual reward payouts, ordered by epoch"
+  rewardsConnection(
+    "An optional asset"
+    asset: String
+    "Cursor pagination information"
+    pagination: Pagination
+  ): RewardsConnection
 
   "return net reward information"
   rewardSummaries("An optional asset" asset: String): [RewardSummary]
@@ -3465,6 +3486,20 @@ type MarketDataConnection {
   totalCount: Int
   "The market data elements for the requested page"
   edges: [MarketDataEdge]
+  "The pagination information"
+  pageInfo: PageInfo
+}
+
+type RewardEdge {
+  node: Reward!
+  cursor: String!
+}
+
+type RewardsConnection {
+  "The total number of reward data items available with this connection"
+  totalCount: Int
+  "The rewards"
+  edges: [RewardEdge]
   "The pagination information"
   pageInfo: PageInfo
 }

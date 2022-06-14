@@ -280,6 +280,25 @@ func (r *myPaginatedPartyResolver) Rewards(
 	return resp.Rewards, err
 }
 
+func (r *myPaginatedPartyResolver) RewardsConnection(ctx context.Context, party *types.Party, asset *string, pagination *v2.Pagination) (*v2.RewardsConnection, error) {
+	var assetID string
+	if asset != nil {
+		assetID = *asset
+	}
+
+	req := v2.GetRewardsRequest{
+		PartyId:    party.Id,
+		AssetId:    assetID,
+		Pagination: pagination,
+	}
+	resp, err := r.tradingDataClientV2.GetRewards(ctx, &req)
+	if err != nil {
+		return nil, fmt.Errorf("could not retrieve rewards information: %w", err)
+	}
+
+	return resp.Rewards, nil
+}
+
 func (r *myPaginatedPartyResolver) RewardSummaries(
 	ctx context.Context,
 	party *types.Party,

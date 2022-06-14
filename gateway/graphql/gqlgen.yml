@@ -294,3 +294,7 @@ models:
     model: code.vegaprotocol.io/protos/data-node/api/v2.MarketDataEdge
   MarketDataConnection:
     model: code.vegaprotocol.io/protos/data-node/api/v2.MarketDataConnection
+  RewardEdge:
+    model: code.vegaprotocol.io/protos/data-node/api/v2.RewardEdge
+  RewardsConnection:
+    model: code.vegaprotocol.io/protos/data-node/api/v2.RewardsConnection

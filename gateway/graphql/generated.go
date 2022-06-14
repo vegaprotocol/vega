@@ -745,6 +745,7 @@ type ComplexityRoot struct {
 		Proposals           func(childComplexity int, inState *ProposalState) int
 		RewardSummaries     func(childComplexity int, asset *string) int
 		Rewards             func(childComplexity int, asset *string, skip *int, first *int, last *int) int
+		RewardsConnection   func(childComplexity int, asset *string, pagination *v2.Pagination) int
 		Stake               func(childComplexity int) int
 		TradesPaged         func(childComplexity int, marketID *string, pagination *v2.Pagination) int
 		Votes               func(childComplexity int) int
@@ -766,6 +767,7 @@ type ComplexityRoot struct {
 		RewardDetails       func(childComplexity int) int
 		RewardSummaries     func(childComplexity int, asset *string) int
 		Rewards             func(childComplexity int, asset *string, skip *int, first *int, last *int) int
+		RewardsConnection   func(childComplexity int, asset *string, pagination *v2.Pagination) int
 		Stake               func(childComplexity int) int
 		Trades              func(childComplexity int, marketID *string, skip *int, first *int, last *int) int
 		TradesPaged         func(childComplexity int, marketID *string, pagination *v2.Pagination) int
@@ -964,6 +966,11 @@ type ComplexityRoot struct {
 		RewardType        func(childComplexity int) int
 	}
 
+	RewardEdge struct {
+		Cursor func(childComplexity int) int
+		Node   func(childComplexity int) int
+	}
+
 	RewardPerAssetDetail struct {
 		Asset       func(childComplexity int) int
 		AssetId     func(childComplexity int) int
@@ -981,9 +988,16 @@ type ComplexityRoot struct {
 	}
 
 	RewardSummary struct {
-		Amount  func(childComplexity int) int
-		Asset   func(childComplexity int) int
-		Rewards func(childComplexity int, skip *int, first *int, last *int) int
+		Amount            func(childComplexity int) int
+		Asset             func(childComplexity int) int
+		Rewards           func(childComplexity int, skip *int, first *int, last *int) int
+		RewardsConnection func(childComplexity int, asset *string, pagination *v2.Pagination) int
+	}
+
+	RewardsConnection struct {
+		Edges      func(childComplexity int) int
+		PageInfo   func(childComplexity int) int
+		TotalCount func(childComplexity int) int
 	}
 
 	RiskFactor struct {
@@ -1498,6 +1512,7 @@ type PaginatedPartyResolver interface {
 	Delegations(ctx context.Context, obj *vega.Party, nodeID *string, skip *int, first *int, last *int) ([]*vega.Delegation, error)
 	Stake(ctx context.Context, obj *vega.Party) (*v12.PartyStakeResponse, error)
 	Rewards(ctx context.Context, obj *vega.Party, asset *string, skip *int, first *int, last *int) ([]*vega.Reward, error)
+	RewardsConnection(ctx context.Context, obj *vega.Party, asset *string, pagination *v2.Pagination) (*v2.RewardsConnection, error)
 	RewardSummaries(ctx context.Context, obj *vega.Party, asset *string) ([]*vega.RewardSummary, error)
 }
 type PartyResolver interface {
@@ -1517,6 +1532,7 @@ type PartyResolver interface {
 	Delegations(ctx context.Context, obj *vega.Party, nodeID *string, skip *int, first *int, last *int) ([]*vega.Delegation, error)
 	Stake(ctx context.Context, obj *vega.Party) (*v12.PartyStakeResponse, error)
 	Rewards(ctx context.Context, obj *vega.Party, asset *string, skip *int, first *int, last *int) ([]*vega.Reward, error)
+	RewardsConnection(ctx context.Context, obj *vega.Party, asset *string, pagination *v2.Pagination) (*v2.RewardsConnection, error)
 	RewardSummaries(ctx context.Context, obj *vega.Party, asset *string) ([]*vega.RewardSummary, error)
 	RewardDetails(ctx context.Context, obj *vega.Party) ([]*vega.RewardSummary, error)
 }
@@ -1636,6 +1652,7 @@ type RewardSummaryResolver interface {
 	Asset(ctx context.Context, obj *vega.RewardSummary) (*vega.Asset, error)
 
 	Rewards(ctx context.Context, obj *vega.RewardSummary, skip *int, first *int, last *int) ([]*vega.Reward, error)
+	RewardsConnection(ctx context.Context, obj *vega.RewardSummary, asset *string, pagination *v2.Pagination) (*v2.RewardsConnection, error)
 }
 type StakeLinkingResolver interface {
 	Type(ctx context.Context, obj *v1.StakeLinking) (StakeLinkingType, error)
@@ -4693,6 +4710,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.PaginatedParty.Rewards(childComplexity, args["asset"].(*string), args["skip"].(*int), args["first"].(*int), args["last"].(*int)), true
 
+	case "PaginatedParty.rewardsConnection":
+		if e.complexity.PaginatedParty.RewardsConnection == nil {
+			break
+		}
+
+		args, err := ec.field_PaginatedParty_rewardsConnection_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.PaginatedParty.RewardsConnection(childComplexity, args["asset"].(*string), args["pagination"].(*v2.Pagination)), true
+
 	case "PaginatedParty.stake":
 		if e.complexity.PaginatedParty.Stake == nil {
 			break
@@ -4873,6 +4902,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Party.Rewards(childComplexity, args["asset"].(*string), args["skip"].(*int), args["first"].(*int), args["last"].(*int)), true
+
+	case "Party.rewardsConnection":
+		if e.complexity.Party.RewardsConnection == nil {
+			break
+		}
+
+		args, err := ec.field_Party_rewardsConnection_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Party.RewardsConnection(childComplexity, args["asset"].(*string), args["pagination"].(*v2.Pagination)), true
 
 	case "Party.stake":
 		if e.complexity.Party.Stake == nil {
@@ -5948,6 +5989,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Reward.RewardType(childComplexity), true
 
+	case "RewardEdge.cursor":
+		if e.complexity.RewardEdge.Cursor == nil {
+			break
+		}
+
+		return e.complexity.RewardEdge.Cursor(childComplexity), true
+
+	case "RewardEdge.node":
+		if e.complexity.RewardEdge.Node == nil {
+			break
+		}
+
+		return e.complexity.RewardEdge.Node(childComplexity), true
+
 	case "RewardPerAssetDetail.asset":
 		if e.complexity.RewardPerAssetDetail.Asset == nil {
 			break
@@ -6043,6 +6098,39 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.RewardSummary.Rewards(childComplexity, args["skip"].(*int), args["first"].(*int), args["last"].(*int)), true
+
+	case "RewardSummary.rewardsConnection":
+		if e.complexity.RewardSummary.RewardsConnection == nil {
+			break
+		}
+
+		args, err := ec.field_RewardSummary_rewardsConnection_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.RewardSummary.RewardsConnection(childComplexity, args["asset"].(*string), args["pagination"].(*v2.Pagination)), true
+
+	case "RewardsConnection.edges":
+		if e.complexity.RewardsConnection.Edges == nil {
+			break
+		}
+
+		return e.complexity.RewardsConnection.Edges(childComplexity), true
+
+	case "RewardsConnection.pageInfo":
+		if e.complexity.RewardsConnection.PageInfo == nil {
+			break
+		}
+
+		return e.complexity.RewardsConnection.PageInfo(childComplexity), true
+
+	case "RewardsConnection.totalCount":
+		if e.complexity.RewardsConnection.TotalCount == nil {
+			break
+		}
+
+		return e.complexity.RewardsConnection.TotalCount(childComplexity), true
 
 	case "RiskFactor.long":
 		if e.complexity.RiskFactor.Long == nil {
@@ -8839,7 +8927,14 @@ type Party {
     first: Int
     "Pagination last element"
     last: Int
-  ): [Reward]
+  ): [Reward] @deprecated(reason: "Use rewardsConnection instead")
+
+  rewardsConnection(
+    "An optional asset"
+    asset: String
+    "Cursor pagination information"
+    pagination: Pagination
+  ): RewardsConnection
 
   "return net reward information"
   rewardSummaries(
@@ -10229,7 +10324,14 @@ type RewardSummary {
     "Pagination first element"
     first: Int
     "Pagination last element"
-    last: Int): [Reward]
+    last: Int): [Reward] @deprecated(reason: "Use rewardsConnection instead")
+  "List of individual reward payouts, ordered by epoch"
+  rewardsConnection(
+    "An optional asset"
+    asset: String
+    "Cursor pagination information"
+    pagination: Pagination
+  ): RewardsConnection
 }
 
 "RewardPerAssetDetail is depricated, use RewardSummmary instead "
@@ -10421,7 +10523,14 @@ type PaginatedParty {
     first: Int
     "Pagination last element"
     last: Int
-  ): [Reward]
+  ): [Reward] @deprecated(reason: "Use rewardsConnection instead")
+  "List of individual reward payouts, ordered by epoch"
+  rewardsConnection(
+    "An optional asset"
+    asset: String
+    "Cursor pagination information"
+    pagination: Pagination
+  ): RewardsConnection
 
   "return net reward information"
   rewardSummaries("An optional asset" asset: String): [RewardSummary]
@@ -10663,6 +10772,20 @@ type MarketDataConnection {
   totalCount: Int
   "The market data elements for the requested page"
   edges: [MarketDataEdge]
+  "The pagination information"
+  pageInfo: PageInfo
+}
+
+type RewardEdge {
+  node: Reward!
+  cursor: String!
+}
+
+type RewardsConnection {
+  "The total number of reward data items available with this connection"
+  totalCount: Int
+  "The rewards"
+  edges: [RewardEdge]
   "The pagination information"
   pageInfo: PageInfo
 }
@@ -11229,6 +11352,30 @@ func (ec *executionContext) field_PaginatedParty_rewardSummaries_args(ctx contex
 	return args, nil
 }
 
+func (ec *executionContext) field_PaginatedParty_rewardsConnection_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *string
+	if tmp, ok := rawArgs["asset"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("asset"))
+		arg0, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["asset"] = arg0
+	var arg1 *v2.Pagination
+	if tmp, ok := rawArgs["pagination"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pagination"))
+		arg1, err = ec.unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPagination(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["pagination"] = arg1
+	return args, nil
+}
+
 func (ec *executionContext) field_PaginatedParty_rewards_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -11508,6 +11655,30 @@ func (ec *executionContext) field_Party_rewardSummaries_args(ctx context.Context
 		}
 	}
 	args["asset"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Party_rewardsConnection_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *string
+	if tmp, ok := rawArgs["asset"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("asset"))
+		arg0, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["asset"] = arg0
+	var arg1 *v2.Pagination
+	if tmp, ok := rawArgs["pagination"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pagination"))
+		arg1, err = ec.unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPagination(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["pagination"] = arg1
 	return args, nil
 }
 
@@ -12408,6 +12579,30 @@ func (ec *executionContext) field_Query_withdrawal_args(ctx context.Context, raw
 		}
 	}
 	args["id"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_RewardSummary_rewardsConnection_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *string
+	if tmp, ok := rawArgs["asset"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("asset"))
+		arg0, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["asset"] = arg0
+	var arg1 *v2.Pagination
+	if tmp, ok := rawArgs["pagination"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pagination"))
+		arg1, err = ec.unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPagination(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["pagination"] = arg1
 	return args, nil
 }
 
@@ -26795,6 +26990,45 @@ func (ec *executionContext) _PaginatedParty_rewards(ctx context.Context, field g
 	return ec.marshalOReward2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐReward(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _PaginatedParty_rewardsConnection(ctx context.Context, field graphql.CollectedField, obj *vega.Party) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "PaginatedParty",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_PaginatedParty_rewardsConnection_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.PaginatedParty().RewardsConnection(rctx, obj, args["asset"].(*string), args["pagination"].(*v2.Pagination))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*v2.RewardsConnection)
+	fc.Result = res
+	return ec.marshalORewardsConnection2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐRewardsConnection(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _PaginatedParty_rewardSummaries(ctx context.Context, field graphql.CollectedField, obj *vega.Party) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -27468,6 +27702,45 @@ func (ec *executionContext) _Party_rewards(ctx context.Context, field graphql.Co
 	res := resTmp.([]*vega.Reward)
 	fc.Result = res
 	return ec.marshalOReward2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐReward(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Party_rewardsConnection(ctx context.Context, field graphql.CollectedField, obj *vega.Party) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Party",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Party_rewardsConnection_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Party().RewardsConnection(rctx, obj, args["asset"].(*string), args["pagination"].(*v2.Pagination))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*v2.RewardsConnection)
+	fc.Result = res
+	return ec.marshalORewardsConnection2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐRewardsConnection(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Party_rewardSummaries(ctx context.Context, field graphql.CollectedField, obj *vega.Party) (ret graphql.Marshaler) {
@@ -31998,6 +32271,76 @@ func (ec *executionContext) _Reward_receivedAt(ctx context.Context, field graphq
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _RewardEdge_node(ctx context.Context, field graphql.CollectedField, obj *v2.RewardEdge) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "RewardEdge",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Node, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*vega.Reward)
+	fc.Result = res
+	return ec.marshalNReward2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐReward(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _RewardEdge_cursor(ctx context.Context, field graphql.CollectedField, obj *v2.RewardEdge) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "RewardEdge",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Cursor, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _RewardPerAssetDetail_asset(ctx context.Context, field graphql.CollectedField, obj *vega.RewardSummary) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -32452,6 +32795,141 @@ func (ec *executionContext) _RewardSummary_rewards(ctx context.Context, field gr
 	res := resTmp.([]*vega.Reward)
 	fc.Result = res
 	return ec.marshalOReward2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐReward(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _RewardSummary_rewardsConnection(ctx context.Context, field graphql.CollectedField, obj *vega.RewardSummary) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "RewardSummary",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_RewardSummary_rewardsConnection_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.RewardSummary().RewardsConnection(rctx, obj, args["asset"].(*string), args["pagination"].(*v2.Pagination))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*v2.RewardsConnection)
+	fc.Result = res
+	return ec.marshalORewardsConnection2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐRewardsConnection(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _RewardsConnection_totalCount(ctx context.Context, field graphql.CollectedField, obj *v2.RewardsConnection) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "RewardsConnection",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TotalCount, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(int64)
+	fc.Result = res
+	return ec.marshalOInt2int64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _RewardsConnection_edges(ctx context.Context, field graphql.CollectedField, obj *v2.RewardsConnection) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "RewardsConnection",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Edges, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*v2.RewardEdge)
+	fc.Result = res
+	return ec.marshalORewardEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐRewardEdge(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _RewardsConnection_pageInfo(ctx context.Context, field graphql.CollectedField, obj *v2.RewardsConnection) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "RewardsConnection",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PageInfo, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*v2.PageInfo)
+	fc.Result = res
+	return ec.marshalOPageInfo2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPageInfo(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _RiskFactor_market(ctx context.Context, field graphql.CollectedField, obj *vega.RiskFactor) (ret graphql.Marshaler) {
@@ -46433,6 +46911,23 @@ func (ec *executionContext) _PaginatedParty(ctx context.Context, sel ast.Selecti
 				return innerFunc(ctx)
 
 			})
+		case "rewardsConnection":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._PaginatedParty_rewardsConnection(ctx, field, obj)
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
 		case "rewardSummaries":
 			field := field
 
@@ -46758,6 +47253,23 @@ func (ec *executionContext) _Party(ctx context.Context, sel ast.SelectionSet, ob
 					}
 				}()
 				res = ec._Party_rewards(ctx, field, obj)
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "rewardsConnection":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Party_rewardsConnection(ctx, field, obj)
 				return res
 			}
 
@@ -49290,6 +49802,47 @@ func (ec *executionContext) _Reward(ctx context.Context, sel ast.SelectionSet, o
 	return out
 }
 
+var rewardEdgeImplementors = []string{"RewardEdge"}
+
+func (ec *executionContext) _RewardEdge(ctx context.Context, sel ast.SelectionSet, obj *v2.RewardEdge) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, rewardEdgeImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("RewardEdge")
+		case "node":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._RewardEdge_node(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "cursor":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._RewardEdge_cursor(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
 var rewardPerAssetDetailImplementors = []string{"RewardPerAssetDetail"}
 
 func (ec *executionContext) _RewardPerAssetDetail(ctx context.Context, sel ast.SelectionSet, obj *vega.RewardSummary) graphql.Marshaler {
@@ -49526,6 +50079,65 @@ func (ec *executionContext) _RewardSummary(ctx context.Context, sel ast.Selectio
 				return innerFunc(ctx)
 
 			})
+		case "rewardsConnection":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._RewardSummary_rewardsConnection(ctx, field, obj)
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var rewardsConnectionImplementors = []string{"RewardsConnection"}
+
+func (ec *executionContext) _RewardsConnection(ctx context.Context, sel ast.SelectionSet, obj *v2.RewardsConnection) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, rewardsConnectionImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("RewardsConnection")
+		case "totalCount":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._RewardsConnection_totalCount(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+		case "edges":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._RewardsConnection_edges(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+		case "pageInfo":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._RewardsConnection_pageInfo(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -56933,6 +57545,54 @@ func (ec *executionContext) marshalOReward2ᚖcodeᚗvegaprotocolᚗioᚋprotos�
 	return ec._Reward(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalORewardEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐRewardEdge(ctx context.Context, sel ast.SelectionSet, v []*v2.RewardEdge) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalORewardEdge2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐRewardEdge(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	return ret
+}
+
+func (ec *executionContext) marshalORewardEdge2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐRewardEdge(ctx context.Context, sel ast.SelectionSet, v *v2.RewardEdge) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._RewardEdge(ctx, sel, v)
+}
+
 func (ec *executionContext) marshalORewardPerAssetDetail2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐRewardSummary(ctx context.Context, sel ast.SelectionSet, v []*vega.RewardSummary) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
@@ -57034,6 +57694,13 @@ func (ec *executionContext) marshalORewardSummary2ᚖcodeᚗvegaprotocolᚗioᚋ
 		return graphql.Null
 	}
 	return ec._RewardSummary(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalORewardsConnection2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐRewardsConnection(ctx context.Context, sel ast.SelectionSet, v *v2.RewardsConnection) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._RewardsConnection(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalORiskFactor2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐRiskFactor(ctx context.Context, sel ast.SelectionSet, v *vega.RiskFactor) graphql.Marshaler {

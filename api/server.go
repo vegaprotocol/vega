@@ -460,7 +460,9 @@ func (g *GRPCServer) Start(ctx context.Context, lis net.Listener) error {
 		partyService:         g.partyServiceV2,
 		riskService:          g.riskServiceV2,
 		accountService:       g.accountServiceV2,
+		rewardService:        g.rewardServiceV2,
 	}
+
 	protoapi2.RegisterTradingDataServiceServer(g.srv, tradingDataSvcV2)
 
 	eg, ctx := errgroup.WithContext(ctx)

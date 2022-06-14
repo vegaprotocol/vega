@@ -1,6 +1,7 @@
 package entities
 
 import (
+	"encoding/json"
 	"fmt"
 	"strconv"
 	"time"
@@ -72,4 +73,36 @@ func RewardFromProto(pr eventspb.RewardPayoutEvent, vegaTime time.Time) (Reward,
 	}
 
 	return reward, nil
+}
+
+type RewardCursor struct {
+	PartyID string `json:"party_id"`
+	AssetID string `json:"asset_id"`
+	EpochID int64  `json:"epoch_id"`
+}
+
+func (rc RewardCursor) String() string {
+	bs, err := json.Marshal(rc)
+	if err != nil {
+		return fmt.Sprintf(`{"party_id":"%s","asset_id":"%s","epoch_id":%d}`, rc.PartyID, rc.AssetID, rc.EpochID)
+	}
+	return string(bs)
+}
+
+func (r Reward) Cursor() *Cursor {
+	cursor := RewardCursor{
+		PartyID: r.PartyID.String(),
+		AssetID: r.AssetID.String(),
+		EpochID: r.EpochID,
+	}
+	return NewCursor(cursor.String())
+}
+
+func ParseRewardCursor(cursor string) (RewardCursor, error) {
+	var rc RewardCursor
+	err := json.Unmarshal([]byte(cursor), &rc)
+	if err != nil {
+		return RewardCursor{}, fmt.Errorf("parsing reward cursor: %w", err)
+	}
+	return rc, nil
 }
