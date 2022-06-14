@@ -20,6 +20,7 @@
 - [5446](https://github.com/vegaprotocol/vega/issues/5446) - Cover liquidity monitoring acceptance criteria relating to aggressive order removing best bid or ask from the book
 - [5457](https://github.com/vegaprotocol/vega/issues/5457) - Fix sorting of validators for demotion check
 - [5460](https://github.com/vegaprotocol/vega/issues/5460) - Fix theoretical open interest calculation
+- [5468](https://github.com/vegaprotocol/vega/issues/5468) - Bring indicative trades inline with actual auction uncrossing trades in presence of wash trades
 
 ## 0.51.1
 
