@@ -20,6 +20,12 @@ import (
 	"code.vegaprotocol.io/vega/events"
 )
 
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/time_service_mock.go -package mocks code.vegaprotocol.io/vega/vegatime TimeService
+type TimeService interface {
+	GetTimeNow() time.Time
+	NotifyOnTick(...func(context.Context, time.Time))
+}
+
 type Broker interface {
 	Send(event events.Event)
 	SendBatch(events []events.Event)
@@ -33,8 +39,9 @@ type Svc struct {
 	previousTimestamp time.Time
 	currentTimestamp  time.Time
 
-	listeners []func(context.Context, time.Time)
-	mu        sync.Mutex
+	listeners      []func(context.Context, time.Time)
+	stateListeners []func(context.Context, time.Time)
+	mu             sync.RWMutex
 
 	broker Broker
 }
@@ -73,15 +80,20 @@ func (s *Svc) SetTimeNow(ctx context.Context, t time.Time) {
 
 // GetTimeNow returns the current time in vega.
 func (s *Svc) GetTimeNow() time.Time {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
 	return s.currentTimestamp
 }
 
 // NotifyOnTick allows other services to register a callback function
 // which will be called once the vega time is updated (SetTimeNow is called).
-func (s *Svc) NotifyOnTick(f func(context.Context, time.Time)) {
+func (s *Svc) NotifyOnTick(callbacks ...func(context.Context, time.Time)) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	s.listeners = append(s.listeners, f)
+	for _, cb := range callbacks {
+		s.listeners = append(s.listeners, cb)
+	}
 }
 
 // GetTimeLastBatch returns the previous vega time.
@@ -90,8 +102,7 @@ func (s *Svc) GetTimeLastBatch() time.Time {
 }
 
 func (s *Svc) notify(ctx context.Context, t time.Time) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
+	// Call listeners for triggering actions.
 	for _, f := range s.listeners {
 		f(ctx, t)
 	}

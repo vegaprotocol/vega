@@ -226,7 +226,8 @@ func TestSubmit(t *testing.T) {
 			WithAccountAndAmount(lpparty, 500000000000)
 
 		tm.market.OnSuppliedStakeToObligationFactorUpdate(num.DecimalFromFloat(1.0))
-		tm.market.OnChainTimeUpdate(ctx, now)
+		tm.now = now
+		tm.market.OnTick(ctx, now)
 
 		// Add a LPSubmission
 		// this is a log of stake, enough to cover all
@@ -401,7 +402,8 @@ func TestSubmit(t *testing.T) {
 
 		// Leave auction
 		now = now.Add(time.Second * 40)
-		tm.market.OnChainTimeUpdate(ctx, now)
+		tm.now = now
+		tm.market.OnTick(ctx, now)
 		tm.market.LeaveAuctionWithIdGen(ctx, now, newTestIdGenerator())
 
 		// Check we have an accepted LP submission
@@ -493,7 +495,8 @@ func TestSubmit(t *testing.T) {
 		assert.Equal(t, types.AuctionTriggerOpening, tm.market.GetMarketData().Trigger)
 		// Leave the auction so we can uncross the book
 		now = now.Add(time.Second * 11)
-		tm.market.OnChainTimeUpdate(ctx, now)
+		tm.now = now
+		tm.market.OnTick(ctx, now)
 		// ensure we left auction
 		assert.Equal(t, types.AuctionTriggerUnspecified, tm.market.GetMarketData().Trigger)
 
@@ -594,8 +597,9 @@ func TestSubmit(t *testing.T) {
 
 		// Leave the auction so we can uncross the book
 		now = now.Add(time.Second * 20)
+		tm.now = now
 		tm.market.LeaveAuctionWithIdGen(ctx, now.Add(time.Second*20), newTestIdGenerator())
-		tm.market.OnChainTimeUpdate(ctx, now)
+		tm.market.OnTick(ctx, now)
 		assert.Equal(t, 1, tm.market.GetPeggedOrderCount())
 		assert.Equal(t, 0, tm.market.GetParkedOrderCount())
 
@@ -667,7 +671,8 @@ func TestSubmit(t *testing.T) {
 
 		// Leave the auction so we can uncross the book
 		now = now.Add(time.Second * 20)
-		tm.market.OnChainTimeUpdate(ctx, now)
+		tm.now = now
+		tm.market.OnTick(ctx, now)
 
 		// Save the total amount of assets we have in general+margin+bond
 		totalFunds := tm.market.GetTotalAccountBalance(ctx, "party-A", tm.market.GetID(), tm.asset)
@@ -728,7 +733,8 @@ func TestSubmit(t *testing.T) {
 			WithAccountAndAmount(party0, 1000000000)
 
 		tm.market.OnSuppliedStakeToObligationFactorUpdate(num.DecimalFromFloat(.3))
-		tm.market.OnChainTimeUpdate(ctx, now)
+		tm.now = now
+		tm.market.OnTick(ctx, now)
 
 		// Add a LPSubmission
 		// this is a log of stake, enough to cover all
@@ -820,7 +826,8 @@ func TestSubmit(t *testing.T) {
 			WithAccountAndAmount(ruser3, 10000000)
 
 		tm.market.OnSuppliedStakeToObligationFactorUpdate(num.DecimalFromFloat(.2))
-		tm.market.OnChainTimeUpdate(ctx, now)
+		tm.now = now
+		tm.market.OnTick(ctx, now)
 
 		// Add a LPSubmission
 		// this is a log of stake, enough to cover all
@@ -1020,7 +1027,8 @@ func TestSubmit(t *testing.T) {
 			WithAccountAndAmount(oth2, 500000000000)
 
 		tm.market.OnSuppliedStakeToObligationFactorUpdate(num.DecimalFromFloat(0.7))
-		tm.market.OnChainTimeUpdate(ctx, now)
+		tm.now = now
+		tm.market.OnTick(ctx, now)
 
 		// Add a LPSubmission
 		// this is a log of stake, enough to cover all
@@ -1118,7 +1126,8 @@ func TestSubmit(t *testing.T) {
 
 		// update the time to get out of auction
 		ctx := vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
-		tm.market.OnChainTimeUpdate(ctx, auctionEnd)
+		tm.now = auctionEnd
+		tm.market.OnTick(ctx, auctionEnd)
 
 		t.Run("verify LP orders sizes", func(t *testing.T) {
 			// First collect all the orders events
@@ -1211,7 +1220,8 @@ func TestSubmit(t *testing.T) {
 		tm := newTestMarket(t, now).Run(ctx, mktCfg)
 		tm.WithAccountAndAmount(lpparty, 100000000000000)
 		tm.market.OnSuppliedStakeToObligationFactorUpdate(num.DecimalFromFloat(0.7))
-		tm.market.OnChainTimeUpdate(ctx, now)
+		tm.now = now
+		tm.market.OnTick(ctx, now)
 
 		// Add a LPSubmission
 		// this is a log of stake, enough to cover all
@@ -1302,7 +1312,8 @@ func TestSubmit(t *testing.T) {
 
 		tm.market.OnMarketAuctionMinimumDurationUpdate(ctx, 1*time.Second)
 		tm.market.OnSuppliedStakeToObligationFactorUpdate(num.DecimalFromFloat(0.2))
-		tm.market.OnChainTimeUpdate(ctx, now)
+		tm.now = now
+		tm.market.OnTick(ctx, now)
 
 		// Add a LPSubmission
 		// this is a log of stake, enough to cover all
@@ -1427,7 +1438,8 @@ func TestSubmit(t *testing.T) {
 			conf2, err := tm.market.SubmitOrder(ctx, o2)
 			assert.NoError(t, err)
 			assert.NotNil(t, conf2)
-			tm.market.OnChainTimeUpdate(ctx, auctionEnd.Add(10*time.Second))
+			tm.now = auctionEnd.Add(10 * time.Second)
+			tm.market.OnTick(ctx, auctionEnd.Add(10*time.Second))
 		})
 
 		t.Run("pegged order is REJECTED", func(t *testing.T) {
@@ -1448,13 +1460,11 @@ func TestSubmit(t *testing.T) {
 
 		// now move the time to expire the pegged
 		timeExpires := peggedExpiry.Add(1 * time.Hour)
-		tm.market.OnChainTimeUpdate(ctx, timeExpires)
+		tm.now = timeExpires
+		tm.market.OnTick(ctx, timeExpires)
 		orders, err := tm.market.RemoveExpiredOrders(ctx, timeExpires.UnixNano())
 		assert.NoError(t, err)
 		assert.Len(t, orders, 0)
-
-		// tm.dumpPeggedOrders()
-		// tm.dumpMarketData()
 	})
 
 	t.Run("test lots of pegged and non pegged orders", func(t *testing.T) {
@@ -1488,7 +1498,8 @@ func TestSubmit(t *testing.T) {
 
 		tm.market.OnMarketAuctionMinimumDurationUpdate(ctx, 1*time.Second)
 		tm.market.OnSuppliedStakeToObligationFactorUpdate(num.DecimalFromFloat(0.7))
-		tm.market.OnChainTimeUpdate(ctx, now)
+		tm.now = now
+		tm.market.OnTick(ctx, now)
 
 		// Add a LPSubmission
 		// this is a log of stake, enough to cover all
@@ -1592,7 +1603,8 @@ func TestSubmit(t *testing.T) {
 					assert.NotNil(t, conf)
 				})
 
-				tm.market.OnChainTimeUpdate(ctx, curt)
+				tm.now = curt
+				tm.market.OnTick(ctx, curt)
 				curt = curt.Add(1 * time.Second)
 			}
 		})
@@ -1606,7 +1618,8 @@ func TestSubmit(t *testing.T) {
 					assert.NoError(t, err)
 					assert.NotNil(t, conf)
 				})
-				tm.market.OnChainTimeUpdate(ctx, curt)
+				tm.now = curt
+				tm.market.OnTick(ctx, curt)
 				curt = curt.Add(1 * time.Second)
 			}
 		})
@@ -1620,7 +1633,8 @@ func TestSubmit(t *testing.T) {
 					assert.NoError(t, err)
 					assert.NotNil(t, conf)
 				})
-				tm.market.OnChainTimeUpdate(ctx, curt)
+				tm.now = curt
+				tm.market.OnTick(ctx, curt)
 				curt = curt.Add(1 * time.Second)
 			}
 		})
@@ -1657,7 +1671,8 @@ func TestSubmit(t *testing.T) {
 
 		tm.market.OnMarketValueWindowLengthUpdate(2 * time.Second)
 		tm.market.OnSuppliedStakeToObligationFactorUpdate(num.DecimalFromFloat(0.7))
-		tm.market.OnChainTimeUpdate(ctx, now)
+		tm.now = now
+		tm.market.OnTick(ctx, now)
 
 		// Add a LPSubmission
 		// this is a log of stake, enough to cover all
@@ -1744,19 +1759,22 @@ func TestSubmit(t *testing.T) {
 		// we increase the time for 1 second
 		// the active_window_length =
 		// 1 second so factor = t_market_value_window_length / active_window_length = 2.
-		tm.market.OnChainTimeUpdate(ctx, auctionEnd.Add(1*time.Second))
+		tm.now = auctionEnd.Add(1 * time.Second)
+		tm.market.OnTick(ctx, auctionEnd.Add(1*time.Second))
 		md = tm.market.GetMarketData()
 		assert.Equal(t, "10000", md.MarketValueProxy)
 
 		// we increase the time for another second
-		tm.market.OnChainTimeUpdate(ctx, auctionEnd.Add(2*time.Second))
+		tm.now = auctionEnd.Add(2 * time.Second)
+		tm.market.OnTick(ctx, auctionEnd.Add(2*time.Second))
 		md = tm.market.GetMarketData()
 		assert.Equal(t, "10000", md.MarketValueProxy)
 
 		// now we increase the time for another second, which makes us slide
 		// out of the window, and reset the tradeValue + window
 		// so the mvp is again the total stake submitted in the market
-		tm.market.OnChainTimeUpdate(ctx, auctionEnd.Add(3*time.Second))
+		tm.now = auctionEnd.Add(3 * time.Second)
+		tm.market.OnTick(ctx, auctionEnd.Add(3*time.Second))
 		md = tm.market.GetMarketData()
 		assert.Equal(t, "10000", md.MarketValueProxy)
 	})
@@ -1792,7 +1810,8 @@ func TestSubmit(t *testing.T) {
 
 		tm.market.OnMarketValueWindowLengthUpdate(2 * time.Second)
 		tm.market.OnSuppliedStakeToObligationFactorUpdate(num.DecimalFromFloat(0.7))
-		tm.market.OnChainTimeUpdate(ctx, now)
+		tm.now = now
+		tm.market.OnTick(ctx, now)
 
 		// Add a LPSubmission
 		// this is a log of stake, enough to cover all
@@ -1879,7 +1898,8 @@ func TestSubmit(t *testing.T) {
 
 		tm.events = nil
 
-		tm.market.OnChainTimeUpdate(ctx, auctionEnd.Add(10*time.Second))
+		tm.now = auctionEnd.Add(10 * time.Second)
+		tm.market.OnTick(ctx, auctionEnd.Add(10*time.Second))
 
 		for _, e := range tm.events {
 			switch evt := e.(type) {
@@ -1923,7 +1943,8 @@ func TestSubmit(t *testing.T) {
 
 		tm.market.OnMarketValueWindowLengthUpdate(2 * time.Second)
 		tm.market.OnSuppliedStakeToObligationFactorUpdate(num.DecimalFromFloat(0.7))
-		tm.market.OnChainTimeUpdate(ctx, now)
+		tm.now = now
+		tm.market.OnTick(ctx, now)
 
 		lpSubmission := &types.LiquidityProvisionSubmission{
 			MarketID:         tm.market.GetID(),
@@ -2030,7 +2051,8 @@ func TestSubmit(t *testing.T) {
 
 		// now the limit order expires, and the LP order size should increase again
 		tm.events = nil
-		tm.market.OnChainTimeUpdate(ctx, auctionEnd.Add(11*time.Second))              // this is 1 second after order expiry
+		tm.now = auctionEnd.Add(11 * time.Second)
+		tm.market.OnTick(ctx, auctionEnd.Add(11*time.Second))                         // this is 1 second after order expiry
 		tm.market.RemoveExpiredOrders(ctx, auctionEnd.Add(11*time.Second).UnixNano()) // this is 1 second after order expiry
 
 		// now we ensure we have 2 order on the buy side.
@@ -2122,7 +2144,8 @@ func TestAmend(t *testing.T) {
 			WithAccountAndAmount(lpparty2, 500000000000)
 
 		tm.market.OnSuppliedStakeToObligationFactorUpdate(num.DecimalFromFloat(1.0))
-		tm.market.OnChainTimeUpdate(ctx, now)
+		tm.now = now
+		tm.market.OnTick(ctx, now)
 
 		// Add a LPSubmission
 		// this is a log of stake, enough to cover all

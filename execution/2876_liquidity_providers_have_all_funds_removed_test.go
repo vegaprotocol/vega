@@ -33,7 +33,7 @@ func TestIssue2876(t *testing.T) {
 	ctx := context.Background()
 	ctx = vegacontext.WithTraceID(ctx, vgcrypto.RandomHash())
 
-	tm.market.OnChainTimeUpdate(ctx, now)
+	tm.market.OnTick(ctx, now)
 
 	addAccountWithAmount(tm, "party-0", 100000000)
 	addAccountWithAmount(tm, "party-1", 100000000)
@@ -126,7 +126,7 @@ func TestIssue2876(t *testing.T) {
 	// this should end the opening auction
 	now = now.Add(31 * time.Second)
 
-	tm.market.OnChainTimeUpdate(ctx, now)
+	tm.market.OnTick(ctx, now)
 
 	bondAccount, err = tm.collateralEngine.GetOrCreatePartyBondAccount(ctx, "party-2", tm.market.GetID(), tm.asset)
 	assert.NoError(t, err)

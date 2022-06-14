@@ -18,8 +18,9 @@ import (
 	"testing"
 	"time"
 
-	bmock "code.vegaprotocol.io/vega/broker/mocks"
+	bmocks "code.vegaprotocol.io/vega/broker/mocks"
 	"code.vegaprotocol.io/vega/limits"
+	"code.vegaprotocol.io/vega/limits/mocks"
 	"code.vegaprotocol.io/vega/logging"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
@@ -34,10 +35,14 @@ func getLimitsTest(t *testing.T) *limitsTest {
 	t.Helper()
 	log := logging.NewTestLogger()
 	ctrl := gomock.NewController(t)
-	broker := bmock.NewMockBroker(ctrl)
+	broker := bmocks.NewMockBroker(ctrl)
 	broker.EXPECT().Send(gomock.Any()).AnyTimes()
+
+	timeSvc := mocks.NewMockTimeService(ctrl)
+	timeSvc.EXPECT().GetTimeNow().AnyTimes()
+
 	return &limitsTest{
-		Engine: limits.New(log, limits.NewDefaultConfig(), broker),
+		Engine: limits.New(log, limits.NewDefaultConfig(), timeSvc, broker),
 		log:    log,
 	}
 }

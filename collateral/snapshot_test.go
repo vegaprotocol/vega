@@ -129,7 +129,7 @@ func TestCheckpoint(t *testing.T) {
 	conf := collateral.NewDefaultConfig()
 	conf.Level = encoding.LogLevel{Level: logging.DebugLevel}
 	// system accounts created
-	loadEng := collateral.New(logging.NewTestLogger(), conf, eng.broker, time.Now())
+	loadEng := collateral.New(logging.NewTestLogger(), conf, eng.timeSvc, eng.broker)
 	enableGovernanceAsset(t, loadEng)
 
 	asset := types.Asset{

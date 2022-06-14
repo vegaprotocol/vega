@@ -99,7 +99,7 @@ func (m *Market) checkAuction(ctx context.Context, now time.Time) {
 	if isPrice && end {
 		m.checkLiquidity(ctx, trades, true)
 	}
-	if evt := m.as.AuctionExtended(ctx, m.currentTime); evt != nil {
+	if evt := m.as.AuctionExtended(ctx, m.timeService.GetTimeNow()); evt != nil {
 		m.broker.Send(evt)
 		end = false
 	}

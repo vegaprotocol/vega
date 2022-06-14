@@ -36,16 +36,14 @@ func NewBuiltinOracle(engine *Engine, ts TimeService) *Builtin {
 		engine: engine,
 	}
 
-	ts.NotifyOnTick(builtinOracle.BroadcastInternalTimestamp)
-
 	return builtinOracle
 }
 
-func (b *Builtin) BroadcastInternalTimestamp(ctx context.Context, ts time.Time) {
+func (b *Builtin) OnTick(ctx context.Context, _ time.Time) {
 	data := OracleData{
 		PubKeys: nil,
 		Data: map[string]string{
-			BuiltinOracleTimestamp: fmt.Sprintf("%d", ts.Unix()),
+			BuiltinOracleTimestamp: fmt.Sprintf("%d", b.engine.timeService.GetTimeNow().Unix()),
 		},
 	}
 

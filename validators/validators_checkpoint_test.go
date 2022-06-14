@@ -18,7 +18,7 @@ import (
 	"testing"
 	"time"
 
-	brokerMocks "code.vegaprotocol.io/vega/broker/mocks"
+	bmocks "code.vegaprotocol.io/vega/broker/mocks"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
 )
@@ -79,7 +79,7 @@ func TestValidatorsCheckpoint(t *testing.T) {
 	topology2 := &Topology{}
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
-	broker := brokerMocks.NewMockBroker(ctrl)
+	broker := bmocks.NewMockBroker(ctrl)
 	topology2.broker = broker
 	broker.EXPECT().Send(gomock.Any()).AnyTimes()
 	topology2.Load(context.Background(), hash1)

@@ -863,7 +863,7 @@ func (app *App) canSubmitTx(tx abci.Tx) (err error) {
 		}
 		cmd := tx.Command()
 		// make sure this is a validator command and not a checkpoint.
-		// checkpoints are only allow when the bootstrap period is done.
+		// checkpoints are only allowed when the bootstrap period is done.
 		if !cmd.IsValidatorCommand() {
 			return ErrNonValidatorTransactionDisabledDuringBootstrap
 		}
@@ -1347,7 +1347,7 @@ func (app *App) onTick(ctx context.Context, t time.Time) {
 		app.log.Debug("This would call on chain time update for governance. We've skipped all tx, so just ignore")
 		return
 	}
-	toEnactProposals, voteClosedProposals := app.gov.OnChainTimeUpdate(ctx, t)
+	toEnactProposals, voteClosedProposals := app.gov.OnTick(ctx, t)
 	for _, voteClosed := range voteClosedProposals {
 		prop := voteClosed.Proposal()
 		switch {

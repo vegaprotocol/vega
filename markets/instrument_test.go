@@ -15,7 +15,6 @@ package markets_test
 import (
 	"context"
 	"testing"
-	"time"
 
 	"code.vegaprotocol.io/vega/broker/mocks"
 	emock "code.vegaprotocol.io/vega/execution/mocks"
@@ -114,14 +113,13 @@ func newOracleEngine(t *testing.T) products.OracleEngine {
 	broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
 	ts := emock.NewMockTimeService(ctrl)
-	ts.EXPECT().NotifyOnTick(gomock.Any()).Times(1)
+	ts.EXPECT().GetTimeNow().AnyTimes()
 
 	return oracles.NewEngine(
 		logging.NewTestLogger(),
 		oracles.NewDefaultConfig(),
-		time.Now(),
-		broker,
 		ts,
+		broker,
 	)
 }
 

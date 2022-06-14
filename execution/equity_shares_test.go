@@ -257,7 +257,7 @@ func testWithinMarket(t *testing.T) {
 
 	// End opening auction
 	curTime = curTime.Add(2 * time.Second)
-	tm.market.OnChainTimeUpdate(ctx, curTime)
+	tm.market.OnTick(ctx, curTime)
 
 	md := esm.tm.market.GetMarketData()
 	require.NotNil(t, md)
@@ -269,7 +269,7 @@ func testWithinMarket(t *testing.T) {
 
 		// Trigger Fee distribution
 		curTime = curTime.Add(1 * time.Second)
-		tm.market.OnChainTimeUpdate(ctx, curTime)
+		tm.market.OnTick(ctx, curTime)
 
 		// Assert the event
 		var evt *events.TransferResponse
@@ -297,7 +297,7 @@ func testWithinMarket(t *testing.T) {
 	)
 
 	curTime = curTime.Add(1 * time.Second)
-	tm.market.OnChainTimeUpdate(ctx, curTime)
+	tm.market.OnTick(ctx, curTime)
 
 	assert.True(t, esm.LiquidityFeeAccount().Balance.IsZero(),
 		"LiquidityFeeAccount should be empty after a fee distribution")

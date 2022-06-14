@@ -17,11 +17,11 @@ import (
 	"encoding/hex"
 	"strconv"
 	"testing"
-	"time"
 
 	ptypes "code.vegaprotocol.io/protos/vega"
-	"code.vegaprotocol.io/vega/broker/mocks"
+	bmocks "code.vegaprotocol.io/vega/broker/mocks"
 	"code.vegaprotocol.io/vega/collateral"
+	"code.vegaprotocol.io/vega/collateral/mocks"
 	"code.vegaprotocol.io/vega/config/encoding"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
@@ -43,7 +43,8 @@ const (
 type testEngine struct {
 	*collateral.Engine
 	ctrl               *gomock.Controller
-	broker             *mocks.MockBroker
+	timeSvc            *mocks.MockTimeService
+	broker             *bmocks.MockBroker
 	systemAccs         []*types.Account
 	marketInsuranceID  string
 	marketSettlementID string
@@ -2414,7 +2415,10 @@ func enableGovernanceAsset(t *testing.T, eng *collateral.Engine) {
 func getTestEngine(t *testing.T, market string) *testEngine {
 	t.Helper()
 	ctrl := gomock.NewController(t)
-	broker := mocks.NewMockBroker(ctrl)
+	timeSvc := mocks.NewMockTimeService(ctrl)
+	timeSvc.EXPECT().GetTimeNow().AnyTimes()
+
+	broker := bmocks.NewMockBroker(ctrl)
 	conf := collateral.NewDefaultConfig()
 	conf.Level = encoding.LogLevel{Level: logging.DebugLevel}
 	// 4 new events expected:
@@ -2425,7 +2429,7 @@ func getTestEngine(t *testing.T, market string) *testEngine {
 	broker.EXPECT().Send(gomock.Any()).Times(16)
 	// system accounts created
 
-	eng := collateral.New(logging.NewTestLogger(), conf, broker, time.Now())
+	eng := collateral.New(logging.NewTestLogger(), conf, timeSvc, broker)
 
 	enableGovernanceAsset(t, eng)
 
@@ -2474,6 +2478,7 @@ func getTestEngine(t *testing.T, market string) *testEngine {
 		Engine:             eng,
 		ctrl:               ctrl,
 		broker:             broker,
+		timeSvc:            timeSvc,
 		marketInsuranceID:  insID,
 		marketSettlementID: setID,
 		// systemAccs: accounts,

@@ -24,7 +24,7 @@ import (
 
 	proto "code.vegaprotocol.io/protos/vega"
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
-	bmock "code.vegaprotocol.io/vega/broker/mocks"
+	bmocks "code.vegaprotocol.io/vega/broker/mocks"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/liquidity"
 	"code.vegaprotocol.io/vega/liquidity/mocks"
@@ -58,7 +58,8 @@ func eq(t *testing.T, x interface{}) eqMatcher {
 type testEngine struct {
 	ctrl         *gomock.Controller
 	marketID     string
-	broker       *bmock.MockBroker
+	tsvc         *mocks.MockTimeService
+	broker       *bmocks.MockBroker
 	riskModel    *mocks.MockRiskModel
 	priceMonitor *mocks.MockPriceMonitor
 	orderbook    *mocks.MockOrderBook
@@ -70,7 +71,13 @@ func newTestEngine(t *testing.T, now time.Time) *testEngine {
 	ctrl := gomock.NewController(t)
 
 	log := logging.NewTestLogger()
-	broker := bmock.NewMockBroker(ctrl)
+	tsvc := mocks.NewMockTimeService(ctrl)
+	tsvc.EXPECT().GetTimeNow().DoAndReturn(
+		func() time.Time {
+			return now
+		}).AnyTimes()
+
+	broker := bmocks.NewMockBroker(ctrl)
 	risk := mocks.NewMockRiskModel(ctrl)
 	monitor := mocks.NewMockPriceMonitor(ctrl)
 	orderbook := mocks.NewMockOrderBook(ctrl)
@@ -81,13 +88,13 @@ func newTestEngine(t *testing.T, now time.Time) *testEngine {
 	risk.EXPECT().GetProjectionHorizon().AnyTimes()
 
 	engine := liquidity.NewSnapshotEngine(liquidityConfig,
-		log, broker, risk, monitor, asset, market, stateVarEngine, num.NewUint(100000), num.NewUint(100000), num.DecimalFromInt64(1),
+		log, tsvc, broker, risk, monitor, asset, market, stateVarEngine, num.NewUint(100000), num.NewUint(100000), num.DecimalFromInt64(1),
 	)
-	engine.OnChainTimeUpdate(context.Background(), now)
 
 	return &testEngine{
 		ctrl:         ctrl,
 		marketID:     market,
+		tsvc:         tsvc,
 		broker:       broker,
 		riskModel:    risk,
 		priceMonitor: monitor,
@@ -171,6 +178,7 @@ func testSubmissionCRUD(t *testing.T) {
 			{LiquidityOrder: sellShape[0], OrderID: order2.ID},
 		},
 	}
+
 	// Create a submission should fire an event
 	tng.broker.EXPECT().Send(
 		events.NewLiquidityProvisionEvent(ctx, expected),

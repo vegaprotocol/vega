@@ -19,11 +19,13 @@ import (
 
 	"code.vegaprotocol.io/vega/config"
 	"code.vegaprotocol.io/vega/execution"
+	"code.vegaprotocol.io/vega/execution/mocks"
 	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/matching"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
+	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -59,7 +61,11 @@ func TestPeggedOrders(t *testing.T) {
 
 func testPeggedOrdersSnapshot(t *testing.T) {
 	a := assert.New(t)
-	p := execution.NewPeggedOrders()
+
+	t.Helper()
+	ctrl := gomock.NewController(t)
+	tm := mocks.NewMockTimeService(ctrl)
+	p := execution.NewPeggedOrders(tm)
 	a.False(p.Changed())
 
 	// Test empty
@@ -85,6 +91,7 @@ func testPeggedOrdersSnapshot(t *testing.T) {
 	a.False(p.Changed())
 
 	// Test park
+	tm.EXPECT().GetTimeNow().AnyTimes()
 	p.Park(testOrders[1])
 	a.True(p.Changed())
 	a.Equal(testOrders, p.GetState())
@@ -121,14 +128,15 @@ func testPeggedOrdersSnapshot(t *testing.T) {
 	}
 	ob.LoadState(context.Background(), pl)
 
-	newP := execution.NewPeggedOrdersFromSnapshot(s)
+	newP := execution.NewPeggedOrdersFromSnapshot(s, tm)
 	newP.ReconcileWithOrderBook(ob)
 	a.Equal(s, newP.GetState())
 	a.Equal(len(p.GetAll()), len(newP.GetAll()))
 
 	// if market is in a auction we'll have pegged orders on the market but not the orderbook
 	ob2 := matching.NewCachedOrderBook(logging.NewTestLogger(), config.NewDefaultConfig().Execution.Matching, "market-1", false)
-	newP2 := execution.NewPeggedOrdersFromSnapshot(s)
+	newP2 := execution.NewPeggedOrdersFromSnapshot(s, tm)
+	tm.EXPECT().GetTimeNow().AnyTimes()
 	for _, o := range newP2.GetAll() {
 		newP2.Park(o)
 	}

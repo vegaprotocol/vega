@@ -40,11 +40,10 @@ func NewWithSnapshot(
 	top ValidatorTopology,
 	broker Broker,
 	cmd Commander,
-	tt TimeTicker,
 ) *SnapshotNotary {
 	log = log.Named(namedLogger)
 	return &SnapshotNotary{
-		Notary:  New(log, cfg, top, broker, cmd, tt),
+		Notary:  New(log, cfg, top, broker, cmd),
 		changed: true,
 	}
 }

@@ -137,8 +137,8 @@ func (n *NodeValidation) removeProposal(id string) {
 	}
 }
 
-// OnChainTimeUpdate returns validated proposal by all nodes.
-func (n *NodeValidation) OnChainTimeUpdate(t time.Time) (accepted []*proposal, rejected []*proposal) {
+// OnTick returns validated proposal by all nodes.
+func (n *NodeValidation) OnTick(t time.Time) (accepted []*proposal, rejected []*proposal) {
 	n.currentTimestamp = t
 
 	toRemove := []string{} // id of proposals to remove

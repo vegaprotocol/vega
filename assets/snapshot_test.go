@@ -21,7 +21,6 @@ import (
 	snapshot "code.vegaprotocol.io/protos/vega/snapshot/v1"
 	"code.vegaprotocol.io/shared/paths"
 	"code.vegaprotocol.io/vega/assets"
-	"code.vegaprotocol.io/vega/assets/mocks"
 	"code.vegaprotocol.io/vega/integration/stubs"
 	vgcontext "code.vegaprotocol.io/vega/libs/context"
 	"code.vegaprotocol.io/vega/libs/proto"
@@ -29,6 +28,7 @@ import (
 	snp "code.vegaprotocol.io/vega/snapshot"
 	"code.vegaprotocol.io/vega/stats"
 	"code.vegaprotocol.io/vega/types"
+	tmocks "code.vegaprotocol.io/vega/vegatime/mocks"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
 )
@@ -38,8 +38,7 @@ func testAssets(t *testing.T) *assets.Service {
 	conf := assets.NewDefaultConfig()
 	logger := logging.NewTestLogger()
 	ctrl := gomock.NewController(t)
-	ts := mocks.NewMockTimeService(ctrl)
-	ts.EXPECT().NotifyOnTick(gomock.Any()).Times(1)
+	ts := tmocks.NewMockTimeService(ctrl)
 	as := assets.New(logger, conf, nil, nil, ts, true)
 	return as
 }

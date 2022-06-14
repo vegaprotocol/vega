@@ -32,15 +32,15 @@ type Broker interface {
 // TimeService ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/time_service_mock.go -package mocks code.vegaprotocol.io/vega/oracles TimeService
 type TimeService interface {
-	NotifyOnTick(f func(context.Context, time.Time))
+	GetTimeNow() time.Time
 }
 
 // Engine is responsible for broadcasting the OracleData to products and risk
 // models interested in it.
 type Engine struct {
 	log           *logging.Logger
+	timeService   TimeService
 	broker        Broker
-	CurrentTime   time.Time
 	subscriptions specSubscriptions
 }
 
@@ -48,27 +48,20 @@ type Engine struct {
 func NewEngine(
 	log *logging.Logger,
 	conf Config,
-	currentTime time.Time,
-	broker Broker,
 	ts TimeService,
+	broker Broker,
 ) *Engine {
 	log = log.Named(namedLogger)
 	log.SetLevel(conf.Level.Get())
 
 	e := &Engine{
 		log:           log,
+		timeService:   ts,
 		broker:        broker,
-		CurrentTime:   currentTime,
 		subscriptions: newSpecSubscriptions(),
 	}
 
-	ts.NotifyOnTick(e.UpdateCurrentTime)
 	return e
-}
-
-// UpdateCurrentTime listens to update of the current Vega time.
-func (e *Engine) UpdateCurrentTime(_ context.Context, ts time.Time) {
-	e.CurrentTime = ts
 }
 
 // BroadcastData broadcasts data to products and risk models that are interested
@@ -112,7 +105,7 @@ func (e *Engine) BroadcastData(ctx context.Context, data OracleData) error {
 	return nil
 }
 
-// Subscribe registers a callback for a given OracleSpec that is call when an
+// Subscribe registers a callback for a given OracleSpec that is called when an
 // OracleData matches the spec.
 // It returns a SubscriptionID that is used to Unsubscribe.
 // If cb is nil, the method panics.
@@ -120,7 +113,7 @@ func (e *Engine) Subscribe(ctx context.Context, spec OracleSpec, cb OnMatchedOra
 	if cb == nil {
 		panic(fmt.Sprintf("a callback is required for spec %v", spec))
 	}
-	updatedSubscription := e.subscriptions.addSubscriber(spec, cb, e.CurrentTime)
+	updatedSubscription := e.subscriptions.addSubscriber(spec, cb, e.timeService.GetTimeNow())
 	e.sendNewOracleSpecSubscription(ctx, updatedSubscription)
 	return updatedSubscription.subscriptionID
 }
@@ -174,7 +167,7 @@ func (e *Engine) sendMatchedOracleData(ctx context.Context, data OracleData, spe
 		PubKeys:        data.PubKeys,
 		Data:           payload,
 		MatchedSpecIds: ids,
-		BroadcastAt:    e.CurrentTime.UnixNano(),
+		BroadcastAt:    e.timeService.GetTimeNow().UnixNano(),
 	}
 	e.broker.Send(events.NewOracleDataEvent(ctx, dataProto))
 }

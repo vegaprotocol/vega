@@ -8,7 +8,6 @@ import (
 	context "context"
 	reflect "reflect"
 
-	vega "code.vegaprotocol.io/protos/vega"
 	types "code.vegaprotocol.io/vega/types"
 	num "code.vegaprotocol.io/vega/types/num"
 	gomock "github.com/golang/mock/gomock"
@@ -150,7 +149,7 @@ func (mr *MockBankingMockRecorder) WithdrawBuiltinAsset(arg0, arg1, arg2, arg3, 
 }
 
 // WithdrawERC20 mocks base method.
-func (m *MockBanking) WithdrawERC20(arg0 context.Context, arg1, arg2, arg3 string, arg4 *num.Uint, arg5 *vega.Erc20WithdrawExt) error {
+func (m *MockBanking) WithdrawERC20(arg0 context.Context, arg1, arg2, arg3 string, arg4 *num.Uint, arg5 *types.Erc20WithdrawExt) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "WithdrawERC20", arg0, arg1, arg2, arg3, arg4, arg5)
 	ret0, _ := ret[0].(error)

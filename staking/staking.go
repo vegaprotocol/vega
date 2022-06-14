@@ -43,8 +43,8 @@ type EthereumEventSource interface {
 func New(
 	log *logging.Logger,
 	cfg Config,
+	ts TimeService,
 	broker Broker,
-	tt TimeTicker,
 	witness Witness,
 	ethClient AllEthereumClient,
 	netp *netparams.Store,
@@ -55,9 +55,9 @@ func New(
 ) (*Accounting, *StakeVerifier, *Checkpoint) {
 	log = log.Named(namedLogger)
 	log.SetLevel(cfg.Level.Get())
-	accs := NewAccounting(log, cfg, broker, ethClient, evtFwd, witness, tt, isValidator)
+	accs := NewAccounting(log, cfg, ts, broker, ethClient, evtFwd, witness, isValidator)
 	ocv := NewOnChainVerifier(cfg, log, ethClient, ethCfns)
-	stakeV := NewStakeVerifier(log, cfg, accs, tt, witness, broker, ocv)
+	stakeV := NewStakeVerifier(log, cfg, accs, witness, ts, broker, ocv)
 
 	_ = netp.Watch(netparams.WatchParam{
 		Param: netparams.BlockchainsEthereumConfig,

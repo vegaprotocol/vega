@@ -88,6 +88,10 @@ type executionTestSetup struct {
 
 	// keep track of net deposits/withdrawals (ignores asset type)
 	netDeposits *num.Uint
+
+	ntry           *notary.SnapshotNotary
+	stateVarEngine *stubs.StateVarStub
+	witness        *validators.Witness
 }
 
 func newExecutionTestSetup() *executionTestSetup {
@@ -103,9 +107,8 @@ func newExecutionTestSetup() *executionTestSetup {
 	execsetup.log = logging.NewTestLogger()
 	execsetup.timeService = stubs.NewTimeStub()
 	execsetup.broker = stubs.NewBrokerStub()
-	currentTime := execsetup.timeService.GetTimeNow()
 	execsetup.collateralEngine = collateral.New(
-		execsetup.log, collateral.NewDefaultConfig(), execsetup.broker, currentTime,
+		execsetup.log, collateral.NewDefaultConfig(), execsetup.timeService, execsetup.broker,
 	)
 
 	vegaAsset := types.Asset{
@@ -135,7 +138,8 @@ func newExecutionTestSetup() *executionTestSetup {
 	}
 	execsetup.collateralEngine.EnableAsset(context.Background(), usdc)
 
-	execsetup.epochEngine = epochtime.NewService(execsetup.log, epochtime.NewDefaultConfig(), execsetup.timeService, execsetup.broker)
+	execsetup.epochEngine = epochtime.NewService(execsetup.log, epochtime.NewDefaultConfig(), execsetup.broker)
+
 	execsetup.topology = stubs.NewTopologyStub("nodeID", execsetup.broker)
 
 	execsetup.stakingAccount = stubs.NewStakingAccountStub()
@@ -144,21 +148,22 @@ func newExecutionTestSetup() *executionTestSetup {
 	marketActivityTracker := execution.NewMarketActivityTracker(execsetup.log, execsetup.epochEngine)
 	commander := stubs.NewCommanderStub()
 	execsetup.netDeposits = num.Zero()
-	witness := validators.NewWitness(execsetup.log, validators.NewDefaultConfig(), execsetup.topology, commander, execsetup.timeService)
-	ntry := notary.NewWithSnapshot(execsetup.log, notary.NewDefaultConfig(), execsetup.topology, execsetup.broker, commander, execsetup.timeService)
+	execsetup.witness = validators.NewWitness(execsetup.log, validators.NewDefaultConfig(), execsetup.topology, commander, execsetup.timeService)
+
+	execsetup.ntry = notary.NewWithSnapshot(execsetup.log, notary.NewDefaultConfig(), execsetup.topology, execsetup.broker, commander)
 	execsetup.assetsEngine = stubs.NewAssetStub()
-	execsetup.banking = banking.New(execsetup.log, banking.NewDefaultConfig(), execsetup.collateralEngine, witness, execsetup.timeService, execsetup.assetsEngine, ntry, execsetup.broker, execsetup.topology, execsetup.epochEngine, marketActivityTracker)
+	execsetup.banking = banking.New(execsetup.log, banking.NewDefaultConfig(), execsetup.collateralEngine, execsetup.witness, execsetup.timeService, execsetup.assetsEngine, execsetup.ntry, execsetup.broker, execsetup.topology, execsetup.epochEngine, marketActivityTracker)
 
 	execsetup.delegationEngine = delegation.New(execsetup.log, delegation.NewDefaultConfig(), execsetup.broker, execsetup.topology, execsetup.stakingAccount, execsetup.epochEngine, execsetup.timeService)
 	execsetup.rewardsEngine = rewards.New(execsetup.log, rewards.NewDefaultConfig(), execsetup.broker, execsetup.delegationEngine, execsetup.epochEngine, execsetup.collateralEngine, execsetup.timeService, marketActivityTracker, execsetup.topology)
+
 	execsetup.oracleEngine = oracles.NewEngine(
-		execsetup.log, oracles.NewDefaultConfig(), currentTime, execsetup.broker, execsetup.timeService,
+		execsetup.log, oracles.NewDefaultConfig(), execsetup.timeService, execsetup.broker,
 	)
 
 	execsetup.builtinOracle = oracles.NewBuiltinOracle(execsetup.oracleEngine, execsetup.timeService)
 
-	stateVarEngine := stubs.NewStateVar()
-	execsetup.timeService.NotifyOnTick(stateVarEngine.OnTimeTick)
+	execsetup.stateVarEngine = stubs.NewStateVar()
 	// @TODO stub assets engine and pass it in
 
 	execsetup.executionEngine = newExEng(
@@ -169,7 +174,7 @@ func newExecutionTestSetup() *executionTestSetup {
 			execsetup.collateralEngine,
 			execsetup.oracleEngine,
 			execsetup.broker,
-			stateVarEngine,
+			execsetup.stateVarEngine,
 			marketActivityTracker,
 			execsetup.assetsEngine, // assets
 		),
@@ -181,6 +186,8 @@ func newExecutionTestSetup() *executionTestSetup {
 
 	execsetup.block = helpers.NewBlock()
 
+	execsetup.registerTimeServiceCallbacks()
+
 	execsetup.netParams = netparams.New(execsetup.log, netparams.NewDefaultConfig(), execsetup.broker)
 	if err := execsetup.registerNetParamsCallbacks(); err != nil {
 		panic(err)
@@ -189,7 +196,7 @@ func newExecutionTestSetup() *executionTestSetup {
 	execsetup.netParams.Watch(
 		netparams.WatchParam{
 			Param:   netparams.FloatingPointUpdatesDuration,
-			Watcher: stateVarEngine.OnFloatingPointUpdatesDurationUpdate,
+			Watcher: execsetup.stateVarEngine.OnFloatingPointUpdatesDurationUpdate,
 		},
 		netparams.WatchParam{
 			Param:   netparams.TransferFeeFactor,
@@ -201,6 +208,20 @@ func newExecutionTestSetup() *executionTestSetup {
 		},
 	)
 	return execsetup
+}
+
+func (e *executionTestSetup) registerTimeServiceCallbacks() {
+	e.timeService.NotifyOnTick(
+		e.epochEngine.OnTick,
+		e.witness.OnTick,
+		e.ntry.OnTick,
+		e.banking.OnTick,
+		e.delegationEngine.OnTick,
+		e.rewardsEngine.OnTick,
+		e.builtinOracle.OnTick,
+		e.stateVarEngine.OnTick,
+		e.executionEngine.OnTick,
+	)
 }
 
 func (e *executionTestSetup) registerNetParamsCallbacks() error {

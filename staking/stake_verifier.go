@@ -40,9 +40,9 @@ var (
 )
 
 // Witness provide foreign chain resources validations
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/time_ticker_mock.go -package mocks code.vegaprotocol.io/vega/staking TimeTicker
-type TimeTicker interface {
-	NotifyOnTick(func(context.Context, time.Time))
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/time_service_mock.go -package mocks code.vegaprotocol.io/vega/staking TimeService
+type TimeService interface {
+	GetTimeNow() time.Time
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/eth_confirmations_mock.go -package mocks code.vegaprotocol.io/vega/staking EthConfirmations
@@ -67,13 +67,12 @@ type StakeVerifier struct {
 	log *logging.Logger
 	cfg Config
 
-	accs    *Accounting
-	witness Witness
-	broker  Broker
+	accs        *Accounting
+	witness     Witness
+	timeService TimeService
+	broker      Broker
 
 	ocv EthOnChainVerifier
-
-	currentTime time.Time
 
 	pendingSDs      []*pendingSD
 	pendingSRs      []*pendingSR
@@ -107,24 +106,23 @@ func NewStakeVerifier(
 	log *logging.Logger,
 	cfg Config,
 	accs *Accounting,
-	tt TimeTicker,
 	witness Witness,
+	ts TimeService,
+
 	broker Broker,
 	onChainVerifier EthOnChainVerifier,
 ) (sv *StakeVerifier) {
-	defer func() {
-		tt.NotifyOnTick(sv.onTick)
-	}()
 	log = log.Named("stake-verifier")
 	s := &StakeVerifier{
-		log:     log,
-		cfg:     cfg,
-		accs:    accs,
-		witness: witness,
-		ocv:     onChainVerifier,
-		broker:  broker,
-		ids:     map[string]struct{}{},
-		hashes:  map[string]struct{}{},
+		log:         log,
+		cfg:         cfg,
+		accs:        accs,
+		witness:     witness,
+		ocv:         onChainVerifier,
+		timeService: ts,
+		broker:      broker,
+		ids:         map[string]struct{}{},
+		hashes:      map[string]struct{}{},
 		svss: &stakeVerifierSnapshotState{
 			changedDeposited: true,
 			changedRemoved:   true,
@@ -179,7 +177,7 @@ func (s *StakeVerifier) ProcessStakeRemoved(
 		logging.String("event", event.String()))
 
 	return s.witness.StartCheck(
-		pending, s.onEventVerified, s.currentTime.Add(timeTilCancel))
+		pending, s.onEventVerified, s.timeService.GetTimeNow().Add(timeTilCancel))
 }
 
 func (s *StakeVerifier) ProcessStakeDeposited(
@@ -207,7 +205,7 @@ func (s *StakeVerifier) ProcessStakeDeposited(
 		logging.String("event", event.String()))
 
 	return s.witness.StartCheck(
-		pending, s.onEventVerified, s.currentTime.Add(timeTilCancel))
+		pending, s.onEventVerified, s.timeService.GetTimeNow().Add(timeTilCancel))
 }
 
 func (s *StakeVerifier) removePendingStakeDeposited(id string) error {
@@ -254,12 +252,11 @@ func (s *StakeVerifier) onEventVerified(event interface{}, ok bool) {
 	if ok {
 		evt.Status = types.StakeLinkingStatusAccepted
 	}
-	evt.FinalizedAt = s.currentTime.UnixNano()
+	evt.FinalizedAt = s.timeService.GetTimeNow().UnixNano()
 	s.finalizedEvents = append(s.finalizedEvents, evt)
 }
 
-func (s *StakeVerifier) onTick(ctx context.Context, t time.Time) {
-	s.currentTime = t
+func (s *StakeVerifier) OnTick(ctx context.Context, t time.Time) {
 	for _, evt := range s.finalizedEvents {
 		// s.removeEvent(evt.ID)
 		if evt.Status == types.StakeLinkingStatusAccepted {

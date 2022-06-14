@@ -46,7 +46,6 @@ var (
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/time_service_mock.go -package mocks code.vegaprotocol.io/vega/execution TimeService
 type TimeService interface {
 	GetTimeNow() time.Time
-	NotifyOnTick(f func(context.Context, time.Time))
 }
 
 // OracleEngine ...
@@ -67,7 +66,6 @@ type Collateral interface {
 	MarketCollateral
 	AssetExists(string) bool
 	CreateMarketAccounts(context.Context, string, string) (string, string, error)
-	OnChainTimeUpdate(context.Context, time.Time)
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/state_var_engine_mock.go -package mocks code.vegaprotocol.io/vega/execution StateVarEngine
@@ -98,7 +96,7 @@ type Engine struct {
 	assets     Assets
 
 	broker                Broker
-	time                  TimeService
+	timeService           TimeService
 	stateVarEngine        StateVarEngine
 	marketActivityTracker *MarketActivityTracker
 
@@ -169,7 +167,7 @@ func NewEngine(
 		log:                   log,
 		Config:                executionConfig,
 		markets:               map[string]*Market{},
-		time:                  ts,
+		timeService:           ts,
 		collateral:            collateral,
 		assets:                assets,
 		broker:                broker,
@@ -179,9 +177,6 @@ func NewEngine(
 		stateVarEngine:        stateVarEngine,
 		marketActivityTracker: marketActivityTracker,
 	}
-
-	// Add time change event handler
-	e.time.NotifyOnTick(e.onChainTimeUpdate)
 
 	// set the eligibility for proposer bonus checker
 	e.marketActivityTracker.SetEligibilityChecker(e)
@@ -375,7 +370,8 @@ func (e *Engine) submitMarket(ctx context.Context, marketConfig *types.Market) e
 	if len(marketConfig.ID) == 0 {
 		return ErrNoMarketID
 	}
-	now := e.time.GetTimeNow()
+
+	now := e.timeService.GetTimeNow()
 
 	// ensure the asset for this new market exists
 	asset, err := marketConfig.GetAsset()
@@ -411,7 +407,7 @@ func (e *Engine) submitMarket(ctx context.Context, marketConfig *types.Market) e
 		e.collateral,
 		e.oracle,
 		marketConfig,
-		now,
+		e.timeService,
 		e.broker,
 		mas,
 		e.stateVarEngine,
@@ -752,8 +748,8 @@ func (e *Engine) CancelLiquidityProvision(ctx context.Context, cancel *types.Liq
 	return mkt.CancelLiquidityProvision(ctx, cancel, party)
 }
 
-func (e *Engine) onChainTimeUpdate(ctx context.Context, t time.Time) {
-	timer := metrics.NewTimeCounter("-", "execution", "onChainTimeUpdate")
+func (e *Engine) OnTick(ctx context.Context, t time.Time) {
+	timer := metrics.NewTimeCounter("-", "execution", "OnTick")
 
 	evts := make([]events.Event, 0, len(e.marketsCpy))
 	for _, v := range e.marketsCpy {
@@ -762,9 +758,6 @@ func (e *Engine) onChainTimeUpdate(ctx context.Context, t time.Time) {
 	e.broker.SendBatch(evts)
 
 	e.log.Debug("updating engine on new time update")
-
-	// update collateral
-	e.collateral.OnChainTimeUpdate(ctx, t)
 
 	// remove expired orders
 	// TODO(FIXME): this should be remove, and handled inside the market directly
@@ -775,7 +768,7 @@ func (e *Engine) onChainTimeUpdate(ctx context.Context, t time.Time) {
 	toDelete := []string{}
 	for _, mkt := range e.marketsCpy {
 		mkt := mkt
-		closing := mkt.OnChainTimeUpdate(ctx, t)
+		closing := mkt.OnTick(ctx, t)
 		if closing {
 			e.log.Info("market is closed, removing from execution engine",
 				logging.MarketID(mkt.GetID()))

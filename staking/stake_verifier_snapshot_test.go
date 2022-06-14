@@ -54,6 +54,7 @@ func TestSVSnapshotDeposited(t *testing.T) {
 	sv := getStakeVerifierTest(t)
 	defer sv.ctrl.Finish()
 
+	sv.tsvc.EXPECT().GetTimeNow().Times(1)
 	sv.broker.EXPECT().Send(gomock.Any()).Times(1)
 	sv.witness.EXPECT().StartCheck(gomock.Any(), gomock.Any(), gomock.Any()).Times(1)
 
@@ -104,6 +105,7 @@ func TestSVSnapshotRemoved(t *testing.T) {
 	sv := getStakeVerifierTest(t)
 	defer sv.ctrl.Finish()
 
+	sv.tsvc.EXPECT().GetTimeNow().Times(1)
 	sv.broker.EXPECT().Send(gomock.Any()).Times(1)
 	sv.witness.EXPECT().StartCheck(gomock.Any(), gomock.Any(), gomock.Any()).Times(1)
 

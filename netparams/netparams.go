@@ -200,9 +200,9 @@ func (s *Store) dispatchUpdate(ctx context.Context, p string) error {
 	return err
 }
 
-// OnChainTimeUpdate is trigger once per blocks
+// OnTick is trigger once per blocks
 // we will send parameters update to watchers.
-func (s *Store) OnChainTimeUpdate(ctx context.Context, _ time.Time) {
+func (s *Store) OnTick(ctx context.Context, _ time.Time) {
 	if len(s.paramUpdates) <= 0 {
 		return
 	}

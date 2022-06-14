@@ -44,7 +44,7 @@ func TestGovernanceSnapshotProposalReject(t *testing.T) {
 
 	// Submit a proposal
 	party := eng.newValidParty("a-valid-party", 123456789)
-	proposal := eng.newProposalForNewMarket(party.Id, time.Now())
+	proposal := eng.newProposalForNewMarket(party.Id, eng.tsvc.GetTimeNow())
 	eng.ensureAllAssetEnabled(t)
 	eng.expectOpenProposalEvent(t, party.Id, proposal.ID)
 
@@ -82,7 +82,7 @@ func TestGovernanceSnapshotProposalEnacted(t *testing.T) {
 
 	proposer := eng.newValidParty("proposer", 1)
 	voter1 := eng.newValidPartyTimes("voter-1", 7, 2)
-	proposal := eng.newProposalForNewMarket(proposer.Id, time.Now())
+	proposal := eng.newProposalForNewMarket(proposer.Id, eng.tsvc.GetTimeNow())
 
 	eng.ensureStakingAssetTotalSupply(t, 9)
 	eng.ensureAllAssetEnabled(t)
@@ -109,13 +109,13 @@ func TestGovernanceSnapshotProposalEnacted(t *testing.T) {
 	eng.expectTotalGovernanceTokenFromVoteEvents(t, "1", "7")
 
 	afterClosing := time.Unix(proposal.Terms.ClosingTimestamp, 0).Add(time.Second)
-	eng.OnChainTimeUpdate(context.Background(), afterClosing)
+	eng.OnTick(context.Background(), afterClosing)
 
 	require.True(t, eng.HasChanged(activeKey))
 	eng.GetState(activeKey) // we call get state to get change back to false
 
 	afterEnactment := time.Unix(proposal.Terms.EnactmentTimestamp, 0).Add(time.Second)
-	eng.OnChainTimeUpdate(context.Background(), afterEnactment)
+	eng.OnTick(context.Background(), afterEnactment)
 
 	require.True(t, eng.HasChanged(activeKey))
 	eng.GetState(activeKey) // we call get state to get change back to false
@@ -140,7 +140,7 @@ func TestGovernanceSnapshotNodeProposal(t *testing.T) {
 
 	// Submit a proposal
 	party := eng.newValidParty("a-valid-party", 123456789)
-	proposal := eng.newProposalForNewAsset(party.Id, time.Now())
+	proposal := eng.newProposalForNewAsset(party.Id, eng.tsvc.GetTimeNow())
 
 	eng.expectProposalWaitingForNodeVoteEvent(t, party.Id, proposal.ID)
 	eng.assets.EXPECT().NewAsset(gomock.Any(), gomock.Any()).Times(1)
@@ -195,7 +195,7 @@ func TestGovernanceSnapshotRoundTrip(t *testing.T) {
 	require.Nil(t, err)
 
 	proposer := eng.newValidParty("proposer", 1)
-	proposal := eng.newProposalForNewMarket(proposer.Id, time.Now())
+	proposal := eng.newProposalForNewMarket(proposer.Id, eng.tsvc.GetTimeNow())
 	ctx := context.Background()
 
 	eng.ensureAllAssetEnabled(t)

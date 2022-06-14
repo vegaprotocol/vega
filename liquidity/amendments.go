@@ -74,7 +74,7 @@ func (e *Engine) AmendLiquidityProvision(
 	// first reset the lp orders map
 	e.liquidityOrders.ResetForParty(party)
 	// then update the LP
-	lp.UpdatedAt = e.currentTime.UnixNano()
+	lp.UpdatedAt = e.timeService.GetTimeNow().UnixNano()
 	lp.CommitmentAmount = lpa.CommitmentAmount.Clone()
 	lp.Fee = lpa.Fee
 	lp.Reference = lpa.Reference

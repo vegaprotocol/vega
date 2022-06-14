@@ -18,7 +18,7 @@ import (
 	"testing"
 
 	v1 "code.vegaprotocol.io/protos/vega/snapshot/v1"
-	brokerMocks "code.vegaprotocol.io/vega/broker/mocks"
+	bmocks "code.vegaprotocol.io/vega/broker/mocks"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
@@ -912,7 +912,7 @@ func testGetRewardsScores(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	broker := brokerMocks.NewMockBroker(ctrl)
+	broker := bmocks.NewMockBroker(ctrl)
 	topology.broker = broker
 
 	var bEvents []events.Event

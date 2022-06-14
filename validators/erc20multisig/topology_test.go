@@ -32,7 +32,7 @@ type testTopology struct {
 	*erc20multisig.Topology
 
 	ctrl           *gomock.Controller
-	broker         *bmocks.MockBrokerI
+	broker         *bmocks.MockBroker
 	witness        *mocks.MockWitness
 	ocv            *mocks.MockMultiSigOnChainVerifier
 	ethEventSource *mocks.MockEthereumEventSource
@@ -43,7 +43,7 @@ func getTestTopology(t *testing.T) *testTopology {
 	ctrl := gomock.NewController(t)
 	witness := mocks.NewMockWitness(ctrl)
 	ocv := mocks.NewMockMultiSigOnChainVerifier(ctrl)
-	broker := bmocks.NewMockBrokerI(ctrl)
+	broker := bmocks.NewMockBroker(ctrl)
 	ethEventSource := mocks.NewMockEthereumEventSource(ctrl)
 
 	top := &testTopology{

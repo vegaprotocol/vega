@@ -5,7 +5,6 @@
 package mocks
 
 import (
-	context "context"
 	reflect "reflect"
 	time "time"
 
@@ -47,16 +46,4 @@ func (m *MockTimeService) GetTimeNow() time.Time {
 func (mr *MockTimeServiceMockRecorder) GetTimeNow() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTimeNow", reflect.TypeOf((*MockTimeService)(nil).GetTimeNow))
-}
-
-// NotifyOnTick mocks base method.
-func (m *MockTimeService) NotifyOnTick(arg0 func(context.Context, time.Time)) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "NotifyOnTick", arg0)
-}
-
-// NotifyOnTick indicates an expected call of NotifyOnTick.
-func (mr *MockTimeServiceMockRecorder) NotifyOnTick(arg0 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NotifyOnTick", reflect.TypeOf((*MockTimeService)(nil).NotifyOnTick), arg0)
 }

@@ -76,7 +76,7 @@ func TestMargins(t *testing.T) {
 	now = now.Add(2 * time.Second)
 	// leave opening auction
 	ctx := vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
-	tm.market.OnChainTimeUpdate(ctx, now)
+	tm.market.OnTick(ctx, now)
 	data := tm.market.GetMarketData()
 	require.Equal(t, types.MarketTradingModeContinuous, data.MarketTradingMode)
 
@@ -202,7 +202,7 @@ func TestPartialFillMargins(t *testing.T) {
 		require.NoError(t, err)
 	}
 	now = now.Add(time.Second * 2) // opening auction is 1 second, move time ahead by 2 seconds so we leave auction
-	tm.market.OnChainTimeUpdate(vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash()), now)
+	tm.market.OnTick(vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash()), now)
 
 	// use party 2+3 to set super high mark price
 	orderSell1 := &types.Order{

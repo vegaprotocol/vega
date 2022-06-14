@@ -34,7 +34,7 @@ func testSubmittingFreeformProposalSucceeds(t *testing.T) {
 
 	// given
 	party := eng.newValidParty("a-valid-party", 123456789)
-	proposal := eng.newFreeformProposal(party.Id, time.Now())
+	proposal := eng.newFreeformProposal(party.Id, eng.tsvc.GetTimeNow())
 
 	// setup
 	eng.expectOpenProposalEvent(t, party.Id, proposal.ID)
@@ -53,7 +53,7 @@ func testFreeformProposalDoesNotWaitToEnact(t *testing.T) {
 
 	// when
 	proposer := vgrand.RandomStr(5)
-	proposal := eng.newFreeformProposal(proposer, time.Now())
+	proposal := eng.newFreeformProposal(proposer, eng.tsvc.GetTimeNow())
 
 	// setup
 	eng.ensureStakingAssetTotalSupply(t, 9)
@@ -95,7 +95,7 @@ func testFreeformProposalDoesNotWaitToEnact(t *testing.T) {
 	eng.expectTotalGovernanceTokenFromVoteEvents(t, "1", "7")
 
 	// when the proposal is closed, it is enacted immediately
-	toBeEnacted, _ := eng.OnChainTimeUpdate(context.Background(), afterClosing)
+	toBeEnacted, _ := eng.OnTick(context.Background(), afterClosing)
 
 	// then
 	require.Len(t, toBeEnacted, 1)

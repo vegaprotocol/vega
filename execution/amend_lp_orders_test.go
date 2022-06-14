@@ -63,7 +63,7 @@ func TestAmendDeployedCommitment(t *testing.T) {
 		WithAccountAndAmount(lpparty, 500000000000)
 
 	tm.market.OnSuppliedStakeToObligationFactorUpdate(num.DecimalFromFloat(1.0))
-	tm.market.OnChainTimeUpdate(ctx, now)
+	tm.market.OnTick(ctx, now)
 
 	// Add a LPSubmission
 	// this is a log of stake, enough to cover all
@@ -472,7 +472,7 @@ func TestCancelUndeployedCommitmentDuringAuction(t *testing.T) {
 		WithAccountAndAmount(lpparty, 500000000000)
 
 	tm.market.OnSuppliedStakeToObligationFactorUpdate(num.DecimalFromFloat(1.0))
-	tm.market.OnChainTimeUpdate(ctx, now)
+	tm.market.OnTick(ctx, now)
 
 	// Add a LPSubmission
 	// this is a log of stake, enough to cover all
@@ -563,7 +563,7 @@ func TestDeployedCommitmentIsUndeployedWhenEnteringAuction(t *testing.T) {
 		WithAccountAndAmount(lpparty, 500000000000)
 
 	tm.market.OnSuppliedStakeToObligationFactorUpdate(num.DecimalFromFloat(0.20))
-	tm.market.OnChainTimeUpdate(ctx, now)
+	tm.market.OnTick(ctx, now)
 
 	// Add a LPSubmission
 	// this is a log of stake, enough to cover all
@@ -599,7 +599,7 @@ func TestDeployedCommitmentIsUndeployedWhenEnteringAuction(t *testing.T) {
 		assert.Equal(t, num.NewUint(67860), acc.Balance)
 	})
 
-	tm.market.OnChainTimeUpdate(ctx, auctionEnd.Add(2*time.Second))
+	tm.market.OnTick(ctx, auctionEnd.Add(2*time.Second))
 	tm.mas.StartPriceAuction(auctionEnd.Add(2*time.Second), &types.AuctionDuration{
 		Duration: 30,
 	})
@@ -633,7 +633,7 @@ func TestDeployedCommitmentIsUndeployedWhenEnteringAuction(t *testing.T) {
 
 	// then we are leaving the auction period
 	tm.events = nil
-	tm.market.OnChainTimeUpdate(ctx, auctionEnd.Add(50*time.Second))
+	tm.market.OnTick(ctx, auctionEnd.Add(50*time.Second))
 
 	t.Run("LP orders are re-submitted after auction", func(t *testing.T) {
 		// First collect all the orders events
@@ -700,7 +700,7 @@ func TestDeployedCommitmentIsUndeployedWhenEnteringAuctionAndMarginCheckFailDuri
 		WithAccountAndAmount("party-yolo1", 1000000000)
 
 	tm.market.OnSuppliedStakeToObligationFactorUpdate(num.DecimalFromFloat(1))
-	tm.market.OnChainTimeUpdate(ctx, now)
+	tm.market.OnTick(ctx, now)
 
 	// Add a LPSubmission
 	// this is a log of stake, enough to cover all
@@ -741,7 +741,7 @@ func TestDeployedCommitmentIsUndeployedWhenEnteringAuctionAndMarginCheckFailDuri
 		assert.True(t, acc.Balance.EQ(num.NewUint(336872)))
 	})
 
-	tm.market.OnChainTimeUpdate(ctx, auctionEnd.Add(2*time.Second))
+	tm.market.OnTick(ctx, auctionEnd.Add(2*time.Second))
 	tm.mas.StartPriceAuction(auctionEnd.Add(2*time.Second), &types.AuctionDuration{
 		Duration: 30,
 	})

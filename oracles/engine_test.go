@@ -21,9 +21,9 @@ import (
 	oraclespb "code.vegaprotocol.io/protos/vega/oracles/v1"
 	bmok "code.vegaprotocol.io/vega/broker/mocks"
 	"code.vegaprotocol.io/vega/events"
-	"code.vegaprotocol.io/vega/execution/mocks"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/oracles"
+	"code.vegaprotocol.io/vega/oracles/mocks"
 	"code.vegaprotocol.io/vega/types"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
@@ -48,6 +48,7 @@ func testOracleEngineSubscribingSucceeds(t *testing.T) {
 	// setup
 	ctx := context.Background()
 	currentTime := time.Now()
+
 	engine := newEngine(ctx, t, currentTime)
 	engine.broker.expectNewOracleSpecSubscription(currentTime, btcEquals42.spec.OriginalSpec)
 	engine.broker.expectNewOracleSpecSubscription(currentTime, ethLess84.spec.OriginalSpec)
@@ -112,7 +113,6 @@ func testOracleEngineBroadcastingMatchingDataSucceeds(t *testing.T) {
 
 	// then
 	require.NoError(t, errB)
-	engine.UpdateCurrentTime(ctx, currentTime)
 	assert.Equal(t, &dataBTC42.data, btcEquals42.subscriber.ReceivedData)
 	assert.Equal(t, &dataBTC42.data, btcGreater21.subscriber.ReceivedData)
 	assert.Nil(t, ethEquals42.subscriber.ReceivedData)
@@ -138,7 +138,6 @@ func testOracleEngineBroadcastingNonMatchingDataSucceeds(t *testing.T) {
 
 	// then
 	require.NoError(t, errB)
-	engine.UpdateCurrentTime(ctx, currentTime)
 	assert.NotEqual(t, &dataBTC84.data, btcEquals42.subscriber.ReceivedData)
 }
 
@@ -218,36 +217,41 @@ func testOracleEngineUpdatingCurrentTimeSucceeds(t *testing.T) {
 	time30 := time.Unix(30, 0)
 	time60 := time.Unix(60, 0)
 	engine := newEngine(ctx, t, time30)
+	assert.Equal(t, time30, engine.ts.GetTimeNow())
 
-	// when
-	engine.UpdateCurrentTime(ctx, time60)
-
-	// then
-	assert.Equal(t, time60, engine.CurrentTime)
+	engine2 := newEngine(ctx, t, time60)
+	assert.Equal(t, time60, engine2.ts.GetTimeNow())
 }
 
 type testEngine struct {
 	*oracles.Engine
+	ts     *testTimeService
 	broker *testBroker
 }
 
-func newEngine(ctx context.Context, t *testing.T, currentTime time.Time) *testEngine {
+// newEngine returns new Oracle test engine, but with preset time, so we can test against its value.
+func newEngine(ctx context.Context, t *testing.T, tm time.Time) *testEngine {
 	t.Helper()
 	broker := newBroker(ctx, t)
+
 	ts := newTimeService(ctx, t)
+	ts.EXPECT().GetTimeNow().DoAndReturn(
+		func() time.Time {
+			return tm
+		}).AnyTimes()
 
-	ts.EXPECT().NotifyOnTick(gomock.Any()).Times(1)
-
-	return &testEngine{
+	te := &testEngine{
 		Engine: oracles.NewEngine(
 			logging.NewTestLogger(),
 			oracles.NewDefaultConfig(),
-			currentTime,
-			broker,
 			ts,
+			broker,
 		),
+		ts:     ts,
 		broker: broker,
 	}
+
+	return te
 }
 
 type dataBundle struct {

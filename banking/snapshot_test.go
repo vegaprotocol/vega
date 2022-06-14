@@ -37,12 +37,12 @@ import (
 )
 
 func deposit(eng *testEngine, asset, party string, amount *num.Uint) *types.BuiltinAssetDeposit {
-	now := time.Now()
-	eng.OnTick(context.Background(), now)
-	return depositAt(eng, asset, party, amount, now)
+	eng.OnTick(context.Background(), time.Now())
+	return depositAt(eng, asset, party, amount, time.Now())
 }
 
 func depositAt(eng *testEngine, asset, party string, amount *num.Uint, t time.Time) *types.BuiltinAssetDeposit {
+	eng.tsvc.EXPECT().GetTimeNow().AnyTimes()
 	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 	eng.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(testAsset, nil)
 	return &types.BuiltinAssetDeposit{
@@ -82,6 +82,7 @@ func TestSnapshotRoundtripViaEngine(t *testing.T) {
 	defer snap.Close()
 
 	now := time.Now()
+
 	// setup some deposits
 	d1 := depositAt(eng, "VGT1", "someparty1", num.NewUint(42), now)
 	err := eng.DepositBuiltinAsset(context.Background(), d1, "depositid1", 42)
@@ -110,7 +111,6 @@ func TestSnapshotRoundtripViaEngine(t *testing.T) {
 	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 	eng.col.EXPECT().TransferFunds(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 
-	now = time.Now()
 	deliver := now.Add(time.Hour)
 	eng.OnTick(ctx, now)
 
@@ -168,6 +168,7 @@ func TestSnapshotRoundtripViaEngine(t *testing.T) {
 	engineLoad, snapLoad := testEngineAndSnapshot(t)
 	engineLoad.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 	engineLoad.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(testAsset, nil)
+	engineLoad.tsvc.EXPECT().GetTimeNow().AnyTimes()
 	snapLoad.ReceiveSnapshot(snap1)
 	snapLoad.ApplySnapshot(ctx)
 	snapLoad.CheckLoaded()
@@ -180,7 +181,6 @@ func TestSnapshotRoundtripViaEngine(t *testing.T) {
 	require.NoError(t, err)
 	require.True(t, bytes.Equal(b, bLoad))
 
-	now = time.Now()
 	eng.OnTick(ctx, now)
 	engineLoad.OnTick(ctx, now)
 
@@ -208,7 +208,6 @@ func TestSnapshotRoundtripViaEngine(t *testing.T) {
 	engineLoad.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 	engineLoad.col.EXPECT().TransferFunds(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 
-	now = time.Now()
 	deliver = now.Add(time.Hour)
 	eng.OnTick(ctx, now)
 
@@ -265,6 +264,7 @@ func TestAssetActionsSnapshotRoundTrip(t *testing.T) {
 	eng := getTestEngine(t)
 	defer eng.ctrl.Finish()
 
+	eng.tsvc.EXPECT().GetTimeNow().Times(1)
 	d1 := deposit(eng, "VGT1", "someparty1", num.NewUint(42))
 	err := eng.DepositBuiltinAsset(context.Background(), d1, "depositid1", 42)
 	assert.NoError(t, err)
@@ -273,7 +273,6 @@ func TestAssetActionsSnapshotRoundTrip(t *testing.T) {
 	err = eng.DepositBuiltinAsset(context.Background(), d2, "depositid2", 24)
 	assert.NoError(t, err)
 
-	// 	eng.OnTick(context.Background(), time.Now())
 	state, _, err := eng.GetState(aaKey)
 	require.Nil(t, err)
 
@@ -301,6 +300,7 @@ func TestSeenSnapshotRoundTrip(t *testing.T) {
 		eng := getTestEngine(t)
 		defer eng.ctrl.Finish()
 
+		eng.tsvc.EXPECT().GetTimeNow().Times(1)
 		state1, _, err := eng.GetState(seenKey)
 		require.Nil(t, err)
 		eng.col.EXPECT().Deposit(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().Return(&types.TransferResponse{}, nil)
@@ -348,6 +348,8 @@ func TestWithdrawalsSnapshotRoundTrip(t *testing.T) {
 
 	withdrawalsKey := (&types.PayloadBankingWithdrawals{}).Key()
 	eng := getTestEngine(t)
+	eng.tsvc.EXPECT().GetTimeNow().AnyTimes()
+
 	defer eng.ctrl.Finish()
 	for i := 0; i < 10; i++ {
 		d1 := deposit(eng, "VGT"+strconv.Itoa(i*2), "someparty"+strconv.Itoa(i*2), num.NewUint(42))
@@ -386,6 +388,8 @@ func TestWithdrawalsSnapshotRoundTrip(t *testing.T) {
 func TestDepositSnapshotRoundTrip(t *testing.T) {
 	depositsKey := (&types.PayloadBankingDeposits{}).Key()
 	eng := getTestEngine(t)
+	eng.tsvc.EXPECT().GetTimeNow().AnyTimes()
+
 	defer eng.ctrl.Finish()
 	for i := 0; i < 10; i++ {
 		d1 := deposit(eng, "VGT"+strconv.Itoa(i*2), "someparty"+strconv.Itoa(i*2), num.NewUint(42))
@@ -427,6 +431,7 @@ func TestOneOffTransfersSnapshotRoundTrip(t *testing.T) {
 	}
 
 	eng.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(assets.NewAsset(&mockAsset{num.DecimalFromFloat(100)}), nil)
+	eng.tsvc.EXPECT().GetTimeNow().Times(3)
 	eng.col.EXPECT().GetPartyGeneralAccount(gomock.Any(), gomock.Any()).AnyTimes().Return(&fromAcc, nil)
 	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 	eng.col.EXPECT().TransferFunds(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
@@ -483,6 +488,7 @@ func TestRecurringransfersSnapshotRoundTrip(t *testing.T) {
 	}
 
 	eng.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(assets.NewAsset(&mockAsset{num.DecimalFromFloat(100)}), nil)
+	eng.tsvc.EXPECT().GetTimeNow().Times(1)
 	eng.col.EXPECT().GetPartyGeneralAccount(gomock.Any(), gomock.Any()).AnyTimes().Return(&fromAcc, nil)
 	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 	eng.col.EXPECT().TransferFunds(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()

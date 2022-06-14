@@ -109,8 +109,9 @@ func (e *Engine) distributeScheduledTransfers(ctx context.Context) error {
 	ttfs := []timesToTransfers{}
 
 	// iterate over those scheduled transfers to sort them by time
+	now := e.timeService.GetTimeNow()
 	for k, v := range e.scheduledTransfers {
-		if !e.currentTime.Before(k) {
+		if !now.Before(k) {
 			ttfs = append(ttfs, timesToTransfers{k, v})
 			delete(e.scheduledTransfers, k)
 		}
@@ -143,7 +144,6 @@ func (e *Engine) distributeScheduledTransfers(ctx context.Context) error {
 
 	// at least 1 transfer updated, set to true
 	e.bss.changedScheduledTransfers = true
-
 	tresps, err := e.col.TransferFunds(
 		ctx, transfers, accountTypes, references, nil, nil, // no fees required there, they've been paid already
 	)
