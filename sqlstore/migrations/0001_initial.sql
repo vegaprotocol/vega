@@ -735,8 +735,7 @@ CREATE TABLE checkpoints(
     hash         TEXT                     NOT NULL,
     block_hash   TEXT                     NOT NULL,
     block_height BIGINT                   NOT NULL,
-    vega_time    TIMESTAMP WITH TIME ZONE NOT NULL REFERENCES blocks(vega_time),
-    PRIMARY KEY (block_height)
+    vega_time    TIMESTAMP WITH TIME ZONE NOT NULL REFERENCES blocks(vega_time)
 );
 
 CREATE TABLE positions(

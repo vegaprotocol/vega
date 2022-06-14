@@ -21,6 +21,8 @@
 - [657](https://github.com/vegaprotocol/data-node/issues/657) - Add missing creation field in `ERC20` withdrawal bundle
 - [668](https://github.com/vegaprotocol/data-node/issues/668) - Ensure entity wrappers always hold timestamps to microsecond resolution 
 - [662](https://github.com/vegaprotocol/data-node/issues/662) - Fix auction trigger enum lookup
+- [682](https://github.com/vegaprotocol/data-node/issues/682) - Allow multiple checkpoints per block
+
 
 ## 0.51.1
 
