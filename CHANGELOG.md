@@ -20,6 +20,7 @@
 - [5446](https://github.com/vegaprotocol/vega/issues/5446) - Cover liquidity monitoring acceptance criteria relating to aggressive order removing best bid or ask from the book
 - [5457](https://github.com/vegaprotocol/vega/issues/5457) - Fix sorting of validators for demotion check
 - [5460](https://github.com/vegaprotocol/vega/issues/5460) - Fix theoretical open interest calculation
+- [5477](https://github.com/vegaprotocol/vega/issues/5477) - Pass a clone of the liquidity commitment offset to pegged orders
 
 ## 0.51.1
 
