@@ -28,7 +28,7 @@ func NewPositions(connectionSource *ConnectionSource) *Positions {
 }
 
 func (ps *Positions) Flush(ctx context.Context) ([]entities.Position, error) {
-	defer metrics.StartSQLQuery("Positions", "FlushTest")()
+	defer metrics.StartSQLQuery("Positions", "Flush")()
 	return ps.batcher.Flush(ctx, ps.pool)
 }
 

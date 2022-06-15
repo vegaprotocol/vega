@@ -32,6 +32,7 @@ var (
 var (
 	engineTime        *prometheus.CounterVec
 	eventHandlingTime *prometheus.CounterVec
+	flushHandlingTime *prometheus.CounterVec
 	eventCounter      *prometheus.CounterVec
 	sqlQueryTime      *prometheus.CounterVec
 	sqlQueryCounter   *prometheus.CounterVec
@@ -342,6 +343,21 @@ func setupMetrics() error {
 		return err
 	}
 	engineTime = est
+
+	h, err = AddInstrument(
+		Counter,
+		"flush_handling_seconds_total",
+		Namespace("vega"),
+		Vectors("subscriber"),
+	)
+	if err != nil {
+		return err
+	}
+	fht, err := h.CounterVec()
+	if err != nil {
+		return err
+	}
+	flushHandlingTime = fht
 
 	//eventHandlingTime
 	h, err = AddInstrument(
