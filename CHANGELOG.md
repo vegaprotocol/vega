@@ -30,7 +30,7 @@
 - [668](https://github.com/vegaprotocol/data-node/issues/668) - Ensure entity wrappers always hold timestamps to microsecond resolution
 - [662](https://github.com/vegaprotocol/data-node/issues/662) - Fix auction trigger enum lookup
 - [682](https://github.com/vegaprotocol/data-node/issues/682) - Allow multiple checkpoints per block
-
+- [690](https://github.com/vegaprotocol/data-node/issues/690) - Fix deadlock in market data subscription, close subscriptions when data can't be written rather than silently dropping events.
 
 ## 0.51.1
 

@@ -37,11 +37,16 @@ func TestNotifyDoesNotBlock(t *testing.T) {
 	flogs := logs.FilterMessageSnippet("channel could not be updated")
 	assert.NotZero(t, flogs.Len())
 
-	// And there should be nothing on the channel
-	select {
-	case <-ch:
-		t.Fail()
-	default:
+	// The channel should be closed eventually, but it might take a few cycles to get there.
+	for {
+		select {
+		case _, ok := <-ch:
+			if !ok {
+				return
+			}
+			t.Fail()
+		default:
+		}
 	}
 }
 

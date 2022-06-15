@@ -11,14 +11,12 @@ import (
 	"code.vegaprotocol.io/data-node/logging"
 )
 
-type observable interface{}
-
-type subscriber[T observable] struct {
+type subscriber[T any] struct {
 	ch     chan []T
 	filter func(T) bool
 }
 
-type Observer[T observable] struct {
+type Observer[T any] struct {
 	subCount    int32
 	lastSubId   uint64
 	name        string
@@ -29,7 +27,7 @@ type Observer[T observable] struct {
 	outChSize   int
 }
 
-func NewObserver[T observable](name string, log *logging.Logger, inChSize, outChSize int) Observer[T] {
+func NewObserver[T any](name string, log *logging.Logger, inChSize, outChSize int) Observer[T] {
 	return Observer[T]{
 		name:        name,
 		log:         log,
@@ -37,19 +35,19 @@ func NewObserver[T observable](name string, log *logging.Logger, inChSize, outCh
 		inChSize:    inChSize,
 		outChSize:   outChSize,
 	}
-
 }
 
-func (o *Observer[T]) Subscribe(ctx context.Context, ch chan []T, filter func(T) bool) uint64 {
+func (o *Observer[T]) Subscribe(ctx context.Context, filter func(T) bool) (chan []T, uint64) {
 	o.mut.Lock()
 	defer o.mut.Unlock()
 
+	ch := make(chan []T, o.inChSize)
 	o.lastSubId++
 	o.subscribers[o.lastSubId] = subscriber[T]{ch, filter}
 
 	ip, _ := contextutil.RemoteIPAddrFromContext(ctx)
 	o.logDebug(ip, o.lastSubId, "new subscription")
-	return o.lastSubId
+	return ch, o.lastSubId
 }
 
 func (o *Observer[T]) Unsubscribe(ctx context.Context, ref uint64) error {
@@ -63,7 +61,8 @@ func (o *Observer[T]) Unsubscribe(ctx context.Context, ref uint64) error {
 		return nil
 	}
 
-	if _, exists := o.subscribers[ref]; exists {
+	if sub, exists := o.subscribers[ref]; exists {
+		close(sub.ch)
 		delete(o.subscribers, ref)
 		return nil
 	}
@@ -87,35 +86,21 @@ func (o *Observer[T]) Notify(values []T) {
 		return
 	}
 
-	var ok bool
 	for id, sub := range o.subscribers {
 		select {
 		case sub.ch <- values:
-			ok = true
-		default:
-			ok = false
-		}
-		if ok {
 			o.logDebug("", id, "channel updated successfully")
-		} else {
-			o.logDebug("", id, "channel could not be updated")
+		default:
+			o.logWarning("", id, "channel could not be updated, closing")
+			delete(o.subscribers, id) // safe to delete from map while iterating
+			close(sub.ch)
 		}
-	}
-}
-
-func (o *Observer[T]) BlockingNotify(values []T) {
-	o.mut.Lock()
-	defer o.mut.Unlock()
-
-	for _, sub := range o.subscribers {
-		sub.ch <- values
 	}
 }
 
 func (o *Observer[T]) Observe(ctx context.Context, retries int, filter func(T) bool) (<-chan []T, uint64) {
-	in := make(chan []T, o.inChSize)
 	out := make(chan []T, o.outChSize)
-	ref := o.Subscribe(ctx, in, filter)
+	in, ref := o.Subscribe(ctx, filter)
 	ip, _ := contextutil.RemoteIPAddrFromContext(ctx)
 
 	go func() {
@@ -132,11 +117,15 @@ func (o *Observer[T]) Observe(ctx context.Context, retries int, filter func(T) b
 				if err := o.Unsubscribe(ctx, ref); err != nil {
 					o.logError(ip, ref, "failure un-subscribing when context.Done()")
 				}
-				close(in)
 				close(out)
 				return
 
-			case values := <-in:
+			case values, ok := <-in:
+				if !ok {
+					// 'in' channel may get closed because Notify() couldn't write to it
+					close(out)
+					return
+				}
 				filtered := make([]T, 0, len(values))
 				for _, value := range values {
 					if filter(value) {
