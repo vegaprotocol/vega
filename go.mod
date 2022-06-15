@@ -3,10 +3,10 @@ module code.vegaprotocol.io/data-node
 go 1.18
 
 require (
-	code.vegaprotocol.io/protos v0.51.2-0.20220614090548-f1518deab7bf
+	code.vegaprotocol.io/protos v0.52.0
 	code.vegaprotocol.io/quant v0.2.5
-	code.vegaprotocol.io/shared v0.0.0-20220321185018-3b5684b00533
-	code.vegaprotocol.io/vega v0.51.2-0.20220607090205-1cbbb9aba7d0
+	code.vegaprotocol.io/shared v0.0.0-20220614080106-5c97205b0d92
+	code.vegaprotocol.io/vega v0.52.0
 	github.com/99designs/gqlgen v0.16.0
 	github.com/cenkalti/backoff/v4 v4.1.2
 	github.com/dgraph-io/badger/v2 v2.2007.3
@@ -19,6 +19,7 @@ require (
 	github.com/google/go-cmp v0.5.7
 	github.com/gorilla/websocket v1.5.0
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.9.0
+	github.com/hashicorp/golang-lru v0.5.5-0.20210104140557-80c98217689d
 	github.com/jackc/pgconn v1.12.1
 	github.com/jackc/pgtype v1.11.0
 	github.com/jackc/pgx/v4 v4.14.1
@@ -45,7 +46,7 @@ require (
 require golang.org/x/exp v0.0.0-20220428152302-39d4317da171 // indirect
 
 require (
-	code.vegaprotocol.io/vegawallet v0.15.2-0.20220529200156-cb58876f94ed // indirect
+	code.vegaprotocol.io/vegawallet v0.16.0 // indirect
 	github.com/BurntSushi/toml v1.1.0 // indirect
 	github.com/DataDog/zstd v1.4.1 // indirect
 	github.com/adrg/xdg v0.4.0 // indirect
@@ -71,7 +72,6 @@ require (
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/google/btree v1.0.0 // indirect
 	github.com/grpc-ecosystem/grpc-gateway v1.16.0 // indirect
-	github.com/hashicorp/golang-lru v0.5.5-0.20210104140557-80c98217689d // indirect
 	github.com/holiman/uint256 v1.2.0 // indirect
 	github.com/jackc/chunkreader/v2 v2.0.1 // indirect
 	github.com/jackc/pgio v1.0.0 // indirect

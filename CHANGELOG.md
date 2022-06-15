@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased (0.52.0)
+## Unreleased (0.53.0)
 
 ### 🚨 Breaking changes
 - [](https://github.com/vegaprotocol/data-node/issues/xxx) -
@@ -9,17 +9,25 @@
 - [](https://github.com/vegaprotocol/data-node/issues/xxx) -
 
 ### 🛠  Improvements
+- [](https://github.com/vegaprotocol/data-node/issues/xxx) -
+
+### 🐛 Fixes
+- [](https://github.com/vegaprotocol/data-node/issues/xxx) -
+
+## 0.52.0
+
+### 🛠  Improvements
 - [624](https://github.com/vegaprotocol/data-node/issues/624) - Support subscriptions in new `API`
 - [666](https://github.com/vegaprotocol/data-node/issues/666) - Cache latest market data
 - [564](https://github.com/vegaprotocol/data-node/issues/564) - Add cursor based pagination to market data requests
 - [619](https://github.com/vegaprotocol/data-node/issues/619) - Cache markets
-- [675](https://github.com/vegaprotocol/data-node/issues/675) - Monitoring of subscriber count 
+- [675](https://github.com/vegaprotocol/data-node/issues/675) - Monitoring of subscriber count
 - [618](https://github.com/vegaprotocol/data-node/issues/618) - Fix positions cache
 - [567](https://github.com/vegaprotocol/data-node/issues/567) - Add cursor based pagination to rewards data requests
 
 ### 🐛 Fixes
 - [657](https://github.com/vegaprotocol/data-node/issues/657) - Add missing creation field in `ERC20` withdrawal bundle
-- [668](https://github.com/vegaprotocol/data-node/issues/668) - Ensure entity wrappers always hold timestamps to microsecond resolution 
+- [668](https://github.com/vegaprotocol/data-node/issues/668) - Ensure entity wrappers always hold timestamps to microsecond resolution
 - [662](https://github.com/vegaprotocol/data-node/issues/662) - Fix auction trigger enum lookup
 - [682](https://github.com/vegaprotocol/data-node/issues/682) - Allow multiple checkpoints per block
 
