@@ -1,12 +1,20 @@
 # Changelog
 
-## Unreleased (0.52.0)
+## Unreleased 0.53.0
 
 ### 🚨 Breaking changes
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 ### 🗑️ Deprecation
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+
+### 🛠 Improvements
+- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+
+### 🐛 Fixes
+- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+
+## 0.52.0
 
 ### 🛠 Improvements
 - [5421](https://github.com/vegaprotocol/vega/issues/5421) - Fix notary snapshot determinism when no signature are generated yet
