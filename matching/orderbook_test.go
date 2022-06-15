@@ -2596,11 +2596,23 @@ func TestOrderBook_IndicativePriceAndVolume1(t *testing.T) {
 	price = book.ob.GetIndicativePrice()
 	assert.Equal(t, price.Uint64(), uint64(101))
 
+	// Get indicative trades
+	trades, err := book.ob.GetIndicativeTrades()
+	assert.NoError(t, err)
+	for _, x := range trades {
+		assert.Equal(t, price, x.Price)
+	}
+
 	// Leave auction and uncross the book
 	uncrossedOrders, cancels, err := book.ob.LeaveAuction(time.Now())
 	assert.Nil(t, err)
 	assert.Equal(t, len(uncrossedOrders), 1)
 	assert.Equal(t, len(cancels), 0)
+	for _, o := range uncrossedOrders {
+		for _, x := range o.Trades {
+			assert.Equal(t, price, x.Price)
+		}
+	}
 }
 
 func TestOrderBook_IndicativePriceAndVolume2(t *testing.T) {
@@ -2635,11 +2647,24 @@ func TestOrderBook_IndicativePriceAndVolume2(t *testing.T) {
 	price = book.ob.GetIndicativePrice()
 	assert.Equal(t, uint64(100), price.Uint64())
 
+	// Get indicative trades
+	trades, err := book.ob.GetIndicativeTrades()
+	assert.NoError(t, err)
+	for _, x := range trades {
+		assert.Equal(t, price, x.Price)
+	}
+
 	// Leave auction and uncross the book
 	uncrossedOrders, cancels, err := book.ob.LeaveAuction(time.Now())
 	assert.Nil(t, err)
 	assert.Equal(t, 1, len(uncrossedOrders))
 	assert.Equal(t, 0, len(cancels))
+
+	for _, o := range uncrossedOrders {
+		for _, x := range o.Trades {
+			assert.Equal(t, price, x.Price)
+		}
+	}
 }
 
 func TestOrderBook_IndicativePriceAndVolume3(t *testing.T) {
@@ -2671,11 +2696,24 @@ func TestOrderBook_IndicativePriceAndVolume3(t *testing.T) {
 	price = book.ob.GetIndicativePrice()
 	assert.Equal(t, 100, int(price.Uint64()))
 
+	// Get indicative trades
+	trades, err := book.ob.GetIndicativeTrades()
+	assert.NoError(t, err)
+	for _, x := range trades {
+		assert.Equal(t, price, x.Price)
+	}
+
 	// Leave auction and uncross the book
 	uncrossedOrders, cancels, err := book.ob.LeaveAuction(time.Now())
 	assert.Nil(t, err)
 	assert.Equal(t, 3, len(uncrossedOrders))
 	assert.Equal(t, 0, len(cancels))
+
+	for _, o := range uncrossedOrders {
+		for _, x := range o.Trades {
+			assert.Equal(t, price, x.Price)
+		}
+	}
 }
 
 func TestOrderBook_IndicativePriceAndVolume4(t *testing.T) {
@@ -2707,11 +2745,24 @@ func TestOrderBook_IndicativePriceAndVolume4(t *testing.T) {
 	price = book.ob.GetIndicativePrice()
 	assert.Equal(t, uint64(0), price.Uint64())
 
+	// Get indicative trades
+	trades, err := book.ob.GetIndicativeTrades()
+	assert.NoError(t, err)
+	for _, x := range trades {
+		assert.Equal(t, price, x.Price)
+	}
+
 	// Leave auction and uncross the book
 	uncrossedOrders, cancels, err := book.ob.LeaveAuction(time.Now())
 	assert.Nil(t, err)
 	assert.Equal(t, len(uncrossedOrders), 0)
 	assert.Equal(t, len(cancels), 0)
+
+	for _, o := range uncrossedOrders {
+		for _, x := range o.Trades {
+			assert.Equal(t, price, x.Price)
+		}
+	}
 }
 
 func TestOrderBook_IndicativePriceAndVolume5(t *testing.T) {
@@ -2757,11 +2808,24 @@ func TestOrderBook_IndicativePriceAndVolume5(t *testing.T) {
 	price = book.ob.GetIndicativePrice()
 	assert.Equal(t, uint64(99), price.Uint64())
 
+	// Get indicative trades
+	trades, err := book.ob.GetIndicativeTrades()
+	assert.NoError(t, err)
+	for _, x := range trades {
+		assert.Equal(t, price, x.Price)
+	}
+
 	// Leave auction and uncross the book
 	uncrossedOrders, cancels, err := book.ob.LeaveAuction(time.Now())
 	assert.Nil(t, err)
 	assert.Equal(t, 4, len(uncrossedOrders))
 	assert.Equal(t, 0, len(cancels))
+
+	for _, o := range uncrossedOrders {
+		for _, x := range o.Trades {
+			assert.Equal(t, price, x.Price)
+		}
+	}
 }
 
 // Set up an auction so that the sell side is processed when we uncross.
@@ -2796,11 +2860,24 @@ func TestOrderBook_IndicativePriceAndVolume6(t *testing.T) {
 	price = book.ob.GetIndicativePrice()
 	assert.Equal(t, 101, int(price.Uint64()))
 
+	// Get indicative trades
+	trades, err := book.ob.GetIndicativeTrades()
+	assert.NoError(t, err)
+	for _, x := range trades {
+		assert.Equal(t, price, x.Price)
+	}
+
 	// Leave auction and uncross the book
 	uncrossedOrders, cancels, err := book.ob.LeaveAuction(time.Now())
 	assert.Nil(t, err)
 	assert.Equal(t, len(uncrossedOrders), 1)
 	assert.Equal(t, len(cancels), 0)
+
+	for _, o := range uncrossedOrders {
+		for _, x := range o.Trades {
+			assert.Equal(t, price, x.Price)
+		}
+	}
 }
 
 // Check that multiple orders per price level work.
@@ -2839,11 +2916,24 @@ func TestOrderBook_IndicativePriceAndVolume7(t *testing.T) {
 	price = book.ob.GetIndicativePrice()
 	assert.Equal(t, uint64(99), price.Uint64())
 
+	// Get indicative trades
+	trades, err := book.ob.GetIndicativeTrades()
+	assert.NoError(t, err)
+	for _, x := range trades {
+		assert.Equal(t, price, x.Price)
+	}
+
 	// Leave auction and uncross the book
 	uncrossedOrders, cancels, err := book.ob.LeaveAuction(time.Now())
 	assert.Nil(t, err)
 	assert.Equal(t, 4, len(uncrossedOrders))
 	assert.Equal(t, 0, len(cancels))
+
+	for _, o := range uncrossedOrders {
+		for _, x := range o.Trades {
+			assert.Equal(t, price, x.Price)
+		}
+	}
 }
 
 func TestOrderBook_IndicativePriceAndVolume8(t *testing.T) {
@@ -2881,11 +2971,24 @@ func TestOrderBook_IndicativePriceAndVolume8(t *testing.T) {
 	price = book.ob.GetIndicativePrice()
 	assert.Equal(t, 99, int(price.Uint64()))
 
+	// Get indicative trades
+	trades, err := book.ob.GetIndicativeTrades()
+	assert.NoError(t, err)
+	for _, x := range trades {
+		assert.Equal(t, price, x.Price)
+	}
+
 	// Leave auction and uncross the book
 	uncrossedOrders, cancels, err := book.ob.LeaveAuction(time.Now())
 	assert.Nil(t, err)
 	assert.Equal(t, 8, len(uncrossedOrders))
 	assert.Equal(t, 0, len(cancels))
+
+	for _, o := range uncrossedOrders {
+		for _, x := range o.Trades {
+			assert.Equal(t, price, x.Price)
+		}
+	}
 }
 
 func TestOrderBook_IndicativePriceAndVolume9(t *testing.T) {
@@ -2920,11 +3023,24 @@ func TestOrderBook_IndicativePriceAndVolume9(t *testing.T) {
 	price = book.ob.GetIndicativePrice()
 	assert.Equal(t, 303, int(price.Uint64()))
 
+	// Get indicative trades
+	trades, err := book.ob.GetIndicativeTrades()
+	assert.NoError(t, err)
+	for _, x := range trades {
+		assert.Equal(t, price, x.Price)
+	}
+
 	// Leave auction and uncross the book
 	uncrossedOrders, cancels, err := book.ob.LeaveAuction(time.Now())
 	assert.Nil(t, err)
 	assert.Equal(t, 1, len(uncrossedOrders))
 	assert.Equal(t, 0, len(cancels))
+
+	for _, o := range uncrossedOrders {
+		for _, x := range o.Trades {
+			assert.Equal(t, price, x.Price)
+		}
+	}
 }
 
 func TestOrderBook_UncrossTest1(t *testing.T) {
@@ -2962,11 +3078,24 @@ func TestOrderBook_UncrossTest1(t *testing.T) {
 	price = book.ob.GetIndicativePrice()
 	assert.Equal(t, price.Uint64(), uint64(100))
 
+	// Get indicative trades
+	trades, err := book.ob.GetIndicativeTrades()
+	assert.NoError(t, err)
+	for _, x := range trades {
+		assert.Equal(t, price, x.Price)
+	}
+
 	// Leave auction and uncross the book
 	uncrossedOrders, cancels, err := book.ob.LeaveAuction(time.Now())
 	assert.Nil(t, err)
 	assert.Equal(t, len(uncrossedOrders), 1)
 	assert.Equal(t, len(cancels), 2)
+
+	for _, o := range uncrossedOrders {
+		for _, x := range o.Trades {
+			assert.Equal(t, price, x.Price)
+		}
+	}
 }
 
 // this is a test for issue 2060 to ensure we process FOK orders properly.
@@ -3128,11 +3257,27 @@ func TestOrderBook_AuctionUncrossWashTrades(t *testing.T) {
 	assert.Equal(t, volume, uint64(5))
 	assert.Equal(t, side, types.SideBuy)
 
+	// Get indicative trades
+	trades, err := book.ob.GetIndicativeTrades()
+	assert.NoError(t, err)
+	assert.Equal(t, len(trades), 1)
+
 	// Leave auction and uncross the book
 	uncrossedOrders, cancels, err := book.ob.LeaveAuction(time.Now())
 	assert.Nil(t, err)
 	assert.Equal(t, len(uncrossedOrders), 1)
+	assert.Equal(t, len(uncrossedOrders[0].Trades), 1)
 	assert.Equal(t, len(cancels), 0)
+
+	// Assure indicative trade has same (relevant) data as the actual trade
+	assert.Equal(t, uncrossedOrders[0].Trades[0].Aggressor, trades[0].Aggressor)
+	assert.Equal(t, uncrossedOrders[0].Trades[0].Buyer, trades[0].Buyer)
+	assert.Equal(t, uncrossedOrders[0].Trades[0].Seller, trades[0].Seller)
+	assert.Equal(t, uncrossedOrders[0].Trades[0].Size, trades[0].Size)
+	assert.Equal(t, uncrossedOrders[0].Trades[0].Price, trades[0].Price)
+
+	// Assure trade is indeed a wash trade
+	assert.Equal(t, trades[0].Buyer, trades[0].Seller)
 }
 
 func TestOrderBook_AuctionUncrossTamlyn(t *testing.T) {

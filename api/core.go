@@ -94,6 +94,10 @@ func (s *coreService) LastBlockHeight(
 		s.log.Debug("block height requested, returning", logging.Uint64("block-height", blockHeight), logging.String("block hash", blockHash))
 	}
 
+	if !s.powParams.IsReady() {
+		return nil, errors.New("Failed to get last block height server is initialising")
+	}
+
 	return &protoapi.LastBlockHeightResponse{
 		Height:                      blockHeight,
 		Hash:                        blockHash,

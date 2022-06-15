@@ -582,7 +582,7 @@ func (e *Engine) createOrUpdateForParty(
 	for _, buy := range lp.Buys {
 		pegged := &types.PeggedOrder{
 			Reference: buy.LiquidityOrder.Reference,
-			Offset:    buy.LiquidityOrder.Offset,
+			Offset:    buy.LiquidityOrder.Offset.Clone(),
 		}
 		order := &supplied.LiquidityOrder{
 			OrderID:    buy.OrderID,
@@ -601,7 +601,7 @@ func (e *Engine) createOrUpdateForParty(
 	for _, sell := range lp.Sells {
 		pegged := &types.PeggedOrder{
 			Reference: sell.LiquidityOrder.Reference,
-			Offset:    sell.LiquidityOrder.Offset,
+			Offset:    sell.LiquidityOrder.Offset.Clone(),
 		}
 		order := &supplied.LiquidityOrder{
 			OrderID:    sell.OrderID,

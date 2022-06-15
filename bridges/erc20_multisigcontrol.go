@@ -41,7 +41,7 @@ func (e *ERC20MultiSigControl) BurnNonce(
 		},
 	})
 
-	buf, err := args.Pack([]interface{}{nonce.BigInt(), "set_threshold"}...)
+	buf, err := args.Pack([]interface{}{nonce.BigInt(), "burn_nonce"}...)
 	if err != nil {
 		return nil, err
 	}

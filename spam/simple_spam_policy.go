@@ -1,6 +1,7 @@
 package spam
 
 import (
+	"encoding/hex"
 	"errors"
 	"sort"
 	"sync"
@@ -201,7 +202,7 @@ func (ssp *SimpleSpamPolicy) PostBlockAccept(tx abci.Tx) (bool, error) {
 			ssp.partyBlockRejects[party] = &blockRejectInfo{total: 1, rejected: 1}
 		}
 		if ssp.log.GetLevel() <= logging.DebugLevel {
-			ssp.log.Debug("Spam post: party has already submitted the max amount of commands for "+ssp.policyName, logging.String("party", party))
+			ssp.log.Debug("Spam post: party has already submitted the max amount of commands for "+ssp.policyName, logging.String("txHash", hex.EncodeToString(tx.Hash())), logging.String("party", party))
 		}
 		return false, ssp.tooManyCommands
 	}
@@ -232,7 +233,7 @@ func (ssp *SimpleSpamPolicy) PreBlockAccept(tx abci.Tx) (bool, error) {
 	_, ok := ssp.bannedParties[party]
 	if ok {
 		if ssp.log.GetLevel() <= logging.DebugLevel {
-			ssp.log.Debug("Spam pre: party is banned from "+ssp.policyName, logging.String("party", party))
+			ssp.log.Debug("Spam pre: party is banned from "+ssp.policyName, logging.String("txHash", hex.EncodeToString(tx.Hash())), logging.String("party", party))
 		}
 		return false, ssp.banErr
 	}
@@ -241,7 +242,7 @@ func (ssp *SimpleSpamPolicy) PreBlockAccept(tx abci.Tx) (bool, error) {
 	balance, err := ssp.accounts.GetAvailableBalance(party)
 	if !ssp.minTokensRequired.IsZero() && (err != nil || balance.LT(ssp.minTokensRequired)) {
 		if ssp.log.GetLevel() <= logging.DebugLevel {
-			ssp.log.Debug("Spam pre: party has insufficient balance for "+ssp.policyName, logging.String("party", party), logging.String("balance", num.UintToString(balance)))
+			ssp.log.Debug("Spam pre: party has insufficient balance for "+ssp.policyName, logging.String("txHash", hex.EncodeToString(tx.Hash())), logging.String("party", party), logging.String("balance", num.UintToString(balance)))
 		}
 		return false, ssp.insufficientTokensErr
 	}
@@ -249,7 +250,7 @@ func (ssp *SimpleSpamPolicy) PreBlockAccept(tx abci.Tx) (bool, error) {
 	// Check we have not exceeded our command limit for this given party in this epoch
 	if commandCount, ok := ssp.partyToCount[party]; ok && commandCount >= ssp.maxAllowedCommands {
 		if ssp.log.GetLevel() <= logging.DebugLevel {
-			ssp.log.Debug("Spam pre: party has already submitted the max amount of commands for "+ssp.policyName, logging.String("party", party), logging.Uint64("count", commandCount), logging.Uint64("maxAllowed", ssp.maxAllowedCommands))
+			ssp.log.Debug("Spam pre: party has already submitted the max amount of commands for "+ssp.policyName, logging.String("txHash", hex.EncodeToString(tx.Hash())), logging.String("party", party), logging.Uint64("count", commandCount), logging.Uint64("maxAllowed", ssp.maxAllowedCommands))
 		}
 		return false, ssp.tooManyCommands
 	}

@@ -440,9 +440,13 @@ func (b *OrderBook) GetIndicativeTrades() ([]*types.Trade, error) {
 	opSide := b.getOppositeSide(uncrossSide)
 	output := make([]*types.Trade, 0, len(uncrossOrders))
 	for _, o := range uncrossOrders {
-		trades, err := opSide.fakeUncross(o)
+		trades, err := opSide.fakeUncross(o, false)
 		if err != nil {
 			return nil, err
+		}
+		// Update all the trades to have the correct uncrossing price
+		for index := 0; index < len(trades); index++ {
+			trades[index].Price = price.Clone()
 		}
 		output = append(output, trades...)
 	}
@@ -705,7 +709,7 @@ func (b *OrderBook) GetTrades(order *types.Order) ([]*types.Trade, error) {
 		b.latestTimestamp = order.CreatedAt
 	}
 
-	trades, err := b.getOppositeSide(order.Side).fakeUncross(order)
+	trades, err := b.getOppositeSide(order.Side).fakeUncross(order, true)
 	// it's fine for the error to be a wash trade here,
 	// it's just be stopped when really uncrossing.
 	if err != nil && err != ErrWashTrade {

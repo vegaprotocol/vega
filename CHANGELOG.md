@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased (0.52.0)
+## Unreleased 0.53.0
 
 ### 🚨 Breaking changes
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
@@ -14,6 +14,22 @@
 ### 🐛 Fixes
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
+## 0.52.0
+
+### 🛠 Improvements
+- [5421](https://github.com/vegaprotocol/vega/issues/5421) - Fix notary snapshot determinism when no signature are generated yet
+- [5415](https://github.com/vegaprotocol/vega/issues/5415) - Regenerate smart contracts code
+- [5434](https://github.com/vegaprotocol/vega/issues/5434) - Add health check for faucet
+- [5412](https://github.com/vegaprotocol/vega/issues/5412) - Proof of work improvement to support history of changes to network parameters
+
+### 🐛 Fixes
+- [5438](https://github.com/vegaprotocol/vega/issues/5438) - Evaluate all trades resulting from an aggressive orders in one call to price monitoring engine
+- [5444](https://github.com/vegaprotocol/vega/issues/5444) - Merge both checkpoints and genesis asset on startup
+- [5446](https://github.com/vegaprotocol/vega/issues/5446) - Cover liquidity monitoring acceptance criteria relating to aggressive order removing best bid or ask from the book
+- [5457](https://github.com/vegaprotocol/vega/issues/5457) - Fix sorting of validators for demotion check
+- [5460](https://github.com/vegaprotocol/vega/issues/5460) - Fix theoretical open interest calculation
+- [5477](https://github.com/vegaprotocol/vega/issues/5477) - Pass a clone of the liquidity commitment offset to pegged orders
+- [5468](https://github.com/vegaprotocol/vega/issues/5468) - Bring indicative trades inline with actual auction uncrossing trades in presence of wash trades
 
 ## 0.51.1
 
@@ -38,6 +54,7 @@
 - [3362](https://github.com/vegaprotocol/vega/issues/3362) - Stop non-persistent orders from triggering auctions
 - [5388](https://github.com/vegaprotocol/vega/issues/5388) - Use `UnixNano()` to snapshot price monitor times
 - [5237](https://github.com/vegaprotocol/vega/issues/5237) - Trigger state variable calculation first time indicative uncrossing price is available
+- [5397](https://github.com/vegaprotocol/vega/issues/5397) - Bring indicative trades price inline with that of actual auction uncrossing trades
 
 ## 0.51.0
 

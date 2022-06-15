@@ -412,7 +412,7 @@ func (app *App) Info(_ tmtypes.RequestInfo) tmtypes.ResponseInfo {
 
 	app.log.Info("ABCI service INFO requested",
 		logging.String("version", resp.Version),
-		logging.Uint64("app-vesion", resp.AppVersion),
+		logging.Uint64("app-version", resp.AppVersion),
 		logging.Int64("height", resp.LastBlockHeight),
 		logging.String("hash", hex.EncodeToString(resp.LastBlockAppHash)),
 	)
@@ -909,8 +909,9 @@ func (app *App) canSubmitTx(tx abci.Tx) (err error) {
 }
 
 // OnDeliverTXSpam checks spam and replay.
-func (app *App) OnDeliverTXSpam(tx abci.Tx) tmtypes.ResponseDeliverTx {
+func (app *App) OnDeliverTXSpam(ctx context.Context, tx abci.Tx) tmtypes.ResponseDeliverTx {
 	var resp tmtypes.ResponseDeliverTx
+	ctxWithHash := vgcontext.WithTxHash(ctx, hex.EncodeToString(tx.Hash()))
 
 	// verify proof of work
 	if !app.nilPow {
@@ -918,6 +919,7 @@ func (app *App) OnDeliverTXSpam(tx abci.Tx) tmtypes.ResponseDeliverTx {
 			app.log.Error(err.Error())
 			resp.Code = abci.AbciSpamError
 			resp.Data = []byte(err.Error())
+			app.broker.Send(events.NewTxErrEvent(ctxWithHash, err, tx.Party(), tx.GetCmd(), tx.Command().String()))
 			return resp
 		}
 	}
@@ -926,6 +928,8 @@ func (app *App) OnDeliverTXSpam(tx abci.Tx) tmtypes.ResponseDeliverTx {
 			app.log.Error(err.Error())
 			resp.Code = abci.AbciSpamError
 			resp.Data = []byte(err.Error())
+			evt := events.NewTxErrEvent(ctxWithHash, err, tx.Party(), tx.GetCmd(), tx.Command().String())
+			app.broker.Send(evt)
 			return resp
 		}
 	}
@@ -1040,7 +1044,7 @@ func (app *App) DeliverSubmitOrder(ctx context.Context, tx abci.Tx, deterministi
 			logging.Error(err))
 	}
 
-	return nil
+	return err
 }
 
 func (app *App) DeliverCancelOrder(ctx context.Context, tx abci.Tx, deterministicId string) error {

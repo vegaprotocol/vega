@@ -41,5 +41,5 @@ type (
 	ApplySnapshotChunkHandler func(context.Context, types.RequestApplySnapshotChunk) types.ResponseApplySnapshotChunk
 	InfoHandler               func(types.RequestInfo) types.ResponseInfo
 	OnCheckTxSpamHandler      func(Tx) types.ResponseCheckTx
-	OnDeliverTxSpamHandler    func(Tx) types.ResponseDeliverTx
+	OnDeliverTxSpamHandler    func(context.Context, Tx) types.ResponseDeliverTx
 )
