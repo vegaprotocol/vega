@@ -48,8 +48,8 @@ func WithdrawalFromProto(withdrawal *vega.Withdrawal, vegaTime time.Time) (*With
 		// According to the GraphQL resolver, the expiry is the Unix time, not UnixNano
 		Expiry:             time.Unix(withdrawal.Expiry, 0),
 		TxHash:             withdrawal.TxHash,
-		CreatedTimestamp:   time.Unix(0, withdrawal.CreatedTimestamp),
-		WithdrawnTimestamp: time.Unix(0, withdrawal.WithdrawnTimestamp),
+		CreatedTimestamp:   NanosToPostgresTimestamp(withdrawal.CreatedTimestamp),
+		WithdrawnTimestamp: NanosToPostgresTimestamp(withdrawal.WithdrawnTimestamp),
 		Ext:                WithdrawExt{withdrawal.Ext},
 		VegaTime:           vegaTime,
 	}, nil

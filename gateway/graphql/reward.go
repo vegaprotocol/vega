@@ -3,6 +3,7 @@ package gql
 import (
 	"context"
 
+	"code.vegaprotocol.io/data-node/gateway/graphql/marshallers"
 	"code.vegaprotocol.io/data-node/vegatime"
 	"code.vegaprotocol.io/protos/vega"
 )
@@ -33,4 +34,8 @@ func (r *rewardResolver) Epoch(ctx context.Context, obj *vega.Reward) (*vega.Epo
 	}
 
 	return epoch, nil
+}
+
+func (r *rewardResolver) RewardType(ctx context.Context, obj *vega.Reward) (vega.AccountType, error) {
+	return marshallers.UnmarshalAccountType(ctx, obj.RewardType)
 }

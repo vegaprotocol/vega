@@ -10,6 +10,7 @@ import (
 	"code.vegaprotocol.io/data-node/entities"
 	"code.vegaprotocol.io/data-node/metrics"
 	"github.com/georgysavva/scany/pgxscan"
+	"github.com/jackc/pgx/v4"
 )
 
 var (
@@ -20,15 +21,13 @@ var (
 
 type Blocks struct {
 	*ConnectionSource
-	lastBlock        *entities.Block
-	lastBlockChanged chan struct{}
-	mu               sync.Mutex
+	lastBlock *entities.Block
+	mu        sync.Mutex
 }
 
 func NewBlocks(connectionSource *ConnectionSource) *Blocks {
 	b := &Blocks{
 		ConnectionSource: connectionSource,
-		lastBlockChanged: make(chan struct{}),
 	}
 	return b
 }
@@ -57,9 +56,9 @@ func (bs *Blocks) GetAll() ([]entities.Block, error) {
 	return blocks, err
 }
 
-func (bs *Blocks) GetAtHeight(height int64) (entities.Block, error) {
+func (bs *Blocks) GetAtHeight(ctx context.Context, height int64) (entities.Block, error) {
 	// Check if it's in our cache first
-	block, err := bs.GetLastBlock()
+	block, err := bs.GetLastBlock(ctx)
 	if err == nil && block.Height == height {
 		return block, nil
 	}
@@ -73,19 +72,35 @@ func (bs *Blocks) GetAtHeight(height int64) (entities.Block, error) {
 	return block, err
 }
 
-func (bs *Blocks) GetLastBlock() (entities.Block, error) {
+// GetLastBlock return the last block or ErrNoLastBlock if no block is found
+func (bs *Blocks) GetLastBlock(ctx context.Context) (entities.Block, error) {
 	bs.mu.Lock()
 	defer bs.mu.Unlock()
 	if bs.lastBlock != nil {
 		return *bs.lastBlock, nil
 	}
-	return entities.Block{}, ErrNoLastBlock
+
+	block := &entities.Block{}
+	defer metrics.StartSQLQuery("Blocks", "GetLastBlock")()
+	err := pgxscan.Get(ctx, bs.Connection, block,
+		`SELECT vega_time, height, hash
+		FROM blocks order by vega_time desc limit 1`)
+
+	if errors.Is(err, pgx.ErrNoRows) {
+		return entities.Block{}, ErrNoLastBlock
+	}
+
+	if err != nil {
+		return entities.Block{}, err
+	}
+
+	bs.lastBlock = block
+	return *block, nil
+
 }
 
 func (bs *Blocks) setLastBlock(b entities.Block) {
 	bs.mu.Lock()
 	defer bs.mu.Unlock()
 	bs.lastBlock = &b
-	close(bs.lastBlockChanged)
-	bs.lastBlockChanged = make(chan struct{})
 }

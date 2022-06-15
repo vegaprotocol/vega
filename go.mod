@@ -3,10 +3,10 @@ module code.vegaprotocol.io/data-node
 go 1.18
 
 require (
-	code.vegaprotocol.io/protos v0.51.1
+	code.vegaprotocol.io/protos v0.52.0
 	code.vegaprotocol.io/quant v0.2.5
-	code.vegaprotocol.io/shared v0.0.0-20220321185018-3b5684b00533
-	code.vegaprotocol.io/vega v0.51.1
+	code.vegaprotocol.io/shared v0.0.0-20220614080106-5c97205b0d92
+	code.vegaprotocol.io/vega v0.52.0
 	github.com/99designs/gqlgen v0.16.0
 	github.com/cenkalti/backoff/v4 v4.1.2
 	github.com/dgraph-io/badger/v2 v2.2007.3
@@ -19,8 +19,9 @@ require (
 	github.com/google/go-cmp v0.5.7
 	github.com/gorilla/websocket v1.5.0
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.9.0
-	github.com/jackc/pgconn v1.10.1
-	github.com/jackc/pgtype v1.10.0
+	github.com/hashicorp/golang-lru v0.5.5-0.20210104140557-80c98217689d
+	github.com/jackc/pgconn v1.12.1
+	github.com/jackc/pgtype v1.11.0
 	github.com/jackc/pgx/v4 v4.14.1
 	github.com/jessevdk/go-flags v1.4.0
 	github.com/machinebox/graphql v0.2.2
@@ -42,8 +43,10 @@ require (
 	google.golang.org/protobuf v1.27.1
 )
 
+require golang.org/x/exp v0.0.0-20220428152302-39d4317da171 // indirect
+
 require (
-	code.vegaprotocol.io/vegawallet v0.15.1 // indirect
+	code.vegaprotocol.io/vegawallet v0.16.0 // indirect
 	github.com/BurntSushi/toml v1.1.0 // indirect
 	github.com/DataDog/zstd v1.4.1 // indirect
 	github.com/adrg/xdg v0.4.0 // indirect
@@ -69,14 +72,13 @@ require (
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/google/btree v1.0.0 // indirect
 	github.com/grpc-ecosystem/grpc-gateway v1.16.0 // indirect
-	github.com/hashicorp/golang-lru v0.5.5-0.20210104140557-80c98217689d // indirect
 	github.com/holiman/uint256 v1.2.0 // indirect
 	github.com/jackc/chunkreader/v2 v2.0.1 // indirect
 	github.com/jackc/pgio v1.0.0 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
-	github.com/jackc/pgproto3/v2 v2.2.0 // indirect
+	github.com/jackc/pgproto3/v2 v2.3.0 // indirect
 	github.com/jackc/pgservicefile v0.0.0-20200714003250-2b9c44734f2b // indirect
-	github.com/jackc/puddle v1.2.0 // indirect
+	github.com/jackc/puddle v1.2.1 // indirect
 	github.com/jhump/protoreflect v1.10.1 // indirect
 	github.com/jmhodges/levigo v1.0.0 // indirect
 	github.com/joeshaw/multierror v0.0.0-20140124173710-69b34d4ec901 // indirect
@@ -103,7 +105,6 @@ require (
 	go.etcd.io/bbolt v1.3.6 // indirect
 	go.uber.org/atomic v1.9.0 // indirect
 	go.uber.org/multierr v1.8.0 // indirect
-	golang.org/x/exp v0.0.0-20220428152302-39d4317da171 // indirect
 	golang.org/x/lint v0.0.0-20210508222113-6edffad5e616 // indirect
 	golang.org/x/mod v0.6.0-dev.0.20211013180041-c96bc1413d57 // indirect
 	golang.org/x/net v0.0.0-20220225172249-27dd8689420f // indirect
@@ -121,4 +122,6 @@ require (
 
 replace github.com/shopspring/decimal => github.com/vegaprotocol/decimal v1.2.1-0.20210705145732-aaa563729a0a
 
-replace github.com/fergusstrange/embedded-postgres => github.com/vegaprotocol/embedded-postgres v1.13.1-0.20220307182735-e7d70067af91
+replace github.com/fergusstrange/embedded-postgres => github.com/vegaprotocol/embedded-postgres v1.13.1-0.20220607151211-5f2f488de508
+
+replace github.com/jackc/pgx/v4 v4.14.1 => github.com/pscott31/pgx/v4 v4.16.2-0.20220531164027-bd666b84b61f

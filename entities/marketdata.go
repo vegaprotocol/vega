@@ -365,8 +365,8 @@ func (md MarketData) ToProto() *types.MarketData {
 		IndicativePrice:           md.IndicativePrice.String(),
 		IndicativeVolume:          uint64(md.IndicativeVolume),
 		MarketTradingMode:         types.Market_TradingMode(types.Market_TradingMode_value[md.MarketTradingMode]),
-		Trigger:                   types.AuctionTrigger(types.Market_TradingMode_value[md.AuctionTrigger]),
-		ExtensionTrigger:          types.AuctionTrigger(types.Market_TradingMode_value[md.ExtensionTrigger]),
+		Trigger:                   types.AuctionTrigger(types.AuctionTrigger_value[md.AuctionTrigger]),
+		ExtensionTrigger:          types.AuctionTrigger(types.AuctionTrigger_value[md.ExtensionTrigger]),
 		TargetStake:               md.TargetStake.String(),
 		SuppliedStake:             md.SuppliedStake.String(),
 		PriceMonitoringBounds:     priceMonitoringBoundsToProto(md.PriceMonitoringBounds),
@@ -424,4 +424,10 @@ func priceMonitoringTriggerToProto(trigger PriceMonitoringTrigger) *types.PriceM
 		Probability:      trigger.Probability.String(),
 		AuctionExtension: int64(trigger.AuctionExtension),
 	}
+}
+
+func (md MarketData) Cursor() *Cursor {
+	// NOTE: We need to force the time into a specific timezone or the formatting will reflect the time based on the timezone
+	// of the database that returns the data if the postgres server has a timezone that is not set to UTC
+	return NewCursor(md.SyntheticTime.In(time.UTC).Format(time.RFC3339Nano))
 }

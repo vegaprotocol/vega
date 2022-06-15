@@ -11,27 +11,27 @@ import (
 
 type Balances struct {
 	*ConnectionSource
-	batcher MapBatcher[entities.BalanceKey, entities.Balance]
+	batcher MapBatcher[entities.AccountBalanceKey, entities.AccountBalance]
 }
 
 func NewBalances(connectionSource *ConnectionSource) *Balances {
 	b := &Balances{
 		ConnectionSource: connectionSource,
-		batcher: NewMapBatcher[entities.BalanceKey, entities.Balance](
+		batcher: NewMapBatcher[entities.AccountBalanceKey, entities.AccountBalance](
 			"balances",
 			entities.BalanceColumns),
 	}
 	return b
 }
 
-func (bs *Balances) Flush(ctx context.Context) error {
+func (bs *Balances) Flush(ctx context.Context) ([]entities.AccountBalance, error) {
 	defer metrics.StartSQLQuery("Balances", "Flush")()
 	return bs.batcher.Flush(ctx, bs.Connection)
 }
 
 // Add inserts a row to the balance table. If there's already a balance for this
 // (account, block time) update it to match with the one supplied.
-func (bs *Balances) Add(b entities.Balance) error {
+func (bs *Balances) Add(b entities.AccountBalance) error {
 	bs.batcher.Add(b)
 	return nil
 }

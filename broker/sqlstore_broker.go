@@ -2,7 +2,6 @@ package broker
 
 import (
 	"context"
-	"encoding/hex"
 	"fmt"
 	"reflect"
 	"time"
@@ -10,14 +9,10 @@ import (
 	"code.vegaprotocol.io/data-node/entities"
 	"code.vegaprotocol.io/data-node/logging"
 	"code.vegaprotocol.io/data-node/metrics"
+	"code.vegaprotocol.io/data-node/sqlstore"
 	"code.vegaprotocol.io/vega/events"
 	"github.com/pkg/errors"
 )
-
-type TimeUpdateEvent interface {
-	events.Event
-	Time() time.Time
-}
 
 type SqlBrokerSubscriber interface {
 	SetVegaTime(vegaTime time.Time)
@@ -31,12 +26,14 @@ type SqlStoreEventBroker interface {
 }
 
 type TransactionManager interface {
+	WithConnection(ctx context.Context) (context.Context, error)
 	WithTransaction(ctx context.Context) (context.Context, error)
 	Commit(ctx context.Context) error
 }
 
 type BlockStore interface {
 	Add(ctx context.Context, b entities.Block) error
+	GetLastBlock(ctx context.Context) (entities.Block, error)
 }
 
 // sqlStoreBroker : push events to each subscriber with a single go routine across all types
@@ -49,7 +46,6 @@ type sqlStoreBroker struct {
 	transactionManager TransactionManager
 	blockStore         BlockStore
 	chainInfo          ChainInfoI
-	nextBlockTime      TimeUpdateEvent
 	lastBlock          *entities.Block
 }
 
@@ -72,6 +68,7 @@ func NewSqlStoreBroker(log *logging.Logger, config Config, chainInfo ChainInfoI,
 			b.typeToSubs[evtType] = append(b.typeToSubs[evtType], s)
 		}
 	}
+
 	return b
 }
 
@@ -82,32 +79,89 @@ func (b *sqlStoreBroker) Receive(ctx context.Context) error {
 
 	receiveCh, errCh := b.eventSource.Receive(ctx)
 
+	nextBlock, err := b.waitForFirstBlock(ctx, errCh, receiveCh)
+	if err != nil {
+		return err
+	}
+
+	dbContext, err := b.transactionManager.WithConnection(context.Background())
+	if err != nil {
+		return err
+	}
+
+	for {
+		if nextBlock, err = b.processBlock(ctx, dbContext, nextBlock, receiveCh, errCh); err != nil {
+			return err
+		}
+	}
+
+}
+
+// waitForFirstBlock processes all events until a new block is encountered and returns the new block. A 'new' block is one for which
+// events have not already been processed by this datanode.
+func (b *sqlStoreBroker) waitForFirstBlock(ctx context.Context, errCh <-chan error, receiveCh <-chan events.Event) (*entities.Block, error) {
+
+	lastProcessedBlock, err := b.blockStore.GetLastBlock(ctx)
+
+	if errors.Is(err, sqlstore.ErrNoLastBlock) {
+		lastProcessedBlock = entities.Block{
+			VegaTime: time.Time{},
+			Height:   -1,
+			Hash:     nil,
+		}
+	} else if err != nil {
+		return nil, err
+	}
+
+	var timeUpdate entities.TimeUpdateEvent
 	for {
 		select {
 		case <-ctx.Done():
-			return ctx.Err()
-		default:
-			if err := b.receiveBlock(ctx, receiveCh, errCh); err != nil {
-				return err
+			return nil, ctx.Err()
+		case err = <-errCh:
+			return nil, err
+		case e := <-receiveCh:
+			if e.Type() == events.TimeUpdate {
+				timeUpdate = e.(entities.TimeUpdateEvent)
+				metrics.EventCounterInc(timeUpdate.Type().String())
+
+				if timeUpdate.BlockNr() > lastProcessedBlock.Height+1 {
+					return nil, fmt.Errorf("block height on time update, %d, is too high, the height of the last processed block is %d",
+						timeUpdate.BlockNr(), lastProcessedBlock.Height)
+				}
+
+				if timeUpdate.BlockNr() > lastProcessedBlock.Height {
+					return entities.BlockFromTimeUpdate(timeUpdate)
+				}
 			}
 		}
 	}
+
 }
 
-func (b *sqlStoreBroker) receiveBlock(ctx context.Context, receiveCh <-chan events.Event, errCh <-chan error) error {
+// processBlock processes all events in the current block up to the next time update.  The next time block is returned when processing of the block is done.
+func (b *sqlStoreBroker) processBlock(ctx context.Context, dbContext context.Context, block *entities.Block, eventsCh <-chan events.Event, errCh <-chan error) (*entities.Block, error) {
 
-	// Don't use our parent context for as a parent of the database operation; if we get cancelled
+	metrics.BlockCounterInc()
+
+	for _, subscriber := range b.subscribers {
+		subscriber.SetVegaTime(block.VegaTime)
+	}
+
+	// Don't use our parent context as a parent of the database operation; if we get cancelled
 	// by e.g. a shutdown request then let the last database operation complete.
-	blockCtx, cancel := context.WithTimeout(context.Background(), b.config.BlockProcessingTimeout.Duration)
+	var blockCtx context.Context
+	var cancel context.CancelFunc
+	blockCtx, cancel = context.WithTimeout(dbContext, b.config.BlockProcessingTimeout.Duration)
 	defer cancel()
 
 	blockCtx, err := b.transactionManager.WithTransaction(blockCtx)
 	if err != nil {
-		return fmt.Errorf("failed to add transaction to context:%w", err)
+		return nil, fmt.Errorf("failed to add transaction to context:%w", err)
 	}
 
-	if b.nextBlockTime != nil {
-		b.addBlock(blockCtx, b.nextBlockTime)
+	if err = b.addBlock(blockCtx, block); err != nil {
+		return nil, fmt.Errorf("failed to add block:%w", err)
 	}
 
 	for {
@@ -115,66 +169,58 @@ func (b *sqlStoreBroker) receiveBlock(ctx context.Context, receiveCh <-chan even
 		// the number of things we'll keep trying to handle after we are cancelled.
 		select {
 		case <-ctx.Done():
-			return ctx.Err()
+			return nil, ctx.Err()
 		default:
 		}
 
 		select {
 		case <-ctx.Done():
-			return ctx.Err()
-		case e := <-receiveCh:
+			return nil, ctx.Err()
+		case err = <-errCh:
+			return nil, err
+
+		case e := <-eventsCh:
 			if e.Type() == events.TimeUpdate {
-				return b.handleBlockEnd(blockCtx, e.(TimeUpdateEvent))
-			} else {
-				err = b.handleEvent(blockCtx, e)
+				timeUpdate := e.(entities.TimeUpdateEvent)
+				metrics.EventCounterInc(timeUpdate.Type().String())
+
+				err = b.flushAllSubscribers(blockCtx)
 				if err != nil {
-					return err
+					return nil, err
+				}
+
+				err = b.transactionManager.Commit(blockCtx)
+				if err != nil {
+					return nil, fmt.Errorf("failed to commit transactional context:%w", err)
+				}
+
+				return entities.BlockFromTimeUpdate(timeUpdate)
+
+			} else {
+				if err = b.handleEvent(blockCtx, e); err != nil {
+					return nil, err
 				}
 			}
-
 		}
 	}
 }
 
-func (b *sqlStoreBroker) handleBlockEnd(blockCtx context.Context, timeUpdate TimeUpdateEvent) error {
-	metrics.EventCounterInc(timeUpdate.Type().String())
-	metrics.BlockCounterInc()
+func (b *sqlStoreBroker) flushAllSubscribers(blockCtx context.Context) error {
 	for _, subscriber := range b.subscribers {
-		subscriber.Flush(blockCtx)
+		err := subscriber.Flush(blockCtx)
+		if err != nil {
+			return fmt.Errorf("failed to flush subscriber:%w", err)
+		}
 	}
-
-	err := b.transactionManager.Commit(blockCtx)
-	if err != nil {
-		return fmt.Errorf("failed to commit transactional context:%w", err)
-	}
-
-	b.nextBlockTime = timeUpdate
-	for _, subscriber := range b.subscribers {
-		subscriber.SetVegaTime(b.nextBlockTime.Time())
-	}
-
 	return nil
 }
 
-func (b *sqlStoreBroker) addBlock(ctx context.Context, te TimeUpdateEvent) error {
-	hash, err := hex.DecodeString(te.TraceID())
-	if err != nil {
-		b.log.Panic("Trace ID is not valid hex string",
-			logging.String("traceId", te.TraceID()))
-	}
-
-	// Postgres only stores timestamps in microsecond resolution
-	block := entities.Block{
-		VegaTime: te.Time().Truncate(time.Microsecond),
-		Hash:     hash,
-		Height:   te.BlockNr(),
-	}
-
+func (b *sqlStoreBroker) addBlock(ctx context.Context, block *entities.Block) error {
 	// At startup we get time updates that have the same time to microsecond precision which causes
 	// a primary key restraint failure, this code is to handle this scenario
 	if b.lastBlock == nil || !block.VegaTime.Equal(b.lastBlock.VegaTime) {
-		b.lastBlock = &block
-		err = b.blockStore.Add(ctx, block)
+		b.lastBlock = block
+		err := b.blockStore.Add(ctx, *block)
 		if err != nil {
 			return errors.Wrap(err, "failed to add block")
 		}

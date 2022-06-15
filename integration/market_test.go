@@ -34,7 +34,7 @@ func TestMarkets(t *testing.T) {
 	for name, query := range queries {
 		t.Run(name, func(t *testing.T) {
 			var new, old struct{ Markets []Market }
-			assertGraphQLQueriesReturnSame(t, query, &new, &old)
+			assertGraphQLQueriesReturnSame(t, query, &old, &new)
 		})
 	}
 }

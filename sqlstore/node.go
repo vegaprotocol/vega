@@ -64,6 +64,24 @@ func (store *Node) UpsertNode(ctx context.Context, node *entities.Node) error {
 	return err
 }
 
+// AddNodeAnnoucedEvent store data about which epoch a particular node was added or removed from the roster of alidators
+func (store *Node) AddNodeAnnoucedEvent(ctx context.Context, nodeID entities.NodeID, aux *entities.ValidatorUpdateAux) error {
+	defer metrics.StartSQLQuery("Node", "AddNodeAnnoucedEvent")()
+	_, err := store.pool.Exec(ctx, `
+		INSERT INTO nodes_announced (
+			node_id,
+			epoch_seq,
+			added)
+		VALUES
+			($1, $2, $3)`,
+		nodeID,
+		aux.FromEpoch,
+		aux.Added,
+	)
+
+	return err
+}
+
 func (store *Node) UpsertRanking(ctx context.Context, rs *entities.RankingScore, aux *entities.RankingScoreAux) error {
 	defer metrics.StartSQLQuery("Node", "UpsertRanking")()
 
@@ -158,6 +176,25 @@ func (store *Node) GetNodeData(ctx context.Context) (entities.NodeData, error) {
 					-- Select the current epoch
 					epoch_id = (SELECT MAX(id) FROM epochs)
 			),
+			/* partitioned by node_id find the join/leave annoucement with the biggest epoch that is also less or equal to the target epoch */
+			join_event AS (
+				SELECT 
+					node_id, added 
+				FROM 
+					( 
+						SELECT 
+							node_id, added, epoch_seq, Row_Number() 
+						OVER(PARTITION BY node_id order BY epoch_seq desc) 
+						AS 
+							row_number 
+						FROM 
+							nodes_announced 
+						WHERE 
+							epoch_seq <= (SELECT MAX(id) FROM epochs)
+					) AS a
+				WHERE 
+					row_number = 1 AND added = true
+			),
 
 			node_totals AS ( ` +
 		// 		Currently there's no mechanism for changing the node status
@@ -169,6 +206,11 @@ func (store *Node) GetNodeData(ctx context.Context) (entities.NodeData, error) {
 					ROW_NUMBER() OVER () AS id
 				FROM
 					nodes
+					WHERE EXISTS (
+						SELECT *
+						FROM join_event WHERE node_id = nodes.id
+					)
+
 			)
 		SELECT
 			staked.total AS staked_total,
@@ -202,7 +244,24 @@ func (store *Node) GetNodes(ctx context.Context, epochSeq uint64) ([]entities.No
 	pending_delegations AS (
 		SELECT * FROM delegations
 		WHERE epoch_id = $1 + 1
+	),
+
+	/* partitioned by node_id find the join/leave annoucement with the biggest epoch that is also less or equal to the target epoch */
+	join_event AS (
+		SELECT 
+			node_id, added 
+		FROM ( 
+			SELECT 
+				node_id, added, epoch_seq, Row_Number() 
+			OVER(PARTITION BY node_id order BY epoch_seq desc) 
+			AS 
+				row_number 
+			FROM 
+				nodes_announced 
+			WHERE epoch_seq <= $1) AS a
+		WHERE row_number = 1 AND added = true
 	)
+
 	SELECT
 		nodes.id,
 		nodes.vega_pub_key,
@@ -232,6 +291,10 @@ func (store *Node) GetNodes(ctx context.Context, epochSeq uint64) ([]entities.No
 	LEFT JOIN pending_delegations ON pending_delegations.node_id = nodes.id
 	LEFT JOIN ranking_scores ON ranking_scores.node_id = nodes.id AND ranking_scores.epoch_seq = $1
 	LEFT JOIN reward_scores ON reward_scores.node_id = nodes.id AND reward_scores.epoch_seq = $1
+	WHERE EXISTS (
+		SELECT *
+		FROM join_event WHERE node_id = nodes.id
+		)
 	GROUP BY nodes.id`
 
 	err := pgxscan.Select(ctx, store.pool, &nodes, query, epochSeq)
@@ -255,7 +318,14 @@ func (store *Node) GetNodeByID(ctx context.Context, nodeId string, epochSeq uint
 		SELECT * FROM delegations
 		WHERE epoch_id = $2 + 1
 		AND node_id = $1
+	),
+
+	/* find the join/leave annoucement with the biggest epoch that is also less or equal to the target epoch */
+	join_event AS (
+		SELECT * FROM nodes_announced
+		WHERE epoch_seq = ( SELECT MAX(epoch_seq) FROM nodes_announced WHERE node_id = $1 AND epoch_seq <= $2)
 	)
+
 	SELECT
 		nodes.id,
 		nodes.vega_pub_key,
@@ -266,7 +336,6 @@ func (store *Node) GetNodeByID(ctx context.Context, nodeId string, epochSeq uint
 		nodes.info_url,
 		nodes.avatar_url,
 		nodes.status,
-
 
 		FIRST(ROW_TO_JSON(reward_scores.*))::JSONB AS "reward_score",
 		FIRST(ROW_TO_JSON(ranking_scores.*))::JSONB AS "ranking_score",
@@ -286,7 +355,10 @@ func (store *Node) GetNodeByID(ctx context.Context, nodeId string, epochSeq uint
 	LEFT JOIN pending_delegations ON pending_delegations.node_id = nodes.id
 	LEFT JOIN ranking_scores ON ranking_scores.node_id = nodes.id AND ranking_scores.epoch_seq = $2
 	LEFT JOIN reward_scores ON reward_scores.node_id = nodes.id AND reward_scores.epoch_seq = $2
-	WHERE nodes.id = $1
+	WHERE nodes.id = $1 AND EXISTS (
+		SELECT *
+		FROM   join_event WHERE added = true
+		)
 	GROUP BY nodes.id`
 
 	err := pgxscan.Get(ctx, store.pool, &node, query, id, epochSeq)

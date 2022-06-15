@@ -46,7 +46,7 @@ func (rs *Reward) Push(ctx context.Context, evt events.Event) error {
 
 func (rs *Reward) consume(ctx context.Context, event RewardPayoutEvent) error {
 	protoRewardPayoutEvent := event.RewardPayoutEvent()
-	reward, err := entities.RewardFromProto(protoRewardPayoutEvent)
+	reward, err := entities.RewardFromProto(protoRewardPayoutEvent, rs.vegaTime)
 	if err != nil {
 		return errors.Wrap(err, "unable to parse reward")
 	}

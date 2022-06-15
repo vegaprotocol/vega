@@ -177,7 +177,7 @@ func testInsertMarginLevels(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, 0, rowCount)
 
-	err = ml.Flush(ctx)
+	_, err = ml.Flush(ctx)
 	assert.NoError(t, err)
 
 	err = conn.QueryRow(ctx, `select count(*) from margin_levels`).Scan(&rowCount)
@@ -211,7 +211,7 @@ func testDuplicateMarginLevelInSameBlock(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, 0, rowCount)
 
-	err = ml.Flush(ctx)
+	_, err = ml.Flush(ctx)
 	assert.NoError(t, err)
 
 	err = conn.QueryRow(ctx, `select count(*) from margin_levels`).Scan(&rowCount)
@@ -276,7 +276,7 @@ func testGetMarginLevelsByPartyID(t *testing.T) {
 	err = ml.Add(marginLevel2)
 	require.NoError(t, err)
 
-	err = ml.Flush(ctx)
+	_, err = ml.Flush(ctx)
 	require.NoError(t, err)
 
 	err = conn.QueryRow(ctx, `select count(*) from margin_levels`).Scan(&rowCount)
@@ -295,7 +295,7 @@ func testGetMarginLevelsByPartyID(t *testing.T) {
 	err = ml.Add(marginLevel4)
 	require.NoError(t, err)
 
-	err = ml.Flush(ctx)
+	_, err = ml.Flush(ctx)
 	require.NoError(t, err)
 
 	err = conn.QueryRow(ctx, `select count(*) from margin_levels`).Scan(&rowCount)
@@ -360,7 +360,7 @@ func testGetMarginLevelsByMarketID(t *testing.T) {
 	err = ml.Add(marginLevel2)
 	require.NoError(t, err)
 
-	err = ml.Flush(ctx)
+	_, err = ml.Flush(ctx)
 	assert.NoError(t, err)
 
 	err = conn.QueryRow(ctx, `select count(*) from margin_levels`).Scan(&rowCount)
@@ -381,7 +381,7 @@ func testGetMarginLevelsByMarketID(t *testing.T) {
 	err = ml.Add(marginLevel4)
 	require.NoError(t, err)
 
-	err = ml.Flush(ctx)
+	_, err = ml.Flush(ctx)
 	assert.NoError(t, err)
 
 	err = conn.QueryRow(ctx, `select count(*) from margin_levels`).Scan(&rowCount)
@@ -446,7 +446,7 @@ func testGetMarginLevelsByID(t *testing.T) {
 	err = ml.Add(marginLevel2)
 	require.NoError(t, err)
 
-	err = ml.Flush(ctx)
+	_, err = ml.Flush(ctx)
 	assert.NoError(t, err)
 
 	err = conn.QueryRow(ctx, `select count(*) from margin_levels`).Scan(&rowCount)
@@ -467,7 +467,7 @@ func testGetMarginLevelsByID(t *testing.T) {
 	err = ml.Add(marginLevel4)
 	require.NoError(t, err)
 
-	err = ml.Flush(ctx)
+	_, err = ml.Flush(ctx)
 	assert.NoError(t, err)
 
 	err = conn.QueryRow(ctx, `select count(*) from margin_levels`).Scan(&rowCount)
@@ -606,7 +606,7 @@ func populateMarginLevelPaginationTestData(t *testing.T, ctx context.Context) (*
 		marginLevels[i] = mlEntity
 	}
 
-	err := mlStore.Flush(ctx)
+	_, err := mlStore.Flush(ctx)
 	require.NoError(t, err)
 
 	return mlStore, blocks, marginLevels
@@ -620,7 +620,7 @@ func testGetMarginLevelsByIDPaginationWithPartyNoCursor(t *testing.T) {
 
 	t.Logf("DB Port: %d", testDBPort)
 	mls, blocks, marginLevels := populateMarginLevelPaginationTestData(t, context.Background())
-	pagination, err := entities.PaginationFromProto(&v2.Pagination{})
+	pagination, err := entities.CursorPaginationFromProto(&v2.Pagination{})
 	require.NoError(t, err)
 	results, pageInfo, err := mls.GetMarginLevelsByIDWithCursorPagination(testCtx, "DEADBEEF", "", pagination)
 	require.NoError(t, err)
@@ -656,7 +656,7 @@ func testGetMarginLevelsByIDPaginationWithMarketNoCursor(t *testing.T) {
 
 	t.Logf("DB Port: %d", testDBPort)
 	mls, blocks, marginLevels := populateMarginLevelPaginationTestData(t, context.Background())
-	pagination, err := entities.PaginationFromProto(&v2.Pagination{})
+	pagination, err := entities.CursorPaginationFromProto(&v2.Pagination{})
 	require.NoError(t, err)
 	results, pageInfo, err := mls.GetMarginLevelsByIDWithCursorPagination(testCtx, "", "DEADBEEF", pagination)
 	require.NoError(t, err)
@@ -693,7 +693,7 @@ func testGetMarginLevelsByIDPaginationWithPartyFirstNoAfterCursor(t *testing.T) 
 	t.Logf("DB Port: %d", testDBPort)
 	mls, blocks, marginLevels := populateMarginLevelPaginationTestData(t, context.Background())
 	first := int32(3)
-	pagination, err := entities.PaginationFromProto(&v2.Pagination{
+	pagination, err := entities.CursorPaginationFromProto(&v2.Pagination{
 		First: &first,
 	})
 	require.NoError(t, err)
@@ -729,7 +729,7 @@ func testGetMarginLevelsByIDPaginationWithMarketFirstNoAfterCursor(t *testing.T)
 	t.Logf("DB Port: %d", testDBPort)
 	mls, blocks, marginLevels := populateMarginLevelPaginationTestData(t, context.Background())
 	first := int32(3)
-	pagination, err := entities.PaginationFromProto(&v2.Pagination{
+	pagination, err := entities.CursorPaginationFromProto(&v2.Pagination{
 		First: &first,
 	})
 	require.NoError(t, err)
@@ -765,7 +765,7 @@ func testGetMarginLevelsByIDPaginationWithPartyLastNoBeforeCursor(t *testing.T) 
 	t.Logf("DB Port: %d", testDBPort)
 	mls, blocks, marginLevels := populateMarginLevelPaginationTestData(t, context.Background())
 	last := int32(3)
-	pagination, err := entities.PaginationFromProto(&v2.Pagination{
+	pagination, err := entities.CursorPaginationFromProto(&v2.Pagination{
 		Last: &last,
 	})
 	require.NoError(t, err)
@@ -801,7 +801,7 @@ func testGetMarginLevelsByIDPaginationWithMarketLastNoBeforeCursor(t *testing.T)
 	t.Logf("DB Port: %d", testDBPort)
 	mls, blocks, marginLevels := populateMarginLevelPaginationTestData(t, context.Background())
 	last := int32(3)
-	pagination, err := entities.PaginationFromProto(&v2.Pagination{
+	pagination, err := entities.CursorPaginationFromProto(&v2.Pagination{
 		Last: &last,
 	})
 	require.NoError(t, err)
@@ -841,7 +841,7 @@ func testGetMarginLevelsByIDPaginationWithPartyFirstAndAfterCursor(t *testing.T)
 		VegaTime:  blocks[1].VegaTime,
 		AccountID: marginLevels[1].AccountID,
 	}.String()).Encode()
-	pagination, err := entities.PaginationFromProto(&v2.Pagination{
+	pagination, err := entities.CursorPaginationFromProto(&v2.Pagination{
 		First: &first,
 		After: &after,
 	})
@@ -882,7 +882,7 @@ func testGetMarginLevelsByIDPaginationWithMarketFirstAndAfterCursor(t *testing.T
 		VegaTime:  blocks[5].VegaTime,
 		AccountID: marginLevels[5].AccountID,
 	}.String()).Encode()
-	pagination, err := entities.PaginationFromProto(&v2.Pagination{
+	pagination, err := entities.CursorPaginationFromProto(&v2.Pagination{
 		First: &first,
 		After: &after,
 	})
@@ -923,7 +923,7 @@ func testGetMarginLevelsByIDPaginationWithPartyLastAndBeforeCursor(t *testing.T)
 		VegaTime:  blocks[10].VegaTime,
 		AccountID: marginLevels[10].AccountID,
 	}.String()).Encode()
-	pagination, err := entities.PaginationFromProto(&v2.Pagination{
+	pagination, err := entities.CursorPaginationFromProto(&v2.Pagination{
 		Last:   &last,
 		Before: &before,
 	})
@@ -964,7 +964,7 @@ func testGetMarginLevelsByIDPaginationWithMarketLastAndBeforeCursor(t *testing.T
 		VegaTime:  blocks[11].VegaTime,
 		AccountID: marginLevels[11].AccountID,
 	}.String()).Encode()
-	pagination, err := entities.PaginationFromProto(&v2.Pagination{
+	pagination, err := entities.CursorPaginationFromProto(&v2.Pagination{
 		Last:   &last,
 		Before: &before,
 	})

@@ -23,7 +23,7 @@ func NewTrades(connectionSource *ConnectionSource) *Trades {
 	return t
 }
 
-func (ts *Trades) Flush(ctx context.Context) error {
+func (ts *Trades) Flush(ctx context.Context) ([]*entities.Trade, error) {
 	var rows [][]interface{}
 	for _, t := range ts.trades {
 		rows = append(rows, []interface{}{
@@ -66,17 +66,18 @@ func (ts *Trades) Flush(ctx context.Context) error {
 			pgx.CopyFromRows(rows),
 		)
 		if err != nil {
-			return fmt.Errorf("failed to copy trades into database:%w", err)
+			return nil, fmt.Errorf("failed to copy trades into database:%w", err)
 		}
 
 		if copyCount != int64(len(rows)) {
-			return fmt.Errorf("copied %d trade rows into the database, expected to copy %d", copyCount, len(rows))
+			return nil, fmt.Errorf("copied %d trade rows into the database, expected to copy %d", copyCount, len(rows))
 		}
 	}
 
+	flushed := ts.trades
 	ts.trades = nil
 
-	return nil
+	return flushed, nil
 }
 
 func (ts *Trades) Add(t *entities.Trade) error {
@@ -96,7 +97,7 @@ func (ts *Trades) GetByMarket(ctx context.Context, market string, p entities.Off
 	return trades, nil
 }
 
-func (ts *Trades) GetByMarketWithCursor(ctx context.Context, market string, pagination entities.Pagination) ([]entities.Trade, entities.PageInfo, error) {
+func (ts *Trades) GetByMarketWithCursor(ctx context.Context, market string, pagination entities.CursorPagination) ([]entities.Trade, entities.PageInfo, error) {
 	query := `SELECT * from trades WHERE market_id=$1`
 	args := []interface{}{entities.NewMarketID(market)}
 	trades, pageInfo, err := ts.queryTradesWithCursorPagination(ctx, query, args, pagination)
@@ -115,7 +116,7 @@ func (ts *Trades) GetByParty(ctx context.Context, party string, market *string, 
 	return ts.queryTradesWithMarketFilter(ctx, query, args, market, pagination)
 }
 
-func (ts *Trades) GetByPartyWithCursor(ctx context.Context, party string, market *string, pagination entities.Pagination) ([]entities.Trade, entities.PageInfo, error) {
+func (ts *Trades) GetByPartyWithCursor(ctx context.Context, party string, market *string, pagination entities.CursorPagination) ([]entities.Trade, entities.PageInfo, error) {
 	args := []interface{}{entities.NewPartyID(party)}
 	query := `SELECT * from trades WHERE (buyer=$1 or seller=$1)`
 
@@ -130,7 +131,7 @@ func (ts *Trades) GetByOrderID(ctx context.Context, order string, market *string
 	return ts.queryTradesWithMarketFilter(ctx, query, args, market, pagination)
 }
 
-func (ts *Trades) GetByOrderIDWithCursor(ctx context.Context, order string, market *string, pagination entities.Pagination) ([]entities.Trade, entities.PageInfo, error) {
+func (ts *Trades) GetByOrderIDWithCursor(ctx context.Context, order string, market *string, pagination entities.CursorPagination) ([]entities.Trade, entities.PageInfo, error) {
 	args := []interface{}{entities.NewOrderID(order)}
 	query := `SELECT * from trades WHERE buy_order=$1 or sell_order=$1`
 
@@ -153,7 +154,7 @@ func (ts *Trades) queryTradesWithMarketFilter(ctx context.Context, query string,
 }
 
 func (ts *Trades) queryTradesWithMarketFilterAndCursorPagination(ctx context.Context, query string, args []interface{},
-	market *string, cursor entities.Pagination,
+	market *string, cursor entities.CursorPagination,
 ) ([]entities.Trade, entities.PageInfo, error) {
 	if market != nil && *market != "" {
 		marketID := nextBindVar(&args, entities.NewMarketID(*market))
@@ -181,7 +182,7 @@ func (ts *Trades) queryTrades(ctx context.Context, query string, args []interfac
 	return trades, nil
 }
 
-func (ts *Trades) queryTradesWithCursorPagination(ctx context.Context, query string, args []interface{}, pagination entities.Pagination) ([]entities.Trade, entities.PageInfo, error) {
+func (ts *Trades) queryTradesWithCursorPagination(ctx context.Context, query string, args []interface{}, pagination entities.CursorPagination) ([]entities.Trade, entities.PageInfo, error) {
 	var err error
 
 	sorting, cmp, cursor := extractPaginationInfo(pagination)

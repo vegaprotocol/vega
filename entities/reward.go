@@ -1,6 +1,7 @@
 package entities
 
 import (
+	"encoding/json"
 	"fmt"
 	"strconv"
 	"time"
@@ -18,6 +19,7 @@ type Reward struct {
 	Amount         decimal.Decimal
 	PercentOfTotal float64
 	RewardType     string
+	Timestamp      time.Time
 	VegaTime       time.Time
 }
 
@@ -33,14 +35,14 @@ func (r *Reward) ToProto() *vega.Reward {
 		Epoch:             uint64(r.EpochID),
 		Amount:            r.Amount.String(),
 		PercentageOfTotal: fmt.Sprintf("%v", r.PercentOfTotal),
-		ReceivedAt:        r.VegaTime.UnixNano(),
+		ReceivedAt:        r.Timestamp.UnixNano(),
 		MarketId:          r.MarketID.String(),
 		RewardType:        r.RewardType,
 	}
 	return &protoReward
 }
 
-func RewardFromProto(pr eventspb.RewardPayoutEvent) (Reward, error) {
+func RewardFromProto(pr eventspb.RewardPayoutEvent, vegaTime time.Time) (Reward, error) {
 	epochID, err := strconv.ParseInt(pr.EpochSeq, 10, 64)
 	if err != nil {
 		return Reward{}, fmt.Errorf("parsing epoch '%v': %w", pr.EpochSeq, err)
@@ -64,10 +66,43 @@ func RewardFromProto(pr eventspb.RewardPayoutEvent) (Reward, error) {
 		EpochID:        epochID,
 		Amount:         amount,
 		PercentOfTotal: percentOfTotal,
-		VegaTime:       time.Unix(0, pr.Timestamp),
+		Timestamp:      NanosToPostgresTimestamp(pr.Timestamp),
 		MarketID:       NewMarketID(pr.Market),
 		RewardType:     pr.RewardType,
+		VegaTime:       vegaTime,
 	}
 
 	return reward, nil
+}
+
+type RewardCursor struct {
+	PartyID string `json:"party_id"`
+	AssetID string `json:"asset_id"`
+	EpochID int64  `json:"epoch_id"`
+}
+
+func (rc RewardCursor) String() string {
+	bs, err := json.Marshal(rc)
+	if err != nil {
+		return fmt.Sprintf(`{"party_id":"%s","asset_id":"%s","epoch_id":%d}`, rc.PartyID, rc.AssetID, rc.EpochID)
+	}
+	return string(bs)
+}
+
+func (r Reward) Cursor() *Cursor {
+	cursor := RewardCursor{
+		PartyID: r.PartyID.String(),
+		AssetID: r.AssetID.String(),
+		EpochID: r.EpochID,
+	}
+	return NewCursor(cursor.String())
+}
+
+func ParseRewardCursor(cursor string) (RewardCursor, error) {
+	var rc RewardCursor
+	err := json.Unmarshal([]byte(cursor), &rc)
+	if err != nil {
+		return RewardCursor{}, fmt.Errorf("parsing reward cursor: %w", err)
+	}
+	return rc, nil
 }

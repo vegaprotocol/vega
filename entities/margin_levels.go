@@ -119,7 +119,7 @@ type MarginCursor struct {
 func (mc MarginCursor) String() string {
 	bs, err := json.Marshal(mc)
 	if err != nil {
-		return fmt.Sprintf(`{"vegaTime":"%s","accountID":%d}`, mc.VegaTime, mc.AccountID)
+		return fmt.Sprintf(`{"vegaTime":"%s","accountID":%d}`, mc.VegaTime.In(time.UTC), mc.AccountID)
 	}
 	return string(bs)
 }

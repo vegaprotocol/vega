@@ -41,7 +41,7 @@ func (md *MarketData) Add(data *entities.MarketData) error {
 	return nil
 }
 
-func (md *MarketData) Flush(ctx context.Context) error {
+func (md *MarketData) Flush(ctx context.Context) ([]*entities.MarketData, error) {
 	var rows [][]interface{}
 	for _, data := range md.marketData {
 		rows = append(rows, []interface{}{
@@ -62,17 +62,18 @@ func (md *MarketData) Flush(ctx context.Context) error {
 			pgx.Identifier{"market_data"}, md.columns, pgx.CopyFromRows(rows),
 		)
 		if err != nil {
-			return fmt.Errorf("failed to copy market data into database:%w", err)
+			return nil, fmt.Errorf("failed to copy market data into database:%w", err)
 		}
 
 		if copyCount != int64(len(rows)) {
-			return fmt.Errorf("copied %d market data rows into the database, expected to copy %d", copyCount, len(rows))
+			return nil, fmt.Errorf("copied %d market data rows into the database, expected to copy %d", copyCount, len(rows))
 		}
 	}
 
+	flushed := md.marketData
 	md.marketData = nil
 
-	return nil
+	return flushed, nil
 }
 
 func (md *MarketData) GetMarketDataByID(ctx context.Context, marketID string) (entities.MarketData, error) {
@@ -81,6 +82,7 @@ func (md *MarketData) GetMarketDataByID(ctx context.Context, marketID string) (e
 	var marketData entities.MarketData
 	query := "select * from market_data_snapshot where market = $1"
 
+	defer metrics.StartSQLQuery("MarketData", "GetMarketDataByID")()
 	err := pgxscan.Get(ctx, md.Connection, &marketData, query, entities.NewMarketID(marketID))
 
 	return marketData, err
@@ -98,27 +100,49 @@ func (md *MarketData) GetMarketsData(ctx context.Context) ([]entities.MarketData
 	return marketData, err
 }
 
-func (md *MarketData) GetBetweenDatesByID(ctx context.Context, marketID string, start, end time.Time, pagination entities.OffsetPagination) ([]entities.MarketData, error) {
+func (md *MarketData) GetBetweenDatesByID(ctx context.Context, marketID string, start, end time.Time, pagination entities.Pagination) ([]entities.MarketData, entities.PageInfo, error) {
 	if end.Before(start) {
-		return nil, ErrInvalidDateRange
+		return nil, entities.PageInfo{}, ErrInvalidDateRange
 	}
 
-	return md.getBetweenDatesByID(ctx, marketID, &start, &end, pagination)
+	switch p := pagination.(type) {
+	case entities.OffsetPagination:
+		return md.getBetweenDatesByIDOffset(ctx, marketID, &start, &end, p)
+	case entities.CursorPagination:
+		return md.getBetweenDatesByID(ctx, marketID, &start, &end, p)
+	}
+
+	return nil, entities.PageInfo{}, errors.New("invalid pagination")
 }
 
-func (md *MarketData) GetFromDateByID(ctx context.Context, marketID string, start time.Time, pagination entities.OffsetPagination) ([]entities.MarketData, error) {
-	return md.getBetweenDatesByID(ctx, marketID, &start, nil, pagination)
+func (md *MarketData) GetFromDateByID(ctx context.Context, marketID string, start time.Time, pagination entities.Pagination) ([]entities.MarketData, entities.PageInfo, error) {
+	switch p := pagination.(type) {
+	case entities.OffsetPagination:
+		return md.getBetweenDatesByIDOffset(ctx, marketID, &start, nil, p)
+	case entities.CursorPagination:
+		return md.getBetweenDatesByID(ctx, marketID, &start, nil, p)
+	}
+	return nil, entities.PageInfo{}, errors.New("invalid pagination")
 }
 
-func (md *MarketData) GetToDateByID(ctx context.Context, marketID string, end time.Time, pagination entities.OffsetPagination) ([]entities.MarketData, error) {
-	return md.getBetweenDatesByID(ctx, marketID, nil, &end, pagination)
+func (md *MarketData) GetToDateByID(ctx context.Context, marketID string, end time.Time, pagination entities.Pagination) ([]entities.MarketData, entities.PageInfo, error) {
+	switch p := pagination.(type) {
+	case entities.OffsetPagination:
+		return md.getBetweenDatesByIDOffset(ctx, marketID, nil, &end, p)
+	case entities.CursorPagination:
+		return md.getBetweenDatesByID(ctx, marketID, nil, &end, p)
+	}
+	return nil, entities.PageInfo{}, errors.New("invalid pagination")
 }
 
-func (md *MarketData) getBetweenDatesByID(ctx context.Context, marketID string, start, end *time.Time, pagination entities.OffsetPagination) (results []entities.MarketData, err error) {
+func (md *MarketData) getBetweenDatesByIDOffset(ctx context.Context, marketID string, start, end *time.Time, pagination entities.OffsetPagination) ([]entities.MarketData, entities.PageInfo, error) {
 	defer metrics.StartSQLQuery("MarketData", "getBetweenDatesByID")()
 	market := entities.NewMarketID(marketID)
 
 	selectStatement := `select * from market_data`
+
+	var results []entities.MarketData
+	var err error
 
 	if start != nil && end != nil {
 		query, args := orderAndPaginateQuery(
@@ -141,5 +165,49 @@ func (md *MarketData) getBetweenDatesByID(ctx context.Context, marketID string, 
 		err = pgxscan.Select(ctx, md.Connection, &results, query, args...)
 	}
 
-	return results, err
+	return results, entities.PageInfo{}, err
+}
+
+func (md *MarketData) getBetweenDatesByID(ctx context.Context, marketID string, start, end *time.Time, pagination entities.CursorPagination) ([]entities.MarketData, entities.PageInfo, error) {
+	defer metrics.StartSQLQuery("MarketData", "getBetweenDatesByID")()
+	market := entities.NewMarketID(marketID)
+
+	selectStatement := `select * from market_data`
+	sorting, cmp, cursor := extractPaginationInfo(pagination)
+	args := make([]interface{}, 0)
+
+	var query string
+
+	if start != nil && end != nil {
+		query = fmt.Sprintf(`%s where market = %s and vega_time between %s and %s`, selectStatement,
+			nextBindVar(&args, market),
+			nextBindVar(&args, *start),
+			nextBindVar(&args, *end),
+		)
+	} else if start != nil && end == nil {
+		query = fmt.Sprintf(`%s where market = %s and vega_time >= %s`, selectStatement,
+			nextBindVar(&args, market),
+			nextBindVar(&args, *start))
+	} else if start == nil && end != nil {
+		query = fmt.Sprintf(`%s where market = %s and vega_time <= %s`, selectStatement,
+			nextBindVar(&args, market),
+			nextBindVar(&args, *end))
+	}
+
+	cursorParams := []CursorQueryParameter{
+		NewCursorQueryParameter("synthetic_time", sorting, cmp, cursor),
+	}
+
+	query, args = orderAndPaginateWithCursor(query, pagination, cursorParams, args...)
+	results := make([]entities.MarketData, 0)
+	var pagedData []entities.MarketData
+	var pageInfo entities.PageInfo
+
+	if err := pgxscan.Select(ctx, md.Connection, &results, query, args...); err != nil {
+		return pagedData, pageInfo, err
+	}
+
+	pagedData, pageInfo = entities.PageEntities(results, pagination)
+
+	return pagedData, pageInfo, nil
 }

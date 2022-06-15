@@ -27,7 +27,7 @@ func addTestLedgerEntry(t *testing.T, ledger *sqlstore.Ledger,
 		Type:          "some string",
 	}
 
-	err := ledger.Add(&ledgerEntry)
+	err := ledger.Add(ledgerEntry)
 	require.NoError(t, err)
 	return ledgerEntry
 }
@@ -54,14 +54,14 @@ func TestLedger(t *testing.T) {
 	accountTo := addTestAccount(t, accountStore, party, asset, block)
 	ledgerEntry := addTestLedgerEntry(t, ledgerStore, accountFrom, accountTo, block)
 
-	err = ledgerStore.Flush(ctx)
+	_, err = ledgerStore.Flush(ctx)
 	assert.NoError(t, err)
 
 	// Add it again; we're allowed multiple ledger entries with the same parameters
-	err = ledgerStore.Add(&ledgerEntry)
+	err = ledgerStore.Add(ledgerEntry)
 	assert.NoError(t, err)
 
-	err = ledgerStore.Flush(ctx)
+	_, err = ledgerStore.Flush(ctx)
 	assert.NoError(t, err)
 
 	// Query and check we've got back an asset the same as the one we put in, once we give it an ID

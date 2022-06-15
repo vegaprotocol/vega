@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/data-node/entities"
+	"code.vegaprotocol.io/data-node/logging"
 	"code.vegaprotocol.io/data-node/metrics"
 	"github.com/georgysavva/scany/pgxscan"
 )
@@ -24,7 +25,7 @@ type Orders struct {
 	batcher MapBatcher[entities.OrderKey, entities.Order]
 }
 
-func NewOrders(connectionSource *ConnectionSource) *Orders {
+func NewOrders(connectionSource *ConnectionSource, logger *logging.Logger) *Orders {
 	a := &Orders{
 		ConnectionSource: connectionSource,
 		batcher: NewMapBatcher[entities.OrderKey, entities.Order](
@@ -34,7 +35,7 @@ func NewOrders(connectionSource *ConnectionSource) *Orders {
 	return a
 }
 
-func (os *Orders) Flush(ctx context.Context) error {
+func (os *Orders) Flush(ctx context.Context) ([]entities.Order, error) {
 	defer metrics.StartSQLQuery("Orders", "Flush")()
 	return os.batcher.Flush(ctx, os.Connection)
 }
@@ -139,7 +140,7 @@ func (os *Orders) queryOrders(ctx context.Context, query string, args []interfac
 }
 
 func (os *Orders) queryOrdersWithCursorPagination(ctx context.Context, query string, args []interface{},
-	pagination entities.Pagination,
+	pagination entities.CursorPagination,
 ) ([]entities.Order, entities.PageInfo, error) {
 	var (
 		err      error
@@ -192,7 +193,7 @@ func paginateOrderQuery(query string, args []interface{}, p entities.OffsetPagin
 	return query, args
 }
 
-func (os *Orders) GetByMarketPaged(ctx context.Context, marketIDStr string, p entities.Pagination) ([]entities.Order, entities.PageInfo, error) {
+func (os *Orders) GetByMarketPaged(ctx context.Context, marketIDStr string, p entities.CursorPagination) ([]entities.Order, entities.PageInfo, error) {
 	if marketIDStr == "" {
 		return nil, entities.PageInfo{}, errors.New("marketID is required")
 	}
@@ -205,7 +206,7 @@ func (os *Orders) GetByMarketPaged(ctx context.Context, marketIDStr string, p en
 	return os.queryOrdersWithCursorPagination(ctx, query, []interface{}{marketID}, p)
 }
 
-func (os *Orders) GetByPartyPaged(ctx context.Context, partyIDStr string, p entities.Pagination) ([]entities.Order, entities.PageInfo, error) {
+func (os *Orders) GetByPartyPaged(ctx context.Context, partyIDStr string, p entities.CursorPagination) ([]entities.Order, entities.PageInfo, error) {
 	if partyIDStr == "" {
 		return nil, entities.PageInfo{}, errors.New("partyID is required")
 	}
@@ -218,7 +219,7 @@ func (os *Orders) GetByPartyPaged(ctx context.Context, partyIDStr string, p enti
 	return os.queryOrdersWithCursorPagination(ctx, query, []interface{}{partyID}, p)
 }
 
-func (os *Orders) GetOrderVersionsByIDPaged(ctx context.Context, orderIDStr string, p entities.Pagination) ([]entities.Order, entities.PageInfo, error) {
+func (os *Orders) GetOrderVersionsByIDPaged(ctx context.Context, orderIDStr string, p entities.CursorPagination) ([]entities.Order, entities.PageInfo, error) {
 	if orderIDStr == "" {
 		return nil, entities.PageInfo{}, errors.New("orderID is required")
 	}
@@ -229,7 +230,7 @@ func (os *Orders) GetOrderVersionsByIDPaged(ctx context.Context, orderIDStr stri
 	return os.queryOrdersWithCursorPagination(ctx, query, []interface{}{orderID}, p)
 }
 
-func (os *Orders) GetByPartyAndMarketPaged(ctx context.Context, partyIDStr, marketIDStr string, p entities.Pagination) ([]entities.Order, entities.PageInfo, error) {
+func (os *Orders) GetByPartyAndMarketPaged(ctx context.Context, partyIDStr, marketIDStr string, p entities.CursorPagination) ([]entities.Order, entities.PageInfo, error) {
 	if partyIDStr == "" {
 		return nil, entities.PageInfo{}, errors.New("partyID is required")
 	}

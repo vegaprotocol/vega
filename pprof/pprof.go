@@ -41,6 +41,8 @@ type Config struct {
 	// To just read the current rate, pass rate < 0.
 	// (For n>1 the details of sampling may change.)
 	MutexProfileFraction int `long:"mutex-profile-fraction"`
+	// Write the profiles to disk every WriteEvery interval
+	WriteEvery encoding.Duration `long:"write-every"  description:"write pprof files at this interval; if 0 only write on shutdown"`
 }
 
 // Pprofhandler is handling pprof profile management
@@ -48,6 +50,8 @@ type Pprofhandler struct {
 	Config
 
 	log            *logging.Logger
+	stop           chan struct{}
+	done           chan struct{}
 	memprofilePath string
 	cpuprofilePath string
 }
@@ -61,6 +65,7 @@ func NewDefaultConfig() Config {
 		ProfilesDir:          "/tmp",
 		BlockProfileRate:     0,
 		MutexProfileFraction: 0,
+		WriteEvery:           encoding.Duration{Duration: 15 * time.Minute},
 	}
 }
 
@@ -73,15 +78,11 @@ func New(log *logging.Logger, config Config) (*Pprofhandler, error) {
 	runtime.SetBlockProfileRate(config.BlockProfileRate)
 	runtime.SetMutexProfileFraction(config.MutexProfileFraction)
 
-	t := time.Now()
-	memprofileFile := fmt.Sprintf("%s-%s%s", memprofileName, t.Format("2006-01-02-15-04-05"), profileExt)
-	cpuprofileFile := fmt.Sprintf("%s-%s%s", cpuprofileName, t.Format("2006-01-02-15-04-05"), profileExt)
-
 	p := &Pprofhandler{
-		log:            log,
-		Config:         config,
-		memprofilePath: filepath.Join(config.ProfilesDir, pprofDir, memprofileFile),
-		cpuprofilePath: filepath.Join(config.ProfilesDir, pprofDir, cpuprofileFile),
+		log:    log,
+		Config: config,
+		stop:   make(chan struct{}),
+		done:   make(chan struct{}),
 	}
 
 	// start the pprof http server
@@ -89,14 +90,53 @@ func New(log *logging.Logger, config Config) (*Pprofhandler, error) {
 		p.log.Error("pprof web server closed", logging.Error(http.ListenAndServe(fmt.Sprintf("localhost:%d", config.Port), nil)))
 	}()
 
-	// start cpu and mem profilers
-	if err := fsutil.EnsureDir(filepath.Join(config.ProfilesDir, pprofDir)); err != nil {
-		p.log.Error("Could not create CPU profile file",
-			logging.String("path", p.cpuprofilePath),
+	// make sure profile dir exists
+	profDir := filepath.Join(config.ProfilesDir, pprofDir)
+	if err := fsutil.EnsureDir(profDir); err != nil {
+		p.log.Error("Could not create profile dir",
+			logging.String("path", profDir),
 			logging.Error(err),
 		)
 		return nil, err
 	}
+
+	go p.runProfiling()
+
+	return p, nil
+}
+
+func (p *Pprofhandler) runProfiling() error {
+	defer close(p.done)
+	// If WriteEvery is 0, make a ticker that never ticks
+	tick := make(<-chan time.Time)
+	if p.WriteEvery.Duration > 0 {
+		tick = time.NewTicker(p.WriteEvery.Duration).C
+	}
+
+	for {
+		if err := p.startProfiling(); err != nil {
+			return err
+		}
+
+		select {
+		case <-p.stop:
+			return p.stopProfiling()
+		case <-tick:
+		}
+
+		if err := p.stopProfiling(); err != nil {
+			return err
+		}
+	}
+}
+
+func (p *Pprofhandler) startProfiling() error {
+	t := time.Now()
+	memprofileFile := fmt.Sprintf("%s-%s%s", memprofileName, t.Format("2006-01-02-15-04-05"), profileExt)
+	cpuprofileFile := fmt.Sprintf("%s-%s%s", cpuprofileName, t.Format("2006-01-02-15-04-05"), profileExt)
+
+	p.memprofilePath = filepath.Join(p.ProfilesDir, pprofDir, memprofileFile)
+	p.cpuprofilePath = filepath.Join(p.ProfilesDir, pprofDir, cpuprofileFile)
 
 	profileFile, err := os.Create(p.cpuprofilePath)
 	if err != nil {
@@ -104,11 +144,11 @@ func New(log *logging.Logger, config Config) (*Pprofhandler, error) {
 			logging.String("path", p.cpuprofilePath),
 			logging.Error(err),
 		)
-		return nil, err
+		return err
 	}
 	pprof.StartCPUProfile(profileFile)
 
-	return p, nil
+	return nil
 }
 
 // ReloadConf update the configuration of the pprof package
@@ -130,6 +170,12 @@ func (p *Pprofhandler) ReloadConf(cfg Config) {
 
 // Stop is meant to be use to stop the pprof profile, should be use with defer probably
 func (p *Pprofhandler) Stop() error {
+	close(p.stop)
+	<-p.done
+	return nil
+}
+
+func (p *Pprofhandler) stopProfiling() error {
 	// stop cpu profile once the memory profile is written
 	defer pprof.StopCPUProfile()
 

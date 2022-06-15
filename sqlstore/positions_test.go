@@ -118,7 +118,7 @@ func TestPosition(t *testing.T) {
 		expected := pos4
 		actual, err := ps.GetByMarketAndParty(ctx, market2.ID, party2.ID)
 		require.NoError(t, err)
-		assert.Equal(t, expected, actual)
+		assert.True(t, expected.Equal(actual))
 	})
 
 	t.Run("GetBadMarketAndParty", func(t *testing.T) {

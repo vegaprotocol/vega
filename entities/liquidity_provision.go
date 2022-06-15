@@ -81,8 +81,8 @@ func LiquidityProvisionFromProto(lpProto *vega.LiquidityProvision, vegaTime time
 	return LiquidityProvision{
 		ID:               lpID,
 		PartyID:          partyID,
-		CreatedAt:        time.Unix(0, lpProto.CreatedAt),
-		UpdatedAt:        time.Unix(0, lpProto.UpdatedAt),
+		CreatedAt:        NanosToPostgresTimestamp(lpProto.CreatedAt),
+		UpdatedAt:        NanosToPostgresTimestamp(lpProto.UpdatedAt),
 		MarketID:         marketID,
 		CommitmentAmount: commitmentAmount,
 		Fee:              fee,

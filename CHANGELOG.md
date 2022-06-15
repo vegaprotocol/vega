@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased (0.52.0)
+## Unreleased (0.53.0)
 
 ### 🚨 Breaking changes
 - [](https://github.com/vegaprotocol/data-node/issues/xxx) -
@@ -14,20 +14,46 @@
 ### 🐛 Fixes
 - [](https://github.com/vegaprotocol/data-node/issues/xxx) -
 
+## 0.52.0
+
+### 🛠  Improvements
+- [624](https://github.com/vegaprotocol/data-node/issues/624) - Support subscriptions in new `API`
+- [666](https://github.com/vegaprotocol/data-node/issues/666) - Cache latest market data
+- [564](https://github.com/vegaprotocol/data-node/issues/564) - Add cursor based pagination to market data requests
+- [619](https://github.com/vegaprotocol/data-node/issues/619) - Cache markets
+- [675](https://github.com/vegaprotocol/data-node/issues/675) - Monitoring of subscriber count
+- [618](https://github.com/vegaprotocol/data-node/issues/618) - Fix positions cache
+- [567](https://github.com/vegaprotocol/data-node/issues/567) - Add cursor based pagination to rewards data requests
+
+### 🐛 Fixes
+- [657](https://github.com/vegaprotocol/data-node/issues/657) - Add missing creation field in `ERC20` withdrawal bundle
+- [668](https://github.com/vegaprotocol/data-node/issues/668) - Ensure entity wrappers always hold timestamps to microsecond resolution
+- [662](https://github.com/vegaprotocol/data-node/issues/662) - Fix auction trigger enum lookup
+- [682](https://github.com/vegaprotocol/data-node/issues/682) - Allow multiple checkpoints per block
+
+
 ## 0.51.1
 
 ### 🛠  Improvements
+- [615](https://github.com/vegaprotocol/data-node/issues/615) - Ensure pool size less than maximum number of `postgres` connections
 - [632](https://github.com/vegaprotocol/data-node/issues/632) - Rename method for listing asset bundle
 - [609](https://github.com/vegaprotocol/data-node/issues/609) - Add fields related to network limit for ERC20 asset
 - [609](https://github.com/vegaprotocol/data-node/issues/384) - Migrate node data to V2
+- [613](https://github.com/vegaprotocol/data-node/issues/613) - Option to regularly dump `pprof` data
+- [635](https://github.com/vegaprotocol/data-node/issues/635) - V2 code path returns only nodes that exist in a particular epoch
 - [590](https://github.com/vegaprotocol/data-node/pull/590) - Implement pagination for `Data-Node V2 APIs` for Trades, Parties and Markets
 - [560](https://github.com/vegaprotocol/data-node/issues/560) - Implement pagination for `Data-Node V2 APIs` for Orders
 - [562](https://github.com/vegaprotocol/data-node/issues/560) - Implement pagination for `Data-Node V2 APIs` for Margin Levels
+- [621](https://github.com/vegaprotocol/data-node/issues/621) - Reserve database connection for data ingestion
+- [625](https://github.com/vegaprotocol/data-node/issues/625) - Make socket server buffer size configurable
 - [630](https://github.com/vegaprotocol/data-node/issues/630) - Data retention across all historical data tables
+- [645](https://github.com/vegaprotocol/data-node/issues/645) - Make `rewardType` an `enum` in `GraphQL API`
+- [427](https://github.com/vegaprotocol/data-node/issues/427) - Handle recovery from snapshots
 
 ### 🐛 Fixes
 - [616](https://github.com/vegaprotocol/data-node/pull/616) - Don't return multiple delegations per epoch/party/node
 - [627](https://github.com/vegaprotocol/data-node/issues/627) - User `from_epoch` in update event to determine if node exists
+- [651](https://github.com/vegaprotocol/data-node/issues/651) - Hide the `V2 grpc API` if V2 not enabled
 
 ## 0.51.0
 

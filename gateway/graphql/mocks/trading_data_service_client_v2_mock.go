@@ -376,6 +376,46 @@ func (mr *MockTradingDataServiceClientV2MockRecorder) GetParties(arg0, arg1 inte
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetParties", reflect.TypeOf((*MockTradingDataServiceClientV2)(nil).GetParties), varargs...)
 }
 
+// GetRewardSummaries mocks base method.
+func (m *MockTradingDataServiceClientV2) GetRewardSummaries(arg0 context.Context, arg1 *v2.GetRewardSummariesRequest, arg2 ...grpc.CallOption) (*v2.GetRewardSummariesResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "GetRewardSummaries", varargs...)
+	ret0, _ := ret[0].(*v2.GetRewardSummariesResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetRewardSummaries indicates an expected call of GetRewardSummaries.
+func (mr *MockTradingDataServiceClientV2MockRecorder) GetRewardSummaries(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRewardSummaries", reflect.TypeOf((*MockTradingDataServiceClientV2)(nil).GetRewardSummaries), varargs...)
+}
+
+// GetRewards mocks base method.
+func (m *MockTradingDataServiceClientV2) GetRewards(arg0 context.Context, arg1 *v2.GetRewardsRequest, arg2 ...grpc.CallOption) (*v2.GetRewardsResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "GetRewards", varargs...)
+	ret0, _ := ret[0].(*v2.GetRewardsResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetRewards indicates an expected call of GetRewards.
+func (mr *MockTradingDataServiceClientV2MockRecorder) GetRewards(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRewards", reflect.TypeOf((*MockTradingDataServiceClientV2)(nil).GetRewards), varargs...)
+}
+
 // GetTradesByMarket mocks base method.
 func (m *MockTradingDataServiceClientV2) GetTradesByMarket(arg0 context.Context, arg1 *v2.GetTradesByMarketRequest, arg2 ...grpc.CallOption) (*v2.GetTradesByMarketResponse, error) {
 	m.ctrl.T.Helper()

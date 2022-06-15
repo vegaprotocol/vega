@@ -53,7 +53,7 @@ func VoteFromProto(pv *vega.Vote) (Vote, error) {
 		TotalGovernanceTokenBalance: totalGovernanceTokenBalance,
 		TotalGovernanceTokenWeight:  totalGovernanceTokenWeight,
 		TotalEquityLikeShareWeight:  totalEquityLikeShareWeight,
-		InitialTime:                 time.Unix(0, pv.Timestamp),
+		InitialTime:                 NanosToPostgresTimestamp(pv.Timestamp),
 	}
 
 	return v, nil

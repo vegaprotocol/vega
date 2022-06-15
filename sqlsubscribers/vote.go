@@ -18,18 +18,18 @@ type VoteEvent interface {
 	Value() vega.Vote_Value
 }
 
-type VoteStore interface {
-	Add(context.Context, entities.Vote) error
+type GovernanceService interface {
+	AddVote(context.Context, entities.Vote) error
 }
 
 type Vote struct {
 	subscriber
-	store VoteStore
+	store GovernanceService
 	log   *logging.Logger
 }
 
 func NewVote(
-	store VoteStore,
+	store GovernanceService,
 	log *logging.Logger,
 ) *Vote {
 	vs := &Vote{
@@ -60,5 +60,5 @@ func (vs *Vote) consume(ctx context.Context, event VoteEvent) error {
 		return errors.Wrap(err, "unable to parse vote")
 	}
 
-	return errors.Wrap(vs.store.Add(ctx, vote), "error adding vote:%w")
+	return errors.Wrap(vs.store.AddVote(ctx, vote), "error adding vote:%w")
 }

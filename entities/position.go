@@ -173,3 +173,15 @@ func (p Position) ToRow() []interface{} {
 		p.AverageEntryPrice, p.Loss, p.Adjustment, p.VegaTime,
 	}
 }
+
+func (p Position) Equal(q Position) bool {
+	return p.MarketID == q.MarketID &&
+		p.PartyID == q.PartyID &&
+		p.OpenVolume == q.OpenVolume &&
+		p.RealisedPnl.Equal(q.RealisedPnl) &&
+		q.UnrealisedPnl.Equal(q.UnrealisedPnl) &&
+		q.AverageEntryPrice.Equal(q.AverageEntryPrice) &&
+		q.Loss.Equal(q.Loss) &&
+		q.Adjustment.Equal(q.Adjustment) &&
+		q.VegaTime.Equal(q.VegaTime)
+}

@@ -7,17 +7,17 @@ import (
 	"github.com/jackc/pgx/v4"
 )
 
-type ListBatcher struct {
-	pending     [][]interface{}
+type ListBatcher[T simpleEntity] struct {
+	pending     []T
 	tableName   string
 	columnNames []string
 }
 
-func NewListBatcher(tableName string, columnNames []string) ListBatcher {
-	return ListBatcher{
+func NewListBatcher[T simpleEntity](tableName string, columnNames []string) ListBatcher[T] {
+	return ListBatcher[T]{
 		tableName:   tableName,
 		columnNames: columnNames,
-		pending:     make([][]interface{}, 0, 1000),
+		pending:     make([]T, 0, 1000),
 	}
 }
 
@@ -25,29 +25,34 @@ type simpleEntity interface {
 	ToRow() []interface{}
 }
 
-func (b *ListBatcher) Add(entity simpleEntity) {
-	row := entity.ToRow()
-	b.pending = append(b.pending, row)
+func (b *ListBatcher[T]) Add(entity T) {
+	b.pending = append(b.pending, entity)
 }
 
-func (b *ListBatcher) Flush(ctx context.Context, connection Connection) error {
+func (b *ListBatcher[T]) Flush(ctx context.Context, connection Connection) ([]T, error) {
+	rows := make([][]interface{}, len(b.pending))
+	for i := 0; i < len(b.pending); i++ {
+		rows[i] = b.pending[i].ToRow()
+	}
+
 	copyCount, err := connection.CopyFrom(
 		ctx,
 		pgx.Identifier{b.tableName},
 		b.columnNames,
-		pgx.CopyFromRows(b.pending),
+		pgx.CopyFromRows(rows),
 	)
 	if err != nil {
-		return fmt.Errorf("failed to copy %s entries into database:%w", b.tableName, err)
+		return nil, fmt.Errorf("failed to copy %s entries into database:%w", b.tableName, err)
 	}
 
 	if copyCount != int64(len(b.pending)) {
-		return fmt.Errorf("copied %d %s rows into the database, expected to copy %d",
+		return nil, fmt.Errorf("copied %d %s rows into the database, expected to copy %d",
 			copyCount,
 			b.tableName,
 			len(b.pending))
 	}
 
+	flushed := b.pending
 	b.pending = b.pending[:0]
-	return nil
+	return flushed, nil
 }

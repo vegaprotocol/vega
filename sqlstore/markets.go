@@ -101,7 +101,7 @@ order by id, vega_time desc
 	return markets, err
 }
 
-func (m *Markets) GetAllPaged(ctx context.Context, marketID string, pagination entities.Pagination) ([]entities.Market, entities.PageInfo, error) {
+func (m *Markets) GetAllPaged(ctx context.Context, marketID string, pagination entities.CursorPagination) ([]entities.Market, entities.PageInfo, error) {
 	if marketID != "" {
 		market, err := m.GetByID(ctx, marketID)
 		if err != nil {

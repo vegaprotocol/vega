@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/data-node/entities"
+	"code.vegaprotocol.io/data-node/logging"
 	"code.vegaprotocol.io/data-node/sqlstore"
 	v2 "code.vegaprotocol.io/protos/data-node/api/v2"
 	"code.vegaprotocol.io/vega/types"
@@ -49,8 +50,9 @@ const numTestOrders = 30
 
 func TestOrders(t *testing.T) {
 	defer DeleteEverything()
+	logger := logging.NewTestLogger()
 	ps := sqlstore.NewParties(connectionSource)
-	os := sqlstore.NewOrders(connectionSource)
+	os := sqlstore.NewOrders(connectionSource, logger)
 	bs := sqlstore.NewBlocks(connectionSource)
 	block := addTestBlock(t, bs)
 	block2 := addTestBlock(t, bs)
@@ -409,11 +411,11 @@ func generateTestOrders(t *testing.T, blocks []entities.Block, parties []entitie
 
 func TestOrders_GetLiveOrders(t *testing.T) {
 	defer DeleteEverything()
-
+	logger := logging.NewTestLogger()
 	bs := sqlstore.NewBlocks(connectionSource)
 	ps := sqlstore.NewParties(connectionSource)
 	ms := sqlstore.NewMarkets(connectionSource)
-	os := sqlstore.NewOrders(connectionSource)
+	os := sqlstore.NewOrders(connectionSource, logger)
 
 	t.Logf("test store port: %d", testDBPort)
 
@@ -425,7 +427,7 @@ func TestOrders_GetLiveOrders(t *testing.T) {
 	testOrders := generateTestOrders(t, blocks, parties, markets, orderIDs, os)
 
 	// Make sure we flush the batcher and write the orders to the database
-	err := os.Flush(context.Background())
+	_, err := os.Flush(context.Background())
 	require.NoError(t, err)
 
 	want := append(testOrders[:3], testOrders[4:6]...)
@@ -481,11 +483,12 @@ type orderTestData struct {
 func setupOrderCursorPaginationTests(t *testing.T) (*orderTestStores, func(t *testing.T)) {
 	t.Helper()
 	DeleteEverything()
+	logger := logging.NewTestLogger()
 	stores := &orderTestStores{
 		bs:     sqlstore.NewBlocks(connectionSource),
 		ps:     sqlstore.NewParties(connectionSource),
 		ms:     sqlstore.NewMarkets(connectionSource),
-		os:     sqlstore.NewOrders(connectionSource),
+		os:     sqlstore.NewOrders(connectionSource, logger),
 		config: sqlstore.NewDefaultConfig(),
 	}
 
@@ -771,7 +774,7 @@ func generateTestOrdersForCursorPagination(t *testing.T, stores *orderTestStores
 	}
 
 	// Make sure we flush the batcher and write the orders to the database
-	err := stores.os.Flush(context.Background())
+	_, err := stores.os.Flush(context.Background())
 	require.NoError(t, err, "Could not insert test order data to the test database")
 
 	return orderTestData{
@@ -792,7 +795,7 @@ func testOrdersCursorPaginationByMarketNoCursor(t *testing.T) {
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	defer cancel()
-	pagination, err := entities.PaginationFromProto(&v2.Pagination{})
+	pagination, err := entities.CursorPaginationFromProto(&v2.Pagination{})
 	require.NoError(t, err)
 
 	marketID := testData.markets[0].ID
@@ -816,7 +819,7 @@ func testOrdersCursorPaginationByPartyNoCursor(t *testing.T) {
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	defer cancel()
-	pagination, err := entities.PaginationFromProto(&v2.Pagination{})
+	pagination, err := entities.CursorPaginationFromProto(&v2.Pagination{})
 	require.NoError(t, err)
 
 	partyID := testData.parties[1].ID
@@ -840,7 +843,7 @@ func testOrdersCursorPaginationByOrderIDNoCursor(t *testing.T) {
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	defer cancel()
-	pagination, err := entities.PaginationFromProto(&v2.Pagination{})
+	pagination, err := entities.CursorPaginationFromProto(&v2.Pagination{})
 	require.NoError(t, err)
 
 	orderID := testData.orders[1].ID
@@ -864,7 +867,7 @@ func testOrdersCursorPaginationByMarketAndPartyNoCursor(t *testing.T) {
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	defer cancel()
-	pagination, err := entities.PaginationFromProto(&v2.Pagination{})
+	pagination, err := entities.CursorPaginationFromProto(&v2.Pagination{})
 	require.NoError(t, err)
 
 	partyID := testData.parties[1].ID
@@ -890,7 +893,7 @@ func testOrdersCursorPaginationByMarketFirstCursor(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	defer cancel()
 	first := int32(3)
-	pagination, err := entities.PaginationFromProto(&v2.Pagination{
+	pagination, err := entities.CursorPaginationFromProto(&v2.Pagination{
 		First: &first,
 	})
 	require.NoError(t, err)
@@ -917,7 +920,7 @@ func testOrdersCursorPaginationByPartyFirstCursor(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	defer cancel()
 	first := int32(3)
-	pagination, err := entities.PaginationFromProto(&v2.Pagination{
+	pagination, err := entities.CursorPaginationFromProto(&v2.Pagination{
 		First: &first,
 	})
 	require.NoError(t, err)
@@ -944,7 +947,7 @@ func testOrdersCursorPaginationByOrderIDFirstCursor(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	defer cancel()
 	first := int32(3)
-	pagination, err := entities.PaginationFromProto(&v2.Pagination{
+	pagination, err := entities.CursorPaginationFromProto(&v2.Pagination{
 		First: &first,
 	})
 	require.NoError(t, err)
@@ -971,7 +974,7 @@ func testOrdersCursorPaginationByMarketAndPartyFirstCursor(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	defer cancel()
 	first := int32(2)
-	pagination, err := entities.PaginationFromProto(&v2.Pagination{
+	pagination, err := entities.CursorPaginationFromProto(&v2.Pagination{
 		First: &first,
 	})
 	require.NoError(t, err)
@@ -999,7 +1002,7 @@ func testOrdersCursorPaginationByMarketLastCursor(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	defer cancel()
 	last := int32(3)
-	pagination, err := entities.PaginationFromProto(&v2.Pagination{
+	pagination, err := entities.CursorPaginationFromProto(&v2.Pagination{
 		Last: &last,
 	})
 	require.NoError(t, err)
@@ -1026,7 +1029,7 @@ func testOrdersCursorPaginationByPartyLastCursor(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	defer cancel()
 	last := int32(3)
-	pagination, err := entities.PaginationFromProto(&v2.Pagination{
+	pagination, err := entities.CursorPaginationFromProto(&v2.Pagination{
 		Last: &last,
 	})
 	require.NoError(t, err)
@@ -1053,7 +1056,7 @@ func testOrdersCursorPaginationByOrderIDLastCursor(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	defer cancel()
 	last := int32(3)
-	pagination, err := entities.PaginationFromProto(&v2.Pagination{
+	pagination, err := entities.CursorPaginationFromProto(&v2.Pagination{
 		Last: &last,
 	})
 	require.NoError(t, err)
@@ -1080,7 +1083,7 @@ func testOrdersCursorPaginationByMarketAndPartyLastCursor(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	defer cancel()
 	last := int32(2)
-	pagination, err := entities.PaginationFromProto(&v2.Pagination{
+	pagination, err := entities.CursorPaginationFromProto(&v2.Pagination{
 		Last: &last,
 	})
 	require.NoError(t, err)
@@ -1109,7 +1112,7 @@ func testOrdersCursorPaginationByMarketFirstAndAfterCursor(t *testing.T) {
 	defer cancel()
 	first := int32(3)
 	after := testData.cursors[0].Encode()
-	pagination, err := entities.PaginationFromProto(&v2.Pagination{
+	pagination, err := entities.CursorPaginationFromProto(&v2.Pagination{
 		First: &first,
 		After: &after,
 	})
@@ -1138,7 +1141,7 @@ func testOrdersCursorPaginationByPartyFirstAndAfterCursor(t *testing.T) {
 	defer cancel()
 	first := int32(3)
 	after := testData.cursors[5].Encode()
-	pagination, err := entities.PaginationFromProto(&v2.Pagination{
+	pagination, err := entities.CursorPaginationFromProto(&v2.Pagination{
 		First: &first,
 		After: &after,
 	})
@@ -1167,7 +1170,7 @@ func testOrdersCursorPaginationByOrderIDFirstAndAfterCursor(t *testing.T) {
 	defer cancel()
 	first := int32(3)
 	after := testData.cursors[2].Encode()
-	pagination, err := entities.PaginationFromProto(&v2.Pagination{
+	pagination, err := entities.CursorPaginationFromProto(&v2.Pagination{
 		First: &first,
 		After: &after,
 	})
@@ -1196,7 +1199,7 @@ func testOrdersCursorPaginationByMarketAndPartyFirstAndAfterCursor(t *testing.T)
 	defer cancel()
 	first := int32(1)
 	after := testData.cursors[5].Encode()
-	pagination, err := entities.PaginationFromProto(&v2.Pagination{
+	pagination, err := entities.CursorPaginationFromProto(&v2.Pagination{
 		First: &first,
 		After: &after,
 	})
@@ -1226,7 +1229,7 @@ func testOrdersCursorPaginationByMarketLastAndBeforeCursor(t *testing.T) {
 	defer cancel()
 	last := int32(3)
 	before := testData.cursors[14].Encode()
-	pagination, err := entities.PaginationFromProto(&v2.Pagination{
+	pagination, err := entities.CursorPaginationFromProto(&v2.Pagination{
 		Last:   &last,
 		Before: &before,
 	})
@@ -1255,7 +1258,7 @@ func testOrdersCursorPaginationByPartyLastAndBeforeCursor(t *testing.T) {
 	defer cancel()
 	last := int32(3)
 	before := testData.cursors[12].Encode()
-	pagination, err := entities.PaginationFromProto(&v2.Pagination{
+	pagination, err := entities.CursorPaginationFromProto(&v2.Pagination{
 		Last:   &last,
 		Before: &before,
 	})
@@ -1284,7 +1287,7 @@ func testOrdersCursorPaginationByOrderIDLastAndBeforeCursor(t *testing.T) {
 	defer cancel()
 	last := int32(3)
 	before := testData.cursors[11].Encode()
-	pagination, err := entities.PaginationFromProto(&v2.Pagination{
+	pagination, err := entities.CursorPaginationFromProto(&v2.Pagination{
 		Last:   &last,
 		Before: &before,
 	})
@@ -1313,7 +1316,7 @@ func testOrdersCursorPaginationByMarketAndPartyLastAndBeforeCursor(t *testing.T)
 	defer cancel()
 	last := int32(1)
 	before := testData.cursors[12].Encode()
-	pagination, err := entities.PaginationFromProto(&v2.Pagination{
+	pagination, err := entities.CursorPaginationFromProto(&v2.Pagination{
 		Last:   &last,
 		Before: &before,
 	})

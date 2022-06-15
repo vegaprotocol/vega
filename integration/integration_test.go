@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 	"sort"
 	"strconv"
+	"strings"
 	"syscall"
 	"testing"
 	"time"
@@ -29,7 +30,7 @@ import (
 
 const (
 	LastEpoch       = 2090
-	PlaybackTimeout = 2 * time.Minute
+	PlaybackTimeout = 3 * time.Minute
 )
 
 var (
@@ -122,13 +123,33 @@ func compareResponses(t *testing.T, oldResp, newResp interface{}) {
 	sortWithdrawals := cmpopts.SortSlices(func(a, b Withdrawal) bool { return a.ID < b.ID })
 	sortOrders := cmpopts.SortSlices(func(a, b Order) bool { return a.Id < b.Id })
 	sortNodes := cmpopts.SortSlices(func(a, b Node) bool { return a.Id < b.Id })
+	sortDelegations := cmpopts.SortSlices(func(a, b Delegation) bool { return a.Party.Id < b.Party.Id })
 
 	// The old API has nulls for the 'UpdatedAt' field in positions
 	ignorePositionTimestamps := cmpopts.IgnoreFields(Position{}, "UpdatedAt")
+	truncateOrderNanoseconds := cmp.Transformer("truncateOrderNanoseconds", func(input Order) Order {
+		if input.UpdatedAt == "" {
+			return input
+		}
 
-	diff := cmp.Diff(oldResp, newResp, removeDupVotes(), sortTrades, sortAccounts, sortMarkets,
-		sortProposals, sortNetParams, sortParties, sortDeposits, sortSpecs, sortTransfers,
-		sortWithdrawals, sortOrders, sortNodes, sortPositions, ignorePositionTimestamps)
+		updatedAt, err := time.Parse(time.RFC3339Nano, input.UpdatedAt)
+		if err != nil {
+			t.Logf("could not conver order Update At timestamp: %v", err)
+			return input
+		}
+
+		input.UpdatedAt = updatedAt.Truncate(time.Microsecond).Format(time.RFC3339Nano)
+		return input
+	})
+	normaliseEthereumAddress := cmp.Transformer("normaliseEthereumAddress", func(input Node) Node {
+		input.EthereumAdddress = strings.ToLower(input.EthereumAdddress)
+		return input
+	})
+
+	diff := cmp.Diff(oldResp, newResp, removeDupVotes(), normaliseEthereumAddress, truncateOrderNanoseconds,
+		sortTrades, sortAccounts, sortMarkets, sortProposals, sortNetParams, sortParties, sortDeposits,
+		sortSpecs, sortTransfers, sortWithdrawals, sortOrders, sortNodes, sortPositions, ignorePositionTimestamps,
+		sortDelegations)
 
 	assert.Empty(t, diff)
 }

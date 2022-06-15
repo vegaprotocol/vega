@@ -142,6 +142,8 @@ type Erc20WithdrawalApproval struct {
 	Signatures string `json:"signatures"`
 	// The target address which will receive the funds
 	TargetAddress string `json:"targetAddress"`
+	// Timestamp at which the withdrawal was created
+	Creation string `json:"creation"`
 }
 
 // Specific details for an erc20 withdrawal

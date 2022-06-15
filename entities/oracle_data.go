@@ -50,7 +50,7 @@ func OracleDataFromProto(data *oraclespb.OracleData, vegaTime time.Time) (*Oracl
 		PublicKeys:     pubKeys,
 		Data:           properties,
 		MatchedSpecIds: specIDs,
-		BroadcastAt:    time.Unix(0, data.BroadcastAt),
+		BroadcastAt:    NanosToPostgresTimestamp(data.BroadcastAt),
 		VegaTime:       vegaTime,
 	}, nil
 }

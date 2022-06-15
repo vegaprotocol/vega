@@ -26,5 +26,5 @@ func (p *Party) ToProto() *types.Party {
 }
 
 func (p Party) Cursor() *Cursor {
-	return NewCursor(p.VegaTime.Format(time.RFC3339Nano))
+	return NewCursor(p.VegaTime.In(time.UTC).Format(time.RFC3339Nano))
 }
