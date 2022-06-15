@@ -144,8 +144,14 @@ func (b *sqlStoreBroker) waitForFirstBlock(ctx context.Context, errCh <-chan err
 
 // processBlock processes all events in the current block up to the next time update.  The next time block is returned when processing of the block is done.
 func (b *sqlStoreBroker) processBlock(ctx context.Context, dbContext context.Context, block *entities.Block, eventsCh <-chan events.Event, errCh <-chan error) (*entities.Block, error) {
-
 	metrics.BlockCounterInc()
+
+	blockTimer := blockTimer{}
+	blockTimer.startTimer()
+	defer func() {
+		blockTimer.stopTimer()
+		metrics.AddBlockHandlingTime(blockTimer.duration)
+	}()
 
 	for _, subscriber := range b.subscribers {
 		subscriber.SetVegaTime(block.VegaTime)
@@ -176,6 +182,7 @@ func (b *sqlStoreBroker) processBlock(ctx context.Context, dbContext context.Con
 		default:
 		}
 
+		blockTimer.stopTimer()
 		select {
 		case <-ctx.Done():
 			return nil, ctx.Err()
@@ -183,10 +190,11 @@ func (b *sqlStoreBroker) processBlock(ctx context.Context, dbContext context.Con
 			return nil, err
 
 		case e := <-eventsCh:
+			metrics.EventCounterInc(e.Type().String())
+			blockTimer.startTimer()
 			if e.Type() == events.TimeUpdate {
 
 				timeUpdate := e.(entities.TimeUpdateEvent)
-				metrics.EventCounterInc(timeUpdate.Type().String())
 
 				err = b.flushAllSubscribers(blockCtx)
 				if err != nil {
@@ -236,7 +244,6 @@ func (b *sqlStoreBroker) addBlock(ctx context.Context, block *entities.Block) er
 }
 
 func (b *sqlStoreBroker) handleEvent(ctx context.Context, e events.Event) error {
-	metrics.EventCounterInc(e.Type().String())
 
 	if err := checkChainID(b.chainInfo, e.ChainID()); err != nil {
 		return err
@@ -268,4 +275,21 @@ func (b *sqlStoreBroker) push(ctx context.Context, sub SqlBrokerSubscriber, e ev
 	}
 
 	return nil
+}
+
+type blockTimer struct {
+	duration  time.Duration
+	startTime *time.Time
+}
+
+func (t *blockTimer) startTimer() {
+	now := time.Now()
+	t.startTime = &now
+}
+
+func (t *blockTimer) stopTimer() {
+	if t.startTime != nil {
+		t.duration = t.duration + time.Now().Sub(*t.startTime)
+		t.startTime = nil
+	}
 }
