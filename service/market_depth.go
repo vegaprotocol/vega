@@ -33,7 +33,7 @@ func NewMarketDepth(orderStore OrderStore, logger *logging.Logger) *MarketDepth 
 		marketDepths:   map[string]*entities.MarketDepth{},
 		orderStore:     orderStore,
 		log:            logger,
-		depthObserver:  utils.NewObserver[*types.MarketDepth]("market_depth", logger, 0, 0),
+		depthObserver:  utils.NewObserver[*types.MarketDepth]("market_depth", logger, 100, 100),
 		updateObserver: utils.NewObserver[*types.MarketDepthUpdate]("market_depth_update", logger, 100, 100),
 	}
 }
@@ -104,8 +104,8 @@ func (m *MarketDepth) publishChanges() {
 			PreviousSequenceNumber: md.PreviousSequenceNumber,
 		}
 
-		m.updateObserver.BlockingNotify([]*types.MarketDepthUpdate{marketDepthUpdate})
-		m.depthObserver.BlockingNotify([]*types.MarketDepth{md.ToProto(0)})
+		m.updateObserver.Notify([]*types.MarketDepthUpdate{marketDepthUpdate})
+		m.depthObserver.Notify([]*types.MarketDepth{md.ToProto(0)})
 
 		// Clear the list of changes
 		md.Changes = make([]*entities.PriceLevel, 0, len(md.Changes))
