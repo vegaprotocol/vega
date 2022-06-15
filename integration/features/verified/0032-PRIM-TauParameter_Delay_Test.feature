@@ -38,8 +38,8 @@ Feature: Test when the "market.liquidity.probabilityOfTrading.tau.scaling" is ap
 
     When the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | party0 | ETH/DEC21 | 40000              | 0.001 | buy  | MID              | 2          | 1      | submission |
-      | lp1 | party0 | ETH/DEC21 | 40000              | 0.001 | sell | MID              | 2          | 1      | submission |
+      | lp1 | party0 | ETH/DEC21 | 40000              | 0.001 | buy  | BID              | 2          | 1      | submission |
+      | lp1 | party0 | ETH/DEC21 | 40000              | 0.001 | sell | ASK              | 2          | 1      | submission |
 
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
@@ -61,10 +61,10 @@ Feature: Test when the "market.liquidity.probabilityOfTrading.tau.scaling" is ap
       | side | price | volume |
       | buy  | 900   | 10     |
       | buy  | 990   | 1      |
-      | buy  | 999   | 81     |
+      | buy  | 989   | 85     |
       | sell | 1100  | 10     |
       | sell | 1010  | 1      |
-      | sell | 1001  | 80     |
+      | sell | 1011  | 83     |
     
     When the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
@@ -73,21 +73,20 @@ Feature: Test when the "market.liquidity.probabilityOfTrading.tau.scaling" is ap
 
     And the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 1001       | TRADING_MODE_CONTINUOUS | 1000    | 972       | 1029      | 818          | 40000           | 11            |
+      | 1010       | TRADING_MODE_CONTINUOUS | 1000    | 972       | 1029      | 825          | 40000          | 11            |
 
     And the order book should have the following volumes for market "ETH/DEC21":
       | side | price | volume |
       | buy  | 900   | 10     |
       | buy  | 990   | 1      |
-      | buy  | 999   | 81     |
+      | buy  | 989   | 85     |
       | sell | 1100  | 10     |
-      | sell | 1010  | 1      |
-      | sell | 1001  | 80     |
+      | sell | 1021  | 82     |
       | sell | 1020  | 20     |
   
     And the parties should have the following account balances:
       | party  | asset | market id | margin  | general   |
-      | party0 | ETH   | ETH/DEC21 | 7245     | 999952760 |
+      | party0 | ETH   | ETH/DEC21 | 7389     | 999952611 |
 
     Then the following network parameters are set:
       | name                                             | value |
@@ -103,18 +102,18 @@ Feature: Test when the "market.liquidity.probabilityOfTrading.tau.scaling" is ap
 
     And the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 1001       | TRADING_MODE_CONTINUOUS | 1000    | 973       | 1030      | 892          | 40000           | 12            |
+      | 1020       | TRADING_MODE_CONTINUOUS | 1000    | 982       | 1039      | 909          | 40000          | 12            |
 
     And the parties should have the following account balances:
       | party  | asset | market id | margin  | general   |
-      | party0 | ETH   | ETH/DEC21 | 7357     | 999952655 |
+      | party0 | ETH   | ETH/DEC21 | 7280    | 999952722 |
 
      And the order book should have the following volumes for market "ETH/DEC21":
       | side | price | volume |
       | buy  | 900   | 10     |
       | buy  | 990   | 1      |
-      | buy  | 999   | 81     |
+      | buy  | 989   | 82     |
       | sell | 1100  | 10     |
-      | sell | 1010  | 1      |
-      | sell | 1001  | 80     |
-      | sell | 1020  | 40     |
+      | sell | 1021  | 80     |
+      | sell | 1020  | 39     |
+
