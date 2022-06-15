@@ -184,9 +184,9 @@ func (b *sqlStoreBroker) processBlock(ctx context.Context, dbContext context.Con
 
 		case e := <-eventsCh:
 			if e.Type() == events.TimeUpdate {
+
 				timeUpdate := e.(entities.TimeUpdateEvent)
 				metrics.EventCounterInc(timeUpdate.Type().String())
-				timer := metrics.NewTimeCounter("sql", "sqlbroker", e.Type().String())
 
 				err = b.flushAllSubscribers(blockCtx)
 				if err != nil {
@@ -198,9 +198,7 @@ func (b *sqlStoreBroker) processBlock(ctx context.Context, dbContext context.Con
 					return nil, fmt.Errorf("failed to commit transactional context:%w", err)
 				}
 
-				timer.EventTimeCounterAdd()
 				return entities.BlockFromTimeUpdate(timeUpdate)
-
 			} else {
 				if err = b.handleEvent(blockCtx, e); err != nil {
 					return nil, err
@@ -212,7 +210,10 @@ func (b *sqlStoreBroker) processBlock(ctx context.Context, dbContext context.Con
 
 func (b *sqlStoreBroker) flushAllSubscribers(blockCtx context.Context) error {
 	for _, subscriber := range b.subscribers {
+		subName := reflect.TypeOf(subscriber).Elem().Name()
+		timer := metrics.NewTimeCounter(subName)
 		err := subscriber.Flush(blockCtx)
+		timer.FlushTimeCounterAdd()
 		if err != nil {
 			return fmt.Errorf("failed to flush subscriber:%w", err)
 		}
