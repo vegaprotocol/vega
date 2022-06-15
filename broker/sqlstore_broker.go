@@ -103,13 +103,15 @@ func (b *sqlStoreBroker) waitForFirstBlock(ctx context.Context, errCh <-chan err
 
 	lastProcessedBlock, err := b.blockStore.GetLastBlock(ctx)
 
-	if errors.Is(err, sqlstore.ErrNoLastBlock) {
+	if err == nil {
+		b.log.Infof("waiting for first unprocessed block, last processed block: %v", lastProcessedBlock)
+	} else if errors.Is(err, sqlstore.ErrNoLastBlock) {
 		lastProcessedBlock = entities.Block{
 			VegaTime: time.Time{},
 			Height:   -1,
 			Hash:     nil,
 		}
-	} else if err != nil {
+	} else {
 		return nil, err
 	}
 
@@ -131,6 +133,7 @@ func (b *sqlStoreBroker) waitForFirstBlock(ctx context.Context, errCh <-chan err
 				}
 
 				if timeUpdate.BlockNr() > lastProcessedBlock.Height {
+					b.log.Info("first unprocessed block received, starting block processing")
 					return entities.BlockFromTimeUpdate(timeUpdate)
 				}
 			}
@@ -183,6 +186,7 @@ func (b *sqlStoreBroker) processBlock(ctx context.Context, dbContext context.Con
 			if e.Type() == events.TimeUpdate {
 				timeUpdate := e.(entities.TimeUpdateEvent)
 				metrics.EventCounterInc(timeUpdate.Type().String())
+				timer := metrics.NewTimeCounter("sql", "sqlbroker", e.Type().String())
 
 				err = b.flushAllSubscribers(blockCtx)
 				if err != nil {
@@ -194,6 +198,7 @@ func (b *sqlStoreBroker) processBlock(ctx context.Context, dbContext context.Con
 					return nil, fmt.Errorf("failed to commit transactional context:%w", err)
 				}
 
+				timer.EventTimeCounterAdd()
 				return entities.BlockFromTimeUpdate(timeUpdate)
 
 			} else {
