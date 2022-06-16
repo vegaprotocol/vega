@@ -502,6 +502,7 @@ func (e *Engine) decreaseBalanceAndFireEvent(ctx context.Context, party, nodeID 
 			e.sendDelegatedBalanceEvent(ctx, party, nodeID, epoch, partyState.nodeToAmount[nodeID])
 		}
 		if cleanup && partyState.nodeToAmount[nodeID].IsZero() {
+			e.dss.changedActive = true
 			delete(partyState.nodeToAmount, nodeID)
 		}
 	}

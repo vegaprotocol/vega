@@ -99,7 +99,7 @@ func (e *Engine) GetPotentialShapeOrders(
 		for _, lorder := range loShape {
 			pegged := &types.PeggedOrder{
 				Reference: lorder.Reference,
-				Offset:    lorder.Offset,
+				Offset:    lorder.Offset.Clone(),
 			}
 			order := &supplied.LiquidityOrder{
 				Proportion: uint64(lorder.Proportion),
