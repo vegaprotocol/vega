@@ -32,6 +32,7 @@
 - [682](https://github.com/vegaprotocol/data-node/issues/682) - Allow multiple checkpoints per block
 - [690](https://github.com/vegaprotocol/data-node/issues/690) - Fix deadlock in market data subscription, close subscriptions when data can't be written rather than silently dropping events.
 - [698](https://github.com/vegaprotocol/data-node/issues/698) - Fix bug that was preventing correct translation of reward type in `GraphQL`
+- [697](https://github.com/vegaprotocol/data-node/issues/697) - Fix bug that was causing misreporting of delegations in node queries
 
 ## 0.51.1
 
