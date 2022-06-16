@@ -38,6 +38,7 @@ var (
 	sqlQueryCounter   *prometheus.CounterVec
 	blockCounter      prometheus.Counter
 	blockHandlingTime prometheus.Counter
+	blockHeight       prometheus.Gauge
 
 	orderCounter      *prometheus.CounterVec
 	evtForwardCounter *prometheus.CounterVec
@@ -475,6 +476,22 @@ func setupMetrics() error {
 	blockCounter = bt
 
 	h, err = AddInstrument(
+		Gauge,
+		"block_height",
+		Namespace("vega"),
+		Vectors(),
+		Help("Current block height"),
+	)
+	if err != nil {
+		return err
+	}
+	bh, err := h.Gauge()
+	if err != nil {
+		return err
+	}
+	blockHeight = bh
+
+	h, err = AddInstrument(
 		Counter,
 		"evt_forward_total",
 		Namespace("vega"),
@@ -593,6 +610,13 @@ func EventCounterInc(labelValues ...string) {
 		return
 	}
 	eventCounter.WithLabelValues(labelValues...).Inc()
+}
+
+func SetBlockHeight(height float64) {
+	if blockHeight == nil {
+		return
+	}
+	blockHeight.Set(height)
 }
 
 func SQLQueryCounterInc(labelValues ...string) {

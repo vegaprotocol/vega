@@ -145,6 +145,7 @@ func (b *sqlStoreBroker) waitForFirstBlock(ctx context.Context, errCh <-chan err
 // processBlock processes all events in the current block up to the next time update.  The next time block is returned when processing of the block is done.
 func (b *sqlStoreBroker) processBlock(ctx context.Context, dbContext context.Context, block *entities.Block, eventsCh <-chan events.Event, errCh <-chan error) (*entities.Block, error) {
 	metrics.BlockCounterInc()
+	metrics.SetBlockHeight(float64(block.Height))
 
 	blockTimer := blockTimer{}
 	blockTimer.startTimer()
