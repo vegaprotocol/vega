@@ -31,7 +31,6 @@ type Product interface {
 	Value(markPrice *num.Uint) (*num.Uint, error)
 	GetAsset() string
 	IsTradingTerminated() bool
-	SettlementPrice() (*num.Uint, error)
 	ScaleSettlementPriceToDecimalPlaces(price *num.Uint, dp uint32) (*num.Uint, error)
 	NotifyOnTradingTerminated(listener func(context.Context, bool))
 	NotifyOnSettlementPrice(listener func(context.Context, *num.Uint))

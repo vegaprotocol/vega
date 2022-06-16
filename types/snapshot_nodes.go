@@ -294,6 +294,7 @@ type ExecMarket struct {
 	LongRiskFactor             num.Decimal
 	RiskFactorConsensusReached bool
 	FeeSplitter                *FeeSplitter
+	SettlementPrice            *num.Uint
 }
 
 type PriceMonitor struct {
@@ -2668,6 +2669,12 @@ func ExecMarketFromProto(em *snapshot.Market) *ExecMarket {
 	if len(em.LastMarketValueProxy) > 0 {
 		lastMVP, _ = num.DecimalFromString(em.LastMarketValueProxy)
 	}
+
+	var sp *num.Uint = nil
+	if em.SettlementPrice != "" {
+		sp, _ = num.UintFromString(em.SettlementPrice, 10)
+	}
+
 	ret := ExecMarket{
 		Market:                     MarketFromProto(em.Market),
 		PriceMonitor:               PriceMonitorFromProto(em.PriceMonitor),
@@ -2686,6 +2693,7 @@ func ExecMarketFromProto(em *snapshot.Market) *ExecMarket {
 		LongRiskFactor:             longRF,
 		RiskFactorConsensusReached: em.RiskFactorConsensusReached,
 		FeeSplitter:                FeeSplitterFromProto(em.FeeSplitter),
+		SettlementPrice:            sp,
 	}
 	for _, o := range em.PeggedOrders {
 		or, _ := OrderFromProto(o)
@@ -2699,6 +2707,11 @@ func ExecMarketFromProto(em *snapshot.Market) *ExecMarket {
 }
 
 func (e ExecMarket) IntoProto() *snapshot.Market {
+	sp := ""
+	if e.SettlementPrice != nil {
+		sp = e.SettlementPrice.String()
+	}
+
 	ret := snapshot.Market{
 		Market:                     e.Market.IntoProto(),
 		PriceMonitor:               e.PriceMonitor.IntoProto(),
@@ -2717,6 +2730,7 @@ func (e ExecMarket) IntoProto() *snapshot.Market {
 		RiskFactorLong:             e.LongRiskFactor.String(),
 		RiskFactorConsensusReached: e.RiskFactorConsensusReached,
 		FeeSplitter:                e.FeeSplitter.IntoProto(),
+		SettlementPrice:            sp,
 	}
 	for _, o := range e.PeggedOrders {
 		ret.PeggedOrders = append(ret.PeggedOrders, o.IntoProto())
