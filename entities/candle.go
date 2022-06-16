@@ -44,3 +44,7 @@ func (c *Candle) ToV2CandleProto() *v2.Candle {
 		Volume:     c.Volume,
 	}
 }
+
+func (c Candle) Cursor() *Cursor {
+	return NewCursor(c.PeriodStart.Format(time.RFC3339Nano))
+}

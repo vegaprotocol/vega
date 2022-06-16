@@ -298,3 +298,9 @@ models:
     model: code.vegaprotocol.io/protos/data-node/api/v2.RewardEdge
   RewardsConnection:
     model: code.vegaprotocol.io/protos/data-node/api/v2.RewardsConnection
+  CandleNode:
+    model: code.vegaprotocol.io/protos/data-node/api/v2.Candle
+  CandleEdge:
+    model: code.vegaprotocol.io/protos/data-node/api/v2.CandleEdge
+  CandleDataConnection:
+    model: code.vegaprotocol.io/protos/data-node/api/v2.CandleDataConnection

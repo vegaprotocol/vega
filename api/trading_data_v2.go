@@ -268,7 +268,8 @@ func (t *tradingDataServiceV2) GetNetworkLimits(ctx context.Context, req *v2.Get
 
 // GetCandleData for a given market, time range and interval.  Interval must be a valid postgres interval value
 func (t *tradingDataServiceV2) GetCandleData(ctx context.Context, req *v2.GetCandleDataRequest) (*v2.GetCandleDataResponse, error) {
-	if err := t.checkV2ApiEnabled(); err != nil {
+	var err error
+	if err = t.checkV2ApiEnabled(); err != nil {
 		return nil, err
 	}
 
@@ -279,22 +280,37 @@ func (t *tradingDataServiceV2) GetCandleData(ctx context.Context, req *v2.GetCan
 	from := vegatime.UnixNano(req.FromTimestamp)
 	to := vegatime.UnixNano(req.ToTimestamp)
 
-	pagination := defaultPaginationV2
+	pagination := entities.CursorPagination{}
 	if req.Pagination != nil {
-		pagination = entities.OffsetPaginationFromProto(req.Pagination)
+		pagination, err = entities.CursorPaginationFromProto(req.Pagination)
+		if err != nil {
+			return nil, fmt.Errorf("could not parse cursor pagination information: %w", err)
+		}
 	}
 
-	candles, err := t.candleService.GetCandleDataForTimeSpan(ctx, req.CandleId, &from, &to, pagination)
+	candles, pageInfo, err := t.candleService.GetCandleDataForTimeSpan(ctx, req.CandleId, &from, &to, pagination)
 	if err != nil {
 		return nil, apiError(codes.Internal, ErrCandleServiceGetCandleData, err)
 	}
 
-	protoCandles := make([]*v2.Candle, len(candles))
-	for _, candle := range candles {
-		protoCandles = append(protoCandles, candle.ToV2CandleProto())
+	connection := v2.CandleDataConnection{
+		TotalCount: 0,
+		Edges:      makeCandleDataEdges(candles),
+		PageInfo:   pageInfo.ToProto(),
 	}
 
-	return &v2.GetCandleDataResponse{Candles: protoCandles}, nil
+	return &v2.GetCandleDataResponse{Candles: &connection}, nil
+}
+
+func makeCandleDataEdges(candles []entities.Candle) []*v2.CandleEdge {
+	edges := make([]*v2.CandleEdge, len(candles))
+	for i, candle := range candles {
+		edges[i] = &v2.CandleEdge{
+			Node:   candle.ToV2CandleProto(),
+			Cursor: candle.Cursor().Encode(),
+		}
+	}
+	return edges
 }
 
 // SubscribeToCandleData subscribes to candle updates for a given market and interval.  Interval must be a valid postgres interval value

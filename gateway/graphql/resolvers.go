@@ -90,6 +90,10 @@ func (r *VegaResolverRoot) Candle() CandleResolver {
 	return (*myCandleResolver)(r)
 }
 
+func (r *VegaResolverRoot) CandleNode() CandleNodeResolver {
+	return (*myCandleNodeResolver)(r)
+}
+
 // MarketDepth returns the market depth resolver
 func (r *VegaResolverRoot) MarketDepth() MarketDepthResolver {
 	return (*myMarketDepthResolver)(r)
@@ -2002,6 +2006,24 @@ func (r *myCandleResolver) Interval(ctx context.Context, obj *types.Candle) (Int
 }
 
 // END: Candle Resolver
+
+// BEGIN: CandleNode Resolver
+
+type myCandleNodeResolver VegaResolverRoot
+
+func (m *myCandleNodeResolver) Start(ctx context.Context, obj *v2.Candle) (string, error) {
+	return strconv.FormatInt(obj.Start, 10), nil
+}
+
+func (m *myCandleNodeResolver) LastUpdate(ctx context.Context, obj *v2.Candle) (string, error) {
+	return strconv.FormatInt(obj.LastUpdate, 10), nil
+}
+
+func (m *myCandleNodeResolver) Volume(ctx context.Context, obj *v2.Candle) (string, error) {
+	return strconv.FormatUint(obj.Volume, 10), nil
+}
+
+// END: CandleNode Resolver
 
 // BEGIN: Price Level Resolver
 

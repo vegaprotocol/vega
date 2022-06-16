@@ -270,3 +270,8 @@ func (r *myMarketResolver) RiskFactors(ctx context.Context, obj *types.Market) (
 
 	return rf.RiskFactor, nil
 }
+
+func (r *myMarketResolver) CandlesConnection(ctx context.Context, market *types.Market, sinceRaw string, toRaw *string,
+	interval Interval, pagination *v2.Pagination) (*v2.CandleDataConnection, error) {
+	return handleCandleConnectionRequest(ctx, r.tradingDataClientV2, market, sinceRaw, toRaw, interval, pagination)
+}

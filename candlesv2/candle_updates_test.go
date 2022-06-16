@@ -21,13 +21,14 @@ type testCandleSource struct {
 }
 
 func (t *testCandleSource) GetCandleDataForTimeSpan(ctx context.Context, candleId string, from *time.Time, to *time.Time,
-	p entities.OffsetPagination,
-) ([]entities.Candle, error) {
+	p entities.CursorPagination,
+) ([]entities.Candle, entities.PageInfo, error) {
+	pageInfo := entities.PageInfo{}
 	select {
 	case c := <-t.candles:
-		return c, nil
+		return c, pageInfo, nil
 	default:
-		return nil, nil
+		return nil, pageInfo, nil
 	}
 }
 
