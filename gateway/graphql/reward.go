@@ -2,8 +2,8 @@ package gql
 
 import (
 	"context"
+	"fmt"
 
-	"code.vegaprotocol.io/data-node/gateway/graphql/marshallers"
 	"code.vegaprotocol.io/data-node/vegatime"
 	"code.vegaprotocol.io/protos/vega"
 )
@@ -37,5 +37,10 @@ func (r *rewardResolver) Epoch(ctx context.Context, obj *vega.Reward) (*vega.Epo
 }
 
 func (r *rewardResolver) RewardType(ctx context.Context, obj *vega.Reward) (vega.AccountType, error) {
-	return marshallers.UnmarshalAccountType(ctx, obj.RewardType)
+	accountType, ok := vega.AccountType_value[obj.RewardType]
+	if !ok {
+		return vega.AccountType_ACCOUNT_TYPE_UNSPECIFIED, fmt.Errorf("Unknown account type %v", obj.RewardType)
+	}
+
+	return vega.AccountType(accountType), nil
 }
