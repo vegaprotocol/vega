@@ -1435,7 +1435,19 @@ type Market {
     since: String!
     "Interval of the candles"
     interval: Interval!
-  ): [Candle]
+  ): [Candle] @deprecated(reason: "Use the 'candlesConnection' field instead")
+
+  "Candles on a market, for the 'last' n candles, at 'interval' seconds as specified by params using cursor based pagination"
+  candlesConnection(
+    "RFC3339Nano encoded time to get candles from"
+    since: String!
+    "Optional: RFC3339Nano encoded time to get candles to"
+    to: String
+    "Interval of the candles"
+    interval: Interval!
+    "Pagination information"
+    pagination: Pagination
+  ): CandleDataConnection!
 
   "marketData for the given market"
   data: MarketData
@@ -3354,7 +3366,19 @@ type PaginatedMarket {
     since: String!
     "Interval of the candles"
     interval: Interval!
-  ): [Candle]
+  ): [Candle] @deprecated(reason: "Use the 'candlesConnection' field instead")
+
+  "Candles on a market, for the 'last' n candles, at 'interval' seconds as specified by params using cursor based pagination"
+  candlesConnection(
+    "RFC3339Nano encoded time to get candles from"
+    since: String!
+    "Optional: RFC3339Nano encoded time to get candles to"
+    to: String
+    "Interval of the candles"
+    interval: Interval!
+    "Pagination information"
+    pagination: Pagination
+  ): CandleDataConnection!
 
   "marketData for the given market"
   data: MarketData
@@ -3502,4 +3526,41 @@ type RewardsConnection {
   edges: [RewardEdge]
   "The pagination information"
   pageInfo: PageInfo
+}
+
+type CandleNode {
+  "Unix epoch+nanoseconds for when the candle occurred"
+  start: String!
+
+  "RFC3339Nano formatted date and time for the candle"
+  lastUpdate: String!
+
+  "High price (uint64)"
+  high: String!
+
+  "Low price (uint64)"
+  low: String!
+
+  "Open price (uint64)"
+  open: String!
+
+  "Close price (uint64)"
+  close: String!
+
+  "Volume price (uint64)"
+  volume: String!
+}
+
+type CandleEdge {
+  node: CandleNode!
+  cursor: String!
+}
+
+type CandleDataConnection {
+  "The total number of candles available with this connection"
+  totalCount: Int
+    "The candles"
+    edges: [CandleEdge]
+    "The pagination information"
+    pageInfo: PageInfo
 }

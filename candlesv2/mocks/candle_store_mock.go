@@ -52,12 +52,13 @@ func (mr *MockCandleStoreMockRecorder) CandleExists(arg0, arg1 interface{}) *gom
 }
 
 // GetCandleDataForTimeSpan mocks base method.
-func (m *MockCandleStore) GetCandleDataForTimeSpan(arg0 context.Context, arg1 string, arg2, arg3 *time.Time, arg4 entities.OffsetPagination) ([]entities.Candle, error) {
+func (m *MockCandleStore) GetCandleDataForTimeSpan(arg0 context.Context, arg1 string, arg2, arg3 *time.Time, arg4 entities.CursorPagination) ([]entities.Candle, entities.PageInfo, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetCandleDataForTimeSpan", arg0, arg1, arg2, arg3, arg4)
 	ret0, _ := ret[0].([]entities.Candle)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret1, _ := ret[1].(entities.PageInfo)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
 }
 
 // GetCandleDataForTimeSpan indicates an expected call of GetCandleDataForTimeSpan.

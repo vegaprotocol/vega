@@ -79,6 +79,15 @@ func (p CursorPagination) HasBackward() bool {
 	return p.Backward != nil
 }
 
+func NewCursorPagination(first *int32, after *string, last *int32, before *string) (CursorPagination, error) {
+	return CursorPaginationFromProto(&v2.Pagination{
+		First:  first,
+		After:  after,
+		Last:   last,
+		Before: before,
+	})
+}
+
 func CursorPaginationFromProto(cp *v2.Pagination) (CursorPagination, error) {
 	if cp == nil {
 		return CursorPagination{}, nil
