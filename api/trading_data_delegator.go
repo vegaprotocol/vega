@@ -572,7 +572,7 @@ func (t *tradingDataDelegator) Candles(ctx context.Context,
 			fmt.Errorf("candle does not exist for interval %s and market %s", interval, request.MarketId))
 	}
 
-	candles, err := t.candleServiceV2.GetCandleDataForTimeSpan(ctx, candleId, &from, nil, entities.OffsetPagination{})
+	candles, _, err := t.candleServiceV2.GetCandleDataForTimeSpan(ctx, candleId, &from, nil, entities.CursorPagination{})
 	if err != nil {
 		return nil, apiError(codes.Internal, ErrCandleServiceGetCandleData,
 			fmt.Errorf("failed to get candles for interval:%w", err))

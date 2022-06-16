@@ -12,7 +12,7 @@ import (
 
 type candleSource interface {
 	GetCandleDataForTimeSpan(ctx context.Context, candleId string, from *time.Time, to *time.Time,
-		p entities.OffsetPagination) ([]entities.Candle, error)
+		p entities.CursorPagination) ([]entities.Candle, entities.PageInfo, error)
 }
 
 type subscribeRequest struct {
@@ -126,7 +126,11 @@ func (s *candleUpdates) getCandleUpdates(ctx context.Context, lastCandle *entiti
 	if lastCandle != nil {
 		start := lastCandle.PeriodStart
 		var candles []entities.Candle
-		candles, err = s.candleSource.GetCandleDataForTimeSpan(ctx, s.candleId, &start, nil, entities.OffsetPagination{})
+		candles, _, err = s.candleSource.GetCandleDataForTimeSpan(ctx, s.candleId, &start, nil, entities.CursorPagination{})
+
+		if err != nil {
+			return nil, fmt.Errorf("getting candle updates:%w", err)
+		}
 
 		for _, candle := range candles {
 			if candle.LastUpdateInPeriod.After(lastCandle.LastUpdateInPeriod) {
@@ -134,12 +138,16 @@ func (s *candleUpdates) getCandleUpdates(ctx context.Context, lastCandle *entiti
 			}
 		}
 	} else {
-		pagination := entities.OffsetPagination{Skip: 0, Limit: 1, Descending: true}
-		updates, err = s.candleSource.GetCandleDataForTimeSpan(ctx, s.candleId, nil, nil, pagination)
-	}
+		last := int32(1)
+		pagination, err := entities.NewCursorPagination(nil, nil, &last, nil)
+		if err != nil {
+			return nil, err
+		}
+		updates, _, err = s.candleSource.GetCandleDataForTimeSpan(ctx, s.candleId, nil, nil, pagination)
 
-	if err != nil {
-		return nil, fmt.Errorf("getting candle updates:%w", err)
+		if err != nil {
+			return nil, fmt.Errorf("getting candle updates:%w", err)
+		}
 	}
 
 	return updates, nil

@@ -26,7 +26,7 @@ func TestCandleSubscribe(t *testing.T) {
 	expectedCandle := createCandle(time.Now(), time.Now(), 1, 2, 2, 1, 10)
 
 	store.EXPECT().GetCandleDataForTimeSpan(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
-		Return([]entities.Candle{expectedCandle}, nil).AnyTimes()
+		Return([]entities.Candle{expectedCandle}, entities.PageInfo{}, nil).AnyTimes()
 
 	svc := candlesv2.NewService(context.Background(), logging.NewTestLogger(), candlesv2.NewDefaultConfig(), store)
 
@@ -78,6 +78,6 @@ type testStore struct {
 	candles chan []entities.Candle
 }
 
-func (t *testStore) GetCandleDataForTimeSpan(ctx context.Context, candleId string, from *time.Time, to *time.Time, p entities.OffsetPagination) ([]entities.Candle, error) {
-	return <-t.candles, nil
+func (t *testStore) GetCandleDataForTimeSpan(ctx context.Context, candleId string, from *time.Time, to *time.Time, p entities.CursorPagination) ([]entities.Candle, entities.PageInfo, error) {
+	return <-t.candles, entities.PageInfo{}, nil
 }

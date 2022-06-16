@@ -9,7 +9,7 @@
 - [](https://github.com/vegaprotocol/data-node/issues/xxx) -
 
 ### 🛠  Improvements
-- [](https://github.com/vegaprotocol/data-node/issues/xxx) -
+- [565](https://github.com/vegaprotocol/data-node/issues/565) - Add cursor based pagination for candles data requests
 
 ### 🐛 Fixes
 - [](https://github.com/vegaprotocol/data-node/issues/xxx) -
