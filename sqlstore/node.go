@@ -238,11 +238,11 @@ func (store *Node) GetNodes(ctx context.Context, epochSeq uint64) ([]entities.No
 
 	query := `WITH
 	current_delegations AS (
-		SELECT * FROM delegations
+		SELECT * FROM delegations_current
 		WHERE epoch_id = $1
 	),
 	pending_delegations AS (
-		SELECT * FROM delegations
+		SELECT * FROM delegations_current
 		WHERE epoch_id = $1 + 1
 	),
 
@@ -310,12 +310,12 @@ func (store *Node) GetNodeByID(ctx context.Context, nodeId string, epochSeq uint
 
 	query := `WITH
 	current_delegations AS (
-		SELECT * FROM delegations
+		SELECT * FROM delegations_current
 		WHERE epoch_id = $2
 		AND node_id = $1
 	),
 	pending_delegations AS (
-		SELECT * FROM delegations
+		SELECT * FROM delegations_current
 		WHERE epoch_id = $2 + 1
 		AND node_id = $1
 	),
