@@ -37,6 +37,8 @@ var (
 	sqlQueryTime      *prometheus.CounterVec
 	sqlQueryCounter   *prometheus.CounterVec
 	blockCounter      prometheus.Counter
+	blockHandlingTime prometheus.Counter
+
 	orderCounter      *prometheus.CounterVec
 	evtForwardCounter *prometheus.CounterVec
 	orderGauge        *prometheus.GaugeVec
@@ -442,6 +444,22 @@ func setupMetrics() error {
 
 	h, err = AddInstrument(
 		Counter,
+		"blocks_handling_time_seconds_total",
+		Namespace("vega"),
+		Vectors(),
+		Help("Total time handling blocks"),
+	)
+	if err != nil {
+		return err
+	}
+	bht, err := h.Counter()
+	if err != nil {
+		return err
+	}
+	blockHandlingTime = bht
+
+	h, err = AddInstrument(
+		Counter,
 		"blocks_total",
 		Namespace("vega"),
 		Vectors(),
@@ -553,6 +571,12 @@ func OrderCounterInc(labelValues ...string) {
 		return
 	}
 	orderCounter.WithLabelValues(labelValues...).Inc()
+}
+
+func AddBlockHandlingTime(duration time.Duration) {
+	if blockHandlingTime != nil {
+		blockHandlingTime.Add(duration.Seconds())
+	}
 }
 
 // BlockCounterInc increments the block counter
