@@ -334,7 +334,7 @@ func setupMetrics() error {
 	h, err := AddInstrument(
 		Counter,
 		"engine_seconds_total",
-		Namespace("vega"),
+		Namespace("datanode"),
 		Vectors("market", "engine", "fn"),
 	)
 	if err != nil {
@@ -349,7 +349,7 @@ func setupMetrics() error {
 	h, err = AddInstrument(
 		Counter,
 		"flush_handling_seconds_total",
-		Namespace("vega"),
+		Namespace("datanode"),
 		Vectors("subscriber"),
 	)
 	if err != nil {
@@ -365,7 +365,7 @@ func setupMetrics() error {
 	h, err = AddInstrument(
 		Counter,
 		"event_handling_seconds_total",
-		Namespace("vega"),
+		Namespace("datanode"),
 		Vectors("type", "subscriber", "event"),
 	)
 	if err != nil {
@@ -381,7 +381,7 @@ func setupMetrics() error {
 	h, err = AddInstrument(
 		Counter,
 		"event_count_total",
-		Namespace("vega"),
+		Namespace("datanode"),
 		Vectors("event"),
 	)
 	if err != nil {
@@ -397,7 +397,7 @@ func setupMetrics() error {
 	h, err = AddInstrument(
 		Counter,
 		"sql_query_seconds_total",
-		Namespace("vega"),
+		Namespace("datanode"),
 		Vectors("store", "query"),
 	)
 	if err != nil {
@@ -413,7 +413,7 @@ func setupMetrics() error {
 	h, err = AddInstrument(
 		Counter,
 		"sql_query_count",
-		Namespace("vega"),
+		Namespace("datanode"),
 		Vectors("store", "query"),
 	)
 	if err != nil {
@@ -429,7 +429,7 @@ func setupMetrics() error {
 	h, err = AddInstrument(
 		Counter,
 		"orders_total",
-		Namespace("vega"),
+		Namespace("datanode"),
 		Vectors("market", "valid"),
 		Help("Number of orders processed"),
 	)
@@ -445,7 +445,7 @@ func setupMetrics() error {
 	h, err = AddInstrument(
 		Counter,
 		"blocks_handling_time_seconds_total",
-		Namespace("vega"),
+		Namespace("datanode"),
 		Vectors(),
 		Help("Total time handling blocks"),
 	)
@@ -461,7 +461,7 @@ func setupMetrics() error {
 	h, err = AddInstrument(
 		Counter,
 		"blocks_total",
-		Namespace("vega"),
+		Namespace("datanode"),
 		Vectors(),
 		Help("Number of blocks processed"),
 	)
@@ -477,7 +477,7 @@ func setupMetrics() error {
 	h, err = AddInstrument(
 		Counter,
 		"evt_forward_total",
-		Namespace("vega"),
+		Namespace("datanode"),
 		Vectors("func", "res"),
 		Help("Number of call made forward/ack event from ethereum"),
 	)
@@ -494,7 +494,7 @@ func setupMetrics() error {
 	h, err = AddInstrument(
 		Gauge,
 		"orders",
-		Namespace("vega"),
+		Namespace("datanode"),
 		Vectors("market"),
 		Help("Number of orders currently being processed"),
 	)
@@ -517,7 +517,7 @@ func setupMetrics() error {
 	if h, err = AddInstrument(
 		Gauge,
 		"active_subscriptions",
-		Namespace("vega"),
+		Namespace("datanode"),
 		Vectors("apiType", "subscribedToType"),
 		Help("Number of active subscriptions"),
 	); err != nil {
@@ -532,7 +532,7 @@ func setupMetrics() error {
 	h, err = AddInstrument(
 		Counter,
 		"request_count_total",
-		Namespace("vega"),
+		Namespace("datanode"),
 		Vectors("apiType", "requestType"),
 		Help("Count of API requests"),
 	)
@@ -549,7 +549,7 @@ func setupMetrics() error {
 	h, err = AddInstrument(
 		Counter,
 		"request_time_total",
-		Namespace("vega"),
+		Namespace("datanode"),
 		Vectors("apiType", "requestType"),
 		Help("Total time spent in each API request"),
 	)
