@@ -627,7 +627,7 @@ func (m *Market) CanLeaveOpeningAuction() bool {
 	boundFactorsInitialised := m.pMonitor.IsBoundFactorsInitialised()
 	potInitialised := m.liquidity.IsPoTInitialised()
 	riskFactorsInitialised := m.risk.IsRiskFactorInitialised()
-	canLeave := boundFactorsInitialised && potInitialised && riskFactorsInitialised && m.getSuppliedStake().GT(num.Zero())
+	canLeave := boundFactorsInitialised && potInitialised && riskFactorsInitialised
 	if !canLeave {
 		m.log.Info("Cannot leave opening auction", logging.String("market", m.mkt.ID), logging.Bool("bound-factors-initialised", boundFactorsInitialised), logging.Bool("pot-initialised", potInitialised), logging.Bool("risk-factors-initialised", riskFactorsInitialised))
 	}
@@ -3089,6 +3089,7 @@ func (m *Market) checkLiquidity(ctx context.Context, trades []*types.Trade, pers
 	// provided stake to the bond accounts so we don't trigger liquidity auction for no reason
 	m.checkBondBalance(ctx)
 	var vBid, vAsk uint64
+	// if we're not in auction, or we are checking liquidity when leaving opening auction, or we have best bid/ask volume
 	if !m.as.InAuction() || m.matching.BidAndAskPresentAfterAuction() {
 		_, vBid, _ = m.getBestStaticBidPriceAndVolume()
 		_, vAsk, _ = m.getBestStaticAskPriceAndVolume()

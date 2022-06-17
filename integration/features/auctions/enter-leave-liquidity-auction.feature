@@ -139,10 +139,25 @@ Feature: Ensure we can enter and leave liquidity auction
       | aux2      | ETH/DEC19 | buy  | 1      | 100   | 0                | TYPE_LIMIT | TIF_GTC | oa-b-2    |
       | auxiliary | ETH/DEC19 | sell | 1      | 100   | 0                | TYPE_LIMIT | TIF_GTC | oa-s-2    |
     Then the opening auction period ends for market "ETH/DEC19"
-    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
+    And the trading mode should be "TRADING_MODE_OPENING_AUCTION" for the market "ETH/DEC19"
     And the market data for the market "ETH/DEC19" should be:
-      | trading mode            | supplied stake | target stake |
-      | TRADING_MODE_CONTINUOUS | 1              | 11           |
+      | trading mode                 | extension trigger         | supplied stake | target stake |
+      | TRADING_MODE_OPENING_AUCTION | AUCTION_TRIGGER_LIQUIDITY | 1              | 11           |
+
+    # Amend LP, set the commitment amount to be enough to leave opening auction
+    When the parties submit the following liquidity provision:
+      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type   |
+      | lp1 | party1 | ETH/DEC19 | 30000             | 0.1 | buy  | BID              | 50         | 10     | amendment |
+      | lp1 | party1 | ETH/DEC19 | 30000             | 0.1 | sell | ASK              | 50         | 10     | amendment |
+    Then the market data for the market "ETH/DEC19" should be:
+      | trading mode                 | supplied stake | target stake |
+      | TRADING_MODE_OPENING_AUCTION | 30000          | 11           |
+
+    # after updating the LP, we now can leave opening auction
+    When the network moves ahead "3" blocks
+    Then the market data for the market "ETH/DEC19" should be:
+      | mark price | trading mode            | supplied stake | target stake |
+      | 100        | TRADING_MODE_CONTINUOUS | 30000          | 11           |
 
 # add a few pegged orders now
     Then the parties place the following pegged orders:
