@@ -28,6 +28,7 @@ var defaultPaginationV2 = entities.OffsetPagination{
 type tradingDataServiceV2 struct {
 	v2.UnimplementedTradingDataServiceServer
 	v2ApiEnabled         bool
+	config               Config
 	log                  *logging.Logger
 	orderService         *service.Order
 	networkLimitsService *service.NetworkLimits
@@ -247,6 +248,30 @@ func (t *tradingDataServiceV2) getMarketDataHistoryToDateByID(ctx context.Contex
 	}
 
 	return parseMarketDataResults(results)
+}
+
+// MarketsDataSubscribe opens a subscription to market data provided by the markets service.
+func (t *tradingDataServiceV2) MarketsDataSubscribe(req *v2.MarketsDataSubscribeRequest,
+	srv v2.TradingDataService_MarketsDataSubscribeServer,
+) error {
+	if err := t.checkV2ApiEnabled(); err != nil {
+		return apiError(codes.Unavailable, err)
+	}
+
+	// Wrap context from the request into cancellable. We can close internal chan on error.
+	ctx, cancel := context.WithCancel(srv.Context())
+	defer cancel()
+
+	ch, ref := t.marketDataService.ObserveMarketData(ctx, t.config.StreamRetries, req.MarketId)
+	return subscriptionHelper[v2.MarketsDataSubscribeResponse](
+		ctx, "MarketsData", ch, ref, req, srv, t.log, buildMarketsDataResponse,
+	)
+}
+
+func buildMarketsDataResponse(protoMds []*vega.MarketData) *v2.MarketsDataSubscribeResponse {
+	return &v2.MarketsDataSubscribeResponse{
+		MarketData: protoMds,
+	}
 }
 
 func (t *tradingDataServiceV2) GetNetworkLimits(ctx context.Context, req *v2.GetNetworkLimitsRequest) (*v2.GetNetworkLimitsResponse, error) {

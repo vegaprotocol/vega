@@ -2250,6 +2250,42 @@ func (r *mySubscriptionResolver) Margins(ctx context.Context, partyID string, ma
 	return ch, nil
 }
 
+func (r *mySubscriptionResolver) MarketsData(ctx context.Context, marketID *string) (<-chan []*types.MarketData, error) {
+	var mktid string
+	if marketID != nil {
+		mktid = *marketID
+	}
+	req := &v2.MarketsDataSubscribeRequest{
+		MarketId: mktid,
+	}
+	stream, err := r.tradingDataClientV2.MarketsDataSubscribe(ctx, req)
+	if err != nil {
+		return nil, customErrorFromStatus(err)
+	}
+
+	ch := make(chan []*types.MarketData)
+	go func() {
+		defer func() {
+			stream.CloseSend()
+			close(ch)
+		}()
+		for {
+			m, err := stream.Recv()
+			if err == io.EOF {
+				r.log.Error("marketdata: stream closed by server", logging.Error(err))
+				break
+			}
+			if err != nil {
+				r.log.Error("marketdata: stream closed", logging.Error(err))
+				break
+			}
+			ch <- m.MarketData
+		}
+	}()
+
+	return ch, nil
+}
+
 func (r *mySubscriptionResolver) MarketData(ctx context.Context, marketID *string) (<-chan *types.MarketData, error) {
 	var mktid string
 	if marketID != nil {

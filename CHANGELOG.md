@@ -21,6 +21,7 @@
 - [666](https://github.com/vegaprotocol/data-node/issues/666) - Cache latest market data
 - [564](https://github.com/vegaprotocol/data-node/issues/564) - Add cursor based pagination to market data requests
 - [619](https://github.com/vegaprotocol/data-node/issues/619) - Cache markets
+- [439](https://github.com/vegaprotocol/data-node/issues/439) - Add new subscription endpoint for batched market data updates
 - [675](https://github.com/vegaprotocol/data-node/issues/675) - Monitoring of subscriber count
 - [618](https://github.com/vegaprotocol/data-node/issues/618) - Fix positions cache
 - [567](https://github.com/vegaprotocol/data-node/issues/567) - Add cursor based pagination to rewards data requests

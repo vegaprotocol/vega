@@ -1107,6 +1107,7 @@ type ComplexityRoot struct {
 		MarketData        func(childComplexity int, marketID *string) int
 		MarketDepth       func(childComplexity int, marketID string) int
 		MarketDepthUpdate func(childComplexity int, marketID string) int
+		MarketsData       func(childComplexity int, marketID *string) int
 		Orders            func(childComplexity int, marketID *string, partyID *string) int
 		Positions         func(childComplexity int, partyID *string, marketID *string) int
 		Proposals         func(childComplexity int, partyID *string) int
@@ -1724,6 +1725,7 @@ type SubscriptionResolver interface {
 	MarketDepthUpdate(ctx context.Context, marketID string) (<-chan *vega.MarketDepthUpdate, error)
 	Accounts(ctx context.Context, marketID *string, partyID *string, asset *string, typeArg *vega.AccountType) (<-chan *vega.Account, error)
 	MarketData(ctx context.Context, marketID *string) (<-chan *vega.MarketData, error)
+	MarketsData(ctx context.Context, marketID *string) (<-chan []*vega.MarketData, error)
 	Margins(ctx context.Context, partyID string, marketID *string) (<-chan *vega.MarginLevels, error)
 	Proposals(ctx context.Context, partyID *string) (<-chan *vega.GovernanceData, error)
 	Votes(ctx context.Context, proposalID *string, partyID *string) (<-chan *ProposalVote, error)
@@ -6718,6 +6720,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Subscription.MarketDepthUpdate(childComplexity, args["marketId"].(string)), true
 
+	case "Subscription.marketsData":
+		if e.complexity.Subscription.MarketsData == nil {
+			break
+		}
+
+		args, err := ec.field_Subscription_marketsData_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Subscription.MarketsData(childComplexity, args["marketId"].(*string)), true
+
 	case "Subscription.orders":
 		if e.complexity.Subscription.Orders == nil {
 			break
@@ -7502,6 +7516,12 @@ type Subscription {
     "id of the market we want to subscribe to the market data changes"
     marketId: ID
   ): MarketData!
+
+  "Subscribe to the mark price changes, but get multiple updates at once"
+  marketsData(
+    "id of the market we want to subscribe to the market data changes"
+    marketId: ID
+  ): [MarketData!]!
 
   "Subscribe to the margin changes"
   margins(
@@ -13117,6 +13137,21 @@ func (ec *executionContext) field_Subscription_marketDepth_args(ctx context.Cont
 	if tmp, ok := rawArgs["marketId"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("marketId"))
 		arg0, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["marketId"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Subscription_marketsData_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *string
+	if tmp, ok := rawArgs["marketId"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("marketId"))
+		arg0, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -35866,6 +35901,58 @@ func (ec *executionContext) _Subscription_marketData(ctx context.Context, field 
 	}
 }
 
+func (ec *executionContext) _Subscription_marketsData(ctx context.Context, field graphql.CollectedField) (ret func() graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = nil
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Subscription",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Subscription_marketsData_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return nil
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Subscription().MarketsData(rctx, args["marketId"].(*string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return nil
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return nil
+	}
+	return func() graphql.Marshaler {
+		res, ok := <-resTmp.(<-chan []*vega.MarketData)
+		if !ok {
+			return nil
+		}
+		return graphql.WriterFunc(func(w io.Writer) {
+			w.Write([]byte{'{'})
+			graphql.MarshalString(field.Alias).MarshalGQL(w)
+			w.Write([]byte{':'})
+			ec.marshalNMarketData2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐMarketDataᚄ(ctx, field.Selections, res).MarshalGQL(w)
+			w.Write([]byte{'}'})
+		})
+	}
+}
+
 func (ec *executionContext) _Subscription_margins(ctx context.Context, field graphql.CollectedField) (ret func() graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -52074,6 +52161,8 @@ func (ec *executionContext) _Subscription(ctx context.Context, sel ast.Selection
 		return ec._Subscription_accounts(ctx, fields[0])
 	case "marketData":
 		return ec._Subscription_marketData(ctx, fields[0])
+	case "marketsData":
+		return ec._Subscription_marketsData(ctx, fields[0])
 	case "margins":
 		return ec._Subscription_margins(ctx, fields[0])
 	case "proposals":
@@ -54857,6 +54946,50 @@ func (ec *executionContext) marshalNMarketConnection2ᚖcodeᚗvegaprotocolᚗio
 
 func (ec *executionContext) marshalNMarketData2codeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐMarketData(ctx context.Context, sel ast.SelectionSet, v vega.MarketData) graphql.Marshaler {
 	return ec._MarketData(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNMarketData2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐMarketDataᚄ(ctx context.Context, sel ast.SelectionSet, v []*vega.MarketData) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNMarketData2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐMarketData(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
 }
 
 func (ec *executionContext) marshalNMarketData2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐMarketData(ctx context.Context, sel ast.SelectionSet, v *vega.MarketData) graphql.Marshaler {

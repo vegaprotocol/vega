@@ -77,6 +77,12 @@ type Subscription {
     marketId: ID
   ): MarketData!
 
+  "Subscribe to the mark price changes, but get multiple updates at once"
+  marketsData(
+    "id of the market we want to subscribe to the market data changes"
+    marketId: ID
+  ): [MarketData!]!
+
   "Subscribe to the margin changes"
   margins(
     "id of the party we want to subscribe for margin updates"
