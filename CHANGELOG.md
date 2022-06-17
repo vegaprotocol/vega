@@ -12,7 +12,7 @@
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 ### 🐛 Fixes
-- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+- [5476](https://github.com/vegaprotocol/vega/issues/5476) - Include settlement price in snapshot
 
 ## 0.52.0
 

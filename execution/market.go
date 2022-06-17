@@ -257,6 +257,8 @@ type Market struct {
 	marketActivityTracker *MarketActivityTracker
 	positionFactor        num.Decimal // 10^pdp
 	assetDP               uint32
+
+	settlementPriceInMarket *num.Uint
 }
 
 // SetMarketID assigns a deterministic pseudo-random ID to a Market.
@@ -3133,33 +3135,34 @@ func (m *Market) tradingTerminated(ctx context.Context, tt bool) {
 	m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
 	m.stateChanged = true
 
-	settlementPrice, err := m.tradableInstrument.Instrument.Product.SettlementPrice()
-	if err != nil {
+	if m.settlementPriceInMarket == nil {
 		m.log.Debug("no settlement price", logging.MarketID(m.GetID()))
 		return
 	}
-	m.settlementPriceWithLock(ctx, settlementPrice)
+	m.settlementPriceWithLock(ctx)
 }
 
 func (m *Market) settlementPrice(ctx context.Context, settlementPrice *num.Uint) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
-	m.settlementPriceWithLock(ctx, settlementPrice)
+	m.stateChanged = true
+	m.settlementPriceInMarket = settlementPrice
+	m.settlementPriceWithLock(ctx)
 }
 
 // NB this musy be called with the lock already acquired.
-func (m *Market) settlementPriceWithLock(ctx context.Context, settlementPrice *num.Uint) {
+func (m *Market) settlementPriceWithLock(ctx context.Context) {
 	if m.closed {
 		return
 	}
-	if m.mkt.State == types.MarketStateTradingTerminated && settlementPrice != nil {
+	if m.mkt.State == types.MarketStateTradingTerminated && m.settlementPriceInMarket != nil {
 		err := m.closeMarket(ctx, m.currentTime)
 		if err != nil {
 			m.log.Error("could not close market", logging.Error(err))
 		}
 		m.closed = m.mkt.State == types.MarketStateSettled
-		settlementPriceInAsset, err := m.tradableInstrument.Instrument.Product.ScaleSettlementPriceToDecimalPlaces(settlementPrice, m.assetDP)
+		settlementPriceInAsset, err := m.tradableInstrument.Instrument.Product.ScaleSettlementPriceToDecimalPlaces(m.settlementPriceInMarket, m.assetDP)
 		if err == nil {
 			m.markPrice = settlementPriceInAsset.Clone()
 

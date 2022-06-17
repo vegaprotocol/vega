@@ -75,10 +75,6 @@ func (f *Future) NotifyOnTradingTerminated(listener func(context.Context, bool))
 	f.tradingTerminationListener = listener
 }
 
-func (f *Future) SettlementPrice() (*num.Uint, error) {
-	return f.oracle.data.SettlementPrice()
-}
-
 func (f *Future) ScaleSettlementPriceToDecimalPlaces(price *num.Uint, dp uint32) (*num.Uint, error) {
 	// scale to asset decimals by multiplying by 10^(assetDP - oracleDP)
 	// if assetDP > oracleDP - this scales up the decimals of settlement price
