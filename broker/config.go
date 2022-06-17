@@ -39,7 +39,7 @@ func NewDefaultConfig() Config {
 			SendChannelBufferSize: 1000,
 		},
 		UseEventFile:           false,
-		PanicOnError:           true,
+		PanicOnError:           false,
 		BlockProcessingTimeout: encoding.Duration{Duration: 30 * time.Second},
 	}
 }

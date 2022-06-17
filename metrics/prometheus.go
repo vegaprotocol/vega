@@ -40,9 +40,7 @@ var (
 	blockHandlingTime prometheus.Counter
 	blockHeight       prometheus.Gauge
 
-	orderCounter      *prometheus.CounterVec
-	evtForwardCounter *prometheus.CounterVec
-	orderGauge        *prometheus.GaugeVec
+	publishedEventsCounter *prometheus.CounterVec
 
 	// Subscription gauge for each type
 	subscriptionGauge *prometheus.GaugeVec
@@ -378,6 +376,21 @@ func setupMetrics() error {
 	}
 	eventHandlingTime = eht
 
+	h, err = AddInstrument(
+		Counter,
+		"published_event_count_total",
+		Namespace("datanode"),
+		Vectors("event"),
+	)
+	if err != nil {
+		return err
+	}
+	sec, err := h.CounterVec()
+	if err != nil {
+		return err
+	}
+	publishedEventsCounter = sec
+
 	//eventCount
 	h, err = AddInstrument(
 		Counter,
@@ -426,23 +439,6 @@ func setupMetrics() error {
 	}
 	sqlQueryCounter = qc
 
-	// order counter
-	h, err = AddInstrument(
-		Counter,
-		"orders_total",
-		Namespace("datanode"),
-		Vectors("market", "valid"),
-		Help("Number of orders processed"),
-	)
-	if err != nil {
-		return err
-	}
-	ot, err := h.CounterVec()
-	if err != nil {
-		return err
-	}
-	orderCounter = ot
-
 	h, err = AddInstrument(
 		Counter,
 		"blocks_handling_time_seconds_total",
@@ -490,42 +486,6 @@ func setupMetrics() error {
 		return err
 	}
 	blockHeight = bh
-
-	h, err = AddInstrument(
-		Counter,
-		"evt_forward_total",
-		Namespace("datanode"),
-		Vectors("func", "res"),
-		Help("Number of call made forward/ack event from ethereum"),
-	)
-	if err != nil {
-		return err
-	}
-	evtFwd, err := h.CounterVec()
-	if err != nil {
-		return err
-	}
-	evtForwardCounter = evtFwd
-
-	// now add the orders gauge
-	h, err = AddInstrument(
-		Gauge,
-		"orders",
-		Namespace("datanode"),
-		Vectors("market"),
-		Help("Number of orders currently being processed"),
-	)
-	if err != nil {
-		return err
-	}
-	g, err := h.GaugeVec()
-	if err != nil {
-		return err
-	}
-	orderGauge = g
-	// example usage of this simple gauge:
-	// e.orderGauge.WithLabelValues(mkt.Name).Add(float64(len(orders)))
-	// e.orderGauge.WithLabelValues(mkt.Name).Sub(float64(len(completedOrders)))
 
 	//
 	// API usage metrics start here
@@ -582,21 +542,12 @@ func setupMetrics() error {
 	return nil
 }
 
-// OrderCounterInc increments the order counter
-func OrderCounterInc(labelValues ...string) {
-	if orderCounter == nil {
-		return
-	}
-	orderCounter.WithLabelValues(labelValues...).Inc()
-}
-
 func AddBlockHandlingTime(duration time.Duration) {
 	if blockHandlingTime != nil {
 		blockHandlingTime.Add(duration.Seconds())
 	}
 }
 
-// BlockCounterInc increments the block counter
 func BlockCounterInc(labelValues ...string) {
 	if blockCounter == nil {
 		return
@@ -604,12 +555,19 @@ func BlockCounterInc(labelValues ...string) {
 	blockCounter.Inc()
 }
 
-// BlockCounterInc increments the block counter
 func EventCounterInc(labelValues ...string) {
 	if eventCounter == nil {
 		return
 	}
 	eventCounter.WithLabelValues(labelValues...).Inc()
+}
+
+func PublishedEventsAdd(event string, eventCount float64) {
+	if publishedEventsCounter == nil {
+		return
+	}
+
+	publishedEventsCounter.WithLabelValues(event).Add(eventCount)
 }
 
 func SetBlockHeight(height float64) {
@@ -619,29 +577,6 @@ func SetBlockHeight(height float64) {
 	blockHeight.Set(height)
 }
 
-func SQLQueryCounterInc(labelValues ...string) {
-	if sqlQueryCounter == nil {
-		return
-	}
-	sqlQueryCounter.WithLabelValues(labelValues...).Inc()
-}
-
-// EvtForwardInc increments the evt forward counter
-func EvtForwardInc(labelValues ...string) {
-	if evtForwardCounter == nil {
-		return
-	}
-	evtForwardCounter.WithLabelValues(labelValues...).Inc()
-}
-
-// OrderGaugeAdd increment the order gauge
-func OrderGaugeAdd(n int, labelValues ...string) {
-	if orderGauge == nil {
-		return
-	}
-	orderGauge.WithLabelValues(labelValues...).Add(float64(n))
-}
-
 // APIRequestAndTimeREST updates the metrics for REST API calls
 func APIRequestAndTimeREST(request string, time float64) {
 	if apiRequestCallCounter == nil || apiRequestTimeCounter == nil {
@@ -649,16 +584,6 @@ func APIRequestAndTimeREST(request string, time float64) {
 	}
 	apiRequestCallCounter.WithLabelValues("REST", request).Inc()
 	apiRequestTimeCounter.WithLabelValues("REST", request).Add(time)
-}
-
-// APIRequestAndTimeGRPC updates the metrics for GRPC API calls
-func APIRequestAndTimeGRPC(request string, startTime time.Time) {
-	if apiRequestCallCounter == nil || apiRequestTimeCounter == nil {
-		return
-	}
-	apiRequestCallCounter.WithLabelValues("GRPC", request).Inc()
-	duration := time.Since(startTime).Seconds()
-	apiRequestTimeCounter.WithLabelValues("GRPC", request).Add(duration)
 }
 
 // APIRequestAndTimeGraphQL updates the metrics for GraphQL API calls
