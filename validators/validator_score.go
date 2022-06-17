@@ -212,7 +212,10 @@ func getMultisigScore(log *logging.Logger, rawScores map[string]num.Decimal, per
 					res[vs.ID] = decimalOne
 				}
 			}
+			continue
 		}
+		// everyone else is a 1
+		res[vs.ID] = decimalOne
 	}
 	for k := range rawScores {
 		if _, ok := res[k]; !ok {
