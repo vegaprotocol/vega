@@ -478,7 +478,7 @@ func setupMetrics() error {
 	h, err = AddInstrument(
 		Gauge,
 		"block_height",
-		Namespace("vega"),
+		Namespace("datanode"),
 		Vectors(),
 		Help("Current block height"),
 	)
