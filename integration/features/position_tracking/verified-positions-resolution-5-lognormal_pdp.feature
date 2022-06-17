@@ -27,20 +27,26 @@ Feature: Position resolution case 5 lognormal risk model
 
 # setup accounts
      Given the parties deposit on asset's general account the following amount:
-      | party           | asset | amount        |
+      | party            | asset | amount        |
       | sellSideProvider | USD   | 1000000000000 |
       | buySideProvider  | USD   | 1000000000000 |
       | designatedLooser | USD   | 21600         |
       | aux              | USD   | 1000000000000 |
       | aux2             | USD   | 1000000000000 |
+      | lpprov           | USD   | 1000000000000 |
+
+    When the parties submit the following liquidity provision:
+      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
+      | lp1 | lpprov | ETH/DEC19 | 90000             | 0.1 | buy  | BID              | 50         | 100    | submission |
+      | lp1 | lpprov | ETH/DEC19 | 90000             | 0.1 | sell | ASK              | 50         | 100    | submission |
 
 # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     Then the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     |
-      | aux    | ETH/DEC19 | buy  | 1000  | 1     | 0                | TYPE_LIMIT | TIF_GTC |
-      | aux    | ETH/DEC19 | sell | 1000  | 2000  | 0                | TYPE_LIMIT | TIF_GTC |
-      | aux    | ETH/DEC19 | buy  | 100   | 150   | 0                | TYPE_LIMIT | TIF_GTC |
-      | aux2   | ETH/DEC19 | sell | 100   | 150   | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux   | ETH/DEC19 | buy  | 1000  | 1     | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux   | ETH/DEC19 | sell | 1000  | 2000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux   | ETH/DEC19 | buy  | 100   | 150   | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux2  | ETH/DEC19 | sell | 100   | 150   | 0                | TYPE_LIMIT | TIF_GTC |
     Then the opening auction period ends for market "ETH/DEC19"
     And the mark price should be "150" for the market "ETH/DEC19"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
@@ -102,4 +108,4 @@ Feature: Position resolution case 5 lognormal risk model
       | designatedLooser | USD   | ETH/DEC19 | 0      | 0       |
 
 # then we make sure the insurance pool collected the funds
-    And the insurance pool balance should be "0" for the market "ETH/DEC19"
+    And the insurance pool balance should be "73900" for the market "ETH/DEC19"

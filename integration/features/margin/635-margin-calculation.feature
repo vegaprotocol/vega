@@ -13,15 +13,21 @@ Feature: Regression test for issue 596
   Scenario: Traded out position but monies left in margin account
     # setup accounts
     Given the parties deposit on asset's general account the following amount:
-      | party           | asset | amount     |
-      | partyGuy        | BTC   | 1000000000 |
+      | party            | asset | amount     |
+      | partyGuy         | BTC   | 1000000000 |
       | sellSideProvider | BTC   | 1000000000 |
       | buySideProvider  | BTC   | 1000000000 |
       | aux              | BTC   | 1000000000 |
       | aux2             | BTC   | 1000000000 |
+      | lpprov           | BTC   | 1000000000 |
+
+    When the parties submit the following liquidity provision:
+      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
+      | lp1 | lpprov | ETH/DEC19 | 900000000         | 0.1 | buy  | BID              | 50         | 100    | submission |
+      | lp1 | lpprov | ETH/DEC19 | 900000000         | 0.1 | sell | ASK              | 50         | 100    | submission |
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
-    When the parties place the following orders:
+    And the parties place the following orders:
       | party | market id | side | volume | price    | resulting trades | type       | tif     |
       | aux    | ETH/DEC19 | buy  | 1      | 8700000  | 0                | TYPE_LIMIT | TIF_GTC |
       | aux    | ETH/DEC19 | sell | 1      | 25000000 | 0                | TYPE_LIMIT | TIF_GTC |

@@ -21,6 +21,7 @@ Feature: Set up a market, create indiciative price different to actual opening a
       | party4 | BTC   | 100000000 |
       | party5 | BTC   | 100000000 |
       | party6 | BTC   | 100000000 |
+      | lpprov | BTC   | 100000000 |
 
     When the network moves ahead "3" blocks
     Then the market data for the market "ETH/DEC19" should be:
@@ -55,6 +56,10 @@ Feature: Set up a market, create indiciative price different to actual opening a
       | party2 | ETH/DEC19 | sell | 5      | 10001 | 0                | TYPE_LIMIT | TIF_GFA | t2-s-2    |
       | party1 | ETH/DEC19 | buy  | 4      | 3000  | 0                | TYPE_LIMIT | TIF_GFA | t1-b-3    |
       | party2 | ETH/DEC19 | sell | 3      | 3000  | 0                | TYPE_LIMIT | TIF_GFA | t2-s-3    |
+    And the parties submit the following liquidity provision:
+      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
+      | lp1 | lpprov | ETH/DEC19 | 60000             | 0.1 | buy  | MID              | 50         | 100    | submission |
+      | lp1 | lpprov | ETH/DEC19 | 60000             | 0.1 | sell | MID              | 50         | 100    | submission |
 
     When the opening auction period ends for market "ETH/DEC19"
     Then the market data for the market "ETH/DEC19" should be:
