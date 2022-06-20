@@ -81,10 +81,16 @@ func TestGovernanceSnapshotProposalEnacted(t *testing.T) {
 
 	require.NoError(t, err)
 
+	require.True(t, eng.HasChanged(activeKey))
+	eng.GetState(activeKey) // we call get state to get change back to false
+
 	// vote for it
 	eng.expectVoteEvent(t, voter1.Id, proposal.ID)
 	err = eng.addYesVote(t, voter1.Id, proposal.ID)
 	require.NoError(t, err)
+
+	require.True(t, eng.HasChanged(activeKey))
+	eng.GetState(activeKey) // we call get state to get change back to false
 
 	// chain update
 	eng.expectPassedProposalEvent(t, proposal.ID)
@@ -93,8 +99,14 @@ func TestGovernanceSnapshotProposalEnacted(t *testing.T) {
 	afterClosing := time.Unix(proposal.Terms.ClosingTimestamp, 0).Add(time.Second)
 	eng.OnChainTimeUpdate(context.Background(), afterClosing)
 
+	require.True(t, eng.HasChanged(activeKey))
+	eng.GetState(activeKey) // we call get state to get change back to false
+
 	afterEnactment := time.Unix(proposal.Terms.EnactmentTimestamp, 0).Add(time.Second)
 	eng.OnChainTimeUpdate(context.Background(), afterEnactment)
+
+	require.True(t, eng.HasChanged(activeKey))
+	eng.GetState(activeKey) // we call get state to get change back to false
 
 	// check snapshot hashes (should have no active proposals and one enacted proposal)
 	activeHash, _, err := eng.GetState(activeKey)
