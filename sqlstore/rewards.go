@@ -6,6 +6,7 @@ import (
 
 	"code.vegaprotocol.io/data-node/entities"
 	"code.vegaprotocol.io/data-node/metrics"
+	v2 "code.vegaprotocol.io/protos/data-node/api/v2"
 	"github.com/georgysavva/scany/pgxscan"
 )
 
@@ -57,9 +58,9 @@ func (rs *Rewards) GetByCursor(ctx context.Context,
 	}
 
 	sorting, cmp, cursor := extractPaginationInfo(pagination)
-	var rc entities.RewardCursor
+	rc := &entities.RewardCursor{}
 	if cursor != "" {
-		rc, err = entities.ParseRewardCursor(cursor)
+		err := rc.Parse(cursor)
 		if err != nil {
 			return nil, entities.PageInfo{}, fmt.Errorf("parsing cursor: %w", err)
 		}
@@ -77,7 +78,7 @@ func (rs *Rewards) GetByCursor(ctx context.Context,
 		return nil, entities.PageInfo{}, fmt.Errorf("querying rewards: %w", err)
 	}
 
-	pagedData, pageInfo := entities.PageEntities(rewards, pagination)
+	pagedData, pageInfo := entities.PageEntities[*v2.RewardEdge](rewards, pagination)
 	return pagedData, pageInfo, nil
 }
 

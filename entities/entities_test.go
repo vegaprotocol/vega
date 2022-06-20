@@ -46,7 +46,7 @@ func testPageEntitiesForwardHasNextAndPrevious(t *testing.T) {
 			Before: nil,
 		})
 	require.NoError(t, err)
-	gotPaged, gotInfo := entities.PageEntities(trades, cursor)
+	gotPaged, gotInfo := entities.PageEntities[*v2.TradeEdge](trades, cursor)
 
 	startCursor := time.Unix(0, 1000001000000).UTC().Format(time.RFC3339Nano)
 	endCursor := time.Unix(0, 1000005000000).UTC().Format(time.RFC3339Nano)
@@ -75,7 +75,7 @@ func testPageEntitiesBackwardHasNextAndPrevious(t *testing.T) {
 			Before: &before,
 		})
 	require.NoError(t, err)
-	gotPaged, gotInfo := entities.PageEntities(trades, cursor)
+	gotPaged, gotInfo := entities.PageEntities[*v2.TradeEdge](trades, cursor)
 
 	startCursor := time.Unix(0, 1000001000000).UTC().Format(time.RFC3339Nano)
 	endCursor := time.Unix(0, 1000005000000).UTC().Format(time.RFC3339Nano)
@@ -104,7 +104,7 @@ func testPagedEntitiesForwardHasPreviousButNoNext(t *testing.T) {
 			Before: nil,
 		})
 	require.NoError(t, err)
-	gotPaged, gotInfo := entities.PageEntities(trades, cursor)
+	gotPaged, gotInfo := entities.PageEntities[*v2.TradeEdge](trades, cursor)
 
 	startCursor := time.Unix(0, 1000002000000).UTC().Format(time.RFC3339Nano)
 	endCursor := time.Unix(0, 1000006000000).UTC().Format(time.RFC3339Nano)
@@ -133,7 +133,7 @@ func testPagedEntitiesBackwardHasNextButNoPrevious(t *testing.T) {
 			Before: &before,
 		})
 	require.NoError(t, err)
-	gotPaged, gotInfo := entities.PageEntities(trades, cursor)
+	gotPaged, gotInfo := entities.PageEntities[*v2.TradeEdge](trades, cursor)
 
 	startCursor := time.Unix(0, 1000000000000).UTC().Format(time.RFC3339Nano)
 	endCursor := time.Unix(0, 1000004000000).UTC().Format(time.RFC3339Nano)
@@ -160,7 +160,7 @@ func testPagedEntitiesForwardNoNextOrPreviousEqualLimit(t *testing.T) {
 			Before: nil,
 		})
 	require.NoError(t, err)
-	gotPaged, gotInfo := entities.PageEntities(trades, cursor)
+	gotPaged, gotInfo := entities.PageEntities[*v2.TradeEdge](trades, cursor)
 
 	startCursor := time.Unix(0, 1000000000000).UTC().Format(time.RFC3339Nano)
 	endCursor := time.Unix(0, 1000004000000).UTC().Format(time.RFC3339Nano)
@@ -187,7 +187,7 @@ func testPagedEntitiesBackwardNoNextOrPreviousEqualLimit(t *testing.T) {
 			Before: nil,
 		})
 	require.NoError(t, err)
-	gotPaged, gotInfo := entities.PageEntities(trades, cursor)
+	gotPaged, gotInfo := entities.PageEntities[*v2.TradeEdge](trades, cursor)
 
 	startCursor := time.Unix(0, 1000002000000).UTC().Format(time.RFC3339Nano)
 	endCursor := time.Unix(0, 1000006000000).UTC().Format(time.RFC3339Nano)
@@ -214,7 +214,7 @@ func testPagedEntitiesForwardNoNextOrPreviousLessThanLimit(t *testing.T) {
 			Before: nil,
 		})
 	require.NoError(t, err)
-	gotPaged, gotInfo := entities.PageEntities(trades, cursor)
+	gotPaged, gotInfo := entities.PageEntities[*v2.TradeEdge](trades, cursor)
 
 	startCursor := time.Unix(0, 1000000000000).UTC().Format(time.RFC3339Nano)
 	endCursor := time.Unix(0, 1000002000000).UTC().Format(time.RFC3339Nano)
@@ -241,7 +241,7 @@ func testPagedEntitiesBackwardNoNextOrPreviousLessThanLimit(t *testing.T) {
 			Before: nil,
 		})
 	require.NoError(t, err)
-	gotPaged, gotInfo := entities.PageEntities(trades, cursor)
+	gotPaged, gotInfo := entities.PageEntities[*v2.TradeEdge](trades, cursor)
 
 	startCursor := time.Unix(0, 1000004000000).UTC().Format(time.RFC3339Nano)
 	endCursor := time.Unix(0, 1000006000000).UTC().Format(time.RFC3339Nano)

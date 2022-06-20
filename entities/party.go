@@ -3,6 +3,7 @@ package entities
 import (
 	"time"
 
+	v2 "code.vegaprotocol.io/protos/data-node/api/v2"
 	"code.vegaprotocol.io/vega/types"
 )
 
@@ -27,4 +28,11 @@ func (p *Party) ToProto() *types.Party {
 
 func (p Party) Cursor() *Cursor {
 	return NewCursor(p.VegaTime.In(time.UTC).Format(time.RFC3339Nano))
+}
+
+func (p Party) ToProtoEdge(_ ...any) *v2.PartyEdge {
+	return &v2.PartyEdge{
+		Node:   p.ToProto(),
+		Cursor: p.Cursor().Encode(),
+	}
 }

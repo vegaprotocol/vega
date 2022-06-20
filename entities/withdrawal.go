@@ -1,9 +1,11 @@
 package entities
 
 import (
+	"encoding/json"
 	"fmt"
 	"time"
 
+	v2 "code.vegaprotocol.io/protos/data-node/api/v2"
 	"code.vegaprotocol.io/protos/vega"
 	"github.com/shopspring/decimal"
 	"google.golang.org/protobuf/encoding/protojson"
@@ -71,6 +73,21 @@ func (w Withdrawal) ToProto() *vega.Withdrawal {
 	}
 }
 
+func (w Withdrawal) Cursor() *Cursor {
+	wc := WithdrawalCursor{
+		VegaTime: w.VegaTime,
+		ID:       w.ID.String(),
+	}
+	return NewCursor(wc.String())
+}
+
+func (w Withdrawal) ToProtoEdge(_ ...any) *v2.WithdrawalEdge {
+	return &v2.WithdrawalEdge{
+		Node:   w.ToProto(),
+		Cursor: w.Cursor().Encode(),
+	}
+}
+
 type WithdrawExt struct {
 	*vega.WithdrawExt
 }
@@ -82,4 +99,24 @@ func (we WithdrawExt) MarshalJSON() ([]byte, error) {
 func (we *WithdrawExt) UnmarshalJSON(b []byte) error {
 	we.WithdrawExt = &vega.WithdrawExt{}
 	return protojson.Unmarshal(b, we)
+}
+
+type WithdrawalCursor struct {
+	VegaTime time.Time `json:"vegaTime"`
+	ID       string    `json:"id"`
+}
+
+func (wc WithdrawalCursor) String() string {
+	bs, err := json.Marshal(wc)
+	if err != nil {
+		return fmt.Sprintf(`{"vegaTime":%d,"id":"%s"}`, wc.VegaTime.Unix(), wc.ID)
+	}
+	return string(bs)
+}
+
+func (wc *WithdrawalCursor) Parse(cursorString string) error {
+	if cursorString == "" {
+		return nil
+	}
+	return json.Unmarshal([]byte(cursorString), wc)
 }

@@ -57,11 +57,11 @@ func (c CursorQueryParameters) Where(args ...interface{}) (string, []interface{}
 	var where string
 
 	for i, cursor := range c {
-		if i > 0 && strings.TrimSpace(where) != "" {
-			where = fmt.Sprintf("%s AND", where)
-		}
 		var cursorCondition string
 		cursorCondition, args = cursor.Where(args...)
+		if i > 0 && strings.TrimSpace(where) != "" && strings.TrimSpace(cursorCondition) != "" {
+			where = fmt.Sprintf("%s AND", where)
+		}
 		where = fmt.Sprintf("%s %s", where, cursorCondition)
 	}
 

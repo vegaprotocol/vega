@@ -6,6 +6,7 @@ import (
 
 	"code.vegaprotocol.io/data-node/entities"
 	"code.vegaprotocol.io/data-node/metrics"
+	v2 "code.vegaprotocol.io/protos/data-node/api/v2"
 	"github.com/georgysavva/scany/pgxscan"
 )
 
@@ -72,24 +73,72 @@ func (w *Withdrawals) GetByID(ctx context.Context, withdrawalID string) (entitie
 	return withdrawal, err
 }
 
-func (w *Withdrawals) GetByParty(ctx context.Context, partyID string, openOnly bool, pagination entities.OffsetPagination) []entities.Withdrawal {
-	var withdrawals []entities.Withdrawal
-	prequery := `SELECT
-		distinct on (id) id, party_id, amount, asset, status, ref, expiry, tx_hash,
-		created_timestamp, withdrawn_timestamp, ext, vega_time
-		FROM withdrawals
-		WHERE party_id = $1
-		ORDER BY id, vega_time DESC`
+func (w *Withdrawals) GetByParty(ctx context.Context, partyID string, openOnly bool, pagination entities.Pagination) (
+	[]entities.Withdrawal, entities.PageInfo, error) {
+	switch p := pagination.(type) {
+	case entities.OffsetPagination:
+		return w.getByPartyOffset(ctx, partyID, openOnly, p)
+	case entities.CursorPagination:
+		return w.getByPartyCursor(ctx, partyID, openOnly, p)
+	default:
+		return w.getByPartyOffset(ctx, partyID, openOnly, entities.OffsetPagination{})
+	}
+}
 
-	var query string
+func (w *Withdrawals) getByPartyOffset(ctx context.Context, partyID string, openOnly bool,
+	pagination entities.OffsetPagination) ([]entities.Withdrawal, entities.PageInfo, error) {
+	var withdrawals []entities.Withdrawal
+	var pageInfo entities.PageInfo
 	var args []interface{}
 
-	query, args = orderAndPaginateQuery(prequery, nil, pagination, entities.NewPartyID(partyID))
+	query := fmt.Sprintf("%s WHERE party_id = %s ORDER BY id, vega_time DESC",
+		getWithdrawalsByPartyQuery(), nextBindVar(&args, entities.NewPartyID(partyID)))
+	query, args = orderAndPaginateQuery(query, nil, pagination, args...)
 
 	defer metrics.StartSQLQuery("Withdrawals", "GetByParty")()
 	if err := pgxscan.Select(ctx, w.Connection, &withdrawals, query, args...); err != nil {
-		return nil
+		return nil, pageInfo, fmt.Errorf("could not get withdrawals by party: %w", err)
 	}
 
-	return withdrawals
+	return withdrawals, pageInfo, nil
+
+}
+
+func (w *Withdrawals) getByPartyCursor(ctx context.Context, partyID string, openOnly bool,
+	pagination entities.CursorPagination) ([]entities.Withdrawal, entities.PageInfo, error) {
+	var withdrawals []entities.Withdrawal
+	var pageInfo entities.PageInfo
+
+	sorting, cmp, cursor := extractPaginationInfo(pagination)
+
+	wc := &entities.WithdrawalCursor{}
+	if err := wc.Parse(cursor); err != nil {
+		return nil, pageInfo, fmt.Errorf("could not parse cursor information: %w", err)
+	}
+
+	cursorParams := []CursorQueryParameter{
+		NewCursorQueryParameter("party_id", sorting, "=", entities.NewPartyID(partyID)),
+		NewCursorQueryParameter("vega_time", sorting, cmp, wc.VegaTime),
+		NewCursorQueryParameter("id", sorting, cmp, entities.NewWithdrawalID(wc.ID)),
+	}
+
+	var args []interface{}
+	query := getWithdrawalsByPartyQuery()
+	query, args = orderAndPaginateWithCursor(query, pagination, cursorParams, args...)
+
+	defer metrics.StartSQLQuery("Withdrawals", "GetByParty")()
+	if err := pgxscan.Select(ctx, w.Connection, &withdrawals, query, args...); err != nil {
+		return nil, pageInfo, fmt.Errorf("could not get withdrawals by party: %w", err)
+	}
+
+	withdrawals, pageInfo = entities.PageEntities[*v2.WithdrawalEdge](withdrawals, pagination)
+
+	return withdrawals, pageInfo, nil
+}
+
+func getWithdrawalsByPartyQuery() string {
+	return `SELECT
+		id, party_id, amount, asset, status, ref, expiry, tx_hash,
+		created_timestamp, withdrawn_timestamp, ext, vega_time
+		FROM withdrawals_current`
 }

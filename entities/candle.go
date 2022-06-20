@@ -48,3 +48,10 @@ func (c *Candle) ToV2CandleProto() *v2.Candle {
 func (c Candle) Cursor() *Cursor {
 	return NewCursor(c.PeriodStart.Format(time.RFC3339Nano))
 }
+
+func (c Candle) ToProtoEdge(_ ...any) *v2.CandleEdge {
+	return &v2.CandleEdge{
+		Node:   c.ToV2CandleProto(),
+		Cursor: c.Cursor().Encode(),
+	}
+}

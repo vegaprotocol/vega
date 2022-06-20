@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"time"
 
+	v2 "code.vegaprotocol.io/protos/data-node/api/v2"
 	"code.vegaprotocol.io/protos/vega"
 	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
 	"github.com/shopspring/decimal"
@@ -40,6 +41,22 @@ func (r *Reward) ToProto() *vega.Reward {
 		RewardType:        r.RewardType,
 	}
 	return &protoReward
+}
+
+func (r Reward) Cursor() *Cursor {
+	cursor := RewardCursor{
+		PartyID: r.PartyID.String(),
+		AssetID: r.AssetID.String(),
+		EpochID: r.EpochID,
+	}
+	return NewCursor(cursor.String())
+}
+
+func (r Reward) ToProtoEdge(_ ...any) *v2.RewardEdge {
+	return &v2.RewardEdge{
+		Node:   r.ToProto(),
+		Cursor: r.Cursor().Encode(),
+	}
 }
 
 func RewardFromProto(pr eventspb.RewardPayoutEvent, vegaTime time.Time) (Reward, error) {
@@ -89,20 +106,9 @@ func (rc RewardCursor) String() string {
 	return string(bs)
 }
 
-func (r Reward) Cursor() *Cursor {
-	cursor := RewardCursor{
-		PartyID: r.PartyID.String(),
-		AssetID: r.AssetID.String(),
-		EpochID: r.EpochID,
+func (rc *RewardCursor) Parse(cursorString string) error {
+	if cursorString == "" {
+		return nil
 	}
-	return NewCursor(cursor.String())
-}
-
-func ParseRewardCursor(cursor string) (RewardCursor, error) {
-	var rc RewardCursor
-	err := json.Unmarshal([]byte(cursor), &rc)
-	if err != nil {
-		return RewardCursor{}, fmt.Errorf("parsing reward cursor: %w", err)
-	}
-	return rc, nil
+	return json.Unmarshal([]byte(cursorString), rc)
 }
