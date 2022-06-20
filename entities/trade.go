@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	v2 "code.vegaprotocol.io/protos/data-node/api/v2"
 	"code.vegaprotocol.io/protos/vega"
 
 	"github.com/shopspring/decimal"
@@ -69,6 +70,13 @@ func (t *Trade) ToProto() *vega.Trade {
 
 func (t Trade) Cursor() *Cursor {
 	return NewCursor(t.SyntheticTime.In(time.UTC).Format(time.RFC3339Nano))
+}
+
+func (t Trade) ToProtoEdge(_ ...any) *v2.TradeEdge {
+	return &v2.TradeEdge{
+		Node:   t.ToProto(),
+		Cursor: t.Cursor().Encode(),
+	}
 }
 
 func TradeFromProto(t *vega.Trade, vegaTime time.Time, sequenceNumber uint64) (*Trade, error) {

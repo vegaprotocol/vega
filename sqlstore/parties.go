@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	v2 "code.vegaprotocol.io/protos/data-node/api/v2"
 	"github.com/pkg/errors"
 
 	"code.vegaprotocol.io/data-node/entities"
@@ -112,6 +113,6 @@ func (ps *Parties) GetAllPaged(ctx context.Context, partyID string, pagination e
 		return pagedParties, pageInfo, err
 	}
 
-	pagedParties, pageInfo = entities.PageEntities(parties, pagination)
+	pagedParties, pageInfo = entities.PageEntities[*v2.PartyEdge](parties, pagination)
 	return pagedParties, pageInfo, nil
 }

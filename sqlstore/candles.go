@@ -9,6 +9,7 @@ import (
 
 	"code.vegaprotocol.io/data-node/candlesv2"
 	"code.vegaprotocol.io/data-node/metrics"
+	v2 "code.vegaprotocol.io/protos/data-node/api/v2"
 
 	"github.com/shopspring/decimal"
 
@@ -92,7 +93,7 @@ func (cs *Candles) GetCandleDataForTimeSpan(ctx context.Context, candleId string
 
 	var pagedCandles []entities.Candle
 
-	pagedCandles, pageInfo = entities.PageEntities(candles, p)
+	pagedCandles, pageInfo = entities.PageEntities[*v2.CandleEdge](candles, p)
 
 	return pagedCandles, pageInfo, nil
 }

@@ -1672,11 +1672,7 @@ func validateMarketSQL(ctx context.Context, marketID string, marketsStore *servi
 		return nil, nil
 	}
 
-	mkt, err := market.ToProto()
-	if err != nil {
-		return nil, nil
-	}
-
+	mkt := market.ToProto()
 	return mkt, nil
 }
 
@@ -1690,11 +1686,7 @@ func (t *tradingDataDelegator) Markets(ctx context.Context, _ *protoapi.MarketsR
 
 	results := make([]*vega.Market, 0, len(markets))
 	for _, m := range markets {
-		mkt, err := m.ToProto()
-		if err != nil {
-			continue
-		}
-
+		mkt := m.ToProto()
 		results = append(results, mkt)
 	}
 
@@ -1724,7 +1716,11 @@ func (t *tradingDataDelegator) Deposits(ctx context.Context, req *protoapi.Depos
 	}
 
 	// current API doesn't support pagination, but we will need to support it for v2
-	deposits := t.depositServiceV2.GetByParty(ctx, req.PartyId, false, entities.OffsetPagination{})
+	deposits, _, err := t.depositServiceV2.GetByParty(ctx, req.PartyId, false, entities.OffsetPagination{})
+	if err != nil {
+		return nil, apiError(codes.Internal, err)
+	}
+
 	out := make([]*vega.Deposit, 0, len(deposits))
 	for _, v := range deposits {
 		out = append(out, v.ToProto())
@@ -1792,10 +1788,7 @@ func (t *tradingDataDelegator) estimateMargin(ctx context.Context, order *vega.O
 		return nil, err
 	}
 
-	mktProto, err := mkt.ToProto()
-	if err != nil {
-		return nil, err
-	}
+	mktProto := mkt.ToProto()
 
 	mktData, err := t.marketDataServiceV2.GetMarketDataByID(ctx, order.MarketId)
 	if err != nil {
@@ -1957,7 +1950,10 @@ func (t *tradingDataDelegator) Withdrawals(ctx context.Context, req *protoapi.Wi
 	}
 
 	// current API doesn't support pagination, but we will need to support it for v2
-	withdrawals := t.withdrawalServiceV2.GetByParty(ctx, req.PartyId, false, entities.OffsetPagination{})
+	withdrawals, _, err := t.withdrawalServiceV2.GetByParty(ctx, req.PartyId, false, entities.OffsetPagination{})
+	if err != nil {
+		return nil, apiError(codes.Internal, err)
+	}
 	out := make([]*vega.Withdrawal, 0, len(withdrawals))
 	for _, w := range withdrawals {
 		out = append(out, w.ToProto())

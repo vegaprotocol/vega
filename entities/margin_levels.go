@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"time"
 
+	v2 "code.vegaprotocol.io/protos/data-node/api/v2"
 	"code.vegaprotocol.io/protos/vega"
 	"github.com/shopspring/decimal"
 )
@@ -90,6 +91,34 @@ func (ml *MarginLevels) ToProto(accountSource AccountSource) (*vega.MarginLevels
 	}, nil
 }
 
+func (ml MarginLevels) Cursor() *Cursor {
+	cursor := MarginCursor{
+		VegaTime:  ml.VegaTime,
+		AccountID: ml.AccountID,
+	}
+	return NewCursor(cursor.String())
+}
+
+func (ml MarginLevels) ToProtoEdge(input ...any) *v2.MarginEdge {
+	if len(input) == 0 {
+		return nil
+	}
+
+	switch as := input[0].(type) {
+	case AccountSource:
+		mlProto, err := ml.ToProto(as)
+		if err != nil {
+			return nil
+		}
+		return &v2.MarginEdge{
+			Node:   mlProto,
+			Cursor: ml.Cursor().Encode(),
+		}
+	default:
+		return nil
+	}
+}
+
 type MarginLevelsKey struct {
 	AccountID int64
 	VegaTime  time.Time
@@ -124,18 +153,9 @@ func (mc MarginCursor) String() string {
 	return string(bs)
 }
 
-func (ml MarginLevels) Cursor() *Cursor {
-	cursor := MarginCursor{
-		VegaTime:  ml.VegaTime,
-		AccountID: ml.AccountID,
+func (mc *MarginCursor) Parse(cursorString string) error {
+	if cursorString == "" {
+		return nil
 	}
-	return NewCursor(cursor.String())
-}
-
-func ParseMarginLevelCursor(cursor string) (time.Time, int64, error) {
-	var mc MarginCursor
-	if err := json.Unmarshal([]byte(cursor), &mc); err != nil {
-		return time.Time{}, 0, fmt.Errorf("parsing margin cursor: %w", err)
-	}
-	return mc.VegaTime, mc.AccountID, nil
+	return json.Unmarshal([]byte(cursorString), mc)
 }

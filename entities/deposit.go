@@ -1,9 +1,11 @@
 package entities
 
 import (
+	"encoding/json"
 	"fmt"
 	"time"
 
+	v2 "code.vegaprotocol.io/protos/data-node/api/v2"
 	"code.vegaprotocol.io/protos/vega"
 	"github.com/shopspring/decimal"
 )
@@ -58,4 +60,39 @@ func (d Deposit) ToProto() *vega.Deposit {
 		CreditedTimestamp: d.CreditedTimestamp.UnixNano(),
 		CreatedTimestamp:  d.CreatedTimestamp.UnixNano(),
 	}
+}
+
+func (d Deposit) Cursor() *Cursor {
+	cursor := DepositCursor{
+		VegaTime: d.VegaTime,
+		ID:       d.ID.String(),
+	}
+	return NewCursor(cursor.String())
+}
+
+func (d Deposit) ToProtoEdge(_ ...any) *v2.DepositEdge {
+	return &v2.DepositEdge{
+		Node:   d.ToProto(),
+		Cursor: d.Cursor().Encode(),
+	}
+}
+
+type DepositCursor struct {
+	VegaTime time.Time `json:"vegaTime"`
+	ID       string    `json:"id"`
+}
+
+func (dc DepositCursor) String() string {
+	bs, err := json.Marshal(dc)
+	if err != nil {
+		return fmt.Sprintf(`{"vegaTime":"%s","id":"%s"}`, dc.VegaTime.Format(time.RFC3339Nano), dc.ID)
+	}
+	return string(bs)
+}
+
+func (dc *DepositCursor) Parse(cursorString string) error {
+	if cursorString == "" {
+		return nil
+	}
+	return json.Unmarshal([]byte(cursorString), dc)
 }

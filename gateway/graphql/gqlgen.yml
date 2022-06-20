@@ -304,3 +304,11 @@ models:
     model: code.vegaprotocol.io/protos/data-node/api/v2.CandleEdge
   CandleDataConnection:
     model: code.vegaprotocol.io/protos/data-node/api/v2.CandleDataConnection
+  DepositEdge:
+    model: code.vegaprotocol.io/protos/data-node/api/v2.DepositEdge
+  DepositsConnection:
+    model: code.vegaprotocol.io/protos/data-node/api/v2.DepositsConnection
+  WithdrawalEdge:
+    model: code.vegaprotocol.io/protos/data-node/api/v2.WithdrawalEdge
+  WithdrawalsConnection:
+    model: code.vegaprotocol.io/protos/data-node/api/v2.WithdrawalsConnection
