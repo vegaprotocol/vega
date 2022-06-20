@@ -1,6 +1,7 @@
 package spam
 
 import (
+	"encoding/hex"
 	"errors"
 	"sort"
 	"strings"
@@ -345,7 +346,7 @@ func (vsp *VoteSpamPolicy) PostBlockAccept(tx abci.Tx) (bool, error) {
 			vsp.partyBlockRejects[party] = &blockRejectInfo{total: 1, rejected: 1}
 		}
 		if vsp.log.GetLevel() <= logging.DebugLevel {
-			vsp.log.Debug("Spam post: party has already voted for proposal the max amount of votes", logging.String("party", party), logging.String("proposal", vote.ProposalId), logging.Uint64("voteCount", epochVotes+blockVotes), logging.Uint64("maxAllowed", vsp.numVotes))
+			vsp.log.Debug("Spam post: party has already voted for proposal the max amount of votes", logging.String("txHash", hex.EncodeToString(tx.Hash())), logging.String("party", party), logging.String("proposal", vote.ProposalId), logging.Uint64("voteCount", epochVotes+blockVotes), logging.Uint64("maxAllowed", vsp.numVotes))
 		}
 
 		return false, ErrTooManyVotes
@@ -383,7 +384,7 @@ func (vsp *VoteSpamPolicy) PreBlockAccept(tx abci.Tx) (bool, error) {
 	_, ok := vsp.bannedParties[party]
 	if ok {
 		if vsp.log.GetLevel() <= logging.DebugLevel {
-			vsp.log.Debug("Spam pre: party is banned from voting", logging.String("party", party))
+			vsp.log.Debug("Spam pre: party is banned from voting", logging.String("txHash", hex.EncodeToString(tx.Hash())), logging.String("party", party))
 		}
 		return false, ErrPartyIsBannedFromVoting
 	}
@@ -392,7 +393,7 @@ func (vsp *VoteSpamPolicy) PreBlockAccept(tx abci.Tx) (bool, error) {
 	balance, err := vsp.accounts.GetAvailableBalance(party)
 	if err != nil || balance.LT(vsp.effectiveMinTokens) {
 		if vsp.log.GetLevel() <= logging.DebugLevel {
-			vsp.log.Debug("Spam pre: party has insufficient balance for voting", logging.String("party", party), logging.String("balance", num.UintToString(balance)))
+			vsp.log.Debug("Spam pre: party has insufficient balance for voting", logging.String("txHash", hex.EncodeToString(tx.Hash())), logging.String("party", party), logging.String("balance", num.UintToString(balance)))
 		}
 		return false, ErrInsufficientTokensForVoting
 	}
@@ -407,7 +408,7 @@ func (vsp *VoteSpamPolicy) PreBlockAccept(tx abci.Tx) (bool, error) {
 	if partyVotes, ok := vsp.partyToVote[party]; ok {
 		if voteCount, ok := partyVotes[vote.ProposalId]; ok && voteCount >= vsp.numVotes {
 			if vsp.log.GetLevel() <= logging.DebugLevel {
-				vsp.log.Debug("Spam pre: party has already voted for proposal the max amount of votes", logging.String("party", party), logging.String("proposal", vote.ProposalId), logging.Uint64("voteCount", voteCount), logging.Uint64("maxAllowed", vsp.numVotes))
+				vsp.log.Debug("Spam pre: party has already voted for proposal the max amount of votes", logging.String("txHash", hex.EncodeToString(tx.Hash())), logging.String("party", party), logging.String("proposal", vote.ProposalId), logging.Uint64("voteCount", voteCount), logging.Uint64("maxAllowed", vsp.numVotes))
 			}
 			return false, ErrTooManyVotes
 		}

@@ -143,6 +143,7 @@ func NewMarketFromSnapshot(
 		marketActivityTracker:      marketActivityTracker,
 		positionFactor:             positionFactor,
 		stateVarEngine:             stateVarEngine,
+		settlementPriceInMarket:    em.SettlementPrice,
 	}
 
 	market.assetDP = uint32(assetDetails.DecimalPlaces())
@@ -169,6 +170,10 @@ func (m *Market) changed() bool {
 
 func (m *Market) getState() *types.ExecMarket {
 	rf, _ := m.risk.GetRiskFactors()
+	var sp *num.Uint
+	if m.settlementPriceInMarket != nil {
+		sp = m.settlementPriceInMarket.Clone()
+	}
 	em := &types.ExecMarket{
 		Market:                     m.mkt.DeepClone(),
 		PriceMonitor:               m.pMonitor.GetState(),
@@ -187,6 +192,7 @@ func (m *Market) getState() *types.ExecMarket {
 		ShortRiskFactor:            rf.Short,
 		LongRiskFactor:             rf.Long,
 		FeeSplitter:                m.feeSplitter.GetState(),
+		SettlementPrice:            sp,
 	}
 
 	m.stateChanged = false

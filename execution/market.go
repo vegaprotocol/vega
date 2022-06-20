@@ -98,7 +98,7 @@ var (
 // @TODO the interface shouldn't be imported here.
 type PriceMonitor interface {
 	OnTimeUpdate(now time.Time)
-	CheckPrice(ctx context.Context, as price.AuctionState, p *num.Uint, v uint64, persistent bool) bool
+	CheckPrice(ctx context.Context, as price.AuctionState, trades []*types.Trade, persistent bool) bool
 	GetCurrentBounds() []*types.PriceMonitoringBounds
 	SetMinDuration(d time.Duration)
 	GetValidPriceRange() (num.WrappedDecimal, num.WrappedDecimal)
@@ -257,6 +257,8 @@ type Market struct {
 	marketActivityTracker *MarketActivityTracker
 	positionFactor        num.Decimal // 10^pdp
 	assetDP               uint32
+
+	settlementPriceInMarket *num.Uint
 }
 
 // SetMarketID assigns a deterministic pseudo-random ID to a Market.
@@ -1009,19 +1011,10 @@ func (m *Market) leaveAuction(ctx context.Context, now time.Time) {
 		OriginalPrice: mcmp,
 	})
 
-	// keep var to see if we're leaving opening auction
-	isOpening := m.as.IsOpeningAuction()
 	// update auction state, so we know what the new tradeMode ought to be
 	endEvt := m.as.Left(ctx, now)
 
 	for _, uncrossedOrder := range uncrossedOrders {
-		if !isOpening {
-			// @TODO we should update this once
-			for _, trade := range uncrossedOrder.Trades {
-				m.pMonitor.CheckPrice(ctx, m.as, trade.Price.Clone(), trade.Size, true)
-			}
-		}
-
 		updatedOrders = append(updatedOrders, uncrossedOrder.Order)
 		updatedOrders = append(
 			updatedOrders, uncrossedOrder.PassiveOrdersAffected...)
@@ -1435,11 +1428,10 @@ func (m *Market) checkPriceAndGetTrades(ctx context.Context, order *types.Order)
 		persistent = false
 	}
 
-	for _, t := range trades {
-		if m.pMonitor.CheckPrice(ctx, m.as, t.Price.Clone(), t.Size, persistent) {
-			return nil, types.OrderErrorNonPersistentOrderOutOfPriceBounds
-		}
+	if m.pMonitor.CheckPrice(ctx, m.as, trades, persistent) {
+		return nil, types.OrderErrorNonPersistentOrderOutOfPriceBounds
 	}
+
 	if m.checkLiquidity(ctx, trades, persistent) {
 		return nil, types.OrderErrorInvalidPersistance
 	}
@@ -3122,9 +3114,11 @@ func (m *Market) commandLiquidityAuction(ctx context.Context) {
 	}
 	// end the liquidity monitoring auction if possible
 	if m.as.InAuction() && m.as.CanLeave() && !m.as.IsOpeningAuction() {
-		p, v, _ := m.matching.GetIndicativePriceAndVolume()
-		// no need to clone here, we're getting indicative price once for this call
-		m.pMonitor.CheckPrice(ctx, m.as, p, v, true)
+		trades, err := m.matching.OrderBook.GetIndicativeTrades()
+		if err != nil {
+			m.log.Panic("Can't get indicative trades")
+		}
+		m.pMonitor.CheckPrice(ctx, m.as, trades, true)
 		// TODO: Need to also get indicative trades and check how they'd impact target stake,
 		// see  https://github.com/vegaprotocol/vega/issues/3047
 		// If price monitoring doesn't trigger auction than leave it
@@ -3141,33 +3135,34 @@ func (m *Market) tradingTerminated(ctx context.Context, tt bool) {
 	m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
 	m.stateChanged = true
 
-	settlementPrice, err := m.tradableInstrument.Instrument.Product.SettlementPrice()
-	if err != nil {
+	if m.settlementPriceInMarket == nil {
 		m.log.Debug("no settlement price", logging.MarketID(m.GetID()))
 		return
 	}
-	m.settlementPriceWithLock(ctx, settlementPrice)
+	m.settlementPriceWithLock(ctx)
 }
 
 func (m *Market) settlementPrice(ctx context.Context, settlementPrice *num.Uint) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
-	m.settlementPriceWithLock(ctx, settlementPrice)
+	m.stateChanged = true
+	m.settlementPriceInMarket = settlementPrice
+	m.settlementPriceWithLock(ctx)
 }
 
 // NB this musy be called with the lock already acquired.
-func (m *Market) settlementPriceWithLock(ctx context.Context, settlementPrice *num.Uint) {
+func (m *Market) settlementPriceWithLock(ctx context.Context) {
 	if m.closed {
 		return
 	}
-	if m.mkt.State == types.MarketStateTradingTerminated && settlementPrice != nil {
+	if m.mkt.State == types.MarketStateTradingTerminated && m.settlementPriceInMarket != nil {
 		err := m.closeMarket(ctx, m.currentTime)
 		if err != nil {
 			m.log.Error("could not close market", logging.Error(err))
 		}
 		m.closed = m.mkt.State == types.MarketStateSettled
-		settlementPriceInAsset, err := m.tradableInstrument.Instrument.Product.ScaleSettlementPriceToDecimalPlaces(settlementPrice, m.assetDP)
+		settlementPriceInAsset, err := m.tradableInstrument.Instrument.Product.ScaleSettlementPriceToDecimalPlaces(m.settlementPriceInMarket, m.assetDP)
 		if err == nil {
 			m.markPrice = settlementPriceInAsset.Clone()
 

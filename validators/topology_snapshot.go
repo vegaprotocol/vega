@@ -3,7 +3,6 @@ package validators
 import (
 	"context"
 	"encoding/base64"
-	"math/rand"
 	"sort"
 	"time"
 
@@ -300,5 +299,4 @@ func (t *Topology) OnEpochRestore(_ context.Context, epoch types.Epoch) {
 	// 1) we aren't at the start of an epoch and so newEpochStarted is obviously false
 	// 2) we are at the start of an epoch, but at the end of the block *before* we take the snapshot we reset the powers and set newEpochStarted to false
 	t.newEpochStarted = false
-	t.rng = rand.New(rand.NewSource(epoch.StartTime.Unix()))
 }

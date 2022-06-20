@@ -85,6 +85,53 @@ func TestSnapshotOraclesTerminatingMarketFromSnapshot(t *testing.T) {
 	require.True(t, bytes.Equal(state, state2))
 }
 
+// TestSnapshotOraclesTerminatingMarketFromSnapshotAfterSettlementPrice sets up a market that gets the settlement price first.
+// Then a snapshot is taken and another node is restored from this snapshot. Finally trading termination data is received and both markets
+// are expected to get settled.
+func TestSnapshotOraclesTerminatingMarketFromSnapshotAfterSettlementPrice(t *testing.T) {
+	now := time.Now()
+	exec := getEngine(t, now)
+	err := exec.engine.SubmitMarket(context.Background(), newMarket("MarketID", "0xDEADBEEF"), "")
+	require.NoError(t, err)
+
+	// settlement price arrives first
+	exec.oracleEngine.BroadcastData(context.Background(), oracles.OracleData{
+		PubKeys: []string{"0xDEADBEEF"},
+		Data:    map[string]string{"prices.ETH.value": "100"},
+	})
+
+	// take a snapshot
+	state, _, _ := exec.engine.GetState("")
+
+	// load from the snapshot
+	exec2 := getEngine(t, now)
+	snap := &snapshot.Payload{}
+	proto.Unmarshal(state, snap)
+	_, _ = exec2.engine.LoadState(context.Background(), types.PayloadFromProto(snap))
+
+	// take a snapshot on the loaded engine
+	state2, _, _ := exec2.engine.GetState("")
+	require.True(t, bytes.Equal(state, state2))
+
+	// terminate the market to lead to settlement
+	exec.oracleEngine.BroadcastData(context.Background(), oracles.OracleData{
+		PubKeys: []string{"0xDEADBEEF"},
+		Data:    map[string]string{"trading.terminated": "true"},
+	})
+
+	exec2.oracleEngine.BroadcastData(context.Background(), oracles.OracleData{
+		PubKeys: []string{"0xDEADBEEF"},
+		Data:    map[string]string{"trading.terminated": "true"},
+	})
+
+	// take snapshot for both engines, and verify they're both settled
+	marketState1, _ := exec.engine.GetMarketState("MarketID")
+	marketState2, _ := exec2.engine.GetMarketState("MarketID")
+	require.Equal(t, marketState1, marketState2)
+	require.Equal(t, types.MarketStateSettled, marketState1)
+	require.Equal(t, types.MarketStateSettled, marketState2)
+}
+
 // TestLoadTerminatedMarketFromSnapshot terminates markets, loads them using the snapshot engine and then settles them successfully.
 func TestLoadTerminatedMarketFromSnapshot(t *testing.T) {
 	now := time.Now()

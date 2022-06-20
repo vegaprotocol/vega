@@ -4,13 +4,18 @@ import (
 	"bytes"
 	"context"
 	"testing"
+	"time"
 
 	"code.vegaprotocol.io/protos/vega"
 	snapshotpb "code.vegaprotocol.io/protos/vega/snapshot/v1"
 	"code.vegaprotocol.io/shared/libs/crypto"
+	"code.vegaprotocol.io/shared/paths"
+	"code.vegaprotocol.io/vega/integration/stubs"
+	vgcontext "code.vegaprotocol.io/vega/libs/context"
 	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/vega/snapshot"
+	"code.vegaprotocol.io/vega/stats"
 	"code.vegaprotocol.io/vega/types"
-	gtypes "code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
 	"github.com/golang/protobuf/proto"
 	"github.com/stretchr/testify/require"
@@ -20,9 +25,7 @@ func TestConversions(t *testing.T) {
 	p := &types.PayloadProofOfWork{
 		BlockHeight:   []uint64{100, 101, 102},
 		BlockHash:     []string{"94A9CB1532011081B013CCD8E6AAA832CAB1CBA603F0C5A093B14C4961E5E7F0", "DC911C0EA95545441F3E1182DD25D973764395A7E75CBDBC086F1C6F7075AED6", "2E4F2967AA904F9A952BB4813EC6BBB3730B9FFFEC44106B89F0A1958547733C"},
-		SeenTx:        map[string]struct{}{"1": {}, "2": {}, "3": {}},
 		HeightToTx:    map[uint64][]string{100: {"1", "2"}, 101: {"3"}},
-		SeenTid:       map[string]struct{}{"100": {}, "200": {}, "300": {}},
 		HeightToTid:   map[uint64][]string{100: {"100", "200"}, 101: {"300"}},
 		BannedParties: map[string]uint64{"party1": 105, "party2": 104},
 	}
@@ -65,14 +68,6 @@ func TestConversions(t *testing.T) {
 	for i, v := range ppp.BlockHash {
 		require.Equal(t, v, pp.ProofOfWork.BlockHash[i])
 	}
-	require.Equal(t, 3, len(ppp.SeenTx))
-	require.Equal(t, p.SeenTx["1"], ppp.SeenTx["1"])
-	require.Equal(t, p.SeenTx["2"], ppp.SeenTx["2"])
-	require.Equal(t, p.SeenTx["3"], ppp.SeenTx["3"])
-	require.Equal(t, p.SeenTid["100"], ppp.SeenTid["100"])
-	require.Equal(t, p.SeenTid["200"], ppp.SeenTid["200"])
-	require.Equal(t, p.SeenTid["300"], ppp.SeenTid["300"])
-
 	require.Equal(t, 2, len(ppp.HeightToTx))
 	require.Equal(t, 2, len(ppp.HeightToTid))
 	require.Equal(t, 2, len(ppp.HeightToTx[100]))
@@ -100,6 +95,13 @@ func TestSnapshot(t *testing.T) {
 	e.OnEpochEvent(context.Background(), types.Epoch{Seq: 1, Action: vega.EpochAction_EPOCH_ACTION_START})
 	e.BeginBlock(100, "2E7A16D9EF690F0D2BEED115FBA13BA2AAA16C8F971910AD88C72B9DB010C7D4")
 
+	// add a new set of configuration which becomes active at block 101
+	e.UpdateSpamPoWNumberOfPastBlocks(context.Background(), num.NewUint(5))
+	e.UpdateSpamPoWDifficulty(context.Background(), num.NewUint(25))
+	e.UpdateSpamPoWHashFunction(context.Background(), crypto.Sha3)
+	e.UpdateSpamPoWNumberOfTxPerBlock(context.Background(), num.NewUint(2))
+	e.UpdateSpamPoWIncreasingDifficulty(context.Background(), num.NewUint(0))
+
 	party := crypto.RandomHash()
 
 	require.NoError(t, e.DeliverTx(&testTx{txID: "1", party: party, blockHeight: 100, powTxID: "DFE522E234D67E6AE3F017859F898E576B3928EA57310B765398615A0D3FDE2F", powNonce: 424517}))
@@ -121,9 +123,76 @@ func TestSnapshot(t *testing.T) {
 
 	pl := snapshotpb.Payload{}
 	require.NoError(t, proto.Unmarshal(state1, &pl))
-	eLoaded.LoadState(context.Background(), gtypes.PayloadFromProto(&pl))
+	eLoaded.LoadState(context.Background(), types.PayloadFromProto(&pl))
 
 	state2, _, err := eLoaded.GetState(key)
 	require.NoError(t, err)
 	require.True(t, bytes.Equal(state1, state2))
+
+	require.Equal(t, 2, len(eLoaded.activeParams))
+}
+
+func TestSnapshotViaEngine(t *testing.T) {
+	e := New(logging.NewTestLogger(), NewDefaultConfig(), &TestEpochEngine{})
+	now := time.Now()
+	log := logging.NewTestLogger()
+	timeService := stubs.NewTimeStub()
+	timeService.SetTime(now)
+	statsData := stats.New(log, stats.NewDefaultConfig(), "", "")
+	config := snapshot.NewDefaultConfig()
+	config.Storage = "memory"
+	snap, _ := snapshot.New(context.Background(), &paths.DefaultPaths{}, config, log, timeService, statsData.Blockchain)
+	snap.AddProviders(e)
+	snap.ClearAndInitialise()
+	defer snap.Close()
+
+	e.UpdateSpamPoWNumberOfPastBlocks(context.Background(), num.NewUint(1))
+	e.UpdateSpamPoWDifficulty(context.Background(), num.NewUint(20))
+	e.UpdateSpamPoWHashFunction(context.Background(), crypto.Sha3)
+	e.UpdateSpamPoWNumberOfTxPerBlock(context.Background(), num.NewUint(1))
+	e.UpdateSpamPoWIncreasingDifficulty(context.Background(), num.NewUint(1))
+
+	e.OnEpochEvent(context.Background(), types.Epoch{Seq: 1, Action: vega.EpochAction_EPOCH_ACTION_START})
+	e.BeginBlock(100, "2E7A16D9EF690F0D2BEED115FBA13BA2AAA16C8F971910AD88C72B9DB010C7D4")
+
+	party := crypto.RandomHash()
+
+	require.NoError(t, e.DeliverTx(&testTx{txID: "1", party: party, blockHeight: 100, powTxID: "DFE522E234D67E6AE3F017859F898E576B3928EA57310B765398615A0D3FDE2F", powNonce: 424517}))
+	require.NoError(t, e.DeliverTx(&testTx{txID: "2", party: party, blockHeight: 100, powTxID: "5B0E1EB96CCAC120E6D824A5F4C4007EABC59573B861BD84B1EF09DFB376DC84", powNonce: 4031737}))
+	require.NoError(t, e.DeliverTx(&testTx{txID: "3", party: party, blockHeight: 100, powTxID: "94A9CB1532011081B013CCD8E6AAA832CAB1CBA603F0C5A093B14C4961E5E7F0", powNonce: 431336}))
+
+	e.BeginBlock(101, "2E289FB9CEF7234E2C08F34CCD66B330229067CE47E22F76EF0595B3ABA9968F")
+	e.BeginBlock(102, "2E289FB9CEF7234E2C08F34CCD66B330229067CE47E22F76EF0595B3ABA9968F")
+
+	e.UpdateSpamPoWNumberOfPastBlocks(context.Background(), num.NewUint(2))
+	e.UpdateSpamPoWDifficulty(context.Background(), num.NewUint(25))
+	e.UpdateSpamPoWHashFunction(context.Background(), crypto.Sha3)
+	e.UpdateSpamPoWNumberOfTxPerBlock(context.Background(), num.NewUint(5))
+	e.UpdateSpamPoWIncreasingDifficulty(context.Background(), num.NewUint(0))
+
+	ctx := vgcontext.WithTraceID(vgcontext.WithBlockHeight(context.Background(), 102), "0xDEADBEEF")
+	ctx = vgcontext.WithChainID(ctx, "chainid")
+	_, err := snap.Snapshot(ctx)
+	require.NoError(t, err)
+	snaps, err := snap.List()
+	require.NoError(t, err)
+	snap1 := snaps[0]
+
+	eLoaded := New(logging.NewTestLogger(), NewDefaultConfig(), &TestEpochEngine{})
+	timeServiceLoaded := stubs.NewTimeStub()
+	timeServiceLoaded.SetTime(now)
+	snapLoad, _ := snapshot.New(context.Background(), &paths.DefaultPaths{}, config, log, timeServiceLoaded, statsData.Blockchain)
+	snapLoad.AddProviders(eLoaded)
+	snapLoad.ClearAndInitialise()
+	defer snapLoad.Close()
+
+	snapLoad.ReceiveSnapshot(snap1)
+	snapLoad.ApplySnapshot(ctx)
+	snapLoad.CheckLoaded()
+
+	b, err := snap.Snapshot(ctx)
+	require.NoError(t, err)
+	bLoad, err := snapLoad.Snapshot(ctx)
+	require.NoError(t, err)
+	require.True(t, bytes.Equal(b, bLoad))
 }
