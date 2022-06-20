@@ -6,6 +6,7 @@ import (
 
 	"code.vegaprotocol.io/data-node/entities"
 	"code.vegaprotocol.io/data-node/metrics"
+	v2 "code.vegaprotocol.io/protos/data-node/api/v2"
 
 	"github.com/georgysavva/scany/pgxscan"
 	"github.com/jackc/pgx/v4"
@@ -199,6 +200,6 @@ func (ts *Trades) queryTradesWithCursorPagination(ctx context.Context, query str
 		return pagedTrades, pageInfo, fmt.Errorf("querying trades: %w", err)
 	}
 
-	pagedTrades, pageInfo = entities.PageEntities(trades, pagination)
+	pagedTrades, pageInfo = entities.PageEntities[*v2.TradeEdge](trades, pagination)
 	return pagedTrades, pageInfo, nil
 }

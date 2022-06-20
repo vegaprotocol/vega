@@ -1622,10 +1622,16 @@ type Party {
   votes: [ProposalVote]
 
   "The list of all withdrawals initiated by the party"
-  withdrawals: [Withdrawal!]
+  withdrawals: [Withdrawal!] @deprecated(reason: "Use withdrawalsConnection instead")
+
+  "The list of all withdrawals initiated by the party"
+  withdrawalsConnection: WithdrawalsConnection!
 
   "The list of all deposits for a party by the party"
-  deposits: [Deposit!]
+  deposits: [Deposit!] @deprecated(reason: "Use depositsConnection instead")
+
+  "The list of all deposits for a party by the party"
+  depositsConnection: DepositsConnection!
 
   "The list of the liquidity provision commitment from this party"
   liquidityProvisions(
@@ -3217,10 +3223,16 @@ type PaginatedParty {
   votes: [ProposalVote]
 
   "The list of all withdrawals initiated by the party"
-  withdrawals: [Withdrawal!]
+  withdrawals: [Withdrawal!] @deprecated(reason: "Use withdrawalsConnection instead")
+
+  "The list of all withdrawals initiated by the party"
+  withdrawalsConnection: WithdrawalsConnection!
 
   "The list of all deposits for a party by the party"
-  deposits: [Deposit!]
+  deposits: [Deposit!] @deprecated(reason: "Use depositsConnection instead")
+
+  "The list of all deposits for a party by the party"
+  depositsConnection: DepositsConnection!
 
   "The list of the liquidity provision commitment from this party"
   liquidityProvisions(
@@ -3565,8 +3577,36 @@ type CandleEdge {
 type CandleDataConnection {
   "The total number of candles available with this connection"
   totalCount: Int
-    "The candles"
-    edges: [CandleEdge]
-    "The pagination information"
-    pageInfo: PageInfo
+  "The candles"
+  edges: [CandleEdge]
+  "The pagination information"
+  pageInfo: PageInfo
+}
+
+type WithdrawalEdge {
+  node: Withdrawal!
+  cursor: String!
+}
+
+type WithdrawalsConnection {
+  "The total number of withdrawals available with this connection"
+  totalCount: Int
+  "The withdrawals"
+  edges: [WithdrawalEdge]
+  "The pagination information"
+  pageInfo: PageInfo
+}
+
+type DepositEdge {
+  node: Deposit!
+  cursor: String!
+}
+
+type DepositsConnection {
+  "The total number of deposits available with this connection"
+  totalCount: Int
+  "The deposits"
+  edges: [DepositEdge]
+  "The pagination information"
+  pageInfo: PageInfo
 }

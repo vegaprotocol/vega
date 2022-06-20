@@ -6,6 +6,7 @@ import (
 	"math"
 	"time"
 
+	v2 "code.vegaprotocol.io/protos/data-node/api/v2"
 	"code.vegaprotocol.io/protos/vega"
 	"github.com/shopspring/decimal"
 )
@@ -89,7 +90,7 @@ func NewMarketFromProto(market *vega.Market, vegaTime time.Time) (*Market, error
 	}, nil
 }
 
-func (m Market) ToProto() (*vega.Market, error) {
+func (m Market) ToProto() *vega.Market {
 	return &vega.Market{
 		Id:                 m.ID.String(),
 		TradableInstrument: m.TradableInstrument.ToProto(),
@@ -105,11 +106,18 @@ func (m Market) ToProto() (*vega.Market, error) {
 		State:                         vega.Market_State(m.State),
 		MarketTimestamps:              m.MarketTimestamps.ToProto(),
 		PositionDecimalPlaces:         uint64(m.PositionDecimalPlaces),
-	}, nil
+	}
 }
 
 func (m Market) Cursor() *Cursor {
 	return NewCursor(m.VegaTime.In(time.UTC).Format(time.RFC3339Nano))
+}
+
+func (m Market) ToProtoEdge(_ ...any) *v2.MarketEdge {
+	return &v2.MarketEdge{
+		Node:   m.ToProto(),
+		Cursor: m.Cursor().Encode(),
+	}
 }
 
 type MarketTimestamps struct {

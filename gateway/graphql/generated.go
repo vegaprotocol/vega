@@ -227,6 +227,17 @@ type ComplexityRoot struct {
 		TxHash            func(childComplexity int) int
 	}
 
+	DepositEdge struct {
+		Cursor func(childComplexity int) int
+		Node   func(childComplexity int) int
+	}
+
+	DepositsConnection struct {
+		Edges      func(childComplexity int) int
+		PageInfo   func(childComplexity int) int
+		TotalCount func(childComplexity int) int
+	}
+
 	DiscreteTrading struct {
 		Duration func(childComplexity int) int
 		TickSize func(childComplexity int) int
@@ -758,45 +769,49 @@ type ComplexityRoot struct {
 	}
 
 	PaginatedParty struct {
-		Accounts            func(childComplexity int, marketID *string, asset *string, typeArg *vega.AccountType) int
-		Delegations         func(childComplexity int, nodeID *string, skip *int, first *int, last *int) int
-		Deposits            func(childComplexity int) int
-		Id                  func(childComplexity int) int
-		LiquidityProvisions func(childComplexity int, market *string, reference *string) int
-		MarginsPaged        func(childComplexity int, marketID *string, pagination *v2.Pagination) int
-		OrdersPaged         func(childComplexity int, pagination *v2.Pagination) int
-		Positions           func(childComplexity int) int
-		Proposals           func(childComplexity int, inState *ProposalState) int
-		RewardSummaries     func(childComplexity int, asset *string) int
-		Rewards             func(childComplexity int, asset *string, skip *int, first *int, last *int) int
-		RewardsConnection   func(childComplexity int, asset *string, pagination *v2.Pagination) int
-		Stake               func(childComplexity int) int
-		TradesPaged         func(childComplexity int, marketID *string, pagination *v2.Pagination) int
-		Votes               func(childComplexity int) int
-		Withdrawals         func(childComplexity int) int
+		Accounts              func(childComplexity int, marketID *string, asset *string, typeArg *vega.AccountType) int
+		Delegations           func(childComplexity int, nodeID *string, skip *int, first *int, last *int) int
+		Deposits              func(childComplexity int) int
+		DepositsConnection    func(childComplexity int) int
+		Id                    func(childComplexity int) int
+		LiquidityProvisions   func(childComplexity int, market *string, reference *string) int
+		MarginsPaged          func(childComplexity int, marketID *string, pagination *v2.Pagination) int
+		OrdersPaged           func(childComplexity int, pagination *v2.Pagination) int
+		Positions             func(childComplexity int) int
+		Proposals             func(childComplexity int, inState *ProposalState) int
+		RewardSummaries       func(childComplexity int, asset *string) int
+		Rewards               func(childComplexity int, asset *string, skip *int, first *int, last *int) int
+		RewardsConnection     func(childComplexity int, asset *string, pagination *v2.Pagination) int
+		Stake                 func(childComplexity int) int
+		TradesPaged           func(childComplexity int, marketID *string, pagination *v2.Pagination) int
+		Votes                 func(childComplexity int) int
+		Withdrawals           func(childComplexity int) int
+		WithdrawalsConnection func(childComplexity int) int
 	}
 
 	Party struct {
-		Accounts            func(childComplexity int, marketID *string, asset *string, typeArg *vega.AccountType) int
-		Delegations         func(childComplexity int, nodeID *string, skip *int, first *int, last *int) int
-		Deposits            func(childComplexity int) int
-		Id                  func(childComplexity int) int
-		LiquidityProvisions func(childComplexity int, market *string, reference *string) int
-		Margins             func(childComplexity int, marketID *string) int
-		MarginsPaged        func(childComplexity int, marketID *string, pagination *v2.Pagination) int
-		Orders              func(childComplexity int, skip *int, first *int, last *int) int
-		OrdersPaged         func(childComplexity int, pagination *v2.Pagination) int
-		Positions           func(childComplexity int) int
-		Proposals           func(childComplexity int, inState *ProposalState) int
-		RewardDetails       func(childComplexity int) int
-		RewardSummaries     func(childComplexity int, asset *string) int
-		Rewards             func(childComplexity int, asset *string, skip *int, first *int, last *int) int
-		RewardsConnection   func(childComplexity int, asset *string, pagination *v2.Pagination) int
-		Stake               func(childComplexity int) int
-		Trades              func(childComplexity int, marketID *string, skip *int, first *int, last *int) int
-		TradesPaged         func(childComplexity int, marketID *string, pagination *v2.Pagination) int
-		Votes               func(childComplexity int) int
-		Withdrawals         func(childComplexity int) int
+		Accounts              func(childComplexity int, marketID *string, asset *string, typeArg *vega.AccountType) int
+		Delegations           func(childComplexity int, nodeID *string, skip *int, first *int, last *int) int
+		Deposits              func(childComplexity int) int
+		DepositsConnection    func(childComplexity int) int
+		Id                    func(childComplexity int) int
+		LiquidityProvisions   func(childComplexity int, market *string, reference *string) int
+		Margins               func(childComplexity int, marketID *string) int
+		MarginsPaged          func(childComplexity int, marketID *string, pagination *v2.Pagination) int
+		Orders                func(childComplexity int, skip *int, first *int, last *int) int
+		OrdersPaged           func(childComplexity int, pagination *v2.Pagination) int
+		Positions             func(childComplexity int) int
+		Proposals             func(childComplexity int, inState *ProposalState) int
+		RewardDetails         func(childComplexity int) int
+		RewardSummaries       func(childComplexity int, asset *string) int
+		Rewards               func(childComplexity int, asset *string, skip *int, first *int, last *int) int
+		RewardsConnection     func(childComplexity int, asset *string, pagination *v2.Pagination) int
+		Stake                 func(childComplexity int) int
+		Trades                func(childComplexity int, marketID *string, skip *int, first *int, last *int) int
+		TradesPaged           func(childComplexity int, marketID *string, pagination *v2.Pagination) int
+		Votes                 func(childComplexity int) int
+		Withdrawals           func(childComplexity int) int
+		WithdrawalsConnection func(childComplexity int) int
 	}
 
 	PartyConnection struct {
@@ -1262,6 +1277,17 @@ type ComplexityRoot struct {
 		TxHash             func(childComplexity int) int
 		WithdrawnTimestamp func(childComplexity int) int
 	}
+
+	WithdrawalEdge struct {
+		Cursor func(childComplexity int) int
+		Node   func(childComplexity int) int
+	}
+
+	WithdrawalsConnection struct {
+		Edges      func(childComplexity int) int
+		PageInfo   func(childComplexity int) int
+		TotalCount func(childComplexity int) int
+	}
 }
 
 type AccountResolver interface {
@@ -1540,7 +1566,9 @@ type PaginatedPartyResolver interface {
 	Proposals(ctx context.Context, obj *vega.Party, inState *ProposalState) ([]*vega.GovernanceData, error)
 	Votes(ctx context.Context, obj *vega.Party) ([]*ProposalVote, error)
 	Withdrawals(ctx context.Context, obj *vega.Party) ([]*vega.Withdrawal, error)
+	WithdrawalsConnection(ctx context.Context, obj *vega.Party) (*v2.WithdrawalsConnection, error)
 	Deposits(ctx context.Context, obj *vega.Party) ([]*vega.Deposit, error)
+	DepositsConnection(ctx context.Context, obj *vega.Party) (*v2.DepositsConnection, error)
 	LiquidityProvisions(ctx context.Context, obj *vega.Party, market *string, reference *string) ([]*vega.LiquidityProvision, error)
 	Delegations(ctx context.Context, obj *vega.Party, nodeID *string, skip *int, first *int, last *int) ([]*vega.Delegation, error)
 	Stake(ctx context.Context, obj *vega.Party) (*v12.PartyStakeResponse, error)
@@ -1560,7 +1588,9 @@ type PartyResolver interface {
 	Proposals(ctx context.Context, obj *vega.Party, inState *ProposalState) ([]*vega.GovernanceData, error)
 	Votes(ctx context.Context, obj *vega.Party) ([]*ProposalVote, error)
 	Withdrawals(ctx context.Context, obj *vega.Party) ([]*vega.Withdrawal, error)
+	WithdrawalsConnection(ctx context.Context, obj *vega.Party) (*v2.WithdrawalsConnection, error)
 	Deposits(ctx context.Context, obj *vega.Party) ([]*vega.Deposit, error)
+	DepositsConnection(ctx context.Context, obj *vega.Party) (*v2.DepositsConnection, error)
 	LiquidityProvisions(ctx context.Context, obj *vega.Party, market *string, reference *string) ([]*vega.LiquidityProvision, error)
 	Delegations(ctx context.Context, obj *vega.Party, nodeID *string, skip *int, first *int, last *int) ([]*vega.Delegation, error)
 	Stake(ctx context.Context, obj *vega.Party) (*v12.PartyStakeResponse, error)
@@ -2289,6 +2319,41 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Deposit.TxHash(childComplexity), true
+
+	case "DepositEdge.cursor":
+		if e.complexity.DepositEdge.Cursor == nil {
+			break
+		}
+
+		return e.complexity.DepositEdge.Cursor(childComplexity), true
+
+	case "DepositEdge.node":
+		if e.complexity.DepositEdge.Node == nil {
+			break
+		}
+
+		return e.complexity.DepositEdge.Node(childComplexity), true
+
+	case "DepositsConnection.edges":
+		if e.complexity.DepositsConnection.Edges == nil {
+			break
+		}
+
+		return e.complexity.DepositsConnection.Edges(childComplexity), true
+
+	case "DepositsConnection.pageInfo":
+		if e.complexity.DepositsConnection.PageInfo == nil {
+			break
+		}
+
+		return e.complexity.DepositsConnection.PageInfo(childComplexity), true
+
+	case "DepositsConnection.totalCount":
+		if e.complexity.DepositsConnection.TotalCount == nil {
+			break
+		}
+
+		return e.complexity.DepositsConnection.TotalCount(childComplexity), true
 
 	case "DiscreteTrading.duration":
 		if e.complexity.DiscreteTrading.Duration == nil {
@@ -4766,6 +4831,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.PaginatedParty.Deposits(childComplexity), true
 
+	case "PaginatedParty.depositsConnection":
+		if e.complexity.PaginatedParty.DepositsConnection == nil {
+			break
+		}
+
+		return e.complexity.PaginatedParty.DepositsConnection(childComplexity), true
+
 	case "PaginatedParty.id":
 		if e.complexity.PaginatedParty.Id == nil {
 			break
@@ -4897,6 +4969,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.PaginatedParty.Withdrawals(childComplexity), true
 
+	case "PaginatedParty.withdrawalsConnection":
+		if e.complexity.PaginatedParty.WithdrawalsConnection == nil {
+			break
+		}
+
+		return e.complexity.PaginatedParty.WithdrawalsConnection(childComplexity), true
+
 	case "Party.accounts":
 		if e.complexity.Party.Accounts == nil {
 			break
@@ -4927,6 +5006,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Party.Deposits(childComplexity), true
+
+	case "Party.depositsConnection":
+		if e.complexity.Party.DepositsConnection == nil {
+			break
+		}
+
+		return e.complexity.Party.DepositsConnection(childComplexity), true
 
 	case "Party.id":
 		if e.complexity.Party.Id == nil {
@@ -5101,6 +5187,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Party.Withdrawals(childComplexity), true
+
+	case "Party.withdrawalsConnection":
+		if e.complexity.Party.WithdrawalsConnection == nil {
+			break
+		}
+
+		return e.complexity.Party.WithdrawalsConnection(childComplexity), true
 
 	case "PartyConnection.edges":
 		if e.complexity.PartyConnection.Edges == nil {
@@ -7371,6 +7464,41 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Withdrawal.WithdrawnTimestamp(childComplexity), true
 
+	case "WithdrawalEdge.cursor":
+		if e.complexity.WithdrawalEdge.Cursor == nil {
+			break
+		}
+
+		return e.complexity.WithdrawalEdge.Cursor(childComplexity), true
+
+	case "WithdrawalEdge.node":
+		if e.complexity.WithdrawalEdge.Node == nil {
+			break
+		}
+
+		return e.complexity.WithdrawalEdge.Node(childComplexity), true
+
+	case "WithdrawalsConnection.edges":
+		if e.complexity.WithdrawalsConnection.Edges == nil {
+			break
+		}
+
+		return e.complexity.WithdrawalsConnection.Edges(childComplexity), true
+
+	case "WithdrawalsConnection.pageInfo":
+		if e.complexity.WithdrawalsConnection.PageInfo == nil {
+			break
+		}
+
+		return e.complexity.WithdrawalsConnection.PageInfo(childComplexity), true
+
+	case "WithdrawalsConnection.totalCount":
+		if e.complexity.WithdrawalsConnection.TotalCount == nil {
+			break
+		}
+
+		return e.complexity.WithdrawalsConnection.TotalCount(childComplexity), true
+
 	}
 	return 0, false
 }
@@ -9062,10 +9190,16 @@ type Party {
   votes: [ProposalVote]
 
   "The list of all withdrawals initiated by the party"
-  withdrawals: [Withdrawal!]
+  withdrawals: [Withdrawal!] @deprecated(reason: "Use withdrawalsConnection instead")
+
+  "The list of all withdrawals initiated by the party"
+  withdrawalsConnection: WithdrawalsConnection!
 
   "The list of all deposits for a party by the party"
-  deposits: [Deposit!]
+  deposits: [Deposit!] @deprecated(reason: "Use depositsConnection instead")
+
+  "The list of all deposits for a party by the party"
+  depositsConnection: DepositsConnection!
 
   "The list of the liquidity provision commitment from this party"
   liquidityProvisions(
@@ -10657,10 +10791,16 @@ type PaginatedParty {
   votes: [ProposalVote]
 
   "The list of all withdrawals initiated by the party"
-  withdrawals: [Withdrawal!]
+  withdrawals: [Withdrawal!] @deprecated(reason: "Use withdrawalsConnection instead")
+
+  "The list of all withdrawals initiated by the party"
+  withdrawalsConnection: WithdrawalsConnection!
 
   "The list of all deposits for a party by the party"
-  deposits: [Deposit!]
+  deposits: [Deposit!] @deprecated(reason: "Use depositsConnection instead")
+
+  "The list of all deposits for a party by the party"
+  depositsConnection: DepositsConnection!
 
   "The list of the liquidity provision commitment from this party"
   liquidityProvisions(
@@ -11005,10 +11145,38 @@ type CandleEdge {
 type CandleDataConnection {
   "The total number of candles available with this connection"
   totalCount: Int
-    "The candles"
-    edges: [CandleEdge]
-    "The pagination information"
-    pageInfo: PageInfo
+  "The candles"
+  edges: [CandleEdge]
+  "The pagination information"
+  pageInfo: PageInfo
+}
+
+type WithdrawalEdge {
+  node: Withdrawal!
+  cursor: String!
+}
+
+type WithdrawalsConnection {
+  "The total number of withdrawals available with this connection"
+  totalCount: Int
+  "The withdrawals"
+  edges: [WithdrawalEdge]
+  "The pagination information"
+  pageInfo: PageInfo
+}
+
+type DepositEdge {
+  node: Deposit!
+  cursor: String!
+}
+
+type DepositsConnection {
+  "The total number of deposits available with this connection"
+  totalCount: Int
+  "The deposits"
+  edges: [DepositEdge]
+  "The pagination information"
+  pageInfo: PageInfo
 }
 `, BuiltIn: false},
 }
@@ -15704,6 +15872,172 @@ func (ec *executionContext) _Deposit_txHash(ctx context.Context, field graphql.C
 	res := resTmp.(string)
 	fc.Result = res
 	return ec.marshalOString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _DepositEdge_node(ctx context.Context, field graphql.CollectedField, obj *v2.DepositEdge) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "DepositEdge",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Node, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*vega.Deposit)
+	fc.Result = res
+	return ec.marshalNDeposit2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐDeposit(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _DepositEdge_cursor(ctx context.Context, field graphql.CollectedField, obj *v2.DepositEdge) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "DepositEdge",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Cursor, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _DepositsConnection_totalCount(ctx context.Context, field graphql.CollectedField, obj *v2.DepositsConnection) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "DepositsConnection",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TotalCount, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(int64)
+	fc.Result = res
+	return ec.marshalOInt2int64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _DepositsConnection_edges(ctx context.Context, field graphql.CollectedField, obj *v2.DepositsConnection) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "DepositsConnection",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Edges, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*v2.DepositEdge)
+	fc.Result = res
+	return ec.marshalODepositEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐDepositEdge(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _DepositsConnection_pageInfo(ctx context.Context, field graphql.CollectedField, obj *v2.DepositsConnection) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "DepositsConnection",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PageInfo, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*v2.PageInfo)
+	fc.Result = res
+	return ec.marshalOPageInfo2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPageInfo(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _DiscreteTrading_duration(ctx context.Context, field graphql.CollectedField, obj *DiscreteTrading) (ret graphql.Marshaler) {
@@ -27621,6 +27955,41 @@ func (ec *executionContext) _PaginatedParty_withdrawals(ctx context.Context, fie
 	return ec.marshalOWithdrawal2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐWithdrawalᚄ(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _PaginatedParty_withdrawalsConnection(ctx context.Context, field graphql.CollectedField, obj *vega.Party) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "PaginatedParty",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.PaginatedParty().WithdrawalsConnection(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*v2.WithdrawalsConnection)
+	fc.Result = res
+	return ec.marshalNWithdrawalsConnection2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐWithdrawalsConnection(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _PaginatedParty_deposits(ctx context.Context, field graphql.CollectedField, obj *vega.Party) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -27651,6 +28020,41 @@ func (ec *executionContext) _PaginatedParty_deposits(ctx context.Context, field 
 	res := resTmp.([]*vega.Deposit)
 	fc.Result = res
 	return ec.marshalODeposit2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐDepositᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PaginatedParty_depositsConnection(ctx context.Context, field graphql.CollectedField, obj *vega.Party) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "PaginatedParty",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.PaginatedParty().DepositsConnection(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*v2.DepositsConnection)
+	fc.Result = res
+	return ec.marshalNDepositsConnection2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐDepositsConnection(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _PaginatedParty_liquidityProvisions(ctx context.Context, field graphql.CollectedField, obj *vega.Party) (ret graphql.Marshaler) {
@@ -28335,6 +28739,41 @@ func (ec *executionContext) _Party_withdrawals(ctx context.Context, field graphq
 	return ec.marshalOWithdrawal2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐWithdrawalᚄ(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Party_withdrawalsConnection(ctx context.Context, field graphql.CollectedField, obj *vega.Party) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Party",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Party().WithdrawalsConnection(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*v2.WithdrawalsConnection)
+	fc.Result = res
+	return ec.marshalNWithdrawalsConnection2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐWithdrawalsConnection(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Party_deposits(ctx context.Context, field graphql.CollectedField, obj *vega.Party) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -28365,6 +28804,41 @@ func (ec *executionContext) _Party_deposits(ctx context.Context, field graphql.C
 	res := resTmp.([]*vega.Deposit)
 	fc.Result = res
 	return ec.marshalODeposit2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐDepositᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Party_depositsConnection(ctx context.Context, field graphql.CollectedField, obj *vega.Party) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Party",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Party().DepositsConnection(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*v2.DepositsConnection)
+	fc.Result = res
+	return ec.marshalNDepositsConnection2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐDepositsConnection(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Party_liquidityProvisions(ctx context.Context, field graphql.CollectedField, obj *vega.Party) (ret graphql.Marshaler) {
@@ -39055,6 +39529,172 @@ func (ec *executionContext) _Withdrawal_details(ctx context.Context, field graph
 	return ec.marshalOWithdrawalDetails2codeᚗvegaprotocolᚗioᚋdataᚑnodeᚋgatewayᚋgraphqlᚐWithdrawalDetails(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _WithdrawalEdge_node(ctx context.Context, field graphql.CollectedField, obj *v2.WithdrawalEdge) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "WithdrawalEdge",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Node, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*vega.Withdrawal)
+	fc.Result = res
+	return ec.marshalNWithdrawal2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐWithdrawal(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _WithdrawalEdge_cursor(ctx context.Context, field graphql.CollectedField, obj *v2.WithdrawalEdge) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "WithdrawalEdge",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Cursor, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _WithdrawalsConnection_totalCount(ctx context.Context, field graphql.CollectedField, obj *v2.WithdrawalsConnection) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "WithdrawalsConnection",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TotalCount, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(int64)
+	fc.Result = res
+	return ec.marshalOInt2int64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _WithdrawalsConnection_edges(ctx context.Context, field graphql.CollectedField, obj *v2.WithdrawalsConnection) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "WithdrawalsConnection",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Edges, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*v2.WithdrawalEdge)
+	fc.Result = res
+	return ec.marshalOWithdrawalEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐWithdrawalEdge(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _WithdrawalsConnection_pageInfo(ctx context.Context, field graphql.CollectedField, obj *v2.WithdrawalsConnection) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "WithdrawalsConnection",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PageInfo, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*v2.PageInfo)
+	fc.Result = res
+	return ec.marshalOPageInfo2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPageInfo(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) ___Directive_name(ctx context.Context, field graphql.CollectedField, obj *introspection.Directive) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -41924,6 +42564,89 @@ func (ec *executionContext) _Deposit(ctx context.Context, sel ast.SelectionSet, 
 		case "txHash":
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Deposit_txHash(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var depositEdgeImplementors = []string{"DepositEdge"}
+
+func (ec *executionContext) _DepositEdge(ctx context.Context, sel ast.SelectionSet, obj *v2.DepositEdge) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, depositEdgeImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("DepositEdge")
+		case "node":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._DepositEdge_node(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "cursor":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._DepositEdge_cursor(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var depositsConnectionImplementors = []string{"DepositsConnection"}
+
+func (ec *executionContext) _DepositsConnection(ctx context.Context, sel ast.SelectionSet, obj *v2.DepositsConnection) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, depositsConnectionImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("DepositsConnection")
+		case "totalCount":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._DepositsConnection_totalCount(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+		case "edges":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._DepositsConnection_edges(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+		case "pageInfo":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._DepositsConnection_pageInfo(ctx, field, obj)
 			}
 
 			out.Values[i] = innerFunc(ctx)
@@ -47934,6 +48657,26 @@ func (ec *executionContext) _PaginatedParty(ctx context.Context, sel ast.Selecti
 				return innerFunc(ctx)
 
 			})
+		case "withdrawalsConnection":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._PaginatedParty_withdrawalsConnection(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
 		case "deposits":
 			field := field
 
@@ -47944,6 +48687,26 @@ func (ec *executionContext) _PaginatedParty(ctx context.Context, sel ast.Selecti
 					}
 				}()
 				res = ec._PaginatedParty_deposits(ctx, field, obj)
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "depositsConnection":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._PaginatedParty_depositsConnection(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
 				return res
 			}
 
@@ -48283,6 +49046,26 @@ func (ec *executionContext) _Party(ctx context.Context, sel ast.SelectionSet, ob
 				return innerFunc(ctx)
 
 			})
+		case "withdrawalsConnection":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Party_withdrawalsConnection(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
 		case "deposits":
 			field := field
 
@@ -48293,6 +49076,26 @@ func (ec *executionContext) _Party(ctx context.Context, sel ast.SelectionSet, ob
 					}
 				}()
 				res = ec._Party_deposits(ctx, field, obj)
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "depositsConnection":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Party_depositsConnection(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
 				return res
 			}
 
@@ -53760,6 +54563,89 @@ func (ec *executionContext) _Withdrawal(ctx context.Context, sel ast.SelectionSe
 	return out
 }
 
+var withdrawalEdgeImplementors = []string{"WithdrawalEdge"}
+
+func (ec *executionContext) _WithdrawalEdge(ctx context.Context, sel ast.SelectionSet, obj *v2.WithdrawalEdge) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, withdrawalEdgeImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("WithdrawalEdge")
+		case "node":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._WithdrawalEdge_node(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "cursor":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._WithdrawalEdge_cursor(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var withdrawalsConnectionImplementors = []string{"WithdrawalsConnection"}
+
+func (ec *executionContext) _WithdrawalsConnection(ctx context.Context, sel ast.SelectionSet, obj *v2.WithdrawalsConnection) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, withdrawalsConnectionImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("WithdrawalsConnection")
+		case "totalCount":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._WithdrawalsConnection_totalCount(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+		case "edges":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._WithdrawalsConnection_edges(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+		case "pageInfo":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._WithdrawalsConnection_pageInfo(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
 var __DirectiveImplementors = []string{"__Directive"}
 
 func (ec *executionContext) ___Directive(ctx context.Context, sel ast.SelectionSet, obj *introspection.Directive) graphql.Marshaler {
@@ -54530,6 +55416,20 @@ func (ec *executionContext) unmarshalNDepositStatus2codeᚗvegaprotocolᚗioᚋd
 
 func (ec *executionContext) marshalNDepositStatus2codeᚗvegaprotocolᚗioᚋdataᚑnodeᚋgatewayᚋgraphqlᚐDepositStatus(ctx context.Context, sel ast.SelectionSet, v DepositStatus) graphql.Marshaler {
 	return v
+}
+
+func (ec *executionContext) marshalNDepositsConnection2codeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐDepositsConnection(ctx context.Context, sel ast.SelectionSet, v v2.DepositsConnection) graphql.Marshaler {
+	return ec._DepositsConnection(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNDepositsConnection2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐDepositsConnection(ctx context.Context, sel ast.SelectionSet, v *v2.DepositsConnection) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._DepositsConnection(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNDispatchMetric2codeᚗvegaprotocolᚗioᚋdataᚑnodeᚋgatewayᚋgraphqlᚐDispatchMetric(ctx context.Context, v interface{}) (DispatchMetric, error) {
@@ -56176,6 +57076,20 @@ func (ec *executionContext) marshalNWithdrawalStatus2codeᚗvegaprotocolᚗioᚋ
 	return v
 }
 
+func (ec *executionContext) marshalNWithdrawalsConnection2codeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐWithdrawalsConnection(ctx context.Context, sel ast.SelectionSet, v v2.WithdrawalsConnection) graphql.Marshaler {
+	return ec._WithdrawalsConnection(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNWithdrawalsConnection2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐWithdrawalsConnection(ctx context.Context, sel ast.SelectionSet, v *v2.WithdrawalsConnection) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._WithdrawalsConnection(ctx, sel, v)
+}
+
 func (ec *executionContext) marshalN__Directive2githubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐDirective(ctx context.Context, sel ast.SelectionSet, v introspection.Directive) graphql.Marshaler {
 	return ec.___Directive(ctx, sel, &v)
 }
@@ -57046,6 +57960,54 @@ func (ec *executionContext) marshalODeposit2ᚖcodeᚗvegaprotocolᚗioᚋprotos
 		return graphql.Null
 	}
 	return ec._Deposit(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalODepositEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐDepositEdge(ctx context.Context, sel ast.SelectionSet, v []*v2.DepositEdge) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalODepositEdge2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐDepositEdge(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	return ret
+}
+
+func (ec *executionContext) marshalODepositEdge2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐDepositEdge(ctx context.Context, sel ast.SelectionSet, v *v2.DepositEdge) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._DepositEdge(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalODispatchStrategy2ᚖcodeᚗvegaprotocolᚗioᚋdataᚑnodeᚋgatewayᚋgraphqlᚐDispatchStrategy(ctx context.Context, sel ast.SelectionSet, v *DispatchStrategy) graphql.Marshaler {
@@ -59437,6 +60399,54 @@ func (ec *executionContext) marshalOWithdrawalDetails2codeᚗvegaprotocolᚗio�
 		return graphql.Null
 	}
 	return ec._WithdrawalDetails(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOWithdrawalEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐWithdrawalEdge(ctx context.Context, sel ast.SelectionSet, v []*v2.WithdrawalEdge) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalOWithdrawalEdge2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐWithdrawalEdge(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	return ret
+}
+
+func (ec *executionContext) marshalOWithdrawalEdge2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐWithdrawalEdge(ctx context.Context, sel ast.SelectionSet, v *v2.WithdrawalEdge) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._WithdrawalEdge(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalO__EnumValue2ᚕgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐEnumValueᚄ(ctx context.Context, sel ast.SelectionSet, v []introspection.EnumValue) graphql.Marshaler {

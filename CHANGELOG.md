@@ -10,6 +10,8 @@
 
 ### 🛠  Improvements
 - [565](https://github.com/vegaprotocol/data-node/issues/565) - Add cursor based pagination for candles data requests
+- [568](https://github.com/vegaprotocol/data-node/issues/568) - Add cursor based pagination for deposits requests
+- [569](https://github.com/vegaprotocol/data-node/issues/569) - Add cursor based pagination for withdrawal requests
 
 ### 🐛 Fixes
 - [](https://github.com/vegaprotocol/data-node/issues/xxx) -

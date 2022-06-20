@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"time"
 
+	v2 "code.vegaprotocol.io/protos/data-node/api/v2"
 	types "code.vegaprotocol.io/protos/vega"
 	"github.com/shopspring/decimal"
 )
@@ -377,6 +378,19 @@ func (md MarketData) ToProto() *types.MarketData {
 	return &result
 }
 
+func (md MarketData) Cursor() *Cursor {
+	// NOTE: We need to force the time into a specific timezone or the formatting will reflect the time based on the timezone
+	// of the database that returns the data if the postgres server has a timezone that is not set to UTC
+	return NewCursor(md.SyntheticTime.In(time.UTC).Format(time.RFC3339Nano))
+}
+
+func (md MarketData) ToProtoEdge(_ ...any) *v2.MarketDataEdge {
+	return &v2.MarketDataEdge{
+		Node:   md.ToProto(),
+		Cursor: md.Cursor().Encode(),
+	}
+}
+
 func priceMonitoringBoundsToProto(bounds []*PriceMonitoringBound) []*types.PriceMonitoringBounds {
 	if len(bounds) == 0 {
 		return nil
@@ -424,10 +438,4 @@ func priceMonitoringTriggerToProto(trigger PriceMonitoringTrigger) *types.PriceM
 		Probability:      trigger.Probability.String(),
 		AuctionExtension: int64(trigger.AuctionExtension),
 	}
-}
-
-func (md MarketData) Cursor() *Cursor {
-	// NOTE: We need to force the time into a specific timezone or the formatting will reflect the time based on the timezone
-	// of the database that returns the data if the postgres server has a timezone that is not set to UTC
-	return NewCursor(md.SyntheticTime.In(time.UTC).Format(time.RFC3339Nano))
 }

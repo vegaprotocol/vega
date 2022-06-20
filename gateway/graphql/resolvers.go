@@ -1418,6 +1418,10 @@ func (r *myPartyResolver) Withdrawals(ctx context.Context, party *types.Party) (
 	return res.Withdrawals, nil
 }
 
+func (r *myPartyResolver) WithdrawalsConnection(ctx context.Context, party *types.Party) (*v2.WithdrawalsConnection, error) {
+	return handleWithdrawalsConnectionRequest(ctx, r.tradingDataClientV2, party)
+}
+
 func (r *myPartyResolver) Deposits(ctx context.Context, party *types.Party) ([]*types.Deposit, error) {
 	res, err := r.tradingDataClient.Deposits(
 		ctx, &protoapi.DepositsRequest{PartyId: party.Id},
@@ -1427,6 +1431,10 @@ func (r *myPartyResolver) Deposits(ctx context.Context, party *types.Party) ([]*
 	}
 
 	return res.Deposits, nil
+}
+
+func (r *myPartyResolver) DepositsConnection(ctx context.Context, party *types.Party) (*v2.DepositsConnection, error) {
+	return handleDepositsConnectionRequest(ctx, r.tradingDataClientV2, party)
 }
 
 func (r *myPartyResolver) Votes(ctx context.Context, party *types.Party) ([]*ProposalVote, error) {

@@ -7,6 +7,7 @@ import (
 
 	"code.vegaprotocol.io/data-node/entities"
 	"code.vegaprotocol.io/data-node/metrics"
+	v2 "code.vegaprotocol.io/protos/data-node/api/v2"
 	"github.com/georgysavva/scany/pgxscan"
 )
 
@@ -133,6 +134,6 @@ func (m *Markets) GetAllPaged(ctx context.Context, marketID string, pagination e
 		return pagedMarkets, pageInfo, err
 	}
 
-	pagedMarkets, pageInfo = entities.PageEntities(markets, pagination)
+	pagedMarkets, pageInfo = entities.PageEntities[*v2.MarketEdge](markets, pagination)
 	return pagedMarkets, pageInfo, nil
 }

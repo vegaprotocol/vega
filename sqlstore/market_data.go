@@ -9,6 +9,7 @@ import (
 	"code.vegaprotocol.io/data-node/entities"
 	"code.vegaprotocol.io/data-node/logging"
 	"code.vegaprotocol.io/data-node/metrics"
+	v2 "code.vegaprotocol.io/protos/data-node/api/v2"
 	"github.com/georgysavva/scany/pgxscan"
 	"github.com/jackc/pgx/v4"
 )
@@ -207,7 +208,7 @@ func (md *MarketData) getBetweenDatesByID(ctx context.Context, marketID string, 
 		return pagedData, pageInfo, err
 	}
 
-	pagedData, pageInfo = entities.PageEntities(results, pagination)
+	pagedData, pageInfo = entities.PageEntities[*v2.MarketDataEdge](results, pagination)
 
 	return pagedData, pageInfo, nil
 }

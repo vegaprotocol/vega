@@ -37,7 +37,7 @@ var (
 	newClient               *graphql.Client
 	oldClient               *graphql.Client
 	integrationTestsEnabled *bool = flag.Bool("integration", false, "run integration tests")
-	blockWhenDone           bool  = false
+	blockWhenDone                 = flag.Bool("block", false, "leave services running after tests are complete")
 )
 
 func TestMain(m *testing.M) {
@@ -68,9 +68,11 @@ func TestMain(m *testing.M) {
 
 	m.Run()
 
+	log.Printf("Integration tests completed")
+
 	// When you're debugging tests, it's helpful to stop here so you can go in and poke around
 	// sending queries via the graphql playground etc..
-	if blockWhenDone {
+	if blockWhenDone != nil && *blockWhenDone {
 		log.Print("Blocking now to allow debugging")
 		waitForSIGTERM()
 	}

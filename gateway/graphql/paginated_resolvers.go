@@ -569,6 +569,10 @@ func (r *myPaginatedPartyResolver) Withdrawals(ctx context.Context, party *types
 	return res.Withdrawals, nil
 }
 
+func (r *myPaginatedPartyResolver) WithdrawalsConnection(ctx context.Context, party *types.Party) (*v2.WithdrawalsConnection, error) {
+	return handleWithdrawalsConnectionRequest(ctx, r.tradingDataClientV2, party)
+}
+
 func (r *myPaginatedPartyResolver) Deposits(ctx context.Context, party *types.Party) ([]*types.Deposit, error) {
 	res, err := r.tradingDataClient.Deposits(
 		ctx, &protoapi.DepositsRequest{PartyId: party.Id},
@@ -578,6 +582,10 @@ func (r *myPaginatedPartyResolver) Deposits(ctx context.Context, party *types.Pa
 	}
 
 	return res.Deposits, nil
+}
+
+func (r *myPaginatedPartyResolver) DepositsConnection(ctx context.Context, party *types.Party) (*v2.DepositsConnection, error) {
+	return handleDepositsConnectionRequest(ctx, r.tradingDataClientV2, party)
 }
 
 func (r *myPaginatedPartyResolver) Votes(ctx context.Context, party *types.Party) ([]*ProposalVote, error) {
@@ -821,4 +829,22 @@ func handleCandleConnectionRequest(ctx context.Context, client TradingDataServic
 	}
 
 	return resp.Candles, nil
+}
+
+func handleWithdrawalsConnectionRequest(ctx context.Context, client TradingDataServiceClientV2, party *types.Party) (*v2.WithdrawalsConnection, error) {
+	req := v2.GetWithdrawalsRequest{PartyId: party.Id}
+	resp, err := client.GetWithdrawals(ctx, &req)
+	if err != nil {
+		return nil, fmt.Errorf("could not retrieve withdrawals for party %s: %w", party.Id, err)
+	}
+	return resp.Withdrawals, nil
+}
+
+func handleDepositsConnectionRequest(ctx context.Context, client TradingDataServiceClientV2, party *types.Party) (*v2.DepositsConnection, error) {
+	req := v2.GetDepositsRequest{PartyId: party.Id}
+	resp, err := client.GetDeposits(ctx, &req)
+	if err != nil {
+		return nil, fmt.Errorf("could not retrieve deposits for party %s: %w", party.Id, err)
+	}
+	return resp.Deposits, nil
 }
