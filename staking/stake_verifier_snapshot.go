@@ -98,14 +98,15 @@ func (s *StakeVerifier) Stopped() bool {
 }
 
 func (s *StakeVerifier) HasChanged(k string) bool {
-	switch k {
-	case depositedKey:
-		return s.svss.changedDeposited
-	case removedKey:
-		return s.svss.changedRemoved
-	default:
-		return false
-	}
+	// switch k {
+	// case depositedKey:
+	// 	return s.svss.changedDeposited
+	// case removedKey:
+	// 	return s.svss.changedRemoved
+	// default:
+	// 	return false
+	// }
+	return true
 }
 
 func (s *StakeVerifier) GetState(k string) ([]byte, []types.StateProvider, error) {

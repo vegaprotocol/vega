@@ -139,7 +139,7 @@ func (t *Topology) serialise(k string) ([]byte, error) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
-	if !t.tss.changed {
+	if !t.HasChanged(k) {
 		return t.tss.serialised, nil
 	}
 
@@ -165,9 +165,10 @@ func (t *Topology) serialise(k string) ([]byte, error) {
 }
 
 func (t *Topology) HasChanged(k string) bool {
-	t.mu.RLock()
-	defer t.mu.RUnlock()
-	return t.tss.changed
+	// t.mu.RLock()
+	// defer t.mu.RUnlock()
+	// return t.tss.changed
+	return true
 }
 
 func (t *Topology) GetState(k string) ([]byte, []types.StateProvider, error) {

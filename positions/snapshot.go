@@ -90,7 +90,8 @@ func (e *SnapshotEngine) Stopped() bool {
 }
 
 func (e *SnapshotEngine) HasChanged(k string) bool {
-	return e.changed
+	return true
+	// return e.changed
 }
 
 func (e *SnapshotEngine) GetState(k string) ([]byte, []types.StateProvider, error) {
@@ -144,7 +145,7 @@ func (e *SnapshotEngine) serialise() ([]byte, error) {
 		return nil, nil
 	}
 
-	if !e.changed {
+	if !e.HasChanged(e.pl.Key()) {
 		return e.data, nil // we already have what we need
 	}
 

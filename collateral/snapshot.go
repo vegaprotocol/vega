@@ -45,7 +45,8 @@ func (e *Engine) Stopped() bool {
 }
 
 func (e *Engine) HasChanged(k string) bool {
-	return e.state.HasChanged(k)
+	// return e.state.HasChanged(k)
+	return true
 }
 
 func (e *Engine) GetState(k string) ([]byte, []types.StateProvider, error) {

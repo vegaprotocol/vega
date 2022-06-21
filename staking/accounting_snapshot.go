@@ -48,7 +48,7 @@ func (a *Accounting) serialise(k string) ([]byte, error) {
 		return nil, types.ErrSnapshotKeyDoesNotExist
 	}
 
-	if !a.accState.changed {
+	if !a.HasChanged(k) {
 		return a.accState.serialised, nil
 	}
 
@@ -85,7 +85,8 @@ func (a *Accounting) Stopped() bool {
 }
 
 func (a *Accounting) HasChanged(k string) bool {
-	return a.accState.changed
+	return true
+	// return a.accState.changed
 }
 
 func (a *Accounting) GetState(k string) ([]byte, []types.StateProvider, error) {

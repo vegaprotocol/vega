@@ -87,7 +87,7 @@ func (mat *MarketActivityTracker) serialise(k string) ([]byte, error) {
 		return nil, ErrSnapshotKeyDoesNotExist
 	}
 
-	if !mat.ss.changed {
+	if !mat.HasChanged(k) {
 		return mat.ss.serialised, nil
 	}
 
@@ -108,7 +108,8 @@ func (mat *MarketActivityTracker) serialise(k string) ([]byte, error) {
 }
 
 func (mat *MarketActivityTracker) HasChanged(k string) bool {
-	return mat.ss.changed
+	// return mat.ss.changed
+	return true
 }
 
 func (mat *MarketActivityTracker) GetState(k string) ([]byte, []types.StateProvider, error) {

@@ -46,7 +46,7 @@ func (e *Engine) serialise(k string) ([]byte, error) {
 		return nil, types.ErrSnapshotKeyDoesNotExist
 	}
 
-	if !e.lss.changed {
+	if !e.HasChanged(k) {
 		return e.lss.serialised, nil
 	}
 
@@ -73,7 +73,8 @@ func (e *Engine) Stopped() bool {
 }
 
 func (e *Engine) HasChanged(k string) bool {
-	return e.lss.changed
+	// return e.lss.changed
+	return true
 }
 
 func (e *Engine) GetState(k string) ([]byte, []types.StateProvider, error) {

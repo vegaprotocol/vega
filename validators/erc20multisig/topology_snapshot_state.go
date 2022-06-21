@@ -38,14 +38,15 @@ func (s *Topology) Keys() []string {
 }
 
 func (s *Topology) HasChanged(k string) bool {
-	switch k {
-	case verifiedStateKey:
-		return s.tss.changedVerifiedState
-	case pendingStateKey:
-		return s.tss.changedPendingState
-	default:
-		return false
-	}
+	// switch k {
+	// case verifiedStateKey:
+	// 	return s.tss.changedVerifiedState
+	// case pendingStateKey:
+	// 	return s.tss.changedPendingState
+	// default:
+	// 	return false
+	// }
+	return true
 }
 
 func (s *Topology) GetState(k string) ([]byte, []types.StateProvider, error) {

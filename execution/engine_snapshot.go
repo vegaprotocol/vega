@@ -123,7 +123,7 @@ func (e *Engine) restoreMarketsStates(ctx context.Context, ems []*types.ExecMark
 }
 
 func (e *Engine) serialise() (snapshot []byte, providers []types.StateProvider, err error) {
-	if !e.changed() {
+	if !e.HasChanged("") {
 		return e.snapshotSerialised, e.newGeneratedProviders, nil
 	}
 
@@ -181,7 +181,8 @@ func (e *Engine) Stopped() bool {
 }
 
 func (e *Engine) HasChanged(k string) bool {
-	return e.changed()
+	return true
+	// return e.changed()
 }
 
 func (e *Engine) GetState(_ string) ([]byte, []types.StateProvider, error) {

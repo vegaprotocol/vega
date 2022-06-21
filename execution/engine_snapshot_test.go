@@ -199,10 +199,6 @@ func TestValidMarketSnapshot(t *testing.T) {
 	require.Equal(t, 1, len(keys))
 	key := keys[0]
 
-	state1, _, err := engine.GetState(key)
-	assert.NoError(t, err)
-	assert.NotEmpty(t, state1)
-
 	// Take the snapshot and hash
 	b, providers, err := engine.GetState(key)
 	assert.NoError(t, err)
@@ -232,7 +228,7 @@ func TestValidMarketSnapshot(t *testing.T) {
 	// Check the hashes are the same
 	state2, _, err := engine2.GetState(key)
 	assert.NoError(t, err)
-	assert.True(t, bytes.Equal(state1, state2))
+	assert.True(t, bytes.Equal(b, state2))
 
 	// now load the providers state
 	for _, p := range providers {

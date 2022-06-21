@@ -142,22 +142,23 @@ func (e *SnapshotEngine) OnMarketLiquidityProvisionShapesMaxSizeUpdate(v int64) 
 }
 
 func (e *SnapshotEngine) HasChanged(k string) bool {
-	switch k {
-	case e.parametersKey:
-		return e.parametersChanged
-	case e.partiesLiquidityOrdersKey:
-		return e.Engine.liquidityOrders.HasUpdates()
-	case e.partiesOrdersKey:
-		return e.Engine.orders.HasUpdates()
-	case e.pendingProvisionsKey:
-		return e.Engine.pendings.HasUpdates()
-	case e.provisionsKey:
-		return e.Engine.provisions.HasUpdates()
-	case e.suppliedKey:
-		return e.suppliedEngine.HasUpdates()
-	default:
-		return false
-	}
+	// switch k {
+	// case e.parametersKey:
+	// 	return e.parametersChanged
+	// case e.partiesLiquidityOrdersKey:
+	// 	return e.Engine.liquidityOrders.HasUpdates()
+	// case e.partiesOrdersKey:
+	// 	return e.Engine.orders.HasUpdates()
+	// case e.pendingProvisionsKey:
+	// 	return e.Engine.pendings.HasUpdates()
+	// case e.provisionsKey:
+	// 	return e.Engine.provisions.HasUpdates()
+	// case e.suppliedKey:
+	// 	return e.suppliedEngine.HasUpdates()
+	// default:
+	// 	return false
+	// }
+	return true
 }
 
 func (e *SnapshotEngine) GetState(k string) ([]byte, []types.StateProvider, error) {
@@ -359,7 +360,7 @@ func (e *SnapshotEngine) serialise(k string) ([]byte, error) {
 
 func (e *SnapshotEngine) serialiseParameters() ([]byte, bool, error) {
 	key := e.parametersKey
-	if !e.parametersChanged {
+	if !e.HasChanged(key) {
 		return e.serialisedParameters, false, nil
 	}
 
@@ -382,7 +383,7 @@ func (e *SnapshotEngine) serialiseParameters() ([]byte, bool, error) {
 
 func (e *SnapshotEngine) serialisePartiesLiquidityOrders() ([]byte, bool, error) {
 	key := e.partiesLiquidityOrdersKey
-	if !e.Engine.liquidityOrders.HasUpdates() {
+	if !e.HasChanged(key) {
 		return e.serialisedPartiesLiquidityOrders, false, nil
 	}
 
@@ -415,7 +416,7 @@ func partyOrdersToProto(m map[string]map[string]*types.Order) []*snapshotpb.Part
 
 func (e *SnapshotEngine) serialisePartiesOrders() ([]byte, bool, error) {
 	key := e.partiesOrdersKey
-	if !e.Engine.orders.HasUpdates() {
+	if !e.HasChanged(key) {
 		return e.serialisedPartiesOrders, false, nil
 	}
 
@@ -434,7 +435,7 @@ func (e *SnapshotEngine) serialisePartiesOrders() ([]byte, bool, error) {
 
 func (e *SnapshotEngine) serialisePendingProvisions() ([]byte, bool, error) {
 	key := e.pendingProvisionsKey
-	if !e.Engine.pendings.HasUpdates() {
+	if !e.HasChanged(key) {
 		return e.serialisedPendingProvisions, false, nil
 	}
 
@@ -460,7 +461,7 @@ func (e *SnapshotEngine) serialisePendingProvisions() ([]byte, bool, error) {
 
 func (e *SnapshotEngine) serialiseProvisions() ([]byte, bool, error) {
 	key := e.provisionsKey
-	if !e.Engine.provisions.HasUpdates() {
+	if !e.HasChanged(key) {
 		return e.serialisedProvisions, false, nil
 	}
 
@@ -487,7 +488,7 @@ func (e *SnapshotEngine) serialiseProvisions() ([]byte, bool, error) {
 
 func (e *SnapshotEngine) serialiseSupplied() ([]byte, bool, error) {
 	key := e.suppliedKey
-	if !e.suppliedEngine.HasUpdates() {
+	if !e.HasChanged(key) {
 		return e.serialisedSupplied, false, nil
 	}
 
