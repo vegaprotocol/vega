@@ -771,6 +771,7 @@ func (e *Engine) closeProposal(ctx context.Context, proposal *proposal) {
 	params := e.mustGetProposalParams(proposal)
 
 	proposal.Close(params, e.accs, e.markets)
+	e.gss.changedActive = true
 
 	if proposal.IsPassed() {
 		e.log.Debug("Proposal passed", logging.ProposalID(proposal.ID))
