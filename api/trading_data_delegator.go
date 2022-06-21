@@ -6,18 +6,15 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
-	"time"
 
 	"code.vegaprotocol.io/data-node/candlesv2"
 	"code.vegaprotocol.io/data-node/logging"
 	"code.vegaprotocol.io/data-node/risk"
 	"code.vegaprotocol.io/data-node/service"
-	"code.vegaprotocol.io/data-node/subscribers"
 	"code.vegaprotocol.io/data-node/vegatime"
 	pbtypes "code.vegaprotocol.io/protos/vega"
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
-	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/types/num"
 
 	"code.vegaprotocol.io/data-node/entities"
@@ -78,8 +75,6 @@ var defaultEntityPagination = entities.OffsetPagination{
 func (t *tradingDataDelegator) TransferResponsesSubscribe(
 	_ *protoapi.TransferResponsesSubscribeRequest, srv protoapi.TradingDataService_TransferResponsesSubscribeServer,
 ) error {
-	defer metrics.StartActiveSubscriptionCountGRPC("TransferResponses")()
-
 	// Wrap context from the request into cancellable. We can close internal chan in error.
 	ctx, cancel := context.WithCancel(srv.Context())
 	defer cancel()
@@ -90,50 +85,11 @@ func (t *tradingDataDelegator) TransferResponsesSubscribe(
 		t.log.Debug("TransferResponses subscriber - new rpc stream", logging.Uint64("ref", ref))
 	}
 
-	var err error
-	for {
-		select {
-		case transferResponses := <-transferResponsesChan:
-			if transferResponses == nil {
-				err = ErrChannelClosed
-				t.log.Error("TransferResponses subscriber",
-					logging.Error(err),
-					logging.Uint64("ref", ref),
-				)
-				return apiError(codes.Internal, err)
-			}
-			for _, tr := range transferResponses {
-				tr := tr
-				if err := srv.Send(&protoapi.TransferResponsesSubscribeResponse{
-					Response: tr,
-				}); err != nil {
-					t.log.Error("TransferResponses subscriber - rpc stream error",
-						logging.Error(err),
-						logging.Uint64("ref", ref),
-					)
-					return apiError(codes.Internal, ErrStreamInternal, err)
-				}
-			}
-		case <-ctx.Done():
-			err = ctx.Err()
-			if t.log.GetLevel() == logging.DebugLevel {
-				t.log.Debug("TransferResponses subscriber - rpc stream ctx error",
-					logging.Error(err),
-					logging.Uint64("ref", ref),
-				)
-			}
-			return apiError(codes.Internal, ErrStreamInternal, err)
-		}
-
-		if transferResponsesChan == nil {
-			if t.log.GetLevel() == logging.DebugLevel {
-				t.log.Debug("TransferResponses subscriber - rpc stream closed",
-					logging.Uint64("ref", ref),
-				)
-			}
-			return apiError(codes.Internal, ErrStreamClosed)
-		}
-	}
+	return observe(ctx, t.log, "TransferResponse", transferResponsesChan, ref, func(tr *vega.TransferResponse) error {
+		return srv.Send(&protoapi.TransferResponsesSubscribeResponse{
+			Response: tr,
+		})
+	})
 }
 
 /****************************** Market Depth **************************************/
@@ -186,49 +142,11 @@ func (t *tradingDataDelegator) MarketDepthSubscribe(
 		t.log.Debug("Depth subscriber - new rpc stream", logging.Uint64("ref", ref))
 	}
 
-	for {
-		select {
-		case depths := <-depthChan:
-			if depths == nil {
-				err = ErrChannelClosed
-				t.log.Error("Depth subscriber",
-					logging.Error(err),
-					logging.Uint64("ref", ref),
-				)
-				return apiError(codes.Internal, err)
-			}
-			for _, depth := range depths {
-				resp := &protoapi.MarketDepthSubscribeResponse{
-					MarketDepth: depth,
-				}
-				if err := srv.Send(resp); err != nil {
-					if t.log.GetLevel() == logging.DebugLevel {
-						t.log.Debug("Depth subscriber - rpc stream error",
-							logging.Error(err),
-							logging.Uint64("ref", ref),
-						)
-					}
-					return apiError(codes.Internal, ErrStreamInternal, err)
-				}
-			}
-		case <-ctx.Done():
-			err = ctx.Err()
-			if t.log.GetLevel() == logging.DebugLevel {
-				t.log.Debug("Depth subscriber - rpc stream ctx error",
-					logging.Error(err),
-					logging.Uint64("ref", ref),
-				)
-			}
-			return apiError(codes.Internal, ErrStreamInternal, err)
-		}
-
-		if depthChan == nil {
-			if t.log.GetLevel() == logging.DebugLevel {
-				t.log.Debug("Depth subscriber - rpc stream closed", logging.Uint64("ref", ref))
-			}
-			return apiError(codes.Internal, ErrStreamClosed)
-		}
-	}
+	return observe(ctx, t.log, "MarketDepth", depthChan, ref, func(tr *vega.MarketDepth) error {
+		return srv.Send(&protoapi.MarketDepthSubscribeResponse{
+			MarketDepth: tr,
+		})
+	})
 }
 
 // MarketDepthUpdatesSubscribe opens a subscription to the MarketDepth Updates service.
@@ -254,51 +172,11 @@ func (t *tradingDataDelegator) MarketDepthUpdatesSubscribe(
 		t.log.Debug("Depth updates subscriber - new rpc stream", logging.Uint64("ref", ref))
 	}
 
-	for {
-		select {
-		case depths := <-depthChan:
-			if depths == nil {
-				err = ErrChannelClosed
-				if t.log.GetLevel() == logging.DebugLevel {
-					t.log.Debug("Depth updates subscriber closed",
-						logging.Error(err),
-						logging.Uint64("ref", ref))
-				}
-				return apiError(codes.Internal, err)
-			}
-			for _, depth := range depths {
-				resp := &protoapi.MarketDepthUpdatesSubscribeResponse{
-					Update: depth,
-				}
-
-				if err := srv.Send(resp); err != nil {
-					if t.log.GetLevel() == logging.DebugLevel {
-						t.log.Debug("Depth updates subscriber - rpc stream error",
-							logging.Error(err),
-							logging.Uint64("ref", ref),
-						)
-					}
-					return apiError(codes.Internal, ErrStreamInternal, err)
-				}
-			}
-		case <-ctx.Done():
-			err = ctx.Err()
-			if t.log.GetLevel() == logging.DebugLevel {
-				t.log.Debug("Depth updates subscriber - rpc stream ctx error",
-					logging.Error(err),
-					logging.Uint64("ref", ref),
-				)
-			}
-			return apiError(codes.Internal, ErrStreamInternal, err)
-		}
-
-		if depthChan == nil {
-			if t.log.GetLevel() == logging.DebugLevel {
-				t.log.Debug("Depth updates subscriber - rpc stream closed", logging.Uint64("ref", ref))
-			}
-			return apiError(codes.Internal, ErrStreamClosed)
-		}
-	}
+	return observe(ctx, t.log, "MarketDepthUpdate", depthChan, ref, func(tr *vega.MarketDepthUpdate) error {
+		return srv.Send(&protoapi.MarketDepthUpdatesSubscribeResponse{
+			Update: tr,
+		})
+	})
 }
 
 /****************************** Positions **************************************/
@@ -356,48 +234,12 @@ func (t *tradingDataDelegator) PositionsSubscribe(
 		t.log.Debug("Positions subscriber - new rpc stream", logging.Uint64("ref", ref))
 	}
 
-	for {
-		select {
-		case positions := <-positionsChan:
-			if positions == nil {
-				err := ErrChannelClosed
-				t.log.Error("Positions subscriber",
-					logging.Error(err),
-					logging.Uint64("ref", ref),
-				)
-				return apiError(codes.Internal, err)
-			}
-			for _, position := range positions {
-				resp := &protoapi.PositionsSubscribeResponse{
-					Position: position.ToProto(),
-				}
-				if err := srv.Send(resp); err != nil {
-					t.log.Error("Positions subscriber - rpc stream error",
-						logging.Error(err),
-						logging.Uint64("ref", ref),
-					)
-					return apiError(codes.Internal, ErrStreamInternal, err)
-				}
-			}
+	return observe(ctx, t.log, "Position", positionsChan, ref, func(position entities.Position) error {
+		return srv.Send(&protoapi.PositionsSubscribeResponse{
+			Position: position.ToProto(),
+		})
+	})
 
-		case <-ctx.Done():
-			err := ctx.Err()
-			if t.log.GetLevel() == logging.DebugLevel {
-				t.log.Debug("Positions subscriber - rpc stream ctx error",
-					logging.Error(err),
-					logging.Uint64("ref", ref),
-				)
-			}
-			return apiError(codes.Internal, ErrStreamInternal, err)
-		}
-
-		if positionsChan == nil {
-			if t.log.GetLevel() == logging.DebugLevel {
-				t.log.Debug("Positions subscriber - rpc stream closed", logging.Uint64("ref", ref))
-			}
-			return apiError(codes.Internal, ErrStreamClosed)
-		}
-	}
 }
 
 /****************************** Parties **************************************/
@@ -924,33 +766,17 @@ func (t *tradingDataDelegator) ObserveGovernance(
 	if t.log.GetLevel() == logging.DebugLevel {
 		t.log.Debug("starting streaming governance updates")
 	}
-	ch, _ := t.governanceServiceV2.ObserveProposals(ctx, t.Config.StreamRetries, nil)
-	for {
-		select {
-		case props, ok := <-ch:
-			if !ok {
-				cfunc()
-				return nil
-			}
-			for _, proposal := range props {
-				gd, err := t.proposalToGovernanceData(ctx, proposal)
-				if err != nil {
-					return err
-				}
+	ch, ref := t.governanceServiceV2.ObserveProposals(ctx, t.Config.StreamRetries, nil)
 
-				resp := &protoapi.ObserveGovernanceResponse{
-					Data: gd,
-				}
-				if err := stream.Send(resp); err != nil {
-					t.log.Error("failed to send governance data into stream",
-						logging.Error(err))
-					return apiError(codes.Internal, ErrStreamInternal, err)
-				}
-			}
-		case <-ctx.Done():
-			return apiError(codes.Internal, ErrStreamInternal, ctx.Err())
+	return observe(ctx, t.log, "Governance", ch, ref, func(proposal entities.Proposal) error {
+		gd, err := t.proposalToGovernanceData(ctx, proposal)
+		if err != nil {
+			return err
 		}
-	}
+		return stream.Send(&protoapi.ObserveGovernanceResponse{
+			Data: gd,
+		})
+	})
 }
 
 func (t *tradingDataDelegator) ObservePartyProposals(
@@ -964,32 +790,17 @@ func (t *tradingDataDelegator) ObservePartyProposals(
 	if t.log.GetLevel() == logging.DebugLevel {
 		t.log.Debug("starting streaming party proposals")
 	}
-	ch, _ := t.governanceServiceV2.ObserveProposals(ctx, t.Config.StreamRetries, &in.PartyId)
-	for {
-		select {
-		case props, ok := <-ch:
-			if !ok {
-				cfunc()
-				return nil
-			}
-			for _, proposal := range props {
-				gd, err := t.proposalToGovernanceData(ctx, proposal)
-				if err != nil {
-					return err
-				}
-				resp := &protoapi.ObservePartyProposalsResponse{
-					Data: gd,
-				}
-				if err := stream.Send(resp); err != nil {
-					t.log.Error("failed to send party proposal into stream",
-						logging.Error(err))
-					return apiError(codes.Internal, ErrStreamInternal, err)
-				}
-			}
-		case <-ctx.Done():
-			return apiError(codes.Internal, ErrStreamInternal, ctx.Err())
+
+	ch, ref := t.governanceServiceV2.ObserveProposals(ctx, t.Config.StreamRetries, &in.PartyId)
+	return observe(ctx, t.log, "PartyProposal", ch, ref, func(proposal entities.Proposal) error {
+		gd, err := t.proposalToGovernanceData(ctx, proposal)
+		if err != nil {
+			return err
 		}
-	}
+		return stream.Send(&protoapi.ObservePartyProposalsResponse{
+			Data: gd,
+		})
+	})
 }
 
 func (t *tradingDataDelegator) ObservePartyVotes(
@@ -1003,28 +814,13 @@ func (t *tradingDataDelegator) ObservePartyVotes(
 	if t.log.GetLevel() == logging.DebugLevel {
 		t.log.Debug("starting streaming party votes")
 	}
-	ch, _ := t.governanceServiceV2.ObservePartyVotes(ctx, t.Config.StreamRetries, in.PartyId)
-	for {
-		select {
-		case votes, ok := <-ch:
-			if !ok {
-				cfunc()
-				return nil
-			}
-			for _, p := range votes {
-				resp := &protoapi.ObservePartyVotesResponse{
-					Vote: p.ToProto(),
-				}
-				if err := stream.Send(resp); err != nil {
-					t.log.Error("failed to send party vote into stream",
-						logging.Error(err))
-					return apiError(codes.Internal, ErrStreamInternal, err)
-				}
-			}
-		case <-ctx.Done():
-			return apiError(codes.Internal, ErrStreamInternal, ctx.Err())
-		}
-	}
+	ch, ref := t.governanceServiceV2.ObservePartyVotes(ctx, t.Config.StreamRetries, in.PartyId)
+
+	return observe(ctx, t.log, "PartyVote", ch, ref, func(vote entities.Vote) error {
+		return stream.Send(&protoapi.ObservePartyVotesResponse{
+			Vote: vote.ToProto(),
+		})
+	})
 }
 
 func (t *tradingDataDelegator) ObserveProposalVotes(
@@ -1038,28 +834,13 @@ func (t *tradingDataDelegator) ObserveProposalVotes(
 	if t.log.GetLevel() == logging.DebugLevel {
 		t.log.Debug("starting streaming proposal votes")
 	}
-	ch, _ := t.governanceServiceV2.ObserveProposalVotes(ctx, t.Config.StreamRetries, in.ProposalId)
-	for {
-		select {
-		case votes, ok := <-ch:
-			if !ok {
-				cfunc()
-				return nil
-			}
-			for _, p := range votes {
-				resp := &protoapi.ObserveProposalVotesResponse{
-					Vote: p.ToProto(),
-				}
-				if err := stream.Send(resp); err != nil {
-					t.log.Error("failed to send proposal vote into stream",
-						logging.Error(err))
-					return apiError(codes.Internal, ErrStreamInternal, err)
-				}
-			}
-		case <-ctx.Done():
-			return apiError(codes.Internal, ErrStreamInternal, ctx.Err())
-		}
-	}
+	ch, ref := t.governanceServiceV2.ObserveProposalVotes(ctx, t.Config.StreamRetries, in.ProposalId)
+
+	return observe(ctx, t.log, "ProposalVote", ch, ref, func(p entities.Vote) error {
+		return stream.Send(&protoapi.ObserveProposalVotesResponse{
+			Vote: p.ToProto(),
+		})
+	})
 }
 
 /****************************** Epochs **************************************/
@@ -1172,28 +953,13 @@ func (t *tradingDataDelegator) ObserveDelegations(
 	if t.log.GetLevel() == logging.DebugLevel {
 		t.log.Debug("starting streaming delegation updates")
 	}
-	ch, _ := t.delegationServiceV2.Observe(ctx, t.Config.StreamRetries, req.Party, req.NodeId)
-	for {
-		select {
-		case delegations, ok := <-ch:
-			if !ok {
-				cfunc()
-				return nil
-			}
-			for _, delegation := range delegations {
-				resp := &protoapi.ObserveDelegationsResponse{
-					Delegation: delegation.ToProto(),
-				}
-				if err := stream.Send(resp); err != nil {
-					t.log.Error("failed to send delegations data into stream",
-						logging.Error(err))
-					return apiError(codes.Internal, ErrStreamInternal, err)
-				}
-			}
-		case <-ctx.Done():
-			return apiError(codes.Internal, ErrStreamInternal, ctx.Err())
-		}
-	}
+	ch, ref := t.delegationServiceV2.Observe(ctx, t.Config.StreamRetries, req.Party, req.NodeId)
+
+	return observe(ctx, t.log, "Delegations", ch, ref, func(delegation entities.Delegation) error {
+		return stream.Send(&protoapi.ObserveDelegationsResponse{
+			Delegation: delegation.ToProto(),
+		})
+	})
 }
 
 /****************************** Rewards **************************************/
@@ -1272,29 +1038,13 @@ func (t *tradingDataDelegator) ObserveRewards(req *protoapi.ObserveRewardsReques
 	if t.log.GetLevel() == logging.DebugLevel {
 		t.log.Debug("starting streaming reward updates")
 	}
-	ch, _ := t.rewardServiceV2.Observe(ctx, t.Config.StreamRetries, req.AssetId, req.Party)
-	for {
-		select {
-		case rewards, ok := <-ch:
-			if !ok {
-				cfunc()
-				return nil
-			}
+	ch, ref := t.rewardServiceV2.Observe(ctx, t.Config.StreamRetries, req.AssetId, req.Party)
 
-			for _, reward := range rewards {
-				resp := &protoapi.ObserveRewardsResponse{
-					Reward: reward.ToProto(),
-				}
-				if err := stream.Send(resp); err != nil {
-					t.log.Error("failed to send reward details data into stream",
-						logging.Error(err))
-					return apiError(codes.Internal, ErrStreamInternal, err)
-				}
-			}
-		case <-ctx.Done():
-			return apiError(codes.Internal, ErrStreamInternal, ctx.Err())
-		}
-	}
+	return observe(ctx, t.log, "Reward", ch, ref, func(reward entities.Reward) error {
+		return stream.Send(&protoapi.ObserveRewardsResponse{
+			Reward: reward.ToProto(),
+		})
+	})
 }
 
 /****************************** Trades **************************************/
@@ -1407,7 +1157,6 @@ func (t *tradingDataDelegator) TradesSubscribe(req *protoapi.TradesSubscribeRequ
 	defer cancel()
 
 	var (
-		err               error
 		marketID, partyID *string
 	)
 	if len(req.MarketId) > 0 {
@@ -1423,46 +1172,13 @@ func (t *tradingDataDelegator) TradesSubscribe(req *protoapi.TradesSubscribeRequ
 		t.log.Debug("Trades subscriber - new rpc stream", logging.Uint64("ref", ref))
 	}
 
-	for {
-		select {
-		case trades := <-tradesChan:
-			if len(trades) <= 0 {
-				err = ErrChannelClosed
-				t.log.Error("Trades subscriber",
-					logging.Error(err),
-					logging.Uint64("ref", ref),
-				)
-				return apiError(codes.Internal, err)
-			}
-
-			out := make([]*pbtypes.Trade, 0, len(trades))
-			for _, v := range trades {
-				out = append(out, v.ToProto())
-			}
-			if err := srv.Send(&protoapi.TradesSubscribeResponse{Trades: out}); err != nil {
-				t.log.Error("Trades subscriber - rpc stream error",
-					logging.Error(err),
-					logging.Uint64("ref", ref),
-				)
-				return apiError(codes.Internal, ErrStreamInternal, err)
-			}
-		case <-ctx.Done():
-			err = ctx.Err()
-			if t.log.GetLevel() == logging.DebugLevel {
-				t.log.Debug("Trades subscriber - rpc stream ctx error",
-					logging.Error(err),
-					logging.Uint64("ref", ref),
-				)
-			}
-			return apiError(codes.Internal, ErrStreamInternal, err)
+	return observeBatch(ctx, t.log, "Trade", tradesChan, ref, func(trades []*entities.Trade) error {
+		out := make([]*pbtypes.Trade, 0, len(trades))
+		for _, v := range trades {
+			out = append(out, v.ToProto())
 		}
-		if tradesChan == nil {
-			if t.log.GetLevel() == logging.DebugLevel {
-				t.log.Debug("Trades subscriber - rpc stream closed", logging.Uint64("ref", ref))
-			}
-			return apiError(codes.Internal, ErrStreamClosed)
-		}
-	}
+		return srv.Send(&protoapi.TradesSubscribeResponse{Trades: out})
+	})
 }
 
 /****************************** Orders **************************************/
@@ -1473,14 +1189,11 @@ func (t *tradingDataDelegator) TradesSubscribe(req *protoapi.TradesSubscribeRequ
 func (t *tradingDataDelegator) OrdersSubscribe(
 	req *protoapi.OrdersSubscribeRequest, srv protoapi.TradingDataService_OrdersSubscribeServer,
 ) error {
-	defer metrics.StartActiveSubscriptionCountGRPC("Orders")()
-
 	// Wrap context from the request into cancellable. We can close internal chan on error.
 	ctx, cancel := context.WithCancel(srv.Context())
 	defer cancel()
 
 	var (
-		err               error
 		marketID, partyID *string
 	)
 
@@ -1497,49 +1210,13 @@ func (t *tradingDataDelegator) OrdersSubscribe(
 		t.log.Debug("Orders subscriber - new rpc stream", logging.Uint64("ref", ref))
 	}
 
-	for {
-		select {
-		case orders := <-ordersChan:
-			if orders == nil {
-				err = ErrChannelClosed
-				t.log.Error("Orders subscriber",
-					logging.Error(err),
-					logging.Uint64("ref", ref),
-				)
-				return apiError(codes.Internal, err)
-			}
-			out := make([]*pbtypes.Order, 0, len(orders))
-			for _, v := range orders {
-				out = append(out, v.ToProto())
-			}
-			err = srv.Send(&protoapi.OrdersSubscribeResponse{Orders: out})
-			if err != nil {
-				t.log.Error("Orders subscriber - rpc stream error",
-					logging.Error(err),
-					logging.Uint64("ref", ref),
-				)
-				return apiError(codes.Internal, ErrStreamInternal, err)
-			}
-		case <-ctx.Done():
-			err = ctx.Err()
-			if t.log.GetLevel() == logging.DebugLevel {
-				t.log.Debug("Orders subscriber - rpc stream ctx error",
-					logging.Error(err),
-					logging.Uint64("ref", ref),
-				)
-			}
-			return apiError(codes.Internal, ErrStreamInternal, err)
+	return observeBatch(ctx, t.log, "Order", ordersChan, ref, func(orders []entities.Order) error {
+		out := make([]*pbtypes.Order, 0, len(orders))
+		for _, v := range orders {
+			out = append(out, v.ToProto())
 		}
-
-		if ordersChan == nil {
-			if t.log.GetLevel() == logging.DebugLevel {
-				t.log.Debug("Orders subscriber - rpc stream closed",
-					logging.Uint64("ref", ref),
-				)
-			}
-			return apiError(codes.Internal, ErrStreamClosed)
-		}
-	}
+		return srv.Send(&protoapi.OrdersSubscribeResponse{Orders: out})
+	})
 }
 
 func (t *tradingDataDelegator) OrderByID(ctx context.Context, req *protoapi.OrderByIDRequest) (*protoapi.OrderByIDResponse, error) {
@@ -1899,52 +1576,11 @@ func (t *tradingDataDelegator) AccountsSubscribe(req *protoapi.AccountsSubscribe
 		t.log.Debug("Accounts subscriber - new rpc stream", logging.Uint64("ref", ref))
 	}
 
-	var err error
-	for {
-		select {
-		case accounts := <-accountsChan:
-			if accounts == nil {
-				err = ErrChannelClosed
-				t.log.Error("Accounts subscriber",
-					logging.Error(err),
-					logging.Uint64("ref", ref),
-				)
-				return apiError(codes.Internal, err)
-			}
-			for _, account := range accounts {
-				account := account
-				resp := &protoapi.AccountsSubscribeResponse{
-					Account: account.ToProto(),
-				}
-				err = srv.Send(resp)
-				if err != nil {
-					t.log.Error("Accounts subscriber - rpc stream error",
-						logging.Error(err),
-						logging.Uint64("ref", ref),
-					)
-					return apiError(codes.Internal, ErrStreamInternal, err)
-				}
-			}
-		case <-ctx.Done():
-			err = ctx.Err()
-			if t.log.GetLevel() == logging.DebugLevel {
-				t.log.Debug("Accounts subscriber - rpc stream ctx error",
-					logging.Error(err),
-					logging.Uint64("ref", ref),
-				)
-			}
-			return apiError(codes.Internal, ErrStreamInternal, err)
-		}
-
-		if accountsChan == nil {
-			if t.log.GetLevel() == logging.DebugLevel {
-				t.log.Debug("Accounts subscriber - rpc stream closed",
-					logging.Uint64("ref", ref),
-				)
-			}
-			return apiError(codes.Internal, ErrStreamClosed)
-		}
-	}
+	return observe(ctx, t.log, "Accounts", accountsChan, ref, func(account entities.AccountBalance) error {
+		return srv.Send(&protoapi.AccountsSubscribeResponse{
+			Account: account.ToProto(),
+		})
+	})
 }
 
 /****************************** Market Data **************************************/
@@ -2000,48 +1636,11 @@ func (t *tradingDataDelegator) MarketsDataSubscribe(req *protoapi.MarketsDataSub
 		t.log.Debug("Markets data subscriber - new rpc stream", logging.Uint64("ref", ref))
 	}
 
-	var err error
-	for {
-		select {
-		case mds := <-marketsDataChan:
-			if mds == nil {
-				err = ErrChannelClosed
-				t.log.Error("Markets data subscriber",
-					logging.Error(err),
-					logging.Uint64("ref", ref),
-				)
-				return apiError(codes.Internal, err)
-			}
-			for _, md := range mds {
-				resp := &protoapi.MarketsDataSubscribeResponse{
-					MarketData: md.ToProto(),
-				}
-				if err := srv.Send(resp); err != nil {
-					t.log.Error("Markets data subscriber - rpc stream error",
-						logging.Error(err),
-						logging.Uint64("ref", ref),
-					)
-					return apiError(codes.Internal, ErrStreamInternal, err)
-				}
-			}
-		case <-ctx.Done():
-			err = ctx.Err()
-			if t.log.GetLevel() == logging.DebugLevel {
-				t.log.Debug("Markets data subscriber - rpc stream ctx error",
-					logging.Error(err),
-					logging.Uint64("ref", ref),
-				)
-			}
-			return apiError(codes.Internal, ErrStreamInternal, err)
-		}
-
-		if marketsDataChan == nil {
-			if t.log.GetLevel() == logging.DebugLevel {
-				t.log.Debug("Markets data subscriber - rpc stream closed", logging.Uint64("ref", ref))
-			}
-			return apiError(codes.Internal, ErrStreamClosed)
-		}
-	}
+	return observe(ctx, t.log, "MarketsData", marketsDataChan, ref, func(md *entities.MarketData) error {
+		return srv.Send(&protoapi.MarketsDataSubscribeResponse{
+			MarketData: md.ToProto(),
+		})
+	})
 }
 
 /****************************** Markets **************************************/
@@ -2146,55 +1745,16 @@ func (t *tradingDataDelegator) MarginLevelsSubscribe(req *protoapi.MarginLevelsS
 		t.log.Debug("Margin levels subscriber - new rpc stream", logging.Uint64("ref", ref))
 	}
 
-	var err error
-	for {
-		select {
-		case mls := <-marginLevelsChan:
-			if mls == nil {
-				err = ErrChannelClosed
-				t.log.Error("Margin levels subscriber",
-					logging.Error(err),
-					logging.Uint64("ref", ref),
-				)
-				return apiError(codes.Internal, err)
-			}
-			for _, ml := range mls {
-				protoMl, err := ml.ToProto(t.accountServiceV2)
-				if err != nil {
-					return apiError(codes.Internal, err)
-				}
-
-				resp := &protoapi.MarginLevelsSubscribeResponse{
-					MarginLevels: protoMl,
-				}
-				if err := srv.Send(resp); err != nil {
-					t.log.Error("Margin levels data subscriber - rpc stream error",
-						logging.Error(err),
-						logging.Uint64("ref", ref),
-					)
-					return apiError(codes.Internal, ErrStreamInternal, err)
-				}
-			}
-		case <-ctx.Done():
-			err = ctx.Err()
-			if t.log.GetLevel() == logging.DebugLevel {
-				t.log.Debug("Margin levels data subscriber - rpc stream ctx error",
-					logging.Error(err),
-					logging.Uint64("ref", ref),
-				)
-			}
-			return apiError(codes.Internal, ErrStreamInternal, err)
+	return observe(ctx, t.log, "MarginLevel", marginLevelsChan, ref, func(ml entities.MarginLevels) error {
+		protoMl, err := ml.ToProto(t.accountServiceV2)
+		if err != nil {
+			return apiError(codes.Internal, err)
 		}
 
-		if marginLevelsChan == nil {
-			if t.log.GetLevel() == logging.DebugLevel {
-				t.log.Debug("Margin levels data subscriber - rpc stream closed",
-					logging.Uint64("ref", ref),
-				)
-			}
-			return apiError(codes.Internal, ErrStreamClosed)
-		}
-	}
+		return srv.Send(&protoapi.MarginLevelsSubscribeResponse{
+			MarginLevels: protoMl,
+		})
+	})
 }
 
 func (t *tradingDataDelegator) EstimateMargin(ctx context.Context, req *protoapi.EstimateMarginRequest) (*protoapi.EstimateMarginResponse, error) {
@@ -2688,139 +2248,30 @@ func (t *tradingDataDelegator) GetNodeByID(ctx context.Context, req *protoapi.Ge
 	}, nil
 }
 
+type tradingDataEventBusServer struct {
+	stream protoapi.TradingDataService_ObserveEventBusServer
+}
+
+func (t tradingDataEventBusServer) RecvMsg(m interface{}) error {
+	return t.stream.RecvMsg(m)
+}
+
+func (t tradingDataEventBusServer) Context() context.Context {
+	return t.stream.Context()
+}
+
+func (t tradingDataEventBusServer) Send(data []*eventspb.BusEvent) error {
+	resp := &protoapi.ObserveEventBusResponse{
+		Events: data,
+	}
+	return t.stream.Send(resp)
+}
+
 func (t *tradingDataDelegator) ObserveEventBus(
-	stream protoapi.TradingDataService_ObserveEventBusServer,
-) error {
-	defer metrics.StartActiveSubscriptionCountGRPC("EventBus")()
+	stream protoapi.TradingDataService_ObserveEventBusServer) error {
 
-	ctx, cfunc := context.WithCancel(stream.Context())
-	defer cfunc()
+	server := tradingDataEventBusServer{stream}
+	eventService := t.eventService
 
-	// now we start listening for a few seconds in order to get at least the very first message
-	// this will be blocking until the connection by the client is closed
-	// and we will not start processing any events until we receive the original request
-	// indicating filters and batch size.
-	req, err := t.recvEventRequest(stream)
-	if err != nil {
-		// client exited, nothing to do
-		return nil
-	}
-
-	// now we will aggregate filter out of the initial request
-	types, err := events.ProtoToInternal(req.Type...)
-	if err != nil {
-		return apiError(codes.InvalidArgument, ErrMalformedRequest, err)
-	}
-	filters := []subscribers.EventFilter{}
-	if len(req.MarketId) > 0 && len(req.PartyId) > 0 {
-		filters = append(filters, events.GetPartyAndMarketFilter(req.MarketId, req.PartyId))
-	} else {
-		if len(req.MarketId) > 0 {
-			filters = append(filters, events.GetMarketIDFilter(req.MarketId))
-		}
-		if len(req.PartyId) > 0 {
-			filters = append(filters, events.GetPartyIDFilter(req.PartyId))
-		}
-	}
-
-	// number of retries to -1 to have pretty much unlimited retries
-	ch, bCh := t.eventService.ObserveEvents(ctx, t.Config.StreamRetries, types, int(req.BatchSize), filters...)
-	defer close(bCh)
-
-	if req.BatchSize > 0 {
-		err := t.observeEventsWithAck(ctx, stream, req.BatchSize, ch, bCh)
-		return err
-
-	}
-	err = t.observeEvents(ctx, stream, ch)
-	return err
-}
-
-func (t *tradingDataDelegator) observeEvents(
-	ctx context.Context,
-	stream protoapi.TradingDataService_ObserveEventBusServer,
-	ch <-chan []*eventspb.BusEvent,
-) error {
-	for {
-		select {
-		case data, ok := <-ch:
-			if !ok {
-				return nil
-			}
-			resp := &protoapi.ObserveEventBusResponse{
-				Events: data,
-			}
-			if err := stream.Send(resp); err != nil {
-				t.log.Error("Error sending event on stream", logging.Error(err))
-				return apiError(codes.Internal, ErrStreamInternal, err)
-			}
-		case <-ctx.Done():
-			return apiError(codes.Internal, ErrStreamInternal, ctx.Err())
-		}
-	}
-}
-
-func (t *tradingDataDelegator) recvEventRequest(
-	stream protoapi.TradingDataService_ObserveEventBusServer,
-) (*protoapi.ObserveEventBusRequest, error) {
-	readCtx, cfunc := context.WithTimeout(stream.Context(), 5*time.Second)
-	oebCh := make(chan protoapi.ObserveEventBusRequest)
-	var err error
-	go func() {
-		defer close(oebCh)
-		nb := protoapi.ObserveEventBusRequest{}
-		if err = stream.RecvMsg(&nb); err != nil {
-			cfunc()
-			return
-		}
-		oebCh <- nb
-	}()
-	select {
-	case <-readCtx.Done():
-		if err != nil {
-			// this means the client disconnected
-			return nil, err
-		}
-		// this mean we timedout
-		return nil, readCtx.Err()
-	case nb := <-oebCh:
-		return &nb, nil
-	}
-}
-
-func (t *tradingDataDelegator) observeEventsWithAck(
-	ctx context.Context,
-	stream protoapi.TradingDataService_ObserveEventBusServer,
-	batchSize int64,
-	ch <-chan []*eventspb.BusEvent,
-	bCh chan<- int,
-) error {
-	for {
-		select {
-		case data, ok := <-ch:
-			if !ok {
-				return nil
-			}
-			resp := &protoapi.ObserveEventBusResponse{
-				Events: data,
-			}
-			if err := stream.Send(resp); err != nil {
-				t.log.Error("Error sending event on stream", logging.Error(err))
-				return apiError(codes.Internal, ErrStreamInternal, err)
-			}
-		case <-ctx.Done():
-			return apiError(codes.Internal, ErrStreamInternal, ctx.Err())
-		}
-
-		// now we try to read again the new size / ack
-		req, err := t.recvEventRequest(stream)
-		if err != nil {
-			return err
-		}
-
-		if req.BatchSize != batchSize {
-			batchSize = req.BatchSize
-			bCh <- int(batchSize)
-		}
-	}
+	return observeEventBus(t.log, t.Config, server, eventService)
 }

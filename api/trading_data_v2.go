@@ -12,6 +12,7 @@ import (
 	"code.vegaprotocol.io/data-node/candlesv2"
 	"code.vegaprotocol.io/data-node/entities"
 	"code.vegaprotocol.io/data-node/logging"
+	"code.vegaprotocol.io/data-node/metrics"
 	"code.vegaprotocol.io/data-node/service"
 	"code.vegaprotocol.io/data-node/vegatime"
 	v2 "code.vegaprotocol.io/protos/data-node/api/v2"
@@ -266,15 +267,14 @@ func (t *tradingDataServiceV2) MarketsDataSubscribe(req *v2.MarketsDataSubscribe
 	defer cancel()
 
 	ch, ref := t.marketDataService.ObserveMarketData(ctx, t.config.StreamRetries, req.MarketId)
-	return subscriptionHelper[v2.MarketsDataSubscribeResponse](
-		ctx, "MarketsData", ch, ref, req, srv, t.log, buildMarketsDataResponse,
-	)
-}
 
-func buildMarketsDataResponse(protoMds []*vega.MarketData) *v2.MarketsDataSubscribeResponse {
-	return &v2.MarketsDataSubscribeResponse{
-		MarketData: protoMds,
-	}
+	return observeBatch(ctx, t.log, "MarketsData", ch, ref, func(orders []*entities.MarketData) error {
+		out := make([]*vega.MarketData, 0, len(orders))
+		for _, v := range orders {
+			out = append(out, v.ToProto())
+		}
+		return srv.Send(&v2.MarketsDataSubscribeResponse{MarketData: out})
+	})
 }
 
 func (t *tradingDataServiceV2) GetNetworkLimits(ctx context.Context, req *v2.GetNetworkLimitsRequest) (*v2.GetNetworkLimitsResponse, error) {
@@ -336,6 +336,8 @@ func (t *tradingDataServiceV2) SubscribeToCandleData(req *v2.SubscribeToCandleDa
 		return err
 	}
 
+	defer metrics.StartActiveSubscriptionCountGRPC("Candle")()
+
 	if t.candleService == nil {
 		return errors.New("sql candle service not available")
 	}
@@ -344,12 +346,20 @@ func (t *tradingDataServiceV2) SubscribeToCandleData(req *v2.SubscribeToCandleDa
 	defer cancel()
 
 	subscriptionId, candlesChan, err := t.candleService.Subscribe(ctx, req.CandleId)
+	defer t.candleService.Unsubscribe(subscriptionId)
+
 	if err != nil {
 		return apiError(codes.Internal, ErrCandleServiceSubscribeToCandles, err)
 	}
 
+	publishedEventStatTicker := time.NewTicker(time.Second)
+	var publishedEvents int64
+
 	for {
 		select {
+		case <-publishedEventStatTicker.C:
+			metrics.PublishedEventsAdd("Candle", float64(publishedEvents))
+			publishedEvents = 0
 		case candle, ok := <-candlesChan:
 			if !ok {
 				return apiError(codes.Internal, ErrCandleServiceSubscribeToCandles, fmt.Errorf("channel closed"))
@@ -362,12 +372,8 @@ func (t *tradingDataServiceV2) SubscribeToCandleData(req *v2.SubscribeToCandleDa
 				return apiError(codes.Internal, ErrCandleServiceSubscribeToCandles,
 					fmt.Errorf("sending candles:%w", err))
 			}
+			publishedEvents++
 		case <-ctx.Done():
-			err := t.candleService.Unsubscribe(subscriptionId)
-			if err != nil {
-				t.log.Errorf("failed to unsubscribe from candle updates:%s", err)
-			}
-
 			err = ctx.Err()
 			if err != nil {
 				return apiError(codes.Internal, ErrCandleServiceSubscribeToCandles, err)
