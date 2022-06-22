@@ -70,6 +70,7 @@ mutex
 mutexes
 nodewallet
 notarising
+phish
 Prometheus
 proto
 protobuf
@@ -101,6 +102,7 @@ unparked
 Unstaking
 vega
 vegawallet
+VegaCapsule
 whitepaper
 XDG
 xor
