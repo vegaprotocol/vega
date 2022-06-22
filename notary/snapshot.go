@@ -87,7 +87,7 @@ func (n *SnapshotNotary) serialise(k string) ([]byte, error) {
 		return nil, types.ErrSnapshotKeyDoesNotExist
 	}
 
-	if !n.changed {
+	if !n.HasChanged(k) {
 		return n.serialised, nil
 	}
 
@@ -114,7 +114,8 @@ func (n *SnapshotNotary) Stopped() bool {
 }
 
 func (n *SnapshotNotary) HasChanged(k string) bool {
-	return n.changed
+	return true
+	// return n.changed
 }
 
 func (n *SnapshotNotary) GetState(k string) ([]byte, []types.StateProvider, error) {

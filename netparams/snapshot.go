@@ -73,7 +73,8 @@ func (s snapState) Namespace() types.SnapshotNamespace {
 }
 
 func (s *snapState) HasChanged(k string) bool {
-	return s.updated
+	return true
+	// return s.updated
 }
 
 func (s *snapState) hashState() error {
@@ -91,7 +92,7 @@ func (s *snapState) hashState() error {
 }
 
 func (s *snapState) GetState(_ string) ([]byte, error) {
-	if !s.updated {
+	if !s.HasChanged(s.t.Key()) {
 		return s.data, nil
 	}
 	if err := s.hashState(); err != nil {

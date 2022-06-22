@@ -212,22 +212,23 @@ func (e *Engine) serialise(k string) ([]byte, error) {
 }
 
 func (e *Engine) HasChanged(k string) bool {
-	switch k {
-	case depositsKey:
-		return e.bss.changedDeposits
-	case withdrawalsKey:
-		return e.bss.changedWithdrawals
-	case seenKey:
-		return e.bss.changedSeen
-	case assetActionsKey:
-		return e.bss.changedAssetActions
-	case recurringTransfersKey:
-		return e.bss.changedRecurringTransfers
-	case scheduledTransfersKey:
-		return e.bss.changedScheduledTransfers
-	default:
-		return false
-	}
+	// switch k {
+	// case depositsKey:
+	// 	return e.bss.changedDeposits
+	// case withdrawalsKey:
+	// 	return e.bss.changedWithdrawals
+	// case seenKey:
+	// 	return e.bss.changedSeen
+	// case assetActionsKey:
+	// 	return e.bss.changedAssetActions
+	// case recurringTransfersKey:
+	// 	return e.bss.changedRecurringTransfers
+	// case scheduledTransfersKey:
+	// 	return e.bss.changedScheduledTransfers
+	// default:
+	// 	return false
+	// }
+	return true
 }
 
 func (e *Engine) GetState(k string) ([]byte, []types.StateProvider, error) {

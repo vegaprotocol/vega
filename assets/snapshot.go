@@ -108,14 +108,15 @@ func (s *Service) serialise(k string) ([]byte, error) {
 }
 
 func (s *Service) HasChanged(k string) bool {
-	switch k {
-	case activeKey:
-		return s.ass.changedActive
-	case pendingKey:
-		return s.ass.changedPending
-	default:
-		return false
-	}
+	// switch k {
+	// case activeKey:
+	// 	return s.ass.changedActive
+	// case pendingKey:
+	// 	return s.ass.changedPending
+	// default:
+	// 	return false
+	// }
+	return true
 }
 
 func (s *Service) GetState(k string) ([]byte, []types.StateProvider, error) {

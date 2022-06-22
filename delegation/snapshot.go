@@ -156,18 +156,19 @@ func (e *Engine) serialise(k string) ([]byte, error) {
 }
 
 func (e *Engine) HasChanged(k string) bool {
-	switch k {
-	case activeKey:
-		return e.dss.changedActive
-	case pendingKey:
-		return e.dss.changedPending
-	case autoKey:
-		return e.dss.changedAuto
-	case lastReconKey:
-		return e.dss.changedLastRecon
-	default:
-		return false
-	}
+	// switch k {
+	// case activeKey:
+	// 	return e.dss.changedActive
+	// case pendingKey:
+	// 	return e.dss.changedPending
+	// case autoKey:
+	// 	return e.dss.changedAuto
+	// case lastReconKey:
+	// 	return e.dss.changedLastRecon
+	// default:
+	// 	return false
+	// }
+	return true
 }
 
 func (e *Engine) GetState(k string) ([]byte, []types.StateProvider, error) {

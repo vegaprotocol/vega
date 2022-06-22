@@ -158,16 +158,17 @@ func (e *Engine) Stopped() bool {
 }
 
 func (e *Engine) HasChanged(k string) bool {
-	switch k {
-	case activeKey:
-		return e.gss.changedActive
-	case enactedKey:
-		return e.gss.changedEnacted
-	case nodeValidationKey:
-		return e.gss.changedNodeValidation
-	default:
-		return false
-	}
+	// switch k {
+	// case activeKey:
+	// 	return e.gss.changedActive
+	// case enactedKey:
+	// 	return e.gss.changedEnacted
+	// case nodeValidationKey:
+	// 	return e.gss.changedNodeValidation
+	// default:
+	// 	return false
+	// }
+	return true
 }
 
 func (e *Engine) GetState(k string) ([]byte, []types.StateProvider, error) {

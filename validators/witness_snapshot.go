@@ -89,7 +89,7 @@ func (w *Witness) serialise(k string) ([]byte, error) {
 
 	w.wss.mu.Lock()
 	defer w.wss.mu.Unlock()
-	if !w.wss.changed {
+	if !w.HasChanged(k) {
 		return w.wss.serialised, nil
 	}
 
@@ -106,9 +106,10 @@ func (w *Witness) serialise(k string) ([]byte, error) {
 func (w *Witness) Stopped() bool { return false }
 
 func (w *Witness) HasChanged(k string) bool {
-	w.wss.mu.Lock()
-	defer w.wss.mu.Unlock()
-	return w.wss.changed
+	// w.wss.mu.Lock()
+	// defer w.wss.mu.Unlock()
+	// return w.wss.changed
+	return true
 }
 
 func (w *Witness) GetState(k string) ([]byte, []types.StateProvider, error) {

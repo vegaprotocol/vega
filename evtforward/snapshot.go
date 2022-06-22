@@ -61,7 +61,7 @@ func (f *Forwarder) getSerialised(k string) (data []byte, err error) {
 		return nil, types.ErrSnapshotKeyDoesNotExist
 	}
 
-	if !f.efss.changed {
+	if !f.HasChanged(k) {
 		return f.efss.serialised, nil
 	}
 
@@ -75,7 +75,8 @@ func (f *Forwarder) getSerialised(k string) (data []byte, err error) {
 }
 
 func (f *Forwarder) HasChanged(k string) bool {
-	return f.efss.changed
+	// return f.efss.changed
+	return true
 }
 
 func (f *Forwarder) GetState(k string) ([]byte, []types.StateProvider, error) {
