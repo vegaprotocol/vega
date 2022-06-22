@@ -3,6 +3,7 @@ package subscribers
 import (
 	"context"
 	"sync"
+	"time"
 
 	"code.vegaprotocol.io/data-node/logging"
 	types "code.vegaprotocol.io/protos/vega"
@@ -12,6 +13,7 @@ import (
 type OE interface {
 	events.Event
 	Order() *types.Order
+	VegaTime() time.Time
 }
 
 type OrderStore interface {

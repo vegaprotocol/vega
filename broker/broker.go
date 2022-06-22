@@ -6,7 +6,9 @@ import (
 	"sync"
 	"time"
 
+	"code.vegaprotocol.io/data-node/entities"
 	"code.vegaprotocol.io/data-node/logging"
+	types "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/events"
 )
 
@@ -52,6 +54,20 @@ type ChainInfoI interface {
 	GetChainID() (string, error)
 }
 
+type OrderEvent interface {
+	events.Event
+	Order() *types.Order
+}
+
+type OrderEventWithVegaTime struct {
+	OrderEvent
+	vegaTime time.Time
+}
+
+func (oe OrderEventWithVegaTime) VegaTime() time.Time {
+	return oe.vegaTime
+}
+
 // Broker - the base broker type
 // perhaps we can extend this to embed into type-specific brokers
 type Broker struct {
@@ -69,6 +85,7 @@ type Broker struct {
 	eventSource eventSource
 	quit        chan struct{}
 	chainInfo   ChainInfoI
+	vegaTime    time.Time
 }
 
 // New creates a new base broker
@@ -131,7 +148,7 @@ func (b *Broker) sendChannelSync(sub Subscriber, evts []events.Event) bool {
 	}
 }
 
-func (b *Broker) startSending(t events.Type, evts []events.Event) {
+func (b *Broker) startSending(t events.Type, evt events.Event) {
 	var (
 		subs map[int]*subscription
 		ver  int
@@ -145,7 +162,18 @@ func (b *Broker) startSending(t events.Type, evts []events.Event) {
 		b.eChans[t] = ch                         // assign the newly created channel
 	}
 	b.mu.Unlock()
-	ch <- evts
+
+	if t == events.TimeUpdate {
+		timeUpdate := evt.(entities.TimeUpdateEvent)
+		b.vegaTime = timeUpdate.Time().Truncate(time.Microsecond)
+	}
+
+	if t == events.OrderEvent {
+		orderEvent := evt.(OrderEvent)
+		evt = OrderEventWithVegaTime{orderEvent, b.vegaTime}
+	}
+
+	ch <- []events.Event{evt}
 	if ok {
 		// we already started the routine to consume the channel
 		// we can return here
@@ -201,7 +229,7 @@ func (b *Broker) startSending(t events.Type, evts []events.Event) {
 
 // Send sends an event to all subscribers
 func (b *Broker) Send(event events.Event) {
-	b.startSending(event.Type(), []events.Event{event})
+	b.startSending(event.Type(), event)
 }
 
 // simplified version for better performance - unfortunately, we'll still need to copy the map

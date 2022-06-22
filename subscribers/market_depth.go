@@ -57,7 +57,6 @@ type MarketDepthBuilder struct {
 	subscribers map[uint64]chan<- *types.MarketDepthUpdate
 	// Logger
 	log            *logging.Logger
-	vegaTime       time.Time
 	sequenceNumber uint64
 }
 
@@ -95,16 +94,12 @@ func (mdb *MarketDepthBuilder) loop(ctx context.Context) {
 func (mdb *MarketDepthBuilder) Push(evts ...events.Event) {
 	for _, e := range evts {
 		switch et := e.(type) {
-		case TimeEvent:
-			mdb.mu.Lock()
-			mdb.vegaTime = et.Time()
-			mdb.mu.Unlock()
 		case OE:
 			order, err := types.OrderFromProto(et.Order())
 			if err != nil {
 				panic(err)
 			}
-			mdb.updateMarketDepth(order, et.Sequence())
+			mdb.updateMarketDepth(order, et.VegaTime(), et.Sequence())
 		default:
 			mdb.log.Panic("Unknown event type in market depth builder", logging.String("Type", et.Type().String()))
 		}
@@ -114,7 +109,6 @@ func (mdb *MarketDepthBuilder) Push(evts ...events.Event) {
 // Types returns all the message types this subscriber wants to receive
 func (mdb *MarketDepthBuilder) Types() []events.Type {
 	return []events.Type{
-		events.TimeUpdate,
 		events.OrderEvent,
 	}
 }
@@ -258,7 +252,7 @@ func (md *MarketDepth) removePriceLevel(order *types.Order) {
 	}
 }
 
-func (mdb *MarketDepthBuilder) updateMarketDepth(order *types.Order, sequenceNumber uint64) {
+func (mdb *MarketDepthBuilder) updateMarketDepth(order *types.Order, vegaTime time.Time, sequenceNumber uint64) {
 	mdb.mu.Lock()
 	defer mdb.mu.Unlock()
 
@@ -277,7 +271,8 @@ func (mdb *MarketDepthBuilder) updateMarketDepth(order *types.Order, sequenceNum
 	// we truncate the vegaTime by microsecond because Postgres only supports microsecond
 	// granularity for time. In order to be able to reproduce the same sequence numbers regardless
 	// the source, we have to truncate the time to microsecond granularity
-	seqNum := uint64(mdb.vegaTime.Truncate(time.Microsecond).UnixNano()) + sequenceNumber
+
+	seqNum := uint64(vegaTime.Truncate(time.Microsecond).UnixNano()) + sequenceNumber
 
 	if mdb.sequenceNumber > seqNum {
 		// This update is older than the current MarketDepth
