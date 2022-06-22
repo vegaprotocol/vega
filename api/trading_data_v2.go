@@ -42,26 +42,27 @@ var defaultPaginationV2 = entities.OffsetPagination{
 
 type tradingDataServiceV2 struct {
 	v2.UnimplementedTradingDataServiceServer
-	config               Config
-	log                  *logging.Logger
-	orderService         *service.Order
-	networkLimitsService *service.NetworkLimits
-	marketDataService    *service.MarketData
-	tradeService         *service.Trade
-	multiSigService      *service.MultiSig
-	notaryService        *service.Notary
-	assetService         *service.Asset
-	candleService        *candlesv2.Svc
-	marketsService       *service.Markets
-	partyService         *service.Party
-	riskService          *service.Risk
-	positionService      *service.Position
-	accountService       *service.Account
-	rewardService        *service.Reward
-	depositService       *service.Deposit
-	withdrawalService    *service.Withdrawal
-	oracleSpecService    *service.OracleSpec
-	oracleDataService    *service.OracleData
+	config                    Config
+	log                       *logging.Logger
+	orderService              *service.Order
+	networkLimitsService      *service.NetworkLimits
+	marketDataService         *service.MarketData
+	tradeService              *service.Trade
+	multiSigService           *service.MultiSig
+	notaryService             *service.Notary
+	assetService              *service.Asset
+	candleService             *candlesv2.Svc
+	marketsService            *service.Markets
+	partyService              *service.Party
+	riskService               *service.Risk
+	positionService           *service.Position
+	accountService            *service.Account
+	rewardService             *service.Reward
+	depositService            *service.Deposit
+	withdrawalService         *service.Withdrawal
+	oracleSpecService         *service.OracleSpec
+	oracleDataService         *service.OracleData
+	liquidityProvisionService *service.LiquidityProvision
 }
 
 func (t *tradingDataServiceV2) GetBalanceHistory(ctx context.Context, req *v2.GetBalanceHistoryRequest) (*v2.GetBalanceHistoryResponse, error) {
@@ -1044,4 +1045,27 @@ func (t *tradingDataServiceV2) GetOracleDataConnection(ctx context.Context, req 
 	}
 
 	return &resp, nil
+}
+
+func (t *tradingDataServiceV2) GetLiquidityProvisions(ctx context.Context, req *v2.GetLiquidityProvisionsRequest) (*v2.GetLiquidityProvisionsResponse, error) {
+	partyID := entities.NewPartyID(req.Party)
+	marketID := entities.NewMarketID(req.Market)
+
+	pagination, err := entities.CursorPaginationFromProto(req.Pagination)
+	if err != nil {
+		return nil, apiError(codes.InvalidArgument, err)
+	}
+
+	lps, pageInfo, err := t.liquidityProvisionService.Get(ctx, partyID, marketID, req.Reference, pagination)
+	if err != nil {
+		return nil, apiError(codes.Internal, err)
+	}
+
+	liquidityProvisionConnection := &v2.LiquidityProvisionsConnection{
+		TotalCount: 0, // TODO: implement total count
+		Edges:      makeEdges[*v2.LiquidityProvisionsEdge](lps),
+		PageInfo:   pageInfo.ToProto(),
+	}
+
+	return &v2.GetLiquidityProvisionsResponse{LiquidityProvisions: liquidityProvisionConnection}, nil
 }

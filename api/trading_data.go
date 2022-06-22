@@ -2111,7 +2111,7 @@ func (t *tradingDataService) LiquidityProvisions(ctx context.Context, req *proto
 	partyID := entities.NewPartyID(req.Party)
 	marketID := entities.NewMarketID(req.Market)
 
-	lps, err := t.liquidityProvisionService.Get(ctx, partyID, marketID, entities.OffsetPagination{})
+	lps, _, err := t.liquidityProvisionService.Get(ctx, partyID, marketID, "", entities.OffsetPagination{})
 	if err != nil {
 		return nil, err
 	}

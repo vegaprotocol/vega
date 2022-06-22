@@ -48,6 +48,32 @@ func (r *myMarketResolver) LiquidityProvisions(
 	return res.LiquidityProvisions, nil
 }
 
+func (r *myMarketResolver) LiquidityProvisionsConnection(
+	ctx context.Context,
+	market *types.Market,
+	party *string,
+	pagination *v2.Pagination,
+) (*v2.LiquidityProvisionsConnection, error) {
+	var pid string
+	if party != nil {
+		pid = *party
+	}
+
+	req := v2.GetLiquidityProvisionsRequest{
+		Party:      pid,
+		Market:     market.Id,
+		Pagination: pagination,
+	}
+
+	res, err := r.tradingDataClientV2.GetLiquidityProvisions(ctx, &req)
+	if err != nil {
+		r.log.Error("tradingData client", logging.Error(err))
+		return nil, customErrorFromStatus(err)
+	}
+
+	return res.LiquidityProvisions, nil
+}
+
 func (r *myMarketResolver) Data(ctx context.Context, market *types.Market) (*types.MarketData, error) {
 	req := protoapi.MarketDataByIDRequest{
 		MarketId: market.Id,
