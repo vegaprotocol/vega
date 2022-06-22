@@ -66,7 +66,6 @@ func (e *eventObserver) ObserveEventBus(
 }
 
 func observeEventBus(log *logging.Logger, config Config, eventBusServer eventBusServer, eventService EventService) error {
-	defer metrics.StartActiveSubscriptionCountGRPC("EventBus")()
 
 	ctx, cfunc := context.WithCancel(eventBusServer.Context())
 	defer cfunc()
@@ -86,6 +85,9 @@ func observeEventBus(log *logging.Logger, config Config, eventBusServer eventBus
 	if err != nil {
 		return apiError(codes.InvalidArgument, ErrMalformedRequest, err)
 	}
+	metrics.StartEventBusActiveSubscriptionCount(types)
+	defer metrics.StopEventBusActiveSubscriptionCount(types)
+
 	filters := []subscribers.EventFilter{}
 	if len(req.MarketId) > 0 && len(req.PartyId) > 0 {
 		filters = append(filters, events.GetPartyAndMarketFilter(req.MarketId, req.PartyId))
@@ -118,13 +120,13 @@ func observeEvents(
 	ch <-chan []*eventspb.BusEvent,
 ) error {
 	sentEventStatTicker := time.NewTicker(time.Second)
-	var sentEvents int64
+	publishedEvents := eventStats{}
 
 	for {
 		select {
 		case <-sentEventStatTicker.C:
-			metrics.PublishedEventsAdd("EventBus", float64(sentEvents))
-			sentEvents = 0
+			publishedEvents.publishStats()
+			publishedEvents = eventStats{}
 		case data, ok := <-ch:
 			if !ok {
 				return nil
@@ -134,7 +136,7 @@ func observeEvents(
 				log.Error("Error sending event on stream", logging.Error(err))
 				return apiError(codes.Internal, ErrStreamInternal, err)
 			}
-			sentEvents = sentEvents + int64(len(data))
+			publishedEvents.updateStats(data)
 		case <-ctx.Done():
 			return apiError(codes.Internal, ErrStreamInternal, ctx.Err())
 		}
@@ -150,13 +152,13 @@ func observeEventsWithAck(
 	bCh chan<- int,
 ) error {
 	sentEventStatTicker := time.NewTicker(time.Second)
-	var sentEvents int64
+	publishedEvents := eventStats{}
 
 	for {
 		select {
 		case <-sentEventStatTicker.C:
-			metrics.PublishedEventsAdd("EventBus", float64(sentEvents))
-			sentEvents = 0
+			publishedEvents.publishStats()
+			publishedEvents = eventStats{}
 		case data, ok := <-ch:
 			if !ok {
 				return nil
@@ -166,7 +168,7 @@ func observeEventsWithAck(
 				log.Error("Error sending event on stream", logging.Error(err))
 				return apiError(codes.Internal, ErrStreamInternal, err)
 			}
-			sentEvents = sentEvents + int64(len(data))
+			publishedEvents.updateStats(data)
 		case <-ctx.Done():
 			return apiError(codes.Internal, ErrStreamInternal, ctx.Err())
 		}
@@ -209,5 +211,36 @@ func recvEventRequest(
 		return nil, readCtx.Err()
 	case nb := <-oebCh:
 		return &nb, nil
+	}
+}
+
+// this needs to be greater than the highest eventspb.BusEvent event type
+const maxEventTypeOrdinal = 299
+
+type eventStats struct {
+	eventCount    [maxEventTypeOrdinal + 1]int
+	ignoredEvents bool
+}
+
+func (s *eventStats) updateStats(events []*eventspb.BusEvent) {
+	for _, event := range events {
+		eventType := event.Type
+		if int(eventType) > maxEventTypeOrdinal {
+			eventType = maxEventTypeOrdinal
+		}
+		s.eventCount[eventType] = s.eventCount[eventType] + 1
+	}
+}
+
+func (s eventStats) publishStats() {
+	for idx, count := range s.eventCount {
+		if count > 0 {
+			if idx == maxEventTypeOrdinal {
+				metrics.EventBusPublishedEventsAdd("Unknown", float64(count))
+			}
+
+			eventName := eventspb.BusEventType_name[int32(idx)]
+			metrics.EventBusPublishedEventsAdd(eventName, float64(count))
+		}
 	}
 }

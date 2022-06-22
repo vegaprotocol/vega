@@ -18,6 +18,7 @@ import (
 	"net/http"
 	"time"
 
+	"code.vegaprotocol.io/vega/events"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -52,10 +53,12 @@ var (
 	blockHandlingTime prometheus.Counter
 	blockHeight       prometheus.Gauge
 
-	publishedEventsCounter *prometheus.CounterVec
+	publishedEventsCounter         *prometheus.CounterVec
+	eventBusPublishedEventsCounter *prometheus.CounterVec
 
 	// Subscription gauge for each type
-	subscriptionGauge *prometheus.GaugeVec
+	subscriptionGauge         *prometheus.GaugeVec
+	eventBusSubscriptionGauge *prometheus.GaugeVec
 
 	// Call counters for each request type per API
 	apiRequestCallCounter *prometheus.CounterVec
@@ -403,6 +406,21 @@ func setupMetrics() error {
 	}
 	publishedEventsCounter = sec
 
+	h, err = AddInstrument(
+		Counter,
+		"event_bus_published_event_count_total",
+		Namespace("datanode"),
+		Vectors("event"),
+	)
+	if err != nil {
+		return err
+	}
+	sec, err = h.CounterVec()
+	if err != nil {
+		return err
+	}
+	eventBusPublishedEventsCounter = sec
+
 	//eventCount
 	h, err = AddInstrument(
 		Counter,
@@ -507,13 +525,27 @@ func setupMetrics() error {
 		Gauge,
 		"active_subscriptions",
 		Namespace("datanode"),
-		Vectors("apiType", "subscribedToType"),
+		Vectors("eventType"),
 		Help("Number of active subscriptions"),
 	); err != nil {
 		return err
 	}
 
 	if subscriptionGauge, err = h.GaugeVec(); err != nil {
+		return err
+	}
+
+	if h, err = AddInstrument(
+		Gauge,
+		"event_bus_active_subscriptions",
+		Namespace("datanode"),
+		Vectors("eventType"),
+		Help("Number of active subscriptions to the event bus"),
+	); err != nil {
+		return err
+	}
+
+	if eventBusSubscriptionGauge, err = h.GaugeVec(); err != nil {
 		return err
 	}
 
@@ -582,6 +614,14 @@ func PublishedEventsAdd(event string, eventCount float64) {
 	publishedEventsCounter.WithLabelValues(event).Add(eventCount)
 }
 
+func EventBusPublishedEventsAdd(event string, eventCount float64) {
+	if eventBusPublishedEventsCounter == nil {
+		return
+	}
+
+	eventBusPublishedEventsCounter.WithLabelValues(event).Add(eventCount)
+}
+
 func SetBlockHeight(height float64) {
 	if blockHeight == nil {
 		return
@@ -640,5 +680,25 @@ func StartActiveSubscriptionCountGRPC(subscribedToType string) func() {
 	subscriptionGauge.WithLabelValues("GRPC", subscribedToType).Inc()
 	return func() {
 		subscriptionGauge.WithLabelValues("GRPC", subscribedToType).Dec()
+	}
+}
+
+func StartEventBusActiveSubscriptionCount(eventTypes []events.Type) {
+	if eventBusSubscriptionGauge == nil {
+		return
+	}
+
+	for _, eventType := range eventTypes {
+		eventBusSubscriptionGauge.WithLabelValues(eventType.String()).Inc()
+	}
+}
+
+func StopEventBusActiveSubscriptionCount(eventTypes []events.Type) {
+	if eventBusSubscriptionGauge == nil {
+		return
+	}
+
+	for _, eventType := range eventTypes {
+		eventBusSubscriptionGauge.WithLabelValues(eventType.String()).Dec()
 	}
 }
