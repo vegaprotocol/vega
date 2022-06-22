@@ -2,10 +2,12 @@ package sqlstore
 
 import (
 	"context"
+	"fmt"
 	"sync"
 
 	"code.vegaprotocol.io/data-node/entities"
 	"code.vegaprotocol.io/data-node/metrics"
+	v2 "code.vegaprotocol.io/protos/data-node/api/v2"
 	"github.com/georgysavva/scany/pgxscan"
 )
 
@@ -67,8 +69,37 @@ func (as *Assets) GetByID(ctx context.Context, id string) (entities.Asset, error
 func (as *Assets) GetAll(ctx context.Context) ([]entities.Asset, error) {
 	assets := []entities.Asset{}
 	defer metrics.StartSQLQuery("Assets", "GetAll")()
-	err := pgxscan.Select(ctx, as.Connection, &assets, `
-		SELECT id, name, symbol, total_supply, decimals, quantum, source, erc20_contract, lifetime_limit, withdraw_threshold, vega_time
-		FROM assets`)
+	err := pgxscan.Select(ctx, as.Connection, &assets, getAssetQuery())
 	return assets, err
+}
+
+func (as *Assets) GetAllWithCursorPagination(ctx context.Context, pagination entities.CursorPagination) (
+	[]entities.Asset, entities.PageInfo, error) {
+	var assets []entities.Asset
+	var pageInfo entities.PageInfo
+	var args []interface{}
+
+	sorting, cmp, cursor := extractPaginationInfo(pagination)
+
+	cursorParams := []CursorQueryParameter{
+		NewCursorQueryParameter("id", sorting, cmp, entities.NewAssetID(cursor)),
+	}
+
+	query := getAssetQuery()
+	query, args = orderAndPaginateWithCursor(query, pagination, cursorParams, args...)
+
+	defer metrics.StartSQLQuery("Assets", "GetAllWithCursorPagination")()
+
+	if err := pgxscan.Select(ctx, as.Connection, &assets, query, args...); err != nil {
+		return nil, pageInfo, fmt.Errorf("could not get assets: %w", err)
+	}
+
+	assets, pageInfo = entities.PageEntities[*v2.AssetEdge](assets, pagination)
+
+	return assets, pageInfo, nil
+}
+
+func getAssetQuery() string {
+	return `SELECT id, name, symbol, total_supply, decimals, quantum, source, erc20_contract, lifetime_limit, withdraw_threshold, vega_time
+		FROM assets`
 }

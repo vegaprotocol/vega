@@ -36,6 +36,26 @@ func (m *MockTradingDataServiceClientV2) EXPECT() *MockTradingDataServiceClientV
 	return m.recorder
 }
 
+// GetAssets mocks base method.
+func (m *MockTradingDataServiceClientV2) GetAssets(arg0 context.Context, arg1 *v2.GetAssetsRequest, arg2 ...grpc.CallOption) (*v2.GetAssetsResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "GetAssets", varargs...)
+	ret0, _ := ret[0].(*v2.GetAssetsResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetAssets indicates an expected call of GetAssets.
+func (mr *MockTradingDataServiceClientV2MockRecorder) GetAssets(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAssets", reflect.TypeOf((*MockTradingDataServiceClientV2)(nil).GetAssets), varargs...)
+}
+
 // GetBalanceHistory mocks base method.
 func (m *MockTradingDataServiceClientV2) GetBalanceHistory(arg0 context.Context, arg1 *v2.GetBalanceHistoryRequest, arg2 ...grpc.CallOption) (*v2.GetBalanceHistoryResponse, error) {
 	m.ctrl.T.Helper()

@@ -394,7 +394,10 @@ type Query {
   asset("Id of the asset" assetId: ID!): Asset
 
   "The list of all assets in use in the vega network"
-  assets: [Asset!]
+  assets: [Asset!] @deprecated(reason: "Use assetsConnection instead")
+
+  "The list of all assets in use in the vega network or the specified asset if id is provided"
+  assetsConnection(id: ID, pagination: Pagination): AssetsConnection!
 
   "return an estimation of the potential cost for a new order"
   estimateOrder(
@@ -3609,4 +3612,18 @@ type DepositsConnection {
   edges: [DepositEdge]
   "The pagination information"
   pageInfo: PageInfo
+}
+
+type AssetEdge {
+  node: Asset!
+  cursor: String!
+}
+
+type AssetsConnection {
+    "The total number of assets available with this connection"
+    totalCount: Int
+    "The assets"
+    edges: [AssetEdge]
+    "The pagination information"
+    pageInfo: PageInfo
 }

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	v2 "code.vegaprotocol.io/protos/data-node/api/v2"
 	pb "code.vegaprotocol.io/protos/vega"
 	"github.com/shopspring/decimal"
 )
@@ -56,4 +57,15 @@ func (a Asset) ToProto() *pb.Asset {
 	}
 
 	return pbAsset
+}
+
+func (a Asset) Cursor() *Cursor {
+	return NewCursor(a.ID.String())
+}
+
+func (a Asset) ToProtoEdge(_ ...any) *v2.AssetEdge {
+	return &v2.AssetEdge{
+		Node:   a.ToProto(),
+		Cursor: a.Cursor().Encode(),
+	}
 }

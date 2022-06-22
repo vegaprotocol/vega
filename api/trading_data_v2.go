@@ -991,3 +991,57 @@ func (t *tradingDataServiceV2) GetWithdrawals(ctx context.Context, req *v2.GetWi
 
 	return &resp, nil
 }
+
+// -- Assets --
+func (t *tradingDataServiceV2) GetAssets(ctx context.Context, req *v2.GetAssetsRequest) (*v2.GetAssetsResponse, error) {
+	if err := t.checkV2ApiEnabled(); err != nil {
+		return nil, err
+	}
+
+	if req.AssetId != "" {
+		return t.getSingleAsset(ctx, req.AssetId)
+	}
+
+	return t.getAllAssets(ctx, req.Pagination)
+}
+
+func (t *tradingDataServiceV2) getSingleAsset(ctx context.Context, assetID string) (*v2.GetAssetsResponse, error) {
+	asset, err := t.assetService.GetByID(ctx, assetID)
+	if err != nil {
+		return nil, apiError(codes.Internal, err)
+	}
+
+	connection := &v2.AssetsConnection{
+		TotalCount: 1,
+		Edges:      makeEdges[*v2.AssetEdge]([]entities.Asset{asset}),
+		PageInfo: &v2.PageInfo{
+			HasNextPage:     false,
+			HasPreviousPage: false,
+			StartCursor:     asset.Cursor().Encode(),
+			EndCursor:       asset.Cursor().Encode(),
+		},
+	}
+
+	return &v2.GetAssetsResponse{Assets: connection}, nil
+}
+
+func (t *tradingDataServiceV2) getAllAssets(ctx context.Context, p *v2.Pagination) (*v2.GetAssetsResponse, error) {
+	pagination, err := entities.CursorPaginationFromProto(p)
+	if err != nil {
+		return nil, apiError(codes.InvalidArgument, err)
+	}
+
+	assets, pageInfo, err := t.assetService.GetAllWithCursorPagination(ctx, pagination)
+	if err != nil {
+		return nil, apiError(codes.Internal, err)
+	}
+
+	connection := &v2.AssetsConnection{
+		TotalCount: 0, // TODO: implement total count
+		Edges:      makeEdges[*v2.AssetEdge](assets),
+		PageInfo:   pageInfo.ToProto(),
+	}
+
+	resp := v2.GetAssetsResponse{Assets: connection}
+	return &resp, nil
+}

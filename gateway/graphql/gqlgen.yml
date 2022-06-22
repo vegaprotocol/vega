@@ -312,3 +312,7 @@ models:
     model: code.vegaprotocol.io/protos/data-node/api/v2.WithdrawalEdge
   WithdrawalsConnection:
     model: code.vegaprotocol.io/protos/data-node/api/v2.WithdrawalsConnection
+  AssetEdge:
+    model: code.vegaprotocol.io/protos/data-node/api/v2.AssetEdge
+  AssetsConnection:
+    model: code.vegaprotocol.io/protos/data-node/api/v2.AssetsConnection

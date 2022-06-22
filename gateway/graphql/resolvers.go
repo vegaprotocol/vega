@@ -699,6 +699,23 @@ func (r *myQueryResolver) Assets(ctx context.Context) ([]*types.Asset, error) {
 	return r.r.allAssets(ctx)
 }
 
+func (r *myQueryResolver) AssetsConnection(ctx context.Context, id *string, pagination *v2.Pagination) (*v2.AssetsConnection, error) {
+	assetID := ""
+	if id != nil {
+		assetID = *id
+	}
+
+	req := &v2.GetAssetsRequest{
+		AssetId:    assetID,
+		Pagination: pagination,
+	}
+	resp, err := r.tradingDataClientV2.GetAssets(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	return resp.Assets, nil
+}
+
 func (r *myQueryResolver) NodeSignatures(ctx context.Context, resourceID string) ([]*commandspb.NodeSignature, error) {
 	if len(resourceID) <= 0 {
 		return nil, ErrMissingIDOrReference
