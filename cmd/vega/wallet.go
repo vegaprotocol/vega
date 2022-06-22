@@ -16,8 +16,7 @@ import (
 	"context"
 	"os"
 
-	"code.vegaprotocol.io/vegawallet/cmd"
-
+	cmd "code.vegaprotocol.io/vega/cmd/vegawallet/commands"
 	"github.com/jessevdk/go-flags"
 )
 

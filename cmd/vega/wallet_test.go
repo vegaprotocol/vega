@@ -17,7 +17,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	"code.vegaprotocol.io/vegawallet/wallet"
+	"code.vegaprotocol.io/vega/wallet/wallet"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

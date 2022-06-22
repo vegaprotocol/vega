@@ -15,7 +15,7 @@ package crypto
 import (
 	"errors"
 
-	wcrypto "code.vegaprotocol.io/vegawallet/crypto"
+	wcrypto "code.vegaprotocol.io/vega/wallet/crypto"
 	"github.com/ethereum/go-ethereum/common"
 	ecrypto "github.com/ethereum/go-ethereum/crypto"
 )

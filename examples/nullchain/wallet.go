@@ -19,8 +19,8 @@ import (
 	api "code.vegaprotocol.io/protos/vega/api/v1"
 	walletpb "code.vegaprotocol.io/protos/vega/wallet/v1"
 	vgrand "code.vegaprotocol.io/shared/libs/rand"
-	storev1 "code.vegaprotocol.io/vegawallet/wallet/store/v1"
-	wallets "code.vegaprotocol.io/vegawallet/wallets"
+	storev1 "code.vegaprotocol.io/vega/wallet/wallet/store/v1"
+	wallets "code.vegaprotocol.io/vega/wallet/wallets"
 )
 
 var ErrFailedSubmission = errors.New("failed to submit transaction")
