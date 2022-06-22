@@ -13,6 +13,7 @@
 
 ### 🐛 Fixes
 - [5476](https://github.com/vegaprotocol/vega/issues/5476) - Include settlement price in snapshot
+- [5476](https://github.com/vegaprotocol/vega/issues/5314) - Fix validation of checkpoint file
 
 ## 0.52.0
 

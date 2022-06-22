@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"code.vegaprotocol.io/vega/genesis"
@@ -62,7 +63,7 @@ func (opts *loadCheckpointCmd) Execute(_ []string) error {
 		return err
 	}
 
-	splits := strings.Split(f.Name(), "-")
+	splits := strings.Split(filepath.Base(f.Name()), "-")
 	if len(splits) != 3 {
 		return fmt.Errorf("invalid checkpoint file name: `%v`", f.Name())
 	}
