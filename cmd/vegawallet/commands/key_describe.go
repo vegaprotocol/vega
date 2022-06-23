@@ -20,7 +20,7 @@ var (
 
 	describeKeyExample = cli.Examples(`
 		# Describe a key
-		vegawallet key describe --wallet WALLET --pubkey PUBKEY
+		{{.Software}} key describe --wallet WALLET --pubkey PUBKEY
 	`)
 )
 

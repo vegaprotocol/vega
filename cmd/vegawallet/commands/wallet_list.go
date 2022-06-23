@@ -20,7 +20,7 @@ var (
 
 	listWalletsExample = cli.Examples(`
 		# List all registered wallets
-		vegawallet list
+		{{.Software}} list
 	`)
 )
 

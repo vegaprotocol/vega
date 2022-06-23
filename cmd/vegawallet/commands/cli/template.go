@@ -1,10 +1,18 @@
 package cli
 
 import (
+	"bytes"
+	"fmt"
+	"os"
 	"strings"
+	"text/template"
 )
 
 const indentation = `  `
+
+type exampleData struct {
+	Software string
+}
 
 // LongDesc normalizes a command's long description to follow the conventions.
 func LongDesc(s string) string {
@@ -19,7 +27,30 @@ func Examples(s string) string {
 	if len(s) == 0 {
 		return s
 	}
-	return normalizer{s}.trim().indent().string
+
+	software := os.Args[0]
+
+	// If the wallet cmd is embedded inside vega, we display the software as
+	// a sub-command in the examples.
+	if software == "vega" || strings.HasSuffix(software, "/vega") {
+		software = fmt.Sprintf("%s wallet", software)
+	}
+
+	sweaters := exampleData{
+		Software: software,
+	}
+	tmpl, err := template.New("example").Parse(s)
+	if err != nil {
+		panic(err)
+	}
+
+	var tpl bytes.Buffer
+	err = tmpl.Execute(&tpl, sweaters)
+	if err != nil {
+		panic(err)
+	}
+
+	return normalizer{tpl.String()}.trim().indent().string
 }
 
 type normalizer struct {

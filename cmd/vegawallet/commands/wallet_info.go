@@ -20,7 +20,7 @@ var (
 
 	infoExample = cli.Examples(`
 		# Get the wallet information
-		vegawallet info --wallet WALLET
+		{{.Software}} info --wallet WALLET
 	`)
 )
 

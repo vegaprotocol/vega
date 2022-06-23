@@ -30,10 +30,10 @@ var (
 
 	deleteWalletExample = cli.Examples(`
 		# Delete the specified wallet
-		vegawallet delete --wallet WALLET
+		{{.Software}} delete --wallet WALLET
 
 		# Delete the specified wallet without asking for confirmation
-		vegawallet delete --wallet WALLET --force
+		{{.Software}} delete --wallet WALLET --force
 	`)
 )
 

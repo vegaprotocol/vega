@@ -21,13 +21,13 @@ var (
 
 	generateKeyExample = cli.Examples(`
 		# Generate a key pair
-		vegawallet key generate --wallet WALLET
+		{{.Software}} key generate --wallet WALLET
 
 		# Generate a key pair with additional metadata (name = my-wallet and type = validation)
-		vegawallet key generate --wallet WALLET --meta "name:my-wallet,type:validation"
+		{{.Software}} key generate --wallet WALLET --meta "name:my-wallet,type:validation"
 
 		# Generate a key pair with custom name
-		vegawallet key generate --wallet WALLET --meta "name:my-wallet"
+		{{.Software}} key generate --wallet WALLET --meta "name:my-wallet"
 	`)
 )
 

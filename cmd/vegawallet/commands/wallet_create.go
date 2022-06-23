@@ -25,7 +25,7 @@ var (
 
 	createWalletExample = cli.Examples(`
 		# Creating a wallet
-		vegawallet create --wallet WALLET
+		{{.Software}} create --wallet WALLET
 	`)
 )
 

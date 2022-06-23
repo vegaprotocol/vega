@@ -31,10 +31,10 @@ var (
 			- type: validation
 
 		# Annotate a key pair
-		vegawallet key annotate --wallet WALLET --pubkey PUBKEY --meta "name:my-wallet,type:validation"
+		{{.Software}} key annotate --wallet WALLET --pubkey PUBKEY --meta "name:my-wallet,type:validation"
 
 		# Remove all metadata from a key pair
-		vegawallet key annotate --wallet WALLET --pubkey PUBKEY --clear
+		{{.Software}} key annotate --wallet WALLET --pubkey PUBKEY --clear
 	`)
 )
 

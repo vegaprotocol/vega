@@ -22,7 +22,7 @@ var (
 
 	signMessageExample = cli.Examples(`
 		# Sign a message
-		vegawallet message sign --message MESSAGE --wallet WALLET --pubkey PUBKEY
+		{{.Software}} message sign --message MESSAGE --wallet WALLET --pubkey PUBKEY
 	`)
 )
 

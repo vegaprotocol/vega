@@ -33,11 +33,11 @@ var (
 
 	signCommandExample = cli.Examples(`
 		# Sign a command
-		vegawallet command sign --wallet WALLET --pubkey PUBKEY --tx-height TX_HEIGHT COMMAND
+		{{.Software}} command sign --wallet WALLET --pubkey PUBKEY --tx-height TX_HEIGHT COMMAND
 
 		# To decode the result, save the result in a file and use the command
 		# "base64"
-		vegawallet command sign --wallet WALLET --pubkey PUBKEY --tx-height TX_HEIGHT COMMAND > result.txt
+		{{.Software}} command sign --wallet WALLET --pubkey PUBKEY --tx-height TX_HEIGHT COMMAND > result.txt
 		base64 --decode --input result.txt
 	`)
 )

@@ -53,7 +53,7 @@ var (
 
 	listEndpointsExample = cli.Examples(`
 		# List service endpoints
-		vegawallet endpoints --network NETWORK
+		{{.Software}} endpoints --network NETWORK
 	`)
 )
 

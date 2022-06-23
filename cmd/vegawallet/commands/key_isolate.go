@@ -31,7 +31,7 @@ var (
 
 	isolateKeyExample = cli.Examples(`
 		# Isolate a key pair
-		vegawallet key isolate --wallet WALLET --pubkey PUBKEY
+		{{.Software}} key isolate --wallet WALLET --pubkey PUBKEY
 	`)
 )
 
