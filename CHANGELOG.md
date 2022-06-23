@@ -12,8 +12,10 @@
 - [565](https://github.com/vegaprotocol/data-node/issues/565) - Add cursor based pagination for candles data requests
 - [568](https://github.com/vegaprotocol/data-node/issues/568) - Add cursor based pagination for deposits requests
 - [569](https://github.com/vegaprotocol/data-node/issues/569) - Add cursor based pagination for withdrawal requests
-- [576](https://github.com/vegaprotocol/data-node/issues/569) - Add cursor based pagination for assets requests
 - [723](https://github.com/vegaprotocol/data-node/issues/723) - Update contributor information
+- [576](https://github.com/vegaprotocol/data-node/issues/576) - Add cursor based pagination for assets requests
+- [571](https://github.com/vegaprotocol/data-node/issues/571) - Add cursor based pagination for Oracle Spec and Data requests
+
 
 ### 🐛 Fixes
 - [705](https://github.com/vegaprotocol/data-node/issues/705) - Market Depth returning incorrect book state

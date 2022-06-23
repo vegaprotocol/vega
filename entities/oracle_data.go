@@ -14,9 +14,11 @@ package entities
 
 import (
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"time"
 
+	v2 "code.vegaprotocol.io/protos/data-node/api/v2"
 	oraclespb "code.vegaprotocol.io/protos/vega/oracles/v1"
 )
 
@@ -94,4 +96,47 @@ func (od *OracleData) ToProto() *oraclespb.OracleData {
 		MatchedSpecIds: specIDs,
 		BroadcastAt:    od.BroadcastAt.UnixNano(),
 	}
+}
+
+func (od OracleData) Cursor() *Cursor {
+	pks := make([]string, 0, len(od.PublicKeys))
+
+	for _, pk := range od.PublicKeys {
+		pks = append(pks, hex.EncodeToString(pk))
+	}
+
+	return NewCursor(OracleDataCursor{
+		VegaTime:   od.VegaTime,
+		PublicKeys: pks,
+	}.String())
+}
+
+func (od OracleData) ToProtoEdge(_ ...any) *v2.OracleDataEdge {
+	return &v2.OracleDataEdge{
+		Node:   od.ToProto(),
+		Cursor: od.Cursor().Encode(),
+	}
+}
+
+type OracleDataCursor struct {
+	VegaTime   time.Time `json:"vegaTime"`
+	PublicKeys []string  `json:"publicKeys"`
+}
+
+func (c OracleDataCursor) String() string {
+	bs, err := json.Marshal(c)
+	if err != nil {
+		// This really shouldn't happen.
+		panic(fmt.Errorf("couldn't marshal oracle data cursor: %w", err))
+	}
+
+	return string(bs)
+}
+
+func (c *OracleDataCursor) Parse(cursorString string) error {
+	if cursorString == "" {
+		return nil
+	}
+
+	return json.Unmarshal([]byte(cursorString), c)
 }

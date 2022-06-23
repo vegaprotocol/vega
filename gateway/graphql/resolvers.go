@@ -136,19 +136,9 @@ func (r *VegaResolverRoot) Market() MarketResolver {
 	return (*myMarketResolver)(r)
 }
 
-// PaginatedMarket returns the paginated markets resolver
-func (r *VegaResolverRoot) PaginatedMarket() PaginatedMarketResolver {
-	return (*myPaginatedMarketResolver)(r)
-}
-
 // Order returns the order resolver
 func (r *VegaResolverRoot) Order() OrderResolver {
 	return (*myOrderResolver)(r)
-}
-
-// PaginatedOrder returns the order resolver
-func (r *VegaResolverRoot) PaginatedOrder() PaginatedOrderResolver {
-	return (*myPaginatedOrderResolver)(r)
 }
 
 // Trade returns the trades resolver
@@ -164,11 +154,6 @@ func (r *VegaResolverRoot) Position() PositionResolver {
 // Party returns the parties resolver
 func (r *VegaResolverRoot) Party() PartyResolver {
 	return (*myPartyResolver)(r)
-}
-
-// PaginatedParty returns the parties resolver
-func (r *VegaResolverRoot) PaginatedParty() PaginatedPartyResolver {
-	return (*myPaginatedPartyResolver)(r)
 }
 
 // Subscription returns the subscriptions resolver
@@ -517,6 +502,19 @@ func (r *myQueryResolver) OracleSpecs(ctx context.Context, pagination *OffsetPag
 	return res.OracleSpecs, nil
 }
 
+func (r *myQueryResolver) OracleSpecsConnection(ctx context.Context, pagination *v2.Pagination) (*v2.OracleSpecsConnection, error) {
+	req := v2.GetOracleSpecsConnectionRequest{
+		Pagination: pagination,
+	}
+	res, err := r.tradingDataClientV2.GetOracleSpecsConnection(ctx, &req)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return res.OracleSpecs, nil
+}
+
 func (r *myQueryResolver) OracleSpec(ctx context.Context, id string) (*oraclespb.OracleSpec, error) {
 	res, err := r.tradingDataClient.OracleSpec(
 		ctx, &protoapi.OracleSpecRequest{Id: id},
@@ -528,7 +526,8 @@ func (r *myQueryResolver) OracleSpec(ctx context.Context, id string) (*oraclespb
 	return res.OracleSpec, nil
 }
 
-func (r *myQueryResolver) OracleDataBySpec(ctx context.Context, id string, pagination *OffsetPagination) ([]*oraclespb.OracleData, error) {
+func (r *myQueryResolver) OracleDataBySpec(ctx context.Context, id string,
+	pagination *OffsetPagination) ([]*oraclespb.OracleData, error) {
 	paginationProto, err := pagination.ToProto()
 	if err != nil {
 		return nil, fmt.Errorf("invalid pagination object: %w", err)
@@ -547,6 +546,21 @@ func (r *myQueryResolver) OracleDataBySpec(ctx context.Context, id string, pagin
 	return res.OracleData, nil
 }
 
+func (r *myQueryResolver) OracleDataBySpecConnection(ctx context.Context, oracleSpecID string,
+	pagination *v2.Pagination) (*v2.OracleDataConnection, error) {
+	req := v2.GetOracleDataConnectionRequest{
+		SpecId:     oracleSpecID,
+		Pagination: pagination,
+	}
+
+	resp, err := r.tradingDataClientV2.GetOracleDataConnection(ctx, &req)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.OracleData, nil
+}
+
 func (r *myQueryResolver) OracleData(ctx context.Context, pagination *OffsetPagination) ([]*oraclespb.OracleData, error) {
 	paginationProto, err := pagination.ToProto()
 	if err != nil {
@@ -563,6 +577,19 @@ func (r *myQueryResolver) OracleData(ctx context.Context, pagination *OffsetPagi
 	}
 
 	return res.OracleData, nil
+}
+
+func (r *myQueryResolver) OracleDataConnection(ctx context.Context, pagination *v2.Pagination) (*v2.OracleDataConnection, error) {
+	req := v2.GetOracleDataConnectionRequest{
+		Pagination: pagination,
+	}
+
+	resp, err := r.tradingDataClientV2.GetOracleDataConnection(ctx, &req)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.OracleData, nil
 }
 
 func (r *myQueryResolver) NetworkParameters(ctx context.Context) ([]*types.NetworkParameter, error) {
@@ -801,16 +828,16 @@ func (r *myQueryResolver) OrderVersions(
 	return res.Orders, nil
 }
 
-func (r *myQueryResolver) OrderVersionsPaged(ctx context.Context, orderID *string, pagination *v2.Pagination) (*v2.OrderConnection, error) {
+func (r *myQueryResolver) OrderVersionsConnection(ctx context.Context, orderID *string, pagination *v2.Pagination) (*v2.OrderConnection, error) {
 	if orderID == nil {
 		return nil, ErrMissingIDOrReference
 	}
-	req := &v2.GetOrderVersionsByIDPagedRequest{
+	req := &v2.GetOrderVersionsByIDConnectionRequest{
 		OrderId:    *orderID,
 		Pagination: pagination,
 	}
 
-	resp, err := r.tradingDataClientV2.GetOrderVersionsByIDPaged(ctx, req)
+	resp, err := r.tradingDataClientV2.GetOrderVersionsByIDConnection(ctx, req)
 	if err != nil {
 		r.log.Error("tradingData client", logging.Error(err))
 		return nil, customErrorFromStatus(err)
@@ -1238,7 +1265,7 @@ func (r *myPartyResolver) Margins(ctx context.Context,
 	return out, nil
 }
 
-func (r *myPartyResolver) MarginsPaged(ctx context.Context, party *types.Party, marketID *string,
+func (r *myPartyResolver) MarginsConnection(ctx context.Context, party *types.Party, marketID *string,
 	pagination *v2.Pagination,
 ) (*v2.MarginConnection, error) {
 	if party == nil {
@@ -1287,15 +1314,15 @@ func (r *myPartyResolver) Orders(ctx context.Context, party *types.Party,
 	return []*types.Order{}, nil
 }
 
-func (r *myPartyResolver) OrdersPaged(ctx context.Context, party *types.Party, pagination *v2.Pagination) (*v2.OrderConnection, error) {
+func (r *myPartyResolver) OrdersConnection(ctx context.Context, party *types.Party, pagination *v2.Pagination) (*v2.OrderConnection, error) {
 	if party == nil {
 		return nil, errors.New("party is required")
 	}
-	req := v2.GetOrdersByPartyPagedRequest{
+	req := v2.GetOrdersByPartyConnectionRequest{
 		PartyId:    party.Id,
 		Pagination: pagination,
 	}
-	res, err := r.tradingDataClientV2.GetOrdersByPartyPaged(ctx, &req)
+	res, err := r.tradingDataClientV2.GetOrdersByPartyConnection(ctx, &req)
 	if err != nil {
 		r.log.Error("tradingData client", logging.Error(err))
 		return nil, customErrorFromStatus(err)
@@ -1331,7 +1358,7 @@ func (r *myPartyResolver) Trades(ctx context.Context, party *types.Party,
 	return []*types.Trade{}, nil
 }
 
-func (r *myPartyResolver) TradesPaged(ctx context.Context, party *types.Party, market *string, pagination *v2.Pagination) (*v2.TradeConnection, error) {
+func (r *myPartyResolver) TradesConnection(ctx context.Context, party *types.Party, market *string, pagination *v2.Pagination) (*v2.TradeConnection, error) {
 	var mkt string
 	if market != nil {
 		mkt = *market
@@ -1856,7 +1883,7 @@ func (r *myOrderResolver) Trades(ctx context.Context, ord *types.Order) ([]*type
 	return res.Trades, nil
 }
 
-func (r *myOrderResolver) TradesPaged(ctx context.Context, ord *types.Order, pagination *v2.Pagination) (*v2.TradeConnection, error) {
+func (r *myOrderResolver) TradesConnection(ctx context.Context, ord *types.Order, pagination *v2.Pagination) (*v2.TradeConnection, error) {
 	if ord == nil {
 		return nil, errors.New("nil order")
 	}
@@ -2146,7 +2173,7 @@ func (r *myPositionResolver) Margins(ctx context.Context, obj *types.Position) (
 	return res.MarginLevels, nil
 }
 
-func (r *myPositionResolver) MarginsPaged(ctx context.Context, pos *types.Position, pagination *v2.Pagination) (*v2.MarginConnection, error) {
+func (r *myPositionResolver) MarginsConnection(ctx context.Context, pos *types.Position, pagination *v2.Pagination) (*v2.MarginConnection, error) {
 	req := v2.GetMarginLevelsRequest{
 		PartyId:    pos.PartyId,
 		MarketId:   pos.MarketId,
@@ -2988,7 +3015,7 @@ func (r *myQueryResolver) GetMarketDataHistoryConnectionByID(ctx context.Context
 	return resp.GetMarketData(), nil
 }
 
-func (r *myQueryResolver) MarketsPaged(ctx context.Context, id *string, pagination *v2.Pagination) (*v2.MarketConnection, error) {
+func (r *myQueryResolver) MarketsConnection(ctx context.Context, id *string, pagination *v2.Pagination) (*v2.MarketConnection, error) {
 	var marketID string
 
 	if id != nil {
@@ -3006,7 +3033,7 @@ func (r *myQueryResolver) MarketsPaged(ctx context.Context, id *string, paginati
 	return resp.Markets, nil
 }
 
-func (r *myQueryResolver) PartiesPaged(ctx context.Context, id *string, pagination *v2.Pagination) (*v2.PartyConnection, error) {
+func (r *myQueryResolver) PartiesConnection(ctx context.Context, id *string, pagination *v2.Pagination) (*v2.PartyConnection, error) {
 	var partyID string
 	if id != nil {
 		partyID = *id
@@ -3020,4 +3047,82 @@ func (r *myQueryResolver) PartiesPaged(ctx context.Context, id *string, paginati
 	}
 
 	return resp.Party, nil
+}
+
+func handleCandleConnectionRequest(ctx context.Context, client TradingDataServiceClientV2, market *types.Market, sinceRaw string, toRaw *string,
+	interval Interval, pagination *v2.Pagination) (*v2.CandleDataConnection, error) {
+	pInterval, err := convertIntervalToProto(interval)
+	if err != nil {
+		return nil, fmt.Errorf("could not convert interval: %w", err)
+	}
+
+	since, err := vegatime.Parse(sinceRaw)
+	if err != nil {
+		return nil, err
+	}
+
+	to := time.Unix(0, 0)
+	if toRaw != nil {
+		to, err = vegatime.Parse(*toRaw)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	var mkt string
+	if market != nil {
+		mkt = market.Id
+	}
+
+	candlesForMktReq := v2.GetCandlesForMarketRequest{MarketId: mkt}
+	candlesForMktResp, err := client.GetCandlesForMarket(ctx, &candlesForMktReq)
+
+	if err != nil {
+		return nil, fmt.Errorf("could not retrieve candles for market %s: %w", mkt, err)
+	}
+
+	candleID := ""
+
+	for _, c4m := range candlesForMktResp.IntervalToCandleId {
+		if c4m.Interval == string(interval) {
+			candleID = c4m.CandleId
+			break
+		}
+	}
+
+	if candleID == "" {
+		return nil, fmt.Errorf("could not find candle for market %s and interval %s", mkt, interval)
+	}
+
+	req := v2.GetCandleDataRequest{
+		CandleId:      candleID,
+		FromTimestamp: since.Unix(),
+		ToTimestamp:   to.Unix(),
+		Interval:      pInterval,
+		Pagination:    pagination,
+	}
+	resp, err := client.GetCandleData(ctx, &req)
+	if err != nil {
+		return nil, fmt.Errorf("could not retrieve candles for market %s: %w", mkt, err)
+	}
+
+	return resp.Candles, nil
+}
+
+func handleWithdrawalsConnectionRequest(ctx context.Context, client TradingDataServiceClientV2, party *types.Party) (*v2.WithdrawalsConnection, error) {
+	req := v2.GetWithdrawalsRequest{PartyId: party.Id}
+	resp, err := client.GetWithdrawals(ctx, &req)
+	if err != nil {
+		return nil, fmt.Errorf("could not retrieve withdrawals for party %s: %w", party.Id, err)
+	}
+	return resp.Withdrawals, nil
+}
+
+func handleDepositsConnectionRequest(ctx context.Context, client TradingDataServiceClientV2, party *types.Party) (*v2.DepositsConnection, error) {
+	req := v2.GetDepositsRequest{PartyId: party.Id}
+	resp, err := client.GetDeposits(ctx, &req)
+	if err != nil {
+		return nil, fmt.Errorf("could not retrieve deposits for party %s: %w", party.Id, err)
+	}
+	return resp.Deposits, nil
 }

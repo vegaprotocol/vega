@@ -15,7 +15,7 @@ package entities
 import "google.golang.org/protobuf/proto"
 
 type PagedEntity[T proto.Message] interface {
-	Market | Party | Trade | Order | MarginLevels | MarketData | Reward | Candle | Deposit | Withdrawal | Asset
+	Market | Party | Trade | Order | MarginLevels | MarketData | Reward | Candle | Deposit | Withdrawal | Asset | OracleSpec | OracleData
 	// ToProtoEdge may need some optional arguments in order to generate the proto, for example margin levels
 	// requires an account source. This is not ideal, but we can come back to this later if a better solution can be found.
 	ToProtoEdge(...any) T

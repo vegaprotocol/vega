@@ -842,6 +842,12 @@ create table if not exists oracle_data (
 
 create index if not exists idx_oracle_data_matched_spec_ids on oracle_data(matched_spec_ids);
 
+create view oracle_data_current as (
+    select distinct on (matched_spec_ids, data) public_keys, data, matched_spec_ids, broadcast_at, vega_time
+    from oracle_data
+    order by matched_spec_ids, data, vega_time desc
+);
+
 create type liquidity_provision_status as enum('STATUS_UNSPECIFIED', 'STATUS_ACTIVE', 'STATUS_STOPPED',
     'STATUS_CANCELLED', 'STATUS_REJECTED', 'STATUS_UNDEPLOYED', 'STATUS_PENDING');
 
@@ -981,6 +987,7 @@ DROP TYPE IF EXISTS node_signature_kind;
 DROP TABLE IF EXISTS liquidity_provisions;
 DROP TYPE IF EXISTS liquidity_provision_status;
 
+DROP VIEW IF EXISTS oracle_data_current;
 DROP INDEX IF EXISTS idx_oracle_data_matched_spec_ids;
 DROP TABLE IF EXISTS oracle_data;
 DROP TABLE IF EXISTS oracle_specs;

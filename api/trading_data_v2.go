@@ -59,6 +59,8 @@ type tradingDataServiceV2 struct {
 	rewardService        *service.Reward
 	depositService       *service.Deposit
 	withdrawalService    *service.Withdrawal
+	oracleSpecService    *service.OracleSpec
+	oracleDataService    *service.OracleData
 }
 
 func (t *tradingDataServiceV2) checkV2ApiEnabled() error {
@@ -787,7 +789,7 @@ func (t *tradingDataServiceV2) GetParties(ctx context.Context, in *v2.GetParties
 	return resp, nil
 }
 
-func (t *tradingDataServiceV2) GetOrdersByMarketPaged(ctx context.Context, in *v2.GetOrdersByMarketPagedRequest) (*v2.GetOrdersByMarketPagedResponse, error) {
+func (t *tradingDataServiceV2) GetOrdersByMarketConnection(ctx context.Context, in *v2.GetOrdersByMarketConnectionRequest) (*v2.GetOrdersByMarketConnectionResponse, error) {
 	if err := t.checkV2ApiEnabled(); err != nil {
 		return nil, err
 	}
@@ -806,14 +808,14 @@ func (t *tradingDataServiceV2) GetOrdersByMarketPaged(ctx context.Context, in *v
 		PageInfo:   pageInfo.ToProto(),
 	}
 
-	resp := &v2.GetOrdersByMarketPagedResponse{
+	resp := &v2.GetOrdersByMarketConnectionResponse{
 		Orders: ordersConnection,
 	}
 
 	return resp, nil
 }
 
-func (t *tradingDataServiceV2) GetOrderVersionsByIDPaged(ctx context.Context, in *v2.GetOrderVersionsByIDPagedRequest) (*v2.GetOrderVersionsByIDPagedResponse, error) {
+func (t *tradingDataServiceV2) GetOrderVersionsByIDConnection(ctx context.Context, in *v2.GetOrderVersionsByIDConnectionRequest) (*v2.GetOrderVersionsByIDConnectionResponse, error) {
 	if err := t.checkV2ApiEnabled(); err != nil {
 		return nil, err
 	}
@@ -833,13 +835,13 @@ func (t *tradingDataServiceV2) GetOrderVersionsByIDPaged(ctx context.Context, in
 		PageInfo:   pageInfo.ToProto(),
 	}
 
-	resp := &v2.GetOrderVersionsByIDPagedResponse{
+	resp := &v2.GetOrderVersionsByIDConnectionResponse{
 		Orders: ordersConnection,
 	}
 	return resp, nil
 }
 
-func (t *tradingDataServiceV2) GetOrdersByPartyPaged(ctx context.Context, in *v2.GetOrdersByPartyPagedRequest) (*v2.GetOrdersByPartyPagedResponse, error) {
+func (t *tradingDataServiceV2) GetOrdersByPartyConnection(ctx context.Context, in *v2.GetOrdersByPartyConnectionRequest) (*v2.GetOrdersByPartyConnectionResponse, error) {
 	if err := t.checkV2ApiEnabled(); err != nil {
 		return nil, err
 	}
@@ -859,7 +861,7 @@ func (t *tradingDataServiceV2) GetOrdersByPartyPaged(ctx context.Context, in *v2
 		PageInfo:   pageInfo.ToProto(),
 	}
 
-	resp := &v2.GetOrdersByPartyPagedResponse{
+	resp := &v2.GetOrdersByPartyConnectionResponse{
 		Orders: ordersConnection,
 	}
 
@@ -1055,5 +1057,69 @@ func (t *tradingDataServiceV2) getAllAssets(ctx context.Context, p *v2.Paginatio
 	}
 
 	resp := v2.GetAssetsResponse{Assets: connection}
+	return &resp, nil
+}
+
+func (t *tradingDataServiceV2) GetOracleSpecsConnection(ctx context.Context, req *v2.GetOracleSpecsConnectionRequest) (*v2.GetOracleSpecsConnectionResponse, error) {
+	if err := t.checkV2ApiEnabled(); err != nil {
+		return nil, err
+	}
+
+	pagination, err := entities.CursorPaginationFromProto(req.Pagination)
+	if err != nil {
+		return nil, apiError(codes.Internal, err)
+	}
+
+	specs, pageInfo, err := t.oracleSpecService.GetSpecsWithCursorPagination(ctx, req.SpecId, pagination)
+	if err != nil {
+		return nil, apiError(codes.Internal, err)
+	}
+
+	connection := &v2.OracleSpecsConnection{
+		TotalCount: 0, // TODO: implement total count
+		Edges:      makeEdges[*v2.OracleSpecEdge](specs),
+		PageInfo:   pageInfo.ToProto(),
+	}
+
+	resp := v2.GetOracleSpecsConnectionResponse{
+		OracleSpecs: connection,
+	}
+
+	return &resp, nil
+}
+
+func (t *tradingDataServiceV2) GetOracleDataConnection(ctx context.Context, req *v2.GetOracleDataConnectionRequest) (*v2.GetOracleDataConnectionResponse, error) {
+	if err := t.checkV2ApiEnabled(); err != nil {
+		return nil, err
+	}
+
+	pagination, err := entities.CursorPaginationFromProto(req.Pagination)
+	if err != nil {
+		return nil, apiError(codes.Internal, err)
+	}
+
+	var data []entities.OracleData
+	var pageInfo entities.PageInfo
+
+	if req.SpecId != "" {
+		data, pageInfo, err = t.oracleDataService.GetOracleDataBySpecID(ctx, req.SpecId, pagination)
+	} else {
+		data, pageInfo, err = t.oracleDataService.ListOracleData(ctx, pagination)
+	}
+
+	if err != nil {
+		return nil, apiError(codes.Internal, err)
+	}
+
+	connection := &v2.OracleDataConnection{
+		TotalCount: 0, // TODO: implement total count
+		Edges:      makeEdges[*v2.OracleDataEdge](data),
+		PageInfo:   pageInfo.ToProto(),
+	}
+
+	resp := v2.GetOracleDataConnectionResponse{
+		OracleData: connection,
+	}
+
 	return &resp, nil
 }

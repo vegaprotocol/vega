@@ -263,7 +263,7 @@ type Query {
   "One or more instruments that are trading on the VEGA network"
   markets("ID of the market" id: ID): [Market!]
 
-  marketsPaged(
+  marketsConnection(
     id: ID
     pagination: Pagination
   ): MarketConnection!
@@ -274,7 +274,7 @@ type Query {
   "One or more entities that are trading on the VEGA network"
   parties("Optional ID of a party" id: ID): [Party!]
 
-  partiesPaged(
+  partiesConnection(
     id: ID
     pagination: Pagination
   ): PartyConnection!
@@ -289,7 +289,14 @@ type Query {
   oracleSpecs(
     "Pagination"
     pagination: OffsetPagination
-  ): [OracleSpec!]
+  ): [OracleSpec!] @deprecated(reason: "Use oracleSpecsConnection instead")
+
+
+  "All registered oracle specs"
+  oracleSpecsConnection(
+    "Pagination"
+    pagination: Pagination
+  ): OracleSpecsConnection!
 
   "An oracle spec for a given oracle spec ID"
   oracleSpec("ID for an oracle spec" oracleSpecID: String!): OracleSpec
@@ -300,13 +307,26 @@ type Query {
     oracleSpecID: String!
     "Pagination"
     pagination: OffsetPagination
-  ): [OracleData!]
+  ): [OracleData!] @deprecated(reason: "Use oracleDataBySpecConnection instead")
+
+  oracleDataBySpecConnection(
+    "ID for an oracle spec"
+    oracleSpecID: String!
+    "Pagination"
+    pagination: Pagination
+  ): OracleDataConnection!
 
   "All registered oracle specs"
   oracleData(
     "Pagination"
     pagination: OffsetPagination
-  ): [OracleData!]
+  ): [OracleData!] @deprecated(reason: "Use oracleDataConnection instead")
+
+  "All registered oracle specs"
+  oracleDataConnection(
+    "Pagination"
+    pagination: Pagination
+  ): OracleDataConnection!
 
   "An order in the VEGA network found by orderID"
   orderByID(
@@ -328,10 +348,10 @@ type Query {
     first: Int
     "Pagination last element"
     last: Int
-  ): [Order!] @deprecated(reason: "Use orderVersionsPaged instead")
+  ): [Order!] @deprecated(reason: "Use orderVersionsConnection instead")
 
   "Order versions (created via amendments if any) found by orderID"
-  orderVersionsPaged(
+  orderVersionsConnection(
     "ID for an order"
     orderId: ID
     "Pagination information"
@@ -1084,7 +1104,9 @@ type OracleSpec {
   "status describes the status of the oracle spec"
   status: OracleSpecStatus!
   "data list all the oracle data broadcast to this spec"
-  data: [OracleData!]!
+  data: [OracleData!]! @deprecated(reason: "Use dataConnection instead")
+  "data list all the oracle data broadcast to this spec"
+  dataConnection(pagination: Pagination): OracleDataConnection!
 }
 
 "Status describe the status of the oracle spec"
@@ -1406,10 +1428,10 @@ type Market {
     first: Int
     "Pagination last element"
     last: Int
-  ): [Order!] @deprecated(reason: "Use the 'ordersPaged' field instead")
+  ): [Order!] @deprecated(reason: "Use the 'ordersConnection' field instead")
 
   "Orders on a market"
-  ordersPaged(
+  ordersConnection(
     "Pagination information"
     pagination: Pagination
   ): OrderConnection!
@@ -1428,9 +1450,9 @@ type Market {
     first: Int
     "Pagination last element"
     last: Int
-  ): [Trade!] @deprecated(reason: "Use tradesPaged for cursor based pagination instead")
+  ): [Trade!] @deprecated(reason: "Use tradesConnection for cursor based pagination instead")
 
-  tradesPaged(pagination: Pagination): TradeConnection!
+  tradesConnection(pagination: Pagination): TradeConnection!
 
   "Current depth on the order book for this market"
   depth(
@@ -1568,10 +1590,10 @@ type Party {
     first: Int
     "Pagination last element"
     last: Int
-  ): [Order!] @deprecated(reason: "Use ordersPaged instead")
+  ): [Order!] @deprecated(reason: "Use ordersConnection instead")
 
   "Orders relating to a party"
-  ordersPaged(
+  ordersConnection(
     "Pagination information"
     pagination: Pagination
   ): OrderConnection!
@@ -1586,9 +1608,9 @@ type Party {
     first: Int
     "Pagination last element"
     last: Int
-  ): [Trade!] @deprecated(reason: "Use tradesPaged for cursor based pagination instead")
+  ): [Trade!] @deprecated(reason: "Use tradesConnection for cursor based pagination instead")
 
-  tradesPaged(marketId: ID, pagination: Pagination): TradeConnection!
+  tradesConnection(marketId: ID, pagination: Pagination): TradeConnection!
 
   "Collateral accounts relating to a party"
   accounts(
@@ -1607,10 +1629,10 @@ type Party {
   margins(
     "market id off the margin to get, nil if all markets"
     marketId: ID
-  ): [MarginLevels!] @deprecated(reason: "Use marginsPaged instead")
+  ): [MarginLevels!] @deprecated(reason: "Use marginsConnection instead")
 
   "Margin level for a market"
-  marginsPaged(
+  marginsConnection(
     "market id off the margin to get, nil if all markets"
     marketId: ID
     "Pagination information"
@@ -1769,7 +1791,7 @@ type Position {
   margins: [MarginLevels!]
 
   "margins of the party for the given position"
-  marginsPaged(pagination: Pagination): MarginConnection!
+  marginsConnection(pagination: Pagination): MarginConnection!
 
   "RFC3339Nano time the position was updated"
   updatedAt: String
@@ -1814,10 +1836,10 @@ type Order {
   reference: String!
 
   "Trades relating to this order"
-  trades: [Trade!] @deprecated(reason: "Use tradesPaged instead")
+  trades: [Trade!] @deprecated(reason: "Use tradesConnection instead")
 
   "Trades relating to this order"
-  tradesPaged(pagination: Pagination): TradeConnection!
+  tradesConnection(pagination: Pagination): TradeConnection!
 
   "Type the order type (defaults to PARTY)"
   type: OrderType
@@ -3179,112 +3201,8 @@ type TradeConnection {
   pageInfo: PageInfo!
 }
 
-"Represents a party on Vega, could be an ethereum wallet address in the future using a cursor pagination model"
-type PaginatedParty {
-  "Party identifier"
-  id: ID!
-
-  "Orders relating to a party"
-  ordersPaged(
-    "Pagination"
-    pagination: Pagination
-  ): OrderConnection!
-
-  "Trades relating to a party (specifically where party is either buyer OR seller)"
-  tradesPaged(
-    "ID of the market we want to get trades for"
-    marketId: ID
-    pagination: Pagination
-  ): TradeConnection!
-
-  "Collateral accounts relating to a party"
-  accounts(
-    "Market ID - specify what market accounts for the party to return"
-    marketId: ID
-    "Asset (USD, EUR etc)"
-    asset: String
-    "Filter accounts by type (General account, margin account, etc...)"
-    type: AccountType
-  ): [Account!]
-
-  "Trading positions relating to a party"
-  positions: [Position!]
-
-  "marginLevels"
-  marginsPaged(
-    "market id off the margin to get, nil if all markets"
-    marketId: ID
-    "Pagination"
-    pagination: Pagination
-  ): MarginConnection!
-
-  proposals(
-    "Select only proposals in the specified state. Leave out to get all proposals"
-    inState: ProposalState
-  ): [Proposal]
-
-  votes: [ProposalVote]
-
-  "The list of all withdrawals initiated by the party"
-  withdrawals: [Withdrawal!] @deprecated(reason: "Use withdrawalsConnection instead")
-
-  "The list of all withdrawals initiated by the party"
-  withdrawalsConnection: WithdrawalsConnection!
-
-  "The list of all deposits for a party by the party"
-  deposits: [Deposit!] @deprecated(reason: "Use depositsConnection instead")
-
-  "The list of all deposits for a party by the party"
-  depositsConnection: DepositsConnection!
-
-  "The list of the liquidity provision commitment from this party"
-  liquidityProvisions(
-    "An optional market id"
-    market: String
-    "An optional reference"
-    reference: String
-  ): [LiquidityProvision!]
-
-  # All delegations for a party to a given node if node is specified, or all delegations if not
-  delegations(
-    "Optional node"
-    nodeId: String
-    "Pagination skip"
-    skip: Int
-    "Pagination first element"
-    first: Int
-    "Pagination last element"
-    last: Int
-  ): [Delegation!]
-
-  "The staking information for this Party"
-  stake: PartyStake!
-
-  "return individual reward information"
-  rewards(
-    "An optional asset"
-    asset: String
-    "Pagination skip element"
-    skip: Int
-    "Pagination first element"
-    first: Int
-    "Pagination last element"
-    last: Int
-  ): [Reward] @deprecated(reason: "Use rewardsConnection instead")
-  "List of individual reward payouts, ordered by epoch"
-  rewardsConnection(
-    "An optional asset"
-    asset: String
-    "Cursor pagination information"
-    pagination: Pagination
-  ): RewardsConnection
-
-  "return net reward information"
-  rewardSummaries("An optional asset" asset: String): [RewardSummary]
-}
-
 type PartyEdge {
-  node: PaginatedParty!
+  node: Party!
   cursor: String!
 }
 
@@ -3297,128 +3215,8 @@ type PartyConnection {
   pageInfo: PageInfo!
 }
 
-"Represents a product & associated parameters that can be traded on Vega, has an associated OrderBook and Trade history"
-type PaginatedMarket {
-  "Market ID"
-  id: ID!
-
-  "Market full name"
-  name: String!
-
-  "Fees related data"
-  fees: Fees!
-
-  "An instance of or reference to a tradable instrument."
-  tradableInstrument: TradableInstrument!
-
-  """
-  decimalPlaces indicates the number of decimal places that an integer must be shifted by in order to get a correct
-  number denominated in the currency of the Market. (uint64)
-
-  Examples:
-  Currency     Balance  decimalPlaces  Real Balance
-  GBP              100              0       GBP 100
-  GBP              100              2       GBP   1.00
-  GBP              100              4       GBP   0.01
-  GBP                1              4       GBP   0.0001   (  0.01p  )
-
-  GBX (pence)      100              0       GBP   1.00     (100p     )
-  GBX (pence)      100              2       GBP   0.01     (  1p     )
-  GBX (pence)      100              4       GBP   0.0001   (  0.01p  )
-  GBX (pence)        1              4       GBP   0.000001 (  0.0001p)
-  """
-  decimalPlaces: Int!
-
-  """
-  positionDecimalPlaces indicated the number of decimal places that an integer must be shifted in order to get a correct size (uint64).
-  i.e. 0 means there are no fractional orders for the market, and order sizes are always whole sizes.
-  2 means sizes given as 10^2 * desired size, e.g. a desired size of 1.23 is represented as 123 in this market.
-  """
-  positionDecimalPlaces: Int!
-
-  """
-  Auction duration specifies how long the opening auction will run (minimum
-  duration and optionally a minimum traded volume).
-  """
-  openingAuction: AuctionDuration!
-
-  "Price monitoring settings for the market"
-  priceMonitoringSettings: PriceMonitoringSettings!
-
-  "Liquidity monitoring parameters for the market"
-  liquidityMonitoringParameters: LiquidityMonitoringParameters!
-
-  "Current mode of execution of the market"
-  tradingMode: MarketTradingMode!
-
-  "Current state of the market"
-  state: MarketState!
-
-  "The proposal which initiated this market"
-  proposal: Proposal
-
-  "Orders on a market"
-  ordersPaged(
-    "Pagination information"
-    pagination: Pagination
-  ): OrderConnection
-
-  "Get account for a party or market"
-  accounts(
-    "Id of the party to get the margin account for"
-    partyId: ID
-  ): [Account!]
-
-  "Trades on a market"
-  tradesPaged(
-    "Cursor based page information to retrieve"
-    pagination: Pagination
-  ): TradeConnection!
-
-  "Current depth on the order book for this market"
-  depth(
-    "Maximum market order book depth (returns whole order book if omitted)"
-    maxDepth: Int
-  ): MarketDepth!
-
-  "Candles on a market, for the 'last' n candles, at 'interval' seconds as specified by params"
-  candles(
-    "RFC3339Nano encoded time from when to get candles"
-    since: String!
-    "Interval of the candles"
-    interval: Interval!
-  ): [Candle] @deprecated(reason: "Use the 'candlesConnection' field instead")
-
-  "Candles on a market, for the 'last' n candles, at 'interval' seconds as specified by params using cursor based pagination"
-  candlesConnection(
-    "RFC3339Nano encoded time to get candles from"
-    since: String!
-    "Optional: RFC3339Nano encoded time to get candles to"
-    to: String
-    "Interval of the candles"
-    interval: Interval!
-    "Pagination information"
-    pagination: Pagination
-  ): CandleDataConnection!
-
-  "marketData for the given market"
-  data: MarketData
-
-  "The list of the liquidity provision commitment for this market"
-  liquidityProvisions(
-    "An optional party id"
-    party: String
-  ): [LiquidityProvision!]
-
-  "timestamps for state changes in the market"
-  marketTimestamps: MarketTimestamps!
-
-  "risk factors for the market"
-  riskFactors: RiskFactor
-}
-
 type MarketEdge {
-  node: PaginatedMarket!
+  node: Market!
   cursor: String!
 }
 
@@ -3431,70 +3229,8 @@ type MarketConnection {
   pageInfo: PageInfo!
 }
 
-"""
-An order in Vega, if active it will be on the OrderBook for the market, this version supports cursor based
-pagination in sub-queries for trades"""
-type PaginatedOrder {
-  "Hash of the order data"
-  id: ID!
-
-  "The worst price the order will trade at (e.g. buy for price or less, sell for price or more) (uint64)"
-  price: String!
-
-  "The timeInForce of order (determines how and if it executes, and whether it persists on the book)"
-  timeInForce: OrderTimeInForce!
-
-  "Whether the order is to buy or sell"
-  side: Side!
-
-  "The market the order is trading on (probably stored internally as a hash of the market details)"
-  market: Market
-
-  "Total number of contracts that may be bought or sold (immutable) (uint64)"
-  size: String!
-
-  "Number of contracts remaining of the total that have not yet been bought or sold (uint64)"
-  remaining: String!
-
-  "The party who place the order (probably stored internally as the party's public key)"
-  party: Party!
-
-  "RFC3339Nano formatted date and time for when the order was created (timestamp)"
-  createdAt: String!
-
-  "Expiration time of this order (ISO-8601 RFC3339+Nano formatted date)"
-  expiresAt: String
-
-  "The status of an order, for example 'Active'"
-  status: OrderStatus!
-
-  "The external reference (if available) for the order"
-  reference: String!
-
-  "Trades relating to this order"
-  tradesPaged(pagination: Pagination): TradeConnection!
-
-  "Type the order type (defaults to PARTY)"
-  type: OrderType
-
-  "Reason for the order to be rejected"
-  rejectionReason: OrderRejectionReason
-
-  "Version of this order, counts the number of amends"
-  version: String!
-
-  "RFC3339Nano time the order was altered"
-  updatedAt: String
-
-  "PeggedOrder contains the details about a pegged order"
-  peggedOrder: PeggedOrder
-
-  "The liquidity provision this order was created from"
-  liquidityProvision: LiquidityProvision
-}
-
 type OrderEdge {
-  node: PaginatedOrder!
+  node: Order!
   cursor: String
 }
 
@@ -3626,4 +3362,36 @@ type AssetsConnection {
     edges: [AssetEdge]
     "The pagination information"
     pageInfo: PageInfo
+}
+
+type OracleSpecEdge {
+  "The oracle spec"
+  node: OracleSpec!
+  "The cursor for the data item"
+  cursor: String!
+}
+
+type OracleSpecsConnection {
+    "The total number of oracle specs available with this connection"
+    totalCount: Int!
+    "The oracle specs"
+    edges: [OracleSpecEdge]
+    "The pagination information"
+    pageInfo: PageInfo!
+}
+
+type OracleDataEdge {
+  "The oracle data"
+  node: OracleData!
+  "The cursor for the data item"
+  cursor: String!
+}
+
+type OracleDataConnection {
+    "The total number of oracle data items available with this connection"
+    totalCount: Int!
+    "The oracle data"
+    edges: [OracleDataEdge]
+    "The pagination information"
+    pageInfo: PageInfo!
 }

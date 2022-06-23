@@ -160,7 +160,8 @@ type MarginCursor struct {
 func (mc MarginCursor) String() string {
 	bs, err := json.Marshal(mc)
 	if err != nil {
-		return fmt.Sprintf(`{"vegaTime":"%s","accountID":%d}`, mc.VegaTime.In(time.UTC), mc.AccountID)
+		// This should never happen
+		panic(fmt.Errorf("failed to marshal margin cursor: %w", err))
 	}
 	return string(bs)
 }

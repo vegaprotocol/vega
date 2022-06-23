@@ -316,3 +316,11 @@ models:
     model: code.vegaprotocol.io/protos/data-node/api/v2.AssetEdge
   AssetsConnection:
     model: code.vegaprotocol.io/protos/data-node/api/v2.AssetsConnection
+  OracleSpecEdge:
+    model: code.vegaprotocol.io/protos/data-node/api/v2.OracleSpecEdge
+  OracleSpecsConnection:
+    model: code.vegaprotocol.io/protos/data-node/api/v2.OracleSpecsConnection
+  OracleDataEdge:
+    model: code.vegaprotocol.io/protos/data-node/api/v2.OracleDataEdge
+  OracleDataConnection:
+    model: code.vegaprotocol.io/protos/data-node/api/v2.OracleDataConnection
