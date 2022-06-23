@@ -15,7 +15,7 @@ Licensor:
     Gobalsky Labs Limited
 
 Licensed Work:
-    Vega Protocol Core, defined as all versions of all Computer programs and
+    Vega Data Node, defined as all versions of all Computer programs and
     Databases made available via the Licensed Work Source Repository. For the
     avoidance of doubt, the License Work includes all source code,
     configuration files, text and other documents, and all other files made
@@ -23,7 +23,7 @@ Licensed Work:
     2018–2022 Gobalsky Labs Limited.
 
 Licensed Work Source Repository:
-    https://github.com/vegaprotocol/vega
+    https://github.com/vegaprotocol/data-node
 
 Additional Use Grant:
     As set out in the Vega Community Production Use Grant section below
