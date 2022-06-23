@@ -20,7 +20,6 @@ checkpointing
 CI
 cleanup
 Cleanup
-cmd/vegawallet
 clef
 codegen
 cyclomatic
@@ -60,6 +59,7 @@ int
 init
 istake
 Jenkinsfile
+JSON-RPC
 Kanban
 lifecycle
 linters

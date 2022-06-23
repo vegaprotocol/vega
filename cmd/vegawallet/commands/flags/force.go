@@ -34,7 +34,7 @@ func YesOrNo(question string) bool {
 		case "no", "n":
 			return false
 		default:
-			fmt.Printf("invalid answer \"%s\", expect \"yes\" or \"no\"\n", answer) //nolint:forbidigo
+			fmt.Printf("invalid answer %q, expect \"yes\" or \"no\"\n", answer) //nolint:forbidigo
 		}
 	}
 }

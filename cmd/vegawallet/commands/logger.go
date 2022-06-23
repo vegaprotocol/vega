@@ -24,7 +24,7 @@ type LoggerError struct {
 
 func UnsupportedLoggerLevelError(l string) LoggerError {
 	return LoggerError{
-		message: fmt.Sprintf("unsupported logger level \"%s\"", l),
+		message: fmt.Sprintf("unsupported logger level %q", l),
 	}
 }
 

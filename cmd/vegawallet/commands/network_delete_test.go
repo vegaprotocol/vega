@@ -17,10 +17,8 @@ func TestDeleteNetworkFlags(t *testing.T) {
 
 func testDeleteNetworkFlagsValidFlagsSucceeds(t *testing.T) {
 	// given
-	walletName := vgrand.RandomStr(10)
-
 	f := &cmd.DeleteNetworkFlags{
-		Network: walletName,
+		Network: vgrand.RandomStr(10),
 		Force:   true,
 	}
 
@@ -49,9 +47,7 @@ func testDeleteNetworkFlagsMissingNetworkFails(t *testing.T) {
 func newDeleteNetworkFlags(t *testing.T) *cmd.DeleteNetworkFlags {
 	t.Helper()
 
-	walletName := vgrand.RandomStr(10)
-
 	return &cmd.DeleteNetworkFlags{
-		Network: walletName,
+		Network: vgrand.RandomStr(10),
 	}
 }

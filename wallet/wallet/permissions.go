@@ -11,10 +11,32 @@ type Permissions struct {
 	PublicKeys PublicKeysPermission `json:"publicKeys"`
 }
 
-func (p Permissions) Summary() map[string]string {
+func (p Permissions) Summary() PermissionsSummary {
 	summary := map[string]string{}
 	summary[PublicKeysPermissionLabel] = AccessModeToString(p.PublicKeys.Access)
 	return summary
+}
+
+func (p Permissions) CanListKeys() bool {
+	return p.PublicKeys.Access == ReadAccess || p.PublicKeys.Access == WriteAccess
+}
+
+func (p Permissions) CanUseKey(pubKey string) bool {
+	if !p.CanListKeys() {
+		return false
+	}
+
+	// No restricted keys specified. All keys can be listed.
+	if len(p.PublicKeys.RestrictedKeys) == 0 {
+		return true
+	}
+
+	for _, k := range p.PublicKeys.RestrictedKeys {
+		if k == pubKey {
+			return true
+		}
+	}
+	return false
 }
 
 func DefaultPermissions() Permissions {
@@ -22,6 +44,8 @@ func DefaultPermissions() Permissions {
 		PublicKeys: NoPublicKeysPermission(),
 	}
 }
+
+type PermissionsSummary map[string]string
 
 type AccessMode string
 
@@ -40,7 +64,7 @@ func ToAccessMode(mode string) (AccessMode, error) {
 	case "none":
 		return NoAccess, nil
 	default:
-		return NoAccess, fmt.Errorf("access mode \"%s\" is not supported", mode)
+		return NoAccess, fmt.Errorf("access mode %q is not supported", mode)
 	}
 }
 
@@ -72,28 +96,6 @@ func (p PublicKeysPermission) Enabled() bool {
 
 func (p PublicKeysPermission) HasRestrictedKeys() bool {
 	return len(p.RestrictedKeys) != 0
-}
-
-func (p PublicKeysPermission) CanListKeys() bool {
-	return p.Access == ReadAccess || p.Access == WriteAccess
-}
-
-func (p PublicKeysPermission) CanUseKey(pubkey string) bool {
-	if !p.CanListKeys() {
-		return false
-	}
-
-	// No restricted keys specified. All keys can be listed.
-	if len(p.RestrictedKeys) == 0 {
-		return true
-	}
-
-	for _, k := range p.RestrictedKeys {
-		if k == pubkey {
-			return true
-		}
-	}
-	return false
 }
 
 // NoPublicKeysPermission returns a revoked access for public keys.

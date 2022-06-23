@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -46,7 +47,7 @@ func NewCmdDeleteWallet(w io.Writer, rf *RootFlags) *cobra.Command {
 			return fmt.Errorf("couldn't initialise wallets store: %w", err)
 		}
 
-		return s.DeleteWallet(wallet)
+		return s.DeleteWallet(context.Background(), wallet)
 	}
 
 	return BuildCmdDeleteWallet(w, h, rf)

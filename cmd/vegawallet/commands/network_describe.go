@@ -122,8 +122,8 @@ func PrintDescribeNetworkResponse(w io.Writer, resp *network.DescribeNetworkResp
 	for _, h := range resp.API.RESTConfig.Hosts {
 		str.Text("    - ").WarningText(h).NextLine()
 	}
-
 	str.NextLine()
+
 	str.Text("API.GraphQL").NextLine()
 	str.Text("  Hosts:").NextLine()
 	for _, h := range resp.API.GraphQLConfig.Hosts {
@@ -132,6 +132,6 @@ func PrintDescribeNetworkResponse(w io.Writer, resp *network.DescribeNetworkResp
 	str.NextLine()
 
 	str.Text("Console").NextLine()
-	str.Text("  Address: ").WarningText(resp.Console.URL).WarningText(":").WarningText(fmt.Sprint(resp.Console.LocalPort))
-	str.NextSection()
+	str.Text("  Address: ").WarningText(fmt.Sprintf("%s:%d", resp.Console.URL, resp.Console.LocalPort))
+	str.NextLine()
 }

@@ -345,7 +345,7 @@ func (w *HDWallet) UnmarshalJSON(data []byte) error {
 
 	for hostname, perms := range w.permissions {
 		if err := ensurePermissionsConsistency(w, perms); err != nil {
-			return fmt.Errorf("inconsistent permissions setup for hostname \"%s\": %w", hostname, err)
+			return fmt.Errorf("inconsistent permissions setup for hostname %q: %w", hostname, err)
 		}
 	}
 

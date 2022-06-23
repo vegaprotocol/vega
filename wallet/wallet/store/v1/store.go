@@ -1,6 +1,7 @@
 package v1
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io/fs"
@@ -27,7 +28,11 @@ func InitialiseStore(walletsHome string) (*Store, error) {
 	}, nil
 }
 
-func (s *Store) DeleteWallet(name string) error {
+func (s *Store) DeleteWallet(ctx context.Context, name string) error {
+	if err := checkContextStatus(ctx); err != nil {
+		return err
+	}
+
 	walletPath := s.walletPath(name)
 
 	if exists, _ := vgfs.PathExists(walletPath); !exists {
@@ -40,14 +45,25 @@ func (s *Store) DeleteWallet(name string) error {
 	return nil
 }
 
-func (s *Store) WalletExists(name string) bool {
+func (s *Store) WalletExists(ctx context.Context, name string) (bool, error) {
+	if err := checkContextStatus(ctx); err != nil {
+		return false, err
+	}
+
 	walletPath := s.walletPath(name)
 
-	exists, _ := vgfs.PathExists(walletPath)
-	return exists
+	exists, err := vgfs.PathExists(walletPath)
+	if err != nil {
+		return false, fmt.Errorf("couldn't verify path: %w", err)
+	}
+	return exists, err
 }
 
-func (s *Store) ListWallets() ([]string, error) {
+func (s *Store) ListWallets(ctx context.Context) ([]string, error) {
+	if err := checkContextStatus(ctx); err != nil {
+		return nil, err
+	}
+
 	walletsParentDir, walletsDir := filepath.Split(s.walletsHome)
 	entries, err := fs.ReadDir(os.DirFS(walletsParentDir), walletsDir)
 	if err != nil {
@@ -61,7 +77,11 @@ func (s *Store) ListWallets() ([]string, error) {
 	return wallets, nil
 }
 
-func (s *Store) GetWallet(name, passphrase string) (wallet.Wallet, error) {
+func (s *Store) GetWallet(ctx context.Context, name, passphrase string) (wallet.Wallet, error) {
+	if err := checkContextStatus(ctx); err != nil {
+		return nil, err
+	}
+
 	buf, err := fs.ReadFile(os.DirFS(s.walletsHome), name)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't read file at %s: %w", s.walletsHome, err)
@@ -99,7 +119,11 @@ func (s *Store) GetWallet(name, passphrase string) (wallet.Wallet, error) {
 	return w, nil
 }
 
-func (s *Store) SaveWallet(w wallet.Wallet, passphrase string) error {
+func (s *Store) SaveWallet(ctx context.Context, w wallet.Wallet, passphrase string) error {
+	if err := checkContextStatus(ctx); err != nil {
+		return err
+	}
+
 	buf, err := json.Marshal(w)
 	if err != nil {
 		return fmt.Errorf("couldn't marshal wallet: %w", err)
@@ -124,4 +148,11 @@ func (s *Store) GetWalletPath(name string) string {
 
 func (s *Store) walletPath(name string) string {
 	return filepath.Join(s.walletsHome, name)
+}
+
+func checkContextStatus(ctx context.Context) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	return nil
 }
