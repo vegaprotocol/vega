@@ -149,6 +149,6 @@ Debugging the application locally is also possible with [Delve](./DEBUG_WITH_DLV
 
 ### License
 
-The vega core (i.e. all code outside of the following directories: wallet, cmd/vegawallet) is licensed under the BSL 1.1, also included in our repository in the LICENSE file.
+The vega core (i.e. all code outside of the following directories: wallet, `cmd/vegawallet`) is licensed under the BSL 1.1, also included in our repository in the LICENSE file.
 
-The vegawallet (i.e. all code inside of the following directories: wallet, cmd/vegawallet) is licensed under the MIT, also included in our repository in the LICENSE.MIT file.
+The vegawallet (i.e. all code inside of the following directories: wallet, `cmd/vegawallet`) is licensed under the MIT, also included in our repository in the LICENSE.MIT file.
