@@ -15,12 +15,12 @@ Licensor:
     Gobalsky Labs Limited
 
 Licensed Work:
-        Vega Protocol Core, defined as all versions of all Computer programs and
-        Databases made available via the Licensed Work Source Repository. For the
-        avoidance of doubt, the License Work includes all source code,
-        configuration files, text and other documents, and all other files made
-        available via the Licensed Work Source Repository. The Licensed Work is (c)
-        2018–2022 Gobalsky Labs Limited.
+    Vega Protocol Core, defined as all versions of all Computer programs and
+    Databases made available via the Licensed Work Source Repository. For the
+    avoidance of doubt, the License Work includes all source code,
+    configuration files, text and other documents, and all other files made
+    available via the Licensed Work Source Repository. The Licensed Work is (c)
+    2018–2022 Gobalsky Labs Limited.
 
 Licensed Work Source Repository:
     https://github.com/vegaprotocol/vega
@@ -29,17 +29,17 @@ Additional Use Grant:
     As set out in the Vega Community Production Use Grant section below
 
 Change Date:
-        18 months from the later of the date of the first publicly available
-        Distribution of a specific version of the Licensed Work under this License,
-        and 25 June 2022
+    18 months from the later of the date of the first publicly available
+    Distribution of a specific version of the Licensed Work under this License,
+    and 25 June 2022
 
 Change License:
     GNU General Public License v3.0
 
 Vega Protocol Public Blockchain:
-        The public blockchain, which is a decentralised proof-of-stake network
-        Operated by third parties running the Licensed Work or derivatives thereof
-        and using the Vega Protocol Governance Token for:
+    The public blockchain, which is a decentralised proof-of-stake network
+    Operated by third parties running the Licensed Work or derivatives thereof
+    and using the Vega Protocol Governance Token for:
 
       a. the calculation of the voting power of nodes in the network; and
 
@@ -49,8 +49,8 @@ Vega Protocol Public Blockchain:
       c. the execution of network governance votes.
 
 Vega Protocol Governance Token:
-        The ERC20 token at address 0xcB84d72e61e383767C4DFEb2d8ff7f4FB89abc6e on
-        the Ethereum mainnet blockchain.
+    The ERC20 token at address 0xcB84d72e61e383767C4DFEb2d8ff7f4FB89abc6e on
+    the Ethereum mainnet blockchain.
 
 --------------------------------------------------------------------------------
 
