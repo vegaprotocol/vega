@@ -21,7 +21,7 @@ var (
 
 	listNetworkExample = cli.Examples(`
 		# List networks
-		vegawallet network list
+		{{.Software}} network list
 	`)
 )
 

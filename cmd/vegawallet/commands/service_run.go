@@ -50,22 +50,22 @@ var (
 
 	runServiceExample = cli.Examples(`
 		# Start the service
-		vegawallet service run --network NETWORK
+		{{.Software}} service run --network NETWORK
 
 		# Start the service and open the console in the default browser
-		vegawallet service run --network NETWORK --with-console
+		{{.Software}} service run --network NETWORK --with-console
 
 		# Start the service without opening the console
-		vegawallet service run --network NETWORK --with-console --no-browser
+		{{.Software}} service run --network NETWORK --with-console --no-browser
 
 		# Start the service and open the token dApp in the default browser
-		vegawallet service run --network NETWORK --with-token-dapp
+		{{.Software}} service run --network NETWORK --with-token-dapp
 
 		# Start the service without opening the token dApp
-		vegawallet service run --network NETWORK --with-token-dapp --no-browser
+		{{.Software}} service run --network NETWORK --with-token-dapp --no-browser
 
 		# Start the service with automatic consent of incoming transactions
-		vegawallet service run --network NETWORK --automatic-consent
+		{{.Software}} service run --network NETWORK --automatic-consent
 	`)
 )
 

@@ -20,7 +20,7 @@ var (
 
 	listKeysExample = cli.Examples(`
 		# List all keys
-		vegawallet key list --wallet WALLET
+		{{.Software}} key list --wallet WALLET
 	`)
 )
 

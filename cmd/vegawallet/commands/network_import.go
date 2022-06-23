@@ -21,16 +21,16 @@ var (
 
 	importNetworkExample = cli.Examples(`
 		# import a network configuration from a file
-		vegawallet network import --from-file PATH_TO_NETWORK
+		{{.Software}} network import --from-file PATH_TO_NETWORK
 
 		# import a network configuration from an URL
-		vegawallet network import --from-url URL_TO_NETWORK
+		{{.Software}} network import --from-url URL_TO_NETWORK
 
 		# overwrite existing network configuration
-		vegawallet network import --from-url URL_TO_NETWORK --force
+		{{.Software}} network import --from-url URL_TO_NETWORK --force
 
 		# import a network configuration with a different name
-		vegawallet network import --from-url URL_TO_NETWORK --with-name NEW_NAME
+		{{.Software}} network import --from-url URL_TO_NETWORK --with-name NEW_NAME
 	`)
 )
 

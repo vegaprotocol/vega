@@ -21,7 +21,7 @@ var (
 
 	describeNetworkExample = cli.Examples(`
 		# Describe a network
-		vegawallet network describe --network NETWORK
+		{{.Software}} network describe --network NETWORK
 	`)
 )
 

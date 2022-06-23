@@ -23,7 +23,7 @@ var (
 
 	versionExample = cli.Examples(`
 		# Get the version of the software
-		vegawallet version
+		{{.Software}} version
 	`)
 )
 

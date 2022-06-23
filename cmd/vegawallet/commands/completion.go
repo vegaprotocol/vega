@@ -10,9 +10,9 @@ var completionLong = `To load completions:
 
 Bash:  To load completions for each session, execute once:
 -----  Linux:
-       $ vegawallet completion bash > /etc/bash_completion.d/vegawallet
+       $ {{.Software}} completion bash > /etc/bash_completion.d/vegawallet
        MacOS:
-       $ vegawallet completion bash > /usr/local/etc/bash_completion.d/vegawallet
+       $ {{.Software}} completion bash > /usr/local/etc/bash_completion.d/vegawallet
 
 
 Zsh:   If shell completion is not already enabled in your environment you will need
@@ -20,13 +20,13 @@ Zsh:   If shell completion is not already enabled in your environment you will n
        $ echo "autoload -U compinit; compinit" >> ~/.zshrc
 
        To load completions for each session, execute once:
-       $ vegawallet completion zsh > "${fpath[1]}/_vegawallet"
+       $ {{.Software}} completion zsh > "${fpath[1]}/_vegawallet"
 
        You will need to start a new shell for this setup to take effect.
 
 
 Fish:  To load completions for each session, execute once:
------  $ vegawallet completion fish > ~/.config/fish/completions/vegawallet.fish
+-----  $ {{.Software}} completion fish > ~/.config/fish/completions/vegawallet.fish
 `
 
 func NewCmdCompletion(w io.Writer) *cobra.Command {

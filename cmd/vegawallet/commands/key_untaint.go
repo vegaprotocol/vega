@@ -23,7 +23,7 @@ var (
 
 	untaintKeyExample = cli.Examples(`
 		# Untaint a key pair
-		vegawallet key untaint --wallet WALLET --pubkey PUBKEY
+		{{.Software}} key untaint --wallet WALLET --pubkey PUBKEY
 	`)
 )
 

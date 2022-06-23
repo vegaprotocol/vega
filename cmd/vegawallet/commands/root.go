@@ -22,16 +22,16 @@ var (
 
 	rootExamples = cli.Examples(`
 		# Specify a custom Vega home directory
-		vegawallet --home PATH_TO_DIR COMMAND
+		{{.Software}} --home PATH_TO_DIR COMMAND
 
 		# Change the output to JSON
-		vegawallet --output json COMMAND
+		{{.Software}} --output json COMMAND
 
 		# Disable colors on output using environment variable
-		NO_COLOR=1 vegawallet COMMAND
+		NO_COLOR=1 {{.Software}} COMMAND
 
 		# Disable the verification of the software version
-		vegawallet --no-version-check COMMAND
+		{{.Software}} --no-version-check COMMAND
 	`)
 )
 

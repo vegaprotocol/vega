@@ -23,7 +23,7 @@ var (
 
 	rotateKeyExample = cli.Examples(`
 		# Build signed transaction for rotating to new key public key
-		vegawallet key rotate --wallet WALLET --tx-height TX_HEIGHT --target-height TARGET_HEIGHT --pubkey PUBLIC_KEY --current-pubkey CURRENT_PUBLIC_KEY
+		{{.Software}} key rotate --wallet WALLET --tx-height TX_HEIGHT --target-height TARGET_HEIGHT --pubkey PUBLIC_KEY --current-pubkey CURRENT_PUBLIC_KEY
 	`)
 )
 

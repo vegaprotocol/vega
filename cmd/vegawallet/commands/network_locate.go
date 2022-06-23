@@ -20,7 +20,7 @@ var (
 
 	locateNetworkExample = cli.Examples(`
 		# Locate network configuration files
-		vegawallet network locate
+		{{.Software}} network locate
 	`)
 )
 

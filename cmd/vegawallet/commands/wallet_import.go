@@ -28,10 +28,10 @@ var (
 
 	importWalletExample = cli.Examples(`
 		# Import a wallet using the recovery phrase
-		vegawallet import --wallet WALLET --recovery-phrase-file PATH_TO_RECOVERY_PHRASE
+		{{.Software}} import --wallet WALLET --recovery-phrase-file PATH_TO_RECOVERY_PHRASE
 
 		# Import an older version of the wallet using the recovery phrase
-		vegawallet import --wallet WALLET --recovery-phrase-file PATH_TO_RECOVERY_PHRASE --version VERSION
+		{{.Software}} import --wallet WALLET --recovery-phrase-file PATH_TO_RECOVERY_PHRASE --version VERSION
 	`)
 )
 

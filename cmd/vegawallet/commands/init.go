@@ -24,10 +24,10 @@ var (
 
 	initExample = cli.Examples(`
 		# Initialise the software
-		vegawallet init
+		{{.Software}} init
 
 		# Re-initialise the software
-		vegawallet init --force
+		{{.Software}} init --force
 	`)
 )
 

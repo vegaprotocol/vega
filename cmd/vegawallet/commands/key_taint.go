@@ -24,7 +24,7 @@ var (
 
 	taintKeyExample = cli.Examples(`
 		# Taint a key pair
-		vegawallet key taint --wallet WALLET --pubkey PUBKEY
+		{{.Software}} key taint --wallet WALLET --pubkey PUBKEY
 	`)
 )
 

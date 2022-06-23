@@ -31,16 +31,16 @@ var (
 
 	sendTxExample = cli.Examples(`
 		# Send a transaction to a registered network
-		vegawallet tx send --network NETWORK BASE64_TRANSACTION
+		{{.Software}} tx send --network NETWORK BASE64_TRANSACTION
 
 		# Send a transaction to a specific Vega node address
-		vegawallet tx send --node-address ADDRESS BASE64_TRANSACTION
+		{{.Software}} tx send --node-address ADDRESS BASE64_TRANSACTION
 
 		# Send a transaction with a log level set to debug
-		vegawallet tx send --network NETWORK --level debug BASE64_TRANSACTION
+		{{.Software}} tx send --network NETWORK --level debug BASE64_TRANSACTION
 
 		# Send a transaction with a maximum of 10 retries
-		vegawallet tx send --network NETWORK --retries 10 BASE64_TRANSACTION
+		{{.Software}} tx send --network NETWORK --retries 10 BASE64_TRANSACTION
 	`)
 )
 

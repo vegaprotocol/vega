@@ -22,10 +22,10 @@ var (
 
 	deleteNetworkExample = cli.Examples(`
 		# Delete the specified network
-		vegawallet network delete --network NETWORK
+		{{.Software}} network delete --network NETWORK
 
 		# Delete the specified network without asking for confirmation
-		vegawallet delete --wallet WALLET --force
+		{{.Software}} delete --wallet WALLET --force
 	`)
 )
 
