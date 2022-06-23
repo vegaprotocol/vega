@@ -146,3 +146,9 @@ The application has structured logging capability, the first port of call for a 
 Each internal Go package has a logging level that can be set at runtime by configuration. Setting the logging `Level` to `"Debug"` for a package will enable all debugging messages for the package which can be useful when trying to analyse a crash or issue.
 
 Debugging the application locally is also possible with [Delve](./DEBUG_WITH_DLV.md).
+
+### License
+
+The vega core (i.e. all code outside of the following directories: wallet, cmd/vegawallet) is licensed under the BSL 1.1, also included in our repository in the LICENSE file.
+
+The vegawallet (i.e. all code inside of the following directories: wallet, cmd/vegawallet) is licensed under the MIT, also included in our repository in the LICENSE.MIT file.
