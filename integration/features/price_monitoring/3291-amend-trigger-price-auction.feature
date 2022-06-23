@@ -20,6 +20,12 @@ Feature: Amend order to trigger price monitoring auction
       | party2    | ETH   | 100000000000 |
       | auxiliary | ETH   | 100000000000 |
       | aux2      | ETH   | 100000000000 |
+      | lpprov    | ETH   | 100000000000 |
+
+    When the parties submit the following liquidity provision:
+      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
+      | lp1 | lpprov | ETH/DEC20 | 90000000          | 0.1 | buy  | BID              | 50         | 100    | submission |
+      | lp1 | lpprov | ETH/DEC20 | 90000000          | 0.1 | sell | ASK              | 50         | 100    | submission |
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     Then the parties place the following orders:
