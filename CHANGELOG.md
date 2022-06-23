@@ -29,6 +29,7 @@
 - [675](https://github.com/vegaprotocol/data-node/issues/675) - Monitoring of subscriber count
 - [618](https://github.com/vegaprotocol/data-node/issues/618) - Fix positions cache
 - [567](https://github.com/vegaprotocol/data-node/issues/567) - Add cursor based pagination to rewards data requests
+- [708](https://github.com/vegaprotocol/data-node/issues/708) - Fix problem where querying `nodeData` would fail if there are no delegations
 
 ### 🐛 Fixes
 - [657](https://github.com/vegaprotocol/data-node/issues/657) - Add missing creation field in `ERC20` withdrawal bundle

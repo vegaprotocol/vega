@@ -180,7 +180,7 @@ func (store *Node) GetNodeData(ctx context.Context) (entities.NodeData, error) {
 
 			staked AS (
 				SELECT
-					SUM(amount) AS total,
+					COALESCE(SUM(amount),0) AS total,
 					ROW_NUMBER() OVER () AS id
 				FROM
 					delegations
@@ -240,7 +240,6 @@ func (store *Node) GetNodeData(ctx context.Context) (entities.NodeData, error) {
 	nodeData := entities.NodeData{}
 
 	err := pgxscan.Get(ctx, store.pool, &nodeData, query)
-
 	return nodeData, err
 }
 
