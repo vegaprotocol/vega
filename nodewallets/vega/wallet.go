@@ -18,7 +18,7 @@ import (
 
 	"code.vegaprotocol.io/vega/crypto"
 	"code.vegaprotocol.io/vega/nodewallets/registry"
-	"code.vegaprotocol.io/vegawallet/wallet"
+	"code.vegaprotocol.io/vega/wallet/wallet"
 )
 
 type loader interface {

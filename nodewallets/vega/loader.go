@@ -20,9 +20,9 @@ import (
 
 	"code.vegaprotocol.io/shared/paths"
 	"code.vegaprotocol.io/vega/crypto"
-	"code.vegaprotocol.io/vegawallet/wallet"
-	storev1 "code.vegaprotocol.io/vegawallet/wallet/store/v1"
-	"code.vegaprotocol.io/vegawallet/wallets"
+	"code.vegaprotocol.io/vega/wallet/wallet"
+	storev1 "code.vegaprotocol.io/vega/wallet/wallet/store/v1"
+	"code.vegaprotocol.io/vega/wallet/wallets"
 )
 
 type WalletLoader struct {

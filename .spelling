@@ -20,6 +20,7 @@ checkpointing
 CI
 cleanup
 Cleanup
+cmd/vegawallet
 clef
 codegen
 cyclomatic
@@ -61,6 +62,7 @@ Jenkinsfile
 Kanban
 lifecycle
 linters
+LICENSE.MIT
 MacOSX
 mainnet
 MarkToMarket

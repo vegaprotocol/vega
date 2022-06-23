@@ -7,7 +7,6 @@ require (
 	code.vegaprotocol.io/protos v0.52.1-0.20220616152803-016ebcb2e35e
 	code.vegaprotocol.io/quant v0.2.5
 	code.vegaprotocol.io/shared v0.0.0-20220614080106-5c97205b0d92
-	code.vegaprotocol.io/vegawallet v0.16.0
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/cenkalti/backoff v2.2.1+incompatible
 	github.com/cosmos/iavl v0.15.3
@@ -47,8 +46,18 @@ require (
 )
 
 require (
+	github.com/blang/semver/v4 v4.0.0
+	github.com/cenkalti/backoff/v4 v4.1.2
 	github.com/cucumber/messages-go/v16 v16.0.1
+	github.com/dgrijalva/jwt-go/v4 v4.0.0-preview1
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.9.0
+	github.com/muesli/termenv v0.11.0
+	github.com/oasisprotocol/curve25519-voi v0.0.0-20220317090546-adb2f9614b17
+	github.com/skratchdot/open-golang v0.0.0-20200116055534-eef842397966
+	github.com/tyler-smith/go-bip39 v1.1.0
+	github.com/vegaprotocol/go-slip10 v0.1.0
+	golang.org/x/sys v0.0.0-20220318055525-2edf467146b5
+	golang.org/x/term v0.0.0-20210927222741-03fcf44c2211
 )
 
 require (
@@ -59,9 +68,7 @@ require (
 	github.com/adrg/xdg v0.4.0 // indirect
 	github.com/armon/go-radix v1.0.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
-	github.com/blang/semver/v4 v4.0.0 // indirect
 	github.com/btcsuite/btcd v0.22.0-beta // indirect
-	github.com/cenkalti/backoff/v4 v4.1.2 // indirect
 	github.com/cespare/xxhash v1.1.0 // indirect
 	github.com/cespare/xxhash/v2 v2.1.2 // indirect
 	github.com/confio/ics23/go v0.6.3 // indirect
@@ -71,7 +78,6 @@ require (
 	github.com/deckarep/golang-set v1.8.0 // indirect
 	github.com/dgraph-io/badger/v2 v2.2007.2 // indirect
 	github.com/dgraph-io/ristretto v0.0.3-0.20200630154024-f66de99634de // indirect
-	github.com/dgrijalva/jwt-go/v4 v4.0.0-preview1 // indirect
 	github.com/dgryski/go-farm v0.0.0-20190423205320-6a90982ecee2 // indirect
 	github.com/dustin/go-humanize v1.0.0 // indirect
 	github.com/elastic/go-licenser v0.3.1 // indirect
@@ -105,8 +111,6 @@ require (
 	github.com/mimoo/StrobeGo v0.0.0-20181016162300-f8f6d4d2b643 // indirect
 	github.com/minio/highwayhash v1.0.2 // indirect
 	github.com/mitchellh/mapstructure v1.4.3 // indirect
-	github.com/muesli/termenv v0.11.0 // indirect
-	github.com/oasisprotocol/curve25519-voi v0.0.0-20220317090546-adb2f9614b17 // indirect
 	github.com/pelletier/go-toml v1.9.4 // indirect
 	github.com/petermattis/goid v0.0.0-20180202154549-b0b1615b78e5 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
@@ -119,15 +123,12 @@ require (
 	github.com/santhosh-tekuri/jsonschema v1.2.4 // indirect
 	github.com/sasha-s/go-deadlock v0.2.1-0.20190427202633-1595213edefa // indirect
 	github.com/shirou/gopsutil v3.21.4-0.20210419000835-c7a38de76ee5+incompatible // indirect
-	github.com/skratchdot/open-golang v0.0.0-20200116055534-eef842397966 // indirect
 	github.com/spf13/cast v1.4.1 // indirect
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
 	github.com/stretchr/objx v0.1.1 // indirect
 	github.com/subosito/gotenv v1.2.0 // indirect
 	github.com/tecbot/gorocksdb v0.0.0-20191217155057-f0fad39f321c // indirect
 	github.com/tklauser/numcpus v0.3.0 // indirect
-	github.com/tyler-smith/go-bip39 v1.1.0 // indirect
-	github.com/vegaprotocol/go-slip10 v0.1.0 // indirect
 	go.elastic.co/fastjson v1.1.0 // indirect
 	go.etcd.io/bbolt v1.3.6 // indirect
 	go.uber.org/atomic v1.9.0 // indirect
@@ -136,8 +137,6 @@ require (
 	golang.org/x/lint v0.0.0-20210508222113-6edffad5e616 // indirect
 	golang.org/x/mod v0.5.1 // indirect
 	golang.org/x/net v0.0.0-20220225172249-27dd8689420f // indirect
-	golang.org/x/sys v0.0.0-20220318055525-2edf467146b5 // indirect
-	golang.org/x/term v0.0.0-20210927222741-03fcf44c2211 // indirect
 	golang.org/x/text v0.3.7 // indirect
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
 	gonum.org/v1/gonum v0.9.1 // indirect
