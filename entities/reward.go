@@ -113,7 +113,8 @@ type RewardCursor struct {
 func (rc RewardCursor) String() string {
 	bs, err := json.Marshal(rc)
 	if err != nil {
-		return fmt.Sprintf(`{"party_id":"%s","asset_id":"%s","epoch_id":%d}`, rc.PartyID, rc.AssetID, rc.EpochID)
+		// This should never happen.
+		panic(fmt.Errorf("marshalling reward cursor: %w", err))
 	}
 	return string(bs)
 }

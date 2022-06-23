@@ -97,7 +97,8 @@ type DepositCursor struct {
 func (dc DepositCursor) String() string {
 	bs, err := json.Marshal(dc)
 	if err != nil {
-		return fmt.Sprintf(`{"vegaTime":"%s","id":"%s"}`, dc.VegaTime.Format(time.RFC3339Nano), dc.ID)
+		// This should never happen.
+		panic(fmt.Errorf("couldn't marshal deposit cursor: %w", err))
 	}
 	return string(bs)
 }

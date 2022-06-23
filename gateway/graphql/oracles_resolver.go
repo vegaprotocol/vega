@@ -17,6 +17,7 @@ import (
 
 	"code.vegaprotocol.io/data-node/vegatime"
 	protoapi "code.vegaprotocol.io/protos/data-node/api/v1"
+	v2 "code.vegaprotocol.io/protos/data-node/api/v2"
 	v1 "code.vegaprotocol.io/protos/vega/oracles/v1"
 )
 
@@ -43,6 +44,20 @@ func (o oracleSpecResolver) Data(ctx context.Context, obj *v1.OracleSpec) ([]*v1
 	if err != nil {
 		return nil, err
 	}
+	return resp.OracleData, nil
+}
+
+func (o oracleSpecResolver) DataConnection(ctx context.Context, spec *v1.OracleSpec, pagination *v2.Pagination) (*v2.OracleDataConnection, error) {
+	req := v2.GetOracleDataConnectionRequest{
+		SpecId:     spec.Id,
+		Pagination: pagination,
+	}
+
+	resp, err := o.tradingDataClientV2.GetOracleDataConnection(ctx, &req)
+	if err != nil {
+		return nil, err
+	}
+
 	return resp.OracleData, nil
 }
 

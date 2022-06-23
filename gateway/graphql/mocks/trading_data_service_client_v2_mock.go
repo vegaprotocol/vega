@@ -276,6 +276,26 @@ func (mr *MockTradingDataServiceClientV2MockRecorder) GetOracleDataBySpecID(arg0
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOracleDataBySpecID", reflect.TypeOf((*MockTradingDataServiceClientV2)(nil).GetOracleDataBySpecID), varargs...)
 }
 
+// GetOracleDataConnection mocks base method.
+func (m *MockTradingDataServiceClientV2) GetOracleDataConnection(arg0 context.Context, arg1 *v2.GetOracleDataConnectionRequest, arg2 ...grpc.CallOption) (*v2.GetOracleDataConnectionResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "GetOracleDataConnection", varargs...)
+	ret0, _ := ret[0].(*v2.GetOracleDataConnectionResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetOracleDataConnection indicates an expected call of GetOracleDataConnection.
+func (mr *MockTradingDataServiceClientV2MockRecorder) GetOracleDataConnection(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOracleDataConnection", reflect.TypeOf((*MockTradingDataServiceClientV2)(nil).GetOracleDataConnection), varargs...)
+}
+
 // GetOracleSpecByID mocks base method.
 func (m *MockTradingDataServiceClientV2) GetOracleSpecByID(arg0 context.Context, arg1 *v2.GetOracleSpecByIDRequest, arg2 ...grpc.CallOption) (*v2.GetOracleSpecByIDResponse, error) {
 	m.ctrl.T.Helper()
@@ -294,6 +314,26 @@ func (mr *MockTradingDataServiceClientV2MockRecorder) GetOracleSpecByID(arg0, ar
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{arg0, arg1}, arg2...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOracleSpecByID", reflect.TypeOf((*MockTradingDataServiceClientV2)(nil).GetOracleSpecByID), varargs...)
+}
+
+// GetOracleSpecsConnection mocks base method.
+func (m *MockTradingDataServiceClientV2) GetOracleSpecsConnection(arg0 context.Context, arg1 *v2.GetOracleSpecsConnectionRequest, arg2 ...grpc.CallOption) (*v2.GetOracleSpecsConnectionResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "GetOracleSpecsConnection", varargs...)
+	ret0, _ := ret[0].(*v2.GetOracleSpecsConnectionResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetOracleSpecsConnection indicates an expected call of GetOracleSpecsConnection.
+func (mr *MockTradingDataServiceClientV2MockRecorder) GetOracleSpecsConnection(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOracleSpecsConnection", reflect.TypeOf((*MockTradingDataServiceClientV2)(nil).GetOracleSpecsConnection), varargs...)
 }
 
 // GetOrderVersionsByID mocks base method.
@@ -316,24 +356,24 @@ func (mr *MockTradingDataServiceClientV2MockRecorder) GetOrderVersionsByID(arg0,
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOrderVersionsByID", reflect.TypeOf((*MockTradingDataServiceClientV2)(nil).GetOrderVersionsByID), varargs...)
 }
 
-// GetOrderVersionsByIDPaged mocks base method.
-func (m *MockTradingDataServiceClientV2) GetOrderVersionsByIDPaged(arg0 context.Context, arg1 *v2.GetOrderVersionsByIDPagedRequest, arg2 ...grpc.CallOption) (*v2.GetOrderVersionsByIDPagedResponse, error) {
+// GetOrderVersionsByIDConnection mocks base method.
+func (m *MockTradingDataServiceClientV2) GetOrderVersionsByIDConnection(arg0 context.Context, arg1 *v2.GetOrderVersionsByIDConnectionRequest, arg2 ...grpc.CallOption) (*v2.GetOrderVersionsByIDConnectionResponse, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0, arg1}
 	for _, a := range arg2 {
 		varargs = append(varargs, a)
 	}
-	ret := m.ctrl.Call(m, "GetOrderVersionsByIDPaged", varargs...)
-	ret0, _ := ret[0].(*v2.GetOrderVersionsByIDPagedResponse)
+	ret := m.ctrl.Call(m, "GetOrderVersionsByIDConnection", varargs...)
+	ret0, _ := ret[0].(*v2.GetOrderVersionsByIDConnectionResponse)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetOrderVersionsByIDPaged indicates an expected call of GetOrderVersionsByIDPaged.
-func (mr *MockTradingDataServiceClientV2MockRecorder) GetOrderVersionsByIDPaged(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+// GetOrderVersionsByIDConnection indicates an expected call of GetOrderVersionsByIDConnection.
+func (mr *MockTradingDataServiceClientV2MockRecorder) GetOrderVersionsByIDConnection(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{arg0, arg1}, arg2...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOrderVersionsByIDPaged", reflect.TypeOf((*MockTradingDataServiceClientV2)(nil).GetOrderVersionsByIDPaged), varargs...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOrderVersionsByIDConnection", reflect.TypeOf((*MockTradingDataServiceClientV2)(nil).GetOrderVersionsByIDConnection), varargs...)
 }
 
 // GetOrdersByMarket mocks base method.
@@ -356,44 +396,44 @@ func (mr *MockTradingDataServiceClientV2MockRecorder) GetOrdersByMarket(arg0, ar
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOrdersByMarket", reflect.TypeOf((*MockTradingDataServiceClientV2)(nil).GetOrdersByMarket), varargs...)
 }
 
-// GetOrdersByMarketPaged mocks base method.
-func (m *MockTradingDataServiceClientV2) GetOrdersByMarketPaged(arg0 context.Context, arg1 *v2.GetOrdersByMarketPagedRequest, arg2 ...grpc.CallOption) (*v2.GetOrdersByMarketPagedResponse, error) {
+// GetOrdersByMarketConnection mocks base method.
+func (m *MockTradingDataServiceClientV2) GetOrdersByMarketConnection(arg0 context.Context, arg1 *v2.GetOrdersByMarketConnectionRequest, arg2 ...grpc.CallOption) (*v2.GetOrdersByMarketConnectionResponse, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0, arg1}
 	for _, a := range arg2 {
 		varargs = append(varargs, a)
 	}
-	ret := m.ctrl.Call(m, "GetOrdersByMarketPaged", varargs...)
-	ret0, _ := ret[0].(*v2.GetOrdersByMarketPagedResponse)
+	ret := m.ctrl.Call(m, "GetOrdersByMarketConnection", varargs...)
+	ret0, _ := ret[0].(*v2.GetOrdersByMarketConnectionResponse)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetOrdersByMarketPaged indicates an expected call of GetOrdersByMarketPaged.
-func (mr *MockTradingDataServiceClientV2MockRecorder) GetOrdersByMarketPaged(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+// GetOrdersByMarketConnection indicates an expected call of GetOrdersByMarketConnection.
+func (mr *MockTradingDataServiceClientV2MockRecorder) GetOrdersByMarketConnection(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{arg0, arg1}, arg2...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOrdersByMarketPaged", reflect.TypeOf((*MockTradingDataServiceClientV2)(nil).GetOrdersByMarketPaged), varargs...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOrdersByMarketConnection", reflect.TypeOf((*MockTradingDataServiceClientV2)(nil).GetOrdersByMarketConnection), varargs...)
 }
 
-// GetOrdersByPartyPaged mocks base method.
-func (m *MockTradingDataServiceClientV2) GetOrdersByPartyPaged(arg0 context.Context, arg1 *v2.GetOrdersByPartyPagedRequest, arg2 ...grpc.CallOption) (*v2.GetOrdersByPartyPagedResponse, error) {
+// GetOrdersByPartyConnection mocks base method.
+func (m *MockTradingDataServiceClientV2) GetOrdersByPartyConnection(arg0 context.Context, arg1 *v2.GetOrdersByPartyConnectionRequest, arg2 ...grpc.CallOption) (*v2.GetOrdersByPartyConnectionResponse, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0, arg1}
 	for _, a := range arg2 {
 		varargs = append(varargs, a)
 	}
-	ret := m.ctrl.Call(m, "GetOrdersByPartyPaged", varargs...)
-	ret0, _ := ret[0].(*v2.GetOrdersByPartyPagedResponse)
+	ret := m.ctrl.Call(m, "GetOrdersByPartyConnection", varargs...)
+	ret0, _ := ret[0].(*v2.GetOrdersByPartyConnectionResponse)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetOrdersByPartyPaged indicates an expected call of GetOrdersByPartyPaged.
-func (mr *MockTradingDataServiceClientV2MockRecorder) GetOrdersByPartyPaged(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+// GetOrdersByPartyConnection indicates an expected call of GetOrdersByPartyConnection.
+func (mr *MockTradingDataServiceClientV2MockRecorder) GetOrdersByPartyConnection(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{arg0, arg1}, arg2...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOrdersByPartyPaged", reflect.TypeOf((*MockTradingDataServiceClientV2)(nil).GetOrdersByPartyPaged), varargs...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOrdersByPartyConnection", reflect.TypeOf((*MockTradingDataServiceClientV2)(nil).GetOrdersByPartyConnection), varargs...)
 }
 
 // GetParties mocks base method.
@@ -416,24 +456,24 @@ func (mr *MockTradingDataServiceClientV2MockRecorder) GetParties(arg0, arg1 inte
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetParties", reflect.TypeOf((*MockTradingDataServiceClientV2)(nil).GetParties), varargs...)
 }
 
-// GetPositionsByPartyPaged mocks base method.
-func (m *MockTradingDataServiceClientV2) GetPositionsByPartyPaged(arg0 context.Context, arg1 *v2.GetPositionsByPartyPagedRequest, arg2 ...grpc.CallOption) (*v2.GetPositionsByPartyPagedResponse, error) {
+// GetPositionsByPartyConnection mocks base method.
+func (m *MockTradingDataServiceClientV2) GetPositionsByPartyConnection(arg0 context.Context, arg1 *v2.GetPositionsByPartyConnectionRequest, arg2 ...grpc.CallOption) (*v2.GetPositionsByPartyConnectionResponse, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0, arg1}
 	for _, a := range arg2 {
 		varargs = append(varargs, a)
 	}
-	ret := m.ctrl.Call(m, "GetPositionsByPartyPaged", varargs...)
-	ret0, _ := ret[0].(*v2.GetPositionsByPartyPagedResponse)
+	ret := m.ctrl.Call(m, "GetPositionsByPartyConnection", varargs...)
+	ret0, _ := ret[0].(*v2.GetPositionsByPartyConnectionResponse)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetPositionsByPartyPaged indicates an expected call of GetPositionsByPartyPaged.
-func (mr *MockTradingDataServiceClientV2MockRecorder) GetPositionsByPartyPaged(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+// GetPositionsByPartyConnection indicates an expected call of GetPositionsByPartyConnection.
+func (mr *MockTradingDataServiceClientV2MockRecorder) GetPositionsByPartyConnection(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{arg0, arg1}, arg2...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPositionsByPartyPaged", reflect.TypeOf((*MockTradingDataServiceClientV2)(nil).GetPositionsByPartyPaged), varargs...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPositionsByPartyConnection", reflect.TypeOf((*MockTradingDataServiceClientV2)(nil).GetPositionsByPartyConnection), varargs...)
 }
 
 // GetRewardSummaries mocks base method.

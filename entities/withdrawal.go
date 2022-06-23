@@ -121,7 +121,8 @@ type WithdrawalCursor struct {
 func (wc WithdrawalCursor) String() string {
 	bs, err := json.Marshal(wc)
 	if err != nil {
-		return fmt.Sprintf(`{"vegaTime":%d,"id":"%s"}`, wc.VegaTime.Unix(), wc.ID)
+		// This should never happen
+		panic(fmt.Errorf("failed to marshal withdrawal cursor: %w", err))
 	}
 	return string(bs)
 }

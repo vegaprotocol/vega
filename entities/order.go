@@ -208,7 +208,8 @@ func (oc *OrderCursor) Parse(cursorString string) error {
 func (oc OrderCursor) String() string {
 	bs, err := json.Marshal(oc)
 	if err != nil {
-		return fmt.Sprintf(`{"vegaTime":"%s","seqNum":%d}`, oc.VegaTime.Format(time.RFC3339), oc.SeqNum)
+		// This should never happen.
+		panic(fmt.Errorf("could not marshal order cursor: %w", err))
 	}
 	return string(bs)
 }

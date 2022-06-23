@@ -2089,7 +2089,7 @@ func (t *tradingDataDelegator) OracleDataBySpec(ctx context.Context, req *protoa
 	if len(req.Id) <= 0 {
 		return nil, ErrMissingOracleSpecID
 	}
-	data, err := t.oracleDataServiceV2.GetOracleDataBySpecID(ctx, req.Id, entities.OffsetPagination{})
+	data, _, err := t.oracleDataServiceV2.GetOracleDataBySpecID(ctx, req.Id, entities.OffsetPagination{})
 	if err != nil {
 		return nil, apiError(codes.NotFound, err)
 	}
@@ -2104,7 +2104,7 @@ func (t *tradingDataDelegator) OracleDataBySpec(ctx context.Context, req *protoa
 
 func (t *tradingDataDelegator) ListOracleData(ctx context.Context, _ *protoapi.ListOracleDataRequest) (*protoapi.ListOracleDataResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("ListOracleData SQL")()
-	specs, err := t.oracleDataServiceV2.ListOracleData(ctx, entities.OffsetPagination{})
+	specs, _, err := t.oracleDataServiceV2.ListOracleData(ctx, entities.OffsetPagination{})
 	if err != nil {
 		return nil, apiError(codes.Internal, err)
 	}

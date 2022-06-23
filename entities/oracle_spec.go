@@ -18,6 +18,7 @@ import (
 	"strings"
 	"time"
 
+	v2 "code.vegaprotocol.io/protos/data-node/api/v2"
 	oraclespb "code.vegaprotocol.io/protos/vega/oracles/v1"
 )
 
@@ -81,6 +82,17 @@ func (os *OracleSpec) ToProto() *oraclespb.OracleSpec {
 		PubKeys:   pubKeys,
 		Filters:   filters,
 		Status:    oraclespb.OracleSpec_Status(os.Status),
+	}
+}
+
+func (os OracleSpec) Cursor() *Cursor {
+	return NewCursor(os.ID.String())
+}
+
+func (os OracleSpec) ToProtoEdge(_ ...any) *v2.OracleSpecEdge {
+	return &v2.OracleSpecEdge{
+		Node:   os.ToProto(),
+		Cursor: os.Cursor().Encode(),
 	}
 }
 
