@@ -66,6 +66,7 @@ func (e *eventObserver) ObserveEventBus(
 }
 
 func observeEventBus(log *logging.Logger, config Config, eventBusServer eventBusServer, eventService EventService) error {
+	defer metrics.StartActiveEventBusConnection()()
 
 	ctx, cfunc := context.WithCancel(eventBusServer.Context())
 	defer cfunc()

@@ -59,6 +59,7 @@ var (
 	// Subscription gauge for each type
 	subscriptionGauge         *prometheus.GaugeVec
 	eventBusSubscriptionGauge *prometheus.GaugeVec
+	eventBusConnectionGauge   prometheus.Gauge
 
 	// Call counters for each request type per API
 	apiRequestCallCounter *prometheus.CounterVec
@@ -540,7 +541,7 @@ func setupMetrics() error {
 		"event_bus_active_subscriptions",
 		Namespace("datanode"),
 		Vectors("eventType"),
-		Help("Number of active subscriptions to the event bus"),
+		Help("Number of active subscriptions by type to the event bus"),
 	); err != nil {
 		return err
 	}
@@ -548,6 +549,20 @@ func setupMetrics() error {
 	if eventBusSubscriptionGauge, err = h.GaugeVec(); err != nil {
 		return err
 	}
+
+	if h, err = AddInstrument(
+		Gauge,
+		"event_bus_active_connections",
+		Namespace("datanode"),
+		Help("Number of active connections to the event bus"),
+	); err != nil {
+		return err
+	}
+	ac, err := h.Gauge()
+	if err != nil {
+		return err
+	}
+	eventBusConnectionGauge = ac
 
 	// Number of calls to each request type
 	h, err = AddInstrument(
@@ -680,6 +695,17 @@ func StartActiveSubscriptionCountGRPC(subscribedToType string) func() {
 	subscriptionGauge.WithLabelValues("GRPC", subscribedToType).Inc()
 	return func() {
 		subscriptionGauge.WithLabelValues("GRPC", subscribedToType).Dec()
+	}
+}
+
+func StartActiveEventBusConnection() func() {
+	if eventBusConnectionGauge == nil {
+		return func() {}
+	}
+
+	eventBusConnectionGauge.Inc()
+	return func() {
+		eventBusConnectionGauge.Dec()
 	}
 }
 
