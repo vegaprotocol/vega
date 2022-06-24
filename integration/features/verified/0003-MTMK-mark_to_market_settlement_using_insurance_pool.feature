@@ -15,16 +15,22 @@ Feature: Test mark to market settlement with insurance pool
       | party1 | ETH   | 5122   |
       | party2 | ETH   | 10000  |
       | party3 | ETH   | 10000  |
-      | aux     | ETH   | 10000  |
-      | aux2    | ETH   | 10000  |
+      | aux    | ETH   | 10000  |
+      | aux2   | ETH   | 10000  |
+      | lpprov | ETH   | 100000 |
+
+    When the parties submit the following liquidity provision:
+      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
+      | lp1 | lpprov | ETH/DEC19 | 90000             | 0.1 | buy  | BID              | 50         | 10     | submission |
+      | lp1 | lpprov | ETH/DEC19 | 90000             | 0.1 | sell | ASK              | 50         | 10     | submission |
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     When the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
-      | aux    | ETH/DEC19 | buy  | 1      | 999   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
-      | aux    | ETH/DEC19 | sell | 1      | 6001  | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
-      | aux2   | ETH/DEC19 | buy  | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC | ref-3     |
-      | aux    | ETH/DEC19 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC | ref-4     |
+      | aux   | ETH/DEC19 | buy  | 1      | 999   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
+      | aux   | ETH/DEC19 | sell | 1      | 6001  | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
+      | aux2  | ETH/DEC19 | buy  | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC | ref-3     |
+      | aux   | ETH/DEC19 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC | ref-4     |
     Then the opening auction period ends for market "ETH/DEC19"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
 
@@ -55,6 +61,6 @@ Feature: Test mark to market settlement with insurance pool
       | party2 | ETH   | ETH/DEC19 | 13586  | 1414    |
       | party3 | ETH   | ETH/DEC19 | 721    | 9279    |
 
-    And the cumulated balance for all accounts should be worth "55122"
+    And the cumulated balance for all accounts should be worth "155122"
     And the settlement account should have a balance of "0" for the market "ETH/DEC19"
     And the insurance pool balance should be "10121" for the market "ETH/DEC19"
