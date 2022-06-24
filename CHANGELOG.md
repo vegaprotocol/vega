@@ -19,6 +19,7 @@
 
 ### 🐛 Fixes
 - [705](https://github.com/vegaprotocol/data-node/issues/705) - Market Depth returning incorrect book state
+- [730](https://github.com/vegaprotocol/data-node/issues/730) - Event bus subscriptions with party and market filter not working 
 
 ## 0.52.0
 

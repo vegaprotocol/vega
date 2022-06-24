@@ -24,7 +24,7 @@ import (
 
 type OE interface {
 	events.Event
-	Order() *types.Order
+	GetOrder() *types.Order
 	VegaTime() time.Time
 }
 
@@ -88,7 +88,7 @@ func (o *OrderEvent) Push(evts ...events.Event) {
 // this function will be replaced - this is where the events will be normalised for a market event plugin to use
 func (o *OrderEvent) write(e OE) {
 	o.mu.Lock()
-	o.buf = append(o.buf, *e.Order())
+	o.buf = append(o.buf, *e.GetOrder())
 	o.mu.Unlock()
 	if o.log.GetLevel() <= logging.DebugLevel {
 		o.log.Debug("ORDER EVENT",
