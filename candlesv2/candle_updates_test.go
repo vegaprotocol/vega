@@ -114,27 +114,6 @@ func TestNewSubscriberAlwaysGetsLastCandle(t *testing.T) {
 	assert.Equal(t, expectedCandle, candle2)
 }
 
-func TestSlowConsumersChannelIsClosed(t *testing.T) {
-	testCandleSource := &testCandleSource{candles: make(chan []entities.Candle)}
-
-	updates, _ := candlesv2.NewCandleUpdates(context.Background(), logging.NewTestLogger(), "testCandles",
-		testCandleSource, newTestCandleConfig(1).CandleUpdates)
-	startTime := time.Now()
-
-	_, out1 := updates.Subscribe()
-
-	expectedCandle := createCandle(startTime, startTime, 1, 1, 1, 1, 10)
-	candle2 := createCandle(startTime.Add(1*time.Minute), startTime.Add(1*time.Minute), 2, 2, 2, 2, 20)
-	testCandleSource.candles <- []entities.Candle{expectedCandle}
-	testCandleSource.candles <- []entities.Candle{candle2}
-
-	candle1 := <-out1
-	assert.Equal(t, expectedCandle, candle1)
-
-	_, ok := <-out1
-	assert.False(t, ok, "channel should be closed")
-}
-
 func newTestCandleConfig(bufferSize int) candlesv2.Config {
 	conf := candlesv2.NewDefaultConfig()
 	conf.CandleUpdates = candlesv2.CandleUpdatesConfig{
