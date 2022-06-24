@@ -14,6 +14,7 @@
 ### 🐛 Fixes
 - [5476](https://github.com/vegaprotocol/vega/issues/5476) - Include settlement price in snapshot
 - [5476](https://github.com/vegaprotocol/vega/issues/5314) - Fix validation of checkpoint file
+- [5499](https://github.com/vegaprotocol/vega/issues/5499) - Add error from app specific validation to check transaction response
 
 ## 0.52.0
 
