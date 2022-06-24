@@ -110,8 +110,8 @@ func (app *App) CheckTx(req types.RequestCheckTx) (resp types.ResponseCheckTx) {
 	// Lookup for check tx, skip if not found
 	if fn, ok := app.checkTxs[tx.Command()]; ok {
 		if err := fn(ctx, tx); err != nil {
-			resp.Code = AbciTxnInternalError
 			println("transaction failed command validation", tx.Command().String(), "tid", tx.GetPoWTID(), err.Error())
+			return AddCommonCheckTxEvents(NewResponseCheckTxError(AbciTxnInternalError, err), tx)
 		}
 	}
 
