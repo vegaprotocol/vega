@@ -107,7 +107,7 @@ func (mdb *MarketDepthBuilder) Push(evts ...events.Event) {
 	for _, e := range evts {
 		switch et := e.(type) {
 		case OE:
-			order, err := types.OrderFromProto(et.Order())
+			order, err := types.OrderFromProto(et.GetOrder())
 			if err != nil {
 				panic(err)
 			}

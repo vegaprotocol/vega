@@ -20,7 +20,7 @@ import (
 
 	"code.vegaprotocol.io/data-node/entities"
 	"code.vegaprotocol.io/data-node/logging"
-	types "code.vegaprotocol.io/protos/vega"
+	"code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/events"
 )
 
@@ -66,18 +66,17 @@ type ChainInfoI interface {
 	GetChainID() (string, error)
 }
 
-type OrderEvent interface {
-	events.Event
-	Order() *types.Order
-}
-
 type OrderEventWithVegaTime struct {
-	OrderEvent
+	events.Order
 	vegaTime time.Time
 }
 
-func (oe OrderEventWithVegaTime) VegaTime() time.Time {
+func (oe *OrderEventWithVegaTime) VegaTime() time.Time {
 	return oe.vegaTime
+}
+
+func (oe *OrderEventWithVegaTime) GetOrder() *vega.Order {
+	return oe.Order.Order()
 }
 
 // Broker - the base broker type
@@ -181,8 +180,8 @@ func (b *Broker) startSending(t events.Type, evt events.Event) {
 	}
 
 	if t == events.OrderEvent {
-		orderEvent := evt.(OrderEvent)
-		evt = OrderEventWithVegaTime{orderEvent, b.vegaTime}
+		orderEvent := evt.(*events.Order)
+		evt = &OrderEventWithVegaTime{*orderEvent, b.vegaTime}
 	}
 
 	ch <- []events.Event{evt}
