@@ -4,6 +4,7 @@ import (
 	"errors"
 
 	proto "code.vegaprotocol.io/protos/vega"
+	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/types/num"
 )
 
@@ -192,7 +193,7 @@ func (a AssetDetailsBuiltinAsset) ValidateAssetSource() (ProposalError, error) {
 func AssetDetailsERC20FromProto(p *proto.AssetDetails_Erc20) *AssetDetailsErc20 {
 	return &AssetDetailsErc20{
 		Erc20: &ERC20{
-			ContractAddress: p.Erc20.ContractAddress,
+			ContractAddress: crypto.EthereumChecksumAddress(p.Erc20.ContractAddress),
 		},
 	}
 }

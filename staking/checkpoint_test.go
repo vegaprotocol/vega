@@ -2,8 +2,11 @@ package staking_test
 
 import (
 	"context"
+	_ "embed"
 	"testing"
 
+	checkpoint "code.vegaprotocol.io/protos/vega/checkpoint/v1"
+	"code.vegaprotocol.io/vega/libs/proto"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/staking"
 	"code.vegaprotocol.io/vega/staking/mocks"
@@ -14,6 +17,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+//go:embed testcp/20220627071230-316971-74f8b933dd6e564489de1958b89ca8c00ed25b73b16a85bcf48bd3e8aa493a4e.cp
+var cpFile []byte
 
 type checkpointTest struct {
 	*staking.Checkpoint
@@ -49,6 +55,37 @@ func getCheckpointTest(t *testing.T) *checkpointTest {
 func (c *checkpointTest) Finish() {
 	c.ctrl.Finish()
 	c.sv.ctrl.Finish()
+}
+
+// TestCheckpointLoadNoDuplicates is testing that with the recent changes
+// balance on mainnet are reconciled accurately. Due to a bug some eth events
+// go duplicated and balances became incorrect. The Load call without duplication
+// for the events would have panicked, this should not.
+func TestCheckpointLoadNoDuplicates(t *testing.T) {
+	cptest := getCheckpointTest(t)
+	defer cptest.Finish()
+
+	cp := &checkpoint.Checkpoint{}
+	if err := proto.Unmarshal(cpFile, cp); err != nil {
+		println(err)
+	}
+
+	cptest.acc.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+	cptest.acc.broker.EXPECT().SendBatch(gomock.Any()).Times(1)
+	cptest.ethEventSource.EXPECT().UpdateStakingStartingBlock(gomock.Any()).Do(
+		func(block uint64) {
+			// ensure we restart at the right block
+			// which is the last pending event we've seen
+			assert.Equal(t, int(block), 15026715)
+		},
+	)
+	require.NotPanics(t, func() { cptest.Load(context.Background(), cp.Staking) })
+
+	// now we ensure the balance which were incorrect are now OK
+	balance, err := cptest.acc.GetAvailableBalance(
+		"657c2a8a5867c43c831e24820b7544e2fdcc1cf610cfe0ece940fe78137400fd")
+	assert.NoError(t, err)
+	assert.Equal(t, balance, num.NewUint(0))
 }
 
 func TestCheckpoint(t *testing.T) {

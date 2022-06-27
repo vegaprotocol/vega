@@ -223,7 +223,7 @@ func testSnapshotRestore(t *testing.T) {
 	ctx := context.Background()
 	erc20 := types.AssetDetailsErc20{
 		Erc20: &types.ERC20{
-			ContractAddress: "nowhere",
+			ContractAddress: "0x6d53C489bbda35B8096C8b4Cb362e2889F82E19B",
 		},
 	}
 	asset := types.Asset{

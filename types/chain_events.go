@@ -8,6 +8,7 @@ import (
 
 	proto "code.vegaprotocol.io/protos/vega"
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
+	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/types/num"
 )
 
@@ -76,6 +77,10 @@ func (w *Withdrawal) IntoProto() *proto.Withdrawal {
 }
 
 func WithdrawalFromProto(w *proto.Withdrawal) *Withdrawal {
+	if w.Ext != nil && w.Ext.GetErc20() != nil {
+		rcvAddress := w.Ext.GetErc20().ReceiverAddress
+		w.Ext.GetErc20().ReceiverAddress = crypto.EthereumChecksumAddress(rcvAddress)
+	}
 	amt, _ := num.UintFromString(w.Amount, 10)
 	return &Withdrawal{
 		ID:             w.Id,
@@ -629,7 +634,7 @@ type ERC20Deposit struct {
 func NewERC20DepositFromProto(p *proto.ERC20Deposit) (*ERC20Deposit, error) {
 	e := ERC20Deposit{
 		VegaAssetID:           p.VegaAssetId,
-		SourceEthereumAddress: p.SourceEthereumAddress,
+		SourceEthereumAddress: crypto.EthereumChecksumAddress(p.SourceEthereumAddress),
 		TargetPartyID:         p.TargetPartyId,
 	}
 	if len(p.Amount) > 0 {

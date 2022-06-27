@@ -41,6 +41,9 @@ type Verifier interface {
 // SignAnnounceNode adds the signature for the ethereum and
 // Vega address / pubkeys.
 func VerifyAnnounceNode(an *commandspb.AnnounceNode) error {
+	// just ensure the node address is checksumed
+	an.EthereumAddress = vgcrypto.EthereumChecksumAddress(an.EthereumAddress)
+
 	buf, err := makeAnnounceNodeSignableMessage(an)
 	if err != nil {
 		return err
