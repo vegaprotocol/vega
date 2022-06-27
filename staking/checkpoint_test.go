@@ -72,7 +72,7 @@ func (c *checkpointTest) Finish() {
 // TestCheckpointLoadNoDuplicates is testing that with the recent changes
 // balance on mainnet are reconciled accurately. Due to a bug some eth events
 // go duplicated and balances became incorrect. The Load call without duplication
-// for the events would have panicked, this should not
+// for the events would have panicked, this should not.
 func TestCheckpointLoadNoDuplicates(t *testing.T) {
 	cptest := getCheckpointTest(t)
 	defer cptest.Finish()
