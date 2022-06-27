@@ -71,7 +71,7 @@ func StakeTotalSupplyFromProto(s *vgproto.StakeTotalSupply) (*StakeTotalSupply, 
 		}
 	}
 	return &StakeTotalSupply{
-		TokenAddress: s.TokenAddress,
+		TokenAddress: crypto.EthereumChecksumAddress(s.TokenAddress),
 		TotalSupply:  totalSupply,
 	}, nil
 }
@@ -150,7 +150,7 @@ func StakeLinkingFromProto(sl *eventspb.StakeLinking) *StakeLinking {
 		BlockHeight:     sl.BlockHeight,
 		BlockTime:       sl.BlockTime,
 		LogIndex:        sl.LogIndex,
-		EthereumAddress: sl.EthereumAddress,
+		EthereumAddress: crypto.EthereumChecksumAddress(sl.EthereumAddress),
 	}
 }
 
@@ -185,7 +185,7 @@ func StakeDepositedFromProto(
 		LogIndex:        logIndex,
 		TxID:            txID,
 		VegaPubKey:      s.VegaPublicKey,
-		EthereumAddress: s.EthereumAddress,
+		EthereumAddress: crypto.EthereumChecksumAddress(s.EthereumAddress),
 		Amount:          amount,
 		BlockTime:       s.BlockTime,
 	}, nil
@@ -251,7 +251,7 @@ func StakeRemovedFromProto(
 		LogIndex:        logIndex,
 		TxID:            txID,
 		VegaPubKey:      s.VegaPublicKey,
-		EthereumAddress: s.EthereumAddress,
+		EthereumAddress: crypto.EthereumChecksumAddress(s.EthereumAddress),
 		Amount:          amount,
 		BlockTime:       s.BlockTime,
 	}, nil
@@ -282,6 +282,6 @@ func (s *StakeRemoved) IntoStakeLinking() *StakeLinking {
 		BlockHeight:     s.BlockNumber,
 		BlockTime:       s.BlockTime,
 		LogIndex:        s.LogIndex,
-		EthereumAddress: s.EthereumAddress,
+		EthereumAddress: crypto.EthereumChecksumAddress(s.EthereumAddress),
 	}
 }

@@ -22,10 +22,12 @@ import (
 	vgjson "code.vegaprotocol.io/shared/libs/json"
 	"code.vegaprotocol.io/shared/paths"
 	"code.vegaprotocol.io/vega/config"
+	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/nodewallets"
 	"code.vegaprotocol.io/vega/txn"
 	"code.vegaprotocol.io/vega/validators"
+
 	"github.com/jessevdk/go-flags"
 )
 
@@ -78,7 +80,7 @@ func (opts *AnnounceNodeCmd) Execute(args []string) error {
 		VegaPubKey:      nodeWallets.Vega.PubKey().Hex(),
 		VegaPubKeyIndex: nodeWallets.Vega.Index(),
 		ChainPubKey:     nodeWallets.Tendermint.Pubkey,
-		EthereumAddress: nodeWallets.Ethereum.PubKey().Hex(),
+		EthereumAddress: crypto.EthereumChecksumAddress(nodeWallets.Ethereum.PubKey().Hex()),
 		FromEpoch:       opts.FromEpoch,
 		InfoUrl:         opts.InfoURL,
 		Name:            opts.Name,

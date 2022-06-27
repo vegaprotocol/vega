@@ -20,6 +20,7 @@ import (
 
 	vegapb "code.vegaprotocol.io/protos/vega"
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
+	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/types/num"
 )
 
@@ -126,7 +127,7 @@ func (x *Erc20WithdrawExt) IntoProto() *vegapb.Erc20WithdrawExt {
 
 func Erc20WithdrawExtFromProto(erc20 *vegapb.Erc20WithdrawExt) *Erc20WithdrawExt {
 	return &Erc20WithdrawExt{
-		ReceiverAddress: erc20.ReceiverAddress,
+		ReceiverAddress: crypto.EthereumChecksumAddress(erc20.ReceiverAddress),
 	}
 }
 

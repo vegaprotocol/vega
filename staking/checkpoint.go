@@ -14,6 +14,7 @@ package staking
 
 import (
 	"context"
+	"sort"
 
 	checkpoint "code.vegaprotocol.io/protos/vega/checkpoint/v1"
 	pbevents "code.vegaprotocol.io/protos/vega/events/v1"
@@ -70,7 +71,10 @@ func (c *Checkpoint) Load(ctx context.Context, data []byte) error {
 
 	stakeLinkingEvents := make([]events.Event, 0, len(b.Accepted))
 
-	for _, evt := range b.Accepted {
+	// first we deduplicates those events, this is a fix for v0.50.4
+	dedup := dedupEvents(b.Accepted)
+
+	for _, evt := range dedup {
 		stakeLinking := types.StakeLinkingFromProto(evt)
 		stakeLinkingEvents = append(stakeLinkingEvents, events.NewStakeLinking(ctx, *stakeLinking))
 		// this will send all necessary events as well
@@ -147,4 +151,35 @@ func (c *Checkpoint) getLastBlockSeen() uint64 {
 	}
 
 	return block
+}
+
+type key struct {
+	txHash                string
+	logIndex, blockHeight uint64
+}
+
+func dedupEvents(evts []*pbevents.StakeLinking) []*pbevents.StakeLinking {
+	evtsM := map[key]*pbevents.StakeLinking{}
+	for _, v := range evts {
+		k := key{v.TxHash, v.LogIndex, v.BlockHeight}
+		evt, ok := evtsM[k]
+		if !ok {
+			// we haven't seen this event, just add it and move on
+			evtsM[k] = v
+			continue
+		}
+		// we have seen this one already, let's save to earliest one only
+		if evt.FinalizedAt > v.FinalizedAt {
+			evtsM[k] = v
+		}
+	}
+
+	// now we sort and return
+	out := make([]*pbevents.StakeLinking, 0, len(evtsM))
+	for _, v := range evtsM {
+		out = append(out, v)
+	}
+
+	sort.Slice(out, func(i, j int) bool { return out[i].BlockTime < out[j].BlockTime })
+	return out
 }

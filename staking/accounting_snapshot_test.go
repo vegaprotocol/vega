@@ -55,7 +55,7 @@ func TestAccountsSnapshotRoundTrip(t *testing.T) {
 		BlockHeight:     12,
 		BlockTime:       1000002000,
 		LogIndex:        100022,
-		EthereumAddress: "blah",
+		EthereumAddress: "0xe82EfC4187705655C9b484dFFA25f240e8A6B0BA",
 	}
 	acc.AddEvent(ctx, evt)
 
