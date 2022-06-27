@@ -23,6 +23,7 @@ import (
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
 	snapshot "code.vegaprotocol.io/protos/vega/snapshot/v1"
+	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/types/num"
 )
 
@@ -3293,7 +3294,7 @@ func PayloadStakeVerifierRemovedFromProto(svd *snapshot.Payload_StakeVerifierRem
 
 	for _, pr := range svd.StakeVerifierRemoved.PendingRemoved {
 		removed := &StakeRemoved{
-			EthereumAddress: pr.EthereumAddress,
+			EthereumAddress: crypto.EthereumChecksumAddress(pr.EthereumAddress),
 			TxID:            pr.TxId,
 			LogIndex:        pr.LogIndex,
 			BlockNumber:     pr.BlockNumber,
@@ -3320,7 +3321,7 @@ func (p *PayloadStakeVerifierRemoved) IntoProto() *snapshot.Payload_StakeVerifie
 	for _, p := range p.StakeVerifierRemoved {
 		pending = append(pending,
 			&snapshot.StakeVerifierPending{
-				EthereumAddress: p.EthereumAddress,
+				EthereumAddress: crypto.EthereumChecksumAddress(p.EthereumAddress),
 				VegaPublicKey:   p.VegaPubKey,
 				Amount:          p.Amount.String(),
 				BlockTime:       p.BlockTime,
@@ -3357,7 +3358,7 @@ func PayloadStakeVerifierDepositedFromProto(svd *snapshot.Payload_StakeVerifierD
 
 	for _, pd := range svd.StakeVerifierDeposited.PendingDeposited {
 		deposit := &StakeDeposited{
-			EthereumAddress: pd.EthereumAddress,
+			EthereumAddress: crypto.EthereumChecksumAddress(pd.EthereumAddress),
 			TxID:            pd.TxId,
 			LogIndex:        pd.LogIndex,
 			BlockNumber:     pd.BlockNumber,
@@ -3384,7 +3385,7 @@ func (p *PayloadStakeVerifierDeposited) IntoProto() *snapshot.Payload_StakeVerif
 	for _, p := range p.StakeVerifierDeposited {
 		pending = append(pending,
 			&snapshot.StakeVerifierPending{
-				EthereumAddress: p.EthereumAddress,
+				EthereumAddress: crypto.EthereumChecksumAddress(p.EthereumAddress),
 				VegaPublicKey:   p.VegaPubKey,
 				Amount:          p.Amount.String(),
 				BlockTime:       p.BlockTime,
