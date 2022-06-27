@@ -13,7 +13,11 @@
 package entities
 
 import (
+	"encoding/json"
+	"fmt"
 	"time"
+
+	v2 "code.vegaprotocol.io/protos/data-node/api/v2"
 
 	"code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/events"
@@ -113,6 +117,13 @@ func (p *Position) ToProto() *vega.Position {
 	}
 }
 
+func (p Position) ToProtoEdge(_ ...any) *v2.PositionEdge {
+	return &v2.PositionEdge{
+		Node:   p.ToProto(),
+		Cursor: p.Cursor().Encode(),
+	}
+}
+
 func (p *Position) AverageEntryPriceUint() *num.Uint {
 	uint, overflow := num.UintFromDecimal(p.AverageEntryPrice)
 	if overflow {
@@ -170,6 +181,16 @@ type PositionKey struct {
 	VegaTime time.Time
 }
 
+func (p Position) Cursor() *Cursor {
+	pc := PositionCursor{
+		MarketID: p.MarketID,
+		PartyID:  p.PartyID,
+		VegaTime: p.VegaTime,
+	}
+
+	return NewCursor(pc.String())
+}
+
 func (p Position) Key() PositionKey {
 	return PositionKey{p.MarketID, p.PartyID, p.VegaTime}
 }
@@ -196,4 +217,26 @@ func (p Position) Equal(q Position) bool {
 		q.Loss.Equal(q.Loss) &&
 		q.Adjustment.Equal(q.Adjustment) &&
 		q.VegaTime.Equal(q.VegaTime)
+}
+
+type PositionCursor struct {
+	PartyID  PartyID   `json:"party_id"`
+	MarketID MarketID  `json:"market_id"`
+	VegaTime time.Time `json:"vega_time"`
+}
+
+func (rc PositionCursor) String() string {
+	bs, err := json.Marshal(rc)
+	if err != nil {
+		// This should never happen.
+		panic(fmt.Errorf("could not marshal order cursor: %w", err))
+	}
+	return string(bs)
+}
+
+func (rc *PositionCursor) Parse(cursorString string) error {
+	if cursorString == "" {
+		return nil
+	}
+	return json.Unmarshal([]byte(cursorString), rc)
 }

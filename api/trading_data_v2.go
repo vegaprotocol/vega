@@ -55,6 +55,7 @@ type tradingDataServiceV2 struct {
 	marketsService       *service.Markets
 	partyService         *service.Party
 	riskService          *service.Risk
+	positionService      *service.Position
 	accountService       *service.Account
 	rewardService        *service.Reward
 	depositService       *service.Deposit
@@ -758,6 +759,35 @@ func (t *tradingDataServiceV2) GetMarkets(ctx context.Context, in *v2.GetMarkets
 
 	resp := &v2.GetMarketsResponse{
 		Markets: marketsConnection,
+	}
+
+	return resp, nil
+}
+
+// Get all Positions using a cursor based pagination model
+func (t *tradingDataServiceV2) GetPositionsByPartyConnection(ctx context.Context, in *v2.GetPositionsByPartyConnectionRequest) (*v2.GetPositionsByPartyConnectionResponse, error) {
+	if err := t.checkV2ApiEnabled(); err != nil {
+		return nil, err
+	}
+
+	pagination, err := entities.CursorPaginationFromProto(in.Pagination)
+	if err != nil {
+		return nil, apiError(codes.InvalidArgument, err)
+	}
+
+	positions, pageInfo, err := t.positionService.GetByPartyConnection(ctx, entities.NewPartyID(in.PartyId), entities.NewMarketID(in.MarketId), pagination)
+	if err != nil {
+		return nil, apiError(codes.Internal, err)
+	}
+
+	PositionsConnection := &v2.PositionConnection{
+		TotalCount: 0, // TODO: implement total count
+		Edges:      makeEdges[*v2.PositionEdge](positions),
+		PageInfo:   pageInfo.ToProto(),
+	}
+
+	resp := &v2.GetPositionsByPartyConnectionResponse{
+		Positions: PositionsConnection,
 	}
 
 	return resp, nil

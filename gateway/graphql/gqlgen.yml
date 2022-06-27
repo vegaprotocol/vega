@@ -276,6 +276,10 @@ models:
     model: code.vegaprotocol.io/protos/data-node/api/v2.MarketConnection
   MarketEdge:
     model: code.vegaprotocol.io/protos/data-node/api/v2.MarketEdge
+  PositionConnection:
+    model: code.vegaprotocol.io/protos/data-node/api/v2.PositionConnection
+  PositionEdge:
+    model: code.vegaprotocol.io/protos/data-node/api/v2.PositionEdge
   PartyConnection:
     model: code.vegaprotocol.io/protos/data-node/api/v2.PartyConnection
   PartyEdge:
