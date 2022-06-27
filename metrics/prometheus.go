@@ -526,7 +526,7 @@ func setupMetrics() error {
 		Gauge,
 		"active_subscriptions",
 		Namespace("datanode"),
-		Vectors("eventType"),
+		Vectors("apiType", "eventType"),
 		Help("Number of active subscriptions"),
 	); err != nil {
 		return err
