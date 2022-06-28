@@ -77,7 +77,6 @@ func Main(ctx context.Context) error {
 		Wallet,
 		Watch,
 		Tm,
-		Checkpoint,
 		Query,
 		Bridge,
 		paths.Paths,
