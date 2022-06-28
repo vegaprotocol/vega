@@ -60,6 +60,7 @@ func testRejectedIfDoesntReachMinimalAmount(t *testing.T) {
 	e.OnMinTransferQuantumMultiple(context.Background(), num.DecimalFromFloat(1))
 	// asset exists
 	e.assets.EXPECT().Get(gomock.Any()).Times(1).Return(assets.NewAsset(&mockAsset{num.DecimalFromFloat(100)}), nil)
+	e.tsvc.EXPECT().GetTimeNow().Times(1)
 	e.broker.EXPECT().Send(gomock.Any()).Times(1)
 
 	assert.EqualError(t,
@@ -76,6 +77,7 @@ func testInvalidTransferKind(t *testing.T) {
 	transfer := &types.TransferFunds{
 		Kind: types.TransferCommandKind(-1),
 	}
+	e.tsvc.EXPECT().GetTimeNow().Times(1)
 	assert.EqualError(t,
 		e.TransferFunds(ctx, transfer),
 		banking.ErrUnsupportedTransferKind.Error(),
@@ -85,6 +87,7 @@ func testInvalidTransferKind(t *testing.T) {
 func testOneOffTransferNotEnoughFundsToTransfer(t *testing.T) {
 	e := getTestEngine(t)
 	defer e.ctrl.Finish()
+	e.tsvc.EXPECT().GetTimeNow().Times(1)
 
 	ctx := context.Background()
 	transfer := &types.TransferFunds{
@@ -139,10 +142,10 @@ func testOneOffTransferInvalidTransfers(t *testing.T) {
 
 	// asset exists
 	e.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(nil, nil)
-
 	var baseCpy types.TransferBase
 
 	t.Run("invalid from account", func(t *testing.T) {
+		e.tsvc.EXPECT().GetTimeNow().Times(1)
 		e.broker.EXPECT().Send(gomock.Any()).Times(1)
 		baseCpy := transferBase
 		transfer.OneOff.TransferBase = &baseCpy
@@ -154,6 +157,7 @@ func testOneOffTransferInvalidTransfers(t *testing.T) {
 	})
 
 	t.Run("invalid to account", func(t *testing.T) {
+		e.tsvc.EXPECT().GetTimeNow().Times(1)
 		e.broker.EXPECT().Send(gomock.Any()).Times(1)
 		baseCpy = transferBase
 		transfer.OneOff.TransferBase = &baseCpy
@@ -165,6 +169,7 @@ func testOneOffTransferInvalidTransfers(t *testing.T) {
 	})
 
 	t.Run("unsupported from account type", func(t *testing.T) {
+		e.tsvc.EXPECT().GetTimeNow().Times(1)
 		e.broker.EXPECT().Send(gomock.Any()).Times(1)
 		baseCpy = transferBase
 		transfer.OneOff.TransferBase = &baseCpy
@@ -176,6 +181,7 @@ func testOneOffTransferInvalidTransfers(t *testing.T) {
 	})
 
 	t.Run("unsuported to account type", func(t *testing.T) {
+		e.tsvc.EXPECT().GetTimeNow().Times(1)
 		e.broker.EXPECT().Send(gomock.Any()).Times(1)
 		baseCpy = transferBase
 		transfer.OneOff.TransferBase = &baseCpy
@@ -187,6 +193,7 @@ func testOneOffTransferInvalidTransfers(t *testing.T) {
 	})
 
 	t.Run("zero funds transfer", func(t *testing.T) {
+		e.tsvc.EXPECT().GetTimeNow().Times(1)
 		e.broker.EXPECT().Send(gomock.Any()).Times(1)
 		baseCpy = transferBase
 		transfer.OneOff.TransferBase = &baseCpy
@@ -226,6 +233,7 @@ func testValidOneOffTransfer(t *testing.T) {
 	}
 
 	// asset exists
+	e.tsvc.EXPECT().GetTimeNow().Times(1)
 	e.assets.EXPECT().Get(gomock.Any()).Times(1).Return(
 		assets.NewAsset(&mockAsset{num.DecimalFromFloat(1)}), nil)
 	e.col.EXPECT().GetPartyGeneralAccount(gomock.Any(), gomock.Any()).Times(1).Return(&fromAcc, nil)
@@ -270,13 +278,18 @@ func testValidOneOffTransfer(t *testing.T) {
 		})
 
 	e.broker.EXPECT().Send(gomock.Any()).Times(2)
-
+	e.tsvc.EXPECT().GetTimeNow().AnyTimes()
 	assert.NoError(t, e.TransferFunds(ctx, transfer))
 }
 
 func testValidOneOffTransferWithDeliverOnInThePastStraightAway(t *testing.T) {
 	e := getTestEngine(t)
 	defer e.ctrl.Finish()
+
+	e.tsvc.EXPECT().GetTimeNow().DoAndReturn(
+		func() time.Time {
+			return time.Unix(10, 0)
+		}).Times(3)
 
 	// let's do a massive fee, easy to test
 	e.OnTransferFeeFactorUpdate(context.Background(), num.NewDecimalFromFloat(1))
@@ -348,13 +361,18 @@ func testValidOneOffTransferWithDeliverOnInThePastStraightAway(t *testing.T) {
 		})
 
 	e.broker.EXPECT().Send(gomock.Any()).Times(2)
-
 	assert.NoError(t, e.TransferFunds(ctx, transfer))
 }
 
 func testValidOneOffTransferWithDeliverOn(t *testing.T) {
 	e := getTestEngine(t)
 	defer e.ctrl.Finish()
+
+	// Time given to OnTick call - base time Unix(10, 0)
+	e.tsvc.EXPECT().GetTimeNow().DoAndReturn(
+		func() time.Time {
+			return time.Unix(10, 0)
+		}).Times(1)
 
 	// let's do a massive fee, easy to test
 	e.OnTransferFeeFactorUpdate(context.Background(), num.NewDecimalFromFloat(1))
@@ -381,6 +399,12 @@ func testValidOneOffTransferWithDeliverOn(t *testing.T) {
 	fromAcc := types.Account{
 		Balance: num.NewUint(100),
 	}
+
+	// Time given to e.Transferfunds - base time Unix(10,0)
+	e.tsvc.EXPECT().GetTimeNow().DoAndReturn(
+		func() time.Time {
+			return time.Unix(10, 0)
+		}).Times(2)
 
 	// asset exists
 	e.assets.EXPECT().Get(gomock.Any()).Times(1).Return(assets.NewAsset(&mockAsset{num.DecimalFromFloat(1)}), nil)
@@ -422,13 +446,21 @@ func testValidOneOffTransferWithDeliverOn(t *testing.T) {
 		})
 
 	e.broker.EXPECT().Send(gomock.Any()).Times(2)
-
 	assert.NoError(t, e.TransferFunds(ctx, transfer))
 
-	// nothing expected
+	// Run OnTick with time.Unix(11, 0) and expect nothing.
+	e.tsvc.EXPECT().GetTimeNow().DoAndReturn(
+		func() time.Time {
+			return time.Unix(11, 0)
+		}).Times(1)
+
 	e.OnTick(context.Background(), time.Unix(11, 0))
 
-	// now the funds are being paid
+	// Give time to trigger transfers.
+	e.tsvc.EXPECT().GetTimeNow().DoAndReturn(
+		func() time.Time {
+			return time.Unix(12, 0)
+		}).Times(1)
 
 	// assert the calculation of fees and transfer request are correct
 	e.broker.EXPECT().Send(gomock.Any()).Times(1)

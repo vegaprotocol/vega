@@ -54,13 +54,8 @@ type Svc struct {
 	needsFastForward bool
 }
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/time_mock.go -package mocks code.vegaprotocol.io/vega/epochtime VegaTime
-type VegaTime interface {
-	NotifyOnTick(func(context.Context, time.Time))
-}
-
 // NewService instantiates a new epochtime service.
-func NewService(l *logging.Logger, conf Config, vt VegaTime, broker Broker) *Svc {
+func NewService(l *logging.Logger, conf Config, broker Broker) *Svc {
 	s := &Svc{
 		config:               conf,
 		log:                  l,
@@ -75,9 +70,6 @@ func NewService(l *logging.Logger, conf Config, vt VegaTime, broker Broker) *Svc
 			EpochState: s.state,
 		},
 	}
-
-	// Subscribe to the vegatime onblocktime event
-	vt.NotifyOnTick(s.onTick)
 
 	return s
 }
@@ -102,7 +94,7 @@ func (s *Svc) OnBlockEnd(ctx context.Context) {
 // and avoid no man's epoch - once we get the first block past expiry we mark get ready to end the epoch. Once we get the on block end callback we're setting
 // the flag to be ready to start a new block on the next onTick (i.e. preceding the beginning of the next block). Once we get the next block's on tick we close
 // the epoch and notify on its end and start a new epoch (with incremented sequence) and notify about it.
-func (s *Svc) onTick(ctx context.Context, t time.Time) {
+func (s *Svc) OnTick(ctx context.Context, t time.Time) {
 	if t.IsZero() {
 		// We haven't got a block time yet, ignore
 		return
@@ -198,9 +190,9 @@ func (s *Svc) fastForward(ctx context.Context) {
 	tt := s.currentTime
 	for s.epoch.ExpireTime.Before(tt) {
 		s.OnBlockEnd(ctx)
-		s.onTick(ctx, s.epoch.ExpireTime.Add(1*time.Second))
+		s.OnTick(ctx, s.epoch.ExpireTime.Add(1*time.Second))
 	}
-	s.onTick(ctx, tt)
+	s.OnTick(ctx, tt)
 }
 
 // NotifyOnEpoch allows other services to register 2 callback functions.

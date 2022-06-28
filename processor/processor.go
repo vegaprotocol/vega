@@ -41,7 +41,7 @@ var (
 type TimeService interface {
 	GetTimeNow() time.Time
 	GetTimeLastBatch() time.Time
-	NotifyOnTick(f func(context.Context, time.Time))
+	NotifyOnTick(...func(context.Context, time.Time))
 	SetTimeNow(context.Context, time.Time)
 }
 
@@ -86,7 +86,7 @@ type GovernanceEngine interface {
 	SubmitProposal(context.Context, types.ProposalSubmission, string, string) (*governance.ToSubmit, error)
 	FinaliseEnactment(ctx context.Context, prop *types.Proposal)
 	AddVote(context.Context, types.VoteSubmission, string) error
-	OnChainTimeUpdate(context.Context, time.Time) ([]*governance.ToEnact, []*governance.VoteClosed)
+	OnTick(context.Context, time.Time) ([]*governance.ToEnact, []*governance.VoteClosed)
 	RejectProposal(context.Context, *types.Proposal, types.ProposalError, error) error
 	Hash() []byte
 }

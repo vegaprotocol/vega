@@ -67,6 +67,6 @@ func (s *Store) Load(ctx context.Context, data []byte) error {
 		return err
 	}
 	// force the updates dispatch
-	s.OnChainTimeUpdate(ctx, time.Time{})
+	s.OnTick(ctx, time.Time{})
 	return nil
 }

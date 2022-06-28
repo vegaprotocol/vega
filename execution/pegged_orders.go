@@ -15,7 +15,6 @@ package execution
 import (
 	"context"
 	"sort"
-	"time"
 
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/matching"
@@ -24,21 +23,23 @@ import (
 )
 
 type PeggedOrders struct {
-	currentTime int64
+	timeService TimeService
 	orders      []*types.Order
 
 	ordersChanged bool
 }
 
-func NewPeggedOrders() *PeggedOrders {
+func NewPeggedOrders(ts TimeService) *PeggedOrders {
 	return &PeggedOrders{
-		orders: []*types.Order{},
+		timeService: ts,
+		orders:      []*types.Order{},
 	}
 }
 
-func NewPeggedOrdersFromSnapshot(orders []*types.Order) *PeggedOrders {
+func NewPeggedOrdersFromSnapshot(orders []*types.Order, tm TimeService) *PeggedOrders {
 	return &PeggedOrders{
-		orders: orders,
+		timeService: tm,
+		orders:      orders,
 	}
 }
 
@@ -77,12 +78,8 @@ func (p *PeggedOrders) GetState() []*types.Order {
 	return ordersCopy
 }
 
-func (p *PeggedOrders) OnTimeUpdate(t time.Time) {
-	p.currentTime = t.UnixNano()
-}
-
 func (p *PeggedOrders) Park(o *types.Order) {
-	o.UpdatedAt = p.currentTime
+	o.UpdatedAt = p.timeService.GetTimeNow().UnixNano()
 	o.Status = types.OrderStatusParked
 	o.Price = num.Zero()
 	o.OriginalPrice = num.Zero()
@@ -131,9 +128,11 @@ func (p *PeggedOrders) RemoveAllForParty(
 	ctx context.Context, party string, status types.OrderStatus,
 ) (orders []*types.Order, evts []events.Event) {
 	n := 0
+	now := p.timeService.GetTimeNow().UnixNano()
+
 	for _, o := range p.orders {
 		if o.Party == party /* && o.Status == types.Order_STATUS_PARKED */ {
-			o.UpdatedAt = p.currentTime
+			o.UpdatedAt = now
 			o.Status = status
 			orders = append(orders, o)
 			evts = append(evts, events.NewOrderEvent(ctx, o))
@@ -152,10 +151,11 @@ func (p *PeggedOrders) RemoveAllParkedForParty(
 	ctx context.Context, party string, status types.OrderStatus,
 ) (orders []*types.Order, evts []events.Event) {
 	n := 0
+	now := p.timeService.GetTimeNow().UnixNano()
 
 	for _, o := range p.orders {
 		if o.Party == party && o.Status == types.OrderStatusParked {
-			o.UpdatedAt = p.currentTime
+			o.UpdatedAt = now
 			o.Status = status
 			orders = append(orders, o)
 			evts = append(evts, events.NewOrderEvent(ctx, o))

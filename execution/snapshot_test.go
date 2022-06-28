@@ -331,11 +331,10 @@ func getEngine(t *testing.T, now time.Time) *snapshotTestData {
 	broker := stubs.NewBrokerStub()
 	timeService := stubs.NewTimeStub()
 	timeService.SetTime(now)
-	currentTime := timeService.GetTimeNow()
-	collateralEngine := collateral.New(log, collateral.NewDefaultConfig(), broker, currentTime)
-	oracleEngine := oracles.NewEngine(log, oracles.NewDefaultConfig(), currentTime, broker, timeService)
+	collateralEngine := collateral.New(log, collateral.NewDefaultConfig(), timeService, broker)
+	oracleEngine := oracles.NewEngine(log, oracles.NewDefaultConfig(), timeService, broker)
 
-	epochEngine := epochtime.NewService(log, epochtime.NewDefaultConfig(), timeService, broker)
+	epochEngine := epochtime.NewService(log, epochtime.NewDefaultConfig(), broker)
 	marketActivityTracker := execution.NewMarketActivityTracker(logging.NewTestLogger(), epochEngine)
 
 	ethAsset := types.Asset{

@@ -73,6 +73,12 @@ type Broker interface {
 	SendBatch(events []events.Event)
 }
 
+// TimeService provide the time of the vega node.
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/time_service_mock.go -package mocks code.vegaprotocol.io/vega/collateral TimeService
+type TimeService interface {
+	GetTimeNow() time.Time
+}
+
 // Engine is handling the power of the collateral.
 type Engine struct {
 	Config
@@ -85,9 +91,8 @@ type Engine struct {
 	// any assets at all
 	partiesAccs  map[string]map[string]*types.Account
 	hashableAccs []*types.Account
+	timeService  TimeService
 	broker       Broker
-	// could be a unix.Time but storing it like this allow us to now time.UnixNano() all the time
-	currentTime int64
 
 	idbuf []byte
 
@@ -98,7 +103,7 @@ type Engine struct {
 }
 
 // New instantiates a new collateral engine.
-func New(log *logging.Logger, conf Config, broker Broker, now time.Time) *Engine {
+func New(log *logging.Logger, conf Config, ts TimeService, broker Broker) *Engine {
 	// setup logger
 	log = log.Named(namedLogger)
 	log.SetLevel(conf.Level.Get())
@@ -108,18 +113,12 @@ func New(log *logging.Logger, conf Config, broker Broker, now time.Time) *Engine
 		accs:          make(map[string]*types.Account, initialAccountSize),
 		partiesAccs:   map[string]map[string]*types.Account{},
 		hashableAccs:  []*types.Account{},
+		timeService:   ts,
 		broker:        broker,
-		currentTime:   now.UnixNano(),
 		idbuf:         make([]byte, 256),
 		enabledAssets: map[string]types.Asset{},
 		state:         newAccState(),
 	}
-}
-
-// OnChainTimeUpdate is used to be specified as a callback in over services
-// in order to be called when the chain time is updated (basically EndBlock).
-func (e *Engine) OnChainTimeUpdate(_ context.Context, t time.Time) {
-	e.currentTime = t.UnixNano()
 }
 
 func (e *Engine) addPartyAccount(party, accid string, acc *types.Account) {
@@ -563,6 +562,7 @@ func (e *Engine) FinalSettlement(ctx context.Context, marketID string, transfers
 		totalAmountCollected = num.Zero()
 	)
 
+	now := e.timeService.GetTimeNow().UnixNano()
 	brokerEvts := make([]events.Event, 0, len(transfers))
 
 	settle, insurance, err := e.getSystemAccounts(marketID, asset)
@@ -639,7 +639,7 @@ func (e *Engine) FinalSettlement(ctx context.Context, marketID string, transfers
 					logging.String("market-id", settle.MarketID))
 
 				brokerEvts = append(brokerEvts,
-					events.NewLossSocializationEvent(ctx, transfer.Owner, marketID, delta, false, e.currentTime))
+					events.NewLossSocializationEvent(ctx, transfer.Owner, marketID, delta, false, now))
 			}
 		}
 	}
@@ -665,7 +665,7 @@ func (e *Engine) FinalSettlement(ctx context.Context, marketID string, transfers
 		expectCollected: expCollected,
 		collected:       totalAmountCollected,
 		requests:        make([]request, 0, len(transfers)-winidx),
-		ts:              e.currentTime,
+		ts:              now,
 	}
 
 	if distr.LossSocializationEnabled() {
@@ -772,6 +772,8 @@ func (e *Engine) MarkToMarket(ctx context.Context, marketID string, transfers []
 
 	// create batch of events
 	brokerEvts := make([]events.Event, 0, len(transfers))
+	now := e.timeService.GetTimeNow().UnixNano()
+
 	// iterate over transfer until we get the first win, so we need we accumulated all loss
 	for i, evt := range transfers {
 		party := evt.Party()
@@ -866,7 +868,7 @@ func (e *Engine) MarkToMarket(ctx context.Context, marketID string, transfers []
 					logging.String("market-id", settle.MarketID))
 
 				brokerEvts = append(brokerEvts,
-					events.NewLossSocializationEvent(ctx, party, settle.MarketID, delta, false, e.currentTime))
+					events.NewLossSocializationEvent(ctx, party, settle.MarketID, delta, false, now))
 			}
 			marginEvts = append(marginEvts, marginEvt)
 		} else {
@@ -901,7 +903,7 @@ func (e *Engine) MarkToMarket(ctx context.Context, marketID string, transfers []
 		expectCollected: expCollected,
 		collected:       settle.Balance,
 		requests:        make([]request, 0, len(transfers)-winidx),
-		ts:              e.currentTime,
+		ts:              now,
 	}
 
 	if distr.LossSocializationEnabled() {
@@ -1808,6 +1810,7 @@ func (e *Engine) getLedgerEntries(ctx context.Context, req *types.TransferReques
 		})
 	}
 	amount := req.Amount
+	now := e.timeService.GetTimeNow().UnixNano()
 	for _, acc := range req.FromAccount {
 		// give each to account an equal share
 		nToAccounts := num.NewUint(uint64(len(req.ToAccount)))
@@ -1837,7 +1840,7 @@ func (e *Engine) getLedgerEntries(ctx context.Context, req *types.TransferReques
 					Amount:      parts,
 					Reference:   req.Reference,
 					Type:        "settlement",
-					Timestamp:   e.currentTime,
+					Timestamp:   now,
 				}
 				ret.Transfers = append(ret.Transfers, lm)
 				to.Balance.AddSum(parts)
@@ -1871,7 +1874,7 @@ func (e *Engine) getLedgerEntries(ctx context.Context, req *types.TransferReques
 					Amount:      parts,
 					Reference:   req.Reference,
 					Type:        "settlement",
-					Timestamp:   e.currentTime,
+					Timestamp:   now,
 				}
 				ret.Transfers = append(ret.Transfers, lm)
 				to.Account.Balance.AddSum(parts)
@@ -2226,6 +2229,7 @@ func (e *Engine) RemoveDistressed(ctx context.Context, parties []events.MarketPo
 	resp := types.TransferResponse{
 		Transfers: make([]*types.LedgerEntry, 0, tl),
 	}
+	now := e.timeService.GetTimeNow().UnixNano()
 	for _, party := range parties {
 		bondAcc, err := e.GetAccountByID(e.accountID(marketID, party.Party(), asset, types.AccountTypeBond))
 		if err != nil {
@@ -2247,7 +2251,7 @@ func (e *Engine) RemoveDistressed(ctx context.Context, parties []events.MarketPo
 				Amount:      bondAcc.Balance.Clone(),
 				Reference:   types.TransferTypeMarginLow.String(),
 				Type:        "position-resolution",
-				Timestamp:   e.currentTime,
+				Timestamp:   now,
 			})
 			if err := e.IncrementBalance(ctx, marginAcc.ID, bondAcc.Balance); err != nil {
 				return nil, err
@@ -2265,7 +2269,7 @@ func (e *Engine) RemoveDistressed(ctx context.Context, parties []events.MarketPo
 				Amount:      genAcc.Balance.Clone(),
 				Reference:   types.TransferTypeMarginLow.String(),
 				Type:        "position-resolution",
-				Timestamp:   e.currentTime,
+				Timestamp:   now,
 			})
 			if err := e.IncrementBalance(ctx, marginAcc.ID, genAcc.Balance); err != nil {
 				return nil, err
@@ -2282,7 +2286,7 @@ func (e *Engine) RemoveDistressed(ctx context.Context, parties []events.MarketPo
 				Amount:      marginAcc.Balance.Clone(),
 				Reference:   types.TransferTypeMarginConfiscated.String(),
 				Type:        "position-resolution",
-				Timestamp:   e.currentTime,
+				Timestamp:   now,
 			})
 			if err := e.IncrementBalance(ctx, ins.ID, marginAcc.Balance); err != nil {
 				return nil, err
@@ -2308,6 +2312,7 @@ func (e *Engine) ClearPartyMarginAccount(ctx context.Context, party, market, ass
 	resp := types.TransferResponse{
 		Transfers: []*types.LedgerEntry{},
 	}
+	now := e.timeService.GetTimeNow().UnixNano()
 
 	if !acc.Balance.IsZero() {
 		genAcc, err := e.GetAccountByID(e.accountID(noMarket, party, asset, types.AccountTypeGeneral))
@@ -2321,7 +2326,7 @@ func (e *Engine) ClearPartyMarginAccount(ctx context.Context, party, market, ass
 			Amount:      acc.Balance.Clone(),
 			Reference:   types.TransferTypeMarginHigh.String(),
 			Type:        types.TransferTypeMarginHigh.String(),
-			Timestamp:   e.currentTime,
+			Timestamp:   now,
 		})
 		if err := e.IncrementBalance(ctx, genAcc.ID, acc.Balance); err != nil {
 			return nil, err

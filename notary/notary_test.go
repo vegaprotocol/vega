@@ -18,7 +18,7 @@ import (
 	"time"
 
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
-	bmock "code.vegaprotocol.io/vega/broker/mocks"
+	bmocks "code.vegaprotocol.io/vega/broker/mocks"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/notary"
 	"code.vegaprotocol.io/vega/notary/mocks"
@@ -34,7 +34,6 @@ type testNotary struct {
 	ctrl   *gomock.Controller
 	top    *mocks.MockValidatorTopology
 	cmd    *mocks.MockCommander
-	tt     *mocks.MockTimeTicker
 	onTick func(context.Context, time.Time)
 }
 
@@ -42,24 +41,17 @@ func getTestNotary(t *testing.T) *testNotary {
 	t.Helper()
 	ctrl := gomock.NewController(t)
 	top := mocks.NewMockValidatorTopology(ctrl)
-	broker := bmock.NewMockBroker(ctrl)
+	broker := bmocks.NewMockBroker(ctrl)
 	cmd := mocks.NewMockCommander(ctrl)
-	tt := mocks.NewMockTimeTicker(ctrl)
 	broker.EXPECT().Send(gomock.Any()).AnyTimes()
 	broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
-	var onTick func(context.Context, time.Time)
-	// register the call back, will be needed during tests
-	tt.EXPECT().NotifyOnTick(gomock.Any()).Times(1).Do(func(f func(context.Context, time.Time)) {
-		onTick = f
-	})
-	notr := notary.NewWithSnapshot(logging.NewTestLogger(), notary.NewDefaultConfig(), top, broker, cmd, tt)
+	notr := notary.NewWithSnapshot(logging.NewTestLogger(), notary.NewDefaultConfig(), top, broker, cmd)
 	return &testNotary{
 		SnapshotNotary: notr,
 		top:            top,
 		ctrl:           ctrl,
 		cmd:            cmd,
-		onTick:         onTick,
-		tt:             tt,
+		onTick:         notr.OnTick,
 	}
 }
 

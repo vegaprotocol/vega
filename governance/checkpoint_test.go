@@ -42,7 +42,7 @@ func testCheckpointSuccess(t *testing.T) {
 	proposer := eng.newValidParty("proposer", 1)
 	voter1 := eng.newValidPartyTimes("voter-1", 7, 2)
 	voter2 := eng.newValidPartyTimes("voter2", 1, 0)
-	proposal := eng.newProposalForNewMarket(proposer.Id, time.Now())
+	proposal := eng.newProposalForNewMarket(proposer.Id, eng.tsvc.GetTimeNow())
 	ctx := context.Background()
 
 	// setup
@@ -78,7 +78,7 @@ func testCheckpointSuccess(t *testing.T) {
 	require.Empty(t, data)
 
 	// when
-	eng.OnChainTimeUpdate(ctx, afterClosing)
+	eng.OnTick(ctx, afterClosing)
 
 	// the proposal should already be in the snapshot
 	data, err = eng.Checkpoint()
@@ -97,7 +97,7 @@ func testCheckpointSuccess(t *testing.T) {
 
 	// when
 	// no calculations, no state change, simply removed from governance engine
-	toBeEnacted, closed := eng.OnChainTimeUpdate(ctx, afterEnactment)
+	toBeEnacted, closed := eng.OnTick(ctx, afterEnactment)
 
 	// then
 	require.NotEmpty(t, toBeEnacted)
@@ -117,7 +117,7 @@ func testCheckpointSuccess(t *testing.T) {
 	// Load checkpoint
 	require.NoError(t, eng2.Load(ctx, data))
 
-	enact, noClose := eng2.OnChainTimeUpdate(ctx, afterEnactment)
+	enact, noClose := eng2.OnTick(ctx, afterEnactment)
 	require.Empty(t, noClose)
 	require.NotEmpty(t, enact)
 
@@ -129,6 +129,7 @@ func testCheckpointLoadingWithMissingRationaleShouldNotBeProblem(t *testing.T) {
 	eng := getTestEngine(t)
 	defer eng.ctrl.Finish()
 
+	now := eng.tsvc.GetTimeNow()
 	// given
 	proposalWithoutRationale := &vegapb.Proposal{
 		Id:        vgrand.RandomStr(5),
@@ -137,8 +138,8 @@ func testCheckpointLoadingWithMissingRationaleShouldNotBeProblem(t *testing.T) {
 		State:     types.ProposalStateEnacted,
 		Timestamp: 123456789,
 		Terms: &vegapb.ProposalTerms{
-			ClosingTimestamp:    eng.now.Add(10 * time.Minute).Unix(),
-			EnactmentTimestamp:  eng.now.Add(30 * time.Minute).Unix(),
+			ClosingTimestamp:    now.Add(10 * time.Minute).Unix(),
+			EnactmentTimestamp:  now.Add(30 * time.Minute).Unix(),
 			ValidationTimestamp: 0,
 			Change:              &vegapb.ProposalTerms_NewFreeform{},
 		},

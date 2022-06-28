@@ -19,7 +19,6 @@ import (
 
 	mbroker "code.vegaprotocol.io/vega/broker/mocks"
 	"code.vegaprotocol.io/vega/epochtime"
-	"code.vegaprotocol.io/vega/epochtime/mocks"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
 
@@ -36,7 +35,6 @@ var (
 type tstSvc struct {
 	*epochtime.Svc
 	ctrl   *gomock.Controller
-	time   *mocks.MockVegaTime
 	broker *mbroker.MockBroker
 	cb     func(context.Context, time.Time)
 }
@@ -45,24 +43,20 @@ func getEpochServiceMT(t *testing.T) *tstSvc {
 	t.Helper()
 	log := logging.NewTestLogger()
 	ctrl := gomock.NewController(t)
-	tm := mocks.NewMockVegaTime(ctrl)
 	broker := mbroker.NewMockBroker(ctrl)
 	ret := &tstSvc{
 		ctrl:   ctrl,
-		time:   tm,
 		broker: broker,
 	}
-
-	tm.EXPECT().NotifyOnTick(gomock.Any()).Times(1).Do(func(cb func(context.Context, time.Time)) {
-		ret.cb = cb
-	})
 
 	ret.Svc = epochtime.NewService(
 		log,
 		epochtime.NewDefaultConfig(),
-		tm,
 		broker,
 	)
+
+	ret.cb = ret.Svc.OnTick
+
 	_ = ret.OnEpochLengthUpdate(context.Background(), time.Hour*24) // set default epoch duration
 	return ret
 }

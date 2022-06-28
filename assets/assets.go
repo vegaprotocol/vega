@@ -13,16 +13,15 @@
 package assets
 
 import (
-	"context"
 	"errors"
 	"sync"
-	"time"
 
 	"code.vegaprotocol.io/vega/assets/builtin"
 	"code.vegaprotocol.io/vega/assets/erc20"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/nodewallets"
 	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/vegatime"
 )
 
 var (
@@ -30,12 +29,6 @@ var (
 	ErrAssetDoesNotExist  = errors.New("asset does not exist")
 	ErrUnknownAssetSource = errors.New("unknown asset source")
 )
-
-// TimeService ...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/time_service_mock.go -package mocks code.vegaprotocol.io/vega/assets TimeService
-type TimeService interface {
-	NotifyOnTick(f func(context.Context, time.Time))
-}
 
 type Service struct {
 	log *logging.Logger
@@ -65,13 +58,13 @@ func New(
 	cfg Config,
 	nw *nodewallets.NodeWallets,
 	ethClient erc20.ETHClient,
-	ts TimeService,
+	ts vegatime.TimeService,
 	isValidator bool,
 ) *Service {
 	log = log.Named(namedLogger)
 	log.SetLevel(cfg.Level.Get())
 
-	s := &Service{
+	return &Service{
 		log:           log,
 		cfg:           cfg,
 		assets:        map[string]*Asset{},
@@ -85,8 +78,6 @@ func New(
 		isValidator: isValidator,
 		ethToVega:   map[string]string{},
 	}
-	ts.NotifyOnTick(s.onTick)
-	return s
 }
 
 // ReloadConf updates the internal configuration.
@@ -102,8 +93,6 @@ func (s *Service) ReloadConf(cfg Config) {
 
 	s.cfg = cfg
 }
-
-func (*Service) onTick(_ context.Context, t time.Time) {}
 
 // Enable move the state of an from pending the list of valid and accepted assets.
 func (s *Service) Enable(assetID string) error {

@@ -18,7 +18,6 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/broker/mocks"
-
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 )
@@ -26,8 +25,7 @@ import (
 func TestTimeUpdateEventIsSentBeforeCallbacksAreInvoked(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
-
-	m := mocks.NewMockBrokerI(ctrl)
+	m := mocks.NewMockBroker(ctrl)
 
 	s := New(Config{}, m)
 

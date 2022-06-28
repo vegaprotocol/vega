@@ -872,7 +872,7 @@ func TestEvents_CloseOutPartyWithNotEnoughLiquidity(t *testing.T) {
 	}
 	// move time forwards 20 seconds, so the opening auction can end
 	now = now.Add(time.Second * 20)
-	tm.market.OnChainTimeUpdate(ctx, now)
+	tm.market.OnTick(ctx, now)
 	// leaveAuction(tm, ctx, &now)
 
 	// Add a GFN order
@@ -1001,7 +1001,7 @@ func TestEvents_PeggedOrders(t *testing.T) {
 	}
 	// move time forwards 20 seconds, so the opening auction can end
 	now = now.Add(time.Second * 20)
-	tm.market.OnChainTimeUpdate(ctx, now)
+	tm.market.OnTick(ctx, now)
 	// leaveAuction(tm, ctx, &now)
 
 	o1 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGFN, "Order01", types.SideBuy, "party-B", 2, 100)

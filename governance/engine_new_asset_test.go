@@ -41,7 +41,7 @@ func testSubmittingProposalForNewAssetSucceeds(t *testing.T) {
 
 	// given
 	party := eng.newValidParty("a-valid-party", 123456789)
-	proposal := eng.newProposalForNewAsset(party.Id, time.Now())
+	proposal := eng.newProposalForNewAsset(party.Id, eng.tsvc.GetTimeNow())
 
 	// setup
 	eng.assets.EXPECT().NewAsset(proposal.ID, gomock.Any()).Times(1).Return(proposal.ID, nil)
@@ -65,9 +65,8 @@ func testSubmittingProposalForNewAssetWithClosingTimeBeforeValidationTimeFails(t
 	defer eng.ctrl.Finish()
 
 	// given
-	now := time.Now()
 	party := vgrand.RandomStr(5)
-	proposal := eng.newProposalForNewAsset(party, now)
+	proposal := eng.newProposalForNewAsset(party, eng.tsvc.GetTimeNow())
 	proposal.Terms.ValidationTimestamp = proposal.Terms.ClosingTimestamp + 10
 
 	// setup
@@ -87,7 +86,7 @@ func testVotingDuringValidationOfProposalForNewAssetSucceeds(t *testing.T) {
 
 	// when
 	proposer := vgrand.RandomStr(5)
-	proposal := eng.newProposalForNewAsset(proposer, time.Now())
+	proposal := eng.newProposalForNewAsset(proposer, eng.tsvc.GetTimeNow())
 
 	// setup
 	var bAsset *assets.Asset
@@ -144,7 +143,7 @@ func testVotingDuringValidationOfProposalForNewAssetSucceeds(t *testing.T) {
 	eng.expectOpenProposalEvent(t, proposer, proposal.ID)
 
 	// when
-	eng.OnChainTimeUpdate(context.Background(), afterValidation)
+	eng.OnTick(context.Background(), afterValidation)
 
 	// given
 	afterClosing := time.Unix(proposal.Terms.ClosingTimestamp, 0).Add(time.Second)
@@ -154,7 +153,7 @@ func testVotingDuringValidationOfProposalForNewAssetSucceeds(t *testing.T) {
 	eng.expectTotalGovernanceTokenFromVoteEvents(t, "1", "7")
 
 	// when
-	eng.OnChainTimeUpdate(context.Background(), afterClosing)
+	eng.OnTick(context.Background(), afterClosing)
 
 	// given
 	voter2 := vgrand.RandomStr(5)
@@ -171,7 +170,7 @@ func testVotingDuringValidationOfProposalForNewAssetSucceeds(t *testing.T) {
 
 	// when
 	// no calculations, no state change, simply removed from governance engine
-	toBeEnacted, _ := eng.OnChainTimeUpdate(context.Background(), afterEnactment)
+	toBeEnacted, _ := eng.OnTick(context.Background(), afterEnactment)
 
 	// then
 	require.Len(t, toBeEnacted, 1)

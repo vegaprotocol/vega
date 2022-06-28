@@ -167,7 +167,7 @@ func testCanMoveFromPendingToActiveState(t *testing.T) {
 		assert.NoError(t, err)
 	}
 	// now move to after the opening auction time
-	tm.market.OnChainTimeUpdate(vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash()), now.Add(40*time.Second))
+	tm.market.OnTick(vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash()), now.Add(40*time.Second))
 	assert.Equal(t, types.MarketStateActive, tm.market.State())
 }
 
@@ -201,7 +201,7 @@ func testCanPlaceOrderInActiveState(t *testing.T) {
 		assert.NoError(t, err)
 	}
 	// now move to after the opening auction time
-	tm.market.OnChainTimeUpdate(vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash()), now.Add(40*time.Second))
+	tm.market.OnTick(vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash()), now.Add(40*time.Second))
 	assert.Equal(t, types.MarketStateActive, tm.market.State())
 
 	addAccountWithAmount(tm, "someparty", 100000000)

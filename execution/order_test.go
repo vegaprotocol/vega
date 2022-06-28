@@ -255,7 +255,7 @@ func TestMarkPriceUpdateAfterPartialFill(t *testing.T) {
 	}
 	// leave opening auction
 	now = now.Add(2 * time.Second)
-	tm.market.OnChainTimeUpdate(vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash()), now)
+	tm.market.OnTick(vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash()), now)
 
 	orderBuy := &types.Order{
 		Status:      types.OrderStatusActive,
@@ -307,7 +307,7 @@ func TestExpireCancelGTCOrder(t *testing.T) {
 	addAccount(t, tm, party1)
 
 	orderBuy := &types.Order{
-		CreatedAt:   10000000000,
+		CreatedAt:   int64(now.Second()),
 		Status:      types.OrderStatusActive,
 		TimeInForce: types.OrderTimeInForceGTC,
 		ID:          "someid",
@@ -325,9 +325,7 @@ func TestExpireCancelGTCOrder(t *testing.T) {
 	assert.NotNil(t, buyConfirmation)
 	assert.NoError(t, err)
 
-	// Move the current time forward
-	tm.market.OnChainTimeUpdate(vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash()), time.Unix(10, 100))
-
+	tm.market.OnTick(vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash()), time.Unix(10, 100))
 	exp := int64(10000000010)
 	amend := &types.OrderAmendment{
 		OrderID:     buyConfirmation.Order.ID,
@@ -335,6 +333,8 @@ func TestExpireCancelGTCOrder(t *testing.T) {
 		ExpiresAt:   &exp,
 		TimeInForce: types.OrderTimeInForceGTT,
 	}
+
+	tm.now = time.Unix(10, 100)
 	amended, err := tm.market.AmendOrder(context.Background(), amend, party1, vgcrypto.RandomHash())
 	assert.NotNil(t, amended)
 	assert.NoError(t, err)
@@ -343,8 +343,8 @@ func TestExpireCancelGTCOrder(t *testing.T) {
 	assert.EqualValues(t, amended.Order.TimeInForce, types.OrderTimeInForceGTT)
 	assert.EqualValues(t, amended.Order.Status, types.OrderStatusExpired)
 	assert.EqualValues(t, amended.Order.CreatedAt, 10000000000)
-	assert.EqualValues(t, amended.Order.ExpiresAt, 10000000010)
-	assert.EqualValues(t, amended.Order.UpdatedAt, 10000000100)
+	assert.EqualValues(t, amended.Order.ExpiresAt, exp)
+	assert.EqualValues(t, 10000000100, amended.Order.UpdatedAt)
 }
 
 func TestAmendPartialFillCancelReplace(t *testing.T) {
@@ -388,7 +388,7 @@ func TestAmendPartialFillCancelReplace(t *testing.T) {
 	}
 	// leave opening auction
 	now = now.Add(2 * time.Second)
-	tm.market.OnChainTimeUpdate(vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash()), now)
+	tm.market.OnTick(vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash()), now)
 
 	orderBuy := &types.Order{
 		Status:      types.OrderStatusActive,
@@ -520,7 +520,7 @@ func TestPartialFilledWashTrade(t *testing.T) {
 	}
 	// leave opening auction
 	now = now.Add(2 * time.Second)
-	tm.market.OnChainTimeUpdate(ctx, now)
+	tm.market.OnTick(ctx, now)
 
 	orderSell1 := &types.Order{
 		Status:      types.OrderStatusActive,
@@ -658,11 +658,6 @@ func sendOrder(t *testing.T, tm *testMarket, now *time.Time, orderType types.Ord
 	confirmation, err := tm.market.SubmitOrder(context.Background(), order)
 	require.NotNil(t, confirmation)
 	assert.NoError(t, err)
-
-	// Move time forward one second
-	//	*now = now.Add(time.Second)
-	//	tm.market.OnChainTimeUpdate(*now)
-
 	return confirmation.Order.ID
 }
 
@@ -738,7 +733,7 @@ func TestUnableToAmendGFAGFN(t *testing.T) {
 	}
 	// leave opening auction
 	now = now.Add(2 * time.Second)
-	tm.market.OnChainTimeUpdate(vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash()), now)
+	tm.market.OnTick(vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash()), now)
 
 	// test_AmendMarketOrderFail
 	orderID := sendOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideSell, mainParty, 10, 100)
@@ -843,7 +838,7 @@ func testPeggedOrderUnpark(t *testing.T) {
 
 	// leave opening auction
 	now = now.Add(2 * time.Second)
-	tm.market.OnChainTimeUpdate(ctx, now)
+	tm.market.OnTick(ctx, now)
 	// Send a new order to set the BEST_ASK price and force the parked order to unpark
 	sendOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideSell, "party2", 5, 15)
 
@@ -876,7 +871,7 @@ func testPeggedOrderAmendToMoveReference(t *testing.T) {
 	}
 	// leave opening auction
 	now = now.Add(2 * time.Second)
-	tm.market.OnChainTimeUpdate(ctx, now)
+	tm.market.OnTick(ctx, now)
 
 	// Place 2 orders to create valid reference prices
 	bestBidOrder := sendOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideBuy, "party1", 1, 90)
@@ -920,7 +915,7 @@ func testPeggedOrderFilledOrder(t *testing.T) {
 	}
 	// leave opening auction
 	now = now.Add(2 * time.Second)
-	tm.market.OnChainTimeUpdate(ctx, now)
+	tm.market.OnTick(ctx, now)
 
 	// Place 2 orders to create valid reference prices
 	sendOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideBuy, "party1", 1, 90)
@@ -983,7 +978,7 @@ func testParkedOrdersAreUnparkedWhenPossible(t *testing.T) {
 
 	// leave opening auction
 	now = now.Add(2 * time.Second)
-	tm.market.OnChainTimeUpdate(ctx, now)
+	tm.market.OnTick(ctx, now)
 	assert.Equal(t, 0, tm.market.GetParkedOrderCount())
 	assert.Equal(t, 1, tm.market.GetPeggedOrderCount())
 }
@@ -1022,7 +1017,7 @@ func testPeggedOrdersLeavingAuction(t *testing.T) {
 	assert.Equal(t, 1, tm.market.GetParkedOrderCount())
 
 	// Update the time to force the auction to end
-	tm.market.OnChainTimeUpdate(ctx, auctionClose)
+	tm.market.OnTick(ctx, auctionClose)
 	assert.Equal(t, 1, tm.market.GetPeggedOrderCount())
 	assert.Equal(t, 0, tm.market.GetParkedOrderCount())
 }
@@ -1106,7 +1101,7 @@ func testPeggedOrderAdd(t *testing.T) {
 	}
 	// leave auction
 	now = now.Add(2 * time.Second)
-	tm.market.OnChainTimeUpdate(ctx, now)
+	tm.market.OnTick(ctx, now)
 
 	sendOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideBuy, "party1", 1, 100)
 	sendOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideSell, "party1", 1, 102)
@@ -1151,7 +1146,7 @@ func testPeggedOrderWithReprice(t *testing.T) {
 	}
 	// leave auction
 	now = now.Add(2 * time.Second)
-	tm.market.OnChainTimeUpdate(ctx, now)
+	tm.market.OnTick(ctx, now)
 
 	sendOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideBuy, "party1", 1, 90)
 	sendOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideSell, "party1", 1, 110)
@@ -1605,7 +1600,7 @@ func testPeggedOrderOutputMessages(t *testing.T) {
 	}
 	// leave opening auction
 	now = now.Add(2 * time.Second)
-	tm.market.OnChainTimeUpdate(ctx, now)
+	tm.market.OnTick(ctx, now)
 
 	order := getOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideSell, "user1", 10, 0)
 	order.PeggedOrder = newPeggedOrder(types.PeggedReferenceBestAsk, 10)
@@ -1680,7 +1675,7 @@ func testPeggedOrderOutputMessages2(t *testing.T) {
 	}
 	// leave opening auction
 	now = now.Add(2 * time.Second)
-	tm.market.OnChainTimeUpdate(ctx, now)
+	tm.market.OnTick(ctx, now)
 
 	// Create a pegged parked order
 	order := getOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideBuy, "user1", 10, 0)
@@ -1792,7 +1787,7 @@ func testPeggedOrderRepricing(t *testing.T) {
 			}
 			// leave auction
 			now := now.Add(2 * time.Second)
-			tm.market.OnChainTimeUpdate(ctx, now)
+			tm.market.OnTick(ctx, now)
 
 			// Create buy and sell orders
 			sendOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideBuy, "party1", 1, buyPrice)
@@ -1948,7 +1943,7 @@ func testPeggedOrderAmendParkedToLive(t *testing.T) {
 	assert.Equal(t, 1, tm.market.GetPeggedOrderCount())
 	// leave opening auction
 	now = now.Add(2 * time.Second)
-	tm.market.OnChainTimeUpdate(ctx, now)
+	tm.market.OnTick(ctx, now)
 	assert.Equal(t, 0, tm.market.GetParkedOrderCount())
 	assert.Equal(t, 1, tm.market.GetPeggedOrderCount())
 }
@@ -2089,7 +2084,7 @@ func testPeggedOrderAmendReference(t *testing.T) {
 	require.NotNil(t, sellOrder)
 	// leave opening auction
 	now = now.Add(2 * time.Second)
-	tm.market.OnChainTimeUpdate(ctx, now)
+	tm.market.OnTick(ctx, now)
 
 	// Place the pegged order which will park it
 	order := getOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideBuy, "party1", 10, 10)
@@ -2223,7 +2218,7 @@ func testPeggedOrderAmendMultiple(t *testing.T) {
 
 	// leave opening auction
 	now = now.Add(2 * time.Second)
-	tm.market.OnChainTimeUpdate(ctx, now)
+	tm.market.OnTick(ctx, now)
 
 	// Place the pegged order which will park it
 	order := getOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideBuy, "party1", 10, 10)
@@ -2277,7 +2272,7 @@ func testPeggedOrderMidPriceCalc(t *testing.T) {
 		require.NotNil(t, conf)
 	}
 	now = now.Add(2 * time.Second)
-	tm.market.OnChainTimeUpdate(ctx, now)
+	tm.market.OnTick(ctx, now)
 
 	// Place the pegged orders
 	order1 := getOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideBuy, "party1", 10, 10)
@@ -2446,7 +2441,7 @@ func TestGTTExpiredPartiallyFilled(t *testing.T) {
 	}
 	// leave auction
 	now = now.Add(2 * time.Second)
-	tm.market.OnChainTimeUpdate(ctx, now)
+	tm.market.OnTick(ctx, now)
 	addAccount(t, tm, "aaa")
 	addAccount(t, tm, "bbb")
 
@@ -2597,7 +2592,7 @@ func Test2965EnsureLPOrdersAreNotCancelleableWithCancelAll(t *testing.T) {
 		WithAccountAndAmount("party-4", 1000000)
 
 	tm.market.OnSuppliedStakeToObligationFactorUpdate(num.DecimalFromFloat(1.0))
-	tm.market.OnChainTimeUpdate(ctx, now)
+	tm.market.OnTick(ctx, now)
 
 	orderParams := []struct {
 		id        string
@@ -2712,12 +2707,12 @@ func Test2965EnsureLPOrdersAreNotCancelleableWithCancelAll(t *testing.T) {
 	}
 
 	// Leave the auction
-	tm.market.OnChainTimeUpdate(ctx, now.Add(10001*time.Second))
+	tm.market.OnTick(ctx, now.Add(10001*time.Second))
 
 	require.NoError(t, tm.market.SubmitLiquidityProvision(ctx, lp, "party-2", vgcrypto.RandomHash()))
 	assert.Equal(t, 1, tm.market.GetLPSCount())
 
-	tm.market.OnChainTimeUpdate(ctx, now.Add(10011*time.Second))
+	tm.market.OnTick(ctx, now.Add(10011*time.Second))
 
 	newOrder := tpl.New(types.Order{
 		MarketID:    tm.market.GetID(),
@@ -2812,7 +2807,7 @@ func TestMissingLP(t *testing.T) {
 		require.NoError(t, err)
 	}
 	now = now.Add(time.Second * 2) // opening auction is 1 second, move time ahead by 2 seconds so we leave auction
-	tm.market.OnChainTimeUpdate(ctx, now)
+	tm.market.OnTick(ctx, now)
 
 	// Here we are in auction
 	assert.False(t, tm.mas.InAuction())

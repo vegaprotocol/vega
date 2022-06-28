@@ -19,7 +19,7 @@ import (
 
 	"code.vegaprotocol.io/vega/types/num"
 
-	bmock "code.vegaprotocol.io/vega/broker/mocks"
+	bmocks "code.vegaprotocol.io/vega/broker/mocks"
 	"code.vegaprotocol.io/vega/collateral"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/rewards/mocks"
@@ -72,6 +72,12 @@ func testUpdateMaxPayoutPerParticipantForStakingRewardScheme(t *testing.T) {
 // test calculation of reward payout.
 func testCalculateRewards(t *testing.T) {
 	testEngine := getEngine(t)
+	now := time.Now()
+	testEngine.timeService.EXPECT().GetTimeNow().DoAndReturn(
+		func() time.Time {
+			return now
+		}).AnyTimes()
+
 	engine := testEngine.engine
 	engine.UpdateAssetForStakingAndDelegation(context.Background(), "VEGA")
 	engine.UpdateDelegatorShareForStakingRewardScheme(context.Background(), num.DecimalFromFloat(0.3))
@@ -82,9 +88,10 @@ func testCalculateRewards(t *testing.T) {
 	engine.UpdateMaxPayoutPerParticipantForStakingRewardScheme(context.Background(), num.DecimalZero())
 	engine.UpdateErsatzRewardFactor(context.Background(), num.DecimalFromFloat(0.5))
 
-	epoch := types.Epoch{EndTime: time.Now()}
+	epoch := types.Epoch{EndTime: now}
 	rewardAccount, err := testEngine.collateral.GetGlobalRewardAccount("VEGA")
 	require.NoError(t, err)
+
 	testEngine.delegation.EXPECT().ProcessEpochDelegations(gomock.Any(), gomock.Any()).Return(testEngine.validatorData)
 	testEngine.delegation.EXPECT().GetValidatorData().AnyTimes()
 	testEngine.topology.EXPECT().RecalcValidatorSet(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
@@ -107,7 +114,6 @@ func testCalculateRewards(t *testing.T) {
 	err = testEngine.collateral.IncrementBalance(context.Background(), rewardAccount.ID, num.NewUint(1000000))
 	require.Nil(t, err)
 
-	engine.currentTime = epoch.EndTime
 	payouts := engine.calculateRewardPayouts(context.Background(), epoch)
 	primary := payouts[0]
 	ersatz := payouts[1]
@@ -150,6 +156,12 @@ func testCalculateRewards(t *testing.T) {
 
 func testCalculateRewardsWithMaxPerParticipant(t *testing.T) {
 	testEngine := getEngine(t)
+	now := time.Now()
+	testEngine.timeService.EXPECT().GetTimeNow().DoAndReturn(
+		func() time.Time {
+			return now
+		}).AnyTimes()
+
 	engine := testEngine.engine
 	engine.UpdateAssetForStakingAndDelegation(context.Background(), "VEGA")
 	engine.UpdateDelegatorShareForStakingRewardScheme(context.Background(), num.DecimalFromFloat(0.3))
@@ -160,8 +172,7 @@ func testCalculateRewardsWithMaxPerParticipant(t *testing.T) {
 	engine.UpdateMaxPayoutPerParticipantForStakingRewardScheme(context.Background(), num.DecimalFromFloat(100000))
 	engine.UpdateErsatzRewardFactor(context.Background(), num.DecimalFromFloat(0.5))
 
-	epoch := types.Epoch{EndTime: time.Now()}
-	testEngine.engine.currentTime = epoch.EndTime
+	epoch := types.Epoch{EndTime: now}
 	rewardAccount, err := testEngine.collateral.GetGlobalRewardAccount("VEGA")
 	require.NoError(t, err)
 	testEngine.delegation.EXPECT().ProcessEpochDelegations(gomock.Any(), gomock.Any()).Return(testEngine.validatorData)
@@ -215,6 +226,12 @@ func testCalculateRewardsWithMaxPerParticipant(t *testing.T) {
 // test payout distribution.
 func testDistributePayout(t *testing.T) {
 	testEngine := getEngine(t)
+	now := time.Now()
+	testEngine.timeService.EXPECT().GetTimeNow().DoAndReturn(
+		func() time.Time {
+			return now
+		}).AnyTimes()
+
 	engine := testEngine.engine
 	engine.UpdateAssetForStakingAndDelegation(context.Background(), "VEGA")
 	engine.UpdateMinimumValidatorStakeForStakingRewardScheme(context.Background(), num.NewDecimalFromFloat(0))
@@ -251,6 +268,12 @@ func testDistributePayout(t *testing.T) {
 // test payout distribution on epoch end with no delay.
 func testOnEpochEventNoPayoutDelay(t *testing.T) {
 	testEngine := getEngine(t)
+	now := time.Now()
+	testEngine.timeService.EXPECT().GetTimeNow().DoAndReturn(
+		func() time.Time {
+			return now
+		}).AnyTimes()
+
 	engine := testEngine.engine
 	engine.UpdateAssetForStakingAndDelegation(context.Background(), "VEGA")
 	engine.UpdateDelegatorShareForStakingRewardScheme(context.Background(), num.DecimalFromFloat(0.3))
@@ -286,11 +309,11 @@ func testOnEpochEventNoPayoutDelay(t *testing.T) {
 	require.Nil(t, err)
 
 	// there is remaining 1000000 to distribute as payout
-	epoch := types.Epoch{StartTime: time.Now(), EndTime: time.Now()}
+	epoch := types.Epoch{StartTime: now, EndTime: now}
 
 	testEngine.delegation.EXPECT().ProcessEpochDelegations(gomock.Any(), gomock.Any()).Return(testEngine.validatorData)
 	engine.OnEpochEvent(context.Background(), epoch)
-	engine.onChainTimeUpdate(context.Background(), epoch.EndTime.Add(120*time.Second))
+	engine.OnTick(context.Background(), epoch.EndTime.Add(120*time.Second))
 
 	// get party account balances
 	party1Acc, _ := testEngine.collateral.GetPartyGeneralAccount("party1", "VEGA")
@@ -311,7 +334,8 @@ func testOnEpochEventNoPayoutDelay(t *testing.T) {
 type testEngine struct {
 	engine        *Engine
 	ctrl          *gomock.Controller
-	broker        *bmock.MockBroker
+	timeService   *mocks.MockTimeService
+	broker        *bmocks.MockBroker
 	epochEngine   *TestEpochEngine
 	delegation    *mocks.MockDelegation
 	collateral    *collateral.Engine
@@ -323,7 +347,7 @@ func getEngine(t *testing.T) *testEngine {
 	t.Helper()
 	conf := NewDefaultConfig()
 	ctrl := gomock.NewController(t)
-	broker := bmock.NewMockBroker(ctrl)
+	broker := bmocks.NewMockBroker(ctrl)
 	logger := logging.NewTestLogger()
 	delegation := mocks.NewMockDelegation(ctrl)
 	epochEngine := &TestEpochEngine{
@@ -332,12 +356,10 @@ func getEngine(t *testing.T) *testEngine {
 	}
 	ts := mocks.NewMockTimeService(ctrl)
 
-	ts.EXPECT().GetTimeNow().AnyTimes()
-	ts.EXPECT().NotifyOnTick(gomock.Any()).Times(1)
 	broker.EXPECT().Send(gomock.Any()).AnyTimes()
 	broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
 
-	collateral := collateral.New(logger, collateral.NewDefaultConfig(), broker, ts.GetTimeNow())
+	collateral := collateral.New(logger, collateral.NewDefaultConfig(), ts, broker)
 	asset := types.Asset{
 		ID: "VEGA",
 		Details: &types.AssetDetails{
@@ -394,6 +416,7 @@ func getEngine(t *testing.T) *testEngine {
 	return &testEngine{
 		engine:        engine,
 		ctrl:          ctrl,
+		timeService:   ts,
 		broker:        broker,
 		epochEngine:   epochEngine,
 		delegation:    delegation,
@@ -411,4 +434,8 @@ type TestEpochEngine struct {
 func (e *TestEpochEngine) NotifyOnEpoch(f func(context.Context, types.Epoch), r func(context.Context, types.Epoch)) {
 	e.callbacks = append(e.callbacks, f)
 	e.restore = append(e.callbacks, r)
+}
+
+func (e *TestEpochEngine) GetTimeNow() time.Time {
+	return time.Now()
 }

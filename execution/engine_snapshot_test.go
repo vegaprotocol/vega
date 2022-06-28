@@ -22,7 +22,7 @@ import (
 	snapshot "code.vegaprotocol.io/protos/vega/snapshot/v1"
 
 	"code.vegaprotocol.io/vega/assets"
-	bmock "code.vegaprotocol.io/vega/broker/mocks"
+	bmocks "code.vegaprotocol.io/vega/broker/mocks"
 	"code.vegaprotocol.io/vega/execution"
 	"code.vegaprotocol.io/vega/execution/mocks"
 	"code.vegaprotocol.io/vega/libs/proto"
@@ -39,11 +39,10 @@ func createEngine(t *testing.T) (*execution.Engine, *gomock.Controller) {
 	ctrl := gomock.NewController(t)
 	log := logging.NewTestLogger()
 	executionConfig := execution.NewDefaultConfig()
-	broker := bmock.NewMockBroker(ctrl)
+	broker := bmocks.NewMockBroker(ctrl)
 	broker.EXPECT().Send(gomock.Any()).AnyTimes()
 	broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
 	timeService := mocks.NewMockTimeService(ctrl)
-	timeService.EXPECT().NotifyOnTick(gomock.Any()).Times(1)
 	timeService.EXPECT().GetTimeNow().AnyTimes()
 
 	collateralService := mocks.NewMockCollateral(ctrl)

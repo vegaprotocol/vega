@@ -39,7 +39,7 @@ var (
 	chars               = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
 )
 
-// go:generate go run github.com/golang/mock/mockgen -destination mocks/commander_mock.go -package mocks code.vegaprotocol.io/vega/statevar Commander.
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/commander_mock.go -package mocks code.vegaprotocol.io/vega/statevar Commander
 type Commander interface {
 	Command(ctx context.Context, cmd txn.Command, payload proto.Message, f func(error), bo *backoff.ExponentialBackOff)
 }
@@ -50,7 +50,7 @@ type Broker interface {
 }
 
 // Topology the topology service.
-// go:generate go run github.com/golang/mock/mockgen -destination -destination mocks/topology_mock.go -package mocks code.vegaprotocol.io/vega/statevar Tolopology.
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/topology_mock.go -package mocks code.vegaprotocol.io/vega/statevar Topology
 type Topology interface {
 	IsValidatorVegaPubKey(node string) bool
 	AllNodeIDs() []string
@@ -62,11 +62,6 @@ type Topology interface {
 // EpochEngine for being notified on epochs.
 type EpochEngine interface {
 	NotifyOnEpoch(f func(context.Context, types.Epoch))
-}
-
-// TimeService for being notified on new blocks for time based calculations.
-type TimeService interface {
-	NotifyOnTick(func(context.Context, time.Time))
 }
 
 // Engine is an engine for creating consensus for floaing point "state variables".
@@ -89,7 +84,7 @@ type Engine struct {
 }
 
 // New instantiates the state variable engine.
-func New(log *logging.Logger, config Config, broker Broker, top Topology, cmd Commander, ts TimeService) *Engine {
+func New(log *logging.Logger, config Config, broker Broker, top Topology, cmd Commander) *Engine {
 	lg := log.Named(namedLogger)
 	lg.SetLevel(config.Level.Get())
 	e := &Engine{
@@ -105,7 +100,6 @@ func New(log *logging.Logger, config Config, broker Broker, top Topology, cmd Co
 		stateVarToNextCalc:  map[string]time.Time{},
 		ss:                  &snapshotState{},
 	}
-	ts.NotifyOnTick(e.OnTimeTick)
 
 	return e
 }
@@ -179,8 +173,8 @@ func (e *Engine) OnBlockEnd(ctx context.Context) {
 	}
 }
 
-// OnTimeTick triggers the calculation of state variables whose next scheduled calculation is due.
-func (e *Engine) OnTimeTick(ctx context.Context, t time.Time) {
+// OnTick triggers the calculation of state variables whose next scheduled calculation is due.
+func (e *Engine) OnTick(ctx context.Context, t time.Time) {
 	e.currentTime = t
 	e.rng = rand.New(rand.NewSource(t.Unix()))
 

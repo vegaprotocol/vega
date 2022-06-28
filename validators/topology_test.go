@@ -22,7 +22,7 @@ import (
 
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	vgcrypto "code.vegaprotocol.io/shared/libs/crypto"
-	brokerMocks "code.vegaprotocol.io/vega/broker/mocks"
+	bmocks "code.vegaprotocol.io/vega/broker/mocks"
 	"code.vegaprotocol.io/vega/crypto"
 	"code.vegaprotocol.io/vega/events"
 	vgtesting "code.vegaprotocol.io/vega/libs/testing"
@@ -78,7 +78,7 @@ type testTop struct {
 	*validators.Topology
 	ctrl   *gomock.Controller
 	wallet *mocks.MockWallet
-	broker *brokerMocks.MockBroker
+	broker *bmocks.MockBroker
 }
 
 func getTestTopologyWithNodeWallet(
@@ -86,7 +86,7 @@ func getTestTopologyWithNodeWallet(
 ) *testTop {
 	t.Helper()
 
-	broker := brokerMocks.NewMockBroker(ctrl)
+	broker := bmocks.NewMockBroker(ctrl)
 	broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
 	commander := mocks.NewMockCommander(gomock.NewController(t))
@@ -438,7 +438,7 @@ func testAddNewNodeSendsValidatorUpdateEventToBroker(t *testing.T) {
 		vega: wallet,
 	}
 
-	broker := brokerMocks.NewMockBroker(ctrl)
+	broker := bmocks.NewMockBroker(ctrl)
 	commander := mocks.NewMockCommander(gomock.NewController(t))
 	top := validators.NewTopology(logging.NewTestLogger(), validators.NewDefaultConfig(), nw, broker, true, commander, &DummyMultiSigTopology{})
 

@@ -46,7 +46,7 @@ func (e *Engine) Load(ctx context.Context, data []byte) error {
 	e.activeProposals = make([]*proposal, 0, len(snap.Proposals))
 	evts := make([]events.Event, 0, len(snap.Proposals))
 	for _, p := range snap.Proposals {
-		if p.Terms.ClosingTimestamp < e.currentTime.Unix() {
+		if p.Terms.ClosingTimestamp < e.timeService.GetTimeNow().Unix() {
 			// the proposal in question has expired, ignore it
 			continue
 		}
@@ -61,7 +61,7 @@ func (e *Engine) Load(ctx context.Context, data []byte) error {
 	}
 	// send events for restored proposals
 	e.broker.SendBatch(evts)
-	// @TODO ensure OnChainTimeUpdate is called
+	// @TODO ensure OnTick is called
 	return nil
 }
 

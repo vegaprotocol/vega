@@ -67,7 +67,7 @@ func TestRefreshLiquidityProvisionOrdersSizes(t *testing.T) {
 		WithAccountAndAmount("party-4", 1000000)
 
 	tm.market.OnSuppliedStakeToObligationFactorUpdate(num.DecimalFromFloat(1.0))
-	tm.market.OnChainTimeUpdate(ctx, now)
+	tm.market.OnTick(ctx, now)
 
 	orderParams := []struct {
 		id        string
@@ -181,12 +181,12 @@ func TestRefreshLiquidityProvisionOrdersSizes(t *testing.T) {
 	}
 
 	// Leave the auction
-	tm.market.OnChainTimeUpdate(ctx, now.Add(10001*time.Second))
+	tm.market.OnTick(ctx, now.Add(10001*time.Second))
 
 	require.NoError(t, tm.market.SubmitLiquidityProvision(ctx, lp, "party-2", vgcrypto.RandomHash()))
 	assert.Equal(t, 1, tm.market.GetLPSCount())
 
-	tm.market.OnChainTimeUpdate(ctx, now.Add(10011*time.Second))
+	tm.market.OnTick(ctx, now.Add(10011*time.Second))
 
 	newOrder := tpl.New(types.Order{
 		MarketID:    tm.market.GetID(),
@@ -297,7 +297,7 @@ func TestRefreshLiquidityProvisionOrdersSizesCrashOnSubmitOrder(t *testing.T) {
 		WithAccountAndAmount(lpparty, 155000)
 
 	tm.market.OnSuppliedStakeToObligationFactorUpdate(num.DecimalFromFloat(1.0))
-	tm.market.OnChainTimeUpdate(ctx, now)
+	tm.market.OnTick(ctx, now)
 
 	// Add a LPSubmission
 	// this is a log of stake, enough to cover all
@@ -362,7 +362,7 @@ func TestCommitmentIsDeployed(t *testing.T) {
 		WithAccountAndAmount(lpparty, 50000000)
 
 	tm.market.OnSuppliedStakeToObligationFactorUpdate(num.DecimalFromFloat(1.0))
-	tm.market.OnChainTimeUpdate(ctx, now)
+	tm.market.OnTick(ctx, now)
 
 	// Add a LPSubmission
 	// this is a log of stake, enough to cover all
@@ -448,7 +448,7 @@ func (tm *testMarket) EndOpeningAuction(t *testing.T, auctionEnd time.Time, setM
 
 	// update the time to get out of auction
 	ctx := vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
-	tm.market.OnChainTimeUpdate(ctx, auctionEnd)
+	tm.market.OnTick(ctx, auctionEnd)
 
 	assert.Equal(t,
 		tm.market.GetMarketData().MarketTradingMode,
@@ -537,7 +537,7 @@ func (tm *testMarket) EndOpeningAuction2(t *testing.T, auctionEnd time.Time, set
 	tm.WithSubmittedOrders(t, auctionOrders...)
 
 	// update the time to get out of auction
-	tm.market.OnChainTimeUpdate(context.Background(), auctionEnd)
+	tm.market.OnTick(context.Background(), auctionEnd)
 
 	assert.Equal(t,
 		tm.market.GetMarketData().MarketTradingMode,

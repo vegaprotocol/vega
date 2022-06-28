@@ -27,7 +27,7 @@ type Engine struct {
 	cfg    Config
 	broker Broker
 
-	currentTime time.Time
+	timeService TimeService
 	blockCount  uint16
 
 	// are these action possible?
@@ -48,15 +48,22 @@ type Broker interface {
 	Send(event events.Event)
 }
 
-func New(log *logging.Logger, cfg Config, broker Broker) *Engine {
+// TimeService provide the time of the vega node using the tm time.
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/time_service_mock.go -package mocks code.vegaprotocol.io/vega/limits TimeService
+type TimeService interface {
+	GetTimeNow() time.Time
+}
+
+func New(log *logging.Logger, cfg Config, tm TimeService, broker Broker) *Engine {
 	log = log.Named(namedLogger)
 	log.SetLevel(cfg.Level.Get())
 
 	return &Engine{
-		log:    log,
-		cfg:    cfg,
-		lss:    &limitsSnapshotState{changed: true},
-		broker: broker,
+		log:         log,
+		cfg:         cfg,
+		lss:         &limitsSnapshotState{changed: true},
+		broker:      broker,
+		timeService: tm,
 	}
 }
 
@@ -114,7 +121,7 @@ func (e *Engine) OnLimitsProposeMarketEnabledFromUpdate(ctx context.Context, dat
 		e.proposeMarketEnabledFrom = time.Time{}
 	} else {
 		t, _ := time.Parse(time.RFC3339, date)
-		if e.currentTime.Before(t) {
+		if e.timeService.GetTimeNow().Before(t) {
 			// only if the date is in the future
 			e.proposeMarketEnabledFrom = t
 		}
@@ -136,7 +143,7 @@ func (e *Engine) OnLimitsProposeAssetEnabledFromUpdate(ctx context.Context, date
 		e.proposeAssetEnabledFrom = time.Time{}
 	} else {
 		t, _ := time.Parse(time.RFC3339, date)
-		if e.currentTime.Before(t) {
+		if e.timeService.GetTimeNow().Before(t) {
 			// only if the date is in the future
 			e.proposeAssetEnabledFrom = t
 		}
@@ -147,7 +154,6 @@ func (e *Engine) OnLimitsProposeAssetEnabledFromUpdate(ctx context.Context, date
 }
 
 func (e *Engine) OnTick(ctx context.Context, t time.Time) {
-	e.currentTime = t
 	if !e.genesisLoaded || (e.bootstrapFinished && e.canProposeAsset && e.canProposeMarket) {
 		return
 	}

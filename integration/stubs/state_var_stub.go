@@ -118,7 +118,7 @@ func (e *StateVarStub) ReadyForTimeTrigger(asset, mktID string) {
 	}
 }
 
-func (e *StateVarStub) OnTimeTick(ctx context.Context, t time.Time) {
+func (e *StateVarStub) OnTick(ctx context.Context, t time.Time) {
 	e.currentTime = t
 	stateVarIDs := []string{}
 	for ID, nextTime := range e.stateVarToNextCalc {

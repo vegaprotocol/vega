@@ -99,10 +99,10 @@ func (s specSubscriptions) filterSubscribers(predicate OracleSpecPredicate) (*fi
 	return result, nil
 }
 
-func (s *specSubscriptions) addSubscriber(spec OracleSpec, cb OnMatchedOracleData, currentTime time.Time) updatedSubscription {
+func (s *specSubscriptions) addSubscriber(spec OracleSpec, cb OnMatchedOracleData, tm time.Time) updatedSubscription {
 	_, subscription := s.getSubscription(spec.id)
 	if subscription == nil {
-		subscription = s.createSubscription(spec, currentTime)
+		subscription = s.createSubscription(spec, tm)
 	}
 
 	subscriptionID := s.nextSubscriptionID()
@@ -149,8 +149,8 @@ func (s *specSubscriptions) removeSubscriptionFromIndex(index int) {
 }
 
 // Internal usage.
-func (s *specSubscriptions) createSubscription(spec OracleSpec, currentTime time.Time) *specSubscription {
-	subscription := newOracleSpecSubscription(spec, currentTime)
+func (s *specSubscriptions) createSubscription(spec OracleSpec, tm time.Time) *specSubscription {
+	subscription := newOracleSpecSubscription(spec, tm)
 	s.subscriptions = append(s.subscriptions, subscription)
 	return subscription
 }

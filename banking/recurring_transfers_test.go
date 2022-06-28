@@ -61,6 +61,7 @@ func testInvalidRecurringTransfersBadAmount(t *testing.T) {
 	e.OnMinTransferQuantumMultiple(context.Background(), num.DecimalFromFloat(1))
 	// asset exists
 	e.assets.EXPECT().Get(gomock.Any()).Times(1).Return(assets.NewAsset(&mockAsset{num.DecimalFromFloat(100)}), nil)
+	e.tsvc.EXPECT().GetTimeNow().Times(1)
 	e.broker.EXPECT().Send(gomock.Any()).Times(1)
 
 	assert.EqualError(t,
@@ -99,6 +100,7 @@ func testInvalidRecurringTransfersInThePast(t *testing.T) {
 	}
 
 	e.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(assets.NewAsset(&mockAsset{quantum: num.DecimalFromFloat(10)}), nil)
+	e.tsvc.EXPECT().GetTimeNow().Times(2)
 	e.broker.EXPECT().Send(gomock.Any()).Times(1)
 	assert.EqualError(t,
 		e.TransferFunds(ctx, transfer),
@@ -162,6 +164,7 @@ func testInvalidRecurringTransfersDuplicates(t *testing.T) {
 	}
 
 	e.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(assets.NewAsset(&mockAsset{quantum: num.DecimalFromFloat(10)}), nil)
+	e.tsvc.EXPECT().GetTimeNow().Times(2)
 	e.broker.EXPECT().Send(gomock.Any()).Times(1)
 	assert.NoError(t, e.TransferFunds(ctx, transfer))
 
@@ -222,6 +225,7 @@ func testForeverTransferCancelledNotEnoughFunds(t *testing.T) {
 	}
 
 	e.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(assets.NewAsset(&mockAsset{quantum: num.DecimalFromFloat(10)}), nil)
+	e.tsvc.EXPECT().GetTimeNow().Times(2)
 	e.broker.EXPECT().Send(gomock.Any()).Times(1)
 	assert.NoError(t, e.TransferFunds(ctx, transfer))
 
@@ -337,6 +341,7 @@ func testValidRecurringTransfer(t *testing.T) {
 	}
 
 	e.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(assets.NewAsset(&mockAsset{quantum: num.DecimalFromFloat(10)}), nil)
+	e.tsvc.EXPECT().GetTimeNow().Times(3)
 	e.broker.EXPECT().Send(gomock.Any()).Times(1)
 	assert.NoError(t, e.TransferFunds(ctx, transfer))
 
@@ -476,6 +481,7 @@ func testRecurringTransferInvalidTransfers(t *testing.T) {
 	var baseCpy types.TransferBase
 
 	t.Run("invalid from account", func(t *testing.T) {
+		e.tsvc.EXPECT().GetTimeNow().Times(1)
 		e.broker.EXPECT().Send(gomock.Any()).Times(1)
 		baseCpy := transferBase
 		transfer.Recurring.TransferBase = &baseCpy
@@ -487,6 +493,7 @@ func testRecurringTransferInvalidTransfers(t *testing.T) {
 	})
 
 	t.Run("invalid to account", func(t *testing.T) {
+		e.tsvc.EXPECT().GetTimeNow().Times(1)
 		e.broker.EXPECT().Send(gomock.Any()).Times(1)
 		baseCpy = transferBase
 		transfer.Recurring.TransferBase = &baseCpy
@@ -498,6 +505,7 @@ func testRecurringTransferInvalidTransfers(t *testing.T) {
 	})
 
 	t.Run("unsupported from account type", func(t *testing.T) {
+		e.tsvc.EXPECT().GetTimeNow().Times(1)
 		e.broker.EXPECT().Send(gomock.Any()).Times(1)
 		baseCpy = transferBase
 		transfer.Recurring.TransferBase = &baseCpy
@@ -509,6 +517,7 @@ func testRecurringTransferInvalidTransfers(t *testing.T) {
 	})
 
 	t.Run("unsuported to account type", func(t *testing.T) {
+		e.tsvc.EXPECT().GetTimeNow().Times(1)
 		e.broker.EXPECT().Send(gomock.Any()).Times(1)
 		baseCpy = transferBase
 		transfer.Recurring.TransferBase = &baseCpy
@@ -520,6 +529,7 @@ func testRecurringTransferInvalidTransfers(t *testing.T) {
 	})
 
 	t.Run("zero funds transfer", func(t *testing.T) {
+		e.tsvc.EXPECT().GetTimeNow().Times(1)
 		e.broker.EXPECT().Send(gomock.Any()).Times(1)
 		baseCpy = transferBase
 		transfer.Recurring.TransferBase = &baseCpy
@@ -545,6 +555,7 @@ func testRecurringTransferInvalidTransfers(t *testing.T) {
 	t.Run("bad start time", func(t *testing.T) {
 		transfer.Recurring.StartEpoch = 0
 
+		e.tsvc.EXPECT().GetTimeNow().Times(1)
 		e.broker.EXPECT().Send(gomock.Any()).Times(1)
 
 		assert.EqualError(t,
@@ -557,6 +568,7 @@ func testRecurringTransferInvalidTransfers(t *testing.T) {
 		transfer.Recurring.StartEpoch = 90
 		transfer.Recurring.EndEpoch = &endEpoch0
 
+		e.tsvc.EXPECT().GetTimeNow().Times(1)
 		e.broker.EXPECT().Send(gomock.Any()).Times(1)
 
 		assert.EqualError(t,
@@ -569,6 +581,7 @@ func testRecurringTransferInvalidTransfers(t *testing.T) {
 		transfer.Recurring.EndEpoch = &endEpoch100
 		transfer.Recurring.Factor = num.MustDecimalFromString("-1")
 
+		e.tsvc.EXPECT().GetTimeNow().Times(1)
 		e.broker.EXPECT().Send(gomock.Any()).Times(1)
 
 		assert.EqualError(t,
@@ -580,6 +593,7 @@ func testRecurringTransferInvalidTransfers(t *testing.T) {
 	t.Run("zero factor", func(t *testing.T) {
 		transfer.Recurring.Factor = num.MustDecimalFromString("0")
 
+		e.tsvc.EXPECT().GetTimeNow().Times(1)
 		e.broker.EXPECT().Send(gomock.Any()).Times(1)
 
 		assert.EqualError(t,
@@ -592,6 +606,7 @@ func testRecurringTransferInvalidTransfers(t *testing.T) {
 		transfer.Recurring.Factor = num.MustDecimalFromString("1")
 		transfer.Recurring.EndEpoch = &endEpoch1
 
+		e.tsvc.EXPECT().GetTimeNow().Times(1)
 		e.broker.EXPECT().Send(gomock.Any()).Times(1)
 
 		assert.EqualError(t,
@@ -603,6 +618,7 @@ func testRecurringTransferInvalidTransfers(t *testing.T) {
 	t.Run("end epoch nil", func(t *testing.T) {
 		transfer.Recurring.EndEpoch = nil
 
+		e.tsvc.EXPECT().GetTimeNow().Times(1)
 		e.broker.EXPECT().Send(gomock.Any()).Times(1)
 
 		assert.NoError(t,

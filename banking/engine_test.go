@@ -22,7 +22,7 @@ import (
 	"code.vegaprotocol.io/vega/assets/builtin"
 	"code.vegaprotocol.io/vega/banking"
 	"code.vegaprotocol.io/vega/banking/mocks"
-	bmock "code.vegaprotocol.io/vega/broker/mocks"
+	bmocks "code.vegaprotocol.io/vega/broker/mocks"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
@@ -45,7 +45,7 @@ type testEngine struct {
 	assets *mocks.MockAssets
 	tsvc   *mocks.MockTimeService
 	top    *mocks.MockTopology
-	broker *bmock.MockBroker
+	broker *bmocks.MockBroker
 	epoch  *mocks.MockEpochService
 }
 
@@ -57,13 +57,12 @@ func getTestEngine(t *testing.T) *testEngine {
 	assets := mocks.NewMockAssets(ctrl)
 	tsvc := mocks.NewMockTimeService(ctrl)
 	notary := mocks.NewMockNotary(ctrl)
-	broker := bmock.NewMockBroker(ctrl)
+	broker := bmocks.NewMockBroker(ctrl)
 	top := mocks.NewMockTopology(ctrl)
 	epoch := mocks.NewMockEpochService(ctrl)
 	marketActivityTracker := mocks.NewMockMarketActivityTracker(ctrl)
 
 	notary.EXPECT().OfferSignatures(gomock.Any(), gomock.Any()).AnyTimes()
-	tsvc.EXPECT().NotifyOnTick(gomock.Any()).Times(1)
 	epoch.EXPECT().NotifyOnEpoch(gomock.Any(), gomock.Any()).Times(1)
 	eng := banking.New(logging.NewTestLogger(), banking.NewDefaultConfig(), col, erc, tsvc, assets, notary, broker, top, epoch, marketActivityTracker)
 
@@ -92,15 +91,17 @@ func testDepositSuccess(t *testing.T) {
 	eng := getTestEngine(t)
 	defer eng.ctrl.Finish()
 
+	eng.tsvc.EXPECT().GetTimeNow().Times(1)
 	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 	eng.assets.EXPECT().Get(gomock.Any()).Times(1).Return(testAsset, nil)
-	now := time.Now()
-	eng.OnTick(context.Background(), now)
+	eng.OnTick(context.Background(), time.Now())
 	bad := &types.BuiltinAssetDeposit{
 		VegaAssetID: "VGT",
 		PartyID:     "someparty",
 		Amount:      num.NewUint(42),
 	}
+
+	eng.tsvc.EXPECT().GetTimeNow().Times(2)
 
 	// call the deposit function
 	err := eng.DepositBuiltinAsset(context.Background(), bad, "depositid", 42)
@@ -114,17 +115,18 @@ func testDepositSuccess(t *testing.T) {
 	// to do the deposit
 	eng.col.EXPECT().Deposit(gomock.Any(), bad.PartyID, bad.VegaAssetID, bad.Amount).Times(1).Return(&types.TransferResponse{}, nil)
 
-	eng.OnTick(context.Background(), now.Add(1*time.Second))
+	eng.tsvc.EXPECT().GetTimeNow().Times(2)
+	eng.OnTick(context.Background(), time.Now())
 }
 
 func testDepositSuccessNoTxDuplicate(t *testing.T) {
 	eng := getTestEngine(t)
 	defer eng.ctrl.Finish()
 
+	eng.tsvc.EXPECT().GetTimeNow().Times(3)
 	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 	eng.assets.EXPECT().Get(gomock.Any()).Times(2).Return(testAsset, nil)
-	now := time.Now()
-	eng.OnTick(context.Background(), now.Add(1*time.Second))
+	eng.OnTick(context.Background(), time.Now())
 	bad := &types.BuiltinAssetDeposit{
 		VegaAssetID: "VGT",
 		PartyID:     "someparty",
@@ -143,7 +145,8 @@ func testDepositSuccessNoTxDuplicate(t *testing.T) {
 	// to do the deposit
 	eng.col.EXPECT().Deposit(gomock.Any(), bad.PartyID, bad.VegaAssetID, bad.Amount).Times(1).Return(&types.TransferResponse{}, nil)
 
-	eng.OnTick(context.Background(), now.Add(1*time.Second))
+	eng.tsvc.EXPECT().GetTimeNow().Times(4)
+	eng.OnTick(context.Background(), time.Now())
 
 	// call the deposit function
 	err = eng.DepositBuiltinAsset(context.Background(), bad, "depositid2", 43)
@@ -157,17 +160,18 @@ func testDepositSuccessNoTxDuplicate(t *testing.T) {
 	// to do the deposit
 	eng.col.EXPECT().Deposit(gomock.Any(), bad.PartyID, bad.VegaAssetID, bad.Amount).Times(1).Return(&types.TransferResponse{}, nil)
 
-	eng.OnTick(context.Background(), now.Add(1*time.Second))
+	eng.tsvc.EXPECT().GetTimeNow().Times(2)
+	eng.OnTick(context.Background(), time.Now())
 }
 
 func testDepositFailure(t *testing.T) {
 	eng := getTestEngine(t)
 	defer eng.ctrl.Finish()
 
+	eng.tsvc.EXPECT().GetTimeNow().Times(3)
 	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 	eng.assets.EXPECT().Get(gomock.Any()).Times(1).Return(testAsset, nil)
-	now := time.Now()
-	eng.OnTick(context.Background(), now)
+	eng.OnTick(context.Background(), time.Now())
 	bad := &types.BuiltinAssetDeposit{
 		VegaAssetID: "VGT",
 		PartyID:     "someparty",
@@ -184,17 +188,18 @@ func testDepositFailure(t *testing.T) {
 
 	// then we call time update, expect collateral to never be called
 	eng.col.EXPECT().Deposit(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
-	eng.OnTick(context.Background(), now.Add(1*time.Second))
+	eng.tsvc.EXPECT().GetTimeNow().Times(1)
+	eng.OnTick(context.Background(), time.Now())
 }
 
 func testDepositError(t *testing.T) {
 	eng := getTestEngine(t)
 	defer eng.ctrl.Finish()
 
-	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+	eng.tsvc.EXPECT().GetTimeNow().Times(3)
+	eng.broker.EXPECT().Send(gomock.Any()).Times(1)
 	eng.assets.EXPECT().Get(gomock.Any()).Times(1).Return(testAsset, nil)
-	now := time.Now()
-	eng.OnTick(context.Background(), now)
+	eng.OnTick(context.Background(), time.Now())
 	bad := &types.BuiltinAssetDeposit{
 		VegaAssetID: "VGT",
 		PartyID:     "someparty",
@@ -214,11 +219,11 @@ func testDepositFailureNotBuiltin(t *testing.T) {
 	eng := getTestEngine(t)
 	defer eng.ctrl.Finish()
 
+	eng.tsvc.EXPECT().GetTimeNow().Times(2)
 	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 	expectError := errors.New("bad bad bad")
 	eng.assets.EXPECT().Get(gomock.Any()).Times(1).Return(nil, expectError)
-	now := time.Now()
-	eng.OnTick(context.Background(), now)
+	eng.OnTick(context.Background(), time.Now())
 	bad := &types.BuiltinAssetDeposit{
 		VegaAssetID: "VGT",
 		PartyID:     "someparty",

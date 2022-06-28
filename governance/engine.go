@@ -74,7 +74,7 @@ type Assets interface {
 // TimeService ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/time_service_mock.go -package mocks code.vegaprotocol.io/vega/governance TimeService
 type TimeService interface {
-	GetTimeNow() (time.Time, error)
+	GetTimeNow() time.Time
 }
 
 // Witness ...
@@ -99,16 +99,16 @@ type NetParams interface {
 // Engine is the governance engine that handles proposal and vote lifecycle.
 type Engine struct {
 	Config
-	log         *logging.Logger
-	accs        StakingAccounts
-	markets     Markets
-	currentTime time.Time
+	log     *logging.Logger
+	accs    StakingAccounts
+	markets Markets
 	// we store proposals in slice
 	// not as easy to access them directly, but by doing this we can keep
 	// them in order of arrival, which makes their processing deterministic
 	activeProposals        []*proposal
 	enactedProposals       []*proposal
 	nodeProposalValidation *NodeValidation
+	timeService            TimeService
 	broker                 Broker
 	assets                 Assets
 	netp                   NetParams
@@ -121,12 +121,12 @@ func NewEngine(
 	log *logging.Logger,
 	cfg Config,
 	accs StakingAccounts,
+	tm TimeService,
 	broker Broker,
 	assets Assets,
 	witness Witness,
 	markets Markets,
 	netp NetParams,
-	now time.Time,
 ) *Engine {
 	log = log.Named(namedLogger)
 	log.SetLevel(cfg.Level.Level)
@@ -135,10 +135,10 @@ func NewEngine(
 		Config:                 cfg,
 		accs:                   accs,
 		log:                    log,
-		currentTime:            now,
 		activeProposals:        []*proposal{},
 		enactedProposals:       []*proposal{},
-		nodeProposalValidation: NewNodeValidation(log, assets, now, witness),
+		nodeProposalValidation: NewNodeValidation(log, assets, tm.GetTimeNow(), witness),
+		timeService:            tm,
 		broker:                 broker,
 		assets:                 assets,
 		markets:                markets,
@@ -276,10 +276,8 @@ func (e *Engine) removeProposal(id string) {
 	}
 }
 
-// OnChainTimeUpdate triggers time bound state changes.
-func (e *Engine) OnChainTimeUpdate(ctx context.Context, t time.Time) ([]*ToEnact, []*VoteClosed) {
-	e.currentTime = t
-
+// OnTick triggers time bound state changes.
+func (e *Engine) OnTick(ctx context.Context, t time.Time) ([]*ToEnact, []*VoteClosed) {
 	var (
 		toBeEnacted []*ToEnact
 		voteClosed  []*VoteClosed
@@ -316,7 +314,7 @@ func (e *Engine) OnChainTimeUpdate(ctx context.Context, t time.Time) ([]*ToEnact
 	}
 
 	// then get all proposal accepted through node validation, and start their vote time.
-	accepted, rejected := e.nodeProposalValidation.OnChainTimeUpdate(t)
+	accepted, rejected := e.nodeProposalValidation.OnTick(t)
 	for _, p := range accepted {
 		e.log.Info("proposal has been validated by nodes, starting now",
 			logging.String("proposal-id", p.ID))
@@ -393,7 +391,7 @@ func (e *Engine) SubmitProposal(
 
 	p := &types.Proposal{
 		ID:        id,
-		Timestamp: e.currentTime.UnixNano(),
+		Timestamp: e.timeService.GetTimeNow().UnixNano(),
 		Party:     party,
 		State:     types.ProposalStateOpen,
 		Terms:     psub.Terms,
@@ -472,7 +470,7 @@ func (e *Engine) intoToSubmit(p *types.Proposal) (*ToSubmit, error) {
 		// FIXME(): normally we should use the closetime
 		// but this would not play well with the MarketAuctionState stuff
 		// for now we start the auction as of now.
-		closeTime := e.currentTime
+		closeTime := e.timeService.GetTimeNow()
 		enactTime := time.Unix(p.Terms.EnactmentTimestamp, 0)
 		newMarket := p.Terms.GetNewMarket()
 
@@ -555,8 +553,9 @@ func (e *Engine) validateOpenProposal(proposal *types.Proposal) (types.ProposalE
 		return types.ProposalErrorUnknownType, err
 	}
 
+	now := e.timeService.GetTimeNow()
 	closeTime := time.Unix(proposal.Terms.ClosingTimestamp, 0)
-	minCloseTime := e.currentTime.Add(params.MinClose)
+	minCloseTime := now.Add(params.MinClose)
 	if closeTime.Before(minCloseTime) {
 		e.log.Debug("proposal close time is too soon",
 			logging.Time("expected-min", minCloseTime),
@@ -566,7 +565,7 @@ func (e *Engine) validateOpenProposal(proposal *types.Proposal) (types.ProposalE
 			fmt.Errorf("proposal closing time too soon, expected > %v, got %v", minCloseTime.UTC(), closeTime.UTC())
 	}
 
-	maxCloseTime := e.currentTime.Add(params.MaxClose)
+	maxCloseTime := now.Add(params.MaxClose)
 	if closeTime.After(maxCloseTime) {
 		e.log.Debug("proposal close time is too late",
 			logging.Time("expected-max", maxCloseTime),
@@ -577,7 +576,7 @@ func (e *Engine) validateOpenProposal(proposal *types.Proposal) (types.ProposalE
 	}
 
 	enactTime := time.Unix(proposal.Terms.EnactmentTimestamp, 0)
-	minEnactTime := e.currentTime.Add(params.MinEnact)
+	minEnactTime := now.Add(params.MinEnact)
 	if !e.isAutoEnactableProposal(proposal) && enactTime.Before(minEnactTime) {
 		e.log.Debug("proposal enact time is too soon",
 			logging.Time("expected-min", minEnactTime),
@@ -587,7 +586,7 @@ func (e *Engine) validateOpenProposal(proposal *types.Proposal) (types.ProposalE
 			fmt.Errorf("proposal enactment time too soon, expected > %v, got %v", minEnactTime.UTC(), enactTime.UTC())
 	}
 
-	maxEnactTime := e.currentTime.Add(params.MaxEnact)
+	maxEnactTime := now.Add(params.MaxEnact)
 	if !e.isAutoEnactableProposal(proposal) && enactTime.After(maxEnactTime) {
 		e.log.Debug("proposal enact time is too late",
 			logging.Time("expected-max", maxEnactTime),
@@ -669,7 +668,7 @@ func (e *Engine) AddVote(ctx context.Context, cmd types.VoteSubmission, party st
 		PartyID:                     party,
 		ProposalID:                  cmd.ProposalID,
 		Value:                       cmd.Value,
-		Timestamp:                   e.currentTime.UnixNano(),
+		Timestamp:                   e.timeService.GetTimeNow().UnixNano(),
 		TotalGovernanceTokenBalance: num.Zero(),
 		TotalGovernanceTokenWeight:  num.DecimalZero(),
 		TotalEquityLikeShareWeight:  num.DecimalZero(),

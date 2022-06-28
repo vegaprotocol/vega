@@ -47,7 +47,7 @@ func NewMarketFromSnapshot(
 	liquidityConfig liquidity.Config,
 	collateralEngine MarketCollateral,
 	oracleEngine products.OracleEngine,
-	now time.Time,
+	timeService TimeService,
 	broker Broker,
 	stateVarEngine StateVarEngine,
 	assetDetails *assets.Asset,
@@ -79,8 +79,8 @@ func NewMarketFromSnapshot(
 		tradableInstrument.RiskModel,
 		book,
 		as,
+		timeService,
 		broker,
-		now.UnixNano(),
 		mkt.ID,
 		asset,
 		stateVarEngine,
@@ -94,6 +94,7 @@ func NewMarketFromSnapshot(
 		settlementConfig,
 		tradableInstrument.Instrument.Product,
 		mkt.ID,
+		timeService,
 		broker,
 		positionFactor,
 	)
@@ -115,16 +116,14 @@ func NewMarketFromSnapshot(
 	priceFactor := num.Zero().Exp(num.NewUint(10), num.NewUint(exp))
 	lMonitor := lmon.NewMonitor(tsCalc, mkt.LiquidityMonitoringParameters)
 
-	liqEngine := liquidity.NewSnapshotEngine(liquidityConfig, log, broker, tradableInstrument.RiskModel, pMonitor, asset, mkt.ID, stateVarEngine, mkt.TickSize(), priceFactor.Clone(), positionFactor)
-	// call on chain time update straight away, so
-	// the time in the engine is being updated at creation
-	liqEngine.OnChainTimeUpdate(ctx, now)
+	liqEngine := liquidity.NewSnapshotEngine(liquidityConfig, log, timeService, broker, tradableInstrument.RiskModel, pMonitor, asset, mkt.ID, stateVarEngine, mkt.TickSize(), priceFactor.Clone(), positionFactor)
 
+	now := timeService.GetTimeNow()
 	market := &Market{
 		log:                        log,
 		mkt:                        mkt,
 		closingAt:                  time.Unix(0, mkt.MarketTimestamps.Close),
-		currentTime:                now,
+		timeService:                timeService,
 		matching:                   book,
 		tradableInstrument:         tradableInstrument,
 		risk:                       riskEngine,
@@ -140,7 +139,7 @@ func NewMarketFromSnapshot(
 		feeSplitter:                NewFeeSplitterFromSnapshot(em.FeeSplitter, now),
 		as:                         as,
 		pMonitor:                   pMonitor,
-		peggedOrders:               NewPeggedOrdersFromSnapshot(em.PeggedOrders),
+		peggedOrders:               NewPeggedOrdersFromSnapshot(em.PeggedOrders, timeService),
 		expiringOrders:             NewExpiringOrdersFromState(em.ExpiringOrders),
 		equityShares:               NewEquitySharesFromSnapshot(em.EquityShare),
 		lastBestBidPrice:           em.LastBestBid.Clone(),

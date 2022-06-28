@@ -18,6 +18,7 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/client/eth"
+	localMocks "code.vegaprotocol.io/vega/client/eth/mocks"
 	"code.vegaprotocol.io/vega/staking/mocks"
 
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
@@ -28,7 +29,7 @@ import (
 func TestEthereumConfirmations(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	ethClient := mocks.NewMockEthereumClientConfirmations(ctrl)
-	tim := mocks.NewMockTime(ctrl)
+	tim := localMocks.NewMockTime(ctrl)
 	ethCfns := eth.NewEthereumConfirmations(ethClient, tim)
 	defer ctrl.Finish()
 

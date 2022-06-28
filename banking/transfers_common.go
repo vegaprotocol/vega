@@ -36,13 +36,14 @@ func (e *Engine) TransferFunds(
 	ctx context.Context,
 	transfer *types.TransferFunds,
 ) error {
+	now := e.timeService.GetTimeNow()
 	// add timestamps straight away
 	switch transfer.Kind {
 	case types.TransferCommandKindOneOff:
-		transfer.OneOff.Timestamp = e.currentTime
+		transfer.OneOff.Timestamp = now
 		return e.oneOffTransfer(ctx, transfer.OneOff)
 	case types.TransferCommandKindRecurring:
-		transfer.Recurring.Timestamp = e.currentTime
+		transfer.Recurring.Timestamp = now
 		return e.recurringTransfer(ctx, transfer.Recurring)
 	default:
 		return ErrUnsupportedTransferKind
@@ -90,7 +91,8 @@ func (e *Engine) processTransfer(
 	references := []string{reference}
 
 	// does the transfer needs to be finalized now?
-	if oneoff == nil || (oneoff.DeliverOn == nil || oneoff.DeliverOn.Before(e.currentTime)) {
+	now := e.timeService.GetTimeNow()
+	if oneoff == nil || (oneoff.DeliverOn == nil || oneoff.DeliverOn.Before(now)) {
 		transfers = append(transfers, toTransfer)
 		accountTypes = append(accountTypes, toAcc)
 		references = append(references, reference)
