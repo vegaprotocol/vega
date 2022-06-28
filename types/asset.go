@@ -34,15 +34,15 @@ var (
 type AssetStatus = proto.Asset_Status
 
 const (
-	// Default value, always invalid
+	// Default value, always invalid.
 	AssetStatusUnspecified AssetStatus = proto.Asset_STATUS_UNSPECIFIED
-	// Asset is proposed and under vote
+	// Asset is proposed and under vote.
 	AssetStatusProposed AssetStatus = proto.Asset_STATUS_PROPOSED
-	// Asset has been rejected from governance
+	// Asset has been rejected from governance.
 	AssetStatusRejected AssetStatus = proto.Asset_STATUS_REJECTED
-	// Asset is pending listing from the bridge
+	// Asset is pending listing from the bridge.
 	AssetStatusPendingListing AssetStatus = proto.Asset_STATUS_PENDING_LISTING
-	// Asset is fully usable in the network
+	// Asset is fully usable in the network.
 	AssetStatusEnabled AssetStatus = proto.Asset_STATUS_ENABLED
 )
 

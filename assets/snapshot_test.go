@@ -21,7 +21,6 @@ import (
 	snapshot "code.vegaprotocol.io/protos/vega/snapshot/v1"
 	"code.vegaprotocol.io/shared/paths"
 	"code.vegaprotocol.io/vega/assets"
-	"code.vegaprotocol.io/vega/assets/mocks"
 	bmocks "code.vegaprotocol.io/vega/broker/mocks"
 	"code.vegaprotocol.io/vega/integration/stubs"
 	vgcontext "code.vegaprotocol.io/vega/libs/context"
@@ -30,6 +29,7 @@ import (
 	snp "code.vegaprotocol.io/vega/snapshot"
 	"code.vegaprotocol.io/vega/stats"
 	"code.vegaprotocol.io/vega/types"
+	tmocks "code.vegaprotocol.io/vega/vegatime/mocks"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
 )
@@ -37,7 +37,7 @@ import (
 type assetsTest struct {
 	*assets.Service
 	ctrl   *gomock.Controller
-	ts     *mocks.MockTimeService
+	ts     *tmocks.MockTimeService
 	broker *bmocks.MockBrokerI
 }
 
@@ -46,8 +46,7 @@ func testAssets(t *testing.T) *assetsTest {
 	conf := assets.NewDefaultConfig()
 	logger := logging.NewTestLogger()
 	ctrl := gomock.NewController(t)
-	ts := mocks.NewMockTimeService(ctrl)
-	ts.EXPECT().NotifyOnTick(gomock.Any()).Times(1)
+	ts := tmocks.NewMockTimeService(ctrl)
 	broker := bmocks.NewMockBrokerI(ctrl)
 	as := assets.New(logger, conf, nil, nil, broker, ts, true)
 	return &assetsTest{

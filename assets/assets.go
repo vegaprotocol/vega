@@ -130,7 +130,7 @@ func (s *Service) Enable(ctx context.Context, assetID string) error {
 }
 
 // SetPendingListing update the state of an asset from proposed
-// to pending listing on the bridge
+// to pending listing on the bridge.
 func (s *Service) SetPendingListing(ctx context.Context, assetID string) error {
 	s.pamu.Lock()
 	defer s.pamu.Unlock()
@@ -147,7 +147,7 @@ func (s *Service) SetPendingListing(ctx context.Context, assetID string) error {
 }
 
 // SetRejected update the state of an asset from proposed
-// to pending listing on the bridge
+// to pending listing on the bridge.
 func (s *Service) SetRejected(ctx context.Context, assetID string) error {
 	s.pamu.Lock()
 	defer s.pamu.Unlock()

@@ -151,6 +151,7 @@ func testVotingDuringValidationOfProposalForNewAssetSucceeds(t *testing.T) {
 	// expect
 	eng.expectPassedProposalEvent(t, proposal.ID)
 	eng.expectTotalGovernanceTokenFromVoteEvents(t, "1", "7")
+	eng.assets.EXPECT().SetPendingListing(gomock.Any(), proposal.ID).Times(1)
 
 	// when
 	eng.OnTick(context.Background(), afterClosing)

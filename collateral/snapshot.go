@@ -123,17 +123,15 @@ func (e *Engine) restoreAssets(ctx context.Context, assets *types.CollateralAsse
 	e.enabledAssets = make(map[string]types.Asset, len(assets.Assets))
 	e.state.assetIDs = make([]string, 0, len(assets.Assets))
 	e.state.assets = make(map[string]types.Asset, len(assets.Assets))
-	evts := []events.Event{}
 	for _, a := range assets.Assets {
 		ast := types.Asset{
 			ID:      a.ID,
 			Details: a.Details,
+			Status:  a.Status,
 		}
 		e.enabledAssets[a.ID] = ast
 		e.state.enableAsset(ast)
-		evts = append(evts, events.NewAssetEvent(ctx, *a))
 	}
-	e.broker.SendBatch(evts)
 	var err error
 	e.state.updatesAssets = false
 	e.state.serialisedAssets, err = proto.Marshal(p.IntoProto())
