@@ -29,7 +29,7 @@ create table assets
     erc20_contract      TEXT,
     lifetime_limit      HUGEINT NOT NULL,
     withdraw_threshold  HUGEINT NOT NULL,
-    status		asset_status_type NO NULL,
+    status		asset_status_type NOT NULL,
     vega_time           TIMESTAMP WITH TIME ZONE NOT NULL REFERENCES blocks (vega_time)
 );
 
