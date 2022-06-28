@@ -66,7 +66,7 @@ type StakingAccounts interface {
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/assets_mock.go -package mocks code.vegaprotocol.io/vega/governance Assets
 type Assets interface {
-	NewAsset(ref string, assetDetails *types.AssetDetails) (string, error)
+	NewAsset(ctx context.Context, ref string, assetDetails *types.AssetDetails) (string, error)
 	Get(assetID string) (*assets.Asset, error)
 	IsEnabled(string) bool
 }
@@ -417,7 +417,7 @@ func (e *Engine) SubmitProposal(
 	// now if it's a 2 steps proposal, start the node votes
 	if e.isTwoStepsProposal(p) {
 		p.WaitForNodeVote()
-		if err := e.startTwoStepsProposal(p); err != nil {
+		if err := e.startTwoStepsProposal(ctx, p); err != nil {
 			return nil, err
 		}
 	} else {
@@ -512,9 +512,9 @@ func (e *Engine) startValidatedProposal(p *proposal) {
 	e.gss.changedActive = true
 }
 
-func (e *Engine) startTwoStepsProposal(p *types.Proposal) error {
+func (e *Engine) startTwoStepsProposal(ctx context.Context, p *types.Proposal) error {
 	e.gss.changedNodeValidation = true
-	return e.nodeProposalValidation.Start(p)
+	return e.nodeProposalValidation.Start(ctx, p)
 }
 
 func (e *Engine) isTwoStepsProposal(p *types.Proposal) bool {

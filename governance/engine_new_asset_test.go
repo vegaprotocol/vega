@@ -44,7 +44,7 @@ func testSubmittingProposalForNewAssetSucceeds(t *testing.T) {
 	proposal := eng.newProposalForNewAsset(party.Id, eng.tsvc.GetTimeNow())
 
 	// setup
-	eng.assets.EXPECT().NewAsset(proposal.ID, gomock.Any()).Times(1).Return(proposal.ID, nil)
+	eng.assets.EXPECT().NewAsset(gomock.Any(), proposal.ID, gomock.Any()).Times(1).Return(proposal.ID, nil)
 	eng.witness.EXPECT().StartCheck(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(nil)
 
 	// expect
@@ -92,7 +92,7 @@ func testVotingDuringValidationOfProposalForNewAssetSucceeds(t *testing.T) {
 	var bAsset *assets.Asset
 	var fcheck func(interface{}, bool)
 	var rescheck validators.Resource
-	eng.assets.EXPECT().NewAsset(gomock.Any(), gomock.Any()).Times(1).DoAndReturn(func(ref string, assetDetails *types.AssetDetails) (string, error) {
+	eng.assets.EXPECT().NewAsset(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).DoAndReturn(func(_ context.Context, ref string, assetDetails *types.AssetDetails) (string, error) {
 		bAsset = assets.NewAsset(builtin.New(ref, assetDetails))
 		return ref, nil
 	})

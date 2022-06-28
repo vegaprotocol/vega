@@ -13,11 +13,14 @@
 package assets
 
 import (
+	"context"
 	"errors"
 	"sync"
 
 	"code.vegaprotocol.io/vega/assets/builtin"
 	"code.vegaprotocol.io/vega/assets/erc20"
+	"code.vegaprotocol.io/vega/broker"
+	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/nodewallets"
 	"code.vegaprotocol.io/vega/types"
@@ -33,6 +36,8 @@ var (
 type Service struct {
 	log *logging.Logger
 	cfg Config
+
+	broker broker.BrokerI
 
 	// id to asset
 	// these assets exists and have been save
@@ -58,6 +63,7 @@ func New(
 	cfg Config,
 	nw *nodewallets.NodeWallets,
 	ethClient erc20.ETHClient,
+	broker broker.BrokerI,
 	ts vegatime.TimeService,
 	isValidator bool,
 ) *Service {
@@ -67,6 +73,7 @@ func New(
 	return &Service{
 		log:           log,
 		cfg:           cfg,
+		broker:        broker,
 		assets:        map[string]*Asset{},
 		pendingAssets: map[string]*Asset{},
 		nodeWallets:   nw,
@@ -95,7 +102,7 @@ func (s *Service) ReloadConf(cfg Config) {
 }
 
 // Enable move the state of an from pending the list of valid and accepted assets.
-func (s *Service) Enable(assetID string) error {
+func (s *Service) Enable(ctx context.Context, assetID string) error {
 	s.pamu.Lock()
 	defer s.pamu.Unlock()
 	asset, ok := s.pendingAssets[assetID]
@@ -103,6 +110,7 @@ func (s *Service) Enable(assetID string) error {
 		return ErrAssetDoesNotExist
 	}
 	if asset.IsValid() {
+		asset.SetEnabled()
 		s.amu.Lock()
 		defer s.amu.Unlock()
 		s.assets[assetID] = asset
@@ -113,9 +121,47 @@ func (s *Service) Enable(assetID string) error {
 		delete(s.pendingAssets, assetID)
 		s.ass.changedActive = true
 		s.ass.changedPending = true
+
+		s.broker.Send(events.NewAssetEvent(ctx, *asset.Type()))
+
 		return nil
 	}
 	return ErrAssetInvalid
+}
+
+// SetPendingListing update the state of an asset from proposed
+// to pending listing on the bridge
+func (s *Service) SetPendingListing(ctx context.Context, assetID string) error {
+	s.pamu.Lock()
+	defer s.pamu.Unlock()
+	asset, ok := s.pendingAssets[assetID]
+	if !ok {
+		return ErrAssetDoesNotExist
+	}
+
+	asset.SetPendingListing()
+	s.broker.Send(events.NewAssetEvent(ctx, *asset.Type()))
+	s.ass.changedPending = true
+
+	return nil
+}
+
+// SetRejected update the state of an asset from proposed
+// to pending listing on the bridge
+func (s *Service) SetRejected(ctx context.Context, assetID string) error {
+	s.pamu.Lock()
+	defer s.pamu.Unlock()
+	asset, ok := s.pendingAssets[assetID]
+	if !ok {
+		return ErrAssetDoesNotExist
+	}
+
+	asset.SetRejected()
+	s.broker.Send(events.NewAssetEvent(ctx, *asset.Type()))
+	delete(s.pendingAssets, assetID)
+	s.ass.changedPending = true
+
+	return nil
 }
 
 func (s *Service) GetVegaIDFromEthereumAddress(address string) string {
@@ -161,7 +207,7 @@ func (s *Service) assetFromDetails(assetID string, assetDetails *types.AssetDeta
 // NewAsset add a new asset to the pending list of assets
 // the ref is the reference of proposal which submitted the new asset
 // returns the assetID and an error.
-func (s *Service) NewAsset(assetID string, assetDetails *types.AssetDetails) (string, error) {
+func (s *Service) NewAsset(ctx context.Context, assetID string, assetDetails *types.AssetDetails) (string, error) {
 	s.pamu.Lock()
 	defer s.pamu.Unlock()
 	asset, err := s.assetFromDetails(assetID, assetDetails)
@@ -170,6 +216,8 @@ func (s *Service) NewAsset(assetID string, assetDetails *types.AssetDetails) (st
 	}
 	s.pendingAssets[assetID] = asset
 	s.ass.changedPending = true
+	s.broker.Send(events.NewAssetEvent(ctx, *asset.Type()))
+
 	return assetID, err
 }
 

@@ -79,11 +79,24 @@ func New(
 		asset: &types.Asset{
 			ID:      id,
 			Details: asset,
+			Status:  types.AssetStatusProposed,
 		},
 		address:   source.ContractAddress,
 		wallet:    w,
 		ethClient: ethClient,
 	}, nil
+}
+
+func (e *ERC20) SetPendingListing() {
+	e.asset.Status = types.AssetStatusPendingListing
+}
+
+func (e *ERC20) SetRejected() {
+	e.asset.Status = types.AssetStatusRejected
+}
+
+func (e *ERC20) SetEnabled() {
+	e.asset.Status = types.AssetStatusEnabled
 }
 
 func (e *ERC20) ProtoAsset() *typespb.Asset {

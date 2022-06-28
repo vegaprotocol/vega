@@ -5,6 +5,7 @@
 package mocks
 
 import (
+	context "context"
 	reflect "reflect"
 
 	assets "code.vegaprotocol.io/vega/assets"
@@ -65,16 +66,16 @@ func (mr *MockAssetsMockRecorder) IsEnabled(arg0 interface{}) *gomock.Call {
 }
 
 // NewAsset mocks base method.
-func (m *MockAssets) NewAsset(arg0 string, arg1 *types.AssetDetails) (string, error) {
+func (m *MockAssets) NewAsset(arg0 context.Context, arg1 string, arg2 *types.AssetDetails) (string, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "NewAsset", arg0, arg1)
+	ret := m.ctrl.Call(m, "NewAsset", arg0, arg1, arg2)
 	ret0, _ := ret[0].(string)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // NewAsset indicates an expected call of NewAsset.
-func (mr *MockAssetsMockRecorder) NewAsset(arg0, arg1 interface{}) *gomock.Call {
+func (mr *MockAssetsMockRecorder) NewAsset(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NewAsset", reflect.TypeOf((*MockAssets)(nil).NewAsset), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NewAsset", reflect.TypeOf((*MockAssets)(nil).NewAsset), arg0, arg1, arg2)
 }
