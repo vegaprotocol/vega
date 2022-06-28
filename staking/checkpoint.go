@@ -69,14 +69,12 @@ func (c *Checkpoint) Load(ctx context.Context, data []byte) error {
 		return err
 	}
 
-	stakeLinkingEvents := make([]events.Event, 0, len(b.Accepted))
-
 	// first we deduplicates those events, this is a fix for v0.50.4
 	dedup := dedupEvents(b.Accepted)
 
 	for _, evt := range dedup {
 		stakeLinking := types.StakeLinkingFromProto(evt)
-		stakeLinkingEvents = append(stakeLinkingEvents, events.NewStakeLinking(ctx, *stakeLinking))
+
 		// this will send all necessary events as well
 		c.accounting.AddEvent(ctx, stakeLinking)
 		// now add event to the hash mapping
@@ -84,6 +82,13 @@ func (c *Checkpoint) Load(ctx context.Context, data []byte) error {
 			c.log.Panic("invalid checkpoint, duplicate event stored",
 				logging.String("event-id", stakeLinking.ID),
 			)
+		}
+	}
+
+	stakeLinkingEvents := make([]events.Event, 0, len(b.Accepted))
+	for _, acc := range c.accounting.hashableAccounts {
+		for _, e := range acc.Events {
+			stakeLinkingEvents = append(stakeLinkingEvents, events.NewStakeLinking(ctx, *e))
 		}
 	}
 
@@ -180,6 +185,6 @@ func dedupEvents(evts []*pbevents.StakeLinking) []*pbevents.StakeLinking {
 		out = append(out, v)
 	}
 
-	sort.Slice(out, func(i, j int) bool { return out[i].BlockTime < out[j].BlockTime })
+	sort.Slice(out, func(i, j int) bool { return out[i].Id < out[j].Id })
 	return out
 }
