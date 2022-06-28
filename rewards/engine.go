@@ -20,6 +20,7 @@ import (
 
 	"code.vegaprotocol.io/vega/types/num"
 
+	proto "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
@@ -197,7 +198,7 @@ func (e *Engine) OnEpochEvent(ctx context.Context, epoch types.Epoch) {
 	e.log.Debug("OnEpochEvent")
 
 	// on new epoch update the epoch seq and update the epoch started flag
-	if (epoch.EndTime == time.Time{}) {
+	if epoch.Action == proto.EpochAction_EPOCH_ACTION_START {
 		e.epochSeq = num.NewUint(epoch.Seq).String()
 		e.newEpochStarted = true
 		return
