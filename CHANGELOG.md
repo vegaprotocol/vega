@@ -6,7 +6,7 @@
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 ### 🗑️ Deprecation
-- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+- [5513](https://github.com/vegaprotocol/vega/issues/5513) - Remove all checkpoint restore command
 
 ### 🛠 Improvements
 - [5428](https://github.com/vegaprotocol/vega/pull/5428) - Update contributor information
