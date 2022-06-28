@@ -14,7 +14,6 @@
 ### 🐛 Fixes
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
-
 ## 0.50.2
 
 ### 🛠 Improvements
