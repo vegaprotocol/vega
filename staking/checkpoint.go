@@ -70,6 +70,15 @@ func (c *Checkpoint) Load(ctx context.Context, data []byte) error {
 		}
 	}
 
+	stakeLinkingEvents := make([]events.Event, 0, len(b.Accepted))
+	for _, acc := range c.accounting.hashableAccounts {
+		for _, e := range acc.Events {
+			stakeLinkingEvents = append(stakeLinkingEvents, events.NewStakeLinking(ctx, *e))
+		}
+	}
+
+	c.accounting.broker.SendBatch(stakeLinkingEvents)
+
 	// 0 is default value, we assume that it was then not set
 	if b.LastBlockSeen != 0 {
 		c.ethEventSource.UpdateStakingStartingBlock(b.LastBlockSeen)
@@ -161,6 +170,6 @@ func dedupEvents(evts []*events.StakeLinking) []*events.StakeLinking {
 		out = append(out, v)
 	}
 
-	sort.Slice(out, func(i, j int) bool { return out[i].BlockTime < out[j].BlockTime })
+	sort.Slice(out, func(i, j int) bool { return out[i].Id < out[j].Id })
 	return out
 }
