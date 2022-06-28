@@ -49,8 +49,6 @@ const (
 	DelegateCommand Command = 0x4D
 	// UndelegateCommand ...
 	UndelegateCommand Command = 0x4E
-	// CheckpointRestoreCommand ...
-	CheckpointRestoreCommand Command = 0x4F
 	// RotateKeySubmissionCommand ...
 	RotateKeySubmissionCommand Command = 0x50
 	// StateVariableProposalCommand ...
@@ -82,7 +80,6 @@ var commandName = map[Command]string{
 	SubmitOracleDataCommand:            "Submit Oracle Data",
 	DelegateCommand:                    "Delegate",
 	UndelegateCommand:                  "Undelegate",
-	CheckpointRestoreCommand:           "Checkpoint Restore",
 	RotateKeySubmissionCommand:         "Key Rotate Submission",
 	StateVariableProposalCommand:       "State Variable Proposal",
 	TransferFundsCommand:               "Transfer Funds",
@@ -93,7 +90,7 @@ var commandName = map[Command]string{
 
 func (cmd Command) IsValidatorCommand() bool {
 	switch cmd {
-	case CheckpointRestoreCommand, NodeSignatureCommand, ChainEventCommand, NodeVoteCommand, ValidatorHeartbeatCommand, RotateKeySubmissionCommand, StateVariableProposalCommand, RotateEthereumKeySubmissionCommand:
+	case NodeSignatureCommand, ChainEventCommand, NodeVoteCommand, ValidatorHeartbeatCommand, RotateKeySubmissionCommand, StateVariableProposalCommand, RotateEthereumKeySubmissionCommand:
 		return true
 	default:
 		return false

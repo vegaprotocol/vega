@@ -146,10 +146,11 @@ func (e *Engine) UponGenesis(ctx context.Context, data []byte) (err error) {
 		}
 	}
 
-	if state != nil && len(state.CheckpointState) > 0 {
+	// a hash is set to be loaded
+	if len(e.loadHash) > 0 {
 		// no loadHash but a state specified.
-		if len(e.loadHash) <= 0 {
-			e.log.Panic("invalid genesis file, state specified without hash")
+		if len(state.CheckpointHash) <= 0 {
+			e.log.Panic("invalid genesis file, hash specified without state")
 		}
 
 		buf, err := base64.StdEncoding.DecodeString(state.CheckpointState)
@@ -163,7 +164,7 @@ func (e *Engine) UponGenesis(ctx context.Context, data []byte) (err error) {
 		}
 
 		// now we can proceed with loading it.
-		if err := e.Load(ctx, cpt); err != nil {
+		if err := e.load(ctx, cpt); err != nil {
 			return fmt.Errorf("could not load checkpoint: %w", err)
 		}
 	}
@@ -202,11 +203,6 @@ func (e *Engine) addComponent(comp State) error {
 	}
 	// component was registered already
 	return nil
-}
-
-// AwaitingRestore indicates that a checkpoint restore is pending, will return false once CP is restored.
-func (e *Engine) AwaitingRestore() bool {
-	return len(e.loadHash) > 0
 }
 
 // BalanceCheckpoint is used for deposits and withdrawals. We want a checkpoint to be taken in those events
@@ -264,8 +260,8 @@ func (e *Engine) makeCheckpoint(ctx context.Context) *types.CheckpointState {
 	return cpState
 }
 
-// Load - loads checkpoint data for all components by name.
-func (e *Engine) Load(ctx context.Context, cpt *types.CheckpointState) error {
+// load - loads checkpoint data for all components by name.
+func (e *Engine) load(ctx context.Context, cpt *types.CheckpointState) error {
 	if len(e.loadHash) != 0 {
 		hashDiff := bytes.Compare(e.loadHash, cpt.Hash)
 

@@ -29,7 +29,6 @@ import (
 
 	"code.vegaprotocol.io/vega/api"
 	"code.vegaprotocol.io/vega/blockchain/abci"
-	"code.vegaprotocol.io/vega/checkpoint"
 	"code.vegaprotocol.io/vega/crypto"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/genesis"
@@ -62,9 +61,6 @@ var (
 type Checkpoint interface {
 	BalanceCheckpoint(ctx context.Context) (*types.CheckpointState, error)
 	Checkpoint(ctx context.Context, now time.Time) (*types.CheckpointState, error)
-	Load(ctx context.Context, cpt *types.CheckpointState) error
-	AwaitingRestore() bool
-	ValidateCheckpoint(cpt *types.CheckpointState) error
 }
 
 type SpamEngine interface {
@@ -117,7 +113,6 @@ type App struct {
 	chainCtx          context.Context // use this to have access to chain ID
 	blockCtx          context.Context // use this to have access to block hash + height in commit call
 	lastBlockAppHash  []byte
-	reloadCP          bool
 	version           string
 	blockchainClient  BlockchainClient
 
@@ -207,7 +202,6 @@ func NewApp(
 			config.Ratelimit.Requests,
 			config.Ratelimit.PerNBlocks,
 		),
-		reloadCP:              checkpoint.AwaitingRestore(),
 		assets:                assets,
 		banking:               banking,
 		broker:                broker,
@@ -301,8 +295,6 @@ func NewApp(
 			app.SendEventOnError(app.DeliverDelegate)).
 		HandleDeliverTx(txn.UndelegateCommand,
 			app.SendEventOnError(app.DeliverUndelegate)).
-		HandleDeliverTx(txn.CheckpointRestoreCommand,
-			app.SendEventOnError(app.DeliverReloadCheckpoint)).
 		HandleDeliverTx(txn.RotateKeySubmissionCommand,
 			app.RequireValidatorMasterPubKeyW(app.DeliverKeyRotateSubmission)).
 		HandleDeliverTx(txn.StateVariableProposalCommand,
@@ -640,16 +632,6 @@ func (app *App) OnBeginBlock(req tmtypes.RequestBeginBlock) (ctx context.Context
 		logging.Int64("height", req.Header.GetHeight()),
 	)
 
-	// will be true only the first time we get out of the bootstrap period
-	if app.cpt != nil && app.limits.BootstrapFinished() {
-		app.log.Info("restoring a scheduled checkpoint")
-		if err := app.DeliverReloadCheckpoint(ctx, app.cpt); err != nil {
-			app.log.Error("could not restore scheduled checkpoint",
-				logging.Error(err))
-		}
-		app.cpt = nil
-	}
-
 	app.top.BeginBlock(ctx, req)
 
 	return ctx, resp
@@ -800,51 +782,6 @@ func (app *App) limitPubkey(pk string) (limit bool, isValidator bool) {
 	return false, false
 }
 
-func (app *App) validateScheduleCheckpointRestore(tx abci.Tx) (cpt *types.CheckpointState, err error) {
-	defer func() {
-		if err != nil {
-			app.log.Error("could not schedule checkpoint to be loaded at network bootstraping end", logging.Error(err))
-		}
-	}()
-
-	if app.cpt != nil {
-		// an valid checkpoint is already schedule to be loaded
-		// at end of bootstrap, skip
-		return nil, errors.New("a valid checkpoint is already scheduled to be loaded at the end of the boostraping period")
-	}
-
-	cmd := &commandspb.RestoreSnapshot{}
-	if err := tx.Unmarshal(cmd); err != nil {
-		return nil, fmt.Errorf("invalid restore checkpoint command: %w", err)
-	}
-
-	// convert to checkpoint type:
-	cpt = &types.CheckpointState{}
-	if err := cpt.SetState(cmd.Data); err != nil {
-		return nil, fmt.Errorf("invalid restore checkpoint command: %w", err)
-	}
-
-	// now we have a valid checkpoint.
-	if err := app.checkpoint.ValidateCheckpoint(cpt); err != nil {
-		return nil, err
-	}
-
-	return cpt, nil
-}
-
-func (app *App) scheduleCheckpointRestore(tx abci.Tx) (err error) {
-	cpt, err := app.validateScheduleCheckpointRestore(tx)
-	if err != nil {
-		return err
-	}
-
-	app.cpt = tx
-	app.log.Info("new checkpoint scheduled to be loaded after boostraping ends",
-		logging.String("hash", hex.EncodeToString(cpt.Hash)))
-
-	return nil
-}
-
 func (app *App) canSubmitTx(tx abci.Tx) (err error) {
 	defer func() {
 		if err != nil {
@@ -852,49 +789,12 @@ func (app *App) canSubmitTx(tx abci.Tx) (err error) {
 		}
 	}()
 
-	// are we in a bootstrapping period?
-	if !app.limits.BootstrapFinished() {
-		// only validators can send transaction at this point.
-		party := tx.Party()
-		// validator can be identified as with Vega public key with IsValidatorVegaPubKey function
-		// or with Vega master publick key with IsValidatorNodeID function.
-		if !(app.top.IsValidatorVegaPubKey(party) || app.top.IsValidatorNodeID(party)) {
-			return ErrNoTransactionAllowedDuringBootstrap
-		}
-		cmd := tx.Command()
-		// make sure this is a validator command and not a checkpoint.
-		// checkpoints are only allowed when the bootstrap period is done.
-		if !cmd.IsValidatorCommand() {
-			return ErrNonValidatorTransactionDisabledDuringBootstrap
-		}
-		if cmd == txn.CheckpointRestoreCommand {
-			_, err := app.validateScheduleCheckpointRestore(tx)
-			return err
-		}
-	}
-
 	switch tx.Command() {
-	case txn.CheckpointRestoreCommand:
-		// do not get the transaction in the chain if we are not expecting a reload
-		if !app.checkpoint.AwaitingRestore() {
-			return errors.New("no checkpoint expected to be restored")
-		}
-	case txn.WithdrawCommand:
-		if app.reloadCP {
-			// we haven't reloaded the collateral data, withdrawals are going to fail
-			return ErrAwaitingCheckpointRestore
-		}
 	case txn.SubmitOrderCommand, txn.AmendOrderCommand, txn.CancelOrderCommand, txn.LiquidityProvisionCommand, txn.AmendLiquidityProvisionCommand, txn.CancelLiquidityProvisionCommand:
 		if !app.limits.CanTrade() {
 			return ErrTradingDisabled
 		}
-		if app.reloadCP {
-			return ErrAwaitingCheckpointRestore
-		}
 	case txn.ProposeCommand:
-		if app.reloadCP {
-			return ErrAwaitingCheckpointRestore
-		}
 		praw := &commandspb.ProposalSubmission{}
 		if err := tx.Unmarshal(praw); err != nil {
 			return fmt.Errorf("could not unmarshal proposal submission: %w", err)
@@ -1348,10 +1248,6 @@ func (app *App) CheckSubmitOracleData(_ context.Context, tx abci.Tx) error {
 }
 
 func (app *App) onTick(ctx context.Context, t time.Time) {
-	if app.reloadCP {
-		app.log.Debug("This would call on chain time update for governance. We've skipped all tx, so just ignore")
-		return
-	}
 	toEnactProposals, voteClosedProposals := app.gov.OnTick(ctx, t)
 	for _, voteClosed := range voteClosedProposals {
 		prop := voteClosed.Proposal()
@@ -1476,10 +1372,6 @@ func (app *App) enactNetworkParameterUpdate(ctx context.Context, prop *types.Pro
 }
 
 func (app *App) DeliverDelegate(ctx context.Context, tx abci.Tx) (err error) {
-	if app.reloadCP {
-		app.log.Debug("Skipping transaction while waiting for checkpoint restore")
-		return nil
-	}
 	ce := &commandspb.DelegateSubmission{}
 	if err := tx.Unmarshal(ce); err != nil {
 		return err
@@ -1494,10 +1386,6 @@ func (app *App) DeliverDelegate(ctx context.Context, tx abci.Tx) (err error) {
 }
 
 func (app *App) DeliverUndelegate(ctx context.Context, tx abci.Tx) (err error) {
-	if app.reloadCP {
-		app.log.Debug("Skipping transaction while waiting for checkpoint restore")
-		return nil
-	}
 	ce := &commandspb.UndelegateSubmission{}
 	if err := tx.Unmarshal(ce); err != nil {
 		return err
@@ -1521,64 +1409,7 @@ func (app *App) DeliverUndelegate(ctx context.Context, tx abci.Tx) (err error) {
 	}
 }
 
-func (app *App) DeliverReloadCheckpoint(ctx context.Context, tx abci.Tx) (err error) {
-	if !app.limits.BootstrapFinished() {
-		// bootstrap is not finished, we eventually schedule a reload of the
-		// checkpoint, if valid
-		return app.scheduleCheckpointRestore(tx)
-	}
-
-	cmd := &commandspb.RestoreSnapshot{}
-	defer func() {
-		if err != nil {
-			app.log.Error("Restoring checkpoint failed",
-				logging.Error(err),
-			)
-			return
-		}
-		app.log.Info("Checkpoint restored!")
-	}()
-
-	if err := tx.Unmarshal(cmd); err != nil {
-		return err
-	}
-
-	// convert to checkpoint type:
-	cpt := &types.CheckpointState{}
-	if err := cpt.SetState(cmd.Data); err != nil {
-		return err
-	}
-	bh, err := cpt.GetBlockHeight()
-	if err != nil {
-		app.log.Panic("Failed to get blockheight from checkpoint", logging.Error(err))
-	}
-	// ensure block height and chain id are set
-	cid, err := vgcontext.ChainIDFromContext(app.chainCtx)
-	if err != nil {
-		app.log.Panic("Failed to get chain id", logging.Error(err))
-	}
-
-	ctx = vgcontext.WithBlockHeight(ctx, bh)
-	ctx = vgcontext.WithChainID(ctx, cid)
-	app.blockCtx = ctx
-	err = app.checkpoint.Load(ctx, cpt)
-	if err != nil && err != types.ErrCheckpointStateInvalid && err != types.ErrCheckpointHashIncorrect && !errors.Is(err, checkpoint.ErrNoCheckpointExpectedToBeRestored) && !errors.Is(err, checkpoint.ErrIncompatibleHashes) {
-		app.log.Panic("Failed to restore checkpoint", logging.Error(err))
-	}
-	// set flag in case the CP has been reloaded
-	app.reloadCP = app.checkpoint.AwaitingRestore()
-	// now we can call onTick for the governance engine updates, and enable the markets
-	app.onTick(ctx, app.time.GetTimeNow())
-	// @TODO if the snapshot hash was invalid, or its payload incorrect, the data was potentially tampered with
-	// emit an error event perhaps, log, etc...?
-	return err
-}
-
 func (app *App) DeliverKeyRotateSubmission(ctx context.Context, tx abci.Tx) error {
-	if app.reloadCP {
-		app.log.Debug("Skipping transaction while waiting for checkpoint restore")
-		return nil
-	}
 	kr := &commandspb.KeyRotateSubmission{}
 	if err := tx.Unmarshal(kr); err != nil {
 		return err
@@ -1624,10 +1455,6 @@ func (app *App) enactUpdateMarket(ctx context.Context, prop *types.Proposal, mar
 }
 
 func (app *App) DeliverEthereumKeyRotateSubmission(ctx context.Context, tx abci.Tx) error {
-	if app.reloadCP {
-		app.log.Debug("Skipping transaction while waiting for checkpoint restore")
-		return nil
-	}
 	kr := &commandspb.EthereumKeyRotateSubmission{}
 	if err := tx.Unmarshal(kr); err != nil {
 		return err

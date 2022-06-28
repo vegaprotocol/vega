@@ -38,7 +38,6 @@ func (e *Engine) serialiseLimits() ([]byte, error) {
 	pl := types.Payload{
 		Data: &types.PayloadLimitState{
 			LimitState: &types.LimitState{
-				BlockCount:               uint32(e.blockCount),
 				CanProposeMarket:         e.canProposeMarket,
 				CanProposeAsset:          e.canProposeAsset,
 				GenesisLoaded:            e.genesisLoaded,
@@ -108,7 +107,6 @@ func (e *Engine) LoadState(ctx context.Context, payload *types.Payload) ([]types
 }
 
 func (e *Engine) restoreLimits(ctx context.Context, l *types.LimitState, p *types.Payload) error {
-	e.blockCount = uint16(l.BlockCount)
 	e.canProposeAsset = l.CanProposeAsset
 	e.canProposeMarket = l.CanProposeMarket
 	e.genesisLoaded = l.GenesisLoaded
@@ -116,10 +114,6 @@ func (e *Engine) restoreLimits(ctx context.Context, l *types.LimitState, p *type
 	e.proposeAssetEnabled = l.ProposeAssetEnabled
 	e.proposeMarketEnabledFrom = l.ProposeMarketEnabledFrom
 	e.proposeAssetEnabledFrom = l.ProposeAssetEnabledFrom
-
-	if e.blockCount > e.bootstrapBlockCount {
-		e.bootstrapFinished = true
-	}
 
 	e.sendEvent(ctx)
 	var err error
