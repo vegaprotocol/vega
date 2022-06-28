@@ -15,6 +15,7 @@ create table chain
     id            TEXT NOT NULL,
     onerow_check  bool PRIMARY KEY DEFAULT TRUE
 );
+create type asset_status_type as enum('STATUS_UNSPECIFIED', 'STATUS_PROPOSED', 'STATUS_REJECTED', 'STATUS_PENDING_LISTING', 'STATUS_ENABLED');
 
 create table assets
 (
@@ -28,6 +29,7 @@ create table assets
     erc20_contract      TEXT,
     lifetime_limit      HUGEINT NOT NULL,
     withdraw_threshold  HUGEINT NOT NULL,
+    status		asset_status_type NO NULL,
     vega_time           TIMESTAMP WITH TIME ZONE NOT NULL REFERENCES blocks (vega_time)
 );
 
@@ -1074,4 +1076,3 @@ DROP TABLE IF EXISTS chain;
 DROP TABLE IF EXISTS blocks cascade;
 
 DROP DOMAIN IF EXISTS HUGEINT;
-

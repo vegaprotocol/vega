@@ -4,6 +4,7 @@ go 1.18
 
 require (
 	code.vegaprotocol.io/protos v0.52.1-0.20220627200421-fade3fdf4a25
+	code.vegaprotocol.io/quant v0.2.5
 	code.vegaprotocol.io/shared v0.0.0-20220614080106-5c97205b0d92
 	code.vegaprotocol.io/vega v0.52.0
 	github.com/99designs/gqlgen v0.16.0

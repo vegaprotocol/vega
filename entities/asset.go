@@ -39,6 +39,7 @@ type Asset struct {
 	VegaTime          time.Time
 	LifetimeLimit     decimal.Decimal
 	WithdrawThreshold decimal.Decimal
+	Status            AssetStatus
 }
 
 func (a Asset) ToProto() *pb.Asset {
@@ -51,6 +52,7 @@ func (a Asset) ToProto() *pb.Asset {
 			Decimals:    uint64(a.Decimals),
 			Quantum:     fmt.Sprintf("%d", a.Quantum),
 		},
+		Status: pb.Asset_Status(a.Status),
 	}
 	if a.Source != "" {
 		pbAsset.Details.Source = &pb.AssetDetails_BuiltinAsset{
