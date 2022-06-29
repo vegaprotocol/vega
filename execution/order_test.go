@@ -1715,6 +1715,7 @@ func testPeggedOrderOutputMessages(t *testing.T) {
 	auxParty2 := "auxParty2"
 	addAccount(t, tm, auxParty)
 	addAccount(t, tm, auxParty2)
+	addAccountWithAmount(tm, "lpprov", 10000000)
 
 	// Assure liquidity auction won't be triggered
 	tm.market.OnMarketLiquidityTargetStakeTriggeringRatio(context.Background(), num.DecimalFromFloat(0))
@@ -1740,6 +1741,18 @@ func testPeggedOrderOutputMessages(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, conf)
 	}
+	lp := &types.LiquidityProvisionSubmission{
+		MarketID:         tm.market.GetID(),
+		CommitmentAmount: num.NewUint(5000),
+		Fee:              num.DecimalFromFloat(0.01),
+		Sells: []*types.LiquidityOrder{
+			newLiquidityOrder(types.PeggedReferenceMid, 1, 10),
+		},
+		Buys: []*types.LiquidityOrder{
+			newLiquidityOrder(types.PeggedReferenceMid, 1, 10),
+		},
+	}
+	require.NoError(t, tm.market.SubmitLiquidityProvision(context.Background(), lp, "lpprov", vgcrypto.RandomHash()))
 	// leave opening auction
 	now = now.Add(2 * time.Second)
 	tm.market.OnTick(ctx, now)
@@ -1749,36 +1762,36 @@ func testPeggedOrderOutputMessages(t *testing.T) {
 	confirmation, err := tm.market.SubmitOrder(ctx, &order)
 	require.NoError(t, err)
 	assert.NotNil(t, confirmation)
-	assert.Equal(t, uint64(7), tm.orderEventCount)
+	assert.Equal(t, uint64(13), tm.orderEventCount)
 
 	order2 := getOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideSell, "user2", 10, 0)
 	order2.PeggedOrder = newPeggedOrder(types.PeggedReferenceMid, 15)
 	confirmation2, err := tm.market.SubmitOrder(ctx, &order2)
 	require.NoError(t, err)
 	assert.NotNil(t, confirmation2)
-	assert.Equal(t, uint64(8), tm.orderEventCount)
+	assert.Equal(t, uint64(18), tm.orderEventCount)
 
 	order3 := getOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideBuy, "user3", 10, 0)
 	order3.PeggedOrder = newPeggedOrder(types.PeggedReferenceBestBid, 10)
 	confirmation3, err := tm.market.SubmitOrder(ctx, &order3)
 	require.NoError(t, err)
 	assert.NotNil(t, confirmation3)
-	assert.Equal(t, uint64(9), tm.orderEventCount)
+	assert.Equal(t, uint64(23), tm.orderEventCount)
 
 	order4 := getOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideBuy, "user4", 10, 0)
 	order4.PeggedOrder = newPeggedOrder(types.PeggedReferenceMid, 10)
 	confirmation4, err := tm.market.SubmitOrder(ctx, &order4)
 	require.NoError(t, err)
 	assert.NotNil(t, confirmation4)
-	assert.Equal(t, uint64(10), tm.orderEventCount)
+	assert.Equal(t, uint64(28), tm.orderEventCount)
 
 	limitOrder := sendOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideSell, "user5", 1000, 120)
 	require.NotEmpty(t, limitOrder)
-	assert.Equal(t, uint64(14), tm.orderEventCount)
+	assert.Equal(t, uint64(36), tm.orderEventCount)
 
 	limitOrder2 := sendOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideBuy, "user6", 1000, 80)
 	require.NotEmpty(t, limitOrder2)
-	assert.Equal(t, uint64(17), tm.orderEventCount)
+	assert.Equal(t, uint64(43), tm.orderEventCount)
 }
 
 func testPeggedOrderOutputMessages2(t *testing.T) {
@@ -1794,6 +1807,7 @@ func testPeggedOrderOutputMessages2(t *testing.T) {
 	auxParty2 := "auxParty2"
 	addAccount(t, tm, auxParty)
 	addAccount(t, tm, auxParty2)
+	addAccountWithAmount(tm, "lpprov", 10000000)
 
 	// Assure liquidity auction won't be triggered
 	tm.market.OnMarketLiquidityTargetStakeTriggeringRatio(context.Background(), num.DecimalFromFloat(0))
@@ -1815,6 +1829,18 @@ func testPeggedOrderOutputMessages2(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, conf)
 	}
+	lp := &types.LiquidityProvisionSubmission{
+		MarketID:         tm.market.GetID(),
+		CommitmentAmount: num.NewUint(5000),
+		Fee:              num.DecimalFromFloat(0.01),
+		Sells: []*types.LiquidityOrder{
+			newLiquidityOrder(types.PeggedReferenceMid, 1, 10),
+		},
+		Buys: []*types.LiquidityOrder{
+			newLiquidityOrder(types.PeggedReferenceMid, 1, 10),
+		},
+	}
+	require.NoError(t, tm.market.SubmitLiquidityProvision(context.Background(), lp, "lpprov", vgcrypto.RandomHash()))
 	// leave opening auction
 	now = now.Add(2 * time.Second)
 	tm.market.OnTick(ctx, now)
@@ -1826,30 +1852,30 @@ func testPeggedOrderOutputMessages2(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, types.OrderStatusParked, confirmation.Order.Status)
 	assert.NotNil(t, confirmation)
-	assert.Equal(t, uint64(7), tm.orderEventCount)
+	assert.Equal(t, uint64(13), tm.orderEventCount)
 
 	// Send normal order to unpark the pegged order
 	limitOrder := sendOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideBuy, "user2", 1000, 120)
 	require.NotEmpty(t, limitOrder)
-	assert.Equal(t, uint64(9), tm.orderEventCount)
+	assert.Equal(t, uint64(19), tm.orderEventCount)
 	assert.Equal(t, types.OrderStatusActive, confirmation.Order.Status)
 
 	// Cancel the normal order to park the pegged order
 	tm.market.CancelOrder(ctx, "user2", limitOrder, vgcrypto.RandomHash())
 	require.Equal(t, types.OrderStatusParked, confirmation.Order.Status)
-	assert.Equal(t, uint64(11), tm.orderEventCount)
+	assert.Equal(t, uint64(25), tm.orderEventCount)
 
 	// Send a new normal order to unpark the pegged order
 	limitOrder2 := sendOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideBuy, "user2", 1000, 80)
 	require.NotEmpty(t, limitOrder2)
 	require.Equal(t, types.OrderStatusActive, confirmation.Order.Status)
-	assert.Equal(t, uint64(13), tm.orderEventCount)
+	assert.Equal(t, uint64(31), tm.orderEventCount)
 
 	// Fill that order to park the pegged order
 	limitOrder3 := sendOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideSell, "user1", 1000, 80)
 	require.NotEmpty(t, limitOrder3)
-	require.Equal(t, types.OrderStatusParked, confirmation.Order.Status)
-	assert.Equal(t, uint64(16), tm.orderEventCount)
+	require.Equal(t, types.OrderStatusActive, confirmation.Order.Status)
+	assert.Equal(t, uint64(37), tm.orderEventCount)
 }
 
 func testPeggedOrderRepricing(t *testing.T) {
@@ -2061,6 +2087,7 @@ func testPeggedOrderAmendParkedToLive(t *testing.T) {
 	addAccount(t, tm, "party1")
 	addAccount(t, tm, auxParty)
 	addAccount(t, tm, auxParty2)
+	addAccountWithAmount(tm, "lpprov", 10000000)
 
 	// Place 2 trades so we have a valid BEST_BID+MID+BEST_ASK price
 	buyOrder := sendOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideBuy, "party1", 10, 9)
@@ -2096,6 +2123,18 @@ func testPeggedOrderAmendParkedToLive(t *testing.T) {
 	// Check we should have no parked orders
 	assert.Equal(t, 1, tm.market.GetParkedOrderCount())
 	assert.Equal(t, 1, tm.market.GetPeggedOrderCount())
+	lp := &types.LiquidityProvisionSubmission{
+		MarketID:         tm.market.GetID(),
+		CommitmentAmount: num.NewUint(5000),
+		Fee:              num.DecimalFromFloat(0.01),
+		Sells: []*types.LiquidityOrder{
+			newLiquidityOrder(types.PeggedReferenceMid, 1, 10),
+		},
+		Buys: []*types.LiquidityOrder{
+			newLiquidityOrder(types.PeggedReferenceMid, 1, 10),
+		},
+	}
+	require.NoError(t, tm.market.SubmitLiquidityProvision(context.Background(), lp, "lpprov", vgcrypto.RandomHash()))
 	// leave opening auction
 	now = now.Add(2 * time.Second)
 	tm.market.OnTick(ctx, now)
@@ -2222,6 +2261,7 @@ func testPeggedOrderAmendReference(t *testing.T) {
 	addAccount(t, tm, "party1")
 	addAccount(t, tm, auxParty)
 	addAccount(t, tm, auxParty2)
+	addAccountWithAmount(tm, "lpprov", 10000000)
 
 	auxOrders := []*types.Order{
 		getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "aux1", types.SideSell, auxParty, 1, 10),
@@ -2237,6 +2277,18 @@ func testPeggedOrderAmendReference(t *testing.T) {
 	require.NotNil(t, buyOrder)
 	sellOrder := sendOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideSell, "party1", 10, 11)
 	require.NotNil(t, sellOrder)
+	lp := &types.LiquidityProvisionSubmission{
+		MarketID:         tm.market.GetID(),
+		CommitmentAmount: num.NewUint(5000),
+		Fee:              num.DecimalFromFloat(0.01),
+		Sells: []*types.LiquidityOrder{
+			newLiquidityOrder(types.PeggedReferenceMid, 1, 10),
+		},
+		Buys: []*types.LiquidityOrder{
+			newLiquidityOrder(types.PeggedReferenceMid, 1, 10),
+		},
+	}
+	require.NoError(t, tm.market.SubmitLiquidityProvision(context.Background(), lp, "lpprov", vgcrypto.RandomHash()))
 	// leave opening auction
 	now = now.Add(2 * time.Second)
 	tm.market.OnTick(ctx, now)
@@ -2355,6 +2407,7 @@ func testPeggedOrderAmendMultiple(t *testing.T) {
 	addAccount(t, tm, "party1")
 	addAccount(t, tm, auxParty)
 	addAccount(t, tm, auxParty2)
+	addAccountWithAmount(tm, "lpprov", 10000000)
 
 	auxOrders := []*types.Order{
 		getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "aux1", types.SideSell, auxParty, 1, 10),
@@ -2370,6 +2423,18 @@ func testPeggedOrderAmendMultiple(t *testing.T) {
 	require.NotNil(t, buyOrder)
 	sellOrder := sendOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideSell, "party1", 10, 11)
 	require.NotNil(t, sellOrder)
+	lp := &types.LiquidityProvisionSubmission{
+		MarketID:         tm.market.GetID(),
+		CommitmentAmount: num.NewUint(5000),
+		Fee:              num.DecimalFromFloat(0.01),
+		Sells: []*types.LiquidityOrder{
+			newLiquidityOrder(types.PeggedReferenceMid, 1, 10),
+		},
+		Buys: []*types.LiquidityOrder{
+			newLiquidityOrder(types.PeggedReferenceMid, 1, 10),
+		},
+	}
+	require.NoError(t, tm.market.SubmitLiquidityProvision(context.Background(), lp, "lpprov", vgcrypto.RandomHash()))
 
 	// leave opening auction
 	now = now.Add(2 * time.Second)
@@ -2411,6 +2476,7 @@ func testPeggedOrderMidPriceCalc(t *testing.T) {
 	addAccount(t, tm, "party1")
 	addAccount(t, tm, auxParty)
 	addAccount(t, tm, auxParty2)
+	addAccountWithAmount(tm, "lpprov", 10000000)
 
 	// Place 2 trades so we have a valid BEST_BID+MID+BEST_ASK price
 	buyOrder := sendOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideBuy, "party1", 1, 90)
@@ -2426,6 +2492,18 @@ func testPeggedOrderMidPriceCalc(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, conf)
 	}
+	lp := &types.LiquidityProvisionSubmission{
+		MarketID:         tm.market.GetID(),
+		CommitmentAmount: num.NewUint(5000),
+		Fee:              num.DecimalFromFloat(0.01),
+		Sells: []*types.LiquidityOrder{
+			newLiquidityOrder(types.PeggedReferenceMid, 1, 10),
+		},
+		Buys: []*types.LiquidityOrder{
+			newLiquidityOrder(types.PeggedReferenceMid, 1, 10),
+		},
+	}
+	require.NoError(t, tm.market.SubmitLiquidityProvision(context.Background(), lp, "lpprov", vgcrypto.RandomHash()))
 	now = now.Add(2 * time.Second)
 	tm.market.OnTick(ctx, now)
 
@@ -2582,6 +2660,7 @@ func TestGTTExpiredPartiallyFilled(t *testing.T) {
 	auxParty, auxParty2 := "auxParty", "auxParty2"
 	addAccount(t, tm, auxParty)
 	addAccount(t, tm, auxParty2)
+	addAccountWithAmount(tm, "lpprov", 10000000)
 
 	auxOrders := []*types.Order{
 		getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "alwaysOnAsk", types.SideSell, auxParty, 1, 1000000),
@@ -2594,6 +2673,18 @@ func TestGTTExpiredPartiallyFilled(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, conf)
 	}
+	lp := &types.LiquidityProvisionSubmission{
+		MarketID:         tm.market.GetID(),
+		CommitmentAmount: num.NewUint(5000),
+		Fee:              num.DecimalFromFloat(0.01),
+		Sells: []*types.LiquidityOrder{
+			newLiquidityOrder(types.PeggedReferenceMid, 1, 10),
+		},
+		Buys: []*types.LiquidityOrder{
+			newLiquidityOrder(types.PeggedReferenceMid, 1, 10),
+		},
+	}
+	require.NoError(t, tm.market.SubmitLiquidityProvision(context.Background(), lp, "lpprov", vgcrypto.RandomHash()))
 	// leave auction
 	now = now.Add(2 * time.Second)
 	tm.market.OnTick(ctx, now)
@@ -2603,17 +2694,6 @@ func TestGTTExpiredPartiallyFilled(t *testing.T) {
 	// We probably don't need these orders anymore, but they don't do any harm
 	// Assure liquidity auction won't be triggered
 	tm.market.OnMarketLiquidityTargetStakeTriggeringRatio(context.Background(), num.DecimalFromFloat(0))
-	alwaysOnBid := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "alwaysOnBid", types.SideBuy, auxParty, 1, 1)
-	conf, err := tm.market.SubmitOrder(context.Background(), alwaysOnBid)
-	require.NotNil(t, conf)
-	require.NoError(t, err)
-	require.Equal(t, types.OrderStatusActive, conf.Order.Status)
-
-	alwaysOnAsk := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "alwaysOnAsk", types.SideSell, auxParty, 1, 10000)
-	conf, err = tm.market.SubmitOrder(context.Background(), alwaysOnAsk)
-	require.NotNil(t, conf)
-	require.NoError(t, err)
-	require.Equal(t, types.OrderStatusActive, conf.Order.Status)
 
 	// place expiring order
 	o1 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTT, "Order01", types.SideSell, "aaa", 10, 100)
@@ -2632,7 +2712,7 @@ func TestGTTExpiredPartiallyFilled(t *testing.T) {
 	// then remove expired, set 1 sec after order exp time.
 	orders, err := tm.market.RemoveExpiredOrders(ctx, now.Add(10*time.Second).UnixNano())
 	assert.NoError(t, err)
-	assert.Len(t, orders, 1)
+	assert.Len(t, orders, 2)
 	assert.Equal(t, types.OrderStatusExpired, orders[0].Status)
 	assert.Equal(t, o1.ID, orders[0].ID)
 }
