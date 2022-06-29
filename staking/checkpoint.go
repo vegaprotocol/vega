@@ -55,7 +55,6 @@ func (c *Checkpoint) Load(ctx context.Context, data []byte) error {
 		return err
 	}
 
-	stakeLinkingEvents := make([]events.Event, 0, len(b.Accepted))
 	// first we deduplicates those events, this is a fix for v0.50.4
 	dedup := dedupEvents(b.Accepted)
 
@@ -140,8 +139,8 @@ type key struct {
 	logIndex, blockHeight uint64
 }
 
-func dedupEvents(evts []*pbevents.StakeLinking) []*pbevents.StakeLinking {
-	evtsM := map[key]*pbevents.StakeLinking{}
+func dedupEvents(evts []*events.StakeLinking) []*events.StakeLinking {
+	evtsM := map[key]*events.StakeLinking{}
 	for _, v := range evts {
 		k := key{v.TxHash, v.LogIndex, v.BlockHeight}
 		evt, ok := evtsM[k]
@@ -157,7 +156,7 @@ func dedupEvents(evts []*pbevents.StakeLinking) []*pbevents.StakeLinking {
 	}
 
 	// now we sort and return
-	out := make([]*pbevents.StakeLinking, 0, len(evtsM))
+	out := make([]*events.StakeLinking, 0, len(evtsM))
 	for _, v := range evtsM {
 		out = append(out, v)
 	}
