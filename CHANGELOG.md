@@ -84,6 +84,8 @@ The init command now also generate the configuration for tendermint, the flags `
 - [5477](https://github.com/vegaprotocol/vega/issues/5477) - Pass a clone of the liquidity commitment offset to pegged orders
 - [5468](https://github.com/vegaprotocol/vega/issues/5468) - Bring indicative trades inline with actual auction uncrossing trades in presence of wash trades
 - [5419](https://github.com/vegaprotocol/vega/issues/5419) - Fix listeners ordering and state updates
+- [5358](https://github.com/vegaprotocol/vega/issues/5358) - Fix equity like shares calculations to match spreadsheet
+- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 ## 0.51.1
 
