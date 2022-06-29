@@ -19,6 +19,7 @@
 ### 🐛 Fixes
 - [5508](https://github.com/vegaprotocol/vega/issues/5508) - Fix duplicated staking events
 - [5514](https://github.com/vegaprotocol/vega/issues/5514) - Emit `rewardScore` event correctly after loading from checkpoint
+- [5519](https://github.com/vegaprotocol/vega/pull/5519) - Add `--genesis-file` option to the `load_checkpoint` command
 
 ## 0.50.3
 - Snapshot fixes
