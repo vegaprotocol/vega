@@ -16,6 +16,7 @@
 - [723](https://github.com/vegaprotocol/data-node/issues/723) - Update contributor information
 - [576](https://github.com/vegaprotocol/data-node/issues/576) - Add cursor based pagination for assets requests
 - [571](https://github.com/vegaprotocol/data-node/issues/571) - Add cursor based pagination for Oracle Spec and Data requests
+- [733](https://github.com/vegaprotocol/data-node/issues/733) - Store chain info in database when using `SQL`
 
 
 ### 🐛 Fixes
