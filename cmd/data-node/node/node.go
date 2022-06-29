@@ -152,6 +152,7 @@ type NodeCommand struct {
 	keyRotationsStoreSQL        *sqlstore.KeyRotations
 	nodeStoreSQL                *sqlstore.Node
 	candleStoreSQL              *sqlstore.Candles
+	chainStoreSQL               *sqlstore.Chain
 
 	// SQL Services
 	candleServiceV2             *candlesv2.Svc
@@ -186,6 +187,7 @@ type NodeCommand struct {
 	multiSigServiceV2           *service.MultiSig
 	keyRotationsServiceV2       *service.KeyRotations
 	nodeServiceV2               *service.Node
+	chainServiceV2              *service.Chain
 
 	vegaCoreServiceClient vegaprotoapi.CoreServiceClient
 
