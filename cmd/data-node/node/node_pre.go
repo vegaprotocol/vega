@@ -244,6 +244,7 @@ func (l *NodeCommand) setupStoresSQL() error {
 	l.keyRotationsStoreSQL = sqlstore.NewKeyRotations(transactionalConnectionSource)
 	l.nodeStoreSQL = sqlstore.NewNode(transactionalConnectionSource)
 	l.candleStoreSQL = sqlstore.NewCandles(l.ctx, transactionalConnectionSource, l.conf.CandlesV2.CandleStore)
+	l.chainStoreSQL = sqlstore.NewChain(transactionalConnectionSource)
 	return nil
 }
 
@@ -267,6 +268,10 @@ func (l *NodeCommand) setupLegacyStorages() error {
 	st, err := storage.InitialiseStorage(l.vegaPaths)
 	if err != nil {
 		return fmt.Errorf("couldn't initialise storage: %w", err)
+	}
+
+	if l.chainInfoStore, err = storage.NewChainInfo(l.Log, st.ChainInfoHome, l.conf.Storage, l.cancel); err != nil {
+		return err
 	}
 
 	if l.marketStore, err = storage.NewMarkets(l.Log, st.MarketsHome, l.conf.Storage, l.cancel); err != nil {
@@ -322,20 +327,10 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 		return err
 	}
 
-	// Todo - move chaininfo into postgres
-	st, err := storage.InitialiseStorage(l.vegaPaths)
-	if err != nil {
-		return fmt.Errorf("couldn't initialise storage: %w", err)
-	}
-
-	if l.chainInfoStore, err = storage.NewChainInfo(l.Log, st.ChainInfoHome, l.conf.Storage, l.cancel); err != nil {
-		return err
-	}
-
 	if l.conf.SQLStore.Enabled {
 		eventSource = broker.NewFanOutEventSource(eventSource, l.conf.SQLStore.FanOutBufferSize, 2)
 
-		l.sqlBroker = broker.NewSqlStoreBroker(l.Log, l.conf.Broker, l.chainInfoStore, eventSource,
+		l.sqlBroker = broker.NewSqlStoreBroker(l.Log, l.conf.Broker, l.chainServiceV2, eventSource,
 			l.transactionalConnectionSource,
 			l.blockStoreSQL,
 			l.accountSubSQL,
@@ -374,12 +369,17 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 			l.marketDepthSubSQL,
 		)
 
-	}
-
-	l.broker, err = broker.New(l.ctx, l.Log, l.conf.Broker, l.chainInfoStore, eventSource)
-	if err != nil {
-		l.Log.Error("unable to initialise broker", logging.Error(err))
-		return err
+		l.broker, err = broker.New(l.ctx, l.Log, l.conf.Broker, l.chainServiceV2, eventSource)
+		if err != nil {
+			l.Log.Error("unable to initialise broker", logging.Error(err))
+			return err
+		}
+	} else {
+		l.broker, err = broker.New(l.ctx, l.Log, l.conf.Broker, l.chainInfoStore, eventSource)
+		if err != nil {
+			l.Log.Error("unable to initialise broker", logging.Error(err))
+			return err
+		}
 	}
 
 	// Event service us used by old and new world
@@ -442,6 +442,7 @@ func (l *NodeCommand) setupV2Services() error {
 	l.tradeServiceV2 = service.NewTrade(l.tradeStoreSQL, log)
 	l.transferServiceV2 = service.NewTransfer(l.transfersStoreSQL, log)
 	l.withdrawalServiceV2 = service.NewWithdrawal(l.withdrawalsStoreSQL, log)
+	l.chainServiceV2 = service.NewChain(l.chainStoreSQL, log)
 
 	toInit := []interface{ Initialise(context.Context) error }{
 		l.marketDepthServiceV2,

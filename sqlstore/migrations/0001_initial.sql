@@ -10,6 +10,12 @@ create table blocks
     hash          BYTEA                    NOT NULL
 );
 
+create table chain
+(
+    id            TEXT NOT NULL,
+    onerow_check  bool PRIMARY KEY DEFAULT TRUE
+);
+
 create table assets
 (
     id                  BYTEA NOT NULL PRIMARY KEY,
@@ -1064,6 +1070,7 @@ DROP TABLE IF EXISTS accounts;
 DROP TABLE IF EXISTS parties;
 DROP TABLE IF EXISTS assets;
 DROP TABLE IF EXISTS trades cascade;
+DROP TABLE IF EXISTS chain;
 DROP TABLE IF EXISTS blocks cascade;
 
 DROP DOMAIN IF EXISTS HUGEINT;
