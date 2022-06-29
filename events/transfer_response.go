@@ -41,7 +41,7 @@ func (t *TransferResponse) TransferResponses() []*ptypes.TransferResponse {
 func (t TransferResponse) IsParty(id string) bool {
 	for _, r := range t.responses {
 		for _, e := range r.Transfers {
-			if e.FromAccount == id || e.ToAccount == id {
+			if e.FromAccount.Owner == id || e.ToAccount.Owner == id {
 				return true
 			}
 		}

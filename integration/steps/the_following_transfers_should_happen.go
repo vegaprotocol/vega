@@ -70,7 +70,7 @@ func errMissingTransfer(row transferRow) error {
 func matchTransfers(transfers []*types.LedgerEntry, row transferRow) (bool, []uint64) {
 	divergingAmounts := []uint64{}
 	for _, transfer := range transfers {
-		if transfer.FromAccount == row.FromAccountID() && transfer.ToAccount == row.ToAccountID() {
+		if transfer.FromAccount.ID == row.FromAccountID() && transfer.ToAccount.ID == row.ToAccountID() {
 			if stringToU64(transfer.Amount) == row.Amount() {
 				return true, nil
 			}

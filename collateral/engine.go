@@ -1089,10 +1089,10 @@ func (e *Engine) MarginUpdate(ctx context.Context, marketID string, updates []ev
 		response = append(response, res)
 		for _, v := range res.Transfers {
 			// increment the to account
-			if err := e.IncrementBalance(ctx, v.ToAccount, v.Amount); err != nil {
+			if err := e.IncrementBalance(ctx, v.ToAccount.ID, v.Amount); err != nil {
 				e.log.Error(
 					"Failed to increment balance for account",
-					logging.String("account-id", v.ToAccount),
+					logging.String("account-id", v.ToAccount.ID),
 					logging.BigUint("amount", v.Amount),
 					logging.Error(err),
 				)
@@ -1150,10 +1150,10 @@ func (e *Engine) RollbackMarginUpdateOnOrder(ctx context.Context, marketID strin
 	}
 	for _, v := range res.Transfers {
 		// increment the to account
-		if err := e.IncrementBalance(ctx, v.ToAccount, v.Amount); err != nil {
+		if err := e.IncrementBalance(ctx, v.ToAccount.ID, v.Amount); err != nil {
 			e.log.Error(
 				"Failed to increment balance for account",
-				logging.String("account-id", v.ToAccount),
+				logging.String("account-id", v.ToAccount.ID),
 				logging.BigUint("amount", v.Amount),
 				logging.Error(err),
 			)
@@ -1220,10 +1220,10 @@ func (e *Engine) TransferFunds(
 
 		for _, v := range res.Transfers {
 			// increment the to account
-			if err := e.IncrementBalance(ctx, v.ToAccount, v.Amount); err != nil {
+			if err := e.IncrementBalance(ctx, v.ToAccount.ID, v.Amount); err != nil {
 				e.log.Error(
 					"Failed to increment balance for account",
-					logging.String("account-id", v.ToAccount),
+					logging.String("account-id", v.ToAccount.ID),
 					logging.BigUint("amount", v.Amount),
 					logging.Error(err),
 				)
@@ -1251,10 +1251,10 @@ func (e *Engine) BondUpdate(ctx context.Context, market string, transfer *types.
 
 	for _, v := range res.Transfers {
 		// increment the to account
-		if err := e.IncrementBalance(ctx, v.ToAccount, v.Amount); err != nil {
+		if err := e.IncrementBalance(ctx, v.ToAccount.ID, v.Amount); err != nil {
 			e.log.Error(
 				"Failed to increment balance for account",
-				logging.String("account-id", v.ToAccount),
+				logging.String("account-id", v.ToAccount.ID),
 				logging.BigUint("amount", v.Amount),
 				logging.Error(err),
 			)
@@ -1305,10 +1305,10 @@ func (e *Engine) MarginUpdateOnOrder(ctx context.Context, marketID string, updat
 	}
 	for _, v := range res.Transfers {
 		// increment the to account
-		if err := e.IncrementBalance(ctx, v.ToAccount, v.Amount); err != nil {
+		if err := e.IncrementBalance(ctx, v.ToAccount.ID, v.Amount); err != nil {
 			e.log.Error(
 				"Failed to increment balance for account",
-				logging.String("account-id", v.ToAccount),
+				logging.String("account-id", v.ToAccount.ID),
 				logging.BigUint("amount", v.Amount),
 				logging.Error(err),
 			)
@@ -1835,8 +1835,8 @@ func (e *Engine) getLedgerEntries(ctx context.Context, req *types.TransferReques
 			}
 			for _, to = range ret.Balances {
 				lm = &types.LedgerEntry{
-					FromAccount: acc.ID,
-					ToAccount:   to.Account.ID,
+					FromAccount: types.AccountIdFromAccount(acc),
+					ToAccount:   types.AccountIdFromAccount(to.Account),
 					Amount:      parts,
 					Reference:   req.Reference,
 					Type:        "settlement",
@@ -1869,8 +1869,8 @@ func (e *Engine) getLedgerEntries(ctx context.Context, req *types.TransferReques
 			}
 			for _, to = range ret.Balances {
 				lm = &types.LedgerEntry{
-					FromAccount: acc.ID,
-					ToAccount:   to.Account.ID,
+					FromAccount: types.AccountIdFromAccount(acc),
+					ToAccount:   types.AccountIdFromAccount(to.Account),
 					Amount:      parts,
 					Reference:   req.Reference,
 					Type:        "settlement",
@@ -1905,10 +1905,10 @@ func (e *Engine) clearAccount(
 
 	for _, v := range ledgerEntries.Transfers {
 		// increment the to account
-		if err := e.IncrementBalance(ctx, v.ToAccount, v.Amount); err != nil {
+		if err := e.IncrementBalance(ctx, v.ToAccount.ID, v.Amount); err != nil {
 			e.log.Error(
 				"Failed to increment balance for account",
-				logging.String("account-id", v.ToAccount),
+				logging.String("account-id", v.ToAccount.ID),
 				logging.BigUint("amount", v.Amount),
 				logging.Error(err),
 			)
@@ -2246,8 +2246,8 @@ func (e *Engine) RemoveDistressed(ctx context.Context, parties []events.MarketPo
 		// If any balance remains on bond account, move it over to margin account
 		if bondAcc.Balance != nil && !bondAcc.Balance.IsZero() {
 			resp.Transfers = append(resp.Transfers, &types.LedgerEntry{
-				FromAccount: bondAcc.ID,
-				ToAccount:   marginAcc.ID,
+				FromAccount: types.AccountIdFromAccount(bondAcc),
+				ToAccount:   types.AccountIdFromAccount(marginAcc),
 				Amount:      bondAcc.Balance.Clone(),
 				Reference:   types.TransferTypeMarginLow.String(),
 				Type:        "position-resolution",
@@ -2264,8 +2264,8 @@ func (e *Engine) RemoveDistressed(ctx context.Context, parties []events.MarketPo
 		// we can take everything from the account, as whatever amount was left here didn't cover the minimum margin requirement
 		if genAcc.Balance != nil && !genAcc.Balance.IsZero() {
 			resp.Transfers = append(resp.Transfers, &types.LedgerEntry{
-				FromAccount: genAcc.ID,
-				ToAccount:   marginAcc.ID,
+				FromAccount: types.AccountIdFromAccount(genAcc),
+				ToAccount:   types.AccountIdFromAccount(marginAcc),
 				Amount:      genAcc.Balance.Clone(),
 				Reference:   types.TransferTypeMarginLow.String(),
 				Type:        "position-resolution",
@@ -2281,8 +2281,8 @@ func (e *Engine) RemoveDistressed(ctx context.Context, parties []events.MarketPo
 		// move monies from the margin account (balance is general, bond, and margin combined now)
 		if !marginAcc.Balance.IsZero() {
 			resp.Transfers = append(resp.Transfers, &types.LedgerEntry{
-				FromAccount: marginAcc.ID,
-				ToAccount:   ins.ID,
+				FromAccount: types.AccountIdFromAccount(marginAcc),
+				ToAccount:   types.AccountIdFromAccount(ins),
 				Amount:      marginAcc.Balance.Clone(),
 				Reference:   types.TransferTypeMarginConfiscated.String(),
 				Type:        "position-resolution",
@@ -2321,8 +2321,8 @@ func (e *Engine) ClearPartyMarginAccount(ctx context.Context, party, market, ass
 		}
 
 		resp.Transfers = append(resp.Transfers, &types.LedgerEntry{
-			FromAccount: acc.ID,
-			ToAccount:   genAcc.ID,
+			FromAccount: types.AccountIdFromAccount(acc),
+			ToAccount:   types.AccountIdFromAccount(genAcc),
 			Amount:      acc.Balance.Clone(),
 			Reference:   types.TransferTypeMarginHigh.String(),
 			Type:        types.TransferTypeMarginHigh.String(),

@@ -148,8 +148,8 @@ func (a TransferBalances) IntoProto() []*proto.TransferBalance {
 }
 
 type LedgerEntry struct {
-	FromAccount string
-	ToAccount   string
+	FromAccount AccountId
+	ToAccount   AccountId
 	Amount      *num.Uint
 	Reference   string
 	Type        string
@@ -158,8 +158,8 @@ type LedgerEntry struct {
 
 func (l *LedgerEntry) IntoProto() *proto.LedgerEntry {
 	return &proto.LedgerEntry{
-		FromAccount: l.FromAccount,
-		ToAccount:   l.ToAccount,
+		FromAccount: l.FromAccount.IntoProto(),
+		ToAccount:   l.ToAccount.IntoProto(),
 		Amount:      num.UintToString(l.Amount),
 		Reference:   l.Reference,
 		Type:        l.Type,

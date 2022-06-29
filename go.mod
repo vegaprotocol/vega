@@ -2,6 +2,8 @@ module code.vegaprotocol.io/vega
 
 go 1.18
 
+replace code.vegaprotocol.io/protos => ../../protos
+
 require (
 	code.vegaprotocol.io/oracles-relay v0.0.0-20210201140234-f047e1bf6df3
 	code.vegaprotocol.io/protos v0.52.1-0.20220616152803-016ebcb2e35e

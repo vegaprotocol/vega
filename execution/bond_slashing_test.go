@@ -228,7 +228,7 @@ func TestRejectLiquidityProvisionWithInsufficientFundsForInitialMargin(t *testin
 	require.NotNil(t, marginAcc)
 
 	exp := num.Zero().Sub(num.NewUint(mainPartyInitialDeposit), marginAcc.Balance)
-	genAcc, err := tm.collateralEngine.GetAccountByID(mainPartyGenAccID)
+	genAcc, err := tm.collateralEngine.GetAccountByID(mainPartyGenAccID.ID)
 	require.NoError(t, err)
 	require.NotNil(t, genAcc)
 	require.Equal(t, genAcc.Balance, exp)
@@ -296,7 +296,7 @@ func TestCloseoutLPWhenCannotCoverMargin(t *testing.T) {
 	require.NotNil(t, bondAcc)
 	require.Equal(t, lp.CommitmentAmount, bondAcc.Balance)
 
-	genAcc, err := tm.collateralEngine.GetAccountByID(mainPartyGenAccID)
+	genAcc, err := tm.collateralEngine.GetAccountByID(mainPartyGenAccID.ID)
 	require.NoError(t, err)
 	require.NotNil(t, genAcc)
 	require.Equal(t, genAcc.Balance, num.Zero())
@@ -315,7 +315,7 @@ func TestCloseoutLPWhenCannotCoverMargin(t *testing.T) {
 
 	assert.Equal(t, 0, tm.market.GetLPSCount())
 
-	genAcc, err = tm.collateralEngine.GetAccountByID(mainPartyGenAccID)
+	genAcc, err = tm.collateralEngine.GetAccountByID(mainPartyGenAccID.ID)
 	require.NoError(t, err)
 	require.NotNil(t, genAcc)
 	require.Equal(t, num.Zero(), genAcc.Balance)
@@ -402,7 +402,7 @@ func TestBondAccountNotUsedForMarginShortageWhenEnoughMoneyInGeneral(t *testing.
 	require.NoError(t, err)
 	require.Equal(t, 2, len(confirmationBuyAux1.Trades))
 
-	genAcc, err := tm.collateralEngine.GetAccountByID(mainPartyGenAccID)
+	genAcc, err := tm.collateralEngine.GetAccountByID(mainPartyGenAccID.ID)
 	require.NoError(t, err)
 	require.NotNil(t, genAcc)
 	require.Equal(t, num.Zero(), genAcc.Balance)
@@ -482,7 +482,7 @@ func TestBondAccountUsedForMarginShortage_PenaltyPaidFromBondAccount(t *testing.
 	err = tm.market.SubmitLiquidityProvision(ctx, lp, mainParty, vgcrypto.RandomHash())
 	require.NoError(t, err)
 
-	genAcc, err := tm.collateralEngine.GetAccountByID(mainPartyGenAccID)
+	genAcc, err := tm.collateralEngine.GetAccountByID(mainPartyGenAccID.ID)
 	require.NoError(t, err)
 	require.NotNil(t, genAcc)
 	require.False(t, genAcc.Balance.IsZero())
@@ -511,7 +511,7 @@ func TestBondAccountUsedForMarginShortage_PenaltyPaidFromBondAccount(t *testing.
 	require.NoError(t, err)
 	require.Equal(t, 2, len(confirmationBuyAux1.Trades))
 
-	genAcc, err = tm.collateralEngine.GetAccountByID(mainPartyGenAccID)
+	genAcc, err = tm.collateralEngine.GetAccountByID(mainPartyGenAccID.ID)
 	require.NoError(t, err)
 	require.NotNil(t, genAcc)
 	genAccBalanceAfterMarketMove := genAcc.Balance.Clone()
@@ -643,7 +643,7 @@ func TestBondAccountUsedForMarginShortagePenaltyPaidFromMarginAccount_NoCloseout
 	require.NoError(t, err)
 	require.Equal(t, 2, len(confirmationBuyAux1.Trades))
 
-	genAcc, err := tm.collateralEngine.GetAccountByID(mainPartyGenAccID)
+	genAcc, err := tm.collateralEngine.GetAccountByID(mainPartyGenAccID.ID)
 	require.NoError(t, err)
 	require.NotNil(t, genAcc)
 	require.True(t, genAcc.Balance.IsZero())
@@ -715,7 +715,7 @@ func TestBondAccountUsedForMarginShortagePenaltyNotPaidOnTransitionFromAuction(t
 		},
 	}
 
-	genAcc, err := tm.collateralEngine.GetAccountByID(mainPartyGenAccID)
+	genAcc, err := tm.collateralEngine.GetAccountByID(mainPartyGenAccID.ID)
 	require.NoError(t, err)
 	require.NotNil(t, genAcc)
 	genAccBalanceBeforeLPSubmission := genAcc.Balance.Clone()
@@ -724,7 +724,7 @@ func TestBondAccountUsedForMarginShortagePenaltyNotPaidOnTransitionFromAuction(t
 	err = tm.market.SubmitLiquidityProvision(ctx, lp, mainParty, vgcrypto.RandomHash())
 	require.NoError(t, err)
 
-	genAcc, err = tm.collateralEngine.GetAccountByID(mainPartyGenAccID)
+	genAcc, err = tm.collateralEngine.GetAccountByID(mainPartyGenAccID.ID)
 	require.NoError(t, err)
 	require.NotNil(t, genAcc)
 	require.False(t, genAcc.Balance.IsZero())
@@ -749,7 +749,7 @@ func TestBondAccountUsedForMarginShortagePenaltyNotPaidOnTransitionFromAuction(t
 	require.NotNil(t, mktData)
 	require.Equal(t, types.MarketTradingModeContinuous, mktData.MarketTradingMode)
 
-	genAcc, err = tm.collateralEngine.GetAccountByID(mainPartyGenAccID)
+	genAcc, err = tm.collateralEngine.GetAccountByID(mainPartyGenAccID.ID)
 	require.NoError(t, err)
 	require.NotNil(t, genAcc)
 	require.True(t, genAcc.Balance.IsZero())
