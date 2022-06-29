@@ -5,7 +5,8 @@ import (
 	"sort"
 
 	checkpoint "code.vegaprotocol.io/protos/vega/checkpoint/v1"
-	events "code.vegaprotocol.io/protos/vega/events/v1"
+	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
+	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
 
@@ -87,8 +88,8 @@ func (c *Checkpoint) Load(ctx context.Context, data []byte) error {
 	return nil
 }
 
-func (c *Checkpoint) getAcceptedEvents() []*events.StakeLinking {
-	out := make([]*events.StakeLinking, 0, len(c.accounting.hashableAccounts))
+func (c *Checkpoint) getAcceptedEvents() []*eventspb.StakeLinking {
+	out := make([]*eventspb.StakeLinking, 0, len(c.accounting.hashableAccounts))
 
 	for _, acc := range c.accounting.hashableAccounts {
 		for _, evt := range acc.Events {
@@ -148,8 +149,8 @@ type key struct {
 	logIndex, blockHeight uint64
 }
 
-func dedupEvents(evts []*events.StakeLinking) []*events.StakeLinking {
-	evtsM := map[key]*events.StakeLinking{}
+func dedupEvents(evts []*eventspb.StakeLinking) []*eventspb.StakeLinking {
+	evtsM := map[key]*eventspb.StakeLinking{}
 	for _, v := range evts {
 		k := key{v.TxHash, v.LogIndex, v.BlockHeight}
 		evt, ok := evtsM[k]
@@ -165,7 +166,7 @@ func dedupEvents(evts []*events.StakeLinking) []*events.StakeLinking {
 	}
 
 	// now we sort and return
-	out := make([]*events.StakeLinking, 0, len(evtsM))
+	out := make([]*eventspb.StakeLinking, 0, len(evtsM))
 	for _, v := range evtsM {
 		out = append(out, v)
 	}

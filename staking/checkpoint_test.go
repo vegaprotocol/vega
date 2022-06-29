@@ -71,7 +71,7 @@ func TestCheckpointLoadNoDuplicates(t *testing.T) {
 	}
 
 	cptest.acc.broker.EXPECT().Send(gomock.Any()).AnyTimes()
-	// cptest.acc.broker.EXPECT().SendBatch(gomock.Any()).Times(1)
+	cptest.acc.broker.EXPECT().SendBatch(gomock.Any()).Times(1)
 	cptest.ethEventSource.EXPECT().UpdateStakingStartingBlock(gomock.Any()).Do(
 		func(block uint64) {
 			// ensure we restart at the right block
@@ -102,6 +102,7 @@ func TestCheckpoint(t *testing.T) {
 	cptest2 := getCheckpointTest(t)
 
 	cptest2.acc.broker.EXPECT().Send(gomock.Any()).Times(1)
+	cptest2.acc.broker.EXPECT().SendBatch(gomock.Any()).Times(1)
 	cptest2.ethEventSource.EXPECT().UpdateStakingStartingBlock(gomock.Any()).Do(
 		func(block uint64) {
 			// ensure we restart at the right block
