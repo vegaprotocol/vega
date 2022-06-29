@@ -10,6 +10,7 @@
 
 ### 🛠 Improvements
 - [5428](https://github.com/vegaprotocol/vega/pull/5428) - Update contributor information
+- [5519](https://github.com/vegaprotocol/vega/pull/5519) - Add `--genesis-file` option to the `load_checkpoint` command
 
 ### 🐛 Fixes
 - [5476](https://github.com/vegaprotocol/vega/issues/5476) - Include settlement price in snapshot
