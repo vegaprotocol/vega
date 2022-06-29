@@ -14,6 +14,15 @@
 ### 🐛 Fixes
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
+## 0.50.4
+
+### 🐛 Fixes
+- [5508](https://github.com/vegaprotocol/vega/issues/5508) - Fix duplicated staking events
+- [5514](https://github.com/vegaprotocol/vega/issues/5514) - Emit `rewardScore` event correctly after loading from checkpoint
+
+## 0.50.3
+- Snapshot fixes
+
 ## 0.50.2
 
 ### 🛠 Improvements
