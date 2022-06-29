@@ -251,8 +251,7 @@ func (t *Topology) OnEpochLengthUpdate(ctx context.Context, l time.Duration) err
 	// set time between hearbeats to 1% of the epoch duration in seconds as blocks
 	// e.g. if epoch is 1 day = 86400 seconds (blocks) then time between hb becomes 864
 	// if epoch is 300 seconds then blocks becomes 50 (lower bound applied).
-	// if epoch is 5 seconds then blocks becomes 5 (lower bound applied).
-	blocks := int64(math.Max(l.Seconds()*0.01, math.Min(50.0, l.Seconds())))
+	blocks := int64(math.Max(l.Seconds()*0.01, 50.0))
 	t.timeBetweenHeartbeats = time.Duration(blocks * int64(time.Second))
 	t.timeToSendHeartbeat = time.Duration(blocks * int64(time.Second) / 2)
 	return nil
