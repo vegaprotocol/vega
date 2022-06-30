@@ -50,6 +50,6 @@ func (c *Proxy) Stop() error {
 	return c.server.Shutdown(context.Background())
 }
 
-func (c *Proxy) GetBrowserURL() string {
+func (c *Proxy) GetLocalProxyURL() string {
 	return fmt.Sprintf("http://%s", c.server.Addr)
 }

@@ -12,10 +12,10 @@ type InteractivePrinter struct {
 	writer       io.Writer
 	profile      termenv.Profile
 	checkMark    string
-	bangMark     string
 	crossMark    string
 	questionMark string
 	arrow        termenv.Style
+	bangMark     termenv.Style
 }
 
 func fancyPrinter(w io.Writer, profile termenv.Profile) *InteractivePrinter {
@@ -23,21 +23,22 @@ func fancyPrinter(w io.Writer, profile termenv.Profile) *InteractivePrinter {
 		writer:       w,
 		profile:      profile,
 		checkMark:    termenv.String("✓ ").Foreground(profile.Color("2")).String(),
-		bangMark:     termenv.String("! ").Foreground(profile.Color("1")).String(),
 		questionMark: termenv.String("? ").Foreground(profile.Color("2")).String(),
 		crossMark:    termenv.String("✗ ").Foreground(profile.Color("1")).String(),
-		arrow:        termenv.String("➜ ").Foreground(profile.Color("2")),
+		bangMark:     termenv.String("! "),
+		arrow:        termenv.String("➜ "),
 	}
 }
 
 func ansiPrinter(w io.Writer, profile termenv.Profile) *InteractivePrinter {
 	return &InteractivePrinter{
-		writer:    w,
-		profile:   profile,
-		checkMark: termenv.String("* ").Foreground(profile.Color("2")).String(),
-		bangMark:  termenv.String("! ").Foreground(profile.Color("1")).String(),
-		crossMark: termenv.String("x ").Foreground(profile.Color("1")).String(),
-		arrow:     termenv.String("> ").Foreground(profile.Color("2")),
+		writer:       w,
+		profile:      profile,
+		checkMark:    termenv.String("* ").Foreground(profile.Color("2")).String(),
+		questionMark: termenv.String("? ").Foreground(profile.Color("2")).String(),
+		crossMark:    termenv.String("x ").Foreground(profile.Color("1")).String(),
+		bangMark:     termenv.String("! "),
+		arrow:        termenv.String("> "),
 	}
 }
 
@@ -70,8 +71,13 @@ func (p *InteractivePrinter) CheckMark() *InteractivePrinter {
 	return p
 }
 
-func (p *InteractivePrinter) BangMark() *InteractivePrinter {
-	p.printOut(p.bangMark)
+func (p *InteractivePrinter) WarningBangMark() *InteractivePrinter {
+	p.printOut(p.bangMark.Foreground(p.profile.Color("3")).String())
+	return p
+}
+
+func (p *InteractivePrinter) DangerBangMark() *InteractivePrinter {
+	p.printOut(p.bangMark.Foreground(p.profile.Color("1")).String())
 	return p
 }
 
