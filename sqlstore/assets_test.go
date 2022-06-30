@@ -49,6 +49,7 @@ func addTestAsset(t *testing.T, as *sqlstore.Assets, block entities.Block, idPre
 		VegaTime:          block.VegaTime,
 		LifetimeLimit:     decimal.New(42, 0),
 		WithdrawThreshold: decimal.New(81, 0),
+		Status:            entities.AssetStatusEnabled,
 	}
 
 	// Add it to the database

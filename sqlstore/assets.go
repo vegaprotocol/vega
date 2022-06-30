@@ -51,7 +51,7 @@ func (as *Assets) Add(ctx context.Context, a entities.Asset) error {
             source = EXCLUDED.source,
             erc20_contract = EXCLUDED.erc20_contract,
             lifetime_limit = EXCLUDED.lifetime_limit,
-            withraw_threshold = EXCLUDED.withdraw_threshold,
+            withdraw_threshold = EXCLUDED.withdraw_threshold,
             vega_time = EXCLUDED.vega_time,
             status = EXCLUDED.status
             ;`,
