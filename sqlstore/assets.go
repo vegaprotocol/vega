@@ -53,7 +53,7 @@ func (as *Assets) Add(ctx context.Context, a entities.Asset) error {
             lifetime_limit = EXCLUDED.lifetime_limit,
             withraw_threshold = EXCLUDED.withdraw_threshold,
             vega_time = EXCLUDED.vega_time,
-            status = EXCLUDED.status,
+            status = EXCLUDED.status
             ;`,
 		a.ID,
 		a.Name,

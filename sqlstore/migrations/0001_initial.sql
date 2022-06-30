@@ -15,6 +15,7 @@ create table chain
     id            TEXT NOT NULL,
     onerow_check  bool PRIMARY KEY DEFAULT TRUE
 );
+
 create type asset_status_type as enum('STATUS_UNSPECIFIED', 'STATUS_PROPOSED', 'STATUS_REJECTED', 'STATUS_PENDING_LISTING', 'STATUS_ENABLED');
 
 create table assets
