@@ -2763,7 +2763,7 @@ func Test2965EnsureLPOrdersAreNotCancelleableWithCancelAll(t *testing.T) {
 	})
 }
 
-func TestMissingLP(t *testing.T) {
+func testMissingLP(t *testing.T) {
 	party1 := "party1"
 	party2 := "party2"
 	party3 := "party3"

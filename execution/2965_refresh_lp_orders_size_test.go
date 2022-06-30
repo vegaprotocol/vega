@@ -168,7 +168,7 @@ func TestRefreshLiquidityProvisionOrdersSizes(t *testing.T) {
 	// the required stake for the market
 	lp := &types.LiquidityProvisionSubmission{
 		MarketID:         tm.market.GetID(),
-		CommitmentAmount: num.NewUint(2000000),
+		CommitmentAmount: num.NewUint(3120580),
 		Fee:              num.DecimalFromFloat(0.01),
 		Sells: []*types.LiquidityOrder{
 			newLiquidityOrder(types.PeggedReferenceBestAsk, 2, 10),
@@ -218,7 +218,7 @@ func TestRefreshLiquidityProvisionOrdersSizes(t *testing.T) {
 			switch evt := e.(type) {
 			case *events.Order:
 				if evt.Order().PartyId == "party-2" &&
-					evt.Order().Size == 534 { // "V0000000000-0000000010" {
+					evt.Order().Size == 833 { // "V0000000000-0000000010" {
 					found = append(found, mustOrderFromProto(evt.Order()))
 				}
 			}
@@ -235,18 +235,18 @@ func TestRefreshLiquidityProvisionOrdersSizes(t *testing.T) {
 				// this is the first update indicating the order
 				// was matched
 				types.OrderStatusActive,
-				0x202, // size - 20
+				0x32d, // size - 20
 			},
 			{
 				// this is the replacement order created
 				// by engine.
 				types.OrderStatusCancelled,
-				0x202, // size
+				0x32d, // size
 			},
 			{
 				// this is the cancellation
 				types.OrderStatusActive,
-				0x216, // cancelled
+				0x341, // cancelled
 			},
 		}
 
@@ -359,7 +359,7 @@ func TestCommitmentIsDeployed(t *testing.T) {
 	tm := newTestMarket(t, now).Run(ctx, mktCfg)
 	tm.StartOpeningAuction().
 		// the liquidity provider
-		WithAccountAndAmount(lpparty, 50000000)
+		WithAccountAndAmount(lpparty, 90000000)
 
 	tm.market.OnSuppliedStakeToObligationFactorUpdate(num.DecimalFromFloat(1.0))
 	tm.market.OnTick(ctx, now)
@@ -369,7 +369,7 @@ func TestCommitmentIsDeployed(t *testing.T) {
 	// the required stake for the market
 	lpSubmission := &types.LiquidityProvisionSubmission{
 		MarketID:         tm.market.GetID(),
-		CommitmentAmount: num.NewUint(200),
+		CommitmentAmount: num.NewUint(50000000),
 		Fee:              num.DecimalFromFloat(0.01),
 		Reference:        "ref-lp-submission-1",
 		Buys: []*types.LiquidityOrder{
@@ -397,11 +397,13 @@ func (tm *testMarket) EndOpeningAuction(t *testing.T, auctionEnd time.Time, setM
 	var (
 		party0 = "clearing-auction-party0"
 		party1 = "clearing-auction-party1"
+		party2 = "lpprov-party"
 	)
 
 	// parties used for clearing opening auction
 	tm.WithAccountAndAmount(party0, 1000000).
-		WithAccountAndAmount(party1, 1000000)
+		WithAccountAndAmount(party1, 1000000).
+		WithAccountAndAmount(party2, 90000000000) // LP needs a lot of balance
 
 	auctionOrders := []*types.Order{
 		// Limit Orders
@@ -442,19 +444,10 @@ func (tm *testMarket) EndOpeningAuction(t *testing.T, auctionEnd time.Time, setM
 			TimeInForce: types.OrderTimeInForceGTC,
 		},
 	}
-
-	// submit the auctions orders
-	tm.WithSubmittedOrders(t, auctionOrders...)
-
-	// update the time to get out of auction
 	ctx := vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
-	tm.market.OnTick(ctx, auctionEnd)
-
-	assert.Equal(t,
-		tm.market.GetMarketData().MarketTradingMode,
-		types.MarketTradingModeContinuous,
-	)
-
+	// submit the auctions orders & LP
+	tm.WithSubmittedOrders(t, auctionOrders...)
+	// update the time to get out of auction
 	if setMarkPrice {
 		// now set the markprice
 		mpOrders := []*types.Order{
@@ -480,6 +473,14 @@ func (tm *testMarket) EndOpeningAuction(t *testing.T, auctionEnd time.Time, setM
 		// submit the auctions orders
 		tm.WithSubmittedOrders(t, mpOrders...)
 	}
+
+	tm.market.OnTick(ctx, auctionEnd)
+
+	assert.Equal(t,
+		tm.market.GetMarketData().MarketTradingMode,
+		types.MarketTradingModeContinuous,
+	)
+
 }
 
 func (tm *testMarket) EndOpeningAuction2(t *testing.T, auctionEnd time.Time, setMarkPrice bool) {

@@ -103,6 +103,31 @@ func setMarkPrice(t *testing.T, mkt *testMarket, duration *types.AuctionDuration
 	require.Equal(t, types.MarketTradingModeContinuous, mktData.MarketTradingMode)
 }
 
+func addSimpleLP(t *testing.T, mkt *testMarket, amt uint64) {
+	t.Helper()
+	lpprov := "lpprov-party"
+	bal := 2 * amt
+	addAccountWithAmount(mkt, lpprov, bal)
+	buys := []*types.LiquidityOrder{
+		newLiquidityOrder(types.PeggedReferenceBestBid, 10, 50),
+		newLiquidityOrder(types.PeggedReferenceBestBid, 20, 50),
+	}
+	sells := []*types.LiquidityOrder{
+		newLiquidityOrder(types.PeggedReferenceBestAsk, 10, 50),
+		newLiquidityOrder(types.PeggedReferenceBestAsk, 20, 50),
+	}
+	lps := &types.LiquidityProvisionSubmission{
+		Fee:              num.DecimalFromFloat(0.01),
+		MarketID:         mkt.market.GetID(),
+		CommitmentAmount: num.NewUint(amt),
+		Buys:             buys,
+		Sells:            sells,
+	}
+	require.NoError(t, mkt.market.SubmitLiquidityProvision(
+		context.Background(), lps, lpprov, vgcrypto.RandomHash(),
+	))
+}
+
 func TestAcceptLiquidityProvisionWithSufficientFunds(t *testing.T) {
 	mainParty := "mainParty"
 	now := time.Unix(10, 0)
@@ -115,6 +140,7 @@ func TestAcceptLiquidityProvisionWithSufficientFunds(t *testing.T) {
 
 	asset := tm.asset
 
+	addSimpleLP(t, tm, 5000000)
 	// end opening auction
 	setMarkPrice(t, tm, openingAuction, now, initialMarkPrice)
 
@@ -170,6 +196,7 @@ func TestRejectLiquidityProvisionWithInsufficientFundsForInitialMargin(t *testin
 
 	asset := tm.asset
 
+	addSimpleLP(t, tm, 5000000)
 	// end opening auction
 	setMarkPrice(t, tm, openingAuction, now, initialMarkPrice)
 
