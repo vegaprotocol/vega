@@ -14,7 +14,6 @@ package liquidity
 
 import (
 	"context"
-	"fmt"
 	"sync"
 	"time"
 
@@ -96,10 +95,6 @@ func (e *Engine) CheckLiquidity(as AuctionState, t time.Time, currentStake *num.
 	md := int64(e.minDuration / time.Second)
 	e.mu.Unlock()
 	targetStake := e.tsCalc.GetTheoreticalTargetStake(rf, t, refPrice.Clone(), trades)
-	cs := num.NewUint(11)
-	if currentStake.EQ(cs) {
-		fmt.Printf("Target stake: %s\nCurrent: %s\n", targetStake.String(), currentStake.String())
-	}
 	ext := types.AuctionDuration{
 		Duration: e.params.AuctionExtension,
 	}
