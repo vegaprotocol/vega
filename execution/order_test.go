@@ -3020,7 +3020,7 @@ func Test2965EnsureLPOrdersAreNotCancelleableWithCancelAll(t *testing.T) {
 	})
 }
 
-func testMissingLP(t *testing.T) {
+func TestMissingLP(t *testing.T) {
 	party1 := "party1"
 	party2 := "party2"
 	party3 := "party3"
@@ -3068,7 +3068,7 @@ func testMissingLP(t *testing.T) {
 	tm.market.OnTick(ctx, now)
 
 	// Here we are in auction
-	assert.False(t, tm.mas.InAuction())
+	assert.True(t, tm.mas.InAuction())
 
 	// Send LP order
 
@@ -3098,4 +3098,7 @@ func testMissingLP(t *testing.T) {
 
 	// Check we have 5 orders in total
 	assert.EqualValues(t, 5, tm.market.GetOrdersOnBookCount())
+	now = now.Add(time.Second * 2) // opening auction is 1 second, move time ahead by 2 seconds so we leave auction
+	tm.now = now
+	tm.market.OnTick(ctx, now)
 }
