@@ -113,23 +113,26 @@ func (f *CreateWalletFlags) Validate() (*wallet.CreateWalletRequest, error) {
 func PrintCreateWalletResponse(w io.Writer, resp *wallet.CreateWalletResponse) {
 	p := printer.NewInteractivePrinter(w)
 
-	p.CheckMark().Text("Wallet ").Bold(resp.Wallet.Name).Text(" has been created at: ").SuccessText(resp.Wallet.FilePath).NextLine()
-	p.CheckMark().Text("First key pair has been generated for wallet ").Bold(resp.Wallet.Name).Text(" at: ").SuccessText(resp.Wallet.FilePath).NextLine()
-	p.CheckMark().SuccessText("Creating wallet succeeded").NextSection()
+	str := p.String()
+	defer p.Print(str)
 
-	p.Text("Wallet recovery phrase:").NextLine()
-	p.WarningText(resp.Wallet.RecoveryPhrase).NextLine()
-	p.Text("Wallet version:").NextLine()
-	p.WarningText(fmt.Sprintf("%d", resp.Wallet.Version)).NextLine()
-	p.Text("First public key:").NextLine()
-	p.WarningText(resp.Key.PublicKey).NextLine()
-	p.NextSection()
+	str.CheckMark().Text("Wallet ").Bold(resp.Wallet.Name).Text(" has been created at: ").SuccessText(resp.Wallet.FilePath).NextLine()
+	str.CheckMark().Text("First key pair has been generated for wallet ").Bold(resp.Wallet.Name).Text(" at: ").SuccessText(resp.Wallet.FilePath).NextLine()
+	str.CheckMark().SuccessText("Creating wallet succeeded").NextSection()
 
-	p.RedArrow().DangerText("Important").NextLine()
-	p.Text("Write down the ").Bold("recovery phrase").Text(" and the ").Bold("wallet's version").Text(", and store it somewhere safe and secure, now.").NextLine()
-	p.DangerText("The recovery phrase will not be displayed ever again, nor will you be able to retrieve it!").NextSection()
+	str.Text("Wallet recovery phrase:").NextLine()
+	str.WarningText(resp.Wallet.RecoveryPhrase).NextLine()
+	str.Text("Wallet version:").NextLine()
+	str.WarningText(fmt.Sprintf("%d", resp.Wallet.Version)).NextLine()
+	str.Text("First public key:").NextLine()
+	str.WarningText(resp.Key.PublicKey).NextLine()
+	str.NextSection()
 
-	p.BlueArrow().InfoText("Run the service").NextLine()
-	p.Text("Now, you can run the service. See the following command:").NextSection()
-	p.Code(fmt.Sprintf("%s service run --help", os.Args[0])).NextLine()
+	str.RedArrow().DangerText("Important").NextLine()
+	str.Text("Write down the ").Bold("recovery phrase").Text(" and the ").Bold("wallet's version").Text(", and store it somewhere safe and secure, now.").NextLine()
+	str.DangerText("The recovery phrase will not be displayed ever again, nor will you be able to retrieve it!").NextSection()
+
+	str.BlueArrow().InfoText("Run the service").NextLine()
+	str.Text("Now, you can run the service. See the following command:").NextSection()
+	str.Code(fmt.Sprintf("%s service run --help", os.Args[0])).NextLine()
 }

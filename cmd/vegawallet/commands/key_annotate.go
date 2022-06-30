@@ -160,11 +160,13 @@ func PrintAnnotateKeyResponse(w io.Writer, req *wallet.AnnotateKeyRequest) {
 	metadataHaveBeenCleared := len(req.Metadata) == 0
 
 	p := printer.NewInteractivePrinter(w)
+	str := p.String()
+	defer p.Print(str)
 	if metadataHaveBeenCleared {
-		p.CheckMark().SuccessText("Annotation cleared").NextLine()
+		str.CheckMark().SuccessText("Annotation cleared").NextLine()
 		return
 	}
-	p.CheckMark().SuccessText("Annotation succeeded").NextSection()
-	p.Text("New metadata:").NextLine()
-	printMeta(p, req.Metadata)
+	str.CheckMark().SuccessText("Annotation succeeded").NextSection()
+	str.Text("New metadata:").NextLine()
+	printMeta(str, req.Metadata)
 }

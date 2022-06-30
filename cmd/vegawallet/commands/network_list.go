@@ -71,12 +71,15 @@ func BuildCmdListNetworks(w io.Writer, handler ListNetworksHandler, rf *RootFlag
 func PrintListNetworksResponse(w io.Writer, resp *network.ListNetworksResponse) {
 	p := printer.NewInteractivePrinter(w)
 
+	str := p.String()
+	defer p.Print(str)
+
 	if len(resp.Networks) == 0 {
-		p.InfoText("No network registered").NextLine()
+		str.InfoText("No network registered").NextLine()
 		return
 	}
 
 	for _, net := range resp.Networks {
-		p.Text(fmt.Sprintf("- %s", net)).NextLine()
+		str.Text(fmt.Sprintf("- %s", net)).NextLine()
 	}
 }

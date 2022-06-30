@@ -110,7 +110,10 @@ func (f *GetWalletInfoFlags) Validate() (*wallet.GetWalletInfoRequest, error) {
 func PrintGetWalletInfoResponse(w io.Writer, resp *wallet.GetWalletInfoResponse) {
 	p := printer.NewInteractivePrinter(w)
 
-	p.Text("Type:").NextLine().WarningText(resp.Type).NextLine()
-	p.Text("Version:").NextLine().WarningText(fmt.Sprintf("%d", resp.Version)).NextLine()
-	p.Text("ID:").NextLine().WarningText(resp.ID).NextLine()
+	str := p.String()
+	defer p.Print(str)
+
+	str.Text("Type:").NextLine().WarningText(resp.Type).NextLine()
+	str.Text("Version:").NextLine().WarningText(fmt.Sprintf("%d", resp.Version)).NextLine()
+	str.Text("ID:").NextLine().WarningText(resp.ID).NextLine()
 }

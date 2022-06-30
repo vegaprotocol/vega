@@ -122,5 +122,8 @@ func (f *DeleteWalletFlags) Validate() error {
 func PrintDeleteWalletResponse(w io.Writer, walletName string) {
 	p := printer.NewInteractivePrinter(w)
 
-	p.CheckMark().SuccessText("Wallet ").SuccessBold(walletName).SuccessText(" deleted").NextLine()
+	str := p.String()
+	defer p.Print(str)
+
+	str.CheckMark().SuccessText("Wallet ").SuccessBold(walletName).SuccessText(" deleted").NextLine()
 }

@@ -111,5 +111,9 @@ func (f *DeleteNetworkFlags) Validate() (*network.DeleteNetworkRequest, error) {
 
 func PrintDeleteNetworkResponse(w io.Writer, networkName string) {
 	p := printer.NewInteractivePrinter(w)
-	p.CheckMark().SuccessText("Network ").SuccessBold(networkName).SuccessText(" deleted").NextLine()
+
+	str := p.String()
+	defer p.Print(str)
+
+	str.CheckMark().SuccessText("Network ").SuccessBold(networkName).SuccessText(" deleted").NextLine()
 }

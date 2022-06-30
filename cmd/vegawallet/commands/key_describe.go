@@ -119,23 +119,26 @@ func (f *DescribeKeyFlags) Validate() (*wallet.DescribeKeyRequest, error) {
 }
 
 func PrintDescribeKeyResponse(w io.Writer, resp *wallet.DescribeKeyResponse) {
-	p := printer.NewInteractivePrinter(w).NextLine()
+	p := printer.NewInteractivePrinter(w)
 
-	p.Text("Name:              ").WarningText(wallet.GetKeyName(resp.Meta)).NextLine()
-	p.Text("Public key:        ").WarningText(resp.PublicKey).NextLine()
-	p.Text("Algorithm Name:    ").WarningText(resp.Algorithm.Name).NextLine()
-	p.Text("Algorithm Version: ").WarningText(fmt.Sprint(resp.Algorithm.Version)).NextSection()
+	str := p.String()
+	defer p.Print(str)
 
-	p.Text("Key pair is: ")
+	str.Text("Name:              ").WarningText(wallet.GetKeyName(resp.Meta)).NextLine()
+	str.Text("Public key:        ").WarningText(resp.PublicKey).NextLine()
+	str.Text("Algorithm Name:    ").WarningText(resp.Algorithm.Name).NextLine()
+	str.Text("Algorithm Version: ").WarningText(fmt.Sprint(resp.Algorithm.Version)).NextSection()
+
+	str.Text("Key pair is: ")
 	switch resp.IsTainted {
 	case true:
-		p.DangerText("tainted").NextLine()
+		str.DangerText("tainted").NextLine()
 	case false:
-		p.SuccessText("not tainted").NextLine()
+		str.SuccessText("not tainted").NextLine()
 	}
-	p.Text("Tainting a key pair marks it as unsafe to use and ensures it will not be used to sign transactions.").NextLine()
-	p.Text("This mechanism is useful when the key pair has been compromised.").NextSection()
+	str.Text("Tainting a key pair marks it as unsafe to use and ensures it will not be used to sign transactions.").NextLine()
+	str.Text("This mechanism is useful when the key pair has been compromised.").NextSection()
 
-	p.Text("Metadata:").NextLine()
-	printMeta(p, resp.Meta)
+	str.Text("Metadata:").NextLine()
+	printMeta(str, resp.Meta)
 }

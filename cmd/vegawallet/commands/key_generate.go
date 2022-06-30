@@ -129,16 +129,17 @@ func (f *GenerateKeyFlags) Validate() (*wallet.GenerateKeyRequest, error) {
 func PrintGenerateKeyResponse(w io.Writer, req *wallet.GenerateKeyRequest, resp *wallet.GenerateKeyResponse) {
 	p := printer.NewInteractivePrinter(w)
 
-	p.CheckMark().Text("Key pair has been generated in wallet ").Bold(req.Wallet).NextLine()
-	p.CheckMark().SuccessText("Generating a key pair succeeded").NextSection()
+	str := p.String()
+	defer p.Print(str)
 
-	p.Text("Public key:").NextLine()
-	p.WarningText(resp.PublicKey).NextLine()
-	p.Text("Metadata:").NextLine()
-	printMeta(p, resp.Meta)
-	p.NextSection()
-
-	p.BlueArrow().InfoText("Run the service").NextLine()
-	p.Text("Now, you can run the service. See the following command:").NextSection()
-	p.Code(fmt.Sprintf("%s service run --help", os.Args[0])).NextLine()
+	str.CheckMark().Text("Key pair has been generated in wallet ").Bold(req.Wallet).NextLine()
+	str.CheckMark().SuccessText("Generating a key pair succeeded").NextSection()
+	str.Text("Public key:").NextLine()
+	str.WarningText(resp.PublicKey).NextLine()
+	str.Text("Metadata:").NextLine()
+	printMeta(str, resp.Meta)
+	str.NextSection()
+	str.BlueArrow().InfoText("Run the service").NextLine()
+	str.Text("Now, you can run the service. See the following command:").NextSection()
+	str.Code(fmt.Sprintf("%s service run --help", os.Args[0])).NextLine()
 }

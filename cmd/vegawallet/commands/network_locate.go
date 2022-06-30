@@ -76,5 +76,8 @@ func BuildCmdLocateNetworks(w io.Writer, handler LocateNetworksHandler, rf *Root
 func PrintLocateNetworksResponse(w io.Writer, resp *LocateNetworksResponse) {
 	p := printer.NewInteractivePrinter(w)
 
-	p.Text("Network configuration files are located at: ").SuccessText(resp.Path).NextLine()
+	str := p.String()
+	defer p.Print(str)
+
+	str.Text("Network configuration files are located at: ").SuccessText(resp.Path).NextLine()
 }

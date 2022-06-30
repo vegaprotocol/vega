@@ -121,9 +121,12 @@ func ListEndpoints(w io.Writer, rf *RootFlags, f *ListEndpointsFlags) error {
 
 	serviceHost := fmt.Sprintf("http://%v:%v", cfg.Host, cfg.Port)
 
-	p.BlueArrow().InfoText("Available endpoints").NextLine()
+	str := p.String()
+	defer p.Print(str)
+
+	str.BlueArrow().InfoText("Available endpoints").NextLine()
 	printServiceEndpoints(serviceHost)
-	p.NextLine()
+	str.NextLine()
 
 	return nil
 }
