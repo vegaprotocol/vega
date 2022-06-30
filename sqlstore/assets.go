@@ -68,7 +68,16 @@ func (as *Assets) Add(ctx context.Context, a entities.Asset) error {
 		a.VegaTime,
 		a.Status,
 	)
-	return err
+	if err != nil {
+		return err
+	}
+
+	// delete cache
+	as.cacheLock.Lock()
+	defer as.cacheLock.Unlock()
+	delete(as.cache, a.ID.String())
+
+	return nil
 }
 
 func (as *Assets) GetByID(ctx context.Context, id string) (entities.Asset, error) {
