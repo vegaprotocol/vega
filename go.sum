@@ -52,10 +52,8 @@ code.vegaprotocol.io/quant v0.2.5 h1:8h+TTHdz1LCO4oGXt8mbowXszd8CQP1MHlJOkthUp1E
 code.vegaprotocol.io/quant v0.2.5/go.mod h1:HEzOoPKj8OIP49r9AZYeo5281M5ygeGWxopwvt8k6Es=
 code.vegaprotocol.io/shared v0.0.0-20220614080106-5c97205b0d92 h1:BjS0uyoTUFgbBNY3clzSj0fDA1rAPLsV5dNMwfpvSNg=
 code.vegaprotocol.io/shared v0.0.0-20220614080106-5c97205b0d92/go.mod h1:pNHKwqRDkotUN0s6jErl7Eb2EpZa2HAf03lyPMTCUT0=
-code.vegaprotocol.io/vega v0.52.0 h1:3b7EarboBxiqx4btxIdLMopNPDh4e19NKc8WoYHQL9w=
-code.vegaprotocol.io/vega v0.52.0/go.mod h1:B6hZq2r+OVpm6RO0SefFfCubcjGtT4ZfX+lbSuaeidk=
-code.vegaprotocol.io/vegawallet v0.16.0 h1:rGVSKtjs7XcLim1qfFkDqzIh8Rkwb5cA0CsNOgwll/U=
-code.vegaprotocol.io/vegawallet v0.16.0/go.mod h1:rb0GMAaAFmWkjqsCpclYIPrTympq13Ciy6S9xwIfB2U=
+code.vegaprotocol.io/vega v0.52.1-0.20220630092914-f32245e6042b h1:o9Yf/oIsL/6Z+yFzTZgPFO908N0nwPiD17IoZIsznvo=
+code.vegaprotocol.io/vega v0.52.1-0.20220630092914-f32245e6042b/go.mod h1:9EjJN5g9uP9R7L8eaYzbwTFan9UDy3z1iqZgSgzBuWQ=
 collectd.org v0.3.0/go.mod h1:A/8DzQBkF6abtvrT2j/AU/4tiBgJWYyh0y/oB/4MlWE=
 dmitri.shuralyov.com/gpu/mtl v0.0.0-20190408044501-666a987793e9/go.mod h1:H6x//7gZCb22OMCxBHrMx7a5I7Hp++hsVxbQ4BYO7hU=
 github.com/99designs/gqlgen v0.16.0 h1:7Qc4Ll3mfN3doAyUWOgtGLcBGu+KDgK48HdkBGLZVFs=

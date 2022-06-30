@@ -74,10 +74,6 @@ func TestAsset(t *testing.T) {
 
 	asset := addTestAsset(t, as, block)
 
-	// Add it again, we should get a primary key violation
-	err = as.Add(context.Background(), asset)
-	assert.Error(t, err)
-
 	// Query and check we've got back an asset the same as the one we put in
 	fetchedAsset, err := as.GetByID(ctx, asset.ID.String())
 	assert.NoError(t, err)

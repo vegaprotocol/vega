@@ -31,7 +31,7 @@ create table assets
     lifetime_limit      HUGEINT NOT NULL,
     withdraw_threshold  HUGEINT NOT NULL,
     status		asset_status_type NOT NULL,
-    vega_time           TIMESTAMP WITH TIME ZONE NOT NULL REFERENCES blocks (vega_time),
+    vega_time           TIMESTAMP WITH TIME ZONE NOT NULL REFERENCES blocks(vega_time),
     PRIMARY KEY (id, vega_time)
 );
 
@@ -42,7 +42,7 @@ CREATE VIEW assets_current AS (
 create table parties
 (
     id        BYTEA NOT NULL PRIMARY KEY,
-    vega_time TIMESTAMP WITH TIME ZONE REFERENCES blocks (vega_time)
+    vega_time TIMESTAMP WITH TIME ZONE REFERENCES blocks(vega_time)
 );
 
 create table accounts
