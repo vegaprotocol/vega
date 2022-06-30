@@ -19,7 +19,7 @@ create type asset_status_type as enum('STATUS_UNSPECIFIED', 'STATUS_PROPOSED', '
 
 create table assets
 (
-    id                  BYTEA NOT NULL PRIMARY KEY,
+    id                  BYTEA NOT NULL,
     name                TEXT NOT NULL,
     symbol              TEXT NOT NULL,
     total_supply        HUGEINT,
@@ -31,6 +31,10 @@ create table assets
     withdraw_threshold  HUGEINT NOT NULL,
     status		asset_status_type NOT NULL,
     vega_time           TIMESTAMP WITH TIME ZONE NOT NULL REFERENCES blocks (vega_time)
+);
+
+CREATE VIEW assets_current AS (
+  SELECT DISTINCT ON (id) * FROM assets ORDER BY id, vega_time DESC
 );
 
 create table parties
