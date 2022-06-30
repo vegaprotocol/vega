@@ -142,14 +142,16 @@ func testSubmittingProposalForNewMarketWithoutValidCommitmentFails(t *testing.T)
 
 	eng.ensureAllAssetEnabled(t)
 
-	// first we test with no commitment
+	// first we test with no commitment - this should not return an error
 	proposal.Terms.GetNewMarket().LiquidityCommitment = nil
 	eng.ensureTokenBalanceForParty(t, party, 1)
-	eng.expectRejectedProposalEvent(t, party, proposal.ID, types.ProposalErrorMarketMissingLiquidityCommitment)
+	eng.expectOpenProposalEvent(t, party, proposal.ID)
 	_, err := eng.submitProposal(t, proposal)
-	require.Error(t, err)
-	assert.Contains(t, err.Error(), "market proposal is missing liquidity commitment")
+	require.NoError(t, err)
+	// assert.Contains(t, err.Error(), "market proposal is missing liquidity commitment")
 
+	// ensure unique ID
+	proposal.ID += "2"
 	// Then no amount
 	proposal.Terms.GetNewMarket().LiquidityCommitment = newMarketLiquidityCommitment()
 	proposal.Terms.GetNewMarket().LiquidityCommitment.CommitmentAmount = num.Zero()
