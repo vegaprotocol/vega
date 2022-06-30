@@ -25,7 +25,7 @@ import (
 	"code.vegaprotocol.io/vega/types/num"
 )
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/market_depth_mock.go -package mocks code.vegaprotocol.io/data-node/subscribers SqlOrderStore
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/market_depth_mock.go -package mocks code.vegaprotocol.io/data-node/service OrderStore
 type OrderStore interface {
 	GetLiveOrders(ctx context.Context) ([]entities.Order, error)
 }

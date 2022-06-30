@@ -35,10 +35,10 @@ func (m *MockLiquidityService) EXPECT() *MockLiquidityServiceMockRecorder {
 }
 
 // Get mocks base method.
-func (m *MockLiquidityService) Get(arg0, arg1 string) ([]vega.LiquidityProvision, error) {
+func (m *MockLiquidityService) Get(arg0, arg1 string) ([]*vega.LiquidityProvision, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Get", arg0, arg1)
-	ret0, _ := ret[0].([]vega.LiquidityProvision)
+	ret0, _ := ret[0].([]*vega.LiquidityProvision)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

@@ -19,6 +19,7 @@ import (
 
 	"code.vegaprotocol.io/data-node/entities"
 	"code.vegaprotocol.io/data-node/metrics"
+	v2 "code.vegaprotocol.io/protos/data-node/api/v2"
 	"github.com/georgysavva/scany/pgxscan"
 )
 
@@ -83,6 +84,33 @@ func (ps *Positions) GetByParty(ctx context.Context, partyID entities.PartyID) (
 		`SELECT * FROM positions_current WHERE party_id=$1`,
 		partyID)
 	return positions, err
+}
+
+func (ps *Positions) GetByPartyConnection(ctx context.Context, partyID entities.PartyID, marketID entities.MarketID, pagination entities.CursorPagination) ([]entities.Position, entities.PageInfo, error) {
+	var query string
+	if marketID.String() != "" {
+		query = fmt.Sprintf(`select * from positions_current where party_id=%s`, partyID.String())
+	} else {
+		query = fmt.Sprintf(`select * from positions_current where party_id=%s and market_id=%s`,
+			partyID.String(), marketID.String())
+	}
+
+	positions := make([]entities.Position, 0)
+	args := make([]interface{}, 0)
+
+	var pagedPositions []entities.Position
+	var pageInfo entities.PageInfo
+
+	sorting, cmp, cursor := extractPaginationInfo(pagination)
+	cursors := []CursorQueryParameter{NewCursorQueryParameter("vega_time", sorting, cmp, cursor)}
+	query, args = orderAndPaginateWithCursor(query, pagination, cursors, args...)
+
+	if err := pgxscan.Select(ctx, ps.Connection, &positions, query, args...); err != nil {
+		return nil, entities.PageInfo{}, err
+	}
+
+	pagedPositions, pageInfo = entities.PageEntities[*v2.PositionEdge](positions, pagination)
+	return pagedPositions, pageInfo, nil
 }
 
 func (ps *Positions) GetAll(ctx context.Context) ([]entities.Position, error) {

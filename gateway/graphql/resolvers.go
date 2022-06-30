@@ -2189,6 +2189,38 @@ func (r *myPositionResolver) MarginsConnection(ctx context.Context, pos *types.P
 	return res.MarginLevels, nil
 }
 
+func (r *myQueryResolver) PositionsByParty(ctx context.Context, partyID *string, marketID *string) ([]*types.Position, error) {
+	if len(*partyID) <= 0 {
+		return nil, errors.New("missing party id")
+	}
+	req := protoapi.PositionsByPartyRequest{
+		PartyId:  *partyID,
+		MarketId: *marketID,
+	}
+	res, err := r.tradingDataClient.PositionsByParty(ctx, &req)
+	if err != nil {
+		r.log.Error("tradingData client", logging.Error(err))
+		return nil, customErrorFromStatus(err)
+	}
+	return res.Positions, nil
+}
+
+func (r *myQueryResolver) PositionsByPartyConnection(ctx context.Context, partyID *string, marketID string, pagination *v2.Pagination) (*v2.PositionConnection, error) {
+	req := v2.GetPositionsByPartyConnectionRequest{
+		PartyId:    *partyID,
+		MarketId:   marketID,
+		Pagination: pagination,
+	}
+
+	res, err := r.tradingDataClientV2.GetPositionsByPartyConnection(ctx, &req)
+	if err != nil {
+		r.log.Error("tradingData client", logging.Error(err))
+		return nil, customErrorFromStatus(err)
+	}
+
+	return res.Positions, nil
+}
+
 // END: Position Resolver
 
 // BEGIN: Subscription Resolver

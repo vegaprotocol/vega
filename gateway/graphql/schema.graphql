@@ -271,6 +271,12 @@ type Query {
   "An instrument that is trading on the VEGA network"
   market("Optional ID of a market" id: ID!): Market
 
+  positionsByPartyConnection(
+    partyId: ID
+    marketId: ID!
+    pagination: Pagination
+  ): PositionConnection!
+
   "One or more entities that are trading on the VEGA network"
   parties("Optional ID of a party" id: ID): [Party!]
 
@@ -3239,6 +3245,20 @@ type OrderConnection {
   totalCount: Int
   "The orders in this connection"
   edges: [OrderEdge!]
+  "The pagination information"
+  pageInfo: PageInfo
+}
+
+type PositionEdge {
+  node: Position!
+  cursor: String
+}
+
+type PositionConnection {
+  "The total number of positions in this connection"
+  totalCount: Int
+  "The positions in this connection"
+  edges: [PositionEdge!]
   "The pagination information"
   pageInfo: PageInfo
 }

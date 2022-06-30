@@ -223,7 +223,7 @@ func (os *Orders) GetByPartyPaged(ctx context.Context, partyIDStr string, p enti
 	partyID := entities.NewPartyID(partyIDStr)
 
 	query := fmt.Sprintf(`SELECT %s from orders_current WHERE party_id=$1`, sqlOrderColumns)
-	defer metrics.StartSQLQuery("Orders", "GetByPartyPaged")()
+	defer metrics.StartSQLQuery("Orders", "GetByPartyConnection")()
 
 	return os.queryOrdersWithCursorPagination(ctx, query, []interface{}{partyID}, p)
 }

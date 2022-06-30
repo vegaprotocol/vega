@@ -9,16 +9,19 @@
 - [](https://github.com/vegaprotocol/data-node/issues/xxx) -
 
 ### 🛠  Improvements
+- [561](https://github.com/vegaprotocol/data-node/issues/561) - Add cursor based pagination for positions requests
 - [565](https://github.com/vegaprotocol/data-node/issues/565) - Add cursor based pagination for candles data requests
 - [568](https://github.com/vegaprotocol/data-node/issues/568) - Add cursor based pagination for deposits requests
 - [569](https://github.com/vegaprotocol/data-node/issues/569) - Add cursor based pagination for withdrawal requests
 - [723](https://github.com/vegaprotocol/data-node/issues/723) - Update contributor information
 - [576](https://github.com/vegaprotocol/data-node/issues/576) - Add cursor based pagination for assets requests
 - [571](https://github.com/vegaprotocol/data-node/issues/571) - Add cursor based pagination for Oracle Spec and Data requests
-
+- [733](https://github.com/vegaprotocol/data-node/issues/733) - Store chain info in database when using `SQL`
+- [748](https://github.com/vegaprotocol/data-node/issues/748) - Add REST endpoint to list `OracleData`
 
 ### 🐛 Fixes
 - [705](https://github.com/vegaprotocol/data-node/issues/705) - Market Depth returning incorrect book state
+- [730](https://github.com/vegaprotocol/data-node/issues/730) - Event bus subscriptions with party and market filter not working 
 
 ## 0.52.0
 

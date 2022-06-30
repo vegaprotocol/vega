@@ -186,6 +186,10 @@ func (b *sqlStoreBroker) processBlock(ctx context.Context, dbContext context.Con
 		return nil, fmt.Errorf("failed to add block:%w", err)
 	}
 
+	slowTimeUpdateThreshold := 2 * time.Second
+	slowTimeUpdateTicker := time.NewTicker(slowTimeUpdateThreshold)
+	defer slowTimeUpdateTicker.Stop()
+
 	for {
 		// Do a pre-check on ctx.Done() since select() cases are randomized, this reduces
 		// the number of things we'll keep trying to handle after we are cancelled.
@@ -201,7 +205,9 @@ func (b *sqlStoreBroker) processBlock(ctx context.Context, dbContext context.Con
 			return nil, ctx.Err()
 		case err = <-errCh:
 			return nil, err
-
+		case <-slowTimeUpdateTicker.C:
+			b.log.Warningf("slow time update detected, time between checks %v, block height: %d, total block processing time: %v", slowTimeUpdateThreshold,
+				block.Height, blockTimer.duration)
 		case e := <-eventsCh:
 			metrics.EventCounterInc(e.Type().String())
 			blockTimer.startTimer()

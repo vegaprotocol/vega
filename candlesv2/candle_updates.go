@@ -166,21 +166,14 @@ func (s *candleUpdates) getCandleUpdates(ctx context.Context, lastCandle *entiti
 }
 
 func (s *candleUpdates) sendCandles(candles []entities.Candle, subscriptions map[string]chan entities.Candle) {
-	var slowConsumers []string
-
 	for subscriptionId, outCh := range subscriptions {
 		for _, candle := range candles {
-			if len(outCh) < cap(outCh) {
-				outCh <- candle
-			} else {
-				slowConsumers = append(slowConsumers, subscriptionId)
+			select {
+			case outCh <- candle:
+			default:
+				removeSubscription(subscriptions, subscriptionId)
 				break
 			}
 		}
-	}
-
-	for _, slowConsumerId := range slowConsumers {
-		s.log.Warningf("slow consumer detected, removing subscription %s", slowConsumerId)
-		removeSubscription(subscriptions, slowConsumerId)
 	}
 }
