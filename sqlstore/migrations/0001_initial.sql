@@ -47,7 +47,7 @@ create table accounts
 (
     id        SERIAL PRIMARY KEY,
     party_id  BYTEA,
-    asset_id  BYTEA                    NOT NULL REFERENCES assets (id),
+    asset_id  BYTEA  NOT NULL,
     market_id BYTEA,
     type      INT,
     vega_time TIMESTAMP WITH TIME ZONE NOT NULL REFERENCES blocks(vega_time),
@@ -546,7 +546,7 @@ CREATE TABLE IF NOT EXISTS reward_scores (
 
 CREATE TABLE rewards(
   party_id         BYTEA NOT NULL REFERENCES parties(id),
-  asset_id         BYTEA NOT NULL REFERENCES assets(id),
+  asset_id         BYTEA NOT NULL,
   market_id        BYTEA NOT NULL,
   reward_type      TEXT NOT NULL,
   epoch_id         BIGINT NOT NULL,
