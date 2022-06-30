@@ -14,6 +14,7 @@ package execution_test
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
@@ -46,6 +47,7 @@ func TestMargins(t *testing.T) {
 	auxParty2 := "auxParty2"
 	addAccount(t, tm, auxParty)
 	addAccount(t, tm, auxParty2)
+	addAccountWithAmount(tm, "lpprov", 100000)
 
 	// Assure liquidity auction won't be triggered
 	tm.market.OnMarketLiquidityTargetStakeTriggeringRatio(context.Background(), num.DecimalFromFloat(0))
@@ -72,6 +74,20 @@ func TestMargins(t *testing.T) {
 		require.NotNil(t, conf)
 		require.NoError(t, err)
 	}
+	lp := &types.LiquidityProvisionSubmission{
+		MarketID:         tm.market.GetID(),
+		CommitmentAmount: num.NewUint(500),
+		Fee:              num.DecimalFromFloat(0.01),
+		Sells: []*types.LiquidityOrder{
+			newLiquidityOrder(types.PeggedReferenceBestAsk, 2, 10),
+			newLiquidityOrder(types.PeggedReferenceBestAsk, 1, 13),
+		},
+		Buys: []*types.LiquidityOrder{
+			newLiquidityOrder(types.PeggedReferenceBestBid, 1, 10),
+			newLiquidityOrder(types.PeggedReferenceMid, 15, 13),
+		},
+	}
+	require.NoError(t, tm.market.SubmitLiquidityProvision(context.Background(), lp, "lpprov", vgcrypto.RandomHash()))
 
 	now = now.Add(2 * time.Second)
 	// leave opening auction
@@ -112,7 +128,7 @@ func TestMargins(t *testing.T) {
 	assert.NoError(t, err)
 	confirmation, err := tm.market.SubmitOrder(context.TODO(), order2)
 	assert.NoError(t, err)
-	assert.Equal(t, 1, len(confirmation.Trades))
+	assert.Equal(t, 2, len(confirmation.Trades))
 
 	orderBuy := &types.Order{
 		Status:      types.OrderStatusActive,
@@ -174,6 +190,7 @@ func TestPartialFillMargins(t *testing.T) {
 	addAccount(t, tm, party3)
 	addAccount(t, tm, auxParty)
 	addAccount(t, tm, auxParty2)
+	addAccountWithAmount(tm, "lpprov", 100000000)
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
 	// Assure liquidity auction won't be triggered
@@ -201,6 +218,22 @@ func TestPartialFillMargins(t *testing.T) {
 		require.NotNil(t, conf)
 		require.NoError(t, err)
 	}
+	mktD := tm.market.GetMarketData()
+	fmt.Printf("TS: %s\nSS: %s\n", mktD.TargetStake, mktD.SuppliedStake)
+	lp := &types.LiquidityProvisionSubmission{
+		MarketID:         tm.market.GetID(),
+		CommitmentAmount: num.NewUint(30000000),
+		Fee:              num.DecimalFromFloat(0.01),
+		Sells: []*types.LiquidityOrder{
+			newLiquidityOrder(types.PeggedReferenceBestAsk, 2, 10),
+			newLiquidityOrder(types.PeggedReferenceBestAsk, 1, 13),
+		},
+		Buys: []*types.LiquidityOrder{
+			newLiquidityOrder(types.PeggedReferenceBestBid, 1, 10),
+			newLiquidityOrder(types.PeggedReferenceMid, 15, 13),
+		},
+	}
+	require.NoError(t, tm.market.SubmitLiquidityProvision(context.Background(), lp, "lpprov", vgcrypto.RandomHash()))
 	now = now.Add(time.Second * 2) // opening auction is 1 second, move time ahead by 2 seconds so we leave auction
 	tm.market.OnTick(vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash()), now)
 

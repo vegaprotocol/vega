@@ -14,6 +14,7 @@ package execution_test
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
@@ -476,6 +477,8 @@ func (tm *testMarket) EndOpeningAuction(t *testing.T, auctionEnd time.Time, setM
 
 	tm.market.OnTick(ctx, auctionEnd)
 
+	md := tm.market.GetMarketData()
+	fmt.Printf("TS: %s\nSS: %s\n", md.TargetStake, md.SuppliedStake)
 	assert.Equal(t,
 		tm.market.GetMarketData().MarketTradingMode,
 		types.MarketTradingModeContinuous,
