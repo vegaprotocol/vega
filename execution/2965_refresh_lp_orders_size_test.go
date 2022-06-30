@@ -14,7 +14,6 @@ package execution_test
 
 import (
 	"context"
-	"fmt"
 	"testing"
 	"time"
 
@@ -182,12 +181,16 @@ func TestRefreshLiquidityProvisionOrdersSizes(t *testing.T) {
 	}
 
 	// Leave the auction
-	tm.market.OnTick(ctx, now.Add(10001*time.Second))
+	newT := now.Add(10001 * time.Second)
+	tm.now = newT
+	tm.market.OnTick(ctx, newT)
 
 	require.NoError(t, tm.market.SubmitLiquidityProvision(ctx, lp, "party-2", vgcrypto.RandomHash()))
 	assert.Equal(t, 1, tm.market.GetLPSCount())
 
-	tm.market.OnTick(ctx, now.Add(10011*time.Second))
+	newT = newT.Add(10 * time.Second)
+	tm.now = newT
+	tm.market.OnTick(ctx, newT)
 
 	newOrder := tpl.New(types.Order{
 		MarketID:    tm.market.GetID(),
@@ -475,10 +478,11 @@ func (tm *testMarket) EndOpeningAuction(t *testing.T, auctionEnd time.Time, setM
 		tm.WithSubmittedOrders(t, mpOrders...)
 	}
 
+	tm.now = auctionEnd
 	tm.market.OnTick(ctx, auctionEnd)
 
-	md := tm.market.GetMarketData()
-	fmt.Printf("TS: %s\nSS: %s\n", md.TargetStake, md.SuppliedStake)
+	// md := tm.market.GetMarketData()
+	// fmt.Printf("TS: %s\nSS: %s\n", md.TargetStake, md.SuppliedStake)
 	assert.Equal(t,
 		tm.market.GetMarketData().MarketTradingMode,
 		types.MarketTradingModeContinuous,

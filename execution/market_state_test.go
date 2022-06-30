@@ -183,7 +183,9 @@ func testCanMoveFromPendingToActiveState(t *testing.T) {
 	}
 	require.NoError(t, tm.market.SubmitLiquidityProvision(context.Background(), lp, "lpprov", vgcrypto.RandomHash()))
 	// now move to after the opening auction time
-	tm.market.OnTick(vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash()), now.Add(40*time.Second))
+	now = now.Add(40 * time.Second)
+	tm.now = now
+	tm.market.OnTick(vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash()), now)
 	assert.Equal(t, types.MarketStateActive, tm.market.State())
 }
 
@@ -232,7 +234,9 @@ func testCanPlaceOrderInActiveState(t *testing.T) {
 	}
 	require.NoError(t, tm.market.SubmitLiquidityProvision(context.Background(), lp, "lpprov", vgcrypto.RandomHash()))
 	// now move to after the opening auction time
-	tm.market.OnTick(vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash()), now.Add(40*time.Second))
+	now = now.Add(40 * time.Second)
+	tm.now = now
+	tm.market.OnTick(vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash()), now)
 	assert.Equal(t, types.MarketStateActive, tm.market.State())
 
 	addAccountWithAmount(tm, "someparty", 100000000)

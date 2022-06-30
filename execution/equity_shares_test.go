@@ -257,6 +257,7 @@ func testWithinMarket(t *testing.T) {
 
 	// End opening auction
 	curTime = curTime.Add(2 * time.Second)
+	tm.now = curTime
 	tm.market.OnTick(ctx, curTime)
 
 	md := esm.tm.market.GetMarketData()
@@ -270,6 +271,7 @@ func testWithinMarket(t *testing.T) {
 
 		// Trigger Fee distribution
 		curTime = curTime.Add(1 * time.Second)
+		tm.now = curTime
 		tm.market.OnTick(ctx, curTime)
 
 		// Assert the event
@@ -298,6 +300,7 @@ func testWithinMarket(t *testing.T) {
 	)
 
 	curTime = curTime.Add(1 * time.Second)
+	tm.now = curTime
 	tm.market.OnTick(ctx, curTime)
 
 	assert.True(t, esm.LiquidityFeeAccount().Balance.IsZero(),

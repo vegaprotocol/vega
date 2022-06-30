@@ -617,14 +617,18 @@ func TestMarketClosing(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	closed := tm.market.OnTick(vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash()), closingAt.Add(1*time.Second))
+	closingAt = closingAt.Add(time.Second)
+	tm.now = closingAt
+	closed := tm.market.OnTick(vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash()), closingAt)
 
 	// there's no settlement price yet
 	assert.False(t, closed)
 	assert.Equal(t, types.MarketStateTradingTerminated, tm.market.State())
 
 	// let time pass still no settlement price
-	closed = tm.market.OnTick(vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash()), closingAt.Add(1*time.Second))
+	closingAt = closingAt.Add(time.Second)
+	tm.now = closingAt
+	closed = tm.market.OnTick(vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash()), closingAt)
 	assert.False(t, closed)
 	assert.Equal(t, types.MarketStateTradingTerminated, tm.market.State())
 
@@ -636,7 +640,9 @@ func TestMarketClosing(t *testing.T) {
 		Data:    properties,
 	})
 	require.NoError(t, err)
-	closed = tm.market.OnTick(vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash()), closingAt.Add(3*time.Second))
+	closingAt = closingAt.Add(time.Second)
+	tm.now = closingAt
+	closed = tm.market.OnTick(vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash()), closingAt)
 	assert.True(t, closed)
 	assert.Equal(t, types.MarketStateSettled, tm.market.State())
 }
@@ -672,6 +678,7 @@ func TestMarketClosingAfterUpdate(t *testing.T) {
 	closingTimePlus1Sec := closingAt.Add(1 * time.Second)
 
 	// when
+	tm.now = closingTimePlus1Sec
 	closed := tm.market.OnTick(vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash()), closingTimePlus1Sec)
 
 	// then
@@ -711,6 +718,7 @@ func TestMarketClosingAfterUpdate(t *testing.T) {
 	closingTimePlus2Sec := closingAt.Add(2 * time.Second)
 
 	// when
+	tm.now = closingTimePlus2Sec
 	closed = tm.market.OnTick(vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash()), closingTimePlus2Sec)
 
 	// then
@@ -735,6 +743,7 @@ func TestMarketClosingAfterUpdate(t *testing.T) {
 	closingTimePlus3Sec := closingAt.Add(2 * time.Second)
 
 	// when
+	tm.now = closingTimePlus3Sec
 	closed = tm.market.OnTick(vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash()), closingTimePlus3Sec)
 
 	// then
@@ -930,6 +939,7 @@ func TestMarketWithTradeClosing(t *testing.T) {
 	})
 	require.NoError(t, err)
 
+	tm.now = futureTime
 	closed := tm.market.OnTick(vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash()), futureTime)
 	assert.True(t, closed)
 }
@@ -1038,6 +1048,7 @@ func TestMarketGetMarginOnFailNoFund(t *testing.T) {
 	require.NoError(t, tm.market.SubmitLiquidityProvision(context.Background(), lp, "lpprov", vgcrypto.RandomHash()))
 	// leave opening auction
 	now = now.Add(time.Second * 2)
+	tm.now = now
 	tm.market.OnTick(vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash()), now)
 
 	order1 := &types.Order{
@@ -1255,7 +1266,7 @@ func TestTriggerByPriceNoTradesInAuction(t *testing.T) {
 	auctionExtensionSeconds := int64(45)
 	openEnd := now.Add(time.Duration(auctionExtensionSeconds)*time.Second + time.Second)
 	auctionEndTime := openEnd.Add(time.Duration(auctionExtensionSeconds) * time.Second)
-	afterAuciton := auctionEndTime.Add(time.Nanosecond)
+	afterAuction := auctionEndTime.Add(time.Nanosecond)
 	pMonitorSettings := &types.PriceMonitoringSettings{
 		Parameters: &types.PriceMonitoringParameters{
 			Triggers: []*types.PriceMonitoringTrigger{
@@ -1322,6 +1333,7 @@ func TestTriggerByPriceNoTradesInAuction(t *testing.T) {
 	}
 	require.NoError(t, tm.market.SubmitLiquidityProvision(context.Background(), lp, "lpprov", vgcrypto.RandomHash()))
 	// leave opening auction by moving time
+	tm.now = openEnd
 	tm.market.OnTick(vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash()), openEnd)
 	now = openEnd
 
@@ -1410,10 +1422,12 @@ func TestTriggerByPriceNoTradesInAuction(t *testing.T) {
 	auctionEnd = tm.market.GetMarketData().AuctionEnd
 	require.Equal(t, auctionEndTime.UnixNano(), auctionEnd) // In auction
 
+	tm.now = auctionEndTime
 	closed := tm.market.OnTick(vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash()), auctionEndTime)
 	assert.False(t, closed)
 
-	closed = tm.market.OnTick(vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash()), afterAuciton)
+	tm.now = afterAuction
+	closed = tm.market.OnTick(vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash()), afterAuction)
 	require.Equal(t, types.MarketStateActive, tm.market.State())
 	assert.False(t, closed)
 }
@@ -1499,6 +1513,7 @@ func TestTriggerByPriceAuctionPriceInBounds(t *testing.T) {
 	}
 	require.NoError(t, tm.market.SubmitLiquidityProvision(context.Background(), lp, "lpprov", vgcrypto.RandomHash()))
 	// leave auction
+	tm.now = openEnd
 	tm.market.OnTick(vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash()), openEnd)
 	now = openEnd
 
@@ -1585,6 +1600,7 @@ func TestTriggerByPriceAuctionPriceInBounds(t *testing.T) {
 
 	require.Empty(t, confirmationSell.Trades)
 
+	tm.now = auctionEndTime
 	closed := tm.market.OnTick(vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash()), auctionEndTime)
 	assert.False(t, closed)
 
@@ -1631,6 +1647,7 @@ func TestTriggerByPriceAuctionPriceInBounds(t *testing.T) {
 	require.Equal(t, auctionEndTime.UnixNano(), auctionEnd)         // In auction
 	require.Equal(t, types.MarketStateSuspended, tm.market.State()) // enter auction
 
+	tm.now = afterAuction
 	closed = tm.market.OnTick(vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash()), afterAuction)
 	require.Equal(t, tm.market.State(), types.MarketStateActive)
 	assert.False(t, closed)
@@ -1758,6 +1775,7 @@ func TestTriggerByPriceAuctionPriceOutsideBounds(t *testing.T) {
 	}
 	require.NoError(t, tm.market.SubmitLiquidityProvision(context.Background(), lp, "lpprov", vgcrypto.RandomHash()))
 	// increase time, so we can leave opening auction
+	tm.now = openEnd
 	tm.market.OnTick(vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash()), openEnd)
 
 	md := tm.market.GetMarketData()
@@ -1866,6 +1884,7 @@ func TestTriggerByPriceAuctionPriceOutsideBounds(t *testing.T) {
 	auctionEnd = tm.market.GetMarketData().AuctionEnd
 	require.Equal(t, auctionEndTime.UnixNano(), auctionEnd) // In auction
 
+	tm.now = auctionEndTime
 	closed := tm.market.OnTick(vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash()), auctionEndTime)
 	assert.False(t, closed)
 
@@ -1912,6 +1931,7 @@ func TestTriggerByPriceAuctionPriceOutsideBounds(t *testing.T) {
 	require.Equal(t, auctionEndTime.UnixNano(), auctionEnd) // In auction
 
 	// Expecting market to still be in auction as auction resulted in invalid price
+	tm.now = initialAuctionEnd
 	closed = tm.market.OnTick(vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash()), initialAuctionEnd)
 	assert.False(t, closed)
 
@@ -1995,6 +2015,7 @@ func TestTriggerByMarketOrder(t *testing.T) {
 	}
 	require.NoError(t, tm.market.SubmitLiquidityProvision(context.Background(), lp, "lpprov", vgcrypto.RandomHash()))
 	// now leave auction
+	tm.now = openingEnd
 	tm.market.OnTick(vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash()), openingEnd)
 	now = openingEnd
 
@@ -2111,6 +2132,7 @@ func TestTriggerByMarketOrder(t *testing.T) {
 	auctionEnd = tm.market.GetMarketData().AuctionEnd
 	require.Equal(t, auctionEndTime.UnixNano(), auctionEnd) // In auction
 
+	tm.now = auctionEndTime
 	closed := tm.market.OnTick(vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash()), auctionEndTime)
 	assert.False(t, closed)
 
@@ -2118,7 +2140,8 @@ func TestTriggerByMarketOrder(t *testing.T) {
 	require.Equal(t, auctionEndTime.UnixNano(), auctionEnd) // Still in auction
 	require.Equal(t, types.MarketStateSuspended, tm.market.State())
 
-	closed = tm.market.OnTick(vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash()), auctionEndTime.Add(time.Nanosecond))
+	tm.now = auctionEndTime.Add(time.Nanosecond)
+	closed = tm.market.OnTick(vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash()), tm.now)
 	require.Equal(t, types.MarketStateActive, tm.market.State()) // left auction
 	assert.False(t, closed)
 
@@ -2232,6 +2255,7 @@ func TestPriceMonitoringBoundsInGetMarketData(t *testing.T) {
 	}
 	require.NoError(t, tm.market.SubmitLiquidityProvision(context.Background(), lp, "lpprov", vgcrypto.RandomHash()))
 	// leave auction
+	tm.now = openEnd
 	tm.market.OnTick(vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash()), openEnd)
 	now = openEnd
 
@@ -2339,6 +2363,7 @@ func TestPriceMonitoringBoundsInGetMarketData(t *testing.T) {
 
 	require.Empty(t, md.PriceMonitoringBounds)
 
+	tm.now = auctionEndTime
 	closed := tm.market.OnTick(vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash()), auctionEndTime)
 	assert.False(t, closed)
 
@@ -2350,7 +2375,8 @@ func TestPriceMonitoringBoundsInGetMarketData(t *testing.T) {
 
 	require.Empty(t, md.PriceMonitoringBounds)
 
-	closed = tm.market.OnTick(vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash()), auctionEndTime.Add(time.Nanosecond))
+	tm.now = auctionEndTime.Add(time.Nanosecond)
+	closed = tm.market.OnTick(vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash()), tm.now)
 	assert.False(t, closed)
 
 	md = tm.market.GetMarketData()
@@ -2439,6 +2465,7 @@ func TestTargetStakeReturnedAndCorrect(t *testing.T) {
 	require.NoError(t, tm.market.SubmitLiquidityProvision(context.Background(), lp, "lpprov", vgcrypto.RandomHash()))
 	// leave opening auction
 	now = now.Add(2 * time.Second)
+	tm.now = now
 	tm.market.OnTick(vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash()), now)
 
 	orderSell1 := &types.Order{
@@ -2553,6 +2580,7 @@ func TestHandleLPCommitmentChange(t *testing.T) {
 	require.NoError(t, tm.market.SubmitLiquidityProvision(context.Background(), lp, "lpprov", vgcrypto.RandomHash()))
 	// leave opening auction
 	now = now.Add(2 * time.Second)
+	tm.now = now
 	tm.market.OnTick(vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash()), now)
 
 	order1 := &types.Order{
@@ -2847,6 +2875,7 @@ func TestSubmitLiquidityProvisionWithNoOrdersOnBook(t *testing.T) {
 	}
 	// leave opening auction
 	now = now.Add(2 * time.Second)
+	tm.now = now
 	tm.market.OnTick(ctx, now)
 
 	// Check that liquidity orders appear on the book once reference prices exist
@@ -2913,7 +2942,9 @@ func TestSubmitLiquidityProvisionInOpeningAuction(t *testing.T) {
 	assert.NotNil(t, confirmationBuy)
 	assert.NoError(t, err)
 
-	tm.market.OnTick(ctx, now.Add(time.Duration((auctionDuration+1)*time.Second.Nanoseconds())))
+	now = now.Add(time.Duration((auctionDuration + 1) * time.Second.Nanoseconds()))
+	tm.now = now
+	tm.market.OnTick(ctx, now)
 
 	// Check that liquidity orders appear on the book once reference prices exist
 	mktData := tm.market.GetMarketData()
@@ -2968,6 +2999,7 @@ func TestLimitOrderChangesAffectLiquidityOrders(t *testing.T) {
 	}
 	// move ahead time to leave auction
 	now = now.Add(2 * time.Second)
+	tm.now = now
 	tm.market.OnTick(ctx, now)
 
 	orderSell1 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "party1-sell-order-1", types.SideSell, mainParty, 6, matchingPrice+2)
@@ -3122,6 +3154,7 @@ func TestLimitOrderChangesAffectLiquidityOrders(t *testing.T) {
 	lpOrderVolumeBidPrev = mktData.BestBidVolume - mktData.BestStaticBidVolume
 
 	now = now.Add(time.Second)
+	tm.now = now
 	tm.market.OnTick(ctx, now)
 
 	orderBuy2SizeBeforeTrade := orderBuy2.Remaining
@@ -3348,6 +3381,7 @@ func TestOrderBook_Crash2599(t *testing.T) {
 	require.NoError(t, tm.market.SubmitLiquidityProvision(context.Background(), lp, "lpprov", vgcrypto.RandomHash()))
 	// leave opening auction
 	now = now.Add(2 * time.Second)
+	tm.now = now
 	tm.market.OnTick(ctx, now)
 
 	o1 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGFN, "Order01", types.SideBuy, "A", 5, 11500)
@@ -3355,6 +3389,7 @@ func TestOrderBook_Crash2599(t *testing.T) {
 	require.NotNil(t, o1conf)
 	require.NoError(t, err)
 	now = now.Add(time.Second * 1)
+	tm.now = now
 	tm.market.OnTick(vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash()), now)
 
 	o2 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGFN, "Order02", types.SideSell, "B", 25, 11000)
@@ -3362,6 +3397,7 @@ func TestOrderBook_Crash2599(t *testing.T) {
 	require.NotNil(t, o2conf)
 	require.NoError(t, err)
 	now = now.Add(time.Second * 1)
+	tm.now = now
 	tm.market.OnTick(vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash()), now)
 
 	o3 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGFN, "Order03", types.SideBuy, "A", 10, 10500)
@@ -3369,6 +3405,7 @@ func TestOrderBook_Crash2599(t *testing.T) {
 	require.NotNil(t, o3conf)
 	require.NoError(t, err)
 	now = now.Add(time.Second * 1)
+	tm.now = now
 	tm.market.OnTick(vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash()), now)
 
 	o4 := getMarketOrder(tm, now, types.OrderTypeMarket, types.OrderTimeInForceIOC, "Order04", types.SideSell, "C", 5, 0)
@@ -3376,6 +3413,7 @@ func TestOrderBook_Crash2599(t *testing.T) {
 	require.NotNil(t, o4conf)
 	require.NoError(t, err)
 	now = now.Add(time.Second * 1)
+	tm.now = now
 	tm.market.OnTick(vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash()), now)
 
 	o5 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "Order05", types.SideBuy, "C", 35, 0)
@@ -3384,6 +3422,7 @@ func TestOrderBook_Crash2599(t *testing.T) {
 	require.NotNil(t, o5conf)
 	require.NoError(t, err)
 	now = now.Add(time.Second * 1)
+	tm.now = now
 	tm.market.OnTick(vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash()), now)
 
 	o6 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "Order06", types.SideBuy, "D", 16, 0)
@@ -3392,6 +3431,7 @@ func TestOrderBook_Crash2599(t *testing.T) {
 	require.NotNil(t, o6conf)
 	require.NoError(t, err)
 	now = now.Add(time.Second * 1)
+	tm.now = now
 	tm.market.OnTick(vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash()), now)
 
 	o7 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTT, "Order07", types.SideSell, "E", 19, 0)
@@ -3401,6 +3441,7 @@ func TestOrderBook_Crash2599(t *testing.T) {
 	require.NotNil(t, o7conf)
 	require.NoError(t, err)
 	now = now.Add(time.Second * 1)
+	tm.now = now
 	tm.market.OnTick(vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash()), now)
 
 	o8 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "Order08", types.SideBuy, "F", 25, 10000)
@@ -3408,6 +3449,7 @@ func TestOrderBook_Crash2599(t *testing.T) {
 	require.NotNil(t, o8conf)
 	require.NoError(t, err)
 	now = now.Add(time.Second * 1)
+	tm.now = now
 	tm.market.OnTick(vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash()), now)
 
 	// This one should crash
@@ -3416,6 +3458,7 @@ func TestOrderBook_Crash2599(t *testing.T) {
 	require.NotNil(t, o9conf)
 	require.NoError(t, err)
 	now = now.Add(time.Second * 1)
+	tm.now = now
 	tm.market.OnTick(vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash()), now)
 
 	o10 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "Order10", types.SideBuy, "G", 45, 14000)
@@ -3423,6 +3466,7 @@ func TestOrderBook_Crash2599(t *testing.T) {
 	require.NotNil(t, o10conf)
 	require.NoError(t, err)
 	now = now.Add(time.Second * 1)
+	tm.now = now
 	tm.market.OnTick(vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash()), now)
 
 	o11 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "Order11", types.SideSell, "G", 45, 8500)
@@ -3430,6 +3474,7 @@ func TestOrderBook_Crash2599(t *testing.T) {
 	require.NotNil(t, o11conf)
 	require.NoError(t, err)
 	now = now.Add(time.Second * 1)
+	tm.now = now
 	tm.market.OnTick(vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash()), now)
 }
 
@@ -3583,6 +3628,7 @@ func TestTriggerAfterOpeningAuction(t *testing.T) {
 		},
 	}
 	require.NoError(t, tm.market.SubmitLiquidityProvision(context.Background(), lp, "lpprov", vgcrypto.RandomHash()))
+	tm.now = afterOpeningAuction
 	closed := tm.market.OnTick(vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash()), afterOpeningAuction)
 	assert.False(t, closed)
 	auctionEnd = tm.market.GetMarketData().AuctionEnd
@@ -3635,9 +3681,11 @@ func TestTriggerAfterOpeningAuction(t *testing.T) {
 	auctionEnd = tm.market.GetMarketData().AuctionEnd
 	require.Equal(t, pMonitorAuctionEndTime.UnixNano(), auctionEnd) // In auction
 
+	tm.now = pMonitorAuctionEndTime
 	closed = tm.market.OnTick(vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash()), pMonitorAuctionEndTime)
 	assert.False(t, closed)
 
+	tm.now = afterPMonitorAuction
 	closed = tm.market.OnTick(vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash()), afterPMonitorAuction)
 	assert.False(t, closed)
 }
@@ -3698,6 +3746,7 @@ func TestOrderBook_Crash2718(t *testing.T) {
 	require.NoError(t, tm.market.SubmitLiquidityProvision(context.Background(), lp, "lpprov", vgcrypto.RandomHash()))
 	// leave opening auction
 	now = now.Add(2 * time.Second)
+	tm.now = now
 	tm.market.OnTick(ctx, now)
 
 	// We start in continuous trading, create order to set best bid
@@ -3706,6 +3755,7 @@ func TestOrderBook_Crash2718(t *testing.T) {
 	require.NotNil(t, o1conf)
 	require.NoError(t, err)
 	now = now.Add(time.Second * 1)
+	tm.now = now
 	tm.market.OnTick(vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash()), now)
 
 	// Now the pegged order which will be live
@@ -3715,6 +3765,7 @@ func TestOrderBook_Crash2718(t *testing.T) {
 	require.NotNil(t, o2conf)
 	require.NoError(t, err)
 	now = now.Add(time.Second * 1)
+	tm.now = now
 	tm.market.OnTick(vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash()), now)
 	assert.Equal(t, types.OrderStatusActive, o2.Status, o2.Status.String())
 	assert.Equal(t, num.NewUint(90), o2.Price)
@@ -3725,6 +3776,7 @@ func TestOrderBook_Crash2718(t *testing.T) {
 	require.NotNil(t, o3conf)
 	require.NoError(t, err)
 	now = now.Add(time.Second * 1)
+	tm.now = now
 	tm.market.OnTick(vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash()), now)
 
 	o2Update := tm.lastOrderUpdate(o2.ID)
@@ -3764,6 +3816,7 @@ func TestOrderBook_AmendPriceInParkedOrder(t *testing.T) {
 	require.NotNil(t, o1conf)
 	require.NoError(t, err)
 	now = now.Add(time.Second * 1)
+	tm.now = now
 	tm.market.OnTick(vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash()), now)
 	assert.Equal(t, types.OrderStatusParked, o1.Status)
 	assert.True(t, o1.Price.IsZero())
@@ -3804,6 +3857,7 @@ func TestOrderBook_ExpiredOrderTriggersReprice(t *testing.T) {
 
 	// Move the clock forward to expire the first order
 	now = now.Add(time.Second * 10)
+	tm.now = now
 	tm.market.OnTick(vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash()), now)
 	orders, err := tm.market.RemoveExpiredOrders(ctx, now.UnixNano())
 	require.NoError(t, err)
@@ -3887,6 +3941,7 @@ func TestOrderBook_CrashWithDistressedPartyPeggedOrderNotRemovedFromPeggedList27
 	}
 	require.NoError(t, tm.market.SubmitLiquidityProvision(context.Background(), lp, "lpprov", vgcrypto.RandomHash()))
 	now = now.Add(2 * time.Second)
+	tm.now = now
 	tm.market.OnTick(ctx, now)
 
 	o1 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "Order01", types.SideBuy, "party-A", 5, 15000)
@@ -3962,6 +4017,7 @@ func TestOrderBook_Crash2733(t *testing.T) {
 
 	// now move time to after auction
 	now = now.Add(31 * time.Second)
+	tm.now = now
 	tm.market.OnTick(vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash()), now)
 
 	for i := 1; i <= 10; i += 1 {
@@ -4060,6 +4116,7 @@ func TestOrderBook_AmendTIME_IN_FORCEForPeggedOrder(t *testing.T) {
 	require.NoError(t, tm.market.SubmitLiquidityProvision(context.Background(), lp, "lpprov", vgcrypto.RandomHash()))
 	// leave opening auction
 	now = now.Add(time.Second * 2)
+	tm.now = now
 	tm.market.OnTick(ctx, now)
 	// Create a normal order to set a BB price
 	o1 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "Order01", types.SideBuy, "aaa", 1, 10)
@@ -4088,6 +4145,7 @@ func TestOrderBook_AmendTIME_IN_FORCEForPeggedOrder(t *testing.T) {
 
 	// Move the clock forward to expire any old orders
 	now = now.Add(time.Second * 10)
+	tm.now = now
 	tm.market.OnTick(vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash()), now)
 	orders, err := tm.market.RemoveExpiredOrders(ctx, now.UnixNano())
 	require.Equal(t, 0, len(orders))
@@ -4153,6 +4211,7 @@ func TestOrderBook_AmendTIME_IN_FORCEForPeggedOrder2(t *testing.T) {
 	require.NoError(t, tm.market.SubmitLiquidityProvision(context.Background(), lp, "lpprov", vgcrypto.RandomHash()))
 	// leave opening auction
 	now = now.Add(2 * time.Second)
+	tm.now = now
 	tm.market.OnTick(ctx, now)
 
 	// Create a normal order to set a BB price
@@ -4184,6 +4243,7 @@ func TestOrderBook_AmendTIME_IN_FORCEForPeggedOrder2(t *testing.T) {
 
 	// Move the clock forward to expire any old orders
 	now = now.Add(time.Second * 10)
+	tm.now = now
 	tm.market.OnTick(vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash()), now)
 	orders, err := tm.market.RemoveExpiredOrders(ctx, now.UnixNano())
 	require.NoError(t, err)
@@ -4253,6 +4313,7 @@ func TestOrderBook_AmendFilledWithActiveStatus2736(t *testing.T) {
 	require.NoError(t, tm.market.SubmitLiquidityProvision(context.Background(), lp, "lpprov", vgcrypto.RandomHash()))
 	// leave opening auction
 	now = now.Add(2 * time.Second)
+	tm.now = now
 	tm.market.OnTick(ctx, now)
 
 	o1 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "Order01", types.SideSell, "party-A", 5, 5000)
@@ -4322,6 +4383,7 @@ func TestOrderBook_PeggedOrderReprice2748(t *testing.T) {
 	require.NoError(t, tm.market.SubmitLiquidityProvision(context.Background(), lp, "lpprov", vgcrypto.RandomHash()))
 	// leave opening auction
 	now = now.Add(2 * time.Second)
+	tm.now = now
 	tm.market.OnTick(ctx, now)
 	// set the mid-price first to 6.5k
 	o1 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "Order01", types.SideBuy, "party-A", 5, 6000)
@@ -4414,6 +4476,7 @@ func TestOrderBook_AmendGFNToGTCOrGTTNotAllowed2486(t *testing.T) {
 	require.NoError(t, tm.market.SubmitLiquidityProvision(context.Background(), lp, "lpprov", vgcrypto.RandomHash()))
 	// leave opening auction
 	now = now.Add(2 * time.Second)
+	tm.now = now
 	tm.market.OnTick(ctx, now)
 
 	// set the mid-price first to 6.5k
@@ -4618,6 +4681,7 @@ func TestOrderBook_ParkPeggedOrderWhenMovingToAuction(t *testing.T) {
 	require.NoError(t, tm.market.SubmitLiquidityProvision(context.Background(), lp, "lpprov", vgcrypto.RandomHash()))
 	// leave opening auction
 	now = now.Add(2 * time.Second)
+	tm.now = now
 	tm.market.OnTick(ctx, now)
 
 	o1 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGFN, "Order01", types.SideSell, "party-A", 10, 1010)
@@ -4897,7 +4961,8 @@ func TestOrderBook_ClosingOutLPProviderShouldRemoveCommitment(t *testing.T) {
 	}
 
 	tm.stateVar.ReadyForTimeTrigger(tm.asset, tm.market.GetID())
-	tm.stateVar.OnTick(context.Background(), now.Add(6*time.Minute))
+	tm.now = now.Add(6 * time.Minute)
+	tm.stateVar.OnTick(context.Background(), tm.now)
 
 	require.NoError(t, tm.market.SubmitLiquidityProvision(ctx, lp, "party-A", vgcrypto.RandomHash()))
 	require.Equal(t, 0, tm.market.GetParkedOrderCount())
@@ -5066,6 +5131,7 @@ func TestOrderBook_PartiallyFilledMarketOrderThatWouldWashFOKBuy(t *testing.T) {
 	require.NoError(t, tm.market.SubmitLiquidityProvision(context.Background(), lp, "lpprov", vgcrypto.RandomHash()))
 	// Leave auction
 	now = now.Add(2 * time.Second)
+	tm.now = now
 	tm.market.OnTick(ctx, now)
 
 	// Create 2 buy orders that we will try to match against
@@ -5207,6 +5273,7 @@ func TestLPOrdersRollback(t *testing.T) {
 	addAccountWithAmount(tm, "lpprov", 10000000)
 
 	tm.market.OnSuppliedStakeToObligationFactorUpdate(num.DecimalFromFloat(1.0))
+	tm.now = now
 	tm.market.OnTick(ctx, now)
 
 	orderParams := []struct {
@@ -5328,7 +5395,8 @@ func TestLPOrdersRollback(t *testing.T) {
 	}
 	require.NoError(t, tm.market.SubmitLiquidityProvision(context.Background(), lpp, "lpprov", vgcrypto.RandomHash()))
 	// Leave the auction
-	tm.market.OnTick(ctx, now.Add(10001*time.Second))
+	tm.now = now.Add(10001 * time.Second)
+	tm.market.OnTick(ctx, tm.now)
 	// reset the registered events
 	tm.events = nil
 
@@ -5434,6 +5502,7 @@ func Test3008CancelLiquidityProvisionWhenTargetStakeNotReached(t *testing.T) {
 		WithAccountAndAmount("party-4", 1000000)
 
 	tm.market.OnSuppliedStakeToObligationFactorUpdate(num.DecimalFromFloat(1.0))
+	tm.now = now
 	tm.market.OnTick(ctx, now)
 
 	orderParams := []struct {
@@ -5542,8 +5611,8 @@ func Test3008CancelLiquidityProvisionWhenTargetStakeNotReached(t *testing.T) {
 	require.NoError(t, tm.market.SubmitLiquidityProvision(ctx, lp, "party-2", vgcrypto.RandomHash()))
 	// Leave the auction
 
-	require.NoError(t, tm.market.SubmitLiquidityProvision(ctx, lp, "party-2", vgcrypto.RandomHash()))
-	tm.market.OnTick(ctx, now.Add(10001*time.Second))
+	tm.now = now.Add(10001 * time.Second)
+	tm.market.OnTick(ctx, tm.now)
 	assert.Equal(t, 1, tm.market.GetLPSCount())
 
 	lpCancel := &types.LiquidityProvisionCancellation{
@@ -5593,6 +5662,7 @@ func Test3008And3007CancelLiquidityProvision(t *testing.T) {
 		WithAccountAndAmount("party-4", 1000000)
 
 	tm.market.OnSuppliedStakeToObligationFactorUpdate(num.DecimalFromFloat(1.0))
+	tm.now = now
 	tm.market.OnTick(ctx, now)
 
 	orderParams := []struct {
@@ -5702,7 +5772,8 @@ func Test3008And3007CancelLiquidityProvision(t *testing.T) {
 
 	require.NoError(t, tm.market.SubmitLiquidityProvision(ctx, lp, "party-2", vgcrypto.RandomHash()))
 	// Leave the auction
-	tm.market.OnTick(ctx, now.Add(10001*time.Second))
+	tm.now = now.Add(10001 * time.Second)
+	tm.market.OnTick(ctx, tm.now)
 
 	assert.Equal(t, 1, tm.market.GetLPSCount())
 
@@ -5757,7 +5828,8 @@ func Test3008And3007CancelLiquidityProvision(t *testing.T) {
 		}
 	})
 
-	tm.market.OnTick(ctx, now.Add(10011*time.Second))
+	tm.now = now.Add(10011 * time.Second)
+	tm.market.OnTick(ctx, tm.now)
 
 	// now we do a cancellation
 	lpCancel := &types.LiquidityProvisionCancellation{
@@ -5839,7 +5911,8 @@ func Test3008And3007CancelLiquidityProvision(t *testing.T) {
 	// then check for transfer of liquidity fees
 	// party-2-bis should receive none
 	tm.events = nil
-	tm.market.OnTick(ctx, now.Add(10021*time.Second))
+	tm.now = now.Add(10021 * time.Second)
+	tm.market.OnTick(ctx, tm.now)
 
 	t.Run("Fee are distribute to party-2 only", func(t *testing.T) {
 		var found []*vegapb.TransferResponse
@@ -5895,6 +5968,7 @@ func Test2963EnsureMarketValueProxyAndEquityShareAreInMarketData(t *testing.T) {
 		WithAccountAndAmount("party-4", 1000000)
 
 	tm.market.OnSuppliedStakeToObligationFactorUpdate(num.DecimalFromFloat(1.0))
+	tm.now = now
 	tm.market.OnTick(ctx, now)
 
 	orderParams := []struct {
@@ -6003,7 +6077,8 @@ func Test2963EnsureMarketValueProxyAndEquityShareAreInMarketData(t *testing.T) {
 	}
 
 	// Leave the auction
-	tm.market.OnTick(ctx, now.Add(10001*time.Second))
+	tm.now = now.Add(10001 * time.Second)
+	tm.market.OnTick(ctx, tm.now)
 
 	require.NoError(t, tm.market.SubmitLiquidityProvision(ctx, lp, "party-2", vgcrypto.RandomHash()))
 	assert.Equal(t, 1, tm.market.GetLPSCount())
@@ -6031,7 +6106,8 @@ func Test2963EnsureMarketValueProxyAndEquityShareAreInMarketData(t *testing.T) {
 		ctx, lp2, "party-2-bis", vgcrypto.RandomHash()))
 	assert.Equal(t, 2, tm.market.GetLPSCount())
 
-	tm.market.OnTick(ctx, now.Add(10011*time.Second))
+	tm.now = now.Add(10011 * time.Second)
+	tm.market.OnTick(ctx, tm.now)
 
 	mktData := tm.market.GetMarketData()
 	assert.Equal(t, mktData.MarketValueProxy, "2001000")
@@ -6075,6 +6151,7 @@ func Test3045DistributeFeesToManyProviders(t *testing.T) {
 		WithAccountAndAmount("party-4", 1000000)
 
 	tm.market.OnSuppliedStakeToObligationFactorUpdate(num.DecimalFromFloat(1.0))
+	tm.now = now
 	tm.market.OnTick(ctx, now)
 
 	orderParams := []struct {
@@ -6184,7 +6261,8 @@ func Test3045DistributeFeesToManyProviders(t *testing.T) {
 	require.NoError(t, tm.market.SubmitLiquidityProvision(ctx, lp, "party-2", vgcrypto.RandomHash()))
 
 	// Leave the auction
-	tm.market.OnTick(ctx, now.Add(10001*time.Second))
+	tm.now = now.Add(10001 * time.Second)
+	tm.market.OnTick(ctx, tm.now)
 
 	assert.Equal(t, 1, tm.market.GetLPSCount())
 
@@ -6239,7 +6317,8 @@ func Test3045DistributeFeesToManyProviders(t *testing.T) {
 		}
 	})
 
-	tm.market.OnTick(ctx, now.Add(10011*time.Second))
+	tm.now = now.Add(10011 * time.Second)
+	tm.market.OnTick(ctx, tm.now)
 
 	newOrder := tpl.New(types.Order{
 		MarketID:    tm.market.GetID(),
@@ -6260,7 +6339,8 @@ func Test3045DistributeFeesToManyProviders(t *testing.T) {
 	// then check for transfer of liquidity fees
 	// party-2-bis should receive none
 	tm.events = nil
-	tm.market.OnTick(ctx, now.Add(10021*time.Second))
+	tm.now = now.Add(10021 * time.Second)
+	tm.market.OnTick(ctx, tm.now)
 
 	t.Run("Fee are distributed", func(t *testing.T) {
 		var found []*vegapb.TransferResponse
@@ -6430,6 +6510,7 @@ func TestBondAccountIsReleasedItMarketRejected(t *testing.T) {
 	tm.WithAccountAndAmount(lpparty, 500000)
 
 	tm.market.OnSuppliedStakeToObligationFactorUpdate(num.DecimalFromFloat(0.20))
+	tm.now = now
 	tm.market.OnTick(ctx, now)
 
 	// Add a LPSubmission
@@ -6882,6 +6963,7 @@ func TestLiquidityMonitoring_BestBidAskExistAfterAuction(t *testing.T) {
 	require.Equal(t, 0, len(sellConf2.Trades))
 
 	now = now.Add(time.Second * time.Duration(openingDuration.Duration)).Add(time.Millisecond)
+	tm.now = now
 	closed := tm.market.OnTick(ctx, now)
 	require.False(t, closed)
 

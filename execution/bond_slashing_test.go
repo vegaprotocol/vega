@@ -95,6 +95,7 @@ func setMarkPrice(t *testing.T, mkt *testMarket, duration *types.AuctionDuration
 	// now fast-forward the market so the auction ends
 	now = now.Add(time.Duration(duration.Duration+1) * time.Second)
 	ctx := vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
+	mkt.now = now
 	mkt.market.OnTick(ctx, now)
 
 	// opening auction ended, mark-price set
