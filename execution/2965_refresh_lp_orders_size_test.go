@@ -487,7 +487,6 @@ func (tm *testMarket) EndOpeningAuction(t *testing.T, auctionEnd time.Time, setM
 		tm.market.GetMarketData().MarketTradingMode,
 		types.MarketTradingModeContinuous,
 	)
-
 }
 
 func (tm *testMarket) EndOpeningAuction2(t *testing.T, auctionEnd time.Time, setMarkPrice bool) {
