@@ -40,18 +40,7 @@ build_app() {
 	local app
 	app="${1:?}"
 
-	local combo goarch goos ldflags o pidsfile
-
-	case "$app" in
-		vega)
-			version="${DRONE_TAG:-$(git describe --tags 2>/dev/null)}"
-			version_hash="$(echo "${CI_COMMIT_SHA:-$(git rev-parse HEAD)}" | cut -b1-8)"
-			ldflags="-X main.CLIVersion=$version -X main.CLIVersionHash=$version_hash"
-			;;
-		*)
-			ldflags=""
-			;;
-	esac
+	local combo goarch goos o pidsfile
 
 	pidsfile="$(mktemp)"
 	for combo in "${combinations[@]}" ; do
@@ -65,7 +54,7 @@ build_app() {
 			CGO_ENABLED=0 \
 			GOOS="$goos" \
 			GOARCH="$goarch" \
-			go build -o "$o" -ldflags "$ldflags" "./cmd/$app" &
+			go build -o "$o" "./cmd/$app" &
 		pid="$!"
 		echo "Building $app for OS=$goos arch=$goarch in subprocess $pid"
 		echo "$pid" >>"$pidsfile"
