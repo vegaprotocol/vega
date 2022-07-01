@@ -126,6 +126,7 @@ func TestIssue2876(t *testing.T) {
 	// this should end the opening auction
 	now = now.Add(31 * time.Second)
 
+	tm.now = now
 	tm.market.OnTick(ctx, now)
 
 	bondAccount, err = tm.collateralEngine.GetOrCreatePartyBondAccount(ctx, "party-2", tm.market.GetID(), tm.asset)

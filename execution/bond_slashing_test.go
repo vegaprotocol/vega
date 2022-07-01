@@ -95,12 +95,38 @@ func setMarkPrice(t *testing.T, mkt *testMarket, duration *types.AuctionDuration
 	// now fast-forward the market so the auction ends
 	now = now.Add(time.Duration(duration.Duration+1) * time.Second)
 	ctx := vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
+	mkt.now = now
 	mkt.market.OnTick(ctx, now)
 
 	// opening auction ended, mark-price set
 	mktData := mkt.market.GetMarketData()
 	require.NotNil(t, mktData)
 	require.Equal(t, types.MarketTradingModeContinuous, mktData.MarketTradingMode)
+}
+
+func addSimpleLP(t *testing.T, mkt *testMarket, amt uint64) {
+	t.Helper()
+	lpprov := "lpprov-party"
+	bal := 2 * amt
+	addAccountWithAmount(mkt, lpprov, bal)
+	buys := []*types.LiquidityOrder{
+		newLiquidityOrder(types.PeggedReferenceBestBid, 10, 50),
+		newLiquidityOrder(types.PeggedReferenceBestBid, 20, 50),
+	}
+	sells := []*types.LiquidityOrder{
+		newLiquidityOrder(types.PeggedReferenceBestAsk, 10, 50),
+		newLiquidityOrder(types.PeggedReferenceBestAsk, 20, 50),
+	}
+	lps := &types.LiquidityProvisionSubmission{
+		Fee:              num.DecimalFromFloat(0.01),
+		MarketID:         mkt.market.GetID(),
+		CommitmentAmount: num.NewUint(amt),
+		Buys:             buys,
+		Sells:            sells,
+	}
+	require.NoError(t, mkt.market.SubmitLiquidityProvision(
+		context.Background(), lps, lpprov, vgcrypto.RandomHash(),
+	))
 }
 
 func TestAcceptLiquidityProvisionWithSufficientFunds(t *testing.T) {
@@ -115,6 +141,7 @@ func TestAcceptLiquidityProvisionWithSufficientFunds(t *testing.T) {
 
 	asset := tm.asset
 
+	addSimpleLP(t, tm, 5000000)
 	// end opening auction
 	setMarkPrice(t, tm, openingAuction, now, initialMarkPrice)
 
@@ -170,6 +197,7 @@ func TestRejectLiquidityProvisionWithInsufficientFundsForInitialMargin(t *testin
 
 	asset := tm.asset
 
+	addSimpleLP(t, tm, 5000000)
 	// end opening auction
 	setMarkPrice(t, tm, openingAuction, now, initialMarkPrice)
 

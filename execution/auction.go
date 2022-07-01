@@ -28,7 +28,8 @@ func (m *Market) checkAuction(ctx context.Context, now time.Time) {
 	}
 
 	// as soon as we have an indicative uncrossing price in opening auction it needs to be passed into the price monitoring engine so statevar calculation can start
-	if m.as.IsOpeningAuction() && !m.pMonitor.Initialised() {
+	isOpening := m.as.IsOpeningAuction()
+	if isOpening && !m.pMonitor.Initialised() {
 		trades, err := m.matching.OrderBook.GetIndicativeTrades()
 		if err != nil {
 			m.log.Panic("Can't get indicative trades")
@@ -49,17 +50,21 @@ func (m *Market) checkAuction(ctx context.Context, now time.Time) {
 	}
 
 	// opening auction
-	if m.as.IsOpeningAuction() {
+	if isOpening {
 		if len(trades) == 0 {
+			return
+		}
+
+		// first check liquidity - before we mark auction as ready to leave
+		m.checkLiquidity(ctx, trades, true)
+		if !m.as.CanLeave() {
+			if e := m.as.AuctionExtended(ctx, now); e != nil {
+				m.broker.Send(e)
+			}
 			return
 		}
 		// opening auction requirements satisfied at this point, other requirements still need to be checked downstream though
 		m.as.SetReadyToLeave()
-
-		m.checkLiquidity(ctx, trades, true)
-		if !m.as.CanLeave() {
-			return
-		}
 		m.pMonitor.CheckPrice(ctx, m.as, trades, true)
 		if m.as.ExtensionTrigger() == types.AuctionTriggerPrice {
 			// this should never, ever happen

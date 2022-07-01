@@ -23,6 +23,7 @@ import (
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/auction_state_mock.go -package mocks code.vegaprotocol.io/vega/monitor/liquidity AuctionState
 type AuctionState interface {
+	IsOpeningAuction() bool
 	IsLiquidityAuction() bool
 	IsLiquidityExtension() bool
 	StartLiquidityAuction(t time.Time, d *types.AuctionDuration)
@@ -100,7 +101,8 @@ func (e *Engine) CheckLiquidity(as AuctionState, t time.Time, currentStake *num.
 	// if we're in liquidity auction already, the auction has expired, and we can end/extend the auction
 	// @TODO we don't have the ability to support volume limited auctions yet
 
-	if exp != nil && as.IsLiquidityAuction() || as.IsLiquidityExtension() {
+	isOpening := as.IsOpeningAuction()
+	if exp != nil && as.IsLiquidityAuction() || as.IsLiquidityExtension() || isOpening {
 		if currentStake.GTE(targetStake) && bestStaticBidVolume > 0 && bestStaticAskVolume > 0 {
 			as.SetReadyToLeave()
 			return false // all done

@@ -20,17 +20,25 @@ Feature: Set up a market, with an opening auction, then uncross the book. Make s
       | party1 | ETH   | 1000000000 |
       | party2 | ETH   | 1000000000 |
       | party3 | ETH   | 1000000000 |
+      | lpprov | ETH   | 1000000000 |
 
+    When the parties submit the following liquidity provision:
+      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
+      | lp1 | lpprov | ETH/DEC20 | 937000            | 0.1 | buy  | MID              | 50         | 100    | submission |
+      | lp1 | lpprov | ETH/DEC20 | 937000            | 0.1 | sell | MID              | 50         | 100    | submission |
     # place orders and generate trades - slippage 100
-    When the parties place the following orders:
-      | party  | market id | side | volume | price    | resulting trades | type       | tif     | reference |
-      | party2 | ETH/DEC20 | buy  | 1      | 9500000  | 0                | TYPE_LIMIT | TIF_GTC | t2-b-1    |
-      | party1 | ETH/DEC20 | buy  | 1      | 10000000 | 0                | TYPE_LIMIT | TIF_GFA | t1-b-1    |
-      | party2 | ETH/DEC20 | sell | 2      | 10000000 | 0                | TYPE_LIMIT | TIF_GTC | t2-s-1    |
+    And the parties place the following orders:
+      | party  | market id | side | volume | price   | resulting trades | type       | tif     | reference |
+      | party2 | ETH/DEC20 | buy  | 1      | 950000  | 0                | TYPE_LIMIT | TIF_GTC | t2-b-1    |
+      | party1 | ETH/DEC20 | buy  | 1      | 1000000 | 0                | TYPE_LIMIT | TIF_GFA | t1-b-1    |
+      | party2 | ETH/DEC20 | sell | 2      | 1000000 | 0                | TYPE_LIMIT | TIF_GTC | t2-s-1    |
+    Then the market data for the market "ETH/DEC20" should be:
+      | trading mode                 | supplied stake | target stake |
+      | TRADING_MODE_OPENING_AUCTION | 937000         | 937000       |
 
-    Then the opening auction period ends for market "ETH/DEC20"
+    When the opening auction period ends for market "ETH/DEC20"
 
     And the following trades should be executed:
-      | buyer   | price    | size | seller  |
-      | party1 | 10000000 | 1    | party2 |
-    And the mark price should be "10000000" for the market "ETH/DEC20"
+      | buyer  | price   | size | seller |
+      | party1 | 1000000 | 1    | party2 |
+    And the mark price should be "1000000" for the market "ETH/DEC20"

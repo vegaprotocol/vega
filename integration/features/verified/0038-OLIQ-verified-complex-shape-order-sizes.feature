@@ -26,31 +26,31 @@ Feature: Verify the order size is correctly cumulated.
       | party2 | ETH/DEC19 | sell | 1      | 12000020 | 0                | TYPE_LIMIT | TIF_GTC | party2-1 |
       | party1 | ETH/DEC19 | buy  | 1      | 12000010 | 0                | TYPE_LIMIT | TIF_GFA | party1-2 |
       | party2 | ETH/DEC19 | sell | 1      | 12000010 | 0                | TYPE_LIMIT | TIF_GFA | party2-2 |
+
+    And the parties submit the following liquidity provision:
+      | id  | party      | market id | commitment amount | fee | side | pegged reference | proportion | offset | reference | lp type    |
+      | lp1 | party-lp-1 | ETH/DEC19 | 1000000000        | 0.1 | buy  | MID              | 1          | 10     | lp-1-ref  | submission |
+      | lp1 | party-lp-1 | ETH/DEC19 | 1000000000        | 0.1 | buy  | MID              | 1          | 9      | lp-1-ref  | submission |
+      | lp1 | party-lp-1 | ETH/DEC19 | 1000000000        | 0.1 | buy  | MID              | 1          | 8      | lp-1-ref  | submission |
+      | lp1 | party-lp-1 | ETH/DEC19 | 1000000000        | 0.1 | buy  | MID              | 1          | 7      | lp-1-ref  | submission |
+      | lp1 | party-lp-1 | ETH/DEC19 | 1000000000        | 0.1 | buy  | MID              | 1          | 6      | lp-1-ref  | submission |
+      | lp1 | party-lp-1 | ETH/DEC19 | 1000000000        | 0.1 | buy  | MID              | 1          | 5      | lp-1-ref  | submission |
+      | lp1 | party-lp-1 | ETH/DEC19 | 1000000000        | 0.1 | buy  | MID              | 1          | 4      | lp-1-ref  | submission |
+      | lp1 | party-lp-1 | ETH/DEC19 | 1000000000        | 0.1 | buy  | MID              | 1          | 3      | lp-1-ref  | submission |
+      | lp1 | party-lp-1 | ETH/DEC19 | 1000000000        | 0.1 | buy  | MID              | 1          | 2      | lp-1-ref  | submission |
+      | lp1 | party-lp-1 | ETH/DEC19 | 1000000000        | 0.1 | sell | MID              | 1          | 4      | lp-1-ref  | submission |
+      | lp1 | party-lp-1 | ETH/DEC19 | 1000000000        | 0.1 | sell | MID              | 1          | 5      | lp-1-ref  | submission |
+      | lp1 | party-lp-1 | ETH/DEC19 | 1000000000        | 0.1 | sell | MID              | 1          | 6      | lp-1-ref  | submission |
+      | lp1 | party-lp-1 | ETH/DEC19 | 1000000000        | 0.1 | sell | MID              | 1          | 7      | lp-1-ref  | submission |
+      | lp1 | party-lp-1 | ETH/DEC19 | 1000000000        | 0.1 | sell | MID              | 1          | 8      | lp-1-ref  | submission |
+      | lp1 | party-lp-1 | ETH/DEC19 | 1000000000        | 0.1 | sell | MID              | 1          | 9      | lp-1-ref  | submission |
+      | lp1 | party-lp-1 | ETH/DEC19 | 1000000000        | 0.1 | sell | MID              | 1          | 10     | lp-1-ref  | submission |
     Then the opening auction period ends for market "ETH/DEC19"
     And the mark price should be "12000010" for the market "ETH/DEC19"
 
     When the parties place the following orders:
       | party      | market id | side | volume | price    | resulting trades | type       | tif     | reference |
       | party-lp-1 | ETH/DEC19 | sell | 50     | 12000013 | 0                | TYPE_LIMIT | TIF_GTC | party2-1 |
-
-    And the parties submit the following liquidity provision:
-      | id  | party      | market id | commitment amount | fee | side | pegged reference | proportion | offset | reference | lp type |
-      | lp1 | party-lp-1 | ETH/DEC19 | 1000000000        | 0.1 | buy  | MID              | 1          | 10     | lp-1-ref  | submission |
-      | lp1 | party-lp-1 | ETH/DEC19 | 1000000000        | 0.1 | buy  | MID              | 1          | 9      | lp-1-ref  | amendment |
-      | lp1 | party-lp-1 | ETH/DEC19 | 1000000000        | 0.1 | buy  | MID              | 1          | 8      | lp-1-ref  | amendment |
-      | lp1 | party-lp-1 | ETH/DEC19 | 1000000000        | 0.1 | buy  | MID              | 1          | 7      | lp-1-ref  | amendment |
-      | lp1 | party-lp-1 | ETH/DEC19 | 1000000000        | 0.1 | buy  | MID              | 1          | 6      | lp-1-ref  | amendment |
-      | lp1 | party-lp-1 | ETH/DEC19 | 1000000000        | 0.1 | buy  | MID              | 1          | 5      | lp-1-ref  | amendment |
-      | lp1 | party-lp-1 | ETH/DEC19 | 1000000000        | 0.1 | buy  | MID              | 1          | 4      | lp-1-ref  | amendment |
-      | lp1 | party-lp-1 | ETH/DEC19 | 1000000000        | 0.1 | buy  | MID              | 1          | 3      | lp-1-ref  | amendment |
-      | lp1 | party-lp-1 | ETH/DEC19 | 1000000000        | 0.1 | buy  | MID              | 1          | 2      | lp-1-ref  | amendment |
-      | lp1 | party-lp-1 | ETH/DEC19 | 1000000000        | 0.1 | sell | MID              | 1          | 4      | lp-1-ref  | amendment |
-      | lp1 | party-lp-1 | ETH/DEC19 | 1000000000        | 0.1 | sell | MID              | 1          | 5      | lp-1-ref  | amendment |
-      | lp1 | party-lp-1 | ETH/DEC19 | 1000000000        | 0.1 | sell | MID              | 1          | 6      | lp-1-ref  | amendment |
-      | lp1 | party-lp-1 | ETH/DEC19 | 1000000000        | 0.1 | sell | MID              | 1          | 7      | lp-1-ref  | amendment |
-      | lp1 | party-lp-1 | ETH/DEC19 | 1000000000        | 0.1 | sell | MID              | 1          | 8      | lp-1-ref  | amendment |
-      | lp1 | party-lp-1 | ETH/DEC19 | 1000000000        | 0.1 | sell | MID              | 1          | 9      | lp-1-ref  | amendment |
-      | lp1 | party-lp-1 | ETH/DEC19 | 1000000000        | 0.1 | sell | MID              | 1          | 10     | lp-1-ref  | amendment |
 
     Then the liquidity provisions should have the following states:
       | id  | party      | market    | commitment amount | status        |

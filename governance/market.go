@@ -323,7 +323,7 @@ func validateCommitment(
 	maxFee, _ := netp.GetDecimal(netparams.MarketLiquidityMaximumLiquidityFeeFactorLevel)
 
 	if commitment == nil {
-		return types.ProposalErrorMarketMissingLiquidityCommitment, errors.New("market proposal is missing liquidity commitment")
+		return types.ProposalErrorUnspecified, nil
 	}
 	if commitment.CommitmentAmount.IsZero() {
 		return types.ProposalErrorMissingCommitmentAmount,

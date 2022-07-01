@@ -14,7 +14,12 @@ Feature: Set up a market, with an opening auction, then uncross the book in pres
       | party2 | BTC   | 100000000 |
       | party3 | BTC   | 100000000 |
       | party4 | BTC   | 100000000 |
+      | lpprov | BTC   | 100000000 |
 
+    When the parties submit the following liquidity provision:
+      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
+      | lp1 | lpprov | ETH/DEC19 | 50000             | 0.1 | buy  | MID              | 50         | 100    | submission |
+      | lp1 | lpprov | ETH/DEC19 | 50000             | 0.1 | sell | MID              | 50         | 100    | submission |
     # place orders and generate trades
     When the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
@@ -29,7 +34,7 @@ Feature: Set up a market, with an opening auction, then uncross the book in pres
 
     And the market data for the market "ETH/DEC19" should be:
       | mark price | trading mode            | target stake | supplied stake | open interest |
-      | 10000      | TRADING_MODE_CONTINUOUS | 50000        | 0              | 5             |
+      | 10000      | TRADING_MODE_CONTINUOUS | 50000        | 50000          | 5             |
 
     And the following trades should be executed:
       | buyer  | price | size | seller |

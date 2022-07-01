@@ -327,9 +327,8 @@ func (e *Engine) SubmitMarket(ctx context.Context, marketConfig *types.Market, p
 	}
 	e.marketActivityTracker.MarketProposed(asset, marketConfig.ID, proposer)
 
-	// here straight away we start the OPENING_AUCTION
+	// keep state in pending, opening auction is triggered when proposal is enacted
 	mkt := e.markets[marketConfig.ID]
-	_ = mkt.StartOpeningAuction(ctx)
 
 	e.publishNewMarketInfos(ctx, mkt)
 	return nil

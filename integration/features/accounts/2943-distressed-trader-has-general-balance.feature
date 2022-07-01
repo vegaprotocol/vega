@@ -19,6 +19,13 @@ Feature: Distressed parties should not have general balance left
       | party5    | ETH   | 10000000000000 |
       | auxiliary | ETH   | 100000000000   |
       | aux2      | ETH   | 100000000000   |
+      | lpprov    | ETH   | 10000000000000 |
+
+    # Provide LP so market can leave opening auction
+    When the parties submit the following liquidity provision:
+      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
+      | lp1 | lpprov | ETH/DEC20 | 10000             | 0.1 | buy  | BID              | 50         | 10     | submission |
+      | lp1 | lpprov | ETH/DEC20 | 10000             | 0.1 | sell | ASK              | 50         | 10     | submission |
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     Then the parties place the following orders:
@@ -56,9 +63,8 @@ Feature: Distressed parties should not have general balance left
 
     Then the parties should have the following account balances:
       | party  | asset | market id | margin | general       |
-      | party4 | ETH   | ETH/DEC20 | 360    | 9999999999640 |
-      | party5 | ETH   | ETH/DEC20 | 372    | 9999999999628 |
-    And clear all events
+      | party4 | ETH   | ETH/DEC20 | 240    | 9999999999760 |
+      | party5 | ETH   | ETH/DEC20 | 372    | 9999999999528 |
     Then the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
       | lp1 | party3 | ETH/DEC20 | 10000             | 0.1 | buy  | BID              | 10         | 10     | submission |

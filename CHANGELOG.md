@@ -26,6 +26,7 @@
 - [5415](https://github.com/vegaprotocol/vega/issues/5415) - Regenerate smart contracts code
 - [5434](https://github.com/vegaprotocol/vega/issues/5434) - Add health check for faucet
 - [5412](https://github.com/vegaprotocol/vega/issues/5412) - Proof of work improvement to support history of changes to network parameters
+- [5378](https://github.com/vegaprotocol/vega/issues/5278) - Allow new market proposals without LP
 
 ### 🐛 Fixes
 - [5438](https://github.com/vegaprotocol/vega/issues/5438) - Evaluate all trades resulting from an aggressive orders in one call to price monitoring engine

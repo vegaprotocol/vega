@@ -1169,8 +1169,13 @@ func (app *App) DeliverPropose(ctx context.Context, tx abci.Tx, deterministicId 
 		// TODO(): for now we are using a hash of the market ID to create
 		// the lp provision ID (well it's still deterministic...)
 		lpid := hex.EncodeToString(vgcrypto.Hash([]byte(nm.Market().ID)))
-		err := app.exec.SubmitMarketWithLiquidityProvision(
-			ctx, nm.Market(), nm.LiquidityProvisionSubmission(), party, lpid, deterministicId)
+		var err error
+		if lp := nm.LiquidityProvisionSubmission(); lp != nil {
+			err = app.exec.SubmitMarketWithLiquidityProvision(
+				ctx, nm.Market(), nm.LiquidityProvisionSubmission(), party, lpid, deterministicId)
+		} else {
+			err = app.exec.SubmitMarket(ctx, nm.Market(), party)
+		}
 		if err != nil {
 			app.log.Debug("unable to submit new market with liquidity submission",
 				logging.ProposalID(nm.Market().ID),
