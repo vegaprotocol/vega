@@ -109,24 +109,21 @@ func (s *Service) Enable(ctx context.Context, assetID string) error {
 	if !ok {
 		return ErrAssetDoesNotExist
 	}
-	if asset.IsValid() {
-		asset.SetEnabled()
-		s.amu.Lock()
-		defer s.amu.Unlock()
-		s.assets[assetID] = asset
-		if asset.IsERC20() {
-			eth, _ := asset.ERC20()
-			s.ethToVega[eth.ProtoAsset().GetDetails().GetErc20().GetContractAddress()] = assetID
-		}
-		delete(s.pendingAssets, assetID)
-		s.ass.changedActive = true
-		s.ass.changedPending = true
 
-		s.broker.Send(events.NewAssetEvent(ctx, *asset.Type()))
-
-		return nil
+	asset.SetEnabled()
+	s.amu.Lock()
+	defer s.amu.Unlock()
+	s.assets[assetID] = asset
+	if asset.IsERC20() {
+		eth, _ := asset.ERC20()
+		s.ethToVega[eth.ProtoAsset().GetDetails().GetErc20().GetContractAddress()] = assetID
 	}
-	return ErrAssetInvalid
+	delete(s.pendingAssets, assetID)
+	s.ass.changedActive = true
+	s.ass.changedPending = true
+
+	s.broker.Send(events.NewAssetEvent(ctx, *asset.Type()))
+	return nil
 }
 
 // SetPendingListing update the state of an asset from proposed

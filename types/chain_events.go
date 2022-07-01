@@ -705,11 +705,14 @@ func (e ERC20EventAssetList) IntoProto() *vegapb.ERC20Event_AssetList {
 type ERC20AssetList struct {
 	// The Vega network internal identifier of the asset
 	VegaAssetID string
+	// ethereum address of the asset
+	AssetSource string
 }
 
 func NewERC20AssetListFromProto(p *vegapb.ERC20AssetList) *ERC20AssetList {
 	return &ERC20AssetList{
 		VegaAssetID: p.VegaAssetId,
+		AssetSource: p.AssetSource,
 	}
 }
 
