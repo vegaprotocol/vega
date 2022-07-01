@@ -83,9 +83,6 @@ pipeline {
         }
 
         stage('Compile') {
-            environment {
-                LDFLAGS      = "-X main.CLIVersion=${version} -X main.CLIVersionHash=${versionHash}"
-            }
             failFast true
             parallel {
                 stage('Linux build') {
@@ -98,7 +95,7 @@ pipeline {
                     steps {
                         dir('vega') {
                             sh label: 'Compile', script: '''
-                                go build -v -o "${OUTPUT}" -ldflags "${LDFLAGS}" ./cmd/vega
+                                go build -v -o "${OUTPUT}" ./cmd/vega
                             '''
                             sh label: 'Sanity check', script: '''
                                 file ${OUTPUT}
@@ -117,7 +114,7 @@ pipeline {
                     steps {
                         dir('vega') {
                             sh label: 'Compile', script: '''
-                                go build -v -o "${OUTPUT}" -ldflags "${LDFLAGS}" ./cmd/vega
+                                go build -v -o "${OUTPUT}" ./cmd/vega
                             '''
                             sh label: 'Sanity check', script: '''
                                 file ${OUTPUT}
@@ -135,7 +132,7 @@ pipeline {
                     steps {
                         dir('vega') {
                             sh label: 'Compile', script: '''
-                                go build -v -o "${OUTPUT}" -ldflags "${LDFLAGS}" ./cmd/vega
+                                go build -v -o "${OUTPUT}" ./cmd/vega
                             '''
                             sh label: 'Sanity check', script: '''
                                 file ${OUTPUT}
