@@ -29,7 +29,7 @@ import (
 
 var (
 	CLIVersionHash = ""
-	CLIVersion     = "v0.53.0-dev"
+	CLIVersion     = "v0.53.0+dev"
 )
 
 // Subcommand is the signature of a sub command that can be registered.
