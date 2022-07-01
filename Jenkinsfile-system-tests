@@ -115,13 +115,12 @@ pipeline {
                 GOOS         = 'linux'
                 GOARCH       = 'amd64'
                 OUTPUT       = './cmd/vega/vega-linux-amd64'
-                LDFLAGS      = "-X main.CLIVersion=${version} -X main.CLIVersionHash=${versionHash}"
             }
             options { retry(3) }
             steps {
                 dir('vega') {
                     sh label: 'Compile', script: '''
-                        go build -v -o "${OUTPUT}" -ldflags "${LDFLAGS}" ./cmd/vega
+                        go build -v -o "${OUTPUT}" ./cmd/vega
                     '''
                     sh label: 'Sanity check', script: '''
                         file ${OUTPUT}

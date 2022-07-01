@@ -114,7 +114,7 @@ pipeline {
                     steps {
                         dir('vega') {
                             sh label: 'Compile', script: '''
-                                go build -v -o "${OUTPUT}" -ldflags "${LDFLAGS}" ./cmd/vega
+                                go build -v -o "${OUTPUT}" ./cmd/vega
                             '''
                             sh label: 'Sanity check', script: '''
                                 file ${OUTPUT}
@@ -132,7 +132,7 @@ pipeline {
                     steps {
                         dir('vega') {
                             sh label: 'Compile', script: '''
-                                go build -v -o "${OUTPUT}" -ldflags "${LDFLAGS}" ./cmd/vega
+                                go build -v -o "${OUTPUT}" ./cmd/vega
                             '''
                             sh label: 'Sanity check', script: '''
                                 file ${OUTPUT}
