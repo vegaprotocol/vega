@@ -3055,6 +3055,62 @@ func TestOrderBook_IndicativePriceAndVolume9(t *testing.T) {
 	}
 }
 
+// check behaviour consistent in the presence of wash trades
+func TestOrderBook_IndicativePriceAndVolume10(t *testing.T) {
+	market := "testOrderbook"
+	book := getTestOrderBook(t, market)
+	defer book.Finish()
+
+	logger := logging.NewTestLogger()
+	defer logger.Sync()
+
+	// Switch to auction mode
+	book.ob.EnterAuction()
+
+	// Populate buy side
+	makeOrder(t, book, market, "BuyOrder01", types.SideBuy, 103, "party01", 10)
+	makeOrder(t, book, market, "BuyOrder02", types.SideBuy, 102, "party01", 9)
+	makeOrder(t, book, market, "BuyOrder03", types.SideBuy, 101, "party01", 8)
+	makeOrder(t, book, market, "BuyOrder04", types.SideBuy, 100, "party01", 7)
+
+	// Populate sell side
+	makeOrder(t, book, market, "SellOrder01", types.SideSell, 99, "party02", 1)
+	makeOrder(t, book, market, "SellOrder02", types.SideSell, 98, "party01", 1)
+	makeOrder(t, book, market, "SellOrder03", types.SideSell, 98, "party02", 1)
+	makeOrder(t, book, market, "SellOrder04", types.SideSell, 97, "party02", 3)
+	makeOrder(t, book, market, "SellOrder05", types.SideSell, 96, "party02", 4)
+
+	// Get indicative auction price and volume
+	price, volume, side := book.ob.GetIndicativePriceAndVolume()
+	assert.Equal(t, 101, int(price.Uint64()))
+	assert.Equal(t, 10, int(volume))
+	assert.Equal(t, types.SideBuy, side)
+	price = book.ob.GetIndicativePrice()
+	assert.Equal(t, 101, int(price.Uint64()))
+
+	// Get indicative trades
+	trades, err := book.ob.GetIndicativeTrades()
+	assert.NoError(t, err)
+	for _, x := range trades {
+		assert.Equal(t, price, x.Price)
+	}
+
+	// Leave auction and uncross the book
+	uncrossedOrders, cancels, err := book.ob.LeaveAuction(time.Now())
+	assert.Nil(t, err)
+	assert.Equal(t, len(uncrossedOrders), 1)
+	assert.Equal(t, len(cancels), 0)
+
+	nTrades := 0
+	for _, o := range uncrossedOrders {
+		for _, x := range o.Trades {
+			nTrades++
+			assert.Equal(t, price, x.Price)
+		}
+	}
+	assert.Equal(t, len(trades), nTrades)
+}
+
 func TestOrderBook_UncrossTest1(t *testing.T) {
 	market := "testOrderbook"
 	book := getTestOrderBook(t, market)

@@ -292,8 +292,8 @@ Scenario: Max open interest changes over time, testing change of timewindow (004
 
     # # Check that target stake is unchanged
     Then the market data for the market "ETH/DEC21" should be:
-      | mark price | trading mode            | auction trigger             | target stake | supplied stake | open interest |
-      | 110        | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 550          | 2000           | 50            |
+      | mark price | trading mode                 | auction trigger         | target stake | supplied stake | open interest |
+      | 0          | TRADING_MODE_OPENING_AUCTION | AUCTION_TRIGGER_OPENING | 550          | 2000           | 0             |
 
     Then the opening auction period ends for market "ETH/DEC21"
 
