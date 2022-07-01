@@ -98,36 +98,40 @@ func BuildCmdDescribeNetwork(w io.Writer, handler DescribeNetworkHandler, rf *Ro
 
 func PrintDescribeNetworkResponse(w io.Writer, resp *network.DescribeNetworkResponse) {
 	p := printer.NewInteractivePrinter(w)
-	p.NextLine().Text("Network").NextLine()
-	p.Text("  Name:         ").WarningText(resp.Name).NextLine()
-	p.Text("  Address:      ").WarningText(resp.Host).WarningText(":").WarningText(fmt.Sprint(resp.Port)).NextLine()
-	p.Text("  Token expiry: ").WarningText(resp.TokenExpiry).NextLine()
-	p.Text("  Level:        ").WarningText(resp.Level)
-	p.NextSection()
 
-	p.Text("API.GRPC").NextLine()
-	p.Text("  Retries: ").WarningText(fmt.Sprint(resp.API.GRPCConfig.Retries)).NextLine()
-	p.Text("  Hosts:").NextLine()
+	str := p.String()
+	defer p.Print(str)
+
+	str.NextLine().Text("Network").NextLine()
+	str.Text("  Name:         ").WarningText(resp.Name).NextLine()
+	str.Text("  Address:      ").WarningText(resp.Host).WarningText(":").WarningText(fmt.Sprint(resp.Port)).NextLine()
+	str.Text("  Token expiry: ").WarningText(resp.TokenExpiry).NextLine()
+	str.Text("  Level:        ").WarningText(resp.Level)
+	str.NextSection()
+
+	str.Text("API.GRPC").NextLine()
+	str.Text("  Retries: ").WarningText(fmt.Sprint(resp.API.GRPCConfig.Retries)).NextLine()
+	str.Text("  Hosts:").NextLine()
 	for _, h := range resp.API.GRPCConfig.Hosts {
-		p.Text("    - ").WarningText(h).NextLine()
+		str.Text("    - ").WarningText(h).NextLine()
 	}
-	p.NextLine()
+	str.NextLine()
 
-	p.Text("API.REST").NextLine()
-	p.Text("  Hosts:").NextLine()
+	str.Text("API.REST").NextLine()
+	str.Text("  Hosts:").NextLine()
 	for _, h := range resp.API.RESTConfig.Hosts {
-		p.Text("    - ").WarningText(h).NextLine()
+		str.Text("    - ").WarningText(h).NextLine()
 	}
 
-	p.NextLine()
-	p.Text("API.GraphQL").NextLine()
-	p.Text("  Hosts:").NextLine()
+	str.NextLine()
+	str.Text("API.GraphQL").NextLine()
+	str.Text("  Hosts:").NextLine()
 	for _, h := range resp.API.GraphQLConfig.Hosts {
-		p.Text("    - ").WarningText(h).NextLine()
+		str.Text("    - ").WarningText(h).NextLine()
 	}
-	p.NextLine()
+	str.NextLine()
 
-	p.Text("Console").NextLine()
-	p.Text("  Address: ").WarningText(resp.Console.URL).WarningText(":").WarningText(fmt.Sprint(resp.Console.LocalPort))
-	p.NextSection()
+	str.Text("Console").NextLine()
+	str.Text("  Address: ").WarningText(resp.Console.URL).WarningText(":").WarningText(fmt.Sprint(resp.Console.LocalPort))
+	str.NextSection()
 }

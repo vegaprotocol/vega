@@ -27,7 +27,7 @@ func NewCmdKey(w io.Writer, rf *RootFlags) *cobra.Command {
 	return cmd
 }
 
-func printMeta(p *printer.InteractivePrinter, meta []wallet.Meta) {
+func printMeta(str *printer.FormattedString, meta []wallet.Meta) {
 	padding := 0
 	for _, m := range meta {
 		keyLen := len(m.Key)
@@ -37,6 +37,6 @@ func printMeta(p *printer.InteractivePrinter, meta []wallet.Meta) {
 	}
 
 	for _, m := range meta {
-		p.WarningText(fmt.Sprintf("%-*s", padding, m.Key)).Text(" | ").WarningText(m.Value).NextLine()
+		str.WarningText(fmt.Sprintf("%-*s", padding, m.Key)).Text(" | ").WarningText(m.Value).NextLine()
 	}
 }

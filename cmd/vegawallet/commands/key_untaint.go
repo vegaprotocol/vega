@@ -123,12 +123,15 @@ func (f *UntaintKeyFlags) Validate() (*wallet.UntaintKeyRequest, error) {
 func PrintUntaintKeyResponse(w io.Writer) {
 	p := printer.NewInteractivePrinter(w)
 
-	p.CheckMark().SuccessText("Untainting succeeded").NextSection()
+	str := p.String()
+	defer p.Print(str)
 
-	p.RedArrow().DangerText("Important").NextLine()
-	p.Text("If you tainted a key for security reasons, you should not use it.").NextLine()
+	str.CheckMark().SuccessText("Untainting succeeded").NextSection()
 
-	p.BlueArrow().InfoText("Taint a key").NextLine()
-	p.Text("To taint a key pair, see the following command:").NextSection()
-	p.Code(fmt.Sprintf("%s key taint --help", os.Args[0])).NextLine()
+	str.RedArrow().DangerText("Important").NextLine()
+	str.Text("If you tainted a key for security reasons, you should not use it.").NextLine()
+
+	str.BlueArrow().InfoText("Taint a key").NextLine()
+	str.Text("To taint a key pair, see the following command:").NextSection()
+	str.Code(fmt.Sprintf("%s key taint --help", os.Args[0])).NextLine()
 }

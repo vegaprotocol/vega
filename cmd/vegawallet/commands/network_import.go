@@ -132,7 +132,10 @@ func (f *ImportNetworkFlags) Validate() (*network.ImportNetworkFromSourceRequest
 func PrintImportNetworkResponse(w io.Writer, resp *network.ImportNetworkFromSourceResponse) {
 	p := printer.NewInteractivePrinter(w)
 
-	p.CheckMark().SuccessText("Importing the network succeeded").NextSection()
-	p.Text("Name:").NextLine().WarningText(resp.Name).NextLine()
-	p.Text("File path:").NextLine().WarningText(resp.FilePath).NextLine()
+	str := p.String()
+	defer p.Print(str)
+
+	str.CheckMark().SuccessText("Importing the network succeeded").NextSection()
+	str.Text("Name:").NextLine().WarningText(resp.Name).NextLine()
+	str.Text("File path:").NextLine().WarningText(resp.FilePath).NextLine()
 }

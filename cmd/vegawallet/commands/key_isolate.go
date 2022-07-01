@@ -132,6 +132,8 @@ func (f *IsolateKeyFlags) Validate() (*wallet.IsolateKeyRequest, error) {
 func PrintIsolateKeyResponse(w io.Writer, resp *wallet.IsolateKeyResponse) {
 	p := printer.NewInteractivePrinter(w)
 
-	p.CheckMark().Text("Key pair has been isolated in wallet ").Bold(resp.Wallet).Text(" at: ").SuccessText(resp.FilePath).NextLine()
-	p.CheckMark().SuccessText("Key isolation succeeded").NextLine()
+	str := p.String()
+	defer p.Print(str)
+	str.CheckMark().Text("Key pair has been isolated in wallet ").Bold(resp.Wallet).Text(" at: ").SuccessText(resp.FilePath).NextLine()
+	str.CheckMark().SuccessText("Key isolation succeeded").NextLine()
 }

@@ -190,8 +190,12 @@ func SendTx(w io.Writer, rf *RootFlags, req *SendTxRequest) error {
 	}()
 
 	p := printer.NewInteractivePrinter(w)
+
+	str := p.String()
+	defer p.Print(str)
+
 	if rf.Output == flags.InteractiveOutput {
-		p.BlueArrow().InfoText("Logs").NextLine()
+		str.BlueArrow().InfoText("Logs").NextLine()
 	}
 
 	ctx, cancelFn := context.WithTimeout(context.Background(), ForwarderRequestTimeout)
@@ -205,7 +209,7 @@ func SendTx(w io.Writer, rf *RootFlags, req *SendTxRequest) error {
 
 	log.Info("transaction successfully sent", zap.String("hash", txHash))
 	if rf.Output == flags.InteractiveOutput {
-		p.NextLine().CheckMark().Text("Transaction sent: ").SuccessText(txHash).NextLine()
+		str.NextLine().CheckMark().Text("Transaction sent: ").SuccessText(txHash).NextLine()
 	}
 
 	return nil

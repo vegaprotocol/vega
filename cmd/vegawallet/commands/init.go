@@ -108,13 +108,16 @@ func Init(home string, f *InitFlags) (*InitResponse, error) {
 func PrintInitResponse(w io.Writer, resp *InitResponse) {
 	p := printer.NewInteractivePrinter(w)
 
-	p.CheckMark().Text("Service public RSA keys created at: ").SuccessText(resp.RSAKeys.PublicKeyFilePath).NextLine()
-	p.CheckMark().Text("Service private RSA keys created at: ").SuccessText(resp.RSAKeys.PrivateKeyFilePath).NextLine()
-	p.CheckMark().SuccessText("Initialisation succeeded").NextSection()
+	str := p.String()
+	defer p.Print(str)
 
-	p.BlueArrow().InfoText("Create a wallet").NextLine()
-	p.Text("To create a wallet, use the following command:").NextSection()
-	p.Code(fmt.Sprintf("%s create --wallet \"YOUR_USERNAME\"", os.Args[0])).NextSection()
-	p.Text("The ").Bold("--wallet").Text(" flag sets the name of your wallet and will be used to login to Vega Console.").NextSection()
-	p.Text("For more information, use ").Bold("--help").Text(" flag.").NextLine()
+	str.CheckMark().Text("Service public RSA keys created at: ").SuccessText(resp.RSAKeys.PublicKeyFilePath).NextLine()
+	str.CheckMark().Text("Service private RSA keys created at: ").SuccessText(resp.RSAKeys.PrivateKeyFilePath).NextLine()
+	str.CheckMark().SuccessText("Initialisation succeeded").NextSection()
+
+	str.BlueArrow().InfoText("Create a wallet").NextLine()
+	str.Text("To create a wallet, use the following command:").NextSection()
+	str.Code(fmt.Sprintf("%s create --wallet \"YOUR_USERNAME\"", os.Args[0])).NextSection()
+	str.Text("The ").Bold("--wallet").Text(" flag sets the name of your wallet and will be used to login to Vega Console.").NextSection()
+	str.Text("For more information, use ").Bold("--help").Text(" flag.").NextLine()
 }

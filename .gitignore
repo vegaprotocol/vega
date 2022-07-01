@@ -1,8 +1,10 @@
 # Vega specific entries
 build/
+vegawallet
 bin/
 cmd/*/*-dbg
 cmd/vega/vega*
+cmd/vegawallet/vegawallet*
 cmd/vegabenchmark/vegabenchmark*
 cmd/examples/nullchain/nullchain*
 data/

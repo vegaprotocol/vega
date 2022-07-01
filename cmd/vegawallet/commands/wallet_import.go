@@ -150,15 +150,18 @@ func (f *ImportWalletFlags) Validate() (*wallet.ImportWalletRequest, error) {
 func PrintImportWalletResponse(w io.Writer, resp *wallet.ImportWalletResponse) {
 	p := printer.NewInteractivePrinter(w)
 
-	p.CheckMark().Text("Wallet ").Bold(resp.Wallet.Name).Text(" has been imported at: ").SuccessText(resp.Wallet.FilePath).NextLine()
-	p.CheckMark().Text("First key pair has been generated for wallet ").Bold(resp.Wallet.Name).Text(" at: ").SuccessText(resp.Wallet.FilePath).NextLine()
-	p.CheckMark().SuccessText("Importing the wallet succeeded").NextSection()
+	str := p.String()
+	defer p.Print(str)
 
-	p.Text("First public key:").NextLine()
-	p.WarningText(resp.Key.PublicKey).NextLine()
-	p.NextSection()
+	str.CheckMark().Text("Wallet ").Bold(resp.Wallet.Name).Text(" has been imported at: ").SuccessText(resp.Wallet.FilePath).NextLine()
+	str.CheckMark().Text("First key pair has been generated for wallet ").Bold(resp.Wallet.Name).Text(" at: ").SuccessText(resp.Wallet.FilePath).NextLine()
+	str.CheckMark().SuccessText("Importing the wallet succeeded").NextSection()
 
-	p.BlueArrow().InfoText("Run the service").NextLine()
-	p.Text("Now, you can run the service. See the following command:").NextSection()
-	p.Code(fmt.Sprintf("%s service run --help", os.Args[0])).NextLine()
+	str.Text("First public key:").NextLine()
+	str.WarningText(resp.Key.PublicKey).NextLine()
+	str.NextSection()
+
+	str.BlueArrow().InfoText("Run the service").NextLine()
+	str.Text("Now, you can run the service. See the following command:").NextSection()
+	str.Code(fmt.Sprintf("%s service run --help", os.Args[0])).NextLine()
 }

@@ -78,18 +78,20 @@ func BuildCmdRoot(w io.Writer, vh CheckVersionHandler) *cobra.Command {
 			if !f.NoVersionCheck && f.Output == flags.InteractiveOutput {
 				p := printer.NewInteractivePrinter(w)
 				if version.IsUnreleased() {
-					p.CrossMark().DangerText("You are running an unreleased version of the Vega wallet (").DangerText(version.Version).DangerText("). Use it at your own risk!").NextSection()
+					p.Print(p.String().CrossMark().DangerText("You are running an unreleased version of the Vega wallet (").DangerText(version.Version).DangerText("). Use it at your own risk!").NextSection())
 				}
 
 				v, err := vh()
 				if err != nil {
-					p.CrossMark().DangerText(err.Error()).NextSection()
+					p.Print(p.String().CrossMark().DangerText(err.Error()).NextSection())
 					return nil
 				}
 
 				if v != nil {
-					p.Text("Version ").SuccessText(v.String()).Text(" is available. Your current version is ").DangerText(version.Version).Text(".").NextLine()
-					p.Text("Download the latest version at: ").Underline(vgversion.GetGithubReleaseURL(version.ReleasesURL, v)).NextSection()
+					str := p.String()
+					str.Text("Version ").SuccessText(v.String()).Text(" is available. Your current version is ").DangerText(version.Version).Text(".").NextLine()
+					str.Text("Download the latest version at: ").Underline(vgversion.GetGithubReleaseURL(version.ReleasesURL, v)).NextSection()
+					p.Print(str)
 				}
 			}
 			return nil

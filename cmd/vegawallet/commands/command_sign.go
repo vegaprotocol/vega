@@ -173,10 +173,12 @@ func (f *SignCommandFlags) Validate() (*wallet.SignCommandRequest, error) {
 func PrintSignCommandResponse(w io.Writer, req *wallet.SignCommandResponse) {
 	p := printer.NewInteractivePrinter(w)
 
-	p.CheckMark().SuccessText("Command signature successful").NextSection()
-	p.Text("Transaction (base64-encoded):").NextLine().WarningText(req.Base64Transaction).NextSection()
+	str := p.String()
+	defer p.Print(str)
+	str.CheckMark().SuccessText("Command signature successful").NextSection()
+	str.Text("Transaction (base64-encoded):").NextLine().WarningText(req.Base64Transaction).NextSection()
 
-	p.BlueArrow().InfoText("Send a transaction").NextLine()
-	p.Text("To send a raw transaction, see the following command:").NextSection()
-	p.Code(fmt.Sprintf("%s tx send --help", os.Args[0])).NextSection()
+	str.BlueArrow().InfoText("Send a transaction").NextLine()
+	str.Text("To send a raw transaction, see the following command:").NextSection()
+	str.Code(fmt.Sprintf("%s tx send --help", os.Args[0])).NextSection()
 }

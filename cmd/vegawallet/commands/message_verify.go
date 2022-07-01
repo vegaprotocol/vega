@@ -124,13 +124,16 @@ func (f *VerifyMessageFlags) Validate() (*crypto.VerifyMessageRequest, error) {
 func PrintVerifyMessageResponse(w io.Writer, isValid bool) {
 	p := printer.NewInteractivePrinter(w)
 
+	str := p.String()
+	defer p.Print(str)
+
 	if isValid {
-		p.CheckMark().SuccessText("Valid signature").NextSection()
+		str.CheckMark().SuccessText("Valid signature").NextSection()
 	} else {
-		p.CrossMark().DangerText("Invalid signature").NextSection()
+		str.CrossMark().DangerText("Invalid signature").NextSection()
 	}
 
-	p.BlueArrow().InfoText("Sign a message").NextLine()
-	p.Text("To sign a message, see the following command:").NextSection()
-	p.Code(fmt.Sprintf("%s sign --help", os.Args[0])).NextLine()
+	str.BlueArrow().InfoText("Sign a message").NextLine()
+	str.Text("To sign a message, see the following command:").NextSection()
+	str.Code(fmt.Sprintf("%s sign --help", os.Args[0])).NextLine()
 }

@@ -141,10 +141,13 @@ func (f *SignMessageFlags) Validate() (*wallet.SignMessageRequest, error) {
 func PrintSignMessageResponse(w io.Writer, req *wallet.SignMessageResponse) {
 	p := printer.NewInteractivePrinter(w)
 
-	p.CheckMark().SuccessText("Message signature successful").NextSection()
-	p.Text("Signature (base64-encoded):").NextLine().WarningText(req.Base64).NextSection()
+	str := p.String()
+	defer p.Print(str)
 
-	p.BlueArrow().InfoText("Sign a message").NextLine()
-	p.Text("To verify a message, see the following command:").NextSection()
-	p.Code(fmt.Sprintf("%s verify --help", os.Args[0])).NextSection()
+	str.CheckMark().SuccessText("Message signature successful").NextSection()
+	str.Text("Signature (base64-encoded):").NextLine().WarningText(req.Base64).NextSection()
+
+	str.BlueArrow().InfoText("Sign a message").NextLine()
+	str.Text("To verify a message, see the following command:").NextSection()
+	str.Code(fmt.Sprintf("%s verify --help", os.Args[0])).NextSection()
 }

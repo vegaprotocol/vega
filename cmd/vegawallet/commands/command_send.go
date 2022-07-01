@@ -258,7 +258,7 @@ func SendCommand(w io.Writer, rf *RootFlags, req *SendCommandRequest) error {
 
 	p := printer.NewInteractivePrinter(w)
 	if rf.Output == flags.InteractiveOutput {
-		p.BlueArrow().InfoText("Logs").NextLine()
+		p.Print(p.String().BlueArrow().InfoText("Logs").NextLine())
 	}
 
 	ctx, cancelFn := context.WithTimeout(context.Background(), ForwarderRequestTimeout)
