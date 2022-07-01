@@ -97,9 +97,17 @@ func Main(ctx context.Context) error {
 
 func setCommitHash() {
 	info, _ := debug.ReadBuildInfo()
+	modified := false
+
 	for _, v := range info.Settings {
 		if v.Key == "vcs.revision" {
 			CLIVersionHash = v.Value
 		}
+		if v.Key == "vcs.modified" {
+			modified = true
+		}
+	}
+	if modified {
+		CLIVersionHash += "-modified"
 	}
 }
