@@ -80,9 +80,6 @@ pipeline {
         }
 
         stage('Build') {
-            environment {
-                LDFLAGS      = "-X main.CLIVersion=${version} -X main.CLIVersionHash=${versionHash}"
-            }
             failFast true
             parallel {
                 stage('Linux') {
@@ -94,7 +91,7 @@ pipeline {
                     options { retry(3) }
                     steps {
                         sh label: 'Compile', script: '''
-                            go build -o "${OUTPUT}" -ldflags "${LDFLAGS}" ./cmd/data-node
+                            go build -o "${OUTPUT}" ./cmd/data-node
                         '''
                         sh label: 'Sanity check', script: '''
                             file ${OUTPUT}
@@ -111,7 +108,7 @@ pipeline {
                     options { retry(3) }
                     steps {
                         sh label: 'Compile', script: '''
-                            go build -o "${OUTPUT}" -ldflags "${LDFLAGS}" ./cmd/data-node
+                            go build -o "${OUTPUT}" ./cmd/data-node
                         '''
                         sh label: 'Sanity check', script: '''
                             file ${OUTPUT}
@@ -127,7 +124,7 @@ pipeline {
                     options { retry(3) }
                     steps {
                         sh label: 'Compile', script: '''
-                            go build -o "${OUTPUT}" -ldflags "${LDFLAGS}" ./cmd/data-node
+                            go build -o "${OUTPUT}" ./cmd/data-node
                         '''
                         sh label: 'Sanity check', script: '''
                             file ${OUTPUT}
