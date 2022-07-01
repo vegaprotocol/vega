@@ -21,7 +21,6 @@ import (
 )
 
 type Config struct {
-	Enabled           encoding.Bool     `long:"enabled"`
 	ConnectionConfig  ConnectionConfig  `group:"ConnectionConfig" namespace:"ConnectionConfig"`
 	WipeOnStartup     encoding.Bool     `long:"wipe-on-startup"`
 	Level             encoding.LogLevel `long:"log-level"`
@@ -64,7 +63,6 @@ func (conf ConnectionConfig) GetPoolConfig() (*pgxpool.Config, error) {
 
 func NewDefaultConfig() Config {
 	return Config{
-		Enabled: false,
 		ConnectionConfig: ConnectionConfig{
 			Host:            "localhost",
 			Port:            5432,

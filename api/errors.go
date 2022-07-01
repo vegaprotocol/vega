@@ -92,6 +92,7 @@ var (
 	ErrAccountServiceGetPartyAccounts             = errors.New("failed to get party accounts")
 	// RiskService...
 	ErrRiskServiceGetMarginLevelsByID = errors.New("failed to get margin levels")
+	ErrInvalidOrderSide               = errors.New("invalid order side")
 	// CandleService...
 	ErrCandleServiceGetCandleData       = errors.New("failed to get candle data")
 	ErrCandleServiceSubscribeToCandles  = errors.New("failed to subscribe to candle data")

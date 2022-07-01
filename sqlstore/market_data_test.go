@@ -18,7 +18,6 @@ import (
 	"encoding/csv"
 	"encoding/hex"
 	"encoding/json"
-	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -114,15 +113,6 @@ func shouldInsertAValidMarketDataRecord(t *testing.T) {
 	err = conn.QueryRow(ctx, `select count(*) from market_data`).Scan(&rowCount)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, rowCount)
-}
-
-func connectionString(config sqlstore.ConnectionConfig) string {
-	return fmt.Sprintf("postgresql://%s:%s@%s:%d/%s",
-		config.Username,
-		config.Password,
-		config.Host,
-		config.Port,
-		config.Database)
 }
 
 func getLatestMarketData(t *testing.T) {

@@ -18,7 +18,6 @@ import (
 
 	"code.vegaprotocol.io/data-node/config"
 	"code.vegaprotocol.io/data-node/logging"
-	"code.vegaprotocol.io/data-node/storage"
 	"code.vegaprotocol.io/shared/paths"
 
 	"github.com/jessevdk/go-flags"
@@ -60,10 +59,6 @@ func (opts *InitCmd) Execute(_ []string) error {
 
 	if err := cfgLoader.Save(&cfg); err != nil {
 		return fmt.Errorf("couldn't save configuration file: %w", err)
-	}
-
-	if _, err = storage.InitialiseStorage(vegaPaths); err != nil {
-		return fmt.Errorf("couldn't initialise storage: %w", err)
 	}
 
 	logger.Info("configuration generated successfully", logging.String("path", cfgLoader.ConfigFilePath()))

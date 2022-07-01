@@ -18,6 +18,8 @@
 - [571](https://github.com/vegaprotocol/data-node/issues/571) - Add cursor based pagination for Oracle Spec and Data requests
 - [733](https://github.com/vegaprotocol/data-node/issues/733) - Store chain info in database when using `SQL`
 - [748](https://github.com/vegaprotocol/data-node/issues/748) - Add REST endpoint to list `OracleData`
+- [761](https://github.com/vegaprotocol/data-node/issues/761) - Delete all badger stores, `SQL` stores only from now
+
 
 ### 🐛 Fixes
 - [705](https://github.com/vegaprotocol/data-node/issues/705) - Market Depth returning incorrect book state

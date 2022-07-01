@@ -76,3 +76,7 @@ func (r *Reward) Observe(ctx context.Context, retries int, assetID, partyID stri
 		})
 	return ch, ref
 }
+
+func (r *Reward) GetRewardSubscribersCount() int32 {
+	return r.observer.GetSubscribersCount()
+}

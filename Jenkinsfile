@@ -52,7 +52,7 @@ pipeline {
                 cleanWs()
                 sh 'printenv'
                 echo "${params}"
-		script {
+				script {
                     params = pr.injectPRParams()
                 }
                 echo "params (after injection)=${params}"
@@ -228,18 +228,17 @@ pipeline {
                         junit checksName: 'Unit Tests with Race', testResults: 'vega-unit-test-race-report.xml'
                     }
                 }
-                stage('LNL System Tests') {
+                stage('System Tests Network Smoke') {
                     steps {
                         script {
-                            systemTestsLNL ignoreFailure: !isPRBuild(),
+                            systemTestsCapsule ignoreFailure: !isPRBuild(),
                                 vegaCore: params.VEGA_CORE_BRANCH,
                                 dataNode: commitHash,
                                 vegawallet: params.VEGAWALLET_BRANCH,
-                                ethereumEventForwarder: params.ETHEREUM_EVENT_FORWARDER_BRANCH,
-                                devopsInfra: params.DEVOPS_INFRA_BRANCH,
                                 vegatools: params.VEGATOOLS_BRANCH,
                                 systemTests: params.SYSTEM_TESTS_BRANCH,
-                                protos: params.PROTOS_BRANCH
+                                protos: params.PROTOS_BRANCH,
+                                testMark: "network_infra_smoke"
                         }
                     }
                 }
