@@ -148,8 +148,6 @@ func (t Tx) Command() txn.Command {
 		return txn.DelegateCommand
 	case *commandspb.InputData_UndelegateSubmission:
 		return txn.UndelegateCommand
-	case *commandspb.InputData_RestoreSnapshotSubmission:
-		return txn.CheckpointRestoreCommand
 	case *commandspb.InputData_KeyRotateSubmission:
 		return txn.RotateKeySubmissionCommand
 	case *commandspb.InputData_StateVariableProposal:
