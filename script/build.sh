@@ -221,7 +221,6 @@ run() {
 		help
 		exit 1
 	fi
-	echo "Version: $version ($version_hash)"
 
 	set_go_flags default
 	case "$action" in
