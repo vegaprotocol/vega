@@ -66,3 +66,7 @@ func (r *Delegation) Observe(ctx context.Context, retries int, partyID, nodeID s
 		})
 	return ch, ref
 }
+
+func (r *Delegation) GetDelegationSubscribersCount() int32 {
+	return r.observer.GetSubscribersCount()
+}

@@ -21,7 +21,6 @@ import (
 
 	"code.vegaprotocol.io/data-node/entities"
 	"code.vegaprotocol.io/data-node/logging"
-	"code.vegaprotocol.io/data-node/plugins"
 	"code.vegaprotocol.io/data-node/sqlsubscribers"
 	"code.vegaprotocol.io/data-node/sqlsubscribers/mocks"
 	"code.vegaprotocol.io/vega/events"
@@ -38,12 +37,26 @@ type expect struct {
 	UnrealisedPNL     num.Decimal
 }
 
+type positionEventBase interface {
+	events.Event
+	PartyID() string
+	MarketID() string
+	Timestamp() int64
+}
+
+type positionSettlement interface {
+	positionEventBase
+	Price() *num.Uint
+	PositionFactor() num.Decimal
+	Trades() []events.TradeSettlement
+}
+
 func TestPositionSpecSuite(t *testing.T) {
 	market := "market-id"
 	ctx := context.Background()
 	testcases := []struct {
 		run    string
-		pos    plugins.SPE // TODO
+		pos    positionSettlement
 		expect expect
 	}{
 		{

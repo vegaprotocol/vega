@@ -67,3 +67,7 @@ func (l *Ledger) Observe(ctx context.Context, retries int) (<-chan []*vega.Trans
 		})
 	return ch, ref
 }
+
+func (r *Ledger) GetSubscribersCount() int32 {
+	return r.observer.GetSubscribersCount()
+}

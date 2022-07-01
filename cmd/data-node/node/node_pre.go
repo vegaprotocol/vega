@@ -20,36 +20,13 @@ import (
 	"code.vegaprotocol.io/data-node/service"
 	"code.vegaprotocol.io/shared/paths"
 
-	"code.vegaprotocol.io/data-node/accounts"
-	"code.vegaprotocol.io/data-node/assets"
 	"code.vegaprotocol.io/data-node/broker"
-	"code.vegaprotocol.io/data-node/candles"
-	"code.vegaprotocol.io/data-node/checkpoint"
 	"code.vegaprotocol.io/data-node/config"
-	"code.vegaprotocol.io/data-node/delegations"
-	"code.vegaprotocol.io/data-node/epochs"
-	"code.vegaprotocol.io/data-node/fee"
-	"code.vegaprotocol.io/data-node/governance"
-	"code.vegaprotocol.io/data-node/liquidity"
 	"code.vegaprotocol.io/data-node/logging"
-	"code.vegaprotocol.io/data-node/markets"
-	"code.vegaprotocol.io/data-node/netparams"
-	"code.vegaprotocol.io/data-node/nodes"
-	"code.vegaprotocol.io/data-node/notary"
-	"code.vegaprotocol.io/data-node/oracles"
-	"code.vegaprotocol.io/data-node/orders"
-	"code.vegaprotocol.io/data-node/parties"
-	"code.vegaprotocol.io/data-node/plugins"
 	"code.vegaprotocol.io/data-node/pprof"
-	"code.vegaprotocol.io/data-node/risk"
 	"code.vegaprotocol.io/data-node/sqlstore"
 	"code.vegaprotocol.io/data-node/sqlsubscribers"
-	"code.vegaprotocol.io/data-node/staking"
-	"code.vegaprotocol.io/data-node/storage"
 	"code.vegaprotocol.io/data-node/subscribers"
-	"code.vegaprotocol.io/data-node/trades"
-	"code.vegaprotocol.io/data-node/transfers"
-	"code.vegaprotocol.io/data-node/vegatime"
 	vegaprotoapi "code.vegaprotocol.io/protos/vega/api/v1"
 
 	"google.golang.org/grpc"
@@ -88,9 +65,6 @@ func (l *NodeCommand) persistentPre(args []string) (err error) {
 		logging.String("version", l.Version),
 		logging.String("version-hash", l.VersionHash))
 
-	// this doesn't fail
-	l.timeService = vegatime.New(l.conf.Time)
-
 	// Set ulimits
 	if err = l.SetUlimits(); err != nil {
 		l.Log.Warn("Unable to set ulimits",
@@ -100,87 +74,51 @@ func (l *NodeCommand) persistentPre(args []string) (err error) {
 			logging.Uint64("nofile", l.conf.UlimitNOFile))
 	}
 
-	if l.conf.API.ExposeLegacyAPI || !l.conf.SQLStore.Enabled {
-		l.Log.Info("Enabling legacy stores")
-		if err := l.setupLegacyStorages(); err != nil {
-			return err
-		}
-		l.setupSubscribers()
-
+	l.Log.Info("Enabling SQL stores")
+	if err := l.setupStoresSQL(); err != nil {
+		return err
 	}
-
-	if l.conf.SQLStore.Enabled {
-		l.Log.Info("Enabling SQL stores")
-		if err := l.setupStoresSQL(); err != nil {
-			return err
-		}
-		if err := l.setupV2Services(); err != nil {
-			return err
-		}
-		l.setupSQLSubscribers()
+	if err := l.setupServices(); err != nil {
+		return err
 	}
+	l.setupSQLSubscribers()
 
 	return nil
 }
 
-func (l *NodeCommand) setupSubscribers() {
-	l.timeUpdateSub = subscribers.NewTimeSub(l.ctx, l.timeService, l.Log, true)
-	l.transferRespSub = subscribers.NewTransferResponse(l.ctx, l.transferResponseStore, l.Log, true)
-	l.marketEventSub = subscribers.NewMarketEvent(l.ctx, l.conf.Subscribers, l.Log, false)
-	l.orderSub = subscribers.NewOrderEvent(l.ctx, l.conf.Subscribers, l.Log, l.orderStore, true)
-	l.accountSub = subscribers.NewAccountSub(l.ctx, l.accounts, l.Log, true)
-	l.partySub = subscribers.NewPartySub(l.ctx, l.partyStore, l.Log, true)
-	l.tradeSub = subscribers.NewTradeSub(l.ctx, l.tradeStore, l.Log, true)
-	l.marginLevelSub = subscribers.NewMarginLevelSub(l.ctx, l.riskStore, l.Log, true)
-	l.governanceSub = subscribers.NewGovernanceDataSub(l.ctx, l.Log, true)
-	l.voteSub = subscribers.NewVoteSub(l.ctx, false, true, l.Log)
-	l.marketDataSub = subscribers.NewMarketDataSub(l.ctx, l.marketDataStore, l.Log, true)
-	l.newMarketSub = subscribers.NewMarketSub(l.ctx, l.marketStore, l.Log, true)
-	l.marketUpdatedSub = subscribers.NewMarketUpdatedSub(l.ctx, l.marketStore, l.Log, true)
-	l.candleSub = subscribers.NewCandleSub(l.ctx, l.candleStore, l.Log, true)
-	l.marketDepthSub = subscribers.NewMarketDepthBuilder(l.ctx, l.Log, true)
-	l.riskFactorSub = subscribers.NewRiskFactorSub(l.ctx, l.riskStore, l.Log, true)
-	l.nodesSub = subscribers.NewNodesSub(l.ctx, l.nodeStore, l.Log, true)
-	l.delegationBalanceSub = subscribers.NewDelegationBalanceSub(l.ctx, l.nodeStore, l.epochStore, l.delegationStore, l.Log, true)
-	l.epochUpdateSub = subscribers.NewEpochUpdateSub(l.ctx, l.epochStore, l.Log, true)
-	l.rewardsSub = subscribers.NewRewards(l.ctx, l.Log, true)
-	l.checkpointSub = subscribers.NewCheckpointSub(l.ctx, l.Log, l.checkpointStore, true)
-	l.transferSub = subscribers.NewTransferSub(l.ctx, l.transferStore, l.Log, true)
-}
-
 func (l *NodeCommand) setupSQLSubscribers() {
-	l.accountSubSQL = sqlsubscribers.NewAccount(l.accountServiceV2, l.Log)
-	l.assetSubSQL = sqlsubscribers.NewAsset(l.assetServiceV2, l.Log)
-	l.partySubSQL = sqlsubscribers.NewParty(l.partyServiceV2, l.Log)
-	l.transferResponseSubSQL = sqlsubscribers.NewTransferResponse(l.ledgerServiceV2, l.accountServiceV2, l.Log)
-	l.orderSubSQL = sqlsubscribers.NewOrder(l.orderServiceV2, l.Log)
-	l.networkLimitsSubSQL = sqlsubscribers.NewNetworkLimitSub(l.ctx, l.networkLimitsServiceV2, l.Log)
-	l.marketDataSubSQL = sqlsubscribers.NewMarketData(l.marketDataServiceV2, l.Log)
-	l.tradesSubSQL = sqlsubscribers.NewTradesSubscriber(l.tradeServiceV2, l.Log)
-	l.rewardsSubSQL = sqlsubscribers.NewReward(l.rewardServiceV2, l.Log)
-	l.marketCreatedSubSQL = sqlsubscribers.NewMarketCreated(l.marketsServiceV2, l.Log)
-	l.marketUpdatedSubSQL = sqlsubscribers.NewMarketUpdated(l.marketsServiceV2, l.Log)
-	l.delegationsSubSQL = sqlsubscribers.NewDelegation(l.delegationServiceV2, l.Log)
-	l.epochSubSQL = sqlsubscribers.NewEpoch(l.epochServiceV2, l.Log)
-	l.depositSubSQL = sqlsubscribers.NewDeposit(l.depositServiceV2, l.Log)
-	l.withdrawalSubSQL = sqlsubscribers.NewWithdrawal(l.withdrawalServiceV2, l.Log)
-	l.proposalsSubSQL = sqlsubscribers.NewProposal(l.governanceServiceV2, l.Log)
-	l.votesSubSQL = sqlsubscribers.NewVote(l.governanceServiceV2, l.Log)
-	l.marginLevelsSubSQL = sqlsubscribers.NewMarginLevels(l.riskServiceV2, l.accountStoreSQL, l.Log)
-	l.riskFactorSubSQL = sqlsubscribers.NewRiskFactor(l.riskFactorServiceV2, l.Log)
-	l.netParamSubSQL = sqlsubscribers.NewNetworkParameter(l.networkParameterServiceV2, l.Log)
-	l.checkpointSubSQL = sqlsubscribers.NewCheckpoint(l.checkpointServiceV2, l.Log)
-	l.positionsSubSQL = sqlsubscribers.NewPosition(l.positionServiceV2, l.Log)
-	l.oracleSpecSubSQL = sqlsubscribers.NewOracleSpec(l.oracleSpecServiceV2, l.Log)
-	l.oracleDataSubSQL = sqlsubscribers.NewOracleData(l.oracleDataServiceV2, l.Log)
-	l.liquidityProvisionSubSQL = sqlsubscribers.NewLiquidityProvision(l.liquidityProvisionServiceV2, l.Log)
-	l.transferSubSQL = sqlsubscribers.NewTransfer(l.transfersStoreSQL, l.accountServiceV2, l.Log)
-	l.stakeLinkingSubSQL = sqlsubscribers.NewStakeLinking(l.stakeLinkingServiceV2, l.Log)
-	l.notarySubSQL = sqlsubscribers.NewNotary(l.notaryServiceV2, l.Log)
-	l.multiSigSignerEventSubSQL = sqlsubscribers.NewERC20MultiSigSignerEvent(l.multiSigServiceV2, l.Log)
-	l.keyRotationsSubSQL = sqlsubscribers.NewKeyRotation(l.keyRotationsServiceV2, l.Log)
-	l.nodeSubSQL = sqlsubscribers.NewNode(l.nodeServiceV2, l.Log)
-	l.marketDepthSubSQL = sqlsubscribers.NewMarketDepth(l.marketDepthServiceV2)
+	l.accountSub = sqlsubscribers.NewAccount(l.accountService, l.Log)
+	l.assetSub = sqlsubscribers.NewAsset(l.assetService, l.Log)
+	l.partySub = sqlsubscribers.NewParty(l.partyService, l.Log)
+	l.transferResponseSub = sqlsubscribers.NewTransferResponse(l.ledgerService, l.accountService, l.Log)
+	l.orderSub = sqlsubscribers.NewOrder(l.orderService, l.Log)
+	l.networkLimitsSub = sqlsubscribers.NewNetworkLimitSub(l.ctx, l.networkLimitsService, l.Log)
+	l.marketDataSub = sqlsubscribers.NewMarketData(l.marketDataService, l.Log)
+	l.tradesSub = sqlsubscribers.NewTradesSubscriber(l.tradeService, l.Log)
+	l.rewardsSub = sqlsubscribers.NewReward(l.rewardService, l.Log)
+	l.marketCreatedSub = sqlsubscribers.NewMarketCreated(l.marketsService, l.Log)
+	l.marketUpdatedSub = sqlsubscribers.NewMarketUpdated(l.marketsService, l.Log)
+	l.delegationsSub = sqlsubscribers.NewDelegation(l.delegationService, l.Log)
+	l.epochSub = sqlsubscribers.NewEpoch(l.epochService, l.Log)
+	l.depositSub = sqlsubscribers.NewDeposit(l.depositService, l.Log)
+	l.withdrawalSub = sqlsubscribers.NewWithdrawal(l.withdrawalService, l.Log)
+	l.proposalsSub = sqlsubscribers.NewProposal(l.governanceService, l.Log)
+	l.votesSub = sqlsubscribers.NewVote(l.governanceService, l.Log)
+	l.marginLevelsSub = sqlsubscribers.NewMarginLevels(l.riskService, l.accountStore, l.Log)
+	l.riskFactorSub = sqlsubscribers.NewRiskFactor(l.riskFactorService, l.Log)
+	l.netParamSub = sqlsubscribers.NewNetworkParameter(l.networkParameterService, l.Log)
+	l.checkpointSub = sqlsubscribers.NewCheckpoint(l.checkpointService, l.Log)
+	l.positionsSub = sqlsubscribers.NewPosition(l.positionService, l.Log)
+	l.oracleSpecSub = sqlsubscribers.NewOracleSpec(l.oracleSpecService, l.Log)
+	l.oracleDataSub = sqlsubscribers.NewOracleData(l.oracleDataService, l.Log)
+	l.liquidityProvisionSub = sqlsubscribers.NewLiquidityProvision(l.liquidityProvisionService, l.Log)
+	l.transferSub = sqlsubscribers.NewTransfer(l.transfersStore, l.accountService, l.Log)
+	l.stakeLinkingSub = sqlsubscribers.NewStakeLinking(l.stakeLinkingService, l.Log)
+	l.notarySub = sqlsubscribers.NewNotary(l.notaryService, l.Log)
+	l.multiSigSignerEventSub = sqlsubscribers.NewERC20MultiSigSignerEvent(l.multiSigService, l.Log)
+	l.keyRotationsSub = sqlsubscribers.NewKeyRotation(l.keyRotationsService, l.Log)
+	l.nodeSub = sqlsubscribers.NewNode(l.nodeService, l.Log)
+	l.marketDepthSub = sqlsubscribers.NewMarketDepth(l.marketDepthService)
 }
 
 func (l *NodeCommand) setupStoresSQL() error {
@@ -210,105 +148,41 @@ func (l *NodeCommand) setupStoresSQL() error {
 
 	l.transactionalConnectionSource = transactionalConnectionSource
 
-	l.assetStoreSQL = sqlstore.NewAssets(transactionalConnectionSource)
-	l.blockStoreSQL = sqlstore.NewBlocks(transactionalConnectionSource)
-	l.partyStoreSQL = sqlstore.NewParties(transactionalConnectionSource)
-	l.partyStoreSQL.Initialise()
-	l.accountStoreSQL = sqlstore.NewAccounts(transactionalConnectionSource)
-	l.balanceStoreSQL = sqlstore.NewBalances(transactionalConnectionSource)
-	l.ledgerSQL = sqlstore.NewLedger(transactionalConnectionSource)
-	l.orderStoreSQL = sqlstore.NewOrders(transactionalConnectionSource, l.Log)
-	l.tradeStoreSQL = sqlstore.NewTrades(transactionalConnectionSource)
-	l.networkLimitsStoreSQL = sqlstore.NewNetworkLimits(transactionalConnectionSource)
-	l.marketDataStoreSQL = sqlstore.NewMarketData(transactionalConnectionSource)
-	l.rewardStoreSQL = sqlstore.NewRewards(transactionalConnectionSource)
-	l.marketsStoreSQL = sqlstore.NewMarkets(transactionalConnectionSource)
-	l.delegationStoreSQL = sqlstore.NewDelegations(transactionalConnectionSource)
-	l.epochStoreSQL = sqlstore.NewEpochs(transactionalConnectionSource)
-	l.depositStoreSQL = sqlstore.NewDeposits(transactionalConnectionSource)
-	l.withdrawalsStoreSQL = sqlstore.NewWithdrawals(transactionalConnectionSource)
-	l.proposalStoreSQL = sqlstore.NewProposals(transactionalConnectionSource)
-	l.voteStoreSQL = sqlstore.NewVotes(transactionalConnectionSource)
-	l.marginLevelsStoreSQL = sqlstore.NewMarginLevels(transactionalConnectionSource)
-	l.riskFactorStoreSQL = sqlstore.NewRiskFactors(transactionalConnectionSource)
-	l.netParamStoreSQL = sqlstore.NewNetworkParameters(transactionalConnectionSource)
-	l.checkpointStoreSQL = sqlstore.NewCheckpoints(transactionalConnectionSource)
-	l.positionStoreSQL = sqlstore.NewPositions(transactionalConnectionSource)
-	l.oracleSpecStoreSQL = sqlstore.NewOracleSpec(transactionalConnectionSource)
-	l.oracleDataStoreSQL = sqlstore.NewOracleData(transactionalConnectionSource)
-	l.liquidityProvisionStoreSQL = sqlstore.NewLiquidityProvision(transactionalConnectionSource)
-	l.transfersStoreSQL = sqlstore.NewTransfers(transactionalConnectionSource)
-	l.stakeLinkingStoreSQL = sqlstore.NewStakeLinking(transactionalConnectionSource)
-	l.notaryStoreSQL = sqlstore.NewNotary(transactionalConnectionSource)
-	l.multiSigSignerAddedStoreSQL = sqlstore.NewERC20MultiSigSignerEvent(transactionalConnectionSource)
-	l.keyRotationsStoreSQL = sqlstore.NewKeyRotations(transactionalConnectionSource)
-	l.nodeStoreSQL = sqlstore.NewNode(transactionalConnectionSource)
-	l.candleStoreSQL = sqlstore.NewCandles(l.ctx, transactionalConnectionSource, l.conf.CandlesV2.CandleStore)
-	l.chainStoreSQL = sqlstore.NewChain(transactionalConnectionSource)
-	return nil
-}
-
-func (l *NodeCommand) setupLegacyStorages() error {
-	var err error
-
-	l.marketDataStore = storage.NewMarketData(l.Log, l.conf.Storage)
-	l.riskStore = storage.NewRisks(l.Log, l.conf.Storage)
-	l.nodeStore = storage.NewNode(l.Log, l.conf.Storage)
-	l.epochStore = storage.NewEpoch(l.Log, l.nodeStore, l.conf.Storage)
-	l.delegationStore = storage.NewDelegations(l.Log, l.conf.Storage)
-	l.transferStore = storage.NewTransfers(l.Log, l.conf.Storage)
-
-	if l.partyStore, err = storage.NewParties(l.conf.Storage); err != nil {
-		return err
-	}
-	if l.transferResponseStore, err = storage.NewTransferResponses(l.Log, l.conf.Storage); err != nil {
-		return err
-	}
-
-	st, err := storage.InitialiseStorage(l.vegaPaths)
-	if err != nil {
-		return fmt.Errorf("couldn't initialise storage: %w", err)
-	}
-
-	if l.chainInfoStore, err = storage.NewChainInfo(l.Log, st.ChainInfoHome, l.conf.Storage, l.cancel); err != nil {
-		return err
-	}
-
-	if l.marketStore, err = storage.NewMarkets(l.Log, st.MarketsHome, l.conf.Storage, l.cancel); err != nil {
-		return err
-	}
-	if l.candleStore, err = storage.NewCandles(l.Log, st.CandlesHome, l.conf.Storage, l.cancel); err != nil {
-		return err
-	}
-	if l.orderStore, err = storage.NewOrders(l.Log, st.OrdersHome, l.conf.Storage, l.cancel); err != nil {
-		return err
-	}
-	if l.tradeStore, err = storage.NewTrades(l.Log, st.TradesHome, l.conf.Storage, l.cancel); err != nil {
-		return err
-	}
-	if l.accounts, err = storage.NewAccounts(l.Log, st.AccountsHome, l.conf.Storage, l.cancel); err != nil {
-		return err
-	}
-	if l.checkpointStore, err = storage.NewCheckpoints(l.Log, st.CheckpointsHome, l.conf.Storage, l.cancel); err != nil {
-		return err
-	}
-
-	l.configWatcher.OnConfigUpdate(
-		func(cfg config.Config) { l.accounts.ReloadConf(cfg.Storage) },
-		func(cfg config.Config) { l.tradeStore.ReloadConf(cfg.Storage) },
-		func(cfg config.Config) { l.orderStore.ReloadConf(cfg.Storage) },
-		func(cfg config.Config) { l.candleStore.ReloadConf(cfg.Storage) },
-		func(cfg config.Config) { l.transferResponseStore.ReloadConf(cfg.Storage) },
-		func(cfg config.Config) { l.partyStore.ReloadConf(cfg.Storage) },
-		func(cfg config.Config) { l.riskStore.ReloadConf(cfg.Storage) },
-		func(cfg config.Config) { l.marketDataStore.ReloadConf(cfg.Storage) },
-		func(cfg config.Config) { l.marketStore.ReloadConf(cfg.Storage) },
-		func(cfg config.Config) { l.nodeStore.ReloadConf(cfg.Storage) },
-		func(cfg config.Config) { l.epochStore.ReloadConf(cfg.Storage) },
-		func(cfg config.Config) { l.delegationStore.ReloadConf(cfg.Storage) },
-		func(cfg config.Config) { l.transferStore.ReloadConf(cfg.Storage) },
-	)
-
+	l.assetStore = sqlstore.NewAssets(transactionalConnectionSource)
+	l.blockStore = sqlstore.NewBlocks(transactionalConnectionSource)
+	l.partyStore = sqlstore.NewParties(transactionalConnectionSource)
+	l.partyStore.Initialise()
+	l.accountStore = sqlstore.NewAccounts(transactionalConnectionSource)
+	l.balanceStore = sqlstore.NewBalances(transactionalConnectionSource)
+	l.ledger = sqlstore.NewLedger(transactionalConnectionSource)
+	l.orderStore = sqlstore.NewOrders(transactionalConnectionSource, l.Log)
+	l.tradeStore = sqlstore.NewTrades(transactionalConnectionSource)
+	l.networkLimitsStore = sqlstore.NewNetworkLimits(transactionalConnectionSource)
+	l.marketDataStore = sqlstore.NewMarketData(transactionalConnectionSource)
+	l.rewardStore = sqlstore.NewRewards(transactionalConnectionSource)
+	l.marketsStore = sqlstore.NewMarkets(transactionalConnectionSource)
+	l.delegationStore = sqlstore.NewDelegations(transactionalConnectionSource)
+	l.epochStore = sqlstore.NewEpochs(transactionalConnectionSource)
+	l.depositStore = sqlstore.NewDeposits(transactionalConnectionSource)
+	l.withdrawalsStore = sqlstore.NewWithdrawals(transactionalConnectionSource)
+	l.proposalStore = sqlstore.NewProposals(transactionalConnectionSource)
+	l.voteStore = sqlstore.NewVotes(transactionalConnectionSource)
+	l.marginLevelsStore = sqlstore.NewMarginLevels(transactionalConnectionSource)
+	l.riskFactorStore = sqlstore.NewRiskFactors(transactionalConnectionSource)
+	l.netParamStore = sqlstore.NewNetworkParameters(transactionalConnectionSource)
+	l.checkpointStore = sqlstore.NewCheckpoints(transactionalConnectionSource)
+	l.positionStore = sqlstore.NewPositions(transactionalConnectionSource)
+	l.oracleSpecStore = sqlstore.NewOracleSpec(transactionalConnectionSource)
+	l.oracleDataStore = sqlstore.NewOracleData(transactionalConnectionSource)
+	l.liquidityProvisionStore = sqlstore.NewLiquidityProvision(transactionalConnectionSource)
+	l.transfersStore = sqlstore.NewTransfers(transactionalConnectionSource)
+	l.stakeLinkingStore = sqlstore.NewStakeLinking(transactionalConnectionSource)
+	l.notaryStore = sqlstore.NewNotary(transactionalConnectionSource)
+	l.multiSigSignerAddedStore = sqlstore.NewERC20MultiSigSignerEvent(transactionalConnectionSource)
+	l.keyRotationsStore = sqlstore.NewKeyRotations(transactionalConnectionSource)
+	l.nodeStore = sqlstore.NewNode(transactionalConnectionSource)
+	l.candleStore = sqlstore.NewCandles(l.ctx, transactionalConnectionSource, l.conf.CandlesV2.CandleStore)
+	l.chainStore = sqlstore.NewChain(transactionalConnectionSource)
 	return nil
 }
 
@@ -327,67 +201,55 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 		return err
 	}
 
-	if l.conf.SQLStore.Enabled {
-		eventSource = broker.NewFanOutEventSource(eventSource, l.conf.SQLStore.FanOutBufferSize, 2)
+	eventSource = broker.NewFanOutEventSource(eventSource, l.conf.SQLStore.FanOutBufferSize, 2)
 
-		l.sqlBroker = broker.NewSqlStoreBroker(l.Log, l.conf.Broker, l.chainServiceV2, eventSource,
-			l.transactionalConnectionSource,
-			l.blockStoreSQL,
-			l.accountSubSQL,
-			l.assetSubSQL,
-			l.partySubSQL,
-			l.transferResponseSubSQL,
-			l.orderSubSQL,
-			l.networkLimitsSubSQL,
-			l.marketDataSubSQL,
-			l.tradesSubSQL,
-			l.rewardsSubSQL,
-			l.delegationsSubSQL,
-			l.marketCreatedSubSQL,
-			l.marketUpdatedSubSQL,
-			l.epochSubSQL,
-			l.marketUpdatedSubSQL,
-			l.depositSubSQL,
-			l.withdrawalSubSQL,
-			l.proposalsSubSQL,
-			l.votesSubSQL,
-			l.depositSubSQL,
-			l.marginLevelsSubSQL,
-			l.riskFactorSubSQL,
-			l.netParamSubSQL,
-			l.checkpointSubSQL,
-			l.positionsSubSQL,
-			l.oracleSpecSubSQL,
-			l.oracleDataSubSQL,
-			l.liquidityProvisionSubSQL,
-			l.transferSubSQL,
-			l.stakeLinkingSubSQL,
-			l.notarySubSQL,
-			l.multiSigSignerEventSubSQL,
-			l.keyRotationsSubSQL,
-			l.nodeSubSQL,
-			l.marketDepthSubSQL,
-		)
+	l.sqlBroker = broker.NewSqlStoreBroker(l.Log, l.conf.Broker, l.chainService, eventSource,
+		l.transactionalConnectionSource,
+		l.blockStore,
+		l.accountSub,
+		l.assetSub,
+		l.partySub,
+		l.transferResponseSub,
+		l.orderSub,
+		l.networkLimitsSub,
+		l.marketDataSub,
+		l.tradesSub,
+		l.rewardsSub,
+		l.delegationsSub,
+		l.marketCreatedSub,
+		l.marketUpdatedSub,
+		l.epochSub,
+		l.marketUpdatedSub,
+		l.depositSub,
+		l.withdrawalSub,
+		l.proposalsSub,
+		l.votesSub,
+		l.depositSub,
+		l.marginLevelsSub,
+		l.riskFactorSub,
+		l.netParamSub,
+		l.checkpointSub,
+		l.positionsSub,
+		l.oracleSpecSub,
+		l.oracleDataSub,
+		l.liquidityProvisionSub,
+		l.transferSub,
+		l.stakeLinkingSub,
+		l.notarySub,
+		l.multiSigSignerEventSub,
+		l.keyRotationsSub,
+		l.nodeSub,
+		l.marketDepthSub,
+	)
 
-		l.broker, err = broker.New(l.ctx, l.Log, l.conf.Broker, l.chainServiceV2, eventSource)
-		if err != nil {
-			l.Log.Error("unable to initialise broker", logging.Error(err))
-			return err
-		}
-	} else {
-		l.broker, err = broker.New(l.ctx, l.Log, l.conf.Broker, l.chainInfoStore, eventSource)
-		if err != nil {
-			l.Log.Error("unable to initialise broker", logging.Error(err))
-			return err
-		}
+	l.broker, err = broker.New(l.ctx, l.Log, l.conf.Broker, l.chainService, eventSource)
+	if err != nil {
+		l.Log.Error("unable to initialise broker", logging.Error(err))
+		return err
 	}
 
 	// Event service us used by old and new world
 	l.eventService = subscribers.NewService(l.broker)
-
-	if l.conf.API.ExposeLegacyAPI || !l.conf.SQLStore.Enabled {
-		l.setupLegacyServices()
-	}
 
 	nodeAddr := fmt.Sprintf("%v:%v", l.conf.API.CoreNodeIP, l.conf.API.CoreNodeGRPCPort)
 	conn, err := grpc.Dial(nodeAddr, grpc.WithInsecure())
@@ -397,57 +259,51 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 
 	l.vegaCoreServiceClient = vegaprotoapi.NewCoreServiceClient(conn)
 
-	l.checkpointSvc = checkpoint.NewService(l.Log, l.conf.Checkpoint, l.checkpointStore)
-
-	// setup config reloads for all services /etc
-	l.setupConfigWatchers()
-	l.timeService.NotifyOnTick(l.configWatcher.OnTimeUpdate)
-
 	return nil
 }
 
-func (l *NodeCommand) setupV2Services() error {
+func (l *NodeCommand) setupServices() error {
 	log := l.Log.Named("service")
 	log.SetLevel(l.conf.Service.Level.Get())
 
-	l.accountServiceV2 = service.NewAccount(l.accountStoreSQL, l.balanceStoreSQL, log)
-	l.assetServiceV2 = service.NewAsset(l.assetStoreSQL, log)
-	l.blockServiceV2 = service.NewBlock(l.blockStoreSQL, log)
-	l.candleServiceV2 = candlesv2.NewService(l.ctx, log, l.conf.CandlesV2, l.candleStoreSQL)
-	l.checkpointServiceV2 = service.NewCheckpoint(l.checkpointStoreSQL, log)
-	l.delegationServiceV2 = service.NewDelegation(l.delegationStoreSQL, log)
-	l.depositServiceV2 = service.NewDeposit(l.depositStoreSQL, log)
-	l.epochServiceV2 = service.NewEpoch(l.epochStoreSQL, log)
-	l.governanceServiceV2 = service.NewGovernance(l.proposalStoreSQL, l.voteStoreSQL, log)
-	l.keyRotationsServiceV2 = service.NewKeyRotations(l.keyRotationsStoreSQL, log)
-	l.ledgerServiceV2 = service.NewLedger(l.ledgerSQL, log)
-	l.liquidityProvisionServiceV2 = service.NewLiquidityProvision(l.liquidityProvisionStoreSQL, log)
-	l.marketDataServiceV2 = service.NewMarketData(l.marketDataStoreSQL, log)
-	l.marketDepthServiceV2 = service.NewMarketDepth(l.orderStoreSQL, log)
-	l.marketsServiceV2 = service.NewMarkets(l.marketsStoreSQL, log)
-	l.multiSigServiceV2 = service.NewMultiSig(l.multiSigSignerAddedStoreSQL, log)
-	l.networkLimitsServiceV2 = service.NewNetworkLimits(l.networkLimitsStoreSQL, log)
-	l.networkParameterServiceV2 = service.NewNetworkParameter(l.netParamStoreSQL, log)
-	l.nodeServiceV2 = service.NewNode(l.nodeStoreSQL, log)
-	l.notaryServiceV2 = service.NewNotary(l.notaryStoreSQL, log)
-	l.oracleDataServiceV2 = service.NewOracleData(l.oracleDataStoreSQL, log)
-	l.oracleSpecServiceV2 = service.NewOracleSpec(l.oracleSpecStoreSQL, log)
-	l.orderServiceV2 = service.NewOrder(l.orderStoreSQL, log)
-	l.partyServiceV2 = service.NewParty(l.partyStoreSQL, log)
-	l.positionServiceV2 = service.NewPosition(l.positionStoreSQL, log)
-	l.rewardServiceV2 = service.NewReward(l.rewardStoreSQL, log)
-	l.riskFactorServiceV2 = service.NewRiskFactor(l.riskFactorStoreSQL, log)
-	l.riskServiceV2 = service.NewRisk(l.marginLevelsStoreSQL, l.accountStoreSQL, log)
-	l.stakeLinkingServiceV2 = service.NewStakeLinking(l.stakeLinkingStoreSQL, log)
-	l.tradeServiceV2 = service.NewTrade(l.tradeStoreSQL, log)
-	l.transferServiceV2 = service.NewTransfer(l.transfersStoreSQL, log)
-	l.withdrawalServiceV2 = service.NewWithdrawal(l.withdrawalsStoreSQL, log)
-	l.chainServiceV2 = service.NewChain(l.chainStoreSQL, log)
+	l.accountService = service.NewAccount(l.accountStore, l.balanceStore, log)
+	l.assetService = service.NewAsset(l.assetStore, log)
+	l.blockService = service.NewBlock(l.blockStore, log)
+	l.candleService = candlesv2.NewService(l.ctx, log, l.conf.CandlesV2, l.candleStore)
+	l.checkpointService = service.NewCheckpoint(l.checkpointStore, log)
+	l.delegationService = service.NewDelegation(l.delegationStore, log)
+	l.depositService = service.NewDeposit(l.depositStore, log)
+	l.epochService = service.NewEpoch(l.epochStore, log)
+	l.governanceService = service.NewGovernance(l.proposalStore, l.voteStore, log)
+	l.keyRotationsService = service.NewKeyRotations(l.keyRotationsStore, log)
+	l.ledgerService = service.NewLedger(l.ledger, log)
+	l.liquidityProvisionService = service.NewLiquidityProvision(l.liquidityProvisionStore, log)
+	l.marketDataService = service.NewMarketData(l.marketDataStore, log)
+	l.marketDepthService = service.NewMarketDepth(l.orderStore, log)
+	l.marketsService = service.NewMarkets(l.marketsStore, log)
+	l.multiSigService = service.NewMultiSig(l.multiSigSignerAddedStore, log)
+	l.networkLimitsService = service.NewNetworkLimits(l.networkLimitsStore, log)
+	l.networkParameterService = service.NewNetworkParameter(l.netParamStore, log)
+	l.nodeService = service.NewNode(l.nodeStore, log)
+	l.notaryService = service.NewNotary(l.notaryStore, log)
+	l.oracleDataService = service.NewOracleData(l.oracleDataStore, log)
+	l.oracleSpecService = service.NewOracleSpec(l.oracleSpecStore, log)
+	l.orderService = service.NewOrder(l.orderStore, log)
+	l.partyService = service.NewParty(l.partyStore, log)
+	l.positionService = service.NewPosition(l.positionStore, log)
+	l.rewardService = service.NewReward(l.rewardStore, log)
+	l.riskFactorService = service.NewRiskFactor(l.riskFactorStore, log)
+	l.riskService = service.NewRisk(l.marginLevelsStore, l.accountStore, log)
+	l.stakeLinkingService = service.NewStakeLinking(l.stakeLinkingStore, log)
+	l.tradeService = service.NewTrade(l.tradeStore, log)
+	l.transferService = service.NewTransfer(l.transfersStore, log)
+	l.withdrawalService = service.NewWithdrawal(l.withdrawalsStore, log)
+	l.chainService = service.NewChain(l.chainStore, log)
 
 	toInit := []interface{ Initialise(context.Context) error }{
-		l.marketDepthServiceV2,
-		l.marketDataServiceV2,
-		l.marketsServiceV2,
+		l.marketDepthService,
+		l.marketDataService,
+		l.marketsService,
 	}
 
 	for _, svc := range toInit {
@@ -457,67 +313,4 @@ func (l *NodeCommand) setupV2Services() error {
 	}
 
 	return nil
-}
-
-func (l *NodeCommand) setupLegacyServices() {
-	// plugins
-	l.settlePlugin = plugins.NewPositions(l.ctx)
-	l.notaryPlugin = plugins.NewNotary(l.ctx)
-	l.assetPlugin = plugins.NewAsset(l.ctx)
-	l.withdrawalPlugin = plugins.NewWithdrawal(l.ctx)
-	l.depositPlugin = plugins.NewDeposit(l.ctx)
-	l.netParamsService = netparams.NewService(l.ctx)
-	l.liquidityService = liquidity.NewService(l.ctx, l.Log, l.conf.Liquidity)
-	l.oracleService = oracles.NewService(l.ctx)
-	l.stakingService = staking.NewService(l.ctx, l.Log)
-
-	// start services
-	l.candleService = candles.NewService(l.Log, l.conf.Candles, l.candleStore)
-	l.tradeService = trades.NewService(l.Log, l.conf.Trades, l.tradeStore, l.settlePlugin)
-	l.marketService = markets.NewService(l.Log, l.conf.Markets, l.marketStore, l.orderStore, l.marketDataStore, l.marketDepthSub)
-	l.riskService = risk.NewService(l.Log, l.conf.Risk, l.riskStore, l.marketStore, l.marketDataStore)
-	l.governanceService = governance.NewService(l.Log, l.conf.Governance, l.broker, l.governanceSub, l.voteSub)
-	l.orderService = orders.NewService(l.Log, l.conf.Orders, l.orderStore, l.timeService)
-	l.feeService = fee.NewService(l.Log, l.conf.Fee, l.marketStore, l.marketDataStore)
-	l.partyService, _ = parties.NewService(l.Log, l.conf.Parties, l.partyStore)
-	l.accountsService = accounts.NewService(l.Log, l.conf.Accounts, l.accounts)
-	l.transfersService = transfers.NewService(l.Log, l.conf.Transfers, l.transferResponseStore, l.transferStore)
-	l.notaryService = notary.NewService(l.Log, l.conf.Notary, l.notaryPlugin)
-	l.assetService = assets.NewService(l.Log, l.conf.Assets, l.assetPlugin)
-	l.eventService = subscribers.NewService(l.broker)
-	l.epochService = epochs.NewService(l.Log, l.conf.Epochs, l.epochStore)
-	l.delegationService = delegations.NewService(l.Log, l.conf.Delegations, l.delegationStore)
-	l.nodeService = nodes.NewService(l.Log, l.conf.Nodes, l.nodeStore, l.epochStore)
-
-	l.broker.SubscribeBatch(
-		l.marketEventSub, l.transferRespSub, l.orderSub, l.accountSub,
-		l.partySub, l.tradeSub, l.marginLevelSub, l.governanceSub,
-		l.voteSub, l.marketDataSub, l.notaryPlugin, l.settlePlugin,
-		l.newMarketSub, l.assetPlugin, l.candleSub, l.withdrawalPlugin,
-		l.depositPlugin, l.marketDepthSub, l.riskFactorSub, l.netParamsService,
-		l.liquidityService, l.marketUpdatedSub, l.oracleService, l.timeUpdateSub,
-		l.nodesSub, l.delegationBalanceSub, l.epochUpdateSub, l.rewardsSub,
-		l.stakingService, l.checkpointSub, l.transferSub,
-	)
-}
-
-func (l *NodeCommand) setupConfigWatchers() {
-	l.configWatcher.OnConfigUpdate(
-		func(cfg config.Config) { l.candleService.ReloadConf(cfg.Candles) },
-		func(cfg config.Config) { l.orderService.ReloadConf(cfg.Orders) },
-		func(cfg config.Config) { l.liquidityService.ReloadConf(cfg.Liquidity) },
-		func(cfg config.Config) { l.tradeService.ReloadConf(cfg.Trades) },
-		func(cfg config.Config) { l.marketService.ReloadConf(cfg.Markets) },
-		func(cfg config.Config) { l.riskService.ReloadConf(cfg.Risk) },
-		func(cfg config.Config) { l.governanceService.ReloadConf(cfg.Governance) },
-		func(cfg config.Config) { l.assetService.ReloadConf(cfg.Assets) },
-		func(cfg config.Config) { l.notaryService.ReloadConf(cfg.Notary) },
-		func(cfg config.Config) { l.transfersService.ReloadConf(cfg.Transfers) },
-		func(cfg config.Config) { l.accountsService.ReloadConf(cfg.Accounts) },
-		func(cfg config.Config) { l.partyService.ReloadConf(cfg.Parties) },
-		func(cfg config.Config) { l.nodeService.ReloadConf(cfg.Nodes) },
-		func(cfg config.Config) { l.epochService.ReloadConf(cfg.Epochs) },
-		func(cfg config.Config) { l.delegationService.ReloadConf(cfg.Delegations) },
-		func(cfg config.Config) { l.checkpointSvc.ReloadConf(cfg.Checkpoint) },
-	)
 }

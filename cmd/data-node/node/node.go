@@ -26,265 +26,145 @@ import (
 
 	"code.vegaprotocol.io/data-node/api"
 
-	"code.vegaprotocol.io/data-node/accounts"
-	"code.vegaprotocol.io/data-node/assets"
 	"code.vegaprotocol.io/data-node/broker"
-	"code.vegaprotocol.io/data-node/candles"
-	"code.vegaprotocol.io/data-node/checkpoint"
 	"code.vegaprotocol.io/data-node/config"
-	"code.vegaprotocol.io/data-node/delegations"
-	"code.vegaprotocol.io/data-node/epochs"
-	"code.vegaprotocol.io/data-node/fee"
 	"code.vegaprotocol.io/data-node/gateway/server"
-	"code.vegaprotocol.io/data-node/governance"
-	"code.vegaprotocol.io/data-node/liquidity"
 	"code.vegaprotocol.io/data-node/logging"
-	"code.vegaprotocol.io/data-node/markets"
 	"code.vegaprotocol.io/data-node/metrics"
-	"code.vegaprotocol.io/data-node/netparams"
-	"code.vegaprotocol.io/data-node/nodes"
-	"code.vegaprotocol.io/data-node/notary"
-	"code.vegaprotocol.io/data-node/oracles"
-	"code.vegaprotocol.io/data-node/orders"
-	"code.vegaprotocol.io/data-node/parties"
-	"code.vegaprotocol.io/data-node/plugins"
 	"code.vegaprotocol.io/data-node/pprof"
-	"code.vegaprotocol.io/data-node/risk"
 	"code.vegaprotocol.io/data-node/sqlstore"
 	"code.vegaprotocol.io/data-node/sqlsubscribers"
-	"code.vegaprotocol.io/data-node/staking"
-	"code.vegaprotocol.io/data-node/storage"
 	"code.vegaprotocol.io/data-node/subscribers"
-	"code.vegaprotocol.io/data-node/trades"
-	"code.vegaprotocol.io/data-node/transfers"
-	"code.vegaprotocol.io/data-node/vegatime"
-	types "code.vegaprotocol.io/protos/vega"
 	vegaprotoapi "code.vegaprotocol.io/protos/vega/api/v1"
 	"code.vegaprotocol.io/shared/paths"
 
 	"golang.org/x/sync/errgroup"
 )
 
-type AccountStore interface {
-	accounts.AccountStore
-	SaveBatch([]*types.Account) error
-	Close() error
-	ReloadConf(storage.Config)
-}
-
-type CandleStore interface {
-	FetchLastCandle(marketID string, interval types.Interval) (*types.Candle, error)
-	GenerateCandlesFromBuffer(marketID string, previousCandlesBuf map[string]types.Candle) error
-	candles.CandleStore
-	Close() error
-	ReloadConf(storage.Config)
-}
-
-type OrderStore interface {
-	orders.OrderStore
-	SaveBatch([]types.Order) error
-	Close() error
-	ReloadConf(storage.Config)
-}
-
-type TradeStore interface {
-	trades.TradeStore
-	SaveBatch([]types.Trade) error
-	Close() error
-	ReloadConf(storage.Config)
-}
-
 // NodeCommand use to implement 'node' command.
 type NodeCommand struct {
 	ctx    context.Context
 	cancel context.CancelFunc
 
-	accounts              AccountStore
-	candleStore           CandleStore
-	orderStore            OrderStore
-	marketStore           *storage.Market
-	marketDataStore       *storage.MarketData
-	tradeStore            TradeStore
-	partyStore            *storage.Party
-	riskStore             *storage.Risk
-	transferResponseStore *storage.TransferResponse
-	nodeStore             *storage.Node
-	epochStore            *storage.Epoch
-	delegationStore       *storage.Delegations
-	checkpointStore       *storage.Checkpoints
-	chainInfoStore        *storage.ChainInfo
-	transferStore         *storage.Transfers
-
 	embeddedPostgres              *embeddedpostgres.EmbeddedPostgres
 	transactionalConnectionSource *sqlstore.ConnectionSource
 
-	// SQL Stores
-	assetStoreSQL               *sqlstore.Assets
-	blockStoreSQL               *sqlstore.Blocks
-	accountStoreSQL             *sqlstore.Accounts
-	balanceStoreSQL             *sqlstore.Balances
-	ledgerSQL                   *sqlstore.Ledger
-	partyStoreSQL               *sqlstore.Parties
-	orderStoreSQL               *sqlstore.Orders
-	tradeStoreSQL               *sqlstore.Trades
-	networkLimitsStoreSQL       *sqlstore.NetworkLimits
-	marketDataStoreSQL          *sqlstore.MarketData
-	rewardStoreSQL              *sqlstore.Rewards
-	delegationStoreSQL          *sqlstore.Delegations
-	marketsStoreSQL             *sqlstore.Markets
-	epochStoreSQL               *sqlstore.Epochs
-	depositStoreSQL             *sqlstore.Deposits
-	withdrawalsStoreSQL         *sqlstore.Withdrawals
-	proposalStoreSQL            *sqlstore.Proposals
-	voteStoreSQL                *sqlstore.Votes
-	marginLevelsStoreSQL        *sqlstore.MarginLevels
-	riskFactorStoreSQL          *sqlstore.RiskFactors
-	netParamStoreSQL            *sqlstore.NetworkParameters
-	checkpointStoreSQL          *sqlstore.Checkpoints
-	oracleSpecStoreSQL          *sqlstore.OracleSpec
-	oracleDataStoreSQL          *sqlstore.OracleData
-	liquidityProvisionStoreSQL  *sqlstore.LiquidityProvision
-	positionStoreSQL            *sqlstore.Positions
-	transfersStoreSQL           *sqlstore.Transfers
-	stakeLinkingStoreSQL        *sqlstore.StakeLinking
-	notaryStoreSQL              *sqlstore.Notary
-	multiSigSignerAddedStoreSQL *sqlstore.ERC20MultiSigSignerEvent
-	keyRotationsStoreSQL        *sqlstore.KeyRotations
-	nodeStoreSQL                *sqlstore.Node
-	candleStoreSQL              *sqlstore.Candles
-	chainStoreSQL               *sqlstore.Chain
+	// Stores
+	assetStore               *sqlstore.Assets
+	blockStore               *sqlstore.Blocks
+	accountStore             *sqlstore.Accounts
+	balanceStore             *sqlstore.Balances
+	ledger                   *sqlstore.Ledger
+	partyStore               *sqlstore.Parties
+	orderStore               *sqlstore.Orders
+	tradeStore               *sqlstore.Trades
+	networkLimitsStore       *sqlstore.NetworkLimits
+	marketDataStore          *sqlstore.MarketData
+	rewardStore              *sqlstore.Rewards
+	delegationStore          *sqlstore.Delegations
+	marketsStore             *sqlstore.Markets
+	epochStore               *sqlstore.Epochs
+	depositStore             *sqlstore.Deposits
+	withdrawalsStore         *sqlstore.Withdrawals
+	proposalStore            *sqlstore.Proposals
+	voteStore                *sqlstore.Votes
+	marginLevelsStore        *sqlstore.MarginLevels
+	riskFactorStore          *sqlstore.RiskFactors
+	netParamStore            *sqlstore.NetworkParameters
+	checkpointStore          *sqlstore.Checkpoints
+	oracleSpecStore          *sqlstore.OracleSpec
+	oracleDataStore          *sqlstore.OracleData
+	liquidityProvisionStore  *sqlstore.LiquidityProvision
+	positionStore            *sqlstore.Positions
+	transfersStore           *sqlstore.Transfers
+	stakeLinkingStore        *sqlstore.StakeLinking
+	notaryStore              *sqlstore.Notary
+	multiSigSignerAddedStore *sqlstore.ERC20MultiSigSignerEvent
+	keyRotationsStore        *sqlstore.KeyRotations
+	nodeStore                *sqlstore.Node
+	candleStore              *sqlstore.Candles
+	chainStore               *sqlstore.Chain
 
-	// SQL Services
-	candleServiceV2             *candlesv2.Svc
-	marketDepthServiceV2        *service.MarketDepth
-	riskServiceV2               *service.Risk
-	marketDataServiceV2         *service.MarketData
-	positionServiceV2           *service.Position
-	tradeServiceV2              *service.Trade
-	ledgerServiceV2             *service.Ledger
-	rewardServiceV2             *service.Reward
-	delegationServiceV2         *service.Delegation
-	assetServiceV2              *service.Asset
-	blockServiceV2              *service.Block
-	partyServiceV2              *service.Party
-	accountServiceV2            *service.Account
-	orderServiceV2              *service.Order
-	networkLimitsServiceV2      *service.NetworkLimits
-	marketsServiceV2            *service.Markets
-	epochServiceV2              *service.Epoch
-	depositServiceV2            *service.Deposit
-	withdrawalServiceV2         *service.Withdrawal
-	governanceServiceV2         *service.Governance
-	riskFactorServiceV2         *service.RiskFactor
-	networkParameterServiceV2   *service.NetworkParameter
-	checkpointServiceV2         *service.Checkpoint
-	oracleSpecServiceV2         *service.OracleSpec
-	oracleDataServiceV2         *service.OracleData
-	liquidityProvisionServiceV2 *service.LiquidityProvision
-	transferServiceV2           *service.Transfer
-	stakeLinkingServiceV2       *service.StakeLinking
-	notaryServiceV2             *service.Notary
-	multiSigServiceV2           *service.MultiSig
-	keyRotationsServiceV2       *service.KeyRotations
-	nodeServiceV2               *service.Node
-	chainServiceV2              *service.Chain
+	// Services
+	candleService             *candlesv2.Svc
+	marketDepthService        *service.MarketDepth
+	riskService               *service.Risk
+	marketDataService         *service.MarketData
+	positionService           *service.Position
+	tradeService              *service.Trade
+	ledgerService             *service.Ledger
+	rewardService             *service.Reward
+	delegationService         *service.Delegation
+	assetService              *service.Asset
+	blockService              *service.Block
+	partyService              *service.Party
+	accountService            *service.Account
+	orderService              *service.Order
+	networkLimitsService      *service.NetworkLimits
+	marketsService            *service.Markets
+	epochService              *service.Epoch
+	depositService            *service.Deposit
+	withdrawalService         *service.Withdrawal
+	governanceService         *service.Governance
+	riskFactorService         *service.RiskFactor
+	networkParameterService   *service.NetworkParameter
+	checkpointService         *service.Checkpoint
+	oracleSpecService         *service.OracleSpec
+	oracleDataService         *service.OracleData
+	liquidityProvisionService *service.LiquidityProvision
+	transferService           *service.Transfer
+	stakeLinkingService       *service.StakeLinking
+	notaryService             *service.Notary
+	multiSigService           *service.MultiSig
+	keyRotationsService       *service.KeyRotations
+	nodeService               *service.Node
+	chainService              *service.Chain
 
 	vegaCoreServiceClient vegaprotoapi.CoreServiceClient
 
 	broker    *broker.Broker
 	sqlBroker broker.SqlStoreEventBroker
 
-	transferRespSub      *subscribers.TransferResponse
-	marketEventSub       *subscribers.MarketEvent
-	orderSub             *subscribers.OrderEvent
-	accountSub           *subscribers.AccountSub
-	partySub             *subscribers.PartySub
-	tradeSub             *subscribers.TradeSub
-	marginLevelSub       *subscribers.MarginLevelSub
-	governanceSub        *subscribers.GovernanceDataSub
-	voteSub              *subscribers.VoteSub
-	marketDataSub        *subscribers.MarketDataSub
-	newMarketSub         *subscribers.Market
-	marketUpdatedSub     *subscribers.MarketUpdated
-	candleSub            *subscribers.CandleSub
-	riskFactorSub        *subscribers.RiskFactorSub
-	marketDepthSub       *subscribers.MarketDepthBuilder
-	nodesSub             *subscribers.NodesSub
-	delegationBalanceSub *subscribers.DelegationBalanceSub
-	epochUpdateSub       *subscribers.EpochUpdateSub
-	timeUpdateSub        *subscribers.Time
-	rewardsSub           *subscribers.RewardCounters
-	checkpointSub        *subscribers.CheckpointSub
-	transferSub          *subscribers.TransferSub
+	accountSub             *sqlsubscribers.Account
+	assetSub               *sqlsubscribers.Asset
+	partySub               *sqlsubscribers.Party
+	transferResponseSub    *sqlsubscribers.TransferResponse
+	orderSub               *sqlsubscribers.Order
+	networkLimitsSub       *sqlsubscribers.NetworkLimits
+	marketDataSub          *sqlsubscribers.MarketData
+	tradesSub              *sqlsubscribers.TradeSubscriber
+	rewardsSub             *sqlsubscribers.Reward
+	delegationsSub         *sqlsubscribers.Delegation
+	marketCreatedSub       *sqlsubscribers.MarketCreated
+	marketUpdatedSub       *sqlsubscribers.MarketUpdated
+	epochSub               *sqlsubscribers.Epoch
+	depositSub             *sqlsubscribers.Deposit
+	withdrawalSub          *sqlsubscribers.Withdrawal
+	proposalsSub           *sqlsubscribers.Proposal
+	votesSub               *sqlsubscribers.Vote
+	marginLevelsSub        *sqlsubscribers.MarginLevels
+	riskFactorSub          *sqlsubscribers.RiskFactor
+	netParamSub            *sqlsubscribers.NetworkParameter
+	checkpointSub          *sqlsubscribers.Checkpoint
+	oracleSpecSub          *sqlsubscribers.OracleSpec
+	oracleDataSub          *sqlsubscribers.OracleData
+	liquidityProvisionSub  *sqlsubscribers.LiquidityProvision
+	positionsSub           *sqlsubscribers.Position
+	transferSub            *sqlsubscribers.Transfer
+	stakeLinkingSub        *sqlsubscribers.StakeLinking
+	notarySub              *sqlsubscribers.Notary
+	multiSigSignerEventSub *sqlsubscribers.ERC20MultiSigSignerEvent
+	keyRotationsSub        *sqlsubscribers.KeyRotation
+	nodeSub                *sqlsubscribers.Node
+	marketDepthSub         *sqlsubscribers.MarketDepth
 
-	accountSubSQL             *sqlsubscribers.Account
-	assetSubSQL               *sqlsubscribers.Asset
-	partySubSQL               *sqlsubscribers.Party
-	transferResponseSubSQL    *sqlsubscribers.TransferResponse
-	orderSubSQL               *sqlsubscribers.Order
-	networkLimitsSubSQL       *sqlsubscribers.NetworkLimits
-	marketDataSubSQL          *sqlsubscribers.MarketData
-	tradesSubSQL              *sqlsubscribers.TradeSubscriber
-	rewardsSubSQL             *sqlsubscribers.Reward
-	delegationsSubSQL         *sqlsubscribers.Delegation
-	marketCreatedSubSQL       *sqlsubscribers.MarketCreated
-	marketUpdatedSubSQL       *sqlsubscribers.MarketUpdated
-	epochSubSQL               *sqlsubscribers.Epoch
-	depositSubSQL             *sqlsubscribers.Deposit
-	withdrawalSubSQL          *sqlsubscribers.Withdrawal
-	proposalsSubSQL           *sqlsubscribers.Proposal
-	votesSubSQL               *sqlsubscribers.Vote
-	marginLevelsSubSQL        *sqlsubscribers.MarginLevels
-	riskFactorSubSQL          *sqlsubscribers.RiskFactor
-	netParamSubSQL            *sqlsubscribers.NetworkParameter
-	checkpointSubSQL          *sqlsubscribers.Checkpoint
-	oracleSpecSubSQL          *sqlsubscribers.OracleSpec
-	oracleDataSubSQL          *sqlsubscribers.OracleData
-	liquidityProvisionSubSQL  *sqlsubscribers.LiquidityProvision
-	positionsSubSQL           *sqlsubscribers.Position
-	transferSubSQL            *sqlsubscribers.Transfer
-	stakeLinkingSubSQL        *sqlsubscribers.StakeLinking
-	notarySubSQL              *sqlsubscribers.Notary
-	multiSigSignerEventSubSQL *sqlsubscribers.ERC20MultiSigSignerEvent
-	keyRotationsSubSQL        *sqlsubscribers.KeyRotation
-	nodeSubSQL                *sqlsubscribers.Node
-	marketDepthSubSQL         *sqlsubscribers.MarketDepth
-
-	candleService     *candles.Svc
-	tradeService      *trades.Svc
-	marketService     *markets.Svc
-	orderService      *orders.Svc
-	liquidityService  *liquidity.Svc
-	partyService      *parties.Svc
-	timeService       *vegatime.Svc
-	accountsService   *accounts.Svc
-	transfersService  *transfers.Svc
-	riskService       *risk.Svc
-	governanceService *governance.Svc
-	notaryService     *notary.Svc
-	assetService      *assets.Svc
-	feeService        *fee.Svc
-	eventService      *subscribers.Service
-	netParamsService  *netparams.Service
-	oracleService     *oracles.Service
-	nodeService       *nodes.Service
-	epochService      *epochs.Service
-	delegationService *delegations.Service
-	stakingService    *staking.Service
-	checkpointSvc     *checkpoint.Svc
+	eventService *subscribers.Service
 
 	pproffhandlr  *pprof.Pprofhandler
 	Log           *logging.Logger
 	vegaPaths     paths.Paths
 	configWatcher *config.Watcher
 	conf          config.Config
-
-	// plugins
-	settlePlugin     *plugins.Positions
-	notaryPlugin     *plugins.Notary
-	assetPlugin      *plugins.Asset
-	withdrawalPlugin *plugins.Withdrawal
-	depositPlugin    *plugins.Deposit
 
 	Version     string
 	VersionHash string
@@ -320,7 +200,7 @@ func (l *NodeCommand) runNode(args []string) error {
 	eg, ctx := errgroup.WithContext(ctx)
 
 	// gRPC server
-	grpcServer := l.createGRPCServer(l.conf.API, bool(l.conf.SQLStore.Enabled))
+	grpcServer := l.createGRPCServer(l.conf.API)
 
 	// watch configs
 	l.configWatcher.OnConfigUpdate(
@@ -330,46 +210,19 @@ func (l *NodeCommand) runNode(args []string) error {
 	// start the grpc server
 	eg.Go(func() error { return grpcServer.Start(ctx, nil) })
 
-	if l.conf.SQLStore.Enabled && l.conf.API.ExposeLegacyAPI {
-		l.Log.Info("Running legacy APIs", logging.Int("port offset", l.conf.API.LegacyAPIPortOffset))
-
-		apiConfig := addLegacyPortOffsetToAPIPorts(l.conf.API, l.conf.API.LegacyAPIPortOffset)
-		legacyGRPCServer := l.createGRPCServer(apiConfig, false)
-
-		l.configWatcher.OnConfigUpdate(
-			func(cfg config.Config) {
-				legacyGRPCServer.ReloadConf(addLegacyPortOffsetToAPIPorts(cfg.API, l.conf.API.LegacyAPIPortOffset))
-			},
-		)
-
-		eg.Go(func() error { return legacyGRPCServer.Start(ctx, nil) })
-	}
-
 	// start gateway
 	if l.conf.GatewayEnabled {
 		gty := server.New(l.conf.Gateway, l.Log, l.vegaPaths)
-
 		eg.Go(func() error { return gty.Start(ctx) })
-
-		if l.conf.SQLStore.Enabled && l.conf.API.ExposeLegacyAPI {
-			legacyAPIGatewayConf := l.conf.Gateway
-			legacyAPIGatewayConf.Node.Port = legacyAPIGatewayConf.Node.Port + l.conf.API.LegacyAPIPortOffset
-			legacyAPIGatewayConf.GraphQL.Port = legacyAPIGatewayConf.GraphQL.Port + l.conf.API.LegacyAPIPortOffset
-			legacyAPIGatewayConf.REST.Port = legacyAPIGatewayConf.REST.Port + l.conf.API.LegacyAPIPortOffset
-			legacyGty := server.New(legacyAPIGatewayConf, l.Log, l.vegaPaths)
-			eg.Go(func() error { return legacyGty.Start(ctx) })
-		}
 	}
 
 	eg.Go(func() error {
 		return l.broker.Receive(ctx)
 	})
 
-	if l.conf.SQLStore.Enabled {
-		eg.Go(func() error {
-			return l.sqlBroker.Receive(ctx)
-		})
-	}
+	eg.Go(func() error {
+		return l.sqlBroker.Receive(ctx)
+	})
 
 	// waitSig will wait for a sigterm or sigint interrupt.
 	eg.Go(func() error {
@@ -399,78 +252,44 @@ func (l *NodeCommand) runNode(args []string) error {
 	return err
 }
 
-func (l *NodeCommand) createGRPCServer(config api.Config, useSQLStores bool) *api.GRPCServer {
+func (l *NodeCommand) createGRPCServer(config api.Config) *api.GRPCServer {
 	grpcServer := api.NewGRPCServer(
 		l.Log,
 		config,
-		useSQLStores,
 		l.vegaCoreServiceClient,
-		l.timeService,
-		l.marketService,
-		l.partyService,
-		l.orderService,
-		l.liquidityService,
-		l.tradeService,
-		l.candleService,
-		l.accountsService,
-		l.transfersService,
-		l.riskService,
-		l.governanceService,
-		l.notaryService,
-		l.assetService,
-		l.feeService,
 		l.eventService,
-		l.oracleService,
-		l.withdrawalPlugin,
-		l.depositPlugin,
-		l.marketDepthSub,
-		l.netParamsService,
-		l.nodeService,
-		l.epochService,
+		l.orderService,
+		l.networkLimitsService,
+		l.marketDataService,
+		l.tradeService,
+		l.assetService,
+		l.accountService,
+		l.rewardService,
+		l.marketsService,
 		l.delegationService,
-		l.rewardsSub,
-		l.stakingService,
-		l.checkpointSvc,
-
-		l.orderServiceV2,
-		l.networkLimitsServiceV2,
-		l.marketDataServiceV2,
-		l.tradeServiceV2,
-		l.assetServiceV2,
-		l.accountServiceV2,
-		l.rewardServiceV2,
-		l.marketsServiceV2,
-		l.delegationServiceV2,
-		l.epochServiceV2,
-		l.depositServiceV2,
-		l.withdrawalServiceV2,
-		l.governanceServiceV2,
-		l.riskFactorServiceV2,
-		l.riskServiceV2,
-		l.networkParameterServiceV2,
-		l.blockServiceV2,
-		l.checkpointServiceV2,
-		l.partyServiceV2,
-		l.candleServiceV2,
-		l.oracleSpecServiceV2,
-		l.oracleDataServiceV2,
-		l.liquidityProvisionServiceV2,
-		l.positionServiceV2,
-		l.transferServiceV2,
-		l.stakeLinkingServiceV2,
-		l.notaryServiceV2,
-		l.multiSigServiceV2,
-		l.keyRotationsServiceV2,
-		l.nodeServiceV2,
-		l.marketDepthServiceV2,
-		l.ledgerServiceV2,
+		l.epochService,
+		l.depositService,
+		l.withdrawalService,
+		l.governanceService,
+		l.riskFactorService,
+		l.riskService,
+		l.networkParameterService,
+		l.blockService,
+		l.checkpointService,
+		l.partyService,
+		l.candleService,
+		l.oracleSpecService,
+		l.oracleDataService,
+		l.liquidityProvisionService,
+		l.positionService,
+		l.transferService,
+		l.stakeLinkingService,
+		l.notaryService,
+		l.multiSigService,
+		l.keyRotationsService,
+		l.nodeService,
+		l.marketDepthService,
+		l.ledgerService,
 	)
 	return grpcServer
-}
-
-func addLegacyPortOffsetToAPIPorts(original api.Config, portOffset int) api.Config {
-	apiConfig := original
-	apiConfig.WebUIPort = apiConfig.WebUIPort + portOffset
-	apiConfig.Port = apiConfig.Port + portOffset
-	return apiConfig
 }

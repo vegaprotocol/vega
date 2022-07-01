@@ -214,7 +214,6 @@ func newTestConfig() (*config.Config, error) {
 	}
 
 	cfg := config.NewDefaultConfig()
-	cfg.SQLStore.Enabled = true
 	cfg.Broker.UseEventFile = true
 	cfg.Broker.FileEventSourceConfig.File = filepath.Join(cwd, "testdata", "system_tests.evt")
 	cfg.Broker.FileEventSourceConfig.TimeBetweenBlocks = encoding.Duration{Duration: 0}

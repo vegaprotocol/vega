@@ -22,42 +22,17 @@ import (
 	"code.vegaprotocol.io/data-node/candlesv2"
 	"code.vegaprotocol.io/data-node/service"
 
-	"code.vegaprotocol.io/data-node/accounts"
 	"code.vegaprotocol.io/data-node/api"
 	"code.vegaprotocol.io/data-node/api/mocks"
-	"code.vegaprotocol.io/data-node/assets"
 	"code.vegaprotocol.io/data-node/broker"
-	"code.vegaprotocol.io/data-node/candles"
-	"code.vegaprotocol.io/data-node/checkpoint"
 	"code.vegaprotocol.io/data-node/config"
-	"code.vegaprotocol.io/data-node/delegations"
-	"code.vegaprotocol.io/data-node/epochs"
-	"code.vegaprotocol.io/data-node/fee"
-	"code.vegaprotocol.io/data-node/governance"
 	vgtesting "code.vegaprotocol.io/data-node/libs/testing"
-	"code.vegaprotocol.io/data-node/liquidity"
 	"code.vegaprotocol.io/data-node/logging"
-	"code.vegaprotocol.io/data-node/markets"
-	"code.vegaprotocol.io/data-node/netparams"
-	"code.vegaprotocol.io/data-node/nodes"
-	"code.vegaprotocol.io/data-node/notary"
-	"code.vegaprotocol.io/data-node/oracles"
-	"code.vegaprotocol.io/data-node/orders"
-	"code.vegaprotocol.io/data-node/parties"
-	"code.vegaprotocol.io/data-node/plugins"
-	"code.vegaprotocol.io/data-node/risk"
 	"code.vegaprotocol.io/data-node/sqlstore"
-	"code.vegaprotocol.io/data-node/staking"
-	"code.vegaprotocol.io/data-node/storage"
 	"code.vegaprotocol.io/data-node/subscribers"
-	"code.vegaprotocol.io/data-node/trades"
-	"code.vegaprotocol.io/data-node/transfers"
-	"code.vegaprotocol.io/data-node/vegatime"
 	"github.com/golang/protobuf/proto"
-	"github.com/stretchr/testify/require"
 
 	protoapi "code.vegaprotocol.io/protos/data-node/api/v1"
-	types "code.vegaprotocol.io/protos/vega"
 	vegaprotoapi "code.vegaprotocol.io/protos/vega/api/v1"
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 
@@ -75,18 +50,6 @@ type GRPCServer interface {
 	Stop()
 }
 
-type govStub struct{}
-
-type voteStub struct{}
-
-func (g govStub) Filter(_ bool, filters ...subscribers.ProposalFilter) []*types.GovernanceData {
-	return nil
-}
-
-func (v voteStub) Filter(filters ...subscribers.VoteFilter) []*types.Vote {
-	return nil
-}
-
 func waitForNode(t *testing.T, ctx context.Context, conn *grpc.ClientConn) {
 	const maxSleep = 2000 // milliseconds
 
@@ -94,7 +57,7 @@ func waitForNode(t *testing.T, ctx context.Context, conn *grpc.ClientConn) {
 
 	sleepTime := 10 // milliseconds
 	for sleepTime < maxSleep {
-		_, err := c.GetProposals(ctx, &protoapi.GetProposalsRequest{})
+		_, err := c.Markets(ctx, &protoapi.MarketsRequest{})
 		if err == nil {
 			return
 		}
@@ -121,10 +84,7 @@ func getTestGRPCServer(
 	mockCoreServiceClient *mocks.MockCoreServiceClient,
 	err error,
 ) {
-	vegaPaths, cleanupFn := vgtesting.NewVegaPaths()
-
-	st, err := storage.InitialiseStorage(vegaPaths)
-	require.NoError(t, err)
+	_, cleanupFn := vgtesting.NewVegaPaths()
 
 	conf := config.NewDefaultConfig()
 	conf.API.IP = "127.0.0.1"
@@ -137,158 +97,24 @@ func getTestGRPCServer(
 
 	mockCoreServiceClient = mocks.NewMockCoreServiceClient(mockCtrl)
 
-	ctx, cancel := context.WithCancel(ctx)
-
-	// Account Store
-	accountStore, err := storage.NewAccounts(logger, st.AccountsHome, conf.Storage, cancel)
-	if err != nil {
-		err = errors.Wrap(err, "failed to create account store")
-		return
-	}
-
-	// Candle Store
-	candleStore, err := storage.NewCandles(logger, st.CandlesHome, conf.Storage, cancel)
-	if err != nil {
-		err = errors.Wrap(err, "failed to create candle store")
-		return
-	}
-
-	// Market Store
-	marketStore, err := storage.NewMarkets(logger, st.MarketsHome, conf.Storage, cancel)
-	if err != nil {
-		err = errors.Wrap(err, "failed to create market store")
-		return
-	}
-
-	// Order Store
-	orderStore, err := storage.NewOrders(logger, st.OrdersHome, conf.Storage, cancel)
-	if err != nil {
-		err = errors.Wrap(err, "failed to create order store")
-		return
-	}
-
-	// Party Store
-	partyStore, err := storage.NewParties(conf.Storage)
-	if err != nil {
-		err = errors.Wrap(err, "failed to create party store")
-		return
-	}
-
-	// Risk Store
-	riskStore := storage.NewRisks(logger, conf.Storage)
-
-	transferResponseStore, err := storage.NewTransferResponses(logger, conf.Storage)
-	if err != nil {
-		err = errors.Wrap(err, "failed to create risk store")
-		return
-	}
-
-	// Trade Store
-	tradeStore, err := storage.NewTrades(logger, st.TradesHome, conf.Storage, cancel)
-	if err != nil {
-		err = errors.Wrap(err, "failed to create trade store")
-		return
-	}
-
-	nodeStore := storage.NewNode(logger, conf.Storage)
-	epochStore := storage.NewEpoch(logger, nodeStore, conf.Storage)
-
-	// checkpoint storage
-	checkpointStore, err := storage.NewCheckpoints(logger, st.CheckpointsHome, conf.Storage, cancel)
-	if err != nil {
-		err = fmt.Errorf("failed to create checkpoint store: %w", err)
-		return
-	}
-
-	// Account Service
-	accountService := accounts.NewService(logger, conf.Accounts, accountStore)
-
-	// Candle Service
-	candleService := candles.NewService(logger, conf.Candles, candleStore)
-	marketDataStore := storage.NewMarketData(logger, conf.Storage)
-
-	marketDepth := subscribers.NewMarketDepthBuilder(ctx, logger, true)
-	if marketDepth == nil {
-		return
-	}
-
-	// Market Service
-	marketService := markets.NewService(logger, conf.Markets, marketStore, orderStore, marketDataStore, marketDepth)
-	// Time Service (required for Order Service)
-	timeService := vegatime.New(conf.Time)
-
-	// Order Service
-	orderService := orders.NewService(logger, conf.Orders, orderStore, timeService)
-
-	// Party Service
-	partyService, err := parties.NewService(logger, conf.Parties, partyStore)
-	if err != nil {
-		err = errors.Wrap(err, "failed to create party service")
-		return
-	}
-
-	// Trade Service
-	tradeService := trades.NewService(logger, conf.Trades, tradeStore, nil)
-
-	// TransferResponse Service
-	transferResponseService := transfers.NewService(logger, conf.Transfers, transferResponseStore, nil)
-	if err != nil {
-		err = errors.Wrap(err, "failed to create trade service")
-		return
-	}
-
-	liquidityService := liquidity.NewService(ctx, logger, conf.Liquidity)
-
-	riskService := risk.NewService(logger, conf.Risk, riskStore, marketStore, marketDataStore)
-
-	nodeService := nodes.NewService(logger, conf.Nodes, nodeStore, epochStore)
-	epochService := epochs.NewService(logger, conf.Epochs, epochStore)
-
-	// stub...
-	gov, vote := govStub{}, voteStub{}
-
-	chainInfoStore, err := storage.NewChainInfo(logger, st.ChainInfoHome, conf.Storage, cancel)
-	if err != nil {
-		t.Fatalf("failed to create chain info store: %v", err)
-	}
-
 	eventSource, err := broker.NewEventSource(conf.Broker, logger)
 	if err != nil {
 		t.Fatalf("failed to create event source: %v", err)
 	}
 
-	broker, err := broker.New(ctx, logger, conf.Broker, chainInfoStore, eventSource)
+	conf.CandlesV2.CandleStore.DefaultCandleIntervals = ""
+
+	sqlConn := &sqlstore.ConnectionSource{}
+	sqlChainStore := sqlstore.NewChain(sqlConn)
+	sqlChainService := service.NewChain(sqlChainStore, logger)
+
+	broker, err := broker.New(ctx, logger, conf.Broker, sqlChainService, eventSource)
 	if err != nil {
 		err = errors.Wrap(err, "failed to create broker")
 		return
 	}
 
-	governanceService := governance.NewService(logger, conf.Governance, broker, gov, vote)
-	checkpointSvc := checkpoint.NewService(logger, conf.Checkpoint, checkpointStore)
-
-	nplugin := plugins.NewNotary(context.Background())
-	notaryService := notary.NewService(logger, conf.Notary, nplugin)
-
-	aplugin := plugins.NewAsset(context.Background())
-	assetService := assets.NewService(logger, conf.Assets, aplugin)
-	feeService := fee.NewService(logger, conf.Fee, marketStore, marketDataStore)
 	eventService := subscribers.NewService(broker)
-
-	deposit := plugins.NewDeposit(ctx)
-	withdrawal := plugins.NewWithdrawal(ctx)
-	netparams := netparams.NewService(ctx)
-	oracleService := oracles.NewService(ctx)
-	rewardsService := subscribers.NewRewards(ctx, logger, true)
-
-	delegationStore := storage.NewDelegations(logger, conf.Storage)
-	delegationService := delegations.NewService(logger, conf.Delegations, delegationStore)
-
-	stakingService := staking.NewService(ctx, logger)
-
-	conf.CandlesV2.CandleStore.DefaultCandleIntervals = ""
-
-	sqlConn := &sqlstore.ConnectionSource{}
-
 	sqlOrderStore := sqlstore.NewOrders(sqlConn, logger)
 	sqlOrderService := service.NewOrder(sqlOrderStore, logger)
 	sqlNetworkLimitsService := service.NewNetworkLimits(sqlstore.NewNetworkLimits(sqlConn), logger)
@@ -327,34 +153,8 @@ func getTestGRPCServer(
 	g := api.NewGRPCServer(
 		logger,
 		conf.API,
-		false,
 		mockCoreServiceClient,
-		timeService,
-		marketService,
-		partyService,
-		orderService,
-		liquidityService,
-		tradeService,
-		candleService,
-		accountService,
-		transferResponseService,
-		riskService,
-		governanceService,
-		notaryService,
-		assetService,
-		feeService,
 		eventService,
-		oracleService,
-		withdrawal,
-		deposit,
-		marketDepth,
-		netparams,
-		nodeService,
-		epochService,
-		delegationService,
-		rewardsService,
-		stakingService,
-		checkpointSvc,
 		sqlOrderService,
 		sqlNetworkLimitsService,
 		sqlMarketDataService,
@@ -395,8 +195,6 @@ func getTestGRPCServer(
 
 	tidy = func() {
 		mockCtrl.Finish()
-		cancel()
-		st.Purge()
 		cleanupFn()
 	}
 
