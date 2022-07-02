@@ -58,11 +58,13 @@ func New(
 ) (p *Protocol, err error) {
 	defer func() {
 		if err != nil {
-			ids := p.confWatcher.OnConfigUpdateWithID(
-				func(cfg config.Config) { p.ReloadConf(cfg.Processor) },
-			)
-			p.confListenerIDs = ids
+			return
 		}
+
+		ids := p.confWatcher.OnConfigUpdateWithID(
+			func(cfg config.Config) { p.ReloadConf(cfg.Processor) },
+		)
+		p.confListenerIDs = ids
 	}()
 
 	svcs, err := newServices(
