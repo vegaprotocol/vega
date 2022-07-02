@@ -58,6 +58,7 @@ func New(
 ) (p *Protocol, err error) {
 	defer func() {
 		if err != nil {
+			log.Error("unable to start protocol", logging.Error(err))
 			return
 		}
 
