@@ -457,13 +457,13 @@ func (s *OrderBookSide) fakeUncrossAuction(orders []*types.Order) ([]*types.Trad
 			if fake.Remaining == 0 {
 				iOrder++
 				if iOrder >= nOrders {
-					return trades, err
+					return trades, nil
 				}
 				fake = orders[iOrder].Clone()
 			}
 		}
 	}
-	return trades, err
+	return trades, nil
 }
 
 func clonePriceLevel(lvl *PriceLevel) *PriceLevel {
