@@ -451,7 +451,7 @@ func (b *OrderBook) GetIndicativeTrades() ([]*types.Trade, error) {
 	uncrossOrders = uncrossingSide.ExtractOrders(price, volume, false)
 	opSide := b.getOppositeSide(uncrossSide)
 	output := make([]*types.Trade, 0, len(uncrossOrders))
-	trades, err := opSide.fakeUncrossAuction(uncrossOrders, false)
+	trades, err := opSide.fakeUncrossAuction(uncrossOrders)
 	if err != nil {
 		return nil, err
 	}

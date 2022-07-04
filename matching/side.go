@@ -414,8 +414,8 @@ func (s *OrderBookSide) fakeUncross(agg *types.Order, checkWashTrades bool) ([]*
 }
 
 // fakeUncrossAuction returns hypotehetical trades if the order book side were to be uncrossed with the agg orders supplied,
-// checkWashTrades checks non-FOK orders for wash trades if set to true (FOK orders are always checked for wash trades).
-func (s *OrderBookSide) fakeUncrossAuction(orders []*types.Order, checkWashTrades bool) ([]*types.Trade, error) {
+// wash trades are allowed
+func (s *OrderBookSide) fakeUncrossAuction(orders []*types.Order) ([]*types.Trade, error) {
 	// in here we iterate from the end, as it's easier to remove the
 	// price levels from the back of the slice instead of from the front
 	// also it will allow us to reduce allocations
@@ -449,11 +449,12 @@ func (s *OrderBookSide) fakeUncrossAuction(orders []*types.Order, checkWashTrade
 				continue
 			}
 
-			_, ntrades, _, err = lvl.uncross(fake, checkWashTrades)
-			washTrade := err != nil && err == ErrWashTrade
+			_, ntrades, _, err = lvl.uncross(fake, false)
+			if err != nil {
+				return nil, err
+			}
 			trades = append(trades, ntrades...)
-			// move to the next order if a wash trade is detected
-			if fake.Remaining == 0 || washTrade {
+			if fake.Remaining == 0 {
 				iOrder++
 				if iOrder >= nOrders {
 					return trades, err
