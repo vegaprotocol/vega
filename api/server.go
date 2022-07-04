@@ -50,7 +50,6 @@ type EventService interface {
 // GRPCServer represent the grpc api provided by the vega node
 type GRPCServer struct {
 	Config
-	useSQLStores          bool
 	log                   *logging.Logger
 	srv                   *grpc.Server
 	vegaCoreServiceClient CoreServiceClient
@@ -333,7 +332,6 @@ func (g *GRPCServer) Start(ctx context.Context, lis net.Listener) error {
 	tradingDataSvcV2 := &tradingDataServiceV2{
 		config:               g.Config,
 		log:                  g.log,
-		v2ApiEnabled:         g.useSQLStores,
 		orderService:         g.orderService,
 		networkLimitsService: g.networkLimitsService,
 		marketDataService:    g.marketDataService,
