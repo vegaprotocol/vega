@@ -58,11 +58,14 @@ func New(
 ) (p *Protocol, err error) {
 	defer func() {
 		if err != nil {
-			ids := p.confWatcher.OnConfigUpdateWithID(
-				func(cfg config.Config) { p.ReloadConf(cfg.Processor) },
-			)
-			p.confListenerIDs = ids
+			log.Error("unable to start protocol", logging.Error(err))
+			return
 		}
+
+		ids := p.confWatcher.OnConfigUpdateWithID(
+			func(cfg config.Config) { p.ReloadConf(cfg.Processor) },
+		)
+		p.confListenerIDs = ids
 	}()
 
 	svcs, err := newServices(
