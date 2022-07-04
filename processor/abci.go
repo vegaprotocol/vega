@@ -560,7 +560,9 @@ func (app *App) OnInitChain(req tmtypes.RequestInitChain) tmtypes.ResponseInitCh
 		app.log.Fatal("couldn't initialise vega with the genesis block", logging.Error(err))
 	}
 
-	return tmtypes.ResponseInitChain{}
+	return tmtypes.ResponseInitChain{
+		Validators: app.top.GetValidatorPowerUpdates(),
+	}
 }
 
 func (app *App) OnEndBlock(req tmtypes.RequestEndBlock) (ctx context.Context, resp tmtypes.ResponseEndBlock) {

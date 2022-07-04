@@ -114,7 +114,7 @@ func (t *Topology) Load(ctx context.Context, data []byte) error {
 		vUpdates = append(vUpdates, update)
 	}
 
-	// setting this to true so that at the end of the block
+	// setting this to true so we can pass the powers back to tendermint after initChain
 	t.validatorPowerUpdates = vUpdates
 	t.newEpochStarted = true
 	return nil
