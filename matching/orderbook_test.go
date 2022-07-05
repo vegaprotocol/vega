@@ -3055,7 +3055,7 @@ func TestOrderBook_IndicativePriceAndVolume9(t *testing.T) {
 	}
 }
 
-// check behaviour consistent in the presence of wash trades
+// check behaviour consistent in the presence of wash trades.
 func TestOrderBook_IndicativePriceAndVolume10(t *testing.T) {
 	market := "testOrderbook"
 	book := getTestOrderBook(t, market)

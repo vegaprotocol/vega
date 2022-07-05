@@ -413,8 +413,7 @@ func (s *OrderBookSide) fakeUncross(agg *types.Order, checkWashTrades bool) ([]*
 	return trades, err
 }
 
-// fakeUncrossAuction returns hypotehetical trades if the order book side were to be uncrossed with the agg orders supplied,
-// wash trades are allowed
+// fakeUncrossAuction returns hypotehetical trades if the order book side were to be uncrossed with the agg orders supplied, wash trades are allowed.
 func (s *OrderBookSide) fakeUncrossAuction(orders []*types.Order) ([]*types.Trade, error) {
 	// in here we iterate from the end, as it's easier to remove the
 	// price levels from the back of the slice instead of from the front
@@ -467,7 +466,6 @@ func (s *OrderBookSide) fakeUncrossAuction(orders []*types.Order) ([]*types.Trad
 }
 
 func clonePriceLevel(lvl *PriceLevel) *PriceLevel {
-
 	orders := make([]*types.Order, 0, len(lvl.orders))
 	for _, o := range lvl.orders {
 		orders = append(orders, o.Clone())
