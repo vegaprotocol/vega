@@ -25,8 +25,8 @@
 - [5546](https://github.com/vegaprotocol/vega/issues/5546) - Fix collateral checkpoint to unlock locked reward account balance
 - [5194](https://github.com/vegaprotocol/vega/issues/5194) - Fix market trading mode vs market state
 - [5432](https://github.com/vegaprotocol/vega/issues/5431) - Do not accept transaction with unexpected public keys
-- [5478](https://github.com/vegaprotocol/vega/issues/5478) - Assure uncross and fakeUncross are in line with each other
-- [5480](https://github.com/vegaprotocol/vega/issues/5480) - Assure GetIndicativeTrades is in line with actual uncrossing trades
+- [5478](https://github.com/vegaprotocol/vega/issues/5478) - Assure uncross and fake uncross are in line with each other
+- [5480](https://github.com/vegaprotocol/vega/issues/5480) - Assure indicative trades are in line with actual uncrossing trades
 
 ## 0.52.0
 
