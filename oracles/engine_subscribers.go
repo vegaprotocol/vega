@@ -29,6 +29,11 @@ type OnMatchedOracleData func(ctx context.Context, data OracleData) error
 // The order between specs and subscribers is preserved.
 type OracleSpecPredicate func(spec OracleSpec) (bool, error)
 
+// OracleSubscriptionPredicate describes the predicate used to check if any
+// of the currently existing subscriptions expects the public keys inside
+// the incoming OracleSpec object.
+type OracleSubscriptionPredicate func(spec OracleSpec) bool
+
 // SubscriptionID is a unique identifier referencing the subscription of an
 // OnMatchedOracleData to an OracleSpec.
 type SubscriptionID uint64
@@ -72,6 +77,19 @@ func newSpecSubscriptions() specSubscriptions {
 		subscriptions:       []*specSubscription{},
 		subscriptionsMatrix: map[SubscriptionID]OracleSpecID{},
 	}
+}
+
+// hasAnySubscribers checks if any of the subscriptions contains public keys that
+// match the given ones by the predicate.
+// Returns fast on the first match.
+func (s specSubscriptions) hasAnySubscribers(predicate OracleSubscriptionPredicate) bool {
+	for _, subscription := range s.subscriptions {
+		if predicate(subscription.spec) {
+			return true
+		}
+	}
+
+	return false
 }
 
 // filterSubscribers collects the subscribers that match the predicate on the

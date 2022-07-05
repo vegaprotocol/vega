@@ -203,6 +203,7 @@ type Oracle struct {
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/oracles_engine_mock.go -package mocks code.vegaprotocol.io/vega/processor OraclesEngine
 type OraclesEngine interface {
 	BroadcastData(context.Context, oracles.OracleData) error
+	ListensToPubKeys(oracles.OracleData) bool
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/oracle_adaptors_mock.go -package mocks code.vegaprotocol.io/vega/processor OracleAdaptors

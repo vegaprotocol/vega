@@ -48,6 +48,7 @@ import (
 
 var (
 	ErrPublicKeyCannotSubmitTransactionWithNoBalance  = errors.New("public key cannot submit transaction without balance")
+	ErrUnexpectedTxPubKey                             = errors.New("no one listens to the public keys that signed this oracle data")
 	ErrTradingDisabled                                = errors.New("trading disabled")
 	ErrNoTransactionAllowedDuringBootstrap            = errors.New("no transaction allowed during the bootstraping period")
 	ErrMarketProposalDisabled                         = errors.New("market proposal disabled")
@@ -55,6 +56,9 @@ var (
 	ErrNonValidatorTransactionDisabledDuringBootstrap = errors.New("non validator transaction disabled during bootstrap")
 	ErrCheckpointRestoreDisabledDuringBootstrap       = errors.New("checkpoint restore disabled during bootstrap")
 	ErrAwaitingCheckpointRestore                      = errors.New("transactions not allowed while waiting for checkpoint restore")
+	ErrOracleDataNormalization                        = func(err error) error {
+		return fmt.Errorf("error normalizing incoming oracle data: %w", err)
+	}
 )
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/checkpoint_mock.go -package mocks code.vegaprotocol.io/vega/processor Checkpoint
@@ -1244,9 +1248,16 @@ func (app *App) CheckSubmitOracleData(_ context.Context, tx abci.Tx) error {
 	}
 
 	pubKey := crypto.NewPublicKey(tx.PubKeyHex(), tx.PubKey())
-	_, err := app.oracles.Adaptors.Normalise(pubKey, *data)
+	oracleData, err := app.oracles.Adaptors.Normalise(pubKey, *data)
+	if err != nil {
+		return ErrOracleDataNormalization(err)
+	}
 
-	return err
+	if !app.oracles.Engine.ListensToPubKeys(*oracleData) {
+		return ErrUnexpectedTxPubKey
+	}
+
+	return nil
 }
 
 func (app *App) onTick(ctx context.Context, t time.Time) {

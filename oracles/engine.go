@@ -23,13 +23,13 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 )
 
-// Broker no need to mock (use broker package mock).
+// Broker interface. Do not need to mock (use package broker/mock).
 type Broker interface {
 	Send(event events.Event)
 	SendBatch(events []events.Event)
 }
 
-// TimeService ...
+// TimeService interface.
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/time_service_mock.go -package mocks code.vegaprotocol.io/vega/oracles TimeService
 type TimeService interface {
 	GetTimeNow() time.Time
@@ -62,6 +62,14 @@ func NewEngine(
 	}
 
 	return e
+}
+
+// ListensToPubKeys checks if the public keys from provided OracleData are among the keys
+// current OracleSpecs listen to.
+func (e *Engine) ListensToPubKeys(data OracleData) bool {
+	return e.subscriptions.hasAnySubscribers(func(spec OracleSpec) bool {
+		return spec.MatchPubKeys(data)
+	})
 }
 
 // BroadcastData broadcasts data to products and risk models that are interested

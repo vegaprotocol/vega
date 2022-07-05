@@ -31,6 +31,8 @@ import (
 )
 
 func TestOracleEngine(t *testing.T) {
+	t.Run("Oracle listens to given public keys succeeds", testOracleEngineListensToPubKeysSucceeds)
+	t.Run("Oracle listens to given public keys fails", testOracleEngineListensToPubKeysFails)
 	t.Run("Subscribing to oracle engine succeeds", testOracleEngineSubscribingSucceeds)
 	t.Run("Subscribing to oracle engine with without callback fails", testOracleEngineSubscribingWithoutCallbackFails)
 	t.Run("Broadcasting to matching data succeeds", testOracleEngineBroadcastingMatchingDataSucceeds)
@@ -38,6 +40,83 @@ func TestOracleEngine(t *testing.T) {
 	t.Run("Unsubscribing known ID from oracle engine succeeds", testOracleEngineUnsubscribingKnownIDSucceeds)
 	t.Run("Unsubscribing unknown ID from oracle engine panics", testOracleEngineUnsubscribingUnknownIDPanics)
 	t.Run("Updating current time succeeds", testOracleEngineUpdatingCurrentTimeSucceeds)
+}
+
+func testOracleEngineListensToPubKeysSucceeds(t *testing.T) {
+	// test conditions
+	ctx := context.Background()
+	currentTime := time.Now()
+	engine := newEngine(ctx, t, currentTime)
+
+	// test oracle engine with 1 subscriber and 1 key provided
+	btcEquals42 := spec(t, "BTC", oraclespb.Condition_OPERATOR_EQUALS, "42")
+	engine.broker.expectNewOracleSpecSubscription(currentTime, btcEquals42.spec.OriginalSpec)
+	_ = engine.Subscribe(ctx, btcEquals42.spec, btcEquals42.subscriber.Cb)
+
+	// test oracle data with single PubKey
+	data := oracles.OracleData{
+		PubKeys: []string{
+			"0xCAFED00D",
+		},
+		Data: map[string]string{
+			"my_key": "not an integer",
+		},
+	}
+
+	result := engine.ListensToPubKeys(data)
+	assert.True(t, result)
+
+	// test oracle engine with 2 subscribers and multiple keys provided for one of them
+	ethEquals42 := spec(t, "ETH", oraclespb.Condition_OPERATOR_LESS_THAN, "84", "0xCAFED00X", "0xCAFED00D", "0xBEARISH7", "0xBULLISH5")
+	engine.broker.expectNewOracleSpecSubscription(currentTime, ethEquals42.spec.OriginalSpec)
+	_ = engine.Subscribe(ctx, ethEquals42.spec, ethEquals42.subscriber.Cb)
+
+	data.PubKeys = append(data.PubKeys, []string{"0xBEARISH7", "0xBULLISH5"}...)
+	result = engine.ListensToPubKeys(data)
+	assert.True(t, result)
+
+	// test oracle data with 3 subscribers and multiple keys for some of them
+	btcGreater21 := spec(t, "BTC", oraclespb.Condition_OPERATOR_GREATER_THAN, "21", "0xCAFED00D", "0xBEARISH7", "0xBULLISH5", "0xMILK123", "OxMILK456")
+	engine.broker.expectNewOracleSpecSubscription(currentTime, btcGreater21.spec.OriginalSpec)
+	_ = engine.Subscribe(ctx, btcGreater21.spec, btcGreater21.subscriber.Cb)
+
+	data.PubKeys = append(data.PubKeys, "0xMILK123")
+	result = engine.ListensToPubKeys(data)
+	assert.True(t, result)
+}
+
+func testOracleEngineListensToPubKeysFails(t *testing.T) {
+	// test conditions
+	ctx := context.Background()
+	currentTime := time.Now()
+	engine := newEngine(ctx, t, currentTime)
+
+	// test oracle engine with single subscriber and wrong key
+	btcEquals42 := spec(t, "BTC", oraclespb.Condition_OPERATOR_EQUALS, "42", "0xWRONGKEY")
+	engine.broker.expectNewOracleSpecSubscription(currentTime, btcEquals42.spec.OriginalSpec)
+	_ = engine.Subscribe(ctx, btcEquals42.spec, btcEquals42.subscriber.Cb)
+
+	data := oracles.OracleData{
+		PubKeys: []string{
+			"0xCAFED00D",
+			"0xBEARISH17",
+		},
+		Data: map[string]string{
+			"my_key": "not an integer",
+		},
+	}
+
+	result := engine.ListensToPubKeys(data)
+	assert.False(t, result)
+
+	// test oracle engine with 2 subscribers and multiple missing keys
+	ethEquals42 := spec(t, "ETH", oraclespb.Condition_OPERATOR_LESS_THAN, "84", "0xBEARISH7", "0xBULLISH5")
+	engine.broker.expectNewOracleSpecSubscription(currentTime, ethEquals42.spec.OriginalSpec)
+	_ = engine.Subscribe(ctx, ethEquals42.spec, ethEquals42.subscriber.Cb)
+
+	data.PubKeys = append(data.PubKeys, []string{"0xMILK123", "OxMILK456"}...)
+	result = engine.ListensToPubKeys(data)
+	assert.False(t, result)
 }
 
 func testOracleEngineSubscribingSucceeds(t *testing.T) {
@@ -289,12 +368,15 @@ type specBundle struct {
 	subscriber dummySubscriber
 }
 
-func spec(t *testing.T, currency string, op oraclespb.Condition_Operator, price string) specBundle {
+func spec(t *testing.T, currency string, op oraclespb.Condition_Operator, price string, keys ...string) specBundle {
 	t.Helper()
-	typedOracleSpec := types.OracleSpecFromProto(oraclespb.NewOracleSpec(
-		[]string{
+	if len(keys) == 0 {
+		keys = []string{
 			"0xCAFED00D",
-		},
+		}
+	}
+	typedOracleSpec := types.OracleSpecFromProto(oraclespb.NewOracleSpec(
+		keys,
 		[]*oraclespb.Filter{
 			{
 				Key: &oraclespb.PropertyKey{
