@@ -66,7 +66,8 @@ func PrintGetVersionResponse(w io.Writer, resp *version.GetVersionResponse) {
 	str.Text("Git hash:").NextLine().WarningText(resp.GitHash).NextSection()
 
 	str.RedArrow().DangerText("Important").NextLine()
-	str.Text("This command does NOT give you your wallet version.").NextLine()
-	str.Text("To get this information, see the following command:").NextSection()
+	str.Text("This command is NOT related to your wallet version.").NextLine()
+	str.Bold("This is the version of the software.").NextLine()
+	str.Text("To get your wallet version, see the following command:").NextSection()
 	str.Code(fmt.Sprintf("%s info --help", os.Args[0])).NextLine()
 }
