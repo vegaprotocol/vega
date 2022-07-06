@@ -92,7 +92,7 @@ func (as *Assets) GetByID(ctx context.Context, id string) (entities.Asset, error
 
 	defer metrics.StartSQLQuery("Assets", "GetByID")()
 	err := pgxscan.Get(ctx, as.Connection, &a,
-		`SELECT * FROM assets_current WHERE id=$1`,
+		getAssetQuery()+` WHERE id=$1`,
 		entities.NewAssetID(id))
 
 	if err == nil {
