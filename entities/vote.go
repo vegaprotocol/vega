@@ -75,11 +75,11 @@ func VoteFromProto(pv *vega.Vote) (Vote, error) {
 	return v, nil
 }
 
-func (p Vote) ToProtoEdge(_ ...any) *v2.VoteEdge {
+func (p Vote) ToProtoEdge(_ ...any) (*v2.VoteEdge, error) {
 	return &v2.VoteEdge{
 		Node:   p.ToProto(),
 		Cursor: p.Cursor().Encode(),
-	}
+	}, nil
 }
 
 func (p Vote) Cursor() *Cursor {

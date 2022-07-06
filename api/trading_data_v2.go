@@ -15,11 +15,12 @@ package api
 import (
 	"context"
 	"encoding/hex"
-	"errors"
 	"fmt"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/pkg/errors"
 
 	"code.vegaprotocol.io/data-node/candlesv2"
 	"code.vegaprotocol.io/data-node/entities"
@@ -64,6 +65,7 @@ type tradingDataServiceV2 struct {
 	oracleDataService         *service.OracleData
 	liquidityProvisionService *service.LiquidityProvision
 	governanceService         *service.Governance
+	transfersService          *service.Transfer
 }
 
 func (t *tradingDataServiceV2) GetBalanceHistory(ctx context.Context, req *v2.GetBalanceHistoryRequest) (*v2.GetBalanceHistoryResponse, error) {
@@ -126,9 +128,9 @@ func (t *tradingDataServiceV2) GetOrdersByMarket(ctx context.Context, req *v2.Ge
 	}, nil
 }
 
-func entityMarketDataListToProtoList(list []entities.MarketData) *v2.MarketDataConnection {
+func entityMarketDataListToProtoList(list []entities.MarketData) (*v2.MarketDataConnection, error) {
 	if len(list) == 0 {
-		return nil
+		return nil, nil
 	}
 
 	results := make([]*vega.MarketData, 0, len(list))
@@ -137,11 +139,16 @@ func entityMarketDataListToProtoList(list []entities.MarketData) *v2.MarketDataC
 		results = append(results, item.ToProto())
 	}
 
-	connection := v2.MarketDataConnection{
-		Edges: makeEdges[*v2.MarketDataEdge](list),
+	edges, err := makeEdges[*v2.MarketDataEdge](list)
+	if err != nil {
+		return nil, errors.Wrap(err, "making edges")
 	}
 
-	return &connection
+	connection := v2.MarketDataConnection{
+		Edges: edges,
+	}
+
+	return &connection, nil
 }
 
 func (t *tradingDataServiceV2) GetMarketDataHistoryByID(ctx context.Context, req *v2.GetMarketDataHistoryByIDRequest) (*v2.GetMarketDataHistoryByIDResponse, error) {
@@ -199,9 +206,14 @@ func (t *tradingDataServiceV2) handleGetMarketDataHistoryWithCursorPagination(ct
 		return nil, fmt.Errorf("could not retrieve historic market data: %w", err)
 	}
 
+	edges, err := makeEdges[*v2.MarketDataEdge](history)
+	if err != nil {
+		return nil, errors.Wrap(err, "making edges")
+	}
+
 	connection := v2.MarketDataConnection{
 		TotalCount: 0,
-		Edges:      makeEdges[*v2.MarketDataEdge](history),
+		Edges:      edges,
 		PageInfo:   pageInfo.ToProto(),
 	}
 
@@ -211,11 +223,16 @@ func (t *tradingDataServiceV2) handleGetMarketDataHistoryWithCursorPagination(ct
 }
 
 func parseMarketDataResults(results []entities.MarketData) (*v2.GetMarketDataHistoryByIDResponse, error) {
-	response := v2.GetMarketDataHistoryByIDResponse{
-		MarketData: entityMarketDataListToProtoList(results),
+	marketData, err := entityMarketDataListToProtoList(results)
+	if err != nil {
+		return nil, err
 	}
 
-	return &response, nil
+	response := v2.GetMarketDataHistoryByIDResponse{
+		MarketData: marketData,
+	}
+
+	return &response, err
 }
 
 func (t *tradingDataServiceV2) getMarketDataHistoryByID(ctx context.Context, id string, start, end time.Time, pagination entities.OffsetPagination) (*v2.GetMarketDataHistoryByIDResponse, error) {
@@ -311,9 +328,14 @@ func (t *tradingDataServiceV2) GetCandleData(ctx context.Context, req *v2.GetCan
 		return nil, apiError(codes.Internal, ErrCandleServiceGetCandleData, err)
 	}
 
+	edges, err := makeEdges[*v2.CandleEdge](candles)
+	if err != nil {
+		return nil, apiError(codes.Internal, err)
+	}
+
 	connection := v2.CandleDataConnection{
 		TotalCount: 0,
-		Edges:      makeEdges[*v2.CandleEdge](candles),
+		Edges:      edges,
 		PageInfo:   pageInfo.ToProto(),
 	}
 
@@ -605,9 +627,14 @@ func (t *tradingDataServiceV2) GetTradesByMarket(ctx context.Context, in *v2.Get
 		return nil, apiError(codes.Internal, err)
 	}
 
+	edges, err := makeEdges[*v2.TradeEdge](trades)
+	if err != nil {
+		return nil, apiError(codes.Internal, err)
+	}
+
 	tradesConnection := &v2.TradeConnection{
 		TotalCount: 0,
-		Edges:      makeEdges[*v2.TradeEdge](trades),
+		Edges:      edges,
 		PageInfo:   pageInfo.ToProto(),
 	}
 
@@ -639,9 +666,14 @@ func (t *tradingDataServiceV2) GetTradesByParty(ctx context.Context, in *v2.GetT
 		return nil, apiError(codes.Internal, err)
 	}
 
+	edges, err := makeEdges[*v2.TradeEdge](trades)
+	if err != nil {
+		return nil, apiError(codes.Internal, err)
+	}
+
 	tradesConnection := &v2.TradeConnection{
 		TotalCount: 0, // TODO: implement total count
-		Edges:      makeEdges[*v2.TradeEdge](trades),
+		Edges:      edges,
 		PageInfo:   pageInfo.ToProto(),
 	}
 
@@ -672,9 +704,14 @@ func (t *tradingDataServiceV2) GetTradesByOrderID(ctx context.Context, in *v2.Ge
 		return nil, apiError(codes.Internal, err)
 	}
 
+	edges, err := makeEdges[*v2.TradeEdge](trades)
+	if err != nil {
+		return nil, apiError(codes.Internal, err)
+	}
+
 	tradesConnection := &v2.TradeConnection{
 		TotalCount: 0, // TODO: implement total count
-		Edges:      makeEdges[*v2.TradeEdge](trades),
+		Edges:      edges,
 		PageInfo:   pageInfo.ToProto(),
 	}
 
@@ -696,9 +733,14 @@ func (t *tradingDataServiceV2) GetMarkets(ctx context.Context, in *v2.GetMarkets
 		return nil, apiError(codes.Internal, err)
 	}
 
+	edges, err := makeEdges[*v2.MarketEdge](markets)
+	if err != nil {
+		return nil, apiError(codes.Internal, err)
+	}
+
 	marketsConnection := &v2.MarketConnection{
 		TotalCount: 0, // TODO: implement total count
-		Edges:      makeEdges[*v2.MarketEdge](markets),
+		Edges:      edges,
 		PageInfo:   pageInfo.ToProto(),
 	}
 
@@ -721,9 +763,14 @@ func (t *tradingDataServiceV2) GetPositionsByPartyConnection(ctx context.Context
 		return nil, apiError(codes.Internal, err)
 	}
 
+	edges, err := makeEdges[*v2.PositionEdge](positions)
+	if err != nil {
+		return nil, apiError(codes.Internal, err)
+	}
+
 	PositionsConnection := &v2.PositionConnection{
 		TotalCount: 0, // TODO: implement total count
-		Edges:      makeEdges[*v2.PositionEdge](positions),
+		Edges:      edges,
 		PageInfo:   pageInfo.ToProto(),
 	}
 
@@ -744,9 +791,15 @@ func (t *tradingDataServiceV2) GetParties(ctx context.Context, in *v2.GetParties
 	if err != nil {
 		return nil, apiError(codes.Internal, err)
 	}
+
+	edges, err := makeEdges[*v2.PartyEdge](parties)
+	if err != nil {
+		return nil, apiError(codes.Internal, err)
+	}
+
 	partyConnection := &v2.PartyConnection{
 		TotalCount: 0, // TODO: implement total count
-		Edges:      makeEdges[*v2.PartyEdge](parties),
+		Edges:      edges,
 		PageInfo:   pageInfo.ToProto(),
 	}
 
@@ -765,9 +818,15 @@ func (t *tradingDataServiceV2) GetOrdersByMarketConnection(ctx context.Context, 
 	if err != nil {
 		return nil, apiError(codes.Internal, err)
 	}
+
+	edges, err := makeEdges[*v2.OrderEdge](orders)
+	if err != nil {
+		return nil, apiError(codes.Internal, err)
+	}
+
 	ordersConnection := &v2.OrderConnection{
 		TotalCount: 0, // TODO: implement total count
-		Edges:      makeEdges[*v2.OrderEdge](orders),
+		Edges:      edges,
 		PageInfo:   pageInfo.ToProto(),
 	}
 
@@ -788,9 +847,15 @@ func (t *tradingDataServiceV2) GetOrderVersionsByIDConnection(ctx context.Contex
 	if err != nil {
 		return nil, apiError(codes.Internal, err)
 	}
+
+	edges, err := makeEdges[*v2.OrderEdge](orders)
+	if err != nil {
+		return nil, apiError(codes.Internal, err)
+	}
+
 	ordersConnection := &v2.OrderConnection{
 		TotalCount: 0, // TODO: implement total count
-		Edges:      makeEdges[*v2.OrderEdge](orders),
+		Edges:      edges,
 		PageInfo:   pageInfo.ToProto(),
 	}
 
@@ -810,9 +875,15 @@ func (t *tradingDataServiceV2) GetOrdersByPartyConnection(ctx context.Context, i
 	if err != nil {
 		return nil, apiError(codes.Internal, err)
 	}
+
+	edges, err := makeEdges[*v2.OrderEdge](orders)
+	if err != nil {
+		return nil, apiError(codes.Internal, err)
+	}
+
 	ordersConnection := &v2.OrderConnection{
 		TotalCount: 0, // TODO: implement total count
-		Edges:      makeEdges[*v2.OrderEdge](orders),
+		Edges:      edges,
 		PageInfo:   pageInfo.ToProto(),
 	}
 
@@ -834,9 +905,14 @@ func (t *tradingDataServiceV2) GetMarginLevels(ctx context.Context, in *v2.GetMa
 		return nil, apiError(codes.Internal, err)
 	}
 
+	edges, err := makeEdges[*v2.MarginEdge](marginLevels, t.accountService)
+	if err != nil {
+		return nil, apiError(codes.Internal, err)
+	}
+
 	marginLevelsConnection := &v2.MarginConnection{
 		TotalCount: 0, // TODO: implement total count
-		Edges:      makeEdges[*v2.MarginEdge](marginLevels, t.accountService),
+		Edges:      edges,
 		PageInfo:   pageInfo.ToProto(),
 	}
 
@@ -859,9 +935,14 @@ func (t *tradingDataServiceV2) GetRewards(ctx context.Context, in *v2.GetRewards
 		return nil, apiError(codes.Internal, err)
 	}
 
+	edges, err := makeEdges[*v2.RewardEdge](rewards)
+	if err != nil {
+		return nil, apiError(codes.Internal, err)
+	}
+
 	rewardsConnection := &v2.RewardsConnection{
 		TotalCount: 0, // TODO: implement total count
-		Edges:      makeEdges[*v2.RewardEdge](rewards),
+		Edges:      edges,
 		PageInfo:   pageInfo.ToProto(),
 	}
 
@@ -898,10 +979,15 @@ func (t *tradingDataServiceV2) GetDeposits(ctx context.Context, req *v2.GetDepos
 		return nil, apiError(codes.Internal, err)
 	}
 
+	edges, err := makeEdges[*v2.DepositEdge](deposits)
+	if err != nil {
+		return nil, apiError(codes.Internal, err)
+	}
+
 	depositConnection := &v2.DepositsConnection{
 		TotalCount: 0, // TODO: implement total count
 		//Edges:      makeDepositEdges(deposits),
-		Edges:    makeEdges[*v2.DepositEdge](deposits),
+		Edges:    edges,
 		PageInfo: pageInfo.ToProto(),
 	}
 
@@ -910,12 +996,17 @@ func (t *tradingDataServiceV2) GetDeposits(ctx context.Context, req *v2.GetDepos
 	return &resp, nil
 }
 
-func makeEdges[T proto.Message, V entities.PagedEntity[T]](inputs []V, args ...any) []T {
+func makeEdges[T proto.Message, V entities.PagedEntity[T]](inputs []V, args ...any) ([]T, error) {
 	edges := make([]T, 0, len(inputs))
 	for _, input := range inputs {
-		edges = append(edges, input.ToProtoEdge(args))
+		edge, err := input.ToProtoEdge(args)
+		if err != nil {
+			return nil, fmt.Errorf("failed to make edge for %v: %w", input, err)
+		}
+
+		edges = append(edges, edge)
 	}
-	return edges
+	return edges, nil
 }
 
 // -- Withdrawals --
@@ -931,9 +1022,14 @@ func (t *tradingDataServiceV2) GetWithdrawals(ctx context.Context, req *v2.GetWi
 		return nil, apiError(codes.Internal, err)
 	}
 
+	edges, err := makeEdges[*v2.WithdrawalEdge](withdrawals)
+	if err != nil {
+		return nil, apiError(codes.Internal, err)
+	}
+
 	depositConnection := &v2.WithdrawalsConnection{
 		TotalCount: 0, // TODO: implement total count
-		Edges:      makeEdges[*v2.WithdrawalEdge](withdrawals),
+		Edges:      edges,
 		PageInfo:   pageInfo.ToProto(),
 	}
 
@@ -957,9 +1053,14 @@ func (t *tradingDataServiceV2) getSingleAsset(ctx context.Context, assetID strin
 		return nil, apiError(codes.Internal, err)
 	}
 
+	edges, err := makeEdges[*v2.AssetEdge]([]entities.Asset{asset})
+	if err != nil {
+		return nil, apiError(codes.Internal, err)
+	}
+
 	connection := &v2.AssetsConnection{
 		TotalCount: 1,
-		Edges:      makeEdges[*v2.AssetEdge]([]entities.Asset{asset}),
+		Edges:      edges,
 		PageInfo: &v2.PageInfo{
 			HasNextPage:     false,
 			HasPreviousPage: false,
@@ -982,9 +1083,14 @@ func (t *tradingDataServiceV2) getAllAssets(ctx context.Context, p *v2.Paginatio
 		return nil, apiError(codes.Internal, err)
 	}
 
+	edges, err := makeEdges[*v2.AssetEdge](assets)
+	if err != nil {
+		return nil, apiError(codes.Internal, err)
+	}
+
 	connection := &v2.AssetsConnection{
 		TotalCount: 0, // TODO: implement total count
-		Edges:      makeEdges[*v2.AssetEdge](assets),
+		Edges:      edges,
 		PageInfo:   pageInfo.ToProto(),
 	}
 
@@ -1003,9 +1109,14 @@ func (t *tradingDataServiceV2) GetOracleSpecsConnection(ctx context.Context, req
 		return nil, apiError(codes.Internal, err)
 	}
 
+	edges, err := makeEdges[*v2.OracleSpecEdge](specs)
+	if err != nil {
+		return nil, apiError(codes.Internal, err)
+	}
+
 	connection := &v2.OracleSpecsConnection{
 		TotalCount: 0, // TODO: implement total count
-		Edges:      makeEdges[*v2.OracleSpecEdge](specs),
+		Edges:      edges,
 		PageInfo:   pageInfo.ToProto(),
 	}
 
@@ -1035,9 +1146,14 @@ func (t *tradingDataServiceV2) GetOracleDataConnection(ctx context.Context, req 
 		return nil, apiError(codes.Internal, err)
 	}
 
+	edges, err := makeEdges[*v2.OracleDataEdge](data)
+	if err != nil {
+		return nil, apiError(codes.Internal, err)
+	}
+
 	connection := &v2.OracleDataConnection{
 		TotalCount: 0, // TODO: implement total count
-		Edges:      makeEdges[*v2.OracleDataEdge](data),
+		Edges:      edges,
 		PageInfo:   pageInfo.ToProto(),
 	}
 
@@ -1062,9 +1178,14 @@ func (t *tradingDataServiceV2) GetLiquidityProvisions(ctx context.Context, req *
 		return nil, apiError(codes.Internal, err)
 	}
 
+	edges, err := makeEdges[*v2.LiquidityProvisionsEdge](lps)
+	if err != nil {
+		return nil, apiError(codes.Internal, err)
+	}
+
 	liquidityProvisionConnection := &v2.LiquidityProvisionsConnection{
 		TotalCount: 0, // TODO: implement total count
-		Edges:      makeEdges[*v2.LiquidityProvisionsEdge](lps),
+		Edges:      edges,
 		PageInfo:   pageInfo.ToProto(),
 	}
 
@@ -1083,9 +1204,14 @@ func (t *tradingDataServiceV2) ListVotes(ctx context.Context, in *v2.ListVotesRe
 		return nil, apiError(codes.Internal, err)
 	}
 
+	edges, err := makeEdges[*v2.VoteEdge](votes)
+	if err != nil {
+		return nil, apiError(codes.Internal, err)
+	}
+
 	VotesConnection := &v2.VoteConnection{
 		TotalCount: 0, // TODO: implement total count
-		Edges:      makeEdges[*v2.VoteEdge](votes),
+		Edges:      edges,
 		PageInfo:   pageInfo.ToProto(),
 	}
 
@@ -1094,4 +1220,44 @@ func (t *tradingDataServiceV2) ListVotes(ctx context.Context, in *v2.ListVotesRe
 	}
 
 	return resp, nil
+}
+
+func (t *tradingDataServiceV2) ListTransfers(ctx context.Context, req *v2.ListTransfersRequest) (*v2.ListTransfersResponse, error) {
+
+	pagination, err := entities.CursorPaginationFromProto(req.Pagination)
+	if err != nil {
+		return nil, apiError(codes.InvalidArgument, err)
+	}
+
+	var transfers []entities.Transfer
+	var pageInfo entities.PageInfo
+	if req.Pubkey == nil {
+		transfers, pageInfo, err = t.transfersService.GetAll(ctx, pagination)
+	} else {
+		switch req.Direction {
+		case v2.TransferDirection_TRANSFER_DIRECTION_TRANSFER_FROM:
+			transfers, pageInfo, err = t.transfersService.GetTransfersFromParty(ctx, entities.NewPartyID(*req.Pubkey), pagination)
+		case v2.TransferDirection_TRANSFER_DIRECTION_TRANSFER_TO:
+			transfers, pageInfo, err = t.transfersService.GetTransfersToParty(ctx, entities.NewPartyID(*req.Pubkey), pagination)
+		case v2.TransferDirection_TRANSFER_DIRECTION_TRANSFER_TO_OR_FROM:
+			transfers, pageInfo, err = t.transfersService.GetTransfersToOrFromParty(ctx, entities.NewPartyID(*req.Pubkey), pagination)
+		default:
+			return nil, apiError(codes.InvalidArgument, fmt.Errorf("transfer direction not supported:%v", req.Direction))
+		}
+	}
+
+	if err != nil {
+		return nil, apiError(codes.Internal, err)
+	}
+
+	edges, err := makeEdges[*v2.TransferEdge](transfers)
+	if err != nil {
+		return nil, apiError(codes.Internal, err)
+	}
+
+	return &v2.ListTransfersResponse{Transfers: &v2.TransferConnection{
+		TotalCount: 0,
+		Edges:      edges,
+		PageInfo:   pageInfo.ToProto(),
+	}}, nil
 }

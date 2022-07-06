@@ -111,23 +111,23 @@ func (ml MarginLevels) Cursor() *Cursor {
 	return NewCursor(cursor.String())
 }
 
-func (ml MarginLevels) ToProtoEdge(input ...any) *v2.MarginEdge {
+func (ml MarginLevels) ToProtoEdge(input ...any) (*v2.MarginEdge, error) {
 	if len(input) == 0 {
-		return nil
+		return nil, fmt.Errorf("expected account source argument")
 	}
 
 	switch as := input[0].(type) {
 	case AccountSource:
 		mlProto, err := ml.ToProto(as)
 		if err != nil {
-			return nil
+			return nil, err
 		}
 		return &v2.MarginEdge{
 			Node:   mlProto,
 			Cursor: ml.Cursor().Encode(),
-		}
+		}, nil
 	default:
-		return nil
+		return nil, fmt.Errorf("expected account source argument, got:%v", as)
 	}
 }
 

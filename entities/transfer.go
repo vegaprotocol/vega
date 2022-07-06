@@ -14,9 +14,11 @@ package entities
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"time"
 
+	v2 "code.vegaprotocol.io/protos/data-node/api/v2"
 	"code.vegaprotocol.io/protos/vega"
 	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
 	"github.com/shopspring/decimal"
@@ -187,4 +189,53 @@ func TransferFromProto(ctx context.Context, t *eventspb.Transfer, vegaTime time.
 	}
 
 	return &transfer, nil
+}
+
+func (t Transfer) Cursor() *Cursor {
+	wc := TransferCursor{
+		VegaTime: t.VegaTime,
+		ID:       t.ID.String(),
+	}
+	return NewCursor(wc.String())
+}
+
+func (t Transfer) ToProtoEdge(input ...any) (*v2.TransferEdge, error) {
+	if len(input) == 0 {
+		return nil, fmt.Errorf("expected account source argument")
+	}
+
+	switch as := input[0].(type) {
+	case AccountSource:
+		transferProto, err := t.ToProto(as)
+		if err != nil {
+			return nil, err
+		}
+		return &v2.TransferEdge{
+			Node:   transferProto,
+			Cursor: t.Cursor().Encode(),
+		}, nil
+	default:
+		return nil, fmt.Errorf("expected account source argument, got:%v", as)
+	}
+}
+
+type TransferCursor struct {
+	VegaTime time.Time `json:"vegaTime"`
+	ID       string    `json:"id"`
+}
+
+func (tc TransferCursor) String() string {
+	bs, err := json.Marshal(tc)
+	if err != nil {
+		// This should never happen
+		panic(fmt.Errorf("failed to marshal withdrawal cursor: %w", err))
+	}
+	return string(bs)
+}
+
+func (tc *TransferCursor) Parse(cursorString string) error {
+	if cursorString == "" {
+		return nil
+	}
+	return json.Unmarshal([]byte(cursorString), tc)
 }

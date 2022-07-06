@@ -336,24 +336,24 @@ func (t *tradingDataService) Transfers(ctx context.Context, req *protoapi.Transf
 		return nil, apiError(codes.InvalidArgument, errors.New("request is for transfers to and from the same party"))
 	}
 
-	var transfers []*entities.Transfer
+	var transfers []entities.Transfer
 	var err error
 	if !req.IsFrom && !req.IsTo {
-		transfers, err = t.transferService.GetAll(ctx)
+		transfers, _, err = t.transferService.GetAll(ctx, entities.CursorPagination{})
 		if err != nil {
 			return nil, apiError(codes.Internal, err)
 		}
 	} else if req.IsFrom || req.IsTo {
 
 		if req.IsFrom {
-			transfers, err = t.transferService.GetTransfersFromParty(ctx, entities.PartyID{ID: entities.ID(req.Pubkey)})
+			transfers, _, err = t.transferService.GetTransfersFromParty(ctx, entities.PartyID{ID: entities.ID(req.Pubkey)}, entities.CursorPagination{})
 			if err != nil {
 				return nil, apiError(codes.Internal, err)
 			}
 		}
 
 		if req.IsTo {
-			transfers, err = t.transferService.GetTransfersToParty(ctx, entities.PartyID{ID: entities.ID(req.Pubkey)})
+			transfers, _, err = t.transferService.GetTransfersToParty(ctx, entities.PartyID{ID: entities.ID(req.Pubkey)}, entities.CursorPagination{})
 			if err != nil {
 				return nil, apiError(codes.Internal, err)
 			}

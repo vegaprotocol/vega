@@ -22,6 +22,7 @@
 - [761](https://github.com/vegaprotocol/data-node/issues/761) - Delete all badger stores, `SQL` stores only from now
 - [566](https://github.com/vegaprotocol/data-node/issues/566) - Liquidity provision pagination 
 - [779](https://github.com/vegaprotocol/data-node/issues/779) - Ordering of paginated query results from newest to oldest
+- [573](https://github.com/vegaprotocol/data-node/issues/573) - Transfers pagination and addition of `v2` transfers `API` 
 - [781](https://github.com/vegaprotocol/data-node/issues/781) - Add a summary table of current balances 
 
 ### 🐛 Fixes

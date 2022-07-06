@@ -930,8 +930,8 @@ create table if not exists transfers (
          end_epoch       BIGINT,
          factor        NUMERIC(1000, 16) ,
          dispatch_metric INT,
-         dispatch_metric_asset bytea,
-         dispatch_markets bytea[],
+         dispatch_metric_asset TEXT,
+         dispatch_markets TEXT[],
          primary key (id, vega_time)
 );
 

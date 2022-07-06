@@ -84,11 +84,11 @@ func (t Trade) Cursor() *Cursor {
 	return NewCursor(t.SyntheticTime.In(time.UTC).Format(time.RFC3339Nano))
 }
 
-func (t Trade) ToProtoEdge(_ ...any) *v2.TradeEdge {
+func (t Trade) ToProtoEdge(_ ...any) (*v2.TradeEdge, error) {
 	return &v2.TradeEdge{
 		Node:   t.ToProto(),
 		Cursor: t.Cursor().Encode(),
-	}
+	}, nil
 }
 
 func TradeFromProto(t *vega.Trade, vegaTime time.Time, sequenceNumber uint64) (*Trade, error) {

@@ -439,6 +439,33 @@ func (r *myQueryResolver) Transfers(
 	return response.Transfers, nil
 }
 
+func (r *myQueryResolver) TransfersConnection(ctx context.Context, pubkey *string, direction TransferDirection,
+	pagination *v2.Pagination) (*v2.TransferConnection, error) {
+
+	var transferDirection v2.TransferDirection
+	switch direction {
+	case TransferDirectionFrom:
+		transferDirection = v2.TransferDirection_TRANSFER_DIRECTION_TRANSFER_FROM
+	case TransferDirectionTo:
+		transferDirection = v2.TransferDirection_TRANSFER_DIRECTION_TRANSFER_TO
+	case TransferDirectionToOrFrom:
+		transferDirection = v2.TransferDirection_TRANSFER_DIRECTION_TRANSFER_TO_OR_FROM
+	}
+
+	res, err := r.tradingDataClientV2.ListTransfers(ctx, &v2.ListTransfersRequest{
+		Pubkey:     pubkey,
+		Direction:  transferDirection,
+		Pagination: pagination,
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return res.Transfers, nil
+
+}
+
 func (r *myQueryResolver) LastBlockHeight(ctx context.Context) (string, error) {
 	resp, err := r.tradingProxyClient.LastBlockHeight(ctx, &vegaprotoapi.LastBlockHeightRequest{})
 	if err != nil {

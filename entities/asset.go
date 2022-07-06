@@ -77,9 +77,9 @@ func (a Asset) Cursor() *Cursor {
 	return NewCursor(a.ID.String())
 }
 
-func (a Asset) ToProtoEdge(_ ...any) *v2.AssetEdge {
+func (a Asset) ToProtoEdge(_ ...any) (*v2.AssetEdge, error) {
 	return &v2.AssetEdge{
 		Node:   a.ToProto(),
 		Cursor: a.Cursor().Encode(),
-	}
+	}, nil
 }
