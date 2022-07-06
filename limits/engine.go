@@ -28,15 +28,13 @@ type Engine struct {
 	broker Broker
 
 	timeService TimeService
-	blockCount  uint16
 
 	// are these action possible?
-	canProposeMarket, canProposeAsset, bootstrapFinished bool
+	canProposeMarket, canProposeAsset bool
 
 	// Settings from the genesis state
 	proposeMarketEnabled, proposeAssetEnabled         bool
 	proposeMarketEnabledFrom, proposeAssetEnabledFrom time.Time
-	bootstrapBlockCount                               uint16
 
 	genesisLoaded bool
 
@@ -101,7 +99,6 @@ func (e *Engine) UponGenesis(ctx context.Context, rawState []byte) (err error) {
 
 	e.proposeAssetEnabled = state.ProposeAssetEnabled
 	e.proposeMarketEnabled = state.ProposeMarketEnabled
-	e.bootstrapBlockCount = state.BootstrapBlockCount
 
 	e.log.Info("loaded limits genesis state",
 		logging.String("state", fmt.Sprintf("%#v", *state)))
@@ -154,27 +151,17 @@ func (e *Engine) OnLimitsProposeAssetEnabledFromUpdate(ctx context.Context, date
 }
 
 func (e *Engine) OnTick(ctx context.Context, t time.Time) {
-	if !e.genesisLoaded || (e.bootstrapFinished && e.canProposeAsset && e.canProposeMarket) {
+	if !e.genesisLoaded || (e.canProposeAsset && e.canProposeMarket) {
 		return
 	}
 
-	if !e.bootstrapFinished {
-		e.blockCount++
-		if e.blockCount > e.bootstrapBlockCount {
-			e.log.Info("bootstraping period finished, transactions are now allowed")
-			e.bootstrapFinished = true
-			e.sendEvent(ctx)
-		}
-		e.lss.changed = true
-	}
-
-	if !e.canProposeMarket && e.bootstrapFinished && e.proposeMarketEnabled && t.After(e.proposeMarketEnabledFrom) {
+	if !e.canProposeMarket && e.proposeMarketEnabled && t.After(e.proposeMarketEnabledFrom) {
 		e.log.Info("all required conditions are met, proposing markets is now allowed")
 		e.canProposeMarket = true
 		e.lss.changed = true
 		e.sendEvent(ctx)
 	}
-	if !e.canProposeAsset && e.bootstrapFinished && e.proposeAssetEnabled && t.After(e.proposeAssetEnabledFrom) {
+	if !e.canProposeAsset && e.proposeAssetEnabled && t.After(e.proposeAssetEnabledFrom) {
 		e.log.Info("all required conditions are met, proposing assets is now allowed")
 		e.canProposeAsset = true
 		e.lss.changed = true
@@ -194,18 +181,12 @@ func (e *Engine) CanTrade() bool {
 	return e.canProposeAsset && e.canProposeMarket
 }
 
-func (e *Engine) BootstrapFinished() bool {
-	return e.bootstrapFinished
-}
-
 func (e *Engine) sendEvent(ctx context.Context) {
 	limits := vega.NetworkLimits{
 		CanProposeMarket:     e.canProposeMarket,
 		CanProposeAsset:      e.canProposeAsset,
-		BootstrapFinished:    e.bootstrapFinished,
 		ProposeMarketEnabled: e.proposeMarketEnabled,
 		ProposeAssetEnabled:  e.proposeAssetEnabled,
-		BootstrapBlockCount:  uint32(e.bootstrapBlockCount),
 		GenesisLoaded:        e.genesisLoaded,
 	}
 

@@ -442,7 +442,8 @@ func toERC20AssetList(event *bridge.Erc20BridgeLogicRestrictedAssetListed) *comm
 				Block: event.Raw.BlockNumber,
 				Action: &vgproto.ERC20Event_AssetList{
 					AssetList: &vgproto.ERC20AssetList{
-						VegaAssetId: event.AssetSource.Hex(),
+						VegaAssetId: hex.EncodeToString(event.VegaAssetId[:]),
+						AssetSource: event.AssetSource.Hex(),
 					},
 				},
 			},

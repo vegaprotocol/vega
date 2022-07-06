@@ -66,7 +66,7 @@ func (svcs *allServices) loadAsset(
 	if err != nil {
 		return err
 	}
-	aid, err := svcs.assets.NewAsset(id, rawAsset)
+	aid, err := svcs.assets.NewAsset(ctx, id, rawAsset)
 	if err != nil {
 		return fmt.Errorf("error instanciating asset %v", err)
 	}
@@ -100,7 +100,7 @@ func (svcs *allServices) loadAsset(
 		asset.SetValidNonValidator()
 	}
 
-	if err := svcs.assets.Enable(aid); err != nil {
+	if err := svcs.assets.Enable(ctx, aid); err != nil {
 		svcs.log.Error("invalid genesis asset",
 			logging.String("asset-details", v.String()),
 			logging.Error(err))

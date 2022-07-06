@@ -20,9 +20,8 @@ import (
 var ErrNoLimitsGenesisState = errors.New("no limits genesis state")
 
 type GenesisState struct {
-	ProposeMarketEnabled bool   `json:"propose_market_enabled"`
-	ProposeAssetEnabled  bool   `json:"propose_asset_enabled"`
-	BootstrapBlockCount  uint16 `json:"bootstrap_block_count"`
+	ProposeMarketEnabled bool `json:"propose_market_enabled"`
+	ProposeAssetEnabled  bool `json:"propose_asset_enabled"`
 }
 
 func DefaultGenesisState() GenesisState {

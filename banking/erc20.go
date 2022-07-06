@@ -26,7 +26,10 @@ import (
 	"code.vegaprotocol.io/vega/types/num"
 )
 
-var ErrInvalidWithdrawalReferenceNonce = errors.New("invalid withdrawal reference nonce")
+var (
+	ErrInvalidWithdrawalReferenceNonce = errors.New("invalid withdrawal reference nonce")
+	ErrAssetAlreadyBeingListed         = errors.New("asset already being listed")
+)
 
 func (e *Engine) EnableERC20(
 	ctx context.Context,
@@ -36,6 +39,11 @@ func (e *Engine) EnableERC20(
 	txHash string,
 ) error {
 	asset, _ := e.assets.Get(al.VegaAssetID)
+	if _, ok := e.assetActs[al.VegaAssetID]; ok {
+		e.log.Error("asset already being listed", logging.AssetID(al.VegaAssetID))
+		return ErrAssetAlreadyBeingListed
+	}
+
 	aa := &assetAction{
 		id:          id,
 		state:       pendingState,

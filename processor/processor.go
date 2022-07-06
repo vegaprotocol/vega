@@ -127,7 +127,7 @@ type Stats interface {
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/assets_mock.go -package mocks code.vegaprotocol.io/vega/processor Assets
 type Assets interface {
-	NewAsset(ref string, assetSrc *types.AssetDetails) (string, error)
+	NewAsset(ctx context.Context, ref string, assetSrc *types.AssetDetails) (string, error)
 	Get(assetID string) (*assets.Asset, error)
 	IsEnabled(string) bool
 }
@@ -215,7 +215,6 @@ type Limits interface {
 	CanProposeMarket() bool
 	CanProposeAsset() bool
 	CanTrade() bool
-	BootstrapFinished() bool
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/stake_verifier_mock.go -package mocks code.vegaprotocol.io/vega/processor StakeVerifier

@@ -33,6 +33,12 @@ type isAsset interface {
 	// without running actual validation, this is used in the
 	// context of a non-validator node.
 	SetValidNonValidator()
+	// SetPendingListing Update the state of the asset to pending for listing
+	// on an external bridge
+	SetPendingListing()
+	// SetRejected Update the state of the asset to rejected
+	SetRejected()
+	SetEnabled()
 	String() string
 }
 

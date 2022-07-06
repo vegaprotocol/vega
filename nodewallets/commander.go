@@ -191,14 +191,6 @@ func wrapPayloadIntoInputData(data *commandspb.InputData, cmd txn.Command, paylo
 		} else {
 			panic("failed to wrap to ChainEvent")
 		}
-	case txn.CheckpointRestoreCommand:
-		if underlyingCmd, ok := payload.(*commandspb.RestoreSnapshot); ok {
-			data.Command = &commandspb.InputData_RestoreSnapshotSubmission{
-				RestoreSnapshotSubmission: underlyingCmd,
-			}
-		} else {
-			panic("failed to wrap RestoreSnapshot")
-		}
 	case txn.StateVariableProposalCommand:
 		if underlyingCmd, ok := payload.(*commandspb.StateVariableProposal); ok {
 			data.Command = &commandspb.InputData_StateVariableProposal{
