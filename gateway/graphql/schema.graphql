@@ -837,6 +837,17 @@ type Delegation {
   epoch: Int!
 }
 
+enum AssetStatus {
+  "Asset is proposed to be added to the network"
+  Proposed
+  "Asset has been rejected"
+  Rejected
+  "Asset is pending listing on the ethereum bridge"
+  PendingListing
+  "Asset can be used on the vega network"
+  Enabled
+}
+
 "Represents an asset in vega"
 type Asset {
   "The id of the asset"
@@ -860,12 +871,15 @@ type Asset {
   "The origin source of the asset (e.g: an erc20 asset)"
   source: AssetSource!
 
+  "The status of the asset in the vega network"
+  status: AssetStatus!
+
   "The infrastructure fee account for this asset"
   infrastructureFeeAccount: Account!
 
   "The global reward pool account for this asset"
   globalRewardPoolAccount: Account
-}
+  }
 
 "One of the possible asset sources"
 union AssetSource = BuiltinAsset | ERC20

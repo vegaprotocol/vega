@@ -16,9 +16,11 @@ create table chain
     onerow_check  bool PRIMARY KEY DEFAULT TRUE
 );
 
+create type asset_status_type as enum('STATUS_UNSPECIFIED', 'STATUS_PROPOSED', 'STATUS_REJECTED', 'STATUS_PENDING_LISTING', 'STATUS_ENABLED');
+
 create table assets
 (
-    id                  BYTEA NOT NULL PRIMARY KEY,
+    id                  BYTEA NOT NULL,
     name                TEXT NOT NULL,
     symbol              TEXT NOT NULL,
     total_supply        HUGEINT,
@@ -28,20 +30,26 @@ create table assets
     erc20_contract      TEXT,
     lifetime_limit      HUGEINT NOT NULL,
     withdraw_threshold  HUGEINT NOT NULL,
-    vega_time           TIMESTAMP WITH TIME ZONE NOT NULL REFERENCES blocks (vega_time)
+    status		asset_status_type NOT NULL,
+    vega_time           TIMESTAMP WITH TIME ZONE NOT NULL REFERENCES blocks(vega_time),
+    PRIMARY KEY (id, vega_time)
+);
+
+CREATE VIEW assets_current AS (
+  SELECT DISTINCT ON (id) * FROM assets ORDER BY id, vega_time DESC
 );
 
 create table parties
 (
     id        BYTEA NOT NULL PRIMARY KEY,
-    vega_time TIMESTAMP WITH TIME ZONE REFERENCES blocks (vega_time)
+    vega_time TIMESTAMP WITH TIME ZONE REFERENCES blocks(vega_time)
 );
 
 create table accounts
 (
     id        SERIAL PRIMARY KEY,
     party_id  BYTEA,
-    asset_id  BYTEA                    NOT NULL REFERENCES assets (id),
+    asset_id  BYTEA  NOT NULL,
     market_id BYTEA,
     type      INT,
     vega_time TIMESTAMP WITH TIME ZONE NOT NULL REFERENCES blocks(vega_time),
@@ -540,7 +548,7 @@ CREATE TABLE IF NOT EXISTS reward_scores (
 
 CREATE TABLE rewards(
   party_id         BYTEA NOT NULL REFERENCES parties(id),
-  asset_id         BYTEA NOT NULL REFERENCES assets(id),
+  asset_id         BYTEA NOT NULL,
   market_id        BYTEA NOT NULL,
   reward_type      TEXT NOT NULL,
   epoch_id         BIGINT NOT NULL,
@@ -1068,10 +1076,11 @@ DROP TABLE IF EXISTS ledger;
 DROP TABLE IF EXISTS balances cascade;
 DROP TABLE IF EXISTS accounts;
 DROP TABLE IF EXISTS parties;
+DROP VIEW IF EXISTS assets_current;
 DROP TABLE IF EXISTS assets;
+DROP TYPE IF EXISTS asset_status_type;
 DROP TABLE IF EXISTS trades cascade;
 DROP TABLE IF EXISTS chain;
 DROP TABLE IF EXISTS blocks cascade;
 
 DROP DOMAIN IF EXISTS HUGEINT;
-

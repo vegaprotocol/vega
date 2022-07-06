@@ -21,6 +21,10 @@ import (
 
 type myAssetResolver VegaResolverRoot
 
+func (r *myAssetResolver) Status(ctx context.Context, obj *types.Asset) (AssetStatus, error) {
+	return convertAssetStatusFromProto(obj.Status)
+}
+
 func (r *myAssetResolver) InfrastructureFeeAccount(ctx context.Context, obj *types.Asset) (*types.Account, error) {
 	if len(obj.Id) <= 0 {
 		return nil, ErrMissingIDOrReference

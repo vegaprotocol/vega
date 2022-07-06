@@ -21,6 +21,22 @@ import (
 	oraclesv1 "code.vegaprotocol.io/protos/vega/oracles/v1"
 )
 
+func convertAssetStatusFromProto(s types.Asset_Status) (AssetStatus, error) {
+	switch s {
+	case types.Asset_STATUS_PROPOSED:
+		return AssetStatusProposed, nil
+	case types.Asset_STATUS_REJECTED:
+		return AssetStatusRejected, nil
+	case types.Asset_STATUS_PENDING_LISTING:
+		return AssetStatusPendingListing, nil
+	case types.Asset_STATUS_ENABLED:
+		return AssetStatusEnabled, nil
+	default:
+		err := fmt.Errorf("failed to convert AssetStatus from Proto to GraphQL: %v", s)
+		return AssetStatus(""), err
+	}
+}
+
 func convertTransferStatusFromProto(x eventspb.Transfer_Status) (TransferStatus, error) {
 	switch x {
 	case eventspb.Transfer_STATUS_PENDING:

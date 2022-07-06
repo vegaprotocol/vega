@@ -29,6 +29,7 @@ import (
 	"code.vegaprotocol.io/data-node/vegatime"
 	v2 "code.vegaprotocol.io/protos/data-node/api/v2"
 	"code.vegaprotocol.io/protos/vega"
+	"code.vegaprotocol.io/vega/types/num"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/proto"
 )
@@ -572,9 +573,14 @@ func (t *tradingDataServiceV2) GetERC20ListAssetBundle(ctx context.Context, req 
 		return nil, fmt.Errorf("invalid erc20 token contract address")
 	}
 
+	nonce, err := num.UintFromHex("0x" + strings.TrimLeft(req.AssetId, "0"))
+	if err != nil {
+		return nil, err
+	}
+
 	return &v2.GetERC20ListAssetBundleResponse{
 		AssetSource: address,
-		Nonce:       req.AssetId,
+		Nonce:       nonce.String(),
 		VegaAssetId: asset.ID.String(),
 		Signatures:  pack,
 	}, nil

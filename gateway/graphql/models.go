@@ -418,6 +418,55 @@ type UpdateInstrumentConfiguration struct {
 	Product *vega.UpdateFutureProduct `json:"product"`
 }
 
+type AssetStatus string
+
+const (
+	// Asset is proposed to be added to the network
+	AssetStatusProposed AssetStatus = "Proposed"
+	// Asset has been rejected
+	AssetStatusRejected AssetStatus = "Rejected"
+	// Asset is pending listing on the ethereum bridge
+	AssetStatusPendingListing AssetStatus = "PendingListing"
+	// Asset can be used on the vega network
+	AssetStatusEnabled AssetStatus = "Enabled"
+)
+
+var AllAssetStatus = []AssetStatus{
+	AssetStatusProposed,
+	AssetStatusRejected,
+	AssetStatusPendingListing,
+	AssetStatusEnabled,
+}
+
+func (e AssetStatus) IsValid() bool {
+	switch e {
+	case AssetStatusProposed, AssetStatusRejected, AssetStatusPendingListing, AssetStatusEnabled:
+		return true
+	}
+	return false
+}
+
+func (e AssetStatus) String() string {
+	return string(e)
+}
+
+func (e *AssetStatus) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = AssetStatus(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid AssetStatus", str)
+	}
+	return nil
+}
+
+func (e AssetStatus) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
 type AuctionTrigger string
 
 const (
