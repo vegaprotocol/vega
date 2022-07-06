@@ -1076,7 +1076,7 @@ DROP TABLE IF EXISTS ledger;
 DROP TABLE IF EXISTS balances cascade;
 DROP TABLE IF EXISTS accounts;
 DROP TABLE IF EXISTS parties;
-DROP VIEW IF EXISTS asset_current;
+DROP VIEW IF EXISTS assets_current;
 DROP TABLE IF EXISTS assets;
 DROP TABLE IF EXISTS trades cascade;
 DROP TABLE IF EXISTS chain;
