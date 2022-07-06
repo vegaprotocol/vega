@@ -1078,6 +1078,7 @@ DROP TABLE IF EXISTS accounts;
 DROP TABLE IF EXISTS parties;
 DROP VIEW IF EXISTS assets_current;
 DROP TABLE IF EXISTS assets;
+DROP TYPE IF EXISTS asset_status_type;
 DROP TABLE IF EXISTS trades cascade;
 DROP TABLE IF EXISTS chain;
 DROP TABLE IF EXISTS blocks cascade;
