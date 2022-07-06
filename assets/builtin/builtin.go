@@ -29,8 +29,21 @@ func New(id string, asset *types.AssetDetails) *Builtin {
 		asset: &types.Asset{
 			ID:      id,
 			Details: asset,
+			Status:  types.AssetStatusProposed,
 		},
 	}
+}
+
+func (e *Builtin) SetPendingListing() {
+	e.asset.Status = types.AssetStatusPendingListing
+}
+
+func (e *Builtin) SetRejected() {
+	e.asset.Status = types.AssetStatusRejected
+}
+
+func (e *Builtin) SetEnabled() {
+	e.asset.Status = types.AssetStatusEnabled
 }
 
 func (b *Builtin) ProtoAsset() *proto.Asset {

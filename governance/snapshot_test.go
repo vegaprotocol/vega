@@ -143,7 +143,7 @@ func TestGovernanceSnapshotNodeProposal(t *testing.T) {
 	proposal := eng.newProposalForNewAsset(party.Id, eng.tsvc.GetTimeNow())
 
 	eng.expectProposalWaitingForNodeVoteEvent(t, party.Id, proposal.ID)
-	eng.assets.EXPECT().NewAsset(gomock.Any(), gomock.Any()).Times(1)
+	eng.assets.EXPECT().NewAsset(gomock.Any(), gomock.Any(), gomock.Any()).Times(1)
 	eng.assets.EXPECT().Get(gomock.Any()).AnyTimes()
 	eng.witness.EXPECT().StartCheck(gomock.Any(), gomock.Any(), gomock.Any()).Times(1)
 
@@ -167,7 +167,7 @@ func TestGovernanceSnapshotNodeProposal(t *testing.T) {
 	snapEng := getTestEngine(t)
 	defer snapEng.ctrl.Finish()
 
-	snapEng.assets.EXPECT().NewAsset(gomock.Any(), gomock.Any()).Times(1)
+	snapEng.assets.EXPECT().NewAsset(gomock.Any(), gomock.Any(), gomock.Any()).Times(1)
 	snapEng.witness.EXPECT().RestoreResource(gomock.Any(), gomock.Any()).Times(1)
 
 	fmt.Printf("SNAP: %v\n", snap.String())

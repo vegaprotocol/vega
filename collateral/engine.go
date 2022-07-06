@@ -214,7 +214,6 @@ func (e *Engine) EnableAsset(ctx context.Context, asset types.Asset) error {
 		return ErrAssetAlreadyEnabled
 	}
 	e.enabledAssets[asset.ID] = asset
-	e.broker.Send(events.NewAssetEvent(ctx, asset))
 	// update state
 	e.state.enableAsset(asset)
 	// then creat a new infrastructure fee account for the asset

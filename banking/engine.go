@@ -55,7 +55,7 @@ var (
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/assets_mock.go -package mocks code.vegaprotocol.io/vega/banking Assets
 type Assets interface {
 	Get(assetID string) (*assets.Asset, error)
-	Enable(assetID string) error
+	Enable(ctx context.Context, assetID string) error
 }
 
 // Notary ...
@@ -360,7 +360,7 @@ func (e *Engine) finalizeAssetList(ctx context.Context, assetID string) error {
 			logging.AssetID(assetID))
 		return nil
 	}
-	if err := e.assets.Enable(assetID); err != nil {
+	if err := e.assets.Enable(ctx, assetID); err != nil {
 		e.log.Error("unable to enable asset",
 			logging.Error(err),
 			logging.AssetID(assetID))

@@ -171,6 +171,10 @@ func (m *mockAsset) Type() *types.Asset {
 	}
 }
 
+func (m *mockAsset) SetPendingListing() {}
+func (m *mockAsset) SetRejected()       {}
+func (m *mockAsset) SetEnabled()        {}
+
 func (m *mockAsset) GetAssetClass() common.AssetClass { return common.ERC20 }
 func (m *mockAsset) IsValid() bool                    { return true }
 func (m *mockAsset) Validate() error                  { return nil }

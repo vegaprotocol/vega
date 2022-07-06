@@ -66,9 +66,11 @@ type StakingAccounts interface {
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/assets_mock.go -package mocks code.vegaprotocol.io/vega/governance Assets
 type Assets interface {
-	NewAsset(ref string, assetDetails *types.AssetDetails) (string, error)
+	NewAsset(ctx context.Context, ref string, assetDetails *types.AssetDetails) (string, error)
 	Get(assetID string) (*assets.Asset, error)
 	IsEnabled(string) bool
+	SetRejected(ctx context.Context, assetID string) error
+	SetPendingListing(ctx context.Context, assetID string) error
 }
 
 // TimeService ...
@@ -205,7 +207,7 @@ func (e *Engine) ReloadConf(cfg Config) {
 	e.Config = cfg
 }
 
-func (e *Engine) preEnactProposal(p *proposal) (te *ToEnact, perr types.ProposalError, err error) {
+func (e *Engine) preEnactProposal(ctx context.Context, p *proposal) (te *ToEnact, perr types.ProposalError, err error) {
 	te = &ToEnact{
 		p: p,
 	}
@@ -235,6 +237,9 @@ func (e *Engine) preEnactProposal(p *proposal) (te *ToEnact, perr types.Proposal
 			return nil, types.ProposalErrorUnspecified, err
 		}
 		te.a = asset.Type()
+		// notify the asset engine that the proposal was passed
+		// and the asset is not pending for listing on the bridge
+		e.assets.SetPendingListing(ctx, p.ID)
 	case types.ProposalTermsTypeNewFreeform:
 		te.f = &ToEnactFreeform{}
 	}
@@ -263,12 +268,21 @@ func (e *Engine) preVoteClosedProposal(p *proposal) *VoteClosed {
 	return vc
 }
 
-func (e *Engine) removeProposal(id string) {
+func (e *Engine) removeProposal(ctx context.Context, id string) {
 	for i, p := range e.activeProposals {
 		if p.ID == id {
 			copy(e.activeProposals[i:], e.activeProposals[i+1:])
 			e.activeProposals[len(e.activeProposals)-1] = nil
 			e.activeProposals = e.activeProposals[:len(e.activeProposals)-1]
+
+			if p.State == types.ProposalStateDeclined || p.State == types.ProposalStateFailed || p.State == types.ProposalStateRejected {
+				// if it's an asset proposal we need to update it's
+				// state in the asset engine
+				switch p.Terms.Change.GetTermType() {
+				case types.ProposalTermsTypeNewAsset:
+					e.assets.SetRejected(ctx, p.ID)
+				}
+			}
 
 			e.gss.changedActive = true
 			return
@@ -295,7 +309,7 @@ func (e *Engine) OnTick(ctx context.Context, t time.Time) ([]*ToEnact, []*VoteCl
 		if !proposal.IsOpen() && !proposal.IsPassed() {
 			toBeRemoved = append(toBeRemoved, proposal.ID)
 		} else if proposal.IsPassed() && (e.isAutoEnactableProposal(proposal.Proposal) || proposal.IsTimeToEnact(now)) {
-			enact, _, err := e.preEnactProposal(proposal)
+			enact, _, err := e.preEnactProposal(ctx, proposal)
 			if err != nil {
 				e.broker.Send(events.NewProposalEvent(ctx, *proposal.Proposal))
 				e.log.Error("proposal enactment has failed",
@@ -310,7 +324,7 @@ func (e *Engine) OnTick(ctx context.Context, t time.Time) ([]*ToEnact, []*VoteCl
 
 	// now we iterate over all proposal ids to remove them from the list
 	for _, id := range toBeRemoved {
-		e.removeProposal(id)
+		e.removeProposal(ctx, id)
 	}
 
 	// then get all proposal accepted through node validation, and start their vote time.
@@ -327,6 +341,13 @@ func (e *Engine) OnTick(ctx context.Context, t time.Time) ([]*ToEnact, []*VoteCl
 			logging.String("proposal-id", p.ID))
 		p.Reject(types.ProposalErrorNodeValidationFailed)
 		e.broker.Send(events.NewProposalEvent(ctx, *p.Proposal))
+
+		// if it's an asset proposal we need to update it's
+		// state in the asset engine
+		switch p.Terms.Change.GetTermType() {
+		case types.ProposalTermsTypeNewAsset:
+			e.assets.SetRejected(ctx, p.ID)
+		}
 	}
 
 	if len(accepted) != 0 || len(rejected) != 0 {
@@ -417,14 +438,14 @@ func (e *Engine) SubmitProposal(
 	// now if it's a 2 steps proposal, start the node votes
 	if e.isTwoStepsProposal(p) {
 		p.WaitForNodeVote()
-		if err := e.startTwoStepsProposal(p); err != nil {
+		if err := e.startTwoStepsProposal(ctx, p); err != nil {
 			return nil, err
 		}
 	} else {
 		e.startProposal(p)
 	}
 
-	return e.intoToSubmit(p)
+	return e.intoToSubmit(ctx, p)
 }
 
 func (e *Engine) RejectProposal(
@@ -434,7 +455,7 @@ func (e *Engine) RejectProposal(
 		return ErrProposalDoesNotExist
 	}
 
-	e.rejectProposal(p, r, errorDetails)
+	e.rejectProposal(ctx, p, r, errorDetails)
 	e.broker.Send(events.NewProposalEvent(ctx, *p))
 	return nil
 }
@@ -453,14 +474,14 @@ func (e *Engine) FinaliseEnactment(ctx context.Context, prop *types.Proposal) {
 	e.broker.Send(events.NewProposalEvent(ctx, *prop))
 }
 
-func (e *Engine) rejectProposal(p *types.Proposal, r types.ProposalError, errorDetails error) {
-	e.removeProposal(p.ID)
+func (e *Engine) rejectProposal(ctx context.Context, p *types.Proposal, r types.ProposalError, errorDetails error) {
+	e.removeProposal(ctx, p.ID)
 	p.RejectWithErr(r, errorDetails)
 }
 
 // toSubmit build the return response for the SubmitProposal
 // method.
-func (e *Engine) intoToSubmit(p *types.Proposal) (*ToSubmit, error) {
+func (e *Engine) intoToSubmit(ctx context.Context, p *types.Proposal) (*ToSubmit, error) {
 	tsb := &ToSubmit{p: p}
 
 	switch p.Terms.Change.GetTermType() {
@@ -476,12 +497,12 @@ func (e *Engine) intoToSubmit(p *types.Proposal) (*ToSubmit, error) {
 
 		auctionDuration := enactTime.Sub(closeTime)
 		if perr, err := validateNewMarketChange(newMarket, e.assets, true, e.netp, auctionDuration); err != nil {
-			e.rejectProposal(p, perr, err)
+			e.rejectProposal(ctx, p, perr, err)
 			return nil, fmt.Errorf("%w, %v", err, perr)
 		}
 		mkt, perr, err := buildMarketFromProposal(p.ID, newMarket, e.netp, auctionDuration)
 		if err != nil {
-			e.rejectProposal(p, perr, err)
+			e.rejectProposal(ctx, p, perr, err)
 			return nil, fmt.Errorf("%w, %v", err, perr)
 		}
 		tsb.m = &ToSubmitNewMarket{
@@ -512,9 +533,9 @@ func (e *Engine) startValidatedProposal(p *proposal) {
 	e.gss.changedActive = true
 }
 
-func (e *Engine) startTwoStepsProposal(p *types.Proposal) error {
+func (e *Engine) startTwoStepsProposal(ctx context.Context, p *types.Proposal) error {
 	e.gss.changedNodeValidation = true
-	return e.nodeProposalValidation.Start(p)
+	return e.nodeProposalValidation.Start(ctx, p)
 }
 
 func (e *Engine) isTwoStepsProposal(p *types.Proposal) bool {

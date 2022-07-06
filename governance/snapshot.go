@@ -276,7 +276,7 @@ func (e *Engine) restoreEnactedProposals(ctx context.Context, enacted *types.Gov
 
 func (e *Engine) restoreNodeProposals(ctx context.Context, node *types.GovernanceNode, p *types.Payload) error {
 	for _, p := range node.Proposals {
-		e.nodeProposalValidation.restore(p)
+		e.nodeProposalValidation.restore(ctx, p)
 		e.broker.Send(events.NewProposalEvent(ctx, *p))
 	}
 	var err error
