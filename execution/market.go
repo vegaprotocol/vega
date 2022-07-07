@@ -384,7 +384,7 @@ func NewMarket(
 
 	// The market is initially create in a proposed state
 	mkt.State = types.MarketStateProposed
-	mkt.TradingMode = types.MarketTradingModeContinuous
+	mkt.TradingMode = types.MarketTradingModeNoTrading
 
 	// Populate the market timestamps
 	ts := &types.MarketTimestamps{
@@ -616,6 +616,7 @@ func (m *Market) Reject(ctx context.Context) error {
 	// we closed all parties accounts
 	m.cleanupOnReject(ctx)
 	m.mkt.State = types.MarketStateRejected
+	m.mkt.TradingMode = types.MarketTradingModeNoTrading
 	m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
 	m.stateChanged = true
 
@@ -644,11 +645,13 @@ func (m *Market) StartOpeningAuction(ctx context.Context) error {
 		// we are now in a pending state
 		m.mkt.State = types.MarketStatePending
 		m.mkt.MarketTimestamps.Pending = m.timeService.GetTimeNow().UnixNano()
+		m.mkt.TradingMode = types.MarketTradingModeOpeningAuction
 		m.enterAuction(ctx)
 	} else {
 		// TODO(): to be removed once we don't have market starting
 		// without an opening auction
 		m.mkt.State = types.MarketStateActive
+		m.mkt.TradingMode = types.MarketTradingModeContinuous
 	}
 
 	m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
@@ -805,6 +808,7 @@ func (m *Market) closeMarket(ctx context.Context, t time.Time) error {
 
 	m.broker.Send(events.NewTransferResponse(ctx, clearMarketTransfers))
 	m.mkt.State = types.MarketStateSettled
+	m.mkt.TradingMode = types.MarketTradingModeNoTrading
 	m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
 
 	// remove all order from the book
@@ -930,6 +934,7 @@ func (m *Market) enterAuction(ctx context.Context) {
 
 	if m.as.InAuction() && (m.as.IsLiquidityAuction() || m.as.IsPriceAuction()) {
 		m.mkt.State = types.MarketStateSuspended
+		m.mkt.TradingMode = types.MarketTradingModeMonitoringAuction
 		m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
 		m.stateChanged = true
 	}
@@ -956,6 +961,7 @@ func (m *Market) leaveAuction(ctx context.Context, now time.Time) {
 	defer func() {
 		if !m.as.InAuction() && m.mkt.State == types.MarketStateSuspended {
 			m.mkt.State = types.MarketStateActive
+			m.mkt.TradingMode = types.MarketTradingModeContinuous
 			m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
 			m.stateChanged = true
 		}
@@ -3138,6 +3144,7 @@ func (m *Market) tradingTerminated(ctx context.Context, tt bool) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	m.mkt.State = types.MarketStateTradingTerminated
+	m.mkt.TradingMode = types.MarketTradingModeNoTrading
 	m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
 	m.stateChanged = true
 
