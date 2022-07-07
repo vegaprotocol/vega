@@ -51,6 +51,7 @@ type TimeService interface {
 // OracleEngine ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/oracle_engine_mock.go -package mocks code.vegaprotocol.io/vega/execution OracleEngine
 type OracleEngine interface {
+	ListensToPubKeys(oracles.OracleData) bool
 	Subscribe(context.Context, oracles.OracleSpec, oracles.OnMatchedOracleData) oracles.SubscriptionID
 	Unsubscribe(context.Context, oracles.SubscriptionID)
 }

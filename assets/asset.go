@@ -26,7 +26,7 @@ type isAsset interface {
 	GetAssetClass() common.AssetClass
 	// IsValid is the order valid / validated with the target chain?
 	IsValid() bool
-	// Validate this is used to check if the assets
+	// Validate is used to check if the assets
 	// are present on the target chain
 	Validate() error
 	// SetValidNonValidator will set an asset as valid

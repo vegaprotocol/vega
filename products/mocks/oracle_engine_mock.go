@@ -35,6 +35,20 @@ func (m *MockOracleEngine) EXPECT() *MockOracleEngineMockRecorder {
 	return m.recorder
 }
 
+// ListensToPubKeys mocks base method.
+func (m *MockOracleEngine) ListensToPubKeys(arg0 oracles.OracleData) bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListensToPubKeys", arg0)
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// ListensToPubKeys indicates an expected call of ListensToPubKeys.
+func (mr *MockOracleEngineMockRecorder) ListensToPubKeys(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListensToPubKeys", reflect.TypeOf((*MockOracleEngine)(nil).ListensToPubKeys), arg0)
+}
+
 // Subscribe mocks base method.
 func (m *MockOracleEngine) Subscribe(arg0 context.Context, arg1 oracles.OracleSpec, arg2 oracles.OnMatchedOracleData) oracles.SubscriptionID {
 	m.ctrl.T.Helper()
