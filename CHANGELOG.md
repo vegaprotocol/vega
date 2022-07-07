@@ -24,6 +24,7 @@
 - [705](https://github.com/vegaprotocol/data-node/issues/705) - Market Depth returning incorrect book state
 - [730](https://github.com/vegaprotocol/data-node/issues/730) - Event bus subscriptions with party and market filter not working
 - [678](https://github.com/vegaprotocol/data-node/issues/678) - Add new trading mode variant
+- [776](https://github.com/vegaprotocol/data-node/issues/776) - Add support for missing proposal errors
 
 ## 0.52.0
 
