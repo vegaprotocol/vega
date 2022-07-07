@@ -50,6 +50,108 @@ Data node is initialised with a set of default configuration with the command `d
   LogRemovedOrdersDebug = false
 ```
 
+## PostgreSQL
+As of version 0.53, data node uses [PostgreSQL](https://www.postgresql.org) as its storage back end instead of the previous mix of in-memory and BadgerDB file stores. We also make use of Postgres extension called [TimescaleDB](https://www.timescale.com), which adds a number of time series specific features.
+
+Postgres is not an embedded database, but a separate server application that needs to be running before datanode starts, and a side effect of this transition is a little bit of setup is required by the data node operator.
+
+By default, data node will attempt to connect to a database called `vega` listening on `localhost:5432`, using the username and password `vega`. This is of course all configurable in data node’s `config.toml` file.
+
+We are developing using `PostgreSQL 14.2` and `Timescale 2.6` and _strongly recommend_ that you also use the same versions.
+
+```json
+​​[SQLStore]
+ UseEmbedded = false
+ [SQLStore.ConnectionConfig]
+   Host = "localhost"
+   Port = 5432
+   Username = "vega"
+   Password = "vega"
+   Database = "vega"
+   UseTransactions = true
+ 
+```
+### Persistence
+Currently the database is destroyed if it exists and recreated at data node start-up, though we expect this to change in the not too distant future once the schema has settled down and we add support for starting/stopping data nodes without replaying the entire chain.
+
+There are a few different ways you can get postgres & timescale up and running. 
+
+### Using docker
+This is probably the most straightforward and reliable way to get up and running. 
+
+Timescale supply a docker image, so assuming you [already have](https://www.docker.com/get-started/) docker installed, it is a simple matter of:
+
+```sh
+docker run --rm \
+           -d
+           -e POSTGRES_USER=vega \
+           -e POSTGRES_PASSWORD=vega \
+           -e POSTGRES_DB=vega \
+           -p 5432:5432 \
+           timescale/timescaledb:2.6.0-pg14
+```
+
+### Using your operating system's native packages
+
+Timescale [have a set of instructions](https://docs.timescale.com/install/latest/self-hosted/) for installing Postgres/Timescale using `.deb` or `.rpm` they have built. If you follow these and get postgres running as a system service you'll then have to create a database, user, and password for the data node to use. For example:
+
+```sql
+➜  ~ sudo -u postgres psql
+psql (14.3 (Ubuntu 14.3-0ubuntu0.22.04.1))
+Type "help" for help.
+
+
+postgres=# create database vega;
+CREATE DATABASE
+
+postgres=# create user vega with password 'vega';
+CREATE ROLE
+
+postgres=# grant all privileges on database vega to vega;
+GRANT
+```
+
+### Using 'embedded' PostgreSQL
+As mentioned above, PostgreSQL is not an embedded database. However, the good folks over at [embedded-postgres-go](https://github.com/fergusstrange/embedded-postgres) didn't let that stop them trying.
+
+This go package allows us to start a PostgreSQL server from the data-node. It does this by
+- Examining your system to figure out what platform/architecture it is
+- Downloading an appropriate PostgreSQL binary installation
+- Unpacking it to a temporary location 
+- Configuring and launching Postgres as a child process of data-node
+
+embedded-postgres-go doesn't come with support for TimescaleDB so we forked it and built a set of our own binaries for a limited set of platforms which we [host on GitHub](https://github.com/vegaprotocol/embedded-postgres-binaries/releases/).
+
+We use it for running integration tests and it works quite well however, we haven't tested it on a wide range of platforms, and ran into a few odd issues usually related to linking to various system libraries or sometimes not shutting down cleanly.
+
+You can launch postgres in this way either with the command either using
+
+```sh
+data-node postgres init
+data-node postgres start
+```
+
+Which will launch embedded postgres in it's own process or
+
+Or by setting 
+```json
+​​[SQLStore]
+  UseEmbedded = true
+```
+
+Which will cause data-node to launch Postgres as it starts up, and stop it when it exits. While convenient, if data-node is forcefully killed and doesn't have chance to shutdown it is possible for postgres to keep on running. Postgres then needs to be manually killed to prevent 'unable to bind to port' errors on the next start.
+
+In both cases, the files for the database will be stored in your 'state' directory, e.g. `~/.local/state/vega/data-node/` on Linux.
+
+### Building from source
+
+It's quite straightforward; if this is your preferred option you probably already know how to do it. There are instructions on the timescale website.
+
+### Using a cloud database provider
+
+This isn't something we've tested yet, but it's something we plan to investigate in the future. Feel very free to give it a try; our main concern is that the latency of the connection may cause data-node to be unable to process blocks as fast as they are produced.
+
+Timescale provide a hosted service, I believe `AWS` do as well.
 ## Vega core streaming
 
 Data requires an instance of Vega core node for it's meaningful function. Please see [Vega Getting Started](https://github.com/vegaprotocol/vega/blob/develop/GETTING_STARTED.md).

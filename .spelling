@@ -9,6 +9,7 @@ async
 barnabee
 base64
 blockchain
+BadgerDB
 Buf
 codegen
 cyclomatic
@@ -57,6 +58,9 @@ Prometheus
 proto
 protobuf
 protobufs
+PostgreSQL
+Postgres
+postgres
 PubKey
 Ropsten
 round_pushpin
@@ -72,6 +76,7 @@ tendermint
 Tendermint
 testnet
 timestamp
+TimescaleDB
 tradable
 traderbot
 TradingService
