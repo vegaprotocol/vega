@@ -2,13 +2,9 @@
 name: Release vegawallet binaries
 
 "on":
-#  push:
-#    tags:
-#      - "v*"
-  pull_request:
-    branches:
-      - master
-      - develop
+  push:
+    tags:
+      - "v*"
 
 jobs:
   release-linux:
@@ -50,12 +46,12 @@ jobs:
           directory: build
           filename: vegawallet-${{ env.GOOS }}-${{ env.GOARCH }}.zip
 
-#      - name: Release
-#        uses: softprops/action-gh-release@v1
-#        with:
-#          files: build/*.zip
-#        env:
-#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: build/*.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   release-macos:
     name: Release on MacOS ${{ matrix.arch }}
@@ -138,12 +134,12 @@ jobs:
             --timeout "90m" \
             --wait
 
-#      - name: Release
-#        uses: softprops/action-gh-release@v1
-#        with:
-#          files: build/*.zip
-#        env:
-#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: build/*.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   release-windows:
     name: Release on Windows ${{ matrix.arch }}
@@ -193,9 +189,9 @@ jobs:
           directory: build
           filename: vegawallet-${{ env.GOOS }}-${{ env.GOARCH }}.zip
 
-#      - name: Release
-#        uses: softprops/action-gh-release@v1
-#        with:
-#          files: build/*.zip
-#        env:
-#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: build/*.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
