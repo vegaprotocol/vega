@@ -9414,6 +9414,14 @@ enum ProposalRejectionReason {
   ParticipationThresholdNotReached
   "Asset details are invalid"
   InvalidAssetDetails
+  "Too many price monitoring triggers specified in market"
+  TooManyPriceMonitoringTriggers
+  "Too many decimal places specified in market"
+  TooManyMarketDecimalPlaces
+  "The market is invalid"
+  InvalidMarket
+  "The proposal is rejected because the party do not have enough equity like share in the market"
+  InsufficientEquityLikeShare
 }
 
 "Reason for the order being rejected by the core node"

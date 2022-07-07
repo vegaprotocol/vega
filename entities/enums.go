@@ -504,6 +504,7 @@ const (
 	ProposalErrorInsufficientEquityLikeShare      = ProposalError(vega.ProposalError_PROPOSAL_ERROR_INSUFFICIENT_EQUITY_LIKE_SHARE)
 	ProposalErrorInvalidMarket                    = ProposalError(vega.ProposalError_PROPOSAL_ERROR_INVALID_MARKET)
 	ProposalErrorTooManyMarketDecimalPlaces       = ProposalError(vega.ProposalError_PROPOSAL_ERROR_TOO_MANY_MARKET_DECIMAL_PLACES)
+	ProposalErrorTooManyPriceMonitoringTriggers   = ProposalError(vega.ProposalError_PROPOSAL_ERROR_TOO_MANY_PRICE_MONITORING_TRIGGERS)
 )
 
 func (s ProposalError) EncodeText(_ *pgtype.ConnInfo, buf []byte) ([]byte, error) {
