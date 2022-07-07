@@ -131,6 +131,7 @@ func BuildCmdRoot(w io.Writer, vh CheckVersionHandler) *cobra.Command {
 	cmd.AddCommand(NewCmdService(w, f))
 	cmd.AddCommand(NewCmdTx(w, f))
 	cmd.AddCommand(NewCmdMessage(w, f))
+	cmd.AddCommand(NewCmdPermissions(w, f))
 
 	// Wallet commands
 	// We don't have a wrapper sub-command for wallet commands.
