@@ -21,6 +21,7 @@
 - [5520](https://github.com/vegaprotocol/vega/issues/5520) - Do not fail silently when wallet fails to start
 - [5521](https://github.com/vegaprotocol/vega/issues/5521) - Fix asset bundle and add asset status
 - [5546](https://github.com/vegaprotocol/vega/issues/5546) - Fix collateral checkpoint to unlock locked reward account balance
+- [5194](https://github.com/vegaprotocol/vega/issues/5194) - Fix market trading mode vs market state
 
 ## 0.52.0
 
