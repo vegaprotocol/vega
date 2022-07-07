@@ -31,7 +31,7 @@ func (cmd *VersionCmd) Execute(_ []string) error {
 
 var versionCmd VersionCmd
 
-func Version(ctx context.Context, parser *flags.Parser) error {
+func Version(_ context.Context, parser *flags.Parser) error {
 	versionCmd = VersionCmd{
 		version: CLIVersion,
 		hash:    CLIVersionHash,

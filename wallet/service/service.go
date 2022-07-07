@@ -891,7 +891,7 @@ func (s *Service) signTx(token string, w http.ResponseWriter, r *http.Request, _
 func (s *Service) Version(w http.ResponseWriter, _ *http.Request, _ httprouter.Params) {
 	res := VersionResponse{
 		Version:     version.Version,
-		VersionHash: version.VersionHash,
+		VersionHash: version.GitHash,
 	}
 
 	s.writeSuccess(w, res)
