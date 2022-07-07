@@ -328,3 +328,7 @@ models:
     model: code.vegaprotocol.io/protos/data-node/api/v2.OracleDataEdge
   OracleDataConnection:
     model: code.vegaprotocol.io/protos/data-node/api/v2.OracleDataConnection
+  LiquidityProvisionsEdge:
+    model: code.vegaprotocol.io/protos/data-node/api/v2.LiquidityProvisionsEdge
+  LiquidityProvisionsConnection:
+    model: code.vegaprotocol.io/protos/data-node/api/v2.LiquidityProvisionsConnection

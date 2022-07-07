@@ -1507,7 +1507,15 @@ type Market {
   liquidityProvisions(
     "An optional party id"
     party: String
-  ): [LiquidityProvision!]
+  ): [LiquidityProvision!] @deprecated(reason: "Use liquidityProvisionsConnection instead")
+
+  "The list of the liquidity provision commitment for this market"
+   liquidityProvisionsConnection(
+     "An optional party id"
+     party: String
+     "Pagination information"
+     pagination: Pagination
+  ): LiquidityProvisionsConnection!
 
   "timestamps for state changes in the market"
   marketTimestamps: MarketTimestamps!
@@ -1684,7 +1692,17 @@ type Party {
     market: String
     "An optional reference"
     reference: String
-  ): [LiquidityProvision!]
+  ): [LiquidityProvision!] @deprecated(reason: "Use liquidityProvisionsConnection instead")
+
+   "The list of the liquidity provision commitment for this party"
+     liquidityProvisionsConnection(
+       "An optional market id"
+       market: String
+       "An optional reference"
+       reference: String
+       "Pagination information"
+       pagination: Pagination
+    ): LiquidityProvisionsConnection!
 
   # All delegations for a party to a given node if node is specified, or all delegations if not
   delegations(
@@ -3440,3 +3458,15 @@ type OracleDataConnection {
     "The pagination information"
     pageInfo: PageInfo!
 }
+
+type LiquidityProvisionsEdge {
+  node: LiquidityProvision!
+  cursor: String!
+}
+
+type LiquidityProvisionsConnection {
+    totalCount: Int!
+    edges: [LiquidityProvisionsEdge]
+    pageInfo: PageInfo!
+}
+

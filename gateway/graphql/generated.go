@@ -411,6 +411,17 @@ type ComplexityRoot struct {
 		Version          func(childComplexity int) int
 	}
 
+	LiquidityProvisionsConnection struct {
+		Edges      func(childComplexity int) int
+		PageInfo   func(childComplexity int) int
+		TotalCount func(childComplexity int) int
+	}
+
+	LiquidityProvisionsEdge struct {
+		Cursor func(childComplexity int) int
+		Node   func(childComplexity int) int
+	}
+
 	LogNormalModelParams struct {
 		Mu    func(childComplexity int) int
 		R     func(childComplexity int) int
@@ -466,6 +477,7 @@ type ComplexityRoot struct {
 		Id                            func(childComplexity int) int
 		LiquidityMonitoringParameters func(childComplexity int) int
 		LiquidityProvisions           func(childComplexity int, party *string) int
+		LiquidityProvisionsConnection func(childComplexity int, party *string, pagination *v2.Pagination) int
 		MarketTimestamps              func(childComplexity int) int
 		Name                          func(childComplexity int) int
 		OpeningAuction                func(childComplexity int) int
@@ -754,28 +766,29 @@ type ComplexityRoot struct {
 	}
 
 	Party struct {
-		Accounts              func(childComplexity int, marketID *string, asset *string, typeArg *vega.AccountType) int
-		Delegations           func(childComplexity int, nodeID *string, skip *int, first *int, last *int) int
-		Deposits              func(childComplexity int) int
-		DepositsConnection    func(childComplexity int) int
-		Id                    func(childComplexity int) int
-		LiquidityProvisions   func(childComplexity int, market *string, reference *string) int
-		Margins               func(childComplexity int, marketID *string) int
-		MarginsConnection     func(childComplexity int, marketID *string, pagination *v2.Pagination) int
-		Orders                func(childComplexity int, skip *int, first *int, last *int) int
-		OrdersConnection      func(childComplexity int, pagination *v2.Pagination) int
-		Positions             func(childComplexity int) int
-		Proposals             func(childComplexity int, inState *ProposalState) int
-		RewardDetails         func(childComplexity int) int
-		RewardSummaries       func(childComplexity int, asset *string) int
-		Rewards               func(childComplexity int, asset *string, skip *int, first *int, last *int) int
-		RewardsConnection     func(childComplexity int, asset *string, pagination *v2.Pagination) int
-		Stake                 func(childComplexity int) int
-		Trades                func(childComplexity int, marketID *string, skip *int, first *int, last *int) int
-		TradesConnection      func(childComplexity int, marketID *string, pagination *v2.Pagination) int
-		Votes                 func(childComplexity int) int
-		Withdrawals           func(childComplexity int) int
-		WithdrawalsConnection func(childComplexity int) int
+		Accounts                      func(childComplexity int, marketID *string, asset *string, typeArg *vega.AccountType) int
+		Delegations                   func(childComplexity int, nodeID *string, skip *int, first *int, last *int) int
+		Deposits                      func(childComplexity int) int
+		DepositsConnection            func(childComplexity int) int
+		Id                            func(childComplexity int) int
+		LiquidityProvisions           func(childComplexity int, market *string, reference *string) int
+		LiquidityProvisionsConnection func(childComplexity int, market *string, reference *string, pagination *v2.Pagination) int
+		Margins                       func(childComplexity int, marketID *string) int
+		MarginsConnection             func(childComplexity int, marketID *string, pagination *v2.Pagination) int
+		Orders                        func(childComplexity int, skip *int, first *int, last *int) int
+		OrdersConnection              func(childComplexity int, pagination *v2.Pagination) int
+		Positions                     func(childComplexity int) int
+		Proposals                     func(childComplexity int, inState *ProposalState) int
+		RewardDetails                 func(childComplexity int) int
+		RewardSummaries               func(childComplexity int, asset *string) int
+		Rewards                       func(childComplexity int, asset *string, skip *int, first *int, last *int) int
+		RewardsConnection             func(childComplexity int, asset *string, pagination *v2.Pagination) int
+		Stake                         func(childComplexity int) int
+		Trades                        func(childComplexity int, marketID *string, skip *int, first *int, last *int) int
+		TradesConnection              func(childComplexity int, marketID *string, pagination *v2.Pagination) int
+		Votes                         func(childComplexity int) int
+		Withdrawals                   func(childComplexity int) int
+		WithdrawalsConnection         func(childComplexity int) int
 	}
 
 	PartyConnection struct {
@@ -1389,6 +1402,7 @@ type MarketResolver interface {
 	CandlesConnection(ctx context.Context, obj *vega.Market, since string, to *string, interval Interval, pagination *v2.Pagination) (*v2.CandleDataConnection, error)
 	Data(ctx context.Context, obj *vega.Market) (*vega.MarketData, error)
 	LiquidityProvisions(ctx context.Context, obj *vega.Market, party *string) ([]*vega.LiquidityProvision, error)
+	LiquidityProvisionsConnection(ctx context.Context, obj *vega.Market, party *string, pagination *v2.Pagination) (*v2.LiquidityProvisionsConnection, error)
 
 	RiskFactors(ctx context.Context, obj *vega.Market) (*vega.RiskFactor, error)
 }
@@ -1514,6 +1528,7 @@ type PartyResolver interface {
 	Deposits(ctx context.Context, obj *vega.Party) ([]*vega.Deposit, error)
 	DepositsConnection(ctx context.Context, obj *vega.Party) (*v2.DepositsConnection, error)
 	LiquidityProvisions(ctx context.Context, obj *vega.Party, market *string, reference *string) ([]*vega.LiquidityProvision, error)
+	LiquidityProvisionsConnection(ctx context.Context, obj *vega.Party, market *string, reference *string, pagination *v2.Pagination) (*v2.LiquidityProvisionsConnection, error)
 	Delegations(ctx context.Context, obj *vega.Party, nodeID *string, skip *int, first *int, last *int) ([]*vega.Delegation, error)
 	Stake(ctx context.Context, obj *vega.Party) (*v12.PartyStakeResponse, error)
 	Rewards(ctx context.Context, obj *vega.Party, asset *string, skip *int, first *int, last *int) ([]*vega.Reward, error)
@@ -2952,6 +2967,41 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.LiquidityProvision.Version(childComplexity), true
 
+	case "LiquidityProvisionsConnection.edges":
+		if e.complexity.LiquidityProvisionsConnection.Edges == nil {
+			break
+		}
+
+		return e.complexity.LiquidityProvisionsConnection.Edges(childComplexity), true
+
+	case "LiquidityProvisionsConnection.pageInfo":
+		if e.complexity.LiquidityProvisionsConnection.PageInfo == nil {
+			break
+		}
+
+		return e.complexity.LiquidityProvisionsConnection.PageInfo(childComplexity), true
+
+	case "LiquidityProvisionsConnection.totalCount":
+		if e.complexity.LiquidityProvisionsConnection.TotalCount == nil {
+			break
+		}
+
+		return e.complexity.LiquidityProvisionsConnection.TotalCount(childComplexity), true
+
+	case "LiquidityProvisionsEdge.cursor":
+		if e.complexity.LiquidityProvisionsEdge.Cursor == nil {
+			break
+		}
+
+		return e.complexity.LiquidityProvisionsEdge.Cursor(childComplexity), true
+
+	case "LiquidityProvisionsEdge.node":
+		if e.complexity.LiquidityProvisionsEdge.Node == nil {
+			break
+		}
+
+		return e.complexity.LiquidityProvisionsEdge.Node(childComplexity), true
+
 	case "LogNormalModelParams.mu":
 		if e.complexity.LogNormalModelParams.Mu == nil {
 			break
@@ -3207,6 +3257,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Market.LiquidityProvisions(childComplexity, args["party"].(*string)), true
+
+	case "Market.liquidityProvisionsConnection":
+		if e.complexity.Market.LiquidityProvisionsConnection == nil {
+			break
+		}
+
+		args, err := ec.field_Market_liquidityProvisionsConnection_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Market.LiquidityProvisionsConnection(childComplexity, args["party"].(*string), args["pagination"].(*v2.Pagination)), true
 
 	case "Market.marketTimestamps":
 		if e.complexity.Market.MarketTimestamps == nil {
@@ -4580,6 +4642,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Party.LiquidityProvisions(childComplexity, args["market"].(*string), args["reference"].(*string)), true
+
+	case "Party.liquidityProvisionsConnection":
+		if e.complexity.Party.LiquidityProvisionsConnection == nil {
+			break
+		}
+
+		args, err := ec.field_Party_liquidityProvisionsConnection_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Party.LiquidityProvisionsConnection(childComplexity, args["market"].(*string), args["reference"].(*string), args["pagination"].(*v2.Pagination)), true
 
 	case "Party.margins":
 		if e.complexity.Party.Margins == nil {
@@ -8718,7 +8792,15 @@ type Market {
   liquidityProvisions(
     "An optional party id"
     party: String
-  ): [LiquidityProvision!]
+  ): [LiquidityProvision!] @deprecated(reason: "Use liquidityProvisionsConnection instead")
+
+  "The list of the liquidity provision commitment for this market"
+   liquidityProvisionsConnection(
+     "An optional party id"
+     party: String
+     "Pagination information"
+     pagination: Pagination
+  ): LiquidityProvisionsConnection!
 
   "timestamps for state changes in the market"
   marketTimestamps: MarketTimestamps!
@@ -8895,7 +8977,17 @@ type Party {
     market: String
     "An optional reference"
     reference: String
-  ): [LiquidityProvision!]
+  ): [LiquidityProvision!] @deprecated(reason: "Use liquidityProvisionsConnection instead")
+
+   "The list of the liquidity provision commitment for this party"
+     liquidityProvisionsConnection(
+       "An optional market id"
+       market: String
+       "An optional reference"
+       reference: String
+       "Pagination information"
+       pagination: Pagination
+    ): LiquidityProvisionsConnection!
 
   # All delegations for a party to a given node if node is specified, or all delegations if not
   delegations(
@@ -10651,6 +10743,18 @@ type OracleDataConnection {
     "The pagination information"
     pageInfo: PageInfo!
 }
+
+type LiquidityProvisionsEdge {
+  node: LiquidityProvision!
+  cursor: String!
+}
+
+type LiquidityProvisionsConnection {
+    totalCount: Int!
+    edges: [LiquidityProvisionsEdge]
+    pageInfo: PageInfo!
+}
+
 `, BuiltIn: false},
 }
 var parsedSchema = gqlparser.MustLoadSchema(sources...)
@@ -10803,6 +10907,30 @@ func (ec *executionContext) field_Market_depth_args(ctx context.Context, rawArgs
 		}
 	}
 	args["maxDepth"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Market_liquidityProvisionsConnection_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *string
+	if tmp, ok := rawArgs["party"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("party"))
+		arg0, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["party"] = arg0
+	var arg1 *v2.Pagination
+	if tmp, ok := rawArgs["pagination"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pagination"))
+		arg1, err = ec.unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPagination(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["pagination"] = arg1
 	return args, nil
 }
 
@@ -11061,6 +11189,39 @@ func (ec *executionContext) field_Party_delegations_args(ctx context.Context, ra
 		}
 	}
 	args["last"] = arg3
+	return args, nil
+}
+
+func (ec *executionContext) field_Party_liquidityProvisionsConnection_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *string
+	if tmp, ok := rawArgs["market"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("market"))
+		arg0, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["market"] = arg0
+	var arg1 *string
+	if tmp, ok := rawArgs["reference"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("reference"))
+		arg1, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["reference"] = arg1
+	var arg2 *v2.Pagination
+	if tmp, ok := rawArgs["pagination"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pagination"))
+		arg2, err = ec.unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPagination(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["pagination"] = arg2
 	return args, nil
 }
 
@@ -18503,6 +18664,178 @@ func (ec *executionContext) _LiquidityProvision_reference(ctx context.Context, f
 	return ec.marshalOString2string(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _LiquidityProvisionsConnection_totalCount(ctx context.Context, field graphql.CollectedField, obj *v2.LiquidityProvisionsConnection) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "LiquidityProvisionsConnection",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TotalCount, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int64)
+	fc.Result = res
+	return ec.marshalNInt2int64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _LiquidityProvisionsConnection_edges(ctx context.Context, field graphql.CollectedField, obj *v2.LiquidityProvisionsConnection) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "LiquidityProvisionsConnection",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Edges, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*v2.LiquidityProvisionsEdge)
+	fc.Result = res
+	return ec.marshalOLiquidityProvisionsEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐLiquidityProvisionsEdge(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _LiquidityProvisionsConnection_pageInfo(ctx context.Context, field graphql.CollectedField, obj *v2.LiquidityProvisionsConnection) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "LiquidityProvisionsConnection",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PageInfo, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*v2.PageInfo)
+	fc.Result = res
+	return ec.marshalNPageInfo2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPageInfo(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _LiquidityProvisionsEdge_node(ctx context.Context, field graphql.CollectedField, obj *v2.LiquidityProvisionsEdge) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "LiquidityProvisionsEdge",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Node, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*vega.LiquidityProvision)
+	fc.Result = res
+	return ec.marshalNLiquidityProvision2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐLiquidityProvision(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _LiquidityProvisionsEdge_cursor(ctx context.Context, field graphql.CollectedField, obj *v2.LiquidityProvisionsEdge) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "LiquidityProvisionsEdge",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Cursor, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _LogNormalModelParams_mu(ctx context.Context, field graphql.CollectedField, obj *vega.LogNormalModelParams) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -20106,6 +20439,48 @@ func (ec *executionContext) _Market_liquidityProvisions(ctx context.Context, fie
 	res := resTmp.([]*vega.LiquidityProvision)
 	fc.Result = res
 	return ec.marshalOLiquidityProvision2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐLiquidityProvisionᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Market_liquidityProvisionsConnection(ctx context.Context, field graphql.CollectedField, obj *vega.Market) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Market",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Market_liquidityProvisionsConnection_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Market().LiquidityProvisionsConnection(rctx, obj, args["party"].(*string), args["pagination"].(*v2.Pagination))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*v2.LiquidityProvisionsConnection)
+	fc.Result = res
+	return ec.marshalNLiquidityProvisionsConnection2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐLiquidityProvisionsConnection(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Market_marketTimestamps(ctx context.Context, field graphql.CollectedField, obj *vega.Market) (ret graphql.Marshaler) {
@@ -26534,6 +26909,48 @@ func (ec *executionContext) _Party_liquidityProvisions(ctx context.Context, fiel
 	res := resTmp.([]*vega.LiquidityProvision)
 	fc.Result = res
 	return ec.marshalOLiquidityProvision2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐLiquidityProvisionᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Party_liquidityProvisionsConnection(ctx context.Context, field graphql.CollectedField, obj *vega.Party) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Party",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Party_liquidityProvisionsConnection_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Party().LiquidityProvisionsConnection(rctx, obj, args["market"].(*string), args["reference"].(*string), args["pagination"].(*v2.Pagination))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*v2.LiquidityProvisionsConnection)
+	fc.Result = res
+	return ec.marshalNLiquidityProvisionsConnection2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐLiquidityProvisionsConnection(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Party_delegations(ctx context.Context, field graphql.CollectedField, obj *vega.Party) (ret graphql.Marshaler) {
@@ -42334,6 +42751,95 @@ func (ec *executionContext) _LiquidityProvision(ctx context.Context, sel ast.Sel
 	return out
 }
 
+var liquidityProvisionsConnectionImplementors = []string{"LiquidityProvisionsConnection"}
+
+func (ec *executionContext) _LiquidityProvisionsConnection(ctx context.Context, sel ast.SelectionSet, obj *v2.LiquidityProvisionsConnection) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, liquidityProvisionsConnectionImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("LiquidityProvisionsConnection")
+		case "totalCount":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._LiquidityProvisionsConnection_totalCount(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "edges":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._LiquidityProvisionsConnection_edges(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+		case "pageInfo":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._LiquidityProvisionsConnection_pageInfo(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var liquidityProvisionsEdgeImplementors = []string{"LiquidityProvisionsEdge"}
+
+func (ec *executionContext) _LiquidityProvisionsEdge(ctx context.Context, sel ast.SelectionSet, obj *v2.LiquidityProvisionsEdge) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, liquidityProvisionsEdgeImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("LiquidityProvisionsEdge")
+		case "node":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._LiquidityProvisionsEdge_node(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "cursor":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._LiquidityProvisionsEdge_cursor(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
 var logNormalModelParamsImplementors = []string{"LogNormalModelParams"}
 
 func (ec *executionContext) _LogNormalModelParams(ctx context.Context, sel ast.SelectionSet, obj *vega.LogNormalModelParams) graphql.Marshaler {
@@ -43151,6 +43657,26 @@ func (ec *executionContext) _Market(ctx context.Context, sel ast.SelectionSet, o
 					}
 				}()
 				res = ec._Market_liquidityProvisions(ctx, field, obj)
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "liquidityProvisionsConnection":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Market_liquidityProvisionsConnection(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
 				return res
 			}
 
@@ -46365,6 +46891,26 @@ func (ec *executionContext) _Party(ctx context.Context, sel ast.SelectionSet, ob
 					}
 				}()
 				res = ec._Party_liquidityProvisions(ctx, field, obj)
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "liquidityProvisionsConnection":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Party_liquidityProvisionsConnection(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
 				return res
 			}
 
@@ -53239,6 +53785,20 @@ func (ec *executionContext) marshalNLiquidityProvisionStatus2codeᚗvegaprotocol
 	return v
 }
 
+func (ec *executionContext) marshalNLiquidityProvisionsConnection2codeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐLiquidityProvisionsConnection(ctx context.Context, sel ast.SelectionSet, v v2.LiquidityProvisionsConnection) graphql.Marshaler {
+	return ec._LiquidityProvisionsConnection(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNLiquidityProvisionsConnection2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐLiquidityProvisionsConnection(ctx context.Context, sel ast.SelectionSet, v *v2.LiquidityProvisionsConnection) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._LiquidityProvisionsConnection(ctx, sel, v)
+}
+
 func (ec *executionContext) marshalNLogNormalModelParams2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐLogNormalModelParams(ctx context.Context, sel ast.SelectionSet, v *vega.LogNormalModelParams) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -56042,6 +56602,54 @@ func (ec *executionContext) marshalOLiquidityProvision2ᚖcodeᚗvegaprotocolᚗ
 		return graphql.Null
 	}
 	return ec._LiquidityProvision(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOLiquidityProvisionsEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐLiquidityProvisionsEdge(ctx context.Context, sel ast.SelectionSet, v []*v2.LiquidityProvisionsEdge) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalOLiquidityProvisionsEdge2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐLiquidityProvisionsEdge(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	return ret
+}
+
+func (ec *executionContext) marshalOLiquidityProvisionsEdge2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐLiquidityProvisionsEdge(ctx context.Context, sel ast.SelectionSet, v *v2.LiquidityProvisionsEdge) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._LiquidityProvisionsEdge(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalOLogNormalRiskModel2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐLogNormalRiskModel(ctx context.Context, sel ast.SelectionSet, v *vega.LogNormalRiskModel) graphql.Marshaler {

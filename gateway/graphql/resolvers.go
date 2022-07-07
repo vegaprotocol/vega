@@ -375,43 +375,6 @@ func (r *myLiquidityOrderReferenceResolver) Order(ctx context.Context, obj *type
 	return r.r.getOrderByID(ctx, obj.OrderId, nil)
 }
 
-// LiquidityProvision resolver
-
-type myLiquidityProvisionResolver VegaResolverRoot
-
-func (r *myLiquidityProvisionResolver) Version(_ context.Context, obj *types.LiquidityProvision) (string, error) {
-	return strconv.FormatUint(obj.Version, 10), nil
-}
-
-func (r *myLiquidityProvisionResolver) Party(_ context.Context, obj *types.LiquidityProvision) (*types.Party, error) {
-	return &types.Party{Id: obj.PartyId}, nil
-}
-
-func (r *myLiquidityProvisionResolver) CreatedAt(ctx context.Context, obj *types.LiquidityProvision) (string, error) {
-	return vegatime.Format(vegatime.UnixNano(obj.CreatedAt)), nil
-}
-
-func (r *myLiquidityProvisionResolver) UpdatedAt(ctx context.Context, obj *types.LiquidityProvision) (*string, error) {
-	var updatedAt *string
-	if obj.UpdatedAt > 0 {
-		t := vegatime.Format(vegatime.UnixNano(obj.UpdatedAt))
-		updatedAt = &t
-	}
-	return updatedAt, nil
-}
-
-func (r *myLiquidityProvisionResolver) Market(ctx context.Context, obj *types.LiquidityProvision) (*types.Market, error) {
-	return r.r.getMarketByID(ctx, obj.MarketId)
-}
-
-func (r *myLiquidityProvisionResolver) CommitmentAmount(ctx context.Context, obj *types.LiquidityProvision) (string, error) {
-	return obj.CommitmentAmount, nil
-}
-
-func (r *myLiquidityProvisionResolver) Status(ctx context.Context, obj *types.LiquidityProvision) (LiquidityProvisionStatus, error) {
-	return convertLiquidityProvisionStatusFromProto(obj.Status)
-}
-
 // deposit resolver
 
 type myDepositResolver VegaResolverRoot
@@ -1243,6 +1206,38 @@ func (r *myPartyResolver) LiquidityProvisions(
 	}
 
 	return out, nil
+}
+
+func (r *myPartyResolver) LiquidityProvisionsConnection(
+	ctx context.Context,
+	party *types.Party,
+	market, ref *string,
+	pagination *v2.Pagination,
+) (*v2.LiquidityProvisionsConnection, error) {
+	var mid string
+	if market != nil {
+		mid = *market
+	}
+
+	var refId string
+	if ref != nil {
+		refId = *ref
+	}
+
+	req := v2.GetLiquidityProvisionsRequest{
+		Party:      party.Id,
+		Market:     mid,
+		Reference:  refId,
+		Pagination: pagination,
+	}
+
+	res, err := r.tradingDataClientV2.GetLiquidityProvisions(ctx, &req)
+	if err != nil {
+		r.log.Error("tradingData client", logging.Error(err))
+		return nil, customErrorFromStatus(err)
+	}
+
+	return res.LiquidityProvisions, nil
 }
 
 func (r *myPartyResolver) Margins(ctx context.Context,
