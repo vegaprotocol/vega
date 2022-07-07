@@ -9609,6 +9609,9 @@ enum MarketTradingMode {
 
   "Auction triggered by price/liquidity monitoring"
   MonitoringAuction
+
+  "No trading allowed"
+  NoTrading
 }
 
 "Whether the placer of an order is aiming to buy or sell on the market"

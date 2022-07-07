@@ -974,6 +974,8 @@ const (
 	MarketTradingModeBatchAuction MarketTradingMode = "BatchAuction"
 	// Auction triggered by price/liquidity monitoring
 	MarketTradingModeMonitoringAuction MarketTradingMode = "MonitoringAuction"
+	// No trading allowed
+	MarketTradingModeNoTrading MarketTradingMode = "NoTrading"
 )
 
 var AllMarketTradingMode = []MarketTradingMode{
@@ -981,11 +983,12 @@ var AllMarketTradingMode = []MarketTradingMode{
 	MarketTradingModeOpeningAuction,
 	MarketTradingModeBatchAuction,
 	MarketTradingModeMonitoringAuction,
+	MarketTradingModeNoTrading,
 }
 
 func (e MarketTradingMode) IsValid() bool {
 	switch e {
-	case MarketTradingModeContinuous, MarketTradingModeOpeningAuction, MarketTradingModeBatchAuction, MarketTradingModeMonitoringAuction:
+	case MarketTradingModeContinuous, MarketTradingModeOpeningAuction, MarketTradingModeBatchAuction, MarketTradingModeMonitoringAuction, MarketTradingModeNoTrading:
 		return true
 	}
 	return false

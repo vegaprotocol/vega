@@ -326,6 +326,8 @@ func convertMarketTradingModeFromProto(ms types.Market_TradingMode) (MarketTradi
 		return MarketTradingModeMonitoringAuction, nil
 	case types.Market_TRADING_MODE_CONTINUOUS:
 		return MarketTradingModeContinuous, nil
+	case types.Market_TRADING_MODE_NO_TRADING:
+		return MarketTradingModeNoTrading, nil
 	default:
 		err := fmt.Errorf("failed to convert MarketTradingMode from Proto to GraphQL: %v", ms)
 		return MarketTradingModeContinuous, err
