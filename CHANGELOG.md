@@ -20,10 +20,10 @@
 - [748](https://github.com/vegaprotocol/data-node/issues/748) - Add REST endpoint to list `OracleData`
 - [761](https://github.com/vegaprotocol/data-node/issues/761) - Delete all badger stores, `SQL` stores only from now
 
-
 ### 🐛 Fixes
 - [705](https://github.com/vegaprotocol/data-node/issues/705) - Market Depth returning incorrect book state
-- [730](https://github.com/vegaprotocol/data-node/issues/730) - Event bus subscriptions with party and market filter not working 
+- [730](https://github.com/vegaprotocol/data-node/issues/730) - Event bus subscriptions with party and market filter not working
+- [678](https://github.com/vegaprotocol/data-node/issues/678) - Add new trading mode variant
 
 ## 0.52.0
 
