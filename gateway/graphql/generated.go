@@ -9506,6 +9506,14 @@ enum ProposalRejectionReason {
   ParticipationThresholdNotReached
   "Asset details are invalid"
   InvalidAssetDetails
+  "Too many price monitoring triggers specified in market"
+  TooManyPriceMonitoringTriggers
+  "Too many decimal places specified in market"
+  TooManyMarketDecimalPlaces
+  "The market is invalid"
+  InvalidMarket
+  "The proposal is rejected because the party do not have enough equity like share in the market"
+  InsufficientEquityLikeShare
 }
 
 "Reason for the order being rejected by the core node"
@@ -9701,6 +9709,9 @@ enum MarketTradingMode {
 
   "Auction triggered by price/liquidity monitoring"
   MonitoringAuction
+
+  "No trading allowed"
+  NoTrading
 }
 
 "Whether the placer of an order is aiming to buy or sell on the market"

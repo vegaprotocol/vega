@@ -326,6 +326,8 @@ func convertMarketTradingModeFromProto(ms types.Market_TradingMode) (MarketTradi
 		return MarketTradingModeMonitoringAuction, nil
 	case types.Market_TRADING_MODE_CONTINUOUS:
 		return MarketTradingModeContinuous, nil
+	case types.Market_TRADING_MODE_NO_TRADING:
+		return MarketTradingModeNoTrading, nil
 	default:
 		err := fmt.Errorf("failed to convert MarketTradingMode from Proto to GraphQL: %v", ms)
 		return MarketTradingModeContinuous, err
@@ -487,6 +489,14 @@ func convertProposalRejectionReasonFromProto(x types.ProposalError) (ProposalRej
 		return ProposalRejectionReasonParticipationThresholdNotReached, nil
 	case types.ProposalError_PROPOSAL_ERROR_INVALID_ASSET_DETAILS:
 		return ProposalRejectionReasonInvalidAssetDetails, nil
+	case types.ProposalError_PROPOSAL_ERROR_TOO_MANY_PRICE_MONITORING_TRIGGERS:
+		return ProposalRejectionReasonTooManyPriceMonitoringTriggers, nil
+	case types.ProposalError_PROPOSAL_ERROR_TOO_MANY_MARKET_DECIMAL_PLACES:
+		return ProposalRejectionReasonTooManyMarketDecimalPlaces, nil
+	case types.ProposalError_PROPOSAL_ERROR_INVALID_MARKET:
+		return ProposalRejectionReasonInvalidMarket, nil
+	case types.ProposalError_PROPOSAL_ERROR_INSUFFICIENT_EQUITY_LIKE_SHARE:
+		return ProposalRejectionReasonInsufficientEquityLikeShare, nil
 	default:
 		err := fmt.Errorf("failed to convert ProposalRejectionReason from Proto to GraphQL: %v", x)
 		return "", err

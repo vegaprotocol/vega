@@ -16,6 +16,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"runtime/debug"
 
 	"code.vegaprotocol.io/data-node/config"
 	"github.com/jessevdk/go-flags"
@@ -26,7 +27,7 @@ var (
 	CLIVersionHash = ""
 
 	// Version specifies the version used to build the application. See VERSION in Makefile for details.
-	CLIVersion = ""
+	CLIVersion = "v0.53.0+dev"
 )
 
 // Subcommand is the signature of a sub command that can be registered.
@@ -43,6 +44,7 @@ func Register(ctx context.Context, parser *flags.Parser, cmds ...Subcommand) err
 }
 
 func main() {
+	setCommitHash()
 	ctx := context.Background()
 	if err := Main(ctx); err != nil {
 		os.Exit(-1)
@@ -72,4 +74,21 @@ func Main(ctx context.Context) error {
 		return err
 	}
 	return nil
+}
+
+func setCommitHash() {
+	info, _ := debug.ReadBuildInfo()
+	modified := false
+
+	for _, v := range info.Settings {
+		if v.Key == "vcs.revision" {
+			CLIVersionHash = v.Value
+		}
+		if v.Key == "vcs.modified" {
+			modified = true
+		}
+	}
+	if modified {
+		CLIVersionHash += "-modified"
+	}
 }
