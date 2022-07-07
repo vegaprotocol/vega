@@ -22,6 +22,7 @@
 - [5514](https://github.com/vegaprotocol/vega/issues/5514) - Emit `rewardScore` event correctly after loading from checkpoint
 - [5520](https://github.com/vegaprotocol/vega/issues/5520) - Do not fail silently when wallet fails to start
 - [5521](https://github.com/vegaprotocol/vega/issues/5521) - Fix asset bundle and add asset status
+- [5546](https://github.com/vegaprotocol/vega/issues/5546) - Fix collateral checkpoint to unlock locked reward account balance
 
 ## 0.52.0
 
