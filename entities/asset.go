@@ -13,7 +13,6 @@
 package entities
 
 import (
-	"fmt"
 	"time"
 
 	v2 "code.vegaprotocol.io/protos/data-node/api/v2"
@@ -33,7 +32,7 @@ type Asset struct {
 	Symbol            string
 	TotalSupply       decimal.Decimal // Maybe num.Uint if we can figure out how to add support to pgx
 	Decimals          int
-	Quantum           int
+	Quantum           decimal.Decimal
 	Source            string
 	ERC20Contract     string
 	VegaTime          time.Time
@@ -50,7 +49,7 @@ func (a Asset) ToProto() *pb.Asset {
 			Symbol:      a.Symbol,
 			TotalSupply: a.TotalSupply.BigInt().String(),
 			Decimals:    uint64(a.Decimals),
-			Quantum:     fmt.Sprintf("%d", a.Quantum),
+			Quantum:     a.Quantum.String(),
 		},
 		Status: pb.Asset_Status(a.Status),
 	}

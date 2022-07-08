@@ -31,7 +31,7 @@ func addTestAsset(t *testing.T, as *sqlstore.Assets, block entities.Block, idPre
 	// Make an asset
 	testAssetCount += 1
 	totalSupply, _ := decimal.NewFromString("1000000000000000000001")
-
+	quantum, _ := decimal.NewFromString("10")
 	assetID := generateID()
 
 	if len(idPrefix) > 0 && idPrefix[0] != "" {
@@ -44,7 +44,7 @@ func addTestAsset(t *testing.T, as *sqlstore.Assets, block entities.Block, idPre
 		Symbol:            fmt.Sprint("TEST", testAssetCount),
 		TotalSupply:       totalSupply,
 		Decimals:          5,
-		Quantum:           10,
+		Quantum:           quantum,
 		ERC20Contract:     "0xdeadbeef",
 		VegaTime:          block.VegaTime,
 		LifetimeLimit:     decimal.New(42, 0),
