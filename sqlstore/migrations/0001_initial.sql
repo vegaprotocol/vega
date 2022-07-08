@@ -66,8 +66,35 @@ create table balances
     PRIMARY KEY(vega_time, account_id)
 );
 
+
 select create_hypertable('balances', 'vega_time', chunk_time_interval => INTERVAL '1 day');
 create index on balances (vega_time, account_id);
+
+create table current_balances
+(
+    account_id INT                      NOT NULL,
+    vega_time  TIMESTAMP WITH TIME ZONE NOT NULL,
+    balance    HUGEINT           NOT NULL,
+
+    PRIMARY KEY(account_id)
+);
+
+-- +goose StatementBegin
+CREATE OR REPLACE FUNCTION update_current_balances()
+   RETURNS TRIGGER
+   LANGUAGE PLPGSQL AS
+$$
+    BEGIN
+    INSERT INTO current_balances(account_id, vega_time, balance) VALUES(NEW.account_id, NEW.vega_time, NEW.balance)
+      ON CONFLICT(account_id) DO UPDATE SET
+         balance=EXCLUDED.balance,
+         vega_time=EXCLUDED.vega_time;
+    RETURN NULL;
+    END;
+$$;
+-- +goose StatementEnd
+
+CREATE TRIGGER update_current_balances AFTER INSERT ON balances FOR EACH ROW EXECUTE function update_current_balances();
 
 CREATE MATERIALIZED VIEW conflated_balances
             WITH (timescaledb.continuous, timescaledb.materialized_only = true) AS
@@ -1074,6 +1101,10 @@ DROP TYPE IF EXISTS erc20_multisig_signer_event;
 
 DROP TABLE IF EXISTS ledger;
 DROP TABLE IF EXISTS balances cascade;
+DROP TRIGGER IF EXISTS update_current_balances ON balances;
+DROP FUNCTION IF EXISTS update_current_balances;
+DROP TABLE IF EXISTS current_balances;
+
 DROP TABLE IF EXISTS accounts;
 DROP TABLE IF EXISTS parties;
 DROP VIEW IF EXISTS assets_current;
