@@ -351,6 +351,7 @@ func (g *GRPCServer) Start(ctx context.Context, lis net.Listener) error {
 		oracleSpecService:         g.oracleSpecService,
 		oracleDataService:         g.oracleDataService,
 		liquidityProvisionService: g.liquidityProvisionService,
+		governanceService:         g.governanceService,
 	}
 
 	protoapi2.RegisterTradingDataServiceServer(g.srv, tradingDataSvcV2)
