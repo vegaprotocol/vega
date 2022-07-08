@@ -352,7 +352,7 @@ func testLiquidityProvisionPaginationNoPagination(t *testing.T) {
 	bs, lpStore, _ := setupLPTests(t, timeoutCtx)
 	testLps := addLiquidityProvisions(timeoutCtx, t, bs, lpStore)
 
-	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil)
+	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, false)
 	require.NoError(t, err)
 	got, pageInfo, err := lpStore.Get(timeoutCtx, entities.PartyID{ID: "deadbaad"}, entities.MarketID{ID: ""}, "", pagination)
 
@@ -377,7 +377,7 @@ func testLiquidityProvisionPaginationFirst(t *testing.T) {
 	testLps := addLiquidityProvisions(timeoutCtx, t, bs, lpStore)
 
 	first := int32(3)
-	pagination, err := entities.NewCursorPagination(&first, nil, nil, nil)
+	pagination, err := entities.NewCursorPagination(&first, nil, nil, nil, false)
 	require.NoError(t, err)
 	got, pageInfo, err := lpStore.Get(timeoutCtx, entities.PartyID{ID: "deadbaad"}, entities.MarketID{ID: ""}, "", pagination)
 
@@ -403,7 +403,7 @@ func testLiquidityProvisionPaginationLast(t *testing.T) {
 	testLps := addLiquidityProvisions(timeoutCtx, t, bs, lpStore)
 
 	last := int32(3)
-	pagination, err := entities.NewCursorPagination(nil, nil, &last, nil)
+	pagination, err := entities.NewCursorPagination(nil, nil, &last, nil, false)
 	require.NoError(t, err)
 	got, pageInfo, err := lpStore.Get(timeoutCtx, entities.PartyID{ID: "deadbaad"}, entities.MarketID{ID: ""}, "", pagination)
 
@@ -433,7 +433,7 @@ func testLiquidityProvisionPaginationFirstAfter(t *testing.T) {
 		VegaTime: testLps[2].VegaTime,
 		ID:       testLps[2].ID.String(),
 	}.String()).Encode()
-	pagination, err := entities.NewCursorPagination(&first, &after, nil, nil)
+	pagination, err := entities.NewCursorPagination(&first, &after, nil, nil, false)
 	require.NoError(t, err)
 	got, pageInfo, err := lpStore.Get(timeoutCtx, entities.PartyID{ID: "deadbaad"}, entities.MarketID{ID: ""}, "", pagination)
 
@@ -463,7 +463,7 @@ func testLiquidityProvisionPaginationLastBefore(t *testing.T) {
 		VegaTime: testLps[7].VegaTime,
 		ID:       testLps[7].ID.String(),
 	}.String()).Encode()
-	pagination, err := entities.NewCursorPagination(nil, nil, &last, &before)
+	pagination, err := entities.NewCursorPagination(nil, nil, &last, &before, false)
 	require.NoError(t, err)
 	got, pageInfo, err := lsStore.Get(timeoutCtx, entities.PartyID{ID: "deadbaad"}, entities.MarketID{ID: ""}, "", pagination)
 

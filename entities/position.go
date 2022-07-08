@@ -183,8 +183,8 @@ type PositionKey struct {
 
 func (p Position) Cursor() *Cursor {
 	pc := PositionCursor{
-		MarketID: p.MarketID,
-		PartyID:  p.PartyID,
+		MarketID: p.MarketID.String(),
+		PartyID:  p.PartyID.String(),
 		VegaTime: p.VegaTime,
 	}
 
@@ -220,8 +220,8 @@ func (p Position) Equal(q Position) bool {
 }
 
 type PositionCursor struct {
-	PartyID  PartyID   `json:"party_id"`
-	MarketID MarketID  `json:"market_id"`
+	PartyID  string    `json:"party_id"`
+	MarketID string    `json:"market_id"`
 	VegaTime time.Time `json:"vega_time"`
 }
 

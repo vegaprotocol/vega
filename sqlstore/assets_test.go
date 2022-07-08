@@ -118,6 +118,12 @@ func TestAssets_GetAllWithCursorPagination(t *testing.T) {
 	t.Run("should return the last page of results if last is provided", testAssetPaginationLast)
 	t.Run("should return the specified page of results if first and after is provided", testAssetPaginationFirstAndAfter)
 	t.Run("should return the specified page of results if last and before is provided", testAssetPaginationLastAndBefore)
+
+	t.Run("should return all deposits if no pagination is specified - newest first", testAssetsPaginationNoPaginationNewestFirst)
+	t.Run("should return the first page of results if first is provided - newest first", testAssetPaginationFirstNewestFirst)
+	t.Run("should return the last page of results if last is provided - newest first", testAssetPaginationLastNewestFirst)
+	t.Run("should return the specified page of results if first and after is provided - newest first", testAssetPaginationFirstAndAfterNewestFirst)
+	t.Run("should return the specified page of results if last and before is provided - newest first", testAssetPaginationLastAndBeforeNewestFirst)
 }
 
 func testAssetsPaginationNoPagination(t *testing.T) {
@@ -127,16 +133,18 @@ func testAssetsPaginationNoPagination(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil)
+	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, false)
 	assert.NoError(t, err)
 
 	got, pageInfo, err := as.GetAllWithCursorPagination(ctx, pagination)
 	assert.NoError(t, err)
 	assert.Equal(t, assets, got)
-	assert.False(t, pageInfo.HasNextPage)
-	assert.False(t, pageInfo.HasPreviousPage)
-	assert.Equal(t, entities.NewCursor(assets[0].ID.String()).Encode(), pageInfo.StartCursor)
-	assert.Equal(t, entities.NewCursor(assets[9].ID.String()).Encode(), pageInfo.EndCursor)
+	assert.Equal(t, entities.PageInfo{
+		HasNextPage:     false,
+		HasPreviousPage: false,
+		StartCursor:     entities.NewCursor(assets[0].ID.String()).Encode(),
+		EndCursor:       entities.NewCursor(assets[9].ID.String()).Encode(),
+	}, pageInfo)
 }
 
 func testAssetPaginationFirst(t *testing.T) {
@@ -147,16 +155,18 @@ func testAssetPaginationFirst(t *testing.T) {
 	defer cancel()
 
 	first := int32(3)
-	pagination, err := entities.NewCursorPagination(&first, nil, nil, nil)
+	pagination, err := entities.NewCursorPagination(&first, nil, nil, nil, false)
 	assert.NoError(t, err)
 
 	got, pageInfo, err := as.GetAllWithCursorPagination(ctx, pagination)
 	assert.NoError(t, err)
 	assert.Equal(t, assets[:3], got)
-	assert.True(t, pageInfo.HasNextPage)
-	assert.False(t, pageInfo.HasPreviousPage)
-	assert.Equal(t, entities.NewCursor(assets[0].ID.String()).Encode(), pageInfo.StartCursor)
-	assert.Equal(t, entities.NewCursor(assets[2].ID.String()).Encode(), pageInfo.EndCursor)
+	assert.Equal(t, entities.PageInfo{
+		HasNextPage:     true,
+		HasPreviousPage: false,
+		StartCursor:     entities.NewCursor(assets[0].ID.String()).Encode(),
+		EndCursor:       entities.NewCursor(assets[2].ID.String()).Encode(),
+	}, pageInfo)
 }
 
 func testAssetPaginationLast(t *testing.T) {
@@ -166,16 +176,18 @@ func testAssetPaginationLast(t *testing.T) {
 	defer cancel()
 
 	last := int32(3)
-	pagination, err := entities.NewCursorPagination(nil, nil, &last, nil)
+	pagination, err := entities.NewCursorPagination(nil, nil, &last, nil, false)
 	assert.NoError(t, err)
 
 	got, pageInfo, err := as.GetAllWithCursorPagination(ctx, pagination)
 	assert.NoError(t, err)
 	assert.Equal(t, assets[7:], got)
-	assert.False(t, pageInfo.HasNextPage)
-	assert.True(t, pageInfo.HasPreviousPage)
-	assert.Equal(t, entities.NewCursor(assets[7].ID.String()).Encode(), pageInfo.StartCursor)
-	assert.Equal(t, entities.NewCursor(assets[9].ID.String()).Encode(), pageInfo.EndCursor)
+	assert.Equal(t, entities.PageInfo{
+		HasNextPage:     false,
+		HasPreviousPage: true,
+		StartCursor:     entities.NewCursor(assets[7].ID.String()).Encode(),
+		EndCursor:       entities.NewCursor(assets[9].ID.String()).Encode(),
+	}, pageInfo)
 }
 
 func testAssetPaginationFirstAndAfter(t *testing.T) {
@@ -187,16 +199,18 @@ func testAssetPaginationFirstAndAfter(t *testing.T) {
 	first := int32(3)
 	after := entities.NewCursor(assets[2].ID.String()).Encode()
 
-	pagination, err := entities.NewCursorPagination(&first, &after, nil, nil)
+	pagination, err := entities.NewCursorPagination(&first, &after, nil, nil, false)
 	assert.NoError(t, err)
 
 	got, pageInfo, err := as.GetAllWithCursorPagination(ctx, pagination)
 	assert.NoError(t, err)
 	assert.Equal(t, assets[3:6], got)
-	assert.True(t, pageInfo.HasNextPage)
-	assert.True(t, pageInfo.HasPreviousPage)
-	assert.Equal(t, entities.NewCursor(assets[3].ID.String()).Encode(), pageInfo.StartCursor)
-	assert.Equal(t, entities.NewCursor(assets[5].ID.String()).Encode(), pageInfo.EndCursor)
+	assert.Equal(t, entities.PageInfo{
+		HasNextPage:     true,
+		HasPreviousPage: true,
+		StartCursor:     entities.NewCursor(assets[3].ID.String()).Encode(),
+		EndCursor:       entities.NewCursor(assets[5].ID.String()).Encode(),
+	}, pageInfo)
 }
 
 func testAssetPaginationLastAndBefore(t *testing.T) {
@@ -208,14 +222,131 @@ func testAssetPaginationLastAndBefore(t *testing.T) {
 	last := int32(3)
 	before := entities.NewCursor(assets[7].ID.String()).Encode()
 
-	pagination, err := entities.NewCursorPagination(nil, nil, &last, &before)
+	pagination, err := entities.NewCursorPagination(nil, nil, &last, &before, false)
 	assert.NoError(t, err)
 
 	got, pageInfo, err := as.GetAllWithCursorPagination(ctx, pagination)
 	assert.NoError(t, err)
 	assert.Equal(t, assets[4:7], got)
-	assert.True(t, pageInfo.HasNextPage)
-	assert.True(t, pageInfo.HasPreviousPage)
-	assert.Equal(t, entities.NewCursor(assets[4].ID.String()).Encode(), pageInfo.StartCursor)
-	assert.Equal(t, entities.NewCursor(assets[6].ID.String()).Encode(), pageInfo.EndCursor)
+	assert.Equal(t, entities.PageInfo{
+		HasNextPage:     true,
+		HasPreviousPage: true,
+		StartCursor:     entities.NewCursor(assets[4].ID.String()).Encode(),
+		EndCursor:       entities.NewCursor(assets[6].ID.String()).Encode(),
+	}, pageInfo)
+}
+
+func testAssetsPaginationNoPaginationNewestFirst(t *testing.T) {
+	defer DeleteEverything()
+
+	as, assets := setupAssetPaginationTest(t)
+	assets = entities.ReverseSlice(assets)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, true)
+	assert.NoError(t, err)
+
+	got, pageInfo, err := as.GetAllWithCursorPagination(ctx, pagination)
+	assert.NoError(t, err)
+	assert.Equal(t, assets, got)
+	assert.Equal(t, entities.PageInfo{
+		HasNextPage:     false,
+		HasPreviousPage: false,
+		StartCursor:     entities.NewCursor(assets[0].ID.String()).Encode(),
+		EndCursor:       entities.NewCursor(assets[9].ID.String()).Encode(),
+	}, pageInfo)
+}
+
+func testAssetPaginationFirstNewestFirst(t *testing.T) {
+	defer DeleteEverything()
+	as, assets := setupAssetPaginationTest(t)
+	assets = entities.ReverseSlice(assets)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	first := int32(3)
+	pagination, err := entities.NewCursorPagination(&first, nil, nil, nil, true)
+	assert.NoError(t, err)
+
+	got, pageInfo, err := as.GetAllWithCursorPagination(ctx, pagination)
+	assert.NoError(t, err)
+	assert.Equal(t, assets[:3], got)
+	assert.Equal(t, entities.PageInfo{
+		HasNextPage:     true,
+		HasPreviousPage: false,
+		StartCursor:     entities.NewCursor(assets[0].ID.String()).Encode(),
+		EndCursor:       entities.NewCursor(assets[2].ID.String()).Encode(),
+	}, pageInfo)
+}
+
+func testAssetPaginationLastNewestFirst(t *testing.T) {
+	defer DeleteEverything()
+	as, assets := setupAssetPaginationTest(t)
+	assets = entities.ReverseSlice(assets)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	last := int32(3)
+	pagination, err := entities.NewCursorPagination(nil, nil, &last, nil, true)
+	assert.NoError(t, err)
+
+	got, pageInfo, err := as.GetAllWithCursorPagination(ctx, pagination)
+	assert.NoError(t, err)
+	assert.Equal(t, assets[7:], got)
+	assert.Equal(t, entities.PageInfo{
+		HasNextPage:     false,
+		HasPreviousPage: true,
+		StartCursor:     entities.NewCursor(assets[7].ID.String()).Encode(),
+		EndCursor:       entities.NewCursor(assets[9].ID.String()).Encode(),
+	}, pageInfo)
+}
+
+func testAssetPaginationFirstAndAfterNewestFirst(t *testing.T) {
+	defer DeleteEverything()
+	as, assets := setupAssetPaginationTest(t)
+	assets = entities.ReverseSlice(assets)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	first := int32(3)
+	after := entities.NewCursor(assets[2].ID.String()).Encode()
+
+	pagination, err := entities.NewCursorPagination(&first, &after, nil, nil, true)
+	assert.NoError(t, err)
+
+	got, pageInfo, err := as.GetAllWithCursorPagination(ctx, pagination)
+	assert.NoError(t, err)
+	assert.Equal(t, assets[3:6], got)
+	assert.Equal(t, entities.PageInfo{
+		HasNextPage:     true,
+		HasPreviousPage: true,
+		StartCursor:     entities.NewCursor(assets[3].ID.String()).Encode(),
+		EndCursor:       entities.NewCursor(assets[5].ID.String()).Encode(),
+	}, pageInfo)
+}
+
+func testAssetPaginationLastAndBeforeNewestFirst(t *testing.T) {
+	defer DeleteEverything()
+	as, assets := setupAssetPaginationTest(t)
+	assets = entities.ReverseSlice(assets)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	last := int32(3)
+	before := entities.NewCursor(assets[7].ID.String()).Encode()
+
+	pagination, err := entities.NewCursorPagination(nil, nil, &last, &before, true)
+	assert.NoError(t, err)
+
+	got, pageInfo, err := as.GetAllWithCursorPagination(ctx, pagination)
+	assert.NoError(t, err)
+	assert.Equal(t, assets[4:7], got)
+	assert.Equal(t, entities.PageInfo{
+		HasNextPage:     true,
+		HasPreviousPage: true,
+		StartCursor:     entities.NewCursor(assets[4].ID.String()).Encode(),
+		EndCursor:       entities.NewCursor(assets[6].ID.String()).Encode(),
+	}, pageInfo)
 }

@@ -128,15 +128,6 @@ func DeleteEverything() {
 	}
 }
 
-func connectionString(config sqlstore.ConnectionConfig) string {
-	return fmt.Sprintf("postgresql://%s:%s@%s:%d/%s",
-		config.Username,
-		config.Password,
-		config.Host,
-		config.Port,
-		config.Database)
-}
-
 // Generate a 256 bit pseudo-random hash ID based on the time
 func generateID() string {
 	currentTime := time.Now().UnixNano()

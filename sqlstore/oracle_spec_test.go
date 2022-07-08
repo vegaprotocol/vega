@@ -241,6 +241,12 @@ func TestOracleSpec_GetSpecsWithCursorPagination(t *testing.T) {
 	t.Run("should return the last page if no spec id and last is provided", testOracleSpecPaginationLast)
 	t.Run("should return the requested page if no spec id and first and after is provided", testOracleSpecPaginationFirstAfter)
 	t.Run("should return the requested page if no spec id and last and before is provided", testOracleSpecPaginationLastBefore)
+
+	t.Run("should return all specs if no spec id and no pagination is provided - newest first", testOracleSpecPaginationNoPaginationNewestFirst)
+	t.Run("should return the first page if no spec id and first is provided - newest first", testOracleSpecPaginationFirstNewestFirst)
+	t.Run("should return the last page if no spec id and last is provided - newest first", testOracleSpecPaginationLastNewestFirst)
+	t.Run("should return the requested page if no spec id and first and after is provided - newest first", testOracleSpecPaginationFirstAfterNewestFirst)
+	t.Run("should return the requested page if no spec id and last and before is provided - newest first", testOracleSpecPaginationLastBeforeNewestFirst)
 }
 
 func createOracleSpecPaginationTestData(t *testing.T, ctx context.Context, bs *sqlstore.Blocks, os *sqlstore.OracleSpec) []entities.OracleSpec {
@@ -312,7 +318,7 @@ func testOracleSpecPaginationFirst(t *testing.T) {
 	bs, os, _ := setupOracleSpecTest(t, ctx)
 	specs := createOracleSpecPaginationTestData(t, ctx, bs, os)
 	first := int32(3)
-	pagination, err := entities.NewCursorPagination(&first, nil, nil, nil)
+	pagination, err := entities.NewCursorPagination(&first, nil, nil, nil, false)
 	require.NoError(t, err)
 
 	got, pageInfo, err := os.GetSpecsWithCursorPagination(ctx, "", pagination)
@@ -334,7 +340,7 @@ func testOracleSpecPaginationLast(t *testing.T) {
 	bs, os, _ := setupOracleSpecTest(t, ctx)
 	specs := createOracleSpecPaginationTestData(t, ctx, bs, os)
 	last := int32(3)
-	pagination, err := entities.NewCursorPagination(nil, nil, &last, nil)
+	pagination, err := entities.NewCursorPagination(nil, nil, &last, nil, false)
 	require.NoError(t, err)
 
 	got, pageInfo, err := os.GetSpecsWithCursorPagination(ctx, "", pagination)
@@ -357,7 +363,7 @@ func testOracleSpecPaginationFirstAfter(t *testing.T) {
 	specs := createOracleSpecPaginationTestData(t, ctx, bs, os)
 	first := int32(3)
 	after := specs[2].Cursor().Encode()
-	pagination, err := entities.NewCursorPagination(&first, &after, nil, nil)
+	pagination, err := entities.NewCursorPagination(&first, &after, nil, nil, false)
 	require.NoError(t, err)
 
 	got, pageInfo, err := os.GetSpecsWithCursorPagination(ctx, "", pagination)
@@ -380,7 +386,115 @@ func testOracleSpecPaginationLastBefore(t *testing.T) {
 	specs := createOracleSpecPaginationTestData(t, ctx, bs, os)
 	last := int32(3)
 	before := specs[7].Cursor().Encode()
-	pagination, err := entities.NewCursorPagination(nil, nil, &last, &before)
+	pagination, err := entities.NewCursorPagination(nil, nil, &last, &before, false)
+	require.NoError(t, err)
+
+	got, pageInfo, err := os.GetSpecsWithCursorPagination(ctx, "", pagination)
+	require.NoError(t, err)
+
+	assert.Equal(t, specs[4:7], got)
+	assert.Equal(t, entities.PageInfo{
+		HasNextPage:     true,
+		HasPreviousPage: true,
+		StartCursor:     specs[4].Cursor().Encode(),
+		EndCursor:       specs[6].Cursor().Encode(),
+	}, pageInfo)
+}
+
+func testOracleSpecPaginationNoPaginationNewestFirst(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
+	defer cancel()
+
+	bs, os, _ := setupOracleSpecTest(t, ctx)
+	specs := entities.ReverseSlice(createOracleSpecPaginationTestData(t, ctx, bs, os))
+	got, pageInfo, err := os.GetSpecsWithCursorPagination(ctx, "", entities.CursorPagination{NewestFirst: true})
+	require.NoError(t, err)
+
+	assert.Equal(t, specs, got)
+	assert.Equal(t, entities.PageInfo{
+		HasNextPage:     false,
+		HasPreviousPage: false,
+		StartCursor:     specs[0].Cursor().Encode(),
+		EndCursor:       specs[9].Cursor().Encode(),
+	}, pageInfo)
+}
+
+func testOracleSpecPaginationFirstNewestFirst(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
+	defer cancel()
+
+	bs, os, _ := setupOracleSpecTest(t, ctx)
+	specs := entities.ReverseSlice(createOracleSpecPaginationTestData(t, ctx, bs, os))
+	first := int32(3)
+	pagination, err := entities.NewCursorPagination(&first, nil, nil, nil, true)
+	require.NoError(t, err)
+
+	got, pageInfo, err := os.GetSpecsWithCursorPagination(ctx, "", pagination)
+	require.NoError(t, err)
+
+	assert.Equal(t, specs[:3], got)
+	assert.Equal(t, entities.PageInfo{
+		HasNextPage:     true,
+		HasPreviousPage: false,
+		StartCursor:     specs[0].Cursor().Encode(),
+		EndCursor:       specs[2].Cursor().Encode(),
+	}, pageInfo)
+}
+
+func testOracleSpecPaginationLastNewestFirst(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
+	defer cancel()
+
+	bs, os, _ := setupOracleSpecTest(t, ctx)
+	specs := entities.ReverseSlice(createOracleSpecPaginationTestData(t, ctx, bs, os))
+	last := int32(3)
+	pagination, err := entities.NewCursorPagination(nil, nil, &last, nil, true)
+	require.NoError(t, err)
+
+	got, pageInfo, err := os.GetSpecsWithCursorPagination(ctx, "", pagination)
+	require.NoError(t, err)
+
+	assert.Equal(t, specs[7:], got)
+	assert.Equal(t, entities.PageInfo{
+		HasNextPage:     false,
+		HasPreviousPage: true,
+		StartCursor:     specs[7].Cursor().Encode(),
+		EndCursor:       specs[9].Cursor().Encode(),
+	}, pageInfo)
+}
+
+func testOracleSpecPaginationFirstAfterNewestFirst(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
+	defer cancel()
+
+	bs, os, _ := setupOracleSpecTest(t, ctx)
+	specs := entities.ReverseSlice(createOracleSpecPaginationTestData(t, ctx, bs, os))
+	first := int32(3)
+	after := specs[2].Cursor().Encode()
+	pagination, err := entities.NewCursorPagination(&first, &after, nil, nil, true)
+	require.NoError(t, err)
+
+	got, pageInfo, err := os.GetSpecsWithCursorPagination(ctx, "", pagination)
+	require.NoError(t, err)
+
+	assert.Equal(t, specs[3:6], got)
+	assert.Equal(t, entities.PageInfo{
+		HasNextPage:     true,
+		HasPreviousPage: true,
+		StartCursor:     specs[3].Cursor().Encode(),
+		EndCursor:       specs[5].Cursor().Encode(),
+	}, pageInfo)
+}
+
+func testOracleSpecPaginationLastBeforeNewestFirst(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
+	defer cancel()
+
+	bs, os, _ := setupOracleSpecTest(t, ctx)
+	specs := entities.ReverseSlice(createOracleSpecPaginationTestData(t, ctx, bs, os))
+	last := int32(3)
+	before := specs[7].Cursor().Encode()
+	pagination, err := entities.NewCursorPagination(nil, nil, &last, &before, true)
 	require.NoError(t, err)
 
 	got, pageInfo, err := os.GetSpecsWithCursorPagination(ctx, "", pagination)

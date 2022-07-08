@@ -64,26 +64,26 @@ func PageEntities[T proto.Message, U PagedEntity[T]](items []U, pagination Curso
 		limit = int(*pagination.Backward.Limit)
 		switch len(items) {
 		case limit + 2:
-			pagedItems = reverseSlice(items[1 : limit+1])
+			pagedItems = ReverseSlice(items[1 : limit+1])
 			pageInfo.HasNextPage = true
 			pageInfo.HasPreviousPage = true
 		case limit + 1:
 			if !pagination.Backward.HasCursor() {
-				pagedItems = reverseSlice(items[0:limit])
+				pagedItems = ReverseSlice(items[0:limit])
 				pageInfo.HasNextPage = false
 				pageInfo.HasPreviousPage = true
 			} else {
-				pagedItems = reverseSlice(items[1:])
+				pagedItems = ReverseSlice(items[1:])
 				pageInfo.HasNextPage = true
 				pageInfo.HasPreviousPage = false
 			}
 		default:
 			if pagination.HasBackward() && pagination.Backward.HasCursor() && pagination.Backward.Cursor.Value() == items[0].Cursor().Value() {
-				pagedItems = reverseSlice(items[1:])
+				pagedItems = ReverseSlice(items[1:])
 				pageInfo.HasNextPage = true
 				pageInfo.HasPreviousPage = false
 			} else {
-				pagedItems = reverseSlice(items)
+				pagedItems = ReverseSlice(items)
 				pageInfo.HasNextPage = false
 				pageInfo.HasPreviousPage = false
 			}
@@ -104,7 +104,7 @@ func PageEntities[T proto.Message, U PagedEntity[T]](items []U, pagination Curso
 	return pagedItems, pageInfo
 }
 
-func reverseSlice[T any](input []T) (reversed []T) {
+func ReverseSlice[T any](input []T) (reversed []T) {
 	reversed = make([]T, len(input))
 	copy(reversed, input)
 	for i, j := 0, len(input)-1; i < j; i, j = i+1, j-1 {

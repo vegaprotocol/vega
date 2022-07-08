@@ -21,7 +21,6 @@ import (
 	"code.vegaprotocol.io/data-node/entities"
 	"code.vegaprotocol.io/data-node/logging"
 	"code.vegaprotocol.io/data-node/sqlstore"
-	v2 "code.vegaprotocol.io/protos/data-node/api/v2"
 	"code.vegaprotocol.io/vega/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -455,25 +454,50 @@ func TestOrders_CursorPagination(t *testing.T) {
 	t.Run("Should return all versions of a given order ID when no cursor is given", testOrdersCursorPaginationByOrderIDNoCursor)
 	t.Run("Should return all current orders for a given party and market when no cursor is given", testOrdersCursorPaginationByMarketAndPartyNoCursor)
 
+	t.Run("Should return all current orders for a given market when no cursor is given - Newest First", testOrdersCursorPaginationByMarketNoCursorNewestFirst)
+	t.Run("Should return all current orders for a given party when no cursor is given - Newest First", testOrdersCursorPaginationByPartyNoCursorNewestFirst)
+	t.Run("Should return all versions of a given order ID when no cursor is given - Newest First", testOrdersCursorPaginationByOrderIDNoCursorNewestFirst)
+	t.Run("Should return all current orders for a given party and market when no cursor is given - Newest First", testOrdersCursorPaginationByMarketAndPartyNoCursorNewestFirst)
+
 	t.Run("Should return the first page of current orders for a given market when a first cursor is given", testOrdersCursorPaginationByMarketFirstCursor)
 	t.Run("Should return the first page of current orders for a given party when a first cursor is given", testOrdersCursorPaginationByPartyFirstCursor)
 	t.Run("Should return the first page of order versions of a given order ID when a first cursor is given", testOrdersCursorPaginationByOrderIDFirstCursor)
 	t.Run("Should return the first page of current orders for a given party and market when a first cursor is given", testOrdersCursorPaginationByMarketAndPartyFirstCursor)
+
+	t.Run("Should return the first page of current orders for a given market when a first cursor is given - Newest First", testOrdersCursorPaginationByMarketFirstCursorNewestFirst)
+	t.Run("Should return the first page of current orders for a given party when a first cursor is given - Newest First", testOrdersCursorPaginationByPartyFirstCursorNewestFirst)
+	t.Run("Should return the first page of order versions of a given order ID when a first cursor is given - Newest First", testOrdersCursorPaginationByOrderIDFirstCursorNewestFirst)
+	t.Run("Should return the first page of current orders for a given party and market when a first cursor is given - Newest First", testOrdersCursorPaginationByMarketAndPartyFirstCursorNewestFirst)
 
 	t.Run("Should return the last page of current orders for a given market when a last cursor is given", testOrdersCursorPaginationByMarketLastCursor)
 	t.Run("Should return the last page of current orders for a given party when a last cursor is given", testOrdersCursorPaginationByPartyLastCursor)
 	t.Run("Should return the last page of order versions of a given order ID when a last cursor is given", testOrdersCursorPaginationByOrderIDLastCursor)
 	t.Run("Should return the last page of current orders for a given party and market when a last cursor is given", testOrdersCursorPaginationByMarketAndPartyLastCursor)
 
+	t.Run("Should return the last page of current orders for a given market when a last cursor is given - Newest First", testOrdersCursorPaginationByMarketLastCursorNewestFirst)
+	t.Run("Should return the last page of current orders for a given party when a last cursor is given - Newest First", testOrdersCursorPaginationByPartyLastCursorNewestFirst)
+	t.Run("Should return the last page of order versions of a given order ID when a last cursor is given - Newest First", testOrdersCursorPaginationByOrderIDLastCursorNewestFirst)
+	t.Run("Should return the last page of current orders for a given party and market when a last cursor is given - Newest First", testOrdersCursorPaginationByMarketAndPartyLastCursorNewestFirst)
+
 	t.Run("Should return the page of current orders for a given market when a first and after cursor is given", testOrdersCursorPaginationByMarketFirstAndAfterCursor)
 	t.Run("Should return the page of current orders for a given party when a first and after cursor is given", testOrdersCursorPaginationByPartyFirstAndAfterCursor)
 	t.Run("Should return the page of order versions of a given order ID when a first and after cursor is given", testOrdersCursorPaginationByOrderIDFirstAndAfterCursor)
 	t.Run("Should return the page of current orders for a given party and market when a first and after cursor is given", testOrdersCursorPaginationByMarketAndPartyFirstAndAfterCursor)
 
+	t.Run("Should return the page of current orders for a given market when a first and after cursor is given - Newest First", testOrdersCursorPaginationByMarketFirstAndAfterCursorNewestFirst)
+	t.Run("Should return the page of current orders for a given party when a first and after cursor is given - Newest First", testOrdersCursorPaginationByPartyFirstAndAfterCursorNewestFirst)
+	t.Run("Should return the page of order versions of a given order ID when a first and after cursor is given - Newest First", testOrdersCursorPaginationByOrderIDFirstAndAfterCursorNewestFirst)
+	t.Run("Should return the page of current orders for a given party and market when a first and after cursor is given - Newest First", testOrdersCursorPaginationByMarketAndPartyFirstAndAfterCursorNewestFirst)
+
 	t.Run("Should return the page of current orders for a given market when a last and before cursor is given", testOrdersCursorPaginationByMarketLastAndBeforeCursor)
 	t.Run("Should return the page of current orders for a given party when a last and before cursor is given", testOrdersCursorPaginationByPartyLastAndBeforeCursor)
 	t.Run("Should return the page of order versions of a given order ID when a last and before cursor is given", testOrdersCursorPaginationByOrderIDLastAndBeforeCursor)
 	t.Run("Should return the page of current orders for a given party and market when a last and before cursor is given", testOrdersCursorPaginationByMarketAndPartyLastAndBeforeCursor)
+
+	t.Run("Should return the page of current orders for a given market when a last and before cursor is given - Newest First", testOrdersCursorPaginationByMarketLastAndBeforeCursorNewestFirst)
+	t.Run("Should return the page of current orders for a given party when a last and before cursor is given - Newest First", testOrdersCursorPaginationByPartyLastAndBeforeCursorNewestFirst)
+	t.Run("Should return the page of order versions of a given order ID when a last and before cursor is given - Newest First", testOrdersCursorPaginationByOrderIDLastAndBeforeCursorNewestFirst)
+	t.Run("Should return the page of current orders for a given party and market when a last and before cursor is given - Newest First", testOrdersCursorPaginationByMarketAndPartyLastAndBeforeCursorNewestFirst)
 }
 
 type orderTestStores struct {
@@ -807,19 +831,21 @@ func testOrdersCursorPaginationByMarketNoCursor(t *testing.T) {
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	defer cancel()
-	pagination, err := entities.CursorPaginationFromProto(&v2.Pagination{})
+	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, false)
 	require.NoError(t, err)
 
 	marketID := testData.markets[0].ID
-	orders, pageInfo, err := stores.os.GetByMarketPaged(ctx, marketID.String(), pagination)
+	got, pageInfo, err := stores.os.GetByMarketPaged(ctx, marketID.String(), pagination)
 	require.NoError(t, err)
-	assert.Len(t, orders, 5)
+	assert.Len(t, got, 5)
 	want := append([]entities.Order{}, testData.orders[0], testData.orders[3], testData.orders[7], testData.orders[13], testData.orders[14])
-	assert.Equal(t, want, orders)
-	assert.False(t, pageInfo.HasNextPage)
-	assert.False(t, pageInfo.HasPreviousPage)
-	assert.Equal(t, pageInfo.StartCursor, testData.cursors[0].Encode())
-	assert.Equal(t, pageInfo.EndCursor, testData.cursors[14].Encode())
+	assert.Equal(t, want, got)
+	assert.Equal(t, entities.PageInfo{
+		HasNextPage:     false,
+		HasPreviousPage: false,
+		StartCursor:     testData.cursors[0].Encode(),
+		EndCursor:       testData.cursors[14].Encode(),
+	}, pageInfo)
 }
 
 func testOrdersCursorPaginationByPartyNoCursor(t *testing.T) {
@@ -831,19 +857,21 @@ func testOrdersCursorPaginationByPartyNoCursor(t *testing.T) {
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	defer cancel()
-	pagination, err := entities.CursorPaginationFromProto(&v2.Pagination{})
+	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, false)
 	require.NoError(t, err)
 
 	partyID := testData.parties[1].ID
-	orders, pageInfo, err := stores.os.GetByPartyPaged(ctx, partyID.String(), pagination)
+	got, pageInfo, err := stores.os.GetByPartyPaged(ctx, partyID.String(), pagination)
 	require.NoError(t, err)
-	assert.Len(t, orders, 6)
+	assert.Len(t, got, 6)
 	want := append([]entities.Order{}, testData.orders[3], testData.orders[5], testData.orders[7], testData.orders[9], testData.orders[12], testData.orders[13])
-	assert.Equal(t, want, orders)
-	assert.False(t, pageInfo.HasNextPage)
-	assert.False(t, pageInfo.HasPreviousPage)
-	assert.Equal(t, pageInfo.StartCursor, testData.cursors[3].Encode())
-	assert.Equal(t, pageInfo.EndCursor, testData.cursors[13].Encode())
+	assert.Equal(t, want, got)
+	assert.Equal(t, entities.PageInfo{
+		HasNextPage:     false,
+		HasPreviousPage: false,
+		StartCursor:     testData.cursors[3].Encode(),
+		EndCursor:       testData.cursors[13].Encode(),
+	}, pageInfo)
 }
 
 func testOrdersCursorPaginationByOrderIDNoCursor(t *testing.T) {
@@ -855,19 +883,21 @@ func testOrdersCursorPaginationByOrderIDNoCursor(t *testing.T) {
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	defer cancel()
-	pagination, err := entities.CursorPaginationFromProto(&v2.Pagination{})
+	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, false)
 	require.NoError(t, err)
 
 	orderID := testData.orders[1].ID
-	orders, pageInfo, err := stores.os.GetOrderVersionsByIDPaged(ctx, orderID.String(), pagination)
+	got, pageInfo, err := stores.os.GetOrderVersionsByIDPaged(ctx, orderID.String(), pagination)
 	require.NoError(t, err)
-	assert.Len(t, orders, 6)
+	assert.Len(t, got, 6)
 	want := append([]entities.Order{}, testData.orders[1], testData.orders[2], testData.orders[6], testData.orders[8], testData.orders[11], testData.orders[13])
-	assert.Equal(t, want, orders)
-	assert.False(t, pageInfo.HasNextPage)
-	assert.False(t, pageInfo.HasPreviousPage)
-	assert.Equal(t, pageInfo.StartCursor, testData.cursors[1].Encode())
-	assert.Equal(t, pageInfo.EndCursor, testData.cursors[13].Encode())
+	assert.Equal(t, want, got)
+	assert.Equal(t, entities.PageInfo{
+		HasNextPage:     false,
+		HasPreviousPage: false,
+		StartCursor:     testData.cursors[1].Encode(),
+		EndCursor:       testData.cursors[13].Encode(),
+	}, pageInfo)
 }
 
 func testOrdersCursorPaginationByMarketAndPartyNoCursor(t *testing.T) {
@@ -879,21 +909,154 @@ func testOrdersCursorPaginationByMarketAndPartyNoCursor(t *testing.T) {
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	defer cancel()
-	pagination, err := entities.CursorPaginationFromProto(&v2.Pagination{})
+	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, false)
 	require.NoError(t, err)
 
 	partyID := testData.parties[1].ID
 	marketID := testData.markets[1].ID
-	orders, pageInfo, err := stores.os.GetByPartyAndMarketPaged(ctx, partyID.String(), marketID.String(), pagination)
+	got, pageInfo, err := stores.os.GetByPartyAndMarketPaged(ctx, partyID.String(), marketID.String(), pagination)
 	require.NoError(t, err)
-	assert.Len(t, orders, 3)
+	assert.Len(t, got, 3)
 	want := append([]entities.Order{}, testData.orders[5], testData.orders[9], testData.orders[12])
-	assert.Equal(t, want, orders)
-	assert.False(t, pageInfo.HasNextPage)
-	assert.False(t, pageInfo.HasPreviousPage)
-	assert.Equal(t, pageInfo.StartCursor, testData.cursors[5].Encode())
-	assert.Equal(t, pageInfo.EndCursor, testData.cursors[12].Encode())
+	assert.Equal(t, want, got)
+	assert.Equal(t, entities.PageInfo{
+		HasNextPage:     false,
+		HasPreviousPage: false,
+		StartCursor:     testData.cursors[5].Encode(),
+		EndCursor:       testData.cursors[12].Encode(),
+	}, pageInfo)
 }
+
+func testOrdersCursorPaginationByMarketNoCursorNewestFirst(t *testing.T) {
+	stores, teardown := setupOrderCursorPaginationTests(t)
+	defer teardown(t)
+	testData := generateTestOrdersForCursorPagination(t, stores)
+
+	t.Logf("Test DB Port: %d", testDBPort)
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	defer cancel()
+	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, true)
+	require.NoError(t, err)
+
+	marketID := testData.markets[0].ID
+	got, pageInfo, err := stores.os.GetByMarketPaged(ctx, marketID.String(), pagination)
+	require.NoError(t, err)
+	assert.Len(t, got, 5)
+	want := append([]entities.Order{},
+		testData.orders[14],
+		testData.orders[13],
+		testData.orders[7],
+		testData.orders[3],
+		testData.orders[0],
+	)
+	assert.Equal(t, want, got)
+	assert.Equal(t, entities.PageInfo{
+		HasNextPage:     false,
+		HasPreviousPage: false,
+		StartCursor:     testData.cursors[14].Encode(),
+		EndCursor:       testData.cursors[0].Encode(),
+	}, pageInfo)
+}
+
+func testOrdersCursorPaginationByPartyNoCursorNewestFirst(t *testing.T) {
+	stores, teardown := setupOrderCursorPaginationTests(t)
+	defer teardown(t)
+	testData := generateTestOrdersForCursorPagination(t, stores)
+
+	t.Logf("Test DB Port: %d", testDBPort)
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	defer cancel()
+	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, true)
+	require.NoError(t, err)
+
+	partyID := testData.parties[1].ID
+	got, pageInfo, err := stores.os.GetByPartyPaged(ctx, partyID.String(), pagination)
+	require.NoError(t, err)
+	assert.Len(t, got, 6)
+	want := append([]entities.Order{},
+		testData.orders[13],
+		testData.orders[12],
+		testData.orders[9],
+		testData.orders[7],
+		testData.orders[5],
+		testData.orders[3],
+	)
+	assert.Equal(t, want, got)
+	assert.Equal(t, entities.PageInfo{
+		HasNextPage:     false,
+		HasPreviousPage: false,
+		StartCursor:     testData.cursors[13].Encode(),
+		EndCursor:       testData.cursors[3].Encode(),
+	}, pageInfo)
+}
+
+func testOrdersCursorPaginationByOrderIDNoCursorNewestFirst(t *testing.T) {
+	stores, teardown := setupOrderCursorPaginationTests(t)
+	defer teardown(t)
+	testData := generateTestOrdersForCursorPagination(t, stores)
+
+	t.Logf("Test DB Port: %d", testDBPort)
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	defer cancel()
+	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, true)
+	require.NoError(t, err)
+
+	orderID := testData.orders[1].ID
+	got, pageInfo, err := stores.os.GetOrderVersionsByIDPaged(ctx, orderID.String(), pagination)
+	require.NoError(t, err)
+	assert.Len(t, got, 6)
+	want := append([]entities.Order{},
+		testData.orders[13],
+		testData.orders[11],
+		testData.orders[8],
+		testData.orders[6],
+		testData.orders[2],
+		testData.orders[1],
+	)
+	assert.Equal(t, want, got)
+	assert.Equal(t, entities.PageInfo{
+		HasNextPage:     false,
+		HasPreviousPage: false,
+		StartCursor:     testData.cursors[13].Encode(),
+		EndCursor:       testData.cursors[1].Encode(),
+	}, pageInfo)
+}
+
+func testOrdersCursorPaginationByMarketAndPartyNoCursorNewestFirst(t *testing.T) {
+	stores, teardown := setupOrderCursorPaginationTests(t)
+	defer teardown(t)
+	testData := generateTestOrdersForCursorPagination(t, stores)
+
+	t.Logf("Test DB Port: %d", testDBPort)
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	defer cancel()
+	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, true)
+	require.NoError(t, err)
+
+	partyID := testData.parties[1].ID
+	marketID := testData.markets[1].ID
+	got, pageInfo, err := stores.os.GetByPartyAndMarketPaged(ctx, partyID.String(), marketID.String(), pagination)
+	require.NoError(t, err)
+	assert.Len(t, got, 3)
+	want := append([]entities.Order{},
+		testData.orders[12],
+		testData.orders[9],
+		testData.orders[5],
+	)
+	assert.Equal(t, want, got)
+	assert.Equal(t, entities.PageInfo{
+		HasNextPage:     false,
+		HasPreviousPage: false,
+		StartCursor:     testData.cursors[12].Encode(),
+		EndCursor:       testData.cursors[5].Encode(),
+	}, pageInfo)
+}
+
+// -- First Cursor Tests --
 
 func testOrdersCursorPaginationByMarketFirstCursor(t *testing.T) {
 	stores, teardown := setupOrderCursorPaginationTests(t)
@@ -905,21 +1068,21 @@ func testOrdersCursorPaginationByMarketFirstCursor(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	defer cancel()
 	first := int32(3)
-	pagination, err := entities.CursorPaginationFromProto(&v2.Pagination{
-		First: &first,
-	})
+	pagination, err := entities.NewCursorPagination(&first, nil, nil, nil, false)
 	require.NoError(t, err)
 
 	marketID := testData.markets[0].ID
-	orders, pageInfo, err := stores.os.GetByMarketPaged(ctx, marketID.String(), pagination)
+	got, pageInfo, err := stores.os.GetByMarketPaged(ctx, marketID.String(), pagination)
 	require.NoError(t, err)
-	assert.Len(t, orders, 3)
+	assert.Len(t, got, 3)
 	want := append([]entities.Order{}, testData.orders[0], testData.orders[3], testData.orders[7])
-	assert.Equal(t, want, orders)
-	assert.True(t, pageInfo.HasNextPage)
-	assert.False(t, pageInfo.HasPreviousPage)
-	assert.Equal(t, pageInfo.StartCursor, testData.cursors[0].Encode())
-	assert.Equal(t, pageInfo.EndCursor, testData.cursors[7].Encode())
+	assert.Equal(t, want, got)
+	assert.Equal(t, entities.PageInfo{
+		HasNextPage:     true,
+		HasPreviousPage: false,
+		StartCursor:     testData.cursors[0].Encode(),
+		EndCursor:       testData.cursors[7].Encode(),
+	}, pageInfo)
 }
 
 func testOrdersCursorPaginationByPartyFirstCursor(t *testing.T) {
@@ -932,21 +1095,21 @@ func testOrdersCursorPaginationByPartyFirstCursor(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	defer cancel()
 	first := int32(3)
-	pagination, err := entities.CursorPaginationFromProto(&v2.Pagination{
-		First: &first,
-	})
+	pagination, err := entities.NewCursorPagination(&first, nil, nil, nil, false)
 	require.NoError(t, err)
 
 	partyID := testData.parties[1].ID
-	orders, pageInfo, err := stores.os.GetByPartyPaged(ctx, partyID.String(), pagination)
+	got, pageInfo, err := stores.os.GetByPartyPaged(ctx, partyID.String(), pagination)
 	require.NoError(t, err)
-	assert.Len(t, orders, 3)
+	assert.Len(t, got, 3)
 	want := append([]entities.Order{}, testData.orders[3], testData.orders[5], testData.orders[7])
-	assert.Equal(t, want, orders)
-	assert.True(t, pageInfo.HasNextPage)
-	assert.False(t, pageInfo.HasPreviousPage)
-	assert.Equal(t, pageInfo.StartCursor, testData.cursors[3].Encode())
-	assert.Equal(t, pageInfo.EndCursor, testData.cursors[7].Encode())
+	assert.Equal(t, want, got)
+	assert.Equal(t, entities.PageInfo{
+		HasNextPage:     true,
+		HasPreviousPage: false,
+		StartCursor:     testData.cursors[3].Encode(),
+		EndCursor:       testData.cursors[7].Encode(),
+	}, pageInfo)
 }
 
 func testOrdersCursorPaginationByOrderIDFirstCursor(t *testing.T) {
@@ -959,21 +1122,21 @@ func testOrdersCursorPaginationByOrderIDFirstCursor(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	defer cancel()
 	first := int32(3)
-	pagination, err := entities.CursorPaginationFromProto(&v2.Pagination{
-		First: &first,
-	})
+	pagination, err := entities.NewCursorPagination(&first, nil, nil, nil, false)
 	require.NoError(t, err)
 
 	orderID := testData.orders[1].ID
-	orders, pageInfo, err := stores.os.GetOrderVersionsByIDPaged(ctx, orderID.String(), pagination)
+	got, pageInfo, err := stores.os.GetOrderVersionsByIDPaged(ctx, orderID.String(), pagination)
 	require.NoError(t, err)
-	assert.Len(t, orders, 3)
+	assert.Len(t, got, 3)
 	want := append([]entities.Order{}, testData.orders[1], testData.orders[2], testData.orders[6])
-	assert.Equal(t, want, orders)
-	assert.True(t, pageInfo.HasNextPage)
-	assert.False(t, pageInfo.HasPreviousPage)
-	assert.Equal(t, pageInfo.StartCursor, testData.cursors[1].Encode())
-	assert.Equal(t, pageInfo.EndCursor, testData.cursors[6].Encode())
+	assert.Equal(t, want, got)
+	assert.Equal(t, entities.PageInfo{
+		HasNextPage:     true,
+		HasPreviousPage: false,
+		StartCursor:     testData.cursors[1].Encode(),
+		EndCursor:       testData.cursors[6].Encode(),
+	}, pageInfo)
 }
 
 func testOrdersCursorPaginationByMarketAndPartyFirstCursor(t *testing.T) {
@@ -986,23 +1149,149 @@ func testOrdersCursorPaginationByMarketAndPartyFirstCursor(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	defer cancel()
 	first := int32(2)
-	pagination, err := entities.CursorPaginationFromProto(&v2.Pagination{
-		First: &first,
-	})
+	pagination, err := entities.NewCursorPagination(&first, nil, nil, nil, false)
 	require.NoError(t, err)
 
 	partyID := testData.parties[1].ID
 	marketID := testData.markets[1].ID
-	orders, pageInfo, err := stores.os.GetByPartyAndMarketPaged(ctx, partyID.String(), marketID.String(), pagination)
+	got, pageInfo, err := stores.os.GetByPartyAndMarketPaged(ctx, partyID.String(), marketID.String(), pagination)
 	require.NoError(t, err)
-	assert.Len(t, orders, 2)
+	assert.Len(t, got, 2)
 	want := append([]entities.Order{}, testData.orders[5], testData.orders[9])
-	assert.Equal(t, want, orders)
-	assert.True(t, pageInfo.HasNextPage)
-	assert.False(t, pageInfo.HasPreviousPage)
-	assert.Equal(t, pageInfo.StartCursor, testData.cursors[5].Encode())
-	assert.Equal(t, pageInfo.EndCursor, testData.cursors[9].Encode())
+	assert.Equal(t, want, got)
+	assert.Equal(t, entities.PageInfo{
+		HasNextPage:     true,
+		HasPreviousPage: false,
+		StartCursor:     testData.cursors[5].Encode(),
+		EndCursor:       testData.cursors[9].Encode(),
+	}, pageInfo)
 }
+
+func testOrdersCursorPaginationByMarketFirstCursorNewestFirst(t *testing.T) {
+	stores, teardown := setupOrderCursorPaginationTests(t)
+	defer teardown(t)
+	testData := generateTestOrdersForCursorPagination(t, stores)
+
+	t.Logf("Test DB Port: %d", testDBPort)
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	defer cancel()
+	first := int32(3)
+	pagination, err := entities.NewCursorPagination(&first, nil, nil, nil, true)
+	require.NoError(t, err)
+
+	marketID := testData.markets[0].ID
+	got, pageInfo, err := stores.os.GetByMarketPaged(ctx, marketID.String(), pagination)
+	require.NoError(t, err)
+	assert.Len(t, got, 3)
+	want := append([]entities.Order{},
+		testData.orders[14],
+		testData.orders[13],
+		testData.orders[7],
+	)
+	assert.Equal(t, want, got)
+	assert.Equal(t, entities.PageInfo{
+		HasNextPage:     true,
+		HasPreviousPage: false,
+		StartCursor:     testData.cursors[14].Encode(),
+		EndCursor:       testData.cursors[7].Encode(),
+	}, pageInfo)
+}
+
+func testOrdersCursorPaginationByPartyFirstCursorNewestFirst(t *testing.T) {
+	stores, teardown := setupOrderCursorPaginationTests(t)
+	defer teardown(t)
+	testData := generateTestOrdersForCursorPagination(t, stores)
+
+	t.Logf("Test DB Port: %d", testDBPort)
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	defer cancel()
+	first := int32(3)
+	pagination, err := entities.NewCursorPagination(&first, nil, nil, nil, true)
+	require.NoError(t, err)
+
+	partyID := testData.parties[1].ID
+	got, pageInfo, err := stores.os.GetByPartyPaged(ctx, partyID.String(), pagination)
+	require.NoError(t, err)
+	assert.Len(t, got, 3)
+	want := append([]entities.Order{},
+		testData.orders[13],
+		testData.orders[12],
+		testData.orders[9],
+	)
+	assert.Equal(t, want, got)
+	assert.Equal(t, entities.PageInfo{
+		HasNextPage:     true,
+		HasPreviousPage: false,
+		StartCursor:     testData.cursors[13].Encode(),
+		EndCursor:       testData.cursors[9].Encode(),
+	}, pageInfo)
+}
+
+func testOrdersCursorPaginationByOrderIDFirstCursorNewestFirst(t *testing.T) {
+	stores, teardown := setupOrderCursorPaginationTests(t)
+	defer teardown(t)
+	testData := generateTestOrdersForCursorPagination(t, stores)
+
+	t.Logf("Test DB Port: %d", testDBPort)
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	defer cancel()
+	first := int32(3)
+	pagination, err := entities.NewCursorPagination(&first, nil, nil, nil, true)
+	require.NoError(t, err)
+
+	orderID := testData.orders[1].ID
+	got, pageInfo, err := stores.os.GetOrderVersionsByIDPaged(ctx, orderID.String(), pagination)
+	require.NoError(t, err)
+	assert.Len(t, got, 3)
+	want := append([]entities.Order{},
+		testData.orders[13],
+		testData.orders[11],
+		testData.orders[8],
+	)
+	assert.Equal(t, want, got)
+	assert.Equal(t, entities.PageInfo{
+		HasNextPage:     true,
+		HasPreviousPage: false,
+		StartCursor:     testData.cursors[13].Encode(),
+		EndCursor:       testData.cursors[8].Encode(),
+	}, pageInfo)
+}
+
+func testOrdersCursorPaginationByMarketAndPartyFirstCursorNewestFirst(t *testing.T) {
+	stores, teardown := setupOrderCursorPaginationTests(t)
+	defer teardown(t)
+	testData := generateTestOrdersForCursorPagination(t, stores)
+
+	t.Logf("Test DB Port: %d", testDBPort)
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	defer cancel()
+	first := int32(2)
+	pagination, err := entities.NewCursorPagination(&first, nil, nil, nil, true)
+	require.NoError(t, err)
+
+	partyID := testData.parties[1].ID
+	marketID := testData.markets[1].ID
+	got, pageInfo, err := stores.os.GetByPartyAndMarketPaged(ctx, partyID.String(), marketID.String(), pagination)
+	require.NoError(t, err)
+	assert.Len(t, got, 2)
+	want := append([]entities.Order{},
+		testData.orders[12],
+		testData.orders[9],
+	)
+	assert.Equal(t, want, got)
+	assert.Equal(t, entities.PageInfo{
+		HasNextPage:     true,
+		HasPreviousPage: false,
+		StartCursor:     testData.cursors[12].Encode(),
+		EndCursor:       testData.cursors[9].Encode(),
+	}, pageInfo)
+}
+
+// -- Last Cursor Tests --
 
 func testOrdersCursorPaginationByMarketLastCursor(t *testing.T) {
 	stores, teardown := setupOrderCursorPaginationTests(t)
@@ -1014,21 +1303,21 @@ func testOrdersCursorPaginationByMarketLastCursor(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	defer cancel()
 	last := int32(3)
-	pagination, err := entities.CursorPaginationFromProto(&v2.Pagination{
-		Last: &last,
-	})
+	pagination, err := entities.NewCursorPagination(nil, nil, &last, nil, false)
 	require.NoError(t, err)
 
 	marketID := testData.markets[0].ID
-	orders, pageInfo, err := stores.os.GetByMarketPaged(ctx, marketID.String(), pagination)
+	got, pageInfo, err := stores.os.GetByMarketPaged(ctx, marketID.String(), pagination)
 	require.NoError(t, err)
-	assert.Len(t, orders, 3)
+	assert.Len(t, got, 3)
 	want := append([]entities.Order{}, testData.orders[7], testData.orders[13], testData.orders[14])
-	assert.Equal(t, want, orders)
-	assert.False(t, pageInfo.HasNextPage)
-	assert.True(t, pageInfo.HasPreviousPage)
-	assert.Equal(t, pageInfo.StartCursor, testData.cursors[7].Encode())
-	assert.Equal(t, pageInfo.EndCursor, testData.cursors[14].Encode())
+	assert.Equal(t, want, got)
+	assert.Equal(t, entities.PageInfo{
+		HasNextPage:     false,
+		HasPreviousPage: true,
+		StartCursor:     testData.cursors[7].Encode(),
+		EndCursor:       testData.cursors[14].Encode(),
+	}, pageInfo)
 }
 
 func testOrdersCursorPaginationByPartyLastCursor(t *testing.T) {
@@ -1041,21 +1330,21 @@ func testOrdersCursorPaginationByPartyLastCursor(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	defer cancel()
 	last := int32(3)
-	pagination, err := entities.CursorPaginationFromProto(&v2.Pagination{
-		Last: &last,
-	})
+	pagination, err := entities.NewCursorPagination(nil, nil, &last, nil, false)
 	require.NoError(t, err)
 
 	partyID := testData.parties[1].ID
-	orders, pageInfo, err := stores.os.GetByPartyPaged(ctx, partyID.String(), pagination)
+	got, pageInfo, err := stores.os.GetByPartyPaged(ctx, partyID.String(), pagination)
 	require.NoError(t, err)
-	assert.Len(t, orders, 3)
+	assert.Len(t, got, 3)
 	want := append([]entities.Order{}, testData.orders[9], testData.orders[12], testData.orders[13])
-	assert.Equal(t, want, orders)
-	assert.False(t, pageInfo.HasNextPage)
-	assert.True(t, pageInfo.HasPreviousPage)
-	assert.Equal(t, pageInfo.StartCursor, testData.cursors[9].Encode())
-	assert.Equal(t, pageInfo.EndCursor, testData.cursors[13].Encode())
+	assert.Equal(t, want, got)
+	assert.Equal(t, entities.PageInfo{
+		HasNextPage:     false,
+		HasPreviousPage: true,
+		StartCursor:     testData.cursors[9].Encode(),
+		EndCursor:       testData.cursors[13].Encode(),
+	}, pageInfo)
 }
 
 func testOrdersCursorPaginationByOrderIDLastCursor(t *testing.T) {
@@ -1068,21 +1357,21 @@ func testOrdersCursorPaginationByOrderIDLastCursor(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	defer cancel()
 	last := int32(3)
-	pagination, err := entities.CursorPaginationFromProto(&v2.Pagination{
-		Last: &last,
-	})
+	pagination, err := entities.NewCursorPagination(nil, nil, &last, nil, false)
 	require.NoError(t, err)
 
 	orderID := testData.orders[1].ID
-	orders, pageInfo, err := stores.os.GetOrderVersionsByIDPaged(ctx, orderID.String(), pagination)
+	got, pageInfo, err := stores.os.GetOrderVersionsByIDPaged(ctx, orderID.String(), pagination)
 	require.NoError(t, err)
-	assert.Len(t, orders, 3)
+	assert.Len(t, got, 3)
 	want := append([]entities.Order{}, testData.orders[8], testData.orders[11], testData.orders[13])
-	assert.Equal(t, want, orders)
-	assert.False(t, pageInfo.HasNextPage)
-	assert.True(t, pageInfo.HasPreviousPage)
-	assert.Equal(t, pageInfo.StartCursor, testData.cursors[8].Encode())
-	assert.Equal(t, pageInfo.EndCursor, testData.cursors[13].Encode())
+	assert.Equal(t, want, got)
+	assert.Equal(t, entities.PageInfo{
+		HasNextPage:     false,
+		HasPreviousPage: true,
+		StartCursor:     testData.cursors[8].Encode(),
+		EndCursor:       testData.cursors[13].Encode(),
+	}, pageInfo)
 }
 
 func testOrdersCursorPaginationByMarketAndPartyLastCursor(t *testing.T) {
@@ -1095,23 +1384,149 @@ func testOrdersCursorPaginationByMarketAndPartyLastCursor(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	defer cancel()
 	last := int32(2)
-	pagination, err := entities.CursorPaginationFromProto(&v2.Pagination{
-		Last: &last,
-	})
+	pagination, err := entities.NewCursorPagination(nil, nil, &last, nil, false)
 	require.NoError(t, err)
 
 	partyID := testData.parties[1].ID
 	marketID := testData.markets[1].ID
-	orders, pageInfo, err := stores.os.GetByPartyAndMarketPaged(ctx, partyID.String(), marketID.String(), pagination)
+	got, pageInfo, err := stores.os.GetByPartyAndMarketPaged(ctx, partyID.String(), marketID.String(), pagination)
 	require.NoError(t, err)
-	assert.Len(t, orders, 2)
+	assert.Len(t, got, 2)
 	want := append([]entities.Order{}, testData.orders[9], testData.orders[12])
-	assert.Equal(t, want, orders)
-	assert.False(t, pageInfo.HasNextPage)
-	assert.True(t, pageInfo.HasPreviousPage)
-	assert.Equal(t, pageInfo.StartCursor, testData.cursors[9].Encode())
-	assert.Equal(t, pageInfo.EndCursor, testData.cursors[12].Encode())
+	assert.Equal(t, want, got)
+	assert.Equal(t, entities.PageInfo{
+		HasNextPage:     false,
+		HasPreviousPage: true,
+		StartCursor:     testData.cursors[9].Encode(),
+		EndCursor:       testData.cursors[12].Encode(),
+	}, pageInfo)
 }
+
+func testOrdersCursorPaginationByMarketLastCursorNewestFirst(t *testing.T) {
+	stores, teardown := setupOrderCursorPaginationTests(t)
+	defer teardown(t)
+	testData := generateTestOrdersForCursorPagination(t, stores)
+
+	t.Logf("Test DB Port: %d", testDBPort)
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	defer cancel()
+	last := int32(3)
+	pagination, err := entities.NewCursorPagination(nil, nil, &last, nil, true)
+	require.NoError(t, err)
+
+	marketID := testData.markets[0].ID
+	got, pageInfo, err := stores.os.GetByMarketPaged(ctx, marketID.String(), pagination)
+	require.NoError(t, err)
+	assert.Len(t, got, 3)
+	want := append([]entities.Order{},
+		testData.orders[7],
+		testData.orders[3],
+		testData.orders[0],
+	)
+	assert.Equal(t, want, got)
+	assert.Equal(t, entities.PageInfo{
+		HasNextPage:     false,
+		HasPreviousPage: true,
+		StartCursor:     testData.cursors[7].Encode(),
+		EndCursor:       testData.cursors[0].Encode(),
+	}, pageInfo)
+}
+
+func testOrdersCursorPaginationByPartyLastCursorNewestFirst(t *testing.T) {
+	stores, teardown := setupOrderCursorPaginationTests(t)
+	defer teardown(t)
+	testData := generateTestOrdersForCursorPagination(t, stores)
+
+	t.Logf("Test DB Port: %d", testDBPort)
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	defer cancel()
+	last := int32(3)
+	pagination, err := entities.NewCursorPagination(nil, nil, &last, nil, true)
+	require.NoError(t, err)
+
+	partyID := testData.parties[1].ID
+	got, pageInfo, err := stores.os.GetByPartyPaged(ctx, partyID.String(), pagination)
+	require.NoError(t, err)
+	assert.Len(t, got, 3)
+	want := append([]entities.Order{},
+		testData.orders[7],
+		testData.orders[5],
+		testData.orders[3],
+	)
+	assert.Equal(t, want, got)
+	assert.Equal(t, entities.PageInfo{
+		HasNextPage:     false,
+		HasPreviousPage: true,
+		StartCursor:     testData.cursors[7].Encode(),
+		EndCursor:       testData.cursors[3].Encode(),
+	}, pageInfo)
+}
+
+func testOrdersCursorPaginationByOrderIDLastCursorNewestFirst(t *testing.T) {
+	stores, teardown := setupOrderCursorPaginationTests(t)
+	defer teardown(t)
+	testData := generateTestOrdersForCursorPagination(t, stores)
+
+	t.Logf("Test DB Port: %d", testDBPort)
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	defer cancel()
+	last := int32(3)
+	pagination, err := entities.NewCursorPagination(nil, nil, &last, nil, true)
+	require.NoError(t, err)
+
+	orderID := testData.orders[1].ID
+	got, pageInfo, err := stores.os.GetOrderVersionsByIDPaged(ctx, orderID.String(), pagination)
+	require.NoError(t, err)
+	assert.Len(t, got, 3)
+	want := append([]entities.Order{},
+		testData.orders[6],
+		testData.orders[2],
+		testData.orders[1],
+	)
+	assert.Equal(t, want, got)
+	assert.Equal(t, entities.PageInfo{
+		HasNextPage:     false,
+		HasPreviousPage: true,
+		StartCursor:     testData.cursors[6].Encode(),
+		EndCursor:       testData.cursors[1].Encode(),
+	}, pageInfo)
+}
+
+func testOrdersCursorPaginationByMarketAndPartyLastCursorNewestFirst(t *testing.T) {
+	stores, teardown := setupOrderCursorPaginationTests(t)
+	defer teardown(t)
+	testData := generateTestOrdersForCursorPagination(t, stores)
+
+	t.Logf("Test DB Port: %d", testDBPort)
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	defer cancel()
+	last := int32(2)
+	pagination, err := entities.NewCursorPagination(nil, nil, &last, nil, true)
+	require.NoError(t, err)
+
+	partyID := testData.parties[1].ID
+	marketID := testData.markets[1].ID
+	got, pageInfo, err := stores.os.GetByPartyAndMarketPaged(ctx, partyID.String(), marketID.String(), pagination)
+	require.NoError(t, err)
+	assert.Len(t, got, 2)
+	want := append([]entities.Order{},
+		testData.orders[9],
+		testData.orders[5],
+	)
+	assert.Equal(t, want, got)
+	assert.Equal(t, entities.PageInfo{
+		HasNextPage:     false,
+		HasPreviousPage: true,
+		StartCursor:     testData.cursors[9].Encode(),
+		EndCursor:       testData.cursors[5].Encode(),
+	}, pageInfo)
+}
+
+// -- First and After tests --
 
 func testOrdersCursorPaginationByMarketFirstAndAfterCursor(t *testing.T) {
 	stores, teardown := setupOrderCursorPaginationTests(t)
@@ -1124,22 +1539,21 @@ func testOrdersCursorPaginationByMarketFirstAndAfterCursor(t *testing.T) {
 	defer cancel()
 	first := int32(3)
 	after := testData.cursors[0].Encode()
-	pagination, err := entities.CursorPaginationFromProto(&v2.Pagination{
-		First: &first,
-		After: &after,
-	})
+	pagination, err := entities.NewCursorPagination(&first, &after, nil, nil, false)
 	require.NoError(t, err)
 
 	marketID := testData.markets[0].ID
-	orders, pageInfo, err := stores.os.GetByMarketPaged(ctx, marketID.String(), pagination)
+	got, pageInfo, err := stores.os.GetByMarketPaged(ctx, marketID.String(), pagination)
 	require.NoError(t, err)
-	assert.Len(t, orders, 3)
+	assert.Len(t, got, 3)
 	want := append([]entities.Order{}, testData.orders[3], testData.orders[7], testData.orders[13])
-	assert.Equal(t, want, orders)
-	assert.True(t, pageInfo.HasNextPage)
-	assert.True(t, pageInfo.HasPreviousPage)
-	assert.Equal(t, pageInfo.StartCursor, testData.cursors[3].Encode())
-	assert.Equal(t, pageInfo.EndCursor, testData.cursors[13].Encode())
+	assert.Equal(t, want, got)
+	assert.Equal(t, entities.PageInfo{
+		HasNextPage:     true,
+		HasPreviousPage: true,
+		StartCursor:     testData.cursors[3].Encode(),
+		EndCursor:       testData.cursors[13].Encode(),
+	}, pageInfo)
 }
 
 func testOrdersCursorPaginationByPartyFirstAndAfterCursor(t *testing.T) {
@@ -1153,22 +1567,21 @@ func testOrdersCursorPaginationByPartyFirstAndAfterCursor(t *testing.T) {
 	defer cancel()
 	first := int32(3)
 	after := testData.cursors[5].Encode()
-	pagination, err := entities.CursorPaginationFromProto(&v2.Pagination{
-		First: &first,
-		After: &after,
-	})
+	pagination, err := entities.NewCursorPagination(&first, &after, nil, nil, false)
 	require.NoError(t, err)
 
 	partyID := testData.parties[1].ID
-	orders, pageInfo, err := stores.os.GetByPartyPaged(ctx, partyID.String(), pagination)
+	got, pageInfo, err := stores.os.GetByPartyPaged(ctx, partyID.String(), pagination)
 	require.NoError(t, err)
-	assert.Len(t, orders, 3)
+	assert.Len(t, got, 3)
 	want := append([]entities.Order{}, testData.orders[7], testData.orders[9], testData.orders[12])
-	assert.Equal(t, want, orders)
-	assert.True(t, pageInfo.HasNextPage)
-	assert.True(t, pageInfo.HasPreviousPage)
-	assert.Equal(t, pageInfo.StartCursor, testData.cursors[7].Encode())
-	assert.Equal(t, pageInfo.EndCursor, testData.cursors[12].Encode())
+	assert.Equal(t, want, got)
+	assert.Equal(t, entities.PageInfo{
+		HasNextPage:     true,
+		HasPreviousPage: true,
+		StartCursor:     testData.cursors[7].Encode(),
+		EndCursor:       testData.cursors[12].Encode(),
+	}, pageInfo)
 }
 
 func testOrdersCursorPaginationByOrderIDFirstAndAfterCursor(t *testing.T) {
@@ -1182,22 +1595,21 @@ func testOrdersCursorPaginationByOrderIDFirstAndAfterCursor(t *testing.T) {
 	defer cancel()
 	first := int32(3)
 	after := testData.cursors[2].Encode()
-	pagination, err := entities.CursorPaginationFromProto(&v2.Pagination{
-		First: &first,
-		After: &after,
-	})
+	pagination, err := entities.NewCursorPagination(&first, &after, nil, nil, false)
 	require.NoError(t, err)
 
 	orderID := testData.orders[1].ID
-	orders, pageInfo, err := stores.os.GetOrderVersionsByIDPaged(ctx, orderID.String(), pagination)
+	got, pageInfo, err := stores.os.GetOrderVersionsByIDPaged(ctx, orderID.String(), pagination)
 	require.NoError(t, err)
-	assert.Len(t, orders, 3)
+	assert.Len(t, got, 3)
 	want := append([]entities.Order{}, testData.orders[6], testData.orders[8], testData.orders[11])
-	assert.Equal(t, want, orders)
-	assert.True(t, pageInfo.HasNextPage)
-	assert.True(t, pageInfo.HasPreviousPage)
-	assert.Equal(t, pageInfo.StartCursor, testData.cursors[6].Encode())
-	assert.Equal(t, pageInfo.EndCursor, testData.cursors[11].Encode())
+	assert.Equal(t, want, got)
+	assert.Equal(t, entities.PageInfo{
+		HasNextPage:     true,
+		HasPreviousPage: true,
+		StartCursor:     testData.cursors[6].Encode(),
+		EndCursor:       testData.cursors[11].Encode(),
+	}, pageInfo)
 }
 
 func testOrdersCursorPaginationByMarketAndPartyFirstAndAfterCursor(t *testing.T) {
@@ -1211,24 +1623,152 @@ func testOrdersCursorPaginationByMarketAndPartyFirstAndAfterCursor(t *testing.T)
 	defer cancel()
 	first := int32(1)
 	after := testData.cursors[5].Encode()
-	pagination, err := entities.CursorPaginationFromProto(&v2.Pagination{
-		First: &first,
-		After: &after,
-	})
+	pagination, err := entities.NewCursorPagination(&first, &after, nil, nil, false)
 	require.NoError(t, err)
 
 	partyID := testData.parties[1].ID
 	marketID := testData.markets[1].ID
-	orders, pageInfo, err := stores.os.GetByPartyAndMarketPaged(ctx, partyID.String(), marketID.String(), pagination)
+	got, pageInfo, err := stores.os.GetByPartyAndMarketPaged(ctx, partyID.String(), marketID.String(), pagination)
 	require.NoError(t, err)
-	assert.Len(t, orders, 1)
+	assert.Len(t, got, 1)
 	want := append([]entities.Order{}, testData.orders[9])
-	assert.Equal(t, want, orders)
-	assert.True(t, pageInfo.HasNextPage)
-	assert.True(t, pageInfo.HasPreviousPage)
-	assert.Equal(t, pageInfo.StartCursor, testData.cursors[9].Encode())
-	assert.Equal(t, pageInfo.EndCursor, testData.cursors[9].Encode())
+	assert.Equal(t, want, got)
+	assert.Equal(t, entities.PageInfo{
+		HasNextPage:     true,
+		HasPreviousPage: true,
+		StartCursor:     testData.cursors[9].Encode(),
+		EndCursor:       testData.cursors[9].Encode(),
+	}, pageInfo)
 }
+
+func testOrdersCursorPaginationByMarketFirstAndAfterCursorNewestFirst(t *testing.T) {
+	stores, teardown := setupOrderCursorPaginationTests(t)
+	defer teardown(t)
+	testData := generateTestOrdersForCursorPagination(t, stores)
+
+	t.Logf("Test DB Port: %d", testDBPort)
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	defer cancel()
+	first := int32(3)
+	after := testData.cursors[14].Encode()
+	pagination, err := entities.NewCursorPagination(&first, &after, nil, nil, true)
+	require.NoError(t, err)
+
+	marketID := testData.markets[0].ID
+	got, pageInfo, err := stores.os.GetByMarketPaged(ctx, marketID.String(), pagination)
+	require.NoError(t, err)
+	assert.Len(t, got, 3)
+	want := append([]entities.Order{},
+		testData.orders[13],
+		testData.orders[7],
+		testData.orders[3],
+	)
+	assert.Equal(t, want, got)
+	assert.Equal(t, entities.PageInfo{
+		HasNextPage:     true,
+		HasPreviousPage: true,
+		StartCursor:     testData.cursors[13].Encode(),
+		EndCursor:       testData.cursors[3].Encode(),
+	}, pageInfo)
+}
+
+func testOrdersCursorPaginationByPartyFirstAndAfterCursorNewestFirst(t *testing.T) {
+	stores, teardown := setupOrderCursorPaginationTests(t)
+	defer teardown(t)
+	testData := generateTestOrdersForCursorPagination(t, stores)
+
+	t.Logf("Test DB Port: %d", testDBPort)
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	defer cancel()
+	first := int32(3)
+	after := testData.cursors[12].Encode()
+	pagination, err := entities.NewCursorPagination(&first, &after, nil, nil, true)
+	require.NoError(t, err)
+
+	partyID := testData.parties[1].ID
+	got, pageInfo, err := stores.os.GetByPartyPaged(ctx, partyID.String(), pagination)
+	require.NoError(t, err)
+	assert.Len(t, got, 3)
+	want := append([]entities.Order{},
+		testData.orders[9],
+		testData.orders[7],
+		testData.orders[5],
+	)
+	assert.Equal(t, want, got)
+	assert.Equal(t, entities.PageInfo{
+		HasNextPage:     true,
+		HasPreviousPage: true,
+		StartCursor:     testData.cursors[9].Encode(),
+		EndCursor:       testData.cursors[5].Encode(),
+	}, pageInfo)
+}
+
+func testOrdersCursorPaginationByOrderIDFirstAndAfterCursorNewestFirst(t *testing.T) {
+	stores, teardown := setupOrderCursorPaginationTests(t)
+	defer teardown(t)
+	testData := generateTestOrdersForCursorPagination(t, stores)
+
+	t.Logf("Test DB Port: %d", testDBPort)
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	defer cancel()
+	first := int32(3)
+	after := testData.cursors[11].Encode()
+	pagination, err := entities.NewCursorPagination(&first, &after, nil, nil, true)
+	require.NoError(t, err)
+
+	orderID := testData.orders[1].ID
+	got, pageInfo, err := stores.os.GetOrderVersionsByIDPaged(ctx, orderID.String(), pagination)
+	require.NoError(t, err)
+	assert.Len(t, got, 3)
+	want := append([]entities.Order{},
+		testData.orders[8],
+		testData.orders[6],
+		testData.orders[2],
+	)
+	assert.Equal(t, want, got)
+	assert.Equal(t, entities.PageInfo{
+		HasNextPage:     true,
+		HasPreviousPage: true,
+		StartCursor:     testData.cursors[8].Encode(),
+		EndCursor:       testData.cursors[2].Encode(),
+	}, pageInfo)
+}
+
+func testOrdersCursorPaginationByMarketAndPartyFirstAndAfterCursorNewestFirst(t *testing.T) {
+	stores, teardown := setupOrderCursorPaginationTests(t)
+	defer teardown(t)
+	testData := generateTestOrdersForCursorPagination(t, stores)
+
+	t.Logf("Test DB Port: %d", testDBPort)
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	defer cancel()
+	first := int32(1)
+	after := testData.cursors[12].Encode()
+	pagination, err := entities.NewCursorPagination(&first, &after, nil, nil, true)
+	require.NoError(t, err)
+
+	partyID := testData.parties[1].ID
+	marketID := testData.markets[1].ID
+	got, pageInfo, err := stores.os.GetByPartyAndMarketPaged(ctx, partyID.String(), marketID.String(), pagination)
+	require.NoError(t, err)
+	assert.Len(t, got, 1)
+	want := append([]entities.Order{},
+		testData.orders[9],
+	)
+	assert.Equal(t, want, got)
+	assert.Equal(t, entities.PageInfo{
+		HasNextPage:     true,
+		HasPreviousPage: true,
+		StartCursor:     testData.cursors[9].Encode(),
+		EndCursor:       testData.cursors[9].Encode(),
+	}, pageInfo)
+}
+
+// -- Last and Before tests --
 
 func testOrdersCursorPaginationByMarketLastAndBeforeCursor(t *testing.T) {
 	stores, teardown := setupOrderCursorPaginationTests(t)
@@ -1241,22 +1781,21 @@ func testOrdersCursorPaginationByMarketLastAndBeforeCursor(t *testing.T) {
 	defer cancel()
 	last := int32(3)
 	before := testData.cursors[14].Encode()
-	pagination, err := entities.CursorPaginationFromProto(&v2.Pagination{
-		Last:   &last,
-		Before: &before,
-	})
+	pagination, err := entities.NewCursorPagination(nil, nil, &last, &before, false)
 	require.NoError(t, err)
 
 	marketID := testData.markets[0].ID
-	orders, pageInfo, err := stores.os.GetByMarketPaged(ctx, marketID.String(), pagination)
+	got, pageInfo, err := stores.os.GetByMarketPaged(ctx, marketID.String(), pagination)
 	require.NoError(t, err)
-	assert.Len(t, orders, 3)
+	assert.Len(t, got, 3)
 	want := append([]entities.Order{}, testData.orders[3], testData.orders[7], testData.orders[13])
-	assert.Equal(t, want, orders)
-	assert.True(t, pageInfo.HasNextPage)
-	assert.True(t, pageInfo.HasPreviousPage)
-	assert.Equal(t, pageInfo.StartCursor, testData.cursors[3].Encode())
-	assert.Equal(t, pageInfo.EndCursor, testData.cursors[13].Encode())
+	assert.Equal(t, want, got)
+	assert.Equal(t, entities.PageInfo{
+		HasNextPage:     true,
+		HasPreviousPage: true,
+		StartCursor:     testData.cursors[3].Encode(),
+		EndCursor:       testData.cursors[13].Encode(),
+	}, pageInfo)
 }
 
 func testOrdersCursorPaginationByPartyLastAndBeforeCursor(t *testing.T) {
@@ -1270,22 +1809,21 @@ func testOrdersCursorPaginationByPartyLastAndBeforeCursor(t *testing.T) {
 	defer cancel()
 	last := int32(3)
 	before := testData.cursors[12].Encode()
-	pagination, err := entities.CursorPaginationFromProto(&v2.Pagination{
-		Last:   &last,
-		Before: &before,
-	})
+	pagination, err := entities.NewCursorPagination(nil, nil, &last, &before, false)
 	require.NoError(t, err)
 
 	partyID := testData.parties[1].ID
-	orders, pageInfo, err := stores.os.GetByPartyPaged(ctx, partyID.String(), pagination)
+	got, pageInfo, err := stores.os.GetByPartyPaged(ctx, partyID.String(), pagination)
 	require.NoError(t, err)
-	assert.Len(t, orders, 3)
+	assert.Len(t, got, 3)
 	want := append([]entities.Order{}, testData.orders[5], testData.orders[7], testData.orders[9])
-	assert.Equal(t, want, orders)
-	assert.True(t, pageInfo.HasNextPage)
-	assert.True(t, pageInfo.HasPreviousPage)
-	assert.Equal(t, pageInfo.StartCursor, testData.cursors[5].Encode())
-	assert.Equal(t, pageInfo.EndCursor, testData.cursors[9].Encode())
+	assert.Equal(t, want, got)
+	assert.Equal(t, entities.PageInfo{
+		HasNextPage:     true,
+		HasPreviousPage: true,
+		StartCursor:     testData.cursors[5].Encode(),
+		EndCursor:       testData.cursors[9].Encode(),
+	}, pageInfo)
 }
 
 func testOrdersCursorPaginationByOrderIDLastAndBeforeCursor(t *testing.T) {
@@ -1299,22 +1837,21 @@ func testOrdersCursorPaginationByOrderIDLastAndBeforeCursor(t *testing.T) {
 	defer cancel()
 	last := int32(3)
 	before := testData.cursors[11].Encode()
-	pagination, err := entities.CursorPaginationFromProto(&v2.Pagination{
-		Last:   &last,
-		Before: &before,
-	})
+	pagination, err := entities.NewCursorPagination(nil, nil, &last, &before, false)
 	require.NoError(t, err)
 
 	orderID := testData.orders[1].ID
-	orders, pageInfo, err := stores.os.GetOrderVersionsByIDPaged(ctx, orderID.String(), pagination)
+	got, pageInfo, err := stores.os.GetOrderVersionsByIDPaged(ctx, orderID.String(), pagination)
 	require.NoError(t, err)
-	assert.Len(t, orders, 3)
+	assert.Len(t, got, 3)
 	want := append([]entities.Order{}, testData.orders[2], testData.orders[6], testData.orders[8])
-	assert.Equal(t, want, orders)
-	assert.True(t, pageInfo.HasNextPage)
-	assert.True(t, pageInfo.HasPreviousPage)
-	assert.Equal(t, pageInfo.StartCursor, testData.cursors[2].Encode())
-	assert.Equal(t, pageInfo.EndCursor, testData.cursors[8].Encode())
+	assert.Equal(t, want, got)
+	assert.Equal(t, entities.PageInfo{
+		HasNextPage:     true,
+		HasPreviousPage: true,
+		StartCursor:     testData.cursors[2].Encode(),
+		EndCursor:       testData.cursors[8].Encode(),
+	}, pageInfo)
 }
 
 func testOrdersCursorPaginationByMarketAndPartyLastAndBeforeCursor(t *testing.T) {
@@ -1328,21 +1865,147 @@ func testOrdersCursorPaginationByMarketAndPartyLastAndBeforeCursor(t *testing.T)
 	defer cancel()
 	last := int32(1)
 	before := testData.cursors[12].Encode()
-	pagination, err := entities.CursorPaginationFromProto(&v2.Pagination{
-		Last:   &last,
-		Before: &before,
-	})
+	pagination, err := entities.NewCursorPagination(nil, nil, &last, &before, false)
 	require.NoError(t, err)
 
 	partyID := testData.parties[1].ID
 	marketID := testData.markets[1].ID
-	orders, pageInfo, err := stores.os.GetByPartyAndMarketPaged(ctx, partyID.String(), marketID.String(), pagination)
+	got, pageInfo, err := stores.os.GetByPartyAndMarketPaged(ctx, partyID.String(), marketID.String(), pagination)
 	require.NoError(t, err)
-	assert.Len(t, orders, 1)
+	assert.Len(t, got, 1)
 	want := append([]entities.Order{}, testData.orders[9])
-	assert.Equal(t, want, orders)
-	assert.True(t, pageInfo.HasNextPage)
-	assert.True(t, pageInfo.HasPreviousPage)
-	assert.Equal(t, pageInfo.StartCursor, testData.cursors[9].Encode())
-	assert.Equal(t, pageInfo.EndCursor, testData.cursors[9].Encode())
+	assert.Equal(t, want, got)
+	assert.Equal(t, entities.PageInfo{
+		HasNextPage:     true,
+		HasPreviousPage: true,
+		StartCursor:     testData.cursors[9].Encode(),
+		EndCursor:       testData.cursors[9].Encode(),
+	}, pageInfo)
+}
+
+func testOrdersCursorPaginationByMarketLastAndBeforeCursorNewestFirst(t *testing.T) {
+	stores, teardown := setupOrderCursorPaginationTests(t)
+	defer teardown(t)
+	testData := generateTestOrdersForCursorPagination(t, stores)
+
+	t.Logf("Test DB Port: %d", testDBPort)
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	defer cancel()
+	last := int32(3)
+	before := testData.cursors[0].Encode()
+	pagination, err := entities.NewCursorPagination(nil, nil, &last, &before, true)
+	require.NoError(t, err)
+
+	marketID := testData.markets[0].ID
+	got, pageInfo, err := stores.os.GetByMarketPaged(ctx, marketID.String(), pagination)
+	require.NoError(t, err)
+	assert.Len(t, got, 3)
+	want := append([]entities.Order{},
+		testData.orders[13],
+		testData.orders[7],
+		testData.orders[3],
+	)
+	assert.Equal(t, want, got)
+	assert.Equal(t, entities.PageInfo{
+		HasNextPage:     true,
+		HasPreviousPage: true,
+		StartCursor:     testData.cursors[13].Encode(),
+		EndCursor:       testData.cursors[3].Encode(),
+	}, pageInfo)
+}
+
+func testOrdersCursorPaginationByPartyLastAndBeforeCursorNewestFirst(t *testing.T) {
+	stores, teardown := setupOrderCursorPaginationTests(t)
+	defer teardown(t)
+	testData := generateTestOrdersForCursorPagination(t, stores)
+
+	t.Logf("Test DB Port: %d", testDBPort)
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	defer cancel()
+	last := int32(3)
+	before := testData.cursors[5].Encode()
+	pagination, err := entities.NewCursorPagination(nil, nil, &last, &before, true)
+	require.NoError(t, err)
+
+	partyID := testData.parties[1].ID
+	got, pageInfo, err := stores.os.GetByPartyPaged(ctx, partyID.String(), pagination)
+	require.NoError(t, err)
+	assert.Len(t, got, 3)
+	want := append([]entities.Order{},
+		testData.orders[12],
+		testData.orders[9],
+		testData.orders[7],
+	)
+	assert.Equal(t, want, got)
+	assert.Equal(t, entities.PageInfo{
+		HasNextPage:     true,
+		HasPreviousPage: true,
+		StartCursor:     testData.cursors[12].Encode(),
+		EndCursor:       testData.cursors[7].Encode(),
+	}, pageInfo)
+}
+
+func testOrdersCursorPaginationByOrderIDLastAndBeforeCursorNewestFirst(t *testing.T) {
+	stores, teardown := setupOrderCursorPaginationTests(t)
+	defer teardown(t)
+	testData := generateTestOrdersForCursorPagination(t, stores)
+
+	t.Logf("Test DB Port: %d", testDBPort)
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	defer cancel()
+	last := int32(3)
+	before := testData.cursors[2].Encode()
+	pagination, err := entities.NewCursorPagination(nil, nil, &last, &before, true)
+	require.NoError(t, err)
+
+	orderID := testData.orders[1].ID
+	got, pageInfo, err := stores.os.GetOrderVersionsByIDPaged(ctx, orderID.String(), pagination)
+	require.NoError(t, err)
+	assert.Len(t, got, 3)
+	want := append([]entities.Order{},
+		testData.orders[11],
+		testData.orders[8],
+		testData.orders[6],
+	)
+	assert.Equal(t, want, got)
+	assert.Equal(t, entities.PageInfo{
+		HasNextPage:     true,
+		HasPreviousPage: true,
+		StartCursor:     testData.cursors[11].Encode(),
+		EndCursor:       testData.cursors[6].Encode(),
+	}, pageInfo)
+}
+
+func testOrdersCursorPaginationByMarketAndPartyLastAndBeforeCursorNewestFirst(t *testing.T) {
+	stores, teardown := setupOrderCursorPaginationTests(t)
+	defer teardown(t)
+	testData := generateTestOrdersForCursorPagination(t, stores)
+
+	t.Logf("Test DB Port: %d", testDBPort)
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	defer cancel()
+	last := int32(1)
+	before := testData.cursors[5].Encode()
+	pagination, err := entities.NewCursorPagination(nil, nil, &last, &before, true)
+	require.NoError(t, err)
+
+	partyID := testData.parties[1].ID
+	marketID := testData.markets[1].ID
+	got, pageInfo, err := stores.os.GetByPartyAndMarketPaged(ctx, partyID.String(), marketID.String(), pagination)
+	require.NoError(t, err)
+	assert.Len(t, got, 1)
+	want := append([]entities.Order{},
+		testData.orders[9],
+	)
+	assert.Equal(t, want, got)
+	assert.Equal(t, entities.PageInfo{
+		HasNextPage:     true,
+		HasPreviousPage: true,
+		StartCursor:     testData.cursors[9].Encode(),
+		EndCursor:       testData.cursors[9].Encode(),
+	}, pageInfo)
 }
