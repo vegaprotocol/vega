@@ -529,7 +529,8 @@ CREATE TABLE IF NOT EXISTS nodes_announced (
   node_id               BYTEA NOT NULL,
   epoch_seq             BIGINT NOT NULL,
   added                 BOOLEAN NOT NULL,
-  PRIMARY KEY(node_id, epoch_seq)
+  vega_time             TIMESTAMP WITH TIME ZONE NOT NULL,
+  PRIMARY KEY(node_id, epoch_seq, vega_time)
 );
 
 CREATE TYPE validator_node_status as enum(
