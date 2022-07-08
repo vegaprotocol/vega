@@ -1390,6 +1390,33 @@ func (r *myPartyResolver) Positions(ctx context.Context, party *types.Party) ([]
 	return []*types.Position{}, nil
 }
 
+func (r *myPartyResolver) PositionsConnection(ctx context.Context, party *types.Party, market *string, pagination *v2.Pagination) (*v2.PositionConnection, error) {
+	partyID := ""
+	if party != nil {
+		partyID = party.Id
+	}
+
+	marketID := ""
+	if market != nil {
+		marketID = *market
+	}
+
+	req := v2.GetPositionsByPartyConnectionRequest{
+		PartyId:    partyID,
+		MarketId:   marketID,
+		Pagination: pagination,
+	}
+
+	res, err := r.tradingDataClientV2.GetPositionsByPartyConnection(ctx, &req)
+	if err != nil {
+		r.log.Error("tradingData client", logging.Error(err))
+		return nil, customErrorFromStatus(err)
+	}
+
+	return res.Positions, nil
+
+}
+
 func (r *myPartyResolver) Accounts(ctx context.Context, party *types.Party,
 	marketID *string, asset *string, accType *types.AccountType,
 ) ([]*types.Account, error) {
@@ -1500,6 +1527,37 @@ func (r *myPartyResolver) Votes(ctx context.Context, party *types.Party) ([]*Pro
 		result[i] = ProposalVoteFromProto(vote)
 	}
 	return result, nil
+}
+
+func (r *myPartyResolver) VotesConnection(ctx context.Context, party *types.Party, pagination *v2.Pagination) (*ProposalVoteConnection, error) {
+	req := v2.ListVotesRequest{
+		PartyId:    party.Id,
+		Pagination: pagination,
+	}
+
+	res, err := r.tradingDataClientV2.ListVotes(ctx, &req)
+	if err != nil {
+		r.log.Error("tradingData client", logging.Error(err))
+		return nil, customErrorFromStatus(err)
+	}
+
+	totalCount := int(res.Votes.TotalCount)
+	edges := make([]*ProposalVoteEdge, 0, len(res.Votes.Edges))
+
+	for _, edge := range res.Votes.Edges {
+		edges = append(edges, &ProposalVoteEdge{
+			Cursor: &edge.Cursor,
+			Node:   ProposalVoteFromProto(edge.Node),
+		})
+	}
+
+	connection := &ProposalVoteConnection{
+		TotalCount: &totalCount,
+		Edges:      edges,
+		PageInfo:   res.Votes.PageInfo,
+	}
+
+	return connection, nil
 }
 
 func (r *myPartyResolver) Delegations(
@@ -2182,38 +2240,6 @@ func (r *myPositionResolver) MarginsConnection(ctx context.Context, pos *types.P
 	}
 
 	return res.MarginLevels, nil
-}
-
-func (r *myQueryResolver) PositionsByParty(ctx context.Context, partyID *string, marketID *string) ([]*types.Position, error) {
-	if len(*partyID) <= 0 {
-		return nil, errors.New("missing party id")
-	}
-	req := protoapi.PositionsByPartyRequest{
-		PartyId:  *partyID,
-		MarketId: *marketID,
-	}
-	res, err := r.tradingDataClient.PositionsByParty(ctx, &req)
-	if err != nil {
-		r.log.Error("tradingData client", logging.Error(err))
-		return nil, customErrorFromStatus(err)
-	}
-	return res.Positions, nil
-}
-
-func (r *myQueryResolver) PositionsByPartyConnection(ctx context.Context, partyID *string, marketID string, pagination *v2.Pagination) (*v2.PositionConnection, error) {
-	req := v2.GetPositionsByPartyConnectionRequest{
-		PartyId:    *partyID,
-		MarketId:   marketID,
-		Pagination: pagination,
-	}
-
-	res, err := r.tradingDataClientV2.GetPositionsByPartyConnection(ctx, &req)
-	if err != nil {
-		r.log.Error("tradingData client", logging.Error(err))
-		return nil, customErrorFromStatus(err)
-	}
-
-	return res.Positions, nil
 }
 
 // END: Position Resolver

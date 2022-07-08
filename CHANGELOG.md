@@ -9,6 +9,7 @@
 - [](https://github.com/vegaprotocol/data-node/issues/xxx) -
 
 ### 🛠  Improvements
+- [572](https://github.com/vegaprotocol/data-node/issues/572) - Add cursor based pagination for votes requests
 - [561](https://github.com/vegaprotocol/data-node/issues/561) - Add cursor based pagination for positions requests
 - [565](https://github.com/vegaprotocol/data-node/issues/565) - Add cursor based pagination for candles data requests
 - [568](https://github.com/vegaprotocol/data-node/issues/568) - Add cursor based pagination for deposits requests

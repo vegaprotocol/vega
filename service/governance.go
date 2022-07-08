@@ -32,6 +32,7 @@ type VoteStore interface {
 	GetYesVotesForProposal(ctx context.Context, proposalIDStr string) ([]entities.Vote, error)
 	GetNoVotesForProposal(ctx context.Context, proposalIDStr string) ([]entities.Vote, error)
 	GetByParty(ctx context.Context, partyIDStr string) ([]entities.Vote, error)
+	GetByPartyConnection(ctx context.Context, partyIDStr string, pagination entities.CursorPagination) ([]entities.Vote, entities.PageInfo, error)
 	Get(ctx context.Context, proposalID, partyID *string, value *entities.VoteValue) ([]entities.Vote, error)
 }
 
@@ -99,6 +100,10 @@ func (g *Governance) GetNoVotesForProposal(ctx context.Context, proposalID strin
 
 func (g *Governance) GetVotesByParty(ctx context.Context, partyID string) ([]entities.Vote, error) {
 	return g.vStore.GetByParty(ctx, partyID)
+}
+
+func (p *Governance) GetByPartyConnection(ctx context.Context, partyID string, pagination entities.CursorPagination) ([]entities.Vote, entities.PageInfo, error) {
+	return p.vStore.GetByPartyConnection(ctx, partyID, pagination)
 }
 
 func (g *Governance) GetVotes(ctx context.Context, proposalID, partyID *string, value *entities.VoteValue) ([]entities.Vote, error) {

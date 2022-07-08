@@ -13,7 +13,11 @@
 package entities
 
 import (
+	"encoding/json"
+	"fmt"
 	"time"
+
+	v2 "code.vegaprotocol.io/protos/data-node/api/v2"
 
 	"code.vegaprotocol.io/protos/vega"
 	"github.com/shopspring/decimal"
@@ -69,4 +73,41 @@ func VoteFromProto(pv *vega.Vote) (Vote, error) {
 	}
 
 	return v, nil
+}
+
+func (p Vote) ToProtoEdge(_ ...any) *v2.VoteEdge {
+	return &v2.VoteEdge{
+		Node:   p.ToProto(),
+		Cursor: p.Cursor().Encode(),
+	}
+}
+
+func (p Vote) Cursor() *Cursor {
+	pc := VoteCursor{
+		PartyID:  p.PartyID,
+		VegaTime: p.VegaTime,
+	}
+
+	return NewCursor(pc.String())
+}
+
+type VoteCursor struct {
+	PartyID  PartyID   `json:"party_id"`
+	VegaTime time.Time `json:"vega_time"`
+}
+
+func (rc VoteCursor) String() string {
+	bs, err := json.Marshal(rc)
+	if err != nil {
+		// This should never happen.
+		panic(fmt.Errorf("could not marshal order cursor: %w", err))
+	}
+	return string(bs)
+}
+
+func (rc *VoteCursor) Parse(cursorString string) error {
+	if cursorString == "" {
+		return nil
+	}
+	return json.Unmarshal([]byte(cursorString), rc)
 }

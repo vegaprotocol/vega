@@ -7,6 +7,7 @@ import (
 	"io"
 	"strconv"
 
+	"code.vegaprotocol.io/protos/data-node/api/v2"
 	"code.vegaprotocol.io/protos/vega"
 )
 
@@ -310,6 +311,20 @@ type ProposalVote struct {
 	Vote *vega.Vote `json:"vote"`
 	// Proposal casting the vote on
 	ProposalID string `json:"proposalId"`
+}
+
+type ProposalVoteConnection struct {
+	// The total number of proposal votes in this connection
+	TotalCount *int `json:"totalCount"`
+	// The proposal votes in this connection
+	Edges []*ProposalVoteEdge `json:"edges"`
+	// The pagination information
+	PageInfo *v2.PageInfo `json:"pageInfo"`
+}
+
+type ProposalVoteEdge struct {
+	Node   *ProposalVote `json:"node"`
+	Cursor *string       `json:"cursor"`
 }
 
 type ProposalVoteSide struct {
