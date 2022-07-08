@@ -230,3 +230,73 @@ Scenario: Max open interest changes over time, testing change of timewindow (004
     # target_stake = 110 x (140+30) x 170 x 1 x 0.1=1870
     And the target stake should be "1870" for the market "ETH/DEC21"
 
+ Scenario: Target stake is calculate correctly during auction in presence of wash trades
+  Background:
+    Given the following network parameters are set:
+      | name                              | value |
+      | market.stake.target.timeWindow    | 168h  |
+      | market.stake.target.scalingFactor | 1     |
+    And the simple risk model named "simple-risk-model-1":
+      | long | short | max move up | min move down | probability of trading |
+      | 0.1  | 0.1   | 10          | -10           | 0.1                    |
+    And the log normal risk model named "log-normal-risk-model-1":
+      | risk aversion | tau                    | mu | r  | sigma |
+      | 0.000001      | 0.00011407711613050422 | -1 | -1 | -1    |
+    And the fees configuration named "fees-config-1":
+      | maker fee | infrastructure fee |
+      | 0.00025   | 0.0005             |
+    And the margin calculator named "margin-calculator-1":
+      | search factor | initial factor | release factor |
+      | 1.1           | 1.2            | 1.4            |
+    And the markets:
+      | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring | oracle config          |
+      | ETH/DEC21 | BTC        | BTC   | simple-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | default-none     | default-eth-for-future |
+
+    And time is updated to "2021-03-08T00:00:00Z"
+
+    Given the parties deposit on asset's general account the following amount:
+      | party | asset | amount    |
+      | tt_0  | BTC   | 100000000 |
+      | tt_1  | BTC   | 100000000 |
+      | tt_2  | BTC   | 100000000 |
+      | tt_3  | BTC   | 100000000 |
+      | tt_4  | BTC   | 100000000 |
+
+    When the parties place the following orders:
+      | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | tt_0  | ETH/DEC21 | buy  | 1000   | 90    | 0                | TYPE_LIMIT | TIF_GTC | tt_0_0    |
+      | tt_0  | ETH/DEC21 | sell | 1000   | 200   | 0                | TYPE_LIMIT | TIF_GTC | tt_0_1    |
+
+    Then the mark price should be "0" for the market "ETH/DEC21"
+
+    When the parties place the following orders:
+      | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | tt_1  | ETH/DEC21 | sell | 50     | 110   | 0                | TYPE_LIMIT | TIF_GTC | tt_1_0    |
+      | tt_2  | ETH/DEC21 | buy  | 20     | 110   | 0                | TYPE_LIMIT | TIF_GTC | tt_2_0    |
+      | tt_3  | ETH/DEC21 | buy  | 30     | 110   | 0                | TYPE_LIMIT | TIF_GTC | tt_2_0    |
+
+    And the market data for the market "ETH/DEC21" should be:
+      | trading mode                 | auction trigger         | target stake | supplied stake | open interest |
+      | TRADING_MODE_OPENING_AUCTION | AUCTION_TRIGGER_OPENING | 550          | 0              | 0             |
+
+    Then the parties submit the following liquidity provision:
+      | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
+      | lp1 | tt_0   | ETH/DEC21 | 2000              | 0.001 | buy  | BID              | 1          | 10     | submission |
+      | lp1 | tt_0   | ETH/DEC21 | 2000              | 0.001 | sell | ASK              | 1          | 10     | amendment  |
+
+    # Add wash trades
+    When the parties place the following orders:
+      | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | tt_4  | ETH/DEC21 | sell | 40     | 110   | 0                | TYPE_LIMIT | TIF_GTC | tt_4_0    |
+      | tt_4  | ETH/DEC21 | buy  | 40     | 110   | 0                | TYPE_LIMIT | TIF_GTC | tt_4_1    |
+
+    # # Check that target stake is unchanged
+    Then the market data for the market "ETH/DEC21" should be:
+      | mark price | trading mode                 | auction trigger         | target stake | supplied stake | open interest |
+      | 0          | TRADING_MODE_OPENING_AUCTION | AUCTION_TRIGGER_OPENING | 550          | 2000           | 0             |
+
+    Then the opening auction period ends for market "ETH/DEC21"
+
+    Then the market data for the market "ETH/DEC21" should be:
+      | mark price | trading mode            | auction trigger             | target stake | supplied stake | open interest |
+      | 110        | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 550          | 2000           | 50            |

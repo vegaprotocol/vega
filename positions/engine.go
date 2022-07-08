@@ -330,6 +330,10 @@ func (e *Engine) GetOpenInterestGivenTrades(trades []*types.Trade) uint64 {
 	posLocal := make(map[string]int64)
 	var ok bool
 	for _, t := range trades {
+		if t.Seller == t.Buyer {
+			// ignore wash trade
+			continue
+		}
 		bPos, sPos := int64(0), int64(0)
 		if bPos, ok = posLocal[t.Buyer]; !ok {
 			if p, ok := e.positions[t.Buyer]; ok {
