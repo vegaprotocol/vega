@@ -37,6 +37,7 @@ func TestValidatorSet(t *testing.T) {
 	t.Run("test the number of ersatz validators is reduced hence validators being demoted", testErsatzValidatorsNumberReduced)
 	t.Run("test the number of ersatz validators is greater than the number of current tm, promotion is available", testErsatzFreeSlotsPromotion)
 	t.Run("test swap of the best pending with the worst ersatz validators", testSwapBestPendingWithWorstErsatz)
+	t.Run("test swap of from ez to tendermint with slot reduction in ersatz", testSwapAndSlotChange)
 }
 
 func TestApplyPromotionAllThingsEqual(t *testing.T) {
@@ -967,7 +968,7 @@ func testErsatzValidatorsNumberReduced(t *testing.T) {
 	require.Equal(t, int64(1001), topology.validators["node5"].statusChangeBlock)
 }
 
-func TestSwapAndSlotChange(t *testing.T) {
+func testSwapAndSlotChange(t *testing.T) {
 	topology := NewTopology(logging.NewLoggerFromConfig(logging.Config{}), NewDefaultConfig(), nil, nil, true, nil, &DummyMultiSigTopology{})
 	topology.numberOfTendermintValidators = 4
 	topology.numberOfErsatzValidators = 2
