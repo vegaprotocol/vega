@@ -59,6 +59,7 @@ func Main(ctx context.Context) error {
 		Gateway,
 		Node,
 		Version,
+		Postgres,
 	); err != nil {
 		fmt.Printf("%+v\n", err)
 		return err

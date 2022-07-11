@@ -18,6 +18,7 @@
 - [576](https://github.com/vegaprotocol/data-node/issues/576) - Add cursor based pagination for assets requests
 - [571](https://github.com/vegaprotocol/data-node/issues/571) - Add cursor based pagination for Oracle Spec and Data requests
 - [733](https://github.com/vegaprotocol/data-node/issues/733) - Store chain info in database when using `SQL`
+- [744](https://github.com/vegaprotocol/data-node/issues/744) - Add command to launch embedded postgres `data-node postgres run`
 - [748](https://github.com/vegaprotocol/data-node/issues/748) - Add REST endpoint to list `OracleData`
 - [761](https://github.com/vegaprotocol/data-node/issues/761) - Delete all badger stores, `SQL` stores only from now
 - [566](https://github.com/vegaprotocol/data-node/issues/566) - Liquidity provision pagination 

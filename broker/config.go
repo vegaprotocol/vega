@@ -30,7 +30,6 @@ type Config struct {
 	FileEventSourceConfig          FileEventSourceConfig `group:"FileEventSourceConfig" namespace:"fileeventsource"`
 	UseEventFile                   encoding.Bool         `long:"use-event-file" description:"set to true to source events from a file"`
 	PanicOnError                   encoding.Bool         `long:"panic-on-error" description:"if an error occurs on event push the broker will panic, else log the error"`
-	BlockProcessingTimeout         encoding.Duration     `long:"block-processing-timeout" description:"The maximum time permitted for a block of events to be processed"`
 }
 
 // NewDefaultConfig creates an instance of config with default values.
@@ -50,9 +49,8 @@ func NewDefaultConfig() Config {
 			TimeBetweenBlocks:     encoding.Duration{Duration: 1 * time.Second},
 			SendChannelBufferSize: 1000,
 		},
-		UseEventFile:           false,
-		PanicOnError:           false,
-		BlockProcessingTimeout: encoding.Duration{Duration: 30 * time.Second},
+		UseEventFile: false,
+		PanicOnError: false,
 	}
 }
 

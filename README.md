@@ -127,8 +127,7 @@ We use it for running integration tests and it works quite well however, we have
 You can launch postgres in this way either with the command either using
 
 ```sh
-data-node postgres init
-data-node postgres start
+data-node postgres run
 ```
 
 Which will launch embedded postgres in it's own process or
