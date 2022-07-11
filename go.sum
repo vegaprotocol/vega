@@ -1347,8 +1347,8 @@ github.com/tecbot/gorocksdb v0.0.0-20191217155057-f0fad39f321c/go.mod h1:ahpPrc7
 github.com/tendermint/tendermint v0.34.0-rc4/go.mod h1:yotsojf2C1QBOw4dZrTcxbyxmPUrT4hNuOQWX9XUwB4=
 github.com/tendermint/tendermint v0.34.0-rc6/go.mod h1:ugzyZO5foutZImv0Iyx/gOFCX6mjJTgbLHTwi17VDVg=
 github.com/tendermint/tendermint v0.34.0/go.mod h1:Aj3PIipBFSNO21r+Lq3TtzQ+uKESxkbA3yo/INM4QwQ=
-github.com/tendermint/tendermint v0.36.0-dev.0.20220706144155-da83edc58818 h1:jjOM7KR376958mh2nea3V4jnur6CEiscNt8T4nqqDdM=
-github.com/tendermint/tendermint v0.36.0-dev.0.20220706144155-da83edc58818/go.mod h1:6cIWilifL392hrtTPeYL5A6CqNBwDbhvwvAZSDmQpvc=
+github.com/tendermint/tendermint v0.36.0-dev.0.20220708172942-e3292a48e322 h1:Yu+fj38ZUam9j2rZ9o5ZO6o76JiKwCvRSPng3ytpyv0=
+github.com/tendermint/tendermint v0.36.0-dev.0.20220708172942-e3292a48e322/go.mod h1:6cIWilifL392hrtTPeYL5A6CqNBwDbhvwvAZSDmQpvc=
 github.com/tendermint/tm-db v0.6.2/go.mod h1:GYtQ67SUvATOcoY8/+x6ylk8Qo02BQyLrAs+yAcLvGI=
 github.com/tendermint/tm-db v0.6.3/go.mod h1:lfA1dL9/Y/Y8wwyPp2NMLyn5P5Ptr/gvDFNWtrCWSf8=
 github.com/tendermint/tm-db v0.6.6 h1:EzhaOfR0bdKyATqcd5PNeyeq8r+V4bRPHBfyFdD9kGM=
