@@ -413,6 +413,7 @@ type NodeForward interface {
 	SendTx(context.Context, *commandspb.Transaction, api.SubmitTransactionRequest_Type, int) (string, error)
 	CheckTx(context.Context, *commandspb.Transaction, int) (*api.CheckTransactionResponse, error)
 	HealthCheck(context.Context) error
+	GetNetworkChainID(context.Context) (string, error)
 	LastBlockHeightAndHash(context.Context) (*api.LastBlockHeightResponse, int, error)
 }
 
@@ -436,6 +437,7 @@ func NewService(log *zap.Logger, net *network.Network, h WalletHandler, a Auth, 
 	s.handle(http.MethodDelete, "/api/v1/auth/token", extractToken(s.Revoke))
 
 	s.handle(http.MethodGet, "/api/v1/network", s.GetNetwork)
+	s.handle(http.MethodGet, "/api/v1/network/chainid", s.GetNetworkChainID)
 
 	s.handle(http.MethodPost, "/api/v1/wallets", s.CreateWallet)
 	s.handle(http.MethodPost, "/api/v1/wallets/import", s.ImportWallet)
@@ -910,6 +912,19 @@ func (s *Service) Health(w http.ResponseWriter, r *http.Request, _ httprouter.Pa
 		return
 	}
 	s.writeSuccess(w, nil)
+}
+
+func (s *Service) GetNetworkChainID(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	chainID, err := s.nodeForward.GetNetworkChainID(r.Context())
+	if err != nil {
+		s.writeError(w, newErrorResponse(err.Error()), http.StatusFailedDependency)
+		return
+	}
+	s.writeSuccess(w, struct {
+		ChainID string `json:"chainID"`
+	}{
+		ChainID: chainID,
+	})
 }
 
 func (s *Service) writeBadRequestErr(w http.ResponseWriter, err error) {

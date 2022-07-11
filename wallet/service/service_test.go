@@ -3,6 +3,7 @@ package service_test
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -109,6 +110,8 @@ func TestService(t *testing.T) {
 	t.Run("Verifying anything succeeds", testVerifyingAnythingSucceeds)
 	t.Run("Failed verification fails", testVerifyingAnythingFails)
 	t.Run("Verifying anything with invalid request fails", testVerifyingAnyDataWithInvalidRequestFails)
+	t.Run("Requesting the chain id is successful", testGetNetworkChainIDSuccess)
+	t.Run("Requesting the chain id fails when node in available", testGetNetworkChainIDFailure)
 }
 
 func testServiceCreateWalletOK(t *testing.T) {
@@ -1122,6 +1125,39 @@ func testVerifyingAnyDataWithInvalidRequestFails(t *testing.T) {
 	}
 }
 
+func testGetNetworkChainIDSuccess(t *testing.T) {
+	s := getTestService(t, "manual")
+	defer s.ctrl.Finish()
+
+	// setup
+	expectedChainID := "some-chain-id"
+	s.nodeForward.EXPECT().GetNetworkChainID(gomock.Any()).Return(expectedChainID, nil)
+
+	// when
+	statusCode, body := serveHTTP(t, s, chainIDRequest(t))
+	assert.Equal(t, http.StatusOK, statusCode)
+
+	resp := struct {
+		ChainID string `json:"chainID"`
+	}{}
+	if err := json.Unmarshal(body, &resp); err != nil {
+		t.Fatalf("couldn't unmarshal responde: %v", err)
+	}
+	assert.Equal(t, resp.ChainID, expectedChainID)
+}
+
+func testGetNetworkChainIDFailure(t *testing.T) {
+	s := getTestService(t, "manual")
+	defer s.ctrl.Finish()
+
+	// setup
+	s.nodeForward.EXPECT().GetNetworkChainID(gomock.Any()).Return("", errors.New("dummyerror"))
+
+	// when
+	statusCode, _ := serveHTTP(t, s, chainIDRequest(t))
+	assert.Equal(t, http.StatusFailedDependency, statusCode)
+}
+
 func loginRequest(t *testing.T, payload string) *http.Request {
 	t.Helper()
 	return buildRequest(t, http.MethodPost, "/api/v1/auth/token", payload, nil)
@@ -1185,6 +1221,11 @@ func signAnyRequest(t *testing.T, payload string, headers map[string]string) *ht
 func verifyAnyRequest(t *testing.T, payload string) *http.Request {
 	t.Helper()
 	return buildRequest(t, http.MethodPost, "/api/v1/verify", payload, nil)
+}
+
+func chainIDRequest(t *testing.T) *http.Request {
+	t.Helper()
+	return buildRequest(t, http.MethodGet, "/api/v1/network/chainid", "", map[string]string{})
 }
 
 func authHeaders(t *testing.T, token string) map[string]string {
