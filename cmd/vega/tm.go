@@ -42,6 +42,7 @@ func (opts *tmCmd) Execute(_ []string) error {
 	rootCmd := tmcmd.RootCmd
 	rootCmd.AddCommand(
 		tmcmd.GenValidatorCmd,
+		tmcmd.ReIndexEventCmd,
 		tmcmd.InitFilesCmd,
 		tmcmd.ProbeUpnpCmd,
 		tmcmd.LightCmd,
@@ -54,12 +55,14 @@ func (opts *tmCmd) Execute(_ []string) error {
 		tmcmd.ShowNodeIDCmd,
 		tmcmd.GenNodeKeyCmd,
 		tmcmd.VersionCmd,
+		tmcmd.InspectCmd,
+		tmcmd.MakeKeyMigrateCommand(),
 		tmdebug.DebugCmd,
 		tmcli.NewCompletionCmd(rootCmd, true),
 	)
 
-	nodeFunc := defaultNewNode
-	rootCmd.AddCommand(newRunNodeCmd(nodeFunc))
+	rootCmd.AddCommand(NewRunNodeCmd())
+
 	baseCmd := tmcli.PrepareBaseCmd(rootCmd, "TM", os.ExpandEnv(filepath.Join("$HOME", tmcfg.DefaultTendermintDir)))
 	if err := baseCmd.Execute(); err != nil {
 		return err

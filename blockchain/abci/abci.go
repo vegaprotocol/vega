@@ -15,6 +15,7 @@ package abci
 import (
 	"encoding/hex"
 	"errors"
+	"time"
 
 	vgcontext "code.vegaprotocol.io/vega/libs/context"
 
@@ -58,6 +59,8 @@ func (app *App) InitChain(req types.RequestInitChain) (resp types.ResponseInitCh
 }
 
 func (app *App) BeginBlock(req types.RequestBeginBlock) (resp types.ResponseBeginBlock) {
+	app.blockStartTime = time.Now()
+	app.numTx = 0
 	if fn := app.OnBeginBlock; fn != nil {
 		app.ctx, resp = fn(req)
 	}
@@ -68,6 +71,7 @@ func (app *App) EndBlock(req types.RequestEndBlock) (resp types.ResponseEndBlock
 	if fn := app.OnEndBlock; fn != nil {
 		app.ctx, resp = fn(req)
 	}
+	println("begin block to end block ==> ", req.Height, "with", app.numTx, "txs took", time.Since(app.blockStartTime).Seconds())
 	return
 }
 
@@ -125,6 +129,7 @@ func (app *App) CheckTx(req types.RequestCheckTx) (resp types.ResponseCheckTx) {
 }
 
 func (app *App) DeliverTx(req types.RequestDeliverTx) (resp types.ResponseDeliverTx) {
+	app.numTx++
 	// first, only decode the transaction but don't validate
 	tx, code, err := app.getTx(req.GetTx())
 	if err != nil {
@@ -221,8 +226,8 @@ func getBaseTxEvents(tx Tx) []types.Event {
 			Type: "tx",
 			Attributes: []types.EventAttribute{
 				{
-					Key:   []byte("submitter"),
-					Value: []byte(tx.PubKeyHex()),
+					Key:   "submitter",
+					Value: tx.PubKeyHex(),
 					Index: true,
 				},
 			},
@@ -231,8 +236,8 @@ func getBaseTxEvents(tx Tx) []types.Event {
 			Type: "command",
 			Attributes: []types.EventAttribute{
 				{
-					Key:   []byte("type"),
-					Value: []byte(tx.Command().String()),
+					Key:   "type",
+					Value: tx.Command().String(),
 					Index: true,
 				},
 			},
@@ -250,8 +255,8 @@ func getBaseTxEvents(tx Tx) []types.Event {
 		Type: "command",
 		Attributes: []types.EventAttribute{
 			{
-				Key:   []byte("market"),
-				Value: []byte(market),
+				Key:   "market",
+				Value: market,
 				Index: true,
 			},
 		},
@@ -268,8 +273,8 @@ func getBaseTxEvents(tx Tx) []types.Event {
 		Type: "command",
 		Attributes: []types.EventAttribute{
 			{
-				Key:   []byte("asset"),
-				Value: []byte(asset),
+				Key:   "asset",
+				Value: asset,
 				Index: true,
 			},
 		},
@@ -283,8 +288,8 @@ func getBaseTxEvents(tx Tx) []types.Event {
 		Type: "command",
 		Attributes: []types.EventAttribute{
 			{
-				Key:   []byte("reference"),
-				Value: []byte(reference),
+				Key:   "reference",
+				Value: reference,
 				Index: true,
 			},
 		},
@@ -298,8 +303,8 @@ func getBaseTxEvents(tx Tx) []types.Event {
 		Type: "command",
 		Attributes: []types.EventAttribute{
 			{
-				Key:   []byte("proposal"),
-				Value: []byte(proposal),
+				Key:   "proposal",
+				Value: proposal,
 				Index: true,
 			},
 		},
