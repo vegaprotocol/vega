@@ -498,7 +498,7 @@ func getTestAccounts(t *testing.T, accounts *sqlstore.Accounts, block entities.B
 		Symbol:        "tan",
 		TotalSupply:   decimal.NewFromInt(20),
 		Decimals:      1,
-		Quantum:       1,
+		Quantum:       decimal.NewFromInt(1),
 		Source:        "TS",
 		ERC20Contract: "ET",
 		VegaTime:      block.VegaTime,

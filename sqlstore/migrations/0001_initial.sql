@@ -25,7 +25,7 @@ create table assets
     symbol              TEXT NOT NULL,
     total_supply        HUGEINT,
     decimals            INT,
-    quantum             INT,
+    quantum             HUGEINT,
     source              TEXT,
     erc20_contract      TEXT,
     lifetime_limit      HUGEINT NOT NULL,
@@ -65,7 +65,6 @@ create table balances
 
     PRIMARY KEY(vega_time, account_id)
 );
-
 
 select create_hypertable('balances', 'vega_time', chunk_time_interval => INTERVAL '1 day');
 create index on balances (vega_time, account_id);
