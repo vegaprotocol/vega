@@ -20,8 +20,8 @@ import (
 )
 
 var (
-	minVersion = semver.MustParse("0.34.11")
-	maxVersion = semver.MustParse("0.35.0")
+	minVersion = semver.MustParse("0.35.0")
+	maxVersion = semver.MustParse("0.36.0")
 )
 
 var defaultChainVersion = ChainVersion{
@@ -38,6 +38,7 @@ type ChainVersion struct {
 // Check validate that they chain respect the minimal and maximum versions required.
 func (c ChainVersion) Check(vstr string) error {
 	vstr = stripVPrefix(vstr)
+	vstr = stripVSuffix(vstr)
 
 	v, err := semver.Parse(vstr)
 	if err != nil {
@@ -57,4 +58,11 @@ func (c ChainVersion) Check(vstr string) error {
 
 func stripVPrefix(vstr string) string {
 	return strings.TrimPrefix(vstr, "v")
+}
+
+func stripVSuffix(vstr string) string {
+	if strings.Index(vstr, "-") < 0 {
+		return vstr
+	}
+	return vstr[:strings.Index(vstr, "-")]
 }
