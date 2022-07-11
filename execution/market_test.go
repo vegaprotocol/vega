@@ -24,6 +24,7 @@ import (
 
 	"code.vegaprotocol.io/vega/integration/stubs"
 
+	proto "code.vegaprotocol.io/protos/vega"
 	vegapb "code.vegaprotocol.io/protos/vega"
 	oraclespb "code.vegaprotocol.io/protos/vega/oracles/v1"
 	bmocks "code.vegaprotocol.io/vega/broker/mocks"
@@ -3859,16 +3860,28 @@ func TestOrderBook_ExpiredOrderTriggersReprice(t *testing.T) {
 	now = now.Add(time.Second * 10)
 	tm.now = now
 	tm.market.OnTick(vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash()), now)
-	orders, err := tm.market.RemoveExpiredOrders(ctx, now.UnixNano())
-	require.NoError(t, err)
 
-	// we have one order
-	require.Len(t, orders, 1)
-	// id == o1.Id
-	assert.Equal(t, o1.ID, orders[0].ID)
-	// status is expired
-	assert.Equal(t, types.OrderStatusExpired, orders[0].Status)
-	assert.Equal(t, types.OrderStatusParked, o2.Status)
+	t.Run("order is parked", func(t *testing.T) {
+		// First collect all the orders events
+		found := map[string]*proto.Order{}
+		for _, e := range tm.events {
+			switch evt := e.(type) {
+			case *events.Order:
+				found[evt.Order().Id] = evt.Order()
+			}
+		}
+
+		require.Len(t, found, 2)
+
+		expects := map[string]types.OrderStatus{
+			o1.ID: types.OrderStatusExpired,
+			o2.ID: types.OrderStatusParked,
+		}
+
+		for id, v := range found {
+			require.Equal(t, v.Status, expects[id])
+		}
+	})
 }
 
 // This is a scenario to test issue: 2734
@@ -4146,10 +4159,21 @@ func TestOrderBook_AmendTIME_IN_FORCEForPeggedOrder(t *testing.T) {
 	// Move the clock forward to expire any old orders
 	now = now.Add(time.Second * 10)
 	tm.now = now
+	tm.events = nil
 	tm.market.OnTick(vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash()), now)
-	orders, err := tm.market.RemoveExpiredOrders(ctx, now.UnixNano())
-	require.Equal(t, 0, len(orders))
-	require.NoError(t, err)
+	t.Run("no orders expired", func(t *testing.T) {
+		// First collect all the orders events
+		orders := []*types.Order{}
+		for _, e := range tm.events {
+			switch evt := e.(type) {
+			case *events.Order:
+				if evt.Order().Status == types.OrderStatusExpired {
+					orders = append(orders, mustOrderFromProto(evt.Order()))
+				}
+			}
+		}
+		require.Equal(t, 0, len(orders))
+	})
 
 	// The pegged order should not be expired
 	assert.Equal(t, types.OrderStatusActive.String(), o2.Status.String())
@@ -4245,15 +4269,21 @@ func TestOrderBook_AmendTIME_IN_FORCEForPeggedOrder2(t *testing.T) {
 	now = now.Add(time.Second * 10)
 	tm.now = now
 	tm.market.OnTick(vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash()), now)
-	orders, err := tm.market.RemoveExpiredOrders(ctx, now.UnixNano())
-	require.NoError(t, err)
+	t.Run("1 order expired", func(t *testing.T) {
+		// First collect all the orders events
+		orders := []*types.Order{}
+		for _, e := range tm.events {
+			switch evt := e.(type) {
+			case *events.Order:
+				if evt.Order().Status == types.OrderStatusExpired {
+					orders = append(orders, mustOrderFromProto(evt.Order()))
+				}
+			}
+		}
+		require.Equal(t, 1, len(orders))
+		assert.Equal(t, orders[0].ID, o2.ID)
+	})
 
-	// 1 expired order
-	require.Len(t, orders, 1)
-	//
-	assert.Equal(t, orders[0].ID, o2.ID)
-	// The pegged order should be expired
-	assert.Equal(t, types.OrderStatusExpired, orders[0].Status)
 	assert.Equal(t, 0, tm.market.GetPeggedExpiryOrderCount())
 }
 
