@@ -39,13 +39,13 @@ func addTestNode(t *testing.T, ps *sqlstore.Node, block entities.Block) entities
 	return node
 }
 
-func addNodeAnnounced(t *testing.T, ps *sqlstore.Node, nodeID entities.NodeID, added bool, fromEpoch uint64) {
+func addNodeAnnounced(t *testing.T, ps *sqlstore.Node, nodeID entities.NodeID, added bool, fromEpoch uint64, vegatime time.Time) {
 	t.Helper()
 	aux := entities.ValidatorUpdateAux{
 		Added:     added,
 		FromEpoch: fromEpoch,
 	}
-	err := ps.AddNodeAnnoucedEvent(context.Background(), nodeID, &aux)
+	err := ps.AddNodeAnnoucedEvent(context.Background(), nodeID, vegatime, &aux)
 	require.NoError(t, err)
 }
 
@@ -78,9 +78,10 @@ func TestGetNodes(t *testing.T) {
 	ns := sqlstore.NewNode(connectionSource)
 	block := addTestBlock(t, bs)
 
+	now := time.Now()
 	node1 := addTestNode(t, ns, block)
-	addNodeAnnounced(t, ns, node1.ID, true, 0)
-	addNodeAnnounced(t, ns, node1.ID, false, 7)
+	addNodeAnnounced(t, ns, node1.ID, true, 0, now)
+	addNodeAnnounced(t, ns, node1.ID, false, 7, now)
 	addRankingScore(t, ns, block, node1, 3)
 
 	// get all nodes
@@ -101,6 +102,14 @@ func TestGetNodes(t *testing.T) {
 
 	node, err = ns.GetNodeByID(ctx, "DEADBEEF", 3)
 	require.Error(t, err)
+
+	// check the value can be changed, since this happens during a checkpoint restore
+	// we were need to remove genesis validators if they aren't in the checkpoint
+	addNodeAnnounced(t, ns, node1.ID, true, 7, now)
+	// get all nodes
+	found, err = ns.GetNodes(ctx, 7)
+	require.NoError(t, err)
+	require.Len(t, found, 1)
 }
 
 func TestGetNodesJoiningAndLeaving(t *testing.T) {
@@ -116,13 +125,13 @@ func TestGetNodesJoiningAndLeaving(t *testing.T) {
 
 	// The node1 will exist int the epochs [2,3] and [6,7]
 	exists := map[int]bool{2: true, 3: true, 6: true, 7: true}
-	addNodeAnnounced(t, ns, node1.ID, true, 2)
-	addNodeAnnounced(t, ns, node1.ID, false, 4)
-	addNodeAnnounced(t, ns, node1.ID, true, 6)
-	addNodeAnnounced(t, ns, node1.ID, false, 8)
+	addNodeAnnounced(t, ns, node1.ID, true, 2, time.Now())
+	addNodeAnnounced(t, ns, node1.ID, false, 4, time.Now())
+	addNodeAnnounced(t, ns, node1.ID, true, 6, time.Now())
+	addNodeAnnounced(t, ns, node1.ID, false, 8, time.Now())
 
 	// node2 will always exist
-	addNodeAnnounced(t, ns, node2.ID, true, 0)
+	addNodeAnnounced(t, ns, node2.ID, true, 0, time.Now())
 
 	nodeID1 := node1.ID.String()
 	nodeID2 := node2.ID.String()
@@ -156,11 +165,11 @@ func TestGetNodeData(t *testing.T) {
 	addTestDelegation(t, ds, party1, node2, 4, block)
 
 	// The node1 will exist int the epochs [2,3]
-	addNodeAnnounced(t, ns, node1.ID, true, 2)
-	addNodeAnnounced(t, ns, node1.ID, false, 4)
+	addNodeAnnounced(t, ns, node1.ID, true, 2, time.Now())
+	addNodeAnnounced(t, ns, node1.ID, false, 4, time.Now())
 
 	// node2 will always exist
-	addNodeAnnounced(t, ns, node2.ID, true, 0)
+	addNodeAnnounced(t, ns, node2.ID, true, 0, time.Now())
 
 	// move to epoch 3 both nodes should exist
 	now := time.Unix(2000, 4)

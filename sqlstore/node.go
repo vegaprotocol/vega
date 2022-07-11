@@ -16,6 +16,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"code.vegaprotocol.io/data-node/entities"
 	"code.vegaprotocol.io/data-node/metrics"
@@ -77,18 +78,22 @@ func (store *Node) UpsertNode(ctx context.Context, node *entities.Node) error {
 }
 
 // AddNodeAnnoucedEvent store data about which epoch a particular node was added or removed from the roster of alidators
-func (store *Node) AddNodeAnnoucedEvent(ctx context.Context, nodeID entities.NodeID, aux *entities.ValidatorUpdateAux) error {
+func (store *Node) AddNodeAnnoucedEvent(ctx context.Context, nodeID entities.NodeID, vegatime time.Time, aux *entities.ValidatorUpdateAux) error {
 	defer metrics.StartSQLQuery("Node", "AddNodeAnnoucedEvent")()
 	_, err := store.pool.Exec(ctx, `
 		INSERT INTO nodes_announced (
 			node_id,
 			epoch_seq,
-			added)
+			added,
+		    vega_time)
 		VALUES
-			($1, $2, $3)`,
+			($1, $2, $3, $4)
+		ON CONFLICT (node_id, epoch_seq, vega_time) DO UPDATE SET
+			added=EXCLUDED.added`,
 		nodeID,
 		aux.FromEpoch,
 		aux.Added,
+		vegatime,
 	)
 
 	return err
