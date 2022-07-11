@@ -89,11 +89,11 @@ func (os OracleSpec) Cursor() *Cursor {
 	return NewCursor(os.ID.String())
 }
 
-func (os OracleSpec) ToProtoEdge(_ ...any) *v2.OracleSpecEdge {
+func (os OracleSpec) ToProtoEdge(_ ...any) (*v2.OracleSpecEdge, error) {
 	return &v2.OracleSpecEdge{
 		Node:   os.ToProto(),
 		Cursor: os.Cursor().Encode(),
-	}
+	}, nil
 }
 
 func decodePublicKeys(publicKeys []string) (PublicKeys, error) {

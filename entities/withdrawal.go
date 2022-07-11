@@ -93,11 +93,11 @@ func (w Withdrawal) Cursor() *Cursor {
 	return NewCursor(wc.String())
 }
 
-func (w Withdrawal) ToProtoEdge(_ ...any) *v2.WithdrawalEdge {
+func (w Withdrawal) ToProtoEdge(_ ...any) (*v2.WithdrawalEdge, error) {
 	return &v2.WithdrawalEdge{
 		Node:   w.ToProto(),
 		Cursor: w.Cursor().Encode(),
-	}
+	}, nil
 }
 
 type WithdrawExt struct {

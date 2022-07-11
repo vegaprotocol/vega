@@ -396,11 +396,11 @@ func (md MarketData) Cursor() *Cursor {
 	return NewCursor(md.SyntheticTime.In(time.UTC).Format(time.RFC3339Nano))
 }
 
-func (md MarketData) ToProtoEdge(_ ...any) *v2.MarketDataEdge {
+func (md MarketData) ToProtoEdge(_ ...any) (*v2.MarketDataEdge, error) {
 	return &v2.MarketDataEdge{
 		Node:   md.ToProto(),
 		Cursor: md.Cursor().Encode(),
-	}
+	}, nil
 }
 
 func priceMonitoringBoundsToProto(bounds []*PriceMonitoringBound) []*types.PriceMonitoringBounds {

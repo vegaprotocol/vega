@@ -82,11 +82,11 @@ func (d Deposit) Cursor() *Cursor {
 	return NewCursor(cursor.String())
 }
 
-func (d Deposit) ToProtoEdge(_ ...any) *v2.DepositEdge {
+func (d Deposit) ToProtoEdge(_ ...any) (*v2.DepositEdge, error) {
 	return &v2.DepositEdge{
 		Node:   d.ToProto(),
 		Cursor: d.Cursor().Encode(),
-	}
+	}, nil
 }
 
 type DepositCursor struct {

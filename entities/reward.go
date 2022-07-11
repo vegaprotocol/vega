@@ -64,11 +64,11 @@ func (r Reward) Cursor() *Cursor {
 	return NewCursor(cursor.String())
 }
 
-func (r Reward) ToProtoEdge(_ ...any) *v2.RewardEdge {
+func (r Reward) ToProtoEdge(_ ...any) (*v2.RewardEdge, error) {
 	return &v2.RewardEdge{
 		Node:   r.ToProto(),
 		Cursor: r.Cursor().Encode(),
-	}
+	}, nil
 }
 
 func RewardFromProto(pr eventspb.RewardPayoutEvent, vegaTime time.Time) (Reward, error) {
