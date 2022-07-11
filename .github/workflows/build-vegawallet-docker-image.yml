@@ -1,6 +1,8 @@
+---
+
 name: Build vegawallet docker image
 
-on:
+"on":
   pull_request:
     branches:
       - develop
