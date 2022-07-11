@@ -174,7 +174,7 @@ func (b *sqlStoreBroker) processBlock(ctx context.Context, dbContext context.Con
 	// by e.g. a shutdown request then let the last database operation complete.
 	var blockCtx context.Context
 	var cancel context.CancelFunc
-	blockCtx, cancel = context.WithTimeout(dbContext, b.config.BlockProcessingTimeout.Duration)
+	blockCtx, cancel = context.WithCancel(dbContext)
 	defer cancel()
 
 	blockCtx, err := b.transactionManager.WithTransaction(blockCtx)
