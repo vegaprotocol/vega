@@ -77,6 +77,29 @@ func (n *Forwarder) HealthCheck(ctx context.Context) error {
 	)
 }
 
+func (n *Forwarder) GetNetworkChainID(ctx context.Context) (string, error) {
+	chainID := ""
+	req := api.StatisticsRequest{}
+	err := backoff.Retry(
+		func() error {
+			clt := n.clts[n.nextClt()]
+			resp, err := clt.Statistics(ctx, &req)
+			if err != nil {
+				return err
+			}
+			chainID = resp.Statistics.ChainId
+			n.log.Debug("Response from Statistics", zap.String("chainID", chainID))
+			return nil
+		},
+		backoff.WithMaxRetries(backoff.NewExponentialBackOff(), n.nodeCfgs.Retries),
+	)
+	if err != nil {
+		n.log.Error("Couldn't get chainID", zap.Error(err))
+	}
+
+	return chainID, nil
+}
+
 // LastBlockHeightAndHash returns information about the last block from vega and the node it used to fetch it.
 func (n *Forwarder) LastBlockHeightAndHash(ctx context.Context) (*api.LastBlockHeightResponse, int, error) {
 	req := api.LastBlockHeightRequest{}

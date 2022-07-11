@@ -13,6 +13,7 @@
 - [5519](https://github.com/vegaprotocol/vega/pull/5519) - Add `--genesis-file` option to the `load_checkpoint` command
 - [5525](https://github.com/vegaprotocol/vega/pull/5525) - Release `vegawallet` from the core
 - [5524](https://github.com/vegaprotocol/vega/pull/5524) - Align `vegawallet` and core versions
+- [5524](https://github.com/vegaprotocol/vega/pull/5549) - Add endpoint for getting the network's `chain-id`
 
 ### 🐛 Fixes
 - [5476](https://github.com/vegaprotocol/vega/issues/5476) - Include settlement price in snapshot
