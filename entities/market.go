@@ -125,11 +125,11 @@ func (m Market) Cursor() *Cursor {
 	return NewCursor(m.VegaTime.In(time.UTC).Format(time.RFC3339Nano))
 }
 
-func (m Market) ToProtoEdge(_ ...any) *v2.MarketEdge {
+func (m Market) ToProtoEdge(_ ...any) (*v2.MarketEdge, error) {
 	return &v2.MarketEdge{
 		Node:   m.ToProto(),
 		Cursor: m.Cursor().Encode(),
-	}
+	}, nil
 }
 
 type MarketTimestamps struct {

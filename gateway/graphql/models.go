@@ -2002,6 +2002,49 @@ func (e TradeType) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
+type TransferDirection string
+
+const (
+	TransferDirectionTo       TransferDirection = "To"
+	TransferDirectionFrom     TransferDirection = "From"
+	TransferDirectionToOrFrom TransferDirection = "ToOrFrom"
+)
+
+var AllTransferDirection = []TransferDirection{
+	TransferDirectionTo,
+	TransferDirectionFrom,
+	TransferDirectionToOrFrom,
+}
+
+func (e TransferDirection) IsValid() bool {
+	switch e {
+	case TransferDirectionTo, TransferDirectionFrom, TransferDirectionToOrFrom:
+		return true
+	}
+	return false
+}
+
+func (e TransferDirection) String() string {
+	return string(e)
+}
+
+func (e *TransferDirection) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = TransferDirection(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid TransferDirection", str)
+	}
+	return nil
+}
+
+func (e TransferDirection) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
 type TransferStatus string
 
 const (

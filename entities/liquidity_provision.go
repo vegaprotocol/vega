@@ -166,11 +166,11 @@ func (lp LiquidityProvision) Cursor() *Cursor {
 	return NewCursor(lc.String())
 }
 
-func (lp LiquidityProvision) ToProtoEdge(_ ...any) *v2.LiquidityProvisionsEdge {
+func (lp LiquidityProvision) ToProtoEdge(_ ...any) (*v2.LiquidityProvisionsEdge, error) {
 	return &v2.LiquidityProvisionsEdge{
 		Node:   lp.ToProto(),
 		Cursor: lp.Cursor().Encode(),
-	}
+	}, nil
 }
 
 type LiquidityProvisionCursor struct {

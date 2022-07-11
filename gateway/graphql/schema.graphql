@@ -477,7 +477,17 @@ type Query {
     isFrom: Boolean
     "is the pubkey in the receiving part of the transfer"
     isTo: Boolean
-  ): [Transfer!]
+  ): [Transfer!] @deprecated(reason: "Use transfersConnection instead")
+
+  "get a list of all transfers for a pubkey"
+  transfersConnection(
+    "the pubkey to look for"
+    pubkey: String
+    "direction of the transfer with respect to the pubkey"
+    direction: TransferDirection!
+    "Pagination information"
+    pagination: Pagination
+  ): TransferConnection!
 
   "get statistics about the vega node"
   statistics: Statistics!
@@ -3494,5 +3504,22 @@ type LiquidityProvisionsConnection {
     totalCount: Int!
     edges: [LiquidityProvisionsEdge]
     pageInfo: PageInfo!
+}
+
+type TransferEdge {
+  node: Transfer!
+  cursor: String!
+}
+
+type TransferConnection {
+    totalCount: Int!
+    edges: [TransferEdge]
+    pageInfo: PageInfo!
+}
+
+enum TransferDirection {
+  To
+  From
+  ToOrFrom
 }
 

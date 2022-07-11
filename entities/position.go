@@ -117,11 +117,11 @@ func (p *Position) ToProto() *vega.Position {
 	}
 }
 
-func (p Position) ToProtoEdge(_ ...any) *v2.PositionEdge {
+func (p Position) ToProtoEdge(_ ...any) (*v2.PositionEdge, error) {
 	return &v2.PositionEdge{
 		Node:   p.ToProto(),
 		Cursor: p.Cursor().Encode(),
-	}
+	}, nil
 }
 
 func (p *Position) AverageEntryPriceUint() *num.Uint {
