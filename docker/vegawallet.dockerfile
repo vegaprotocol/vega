@@ -1,9 +1,9 @@
-FROM golang:1.17-alpine AS builder
+FROM golang:1.18-alpine AS builder
 RUN apk add --no-cache git
 ENV GOPROXY=direct GOSUMDB=off
 WORKDIR /go/src/project
 ADD . .
-RUN env CGO_ENABLED=0 go build -a -ldflags '-extldflags "-static"' -o vegawallet .
+RUN go get -v -t -d ./...
 RUN go build -o build/vegawallet ./cmd/vegawallet
 
 FROM alpine:3.14
