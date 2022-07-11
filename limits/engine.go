@@ -85,6 +85,10 @@ func (e *Engine) UponGenesis(ctx context.Context, rawState []byte) (err error) {
 		return err
 	}
 
+	defer func() {
+		e.sendEvent(ctx)
+	}()
+
 	if err == ErrNoLimitsGenesisState {
 		defaultState := DefaultGenesisState()
 		state = &defaultState
@@ -94,16 +98,20 @@ func (e *Engine) UponGenesis(ctx context.Context, rawState []byte) (err error) {
 	if state == nil {
 		e.proposeAssetEnabled = true
 		e.proposeMarketEnabled = true
-		return nil
+	} else {
+		e.proposeAssetEnabled = state.ProposeAssetEnabled
+		e.proposeMarketEnabled = state.ProposeMarketEnabled
 	}
 
-	e.proposeAssetEnabled = state.ProposeAssetEnabled
-	e.proposeMarketEnabled = state.ProposeMarketEnabled
+	// at this point we only know about the genesis state
+	// of the limits, so we should set the can* fields to
+	// this state
+	e.canProposeAsset = e.proposeAssetEnabled
+	e.canProposeMarket = e.proposeMarketEnabled
 
 	e.log.Info("loaded limits genesis state",
 		logging.String("state", fmt.Sprintf("%#v", *state)))
 
-	e.sendEvent(ctx)
 	return nil
 }
 
@@ -136,20 +144,24 @@ func (e *Engine) OnLimitsProposeAssetEnabledFromUpdate(ctx context.Context, date
 			e.proposeAssetEnabledFrom = t
 		}
 	}
+
+	e.onUpdate(ctx, e.timeService.GetTimeNow())
 	e.sendEvent(ctx)
 
 	return nil
 }
 
 func (e *Engine) OnTick(ctx context.Context, t time.Time) {
-	var canProposeMarket, canProposeAsset = e.canProposeMarket, e.canProposeAsset
+	canProposeAsset, canProposeMarket := e.canProposeAsset, e.canProposeMarket
 	defer func() {
 		if canProposeAsset != e.canProposeAsset || canProposeMarket != e.canProposeMarket {
-			e.lss.changed = true
 			e.sendEvent(ctx)
 		}
 	}()
+	e.onUpdate(ctx, t)
+}
 
+func (e *Engine) onUpdate(ctx context.Context, t time.Time) {
 	//  if propose market enabled in genesis
 	if e.proposeMarketEnabled {
 		// we can propose a market and a new date have been set in the future
