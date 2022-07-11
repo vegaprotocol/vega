@@ -50,11 +50,12 @@ func (mr *MockOracleEngineMockRecorder) ListensToPubKeys(arg0 interface{}) *gomo
 }
 
 // Subscribe mocks base method.
-func (m *MockOracleEngine) Subscribe(arg0 context.Context, arg1 oracles.OracleSpec, arg2 oracles.OnMatchedOracleData) oracles.SubscriptionID {
+func (m *MockOracleEngine) Subscribe(arg0 context.Context, arg1 oracles.OracleSpec, arg2 oracles.OnMatchedOracleData) (oracles.SubscriptionID, oracles.Unsubscriber) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Subscribe", arg0, arg1, arg2)
 	ret0, _ := ret[0].(oracles.SubscriptionID)
-	return ret0
+	ret1, _ := ret[1].(oracles.Unsubscriber)
+	return ret0, ret1
 }
 
 // Subscribe indicates an expected call of Subscribe.
