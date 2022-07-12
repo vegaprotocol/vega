@@ -336,6 +336,26 @@ func (mr *MockTradingDataServiceClientV2MockRecorder) GetTradesByParty(arg0, arg
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTradesByParty", reflect.TypeOf((*MockTradingDataServiceClientV2)(nil).GetTradesByParty), varargs...)
 }
 
+// Info mocks base method.
+func (m *MockTradingDataServiceClientV2) Info(arg0 context.Context, arg1 *v2.InfoRequest, arg2 ...grpc.CallOption) (*v2.InfoResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "Info", varargs...)
+	ret0, _ := ret[0].(*v2.InfoResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Info indicates an expected call of Info.
+func (mr *MockTradingDataServiceClientV2MockRecorder) Info(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Info", reflect.TypeOf((*MockTradingDataServiceClientV2)(nil).Info), varargs...)
+}
+
 // ListAccounts mocks base method.
 func (m *MockTradingDataServiceClientV2) ListAccounts(arg0 context.Context, arg1 *v2.ListAccountsRequest, arg2 ...grpc.CallOption) (*v2.ListAccountsResponse, error) {
 	m.ctrl.T.Helper()
