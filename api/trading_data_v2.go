@@ -102,32 +102,6 @@ func (t *tradingDataServiceV2) GetBalanceHistory(ctx context.Context, req *v2.Ge
 	return &v2.GetBalanceHistoryResponse{Balances: pbBalances}, nil
 }
 
-func (t *tradingDataServiceV2) GetOrdersByMarket(ctx context.Context, req *v2.GetOrdersByMarketRequest) (*v2.GetOrdersByMarketResponse, error) {
-
-	if t.orderService == nil {
-		return nil, errors.New("sql order store not available")
-	}
-
-	p := defaultPaginationV2
-	if req.Pagination != nil {
-		p = entities.OffsetPaginationFromProto(req.Pagination)
-	}
-
-	orders, err := t.orderService.GetByMarket(ctx, req.MarketId, p)
-	if err != nil {
-		return nil, apiError(codes.InvalidArgument, ErrOrderServiceGetByParty, err)
-	}
-
-	pbOrders := make([]*vega.Order, len(orders))
-	for i, order := range orders {
-		pbOrders[i] = order.ToProto()
-	}
-
-	return &v2.GetOrdersByMarketResponse{
-		Orders: pbOrders,
-	}, nil
-}
-
 func entityMarketDataListToProtoList(list []entities.MarketData) (*v2.MarketDataConnection, error) {
 	if len(list) == 0 {
 		return nil, nil
@@ -809,91 +783,6 @@ func (t *tradingDataServiceV2) GetParties(ctx context.Context, in *v2.GetParties
 	return resp, nil
 }
 
-func (t *tradingDataServiceV2) GetOrdersByMarketConnection(ctx context.Context, in *v2.GetOrdersByMarketConnectionRequest) (*v2.GetOrdersByMarketConnectionResponse, error) {
-	pagination, err := entities.CursorPaginationFromProto(in.Pagination)
-	if err != nil {
-		return nil, apiError(codes.InvalidArgument, err)
-	}
-	orders, pageInfo, err := t.orderService.GetByMarketPaged(ctx, in.MarketId, pagination)
-	if err != nil {
-		return nil, apiError(codes.Internal, err)
-	}
-
-	edges, err := makeEdges[*v2.OrderEdge](orders)
-	if err != nil {
-		return nil, apiError(codes.Internal, err)
-	}
-
-	ordersConnection := &v2.OrderConnection{
-		TotalCount: 0, // TODO: implement total count
-		Edges:      edges,
-		PageInfo:   pageInfo.ToProto(),
-	}
-
-	resp := &v2.GetOrdersByMarketConnectionResponse{
-		Orders: ordersConnection,
-	}
-
-	return resp, nil
-}
-
-func (t *tradingDataServiceV2) GetOrderVersionsByIDConnection(ctx context.Context, in *v2.GetOrderVersionsByIDConnectionRequest) (*v2.GetOrderVersionsByIDConnectionResponse, error) {
-	pagination, err := entities.CursorPaginationFromProto(in.Pagination)
-	if err != nil {
-		return nil, apiError(codes.InvalidArgument, err)
-	}
-
-	orders, pageInfo, err := t.orderService.GetOrderVersionsByIDPaged(ctx, in.OrderId, pagination)
-	if err != nil {
-		return nil, apiError(codes.Internal, err)
-	}
-
-	edges, err := makeEdges[*v2.OrderEdge](orders)
-	if err != nil {
-		return nil, apiError(codes.Internal, err)
-	}
-
-	ordersConnection := &v2.OrderConnection{
-		TotalCount: 0, // TODO: implement total count
-		Edges:      edges,
-		PageInfo:   pageInfo.ToProto(),
-	}
-
-	resp := &v2.GetOrderVersionsByIDConnectionResponse{
-		Orders: ordersConnection,
-	}
-	return resp, nil
-}
-
-func (t *tradingDataServiceV2) GetOrdersByPartyConnection(ctx context.Context, in *v2.GetOrdersByPartyConnectionRequest) (*v2.GetOrdersByPartyConnectionResponse, error) {
-	pagination, err := entities.CursorPaginationFromProto(in.Pagination)
-	if err != nil {
-		return nil, apiError(codes.InvalidArgument, err)
-	}
-
-	orders, pageInfo, err := t.orderService.GetByPartyPaged(ctx, in.PartyId, pagination)
-	if err != nil {
-		return nil, apiError(codes.Internal, err)
-	}
-
-	edges, err := makeEdges[*v2.OrderEdge](orders)
-	if err != nil {
-		return nil, apiError(codes.Internal, err)
-	}
-
-	ordersConnection := &v2.OrderConnection{
-		TotalCount: 0, // TODO: implement total count
-		Edges:      edges,
-		PageInfo:   pageInfo.ToProto(),
-	}
-
-	resp := &v2.GetOrdersByPartyConnectionResponse{
-		Orders: ordersConnection,
-	}
-
-	return resp, nil
-}
-
 func (t *tradingDataServiceV2) GetMarginLevels(ctx context.Context, in *v2.GetMarginLevelsRequest) (*v2.GetMarginLevelsResponse, error) {
 	pagination, err := entities.CursorPaginationFromProto(in.Pagination)
 	if err != nil {
@@ -1260,4 +1149,69 @@ func (t *tradingDataServiceV2) ListTransfers(ctx context.Context, req *v2.ListTr
 		Edges:      edges,
 		PageInfo:   pageInfo.ToProto(),
 	}}, nil
+}
+
+func (t *tradingDataServiceV2) GetOrder(ctx context.Context, req *v2.GetOrderRequest) (*v2.GetOrderResponse, error) {
+	order, err := t.orderService.GetOrder(ctx, req.OrderId, req.Version)
+	if err != nil {
+		return nil, apiError(codes.Internal, err)
+	}
+
+	return &v2.GetOrderResponse{Order: order.ToProto()}, nil
+}
+
+func (t *tradingDataServiceV2) ListOrders(ctx context.Context, in *v2.ListOrdersRequest) (*v2.ListOrdersResponse, error) {
+	pagination, err := entities.CursorPaginationFromProto(in.Pagination)
+	if err != nil {
+		return nil, apiError(codes.InvalidArgument, err)
+	}
+	orders, pageInfo, err := t.orderService.ListOrders(ctx, in.PartyId, in.MarketId, in.Reference, pagination)
+	if err != nil {
+		return nil, apiError(codes.Internal, err)
+	}
+
+	edges, err := makeEdges[*v2.OrderEdge](orders)
+	if err != nil {
+		return nil, apiError(codes.Internal, err)
+	}
+
+	ordersConnection := &v2.OrderConnection{
+		TotalCount: 0,
+		Edges:      edges,
+		PageInfo:   pageInfo.ToProto(),
+	}
+
+	resp := &v2.ListOrdersResponse{
+		Orders: ordersConnection,
+	}
+
+	return resp, nil
+}
+
+func (t *tradingDataServiceV2) ListOrderVersions(ctx context.Context, in *v2.ListOrderVersionsRequest) (*v2.ListOrderVersionsResponse, error) {
+	pagination, err := entities.CursorPaginationFromProto(in.Pagination)
+	if err != nil {
+		return nil, apiError(codes.InvalidArgument, err)
+	}
+	orders, pageInfo, err := t.orderService.ListOrderVersions(ctx, in.OrderId, pagination)
+	if err != nil {
+		return nil, apiError(codes.Internal, err)
+	}
+
+	edges, err := makeEdges[*v2.OrderEdge](orders)
+	if err != nil {
+		return nil, apiError(codes.Internal, err)
+	}
+
+	ordersConnection := &v2.OrderConnection{
+		TotalCount: 0,
+		Edges:      edges,
+		PageInfo:   pageInfo.ToProto(),
+	}
+
+	resp := &v2.ListOrderVersionsResponse{
+		Orders: ordersConnection,
+	}
+
+	return resp, nil
 }

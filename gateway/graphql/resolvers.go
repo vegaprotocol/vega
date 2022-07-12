@@ -822,12 +822,12 @@ func (r *myQueryResolver) OrderVersionsConnection(ctx context.Context, orderID *
 	if orderID == nil {
 		return nil, ErrMissingIDOrReference
 	}
-	req := &v2.GetOrderVersionsByIDConnectionRequest{
+	req := &v2.ListOrderVersionsRequest{
 		OrderId:    *orderID,
 		Pagination: pagination,
 	}
 
-	resp, err := r.tradingDataClientV2.GetOrderVersionsByIDConnection(ctx, req)
+	resp, err := r.tradingDataClientV2.ListOrderVersions(ctx, req)
 	if err != nil {
 		r.log.Error("tradingData client", logging.Error(err))
 		return nil, customErrorFromStatus(err)
@@ -1340,11 +1340,11 @@ func (r *myPartyResolver) OrdersConnection(ctx context.Context, party *types.Par
 	if party == nil {
 		return nil, errors.New("party is required")
 	}
-	req := v2.GetOrdersByPartyConnectionRequest{
-		PartyId:    party.Id,
+	req := v2.ListOrdersRequest{
+		PartyId:    &party.Id,
 		Pagination: pagination,
 	}
-	res, err := r.tradingDataClientV2.GetOrdersByPartyConnection(ctx, &req)
+	res, err := r.tradingDataClientV2.ListOrders(ctx, &req)
 	if err != nil {
 		r.log.Error("tradingData client", logging.Error(err))
 		return nil, customErrorFromStatus(err)

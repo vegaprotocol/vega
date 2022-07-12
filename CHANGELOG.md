@@ -25,6 +25,7 @@
 - [779](https://github.com/vegaprotocol/data-node/issues/779) - Ordering of paginated query results from newest to oldest
 - [573](https://github.com/vegaprotocol/data-node/issues/573) - Transfers pagination and addition of `v2` transfers `API` 
 - [781](https://github.com/vegaprotocol/data-node/issues/781) - Add a summary table of current balances 
+- [791](https://github.com/vegaprotocol/data-node/issues/791) - `v2` orders `api` 
 
 ### 🐛 Fixes
 - [705](https://github.com/vegaprotocol/data-node/issues/705) - Market Depth returning incorrect book state

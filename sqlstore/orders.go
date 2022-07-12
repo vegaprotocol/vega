@@ -16,6 +16,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 
 	"code.vegaprotocol.io/data-node/entities"
 	"code.vegaprotocol.io/data-node/logging"
@@ -71,7 +72,7 @@ func (os *Orders) GetAll(ctx context.Context) ([]entities.Order, error) {
 }
 
 // GetByOrderId returns the last update of the order with the given ID
-func (os *Orders) GetByOrderID(ctx context.Context, orderIdStr string, version *int32) (entities.Order, error) {
+func (os *Orders) GetOrder(ctx context.Context, orderIdStr string, version *int32) (entities.Order, error) {
 	var err error
 	order := entities.Order{}
 	orderId := entities.NewOrderID(orderIdStr)
@@ -113,6 +114,11 @@ func (os *Orders) GetByReference(ctx context.Context, reference string, p entiti
 	query := fmt.Sprintf(`SELECT %s from orders_current WHERE reference=$1`, sqlOrderColumns)
 	args := []interface{}{reference}
 	return os.queryOrders(ctx, query, args, &p)
+}
+
+// GetByReference returns the last update of orders with the specified user-suppled reference
+func (os *Orders) GetByReferencePaged(ctx context.Context, reference string, p entities.CursorPagination) ([]entities.Order, entities.PageInfo, error) {
+	return os.ListOrders(ctx, nil, nil, &reference, p)
 }
 
 // GetAllVersionsByOrderID the last update to all versions (e.g. manual changes that lead to
@@ -202,33 +208,30 @@ func paginateOrderQuery(query string, args []interface{}, p entities.OffsetPagin
 	return query, args
 }
 
-func (os *Orders) GetByMarketPaged(ctx context.Context, marketIDStr string, p entities.CursorPagination) ([]entities.Order, entities.PageInfo, error) {
-	if marketIDStr == "" {
-		return nil, entities.PageInfo{}, errors.New("marketID is required")
+func (os *Orders) ListOrders(ctx context.Context, party *string, market *string, reference *string, p entities.CursorPagination) ([]entities.Order, entities.PageInfo, error) {
+
+	var filters []filter
+	if party != nil {
+		filters = append(filters, filter{"party_id", entities.NewPartyID(*party)})
 	}
 
-	marketID := entities.NewMarketID(marketIDStr)
+	if market != nil {
+		filters = append(filters, filter{"market_id", entities.NewMarketID(*market)})
+	}
 
-	query := fmt.Sprintf(`SELECT %s from orders_current WHERE market_id=$1`, sqlOrderColumns)
+	if reference != nil {
+		filters = append(filters, filter{"reference", *reference})
+	}
+
+	where, args := buildWhereClause(filters...)
+
+	query := fmt.Sprintf(`SELECT %s from orders_current %s`, sqlOrderColumns, where)
 	defer metrics.StartSQLQuery("Orders", "GetByMarketPaged")()
 
-	return os.queryOrdersWithCursorPagination(ctx, query, []interface{}{marketID}, p)
+	return os.queryOrdersWithCursorPagination(ctx, query, args, p)
 }
 
-func (os *Orders) GetByPartyPaged(ctx context.Context, partyIDStr string, p entities.CursorPagination) ([]entities.Order, entities.PageInfo, error) {
-	if partyIDStr == "" {
-		return nil, entities.PageInfo{}, errors.New("partyID is required")
-	}
-
-	partyID := entities.NewPartyID(partyIDStr)
-
-	query := fmt.Sprintf(`SELECT %s from orders_current WHERE party_id=$1`, sqlOrderColumns)
-	defer metrics.StartSQLQuery("Orders", "GetByPartyConnection")()
-
-	return os.queryOrdersWithCursorPagination(ctx, query, []interface{}{partyID}, p)
-}
-
-func (os *Orders) GetOrderVersionsByIDPaged(ctx context.Context, orderIDStr string, p entities.CursorPagination) ([]entities.Order, entities.PageInfo, error) {
+func (os *Orders) ListOrderVersions(ctx context.Context, orderIDStr string, p entities.CursorPagination) ([]entities.Order, entities.PageInfo, error) {
 	if orderIDStr == "" {
 		return nil, entities.PageInfo{}, errors.New("orderID is required")
 	}
@@ -239,25 +242,28 @@ func (os *Orders) GetOrderVersionsByIDPaged(ctx context.Context, orderIDStr stri
 	return os.queryOrdersWithCursorPagination(ctx, query, []interface{}{orderID}, p)
 }
 
-func (os *Orders) GetByPartyAndMarketPaged(ctx context.Context, partyIDStr, marketIDStr string, p entities.CursorPagination) ([]entities.Order, entities.PageInfo, error) {
-	if partyIDStr == "" {
-		return nil, entities.PageInfo{}, errors.New("partyID is required")
+type filter struct {
+	colName string
+	value   any
+}
+
+func buildWhereClause(filters ...filter) (string, []any) {
+
+	whereBuilder := strings.Builder{}
+	var args []any
+	filterNum := 0
+	for _, filter := range filters {
+		if filter.value != nil {
+			filterNum++
+			if filterNum == 1 {
+				whereBuilder.WriteString(fmt.Sprintf("WHERE %s = $1", filter.colName))
+				args = append(args, filter.value)
+			} else {
+				whereBuilder.WriteString(fmt.Sprintf(" AND %s = $%d", filter.colName, filterNum))
+				args = append(args, filter.value)
+			}
+		}
 	}
 
-	partyID := entities.NewPartyID(partyIDStr)
-
-	args := make([]interface{}, 0)
-	args = append(args, partyID)
-
-	query := fmt.Sprintf(`SELECT %s from orders_current WHERE party_id=$1`, sqlOrderColumns)
-
-	if marketIDStr != "" {
-		marketID := entities.NewMarketID(marketIDStr)
-		args = append(args, marketID)
-		query = fmt.Sprintf("%s AND market_id=$2", query)
-	}
-
-	defer metrics.StartSQLQuery("Orders", "GetByPartyAndMarketID")()
-
-	return os.queryOrdersWithCursorPagination(ctx, query, args, p)
+	return whereBuilder.String(), args
 }

@@ -1226,7 +1226,7 @@ func (t *tradingDataService) OrderByID(ctx context.Context, req *protoapi.OrderB
 	}
 
 	version := int32(req.Version)
-	order, err := t.orderService.GetByOrderID(ctx, req.OrderId, &version)
+	order, err := t.orderService.GetOrder(ctx, req.OrderId, &version)
 	if err != nil {
 		return nil, ErrOrderNotFound
 	}
@@ -1271,7 +1271,7 @@ func (t *tradingDataService) OrderByMarketAndID(ctx context.Context,
 		return nil, ErrMissingOrderIDParameter
 	}
 
-	order, err := t.orderService.GetByOrderID(ctx, req.OrderId, nil)
+	order, err := t.orderService.GetOrder(ctx, req.OrderId, nil)
 	if err != nil {
 		return nil, ErrOrderNotFound
 	}
