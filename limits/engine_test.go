@@ -85,9 +85,6 @@ func testNilGenesis(t *testing.T) {
 	lmts := getLimitsTest(t)
 	lmts.loadGenesisState(t, nil)
 
-	// need to call onTick
-	lmts.OnTick(context.Background(), time.Unix(1000, 0))
-
 	assert.True(t, lmts.CanProposeAsset())
 	assert.True(t, lmts.CanProposeMarket())
 	assert.True(t, lmts.CanTrade())
@@ -96,9 +93,6 @@ func testNilGenesis(t *testing.T) {
 func testAllDisabled(t *testing.T) {
 	lmts := getLimitsTest(t)
 	lmts.loadGenesisState(t, &limits.GenesisState{})
-
-	// need to call onTick
-	lmts.OnTick(context.Background(), time.Unix(1000, 0))
 
 	assert.False(t, lmts.CanProposeAsset())
 	assert.False(t, lmts.CanProposeMarket())
@@ -112,9 +106,6 @@ func testAllEnabled(t *testing.T) {
 		ProposeMarketEnabled: true,
 	})
 
-	// need to call onTick
-	lmts.OnTick(context.Background(), time.Unix(1000, 0))
-
 	assert.True(t, lmts.CanProposeAsset())
 	assert.True(t, lmts.CanProposeMarket())
 	assert.True(t, lmts.CanTrade())
@@ -127,9 +118,6 @@ func testMarketEnabledAssetDisabled(t *testing.T) {
 		ProposeMarketEnabled: true,
 	})
 
-	// need to call onTick
-	lmts.OnTick(context.Background(), time.Unix(1000, 0))
-
 	assert.True(t, lmts.CanProposeMarket())
 	assert.False(t, lmts.CanProposeAsset())
 	assert.False(t, lmts.CanTrade())
@@ -141,9 +129,6 @@ func testMarketdisabledAssetenabled(t *testing.T) {
 		ProposeAssetEnabled:  true,
 		ProposeMarketEnabled: false,
 	})
-
-	// need to call onTick
-	lmts.OnTick(context.Background(), time.Unix(1000, 0))
 
 	assert.False(t, lmts.CanProposeMarket())
 	assert.True(t, lmts.CanProposeAsset())

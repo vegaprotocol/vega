@@ -29,6 +29,8 @@
 - [5432](https://github.com/vegaprotocol/vega/issues/5431) - Do not accept transaction with unexpected public keys
 - [5478](https://github.com/vegaprotocol/vega/issues/5478) - Assure uncross and fake uncross are in line with each other
 - [5480](https://github.com/vegaprotocol/vega/issues/5480) - Assure indicative trades are in line with actual uncrossing trades
+- [5556](https://github.com/vegaprotocol/vega/issues/5556) - Fix id generation seed
+- [5361](https://github.com/vegaprotocol/vega/issues/5361) - Fix limits for proposals
 
 ## 0.52.0
 
