@@ -1,9 +1,22 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package sqlstore
 
 import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"code.vegaprotocol.io/data-node/entities"
 	"code.vegaprotocol.io/data-node/metrics"
@@ -65,18 +78,22 @@ func (store *Node) UpsertNode(ctx context.Context, node *entities.Node) error {
 }
 
 // AddNodeAnnoucedEvent store data about which epoch a particular node was added or removed from the roster of alidators
-func (store *Node) AddNodeAnnoucedEvent(ctx context.Context, nodeID entities.NodeID, aux *entities.ValidatorUpdateAux) error {
+func (store *Node) AddNodeAnnoucedEvent(ctx context.Context, nodeID entities.NodeID, vegatime time.Time, aux *entities.ValidatorUpdateAux) error {
 	defer metrics.StartSQLQuery("Node", "AddNodeAnnoucedEvent")()
 	_, err := store.pool.Exec(ctx, `
 		INSERT INTO nodes_announced (
 			node_id,
 			epoch_seq,
-			added)
+			added,
+		    vega_time)
 		VALUES
-			($1, $2, $3)`,
+			($1, $2, $3, $4)
+		ON CONFLICT (node_id, epoch_seq, vega_time) DO UPDATE SET
+			added=EXCLUDED.added`,
 		nodeID,
 		aux.FromEpoch,
 		aux.Added,
+		vegatime,
 	)
 
 	return err
@@ -168,7 +185,7 @@ func (store *Node) GetNodeData(ctx context.Context) (entities.NodeData, error) {
 
 			staked AS (
 				SELECT
-					SUM(amount) AS total,
+					COALESCE(SUM(amount),0) AS total,
 					ROW_NUMBER() OVER () AS id
 				FROM
 					delegations
@@ -228,7 +245,6 @@ func (store *Node) GetNodeData(ctx context.Context) (entities.NodeData, error) {
 	nodeData := entities.NodeData{}
 
 	err := pgxscan.Get(ctx, store.pool, &nodeData, query)
-
 	return nodeData, err
 }
 
@@ -238,11 +254,11 @@ func (store *Node) GetNodes(ctx context.Context, epochSeq uint64) ([]entities.No
 
 	query := `WITH
 	current_delegations AS (
-		SELECT * FROM delegations
+		SELECT * FROM delegations_current
 		WHERE epoch_id = $1
 	),
 	pending_delegations AS (
-		SELECT * FROM delegations
+		SELECT * FROM delegations_current
 		WHERE epoch_id = $1 + 1
 	),
 
@@ -260,6 +276,25 @@ func (store *Node) GetNodes(ctx context.Context, epochSeq uint64) ([]entities.No
 				nodes_announced 
 			WHERE epoch_seq <= $1) AS a
 		WHERE row_number = 1 AND added = true
+	),
+	this_epoch AS (
+		SELECT nodes.id AS node_id,
+			COALESCE(SUM(current_delegations.amount) FILTER (WHERE current_delegations.party_id = nodes.vega_pub_key), 0) AS staked_by_operator,
+			COALESCE(SUM(current_delegations.amount) FILTER (WHERE current_delegations.party_id != nodes.vega_pub_key), 0) AS staked_by_delegates,
+			COALESCE(SUM(current_delegations.amount), 0) AS staked_total,
+			COALESCE(JSON_AGG(JSON_BUILD_OBJECT(
+				'party_id', ENCODE(current_delegations.party_id, 'hex'),
+				'node_id', ENCODE(current_delegations.node_id, 'hex'),
+				'epoch_id', current_delegations.epoch_id,
+				'amount', current_delegations.amount)
+			) FILTER (WHERE current_delegations.party_id IS NOT NULL), json_build_array()) AS "delegations"
+		FROM nodes LEFT JOIN current_delegations  on current_delegations.node_id = nodes.id
+		GROUP BY nodes.id),
+	next_epoch AS (
+		SELECT nodes.id as node_id,
+		       COALESCE(SUM(pending_delegations.amount), 0) AS staked_total
+		FROM nodes LEFT JOIN pending_delegations on pending_delegations.node_id = nodes.id
+		GROUP BY nodes.id
 	)
 
 	SELECT
@@ -272,30 +307,23 @@ func (store *Node) GetNodes(ctx context.Context, epochSeq uint64) ([]entities.No
 		nodes.info_url,
 		nodes.avatar_url,
 		nodes.status,
-
-		FIRST(ROW_TO_JSON(reward_scores.*))::JSONB AS "reward_score",
-		FIRST(ROW_TO_JSON(ranking_scores.*))::JSONB AS "ranking_score",
-		JSON_AGG(JSON_BUILD_OBJECT(
-			'party_id', ENCODE(current_delegations.party_id, 'hex'),
-            'node_id', ENCODE(current_delegations.node_id, 'hex'),
-            'epoch_id', current_delegations.epoch_id,
-			'amount', current_delegations.amount)
-        ) FILTER (WHERE current_delegations.party_id IS NOT NULL) AS "delegations",
-
-		COALESCE(SUM(current_delegations.amount) FILTER (WHERE current_delegations.party_id = nodes.vega_pub_key), 0) AS staked_by_operator,
-		COALESCE(SUM(current_delegations.amount) FILTER (WHERE current_delegations.party_id != nodes.vega_pub_key), 0) AS staked_by_delegates,
-		COALESCE(SUM(current_delegations.amount), 0) AS staked_total,
-		COALESCE(SUM(pending_delegations.amount), 0) - COALESCE(SUM(current_delegations.amount), 0) AS pending_stake
+		ROW_TO_JSON(reward_scores.*)::JSONB AS "reward_score",
+		ROW_TO_JSON(ranking_scores.*)::JSONB AS "ranking_score",
+		this_epoch.delegations,
+		this_epoch.staked_by_operator,
+		this_epoch.staked_by_delegates,
+		this_epoch.staked_total,
+		next_epoch.staked_total - this_epoch.staked_total as pending_stake
 	FROM nodes
-	LEFT JOIN current_delegations ON current_delegations.node_id = nodes.id
-	LEFT JOIN pending_delegations ON pending_delegations.node_id = nodes.id
+	JOIN this_epoch on nodes.id = this_epoch.node_id
+	JOIN next_epoch on nodes.id = next_epoch.node_id
 	LEFT JOIN ranking_scores ON ranking_scores.node_id = nodes.id AND ranking_scores.epoch_seq = $1
 	LEFT JOIN reward_scores ON reward_scores.node_id = nodes.id AND reward_scores.epoch_seq = $1
 	WHERE EXISTS (
 		SELECT *
 		FROM join_event WHERE node_id = nodes.id
 		)
-	GROUP BY nodes.id`
+	`
 
 	err := pgxscan.Select(ctx, store.pool, &nodes, query, epochSeq)
 
@@ -310,20 +338,47 @@ func (store *Node) GetNodeByID(ctx context.Context, nodeId string, epochSeq uint
 
 	query := `WITH
 	current_delegations AS (
-		SELECT * FROM delegations
-		WHERE epoch_id = $2
-		AND node_id = $1
+		SELECT * FROM delegations_current
+		WHERE epoch_id = $1
 	),
 	pending_delegations AS (
-		SELECT * FROM delegations
-		WHERE epoch_id = $2 + 1
-		AND node_id = $1
+		SELECT * FROM delegations_current
+		WHERE epoch_id = $1 + 1
 	),
 
-	/* find the join/leave annoucement with the biggest epoch that is also less or equal to the target epoch */
+	/* partitioned by node_id find the join/leave annoucement with the biggest epoch that is also less or equal to the target epoch */
 	join_event AS (
-		SELECT * FROM nodes_announced
-		WHERE epoch_seq = ( SELECT MAX(epoch_seq) FROM nodes_announced WHERE node_id = $1 AND epoch_seq <= $2)
+		SELECT 
+			node_id, added 
+		FROM ( 
+			SELECT 
+				node_id, added, epoch_seq, Row_Number() 
+			OVER(PARTITION BY node_id order BY epoch_seq desc) 
+			AS 
+				row_number 
+			FROM 
+				nodes_announced 
+			WHERE epoch_seq <= $1) AS a
+		WHERE row_number = 1 AND added = true
+	),
+	this_epoch AS (
+		SELECT nodes.id AS node_id,
+			COALESCE(SUM(current_delegations.amount) FILTER (WHERE current_delegations.party_id = nodes.vega_pub_key), 0) AS staked_by_operator,
+			COALESCE(SUM(current_delegations.amount) FILTER (WHERE current_delegations.party_id != nodes.vega_pub_key), 0) AS staked_by_delegates,
+			COALESCE(SUM(current_delegations.amount), 0) AS staked_total,
+			COALESCE(JSON_AGG(JSON_BUILD_OBJECT(
+				'party_id', ENCODE(current_delegations.party_id, 'hex'),
+				'node_id', ENCODE(current_delegations.node_id, 'hex'),
+				'epoch_id', current_delegations.epoch_id,
+				'amount', current_delegations.amount)
+			) FILTER (WHERE current_delegations.party_id IS NOT NULL), json_build_array()) AS "delegations"
+		FROM nodes LEFT JOIN current_delegations  on current_delegations.node_id = nodes.id
+		GROUP BY nodes.id),
+	next_epoch AS (
+		SELECT nodes.id as node_id,
+		       COALESCE(SUM(pending_delegations.amount), 0) AS staked_total
+		FROM nodes LEFT JOIN pending_delegations on pending_delegations.node_id = nodes.id
+		GROUP BY nodes.id
 	)
 
 	SELECT
@@ -336,32 +391,26 @@ func (store *Node) GetNodeByID(ctx context.Context, nodeId string, epochSeq uint
 		nodes.info_url,
 		nodes.avatar_url,
 		nodes.status,
-
-		FIRST(ROW_TO_JSON(reward_scores.*))::JSONB AS "reward_score",
-		FIRST(ROW_TO_JSON(ranking_scores.*))::JSONB AS "ranking_score",
-		JSON_AGG(JSON_BUILD_OBJECT(
-			'party_id', ENCODE(current_delegations.party_id, 'hex'),
-            'node_id', ENCODE(current_delegations.node_id, 'hex'),
-            'epoch_id', current_delegations.epoch_id,
-			'amount', current_delegations.amount)
-        ) FILTER (WHERE current_delegations.party_id IS NOT NULL) AS "delegations",
-
-		COALESCE(SUM(current_delegations.amount) FILTER (WHERE current_delegations.party_id = nodes.vega_pub_key), 0) AS staked_by_operator,
-		COALESCE(SUM(current_delegations.amount) FILTER (WHERE current_delegations.party_id != nodes.vega_pub_key), 0) AS staked_by_delegates,
-		COALESCE(SUM(current_delegations.amount), 0) AS staked_total,
-		COALESCE(SUM(pending_delegations.amount), 0) - COALESCE(SUM(current_delegations.amount), 0) AS pending_stake
+		ROW_TO_JSON(reward_scores.*)::JSONB AS "reward_score",
+		ROW_TO_JSON(ranking_scores.*)::JSONB AS "ranking_score",
+		this_epoch.delegations,
+		this_epoch.staked_by_operator,
+		this_epoch.staked_by_delegates,
+		this_epoch.staked_total,
+		next_epoch.staked_total - this_epoch.staked_total as pending_stake
 	FROM nodes
-	LEFT JOIN current_delegations ON current_delegations.node_id = nodes.id
-	LEFT JOIN pending_delegations ON pending_delegations.node_id = nodes.id
-	LEFT JOIN ranking_scores ON ranking_scores.node_id = nodes.id AND ranking_scores.epoch_seq = $2
-	LEFT JOIN reward_scores ON reward_scores.node_id = nodes.id AND reward_scores.epoch_seq = $2
-	WHERE nodes.id = $1 AND EXISTS (
+	JOIN this_epoch on nodes.id = this_epoch.node_id
+	JOIN next_epoch on nodes.id = next_epoch.node_id
+	LEFT JOIN ranking_scores ON ranking_scores.node_id = nodes.id AND ranking_scores.epoch_seq = $1
+	LEFT JOIN reward_scores ON reward_scores.node_id = nodes.id AND reward_scores.epoch_seq = $1
+	WHERE EXISTS (
 		SELECT *
-		FROM   join_event WHERE added = true
+		FROM join_event WHERE node_id = nodes.id
 		)
-	GROUP BY nodes.id`
+		AND nodes.id=$2
+	`
 
-	err := pgxscan.Get(ctx, store.pool, &node, query, id, epochSeq)
+	err := pgxscan.Get(ctx, store.pool, &node, query, epochSeq, id)
 	if pgxscan.NotFound(err) {
 		return node, fmt.Errorf("'%v': %w", nodeId, ErrNodeNotFound)
 	}

@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package broker
 
 import (
@@ -103,13 +115,15 @@ func (b *sqlStoreBroker) waitForFirstBlock(ctx context.Context, errCh <-chan err
 
 	lastProcessedBlock, err := b.blockStore.GetLastBlock(ctx)
 
-	if errors.Is(err, sqlstore.ErrNoLastBlock) {
+	if err == nil {
+		b.log.Infof("waiting for first unprocessed block, last processed block: %v", lastProcessedBlock)
+	} else if errors.Is(err, sqlstore.ErrNoLastBlock) {
 		lastProcessedBlock = entities.Block{
 			VegaTime: time.Time{},
 			Height:   -1,
 			Hash:     nil,
 		}
-	} else if err != nil {
+	} else {
 		return nil, err
 	}
 
@@ -131,6 +145,7 @@ func (b *sqlStoreBroker) waitForFirstBlock(ctx context.Context, errCh <-chan err
 				}
 
 				if timeUpdate.BlockNr() > lastProcessedBlock.Height {
+					b.log.Info("first unprocessed block received, starting block processing")
 					return entities.BlockFromTimeUpdate(timeUpdate)
 				}
 			}
@@ -141,8 +156,15 @@ func (b *sqlStoreBroker) waitForFirstBlock(ctx context.Context, errCh <-chan err
 
 // processBlock processes all events in the current block up to the next time update.  The next time block is returned when processing of the block is done.
 func (b *sqlStoreBroker) processBlock(ctx context.Context, dbContext context.Context, block *entities.Block, eventsCh <-chan events.Event, errCh <-chan error) (*entities.Block, error) {
-
 	metrics.BlockCounterInc()
+	metrics.SetBlockHeight(float64(block.Height))
+
+	blockTimer := blockTimer{}
+	blockTimer.startTimer()
+	defer func() {
+		blockTimer.stopTimer()
+		metrics.AddBlockHandlingTime(blockTimer.duration)
+	}()
 
 	for _, subscriber := range b.subscribers {
 		subscriber.SetVegaTime(block.VegaTime)
@@ -152,7 +174,7 @@ func (b *sqlStoreBroker) processBlock(ctx context.Context, dbContext context.Con
 	// by e.g. a shutdown request then let the last database operation complete.
 	var blockCtx context.Context
 	var cancel context.CancelFunc
-	blockCtx, cancel = context.WithTimeout(dbContext, b.config.BlockProcessingTimeout.Duration)
+	blockCtx, cancel = context.WithCancel(dbContext)
 	defer cancel()
 
 	blockCtx, err := b.transactionManager.WithTransaction(blockCtx)
@@ -164,6 +186,10 @@ func (b *sqlStoreBroker) processBlock(ctx context.Context, dbContext context.Con
 		return nil, fmt.Errorf("failed to add block:%w", err)
 	}
 
+	slowTimeUpdateThreshold := 2 * time.Second
+	slowTimeUpdateTicker := time.NewTicker(slowTimeUpdateThreshold)
+	defer slowTimeUpdateTicker.Stop()
+
 	for {
 		// Do a pre-check on ctx.Done() since select() cases are randomized, this reduces
 		// the number of things we'll keep trying to handle after we are cancelled.
@@ -173,16 +199,21 @@ func (b *sqlStoreBroker) processBlock(ctx context.Context, dbContext context.Con
 		default:
 		}
 
+		blockTimer.stopTimer()
 		select {
 		case <-ctx.Done():
 			return nil, ctx.Err()
 		case err = <-errCh:
 			return nil, err
-
+		case <-slowTimeUpdateTicker.C:
+			b.log.Warningf("slow time update detected, time between checks %v, block height: %d, total block processing time: %v", slowTimeUpdateThreshold,
+				block.Height, blockTimer.duration)
 		case e := <-eventsCh:
+			metrics.EventCounterInc(e.Type().String())
+			blockTimer.startTimer()
 			if e.Type() == events.TimeUpdate {
+
 				timeUpdate := e.(entities.TimeUpdateEvent)
-				metrics.EventCounterInc(timeUpdate.Type().String())
 
 				err = b.flushAllSubscribers(blockCtx)
 				if err != nil {
@@ -195,7 +226,6 @@ func (b *sqlStoreBroker) processBlock(ctx context.Context, dbContext context.Con
 				}
 
 				return entities.BlockFromTimeUpdate(timeUpdate)
-
 			} else {
 				if err = b.handleEvent(blockCtx, e); err != nil {
 					return nil, err
@@ -207,7 +237,10 @@ func (b *sqlStoreBroker) processBlock(ctx context.Context, dbContext context.Con
 
 func (b *sqlStoreBroker) flushAllSubscribers(blockCtx context.Context) error {
 	for _, subscriber := range b.subscribers {
+		subName := reflect.TypeOf(subscriber).Elem().Name()
+		timer := metrics.NewTimeCounter(subName)
 		err := subscriber.Flush(blockCtx)
+		timer.FlushTimeCounterAdd()
 		if err != nil {
 			return fmt.Errorf("failed to flush subscriber:%w", err)
 		}
@@ -230,7 +263,6 @@ func (b *sqlStoreBroker) addBlock(ctx context.Context, block *entities.Block) er
 }
 
 func (b *sqlStoreBroker) handleEvent(ctx context.Context, e events.Event) error {
-	metrics.EventCounterInc(e.Type().String())
 
 	if err := checkChainID(b.chainInfo, e.ChainID()); err != nil {
 		return err
@@ -262,4 +294,21 @@ func (b *sqlStoreBroker) push(ctx context.Context, sub SqlBrokerSubscriber, e ev
 	}
 
 	return nil
+}
+
+type blockTimer struct {
+	duration  time.Duration
+	startTime *time.Time
+}
+
+func (t *blockTimer) startTimer() {
+	now := time.Now()
+	t.startTime = &now
+}
+
+func (t *blockTimer) stopTimer() {
+	if t.startTime != nil {
+		t.duration = t.duration + time.Now().Sub(*t.startTime)
+		t.startTime = nil
+	}
 }

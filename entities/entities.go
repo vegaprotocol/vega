@@ -1,12 +1,29 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package entities
 
-type PagedEntity interface {
-	Market | Party | Trade | Order | MarginLevels | MarketData | Reward
+import "google.golang.org/protobuf/proto"
+
+type PagedEntity[T proto.Message] interface {
+	Market | Party | Trade | Order | MarginLevels | MarketData | Reward | Candle | Deposit | Withdrawal | Asset | OracleSpec | OracleData | Position | LiquidityProvision | Vote | Transfer
+	// ToProtoEdge may need some optional arguments in order to generate the proto, for example margin levels
+	// requires an account source. This is not ideal, but we can come back to this later if a better solution can be found.
+	ToProtoEdge(...any) (T, error)
 	Cursor() *Cursor
 }
 
-func PageEntities[T PagedEntity](items []T, pagination CursorPagination) ([]T, PageInfo) {
-	var pagedItems []T
+func PageEntities[T proto.Message, U PagedEntity[T]](items []U, pagination CursorPagination) ([]U, PageInfo) {
+	var pagedItems []U
 	var limit int
 	var pageInfo PageInfo
 
@@ -47,26 +64,26 @@ func PageEntities[T PagedEntity](items []T, pagination CursorPagination) ([]T, P
 		limit = int(*pagination.Backward.Limit)
 		switch len(items) {
 		case limit + 2:
-			pagedItems = reverseSlice(items[1 : limit+1])
+			pagedItems = ReverseSlice(items[1 : limit+1])
 			pageInfo.HasNextPage = true
 			pageInfo.HasPreviousPage = true
 		case limit + 1:
 			if !pagination.Backward.HasCursor() {
-				pagedItems = reverseSlice(items[0:limit])
+				pagedItems = ReverseSlice(items[0:limit])
 				pageInfo.HasNextPage = false
 				pageInfo.HasPreviousPage = true
 			} else {
-				pagedItems = reverseSlice(items[1:])
+				pagedItems = ReverseSlice(items[1:])
 				pageInfo.HasNextPage = true
 				pageInfo.HasPreviousPage = false
 			}
 		default:
 			if pagination.HasBackward() && pagination.Backward.HasCursor() && pagination.Backward.Cursor.Value() == items[0].Cursor().Value() {
-				pagedItems = reverseSlice(items[1:])
+				pagedItems = ReverseSlice(items[1:])
 				pageInfo.HasNextPage = true
 				pageInfo.HasPreviousPage = false
 			} else {
-				pagedItems = reverseSlice(items)
+				pagedItems = ReverseSlice(items)
 				pageInfo.HasNextPage = false
 				pageInfo.HasPreviousPage = false
 			}
@@ -87,7 +104,7 @@ func PageEntities[T PagedEntity](items []T, pagination CursorPagination) ([]T, P
 	return pagedItems, pageInfo
 }
 
-func reverseSlice[T any](input []T) (reversed []T) {
+func ReverseSlice[T any](input []T) (reversed []T) {
 	reversed = make([]T, len(input))
 	copy(reversed, input)
 	for i, j := 0, len(input)-1; i < j; i, j = i+1, j-1 {

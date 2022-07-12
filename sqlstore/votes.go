@@ -1,9 +1,23 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package sqlstore
 
 import (
 	"context"
 	"fmt"
 	"strings"
+
+	v2 "code.vegaprotocol.io/protos/data-node/api/v2"
 
 	"code.vegaprotocol.io/data-node/entities"
 	"code.vegaprotocol.io/data-node/metrics"
@@ -46,24 +60,49 @@ func (vs *Votes) Add(ctx context.Context, v entities.Vote) error {
 	return err
 }
 
-func (rs *Votes) GetYesVotesForProposal(ctx context.Context, proposalIDStr string) ([]entities.Vote, error) {
+func (vs *Votes) GetYesVotesForProposal(ctx context.Context, proposalIDStr string) ([]entities.Vote, error) {
 	defer metrics.StartSQLQuery("Votes", "GetYesVotesForProposal")()
 	yes := entities.VoteValueYes
-	return rs.Get(ctx, &proposalIDStr, nil, &yes)
+	return vs.Get(ctx, &proposalIDStr, nil, &yes)
 }
 
-func (rs *Votes) GetNoVotesForProposal(ctx context.Context, proposalIDStr string) ([]entities.Vote, error) {
+func (vs *Votes) GetNoVotesForProposal(ctx context.Context, proposalIDStr string) ([]entities.Vote, error) {
 	defer metrics.StartSQLQuery("Votes", "GetNoVotesForProposal")()
 	no := entities.VoteValueNo
-	return rs.Get(ctx, &proposalIDStr, nil, &no)
+	return vs.Get(ctx, &proposalIDStr, nil, &no)
 }
 
-func (rs *Votes) GetByParty(ctx context.Context, partyIDStr string) ([]entities.Vote, error) {
+func (vs *Votes) GetByParty(ctx context.Context, partyIDStr string) ([]entities.Vote, error) {
 	defer metrics.StartSQLQuery("Votes", "GetByParty")()
-	return rs.Get(ctx, nil, &partyIDStr, nil)
+	return vs.Get(ctx, nil, &partyIDStr, nil)
 }
 
-func (rs *Votes) Get(ctx context.Context,
+func (vs *Votes) GetByPartyConnection(ctx context.Context, partyIDStr string, pagination entities.CursorPagination) ([]entities.Vote, entities.PageInfo, error) {
+	args := make([]interface{}, 0)
+	query := fmt.Sprintf(`select * from votes_current where party_id=%s`, nextBindVar(&args, entities.NewPartyID(partyIDStr)))
+
+	var votes []entities.Vote
+	var pageInfo entities.PageInfo
+
+	sorting, cmp, cursor := extractPaginationInfo(pagination)
+
+	vc := &entities.VoteCursor{}
+	if err := vc.Parse(cursor); err != nil {
+		return nil, pageInfo, fmt.Errorf("parsing cursor: %w", err)
+	}
+
+	cursors := []CursorQueryParameter{NewCursorQueryParameter("vega_time", sorting, cmp, vc.VegaTime)}
+	query, args = orderAndPaginateWithCursor(query, pagination, cursors, args...)
+
+	if err := pgxscan.Select(ctx, vs.Connection, &votes, query, args...); err != nil {
+		return nil, entities.PageInfo{}, err
+	}
+
+	votes, pageInfo = entities.PageEntities[*v2.VoteEdge](votes, pagination)
+	return votes, pageInfo, nil
+}
+
+func (vs *Votes) Get(ctx context.Context,
 	proposalIDStr *string,
 	partyIDStr *string,
 	value *entities.VoteValue,
@@ -92,7 +131,7 @@ func (rs *Votes) Get(ctx context.Context,
 	}
 
 	votes := []entities.Vote{}
-	err := pgxscan.Select(ctx, rs.Connection, &votes, query, args...)
+	err := pgxscan.Select(ctx, vs.Connection, &votes, query, args...)
 	if err != nil {
 		return nil, fmt.Errorf("querying votes: %w", err)
 	}

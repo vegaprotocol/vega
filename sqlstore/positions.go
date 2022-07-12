@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package sqlstore
 
 import (
@@ -7,6 +19,7 @@ import (
 
 	"code.vegaprotocol.io/data-node/entities"
 	"code.vegaprotocol.io/data-node/metrics"
+	v2 "code.vegaprotocol.io/protos/data-node/api/v2"
 	"github.com/georgysavva/scany/pgxscan"
 )
 
@@ -28,7 +41,7 @@ func NewPositions(connectionSource *ConnectionSource) *Positions {
 }
 
 func (ps *Positions) Flush(ctx context.Context) ([]entities.Position, error) {
-	defer metrics.StartSQLQuery("Positions", "FlushTest")()
+	defer metrics.StartSQLQuery("Positions", "Flush")()
 	return ps.batcher.Flush(ctx, ps.pool)
 }
 
@@ -71,6 +84,44 @@ func (ps *Positions) GetByParty(ctx context.Context, partyID entities.PartyID) (
 		`SELECT * FROM positions_current WHERE party_id=$1`,
 		partyID)
 	return positions, err
+}
+
+func (ps *Positions) GetByPartyConnection(ctx context.Context, partyID entities.PartyID, marketID entities.MarketID, pagination entities.CursorPagination) ([]entities.Position, entities.PageInfo, error) {
+	var args []interface{}
+	var pageInfo entities.PageInfo
+
+	query := `select * from positions_current`
+	var where string
+
+	sorting, cmp, cursor := extractPaginationInfo(pagination)
+
+	positionCursor := &entities.PositionCursor{}
+	if err := positionCursor.Parse(cursor); err != nil {
+		return nil, pageInfo, fmt.Errorf("invalid cursor: %w", err)
+	}
+
+	cursorParams := []CursorQueryParameter{
+		NewCursorQueryParameter("vega_time", sorting, cmp, positionCursor.VegaTime),
+	}
+
+	if marketID.String() == "" {
+		where = fmt.Sprintf(" where party_id=%s", nextBindVar(&args, partyID))
+		cursorParams = append(cursorParams, NewCursorQueryParameter("market_id", sorting, cmp,
+			entities.NewMarketID(positionCursor.MarketID)))
+	} else {
+		where = fmt.Sprintf(" where party_id=%s and market_id=%s", nextBindVar(&args, partyID), nextBindVar(&args, marketID))
+	}
+
+	query = fmt.Sprintf("%s %s", query, where)
+	query, args = orderAndPaginateWithCursor(query, pagination, cursorParams, args...)
+
+	var positions []entities.Position
+	if err := pgxscan.Select(ctx, ps.Connection, &positions, query, args...); err != nil {
+		return nil, pageInfo, err
+	}
+
+	positions, pageInfo = entities.PageEntities[*v2.PositionEdge](positions, pagination)
+	return positions, pageInfo, nil
 }
 
 func (ps *Positions) GetAll(ctx context.Context) ([]entities.Position, error) {

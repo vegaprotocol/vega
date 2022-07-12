@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package service
 
 import (
@@ -20,6 +32,7 @@ type VoteStore interface {
 	GetYesVotesForProposal(ctx context.Context, proposalIDStr string) ([]entities.Vote, error)
 	GetNoVotesForProposal(ctx context.Context, proposalIDStr string) ([]entities.Vote, error)
 	GetByParty(ctx context.Context, partyIDStr string) ([]entities.Vote, error)
+	GetByPartyConnection(ctx context.Context, partyIDStr string, pagination entities.CursorPagination) ([]entities.Vote, entities.PageInfo, error)
 	Get(ctx context.Context, proposalID, partyID *string, value *entities.VoteValue) ([]entities.Vote, error)
 }
 
@@ -87,6 +100,10 @@ func (g *Governance) GetNoVotesForProposal(ctx context.Context, proposalID strin
 
 func (g *Governance) GetVotesByParty(ctx context.Context, partyID string) ([]entities.Vote, error) {
 	return g.vStore.GetByParty(ctx, partyID)
+}
+
+func (p *Governance) GetByPartyConnection(ctx context.Context, partyID string, pagination entities.CursorPagination) ([]entities.Vote, entities.PageInfo, error) {
+	return p.vStore.GetByPartyConnection(ctx, partyID, pagination)
 }
 
 func (g *Governance) GetVotes(ctx context.Context, proposalID, partyID *string, value *entities.VoteValue) ([]entities.Vote, error) {

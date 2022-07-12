@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package service
 
 import (
@@ -13,7 +25,7 @@ import (
 	"code.vegaprotocol.io/vega/types/num"
 )
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/market_depth_mock.go -package mocks code.vegaprotocol.io/data-node/subscribers SqlOrderStore
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/market_depth_mock.go -package mocks code.vegaprotocol.io/data-node/service OrderStore
 type OrderStore interface {
 	GetLiveOrders(ctx context.Context) ([]entities.Order, error)
 }
@@ -33,7 +45,7 @@ func NewMarketDepth(orderStore OrderStore, logger *logging.Logger) *MarketDepth 
 		marketDepths:   map[string]*entities.MarketDepth{},
 		orderStore:     orderStore,
 		log:            logger,
-		depthObserver:  utils.NewObserver[*types.MarketDepth]("market_depth", logger, 0, 0),
+		depthObserver:  utils.NewObserver[*types.MarketDepth]("market_depth", logger, 100, 100),
 		updateObserver: utils.NewObserver[*types.MarketDepthUpdate]("market_depth_update", logger, 100, 100),
 	}
 }
@@ -104,8 +116,8 @@ func (m *MarketDepth) publishChanges() {
 			PreviousSequenceNumber: md.PreviousSequenceNumber,
 		}
 
-		m.updateObserver.BlockingNotify([]*types.MarketDepthUpdate{marketDepthUpdate})
-		m.depthObserver.BlockingNotify([]*types.MarketDepth{md.ToProto(0)})
+		m.updateObserver.Notify([]*types.MarketDepthUpdate{marketDepthUpdate})
+		m.depthObserver.Notify([]*types.MarketDepth{md.ToProto(0)})
 
 		// Clear the list of changes
 		md.Changes = make([]*entities.PriceLevel, 0, len(md.Changes))

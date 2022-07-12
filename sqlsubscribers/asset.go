@@ -1,10 +1,21 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package sqlsubscribers
 
 import (
 	"context"
 	"fmt"
 	"math"
-	"strconv"
 	"time"
 
 	"code.vegaprotocol.io/data-node/entities"
@@ -61,7 +72,7 @@ func (as *Asset) addAsset(ctx context.Context, va vega.Asset, vegaTime time.Time
 		return errors.Errorf("bad total supply '%v'", va.Details.TotalSupply)
 	}
 
-	quantum, err := strconv.Atoi(va.Details.Quantum)
+	quantum, err := decimal.NewFromString(va.Details.Quantum)
 	if err != nil {
 		return errors.Errorf("bad quantum '%v'", va.Details.Quantum)
 	}
@@ -110,6 +121,7 @@ func (as *Asset) addAsset(ctx context.Context, va vega.Asset, vegaTime time.Time
 		VegaTime:          vegaTime,
 		LifetimeLimit:     lifetimeLimit,
 		WithdrawThreshold: withdrawalThreshold,
+		Status:            entities.AssetStatus(va.Status),
 	}
 
 	return errors.WithStack(as.store.Add(ctx, asset))

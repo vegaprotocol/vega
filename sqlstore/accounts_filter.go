@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package sqlstore
 
 import (
@@ -96,16 +108,15 @@ func filterAccountBalancesQuery(af entities.AccountFilter, pagination entities.O
 		where = fmt.Sprintf(`%s%sACCOUNTS.market_id=ANY(%s)`, where, and, nextBindVar(&args, marketIDs))
 	}
 
-	query := `SELECT DISTINCT ON (ACCOUNTS.id) ACCOUNTS.id, ACCOUNTS.party_id, ACCOUNTS.asset_id, ACCOUNTS.market_id, ACCOUNTS.type, 
-				all_balances.balance, all_balances.vega_time
-	          FROM ACCOUNTS JOIN all_balances ON ACCOUNTS.id = all_balances.account_id `
+	query := `SELECT ACCOUNTS.id, ACCOUNTS.party_id, ACCOUNTS.asset_id, ACCOUNTS.market_id, ACCOUNTS.type, 
+				current_balances.balance, current_balances.vega_time
+	          FROM ACCOUNTS JOIN current_balances ON ACCOUNTS.id = current_balances.account_id `
 
 	if where != "" {
 		query = fmt.Sprintf("%s WHERE %s", query, where)
 	}
 
-	// We are adding a custom ordering to ensure we're getting the latest balances for each account from our query
-	query = fmt.Sprintf("%s ORDER BY ACCOUNTS.id, all_balances.vega_time DESC", query)
+	query = fmt.Sprintf("%s ORDER BY ACCOUNTS.id", query)
 
 	// and we're calling the order and paginate query method so that we can paginate later as it is a requirement for
 	// data-node API v2, but pass no ordering columns as we've already defined the ordering we want for this query.

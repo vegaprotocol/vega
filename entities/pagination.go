@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package entities
 
 import (
@@ -67,8 +79,9 @@ func OffsetPaginationFromProto(pp *v2.OffsetPagination) OffsetPagination {
 
 type CursorPagination struct {
 	Pagination
-	Forward  *offset
-	Backward *offset
+	Forward     *offset
+	Backward    *offset
+	NewestFirst bool
 }
 
 func (p CursorPagination) HasForward() bool {
@@ -77,6 +90,16 @@ func (p CursorPagination) HasForward() bool {
 
 func (p CursorPagination) HasBackward() bool {
 	return p.Backward != nil
+}
+
+func NewCursorPagination(first *int32, after *string, last *int32, before *string, newestFirst bool) (CursorPagination, error) {
+	return CursorPaginationFromProto(&v2.Pagination{
+		First:       first,
+		After:       after,
+		Last:        last,
+		Before:      before,
+		NewestFirst: &newestFirst,
+	})
 }
 
 func CursorPaginationFromProto(cp *v2.Pagination) (CursorPagination, error) {
@@ -113,9 +136,16 @@ func CursorPaginationFromProto(cp *v2.Pagination) (CursorPagination, error) {
 		}
 	}
 
+	// Default the sort order to return the newest records first if no sort order is provided
+	newestFirst := true
+	if cp.NewestFirst != nil {
+		newestFirst = *cp.NewestFirst
+	}
+
 	pagination := CursorPagination{
-		Forward:  forwardOffset,
-		Backward: backwardOffset,
+		Forward:     forwardOffset,
+		Backward:    backwardOffset,
+		NewestFirst: newestFirst,
 	}
 
 	if err = validatePagination(pagination); err != nil {

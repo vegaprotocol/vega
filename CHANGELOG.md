@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased (0.53.0)
+## Unreleased (0.54.0)
 
 ### 🚨 Breaking changes
 - [](https://github.com/vegaprotocol/data-node/issues/xxx) -
@@ -14,6 +14,33 @@
 ### 🐛 Fixes
 - [](https://github.com/vegaprotocol/data-node/issues/xxx) -
 
+## 0.53.0
+
+### 🛠  Improvements
+- [572](https://github.com/vegaprotocol/data-node/issues/572) - Add cursor based pagination for votes requests
+- [561](https://github.com/vegaprotocol/data-node/issues/561) - Add cursor based pagination for positions requests
+- [565](https://github.com/vegaprotocol/data-node/issues/565) - Add cursor based pagination for candles data requests
+- [568](https://github.com/vegaprotocol/data-node/issues/568) - Add cursor based pagination for deposits requests
+- [569](https://github.com/vegaprotocol/data-node/issues/569) - Add cursor based pagination for withdrawal requests
+- [723](https://github.com/vegaprotocol/data-node/issues/723) - Update contributor information
+- [576](https://github.com/vegaprotocol/data-node/issues/576) - Add cursor based pagination for assets requests
+- [571](https://github.com/vegaprotocol/data-node/issues/571) - Add cursor based pagination for Oracle Spec and Data requests
+- [733](https://github.com/vegaprotocol/data-node/issues/733) - Store chain info in database when using `SQL`
+- [744](https://github.com/vegaprotocol/data-node/issues/744) - Add command to launch embedded postgres `data-node postgres run`
+- [748](https://github.com/vegaprotocol/data-node/issues/748) - Add REST endpoint to list `OracleData`
+- [761](https://github.com/vegaprotocol/data-node/issues/761) - Delete all badger stores, `SQL` stores only from now
+- [566](https://github.com/vegaprotocol/data-node/issues/566) - Liquidity provision pagination
+- [779](https://github.com/vegaprotocol/data-node/issues/779) - Ordering of paginated query results from newest to oldest
+- [573](https://github.com/vegaprotocol/data-node/issues/573) - Transfers pagination and addition of `v2` transfers `API`
+- [781](https://github.com/vegaprotocol/data-node/issues/781) - Add a summary table of current balances
+
+### 🐛 Fixes
+- [705](https://github.com/vegaprotocol/data-node/issues/705) - Market Depth returning incorrect book state
+- [730](https://github.com/vegaprotocol/data-node/issues/730) - Event bus subscriptions with party and market filter not working
+- [678](https://github.com/vegaprotocol/data-node/issues/678) - Add new trading mode variant
+- [776](https://github.com/vegaprotocol/data-node/issues/776) - Add support for missing proposal errors
+- [782](https://github.com/vegaprotocol/data-node/issues/782) - Support large integers for asset quantum
+
 ## 0.52.0
 
 ### 🛠  Improvements
@@ -21,16 +48,21 @@
 - [666](https://github.com/vegaprotocol/data-node/issues/666) - Cache latest market data
 - [564](https://github.com/vegaprotocol/data-node/issues/564) - Add cursor based pagination to market data requests
 - [619](https://github.com/vegaprotocol/data-node/issues/619) - Cache markets
+- [439](https://github.com/vegaprotocol/data-node/issues/439) - Add new subscription endpoint for batched market data updates
 - [675](https://github.com/vegaprotocol/data-node/issues/675) - Monitoring of subscriber count
 - [618](https://github.com/vegaprotocol/data-node/issues/618) - Fix positions cache
 - [567](https://github.com/vegaprotocol/data-node/issues/567) - Add cursor based pagination to rewards data requests
+- [708](https://github.com/vegaprotocol/data-node/issues/708) - Fix problem where querying `nodeData` would fail if there are no delegations
 
 ### 🐛 Fixes
 - [657](https://github.com/vegaprotocol/data-node/issues/657) - Add missing creation field in `ERC20` withdrawal bundle
 - [668](https://github.com/vegaprotocol/data-node/issues/668) - Ensure entity wrappers always hold timestamps to microsecond resolution
 - [662](https://github.com/vegaprotocol/data-node/issues/662) - Fix auction trigger enum lookup
 - [682](https://github.com/vegaprotocol/data-node/issues/682) - Allow multiple checkpoints per block
-
+- [690](https://github.com/vegaprotocol/data-node/issues/690) - Fix deadlock in market data subscription, close subscriptions when data can't be written rather than silently dropping events.
+- [698](https://github.com/vegaprotocol/data-node/issues/698) - Fix bug that was preventing correct translation of reward type in `GraphQL`
+- [697](https://github.com/vegaprotocol/data-node/issues/697) - Fix bug that was causing misreporting of delegations in node queries
+- [697](https://github.com/vegaprotocol/data-node/issues/697) - Actually fix bug that was causing misreporting of delegations in node queries
 
 ## 0.51.1
 

@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package utils_test
 
 import (
@@ -37,11 +49,16 @@ func TestNotifyDoesNotBlock(t *testing.T) {
 	flogs := logs.FilterMessageSnippet("channel could not be updated")
 	assert.NotZero(t, flogs.Len())
 
-	// And there should be nothing on the channel
-	select {
-	case <-ch:
-		t.Fail()
-	default:
+	// The channel should be closed eventually, but it might take a few cycles to get there.
+	for {
+		select {
+		case _, ok := <-ch:
+			if !ok {
+				return
+			}
+			t.Fail()
+		default:
+		}
 	}
 }
 

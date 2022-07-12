@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package entities
 
 import (
@@ -6,6 +18,7 @@ import (
 	"strconv"
 	"time"
 
+	v2 "code.vegaprotocol.io/protos/data-node/api/v2"
 	"code.vegaprotocol.io/protos/vega"
 	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
 	"github.com/shopspring/decimal"
@@ -40,6 +53,22 @@ func (r *Reward) ToProto() *vega.Reward {
 		RewardType:        r.RewardType,
 	}
 	return &protoReward
+}
+
+func (r Reward) Cursor() *Cursor {
+	cursor := RewardCursor{
+		PartyID: r.PartyID.String(),
+		AssetID: r.AssetID.String(),
+		EpochID: r.EpochID,
+	}
+	return NewCursor(cursor.String())
+}
+
+func (r Reward) ToProtoEdge(_ ...any) (*v2.RewardEdge, error) {
+	return &v2.RewardEdge{
+		Node:   r.ToProto(),
+		Cursor: r.Cursor().Encode(),
+	}, nil
 }
 
 func RewardFromProto(pr eventspb.RewardPayoutEvent, vegaTime time.Time) (Reward, error) {
@@ -84,25 +113,15 @@ type RewardCursor struct {
 func (rc RewardCursor) String() string {
 	bs, err := json.Marshal(rc)
 	if err != nil {
-		return fmt.Sprintf(`{"party_id":"%s","asset_id":"%s","epoch_id":%d}`, rc.PartyID, rc.AssetID, rc.EpochID)
+		// This should never happen.
+		panic(fmt.Errorf("marshalling reward cursor: %w", err))
 	}
 	return string(bs)
 }
 
-func (r Reward) Cursor() *Cursor {
-	cursor := RewardCursor{
-		PartyID: r.PartyID.String(),
-		AssetID: r.AssetID.String(),
-		EpochID: r.EpochID,
+func (rc *RewardCursor) Parse(cursorString string) error {
+	if cursorString == "" {
+		return nil
 	}
-	return NewCursor(cursor.String())
-}
-
-func ParseRewardCursor(cursor string) (RewardCursor, error) {
-	var rc RewardCursor
-	err := json.Unmarshal([]byte(cursor), &rc)
-	if err != nil {
-		return RewardCursor{}, fmt.Errorf("parsing reward cursor: %w", err)
-	}
-	return rc, nil
+	return json.Unmarshal([]byte(cursorString), rc)
 }

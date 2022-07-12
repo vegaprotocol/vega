@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package candlesv2
 
 import (
@@ -14,7 +26,7 @@ import (
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/candle_store_mock.go -package mocks code.vegaprotocol.io/data-node/candlesv2 CandleStore
 type CandleStore interface {
 	GetCandleDataForTimeSpan(ctx context.Context, candleId string, from *time.Time, to *time.Time,
-		p entities.OffsetPagination) ([]entities.Candle, error)
+		p entities.CursorPagination) ([]entities.Candle, entities.PageInfo, error)
 	GetCandlesForMarket(ctx context.Context, market string) (map[string]string, error)
 	CandleExists(ctx context.Context, candleId string) (bool, error)
 	GetCandleIdForIntervalAndMarket(ctx context.Context, interval string, market string) (bool, string, error)

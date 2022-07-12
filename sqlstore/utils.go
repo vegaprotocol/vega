@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package sqlstore
 
 import (
@@ -100,20 +112,35 @@ func orderAndPaginateWithCursor(query string, pagination entities.CursorPaginati
 }
 
 func extractPaginationInfo(pagination entities.CursorPagination) (Sorting, Compare, string) {
-	var sort Sorting
 	var cmp Compare
 	var value string
 
+	sort := ASC
+
+	if pagination.NewestFirst {
+		sort = DESC
+	}
+
 	if pagination.HasForward() {
-		sort = ASC
 		if pagination.Forward.HasCursor() {
 			cmp = GE
+			if pagination.NewestFirst {
+				cmp = LE
+			}
 			value = pagination.Forward.Cursor.Value()
 		}
 	} else if pagination.HasBackward() {
 		sort = DESC
+
+		if pagination.NewestFirst {
+			sort = ASC
+		}
+
 		if pagination.Backward.HasCursor() {
 			cmp = LE
+			if pagination.NewestFirst {
+				cmp = GE
+			}
 			value = pagination.Backward.Cursor.Value()
 		}
 	}

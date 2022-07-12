@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package integration_test
 
 import (
@@ -37,7 +49,7 @@ var (
 	newClient               *graphql.Client
 	oldClient               *graphql.Client
 	integrationTestsEnabled *bool = flag.Bool("integration", false, "run integration tests")
-	blockWhenDone           bool  = false
+	blockWhenDone                 = flag.Bool("block", false, "leave services running after tests are complete")
 )
 
 func TestMain(m *testing.M) {
@@ -68,9 +80,11 @@ func TestMain(m *testing.M) {
 
 	m.Run()
 
+	log.Printf("Integration tests completed")
+
 	// When you're debugging tests, it's helpful to stop here so you can go in and poke around
 	// sending queries via the graphql playground etc..
-	if blockWhenDone {
+	if blockWhenDone != nil && *blockWhenDone {
 		log.Print("Blocking now to allow debugging")
 		waitForSIGTERM()
 	}
@@ -200,7 +214,6 @@ func newTestConfig() (*config.Config, error) {
 	}
 
 	cfg := config.NewDefaultConfig()
-	cfg.SQLStore.Enabled = true
 	cfg.Broker.UseEventFile = true
 	cfg.Broker.FileEventSourceConfig.File = filepath.Join(cwd, "testdata", "system_tests.evt")
 	cfg.Broker.FileEventSourceConfig.TimeBetweenBlocks = encoding.Duration{Duration: 0}

@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package candlesv2
 
 import (
@@ -12,7 +24,7 @@ import (
 
 type candleSource interface {
 	GetCandleDataForTimeSpan(ctx context.Context, candleId string, from *time.Time, to *time.Time,
-		p entities.OffsetPagination) ([]entities.Candle, error)
+		p entities.CursorPagination) ([]entities.Candle, entities.PageInfo, error)
 }
 
 type subscribeRequest struct {
@@ -126,7 +138,11 @@ func (s *candleUpdates) getCandleUpdates(ctx context.Context, lastCandle *entiti
 	if lastCandle != nil {
 		start := lastCandle.PeriodStart
 		var candles []entities.Candle
-		candles, err = s.candleSource.GetCandleDataForTimeSpan(ctx, s.candleId, &start, nil, entities.OffsetPagination{})
+		candles, _, err = s.candleSource.GetCandleDataForTimeSpan(ctx, s.candleId, &start, nil, entities.CursorPagination{})
+
+		if err != nil {
+			return nil, fmt.Errorf("getting candle updates:%w", err)
+		}
 
 		for _, candle := range candles {
 			if candle.LastUpdateInPeriod.After(lastCandle.LastUpdateInPeriod) {
@@ -134,33 +150,30 @@ func (s *candleUpdates) getCandleUpdates(ctx context.Context, lastCandle *entiti
 			}
 		}
 	} else {
-		pagination := entities.OffsetPagination{Skip: 0, Limit: 1, Descending: true}
-		updates, err = s.candleSource.GetCandleDataForTimeSpan(ctx, s.candleId, nil, nil, pagination)
-	}
+		last := int32(1)
+		pagination, err := entities.NewCursorPagination(nil, nil, &last, nil, false)
+		if err != nil {
+			return nil, err
+		}
+		updates, _, err = s.candleSource.GetCandleDataForTimeSpan(ctx, s.candleId, nil, nil, pagination)
 
-	if err != nil {
-		return nil, fmt.Errorf("getting candle updates:%w", err)
+		if err != nil {
+			return nil, fmt.Errorf("getting candle updates:%w", err)
+		}
 	}
 
 	return updates, nil
 }
 
 func (s *candleUpdates) sendCandles(candles []entities.Candle, subscriptions map[string]chan entities.Candle) {
-	var slowConsumers []string
-
 	for subscriptionId, outCh := range subscriptions {
 		for _, candle := range candles {
-			if len(outCh) < cap(outCh) {
-				outCh <- candle
-			} else {
-				slowConsumers = append(slowConsumers, subscriptionId)
+			select {
+			case outCh <- candle:
+			default:
+				removeSubscription(subscriptions, subscriptionId)
 				break
 			}
 		}
-	}
-
-	for _, slowConsumerId := range slowConsumers {
-		s.log.Warningf("slow consumer detected, removing subscription %s", slowConsumerId)
-		removeSubscription(subscriptions, slowConsumerId)
 	}
 }

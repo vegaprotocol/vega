@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package gql
 
 import (
@@ -36,6 +48,32 @@ func (r *myMarketResolver) LiquidityProvisions(
 	return res.LiquidityProvisions, nil
 }
 
+func (r *myMarketResolver) LiquidityProvisionsConnection(
+	ctx context.Context,
+	market *types.Market,
+	party *string,
+	pagination *v2.Pagination,
+) (*v2.LiquidityProvisionsConnection, error) {
+	var pid string
+	if party != nil {
+		pid = *party
+	}
+
+	req := v2.GetLiquidityProvisionsRequest{
+		Party:      pid,
+		Market:     market.Id,
+		Pagination: pagination,
+	}
+
+	res, err := r.tradingDataClientV2.GetLiquidityProvisions(ctx, &req)
+	if err != nil {
+		r.log.Error("tradingData client", logging.Error(err))
+		return nil, customErrorFromStatus(err)
+	}
+
+	return res.LiquidityProvisions, nil
+}
+
 func (r *myMarketResolver) Data(ctx context.Context, market *types.Market) (*types.MarketData, error) {
 	req := protoapi.MarketDataByIDRequest{
 		MarketId: market.Id,
@@ -64,13 +102,13 @@ func (r *myMarketResolver) Orders(ctx context.Context, market *types.Market,
 	return res.Orders, nil
 }
 
-func (r *myMarketResolver) OrdersPaged(ctx context.Context, market *types.Market, pagination *v2.Pagination) (*v2.OrderConnection, error) {
-	req := v2.GetOrdersByMarketPagedRequest{
+func (r *myMarketResolver) OrdersConnection(ctx context.Context, market *types.Market, pagination *v2.Pagination) (*v2.OrderConnection, error) {
+	req := v2.GetOrdersByMarketConnectionRequest{
 		MarketId:   market.Id,
 		Pagination: pagination,
 	}
 
-	res, err := r.tradingDataClientV2.GetOrdersByMarketPaged(ctx, &req)
+	res, err := r.tradingDataClientV2.GetOrdersByMarketConnection(ctx, &req)
 	if err != nil {
 		r.log.Error("tradingData client", logging.Error(err))
 		return nil, customErrorFromStatus(err)
@@ -96,7 +134,7 @@ func (r *myMarketResolver) Trades(ctx context.Context, market *types.Market,
 	return res.Trades, nil
 }
 
-func (r *myMarketResolver) TradesPaged(ctx context.Context, market *types.Market, pagination *v2.Pagination) (*v2.TradeConnection, error) {
+func (r *myMarketResolver) TradesConnection(ctx context.Context, market *types.Market, pagination *v2.Pagination) (*v2.TradeConnection, error) {
 	req := v2.GetTradesByMarketRequest{
 		MarketId:   market.Id,
 		Pagination: pagination,
@@ -269,4 +307,9 @@ func (r *myMarketResolver) RiskFactors(ctx context.Context, obj *types.Market) (
 	}
 
 	return rf.RiskFactor, nil
+}
+
+func (r *myMarketResolver) CandlesConnection(ctx context.Context, market *types.Market, sinceRaw string, toRaw *string,
+	interval Interval, pagination *v2.Pagination) (*v2.CandleDataConnection, error) {
+	return handleCandleConnectionRequest(ctx, r.tradingDataClientV2, market, sinceRaw, toRaw, interval, pagination)
 }

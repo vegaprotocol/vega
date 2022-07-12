@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package marshallers
 
 import (
@@ -11,6 +23,7 @@ import (
 )
 
 var accountTypeToName = map[vega.AccountType]string{
+	vega.AccountType_ACCOUNT_TYPE_UNSPECIFIED:                "Unspecified",
 	vega.AccountType_ACCOUNT_TYPE_INSURANCE:                  "Insurance",
 	vega.AccountType_ACCOUNT_TYPE_SETTLEMENT:                 "Settlement",
 	vega.AccountType_ACCOUNT_TYPE_MARGIN:                     "Margin",
@@ -31,6 +44,7 @@ var accountTypeToName = map[vega.AccountType]string{
 }
 
 var nameToAccountType = map[string]vega.AccountType{
+	"Unspecified":             vega.AccountType_ACCOUNT_TYPE_UNSPECIFIED,
 	"Insurance":               vega.AccountType_ACCOUNT_TYPE_INSURANCE,
 	"Settlement":              vega.AccountType_ACCOUNT_TYPE_SETTLEMENT,
 	"Margin":                  vega.AccountType_ACCOUNT_TYPE_MARGIN,
@@ -51,10 +65,6 @@ var nameToAccountType = map[string]vega.AccountType{
 }
 
 func MarshalAccountType(t vega.AccountType) graphql.ContextMarshaler {
-	if t == vega.AccountType_ACCOUNT_TYPE_UNSPECIFIED {
-		return graphql.Null
-	}
-
 	f := func(ctx context.Context, w io.Writer) error {
 		s, ok := accountTypeToName[t]
 		if !ok {

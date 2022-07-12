@@ -3,10 +3,9 @@ module code.vegaprotocol.io/data-node
 go 1.18
 
 require (
-	code.vegaprotocol.io/protos v0.52.0
-	code.vegaprotocol.io/quant v0.2.5
+	code.vegaprotocol.io/protos v0.53.0
 	code.vegaprotocol.io/shared v0.0.0-20220614080106-5c97205b0d92
-	code.vegaprotocol.io/vega v0.52.0
+	code.vegaprotocol.io/vega v0.53.0
 	github.com/99designs/gqlgen v0.16.0
 	github.com/cenkalti/backoff/v4 v4.1.2
 	github.com/dgraph-io/badger/v2 v2.2007.3
@@ -25,7 +24,6 @@ require (
 	github.com/jackc/pgx/v4 v4.14.1
 	github.com/jessevdk/go-flags v1.4.0
 	github.com/machinebox/graphql v0.2.2
-	github.com/mwitkow/go-proto-validators v0.3.2
 	github.com/pkg/errors v0.9.1
 	github.com/pressly/goose/v3 v3.5.1
 	github.com/prometheus/client_golang v1.12.1
@@ -43,10 +41,7 @@ require (
 	google.golang.org/protobuf v1.27.1
 )
 
-require golang.org/x/exp v0.0.0-20220428152302-39d4317da171 // indirect
-
 require (
-	code.vegaprotocol.io/vegawallet v0.16.0 // indirect
 	github.com/BurntSushi/toml v1.1.0 // indirect
 	github.com/DataDog/zstd v1.4.1 // indirect
 	github.com/adrg/xdg v0.4.0 // indirect
@@ -109,11 +104,9 @@ require (
 	golang.org/x/mod v0.6.0-dev.0.20211013180041-c96bc1413d57 // indirect
 	golang.org/x/net v0.0.0-20220225172249-27dd8689420f // indirect
 	golang.org/x/sys v0.0.0-20220318055525-2edf467146b5 // indirect
-	golang.org/x/term v0.0.0-20210927222741-03fcf44c2211 // indirect
 	golang.org/x/text v0.3.7 // indirect
 	golang.org/x/tools v0.1.9 // indirect
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
-	gonum.org/v1/gonum v0.9.1 // indirect
 	google.golang.org/genproto v0.0.0-20220317150908-0efb43f6373e // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect

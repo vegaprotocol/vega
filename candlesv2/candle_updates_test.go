@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package candlesv2_test
 
 import (
@@ -21,13 +33,14 @@ type testCandleSource struct {
 }
 
 func (t *testCandleSource) GetCandleDataForTimeSpan(ctx context.Context, candleId string, from *time.Time, to *time.Time,
-	p entities.OffsetPagination,
-) ([]entities.Candle, error) {
+	p entities.CursorPagination,
+) ([]entities.Candle, entities.PageInfo, error) {
+	pageInfo := entities.PageInfo{}
 	select {
 	case c := <-t.candles:
-		return c, nil
+		return c, pageInfo, nil
 	default:
-		return nil, nil
+		return nil, pageInfo, nil
 	}
 }
 
@@ -99,27 +112,6 @@ func TestNewSubscriberAlwaysGetsLastCandle(t *testing.T) {
 	_, out2 := updates.Subscribe()
 	candle2 := <-out2
 	assert.Equal(t, expectedCandle, candle2)
-}
-
-func TestSlowConsumersChannelIsClosed(t *testing.T) {
-	testCandleSource := &testCandleSource{candles: make(chan []entities.Candle)}
-
-	updates, _ := candlesv2.NewCandleUpdates(context.Background(), logging.NewTestLogger(), "testCandles",
-		testCandleSource, newTestCandleConfig(1).CandleUpdates)
-	startTime := time.Now()
-
-	_, out1 := updates.Subscribe()
-
-	expectedCandle := createCandle(startTime, startTime, 1, 1, 1, 1, 10)
-	candle2 := createCandle(startTime.Add(1*time.Minute), startTime.Add(1*time.Minute), 2, 2, 2, 2, 20)
-	testCandleSource.candles <- []entities.Candle{expectedCandle}
-	testCandleSource.candles <- []entities.Candle{candle2}
-
-	candle1 := <-out1
-	assert.Equal(t, expectedCandle, candle1)
-
-	_, ok := <-out1
-	assert.False(t, ok, "channel should be closed")
 }
 
 func newTestCandleConfig(bufferSize int) candlesv2.Config {

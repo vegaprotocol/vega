@@ -1,7 +1,21 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package sqlstore_test
 
 import (
 	"context"
+	"fmt"
+	"strconv"
 	"testing"
 	"time"
 
@@ -14,6 +28,11 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const (
+	testID     = "deadbeef"
+	testAmount = "1000"
+)
+
 func TestDeposits(t *testing.T) {
 	t.Run("Upsert should insert deposits if one doesn't exist for the block", testAddDepositForNewBlock)
 	t.Run("Upsert should error if the vega block does not exist", testErrorIfBlockDoesNotExist)
@@ -21,6 +40,20 @@ func TestDeposits(t *testing.T) {
 	t.Run("Upsert should insert deposit updates if the same deposit id is inserted in a different block", testInsertDepositUpdatesIfNewBlock)
 	t.Run("GetByID should retrieve the latest state of the deposit with the given ID", testDepositsGetByID)
 	t.Run("GetByParty should retrieve the latest state of all deposits for a given party", testDepositsGetByParty)
+}
+
+func TestDepositsPagination(t *testing.T) {
+	t.Run("should return all deposits if no pagination is specified", testDepositsPaginationNoPagination)
+	t.Run("should return the first page of results if first is provided", testDepositsPaginationFirst)
+	t.Run("should return the last page of results if last is provided", testDepositsPaginationLast)
+	t.Run("should return the specified page of results if first and after are provided", testDepositsPaginationFirstAfter)
+	t.Run("should return the specified page of results if last and before are provided", testDepositsPaginationLastBefore)
+
+	t.Run("should return all deposits if no pagination is specified - newest first", testDepositsPaginationNoPaginationNewestFirst)
+	t.Run("should return the first page of results if first is provided - newest first", testDepositsPaginationFirstNewestFirst)
+	t.Run("should return the last page of results if last is provided - newest first", testDepositsPaginationLastNewestFirst)
+	t.Run("should return the specified page of results if first and after are provided - newest first", testDepositsPaginationFirstAfterNewestFirst)
+	t.Run("should return the specified page of results if last and before are provided - newest first", testDepositsPaginationLastBeforeNewestFirst)
 }
 
 func setupDepositStoreTests(t *testing.T, ctx context.Context) (*sqlstore.Blocks, *sqlstore.Deposits, *pgx.Conn) {
@@ -52,7 +85,8 @@ func testAddDepositForNewBlock(t *testing.T) {
 	assert.Equal(t, 0, rowCount)
 
 	block := addTestBlock(t, bs)
-	depositProto := getTestDeposit()
+
+	depositProto := getTestDeposit(testID, testID, testID, testAmount, testID, time.Now().UnixNano())
 
 	deposit, err := entities.DepositFromProto(depositProto, block.VegaTime)
 	require.NoError(t, err, "Converting market proto to database entity")
@@ -78,7 +112,7 @@ func testErrorIfBlockDoesNotExist(t *testing.T) {
 	assert.Equal(t, 0, rowCount)
 
 	block := addTestBlock(t, bs)
-	depositProto := getTestDeposit()
+	depositProto := getTestDeposit(testID, testID, testID, testAmount, testID, time.Now().UnixNano())
 
 	deposit, err := entities.DepositFromProto(depositProto, block.VegaTime.Add(time.Second))
 	require.NoError(t, err, "Converting market proto to database entity")
@@ -101,7 +135,7 @@ func testUpdateDepositForBlockIfExists(t *testing.T) {
 	assert.Equal(t, 0, rowCount)
 
 	block := addTestBlock(t, bs)
-	depositProto := getTestDeposit()
+	depositProto := getTestDeposit(testID, testID, testID, testAmount, testID, time.Now().UnixNano())
 
 	deposit, err := entities.DepositFromProto(depositProto, block.VegaTime)
 	require.NoError(t, err, "Converting market proto to database entity")
@@ -140,7 +174,7 @@ func testInsertDepositUpdatesIfNewBlock(t *testing.T) {
 	assert.Equal(t, 0, rowCount)
 
 	block := addTestBlock(t, bs)
-	depositProto := getTestDeposit()
+	depositProto := getTestDeposit(testID, testID, testID, testAmount, testID, time.Now().UnixNano())
 
 	deposit, err := entities.DepositFromProto(depositProto, block.VegaTime)
 	require.NoError(t, err, "Converting market proto to database entity")
@@ -184,7 +218,7 @@ func testDepositsGetByID(t *testing.T) {
 	assert.Equal(t, 0, rowCount)
 
 	block := addTestBlock(t, bs)
-	depositProto := getTestDeposit()
+	depositProto := getTestDeposit(testID, testID, testID, testAmount, testID, time.Now().UnixNano())
 
 	deposit, err := entities.DepositFromProto(depositProto, block.VegaTime)
 	require.NoError(t, err, "Converting market proto to database entity")
@@ -229,10 +263,10 @@ func testDepositsGetByParty(t *testing.T) {
 	assert.Equal(t, 0, rowCount)
 
 	block := addTestBlock(t, bs)
-	depositProto1 := getTestDeposit()
+	depositProto1 := getTestDeposit(testID, testID, testID, testAmount, testID, time.Now().UnixNano())
 	depositProto1.Id = "deadbeef01"
 
-	depositProto2 := getTestDeposit()
+	depositProto2 := getTestDeposit(testID, testID, testID, testAmount, testID, time.Now().UnixNano())
 	depositProto2.Id = "deadbeef02"
 
 	want := make([]entities.Deposit, 0)
@@ -282,21 +316,344 @@ func testDepositsGetByParty(t *testing.T) {
 
 	want = append(want, *deposit)
 
-	got := ds.GetByParty(ctx, depositProto1.PartyId, false, entities.OffsetPagination{})
-
+	got, _, err := ds.GetByParty(ctx, depositProto1.PartyId, false, entities.OffsetPagination{})
+	assert.NoError(t, err)
 	assert.Equal(t, want, got)
 }
 
-func getTestDeposit() *vega.Deposit {
-	now := time.Now().UnixNano()
+func getTestDeposit(id, party, asset, amount, txHash string, ts int64) *vega.Deposit {
 	return &vega.Deposit{
-		Id:                "deadbeef",
+		Id:                id,
 		Status:            vega.Deposit_STATUS_OPEN,
-		PartyId:           "deadbeef",
-		Asset:             "deadbeef",
-		Amount:            "1000",
-		TxHash:            "deadbeef",
-		CreditedTimestamp: now,
-		CreatedTimestamp:  now,
+		PartyId:           party,
+		Asset:             asset,
+		Amount:            amount,
+		TxHash:            txHash,
+		CreditedTimestamp: ts,
+		CreatedTimestamp:  ts,
 	}
+}
+
+func addDeposits(ctx context.Context, t *testing.T, bs *sqlstore.Blocks, ds *sqlstore.Deposits) []entities.Deposit {
+	vegaTime := time.Now().Truncate(time.Microsecond)
+	amount := int64(1000)
+	deposits := make([]entities.Deposit, 0, 10)
+	for i := 0; i < 10; i++ {
+		addTestBlockForTime(t, bs, vegaTime)
+
+		depositProto := getTestDeposit(fmt.Sprintf("deadbeef%02d", i+1), testID, testID,
+			strconv.FormatInt(amount, 10), generateID(), vegaTime.UnixNano())
+		deposit, err := entities.DepositFromProto(depositProto, vegaTime)
+		require.NoError(t, err, "Converting deposit proto to database entity")
+		err = ds.Upsert(ctx, deposit)
+		deposits = append(deposits, *deposit)
+		require.NoError(t, err)
+
+		vegaTime = vegaTime.Add(time.Second)
+		amount += 100
+	}
+
+	return deposits
+}
+
+func testDepositsPaginationNoPagination(t *testing.T) {
+	timeoutCtx, cancel := context.WithTimeout(context.Background(), time.Second*10)
+	defer cancel()
+	bs, ds, _ := setupDepositStoreTests(t, timeoutCtx)
+
+	testDeposits := addDeposits(timeoutCtx, t, bs, ds)
+
+	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, false)
+	require.NoError(t, err)
+	got, pageInfo, err := ds.GetByParty(timeoutCtx, testID, false, pagination)
+
+	require.NoError(t, err)
+	assert.Equal(t, testDeposits, got)
+	assert.Equal(t, entities.PageInfo{
+		HasNextPage:     false,
+		HasPreviousPage: false,
+		StartCursor: entities.NewCursor(entities.DepositCursor{
+			VegaTime: testDeposits[0].VegaTime,
+			ID:       testDeposits[0].ID.String(),
+		}.String()).Encode(),
+		EndCursor: entities.NewCursor(entities.DepositCursor{
+			VegaTime: testDeposits[9].VegaTime,
+			ID:       testDeposits[9].ID.String(),
+		}.String()).Encode(),
+	}, pageInfo)
+}
+
+func testDepositsPaginationFirst(t *testing.T) {
+	timeoutCtx, cancel := context.WithTimeout(context.Background(), time.Second*10)
+	defer cancel()
+	bs, ds, _ := setupDepositStoreTests(t, timeoutCtx)
+
+	testDeposits := addDeposits(timeoutCtx, t, bs, ds)
+
+	first := int32(3)
+	pagination, err := entities.NewCursorPagination(&first, nil, nil, nil, false)
+	require.NoError(t, err)
+	got, pageInfo, err := ds.GetByParty(timeoutCtx, testID, false, pagination)
+
+	require.NoError(t, err)
+	want := testDeposits[:3]
+	assert.Equal(t, want, got)
+	assert.Equal(t, entities.PageInfo{
+		HasNextPage:     true,
+		HasPreviousPage: false,
+		StartCursor: entities.NewCursor(entities.DepositCursor{
+			VegaTime: testDeposits[0].VegaTime,
+			ID:       testDeposits[0].ID.String(),
+		}.String()).Encode(),
+		EndCursor: entities.NewCursor(entities.DepositCursor{
+			VegaTime: testDeposits[2].VegaTime,
+			ID:       testDeposits[2].ID.String(),
+		}.String()).Encode(),
+	}, pageInfo)
+}
+
+func testDepositsPaginationLast(t *testing.T) {
+	timeoutCtx, cancel := context.WithTimeout(context.Background(), time.Second*10)
+	defer cancel()
+	bs, ds, _ := setupDepositStoreTests(t, timeoutCtx)
+
+	testDeposits := addDeposits(timeoutCtx, t, bs, ds)
+
+	last := int32(3)
+	pagination, err := entities.NewCursorPagination(nil, nil, &last, nil, false)
+	require.NoError(t, err)
+	got, pageInfo, err := ds.GetByParty(timeoutCtx, testID, false, pagination)
+
+	require.NoError(t, err)
+	want := testDeposits[7:]
+	assert.Equal(t, want, got)
+	assert.Equal(t, entities.PageInfo{
+		HasNextPage:     false,
+		HasPreviousPage: true,
+		StartCursor: entities.NewCursor(entities.DepositCursor{
+			VegaTime: testDeposits[7].VegaTime,
+			ID:       testDeposits[7].ID.String(),
+		}.String()).Encode(),
+		EndCursor: entities.NewCursor(entities.DepositCursor{
+			VegaTime: testDeposits[9].VegaTime,
+			ID:       testDeposits[9].ID.String(),
+		}.String()).Encode(),
+	}, pageInfo)
+}
+
+func testDepositsPaginationFirstAfter(t *testing.T) {
+	timeoutCtx, cancel := context.WithTimeout(context.Background(), time.Second*10)
+	defer cancel()
+	bs, ds, _ := setupDepositStoreTests(t, timeoutCtx)
+
+	testDeposits := addDeposits(timeoutCtx, t, bs, ds)
+
+	first := int32(3)
+	after := entities.NewCursor(entities.DepositCursor{
+		VegaTime: testDeposits[2].VegaTime,
+		ID:       testDeposits[2].ID.String(),
+	}.String()).Encode()
+	pagination, err := entities.NewCursorPagination(&first, &after, nil, nil, false)
+	require.NoError(t, err)
+	got, pageInfo, err := ds.GetByParty(timeoutCtx, testID, false, pagination)
+
+	require.NoError(t, err)
+	want := testDeposits[3:6]
+	assert.Equal(t, want, got)
+	assert.Equal(t, entities.PageInfo{
+		HasNextPage:     true,
+		HasPreviousPage: true,
+		StartCursor: entities.NewCursor(entities.DepositCursor{
+			VegaTime: testDeposits[3].VegaTime,
+			ID:       testDeposits[3].ID.String(),
+		}.String()).Encode(),
+		EndCursor: entities.NewCursor(entities.DepositCursor{
+			VegaTime: testDeposits[5].VegaTime,
+			ID:       testDeposits[5].ID.String(),
+		}.String()).Encode(),
+	}, pageInfo)
+}
+
+func testDepositsPaginationLastBefore(t *testing.T) {
+	timeoutCtx, cancel := context.WithTimeout(context.Background(), time.Second*10)
+	defer cancel()
+	bs, ds, _ := setupDepositStoreTests(t, timeoutCtx)
+
+	testDeposits := addDeposits(timeoutCtx, t, bs, ds)
+
+	last := int32(3)
+	before := entities.NewCursor(entities.DepositCursor{
+		VegaTime: testDeposits[7].VegaTime,
+		ID:       testDeposits[7].ID.String(),
+	}.String()).Encode()
+	pagination, err := entities.NewCursorPagination(nil, nil, &last, &before, false)
+	require.NoError(t, err)
+	got, pageInfo, err := ds.GetByParty(timeoutCtx, testID, false, pagination)
+
+	require.NoError(t, err)
+	want := testDeposits[4:7]
+	assert.Equal(t, want, got)
+	assert.Equal(t, entities.PageInfo{
+		HasNextPage:     true,
+		HasPreviousPage: true,
+		StartCursor: entities.NewCursor(entities.DepositCursor{
+			VegaTime: testDeposits[4].VegaTime,
+			ID:       testDeposits[4].ID.String(),
+		}.String()).Encode(),
+		EndCursor: entities.NewCursor(entities.DepositCursor{
+			VegaTime: testDeposits[6].VegaTime,
+			ID:       testDeposits[6].ID.String(),
+		}.String()).Encode(),
+	}, pageInfo)
+}
+
+func testDepositsPaginationNoPaginationNewestFirst(t *testing.T) {
+	timeoutCtx, cancel := context.WithTimeout(context.Background(), time.Second*10)
+	defer cancel()
+	bs, ds, _ := setupDepositStoreTests(t, timeoutCtx)
+
+	testDeposits := entities.ReverseSlice(addDeposits(timeoutCtx, t, bs, ds))
+
+	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, true)
+	require.NoError(t, err)
+	got, pageInfo, err := ds.GetByParty(timeoutCtx, testID, false, pagination)
+
+	require.NoError(t, err)
+	assert.Equal(t, testDeposits, got)
+	assert.Equal(t, entities.PageInfo{
+		HasNextPage:     false,
+		HasPreviousPage: false,
+		StartCursor: entities.NewCursor(entities.DepositCursor{
+			VegaTime: testDeposits[0].VegaTime,
+			ID:       testDeposits[0].ID.String(),
+		}.String()).Encode(),
+		EndCursor: entities.NewCursor(entities.DepositCursor{
+			VegaTime: testDeposits[9].VegaTime,
+			ID:       testDeposits[9].ID.String(),
+		}.String()).Encode(),
+	}, pageInfo)
+}
+
+func testDepositsPaginationFirstNewestFirst(t *testing.T) {
+	timeoutCtx, cancel := context.WithTimeout(context.Background(), time.Second*10)
+	defer cancel()
+	bs, ds, _ := setupDepositStoreTests(t, timeoutCtx)
+
+	testDeposits := entities.ReverseSlice(addDeposits(timeoutCtx, t, bs, ds))
+
+	first := int32(3)
+	pagination, err := entities.NewCursorPagination(&first, nil, nil, nil, true)
+	require.NoError(t, err)
+	got, pageInfo, err := ds.GetByParty(timeoutCtx, testID, false, pagination)
+
+	require.NoError(t, err)
+	want := testDeposits[:3]
+	assert.Equal(t, want, got)
+	assert.Equal(t, entities.PageInfo{
+		HasNextPage:     true,
+		HasPreviousPage: false,
+		StartCursor: entities.NewCursor(entities.DepositCursor{
+			VegaTime: testDeposits[0].VegaTime,
+			ID:       testDeposits[0].ID.String(),
+		}.String()).Encode(),
+		EndCursor: entities.NewCursor(entities.DepositCursor{
+			VegaTime: testDeposits[2].VegaTime,
+			ID:       testDeposits[2].ID.String(),
+		}.String()).Encode(),
+	}, pageInfo)
+}
+
+func testDepositsPaginationLastNewestFirst(t *testing.T) {
+	timeoutCtx, cancel := context.WithTimeout(context.Background(), time.Second*10)
+	defer cancel()
+	bs, ds, _ := setupDepositStoreTests(t, timeoutCtx)
+
+	testDeposits := entities.ReverseSlice(addDeposits(timeoutCtx, t, bs, ds))
+
+	last := int32(3)
+	pagination, err := entities.NewCursorPagination(nil, nil, &last, nil, true)
+	require.NoError(t, err)
+	got, pageInfo, err := ds.GetByParty(timeoutCtx, testID, false, pagination)
+
+	require.NoError(t, err)
+	want := testDeposits[7:]
+	assert.Equal(t, want, got)
+	assert.Equal(t, entities.PageInfo{
+		HasNextPage:     false,
+		HasPreviousPage: true,
+		StartCursor: entities.NewCursor(entities.DepositCursor{
+			VegaTime: testDeposits[7].VegaTime,
+			ID:       testDeposits[7].ID.String(),
+		}.String()).Encode(),
+		EndCursor: entities.NewCursor(entities.DepositCursor{
+			VegaTime: testDeposits[9].VegaTime,
+			ID:       testDeposits[9].ID.String(),
+		}.String()).Encode(),
+	}, pageInfo)
+}
+
+func testDepositsPaginationFirstAfterNewestFirst(t *testing.T) {
+	timeoutCtx, cancel := context.WithTimeout(context.Background(), time.Second*10)
+	defer cancel()
+	bs, ds, _ := setupDepositStoreTests(t, timeoutCtx)
+
+	testDeposits := entities.ReverseSlice(addDeposits(timeoutCtx, t, bs, ds))
+
+	first := int32(3)
+	after := entities.NewCursor(entities.DepositCursor{
+		VegaTime: testDeposits[2].VegaTime,
+		ID:       testDeposits[2].ID.String(),
+	}.String()).Encode()
+	pagination, err := entities.NewCursorPagination(&first, &after, nil, nil, true)
+	require.NoError(t, err)
+	got, pageInfo, err := ds.GetByParty(timeoutCtx, testID, false, pagination)
+
+	require.NoError(t, err)
+	want := testDeposits[3:6]
+	assert.Equal(t, want, got)
+	assert.Equal(t, entities.PageInfo{
+		HasNextPage:     true,
+		HasPreviousPage: true,
+		StartCursor: entities.NewCursor(entities.DepositCursor{
+			VegaTime: testDeposits[3].VegaTime,
+			ID:       testDeposits[3].ID.String(),
+		}.String()).Encode(),
+		EndCursor: entities.NewCursor(entities.DepositCursor{
+			VegaTime: testDeposits[5].VegaTime,
+			ID:       testDeposits[5].ID.String(),
+		}.String()).Encode(),
+	}, pageInfo)
+}
+
+func testDepositsPaginationLastBeforeNewestFirst(t *testing.T) {
+	timeoutCtx, cancel := context.WithTimeout(context.Background(), time.Second*10)
+	defer cancel()
+	bs, ds, _ := setupDepositStoreTests(t, timeoutCtx)
+
+	testDeposits := entities.ReverseSlice(addDeposits(timeoutCtx, t, bs, ds))
+
+	last := int32(3)
+	before := entities.NewCursor(entities.DepositCursor{
+		VegaTime: testDeposits[7].VegaTime,
+		ID:       testDeposits[7].ID.String(),
+	}.String()).Encode()
+	pagination, err := entities.NewCursorPagination(nil, nil, &last, &before, true)
+	require.NoError(t, err)
+	got, pageInfo, err := ds.GetByParty(timeoutCtx, testID, false, pagination)
+
+	require.NoError(t, err)
+	want := testDeposits[4:7]
+	assert.Equal(t, want, got)
+	assert.Equal(t, entities.PageInfo{
+		HasNextPage:     true,
+		HasPreviousPage: true,
+		StartCursor: entities.NewCursor(entities.DepositCursor{
+			VegaTime: testDeposits[4].VegaTime,
+			ID:       testDeposits[4].ID.String(),
+		}.String()).Encode(),
+		EndCursor: entities.NewCursor(entities.DepositCursor{
+			VegaTime: testDeposits[6].VegaTime,
+			ID:       testDeposits[6].ID.String(),
+		}.String()).Encode(),
+	}, pageInfo)
 }

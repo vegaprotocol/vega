@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package entities
 
 import (
@@ -6,6 +18,7 @@ import (
 	"fmt"
 	"time"
 
+	v2 "code.vegaprotocol.io/protos/data-node/api/v2"
 	"code.vegaprotocol.io/protos/vega"
 	"github.com/shopspring/decimal"
 )
@@ -90,6 +103,34 @@ func (ml *MarginLevels) ToProto(accountSource AccountSource) (*vega.MarginLevels
 	}, nil
 }
 
+func (ml MarginLevels) Cursor() *Cursor {
+	cursor := MarginCursor{
+		VegaTime:  ml.VegaTime,
+		AccountID: ml.AccountID,
+	}
+	return NewCursor(cursor.String())
+}
+
+func (ml MarginLevels) ToProtoEdge(input ...any) (*v2.MarginEdge, error) {
+	if len(input) == 0 {
+		return nil, fmt.Errorf("expected account source argument")
+	}
+
+	switch as := input[0].(type) {
+	case AccountSource:
+		mlProto, err := ml.ToProto(as)
+		if err != nil {
+			return nil, err
+		}
+		return &v2.MarginEdge{
+			Node:   mlProto,
+			Cursor: ml.Cursor().Encode(),
+		}, nil
+	default:
+		return nil, fmt.Errorf("expected account source argument, got:%v", as)
+	}
+}
+
 type MarginLevelsKey struct {
 	AccountID int64
 	VegaTime  time.Time
@@ -119,23 +160,15 @@ type MarginCursor struct {
 func (mc MarginCursor) String() string {
 	bs, err := json.Marshal(mc)
 	if err != nil {
-		return fmt.Sprintf(`{"vegaTime":"%s","accountID":%d}`, mc.VegaTime.In(time.UTC), mc.AccountID)
+		// This should never happen
+		panic(fmt.Errorf("failed to marshal margin cursor: %w", err))
 	}
 	return string(bs)
 }
 
-func (ml MarginLevels) Cursor() *Cursor {
-	cursor := MarginCursor{
-		VegaTime:  ml.VegaTime,
-		AccountID: ml.AccountID,
+func (mc *MarginCursor) Parse(cursorString string) error {
+	if cursorString == "" {
+		return nil
 	}
-	return NewCursor(cursor.String())
-}
-
-func ParseMarginLevelCursor(cursor string) (time.Time, int64, error) {
-	var mc MarginCursor
-	if err := json.Unmarshal([]byte(cursor), &mc); err != nil {
-		return time.Time{}, 0, fmt.Errorf("parsing margin cursor: %w", err)
-	}
-	return mc.VegaTime, mc.AccountID, nil
+	return json.Unmarshal([]byte(cursorString), mc)
 }

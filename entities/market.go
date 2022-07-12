@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package entities
 
 import (
@@ -6,6 +18,7 @@ import (
 	"math"
 	"time"
 
+	v2 "code.vegaprotocol.io/protos/data-node/api/v2"
 	"code.vegaprotocol.io/protos/vega"
 	"github.com/shopspring/decimal"
 )
@@ -89,7 +102,7 @@ func NewMarketFromProto(market *vega.Market, vegaTime time.Time) (*Market, error
 	}, nil
 }
 
-func (m Market) ToProto() (*vega.Market, error) {
+func (m Market) ToProto() *vega.Market {
 	return &vega.Market{
 		Id:                 m.ID.String(),
 		TradableInstrument: m.TradableInstrument.ToProto(),
@@ -105,11 +118,18 @@ func (m Market) ToProto() (*vega.Market, error) {
 		State:                         vega.Market_State(m.State),
 		MarketTimestamps:              m.MarketTimestamps.ToProto(),
 		PositionDecimalPlaces:         uint64(m.PositionDecimalPlaces),
-	}, nil
+	}
 }
 
 func (m Market) Cursor() *Cursor {
 	return NewCursor(m.VegaTime.In(time.UTC).Format(time.RFC3339Nano))
+}
+
+func (m Market) ToProtoEdge(_ ...any) (*v2.MarketEdge, error) {
+	return &v2.MarketEdge{
+		Node:   m.ToProto(),
+		Cursor: m.Cursor().Encode(),
+	}, nil
 }
 
 type MarketTimestamps struct {

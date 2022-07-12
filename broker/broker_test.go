@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package broker_test
 
 import (
@@ -12,7 +24,6 @@ import (
 	"time"
 
 	vgtesting "code.vegaprotocol.io/data-node/libs/testing"
-	"code.vegaprotocol.io/data-node/plugins"
 	types "code.vegaprotocol.io/protos/vega"
 	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
 	"code.vegaprotocol.io/vega/broker"
@@ -103,13 +114,6 @@ func TestSendEvent(t *testing.T) {
 	t.Run("Stop sending if context is cancelled, even new events", testStopCtxSendAgain)
 	t.Run("Skip subscriber based on channel state", testSubscriberSkip)
 	t.Run("Send only to typed subscriber (also tests TxErrEvents are skipped)", testEventTypeSubscription)
-}
-
-func TestEventOrder(t *testing.T) {
-	// there's some weirdness here where events are consistently delivered in the wrong (yet random) order
-	// no matter what we do. @TODO look in to this more closely
-	t.Skip()
-	t.Run("Specific test concerning the positions plugin", testPositionsEventOrder)
 }
 
 func testSequenceIDGenSeveralBlocksOrdered(t *testing.T) {
@@ -712,69 +716,6 @@ func testStopsProcessOnStreamError(t *testing.T) {
 		return
 	}
 	t.Fatalf("process ran with err %v, want exit status 1", err)
-}
-
-func testPositionsEventOrder(t *testing.T) {
-	t.Parallel()
-	broker := getBroker(t)
-	defer broker.Finish()
-	// create a mock subscriber
-	sub := mocks.NewMockSubscriber(broker.ctrl)
-	pos := plugins.NewPositions(broker.ctx)
-	oCh := make(chan struct{}) // skip/done channel
-
-	// ensure we register it with all the types the positions plugin subscribes to
-	sub.EXPECT().Types().AnyTimes().Return(pos.Types())
-	sub.EXPECT().Skip().AnyTimes().Return(oCh)
-	sub.EXPECT().Closed().AnyTimes().Return(oCh)
-	sub.EXPECT().Ack().AnyTimes().Return(pos.Ack()) // should be true
-	sub.EXPECT().SetID(gomock.Any()).AnyTimes()
-
-	broker.Subscribe(sub)
-	tid, cid, txHash := "trace-ID", "chain-id", "tx-hash"
-	input := []*evt{
-		{
-			t:      events.PositionStateEvent,
-			ctx:    broker.ctx,
-			sid:    1,
-			id:     tid,
-			cid:    cid,
-			txHash: txHash,
-		},
-		{
-			t:      events.SettlePositionEvent,
-			ctx:    broker.ctx,
-			sid:    2,
-			id:     tid,
-			cid:    cid,
-			txHash: txHash,
-		},
-	}
-
-	// now we expect events to be sent in a specific order
-	callIdx := 0
-	wg := sync.WaitGroup{}
-	wg.Add(len(input))
-	mu := sync.Mutex{}
-	sub.EXPECT().Push(gomock.Any()).Times(2).Do(func(evts ...events.Event) {
-		mu.Lock()
-		in := input[callIdx]
-		callIdx++
-		mu.Unlock()
-		assert.Equal(t, 1, len(evts))
-		assert.EqualValues(t, in, evts[0])
-		wg.Done()
-	})
-	// simulate sending them in quick succession, more closely resembling a realistic scenario
-	go func() {
-		evtInterface := make([]events.Event, 0, len(input))
-		for _, e := range input {
-			evtInterface = append(evtInterface, e)
-		}
-		broker.Send(evtInterface[0])
-		broker.Send(evtInterface[1])
-	}()
-	wg.Wait()
 }
 
 func (e evt) Type() events.Type {

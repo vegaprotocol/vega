@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package sqlstore
 
 import (
@@ -9,6 +21,7 @@ import (
 
 	"code.vegaprotocol.io/data-node/candlesv2"
 	"code.vegaprotocol.io/data-node/metrics"
+	v2 "code.vegaprotocol.io/protos/data-node/api/v2"
 
 	"github.com/shopspring/decimal"
 
@@ -38,20 +51,22 @@ func NewCandles(ctx context.Context, connectionSource *ConnectionSource, config 
 
 // GetCandleDataForTimeSpan gets the candles for a given interval, from and to are optional
 func (cs *Candles) GetCandleDataForTimeSpan(ctx context.Context, candleId string, from *time.Time, to *time.Time,
-	p entities.OffsetPagination) ([]entities.Candle, error,
+	p entities.CursorPagination) ([]entities.Candle, entities.PageInfo, error,
 ) {
+	pageInfo := entities.PageInfo{}
+
 	descriptor, err := candleDescriptorFromCandleId(candleId)
 	if err != nil {
-		return nil, fmt.Errorf("getting candle data for time span:%w", err)
+		return nil, pageInfo, fmt.Errorf("getting candle data for time span:%w", err)
 	}
 
 	exists, err := cs.CandleExists(ctx, descriptor.id)
 	if err != nil {
-		return nil, fmt.Errorf("getting candles for time span:%w", err)
+		return nil, pageInfo, fmt.Errorf("getting candles for time span:%w", err)
 	}
 
 	if !exists {
-		return nil, fmt.Errorf("no candle exists for candle id:%s", candleId)
+		return nil, pageInfo, fmt.Errorf("no candle exists for candle id:%s", candleId)
 	}
 
 	var candles []entities.Candle
@@ -61,7 +76,7 @@ func (cs *Candles) GetCandleDataForTimeSpan(ctx context.Context, candleId string
 
 	marketAsBytes, err := hex.DecodeString(descriptor.market)
 	if err != nil {
-		return nil, fmt.Errorf("invalid market:%w", err)
+		return nil, pageInfo, fmt.Errorf("invalid market:%w", err)
 	}
 
 	args := []interface{}{marketAsBytes}
@@ -74,15 +89,25 @@ func (cs *Candles) GetCandleDataForTimeSpan(ctx context.Context, candleId string
 		query = fmt.Sprintf("%s AND period_start < %s", query, nextBindVar(&args, to))
 	}
 
-	query, args = orderAndPaginateQuery(query, []string{"period_start"}, p, args...)
+	sorting, cmp, cursor := extractPaginationInfo(p)
+
+	cursorParams := []CursorQueryParameter{
+		NewCursorQueryParameter("period_start", sorting, cmp, cursor),
+	}
+
+	query, args = orderAndPaginateWithCursor(query, p, cursorParams, args...)
 
 	defer metrics.StartSQLQuery("Candles", "GetCandleDataForTimeSpan")()
 	err = pgxscan.Select(ctx, cs.Connection, &candles, query, args...)
 	if err != nil {
-		return nil, fmt.Errorf("querying candles: %w", err)
+		return nil, pageInfo, fmt.Errorf("querying candles: %w", err)
 	}
 
-	return candles, nil
+	var pagedCandles []entities.Candle
+
+	pagedCandles, pageInfo = entities.PageEntities[*v2.CandleEdge](candles, p)
+
+	return pagedCandles, pageInfo, nil
 }
 
 // GetCandlesForMarket returns a map of existing intervals to candle ids for the given market

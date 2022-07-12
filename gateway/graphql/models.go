@@ -7,6 +7,7 @@ import (
 	"io"
 	"strconv"
 
+	"code.vegaprotocol.io/protos/data-node/api/v2"
 	"code.vegaprotocol.io/protos/vega"
 )
 
@@ -312,6 +313,20 @@ type ProposalVote struct {
 	ProposalID string `json:"proposalId"`
 }
 
+type ProposalVoteConnection struct {
+	// The total number of proposal votes in this connection
+	TotalCount *int `json:"totalCount"`
+	// The proposal votes in this connection
+	Edges []*ProposalVoteEdge `json:"edges"`
+	// The pagination information
+	PageInfo *v2.PageInfo `json:"pageInfo"`
+}
+
+type ProposalVoteEdge struct {
+	Node   *ProposalVote `json:"node"`
+	Cursor *string       `json:"cursor"`
+}
+
 type ProposalVoteSide struct {
 	// All votes casted for this side
 	Votes []*vega.Vote `json:"votes"`
@@ -416,6 +431,55 @@ func (TransferResponses) IsEvent() {}
 type UpdateInstrumentConfiguration struct {
 	Code    string                    `json:"code"`
 	Product *vega.UpdateFutureProduct `json:"product"`
+}
+
+type AssetStatus string
+
+const (
+	// Asset is proposed to be added to the network
+	AssetStatusProposed AssetStatus = "Proposed"
+	// Asset has been rejected
+	AssetStatusRejected AssetStatus = "Rejected"
+	// Asset is pending listing on the ethereum bridge
+	AssetStatusPendingListing AssetStatus = "PendingListing"
+	// Asset can be used on the vega network
+	AssetStatusEnabled AssetStatus = "Enabled"
+)
+
+var AllAssetStatus = []AssetStatus{
+	AssetStatusProposed,
+	AssetStatusRejected,
+	AssetStatusPendingListing,
+	AssetStatusEnabled,
+}
+
+func (e AssetStatus) IsValid() bool {
+	switch e {
+	case AssetStatusProposed, AssetStatusRejected, AssetStatusPendingListing, AssetStatusEnabled:
+		return true
+	}
+	return false
+}
+
+func (e AssetStatus) String() string {
+	return string(e)
+}
+
+func (e *AssetStatus) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = AssetStatus(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid AssetStatus", str)
+	}
+	return nil
+}
+
+func (e AssetStatus) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
 type AuctionTrigger string
@@ -925,6 +989,8 @@ const (
 	MarketTradingModeBatchAuction MarketTradingMode = "BatchAuction"
 	// Auction triggered by price/liquidity monitoring
 	MarketTradingModeMonitoringAuction MarketTradingMode = "MonitoringAuction"
+	// No trading allowed
+	MarketTradingModeNoTrading MarketTradingMode = "NoTrading"
 )
 
 var AllMarketTradingMode = []MarketTradingMode{
@@ -932,11 +998,12 @@ var AllMarketTradingMode = []MarketTradingMode{
 	MarketTradingModeOpeningAuction,
 	MarketTradingModeBatchAuction,
 	MarketTradingModeMonitoringAuction,
+	MarketTradingModeNoTrading,
 }
 
 func (e MarketTradingMode) IsValid() bool {
 	switch e {
-	case MarketTradingModeContinuous, MarketTradingModeOpeningAuction, MarketTradingModeBatchAuction, MarketTradingModeMonitoringAuction:
+	case MarketTradingModeContinuous, MarketTradingModeOpeningAuction, MarketTradingModeBatchAuction, MarketTradingModeMonitoringAuction, MarketTradingModeNoTrading:
 		return true
 	}
 	return false
@@ -1609,6 +1676,14 @@ const (
 	ProposalRejectionReasonParticipationThresholdNotReached ProposalRejectionReason = "ParticipationThresholdNotReached"
 	// Asset details are invalid
 	ProposalRejectionReasonInvalidAssetDetails ProposalRejectionReason = "InvalidAssetDetails"
+	// Too many price monitoring triggers specified in market
+	ProposalRejectionReasonTooManyPriceMonitoringTriggers ProposalRejectionReason = "TooManyPriceMonitoringTriggers"
+	// Too many decimal places specified in market
+	ProposalRejectionReasonTooManyMarketDecimalPlaces ProposalRejectionReason = "TooManyMarketDecimalPlaces"
+	// The market is invalid
+	ProposalRejectionReasonInvalidMarket ProposalRejectionReason = "InvalidMarket"
+	// The proposal is rejected because the party do not have enough equity like share in the market
+	ProposalRejectionReasonInsufficientEquityLikeShare ProposalRejectionReason = "InsufficientEquityLikeShare"
 )
 
 var AllProposalRejectionReason = []ProposalRejectionReason{
@@ -1645,11 +1720,15 @@ var AllProposalRejectionReason = []ProposalRejectionReason{
 	ProposalRejectionReasonMajorityThresholdNotReached,
 	ProposalRejectionReasonParticipationThresholdNotReached,
 	ProposalRejectionReasonInvalidAssetDetails,
+	ProposalRejectionReasonTooManyPriceMonitoringTriggers,
+	ProposalRejectionReasonTooManyMarketDecimalPlaces,
+	ProposalRejectionReasonInvalidMarket,
+	ProposalRejectionReasonInsufficientEquityLikeShare,
 }
 
 func (e ProposalRejectionReason) IsValid() bool {
 	switch e {
-	case ProposalRejectionReasonCloseTimeTooSoon, ProposalRejectionReasonCloseTimeTooLate, ProposalRejectionReasonEnactTimeTooSoon, ProposalRejectionReasonEnactTimeTooLate, ProposalRejectionReasonInsufficientTokens, ProposalRejectionReasonInvalidInstrumentSecurity, ProposalRejectionReasonNoProduct, ProposalRejectionReasonUnsupportedProduct, ProposalRejectionReasonInvalidFutureMaturityTimestamp, ProposalRejectionReasonProductMaturityIsPassed, ProposalRejectionReasonNoTradingMode, ProposalRejectionReasonUnsupportedTradingMode, ProposalRejectionReasonNodeValidationFailed, ProposalRejectionReasonMissingBuiltinAssetField, ProposalRejectionReasonMissingERC20ContractAddress, ProposalRejectionReasonInvalidAsset, ProposalRejectionReasonIncompatibleTimestamps, ProposalRejectionReasonNoRiskParameters, ProposalRejectionReasonNetworkParameterInvalidKey, ProposalRejectionReasonNetworkParameterInvalidValue, ProposalRejectionReasonNetworkParameterValidationFailed, ProposalRejectionReasonOpeningAuctionDurationTooSmall, ProposalRejectionReasonOpeningAuctionDurationTooLarge, ProposalRejectionReasonMarketMissingLiquidityCommitment, ProposalRejectionReasonCouldNotInstantiateMarket, ProposalRejectionReasonInvalidFutureProduct, ProposalRejectionReasonMissingCommitmentAmount, ProposalRejectionReasonInvalidFeeAmount, ProposalRejectionReasonInvalidShape, ProposalRejectionReasonInvalidRiskParameter, ProposalRejectionReasonMajorityThresholdNotReached, ProposalRejectionReasonParticipationThresholdNotReached, ProposalRejectionReasonInvalidAssetDetails:
+	case ProposalRejectionReasonCloseTimeTooSoon, ProposalRejectionReasonCloseTimeTooLate, ProposalRejectionReasonEnactTimeTooSoon, ProposalRejectionReasonEnactTimeTooLate, ProposalRejectionReasonInsufficientTokens, ProposalRejectionReasonInvalidInstrumentSecurity, ProposalRejectionReasonNoProduct, ProposalRejectionReasonUnsupportedProduct, ProposalRejectionReasonInvalidFutureMaturityTimestamp, ProposalRejectionReasonProductMaturityIsPassed, ProposalRejectionReasonNoTradingMode, ProposalRejectionReasonUnsupportedTradingMode, ProposalRejectionReasonNodeValidationFailed, ProposalRejectionReasonMissingBuiltinAssetField, ProposalRejectionReasonMissingERC20ContractAddress, ProposalRejectionReasonInvalidAsset, ProposalRejectionReasonIncompatibleTimestamps, ProposalRejectionReasonNoRiskParameters, ProposalRejectionReasonNetworkParameterInvalidKey, ProposalRejectionReasonNetworkParameterInvalidValue, ProposalRejectionReasonNetworkParameterValidationFailed, ProposalRejectionReasonOpeningAuctionDurationTooSmall, ProposalRejectionReasonOpeningAuctionDurationTooLarge, ProposalRejectionReasonMarketMissingLiquidityCommitment, ProposalRejectionReasonCouldNotInstantiateMarket, ProposalRejectionReasonInvalidFutureProduct, ProposalRejectionReasonMissingCommitmentAmount, ProposalRejectionReasonInvalidFeeAmount, ProposalRejectionReasonInvalidShape, ProposalRejectionReasonInvalidRiskParameter, ProposalRejectionReasonMajorityThresholdNotReached, ProposalRejectionReasonParticipationThresholdNotReached, ProposalRejectionReasonInvalidAssetDetails, ProposalRejectionReasonTooManyPriceMonitoringTriggers, ProposalRejectionReasonTooManyMarketDecimalPlaces, ProposalRejectionReasonInvalidMarket, ProposalRejectionReasonInsufficientEquityLikeShare:
 		return true
 	}
 	return false
@@ -1920,6 +1999,49 @@ func (e *TradeType) UnmarshalGQL(v interface{}) error {
 }
 
 func (e TradeType) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type TransferDirection string
+
+const (
+	TransferDirectionTo       TransferDirection = "To"
+	TransferDirectionFrom     TransferDirection = "From"
+	TransferDirectionToOrFrom TransferDirection = "ToOrFrom"
+)
+
+var AllTransferDirection = []TransferDirection{
+	TransferDirectionTo,
+	TransferDirectionFrom,
+	TransferDirectionToOrFrom,
+}
+
+func (e TransferDirection) IsValid() bool {
+	switch e {
+	case TransferDirectionTo, TransferDirectionFrom, TransferDirectionToOrFrom:
+		return true
+	}
+	return false
+}
+
+func (e TransferDirection) String() string {
+	return string(e)
+}
+
+func (e *TransferDirection) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = TransferDirection(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid TransferDirection", str)
+	}
+	return nil
+}
+
+func (e TransferDirection) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 

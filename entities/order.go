@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package entities
 
 import (
@@ -8,6 +20,7 @@ import (
 	"strconv"
 	"time"
 
+	v2 "code.vegaprotocol.io/protos/data-node/api/v2"
 	"code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/types"
 )
@@ -43,7 +56,7 @@ type Order struct {
 	SeqNum          uint64
 }
 
-func (o *Order) ToProto() *vega.Order {
+func (o Order) ToProto() *vega.Order {
 	var peggedOrder *vega.PeggedOrder
 	if o.PeggedReference != types.PeggedReferenceUnspecified {
 		peggedOrder = &vega.PeggedOrder{
@@ -74,6 +87,13 @@ func (o *Order) ToProto() *vega.Order {
 		LiquidityProvisionId: hex.EncodeToString(o.LpID),
 	}
 	return &vo
+}
+
+func (o Order) ToProtoEdge(_ ...any) (*v2.OrderEdge, error) {
+	return &v2.OrderEdge{
+		Node:   o.ToProto(),
+		Cursor: o.Cursor().Encode(),
+	}, nil
 }
 
 func OrderFromProto(po *vega.Order, seqNum uint64) (Order, error) {
@@ -178,10 +198,18 @@ type OrderCursor struct {
 	SeqNum   uint64    `json:"seqNum"`
 }
 
+func (oc *OrderCursor) Parse(cursorString string) error {
+	if cursorString == "" {
+		return nil
+	}
+	return json.Unmarshal([]byte(cursorString), oc)
+}
+
 func (oc OrderCursor) String() string {
 	bs, err := json.Marshal(oc)
 	if err != nil {
-		return fmt.Sprintf(`{"vegaTime":"%s","seqNum":%d}`, oc.VegaTime.Format(time.RFC3339), oc.SeqNum)
+		// This should never happen.
+		panic(fmt.Errorf("could not marshal order cursor: %w", err))
 	}
 	return string(bs)
 }
@@ -193,14 +221,4 @@ func (o Order) Cursor() *Cursor {
 	}
 
 	return NewCursor(cursor.String())
-}
-
-func ParseOrderCursor(cursor string) (time.Time, uint64, error) {
-	var oc OrderCursor
-
-	if err := json.Unmarshal([]byte(cursor), &oc); err != nil {
-		return time.Time{}, 0, err
-	}
-
-	return oc.VegaTime, oc.SeqNum, nil
 }

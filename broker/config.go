@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package broker
 
 import (
@@ -18,7 +30,6 @@ type Config struct {
 	FileEventSourceConfig          FileEventSourceConfig `group:"FileEventSourceConfig" namespace:"fileeventsource"`
 	UseEventFile                   encoding.Bool         `long:"use-event-file" description:"set to true to source events from a file"`
 	PanicOnError                   encoding.Bool         `long:"panic-on-error" description:"if an error occurs on event push the broker will panic, else log the error"`
-	BlockProcessingTimeout         encoding.Duration     `long:"block-processing-timeout" description:"The maximum time permitted for a block of events to be processed"`
 }
 
 // NewDefaultConfig creates an instance of config with default values.
@@ -38,9 +49,8 @@ func NewDefaultConfig() Config {
 			TimeBetweenBlocks:     encoding.Duration{Duration: 1 * time.Second},
 			SendChannelBufferSize: 1000,
 		},
-		UseEventFile:           false,
-		PanicOnError:           true,
-		BlockProcessingTimeout: encoding.Duration{Duration: 30 * time.Second},
+		UseEventFile: false,
+		PanicOnError: false,
 	}
 }
 

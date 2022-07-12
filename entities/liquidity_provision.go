@@ -1,9 +1,24 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package entities
 
 import (
 	"fmt"
 	"time"
 
+	"encoding/json"
+
+	v2 "code.vegaprotocol.io/protos/data-node/api/v2"
 	"code.vegaprotocol.io/protos/vega"
 	"github.com/jackc/pgtype"
 	"github.com/shopspring/decimal"
@@ -141,4 +156,39 @@ func (lp LiquidityProvision) ToRow() []interface{} {
 		lp.ID, lp.PartyID, lp.CreatedAt, lp.UpdatedAt, lp.MarketID,
 		lp.CommitmentAmount, lp.Fee, lp.Sells, lp.Buys, lp.Version,
 		lp.Status, lp.Reference, lp.VegaTime}
+}
+
+func (lp LiquidityProvision) Cursor() *Cursor {
+	lc := LiquidityProvisionCursor{
+		VegaTime: lp.VegaTime,
+		ID:       lp.ID.String(),
+	}
+	return NewCursor(lc.String())
+}
+
+func (lp LiquidityProvision) ToProtoEdge(_ ...any) (*v2.LiquidityProvisionsEdge, error) {
+	return &v2.LiquidityProvisionsEdge{
+		Node:   lp.ToProto(),
+		Cursor: lp.Cursor().Encode(),
+	}, nil
+}
+
+type LiquidityProvisionCursor struct {
+	VegaTime time.Time `json:"vegaTime"`
+	ID       string    `json:"id"`
+}
+
+func (lc LiquidityProvisionCursor) String() string {
+	bs, err := json.Marshal(lc)
+	if err != nil {
+		panic(fmt.Errorf("could not marshal liquidity provision cursor: %w", err))
+	}
+	return string(bs)
+}
+
+func (lc *LiquidityProvisionCursor) Parse(cursorString string) error {
+	if cursorString == "" {
+		return nil
+	}
+	return json.Unmarshal([]byte(cursorString), lc)
 }

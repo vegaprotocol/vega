@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package service
 
 import (
@@ -17,6 +29,7 @@ type PositionStore interface {
 	GetByMarketAndParty(ctx context.Context, marketID entities.MarketID, partyID entities.PartyID) (entities.Position, error)
 	GetByMarket(ctx context.Context, marketID entities.MarketID) ([]entities.Position, error)
 	GetByParty(ctx context.Context, partyID entities.PartyID) ([]entities.Position, error)
+	GetByPartyConnection(ctx context.Context, partyID entities.PartyID, marketID entities.MarketID, pagination entities.CursorPagination) ([]entities.Position, entities.PageInfo, error)
 	GetAll(ctx context.Context) ([]entities.Position, error)
 }
 
@@ -89,6 +102,10 @@ func (p *Position) GetByMarket(ctx context.Context, marketID entities.MarketID) 
 
 func (p *Position) GetByParty(ctx context.Context, partyID entities.PartyID) ([]entities.Position, error) {
 	return p.store.GetByParty(ctx, partyID)
+}
+
+func (p *Position) GetByPartyConnection(ctx context.Context, partyID entities.PartyID, marketID entities.MarketID, pagination entities.CursorPagination) ([]entities.Position, entities.PageInfo, error) {
+	return p.store.GetByPartyConnection(ctx, partyID, marketID, pagination)
 }
 
 func (p *Position) GetAll(ctx context.Context) ([]entities.Position, error) {

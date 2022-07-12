@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package sqlstore
 
 import (
@@ -57,11 +69,11 @@ func (c CursorQueryParameters) Where(args ...interface{}) (string, []interface{}
 	var where string
 
 	for i, cursor := range c {
-		if i > 0 && strings.TrimSpace(where) != "" {
-			where = fmt.Sprintf("%s AND", where)
-		}
 		var cursorCondition string
 		cursorCondition, args = cursor.Where(args...)
+		if i > 0 && strings.TrimSpace(where) != "" && strings.TrimSpace(cursorCondition) != "" {
+			where = fmt.Sprintf("%s AND", where)
+		}
 		where = fmt.Sprintf("%s %s", where, cursorCondition)
 	}
 

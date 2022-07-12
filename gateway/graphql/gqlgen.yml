@@ -86,46 +86,12 @@ models:
         resolver: true
       liquidityProvisions:
         resolver: true
-  PaginatedMarket:
-    model: code.vegaprotocol.io/protos/vega.Market
-    fields:
-      orders:
-        resolver: true
-      trades:
-        resolver: true
-      depth:
-        resolver: true
-      data:
-        resolver: true
-      candles:
-        resolver: true
-      accounts:
-        resolver: true
-      orderByReference:
-        resolver: true
-      liquidityProvisions:
-        resolver: true
   Party:
     model: code.vegaprotocol.io/protos/vega.Party
     fields:
       orders:
         resolver: true
       trades:
-        resolver: true
-      tradesPaged:
-        resolver: true
-      positions:
-        resolver: true
-      accounts:
-        resolver: true
-      margins:
-        resolver: true
-      delegations:
-        resolver: true
-  PaginatedParty:
-    model: code.vegaprotocol.io/protos/vega.Party
-    fields:
-      ordersPaged:
         resolver: true
       tradesPaged:
         resolver: true
@@ -207,6 +173,10 @@ models:
     model: code.vegaprotocol.io/protos/vega.MarginCalculator
   Vote:
     model: code.vegaprotocol.io/protos/vega.Vote
+  VoteConnection:
+    model: code.vegaprotocol.io/protos/data-node/api/v2.VoteConnection
+  VoteEdge:
+    model: code.vegaprotocol.io/protos/data-node/api/v2.VoteEdge
   MarketTimestamps:
     model: code.vegaprotocol.io/protos/vega.MarketTimestamps
   NodeData:
@@ -276,6 +246,10 @@ models:
     model: code.vegaprotocol.io/protos/data-node/api/v2.MarketConnection
   MarketEdge:
     model: code.vegaprotocol.io/protos/data-node/api/v2.MarketEdge
+  PositionConnection:
+    model: code.vegaprotocol.io/protos/data-node/api/v2.PositionConnection
+  PositionEdge:
+    model: code.vegaprotocol.io/protos/data-node/api/v2.PositionEdge
   PartyConnection:
     model: code.vegaprotocol.io/protos/data-node/api/v2.PartyConnection
   PartyEdge:
@@ -298,3 +272,37 @@ models:
     model: code.vegaprotocol.io/protos/data-node/api/v2.RewardEdge
   RewardsConnection:
     model: code.vegaprotocol.io/protos/data-node/api/v2.RewardsConnection
+  CandleNode:
+    model: code.vegaprotocol.io/protos/data-node/api/v2.Candle
+  CandleEdge:
+    model: code.vegaprotocol.io/protos/data-node/api/v2.CandleEdge
+  CandleDataConnection:
+    model: code.vegaprotocol.io/protos/data-node/api/v2.CandleDataConnection
+  DepositEdge:
+    model: code.vegaprotocol.io/protos/data-node/api/v2.DepositEdge
+  DepositsConnection:
+    model: code.vegaprotocol.io/protos/data-node/api/v2.DepositsConnection
+  WithdrawalEdge:
+    model: code.vegaprotocol.io/protos/data-node/api/v2.WithdrawalEdge
+  WithdrawalsConnection:
+    model: code.vegaprotocol.io/protos/data-node/api/v2.WithdrawalsConnection
+  AssetEdge:
+    model: code.vegaprotocol.io/protos/data-node/api/v2.AssetEdge
+  AssetsConnection:
+    model: code.vegaprotocol.io/protos/data-node/api/v2.AssetsConnection
+  OracleSpecEdge:
+    model: code.vegaprotocol.io/protos/data-node/api/v2.OracleSpecEdge
+  OracleSpecsConnection:
+    model: code.vegaprotocol.io/protos/data-node/api/v2.OracleSpecsConnection
+  OracleDataEdge:
+    model: code.vegaprotocol.io/protos/data-node/api/v2.OracleDataEdge
+  OracleDataConnection:
+    model: code.vegaprotocol.io/protos/data-node/api/v2.OracleDataConnection
+  LiquidityProvisionsEdge:
+    model: code.vegaprotocol.io/protos/data-node/api/v2.LiquidityProvisionsEdge
+  LiquidityProvisionsConnection:
+    model: code.vegaprotocol.io/protos/data-node/api/v2.LiquidityProvisionsConnection
+  TransferEdge:
+    model: code.vegaprotocol.io/protos/data-node/api/v2.TransferEdge
+  TransferConnection:
+    model: code.vegaprotocol.io/protos/data-node/api/v2.TransferConnection

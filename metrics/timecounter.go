@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package metrics
 
 import (
@@ -42,6 +54,14 @@ func (tc *TimeCounter) EventTimeCounterAdd() {
 		return
 	}
 	eventHandlingTime.WithLabelValues(tc.labelValues...).Add(time.Since(tc.start).Seconds())
+}
+
+func (tc *TimeCounter) FlushTimeCounterAdd() {
+	// Check that the metric has been set up. (Testing does not use metrics.)
+	if flushHandlingTime == nil {
+		return
+	}
+	flushHandlingTime.WithLabelValues(tc.labelValues...).Add(time.Since(tc.start).Seconds())
 }
 
 func (tc *TimeCounter) SQLQueryTimeCounterAdd() {

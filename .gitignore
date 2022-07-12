@@ -17,6 +17,8 @@ tmp/
 *.log
 vendor/
 .vscode/
+.VSCodeCounter/
 proto/**.orig
 *.pb.go-re
 gomock_reflect_*
+__debug_bin

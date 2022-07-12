@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package sqlstore
 
 import (
@@ -6,6 +18,7 @@ import (
 
 	"code.vegaprotocol.io/data-node/entities"
 	"code.vegaprotocol.io/data-node/metrics"
+	v2 "code.vegaprotocol.io/protos/data-node/api/v2"
 	"github.com/georgysavva/scany/pgxscan"
 )
 
@@ -57,9 +70,9 @@ func (rs *Rewards) GetByCursor(ctx context.Context,
 	}
 
 	sorting, cmp, cursor := extractPaginationInfo(pagination)
-	var rc entities.RewardCursor
+	rc := &entities.RewardCursor{}
 	if cursor != "" {
-		rc, err = entities.ParseRewardCursor(cursor)
+		err := rc.Parse(cursor)
 		if err != nil {
 			return nil, entities.PageInfo{}, fmt.Errorf("parsing cursor: %w", err)
 		}
@@ -77,7 +90,7 @@ func (rs *Rewards) GetByCursor(ctx context.Context,
 		return nil, entities.PageInfo{}, fmt.Errorf("querying rewards: %w", err)
 	}
 
-	pagedData, pageInfo := entities.PageEntities(rewards, pagination)
+	pagedData, pageInfo := entities.PageEntities[*v2.RewardEdge](rewards, pagination)
 	return pagedData, pageInfo, nil
 }
 

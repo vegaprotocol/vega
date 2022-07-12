@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package sqlsubscribers_test
 
 // No race condition checks on these tests, the channels are buffered to avoid actual issues
@@ -9,7 +21,6 @@ import (
 
 	"code.vegaprotocol.io/data-node/entities"
 	"code.vegaprotocol.io/data-node/logging"
-	"code.vegaprotocol.io/data-node/plugins"
 	"code.vegaprotocol.io/data-node/sqlsubscribers"
 	"code.vegaprotocol.io/data-node/sqlsubscribers/mocks"
 	"code.vegaprotocol.io/vega/events"
@@ -26,12 +37,26 @@ type expect struct {
 	UnrealisedPNL     num.Decimal
 }
 
+type positionEventBase interface {
+	events.Event
+	PartyID() string
+	MarketID() string
+	Timestamp() int64
+}
+
+type positionSettlement interface {
+	positionEventBase
+	Price() *num.Uint
+	PositionFactor() num.Decimal
+	Trades() []events.TradeSettlement
+}
+
 func TestPositionSpecSuite(t *testing.T) {
 	market := "market-id"
 	ctx := context.Background()
 	testcases := []struct {
 		run    string
-		pos    plugins.SPE // TODO
+		pos    positionSettlement
 		expect expect
 	}{
 		{

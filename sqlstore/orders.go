@@ -1,14 +1,26 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package sqlstore
 
 import (
 	"context"
 	"errors"
 	"fmt"
-	"time"
 
 	"code.vegaprotocol.io/data-node/entities"
 	"code.vegaprotocol.io/data-node/logging"
 	"code.vegaprotocol.io/data-node/metrics"
+	v2 "code.vegaprotocol.io/protos/data-node/api/v2"
 	"github.com/georgysavva/scany/pgxscan"
 )
 
@@ -142,25 +154,22 @@ func (os *Orders) queryOrders(ctx context.Context, query string, args []interfac
 func (os *Orders) queryOrdersWithCursorPagination(ctx context.Context, query string, args []interface{},
 	pagination entities.CursorPagination,
 ) ([]entities.Order, entities.PageInfo, error) {
-	var (
-		err      error
-		vegaTime time.Time
-		seqNum   uint64
-	)
+	var err error
 
 	sorting, cmp, cursor := extractPaginationInfo(pagination)
 	var builders CursorQueryParameters
 
+	oc := &entities.OrderCursor{}
 	if cursor != "" {
-		vegaTime, seqNum, err = entities.ParseOrderCursor(cursor)
+		err = oc.Parse(cursor)
 		if err != nil {
 			return nil, entities.PageInfo{}, fmt.Errorf("parsing cursor: %w", err)
 		}
 	}
 
 	builders = []CursorQueryParameter{
-		NewCursorQueryParameter("vega_time", sorting, cmp, vegaTime),
-		NewCursorQueryParameter("seq_num", sorting, cmp, seqNum),
+		NewCursorQueryParameter("vega_time", sorting, cmp, oc.VegaTime),
+		NewCursorQueryParameter("seq_num", sorting, cmp, oc.SeqNum),
 	}
 
 	query, args = orderAndPaginateWithCursor(query, pagination, builders, args...)
@@ -172,7 +181,7 @@ func (os *Orders) queryOrdersWithCursorPagination(ctx context.Context, query str
 		return nil, pageInfo, fmt.Errorf("querying orders: %w", err)
 	}
 
-	pagedOrders, pageInfo = entities.PageEntities(orders, pagination)
+	pagedOrders, pageInfo = entities.PageEntities[*v2.OrderEdge](orders, pagination)
 	return pagedOrders, pageInfo, nil
 }
 
@@ -214,7 +223,7 @@ func (os *Orders) GetByPartyPaged(ctx context.Context, partyIDStr string, p enti
 	partyID := entities.NewPartyID(partyIDStr)
 
 	query := fmt.Sprintf(`SELECT %s from orders_current WHERE party_id=$1`, sqlOrderColumns)
-	defer metrics.StartSQLQuery("Orders", "GetByPartyPaged")()
+	defer metrics.StartSQLQuery("Orders", "GetByPartyConnection")()
 
 	return os.queryOrdersWithCursorPagination(ctx, query, []interface{}{partyID}, p)
 }

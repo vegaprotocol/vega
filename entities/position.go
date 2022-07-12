@@ -1,7 +1,23 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package entities
 
 import (
+	"encoding/json"
+	"fmt"
 	"time"
+
+	v2 "code.vegaprotocol.io/protos/data-node/api/v2"
 
 	"code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/events"
@@ -101,6 +117,13 @@ func (p *Position) ToProto() *vega.Position {
 	}
 }
 
+func (p Position) ToProtoEdge(_ ...any) (*v2.PositionEdge, error) {
+	return &v2.PositionEdge{
+		Node:   p.ToProto(),
+		Cursor: p.Cursor().Encode(),
+	}, nil
+}
+
 func (p *Position) AverageEntryPriceUint() *num.Uint {
 	uint, overflow := num.UintFromDecimal(p.AverageEntryPrice)
 	if overflow {
@@ -158,6 +181,16 @@ type PositionKey struct {
 	VegaTime time.Time
 }
 
+func (p Position) Cursor() *Cursor {
+	pc := PositionCursor{
+		MarketID: p.MarketID.String(),
+		PartyID:  p.PartyID.String(),
+		VegaTime: p.VegaTime,
+	}
+
+	return NewCursor(pc.String())
+}
+
 func (p Position) Key() PositionKey {
 	return PositionKey{p.MarketID, p.PartyID, p.VegaTime}
 }
@@ -184,4 +217,26 @@ func (p Position) Equal(q Position) bool {
 		q.Loss.Equal(q.Loss) &&
 		q.Adjustment.Equal(q.Adjustment) &&
 		q.VegaTime.Equal(q.VegaTime)
+}
+
+type PositionCursor struct {
+	PartyID  string    `json:"party_id"`
+	MarketID string    `json:"market_id"`
+	VegaTime time.Time `json:"vega_time"`
+}
+
+func (rc PositionCursor) String() string {
+	bs, err := json.Marshal(rc)
+	if err != nil {
+		// This should never happen.
+		panic(fmt.Errorf("could not marshal order cursor: %w", err))
+	}
+	return string(bs)
+}
+
+func (rc *PositionCursor) Parse(cursorString string) error {
+	if cursorString == "" {
+		return nil
+	}
+	return json.Unmarshal([]byte(cursorString), rc)
 }

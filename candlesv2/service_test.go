@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package candlesv2_test
 
 import (
@@ -26,7 +38,7 @@ func TestCandleSubscribe(t *testing.T) {
 	expectedCandle := createCandle(time.Now(), time.Now(), 1, 2, 2, 1, 10)
 
 	store.EXPECT().GetCandleDataForTimeSpan(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
-		Return([]entities.Candle{expectedCandle}, nil).AnyTimes()
+		Return([]entities.Candle{expectedCandle}, entities.PageInfo{}, nil).AnyTimes()
 
 	svc := candlesv2.NewService(context.Background(), logging.NewTestLogger(), candlesv2.NewDefaultConfig(), store)
 
@@ -78,6 +90,6 @@ type testStore struct {
 	candles chan []entities.Candle
 }
 
-func (t *testStore) GetCandleDataForTimeSpan(ctx context.Context, candleId string, from *time.Time, to *time.Time, p entities.OffsetPagination) ([]entities.Candle, error) {
-	return <-t.candles, nil
+func (t *testStore) GetCandleDataForTimeSpan(ctx context.Context, candleId string, from *time.Time, to *time.Time, p entities.CursorPagination) ([]entities.Candle, entities.PageInfo, error) {
+	return <-t.candles, entities.PageInfo{}, nil
 }

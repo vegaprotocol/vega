@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package gql
 
 import (
@@ -8,6 +20,22 @@ import (
 	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
 	oraclesv1 "code.vegaprotocol.io/protos/vega/oracles/v1"
 )
+
+func convertAssetStatusFromProto(s types.Asset_Status) (AssetStatus, error) {
+	switch s {
+	case types.Asset_STATUS_PROPOSED:
+		return AssetStatusProposed, nil
+	case types.Asset_STATUS_REJECTED:
+		return AssetStatusRejected, nil
+	case types.Asset_STATUS_PENDING_LISTING:
+		return AssetStatusPendingListing, nil
+	case types.Asset_STATUS_ENABLED:
+		return AssetStatusEnabled, nil
+	default:
+		err := fmt.Errorf("failed to convert AssetStatus from Proto to GraphQL: %v", s)
+		return AssetStatus(""), err
+	}
+}
 
 func convertTransferStatusFromProto(x eventspb.Transfer_Status) (TransferStatus, error) {
 	switch x {
@@ -298,6 +326,8 @@ func convertMarketTradingModeFromProto(ms types.Market_TradingMode) (MarketTradi
 		return MarketTradingModeMonitoringAuction, nil
 	case types.Market_TRADING_MODE_CONTINUOUS:
 		return MarketTradingModeContinuous, nil
+	case types.Market_TRADING_MODE_NO_TRADING:
+		return MarketTradingModeNoTrading, nil
 	default:
 		err := fmt.Errorf("failed to convert MarketTradingMode from Proto to GraphQL: %v", ms)
 		return MarketTradingModeContinuous, err
@@ -459,6 +489,14 @@ func convertProposalRejectionReasonFromProto(x types.ProposalError) (ProposalRej
 		return ProposalRejectionReasonParticipationThresholdNotReached, nil
 	case types.ProposalError_PROPOSAL_ERROR_INVALID_ASSET_DETAILS:
 		return ProposalRejectionReasonInvalidAssetDetails, nil
+	case types.ProposalError_PROPOSAL_ERROR_TOO_MANY_PRICE_MONITORING_TRIGGERS:
+		return ProposalRejectionReasonTooManyPriceMonitoringTriggers, nil
+	case types.ProposalError_PROPOSAL_ERROR_TOO_MANY_MARKET_DECIMAL_PLACES:
+		return ProposalRejectionReasonTooManyMarketDecimalPlaces, nil
+	case types.ProposalError_PROPOSAL_ERROR_INVALID_MARKET:
+		return ProposalRejectionReasonInvalidMarket, nil
+	case types.ProposalError_PROPOSAL_ERROR_INSUFFICIENT_EQUITY_LIKE_SHARE:
+		return ProposalRejectionReasonInsufficientEquityLikeShare, nil
 	default:
 		err := fmt.Errorf("failed to convert ProposalRejectionReason from Proto to GraphQL: %v", x)
 		return "", err
