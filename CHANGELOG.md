@@ -14,6 +14,7 @@
 - [5525](https://github.com/vegaprotocol/vega/pull/5525) - Release `vegawallet` from the core
 - [5524](https://github.com/vegaprotocol/vega/pull/5524) - Align `vegawallet` and core versions
 - [5524](https://github.com/vegaprotocol/vega/pull/5549) - Add endpoint for getting the network's `chain-id`
+- [5524](https://github.com/vegaprotocol/vega/pull/5552) - Handle tendermint demotion and `ersatz` slot reduction at the same time
 
 ### 🐛 Fixes
 - [5476](https://github.com/vegaprotocol/vega/issues/5476) - Include settlement price in snapshot
