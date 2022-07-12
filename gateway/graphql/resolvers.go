@@ -1568,7 +1568,6 @@ func (r *myPartyResolver) VotesConnection(ctx context.Context, party *types.Part
 		return nil, customErrorFromStatus(err)
 	}
 
-	totalCount := int(res.Votes.TotalCount)
 	edges := make([]*ProposalVoteEdge, 0, len(res.Votes.Edges))
 
 	for _, edge := range res.Votes.Edges {
@@ -1579,9 +1578,8 @@ func (r *myPartyResolver) VotesConnection(ctx context.Context, party *types.Part
 	}
 
 	connection := &ProposalVoteConnection{
-		TotalCount: &totalCount,
-		Edges:      edges,
-		PageInfo:   res.Votes.PageInfo,
+		Edges:    edges,
+		PageInfo: res.Votes.PageInfo,
 	}
 
 	return connection, nil

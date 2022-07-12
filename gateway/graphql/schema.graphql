@@ -3250,8 +3250,6 @@ type TradeEdge {
 }
 
 type TradeConnection {
-  "The total number of trades in this connection"
-  totalCount: Int!
   "The trade in this connection"
   edges: [TradeEdge!]!
   "The pagination information"
@@ -3264,8 +3262,6 @@ type PartyEdge {
 }
 
 type PartyConnection {
-  "The total number of parties in this connection"
-  totalCount: Int!
   "The parties in this connection"
   edges: [PartyEdge!]!
   "The pagination information"
@@ -3278,8 +3274,6 @@ type MarketEdge {
 }
 
 type MarketConnection {
-  "The total number of markets in this connection"
-  totalCount: Int!
   "The markets in this connection"
   edges: [MarketEdge!]!
   "The pagination information"
@@ -3292,8 +3286,6 @@ type OrderEdge {
 }
 
 type OrderConnection {
-  "The total number of orders in this connection"
-  totalCount: Int
   "The orders in this connection"
   edges: [OrderEdge!]
   "The pagination information"
@@ -3306,8 +3298,6 @@ type PositionEdge {
 }
 
 type PositionConnection {
-  "The total number of positions in this connection"
-  totalCount: Int
   "The positions in this connection"
   edges: [PositionEdge!]
   "The pagination information"
@@ -3320,8 +3310,6 @@ type VoteEdge {
 }
 
 type VoteConnection {
-  "The total number of votes in this connection"
-  totalCount: Int
   "The votes in this connection"
   edges: [VoteEdge!]
   "The pagination information"
@@ -3334,8 +3322,6 @@ type ProposalVoteEdge {
 }
 
 type ProposalVoteConnection {
-  "The total number of proposal votes in this connection"
-  totalCount: Int
   "The proposal votes in this connection"
   edges: [ProposalVoteEdge!]
   "The pagination information"
@@ -3348,8 +3334,6 @@ type MarginEdge {
 }
 
 type MarginConnection {
-  "The total number of margin levels in this connection"
-  totalCount: Int
   "The margin levels in this connection"
   edges: [MarginEdge!]
   "The pagination information"
@@ -3362,8 +3346,6 @@ type MarketDataEdge {
 }
 
 type MarketDataConnection {
-  "The total number of market data elements available with this connection"
-  totalCount: Int
   "The market data elements for the requested page"
   edges: [MarketDataEdge]
   "The pagination information"
@@ -3376,8 +3358,6 @@ type RewardEdge {
 }
 
 type RewardsConnection {
-  "The total number of reward data items available with this connection"
-  totalCount: Int
   "The rewards"
   edges: [RewardEdge]
   "The pagination information"
@@ -3413,8 +3393,6 @@ type CandleEdge {
 }
 
 type CandleDataConnection {
-  "The total number of candles available with this connection"
-  totalCount: Int
   "The candles"
   edges: [CandleEdge]
   "The pagination information"
@@ -3427,8 +3405,6 @@ type WithdrawalEdge {
 }
 
 type WithdrawalsConnection {
-  "The total number of withdrawals available with this connection"
-  totalCount: Int
   "The withdrawals"
   edges: [WithdrawalEdge]
   "The pagination information"
@@ -3441,8 +3417,6 @@ type DepositEdge {
 }
 
 type DepositsConnection {
-  "The total number of deposits available with this connection"
-  totalCount: Int
   "The deposits"
   edges: [DepositEdge]
   "The pagination information"
@@ -3455,8 +3429,6 @@ type AssetEdge {
 }
 
 type AssetsConnection {
-    "The total number of assets available with this connection"
-    totalCount: Int
     "The assets"
     edges: [AssetEdge]
     "The pagination information"
@@ -3471,8 +3443,6 @@ type OracleSpecEdge {
 }
 
 type OracleSpecsConnection {
-    "The total number of oracle specs available with this connection"
-    totalCount: Int!
     "The oracle specs"
     edges: [OracleSpecEdge]
     "The pagination information"
@@ -3487,8 +3457,6 @@ type OracleDataEdge {
 }
 
 type OracleDataConnection {
-    "The total number of oracle data items available with this connection"
-    totalCount: Int!
     "The oracle data"
     edges: [OracleDataEdge]
     "The pagination information"
@@ -3501,7 +3469,6 @@ type LiquidityProvisionsEdge {
 }
 
 type LiquidityProvisionsConnection {
-    totalCount: Int!
     edges: [LiquidityProvisionsEdge]
     pageInfo: PageInfo!
 }
@@ -3512,7 +3479,6 @@ type TransferEdge {
 }
 
 type TransferConnection {
-    totalCount: Int!
     edges: [TransferEdge]
     pageInfo: PageInfo!
 }

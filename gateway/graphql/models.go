@@ -314,8 +314,6 @@ type ProposalVote struct {
 }
 
 type ProposalVoteConnection struct {
-	// The total number of proposal votes in this connection
-	TotalCount *int `json:"totalCount"`
 	// The proposal votes in this connection
 	Edges []*ProposalVoteEdge `json:"edges"`
 	// The pagination information
