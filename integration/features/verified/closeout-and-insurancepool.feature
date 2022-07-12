@@ -5,7 +5,7 @@ Feature: Test closeout type 1: margin >= cost of closeout
     And the log normal risk model named "lognormal-risk-model-1":
       | risk aversion | tau  | mu | r     | sigma |
       | 0.001         | 0.01 | 0  | 0.0   | 1.2   |
-      # risk factor: 0.48787313795861700
+      # risk factor short: 0.48787313795861700
 
     And the margin calculator named "margin-calculator-1":
       | search factor | initial factor | release factor | 
@@ -13,7 +13,7 @@ Feature: Test closeout type 1: margin >= cost of closeout
 
     And the price monitoring updated every "1" seconds named "price-monitoring":
       | horizon | probability | auction extension |
-      | 100     | 0.99        | 3                 |
+      | 100000     | 0.9999999     | 3                 |
 
     And the markets:
       | id        | quote name | asset | risk model             | margin calculator   | auction duration | fees         | price monitoring | oracle config          |
@@ -38,46 +38,64 @@ Feature: Test closeout type 1: margin >= cost of closeout
     When the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
       | lp1 | aux1   | ETH/DEC19 | 20000             | 0.001 | buy  | BID              | 1          | 10     | submission |
-      | lp1 | aux1   | ETH/DEC19 | 20000             | 0.001 | sell | ASK              | 1          | 10     | submission |
-      | lp2 | aux2   | ETH/DEC19 | 20000             | 0.001 | buy  | MID              | 1          | 10     | submission |
-      | lp2 | aux2   | ETH/DEC19 | 20000             | 0.001 | sell | MID              | 1          | 10     | submission |
-
+      | lp1 | aux1   | ETH/DEC19 | 20000             | 0.001 | sell | ASK              | 1          | 10     | amendment |
+      | lp1 | aux1   | ETH/DEC19 | 20000             | 0.001 | buy  | MID              | 1          | 10     | amendment |
+      | lp1 | aux1   | ETH/DEC19 | 20000             | 0.001 | sell | MID              | 1          | 10     | amendment |
+    Given time is updated to "2020-10-16T00:00:00Z"
     # setup order book
     When the parties place the following orders:
       | party            | market id | side | volume | price | resulting trades | type       | tif     | reference       |
       | sellSideProvider | ETH/DEC19 | sell | 1000   | 150   | 0                | TYPE_LIMIT | TIF_GTC | sell-provider-1 |
-      | aux1             | ETH/DEC19 | sell | 1      | 150   | 0                | TYPE_LIMIT | TIF_GTC | aux-s-1         |
+      | aux1             | ETH/DEC19 | sell | 1      | 105   | 0                | TYPE_LIMIT | TIF_GTC | aux-s-1         |
       | aux1             | ETH/DEC19 | sell | 1      | 100   | 0                | TYPE_LIMIT | TIF_GTC | aux-s-2         |
       | aux2             | ETH/DEC19 | buy  | 1      | 100   | 0                | TYPE_LIMIT | TIF_GTC | aux-b-2         |
-      | buySideProvider  | ETH/DEC19 | buy  | 1000   | 80    | 0                | TYPE_LIMIT | TIF_GTC | buy-provider-1  |
-      | aux2             | ETH/DEC19 | buy  | 1      | 80    | 0                | TYPE_LIMIT | TIF_GTC | aux-b-1         | 
+      | buySideProvider  | ETH/DEC19 | buy  | 1000   | 95    | 0                | TYPE_LIMIT | TIF_GTC | buy-provider-1  |
+      | aux2             | ETH/DEC19 | buy  | 1      | 80    | 0                | TYPE_LIMIT | TIF_GTC | aux-b-1         |
+
+    Then time is updated to "2020-10-20T00:00:00Z" 
 
     And the market data for the market "ETH/DEC19" should be:
-      | mark price | trading mode                | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 0          |TRADING_MODE_OPENING_AUCTION | 100     | 500       | 1500      | 487          | 40000           | 0            |
+      | mark price | trading mode           | horizon | min bound | max bound | target stake | supplied stake | open interest |
+      | 100        |TRADING_MODE_CONTINUOUS | 100000  | 70        | 142       | 487          | 20000          | 1            |
 
-    And the trading mode should be "TRADING_MODE_OPENING_AUCTION" for the market "ETH/DEC19"
-
-    # party 1 place an order + we check margins
+    # party1 place an order 
     When the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | party1 | ETH/DEC19 | sell | 100    | 100   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
+
+    # party1 maintenance margin should be: ordersize*markprice*riskfactor = 100*100*0.48787313795861700=4879
+    And the parties should have the following margin levels:
+      | party   | market id  | maintenance | search | initial | release |
+      | party1  | ETH/DEC19  | 4879        | 9758   | 12197   | 14637   |
+    Then the parties should have the following account balances:
+      | party  | asset | market id | margin    | general  |
+      | party1 | USD   | ETH/DEC19 | 12197     | 17803    |
+  
+    # party1 has a position
+    When the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | party2 | ETH/DEC19 | buy  | 100    | 100   | 1                | TYPE_LIMIT | TIF_GTC | ref-1     |
+
+    And the order book should have the following volumes for market "ETH/DEC19":
+      | side | price | volume |
+       #original vol
+      | sell | 150   | 1000   |
+      #LP pegged vol
+      | sell | 115   | 401    |
+      #LP pegged vol
+      | sell | 110   | 265    |
+      #original vol
+      | sell | 105   | 1      | 
     
-    # all general acc balance goes to margin account for the order
-    Then "party1" should have general account balance of "5606" for asset "USD"  
+   # party1 maintenance margin should be: vol* slippage = vol * (ExitPrice-MarkPrice) = 100*((105+110*99)/100-100)=995
+    And the parties should have the following margin levels:
+      | party   | market id  | maintenance | search | initial | release |
+      | party1  | ETH/DEC19  | 5479        | 10958  | 13697   | 16437   |
+    Then the parties should have the following account balances:
+      | party  | asset | market id | margin    | general  |
+      | party1 | USD   | ETH/DEC19 | 12197     | 17803    |
     
-    # # then party2 places an order, this trades with party1 and we calculate the margins again
-    # When the parties place the following orders:
-    #   | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
-    #   | party2 | ETH/DEC19 | buy  | 100    | 100   | 1                | TYPE_LIMIT | TIF_GTC | ref-1     |
-    
-    # Then the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
-    # And the mark price should be "100" for the market "ETH/DEC19"
-    # And the parties should have the following account balances:
-    #   | party  | asset | market id | margin   | general  |
-    #   | party1 | USD   | ETH/DEC19 | 30000    |  0       |
-    
-    # Then the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
+
 
     # When the parties place the following orders:
     #   | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
