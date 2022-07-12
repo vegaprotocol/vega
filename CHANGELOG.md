@@ -12,7 +12,7 @@
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 ### 🐛 Fixes
-- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+- [5439](https://github.com/vegaprotocol/vega/issues/5439) - `vegawallet` returns 400 when transaction is blocked by spam
 
 ## 0.53.0
 

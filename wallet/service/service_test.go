@@ -17,12 +17,14 @@ import (
 	vgrand "code.vegaprotocol.io/shared/libs/rand"
 	"code.vegaprotocol.io/vega/wallet/crypto"
 	"code.vegaprotocol.io/vega/wallet/network"
+	"code.vegaprotocol.io/vega/wallet/node"
 	"code.vegaprotocol.io/vega/wallet/service"
 	"code.vegaprotocol.io/vega/wallet/service/mocks"
 	"code.vegaprotocol.io/vega/wallet/wallet"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/zap"
+	"google.golang.org/grpc/codes"
 )
 
 const (
@@ -97,6 +99,7 @@ func TestService(t *testing.T) {
 	t.Run("update metadata", testServiceUpdateMetaOK)
 	t.Run("update metadata invalid request", testServiceUpdateMetaFailInvalidRequest)
 	t.Run("Signing transaction succeeds", testAcceptSigningTransactionSucceeds)
+	t.Run("Signing transaction bad request", testAcceptSigningTransactionBadRequest)
 	t.Run("Checking transaction succeeds", testCheckTransactionSucceeds)
 	t.Run("Checking transaction with rejected transaction succeeds", testCheckTransactionWithRejectedTransactionSucceeds)
 	t.Run("Checking transaction with failed transaction fails", testCheckTransactionWithFailedTransactionFails)
@@ -825,6 +828,34 @@ func testAcceptSigningTransactionSucceeds(t *testing.T) {
 
 	statusCode, _ := serveHTTP(t, s, signTxRequest(t, payload, headers))
 	assert.Equal(t, http.StatusOK, statusCode)
+}
+
+func testAcceptSigningTransactionBadRequest(t *testing.T) {
+	s := getTestService(t, "manual")
+	defer s.ctrl.Finish()
+
+	// given
+	walletName := vgrand.RandomStr(5)
+	token := vgrand.RandomStr(5)
+	headers := authHeaders(t, token)
+	pubKey := vgrand.RandomStr(5)
+	payload := fmt.Sprintf(`{"pubKey": "%s", "orderCancellation": {}}`, pubKey)
+
+	// setup
+	s.auth.EXPECT().VerifyToken(token).Times(1).Return(walletName, nil)
+	s.handler.EXPECT().SignTx(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(&commandspb.Transaction{}, nil)
+	s.nodeForward.EXPECT().SendTx(gomock.Any(), gomock.Any(), api.SubmitTransactionRequest_TYPE_ASYNC, gomock.Any()).Times(1).
+		Return("", &node.StatusError{Code: codes.InvalidArgument})
+	s.nodeForward.EXPECT().LastBlockHeightAndHash(gomock.Any()).Times(1).Return(&api.LastBlockHeightResponse{
+		Height:              42,
+		Hash:                "0292041e2f0cf741894503fb3ead4cb817bca2375e543aa70f7c4d938157b5a6",
+		SpamPowDifficulty:   2,
+		SpamPowHashFunction: "sha3_24_rounds",
+	}, 0, nil)
+	// when
+
+	statusCode, _ := serveHTTP(t, s, signTxRequest(t, payload, headers))
+	assert.Equal(t, http.StatusBadRequest, statusCode)
 }
 
 func testDeclineSigningTransactionManuallySucceeds(t *testing.T) {

@@ -19,8 +19,10 @@ import (
 	vgrand "code.vegaprotocol.io/shared/libs/rand"
 	wcommands "code.vegaprotocol.io/vega/wallet/commands"
 	"code.vegaprotocol.io/vega/wallet/network"
+	"code.vegaprotocol.io/vega/wallet/node"
 	"code.vegaprotocol.io/vega/wallet/version"
 	"code.vegaprotocol.io/vega/wallet/wallet"
+	"google.golang.org/grpc/codes"
 
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/julienschmidt/httprouter"
@@ -864,7 +866,7 @@ func (s *Service) signTx(token string, w http.ResponseWriter, r *http.Request, _
 			Error:  err,
 			SentAt: sentAt,
 		})
-		s.writeInternalError(w, err)
+		s.writeTxError(w, err)
 		return
 	}
 
@@ -971,6 +973,18 @@ func (s *Service) writeForbiddenError(w http.ResponseWriter, e error) {
 
 func (s *Service) writeInternalError(w http.ResponseWriter, e error) {
 	s.writeError(w, newErrorResponse(e.Error()), http.StatusInternalServerError)
+}
+
+func (s *Service) writeTxError(w http.ResponseWriter, e error) {
+	code := http.StatusInternalServerError
+
+	if statusErr, ok := e.(*node.StatusError); ok {
+		if statusErr.Code == codes.InvalidArgument {
+			code = http.StatusBadRequest
+		}
+	}
+
+	s.writeError(w, newErrorResponse(e.Error()), code)
 }
 
 func (s *Service) writeError(w http.ResponseWriter, e error, status int) {
