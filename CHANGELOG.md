@@ -1,9 +1,20 @@
 # Changelog
 
-## Unreleased 0.53.0
+## Unreleased 0.54.0
 
 ### 🚨 Breaking changes
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+
+### 🗑️ Deprecation
+- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+
+### 🛠 Improvements
+- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+
+### 🐛 Fixes
+- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+
+## 0.53.0
 
 ### 🗑️ Deprecation
 - [5513](https://github.com/vegaprotocol/vega/issues/5513) - Remove all checkpoint restore command
@@ -14,6 +25,7 @@
 - [5525](https://github.com/vegaprotocol/vega/pull/5525) - Release `vegawallet` from the core
 - [5524](https://github.com/vegaprotocol/vega/pull/5524) - Align `vegawallet` and core versions
 - [5524](https://github.com/vegaprotocol/vega/pull/5549) - Add endpoint for getting the network's `chain-id`
+- [5524](https://github.com/vegaprotocol/vega/pull/5552) - Handle tendermint demotion and `ersatz` slot reduction at the same time
 
 ### 🐛 Fixes
 - [5476](https://github.com/vegaprotocol/vega/issues/5476) - Include settlement price in snapshot
