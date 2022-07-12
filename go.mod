@@ -3,9 +3,9 @@ module code.vegaprotocol.io/data-node
 go 1.18
 
 require (
-	code.vegaprotocol.io/protos v0.52.1-0.20220708161517-317a4875c958
+	code.vegaprotocol.io/protos v0.53.0
 	code.vegaprotocol.io/shared v0.0.0-20220614080106-5c97205b0d92
-	code.vegaprotocol.io/vega v0.52.1-0.20220707090659-0a9c645d2189
+	code.vegaprotocol.io/vega v0.53.0
 	github.com/99designs/gqlgen v0.16.0
 	github.com/cenkalti/backoff/v4 v4.1.2
 	github.com/dgraph-io/badger/v2 v2.2007.3
