@@ -40,7 +40,7 @@ Feature: Test closeout type 1: margin >= cost of closeout
       | lp1 | aux1   | ETH/DEC19 | 20000             | 0.001 | buy  | BID              | 1          | 10     | submission |
       | lp1 | aux1   | ETH/DEC19 | 20000             | 0.001 | sell | ASK              | 1          | 10     | amendment |
       | lp1 | aux1   | ETH/DEC19 | 20000             | 0.001 | buy  | MID              | 1          | 10     | amendment |
-      | lp1 | aux1   | ETH/DEC19 | 20000             | 0.001 | sell | MID              | 1          | 10     | amendment |
+      | lp1 | aux1   | ETH/DEC19 | 20000             | 0.001 | sell | MID              | 1          | 26     | amendment |
     Given time is updated to "2020-10-16T00:00:00Z"
     # setup order book
     When the parties place the following orders:
@@ -81,37 +81,34 @@ Feature: Test closeout type 1: margin >= cost of closeout
        #original vol
       | sell | 150   | 1000   |
       #LP pegged vol
+      | sell | 126   | 1323   |
+        #LP pegged vol
       | sell | 115   | 401    |
-      #LP pegged vol
-      | sell | 110   | 265    |
       #original vol
       | sell | 105   | 1      | 
+
+    Then the mark price should be "100" for the market "ETH/DEC19"  
     
-   # party1 maintenance margin should be: vol* slippage = vol * (ExitPrice-MarkPrice) = 100*((105+110*99)/100-100)=995
+   # party1 maintenance margin should be: position_vol* slippage = position_vol * (ExitPrice-MarkPrice) + vol * riskfactor * markprice= 100*((105+115*99)/100-100) + 100*0.48787313795861700*100=6369
     And the parties should have the following margin levels:
       | party   | market id  | maintenance | search | initial | release |
-      | party1  | ETH/DEC19  | 5479        | 10958  | 13697   | 16437   |
+      | party1  | ETH/DEC19  | 5779        | 11558  | 14447   | 17337   |
     Then the parties should have the following account balances:
       | party  | asset | market id | margin    | general  |
       | party1 | USD   | ETH/DEC19 | 12197     | 17803    |
     
-
-
-    # When the parties place the following orders:
-    #   | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
-    #   | party2 | ETH/DEC19 | buy  | 1      | 126   | 0                | TYPE_LIMIT | TIF_GTC | ref-1-xxx |
-    #   | party3 | ETH/DEC19 | sell | 1      | 126   | 0                | TYPE_LIMIT | TIF_GTC | ref-1-xxx |
-    # Then the mark price should be "126" for the market "ETH/DEC19"    
+    When the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | party2 | ETH/DEC19 | buy  | 500   | 126   | 3               | TYPE_LIMIT | TIF_GTC | ref-1-xxx |
+  
+    Then the mark price should be "126" for the market "ETH/DEC19"    
 
     # Then the parties should have the following account balances:
     #   | party            | asset | market id | margin    | general     |
     #   | party1           | USD   | ETH/DEC19 | 0         |  0          |
-    #   | party2           | USD   | ETH/DEC19 | 38900     |  49963700   |
-    #   | party3           | USD   | ETH/DEC19 | 600       |  49999400   |
-    #   | aux1             | USD   | ETH/DEC19 | 1324      |  999998650  |
-    #   | aux2             | USD   | ETH/DEC19 | 686       |  999999340  |
-    #   | sellSideProvider | USD   | ETH/DEC19 | 758400    |  999244000  |
-    #   | buySideProvider  | USD   | ETH/DEC19 | 540000    |  999460000  |
+      # | party2           | USD   | ETH/DEC19 | 38900     |  49963700   |
+      # | party3           | USD   | ETH/DEC19 | 600       |  49999400   |
+    
     
     # And the cumulated balance for all accounts should be worth "4100045000" 
     # And the insurance pool balance should be "25000" for the market "ETH/DEC19"   
