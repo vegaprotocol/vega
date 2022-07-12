@@ -103,12 +103,12 @@ func (r *myMarketResolver) Orders(ctx context.Context, market *types.Market,
 }
 
 func (r *myMarketResolver) OrdersConnection(ctx context.Context, market *types.Market, pagination *v2.Pagination) (*v2.OrderConnection, error) {
-	req := v2.GetOrdersByMarketConnectionRequest{
-		MarketId:   market.Id,
+	req := v2.ListOrdersRequest{
+		MarketId:   &market.Id,
 		Pagination: pagination,
 	}
 
-	res, err := r.tradingDataClientV2.GetOrdersByMarketConnection(ctx, &req)
+	res, err := r.tradingDataClientV2.ListOrders(ctx, &req)
 	if err != nil {
 		r.log.Error("tradingData client", logging.Error(err))
 		return nil, customErrorFromStatus(err)
