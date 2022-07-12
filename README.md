@@ -1,6 +1,6 @@
 # Data node
 
-Version 0.52.0
+Version 0.53.0
 
 A service exposing read only APIs built on top of [Vega](https://github.com/vegaprotocol/vega) platform.
 
@@ -69,15 +69,15 @@ We are developing using `PostgreSQL 14.2` and `Timescale 2.6` and _strongly reco
    Password = "vega"
    Database = "vega"
    UseTransactions = true
- 
+
 ```
 ### Persistence
 Currently the database is destroyed if it exists and recreated at data node start-up, though we expect this to change in the not too distant future once the schema has settled down and we add support for starting/stopping data nodes without replaying the entire chain.
 
-There are a few different ways you can get postgres & timescale up and running. 
+There are a few different ways you can get postgres & timescale up and running.
 
 ### Using docker
-This is probably the most straightforward and reliable way to get up and running. 
+This is probably the most straightforward and reliable way to get up and running.
 
 Timescale supply a docker image, so assuming you [already have](https://www.docker.com/get-started/) docker installed, it is a simple matter of:
 
@@ -117,7 +117,7 @@ As mentioned above, PostgreSQL is not an embedded database. However, the good fo
 This go package allows us to start a PostgreSQL server from the data-node. It does this by
 - Examining your system to figure out what platform/architecture it is
 - Downloading an appropriate PostgreSQL binary installation
-- Unpacking it to a temporary location 
+- Unpacking it to a temporary location
 - Configuring and launching Postgres as a child process of data-node
 
 embedded-postgres-go doesn't come with support for TimescaleDB so we forked it and built a set of our own binaries for a limited set of platforms which we [host on GitHub](https://github.com/vegaprotocol/embedded-postgres-binaries/releases/).
@@ -132,7 +132,7 @@ data-node postgres run
 
 Which will launch embedded postgres in it's own process or
 
-Or by setting 
+Or by setting
 ```json
 ​​[SQLStore]
   UseEmbedded = true

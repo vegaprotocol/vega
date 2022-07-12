@@ -1,12 +1,21 @@
 # Changelog
 
-## Unreleased (0.53.0)
+## Unreleased (0.54.0)
 
 ### 🚨 Breaking changes
 - [](https://github.com/vegaprotocol/data-node/issues/xxx) -
 
 ### 🗑️  Deprecation
 - [](https://github.com/vegaprotocol/data-node/issues/xxx) -
+
+### 🛠  Improvements
+- [781](https://github.com/vegaprotocol/data-node/issues/781) - Add a summary table of current balances
+- [791](https://github.com/vegaprotocol/data-node/issues/791) - `v2` orders `api`
+
+### 🐛 Fixes
+- [](https://github.com/vegaprotocol/data-node/issues/xxx) -
+
+## 0.53.0
 
 ### 🛠  Improvements
 - [572](https://github.com/vegaprotocol/data-node/issues/572) - Add cursor based pagination for votes requests
@@ -21,11 +30,10 @@
 - [744](https://github.com/vegaprotocol/data-node/issues/744) - Add command to launch embedded postgres `data-node postgres run`
 - [748](https://github.com/vegaprotocol/data-node/issues/748) - Add REST endpoint to list `OracleData`
 - [761](https://github.com/vegaprotocol/data-node/issues/761) - Delete all badger stores, `SQL` stores only from now
-- [566](https://github.com/vegaprotocol/data-node/issues/566) - Liquidity provision pagination 
+- [566](https://github.com/vegaprotocol/data-node/issues/566) - Liquidity provision pagination
 - [779](https://github.com/vegaprotocol/data-node/issues/779) - Ordering of paginated query results from newest to oldest
-- [573](https://github.com/vegaprotocol/data-node/issues/573) - Transfers pagination and addition of `v2` transfers `API` 
-- [781](https://github.com/vegaprotocol/data-node/issues/781) - Add a summary table of current balances 
-- [791](https://github.com/vegaprotocol/data-node/issues/791) - `v2` orders `api` 
+- [573](https://github.com/vegaprotocol/data-node/issues/573) - Transfers pagination and addition of `v2` transfers `API`
+- [781](https://github.com/vegaprotocol/data-node/issues/781) - Add a summary table of current balances
 
 ### 🐛 Fixes
 - [705](https://github.com/vegaprotocol/data-node/issues/705) - Market Depth returning incorrect book state
