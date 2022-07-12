@@ -17,6 +17,7 @@ import (
 	"testing"
 	"time"
 
+	"code.vegaprotocol.io/vega/events"
 	vegacontext "code.vegaprotocol.io/vega/libs/context"
 	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
 
@@ -1700,13 +1701,24 @@ func testPeggedOrderExpiring2(t *testing.T) {
 	assert.Equal(t, 2, tm.market.GetPeggedOrderCount())
 
 	// Move the time forward
-	orders, err := tm.market.RemoveExpiredOrders(ctx, afterexpire.UnixNano())
-	require.NotNil(t, orders)
-	assert.NoError(t, err)
-
-	// Check that we have no pegged orders
-	assert.Equal(t, 0, tm.market.GetParkedOrderCount())
-	assert.Equal(t, 0, tm.market.GetPeggedOrderCount())
+	tm.events = nil
+	tm.market.OnTick(ctx, afterexpire)
+	t.Run("3 orders expired", func(t *testing.T) {
+		// First collect all the orders events
+		orders := []*types.Order{}
+		for _, e := range tm.events {
+			switch evt := e.(type) {
+			case *events.Order:
+				if evt.Order().Status == types.OrderStatusExpired {
+					orders = append(orders, mustOrderFromProto(evt.Order()))
+				}
+			}
+		}
+		require.Len(t, orders, 3)
+		// Check that we have no pegged orders
+		assert.Equal(t, 0, tm.market.GetParkedOrderCount())
+		assert.Equal(t, 0, tm.market.GetPeggedOrderCount())
+	})
 }
 
 func testPeggedOrderOutputMessages(t *testing.T) {
@@ -2034,10 +2046,23 @@ func testPeggedOrderExpiring(t *testing.T) {
 	assert.Equal(t, len(expirations), tm.market.GetPeggedOrderCount())
 
 	ctx := vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
-	orders, err := tm.market.RemoveExpiredOrders(ctx, now.Add(25*time.Minute).UnixNano())
-	require.NoError(t, err)
-	assert.Equal(t, 2, len(orders))
-	assert.Equal(t, 1, tm.market.GetPeggedOrderCount(), "1 order should still be in the market")
+	tm.events = nil
+	tm.market.OnTick(ctx, now.Add(25*time.Minute))
+	t.Run("2 orders expired", func(t *testing.T) {
+		// First collect all the orders events
+		orders := []*types.Order{}
+		for _, e := range tm.events {
+			switch evt := e.(type) {
+			case *events.Order:
+				if evt.Order().Status == types.OrderStatusExpired {
+					orders = append(orders, mustOrderFromProto(evt.Order()))
+				}
+			}
+		}
+
+		assert.Equal(t, 2, len(orders))
+		assert.Equal(t, 1, tm.market.GetPeggedOrderCount(), "1 order should still be in the market")
+	})
 }
 
 func TestPeggedOrdersAmends(t *testing.T) {
@@ -2637,9 +2662,20 @@ func TestOrderBookSimple_CancelGTTOrderThenRunExpiration(t *testing.T) {
 	require.NotNil(t, cncl)
 	assert.Equal(t, 0, tm.market.GetPeggedExpiryOrderCount())
 
-	orders, err := tm.market.RemoveExpiredOrders(ctx, now.Add(10*time.Second).UnixNano())
-	require.NoError(t, err)
-	require.Len(t, orders, 0)
+	tm.market.OnTick(ctx, now.Add(10*time.Second))
+	t.Run("no orders expired", func(t *testing.T) {
+		// First collect all the orders events
+		orders := []*types.Order{}
+		for _, e := range tm.events {
+			switch evt := e.(type) {
+			case *events.Order:
+				if evt.Order().Status == types.OrderStatusExpired {
+					orders = append(orders, mustOrderFromProto(evt.Order()))
+				}
+			}
+		}
+		require.Len(t, orders, 0)
+	})
 	assert.Equal(t, 0, tm.market.GetPeggedExpiryOrderCount())
 }
 
@@ -2659,10 +2695,21 @@ func TestGTTExpiredNotFilled(t *testing.T) {
 	require.NotNil(t, o1conf)
 
 	// then remove expired, set 1 sec after order exp time.
-	orders, err := tm.market.RemoveExpiredOrders(ctx, now.Add(10*time.Second).UnixNano())
-	assert.NoError(t, err)
-	assert.Len(t, orders, 1)
-	assert.Equal(t, types.OrderStatusExpired, orders[0].Status)
+	tm.events = nil
+	tm.market.OnTick(ctx, now.Add(10*time.Second))
+	t.Run("1 order expired", func(t *testing.T) {
+		// First collect all the orders events
+		orders := []*types.Order{}
+		for _, e := range tm.events {
+			switch evt := e.(type) {
+			case *events.Order:
+				if evt.Order().Status == types.OrderStatusExpired {
+					orders = append(orders, mustOrderFromProto(evt.Order()))
+				}
+			}
+		}
+		assert.Len(t, orders, 1)
+	})
 }
 
 func TestGTTExpiredPartiallyFilled(t *testing.T) {
@@ -2729,11 +2776,21 @@ func TestGTTExpiredPartiallyFilled(t *testing.T) {
 	require.NotNil(t, o2conf)
 
 	// then remove expired, set 1 sec after order exp time.
-	orders, err := tm.market.RemoveExpiredOrders(ctx, now.Add(10*time.Second).UnixNano())
-	assert.NoError(t, err)
-	assert.Len(t, orders, 2)
-	assert.Equal(t, types.OrderStatusExpired, orders[0].Status)
-	assert.Equal(t, o1.ID, orders[0].ID)
+	tm.events = nil
+	tm.market.OnTick(ctx, now.Add(10*time.Second))
+	t.Run("2 orders expired", func(t *testing.T) {
+		// First collect all the orders events
+		orders := []*types.Order{}
+		for _, e := range tm.events {
+			switch evt := e.(type) {
+			case *events.Order:
+				if evt.Order().Status == types.OrderStatusExpired {
+					orders = append(orders, mustOrderFromProto(evt.Order()))
+				}
+			}
+		}
+		assert.Len(t, orders, 2)
+	})
 }
 
 func TestOrderBook_RemoveExpiredOrders(t *testing.T) {
@@ -2804,9 +2861,21 @@ func TestOrderBook_RemoveExpiredOrders(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, o10conf)
 
-	expired, err := tm.market.RemoveExpiredOrders(ctx, someTimeLater.UnixNano())
-	assert.NoError(t, err)
-	assert.Len(t, expired, 5)
+	tm.events = nil
+	tm.market.OnTick(ctx, someTimeLater)
+	t.Run("5 orders expired", func(t *testing.T) {
+		// First collect all the orders events
+		orders := []*types.Order{}
+		for _, e := range tm.events {
+			switch evt := e.(type) {
+			case *events.Order:
+				if evt.Order().Status == types.OrderStatusExpired {
+					orders = append(orders, mustOrderFromProto(evt.Order()))
+				}
+			}
+		}
+		require.Len(t, orders, 5)
+	})
 }
 
 func Test2965EnsureLPOrdersAreNotCancelleableWithCancelAll(t *testing.T) {
