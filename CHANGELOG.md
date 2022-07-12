@@ -1,9 +1,20 @@
 # Changelog
 
-## Unreleased 0.53.0
+## Unreleased 0.54.0
 
 ### 🚨 Breaking changes
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+
+### 🗑️ Deprecation
+- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+
+### 🛠 Improvements
+- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+
+### 🐛 Fixes
+- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+
+## 0.53.0
 
 ### 🗑️ Deprecation
 - [5513](https://github.com/vegaprotocol/vega/issues/5513) - Remove all checkpoint restore command
