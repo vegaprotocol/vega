@@ -39,6 +39,7 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
       | party0 | ETH   | 1000000000 |
       | party1 | ETH   | 100000000  |
       | party2 | ETH   | 100000000  |
+      | lpprov | ETH   | 1000000000 |
 
   Scenario: Assure minimum auction length is respected
     Given the following network parameters are set:

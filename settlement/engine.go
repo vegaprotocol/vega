@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package settlement
 
 import (
@@ -32,7 +44,12 @@ type MarketPosition interface {
 type Product interface {
 	Settle(entryPrice *num.Uint, assetDecimals uint32, netFractionalPosition num.Decimal) (amt *types.FinancialAmount, neg bool, err error)
 	GetAsset() string
-	SettlementPrice() (*num.Uint, error)
+}
+
+// TimeService.
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/time_service_mock.go -package mocks code.vegaprotocol.io/vega/settlement TimeService
+type TimeService interface {
+	GetTimeNow() time.Time
 }
 
 // Broker - the event bus broker, send events here.
@@ -50,17 +67,13 @@ type Engine struct {
 	pos            map[string]*pos
 	mu             *sync.Mutex
 	trades         map[string][]*pos
+	timeService    TimeService
 	broker         Broker
-	currentTime    time.Time
 	positionFactor num.Decimal
 }
 
-func (e *Engine) OnTick(t time.Time) {
-	e.currentTime = t
-}
-
 // New instantiates a new instance of the settlement engine.
-func New(log *logging.Logger, conf Config, product Product, market string, broker Broker, positionFactor num.Decimal) *Engine {
+func New(log *logging.Logger, conf Config, product Product, market string, timeService TimeService, broker Broker, positionFactor num.Decimal) *Engine {
 	// setup logger
 	log = log.Named(namedLogger)
 	log.SetLevel(conf.Level.Get())
@@ -73,6 +86,7 @@ func New(log *logging.Logger, conf Config, product Product, market string, broke
 		pos:            map[string]*pos{},
 		mu:             &sync.Mutex{},
 		trades:         map[string][]*pos{},
+		timeService:    timeService,
 		broker:         broker,
 		positionFactor: positionFactor,
 	}
@@ -279,7 +293,7 @@ func (e *Engine) SettleMTM(ctx context.Context, markPrice *num.Uint, positions [
 			tradeset = append(tradeset, t)
 		}
 		// create (and add position to buffer)
-		evts = append(evts, events.NewSettlePositionEvent(ctx, party, e.market, evt.Price(), tradeset, e.currentTime.UnixNano(), e.positionFactor))
+		evts = append(evts, events.NewSettlePositionEvent(ctx, party, e.market, evt.Price(), tradeset, e.timeService.GetTimeNow().UnixNano(), e.positionFactor))
 		// no changes in position, and the MTM price hasn't changed, we don't need to do anything
 		if !hasTraded && current.price.EQ(markPrice) {
 			// no changes in position and markPrice hasn't changed -> nothing needs to be marked
@@ -373,7 +387,7 @@ func (e *Engine) RemoveDistressed(ctx context.Context, evts []events.Margin) {
 	for _, v := range evts {
 		key := v.Party()
 		margin := num.Sum(v.MarginBalance(), v.GeneralBalance())
-		devts = append(devts, events.NewSettleDistressed(ctx, key, e.market, v.Price(), margin, e.currentTime.UnixNano()))
+		devts = append(devts, events.NewSettleDistressed(ctx, key, e.market, v.Price(), margin, e.timeService.GetTimeNow().UnixNano()))
 		delete(e.pos, key)
 		delete(e.trades, key)
 	}

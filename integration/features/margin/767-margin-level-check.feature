@@ -9,17 +9,23 @@ Feature: Regression test for issue 767
   Scenario: Traders place orders meeting the maintenance margin, but not the initial margin requirements, and can close out
     Given the parties deposit on asset's general account the following amount:
       | party  | asset | amount  |
-      | edd     | BTC   | 1000    |
-      | barney  | BTC   | 1000    |
+      | edd    | BTC   | 1000    |
+      | barney | BTC   | 1000    |
       | party1 | BTC   | 1000000 |
       | party2 | BTC   | 1000000 |
-      | aux     | BTC   | 100000  |
+      | aux    | BTC   | 100000  |
+      | lpprov | BTC   | 1000000 |
+
+    When the parties submit the following liquidity provision:
+      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
+      | lp1 | lpprov | ETH/DEC19 | 900000            | 0.1 | buy  | BID              | 50         | 100    | submission |
+      | lp1 | lpprov | ETH/DEC19 | 900000            | 0.1 | sell | ASK              | 50         | 100    | submission |
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     When the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     |
-      | aux    | ETH/DEC19 | buy  | 1      | 1     | 0                | TYPE_LIMIT | TIF_GTC |
-      | aux    | ETH/DEC19 | sell | 1      | 10001 | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux   | ETH/DEC19 | buy  | 1      | 1     | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux   | ETH/DEC19 | sell | 1      | 10001 | 0                | TYPE_LIMIT | TIF_GTC |
 
     # Trigger an auction to set the mark price
     When the parties place the following orders:
@@ -58,7 +64,7 @@ Feature: Regression test for issue 767
       | party | asset | market id | margin | general |
       | edd    | BTC   | ETH/DEC19 | 1000   | 0       |
       | barney | BTC   | ETH/DEC19 | 594    | 406     |
-    And the cumulated balance for all accounts should be worth "2102000"
+    And the cumulated balance for all accounts should be worth "3102000"
     When the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | edd    | ETH/DEC19 | buy  | 115    | 100   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
@@ -66,4 +72,4 @@ Feature: Regression test for issue 767
       | party | asset | market id | margin | general |
       | edd    | BTC   | ETH/DEC19 | 1000   | 0       |
       | barney | BTC   | ETH/DEC19 | 594    | 406     |
-    And the cumulated balance for all accounts should be worth "2102000"
+    And the cumulated balance for all accounts should be worth "3102000"

@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package netparams_test
 
 import (
@@ -6,9 +18,7 @@ import (
 	"testing"
 	"time"
 
-	tsmock "code.vegaprotocol.io/vega/netparams/mocks"
-
-	"code.vegaprotocol.io/vega/broker/mocks"
+	bmocks "code.vegaprotocol.io/vega/broker/mocks"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/netparams"
 	"code.vegaprotocol.io/vega/types/num"
@@ -21,13 +31,13 @@ import (
 type testNetParams struct {
 	*netparams.Store
 	ctrl   *gomock.Controller
-	broker *mocks.MockBroker
+	broker *bmocks.MockBroker
 }
 
 func getTestNetParams(t *testing.T) *testNetParams {
 	t.Helper()
 	ctrl := gomock.NewController(t)
-	broker := mocks.NewMockBroker(ctrl)
+	broker := bmocks.NewMockBroker(ctrl)
 	store := netparams.New(
 		logging.NewTestLogger(), netparams.NewDefaultConfig(), broker)
 
@@ -275,12 +285,6 @@ func testCheckpointNotificationsDelivered(t *testing.T) {
 	defer netp.ctrl.Finish()
 	ctx := context.Background()
 	netp.broker.EXPECT().Send(gomock.Any()).AnyTimes()
-	tm := tsmock.NewMockVegaTime(netp.ctrl)
-	var netpCb func(context.Context, time.Time)
-	tm.EXPECT().NotifyOnTick(gomock.Any()).Times(1).Do(func(cb func(context.Context, time.Time)) {
-		netpCb = cb
-	})
-	tm.NotifyOnTick(netp.OnChainTimeUpdate)
 
 	counter := 0
 	countNotificationsFunc := func(_ context.Context, minAmount num.Decimal) error {
@@ -298,7 +302,7 @@ func testCheckpointNotificationsDelivered(t *testing.T) {
 	err := netp.Update(ctx, netparams.DelegationMinAmount, "2.0")
 	assert.NoError(t, err)
 
-	netpCb(ctx, time.Now())
+	netp.OnTick(ctx, time.Now())
 	require.Equal(t, 1, counter)
 
 	cp, err := netp.Checkpoint()
@@ -308,13 +312,6 @@ func testCheckpointNotificationsDelivered(t *testing.T) {
 	defer loadNp.ctrl.Finish()
 	loadNp.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 	loadNp.broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
-
-	loadTm := tsmock.NewMockVegaTime(netp.ctrl)
-	var loadNetpCb func(context.Context, time.Time)
-	loadTm.EXPECT().NotifyOnTick(gomock.Any()).Times(1).Do(func(cb func(context.Context, time.Time)) {
-		loadNetpCb = cb
-	})
-	loadTm.NotifyOnTick(loadNp.OnChainTimeUpdate)
 
 	var loadMinAmount num.Decimal
 	loadCountNotificationsFunc := func(_ context.Context, minAmount num.Decimal) error {
@@ -328,7 +325,7 @@ func testCheckpointNotificationsDelivered(t *testing.T) {
 		},
 	)
 	loadNp.Load(ctx, cp)
-	loadNetpCb(ctx, time.Now())
+	loadNp.OnTick(ctx, time.Now())
 	require.Equal(t, "2", loadMinAmount.String())
 }
 

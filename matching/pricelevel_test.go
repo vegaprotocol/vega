@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package matching
 
 import (
@@ -82,11 +94,20 @@ func TestUncross(t *testing.T) {
 		TimeInForce:   types.OrderTimeInForceGTC,
 		CreatedAt:     0,
 	}
+
+	order, fakeTrades, err := l.fakeUncross(aggresiveOrder, true)
+	assert.NoError(t, err)
+	assert.Equal(t, uint64(0), order.Remaining)
+
 	filled, trades, impactedOrders, err := l.uncross(aggresiveOrder, true)
 	assert.Equal(t, true, filled)
 	assert.Equal(t, 1, len(trades))
 	assert.Equal(t, 1, len(impactedOrders))
 	assert.NoError(t, err)
+
+	for i, tr := range trades {
+		assert.Equal(t, tr, fakeTrades[i])
+	}
 }
 
 func TestUncrossDecimals(t *testing.T) {
@@ -119,6 +140,11 @@ func TestUncrossDecimals(t *testing.T) {
 		TimeInForce:   types.OrderTimeInForceGTC,
 		CreatedAt:     0,
 	}
+
+	order, fakeTrades, err := l.fakeUncross(aggresiveOrder, true)
+	assert.NoError(t, err)
+	assert.Equal(t, uint64(0), order.Remaining)
+
 	filled, trades, impactedOrders, err := l.uncross(aggresiveOrder, true)
 	assert.Equal(t, true, filled)
 	assert.Equal(t, 1, len(trades))
@@ -127,4 +153,8 @@ func TestUncrossDecimals(t *testing.T) {
 	// ensure the price fields are set correctly
 	assert.Equal(t, passiveOrder.OriginalPrice.String(), trades[0].MarketPrice.String())
 	assert.Equal(t, passiveOrder.Price.String(), trades[0].Price.String())
+
+	for i, tr := range trades {
+		assert.Equal(t, tr, fakeTrades[i])
+	}
 }

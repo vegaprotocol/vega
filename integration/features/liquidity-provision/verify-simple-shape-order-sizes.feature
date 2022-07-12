@@ -16,6 +16,7 @@ Feature: Verify the order size is correctly cumulated.
       | party2     | ETH   | 10000000     |
       | party-lp-1 | ETH   | 100000000000 |
       | party3     | ETH   | 1000000000   |
+      | lpprov     | ETH   | 1000000000   |
 
     # Trigger an auction to set the mark price
     When the parties place the following orders:
@@ -24,6 +25,10 @@ Feature: Verify the order size is correctly cumulated.
       | party2 | ETH/DEC19 | sell | 1      | 12000020 | 0                | TYPE_LIMIT | TIF_GTC | party2-1 |
       | party1 | ETH/DEC19 | buy  | 1      | 12000000 | 0                | TYPE_LIMIT | TIF_GFA | party1-2 |
       | party2 | ETH/DEC19 | sell | 1      | 12000000 | 0                | TYPE_LIMIT | TIF_GFA | party2-2 |
+    And the parties submit the following liquidity provision:
+      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
+      | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | buy  | BID              | 50         | 100    | submission |
+      | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | sell | ASK              | 50         | 100    | submission |
     Then the opening auction period ends for market "ETH/DEC19"
     And the mark price should be "12000000" for the market "ETH/DEC19"
 

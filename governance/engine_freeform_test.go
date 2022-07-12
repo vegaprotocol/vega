@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package governance_test
 
 import (
@@ -22,7 +34,7 @@ func testSubmittingFreeformProposalSucceeds(t *testing.T) {
 
 	// given
 	party := eng.newValidParty("a-valid-party", 123456789)
-	proposal := eng.newFreeformProposal(party.Id, time.Now())
+	proposal := eng.newFreeformProposal(party.Id, eng.tsvc.GetTimeNow())
 
 	// setup
 	eng.expectOpenProposalEvent(t, party.Id, proposal.ID)
@@ -41,7 +53,7 @@ func testFreeformProposalDoesNotWaitToEnact(t *testing.T) {
 
 	// when
 	proposer := vgrand.RandomStr(5)
-	proposal := eng.newFreeformProposal(proposer, time.Now())
+	proposal := eng.newFreeformProposal(proposer, eng.tsvc.GetTimeNow())
 
 	// setup
 	eng.ensureStakingAssetTotalSupply(t, 9)
@@ -83,7 +95,7 @@ func testFreeformProposalDoesNotWaitToEnact(t *testing.T) {
 	eng.expectTotalGovernanceTokenFromVoteEvents(t, "1", "7")
 
 	// when the proposal is closed, it is enacted immediately
-	toBeEnacted, _ := eng.OnChainTimeUpdate(context.Background(), afterClosing)
+	toBeEnacted, _ := eng.OnTick(context.Background(), afterClosing)
 
 	// then
 	require.Len(t, toBeEnacted, 1)

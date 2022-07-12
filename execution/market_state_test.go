@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package execution_test
 
 import (
@@ -14,6 +26,7 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestMarketStates(t *testing.T) {
@@ -143,6 +156,7 @@ func testCanMoveFromPendingToActiveState(t *testing.T) {
 	addAccountWithAmount(tm, "party2", 100000000)
 	addAccountWithAmount(tm, "party3", 100000000)
 	addAccountWithAmount(tm, "party4", 100000000)
+	addAccountWithAmount(tm, "lpprov", 100000000)
 	orders := []*types.Order{
 		getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "order1", types.SideBuy, "party1", 1, 5000),
 		getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "order2", types.SideSell, "party2", 1, 5000),
@@ -154,8 +168,24 @@ func testCanMoveFromPendingToActiveState(t *testing.T) {
 		assert.NotNil(t, conf)
 		assert.NoError(t, err)
 	}
+	lp := &types.LiquidityProvisionSubmission{
+		MarketID:         tm.market.GetID(),
+		CommitmentAmount: num.NewUint(15000),
+		Fee:              num.DecimalFromFloat(0.01),
+		Sells: []*types.LiquidityOrder{
+			newLiquidityOrder(types.PeggedReferenceBestAsk, 2, 10),
+			newLiquidityOrder(types.PeggedReferenceBestAsk, 1, 13),
+		},
+		Buys: []*types.LiquidityOrder{
+			newLiquidityOrder(types.PeggedReferenceBestBid, 1, 10),
+			newLiquidityOrder(types.PeggedReferenceMid, 15, 13),
+		},
+	}
+	require.NoError(t, tm.market.SubmitLiquidityProvision(context.Background(), lp, "lpprov", vgcrypto.RandomHash()))
 	// now move to after the opening auction time
-	tm.market.OnChainTimeUpdate(vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash()), now.Add(40*time.Second))
+	now = now.Add(40 * time.Second)
+	tm.now = now
+	tm.market.OnTick(vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash()), now)
 	assert.Equal(t, types.MarketStateActive, tm.market.State())
 }
 
@@ -177,6 +207,7 @@ func testCanPlaceOrderInActiveState(t *testing.T) {
 	addAccountWithAmount(tm, "party2", 100000000)
 	addAccountWithAmount(tm, "party3", 100000000)
 	addAccountWithAmount(tm, "party4", 100000000)
+	addAccountWithAmount(tm, "lpprov", 100000000)
 	orders := []*types.Order{
 		getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "order1", types.SideBuy, "party1", 1, 5000),
 		getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "order2", types.SideSell, "party2", 1, 5000),
@@ -188,8 +219,24 @@ func testCanPlaceOrderInActiveState(t *testing.T) {
 		assert.NotNil(t, conf)
 		assert.NoError(t, err)
 	}
+	lp := &types.LiquidityProvisionSubmission{
+		MarketID:         tm.market.GetID(),
+		CommitmentAmount: num.NewUint(15000),
+		Fee:              num.DecimalFromFloat(0.01),
+		Sells: []*types.LiquidityOrder{
+			newLiquidityOrder(types.PeggedReferenceBestAsk, 2, 10),
+			newLiquidityOrder(types.PeggedReferenceBestAsk, 1, 13),
+		},
+		Buys: []*types.LiquidityOrder{
+			newLiquidityOrder(types.PeggedReferenceBestBid, 1, 10),
+			newLiquidityOrder(types.PeggedReferenceMid, 15, 13),
+		},
+	}
+	require.NoError(t, tm.market.SubmitLiquidityProvision(context.Background(), lp, "lpprov", vgcrypto.RandomHash()))
 	// now move to after the opening auction time
-	tm.market.OnChainTimeUpdate(vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash()), now.Add(40*time.Second))
+	now = now.Add(40 * time.Second)
+	tm.now = now
+	tm.market.OnTick(vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash()), now)
 	assert.Equal(t, types.MarketStateActive, tm.market.State())
 
 	addAccountWithAmount(tm, "someparty", 100000000)

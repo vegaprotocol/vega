@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package types
 
 import (
@@ -55,7 +67,7 @@ func SignerEventFromSignerAddedProto(
 		BlockNumber: blockNumber,
 		LogIndex:    logIndex,
 		TxHash:      txhash,
-		Address:     s.NewSigner,
+		Address:     crypto.EthereumChecksumAddress(s.NewSigner),
 		Nonce:       s.Nonce,
 		Kind:        SignerEventKindAdded,
 		BlockTime:   s.BlockTime,
@@ -70,7 +82,7 @@ func SignerEventFromEventProto(
 		BlockNumber: event.BlockNumber,
 		LogIndex:    event.LogIndex,
 		TxHash:      event.TxHash,
-		Address:     event.Signer,
+		Address:     crypto.EthereumChecksumAddress(event.Signer),
 		Nonce:       event.Nonce,
 		Kind:        event.Type,
 		BlockTime:   event.BlockTime,
@@ -113,7 +125,7 @@ func SignerEventFromSignerRemovedProto(
 		BlockNumber: blockNumber,
 		LogIndex:    logIndex,
 		TxHash:      txhash,
-		Address:     s.OldSigner,
+		Address:     crypto.EthereumChecksumAddress(s.OldSigner),
 		Nonce:       s.Nonce,
 		Kind:        SignerEventKindRemoved,
 		BlockTime:   s.BlockTime,

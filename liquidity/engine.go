@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package liquidity
 
 import (
@@ -31,6 +43,12 @@ type Broker interface {
 	SendBatch(evts []events.Event)
 }
 
+// TimeService provide the time of the vega node using the tm time.
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/time_service_mock.go -package mocks code.vegaprotocol.io/vega/liquidity TimeService
+type TimeService interface {
+	GetTimeNow() time.Time
+}
+
 // RiskModel allows calculation of min/max price range and a probability of trading.
 type RiskModel interface {
 	ProbabilityOfTrading(currentPrice, orderPrice num.Decimal, minPrice, maxPrice num.Decimal, yFrac num.Decimal, isBid, applyMinMax bool) num.Decimal
@@ -62,10 +80,10 @@ type RepricePeggedOrder func(
 type Engine struct {
 	marketID       string
 	log            *logging.Logger
+	timeService    TimeService
 	broker         Broker
 	suppliedEngine *supplied.Engine
 
-	currentTime             time.Time
 	stakeToObligationFactor num.Decimal
 
 	// state
@@ -97,6 +115,7 @@ type Engine struct {
 // NewEngine returns a new Liquidity Engine.
 func NewEngine(config Config,
 	log *logging.Logger,
+	timeService TimeService,
 	broker Broker,
 	riskModel RiskModel,
 	priceMonitor PriceMonitor,
@@ -110,9 +129,10 @@ func NewEngine(config Config,
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
 	e := &Engine{
-		marketID: marketID,
-		log:      log,
-		broker:   broker,
+		marketID:    marketID,
+		log:         log,
+		timeService: timeService,
+		broker:      broker,
 		// tick size to be used by the supplied engine should actually be in asset decimal
 		suppliedEngine: supplied.NewEngine(riskModel, priceMonitor, asset, marketID, stateVarEngine, num.Zero().Mul(tickSize, priceFactor), log, positionFactor),
 
@@ -134,11 +154,6 @@ func NewEngine(config Config,
 
 func (e *Engine) SetGetStaticPricesFunc(f func() (num.Decimal, num.Decimal, error)) {
 	e.suppliedEngine.SetGetStaticPricesFunc(f)
-}
-
-// OnChainTimeUpdate updates the internal engine current time.
-func (e *Engine) OnChainTimeUpdate(_ context.Context, now time.Time) {
-	e.currentTime = now
 }
 
 func (e *Engine) OnMinProbabilityOfTradingLPOrdersUpdate(v num.Decimal) {
@@ -350,7 +365,7 @@ func (e *Engine) rejectLiquidityProvisionSubmission(ctx context.Context, lps *ty
 		MarketID:         lps.MarketID,
 		Party:            party,
 		Status:           types.LiquidityProvisionStatusRejected,
-		CreatedAt:        e.currentTime.UnixNano(),
+		CreatedAt:        e.timeService.GetTimeNow().UnixNano(),
 		CommitmentAmount: lps.CommitmentAmount.Clone(),
 		Reference:        lps.Reference,
 	}
@@ -393,7 +408,7 @@ func (e *Engine) SubmitLiquidityProvision(
 	}
 
 	var (
-		now = e.currentTime.UnixNano()
+		now = e.timeService.GetTimeNow().UnixNano()
 		lp  = &types.LiquidityProvision{
 			ID:        idgen.NextID(),
 			MarketID:  lps.MarketID,
@@ -683,7 +698,7 @@ func (e *Engine) buildOrder(side types.Side, price *num.Uint, partyID, marketID 
 		Reference:            ref,
 		LiquidityProvisionID: lpID,
 	}
-	return order.Create(e.currentTime)
+	return order.Create(e.timeService.GetTimeNow())
 }
 
 func (e *Engine) undeployOrdersFromShape(

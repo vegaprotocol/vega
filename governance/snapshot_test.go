@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package governance_test
 
 import (
@@ -32,7 +44,7 @@ func TestGovernanceSnapshotProposalReject(t *testing.T) {
 
 	// Submit a proposal
 	party := eng.newValidParty("a-valid-party", 123456789)
-	proposal := eng.newProposalForNewMarket(party.Id, time.Now())
+	proposal := eng.newProposalForNewMarket(party.Id, eng.tsvc.GetTimeNow())
 	eng.ensureAllAssetEnabled(t)
 	eng.expectOpenProposalEvent(t, party.Id, proposal.ID)
 
@@ -70,7 +82,7 @@ func TestGovernanceSnapshotProposalEnacted(t *testing.T) {
 
 	proposer := eng.newValidParty("proposer", 1)
 	voter1 := eng.newValidPartyTimes("voter-1", 7, 2)
-	proposal := eng.newProposalForNewMarket(proposer.Id, time.Now())
+	proposal := eng.newProposalForNewMarket(proposer.Id, eng.tsvc.GetTimeNow())
 
 	eng.ensureStakingAssetTotalSupply(t, 9)
 	eng.ensureAllAssetEnabled(t)
@@ -81,20 +93,32 @@ func TestGovernanceSnapshotProposalEnacted(t *testing.T) {
 
 	require.NoError(t, err)
 
+	require.True(t, eng.HasChanged(activeKey))
+	eng.GetState(activeKey) // we call get state to get change back to false
+
 	// vote for it
 	eng.expectVoteEvent(t, voter1.Id, proposal.ID)
 	err = eng.addYesVote(t, voter1.Id, proposal.ID)
 	require.NoError(t, err)
+
+	require.True(t, eng.HasChanged(activeKey))
+	eng.GetState(activeKey) // we call get state to get change back to false
 
 	// chain update
 	eng.expectPassedProposalEvent(t, proposal.ID)
 	eng.expectTotalGovernanceTokenFromVoteEvents(t, "1", "7")
 
 	afterClosing := time.Unix(proposal.Terms.ClosingTimestamp, 0).Add(time.Second)
-	eng.OnChainTimeUpdate(context.Background(), afterClosing)
+	eng.OnTick(context.Background(), afterClosing)
+
+	require.True(t, eng.HasChanged(activeKey))
+	eng.GetState(activeKey) // we call get state to get change back to false
 
 	afterEnactment := time.Unix(proposal.Terms.EnactmentTimestamp, 0).Add(time.Second)
-	eng.OnChainTimeUpdate(context.Background(), afterEnactment)
+	eng.OnTick(context.Background(), afterEnactment)
+
+	require.True(t, eng.HasChanged(activeKey))
+	eng.GetState(activeKey) // we call get state to get change back to false
 
 	// check snapshot hashes (should have no active proposals and one enacted proposal)
 	activeHash, _, err := eng.GetState(activeKey)
@@ -116,10 +140,10 @@ func TestGovernanceSnapshotNodeProposal(t *testing.T) {
 
 	// Submit a proposal
 	party := eng.newValidParty("a-valid-party", 123456789)
-	proposal := eng.newProposalForNewAsset(party.Id, time.Now())
+	proposal := eng.newProposalForNewAsset(party.Id, eng.tsvc.GetTimeNow())
 
 	eng.expectProposalWaitingForNodeVoteEvent(t, party.Id, proposal.ID)
-	eng.assets.EXPECT().NewAsset(gomock.Any(), gomock.Any()).Times(1)
+	eng.assets.EXPECT().NewAsset(gomock.Any(), gomock.Any(), gomock.Any()).Times(1)
 	eng.assets.EXPECT().Get(gomock.Any()).AnyTimes()
 	eng.witness.EXPECT().StartCheck(gomock.Any(), gomock.Any(), gomock.Any()).Times(1)
 
@@ -143,7 +167,7 @@ func TestGovernanceSnapshotNodeProposal(t *testing.T) {
 	snapEng := getTestEngine(t)
 	defer snapEng.ctrl.Finish()
 
-	snapEng.assets.EXPECT().NewAsset(gomock.Any(), gomock.Any()).Times(1)
+	snapEng.assets.EXPECT().NewAsset(gomock.Any(), gomock.Any(), gomock.Any()).Times(1)
 	snapEng.witness.EXPECT().RestoreResource(gomock.Any(), gomock.Any()).Times(1)
 
 	fmt.Printf("SNAP: %v\n", snap.String())
@@ -171,7 +195,7 @@ func TestGovernanceSnapshotRoundTrip(t *testing.T) {
 	require.Nil(t, err)
 
 	proposer := eng.newValidParty("proposer", 1)
-	proposal := eng.newProposalForNewMarket(proposer.Id, time.Now())
+	proposal := eng.newProposalForNewMarket(proposer.Id, eng.tsvc.GetTimeNow())
 	ctx := context.Background()
 
 	eng.ensureAllAssetEnabled(t)

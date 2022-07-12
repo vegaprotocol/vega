@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package oracles_test
 
 import (
@@ -9,9 +21,9 @@ import (
 	oraclespb "code.vegaprotocol.io/protos/vega/oracles/v1"
 	bmok "code.vegaprotocol.io/vega/broker/mocks"
 	"code.vegaprotocol.io/vega/events"
-	"code.vegaprotocol.io/vega/execution/mocks"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/oracles"
+	"code.vegaprotocol.io/vega/oracles/mocks"
 	"code.vegaprotocol.io/vega/types"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
@@ -19,6 +31,8 @@ import (
 )
 
 func TestOracleEngine(t *testing.T) {
+	t.Run("Oracle listens to given public keys succeeds", testOracleEngineListensToPubKeysSucceeds)
+	t.Run("Oracle listens to given public keys fails", testOracleEngineListensToPubKeysFails)
 	t.Run("Subscribing to oracle engine succeeds", testOracleEngineSubscribingSucceeds)
 	t.Run("Subscribing to oracle engine with without callback fails", testOracleEngineSubscribingWithoutCallbackFails)
 	t.Run("Broadcasting to matching data succeeds", testOracleEngineBroadcastingMatchingDataSucceeds)
@@ -26,6 +40,83 @@ func TestOracleEngine(t *testing.T) {
 	t.Run("Unsubscribing known ID from oracle engine succeeds", testOracleEngineUnsubscribingKnownIDSucceeds)
 	t.Run("Unsubscribing unknown ID from oracle engine panics", testOracleEngineUnsubscribingUnknownIDPanics)
 	t.Run("Updating current time succeeds", testOracleEngineUpdatingCurrentTimeSucceeds)
+}
+
+func testOracleEngineListensToPubKeysSucceeds(t *testing.T) {
+	// test conditions
+	ctx := context.Background()
+	currentTime := time.Now()
+	engine := newEngine(ctx, t, currentTime)
+
+	// test oracle engine with 1 subscriber and 1 key provided
+	btcEquals42 := spec(t, "BTC", oraclespb.Condition_OPERATOR_EQUALS, "42")
+	engine.broker.expectNewOracleSpecSubscription(currentTime, btcEquals42.spec.OriginalSpec)
+	_ = engine.Subscribe(ctx, btcEquals42.spec, btcEquals42.subscriber.Cb)
+
+	// test oracle data with single PubKey
+	data := oracles.OracleData{
+		PubKeys: []string{
+			"0xCAFED00D",
+		},
+		Data: map[string]string{
+			"my_key": "not an integer",
+		},
+	}
+
+	result := engine.ListensToPubKeys(data)
+	assert.True(t, result)
+
+	// test oracle engine with 2 subscribers and multiple keys provided for one of them
+	ethEquals42 := spec(t, "ETH", oraclespb.Condition_OPERATOR_LESS_THAN, "84", "0xCAFED00X", "0xCAFED00D", "0xBEARISH7", "0xBULLISH5")
+	engine.broker.expectNewOracleSpecSubscription(currentTime, ethEquals42.spec.OriginalSpec)
+	_ = engine.Subscribe(ctx, ethEquals42.spec, ethEquals42.subscriber.Cb)
+
+	data.PubKeys = append(data.PubKeys, []string{"0xBEARISH7", "0xBULLISH5"}...)
+	result = engine.ListensToPubKeys(data)
+	assert.True(t, result)
+
+	// test oracle data with 3 subscribers and multiple keys for some of them
+	btcGreater21 := spec(t, "BTC", oraclespb.Condition_OPERATOR_GREATER_THAN, "21", "0xCAFED00D", "0xBEARISH7", "0xBULLISH5", "0xMILK123", "OxMILK456")
+	engine.broker.expectNewOracleSpecSubscription(currentTime, btcGreater21.spec.OriginalSpec)
+	_ = engine.Subscribe(ctx, btcGreater21.spec, btcGreater21.subscriber.Cb)
+
+	data.PubKeys = append(data.PubKeys, "0xMILK123")
+	result = engine.ListensToPubKeys(data)
+	assert.True(t, result)
+}
+
+func testOracleEngineListensToPubKeysFails(t *testing.T) {
+	// test conditions
+	ctx := context.Background()
+	currentTime := time.Now()
+	engine := newEngine(ctx, t, currentTime)
+
+	// test oracle engine with single subscriber and wrong key
+	btcEquals42 := spec(t, "BTC", oraclespb.Condition_OPERATOR_EQUALS, "42", "0xWRONGKEY")
+	engine.broker.expectNewOracleSpecSubscription(currentTime, btcEquals42.spec.OriginalSpec)
+	_ = engine.Subscribe(ctx, btcEquals42.spec, btcEquals42.subscriber.Cb)
+
+	data := oracles.OracleData{
+		PubKeys: []string{
+			"0xCAFED00D",
+			"0xBEARISH17",
+		},
+		Data: map[string]string{
+			"my_key": "not an integer",
+		},
+	}
+
+	result := engine.ListensToPubKeys(data)
+	assert.False(t, result)
+
+	// test oracle engine with 2 subscribers and multiple missing keys
+	ethEquals42 := spec(t, "ETH", oraclespb.Condition_OPERATOR_LESS_THAN, "84", "0xBEARISH7", "0xBULLISH5")
+	engine.broker.expectNewOracleSpecSubscription(currentTime, ethEquals42.spec.OriginalSpec)
+	_ = engine.Subscribe(ctx, ethEquals42.spec, ethEquals42.subscriber.Cb)
+
+	data.PubKeys = append(data.PubKeys, []string{"0xMILK123", "OxMILK456"}...)
+	result = engine.ListensToPubKeys(data)
+	assert.False(t, result)
 }
 
 func testOracleEngineSubscribingSucceeds(t *testing.T) {
@@ -36,6 +127,7 @@ func testOracleEngineSubscribingSucceeds(t *testing.T) {
 	// setup
 	ctx := context.Background()
 	currentTime := time.Now()
+
 	engine := newEngine(ctx, t, currentTime)
 	engine.broker.expectNewOracleSpecSubscription(currentTime, btcEquals42.spec.OriginalSpec)
 	engine.broker.expectNewOracleSpecSubscription(currentTime, ethLess84.spec.OriginalSpec)
@@ -100,7 +192,6 @@ func testOracleEngineBroadcastingMatchingDataSucceeds(t *testing.T) {
 
 	// then
 	require.NoError(t, errB)
-	engine.UpdateCurrentTime(ctx, currentTime)
 	assert.Equal(t, &dataBTC42.data, btcEquals42.subscriber.ReceivedData)
 	assert.Equal(t, &dataBTC42.data, btcGreater21.subscriber.ReceivedData)
 	assert.Nil(t, ethEquals42.subscriber.ReceivedData)
@@ -126,7 +217,6 @@ func testOracleEngineBroadcastingNonMatchingDataSucceeds(t *testing.T) {
 
 	// then
 	require.NoError(t, errB)
-	engine.UpdateCurrentTime(ctx, currentTime)
 	assert.NotEqual(t, &dataBTC84.data, btcEquals42.subscriber.ReceivedData)
 }
 
@@ -206,36 +296,41 @@ func testOracleEngineUpdatingCurrentTimeSucceeds(t *testing.T) {
 	time30 := time.Unix(30, 0)
 	time60 := time.Unix(60, 0)
 	engine := newEngine(ctx, t, time30)
+	assert.Equal(t, time30, engine.ts.GetTimeNow())
 
-	// when
-	engine.UpdateCurrentTime(ctx, time60)
-
-	// then
-	assert.Equal(t, time60, engine.CurrentTime)
+	engine2 := newEngine(ctx, t, time60)
+	assert.Equal(t, time60, engine2.ts.GetTimeNow())
 }
 
 type testEngine struct {
 	*oracles.Engine
+	ts     *testTimeService
 	broker *testBroker
 }
 
-func newEngine(ctx context.Context, t *testing.T, currentTime time.Time) *testEngine {
+// newEngine returns new Oracle test engine, but with preset time, so we can test against its value.
+func newEngine(ctx context.Context, t *testing.T, tm time.Time) *testEngine {
 	t.Helper()
 	broker := newBroker(ctx, t)
+
 	ts := newTimeService(ctx, t)
+	ts.EXPECT().GetTimeNow().DoAndReturn(
+		func() time.Time {
+			return tm
+		}).AnyTimes()
 
-	ts.EXPECT().NotifyOnTick(gomock.Any()).Times(1)
-
-	return &testEngine{
+	te := &testEngine{
 		Engine: oracles.NewEngine(
 			logging.NewTestLogger(),
 			oracles.NewDefaultConfig(),
-			currentTime,
-			broker,
 			ts,
+			broker,
 		),
+		ts:     ts,
 		broker: broker,
 	}
+
+	return te
 }
 
 type dataBundle struct {
@@ -273,12 +368,15 @@ type specBundle struct {
 	subscriber dummySubscriber
 }
 
-func spec(t *testing.T, currency string, op oraclespb.Condition_Operator, price string) specBundle {
+func spec(t *testing.T, currency string, op oraclespb.Condition_Operator, price string, keys ...string) specBundle {
 	t.Helper()
-	typedOracleSpec := types.OracleSpecFromProto(oraclespb.NewOracleSpec(
-		[]string{
+	if len(keys) == 0 {
+		keys = []string{
 			"0xCAFED00D",
-		},
+		}
+	}
+	typedOracleSpec := types.OracleSpecFromProto(oraclespb.NewOracleSpec(
+		keys,
 		[]*oraclespb.Filter{
 			{
 				Key: &oraclespb.PropertyKey{

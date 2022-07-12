@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package execution
 
 import (
@@ -40,7 +52,6 @@ func (e *Engine) restoreMarket(ctx context.Context, em *types.ExecMarket) (*Mark
 	if len(marketConfig.ID) == 0 {
 		return nil, ErrNoMarketID
 	}
-	now := e.time.GetTimeNow()
 
 	// ensure the asset for this new market exists
 	asset, err := marketConfig.GetAsset()
@@ -78,7 +89,7 @@ func (e *Engine) restoreMarket(ctx context.Context, em *types.ExecMarket) (*Mark
 		e.Config.Liquidity,
 		e.collateral,
 		e.oracle,
-		now,
+		e.timeService,
 		e.broker,
 		e.stateVarEngine,
 		ad,
@@ -123,7 +134,7 @@ func (e *Engine) restoreMarketsStates(ctx context.Context, ems []*types.ExecMark
 }
 
 func (e *Engine) serialise() (snapshot []byte, providers []types.StateProvider, err error) {
-	if !e.changed() {
+	if !e.HasChanged("") {
 		return e.snapshotSerialised, e.newGeneratedProviders, nil
 	}
 
@@ -181,7 +192,8 @@ func (e *Engine) Stopped() bool {
 }
 
 func (e *Engine) HasChanged(k string) bool {
-	return e.changed()
+	return true
+	// return e.changed()
 }
 
 func (e *Engine) GetState(_ string) ([]byte, []types.StateProvider, error) {

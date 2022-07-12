@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 //lint:file-ignore ST1003 Ignore underscores in names, this is straight copied from the proto package to ease introducing the domain types
 
 package types
@@ -8,6 +20,7 @@ import (
 
 	vegapb "code.vegaprotocol.io/protos/vega"
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
+	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/types/num"
 )
 
@@ -114,7 +127,7 @@ func (x *Erc20WithdrawExt) IntoProto() *vegapb.Erc20WithdrawExt {
 
 func Erc20WithdrawExtFromProto(erc20 *vegapb.Erc20WithdrawExt) *Erc20WithdrawExt {
 	return &Erc20WithdrawExt{
-		ReceiverAddress: erc20.ReceiverAddress,
+		ReceiverAddress: crypto.EthereumChecksumAddress(erc20.ReceiverAddress),
 	}
 }
 
@@ -692,11 +705,14 @@ func (e ERC20EventAssetList) IntoProto() *vegapb.ERC20Event_AssetList {
 type ERC20AssetList struct {
 	// The Vega network internal identifier of the asset
 	VegaAssetID string
+	// ethereum address of the asset
+	AssetSource string
 }
 
 func NewERC20AssetListFromProto(p *vegapb.ERC20AssetList) *ERC20AssetList {
 	return &ERC20AssetList{
 		VegaAssetID: p.VegaAssetId,
+		AssetSource: p.AssetSource,
 	}
 }
 

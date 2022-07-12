@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package matching_test
 
 import (
@@ -3043,6 +3055,62 @@ func TestOrderBook_IndicativePriceAndVolume9(t *testing.T) {
 	}
 }
 
+// check behaviour consistent in the presence of wash trades.
+func TestOrderBook_IndicativePriceAndVolume10(t *testing.T) {
+	market := "testOrderbook"
+	book := getTestOrderBook(t, market)
+	defer book.Finish()
+
+	logger := logging.NewTestLogger()
+	defer logger.Sync()
+
+	// Switch to auction mode
+	book.ob.EnterAuction()
+
+	// Populate buy side
+	makeOrder(t, book, market, "BuyOrder01", types.SideBuy, 103, "party01", 10)
+	makeOrder(t, book, market, "BuyOrder02", types.SideBuy, 102, "party01", 9)
+	makeOrder(t, book, market, "BuyOrder03", types.SideBuy, 101, "party01", 8)
+	makeOrder(t, book, market, "BuyOrder04", types.SideBuy, 100, "party01", 7)
+
+	// Populate sell side
+	makeOrder(t, book, market, "SellOrder01", types.SideSell, 99, "party02", 1)
+	makeOrder(t, book, market, "SellOrder02", types.SideSell, 98, "party01", 1)
+	makeOrder(t, book, market, "SellOrder03", types.SideSell, 98, "party02", 1)
+	makeOrder(t, book, market, "SellOrder04", types.SideSell, 97, "party02", 3)
+	makeOrder(t, book, market, "SellOrder05", types.SideSell, 96, "party02", 4)
+
+	// Get indicative auction price and volume
+	price, volume, side := book.ob.GetIndicativePriceAndVolume()
+	assert.Equal(t, 101, int(price.Uint64()))
+	assert.Equal(t, 10, int(volume))
+	assert.Equal(t, types.SideBuy, side)
+	price = book.ob.GetIndicativePrice()
+	assert.Equal(t, 101, int(price.Uint64()))
+
+	// Get indicative trades
+	trades, err := book.ob.GetIndicativeTrades()
+	assert.NoError(t, err)
+	for _, x := range trades {
+		assert.Equal(t, price, x.Price)
+	}
+
+	// Leave auction and uncross the book
+	uncrossedOrders, cancels, err := book.ob.LeaveAuction(time.Now())
+	assert.Nil(t, err)
+	assert.Equal(t, len(uncrossedOrders), 1)
+	assert.Equal(t, len(cancels), 0)
+
+	nTrades := 0
+	for _, o := range uncrossedOrders {
+		for _, x := range o.Trades {
+			nTrades++
+			assert.Equal(t, price, x.Price)
+		}
+	}
+	assert.Equal(t, len(trades), nTrades)
+}
+
 func TestOrderBook_UncrossTest1(t *testing.T) {
 	market := "testOrderbook"
 	book := getTestOrderBook(t, market)
@@ -3451,4 +3519,90 @@ func TestOrderBook_BidAndAskPresentAfterAuction(t *testing.T) {
 
 	require.Equal(t, false, book.ob.BidAndAskPresentAfterAuction())
 	require.Equal(t, false, book.ob.CanUncross())
+}
+
+func TestOrderBook_AuctionUncrossWashTrades2(t *testing.T) {
+	market := "testOrderbook"
+	book := getTestOrderBook(t, market)
+	defer book.Finish()
+
+	logger := logging.NewTestLogger()
+	defer logger.Sync()
+
+	// Switch to auction mode
+	book.ob.EnterAuction()
+
+	tt_0_0 := getOrder(t, book, market, "tt_0_0", types.SideBuy, 90, "tt_0", 1000)
+	_, err := book.ob.SubmitOrder(tt_0_0)
+	require.NoError(t, err)
+	tt_0_1 := getOrder(t, book, market, "tt_0_1", types.SideSell, 200, "tt_0", 1000)
+	_, err = book.ob.SubmitOrder(tt_0_1)
+	require.NoError(t, err)
+
+	tt_1_0 := getOrder(t, book, market, "tt_1_0", types.SideSell, 110, "tt_1", 50)
+	_, err = book.ob.SubmitOrder(tt_1_0)
+	require.NoError(t, err)
+	tt_2_0 := getOrder(t, book, market, "tt_2_0", types.SideBuy, 110, "tt_2", 20)
+	_, err = book.ob.SubmitOrder(tt_2_0)
+	require.NoError(t, err)
+	tt_3_0 := getOrder(t, book, market, "tt_3_0", types.SideBuy, 110, "tt_3", 30)
+	_, err = book.ob.SubmitOrder(tt_3_0)
+	require.NoError(t, err)
+
+	indicativeTrades, err := book.ob.GetIndicativeTrades()
+	require.NoError(t, err)
+	require.Equal(t, 2, len(indicativeTrades))
+
+	require.Equal(t, tt_1_0.Party, indicativeTrades[0].Seller)
+	require.Equal(t, tt_2_0.Party, indicativeTrades[0].Buyer)
+	require.Equal(t, tt_2_0.Size, indicativeTrades[0].Size)
+	require.Equal(t, tt_2_0.Price, indicativeTrades[0].Price)
+
+	require.Equal(t, tt_1_0.Party, indicativeTrades[1].Seller)
+	require.Equal(t, tt_3_0.Party, indicativeTrades[1].Buyer)
+	require.Equal(t, tt_3_0.Size, indicativeTrades[1].Size)
+	require.Equal(t, tt_3_0.Price, indicativeTrades[1].Price)
+
+	// Add wash trades
+	tt_4_0 := getOrder(t, book, market, "tt_4_0", types.SideSell, 110, "tt_4", 40)
+	_, err = book.ob.SubmitOrder(tt_4_0)
+	require.NoError(t, err)
+	tt_4_1 := getOrder(t, book, market, "tt_4_1", types.SideBuy, 110, "tt_4", 40)
+	_, err = book.ob.SubmitOrder(tt_4_1)
+	require.NoError(t, err)
+
+	indicativeTrades, err = book.ob.GetIndicativeTrades()
+	require.NoError(t, err)
+	// Expecting one more indicative trade now
+	require.Equal(t, 3, len(indicativeTrades))
+
+	// The first two should stay as they were
+	require.Equal(t, tt_1_0.Party, indicativeTrades[0].Seller)
+	require.Equal(t, tt_2_0.Party, indicativeTrades[0].Buyer)
+	require.Equal(t, tt_2_0.Size, indicativeTrades[0].Size)
+	require.Equal(t, tt_2_0.Price, indicativeTrades[0].Price)
+
+	require.Equal(t, tt_1_0.Party, indicativeTrades[1].Seller)
+	require.Equal(t, tt_3_0.Party, indicativeTrades[1].Buyer)
+	require.Equal(t, tt_3_0.Size, indicativeTrades[1].Size)
+	require.Equal(t, tt_3_0.Price, indicativeTrades[1].Price)
+
+	// The third one should be the wash trade
+	require.Equal(t, tt_4_0.Party, indicativeTrades[2].Seller)
+	require.Equal(t, tt_4_1.Party, indicativeTrades[2].Buyer)
+	require.Equal(t, tt_4_0.Size, indicativeTrades[2].Size)
+	require.Equal(t, tt_4_0.Price, indicativeTrades[2].Price)
+
+	confs, ordersToCancel, err := book.ob.LeaveAuction(time.Now())
+	require.NoError(t, err)
+	require.Equal(t, 3, len(confs))
+	require.Equal(t, 0, len(ordersToCancel))
+
+	for i, c := range confs {
+		require.Equal(t, 1, len(c.Trades))
+		require.Equal(t, c.Trades[0].Buyer, indicativeTrades[i].Buyer)
+		require.Equal(t, c.Trades[0].Seller, indicativeTrades[i].Seller)
+		require.Equal(t, c.Trades[0].Size, indicativeTrades[i].Size)
+		require.Equal(t, c.Trades[0].Price, indicativeTrades[i].Price)
+	}
 }

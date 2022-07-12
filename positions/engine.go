@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package positions
 
 import (
@@ -318,6 +330,10 @@ func (e *Engine) GetOpenInterestGivenTrades(trades []*types.Trade) uint64 {
 	posLocal := make(map[string]int64)
 	var ok bool
 	for _, t := range trades {
+		if t.Seller == t.Buyer {
+			// ignore wash trade
+			continue
+		}
 		bPos, sPos := int64(0), int64(0)
 		if bPos, ok = posLocal[t.Buyer]; !ok {
 			if p, ok := e.positions[t.Buyer]; ok {

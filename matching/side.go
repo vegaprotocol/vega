@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package matching
 
 import (
@@ -399,6 +411,70 @@ func (s *OrderBookSide) fakeUncross(agg *types.Order, checkWashTrades bool) ([]*
 	}
 
 	return trades, err
+}
+
+// fakeUncrossAuction returns hypotehetical trades if the order book side were to be uncrossed with the agg orders supplied, wash trades are allowed.
+func (s *OrderBookSide) fakeUncrossAuction(orders []*types.Order) ([]*types.Trade, error) {
+	// in here we iterate from the end, as it's easier to remove the
+	// price levels from the back of the slice instead of from the front
+	// also it will allow us to reduce allocations
+	nOrders := len(orders)
+	if nOrders == 0 {
+		return []*types.Trade{}, nil
+	}
+
+	checkPrice := func(levelPrice *num.Uint, order *types.Order) bool {
+		if order.Side == types.SideBuy {
+			return levelPrice.GT(order.Price)
+		}
+		return levelPrice.LT(order.Price)
+	}
+
+	var (
+		ntrades []*types.Trade
+		iOrder  = 0
+		trades  []*types.Trade
+		lvl     *PriceLevel
+		err     error
+	)
+
+	fake := orders[iOrder].Clone()
+	for idx := len(s.levels) - 1; idx >= 0; idx-- {
+		// clone price level
+		lvl = clonePriceLevel(s.levels[idx])
+		for lvl.volume > 0 {
+			// not a market order && buy side price is too low => continue
+			if fake.Type != types.OrderTypeMarket && checkPrice(lvl.price, fake) {
+				continue
+			}
+
+			_, ntrades, _, err = lvl.uncross(fake, false)
+			if err != nil {
+				return nil, err
+			}
+			trades = append(trades, ntrades...)
+			if fake.Remaining == 0 {
+				iOrder++
+				if iOrder >= nOrders {
+					return trades, nil
+				}
+				fake = orders[iOrder].Clone()
+			}
+		}
+	}
+	return trades, nil
+}
+
+func clonePriceLevel(lvl *PriceLevel) *PriceLevel {
+	orders := make([]*types.Order, 0, len(lvl.orders))
+	for _, o := range lvl.orders {
+		orders = append(orders, o.Clone())
+	}
+	return &PriceLevel{
+		price:  lvl.price.Clone(),
+		orders: orders,
+		volume: lvl.volume,
+	}
 }
 
 // uncross returns trades after order book side gets uncrossed with the agg order supplied,

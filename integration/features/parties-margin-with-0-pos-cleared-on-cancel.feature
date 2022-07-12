@@ -35,6 +35,12 @@ Feature: Close potential positions
       | party3           | USD   | 30000      |
       | aux1             | USD   | 1000000000 |
       | aux2             | USD   | 1000000000 |
+      | lpprov           | USD   | 1000000000 |
+
+    When the parties submit the following liquidity provision:
+      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
+      | lp1 | lpprov | ETH/DEC19 | 90000             | 0.1 | buy  | BID              | 50         | 100    | submission |
+      | lp1 | lpprov | ETH/DEC19 | 90000             | 0.1 | sell | ASK              | 50         | 100    | submission |
      #And the cumulated balance for all accounts should be worth "4050075000"
 # setup order book
     When the parties place the following orders:

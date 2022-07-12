@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package validators_test
 
 import (
@@ -35,7 +47,6 @@ func getTestWitness(t *testing.T) *testWitness {
 
 	now := time.Now()
 	tsvc.EXPECT().GetTimeNow().Times(1).Return(now)
-	tsvc.EXPECT().NotifyOnTick(gomock.Any()).Times(1)
 	w := validators.NewWitness(
 		logging.NewTestLogger(), validators.NewDefaultConfig(), top, cmd, tsvc)
 	assert.NotNil(t, w)
@@ -58,8 +69,8 @@ func TestExtResCheck(t *testing.T) {
 	t.Run("add node vote - error note a validator", testNodeVoteNotAValidator)
 	t.Run("add node vote - error duplicate vote", testNodeVoteDuplicateVote)
 	t.Run("add node vote - OK", testNodeVoteOK)
-	t.Run("on chain time update validated asset", testOnChainTimeUpdate)
-	t.Run("on chain time update validated asset - non validator", testOnChainTimeUpdateNonValidator)
+	t.Run("on chain time update validated asset", testOnTick)
+	t.Run("on chain time update validated asset - non validator", testOnTickNonValidator)
 }
 
 func testStartErrorDuplicate(t *testing.T) {
@@ -202,7 +213,7 @@ func testNodeVoteDuplicateVote(t *testing.T) {
 	require.EqualError(t, err, validators.ErrDuplicateVoteFromNode.Error())
 }
 
-func testOnChainTimeUpdate(t *testing.T) {
+func testOnTick(t *testing.T) {
 	erc := getTestWitness(t)
 	defer erc.ctrl.Finish()
 	defer erc.Stop()
@@ -255,7 +266,7 @@ func testOnChainTimeUpdate(t *testing.T) {
 	<-ch
 }
 
-func testOnChainTimeUpdateNonValidator(t *testing.T) {
+func testOnTickNonValidator(t *testing.T) {
 	erc := getTestWitness(t)
 	defer erc.ctrl.Finish()
 	defer erc.Stop()

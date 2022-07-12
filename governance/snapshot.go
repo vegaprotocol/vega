@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package governance
 
 import (
@@ -146,16 +158,17 @@ func (e *Engine) Stopped() bool {
 }
 
 func (e *Engine) HasChanged(k string) bool {
-	switch k {
-	case activeKey:
-		return e.gss.changedActive
-	case enactedKey:
-		return e.gss.changedEnacted
-	case nodeValidationKey:
-		return e.gss.changedNodeValidation
-	default:
-		return false
-	}
+	// switch k {
+	// case activeKey:
+	// 	return e.gss.changedActive
+	// case enactedKey:
+	// 	return e.gss.changedEnacted
+	// case nodeValidationKey:
+	// 	return e.gss.changedNodeValidation
+	// default:
+	// 	return false
+	// }
+	return true
 }
 
 func (e *Engine) GetState(k string) ([]byte, []types.StateProvider, error) {
@@ -263,7 +276,7 @@ func (e *Engine) restoreEnactedProposals(ctx context.Context, enacted *types.Gov
 
 func (e *Engine) restoreNodeProposals(ctx context.Context, node *types.GovernanceNode, p *types.Payload) error {
 	for _, p := range node.Proposals {
-		e.nodeProposalValidation.restore(p)
+		e.nodeProposalValidation.restore(ctx, p)
 		e.broker.Send(events.NewProposalEvent(ctx, *p))
 	}
 	var err error

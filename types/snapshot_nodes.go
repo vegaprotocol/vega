@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package types
 
 import (
@@ -11,6 +23,7 @@ import (
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
 	snapshot "code.vegaprotocol.io/protos/vega/snapshot/v1"
+	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/types/num"
 )
 
@@ -294,6 +307,7 @@ type ExecMarket struct {
 	LongRiskFactor             num.Decimal
 	RiskFactorConsensusReached bool
 	FeeSplitter                *FeeSplitter
+	SettlementPrice            *num.Uint
 }
 
 type PriceMonitor struct {
@@ -2668,6 +2682,12 @@ func ExecMarketFromProto(em *snapshot.Market) *ExecMarket {
 	if len(em.LastMarketValueProxy) > 0 {
 		lastMVP, _ = num.DecimalFromString(em.LastMarketValueProxy)
 	}
+
+	var sp *num.Uint = nil
+	if em.SettlementPrice != "" {
+		sp, _ = num.UintFromString(em.SettlementPrice, 10)
+	}
+
 	ret := ExecMarket{
 		Market:                     MarketFromProto(em.Market),
 		PriceMonitor:               PriceMonitorFromProto(em.PriceMonitor),
@@ -2686,6 +2706,7 @@ func ExecMarketFromProto(em *snapshot.Market) *ExecMarket {
 		LongRiskFactor:             longRF,
 		RiskFactorConsensusReached: em.RiskFactorConsensusReached,
 		FeeSplitter:                FeeSplitterFromProto(em.FeeSplitter),
+		SettlementPrice:            sp,
 	}
 	for _, o := range em.PeggedOrders {
 		or, _ := OrderFromProto(o)
@@ -2699,6 +2720,11 @@ func ExecMarketFromProto(em *snapshot.Market) *ExecMarket {
 }
 
 func (e ExecMarket) IntoProto() *snapshot.Market {
+	sp := ""
+	if e.SettlementPrice != nil {
+		sp = e.SettlementPrice.String()
+	}
+
 	ret := snapshot.Market{
 		Market:                     e.Market.IntoProto(),
 		PriceMonitor:               e.PriceMonitor.IntoProto(),
@@ -2717,6 +2743,7 @@ func (e ExecMarket) IntoProto() *snapshot.Market {
 		RiskFactorLong:             e.LongRiskFactor.String(),
 		RiskFactorConsensusReached: e.RiskFactorConsensusReached,
 		FeeSplitter:                e.FeeSplitter.IntoProto(),
+		SettlementPrice:            sp,
 	}
 	for _, o := range e.PeggedOrders {
 		ret.PeggedOrders = append(ret.PeggedOrders, o.IntoProto())
@@ -3267,7 +3294,7 @@ func PayloadStakeVerifierRemovedFromProto(svd *snapshot.Payload_StakeVerifierRem
 
 	for _, pr := range svd.StakeVerifierRemoved.PendingRemoved {
 		removed := &StakeRemoved{
-			EthereumAddress: pr.EthereumAddress,
+			EthereumAddress: crypto.EthereumChecksumAddress(pr.EthereumAddress),
 			TxID:            pr.TxId,
 			LogIndex:        pr.LogIndex,
 			BlockNumber:     pr.BlockNumber,
@@ -3294,7 +3321,7 @@ func (p *PayloadStakeVerifierRemoved) IntoProto() *snapshot.Payload_StakeVerifie
 	for _, p := range p.StakeVerifierRemoved {
 		pending = append(pending,
 			&snapshot.StakeVerifierPending{
-				EthereumAddress: p.EthereumAddress,
+				EthereumAddress: crypto.EthereumChecksumAddress(p.EthereumAddress),
 				VegaPublicKey:   p.VegaPubKey,
 				Amount:          p.Amount.String(),
 				BlockTime:       p.BlockTime,
@@ -3331,7 +3358,7 @@ func PayloadStakeVerifierDepositedFromProto(svd *snapshot.Payload_StakeVerifierD
 
 	for _, pd := range svd.StakeVerifierDeposited.PendingDeposited {
 		deposit := &StakeDeposited{
-			EthereumAddress: pd.EthereumAddress,
+			EthereumAddress: crypto.EthereumChecksumAddress(pd.EthereumAddress),
 			TxID:            pd.TxId,
 			LogIndex:        pd.LogIndex,
 			BlockNumber:     pd.BlockNumber,
@@ -3358,7 +3385,7 @@ func (p *PayloadStakeVerifierDeposited) IntoProto() *snapshot.Payload_StakeVerif
 	for _, p := range p.StakeVerifierDeposited {
 		pending = append(pending,
 			&snapshot.StakeVerifierPending{
-				EthereumAddress: p.EthereumAddress,
+				EthereumAddress: crypto.EthereumChecksumAddress(p.EthereumAddress),
 				VegaPublicKey:   p.VegaPubKey,
 				Amount:          p.Amount.String(),
 				BlockTime:       p.BlockTime,

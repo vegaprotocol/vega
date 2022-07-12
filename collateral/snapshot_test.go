@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package collateral_test
 
 import (
@@ -117,7 +129,7 @@ func TestCheckpoint(t *testing.T) {
 	conf := collateral.NewDefaultConfig()
 	conf.Level = encoding.LogLevel{Level: logging.DebugLevel}
 	// system accounts created
-	loadEng := collateral.New(logging.NewTestLogger(), conf, eng.broker, time.Now())
+	loadEng := collateral.New(logging.NewTestLogger(), conf, eng.timeSvc, eng.broker)
 	enableGovernanceAsset(t, loadEng)
 
 	asset := types.Asset{
@@ -267,7 +279,7 @@ func testSnapshotRestore(t *testing.T) {
 	ctx := context.Background()
 	erc20 := types.AssetDetailsErc20{
 		Erc20: &types.ERC20{
-			ContractAddress: "nowhere",
+			ContractAddress: "0x6d53C489bbda35B8096C8b4Cb362e2889F82E19B",
 		},
 	}
 	asset := types.Asset{
@@ -346,7 +358,7 @@ func testSnapshotRestore(t *testing.T) {
 	// we expect 2 batches of events to be sent
 
 	newEng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
-	newEng.broker.EXPECT().SendBatch(gomock.Any()).Times(3)
+	newEng.broker.EXPECT().SendBatch(gomock.Any()).Times(2)
 	for k, pl := range payloads {
 		state := data[k]
 		ptype := pl.IntoProto()
@@ -393,7 +405,7 @@ func TestSnapshotRoundtripViaEngine(t *testing.T) {
 
 		erc20 := types.AssetDetailsErc20{
 			Erc20: &types.ERC20{
-				ContractAddress: "nowhere",
+				ContractAddress: "0x6d53C489bbda35B8096C8b4Cb362e2889F82E19B",
 			},
 		}
 		asset := types.Asset{

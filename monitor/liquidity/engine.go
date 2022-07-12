@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package liquidity
 
 import (
@@ -11,6 +23,7 @@ import (
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/auction_state_mock.go -package mocks code.vegaprotocol.io/vega/monitor/liquidity AuctionState
 type AuctionState interface {
+	IsOpeningAuction() bool
 	IsLiquidityAuction() bool
 	IsLiquidityExtension() bool
 	StartLiquidityAuction(t time.Time, d *types.AuctionDuration)
@@ -88,7 +101,8 @@ func (e *Engine) CheckLiquidity(as AuctionState, t time.Time, currentStake *num.
 	// if we're in liquidity auction already, the auction has expired, and we can end/extend the auction
 	// @TODO we don't have the ability to support volume limited auctions yet
 
-	if exp != nil && as.IsLiquidityAuction() || as.IsLiquidityExtension() {
+	isOpening := as.IsOpeningAuction()
+	if exp != nil && as.IsLiquidityAuction() || as.IsLiquidityExtension() || isOpening {
 		if currentStake.GTE(targetStake) && bestStaticBidVolume > 0 && bestStaticAskVolume > 0 {
 			as.SetReadyToLeave()
 			return false // all done

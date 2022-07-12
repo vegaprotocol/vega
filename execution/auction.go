@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package execution
 
 import (
@@ -16,7 +28,8 @@ func (m *Market) checkAuction(ctx context.Context, now time.Time) {
 	}
 
 	// as soon as we have an indicative uncrossing price in opening auction it needs to be passed into the price monitoring engine so statevar calculation can start
-	if m.as.IsOpeningAuction() && !m.pMonitor.Initialised() {
+	isOpening := m.as.IsOpeningAuction()
+	if isOpening && !m.pMonitor.Initialised() {
 		trades, err := m.matching.OrderBook.GetIndicativeTrades()
 		if err != nil {
 			m.log.Panic("Can't get indicative trades")
@@ -37,17 +50,21 @@ func (m *Market) checkAuction(ctx context.Context, now time.Time) {
 	}
 
 	// opening auction
-	if m.as.IsOpeningAuction() {
+	if isOpening {
 		if len(trades) == 0 {
+			return
+		}
+
+		// first check liquidity - before we mark auction as ready to leave
+		m.checkLiquidity(ctx, trades, true)
+		if !m.as.CanLeave() {
+			if e := m.as.AuctionExtended(ctx, now); e != nil {
+				m.broker.Send(e)
+			}
 			return
 		}
 		// opening auction requirements satisfied at this point, other requirements still need to be checked downstream though
 		m.as.SetReadyToLeave()
-
-		m.checkLiquidity(ctx, trades, true)
-		if !m.as.CanLeave() {
-			return
-		}
 		m.pMonitor.CheckPrice(ctx, m.as, trades, true)
 		if m.as.ExtensionTrigger() == types.AuctionTriggerPrice {
 			// this should never, ever happen
@@ -87,7 +104,7 @@ func (m *Market) checkAuction(ctx context.Context, now time.Time) {
 	if isPrice && end {
 		m.checkLiquidity(ctx, trades, true)
 	}
-	if evt := m.as.AuctionExtended(ctx, m.currentTime); evt != nil {
+	if evt := m.as.AuctionExtended(ctx, m.timeService.GetTimeNow()); evt != nil {
 		m.broker.Send(evt)
 		end = false
 	}

@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package governance_test
 
 import (
@@ -29,10 +41,10 @@ func testSubmittingProposalForNewAssetSucceeds(t *testing.T) {
 
 	// given
 	party := eng.newValidParty("a-valid-party", 123456789)
-	proposal := eng.newProposalForNewAsset(party.Id, time.Now())
+	proposal := eng.newProposalForNewAsset(party.Id, eng.tsvc.GetTimeNow())
 
 	// setup
-	eng.assets.EXPECT().NewAsset(proposal.ID, gomock.Any()).Times(1).Return(proposal.ID, nil)
+	eng.assets.EXPECT().NewAsset(gomock.Any(), proposal.ID, gomock.Any()).Times(1).Return(proposal.ID, nil)
 	eng.witness.EXPECT().StartCheck(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(nil)
 
 	// expect
@@ -53,9 +65,8 @@ func testSubmittingProposalForNewAssetWithClosingTimeBeforeValidationTimeFails(t
 	defer eng.ctrl.Finish()
 
 	// given
-	now := time.Now()
 	party := vgrand.RandomStr(5)
-	proposal := eng.newProposalForNewAsset(party, now)
+	proposal := eng.newProposalForNewAsset(party, eng.tsvc.GetTimeNow())
 	proposal.Terms.ValidationTimestamp = proposal.Terms.ClosingTimestamp + 10
 
 	// setup
@@ -75,13 +86,13 @@ func testVotingDuringValidationOfProposalForNewAssetSucceeds(t *testing.T) {
 
 	// when
 	proposer := vgrand.RandomStr(5)
-	proposal := eng.newProposalForNewAsset(proposer, time.Now())
+	proposal := eng.newProposalForNewAsset(proposer, eng.tsvc.GetTimeNow())
 
 	// setup
 	var bAsset *assets.Asset
 	var fcheck func(interface{}, bool)
 	var rescheck validators.Resource
-	eng.assets.EXPECT().NewAsset(gomock.Any(), gomock.Any()).Times(1).DoAndReturn(func(ref string, assetDetails *types.AssetDetails) (string, error) {
+	eng.assets.EXPECT().NewAsset(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).DoAndReturn(func(_ context.Context, ref string, assetDetails *types.AssetDetails) (string, error) {
 		bAsset = assets.NewAsset(builtin.New(ref, assetDetails))
 		return ref, nil
 	})
@@ -132,7 +143,7 @@ func testVotingDuringValidationOfProposalForNewAssetSucceeds(t *testing.T) {
 	eng.expectOpenProposalEvent(t, proposer, proposal.ID)
 
 	// when
-	eng.OnChainTimeUpdate(context.Background(), afterValidation)
+	eng.OnTick(context.Background(), afterValidation)
 
 	// given
 	afterClosing := time.Unix(proposal.Terms.ClosingTimestamp, 0).Add(time.Second)
@@ -140,9 +151,10 @@ func testVotingDuringValidationOfProposalForNewAssetSucceeds(t *testing.T) {
 	// expect
 	eng.expectPassedProposalEvent(t, proposal.ID)
 	eng.expectTotalGovernanceTokenFromVoteEvents(t, "1", "7")
+	eng.assets.EXPECT().SetPendingListing(gomock.Any(), proposal.ID).Times(1)
 
 	// when
-	eng.OnChainTimeUpdate(context.Background(), afterClosing)
+	eng.OnTick(context.Background(), afterClosing)
 
 	// given
 	voter2 := vgrand.RandomStr(5)
@@ -159,7 +171,7 @@ func testVotingDuringValidationOfProposalForNewAssetSucceeds(t *testing.T) {
 
 	// when
 	// no calculations, no state change, simply removed from governance engine
-	toBeEnacted, _ := eng.OnChainTimeUpdate(context.Background(), afterEnactment)
+	toBeEnacted, _ := eng.OnTick(context.Background(), afterEnactment)
 
 	// then
 	require.Len(t, toBeEnacted, 1)

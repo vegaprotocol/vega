@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased 0.53.0
+## Unreleased 0.54.0
 
 ### 🚨 Breaking changes
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
@@ -14,6 +14,35 @@
 ### 🐛 Fixes
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
+## 0.53.0
+
+### 🗑️ Deprecation
+- [5513](https://github.com/vegaprotocol/vega/issues/5513) - Remove all checkpoint restore command
+
+### 🛠 Improvements
+- [5428](https://github.com/vegaprotocol/vega/pull/5428) - Update contributor information
+- [5519](https://github.com/vegaprotocol/vega/pull/5519) - Add `--genesis-file` option to the `load_checkpoint` command
+- [5525](https://github.com/vegaprotocol/vega/pull/5525) - Release `vegawallet` from the core
+- [5524](https://github.com/vegaprotocol/vega/pull/5524) - Align `vegawallet` and core versions
+- [5524](https://github.com/vegaprotocol/vega/pull/5549) - Add endpoint for getting the network's `chain-id`
+- [5524](https://github.com/vegaprotocol/vega/pull/5552) - Handle tendermint demotion and `ersatz` slot reduction at the same time
+
+### 🐛 Fixes
+- [5476](https://github.com/vegaprotocol/vega/issues/5476) - Include settlement price in snapshot
+- [5476](https://github.com/vegaprotocol/vega/issues/5314) - Fix validation of checkpoint file
+- [5499](https://github.com/vegaprotocol/vega/issues/5499) - Add error from app specific validation to check transaction response
+- [5508](https://github.com/vegaprotocol/vega/issues/5508) - Fix duplicated staking events
+- [5514](https://github.com/vegaprotocol/vega/issues/5514) - Emit `rewardScore` event correctly after loading from checkpoint
+- [5520](https://github.com/vegaprotocol/vega/issues/5520) - Do not fail silently when wallet fails to start
+- [5521](https://github.com/vegaprotocol/vega/issues/5521) - Fix asset bundle and add asset status
+- [5546](https://github.com/vegaprotocol/vega/issues/5546) - Fix collateral checkpoint to unlock locked reward account balance
+- [5194](https://github.com/vegaprotocol/vega/issues/5194) - Fix market trading mode vs market state
+- [5432](https://github.com/vegaprotocol/vega/issues/5431) - Do not accept transaction with unexpected public keys
+- [5478](https://github.com/vegaprotocol/vega/issues/5478) - Assure uncross and fake uncross are in line with each other
+- [5480](https://github.com/vegaprotocol/vega/issues/5480) - Assure indicative trades are in line with actual uncrossing trades
+- [5556](https://github.com/vegaprotocol/vega/issues/5556) - Fix id generation seed
+- [5361](https://github.com/vegaprotocol/vega/issues/5361) - Fix limits for proposals
+
 ## 0.52.0
 
 ### 🛠 Improvements
@@ -21,6 +50,7 @@
 - [5415](https://github.com/vegaprotocol/vega/issues/5415) - Regenerate smart contracts code
 - [5434](https://github.com/vegaprotocol/vega/issues/5434) - Add health check for faucet
 - [5412](https://github.com/vegaprotocol/vega/issues/5412) - Proof of work improvement to support history of changes to network parameters
+- [5378](https://github.com/vegaprotocol/vega/issues/5278) - Allow new market proposals without LP
 
 ### 🐛 Fixes
 - [5438](https://github.com/vegaprotocol/vega/issues/5438) - Evaluate all trades resulting from an aggressive orders in one call to price monitoring engine
@@ -30,6 +60,7 @@
 - [5460](https://github.com/vegaprotocol/vega/issues/5460) - Fix theoretical open interest calculation
 - [5477](https://github.com/vegaprotocol/vega/issues/5477) - Pass a clone of the liquidity commitment offset to pegged orders
 - [5468](https://github.com/vegaprotocol/vega/issues/5468) - Bring indicative trades inline with actual auction uncrossing trades in presence of wash trades
+- [5419](https://github.com/vegaprotocol/vega/issues/5419) - Fix listeners ordering and state updates
 
 ## 0.51.1
 

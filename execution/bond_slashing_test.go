@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package execution_test
 
 import (
@@ -83,12 +95,38 @@ func setMarkPrice(t *testing.T, mkt *testMarket, duration *types.AuctionDuration
 	// now fast-forward the market so the auction ends
 	now = now.Add(time.Duration(duration.Duration+1) * time.Second)
 	ctx := vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
-	mkt.market.OnChainTimeUpdate(ctx, now)
+	mkt.now = now
+	mkt.market.OnTick(ctx, now)
 
 	// opening auction ended, mark-price set
 	mktData := mkt.market.GetMarketData()
 	require.NotNil(t, mktData)
 	require.Equal(t, types.MarketTradingModeContinuous, mktData.MarketTradingMode)
+}
+
+func addSimpleLP(t *testing.T, mkt *testMarket, amt uint64) {
+	t.Helper()
+	lpprov := "lpprov-party"
+	bal := 2 * amt
+	addAccountWithAmount(mkt, lpprov, bal)
+	buys := []*types.LiquidityOrder{
+		newLiquidityOrder(types.PeggedReferenceBestBid, 10, 50),
+		newLiquidityOrder(types.PeggedReferenceBestBid, 20, 50),
+	}
+	sells := []*types.LiquidityOrder{
+		newLiquidityOrder(types.PeggedReferenceBestAsk, 10, 50),
+		newLiquidityOrder(types.PeggedReferenceBestAsk, 20, 50),
+	}
+	lps := &types.LiquidityProvisionSubmission{
+		Fee:              num.DecimalFromFloat(0.01),
+		MarketID:         mkt.market.GetID(),
+		CommitmentAmount: num.NewUint(amt),
+		Buys:             buys,
+		Sells:            sells,
+	}
+	require.NoError(t, mkt.market.SubmitLiquidityProvision(
+		context.Background(), lps, lpprov, vgcrypto.RandomHash(),
+	))
 }
 
 func TestAcceptLiquidityProvisionWithSufficientFunds(t *testing.T) {
@@ -103,6 +141,7 @@ func TestAcceptLiquidityProvisionWithSufficientFunds(t *testing.T) {
 
 	asset := tm.asset
 
+	addSimpleLP(t, tm, 5000000)
 	// end opening auction
 	setMarkPrice(t, tm, openingAuction, now, initialMarkPrice)
 
@@ -158,6 +197,7 @@ func TestRejectLiquidityProvisionWithInsufficientFundsForInitialMargin(t *testin
 
 	asset := tm.asset
 
+	addSimpleLP(t, tm, 5000000)
 	// end opening auction
 	setMarkPrice(t, tm, openingAuction, now, initialMarkPrice)
 

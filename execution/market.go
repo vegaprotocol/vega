@@ -1,10 +1,22 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package execution
 
 import (
 	"context"
 	"crypto/sha256"
-	"encoding/base32"
 	"encoding/binary"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"sort"
@@ -201,7 +213,7 @@ type Market struct {
 	mkt *types.Market
 
 	closingAt   time.Time
-	currentTime time.Time
+	timeService TimeService
 
 	mu sync.Mutex
 
@@ -257,6 +269,8 @@ type Market struct {
 	marketActivityTracker *MarketActivityTracker
 	positionFactor        num.Decimal // 10^pdp
 	assetDP               uint32
+
+	settlementPriceInMarket *num.Uint
 }
 
 // SetMarketID assigns a deterministic pseudo-random ID to a Market.
@@ -279,7 +293,7 @@ func SetMarketID(marketcfg *types.Market, seq uint64) error {
 
 	d := h.Sum(nil)
 	d = d[:20]
-	marketcfg.ID = base32.StdEncoding.EncodeToString(d)
+	marketcfg.ID = hex.EncodeToString(d)
 	return nil
 }
 
@@ -296,7 +310,7 @@ func NewMarket(
 	collateralEngine MarketCollateral,
 	oracleEngine products.OracleEngine,
 	mkt *types.Market,
-	now time.Time,
+	timeService TimeService,
 	broker Broker,
 	as *monitor.AuctionState,
 	stateVarEngine StateVarEngine,
@@ -329,8 +343,8 @@ func NewMarket(
 		tradableInstrument.RiskModel,
 		book,
 		as,
+		timeService,
 		broker,
-		now.UnixNano(),
 		mkt.ID,
 		asset,
 		stateVarEngine,
@@ -344,6 +358,7 @@ func NewMarket(
 		settlementConfig,
 		tradableInstrument.Instrument.Product,
 		mkt.ID,
+		timeService,
 		broker,
 		positionFactor,
 	)
@@ -363,15 +378,13 @@ func NewMarket(
 
 	lMonitor := lmon.NewMonitor(tsCalc, mkt.LiquidityMonitoringParameters)
 
+	now := timeService.GetTimeNow()
 	liqEngine := liquidity.NewSnapshotEngine(
-		liquidityConfig, log, broker, tradableInstrument.RiskModel, pMonitor, asset, mkt.ID, stateVarEngine, mkt.TickSize(), priceFactor.Clone(), positionFactor)
-	// call on chain time update straight away, so
-	// the time in the engine is being updatedat creation
-	liqEngine.OnChainTimeUpdate(ctx, now)
+		liquidityConfig, log, timeService, broker, tradableInstrument.RiskModel, pMonitor, asset, mkt.ID, stateVarEngine, mkt.TickSize(), priceFactor.Clone(), positionFactor)
 
 	// The market is initially create in a proposed state
 	mkt.State = types.MarketStateProposed
-	mkt.TradingMode = types.MarketTradingModeContinuous
+	mkt.TradingMode = types.MarketTradingModeNoTrading
 
 	// Populate the market timestamps
 	ts := &types.MarketTimestamps{
@@ -391,13 +404,13 @@ func NewMarket(
 		log:                       log,
 		idgen:                     nil,
 		mkt:                       mkt,
-		currentTime:               now,
 		matching:                  book,
 		tradableInstrument:        tradableInstrument,
 		risk:                      riskEngine,
 		position:                  positionEngine,
 		settlement:                settleEngine,
 		collateral:                collateralEngine,
+		timeService:               timeService,
 		broker:                    broker,
 		fee:                       feeEngine,
 		liquidity:                 liqEngine,
@@ -406,7 +419,7 @@ func NewMarket(
 		pMonitor:                  pMonitor,
 		lMonitor:                  lMonitor,
 		tsCalc:                    tsCalc,
-		peggedOrders:              NewPeggedOrders(),
+		peggedOrders:              NewPeggedOrders(timeService),
 		expiringOrders:            NewExpiringOrders(),
 		feeSplitter:               NewFeeSplitter(),
 		equityShares:              NewEquityShares(num.DecimalZero()),
@@ -561,7 +574,7 @@ func (m *Market) GetMarketData() types.MarketData {
 		MidPrice:                  m.priceToMarketPrecision(midPrice),
 		StaticMidPrice:            m.priceToMarketPrecision(staticMidPrice),
 		MarkPrice:                 m.priceToMarketPrecision(m.getCurrentMarkPrice()),
-		Timestamp:                 m.currentTime.UnixNano(),
+		Timestamp:                 m.timeService.GetTimeNow().UnixNano(),
 		OpenInterest:              m.position.GetOpenInterest(),
 		IndicativePrice:           m.priceToMarketPrecision(indicativePrice),
 		IndicativeVolume:          indicativeVolume,
@@ -603,6 +616,7 @@ func (m *Market) Reject(ctx context.Context) error {
 	// we closed all parties accounts
 	m.cleanupOnReject(ctx)
 	m.mkt.State = types.MarketStateRejected
+	m.mkt.TradingMode = types.MarketTradingModeNoTrading
 	m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
 	m.stateChanged = true
 
@@ -630,12 +644,14 @@ func (m *Market) StartOpeningAuction(ctx context.Context) error {
 	if m.as.AuctionStart() {
 		// we are now in a pending state
 		m.mkt.State = types.MarketStatePending
-		m.mkt.MarketTimestamps.Pending = m.currentTime.UnixNano()
+		m.mkt.MarketTimestamps.Pending = m.timeService.GetTimeNow().UnixNano()
+		m.mkt.TradingMode = types.MarketTradingModeOpeningAuction
 		m.enterAuction(ctx)
 	} else {
 		// TODO(): to be removed once we don't have market starting
 		// without an opening auction
 		m.mkt.State = types.MarketStateActive
+		m.mkt.TradingMode = types.MarketTradingModeContinuous
 	}
 
 	m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
@@ -675,28 +691,37 @@ func (m *Market) PostRestore(ctx context.Context) error {
 	return nil
 }
 
-// OnChainTimeUpdate notifies the market of a new time event/update.
+// OnTick notifies the market of a new time event/update.
 // todo: make this a more generic function name e.g. OnTimeUpdateEvent
-func (m *Market) OnChainTimeUpdate(ctx context.Context, t time.Time) bool {
-	timer := metrics.NewTimeCounter(m.mkt.ID, "market", "OnChainTimeUpdate")
+func (m *Market) OnTick(ctx context.Context, t time.Time) bool {
+	timer := metrics.NewTimeCounter(m.mkt.ID, "market", "OnTick")
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
 	_, blockHash := vegacontext.TraceIDFromContext(ctx)
-	m.idgen = idgeneration.New(blockHash)
+	// make deterministics ID for this market, concatenate
+	// the block hash and the market ID
+	m.idgen = idgeneration.New(blockHash + crypto.HashStr(m.GetID()))
+	// and we call next ID on this directly just so we don't have an ID which have
+	// a different from others, we basically burn the first ID.
+	_ = m.idgen.NextID()
 	defer func() { m.idgen = nil }()
 
 	if m.closed {
 		return true
 	}
 
+	// first we expire orders
+	expired, err := m.removeExpiredOrders(ctx, t.UnixNano())
+	if err != nil {
+		m.log.Error("unable to get remove expired orders",
+			logging.MarketID(m.GetID()),
+			logging.Error(err))
+	}
+	metrics.OrderGaugeAdd(-len(expired), m.GetID())
+
 	// some engines still needs to get updates:
-	m.currentTime = t
-	m.peggedOrders.OnTimeUpdate(t)
 	m.pMonitor.OnTimeUpdate(t)
-	m.liquidity.OnChainTimeUpdate(ctx, t)
-	m.risk.OnTimeUpdate(t)
-	m.settlement.OnTick(t)
 	m.feeSplitter.SetCurrentTime(t)
 
 	m.stateChanged = true
@@ -739,7 +764,7 @@ func (m *Market) OnChainTimeUpdate(ctx context.Context, t time.Time) bool {
 func (m *Market) updateMarketValueProxy() {
 	// if windows length is reached, reset fee splitter
 	if mvwl := m.marketValueWindowLength; m.feeSplitter.Elapsed() > mvwl {
-		m.feeSplitter.TimeWindowStart(m.currentTime)
+		m.feeSplitter.TimeWindowStart(m.timeService.GetTimeNow())
 		m.equityShares.UpdateVirtualStake() // this should always set the vStake >= physical stake?
 	}
 
@@ -797,6 +822,7 @@ func (m *Market) closeMarket(ctx context.Context, t time.Time) error {
 
 	m.broker.Send(events.NewTransferResponse(ctx, clearMarketTransfers))
 	m.mkt.State = types.MarketStateSettled
+	m.mkt.TradingMode = types.MarketTradingModeNoTrading
 	m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
 
 	// remove all order from the book
@@ -815,7 +841,7 @@ func (m *Market) closeMarket(ctx context.Context, t time.Time) error {
 
 func (m *Market) unregisterAndReject(ctx context.Context, order *types.Order, err error) error {
 	_ = m.position.UnregisterOrder(ctx, order)
-	order.UpdatedAt = m.currentTime.UnixNano()
+	order.UpdatedAt = m.timeService.GetTimeNow().UnixNano()
 	order.Status = types.OrderStatusRejected
 	if oerr, ok := types.IsOrderError(err); ok {
 		// the order wasn't invalid, so stopped is a better status, rather than rejected.
@@ -897,7 +923,7 @@ func (m *Market) enterAuction(ctx context.Context) {
 	ordersToCancel := m.matching.EnterAuction()
 
 	// Move into auction mode to prevent pegged order repricing
-	event := m.as.AuctionStarted(ctx, m.currentTime)
+	event := m.as.AuctionStarted(ctx, m.timeService.GetTimeNow())
 
 	// this is at least the size of the orders to be cancelled
 	updatedOrders := make([]*types.Order, 0, len(ordersToCancel))
@@ -922,6 +948,7 @@ func (m *Market) enterAuction(ctx context.Context) {
 
 	if m.as.InAuction() && (m.as.IsLiquidityAuction() || m.as.IsPriceAuction()) {
 		m.mkt.State = types.MarketStateSuspended
+		m.mkt.TradingMode = types.MarketTradingModeMonitoringAuction
 		m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
 		m.stateChanged = true
 	}
@@ -948,13 +975,14 @@ func (m *Market) leaveAuction(ctx context.Context, now time.Time) {
 	defer func() {
 		if !m.as.InAuction() && m.mkt.State == types.MarketStateSuspended {
 			m.mkt.State = types.MarketStateActive
+			m.mkt.TradingMode = types.MarketTradingModeContinuous
 			m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
 			m.stateChanged = true
 		}
 	}()
 
 	// Change market type to continuous trading
-	uncrossedOrders, ordersToCancel, err := m.matching.LeaveAuction(m.currentTime)
+	uncrossedOrders, ordersToCancel, err := m.matching.LeaveAuction(m.timeService.GetTimeNow())
 	if err != nil {
 		m.log.Error("Error leaving auction", logging.Error(err))
 	}
@@ -1230,7 +1258,7 @@ func (m *Market) SubmitOrder(
 		order.OriginalPrice = order.Price.Clone()
 		order.Price.Mul(order.Price, m.priceFactor)
 	}
-	order.CreatedAt = m.currentTime.UnixNano()
+	order.CreatedAt = m.timeService.GetTimeNow().UnixNano()
 
 	if !m.canTrade() {
 		order.Status = types.OrderStatusRejected
@@ -1434,7 +1462,7 @@ func (m *Market) checkPriceAndGetTrades(ctx context.Context, order *types.Order)
 		return nil, types.OrderErrorInvalidPersistance
 	}
 
-	if evt := m.as.AuctionExtended(ctx, m.currentTime); evt != nil {
+	if evt := m.as.AuctionExtended(ctx, m.timeService.GetTimeNow()); evt != nil {
 		m.broker.Send(evt)
 	}
 
@@ -1518,15 +1546,12 @@ func (m *Market) handleConfirmationPassiveOrders(
 	conf *types.OrderConfirmation,
 ) {
 	if conf.PassiveOrdersAffected != nil {
-		var (
-			evts        = make([]events.Event, 0, len(conf.PassiveOrdersAffected))
-			currentTime = m.currentTime.UnixNano()
-		)
+		evts := make([]events.Event, 0, len(conf.PassiveOrdersAffected))
 
 		// Insert or update passive orders siting on the book
 		for _, order := range conf.PassiveOrdersAffected {
 			// set the `updatedAt` value as these orders have changed
-			order.UpdatedAt = currentTime
+			order.UpdatedAt = m.timeService.GetTimeNow().UnixNano()
 			evts = append(evts, events.NewOrderEvent(ctx, order))
 
 			// If the order is a pegged order and is complete we must remove it from the pegged list
@@ -1555,7 +1580,7 @@ func (m *Market) handleConfirmation(ctx context.Context, conf *types.OrderConfir
 	// for an aggressive order to be pegged, so we never remove them from the pegged
 	// list. All this impact the float of EnterAuction, which if triggered from there
 	// will try to park all pegged orders, including this order which have never been
-	// remove from the pegged list. We add this check to make sure  that if the
+	// removed from the pegged list. We add this check to make sure  that if the
 	// aggressive order is pegged, we then do remove it from the list.
 	if conf.Order.PeggedOrder != nil {
 		if conf.Order.Remaining == 0 || conf.Order.Status != types.OrderStatusActive {
@@ -1582,7 +1607,7 @@ func (m *Market) handleConfirmation(ctx context.Context, conf *types.OrderConfir
 			// Update positions (this communicates with settlement via channel)
 			m.position.Update(ctx, trade)
 			// Record open interest change
-			if err := m.tsCalc.RecordOpenInterest(m.position.GetOpenInterest(), m.currentTime); err != nil {
+			if err := m.tsCalc.RecordOpenInterest(m.position.GetOpenInterest(), m.timeService.GetTimeNow()); err != nil {
 				m.log.Debug("unable record open interest",
 					logging.String("market-id", m.GetID()),
 					logging.Error(err))
@@ -1681,6 +1706,7 @@ func (m *Market) resolveClosedOutParties(ctx context.Context, distressedMarginEv
 	timer := metrics.NewTimeCounter(m.mkt.ID, "market", "resolveClosedOutParties")
 	defer timer.EngineTimeCounterAdd()
 
+	now := m.timeService.GetTimeNow()
 	// this is going to be run after the the closed out routines
 	// are finished, in order to notify the liquidity engine of
 	// any changes in the book / orders owned by the lp providers
@@ -1729,7 +1755,7 @@ func (m *Market) resolveClosedOutParties(ctx context.Context, distressedMarginEv
 		if o.PeggedOrder != nil {
 			m.removePeggedOrder(o)
 		}
-		o.UpdatedAt = m.currentTime.UnixNano()
+		o.UpdatedAt = now.UnixNano()
 		evts = append(evts, events.NewOrderEvent(ctx, o))
 		_ = m.position.UnregisterOrder(ctx, o)
 	}
@@ -1820,7 +1846,7 @@ func (m *Market) resolveClosedOutParties(ctx context.Context, distressedMarginEv
 		Status:      types.OrderStatusActive,
 		Party:       types.NetworkParty, // network is not a party as such
 		Side:        types.SideSell,     // assume sell, price is zero in that case anyway
-		CreatedAt:   m.currentTime.UnixNano(),
+		CreatedAt:   now.UnixNano(),
 		Reference:   fmt.Sprintf("LS-%s", o.ID), // liquidity sourcing, reference the order which caused the problem
 		TimeInForce: types.OrderTimeInForceFOK,  // this is an all-or-nothing order, so TIME_IN_FORCE == FOK
 		Type:        types.OrderTypeNetwork,
@@ -1900,7 +1926,7 @@ func (m *Market) resolveClosedOutParties(ctx context.Context, distressedMarginEv
 			// Update positions - this is a special trade involving the network as party
 			// so rather than checking this every time we call Update, call special UpdateNetwork
 			m.position.UpdateNetwork(ctx, trade)
-			if err := m.tsCalc.RecordOpenInterest(m.position.GetOpenInterest(), m.currentTime); err != nil {
+			if err := m.tsCalc.RecordOpenInterest(m.position.GetOpenInterest(), now); err != nil {
 				m.log.Debug("unable record open interest",
 					logging.String("market-id", m.GetID()),
 					logging.Error(err))
@@ -2017,13 +2043,14 @@ func (m *Market) zeroOutNetwork(ctx context.Context, parties []events.MarketPosi
 		settleOrder.OriginalPrice = num.Zero().Div(settleOrder.Price, m.priceFactor)
 	}
 	marketID := m.GetID()
+	now := m.timeService.GetTimeNow().UnixNano()
 	order := types.Order{
 		MarketID:      marketID,
 		Status:        types.OrderStatusFilled,
 		Party:         types.NetworkParty,
 		Price:         settleOrder.Price.Clone(),
 		OriginalPrice: settleOrder.OriginalPrice.Clone(),
-		CreatedAt:     m.currentTime.UnixNano(),
+		CreatedAt:     now,
 		Reference:     "close-out distressed",
 		TimeInForce:   types.OrderTimeInForceFOK, // this is an all-or-nothing order, so TIME_IN_FORCE == FOK
 		Type:          types.OrderTypeNetwork,
@@ -2033,7 +2060,7 @@ func (m *Market) zeroOutNetwork(ctx context.Context, parties []events.MarketPosi
 	marginLevels := types.MarginLevels{
 		MarketID:  m.mkt.GetID(),
 		Asset:     asset,
-		Timestamp: m.currentTime.UnixNano(),
+		Timestamp: now,
 	}
 
 	tradeEvts := make([]events.Event, 0, len(parties))
@@ -2067,7 +2094,7 @@ func (m *Market) zeroOutNetwork(ctx context.Context, parties []events.MarketPosi
 			Side:          tSide,                     // assume sell, price is zero in that case anyway
 			Price:         settleOrder.Price.Clone(), // average price
 			OriginalPrice: settleOrder.OriginalPrice.Clone(),
-			CreatedAt:     m.currentTime.UnixNano(),
+			CreatedAt:     now,
 			Reference:     fmt.Sprintf("distressed-%d-%s", i, initial.ID),
 			TimeInForce:   types.OrderTimeInForceFOK, // this is an all-or-nothing order, so TIME_IN_FORCE == FOK
 			Type:          types.OrderTypeNetwork,
@@ -2333,7 +2360,7 @@ func (m *Market) cancelOrder(ctx context.Context, partyID, orderID string) (*typ
 	}
 
 	// Publish the changed order details
-	order.UpdatedAt = m.currentTime.UnixNano()
+	order.UpdatedAt = m.timeService.GetTimeNow().UnixNano()
 	m.broker.Send(events.NewOrderEvent(ctx, order))
 
 	return &types.OrderCancellationConfirmation{Order: order}, nil
@@ -2736,7 +2763,7 @@ func (m *Market) applyOrderAmendment(
 	amendment *types.OrderAmendment,
 ) (order *types.Order, err error) {
 	order = existingOrder.Clone()
-	order.UpdatedAt = m.currentTime.UnixNano()
+	order.UpdatedAt = m.timeService.GetTimeNow().UnixNano()
 	order.Version += 1
 
 	if existingOrder.PeggedOrder != nil {
@@ -2890,7 +2917,7 @@ func (m *Market) orderAmendWhenParked(originalOrder, amendOrder *types.Order) *t
 
 // RemoveExpiredOrders remove all expired orders from the order book
 // and also any pegged orders that are parked.
-func (m *Market) RemoveExpiredOrders(
+func (m *Market) removeExpiredOrders(
 	ctx context.Context, timestamp int64,
 ) ([]*types.Order, error) {
 	timer := metrics.NewTimeCounter(m.mkt.ID, "market", "RemoveExpiredOrders")
@@ -2903,10 +2930,6 @@ func (m *Market) RemoveExpiredOrders(
 	if !m.canTrade() {
 		return nil, ErrTradingNotAllowed
 	}
-
-	_, blockHash := vegacontext.TraceIDFromContext(ctx)
-	m.idgen = idgeneration.New(blockHash)
-	defer func() { m.idgen = nil }()
 
 	expired := []*types.Order{}
 	evts := []events.Event{}
@@ -2940,7 +2963,7 @@ func (m *Market) RemoveExpiredOrders(
 
 		// now we add to the list of expired orders
 		// and assign the appropriate status
-		order.UpdatedAt = m.currentTime.UnixNano()
+		order.UpdatedAt = m.timeService.GetTimeNow().UnixNano()
 		order.Status = types.OrderStatusExpired
 		expired = append(expired, order)
 		evts = append(evts, events.NewOrderEvent(ctx, order))
@@ -3060,7 +3083,7 @@ func (m *Market) getTheoreticalTargetStake() *num.Uint {
 	trades, _ := m.matching.OrderBook.GetIndicativeTrades()
 
 	return m.tsCalc.GetTheoreticalTargetStake(
-		*rf, m.currentTime, m.getReferencePrice(), trades)
+		*rf, m.timeService.GetTimeNow(), m.getReferencePrice(), trades)
 }
 
 func (m *Market) getTargetStake() *num.Uint {
@@ -3070,7 +3093,7 @@ func (m *Market) getTargetStake() *num.Uint {
 		m.log.Debug("unable to get risk factors, can't calculate target")
 		return num.Zero()
 	}
-	return m.tsCalc.GetTargetStake(*rf, m.currentTime, m.getCurrentMarkPrice())
+	return m.tsCalc.GetTargetStake(*rf, m.timeService.GetTimeNow(), m.getCurrentMarkPrice())
 }
 
 func (m *Market) getSuppliedStake() *num.Uint {
@@ -3082,6 +3105,7 @@ func (m *Market) checkLiquidity(ctx context.Context, trades []*types.Trade, pers
 	// provided stake to the bond accounts so we don't trigger liquidity auction for no reason
 	m.checkBondBalance(ctx)
 	var vBid, vAsk uint64
+	// if we're not in auction, or we are checking liquidity when leaving opening auction, or we have best bid/ask volume
 	if !m.as.InAuction() || m.matching.BidAndAskPresentAfterAuction() {
 		_, vBid, _ = m.getBestStaticBidPriceAndVolume()
 		_, vAsk, _ = m.getBestStaticAskPriceAndVolume()
@@ -3095,7 +3119,7 @@ func (m *Market) checkLiquidity(ctx context.Context, trades []*types.Trade, pers
 	}
 
 	return m.lMonitor.CheckLiquidity(
-		m.as, m.currentTime,
+		m.as, m.timeService.GetTimeNow(),
 		m.getSuppliedStake(),
 		trades,
 		*rf,
@@ -3120,7 +3144,7 @@ func (m *Market) commandLiquidityAuction(ctx context.Context) {
 		// TODO: Need to also get indicative trades and check how they'd impact target stake,
 		// see  https://github.com/vegaprotocol/vega/issues/3047
 		// If price monitoring doesn't trigger auction than leave it
-		if evt := m.as.AuctionExtended(ctx, m.currentTime); evt != nil {
+		if evt := m.as.AuctionExtended(ctx, m.timeService.GetTimeNow()); evt != nil {
 			m.broker.Send(evt)
 		}
 	}
@@ -3130,36 +3154,39 @@ func (m *Market) tradingTerminated(ctx context.Context, tt bool) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	m.mkt.State = types.MarketStateTradingTerminated
+	m.mkt.TradingMode = types.MarketTradingModeNoTrading
 	m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
 	m.stateChanged = true
 
-	settlementPrice, err := m.tradableInstrument.Instrument.Product.SettlementPrice()
-	if err != nil {
+	if m.settlementPriceInMarket == nil {
 		m.log.Debug("no settlement price", logging.MarketID(m.GetID()))
 		return
 	}
-	m.settlementPriceWithLock(ctx, settlementPrice)
+	m.settlementPriceWithLock(ctx)
 }
 
 func (m *Market) settlementPrice(ctx context.Context, settlementPrice *num.Uint) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
-	m.settlementPriceWithLock(ctx, settlementPrice)
+	m.stateChanged = true
+	m.settlementPriceInMarket = settlementPrice
+	m.settlementPriceWithLock(ctx)
 }
 
 // NB this musy be called with the lock already acquired.
-func (m *Market) settlementPriceWithLock(ctx context.Context, settlementPrice *num.Uint) {
+func (m *Market) settlementPriceWithLock(ctx context.Context) {
 	if m.closed {
 		return
 	}
-	if m.mkt.State == types.MarketStateTradingTerminated && settlementPrice != nil {
-		err := m.closeMarket(ctx, m.currentTime)
+
+	if m.mkt.State == types.MarketStateTradingTerminated && m.settlementPriceInMarket != nil {
+		err := m.closeMarket(ctx, m.timeService.GetTimeNow())
 		if err != nil {
 			m.log.Error("could not close market", logging.Error(err))
 		}
 		m.closed = m.mkt.State == types.MarketStateSettled
-		settlementPriceInAsset, err := m.tradableInstrument.Instrument.Product.ScaleSettlementPriceToDecimalPlaces(settlementPrice, m.assetDP)
+		settlementPriceInAsset, err := m.tradableInstrument.Instrument.Product.ScaleSettlementPriceToDecimalPlaces(m.settlementPriceInMarket, m.assetDP)
 		if err == nil {
 			m.markPrice = settlementPriceInAsset.Clone()
 

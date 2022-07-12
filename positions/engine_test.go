@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package positions_test
 
 import (
@@ -352,6 +364,16 @@ func TestGetOpenInterestGivenTrades(t *testing.T) {
 				{Seller: "A", Buyer: "A", Size: 13, Price: num.Zero()},
 			},
 			ExpectedOI: 110,
+		},
+		{
+			// Same as above + wash trade -> should leave OI unchanged
+			ExistingPositions: []*types.Trade{},
+			Trades: []*types.Trade{
+				{Seller: "A", Buyer: "B", Size: 20, Price: num.Zero()},
+				{Seller: "A", Buyer: "C", Size: 30, Price: num.Zero()},
+				{Seller: "D", Buyer: "D", Size: 40, Price: num.Zero()},
+			},
+			ExpectedOI: 50,
 		},
 		// There at least 1 new party
 		{

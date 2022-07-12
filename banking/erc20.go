@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package banking
 
 import (
@@ -14,7 +26,10 @@ import (
 	"code.vegaprotocol.io/vega/types/num"
 )
 
-var ErrInvalidWithdrawalReferenceNonce = errors.New("invalid withdrawal reference nonce")
+var (
+	ErrInvalidWithdrawalReferenceNonce = errors.New("invalid withdrawal reference nonce")
+	ErrAssetAlreadyBeingListed         = errors.New("asset already being listed")
+)
 
 func (e *Engine) EnableERC20(
 	ctx context.Context,
@@ -24,6 +39,11 @@ func (e *Engine) EnableERC20(
 	txHash string,
 ) error {
 	asset, _ := e.assets.Get(al.VegaAssetID)
+	if _, ok := e.assetActs[al.VegaAssetID]; ok {
+		e.log.Error("asset already being listed", logging.AssetID(al.VegaAssetID))
+		return ErrAssetAlreadyBeingListed
+	}
+
 	aa := &assetAction{
 		id:          id,
 		state:       pendingState,
@@ -35,7 +55,7 @@ func (e *Engine) EnableERC20(
 	}
 	e.assetActs[aa.id] = aa
 	e.bss.changedAssetActions = true
-	return e.witness.StartCheck(aa, e.onCheckDone, e.currentTime.Add(defaultValidationDuration))
+	return e.witness.StartCheck(aa, e.onCheckDone, e.timeService.GetTimeNow().Add(defaultValidationDuration))
 }
 
 func (e *Engine) DepositERC20(
@@ -77,7 +97,7 @@ func (e *Engine) DepositERC20(
 	e.deposits[dep.ID] = dep
 
 	e.broker.Send(events.NewDepositEvent(ctx, *dep))
-	return e.witness.StartCheck(aa, e.onCheckDone, e.currentTime.Add(defaultValidationDuration))
+	return e.witness.StartCheck(aa, e.onCheckDone, e.timeService.GetTimeNow().Add(defaultValidationDuration))
 }
 
 func (e *Engine) ERC20WithdrawalEvent(
@@ -102,7 +122,7 @@ func (e *Engine) ERC20WithdrawalEvent(
 		return ErrWithdrawalNotReady
 	}
 
-	withd.WithdrawalDate = e.currentTime.UnixNano()
+	withd.WithdrawalDate = e.timeService.GetTimeNow().UnixNano()
 	withd.TxHash = txHash
 	e.bss.changedWithdrawals = true
 	e.broker.Send(events.NewWithdrawalEvent(ctx, *withd))
@@ -122,7 +142,7 @@ func (e *Engine) WithdrawERC20(
 		},
 	}
 
-	expiry := e.currentTime.Add(withdrawalsDefaultExpiry)
+	expiry := e.timeService.GetTimeNow().Add(withdrawalsDefaultExpiry)
 	w, ref := e.newWithdrawal(id, party, assetID, amount, expiry, wext)
 	e.broker.Send(events.NewWithdrawalEvent(ctx, *w))
 	e.withdrawals[w.ID] = withdrawalRef{w, ref}

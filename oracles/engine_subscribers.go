@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package oracles
 
 import (
@@ -16,6 +28,11 @@ type OnMatchedOracleData func(ctx context.Context, data OracleData) error
 // OracleSpec are collected.
 // The order between specs and subscribers is preserved.
 type OracleSpecPredicate func(spec OracleSpec) (bool, error)
+
+// OracleSubscriptionPredicate describes the predicate used to check if any
+// of the currently existing subscriptions expects the public keys inside
+// the incoming OracleSpec object.
+type OracleSubscriptionPredicate func(spec OracleSpec) bool
 
 // SubscriptionID is a unique identifier referencing the subscription of an
 // OnMatchedOracleData to an OracleSpec.
@@ -62,6 +79,19 @@ func newSpecSubscriptions() specSubscriptions {
 	}
 }
 
+// hasAnySubscribers checks if any of the subscriptions contains public keys that
+// match the given ones by the predicate.
+// Returns fast on the first match.
+func (s specSubscriptions) hasAnySubscribers(predicate OracleSubscriptionPredicate) bool {
+	for _, subscription := range s.subscriptions {
+		if predicate(subscription.spec) {
+			return true
+		}
+	}
+
+	return false
+}
+
 // filterSubscribers collects the subscribers that match the predicate on the
 // OracleSpec.
 // The order between specs and subscribers is preserved.
@@ -87,10 +117,10 @@ func (s specSubscriptions) filterSubscribers(predicate OracleSpecPredicate) (*fi
 	return result, nil
 }
 
-func (s *specSubscriptions) addSubscriber(spec OracleSpec, cb OnMatchedOracleData, currentTime time.Time) updatedSubscription {
+func (s *specSubscriptions) addSubscriber(spec OracleSpec, cb OnMatchedOracleData, tm time.Time) updatedSubscription {
 	_, subscription := s.getSubscription(spec.id)
 	if subscription == nil {
-		subscription = s.createSubscription(spec, currentTime)
+		subscription = s.createSubscription(spec, tm)
 	}
 
 	subscriptionID := s.nextSubscriptionID()
@@ -137,8 +167,8 @@ func (s *specSubscriptions) removeSubscriptionFromIndex(index int) {
 }
 
 // Internal usage.
-func (s *specSubscriptions) createSubscription(spec OracleSpec, currentTime time.Time) *specSubscription {
-	subscription := newOracleSpecSubscription(spec, currentTime)
+func (s *specSubscriptions) createSubscription(spec OracleSpec, tm time.Time) *specSubscription {
+	subscription := newOracleSpecSubscription(spec, tm)
 	s.subscriptions = append(s.subscriptions, subscription)
 	return subscription
 }

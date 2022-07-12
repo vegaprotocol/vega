@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package staking_test
 
 import (
@@ -21,51 +33,42 @@ type stakeVerifierTest struct {
 	*staking.StakeVerifier
 
 	ctrl    *gomock.Controller
-	broker  *bmocks.MockBrokerI
+	tsvc    *mocks.MockTimeService
+	broker  *bmocks.MockBroker
 	accs    *staking.Accounting
 	ocv     *mocks.MockEthOnChainVerifier
-	tt      *mocks.MockTimeTicker
 	witness *mocks.MockWitness
 	evtfwd  *mocks.MockEvtForwarder
 
-	onTick           func(context.Context, time.Time)
-	onTickAccounting func(context.Context, time.Time)
+	onTick func(context.Context, time.Time)
 }
 
 func getStakeVerifierTest(t *testing.T) *stakeVerifierTest {
 	t.Helper()
 	ctrl := gomock.NewController(t)
-	broker := bmocks.NewMockBrokerI(ctrl)
+	broker := bmocks.NewMockBroker(ctrl)
 	log := logging.NewTestLogger()
 	cfg := staking.NewDefaultConfig()
 	ocv := mocks.NewMockEthOnChainVerifier(ctrl)
-	tt := mocks.NewMockTimeTicker(ctrl)
+	ts := mocks.NewMockTimeService(ctrl)
 	witness := mocks.NewMockWitness(ctrl)
 	evtfwd := mocks.NewMockEvtForwarder(ctrl)
 
-	var onTickAccounting func(context.Context, time.Time)
-	tt.EXPECT().NotifyOnTick(gomock.Any()).Times(1).Do(func(f func(context.Context, time.Time)) {
-		onTickAccounting = f
-	})
-	accs := staking.NewAccounting(log, cfg, broker, nil, evtfwd, witness, tt, true)
+	accs := staking.NewAccounting(log, cfg, ts, broker, nil, evtfwd, witness, true)
 
-	var onTick func(context.Context, time.Time)
-	tt.EXPECT().NotifyOnTick(gomock.Any()).Times(1).Do(func(f func(context.Context, time.Time)) {
-		onTick = f
-	})
-
-	return &stakeVerifierTest{
-		StakeVerifier:    staking.NewStakeVerifier(log, cfg, accs, tt, witness, broker, ocv),
-		ctrl:             ctrl,
-		broker:           broker,
-		accs:             accs,
-		ocv:              ocv,
-		tt:               tt,
-		witness:          witness,
-		onTick:           onTick,
-		onTickAccounting: onTickAccounting,
-		evtfwd:           evtfwd,
+	svt := &stakeVerifierTest{
+		StakeVerifier: staking.NewStakeVerifier(log, cfg, accs, witness, ts, broker, ocv),
+		ctrl:          ctrl,
+		broker:        broker,
+		accs:          accs,
+		ocv:           ocv,
+		tsvc:          ts,
+		witness:       witness,
+		evtfwd:        evtfwd,
 	}
+	svt.onTick = svt.StakeVerifier.OnTick
+
+	return svt
 }
 
 func TestStakeVerifier(t *testing.T) {
@@ -82,6 +85,7 @@ func testProcessStakeEventDepositedOK(t *testing.T) {
 	defer stakev.ctrl.Finish()
 	assert.NotNil(t, stakev)
 
+	stakev.tsvc.EXPECT().GetTimeNow().Times(2)
 	stakev.broker.EXPECT().Send(gomock.Any()).Times(2)
 
 	var f func(interface{}, bool)
@@ -127,6 +131,7 @@ func testProcessStakeEventDepositedKO(t *testing.T) {
 	defer stakev.ctrl.Finish()
 	assert.NotNil(t, stakev)
 
+	stakev.tsvc.EXPECT().GetTimeNow().Times(2)
 	stakev.broker.EXPECT().Send(gomock.Any()).Times(1)
 
 	var f func(interface{}, bool)
@@ -172,6 +177,7 @@ func testProcessStakeEventRemovedOK(t *testing.T) {
 	defer stakev.ctrl.Finish()
 	assert.NotNil(t, stakev)
 
+	stakev.tsvc.EXPECT().GetTimeNow().Times(2)
 	stakev.broker.EXPECT().Send(gomock.Any()).Times(2)
 
 	var f func(interface{}, bool)
@@ -218,6 +224,7 @@ func testProcessStakeEventRemovedKO(t *testing.T) {
 	defer stakev.ctrl.Finish()
 	assert.NotNil(t, stakev)
 
+	stakev.tsvc.EXPECT().GetTimeNow().Times(2)
 	stakev.broker.EXPECT().Send(gomock.Any()).Times(1)
 
 	var f func(interface{}, bool)
@@ -263,6 +270,7 @@ func testProcessStakeEventMultiOK(t *testing.T) {
 	defer stakev.ctrl.Finish()
 	assert.NotNil(t, stakev)
 
+	stakev.tsvc.EXPECT().GetTimeNow().Times(2)
 	stakev.broker.EXPECT().Send(gomock.Any()).Times(2)
 
 	var f func(interface{}, bool)
@@ -304,6 +312,7 @@ func testProcessStakeEventMultiOK(t *testing.T) {
 
 	// no we remove some stake
 
+	stakev.tsvc.EXPECT().GetTimeNow().Times(2)
 	stakev.broker.EXPECT().Send(gomock.Any()).Times(1)
 	f = nil
 	evt = nil
@@ -348,6 +357,7 @@ func testDuplicates(t *testing.T) {
 	defer stakev.ctrl.Finish()
 	assert.NotNil(t, stakev)
 
+	stakev.tsvc.EXPECT().GetTimeNow().Times(1)
 	stakev.broker.EXPECT().Send(gomock.Any()).Times(1)
 
 	stakev.witness.EXPECT().StartCheck(gomock.Any(), gomock.Any(), gomock.Any()).

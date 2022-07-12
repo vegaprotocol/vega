@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package assets
 
 import (
@@ -14,13 +26,19 @@ type isAsset interface {
 	GetAssetClass() common.AssetClass
 	// IsValid is the order valid / validated with the target chain?
 	IsValid() bool
-	// Validate this is used to check if the assets
+	// Validate is used to check if the assets
 	// are present on the target chain
 	Validate() error
 	// SetValidNonValidator will set an asset as valid
 	// without running actual validation, this is used in the
 	// context of a non-validator node.
 	SetValidNonValidator()
+	// SetPendingListing Update the state of the asset to pending for listing
+	// on an external bridge
+	SetPendingListing()
+	// SetRejected Update the state of the asset to rejected
+	SetRejected()
+	SetEnabled()
 	String() string
 }
 

@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package execution_test
 
 import (
@@ -10,7 +22,7 @@ import (
 	snapshot "code.vegaprotocol.io/protos/vega/snapshot/v1"
 
 	"code.vegaprotocol.io/vega/assets"
-	bmock "code.vegaprotocol.io/vega/broker/mocks"
+	bmocks "code.vegaprotocol.io/vega/broker/mocks"
 	"code.vegaprotocol.io/vega/execution"
 	"code.vegaprotocol.io/vega/execution/mocks"
 	"code.vegaprotocol.io/vega/libs/proto"
@@ -27,11 +39,10 @@ func createEngine(t *testing.T) (*execution.Engine, *gomock.Controller) {
 	ctrl := gomock.NewController(t)
 	log := logging.NewTestLogger()
 	executionConfig := execution.NewDefaultConfig()
-	broker := bmock.NewMockBroker(ctrl)
+	broker := bmocks.NewMockBroker(ctrl)
 	broker.EXPECT().Send(gomock.Any()).AnyTimes()
 	broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
 	timeService := mocks.NewMockTimeService(ctrl)
-	timeService.EXPECT().NotifyOnTick(gomock.Any()).Times(1)
 	timeService.EXPECT().GetTimeNow().AnyTimes()
 
 	collateralService := mocks.NewMockCollateral(ctrl)
@@ -199,10 +210,6 @@ func TestValidMarketSnapshot(t *testing.T) {
 	require.Equal(t, 1, len(keys))
 	key := keys[0]
 
-	state1, _, err := engine.GetState(key)
-	assert.NoError(t, err)
-	assert.NotEmpty(t, state1)
-
 	// Take the snapshot and hash
 	b, providers, err := engine.GetState(key)
 	assert.NoError(t, err)
@@ -232,7 +239,7 @@ func TestValidMarketSnapshot(t *testing.T) {
 	// Check the hashes are the same
 	state2, _, err := engine2.GetState(key)
 	assert.NoError(t, err)
-	assert.True(t, bytes.Equal(state1, state2))
+	assert.True(t, bytes.Equal(b, state2))
 
 	// now load the providers state
 	for _, p := range providers {

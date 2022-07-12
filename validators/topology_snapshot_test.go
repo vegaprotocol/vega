@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package validators_test
 
 import (
@@ -66,7 +78,7 @@ func TestTopologySnapshot(t *testing.T) {
 		Id:              "vega-master-pubkey",
 		ChainPubKey:     tmPubKeys[0],
 		VegaPubKey:      hex.EncodeToString([]byte("vega-key")),
-		EthereumAddress: "eth-address",
+		EthereumAddress: "0x6d53C489bbda35B8096C8b4Cb362e2889F82E19B",
 	}
 	err = top.AddNewNode(ctx, &nr1, validators.ValidatorStatusTendermint)
 	assert.NoError(t, err)
@@ -75,7 +87,7 @@ func TestTopologySnapshot(t *testing.T) {
 		Id:              "vega-master-pubkey-2",
 		ChainPubKey:     tmPubKeys[1],
 		VegaPubKey:      hex.EncodeToString([]byte("vega-key-2")),
-		EthereumAddress: "eth-address-2",
+		EthereumAddress: "0x6d53C489bbda35B8096C8b4Cb362e2889F82E19B",
 	}
 	err = top.AddNewNode(ctx, &nr2, validators.ValidatorStatusTendermint)
 	assert.NoError(t, err)
@@ -100,7 +112,7 @@ func TestTopologySnapshot(t *testing.T) {
 
 	ekr1 := &commandspb.EthereumKeyRotateSubmission{
 		TargetBlock:    10,
-		CurrentAddress: "eth-address",
+		CurrentAddress: "0x6d53C489bbda35B8096C8b4Cb362e2889F82E19B",
 		NewAddress:     "0x69bA3B3e6B5b1226A2e26De9a9E2D9C98f2b144B",
 	}
 	err = top.RotateEthereumKey(ctx, nr1.Id, 5, ekr1)
@@ -108,7 +120,7 @@ func TestTopologySnapshot(t *testing.T) {
 
 	ekr2 := &commandspb.EthereumKeyRotateSubmission{
 		TargetBlock:    11,
-		CurrentAddress: "eth-address-2",
+		CurrentAddress: "0x6d53C489bbda35B8096C8b4Cb362e2889F82E19B",
 		NewAddress:     "0xd6B6e9514f2793Af89745Fd69FDa0DAbC228d336",
 	}
 	err = top.RotateEthereumKey(ctx, nr2.Id, 5, ekr2)

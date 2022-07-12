@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package staking_test
 
 import (
@@ -43,7 +55,7 @@ func TestAccountsSnapshotRoundTrip(t *testing.T) {
 		BlockHeight:     12,
 		BlockTime:       1000002000,
 		LogIndex:        100022,
-		EthereumAddress: "blah",
+		EthereumAddress: "0xe82EfC4187705655C9b484dFFA25f240e8A6B0BA",
 	}
 	acc.AddEvent(ctx, evt)
 

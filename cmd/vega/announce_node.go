@@ -1,19 +1,40 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package main
 
 import (
 	"context"
 	"errors"
 	"fmt"
+	"net"
+	"strconv"
+	"time"
 
+	api "code.vegaprotocol.io/protos/vega/api/v1"
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	vgcrypto "code.vegaprotocol.io/shared/libs/crypto"
 	vgjson "code.vegaprotocol.io/shared/libs/json"
 	"code.vegaprotocol.io/shared/paths"
+	"code.vegaprotocol.io/vega/blockchain"
+	"code.vegaprotocol.io/vega/blockchain/abci"
 	"code.vegaprotocol.io/vega/config"
+	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/nodewallets"
 	"code.vegaprotocol.io/vega/txn"
 	"code.vegaprotocol.io/vega/validators"
+	"google.golang.org/grpc"
+
 	"github.com/jessevdk/go-flags"
 )
 
@@ -66,7 +87,7 @@ func (opts *AnnounceNodeCmd) Execute(args []string) error {
 		VegaPubKey:      nodeWallets.Vega.PubKey().Hex(),
 		VegaPubKeyIndex: nodeWallets.Vega.Index(),
 		ChainPubKey:     nodeWallets.Tendermint.Pubkey,
-		EthereumAddress: nodeWallets.Ethereum.PubKey().Hex(),
+		EthereumAddress: crypto.EthereumChecksumAddress(nodeWallets.Ethereum.PubKey().Hex()),
 		FromEpoch:       opts.FromEpoch,
 		InfoUrl:         opts.InfoURL,
 		Name:            opts.Name,
@@ -145,4 +166,61 @@ func AnnounceNode(ctx context.Context, parser *flags.Parser) error {
 	)
 	_, err := parser.AddCommand("announce_node", short, long, &announceNodeCmd)
 	return err
+}
+
+func getNodeWalletCommander(log *logging.Logger, registryPass string, vegaPaths paths.Paths) (*nodewallets.Commander, *api.LastBlockHeightResponse, context.CancelFunc, error) {
+	_, cfg, err := config.EnsureNodeConfig(vegaPaths)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+
+	vegaWallet, err := nodewallets.GetVegaWallet(vegaPaths, registryPass)
+	if err != nil {
+		return nil, nil, nil, fmt.Errorf("couldn't get Vega node wallet: %w", err)
+	}
+
+	abciClient, err := abci.NewClient(cfg.Blockchain.Tendermint.ClientAddr)
+	if err != nil {
+		return nil, nil, nil, fmt.Errorf("couldn't initialise ABCI client: %w", err)
+	}
+
+	coreClient, err := getCoreClient(
+		net.JoinHostPort(cfg.API.IP, strconv.Itoa(cfg.API.Port)))
+	if err != nil {
+		return nil, nil, nil, fmt.Errorf("couldn't connect to node: %w", err)
+	}
+
+	ctx, cancel := timeoutContext()
+	resp, err := coreClient.LastBlockHeight(ctx, &api.LastBlockHeightRequest{})
+	if err != nil {
+		return nil, nil, nil, fmt.Errorf("couldn't get last block height: %w", err)
+	}
+
+	commander, err := nodewallets.NewCommander(cfg.NodeWallet, log, nil, vegaWallet, heightProvider{height: resp.Height})
+	if err != nil {
+		return nil, nil, nil, fmt.Errorf("couldn't initialise node wallet commander: %w", err)
+	}
+
+	commander.SetChain(blockchain.NewClient(abciClient))
+	return commander, resp, cancel, nil
+}
+
+type heightProvider struct {
+	height uint64
+}
+
+func (h heightProvider) Height() uint64 {
+	return h.height
+}
+
+func getCoreClient(address string) (api.CoreServiceClient, error) {
+	tdconn, err := grpc.Dial(address, grpc.WithInsecure())
+	if err != nil {
+		return nil, err
+	}
+	return api.NewCoreServiceClient(tdconn), nil
+}
+
+func timeoutContext() (context.Context, func()) {
+	return context.WithTimeout(context.Background(), 5*time.Second)
 }

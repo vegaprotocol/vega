@@ -185,3 +185,17 @@ func (mr *MockValidatorTopologyMockRecorder) ProcessValidatorHeartbeat(arg0, arg
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessValidatorHeartbeat", reflect.TypeOf((*MockValidatorTopology)(nil).ProcessValidatorHeartbeat), arg0, arg1, arg2, arg3)
 }
+
+// RotateEthereumKey mocks base method.
+func (m *MockValidatorTopology) RotateEthereumKey(arg0 context.Context, arg1 string, arg2 uint64, arg3 *v1.EthereumKeyRotateSubmission) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RotateEthereumKey", arg0, arg1, arg2, arg3)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// RotateEthereumKey indicates an expected call of RotateEthereumKey.
+func (mr *MockValidatorTopologyMockRecorder) RotateEthereumKey(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RotateEthereumKey", reflect.TypeOf((*MockValidatorTopology)(nil).RotateEthereumKey), arg0, arg1, arg2, arg3)
+}

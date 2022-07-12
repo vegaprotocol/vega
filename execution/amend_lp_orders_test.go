@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package execution_test
 
 import (
@@ -51,7 +63,7 @@ func TestAmendDeployedCommitment(t *testing.T) {
 		WithAccountAndAmount(lpparty, 500000000000)
 
 	tm.market.OnSuppliedStakeToObligationFactorUpdate(num.DecimalFromFloat(1.0))
-	tm.market.OnChainTimeUpdate(ctx, now)
+	tm.market.OnTick(ctx, now)
 
 	// Add a LPSubmission
 	// this is a log of stake, enough to cover all
@@ -460,7 +472,7 @@ func TestCancelUndeployedCommitmentDuringAuction(t *testing.T) {
 		WithAccountAndAmount(lpparty, 500000000000)
 
 	tm.market.OnSuppliedStakeToObligationFactorUpdate(num.DecimalFromFloat(1.0))
-	tm.market.OnChainTimeUpdate(ctx, now)
+	tm.market.OnTick(ctx, now)
 
 	// Add a LPSubmission
 	// this is a log of stake, enough to cover all
@@ -551,7 +563,7 @@ func TestDeployedCommitmentIsUndeployedWhenEnteringAuction(t *testing.T) {
 		WithAccountAndAmount(lpparty, 500000000000)
 
 	tm.market.OnSuppliedStakeToObligationFactorUpdate(num.DecimalFromFloat(0.20))
-	tm.market.OnChainTimeUpdate(ctx, now)
+	tm.market.OnTick(ctx, now)
 
 	// Add a LPSubmission
 	// this is a log of stake, enough to cover all
@@ -587,7 +599,7 @@ func TestDeployedCommitmentIsUndeployedWhenEnteringAuction(t *testing.T) {
 		assert.Equal(t, num.NewUint(67860), acc.Balance)
 	})
 
-	tm.market.OnChainTimeUpdate(ctx, auctionEnd.Add(2*time.Second))
+	tm.market.OnTick(ctx, auctionEnd.Add(2*time.Second))
 	tm.mas.StartPriceAuction(auctionEnd.Add(2*time.Second), &types.AuctionDuration{
 		Duration: 30,
 	})
@@ -621,7 +633,7 @@ func TestDeployedCommitmentIsUndeployedWhenEnteringAuction(t *testing.T) {
 
 	// then we are leaving the auction period
 	tm.events = nil
-	tm.market.OnChainTimeUpdate(ctx, auctionEnd.Add(50*time.Second))
+	tm.market.OnTick(ctx, auctionEnd.Add(50*time.Second))
 
 	t.Run("LP orders are re-submitted after auction", func(t *testing.T) {
 		// First collect all the orders events
@@ -688,7 +700,7 @@ func TestDeployedCommitmentIsUndeployedWhenEnteringAuctionAndMarginCheckFailDuri
 		WithAccountAndAmount("party-yolo1", 1000000000)
 
 	tm.market.OnSuppliedStakeToObligationFactorUpdate(num.DecimalFromFloat(1))
-	tm.market.OnChainTimeUpdate(ctx, now)
+	tm.market.OnTick(ctx, now)
 
 	// Add a LPSubmission
 	// this is a log of stake, enough to cover all
@@ -729,7 +741,7 @@ func TestDeployedCommitmentIsUndeployedWhenEnteringAuctionAndMarginCheckFailDuri
 		assert.True(t, acc.Balance.EQ(num.NewUint(336872)))
 	})
 
-	tm.market.OnChainTimeUpdate(ctx, auctionEnd.Add(2*time.Second))
+	tm.market.OnTick(ctx, auctionEnd.Add(2*time.Second))
 	tm.mas.StartPriceAuction(auctionEnd.Add(2*time.Second), &types.AuctionDuration{
 		Duration: 30,
 	})

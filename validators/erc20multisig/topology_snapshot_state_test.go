@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package erc20multisig_test
 
 import (
@@ -95,7 +107,7 @@ func TestERC20TopologySnapshot(t *testing.T) {
 		LogIndex:    11,
 		TxHash:      "0xacbde",
 		ID:          "someid",
-		Address:     "0x123456",
+		Address:     "0xe3133A829FB11c3ad86A992D6576ec7705B105e5",
 		Nonce:       "123",
 		BlockTime:   123456789,
 		Kind:        types.SignerEventKindAdded,
@@ -119,15 +131,15 @@ func TestERC20TopologySnapshot(t *testing.T) {
 	t.Run("ensure the signer list is updated", func(t *testing.T) {
 		signers := top.GetSigners()
 		assert.Len(t, signers, 1)
-		assert.Equal(t, "0x123456", signers[0])
+		assert.Equal(t, "0xe3133A829FB11c3ad86A992D6576ec7705B105e5", signers[0])
 	})
 
 	t.Run("check if our party IsSigner", func(t *testing.T) {
-		assert.True(t, top.IsSigner("0x123456"))
+		assert.True(t, top.IsSigner("0xe3133A829FB11c3ad86A992D6576ec7705B105e5"))
 	})
 
 	t.Run("check excess signers", func(t *testing.T) {
-		okAddresses := []string{"0x123456"}
+		okAddresses := []string{"0xe3133A829FB11c3ad86A992D6576ec7705B105e5"}
 		koAddresses := []string{}
 
 		assert.True(t, top.ExcessSigners(koAddresses))
@@ -157,7 +169,7 @@ func TestERC20TopologySnapshot(t *testing.T) {
 		LogIndex:    19,
 		TxHash:      "0xacbde3",
 		ID:          "someid3",
-		Address:     "0x1234564",
+		Address:     "0xe82EfC4187705655C9b484dFFA25f240e8A6B0BA",
 		Nonce:       "1239",
 		BlockTime:   123456800,
 		Kind:        types.SignerEventKindAdded,
@@ -215,31 +227,31 @@ func TestERC20TopologySnapshot(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t,
 		hex.EncodeToString(crypto.Hash(tStateVerified)),
-		"0bde25caa61289dc7e20c6857cd3b6bb9991b07f0f0386e6dc66d8a281d47b32",
+		"159295749d4eb7646839c438de9004dca3f859c548117d249b6686b4ba1a4736",
 	)
 	tStatePending, _, err := top.GetState((&types.PayloadERC20MultiSigTopologyPending{}).Key())
 	assert.NoError(t, err)
 	assert.Equal(t,
 		hex.EncodeToString(crypto.Hash(tStatePending)),
-		"f96537ca1555b1667b277c0d2694e08f2cb84e31160a3d240a7c107cc2c18be3",
+		"13ed814a71110dba6fbc88cd27c4efb25895d1ceb0434a270d96b835249f2a6d",
 	)
 
 	t2StateVerified, _, err := top2.GetState((&types.PayloadERC20MultiSigTopologyVerified{}).Key())
 	assert.NoError(t, err)
 	assert.Equal(t,
 		hex.EncodeToString(crypto.Hash(t2StateVerified)),
-		"0bde25caa61289dc7e20c6857cd3b6bb9991b07f0f0386e6dc66d8a281d47b32",
+		"159295749d4eb7646839c438de9004dca3f859c548117d249b6686b4ba1a4736",
 	)
 	t2StatePending, _, err := top2.GetState((&types.PayloadERC20MultiSigTopologyPending{}).Key())
 	assert.NoError(t, err)
 	assert.Equal(t,
 		hex.EncodeToString(crypto.Hash(t2StatePending)),
-		"f96537ca1555b1667b277c0d2694e08f2cb84e31160a3d240a7c107cc2c18be3",
+		"13ed814a71110dba6fbc88cd27c4efb25895d1ceb0434a270d96b835249f2a6d",
 	)
 
 	assert.Equal(t, top2.GetThreshold(), uint32(666))
 	signers2 := top2.GetSigners()
-	assert.Equal(t, signers2[0], "0x123456")
+	assert.Equal(t, signers2[0], "0xe3133A829FB11c3ad86A992D6576ec7705B105e5")
 	assert.Len(t, signers2, 1)
 
 	// now let's call the callbacks, and move time
@@ -252,8 +264,8 @@ func TestERC20TopologySnapshot(t *testing.T) {
 	// now we assert the changes
 	assert.Equal(t, top2.GetThreshold(), uint32(500))
 	signers3 := top2.GetSigners()
-	assert.Equal(t, signers3[0], "0x123456")
-	assert.Equal(t, signers3[1], "0x1234564")
+	assert.Equal(t, signers3[0], "0xe3133A829FB11c3ad86A992D6576ec7705B105e5")
+	assert.Equal(t, signers3[1], "0xe82EfC4187705655C9b484dFFA25f240e8A6B0BA")
 	assert.Len(t, signers3, 2)
 
 	// now let's just check the hash
@@ -261,7 +273,7 @@ func TestERC20TopologySnapshot(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t,
 		hex.EncodeToString(crypto.Hash(t2StateVerifiedLast)),
-		"99080a781530de82878e93a47967d0e4aed17db838834be9412d3646682a0b98",
+		"0c8256dcccd2d72a664fedec2e9d36a995e1b81bcfdd4ce492c5360519fa1ccc",
 	)
 	t2StatePendingLast, _, err := top2.GetState((&types.PayloadERC20MultiSigTopologyPending{}).Key())
 	assert.NoError(t, err)
@@ -287,7 +299,7 @@ func TestERC20TopologySnapshotAddRemoveSigner(t *testing.T) {
 		LogIndex:    11,
 		TxHash:      "0xacbde",
 		ID:          "someid",
-		Address:     "0x123456",
+		Address:     "0xe3133A829FB11c3ad86A992D6576ec7705B105e5",
 		Nonce:       "123",
 		BlockTime:   123456789,
 		Kind:        types.SignerEventKindAdded,
@@ -312,7 +324,7 @@ func TestERC20TopologySnapshotAddRemoveSigner(t *testing.T) {
 	t.Run("ensure the signer list is updated", func(t *testing.T) {
 		signers := top.GetSigners()
 		assert.Len(t, signers, 1)
-		assert.Equal(t, "0x123456", signers[0])
+		assert.Equal(t, "0xe3133A829FB11c3ad86A992D6576ec7705B105e5", signers[0])
 	})
 
 	signerEvent2 := types.SignerEvent{
@@ -320,7 +332,7 @@ func TestERC20TopologySnapshotAddRemoveSigner(t *testing.T) {
 		LogIndex:    12,
 		TxHash:      "0xacbde",
 		ID:          "someid",
-		Address:     "0x123456",
+		Address:     "0xe3133A829FB11c3ad86A992D6576ec7705B105e5",
 		Nonce:       "123",
 		BlockTime:   123456789,
 		Kind:        types.SignerEventKindRemoved,

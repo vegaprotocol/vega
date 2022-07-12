@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package types
 
 import (
@@ -5,6 +17,7 @@ import (
 	"fmt"
 
 	proto "code.vegaprotocol.io/protos/vega"
+	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/types/num"
 )
 
@@ -18,11 +31,28 @@ var (
 	ErrInvalidAssetQuantumZero       = errors.New("invalid asset, quantum must not be zero")
 )
 
+type AssetStatus = proto.Asset_Status
+
+const (
+	// Default value, always invalid.
+	AssetStatusUnspecified AssetStatus = proto.Asset_STATUS_UNSPECIFIED
+	// Asset is proposed and under vote.
+	AssetStatusProposed AssetStatus = proto.Asset_STATUS_PROPOSED
+	// Asset has been rejected from governance.
+	AssetStatusRejected AssetStatus = proto.Asset_STATUS_REJECTED
+	// Asset is pending listing from the bridge.
+	AssetStatusPendingListing AssetStatus = proto.Asset_STATUS_PENDING_LISTING
+	// Asset is fully usable in the network.
+	AssetStatusEnabled AssetStatus = proto.Asset_STATUS_ENABLED
+)
+
 type Asset struct {
 	// Internal identifier of the asset
 	ID string
 	// Name of the asset (e.g: Great British Pound)
 	Details *AssetDetails
+	// Status of the asset
+	Status AssetStatus
 }
 
 type AssetDetails struct {
@@ -93,6 +123,7 @@ func (a Asset) IntoProto() *proto.Asset {
 	return &proto.Asset{
 		Id:      a.ID,
 		Details: details,
+		Status:  a.Status,
 	}
 }
 
@@ -110,6 +141,7 @@ func AssetFromProto(p *proto.Asset) (*Asset, error) {
 	return &Asset{
 		ID:      p.Id,
 		Details: details,
+		Status:  p.Status,
 	}, nil
 }
 
@@ -270,7 +302,7 @@ func AssetDetailsERC20FromProto(p *proto.AssetDetails_Erc20) (*AssetDetailsErc20
 	}
 	return &AssetDetailsErc20{
 		Erc20: &ERC20{
-			ContractAddress:   p.Erc20.ContractAddress,
+			ContractAddress:   crypto.EthereumChecksumAddress(p.Erc20.ContractAddress),
 			LifetimeLimit:     lifetimeLimit,
 			WithdrawThreshold: withdrawThreshold,
 		},

@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package abci
 
 import (
@@ -98,8 +110,8 @@ func (app *App) CheckTx(req types.RequestCheckTx) (resp types.ResponseCheckTx) {
 	// Lookup for check tx, skip if not found
 	if fn, ok := app.checkTxs[tx.Command()]; ok {
 		if err := fn(ctx, tx); err != nil {
-			resp.Code = AbciTxnInternalError
 			println("transaction failed command validation", tx.Command().String(), "tid", tx.GetPoWTID(), err.Error())
+			return AddCommonCheckTxEvents(NewResponseCheckTxError(AbciTxnInternalError, err), tx)
 		}
 	}
 
