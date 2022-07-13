@@ -13,6 +13,7 @@
 
 ### 🐛 Fixes
 - [5571](https://github.com/vegaprotocol/vega/issues/5571) - Restore pending assets status correctly after snapshot restore
+- [5572](https://github.com/vegaprotocol/vega/issues/5572) - Add validation on `IDs` and public keys
 
 ## 0.53.0
 
