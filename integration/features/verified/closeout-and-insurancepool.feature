@@ -73,12 +73,36 @@ Feature: Test closeout type 1: margin >= cost of closeout
       | party  | asset | market id | margin    | general  |
       | party1 | USD   | ETH/DEC19 | 12197     | 17803    |
       
+    And the order book should have the following volumes for market "ETH/DEC19":
+      | side | price | volume |
+       #original vol
+      | sell | 150   | 1000   |
+      #LP pegged vol
+      | sell | 123   | 1777   |
+        #LP pegged vol
+      | sell | 110   | 419    |
+      #original vol
+      | sell | 105   | 1      | 
+
     When the network moves ahead "1" blocks
 
-    # party1 has a position
+    # party1 will have a position
     When the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | party2 | ETH/DEC19 | buy  | 100    | 100   | 1                | TYPE_LIMIT | TIF_GTC | ref-1     |
+
+    And the order book should have the following volumes for market "ETH/DEC19":
+      | side | price | volume |
+       #original vol
+      | sell | 150   | 1000   |
+      #LP pegged vol
+      | sell | 126   | 1523   |
+        #LP pegged vol
+      | sell | 115   | 422    |
+      #original vol
+      | sell | 105   | 1      | 
+
+    When the network moves ahead "1" blocks
 
     And the order book should have the following volumes for market "ETH/DEC19":
       | side | price | volume |
