@@ -186,9 +186,8 @@ func (t *tradingDataServiceV2) handleGetMarketDataHistoryWithCursorPagination(ct
 	}
 
 	connection := v2.MarketDataConnection{
-		TotalCount: 0,
-		Edges:      edges,
-		PageInfo:   pageInfo.ToProto(),
+		Edges:    edges,
+		PageInfo: pageInfo.ToProto(),
 	}
 
 	return &v2.GetMarketDataHistoryByIDResponse{
@@ -308,9 +307,8 @@ func (t *tradingDataServiceV2) GetCandleData(ctx context.Context, req *v2.GetCan
 	}
 
 	connection := v2.CandleDataConnection{
-		TotalCount: 0,
-		Edges:      edges,
-		PageInfo:   pageInfo.ToProto(),
+		Edges:    edges,
+		PageInfo: pageInfo.ToProto(),
 	}
 
 	return &v2.GetCandleDataResponse{Candles: &connection}, nil
@@ -607,9 +605,8 @@ func (t *tradingDataServiceV2) GetTradesByMarket(ctx context.Context, in *v2.Get
 	}
 
 	tradesConnection := &v2.TradeConnection{
-		TotalCount: 0,
-		Edges:      edges,
-		PageInfo:   pageInfo.ToProto(),
+		Edges:    edges,
+		PageInfo: pageInfo.ToProto(),
 	}
 
 	resp := &v2.GetTradesByMarketResponse{
@@ -646,9 +643,8 @@ func (t *tradingDataServiceV2) GetTradesByParty(ctx context.Context, in *v2.GetT
 	}
 
 	tradesConnection := &v2.TradeConnection{
-		TotalCount: 0, // TODO: implement total count
-		Edges:      edges,
-		PageInfo:   pageInfo.ToProto(),
+		Edges:    edges,
+		PageInfo: pageInfo.ToProto(),
 	}
 
 	resp := &v2.GetTradesByPartyResponse{
@@ -684,9 +680,8 @@ func (t *tradingDataServiceV2) GetTradesByOrderID(ctx context.Context, in *v2.Ge
 	}
 
 	tradesConnection := &v2.TradeConnection{
-		TotalCount: 0, // TODO: implement total count
-		Edges:      edges,
-		PageInfo:   pageInfo.ToProto(),
+		Edges:    edges,
+		PageInfo: pageInfo.ToProto(),
 	}
 
 	resp := &v2.GetTradesByOrderIDResponse{
@@ -713,9 +708,8 @@ func (t *tradingDataServiceV2) GetMarkets(ctx context.Context, in *v2.GetMarkets
 	}
 
 	marketsConnection := &v2.MarketConnection{
-		TotalCount: 0, // TODO: implement total count
-		Edges:      edges,
-		PageInfo:   pageInfo.ToProto(),
+		Edges:    edges,
+		PageInfo: pageInfo.ToProto(),
 	}
 
 	resp := &v2.GetMarketsResponse{
@@ -743,9 +737,8 @@ func (t *tradingDataServiceV2) GetPositionsByPartyConnection(ctx context.Context
 	}
 
 	PositionsConnection := &v2.PositionConnection{
-		TotalCount: 0, // TODO: implement total count
-		Edges:      edges,
-		PageInfo:   pageInfo.ToProto(),
+		Edges:    edges,
+		PageInfo: pageInfo.ToProto(),
 	}
 
 	resp := &v2.GetPositionsByPartyConnectionResponse{
@@ -772,9 +765,8 @@ func (t *tradingDataServiceV2) GetParties(ctx context.Context, in *v2.GetParties
 	}
 
 	partyConnection := &v2.PartyConnection{
-		TotalCount: 0, // TODO: implement total count
-		Edges:      edges,
-		PageInfo:   pageInfo.ToProto(),
+		Edges:    edges,
+		PageInfo: pageInfo.ToProto(),
 	}
 
 	resp := &v2.GetPartiesResponse{
@@ -800,9 +792,8 @@ func (t *tradingDataServiceV2) GetMarginLevels(ctx context.Context, in *v2.GetMa
 	}
 
 	marginLevelsConnection := &v2.MarginConnection{
-		TotalCount: 0, // TODO: implement total count
-		Edges:      edges,
-		PageInfo:   pageInfo.ToProto(),
+		Edges:    edges,
+		PageInfo: pageInfo.ToProto(),
 	}
 
 	resp := &v2.GetMarginLevelsResponse{
@@ -830,9 +821,8 @@ func (t *tradingDataServiceV2) GetRewards(ctx context.Context, in *v2.GetRewards
 	}
 
 	rewardsConnection := &v2.RewardsConnection{
-		TotalCount: 0, // TODO: implement total count
-		Edges:      edges,
-		PageInfo:   pageInfo.ToProto(),
+		Edges:    edges,
+		PageInfo: pageInfo.ToProto(),
 	}
 
 	resp := v2.GetRewardsResponse{Rewards: rewardsConnection}
@@ -874,8 +864,6 @@ func (t *tradingDataServiceV2) GetDeposits(ctx context.Context, req *v2.GetDepos
 	}
 
 	depositConnection := &v2.DepositsConnection{
-		TotalCount: 0, // TODO: implement total count
-		//Edges:      makeDepositEdges(deposits),
 		Edges:    edges,
 		PageInfo: pageInfo.ToProto(),
 	}
@@ -917,9 +905,8 @@ func (t *tradingDataServiceV2) GetWithdrawals(ctx context.Context, req *v2.GetWi
 	}
 
 	depositConnection := &v2.WithdrawalsConnection{
-		TotalCount: 0, // TODO: implement total count
-		Edges:      edges,
-		PageInfo:   pageInfo.ToProto(),
+		Edges:    edges,
+		PageInfo: pageInfo.ToProto(),
 	}
 
 	resp := v2.GetWithdrawalsResponse{Withdrawals: depositConnection}
@@ -948,8 +935,7 @@ func (t *tradingDataServiceV2) getSingleAsset(ctx context.Context, assetID strin
 	}
 
 	connection := &v2.AssetsConnection{
-		TotalCount: 1,
-		Edges:      edges,
+		Edges: edges,
 		PageInfo: &v2.PageInfo{
 			HasNextPage:     false,
 			HasPreviousPage: false,
@@ -978,9 +964,8 @@ func (t *tradingDataServiceV2) getAllAssets(ctx context.Context, p *v2.Paginatio
 	}
 
 	connection := &v2.AssetsConnection{
-		TotalCount: 0, // TODO: implement total count
-		Edges:      edges,
-		PageInfo:   pageInfo.ToProto(),
+		Edges:    edges,
+		PageInfo: pageInfo.ToProto(),
 	}
 
 	resp := v2.GetAssetsResponse{Assets: connection}
@@ -1004,9 +989,8 @@ func (t *tradingDataServiceV2) GetOracleSpecsConnection(ctx context.Context, req
 	}
 
 	connection := &v2.OracleSpecsConnection{
-		TotalCount: 0, // TODO: implement total count
-		Edges:      edges,
-		PageInfo:   pageInfo.ToProto(),
+		Edges:    edges,
+		PageInfo: pageInfo.ToProto(),
 	}
 
 	resp := v2.GetOracleSpecsConnectionResponse{
@@ -1041,9 +1025,8 @@ func (t *tradingDataServiceV2) GetOracleDataConnection(ctx context.Context, req 
 	}
 
 	connection := &v2.OracleDataConnection{
-		TotalCount: 0, // TODO: implement total count
-		Edges:      edges,
-		PageInfo:   pageInfo.ToProto(),
+		Edges:    edges,
+		PageInfo: pageInfo.ToProto(),
 	}
 
 	resp := v2.GetOracleDataConnectionResponse{
@@ -1073,9 +1056,8 @@ func (t *tradingDataServiceV2) GetLiquidityProvisions(ctx context.Context, req *
 	}
 
 	liquidityProvisionConnection := &v2.LiquidityProvisionsConnection{
-		TotalCount: 0, // TODO: implement total count
-		Edges:      edges,
-		PageInfo:   pageInfo.ToProto(),
+		Edges:    edges,
+		PageInfo: pageInfo.ToProto(),
 	}
 
 	return &v2.GetLiquidityProvisionsResponse{LiquidityProvisions: liquidityProvisionConnection}, nil
@@ -1099,9 +1081,8 @@ func (t *tradingDataServiceV2) ListVotes(ctx context.Context, in *v2.ListVotesRe
 	}
 
 	VotesConnection := &v2.VoteConnection{
-		TotalCount: 0, // TODO: implement total count
-		Edges:      edges,
-		PageInfo:   pageInfo.ToProto(),
+		Edges:    edges,
+		PageInfo: pageInfo.ToProto(),
 	}
 
 	resp := &v2.ListVotesResponse{
@@ -1145,9 +1126,8 @@ func (t *tradingDataServiceV2) ListTransfers(ctx context.Context, req *v2.ListTr
 	}
 
 	return &v2.ListTransfersResponse{Transfers: &v2.TransferConnection{
-		TotalCount: 0,
-		Edges:      edges,
-		PageInfo:   pageInfo.ToProto(),
+		Edges:    edges,
+		PageInfo: pageInfo.ToProto(),
 	}}, nil
 }
 
@@ -1176,9 +1156,8 @@ func (t *tradingDataServiceV2) ListOrders(ctx context.Context, in *v2.ListOrders
 	}
 
 	ordersConnection := &v2.OrderConnection{
-		TotalCount: 0,
-		Edges:      edges,
-		PageInfo:   pageInfo.ToProto(),
+		Edges:    edges,
+		PageInfo: pageInfo.ToProto(),
 	}
 
 	resp := &v2.ListOrdersResponse{
@@ -1204,9 +1183,8 @@ func (t *tradingDataServiceV2) ListOrderVersions(ctx context.Context, in *v2.Lis
 	}
 
 	ordersConnection := &v2.OrderConnection{
-		TotalCount: 0,
-		Edges:      edges,
-		PageInfo:   pageInfo.ToProto(),
+		Edges:    edges,
+		PageInfo: pageInfo.ToProto(),
 	}
 
 	resp := &v2.ListOrderVersionsResponse{

@@ -146,9 +146,8 @@ type ComplexityRoot struct {
 	}
 
 	AssetsConnection struct {
-		Edges      func(childComplexity int) int
-		PageInfo   func(childComplexity int) int
-		TotalCount func(childComplexity int) int
+		Edges    func(childComplexity int) int
+		PageInfo func(childComplexity int) int
 	}
 
 	AuctionDuration struct {
@@ -189,9 +188,8 @@ type ComplexityRoot struct {
 	}
 
 	CandleDataConnection struct {
-		Edges      func(childComplexity int) int
-		PageInfo   func(childComplexity int) int
-		TotalCount func(childComplexity int) int
+		Edges    func(childComplexity int) int
+		PageInfo func(childComplexity int) int
 	}
 
 	CandleEdge struct {
@@ -242,9 +240,8 @@ type ComplexityRoot struct {
 	}
 
 	DepositsConnection struct {
-		Edges      func(childComplexity int) int
-		PageInfo   func(childComplexity int) int
-		TotalCount func(childComplexity int) int
+		Edges    func(childComplexity int) int
+		PageInfo func(childComplexity int) int
 	}
 
 	DiscreteTrading struct {
@@ -412,9 +409,8 @@ type ComplexityRoot struct {
 	}
 
 	LiquidityProvisionsConnection struct {
-		Edges      func(childComplexity int) int
-		PageInfo   func(childComplexity int) int
-		TotalCount func(childComplexity int) int
+		Edges    func(childComplexity int) int
+		PageInfo func(childComplexity int) int
 	}
 
 	LiquidityProvisionsEdge struct {
@@ -445,9 +441,8 @@ type ComplexityRoot struct {
 	}
 
 	MarginConnection struct {
-		Edges      func(childComplexity int) int
-		PageInfo   func(childComplexity int) int
-		TotalCount func(childComplexity int) int
+		Edges    func(childComplexity int) int
+		PageInfo func(childComplexity int) int
 	}
 
 	MarginEdge struct {
@@ -495,9 +490,8 @@ type ComplexityRoot struct {
 	}
 
 	MarketConnection struct {
-		Edges      func(childComplexity int) int
-		PageInfo   func(childComplexity int) int
-		TotalCount func(childComplexity int) int
+		Edges    func(childComplexity int) int
+		PageInfo func(childComplexity int) int
 	}
 
 	MarketData struct {
@@ -536,9 +530,8 @@ type ComplexityRoot struct {
 	}
 
 	MarketDataConnection struct {
-		Edges      func(childComplexity int) int
-		PageInfo   func(childComplexity int) int
-		TotalCount func(childComplexity int) int
+		Edges    func(childComplexity int) int
+		PageInfo func(childComplexity int) int
 	}
 
 	MarketDataEdge struct {
@@ -676,9 +669,8 @@ type ComplexityRoot struct {
 	}
 
 	OracleDataConnection struct {
-		Edges      func(childComplexity int) int
-		PageInfo   func(childComplexity int) int
-		TotalCount func(childComplexity int) int
+		Edges    func(childComplexity int) int
+		PageInfo func(childComplexity int) int
 	}
 
 	OracleDataEdge struct {
@@ -713,9 +705,8 @@ type ComplexityRoot struct {
 	}
 
 	OracleSpecsConnection struct {
-		Edges      func(childComplexity int) int
-		PageInfo   func(childComplexity int) int
-		TotalCount func(childComplexity int) int
+		Edges    func(childComplexity int) int
+		PageInfo func(childComplexity int) int
 	}
 
 	Order struct {
@@ -742,9 +733,8 @@ type ComplexityRoot struct {
 	}
 
 	OrderConnection struct {
-		Edges      func(childComplexity int) int
-		PageInfo   func(childComplexity int) int
-		TotalCount func(childComplexity int) int
+		Edges    func(childComplexity int) int
+		PageInfo func(childComplexity int) int
 	}
 
 	OrderEdge struct {
@@ -794,9 +784,8 @@ type ComplexityRoot struct {
 	}
 
 	PartyConnection struct {
-		Edges      func(childComplexity int) int
-		PageInfo   func(childComplexity int) int
-		TotalCount func(childComplexity int) int
+		Edges    func(childComplexity int) int
+		PageInfo func(childComplexity int) int
 	}
 
 	PartyEdge struct {
@@ -827,9 +816,8 @@ type ComplexityRoot struct {
 	}
 
 	PositionConnection struct {
-		Edges      func(childComplexity int) int
-		PageInfo   func(childComplexity int) int
-		TotalCount func(childComplexity int) int
+		Edges    func(childComplexity int) int
+		PageInfo func(childComplexity int) int
 	}
 
 	PositionEdge struct {
@@ -913,9 +901,8 @@ type ComplexityRoot struct {
 	}
 
 	ProposalVoteConnection struct {
-		Edges      func(childComplexity int) int
-		PageInfo   func(childComplexity int) int
-		TotalCount func(childComplexity int) int
+		Edges    func(childComplexity int) int
+		PageInfo func(childComplexity int) int
 	}
 
 	ProposalVoteEdge struct {
@@ -1040,9 +1027,8 @@ type ComplexityRoot struct {
 	}
 
 	RewardsConnection struct {
-		Edges      func(childComplexity int) int
-		PageInfo   func(childComplexity int) int
-		TotalCount func(childComplexity int) int
+		Edges    func(childComplexity int) int
+		PageInfo func(childComplexity int) int
 	}
 
 	RiskFactor struct {
@@ -1171,9 +1157,8 @@ type ComplexityRoot struct {
 	}
 
 	TradeConnection struct {
-		Edges      func(childComplexity int) int
-		PageInfo   func(childComplexity int) int
-		TotalCount func(childComplexity int) int
+		Edges    func(childComplexity int) int
+		PageInfo func(childComplexity int) int
 	}
 
 	TradeEdge struct {
@@ -1216,9 +1201,8 @@ type ComplexityRoot struct {
 	}
 
 	TransferConnection struct {
-		Edges      func(childComplexity int) int
-		PageInfo   func(childComplexity int) int
-		TotalCount func(childComplexity int) int
+		Edges    func(childComplexity int) int
+		PageInfo func(childComplexity int) int
 	}
 
 	TransferEdge struct {
@@ -1282,9 +1266,8 @@ type ComplexityRoot struct {
 	}
 
 	VoteConnection struct {
-		Edges      func(childComplexity int) int
-		PageInfo   func(childComplexity int) int
-		TotalCount func(childComplexity int) int
+		Edges    func(childComplexity int) int
+		PageInfo func(childComplexity int) int
 	}
 
 	VoteEdge struct {
@@ -1312,9 +1295,8 @@ type ComplexityRoot struct {
 	}
 
 	WithdrawalsConnection struct {
-		Edges      func(childComplexity int) int
-		PageInfo   func(childComplexity int) int
-		TotalCount func(childComplexity int) int
+		Edges    func(childComplexity int) int
+		PageInfo func(childComplexity int) int
 	}
 }
 
@@ -1991,13 +1973,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.AssetsConnection.PageInfo(childComplexity), true
 
-	case "AssetsConnection.totalCount":
-		if e.complexity.AssetsConnection.TotalCount == nil {
-			break
-		}
-
-		return e.complexity.AssetsConnection.TotalCount(childComplexity), true
-
 	case "AuctionDuration.durationSecs":
 		if e.complexity.AuctionDuration.DurationSecs == nil {
 			break
@@ -2165,13 +2140,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.CandleDataConnection.PageInfo(childComplexity), true
-
-	case "CandleDataConnection.totalCount":
-		if e.complexity.CandleDataConnection.TotalCount == nil {
-			break
-		}
-
-		return e.complexity.CandleDataConnection.TotalCount(childComplexity), true
 
 	case "CandleEdge.cursor":
 		if e.complexity.CandleEdge.Cursor == nil {
@@ -2368,13 +2336,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.DepositsConnection.PageInfo(childComplexity), true
-
-	case "DepositsConnection.totalCount":
-		if e.complexity.DepositsConnection.TotalCount == nil {
-			break
-		}
-
-		return e.complexity.DepositsConnection.TotalCount(childComplexity), true
 
 	case "DiscreteTrading.duration":
 		if e.complexity.DiscreteTrading.Duration == nil {
@@ -3018,13 +2979,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.LiquidityProvisionsConnection.PageInfo(childComplexity), true
 
-	case "LiquidityProvisionsConnection.totalCount":
-		if e.complexity.LiquidityProvisionsConnection.TotalCount == nil {
-			break
-		}
-
-		return e.complexity.LiquidityProvisionsConnection.TotalCount(childComplexity), true
-
 	case "LiquidityProvisionsEdge.cursor":
 		if e.complexity.LiquidityProvisionsEdge.Cursor == nil {
 			break
@@ -3122,13 +3076,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.MarginConnection.PageInfo(childComplexity), true
-
-	case "MarginConnection.totalCount":
-		if e.complexity.MarginConnection.TotalCount == nil {
-			break
-		}
-
-		return e.complexity.MarginConnection.TotalCount(childComplexity), true
 
 	case "MarginEdge.cursor":
 		if e.complexity.MarginEdge.Cursor == nil {
@@ -3439,13 +3386,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.MarketConnection.PageInfo(childComplexity), true
 
-	case "MarketConnection.totalCount":
-		if e.complexity.MarketConnection.TotalCount == nil {
-			break
-		}
-
-		return e.complexity.MarketConnection.TotalCount(childComplexity), true
-
 	case "MarketData.auctionEnd":
 		if e.complexity.MarketData.AuctionEnd == nil {
 			break
@@ -3662,13 +3602,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.MarketDataConnection.PageInfo(childComplexity), true
-
-	case "MarketDataConnection.totalCount":
-		if e.complexity.MarketDataConnection.TotalCount == nil {
-			break
-		}
-
-		return e.complexity.MarketDataConnection.TotalCount(childComplexity), true
 
 	case "MarketDataEdge.cursor":
 		if e.complexity.MarketDataEdge.Cursor == nil {
@@ -4249,13 +4182,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.OracleDataConnection.PageInfo(childComplexity), true
 
-	case "OracleDataConnection.totalCount":
-		if e.complexity.OracleDataConnection.TotalCount == nil {
-			break
-		}
-
-		return e.complexity.OracleDataConnection.TotalCount(childComplexity), true
-
 	case "OracleDataEdge.cursor":
 		if e.complexity.OracleDataEdge.Cursor == nil {
 			break
@@ -4386,13 +4312,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.OracleSpecsConnection.PageInfo(childComplexity), true
-
-	case "OracleSpecsConnection.totalCount":
-		if e.complexity.OracleSpecsConnection.TotalCount == nil {
-			break
-		}
-
-		return e.complexity.OracleSpecsConnection.TotalCount(childComplexity), true
 
 	case "Order.createdAt":
 		if e.complexity.Order.CreatedAt == nil {
@@ -4552,13 +4471,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.OrderConnection.PageInfo(childComplexity), true
-
-	case "OrderConnection.totalCount":
-		if e.complexity.OrderConnection.TotalCount == nil {
-			break
-		}
-
-		return e.complexity.OrderConnection.TotalCount(childComplexity), true
 
 	case "OrderEdge.cursor":
 		if e.complexity.OrderEdge.Cursor == nil {
@@ -4892,13 +4804,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.PartyConnection.PageInfo(childComplexity), true
 
-	case "PartyConnection.totalCount":
-		if e.complexity.PartyConnection.TotalCount == nil {
-			break
-		}
-
-		return e.complexity.PartyConnection.TotalCount(childComplexity), true
-
 	case "PartyEdge.cursor":
 		if e.complexity.PartyEdge.Cursor == nil {
 			break
@@ -5022,13 +4927,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.PositionConnection.PageInfo(childComplexity), true
-
-	case "PositionConnection.totalCount":
-		if e.complexity.PositionConnection.TotalCount == nil {
-			break
-		}
-
-		return e.complexity.PositionConnection.TotalCount(childComplexity), true
 
 	case "PositionEdge.cursor":
 		if e.complexity.PositionEdge.Cursor == nil {
@@ -5330,13 +5228,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.ProposalVoteConnection.PageInfo(childComplexity), true
-
-	case "ProposalVoteConnection.totalCount":
-		if e.complexity.ProposalVoteConnection.TotalCount == nil {
-			break
-		}
-
-		return e.complexity.ProposalVoteConnection.TotalCount(childComplexity), true
 
 	case "ProposalVoteEdge.cursor":
 		if e.complexity.ProposalVoteEdge.Cursor == nil {
@@ -6173,13 +6064,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.RewardsConnection.PageInfo(childComplexity), true
 
-	case "RewardsConnection.totalCount":
-		if e.complexity.RewardsConnection.TotalCount == nil {
-			break
-		}
-
-		return e.complexity.RewardsConnection.TotalCount(childComplexity), true
-
 	case "RiskFactor.long":
 		if e.complexity.RiskFactor.Long == nil {
 			break
@@ -6871,13 +6755,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.TradeConnection.PageInfo(childComplexity), true
 
-	case "TradeConnection.totalCount":
-		if e.complexity.TradeConnection.TotalCount == nil {
-			break
-		}
-
-		return e.complexity.TradeConnection.TotalCount(childComplexity), true
-
 	case "TradeEdge.cursor":
 		if e.complexity.TradeEdge.Cursor == nil {
 			break
@@ -7038,13 +6915,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.TransferConnection.PageInfo(childComplexity), true
-
-	case "TransferConnection.totalCount":
-		if e.complexity.TransferConnection.TotalCount == nil {
-			break
-		}
-
-		return e.complexity.TransferConnection.TotalCount(childComplexity), true
 
 	case "TransferEdge.cursor":
 		if e.complexity.TransferEdge.Cursor == nil {
@@ -7249,13 +7119,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.VoteConnection.PageInfo(childComplexity), true
 
-	case "VoteConnection.totalCount":
-		if e.complexity.VoteConnection.TotalCount == nil {
-			break
-		}
-
-		return e.complexity.VoteConnection.TotalCount(childComplexity), true
-
 	case "VoteEdge.cursor":
 		if e.complexity.VoteEdge.Cursor == nil {
 			break
@@ -7374,13 +7237,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.WithdrawalsConnection.PageInfo(childComplexity), true
-
-	case "WithdrawalsConnection.totalCount":
-		if e.complexity.WithdrawalsConnection.TotalCount == nil {
-			break
-		}
-
-		return e.complexity.WithdrawalsConnection.TotalCount(childComplexity), true
 
 	}
 	return 0, false
@@ -10701,8 +10557,6 @@ type TradeEdge {
 }
 
 type TradeConnection {
-  "The total number of trades in this connection"
-  totalCount: Int!
   "The trade in this connection"
   edges: [TradeEdge!]!
   "The pagination information"
@@ -10715,8 +10569,6 @@ type PartyEdge {
 }
 
 type PartyConnection {
-  "The total number of parties in this connection"
-  totalCount: Int!
   "The parties in this connection"
   edges: [PartyEdge!]!
   "The pagination information"
@@ -10729,8 +10581,6 @@ type MarketEdge {
 }
 
 type MarketConnection {
-  "The total number of markets in this connection"
-  totalCount: Int!
   "The markets in this connection"
   edges: [MarketEdge!]!
   "The pagination information"
@@ -10743,8 +10593,6 @@ type OrderEdge {
 }
 
 type OrderConnection {
-  "The total number of orders in this connection"
-  totalCount: Int
   "The orders in this connection"
   edges: [OrderEdge!]
   "The pagination information"
@@ -10757,8 +10605,6 @@ type PositionEdge {
 }
 
 type PositionConnection {
-  "The total number of positions in this connection"
-  totalCount: Int
   "The positions in this connection"
   edges: [PositionEdge!]
   "The pagination information"
@@ -10771,8 +10617,6 @@ type VoteEdge {
 }
 
 type VoteConnection {
-  "The total number of votes in this connection"
-  totalCount: Int
   "The votes in this connection"
   edges: [VoteEdge!]
   "The pagination information"
@@ -10785,8 +10629,6 @@ type ProposalVoteEdge {
 }
 
 type ProposalVoteConnection {
-  "The total number of proposal votes in this connection"
-  totalCount: Int
   "The proposal votes in this connection"
   edges: [ProposalVoteEdge!]
   "The pagination information"
@@ -10799,8 +10641,6 @@ type MarginEdge {
 }
 
 type MarginConnection {
-  "The total number of margin levels in this connection"
-  totalCount: Int
   "The margin levels in this connection"
   edges: [MarginEdge!]
   "The pagination information"
@@ -10813,8 +10653,6 @@ type MarketDataEdge {
 }
 
 type MarketDataConnection {
-  "The total number of market data elements available with this connection"
-  totalCount: Int
   "The market data elements for the requested page"
   edges: [MarketDataEdge]
   "The pagination information"
@@ -10827,8 +10665,6 @@ type RewardEdge {
 }
 
 type RewardsConnection {
-  "The total number of reward data items available with this connection"
-  totalCount: Int
   "The rewards"
   edges: [RewardEdge]
   "The pagination information"
@@ -10864,8 +10700,6 @@ type CandleEdge {
 }
 
 type CandleDataConnection {
-  "The total number of candles available with this connection"
-  totalCount: Int
   "The candles"
   edges: [CandleEdge]
   "The pagination information"
@@ -10878,8 +10712,6 @@ type WithdrawalEdge {
 }
 
 type WithdrawalsConnection {
-  "The total number of withdrawals available with this connection"
-  totalCount: Int
   "The withdrawals"
   edges: [WithdrawalEdge]
   "The pagination information"
@@ -10892,8 +10724,6 @@ type DepositEdge {
 }
 
 type DepositsConnection {
-  "The total number of deposits available with this connection"
-  totalCount: Int
   "The deposits"
   edges: [DepositEdge]
   "The pagination information"
@@ -10906,8 +10736,6 @@ type AssetEdge {
 }
 
 type AssetsConnection {
-    "The total number of assets available with this connection"
-    totalCount: Int
     "The assets"
     edges: [AssetEdge]
     "The pagination information"
@@ -10922,8 +10750,6 @@ type OracleSpecEdge {
 }
 
 type OracleSpecsConnection {
-    "The total number of oracle specs available with this connection"
-    totalCount: Int!
     "The oracle specs"
     edges: [OracleSpecEdge]
     "The pagination information"
@@ -10938,8 +10764,6 @@ type OracleDataEdge {
 }
 
 type OracleDataConnection {
-    "The total number of oracle data items available with this connection"
-    totalCount: Int!
     "The oracle data"
     edges: [OracleDataEdge]
     "The pagination information"
@@ -10952,7 +10776,6 @@ type LiquidityProvisionsEdge {
 }
 
 type LiquidityProvisionsConnection {
-    totalCount: Int!
     edges: [LiquidityProvisionsEdge]
     pageInfo: PageInfo!
 }
@@ -10963,7 +10786,6 @@ type TransferEdge {
 }
 
 type TransferConnection {
-    totalCount: Int!
     edges: [TransferEdge]
     pageInfo: PageInfo!
 }
@@ -13889,38 +13711,6 @@ func (ec *executionContext) _AssetEdge_cursor(ctx context.Context, field graphql
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _AssetsConnection_totalCount(ctx context.Context, field graphql.CollectedField, obj *v2.AssetsConnection) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "AssetsConnection",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.TotalCount, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(int64)
-	fc.Result = res
-	return ec.marshalOInt2int64(ctx, field.Selections, res)
-}
-
 func (ec *executionContext) _AssetsConnection_edges(ctx context.Context, field graphql.CollectedField, obj *v2.AssetsConnection) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -14750,38 +14540,6 @@ func (ec *executionContext) _Candle_interval(ctx context.Context, field graphql.
 	res := resTmp.(Interval)
 	fc.Result = res
 	return ec.marshalNInterval2codeᚗvegaprotocolᚗioᚋdataᚑnodeᚋgatewayᚋgraphqlᚐInterval(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _CandleDataConnection_totalCount(ctx context.Context, field graphql.CollectedField, obj *v2.CandleDataConnection) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "CandleDataConnection",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.TotalCount, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(int64)
-	fc.Result = res
-	return ec.marshalOInt2int64(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _CandleDataConnection_edges(ctx context.Context, field graphql.CollectedField, obj *v2.CandleDataConnection) (ret graphql.Marshaler) {
@@ -15747,38 +15505,6 @@ func (ec *executionContext) _DepositEdge_cursor(ctx context.Context, field graph
 	res := resTmp.(string)
 	fc.Result = res
 	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _DepositsConnection_totalCount(ctx context.Context, field graphql.CollectedField, obj *v2.DepositsConnection) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "DepositsConnection",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.TotalCount, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(int64)
-	fc.Result = res
-	return ec.marshalOInt2int64(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _DepositsConnection_edges(ctx context.Context, field graphql.CollectedField, obj *v2.DepositsConnection) (ret graphql.Marshaler) {
@@ -18922,41 +18648,6 @@ func (ec *executionContext) _LiquidityProvision_reference(ctx context.Context, f
 	return ec.marshalOString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _LiquidityProvisionsConnection_totalCount(ctx context.Context, field graphql.CollectedField, obj *v2.LiquidityProvisionsConnection) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "LiquidityProvisionsConnection",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.TotalCount, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(int64)
-	fc.Result = res
-	return ec.marshalNInt2int64(ctx, field.Selections, res)
-}
-
 func (ec *executionContext) _LiquidityProvisionsConnection_edges(ctx context.Context, field graphql.CollectedField, obj *v2.LiquidityProvisionsConnection) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -19442,38 +19133,6 @@ func (ec *executionContext) _MarginCalculator_scalingFactors(ctx context.Context
 	res := resTmp.(*vega.ScalingFactors)
 	fc.Result = res
 	return ec.marshalNScalingFactors2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐScalingFactors(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _MarginConnection_totalCount(ctx context.Context, field graphql.CollectedField, obj *v2.MarginConnection) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "MarginConnection",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.TotalCount, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(int64)
-	fc.Result = res
-	return ec.marshalOInt2int64(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _MarginConnection_edges(ctx context.Context, field graphql.CollectedField, obj *v2.MarginConnection) (ret graphql.Marshaler) {
@@ -20808,41 +20467,6 @@ func (ec *executionContext) _Market_riskFactors(ctx context.Context, field graph
 	return ec.marshalORiskFactor2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐRiskFactor(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _MarketConnection_totalCount(ctx context.Context, field graphql.CollectedField, obj *v2.MarketConnection) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "MarketConnection",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.TotalCount, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(int64)
-	fc.Result = res
-	return ec.marshalNInt2int64(ctx, field.Selections, res)
-}
-
 func (ec *executionContext) _MarketConnection_edges(ctx context.Context, field graphql.CollectedField, obj *v2.MarketConnection) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -21902,38 +21526,6 @@ func (ec *executionContext) _MarketDataCommitments_buys(ctx context.Context, fie
 	res := resTmp.([]*vega.LiquidityOrderReference)
 	fc.Result = res
 	return ec.marshalOLiquidityOrderReference2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐLiquidityOrderReferenceᚄ(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _MarketDataConnection_totalCount(ctx context.Context, field graphql.CollectedField, obj *v2.MarketDataConnection) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "MarketDataConnection",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.TotalCount, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(int64)
-	fc.Result = res
-	return ec.marshalOInt2int64(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _MarketDataConnection_edges(ctx context.Context, field graphql.CollectedField, obj *v2.MarketDataConnection) (ret graphql.Marshaler) {
@@ -24729,41 +24321,6 @@ func (ec *executionContext) _OracleData_broadcastAt(ctx context.Context, field g
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _OracleDataConnection_totalCount(ctx context.Context, field graphql.CollectedField, obj *v2.OracleDataConnection) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "OracleDataConnection",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.TotalCount, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(int64)
-	fc.Result = res
-	return ec.marshalNInt2int64(ctx, field.Selections, res)
-}
-
 func (ec *executionContext) _OracleDataConnection_edges(ctx context.Context, field graphql.CollectedField, obj *v2.OracleDataConnection) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -25381,41 +24938,6 @@ func (ec *executionContext) _OracleSpecToFutureBinding_tradingTerminationPropert
 	res := resTmp.(string)
 	fc.Result = res
 	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _OracleSpecsConnection_totalCount(ctx context.Context, field graphql.CollectedField, obj *v2.OracleSpecsConnection) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "OracleSpecsConnection",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.TotalCount, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(int64)
-	fc.Result = res
-	return ec.marshalNInt2int64(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _OracleSpecsConnection_edges(ctx context.Context, field graphql.CollectedField, obj *v2.OracleSpecsConnection) (ret graphql.Marshaler) {
@@ -26166,38 +25688,6 @@ func (ec *executionContext) _Order_liquidityProvision(ctx context.Context, field
 	res := resTmp.(*vega.LiquidityProvision)
 	fc.Result = res
 	return ec.marshalOLiquidityProvision2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐLiquidityProvision(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _OrderConnection_totalCount(ctx context.Context, field graphql.CollectedField, obj *v2.OrderConnection) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "OrderConnection",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.TotalCount, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(int64)
-	fc.Result = res
-	return ec.marshalOInt2int64(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _OrderConnection_edges(ctx context.Context, field graphql.CollectedField, obj *v2.OrderConnection) (ret graphql.Marshaler) {
@@ -27518,41 +27008,6 @@ func (ec *executionContext) _Party_rewardDetails(ctx context.Context, field grap
 	return ec.marshalORewardPerAssetDetail2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐRewardSummary(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _PartyConnection_totalCount(ctx context.Context, field graphql.CollectedField, obj *v2.PartyConnection) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "PartyConnection",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.TotalCount, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(int64)
-	fc.Result = res
-	return ec.marshalNInt2int64(ctx, field.Selections, res)
-}
-
 func (ec *executionContext) _PartyConnection_edges(ctx context.Context, field graphql.CollectedField, obj *v2.PartyConnection) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -28144,38 +27599,6 @@ func (ec *executionContext) _Position_updatedAt(ctx context.Context, field graph
 	res := resTmp.(*string)
 	fc.Result = res
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _PositionConnection_totalCount(ctx context.Context, field graphql.CollectedField, obj *v2.PositionConnection) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "PositionConnection",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.TotalCount, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(int64)
-	fc.Result = res
-	return ec.marshalOInt2int64(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _PositionConnection_edges(ctx context.Context, field graphql.CollectedField, obj *v2.PositionConnection) (ret graphql.Marshaler) {
@@ -29648,38 +29071,6 @@ func (ec *executionContext) _ProposalVote_proposalId(ctx context.Context, field 
 	res := resTmp.(string)
 	fc.Result = res
 	return ec.marshalNID2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _ProposalVoteConnection_totalCount(ctx context.Context, field graphql.CollectedField, obj *ProposalVoteConnection) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "ProposalVoteConnection",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.TotalCount, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*int)
-	fc.Result = res
-	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _ProposalVoteConnection_edges(ctx context.Context, field graphql.CollectedField, obj *ProposalVoteConnection) (ret graphql.Marshaler) {
@@ -33076,38 +32467,6 @@ func (ec *executionContext) _RewardSummary_rewardsConnection(ctx context.Context
 	return ec.marshalORewardsConnection2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐRewardsConnection(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _RewardsConnection_totalCount(ctx context.Context, field graphql.CollectedField, obj *v2.RewardsConnection) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "RewardsConnection",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.TotalCount, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(int64)
-	fc.Result = res
-	return ec.marshalOInt2int64(ctx, field.Selections, res)
-}
-
 func (ec *executionContext) _RewardsConnection_edges(ctx context.Context, field graphql.CollectedField, obj *v2.RewardsConnection) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -36413,41 +35772,6 @@ func (ec *executionContext) _Trade_sellerAuctionBatch(ctx context.Context, field
 	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _TradeConnection_totalCount(ctx context.Context, field graphql.CollectedField, obj *v2.TradeConnection) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "TradeConnection",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.TotalCount, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(int64)
-	fc.Result = res
-	return ec.marshalNInt2int64(ctx, field.Selections, res)
-}
-
 func (ec *executionContext) _TradeConnection_edges(ctx context.Context, field graphql.CollectedField, obj *v2.TradeConnection) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -37245,41 +36569,6 @@ func (ec *executionContext) _TransferBalance_balance(ctx context.Context, field 
 	res := resTmp.(string)
 	fc.Result = res
 	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _TransferConnection_totalCount(ctx context.Context, field graphql.CollectedField, obj *v2.TransferConnection) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "TransferConnection",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.TotalCount, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(int64)
-	fc.Result = res
-	return ec.marshalNInt2int64(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _TransferConnection_edges(ctx context.Context, field graphql.CollectedField, obj *v2.TransferConnection) (ret graphql.Marshaler) {
@@ -38276,38 +37565,6 @@ func (ec *executionContext) _Vote_governanceTokenWeight(ctx context.Context, fie
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _VoteConnection_totalCount(ctx context.Context, field graphql.CollectedField, obj *v2.VoteConnection) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "VoteConnection",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.TotalCount, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(int64)
-	fc.Result = res
-	return ec.marshalOInt2int64(ctx, field.Selections, res)
-}
-
 func (ec *executionContext) _VoteConnection_edges(ctx context.Context, field graphql.CollectedField, obj *v2.VoteConnection) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -38883,38 +38140,6 @@ func (ec *executionContext) _WithdrawalEdge_cursor(ctx context.Context, field gr
 	res := resTmp.(string)
 	fc.Result = res
 	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _WithdrawalsConnection_totalCount(ctx context.Context, field graphql.CollectedField, obj *v2.WithdrawalsConnection) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "WithdrawalsConnection",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.TotalCount, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(int64)
-	fc.Result = res
-	return ec.marshalOInt2int64(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _WithdrawalsConnection_edges(ctx context.Context, field graphql.CollectedField, obj *v2.WithdrawalsConnection) (ret graphql.Marshaler) {
@@ -41025,13 +40250,6 @@ func (ec *executionContext) _AssetsConnection(ctx context.Context, sel ast.Selec
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("AssetsConnection")
-		case "totalCount":
-			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._AssetsConnection_totalCount(ctx, field, obj)
-			}
-
-			out.Values[i] = innerFunc(ctx)
-
 		case "edges":
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._AssetsConnection_edges(ctx, field, obj)
@@ -41459,13 +40677,6 @@ func (ec *executionContext) _CandleDataConnection(ctx context.Context, sel ast.S
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("CandleDataConnection")
-		case "totalCount":
-			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._CandleDataConnection_totalCount(ctx, field, obj)
-			}
-
-			out.Values[i] = innerFunc(ctx)
-
 		case "edges":
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._CandleDataConnection_edges(ctx, field, obj)
@@ -42019,13 +41230,6 @@ func (ec *executionContext) _DepositsConnection(ctx context.Context, sel ast.Sel
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("DepositsConnection")
-		case "totalCount":
-			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._DepositsConnection_totalCount(ctx, field, obj)
-			}
-
-			out.Values[i] = innerFunc(ctx)
-
 		case "edges":
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._DepositsConnection_edges(ctx, field, obj)
@@ -43601,16 +42805,6 @@ func (ec *executionContext) _LiquidityProvisionsConnection(ctx context.Context, 
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("LiquidityProvisionsConnection")
-		case "totalCount":
-			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._LiquidityProvisionsConnection_totalCount(ctx, field, obj)
-			}
-
-			out.Values[i] = innerFunc(ctx)
-
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
 		case "edges":
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._LiquidityProvisionsConnection_edges(ctx, field, obj)
@@ -43874,13 +43068,6 @@ func (ec *executionContext) _MarginConnection(ctx context.Context, sel ast.Selec
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("MarginConnection")
-		case "totalCount":
-			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._MarginConnection_totalCount(ctx, field, obj)
-			}
-
-			out.Values[i] = innerFunc(ctx)
-
 		case "edges":
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._MarginConnection_edges(ctx, field, obj)
@@ -44572,16 +43759,6 @@ func (ec *executionContext) _MarketConnection(ctx context.Context, sel ast.Selec
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("MarketConnection")
-		case "totalCount":
-			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._MarketConnection_totalCount(ctx, field, obj)
-			}
-
-			out.Values[i] = innerFunc(ctx)
-
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
 		case "edges":
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._MarketConnection_edges(ctx, field, obj)
@@ -45091,13 +44268,6 @@ func (ec *executionContext) _MarketDataConnection(ctx context.Context, sel ast.S
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("MarketDataConnection")
-		case "totalCount":
-			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._MarketDataConnection_totalCount(ctx, field, obj)
-			}
-
-			out.Values[i] = innerFunc(ctx)
-
 		case "edges":
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._MarketDataConnection_edges(ctx, field, obj)
@@ -46513,16 +45683,6 @@ func (ec *executionContext) _OracleDataConnection(ctx context.Context, sel ast.S
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("OracleDataConnection")
-		case "totalCount":
-			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._OracleDataConnection_totalCount(ctx, field, obj)
-			}
-
-			out.Values[i] = innerFunc(ctx)
-
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
 		case "edges":
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._OracleDataConnection_edges(ctx, field, obj)
@@ -46861,16 +46021,6 @@ func (ec *executionContext) _OracleSpecsConnection(ctx context.Context, sel ast.
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("OracleSpecsConnection")
-		case "totalCount":
-			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._OracleSpecsConnection_totalCount(ctx, field, obj)
-			}
-
-			out.Values[i] = innerFunc(ctx)
-
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
 		case "edges":
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._OracleSpecsConnection_edges(ctx, field, obj)
@@ -47266,13 +46416,6 @@ func (ec *executionContext) _OrderConnection(ctx context.Context, sel ast.Select
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("OrderConnection")
-		case "totalCount":
-			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._OrderConnection_totalCount(ctx, field, obj)
-			}
-
-			out.Values[i] = innerFunc(ctx)
-
 		case "edges":
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._OrderConnection_edges(ctx, field, obj)
@@ -47924,16 +47067,6 @@ func (ec *executionContext) _PartyConnection(ctx context.Context, sel ast.Select
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("PartyConnection")
-		case "totalCount":
-			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._PartyConnection_totalCount(ctx, field, obj)
-			}
-
-			out.Values[i] = innerFunc(ctx)
-
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
 		case "edges":
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._PartyConnection_edges(ctx, field, obj)
@@ -48280,13 +47413,6 @@ func (ec *executionContext) _PositionConnection(ctx context.Context, sel ast.Sel
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("PositionConnection")
-		case "totalCount":
-			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._PositionConnection_totalCount(ctx, field, obj)
-			}
-
-			out.Values[i] = innerFunc(ctx)
-
 		case "edges":
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._PositionConnection_edges(ctx, field, obj)
@@ -49138,13 +48264,6 @@ func (ec *executionContext) _ProposalVoteConnection(ctx context.Context, sel ast
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("ProposalVoteConnection")
-		case "totalCount":
-			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._ProposalVoteConnection_totalCount(ctx, field, obj)
-			}
-
-			out.Values[i] = innerFunc(ctx)
-
 		case "edges":
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._ProposalVoteConnection_edges(ctx, field, obj)
@@ -50984,13 +50103,6 @@ func (ec *executionContext) _RewardsConnection(ctx context.Context, sel ast.Sele
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("RewardsConnection")
-		case "totalCount":
-			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._RewardsConnection_totalCount(ctx, field, obj)
-			}
-
-			out.Values[i] = innerFunc(ctx)
-
 		case "edges":
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._RewardsConnection_edges(ctx, field, obj)
@@ -52351,16 +51463,6 @@ func (ec *executionContext) _TradeConnection(ctx context.Context, sel ast.Select
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("TradeConnection")
-		case "totalCount":
-			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._TradeConnection_totalCount(ctx, field, obj)
-			}
-
-			out.Values[i] = innerFunc(ctx)
-
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
 		case "edges":
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._TradeConnection_edges(ctx, field, obj)
@@ -52772,16 +51874,6 @@ func (ec *executionContext) _TransferConnection(ctx context.Context, sel ast.Sel
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("TransferConnection")
-		case "totalCount":
-			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._TransferConnection_totalCount(ctx, field, obj)
-			}
-
-			out.Values[i] = innerFunc(ctx)
-
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
 		case "edges":
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._TransferConnection_edges(ctx, field, obj)
@@ -53413,13 +52505,6 @@ func (ec *executionContext) _VoteConnection(ctx context.Context, sel ast.Selecti
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("VoteConnection")
-		case "totalCount":
-			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._VoteConnection_totalCount(ctx, field, obj)
-			}
-
-			out.Values[i] = innerFunc(ctx)
-
 		case "edges":
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._VoteConnection_edges(ctx, field, obj)
@@ -53736,13 +52821,6 @@ func (ec *executionContext) _WithdrawalsConnection(ctx context.Context, sel ast.
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("WithdrawalsConnection")
-		case "totalCount":
-			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._WithdrawalsConnection_totalCount(ctx, field, obj)
-			}
-
-			out.Values[i] = innerFunc(ctx)
-
 		case "edges":
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._WithdrawalsConnection_edges(ctx, field, obj)
@@ -54738,21 +53816,6 @@ func (ec *executionContext) unmarshalNInt2int32(ctx context.Context, v interface
 
 func (ec *executionContext) marshalNInt2int32(ctx context.Context, sel ast.SelectionSet, v int32) graphql.Marshaler {
 	res := graphql.MarshalInt32(v)
-	if res == graphql.Null {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "must not be null")
-		}
-	}
-	return res
-}
-
-func (ec *executionContext) unmarshalNInt2int64(ctx context.Context, v interface{}) (int64, error) {
-	res, err := graphql.UnmarshalInt64(v)
-	return res, graphql.ErrorOnPath(ctx, err)
-}
-
-func (ec *executionContext) marshalNInt2int64(ctx context.Context, sel ast.SelectionSet, v int64) graphql.Marshaler {
-	res := graphql.MarshalInt64(v)
 	if res == graphql.Null {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -57457,16 +56520,6 @@ func (ec *executionContext) marshalOID2ᚖstring(ctx context.Context, sel ast.Se
 		return graphql.Null
 	}
 	res := graphql.MarshalID(*v)
-	return res
-}
-
-func (ec *executionContext) unmarshalOInt2int64(ctx context.Context, v interface{}) (int64, error) {
-	res, err := graphql.UnmarshalInt64(v)
-	return res, graphql.ErrorOnPath(ctx, err)
-}
-
-func (ec *executionContext) marshalOInt2int64(ctx context.Context, sel ast.SelectionSet, v int64) graphql.Marshaler {
-	res := graphql.MarshalInt64(v)
 	return res
 }
 
