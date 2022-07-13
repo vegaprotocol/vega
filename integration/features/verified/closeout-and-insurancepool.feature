@@ -22,6 +22,8 @@ Feature: Test closeout type 1: margin >= cost of closeout
       | name                           | value |
       | market.auction.minimumDuration | 1     |
 
+    And the average block duration is "1"
+
   Scenario: case 1 test closeout cost and insurance pool balance
 # setup accounts
     Given the initial insurance pool balance is "15000" for the markets:
@@ -41,7 +43,7 @@ Feature: Test closeout type 1: margin >= cost of closeout
       | lp1 | aux1   | ETH/DEC19 | 20000             | 0.001 | sell | ASK              | 1          | 10     | amendment |
       | lp1 | aux1   | ETH/DEC19 | 20000             | 0.001 | buy  | MID              | 1          | 10     | amendment |
       | lp1 | aux1   | ETH/DEC19 | 20000             | 0.001 | sell | MID              | 1          | 26     | amendment |
-    Given time is updated to "2020-10-16T00:00:00Z"
+    When the network moves ahead "1" blocks
     # setup order book
     When the parties place the following orders:
       | party            | market id | side | volume | price | resulting trades | type       | tif     | reference       |
@@ -52,7 +54,7 @@ Feature: Test closeout type 1: margin >= cost of closeout
       | buySideProvider  | ETH/DEC19 | buy  | 1000   | 95    | 0                | TYPE_LIMIT | TIF_GTC | buy-provider-1  |
       | aux2             | ETH/DEC19 | buy  | 1      | 80    | 0                | TYPE_LIMIT | TIF_GTC | aux-b-1         |
 
-    Then time is updated to "2020-10-20T00:00:00Z" 
+    When the network moves ahead "1" blocks
 
     And the market data for the market "ETH/DEC19" should be:
       | mark price | trading mode           | horizon | min bound | max bound | target stake | supplied stake | open interest |
@@ -70,7 +72,9 @@ Feature: Test closeout type 1: margin >= cost of closeout
     Then the parties should have the following account balances:
       | party  | asset | market id | margin    | general  |
       | party1 | USD   | ETH/DEC19 | 12197     | 17803    |
-  
+      
+    When the network moves ahead "1" blocks
+
     # party1 has a position
     When the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
@@ -81,14 +85,14 @@ Feature: Test closeout type 1: margin >= cost of closeout
        #original vol
       | sell | 150   | 1000   |
       #LP pegged vol
-      | sell | 126   | 1323   |
+      | sell | 126   | 1523   |
         #LP pegged vol
-      | sell | 115   | 401    |
+      | sell | 115   | 422    |
       #original vol
       | sell | 105   | 1      | 
 
     Then the mark price should be "100" for the market "ETH/DEC19"  
-    
+   
    # party1 maintenance margin should be: position_vol* slippage = position_vol * (ExitPrice-MarkPrice) + vol * riskfactor * markprice= 100*((105+115*99)/100-100) + 100*0.48787313795861700*100=6369
     And the parties should have the following margin levels:
       | party   | market id  | maintenance | search | initial | release |
@@ -142,3 +146,4 @@ Feature: Test closeout type 1: margin >= cost of closeout
   #     | party3 | -100   | 0              | 0            |
   #   And the insurance pool balance should be "10000" for the market "ETH/DEC19"
   #   And the cumulated balance for all accounts should be worth "400120000"
+
