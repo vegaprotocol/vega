@@ -39,7 +39,7 @@ func testSignCommandFlagsValidFlagsSucceeds(t *testing.T) {
 		PubKey:         pubKey,
 		PassphraseFile: passphraseFilePath,
 		TxBlockHeight:  150,
-		RawCommand:     `{"voteSubmission": {"proposalId": "some-id", "value": "VALUE_YES"}}`,
+		RawCommand:     `{"voteSubmission": {"proposalId": "ec066610abbd1736b69cadcb059b9efdfdd9e3e33560fc46b2b8b62764edf33f", "value": "VALUE_YES"}}`,
 	}
 
 	expectedReq := &wcommands.SignCommandRequest{
@@ -51,7 +51,7 @@ func testSignCommandFlagsValidFlagsSucceeds(t *testing.T) {
 			Propagate: true,
 			Command: &walletpb.SubmitTransactionRequest_VoteSubmission{
 				VoteSubmission: &v1.VoteSubmission{
-					ProposalId: "some-id",
+					ProposalId: "ec066610abbd1736b69cadcb059b9efdfdd9e3e33560fc46b2b8b62764edf33f",
 					Value:      vega.Vote_VALUE_YES,
 				},
 			},
