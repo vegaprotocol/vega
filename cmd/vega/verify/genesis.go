@@ -49,7 +49,9 @@ type asset struct {
 			MaxFaucetAmountMint string `json:"max_faucet_amount_mint"`
 		} `json:"builtin_asset,omitempty"`
 		ERC20 *struct {
-			ContractAddress string `json:"contract_address"`
+			ContractAddress   string `json:"contract_address"`
+			LifetimeLimit     string `json:"lifetime_limit"`
+			WithdrawThreshold string `json:"withdraw_threshold"`
 		} `json:"erc20,omitempty"`
 	}
 }
