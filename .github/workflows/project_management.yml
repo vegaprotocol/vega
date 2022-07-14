@@ -218,7 +218,7 @@ jobs:
           echo 'BOARD_ITEM_ID='$pr_item_id >> $GITHUB_ENV
       - name: 'Reopen if the linked issue closed'
         id: reopen-issue
-        if: steps.issue-to-project.outcome == 'success' && env.LINKED_ISSUE_STATE == '"CLOSED"'
+        if: steps.issue-to-project.outcome == 'success' && env.LINKED_ISSUE_STATE == '"CLOSED"' && env.PR_STATE != '"MERGED"'
         run: |
           gh api graphql -f query='
             mutation($clientMutationId:String!, $issueId:ID!) {
