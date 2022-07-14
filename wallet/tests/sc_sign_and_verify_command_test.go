@@ -38,7 +38,7 @@ func TestSignCommand(t *testing.T) {
 		"--pubkey", importWalletResp.Key.PublicKey,
 		"--passphrase-file", passphraseFilePath,
 		"--tx-height", "150",
-		`{"voteSubmission": {"proposalId": "some-id", "value": "VALUE_YES"}}`,
+		`{"voteSubmission": {"proposalId": "1da3c57bfc2ff8fac2bd2160e5bed5f88f49d1d54d655918cf0758585f248ef7", "value": "VALUE_YES"}}`,
 	})
 
 	// then
@@ -90,7 +90,7 @@ func TestSignCommandWithTaintedKey(t *testing.T) {
 		"--pubkey", importWalletResp.Key.PublicKey,
 		"--passphrase-file", passphraseFilePath,
 		"--tx-height", "150",
-		`{"voteSubmission": {"proposalId": "some-id", "value": "VALUE_YES"}}`,
+		`{"voteSubmission": {"proposalId": "1da3c57bfc2ff8fac2bd2160e5bed5f88f49d1d54d655918cf0758585f248ef7", "value": "VALUE_YES"}}`,
 	})
 
 	// then
@@ -117,7 +117,7 @@ func TestSignCommandWithTaintedKey(t *testing.T) {
 		"--pubkey", importWalletResp.Key.PublicKey,
 		"--passphrase-file", passphraseFilePath,
 		"--tx-height", "150",
-		`{"voteSubmission": {"proposalId": "some-id", "value": "VALUE_YES"}}`,
+		`{"voteSubmission": {"proposalId": "1da3c57bfc2ff8fac2bd2160e5bed5f88f49d1d54d655918cf0758585f248ef7", "value": "VALUE_YES"}}`,
 	})
 
 	// then
