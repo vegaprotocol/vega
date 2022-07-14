@@ -27,10 +27,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestFuture(t *testing.T) {
-	t.Run("Unsubscribing the oracle engine succeeds", testUnsubscribingTheOracleEngineSucceeds)
-}
-
 func TestScalingOfSettlementPrice(t *testing.T) {
 	t.Run("No scaling needed for settlement price for asset decimals", testNoScalingNeeded)
 	t.Run("Need to scale up the settlement price for asset decimals", testScalingUpNeeded)
@@ -72,19 +68,6 @@ func testScalingDownNeededWithPrecisionLoss(t *testing.T) {
 	scaled, err := ft.future.ScaleSettlementPriceToDecimalPlaces(num.NewUint(123456), 3)
 	require.NoError(t, err)
 	require.Equal(t, num.NewUint(1234), scaled)
-}
-
-func testUnsubscribingTheOracleEngineSucceeds(t *testing.T) {
-	// given
-	tf := testFuture(t)
-	ctx := context.Background()
-
-	// expect
-	tf.oe.EXPECT().Unsubscribe(ctx, oracles.SubscriptionID(1))
-	tf.oe.EXPECT().Unsubscribe(ctx, oracles.SubscriptionID(2))
-
-	// when
-	tf.future.Unsubscribe(context.Background(), tf.oe)
 }
 
 type tstFuture struct {
@@ -133,17 +116,18 @@ func testFuture(t *testing.T) *tstFuture {
 		SettlementPriceDecimals: 5,
 	}
 
+	ctx := context.Background()
 	oe.EXPECT().
 		Subscribe(gomock.Any(), gomock.Any(), gomock.Any()).
 		Times(1).
-		Return(oracles.SubscriptionID(1))
+		Return(subscriptionID(1), func(ctx context.Context, sid oracles.SubscriptionID) {})
 
 	oe.EXPECT().
 		Subscribe(gomock.Any(), gomock.Any(), gomock.Any()).
 		Times(1).
-		Return(oracles.SubscriptionID(2))
+		Return(subscriptionID(2), func(ctx context.Context, sid oracles.SubscriptionID) {})
 
-	future, err := products.NewFuture(context.Background(), log, f, oe)
+	future, err := products.NewFuture(ctx, log, f, oe)
 	if err != nil {
 		t.Fatalf("couldn't create a Future for testing: %v", err)
 	}
@@ -151,4 +135,8 @@ func testFuture(t *testing.T) *tstFuture {
 		future: future,
 		oe:     oe,
 	}
+}
+
+func subscriptionID(i uint64) oracles.SubscriptionID {
+	return oracles.SubscriptionID(i)
 }

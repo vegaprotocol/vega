@@ -65,18 +65,3 @@ func (mr *MockProductMockRecorder) Settle(arg0, arg1, arg2 interface{}) *gomock.
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Settle", reflect.TypeOf((*MockProduct)(nil).Settle), arg0, arg1, arg2)
 }
-
-// SettlementPrice mocks base method.
-func (m *MockProduct) SettlementPrice() (*num.Uint, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SettlementPrice")
-	ret0, _ := ret[0].(*num.Uint)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// SettlementPrice indicates an expected call of SettlementPrice.
-func (mr *MockProductMockRecorder) SettlementPrice() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SettlementPrice", reflect.TypeOf((*MockProduct)(nil).SettlementPrice))
-}
