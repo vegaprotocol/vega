@@ -198,10 +198,13 @@ func TestPendingSnapshotRoundTrip(t *testing.T) {
 			Source: &types.AssetDetailsBuiltinAsset{},
 		})
 		require.Nil(t, err)
-		_, err = as.NewAsset(ctx, "asset2", &types.AssetDetails{
+		assetID2, err := as.NewAsset(ctx, "asset2", &types.AssetDetails{
 			Source: &types.AssetDetailsBuiltinAsset{},
 		})
 		require.Nil(t, err)
+
+		// set asset 2 as pending_listing
+		as.SetPendingListing(ctx, assetID2)
 
 		// get the serialised state
 		state, _, err := as.GetState(pendingKey)
