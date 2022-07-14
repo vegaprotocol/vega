@@ -103,21 +103,10 @@ Feature: Test closeout type 1: margin >= cost of closeout
       | sell | 105   | 1      | 
 
     When the network moves ahead "1" blocks
-
-    And the order book should have the following volumes for market "ETH/DEC19":
-      | side | price | volume |
-       #original vol
-      | sell | 150   | 1000   |
-      #LP pegged vol
-      | sell | 126   | 1523   |
-        #LP pegged vol
-      | sell | 115   | 422    |
-      #original vol
-      | sell | 105   | 1      | 
-
     Then the mark price should be "100" for the market "ETH/DEC19"  
-   
-   # party1 maintenance margin should be: position_vol* slippage = position_vol * (ExitPrice-MarkPrice) + vol * riskfactor * markprice= 100*((105+115*99)/100-100) + 100*0.48787313795861700*100=6369
+    
+   # slippage is calculated from the order book before the trade happens, which is (105+110*99)/100-100=9.95 , round down to 9
+   # party1 maintenance margin should be: position_vol* slippage + vol * riskfactor * markprice= 100*9 + 100*0.48787313795861700*100=5779
     And the parties should have the following margin levels:
       | party   | market id  | maintenance | search | initial | release |
       | party1  | ETH/DEC19  | 5779        | 11558  | 14447   | 17337   |
@@ -127,47 +116,11 @@ Feature: Test closeout type 1: margin >= cost of closeout
     
     When the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
-      | party2 | ETH/DEC19 | buy  | 500   | 126   | 3               | TYPE_LIMIT | TIF_GTC | ref-1-xxx |
+      | party2 | ETH/DEC19 | buy  | 500    | 126   | 3                | TYPE_LIMIT | TIF_GTC | ref-1-xxx |
   
     Then the mark price should be "126" for the market "ETH/DEC19"    
 
-    # Then the parties should have the following account balances:
-    #   | party            | asset | market id | margin    | general     |
-    #   | party1           | USD   | ETH/DEC19 | 0         |  0          |
-      # | party2           | USD   | ETH/DEC19 | 38900     |  49963700   |
-      # | party3           | USD   | ETH/DEC19 | 600       |  49999400   |
-    
-    
-    # And the cumulated balance for all accounts should be worth "4100045000" 
-    # And the insurance pool balance should be "25000" for the market "ETH/DEC19"   
-
-  #   When the parties place the following orders:
-  #     | party            | market id | side | volume | price | resulting trades | type       | tif     | reference       |
-  #     | sellSideProvider | ETH/DEC19 | sell | 1000   | 200   | 0                | TYPE_LIMIT | TIF_GTC | sell-provider-2 |
-  #     | buySideProvider  | ETH/DEC19 | buy  | 1000   | 80    | 0                | TYPE_LIMIT | TIF_GTC | buy-provider-2  |
-  #   Then the parties cancel the following orders:
-  #     | party  | reference |
-  #     | aux1   | aux-s-1   |
-  #     | aux2   | aux-b-1   |
-  #   Then the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
-  #   And the insurance pool balance should be "15000" for the market "ETH/DEC19"
-  #   When the parties place the following orders:
-  #     | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
-  #     | party2 | ETH/DEC19 | buy  | 100    | 160   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
-  #     | party3 | ETH/DEC19 | sell | 100    | 160   | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
-
-  # #check margin/general account 
-  #   Then the parties should have the following account balances:
-  #     | party  | asset | market id | margin   | general |
-  #     | party1 | USD   | ETH/DEC19 | 0        | 0       |
-  #     | party2 | USD   | ETH/DEC19 | 56000    | 0       |
-
-  #   Then the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
-  #   Then the parties should have the following profit and loss:
-  #     | party  | volume | unrealised pnl | realised pnl |
-  #     | party1 | 0      | 0              | -6000        |
-  #     | party2 | 200    | 6000           | 0            |
-  #     | party3 | -100   | 0              | 0            |
-  #   And the insurance pool balance should be "10000" for the market "ETH/DEC19"
-  #   And the cumulated balance for all accounts should be worth "400120000"
-
+    Then the parties should have the following account balances:
+      | party     | asset | market id | margin    | general     |
+      | party1    | USD   | ETH/DEC19 | 15370     |  12030      |
+      
