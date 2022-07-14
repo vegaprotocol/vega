@@ -218,7 +218,7 @@ jobs:
           echo 'BOARD_ITEM_ID='$pr_item_id >> $GITHUB_ENV
       - name: 'Reopen if the linked issue closed'
         id: reopen-issue
-        if: steps.issue-to-project.outcome == 'success' && env.LINKED_ISSUE_STATE == '"CLOSED"'
+        if: steps.issue-to-project.outcome == 'success' && env.LINKED_ISSUE_STATE == '"CLOSED"' && env.PR_STATE != '"MERGED"'
         run: |
           gh api graphql -f query='
             mutation($clientMutationId:String!, $issueId:ID!) {
@@ -289,7 +289,7 @@ jobs:
           echo 'CURRENT_STATUS='${{ env.DONE_COLUMN }} >> $GITHUB_ENV
       - name: 'Set closed PR issue to in progress column'
         id: closed-pr-with-issue
-        if: steps.linked.outcome == 'success' && github.event.pull_request.merged == true
+        if: steps.linked.outcome == 'success' && github.event.pull_request.merged == true && env.PR_STATE != '"MERGED"'
         run: |
           echo 'ITEM_ID='${{  env.BOARD_ITEM_ID }} >> $GITHUB_ENV
           echo 'CURRENT_STATUS='${{ env.IN_PROGRESS_COLUMN }} >> $GITHUB_ENV
