@@ -60,8 +60,8 @@ func (ml *MarginLevels) Flush(ctx context.Context) ([]entities.MarginLevels, err
 func (ml *MarginLevels) GetMarginLevelsByID(ctx context.Context, partyID, marketID string, pagination entities.OffsetPagination) ([]entities.MarginLevels, error) {
 	whereClause, bindVars := buildAccountWhereClause(partyID, marketID)
 
-	query := fmt.Sprintf(`select distinct on (account_id) %s
-		from all_margin_levels
+	query := fmt.Sprintf(`select  %s
+		from current_margin_levels
 		%s
 		order by account_id, vega_time desc`, sqlMarginLevelColumns,
 		whereClause)
@@ -99,14 +99,14 @@ func buildAccountWhereClause(partyID, marketID string) (string, []interface{}) {
 		accountsWhereClause = fmt.Sprintf("where %s", whereMarket)
 	}
 
-	return fmt.Sprintf("where all_margin_levels.account_id  in (select id from accounts %s)", accountsWhereClause), bindVars
+	return fmt.Sprintf("where current_margin_levels.account_id  in (select id from accounts %s)", accountsWhereClause), bindVars
 }
 
 func (ml *MarginLevels) GetMarginLevelsByIDWithCursorPagination(ctx context.Context, partyID, marketID string, pagination entities.CursorPagination) ([]entities.MarginLevels, entities.PageInfo, error) {
 	whereClause, bindVars := buildAccountWhereClause(partyID, marketID)
 
-	query := fmt.Sprintf(`select distinct on (account_id) %s
-		from all_margin_levels
+	query := fmt.Sprintf(`select %s
+		from current_margin_levels
 		%s`, sqlMarginLevelColumns,
 		whereClause)
 

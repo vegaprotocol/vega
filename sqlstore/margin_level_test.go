@@ -14,8 +14,6 @@ package sqlstore_test
 
 import (
 	"context"
-	"fmt"
-	"strconv"
 	"testing"
 	"time"
 
@@ -36,7 +34,6 @@ func TestMarginLevels(t *testing.T) {
 	t.Run("GetMarginLevelsByID should return the latest state of margin levels for all markets if only party ID is provided", testGetMarginLevelsByPartyID)
 	t.Run("GetMarginLevelsByID should return the latest state of margin levels for all parties if only market ID is provided", testGetMarginLevelsByMarketID)
 	t.Run("GetMarginLevelsByID should return the latest state of margin levels for the given party/market ID", testGetMarginLevelsByID)
-	t.Run("GetMarginLevelsByID should return use conflated data where raw data is not available", testMarginLevelsDataRetention)
 
 	t.Run("GetMarginLevelsByIDWithCursorPagination should return all margin levels for a given party if no pagination is provided", testGetMarginLevelsByIDPaginationWithPartyNoCursor)
 	t.Run("GetMarginLevelsByIDWithCursorPagination should return all margin levels for a given market if no pagination is provided", testGetMarginLevelsByIDPaginationWithMarketNoCursor)
@@ -107,73 +104,6 @@ func setupMarginLevelTests(t *testing.T, ctx context.Context) (*testBlockSource,
 	require.NoError(t, err)
 
 	return testBlockSource, ml, accountStore, conn
-}
-
-func testMarginLevelsDataRetention(t *testing.T) {
-	ctx := context.Background()
-
-	now := time.Now()
-	yesterday := now.Add(-24 * time.Hour)
-
-	bs := sqlstore.NewBlocks(connectionSource)
-	blockSource := &testBlockSource{bs, yesterday.Add(1 * time.Hour)}
-	_, ml, accountStore, conn := setupMarginLevelTests(t, ctx)
-
-	marginLevels := addMarginLevels(t, 300, blockSource, accountStore, ml)
-
-	_, err := conn.Exec(context.Background(), fmt.Sprintf("CALL refresh_continuous_aggregate('conflated_margin_levels', '%s', '%s');",
-		yesterday.Format("2006-01-02"),
-		time.Now().Format("2006-01-02")))
-
-	assert.NoError(t, err)
-
-	_, err = conn.Exec(context.Background(), "delete from margin_levels")
-	assert.NoError(t, err)
-
-	levels, err := ml.GetMarginLevelsByID(context.Background(), "", "deadbeef", entities.OffsetPagination{})
-	assert.NoError(t, err)
-	assert.Equal(t, 1, len(levels))
-
-	// The conflated data should be used to obtain the latest margin level when raw margin level data is not available
-	lastMarginLevelInserted := marginLevels[len(marginLevels)-1]
-	assert.Equal(t, lastMarginLevelInserted, levels[0])
-
-	marginLevels = addMarginLevels(t, 150, blockSource, accountStore, ml)
-
-	levels, err = ml.GetMarginLevelsByID(context.Background(), "", "deadbeef", entities.OffsetPagination{})
-	assert.NoError(t, err)
-	assert.Equal(t, 1, len(levels))
-
-	// The latest raw (non-conflated) margin data should be used to get the current margin level when it is available
-	lastMarginLevelInserted = marginLevels[len(marginLevels)-1]
-	assert.Equal(t, lastMarginLevelInserted, levels[0])
-}
-
-func addMarginLevels(t *testing.T, numMarginLevels int, blockSource *testBlockSource, accountStore *sqlstore.Accounts, ml *sqlstore.MarginLevels) []entities.MarginLevels {
-	var marginLevels []entities.MarginLevels
-	block := blockSource.getNextBlock(t)
-	for i := 0; i < numMarginLevels; i++ {
-
-		marginLevelProto := getMarginLevelWithMaintenanceProto(strconv.Itoa(i), "deadbeef",
-			"deadbeef", 0)
-		marginLevelProto2 := getMarginLevelWithMaintenanceProto(strconv.Itoa(i), "deadbeef",
-			"deadbead", 0)
-		marginLevel, err := entities.MarginLevelsFromProto(context.Background(), marginLevelProto, accountStore, block.VegaTime)
-		marginLevels = append(marginLevels, marginLevel)
-		require.NoError(t, err, "Converting margin levels proto to database entity")
-		err = ml.Add(marginLevel)
-		require.NoError(t, err)
-
-		marginLevel2, err := entities.MarginLevelsFromProto(context.Background(), marginLevelProto2, accountStore, block.VegaTime)
-		marginLevels = append(marginLevels, marginLevel)
-		require.NoError(t, err, "Converting margin levels proto to database entity")
-		err = ml.Add(marginLevel2)
-		require.NoError(t, err)
-
-		ml.Flush(context.Background())
-		block = blockSource.getNextBlock(t)
-	}
-	return marginLevels
 }
 
 func testInsertMarginLevels(t *testing.T) {
