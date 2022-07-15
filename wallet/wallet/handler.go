@@ -536,6 +536,86 @@ func SignMessage(store Store, req *SignMessageRequest) (*SignMessageResponse, er
 	}, nil
 }
 
+type ListPermissionsRequest struct {
+	Wallet     string `json:"wallet"`
+	Passphrase string `json:"passphrase"`
+}
+
+type ListPermissionsResponse struct {
+	Hostnames []string `json:"hostnames"`
+}
+
+func ListPermissions(store Store, req *ListPermissionsRequest) (*ListPermissionsResponse, error) {
+	w, err := getWallet(store, req.Wallet, req.Passphrase)
+	if err != nil {
+		return nil, err
+	}
+
+	return &ListPermissionsResponse{
+		Hostnames: w.PermittedHostnames(),
+	}, nil
+}
+
+type DescribePermissionsRequest struct {
+	Wallet     string `json:"wallet"`
+	Passphrase string `json:"passphrase"`
+	Hostname   string `json:"hostname"`
+}
+
+type DescribePermissionsResponse struct {
+	Permissions Permissions `json:"permissions"`
+}
+
+func DescribePermissions(store Store, req *DescribePermissionsRequest) (*DescribePermissionsResponse, error) {
+	w, err := getWallet(store, req.Wallet, req.Passphrase)
+	if err != nil {
+		return nil, err
+	}
+
+	return &DescribePermissionsResponse{
+		Permissions: w.Permissions(req.Hostname),
+	}, nil
+}
+
+type RevokePermissionsRequest struct {
+	Wallet     string `json:"wallet"`
+	Passphrase string `json:"passphrase"`
+	Hostname   string `json:"hostname"`
+}
+
+func RevokePermissions(store Store, req *RevokePermissionsRequest) error {
+	w, err := getWallet(store, req.Wallet, req.Passphrase)
+	if err != nil {
+		return err
+	}
+
+	w.RevokePermissions(req.Hostname)
+
+	if err := store.SaveWallet(w, req.Passphrase); err != nil {
+		return fmt.Errorf("couldn't save wallet: %w", err)
+	}
+	return nil
+}
+
+type PurgePermissionsRequest struct {
+	Wallet     string `json:"wallet"`
+	Passphrase string `json:"passphrase"`
+}
+
+func PurgePermissions(store Store, req *PurgePermissionsRequest) error {
+	w, err := getWallet(store, req.Wallet, req.Passphrase)
+	if err != nil {
+		return err
+	}
+
+	w.PurgePermissions()
+
+	if err := store.SaveWallet(w, req.Passphrase); err != nil {
+		return fmt.Errorf("couldn't save wallet: %w", err)
+	}
+	return nil
+}
+
 func getWallet(store Store, wallet, passphrase string) (Wallet, error) {
 	if !store.WalletExists(wallet) {
 		return nil, ErrWalletDoesNotExists
