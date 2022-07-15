@@ -1473,10 +1473,22 @@ func TestSubmit(t *testing.T) {
 		// now move the time to expire the pegged
 		timeExpires := peggedExpiry.Add(1 * time.Hour)
 		tm.now = timeExpires
+		tm.events = nil
 		tm.market.OnTick(ctx, timeExpires)
-		orders, err := tm.market.RemoveExpiredOrders(ctx, timeExpires.UnixNano())
-		assert.NoError(t, err)
-		assert.Len(t, orders, 0)
+		t.Run("no orders expired", func(t *testing.T) {
+			// First collect all the orders events
+			orders := []*types.Order{}
+			for _, e := range tm.events {
+				switch evt := e.(type) {
+				case *events.Order:
+					if evt.Order().Status == types.OrderStatusExpired {
+						orders = append(orders, mustOrderFromProto(evt.Order()))
+					}
+				}
+			}
+
+			require.Len(t, orders, 0)
+		})
 	})
 
 	t.Run("test lots of pegged and non pegged orders", func(t *testing.T) {
@@ -2064,8 +2076,7 @@ func TestSubmit(t *testing.T) {
 		// now the limit order expires, and the LP order size should increase again
 		tm.events = nil
 		tm.now = auctionEnd.Add(11 * time.Second)
-		tm.market.OnTick(ctx, auctionEnd.Add(11*time.Second))                         // this is 1 second after order expiry
-		tm.market.RemoveExpiredOrders(ctx, auctionEnd.Add(11*time.Second).UnixNano()) // this is 1 second after order expiry
+		tm.market.OnTick(ctx, auctionEnd.Add(11*time.Second)) // this is 1 second after order expiry
 
 		// now we ensure we have 2 order on the buy side.
 		// one lp of size 6, on normal limit of size 500

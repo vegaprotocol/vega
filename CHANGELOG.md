@@ -1,9 +1,21 @@
 # Changelog
 
-## Unreleased 0.53.0
+## Unreleased 0.54.0
 
 ### 🚨 Breaking changes
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+
+### 🗑️ Deprecation
+- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+
+### 🛠 Improvements
+- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+
+### 🐛 Fixes
+- [5571](https://github.com/vegaprotocol/vega/issues/5571) - Restore pending assets status correctly after snapshot restore
+- [5572](https://github.com/vegaprotocol/vega/issues/5572) - Add validation on `IDs` and public keys
+
+## 0.53.0
 
 ### 🗑️ Deprecation
 - [5513](https://github.com/vegaprotocol/vega/issues/5513) - Remove all checkpoint restore command
@@ -13,6 +25,8 @@
 - [5519](https://github.com/vegaprotocol/vega/pull/5519) - Add `--genesis-file` option to the `load_checkpoint` command
 - [5525](https://github.com/vegaprotocol/vega/pull/5525) - Release `vegawallet` from the core
 - [5524](https://github.com/vegaprotocol/vega/pull/5524) - Align `vegawallet` and core versions
+- [5524](https://github.com/vegaprotocol/vega/pull/5549) - Add endpoint for getting the network's `chain-id`
+- [5524](https://github.com/vegaprotocol/vega/pull/5552) - Handle tendermint demotion and `ersatz` slot reduction at the same time
 
 ### 🐛 Fixes
 - [5476](https://github.com/vegaprotocol/vega/issues/5476) - Include settlement price in snapshot
@@ -27,6 +41,9 @@
 - [5432](https://github.com/vegaprotocol/vega/issues/5431) - Do not accept transaction with unexpected public keys
 - [5478](https://github.com/vegaprotocol/vega/issues/5478) - Assure uncross and fake uncross are in line with each other
 - [5480](https://github.com/vegaprotocol/vega/issues/5480) - Assure indicative trades are in line with actual uncrossing trades
+- [5556](https://github.com/vegaprotocol/vega/issues/5556) - Fix id generation seed
+- [5361](https://github.com/vegaprotocol/vega/issues/5361) - Fix limits for proposals
+- [5557](https://github.com/vegaprotocol/vega/issues/5427) - Fix oracle status at market settlement
 
 ## 0.52.0
 

@@ -52,7 +52,7 @@ type TimeService interface {
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/oracle_engine_mock.go -package mocks code.vegaprotocol.io/vega/execution OracleEngine
 type OracleEngine interface {
 	ListensToPubKeys(oracles.OracleData) bool
-	Subscribe(context.Context, oracles.OracleSpec, oracles.OnMatchedOracleData) oracles.SubscriptionID
+	Subscribe(context.Context, oracles.OracleSpec, oracles.OnMatchedOracleData) (oracles.SubscriptionID, oracles.Unsubscriber)
 	Unsubscribe(context.Context, oracles.SubscriptionID)
 }
 
@@ -759,11 +759,6 @@ func (e *Engine) OnTick(ctx context.Context, t time.Time) {
 
 	e.log.Debug("updating engine on new time update")
 
-	// remove expired orders
-	// TODO(FIXME): this should be remove, and handled inside the market directly
-	// when call with the new time (see the next for loop)
-	e.removeExpiredOrders(ctx, t)
-
 	// notify markets of the time expiration
 	toDelete := []string{}
 	for _, mkt := range e.marketsCpy {
@@ -778,25 +773,6 @@ func (e *Engine) OnTick(ctx context.Context, t time.Time) {
 
 	for _, id := range toDelete {
 		e.removeMarket(id)
-	}
-
-	timer.EngineTimeCounterAdd()
-}
-
-// Process any data updates (including state changes)
-// e.g. removing expired orders from matching engine.
-func (e *Engine) removeExpiredOrders(ctx context.Context, t time.Time) {
-	timer := metrics.NewTimeCounter("-", "execution", "removeExpiredOrders")
-	timeNow := t.UnixNano()
-	for _, mkt := range e.marketsCpy {
-		expired, err := mkt.RemoveExpiredOrders(ctx, timeNow)
-		if err != nil {
-			e.log.Error("unable to get remove expired orders",
-				logging.MarketID(mkt.GetID()),
-				logging.Error(err))
-		}
-
-		metrics.OrderGaugeAdd(-len(expired), mkt.GetID())
 	}
 
 	timer.EngineTimeCounterAdd()

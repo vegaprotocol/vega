@@ -298,6 +298,11 @@ func (t *Topology) applyPromotion(performanceScore, rankingScore map[string]num.
 		}
 	}
 
+	// demoted tendermint validators are also ersatz so we need to add them
+	for _, id := range demotedFromTM {
+		ersatzValidators = append(ersatzValidators, t.validators[id])
+	}
+
 	// demote from ersatz to pending due to more ersatz than slots allowed
 	ersatzValidators, waitingListValidators, _ = demoteDueToLackOfSlots(ersatzValidators, waitingListValidators, ValidatorStatusErsatz, ValidatorStatusPending, t.numberOfErsatzValidators, int64(t.currentBlockHeight+1))
 

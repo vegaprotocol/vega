@@ -22,6 +22,7 @@ const startupT = ` # Authentication
 
  # Network management
  - network:                 GET    {{.WalletServiceLocalAddress}}/api/v1/network
+ - network chainid:         GET    {{.WalletServiceLocalAddress}}/api/v1/network/chainid
 
  # Wallet management
  - create a wallet:         POST   {{.WalletServiceLocalAddress}}/api/v1/wallets

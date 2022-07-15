@@ -15,8 +15,8 @@ package execution
 import (
 	"context"
 	"crypto/sha256"
-	"encoding/base32"
 	"encoding/binary"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"sort"
@@ -293,7 +293,7 @@ func SetMarketID(marketcfg *types.Market, seq uint64) error {
 
 	d := h.Sum(nil)
 	d = d[:20]
-	marketcfg.ID = base32.StdEncoding.EncodeToString(d)
+	marketcfg.ID = hex.EncodeToString(d)
 	return nil
 }
 
@@ -699,12 +699,26 @@ func (m *Market) OnTick(ctx context.Context, t time.Time) bool {
 	defer m.mu.Unlock()
 
 	_, blockHash := vegacontext.TraceIDFromContext(ctx)
-	m.idgen = idgeneration.New(blockHash)
+	// make deterministics ID for this market, concatenate
+	// the block hash and the market ID
+	m.idgen = idgeneration.New(blockHash + crypto.HashStr(m.GetID()))
+	// and we call next ID on this directly just so we don't have an ID which have
+	// a different from others, we basically burn the first ID.
+	_ = m.idgen.NextID()
 	defer func() { m.idgen = nil }()
 
 	if m.closed {
 		return true
 	}
+
+	// first we expire orders
+	expired, err := m.removeExpiredOrders(ctx, t.UnixNano())
+	if err != nil {
+		m.log.Error("unable to get remove expired orders",
+			logging.MarketID(m.GetID()),
+			logging.Error(err))
+	}
+	metrics.OrderGaugeAdd(-len(expired), m.GetID())
 
 	// some engines still needs to get updates:
 	m.pMonitor.OnTimeUpdate(t)
@@ -783,6 +797,7 @@ func (m *Market) closeMarket(ctx context.Context, t time.Time) error {
 		return err
 	}
 
+	m.tradableInstrument.Instrument.Unsubscribe(ctx)
 	// @TODO pass in correct context -> Previous or next block?
 	// Which is most appropriate here?
 	// this will be next block
@@ -2903,7 +2918,7 @@ func (m *Market) orderAmendWhenParked(originalOrder, amendOrder *types.Order) *t
 
 // RemoveExpiredOrders remove all expired orders from the order book
 // and also any pegged orders that are parked.
-func (m *Market) RemoveExpiredOrders(
+func (m *Market) removeExpiredOrders(
 	ctx context.Context, timestamp int64,
 ) ([]*types.Order, error) {
 	timer := metrics.NewTimeCounter(m.mkt.ID, "market", "RemoveExpiredOrders")
@@ -2916,10 +2931,6 @@ func (m *Market) RemoveExpiredOrders(
 	if !m.canTrade() {
 		return nil, ErrTradingNotAllowed
 	}
-
-	_, blockHash := vegacontext.TraceIDFromContext(ctx)
-	m.idgen = idgeneration.New(blockHash)
-	defer func() { m.idgen = nil }()
 
 	expired := []*types.Order{}
 	evts := []events.Event{}
@@ -3206,6 +3217,8 @@ func (m *Market) canSubmitCommitment() bool {
 // at this point no fees would have been collected or anything
 // like this.
 func (m *Market) cleanupOnReject(ctx context.Context) {
+	m.tradableInstrument.Instrument.Unsubscribe(ctx)
+
 	// get the list of all parties in this market
 	parties := make([]string, 0, len(m.parties))
 	for k := range m.parties {
