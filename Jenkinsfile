@@ -358,7 +358,9 @@ pipeline {
                                 withGHCLI('credentialsId': 'github-vega-ci-bot-artifacts') {
                                     sh label: 'Upload artifacts', script: '''#!/bin/bash -e
                                         [[ $TAG_NAME =~ '-pre' ]] && prerelease='--prerelease' || prerelease=''
-                                        gh release create $TAG_NAME $prerelease ./cmd/vega/vega-*
+
+                                        gh release view $TAG_NAME && gh release upload $TAG_NAME ./cmd/vega/vega-* \
+                                            || gh release create $TAG_NAME $prerelease ./cmd/vega/vega-*
                                     '''
                                 }
                             }

@@ -85,6 +85,10 @@ func (e *Engine) UponGenesis(ctx context.Context, rawState []byte) (err error) {
 		return err
 	}
 
+	defer func() {
+		e.sendEvent(ctx)
+	}()
+
 	if err == ErrNoLimitsGenesisState {
 		defaultState := DefaultGenesisState()
 		state = &defaultState
@@ -94,24 +98,24 @@ func (e *Engine) UponGenesis(ctx context.Context, rawState []byte) (err error) {
 	if state == nil {
 		e.proposeAssetEnabled = true
 		e.proposeMarketEnabled = true
-		return nil
+	} else {
+		e.proposeAssetEnabled = state.ProposeAssetEnabled
+		e.proposeMarketEnabled = state.ProposeMarketEnabled
 	}
 
-	e.proposeAssetEnabled = state.ProposeAssetEnabled
-	e.proposeMarketEnabled = state.ProposeMarketEnabled
+	// at this point we only know about the genesis state
+	// of the limits, so we should set the can* fields to
+	// this state
+	e.canProposeAsset = e.proposeAssetEnabled
+	e.canProposeMarket = e.proposeMarketEnabled
 
 	e.log.Info("loaded limits genesis state",
 		logging.String("state", fmt.Sprintf("%#v", *state)))
 
-	e.sendEvent(ctx)
 	return nil
 }
 
 func (e *Engine) OnLimitsProposeMarketEnabledFromUpdate(ctx context.Context, date string) error {
-	// we already can propose market, nothing else to be done
-	if e.canProposeMarket {
-		return nil
-	}
 	// already validated by the netparams
 	// no need to check it again, this is a valid date
 	if len(date) <= 0 {
@@ -129,11 +133,6 @@ func (e *Engine) OnLimitsProposeMarketEnabledFromUpdate(ctx context.Context, dat
 }
 
 func (e *Engine) OnLimitsProposeAssetEnabledFromUpdate(ctx context.Context, date string) error {
-	// we already can propose assets, nothing can be changes anymore
-	if e.canProposeAsset {
-		return nil
-	}
-
 	// already validated by the netparams
 	// no need to check it again, this is a valid date
 	if len(date) <= 0 {
@@ -145,27 +144,51 @@ func (e *Engine) OnLimitsProposeAssetEnabledFromUpdate(ctx context.Context, date
 			e.proposeAssetEnabledFrom = t
 		}
 	}
+
+	e.onUpdate(ctx, e.timeService.GetTimeNow())
 	e.sendEvent(ctx)
 
 	return nil
 }
 
 func (e *Engine) OnTick(ctx context.Context, t time.Time) {
-	if !e.genesisLoaded || (e.canProposeAsset && e.canProposeMarket) {
-		return
+	canProposeAsset, canProposeMarket := e.canProposeAsset, e.canProposeMarket
+	defer func() {
+		if canProposeAsset != e.canProposeAsset || canProposeMarket != e.canProposeMarket {
+			e.sendEvent(ctx)
+		}
+	}()
+	e.onUpdate(ctx, t)
+}
+
+func (e *Engine) onUpdate(ctx context.Context, t time.Time) {
+	//  if propose market enabled in genesis
+	if e.proposeMarketEnabled {
+		// we can propose a market and a new date have been set in the future
+		if e.canProposeMarket && t.Before(e.proposeMarketEnabledFrom) {
+			e.log.Info("proposing market is now disabled")
+			e.canProposeMarket = false
+		}
+
+		// we can't propose a market for now, is the date in the past?
+		if !e.canProposeMarket && t.After(e.proposeMarketEnabledFrom) {
+			e.log.Info("all required conditions are met, proposing markets is now allowed")
+			e.canProposeMarket = true
+		}
 	}
 
-	if !e.canProposeMarket && e.proposeMarketEnabled && t.After(e.proposeMarketEnabledFrom) {
-		e.log.Info("all required conditions are met, proposing markets is now allowed")
-		e.canProposeMarket = true
-		e.lss.changed = true
-		e.sendEvent(ctx)
-	}
-	if !e.canProposeAsset && e.proposeAssetEnabled && t.After(e.proposeAssetEnabledFrom) {
-		e.log.Info("all required conditions are met, proposing assets is now allowed")
-		e.canProposeAsset = true
-		e.lss.changed = true
-		e.sendEvent(ctx)
+	//  if propose market enabled in genesis
+	if e.proposeAssetEnabled {
+		// we can propose a market and a new date have been set in the future
+		if e.canProposeAsset && t.Before(e.proposeAssetEnabledFrom) {
+			e.log.Info("proposing asset have been disabled")
+			e.canProposeAsset = false
+		}
+
+		if !e.canProposeAsset && t.After(e.proposeAssetEnabledFrom) {
+			e.log.Info("all required conditions are met, proposing assets is now allowed")
+			e.canProposeAsset = true
+		}
 	}
 }
 

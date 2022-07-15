@@ -17,6 +17,7 @@ import (
 	"testing"
 	"time"
 
+	"code.vegaprotocol.io/vega/events"
 	vegacontext "code.vegaprotocol.io/vega/libs/context"
 	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
 
@@ -54,9 +55,21 @@ func TestGTTAmendToGTCAmendInPlace_OrderGetExpired(t *testing.T) {
 
 	// now expire, and nothing should be returned
 	ctx = vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
+
+	tm.events = nil
 	tm.market.OnTick(ctx, now.Add(10*time.Second))
-	orders, err := tm.market.RemoveExpiredOrders(
-		ctx, now.UnixNano())
-	require.Equal(t, 0, len(orders))
-	require.NoError(t, err)
+
+	t.Run("no orders expired", func(t *testing.T) {
+		// First collect all the orders events
+		orders := []*types.Order{}
+		for _, e := range tm.events {
+			switch evt := e.(type) {
+			case *events.Order:
+				if evt.Order().Status == types.OrderStatusExpired {
+					orders = append(orders, mustOrderFromProto(evt.Order()))
+				}
+			}
+		}
+		require.Equal(t, 0, len(orders))
+	})
 }
