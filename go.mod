@@ -4,7 +4,7 @@ go 1.18
 
 require (
 	code.vegaprotocol.io/oracles-relay v0.0.0-20210201140234-f047e1bf6df3
-	code.vegaprotocol.io/protos v0.53.1-0.20220713162927-ec9f6b8af864
+	code.vegaprotocol.io/protos v0.52.1-0.20220707090406-9ac0156ecee6
 	code.vegaprotocol.io/quant v0.2.5
 	code.vegaprotocol.io/shared v0.0.0-20220614080106-5c97205b0d92
 	github.com/blang/semver v3.5.1+incompatible
@@ -35,7 +35,7 @@ require (
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.8.0
 	github.com/syndtr/goleveldb v1.0.1-0.20210819022825-2ae1ddf74ef7
-	github.com/tendermint/tendermint v0.36.0-dev.0.20220712172851-379096815648
+	github.com/tendermint/tendermint v0.36.0-dev.0.20220708172942-e3292a48e322
 	github.com/tendermint/tm-db v0.6.6
 	go.elastic.co/apm/module/apmhttp v1.8.0
 	go.nanomsg.org/mangos/v3 v3.2.1
@@ -158,3 +158,5 @@ require (
 )
 
 replace github.com/shopspring/decimal => github.com/vegaprotocol/decimal v1.3.1-uint256
+
+replace github.com/tendermint/tendermint => github.com/ze97286/tendermint v0.36.0-dev.0.20220715110107-e2bd4437fd81
