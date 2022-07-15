@@ -159,4 +159,4 @@ require (
 
 replace github.com/shopspring/decimal => github.com/vegaprotocol/decimal v1.3.1-uint256
 
-replace github.com/tendermint/tendermint => github.com/ze97286/tendermint v0.36.0-dev.0.20220715164446-7a14b9e7820c
+replace github.com/tendermint/tendermint => github.com/ze97286/tendermint v0.36.0-dev.0.20220715172550-8afbe2977516
