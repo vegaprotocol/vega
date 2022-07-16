@@ -1340,8 +1340,8 @@ github.com/yuin/goldmark v1.3.5/go.mod h1:mwnBkeHKe2W/ZEtQ+71ViKU8L12m81fl3OWwC1
 github.com/yuin/goldmark v1.4.0/go.mod h1:mwnBkeHKe2W/ZEtQ+71ViKU8L12m81fl3OWwC1Zlc8k=
 github.com/yuin/goldmark v1.4.1/go.mod h1:mwnBkeHKe2W/ZEtQ+71ViKU8L12m81fl3OWwC1Zlc8k=
 github.com/yusufpapurcu/wmi v1.2.2/go.mod h1:SBZ9tNy3G9/m5Oi98Zks0QjeHVDvuK0qfxQmPyzfmi0=
-github.com/ze97286/tendermint v0.36.0-dev.0.20220716091041-d54606039b23 h1:OG2Z3eetVjyXrHPa4G8HRv0ryP5DttAJ/sQIqezzI0c=
-github.com/ze97286/tendermint v0.36.0-dev.0.20220716091041-d54606039b23/go.mod h1:6cIWilifL392hrtTPeYL5A6CqNBwDbhvwvAZSDmQpvc=
+github.com/ze97286/tendermint v0.36.0-dev.0.20220716095209-8978fe44ad3e h1:nOkwqXFxaweoiBA+01GpnminWmdkHFLuUks8/LU5mak=
+github.com/ze97286/tendermint v0.36.0-dev.0.20220716095209-8978fe44ad3e/go.mod h1:6cIWilifL392hrtTPeYL5A6CqNBwDbhvwvAZSDmQpvc=
 gitlab.com/bosi/decorder v0.2.1/go.mod h1:6C/nhLSbF6qZbYD8bRmISBwc6vcWdNsiIBkRvjJFrH0=
 go.elastic.co/apm v1.8.0/go.mod h1:tCw6CkOJgkWnzEthFN9HUP1uL3Gjc/Ur6m7gRPLaoH0=
 go.elastic.co/apm v1.12.0 h1:0rYcZM/GPMeH0Er6DMFfHA8Flg5tf+XD9QbenrWWYWM=
