@@ -9,10 +9,11 @@
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 ### 🛠 Improvements
-- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+- [5541](https://github.com/vegaprotocol/vega/issues/5541) - Support permissions in wallets
 
 ### 🐛 Fixes
-- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+- [5571](https://github.com/vegaprotocol/vega/issues/5571) - Restore pending assets status correctly after snapshot restore
+- [5572](https://github.com/vegaprotocol/vega/issues/5572) - Add validation on `IDs` and public keys
 
 ## 0.53.0
 
@@ -42,6 +43,7 @@
 - [5480](https://github.com/vegaprotocol/vega/issues/5480) - Assure indicative trades are in line with actual uncrossing trades
 - [5556](https://github.com/vegaprotocol/vega/issues/5556) - Fix id generation seed
 - [5361](https://github.com/vegaprotocol/vega/issues/5361) - Fix limits for proposals
+- [5557](https://github.com/vegaprotocol/vega/issues/5427) - Fix oracle status at market settlement
 
 ## 0.52.0
 

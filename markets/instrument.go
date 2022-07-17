@@ -49,7 +49,7 @@ func NewTradableInstrument(ctx context.Context, log *logging.Logger, pti *types.
 }
 
 func (i *TradableInstrument) UpdateInstrument(ctx context.Context, log *logging.Logger, ti *types.TradableInstrument, oe products.OracleEngine) error {
-	i.Instrument.Unsubscribe(ctx, oe)
+	i.Instrument.Unsubscribe(ctx)
 
 	instrument, err := NewInstrument(ctx, log, ti.Instrument, oe)
 	if err != nil {
@@ -96,6 +96,6 @@ func NewInstrument(ctx context.Context, log *logging.Logger, pi *types.Instrumen
 	}, err
 }
 
-func (i *Instrument) Unsubscribe(ctx context.Context, oe products.OracleEngine) {
-	i.Product.Unsubscribe(ctx, oe)
+func (i *Instrument) Unsubscribe(ctx context.Context) {
+	i.Product.Unsubscribe(ctx)
 }

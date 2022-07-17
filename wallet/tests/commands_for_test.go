@@ -735,7 +735,7 @@ func AssertCreateWallet(t *testing.T, resp *CreateWalletResponse) *CreateWalletA
 	assert.NotNil(t, resp)
 	assert.NotEmpty(t, resp.Wallet.Name)
 	assert.NotEmpty(t, resp.Wallet.RecoveryPhrase)
-	assert.NotEmpty(t, resp.Wallet.Version)
+	assert.Equal(t, uint32(2), resp.Wallet.Version)
 	assert.NotEmpty(t, resp.Wallet.FilePath)
 	assert.FileExists(t, resp.Wallet.FilePath)
 	assert.NotEmpty(t, resp.Key.PublicKey)

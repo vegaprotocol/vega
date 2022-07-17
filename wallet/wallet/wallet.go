@@ -19,6 +19,11 @@ type Wallet interface {
 	VerifyAny(pubKey string, data, sig []byte) (bool, error)
 	SignTx(pubKey string, data []byte) (*Signature, error)
 	IsolateWithKey(pubKey string) (Wallet, error)
+	Permissions(hostname string) Permissions
+	PermittedHostnames() []string
+	RevokePermissions(hostname string)
+	PurgePermissions()
+	UpdatePermissions(hostname string, perms Permissions) error
 }
 
 type KeyPair interface {

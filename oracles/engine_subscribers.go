@@ -38,6 +38,10 @@ type OracleSubscriptionPredicate func(spec OracleSpec) bool
 // OnMatchedOracleData to an OracleSpec.
 type SubscriptionID uint64
 
+// Unsubscriber is a closure that is created at subscription step in order to
+// provide the ability to unsubscribe at any conveninent moment.
+type Unsubscriber func(context.Context, SubscriptionID)
+
 // updatedSubscription wraps all useful information about an updated
 // subscription.
 type updatedSubscription struct {

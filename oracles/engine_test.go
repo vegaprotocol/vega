@@ -51,7 +51,7 @@ func testOracleEngineListensToPubKeysSucceeds(t *testing.T) {
 	// test oracle engine with 1 subscriber and 1 key provided
 	btcEquals42 := spec(t, "BTC", oraclespb.Condition_OPERATOR_EQUALS, "42")
 	engine.broker.expectNewOracleSpecSubscription(currentTime, btcEquals42.spec.OriginalSpec)
-	_ = engine.Subscribe(ctx, btcEquals42.spec, btcEquals42.subscriber.Cb)
+	_, _ = engine.Subscribe(ctx, btcEquals42.spec, btcEquals42.subscriber.Cb)
 
 	// test oracle data with single PubKey
 	data := oracles.OracleData{
@@ -69,7 +69,7 @@ func testOracleEngineListensToPubKeysSucceeds(t *testing.T) {
 	// test oracle engine with 2 subscribers and multiple keys provided for one of them
 	ethEquals42 := spec(t, "ETH", oraclespb.Condition_OPERATOR_LESS_THAN, "84", "0xCAFED00X", "0xCAFED00D", "0xBEARISH7", "0xBULLISH5")
 	engine.broker.expectNewOracleSpecSubscription(currentTime, ethEquals42.spec.OriginalSpec)
-	_ = engine.Subscribe(ctx, ethEquals42.spec, ethEquals42.subscriber.Cb)
+	_, _ = engine.Subscribe(ctx, ethEquals42.spec, ethEquals42.subscriber.Cb)
 
 	data.PubKeys = append(data.PubKeys, []string{"0xBEARISH7", "0xBULLISH5"}...)
 	result = engine.ListensToPubKeys(data)
@@ -78,7 +78,7 @@ func testOracleEngineListensToPubKeysSucceeds(t *testing.T) {
 	// test oracle data with 3 subscribers and multiple keys for some of them
 	btcGreater21 := spec(t, "BTC", oraclespb.Condition_OPERATOR_GREATER_THAN, "21", "0xCAFED00D", "0xBEARISH7", "0xBULLISH5", "0xMILK123", "OxMILK456")
 	engine.broker.expectNewOracleSpecSubscription(currentTime, btcGreater21.spec.OriginalSpec)
-	_ = engine.Subscribe(ctx, btcGreater21.spec, btcGreater21.subscriber.Cb)
+	_, _ = engine.Subscribe(ctx, btcGreater21.spec, btcGreater21.subscriber.Cb)
 
 	data.PubKeys = append(data.PubKeys, "0xMILK123")
 	result = engine.ListensToPubKeys(data)
@@ -94,7 +94,7 @@ func testOracleEngineListensToPubKeysFails(t *testing.T) {
 	// test oracle engine with single subscriber and wrong key
 	btcEquals42 := spec(t, "BTC", oraclespb.Condition_OPERATOR_EQUALS, "42", "0xWRONGKEY")
 	engine.broker.expectNewOracleSpecSubscription(currentTime, btcEquals42.spec.OriginalSpec)
-	_ = engine.Subscribe(ctx, btcEquals42.spec, btcEquals42.subscriber.Cb)
+	_, _ = engine.Subscribe(ctx, btcEquals42.spec, btcEquals42.subscriber.Cb)
 
 	data := oracles.OracleData{
 		PubKeys: []string{
@@ -112,7 +112,7 @@ func testOracleEngineListensToPubKeysFails(t *testing.T) {
 	// test oracle engine with 2 subscribers and multiple missing keys
 	ethEquals42 := spec(t, "ETH", oraclespb.Condition_OPERATOR_LESS_THAN, "84", "0xBEARISH7", "0xBULLISH5")
 	engine.broker.expectNewOracleSpecSubscription(currentTime, ethEquals42.spec.OriginalSpec)
-	_ = engine.Subscribe(ctx, ethEquals42.spec, ethEquals42.subscriber.Cb)
+	_, _ = engine.Subscribe(ctx, ethEquals42.spec, ethEquals42.subscriber.Cb)
 
 	data.PubKeys = append(data.PubKeys, []string{"0xMILK123", "OxMILK456"}...)
 	result = engine.ListensToPubKeys(data)
@@ -133,8 +133,8 @@ func testOracleEngineSubscribingSucceeds(t *testing.T) {
 	engine.broker.expectNewOracleSpecSubscription(currentTime, ethLess84.spec.OriginalSpec)
 
 	// when
-	id1 := engine.Subscribe(ctx, btcEquals42.spec, btcEquals42.subscriber.Cb)
-	id2 := engine.Subscribe(ctx, ethLess84.spec, ethLess84.subscriber.Cb)
+	id1, _ := engine.Subscribe(ctx, btcEquals42.spec, btcEquals42.subscriber.Cb)
+	id2, _ := engine.Subscribe(ctx, ethLess84.spec, ethLess84.subscriber.Cb)
 
 	// then
 	assert.Equal(t, oracles.SubscriptionID(1), id1)
@@ -247,13 +247,13 @@ func testOracleEngineUnsubscribingKnownIDSucceeds(t *testing.T) {
 	engine.broker.expectNewOracleSpecSubscription(currentTime, btcEquals42.spec.OriginalSpec)
 
 	// when
-	idS1 := engine.Subscribe(ctx, btcEquals42.spec, btcEquals42.subscriber.Cb)
+	idS1, _ := engine.Subscribe(ctx, btcEquals42.spec, btcEquals42.subscriber.Cb)
 
 	// expect
 	engine.broker.expectNewOracleSpecSubscription(currentTime, ethEquals42.spec.OriginalSpec)
 
 	// when
-	_ = engine.Subscribe(ctx, ethEquals42.spec, ethEquals42.subscriber.Cb)
+	_, _ = engine.Subscribe(ctx, ethEquals42.spec, ethEquals42.subscriber.Cb)
 
 	// expect
 	engine.broker.expectOracleSpecSubscriptionDeactivation(currentTime, btcEquals42.spec.OriginalSpec)
