@@ -19,8 +19,8 @@ import (
 )
 
 func TotalOfEventsShouldBeEmitted(broker *stubs.BrokerStub, eventCounter int) error {
-	allEventCount := broker.GetAllEvents()
-	if len(allEventCount) == eventCounter {
+	allEventCount := len(broker.GetAllEvents())
+	if allEventCount == eventCounter {
 		return nil
 	}
 

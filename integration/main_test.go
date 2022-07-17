@@ -407,10 +407,10 @@ func InitializeScenario(s *godog.ScenarioContext) {
 		steps.ClearTransferResponseEvents(execsetup.broker)
 		return nil
 	})
-	s.Step(`^the following events should be emitted"$`, func(table *godog.Table) error {
+	s.Step(`^the following events should be emitted:$`, func(table *godog.Table) error {
 		return steps.TheFollowingEventsShouldBeEmitted(execsetup.broker, table)
 	})
-	s.Step(`^a total of "([0-9]+)" events should be emitted"$`, func(eventCounter int) error {
+	s.Step(`^a total of "([0-9]+)" events should be emitted$`, func(eventCounter int) error {
 		return steps.TotalOfEventsShouldBeEmitted(execsetup.broker, eventCounter)
 	})
 
