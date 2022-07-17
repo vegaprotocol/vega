@@ -250,6 +250,10 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
       | trading mode                    | auction trigger           | target stake | supplied stake | open interest |
       | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY | 3030         | 1000           | 10            |
 
+    Then the following events should be emitted:
+      | type                   |
+      | BUS_EVENT_TYPE_AUCTION |
+
     And the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type   |
       | lp1 | party0 | ETH/DEC21 | 10000             | 0.001 | buy  | BID              | 1          | 2      | amendment |
