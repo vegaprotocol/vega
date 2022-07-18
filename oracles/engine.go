@@ -41,7 +41,7 @@ type Engine struct {
 	log           *logging.Logger
 	timeService   TimeService
 	broker        Broker
-	subscriptions specSubscriptions
+	subscriptions *specSubscriptions
 }
 
 // NewEngine creates a new oracle Engine.

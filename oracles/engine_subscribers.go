@@ -15,6 +15,7 @@ package oracles
 import (
 	"context"
 	"fmt"
+	"sync"
 	"time"
 
 	"code.vegaprotocol.io/vega/types"
@@ -68,6 +69,8 @@ func (r filterResult) hasMatched() bool {
 // specSubscriptions wraps the subscribers (in form of OnMatchedOracleData) to
 // the OracleSpec.
 type specSubscriptions struct {
+	mu sync.RWMutex
+
 	lastSubscriptionID SubscriptionID
 	subscriptions      []*specSubscription
 	// subscriptionsMatrix maps a SubscriptionID to an OracleSpecID to speed up
@@ -76,8 +79,8 @@ type specSubscriptions struct {
 }
 
 // newSpecSubscriptions initialises the subscription handler.
-func newSpecSubscriptions() specSubscriptions {
-	return specSubscriptions{
+func newSpecSubscriptions() *specSubscriptions {
+	return &specSubscriptions{
 		subscriptions:       []*specSubscription{},
 		subscriptionsMatrix: map[SubscriptionID]OracleSpecID{},
 	}
@@ -86,7 +89,10 @@ func newSpecSubscriptions() specSubscriptions {
 // hasAnySubscribers checks if any of the subscriptions contains public keys that
 // match the given ones by the predicate.
 // Returns fast on the first match.
-func (s specSubscriptions) hasAnySubscribers(predicate OracleSubscriptionPredicate) bool {
+func (s *specSubscriptions) hasAnySubscribers(predicate OracleSubscriptionPredicate) bool {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
 	for _, subscription := range s.subscriptions {
 		if predicate(subscription.spec) {
 			return true
@@ -99,7 +105,10 @@ func (s specSubscriptions) hasAnySubscribers(predicate OracleSubscriptionPredica
 // filterSubscribers collects the subscribers that match the predicate on the
 // OracleSpec.
 // The order between specs and subscribers is preserved.
-func (s specSubscriptions) filterSubscribers(predicate OracleSpecPredicate) (*filterResult, error) {
+func (s *specSubscriptions) filterSubscribers(predicate OracleSpecPredicate) (*filterResult, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
 	result := &filterResult{
 		oracleSpecIDs: []OracleSpecID{},
 		subscribers:   []OnMatchedOracleData{},
@@ -122,6 +131,9 @@ func (s specSubscriptions) filterSubscribers(predicate OracleSpecPredicate) (*fi
 }
 
 func (s *specSubscriptions) addSubscriber(spec OracleSpec, cb OnMatchedOracleData, tm time.Time) updatedSubscription {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
 	_, subscription := s.getSubscription(spec.id)
 	if subscription == nil {
 		subscription = s.createSubscription(spec, tm)
@@ -140,6 +152,9 @@ func (s *specSubscriptions) addSubscriber(spec OracleSpec, cb OnMatchedOracleDat
 }
 
 func (s *specSubscriptions) removeSubscriber(subscriptionID SubscriptionID) (updatedSubscription, bool) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
 	specID, ok := s.subscriptionsMatrix[subscriptionID]
 	if !ok {
 		panic(fmt.Sprintf("unknown subscriber ID %d", subscriptionID))
