@@ -23,6 +23,7 @@ import (
 
 type Signer interface {
 	Sign([]byte) ([]byte, error)
+	Algo() string
 }
 
 type SignaturePayload struct {
@@ -68,9 +69,19 @@ func packBufAndSubmitter(
 }
 
 func sign(signer Signer, msg []byte) (*SignaturePayload, error) {
-	// hash our message before signing it
-	hash := crypto.Keccak256(msg)
-	sig, err := signer.Sign(hash)
+	hash := msg
+
+	var sig []byte
+	var err error
+
+	if signer.Algo() == "clef" {
+		sig, err = signer.Sign(hash)
+	} else {
+		// hash our message before signing it
+		hash = crypto.Keccak256(msg)
+		sig, err = signer.Sign(hash)
+	}
+
 	if err != nil {
 		return nil, fmt.Errorf("could not sign message with ethereum wallet: %w", err)
 	}
