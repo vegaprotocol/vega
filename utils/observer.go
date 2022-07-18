@@ -24,8 +24,7 @@ import (
 )
 
 type subscriber[T any] struct {
-	ch     chan []T
-	filter func(T) bool
+	ch chan []T
 }
 
 type Observer[T any] struct {
@@ -55,7 +54,7 @@ func (o *Observer[T]) Subscribe(ctx context.Context, filter func(T) bool) (chan 
 
 	ch := make(chan []T, o.inChSize)
 	o.lastSubId++
-	o.subscribers[o.lastSubId] = subscriber[T]{ch, filter}
+	o.subscribers[o.lastSubId] = subscriber[T]{ch}
 
 	ip, _ := contextutil.RemoteIPAddrFromContext(ctx)
 	o.logDebug(ip, o.lastSubId, "new subscription")

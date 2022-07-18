@@ -190,17 +190,27 @@ func (m *MarketDepth) GetMarketDepth(market string, limit uint64) *types.MarketD
 
 }
 
-func (m *MarketDepth) ObserveDepth(ctx context.Context, retries int, market string) (<-chan []*types.MarketDepth, uint64) {
+func (m *MarketDepth) ObserveDepth(ctx context.Context, retries int, marketIds []string) (<-chan []*types.MarketDepth, uint64) {
+	markets := map[string]bool{}
+	for _, id := range marketIds {
+		markets[id] = true
+	}
+
 	ch, ref := m.depthObserver.Observe(ctx,
 		retries,
-		func(md *types.MarketDepth) bool { return market == md.GetMarketId() })
+		func(md *types.MarketDepth) bool { return markets[md.MarketId] })
 	return ch, ref
 }
 
-func (m *MarketDepth) ObserveDepthUpdates(ctx context.Context, retries int, market string) (<-chan []*types.MarketDepthUpdate, uint64) {
+func (m *MarketDepth) ObserveDepthUpdates(ctx context.Context, retries int, marketIds []string) (<-chan []*types.MarketDepthUpdate, uint64) {
+	markets := map[string]bool{}
+	for _, id := range marketIds {
+		markets[id] = true
+	}
+
 	ch, ref := m.updateObserver.Observe(ctx,
 		retries,
-		func(md *types.MarketDepthUpdate) bool { return market == md.GetMarketId() })
+		func(md *types.MarketDepthUpdate) bool { return markets[md.MarketId] })
 	return ch, ref
 }
 

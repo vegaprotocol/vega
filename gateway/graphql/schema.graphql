@@ -51,13 +51,13 @@ type Subscription {
   marketDepth(
     "ID of the market we want to receive market depth updates for"
     marketId: ID!
-  ): MarketDepth!
+  ): MarketDepth! @deprecated(reason: "Use marketsDepth instead")
 
   "Subscribe to price level market depth updates"
   marketDepthUpdate(
     "ID of the market we want to receive market depth pricelevel updates for"
     marketId: ID!
-  ): MarketDepthUpdate!
+  ): MarketDepthUpdate! @deprecated(reason: "Use marketsDepthUpdate instead")
 
   "Subscribe to the accounts updates"
   accounts(
@@ -75,13 +75,25 @@ type Subscription {
   marketData(
     "id of the market we want to subscribe to the market data changes"
     marketId: ID
-  ): MarketData!
+  ): MarketData! @deprecated(reason: "Use marketsData instead")
 
-  "Subscribe to the mark price changes, but get multiple updates at once"
-  marketsData(
-    "id of the market we want to subscribe to the market data changes"
-    marketId: ID
-  ): [MarketData!]!
+  "Subscribe to the market depths update"
+    marketsDepth(
+      "ID of the market we want to receive market depth updates for"
+      marketIds: [ID!]!
+    ): [ObservableMarketDepth!]!
+
+    "Subscribe to price level market depth updates"
+    marketsDepthUpdate(
+      "ID of the market we want to receive market depth pricelevel updates for"
+      marketIds: [ID!]!
+    ): [ObservableMarketDepthUpdate!]!
+
+  "Subscribe to the mark price changes"
+    marketsData(
+      "id of the market we want to subscribe to the market data changes"
+      marketIds: [ID!]!
+    ): [ObservableMarketData!]!
 
   "Subscribe to the margin changes"
   margins(
@@ -217,6 +229,64 @@ type MarketData {
   liquidityProviderFeeShare: [LiquidityProviderFeeShare!]
 }
 
+"Live data of a Market"
+type ObservableMarketData {
+  "market id of the associated mark price"
+  marketId: String!
+  "the mark price (actually an unsigned int)"
+  markPrice: String!
+  "the highest price level on an order book for buy orders."
+  bestBidPrice: String!
+  "the aggregated volume being bid at the best bid price."
+  bestBidVolume: String!
+  "the lowest price level on an order book for offer orders."
+  bestOfferPrice: String!
+  "the aggregated volume being offered at the best offer price."
+  bestOfferVolume: String!
+  "the highest price level on an order book for buy orders not including pegged orders."
+  bestStaticBidPrice: String!
+  "the aggregated volume being offered at the best static bid price, excluding pegged orders"
+  bestStaticBidVolume: String!
+  "the lowest price level on an order book for offer orders not including pegged orders."
+  bestStaticOfferPrice: String!
+  "the aggregated volume being offered at the best static offer price, excluding pegged orders."
+  bestStaticOfferVolume: String!
+  "the arithmetic average of the best bid price and best offer price."
+  midPrice: String!
+  "the arithmetic average of the best static bid price and best static offer price"
+  staticMidPrice: String!
+  "RFC3339Nano time at which this market price was relevant"
+  timestamp: String!
+  "the sum of the size of all positions greater than 0."
+  openInterest: String!
+  "RFC3339Nano time at which the auction will stop (null if not in auction mode)"
+  auctionEnd: String
+  "RFC3339Nano time at which the next auction will start (null if none is scheduled)"
+  auctionStart: String
+  "indicative price if the auction ended now, 0 if not in auction mode"
+  indicativePrice: String!
+  "indicative volume if the auction ended now, 0 if not in auction mode"
+  indicativeVolume: String!
+  "what state the market is in (auction, continuous etc)"
+  marketTradingMode: MarketTradingMode!
+  "what triggered an auction (if an auction was started)"
+  trigger: AuctionTrigger!
+  "what extended the ongoing auction (if an auction was extended)"
+  extensionTrigger: AuctionTrigger!
+  "the amount of stake targeted for this market"
+  targetStake: String
+  "the supplied stake for the market"
+  suppliedStake: String
+  "A list of valid price ranges per associated trigger"
+  priceMonitoringBounds: [PriceMonitoringBounds!]
+  "the market value proxy"
+  marketValueProxy: String!
+  "the equity like share of liquidity fee for each liquidity provider"
+  liquidityProviderFeeShare: [ObservableLiquidityProviderFeeShare!]
+}
+
+
+
 "timestamps for when the market changes state"
 type MarketTimestamps {
   "Time when the market is first proposed"
@@ -238,6 +308,18 @@ type LiquidityProviderFeeShare {
   "the average entry valuation of the liquidity provider for the market"
   averageEntryValuation: String!
 }
+
+"The equity like share of liquidity fee for each liquidity provider"
+type ObservableLiquidityProviderFeeShare {
+  "The liquidity provider party id"
+  partyId: String!
+  "The share own by this liquidity provider (float)"
+  equityLikeShare: String!
+  "the average entry valuation of the liquidity provider for the market"
+  averageEntryValuation: String!
+}
+
+
 
 "The MM commitments for this market"
 type MarketDataCommitments {
@@ -1578,11 +1660,43 @@ type MarketDepth {
 }
 
 """
+Market Depth is a measure of the number of open buy and sell orders for a security or currency at different prices.
+The depth of market measure provides an indication of the liquidity and depth for the instrument.
+"""
+type ObservableMarketDepth {
+  "Market id"
+  marketId: String!
+
+  "Buy side price levels (if available)"
+  buy: [PriceLevel!]
+
+  "Sell side price levels (if available)"
+  sell: [PriceLevel!]
+
+  "Last trade for the given market (if available)"
+  lastTrade: MarketDepthTrade!
+
+  "Sequence number for the current snapshot of the market depth"
+  sequenceNumber: String!
+}
+
+type MarketDepthTrade {
+  "id of the trade for the given market (if available)"
+  id: String!
+
+  "Price of the trade"
+  price: String!
+
+  "Size of the trade"
+  size: String!
+}
+
+"""
 Market Depth Update is a delta to the current market depth which can be used to update the
 market depth structure to keep it correct
 """
 type MarketDepthUpdate {
-  "Market id"
+  "Market"
   market: Market!
 
   "Buy side price levels (if available)"
@@ -1597,6 +1711,28 @@ type MarketDepthUpdate {
   "Sequence number of the last update sent; useful for checking that no updates were missed."
   previousSequenceNumber: String!
 }
+
+"""
+Market Depth Update is a delta to the current market depth which can be used to update the
+market depth structure to keep it correct
+"""
+type ObservableMarketDepthUpdate {
+  "Market id"
+  marketId: String!
+
+  "Buy side price levels (if available)"
+  buy: [PriceLevel!]
+
+  "Sell side price levels (if available)"
+  sell: [PriceLevel!]
+
+  "Sequence number for the current snapshot of the market depth. It is always increasing but not monotonic."
+  sequenceNumber: String!
+
+  "Sequence number of the last update sent; useful for checking that no updates were missed."
+  previousSequenceNumber: String!
+}
+
 
 "Represents a price on either the buy or sell side and all the orders at that price"
 type PriceLevel {

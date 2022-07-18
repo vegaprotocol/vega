@@ -35,8 +35,8 @@ func handleCandleConnectionRequest(ctx context.Context, client TradingDataServic
 		mkt = market.Id
 	}
 
-	candlesForMktReq := v2.GetCandlesForMarketRequest{MarketId: mkt}
-	candlesForMktResp, err := client.GetCandlesForMarket(ctx, &candlesForMktReq)
+	candlesForMktReq := v2.ListCandleIntervalsRequest{MarketId: mkt}
+	candlesForMktResp, err := client.ListCandleIntervals(ctx, &candlesForMktReq)
 
 	if err != nil {
 		return nil, fmt.Errorf("could not retrieve candles for market %s: %w", mkt, err)
