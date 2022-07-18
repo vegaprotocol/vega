@@ -57,7 +57,7 @@ Postgres is not an embedded database, but a separate server application that nee
 
 By default, data node will attempt to connect to a database called `vega` listening on `localhost:5432`, using the username and password `vega`. This is of course all configurable in data node’s `config.toml` file.
 
-We are developing using `PostgreSQL 14.2` and `Timescale 2.6` and _strongly recommend_ that you also use the same versions.
+We are developing using `PostgreSQL 14.2` and `Timescale 2.7.1` and _strongly recommend_ that you also use the same versions.
 
 ```json
 ​​[SQLStore]
@@ -88,7 +88,7 @@ docker run --rm \
            -e POSTGRES_PASSWORD=vega \
            -e POSTGRES_DB=vega \
            -p 5432:5432 \
-           timescale/timescaledb:2.6.0-pg14
+           timescale/timescaledb:2.7.1-pg14
 ```
 
 ### Using your operating system's native packages
