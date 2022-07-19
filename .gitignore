@@ -11,8 +11,6 @@
 build/
 bin/
 *.exe
-vegawallet
-vega
 cmd/vega/vega*
 cmd/vegawallet/vegawallet*
 cmd/vegabenchmark/vegabenchmark*

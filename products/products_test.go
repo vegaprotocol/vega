@@ -18,6 +18,7 @@ import (
 
 	oraclespb "code.vegaprotocol.io/protos/vega/oracles/v1"
 	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/vega/oracles"
 	"code.vegaprotocol.io/vega/products"
 	"code.vegaprotocol.io/vega/products/mocks"
 	"code.vegaprotocol.io/vega/types"
@@ -82,7 +83,14 @@ func TestFutureSettlement(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	oe := mocks.NewMockOracleEngine(ctrl)
 
-	oe.EXPECT().Subscribe(ctx, gomock.Any(), gomock.Any()).AnyTimes()
+	sid1 := oracles.SubscriptionID(1)
+	oe.EXPECT().Unsubscribe(ctx, sid1).AnyTimes()
+	oe.EXPECT().
+		Subscribe(ctx, gomock.Any(), gomock.Any()).
+		Times(2).
+		Return(sid1, func(ctx context.Context, sid oracles.SubscriptionID) {
+			oe.Unsubscribe(ctx, sid)
+		})
 
 	proto := getValidInstrumentProto()
 

@@ -80,6 +80,8 @@ func readFile(r *reporter, path string) []byte {
 		r.Err("%v, no such file or directory", path)
 		return nil
 	}
+	defer f.Close()
+
 	bytes, err := ioutil.ReadAll(f)
 	if err != nil {
 		r.Err("unable to read file: %v", err)

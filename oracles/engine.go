@@ -41,7 +41,7 @@ type Engine struct {
 	log           *logging.Logger
 	timeService   TimeService
 	broker        Broker
-	subscriptions specSubscriptions
+	subscriptions *specSubscriptions
 }
 
 // NewEngine creates a new oracle Engine.
@@ -117,13 +117,15 @@ func (e *Engine) BroadcastData(ctx context.Context, data OracleData) error {
 // OracleData matches the spec.
 // It returns a SubscriptionID that is used to Unsubscribe.
 // If cb is nil, the method panics.
-func (e *Engine) Subscribe(ctx context.Context, spec OracleSpec, cb OnMatchedOracleData) SubscriptionID {
+func (e *Engine) Subscribe(ctx context.Context, spec OracleSpec, cb OnMatchedOracleData) (SubscriptionID, Unsubscriber) {
 	if cb == nil {
 		panic(fmt.Sprintf("a callback is required for spec %v", spec))
 	}
 	updatedSubscription := e.subscriptions.addSubscriber(spec, cb, e.timeService.GetTimeNow())
 	e.sendNewOracleSpecSubscription(ctx, updatedSubscription)
-	return updatedSubscription.subscriptionID
+	return updatedSubscription.subscriptionID, func(ctx context.Context, id SubscriptionID) {
+		e.Unsubscribe(ctx, id)
+	}
 }
 
 // Unsubscribe unregisters the callback associated to the SubscriptionID.

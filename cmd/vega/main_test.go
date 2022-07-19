@@ -81,6 +81,5 @@ func (suite *CommandSuite) PrepareSandbox(t *testing.T) (string, string, func())
 func TestSuite(t *testing.T) {
 	s := &CommandSuite{}
 
-	// t.Run("Wallet", s.TestWallet)
 	t.Run("Faucet", s.TestFaucet)
 }

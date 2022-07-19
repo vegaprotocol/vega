@@ -42,7 +42,7 @@ type MarketPosition interface {
 // Product ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/settlement_product_mock.go -package mocks code.vegaprotocol.io/vega/settlement Product
 type Product interface {
-	Settle(entryPrice *num.Uint, assetDecimals uint32, netFractionalPosition num.Decimal) (amt *types.FinancialAmount, neg bool, err error)
+	Settle(*num.Uint, uint32, num.Decimal) (*types.FinancialAmount, bool, error)
 	GetAsset() string
 }
 

@@ -797,6 +797,7 @@ func (m *Market) closeMarket(ctx context.Context, t time.Time) error {
 		return err
 	}
 
+	m.tradableInstrument.Instrument.Unsubscribe(ctx)
 	// @TODO pass in correct context -> Previous or next block?
 	// Which is most appropriate here?
 	// this will be next block
@@ -3216,6 +3217,8 @@ func (m *Market) canSubmitCommitment() bool {
 // at this point no fees would have been collected or anything
 // like this.
 func (m *Market) cleanupOnReject(ctx context.Context) {
+	m.tradableInstrument.Instrument.Unsubscribe(ctx)
+
 	// get the list of all parties in this market
 	parties := make([]string, 0, len(m.parties))
 	for k := range m.parties {
