@@ -531,3 +531,28 @@ func TestRecurringransfersSnapshotRoundTrip(t *testing.T) {
 	statePostReload, _, _ := snap.GetState(key)
 	require.True(t, bytes.Equal(state2, statePostReload))
 }
+
+func TestAssetListRoundTrip(t *testing.T) {
+	ctx := context.Background()
+	key := (&types.PayloadBankingAssetActions{}).Key()
+	eng := getTestEngine(t)
+	eng.tsvc.EXPECT().GetTimeNow().AnyTimes()
+	eng.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(assets.NewAsset(&mockAsset{num.DecimalFromFloat(100)}), nil)
+	require.NoError(t, eng.EnableERC20(ctx, &types.ERC20AssetList{}, "03ae90688632c649c4beab6040ff5bd04dbde8efbf737d8673bbda792a110301", 1000, 1000, "03ae90688632c649c4beab6040ff5bd04dbde8efbf737d8673bbda792a110301"))
+
+	state, _, err := eng.GetState(key)
+	require.Nil(t, err)
+
+	var pp snapshot.Payload
+	proto.Unmarshal(state, &pp)
+	payload := types.PayloadFromProto(&pp)
+
+	snap := getTestEngine(t)
+	snap.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(assets.NewAsset(&mockAsset{num.DecimalFromFloat(100)}), nil)
+	_, err = snap.LoadState(ctx, payload)
+	require.Nil(t, err)
+
+	state2, _, err := snap.GetState(key)
+	require.NoError(t, err)
+	require.True(t, bytes.Equal(state, state2))
+}
