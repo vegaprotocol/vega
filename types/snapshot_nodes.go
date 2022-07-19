@@ -1955,12 +1955,15 @@ func AssetActionFromProto(a *snapshot.AssetAction) *AssetAction {
 		TxIndex:     a.TxIndex,
 		Hash:        a.Hash,
 	}
+
 	if a.Erc20Deposit != nil {
 		erc20d, err := NewERC20DepositFromProto(a.Erc20Deposit)
 		if err == nil {
 			aa.Erc20D = erc20d
 		}
-	} else {
+	}
+
+	if a.BuiltinDeposit != nil {
 		builtind, err := NewBuiltinAssetDepositFromProto(a.BuiltinDeposit)
 		if err == nil {
 			aa.BuiltinD = builtind
