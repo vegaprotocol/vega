@@ -140,11 +140,11 @@ func (r *myMarketResolver) Trades(ctx context.Context, market *types.Market,
 }
 
 func (r *myMarketResolver) TradesConnection(ctx context.Context, market *types.Market, pagination *v2.Pagination) (*v2.TradeConnection, error) {
-	req := v2.GetTradesByMarketRequest{
-		MarketId:   market.Id,
+	req := v2.ListTradesRequest{
+		MarketId:   &market.Id,
 		Pagination: pagination,
 	}
-	res, err := r.tradingDataClientV2.GetTradesByMarket(ctx, &req)
+	res, err := r.tradingDataClientV2.ListTrades(ctx, &req)
 	if err != nil {
 		r.log.Error("tradingData client", logging.Error(err))
 		return nil, customErrorFromStatus(err)

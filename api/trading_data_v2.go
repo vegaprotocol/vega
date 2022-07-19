@@ -776,21 +776,18 @@ func (t *tradingDataServiceV2) GetERC20ListAssetBundle(ctx context.Context, req 
 	}, nil
 }
 
-// Get trades by market using a cursor based pagination model
-func (t *tradingDataServiceV2) GetTradesByMarket(ctx context.Context, in *v2.GetTradesByMarketRequest) (*v2.GetTradesByMarketResponse, error) {
-	defer metrics.StartAPIRequestAndTimeGRPC("GetTradesByMarketV2")()
-
-	market := in.GetMarketId()
-	if len(market) == 0 {
-		return nil, apiError(codes.InvalidArgument, fmt.Errorf("marketId must be supplied"))
-	}
-
+// Get trades by using a cursor based pagination model
+func (t *tradingDataServiceV2) ListTrades(ctx context.Context, in *v2.ListTradesRequest) (*v2.ListTradesResponse, error) {
 	pagination, err := entities.CursorPaginationFromProto(in.Pagination)
 	if err != nil {
 		return nil, apiError(codes.InvalidArgument, err)
 	}
 
-	trades, pageInfo, err := t.tradeService.GetByMarketWithCursor(ctx, market, pagination)
+	trades, pageInfo, err := t.tradeService.List(ctx,
+		entities.NewMarketID(in.GetMarketId()),
+		entities.NewPartyID(in.GetPartyId()),
+		entities.NewOrderID(in.GetOrderId()),
+		pagination)
 	if err != nil {
 		return nil, apiError(codes.Internal, err)
 	}
@@ -805,90 +802,34 @@ func (t *tradingDataServiceV2) GetTradesByMarket(ctx context.Context, in *v2.Get
 		PageInfo: pageInfo.ToProto(),
 	}
 
-	resp := &v2.GetTradesByMarketResponse{
+	resp := &v2.ListTradesResponse{
 		Trades: tradesConnection,
 	}
 
 	return resp, nil
 }
 
-// Get trades by party using a cursor based pagination model
-func (t *tradingDataServiceV2) GetTradesByParty(ctx context.Context, in *v2.GetTradesByPartyRequest) (*v2.GetTradesByPartyResponse, error) {
-	defer metrics.StartAPIRequestAndTimeGRPC("GetTradesByPartyV2")()
+// ObserveTrades opens a subscription to the Trades service.
+func (t *tradingDataServiceV2) ObserveTrades(req *v2.ObserveTradesRequest,
+	srv v2.TradingDataService_ObserveTradesServer,
+) error {
+	// Wrap context from the request into cancellable. We can close internal chan on error.
+	ctx, cancel := context.WithCancel(srv.Context())
+	defer cancel()
 
-	party := in.GetPartyId()
-	if len(party) == 0 {
-		return nil, apiError(codes.InvalidArgument, fmt.Errorf("partyId must be supplied"))
-	}
-	var market *string
-	if len(in.GetMarketId()) > 0 {
-		market = &in.MarketId
-	}
+	tradesChan, ref := t.tradeService.Observe(ctx, t.config.StreamRetries, req.MarketId, req.PartyId)
 
-	pagination, err := entities.CursorPaginationFromProto(in.Pagination)
-	if err != nil {
-		return nil, apiError(codes.InvalidArgument, err)
+	if t.log.GetLevel() == logging.DebugLevel {
+		t.log.Debug("Trades subscriber - new rpc stream", logging.Uint64("ref", ref))
 	}
 
-	trades, pageInfo, err := t.tradeService.GetByPartyWithCursor(ctx, party, market, pagination)
-	if err != nil {
-		return nil, apiError(codes.Internal, err)
-	}
-
-	edges, err := makeEdges[*v2.TradeEdge](trades)
-	if err != nil {
-		return nil, apiError(codes.Internal, err)
-	}
-
-	tradesConnection := &v2.TradeConnection{
-		Edges:    edges,
-		PageInfo: pageInfo.ToProto(),
-	}
-
-	resp := &v2.GetTradesByPartyResponse{
-		Trades: tradesConnection,
-	}
-
-	return resp, nil
-}
-
-func (t *tradingDataServiceV2) GetTradesByOrderID(ctx context.Context, in *v2.GetTradesByOrderIDRequest) (*v2.GetTradesByOrderIDResponse, error) {
-	defer metrics.StartAPIRequestAndTimeGRPC("GetTradesByOrderIDV2")()
-
-	orderID := in.GetOrderId()
-	if len(orderID) == 0 {
-		return nil, apiError(codes.InvalidArgument, fmt.Errorf("orderId must be supplied"))
-	}
-	var market *string
-	if len(in.GetMarketId()) > 0 {
-		market = &in.MarketId
-	}
-
-	pagination, err := entities.CursorPaginationFromProto(in.Pagination)
-	if err != nil {
-		return nil, apiError(codes.InvalidArgument, err)
-	}
-
-	trades, pageInfo, err := t.tradeService.GetByOrderIDWithCursor(ctx, orderID, market, pagination)
-	if err != nil {
-		return nil, apiError(codes.Internal, err)
-	}
-
-	edges, err := makeEdges[*v2.TradeEdge](trades)
-	if err != nil {
-		return nil, apiError(codes.Internal, err)
-	}
-
-	tradesConnection := &v2.TradeConnection{
-		Edges:    edges,
-		PageInfo: pageInfo.ToProto(),
-	}
-
-	resp := &v2.GetTradesByOrderIDResponse{
-		Trades: tradesConnection,
-	}
-
-	return resp, nil
+	return observeBatch(ctx, t.log, "Trade", tradesChan, ref, func(trades []*entities.Trade) error {
+		out := make([]*vega.Trade, 0, len(trades))
+		for _, v := range trades {
+			out = append(out, v.ToProto())
+		}
+		return srv.Send(&v2.ObserveTradesResponse{Trades: out})
+	})
 }
 
 // List all markets using a cursor based pagination model

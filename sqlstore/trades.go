@@ -15,6 +15,7 @@ package sqlstore
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"code.vegaprotocol.io/data-node/entities"
 	"code.vegaprotocol.io/data-node/metrics"
@@ -98,6 +99,42 @@ func (ts *Trades) Add(t *entities.Trade) error {
 	return nil
 }
 
+func (ts *Trades) List(ctx context.Context,
+	marketID entities.MarketID,
+	partyID entities.PartyID,
+	orderID entities.OrderID,
+	pagination entities.CursorPagination) ([]entities.Trade, entities.PageInfo, error) {
+
+	args := []interface{}{}
+
+	conditions := []string{}
+	if marketID.String() != "" {
+		conditions = append(conditions, fmt.Sprintf("market_id=%s", nextBindVar(&args, marketID)))
+	}
+
+	if partyID.String() != "" {
+		bindVar := nextBindVar(&args, partyID)
+		conditions = append(conditions, fmt.Sprintf("(buyer=%s or seller=%s)", bindVar, bindVar))
+	}
+
+	if orderID.String() != "" {
+		bindVar := nextBindVar(&args, orderID)
+		conditions = append(conditions, fmt.Sprintf("(buy_order=%s or sell_order=%s)", bindVar, bindVar))
+	}
+
+	query := `SELECT * from trades`
+	if len(conditions) > 0 {
+		query = fmt.Sprintf("%s WHERE %s", query, strings.Join(conditions, " AND "))
+	}
+
+	trades, pageInfo, err := ts.queryTradesWithCursorPagination(ctx, query, args, pagination)
+	if err != nil {
+		return nil, pageInfo, fmt.Errorf("failed to get trade by market:%w", err)
+	}
+
+	return trades, pageInfo, nil
+}
+
 func (ts *Trades) GetByMarket(ctx context.Context, market string, p entities.OffsetPagination) ([]entities.Trade, error) {
 	query := `SELECT * from trades WHERE market_id=$1`
 	args := []interface{}{entities.NewMarketID(market)}
@@ -110,17 +147,6 @@ func (ts *Trades) GetByMarket(ctx context.Context, market string, p entities.Off
 	return trades, nil
 }
 
-func (ts *Trades) GetByMarketWithCursor(ctx context.Context, market string, pagination entities.CursorPagination) ([]entities.Trade, entities.PageInfo, error) {
-	query := `SELECT * from trades WHERE market_id=$1`
-	args := []interface{}{entities.NewMarketID(market)}
-	trades, pageInfo, err := ts.queryTradesWithCursorPagination(ctx, query, args, pagination)
-	if err != nil {
-		return nil, pageInfo, fmt.Errorf("failed to get trade by market:%w", err)
-	}
-
-	return trades, pageInfo, nil
-}
-
 func (ts *Trades) GetByParty(ctx context.Context, party string, market *string, pagination entities.OffsetPagination) ([]entities.Trade, error) {
 	args := []interface{}{entities.NewPartyID(party)}
 	query := `SELECT * from trades WHERE buyer=$1 or seller=$1`
@@ -129,27 +155,12 @@ func (ts *Trades) GetByParty(ctx context.Context, party string, market *string, 
 	return ts.queryTradesWithMarketFilter(ctx, query, args, market, pagination)
 }
 
-func (ts *Trades) GetByPartyWithCursor(ctx context.Context, party string, market *string, pagination entities.CursorPagination) ([]entities.Trade, entities.PageInfo, error) {
-	args := []interface{}{entities.NewPartyID(party)}
-	query := `SELECT * from trades WHERE (buyer=$1 or seller=$1)`
-
-	return ts.queryTradesWithMarketFilterAndCursorPagination(ctx, query, args, market, pagination)
-}
-
 func (ts *Trades) GetByOrderID(ctx context.Context, order string, market *string, pagination entities.OffsetPagination) ([]entities.Trade, error) {
 	args := []interface{}{entities.NewOrderID(order)}
 	query := `SELECT * from trades WHERE buy_order=$1 or sell_order=$1`
 
 	defer metrics.StartSQLQuery("Trades", "GetByOrderID")()
 	return ts.queryTradesWithMarketFilter(ctx, query, args, market, pagination)
-}
-
-func (ts *Trades) GetByOrderIDWithCursor(ctx context.Context, order string, market *string, pagination entities.CursorPagination) ([]entities.Trade, entities.PageInfo, error) {
-	args := []interface{}{entities.NewOrderID(order)}
-	query := `SELECT * from trades WHERE buy_order=$1 or sell_order=$1`
-
-	defer metrics.StartSQLQuery("Trades", "GetByOrderID")()
-	return ts.queryTradesWithMarketFilterAndCursorPagination(ctx, query, args, market, pagination)
 }
 
 func (ts *Trades) queryTradesWithMarketFilter(ctx context.Context, query string, args []interface{}, market *string, p entities.OffsetPagination) ([]entities.Trade, error) {

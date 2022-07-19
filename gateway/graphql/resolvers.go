@@ -1375,18 +1375,13 @@ func (r *myPartyResolver) Trades(ctx context.Context, party *types.Party,
 }
 
 func (r *myPartyResolver) TradesConnection(ctx context.Context, party *types.Party, market *string, pagination *v2.Pagination) (*v2.TradeConnection, error) {
-	var mkt string
-	if market != nil {
-		mkt = *market
-	}
-
-	req := v2.GetTradesByPartyRequest{
-		PartyId:    party.Id,
-		MarketId:   mkt,
+	req := v2.ListTradesRequest{
+		PartyId:    &party.Id,
+		MarketId:   market,
 		Pagination: pagination,
 	}
 
-	res, err := r.tradingDataClientV2.GetTradesByParty(ctx, &req)
+	res, err := r.tradingDataClientV2.ListTrades(ctx, &req)
 	if err != nil {
 		r.log.Error("tradingData client", logging.Error(err))
 		return nil, customErrorFromStatus(err)
@@ -1773,8 +1768,8 @@ func (r *myOrderResolver) TradesConnection(ctx context.Context, ord *types.Order
 	if ord == nil {
 		return nil, errors.New("nil order")
 	}
-	req := v2.GetTradesByOrderIDRequest{OrderId: ord.Id, Pagination: pagination}
-	res, err := r.tradingDataClientV2.GetTradesByOrderID(ctx, &req)
+	req := v2.ListTradesRequest{OrderId: &ord.Id, Pagination: pagination}
+	res, err := r.tradingDataClientV2.ListTrades(ctx, &req)
 	if err != nil {
 		r.log.Error("tradingData client", logging.Error(err))
 		return nil, customErrorFromStatus(err)
@@ -2295,19 +2290,11 @@ func (r *mySubscriptionResolver) Orders(ctx context.Context, market *string, par
 }
 
 func (r *mySubscriptionResolver) Trades(ctx context.Context, market *string, party *string) (<-chan []*types.Trade, error) {
-	var mkt, pty string
-	if market != nil {
-		mkt = *market
+	req := &v2.ObserveTradesRequest{
+		MarketId: market,
+		PartyId:  party,
 	}
-	if party != nil {
-		pty = *party
-	}
-
-	req := &protoapi.TradesSubscribeRequest{
-		MarketId: mkt,
-		PartyId:  pty,
-	}
-	stream, err := r.tradingDataClient.TradesSubscribe(ctx, req)
+	stream, err := r.tradingDataClientV2.ObserveTrades(ctx, req)
 	if err != nil {
 		return nil, customErrorFromStatus(err)
 	}
