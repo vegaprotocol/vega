@@ -21,8 +21,7 @@ func TestERC20WithdrawalApproval(t *testing.T) {
 
 	for name, query := range queries {
 		t.Run(name, func(t *testing.T) {
-			var new, old struct{ ERC20WithdrawalApproval ERC20WithdrawalApproval }
-			assertGraphQLQueriesReturnSame(t, query, &new, &old)
+			assertGraphQLQueriesReturnSame[struct{ ERC20WithdrawalApproval ERC20WithdrawalApproval }](t, query)
 		})
 	}
 }

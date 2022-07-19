@@ -22,8 +22,7 @@ func TestOracles(t *testing.T) {
 
 	for name, query := range queries {
 		t.Run(name, func(t *testing.T) {
-			var new, old struct{ OracleSpecs []OracleSpec }
-			assertGraphQLQueriesReturnSameIgnoreErrors(t, query, &new, &old)
+			assertGraphQLQueriesReturnSame[struct{ OracleSpecs []OracleSpec }](t, query)
 		})
 	}
 }
