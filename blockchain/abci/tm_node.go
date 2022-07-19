@@ -28,7 +28,7 @@ func NewTmNode(
 	genesisDoc *tmtypes.GenesisDoc,
 ) (*TmNode, error) {
 	log = log.Named("tendermint")
-	log.SetLevel(conf.Level.Get())
+	log.SetLevel(conf.Tendermint.Level.Get())
 
 	config, err := loadConfig(homeDir)
 	if err != nil {
