@@ -96,6 +96,10 @@ type Logger struct {
 	name        string
 }
 
+func (log *Logger) ToSugared() *zap.SugaredLogger {
+	return log.WithOptions(zap.AddCallerSkip(1)).Sugar()
+}
+
 // Clone will clone the internal logger.
 func (log *Logger) Clone() *Logger {
 	newConfig := cloneConfig(log.config)
@@ -139,7 +143,7 @@ func (log *Logger) Named(name string) *Logger {
 		c       = log.Clone()
 		newName string
 	)
-	if log.name == "" {
+	if log.name == "" || log.name == "root" {
 		newName = name
 	} else {
 		newName = fmt.Sprintf("%s.%s", log.name, name)
@@ -239,7 +243,8 @@ func newLoggerFromConfig(config Config) *Logger {
 	if err != nil {
 		panic(err)
 	}
-	return New(zaplogger, &zapconfig, config.Environment, "")
+	zaplogger = zaplogger.Named("root")
+	return New(zaplogger, &zapconfig, config.Environment, "root")
 }
 
 // NewDevLogger creates a new logger suitable for development environments.

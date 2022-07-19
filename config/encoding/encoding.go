@@ -112,6 +112,7 @@ type NodeMode string
 const (
 	NodeModeValidator   NodeMode = "validator"
 	NodeModeFull        NodeMode = "full"
+	NodeModeSeed        NodeMode = "seed"
 	NodeModeUnsupported NodeMode = "unsupported"
 )
 
@@ -121,8 +122,10 @@ func NodeModeFromString(s string) (NodeMode, error) {
 		return NodeModeValidator, nil
 	case NodeModeFull:
 		return NodeModeFull, nil
+	case NodeModeSeed:
+		return NodeModeSeed, nil
 	default:
-		return NodeModeUnsupported, fmt.Errorf("%s is not a valid node mode, expected [validator, full]", s)
+		return NodeModeUnsupported, fmt.Errorf("%s is not a valid node mode, expected [validator, full, seed]", s)
 	}
 }
 

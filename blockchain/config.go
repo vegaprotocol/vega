@@ -51,24 +51,15 @@ func NewDefaultConfig() Config {
 }
 
 type TendermintConfig struct {
-	Level          encoding.LogLevel `long:"log-level" description:" "`
-	LogTimeDebug   encoding.Bool     `long:"log-level-time-debug" description:" "`
-	ClientAddr     string            `long:"client-addr" description:" "`
-	ClientEndpoint string            `long:"client-endpoint" description:" "`
-	ServerPort     int               `long:"server-port" description:" "`
-	ServerAddr     string            `long:"server-addr" description:" "`
+	Level   encoding.LogLevel `long:"log-level" description:" "`
+	RPCAddr string            `long:"rpc-addr" description:"address of the tendermint rpc"`
 }
 
 // NewDefaultTendermintConfig creates an instance of the package specific configuration, given a
 // pointer to a logger instance to be used for logging within the package.
 func NewDefaultTendermintConfig() TendermintConfig {
 	return TendermintConfig{
-		Level:          encoding.LogLevel{Level: logging.InfoLevel},
-		ServerPort:     26658,
-		ServerAddr:     "localhost",
-		ClientAddr:     "tcp://0.0.0.0:26657",
-		ClientEndpoint: "/websocket",
-		LogTimeDebug:   true,
+		Level: encoding.LogLevel{Level: logging.InfoLevel},
 	}
 }
 
