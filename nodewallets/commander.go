@@ -28,7 +28,7 @@ import (
 
 	"github.com/cenkalti/backoff"
 	"github.com/golang/protobuf/proto"
-	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
+	tmctypes "github.com/tendermint/tendermint/rpc/coretypes"
 )
 
 const (
