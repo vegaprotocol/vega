@@ -24,9 +24,6 @@ pipeline {
         string( name: 'DATA_NODE_BRANCH', defaultValue: '',
                 description: '''Git branch, tag or hash of the vegaprotocol/data-node repository.
                     e.g. "develop", "v0.44.0" or commit hash. Default empty: use latests published version.''')
-        string( name: 'VEGAWALLET_BRANCH', defaultValue: '',
-                description: '''Git branch, tag or hash of the vegaprotocol/vegawallet repository.
-                    e.g. "develop", "v0.9.0" or commit hash. Default empty: use latest published version.''')
         string( name: 'DEVOPS_INFRA_BRANCH', defaultValue: 'master',
                 description: 'Git branch, tag or hash of the vegaprotocol/devops-infra repository')
         string( name: 'VEGATOOLS_BRANCH', defaultValue: 'develop',
@@ -277,7 +274,6 @@ pipeline {
                             systemTestsCapsule ignoreFailure: !isPRBuild(),
                                 vegaCore: commitHash,
                                 dataNode: params.DATA_NODE_BRANCH,
-                                vegawallet: params.VEGAWALLET_BRANCH,
                                 vegatools: params.VEGATOOLS_BRANCH,
                                 systemTests: params.SYSTEM_TESTS_BRANCH,
                                 protos: params.PROTOS_BRANCH,
@@ -290,7 +286,6 @@ pipeline {
                             script {
                                 systemTestsCapsule vegaCore: commitHash,
                                     dataNode: params.DATA_NODE_BRANCH,
-                                    vegawallet: params.VEGAWALLET_BRANCH,
                                     devopsInfra: params.DEVOPS_INFRA_BRANCH,
                                     vegatools: params.VEGATOOLS_BRANCH,
                                     systemTests: params.SYSTEM_TESTS_BRANCH,
