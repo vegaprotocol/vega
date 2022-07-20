@@ -295,6 +295,33 @@ pipeline {
                     }
                 }
 
+                stage('development binary for vegacapsule') {
+                    when {
+                        branch 'develop'
+                    }
+                    environment {
+                        AWS_REGION = 'eu-west-2'
+                    }
+                    steps {
+                        script {
+                            vegaS3Ops = usernamePassword(
+                                credentialsId: 'vegacapsule-s3-operations',
+                                passwordVariable: 'AWS_ACCESS_KEY_ID',
+                                usernameVariable: 'AWS_SECRET_ACCESS_KEY'
+                            )
+                            bucketName = string(
+                                credentialsId: 'vegacapsule-s3-bucket-name',
+                                variable: 'VEGACAPSULE_S3_BUCKET_NAME'
+                            )
+                            withCredentials([vegaS3Ops, bucketName]) {
+                                sh label: 'Upload data-node to S3', script: '''
+                                    aws s3 cp ./cmd/data-node/data-node-linux-amd64 s3://''' + env.VEGACAPSULE_S3_BUCKET_NAME + '''/bin/linux-amd64-''' + versionHash + '''
+                                '''
+                            }
+                        }
+                    }
+                }
+
                 stage('release to GitHub') {
                     when {
                         buildingTag()
