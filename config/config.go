@@ -27,6 +27,7 @@ import (
 	"code.vegaprotocol.io/vega/blockchain"
 	"code.vegaprotocol.io/vega/broker"
 	"code.vegaprotocol.io/vega/checkpoint"
+	"code.vegaprotocol.io/vega/client/eth"
 	"code.vegaprotocol.io/vega/collateral"
 	cfgencoding "code.vegaprotocol.io/vega/config/encoding"
 	"code.vegaprotocol.io/vega/coreapi"
@@ -66,6 +67,7 @@ type Config struct {
 	Collateral        collateral.Config    `group:"Collateral" namespace:"collateral"`
 	CoreAPI           coreapi.Config       `group:"CoreAPI" namespace:"coreapi"`
 	Execution         execution.Config     `group:"Execution" namespace:"execution"`
+	Ethereum          eth.Config           `group:"Ethereum" namespace:"ethereum"`
 	Processor         processor.Config     `group:"Processor" namespace:"processor"`
 	Logging           logging.Config       `group:"Logging" namespace:"logging"`
 	Oracles           oracles.Config       `group:"Oracles" namespace:"oracles"`
@@ -110,6 +112,7 @@ func NewDefaultConfig() Config {
 		CoreAPI:           coreapi.NewDefaultConfig(),
 		Blockchain:        blockchain.NewDefaultConfig(),
 		Execution:         execution.NewDefaultConfig(),
+		Ethereum:          eth.NewDefaultConfig(),
 		Processor:         processor.NewDefaultConfig(),
 		Oracles:           oracles.NewDefaultConfig(),
 		Time:              vegatime.NewDefaultConfig(),
