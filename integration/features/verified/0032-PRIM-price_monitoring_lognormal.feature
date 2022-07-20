@@ -41,6 +41,12 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
     And the mark price should be "100000" for the market "ETH/DEC20"
 
+    # why is supplied stake 0????? should it not be 90000000?
+    And the market data for the market "ETH/DEC20" should be:
+      | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
+      | 100000     | TRADING_MODE_CONTINUOUS | 60      | 99461     | 100541    | 74340        | 0              | 1             |
+      | 100000     | TRADING_MODE_CONTINUOUS | 120     | 99000     | 101008    | 74340        | 0              | 1             |
+
     #T0 + 10 min
     When time is updated to "2020-10-16T00:10:00Z"
 
@@ -117,6 +123,11 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
       | party2 | ETH/DEC20 | buy  | 1      | 111000 | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
     Then the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC20"
+
+    # And the market data for the market "ETH/DEC20" should be:
+    #   | mark price | trading mode                    | horizon | min bound | max bound | target stake | supplied stake | open interest |
+    #   | 100000     | TRADING_MODE_MONITORING_AUCTION | 60      | 99461     | 100541    | 247552        | 0              | 2             |
+    #   | 100000     | TRADING_MODE_MONITORING_AUCTION | 120     | 99000     | 101008    | 247552        | 0              | 2             |
 
     And the mark price should be "100000" for the market "ETH/DEC20"
 
@@ -406,3 +417,4 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
       | 1000000    | TRADING_MODE_CONTINUOUS | 60      | 994606    | 1005415   | 7434000      | 0              | 10            |
       | 1000000    | TRADING_MODE_CONTINUOUS | 120     | 989997    | 1010088   | 7434000      | 0              | 10            |
+
