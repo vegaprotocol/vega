@@ -85,7 +85,7 @@ func TestBalances(t *testing.T) {
 	balanceStore.Flush(ctx)
 
 	// Query all the balances (they're all for the same asset)
-	bals, err := balanceStore.Query(entities.AccountFilter{Asset: asset}, []entities.AccountField{})
+	bals, err := balanceStore.Query(entities.AccountFilter{AssetID: asset.ID}, []entities.AccountField{})
 	require.NoError(t, err)
 
 	expected_blocks := []int{0, 1, 2, 3, 4}
@@ -94,8 +94,8 @@ func TestBalances(t *testing.T) {
 
 	// Try just for our first account/party
 	filter := entities.AccountFilter{
-		Asset:   asset,
-		Parties: []entities.Party{parties[0]},
+		AssetID:  asset.ID,
+		PartyIDs: []entities.PartyID{parties[0].ID},
 	}
 	bals, err = balanceStore.Query(filter, []entities.AccountField{})
 	require.NoError(t, err)
@@ -105,7 +105,7 @@ func TestBalances(t *testing.T) {
 	assertBalanceCorrect(t, expected_blocks, expected_bals, blocks[:], *bals)
 
 	// Now try grouping - if we do it by account id it should split out balances for each account.
-	bals, err = balanceStore.Query(entities.AccountFilter{Asset: asset}, []entities.AccountField{entities.AccountFieldID})
+	bals, err = balanceStore.Query(entities.AccountFilter{AssetID: asset.ID}, []entities.AccountField{entities.AccountFieldID})
 	require.NoError(t, err)
 
 	expected_blocks = []int{0, 1, 2, 2, 3, 3, 3, 4, 4, 4}
@@ -174,11 +174,10 @@ func TestBalancesDataRetention(t *testing.T) {
 	balanceStore.Flush(ctx)
 
 	// Query all the balances (they're all for the same asset)
-	bals, err := balanceStore.Query(entities.AccountFilter{Asset: asset}, []entities.AccountField{})
+	bals, err := balanceStore.Query(entities.AccountFilter{AssetID: asset.ID}, []entities.AccountField{})
 	require.NoError(t, err)
 
 	expected_blocks := []int{1, 2, 3, 4}
 	expected_bals := []int64{5, 5 + 10, 5 + 10 + 100, 30 + 10 + 100}
 	assertBalanceCorrect(t, expected_blocks, expected_bals, blocks[:], *bals)
-
 }

@@ -29,8 +29,7 @@ func TestGovernance(t *testing.T) {
 
 	for name, query := range queries {
 		t.Run(name, func(t *testing.T) {
-			var new, old struct{ Proposals []Proposal }
-			assertGraphQLQueriesReturnSame(t, query, &new, &old)
+			assertGraphQLQueriesReturnSame[struct{ Proposals []Proposal }](t, query)
 		})
 	}
 }

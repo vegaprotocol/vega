@@ -1,0 +1,1 @@
+{"TestName":"TestNodeData_NodeData","Query":"{ nodeData { stakedTotal, totalNodes, inactiveNodes, validatingNodes, uptime } }","Result":{"NodeData":{"StakedTotal":"7000000000000000000","TotalNodes":2,"InactiveNodes":0,"ValidatingNodes":2,"Uptime":229.66981506347656}},"Duration":4855965}

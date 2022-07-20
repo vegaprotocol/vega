@@ -1415,13 +1415,13 @@ func (t *tradingDataService) PartyAccounts(ctx context.Context, req *protoapi.Pa
 	pagination := entities.OffsetPagination{}
 
 	filter := entities.AccountFilter{
-		Asset:        toAccountsFilterAsset(req.Asset),
-		Parties:      toAccountsFilterParties(req.PartyId),
+		AssetID:      toAccountsFilterAsset(req.Asset),
+		PartyIDs:     toAccountsFilterParties(req.PartyId),
 		AccountTypes: toAccountsFilterAccountTypes(req.Type),
-		Markets:      toAccountsFilterMarkets(req.MarketId),
+		MarketIDs:    toAccountsFilterMarkets(req.MarketId),
 	}
 
-	accountBalances, err := t.accountService.QueryBalances(ctx, filter, pagination)
+	accountBalances, err := t.accountService.QueryBalancesV1(ctx, filter, pagination)
 	if err != nil {
 		return nil, apiError(codes.Internal, ErrAccountServiceGetPartyAccounts, err)
 	}
@@ -1455,36 +1455,29 @@ func accountBalancesToProtoAccountList(accounts []entities.AccountBalance) []*ve
 	return accountsProto
 }
 
-func toAccountsFilterAsset(assetID string) entities.Asset {
-	asset := entities.Asset{}
-
-	if len(assetID) > 0 {
-		asset.ID = entities.NewAssetID(assetID)
-	}
-
-	return asset
+func toAccountsFilterAsset(assetID string) entities.AssetID {
+	return entities.NewAssetID(assetID)
 }
 
-func toAccountsFilterParties(partyIDs ...string) []entities.Party {
-	parties := make([]entities.Party, 0, len(partyIDs))
+func toAccountsFilterParties(partyIDs ...string) []entities.PartyID {
+	parties := make([]entities.PartyID, 0, len(partyIDs))
 	for _, idStr := range partyIDs {
 		if idStr == "" {
 			continue
 		}
-		party := entities.Party{ID: entities.NewPartyID(idStr)}
-		parties = append(parties, party)
+		parties = append(parties, entities.NewPartyID(idStr))
 	}
 
 	return parties
 }
 
-func toAccountsFilterMarkets(marketIDs ...string) []entities.Market {
-	markets := make([]entities.Market, 0, len(marketIDs))
+func toAccountsFilterMarkets(marketIDs ...string) []entities.MarketID {
+	markets := make([]entities.MarketID, 0, len(marketIDs))
 	for _, idStr := range marketIDs {
 		if idStr == "" {
 			continue
 		}
-		market := entities.Market{ID: entities.NewMarketID(idStr)}
+		market := entities.NewMarketID(idStr)
 		markets = append(markets, market)
 	}
 
@@ -1497,8 +1490,8 @@ func (t *tradingDataService) MarketAccounts(ctx context.Context,
 	defer metrics.StartAPIRequestAndTimeGRPC("MarketAccounts")()
 
 	filter := entities.AccountFilter{
-		Asset:   toAccountsFilterAsset(req.Asset),
-		Markets: toAccountsFilterMarkets(req.MarketId),
+		AssetID:   toAccountsFilterAsset(req.Asset),
+		MarketIDs: toAccountsFilterMarkets(req.MarketId),
 		AccountTypes: toAccountsFilterAccountTypes(
 			vega.AccountType_ACCOUNT_TYPE_INSURANCE,
 			vega.AccountType_ACCOUNT_TYPE_FEES_LIQUIDITY,
@@ -1507,7 +1500,7 @@ func (t *tradingDataService) MarketAccounts(ctx context.Context,
 
 	pagination := entities.OffsetPagination{}
 
-	accountBalances, err := t.accountService.QueryBalances(ctx, filter, pagination)
+	accountBalances, err := t.accountService.QueryBalancesV1(ctx, filter, pagination)
 	if err != nil {
 		return nil, apiError(codes.Internal, ErrAccountServiceGetMarketAccounts, err)
 	}
@@ -1523,14 +1516,14 @@ func (t *tradingDataService) FeeInfrastructureAccounts(ctx context.Context,
 	defer metrics.StartAPIRequestAndTimeGRPC("FeeInfrastructureAccounts")()
 
 	filter := entities.AccountFilter{
-		Asset: toAccountsFilterAsset(req.Asset),
+		AssetID: toAccountsFilterAsset(req.Asset),
 		AccountTypes: toAccountsFilterAccountTypes(
 			vega.AccountType_ACCOUNT_TYPE_FEES_INFRASTRUCTURE,
 		),
 	}
 	pagination := entities.OffsetPagination{}
 
-	accountBalances, err := t.accountService.QueryBalances(ctx, filter, pagination)
+	accountBalances, err := t.accountService.QueryBalancesV1(ctx, filter, pagination)
 	if err != nil {
 		return nil, apiError(codes.Internal, ErrAccountServiceGetFeeInfrastructureAccounts, err)
 	}
@@ -1544,14 +1537,14 @@ func (t *tradingDataService) GlobalRewardPoolAccounts(ctx context.Context,
 ) (*protoapi.GlobalRewardPoolAccountsResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("GloabRewardPoolAccounts")()
 	filter := entities.AccountFilter{
-		Asset: toAccountsFilterAsset(req.Asset),
+		AssetID: toAccountsFilterAsset(req.Asset),
 		AccountTypes: toAccountsFilterAccountTypes(
 			vega.AccountType_ACCOUNT_TYPE_GLOBAL_REWARD,
 		),
 	}
 	pagination := entities.OffsetPagination{}
 
-	accountBalances, err := t.accountService.QueryBalances(ctx, filter, pagination)
+	accountBalances, err := t.accountService.QueryBalancesV1(ctx, filter, pagination)
 	if err != nil {
 		return nil, apiError(codes.Internal, ErrAccountServiceGetGlobalRewardPoolAccounts, err)
 	}

@@ -23,8 +23,7 @@ func TestEpochs(t *testing.T) {
 
 	for name, query := range queries {
 		t.Run(name, func(t *testing.T) {
-			var new, old struct{ Epoch Epoch }
-			assertGraphQLQueriesReturnSame(t, query, &new, &old)
+			assertGraphQLQueriesReturnSame[struct{ Epoch Epoch }](t, query)
 		})
 	}
 }

@@ -26,16 +26,16 @@ func filterAccountsQuery(af entities.AccountFilter) (string, []interface{}, erro
 
 	query := `SELECT id, party_id, asset_id, market_id, type, vega_time
 	          FROM ACCOUNTS `
-	if af.Asset.ID.String() != "" {
-		query = fmt.Sprintf("%s WHERE asset_id=%s", query, nextBindVar(&args, af.Asset.ID))
+	if af.AssetID.String() != "" {
+		query = fmt.Sprintf("%s WHERE asset_id=%s", query, nextBindVar(&args, af.AssetID))
 	} else {
 		query = fmt.Sprintf("%s WHERE true", query)
 	}
 
-	if len(af.Parties) > 0 {
-		partyIDs := make([][]byte, len(af.Parties))
-		for i, party := range af.Parties {
-			partyIDs[i], err = party.ID.Bytes()
+	if len(af.PartyIDs) > 0 {
+		partyIDs := make([][]byte, len(af.PartyIDs))
+		for i, party := range af.PartyIDs {
+			partyIDs[i], err = party.Bytes()
 			if err != nil {
 				return "", nil, fmt.Errorf("invalid party id: %w", err)
 			}
@@ -47,10 +47,10 @@ func filterAccountsQuery(af entities.AccountFilter) (string, []interface{}, erro
 		query += " AND type=ANY(" + nextBindVar(&args, af.AccountTypes) + ")"
 	}
 
-	if len(af.Markets) > 0 {
-		marketIds := make([][]byte, len(af.Markets))
-		for i, market := range af.Markets {
-			marketIds[i], err = market.ID.Bytes()
+	if len(af.MarketIDs) > 0 {
+		marketIds := make([][]byte, len(af.MarketIDs))
+		for i, market := range af.MarketIDs {
+			marketIds[i], err = market.Bytes()
 			if err != nil {
 				return "", nil, fmt.Errorf("invalid market id: %w", err)
 			}
@@ -62,21 +62,21 @@ func filterAccountsQuery(af entities.AccountFilter) (string, []interface{}, erro
 	return query, args, nil
 }
 
-func filterAccountBalancesQuery(af entities.AccountFilter, pagination entities.OffsetPagination) (string, []interface{}, error) {
+func filterAccountBalancesQuery(af entities.AccountFilter) (string, []interface{}, error) {
 	var args []interface{}
 
 	where := ""
 	and := ""
 
-	if len(af.Asset.ID.String()) != 0 {
-		where = fmt.Sprintf("ACCOUNTS.asset_id=%s", nextBindVar(&args, af.Asset.ID))
+	if len(af.AssetID.String()) != 0 {
+		where = fmt.Sprintf("ACCOUNTS.asset_id=%s", nextBindVar(&args, af.AssetID))
 		and = " AND "
 	}
 
-	if len(af.Parties) > 0 {
-		partyIDs := make([][]byte, len(af.Parties))
-		for i, party := range af.Parties {
-			bytes, err := party.ID.Bytes()
+	if len(af.PartyIDs) > 0 {
+		partyIDs := make([][]byte, len(af.PartyIDs))
+		for i, party := range af.PartyIDs {
+			bytes, err := party.Bytes()
 			if err != nil {
 				return "", nil, fmt.Errorf("Couldn't decode party ID: %w", err)
 			}
@@ -95,10 +95,10 @@ func filterAccountBalancesQuery(af entities.AccountFilter, pagination entities.O
 		}
 	}
 
-	if len(af.Markets) > 0 {
-		marketIDs := make([][]byte, len(af.Markets))
-		for i, market := range af.Markets {
-			bytes, err := market.ID.Bytes()
+	if len(af.MarketIDs) > 0 {
+		marketIDs := make([][]byte, len(af.MarketIDs))
+		for i, market := range af.MarketIDs {
+			bytes, err := market.Bytes()
 			if err != nil {
 				return "", nil, fmt.Errorf("Couldn't decode market ID: %w", err)
 			}
@@ -116,10 +116,5 @@ func filterAccountBalancesQuery(af entities.AccountFilter, pagination entities.O
 		query = fmt.Sprintf("%s WHERE %s", query, where)
 	}
 
-	query = fmt.Sprintf("%s ORDER BY ACCOUNTS.id", query)
-
-	// and we're calling the order and paginate query method so that we can paginate later as it is a requirement for
-	// data-node API v2, but pass no ordering columns as we've already defined the ordering we want for this query.
-	query, args = orderAndPaginateQuery(query, nil, pagination, args...)
 	return query, args, nil
 }

@@ -21,8 +21,7 @@ func TestTransfers(t *testing.T) {
 
 	for name, query := range queries {
 		t.Run(name, func(t *testing.T) {
-			var new, old struct{ Transfers []Transfer }
-			assertGraphQLQueriesReturnSame(t, query, &new, &old)
+			assertGraphQLQueriesReturnSame[struct{ Transfers []Transfer }](t, query)
 		})
 	}
 }
