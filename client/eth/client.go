@@ -63,8 +63,12 @@ type Client struct {
 	currentHeight           uint64
 }
 
-func Dial(ctx context.Context, rawURL string) (*Client, error) {
-	ethClient, err := ethclient.DialContext(ctx, rawURL)
+func Dial(ctx context.Context, cfg Config) (*Client, error) {
+	if len(cfg.RPCEndpoint) <= 0 {
+		return nil, errors.New("no ethereum rpc endpoint configured. the configuration have move from the NodeWallet section to the Ethereum section, please make sure your vega configuration is up to date")
+	}
+
+	ethClient, err := ethclient.DialContext(ctx, cfg.RPCEndpoint)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't instantiate Ethereum client: %w", err)
 	}
