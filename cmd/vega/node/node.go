@@ -38,6 +38,7 @@ import (
 	"code.vegaprotocol.io/vega/nodewallets"
 	"code.vegaprotocol.io/vega/protocol"
 	"code.vegaprotocol.io/vega/stats"
+	"code.vegaprotocol.io/vega/version"
 
 	"github.com/blang/semver"
 	"github.com/tendermint/tendermint/abci/types"
@@ -51,9 +52,7 @@ type NodeCommand struct {
 	ctx    context.Context
 	cancel context.CancelFunc
 
-	Log         *logging.Logger
-	Version     string
-	VersionHash string
+	Log *logging.Logger
 
 	pproffhandlr *pprof.Pprofhandler
 	stats        *stats.Stats
@@ -115,9 +114,6 @@ func (n *NodeCommand) Run(
 
 	n.statusChecker = monitoring.New(n.Log, n.conf.Monitoring, n.blockchainClient)
 	n.statusChecker.OnChainDisconnect(n.cancel)
-	n.statusChecker.OnChainVersionObtained(
-		func(v string) { n.stats.SetChainVersion(v) },
-	)
 
 	// TODO(): later we will want to select what version of the protocol
 	// to run, most likely via configuration, so we can use legacy or current
@@ -240,8 +236,8 @@ func (n *NodeCommand) Stop() error {
 	}
 
 	n.Log.Info("Vega shutdown complete",
-		logging.String("version", n.Version),
-		logging.String("version-hash", n.VersionHash))
+		logging.String("version", version.Get()),
+		logging.String("version-hash", version.GetCommitHash()))
 
 	n.Log.Sync()
 	n.cancel()
@@ -388,7 +384,7 @@ func (n *NodeCommand) setupCommon(_ []string) (err error) {
 		)
 	}
 
-	n.stats = stats.New(n.Log, n.conf.Stats, n.Version, n.VersionHash)
+	n.stats = stats.New(n.Log, n.conf.Stats)
 
 	// start prometheus stuff
 	metrics.Start(n.conf.Metrics)
