@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package execution_test
 
 import (
@@ -18,7 +30,6 @@ import (
 
 func startMarketInAuction(t *testing.T, ctx context.Context, now *time.Time) *testMarket {
 	t.Helper()
-	closingAt := time.Unix(1000000000, 0)
 
 	pmt := &types.PriceMonitoringTrigger{
 		Horizon:          60,
@@ -35,7 +46,7 @@ func startMarketInAuction(t *testing.T, ctx context.Context, now *time.Time) *te
 		UpdateFrequency: 600,
 	}
 
-	tm := getTestMarket(t, *now, closingAt, pMonitorSettings, nil)
+	tm := getTestMarket(t, *now, pMonitorSettings, nil)
 
 	addAccountWithAmount(tm, "party-A", 1000)
 	addAccountWithAmount(tm, "party-B", 100000000)
@@ -861,7 +872,7 @@ func TestEvents_CloseOutPartyWithNotEnoughLiquidity(t *testing.T) {
 	}
 	// move time forwards 20 seconds, so the opening auction can end
 	now = now.Add(time.Second * 20)
-	tm.market.OnChainTimeUpdate(ctx, now)
+	tm.market.OnTick(ctx, now)
 	// leaveAuction(tm, ctx, &now)
 
 	// Add a GFN order
@@ -990,7 +1001,7 @@ func TestEvents_PeggedOrders(t *testing.T) {
 	}
 	// move time forwards 20 seconds, so the opening auction can end
 	now = now.Add(time.Second * 20)
-	tm.market.OnChainTimeUpdate(ctx, now)
+	tm.market.OnTick(ctx, now)
 	// leaveAuction(tm, ctx, &now)
 
 	o1 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGFN, "Order01", types.SideBuy, "party-B", 2, 100)

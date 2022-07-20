@@ -1,6 +1,19 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package steps
 
 import (
+	"errors"
 	"fmt"
 	"time"
 
@@ -28,17 +41,25 @@ func TheOracleSpec(config *market.Config, name string, specType string, rawPubKe
 			Conditions: []*oraclesv1.Condition{},
 		}
 
+		if r.HasColumn("condition") != r.HasColumn("value") {
+			return errors.New("condition and value columns require each other")
+		}
+
 		if r.HasColumn("condition") {
-			condition := row.condition()
-			expiry, err := time.Parse(time.RFC3339, condition)
-			if err != nil {
-				panic(fmt.Errorf("cannot parse expiry condition: %w", err))
+			value := row.value()
+
+			if row.propertyType() == oraclesv1.PropertyKey_TYPE_TIMESTAMP {
+				expiry, err := time.Parse(time.RFC3339, value)
+				if err != nil {
+					panic(fmt.Errorf("cannot parse expiry condition: %w", err))
+				}
+				value = fmt.Sprintf("%d", expiry.Unix())
 			}
 
 			filter.Conditions = append(filter.Conditions,
 				&oraclesv1.Condition{
-					Operator: oraclesv1.Condition_OPERATOR_GREATER_THAN_OR_EQUAL,
-					Value:    fmt.Sprintf("%d", expiry.UnixNano()),
+					Operator: row.condition(),
+					Value:    value,
 				},
 			)
 		}
@@ -72,6 +93,7 @@ func parseOracleSpecTable(table *godog.Table) []RowWrapper {
 		"binding",
 	}, []string{
 		"condition",
+		"value",
 	})
 }
 
@@ -91,6 +113,10 @@ func (r oracleSpecRow) destination() string {
 	return r.row.MustStr("binding")
 }
 
-func (r oracleSpecRow) condition() string {
-	return r.row.MustStr("condition")
+func (r oracleSpecRow) condition() oraclesv1.Condition_Operator {
+	return r.row.MustOracleSpecConditionOperator("condition")
+}
+
+func (r oracleSpecRow) value() string {
+	return r.row.MustStr("value")
 }

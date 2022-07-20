@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package market
 
 import (
@@ -6,7 +18,7 @@ import (
 
 	"github.com/jinzhu/copier"
 
-	types "code.vegaprotocol.io/protos/vega"
+	vegapb "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/integration/steps/market/defaults"
 )
 
@@ -29,14 +41,14 @@ var (
 )
 
 type riskModels struct {
-	simple    map[string]*types.TradableInstrument_SimpleRiskModel
-	logNormal map[string]*types.TradableInstrument_LogNormalRiskModel
+	simple    map[string]*vegapb.TradableInstrument_SimpleRiskModel
+	logNormal map[string]*vegapb.TradableInstrument_LogNormalRiskModel
 }
 
 func newRiskModels(unmarshaler *defaults.Unmarshaler) *riskModels {
 	models := &riskModels{
-		simple:    map[string]*types.TradableInstrument_SimpleRiskModel{},
-		logNormal: map[string]*types.TradableInstrument_LogNormalRiskModel{},
+		simple:    map[string]*vegapb.TradableInstrument_SimpleRiskModel{},
+		logNormal: map[string]*vegapb.TradableInstrument_LogNormalRiskModel{},
 	}
 
 	simpleRiskModelReaders := defaults.ReadAll(defaultSimpleRiskModels, defaultSimpleRiskModelFileNames)
@@ -45,7 +57,7 @@ func newRiskModels(unmarshaler *defaults.Unmarshaler) *riskModels {
 		if err != nil {
 			panic(fmt.Errorf("couldn't unmarshal default risk model %s: %v", name, err))
 		}
-		if err := models.AddSimple(name, instrument.RiskModel.(*types.TradableInstrument_SimpleRiskModel)); err != nil {
+		if err := models.AddSimple(name, instrument.RiskModel.(*vegapb.TradableInstrument_SimpleRiskModel)); err != nil {
 			panic(fmt.Errorf("failed to add default simple risk model %s: %v", name, err))
 		}
 	}
@@ -56,7 +68,7 @@ func newRiskModels(unmarshaler *defaults.Unmarshaler) *riskModels {
 		if err != nil {
 			panic(fmt.Errorf("couldn't unmarshal default risk model %s: %v", name, err))
 		}
-		if err := models.AddLogNormal(name, instrument.RiskModel.(*types.TradableInstrument_LogNormalRiskModel)); err != nil {
+		if err := models.AddLogNormal(name, instrument.RiskModel.(*vegapb.TradableInstrument_LogNormalRiskModel)); err != nil {
 			panic(fmt.Errorf("failed to add default simple risk model %s: %v", name, err))
 		}
 	}
@@ -64,7 +76,7 @@ func newRiskModels(unmarshaler *defaults.Unmarshaler) *riskModels {
 	return models
 }
 
-func (r *riskModels) AddSimple(name string, model *types.TradableInstrument_SimpleRiskModel) error {
+func (r *riskModels) AddSimple(name string, model *vegapb.TradableInstrument_SimpleRiskModel) error {
 	if _, okLogNormal := r.logNormal[name]; okLogNormal {
 		return fmt.Errorf("risk model \"%s\" already registered as log normal risk model", name)
 	}
@@ -72,7 +84,7 @@ func (r *riskModels) AddSimple(name string, model *types.TradableInstrument_Simp
 	return nil
 }
 
-func (r *riskModels) AddLogNormal(name string, model *types.TradableInstrument_LogNormalRiskModel) error {
+func (r *riskModels) AddLogNormal(name string, model *vegapb.TradableInstrument_LogNormalRiskModel) error {
 	if _, okSimple := r.simple[name]; okSimple {
 		return fmt.Errorf("risk model \"%s\" already registered as simple risk model", name)
 	}
@@ -80,11 +92,11 @@ func (r *riskModels) AddLogNormal(name string, model *types.TradableInstrument_L
 	return nil
 }
 
-func (r riskModels) LoadModel(name string, instrument *types.TradableInstrument) error {
+func (r riskModels) LoadModel(name string, instrument *vegapb.TradableInstrument) error {
 	simpleModel, okSimple := r.simple[name]
 	if okSimple {
 		// Copy to avoid modification between tests.
-		copyConfig := &types.TradableInstrument_SimpleRiskModel{}
+		copyConfig := &vegapb.TradableInstrument_SimpleRiskModel{}
 		if err := copier.Copy(copyConfig, simpleModel); err != nil {
 			panic(fmt.Errorf("failed to deep copy simple risk model: %v", err))
 		}
@@ -95,7 +107,7 @@ func (r riskModels) LoadModel(name string, instrument *types.TradableInstrument)
 	logNormalModel, okLogNormal := r.logNormal[name]
 	if okLogNormal {
 		// Copy to avoid modification between tests.
-		copyConfig := &types.TradableInstrument_LogNormalRiskModel{}
+		copyConfig := &vegapb.TradableInstrument_LogNormalRiskModel{}
 		if err := copier.Copy(copyConfig, logNormalModel); err != nil {
 			panic(fmt.Errorf("failed to deep copy log normal risk model: %v", err))
 		}

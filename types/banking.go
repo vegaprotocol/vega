@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package types
 
 import (
@@ -55,7 +67,6 @@ type TransferBase struct {
 	To              string
 	ToAccountType   AccountType
 	Asset           string
-	Market          string
 	Amount          *num.Uint
 	Reference       string
 	Status          TransferStatus
@@ -128,7 +139,6 @@ func OneOffTransferFromEvent(p *eventspb.Transfer) *OneOffTransfer {
 			To:              p.To,
 			ToAccountType:   p.ToAccountType,
 			Asset:           p.Asset,
-			Market:          p.Market,
 			Amount:          amount,
 			Reference:       p.Reference,
 			Status:          p.Status,
@@ -146,7 +156,6 @@ func (t *OneOffTransfer) IntoEvent() *eventspb.Transfer {
 		To:              t.To,
 		ToAccountType:   t.ToAccountType,
 		Asset:           t.Asset,
-		Market:          t.Market,
 		Amount:          t.Amount.String(),
 		Reference:       t.Reference,
 		Status:          t.Status,
@@ -166,9 +175,10 @@ func (t *OneOffTransfer) IntoEvent() *eventspb.Transfer {
 
 type RecurringTransfer struct {
 	*TransferBase
-	StartEpoch uint64
-	EndEpoch   *uint64
-	Factor     num.Decimal
+	StartEpoch       uint64
+	EndEpoch         *uint64
+	Factor           num.Decimal
+	DispatchStrategy *vegapb.DispatchStrategy
 }
 
 func (r *RecurringTransfer) IsValid() error {
@@ -209,16 +219,16 @@ func (t *RecurringTransfer) IntoEvent() *eventspb.Transfer {
 		To:              t.To,
 		ToAccountType:   t.ToAccountType,
 		Asset:           t.Asset,
-		Market:          t.Market,
 		Amount:          t.Amount.String(),
 		Reference:       t.Reference,
 		Status:          t.Status,
 		Timestamp:       t.Timestamp.UnixNano(),
 		Kind: &eventspb.Transfer_Recurring{
 			Recurring: &eventspb.RecurringTransfer{
-				StartEpoch: t.StartEpoch,
-				EndEpoch:   endEpoch,
-				Factor:     t.Factor.String(),
+				StartEpoch:       t.StartEpoch,
+				EndEpoch:         endEpoch,
+				Factor:           t.Factor.String(),
+				DispatchStrategy: t.DispatchStrategy,
 			},
 		},
 	}
@@ -271,7 +281,6 @@ func newTransferBase(id, from string, tf *commandspb.Transfer) (*TransferBase, e
 		To:              tf.To,
 		ToAccountType:   tf.ToAccountType,
 		Asset:           tf.Asset,
-		Market:          tf.Market,
 		Amount:          amount,
 		Reference:       tf.Reference,
 		Status:          TransferStatusPending,
@@ -308,10 +317,11 @@ func newRecurringTransfer(base *TransferBase, tf *commandspb.Transfer) (*Transfe
 	return &TransferFunds{
 		Kind: TransferCommandKindRecurring,
 		Recurring: &RecurringTransfer{
-			TransferBase: base,
-			StartEpoch:   tf.GetRecurring().GetStartEpoch(),
-			EndEpoch:     endEpoch,
-			Factor:       factor,
+			TransferBase:     base,
+			StartEpoch:       tf.GetRecurring().GetStartEpoch(),
+			EndEpoch:         endEpoch,
+			Factor:           factor,
+			DispatchStrategy: tf.GetRecurring().DispatchStrategy,
 		},
 	}, nil
 }
@@ -344,15 +354,15 @@ func RecurringTransferFromEvent(p *eventspb.Transfer) *RecurringTransfer {
 			To:              p.To,
 			ToAccountType:   p.ToAccountType,
 			Asset:           p.Asset,
-			Market:          p.Market,
 			Amount:          amount,
 			Reference:       p.Reference,
 			Status:          p.Status,
 			Timestamp:       time.Unix(p.Timestamp/int64(time.Second), p.Timestamp%int64(time.Second)),
 		},
-		StartEpoch: p.GetRecurring().GetStartEpoch(),
-		EndEpoch:   endEpoch,
-		Factor:     factor,
+		StartEpoch:       p.GetRecurring().GetStartEpoch(),
+		EndEpoch:         endEpoch,
+		Factor:           factor,
+		DispatchStrategy: p.GetRecurring().DispatchStrategy,
 	}
 }
 

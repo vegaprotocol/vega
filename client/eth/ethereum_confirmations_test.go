@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package eth_test
 
 import (
@@ -6,6 +18,7 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/client/eth"
+	localMocks "code.vegaprotocol.io/vega/client/eth/mocks"
 	"code.vegaprotocol.io/vega/staking/mocks"
 
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
@@ -16,7 +29,7 @@ import (
 func TestEthereumConfirmations(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	ethClient := mocks.NewMockEthereumClientConfirmations(ctrl)
-	tim := mocks.NewMockTime(ctrl)
+	tim := localMocks.NewMockTime(ctrl)
 	ethCfns := eth.NewEthereumConfirmations(ethClient, tim)
 	defer ctrl.Finish()
 

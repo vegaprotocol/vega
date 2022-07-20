@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package stubs
 
 import (
@@ -50,7 +62,7 @@ func (e *StateVarStub) OnFloatingPointUpdatesDurationUpdate(ctx context.Context,
 	return nil
 }
 
-func (e *StateVarStub) RemoveTimeTriggers(asset, market string) {
+func (e *StateVarStub) UnregisterStateVariable(asset, market string) {
 }
 
 func (e *StateVarStub) RegisterStateVariable(asset, market, name string, converter statevar.Converter, startCalculation func(string, statevar.FinaliseCalculation), trigger []statevar.StateVarEventType, result func(context.Context, statevar.StateVariableResult) error) error {
@@ -90,7 +102,9 @@ func (e *StateVarStub) NewEvent(asset, market string, eventType statevar.StateVa
 }
 
 func (s *sv) CalculationFinished(eventID string, result statevar.StateVariableResult, err error) {
-	s.result(context.Background(), result)
+	if err == nil {
+		s.result(context.Background(), result)
+	}
 }
 
 func (e *StateVarStub) ReadyForTimeTrigger(asset, mktID string) {
@@ -104,7 +118,7 @@ func (e *StateVarStub) ReadyForTimeTrigger(asset, mktID string) {
 	}
 }
 
-func (e *StateVarStub) OnTimeTick(ctx context.Context, t time.Time) {
+func (e *StateVarStub) OnTick(ctx context.Context, t time.Time) {
 	e.currentTime = t
 	stateVarIDs := []string{}
 	for ID, nextTime := range e.stateVarToNextCalc {

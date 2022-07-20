@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package ethereum
 
 import (
@@ -24,7 +36,7 @@ type Filterer interface {
 	FilterCollateralEvents(ctx context.Context, startAt, stopAt uint64, cb OnEventFound)
 	FilterStakingEvents(ctx context.Context, startAt, stopAt uint64, cb OnEventFound)
 	FilterVestingEvents(ctx context.Context, startAt, stopAt uint64, cb OnEventFound)
-	FilterMultiSigControlEvents(ctx context.Context, startAt, stopAt uint64, cb OnEventFound)
+	FilterMultisigControlEvents(ctx context.Context, startAt, stopAt uint64, cb OnEventFound)
 	CurrentHeight(context.Context) uint64
 }
 
@@ -145,7 +157,7 @@ func (e *Engine) gatherEvents(ctx context.Context) {
 
 	// Ensure we are not issuing a filtering request for non-existing block.
 	if e.nextMultiSigControlBlockNumber <= currentHeight {
-		e.filterer.FilterMultiSigControlEvents(ctx, e.nextMultiSigControlBlockNumber, currentHeight, func(event *commandspb.ChainEvent) {
+		e.filterer.FilterMultisigControlEvents(ctx, e.nextMultiSigControlBlockNumber, currentHeight, func(event *commandspb.ChainEvent) {
 			e.forwarder.ForwardFromSelf(event)
 		})
 		e.nextMultiSigControlBlockNumber = currentHeight + 1

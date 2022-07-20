@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package execution_test
 
 import (
@@ -5,6 +17,7 @@ import (
 	"testing"
 	"time"
 
+	"code.vegaprotocol.io/vega/events"
 	vegacontext "code.vegaprotocol.io/vega/libs/context"
 	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
 
@@ -16,8 +29,7 @@ import (
 
 func TestGTTAmendToGTCAmendInPlace_OrderGetExpired(t *testing.T) {
 	now := time.Unix(5, 0)
-	closingAt := time.Unix(10000000000, 0)
-	tm := getTestMarket(t, now, closingAt, nil, nil)
+	tm := getTestMarket(t, now, nil, nil)
 	ctx := context.Background()
 	ctx = vegacontext.WithTraceID(ctx, vgcrypto.RandomHash())
 
@@ -43,9 +55,21 @@ func TestGTTAmendToGTCAmendInPlace_OrderGetExpired(t *testing.T) {
 
 	// now expire, and nothing should be returned
 	ctx = vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
-	tm.market.OnChainTimeUpdate(ctx, now.Add(10*time.Second))
-	orders, err := tm.market.RemoveExpiredOrders(
-		ctx, now.UnixNano())
-	require.Equal(t, 0, len(orders))
-	require.NoError(t, err)
+
+	tm.events = nil
+	tm.market.OnTick(ctx, now.Add(10*time.Second))
+
+	t.Run("no orders expired", func(t *testing.T) {
+		// First collect all the orders events
+		orders := []*types.Order{}
+		for _, e := range tm.events {
+			switch evt := e.(type) {
+			case *events.Order:
+				if evt.Order().Status == types.OrderStatusExpired {
+					orders = append(orders, mustOrderFromProto(evt.Order()))
+				}
+			}
+		}
+		require.Equal(t, 0, len(orders))
+	})
 }

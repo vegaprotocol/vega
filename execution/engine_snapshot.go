@@ -1,10 +1,21 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package execution
 
 import (
 	"context"
 	"fmt"
 
-	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/libs/proto"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
@@ -41,7 +52,6 @@ func (e *Engine) restoreMarket(ctx context.Context, em *types.ExecMarket) (*Mark
 	if len(marketConfig.ID) == 0 {
 		return nil, ErrNoMarketID
 	}
-	now := e.time.GetTimeNow()
 
 	// ensure the asset for this new market exists
 	asset, err := marketConfig.GetAsset()
@@ -79,12 +89,11 @@ func (e *Engine) restoreMarket(ctx context.Context, em *types.ExecMarket) (*Mark
 		e.Config.Liquidity,
 		e.collateral,
 		e.oracle,
-		now,
+		e.timeService,
 		e.broker,
 		e.stateVarEngine,
 		ad,
-		e.feesTracker,
-		e.marketTracker,
+		e.marketActivityTracker,
 	)
 	if err != nil {
 		e.log.Error("failed to instantiate market",
@@ -124,14 +133,14 @@ func (e *Engine) restoreMarketsStates(ctx context.Context, ems []*types.ExecMark
 	return pvds, nil
 }
 
-func (e *Engine) getSerialiseSnapshotAndHash() (snapshot, hash []byte, providers []types.StateProvider, err error) {
-	if !e.changed() {
-		return e.snapshotSerialised, e.snapshotHash, e.newGeneratedProviders, nil
+func (e *Engine) serialise() (snapshot []byte, providers []types.StateProvider, err error) {
+	if !e.HasChanged("") {
+		return e.snapshotSerialised, e.newGeneratedProviders, nil
 	}
 
 	mkts, pvds, err := e.marketsStates()
 	if err != nil {
-		return nil, nil, nil, fmt.Errorf("failed to get market states: %w", err)
+		return nil, nil, fmt.Errorf("failed to get market states: %w", err)
 	}
 
 	pl := types.Payload{
@@ -144,16 +153,12 @@ func (e *Engine) getSerialiseSnapshotAndHash() (snapshot, hash []byte, providers
 
 	s, err := proto.Marshal(pl.IntoProto())
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, err
 	}
-
-	h := crypto.Hash(s)
-
 	e.snapshotSerialised = s
-	e.snapshotHash = h
 	e.stateChanged = false
 
-	return s, h, pvds, nil
+	return s, pvds, nil
 }
 
 func (e *Engine) changed() bool {
@@ -186,17 +191,13 @@ func (e *Engine) Stopped() bool {
 	return false
 }
 
-func (e *Engine) GetHash(_ string) ([]byte, error) {
-	_, hash, _, err := e.getSerialiseSnapshotAndHash()
-	if err != nil {
-		return nil, err
-	}
-
-	return hash, nil
+func (e *Engine) HasChanged(k string) bool {
+	return true
+	// return e.changed()
 }
 
 func (e *Engine) GetState(_ string) ([]byte, []types.StateProvider, error) {
-	serialised, _, providers, err := e.getSerialiseSnapshotAndHash()
+	serialised, providers, err := e.serialise()
 	if err != nil {
 		return nil, providers, err
 	}
@@ -211,8 +212,9 @@ func (e *Engine) LoadState(ctx context.Context, payload *types.Payload) ([]types
 		if err != nil {
 			return nil, fmt.Errorf("failed to restore markets states: %w", err)
 		}
-
-		return providers, nil
+		e.snapshotSerialised, err = proto.Marshal(payload.IntoProto())
+		e.stateChanged = false
+		return providers, err
 	default:
 		return nil, types.ErrUnknownSnapshotType
 	}

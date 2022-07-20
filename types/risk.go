@@ -1,6 +1,20 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package types
 
 import (
+	"fmt"
+
 	proto "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/types/num"
 )
@@ -9,10 +23,6 @@ type LogNormalModelParams struct {
 	Mu    num.Decimal
 	R     num.Decimal
 	Sigma num.Decimal
-}
-
-type TradableInstrumentLogNormalRiskModel struct {
-	LogNormalRiskModel *LogNormalRiskModel
 }
 
 type LogNormalRiskModel struct {
@@ -33,7 +43,12 @@ func (l LogNormalModelParams) IntoProto() *proto.LogNormalModelParams {
 }
 
 func (l LogNormalModelParams) String() string {
-	return l.IntoProto().String()
+	return fmt.Sprintf(
+		"mu(%s) r(%s) sigma(%s)",
+		l.Mu.String(),
+		l.R.String(),
+		l.Sigma.String(),
+	)
 }
 
 func (l LogNormalModelParams) DeepClone() *LogNormalModelParams {
@@ -69,6 +84,26 @@ func (l LogNormalRiskModel) DeepClone() *LogNormalRiskModel {
 	return &cpy
 }
 
+func (l LogNormalRiskModel) String() string {
+	return fmt.Sprintf(
+		"tau(%s) riskAversionParameter(%s) params(%s)",
+		l.Tau.String(),
+		l.RiskAversionParameter.String(),
+		reflectPointerToString(l.Params),
+	)
+}
+
+type TradableInstrumentLogNormalRiskModel struct {
+	LogNormalRiskModel *LogNormalRiskModel
+}
+
+func (t TradableInstrumentLogNormalRiskModel) String() string {
+	return fmt.Sprintf(
+		"logNormalRiskModel(%s)",
+		reflectPointerToString(t.LogNormalRiskModel),
+	)
+}
+
 func (t TradableInstrumentLogNormalRiskModel) IntoProto() *proto.TradableInstrument_LogNormalRiskModel {
 	return &proto.TradableInstrument_LogNormalRiskModel{
 		LogNormalRiskModel: t.LogNormalRiskModel.IntoProto(),
@@ -82,7 +117,7 @@ func (t TradableInstrumentLogNormalRiskModel) trmIntoProto() interface{} {
 }
 
 func (TradableInstrumentLogNormalRiskModel) rmType() rmType {
-	return LOGNORMAL_RISK_MODEL
+	return LogNormalRiskModelType
 }
 
 func MarginCalculatorFromProto(p *proto.MarginCalculator) *MarginCalculator {
@@ -157,7 +192,17 @@ func (m MarginLevels) IntoProto() *proto.MarginLevels {
 }
 
 func (m MarginLevels) String() string {
-	return m.IntoProto().String()
+	return fmt.Sprintf(
+		"marketID(%s) asset(%s) party(%s) intialMargin(%s) maintenanceMargin(%s) collateralReleaseLevel(%s) searchLevel(%s) timestamp(%v)",
+		m.MarketID,
+		m.Asset,
+		m.Party,
+		uintPointerToString(m.InitialMargin),
+		uintPointerToString(m.MaintenanceMargin),
+		uintPointerToString(m.CollateralReleaseLevel),
+		uintPointerToString(m.SearchLevel),
+		m.Timestamp,
+	)
 }
 
 func (r RiskFactor) IntoProto() *proto.RiskFactor {
@@ -169,7 +214,12 @@ func (r RiskFactor) IntoProto() *proto.RiskFactor {
 }
 
 func (r RiskFactor) String() string {
-	return r.IntoProto().String()
+	return fmt.Sprintf(
+		"marketID(%s) short(%s) long(%s)",
+		r.Market,
+		r.Short.String(),
+		r.Long.String(),
+	)
 }
 
 func (m MarginCalculator) IntoProto() *proto.MarginCalculator {
@@ -179,7 +229,10 @@ func (m MarginCalculator) IntoProto() *proto.MarginCalculator {
 }
 
 func (m MarginCalculator) String() string {
-	return m.IntoProto().String()
+	return fmt.Sprintf(
+		"scalingFactors(%s)",
+		reflectPointerToString(m.ScalingFactors),
+	)
 }
 
 func (s ScalingFactors) IntoProto() *proto.ScalingFactors {
@@ -194,19 +247,16 @@ func (s ScalingFactors) IntoProto() *proto.ScalingFactors {
 }
 
 func (s ScalingFactors) String() string {
-	return s.IntoProto().String()
+	return fmt.Sprintf(
+		"searchLevel(%s) initialMargin(%s) collateralRelease(%s)",
+		s.SearchLevel.String(),
+		s.InitialMargin.String(),
+		s.CollateralRelease.String(),
+	)
 }
 
 func (s *ScalingFactors) Reset() {
 	*s = ScalingFactors{}
-}
-
-type TradableInstrumentSimpleRiskModel struct {
-	SimpleRiskModel *SimpleRiskModel
-}
-
-type SimpleRiskModel struct {
-	Params *SimpleModelParams
 }
 
 type SimpleModelParams struct {
@@ -252,6 +302,43 @@ func TradableInstrumentLogNormalFromProto(p *proto.TradableInstrument_LogNormalR
 	}
 }
 
+func SimpleModelParamsFromProto(p *proto.SimpleModelParams) *SimpleModelParams {
+	return &SimpleModelParams{
+		FactorLong:           num.DecimalFromFloat(p.FactorLong),
+		FactorShort:          num.DecimalFromFloat(p.FactorShort),
+		MaxMoveUp:            num.DecimalFromFloat(p.MaxMoveUp),
+		MinMoveDown:          num.DecimalFromFloat(p.MinMoveDown),
+		ProbabilityOfTrading: num.DecimalFromFloat(p.ProbabilityOfTrading),
+	}
+}
+
+type TradableInstrumentSimpleRiskModel struct {
+	SimpleRiskModel *SimpleRiskModel
+}
+
+func (t TradableInstrumentSimpleRiskModel) String() string {
+	return fmt.Sprintf(
+		"simpleRiskModel(%s)",
+		reflectPointerToString(t.SimpleRiskModel),
+	)
+}
+
+func (TradableInstrumentSimpleRiskModel) isTRM() {}
+
+func (t TradableInstrumentSimpleRiskModel) IntoProto() *proto.TradableInstrument_SimpleRiskModel {
+	return &proto.TradableInstrument_SimpleRiskModel{
+		SimpleRiskModel: t.SimpleRiskModel.IntoProto(),
+	}
+}
+
+func (t TradableInstrumentSimpleRiskModel) trmIntoProto() interface{} {
+	return t.IntoProto()
+}
+
+func (TradableInstrumentSimpleRiskModel) rmType() rmType {
+	return SimpleRiskModelType
+}
+
 func TradableInstrumentSimpleFromProto(p *proto.TradableInstrument_SimpleRiskModel) *TradableInstrumentSimpleRiskModel {
 	if p == nil {
 		return nil
@@ -263,30 +350,8 @@ func TradableInstrumentSimpleFromProto(p *proto.TradableInstrument_SimpleRiskMod
 	}
 }
 
-func SimpleModelParamsFromProto(p *proto.SimpleModelParams) *SimpleModelParams {
-	return &SimpleModelParams{
-		FactorLong:           num.DecimalFromFloat(p.FactorLong),
-		FactorShort:          num.DecimalFromFloat(p.FactorShort),
-		MaxMoveUp:            num.DecimalFromFloat(p.MaxMoveUp),
-		MinMoveDown:          num.DecimalFromFloat(p.MinMoveDown),
-		ProbabilityOfTrading: num.DecimalFromFloat(p.ProbabilityOfTrading),
-	}
-}
-
-func (t TradableInstrumentSimpleRiskModel) IntoProto() *proto.TradableInstrument_SimpleRiskModel {
-	return &proto.TradableInstrument_SimpleRiskModel{
-		SimpleRiskModel: t.SimpleRiskModel.IntoProto(),
-	}
-}
-
-func (TradableInstrumentSimpleRiskModel) isTRM() {}
-
-func (t TradableInstrumentSimpleRiskModel) trmIntoProto() interface{} {
-	return t.IntoProto()
-}
-
-func (TradableInstrumentSimpleRiskModel) rmType() rmType {
-	return SIMPLE_RISK_MODEL
+type SimpleRiskModel struct {
+	Params *SimpleModelParams
 }
 
 func (s SimpleRiskModel) IntoProto() *proto.SimpleRiskModel {
@@ -296,7 +361,10 @@ func (s SimpleRiskModel) IntoProto() *proto.SimpleRiskModel {
 }
 
 func (s SimpleRiskModel) String() string {
-	return s.IntoProto().String()
+	return fmt.Sprintf(
+		"params(%s)",
+		reflectPointerToString(s.Params),
+	)
 }
 
 func (s SimpleModelParams) IntoProto() *proto.SimpleModelParams {
@@ -315,7 +383,14 @@ func (s SimpleModelParams) IntoProto() *proto.SimpleModelParams {
 }
 
 func (s SimpleModelParams) String() string {
-	return s.IntoProto().String()
+	return fmt.Sprintf(
+		"probabilityOfTrading(%s) factor(short(%s) long(%s)) minMoveDown(%s) maxMoveUp(%s)",
+		s.ProbabilityOfTrading.String(),
+		s.FactorShort.String(),
+		s.FactorLong.String(),
+		s.MinMoveDown.String(),
+		s.MaxMoveUp.String(),
+	)
 }
 
 func (s SimpleModelParams) DeepClone() *SimpleModelParams {

@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package evtforward
 
 import (
@@ -31,7 +43,6 @@ var (
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/time_service_mock.go -package mocks code.vegaprotocol.io/vega/evtforward TimeService
 type TimeService interface {
 	GetTimeNow() time.Time
-	NotifyOnTick(f func(context.Context, time.Time))
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/commander_mock.go -package mocks code.vegaprotocol.io/vega/evtforward Commander
@@ -55,13 +66,14 @@ type Forwarder struct {
 	cmd  Commander
 	self string
 
-	evtsmu    sync.Mutex
-	ackedEvts map[string]*commandspb.ChainEvent
-	evts      map[string]tsEvt
+	evtsmu         sync.Mutex
+	ackedEvts      map[string]*commandspb.ChainEvent
+	ackedEvtsSlice []*commandspb.ChainEvent
+	evts           map[string]tsEvt
 
 	mu               sync.RWMutex
 	bcQueueAllowlist atomic.Value // this is actually an map[string]struct{}
-	currentTime      time.Time
+	timeService      TimeService
 	nodes            []string
 
 	top  ValidatorTopology
@@ -74,7 +86,7 @@ type tsEvt struct {
 }
 
 // New creates a new instance of the event forwarder.
-func New(log *logging.Logger, cfg Config, cmd Commander, time TimeService, top ValidatorTopology) *Forwarder {
+func New(log *logging.Logger, cfg Config, cmd Commander, timeService TimeService, top ValidatorTopology) *Forwarder {
 	log = log.Named(forwarderLogger)
 	log.SetLevel(cfg.Level.Get())
 	var allowlist atomic.Value
@@ -83,21 +95,20 @@ func New(log *logging.Logger, cfg Config, cmd Commander, time TimeService, top V
 		cfg:              cfg,
 		log:              log,
 		cmd:              cmd,
+		timeService:      timeService,
 		nodes:            []string{},
 		self:             top.SelfNodeID(),
-		currentTime:      time.GetTimeNow(),
 		ackedEvts:        map[string]*commandspb.ChainEvent{},
+		ackedEvtsSlice:   []*commandspb.ChainEvent{},
 		evts:             map[string]tsEvt{},
 		top:              top,
 		bcQueueAllowlist: allowlist,
 		efss: &efSnapshotState{
 			changed:    true,
-			hash:       []byte{},
 			serialised: []byte{},
 		},
 	}
 	forwarder.updateValidatorsList()
-	time.NotifyOnTick(forwarder.onTick)
 	return forwarder
 }
 
@@ -159,6 +170,7 @@ func (f *Forwarder) Ack(evt *commandspb.ChainEvent) bool {
 
 	// now add it to the acknowledged evts
 	f.ackedEvts[key] = evt
+	f.ackedEvtsSlice = append(f.ackedEvtsSlice, evt)
 	f.efss.changed = true
 	f.log.Info("new event acknowledged", logging.String("event", evt.String()))
 	return true
@@ -207,7 +219,7 @@ func (f *Forwarder) Forward(ctx context.Context, evt *commandspb.ChainEvent, pub
 		return ErrEvtAlreadyExist
 	}
 
-	f.evts[key] = tsEvt{ts: f.currentTime, evt: evt}
+	f.evts[key] = tsEvt{ts: f.timeService.GetTimeNow(), evt: evt}
 	if f.isSender(evt) {
 		// we are selected to send the event, let's do it.
 		f.send(ctx, evt)
@@ -242,7 +254,7 @@ func (f *Forwarder) ForwardFromSelf(evt *commandspb.ChainEvent) {
 		return
 	}
 
-	f.evts[key] = tsEvt{ts: f.currentTime, evt: evt}
+	f.evts[key] = tsEvt{ts: f.timeService.GetTimeNow(), evt: evt}
 }
 
 func (f *Forwarder) updateValidatorsList() {
@@ -290,7 +302,7 @@ func (f *Forwarder) isSender(evt *commandspb.ChainEvent) bool {
 		f.log.Error("could not marshal event", logging.Error(err))
 		return false
 	}
-	h := f.hash(key) + uint64(f.currentTime.Unix())
+	h := f.hash(key) + uint64(f.timeService.GetTimeNow().Unix())
 
 	f.mu.RLock()
 	if len(f.nodes) <= 0 {
@@ -303,9 +315,7 @@ func (f *Forwarder) isSender(evt *commandspb.ChainEvent) bool {
 	return node == f.self
 }
 
-func (f *Forwarder) onTick(ctx context.Context, t time.Time) {
-	f.currentTime = t
-
+func (f *Forwarder) OnTick(ctx context.Context, t time.Time) {
 	// get an updated list of validators from the topology
 	f.updateValidatorsList()
 

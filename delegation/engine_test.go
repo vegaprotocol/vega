@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package delegation
 
 import (
@@ -10,10 +22,15 @@ import (
 	"time"
 
 	snapshot "code.vegaprotocol.io/protos/vega/snapshot/v1"
+	"code.vegaprotocol.io/shared/paths"
 	"code.vegaprotocol.io/vega/broker/mocks"
 	dmocks "code.vegaprotocol.io/vega/delegation/mocks"
+	"code.vegaprotocol.io/vega/integration/stubs"
+	vgcontext "code.vegaprotocol.io/vega/libs/context"
 	"code.vegaprotocol.io/vega/libs/proto"
 	"code.vegaprotocol.io/vega/logging"
+	snp "code.vegaprotocol.io/vega/snapshot"
+	"code.vegaprotocol.io/vega/stats"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
 	"code.vegaprotocol.io/vega/validators"
@@ -130,34 +147,92 @@ func testKeyRotated(t *testing.T) {
 	require.Equal(t, num.NewUint(10), engine.nextPartyDelegationState["party1_new"].totalDelegated)
 }
 
+func TestSnapshotRoundtripViaEngine(t *testing.T) {
+	testEngine := getEngine(t)
+	testEngine.broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
+	setupDefaultDelegationState(testEngine, 10, 5)
+	now := testEngine.engine.lastReconciliation.Add(30 * time.Second)
+	testEngine.engine.OnTick(context.Background(), now)
+	testEngine.engine.ProcessEpochDelegations(context.Background(), types.Epoch{Seq: 0})
+
+	log := logging.NewTestLogger()
+	timeService := stubs.NewTimeStub()
+	timeService.SetTime(now)
+	statsData := stats.New(log, stats.NewDefaultConfig(), "", "")
+	config := snp.NewDefaultConfig()
+	config.Storage = "memory"
+	snapshotEngine, _ := snp.New(context.Background(), &paths.DefaultPaths{}, config, log, timeService, statsData.Blockchain)
+	snapshotEngine.AddProviders(testEngine.engine)
+	snapshotEngine.ClearAndInitialise()
+	defer snapshotEngine.Close()
+
+	ctx := vgcontext.WithTraceID(vgcontext.WithBlockHeight(context.Background(), 100), "0xDEADBEEF")
+	ctx = vgcontext.WithChainID(ctx, "chainid")
+
+	_, err := snapshotEngine.Snapshot(ctx)
+	require.NoError(t, err)
+	snaps, err := snapshotEngine.List()
+	require.NoError(t, err)
+	snap1 := snaps[0]
+
+	testEngineLoad := getEngine(t)
+	testEngineLoad.broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
+	snapshotEngineLoad, _ := snp.New(context.Background(), &paths.DefaultPaths{}, config, log, timeService, statsData.Blockchain)
+	snapshotEngineLoad.AddProviders(testEngineLoad.engine)
+	snapshotEngineLoad.ClearAndInitialise()
+	snapshotEngineLoad.ReceiveSnapshot(snap1)
+	snapshotEngineLoad.ApplySnapshot(ctx)
+	snapshotEngineLoad.CheckLoaded()
+	defer snapshotEngineLoad.Close()
+
+	// check that with no changes they still match
+	b, err := snapshotEngine.Snapshot(ctx)
+	require.NoError(t, err)
+	bLoad, err := snapshotEngineLoad.Snapshot(ctx)
+	require.NoError(t, err)
+	require.True(t, bytes.Equal(b, bLoad))
+
+	testEngineLoad.topology.nodeToIsValidator["node1"] = true
+	testEngineLoad.topology.nodeToIsValidator["node2"] = true
+	testEngineLoad.stakingAccounts.partyToStake["party1"] = testEngine.stakingAccounts.partyToStake["party1"]
+	testEngineLoad.stakingAccounts.partyToStake["party2"] = testEngine.stakingAccounts.partyToStake["party2"]
+
+	// make changes to active, pending, auto delegations and to recon time
+	testEngine.engine.ProcessEpochDelegations(context.Background(), types.Epoch{Seq: 1})
+	testEngine.engine.UndelegateNow(context.Background(), "party1", "node1", num.NewUint(3))
+	testEngine.engine.UndelegateAtEndOfEpoch(context.Background(), "party1", "node1", num.NewUint(2))
+	testEngine.engine.OnTick(context.Background(), now.Add(30*time.Second))
+
+	testEngineLoad.engine.ProcessEpochDelegations(context.Background(), types.Epoch{Seq: 1})
+	testEngineLoad.engine.UndelegateNow(context.Background(), "party1", "node1", num.NewUint(3))
+	testEngineLoad.engine.UndelegateAtEndOfEpoch(context.Background(), "party1", "node1", num.NewUint(2))
+	testEngineLoad.engine.OnTick(context.Background(), now.Add(30*time.Second))
+
+	// verify snapshot still matches
+	b, err = snapshotEngine.Snapshot(ctx)
+	require.NoError(t, err)
+	bLoad, err = snapshotEngineLoad.Snapshot(ctx)
+	require.NoError(t, err)
+	require.True(t, bytes.Equal(b, bLoad))
+}
+
 func testLastReconTimeRoundTrip(t *testing.T) {
 	testEngine := getEngine(t)
 	setupDefaultDelegationState(testEngine, 14, 7)
 
-	// get the has and serialised state
-	hash, err := testEngine.engine.GetHash(lastReconKey)
-	require.Nil(t, err)
+	// get the serialised state
 	state, _, err := testEngine.engine.GetState(lastReconKey)
 	require.Nil(t, err)
 
-	// verify hash is consistent in the absence of change
-	hashNoChange, err := testEngine.engine.GetHash(lastReconKey)
-	require.Nil(t, err)
+	// verify state is consistent in the absence of change
 	stateNoChange, _, err := testEngine.engine.GetState(lastReconKey)
 	require.Nil(t, err)
-
-	require.True(t, bytes.Equal(hash, hashNoChange))
 	require.True(t, bytes.Equal(state, stateNoChange))
 
 	// advance 30 seconds
-	testEngine.engine.onChainTimeUpdate(context.Background(), testEngine.engine.lastReconciliation.Add(30*time.Second))
-	hashChanged, err := testEngine.engine.GetHash(lastReconKey)
-	require.Nil(t, err)
-
+	testEngine.engine.OnTick(context.Background(), testEngine.engine.lastReconciliation.Add(30*time.Second))
 	stateChanged, _, err := testEngine.engine.GetState(lastReconKey)
 	require.Nil(t, err)
-
-	require.False(t, bytes.Equal(hash, hashChanged))
 	require.False(t, bytes.Equal(state, stateChanged))
 
 	newEngine := getEngine(t)
@@ -168,16 +243,12 @@ func testLastReconTimeRoundTrip(t *testing.T) {
 	_, err = newEngine.engine.LoadState(context.Background(), payload)
 	require.Nil(t, err)
 
-	reloadedHash, err := newEngine.engine.GetHash(lastReconKey)
-	require.Nil(t, err)
 	reloadedState, _, err := newEngine.engine.GetState(lastReconKey)
 	require.Nil(t, err)
-
-	require.True(t, bytes.Equal(reloadedHash, hashChanged))
 	require.True(t, bytes.Equal(reloadedState, stateChanged))
 }
 
-// test round trip of active snapshot hash and serialisation.
+// test round trip of active snapshot serialisation.
 func testActiveSnapshotRoundTrip(t *testing.T) {
 	ctx := context.Background()
 	testEngine := getEngine(t)
@@ -188,19 +259,13 @@ func testActiveSnapshotRoundTrip(t *testing.T) {
 	// Move ahead a bit further
 	testEngine.engine.onEpochEvent(context.Background(), types.Epoch{Seq: 2, StartTime: time.Now()})
 
-	// get the has and serialised state
-	hash, err := testEngine.engine.GetHash(activeKey)
-	require.Nil(t, err)
+	// get the serialised state
 	state, _, err := testEngine.engine.GetState(activeKey)
 	require.Nil(t, err)
 
-	// verify hash is consistent in the absence of change
-	hashNoChange, err := testEngine.engine.GetHash(activeKey)
-	require.Nil(t, err)
+	// verify state is consistent in the absence of change
 	stateNoChange, _, err := testEngine.engine.GetState(activeKey)
 	require.Nil(t, err)
-
-	require.True(t, bytes.Equal(hash, hashNoChange))
 	require.True(t, bytes.Equal(state, stateNoChange))
 
 	// reload the state
@@ -217,14 +282,12 @@ func testActiveSnapshotRoundTrip(t *testing.T) {
 	// signal loading of the epoch
 	snapEngine.engine.onEpochRestore(ctx, types.Epoch{Seq: 2})
 
-	// verify hash and state match
-	hashPostReload, _ := snapEngine.engine.GetHash(activeKey)
-	require.True(t, bytes.Equal(hash, hashPostReload))
+	// verify state match
 	statePostReload, _, _ := snapEngine.engine.GetState(activeKey)
 	require.True(t, bytes.Equal(state, statePostReload))
 }
 
-// test round trip of pending snapshot hash and serialisation.
+// test round trip of pending snapshot serialisation.
 func testPendingSnapshotRoundTrip(t *testing.T) {
 	testEngine := getEngine(t)
 	setupDefaultDelegationState(testEngine, 20, 7)
@@ -234,19 +297,13 @@ func testPendingSnapshotRoundTrip(t *testing.T) {
 	testEngine.engine.Delegate(context.Background(), "party1", "node2", num.NewUint(3))
 	testEngine.engine.UndelegateAtEndOfEpoch(context.Background(), "party2", "node1", num.NewUint(1))
 
-	// get the has and serialised state
-	hash, err := testEngine.engine.GetHash(pendingKey)
-	require.Nil(t, err)
+	// get the serialised state
 	state, _, err := testEngine.engine.GetState(pendingKey)
 	require.Nil(t, err)
 
-	// verify hash is consistent in the absence of change
-	hashNoChange, err := testEngine.engine.GetHash(pendingKey)
-	require.Nil(t, err)
+	// verify state is consistent in the absence of change
 	stateNoChange, _, err := testEngine.engine.GetState(pendingKey)
 	require.Nil(t, err)
-
-	require.True(t, bytes.Equal(hash, hashNoChange))
 	require.True(t, bytes.Equal(state, stateNoChange))
 
 	// reload the state
@@ -256,13 +313,11 @@ func testPendingSnapshotRoundTrip(t *testing.T) {
 	testEngine.broker.EXPECT().SendBatch(gomock.Any()).Times(1)
 	_, err = testEngine.engine.LoadState(context.Background(), payload)
 	require.Nil(t, err)
-	hashPostReload, _ := testEngine.engine.GetHash(pendingKey)
-	require.True(t, bytes.Equal(hash, hashPostReload))
 	statePostReload, _, _ := testEngine.engine.GetState(pendingKey)
 	require.True(t, bytes.Equal(state, statePostReload))
 }
 
-// test round trip of auto snapshot hash and serialisation.
+// test round trip of auto snapshot serialisation.
 func testAutoSnapshotRoundTrip(t *testing.T) {
 	testEngine := getEngine(t)
 	setupDefaultDelegationState(testEngine, 10, 5)
@@ -270,26 +325,18 @@ func testAutoSnapshotRoundTrip(t *testing.T) {
 	testEngine.engine.ProcessEpochDelegations(context.Background(), types.Epoch{Seq: 0})
 
 	// by now, auto delegation should be set for both party1 and party2 as all of their association is nominated
-	hash, err := testEngine.engine.GetHash(autoKey)
-	require.Nil(t, err)
 	state, _, err := testEngine.engine.GetState(autoKey)
 	require.Nil(t, err)
 
-	// verify hash is consistent in the absence of change
-	hashNoChange, err := testEngine.engine.GetHash(autoKey)
-	require.Nil(t, err)
+	// verify state is consistent in the absence of change
 	stateNoChange, _, err := testEngine.engine.GetState(autoKey)
 	require.Nil(t, err)
-	require.True(t, bytes.Equal(hash, hashNoChange))
 	require.True(t, bytes.Equal(state, stateNoChange))
 
-	// undelegate now to get out of auto for party1 to verify hash changed
+	// undelegate now to get out of auto for party1 to verify state changed
 	testEngine.engine.UndelegateNow(context.Background(), "party1", "node1", num.NewUint(3))
-	hashPostUndelegate, err := testEngine.engine.GetHash(autoKey)
-	require.Nil(t, err)
 	statePostUndelegate, _, err := testEngine.engine.GetState(autoKey)
 	require.Nil(t, err)
-	require.False(t, bytes.Equal(hash, hashPostUndelegate))
 	require.False(t, bytes.Equal(state, statePostUndelegate))
 
 	// reload the state
@@ -299,8 +346,6 @@ func testAutoSnapshotRoundTrip(t *testing.T) {
 
 	_, err = testEngine.engine.LoadState(context.Background(), payload)
 	require.NoError(t, err)
-	hashPostReload, _ := testEngine.engine.GetHash(autoKey)
-	require.True(t, bytes.Equal(hashPostUndelegate, hashPostReload))
 	statePostReload, _, _ := testEngine.engine.GetState(autoKey)
 	require.True(t, bytes.Equal(statePostUndelegate, statePostReload))
 }
@@ -1902,7 +1947,6 @@ func getEngine(t *testing.T) *testEngine {
 	topology := newTestTopology()
 	ts := dmocks.NewMockTimeService(ctrl)
 
-	ts.EXPECT().NotifyOnTick(gomock.Any()).Times(1)
 	engine := New(logger, conf, broker, topology, stakingAccounts, &TestEpochEngine{}, ts)
 	engine.onEpochEvent(context.Background(), types.Epoch{Seq: 1, StartTime: time.Now()})
 	engine.OnMinAmountChanged(context.Background(), num.NewDecimalFromFloat(2))

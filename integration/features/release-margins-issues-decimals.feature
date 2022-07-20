@@ -13,13 +13,19 @@ Feature: Test margin release on order cancel
       | prices.ETH.value | 42    |
 
   @MarginRelease
-  Scenario: a party place a new order in the system, margin are updated, the order is closed, margin is 0ed
+  Scenario: a party place a new order in the system, margin are updated, the order is closed, margin is 0ed (0003-MTMK-0013)
     Given the parties deposit on asset's general account the following amount:
       | party    | asset | amount          |
       | partyGuy | ETH   | 10000000        |
       | party1   | ETH   | 1000000000      |
       | party2   | ETH   | 1000000000      |
       | aux      | ETH   | 100000000000000 |
+      | lpprov   | ETH   | 100000000000000 |
+
+    When the parties submit the following liquidity provision:
+      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
+      | lp1 | lpprov | ETH/DEC19 | 90000000000       | 0.1 | buy  | BID              | 50         | 100    | submission |
+      | lp1 | lpprov | ETH/DEC19 | 90000000000       | 0.1 | sell | ASK              | 50         | 100    | submission |
 
 
      # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
@@ -68,6 +74,12 @@ Feature: Test margin release on order cancel
       | party1   | ETH   | 1000000000      |
       | party2   | ETH   | 1000000000      |
       | aux      | ETH   | 100000000000000 |
+      | lpprov   | ETH   | 100000000000000 |
+
+    When the parties submit the following liquidity provision:
+      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
+      | lp1 | lpprov | ETH/DEC19 | 90000000000       | 0.1 | buy  | BID              | 50         | 100    | submission |
+      | lp1 | lpprov | ETH/DEC19 | 90000000000       | 0.1 | sell | ASK              | 50         | 100    | submission |
 
 
      # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
@@ -100,7 +112,7 @@ Feature: Test margin release on order cancel
 
     And the parties should have the following account balances:
       | party    | asset | market id | margin | general |
-      | partyGuy | ETH   | ETH/DEC19 | 142800 | 9857200 |
+      | partyGuy | ETH   | ETH/DEC19 | 142800 | 9758200 |
 
     Then the parties should have the following profit and loss:
       | party    | volume | unrealised pnl | realised pnl |
@@ -124,7 +136,7 @@ Feature: Test margin release on order cancel
 
     And the parties should have the following account balances:
       | party    | asset | market id | margin | general |
-      | partyGuy | ETH   | ETH/DEC19 | 0      | 9985000 |
+      | partyGuy | ETH   | ETH/DEC19 | 0      | 9886000 |
 
 
   @MarginRelease
@@ -135,6 +147,12 @@ Feature: Test margin release on order cancel
       | party1   | ETH   | 1000000000      |
       | party2   | ETH   | 1000000000      |
       | aux      | ETH   | 100000000000000 |
+      | lpprov   | ETH   | 100000000000000 |
+
+    When the parties submit the following liquidity provision:
+      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
+      | lp1 | lpprov | ETH/DEC19 | 90000000000       | 0.1 | buy  | BID              | 50         | 100    | submission |
+      | lp1 | lpprov | ETH/DEC19 | 90000000000       | 0.1 | sell | ASK              | 50         | 100    | submission |
 
 
      # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
@@ -187,6 +205,12 @@ Feature: Test margin release on order cancel
       | party1       | ETH   | 1000000000      |
       | party2       | ETH   | 1000000000      |
       | aux          | ETH   | 100000000000000 |
+      | lpprov       | ETH   | 100000000000000 |
+
+    When the parties submit the following liquidity provision:
+      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
+      | lp1 | lpprov | ETH/DEC19 | 90000000000       | 0.1 | buy  | BID              | 50         | 100    | submission |
+      | lp1 | lpprov | ETH/DEC19 | 90000000000       | 0.1 | sell | ASK              | 50         | 100    | submission |
 
      # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     Then the parties place the following orders:
@@ -226,7 +250,7 @@ Feature: Test margin release on order cancel
     And the parties should have the following account balances:
       | party        | asset | market id | margin  | general   |
       | partyGuy     | ETH   | ETH/DEC19 | 120000  | 0         |
-      | partyGuyGood | ETH   | ETH/DEC19 | 1320000 | 998680000 |
+      | partyGuyGood | ETH   | ETH/DEC19 | 252000  | 999748000 |
 
     # this will trade with party guy
     # which is going to get him distressed
@@ -240,8 +264,8 @@ Feature: Test margin release on order cancel
     # not being released when the party is used in the distressed flow
     Then the parties should have the following account balances:
       | party        | asset | market id | margin   | general    |
-      | partyGuy     | ETH   | ETH/DEC19 |  0       | 0          |
-      | partyGuyGood | ETH   | ETH/DEC19 | 0        | 1009000000 |
+      | partyGuy     | ETH   | ETH/DEC19 | 0        | 0          |
+      | partyGuyGood | ETH   | ETH/DEC19 | 0        | 1008999000 |
 
     # TODO: FIX THIS
     # partyGuyGood should have a margin of 0 here.
@@ -249,4 +273,4 @@ Feature: Test margin release on order cancel
     # so we just have collateral stuck in the margin account
     Then the parties should have the following profit and loss:
       | party        | volume | unrealised pnl | realised pnl |
-      | partyGuyGood | 0      | 0              | 9000000      |
+      | partyGuyGood | 0      | 0              | 8999000      |

@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package staking
 
 import (
@@ -28,9 +40,9 @@ var (
 )
 
 // Witness provide foreign chain resources validations
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/time_ticker_mock.go -package mocks code.vegaprotocol.io/vega/staking TimeTicker
-type TimeTicker interface {
-	NotifyOnTick(func(context.Context, time.Time))
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/time_service_mock.go -package mocks code.vegaprotocol.io/vega/staking TimeService
+type TimeService interface {
+	GetTimeNow() time.Time
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/eth_confirmations_mock.go -package mocks code.vegaprotocol.io/vega/staking EthConfirmations
@@ -55,13 +67,12 @@ type StakeVerifier struct {
 	log *logging.Logger
 	cfg Config
 
-	accs    *Accounting
-	witness Witness
-	broker  Broker
+	accs        *Accounting
+	witness     Witness
+	timeService TimeService
+	broker      Broker
 
 	ocv EthOnChainVerifier
-
-	currentTime time.Time
 
 	pendingSDs      []*pendingSD
 	pendingSRs      []*pendingSR
@@ -72,8 +83,7 @@ type StakeVerifier struct {
 	hashes map[string]struct{}
 
 	// snapshot data
-	svss            *stakeVerifierSnapshotState
-	keyToSerialiser map[string]func() ([]byte, error)
+	svss *stakeVerifierSnapshotState
 }
 
 type pendingSD struct {
@@ -96,35 +106,28 @@ func NewStakeVerifier(
 	log *logging.Logger,
 	cfg Config,
 	accs *Accounting,
-	tt TimeTicker,
 	witness Witness,
+	ts TimeService,
+
 	broker Broker,
 	onChainVerifier EthOnChainVerifier,
 ) (sv *StakeVerifier) {
-	defer func() {
-		tt.NotifyOnTick(sv.onTick)
-	}()
 	log = log.Named("stake-verifier")
 	s := &StakeVerifier{
-		log:     log,
-		cfg:     cfg,
-		accs:    accs,
-		witness: witness,
-		ocv:     onChainVerifier,
-		broker:  broker,
-		ids:     map[string]struct{}{},
-		hashes:  map[string]struct{}{},
+		log:         log,
+		cfg:         cfg,
+		accs:        accs,
+		witness:     witness,
+		ocv:         onChainVerifier,
+		timeService: ts,
+		broker:      broker,
+		ids:         map[string]struct{}{},
+		hashes:      map[string]struct{}{},
 		svss: &stakeVerifierSnapshotState{
-			changed:    map[string]bool{depositedKey: true, removedKey: true},
-			serialised: map[string][]byte{},
-			hash:       map[string][]byte{},
+			changedDeposited: true,
+			changedRemoved:   true,
 		},
-		keyToSerialiser: map[string]func() ([]byte, error){},
 	}
-
-	s.keyToSerialiser[depositedKey] = s.serialisePendingSD
-	s.keyToSerialiser[removedKey] = s.serialisePendingSR
-
 	return s
 }
 
@@ -163,7 +166,7 @@ func (s *StakeVerifier) ProcessStakeRemoved(
 		StakeRemoved: event,
 		check:        func() error { return s.ocv.CheckStakeRemoved(event) },
 	}
-	s.svss.changed[removedKey] = true
+	s.svss.changedRemoved = true
 
 	s.pendingSRs = append(s.pendingSRs, pending)
 	evt := pending.IntoStakeLinking()
@@ -174,7 +177,7 @@ func (s *StakeVerifier) ProcessStakeRemoved(
 		logging.String("event", event.String()))
 
 	return s.witness.StartCheck(
-		pending, s.onEventVerified, s.currentTime.Add(timeTilCancel))
+		pending, s.onEventVerified, s.timeService.GetTimeNow().Add(timeTilCancel))
 }
 
 func (s *StakeVerifier) ProcessStakeDeposited(
@@ -192,7 +195,7 @@ func (s *StakeVerifier) ProcessStakeDeposited(
 	}
 
 	s.pendingSDs = append(s.pendingSDs, pending)
-	s.svss.changed[depositedKey] = true
+	s.svss.changedDeposited = true
 
 	evt := pending.IntoStakeLinking()
 	evt.Status = types.StakeLinkingStatusPending
@@ -202,14 +205,14 @@ func (s *StakeVerifier) ProcessStakeDeposited(
 		logging.String("event", event.String()))
 
 	return s.witness.StartCheck(
-		pending, s.onEventVerified, s.currentTime.Add(timeTilCancel))
+		pending, s.onEventVerified, s.timeService.GetTimeNow().Add(timeTilCancel))
 }
 
 func (s *StakeVerifier) removePendingStakeDeposited(id string) error {
 	for i, v := range s.pendingSDs {
 		if v.ID == id {
 			s.pendingSDs = s.pendingSDs[:i+copy(s.pendingSDs[i:], s.pendingSDs[i+1:])]
-			s.svss.changed[depositedKey] = true
+			s.svss.changedDeposited = true
 			return nil
 		}
 	}
@@ -220,7 +223,7 @@ func (s *StakeVerifier) removePendingStakeRemoved(id string) error {
 	for i, v := range s.pendingSRs {
 		if v.ID == id {
 			s.pendingSRs = s.pendingSRs[:i+copy(s.pendingSRs[i:], s.pendingSRs[i+1:])]
-			s.svss.changed[removedKey] = true
+			s.svss.changedRemoved = true
 			return nil
 		}
 	}
@@ -249,12 +252,11 @@ func (s *StakeVerifier) onEventVerified(event interface{}, ok bool) {
 	if ok {
 		evt.Status = types.StakeLinkingStatusAccepted
 	}
-	evt.FinalizedAt = s.currentTime.UnixNano()
+	evt.FinalizedAt = s.timeService.GetTimeNow().UnixNano()
 	s.finalizedEvents = append(s.finalizedEvents, evt)
 }
 
-func (s *StakeVerifier) onTick(ctx context.Context, t time.Time) {
-	s.currentTime = t
+func (s *StakeVerifier) OnTick(ctx context.Context, t time.Time) {
 	for _, evt := range s.finalizedEvents {
 		// s.removeEvent(evt.ID)
 		if evt.Status == types.StakeLinkingStatusAccepted {

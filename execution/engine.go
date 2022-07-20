@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package execution
 
 import (
@@ -34,13 +46,13 @@ var (
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/time_service_mock.go -package mocks code.vegaprotocol.io/vega/execution TimeService
 type TimeService interface {
 	GetTimeNow() time.Time
-	NotifyOnTick(f func(context.Context, time.Time))
 }
 
 // OracleEngine ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/oracle_engine_mock.go -package mocks code.vegaprotocol.io/vega/execution OracleEngine
 type OracleEngine interface {
-	Subscribe(context.Context, oracles.OracleSpec, oracles.OnMatchedOracleData) oracles.SubscriptionID
+	ListensToPubKeys(oracles.OracleData) bool
+	Subscribe(context.Context, oracles.OracleSpec, oracles.OnMatchedOracleData) (oracles.SubscriptionID, oracles.Unsubscriber)
 	Unsubscribe(context.Context, oracles.SubscriptionID)
 }
 
@@ -55,13 +67,12 @@ type Collateral interface {
 	MarketCollateral
 	AssetExists(string) bool
 	CreateMarketAccounts(context.Context, string, string) (string, string, error)
-	OnChainTimeUpdate(context.Context, time.Time)
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/state_var_engine_mock.go -package mocks code.vegaprotocol.io/vega/execution StateVarEngine
 type StateVarEngine interface {
 	RegisterStateVariable(asset, market, name string, converter statevar.Converter, startCalculation func(string, statevar.FinaliseCalculation), trigger []statevar.StateVarEventType, result func(context.Context, statevar.StateVariableResult) error) error
-	RemoveTimeTriggers(asset, market string)
+	UnregisterStateVariable(asset, market string)
 	NewEvent(asset, market string, eventType statevar.StateVarEventType)
 	ReadyForTimeTrigger(asset, mktID string)
 }
@@ -85,11 +96,10 @@ type Engine struct {
 	collateral Collateral
 	assets     Assets
 
-	broker         Broker
-	time           TimeService
-	stateVarEngine StateVarEngine
-	feesTracker    *FeesTracker
-	marketTracker  *MarketTracker
+	broker                Broker
+	timeService           TimeService
+	stateVarEngine        StateVarEngine
+	marketActivityTracker *MarketActivityTracker
 
 	oracle OracleEngine
 
@@ -98,7 +108,6 @@ type Engine struct {
 	// Snapshot
 	stateChanged          bool
 	snapshotSerialised    []byte
-	snapshotHash          []byte
 	newGeneratedProviders []types.StateProvider // new providers generated during the last state change
 
 	// Map of all active snapshot providers that the execution engine has generated
@@ -108,8 +117,6 @@ type Engine struct {
 type netParamsValues struct {
 	shapesMaxSize                   int64
 	feeDistributionTimeStep         time.Duration
-	timeWindowUpdate                time.Duration
-	targetStakeScalingFactor        num.Decimal
 	marketValueWindowLength         time.Duration
 	suppliedStakeToObligationFactor num.Decimal
 	infrastructureFee               num.Decimal
@@ -117,7 +124,6 @@ type netParamsValues struct {
 	scalingFactors                  *types.ScalingFactors
 	maxLiquidityFee                 num.Decimal
 	bondPenaltyFactor               num.Decimal
-	targetStakeTriggeringRatio      num.Decimal
 	auctionMinDuration              time.Duration
 	probabilityOfTradingTauScaling  num.Decimal
 	minProbabilityOfTradingLPOrders num.Decimal
@@ -128,8 +134,6 @@ func defaultNetParamsValues() netParamsValues {
 	return netParamsValues{
 		shapesMaxSize:                   -1,
 		feeDistributionTimeStep:         -1,
-		timeWindowUpdate:                -1,
-		targetStakeScalingFactor:        num.DecimalFromInt64(-1),
 		marketValueWindowLength:         -1,
 		suppliedStakeToObligationFactor: num.DecimalFromInt64(-1),
 		infrastructureFee:               num.DecimalFromInt64(-1),
@@ -137,7 +141,6 @@ func defaultNetParamsValues() netParamsValues {
 		scalingFactors:                  nil,
 		maxLiquidityFee:                 num.DecimalFromInt64(-1),
 		bondPenaltyFactor:               num.DecimalFromInt64(-1),
-		targetStakeTriggeringRatio:      num.DecimalFromInt64(-1),
 		auctionMinDuration:              -1,
 		probabilityOfTradingTauScaling:  num.DecimalFromInt64(-1),
 		minProbabilityOfTradingLPOrders: num.DecimalFromInt64(-1),
@@ -155,34 +158,29 @@ func NewEngine(
 	oracle OracleEngine,
 	broker Broker,
 	stateVarEngine StateVarEngine,
-	feesTracker *FeesTracker,
-	marketTracker *MarketTracker,
+	marketActivityTracker *MarketActivityTracker,
 	assets Assets,
 ) *Engine {
 	// setup logger
 	log = log.Named(namedLogger)
 	log.SetLevel(executionConfig.Level.Get())
 	e := &Engine{
-		log:                log,
-		Config:             executionConfig,
-		markets:            map[string]*Market{},
-		time:               ts,
-		collateral:         collateral,
-		assets:             assets,
-		broker:             broker,
-		oracle:             oracle,
-		npv:                defaultNetParamsValues(),
-		generatedProviders: map[string]struct{}{},
-		stateVarEngine:     stateVarEngine,
-		feesTracker:        feesTracker,
-		marketTracker:      marketTracker,
+		log:                   log,
+		Config:                executionConfig,
+		markets:               map[string]*Market{},
+		timeService:           ts,
+		collateral:            collateral,
+		assets:                assets,
+		broker:                broker,
+		oracle:                oracle,
+		npv:                   defaultNetParamsValues(),
+		generatedProviders:    map[string]struct{}{},
+		stateVarEngine:        stateVarEngine,
+		marketActivityTracker: marketActivityTracker,
 	}
 
-	// Add time change event handler
-	e.time.NotifyOnTick(e.onChainTimeUpdate)
-
 	// set the eligibility for proposer bonus checker
-	marketTracker.SetEligibilityChecker(e)
+	e.marketActivityTracker.SetEligibilityChecker(e)
 
 	return e
 }
@@ -296,7 +294,11 @@ func (e *Engine) SubmitMarketWithLiquidityProvision(ctx context.Context, marketC
 	}
 
 	mkt := e.markets[marketConfig.ID]
-	e.marketTracker.MarketProposed(marketConfig.ID, party)
+	asset, err := marketConfig.GetAsset()
+	if err != nil {
+		e.log.Panic("failed to get asset from market config", logging.String("market", mkt.GetID()), logging.String("error", err.Error()))
+	}
+	e.marketActivityTracker.MarketProposed(asset, marketConfig.ID, party)
 
 	// publish market data anyway initially
 	e.publishNewMarketInfos(ctx, mkt)
@@ -311,7 +313,7 @@ func (e *Engine) SubmitMarketWithLiquidityProvision(ctx context.Context, marketC
 }
 
 // SubmitMarket will submit a new market configuration to the network.
-func (e *Engine) SubmitMarket(ctx context.Context, marketConfig *types.Market) error {
+func (e *Engine) SubmitMarket(ctx context.Context, marketConfig *types.Market, proposer string) error {
 	if e.log.IsDebug() {
 		e.log.Debug("submit market", logging.Market(*marketConfig))
 	}
@@ -320,9 +322,14 @@ func (e *Engine) SubmitMarket(ctx context.Context, marketConfig *types.Market) e
 		return err
 	}
 
-	// here straight away we start the OPENING_AUCTION
+	asset, err := marketConfig.GetAsset()
+	if err != nil {
+		e.log.Panic("failed to get asset from market config", logging.String("market", marketConfig.ID), logging.String("error", err.Error()))
+	}
+	e.marketActivityTracker.MarketProposed(asset, marketConfig.ID, proposer)
+
+	// keep state in pending, opening auction is triggered when proposal is enacted
 	mkt := e.markets[marketConfig.ID]
-	_ = mkt.StartOpeningAuction(ctx)
 
 	e.publishNewMarketInfos(ctx, mkt)
 	return nil
@@ -363,7 +370,8 @@ func (e *Engine) submitMarket(ctx context.Context, marketConfig *types.Market) e
 	if len(marketConfig.ID) == 0 {
 		return ErrNoMarketID
 	}
-	now := e.time.GetTimeNow()
+
+	now := e.timeService.GetTimeNow()
 
 	// ensure the asset for this new market exists
 	asset, err := marketConfig.GetAsset()
@@ -399,13 +407,12 @@ func (e *Engine) submitMarket(ctx context.Context, marketConfig *types.Market) e
 		e.collateral,
 		e.oracle,
 		marketConfig,
-		now,
+		e.timeService,
 		e.broker,
 		mas,
 		e.stateVarEngine,
-		e.feesTracker,
+		e.marketActivityTracker,
 		ad,
-		e.marketTracker,
 	)
 	if err != nil {
 		e.log.Error("failed to instantiate market",
@@ -448,12 +455,6 @@ func (e *Engine) propagateInitialNetParams(ctx context.Context, mkt *Market) err
 		}
 	}
 
-	if !e.npv.targetStakeScalingFactor.Equal(num.DecimalFromInt64(-1)) {
-		if err := mkt.OnMarketTargetStakeScalingFactorUpdate(e.npv.targetStakeScalingFactor); err != nil {
-			return err
-		}
-	}
-
 	if !e.npv.infrastructureFee.Equal(num.DecimalFromInt64(-1)) {
 		if err := mkt.OnFeeFactorsInfrastructureFeeUpdate(ctx, e.npv.infrastructureFee); err != nil {
 			return err
@@ -476,10 +477,6 @@ func (e *Engine) propagateInitialNetParams(ctx context.Context, mkt *Market) err
 		mkt.OnMarketLiquidityProvidersFeeDistribitionTimeStep(e.npv.feeDistributionTimeStep)
 	}
 
-	if e.npv.timeWindowUpdate != -1 {
-		mkt.OnMarketTargetStakeTimeWindowUpdate(e.npv.timeWindowUpdate)
-	}
-
 	if e.npv.marketValueWindowLength != -1 {
 		mkt.OnMarketValueWindowLengthUpdate(e.npv.marketValueWindowLength)
 	}
@@ -490,9 +487,7 @@ func (e *Engine) propagateInitialNetParams(ctx context.Context, mkt *Market) err
 	if !e.npv.bondPenaltyFactor.Equal(num.DecimalFromInt64(-1)) {
 		mkt.BondPenaltyFactorUpdate(ctx, e.npv.bondPenaltyFactor)
 	}
-	if !e.npv.targetStakeTriggeringRatio.Equal(num.DecimalFromInt64(-1)) {
-		mkt.OnMarketLiquidityTargetStakeTriggeringRatio(ctx, e.npv.targetStakeTriggeringRatio)
-	}
+
 	if !e.npv.maxLiquidityFee.Equal(num.DecimalFromInt64(-1)) {
 		mkt.OnMarketLiquidityMaximumLiquidityFeeFactorLevelUpdate(e.npv.maxLiquidityFee)
 	}
@@ -514,7 +509,7 @@ func (e *Engine) removeMarket(mktID string) {
 			copy(e.marketsCpy[i:], e.marketsCpy[i+1:])
 			e.marketsCpy[len(e.marketsCpy)-1] = nil
 			e.marketsCpy = e.marketsCpy[:len(e.marketsCpy)-1]
-			e.marketTracker.removeMarket(mktID)
+			e.marketActivityTracker.RemoveMarket(mktID)
 			e.log.Debug("removed in total", logging.String("id", mktID))
 			return
 		}
@@ -753,8 +748,8 @@ func (e *Engine) CancelLiquidityProvision(ctx context.Context, cancel *types.Liq
 	return mkt.CancelLiquidityProvision(ctx, cancel, party)
 }
 
-func (e *Engine) onChainTimeUpdate(ctx context.Context, t time.Time) {
-	timer := metrics.NewTimeCounter("-", "execution", "onChainTimeUpdate")
+func (e *Engine) OnTick(ctx context.Context, t time.Time) {
+	timer := metrics.NewTimeCounter("-", "execution", "OnTick")
 
 	evts := make([]events.Event, 0, len(e.marketsCpy))
 	for _, v := range e.marketsCpy {
@@ -764,19 +759,11 @@ func (e *Engine) onChainTimeUpdate(ctx context.Context, t time.Time) {
 
 	e.log.Debug("updating engine on new time update")
 
-	// update collateral
-	e.collateral.OnChainTimeUpdate(ctx, t)
-
-	// remove expired orders
-	// TODO(FIXME): this should be remove, and handled inside the market directly
-	// when call with the new time (see the next for loop)
-	e.removeExpiredOrders(ctx, t)
-
 	// notify markets of the time expiration
 	toDelete := []string{}
 	for _, mkt := range e.marketsCpy {
 		mkt := mkt
-		closing := mkt.OnChainTimeUpdate(ctx, t)
+		closing := mkt.OnTick(ctx, t)
 		if closing {
 			e.log.Info("market is closed, removing from execution engine",
 				logging.MarketID(mkt.GetID()))
@@ -786,25 +773,6 @@ func (e *Engine) onChainTimeUpdate(ctx context.Context, t time.Time) {
 
 	for _, id := range toDelete {
 		e.removeMarket(id)
-	}
-
-	timer.EngineTimeCounterAdd()
-}
-
-// Process any data updates (including state changes)
-// e.g. removing expired orders from matching engine.
-func (e *Engine) removeExpiredOrders(ctx context.Context, t time.Time) {
-	timer := metrics.NewTimeCounter("-", "execution", "removeExpiredOrders")
-	timeNow := t.UnixNano()
-	for _, mkt := range e.marketsCpy {
-		expired, err := mkt.RemoveExpiredOrders(ctx, timeNow)
-		if err != nil {
-			e.log.Error("unable to get remove expired orders",
-				logging.MarketID(mkt.GetID()),
-				logging.Error(err))
-		}
-
-		metrics.OrderGaugeAdd(-len(expired), mkt.GetID())
 	}
 
 	timer.EngineTimeCounterAdd()
@@ -953,9 +921,6 @@ func (e *Engine) OnMarketTargetStakeScalingFactorUpdate(_ context.Context, d num
 			return err
 		}
 	}
-
-	e.npv.targetStakeScalingFactor = d
-
 	return nil
 }
 
@@ -969,9 +934,6 @@ func (e *Engine) OnMarketTargetStakeTimeWindowUpdate(_ context.Context, d time.D
 	for _, mkt := range e.marketsCpy {
 		mkt.OnMarketTargetStakeTimeWindowUpdate(d)
 	}
-
-	e.npv.timeWindowUpdate = d
-
 	return nil
 }
 
@@ -1037,9 +999,6 @@ func (e *Engine) OnMarketLiquidityTargetStakeTriggeringRatio(ctx context.Context
 	for _, mkt := range e.marketsCpy {
 		mkt.OnMarketLiquidityTargetStakeTriggeringRatio(ctx, d)
 	}
-
-	e.npv.targetStakeTriggeringRatio = d
-
 	return nil
 }
 

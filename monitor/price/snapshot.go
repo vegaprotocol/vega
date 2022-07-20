@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package price
 
 import (
@@ -26,6 +38,7 @@ func NewMonitorFromSnapshot(
 	}
 
 	e := &Engine{
+		market:              marketID,
 		log:                 log,
 		riskModel:           riskModel,
 		initialised:         pm.Initialised,
@@ -40,6 +53,7 @@ func NewMonitorFromSnapshot(
 		pricesNow:           pricesNowToInternal(pm.PricesNow),
 		pricesPast:          pricesPastToInternal(pm.PricesPast),
 		stateChanged:        true,
+		asset:               asset,
 	}
 	e.boundFactorsInitialised = pm.PriceBoundsConsensusReached
 	stateVarEngine.RegisterStateVariable(asset, marketID, "bound-factors", boundFactorsConverter{}, e.startCalcPriceRanges, []statevar.StateVarEventType{statevar.StateVarEventTypeTimeTrigger, statevar.StateVarEventTypeAuctionEnded, statevar.StateVarEventTypeOpeningAuctionFirstUncrossingPrice}, e.updatePriceBounds)
@@ -200,7 +214,7 @@ func (e *Engine) serialisePricesNow() []*types.CurrentPrice {
 
 func (e *Engine) serialisePricesPast() []*types.PastPrice {
 	pps := make([]*types.PastPrice, 0, len(e.pricesPast))
-	for _, pp := range pps {
+	for _, pp := range e.pricesPast {
 		pps = append(pps, &types.PastPrice{
 			Time:                pp.Time,
 			VolumeWeightedPrice: pp.VolumeWeightedPrice,

@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package execution_test
 
 import (
@@ -83,7 +95,8 @@ func setMarkPrice(t *testing.T, mkt *testMarket, duration *types.AuctionDuration
 	// now fast-forward the market so the auction ends
 	now = now.Add(time.Duration(duration.Duration+1) * time.Second)
 	ctx := vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
-	mkt.market.OnChainTimeUpdate(ctx, now)
+	mkt.now = now
+	mkt.market.OnTick(ctx, now)
 
 	// opening auction ended, mark-price set
 	mktData := mkt.market.GetMarketData()
@@ -91,19 +104,44 @@ func setMarkPrice(t *testing.T, mkt *testMarket, duration *types.AuctionDuration
 	require.Equal(t, types.MarketTradingModeContinuous, mktData.MarketTradingMode)
 }
 
+func addSimpleLP(t *testing.T, mkt *testMarket, amt uint64) {
+	t.Helper()
+	lpprov := "lpprov-party"
+	bal := 2 * amt
+	addAccountWithAmount(mkt, lpprov, bal)
+	buys := []*types.LiquidityOrder{
+		newLiquidityOrder(types.PeggedReferenceBestBid, 10, 50),
+		newLiquidityOrder(types.PeggedReferenceBestBid, 20, 50),
+	}
+	sells := []*types.LiquidityOrder{
+		newLiquidityOrder(types.PeggedReferenceBestAsk, 10, 50),
+		newLiquidityOrder(types.PeggedReferenceBestAsk, 20, 50),
+	}
+	lps := &types.LiquidityProvisionSubmission{
+		Fee:              num.DecimalFromFloat(0.01),
+		MarketID:         mkt.market.GetID(),
+		CommitmentAmount: num.NewUint(amt),
+		Buys:             buys,
+		Sells:            sells,
+	}
+	require.NoError(t, mkt.market.SubmitLiquidityProvision(
+		context.Background(), lps, lpprov, vgcrypto.RandomHash(),
+	))
+}
+
 func TestAcceptLiquidityProvisionWithSufficientFunds(t *testing.T) {
 	mainParty := "mainParty"
 	now := time.Unix(10, 0)
-	closingAt := time.Unix(10000000000, 0)
 	openingAuction := &types.AuctionDuration{
 		Duration: 1,
 	}
-	tm := getTestMarket(t, now, closingAt, nil, openingAuction)
+	tm := getTestMarket(t, now, nil, openingAuction)
 	initialMarkPrice := uint64(99)
 	ctx := context.Background()
 
 	asset := tm.asset
 
+	addSimpleLP(t, tm, 5000000)
 	// end opening auction
 	setMarkPrice(t, tm, openingAuction, now, initialMarkPrice)
 
@@ -150,16 +188,16 @@ func TestAcceptLiquidityProvisionWithSufficientFunds(t *testing.T) {
 func TestRejectLiquidityProvisionWithInsufficientFundsForInitialMargin(t *testing.T) {
 	mainParty := "mainParty"
 	now := time.Unix(10, 0)
-	closingAt := time.Unix(10000000000, 0)
 	openingAuction := &types.AuctionDuration{
 		Duration: 1,
 	}
-	tm := getTestMarket(t, now, closingAt, nil, openingAuction)
+	tm := getTestMarket(t, now, nil, openingAuction)
 	initialMarkPrice := uint64(99)
 	ctx := context.Background()
 
 	asset := tm.asset
 
+	addSimpleLP(t, tm, 5000000)
 	// end opening auction
 	setMarkPrice(t, tm, openingAuction, now, initialMarkPrice)
 
@@ -229,12 +267,11 @@ func TestCloseoutLPWhenCannotCoverMargin(t *testing.T) {
 	mainParty := "mainParty"
 	auxParty1 := "auxParty1"
 	now := time.Unix(10, 0)
-	closingAt := time.Unix(10000000000, 0)
 	ctx := context.Background()
 	openingAuction := &types.AuctionDuration{
 		Duration: 1,
 	}
-	tm := getTestMarket(t, now, closingAt, nil, openingAuction)
+	tm := getTestMarket(t, now, nil, openingAuction)
 	initialMarkPrice := uint64(99)
 
 	setMarkPrice(t, tm, openingAuction, now, initialMarkPrice)
@@ -328,13 +365,12 @@ func TestBondAccountNotUsedForMarginShortageWhenEnoughMoneyInGeneral(t *testing.
 	mainParty := "mainParty"
 	auxParty1 := "auxParty1"
 	now := time.Unix(10, 0)
-	closingAt := time.Unix(10000000000, 0)
 	initialMarkPrice := uint64(99)
 	ctx := context.Background()
 	openingAuction := &types.AuctionDuration{
 		Duration: 1,
 	}
-	tm := getTestMarket(t, now, closingAt, nil, openingAuction)
+	tm := getTestMarket(t, now, nil, openingAuction)
 
 	setMarkPrice(t, tm, openingAuction, now, initialMarkPrice)
 
@@ -417,13 +453,12 @@ func TestBondAccountUsedForMarginShortage_PenaltyPaidFromBondAccount(t *testing.
 	mainParty := "mainParty"
 	auxParty1 := "auxParty1"
 	now := time.Unix(10, 0)
-	closingAt := time.Unix(10000000000, 0)
 	initialMarkPrice := uint64(99)
 	ctx := context.Background()
 	openingAuction := &types.AuctionDuration{
 		Duration: 1,
 	}
-	tm := getTestMarket(t, now, closingAt, nil, openingAuction)
+	tm := getTestMarket(t, now, nil, openingAuction)
 
 	setMarkPrice(t, tm, openingAuction, now, initialMarkPrice)
 
@@ -553,13 +588,12 @@ func TestBondAccountUsedForMarginShortagePenaltyPaidFromMarginAccount_NoCloseout
 	mainParty := "mainParty"
 	auxParty1 := "auxParty1"
 	now := time.Unix(10, 0)
-	closingAt := time.Unix(10000000000, 0)
 	initialMarkPrice := uint64(99)
 	ctx := context.Background()
 	openingAuction := &types.AuctionDuration{
 		Duration: 1,
 	}
-	tm := getTestMarket(t, now, closingAt, nil, openingAuction)
+	tm := getTestMarket(t, now, nil, openingAuction)
 
 	setMarkPrice(t, tm, openingAuction, now, initialMarkPrice)
 
@@ -668,9 +702,8 @@ func TestBondAccountUsedForMarginShortagePenaltyNotPaidOnTransitionFromAuction(t
 	auxParty1 := "auxParty1"
 	now := time.Unix(10, 0)
 	ctx := context.Background()
-	closingAt := time.Unix(10000000000, 0)
 	openingAuctionDuration := &types.AuctionDuration{Duration: 10}
-	tm := getTestMarket2(t, now, closingAt, nil, openingAuctionDuration, true)
+	tm := getTestMarket2(t, now, nil, openingAuctionDuration, true)
 
 	mktData := tm.market.GetMarketData()
 	require.NotNil(t, mktData)

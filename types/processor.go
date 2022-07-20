@@ -1,9 +1,22 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 //lint:file-ignore ST1003 Ignore underscores in names, this is straigh copied from the proto package to ease introducing the domain types
 
 package types
 
 import (
 	"errors"
+	"fmt"
 
 	proto "code.vegaprotocol.io/protos/vega"
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
@@ -37,7 +50,11 @@ func (o OrderCancellation) IntoProto() *commandspb.OrderCancellation {
 }
 
 func (o OrderCancellation) String() string {
-	return o.IntoProto().String()
+	return fmt.Sprintf(
+		"marketID(%s) orderID(%s)",
+		o.MarketId,
+		o.OrderId,
+	)
 }
 
 type OrderSubmission struct {
@@ -45,7 +62,7 @@ type OrderSubmission struct {
 	MarketId string
 	// Price for the order, the price is an integer, for example `123456` is a correctly
 	// formatted price of `1.23456` assuming market configured to 5 decimal places,
-	// , required field for limit orders, however it is not required for market orders
+	// required field for limit orders, however it is not required for market orders
 	Price *num.Uint
 	// Size for the order, for example, in a futures market the size equals the number of contracts, cannot be negative
 	Size uint64
@@ -99,8 +116,7 @@ func NewOrderSubmissionFromProto(p *commandspb.OrderSubmission) (*OrderSubmissio
 	}
 
 	return &OrderSubmission{
-		MarketId: p.MarketId,
-		// Need to update protobuf to use string TODO UINT
+		MarketId:    p.MarketId,
 		Price:       price,
 		Size:        p.Size,
 		Side:        p.Side,
@@ -113,7 +129,18 @@ func NewOrderSubmissionFromProto(p *commandspb.OrderSubmission) (*OrderSubmissio
 }
 
 func (o OrderSubmission) String() string {
-	return o.IntoProto().String()
+	return fmt.Sprintf(
+		"marketID(%s) price(%s) size(%v) side(%s) timeInForce(%s) expiresAt(%v) type(%s) reference(%s) peggedOrder(%s)",
+		o.MarketId,
+		uintPointerToString(o.Price),
+		o.Size,
+		o.Side.String(),
+		o.TimeInForce.String(),
+		o.ExpiresAt,
+		o.Type.String(),
+		o.Reference,
+		reflectPointerToString(o.PeggedOrder),
+	)
 }
 
 func (o OrderSubmission) IntoOrder(party string) *Order {
@@ -155,7 +182,7 @@ func NewWithdrawSubmissionFromProto(p *commandspb.WithdrawSubmission) (*Withdraw
 	return &WithdrawSubmission{
 		Amount: amount,
 		Asset:  p.Asset,
-		Ext:    p.Ext,
+		Ext:    WithdrawExtFromProto(p.Ext),
 	}, nil
 }
 
@@ -164,10 +191,15 @@ func (w WithdrawSubmission) IntoProto() *commandspb.WithdrawSubmission {
 		// Update once the protobuf changes TODO UINT
 		Amount: num.UintToString(w.Amount),
 		Asset:  w.Asset,
-		Ext:    w.Ext,
+		Ext:    w.Ext.IntoProto(),
 	}
 }
 
 func (w WithdrawSubmission) String() string {
-	return w.IntoProto().String()
+	return fmt.Sprintf(
+		"asset(%s) amount(%s) ext(%s)",
+		w.Asset,
+		uintPointerToString(w.Amount),
+		reflectPointerToString(w.Ext),
+	)
 }

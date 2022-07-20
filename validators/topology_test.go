@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package validators_test
 
 import (
@@ -10,7 +22,7 @@ import (
 
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	vgcrypto "code.vegaprotocol.io/shared/libs/crypto"
-	brokerMocks "code.vegaprotocol.io/vega/broker/mocks"
+	bmocks "code.vegaprotocol.io/vega/broker/mocks"
 	"code.vegaprotocol.io/vega/crypto"
 	"code.vegaprotocol.io/vega/events"
 	vgtesting "code.vegaprotocol.io/vega/libs/testing"
@@ -66,7 +78,7 @@ type testTop struct {
 	*validators.Topology
 	ctrl   *gomock.Controller
 	wallet *mocks.MockWallet
-	broker *brokerMocks.MockBroker
+	broker *bmocks.MockBroker
 }
 
 func getTestTopologyWithNodeWallet(
@@ -74,7 +86,7 @@ func getTestTopologyWithNodeWallet(
 ) *testTop {
 	t.Helper()
 
-	broker := brokerMocks.NewMockBroker(ctrl)
+	broker := bmocks.NewMockBroker(ctrl)
 	broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
 	commander := mocks.NewMockCommander(gomock.NewController(t))
@@ -426,7 +438,7 @@ func testAddNewNodeSendsValidatorUpdateEventToBroker(t *testing.T) {
 		vega: wallet,
 	}
 
-	broker := brokerMocks.NewMockBroker(ctrl)
+	broker := bmocks.NewMockBroker(ctrl)
 	commander := mocks.NewMockCommander(gomock.NewController(t))
 	top := validators.NewTopology(logging.NewTestLogger(), validators.NewDefaultConfig(), nw, broker, true, commander, &DummyMultiSigTopology{})
 
@@ -488,7 +500,7 @@ func testAddKeyRotateSuccess(t *testing.T) {
 	nr := commandspb.AnnounceNode{
 		Id:              id,
 		ChainPubKey:     tmPubKey,
-		VegaPubKey:      vegaPubKey,
+		VegaPubKey:      hex.EncodeToString([]byte(vegaPubKey)),
 		EthereumAddress: "eth-address",
 	}
 	ctx := context.TODO()
@@ -531,7 +543,7 @@ func testAddKeyRotateSuccessFailsWhenTargetBlockHeightIsLessThenCurrentBlockHeig
 	nr := commandspb.AnnounceNode{
 		Id:              id,
 		ChainPubKey:     tmPubKey,
-		VegaPubKey:      vegaPubKey,
+		VegaPubKey:      hex.EncodeToString([]byte(vegaPubKey)),
 		EthereumAddress: "eth-address",
 	}
 	ctx := context.TODO()
@@ -553,7 +565,7 @@ func testAddKeyRotateSuccessFailsWhenNewKeyIndexIsLessThenCurrentKeyIndex(t *tes
 	nr := commandspb.AnnounceNode{
 		Id:              id,
 		ChainPubKey:     tmPubKey,
-		VegaPubKey:      vegaPubKey,
+		VegaPubKey:      hex.EncodeToString([]byte(vegaPubKey)),
 		EthereumAddress: "eth-address",
 		VegaPubKeyIndex: 2,
 	}
@@ -577,7 +589,7 @@ func testAddKeyRotateSuccessFailsWhenKeyRotationForNodeAlreadyExists(t *testing.
 	nr := commandspb.AnnounceNode{
 		Id:              id,
 		ChainPubKey:     tmPubKey,
-		VegaPubKey:      vegaPubKey,
+		VegaPubKey:      hex.EncodeToString([]byte(vegaPubKey)),
 		EthereumAddress: "eth-address",
 		VegaPubKeyIndex: 1,
 	}
@@ -605,7 +617,7 @@ func testAddKeyRotateSuccessFailsWhenCurrentPubKeyHashDoesNotMatch(t *testing.T)
 	nr := commandspb.AnnounceNode{
 		Id:              id,
 		ChainPubKey:     tmPubKey,
-		VegaPubKey:      vegaPubKey,
+		VegaPubKey:      hex.EncodeToString([]byte(vegaPubKey)),
 		EthereumAddress: "eth-address",
 		VegaPubKeyIndex: 1,
 	}
@@ -643,7 +655,7 @@ func testBeginBlockSuccess(t *testing.T) {
 		nr := commandspb.AnnounceNode{
 			Id:              id,
 			ChainPubKey:     chainValidators[i],
-			VegaPubKey:      fmt.Sprintf("vega-key-%d", j),
+			VegaPubKey:      hex.EncodeToString([]byte(fmt.Sprintf("vega-key-%d", j))),
 			EthereumAddress: fmt.Sprintf("eth-address-%d", j),
 		}
 
@@ -672,10 +684,10 @@ func testBeginBlockSuccess(t *testing.T) {
 	assert.Equal(t, "new-vega-key-2", data2.VegaPubKey)
 	data3 := top.Get("vega-master-pubkey-3")
 	assert.NotNil(t, data3)
-	assert.Equal(t, "vega-key-3", data3.VegaPubKey)
+	assert.Equal(t, hex.EncodeToString([]byte("vega-key-3")), data3.VegaPubKey)
 	data4 := top.Get("vega-master-pubkey-4")
 	assert.NotNil(t, data4)
-	assert.Equal(t, "vega-key-4", data4.VegaPubKey)
+	assert.Equal(t, hex.EncodeToString([]byte("vega-key-4")), data4.VegaPubKey)
 
 	// when
 	top.BeginBlock(ctx, abcitypes.RequestBeginBlock{Header: types1.Header{Height: 13}})
@@ -715,7 +727,7 @@ func testBeginBlockNotifyKeyChange(t *testing.T) {
 		nr := commandspb.AnnounceNode{
 			Id:              id,
 			ChainPubKey:     chainValidators[i],
-			VegaPubKey:      fmt.Sprintf("vega-key-%d", j),
+			VegaPubKey:      hex.EncodeToString([]byte(fmt.Sprintf("vega-key-%d", j))),
 			EthereumAddress: fmt.Sprintf("eth-address-%d", j),
 		}
 

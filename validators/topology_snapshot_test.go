@@ -1,8 +1,21 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package validators_test
 
 import (
 	"bytes"
 	"context"
+	"encoding/hex"
 	"testing"
 
 	"code.vegaprotocol.io/vega/validators"
@@ -26,10 +39,6 @@ func TestEmptySnapshot(t *testing.T) {
 	top := getTestTopology(t)
 	defer top.ctrl.Finish()
 
-	h, err := top.GetHash(topKey)
-	assert.Nil(t, err)
-	assert.NotEmpty(t, h)
-
 	s, p, err := top.GetState(topKey)
 	assert.Nil(t, err)
 	assert.Empty(t, p)
@@ -42,16 +51,16 @@ func TestChangeOnValidatorPerfUpdate(t *testing.T) {
 	top := getTestTopology(t)
 	defer top.ctrl.Finish()
 
-	h, err := top.GetHash(topKey)
+	s, _, err := top.GetState(topKey)
 	assert.Nil(t, err)
-	assert.NotEmpty(t, h)
+	assert.NotEmpty(t, s)
 
 	updateValidatorPerformanceToNonDefaultState(t, top.Topology)
 
-	h2, err := top.GetHash(topKey)
+	s2, _, err := top.GetState(topKey)
 	assert.Nil(t, err)
-	assert.NotEmpty(t, h2)
-	require.NotEqual(t, h, h2)
+	assert.NotEmpty(t, s2)
+	require.False(t, bytes.Equal(s, s2))
 }
 
 func TestTopologySnapshot(t *testing.T) {
@@ -59,7 +68,7 @@ func TestTopologySnapshot(t *testing.T) {
 	updateValidatorPerformanceToNonDefaultState(t, top.Topology)
 	defer top.ctrl.Finish()
 
-	h1, err := top.GetHash(topKey)
+	s1, _, err := top.GetState(topKey)
 	require.Nil(t, err)
 
 	tmPubKeys := []string{"2w5hxsVqWFTV6/f0swyNVqOhY1vWI42MrfO0xkUqsiA=", "67g7+123M0kfMR35U7LLq09eEU1dVr6jHBEgEtPzkrs="}
@@ -68,8 +77,8 @@ func TestTopologySnapshot(t *testing.T) {
 	nr1 := commandspb.AnnounceNode{
 		Id:              "vega-master-pubkey",
 		ChainPubKey:     tmPubKeys[0],
-		VegaPubKey:      "vega-key",
-		EthereumAddress: "eth-address",
+		VegaPubKey:      hex.EncodeToString([]byte("vega-key")),
+		EthereumAddress: "0x6d53C489bbda35B8096C8b4Cb362e2889F82E19B",
 	}
 	err = top.AddNewNode(ctx, &nr1, validators.ValidatorStatusTendermint)
 	assert.NoError(t, err)
@@ -77,8 +86,8 @@ func TestTopologySnapshot(t *testing.T) {
 	nr2 := commandspb.AnnounceNode{
 		Id:              "vega-master-pubkey-2",
 		ChainPubKey:     tmPubKeys[1],
-		VegaPubKey:      "vega-key-2",
-		EthereumAddress: "eth-address-2",
+		VegaPubKey:      hex.EncodeToString([]byte("vega-key-2")),
+		EthereumAddress: "0x6d53C489bbda35B8096C8b4Cb362e2889F82E19B",
 	}
 	err = top.AddNewNode(ctx, &nr2, validators.ValidatorStatusTendermint)
 	assert.NoError(t, err)
@@ -87,7 +96,7 @@ func TestTopologySnapshot(t *testing.T) {
 		NewPubKeyIndex:    1,
 		TargetBlock:       10,
 		NewPubKey:         "new-vega-key",
-		CurrentPubKeyHash: hashKey(nr1.VegaPubKey),
+		CurrentPubKeyHash: hashKey("vega-key"),
 	}
 	err = top.AddKeyRotate(ctx, nr1.Id, 5, kr1)
 	assert.NoError(t, err)
@@ -96,14 +105,14 @@ func TestTopologySnapshot(t *testing.T) {
 		NewPubKeyIndex:    1,
 		TargetBlock:       11,
 		NewPubKey:         "new-vega-key-2",
-		CurrentPubKeyHash: hashKey(nr2.VegaPubKey),
+		CurrentPubKeyHash: hashKey("vega-key-2"),
 	}
 	err = top.AddKeyRotate(ctx, nr2.Id, 5, kr2)
 	assert.NoError(t, err)
 
 	ekr1 := &commandspb.EthereumKeyRotateSubmission{
 		TargetBlock:    10,
-		CurrentAddress: "eth-address",
+		CurrentAddress: "0x6d53C489bbda35B8096C8b4Cb362e2889F82E19B",
 		NewAddress:     "0x69bA3B3e6B5b1226A2e26De9a9E2D9C98f2b144B",
 	}
 	err = top.RotateEthereumKey(ctx, nr1.Id, 5, ekr1)
@@ -111,16 +120,16 @@ func TestTopologySnapshot(t *testing.T) {
 
 	ekr2 := &commandspb.EthereumKeyRotateSubmission{
 		TargetBlock:    11,
-		CurrentAddress: "eth-address-2",
+		CurrentAddress: "0x6d53C489bbda35B8096C8b4Cb362e2889F82E19B",
 		NewAddress:     "0xd6B6e9514f2793Af89745Fd69FDa0DAbC228d336",
 	}
 	err = top.RotateEthereumKey(ctx, nr2.Id, 5, ekr2)
 	assert.NoError(t, err)
 
 	// Check the hashes have changed after each state change
-	h3, err := top.GetHash(topKey)
+	s3, _, err := top.GetState(topKey)
 	require.Nil(t, err)
-	require.False(t, bytes.Equal(h1, h3))
+	require.False(t, bytes.Equal(s1, s3))
 
 	// Get the state ready to load into a new instance of the engine
 	state, _, _ := top.GetState(topKey)
@@ -136,9 +145,9 @@ func TestTopologySnapshot(t *testing.T) {
 	require.Nil(t, err)
 
 	// Check the new reloaded engine is the same as the original
-	h4, err := snapTop.GetHash(topKey)
+	s4, _, err := snapTop.GetState(topKey)
 	require.Nil(t, err)
-	require.True(t, bytes.Equal(h3, h4))
+	require.True(t, bytes.Equal(s3, s4))
 	assert.ElementsMatch(t, top.AllNodeIDs(), snapTop.AllNodeIDs())
 	assert.ElementsMatch(t, top.AllVegaPubKeys(), snapTop.AllVegaPubKeys())
 	assert.Equal(t, top.IsValidator(), snapTop.IsValidator())

@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package execution
 
 import (
@@ -160,8 +172,10 @@ func (m *Market) SubmitLiquidityProvision(
 			// force update of shares so they are updated for all
 			_ = m.equityShares.SharesExcept(m.liquidity.GetInactiveParties())
 
-			m.checkLiquidity(ctx, nil)
-			m.commandLiquidityAuction(ctx)
+			if !m.as.IsOpeningAuction() {
+				m.checkLiquidity(ctx, nil, true)
+				m.commandLiquidityAuction(ctx)
+			}
 		}
 	}()
 
@@ -953,14 +967,15 @@ func (m *Market) cancelLiquidityProvision(
 	// now let's update the fee selection
 	m.updateLiquidityFee(ctx)
 	// and remove the party from the equity share like calculation
-	m.equityShares.SetPartyStake(party, num.Zero())
+	m.equityShares.SetPartyStake(party, nil)
 	// force update of shares so they are updated for all
 	_ = m.equityShares.SharesExcept(m.liquidity.GetInactiveParties())
 
 	m.checkForReferenceMoves(ctx, []*types.Order{}, true)
-	m.checkLiquidity(ctx, nil)
-	m.commandLiquidityAuction(ctx)
-
+	if !m.as.IsOpeningAuction() {
+		m.checkLiquidity(ctx, nil, true)
+		m.commandLiquidityAuction(ctx)
+	}
 	return nil
 }
 
@@ -1121,8 +1136,10 @@ func (m *Market) finalizeLiquidityProvisionAmendmentAuction(
 	// force update of shares so they are updated for all
 	_ = m.equityShares.SharesExcept(m.liquidity.GetInactiveParties())
 
-	m.checkLiquidity(ctx, nil)
-	m.commandLiquidityAuction(ctx)
+	if !m.as.IsOpeningAuction() {
+		m.checkLiquidity(ctx, nil, true)
+		m.commandLiquidityAuction(ctx)
+	}
 
 	return nil
 }
@@ -1222,8 +1239,10 @@ func (m *Market) finalizeLiquidityProvisionAmendmentContinuous(
 	// this workd but we definitely trigger some recursive loop which
 	// are unlikely to be fine.
 	m.checkForReferenceMoves(ctx, []*types.Order{}, true)
-	m.checkLiquidity(ctx, nil)
-	m.commandLiquidityAuction(ctx)
+	if !m.as.IsOpeningAuction() {
+		m.checkLiquidity(ctx, nil, true)
+		m.commandLiquidityAuction(ctx)
+	}
 
 	return nil
 }

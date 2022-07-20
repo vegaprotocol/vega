@@ -1,6 +1,6 @@
 Feature: Test closeout type 1: margin >= cost of closeout 
 
-Scenario: case 1 (using simple risk model) from https://docs.google.com/spreadsheets/d/1CIPH0aQmIKj6YeFW9ApP_l-jwB4OcsNQ/edit#gid=1555964910 (0015-INSR-001, 0015-INSR-003)
+Scenario: case 1 (using simple risk model) from https://docs.google.com/spreadsheets/d/1CIPH0aQmIKj6YeFW9ApP_l-jwB4OcsNQ/edit#gid=1555964910 (0015-INSR-001, 0015-INSR-003, 0018-RSKM-001, 0018-RSKM-003, 0010-MARG-004, 0010-MARG-005, 0010-MARG-006, 0010-MARG-007, 0010-MARG-008. 0010-MARG-009)
   Background:
 
     And the simple risk model named "simple-risk-model-1":
@@ -31,6 +31,12 @@ Scenario: case 1 (using simple risk model) from https://docs.google.com/spreadsh
       | party3           | USD   | 30000      |
       | aux1             | USD   | 1000000000 |
       | aux2             | USD   | 1000000000 |
+      | lpprov           | USD   | 1000000000 |
+
+    When the parties submit the following liquidity provision:
+      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
+      | lp1 | lpprov | ETH/DEC19 | 90000             | 0.1 | buy  | BID              | 50         | 10     | submission |
+      | lp1 | lpprov | ETH/DEC19 | 90000             | 0.1 | sell | ASK              | 50         | 10     | submission |
 
     # setup order book
     When the parties place the following orders:
@@ -57,6 +63,13 @@ Scenario: case 1 (using simple risk model) from https://docs.google.com/spreadsh
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | party1 | ETH/DEC19 | sell | 100    | 100   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
 
+    And the parties should have the following account balances:
+      | party  | asset | market id | margin   | general   |
+      | party1 | USD   | ETH/DEC19 | 30000    |  0        |
+    Then the parties should have the following margin levels:
+      | party  | market id | maintenance | search | initial | release  |
+      | party1 | ETH/DEC19 | 20000       | 40000  | 60000   | 100000   |
+      
     # all general acc balance goes to margin account for the order, 'party1' should have 100*100*3
     # in the margin account as its Position*Markprice*Initialfactor
 
@@ -72,76 +85,71 @@ Scenario: case 1 (using simple risk model) from https://docs.google.com/spreadsh
     And the parties should have the following account balances:
       | party  | asset | market id | margin   | general   |
       | party1 | USD   | ETH/DEC19 | 30000    |  0        |
-      | party2 | USD   | ETH/DEC19 | 30000    |  49970000 |
-
+      | party2 | USD   | ETH/DEC19 | 30000    |  49969000 |
     Then the parties should have the following margin levels:
       | party  | market id | maintenance | search | initial | release  |
-      | party1 | ETH/DEC19 | 25000       | 50000  | 75000   | 125000   |
+      | party1 | ETH/DEC19 | 21000       | 42000  | 63000   | 105000   |
       | party2 | ETH/DEC19 | 12000       | 24000  | 36000   | 60000    |
 
     When the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | party2 | ETH/DEC19 | buy  | 1      | 126   | 0                | TYPE_LIMIT | TIF_GTC | ref-1-xxx |
 
-    # New margin level calculated after placing an order
-    Then the parties should have the following margin levels:
-      | party  | market id | maintenance | search | initial | release  |
-      | party2 | ETH/DEC19 | 12100       | 24200  | 36300   | 60500    |
-
     # Margin account balance brought up to new initial level as order is placed (despite all balance being above search level)
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general   |
-      | party2 | USD   | ETH/DEC19 | 36300  |  49963700 |
+      | party1 | USD   | ETH/DEC19 | 30000  |  0        |
+      | party2 | USD   | ETH/DEC19 | 36300  |  49962700 |
+    # New margin level calculated after placing an order
+    Then the parties should have the following margin levels:
+      | party  | market id | maintenance | search | initial | release  |
+      | party1 | ETH/DEC19 | 21000       | 42000  | 63000   | 105000   |
+      | party2 | ETH/DEC19 | 12100       | 24200  | 36300   | 60500    |
+
 
     When the parties place the following orders:
      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
      | party3 | ETH/DEC19 | sell | 1      | 126   | 1                | TYPE_LIMIT | TIF_GTC | ref-1-xxx |
     Then the mark price should be "126" for the market "ETH/DEC19"
-    And the insurance pool balance should be "40000" for the market "ETH/DEC19"
+    And the insurance pool balance should be "38500" for the market "ETH/DEC19"
 
     # Margin account balance not updated following a trade (above search)
     Then the parties should have the following margin levels:
       | party  | market id | maintenance | search | initial | release  |
-      | party2 | ETH/DEC19 | 17372       | 34744  | 52116   | 86860    |
-
+      | party2 | ETH/DEC19 | 13736       | 27472  | 41208   | 68680    |
     # MTM win transfer
     Then the following transfers should happen:
       | from   | to     | from account            | to account          | market id | amount | asset |
       | market | party2 | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN | ETH/DEC19 | 2600   | USD   |
 
-    And the parties should have the following account balances:
-      | party  | asset | market id | margin | general   |
-      | party2 | USD   | ETH/DEC19 | 38900  |  49963700 |
-
-    Then the parties should have the following margin levels:
-    #check margin account and margin level
-      | party  | market id | maintenance | search | initial | release  |
-      | party1 | ETH/DEC19 | 0           | 0      | 0       | 0        |
-      | party2 | ETH/DEC19 | 17372       | 34744  | 52116   | 86860    |
-      | party3 | ETH/DEC19 | 276         | 552    | 828     | 1380     |
-
     Then the order book should have the following volumes for market "ETH/DEC19":
       | side | price    | volume |
-      | sell | 150      | 900   |
+      | sell | 150      | 900    |
       | sell | 300      | 1      |
       | buy  | 80       | 1000   |
       | buy  | 20       | 1      |
 
     Then the mark price should be "126" for the market "ETH/DEC19"
-    And the insurance pool balance should be "40000" for the market "ETH/DEC19"
+    And the insurance pool balance should be "38500" for the market "ETH/DEC19"
 
     Then the parties should have the following account balances:
       | party            | asset | market id | margin    | general     |
       | party1           | USD   | ETH/DEC19 | 0         |  0          |
-      | party2           | USD   | ETH/DEC19 | 38900     |  49963700   |
-      | party3           | USD   | ETH/DEC19 | 600       |  29400      |
+      | party2           | USD   | ETH/DEC19 | 38900     |  49962700   |
+      | party3           | USD   | ETH/DEC19 | 600       |  29387      |
       | aux1             | USD   | ETH/DEC19 | 1324      |  999998650  |
       | aux2             | USD   | ETH/DEC19 | 986       |  999999040  |
       | sellSideProvider | USD   | ETH/DEC19 | 602400    |  999400000  |
       | buySideProvider  | USD   | ETH/DEC19 | 300000    |  999700000  |
+    Then the parties should have the following margin levels:
+    #check margin account and margin level
+      | party  | market id | maintenance | search | initial | release  |
+      | party1 | ETH/DEC19 | 0           | 0      | 0       | 0        |
+      | party2 | ETH/DEC19 | 13736       | 27472  | 41208   | 68680    |
+      | party3 | ETH/DEC19 | 276         | 552    | 828     | 1380     |
 
-   And the cumulated balance for all accounts should be worth "4050075000"
-   And the insurance pool balance should be "40000" for the market "ETH/DEC19"
+   And the cumulated balance for all accounts should be worth "5050075000"
+   And the insurance pool balance should be "38500" for the market "ETH/DEC19"
 
     # order book volume change
     Then the parties cancel the following orders:
@@ -159,27 +167,22 @@ Scenario: case 1 (using simple risk model) from https://docs.google.com/spreadsh
     #check margin account and margin level
     And the parties should have the following account balances:
       | party  | asset | market id | margin   | general   |
-      | party2 | USD   | ETH/DEC19 | 38900    |  49963700 |
-      | party3 | USD   | ETH/DEC19 | 600      |  29400    |
-
-     Then the parties should have the following margin levels:
+      | party2 | USD   | ETH/DEC19 | 38900    |  49962700 |
+      | party3 | USD   | ETH/DEC19 | 600      |  29387    |
+    Then the parties should have the following margin levels:
       | party  | market id | maintenance | search | initial | release |
-      | party2 | ETH/DEC19 | 17372       | 34744  | 52116   | 86860   |
+      | party2 | ETH/DEC19 | 13736       | 27472  | 41208   | 68680   |
       | party3 | ETH/DEC19 | 276         | 552    | 828     | 1380    |
 
     When the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | party2 | ETH/DEC19 | buy  | 50     | 30    | 0                | TYPE_LIMIT | TIF_GTC | ref-2-xxx |
 
-     Then the parties should have the following margin levels:
-      | party  | market id | maintenance | search | initial | release |
-      | party2 | ETH/DEC19 | 29732       | 59464  | 89196   | 148660  |
-
     #check margin account and margin level
     And the parties should have the following account balances:
       | party  | asset | market id | margin   | general   |
-      | party2 | USD   | ETH/DEC19 | 89196    |  49913404 |
-      | party3 | USD   | ETH/DEC19 | 600      |  29400    |
+      | party2 | USD   | ETH/DEC19 | 89196    |  49912404 |
+      | party3 | USD   | ETH/DEC19 | 600      |  29387    |
 
     Then the parties should have the following margin levels:
       | party  | market id | maintenance | search | initial | release  |
@@ -189,7 +192,7 @@ Scenario: case 1 (using simple risk model) from https://docs.google.com/spreadsh
     When the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | party3 | ETH/DEC19 | sell | 50     | 30    | 1                | TYPE_LIMIT | TIF_GTC | ref-3-xxx |
-    And the insurance pool balance should be "40000" for the market "ETH/DEC19"
+    And the insurance pool balance should be "38500" for the market "ETH/DEC19"
     Then the mark price should be "30" for the market "ETH/DEC19"
     # Then the order book should have the following volumes for market "ETH/DEC19":
       | side | price    | volume |
@@ -204,15 +207,15 @@ Scenario: case 1 (using simple risk model) from https://docs.google.com/spreadsh
     #check margin account and margin level
     And the parties should have the following account balances:
       | party  | asset | market id | margin   | general   |
-      | party2 | USD   | ETH/DEC19 | 18120    | 49974784  |
-      | party3 | USD   | ETH/DEC19 | 30096    |  0        |
+      | party2 | USD   | ETH/DEC19 | 18120    | 49973784  |
+      | party3 | USD   | ETH/DEC19 | 29933    |  0        |
 
     # party3 maintenance margin: position*(mark_price*risk_factor_short+slippage_per_unit) + mark_price*risk_factor_short=51*(30*2+466)+0=26826
     # (slippage calulated as follows) slippager_per_unit=exit_price-mark_price=(300*1+500*50)/51-30=496-30=466
     Then the parties should have the following margin levels:
       | party  | market id | maintenance | search | initial | release  |
       | party2 | ETH/DEC19 | 6040        | 12080  | 18120   | 30200    |
-      | party3 | ETH/DEC19 | 26826       | 53652  | 80478   | 134130   |
+      | party3 | ETH/DEC19 | 17289       | 34578  | 51867   | 86445    |
 
     Then the order book should have the following volumes for market "ETH/DEC19":
       | side | price    | volume |
@@ -229,7 +232,7 @@ Scenario: case 1 (using simple risk model) from https://docs.google.com/spreadsh
     # party3 has put the order twice
     Then the parties should have the following margin levels:
       | party  | market id | maintenance | search | initial | release  |
-      | party3 | ETH/DEC19 | 29826       | 59652  | 89478   | 149130   |
+      | party3 | ETH/DEC19 | 20289       | 40578  | 60867   | 101445   |
 
     Then the order book should have the following volumes for market "ETH/DEC19":
       | side | price    | volume |
@@ -238,39 +241,39 @@ Scenario: case 1 (using simple risk model) from https://docs.google.com/spreadsh
       | sell | 30       | 50     |
       | buy  | 20       | 1001   |
 
-    And the insurance pool balance should be "40000" for the market "ETH/DEC19"
+    And the insurance pool balance should be "38500" for the market "ETH/DEC19"
 
     #check margin account and margin level
     And the parties should have the following account balances:
       | party  | asset | market id | margin   | general   |
-      | party2 | USD   | ETH/DEC19 | 18120    | 49974784  |
-      | party3 | USD   | ETH/DEC19 | 30096    |  0        |
+      | party2 | USD   | ETH/DEC19 | 18120    | 49973784  |
+      | party3 | USD   | ETH/DEC19 | 29933    |  0        |
 
     Then the parties should have the following margin levels:
       | party  | market id | maintenance | search | initial | release  |
       | party2 | ETH/DEC19 | 6040        | 12080  | 18120   | 30200    |
-      | party3 | ETH/DEC19 | 29826       | 59652  | 89478   | 149130   |
+      | party3 | ETH/DEC19 | 20289       | 40578  | 60867   | 101445   |
 
     When the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | party2 | ETH/DEC19 | buy  | 50     | 30    | 1                | TYPE_LIMIT | TIF_GTC | ref-2-xxx |
 
-    And the insurance pool balance should be "22826" for the market "ETH/DEC19"
+    And the insurance pool balance should be "38500" for the market "ETH/DEC19"
 
      #party3 gets closeout with MTM
     And the parties should have the following account balances:
         | party  | asset | market id | margin   | general   |
         | party1 | USD   | ETH/DEC19 | 0        |  0        |
-        | party2 | USD   | ETH/DEC19 | 22620   |  49970284 |
-        | party3 | USD   | ETH/DEC19 | 0        |  0        |
+        | party2 | USD   | ETH/DEC19 | 22620    |  49969134 |
+        | party3 | USD   | ETH/DEC19 | 29933    |  0        |
 
     Then the parties should have the following profit and loss:
        | party  | volume | unrealised pnl | realised pnl |
        | party1 | 0      | 0              | -30000       |
        | party2 | 201    | -7096          | 0            |
-       | party3 | 0      | 0              | -30000       |
+       | party3 | -101   | 96             | 0            |
 
-Scenario: case 2 using lognomal risk model (0015-INSR-003)
+Scenario: case 2 using lognomal risk model (0015-INSR-003, 0010-MARG-009, 0010-MARG-010, 0010-MARG-011)
   Background:
 
     And the log normal risk model named "lognormal-risk-model-fish":
@@ -305,12 +308,17 @@ Scenario: case 2 using lognomal risk model (0015-INSR-003)
       | party3           | USD   | 30000      |
       | aux1             | USD   | 1000000000 |
       | aux2             | USD   | 1000000000 |
+      | lpprov           | USD   | 1000000000 |
+
+    When the parties submit the following liquidity provision:
+      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
+      | lp1 | lpprov | ETH/DEC19 | 90000             | 0.1 | buy  | BID              | 50         | 10     | submission |
+      | lp1 | lpprov | ETH/DEC19 | 90000             | 0.1 | sell | ASK              | 50         | 10     | submission |
      #And the cumulated balance for all accounts should be worth "4050075000"
   # setup order book
     When the parties place the following orders:
       | party            | market id | side | volume | price | resulting trades | type       | tif     | reference       |
       | sellSideProvider | ETH/DEC19 | sell | 1000   | 150   | 0                | TYPE_LIMIT | TIF_GTC | sell-provider-1 |
-     # | party1           | ETH/DEC19 | sell | 100    | 120   | 0                | TYPE_LIMIT | TIF_GTC | party1-s-1      |
       | aux1             | ETH/DEC19 | sell | 1      | 100   | 0                | TYPE_LIMIT | TIF_GTC | aux-s-2         |
       | aux2             | ETH/DEC19 | buy  | 1      | 100   | 0                | TYPE_LIMIT | TIF_GTC | aux-b-2         |
       | party2           | ETH/DEC19 | buy  | 100    | 80    | 0                | TYPE_LIMIT | TIF_GTC | party2-b-1      |
@@ -353,7 +361,7 @@ Scenario: case 2 using lognomal risk model (0015-INSR-003)
       | sell | 150   | 1000   |
       | sell | 120   | 400    |
       | buy  | 80    | 100    |
-      | buy  | 70    | 1000   |
+      | buy  | 70    | 10214  |
 
     And the mark price should be "100" for the market "ETH/DEC19"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
@@ -367,13 +375,12 @@ Scenario: case 2 using lognomal risk model (0015-INSR-003)
 
     # margin on order should be mark_price x volume x rf = 110 x 400 x 0.4878731 = 21466
     # margin account is above maintenance level, so it stays at 29272
-    Then the parties should have the following margin levels:
-      | party  | market id | maintenance | search | initial | release  |
-      | party1 | ETH/DEC19 | 21467       | 25760  | 32200   | 42934    |
-
     Then the parties should have the following account balances:
       | party   | asset | market id | margin | general  |
       | party1  | USD   | ETH/DEC19 | 29272  |  728     |
+    Then the parties should have the following margin levels:
+      | party  | market id | maintenance | search | initial | release  |
+      | party1 | ETH/DEC19 | 21467       | 25760  | 32200   | 42934    |
 
     And the mark price should be "110" for the market "ETH/DEC19"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
@@ -391,7 +398,7 @@ Scenario: case 2 using lognomal risk model (0015-INSR-003)
       | sell | 150   | 1000   |
       | sell | 120   | 400    |
       | buy  | 80    | 100    |
-      | buy  | 70    | 1000   |
+      | buy  | 70    | 10214  |
 
     # margin on order should be mark_price x volume x rf = 119 x 400 x 0.4878731 = 23223
     # margin account is above maintenance level, so it stays at 29272
@@ -406,3 +413,16 @@ Scenario: case 2 using lognomal risk model (0015-INSR-003)
     Then the parties should have the following profit and loss:
       | party           | volume | unrealised pnl | realised pnl |
       | party1          | 0      | 0              | 0            |
+
+    When the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | aux1   | ETH/DEC19 | sell | 1      | 120   | 0                | TYPE_LIMIT | TIF_GTC | ref-4     |
+      | aux2   | ETH/DEC19 | buy  | 1      | 120   | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
+
+    Then the parties should have the following account balances:
+      | party   | asset | market id | margin | general  |
+      | party1  | USD   | ETH/DEC19 | 29272  |  728     |
+    Then the parties should have the following margin levels:
+      | party  | market id | maintenance | search | initial | release  |
+      | party1 | ETH/DEC19 | 23418       | 28101  | 35127   | 46836    |
+

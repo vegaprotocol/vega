@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package staking_test
 
 import (
@@ -22,10 +34,10 @@ type accountingTest struct {
 	*staking.Accounting
 	log     *logging.Logger
 	ctrl    *gomock.Controller
-	broker  *mocks.MockBrokerI
+	tsvc    *smocks.MockTimeService
+	broker  *mocks.MockBroker
 	evtfwd  *smocks.MockEvtForwarder
 	witness *smocks.MockWitness
-	tt      *smocks.MockTimeTicker
 
 	onTick func(context.Context, time.Time)
 }
@@ -34,25 +46,21 @@ func getAccountingTest(t *testing.T) *accountingTest {
 	t.Helper()
 	log := logging.NewTestLogger()
 	ctrl := gomock.NewController(t)
-	broker := mocks.NewMockBrokerI(ctrl)
+	ts := smocks.NewMockTimeService(ctrl)
+	broker := mocks.NewMockBroker(ctrl)
 	evtfwd := smocks.NewMockEvtForwarder(ctrl)
 	witness := smocks.NewMockWitness(ctrl)
-	tt := smocks.NewMockTimeTicker(ctrl)
 	var onTick func(context.Context, time.Time)
-
-	tt.EXPECT().NotifyOnTick(gomock.Any()).Times(1).Do(func(f func(context.Context, time.Time)) {
-		onTick = f
-	})
 
 	return &accountingTest{
 		Accounting: staking.NewAccounting(
-			log, staking.NewDefaultConfig(), broker, nil, evtfwd, witness, tt, true),
+			log, staking.NewDefaultConfig(), ts, broker, nil, evtfwd, witness, true),
 		log:     log,
 		ctrl:    ctrl,
+		tsvc:    ts,
 		broker:  broker,
 		evtfwd:  evtfwd,
 		witness: witness,
-		tt:      tt,
 		onTick:  onTick,
 	}
 }

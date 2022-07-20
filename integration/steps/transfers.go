@@ -1,8 +1,21 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package steps
 
 import (
 	"context"
 	"errors"
+	"strings"
 	"time"
 
 	proto "code.vegaprotocol.io/protos/vega"
@@ -55,10 +68,6 @@ func rowToOneOffTransfer(r RowWrapper) (*types.OneOffTransfer, error) {
 	toAccuontType := r.MustStr("to_account_type")
 	toAT := proto.AccountType_value[toAccuontType]
 	asset := r.MustStr("asset")
-	market := ""
-	if len(r.Str("market")) > 0 {
-		market = r.Str("market")
-	}
 	amount := r.MustStr("amount")
 	amountUint, _ := num.UintFromString(amount, 10)
 	deliveryTime, err := time.Parse("2006-01-02T15:04:05Z", r.MustStr("delivery_time"))
@@ -75,7 +84,6 @@ func rowToOneOffTransfer(r RowWrapper) (*types.OneOffTransfer, error) {
 			ToAccountType:   types.AccountType(toAT),
 			Asset:           asset,
 			Amount:          amountUint,
-			Market:          market,
 		},
 		DeliverOn: &deliveryTime,
 	}
@@ -113,7 +121,7 @@ func PartiesSubmitRecurringTransfers(
 func parseRecurringTransferTable(table *godog.Table) []RowWrapper {
 	return StrictParseTable(table, []string{
 		"id", "from", "from_account_type", "to", "to_account_type", "asset", "amount", "start_epoch", "end_epoch", "factor",
-	}, []string{"error"})
+	}, []string{"metric", "metric_asset", "markets", "error"})
 }
 
 func rowToRecurringTransfer(r RowWrapper) (*types.RecurringTransfer, error) {
@@ -135,6 +143,20 @@ func rowToRecurringTransfer(r RowWrapper) (*types.RecurringTransfer, error) {
 		end_epoch_uint64 := end_epoch_uint.Uint64()
 		end_epoch_ptr = &end_epoch_uint64
 	}
+
+	var dispatchStrategy *proto.DispatchStrategy
+	if len(r.Str("metric")) > 0 {
+		mkts := strings.Split(r.MustStr("markets"), ",")
+		if len(mkts) == 1 && mkts[0] == "" {
+			mkts = []string{}
+		}
+		dispatchStrategy = &proto.DispatchStrategy{
+			AssetForMetric: r.MustStr("metric_asset"),
+			Markets:        mkts,
+			Metric:         proto.DispatchMetric(proto.DispatchMetric_value[r.MustStr("metric")]),
+		}
+	}
+
 	factor := num.MustDecimalFromString(r.MustStr("factor"))
 	recurring := &types.RecurringTransfer{
 		TransferBase: &types.TransferBase{
@@ -146,9 +168,10 @@ func rowToRecurringTransfer(r RowWrapper) (*types.RecurringTransfer, error) {
 			Asset:           asset,
 			Amount:          amountUint,
 		},
-		StartEpoch: start_epoch.Uint64(),
-		EndEpoch:   end_epoch_ptr,
-		Factor:     factor,
+		StartEpoch:       start_epoch.Uint64(),
+		EndEpoch:         end_epoch_ptr,
+		Factor:           factor,
+		DispatchStrategy: dispatchStrategy,
 	}
 	return recurring, nil
 }
@@ -183,5 +206,5 @@ func PartiesCancelTransfers(
 func parseOneOffCancellationTable(table *godog.Table) []RowWrapper {
 	return StrictParseTable(table, []string{
 		"party", "transfer_id",
-	}, []string{"market", "error"})
+	}, []string{"error"})
 }

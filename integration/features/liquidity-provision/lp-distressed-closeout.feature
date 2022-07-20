@@ -77,14 +77,32 @@ Feature: Replicate LP getting distressed during continuous trading, and after le
     When the network moves ahead "2" blocks
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference     |
-      | party2 | ETH/DEC21 | sell | 15     | 1030  | 0                | TYPE_LIMIT | TIF_GTC | party2-sell-1 |
       | party3 | ETH/DEC21 | buy  | 10     | 1022  | 2                | TYPE_LIMIT | TIF_GTC | party3-buy-1  |
       | party3 | ETH/DEC21 | buy  | 3      | 1020  | 0                | TYPE_LIMIT | TIF_GTC | party3-buy-2  |
       | party2 | ETH/DEC21 | sell | 5      | 1030  | 0                | TYPE_LIMIT | TIF_GTC | party2-sell-2 |
     Then the parties should have the following account balances:
       | party  | asset | market id | margin | general | bond |
-      | party0 | ETH   | ETH/DEC21 | 0      | 0       | 0    |
-    And the insurance pool balance should be "6250" for the market "ETH/DEC21"
+      | party0 | ETH   | ETH/DEC21 | 2816      | 0       | 0    |
+    And the insurance pool balance should be "3619" for the market "ETH/DEC21"
+
+    Then the liquidity provisions should have the following states:
+      | id  | party  | market    | commitment amount | status           |
+      | lp1 | party0 | ETH/DEC21 | 5000              | STATUS_CANCELLED |
+
+    # existing LP position not liquidated as there isn't enough volume on the book
+    Then the parties should have the following profit and loss:
+      | party  | volume | unrealised pnl | realised pnl |
+      | party0 | -7     | 0              | 0            |
+
+    Then debug detailed orderbook volumes for market "ETH/DEC21"
+
+    And the order book should have the following volumes for market "ETH/DEC21":
+      | side | price | volume |
+      | sell | 1100  | 1      |
+      | sell | 1030  | 5      |
+      | buy  | 1020  | 3      |
+      | buy  | 990   | 1      |
+      | buy  | 900   | 1      |
 
   Scenario: LP gets distressed after auction
 
@@ -152,7 +170,7 @@ Feature: Replicate LP getting distressed during continuous trading, and after le
       | party3 | ETH/DEC21 | buy  | 10     | 1060  | 0                | TYPE_LIMIT | TIF_GTC |
     Then the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode                    | auction trigger       | target stake | supplied stake | open interest |
-      | 1010       | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_PRICE | 2323         | 5000           | 23            |
+      | 1010       | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_PRICE | 3481         | 5000           | 23            |
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general | bond |
       | party0 | ETH   | ETH/DEC21 | 2816   | 0       | 0    |

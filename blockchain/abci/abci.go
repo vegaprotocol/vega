@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package abci
 
 import (
@@ -98,8 +110,8 @@ func (app *App) CheckTx(req types.RequestCheckTx) (resp types.ResponseCheckTx) {
 	// Lookup for check tx, skip if not found
 	if fn, ok := app.checkTxs[tx.Command()]; ok {
 		if err := fn(ctx, tx); err != nil {
-			resp.Code = AbciTxnInternalError
 			println("transaction failed command validation", tx.Command().String(), "tid", tx.GetPoWTID(), err.Error())
+			return AddCommonCheckTxEvents(NewResponseCheckTxError(AbciTxnInternalError, err), tx)
 		}
 	}
 
@@ -122,7 +134,7 @@ func (app *App) DeliverTx(req types.RequestDeliverTx) (resp types.ResponseDelive
 
 	// check for spam and replay
 	if fn := app.OnDeliverTxSpam; fn != nil {
-		resp = fn(tx)
+		resp = fn(app.ctx, tx)
 		if resp.IsErr() {
 			return AddCommonDeliverTxEvents(resp, tx)
 		}
@@ -209,8 +221,8 @@ func getBaseTxEvents(tx Tx) []types.Event {
 			Type: "tx",
 			Attributes: []types.EventAttribute{
 				{
-					Key:   []byte("submitter"),
-					Value: []byte(tx.PubKeyHex()),
+					Key:   "submitter",
+					Value: tx.PubKeyHex(),
 					Index: true,
 				},
 			},
@@ -219,8 +231,8 @@ func getBaseTxEvents(tx Tx) []types.Event {
 			Type: "command",
 			Attributes: []types.EventAttribute{
 				{
-					Key:   []byte("type"),
-					Value: []byte(tx.Command().String()),
+					Key:   "type",
+					Value: tx.Command().String(),
 					Index: true,
 				},
 			},
@@ -238,8 +250,8 @@ func getBaseTxEvents(tx Tx) []types.Event {
 		Type: "command",
 		Attributes: []types.EventAttribute{
 			{
-				Key:   []byte("market"),
-				Value: []byte(market),
+				Key:   "market",
+				Value: market,
 				Index: true,
 			},
 		},
@@ -256,8 +268,8 @@ func getBaseTxEvents(tx Tx) []types.Event {
 		Type: "command",
 		Attributes: []types.EventAttribute{
 			{
-				Key:   []byte("asset"),
-				Value: []byte(asset),
+				Key:   "asset",
+				Value: asset,
 				Index: true,
 			},
 		},
@@ -271,8 +283,8 @@ func getBaseTxEvents(tx Tx) []types.Event {
 		Type: "command",
 		Attributes: []types.EventAttribute{
 			{
-				Key:   []byte("reference"),
-				Value: []byte(reference),
+				Key:   "reference",
+				Value: reference,
 				Index: true,
 			},
 		},
@@ -286,8 +298,8 @@ func getBaseTxEvents(tx Tx) []types.Event {
 		Type: "command",
 		Attributes: []types.EventAttribute{
 			{
-				Key:   []byte("proposal"),
-				Value: []byte(proposal),
+				Key:   "proposal",
+				Value: proposal,
 				Index: true,
 			},
 		},

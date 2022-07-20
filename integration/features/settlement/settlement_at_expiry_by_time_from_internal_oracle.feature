@@ -9,8 +9,8 @@ Feature: Test settlement at expiry time from internal oracle
       | prices.ETH.value | TYPE_INTEGER | settlement price |
 
     And the oracle spec for trading termination filtering data from "vegaprotocol.builtin" named "ethDec20Oracle":
-      | property                       | type           | binding             | condition            |
-      | vegaprotocol.builtin.timestamp | TYPE_TIMESTAMP | trading termination | 2019-12-31T23:59:59Z |
+      | property                       | type           | binding             | condition                      | value                |
+      | vegaprotocol.builtin.timestamp | TYPE_TIMESTAMP | trading termination | OPERATOR_GREATER_THAN_OR_EQUAL | 2019-12-31T23:59:59Z |
 
     And the oracle spec for settlement price filtering data from "0xCAFECAFE1" named "ethDec21Oracle":
       | property         | type         | binding          |
@@ -48,8 +48,14 @@ Feature: Test settlement at expiry time from internal oracle
       | party1 | ETH   | 10000  |
       | aux1   | ETH   | 100000 |
       | aux2   | ETH   | 100000 |
+      | lpprov | ETH   | 100000 |
 
-    When the parties place the following orders:
+    When the parties submit the following liquidity provision:
+      | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type |
+      | lp1 | lpprov | ETH/DEC19 | 10000             | 0.001 | buy  | BID              | 50         | 1      | submission |
+      | lp1 | lpprov | ETH/DEC19 | 10000             | 0.001 | sell | ASK              | 50         | 1      | submission |
+
+    And the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | aux1  | ETH/DEC19 | buy  | 1      | 999   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | aux2  | ETH/DEC19 | sell | 1      | 1001  | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
@@ -198,13 +204,17 @@ Feature: Test settlement at expiry time from internal oracle
       | aux1     | ETH   | 100000    |
       | aux2     | ETH   | 100000    |
       | party-lp | ETH   | 100000000 |
+      | lpprov   | ETH   | 100000000 |
 
-    And the cumulated balance for all accounts should be worth "100236000"
+    And the cumulated balance for all accounts should be worth "200236000"
 
-    And the parties submit the following liquidity provision:
-      | id  | party    | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | party-lp | ETH/DEC19 | 30000000          | 0   | buy  | BID              | 50         | 10     | submission |
-      | lp1 | party-lp | ETH/DEC19 | 30000000          | 0   | sell | ASK              | 50         | 10     | amendment  |
+
+    When the parties submit the following liquidity provision:
+      | id  | party    | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
+      | lp1 | party-lp | ETH/DEC19 | 30000000          | 0     | buy  | BID              | 50         | 10     | submission |
+      | lp1 | party-lp | ETH/DEC19 | 30000000          | 0     | sell | ASK              | 50         | 10     | amendment  |
+      | lp2 | lpprov   | ETH/DEC21 | 30000000          | 0.001 | buy  | BID              | 50         | 10     | submission |
+      | lp2 | lpprov   | ETH/DEC21 | 30000000          | 0.001 | sell | ASK              | 50         | 10     | submission |
 
     When the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
@@ -267,7 +277,7 @@ Feature: Test settlement at expiry time from internal oracle
       | party2 | ETH/DEC19 | buy  | 1      | 1000  | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
       | party3 | ETH/DEC19 | buy  | 1      | 1000  | 1                | TYPE_LIMIT | TIF_GTC | ref-3     |
 
-    And the cumulated balance for all accounts should be worth "100236000"
+    And the cumulated balance for all accounts should be worth "200236000"
 
     # Close positions by aux parties
     When the parties place the following orders:
@@ -294,7 +304,7 @@ Feature: Test settlement at expiry time from internal oracle
       | party2 | ETH   | ETH/DEC19 | 0      | 42      |
       | party3 | ETH   | ETH/DEC19 | 0      | 4042    |
 
-    And the cumulated balance for all accounts should be worth "100236000"
+    And the cumulated balance for all accounts should be worth "200236000"
     And the insurance pool balance should be "0" for the market "ETH/DEC19"
     And the insurance pool balance should be "0" for the market "ETH/DEC21"
 
@@ -517,8 +527,14 @@ Feature: Test settlement at expiry time from internal oracle
       | party1 | ETH   | 100000 |
       | aux1   | ETH   | 100000 |
       | aux2   | ETH   | 100000 |
+      | lpprov | ETH   | 100000 |
 
-    When the parties place the following orders:
+    When the parties submit the following liquidity provision:
+      | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
+      | lp1 | lpprov | ETH/DEC21 | 10000             | 0.001 | buy  | BID              | 50         | 1      | submission |
+      | lp1 | lpprov | ETH/DEC21 | 10000             | 0.001 | sell | ASK              | 50         | 1      | submission |
+
+    And the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | aux1  | ETH/DEC21 | buy  | 1      | 999   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | aux2  | ETH/DEC21 | sell | 1      | 1001  | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
@@ -542,8 +558,8 @@ Feature: Test settlement at expiry time from internal oracle
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | party1 | ETH/DEC21 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC | ref-7     |
     Then the parties should have the following account balances:
-      | party  | asset | market id | margin  | general |
-      | party1 | ETH   | ETH/DEC21 | 120     | 99880   |
+      | party  | asset | market id | margin | general |
+      | party1 | ETH   | ETH/DEC21 | 120    | 99880   |
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC21"
 
     When the oracles broadcast data signed with "0xCAFECAFE1":

@@ -1,15 +1,28 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package execution_test
 
 import (
+	"bytes"
 	"context"
 	"testing"
 
-	oraclesv1 "code.vegaprotocol.io/protos/vega/oracles/v1"
+	oraclespb "code.vegaprotocol.io/protos/vega/oracles/v1"
 
 	snapshot "code.vegaprotocol.io/protos/vega/snapshot/v1"
 
 	"code.vegaprotocol.io/vega/assets"
-	bmock "code.vegaprotocol.io/vega/broker/mocks"
+	bmocks "code.vegaprotocol.io/vega/broker/mocks"
 	"code.vegaprotocol.io/vega/execution"
 	"code.vegaprotocol.io/vega/execution/mocks"
 	"code.vegaprotocol.io/vega/libs/proto"
@@ -26,10 +39,10 @@ func createEngine(t *testing.T) (*execution.Engine, *gomock.Controller) {
 	ctrl := gomock.NewController(t)
 	log := logging.NewTestLogger()
 	executionConfig := execution.NewDefaultConfig()
-	broker := bmock.NewMockBroker(ctrl)
+	broker := bmocks.NewMockBroker(ctrl)
 	broker.EXPECT().Send(gomock.Any()).AnyTimes()
+	broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
 	timeService := mocks.NewMockTimeService(ctrl)
-	timeService.EXPECT().NotifyOnTick(gomock.Any()).Times(1)
 	timeService.EXPECT().GetTimeNow().AnyTimes()
 
 	collateralService := mocks.NewMockCollateral(ctrl)
@@ -49,7 +62,7 @@ func createEngine(t *testing.T) (*execution.Engine, *gomock.Controller) {
 		as := NewAssetStub(a, 0)
 		return as, nil
 	})
-	return execution.NewEngine(log, executionConfig, timeService, collateralService, oracleService, broker, statevar, execution.NewFeesTracker(epochEngine), execution.NewMarketTracker(), asset), ctrl
+	return execution.NewEngine(log, executionConfig, timeService, collateralService, oracleService, broker, statevar, execution.NewMarketActivityTracker(log, epochEngine), asset), ctrl
 }
 
 func TestEmptyMarkets(t *testing.T) {
@@ -85,7 +98,7 @@ func getMarketConfig() *types.Market {
 		},
 		LiquidityMonitoringParameters: &types.LiquidityMonitoringParameters{
 			TargetStakeParameters: &types.TargetStakeParameters{
-				TimeWindow:    100,
+				TimeWindow:    101,
 				ScalingFactor: num.DecimalFromFloat(1.0),
 			},
 			TriggeringRatio:  num.DecimalFromFloat(0.9),
@@ -119,33 +132,33 @@ func getMarketConfig() *types.Market {
 				Product: &types.InstrumentFuture{
 					Future: &types.Future{
 						SettlementAsset: "Ethereum/Ether",
-						OracleSpecForSettlementPrice: &oraclesv1.OracleSpec{
-							Id:      "1",
+						OracleSpecForSettlementPrice: &types.OracleSpec{
+							ID:      "1",
 							PubKeys: []string{"0xDEADBEEF"},
-							Filters: []*oraclesv1.Filter{
+							Filters: []*types.OracleSpecFilter{
 								{
-									Key: &oraclesv1.PropertyKey{
+									Key: &types.OracleSpecPropertyKey{
 										Name: "prices.ETH.value",
-										Type: oraclesv1.PropertyKey_TYPE_INTEGER,
+										Type: oraclespb.PropertyKey_TYPE_INTEGER,
 									},
-									Conditions: []*oraclesv1.Condition{},
+									Conditions: []*types.OracleSpecCondition{},
 								},
 							},
 						},
-						OracleSpecForTradingTermination: &oraclesv1.OracleSpec{
-							Id:      "2",
+						OracleSpecForTradingTermination: &types.OracleSpec{
+							ID:      "2",
 							PubKeys: []string{"0xDEADBEEF"},
-							Filters: []*oraclesv1.Filter{
+							Filters: []*types.OracleSpecFilter{
 								{
-									Key: &oraclesv1.PropertyKey{
+									Key: &types.OracleSpecPropertyKey{
 										Name: "trading.terminated",
-										Type: oraclesv1.PropertyKey_TYPE_BOOLEAN,
+										Type: oraclespb.PropertyKey_TYPE_BOOLEAN,
 									},
-									Conditions: []*oraclesv1.Condition{},
+									Conditions: []*types.OracleSpecCondition{},
 								},
 							},
 						},
-						OracleSpecBinding: &types.OracleSpecToFutureBinding{
+						OracleSpecBinding: &types.OracleSpecBindingForFuture{
 							SettlementPriceProperty:    "prices.ETH.value",
 							TradingTerminationProperty: "trading.terminated",
 						},
@@ -184,44 +197,66 @@ func TestEmptyExecEngineSnapshot(t *testing.T) {
 }
 
 func TestValidMarketSnapshot(t *testing.T) {
+	ctx := context.Background()
 	engine, ctrl := createEngine(t)
 	defer ctrl.Finish()
 	assert.NotNil(t, engine)
 
 	marketConfig := getMarketConfig()
-	err := engine.SubmitMarket(context.TODO(), marketConfig)
+	err := engine.SubmitMarket(ctx, marketConfig, "")
 	assert.NoError(t, err)
 
 	keys := engine.Keys()
 	require.Equal(t, 1, len(keys))
 	key := keys[0]
 
-	// The snapshot engine will call GetHash first so we keep that order
-	// to mimic the flow
-	hash1, err := engine.GetHash(key)
-	assert.NoError(t, err)
-	assert.NotEmpty(t, hash1)
-
 	// Take the snapshot and hash
-	bytes, providers, err := engine.GetState(key)
+	b, providers, err := engine.GetState(key)
 	assert.NoError(t, err)
-	assert.NotEmpty(t, bytes)
+	assert.NotEmpty(t, b)
 	assert.Len(t, providers, 4)
 
 	// Turn the bytes back into a payload and restore to a new engine
 	engine2, ctrl := createEngine(t)
+
 	defer ctrl.Finish()
 	assert.NotNil(t, engine2)
 	snap := &snapshot.Payload{}
-	err = proto.Unmarshal(bytes, snap)
+	err = proto.Unmarshal(b, snap)
 	assert.NoError(t, err)
-	loadStateProviders, err := engine2.LoadState(context.Background(), types.PayloadFromProto(snap))
+	loadStateProviders, err := engine2.LoadState(ctx, types.PayloadFromProto(snap))
 	assert.Len(t, loadStateProviders, 4)
-
 	assert.NoError(t, err)
+
+	providerMap := map[string]map[string]types.StateProvider{}
+	for _, p := range loadStateProviders {
+		providerMap[p.Namespace().String()] = map[string]types.StateProvider{}
+		for _, k := range p.Keys() {
+			providerMap[p.Namespace().String()][k] = p
+		}
+	}
 
 	// Check the hashes are the same
-	hash2, err := engine2.GetHash(key)
+	state2, _, err := engine2.GetState(key)
 	assert.NoError(t, err)
-	assert.Equal(t, hash1, hash2)
+	assert.True(t, bytes.Equal(b, state2))
+
+	// now load the providers state
+	for _, p := range providers {
+		for _, k := range p.Keys() {
+			b, _, err := p.GetState(k)
+			require.NoError(t, err)
+
+			snap := &snapshot.Payload{}
+			err = proto.Unmarshal(b, snap)
+			assert.NoError(t, err)
+
+			toRestore := providerMap[p.Namespace().String()][k]
+			_, err = toRestore.LoadState(ctx, types.PayloadFromProto(snap))
+			require.NoError(t, err)
+			b2, _, err := toRestore.GetState(k)
+			require.NoError(t, err)
+			assert.True(t, bytes.Equal(b, b2))
+		}
+	}
 }

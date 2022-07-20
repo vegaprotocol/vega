@@ -1,6 +1,6 @@
 # Vega
 
-Version 0.50.2
+Version 0.52.0
 
 A decentralised trading platform that allows pseudo-anonymous trading of derivatives on a blockchain.
 
@@ -135,18 +135,6 @@ Example of import:
 vega nodewallet import --chain=ethereum --eth.clef-address=http://clef-address:port
 ```
 
-## API
-
-Prior to version 0.40.0, Vega Core hosted API endpoints for clients. The majority of this has since migrated to the [data-node](https://github.com/vegaprotocol/data-node).
-## Provisioning
-
-The proposal and creation of new markets is handled by the [Governance engine](./governance/README.md).
-
-Vega supports a single fixed market with ID `BTC/DEC20` which can be passed to APIs as the field `Market` in protobuf / REST / GraphQL requests.
-
-
-Cancellations typically go via consensus so the `OrderResponse` will only indicate that the message was accepted and sent out onto the blockchain to be included in a block. It could be rejected at a later stage of processing.
-
 
 ## Troubleshooting & debugging
 
@@ -158,3 +146,9 @@ The application has structured logging capability, the first port of call for a 
 Each internal Go package has a logging level that can be set at runtime by configuration. Setting the logging `Level` to `"Debug"` for a package will enable all debugging messages for the package which can be useful when trying to analyse a crash or issue.
 
 Debugging the application locally is also possible with [Delve](./DEBUG_WITH_DLV.md).
+
+### License
+
+The vega core (i.e. all code outside of the following directories: wallet, `cmd/vegawallet`) is licensed under the BSL 1.1, also included in our repository in the LICENSE file.
+
+The vegawallet (i.e. all code inside of the following directories: wallet, `cmd/vegawallet`) is licensed under the MIT, also included in our repository in the LICENSE.MIT file.

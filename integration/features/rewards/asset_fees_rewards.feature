@@ -16,6 +16,9 @@ Feature: Fees reward calculations for a single asset, single market
     Given time is updated to "2021-08-26T00:00:00Z"
     Given the average block duration is "2"
 
+     #complete the epoch to advance to a meaningful epoch (can't setup transfer to start at epoch 0)
+    Then the network moves ahead "7" blocks
+
   Scenario: Testing fees in continuous trading with one trade and no liquidity providers - testing maker fee received
     Given the fees configuration named "fees-config-1":
       | maker fee | infrastructure fee |
@@ -34,7 +37,12 @@ Feature: Fees reward calculations for a single asset, single market
 
     Given the parties deposit on asset's general account the following amount:
       | party                                                            | asset  | amount   |
-      | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | VEGA    | 1000000  |
+      | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | VEGA   | 1000000  |
+
+    # setup recurring transfer to the maker fee reward account - this will start at the end of this epoch (1)
+    Given the parties submit the following recurring transfers:
+      | id | from                                                             | from_account_type    | to                                                                | to_account_type                         | asset  | amount | start_epoch | end_epoch | factor | metric                               | metric_asset | markets |
+      | 1  | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000  | ACCOUNT_TYPE_REWARD_MAKER_RECEIVED_FEES | VEGA   | 10000  |       1     |           |    1   |  DISPATCH_METRIC_MAKER_FEES_RECEIVED |      ETH     |         |  
 
     # setup accounts
     Given the parties deposit on asset's general account the following amount:
@@ -43,6 +51,12 @@ Feature: Fees reward calculations for a single asset, single market
       | aux2    | ETH   | 100000000 |
       | trader3 | ETH   | 10000     |
       | trader4 | ETH   | 10000     |
+      | lpprov  | ETH   | 100000000 |
+
+    When the parties submit the following liquidity provision:
+      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
+      | lp1 | lpprov | ETH/DEC21 | 90000             | 0.1 | buy  | BID              | 50         | 100    | submission |
+      | lp1 | lpprov | ETH/DEC21 | 90000             | 0.1 | sell | ASK              | 50         | 100    | submission |
 
     Then the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     |
@@ -87,7 +101,7 @@ Feature: Fees reward calculations for a single asset, single market
       | from    | to      | from account            | to account                       | market id | amount | asset |
       | trader4 | market  | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_MAKER          | ETH/DEC21 | 16     | ETH   |
       | trader4 |         | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_INFRASTRUCTURE |           | 7      | ETH   |
-      | trader4 | market  | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_LIQUIDITY      | ETH/DEC21 | 0      | ETH   |
+      | trader4 | market  | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_LIQUIDITY      | ETH/DEC21 | 301    | ETH   |
       | market  | trader3 | ACCOUNT_TYPE_FEES_MAKER | ACCOUNT_TYPE_GENERAL             | ETH/DEC21 | 16     | ETH   |
 
     # total_fee = infrastructure_fee + maker_fee + liquidity_fee = 7 + 16 + 0 = 23
@@ -96,39 +110,29 @@ Feature: Fees reward calculations for a single asset, single market
 
     Then the parties should have the following account balances:
       | party   | asset | market id | margin | general |
-      | trader3 | ETH   | ETH/DEC21 | 1089   | 8927    |
-      | trader4 | ETH   | ETH/DEC21 | 657    | 9320    |
+      | trader3 | ETH   | ETH/DEC21 | 1082   | 8934    |
+      | trader4 | ETH   | ETH/DEC21 | 715    | 8961    |
 
     And the accumulated infrastructure fees should be "7" for the asset "ETH"
-    And the accumulated liquidity fees should be "0" for the market "ETH/DEC21"
-
-    # transfer to the maker fee reward account
-    Given the parties submit the following one off transfers:
-      | id | from                                                             | from_account_type    | to                                                                | to_account_type                         | asset  | market    | amount | delivery_time        |
-      | 1  | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000  | ACCOUNT_TYPE_REWARD_MAKER_RECEIVED_FEES | VEGA   | ETH/DEC21 | 10000  | 2021-08-26T00:00:00Z |
+    And the accumulated liquidity fees should be "301" for the market "ETH/DEC21"
 
     #complete the epoch for rewards to take place
     Then the network moves ahead "7" blocks
     # only trader3 received the maker fees so only they get the reward of 10k
     Then the parties should have the following account balances:
       | party   | asset | market id | margin | general |
-      | trader3 | ETH   | ETH/DEC21 | 1089   | 8927    |
-      | trader4 | ETH   | ETH/DEC21 | 657    | 9320    |
+      | trader3 | ETH   | ETH/DEC21 | 1082   | 8934    |
+      | trader4 | ETH   | ETH/DEC21 | 715    | 8961    |
 
     Then "trader3" should have general account balance of "10000" for asset "VEGA"
-
-    # make another transfer and end an epoch to verify that no one gets the reward this time because there were no maker fees received
-    Given the parties submit the following one off transfers:
-      | id | from                                                             | from_account_type    | to                                                                | to_account_type                         | asset | market    | amount | delivery_time        |
-      | 1  | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000  | ACCOUNT_TYPE_REWARD_MAKER_RECEIVED_FEES | VEGA  | ETH/DEC21 | 10000  | 2021-08-26T00:00:10Z |
 
     #complete the epoch for rewards to take place
     Then the network moves ahead "7" blocks
     # expect no change to anyone
     Then the parties should have the following account balances:
       | party   | asset | market id | margin | general |
-      | trader3 | ETH   | ETH/DEC21 | 1089   | 8927    |
-      | trader4 | ETH   | ETH/DEC21 | 657    | 9320    |
+      | trader3 | ETH   | ETH/DEC21 | 1082   | 8934    |
+      | trader4 | ETH   | ETH/DEC21 | 715    | 8961    |
 
     Then "trader3" should have general account balance of "10000" for asset "VEGA"
   
@@ -153,6 +157,12 @@ Feature: Fees reward calculations for a single asset, single market
       | party         | asset | amount   |
       | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | VEGA   | 10000000 |
 
+    # setup recurring transfer to the maker fee reward account - this will start at the end of this epoch (1)
+    Given the parties submit the following recurring transfers:
+      | id | from                                                             | from_account_type    | to                                                                | to_account_type                         | asset  | amount | start_epoch | end_epoch | factor |               metric                 | metric_asset | markets   |
+      | 1  | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000  | ACCOUNT_TYPE_REWARD_MAKER_RECEIVED_FEES | VEGA   | 10000  |       1     |           |    1   |  DISPATCH_METRIC_MAKER_FEES_RECEIVED |      ETH     |           |  
+      | 2  | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000  | ACCOUNT_TYPE_REWARD_TAKER_PAID_FEES     | VEGA   | 1234   |       1     |           |    2   |  DISPATCH_METRIC_TAKER_FEES_PAID     |      ETH     | ETH/DEC21 | 
+
     # setup accounts
     Given the parties deposit on asset's general account the following amount:
       | party    | asset | amount    |
@@ -161,6 +171,12 @@ Feature: Fees reward calculations for a single asset, single market
       | trader3a | ETH   | 10000     |
       | trader3b | ETH   | 10000     |
       | trader4  | ETH   | 10000     |
+      | lpprov   | ETH   | 100000000 |
+
+    When the parties submit the following liquidity provision:
+      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
+      | lp1 | lpprov | ETH/DEC21 | 90000             | 0.1 | buy  | BID              | 50         | 100    | submission |
+      | lp1 | lpprov | ETH/DEC21 | 90000             | 0.1 | sell | ASK              | 50         | 100    | submission |
 
     Then the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     |
@@ -216,7 +232,7 @@ Feature: Fees reward calculations for a single asset, single market
       | trader4 | market   | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_MAKER          | ETH/DEC21 | 11     | ETH   |
       | trader4 | market   | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_MAKER          | ETH/DEC21 | 6      | ETH   |
       | trader4 |          | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_INFRASTRUCTURE |           | 8      | ETH   |
-      | trader4 | market   | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_LIQUIDITY      | ETH/DEC21 | 0      | ETH   |
+      | trader4 | market   | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_LIQUIDITY      | ETH/DEC21 | 302    | ETH   |
       | market  | trader3a | ACCOUNT_TYPE_FEES_MAKER | ACCOUNT_TYPE_GENERAL             | ETH/DEC21 | 11     | ETH   |
       | market  | trader3b | ACCOUNT_TYPE_FEES_MAKER | ACCOUNT_TYPE_GENERAL             | ETH/DEC21 | 6      | ETH   |
 
@@ -227,46 +243,34 @@ Feature: Fees reward calculations for a single asset, single market
 
     Then the parties should have the following account balances:
       | party    | asset | market id | margin | general |
-      | trader3a | ETH   | ETH/DEC21 | 726    | 9285    |
-      | trader3b | ETH   | ETH/DEC21 | 363    | 9643    |
-      | trader4  | ETH   | ETH/DEC21 | 657    | 9318    |
+      | trader3a | ETH   | ETH/DEC21 | 721    | 9290    |
+      | trader3b | ETH   | ETH/DEC21 | 361    | 9645    |
+      | trader4  | ETH   | ETH/DEC21 | 715    | 8958    | 
 
     And the accumulated infrastructure fees should be "8" for the asset "ETH"
-    And the accumulated liquidity fees should be "0" for the market "ETH/DEC21"
-
-     # transfer to the maker fee received reward account and the taker paid fee reward account
-    Given the parties submit the following one off transfers:
-      | id | from                                                             | from_account_type    | to                                                                | to_account_type                         | asset | market    | amount | delivery_time        |
-      | 1  | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000  | ACCOUNT_TYPE_REWARD_MAKER_RECEIVED_FEES | VEGA  | ETH/DEC21 |10000   | 2021-08-26T00:00:00Z |
-      | 2  | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000  | ACCOUNT_TYPE_REWARD_TAKER_PAID_FEES     | VEGA  | ETH/DEC21 | 1234   | 2021-08-26T00:00:10Z |
+    And the accumulated liquidity fees should be "302" for the market "ETH/DEC21"
 
     #complete the epoch for rewards to take place
     Then the network moves ahead "7" blocks
     # only trader3 received the maker fees so only they get the reward of 10k
     Then the parties should have the following account balances:
       | party    | asset | market id | margin | general |
-      | trader3a | ETH   | ETH/DEC21 | 726    | 9285    | 
-      | trader3b | ETH   | ETH/DEC21 | 363    | 9643    | 
-      | trader4  | ETH   | ETH/DEC21 | 657    | 9318    | 
+      | trader3a | ETH   | ETH/DEC21 | 721    | 9290    |
+      | trader3b | ETH   | ETH/DEC21 | 361    | 9645    | 
+      | trader4  | ETH   | ETH/DEC21 | 715    | 8958    | 
 
     Then "trader3a" should have general account balance of "6470" for asset "VEGA"
     And "trader3b" should have general account balance of "3529" for asset "VEGA"
     And "trader4" should have general account balance of "1234" for asset "VEGA"
-
-    # make another transfer and end an epoch to verify that no one gets the reward this time because there were no maker fees received
-    Given the parties submit the following one off transfers:
-      | id | from                                                             | from_account_type    | to                                                                | to_account_type                         | asset  | market  | amount | delivery_time        |
-      | 3  | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000  | ACCOUNT_TYPE_REWARD_MAKER_RECEIVED_FEES | VEGA   |ETH/DEC21| 5000   | 2021-08-26T00:00:10Z |
-      | 4  | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000  | ACCOUNT_TYPE_REWARD_TAKER_PAID_FEES     | VEGA   |ETH/DEC21| 5678   | 2021-08-26T00:00:10Z |
 
     #complete the epoch for rewards to take place
     Then the network moves ahead "7" blocks
     # expect no change to anyone
     Then the parties should have the following account balances:
       | party    | asset | market id | margin | general |
-      | trader3a | ETH   | ETH/DEC21 | 726    | 9285    | 
-      | trader3b | ETH   | ETH/DEC21 | 363    | 9643    | 
-      | trader4  | ETH   | ETH/DEC21 | 657    | 9318    | 
+      | trader3a | ETH   | ETH/DEC21 | 721    | 9290    |
+      | trader3b | ETH   | ETH/DEC21 | 361    | 9645    | 
+      | trader4  | ETH   | ETH/DEC21 | 715    | 8958    | 
 
   Scenario: Testing fees in continuous trading with two trades and one liquidity providers with 10 and 0 s liquidity fee distribution timestep - test maker fee received, taker fee paid and lp fees rewards
     When the following network parameters are set:
@@ -300,6 +304,14 @@ Feature: Fees reward calculations for a single asset, single market
       | trader3a | ETH   | 10000     |
       | trader3b | ETH   | 10000     |
       | trader4  | ETH   | 10000     |
+
+    # transfer to the maker fee received reward account and the taker paid fee reward account
+    Given the parties submit the following recurring transfers:
+      | id | from                                                             | from_account_type    | to                                                                | to_account_type                         | asset  | amount | start_epoch | end_epoch | factor |               metric                 | metric_asset | markets   |
+      | 1  | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000  | ACCOUNT_TYPE_REWARD_MAKER_RECEIVED_FEES | VEGA   | 10000  |       1     |           |    0.5 |  DISPATCH_METRIC_MAKER_FEES_RECEIVED |      ETH     |           |  
+      | 2  | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000  | ACCOUNT_TYPE_REWARD_TAKER_PAID_FEES     | VEGA   | 1234   |       1     |           |    1   |  DISPATCH_METRIC_TAKER_FEES_PAID     |      ETH     | ETH/DEC21 |  
+      | 3  | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000  | ACCOUNT_TYPE_REWARD_LP_RECEIVED_FEES    | VEGA   | 500    |       1     |           |    2   |  DISPATCH_METRIC_LP_FEES_RECEIVED    |      ETH     |           |  
+
 
     Then the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     |
@@ -384,16 +396,10 @@ Feature: Fees reward calculations for a single asset, single market
     And the accumulated infrastructure fees should be "8" for the asset "ETH"
     And the accumulated liquidity fees should be "5" for the market "ETH/DEC21"
 
-    # transfer to the maker fee received reward account and the taker paid fee reward account
-    Given the parties submit the following one off transfers:
-      | id | from                                                             | from_account_type    | to                                                                | to_account_type                         | asset  | market     | amount | delivery_time        |
-      | 1  | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000  | ACCOUNT_TYPE_REWARD_MAKER_RECEIVED_FEES | VEGA   | ETH/DEC21 | 10000  | 2021-08-26T00:00:00Z |
-      | 2  | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000  | ACCOUNT_TYPE_REWARD_TAKER_PAID_FEES     | VEGA   | ETH/DEC21 | 1234   | 2021-08-26T00:00:10Z |
-      | 3  | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000  | ACCOUNT_TYPE_REWARD_LP_RECEIVED_FEES    | VEGA   | ETH/DEC21 | 500    | 2021-08-26T00:00:10Z |
-
     #complete the epoch for rewards to take place
     Then the network moves ahead "7" blocks
 
+    # Not sure why this transfer is gone now?
     And the following transfers should happen:
       | from   | to   | from account                | to account           | market id | amount | asset |
       | market | aux1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/DEC21 | 5      | ETH   |
@@ -412,13 +418,6 @@ Feature: Fees reward calculations for a single asset, single market
     And "trader3b" should have general account balance of "3529" for asset "VEGA"
     # 1234 = taker fee paid reward reward
     And "trader4" should have general account balance of "1234" for asset "VEGA"
-
-    # make another transfer and end an epoch to verify that no one gets the reward this time because there were no maker fees received
-    Given the parties submit the following one off transfers:
-      | id | from                                                             | from_account_type    | to                                                                | to_account_type                         | asset| market    | amount | delivery_time        |
-      | 4  | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000  | ACCOUNT_TYPE_REWARD_MAKER_RECEIVED_FEES | VEGA | ETH/DEC21 | 5000   | 2021-08-26T00:00:10Z |
-      | 5  | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000  | ACCOUNT_TYPE_REWARD_TAKER_PAID_FEES     | VEGA | ETH/DEC21 | 5678   | 2021-08-26T00:00:10Z |
-      | 6  | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000  | ACCOUNT_TYPE_REWARD_LP_RECEIVED_FEES    | VEGA | ETH/DEC21 | 250    | 2021-08-26T00:00:10Z |
 
     #complete the epoch for rewards to take place
     Then the network moves ahead "7" blocks

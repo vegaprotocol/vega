@@ -1,6 +1,19 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package stubs
 
 import (
+	"context"
 	"errors"
 
 	"code.vegaprotocol.io/vega/assets"
@@ -50,19 +63,21 @@ func (a *AssetStub) SetStrict() {
 	a.permissive = false
 }
 
-func (AssetStub) Enable(assetID string) error {
+func (AssetStub) Enable(_ context.Context, assetID string) error {
 	return nil
 }
 
 type isAssetStub struct {
 	ID            string
 	DecimalPlaces uint64
+	Status        types.AssetStatus
 }
 
 func NewIsAssetStub(id string, dp uint64) *assets.Asset {
 	return assets.NewAsset(&isAssetStub{
 		ID:            id,
 		DecimalPlaces: dp,
+		Status:        types.AssetStatusProposed,
 	})
 }
 
@@ -74,6 +89,18 @@ func (a isAssetStub) Type() *types.Asset {
 			Quantum:  num.DecimalFromFloat(5000),
 		},
 	}
+}
+
+func (a *isAssetStub) SetPendingListing() {
+	a.Status = types.AssetStatusPendingListing
+}
+
+func (a *isAssetStub) SetRejected() {
+	a.Status = types.AssetStatusRejected
+}
+
+func (a *isAssetStub) SetEnabled() {
+	a.Status = types.AssetStatusEnabled
 }
 
 func (isAssetStub) GetAssetClass() common.AssetClass {

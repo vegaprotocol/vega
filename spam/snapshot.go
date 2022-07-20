@@ -1,9 +1,20 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package spam
 
 import (
 	"context"
 
-	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
 )
@@ -21,27 +32,24 @@ func (e *Engine) Stopped() bool {
 }
 
 // get the serialised form and hash of the given key.
-func (e *Engine) getSerialisedAndHash(k string) ([]byte, []byte, error) {
+func (e *Engine) serialise(k string) ([]byte, error) {
 	if _, ok := e.policyNameToPolicy[k]; !ok {
-		return nil, nil, types.ErrSnapshotKeyDoesNotExist
+		return nil, types.ErrSnapshotKeyDoesNotExist
 	}
 
 	data, err := e.policyNameToPolicy[k].Serialise()
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
-
-	hash := crypto.Hash(data)
-	return data, hash, nil
+	return data, nil
 }
 
-func (e *Engine) GetHash(k string) ([]byte, error) {
-	_, hash, err := e.getSerialisedAndHash(k)
-	return hash, err
+func (e *Engine) HasChanged(k string) bool {
+	return true
 }
 
 func (e *Engine) GetState(k string) ([]byte, []types.StateProvider, error) {
-	state, _, err := e.getSerialisedAndHash(k)
+	state, err := e.serialise(k)
 	return state, nil, err
 }
 

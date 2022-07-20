@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package statevar
 
 import (
@@ -108,17 +120,25 @@ func (sv *StateVariable) GetMarket() string {
 	return sv.market
 }
 
-// startBlock flushes the pending events.
-func (sv *StateVariable) startBlock(ctx context.Context, t time.Time) {
+// endBlock is called at the end of the block to flush the event. This is snapshot-friendly so that at the end of the block we clear all events as opposed to doing the same at the beginning of the block.
+func (sv *StateVariable) endBlock(ctx context.Context) {
 	sv.lock.Lock()
 	evts := make([]events.Event, 0, len(sv.pendingEvents))
 	for _, pending := range sv.pendingEvents {
 		newEvt := events.NewStateVarEvent(ctx, sv.ID, pending.eventID, pending.state)
 		evts = append(evts, newEvt)
 		protoEvt := newEvt.Proto()
-		sv.log.Info("state-var event sent", logging.String("event", protoEvt.String()))
+		if sv.log.IsDebug() {
+			sv.log.Debug("state-var event sent", logging.String("event", protoEvt.String()))
+		}
 	}
 	sv.pendingEvents = []pendingEvent{}
+	sv.lock.Unlock()
+	sv.broker.SendBatch(evts)
+}
+
+func (sv *StateVariable) startBlock(ctx context.Context, t time.Time) {
+	sv.lock.Lock()
 	sv.currentTime = t
 
 	// if we have an active event, and we sent the bundle and we're 5 seconds after sending the bundle and haven't received our self bundle
@@ -132,15 +152,15 @@ func (sv *StateVariable) startBlock(ctx context.Context, t time.Time) {
 	if needsResend {
 		sv.logAndRetry(errors.New("timeout expired"), sv.lastSentSelfBundle)
 	}
-
-	sv.broker.SendBatch(evts)
 }
 
 // calculation is required for the state variable for the given event id.
 func (sv *StateVariable) eventTriggered(eventID string) error {
 	sv.lock.Lock()
 
-	sv.log.Info("event triggered", logging.String("state-var", sv.ID), logging.String("event-id", eventID))
+	if sv.log.IsDebug() {
+		sv.log.Debug("event triggered", logging.String("state-var", sv.ID), logging.String("event-id", eventID))
+	}
 	// if we get a new event while processing an existing event we abort the current calculation and start a new one
 	if sv.eventID != "" {
 		if sv.log.GetLevel() <= logging.DebugLevel {
@@ -170,11 +190,6 @@ func (sv *StateVariable) eventTriggered(eventID string) error {
 	sv.state = StateVarConsensusStateCalculationStarted
 	sv.addEventLocked()
 
-	if !sv.top.IsValidator() {
-		sv.lock.Unlock()
-		return nil
-	}
-
 	sv.lock.Unlock()
 
 	// kickoff calculation
@@ -194,6 +209,13 @@ func (sv *StateVariable) CalculationFinished(eventID string, result statevar.Sta
 		sv.state = StateVarConsensusStateError
 		sv.addEventLocked()
 		sv.eventID = ""
+		sv.lock.Unlock()
+		return
+	}
+
+	if !sv.top.IsValidator() {
+		// if we're a non-validator we still need to do the calculation so that the snapshot will be in sync with
+		// a validators, but now we're here we do not need to actually send in our results.
 		sv.lock.Unlock()
 		return
 	}
@@ -234,7 +256,9 @@ func (sv *StateVariable) logAndRetry(err error, svp *commandspb.StateVariablePro
 	sv.log.Error("failed to send state variable proposal command", logging.String("id", sv.ID), logging.String("event-id", sv.eventID), logging.Error(err))
 	if svp.Proposal.EventId == sv.eventID {
 		sv.lock.Unlock()
-		sv.log.Info("retrying to send state variable proposal command", logging.String("id", sv.ID), logging.String("event-id", sv.eventID))
+		if sv.log.IsDebug() {
+			sv.log.Debug("retrying to send state variable proposal command", logging.String("id", sv.ID), logging.String("event-id", sv.eventID))
+		}
 		sv.cmd.Command(context.Background(), txn.StateVariableProposalCommand, svp, func(err error) { sv.logAndRetry(err, svp) }, nil)
 		return
 	}
@@ -279,7 +303,9 @@ func (sv *StateVariable) bundleReceived(ctx context.Context, t time.Time, node, 
 	validatorsNum := num.DecimalFromInt64(int64(len(sv.top.AllNodeIDs())))
 	requiredNumberOfResults := validatorsNum.Mul(validatorVotesRequired)
 
-	sv.log.Info("received results for state variable", logging.String("state-var", sv.ID), logging.String("event-id", eventID), logging.Decimal("received", numResults), logging.String("out-of", validatorsNum.String()))
+	if sv.log.IsDebug() {
+		sv.log.Debug("received results for state variable", logging.String("state-var", sv.ID), logging.String("event-id", eventID), logging.Decimal("received", numResults), logging.String("out-of", validatorsNum.String()))
+	}
 
 	if numResults.LessThan(requiredNumberOfResults) {
 		if sv.log.GetLevel() <= logging.DebugLevel {
@@ -373,7 +399,9 @@ func (sv *StateVariable) consensusReachedLocked(ctx context.Context, t time.Time
 	sv.result(ctx, sv.converter.BundleToInterface(acceptedValue))
 	sv.addEventLocked()
 
-	sv.log.Info("consensus reached for state variable", logging.String("state-var", sv.ID), logging.String("event-id", sv.eventID))
+	if sv.log.IsDebug() {
+		sv.log.Debug("consensus reached for state variable", logging.String("state-var", sv.ID), logging.String("event-id", sv.eventID))
+	}
 
 	// reset the state
 	sv.eventID = ""

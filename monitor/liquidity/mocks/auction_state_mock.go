@@ -89,6 +89,34 @@ func (mr *MockAuctionStateMockRecorder) IsLiquidityAuction() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsLiquidityAuction", reflect.TypeOf((*MockAuctionState)(nil).IsLiquidityAuction))
 }
 
+// IsLiquidityExtension mocks base method.
+func (m *MockAuctionState) IsLiquidityExtension() bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsLiquidityExtension")
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// IsLiquidityExtension indicates an expected call of IsLiquidityExtension.
+func (mr *MockAuctionStateMockRecorder) IsLiquidityExtension() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsLiquidityExtension", reflect.TypeOf((*MockAuctionState)(nil).IsLiquidityExtension))
+}
+
+// IsOpeningAuction mocks base method.
+func (m *MockAuctionState) IsOpeningAuction() bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsOpeningAuction")
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// IsOpeningAuction indicates an expected call of IsOpeningAuction.
+func (mr *MockAuctionStateMockRecorder) IsOpeningAuction() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsOpeningAuction", reflect.TypeOf((*MockAuctionState)(nil).IsOpeningAuction))
+}
+
 // SetReadyToLeave mocks base method.
 func (m *MockAuctionState) SetReadyToLeave() {
 	m.ctrl.T.Helper()

@@ -16,21 +16,26 @@ Feature: Test LP orders with different decimals for market and asset
 
   Scenario: create liquidity provisions
     Given the parties deposit on asset's general account the following amount:
-      | party           | asset | amount    |
-      | party1          | ETH   | 100000000000000000000000000 |
-      | party2          | ETH   | 100000000000000000000000000 |
-      | party3          | ETH   | 100000000000000000000000000 |
+      | party            | asset | amount    |
+      | party1           | ETH   | 100000000000000000000000000 |
+      | party2           | ETH   | 100000000000000000000000000 |
+      | party3           | ETH   | 100000000000000000000000000 |
       | sellSideProvider | ETH   | 100000000000000000000000000 |
       | buySideProvider  | ETH   | 100000000000000000000000000 |
       | auxiliary        | ETH   | 100000000000000000000000000 |
       | aux2             | ETH   | 100000000000000000000000000 |
+      | lpprov           | ETH   | 100000000000000000000000000 |
 
     When the parties place the following orders:
-      | party    | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | party     | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | auxiliary | ETH/DEC19 | buy  | 100   | 80000000    | 0                | TYPE_LIMIT | TIF_GTC | oa-b-1    |
       | auxiliary | ETH/DEC19 | sell | 100   | 120000000   | 0                | TYPE_LIMIT | TIF_GTC | oa-s-1    |
       | aux2      | ETH/DEC19 | buy  | 100   | 100000000   | 0                | TYPE_LIMIT | TIF_GTC | oa-b-2    |
       | auxiliary | ETH/DEC19 | sell | 100   | 100000000   | 0                | TYPE_LIMIT | TIF_GTC | oa-s-2    |
+    And the parties submit the following liquidity provision:
+      | id  | party  | market id | commitment amount  | fee | side | pegged reference | proportion | offset | lp type    |
+      | lp1 | lpprov | ETH/DEC19 | 552900000000000000 | 0.1 | buy  | BID              | 50         | 100    | submission |
+      | lp1 | lpprov | ETH/DEC19 | 552900000000000000 | 0.1 | sell | ASK              | 50         | 100    | submission |
     Then the opening auction period ends for market "ETH/DEC19"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
 

@@ -1,15 +1,27 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package abci
 
 import (
 	"context"
 	"errors"
-	"os"
+	"fmt"
 	"time"
 
 	tmlog "github.com/tendermint/tendermint/libs/log"
 	tmquery "github.com/tendermint/tendermint/libs/pubsub/query"
 	tmclihttp "github.com/tendermint/tendermint/rpc/client/http"
-	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
+	tmctypes "github.com/tendermint/tendermint/rpc/coretypes"
 	tmtypes "github.com/tendermint/tendermint/types"
 )
 
@@ -24,16 +36,17 @@ func NewClient(addr string) (*Client, error) {
 		return nil, ErrEmptyClientAddr
 	}
 
-	clt, err := tmclihttp.New(addr, "/websocket")
+	clt, err := tmclihttp.New(addr)
 	if err != nil {
 		return nil, err
 	}
 
 	// log errors only
-	clt.Logger = tmlog.NewFilter(
-		tmlog.NewTMLogger(os.Stdout),
-		tmlog.AllowError(),
-	)
+	logger, err := tmlog.NewDefaultLogger(tmlog.LogFormatJSON, "error", false)
+	if err != nil {
+		return nil, fmt.Errorf("couldn't build tendermint logger: %w", err)
+	}
+	clt.SetLogger(logger)
 
 	return &Client{
 		tmclt: clt,

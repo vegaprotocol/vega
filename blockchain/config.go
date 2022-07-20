@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package blockchain
 
 import (
@@ -39,24 +51,15 @@ func NewDefaultConfig() Config {
 }
 
 type TendermintConfig struct {
-	Level          encoding.LogLevel `long:"log-level" description:" "`
-	LogTimeDebug   encoding.Bool     `long:"log-level-time-debug" description:" "`
-	ClientAddr     string            `long:"client-addr" description:" "`
-	ClientEndpoint string            `long:"client-endpoint" description:" "`
-	ServerPort     int               `long:"server-port" description:" "`
-	ServerAddr     string            `long:"server-addr" description:" "`
+	Level   encoding.LogLevel `long:"log-level" description:" "`
+	RPCAddr string            `long:"rpc-addr" description:"address of the tendermint rpc"`
 }
 
 // NewDefaultTendermintConfig creates an instance of the package specific configuration, given a
 // pointer to a logger instance to be used for logging within the package.
 func NewDefaultTendermintConfig() TendermintConfig {
 	return TendermintConfig{
-		Level:          encoding.LogLevel{Level: logging.InfoLevel},
-		ServerPort:     26658,
-		ServerAddr:     "localhost",
-		ClientAddr:     "tcp://0.0.0.0:26657",
-		ClientEndpoint: "/websocket",
-		LogTimeDebug:   true,
+		Level: encoding.LogLevel{Level: logging.InfoLevel},
 	}
 }
 

@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package statevar_test
 
 import (
@@ -7,6 +19,7 @@ import (
 	"testing"
 	"time"
 
+	bmocks "code.vegaprotocol.io/vega/broker/mocks"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/statevar"
@@ -18,11 +31,10 @@ import (
 )
 
 type testEngine struct {
-	engine      *statevar.Engine
-	topology    *mocks.MockTopology
-	broker      *mocks.MockBroker
-	commander   *mocks.MockCommander
-	timeService *mocks.MockTimeService
+	engine    *statevar.Engine
+	topology  *mocks.MockTopology
+	broker    *bmocks.MockBroker
+	commander *mocks.MockCommander
 }
 
 // this is how state param bundles would be created:
@@ -58,22 +70,19 @@ func getTestEngine(t *testing.T, startTime time.Time) *testEngine {
 	t.Helper()
 	conf := statevar.NewDefaultConfig()
 	ctrl := gomock.NewController(t)
-	broker := mocks.NewMockBroker(ctrl)
+	broker := bmocks.NewMockBroker(ctrl)
 	logger := logging.NewTestLogger()
 	topology := mocks.NewMockTopology(ctrl)
-	ts := mocks.NewMockTimeService(ctrl)
 	commander := mocks.NewMockCommander(ctrl)
 
-	ts.EXPECT().NotifyOnTick(gomock.Any()).Times(1)
-	engine := statevar.New(logger, conf, broker, topology, commander, ts)
-	engine.OnTimeTick(context.Background(), startTime)
+	engine := statevar.New(logger, conf, broker, topology, commander)
+	engine.OnTick(context.Background(), startTime)
 
 	return &testEngine{
-		engine:      engine,
-		topology:    topology,
-		broker:      broker,
-		commander:   commander,
-		timeService: ts,
+		engine:    engine,
+		topology:  topology,
+		broker:    broker,
+		commander: commander,
 	}
 }
 
@@ -84,7 +93,7 @@ func getValidators(t *testing.T, now time.Time, numValidators int) []*testEngine
 		validators = append(validators, getTestEngine(t, now))
 		validators[i].engine.OnDefaultValidatorsVoteRequiredUpdate(context.Background(), num.DecimalFromFloat(0.67))
 		validators[i].engine.OnFloatingPointUpdatesDurationUpdate(context.Background(), 10*time.Second)
-		validators[i].engine.OnTimeTick(context.Background(), now)
+		validators[i].engine.OnTick(context.Background(), now)
 	}
 	return validators
 }
@@ -182,7 +191,7 @@ func testEventTriggeredNoPreviousEvent(t *testing.T) {
 
 	time.Sleep(10 * time.Millisecond)
 	for _, v := range validators {
-		v.engine.OnTimeTick(context.Background(), now.Add(1*time.Second))
+		v.engine.OnBlockEnd(context.Background())
 	}
 
 	require.Equal(t, len(validators), len(brokerEvents))
@@ -209,7 +218,8 @@ func testEventTriggeredWithPreviousEvent(t *testing.T) {
 
 	time.Sleep(10 * time.Millisecond)
 	for _, v := range validators {
-		v.engine.OnTimeTick(context.Background(), now.Add(1*time.Second))
+		v.engine.OnBlockEnd(context.Background())
+		v.engine.OnTick(context.Background(), now.Add(1*time.Second))
 	}
 
 	require.Equal(t, len(validators), len(brokerEvents))
@@ -225,7 +235,8 @@ func testEventTriggeredWithPreviousEvent(t *testing.T) {
 
 	time.Sleep(100 * time.Millisecond)
 	for _, v := range validators {
-		v.engine.OnTimeTick(context.Background(), now.Add(2*time.Second))
+		v.engine.OnBlockEnd(context.Background())
+		v.engine.OnTick(context.Background(), now.Add(2*time.Second))
 	}
 
 	require.Equal(t, 3*len(validators), len(brokerEvents))
@@ -260,7 +271,8 @@ func testEventTriggeredCalculationError(t *testing.T) {
 
 	time.Sleep(10 * time.Millisecond)
 	for _, v := range validators {
-		v.engine.OnTimeTick(context.Background(), now.Add(1*time.Second))
+		v.engine.OnBlockEnd(context.Background())
+		v.engine.OnTick(context.Background(), now.Add(1*time.Second))
 	}
 
 	require.Equal(t, 2*len(validators), len(brokerEvents))
@@ -340,7 +352,8 @@ func testBundleReceivedPerfectMatchOfQuorum(t *testing.T) {
 
 	time.Sleep(10 * time.Millisecond)
 	for _, v := range validators {
-		v.engine.OnTimeTick(context.Background(), now.Add(1*time.Second))
+		v.engine.OnBlockEnd(context.Background())
+		v.engine.OnTick(context.Background(), now.Add(1*time.Second))
 	}
 
 	// we exepct there to be 10 events emitted, 5 for starting and 5 for perfect match
@@ -412,7 +425,8 @@ func testBundleReceivedReachingConsensusSuccessfuly(t *testing.T) {
 
 	time.Sleep(10 * time.Millisecond)
 	for _, v := range validators {
-		v.engine.OnTimeTick(context.Background(), now.Add(1*time.Second))
+		v.engine.OnBlockEnd(context.Background())
+		v.engine.OnTick(context.Background(), now.Add(1*time.Second))
 	}
 
 	// we exepct there to be 10 events emitted, 5 for starting and 5 for consensus reached
@@ -480,7 +494,8 @@ func testBundleReceivedReachingConsensusNotSuccessful(t *testing.T) {
 
 	time.Sleep(10 * time.Millisecond)
 	for _, v := range validators {
-		v.engine.OnTimeTick(context.Background(), now.Add(1*time.Second))
+		v.engine.OnBlockEnd(context.Background())
+		v.engine.OnTick(context.Background(), now.Add(1*time.Second))
 	}
 
 	// we exepct there to be 5 events emitted
@@ -537,7 +552,8 @@ func testTimeBasedEvent(t *testing.T) {
 
 	now = now.Add(time.Second * 10)
 	for _, v := range validators {
-		v.engine.OnTimeTick(context.Background(), now)
+		v.engine.OnBlockEnd(context.Background())
+		v.engine.OnTick(context.Background(), now)
 	}
 	time.Sleep(10 * time.Millisecond)
 
@@ -555,7 +571,8 @@ func testTimeBasedEvent(t *testing.T) {
 	now = now.Add(time.Second * 1)
 
 	for _, v := range validators {
-		v.engine.OnTimeTick(context.Background(), now)
+		v.engine.OnBlockEnd(context.Background())
+		v.engine.OnTick(context.Background(), now)
 	}
 
 	time.Sleep(10 * time.Millisecond)
@@ -578,14 +595,16 @@ func testTimeBasedEvent(t *testing.T) {
 	// advance 9 more seconds to get another time trigger
 	now = now.Add(time.Second * 9)
 	for _, v := range validators {
-		v.engine.OnTimeTick(context.Background(), now)
+		v.engine.OnBlockEnd(context.Background())
+		v.engine.OnTick(context.Background(), now)
 	}
 	brokerEvents = []events.Event{}
 
 	// start another block for events to be emitted
 	now = now.Add(time.Second * 1)
 	for _, v := range validators {
-		v.engine.OnTimeTick(context.Background(), now)
+		v.engine.OnBlockEnd(context.Background())
+		v.engine.OnTick(context.Background(), now)
 	}
 	time.Sleep(10 * time.Millisecond)
 
@@ -598,14 +617,15 @@ func testTimeBasedEvent(t *testing.T) {
 
 	// Remove time trigger events
 	for _, v := range validators {
-		v.engine.RemoveTimeTriggers("asset", "market")
+		v.engine.UnregisterStateVariable("asset", "market")
 	}
 
 	// advance even more to when we should have triggered
 	brokerEvents = []events.Event{}
 	now = now.Add(time.Second * 9)
 	for _, v := range validators {
-		v.engine.OnTimeTick(context.Background(), now)
+		v.engine.OnBlockEnd(context.Background())
+		v.engine.OnTick(context.Background(), now)
 	}
 
 	// expected no events

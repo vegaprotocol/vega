@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package liquidity_test
 
 import (
@@ -12,7 +24,7 @@ import (
 
 	proto "code.vegaprotocol.io/protos/vega"
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
-	bmock "code.vegaprotocol.io/vega/broker/mocks"
+	bmocks "code.vegaprotocol.io/vega/broker/mocks"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/liquidity"
 	"code.vegaprotocol.io/vega/liquidity/mocks"
@@ -46,9 +58,11 @@ func eq(t *testing.T, x interface{}) eqMatcher {
 type testEngine struct {
 	ctrl         *gomock.Controller
 	marketID     string
-	broker       *bmock.MockBroker
+	tsvc         *mocks.MockTimeService
+	broker       *bmocks.MockBroker
 	riskModel    *mocks.MockRiskModel
 	priceMonitor *mocks.MockPriceMonitor
+	orderbook    *mocks.MockOrderBook
 	engine       *liquidity.SnapshotEngine
 }
 
@@ -57,9 +71,16 @@ func newTestEngine(t *testing.T, now time.Time) *testEngine {
 	ctrl := gomock.NewController(t)
 
 	log := logging.NewTestLogger()
-	broker := bmock.NewMockBroker(ctrl)
+	tsvc := mocks.NewMockTimeService(ctrl)
+	tsvc.EXPECT().GetTimeNow().DoAndReturn(
+		func() time.Time {
+			return now
+		}).AnyTimes()
+
+	broker := bmocks.NewMockBroker(ctrl)
 	risk := mocks.NewMockRiskModel(ctrl)
 	monitor := mocks.NewMockPriceMonitor(ctrl)
+	orderbook := mocks.NewMockOrderBook(ctrl)
 	market := "market-id"
 	asset := "asset-id"
 	liquidityConfig := liquidity.NewDefaultConfig()
@@ -67,16 +88,17 @@ func newTestEngine(t *testing.T, now time.Time) *testEngine {
 	risk.EXPECT().GetProjectionHorizon().AnyTimes()
 
 	engine := liquidity.NewSnapshotEngine(liquidityConfig,
-		log, broker, risk, monitor, asset, market, stateVarEngine, num.NewUint(100000), num.NewUint(100000), num.DecimalFromInt64(1),
+		log, tsvc, broker, risk, monitor, asset, market, stateVarEngine, num.NewUint(100000), num.NewUint(100000), num.DecimalFromInt64(1),
 	)
-	engine.OnChainTimeUpdate(context.Background(), now)
 
 	return &testEngine{
 		ctrl:         ctrl,
 		marketID:     market,
+		tsvc:         tsvc,
 		broker:       broker,
 		riskModel:    risk,
 		priceMonitor: monitor,
+		orderbook:    orderbook,
 		engine:       engine,
 	}
 }
@@ -156,6 +178,7 @@ func testSubmissionCRUD(t *testing.T) {
 			{LiquidityOrder: sellShape[0], OrderID: order2.ID},
 		},
 	}
+
 	// Create a submission should fire an event
 	tng.broker.EXPECT().Send(
 		events.NewLiquidityProvisionEvent(ctx, expected),

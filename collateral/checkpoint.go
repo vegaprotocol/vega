@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package collateral
 
 import (
@@ -27,6 +39,10 @@ func (e *Engine) Checkpoint() ([]byte, error) {
 		return nil, err
 	}
 	return ret, nil
+}
+
+var partyOverrideAlias = map[string]string{
+	systemOwner + types.AccountTypeGlobalReward.String(): systemOwner,
 }
 
 var partyOverrides = map[string]types.AccountType{
@@ -59,16 +75,22 @@ func (e *Engine) Load(ctx context.Context, data []byte) error {
 		if len(partyComponents) > 1 {
 			market = partyComponents[1]
 		}
+
+		if alias, aliasExists := partyOverrideAlias[owner]; aliasExists {
+			owner = alias
+		}
+
 		// for backward compatibility check both - after this is already out checkpoints will always have the type for global accounts
 		if tp, ok := partyOverrides[owner]; ok {
 			accID := e.accountID(market, systemOwner, balance.Asset, tp)
 			if _, ok := tradingRewardAccountTypes[tp]; ok {
 				e.GetOrCreateRewardAccount(ctx, balance.Asset, market, tp)
 			}
-			if _, err := e.GetAccountByID(accID); err != nil {
+			acc, err := e.GetAccountByID(accID)
+			if err != nil {
 				return err
 			}
-			e.UpdateBalance(ctx, accID, ub)
+			e.UpdateBalance(ctx, accID, num.Sum(ub, acc.Balance))
 			continue
 		}
 		accID := e.accountID(market, balance.Party, balance.Asset, types.AccountTypeGeneral)

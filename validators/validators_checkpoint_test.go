@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package validators
 
 import (
@@ -6,7 +18,7 @@ import (
 	"testing"
 	"time"
 
-	brokerMocks "code.vegaprotocol.io/vega/broker/mocks"
+	bmocks "code.vegaprotocol.io/vega/broker/mocks"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
 )
@@ -67,7 +79,7 @@ func TestValidatorsCheckpoint(t *testing.T) {
 	topology2 := &Topology{}
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
-	broker := brokerMocks.NewMockBroker(ctrl)
+	broker := bmocks.NewMockBroker(ctrl)
 	topology2.broker = broker
 	broker.EXPECT().Send(gomock.Any()).AnyTimes()
 	topology2.Load(context.Background(), hash1)

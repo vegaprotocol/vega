@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package oracles
 
 import (
@@ -7,6 +19,7 @@ import (
 	"strings"
 
 	oraclespb "code.vegaprotocol.io/protos/vega/oracles/v1"
+	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
 )
 
@@ -40,8 +53,8 @@ type OracleSpec struct {
 	// filters holds all the expected property keys with the conditions they
 	// should match.
 	filters map[string]*filter
-	// Proto is the protobuf description of OracleSpec
-	Proto oraclespb.OracleSpec
+	// OriginalSpec is the protobuf description of OracleSpec
+	OriginalSpec *types.OracleSpec
 }
 
 type filter struct {
@@ -52,24 +65,24 @@ type filter struct {
 
 type condition func(string) (bool, error)
 
-// NewOracleSpec build an OracleSpec from an oraclespb.OracleSpec in a form that
+// NewOracleSpec builds an OracleSpec from a types.OracleSpec in a form that
 // suits the processing of the filters.
-func NewOracleSpec(proto oraclespb.OracleSpec) (*OracleSpec, error) {
-	if len(proto.PubKeys) == 0 {
+func NewOracleSpec(originalSpec types.OracleSpec) (*OracleSpec, error) {
+	if len(originalSpec.PubKeys) == 0 {
 		return nil, ErrMissingPubKeys
 	}
 
 	pubKeys := map[string]struct{}{}
-	for _, pk := range proto.PubKeys {
+	for _, pk := range originalSpec.PubKeys {
 		pubKeys[pk] = struct{}{}
 	}
 
-	if len(proto.Filters) == 0 {
+	if len(originalSpec.Filters) == 0 {
 		return nil, ErrAtLeastOneFilterIsRequired
 	}
 
 	typedFilters := map[string]*filter{}
-	for _, f := range proto.Filters {
+	for _, f := range originalSpec.Filters {
 		if f.Key == nil {
 			return nil, ErrMissingPropertyKey
 		}
@@ -101,10 +114,10 @@ func NewOracleSpec(proto oraclespb.OracleSpec) (*OracleSpec, error) {
 	}
 
 	return &OracleSpec{
-		id:      OracleSpecID(proto.Id),
-		pubKeys: pubKeys,
-		filters: typedFilters,
-		Proto:   proto,
+		id:           OracleSpecID(originalSpec.ID),
+		pubKeys:      pubKeys,
+		filters:      typedFilters,
+		OriginalSpec: &originalSpec,
 	}, nil
 }
 
@@ -129,6 +142,12 @@ func isInternalOracleData(data OracleData) bool {
 	}
 
 	return true
+}
+
+// MatchPubKeys tries to match the public keys from the provided OracleData object with the ones
+// present in the Spec.
+func (s *OracleSpec) MatchPubKeys(data OracleData) bool {
+	return containsRequiredPubKeys(data.PubKeys, s.pubKeys)
 }
 
 // MatchData indicates if a given OracleData matches the spec or not.
@@ -156,8 +175,8 @@ func (s *OracleSpec) MatchData(data OracleData) (bool, error) {
 	return true, nil
 }
 
-// containsRequiredPubKeys verifies if all the public keys is the OracleData is
-// matches the keys authorized by the OracleSpec.
+// containsRequiredPubKeys verifies if all the public keys in the OracleData
+// are within the list of currently authorized by the OracleSpec.
 func containsRequiredPubKeys(dataPKs []string, authPks map[string]struct{}) bool {
 	for _, pk := range dataPKs {
 		if _, ok := authPks[pk]; !ok {
@@ -167,7 +186,7 @@ func containsRequiredPubKeys(dataPKs []string, authPks map[string]struct{}) bool
 	return true
 }
 
-var conditionConverters = map[oraclespb.PropertyKey_Type]func(*oraclespb.Condition) (condition, error){
+var conditionConverters = map[oraclespb.PropertyKey_Type]func(*types.OracleSpecCondition) (condition, error){
 	oraclespb.PropertyKey_TYPE_INTEGER:   toIntegerCondition,
 	oraclespb.PropertyKey_TYPE_DECIMAL:   toDecimalCondition,
 	oraclespb.PropertyKey_TYPE_BOOLEAN:   toBooleanCondition,
@@ -175,7 +194,7 @@ var conditionConverters = map[oraclespb.PropertyKey_Type]func(*oraclespb.Conditi
 	oraclespb.PropertyKey_TYPE_STRING:    toStringCondition,
 }
 
-func toConditions(typ oraclespb.PropertyKey_Type, cs []*oraclespb.Condition) ([]condition, error) {
+func toConditions(typ oraclespb.PropertyKey_Type, cs []*types.OracleSpecCondition) ([]condition, error) {
 	converter, ok := conditionConverters[typ]
 	if !ok {
 		return nil, errUnsupportedPropertyType(typ)
@@ -193,7 +212,7 @@ func toConditions(typ oraclespb.PropertyKey_Type, cs []*oraclespb.Condition) ([]
 	return conditions, nil
 }
 
-func toIntegerCondition(c *oraclespb.Condition) (condition, error) {
+func toIntegerCondition(c *types.OracleSpecCondition) (condition, error) {
 	condValue, err := toInteger(c.Value)
 	if err != nil {
 		return nil, err
@@ -249,7 +268,7 @@ func lessThanOrEqualInteger(dataValue, condValue *num.Int) bool {
 	return dataValue.LTE(condValue)
 }
 
-func toDecimalCondition(c *oraclespb.Condition) (condition, error) {
+func toDecimalCondition(c *types.OracleSpecCondition) (condition, error) {
 	condValue, err := toDecimal(c.Value)
 	if err != nil {
 		return nil, err
@@ -301,7 +320,7 @@ func lessThanOrEqualDecimal(dataValue, condValue num.Decimal) bool {
 	return dataValue.LessThanOrEqual(condValue)
 }
 
-func toTimestampCondition(c *oraclespb.Condition) (condition, error) {
+func toTimestampCondition(c *types.OracleSpecCondition) (condition, error) {
 	condValue, err := toTimestamp(c.Value)
 	if err != nil {
 		return nil, err
@@ -361,7 +380,7 @@ func lessThanOrEqualTimestamp(dataValue, condValue int64) bool {
 	return dataValue <= condValue
 }
 
-func toBooleanCondition(c *oraclespb.Condition) (condition, error) {
+func toBooleanCondition(c *types.OracleSpecCondition) (condition, error) {
 	condValue, err := toBoolean(c.Value)
 	if err != nil {
 		return nil, err
@@ -393,7 +412,7 @@ func equalsBoolean(dataValue, condValue bool) bool {
 	return dataValue == condValue
 }
 
-func toStringCondition(c *oraclespb.Condition) (condition, error) {
+func toStringCondition(c *types.OracleSpecCondition) (condition, error) {
 	matcher, ok := stringMatchers[c.Operator]
 	if !ok {
 		return nil, errUnsupportedOperatorForType(c.Operator, oraclespb.PropertyKey_TYPE_STRING)

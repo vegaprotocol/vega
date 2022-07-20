@@ -83,9 +83,6 @@ pipeline {
         }
 
         stage('Compile') {
-            environment {
-                LDFLAGS      = "-X main.CLIVersion=${version} -X main.CLIVersionHash=${versionHash}"
-            }
             failFast true
             parallel {
                 stage('Linux build') {
@@ -98,7 +95,7 @@ pipeline {
                     steps {
                         dir('vega') {
                             sh label: 'Compile', script: '''
-                                go build -v -o "${OUTPUT}" -ldflags "${LDFLAGS}" ./cmd/vega
+                                go build -v -o "${OUTPUT}" ./cmd/vega
                             '''
                             sh label: 'Sanity check', script: '''
                                 file ${OUTPUT}
@@ -117,7 +114,7 @@ pipeline {
                     steps {
                         dir('vega') {
                             sh label: 'Compile', script: '''
-                                go build -v -o "${OUTPUT}" -ldflags "${LDFLAGS}" ./cmd/vega
+                                go build -v -o "${OUTPUT}" ./cmd/vega
                             '''
                             sh label: 'Sanity check', script: '''
                                 file ${OUTPUT}
@@ -135,7 +132,7 @@ pipeline {
                     steps {
                         dir('vega') {
                             sh label: 'Compile', script: '''
-                                go build -v -o "${OUTPUT}" -ldflags "${LDFLAGS}" ./cmd/vega
+                                go build -v -o "${OUTPUT}" ./cmd/vega
                             '''
                             sh label: 'Sanity check', script: '''
                                 file ${OUTPUT}
@@ -274,32 +271,17 @@ pipeline {
                         }
                     }
                 }
-                stage('System Tests') {
+                stage('System Tests Network Smoke') {
                     steps {
                         script {
-                            systemTests ignoreFailure: !isPRBuild(),
-                                vegaBuildTags: 'qa',
+                            systemTestsCapsule ignoreFailure: !isPRBuild(),
                                 vegaCore: commitHash,
                                 dataNode: params.DATA_NODE_BRANCH,
                                 vegawallet: params.VEGAWALLET_BRANCH,
-                                devopsInfra: params.DEVOPS_INFRA_BRANCH,
                                 vegatools: params.VEGATOOLS_BRANCH,
                                 systemTests: params.SYSTEM_TESTS_BRANCH,
-                                protos: params.PROTOS_BRANCH
-                        }
-                    }
-                }
-                stage('LNL System Tests') {
-                    steps {
-                        script {
-                            systemTestsLNL ignoreFailure: !isPRBuild(),
-                                vegaCore: commitHash,
-                                dataNode: params.DATA_NODE_BRANCH,
-                                vegawallet: params.VEGAWALLET_BRANCH,
-                                devopsInfra: params.DEVOPS_INFRA_BRANCH,
-                                vegatools: params.VEGATOOLS_BRANCH,
-                                systemTests: params.SYSTEM_TESTS_BRANCH,
-                                protos: params.PROTOS_BRANCH
+                                protos: params.PROTOS_BRANCH,
+                                testMark: "network_infra_smoke"
                         }
                     }
                 }
@@ -313,7 +295,7 @@ pipeline {
                                     vegatools: params.VEGATOOLS_BRANCH,
                                     systemTests: params.SYSTEM_TESTS_BRANCH,
                                     protos: params.PROTOS_BRANCH,
-                                    ignoreFailure: true // Will be changed when stable
+                                    ignoreFailure: !isPRBuild()
 
                             }
                         }
@@ -376,7 +358,9 @@ pipeline {
                                 withGHCLI('credentialsId': 'github-vega-ci-bot-artifacts') {
                                     sh label: 'Upload artifacts', script: '''#!/bin/bash -e
                                         [[ $TAG_NAME =~ '-pre' ]] && prerelease='--prerelease' || prerelease=''
-                                        gh release create $TAG_NAME $prerelease ./cmd/vega/vega-*
+
+                                        gh release view $TAG_NAME && gh release upload $TAG_NAME ./cmd/vega/vega-* \
+                                            || gh release create $TAG_NAME $prerelease ./cmd/vega/vega-*
                                     '''
                                 }
                             }

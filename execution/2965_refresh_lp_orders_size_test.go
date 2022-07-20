@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package execution_test
 
 import (
@@ -19,11 +31,10 @@ import (
 
 func TestRefreshLiquidityProvisionOrdersSizes(t *testing.T) {
 	now := time.Unix(10, 0)
-	closingAt := time.Unix(1000000000, 0)
 	ctx := context.Background()
 	ctx = vegacontext.WithTraceID(ctx, vgcrypto.RandomHash())
 
-	mktCfg := getMarket(closingAt, defaultPriceMonitorSettings, &types.AuctionDuration{
+	mktCfg := getMarket(defaultPriceMonitorSettings, &types.AuctionDuration{
 		Duration: 10000,
 	})
 	mktCfg.Fees = &types.Fees{
@@ -56,7 +67,7 @@ func TestRefreshLiquidityProvisionOrdersSizes(t *testing.T) {
 		WithAccountAndAmount("party-4", 1000000)
 
 	tm.market.OnSuppliedStakeToObligationFactorUpdate(num.DecimalFromFloat(1.0))
-	tm.market.OnChainTimeUpdate(ctx, now)
+	tm.market.OnTick(ctx, now)
 
 	orderParams := []struct {
 		id        string
@@ -157,7 +168,7 @@ func TestRefreshLiquidityProvisionOrdersSizes(t *testing.T) {
 	// the required stake for the market
 	lp := &types.LiquidityProvisionSubmission{
 		MarketID:         tm.market.GetID(),
-		CommitmentAmount: num.NewUint(2000000),
+		CommitmentAmount: num.NewUint(3120580),
 		Fee:              num.DecimalFromFloat(0.01),
 		Sells: []*types.LiquidityOrder{
 			newLiquidityOrder(types.PeggedReferenceBestAsk, 2, 10),
@@ -170,12 +181,16 @@ func TestRefreshLiquidityProvisionOrdersSizes(t *testing.T) {
 	}
 
 	// Leave the auction
-	tm.market.OnChainTimeUpdate(ctx, now.Add(10001*time.Second))
+	newT := now.Add(10001 * time.Second)
+	tm.now = newT
+	tm.market.OnTick(ctx, newT)
 
 	require.NoError(t, tm.market.SubmitLiquidityProvision(ctx, lp, "party-2", vgcrypto.RandomHash()))
 	assert.Equal(t, 1, tm.market.GetLPSCount())
 
-	tm.market.OnChainTimeUpdate(ctx, now.Add(10011*time.Second))
+	newT = newT.Add(10 * time.Second)
+	tm.now = newT
+	tm.market.OnTick(ctx, newT)
 
 	newOrder := tpl.New(types.Order{
 		MarketID:    tm.market.GetID(),
@@ -207,7 +222,7 @@ func TestRefreshLiquidityProvisionOrdersSizes(t *testing.T) {
 			switch evt := e.(type) {
 			case *events.Order:
 				if evt.Order().PartyId == "party-2" &&
-					evt.Order().Size == 534 { //"V0000000000-0000000010" {
+					evt.Order().Size == 833 { // "V0000000000-0000000010" {
 					found = append(found, mustOrderFromProto(evt.Order()))
 				}
 			}
@@ -224,18 +239,18 @@ func TestRefreshLiquidityProvisionOrdersSizes(t *testing.T) {
 				// this is the first update indicating the order
 				// was matched
 				types.OrderStatusActive,
-				0x202, // size - 20
+				0x32d, // size - 20
 			},
 			{
 				// this is the replacement order created
 				// by engine.
 				types.OrderStatusCancelled,
-				0x202, // size
+				0x32d, // size
 			},
 			{
 				// this is the cancellation
 				types.OrderStatusActive,
-				0x216, // cancelled
+				0x341, // cancelled
 			},
 		}
 
@@ -252,12 +267,11 @@ func TestRefreshLiquidityProvisionOrdersSizes(t *testing.T) {
 
 func TestRefreshLiquidityProvisionOrdersSizesCrashOnSubmitOrder(t *testing.T) {
 	now := time.Unix(10, 0)
-	closingAt := time.Unix(1000000000, 0)
 
 	ctx := vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
 
 	auctionEnd := now.Add(10001 * time.Second)
-	mktCfg := getMarket(closingAt, defaultPriceMonitorSettings, &types.AuctionDuration{
+	mktCfg := getMarket(defaultPriceMonitorSettings, &types.AuctionDuration{
 		Duration: 10000,
 	})
 	mktCfg.Fees = &types.Fees{
@@ -287,7 +301,7 @@ func TestRefreshLiquidityProvisionOrdersSizesCrashOnSubmitOrder(t *testing.T) {
 		WithAccountAndAmount(lpparty, 155000)
 
 	tm.market.OnSuppliedStakeToObligationFactorUpdate(num.DecimalFromFloat(1.0))
-	tm.market.OnChainTimeUpdate(ctx, now)
+	tm.market.OnTick(ctx, now)
 
 	// Add a LPSubmission
 	// this is a log of stake, enough to cover all
@@ -319,11 +333,10 @@ func TestRefreshLiquidityProvisionOrdersSizesCrashOnSubmitOrder(t *testing.T) {
 
 func TestCommitmentIsDeployed(t *testing.T) {
 	now := time.Unix(10, 0)
-	closingAt := time.Unix(1000000000, 0)
 	ctx := vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
 
 	auctionEnd := now.Add(10001 * time.Second)
-	mktCfg := getMarket(closingAt, defaultPriceMonitorSettings, &types.AuctionDuration{
+	mktCfg := getMarket(defaultPriceMonitorSettings, &types.AuctionDuration{
 		Duration: 10000,
 	})
 	mktCfg.Fees = &types.Fees{
@@ -350,17 +363,17 @@ func TestCommitmentIsDeployed(t *testing.T) {
 	tm := newTestMarket(t, now).Run(ctx, mktCfg)
 	tm.StartOpeningAuction().
 		// the liquidity provider
-		WithAccountAndAmount(lpparty, 50000000)
+		WithAccountAndAmount(lpparty, 90000000)
 
 	tm.market.OnSuppliedStakeToObligationFactorUpdate(num.DecimalFromFloat(1.0))
-	tm.market.OnChainTimeUpdate(ctx, now)
+	tm.market.OnTick(ctx, now)
 
 	// Add a LPSubmission
 	// this is a log of stake, enough to cover all
 	// the required stake for the market
 	lpSubmission := &types.LiquidityProvisionSubmission{
 		MarketID:         tm.market.GetID(),
-		CommitmentAmount: num.NewUint(200),
+		CommitmentAmount: num.NewUint(50000000),
 		Fee:              num.DecimalFromFloat(0.01),
 		Reference:        "ref-lp-submission-1",
 		Buys: []*types.LiquidityOrder{
@@ -388,11 +401,13 @@ func (tm *testMarket) EndOpeningAuction(t *testing.T, auctionEnd time.Time, setM
 	var (
 		party0 = "clearing-auction-party0"
 		party1 = "clearing-auction-party1"
+		party2 = "lpprov-party"
 	)
 
 	// parties used for clearing opening auction
 	tm.WithAccountAndAmount(party0, 1000000).
-		WithAccountAndAmount(party1, 1000000)
+		WithAccountAndAmount(party1, 1000000).
+		WithAccountAndAmount(party2, 90000000000) // LP needs a lot of balance
 
 	auctionOrders := []*types.Order{
 		// Limit Orders
@@ -433,19 +448,10 @@ func (tm *testMarket) EndOpeningAuction(t *testing.T, auctionEnd time.Time, setM
 			TimeInForce: types.OrderTimeInForceGTC,
 		},
 	}
-
-	// submit the auctions orders
-	tm.WithSubmittedOrders(t, auctionOrders...)
-
-	// update the time to get out of auction
 	ctx := vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
-	tm.market.OnChainTimeUpdate(ctx, auctionEnd)
-
-	assert.Equal(t,
-		tm.market.GetMarketData().MarketTradingMode,
-		types.MarketTradingModeContinuous,
-	)
-
+	// submit the auctions orders & LP
+	tm.WithSubmittedOrders(t, auctionOrders...)
+	// update the time to get out of auction
 	if setMarkPrice {
 		// now set the markprice
 		mpOrders := []*types.Order{
@@ -471,6 +477,16 @@ func (tm *testMarket) EndOpeningAuction(t *testing.T, auctionEnd time.Time, setM
 		// submit the auctions orders
 		tm.WithSubmittedOrders(t, mpOrders...)
 	}
+
+	tm.now = auctionEnd
+	tm.market.OnTick(ctx, auctionEnd)
+
+	// md := tm.market.GetMarketData()
+	// fmt.Printf("TS: %s\nSS: %s\n", md.TargetStake, md.SuppliedStake)
+	assert.Equal(t,
+		tm.market.GetMarketData().MarketTradingMode,
+		types.MarketTradingModeContinuous,
+	)
 }
 
 func (tm *testMarket) EndOpeningAuction2(t *testing.T, auctionEnd time.Time, setMarkPrice bool) {
@@ -528,7 +544,7 @@ func (tm *testMarket) EndOpeningAuction2(t *testing.T, auctionEnd time.Time, set
 	tm.WithSubmittedOrders(t, auctionOrders...)
 
 	// update the time to get out of auction
-	tm.market.OnChainTimeUpdate(context.Background(), auctionEnd)
+	tm.market.OnTick(context.Background(), auctionEnd)
 
 	assert.Equal(t,
 		tm.market.GetMarketData().MarketTradingMode,

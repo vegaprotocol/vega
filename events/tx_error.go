@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package events
 
 import (
@@ -13,12 +25,12 @@ type TxErr struct {
 	evt *eventspb.TxErrorEvent
 }
 
-func NewTxErrEvent(ctx context.Context, err error, partyID string, tx interface{}) *TxErr {
+func NewTxErrEvent(ctx context.Context, err error, partyID string, tx interface{}, cmd string) *TxErr {
 	evt := &TxErr{
 		Base: newBase(ctx, TxErrEvent),
 		evt: &eventspb.TxErrorEvent{
 			PartyId: partyID,
-			ErrMsg:  err.Error(),
+			ErrMsg:  fmt.Sprintf("%v - %v", cmd, err.Error()),
 		},
 	}
 	switch tv := tx.(type) {
@@ -65,10 +77,6 @@ func NewTxErrEvent(ctx context.Context, err error, partyID string, tx interface{
 	case *commandspb.UndelegateSubmission:
 		evt.evt.Transaction = &eventspb.TxErrorEvent_UndelegateSubmission{
 			UndelegateSubmission: tv,
-		}
-	case *commandspb.RestoreSnapshot:
-		evt.evt.Transaction = &eventspb.TxErrorEvent_RestoreSnapshot{
-			RestoreSnapshot: tv,
 		}
 	case *commandspb.Transfer:
 		evt.evt.Transaction = &eventspb.TxErrorEvent_Transfer{

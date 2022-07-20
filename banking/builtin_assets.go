@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package banking
 
 import (
@@ -41,7 +53,6 @@ func (e *Engine) WithdrawBuiltinAsset(
 func (e *Engine) DepositBuiltinAsset(
 	ctx context.Context, d *types.BuiltinAssetDeposit, id string, nonce uint64,
 ) error {
-	now := e.currentTime
 	dep := e.newDeposit(id, d.PartyID, d.VegaAssetID, d.Amount, "") // no hash
 	e.broker.Send(events.NewDepositEvent(ctx, *dep))
 	asset, err := e.assets.Get(d.VegaAssetID)
@@ -73,7 +84,7 @@ func (e *Engine) DepositBuiltinAsset(
 	}
 	e.assetActs[aa.id] = aa
 	e.deposits[dep.ID] = dep
-	return e.witness.StartCheck(aa, e.onCheckDone, now.Add(defaultValidationDuration))
+	return e.witness.StartCheck(aa, e.onCheckDone, e.timeService.GetTimeNow().Add(defaultValidationDuration))
 }
 
 func (e *Engine) EnableBuiltinAsset(ctx context.Context, assetID string) error {

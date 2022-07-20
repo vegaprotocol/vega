@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package staking_test
 
 import (
@@ -20,9 +32,9 @@ func TestAccountsSnapshotEmpty(t *testing.T) {
 	acc := getAccountingTest(t)
 	defer acc.ctrl.Finish()
 
-	h, err := acc.GetHash(allKey)
+	s, _, err := acc.GetState(allKey)
 	require.Nil(t, err)
-	require.NotNil(t, h)
+	require.NotNil(t, s)
 }
 
 func TestAccountsSnapshotRoundTrip(t *testing.T) {
@@ -31,7 +43,7 @@ func TestAccountsSnapshotRoundTrip(t *testing.T) {
 	defer acc.ctrl.Finish()
 	acc.broker.EXPECT().Send(gomock.Any()).Times(1)
 
-	h1, err := acc.GetHash(allKey)
+	s1, _, err := acc.GetState(allKey)
 	require.Nil(t, err)
 
 	evt := &types.StakeLinking{
@@ -43,14 +55,14 @@ func TestAccountsSnapshotRoundTrip(t *testing.T) {
 		BlockHeight:     12,
 		BlockTime:       1000002000,
 		LogIndex:        100022,
-		EthereumAddress: "blah",
+		EthereumAddress: "0xe82EfC4187705655C9b484dFFA25f240e8A6B0BA",
 	}
 	acc.AddEvent(ctx, evt)
 
-	// Check hash has change now an event as been added
-	h2, err := acc.GetHash(allKey)
+	// Check state has change now an event as been added
+	s2, _, err := acc.GetState(allKey)
 	require.Nil(t, err)
-	require.False(t, bytes.Equal(h1, h2))
+	require.False(t, bytes.Equal(s1, s2))
 
 	// Get state ready to load in a new instance of the engine
 	state, _, err := acc.GetState(allKey)
@@ -70,7 +82,7 @@ func TestAccountsSnapshotRoundTrip(t *testing.T) {
 	require.Nil(t, provs)
 	require.Equal(t, acc.GetAllAvailableBalances(), snapAcc.GetAllAvailableBalances())
 
-	h3, err := snapAcc.GetHash(allKey)
+	s3, _, err := snapAcc.GetState(allKey)
 	require.Nil(t, err)
-	require.True(t, bytes.Equal(h2, h3))
+	require.True(t, bytes.Equal(s2, s3))
 }

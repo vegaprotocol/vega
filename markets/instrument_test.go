@@ -1,9 +1,20 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package markets_test
 
 import (
 	"context"
 	"testing"
-	"time"
 
 	"code.vegaprotocol.io/vega/broker/mocks"
 	emock "code.vegaprotocol.io/vega/execution/mocks"
@@ -11,7 +22,7 @@ import (
 	"code.vegaprotocol.io/vega/markets"
 	"code.vegaprotocol.io/vega/oracles"
 
-	oraclesv1 "code.vegaprotocol.io/protos/vega/oracles/v1"
+	oraclespb "code.vegaprotocol.io/protos/vega/oracles/v1"
 	"code.vegaprotocol.io/vega/products"
 	"code.vegaprotocol.io/vega/types"
 
@@ -44,7 +55,7 @@ func TestInstrument(t *testing.T) {
 				SettlementAsset:                 "Ethereum/Ether",
 				OracleSpecForSettlementPrice:    nil,
 				OracleSpecForTradingTermination: nil,
-				OracleSpecBinding: &types.OracleSpecToFutureBinding{
+				OracleSpecBinding: &types.OracleSpecBindingForFuture{
 					SettlementPriceProperty:    "prices.ETH.value",
 					TradingTerminationProperty: "trading.terminated",
 				},
@@ -61,27 +72,27 @@ func TestInstrument(t *testing.T) {
 		pinst.Product = &types.InstrumentFuture{
 			Future: &types.Future{
 				SettlementAsset: "Ethereum/Ether",
-				OracleSpecForSettlementPrice: &oraclesv1.OracleSpec{
+				OracleSpecForSettlementPrice: &types.OracleSpec{
 					PubKeys: []string{"0xDEADBEEF"},
-					Filters: []*oraclesv1.Filter{
+					Filters: []*types.OracleSpecFilter{
 						{
-							Key: &oraclesv1.PropertyKey{
+							Key: &types.OracleSpecPropertyKey{
 								Name: "prices.ETH.value",
-								Type: oraclesv1.PropertyKey_TYPE_INTEGER,
+								Type: oraclespb.PropertyKey_TYPE_INTEGER,
 							},
-							Conditions: []*oraclesv1.Condition{},
+							Conditions: []*types.OracleSpecCondition{},
 						},
 					},
 				},
-				OracleSpecForTradingTermination: &oraclesv1.OracleSpec{
+				OracleSpecForTradingTermination: &types.OracleSpec{
 					PubKeys: []string{"0xDEADBEEF"},
-					Filters: []*oraclesv1.Filter{
+					Filters: []*types.OracleSpecFilter{
 						{
-							Key: &oraclesv1.PropertyKey{
+							Key: &types.OracleSpecPropertyKey{
 								Name: "trading.terminated",
-								Type: oraclesv1.PropertyKey_TYPE_BOOLEAN,
+								Type: oraclespb.PropertyKey_TYPE_BOOLEAN,
 							},
-							Conditions: []*oraclesv1.Condition{},
+							Conditions: []*types.OracleSpecCondition{},
 						},
 					},
 				},
@@ -102,14 +113,13 @@ func newOracleEngine(t *testing.T) products.OracleEngine {
 	broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
 	ts := emock.NewMockTimeService(ctrl)
-	ts.EXPECT().NotifyOnTick(gomock.Any()).Times(1)
+	ts.EXPECT().GetTimeNow().AnyTimes()
 
 	return oracles.NewEngine(
 		logging.NewTestLogger(),
 		oracles.NewDefaultConfig(),
-		time.Now(),
-		broker,
 		ts,
+		broker,
 	)
 }
 
@@ -128,31 +138,31 @@ func getValidInstrumentProto() *types.Instrument {
 			Future: &types.Future{
 				QuoteName:       "USD",
 				SettlementAsset: "Ethereum/Ether",
-				OracleSpecForSettlementPrice: &oraclesv1.OracleSpec{
+				OracleSpecForSettlementPrice: &types.OracleSpec{
 					PubKeys: []string{"0xDEADBEEF"},
-					Filters: []*oraclesv1.Filter{
+					Filters: []*types.OracleSpecFilter{
 						{
-							Key: &oraclesv1.PropertyKey{
+							Key: &types.OracleSpecPropertyKey{
 								Name: "prices.ETH.value",
-								Type: oraclesv1.PropertyKey_TYPE_INTEGER,
+								Type: oraclespb.PropertyKey_TYPE_INTEGER,
 							},
-							Conditions: []*oraclesv1.Condition{},
+							Conditions: []*types.OracleSpecCondition{},
 						},
 					},
 				},
-				OracleSpecForTradingTermination: &oraclesv1.OracleSpec{
+				OracleSpecForTradingTermination: &types.OracleSpec{
 					PubKeys: []string{"0xDEADBEEF"},
-					Filters: []*oraclesv1.Filter{
+					Filters: []*types.OracleSpecFilter{
 						{
-							Key: &oraclesv1.PropertyKey{
+							Key: &types.OracleSpecPropertyKey{
 								Name: "trading.terminated",
-								Type: oraclesv1.PropertyKey_TYPE_BOOLEAN,
+								Type: oraclespb.PropertyKey_TYPE_BOOLEAN,
 							},
-							Conditions: []*oraclesv1.Condition{},
+							Conditions: []*types.OracleSpecCondition{},
 						},
 					},
 				},
-				OracleSpecBinding: &types.OracleSpecToFutureBinding{
+				OracleSpecBinding: &types.OracleSpecBindingForFuture{
 					SettlementPriceProperty:    "prices.ETH.value",
 					TradingTerminationProperty: "trading.terminated",
 				},

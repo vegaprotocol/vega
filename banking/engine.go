@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package banking
 
 import (
@@ -11,6 +23,7 @@ import (
 	"time"
 
 	proto "code.vegaprotocol.io/protos/vega"
+	snapshot "code.vegaprotocol.io/protos/vega/snapshot/v1"
 	"code.vegaprotocol.io/vega/assets"
 	"code.vegaprotocol.io/vega/broker"
 	"code.vegaprotocol.io/vega/events"
@@ -42,7 +55,7 @@ var (
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/assets_mock.go -package mocks code.vegaprotocol.io/vega/banking Assets
 type Assets interface {
 	Get(assetID string) (*assets.Asset, error)
-	Enable(assetID string) error
+	Enable(ctx context.Context, assetID string) error
 }
 
 // Notary ...
@@ -79,7 +92,7 @@ type Witness interface {
 // TimeService provide the time of the vega node using the tm time
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/time_service_mock.go -package mocks code.vegaprotocol.io/vega/banking TimeService
 type TimeService interface {
-	NotifyOnTick(func(context.Context, time.Time))
+	GetTimeNow() time.Time
 }
 
 // Epochervice ...
@@ -94,6 +107,12 @@ type Topology interface {
 	IsValidator() bool
 }
 
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/market_activity_tracker_mock.go -package mocks code.vegaprotocol.io/vega/banking MarketActivityTracker
+type MarketActivityTracker interface {
+	GetMarketScores(asset string, markets []string, dispatchMetric proto.DispatchMetric) []*types.MarketContributionScore
+	GetMarketsWithEligibleProposer(asset string, markets []string) []*types.MarketContributionScore
+}
+
 const (
 	pendingState uint32 = iota
 	okState
@@ -103,26 +122,28 @@ const (
 var defaultValidationDuration = 2 * time.Hour
 
 type Engine struct {
-	cfg     Config
-	log     *logging.Logger
-	broker  broker.BrokerI
-	col     Collateral
-	witness Witness
-	notary  Notary
-	assets  Assets
-	top     Topology
+	cfg         Config
+	log         *logging.Logger
+	timeService TimeService
+	broker      broker.BrokerI
+	col         Collateral
+	witness     Witness
+	notary      Notary
+	assets      Assets
+	top         Topology
 
 	assetActs     map[string]*assetAction
-	seen          map[txRef]struct{}
+	seen          map[*snapshot.TxRef]struct{}
+	seenSlice     []*snapshot.TxRef
 	withdrawals   map[string]withdrawalRef
 	withdrawalCnt *big.Int
 	deposits      map[string]*types.Deposit
 
-	currentEpoch    uint64
-	currentTime     time.Time
-	mu              sync.RWMutex
-	bss             *bankingSnapshotState
-	keyToSerialiser map[string]func() ([]byte, error)
+	currentEpoch uint64
+	mu           sync.RWMutex
+	bss          *bankingSnapshotState
+
+	marketActivityTracker MarketActivityTracker
 
 	// transfer fee related stuff
 	scheduledTransfers         map[time.Time][]scheduledTransfer
@@ -149,17 +170,18 @@ func New(
 	broker broker.BrokerI,
 	top Topology,
 	epoch EpochService,
+	marketActivityTracker MarketActivityTracker,
 ) (e *Engine) {
 	defer func() {
-		tsvc.NotifyOnTick(e.OnTick)
 		epoch.NotifyOnEpoch(e.OnEpoch, e.OnEpochRestore)
 	}()
 	log = log.Named(namedLogger)
 	log.SetLevel(cfg.Level.Get())
 
-	e = &Engine{
+	return &Engine{
 		cfg:           cfg,
 		log:           log,
+		timeService:   tsvc,
 		broker:        broker,
 		col:           col,
 		witness:       witness,
@@ -167,36 +189,25 @@ func New(
 		notary:        notary,
 		top:           top,
 		assetActs:     map[string]*assetAction{},
-		seen:          map[txRef]struct{}{},
+		seen:          map[*snapshot.TxRef]struct{}{},
+		seenSlice:     []*snapshot.TxRef{},
 		withdrawals:   map[string]withdrawalRef{},
 		deposits:      map[string]*types.Deposit{},
 		withdrawalCnt: big.NewInt(0),
 		bss: &bankingSnapshotState{
-			changed: map[string]bool{
-				withdrawalsKey:        true,
-				depositsKey:           true,
-				seenKey:               true,
-				assetActionsKey:       true,
-				recurringTransfersKey: true,
-				scheduledTransfersKey: true,
-			},
-			hash:       map[string][]byte{},
-			serialised: map[string][]byte{},
+			changedWithdrawals:        true,
+			changedDeposits:           true,
+			changedSeen:               true,
+			changedAssetActions:       true,
+			changedRecurringTransfers: true,
+			changedScheduledTransfers: true,
 		},
-		keyToSerialiser:            map[string]func() ([]byte, error){},
 		scheduledTransfers:         map[time.Time][]scheduledTransfer{},
 		recurringTransfers:         map[string]*types.RecurringTransfer{},
 		transferFeeFactor:          num.DecimalZero(),
 		minTransferQuantumMultiple: num.DecimalZero(),
+		marketActivityTracker:      marketActivityTracker,
 	}
-
-	e.keyToSerialiser[withdrawalsKey] = e.serialiseWithdrawals
-	e.keyToSerialiser[depositsKey] = e.serialiseDeposits
-	e.keyToSerialiser[seenKey] = e.serialiseSeen
-	e.keyToSerialiser[assetActionsKey] = e.serialiseAssetActions
-	e.keyToSerialiser[recurringTransfersKey] = e.serialiseRecurringTransfers
-	e.keyToSerialiser[scheduledTransfersKey] = e.serialiseScheduledTransfers
-	return e
 }
 
 // ReloadConf updates the internal configuration.
@@ -226,11 +237,7 @@ func (e *Engine) OnEpoch(ctx context.Context, ep types.Epoch) {
 	}
 }
 
-func (e *Engine) OnTick(ctx context.Context, t time.Time) {
-	e.mu.Lock()
-	e.currentTime = t
-	e.mu.Unlock()
-
+func (e *Engine) OnTick(ctx context.Context, _ time.Time) {
 	assetActionKeys := make([]string, 0, len(e.assetActs))
 	for k := range e.assetActs {
 		assetActionKeys = append(assetActionKeys, k)
@@ -251,16 +258,17 @@ func (e *Engine) OnTick(ctx context.Context, t time.Time) {
 		switch state {
 		case okState:
 			// check if this transaction have been seen before then
-			if _, ok := e.seen[ref]; ok {
+			if _, ok := e.seen[&ref]; ok {
 				// do nothing of this transaction, just display an error
 				e.log.Error("chain event reference a transaction already processed",
-					logging.String("asset-class", string(ref.asset)),
-					logging.String("tx-hash", ref.hash),
+					logging.String("asset-class", ref.Asset),
+					logging.String("tx-hash", ref.Hash),
 					logging.String("action", v.String()))
 			} else {
 				// first time we seen this transaction, let's add iter
-				e.seen[ref] = struct{}{}
-				e.bss.changed[seenKey] = true
+				e.seen[&ref] = struct{}{}
+				e.seenSlice = append(e.seenSlice, &ref)
+				e.bss.changedSeen = true
 				if err := e.finalizeAction(ctx, v); err != nil {
 					e.log.Error("unable to finalize action",
 						logging.String("action", v.String()),
@@ -281,7 +289,7 @@ func (e *Engine) OnTick(ctx context.Context, t time.Time) {
 		// us to recover for this event, so we have no real reason to keep
 		// it in memory
 		delete(e.assetActs, k)
-		e.bss.changed[assetActionsKey] = true
+		e.bss.changedAssetActions = true
 	}
 
 	// we may want a dedicated method on the snapshot engine at some
@@ -352,7 +360,7 @@ func (e *Engine) finalizeAssetList(ctx context.Context, assetID string) error {
 			logging.AssetID(assetID))
 		return nil
 	}
-	if err := e.assets.Enable(assetID); err != nil {
+	if err := e.assets.Enable(ctx, assetID); err != nil {
 		e.log.Error("unable to enable asset",
 			logging.Error(err),
 			logging.AssetID(assetID))
@@ -374,9 +382,9 @@ func (e *Engine) finalizeDeposit(ctx context.Context, d *types.Deposit) error {
 	}
 
 	d.Status = types.DepositStatusFinalized
-	d.CreditDate = e.currentTime.UnixNano()
+	d.CreditDate = e.timeService.GetTimeNow().UnixNano()
 	e.broker.Send(events.NewTransferResponse(ctx, []*types.TransferResponse{res}))
-	e.bss.changed[depositsKey] = true
+	e.bss.changedDeposits = true
 	return nil
 }
 
@@ -396,7 +404,7 @@ func (e *Engine) finalizeWithdraw(
 	}
 
 	w.Status = types.WithdrawalStatusFinalized
-	e.bss.changed[withdrawalsKey] = true
+	e.bss.changedWithdrawals = true
 	e.broker.Send(events.NewTransferResponse(ctx, []*types.TransferResponse{res}))
 	return nil
 }
@@ -409,8 +417,10 @@ func (e *Engine) newWithdrawal(
 ) (w *types.Withdrawal, ref *big.Int) {
 	partyID = strings.TrimPrefix(partyID, "0x")
 	asset = strings.TrimPrefix(asset, "0x")
+	now := e.timeService.GetTimeNow()
+
 	// reference needs to be an int, deterministic for the contracts
-	ref = big.NewInt(0).Add(e.withdrawalCnt, big.NewInt(e.currentTime.Unix()))
+	ref = big.NewInt(0).Add(e.withdrawalCnt, big.NewInt(now.Unix()))
 	e.withdrawalCnt.Add(e.withdrawalCnt, big.NewInt(1))
 	w = &types.Withdrawal{
 		ID:             id,
@@ -420,10 +430,10 @@ func (e *Engine) newWithdrawal(
 		Amount:         amount,
 		ExpirationDate: expirationDate.Unix(),
 		Ext:            wext,
-		CreationDate:   e.currentTime.UnixNano(),
+		CreationDate:   now.UnixNano(),
 		Ref:            ref.String(),
 	}
-	e.bss.changed[withdrawalsKey] = true
+	e.bss.changedWithdrawals = true
 	return
 }
 
@@ -434,15 +444,15 @@ func (e *Engine) newDeposit(
 ) *types.Deposit {
 	partyID = strings.TrimPrefix(partyID, "0x")
 	asset = strings.TrimPrefix(asset, "0x")
-	e.bss.changed[depositsKey] = true
-	e.bss.changed[assetActionsKey] = true
+	e.bss.changedDeposits = true
+	e.bss.changedAssetActions = true
 	return &types.Deposit{
 		ID:           id,
 		Status:       types.DepositStatusOpen,
 		PartyID:      partyID,
 		Asset:        asset,
 		Amount:       amount,
-		CreationDate: e.currentTime.UnixNano(),
+		CreationDate: e.timeService.GetTimeNow().UnixNano(),
 		TxHash:       txHash,
 	}
 }

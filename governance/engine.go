@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package governance
 
 import (
@@ -54,15 +66,17 @@ type StakingAccounts interface {
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/assets_mock.go -package mocks code.vegaprotocol.io/vega/governance Assets
 type Assets interface {
-	NewAsset(ref string, assetDetails *types.AssetDetails) (string, error)
+	NewAsset(ctx context.Context, ref string, assetDetails *types.AssetDetails) (string, error)
 	Get(assetID string) (*assets.Asset, error)
 	IsEnabled(string) bool
+	SetRejected(ctx context.Context, assetID string) error
+	SetPendingListing(ctx context.Context, assetID string) error
 }
 
 // TimeService ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/time_service_mock.go -package mocks code.vegaprotocol.io/vega/governance TimeService
 type TimeService interface {
-	GetTimeNow() (time.Time, error)
+	GetTimeNow() time.Time
 }
 
 // Witness ...
@@ -87,35 +101,34 @@ type NetParams interface {
 // Engine is the governance engine that handles proposal and vote lifecycle.
 type Engine struct {
 	Config
-	log         *logging.Logger
-	accs        StakingAccounts
-	markets     Markets
-	currentTime time.Time
+	log     *logging.Logger
+	accs    StakingAccounts
+	markets Markets
 	// we store proposals in slice
 	// not as easy to access them directly, but by doing this we can keep
 	// them in order of arrival, which makes their processing deterministic
 	activeProposals        []*proposal
 	enactedProposals       []*proposal
 	nodeProposalValidation *NodeValidation
+	timeService            TimeService
 	broker                 Broker
 	assets                 Assets
 	netp                   NetParams
 
 	// snapshot state
-	gss             *governanceSnapshotState
-	keyToSerialiser map[string]func() ([]byte, error)
+	gss *governanceSnapshotState
 }
 
 func NewEngine(
 	log *logging.Logger,
 	cfg Config,
 	accs StakingAccounts,
+	tm TimeService,
 	broker Broker,
 	assets Assets,
 	witness Witness,
 	markets Markets,
 	netp NetParams,
-	now time.Time,
 ) *Engine {
 	log = log.Named(namedLogger)
 	log.SetLevel(cfg.Level.Level)
@@ -124,25 +137,20 @@ func NewEngine(
 		Config:                 cfg,
 		accs:                   accs,
 		log:                    log,
-		currentTime:            now,
 		activeProposals:        []*proposal{},
 		enactedProposals:       []*proposal{},
-		nodeProposalValidation: NewNodeValidation(log, assets, now, witness),
+		nodeProposalValidation: NewNodeValidation(log, assets, tm.GetTimeNow(), witness),
+		timeService:            tm,
 		broker:                 broker,
 		assets:                 assets,
 		markets:                markets,
 		netp:                   netp,
 		gss: &governanceSnapshotState{
-			changed:    map[string]bool{activeKey: true, enactedKey: true, nodeValidationKey: true},
-			hash:       map[string][]byte{},
-			serialised: map[string][]byte{},
+			changedActive:         true,
+			changedEnacted:        true,
+			changedNodeValidation: true,
 		},
-		keyToSerialiser: map[string]func() ([]byte, error){},
 	}
-
-	e.keyToSerialiser[activeKey] = e.serialiseActiveProposals
-	e.keyToSerialiser[enactedKey] = e.serialiseEnactedProposals
-	e.keyToSerialiser[nodeValidationKey] = e.serialiseNodeProposals
 	return e
 }
 
@@ -199,7 +207,7 @@ func (e *Engine) ReloadConf(cfg Config) {
 	e.Config = cfg
 }
 
-func (e *Engine) preEnactProposal(p *proposal) (te *ToEnact, perr types.ProposalError, err error) {
+func (e *Engine) preEnactProposal(ctx context.Context, p *proposal) (te *ToEnact, perr types.ProposalError, err error) {
 	te = &ToEnact{
 		p: p,
 	}
@@ -229,6 +237,9 @@ func (e *Engine) preEnactProposal(p *proposal) (te *ToEnact, perr types.Proposal
 			return nil, types.ProposalErrorUnspecified, err
 		}
 		te.a = asset.Type()
+		// notify the asset engine that the proposal was passed
+		// and the asset is not pending for listing on the bridge
+		e.assets.SetPendingListing(ctx, p.ID)
 	case types.ProposalTermsTypeNewFreeform:
 		te.f = &ToEnactFreeform{}
 	}
@@ -248,8 +259,7 @@ func (e *Engine) preVoteClosedProposal(p *proposal) *VoteClosed {
 			// this proposal needs to be included in the checkpoint but we don't need to copy
 			// the proposal here, as it may reach the enacted state shortly
 			e.enactedProposals = append(e.enactedProposals, p)
-
-			e.gss.changed[enactedKey] = true
+			e.gss.changedEnacted = true
 		}
 		vc.m = &NewMarketVoteClosed{
 			startAuction: startAuction,
@@ -258,23 +268,30 @@ func (e *Engine) preVoteClosedProposal(p *proposal) *VoteClosed {
 	return vc
 }
 
-func (e *Engine) removeProposal(id string) {
+func (e *Engine) removeProposal(ctx context.Context, id string) {
 	for i, p := range e.activeProposals {
 		if p.ID == id {
 			copy(e.activeProposals[i:], e.activeProposals[i+1:])
 			e.activeProposals[len(e.activeProposals)-1] = nil
 			e.activeProposals = e.activeProposals[:len(e.activeProposals)-1]
 
-			e.gss.changed[activeKey] = true
+			if p.State == types.ProposalStateDeclined || p.State == types.ProposalStateFailed || p.State == types.ProposalStateRejected {
+				// if it's an asset proposal we need to update it's
+				// state in the asset engine
+				switch p.Terms.Change.GetTermType() {
+				case types.ProposalTermsTypeNewAsset:
+					e.assets.SetRejected(ctx, p.ID)
+				}
+			}
+
+			e.gss.changedActive = true
 			return
 		}
 	}
 }
 
-// OnChainTimeUpdate triggers time bound state changes.
-func (e *Engine) OnChainTimeUpdate(ctx context.Context, t time.Time) ([]*ToEnact, []*VoteClosed) {
-	e.currentTime = t
-
+// OnTick triggers time bound state changes.
+func (e *Engine) OnTick(ctx context.Context, t time.Time) ([]*ToEnact, []*VoteClosed) {
 	var (
 		toBeEnacted []*ToEnact
 		voteClosed  []*VoteClosed
@@ -292,7 +309,7 @@ func (e *Engine) OnChainTimeUpdate(ctx context.Context, t time.Time) ([]*ToEnact
 		if !proposal.IsOpen() && !proposal.IsPassed() {
 			toBeRemoved = append(toBeRemoved, proposal.ID)
 		} else if proposal.IsPassed() && (e.isAutoEnactableProposal(proposal.Proposal) || proposal.IsTimeToEnact(now)) {
-			enact, _, err := e.preEnactProposal(proposal)
+			enact, _, err := e.preEnactProposal(ctx, proposal)
 			if err != nil {
 				e.broker.Send(events.NewProposalEvent(ctx, *proposal.Proposal))
 				e.log.Error("proposal enactment has failed",
@@ -307,11 +324,11 @@ func (e *Engine) OnChainTimeUpdate(ctx context.Context, t time.Time) ([]*ToEnact
 
 	// now we iterate over all proposal ids to remove them from the list
 	for _, id := range toBeRemoved {
-		e.removeProposal(id)
+		e.removeProposal(ctx, id)
 	}
 
 	// then get all proposal accepted through node validation, and start their vote time.
-	accepted, rejected := e.nodeProposalValidation.OnChainTimeUpdate(t)
+	accepted, rejected := e.nodeProposalValidation.OnTick(t)
 	for _, p := range accepted {
 		e.log.Info("proposal has been validated by nodes, starting now",
 			logging.String("proposal-id", p.ID))
@@ -324,10 +341,17 @@ func (e *Engine) OnChainTimeUpdate(ctx context.Context, t time.Time) ([]*ToEnact
 			logging.String("proposal-id", p.ID))
 		p.Reject(types.ProposalErrorNodeValidationFailed)
 		e.broker.Send(events.NewProposalEvent(ctx, *p.Proposal))
+
+		// if it's an asset proposal we need to update it's
+		// state in the asset engine
+		switch p.Terms.Change.GetTermType() {
+		case types.ProposalTermsTypeNewAsset:
+			e.assets.SetRejected(ctx, p.ID)
+		}
 	}
 
 	if len(accepted) != 0 || len(rejected) != 0 {
-		e.gss.changed[nodeValidationKey] = true
+		e.gss.changedNodeValidation = true
 	}
 
 	for _, ep := range toBeEnacted {
@@ -353,7 +377,7 @@ func (e *Engine) OnChainTimeUpdate(ctx context.Context, t time.Time) ([]*ToEnact
 	}
 
 	if len(toBeEnacted) != 0 {
-		e.gss.changed[enactedKey] = true
+		e.gss.changedEnacted = true
 	}
 
 	// flush here for now
@@ -388,11 +412,12 @@ func (e *Engine) SubmitProposal(
 
 	p := &types.Proposal{
 		ID:        id,
-		Timestamp: e.currentTime.UnixNano(),
+		Timestamp: e.timeService.GetTimeNow().UnixNano(),
 		Party:     party,
 		State:     types.ProposalStateOpen,
 		Terms:     psub.Terms,
 		Reference: psub.Reference,
+		Rationale: psub.Rationale,
 	}
 
 	defer func() {
@@ -404,7 +429,7 @@ func (e *Engine) SubmitProposal(
 		if e.log.IsDebug() {
 			e.log.Debug("Proposal rejected",
 				logging.String("proposal-id", p.ID),
-				logging.String("proposal details", p.IntoProto().String()),
+				logging.String("proposal details", p.String()),
 			)
 		}
 		return nil, err
@@ -413,14 +438,14 @@ func (e *Engine) SubmitProposal(
 	// now if it's a 2 steps proposal, start the node votes
 	if e.isTwoStepsProposal(p) {
 		p.WaitForNodeVote()
-		if err := e.startTwoStepsProposal(p); err != nil {
+		if err := e.startTwoStepsProposal(ctx, p); err != nil {
 			return nil, err
 		}
 	} else {
 		e.startProposal(p)
 	}
 
-	return e.intoToSubmit(p)
+	return e.intoToSubmit(ctx, p)
 }
 
 func (e *Engine) RejectProposal(
@@ -430,7 +455,7 @@ func (e *Engine) RejectProposal(
 		return ErrProposalDoesNotExist
 	}
 
-	e.rejectProposal(p, r, errorDetails)
+	e.rejectProposal(ctx, p, r, errorDetails)
 	e.broker.Send(events.NewProposalEvent(ctx, *p))
 	return nil
 }
@@ -449,14 +474,14 @@ func (e *Engine) FinaliseEnactment(ctx context.Context, prop *types.Proposal) {
 	e.broker.Send(events.NewProposalEvent(ctx, *prop))
 }
 
-func (e *Engine) rejectProposal(p *types.Proposal, r types.ProposalError, errorDetails error) {
-	e.removeProposal(p.ID)
+func (e *Engine) rejectProposal(ctx context.Context, p *types.Proposal, r types.ProposalError, errorDetails error) {
+	e.removeProposal(ctx, p.ID)
 	p.RejectWithErr(r, errorDetails)
 }
 
 // toSubmit build the return response for the SubmitProposal
 // method.
-func (e *Engine) intoToSubmit(p *types.Proposal) (*ToSubmit, error) {
+func (e *Engine) intoToSubmit(ctx context.Context, p *types.Proposal) (*ToSubmit, error) {
 	tsb := &ToSubmit{p: p}
 
 	switch p.Terms.Change.GetTermType() {
@@ -466,25 +491,27 @@ func (e *Engine) intoToSubmit(p *types.Proposal) (*ToSubmit, error) {
 		// FIXME(): normally we should use the closetime
 		// but this would not play well with the MarketAuctionState stuff
 		// for now we start the auction as of now.
-		closeTime := e.currentTime
+		closeTime := e.timeService.GetTimeNow()
 		enactTime := time.Unix(p.Terms.EnactmentTimestamp, 0)
 		newMarket := p.Terms.GetNewMarket()
 
 		auctionDuration := enactTime.Sub(closeTime)
 		if perr, err := validateNewMarketChange(newMarket, e.assets, true, e.netp, auctionDuration); err != nil {
-			e.rejectProposal(p, perr, err)
+			e.rejectProposal(ctx, p, perr, err)
 			return nil, fmt.Errorf("%w, %v", err, perr)
 		}
 		mkt, perr, err := buildMarketFromProposal(p.ID, newMarket, e.netp, auctionDuration)
 		if err != nil {
-			e.rejectProposal(p, perr, err)
+			e.rejectProposal(ctx, p, perr, err)
 			return nil, fmt.Errorf("%w, %v", err, perr)
 		}
 		tsb.m = &ToSubmitNewMarket{
 			m: mkt,
 		}
-		tsb.m.l = types.LiquidityProvisionSubmissionFromMarketCommitment(
-			newMarket.LiquidityCommitment, p.ID)
+		if newMarket.LiquidityCommitment != nil {
+			tsb.m.l = types.LiquidityProvisionSubmissionFromMarketCommitment(
+				newMarket.LiquidityCommitment, p.ID)
+		}
 	}
 
 	return tsb, nil
@@ -498,17 +525,17 @@ func (e *Engine) startProposal(p *types.Proposal) {
 		invalidVotes: map[string]*types.Vote{},
 	})
 
-	e.gss.changed[activeKey] = true
+	e.gss.changedActive = true
 }
 
 func (e *Engine) startValidatedProposal(p *proposal) {
 	e.activeProposals = append(e.activeProposals, p)
-	e.gss.changed[activeKey] = true
+	e.gss.changedActive = true
 }
 
-func (e *Engine) startTwoStepsProposal(p *types.Proposal) error {
-	e.gss.changed[nodeValidationKey] = true
-	return e.nodeProposalValidation.Start(p)
+func (e *Engine) startTwoStepsProposal(ctx context.Context, p *types.Proposal) error {
+	e.gss.changedNodeValidation = true
+	return e.nodeProposalValidation.Start(ctx, p)
 }
 
 func (e *Engine) isTwoStepsProposal(p *types.Proposal) bool {
@@ -549,8 +576,9 @@ func (e *Engine) validateOpenProposal(proposal *types.Proposal) (types.ProposalE
 		return types.ProposalErrorUnknownType, err
 	}
 
+	now := e.timeService.GetTimeNow()
 	closeTime := time.Unix(proposal.Terms.ClosingTimestamp, 0)
-	minCloseTime := e.currentTime.Add(params.MinClose)
+	minCloseTime := now.Add(params.MinClose)
 	if closeTime.Before(minCloseTime) {
 		e.log.Debug("proposal close time is too soon",
 			logging.Time("expected-min", minCloseTime),
@@ -560,7 +588,7 @@ func (e *Engine) validateOpenProposal(proposal *types.Proposal) (types.ProposalE
 			fmt.Errorf("proposal closing time too soon, expected > %v, got %v", minCloseTime.UTC(), closeTime.UTC())
 	}
 
-	maxCloseTime := e.currentTime.Add(params.MaxClose)
+	maxCloseTime := now.Add(params.MaxClose)
 	if closeTime.After(maxCloseTime) {
 		e.log.Debug("proposal close time is too late",
 			logging.Time("expected-max", maxCloseTime),
@@ -571,7 +599,7 @@ func (e *Engine) validateOpenProposal(proposal *types.Proposal) (types.ProposalE
 	}
 
 	enactTime := time.Unix(proposal.Terms.EnactmentTimestamp, 0)
-	minEnactTime := e.currentTime.Add(params.MinEnact)
+	minEnactTime := now.Add(params.MinEnact)
 	if !e.isAutoEnactableProposal(proposal) && enactTime.Before(minEnactTime) {
 		e.log.Debug("proposal enact time is too soon",
 			logging.Time("expected-min", minEnactTime),
@@ -581,7 +609,7 @@ func (e *Engine) validateOpenProposal(proposal *types.Proposal) (types.ProposalE
 			fmt.Errorf("proposal enactment time too soon, expected > %v, got %v", minEnactTime.UTC(), enactTime.UTC())
 	}
 
-	maxEnactTime := e.currentTime.Add(params.MaxEnact)
+	maxEnactTime := now.Add(params.MaxEnact)
 	if !e.isAutoEnactableProposal(proposal) && enactTime.After(maxEnactTime) {
 		e.log.Debug("proposal enact time is too late",
 			logging.Time("expected-max", maxEnactTime),
@@ -663,7 +691,7 @@ func (e *Engine) AddVote(ctx context.Context, cmd types.VoteSubmission, party st
 		PartyID:                     party,
 		ProposalID:                  cmd.ProposalID,
 		Value:                       cmd.Value,
-		Timestamp:                   e.currentTime.UnixNano(),
+		Timestamp:                   e.timeService.GetTimeNow().UnixNano(),
 		TotalGovernanceTokenBalance: num.Zero(),
 		TotalGovernanceTokenWeight:  num.DecimalZero(),
 		TotalEquityLikeShareWeight:  num.DecimalZero(),
@@ -679,7 +707,7 @@ func (e *Engine) AddVote(ctx context.Context, cmd types.VoteSubmission, party st
 			logging.String("vote", cmd.String()),
 		)
 	}
-
+	e.gss.changedActive = true
 	e.broker.Send(events.NewVoteEvent(ctx, vote))
 	return nil
 }
@@ -764,8 +792,6 @@ func (e *Engine) validateChange(terms *types.ProposalTerms) (types.ProposalError
 		return validateNewAsset(terms.GetNewAsset().Changes)
 	case types.ProposalTermsTypeUpdateNetworkParameter:
 		return validateNetworkParameterUpdate(e.netp, terms.GetUpdateNetworkParameter().Changes)
-	case types.ProposalTermsTypeNewFreeform:
-		return validateNewFreeform(terms.GetNewFreeform())
 	default:
 		return types.ProposalErrorUnspecified, nil
 	}
@@ -779,11 +805,12 @@ func (e *Engine) closeProposal(ctx context.Context, proposal *proposal) {
 	params := e.mustGetProposalParams(proposal)
 
 	proposal.Close(params, e.accs, e.markets)
+	e.gss.changedActive = true
 
 	if proposal.IsPassed() {
 		e.log.Debug("Proposal passed", logging.ProposalID(proposal.ID))
 	} else if proposal.IsDeclined() {
-		e.log.Debug("Proposal declined", logging.ProposalID(proposal.ID))
+		e.log.Debug("Proposal declined", logging.ProposalID(proposal.ID), logging.String("details", proposal.ErrorDetails), logging.String("reason", proposal.Reason.String()))
 	}
 
 	e.broker.Send(events.NewProposalEvent(ctx, *proposal.Proposal))

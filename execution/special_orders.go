@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 //lint:file-ignore U1000 Ignore unused functions
 
 package execution
@@ -42,7 +54,7 @@ func (m *Market) repricePeggedOrders(
 				// Failed to reprice, if we are parked we do nothing,
 				// if not parked we need to park
 				if order.Status != types.OrderStatusParked {
-					order.UpdatedAt = m.currentTime.UnixNano()
+					order.UpdatedAt = m.timeService.GetTimeNow().UnixNano()
 					order.Status = types.OrderStatusParked
 					order.Price = num.Zero()
 					order.OriginalPrice = nil
@@ -239,8 +251,8 @@ func (m *Market) updateLPOrders(
 
 	// this is a list of order which a LP distressed
 	var (
-		orders  []*types.Order
-		parties = map[string]struct{}{}
+		distressedOrders  []*types.Order
+		distressedParties = map[string]struct{}{}
 	)
 
 	// now we iterate over all the orders which
@@ -249,7 +261,7 @@ func (m *Market) updateLPOrders(
 	// cancel them
 	var cancelEvts []events.Event
 	for _, order := range allOrders {
-		if _, ok := parties[order.Party]; ok {
+		if _, ok := distressedParties[order.Party]; ok {
 			// party is distressed, not processing
 			continue
 		}
@@ -265,8 +277,8 @@ func (m *Market) updateLPOrders(
 			order.Status = types.OrderStatusActive
 			conf, _, err := m.submitValidatedOrder(ctx, order)
 			if conf == nil || err != nil {
-				orders = append(orders, order)
-				parties[order.Party] = struct{}{}
+				distressedOrders = append(distressedOrders, order)
+				distressedParties[order.Party] = struct{}{}
 			} else if len(conf.Trades) > 0 {
 				m.log.Panic("submitting liquidity orders after a reprice should never trade",
 					logging.Order(*order))
@@ -289,6 +301,6 @@ func (m *Market) updateLPOrders(
 	// TODO: API to be changed someday as we don't need to cancel anything
 	// now, we assume that all that were required to be cancelled already are.
 	orderUpdates, _ := m.updateAndCreateLPOrders(
-		ctx, submits, []*liquidity.ToCancel{}, orders)
+		ctx, submits, []*liquidity.ToCancel{}, distressedOrders)
 	return orderUpdates
 }

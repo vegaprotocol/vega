@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package staking_test
 
 import (
@@ -27,13 +39,13 @@ func TestSVSnapshotEmpty(t *testing.T) {
 
 	assert.Equal(t, 2, len(sv.Keys()))
 
-	h, err := sv.GetHash(depositedKey)
+	s, _, err := sv.GetState(depositedKey)
 	require.Nil(t, err)
-	require.NotNil(t, h)
+	require.NotNil(t, s)
 
-	h, err = sv.GetHash(removedKey)
+	s, _, err = sv.GetState(removedKey)
 	require.Nil(t, err)
-	require.NotNil(t, h)
+	require.NotNil(t, s)
 }
 
 func TestSVSnapshotDeposited(t *testing.T) {
@@ -42,12 +54,13 @@ func TestSVSnapshotDeposited(t *testing.T) {
 	sv := getStakeVerifierTest(t)
 	defer sv.ctrl.Finish()
 
+	sv.tsvc.EXPECT().GetTimeNow().Times(1)
 	sv.broker.EXPECT().Send(gomock.Any()).Times(1)
 	sv.witness.EXPECT().StartCheck(gomock.Any(), gomock.Any(), gomock.Any()).Times(1)
 
-	h1, err := sv.GetHash(key)
+	s1, _, err := sv.GetState(key)
 	require.Nil(t, err)
-	require.NotNil(t, h1)
+	require.NotNil(t, s1)
 
 	event := &types.StakeDeposited{
 		BlockNumber:     42,
@@ -63,9 +76,9 @@ func TestSVSnapshotDeposited(t *testing.T) {
 	err = sv.ProcessStakeDeposited(ctx, event)
 	require.Nil(t, err)
 
-	h2, err := sv.GetHash(key)
+	s2, _, err := sv.GetState(key)
 	require.Nil(t, err)
-	require.False(t, bytes.Equal(h1, h2))
+	require.False(t, bytes.Equal(s1, s2))
 
 	state, _, err := sv.GetState(key)
 	require.Nil(t, err)
@@ -92,12 +105,13 @@ func TestSVSnapshotRemoved(t *testing.T) {
 	sv := getStakeVerifierTest(t)
 	defer sv.ctrl.Finish()
 
+	sv.tsvc.EXPECT().GetTimeNow().Times(1)
 	sv.broker.EXPECT().Send(gomock.Any()).Times(1)
 	sv.witness.EXPECT().StartCheck(gomock.Any(), gomock.Any(), gomock.Any()).Times(1)
 
-	h1, err := sv.GetHash(key)
+	s1, _, err := sv.GetState(key)
 	require.Nil(t, err)
-	require.NotNil(t, h1)
+	require.NotNil(t, s1)
 
 	event := &types.StakeRemoved{
 		BlockNumber:     42,
@@ -113,9 +127,9 @@ func TestSVSnapshotRemoved(t *testing.T) {
 	err = sv.ProcessStakeRemoved(ctx, event)
 	require.Nil(t, err)
 
-	h2, err := sv.GetHash(key)
+	s2, _, err := sv.GetState(key)
 	require.Nil(t, err)
-	require.False(t, bytes.Equal(h1, h2))
+	require.False(t, bytes.Equal(s1, s2))
 
 	state, _, err := sv.GetState(key)
 	require.Nil(t, err)

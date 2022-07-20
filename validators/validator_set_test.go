@@ -1,9 +1,22 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package validators
 
 import (
 	"context"
 	"math/rand"
 	"testing"
+	"time"
 
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
@@ -24,6 +37,248 @@ func TestValidatorSet(t *testing.T) {
 	t.Run("test the number of ersatz validators is reduced hence validators being demoted", testErsatzValidatorsNumberReduced)
 	t.Run("test the number of ersatz validators is greater than the number of current tm, promotion is available", testErsatzFreeSlotsPromotion)
 	t.Run("test swap of the best pending with the worst ersatz validators", testSwapBestPendingWithWorstErsatz)
+	t.Run("test swap of from ez to tendermint with slot reduction in ersatz", testSwapAndSlotChange)
+}
+
+func TestApplyPromotionAllThingsEqual(t *testing.T) {
+	tm := int64(1654747635)
+	for i := 0; i < 100; i++ {
+		rng := rand.New(rand.NewSource(tm))
+		byStatusChangeBlock := func(val1, val2 *valState) bool { return val1.statusChangeBlock < val2.statusChangeBlock }
+		rankingScore := map[string]num.Decimal{
+			"70b29f15c7d3cc430283dfee07e17775f041427749f7f1f8b9979bdde15ae908": num.DecimalZero(),
+			"db14f8d4e4beebd085b22c7332d8a12d3e3841319ba78542a418c02d7740d117": num.DecimalZero(),
+			"20a7d70939c3453613b6d0477650f8845a6dbc0e58d2416e0aa5c27500f563b3": num.DecimalZero(),
+			"4a329b356c4a875077eb5babcc5b7b91f27d75fe35c52a1dc85fe079b9e14066": num.DecimalZero(),
+			"4dd0e9f844b16777210d2815f81d8cc6f6ecc4f9bf7b895fcee3ab982e5c1ebd": num.DecimalZero(),
+		}
+
+		topology := &Topology{}
+		topology.UpdateNumberOfTendermintValidators(context.Background(), num.NewUint(3))
+
+		valStates := []*valState{
+			{
+				data: ValidatorData{
+					ID: "70b29f15c7d3cc430283dfee07e17775f041427749f7f1f8b9979bdde15ae908",
+				},
+				statusChangeBlock: 1,
+				status:            ValidatorStatusTendermint,
+			},
+			{
+				data: ValidatorData{
+					ID: "db14f8d4e4beebd085b22c7332d8a12d3e3841319ba78542a418c02d7740d117",
+				},
+				statusChangeBlock: 1,
+				status:            ValidatorStatusTendermint,
+			},
+			{
+				data: ValidatorData{
+					ID: "20a7d70939c3453613b6d0477650f8845a6dbc0e58d2416e0aa5c27500f563b3",
+				},
+				statusChangeBlock: 1,
+				status:            ValidatorStatusTendermint,
+			},
+			{
+				data: ValidatorData{
+					ID: "4a329b356c4a875077eb5babcc5b7b91f27d75fe35c52a1dc85fe079b9e14066",
+				},
+				statusChangeBlock: 1,
+				status:            ValidatorStatusTendermint,
+			},
+			{
+				data: ValidatorData{
+					ID: "4dd0e9f844b16777210d2815f81d8cc6f6ecc4f9bf7b895fcee3ab982e5c1ebd",
+				},
+				statusChangeBlock: 1,
+				status:            ValidatorStatusTendermint,
+			},
+		}
+
+		rand.Seed(time.Now().UnixNano())
+		rand.Shuffle(len(valStates), func(i, j int) { valStates[i], valStates[j] = valStates[j], valStates[i] })
+
+		sortValidatorDescRankingScoreAscBlockcompare(valStates, rankingScore, byStatusChangeBlock, rng)
+
+		tendermintValidators, remainingValidators, removedFromTM := demoteDueToLackOfSlots(valStates, []*valState{}, ValidatorStatusTendermint, ValidatorStatusErsatz, 3, int64(3))
+		require.Equal(t, len(tendermintValidators), 3)
+		require.Equal(t, len(remainingValidators), 2)
+		require.Equal(t, len(removedFromTM), 2)
+
+		require.Equal(t, "db14f8d4e4beebd085b22c7332d8a12d3e3841319ba78542a418c02d7740d117", removedFromTM[0])
+		require.Equal(t, "70b29f15c7d3cc430283dfee07e17775f041427749f7f1f8b9979bdde15ae908", removedFromTM[1])
+		count := 0
+		for _, valState := range valStates {
+			if valState.status == ValidatorStatusTendermint {
+				count++
+			}
+		}
+		require.Equal(t, 3, count)
+	}
+}
+
+func TestSortValidatorDescRankingScoreAscBlockStatusChanged(t *testing.T) {
+	tm := int64(1654747635)
+	println(tm)
+	for i := 0; i < 100; i++ {
+		println("round i", i)
+		rng := rand.New(rand.NewSource(tm))
+		byStatusChangeBlock := func(val1, val2 *valState) bool { return val1.statusChangeBlock < val2.statusChangeBlock }
+		valStates1 := []*valState{
+			{
+				data: ValidatorData{
+					ID:         "node1",
+					VegaPubKey: "node1Key",
+				},
+				statusChangeBlock: 1,
+			},
+			{
+				data: ValidatorData{
+					ID:         "node2",
+					VegaPubKey: "node2Key",
+				},
+				statusChangeBlock: 2,
+			},
+			{
+				data: ValidatorData{
+					ID:         "node3",
+					VegaPubKey: "node3Key",
+				},
+				statusChangeBlock: 3,
+			},
+		}
+		rankingScore1 := map[string]num.Decimal{
+			"node1": num.DecimalFromFloat(0.9),
+			"node2": num.DecimalFromFloat(0.5),
+			"node3": num.DecimalFromFloat(0.7),
+		}
+
+		// can sort simply by ranking score descending
+		sortValidatorDescRankingScoreAscBlockcompare(valStates1, rankingScore1, byStatusChangeBlock, rng)
+		require.Equal(t, "node1", valStates1[0].data.ID)
+		require.Equal(t, "node3", valStates1[1].data.ID)
+		require.Equal(t, "node2", valStates1[2].data.ID)
+
+		valStates2 := []*valState{
+			{
+				data: ValidatorData{
+					ID:         "node1",
+					VegaPubKey: "node1Key",
+				},
+				statusChangeBlock: 1,
+			},
+			{
+				data: ValidatorData{
+					ID:         "node2",
+					VegaPubKey: "node2Key",
+				},
+				statusChangeBlock: 2,
+			},
+			{
+				data: ValidatorData{
+					ID:         "node3",
+					VegaPubKey: "node3Key",
+				},
+				statusChangeBlock: 3,
+			},
+		}
+		rankingScore2 := map[string]num.Decimal{
+			"node1": num.DecimalFromFloat(0.9),
+			"node2": num.DecimalFromFloat(0.5),
+			"node3": num.DecimalFromFloat(0.5),
+		}
+
+		// need to use last block change state sorted ascending as tie breaker - node 2 changed state before node 3 so it comes before it
+		sortValidatorDescRankingScoreAscBlockcompare(valStates2, rankingScore2, byStatusChangeBlock, rng)
+		require.Equal(t, "node1", valStates2[0].data.ID)
+		require.Equal(t, "node2", valStates2[1].data.ID)
+		require.Equal(t, "node3", valStates2[2].data.ID)
+
+		valStates3 := []*valState{
+			{
+				data: ValidatorData{
+					ID:         "node1",
+					VegaPubKey: "node1Key",
+				},
+				statusChangeBlock: 1,
+			},
+			{
+				data: ValidatorData{
+					ID:         "node2",
+					VegaPubKey: "node2Key",
+				},
+				statusChangeBlock: 1,
+			},
+			{
+				data: ValidatorData{
+					ID:         "node3",
+					VegaPubKey: "node3Key",
+				},
+				statusChangeBlock: 1,
+			},
+			{
+				data: ValidatorData{
+					ID:         "node4",
+					VegaPubKey: "node4Key",
+				},
+				statusChangeBlock: 1,
+			},
+		}
+		rankingScore3 := map[string]num.Decimal{
+			"node1": num.DecimalFromFloat(0.9),
+			"node2": num.DecimalFromFloat(0.5),
+			"node3": num.DecimalFromFloat(0.5),
+			"node4": num.DecimalFromFloat(0.9),
+		}
+
+		// need to use last block change state sorted ascending as tie breaker - node 2 changed state before node 3 so it comes before it
+		sortValidatorDescRankingScoreAscBlockcompare(valStates3, rankingScore3, byStatusChangeBlock, rng)
+		require.Equal(t, "node1", valStates3[0].data.ID)
+		require.Equal(t, "node4", valStates3[1].data.ID)
+		require.Equal(t, "node2", valStates3[2].data.ID)
+		require.Equal(t, "node3", valStates3[3].data.ID)
+
+		valStates4 := []*valState{
+			{
+				data: ValidatorData{
+					ID:         "node1",
+					VegaPubKey: "node1Key",
+				},
+				statusChangeBlock: 1,
+			},
+			{
+				data: ValidatorData{
+					ID:         "node2",
+					VegaPubKey: "node2Key",
+				},
+				statusChangeBlock: 1,
+			},
+			{
+				data: ValidatorData{
+					ID:         "node3",
+					VegaPubKey: "node3Key",
+				},
+				statusChangeBlock: 1,
+			},
+			{
+				data: ValidatorData{
+					ID:         "node4",
+					VegaPubKey: "node4Key",
+				},
+				statusChangeBlock: 1,
+			},
+		}
+		rankingScore4 := map[string]num.Decimal{
+			"node1": num.DecimalFromFloat(0.5),
+			"node2": num.DecimalFromFloat(0.5),
+			"node3": num.DecimalFromFloat(0.5),
+			"node4": num.DecimalFromFloat(0.9),
+		}
+		sortValidatorDescRankingScoreAscBlockcompare(valStates4, rankingScore4, byStatusChangeBlock, rng)
+		require.Equal(t, "node4", valStates4[0].data.ID)
+		require.Equal(t, "node1", valStates4[1].data.ID)
+		require.Equal(t, "node2", valStates4[2].data.ID)
+		require.Equal(t, "node3", valStates4[3].data.ID)
+	}
 }
 
 func testUpdateNumberEthMultisigSigners(t *testing.T) {
@@ -711,6 +966,110 @@ func testErsatzValidatorsNumberReduced(t *testing.T) {
 	require.Equal(t, int64(1001), topology.validators["node4"].statusChangeBlock)
 	require.Equal(t, "pending", ValidatorStatusToName[topology.validators["node5"].status])
 	require.Equal(t, int64(1001), topology.validators["node5"].statusChangeBlock)
+}
+
+func testSwapAndSlotChange(t *testing.T) {
+	topology := NewTopology(logging.NewLoggerFromConfig(logging.Config{}), NewDefaultConfig(), nil, nil, true, nil, &DummyMultiSigTopology{})
+	topology.numberOfTendermintValidators = 4
+	topology.numberOfErsatzValidators = 2
+	topology.validators["node1"] = &valState{
+		data: ValidatorData{
+			ID:       "node1",
+			TmPubKey: "67g7+123M0kfMR35U7LLq09eEU1dVr6jHBEgEtPzkrs=",
+		},
+		blockAdded:        1,
+		statusChangeBlock: 900,
+		status:            ValidatorStatusTendermint,
+		heartbeatTracker:  &validatorHeartbeatTracker{},
+	}
+	topology.validators["node2"] = &valState{
+		data: ValidatorData{
+			ID:       "node2",
+			TmPubKey: "2w5hxsVqWFTV6/f0swyNVqOhY1vWI42MrfO0xkUqsiA=",
+		},
+		blockAdded:        1,
+		statusChangeBlock: 901,
+		status:            ValidatorStatusTendermint,
+		heartbeatTracker:  &validatorHeartbeatTracker{},
+	}
+	topology.validators["node3"] = &valState{
+		data: ValidatorData{
+			ID:       "node3",
+			TmPubKey: "QZNLWGlqoWv4J9lXqe0pkZQnCJuJbJfiJ50VOj/WsAs=",
+		},
+		blockAdded:       2,
+		status:           ValidatorStatusTendermint,
+		heartbeatTracker: &validatorHeartbeatTracker{},
+	}
+	topology.validators["node4"] = &valState{
+		data: ValidatorData{
+			ID:       "node4",
+			TmPubKey: "Lor28j7E369gLsU6Q9dW64yKPMn9XiD/IcS1XDXbPSQ=",
+		},
+		blockAdded:       3,
+		status:           ValidatorStatusTendermint,
+		heartbeatTracker: &validatorHeartbeatTracker{},
+	}
+	topology.validators["node5"] = &valState{
+		data: ValidatorData{
+			ID:       "node5",
+			TmPubKey: "pobW1cLYgsbQGGwbwiwVMqp15WuRzaVp3mn7z+g3ByM=",
+		},
+		blockAdded:       4,
+		status:           ValidatorStatusErsatz,
+		heartbeatTracker: &validatorHeartbeatTracker{},
+	}
+	topology.validators["node6"] = &valState{
+		data: ValidatorData{
+			ID:       "node5",
+			TmPubKey: "pobW1cLYgsbQGGwbwiwVMqp15WuRzaVp3mn7z+g3ByM=",
+		},
+		blockAdded:       4,
+		status:           ValidatorStatusErsatz,
+		heartbeatTracker: &validatorHeartbeatTracker{},
+	}
+
+	perfScore := map[string]num.Decimal{
+		"node1": decimalOne,
+		"node2": decimalOne,
+		"node3": decimalOne,
+		"node4": decimalOne,
+		"node5": decimalOne,
+		"node6": decimalOne,
+	}
+
+	ranking := map[string]num.Decimal{
+		"node1": num.DecimalFromFloat(0.1),
+		"node2": num.DecimalFromFloat(0.8),
+		"node3": num.DecimalFromFloat(0.8),
+		"node4": num.DecimalFromFloat(0.8),
+		"node5": num.DecimalFromFloat(0.8),
+		"node6": num.DecimalFromFloat(0.5),
+	}
+
+	delegations := []*types.ValidatorData{
+		{NodeID: "node1", SelfStake: num.NewUint(12000), StakeByDelegators: num.NewUint(10000)},
+		{NodeID: "node2", SelfStake: num.NewUint(10000), StakeByDelegators: num.NewUint(10000)},
+		{NodeID: "node3", SelfStake: num.NewUint(40000), StakeByDelegators: num.NewUint(10000)},
+		{NodeID: "node4", SelfStake: num.NewUint(20000), StakeByDelegators: num.NewUint(10000)},
+		{NodeID: "node5", SelfStake: num.NewUint(30000), StakeByDelegators: num.NewUint(10000)},
+		{NodeID: "node5", SelfStake: num.NewUint(30000), StakeByDelegators: num.NewUint(10000)},
+		{NodeID: "node6", SelfStake: num.NewUint(30000), StakeByDelegators: num.NewUint(10000)},
+	}
+	topology.rng = rand.New(rand.NewSource(1000))
+	// reduce the number of ersatz validators from 2 to 1
+	topology.currentBlockHeight = 1000
+	topology.numberOfErsatzValidators = 1
+	topology.applyPromotion(perfScore, ranking, delegations, types.StakeScoreParams{MinVal: num.DecimalFromFloat(2), CompLevel: num.DecimalFromFloat(1), OptimalStakeMultiplier: num.DecimalFromFloat(5)})
+
+	ezCount := 0
+	for _, v := range topology.validators {
+		if ValidatorStatusToName[v.status] == "ersatz" {
+			ezCount += 1
+		}
+	}
+
+	require.Equal(t, ezCount, topology.numberOfErsatzValidators)
 }
 
 type DummyMultiSigTopology struct{}

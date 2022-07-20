@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package governance_test
 
 import (
@@ -35,7 +47,7 @@ func testSubmittingProposalForMarketUpdateSucceeds(t *testing.T) {
 
 	// given
 	proposer := vgrand.RandomStr(5)
-	proposal := eng.newProposalForMarketUpdate(proposer, time.Now())
+	proposal := eng.newProposalForMarketUpdate(proposer, eng.tsvc.GetTimeNow())
 	marketID := proposal.MarketUpdate().MarketID
 
 	// setup
@@ -60,7 +72,7 @@ func testSubmittingProposalForMarketUpdateForUnknownMarketFails(t *testing.T) {
 
 	// given
 	proposer := vgrand.RandomStr(5)
-	proposal := eng.newProposalForMarketUpdate(proposer, time.Now())
+	proposal := eng.newProposalForMarketUpdate(proposer, eng.tsvc.GetTimeNow())
 	marketID := proposal.MarketUpdate().MarketID
 
 	// setup
@@ -84,7 +96,7 @@ func testSubmittingProposalForMarketUpdateForNotEnactedMarketFails(t *testing.T)
 
 	// given
 	proposer := vgrand.RandomStr(5)
-	newMarketProposal := eng.newProposalForNewMarket(proposer, time.Now())
+	newMarketProposal := eng.newProposalForNewMarket(proposer, eng.tsvc.GetTimeNow())
 	marketID := newMarketProposal.ID
 
 	// setup
@@ -101,7 +113,7 @@ func testSubmittingProposalForMarketUpdateForNotEnactedMarketFails(t *testing.T)
 	assert.True(t, toSubmit.IsNewMarket())
 
 	// given
-	updateMarketProposal := eng.newProposalForMarketUpdate(proposer, time.Now())
+	updateMarketProposal := eng.newProposalForMarketUpdate(proposer, eng.tsvc.GetTimeNow())
 	updateMarketProposal.MarketUpdate().MarketID = marketID
 
 	// setup
@@ -125,7 +137,7 @@ func testSubmittingProposalForMarketUpdateWithInsufficientEquityLikeShareFails(t
 
 	// given
 	party := vgrand.RandomStr(5)
-	proposal := eng.newProposalForMarketUpdate(party, time.Now())
+	proposal := eng.newProposalForMarketUpdate(party, eng.tsvc.GetTimeNow())
 	marketID := proposal.MarketUpdate().MarketID
 
 	// setup
@@ -152,7 +164,7 @@ func testPreEnactmentOfMarketUpdateSucceeds(t *testing.T) {
 	// Submit proposal.
 	// given
 	proposer := vgrand.RandomStr(5)
-	proposal := eng.newProposalForMarketUpdate(proposer, time.Now())
+	proposal := eng.newProposalForMarketUpdate(proposer, eng.tsvc.GetTimeNow())
 	marketID := proposal.MarketUpdate().MarketID
 
 	// setup
@@ -218,7 +230,7 @@ func testPreEnactmentOfMarketUpdateSucceeds(t *testing.T) {
 	eng.expectVoteEvents(t)
 
 	// when
-	eng.OnChainTimeUpdate(context.Background(), afterClosing)
+	eng.OnTick(context.Background(), afterClosing)
 
 	// Enact the proposal.
 	// given
@@ -246,7 +258,7 @@ func testPreEnactmentOfMarketUpdateSucceeds(t *testing.T) {
 	eng.ensureGetMarket(t, marketID, existingMarket)
 
 	// when
-	enacted, _ := eng.OnChainTimeUpdate(context.Background(), afterEnactment)
+	enacted, _ := eng.OnTick(context.Background(), afterEnactment)
 
 	// then
 	require.NotEmpty(t, enacted)
@@ -266,7 +278,7 @@ func testRejectingProposalForMarketUpdateSucceeds(t *testing.T) {
 
 	// given
 	party := vgrand.RandomStr(5)
-	proposal := eng.newProposalForMarketUpdate(party, time.Now())
+	proposal := eng.newProposalForMarketUpdate(party, eng.tsvc.GetTimeNow())
 	marketID := proposal.MarketUpdate().MarketID
 
 	// setup
@@ -310,7 +322,7 @@ func testVotingWithoutMinimumTokenHoldersAndEquityLikeShareMakesMarketUpdateProp
 	// Submit proposal.
 	// given
 	proposer := vgrand.RandomStr(5)
-	proposal := eng.newProposalForMarketUpdate(proposer, time.Now())
+	proposal := eng.newProposalForMarketUpdate(proposer, eng.tsvc.GetTimeNow())
 	marketID := proposal.MarketUpdate().MarketID
 
 	// setup
@@ -380,7 +392,7 @@ func testVotingWithoutMinimumTokenHoldersAndEquityLikeShareMakesMarketUpdateProp
 	eng.expectVoteEvents(t)
 
 	// when
-	eng.OnChainTimeUpdate(context.Background(), afterClosing)
+	eng.OnTick(context.Background(), afterClosing)
 }
 
 func testVotingWithMajorityOfYesFromTokenHoldersMakesMarketUpdateProposalPassed(t *testing.T) {
@@ -390,7 +402,7 @@ func testVotingWithMajorityOfYesFromTokenHoldersMakesMarketUpdateProposalPassed(
 	// Submit proposal.
 	// given
 	proposer := vgrand.RandomStr(5)
-	proposal := eng.newProposalForMarketUpdate(proposer, time.Now())
+	proposal := eng.newProposalForMarketUpdate(proposer, eng.tsvc.GetTimeNow())
 	marketID := proposal.MarketUpdate().MarketID
 
 	// setup
@@ -492,7 +504,7 @@ func testVotingWithMajorityOfYesFromTokenHoldersMakesMarketUpdateProposalPassed(
 	eng.expectVoteEvents(t)
 
 	// when
-	eng.OnChainTimeUpdate(context.Background(), afterClosing)
+	eng.OnTick(context.Background(), afterClosing)
 }
 
 func testVotingWithMajorityOfNoFromTokenHoldersMakesMarketUpdateProposalDeclined(t *testing.T) {
@@ -502,7 +514,7 @@ func testVotingWithMajorityOfNoFromTokenHoldersMakesMarketUpdateProposalDeclined
 	// Submit proposal.
 	// given
 	proposer := vgrand.RandomStr(5)
-	proposal := eng.newProposalForMarketUpdate(proposer, time.Now())
+	proposal := eng.newProposalForMarketUpdate(proposer, eng.tsvc.GetTimeNow())
 	marketID := proposal.MarketUpdate().MarketID
 
 	// setup
@@ -604,7 +616,7 @@ func testVotingWithMajorityOfNoFromTokenHoldersMakesMarketUpdateProposalDeclined
 	eng.expectVoteEvents(t)
 
 	// when
-	eng.OnChainTimeUpdate(context.Background(), afterClosing)
+	eng.OnTick(context.Background(), afterClosing)
 }
 
 func testVotingWithoutTokenAndMajorityOfYesFromEquityLikeShareHoldersMakesMarketUpdateProposalPassed(t *testing.T) {
@@ -614,7 +626,7 @@ func testVotingWithoutTokenAndMajorityOfYesFromEquityLikeShareHoldersMakesMarket
 	// Submit proposal.
 	// given
 	proposer := vgrand.RandomStr(5)
-	proposal := eng.newProposalForMarketUpdate(proposer, time.Now())
+	proposal := eng.newProposalForMarketUpdate(proposer, eng.tsvc.GetTimeNow())
 	marketID := proposal.MarketUpdate().MarketID
 
 	// setup
@@ -702,7 +714,7 @@ func testVotingWithoutTokenAndMajorityOfYesFromEquityLikeShareHoldersMakesMarket
 	eng.expectVoteEvents(t)
 
 	// when
-	eng.OnChainTimeUpdate(context.Background(), afterClosing)
+	eng.OnTick(context.Background(), afterClosing)
 }
 
 func testVotingWithoutTokenAndMajorityOfNoFromEquityLikeShareHoldersMakesMarketUpdateProposalDeclined(t *testing.T) {
@@ -712,7 +724,7 @@ func testVotingWithoutTokenAndMajorityOfNoFromEquityLikeShareHoldersMakesMarketU
 	// Submit proposal.
 	// given
 	proposer := vgrand.RandomStr(5)
-	proposal := eng.newProposalForMarketUpdate(proposer, time.Now())
+	proposal := eng.newProposalForMarketUpdate(proposer, eng.tsvc.GetTimeNow())
 	marketID := proposal.MarketUpdate().MarketID
 
 	// setup
@@ -800,5 +812,5 @@ func testVotingWithoutTokenAndMajorityOfNoFromEquityLikeShareHoldersMakesMarketU
 	eng.expectVoteEvents(t)
 
 	// when
-	eng.OnChainTimeUpdate(context.Background(), afterClosing)
+	eng.OnTick(context.Background(), afterClosing)
 }

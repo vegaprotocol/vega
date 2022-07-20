@@ -1,11 +1,24 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package products_test
 
 import (
 	"context"
 	"testing"
 
-	oraclesv1 "code.vegaprotocol.io/protos/vega/oracles/v1"
+	oraclespb "code.vegaprotocol.io/protos/vega/oracles/v1"
 	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/vega/oracles"
 	"code.vegaprotocol.io/vega/products"
 	"code.vegaprotocol.io/vega/products/mocks"
 	"code.vegaprotocol.io/vega/types"
@@ -32,31 +45,31 @@ func getValidInstrumentProto() *types.Instrument {
 			Future: &types.Future{
 				QuoteName:       "USD",
 				SettlementAsset: SettlementAssetStr,
-				OracleSpecForSettlementPrice: &oraclesv1.OracleSpec{
+				OracleSpecForSettlementPrice: &types.OracleSpec{
 					PubKeys: []string{"0xDEADBEEF"},
-					Filters: []*oraclesv1.Filter{
+					Filters: []*types.OracleSpecFilter{
 						{
-							Key: &oraclesv1.PropertyKey{
+							Key: &types.OracleSpecPropertyKey{
 								Name: "prices.ETH.value",
-								Type: oraclesv1.PropertyKey_TYPE_INTEGER,
+								Type: oraclespb.PropertyKey_TYPE_INTEGER,
 							},
-							Conditions: []*oraclesv1.Condition{},
+							Conditions: []*types.OracleSpecCondition{},
 						},
 					},
 				},
-				OracleSpecForTradingTermination: &oraclesv1.OracleSpec{
+				OracleSpecForTradingTermination: &types.OracleSpec{
 					PubKeys: []string{"0xDEADBEEF"},
-					Filters: []*oraclesv1.Filter{
+					Filters: []*types.OracleSpecFilter{
 						{
-							Key: &oraclesv1.PropertyKey{
+							Key: &types.OracleSpecPropertyKey{
 								Name: "trading.terminated",
-								Type: oraclesv1.PropertyKey_TYPE_BOOLEAN,
+								Type: oraclespb.PropertyKey_TYPE_BOOLEAN,
 							},
-							Conditions: []*oraclesv1.Condition{},
+							Conditions: []*types.OracleSpecCondition{},
 						},
 					},
 				},
-				OracleSpecBinding: &types.OracleSpecToFutureBinding{
+				OracleSpecBinding: &types.OracleSpecBindingForFuture{
 					SettlementPriceProperty:    "prices.ETH.value",
 					TradingTerminationProperty: "trading.terminated",
 				},
@@ -70,7 +83,14 @@ func TestFutureSettlement(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	oe := mocks.NewMockOracleEngine(ctrl)
 
-	oe.EXPECT().Subscribe(ctx, gomock.Any(), gomock.Any()).AnyTimes()
+	sid1 := oracles.SubscriptionID(1)
+	oe.EXPECT().Unsubscribe(ctx, sid1).AnyTimes()
+	oe.EXPECT().
+		Subscribe(ctx, gomock.Any(), gomock.Any()).
+		Times(2).
+		Return(sid1, func(ctx context.Context, sid oracles.SubscriptionID) {
+			oe.Unsubscribe(ctx, sid)
+		})
 
 	proto := getValidInstrumentProto()
 

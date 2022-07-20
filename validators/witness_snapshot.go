@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package validators
 
 import (
@@ -9,7 +21,6 @@ import (
 
 	"code.vegaprotocol.io/vega/libs/proto"
 
-	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
 )
@@ -26,7 +37,6 @@ var (
 
 type witnessSnapshotState struct {
 	changed    bool
-	hash       []byte
 	serialised []byte
 	mu         sync.Mutex
 }
@@ -39,7 +49,7 @@ func (w *Witness) Keys() []string {
 	return hashKeys
 }
 
-func (w *Witness) serialise() ([]byte, error) {
+func (w *Witness) serialiseWitness() ([]byte, error) {
 	w.log.Debug("serialising witness resources", logging.Int("n", len(w.resources)))
 	resources := make([]*types.Resource, 0, len(w.resources))
 	for id, r := range w.resources {
@@ -71,39 +81,39 @@ func (w *Witness) serialise() ([]byte, error) {
 	return proto.Marshal(x)
 }
 
-// get the serialised form and hash of the given key.
-func (w *Witness) getSerialisedAndHash(k string) ([]byte, []byte, error) {
+// get the serialised form of the given key.
+func (w *Witness) serialise(k string) ([]byte, error) {
 	if k != key {
-		return nil, nil, ErrSnapshotKeyDoesNotExist
+		return nil, ErrSnapshotKeyDoesNotExist
 	}
 
 	w.wss.mu.Lock()
 	defer w.wss.mu.Unlock()
-	if !w.wss.changed {
-		return w.wss.serialised, w.wss.hash, nil
+	if !w.HasChanged(k) {
+		return w.wss.serialised, nil
 	}
 
-	data, err := w.serialise()
+	data, err := w.serialiseWitness()
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
-	hash := crypto.Hash(data)
 	w.wss.serialised = data
-	w.wss.hash = hash
 	w.wss.changed = false
-	return data, hash, nil
+	return data, nil
 }
 
 func (w *Witness) Stopped() bool { return false }
 
-func (w *Witness) GetHash(k string) ([]byte, error) {
-	_, hash, err := w.getSerialisedAndHash(k)
-	return hash, err
+func (w *Witness) HasChanged(k string) bool {
+	// w.wss.mu.Lock()
+	// defer w.wss.mu.Unlock()
+	// return w.wss.changed
+	return true
 }
 
 func (w *Witness) GetState(k string) ([]byte, []types.StateProvider, error) {
-	state, _, err := w.getSerialisedAndHash(k)
+	state, err := w.serialise(k)
 	return state, nil, err
 }
 
@@ -114,13 +124,13 @@ func (w *Witness) LoadState(ctx context.Context, p *types.Payload) ([]types.Stat
 	// see what we're reloading
 	switch pl := p.Data.(type) {
 	case *types.PayloadWitness:
-		return nil, w.restore(ctx, pl.Witness)
+		return nil, w.restore(ctx, pl.Witness, p)
 	default:
 		return nil, types.ErrUnknownSnapshotType
 	}
 }
 
-func (w *Witness) restore(ctx context.Context, witness *types.Witness) error {
+func (w *Witness) restore(ctx context.Context, witness *types.Witness, p *types.Payload) error {
 	w.resources = map[string]*res{}
 	w.needResendRes = map[string]struct{}{}
 
@@ -149,9 +159,11 @@ func (w *Witness) restore(ctx context.Context, witness *types.Witness) error {
 	}
 
 	w.wss.mu.Lock()
-	w.wss.changed = true
+	var err error
+	w.wss.changed = false
+	w.wss.serialised, err = proto.Marshal(p.IntoProto())
 	w.wss.mu.Unlock()
-	return nil
+	return err
 }
 
 func (w *Witness) RestoreResource(r Resource, cb func(interface{}, bool)) error {
@@ -170,7 +182,7 @@ func (w *Witness) RestoreResource(r Resource, cb func(interface{}, bool)) error 
 		go w.start(ctx, res)
 	}
 	w.wss.mu.Lock()
-	w.wss.changed = true
+	w.wss.changed = false
 	w.wss.mu.Unlock()
 	return nil
 }

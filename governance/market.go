@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package governance
 
 import (
@@ -239,8 +251,15 @@ func validateFuture(future *types.FutureProduct, decimals uint64, assets Assets,
 		return types.ProposalErrorInvalidFutureProduct, err
 	}
 
-	if err := ospec.EnsureBoundableProperty(future.OracleSpecBinding.TradingTerminationProperty, oraclespb.PropertyKey_TYPE_BOOLEAN); err != nil {
-		return types.ProposalErrorInvalidFutureProduct, fmt.Errorf("invalid oracle spec binding for trading termination: %w", err)
+	switch future.OracleSpecBinding.TradingTerminationProperty {
+	case oracles.BuiltinOracleTimestamp:
+		if err := ospec.EnsureBoundableProperty(future.OracleSpecBinding.TradingTerminationProperty, oraclespb.PropertyKey_TYPE_TIMESTAMP); err != nil {
+			return types.ProposalErrorInvalidFutureProduct, fmt.Errorf("invalid oracle spec binding for trading termination: %w", err)
+		}
+	default:
+		if err := ospec.EnsureBoundableProperty(future.OracleSpecBinding.TradingTerminationProperty, oraclespb.PropertyKey_TYPE_BOOLEAN); err != nil {
+			return types.ProposalErrorInvalidFutureProduct, fmt.Errorf("invalid oracle spec binding for trading termination: %w", err)
+		}
 	}
 
 	return validateAsset(future.SettlementAsset, decimals, assets, deepCheck)
@@ -304,7 +323,7 @@ func validateCommitment(
 	maxFee, _ := netp.GetDecimal(netparams.MarketLiquidityMaximumLiquidityFeeFactorLevel)
 
 	if commitment == nil {
-		return types.ProposalErrorMarketMissingLiquidityCommitment, errors.New("market proposal is missing liquidity commitment")
+		return types.ProposalErrorUnspecified, nil
 	}
 	if commitment.CommitmentAmount.IsZero() {
 		return types.ProposalErrorMissingCommitmentAmount,
@@ -447,8 +466,15 @@ func validateUpdateFuture(future *types.UpdateFutureProduct) (types.ProposalErro
 		return types.ProposalErrorInvalidFutureProduct, err
 	}
 
-	if err := ospec.EnsureBoundableProperty(future.OracleSpecBinding.TradingTerminationProperty, oraclespb.PropertyKey_TYPE_BOOLEAN); err != nil {
-		return types.ProposalErrorInvalidFutureProduct, fmt.Errorf("invalid oracle spec binding for trading termination: %w", err)
+	switch future.OracleSpecBinding.TradingTerminationProperty {
+	case oracles.BuiltinOracleTimestamp:
+		if err := ospec.EnsureBoundableProperty(future.OracleSpecBinding.TradingTerminationProperty, oraclespb.PropertyKey_TYPE_TIMESTAMP); err != nil {
+			return types.ProposalErrorInvalidFutureProduct, fmt.Errorf("invalid oracle spec binding for trading termination: %w", err)
+		}
+	default:
+		if err := ospec.EnsureBoundableProperty(future.OracleSpecBinding.TradingTerminationProperty, oraclespb.PropertyKey_TYPE_BOOLEAN); err != nil {
+			return types.ProposalErrorInvalidFutureProduct, fmt.Errorf("invalid oracle spec binding for trading termination: %w", err)
+		}
 	}
 
 	return types.ProposalErrorUnspecified, nil

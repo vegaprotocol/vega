@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package supplied
 
 import (
@@ -60,6 +72,7 @@ func (e *Engine) startCalcProbOfTrading(eventID string, endOfCalcCallback statev
 	bestBid, bestAsk, err := e.getBestStaticPrices()
 	if err != nil {
 		e.log.Error("failed to get static price for probability of trading state var", logging.String("error", err.Error()))
+		endOfCalcCallback.CalculationFinished(eventID, nil, err)
 		return
 	}
 
@@ -151,7 +164,9 @@ func calculateAskRange(bestAsk, maxAsk, tickSize, tauScaled num.Decimal, probabi
 // updatePriceBounds is called back from the state variable consensus engine when consensus is reached for the down/up factors and updates the price bounds.
 func (e *Engine) updateProbabilities(ctx context.Context, res statevar.StateVariableResult) error {
 	e.pot = res.(*probabilityOfTrading)
-	e.log.Info("consensus reached for probability of trading", logging.String("market", e.marketID))
+	if e.log.GetLevel() <= logging.DebugLevel {
+		e.log.Debug("consensus reached for probability of trading", logging.String("market", e.marketID))
+	}
 
 	e.potInitialised = true
 	e.changed = true

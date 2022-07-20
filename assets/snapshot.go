@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package assets
 
 import (
@@ -5,7 +17,6 @@ import (
 	"errors"
 	"sort"
 
-	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/libs/proto"
 	"code.vegaprotocol.io/vega/types"
 )
@@ -23,9 +34,10 @@ var (
 )
 
 type assetsSnapshotState struct {
-	changed    map[string]bool
-	hash       map[string][]byte
-	serialised map[string][]byte
+	changedActive     bool
+	changedPending    bool
+	serialisedActive  []byte
+	serialisedPending []byte
 }
 
 func (s *Service) Namespace() types.SnapshotNamespace {
@@ -67,35 +79,48 @@ func (s *Service) serialisePending() ([]byte, error) {
 	return proto.Marshal(payload.IntoProto())
 }
 
-// get the serialised form and hash of the given key.
-func (s *Service) getSerialisedAndHash(k string) ([]byte, []byte, error) {
-	if _, ok := s.keyToSerialiser[k]; !ok {
-		return nil, nil, ErrSnapshotKeyDoesNotExist
+func (s *Service) serialiseK(k string, serialFunc func() ([]byte, error), dataField *[]byte, changedField *bool) ([]byte, error) {
+	if !s.HasChanged(k) {
+		if dataField == nil {
+			return nil, nil
+		}
+		return *dataField, nil
 	}
-
-	if !s.ass.changed[k] {
-		return s.ass.serialised[k], s.ass.hash[k], nil
-	}
-
-	data, err := s.keyToSerialiser[k]()
+	data, err := serialFunc()
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
-
-	hash := crypto.Hash(data)
-	s.ass.serialised[k] = data
-	s.ass.hash[k] = hash
-	s.ass.changed[k] = false
-	return data, hash, nil
+	*dataField = data
+	*changedField = false
+	return data, nil
 }
 
-func (s *Service) GetHash(k string) ([]byte, error) {
-	_, hash, err := s.getSerialisedAndHash(k)
-	return hash, err
+// get the serialised form and hash of the given key.
+func (s *Service) serialise(k string) ([]byte, error) {
+	switch k {
+	case activeKey:
+		return s.serialiseK(k, s.serialiseActive, &s.ass.serialisedActive, &s.ass.changedActive)
+	case pendingKey:
+		return s.serialiseK(k, s.serialisePending, &s.ass.serialisedPending, &s.ass.changedPending)
+	default:
+		return nil, types.ErrSnapshotKeyDoesNotExist
+	}
+}
+
+func (s *Service) HasChanged(k string) bool {
+	// switch k {
+	// case activeKey:
+	// 	return s.ass.changedActive
+	// case pendingKey:
+	// 	return s.ass.changedPending
+	// default:
+	// 	return false
+	// }
+	return true
 }
 
 func (s *Service) GetState(k string) ([]byte, []types.StateProvider, error) {
-	state, _, err := s.getSerialisedAndHash(k)
+	state, err := s.serialise(k)
 	return state, nil, err
 }
 
@@ -106,47 +131,57 @@ func (s *Service) LoadState(ctx context.Context, p *types.Payload) ([]types.Stat
 	// see what we're reloading
 	switch pl := p.Data.(type) {
 	case *types.PayloadActiveAssets:
-		return nil, s.restoreActive(ctx, pl.ActiveAssets)
+		return nil, s.restoreActive(ctx, pl.ActiveAssets, p)
 	case *types.PayloadPendingAssets:
-		return nil, s.restorePending(ctx, pl.PendingAssets)
+		return nil, s.restorePending(ctx, pl.PendingAssets, p)
 	default:
 		return nil, types.ErrUnknownSnapshotType
 	}
 }
 
-func (s *Service) restoreActive(ctx context.Context, active *types.ActiveAssets) error {
+func (s *Service) restoreActive(ctx context.Context, active *types.ActiveAssets, p *types.Payload) error {
+	var err error
 	s.assets = map[string]*Asset{}
 	for _, p := range active.Assets {
-		if _, err := s.NewAsset(p.ID, p.Details); err != nil {
+		if _, err = s.NewAsset(ctx, p.ID, p.Details); err != nil {
 			return err
 		}
 
 		pa, _ := s.Get(p.ID)
 		if s.isValidator {
-			if err := pa.Validate(); err != nil {
+			if err = pa.Validate(); err != nil {
 				return err
 			}
 		} else {
 			pa.SetValidNonValidator()
 		}
 
-		if err := s.Enable(p.ID); err != nil {
+		if err = s.Enable(ctx, p.ID); err != nil {
 			return err
 		}
 	}
-	s.ass.changed[activeKey] = true
-	return nil
+	s.ass.changedActive = false
+	s.ass.serialisedActive, err = proto.Marshal(p.IntoProto())
+
+	return err
 }
 
-func (s *Service) restorePending(ctx context.Context, pending *types.PendingAssets) error {
+func (s *Service) restorePending(ctx context.Context, pending *types.PendingAssets, p *types.Payload) error {
+	var err error
 	s.pendingAssets = map[string]*Asset{}
 	for _, p := range pending.Assets {
-		if _, err := s.NewAsset(p.ID, p.Details); err != nil {
+		assetID, err := s.NewAsset(ctx, p.ID, p.Details)
+		if err != nil {
 			return err
+		}
+
+		if p.Status == types.AssetStatusPendingListing {
+			s.SetPendingListing(ctx, assetID)
 		}
 	}
 
-	// after reloading we need to set the dirty flag to true so that we know next time to recalc the hash/serialise
-	s.ass.changed[pendingKey] = true
-	return nil
+	s.ass.changedPending = false
+	s.ass.serialisedPending, err = proto.Marshal(p.IntoProto())
+
+	return err
 }

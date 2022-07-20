@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package steps
 
 import (
@@ -538,6 +550,21 @@ func OracleSpecPropertyType(name string) (oraclesv1.PropertyKey_Type, error) {
 		return oraclesv1.PropertyKey_TYPE_UNSPECIFIED, fmt.Errorf("couldn't find %s as property type", name)
 	}
 	return oraclesv1.PropertyKey_Type(ty), nil
+}
+
+func (r RowWrapper) MustOracleSpecConditionOperator(name string) oraclesv1.Condition_Operator {
+	ty, err := OracleSpecConditionOperator(r.MustStr(name))
+	panicW(name, err)
+	return ty
+}
+
+func OracleSpecConditionOperator(name string) (oraclesv1.Condition_Operator, error) {
+	ty, ok := oraclesv1.Condition_Operator_value[name]
+
+	if !ok {
+		return oraclesv1.Condition_OPERATOR_UNSPECIFIED, fmt.Errorf("couldn't find %s as operator condition", name)
+	}
+	return oraclesv1.Condition_Operator(ty), nil
 }
 
 func (r RowWrapper) MustAuctionTrigger(name string) types.AuctionTrigger {

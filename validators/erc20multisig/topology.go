@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package erc20multisig
 
 import (
@@ -77,9 +89,7 @@ type Topology struct {
 	witnessedSigners    map[string]struct{}
 
 	// snapshot state
-	tss             *topologySnapshotState
-	keyToSerialiser map[string]func() ([]byte, error)
-
+	tss            *topologySnapshotState
 	ethEventSource EthereumEventSource
 }
 
@@ -122,20 +132,10 @@ func NewTopology(
 		witnessedThresholds: map[string]struct{}{},
 		witnessedSigners:    map[string]struct{}{},
 		tss: &topologySnapshotState{
-			hash:       map[string][]byte{},
-			serialised: map[string][]byte{},
-			changed: map[string]bool{
-				verifiedStateKey: true,
-				pendingStateKey:  true,
-			},
+			changedVerifiedState: true,
+			changedPendingState:  true,
 		},
 	}
-
-	t.keyToSerialiser = map[string]func() ([]byte, error){
-		verifiedStateKey: t.serialiseVerifiedState,
-		pendingStateKey:  t.serialisePendingState,
-	}
-
 	return t
 }
 
@@ -203,7 +203,7 @@ func (t *Topology) ProcessSignerEvent(event *types.SignerEvent) error {
 		check:       func() error { return t.ocv.CheckSignerEvent(event) },
 	}
 	t.pendingSigners[event.ID] = pending
-	t.tss.changed[pendingStateKey] = true
+	t.tss.changedPendingState = true
 
 	t.log.Info("signer event received, starting validation",
 		logging.String("event", event.String()))
@@ -224,7 +224,7 @@ func (t *Topology) ProcessThresholdEvent(event *types.SignerThresholdSetEvent) e
 		check:                   func() error { return t.ocv.CheckThresholdSetEvent(event) },
 	}
 	t.pendingThresholds[event.ID] = pending
-	t.tss.changed[pendingStateKey] = true
+	t.tss.changedPendingState = true
 
 	t.log.Info("signer threshold set event received, starting validation",
 		logging.String("event", event.String()))
@@ -241,7 +241,7 @@ func (t *Topology) ensureNotDuplicate(h string) bool {
 		return false
 	}
 	t.seen[h] = struct{}{}
-	t.tss.changed[verifiedStateKey] = true
+	t.tss.changedVerifiedState = true
 
 	return true
 }
@@ -283,8 +283,8 @@ func (t *Topology) updateThreshold(ctx context.Context) {
 	}
 
 	// from here we assume state have changed
-	t.tss.changed[verifiedStateKey] = true
-	t.tss.changed[pendingStateKey] = true
+	t.tss.changedVerifiedState = true
+	t.tss.changedPendingState = true
 
 	// sort all IDs to access pendings events in order
 	ids := []string{}
@@ -325,8 +325,8 @@ func (t *Topology) updateSigners(ctx context.Context) {
 	}
 
 	// from here we assume state have changed
-	t.tss.changed[verifiedStateKey] = true
-	t.tss.changed[pendingStateKey] = true
+	t.tss.changedVerifiedState = true
+	t.tss.changedPendingState = true
 
 	// sort all IDs to access pendings events in order
 	ids := []string{}

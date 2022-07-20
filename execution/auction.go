@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package execution
 
 import (
@@ -14,35 +26,51 @@ func (m *Market) checkAuction(ctx context.Context, now time.Time) {
 	if !m.as.InAuction() {
 		return
 	}
-	wt, nt := m.matching.CanLeaveAuction()
-	if !wt && m.as.IsOpeningAuction() {
-		// we won't be able to leave opening auction anyway
-		// in case the opening auction has expired, we might want to extend by 1s
-		// but current behaviour is to leave the auction ASAP
-		// m.extendAuctionIncompleteBook()
+
+	// as soon as we have an indicative uncrossing price in opening auction it needs to be passed into the price monitoring engine so statevar calculation can start
+	isOpening := m.as.IsOpeningAuction()
+	if isOpening && !m.pMonitor.Initialised() {
+		trades, err := m.matching.OrderBook.GetIndicativeTrades()
+		if err != nil {
+			m.log.Panic("Can't get indicative trades")
+		}
+		if len(trades) > 0 {
+			// pass the first uncrossing trades to price engine so state variables depending on it can be initialised
+			m.pMonitor.CheckPrice(ctx, m.as, trades, true)
+			m.OnOpeningAuctionFirstUncrossingPrice()
+		}
+	}
+
+	if endTS := m.as.ExpiresAt(); endTS == nil || !endTS.Before(now) {
 		return
 	}
-	// at this point, it doesn't matter what auction type we're in
-	p, v, _ := m.matching.GetIndicativePriceAndVolume()
+	trades, err := m.matching.OrderBook.GetIndicativeTrades()
+	if err != nil {
+		m.log.Panic("Can't get indicative trades")
+	}
+
 	// opening auction
-	if m.as.IsOpeningAuction() {
-		if endTS := m.as.ExpiresAt(); endTS == nil || !endTS.Before(now) {
+	if isOpening {
+		if len(trades) == 0 {
 			return
 		}
-		if err := m.pMonitor.CheckPrice(ctx, m.as, p.Clone(), v, now, true); err != nil {
-			m.log.Panic("unable to run check price with price monitor",
-				logging.String("market-id", m.GetID()),
-				logging.Error(err))
+
+		// first check liquidity - before we mark auction as ready to leave
+		m.checkLiquidity(ctx, trades, true)
+		if !m.as.CanLeave() {
+			if e := m.as.AuctionExtended(ctx, now); e != nil {
+				m.broker.Send(e)
+			}
+			return
 		}
-		if evt := m.as.AuctionExtended(ctx, m.currentTime); evt != nil {
+		// opening auction requirements satisfied at this point, other requirements still need to be checked downstream though
+		m.as.SetReadyToLeave()
+		m.pMonitor.CheckPrice(ctx, m.as, trades, true)
+		if m.as.ExtensionTrigger() == types.AuctionTriggerPrice {
 			// this should never, ever happen
 			m.log.Panic("Leaving opening auction somehow triggered price monitoring to extend the auction")
 		}
-		// only do this once
-		if !m.as.CanLeave() {
-			m.OnOpeningAuctionFirstUncrossingPrice()
-		}
-		m.as.SetReadyToLeave()
+
 		// if we don't have yet consensus for the floating point parameters, stay in the opening auction
 		if !m.CanLeaveOpeningAuction() {
 			m.log.Info("cannot leave opening auction - waiting for floating point to complete the first round")
@@ -62,61 +90,29 @@ func (m *Market) checkAuction(ctx context.Context, now time.Time) {
 		return
 	}
 	// price and liquidity auctions
-	if isPrice := m.as.IsPriceAuction(); isPrice || m.as.IsLiquidityAuction() {
-		// hacky way to ensure the liquidity monitoring will calculate the target stake based on the target stake
-		// SHOULD we leave the auction. Otherwise, we would leave a liquidity auction, and immediately enter a new one
-		ft := []*types.Trade{
-			{
-				Size:  v,
-				Price: p.Clone(),
-			},
-		}
-		if !isPrice {
-			m.checkLiquidity(ctx, ft)
-		}
-		if isPrice || m.as.CanLeave() {
-			if err := m.pMonitor.CheckPrice(ctx, m.as, p.Clone(), v, now, true); err != nil {
-				m.log.Panic("unable to run check price with price monitor",
-					logging.String("market-id", m.GetID()),
-					logging.Error(err))
-			}
-		}
-		end := m.as.CanLeave()
-		if isPrice && end {
-			m.checkLiquidity(ctx, ft)
-		}
-		if evt := m.as.AuctionExtended(ctx, m.currentTime); evt != nil {
-			m.broker.Send(evt)
-			end = false
-		}
-		// price monitoring engine and liquidity monitoring engine both indicated auction can end
-		if end {
-			// can we leave based on the book state?
-			if !nt {
-				m.extendAuctionIncompleteBook()
-				return
-			}
-			m.leaveAuction(ctx, now)
-		}
+	if endTS := m.as.ExpiresAt(); endTS == nil || !endTS.Before(now) {
+		return
 	}
-	// This is where FBA handling will go
-}
+	isPrice := m.as.IsPriceAuction() || m.as.IsPriceExtension()
+	if !isPrice {
+		m.checkLiquidity(ctx, trades, true)
+	}
+	if isPrice || m.as.CanLeave() {
+		m.pMonitor.CheckPrice(ctx, m.as, trades, true)
+	}
+	end := m.as.CanLeave()
+	if isPrice && end {
+		m.checkLiquidity(ctx, trades, true)
+	}
+	if evt := m.as.AuctionExtended(ctx, m.timeService.GetTimeNow()); evt != nil {
+		m.broker.Send(evt)
+		end = false
+	}
+	// price monitoring engine and liquidity monitoring engine both indicated auction can end
+	if end {
+		// can we leave based on the book state?
+		m.leaveAuction(ctx, now)
+	}
 
-func (m *Market) extendAuctionIncompleteBook() {
-	if m.as.IsOpeningAuction() {
-		// extend 1 second
-		m.as.ExtendAuction(types.AuctionDuration{
-			Duration: 1,
-		})
-		return
-	}
-	if m.as.IsPriceAuction() {
-		m.as.ExtendAuctionPrice(types.AuctionDuration{
-			Duration: 1,
-		})
-		return
-	}
-	m.as.ExtendAuctionLiquidity(types.AuctionDuration{
-		Duration: 1,
-	})
+	// This is where FBA handling will go
 }

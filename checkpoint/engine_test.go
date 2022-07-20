@@ -1,7 +1,20 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package checkpoint_test
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
@@ -10,10 +23,10 @@ import (
 
 	"code.vegaprotocol.io/vega/checkpoint"
 	"code.vegaprotocol.io/vega/checkpoint/mocks"
+	"code.vegaprotocol.io/vega/libs/proto"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
 
-	"code.vegaprotocol.io/vega/libs/proto"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
 )
@@ -53,7 +66,6 @@ func TestLoadCheckpoints(t *testing.T) {
 	t.Run("load checkpoint with invalid hash", testLoadInvalidHash)
 	t.Run("load sparse checkpoint", testLoadSparse)
 	t.Run("error loading checkpoint", testLoadError)
-	t.Run("a checkpoint can only be loaded once if configured", testLoadGenesisHashOnlyOnce)
 }
 
 func TestLoadAssets(t *testing.T) {
@@ -98,13 +110,13 @@ func testGetCheckpointsConstructor(t *testing.T) {
 	// pretend like the genesis block specified this hash to restore
 	set := genesis{
 		CP: &checkpoint.GenesisState{
-			CheckpointHash: hex.EncodeToString(raw.Hash),
+			CheckpointHash:  hex.EncodeToString(raw.Hash),
+			CheckpointState: base64.StdEncoding.EncodeToString(raw.State),
 		},
 	}
 	gen, err := json.Marshal(set)
 	require.NoError(t, err)
 	require.NoError(t, eng.UponGenesis(ctx, gen))
-	require.NoError(t, eng.Load(ctx, raw))
 }
 
 func testGetCheckpointsAdd(t *testing.T) {
@@ -138,13 +150,13 @@ func testGetCheckpointsAdd(t *testing.T) {
 	// pretend like the genesis block specified this hash to restore
 	set := genesis{
 		CP: &checkpoint.GenesisState{
-			CheckpointHash: hex.EncodeToString(raw.Hash),
+			CheckpointHash:  hex.EncodeToString(raw.Hash),
+			CheckpointState: base64.StdEncoding.EncodeToString(raw.State),
 		},
 	}
 	gen, err := json.Marshal(set)
 	require.NoError(t, err)
 	require.NoError(t, eng.UponGenesis(ctx, gen))
-	require.NoError(t, eng.Load(ctx, raw))
 }
 
 func testAddDuplicate(t *testing.T) {
@@ -220,13 +232,13 @@ func testLoadCheckpoints(t *testing.T) {
 	// pretend like the genesis block specified this hash to restore
 	set := genesis{
 		CP: &checkpoint.GenesisState{
-			CheckpointHash: hex.EncodeToString(snapshot.Hash),
+			CheckpointHash:  hex.EncodeToString(snapshot.Hash),
+			CheckpointState: base64.StdEncoding.EncodeToString(snapshot.State),
 		},
 	}
 	gen, err := json.Marshal(set)
 	require.NoError(t, err)
 	require.NoError(t, newEng.UponGenesis(ctx, gen))
-	require.NoError(t, newEng.Load(ctx, snapshot))
 	for k, exp := range data {
 		wc := wComps[k]
 		require.EqualValues(t, exp, wc.data)
@@ -245,28 +257,19 @@ func testLoadMissingCheckpoint(t *testing.T) {
 	}
 	snap := &types.CheckpointState{}
 	snap.SetCheckpoint(cp)
+	cp.Assets = []byte("foobar")
+	b, err := proto.Marshal(cp.IntoProto())
+	require.NoError(t, err)
 	// pretend like the genesis block specified this hash to restore
 	set := genesis{
 		CP: &checkpoint.GenesisState{
-			CheckpointHash: hex.EncodeToString(snap.Hash),
+			CheckpointHash:  hex.EncodeToString(snap.Hash),
+			CheckpointState: base64.StdEncoding.EncodeToString(b),
 		},
 	}
 	gen, err := json.Marshal(set)
 	require.NoError(t, err)
-	require.NoError(t, eng.UponGenesis(ctx, gen))
-	err = eng.Load(ctx, snap)
-	require.Error(t, err)
-	require.Equal(t, checkpoint.ErrUnknownCheckpointName, err)
-	// now try to tamper with the data itself in such a way that the has no longer matches:
-	cp.Assets = []byte("foobar")
-	b, err := proto.Marshal(cp.IntoProto())
-	require.NoError(t, err)
-	snap.State = b
-	// reset genesis hash
-	require.NoError(t, eng.UponGenesis(ctx, gen))
-	err = eng.Load(ctx, snap)
-	require.Error(t, err)
-	require.Equal(t, types.ErrCheckpointHashIncorrect, err)
+	require.Error(t, eng.UponGenesis(ctx, gen), "could not load checkpoint: received(09234807e4af85f17c66b48ee3bca89dffd1f1233659f9f940a2b17b0b8c6bc5), expected(e3795ed41024acefa48c9bdce4f52cf6909f4672dc3112fd0fc6cb1e18c83531): incompatible hashes")
 }
 
 func testLoadInvalidHash(t *testing.T) {
@@ -280,23 +283,20 @@ func testLoadInvalidHash(t *testing.T) {
 	}
 	snap := &types.CheckpointState{}
 	snap.SetCheckpoint(cp)
-	// pretend like the genesis block specified this hash to restore
-	set := genesis{
-		CP: &checkpoint.GenesisState{
-			CheckpointHash: hex.EncodeToString(snap.Hash),
-		},
-	}
-	gen, err := json.Marshal(set)
-	require.NoError(t, err)
-	require.NoError(t, eng.UponGenesis(ctx, gen))
 	// update data -> hash is invalid
 	cp.Assets = []byte("foobar")
 	b, err := proto.Marshal(cp.IntoProto())
 	require.NoError(t, err)
-	snap.State = b
-	err = eng.Load(ctx, snap)
-	require.Error(t, err)
-	require.Equal(t, types.ErrCheckpointHashIncorrect, err)
+	// pretend like the genesis block specified this hash to restore
+	set := genesis{
+		CP: &checkpoint.GenesisState{
+			CheckpointHash:  hex.EncodeToString(snap.Hash),
+			CheckpointState: base64.StdEncoding.EncodeToString(b),
+		},
+	}
+	gen, err := json.Marshal(set)
+	require.NoError(t, err)
+	require.Error(t, eng.UponGenesis(ctx, gen), "could not load checkpoint: received(09234807e4af85f17c66b48ee3bca89dffd1f1233659f9f940a2b17b0b8c6bc5), expected(e3795ed41024acefa48c9bdce4f52cf6909f4672dc3112fd0fc6cb1e18c83531): incompatible hashes")
 }
 
 func testLoadSparse(t *testing.T) {
@@ -329,13 +329,13 @@ func testLoadSparse(t *testing.T) {
 	// pretend like the genesis block specified this hash to restore
 	set := genesis{
 		CP: &checkpoint.GenesisState{
-			CheckpointHash: hex.EncodeToString(snapshot.Hash),
+			CheckpointHash:  hex.EncodeToString(snapshot.Hash),
+			CheckpointState: base64.StdEncoding.EncodeToString(snapshot.State),
 		},
 	}
 	gen, err := json.Marshal(set)
 	require.NoError(t, err)
 	require.NoError(t, eng.UponGenesis(ctx, gen))
-	require.NoError(t, eng.Load(ctx, snapshot))
 }
 
 func testLoadError(t *testing.T) {
@@ -376,15 +376,15 @@ func testLoadError(t *testing.T) {
 	// pretend like the genesis block specified this hash to restore
 	set := genesis{
 		CP: &checkpoint.GenesisState{
-			CheckpointHash: hex.EncodeToString(checkpoints.Hash),
+			CheckpointHash:  hex.EncodeToString(checkpoints.Hash),
+			CheckpointState: base64.StdEncoding.EncodeToString(checkpoints.State),
 		},
 	}
 	gen, err := json.Marshal(set)
 	require.NoError(t, err)
-	require.NoError(t, eng.UponGenesis(ctx, gen))
-	err = eng.Load(ctx, checkpoints)
+	err = eng.UponGenesis(ctx, gen)
 	require.Error(t, err)
-	require.Equal(t, ret[types.GovernanceCheckpoint], err)
+	require.True(t, errors.Is(err, ret[types.GovernanceCheckpoint]))
 }
 
 func testCheckpointBeforeInterval(t *testing.T) {
@@ -522,59 +522,6 @@ func testCheckpointUpdatedInterval(t *testing.T) {
 	require.NotNil(t, raw)
 }
 
-func testLoadGenesisHashOnlyOnce(t *testing.T) {
-	t.Parallel()
-	eng := getTestEngine(t)
-	ctx := context.Background()
-	defer eng.ctrl.Finish()
-	components := map[types.CheckpointName]*mocks.MockState{
-		types.GovernanceCheckpoint: mocks.NewMockState(eng.ctrl),
-		types.AssetsCheckpoint:     mocks.NewMockState(eng.ctrl),
-	}
-	data := map[types.CheckpointName][]byte{
-		types.GovernanceCheckpoint: []byte("foodata"),
-		types.AssetsCheckpoint:     []byte("bardata"),
-	}
-	for k, c := range components {
-		c.EXPECT().Name().Times(1).Return(k)
-	}
-	require.NoError(t, eng.Add(components[types.GovernanceCheckpoint], components[types.AssetsCheckpoint]))
-	for k, c := range components {
-		c.EXPECT().Checkpoint().Times(1).Return(data[k], nil)
-	}
-	tm := time.Now().Add(-2 * time.Hour)
-	_, _ = eng.Checkpoint(ctx, tm)
-	raw, err := eng.Checkpoint(ctx, time.Now())
-	require.NoError(t, err)
-	// calling load with this checkpoint now is a noop
-	require.Error(t, eng.Load(ctx, raw))
-	// pretend like the genesis block specified this hash to restore
-	set := genesis{
-		CP: &checkpoint.GenesisState{
-			CheckpointHash: hex.EncodeToString(raw.Hash),
-		},
-	}
-	gen, err := json.Marshal(set)
-	require.NoError(t, err)
-	// set the genesis hash to some new value
-	set.CP.CheckpointHash = hex.EncodeToString(append(raw.Hash, []byte("foo")...))
-	different, err := json.Marshal(set)
-	require.NoError(t, err)
-	// set up the engine to accept that hash
-	require.NoError(t, eng.UponGenesis(ctx, different))
-	// this doesn´t  call "load" on the components
-	require.Error(t, eng.Load(ctx, raw))
-	// now set the engine to accept the hash of the data we want to load
-	require.NoError(t, eng.UponGenesis(ctx, gen))
-	// now we do expect the calls to be made, but only once
-	for k, c := range components {
-		c.EXPECT().Load(gomock.Any(), data[k]).Times(1).Return(nil)
-	}
-	require.NoError(t, eng.Load(ctx, raw))
-	// subsequent calls to load this checkpoint do nothing
-	require.Error(t, eng.Load(ctx, raw))
-}
-
 func testLoadAssets(t *testing.T) {
 	t.Parallel()
 	eng := getTestEngine(t)
@@ -603,17 +550,15 @@ func testLoadAssets(t *testing.T) {
 	raw, err := eng.Checkpoint(ctx, time.Now())
 	require.NoError(t, err)
 	// calling load with this checkpoint now is a noop
-	require.Error(t, eng.Load(ctx, raw))
+	// require.Error(t, eng.Load(ctx, raw))
 	// pretend like the genesis block specified this hash to restore
 	set := genesis{
 		CP: &checkpoint.GenesisState{
-			CheckpointHash: hex.EncodeToString(raw.Hash),
+			CheckpointHash:  hex.EncodeToString(raw.Hash),
+			CheckpointState: base64.StdEncoding.EncodeToString(raw.State),
 		},
 	}
-	// now set the engine to accept the hash of the data we want to load
-	gen, err := json.Marshal(set)
-	require.NoError(t, err)
-	require.NoError(t, eng.UponGenesis(ctx, gen))
+
 	// now we do expect the calls to be made, but only once
 	governance.EXPECT().Load(gomock.Any(), data[types.GovernanceCheckpoint]).Times(1).Return(nil)
 	assets.EXPECT().Load(gomock.Any(), data[types.AssetsCheckpoint]).Times(1).Return(nil)
@@ -627,9 +572,11 @@ func testLoadAssets(t *testing.T) {
 		&enabled,
 	})
 	collateral.EXPECT().EnableAsset(ctx, enabled).Times(1).Return(nil)
-	require.NoError(t, eng.Load(ctx, raw))
-	// subsequent calls to load this checkpoint do nothing
-	require.Error(t, eng.Load(ctx, raw))
+
+	// now set the engine to accept the hash of the data we want to load
+	gen, err := json.Marshal(set)
+	require.NoError(t, err)
+	require.NoError(t, eng.UponGenesis(ctx, gen))
 }
 
 type wrappedMock struct {

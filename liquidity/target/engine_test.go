@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package target_test
 
 import (
@@ -141,18 +153,20 @@ func TestGetTargetStake_VerifyFormulaAfterParametersUpdate(t *testing.T) {
 	engine.UpdateParameters(updatedParams)
 
 	// given
-	later := now.Add(updatedTWindow).Add(time.Second)
+
 	newOpenInterest := uint64(14)
+
+	// when
+	err = engine.RecordOpenInterest(newOpenInterest, now.Add(time.Second))
+
+	// when
+	require.NoError(t, err)
 
 	// The new open interest should be selected as a new max open interest,
 	// even though it's smaller than the previously registered open interest,
 	// because we are recording the new open interest a second after new
 	// maximum time an open interest is kept in memory.
-	// when
-	err = engine.RecordOpenInterest(newOpenInterest, later)
-
-	// when
-	require.NoError(t, err)
+	later := now.Add(updatedTWindow).Add(2 * time.Second)
 
 	// when
 	updatedTargetStakeNow, _ := engine.GetTargetStake(rf, later, markPrice.Clone())

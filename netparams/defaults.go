@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package netparams
 
 import (
@@ -98,7 +110,7 @@ func defaultNetParams() map[string]value {
 		StakingAndDelegationRewardPayoutDelay:             NewDuration(DurationGTE(0 * time.Second)).Mutable(true).MustUpdate("24h0m0s"),
 		StakingAndDelegationRewardDelegatorShare:          NewDecimal(DecimalGTE(num.DecimalZero()), DecimalLTE(num.MustDecimalFromString("1"))).Mutable(true).MustUpdate("0.883"),
 		StakingAndDelegationRewardMinimumValidatorStake:   NewDecimal(DecimalGTE(num.DecimalZero())).Mutable(true).MustUpdate("0"),
-		StakingAndDelegationRewardCompetitionLevel:        NewDecimal(DecimalGT(num.MustDecimalFromString("1")), DecimalLTE(num.MustDecimalFromString("1000"))).Mutable(true).MustUpdate("1.1"),
+		StakingAndDelegationRewardCompetitionLevel:        NewDecimal(DecimalGTE(num.MustDecimalFromString("1")), DecimalLTE(num.MustDecimalFromString("1000"))).Mutable(true).MustUpdate("1.1"),
 		StakingAndDelegationRewardMaxPayoutPerEpoch:       NewDecimal(DecimalGTE(num.DecimalZero())).Mutable(true).MustUpdate("7000000000000000000000"),
 		StakingAndDelegationRewardsMinValidators:          NewInt(IntGTE(1)).Mutable(true).MustUpdate("5"),
 		StakingAndDelegationRewardOptimalStakeMultiplier:  NewDecimal(DecimalGTE(num.DecimalZero())).Mutable(true).MustUpdate("3.0"),
@@ -154,5 +166,19 @@ func defaultNetParams() map[string]value {
 		SpamPoWHashFunction:         NewString().Mutable(true).MustUpdate(crypto.Sha3),
 		SpamPoWNumberOfTxPerBlock:   NewUint(UintGTE(num.NewUint(1)), UintLTE(num.NewUint(1000))).Mutable(true).MustUpdate("2"),
 		SpamPoWIncreasingDifficulty: NewUint(UintGTE(num.Zero()), UintLTE(num.NewUint(1))).Mutable(true).MustUpdate("0"),
+
+		LimitsProposeMarketEnabledFrom: NewString(checkOptionalRFC3339Date).Mutable(true).MustUpdate(""), // none by default
+		LimitsProposeAssetEnabledFrom:  NewString(checkOptionalRFC3339Date).Mutable(true).MustUpdate(""), // none by default
 	}
+}
+
+func checkOptionalRFC3339Date(d string) error {
+	if len(d) <= 0 {
+		// an empty string is correct, it just disable the value.
+		return nil
+	}
+
+	// now let's just try to parse and see
+	_, err := time.Parse(time.RFC3339, d)
+	return err
 }

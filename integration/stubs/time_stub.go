@@ -1,20 +1,28 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package stubs
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	vegacontext "code.vegaprotocol.io/vega/libs/context"
 	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
-
-	"code.vegaprotocol.io/vega/oracles"
 )
 
 type TimeStub struct {
-	now                       time.Time
-	subscribers               []func(context.Context, time.Time)
-	internalOracleSubscribers []func(context.Context, oracles.OracleData)
+	now         time.Time
+	subscribers []func(context.Context, time.Time)
 }
 
 func NewTimeStub() *TimeStub {
@@ -36,26 +44,16 @@ func (t *TimeStub) SetTime(newNow time.Time) {
 	t.now = newNow
 	ctx := vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
 	t.notify(ctx, t.now)
-	t.publishOracleData(context.Background(), t.now)
 }
 
-func (t *TimeStub) NotifyOnTick(f func(context.Context, time.Time)) {
-	t.subscribers = append(t.subscribers, f)
+func (t *TimeStub) NotifyOnTick(scbs ...func(context.Context, time.Time)) {
+	for _, scb := range scbs {
+		t.subscribers = append(t.subscribers, scb)
+	}
 }
 
 func (t *TimeStub) notify(context context.Context, newTime time.Time) {
 	for _, subscriber := range t.subscribers {
 		subscriber(context, newTime)
-	}
-}
-
-func (t *TimeStub) publishOracleData(ctx context.Context, ts time.Time) {
-	for _, subscriber := range t.internalOracleSubscribers {
-		data := oracles.OracleData{
-			Data: map[string]string{
-				oracles.BuiltinOracleTimestamp: fmt.Sprintf("%d", ts.UnixNano()),
-			},
-		}
-		subscriber(ctx, data)
 	}
 }

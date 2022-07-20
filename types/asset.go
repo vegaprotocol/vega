@@ -1,17 +1,29 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package types
 
 import (
 	"errors"
+	"fmt"
 
 	proto "code.vegaprotocol.io/protos/vega"
+	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/types/num"
 )
 
 var (
-	ErrMissingERC20ContractAddress = errors.New("missing erc20 contract address")
-	ErrMissingBuiltinAssetField    = errors.New("missing builtin asset field")
-	ErrInvalidAssetDetails         = errors.New("invalid asset details")
-
+	ErrMissingERC20ContractAddress   = errors.New("missing erc20 contract address")
+	ErrMissingBuiltinAssetField      = errors.New("missing builtin asset field")
 	ErrInvalidAssetNameEmpty         = errors.New("invalid asset, name must not be empty")
 	ErrInvalidAssetSymbolEmpty       = errors.New("invalid asset, symbol must not be empty")
 	ErrInvalidAssetDecimalPlacesZero = errors.New("invalid asset, decimal places must not be zero")
@@ -19,11 +31,28 @@ var (
 	ErrInvalidAssetQuantumZero       = errors.New("invalid asset, quantum must not be zero")
 )
 
+type AssetStatus = proto.Asset_Status
+
+const (
+	// Default value, always invalid.
+	AssetStatusUnspecified AssetStatus = proto.Asset_STATUS_UNSPECIFIED
+	// Asset is proposed and under vote.
+	AssetStatusProposed AssetStatus = proto.Asset_STATUS_PROPOSED
+	// Asset has been rejected from governance.
+	AssetStatusRejected AssetStatus = proto.Asset_STATUS_REJECTED
+	// Asset is pending listing from the bridge.
+	AssetStatusPendingListing AssetStatus = proto.Asset_STATUS_PENDING_LISTING
+	// Asset is fully usable in the network.
+	AssetStatusEnabled AssetStatus = proto.Asset_STATUS_ENABLED
+)
+
 type Asset struct {
 	// Internal identifier of the asset
 	ID string
 	// Name of the asset (e.g: Great British Pound)
 	Details *AssetDetails
+	// Status of the asset
+	Status AssetStatus
 }
 
 type AssetDetails struct {
@@ -42,10 +71,18 @@ type isAssetDetails interface {
 	adIntoProto() interface{}
 	DeepClone() isAssetDetails
 	ValidateAssetSource() (ProposalError, error)
+	String() string
 }
 
 type AssetDetailsBuiltinAsset struct {
 	BuiltinAsset *BuiltinAsset
+}
+
+func (a AssetDetailsBuiltinAsset) String() string {
+	return fmt.Sprintf(
+		"builtinAsset(%s)",
+		reflectPointerToString(a.BuiltinAsset),
+	)
 }
 
 // BuiltinAsset is a Vega internal asset.
@@ -53,13 +90,29 @@ type BuiltinAsset struct {
 	MaxFaucetAmountMint *num.Uint
 }
 
+func (a BuiltinAsset) String() string {
+	return fmt.Sprintf(
+		"maxFaucetAmountMint(%s)",
+		uintPointerToString(a.MaxFaucetAmountMint),
+	)
+}
+
 type AssetDetailsErc20 struct {
 	Erc20 *ERC20
 }
 
+func (a AssetDetailsErc20) String() string {
+	return fmt.Sprintf(
+		"erc20(%s)",
+		reflectPointerToString(a.Erc20),
+	)
+}
+
 // An ERC20 token based asset, living on the ethereum network.
 type ERC20 struct {
-	ContractAddress string
+	ContractAddress   string
+	LifetimeLimit     *num.Uint
+	WithdrawThreshold *num.Uint
 }
 
 func (a Asset) IntoProto() *proto.Asset {
@@ -70,22 +123,38 @@ func (a Asset) IntoProto() *proto.Asset {
 	return &proto.Asset{
 		Id:      a.ID,
 		Details: details,
+		Status:  a.Status,
 	}
 }
 
-func AssetFromProto(p *proto.Asset) *Asset {
-	var details *AssetDetails
+func AssetFromProto(p *proto.Asset) (*Asset, error) {
+	var (
+		details *AssetDetails
+		err     error
+	)
 	if p.Details != nil {
-		details = AssetDetailsFromProto(p.Details)
+		details, err = AssetDetailsFromProto(p.Details)
+		if err != nil {
+			return nil, err
+		}
 	}
 	return &Asset{
 		ID:      p.Id,
 		Details: details,
-	}
+		Status:  p.Status,
+	}, nil
 }
 
 func (a AssetDetails) String() string {
-	return a.IntoProto().String()
+	return fmt.Sprintf(
+		"name(%s) symbol(%s) quantum(%s) totalSupply(%s) decimals(%d) source(%s)",
+		a.Name,
+		a.Symbol,
+		a.Quantum.String(),
+		uintPointerToString(a.TotalSupply),
+		a.Decimals,
+		reflectPointerToString(a.Source),
+	)
 }
 
 func (a AssetDetails) IntoProto() *proto.AssetDetails {
@@ -109,21 +178,35 @@ func (a AssetDetails) IntoProto() *proto.AssetDetails {
 	return r
 }
 
-func AssetDetailsFromProto(p *proto.AssetDetails) *AssetDetails {
-	var src isAssetDetails
+func AssetDetailsFromProto(p *proto.AssetDetails) (*AssetDetails, error) {
+	var (
+		src isAssetDetails
+		err error
+	)
 	switch st := p.Source.(type) {
 	case *proto.AssetDetails_Erc20:
-		src = AssetDetailsERC20FromProto(st)
+		src, err = AssetDetailsERC20FromProto(st)
+		if err != nil {
+			return nil, err
+		}
 	case *proto.AssetDetails_BuiltinAsset:
 		src = AssetDetailsBuiltinFromProto(st)
 	}
 	total := num.Zero()
 	min := num.DecimalZero()
 	if len(p.TotalSupply) > 0 {
-		total, _ = num.UintFromString(p.TotalSupply, 10)
+		var overflow bool
+		total, overflow = num.UintFromString(p.TotalSupply, 10)
+		if overflow {
+			return nil, errors.New("invalid total supply")
+		}
 	}
 	if len(p.Quantum) > 0 {
-		min, _ = num.DecimalFromString(p.Quantum)
+		var err error
+		min, err = num.DecimalFromString(p.Quantum)
+		if err != nil {
+			return nil, fmt.Errorf("invalid quantum: %w", err)
+		}
 	}
 	return &AssetDetails{
 		Name:        p.Name,
@@ -132,7 +215,7 @@ func AssetDetailsFromProto(p *proto.AssetDetails) *AssetDetails {
 		Decimals:    p.Decimals,
 		Quantum:     min,
 		Source:      src,
-	}
+	}, nil
 }
 
 func (a AssetDetailsBuiltinAsset) IntoProto() *proto.AssetDetails_BuiltinAsset {
@@ -175,9 +258,19 @@ func (a AssetDetailsBuiltinAsset) DeepClone() isAssetDetails {
 }
 
 func (a AssetDetailsErc20) IntoProto() *proto.AssetDetails_Erc20 {
+	lifetimeLimit := "0"
+	if a.Erc20.LifetimeLimit != nil {
+		lifetimeLimit = a.Erc20.LifetimeLimit.String()
+	}
+	withdrawThreshold := "0"
+	if a.Erc20.WithdrawThreshold != nil {
+		withdrawThreshold = a.Erc20.WithdrawThreshold.String()
+	}
 	return &proto.AssetDetails_Erc20{
 		Erc20: &proto.ERC20{
-			ContractAddress: a.Erc20.ContractAddress,
+			ContractAddress:   a.Erc20.ContractAddress,
+			LifetimeLimit:     lifetimeLimit,
+			WithdrawThreshold: withdrawThreshold,
 		},
 	}
 }
@@ -189,12 +282,31 @@ func (a AssetDetailsBuiltinAsset) ValidateAssetSource() (ProposalError, error) {
 	return ProposalErrorUnspecified, nil
 }
 
-func AssetDetailsERC20FromProto(p *proto.AssetDetails_Erc20) *AssetDetailsErc20 {
+func AssetDetailsERC20FromProto(p *proto.AssetDetails_Erc20) (*AssetDetailsErc20, error) {
+	var (
+		lifetimeLimit     = num.Zero()
+		withdrawThreshold = num.Zero()
+		overflow          bool
+	)
+	if len(p.Erc20.LifetimeLimit) > 0 {
+		lifetimeLimit, overflow = num.UintFromString(p.Erc20.LifetimeLimit, 10)
+		if overflow {
+			return nil, errors.New("invalid lifetime limit")
+		}
+	}
+	if len(p.Erc20.WithdrawThreshold) > 0 {
+		withdrawThreshold, overflow = num.UintFromString(p.Erc20.WithdrawThreshold, 10)
+		if overflow {
+			return nil, errors.New("invalid withdraw threshold")
+		}
+	}
 	return &AssetDetailsErc20{
 		Erc20: &ERC20{
-			ContractAddress: p.Erc20.ContractAddress,
+			ContractAddress:   crypto.EthereumChecksumAddress(p.Erc20.ContractAddress),
+			LifetimeLimit:     lifetimeLimit,
+			WithdrawThreshold: withdrawThreshold,
 		},
-	}
+	}, nil
 }
 
 func (a AssetDetailsErc20) adIntoProto() interface{} {
@@ -272,7 +384,25 @@ func (a AssetDetails) DeepClone() *AssetDetails {
 }
 
 func (e ERC20) DeepClone() *ERC20 {
-	return &ERC20{
+	cpy := &ERC20{
 		ContractAddress: e.ContractAddress,
 	}
+	if e.LifetimeLimit != nil {
+		cpy.LifetimeLimit = e.LifetimeLimit.Clone()
+	} else {
+		cpy.LifetimeLimit = num.Zero()
+	}
+	if e.WithdrawThreshold != nil {
+		cpy.WithdrawThreshold = e.WithdrawThreshold.Clone()
+	} else {
+		cpy.WithdrawThreshold = num.Zero()
+	}
+	return cpy
+}
+
+func (e ERC20) String() string {
+	return fmt.Sprintf(
+		"contractAddress(%s)",
+		e.ContractAddress,
+	)
 }

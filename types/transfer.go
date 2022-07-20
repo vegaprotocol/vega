@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package types
 
 import (
@@ -65,7 +77,11 @@ func (t *Transfer) Merge(oth *Transfer) *Transfer {
 }
 
 func (f FinancialAmount) String() string {
-	return f.IntoProto().String()
+	return fmt.Sprintf(
+		"asset(%s) amount(%s)",
+		f.Asset,
+		uintPointerToString(f.Amount),
+	)
 }
 
 func (f *FinancialAmount) IntoProto() *proto.FinancialAmount {
@@ -118,7 +134,13 @@ func TransferFromProto(p *proto.Transfer) (*Transfer, error) {
 }
 
 func (t *Transfer) String() string {
-	return t.IntoProto().String()
+	return fmt.Sprintf(
+		"owner(%s) amount(%s) type(%s) minAmount(%s)",
+		t.Owner,
+		reflectPointerToString(t.Amount),
+		t.Type.String(),
+		uintPointerToString(t.MinAmount),
+	)
 }
 
 type TransferType = proto.TransferType

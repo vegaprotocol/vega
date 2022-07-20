@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package banking
 
 import (
@@ -5,6 +17,7 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
+	"time"
 
 	"code.vegaprotocol.io/vega/assets/erc20"
 	"code.vegaprotocol.io/vega/events"
@@ -13,7 +26,10 @@ import (
 	"code.vegaprotocol.io/vega/types/num"
 )
 
-var ErrInvalidWithdrawalReferenceNonce = errors.New("invalid withdrawal reference nonce")
+var (
+	ErrInvalidWithdrawalReferenceNonce = errors.New("invalid withdrawal reference nonce")
+	ErrAssetAlreadyBeingListed         = errors.New("asset already being listed")
+)
 
 func (e *Engine) EnableERC20(
 	ctx context.Context,
@@ -23,6 +39,11 @@ func (e *Engine) EnableERC20(
 	txHash string,
 ) error {
 	asset, _ := e.assets.Get(al.VegaAssetID)
+	if _, ok := e.assetActs[al.VegaAssetID]; ok {
+		e.log.Error("asset already being listed", logging.AssetID(al.VegaAssetID))
+		return ErrAssetAlreadyBeingListed
+	}
+
 	aa := &assetAction{
 		id:          id,
 		state:       pendingState,
@@ -33,7 +54,8 @@ func (e *Engine) EnableERC20(
 		hash:        txHash,
 	}
 	e.assetActs[aa.id] = aa
-	return e.witness.StartCheck(aa, e.onCheckDone, e.currentTime.Add(defaultValidationDuration))
+	e.bss.changedAssetActions = true
+	return e.witness.StartCheck(aa, e.onCheckDone, e.timeService.GetTimeNow().Add(defaultValidationDuration))
 }
 
 func (e *Engine) DepositERC20(
@@ -75,7 +97,7 @@ func (e *Engine) DepositERC20(
 	e.deposits[dep.ID] = dep
 
 	e.broker.Send(events.NewDepositEvent(ctx, *dep))
-	return e.witness.StartCheck(aa, e.onCheckDone, e.currentTime.Add(defaultValidationDuration))
+	return e.witness.StartCheck(aa, e.onCheckDone, e.timeService.GetTimeNow().Add(defaultValidationDuration))
 }
 
 func (e *Engine) ERC20WithdrawalEvent(
@@ -100,8 +122,9 @@ func (e *Engine) ERC20WithdrawalEvent(
 		return ErrWithdrawalNotReady
 	}
 
-	withd.WithdrawalDate = e.currentTime.UnixNano()
+	withd.WithdrawalDate = e.timeService.GetTimeNow().UnixNano()
 	withd.TxHash = txHash
+	e.bss.changedWithdrawals = true
 	e.broker.Send(events.NewWithdrawalEvent(ctx, *withd))
 
 	return nil
@@ -114,12 +137,12 @@ func (e *Engine) WithdrawERC20(
 	ext *types.Erc20WithdrawExt,
 ) error {
 	wext := &types.WithdrawExt{
-		Ext: &types.WithdrawExt_Erc20{
+		Ext: &types.WithdrawExtErc20{
 			Erc20: ext,
 		},
 	}
 
-	expiry := e.currentTime.Add(withdrawalsDefaultExpiry)
+	expiry := e.timeService.GetTimeNow().Add(withdrawalsDefaultExpiry)
 	w, ref := e.newWithdrawal(id, party, assetID, amount, expiry, wext)
 	e.broker.Send(events.NewWithdrawalEvent(ctx, *w))
 	e.withdrawals[w.ID] = withdrawalRef{w, ref}
@@ -134,10 +157,22 @@ func (e *Engine) WithdrawERC20(
 		return err
 	}
 
-	if !asset.IsERC20() {
+	if a, ok := asset.ERC20(); !ok {
 		w.Status = types.WithdrawalStatusRejected
 		e.broker.Send(events.NewWithdrawalEvent(ctx, *w))
 		return ErrWrongAssetUsedForERC20Withdraw
+	} else if threshold := a.Type().Details.GetErc20().WithdrawThreshold; threshold != nil && threshold.NEQ(num.Zero()) {
+		if threshold.LT(amount) {
+			w.Status = types.WithdrawalStatusRejected
+			e.broker.Send(events.NewWithdrawalEvent(ctx, *w))
+			e.log.Debug("withdraw threshold breached",
+				logging.PartyID(party),
+				logging.BigUint("threshold", threshold),
+				logging.BigUint("amount", amount),
+				logging.AssetID(assetID),
+				logging.Error(err))
+			return fmt.Errorf("witdrawal threshold breached, requested(%d), threshold(%d)", amount, threshold)
+		}
 	}
 
 	// try to withdraw if no error, this'll just abort
@@ -163,12 +198,13 @@ func (e *Engine) startERC20Signatures(
 		err       error
 	)
 
+	creation := time.Unix(0, w.CreationDate)
 	// if we are a validator, we want to build a signature
 	if e.top.IsValidator() {
 		_, signature, err = asset.SignWithdrawal(
-			w.Amount, w.Ext.GetErc20().GetReceiverAddress(), ref)
+			w.Amount, w.Ext.GetErc20().GetReceiverAddress(), ref, creation)
 		if err != nil {
-			// there's not reason we cannot build the signature here
+			// there's no reason we cannot build the signature here
 			// apart if the node isn't configure properly
 			e.log.Panic("unable to sign withdrawal",
 				logging.WithdrawalID(w.ID),
@@ -192,7 +228,7 @@ func (e *Engine) offerERC20NotarySignatures(resource string) []byte {
 
 	wref, ok := e.withdrawals[resource]
 	if !ok {
-		// there's not reason we cannot find the withdrawal here
+		// there's no reason we cannot find the withdrawal here
 		// apart if the node isn't configured properly
 		e.log.Panic("unable to find withdrawal",
 			logging.WithdrawalID(resource))
@@ -201,7 +237,7 @@ func (e *Engine) offerERC20NotarySignatures(resource string) []byte {
 
 	asset, err := e.assets.Get(w.Asset)
 	if err != nil {
-		// there's not reason we cannot build the signature here
+		// there's no reason we cannot build the signature here
 		// apart if the node isn't configure properly
 		e.log.Panic("unable to get asset when offering signature",
 			logging.WithdrawalID(w.ID),
@@ -211,11 +247,12 @@ func (e *Engine) offerERC20NotarySignatures(resource string) []byte {
 			logging.Error(err))
 	}
 
+	creation := time.Unix(0, w.CreationDate)
 	erc20asset, _ := asset.ERC20()
 	_, signature, err := erc20asset.SignWithdrawal(
-		w.Amount, w.Ext.GetErc20().GetReceiverAddress(), wref.ref)
+		w.Amount, w.Ext.GetErc20().GetReceiverAddress(), wref.ref, creation)
 	if err != nil {
-		// there's not reason we cannot build the signature here
+		// there's no reason we cannot build the signature here
 		// apart if the node isn't configure properly
 		e.log.Panic("unable to sign withdrawal",
 			logging.WithdrawalID(w.ID),

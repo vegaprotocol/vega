@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package node
 
 import (
@@ -28,6 +40,8 @@ import (
 	"code.vegaprotocol.io/vega/stats"
 
 	"github.com/blang/semver"
+	"github.com/tendermint/tendermint/abci/types"
+	tmtypes "github.com/tendermint/tendermint/types"
 	"google.golang.org/grpc"
 )
 
@@ -71,12 +85,14 @@ type NodeCommand struct {
 	statusChecker *monitoring.Status
 
 	protocolUpgrade <-chan string
+
+	tmNode *abci.TmNode
 }
 
 func (n *NodeCommand) Run(
 	confWatcher *config.Watcher,
 	vegaPaths paths.Paths,
-	nodeWalletPassphrase string,
+	nodeWalletPassphrase, tmHome, networkURL, network string,
 	args []string,
 ) error {
 	n.confWatcher = confWatcher
@@ -112,11 +128,11 @@ func (n *NodeCommand) Run(
 		return err
 	}
 
-	if err := n.startBlockchain(); err != nil {
+	if err := n.startAPIs(); err != nil {
 		return err
 	}
 
-	if err := n.startAPIs(); err != nil {
+	if err := n.startBlockchain(tmHome, network, networkURL); err != nil {
 		return err
 	}
 
@@ -259,9 +275,9 @@ func (n *NodeCommand) startAPIs() error {
 		n.protocol.GetPoW(),
 	)
 
+	n.coreService = coreapi.NewService(n.ctx, n.Log, n.conf.CoreAPI, n.protocol.GetBroker())
 	n.grpcServer.RegisterService(func(server *grpc.Server) {
-		svc := coreapi.NewService(n.ctx, n.Log, n.conf.CoreAPI, n.protocol.GetBroker())
-		apipb.RegisterCoreStateServiceServer(server, svc)
+		apipb.RegisterCoreStateServiceServer(server, n.coreService)
 	})
 
 	// watch configs
@@ -290,18 +306,35 @@ func (n *NodeCommand) startAPIs() error {
 	return nil
 }
 
-func (n *NodeCommand) startBlockchain() error {
+func (n *NodeCommand) startBlockchain(tmHome, network, networkURL string) error {
+	// make sure any env variable is resolved
+	tmHome = os.ExpandEnv(tmHome)
 	n.abciApp = newAppW(n.protocol.Abci())
 
 	switch n.conf.Blockchain.ChainProvider {
 	case blockchain.ProviderTendermint:
-		n.blockchainServer = blockchain.NewServer(
-			abci.NewServer(n.Log, n.conf.Blockchain, n.abciApp),
-		)
+		var err error
+		// initialise the node
+		n.tmNode, err = n.startABCI(n.ctx, n.abciApp, tmHome, network, networkURL)
+		if err != nil {
+			return err
+		}
+		n.blockchainServer = blockchain.NewServer(n.tmNode)
+		// initialise the client
+		client, err := n.tmNode.GetClient()
+		if err != nil {
+			return err
+		}
+		// n.blockchainClient = blockchain.NewClient(client)
+		n.blockchainClient.Set(client)
 	case blockchain.ProviderNullChain:
-		n.nullBlockchain.SetABCIApp(n.abciApp)
 		// nullchain acts as both the client and the server because its does everything
+		n.nullBlockchain = nullchain.NewClient(n.Log, n.conf.Blockchain.Null)
+		n.nullBlockchain.SetABCIApp(n.abciApp)
 		n.blockchainServer = blockchain.NewServer(n.nullBlockchain)
+		// n.blockchainClient = blockchain.NewClient(n.nullBlockchain)
+		n.blockchainClient.Set(n.nullBlockchain)
+
 	default:
 		return ErrUnknownChainProvider
 	}
@@ -377,18 +410,39 @@ func (n *NodeCommand) loadNodeWallets(_ []string) (err error) {
 	return n.nodeWallets.Verify()
 }
 
-func (n *NodeCommand) startBlockchainClients(_ []string) error {
-	switch n.conf.Blockchain.ChainProvider {
-	case blockchain.ProviderTendermint:
-		a, err := abci.NewClient(n.conf.Blockchain.Tendermint.ClientAddr)
-		if err != nil {
-			return err
-		}
-		n.blockchainClient = blockchain.NewClient(a)
-	case blockchain.ProviderNullChain:
-		n.nullBlockchain = nullchain.NewClient(n.Log, n.conf.Blockchain.Null)
-		n.blockchainClient = blockchain.NewClient(n.nullBlockchain)
+func (n *NodeCommand) startABCI(
+	ctx context.Context,
+	app types.Application,
+	tmHome string,
+	network string,
+	networkURL string,
+) (*abci.TmNode, error) {
+	var (
+		genesisDoc *tmtypes.GenesisDoc
+		err        error
+	)
+	if len(network) > 0 {
+		genesisDoc, err = httpGenesisDocProvider(network)
+	} else if len(networkURL) > 0 {
+		genesisDoc, err = genesisDocHTTPFromURL(networkURL)
 	}
+	if err != nil {
+		return nil, err
+	}
+
+	return abci.NewTmNode(
+		n.conf.Blockchain,
+		n.Log,
+		tmHome,
+		app,
+		genesisDoc,
+	)
+}
+
+func (n *NodeCommand) startBlockchainClients(_ []string) error {
+	// just intantiate the client here, we'll setup the actual impl later on
+	// when the null blockchain or tendermint is started.
+	n.blockchainClient = blockchain.NewClient()
 
 	// if we are a non-validator, nothing needs to be done here
 	if !n.conf.IsValidator() {

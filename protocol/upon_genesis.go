@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package protocol
 
 import (
@@ -50,7 +62,11 @@ func (svcs *allServices) UponGenesis(ctx context.Context, rawstate []byte) (err 
 func (svcs *allServices) loadAsset(
 	ctx context.Context, id string, v *proto.AssetDetails,
 ) error {
-	aid, err := svcs.assets.NewAsset(id, types.AssetDetailsFromProto(v))
+	rawAsset, err := types.AssetDetailsFromProto(v)
+	if err != nil {
+		return err
+	}
+	aid, err := svcs.assets.NewAsset(ctx, id, rawAsset)
 	if err != nil {
 		return fmt.Errorf("error instanciating asset %v", err)
 	}
@@ -84,7 +100,7 @@ func (svcs *allServices) loadAsset(
 		asset.SetValidNonValidator()
 	}
 
-	if err := svcs.assets.Enable(aid); err != nil {
+	if err := svcs.assets.Enable(ctx, aid); err != nil {
 		svcs.log.Error("invalid genesis asset",
 			logging.String("asset-details", v.String()),
 			logging.Error(err))

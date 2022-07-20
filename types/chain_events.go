@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 //lint:file-ignore ST1003 Ignore underscores in names, this is straight copied from the proto package to ease introducing the domain types
 
 package types
@@ -6,20 +18,120 @@ import (
 	"errors"
 	"fmt"
 
-	proto "code.vegaprotocol.io/protos/vega"
+	vegapb "code.vegaprotocol.io/protos/vega"
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
+	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/types/num"
 )
 
 type (
-	WithdrawExt                  = proto.WithdrawExt
-	WithdrawExt_Erc20            = proto.WithdrawExt_Erc20
-	Erc20WithdrawExt             = proto.Erc20WithdrawExt
-	BuiltinAssetEvent_Deposit    = proto.BuiltinAssetEvent_Deposit
-	BuiltinAssetEvent_Withdrawal = proto.BuiltinAssetEvent_Withdrawal
+	BuiltinAssetEvent_Deposit    = vegapb.BuiltinAssetEvent_Deposit
+	BuiltinAssetEvent_Withdrawal = vegapb.BuiltinAssetEvent_Withdrawal
 )
 
-type WithdrawalStatus = proto.Withdrawal_Status
+type WithdrawExt struct {
+	Ext isWithdrawExtExt
+}
+
+func (x *WithdrawExt) String() string {
+	return fmt.Sprintf(
+		"ext(%s)",
+		reflectPointerToString(x.Ext),
+	)
+}
+
+func (x *WithdrawExt) IntoProto() *vegapb.WithdrawExt {
+	if x == nil {
+		return nil
+	}
+	switch st := x.Ext.(type) {
+	case *WithdrawExtErc20:
+		return &vegapb.WithdrawExt{
+			Ext: st.IntoProto(),
+		}
+	default:
+		return nil
+	}
+}
+
+func (x *WithdrawExt) GetErc20() *WithdrawExtErc20 {
+	switch st := x.Ext.(type) {
+	case *WithdrawExtErc20:
+		return st
+	default:
+		return nil
+	}
+}
+
+func WithdrawExtFromProto(extProto *vegapb.WithdrawExt) *WithdrawExt {
+	if extProto == nil {
+		return nil
+	}
+	var src isWithdrawExtExt
+	switch st := extProto.Ext.(type) {
+	case *vegapb.WithdrawExt_Erc20:
+		src = WithdrawExtErc20FromProto(st)
+	}
+	return &WithdrawExt{
+		Ext: src,
+	}
+}
+
+type isWithdrawExtExt interface {
+	isWithdrawExtExt()
+	String() string
+}
+
+type WithdrawExtErc20 struct {
+	Erc20 *Erc20WithdrawExt
+}
+
+func (x *WithdrawExtErc20) isWithdrawExtExt() {}
+
+func (x *WithdrawExtErc20) String() string {
+	return fmt.Sprintf(
+		"erc20(%s)",
+		reflectPointerToString(x.Erc20),
+	)
+}
+
+func (x *WithdrawExtErc20) IntoProto() *vegapb.WithdrawExt_Erc20 {
+	return &vegapb.WithdrawExt_Erc20{
+		Erc20: x.Erc20.IntoProto(),
+	}
+}
+
+func (x *WithdrawExtErc20) GetReceiverAddress() string {
+	return x.Erc20.ReceiverAddress
+}
+
+func WithdrawExtErc20FromProto(erc20 *vegapb.WithdrawExt_Erc20) *WithdrawExtErc20 {
+	return &WithdrawExtErc20{
+		Erc20: Erc20WithdrawExtFromProto(erc20.Erc20),
+	}
+}
+
+type Erc20WithdrawExt struct {
+	ReceiverAddress string
+}
+
+func (x *Erc20WithdrawExt) String() string {
+	return fmt.Sprintf("receiverAddress(%s)", x.ReceiverAddress)
+}
+
+func (x *Erc20WithdrawExt) IntoProto() *vegapb.Erc20WithdrawExt {
+	return &vegapb.Erc20WithdrawExt{
+		ReceiverAddress: x.ReceiverAddress,
+	}
+}
+
+func Erc20WithdrawExtFromProto(erc20 *vegapb.Erc20WithdrawExt) *Erc20WithdrawExt {
+	return &Erc20WithdrawExt{
+		ReceiverAddress: crypto.EthereumChecksumAddress(erc20.ReceiverAddress),
+	}
+}
+
+type WithdrawalStatus = vegapb.Withdrawal_Status
 
 const (
 	// WithdrawalStatusUnspecified Default value, always invalid.
@@ -59,8 +171,8 @@ type Withdrawal struct {
 	Ext *WithdrawExt
 }
 
-func (w *Withdrawal) IntoProto() *proto.Withdrawal {
-	return &proto.Withdrawal{
+func (w *Withdrawal) IntoProto() *vegapb.Withdrawal {
+	return &vegapb.Withdrawal{
 		Id:                 w.ID,
 		PartyId:            w.PartyID,
 		Amount:             num.UintToString(w.Amount),
@@ -71,11 +183,11 @@ func (w *Withdrawal) IntoProto() *proto.Withdrawal {
 		Expiry:             w.ExpirationDate,
 		CreatedTimestamp:   w.CreationDate,
 		WithdrawnTimestamp: w.WithdrawalDate,
-		Ext:                w.Ext,
+		Ext:                w.Ext.IntoProto(),
 	}
 }
 
-func WithdrawalFromProto(w *proto.Withdrawal) *Withdrawal {
+func WithdrawalFromProto(w *vegapb.Withdrawal) *Withdrawal {
 	amt, _ := num.UintFromString(w.Amount, 10)
 	return &Withdrawal{
 		ID:             w.Id,
@@ -88,11 +200,11 @@ func WithdrawalFromProto(w *proto.Withdrawal) *Withdrawal {
 		ExpirationDate: w.Expiry,
 		CreationDate:   w.CreatedTimestamp,
 		WithdrawalDate: w.WithdrawnTimestamp,
-		Ext:            w.Ext,
+		Ext:            WithdrawExtFromProto(w.Ext),
 	}
 }
 
-type DepositStatus = proto.Deposit_Status
+type DepositStatus = vegapb.Deposit_Status
 
 const (
 	// DepositStatusUnspecified Default value, always invalid.
@@ -125,8 +237,8 @@ type Deposit struct {
 	CreationDate int64
 }
 
-func (d *Deposit) IntoProto() *proto.Deposit {
-	return &proto.Deposit{
+func (d *Deposit) IntoProto() *vegapb.Deposit {
+	return &vegapb.Deposit{
 		Id:                d.ID,
 		Status:            d.Status,
 		PartyId:           d.PartyID,
@@ -138,7 +250,21 @@ func (d *Deposit) IntoProto() *proto.Deposit {
 	}
 }
 
-func DepositFromProto(d *proto.Deposit) *Deposit {
+func (d *Deposit) String() string {
+	return fmt.Sprintf(
+		"ID(%s) status(%s) partyID(%s) asset(%s) amount(%s) txHash(%s) creditDate(%v) creationDate(%v)",
+		d.ID,
+		d.Status.String(),
+		d.PartyID,
+		d.Asset,
+		uintPointerToString(d.Amount),
+		d.TxHash,
+		d.CreditDate,
+		d.CreationDate,
+	)
+}
+
+func DepositFromProto(d *vegapb.Deposit) *Deposit {
 	amt, _ := num.UintFromString(d.Amount, 10)
 	return &Deposit{
 		ID:           d.Id,
@@ -174,7 +300,10 @@ func (c ChainEventERC20) IntoProto() *commandspb.ChainEvent_Erc20 {
 }
 
 func (c ChainEventERC20) String() string {
-	return c.IntoProto().Erc20.String()
+	return fmt.Sprintf(
+		"erc20(%s)",
+		reflectPointerToString(c.ERC20),
+	)
 }
 
 type BuiltinAssetDeposit struct {
@@ -186,7 +315,7 @@ type BuiltinAssetDeposit struct {
 	Amount *num.Uint
 }
 
-func NewBuiltinAssetDepositFromProto(p *proto.BuiltinAssetDeposit) (*BuiltinAssetDeposit, error) {
+func NewBuiltinAssetDepositFromProto(p *vegapb.BuiltinAssetDeposit) (*BuiltinAssetDeposit, error) {
 	amount := num.Zero()
 	if len(p.Amount) > 0 {
 		var overflowed bool
@@ -202,8 +331,8 @@ func NewBuiltinAssetDepositFromProto(p *proto.BuiltinAssetDeposit) (*BuiltinAsse
 	}, nil
 }
 
-func (b BuiltinAssetDeposit) IntoProto() *proto.BuiltinAssetDeposit {
-	return &proto.BuiltinAssetDeposit{
+func (b BuiltinAssetDeposit) IntoProto() *vegapb.BuiltinAssetDeposit {
+	return &vegapb.BuiltinAssetDeposit{
 		VegaAssetId: b.VegaAssetID,
 		PartyId:     b.PartyID,
 		Amount:      num.UintToString(b.Amount),
@@ -211,7 +340,12 @@ func (b BuiltinAssetDeposit) IntoProto() *proto.BuiltinAssetDeposit {
 }
 
 func (b BuiltinAssetDeposit) String() string {
-	return b.IntoProto().String()
+	return fmt.Sprintf(
+		"party(%s) vegaAssetID(%s) amount(%s)",
+		b.PartyID,
+		b.VegaAssetID,
+		uintPointerToString(b.Amount),
+	)
 }
 
 func (b BuiltinAssetDeposit) GetVegaAssetID() string {
@@ -227,7 +361,7 @@ type BuiltinAssetWithdrawal struct {
 	Amount *num.Uint
 }
 
-func NewBuiltinAssetWithdrawalFromProto(p *proto.BuiltinAssetWithdrawal) (*BuiltinAssetWithdrawal, error) {
+func NewBuiltinAssetWithdrawalFromProto(p *vegapb.BuiltinAssetWithdrawal) (*BuiltinAssetWithdrawal, error) {
 	amount := num.Zero()
 	if len(p.Amount) > 0 {
 		var overflowed bool
@@ -243,8 +377,8 @@ func NewBuiltinAssetWithdrawalFromProto(p *proto.BuiltinAssetWithdrawal) (*Built
 	}, nil
 }
 
-func (b BuiltinAssetWithdrawal) IntoProto() *proto.BuiltinAssetWithdrawal {
-	return &proto.BuiltinAssetWithdrawal{
+func (b BuiltinAssetWithdrawal) IntoProto() *vegapb.BuiltinAssetWithdrawal {
+	return &vegapb.BuiltinAssetWithdrawal{
 		VegaAssetId: b.VegaAssetID,
 		PartyId:     b.PartyID,
 		Amount:      num.UintToString(b.Amount),
@@ -252,7 +386,12 @@ func (b BuiltinAssetWithdrawal) IntoProto() *proto.BuiltinAssetWithdrawal {
 }
 
 func (b BuiltinAssetWithdrawal) String() string {
-	return b.IntoProto().String()
+	return fmt.Sprintf(
+		"partyID(%s) vegaAssetID(%s) amount(%s)",
+		b.PartyID,
+		b.VegaAssetID,
+		uintPointerToString(b.Amount),
+	)
 }
 
 func (b BuiltinAssetWithdrawal) GetVegaAssetID() string {
@@ -281,7 +420,10 @@ func (c ChainEvent_Builtin) IntoProto() *commandspb.ChainEvent_Builtin {
 }
 
 func (c ChainEvent_Builtin) String() string {
-	return c.IntoProto().Builtin.String()
+	return fmt.Sprintf(
+		"builtin(%s)",
+		reflectPointerToString(c.Builtin),
+	)
 }
 
 type BuiltinAssetEvent struct {
@@ -294,18 +436,19 @@ type BuiltinAssetEvent struct {
 type builtinAssetEventAction interface {
 	isBuiltinAssetEvent()
 	oneOfProto() interface{}
+	String() string
 }
 
-func NewBuiltinAssetEventFromProto(p *proto.BuiltinAssetEvent) (*BuiltinAssetEvent, error) {
+func NewBuiltinAssetEventFromProto(p *vegapb.BuiltinAssetEvent) (*BuiltinAssetEvent, error) {
 	var (
 		ae  = &BuiltinAssetEvent{}
 		err error
 	)
 	switch e := p.Action.(type) {
-	case *proto.BuiltinAssetEvent_Deposit:
+	case *vegapb.BuiltinAssetEvent_Deposit:
 		ae.Action, err = NewBuiltinAssetEventDeposit(e)
 		return ae, err
-	case *proto.BuiltinAssetEvent_Withdrawal:
+	case *vegapb.BuiltinAssetEvent_Withdrawal:
 		ae.Action, err = NewBuiltinAssetEventWithdrawal(e)
 		return ae, err
 	default:
@@ -313,23 +456,37 @@ func NewBuiltinAssetEventFromProto(p *proto.BuiltinAssetEvent) (*BuiltinAssetEve
 	}
 }
 
-func (c BuiltinAssetEvent) IntoProto() *proto.BuiltinAssetEvent {
+func (c BuiltinAssetEvent) IntoProto() *vegapb.BuiltinAssetEvent {
 	action := c.Action.oneOfProto()
-	ceb := &proto.BuiltinAssetEvent{}
+	ceb := &vegapb.BuiltinAssetEvent{}
 	switch a := action.(type) {
-	case *proto.BuiltinAssetEvent_Deposit:
+	case *vegapb.BuiltinAssetEvent_Deposit:
 		ceb.Action = a
-	case *proto.BuiltinAssetEvent_Withdrawal:
+	case *vegapb.BuiltinAssetEvent_Withdrawal:
 		ceb.Action = a
 	}
 	return ceb
+}
+
+func (c BuiltinAssetEvent) String() string {
+	return fmt.Sprintf(
+		"action(%s)",
+		reflectPointerToString(c.Action),
+	)
 }
 
 type BuiltinAssetEventDeposit struct {
 	Deposit *BuiltinAssetDeposit
 }
 
-func NewBuiltinAssetEventDeposit(p *proto.BuiltinAssetEvent_Deposit) (*BuiltinAssetEventDeposit, error) {
+func (b BuiltinAssetEventDeposit) String() string {
+	return fmt.Sprintf(
+		"deposit(%s)",
+		reflectPointerToString(b.Deposit),
+	)
+}
+
+func NewBuiltinAssetEventDeposit(p *vegapb.BuiltinAssetEvent_Deposit) (*BuiltinAssetEventDeposit, error) {
 	dep, err := NewBuiltinAssetDepositFromProto(p.Deposit)
 	if err != nil {
 		return nil, err
@@ -339,14 +496,15 @@ func NewBuiltinAssetEventDeposit(p *proto.BuiltinAssetEvent_Deposit) (*BuiltinAs
 	}, nil
 }
 
-func (b BuiltinAssetEventDeposit) IntoProto() *proto.BuiltinAssetEvent_Deposit {
-	p := &proto.BuiltinAssetEvent_Deposit{
+func (b BuiltinAssetEventDeposit) IntoProto() *vegapb.BuiltinAssetEvent_Deposit {
+	p := &vegapb.BuiltinAssetEvent_Deposit{
 		Deposit: b.Deposit.IntoProto(),
 	}
 	return p
 }
 
 func (b BuiltinAssetEventDeposit) isBuiltinAssetEvent() {}
+
 func (b BuiltinAssetEventDeposit) oneOfProto() interface{} {
 	return b.IntoProto()
 }
@@ -355,7 +513,14 @@ type BuiltinAssetEventWithdrawal struct {
 	Withdrawal *BuiltinAssetWithdrawal
 }
 
-func NewBuiltinAssetEventWithdrawal(p *proto.BuiltinAssetEvent_Withdrawal) (*BuiltinAssetEventWithdrawal, error) {
+func (b BuiltinAssetEventWithdrawal) String() string {
+	return fmt.Sprintf(
+		"withdrawal(%s)",
+		reflectPointerToString(b.Withdrawal),
+	)
+}
+
+func NewBuiltinAssetEventWithdrawal(p *vegapb.BuiltinAssetEvent_Withdrawal) (*BuiltinAssetEventWithdrawal, error) {
 	withdrawal, err := NewBuiltinAssetWithdrawalFromProto(p.Withdrawal)
 	if err != nil {
 		return nil, err
@@ -365,14 +530,15 @@ func NewBuiltinAssetEventWithdrawal(p *proto.BuiltinAssetEvent_Withdrawal) (*Bui
 	}, nil
 }
 
-func (b BuiltinAssetEventWithdrawal) IntoProto() *proto.BuiltinAssetEvent_Withdrawal {
-	p := &proto.BuiltinAssetEvent_Withdrawal{
+func (b BuiltinAssetEventWithdrawal) IntoProto() *vegapb.BuiltinAssetEvent_Withdrawal {
+	p := &vegapb.BuiltinAssetEvent_Withdrawal{
 		Withdrawal: b.Withdrawal.IntoProto(),
 	}
 	return p
 }
 
 func (b BuiltinAssetEventWithdrawal) isBuiltinAssetEvent() {}
+
 func (b BuiltinAssetEventWithdrawal) oneOfProto() interface{} {
 	return b.IntoProto()
 }
@@ -395,9 +561,10 @@ type ERC20Event struct {
 type erc20EventAction interface {
 	isErc20EventAction()
 	oneOfProto() interface{}
+	String() string
 }
 
-func NewERC20Event(p *proto.ERC20Event) (*ERC20Event, error) {
+func NewERC20Event(p *vegapb.ERC20Event) (*ERC20Event, error) {
 	e := ERC20Event{
 		Index: p.Index,
 		Block: p.Block,
@@ -405,19 +572,19 @@ func NewERC20Event(p *proto.ERC20Event) (*ERC20Event, error) {
 
 	var err error
 	switch a := p.Action.(type) {
-	case *proto.ERC20Event_AssetDelist:
+	case *vegapb.ERC20Event_AssetDelist:
 		e.Action = NewERC20EventAssetDelist(a)
 		return &e, nil
-	case *proto.ERC20Event_AssetList:
+	case *vegapb.ERC20Event_AssetList:
 		e.Action = NewERC20EventAssetList(a)
 		return &e, nil
-	case *proto.ERC20Event_Deposit:
+	case *vegapb.ERC20Event_Deposit:
 		e.Action, err = NewERC20EventDeposit(a)
 		if err != nil {
 			return nil, err
 		}
 		return &e, nil
-	case *proto.ERC20Event_Withdrawal:
+	case *vegapb.ERC20Event_Withdrawal:
 		e.Action = NewERC20EventWithdrawal(a)
 		return &e, nil
 	default:
@@ -425,8 +592,8 @@ func NewERC20Event(p *proto.ERC20Event) (*ERC20Event, error) {
 	}
 }
 
-func (e ERC20Event) IntoProto() *proto.ERC20Event {
-	p := &proto.ERC20Event{
+func (e ERC20Event) IntoProto() *vegapb.ERC20Event {
+	p := &vegapb.ERC20Event{
 		Index: e.Index,
 		Block: e.Block,
 	}
@@ -447,23 +614,40 @@ func (e ERC20Event) IntoProto() *proto.ERC20Event {
 	return p
 }
 
+func (e ERC20Event) String() string {
+	return fmt.Sprintf(
+		"index(%v) block(%v) action(%s)",
+		e.Index,
+		e.Block,
+		reflectPointerToString(e.Action),
+	)
+}
+
 type ERC20EventAssetDelist struct {
 	AssetDelist *ERC20AssetDelist
 }
 
+func (e ERC20EventAssetDelist) String() string {
+	return fmt.Sprintf(
+		"assetDelist(%s)",
+		reflectPointerToString(e.AssetDelist),
+	)
+}
+
 func (ERC20EventAssetDelist) isErc20EventAction() {}
+
 func (e ERC20EventAssetDelist) oneOfProto() interface{} {
 	return e.AssetDelist.IntoProto()
 }
 
-func NewERC20EventAssetDelist(p *proto.ERC20Event_AssetDelist) *ERC20EventAssetDelist {
+func NewERC20EventAssetDelist(p *vegapb.ERC20Event_AssetDelist) *ERC20EventAssetDelist {
 	return &ERC20EventAssetDelist{
 		AssetDelist: NewERC20AssetDelistFromProto(p.AssetDelist),
 	}
 }
 
-func (e ERC20EventAssetDelist) IntoProto() *proto.ERC20Event_AssetDelist {
-	return &proto.ERC20Event_AssetDelist{
+func (e ERC20EventAssetDelist) IntoProto() *vegapb.ERC20Event_AssetDelist {
+	return &vegapb.ERC20Event_AssetDelist{
 		AssetDelist: e.AssetDelist.IntoProto(),
 	}
 }
@@ -473,20 +657,20 @@ type ERC20AssetDelist struct {
 	VegaAssetId string
 }
 
-func NewERC20AssetDelistFromProto(p *proto.ERC20AssetDelist) *ERC20AssetDelist {
+func NewERC20AssetDelistFromProto(p *vegapb.ERC20AssetDelist) *ERC20AssetDelist {
 	return &ERC20AssetDelist{
 		VegaAssetId: p.VegaAssetId,
 	}
 }
 
-func (e ERC20AssetDelist) IntoProto() *proto.ERC20AssetDelist {
-	return &proto.ERC20AssetDelist{
+func (e ERC20AssetDelist) IntoProto() *vegapb.ERC20AssetDelist {
+	return &vegapb.ERC20AssetDelist{
 		VegaAssetId: e.VegaAssetId,
 	}
 }
 
 func (e ERC20AssetDelist) String() string {
-	return e.IntoProto().String()
+	return fmt.Sprintf("vegaAssetID(%s)", e.VegaAssetId)
 }
 
 type ERC20EventAssetList struct {
@@ -494,18 +678,26 @@ type ERC20EventAssetList struct {
 }
 
 func (ERC20EventAssetList) isErc20EventAction() {}
+
 func (e ERC20EventAssetList) oneOfProto() interface{} {
 	return e.AssetList.IntoProto()
 }
 
-func NewERC20EventAssetList(p *proto.ERC20Event_AssetList) *ERC20EventAssetList {
+func (e ERC20EventAssetList) String() string {
+	return fmt.Sprintf(
+		"assetList(%s)",
+		reflectPointerToString(e.AssetList),
+	)
+}
+
+func NewERC20EventAssetList(p *vegapb.ERC20Event_AssetList) *ERC20EventAssetList {
 	return &ERC20EventAssetList{
 		AssetList: NewERC20AssetListFromProto(p.AssetList),
 	}
 }
 
-func (e ERC20EventAssetList) IntoProto() *proto.ERC20Event_AssetList {
-	return &proto.ERC20Event_AssetList{
+func (e ERC20EventAssetList) IntoProto() *vegapb.ERC20Event_AssetList {
+	return &vegapb.ERC20Event_AssetList{
 		AssetList: e.AssetList.IntoProto(),
 	}
 }
@@ -513,22 +705,28 @@ func (e ERC20EventAssetList) IntoProto() *proto.ERC20Event_AssetList {
 type ERC20AssetList struct {
 	// The Vega network internal identifier of the asset
 	VegaAssetID string
+	// ethereum address of the asset
+	AssetSource string
 }
 
-func NewERC20AssetListFromProto(p *proto.ERC20AssetList) *ERC20AssetList {
+func NewERC20AssetListFromProto(p *vegapb.ERC20AssetList) *ERC20AssetList {
 	return &ERC20AssetList{
 		VegaAssetID: p.VegaAssetId,
+		AssetSource: p.AssetSource,
 	}
 }
 
-func (e ERC20AssetList) IntoProto() *proto.ERC20AssetList {
-	return &proto.ERC20AssetList{
+func (e ERC20AssetList) IntoProto() *vegapb.ERC20AssetList {
+	return &vegapb.ERC20AssetList{
 		VegaAssetId: e.VegaAssetID,
 	}
 }
 
 func (e ERC20AssetList) String() string {
-	return e.IntoProto().String()
+	return fmt.Sprintf(
+		"vegaAssetID(%s)",
+		e.VegaAssetID,
+	)
 }
 
 func (e ERC20AssetList) GetVegaAssetID() string {
@@ -540,18 +738,26 @@ type ERC20EventWithdrawal struct {
 }
 
 func (ERC20EventWithdrawal) isErc20EventAction() {}
+
 func (e ERC20EventWithdrawal) oneOfProto() interface{} {
 	return e.Withdrawal.IntoProto()
 }
 
-func NewERC20EventWithdrawal(p *proto.ERC20Event_Withdrawal) *ERC20EventWithdrawal {
+func (e ERC20EventWithdrawal) String() string {
+	return fmt.Sprintf(
+		"withdrawal(%s)",
+		reflectPointerToString(e.Withdrawal),
+	)
+}
+
+func NewERC20EventWithdrawal(p *vegapb.ERC20Event_Withdrawal) *ERC20EventWithdrawal {
 	return &ERC20EventWithdrawal{
 		Withdrawal: NewERC20WithdrawalFromProto(p.Withdrawal),
 	}
 }
 
-func (e ERC20EventWithdrawal) IntoProto() *proto.ERC20Event_Withdrawal {
-	return &proto.ERC20Event_Withdrawal{
+func (e ERC20EventWithdrawal) IntoProto() *vegapb.ERC20Event_Withdrawal {
+	return &vegapb.ERC20Event_Withdrawal{
 		Withdrawal: e.Withdrawal.IntoProto(),
 	}
 }
@@ -565,7 +771,7 @@ type ERC20Withdrawal struct {
 	ReferenceNonce string
 }
 
-func NewERC20WithdrawalFromProto(p *proto.ERC20Withdrawal) *ERC20Withdrawal {
+func NewERC20WithdrawalFromProto(p *vegapb.ERC20Withdrawal) *ERC20Withdrawal {
 	return &ERC20Withdrawal{
 		VegaAssetID:           p.VegaAssetId,
 		TargetEthereumAddress: p.TargetEthereumAddress,
@@ -573,8 +779,8 @@ func NewERC20WithdrawalFromProto(p *proto.ERC20Withdrawal) *ERC20Withdrawal {
 	}
 }
 
-func (e ERC20Withdrawal) IntoProto() *proto.ERC20Withdrawal {
-	return &proto.ERC20Withdrawal{
+func (e ERC20Withdrawal) IntoProto() *vegapb.ERC20Withdrawal {
+	return &vegapb.ERC20Withdrawal{
 		VegaAssetId:           e.VegaAssetID,
 		TargetEthereumAddress: e.TargetEthereumAddress,
 		ReferenceNonce:        e.ReferenceNonce,
@@ -582,7 +788,12 @@ func (e ERC20Withdrawal) IntoProto() *proto.ERC20Withdrawal {
 }
 
 func (e ERC20Withdrawal) String() string {
-	return e.IntoProto().String()
+	return fmt.Sprintf(
+		"vegaAssetID(%s) referenceNonce(%s) targetEthereumAddress(%s)",
+		e.VegaAssetID,
+		e.ReferenceNonce,
+		e.TargetEthereumAddress,
+	)
 }
 
 func (e ERC20Withdrawal) GetVegaAssetID() string {
@@ -593,12 +804,20 @@ type ERC20EventDeposit struct {
 	Deposit *ERC20Deposit
 }
 
+func (e ERC20EventDeposit) String() string {
+	return fmt.Sprintf(
+		"deposit(%s)",
+		reflectPointerToString(e.Deposit),
+	)
+}
+
 func (ERC20EventDeposit) isErc20EventAction() {}
+
 func (e ERC20EventDeposit) oneOfProto() interface{} {
 	return e.Deposit.IntoProto()
 }
 
-func NewERC20EventDeposit(p *proto.ERC20Event_Deposit) (*ERC20EventDeposit, error) {
+func NewERC20EventDeposit(p *vegapb.ERC20Event_Deposit) (*ERC20EventDeposit, error) {
 	e := ERC20EventDeposit{}
 	var err error
 	e.Deposit, err = NewERC20DepositFromProto(p.Deposit)
@@ -608,8 +827,8 @@ func NewERC20EventDeposit(p *proto.ERC20Event_Deposit) (*ERC20EventDeposit, erro
 	return &e, nil
 }
 
-func (e ERC20EventDeposit) IntoProto() *proto.ERC20Event_Deposit {
-	p := proto.ERC20Event_Deposit{
+func (e ERC20EventDeposit) IntoProto() *vegapb.ERC20Event_Deposit {
+	p := vegapb.ERC20Event_Deposit{
 		Deposit: e.Deposit.IntoProto(),
 	}
 	return &p
@@ -626,7 +845,7 @@ type ERC20Deposit struct {
 	Amount *num.Uint
 }
 
-func NewERC20DepositFromProto(p *proto.ERC20Deposit) (*ERC20Deposit, error) {
+func NewERC20DepositFromProto(p *vegapb.ERC20Deposit) (*ERC20Deposit, error) {
 	e := ERC20Deposit{
 		VegaAssetID:           p.VegaAssetId,
 		SourceEthereumAddress: p.SourceEthereumAddress,
@@ -642,8 +861,8 @@ func NewERC20DepositFromProto(p *proto.ERC20Deposit) (*ERC20Deposit, error) {
 	return &e, nil
 }
 
-func (e ERC20Deposit) IntoProto() *proto.ERC20Deposit {
-	return &proto.ERC20Deposit{
+func (e ERC20Deposit) IntoProto() *vegapb.ERC20Deposit {
+	return &vegapb.ERC20Deposit{
 		VegaAssetId:           e.VegaAssetID,
 		SourceEthereumAddress: e.SourceEthereumAddress,
 		TargetPartyId:         e.TargetPartyID,
@@ -652,7 +871,13 @@ func (e ERC20Deposit) IntoProto() *proto.ERC20Deposit {
 }
 
 func (e ERC20Deposit) String() string {
-	return e.IntoProto().String()
+	return fmt.Sprintf(
+		"vegaAssetID(%s) targetPartyID(%s) amount(%s) sourceEthereumAddress(%s)",
+		e.VegaAssetID,
+		e.TargetPartyID,
+		uintPointerToString(e.Amount),
+		e.SourceEthereumAddress,
+	)
 }
 
 func (e ERC20Deposit) GetVegaAssetID() string {

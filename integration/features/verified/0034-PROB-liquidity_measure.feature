@@ -1,4 +1,4 @@
-Feature: Tests confirming probability of trading acceptance criteria (0038-OLIQ-001, 0038-OLIQ-002)
+Feature: Tests confirming probability of trading acceptance criteria (0038-OLIQ-001, 0038-OLIQ-002, 0009-MRKP-001, 0009-MRKP-002, 0009-MRKP-006, 0018-RSKM-007, 0018-RSKM-008)
 
   Background:
 
@@ -33,16 +33,6 @@ Feature: Tests confirming probability of trading acceptance criteria (0038-OLIQ-
       | party-lp-1 | ETH   | 100000000000000000000 |
       | party3     | ETH   | 100000000000          |
 
-    # Trigger an auction to set the mark price
-    When the parties place the following orders:
-      | party  | market id | side | volume | price      | resulting trades | type       | tif     | reference |
-      | party1 | ETH/DEC19 | buy  | 1      | 1199990000 | 0                | TYPE_LIMIT | TIF_GTC | party1-1  |
-      | party2 | ETH/DEC19 | sell | 1      | 1200010000 | 0                | TYPE_LIMIT | TIF_GTC | party2-1  |
-      | party1 | ETH/DEC19 | buy  | 1      | 1200000000 | 0                | TYPE_LIMIT | TIF_GFA | party1-2  |
-      | party2 | ETH/DEC19 | sell | 1      | 1200000000 | 0                | TYPE_LIMIT | TIF_GFA | party2-2  |
-    Then the opening auction period ends for market "ETH/DEC19"
-    And the mark price should be "1200000000" for the market "ETH/DEC19"
-
     And the parties submit the following liquidity provision:
       | id  | party      | market id | commitment amount | fee | side | pegged reference | proportion | offset | reference | lp type    |
       | lp1 | party-lp-1 | ETH/DEC19 | 1000000000000      | 0.1 | buy  | BID              | 1          | 100000 | lp-1-ref  | submission |
@@ -64,9 +54,19 @@ Feature: Tests confirming probability of trading acceptance criteria (0038-OLIQ-
       | lp1 | party-lp-1 | ETH/DEC19 | 1000000000000      | 0.1 | sell | ASK              | 1          | 90000  | lp-1-ref  | amendment  |
       | lp1 | party-lp-1 | ETH/DEC19 | 1000000000000      | 0.1 | sell | ASK              | 1          | 100000 | lp-1-ref  | amendment  |
 
+    # Trigger an auction to set the mark price
+    When the parties place the following orders:
+      | party  | market id | side | volume | price      | resulting trades | type       | tif     | reference |
+      | party1 | ETH/DEC19 | buy  | 1      | 1199990000 | 0                | TYPE_LIMIT | TIF_GTC | party1-1  |
+      | party2 | ETH/DEC19 | sell | 1      | 1200010000 | 0                | TYPE_LIMIT | TIF_GTC | party2-1  |
+      | party1 | ETH/DEC19 | buy  | 1      | 1200000000 | 0                | TYPE_LIMIT | TIF_GFA | party1-2  |
+      | party2 | ETH/DEC19 | sell | 1      | 1200000000 | 0                | TYPE_LIMIT | TIF_GFA | party2-2  |
+    Then the opening auction period ends for market "ETH/DEC19"
+    And the mark price should be "1200000000" for the market "ETH/DEC19"
+
     Then the liquidity provisions should have the following states:
       | id  | party      | market    | commitment amount | status        |
-      | lp1 | party-lp-1 | ETH/DEC19 | 1000000000000      | STATUS_ACTIVE |
+      | lp1 | party-lp-1 | ETH/DEC19 | 1000000000000     | STATUS_ACTIVE |
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
 
@@ -91,7 +91,7 @@ Feature: Tests confirming probability of trading acceptance criteria (0038-OLIQ-
       | sell | 1200090000 | 92585648669 |
       | sell | 1200100000 | 92584877187 |
 
-  Scenario:  LP pegged volume is pushed inside price monitoring bounds(0034-PROB-002);
+  Scenario:  LP pegged volume is pushed inside price monitoring bounds(0034-PROB-002, 0009-MRKP-003, 0009-MRKP-004, 0009-MRKP-005);
 
     Given the log normal risk model named "log-normal-risk-model-1":
       | risk aversion | tau     | mu | r | sigma |

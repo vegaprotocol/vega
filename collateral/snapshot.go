@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package collateral
 
 import (
@@ -5,7 +17,6 @@ import (
 	"sort"
 
 	"code.vegaprotocol.io/vega/events"
-	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
 
@@ -14,14 +25,17 @@ import (
 )
 
 type accState struct {
-	accPL      types.PayloadCollateralAccounts
-	assPL      types.PayloadCollateralAssets
-	assets     map[string]types.Asset
-	assetIDs   []string
-	hashes     map[string][]byte
-	updates    map[string]bool
-	serialised map[string][]byte
-	hashKeys   []string
+	accPL              types.PayloadCollateralAccounts
+	assPL              types.PayloadCollateralAssets
+	assets             map[string]types.Asset
+	assetIDs           []string
+	updatesAccounts    bool
+	updatesAssets      bool
+	serialisedAccounts []byte
+	serialisedAssets   []byte
+	hashKeys           []string
+	accountsKey        string
+	assetsKey          string
 }
 
 var (
@@ -42,8 +56,9 @@ func (e *Engine) Stopped() bool {
 	return false
 }
 
-func (e *Engine) GetHash(k string) ([]byte, error) {
-	return e.state.getHash(k)
+func (e *Engine) HasChanged(k string) bool {
+	// return e.state.HasChanged(k)
+	return true
 }
 
 func (e *Engine) GetState(k string) ([]byte, []types.StateProvider, error) {
@@ -58,17 +73,17 @@ func (e *Engine) LoadState(ctx context.Context, p *types.Payload) ([]types.State
 	// see what we're reloading
 	switch pl := p.Data.(type) {
 	case *types.PayloadCollateralAssets:
-		err := e.restoreAssets(ctx, pl.CollateralAssets)
+		err := e.restoreAssets(ctx, pl.CollateralAssets, p)
 		return nil, err
 	case *types.PayloadCollateralAccounts:
-		err := e.restoreAccounts(ctx, pl.CollateralAccounts)
+		err := e.restoreAccounts(ctx, pl.CollateralAccounts, p)
 		return nil, err
 	default:
 		return nil, ErrUnknownSnapshotType
 	}
 }
 
-func (e *Engine) restoreAccounts(ctx context.Context, accs *types.CollateralAccounts) error {
+func (e *Engine) restoreAccounts(ctx context.Context, accs *types.CollateralAccounts, p *types.Payload) error {
 	e.log.Debug("restoring accounts snapshot", logging.Int("n_accounts", len(accs.Accounts)))
 
 	evts := []events.Event{}
@@ -94,28 +109,33 @@ func (e *Engine) restoreAccounts(ctx context.Context, accs *types.CollateralAcco
 	e.state.updateAccs(e.hashableAccs)
 	e.broker.SendBatch(evts)
 	e.broker.SendBatch(pevts)
-	return nil
+	var err error
+	e.state.updatesAccounts = false
+	e.state.serialisedAccounts, err = proto.Marshal(p.IntoProto())
+
+	return err
 }
 
-func (e *Engine) restoreAssets(ctx context.Context, assets *types.CollateralAssets) error {
+func (e *Engine) restoreAssets(ctx context.Context, assets *types.CollateralAssets, p *types.Payload) error {
 	// @TODO the ID and name might not be the same, perhaps we need
 	// to wrap the asset details to preserve that data
 	e.log.Debug("restoring assets snapshot", logging.Int("n_assets", len(assets.Assets)))
 	e.enabledAssets = make(map[string]types.Asset, len(assets.Assets))
 	e.state.assetIDs = make([]string, 0, len(assets.Assets))
 	e.state.assets = make(map[string]types.Asset, len(assets.Assets))
-	evts := []events.Event{}
 	for _, a := range assets.Assets {
 		ast := types.Asset{
 			ID:      a.ID,
 			Details: a.Details,
+			Status:  a.Status,
 		}
 		e.enabledAssets[a.ID] = ast
 		e.state.enableAsset(ast)
-		evts = append(evts, events.NewAssetEvent(ctx, *a))
 	}
-	e.broker.SendBatch(evts)
-	return nil
+	var err error
+	e.state.updatesAssets = false
+	e.state.serialisedAssets, err = proto.Marshal(p.IntoProto())
+	return err
 }
 
 func newAccState() *accState {
@@ -126,21 +146,18 @@ func newAccState() *accState {
 		assPL: types.PayloadCollateralAssets{
 			CollateralAssets: &types.CollateralAssets{},
 		},
-		assets:     map[string]types.Asset{},
-		assetIDs:   []string{},
-		hashes:     map[string][]byte{},
-		updates:    map[string]bool{},
-		serialised: map[string][]byte{},
+		assets:          map[string]types.Asset{},
+		assetIDs:        []string{},
+		updatesAccounts: true,
+		updatesAssets:   true,
 	}
+	state.accountsKey = state.accPL.Key()
+	state.assetsKey = state.assPL.Key()
 	state.hashKeys = []string{
-		state.assPL.Key(),
-		state.accPL.Key(),
+		state.assetsKey,
+		state.accountsKey,
 	}
-	for _, k := range state.hashKeys {
-		state.hashes[k] = nil
-		state.updates[k] = true
-		state.serialised[k] = nil
-	}
+
 	return state
 }
 
@@ -148,19 +165,15 @@ func (a *accState) enableAsset(asset types.Asset) {
 	a.assets[asset.ID] = asset
 	a.assetIDs = append(a.assetIDs, asset.ID)
 	sort.Strings(a.assetIDs)
-	a.updates[a.assPL.Key()] = true
+	a.updatesAssets = true
 }
 
 func (a *accState) updateAccs(accs []*types.Account) {
-	a.updates[a.accPL.Key()] = true
+	a.updatesAccounts = true
 	a.accPL.CollateralAccounts.Accounts = accs[:]
 }
 
-func (a *accState) hashAssets() error {
-	k := a.assPL.Key()
-	if !a.updates[k] {
-		return nil
-	}
+func (a *accState) hashAssets() ([]byte, error) {
 	assets := make([]*types.Asset, 0, len(a.assetIDs))
 	for _, id := range a.assetIDs {
 		ast := a.assets[id]
@@ -172,71 +185,62 @@ func (a *accState) hashAssets() error {
 	}
 	data, err := proto.Marshal(pl.IntoProto())
 	if err != nil {
-		return err
+		return nil, err
 	}
-	a.updates[k] = false
-	a.hashes[k] = crypto.Hash(data)
-	a.serialised[k] = data
-	return nil
+	a.updatesAssets = false
+	a.serialisedAssets = data
+	return data, nil
 }
 
-func (a *accState) hashAccounts() error {
-	k := a.accPL.Key()
-	if !a.updates[k] {
-		return nil
-	}
-
+func (a *accState) hashAccounts() ([]byte, error) {
 	// the account slice is already set, sorted and all
 	pl := types.Payload{
 		Data: &a.accPL,
 	}
 	data, err := proto.Marshal(pl.IntoProto())
 	if err != nil {
-		return err
-	}
-	a.serialised[k] = data
-	a.hashes[k] = crypto.Hash(data)
-	a.updates[k] = false
-	return nil
-}
-
-func (a *accState) getState(k string) ([]byte, error) {
-	update, exist := a.updates[k]
-	if !exist {
-		return nil, ErrSnapshotKeyDoesNotExist
-	}
-	if !update {
-		h := a.serialised[k]
-		return h, nil
-	}
-	if k == a.assPL.Key() {
-		if err := a.hashAssets(); err != nil {
-			return nil, err
-		}
-	} else if err := a.hashAccounts(); err != nil {
 		return nil, err
 	}
-	h := a.serialised[k]
-	return h, nil
+	a.serialisedAccounts = data
+	a.updatesAccounts = false
+	return data, nil
 }
 
-func (a *accState) getHash(k string) ([]byte, error) {
-	update, exist := a.updates[k]
-	if !exist {
-		return nil, ErrSnapshotKeyDoesNotExist
+func (a *accState) HasChanged(k string) bool {
+	switch k {
+	case a.accountsKey:
+		return a.updatesAccounts
+	case a.assetsKey:
+		return a.updatesAssets
+	default:
+		return false
 	}
-	// we have a pending update
-	if update {
-		// hash whichever one we need to update
-		if k == a.assPL.Key() {
-			if err := a.hashAssets(); err != nil {
-				return nil, err
-			}
-		} else if err := a.hashAccounts(); err != nil {
-			return nil, err
+}
+
+func (a *accState) serialiseK(k string, serialFunc func() ([]byte, error), dataField *[]byte, changedField *bool) ([]byte, error) {
+	if !a.HasChanged(k) {
+		if dataField == nil {
+			return nil, nil
 		}
+		return *dataField, nil
 	}
-	// fetch the new hash and return
-	h := a.hashes[k]
-	return h, nil
+	data, err := serialFunc()
+	if err != nil {
+		return nil, err
+	}
+	*dataField = data
+	*changedField = false
+	return data, nil
+}
+
+// get the serialised form and hash of the given key.
+func (a *accState) getState(k string) ([]byte, error) {
+	switch k {
+	case a.accountsKey:
+		return a.serialiseK(k, a.hashAccounts, &a.serialisedAccounts, &a.updatesAccounts)
+	case a.assetsKey:
+		return a.serialiseK(k, a.hashAssets, &a.serialisedAssets, &a.updatesAssets)
+	default:
+		return nil, types.ErrSnapshotKeyDoesNotExist
+	}
 }

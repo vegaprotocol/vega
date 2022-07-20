@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package processor
 
 import (
@@ -5,14 +17,13 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/tendermint/tendermint/crypto/tmhash"
-
 	"code.vegaprotocol.io/protos/commands"
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
-	"code.vegaprotocol.io/vega/txn"
-	wcrypto "code.vegaprotocol.io/vegawallet/crypto"
-
 	"code.vegaprotocol.io/vega/libs/proto"
+	"code.vegaprotocol.io/vega/txn"
+	wcrypto "code.vegaprotocol.io/vega/wallet/crypto"
+
+	"github.com/tendermint/tendermint/crypto/tmhash"
 )
 
 var ErrUnsupportedFromValueInTransaction = errors.New("unsupported value from `from` field in transaction")
@@ -24,6 +35,26 @@ type Tx struct {
 	err        error
 	pow        *commandspb.ProofOfWork
 	version    uint32
+}
+
+func DecodeTxNoValidation(payload []byte) (*Tx, error) {
+	tx := &commandspb.Transaction{}
+	if err := proto.Unmarshal(payload, tx); err != nil {
+		return nil, fmt.Errorf("unable to unmarshal transaction: %w", err)
+	}
+	input := commandspb.InputData{}
+	if err := proto.Unmarshal(tx.InputData, &input); err != nil {
+		return nil, fmt.Errorf("unable to unmarshal input data: %w", err)
+	}
+
+	return &Tx{
+		originalTx: payload,
+		tx:         tx,
+		inputData:  &input,
+		err:        nil,
+		pow:        tx.Pow,
+		version:    tx.Version,
+	}, nil
 }
 
 func DecodeTx(payload []byte) (*Tx, error) {
@@ -117,8 +148,6 @@ func (t Tx) Command() txn.Command {
 		return txn.DelegateCommand
 	case *commandspb.InputData_UndelegateSubmission:
 		return txn.UndelegateCommand
-	case *commandspb.InputData_RestoreSnapshotSubmission:
-		return txn.CheckpointRestoreCommand
 	case *commandspb.InputData_KeyRotateSubmission:
 		return txn.RotateKeySubmissionCommand
 	case *commandspb.InputData_StateVariableProposal:
@@ -186,8 +215,6 @@ func (t Tx) GetCmd() interface{} {
 		return cmd.DelegateSubmission
 	case *commandspb.InputData_UndelegateSubmission:
 		return cmd.UndelegateSubmission
-	case *commandspb.InputData_RestoreSnapshotSubmission:
-		return cmd.RestoreSnapshotSubmission
 	case *commandspb.InputData_KeyRotateSubmission:
 		return cmd.KeyRotateSubmission
 	case *commandspb.InputData_StateVariableProposal:
@@ -303,12 +330,6 @@ func (t Tx) Unmarshal(i interface{}) error {
 			return errors.New("failed to unmarshall to UndelegateSubmission")
 		}
 		*underlyingCmd = *cmd.UndelegateSubmission
-	case *commandspb.InputData_RestoreSnapshotSubmission:
-		underlyingCmd, ok := i.(*commandspb.RestoreSnapshot)
-		if !ok {
-			return errors.New("failed to unmarshal RestoreSnapshotSubmission")
-		}
-		*underlyingCmd = *cmd.RestoreSnapshotSubmission
 	case *commandspb.InputData_KeyRotateSubmission:
 		underlyingCmd, ok := i.(*commandspb.KeyRotateSubmission)
 		if !ok {

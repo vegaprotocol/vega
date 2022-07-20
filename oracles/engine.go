@@ -1,8 +1,21 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package oracles
 
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	oraclespb "code.vegaprotocol.io/protos/vega/oracles/v1"
@@ -10,55 +23,58 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 )
 
-// Broker no need to mock (use broker package mock).
+// Broker interface. Do not need to mock (use package broker/mock).
 type Broker interface {
 	Send(event events.Event)
 	SendBatch(events []events.Event)
 }
 
-// TimeService ...
+// TimeService interface.
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/time_service_mock.go -package mocks code.vegaprotocol.io/vega/oracles TimeService
 type TimeService interface {
-	NotifyOnTick(f func(context.Context, time.Time))
+	GetTimeNow() time.Time
 }
 
 // Engine is responsible for broadcasting the OracleData to products and risk
 // models interested in it.
 type Engine struct {
 	log           *logging.Logger
+	timeService   TimeService
 	broker        Broker
-	CurrentTime   time.Time
-	subscriptions specSubscriptions
+	subscriptions *specSubscriptions
 }
 
 // NewEngine creates a new oracle Engine.
 func NewEngine(
 	log *logging.Logger,
 	conf Config,
-	currentTime time.Time,
-	broker Broker,
 	ts TimeService,
+	broker Broker,
 ) *Engine {
 	log = log.Named(namedLogger)
 	log.SetLevel(conf.Level.Get())
 
 	e := &Engine{
 		log:           log,
+		timeService:   ts,
 		broker:        broker,
-		CurrentTime:   currentTime,
 		subscriptions: newSpecSubscriptions(),
 	}
 
-	ts.NotifyOnTick(e.UpdateCurrentTime)
 	return e
 }
 
-// UpdateCurrentTime listens to update of the current Vega time.
-func (e *Engine) UpdateCurrentTime(ctx context.Context, ts time.Time) {
-	e.CurrentTime = ts
+// ListensToPubKeys checks if the public keys from provided OracleData are among the keys
+// current OracleSpecs listen to.
+func (e *Engine) ListensToPubKeys(data OracleData) bool {
+	return e.subscriptions.hasAnySubscribers(func(spec OracleSpec) bool {
+		return spec.MatchPubKeys(data)
+	})
 }
 
-func (e *Engine) sendOracleUpdate(ctx context.Context, data OracleData) error {
+// BroadcastData broadcasts data to products and risk models that are interested
+// in it. If no one is listening to this OracleData, it is discarded.
+func (e *Engine) BroadcastData(ctx context.Context, data OracleData) error {
 	result, err := e.subscriptions.filterSubscribers(func(spec OracleSpec) (bool, error) {
 		return spec.MatchData(data)
 	})
@@ -69,42 +85,47 @@ func (e *Engine) sendOracleUpdate(ctx context.Context, data OracleData) error {
 		return err
 	}
 
-	if result.hasMatched() {
-		for _, subscriber := range result.subscribers {
-			if err := subscriber(ctx, data); err != nil {
-				e.log.Debug("broadcasting data to subscriber failed",
-					logging.Error(err),
-				)
+	if !result.hasMatched() {
+		if e.log.IsDebug() {
+			strs := make([]string, 0, len(data.Data))
+			for k, v := range data.Data {
+				strs = append(strs, fmt.Sprintf("%s:%s", k, v))
 			}
+			e.log.Debug(
+				"no subscriber matches the oracle data",
+				logging.Strings("pub-keys", data.PubKeys),
+				logging.String("data", strings.Join(strs, ", ")),
+			)
 		}
-		e.sendOracleDataBroadcast(ctx, data, result.oracleSpecIDs)
+		e.sendUnmatchedOracleData(ctx, data)
+		return nil
 	}
+
+	for _, subscriber := range result.subscribers {
+		if err := subscriber(ctx, data); err != nil {
+			e.log.Debug("broadcasting data to subscriber failed",
+				logging.Error(err),
+			)
+		}
+	}
+	e.sendMatchedOracleData(ctx, data, result.oracleSpecIDs)
 
 	return nil
 }
 
-// BroadcastData broadcasts data to products and risk models that are interested in it. If no one is listening to this OracleData, it is discarded.
-func (e *Engine) BroadcastData(ctx context.Context, data OracleData) error {
-	err := e.sendOracleUpdate(ctx, data)
-	if err != nil {
-		e.log.Debug("failed to send oracle update",
-			logging.Error(err),
-		)
-	}
-	return err
-}
-
-// Subscribe registers a callback for a given OracleSpec that is call when an
+// Subscribe registers a callback for a given OracleSpec that is called when an
 // OracleData matches the spec.
 // It returns a SubscriptionID that is used to Unsubscribe.
 // If cb is nil, the method panics.
-func (e *Engine) Subscribe(ctx context.Context, spec OracleSpec, cb OnMatchedOracleData) SubscriptionID {
+func (e *Engine) Subscribe(ctx context.Context, spec OracleSpec, cb OnMatchedOracleData) (SubscriptionID, Unsubscriber) {
 	if cb == nil {
 		panic(fmt.Sprintf("a callback is required for spec %v", spec))
 	}
-	updatedSubscription := e.subscriptions.addSubscriber(spec, cb, e.CurrentTime)
+	updatedSubscription := e.subscriptions.addSubscriber(spec, cb, e.timeService.GetTimeNow())
 	e.sendNewOracleSpecSubscription(ctx, updatedSubscription)
-	return updatedSubscription.subscriptionID
+	return updatedSubscription.subscriptionID, func(ctx context.Context, id SubscriptionID) {
+		e.Unsubscribe(ctx, id)
+	}
 }
 
 // Unsubscribe unregisters the callback associated to the SubscriptionID.
@@ -118,29 +139,28 @@ func (e *Engine) Unsubscribe(ctx context.Context, id SubscriptionID) {
 
 // sendNewOracleSpecSubscription send an event to the broker to inform of the
 // subscription (and thus activation) to an oracle spec.
-// This may be a subscription to a brand new oracle spec, or an additional one.
+// This may be a subscription to a brand-new oracle spec, or an additional one.
 func (e *Engine) sendNewOracleSpecSubscription(ctx context.Context, update updatedSubscription) {
-	specAsProto := update.specProto
-	specAsProto.CreatedAt = update.specActivatedAt.UnixNano()
-	specAsProto.Status = oraclespb.OracleSpec_STATUS_ACTIVE
-	e.broker.Send(events.NewOracleSpecEvent(ctx, specAsProto))
+	proto := update.spec.IntoProto()
+	proto.CreatedAt = update.specActivatedAt.UnixNano()
+	proto.Status = oraclespb.OracleSpec_STATUS_ACTIVE
+	e.broker.Send(events.NewOracleSpecEvent(ctx, *proto))
 }
 
 // sendOracleSpecDeactivation send an event to the broker to inform of
 // the deactivation (and thus activation) to an oracle spec.
-// This may be a subscription to a brand new oracle spec, or an additional one.
+// This may be a subscription to a brand-new oracle spec, or an additional one.
 func (e *Engine) sendOracleSpecDeactivation(ctx context.Context, update updatedSubscription) {
-	specAsProto := update.specProto
-	specAsProto.CreatedAt = update.specActivatedAt.UnixNano()
-	specAsProto.Status = oraclespb.OracleSpec_STATUS_DEACTIVATED
-	e.broker.Send(events.NewOracleSpecEvent(ctx, specAsProto))
+	proto := update.spec.IntoProto()
+	proto.CreatedAt = update.specActivatedAt.UnixNano()
+	proto.Status = oraclespb.OracleSpec_STATUS_DEACTIVATED
+	e.broker.Send(events.NewOracleSpecEvent(ctx, *proto))
 }
 
-// sendOracleSpecDeactivation send an event to the broker to inform of
-// the deactivation (and thus activation) to an oracle spec.
-// This may be a subscription to a brand new oracle spec, or an additional one.
-func (e *Engine) sendOracleDataBroadcast(ctx context.Context, data OracleData, specIDs []OracleSpecID) {
-	payload := []*oraclespb.Property{}
+// sendMatchedOracleData send an event to the broker to inform of
+// a match between an oracle data and one or several oracle specs.
+func (e *Engine) sendMatchedOracleData(ctx context.Context, data OracleData, specIDs []OracleSpecID) {
+	payload := make([]*oraclespb.Property, 0, len(data.Data))
 	for name, value := range data.Data {
 		payload = append(payload, &oraclespb.Property{
 			Name:  name,
@@ -148,7 +168,7 @@ func (e *Engine) sendOracleDataBroadcast(ctx context.Context, data OracleData, s
 		})
 	}
 
-	ids := []string{}
+	ids := make([]string, 0, len(specIDs))
 	for _, specID := range specIDs {
 		ids = append(ids, string(specID))
 	}
@@ -157,7 +177,32 @@ func (e *Engine) sendOracleDataBroadcast(ctx context.Context, data OracleData, s
 		PubKeys:        data.PubKeys,
 		Data:           payload,
 		MatchedSpecIds: ids,
-		BroadcastAt:    e.CurrentTime.UnixNano(),
+		BroadcastAt:    e.timeService.GetTimeNow().UnixNano(),
+	}
+	e.broker.Send(events.NewOracleDataEvent(ctx, dataProto))
+}
+
+// sendUnmatchedOracleData send an event to the broker to inform of
+// an unmatched oracle data.
+// If the oracle data has been emitted by an internal oracle, the sending
+// is skipped.
+func (e *Engine) sendUnmatchedOracleData(ctx context.Context, data OracleData) {
+	if data.FromInternalOracle() {
+		return
+	}
+
+	payload := make([]*oraclespb.Property, 0, len(data.Data))
+	for name, value := range data.Data {
+		payload = append(payload, &oraclespb.Property{
+			Name:  name,
+			Value: value,
+		})
+	}
+
+	dataProto := oraclespb.OracleData{
+		PubKeys:        data.PubKeys,
+		Data:           payload,
+		MatchedSpecIds: []string{},
 	}
 	e.broker.Send(events.NewOracleDataEvent(ctx, dataProto))
 }

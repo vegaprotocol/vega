@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package oracles_test
 
 import (
@@ -28,6 +40,7 @@ func TestOracleData(t *testing.T) {
 	t.Run("Getting uint when not present fails", testOracleDataGetMissingUintFails)
 	t.Run("Getting uint when not a uint fails", testOracleDataGetUintFails)
 	t.Run("Getting uint succeeds", testOracleDataGetUintSucceeds)
+	t.Run("Determining the origin succeeds", testOracleDataDeterminingOriginSucceeds)
 }
 
 func testOracleDataGetMissingUintFails(t *testing.T) {
@@ -348,4 +361,37 @@ func testOracleDataGetStringSucceeds(t *testing.T) {
 	// then
 	require.NoError(t, err)
 	assert.Equal(t, "hello", value)
+}
+
+func testOracleDataDeterminingOriginSucceeds(t *testing.T) {
+	tcs := []struct {
+		name                 string
+		pubkeys              []string
+		isFromInternalOracle bool
+	}{
+		{
+			name:                 "considered from internal oracle without public keys",
+			pubkeys:              []string{},
+			isFromInternalOracle: true,
+		}, {
+			name:                 "considered from external oracle with public keys",
+			pubkeys:              []string{"0xdeadbeef"},
+			isFromInternalOracle: false,
+		},
+	}
+
+	for _, tc := range tcs {
+		t.Run(tc.name, func(tt *testing.T) {
+			// given
+			data := oracles.OracleData{
+				PubKeys: tc.pubkeys,
+				Data: map[string]string{
+					"my_key": "hello",
+				},
+			}
+
+			// then
+			assert.Equal(tt, tc.isFromInternalOracle, data.FromInternalOracle())
+		})
+	}
 }

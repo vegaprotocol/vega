@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package monitor
 
 import (
@@ -10,14 +22,15 @@ import (
 )
 
 type AuctionState struct {
-	mode        types.MarketTradingMode // current trading mode
-	defMode     types.MarketTradingMode // default trading mode for market
-	trigger     types.AuctionTrigger    // Set to the value indicating what started the auction
-	begin       *time.Time              // optional setting auction start time (will be set if start flag is true)
-	end         *types.AuctionDuration  // will be set when in auction, defines parameters that end an auction period
-	start, stop bool                    // flags to clarify whether we're entering or leaving auction
-	m           *types.Market           // keep market definition handy, useful to end auctions when default is FBA
-	extension   *types.AuctionTrigger   // Set if the current auction was extended, reset after the event was created
+	mode               types.MarketTradingMode // current trading mode
+	defMode            types.MarketTradingMode // default trading mode for market
+	trigger            types.AuctionTrigger    // Set to the value indicating what started the auction
+	begin              *time.Time              // optional setting auction start time (will be set if start flag is true)
+	end                *types.AuctionDuration  // will be set when in auction, defines parameters that end an auction period
+	start, stop        bool                    // flags to clarify whether we're entering or leaving auction
+	m                  *types.Market           // keep market definition handy, useful to end auctions when default is FBA
+	extension          *types.AuctionTrigger   // Set if the current auction was extended, reset after the event was created
+	extensionEventSent bool
 	// timer tracks the elapsed time spend in opening auction.
 	timer *metrics.TimeCounter
 
@@ -100,14 +113,12 @@ func (a *AuctionState) ExtendAuctionPrice(delta types.AuctionDuration) {
 func (a *AuctionState) ExtendAuctionLiquidity(delta types.AuctionDuration) {
 	t := types.AuctionTriggerLiquidity
 	a.extension = &t
+	a.extensionEventSent = false
 	a.ExtendAuction(delta)
 }
 
-// ExtendAuction extends the current auction, leaving trigger etc... in tact
-// this assumes whatever extended the auction is the same thing that triggered the auction.
+// ExtendAuction extends the current auction.
 func (a *AuctionState) ExtendAuction(delta types.AuctionDuration) {
-	t := a.trigger
-	a.extension = &t
 	a.end.Duration += delta.Duration
 	a.end.Volume += delta.Volume
 	a.stop = false // the auction was supposed to stop, but we've extended it
@@ -186,6 +197,14 @@ func (a AuctionState) IsPriceAuction() bool {
 	return a.trigger == types.AuctionTriggerPrice
 }
 
+func (a AuctionState) IsLiquidityExtension() bool {
+	return a.extension != nil && *a.extension == types.AuctionTriggerLiquidity
+}
+
+func (a AuctionState) IsPriceExtension() bool {
+	return a.extension != nil && *a.extension == types.AuctionTriggerPrice
+}
+
 func (a AuctionState) IsFBA() bool {
 	return a.trigger == types.AuctionTriggerBatch
 }
@@ -210,7 +229,7 @@ func (a AuctionState) AuctionStart() bool {
 // AuctionExtended - called to confirm we will not leave auction, returns the event to be sent
 // or nil if the auction wasn't extended.
 func (a *AuctionState) AuctionExtended(ctx context.Context, now time.Time) *events.Auction {
-	if a.extension == nil {
+	if a.extension == nil || a.extensionEventSent {
 		return nil
 	}
 	a.start = false
@@ -223,7 +242,7 @@ func (a *AuctionState) AuctionExtended(ctx context.Context, now time.Time) *even
 	}
 	ext := *a.extension
 	// set extension flag to nil
-	a.extension = nil
+	a.extensionEventSent = true
 	a.stateChanged = true
 	return events.NewAuctionEvent(ctx, a.m.ID, false, a.begin.UnixNano(), end, a.trigger, ext)
 }

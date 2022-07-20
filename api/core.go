@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package api
 
 import (
@@ -14,18 +26,18 @@ import (
 	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/evtforward"
+	"code.vegaprotocol.io/vega/libs/proto"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/metrics"
 	"code.vegaprotocol.io/vega/monitoring"
 	"code.vegaprotocol.io/vega/stats"
 	"code.vegaprotocol.io/vega/subscribers"
 	"code.vegaprotocol.io/vega/vegatime"
-	"code.vegaprotocol.io/vegawallet/crypto"
+	"code.vegaprotocol.io/vega/wallet/crypto"
 
-	"code.vegaprotocol.io/vega/libs/proto"
 	"github.com/pkg/errors"
 	"github.com/tendermint/tendermint/libs/bytes"
-	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
+	tmctypes "github.com/tendermint/tendermint/rpc/coretypes"
 	"google.golang.org/grpc/codes"
 )
 
@@ -92,6 +104,10 @@ func (s *coreService) LastBlockHeight(
 	blockHeight, blockHash := s.powParams.BlockData()
 	if s.log.IsDebug() {
 		s.log.Debug("block height requested, returning", logging.Uint64("block-height", blockHeight), logging.String("block hash", blockHash))
+	}
+
+	if !s.powParams.IsReady() {
+		return nil, errors.New("Failed to get last block height server is initialising")
 	}
 
 	return &protoapi.LastBlockHeightResponse{
@@ -196,7 +212,7 @@ func (s *coreService) CheckTransaction(ctx context.Context, req *protoapi.CheckT
 
 	return &protoapi.CheckTransactionResponse{
 		Code:      checkResult.Code,
-		Success:   true,
+		Success:   checkResult.IsOK(),
 		GasWanted: checkResult.GasWanted,
 		GasUsed:   checkResult.GasUsed,
 	}, nil
@@ -236,7 +252,7 @@ func (s *coreService) CheckRawTransaction(ctx context.Context, req *protoapi.Che
 
 	return &protoapi.CheckRawTransactionResponse{
 		Code:      checkResult.Code,
-		Success:   true,
+		Success:   checkResult.IsOK(),
 		GasWanted: checkResult.GasWanted,
 		GasUsed:   checkResult.GasUsed,
 	}, nil

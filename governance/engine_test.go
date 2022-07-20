@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package governance_test
 
 import (
@@ -8,11 +20,11 @@ import (
 	"testing"
 	"time"
 
-	oraclesv1 "code.vegaprotocol.io/protos/vega/oracles/v1"
+	oraclespb "code.vegaprotocol.io/protos/vega/oracles/v1"
 	vgrand "code.vegaprotocol.io/shared/libs/rand"
 	"code.vegaprotocol.io/vega/assets"
 	"code.vegaprotocol.io/vega/assets/builtin"
-	bmock "code.vegaprotocol.io/vega/broker/mocks"
+	bmocks "code.vegaprotocol.io/vega/broker/mocks"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/governance"
 	"code.vegaprotocol.io/vega/governance/mocks"
@@ -31,7 +43,8 @@ type tstEngine struct {
 	*governance.Engine
 	ctrl            *gomock.Controller
 	accounts        *mocks.MockStakingAccounts
-	broker          *bmock.MockBroker
+	tsvc            *mocks.MockTimeService
+	broker          *bmocks.MockBroker
 	witness         *mocks.MockWitness
 	markets         *mocks.MockMarkets
 	assets          *mocks.MockAssets
@@ -65,7 +78,7 @@ func testUpdatingVotersKeyOnVotesSucceeds(t *testing.T) {
 
 	// given
 	proposer := vgrand.RandomStr(5)
-	proposal := eng.newProposalForNewMarket(proposer, time.Now())
+	proposal := eng.newProposalForNewMarket(proposer, eng.tsvc.GetTimeNow())
 
 	// setup
 	eng.ensureAllAssetEnabled(t)
@@ -135,6 +148,7 @@ func testSubmittingProposalWithNonExistingAccountFails(t *testing.T) {
 
 	// given
 	party := vgrand.RandomStr(5)
+	now := eng.tsvc.GetTimeNow()
 
 	tcs := []struct {
 		name     string
@@ -142,16 +156,16 @@ func testSubmittingProposalWithNonExistingAccountFails(t *testing.T) {
 	}{
 		{
 			name:     "For new market",
-			proposal: eng.newProposalForNewMarket(party, time.Now()),
+			proposal: eng.newProposalForNewMarket(party, now),
 		}, {
 			name:     "For market update",
-			proposal: eng.newProposalForMarketUpdate(party, time.Now()),
+			proposal: eng.newProposalForMarketUpdate(party, now),
 		}, {
 			name:     "For new asset",
-			proposal: eng.newProposalForNewAsset(party, time.Now()),
+			proposal: eng.newProposalForNewAsset(party, now),
 		}, {
 			name:     "Freeform",
-			proposal: eng.newFreeformProposal(party, time.Now()),
+			proposal: eng.newFreeformProposal(party, now),
 		},
 	}
 
@@ -178,6 +192,7 @@ func testSubmittingProposalWithoutEnoughStakeFails(t *testing.T) {
 
 	// given
 	party := vgrand.RandomStr(5)
+	now := eng.tsvc.GetTimeNow()
 
 	tcs := []struct {
 		name                    string
@@ -187,19 +202,19 @@ func testSubmittingProposalWithoutEnoughStakeFails(t *testing.T) {
 		{
 			name:                    "For new market",
 			minProposerBalanceParam: netparams.GovernanceProposalMarketMinProposerBalance,
-			proposal:                eng.newProposalForNewMarket(party, time.Now()),
+			proposal:                eng.newProposalForNewMarket(party, now),
 		}, {
 			name:                    "For market update",
 			minProposerBalanceParam: netparams.GovernanceProposalUpdateMarketMinProposerBalance,
-			proposal:                eng.newProposalForMarketUpdate(party, time.Now()),
+			proposal:                eng.newProposalForMarketUpdate(party, now),
 		}, {
 			name:                    "For new asset",
 			minProposerBalanceParam: netparams.GovernanceProposalAssetMinProposerBalance,
-			proposal:                eng.newProposalForNewAsset(party, time.Now()),
+			proposal:                eng.newProposalForNewAsset(party, now),
 		}, {
 			name:                    "Freeform",
 			minProposerBalanceParam: netparams.GovernanceProposalFreeformMinProposerBalance,
-			proposal:                eng.newFreeformProposal(party, time.Now()),
+			proposal:                eng.newFreeformProposal(party, now),
 		},
 	}
 
@@ -225,7 +240,7 @@ func testSubmittingProposalWithClosingTimeTooSoonFails(t *testing.T) {
 	eng := getTestEngine(t)
 	defer eng.ctrl.Finish()
 
-	now := time.Now()
+	now := eng.tsvc.GetTimeNow()
 	party := vgrand.RandomStr(5)
 
 	cases := []struct {
@@ -270,7 +285,7 @@ func testSubmittingProposalWithClosingTimeTooLateFails(t *testing.T) {
 	eng := getTestEngine(t)
 	defer eng.ctrl.Finish()
 
-	now := time.Now()
+	now := eng.tsvc.GetTimeNow()
 	party := vgrand.RandomStr(5)
 
 	cases := []struct {
@@ -315,7 +330,7 @@ func testSubmittingProposalWithEnactmentTimeTooSoonFails(t *testing.T) {
 	eng := getTestEngine(t)
 	defer eng.ctrl.Finish()
 
-	now := time.Now()
+	now := eng.tsvc.GetTimeNow()
 	party := vgrand.RandomStr(5)
 
 	cases := []struct {
@@ -358,7 +373,7 @@ func testSubmittingProposalWithEnactmentTimeTooLateFails(t *testing.T) {
 	eng := getTestEngine(t)
 	defer eng.ctrl.Finish()
 
-	now := time.Now()
+	now := eng.tsvc.GetTimeNow()
 	party := vgrand.RandomStr(5)
 
 	cases := []struct {
@@ -423,7 +438,7 @@ func testVotingWithNonExistingAccountFails(t *testing.T) {
 
 	// given
 	proposer := vgrand.RandomStr(5)
-	proposal := eng.newProposalForNewMarket(proposer, time.Now())
+	proposal := eng.newProposalForNewMarket(proposer, eng.tsvc.GetTimeNow())
 
 	// setup
 	eng.ensureAllAssetEnabled(t)
@@ -458,7 +473,7 @@ func testVotingWithoutTokenFails(t *testing.T) {
 
 	// given
 	proposer := eng.newValidParty("proposer", 1)
-	proposal := eng.newProposalForNewMarket(proposer.Id, time.Now())
+	proposal := eng.newProposalForNewMarket(proposer.Id, eng.tsvc.GetTimeNow())
 
 	// setup
 	eng.ensureAllAssetEnabled(t)
@@ -489,7 +504,7 @@ func testMultipleProposalsLifecycle(t *testing.T) {
 	defer eng.ctrl.Finish()
 
 	// given
-	now := time.Now()
+	now := eng.tsvc.GetTimeNow()
 	partyA := vgrand.RandomStr(5)
 	partyB := vgrand.RandomStr(5)
 
@@ -565,11 +580,11 @@ func testMultipleProposalsLifecycle(t *testing.T) {
 		}
 	})
 	eng.broker.EXPECT().SendBatch(gomock.Any()).Times(howMany * 2)
-	eng.OnChainTimeUpdate(context.Background(), afterClosing)
+	eng.OnTick(context.Background(), afterClosing)
 	assert.Equal(t, howMany, howManyPassed)
 	assert.Equal(t, howMany, howManyDeclined)
 
-	toBeEnacted, _ := eng.OnChainTimeUpdate(context.Background(), afterEnactment)
+	toBeEnacted, _ := eng.OnTick(context.Background(), afterEnactment)
 	require.Len(t, toBeEnacted, howMany)
 	for i := 0; i < howMany; i++ {
 		_, found := passed[toBeEnacted[i].Proposal().ID]
@@ -582,9 +597,8 @@ func testWithdrawingVoteAssetRemovesVoteFromProposalStateCalculation(t *testing.
 	defer eng.ctrl.Finish()
 
 	// given
-	now := time.Now()
 	proposer := vgrand.RandomStr(5)
-	proposal := eng.newProposalForNewMarket(proposer, now)
+	proposal := eng.newProposalForNewMarket(proposer, eng.tsvc.GetTimeNow())
 
 	// setup
 	eng.ensureAllAssetEnabled(t)
@@ -638,7 +652,7 @@ func testWithdrawingVoteAssetRemovesVoteFromProposalStateCalculation(t *testing.
 	eng.expectTotalGovernanceTokenFromVoteEvents(t, "0", "0")
 
 	// when
-	_, voteClosed := eng.OnChainTimeUpdate(context.Background(), afterClosing)
+	_, voteClosed := eng.OnTick(context.Background(), afterClosing)
 
 	// then
 	require.Len(t, voteClosed, 1)
@@ -650,7 +664,7 @@ func testWithdrawingVoteAssetRemovesVoteFromProposalStateCalculation(t *testing.
 	afterEnactment := time.Unix(proposal.Terms.EnactmentTimestamp, 0).Add(time.Second)
 
 	// when
-	toBeEnacted, _ := eng.OnChainTimeUpdate(context.Background(), afterEnactment)
+	toBeEnacted, _ := eng.OnTick(context.Background(), afterEnactment)
 
 	// then
 	assert.Empty(t, toBeEnacted)
@@ -668,7 +682,7 @@ func testComputingGovernanceStateHashIsDeterministic(t *testing.T) {
 
 	// when
 	proposer := vgrand.RandomStr(5)
-	proposal := eng.newProposalForNewMarket(proposer, time.Now())
+	proposal := eng.newProposalForNewMarket(proposer, eng.tsvc.GetTimeNow())
 
 	// setup
 	eng.ensureTokenBalanceForParty(t, proposer, 1)
@@ -716,14 +730,14 @@ func testComputingGovernanceStateHashIsDeterministic(t *testing.T) {
 	eng.expectTotalGovernanceTokenFromVoteEvents(t, "1", "7")
 
 	// when
-	eng.OnChainTimeUpdate(context.Background(), afterClosing)
+	eng.OnTick(context.Background(), afterClosing)
 
 	// given
 	afterEnactment := time.Unix(proposal.Terms.EnactmentTimestamp, 0).Add(time.Second)
 
 	// when
 	// no calculations, no state change, simply removed from governance engine
-	toBeEnacted, _ := eng.OnChainTimeUpdate(context.Background(), afterEnactment)
+	toBeEnacted, _ := eng.OnTick(context.Background(), afterEnactment)
 
 	// then
 	require.Len(t, toBeEnacted, 1)
@@ -744,13 +758,16 @@ func getTestEngine(t *testing.T) *tstEngine {
 	accounts := mocks.NewMockStakingAccounts(ctrl)
 	markets := mocks.NewMockMarkets(ctrl)
 	assets := mocks.NewMockAssets(ctrl)
-	broker := bmock.NewMockBroker(ctrl)
+	ts := mocks.NewMockTimeService(ctrl)
+	broker := bmocks.NewMockBroker(ctrl)
 	witness := mocks.NewMockWitness(ctrl)
 
 	// Set default network parameters
 	netp := netparams.New(log, netparams.NewDefaultConfig(), broker)
 
 	ctx := context.Background()
+
+	ts.EXPECT().GetTimeNow().AnyTimes()
 
 	broker.EXPECT().Send(events.NewNetworkParameterEvent(ctx, netparams.GovernanceProposalMarketMinVoterBalance, "1")).Times(1)
 	require.NoError(t, netp.Update(ctx, netparams.GovernanceProposalMarketMinVoterBalance, "1"))
@@ -762,8 +779,7 @@ func getTestEngine(t *testing.T) *tstEngine {
 	require.NoError(t, netp.Update(ctx, netparams.GovernanceProposalUpdateMarketMinProposerEquityLikeShare, "0.1"))
 
 	// Initialise engine as validator
-	now := time.Now().Truncate(time.Second)
-	eng := governance.NewEngine(log, cfg, accounts, broker, assets, witness, markets, netp, now)
+	eng := governance.NewEngine(log, cfg, accounts, ts, broker, assets, witness, markets, netp)
 	require.NotNil(t, eng)
 
 	return &tstEngine{
@@ -771,6 +787,7 @@ func getTestEngine(t *testing.T) *tstEngine {
 		ctrl:     ctrl,
 		accounts: accounts,
 		markets:  markets,
+		tsvc:     ts,
 		broker:   broker,
 		assets:   assets,
 		witness:  witness,
@@ -780,13 +797,7 @@ func getTestEngine(t *testing.T) *tstEngine {
 
 func newFreeformTerms() *types.ProposalTermsNewFreeform {
 	return &types.ProposalTermsNewFreeform{
-		NewFreeform: &types.NewFreeform{
-			Changes: &types.NewFreeformDetails{
-				URL:         "https://example.com",
-				Description: "Test my freeform proposal",
-				Hash:        "2fb572edea4af9154edeff680e23689ed076d08934c60f8a4c1f5743a614954e",
-			},
-		},
+		NewFreeform: &types.NewFreeform{},
 	}
 }
 
@@ -820,31 +831,31 @@ func newMarketTerms() *types.ProposalTermsNewMarket {
 						Future: &types.FutureProduct{
 							SettlementAsset: "VUSD",
 							QuoteName:       "VUSD",
-							OracleSpecForSettlementPrice: &oraclesv1.OracleSpecConfiguration{
+							OracleSpecForSettlementPrice: &types.OracleSpecConfiguration{
 								PubKeys: []string{"0xDEADBEEF"},
-								Filters: []*oraclesv1.Filter{
+								Filters: []*types.OracleSpecFilter{
 									{
-										Key: &oraclesv1.PropertyKey{
+										Key: &types.OracleSpecPropertyKey{
 											Name: "prices.ETH.value",
-											Type: oraclesv1.PropertyKey_TYPE_INTEGER,
+											Type: oraclespb.PropertyKey_TYPE_INTEGER,
 										},
-										Conditions: []*oraclesv1.Condition{},
+										Conditions: []*types.OracleSpecCondition{},
 									},
 								},
 							},
-							OracleSpecForTradingTermination: &oraclesv1.OracleSpecConfiguration{
+							OracleSpecForTradingTermination: &types.OracleSpecConfiguration{
 								PubKeys: []string{"0xDEADBEEF"},
-								Filters: []*oraclesv1.Filter{
+								Filters: []*types.OracleSpecFilter{
 									{
-										Key: &oraclesv1.PropertyKey{
+										Key: &types.OracleSpecPropertyKey{
 											Name: "trading.terminated",
-											Type: oraclesv1.PropertyKey_TYPE_BOOLEAN,
+											Type: oraclespb.PropertyKey_TYPE_BOOLEAN,
 										},
-										Conditions: []*oraclesv1.Condition{},
+										Conditions: []*types.OracleSpecCondition{},
 									},
 								},
 							},
-							OracleSpecBinding: &types.OracleSpecToFutureBinding{
+							OracleSpecBinding: &types.OracleSpecBindingForFuture{
 								SettlementPriceProperty:    "prices.ETH.value",
 								TradingTerminationProperty: "trading.terminated",
 							},
@@ -880,31 +891,31 @@ func updateMarketTerms() *types.ProposalTermsUpdateMarket {
 					Product: &types.UpdateInstrumentConfigurationFuture{
 						Future: &types.UpdateFutureProduct{
 							QuoteName: "VUSD",
-							OracleSpecForSettlementPrice: &oraclesv1.OracleSpecConfiguration{
+							OracleSpecForSettlementPrice: &types.OracleSpecConfiguration{
 								PubKeys: []string{"0xDEADBEEF"},
-								Filters: []*oraclesv1.Filter{
+								Filters: []*types.OracleSpecFilter{
 									{
-										Key: &oraclesv1.PropertyKey{
+										Key: &types.OracleSpecPropertyKey{
 											Name: "prices.ETH.value",
-											Type: oraclesv1.PropertyKey_TYPE_INTEGER,
+											Type: oraclespb.PropertyKey_TYPE_INTEGER,
 										},
-										Conditions: []*oraclesv1.Condition{},
+										Conditions: []*types.OracleSpecCondition{},
 									},
 								},
 							},
-							OracleSpecForTradingTermination: &oraclesv1.OracleSpecConfiguration{
+							OracleSpecForTradingTermination: &types.OracleSpecConfiguration{
 								PubKeys: []string{"0xDEADBEEF"},
-								Filters: []*oraclesv1.Filter{
+								Filters: []*types.OracleSpecFilter{
 									{
-										Key: &oraclesv1.PropertyKey{
+										Key: &types.OracleSpecPropertyKey{
 											Name: "trading.terminated",
-											Type: oraclesv1.PropertyKey_TYPE_BOOLEAN,
+											Type: oraclespb.PropertyKey_TYPE_BOOLEAN,
 										},
-										Conditions: []*oraclesv1.Condition{},
+										Conditions: []*types.OracleSpecCondition{},
 									},
 								},
 							},
-							OracleSpecBinding: &types.OracleSpecToFutureBinding{
+							OracleSpecBinding: &types.OracleSpecBindingForFuture{
 								SettlementPriceProperty:    "prices.ETH.value",
 								TradingTerminationProperty: "trading.terminated",
 							},
@@ -1000,6 +1011,9 @@ func (e *tstEngine) newProposalForNewMarket(partyID string, now time.Time) types
 			ValidationTimestamp: now.Add(1 * time.Hour).Unix(),
 			Change:              newMarketTerms(),
 		},
+		Rationale: &types.ProposalRationale{
+			Description: "some description",
+		},
 	}
 }
 
@@ -1015,6 +1029,9 @@ func (e *tstEngine) newProposalForMarketUpdate(partyID string, now time.Time) ty
 			EnactmentTimestamp:  now.Add(4 * 48 * time.Hour).Unix(),
 			ValidationTimestamp: now.Add(2 * time.Hour).Unix(),
 			Change:              updateMarketTerms(),
+		},
+		Rationale: &types.ProposalRationale{
+			Description: "some description",
 		},
 	}
 }
@@ -1032,6 +1049,9 @@ func (e *tstEngine) newProposalForNewAsset(partyID string, now time.Time) types.
 			ValidationTimestamp: now.Add(1 * time.Hour).Unix(),
 			Change:              newAssetTerms(),
 		},
+		Rationale: &types.ProposalRationale{
+			Description: "some description",
+		},
 	}
 }
 
@@ -1046,6 +1066,11 @@ func (e *tstEngine) newFreeformProposal(partyID string, now time.Time) types.Pro
 			ClosingTimestamp:    now.Add(48 * time.Hour).Unix(),
 			ValidationTimestamp: now.Add(1 * time.Hour).Unix(),
 			Change:              newFreeformTerms(),
+		},
+		Rationale: &types.ProposalRationale{
+			URL:         "https://example.com",
+			Description: "Test my freeform proposal",
+			Hash:        "2fb572edea4af9154edeff680e23689ed076d08934c60f8a4c1f5743a614954e",
 		},
 	}
 }
@@ -1136,6 +1161,21 @@ func (e *tstEngine) expectVoteEvent(t *testing.T, party, proposal string) {
 		vote := ve.Vote()
 		assert.Equal(t, proposal, vote.ProposalId)
 		assert.Equal(t, party, vote.PartyId)
+	})
+}
+
+func (e *tstEngine) expectRestoredProposals(t *testing.T, proposalIDs []string) {
+	t.Helper()
+	e.broker.EXPECT().SendBatch(gomock.Any()).Times(1).Do(func(es []events.Event) {
+		if len(es) == 0 {
+			t.Errorf("expecting %d proposals to be restored, found %d", len(proposalIDs), len(es))
+		}
+
+		for i, e := range es {
+			pe, ok := e.(*events.Proposal)
+			require.True(t, ok)
+			assert.Equal(t, proposalIDs[i], pe.ProposalID())
+		}
 	})
 }
 

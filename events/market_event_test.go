@@ -1,32 +1,44 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package events_test
 
 import (
 	"context"
 	"testing"
 
-	proto "code.vegaprotocol.io/protos/vega"
-	v1 "code.vegaprotocol.io/protos/vega/oracles/v1"
+	vegapb "code.vegaprotocol.io/protos/vega"
+	oraclespb "code.vegaprotocol.io/protos/vega/oracles/v1"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
 	"github.com/stretchr/testify/assert"
 )
 
-func changeOracleSpec(spec *v1.OracleSpec) {
-	spec.Id = "Changed"
+func changeOracleSpec(spec *types.OracleSpec) {
+	spec.ID = "Changed"
 	spec.CreatedAt = 999
 	spec.UpdatedAt = 999
 	spec.PubKeys[0] = "Changed"
 	spec.Filters[0].Key.Name = "Changed"
-	spec.Filters[0].Key.Type = v1.PropertyKey_TYPE_UNSPECIFIED
-	spec.Filters[0].Conditions[0].Operator = v1.Condition_OPERATOR_UNSPECIFIED
+	spec.Filters[0].Key.Type = oraclespb.PropertyKey_TYPE_UNSPECIFIED
+	spec.Filters[0].Conditions[0].Operator = oraclespb.Condition_OPERATOR_UNSPECIFIED
 	spec.Filters[0].Conditions[0].Value = "Changed"
-	spec.Status = v1.OracleSpec_STATUS_UNSPECIFIED
+	spec.Status = oraclespb.OracleSpec_STATUS_UNSPECIFIED
 }
 
-func assertSpecsNotEqual(t *testing.T, spec1 *v1.OracleSpec, spec2 *v1.OracleSpec) {
+func assertSpecsNotEqual(t *testing.T, spec1 *types.OracleSpec, spec2 *types.OracleSpec) {
 	t.Helper()
-	assert.NotEqual(t, spec1.Id, spec2.Id)
+	assert.NotEqual(t, spec1.ID, spec2.ID)
 	assert.NotEqual(t, spec1.CreatedAt, spec2.CreatedAt)
 	assert.NotEqual(t, spec1.UpdatedAt, spec2.UpdatedAt)
 	assert.NotEqual(t, spec1.PubKeys[0], spec2.PubKeys[0])
@@ -40,80 +52,80 @@ func assertSpecsNotEqual(t *testing.T, spec1 *v1.OracleSpec, spec2 *v1.OracleSpe
 func TestMarketDeepClone(t *testing.T) {
 	ctx := context.Background()
 
-	pme := proto.Market{
+	pme := vegapb.Market{
 		Id: "Id",
-		TradableInstrument: &proto.TradableInstrument{
-			Instrument: &proto.Instrument{
+		TradableInstrument: &vegapb.TradableInstrument{
+			Instrument: &vegapb.Instrument{
 				Id:   "Id",
 				Code: "Code",
 				Name: "Name",
-				Metadata: &proto.InstrumentMetadata{
+				Metadata: &vegapb.InstrumentMetadata{
 					Tags: []string{"Tag1", "Tag2"},
 				},
-				Product: &proto.Instrument_Future{
-					Future: &proto.Future{
+				Product: &vegapb.Instrument_Future{
+					Future: &vegapb.Future{
 						SettlementAsset: "Asset",
 						QuoteName:       "QuoteName",
-						OracleSpecForSettlementPrice: &v1.OracleSpec{
+						OracleSpecForSettlementPrice: &oraclespb.OracleSpec{
 							Id:        "Id",
 							CreatedAt: 1000,
 							UpdatedAt: 2000,
 							PubKeys:   []string{"PubKey "},
-							Filters: []*v1.Filter{
+							Filters: []*oraclespb.Filter{
 								{
-									Key: &v1.PropertyKey{
+									Key: &oraclespb.PropertyKey{
 										Name: "Name",
-										Type: v1.PropertyKey_TYPE_DECIMAL,
+										Type: oraclespb.PropertyKey_TYPE_DECIMAL,
 									},
-									Conditions: []*v1.Condition{
+									Conditions: []*oraclespb.Condition{
 										{
-											Operator: v1.Condition_OPERATOR_EQUALS,
+											Operator: oraclespb.Condition_OPERATOR_EQUALS,
 											Value:    "Value",
 										},
 									},
 								},
 							},
-							Status: v1.OracleSpec_STATUS_ACTIVE,
+							Status: oraclespb.OracleSpec_STATUS_ACTIVE,
 						},
-						OracleSpecForTradingTermination: &v1.OracleSpec{
+						OracleSpecForTradingTermination: &oraclespb.OracleSpec{
 							Id:        "Id2",
 							CreatedAt: 1000,
 							UpdatedAt: 2000,
 							PubKeys:   []string{"PubKey "},
-							Filters: []*v1.Filter{
+							Filters: []*oraclespb.Filter{
 								{
-									Key: &v1.PropertyKey{
+									Key: &oraclespb.PropertyKey{
 										Name: "Name",
-										Type: v1.PropertyKey_TYPE_BOOLEAN,
+										Type: oraclespb.PropertyKey_TYPE_BOOLEAN,
 									},
-									Conditions: []*v1.Condition{
+									Conditions: []*oraclespb.Condition{
 										{
-											Operator: v1.Condition_OPERATOR_EQUALS,
+											Operator: oraclespb.Condition_OPERATOR_EQUALS,
 											Value:    "Value",
 										},
 									},
 								},
 							},
-							Status: v1.OracleSpec_STATUS_ACTIVE,
+							Status: oraclespb.OracleSpec_STATUS_ACTIVE,
 						},
 
-						OracleSpecBinding: &proto.OracleSpecToFutureBinding{
+						OracleSpecBinding: &vegapb.OracleSpecToFutureBinding{
 							SettlementPriceProperty:    "SettlementPrice",
 							TradingTerminationProperty: "trading.terminated",
 						},
 					},
 				},
 			},
-			MarginCalculator: &proto.MarginCalculator{
-				ScalingFactors: &proto.ScalingFactors{
+			MarginCalculator: &vegapb.MarginCalculator{
+				ScalingFactors: &vegapb.ScalingFactors{
 					SearchLevel:       123.45,
 					InitialMargin:     234.56,
 					CollateralRelease: 345.67,
 				},
 			},
-			RiskModel: &proto.TradableInstrument_SimpleRiskModel{
-				SimpleRiskModel: &proto.SimpleRiskModel{
-					Params: &proto.SimpleModelParams{
+			RiskModel: &vegapb.TradableInstrument_SimpleRiskModel{
+				SimpleRiskModel: &vegapb.SimpleRiskModel{
+					Params: &vegapb.SimpleModelParams{
 						FactorLong:           123.45,
 						FactorShort:          234.56,
 						MaxMoveUp:            345.67,
@@ -124,20 +136,20 @@ func TestMarketDeepClone(t *testing.T) {
 			},
 		},
 		DecimalPlaces: 5,
-		Fees: &proto.Fees{
-			Factors: &proto.FeeFactors{
+		Fees: &vegapb.Fees{
+			Factors: &vegapb.FeeFactors{
 				MakerFee:          "0.1",
 				InfrastructureFee: "0.2",
 				LiquidityFee:      "0.3",
 			},
 		},
-		OpeningAuction: &proto.AuctionDuration{
+		OpeningAuction: &vegapb.AuctionDuration{
 			Duration: 1000,
 			Volume:   2000,
 		},
-		PriceMonitoringSettings: &proto.PriceMonitoringSettings{
-			Parameters: &proto.PriceMonitoringParameters{
-				Triggers: []*proto.PriceMonitoringTrigger{
+		PriceMonitoringSettings: &vegapb.PriceMonitoringSettings{
+			Parameters: &vegapb.PriceMonitoringParameters{
+				Triggers: []*vegapb.PriceMonitoringTrigger{
 					{
 						Horizon:          1000,
 						Probability:      "123.45",
@@ -147,17 +159,17 @@ func TestMarketDeepClone(t *testing.T) {
 			},
 			UpdateFrequency: 3000,
 		},
-		LiquidityMonitoringParameters: &proto.LiquidityMonitoringParameters{
-			TargetStakeParameters: &proto.TargetStakeParameters{
+		LiquidityMonitoringParameters: &vegapb.LiquidityMonitoringParameters{
+			TargetStakeParameters: &vegapb.TargetStakeParameters{
 				TimeWindow:    1000,
 				ScalingFactor: 2.0,
 			},
 			TriggeringRatio:  123.45,
 			AuctionExtension: 5000,
 		},
-		TradingMode: proto.Market_TRADING_MODE_CONTINUOUS,
-		State:       proto.Market_STATE_ACTIVE,
-		MarketTimestamps: &proto.MarketTimestamps{
+		TradingMode: vegapb.Market_TRADING_MODE_CONTINUOUS,
+		State:       vegapb.Market_STATE_ACTIVE,
+		MarketTimestamps: &vegapb.MarketTimestamps{
 			Proposed: 1000,
 			Pending:  2000,
 			Open:     3000,
@@ -167,7 +179,8 @@ func TestMarketDeepClone(t *testing.T) {
 
 	me := types.MarketFromProto(&pme)
 	marketEvent := events.NewMarketCreatedEvent(ctx, *me)
-	me2 := marketEvent.Market()
+	mktProto := marketEvent.Market()
+	me2 := types.MarketFromProto(&mktProto)
 
 	// Change the original and check we are not updating the wrapped event
 	me.ID = "Changed"
@@ -213,22 +226,22 @@ func TestMarketDeepClone(t *testing.T) {
 	me.LiquidityMonitoringParameters.TriggeringRatio = num.DecimalFromFloat(99.9)
 	me.LiquidityMonitoringParameters.AuctionExtension = 999
 
-	me.TradingMode = proto.Market_TRADING_MODE_UNSPECIFIED
-	me.State = proto.Market_STATE_UNSPECIFIED
+	me.TradingMode = vegapb.Market_TRADING_MODE_UNSPECIFIED
+	me.State = vegapb.Market_STATE_UNSPECIFIED
 	me.MarketTimestamps.Proposed = 999
 	me.MarketTimestamps.Pending = 999
 	me.MarketTimestamps.Open = 999
 	me.MarketTimestamps.Close = 999
 
-	assert.NotEqual(t, me.ID, me2.Id)
+	assert.NotEqual(t, me.ID, me2.ID)
 
-	assert.NotEqual(t, me.TradableInstrument.Instrument.ID, me2.TradableInstrument.Instrument.Id)
+	assert.NotEqual(t, me.TradableInstrument.Instrument.ID, me2.TradableInstrument.Instrument.ID)
 	assert.NotEqual(t, me.TradableInstrument.Instrument.Code, me2.TradableInstrument.Instrument.Code)
 	assert.NotEqual(t, me.TradableInstrument.Instrument.Name, me2.TradableInstrument.Instrument.Name)
 	assert.NotEqual(t, me.TradableInstrument.Instrument.Metadata.Tags[0], me2.TradableInstrument.Instrument.Metadata.Tags[0])
 	assert.NotEqual(t, me.TradableInstrument.Instrument.Metadata.Tags[1], me2.TradableInstrument.Instrument.Metadata.Tags[1])
 
-	future2 := me2.TradableInstrument.Instrument.Product.(*proto.Instrument_Future)
+	future2 := me2.TradableInstrument.Instrument.Product.(*types.InstrumentFuture)
 
 	assert.NotEqual(t, future.Future.SettlementAsset, future2.Future.SettlementAsset)
 	assert.NotEqual(t, future.Future.QuoteName, future2.Future.QuoteName)
@@ -241,7 +254,7 @@ func TestMarketDeepClone(t *testing.T) {
 	assert.NotEqual(t, me.TradableInstrument.MarginCalculator.ScalingFactors.InitialMargin, me2.TradableInstrument.MarginCalculator.ScalingFactors.InitialMargin)
 	assert.NotEqual(t, me.TradableInstrument.MarginCalculator.ScalingFactors.CollateralRelease, me2.TradableInstrument.MarginCalculator.ScalingFactors.CollateralRelease)
 
-	risk2 := me2.TradableInstrument.RiskModel.(*proto.TradableInstrument_SimpleRiskModel)
+	risk2 := me2.TradableInstrument.RiskModel.(*types.TradableInstrumentSimpleRiskModel)
 	assert.NotEqual(t, risk.SimpleRiskModel.Params.FactorLong, risk2.SimpleRiskModel.Params.FactorLong)
 	assert.NotEqual(t, risk.SimpleRiskModel.Params.FactorShort, risk2.SimpleRiskModel.Params.FactorShort)
 	assert.NotEqual(t, risk.SimpleRiskModel.Params.MaxMoveUp, risk2.SimpleRiskModel.Params.MaxMoveUp)

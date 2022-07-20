@@ -1,9 +1,22 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 //lint:file-ignore ST1003 Ignore underscores in names, this is straigh copied from the proto package to ease introducing the domain types
 
 package types
 
 import (
 	"errors"
+	"fmt"
 
 	proto "code.vegaprotocol.io/protos/vega"
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
@@ -14,18 +27,6 @@ type PriceLevel struct {
 	Price          *num.Uint
 	NumberOfOrders uint64
 	Volume         uint64
-}
-
-func NewPriceLevelFromProto(p *proto.PriceLevel) (*PriceLevel, error) {
-	price, overflowed := num.UintFromString(p.Price, 10)
-	if overflowed {
-		return nil, errors.New("invalid amount")
-	}
-	return &PriceLevel{
-		Price:          price,
-		NumberOfOrders: p.NumberOfOrders,
-		Volume:         p.Volume,
-	}, nil
 }
 
 func (p PriceLevel) IntoProto() *proto.PriceLevel {
@@ -140,13 +141,23 @@ func (o OrderAmendment) Validate() error {
 }
 
 func (o OrderAmendment) String() string {
-	return o.IntoProto().String()
+	return fmt.Sprintf(
+		"orderID(%s) marketID(%s) sizeDelta(%v) timeInForce(%s) peggedReference(%s) price(%s) expiresAt(%v) peggedOffset(%s)",
+		o.OrderID,
+		o.MarketID,
+		o.SizeDelta,
+		o.TimeInForce.String(),
+		o.PeggedReference.String(),
+		uintPointerToString(o.Price),
+		int64PointerToString(o.ExpiresAt),
+		uintPointerToString(o.PeggedOffset),
+	)
 }
 
-func (o OrderAmendment) GetOrderId() string {
+func (o OrderAmendment) GetOrderID() string {
 	return o.OrderID
 }
 
-func (o OrderAmendment) GetMarketId() string {
+func (o OrderAmendment) GetMarketID() string {
 	return o.MarketID
 }

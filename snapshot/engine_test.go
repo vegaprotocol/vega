@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package snapshot_test
 
 import (
@@ -6,8 +18,6 @@ import (
 	"time"
 
 	vegactx "code.vegaprotocol.io/vega/libs/context"
-	"code.vegaprotocol.io/vega/libs/crypto"
-	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/snapshot"
 	"code.vegaprotocol.io/vega/snapshot/mocks"
@@ -39,8 +49,11 @@ func getTestEngine(t *testing.T) *tstEngine {
 	time := mocks.NewMockTimeService(ctrl)
 	stats := mocks.NewMockStatsService(ctrl)
 	eng, err := snapshot.New(context.Background(), nil, snapshot.NewTestConfig(), logging.NewTestLogger(), time, stats)
-	eng.ClearAndInitialise()
 	require.NoError(t, err)
+
+	if err := eng.ClearAndInitialise(); err != nil {
+		t.Fatalf("couldn't clear and initialise snapshot engine for tests: %v", err)
+	}
 	ctx = vegactx.WithTraceID(vegactx.WithBlockHeight(ctx, 1), "0xDEADBEEF")
 	return &tstEngine{
 		ctx:    ctx,
@@ -108,7 +121,8 @@ func TestEngine(t *testing.T) {
 	t.Run("Adding provider with duplicate key in same namespace: first come, first serve", testAddProvidersDuplicateKeys)
 	t.Run("Create a snapshot, if nothing changes, we don't get the data and the hash remains unchanged", testTakeSnapshot)
 	t.Run("Rejecting a snapshot should return a Snapshot Retry Limit error if rejected too many times", testRejectSnapshot)
-	t.Run("Removing multiple keys within a single namespace", testRemovingMutlipleKeysSingleNamespace)
+	t.Run("Removing multiple keys within a single namespace", testRemovingMultipleKeysSingleNamespace)
+	t.Run("Closing the engine doesn't panic when not initialised", testClosingEngineDoesNotPanicWhenNotInitialised)
 }
 
 func TestRestore(t *testing.T) {
@@ -190,12 +204,14 @@ func testAddProvidersDuplicateKeys(t *testing.T) {
 		[]byte("bar2"),
 	}
 	data2 := hash2
+	prov1.EXPECT().Stopped().Times(2).Return(false)
 	for i, k := range keys1 {
-		prov1.EXPECT().GetHash(k).Times(1).Return(hash1[i], nil)
+		prov1.EXPECT().HasChanged(k).Times(1).Return(true)
 		prov1.EXPECT().GetState(k).Times(1).Return(data1[i], nil, nil)
 	}
 	// duplicate key is skipped
-	prov2.EXPECT().GetHash(keys2[1]).Times(1).Return(hash2[0], nil)
+	prov2.EXPECT().Stopped().Times(1).Return(false)
+	prov2.EXPECT().HasChanged(gomock.Any()).Times(1).Return(true)
 	prov2.EXPECT().GetState(keys2[1]).Times(1).Return(data2[0], nil, nil)
 
 	engine.time.EXPECT().GetTimeNow().Times(1).Return(time.Now())
@@ -231,15 +247,20 @@ func testTakeSnapshot(t *testing.T) {
 		pl := state[k]
 		data, err := proto.Marshal(pl.IntoProto())
 		require.NoError(t, err)
-		hash := crypto.Hash(data)
-		prov.EXPECT().GetHash(k).Times(2).Return(hash, nil)
+		prov.EXPECT().HasChanged(k).Times(1).Return(true)
 		prov.EXPECT().GetState(k).Times(1).Return(data, nil, nil)
 	}
+	prov.EXPECT().Stopped().Times(len(keys)).Return(false)
 
 	// take the snapshot knowing state has changed:
 	// we need the ctx that goes with the mock, because that has block height and hash set
 	hash, err := engine.Snapshot(engine.ctx)
 	require.NoError(t, err)
+
+	for _, k := range keys {
+		prov.EXPECT().HasChanged(k).Times(1).Return(false)
+	}
+	prov.EXPECT().Stopped().Times(len(keys)).Return(false)
 	secondHash, err := engine.Snapshot(engine.ctx)
 	require.NoError(t, err)
 	require.EqualValues(t, hash, secondHash)
@@ -271,10 +292,10 @@ func testReloadSnapshot(t *testing.T) {
 		pl := state[k]
 		data, err := proto.Marshal(pl.IntoProto())
 		require.NoError(t, err)
-		hash := crypto.Hash(data)
-		prov.EXPECT().GetHash(k).Times(1).Return(hash, nil)
 		prov.EXPECT().GetState(k).Times(1).Return(data, nil, nil)
+		prov.EXPECT().HasChanged(k).Times(1).Return(true)
 	}
+	prov.EXPECT().Stopped().Times(len(keys)).Return(false)
 	hash, err := engine.Snapshot(engine.ctx)
 	require.NoError(t, err)
 	require.NotEmpty(t, hash)
@@ -349,10 +370,10 @@ func testReloadRestore(t *testing.T) {
 		pl := state[k]
 		data, err := proto.Marshal(pl.IntoProto())
 		require.NoError(t, err)
-		hash := crypto.Hash(data)
-		prov.EXPECT().GetHash(k).Times(1).Return(hash, nil)
 		prov.EXPECT().GetState(k).Times(1).Return(data, nil, nil)
+		prov.EXPECT().HasChanged(k).Times(1).Return(true)
 	}
+	prov.EXPECT().Stopped().Times(len(keys)).Return(false)
 	hash, err := engine.Snapshot(engine.ctx)
 	require.NoError(t, err)
 	require.NotEmpty(t, hash)
@@ -427,9 +448,8 @@ func testRejectSnapshot(t *testing.T) {
 	assert.ErrorIs(t, types.ErrSnapshotRetryLimit, err)
 }
 
-func testRemovingMutlipleKeysSingleNamespace(t *testing.T) {
+func testRemovingMultipleKeysSingleNamespace(t *testing.T) {
 	someState := []byte("hello-i-am-state")
-	someHash := vgcrypto.Hash(someState)
 	engine := getTestEngine(t)
 	defer engine.Finish()
 
@@ -439,7 +459,8 @@ func testRemovingMutlipleKeysSingleNamespace(t *testing.T) {
 	prov := engine.getNewProviderMock()
 	prov.EXPECT().Keys().AnyTimes().Return([]string{"key1"})
 	prov.EXPECT().Namespace().AnyTimes().Return(types.PositionsSnapshot)
-	prov.EXPECT().GetHash(gomock.Any()).Times(2).Return(someHash, nil) // called twice, first to store and second to change for no change
+	prov.EXPECT().HasChanged(gomock.Any()).Times(1).Return(true)
+	prov.EXPECT().Stopped().Times(1).Return(false)
 	prov.EXPECT().GetState(gomock.Any()).Times(1).Return(someState, nil, nil)
 	engine.AddProviders(prov)
 
@@ -447,14 +468,20 @@ func testRemovingMutlipleKeysSingleNamespace(t *testing.T) {
 	prov2 := engine.getNewProviderMock()
 	prov2.EXPECT().Keys().AnyTimes().Return([]string{"key2"})
 	prov2.EXPECT().Namespace().AnyTimes().Return(types.PositionsSnapshot)
-	prov2.EXPECT().GetHash(gomock.Any()).Times(3).Return(someHash, nil)
+	prov2.EXPECT().HasChanged(gomock.Any()).Times(1).Return(true)
 	prov2.EXPECT().GetState(gomock.Any()).Times(1).Return(someState, nil, nil)
+	prov2.EXPECT().Stopped().Times(1).Return(false)
 	engine.AddProviders(prov2)
 
 	// initial snapshot
 	b1, err := engine.Snapshot(engine.ctx)
 	require.NoError(t, err)
 	require.NotNil(t, b1)
+
+	prov.EXPECT().HasChanged(gomock.Any()).Times(1).Return(false)
+	prov.EXPECT().Stopped().Times(1).Return(false)
+	prov2.EXPECT().HasChanged(gomock.Any()).Times(1).Return(false)
+	prov2.EXPECT().Stopped().Times(1).Return(false)
 
 	// call again to confirm no state changes
 	b2, err := engine.Snapshot(engine.ctx)
@@ -463,15 +490,17 @@ func testRemovingMutlipleKeysSingleNamespace(t *testing.T) {
 	require.Equal(t, b1, b2)
 
 	// Now the only change is we signal remove of a single provider, check the snapshot changes
-	prov.EXPECT().GetHash(gomock.Any()).Times(1).Return(nil, nil)
+	prov.EXPECT().HasChanged(gomock.Any()).Times(1).Return(true)
 	prov.EXPECT().Stopped().Times(1).Return(true)
+	prov2.EXPECT().HasChanged(gomock.Any()).Times(1).Return(false)
+	prov2.EXPECT().Stopped().Times(1).Return(false)
 	b3, err := engine.Snapshot(engine.ctx)
 	require.NoError(t, err)
 	require.NotNil(t, b3)
 	require.NotEqual(t, b1, b3)
 
 	// remove the second provider
-	prov2.EXPECT().GetHash(gomock.Any()).Times(1).Return(nil, nil)
+	prov2.EXPECT().HasChanged(gomock.Any()).Times(1).Return(true)
 	prov2.EXPECT().Stopped().Times(1).Return(true)
 	b4, err := engine.Snapshot(engine.ctx)
 	require.NoError(t, err)
@@ -483,4 +512,24 @@ func testRemovingMutlipleKeysSingleNamespace(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, b5)
 	require.Equal(t, b4, b5)
+}
+
+func testClosingEngineDoesNotPanicWhenNotInitialised(t *testing.T) {
+	// given
+	ctrl := gomock.NewController(t)
+	timeSvc := mocks.NewMockTimeService(ctrl)
+	stats := mocks.NewMockStatsService(ctrl)
+	config := snapshot.NewTestConfig()
+	logger := logging.NewTestLogger()
+
+	// when
+	engine, err := snapshot.New(context.Background(), nil, config, logger, timeSvc, stats)
+
+	// then
+	require.NoError(t, err)
+
+	// when
+	require.NotPanics(t, func() {
+		require.NoError(t, engine.Close())
+	})
 }

@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package core_test
 
 import (
@@ -27,7 +39,7 @@ func newExEng(e *execution.Engine, broker *stubs.BrokerStub) *exEng {
 func (e *exEng) SubmitOrder(ctx context.Context, submission *types.OrderSubmission, party string) (*types.OrderConfirmation, error) {
 	conf, err := e.Engine.SubmitOrder(ctx, submission, party, vgcrypto.RandomHash())
 	if err != nil {
-		e.broker.Send(events.NewTxErrEvent(ctx, err, party, submission.IntoProto()))
+		e.broker.Send(events.NewTxErrEvent(ctx, err, party, submission.IntoProto(), "submitOrder"))
 	}
 	return conf, err
 }
@@ -35,7 +47,7 @@ func (e *exEng) SubmitOrder(ctx context.Context, submission *types.OrderSubmissi
 func (e *exEng) AmendOrder(ctx context.Context, amendment *types.OrderAmendment, party string) (*types.OrderConfirmation, error) {
 	conf, err := e.Engine.AmendOrder(ctx, amendment, party, vgcrypto.RandomHash())
 	if err != nil {
-		e.broker.Send(events.NewTxErrEvent(ctx, err, party, amendment.IntoProto()))
+		e.broker.Send(events.NewTxErrEvent(ctx, err, party, amendment.IntoProto(), "amendOrder"))
 	}
 	return conf, err
 }
@@ -43,7 +55,7 @@ func (e *exEng) AmendOrder(ctx context.Context, amendment *types.OrderAmendment,
 func (e *exEng) CancelOrder(ctx context.Context, cancel *types.OrderCancellation, party string) ([]*types.OrderCancellationConfirmation, error) {
 	conf, err := e.Engine.CancelOrder(ctx, cancel, party, vgcrypto.RandomHash())
 	if err != nil {
-		e.broker.Send(events.NewTxErrEvent(ctx, err, party, cancel.IntoProto()))
+		e.broker.Send(events.NewTxErrEvent(ctx, err, party, cancel.IntoProto(), "cancelOrder"))
 	}
 	return conf, err
 }
@@ -52,7 +64,7 @@ func (e *exEng) SubmitLiquidityProvision(ctx context.Context, sub *types.Liquidi
 	deterministicId string,
 ) error {
 	if err := e.Engine.SubmitLiquidityProvision(ctx, sub, party, deterministicId); err != nil {
-		e.broker.Send(events.NewTxErrEvent(ctx, err, party, sub.IntoProto()))
+		e.broker.Send(events.NewTxErrEvent(ctx, err, party, sub.IntoProto(), "submitLiquidityProvision"))
 		return err
 	}
 	return nil
@@ -60,7 +72,7 @@ func (e *exEng) SubmitLiquidityProvision(ctx context.Context, sub *types.Liquidi
 
 func (e *exEng) AmendLiquidityProvision(ctx context.Context, lpa *types.LiquidityProvisionAmendment, party string) error {
 	if err := e.Engine.AmendLiquidityProvision(ctx, lpa, party, vgcrypto.RandomHash()); err != nil {
-		e.broker.Send(events.NewTxErrEvent(ctx, err, party, lpa.IntoProto()))
+		e.broker.Send(events.NewTxErrEvent(ctx, err, party, lpa.IntoProto(), "amendLiquidityProvision"))
 		return err
 	}
 	return nil
@@ -68,7 +80,7 @@ func (e *exEng) AmendLiquidityProvision(ctx context.Context, lpa *types.Liquidit
 
 func (e *exEng) CancelLiquidityProvision(ctx context.Context, lpc *types.LiquidityProvisionCancellation, party string) error {
 	if err := e.Engine.CancelLiquidityProvision(ctx, lpc, party); err != nil {
-		e.broker.Send(events.NewTxErrEvent(ctx, err, party, lpc.IntoProto()))
+		e.broker.Send(events.NewTxErrEvent(ctx, err, party, lpc.IntoProto(), "cancelLiquidityProvision"))
 		return err
 	}
 	return nil

@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package types
 
 import (
@@ -42,7 +54,11 @@ func (s *StakeTotalSupply) IntoProto() *vgproto.StakeTotalSupply {
 }
 
 func (s *StakeTotalSupply) String() string {
-	return fmt.Sprintf("StakeTotalSupply: TokenAddress:%v, TotalSupply:%v", s.TokenAddress, s.TotalSupply.String())
+	return fmt.Sprintf(
+		"tokenAddress(%s) totalSupply(%s)",
+		s.TokenAddress,
+		uintPointerToString(s.TotalSupply),
+	)
 }
 
 func StakeTotalSupplyFromProto(s *vgproto.StakeTotalSupply) (*StakeTotalSupply, error) {
@@ -55,7 +71,7 @@ func StakeTotalSupplyFromProto(s *vgproto.StakeTotalSupply) (*StakeTotalSupply, 
 		}
 	}
 	return &StakeTotalSupply{
-		TokenAddress: s.TokenAddress,
+		TokenAddress: crypto.EthereumChecksumAddress(s.TokenAddress),
 		TotalSupply:  totalSupply,
 	}, nil
 }
@@ -86,7 +102,21 @@ func (s StakeLinking) Hash() string {
 }
 
 func (s *StakeLinking) String() string {
-	return s.IntoProto().String()
+	return fmt.Sprintf(
+		"ID(%s) type(%s) ts(%v) party(%s) amount(%s) status(%s) finalizedAt(%v) txHash(%s) blockHeight(%v) blockTime(%v) logIndex(%v) ethereumAddress(%s)",
+		s.ID,
+		s.Type.String(),
+		s.TS,
+		s.Party,
+		uintPointerToString(s.Amount),
+		s.Status.String(),
+		s.FinalizedAt,
+		s.TxHash,
+		s.BlockHeight,
+		s.BlockTime,
+		s.LogIndex,
+		s.EthereumAddress,
+	)
 }
 
 func (s *StakeLinking) IntoProto() *eventspb.StakeLinking {
@@ -120,7 +150,7 @@ func StakeLinkingFromProto(sl *eventspb.StakeLinking) *StakeLinking {
 		BlockHeight:     sl.BlockHeight,
 		BlockTime:       sl.BlockTime,
 		LogIndex:        sl.LogIndex,
-		EthereumAddress: sl.EthereumAddress,
+		EthereumAddress: crypto.EthereumChecksumAddress(sl.EthereumAddress),
 	}
 }
 
@@ -155,7 +185,7 @@ func StakeDepositedFromProto(
 		LogIndex:        logIndex,
 		TxID:            txID,
 		VegaPubKey:      s.VegaPublicKey,
-		EthereumAddress: s.EthereumAddress,
+		EthereumAddress: crypto.EthereumChecksumAddress(s.EthereumAddress),
 		Amount:          amount,
 		BlockTime:       s.BlockTime,
 	}, nil
@@ -177,7 +207,17 @@ func (s *StakeDeposited) IntoStakeLinking() *StakeLinking {
 }
 
 func (s StakeDeposited) String() string {
-	return fmt.Sprintf("%#v", s)
+	return fmt.Sprintf(
+		"ID(%s) txID(%s) blockNumber(%v) logIndex(%v) vegaPubKey(%s) ethereumAddress(%s) amount(%s) blockTime(%v)",
+		s.ID,
+		s.TxID,
+		s.BlockNumber,
+		s.LogIndex,
+		s.VegaPubKey,
+		s.EthereumAddress,
+		uintPointerToString(s.Amount),
+		s.BlockTime,
+	)
 }
 
 type StakeRemoved struct {
@@ -211,14 +251,24 @@ func StakeRemovedFromProto(
 		LogIndex:        logIndex,
 		TxID:            txID,
 		VegaPubKey:      s.VegaPublicKey,
-		EthereumAddress: s.EthereumAddress,
+		EthereumAddress: crypto.EthereumChecksumAddress(s.EthereumAddress),
 		Amount:          amount,
 		BlockTime:       s.BlockTime,
 	}, nil
 }
 
 func (s StakeRemoved) String() string {
-	return fmt.Sprintf("%#v", s)
+	return fmt.Sprintf(
+		"ID(%s) txID(%s) blockNumber(%v) logIndex(%v) vegaPubKey(%s) ethereumAddress(%s) amount(%s) blockTime(%v)",
+		s.ID,
+		s.TxID,
+		s.BlockNumber,
+		s.LogIndex,
+		s.VegaPubKey,
+		s.EthereumAddress,
+		uintPointerToString(s.Amount),
+		s.BlockTime,
+	)
 }
 
 func (s *StakeRemoved) IntoStakeLinking() *StakeLinking {
@@ -232,6 +282,6 @@ func (s *StakeRemoved) IntoStakeLinking() *StakeLinking {
 		BlockHeight:     s.BlockNumber,
 		BlockTime:       s.BlockTime,
 		LogIndex:        s.LogIndex,
-		EthereumAddress: s.EthereumAddress,
+		EthereumAddress: crypto.EthereumChecksumAddress(s.EthereumAddress),
 	}
 }

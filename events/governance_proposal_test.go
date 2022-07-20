@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package events_test
 
 import (
@@ -19,6 +31,11 @@ func TestAssetProposalNewAssetDeepClone(t *testing.T) {
 		Party:     "PartyId",
 		State:     types.ProposalStateDeclined,
 		Timestamp: 100000,
+		Rationale: &types.ProposalRationale{
+			Description: "Wen moon!",
+			Hash:        "0xdeadbeef",
+			URL:         "example.com",
+		},
 		Terms: &types.ProposalTerms{
 			ClosingTimestamp:    2000000,
 			EnactmentTimestamp:  3000000,
@@ -49,6 +66,9 @@ func TestAssetProposalNewAssetDeepClone(t *testing.T) {
 	p.Terms.ClosingTimestamp = 999
 	p.Terms.EnactmentTimestamp = 888
 	p.Terms.ValidationTimestamp = 777
+	p.Rationale.Description = "Wen mars!"
+	p.Rationale.Hash = "oxcafed00d"
+	p.Rationale.URL = "www.example.com/mars"
 
 	na := p.Terms.Change.(*types.ProposalTermsNewAsset)
 	erc := na.NewAsset.Changes.Source.(*types.AssetDetailsErc20)
@@ -65,6 +85,12 @@ func TestAssetProposalNewAssetDeepClone(t *testing.T) {
 	assert.NotEqual(t, term.ClosingTimestamp, term2.ClosingTimestamp)
 	assert.NotEqual(t, term.EnactmentTimestamp, term2.EnactmentTimestamp)
 	assert.NotEqual(t, term.ValidationTimestamp, term2.ValidationTimestamp)
+
+	rationale := p.Rationale
+	rationale2 := p2.Rationale
+	assert.NotEqual(t, rationale.Description, rationale2.Description)
+	assert.NotEqual(t, rationale.Hash, rationale2.Hash)
+	assert.NotEqual(t, rationale.URL, rationale2.Url)
 
 	na2 := p2.Terms.Change.(*proto.ProposalTerms_NewAsset)
 	erc2 := na2.NewAsset.Changes.Source.(*proto.AssetDetails_Erc20)

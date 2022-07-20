@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package nullchain
 
 import (
@@ -12,15 +24,17 @@ import (
 
 var ErrInvalidRequest = errors.New("invalid request")
 
-func (n *NullBlockchain) Stop() {
+func (n *NullBlockchain) Stop() error {
 	if n.srv == nil {
-		return
+		return nil
 	}
 
 	n.log.Info("Stopping nullchain server")
 	if err := n.srv.Shutdown(context.Background()); err != nil {
 		n.log.Warn("failed to shutdown")
 	}
+
+	return nil
 }
 
 func (n *NullBlockchain) Start() error {

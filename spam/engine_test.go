@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package spam_test
 
 import (
@@ -93,9 +105,9 @@ func testEngineReset(t *testing.T) {
 	// move to next block, we've voted/proposed everything already so shouldn't be allowed to make more
 	engine.EndOfBlock(1)
 
-	proposalHash, err := engine.GetHash("proposal")
+	proposalState, _, err := engine.GetState("proposal")
 	require.Nil(t, err)
-	voteHash, err := engine.GetHash((&types.PayloadVoteSpamPolicy{}).Key())
+	voteState, _, err := engine.GetState((&types.PayloadVoteSpamPolicy{}).Key())
 	require.Nil(t, err)
 
 	keys := engine.Keys()
@@ -117,13 +129,13 @@ func testEngineReset(t *testing.T) {
 	// restore the epoch we were on
 	snapEngine.engine.OnEpochRestore(context.Background(), types.Epoch{Seq: 0})
 
-	proposalHash2, err := snapEngine.engine.GetHash("proposal")
+	proposalState2, _, err := snapEngine.engine.GetState("proposal")
 	require.Nil(t, err)
-	require.True(t, bytes.Equal(proposalHash, proposalHash2))
+	require.True(t, bytes.Equal(proposalState, proposalState2))
 
-	voteHash2, err := snapEngine.engine.GetHash((&types.PayloadVoteSpamPolicy{}).Key())
+	voteState2, _, err := snapEngine.engine.GetState((&types.PayloadVoteSpamPolicy{}).Key())
 	require.Nil(t, err)
-	require.True(t, bytes.Equal(voteHash, voteHash2))
+	require.True(t, bytes.Equal(voteState, voteState2))
 
 	accept, err := snapEngine.engine.PreBlockAccept(tx1)
 	require.Equal(t, false, accept)
@@ -135,9 +147,9 @@ func testEngineReset(t *testing.T) {
 
 	// Notify an epoch event for the *same* epoch and a reset should not happen
 	snapEngine.engine.OnEpochEvent(context.Background(), types.Epoch{Seq: 0})
-	proposalHashNoReset, err := snapEngine.engine.GetHash("proposal")
+	proposalStateNoReset, _, err := snapEngine.engine.GetState("proposal")
 	require.Nil(t, err)
-	require.True(t, bytes.Equal(proposalHashNoReset, proposalHash2))
+	require.True(t, bytes.Equal(proposalStateNoReset, proposalState2))
 
 	// move to next epoch
 	snapEngine.engine.OnEpochEvent(context.Background(), types.Epoch{Seq: 1})
@@ -151,13 +163,13 @@ func testEngineReset(t *testing.T) {
 		require.Equal(t, true, accept)
 	}
 
-	proposalHash3, err := snapEngine.engine.GetHash("proposal")
+	proposalState3, _, err := snapEngine.engine.GetState("proposal")
 	require.Nil(t, err)
-	require.False(t, bytes.Equal(proposalHash3, proposalHash2))
+	require.False(t, bytes.Equal(proposalState3, proposalState2))
 
-	voteHash3, err := snapEngine.engine.GetHash((&types.PayloadVoteSpamPolicy{}).Key())
+	voteState3, _, err := snapEngine.engine.GetState((&types.PayloadVoteSpamPolicy{}).Key())
 	require.Nil(t, err)
-	require.False(t, bytes.Equal(voteHash3, voteHash2))
+	require.False(t, bytes.Equal(voteState3, voteState2))
 }
 
 func testPreBlockAccept(t *testing.T) {

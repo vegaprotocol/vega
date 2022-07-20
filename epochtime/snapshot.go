@@ -1,10 +1,21 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package epochtime
 
 import (
 	"context"
 
 	"code.vegaprotocol.io/protos/vega"
-	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/types"
 
 	"code.vegaprotocol.io/vega/libs/proto"
@@ -23,7 +34,6 @@ func (s *Svc) serialise() error {
 	}
 
 	s.data = data
-	s.hash = crypto.Hash(data)
 	return nil
 }
 
@@ -39,12 +49,8 @@ func (s *Svc) Stopped() bool {
 	return false
 }
 
-func (s *Svc) GetHash(k string) ([]byte, error) {
-	if k != s.pl.Key() {
-		return nil, types.ErrSnapshotKeyDoesNotExist
-	}
-
-	return s.hash, nil
+func (s *Svc) HasChanged(k string) bool {
+	return true
 }
 
 func (s *Svc) GetState(k string) ([]byte, []types.StateProvider, error) {

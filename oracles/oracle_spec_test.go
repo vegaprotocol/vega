@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package oracles_test
 
 import (
@@ -6,6 +18,7 @@ import (
 
 	oraclespb "code.vegaprotocol.io/protos/vega/oracles/v1"
 	"code.vegaprotocol.io/vega/oracles"
+	"code.vegaprotocol.io/vega/types"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -34,15 +47,15 @@ func TestOracleSpec(t *testing.T) {
 
 func testOracleSpecCreatingWithoutPubKeysFails(t *testing.T) {
 	// given
-	spec := oraclespb.OracleSpec{
+	spec := types.OracleSpec{
 		PubKeys: []string{},
-		Filters: []*oraclespb.Filter{
+		Filters: []*types.OracleSpecFilter{
 			{
-				Key: &oraclespb.PropertyKey{
+				Key: &types.OracleSpecPropertyKey{
 					Name: "price",
 					Type: oraclespb.PropertyKey_TYPE_INTEGER,
 				},
-				Conditions: []*oraclespb.Condition{},
+				Conditions: []*types.OracleSpecCondition{},
 			},
 		},
 	}
@@ -58,11 +71,11 @@ func testOracleSpecCreatingWithoutPubKeysFails(t *testing.T) {
 
 func testOracleSpecCreatingWithoutFiltersFails(t *testing.T) {
 	// given
-	spec := oraclespb.OracleSpec{
+	spec := types.OracleSpec{
 		PubKeys: []string{
 			"0xCAFED00D",
 		},
-		Filters: []*oraclespb.Filter{},
+		Filters: []*types.OracleSpecFilter{},
 	}
 
 	// when
@@ -76,11 +89,11 @@ func testOracleSpecCreatingWithoutFiltersFails(t *testing.T) {
 
 func testOracleSpecCreatingWithFiltersWithoutKeyFails(t *testing.T) {
 	// given
-	spec := oraclespb.OracleSpec{
+	spec := types.OracleSpec{
 		PubKeys: []string{
 			"0xCAFED00D",
 		},
-		Filters: []*oraclespb.Filter{
+		Filters: []*types.OracleSpecFilter{
 			{
 				Key:        nil,
 				Conditions: nil,
@@ -99,13 +112,13 @@ func testOracleSpecCreatingWithFiltersWithoutKeyFails(t *testing.T) {
 
 func testOracleSpecCreatingWithFiltersWithoutPropertyNameFails(t *testing.T) {
 	// given
-	spec := oraclespb.OracleSpec{
+	spec := types.OracleSpec{
 		PubKeys: []string{
 			"0xCAFED00D",
 		},
-		Filters: []*oraclespb.Filter{
+		Filters: []*types.OracleSpecFilter{
 			{
-				Key: &oraclespb.PropertyKey{
+				Key: &types.OracleSpecPropertyKey{
 					Name: "",
 					Type: oraclespb.PropertyKey_TYPE_INTEGER,
 				},
@@ -125,29 +138,29 @@ func testOracleSpecCreatingWithFiltersWithoutPropertyNameFails(t *testing.T) {
 
 func testOracleSpecCreatingWithSplitFiltersWithSameTypeWorks(t *testing.T) {
 	// given
-	spec, _ := oracles.NewOracleSpec(oraclespb.OracleSpec{
+	spec, _ := oracles.NewOracleSpec(types.OracleSpec{
 		PubKeys: []string{
 			"0xDEADBEEF",
 			"0xCAFED00D",
 		},
-		Filters: []*oraclespb.Filter{
+		Filters: []*types.OracleSpecFilter{
 			{
-				Key: &oraclespb.PropertyKey{
+				Key: &types.OracleSpecPropertyKey{
 					Name: "prices.BTC.value",
 					Type: oraclespb.PropertyKey_TYPE_INTEGER,
 				},
-				Conditions: []*oraclespb.Condition{
+				Conditions: []*types.OracleSpecCondition{
 					{
 						Value:    "42",
 						Operator: oraclespb.Condition_OPERATOR_GREATER_THAN,
 					},
 				},
 			}, {
-				Key: &oraclespb.PropertyKey{
+				Key: &types.OracleSpecPropertyKey{
 					Name: "prices.BTC.value",
 					Type: oraclespb.PropertyKey_TYPE_INTEGER,
 				},
-				Conditions: []*oraclespb.Condition{
+				Conditions: []*types.OracleSpecCondition{
 					{
 						Value:    "84",
 						Operator: oraclespb.Condition_OPERATOR_LESS_THAN,
@@ -194,29 +207,29 @@ func testOracleSpecCreatingWithSplitFiltersWithSameTypeWorks(t *testing.T) {
 
 func testOracleSpecCreatingWithSplitFiltersWithDifferentTypeWorks(t *testing.T) {
 	// given
-	originalSpec := oraclespb.OracleSpec{
+	originalSpec := types.OracleSpec{
 		PubKeys: []string{
 			"0xDEADBEEF",
 			"0xCAFED00D",
 		},
-		Filters: []*oraclespb.Filter{
+		Filters: []*types.OracleSpecFilter{
 			{
-				Key: &oraclespb.PropertyKey{
+				Key: &types.OracleSpecPropertyKey{
 					Name: "prices.BTC.value",
 					Type: oraclespb.PropertyKey_TYPE_INTEGER,
 				},
-				Conditions: []*oraclespb.Condition{
+				Conditions: []*types.OracleSpecCondition{
 					{
 						Value:    "42",
 						Operator: oraclespb.Condition_OPERATOR_GREATER_THAN,
 					},
 				},
 			}, {
-				Key: &oraclespb.PropertyKey{
+				Key: &types.OracleSpecPropertyKey{
 					Name: "prices.BTC.value",
 					Type: oraclespb.PropertyKey_TYPE_TIMESTAMP,
 				},
-				Conditions: []*oraclespb.Condition{
+				Conditions: []*types.OracleSpecCondition{
 					{
 						Value:    "84",
 						Operator: oraclespb.Condition_OPERATOR_LESS_THAN,
@@ -263,17 +276,17 @@ func testOracleSpecCreatingWithFiltersWithInconvertibleTypeFails(t *testing.T) {
 	for _, c := range cases {
 		t.Run(c.msg, func(t *testing.T) {
 			// given
-			originalSpec := oraclespb.OracleSpec{
+			originalSpec := types.OracleSpec{
 				PubKeys: []string{
 					"0xCAFED00D",
 				},
-				Filters: []*oraclespb.Filter{
+				Filters: []*types.OracleSpecFilter{
 					{
-						Key: &oraclespb.PropertyKey{
+						Key: &types.OracleSpecPropertyKey{
 							Name: "prices.BTC.value",
 							Type: c.typ,
 						},
-						Conditions: []*oraclespb.Condition{
+						Conditions: []*types.OracleSpecCondition{
 							{
 								Value:    c.value,
 								Operator: oraclespb.Condition_OPERATOR_EQUALS,
@@ -295,18 +308,18 @@ func testOracleSpecCreatingWithFiltersWithInconvertibleTypeFails(t *testing.T) {
 
 func testOracleSpecMatchingUnauthorizedPubKeysFails(t *testing.T) {
 	// given
-	spec, _ := oracles.NewOracleSpec(oraclespb.OracleSpec{
+	spec, _ := oracles.NewOracleSpec(types.OracleSpec{
 		PubKeys: []string{
 			"0xDEADBEEF",
 			"0xCAFED00D",
 		},
-		Filters: []*oraclespb.Filter{
+		Filters: []*types.OracleSpecFilter{
 			{
-				Key: &oraclespb.PropertyKey{
+				Key: &types.OracleSpecPropertyKey{
 					Name: "prices.BTC.value",
 					Type: oraclespb.PropertyKey_TYPE_INTEGER,
 				},
-				Conditions: []*oraclespb.Condition{
+				Conditions: []*types.OracleSpecCondition{
 					{
 						Value:    "42",
 						Operator: oraclespb.Condition_OPERATOR_EQUALS,
@@ -336,19 +349,19 @@ func testOracleSpecMatchingUnauthorizedPubKeysFails(t *testing.T) {
 
 func testOracleSpecMatchingAuthorizedPubKeysSucceeds(t *testing.T) {
 	// given
-	spec, _ := oracles.NewOracleSpec(oraclespb.OracleSpec{
+	spec, _ := oracles.NewOracleSpec(types.OracleSpec{
 		PubKeys: []string{
 			"0xDEADBEEF",
 			"0xCAFED00D",
 			"0xBADDCAFE",
 		},
-		Filters: []*oraclespb.Filter{
+		Filters: []*types.OracleSpecFilter{
 			{
-				Key: &oraclespb.PropertyKey{
+				Key: &types.OracleSpecPropertyKey{
 					Name: "prices.BTC.value",
 					Type: oraclespb.PropertyKey_TYPE_INTEGER,
 				},
-				Conditions: []*oraclespb.Condition{
+				Conditions: []*types.OracleSpecCondition{
 					{
 						Value:    "42",
 						Operator: oraclespb.Condition_OPERATOR_EQUALS,
@@ -450,28 +463,28 @@ func testOracleSpecMatchingEqualPropertiesWorks(t *testing.T) {
 	for _, c := range cases {
 		t.Run(c.msg, func(t *testing.T) {
 			// given
-			spec, _ := oracles.NewOracleSpec(oraclespb.OracleSpec{
+			spec, _ := oracles.NewOracleSpec(types.OracleSpec{
 				PubKeys: []string{
 					"0xCAFED00D",
 				},
-				Filters: []*oraclespb.Filter{
+				Filters: []*types.OracleSpecFilter{
 					{
-						Key: &oraclespb.PropertyKey{
+						Key: &types.OracleSpecPropertyKey{
 							Name: "prices.BTC.value",
 							Type: c.keyType,
 						},
-						Conditions: []*oraclespb.Condition{
+						Conditions: []*types.OracleSpecCondition{
 							{
 								Value:    c.specValue,
 								Operator: oraclespb.Condition_OPERATOR_EQUALS,
 							},
 						},
 					}, {
-						Key: &oraclespb.PropertyKey{
+						Key: &types.OracleSpecPropertyKey{
 							Name: "prices.ETH.value",
 							Type: oraclespb.PropertyKey_TYPE_INTEGER,
 						},
-						Conditions: []*oraclespb.Condition{
+						Conditions: []*types.OracleSpecCondition{
 							{
 								Value:    "42",
 								Operator: oraclespb.Condition_OPERATOR_EQUALS,
@@ -551,28 +564,28 @@ func testOracleSpecMatchingGreaterThanPropertiesWorks(t *testing.T) {
 	for _, c := range cases {
 		t.Run(c.msg, func(t *testing.T) {
 			// given
-			spec, _ := oracles.NewOracleSpec(oraclespb.OracleSpec{
+			spec, _ := oracles.NewOracleSpec(types.OracleSpec{
 				PubKeys: []string{
 					"0xCAFED00D",
 				},
-				Filters: []*oraclespb.Filter{
+				Filters: []*types.OracleSpecFilter{
 					{
-						Key: &oraclespb.PropertyKey{
+						Key: &types.OracleSpecPropertyKey{
 							Name: "prices.BTC.value",
 							Type: c.keyType,
 						},
-						Conditions: []*oraclespb.Condition{
+						Conditions: []*types.OracleSpecCondition{
 							{
 								Value:    c.specValue,
 								Operator: oraclespb.Condition_OPERATOR_GREATER_THAN,
 							},
 						},
 					}, {
-						Key: &oraclespb.PropertyKey{
+						Key: &types.OracleSpecPropertyKey{
 							Name: "prices.ETH.value",
 							Type: oraclespb.PropertyKey_TYPE_INTEGER,
 						},
-						Conditions: []*oraclespb.Condition{
+						Conditions: []*types.OracleSpecCondition{
 							{
 								Value:    "42",
 								Operator: oraclespb.Condition_OPERATOR_GREATER_THAN,
@@ -670,28 +683,28 @@ func testOracleSpecMatchingGreaterThanOrEqualPropertiesWorks(t *testing.T) {
 	for _, c := range cases {
 		t.Run(c.msg, func(t *testing.T) {
 			// given
-			spec, _ := oracles.NewOracleSpec(oraclespb.OracleSpec{
+			spec, _ := oracles.NewOracleSpec(types.OracleSpec{
 				PubKeys: []string{
 					"0xCAFED00D",
 				},
-				Filters: []*oraclespb.Filter{
+				Filters: []*types.OracleSpecFilter{
 					{
-						Key: &oraclespb.PropertyKey{
+						Key: &types.OracleSpecPropertyKey{
 							Name: "prices.BTC.value",
 							Type: c.keyType,
 						},
-						Conditions: []*oraclespb.Condition{
+						Conditions: []*types.OracleSpecCondition{
 							{
 								Value:    c.specValue,
 								Operator: oraclespb.Condition_OPERATOR_GREATER_THAN_OR_EQUAL,
 							},
 						},
 					}, {
-						Key: &oraclespb.PropertyKey{
+						Key: &types.OracleSpecPropertyKey{
 							Name: "prices.ETH.value",
 							Type: oraclespb.PropertyKey_TYPE_INTEGER,
 						},
-						Conditions: []*oraclespb.Condition{
+						Conditions: []*types.OracleSpecCondition{
 							{
 								Value:    "42",
 								Operator: oraclespb.Condition_OPERATOR_GREATER_THAN_OR_EQUAL,
@@ -771,28 +784,28 @@ func testOracleSpecMatchingLessThanPropertiesWorks(t *testing.T) {
 	for _, c := range cases {
 		t.Run(c.msg, func(t *testing.T) {
 			// given
-			spec, _ := oracles.NewOracleSpec(oraclespb.OracleSpec{
+			spec, _ := oracles.NewOracleSpec(types.OracleSpec{
 				PubKeys: []string{
 					"0xCAFED00D",
 				},
-				Filters: []*oraclespb.Filter{
+				Filters: []*types.OracleSpecFilter{
 					{
-						Key: &oraclespb.PropertyKey{
+						Key: &types.OracleSpecPropertyKey{
 							Name: "prices.BTC.value",
 							Type: c.keyType,
 						},
-						Conditions: []*oraclespb.Condition{
+						Conditions: []*types.OracleSpecCondition{
 							{
 								Value:    c.specValue,
 								Operator: oraclespb.Condition_OPERATOR_LESS_THAN,
 							},
 						},
 					}, {
-						Key: &oraclespb.PropertyKey{
+						Key: &types.OracleSpecPropertyKey{
 							Name: "prices.ETH.value",
 							Type: oraclespb.PropertyKey_TYPE_INTEGER,
 						},
-						Conditions: []*oraclespb.Condition{
+						Conditions: []*types.OracleSpecCondition{
 							{
 								Value:    "42",
 								Operator: oraclespb.Condition_OPERATOR_LESS_THAN,
@@ -890,28 +903,28 @@ func testOracleSpecMatchingLessThanOrEqualPropertiesWorks(t *testing.T) {
 	for _, c := range cases {
 		t.Run(c.msg, func(t *testing.T) {
 			// given
-			spec, _ := oracles.NewOracleSpec(oraclespb.OracleSpec{
+			spec, _ := oracles.NewOracleSpec(types.OracleSpec{
 				PubKeys: []string{
 					"0xCAFED00D",
 				},
-				Filters: []*oraclespb.Filter{
+				Filters: []*types.OracleSpecFilter{
 					{
-						Key: &oraclespb.PropertyKey{
+						Key: &types.OracleSpecPropertyKey{
 							Name: "prices.BTC.value",
 							Type: c.keyType,
 						},
-						Conditions: []*oraclespb.Condition{
+						Conditions: []*types.OracleSpecCondition{
 							{
 								Value:    c.specValue,
 								Operator: oraclespb.Condition_OPERATOR_LESS_THAN_OR_EQUAL,
 							},
 						},
 					}, {
-						Key: &oraclespb.PropertyKey{
+						Key: &types.OracleSpecPropertyKey{
 							Name: "prices.ETH.value",
 							Type: oraclespb.PropertyKey_TYPE_INTEGER,
 						},
-						Conditions: []*oraclespb.Condition{
+						Conditions: []*types.OracleSpecCondition{
 							{
 								Value:    "42",
 								Operator: oraclespb.Condition_OPERATOR_LESS_THAN_OR_EQUAL,
@@ -967,24 +980,24 @@ func testOracleSpecMatchingPropertiesPresenceSucceeds(t *testing.T) {
 	for _, c := range cases {
 		t.Run(c.msg, func(t *testing.T) {
 			// given
-			spec, _ := oracles.NewOracleSpec(oraclespb.OracleSpec{
+			spec, _ := oracles.NewOracleSpec(types.OracleSpec{
 				PubKeys: []string{
 					"0xCAFED00D",
 				},
-				Filters: []*oraclespb.Filter{
+				Filters: []*types.OracleSpecFilter{
 					{
-						Key: &oraclespb.PropertyKey{
+						Key: &types.OracleSpecPropertyKey{
 							Name: "prices.BTC.value",
 							Type: c.keyType,
 						},
-						Conditions: []*oraclespb.Condition{},
+						Conditions: []*types.OracleSpecCondition{},
 					},
 					{
-						Key: &oraclespb.PropertyKey{
+						Key: &types.OracleSpecPropertyKey{
 							Name: "prices.ETH.value",
 							Type: oraclespb.PropertyKey_TYPE_INTEGER,
 						},
-						Conditions: []*oraclespb.Condition{},
+						Conditions: []*types.OracleSpecCondition{},
 					},
 				},
 			})
@@ -1035,24 +1048,24 @@ func testOracleSpecMatchingPropertiesPresenceFails(t *testing.T) {
 	for _, c := range cases {
 		t.Run(c.msg, func(t *testing.T) {
 			// given
-			spec, _ := oracles.NewOracleSpec(oraclespb.OracleSpec{
+			spec, _ := oracles.NewOracleSpec(types.OracleSpec{
 				PubKeys: []string{
 					"0xCAFED00D",
 				},
-				Filters: []*oraclespb.Filter{
+				Filters: []*types.OracleSpecFilter{
 					{
-						Key: &oraclespb.PropertyKey{
+						Key: &types.OracleSpecPropertyKey{
 							Name: "prices.BTC.value",
 							Type: c.keyType,
 						},
-						Conditions: []*oraclespb.Condition{},
+						Conditions: []*types.OracleSpecCondition{},
 					},
 					{
-						Key: &oraclespb.PropertyKey{
+						Key: &types.OracleSpecPropertyKey{
 							Name: "prices.ETH.value",
 							Type: oraclespb.PropertyKey_TYPE_INTEGER,
 						},
-						Conditions: []*oraclespb.Condition{},
+						Conditions: []*types.OracleSpecCondition{},
 					},
 				},
 			})
@@ -1109,17 +1122,17 @@ func testOracleSpecMatchingWithInconvertibleTypeFails(t *testing.T) {
 	for _, c := range cases {
 		t.Run(c.msg, func(t *testing.T) {
 			// given
-			spec, _ := oracles.NewOracleSpec(oraclespb.OracleSpec{
+			spec, _ := oracles.NewOracleSpec(types.OracleSpec{
 				PubKeys: []string{
 					"0xCAFED00D",
 				},
-				Filters: []*oraclespb.Filter{
+				Filters: []*types.OracleSpecFilter{
 					{
-						Key: &oraclespb.PropertyKey{
+						Key: &types.OracleSpecPropertyKey{
 							Name: "prices.BTC.value",
 							Type: c.keyType,
 						},
-						Conditions: []*oraclespb.Condition{
+						Conditions: []*types.OracleSpecCondition{
 							{
 								Value:    c.specValue,
 								Operator: oraclespb.Condition_OPERATOR_EQUALS,
@@ -1240,17 +1253,17 @@ func testOracleSpecVerifyingBindingWorks(t *testing.T) {
 	for _, c := range cases {
 		t.Run(c.msg, func(t *testing.T) {
 			// given
-			spec, _ := oracles.NewOracleSpec(oraclespb.OracleSpec{
+			spec, _ := oracles.NewOracleSpec(types.OracleSpec{
 				PubKeys: []string{
 					"0xCAFED00D",
 				},
-				Filters: []*oraclespb.Filter{
+				Filters: []*types.OracleSpecFilter{
 					{
-						Key: &oraclespb.PropertyKey{
+						Key: &types.OracleSpecPropertyKey{
 							Name: c.declaredProperty,
 							Type: c.declaredType,
 						},
-						Conditions: []*oraclespb.Condition{},
+						Conditions: []*types.OracleSpecCondition{},
 					},
 				},
 			})

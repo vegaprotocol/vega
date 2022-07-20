@@ -1,9 +1,22 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package protocol
 
 import (
 	"context"
 
 	"code.vegaprotocol.io/shared/paths"
+	"code.vegaprotocol.io/vega/api"
 	"code.vegaprotocol.io/vega/blockchain"
 	"code.vegaprotocol.io/vega/broker"
 	ethclient "code.vegaprotocol.io/vega/client/eth"
@@ -11,7 +24,6 @@ import (
 	"code.vegaprotocol.io/vega/evtforward"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/nodewallets"
-	"code.vegaprotocol.io/vega/pow"
 	"code.vegaprotocol.io/vega/processor"
 	"code.vegaprotocol.io/vega/stats"
 	"code.vegaprotocol.io/vega/subscribers"
@@ -46,11 +58,14 @@ func New(
 ) (p *Protocol, err error) {
 	defer func() {
 		if err != nil {
-			ids := p.confWatcher.OnConfigUpdateWithID(
-				func(cfg config.Config) { p.ReloadConf(cfg.Processor) },
-			)
-			p.confListenerIDs = ids
+			log.Error("unable to start protocol", logging.Error(err))
+			return
 		}
+
+		ids := p.confWatcher.OnConfigUpdateWithID(
+			func(cfg config.Config) { p.ReloadConf(cfg.Processor) },
+		)
+		p.confListenerIDs = ids
 	}()
 
 	svcs, err := newServices(
@@ -96,6 +111,7 @@ func New(
 			svcs.blockchainClient,
 			svcs.erc20MultiSigTopology,
 			stats.GetVersion(),
+			svcs.codec,
 		),
 		log:         log,
 		confWatcher: confWatcher,
@@ -138,6 +154,6 @@ func (n *Protocol) GetBroker() *broker.Broker {
 	return n.services.broker
 }
 
-func (n *Protocol) GetPoW() *pow.Engine {
+func (n *Protocol) GetPoW() api.ProofOfWorkParams {
 	return n.services.pow
 }

@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package liquidity
 
 import (
@@ -8,7 +20,6 @@ import (
 	typespb "code.vegaprotocol.io/protos/vega"
 	snapshotpb "code.vegaprotocol.io/protos/vega/snapshot/v1"
 	"code.vegaprotocol.io/vega/events"
-	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/libs/proto"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/risk"
@@ -16,16 +27,25 @@ import (
 	"code.vegaprotocol.io/vega/types/num"
 )
 
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/orderbook_mock.go -package mocks code.vegaprotocol.io/vega/liquidity OrderBook
+type OrderBook interface {
+	GetOrderByID(orderID string) (*types.Order, error)
+}
+
 type SnapshotEngine struct {
 	*Engine
 	pl     types.Payload
 	market string
 
 	// liquidity types
-	parametersChanged bool
-	stopped           bool
-	hashes            map[string][]byte
-	serialised        map[string][]byte
+	parametersChanged                bool
+	stopped                          bool
+	serialisedParameters             []byte
+	serialisedPartiesLiquidityOrders []byte
+	serialisedPartiesOrders          []byte
+	serialisedPendingProvisions      []byte
+	serialisedProvisions             []byte
+	serialisedSupplied               []byte
 
 	// keys, need to be computed when the engine is
 	// instantiated as they are dynamic
@@ -40,6 +60,7 @@ type SnapshotEngine struct {
 
 func NewSnapshotEngine(config Config,
 	log *logging.Logger,
+	timeService TimeService,
 	broker Broker,
 	riskModel RiskModel,
 	priceMonitor PriceMonitor,
@@ -54,21 +75,43 @@ func NewSnapshotEngine(config Config,
 		// tickSize = 10^{market_dp} - used for calculating probabilities at offsets from the best bid/ask
 		// priceFactor = 10^{asset_dp} / 10^{market_dp} - used for scaling a price to the market
 		// positionFactor = 10^{position_dp} - used to scale sizes to the market position decimals
-		Engine: NewEngine(config, log, broker, riskModel, priceMonitor, asset, market, stateVarEngine, tickSize, priceFactor, positionFactor),
+		Engine: NewEngine(config, log, timeService, broker, riskModel, priceMonitor, asset, market, stateVarEngine, tickSize, priceFactor, positionFactor),
 		pl:     types.Payload{},
 		market: market,
 
 		parametersChanged: true,
 		stopped:           false,
-		// empty so default to nil to force update
-		hashes:     map[string][]byte{},
-		serialised: map[string][]byte{},
 	}
 
 	// build the keys
 	se.buildHashKeys(market)
 
 	return se
+}
+
+func reconcileOrders(orders *SnapshotablePartiesOrders, orderbook OrderBook) *SnapshotablePartiesOrders {
+	newOrders := newSnapshotablePartiesOrders()
+	for party, v := range orders.m {
+		newOrders.ResetForParty(party)
+		for _, o := range v {
+			order, err := orderbook.GetOrderByID(o.ID)
+			if err != nil {
+				// if not in the order book we just add the original
+				newOrders.Add(o.Party, o)
+				continue
+			}
+			newOrders.Add(order.Party, order)
+		}
+	}
+	newOrders.updated = false
+	return newOrders
+}
+
+// ReconcileWithOrderBook ensures that when restoring state from a snapshot the orders in the matching engine and
+// liquidity engine are pointers to the same underlying order struct.
+func (e *SnapshotEngine) ReconcileWithOrderBook(orderbook OrderBook) {
+	e.orders = reconcileOrders(e.orders, orderbook)
+	e.liquidityOrders = reconcileOrders(e.liquidityOrders, orderbook)
 }
 
 func (e *SnapshotEngine) UpdateMarketConfig(model risk.Model, monitor PriceMonitor) {
@@ -111,13 +154,28 @@ func (e *SnapshotEngine) OnMarketLiquidityProvisionShapesMaxSizeUpdate(v int64) 
 	return e.Engine.OnMarketLiquidityProvisionShapesMaxSizeUpdate(v)
 }
 
-func (e *SnapshotEngine) GetHash(k string) ([]byte, error) {
-	_, hash, err := e.serialise(k)
-	return hash, err
+func (e *SnapshotEngine) HasChanged(k string) bool {
+	// switch k {
+	// case e.parametersKey:
+	// 	return e.parametersChanged
+	// case e.partiesLiquidityOrdersKey:
+	// 	return e.Engine.liquidityOrders.HasUpdates()
+	// case e.partiesOrdersKey:
+	// 	return e.Engine.orders.HasUpdates()
+	// case e.pendingProvisionsKey:
+	// 	return e.Engine.pendings.HasUpdates()
+	// case e.provisionsKey:
+	// 	return e.Engine.provisions.HasUpdates()
+	// case e.suppliedKey:
+	// 	return e.suppliedEngine.HasUpdates()
+	// default:
+	// 	return false
+	// }
+	return true
 }
 
 func (e *SnapshotEngine) GetState(k string) ([]byte, []types.StateProvider, error) {
-	state, _, err := e.serialise(k)
+	state, err := e.serialise(k)
 	return state, nil, err
 }
 
@@ -129,60 +187,76 @@ func (e *SnapshotEngine) LoadState(ctx context.Context, p *types.Payload) ([]typ
 	switch pl := p.Data.(type) {
 	case *types.PayloadLiquidityPendingProvisions:
 		return nil, e.loadPendingProvisions(
-			ctx, pl.PendingProvisions.GetPendingProvisions())
+			ctx, pl.PendingProvisions.GetPendingProvisions(), p)
 	case *types.PayloadLiquidityProvisions:
 		return nil, e.loadProvisions(
-			ctx, pl.Provisions.GetLiquidityProvisions())
+			ctx, pl.Provisions.GetLiquidityProvisions(), p)
 	case *types.PayloadLiquidityParameters:
-		return nil, e.loadParameters(ctx, pl.Parameters)
+		return nil, e.loadParameters(ctx, pl.Parameters, p)
 	case *types.PayloadLiquidityPartiesOrders:
-		return nil, e.loadPartiesOrders(ctx, pl.PartiesOrders.GetOrders())
+		return nil, e.loadPartiesOrders(ctx, pl.PartiesOrders.PartyOrders, p)
 	case *types.PayloadLiquidityPartiesLiquidityOrders:
 		return nil, e.loadPartiesLiquidityOrders(
-			ctx, pl.PartiesLiquidityOrders.GetOrders())
+			ctx, pl.PartiesLiquidityOrders.PartyOrders, p)
 	case *types.PayloadLiquiditySupplied:
-		return nil, e.loadSupplied(pl.LiquiditySupplied)
+		return nil, e.loadSupplied(pl.LiquiditySupplied, p)
 	default:
 		return nil, types.ErrUnknownSnapshotType
 	}
 }
 
-func (e *SnapshotEngine) loadSupplied(ls *snapshotpb.LiquiditySupplied) error {
-	return e.suppliedEngine.Reload(ls)
+func (e *SnapshotEngine) loadSupplied(ls *snapshotpb.LiquiditySupplied, p *types.Payload) error {
+	err := e.suppliedEngine.Reload(ls)
+	if err != nil {
+		return err
+	}
+	e.Engine.suppliedEngine.ResetUpdated()
+	e.serialisedSupplied, err = proto.Marshal(p.IntoProto())
+	return err
 }
 
 func (e *SnapshotEngine) loadPartiesOrders(
-	_ context.Context, orders []*typespb.Order,
+	_ context.Context, pOrders []*snapshotpb.PartyOrders, p *types.Payload,
 ) error {
 	e.Engine.orders = newSnapshotablePartiesOrders()
-	for _, v := range orders {
-		order, err := types.OrderFromProto(v)
-		if err != nil {
-			return err
+	for _, partyOrders := range pOrders {
+		e.Engine.orders.ResetForParty(partyOrders.Party)
+		for _, v := range partyOrders.Orders {
+			order, err := types.OrderFromProto(v)
+			if err != nil {
+				return err
+			}
+			e.Engine.orders.Add(order.Party, order)
 		}
-		e.Engine.orders.Add(order.Party, order)
 	}
-
-	return nil
+	var err error
+	e.Engine.orders.ResetUpdated()
+	e.serialisedPartiesOrders, err = proto.Marshal(p.IntoProto())
+	return err
 }
 
 func (e *SnapshotEngine) loadPartiesLiquidityOrders(
-	_ context.Context, orders []*typespb.Order,
+	_ context.Context, pOrders []*snapshotpb.PartyOrders, p *types.Payload,
 ) error {
 	e.Engine.liquidityOrders = newSnapshotablePartiesOrders()
-	for _, v := range orders {
-		order, err := types.OrderFromProto(v)
-		if err != nil {
-			return err
+	for _, partyOrders := range pOrders {
+		e.Engine.liquidityOrders.ResetForParty(partyOrders.Party)
+		for _, v := range partyOrders.Orders {
+			order, err := types.OrderFromProto(v)
+			if err != nil {
+				return err
+			}
+			e.Engine.liquidityOrders.Add(order.Party, order)
 		}
-		e.Engine.liquidityOrders.Add(order.Party, order)
 	}
-
-	return nil
+	var err error
+	e.Engine.liquidityOrders.ResetUpdated()
+	e.serialisedPartiesLiquidityOrders, err = proto.Marshal(p.IntoProto())
+	return err
 }
 
 func (e *SnapshotEngine) loadParameters(
-	_ context.Context, parameters *snapshotpb.LiquidityParameters,
+	_ context.Context, parameters *snapshotpb.LiquidityParameters, p *types.Payload,
 ) error {
 	maxShapesSize, err := strconv.ParseInt(parameters.MaxShapeSize, 10, 64)
 	if err != nil {
@@ -203,23 +277,26 @@ func (e *SnapshotEngine) loadParameters(
 		return err
 	}
 	e.OnSuppliedStakeToObligationFactorUpdate(stof)
-
-	return nil
+	e.parametersChanged = false
+	e.serialisedParameters, err = proto.Marshal(p.IntoProto())
+	return err
 }
 
 func (e *SnapshotEngine) loadPendingProvisions(
-	_ context.Context, pendingProvisions []string,
+	_ context.Context, pendingProvisions []string, p *types.Payload,
 ) error {
 	e.Engine.pendings = newSnapshotablePendingProvisions()
 	for _, v := range pendingProvisions {
 		e.Engine.pendings.Add(v)
 	}
-
-	return nil
+	var err error
+	e.Engine.pendings.ResetUpdated()
+	e.serialisedPendingProvisions, err = proto.Marshal(p.IntoProto())
+	return err
 }
 
 func (e *SnapshotEngine) loadProvisions(
-	ctx context.Context, provisions []*typespb.LiquidityProvision,
+	ctx context.Context, provisions []*typespb.LiquidityProvision, p *types.Payload,
 ) error {
 	e.Engine.provisions = newSnapshotableProvisionsPerParty()
 	evts := make([]events.Event, 0, len(provisions))
@@ -232,12 +309,14 @@ func (e *SnapshotEngine) loadProvisions(
 		evts = append(evts, events.NewLiquidityProvisionEvent(ctx, provision))
 	}
 
+	var err error
+	e.Engine.provisions.ResetUpdated()
+	e.serialisedProvisions, err = proto.Marshal(p.IntoProto())
 	e.broker.SendBatch(evts)
-
-	return nil
+	return err
 }
 
-func (e *SnapshotEngine) serialise(k string) ([]byte, []byte, error) {
+func (e *SnapshotEngine) serialise(k string) ([]byte, error) {
 	var (
 		buf     []byte
 		changed bool
@@ -257,32 +336,45 @@ func (e *SnapshotEngine) serialise(k string) ([]byte, []byte, error) {
 	case e.suppliedKey:
 		buf, changed, err = e.serialiseSupplied()
 	default:
-		return nil, nil, types.ErrSnapshotKeyDoesNotExist
+		return nil, types.ErrSnapshotKeyDoesNotExist
 	}
 
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	if e.stopped {
-		return nil, nil, nil
+		return nil, nil
 	}
 
 	if !changed {
-		return e.serialised[k], e.hashes[k], nil
+		return buf, nil
 	}
 
-	e.serialised[k] = buf
-	h := crypto.Hash(buf)
-	e.hashes[k] = h
+	switch k {
+	case e.parametersKey:
+		e.serialisedParameters = buf
+	case e.partiesLiquidityOrdersKey:
+		e.serialisedPartiesLiquidityOrders = buf
+	case e.partiesOrdersKey:
+		e.serialisedPartiesOrders = buf
+	case e.pendingProvisionsKey:
+		e.serialisedPendingProvisions = buf
+	case e.provisionsKey:
+		e.serialisedProvisions = buf
+	case e.suppliedKey:
+		e.serialisedSupplied = buf
+	default:
+		return nil, types.ErrSnapshotKeyDoesNotExist
+	}
 
-	return buf, h, nil
+	return buf, nil
 }
 
 func (e *SnapshotEngine) serialiseParameters() ([]byte, bool, error) {
 	key := e.parametersKey
-	if !e.parametersChanged {
-		return e.serialised[key], false, nil
+	if !e.HasChanged(key) {
+		return e.serialisedParameters, false, nil
 	}
 
 	// reset the flag
@@ -304,53 +396,49 @@ func (e *SnapshotEngine) serialiseParameters() ([]byte, bool, error) {
 
 func (e *SnapshotEngine) serialisePartiesLiquidityOrders() ([]byte, bool, error) {
 	key := e.partiesLiquidityOrdersKey
-	if !e.Engine.liquidityOrders.HasUpdates() {
-		return e.serialised[key], false, nil
+	if !e.HasChanged(key) {
+		return e.serialisedPartiesLiquidityOrders, false, nil
 	}
 
 	e.Engine.liquidityOrders.ResetUpdated()
-
-	pborders := []*typespb.Order{}
-	for _, orders := range e.Engine.liquidityOrders.m {
-		for _, order := range orders {
-			pborders = append(pborders, order.IntoProto())
-		}
-	}
-	sort.SliceStable(pborders, func(i, j int) bool { return pborders[i].Id < pborders[j].Id })
-
 	payload := &snapshotpb.Payload{
 		Data: &snapshotpb.Payload_LiquidityPartiesLiquidityOrders{
 			LiquidityPartiesLiquidityOrders: &snapshotpb.LiquidityPartiesLiquidityOrders{
-				MarketId: e.market,
-				Orders:   pborders,
+				MarketId:    e.market,
+				PartyOrders: partyOrdersToProto(e.Engine.liquidityOrders.m),
 			},
 		},
 	}
-
 	return e.marshalPayload(key, payload)
+}
+
+func partyOrdersToProto(m map[string]map[string]*types.Order) []*snapshotpb.PartyOrders {
+	pOrders := make([]*snapshotpb.PartyOrders, 0, len(m))
+	for party, orders := range m {
+		partyOrders := &snapshotpb.PartyOrders{Party: party}
+		partyOrders.Orders = []*typespb.Order{}
+		for _, order := range orders {
+			partyOrders.Orders = append(partyOrders.Orders, order.IntoProto())
+		}
+		sort.SliceStable(partyOrders.Orders, func(i, j int) bool { return partyOrders.Orders[i].Id < partyOrders.Orders[j].Id })
+		pOrders = append(pOrders, partyOrders)
+	}
+	sort.SliceStable(pOrders, func(i, j int) bool { return pOrders[i].Party < pOrders[j].Party })
+	return pOrders
 }
 
 func (e *SnapshotEngine) serialisePartiesOrders() ([]byte, bool, error) {
 	key := e.partiesOrdersKey
-	if !e.Engine.orders.HasUpdates() {
-		return e.serialised[key], false, nil
+	if !e.HasChanged(key) {
+		return e.serialisedPartiesOrders, false, nil
 	}
 
 	e.Engine.orders.ResetUpdated()
-
-	pborders := []*typespb.Order{}
-	for _, orders := range e.Engine.orders.m {
-		for _, order := range orders {
-			pborders = append(pborders, order.IntoProto())
-		}
-	}
-	sort.SliceStable(pborders, func(i, j int) bool { return pborders[i].Id < pborders[j].Id })
-
 	payload := &snapshotpb.Payload{
 		Data: &snapshotpb.Payload_LiquidityPartiesOrders{
 			LiquidityPartiesOrders: &snapshotpb.LiquidityPartiesOrders{
-				MarketId: e.market,
-				Orders:   pborders,
+				MarketId:    e.market,
+				PartyOrders: partyOrdersToProto(e.Engine.orders.m),
 			},
 		},
 	}
@@ -360,8 +448,8 @@ func (e *SnapshotEngine) serialisePartiesOrders() ([]byte, bool, error) {
 
 func (e *SnapshotEngine) serialisePendingProvisions() ([]byte, bool, error) {
 	key := e.pendingProvisionsKey
-	if !e.Engine.pendings.HasUpdates() {
-		return e.serialised[key], false, nil
+	if !e.HasChanged(key) {
+		return e.serialisedPendingProvisions, false, nil
 	}
 
 	e.Engine.pendings.ResetUpdated()
@@ -386,8 +474,8 @@ func (e *SnapshotEngine) serialisePendingProvisions() ([]byte, bool, error) {
 
 func (e *SnapshotEngine) serialiseProvisions() ([]byte, bool, error) {
 	key := e.provisionsKey
-	if !e.Engine.provisions.HasUpdates() {
-		return e.serialised[key], false, nil
+	if !e.HasChanged(key) {
+		return e.serialisedProvisions, false, nil
 	}
 
 	e.Engine.provisions.ResetUpdated()
@@ -413,8 +501,8 @@ func (e *SnapshotEngine) serialiseProvisions() ([]byte, bool, error) {
 
 func (e *SnapshotEngine) serialiseSupplied() ([]byte, bool, error) {
 	key := e.suppliedKey
-	if !e.suppliedEngine.HasUpdates() {
-		return e.serialised[key], false, nil
+	if !e.HasChanged(key) {
+		return e.serialisedSupplied, false, nil
 	}
 
 	e.suppliedEngine.ResetUpdated()

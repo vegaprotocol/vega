@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package positions
 
 import (
@@ -5,7 +17,6 @@ import (
 
 	"code.vegaprotocol.io/vega/events"
 
-	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
@@ -16,7 +27,6 @@ import (
 type SnapshotEngine struct {
 	*Engine
 	pl      types.Payload
-	hash    []byte
 	data    []byte
 	changed bool
 	stopped bool
@@ -91,13 +101,9 @@ func (e *SnapshotEngine) Stopped() bool {
 	return e.stopped
 }
 
-func (e *SnapshotEngine) GetHash(k string) ([]byte, error) {
-	if k != e.marketID {
-		return nil, types.ErrSnapshotKeyDoesNotExist
-	}
-
-	_, hash, err := e.serialise()
-	return hash, err
+func (e *SnapshotEngine) HasChanged(k string) bool {
+	return true
+	// return e.changed
 }
 
 func (e *SnapshotEngine) GetState(k string) ([]byte, []types.StateProvider, error) {
@@ -105,7 +111,7 @@ func (e *SnapshotEngine) GetState(k string) ([]byte, []types.StateProvider, erro
 		return nil, nil, types.ErrSnapshotKeyDoesNotExist
 	}
 
-	state, _, err := e.serialise()
+	state, err := e.serialise()
 	return state, nil, err
 }
 
@@ -114,6 +120,7 @@ func (e *SnapshotEngine) LoadState(_ context.Context, payload *types.Payload) ([
 		return nil, types.ErrInvalidSnapshotNamespace
 	}
 
+	var err error
 	switch pl := payload.Data.(type) {
 	case *types.PayloadMarketPositions:
 
@@ -133,25 +140,25 @@ func (e *SnapshotEngine) LoadState(_ context.Context, payload *types.Payload) ([
 
 			e.positionsCpy = append(e.positionsCpy, pos)
 			e.positions[p.PartyID] = pos
-
-			e.changed = true
 		}
-		return nil, nil
+		e.data, err = proto.Marshal(payload.IntoProto())
+		e.changed = false
+		return nil, err
 
 	default:
 		return nil, types.ErrUnknownSnapshotType
 	}
 }
 
-// serialise marshal the snapshot state, populating the data and hash fields
+// serialise marshal the snapshot state, populating the data field
 // with updated values.
-func (e *SnapshotEngine) serialise() ([]byte, []byte, error) {
+func (e *SnapshotEngine) serialise() ([]byte, error) {
 	if e.stopped {
-		return nil, nil, nil
+		return nil, nil
 	}
 
-	if !e.changed {
-		return e.data, e.hash, nil // we already have what we need
+	if !e.HasChanged(e.pl.Key()) {
+		return e.data, nil // we already have what we need
 	}
 
 	e.log.Debug("serilaising snapshot", logging.Int("positions", len(e.positionsCpy)))
@@ -179,11 +186,10 @@ func (e *SnapshotEngine) serialise() ([]byte, []byte, error) {
 	var err error
 	e.data, err = proto.Marshal(e.pl.IntoProto())
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
-	e.hash = crypto.Hash(e.data)
 	e.changed = false
 
-	return e.data, e.hash, nil
+	return e.data, nil
 }

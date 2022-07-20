@@ -1,7 +1,20 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package types
 
 import (
 	"encoding/hex"
+	"fmt"
 	"strconv"
 
 	vgproto "code.vegaprotocol.io/protos/vega"
@@ -54,7 +67,7 @@ func SignerEventFromSignerAddedProto(
 		BlockNumber: blockNumber,
 		LogIndex:    logIndex,
 		TxHash:      txhash,
-		Address:     s.NewSigner,
+		Address:     crypto.EthereumChecksumAddress(s.NewSigner),
 		Nonce:       s.Nonce,
 		Kind:        SignerEventKindAdded,
 		BlockTime:   s.BlockTime,
@@ -69,7 +82,7 @@ func SignerEventFromEventProto(
 		BlockNumber: event.BlockNumber,
 		LogIndex:    event.LogIndex,
 		TxHash:      event.TxHash,
-		Address:     event.Signer,
+		Address:     crypto.EthereumChecksumAddress(event.Signer),
 		Nonce:       event.Nonce,
 		Kind:        event.Type,
 		BlockTime:   event.BlockTime,
@@ -90,7 +103,16 @@ func (s *SignerEvent) IntoProto() *eventspb.ERC20MultiSigSignerEvent {
 }
 
 func (s *SignerEvent) String() string {
-	return s.IntoProto().String()
+	return fmt.Sprintf(
+		"blockNumber(%v) txHash(%s) ID(%s) address(%s) nonce(%s) blockTime(%v) kind(%s) ",
+		s.BlockNumber,
+		s.TxHash,
+		s.ID,
+		s.Address,
+		s.Nonce,
+		s.BlockTime,
+		s.Kind.String(),
+	)
 }
 
 func SignerEventFromSignerRemovedProto(
@@ -103,7 +125,7 @@ func SignerEventFromSignerRemovedProto(
 		BlockNumber: blockNumber,
 		LogIndex:    logIndex,
 		TxHash:      txhash,
-		Address:     s.OldSigner,
+		Address:     crypto.EthereumChecksumAddress(s.OldSigner),
 		Nonce:       s.Nonce,
 		Kind:        SignerEventKindRemoved,
 		BlockTime:   s.BlockTime,
@@ -172,5 +194,14 @@ func (s *SignerThresholdSetEvent) IntoProto() *eventspb.ERC20MultiSigThresholdSe
 }
 
 func (s *SignerThresholdSetEvent) String() string {
-	return s.IntoProto().String()
+	return fmt.Sprintf(
+		"ID(%s) blockNumber(%v) logIndex(%v) txHash(%s) threshold(%v) nonce(%s) blockTime(%v)",
+		s.ID,
+		s.BlockNumber,
+		s.LogIndex,
+		s.TxHash,
+		s.Threshold,
+		s.Nonce,
+		s.BlockTime,
+	)
 }

@@ -16,14 +16,19 @@ Feature: Test margin release on order cancel
       | partyGuy | ETH   | 10000        |
       | party1   | ETH   | 1000000      |
       | party2   | ETH   | 1000000      |
-      | aux       | ETH   | 100000000000 |
+      | aux      | ETH   | 100000000000 |
+      | lpprov   | ETH   | 100000000000 |
 
+    When the parties submit the following liquidity provision:
+      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
+      | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | buy  | BID              | 50         | 100    | submission |
+      | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | sell | ASK              | 50         | 100    | submission |
 
      # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     Then the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type        | tif     |
-      | aux     | ETH/DEC19 | buy  | 1      | 9     | 0                | TYPE_LIMIT  | TIF_GTC |
-      | aux     | ETH/DEC19 | sell | 1      | 10001 | 0                | TYPE_LIMIT  | TIF_GTC |
+      | aux    | ETH/DEC19 | buy  | 1      | 9     | 0                | TYPE_LIMIT  | TIF_GTC |
+      | aux    | ETH/DEC19 | sell | 1      | 10001 | 0                | TYPE_LIMIT  | TIF_GTC |
 
     # Trigger an auction to set the mark price
     When the parties place the following orders:
@@ -64,7 +69,13 @@ Feature: Test margin release on order cancel
       | partyGuy | ETH   | 10000        |
       | party1   | ETH   | 1000000      |
       | party2   | ETH   | 1000000      |
-      | aux       | ETH   | 100000000000 |
+      | aux      | ETH   | 100000000000 |
+      | lpprov   | ETH   | 100000000000 |
+
+    When the parties submit the following liquidity provision:
+      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
+      | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | buy  | BID              | 50         | 100    | submission |
+      | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | sell | ASK              | 50         | 100    | submission |
 
 
      # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
@@ -96,7 +107,7 @@ Feature: Test margin release on order cancel
 
     And the parties should have the following account balances:
       | party    | asset | market id | margin | general |
-      | partyGuy | ETH   | ETH/DEC19 | 142    | 9858    |
+      | partyGuy | ETH   | ETH/DEC19 | 142    | 9759    |
 
     Then the parties should have the following profit and loss:
       | party    | volume | unrealised pnl | realised pnl |
@@ -120,7 +131,7 @@ Feature: Test margin release on order cancel
 
     And the parties should have the following account balances:
       | party    | asset | market id | margin | general |
-      | partyGuy | ETH   | ETH/DEC19 | 0      | 9985    |
+      | partyGuy | ETH   | ETH/DEC19 | 0      | 9886    |
 
 
   @MarginRelease
@@ -130,7 +141,13 @@ Feature: Test margin release on order cancel
       | partyGuy | ETH   | 120          |
       | party1   | ETH   | 1000000      |
       | party2   | ETH   | 1000000      |
-      | aux       | ETH   | 100000000000 |
+      | aux      | ETH   | 100000000000 |
+      | lpprov   | ETH   | 100000000000 |
+
+    When the parties submit the following liquidity provision:
+      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
+      | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | buy  | BID              | 50         | 100    | submission |
+      | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | sell | ASK              | 50         | 100    | submission |
 
 
      # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
@@ -182,7 +199,13 @@ Feature: Test margin release on order cancel
       | partyGuyGood | ETH   | 1000000      |
       | party1       | ETH   | 1000000      |
       | party2       | ETH   | 1000000      |
-      | aux           | ETH   | 100000000000 |
+      | aux          | ETH   | 100000000000 |
+      | lpprov       | ETH   | 100000000000 |
+
+    When the parties submit the following liquidity provision:
+      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
+      | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | buy  | BID              | 50         | 100    | submission |
+      | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | sell | ASK              | 50         | 100    | submission |
 
      # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     Then the parties place the following orders:
@@ -222,7 +245,7 @@ Feature: Test margin release on order cancel
     And the parties should have the following account balances:
       | party        | asset | market id | margin | general |
       | partyGuy     | ETH   | ETH/DEC19 | 120    | 0       |
-      | partyGuyGood | ETH   | ETH/DEC19 | 1320   | 998680  |
+      | partyGuyGood | ETH   | ETH/DEC19 | 252    | 999748  |
 
     # this will trade with party guy
     # which is going to get him distressed
@@ -237,7 +260,7 @@ Feature: Test margin release on order cancel
     Then the parties should have the following account balances:
       | party        | asset | market id | margin | general |
       | partyGuy     | ETH   | ETH/DEC19 |   0    | 0       |
-      | partyGuyGood | ETH   | ETH/DEC19 | 0      | 1009000 |
+      | partyGuyGood | ETH   | ETH/DEC19 | 0      | 1008999 |
       #| partyGuyGood | ETH   | ETH/DEC19 | 13307  | 995693  |
       # TODO: SHOULD BE THIS
 
@@ -248,4 +271,4 @@ Feature: Test margin release on order cancel
     # so we just have collateral stuck in the margin account
     Then the parties should have the following profit and loss:
       | party        | volume | unrealised pnl | realised pnl |
-      | partyGuyGood | 0      | 0              | 9000         |
+      | partyGuyGood | 0      | 0              | 8999         |

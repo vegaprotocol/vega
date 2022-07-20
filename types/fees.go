@@ -1,6 +1,20 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package types
 
 import (
+	"fmt"
+
 	proto "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/types/num"
 )
@@ -47,6 +61,15 @@ func (f FeeFactors) DeepClone() *FeeFactors {
 	}
 }
 
+func (f FeeFactors) String() string {
+	return fmt.Sprintf(
+		"makerFee(%s) liquidityFee(%s) infrastructureFee(%s)",
+		f.MakerFee.String(),
+		f.LiquidityFee.String(),
+		f.InfrastructureFee.String(),
+	)
+}
+
 type Fees struct {
 	Factors *FeeFactors
 }
@@ -72,6 +95,13 @@ func (f Fees) DeepClone() *Fees {
 	}
 }
 
+func (f Fees) String() string {
+	return fmt.Sprintf(
+		"factors(%s)",
+		reflectPointerToString(f.Factors),
+	)
+}
+
 type Fee struct {
 	MakerFee          *num.Uint
 	InfrastructureFee *num.Uint
@@ -92,6 +122,15 @@ func (f Fee) Clone() *Fee {
 		InfrastructureFee: f.InfrastructureFee.Clone(),
 		LiquidityFee:      f.LiquidityFee.Clone(),
 	}
+}
+
+func (f *Fee) String() string {
+	return fmt.Sprintf(
+		"makerFee(%s) liquidityFee(%s) infrastructureFee(%s)",
+		uintPointerToString(f.MakerFee),
+		uintPointerToString(f.LiquidityFee),
+		uintPointerToString(f.InfrastructureFee),
+	)
 }
 
 // NewFee returns a new fee object, with all fields initialised.

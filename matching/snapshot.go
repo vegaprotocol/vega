@@ -1,10 +1,21 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package matching
 
 import (
 	"context"
 	"log"
 
-	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/libs/proto"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
@@ -27,21 +38,8 @@ func (b OrderBook) Namespace() types.SnapshotNamespace {
 	return types.MatchingSnapshot
 }
 
-func (b *OrderBook) GetHash(key string) ([]byte, error) {
-	if key != b.snapshot.Key() {
-		return nil, types.ErrSnapshotKeyDoesNotExist
-	}
-
-	if b.stopped {
-		return nil, nil
-	}
-
-	payload, _, e := b.GetState(key)
-	if e != nil {
-		return nil, e
-	}
-
-	return crypto.Hash(payload), nil
+func (e *OrderBook) HasChanged(k string) bool {
+	return true
 }
 
 func (b *OrderBook) GetState(key string) ([]byte, []types.StateProvider, error) {

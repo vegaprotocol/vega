@@ -1,10 +1,22 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package products_test
 
 import (
 	"context"
 	"testing"
 
-	v1 "code.vegaprotocol.io/protos/vega/oracles/v1"
+	oraclespb "code.vegaprotocol.io/protos/vega/oracles/v1"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/oracles"
 	"code.vegaprotocol.io/vega/products"
@@ -14,10 +26,6 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
 )
-
-func TestFuture(t *testing.T) {
-	t.Run("Unsubscribing the oracle engine succeeds", testUnsubscribingTheOracleEngineSucceeds)
-}
 
 func TestScalingOfSettlementPrice(t *testing.T) {
 	t.Run("No scaling needed for settlement price for asset decimals", testNoScalingNeeded)
@@ -62,19 +70,6 @@ func testScalingDownNeededWithPrecisionLoss(t *testing.T) {
 	require.Equal(t, num.NewUint(1234), scaled)
 }
 
-func testUnsubscribingTheOracleEngineSucceeds(t *testing.T) {
-	// given
-	tf := testFuture(t)
-	ctx := context.Background()
-
-	// expect
-	tf.oe.EXPECT().Unsubscribe(ctx, oracles.SubscriptionID(1))
-	tf.oe.EXPECT().Unsubscribe(ctx, oracles.SubscriptionID(2))
-
-	// when
-	tf.future.Unsubscribe(context.Background(), tf.oe)
-}
-
 type tstFuture struct {
 	oe     *mocks.MockOracleEngine
 	future *products.Future
@@ -90,48 +85,49 @@ func testFuture(t *testing.T) *tstFuture {
 	f := &types.Future{
 		SettlementAsset: "ETH",
 		QuoteName:       "ETH",
-		OracleSpecForSettlementPrice: &v1.OracleSpec{
+		OracleSpecForSettlementPrice: &types.OracleSpec{
 			PubKeys: []string{"0xDEADBEEF"},
-			Filters: []*v1.Filter{
+			Filters: []*types.OracleSpecFilter{
 				{
-					Key: &v1.PropertyKey{
+					Key: &types.OracleSpecPropertyKey{
 						Name: "price.ETH.value",
-						Type: v1.PropertyKey_TYPE_INTEGER,
+						Type: oraclespb.PropertyKey_TYPE_INTEGER,
 					},
 					Conditions: nil,
 				},
 			},
 		},
-		OracleSpecForTradingTermination: &v1.OracleSpec{
+		OracleSpecForTradingTermination: &types.OracleSpec{
 			PubKeys: []string{"0xDEADBEEF"},
-			Filters: []*v1.Filter{
+			Filters: []*types.OracleSpecFilter{
 				{
-					Key: &v1.PropertyKey{
+					Key: &types.OracleSpecPropertyKey{
 						Name: "trading.termination",
-						Type: v1.PropertyKey_TYPE_BOOLEAN,
+						Type: oraclespb.PropertyKey_TYPE_BOOLEAN,
 					},
 					Conditions: nil,
 				},
 			},
 		},
-		OracleSpecBinding: &types.OracleSpecToFutureBinding{
+		OracleSpecBinding: &types.OracleSpecBindingForFuture{
 			SettlementPriceProperty:    "price.ETH.value",
 			TradingTerminationProperty: "trading.termination",
 		},
 		SettlementPriceDecimals: 5,
 	}
 
+	ctx := context.Background()
 	oe.EXPECT().
 		Subscribe(gomock.Any(), gomock.Any(), gomock.Any()).
 		Times(1).
-		Return(oracles.SubscriptionID(1))
+		Return(subscriptionID(1), func(ctx context.Context, sid oracles.SubscriptionID) {})
 
 	oe.EXPECT().
 		Subscribe(gomock.Any(), gomock.Any(), gomock.Any()).
 		Times(1).
-		Return(oracles.SubscriptionID(2))
+		Return(subscriptionID(2), func(ctx context.Context, sid oracles.SubscriptionID) {})
 
-	future, err := products.NewFuture(context.Background(), log, f, oe)
+	future, err := products.NewFuture(ctx, log, f, oe)
 	if err != nil {
 		t.Fatalf("couldn't create a Future for testing: %v", err)
 	}
@@ -139,4 +135,8 @@ func testFuture(t *testing.T) *tstFuture {
 		future: future,
 		oe:     oe,
 	}
+}
+
+func subscriptionID(i uint64) oracles.SubscriptionID {
+	return oracles.SubscriptionID(i)
 }

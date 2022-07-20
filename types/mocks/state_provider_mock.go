@@ -35,21 +35,6 @@ func (m *MockStateProvider) EXPECT() *MockStateProviderMockRecorder {
 	return m.recorder
 }
 
-// GetHash mocks base method.
-func (m *MockStateProvider) GetHash(arg0 string) ([]byte, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetHash", arg0)
-	ret0, _ := ret[0].([]byte)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetHash indicates an expected call of GetHash.
-func (mr *MockStateProviderMockRecorder) GetHash(arg0 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetHash", reflect.TypeOf((*MockStateProvider)(nil).GetHash), arg0)
-}
-
 // GetState mocks base method.
 func (m *MockStateProvider) GetState(arg0 string) ([]byte, []types.StateProvider, error) {
 	m.ctrl.T.Helper()
@@ -64,6 +49,20 @@ func (m *MockStateProvider) GetState(arg0 string) ([]byte, []types.StateProvider
 func (mr *MockStateProviderMockRecorder) GetState(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetState", reflect.TypeOf((*MockStateProvider)(nil).GetState), arg0)
+}
+
+// HasChanged mocks base method.
+func (m *MockStateProvider) HasChanged(arg0 string) bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "HasChanged", arg0)
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// HasChanged indicates an expected call of HasChanged.
+func (mr *MockStateProviderMockRecorder) HasChanged(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HasChanged", reflect.TypeOf((*MockStateProvider)(nil).HasChanged), arg0)
 }
 
 // Keys mocks base method.

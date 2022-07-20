@@ -1,19 +1,128 @@
 # Changelog
 
-## Unreleased (0.51.0)
+## Unreleased 0.54.0
 
 ### 🚨 Breaking changes
-- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+With this release a few breaking changes are introduced.
+The Vega application is now a built-in application. This means that Tendermint doesn't need to be started separately any more.
+The `vega node` command has been renamed `vega start`.
+The `vega tm` command has been renamed `vega tendermint`.
+The `Blockchain.Tendermint.ClientAddr` configuration field have been renamed `Blockchain.Tendermint.RPCAddr`.
+The init command now also generate the configuration for tendermint, the flags `--no-tendermint`, `--tendermint-home` and `--tendermint-key` have been introduced
+
+- [5579](https://github.com/vegaprotocol/vega/issues/5579) - Make vega a built-in Tendermint application
+- [5249](https://github.com/vegaprotocol/vega/issues/5249) - Migrate to Tendermint version 0.35.8
 
 ### 🗑️ Deprecation
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 ### 🛠 Improvements
-- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+- [5541](https://github.com/vegaprotocol/vega/issues/5541) - Support permissions in wallets
 
 ### 🐛 Fixes
-- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+- [5571](https://github.com/vegaprotocol/vega/issues/5571) - Restore pending assets status correctly after snapshot restore
+- [5572](https://github.com/vegaprotocol/vega/issues/5572) - Add validation on `IDs` and public keys
 
+## 0.53.0
+
+### 🗑️ Deprecation
+- [5513](https://github.com/vegaprotocol/vega/issues/5513) - Remove all checkpoint restore command
+
+### 🛠 Improvements
+- [5428](https://github.com/vegaprotocol/vega/pull/5428) - Update contributor information
+- [5519](https://github.com/vegaprotocol/vega/pull/5519) - Add `--genesis-file` option to the `load_checkpoint` command
+- [5525](https://github.com/vegaprotocol/vega/pull/5525) - Release `vegawallet` from the core
+- [5524](https://github.com/vegaprotocol/vega/pull/5524) - Align `vegawallet` and core versions
+- [5524](https://github.com/vegaprotocol/vega/pull/5549) - Add endpoint for getting the network's `chain-id`
+- [5524](https://github.com/vegaprotocol/vega/pull/5552) - Handle tendermint demotion and `ersatz` slot reduction at the same time
+
+### 🐛 Fixes
+- [5476](https://github.com/vegaprotocol/vega/issues/5476) - Include settlement price in snapshot
+- [5476](https://github.com/vegaprotocol/vega/issues/5314) - Fix validation of checkpoint file
+- [5499](https://github.com/vegaprotocol/vega/issues/5499) - Add error from app specific validation to check transaction response
+- [5508](https://github.com/vegaprotocol/vega/issues/5508) - Fix duplicated staking events
+- [5514](https://github.com/vegaprotocol/vega/issues/5514) - Emit `rewardScore` event correctly after loading from checkpoint
+- [5520](https://github.com/vegaprotocol/vega/issues/5520) - Do not fail silently when wallet fails to start
+- [5521](https://github.com/vegaprotocol/vega/issues/5521) - Fix asset bundle and add asset status
+- [5546](https://github.com/vegaprotocol/vega/issues/5546) - Fix collateral checkpoint to unlock locked reward account balance
+- [5194](https://github.com/vegaprotocol/vega/issues/5194) - Fix market trading mode vs market state
+- [5432](https://github.com/vegaprotocol/vega/issues/5431) - Do not accept transaction with unexpected public keys
+- [5478](https://github.com/vegaprotocol/vega/issues/5478) - Assure uncross and fake uncross are in line with each other
+- [5480](https://github.com/vegaprotocol/vega/issues/5480) - Assure indicative trades are in line with actual uncrossing trades
+- [5556](https://github.com/vegaprotocol/vega/issues/5556) - Fix id generation seed
+- [5361](https://github.com/vegaprotocol/vega/issues/5361) - Fix limits for proposals
+- [5557](https://github.com/vegaprotocol/vega/issues/5427) - Fix oracle status at market settlement
+
+## 0.52.0
+
+### 🛠 Improvements
+- [5421](https://github.com/vegaprotocol/vega/issues/5421) - Fix notary snapshot determinism when no signature are generated yet
+- [5415](https://github.com/vegaprotocol/vega/issues/5415) - Regenerate smart contracts code
+- [5434](https://github.com/vegaprotocol/vega/issues/5434) - Add health check for faucet
+- [5412](https://github.com/vegaprotocol/vega/issues/5412) - Proof of work improvement to support history of changes to network parameters
+- [5378](https://github.com/vegaprotocol/vega/issues/5278) - Allow new market proposals without LP
+
+### 🐛 Fixes
+- [5438](https://github.com/vegaprotocol/vega/issues/5438) - Evaluate all trades resulting from an aggressive orders in one call to price monitoring engine
+- [5444](https://github.com/vegaprotocol/vega/issues/5444) - Merge both checkpoints and genesis asset on startup
+- [5446](https://github.com/vegaprotocol/vega/issues/5446) - Cover liquidity monitoring acceptance criteria relating to aggressive order removing best bid or ask from the book
+- [5457](https://github.com/vegaprotocol/vega/issues/5457) - Fix sorting of validators for demotion check
+- [5460](https://github.com/vegaprotocol/vega/issues/5460) - Fix theoretical open interest calculation
+- [5477](https://github.com/vegaprotocol/vega/issues/5477) - Pass a clone of the liquidity commitment offset to pegged orders
+- [5468](https://github.com/vegaprotocol/vega/issues/5468) - Bring indicative trades inline with actual auction uncrossing trades in presence of wash trades
+- [5419](https://github.com/vegaprotocol/vega/issues/5419) - Fix listeners ordering and state updates
+
+## 0.51.1
+
+### 🛠 Improvements
+- [5395](https://github.com/vegaprotocol/vega/issues/5395) - Add `burn_nonce` bridge tool
+- [5403](https://github.com/vegaprotocol/vega/issues/5403) - Allow spam free / proof of work free running of null blockchain
+- [5175](https://github.com/vegaprotocol/vega/issues/5175) - Validation free transactions (including signature verification) for null blockchain
+- [5371](https://github.com/vegaprotocol/vega/issues/5371) - Ensure threshold is not breached in ERC20 withdrawal
+- [5358](https://github.com/vegaprotocol/vega/issues/5358) - Update equity shares following updated spec.
+
+### 🐛 Fixes
+- [5362](https://github.com/vegaprotocol/vega/issues/5362) - Liquidity and order book point to same underlying order after restore
+- [5367](https://github.com/vegaprotocol/vega/issues/5367) - better serialisation for party orders in liquidity snapshot
+- [5377](https://github.com/vegaprotocol/vega/issues/5377) - Serialise state var internal state
+- [5388](https://github.com/vegaprotocol/vega/issues/5388) - State variable snapshot now works as intended
+- [5388](https://github.com/vegaprotocol/vega/issues/5388) - Repopulate cached order-book after snapshot restore
+- [5203](https://github.com/vegaprotocol/vega/issues/5203) - Market liquidity monitor parameters trump network parameters on market creation
+- [5297](https://github.com/vegaprotocol/vega/issues/5297) - Assure min/max price always accurate
+- [4223](https://github.com/vegaprotocol/vega/issues/4223) - Use uncrossing price for target stake calculation during auction
+- [3047](https://github.com/vegaprotocol/vega/issues/3047) - Improve interaction between liquidity and price monitoring auctions
+- [3570](https://github.com/vegaprotocol/vega/issues/3570) - Set extension trigger during opening auction with insufficient liquidity
+- [3362](https://github.com/vegaprotocol/vega/issues/3362) - Stop non-persistent orders from triggering auctions
+- [5388](https://github.com/vegaprotocol/vega/issues/5388) - Use `UnixNano()` to snapshot price monitor times
+- [5237](https://github.com/vegaprotocol/vega/issues/5237) - Trigger state variable calculation first time indicative uncrossing price is available
+- [5397](https://github.com/vegaprotocol/vega/issues/5397) - Bring indicative trades price inline with that of actual auction uncrossing trades
+
+## 0.51.0
+
+### 🚨 Breaking changes
+- [5192](https://github.com/vegaprotocol/vega/issues/5192) - Require a rationale on proposals
+
+### 🛠 Improvements
+- [5318](https://github.com/vegaprotocol/vega/issues/5318) - Automatically dispatch reward pool into markets in recurring transfers
+- [5333](https://github.com/vegaprotocol/vega/issues/5333) - Run snapshot generation for all providers in parallel
+- [5343](https://github.com/vegaprotocol/vega/issues/5343) - Snapshot optimisation part II - get rid of `getHash`
+- [5324](https://github.com/vegaprotocol/vega/issues/5324) -  Send event when oracle data doesn't match
+- [5140](https://github.com/vegaprotocol/vega/issues/5140) - Move limits (enabled market / assets from) to network parameters
+- [5360](https://github.com/vegaprotocol/vega/issues/5360) - rewards test coverage
+
+### 🐛 Fixes
+- [5338](https://github.com/vegaprotocol/vega/issues/5338) - Checking a transaction should return proper success code
+- [5277](https://github.com/vegaprotocol/vega/issues/5277) - Updating a market should default auction extension to 1
+- [5284](https://github.com/vegaprotocol/vega/issues/5284) - price monitoring past prices are now included in the snapshot
+- [5294](https://github.com/vegaprotocol/vega/issues/5294) - Parse timestamps oracle in market proposal validation
+- [5292](https://github.com/vegaprotocol/vega/issues/5292) - Internal time oracle broadcasts timestamp without nanoseconds
+- [5297](https://github.com/vegaprotocol/vega/issues/5297) - Assure min/max price always accurate
+- [5286](https://github.com/vegaprotocol/vega/issues/5286) - Ensure liquidity fees are updated when updating the market
+- [5322](https://github.com/vegaprotocol/vega/issues/5322) - Change vega pub key hashing in topology to fix key rotation submission.
+- [5313](https://github.com/vegaprotocol/vega/issues/5313) - Future update was using oracle spec for settlement price as trading termination spec
+- [5304](https://github.com/vegaprotocol/vega/issues/5304) - Fix bug causing trade events at auction end showing the wrong price.
+- [5345](https://github.com/vegaprotocol/vega/issues/5345) - Fix issue with state variable transactions assumed gone missing
+- [5351](https://github.com/vegaprotocol/vega/issues/5351) - Fix panic when node is interrupted before snapshot engine gets cleared and initialised
 
 ## 0.50.2
 
@@ -24,7 +133,9 @@
 - [5235](https://github.com/vegaprotocol/vega/issues/5235) - Use `BroadcastTxSync` instead of async for submitting transactions to `tendermint`
 - [5268](https://github.com/vegaprotocol/vega/issues/5268) - Make validator heartbeat frequency a function of the epoch duration.
 - [5271](https://github.com/vegaprotocol/vega/issues/5271) - Make generated hex IDs lower case
-- [5273](https://github.com/vegaprotocol/vega/issues/5273) - Reward / Transfer to allow payout of reward in an arbitrary asset unrelated to the settlement and by market. 
+- [5273](https://github.com/vegaprotocol/vega/issues/5273) - Reward / Transfer to allow payout of reward in an arbitrary asset unrelated to the settlement and by market.
+- [5243](https://github.com/vegaprotocol/vega/issues/5243) - Update equity like share according to spec changes.
+- [5249](https://github.com/vegaprotocol/vega/issues/5249) - Upgrade to tendermint 0.35.6
 
 ### 🐛 Fixes
 - [4798](https://github.com/vegaprotocol/vega/issues/4978) - Set market pending timestamp to the time at which the market is created.

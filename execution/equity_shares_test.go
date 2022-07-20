@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package execution_test
 
 import (
@@ -127,7 +139,7 @@ func newEquityShareMarket(t *testing.T) *equityShareMarket {
 
 	return &equityShareMarket{
 		t:         t,
-		tm:        getTestMarket(t, now, closingAt, nil, nil),
+		tm:        getTestMarket(t, now, nil, &types.AuctionDuration{Duration: 1}),
 		parties:   map[string]struct{}{},
 		Now:       now,
 		ClosingAt: closingAt,
@@ -180,7 +192,7 @@ func (esm *equityShareMarket) WithSubmittedOrder(t *testing.T, id, party string,
 func (esm *equityShareMarket) WithSubmittedLiquidityProvision(t *testing.T, party, id string, amount uint64, fee string, buys, sells []*types.LiquidityOrder) *equityShareMarket {
 	t.Helper()
 	esm.createPartyIfMissing(t, party)
-	esm.tm.WithSubmittedLiquidityProvision(esm.t, party, id, amount, fee, buys, sells)
+	esm.tm.WithSubmittedLiquidityProvision(esm.t, party, amount, fee, buys, sells)
 	return esm
 }
 
@@ -222,14 +234,16 @@ func testWithinMarket(t *testing.T) {
 	esm := newEquityShareMarket(t).
 		WithSubmittedOrder(t, "some-id-1", "party1", types.SideSell, matchingPrice+one).
 		WithSubmittedOrder(t, "some-id-2", "party2", types.SideBuy, matchingPrice-one).
+		WithSubmittedOrder(t, "some-id-3", "party1", types.SideSell, matchingPrice).
+		WithSubmittedOrder(t, "some-id-4", "party2", types.SideBuy, matchingPrice). // Need to generate a trade to leave opening auction
 		// party1 (commitment: 2000) should get 2/3 of the fee
-		WithSubmittedLiquidityProvision(t, "party1", "lp-id-1", 2000, "0.5", []*types.LiquidityOrder{
+		WithSubmittedLiquidityProvision(t, "party1", "lp-id-1", 2000000, "0.5", []*types.LiquidityOrder{
 			newLiquidityOrder(types.PeggedReferenceBestBid, 11, 1),
 		}, []*types.LiquidityOrder{
 			newLiquidityOrder(types.PeggedReferenceBestAsk, 10, 1),
 		}).
 		// party2 (commitment: 1000) should get 1/3 of the fee
-		WithSubmittedLiquidityProvision(t, "party2", "lp-id-2", 1000, "0.5", []*types.LiquidityOrder{
+		WithSubmittedLiquidityProvision(t, "party2", "lp-id-2", 1000000, "0.5", []*types.LiquidityOrder{
 			newLiquidityOrder(types.PeggedReferenceBestBid, 10, 1),
 		}, []*types.LiquidityOrder{
 			newLiquidityOrder(types.PeggedReferenceBestAsk, 11, 1),
@@ -241,13 +255,24 @@ func testWithinMarket(t *testing.T) {
 		curTime = esm.Now
 	)
 
+	// End opening auction
+	curTime = curTime.Add(2 * time.Second)
+	tm.now = curTime
+	tm.market.OnTick(ctx, curTime)
+
+	md := esm.tm.market.GetMarketData()
+	require.NotNil(t, md)
+	fmt.Printf("Target stake: %s\nSupplied: %s\n\n", md.TargetStake, md.SuppliedStake)
+	require.Equal(t, types.MarketTradingModeContinuous, md.MarketTradingMode)
+
 	t.Run("WhenNoTrades", func(t *testing.T) {
 		// clean up previous events
 		tm.events = []events.Event{}
 
 		// Trigger Fee distribution
 		curTime = curTime.Add(1 * time.Second)
-		tm.market.OnChainTimeUpdate(ctx, curTime)
+		tm.now = curTime
+		tm.market.OnTick(ctx, curTime)
 
 		// Assert the event
 		var evt *events.TransferResponse
@@ -275,7 +300,8 @@ func testWithinMarket(t *testing.T) {
 	)
 
 	curTime = curTime.Add(1 * time.Second)
-	tm.market.OnChainTimeUpdate(ctx, curTime)
+	tm.now = curTime
+	tm.market.OnTick(ctx, curTime)
 
 	assert.True(t, esm.LiquidityFeeAccount().Balance.IsZero(),
 		"LiquidityFeeAccount should be empty after a fee distribution")

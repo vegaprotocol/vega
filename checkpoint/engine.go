@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package checkpoint
 
 import (
@@ -30,8 +42,9 @@ var (
 		types.MultisigControlCheckpoint, // restore the staking information, so delegation make sense
 		types.StakingCheckpoint,         // restore the staking information, so delegation make sense
 		types.DelegationCheckpoint,
-		types.PendingRewardsCheckpoint, // pending rewards can basically be reloaded any time
-		types.BankingCheckpoint,        // Banking checkpoint needs to be reload any time after collateral
+		types.PendingRewardsCheckpoint,        // pending rewards can basically be reloaded any time
+		types.MarketActivityTrackerCheckpoint, // restore market activity information
+		types.BankingCheckpoint,               // Banking checkpoint needs to be reload any time after collateral
 
 	}
 )
@@ -71,7 +84,6 @@ type Engine struct {
 
 	// snapshot fields
 	state   *types.PayloadCheckpoint
-	hash    []byte
 	data    []byte
 	updated bool
 	snapErr error
@@ -134,10 +146,11 @@ func (e *Engine) UponGenesis(ctx context.Context, data []byte) (err error) {
 		}
 	}
 
-	if state != nil && len(state.CheckpointState) > 0 {
+	// a hash is set to be loaded
+	if len(e.loadHash) > 0 {
 		// no loadHash but a state specified.
-		if len(e.loadHash) <= 0 {
-			e.log.Panic("invalid genesis file, state specified without hash")
+		if len(state.CheckpointHash) <= 0 {
+			e.log.Panic("invalid genesis file, hash specified without state")
 		}
 
 		buf, err := base64.StdEncoding.DecodeString(state.CheckpointState)
@@ -151,7 +164,7 @@ func (e *Engine) UponGenesis(ctx context.Context, data []byte) (err error) {
 		}
 
 		// now we can proceed with loading it.
-		if err := e.Load(ctx, cpt); err != nil {
+		if err := e.load(ctx, cpt); err != nil {
 			return fmt.Errorf("could not load checkpoint: %w", err)
 		}
 	}
@@ -190,11 +203,6 @@ func (e *Engine) addComponent(comp State) error {
 	}
 	// component was registered already
 	return nil
-}
-
-// AwaitingRestore indicates that a checkpoint restore is pending, will return false once CP is restored.
-func (e *Engine) AwaitingRestore() bool {
-	return len(e.loadHash) > 0
 }
 
 // BalanceCheckpoint is used for deposits and withdrawals. We want a checkpoint to be taken in those events
@@ -252,8 +260,8 @@ func (e *Engine) makeCheckpoint(ctx context.Context) *types.CheckpointState {
 	return cpState
 }
 
-// Load - loads checkpoint data for all components by name.
-func (e *Engine) Load(ctx context.Context, cpt *types.CheckpointState) error {
+// load - loads checkpoint data for all components by name.
+func (e *Engine) load(ctx context.Context, cpt *types.CheckpointState) error {
 	if len(e.loadHash) != 0 {
 		hashDiff := bytes.Compare(e.loadHash, cpt.Hash)
 

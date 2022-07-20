@@ -1,21 +1,27 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package banking
 
 import (
 	"errors"
 
+	snapshot "code.vegaprotocol.io/protos/vega/snapshot/v1"
 	"code.vegaprotocol.io/vega/assets"
 	"code.vegaprotocol.io/vega/assets/common"
 	"code.vegaprotocol.io/vega/types"
 )
 
 var ErrUnknownAssetAction = errors.New("unknown asset action")
-
-type txRef struct {
-	asset       common.AssetClass
-	blockNumber uint64
-	hash        string
-	logIndex    uint64
-}
 
 type assetAction struct {
 	id    string
@@ -102,15 +108,15 @@ func (t *assetAction) checkERC20AssetList() error {
 	return asset.ValidateAssetList(t.erc20AL, t.blockNumber, t.txIndex)
 }
 
-func (t *assetAction) getRef() txRef {
+func (t *assetAction) getRef() snapshot.TxRef {
 	switch {
 	case t.IsBuiltinAssetDeposit():
-		return txRef{common.Builtin, 0, t.hash, 0}
+		return snapshot.TxRef{Asset: string(common.Builtin), BlockNr: 0, Hash: t.hash, LogIndex: 0}
 	case t.IsERC20Deposit():
-		return txRef{common.ERC20, t.blockNumber, t.hash, t.txIndex}
+		return snapshot.TxRef{Asset: string(common.ERC20), BlockNr: t.blockNumber, Hash: t.hash, LogIndex: t.txIndex}
 	case t.IsERC20AssetList():
-		return txRef{common.ERC20, t.blockNumber, t.hash, t.txIndex}
+		return snapshot.TxRef{Asset: string(common.ERC20), BlockNr: t.blockNumber, Hash: t.hash, LogIndex: t.txIndex}
 	default:
-		return txRef{} // this is basically unreachable
+		return snapshot.TxRef{} // this is basically unreachable
 	}
 }

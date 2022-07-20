@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package limits
 
 import (
@@ -15,15 +27,14 @@ type Engine struct {
 	cfg    Config
 	broker Broker
 
-	blockCount uint16
+	timeService TimeService
 
 	// are these action possible?
-	canProposeMarket, canProposeAsset, bootstrapFinished bool
+	canProposeMarket, canProposeAsset bool
 
 	// Settings from the genesis state
 	proposeMarketEnabled, proposeAssetEnabled         bool
 	proposeMarketEnabledFrom, proposeAssetEnabledFrom time.Time
-	bootstrapBlockCount                               uint16
 
 	genesisLoaded bool
 
@@ -35,15 +46,22 @@ type Broker interface {
 	Send(event events.Event)
 }
 
-func New(log *logging.Logger, cfg Config, broker Broker) *Engine {
+// TimeService provide the time of the vega node using the tm time.
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/time_service_mock.go -package mocks code.vegaprotocol.io/vega/limits TimeService
+type TimeService interface {
+	GetTimeNow() time.Time
+}
+
+func New(log *logging.Logger, cfg Config, tm TimeService, broker Broker) *Engine {
 	log = log.Named(namedLogger)
 	log.SetLevel(cfg.Level.Get())
 
 	return &Engine{
-		log:    log,
-		cfg:    cfg,
-		lss:    &limitsSnapshotState{changed: true},
-		broker: broker,
+		log:         log,
+		cfg:         cfg,
+		lss:         &limitsSnapshotState{changed: true},
+		broker:      broker,
+		timeService: tm,
 	}
 }
 
@@ -67,6 +85,10 @@ func (e *Engine) UponGenesis(ctx context.Context, rawState []byte) (err error) {
 		return err
 	}
 
+	defer func() {
+		e.sendEvent(ctx)
+	}()
+
 	if err == ErrNoLimitsGenesisState {
 		defaultState := DefaultGenesisState()
 		state = &defaultState
@@ -76,71 +98,97 @@ func (e *Engine) UponGenesis(ctx context.Context, rawState []byte) (err error) {
 	if state == nil {
 		e.proposeAssetEnabled = true
 		e.proposeMarketEnabled = true
-		return nil
+	} else {
+		e.proposeAssetEnabled = state.ProposeAssetEnabled
+		e.proposeMarketEnabled = state.ProposeMarketEnabled
 	}
 
-	e.proposeAssetEnabled = state.ProposeAssetEnabled
-	e.proposeMarketEnabled = state.ProposeMarketEnabled
-	e.proposeAssetEnabledFrom = timeFromPtr(state.ProposeAssetEnabledFrom)
-	e.proposeMarketEnabledFrom = timeFromPtr(state.ProposeMarketEnabledFrom)
-	e.bootstrapBlockCount = state.BootstrapBlockCount
+	// at this point we only know about the genesis state
+	// of the limits, so we should set the can* fields to
+	// this state
+	e.canProposeAsset = e.proposeAssetEnabled
+	e.canProposeMarket = e.proposeMarketEnabled
 
 	e.log.Info("loaded limits genesis state",
 		logging.String("state", fmt.Sprintf("%#v", *state)))
 
-	e.sendEvent(ctx)
 	return nil
 }
 
-func (e *Engine) sendEvent(ctx context.Context) {
-	limits := vega.NetworkLimits{
-		CanProposeMarket:     e.canProposeMarket,
-		CanProposeAsset:      e.canProposeAsset,
-		BootstrapFinished:    e.bootstrapFinished,
-		ProposeMarketEnabled: e.proposeMarketEnabled,
-		ProposeAssetEnabled:  e.proposeAssetEnabled,
-		BootstrapBlockCount:  uint32(e.bootstrapBlockCount),
-		GenesisLoaded:        e.genesisLoaded,
+func (e *Engine) OnLimitsProposeMarketEnabledFromUpdate(ctx context.Context, date string) error {
+	// already validated by the netparams
+	// no need to check it again, this is a valid date
+	if len(date) <= 0 {
+		e.proposeMarketEnabledFrom = time.Time{}
+	} else {
+		t, _ := time.Parse(time.RFC3339, date)
+		if e.timeService.GetTimeNow().Before(t) {
+			// only if the date is in the future
+			e.proposeMarketEnabledFrom = t
+		}
+	}
+	e.sendEvent(ctx)
+
+	return nil
+}
+
+func (e *Engine) OnLimitsProposeAssetEnabledFromUpdate(ctx context.Context, date string) error {
+	// already validated by the netparams
+	// no need to check it again, this is a valid date
+	if len(date) <= 0 {
+		e.proposeAssetEnabledFrom = time.Time{}
+	} else {
+		t, _ := time.Parse(time.RFC3339, date)
+		if e.timeService.GetTimeNow().Before(t) {
+			// only if the date is in the future
+			e.proposeAssetEnabledFrom = t
+		}
 	}
 
-	if !e.proposeMarketEnabledFrom.IsZero() {
-		limits.ProposeMarketEnabledFrom = e.proposeAssetEnabledFrom.UnixNano()
-	}
+	e.onUpdate(ctx, e.timeService.GetTimeNow())
+	e.sendEvent(ctx)
 
-	if !e.proposeAssetEnabledFrom.IsZero() {
-		limits.ProposeAssetEnabledFrom = e.proposeAssetEnabledFrom.UnixNano()
-	}
-
-	event := events.NewNetworkLimitsEvent(ctx, &limits)
-	e.broker.Send(event)
+	return nil
 }
 
 func (e *Engine) OnTick(ctx context.Context, t time.Time) {
-	if !e.genesisLoaded || (e.bootstrapFinished && e.canProposeAsset && e.canProposeMarket) {
-		return
-	}
-
-	if !e.bootstrapFinished {
-		e.blockCount++
-		if e.blockCount > e.bootstrapBlockCount {
-			e.log.Info("bootstraping period finished, transactions are now allowed")
-			e.bootstrapFinished = true
+	canProposeAsset, canProposeMarket := e.canProposeAsset, e.canProposeMarket
+	defer func() {
+		if canProposeAsset != e.canProposeAsset || canProposeMarket != e.canProposeMarket {
 			e.sendEvent(ctx)
 		}
-		e.lss.changed = true
+	}()
+	e.onUpdate(ctx, t)
+}
+
+func (e *Engine) onUpdate(ctx context.Context, t time.Time) {
+	//  if propose market enabled in genesis
+	if e.proposeMarketEnabled {
+		// we can propose a market and a new date have been set in the future
+		if e.canProposeMarket && t.Before(e.proposeMarketEnabledFrom) {
+			e.log.Info("proposing market is now disabled")
+			e.canProposeMarket = false
+		}
+
+		// we can't propose a market for now, is the date in the past?
+		if !e.canProposeMarket && t.After(e.proposeMarketEnabledFrom) {
+			e.log.Info("all required conditions are met, proposing markets is now allowed")
+			e.canProposeMarket = true
+		}
 	}
 
-	if !e.canProposeMarket && e.bootstrapFinished && e.proposeMarketEnabled && t.After(e.proposeMarketEnabledFrom) {
-		e.log.Info("all required conditions are met, proposing markets is now allowed")
-		e.canProposeMarket = true
-		e.lss.changed = true
-		e.sendEvent(ctx)
-	}
-	if !e.canProposeAsset && e.bootstrapFinished && e.proposeAssetEnabled && t.After(e.proposeAssetEnabledFrom) {
-		e.log.Info("all required conditions are met, proposing assets is now allowed")
-		e.canProposeAsset = true
-		e.lss.changed = true
-		e.sendEvent(ctx)
+	//  if propose market enabled in genesis
+	if e.proposeAssetEnabled {
+		// we can propose a market and a new date have been set in the future
+		if e.canProposeAsset && t.Before(e.proposeAssetEnabledFrom) {
+			e.log.Info("proposing asset have been disabled")
+			e.canProposeAsset = false
+		}
+
+		if !e.canProposeAsset && t.After(e.proposeAssetEnabledFrom) {
+			e.log.Info("all required conditions are met, proposing assets is now allowed")
+			e.canProposeAsset = true
+		}
 	}
 }
 
@@ -156,14 +204,23 @@ func (e *Engine) CanTrade() bool {
 	return e.canProposeAsset && e.canProposeMarket
 }
 
-func (e *Engine) BootstrapFinished() bool {
-	return e.bootstrapFinished
-}
-
-func timeFromPtr(tptr *time.Time) time.Time {
-	var t time.Time
-	if tptr != nil {
-		t = *tptr
+func (e *Engine) sendEvent(ctx context.Context) {
+	limits := vega.NetworkLimits{
+		CanProposeMarket:     e.canProposeMarket,
+		CanProposeAsset:      e.canProposeAsset,
+		ProposeMarketEnabled: e.proposeMarketEnabled,
+		ProposeAssetEnabled:  e.proposeAssetEnabled,
+		GenesisLoaded:        e.genesisLoaded,
 	}
-	return t
+
+	if !e.proposeMarketEnabledFrom.IsZero() {
+		limits.ProposeMarketEnabledFrom = e.proposeAssetEnabledFrom.UnixNano()
+	}
+
+	if !e.proposeAssetEnabledFrom.IsZero() {
+		limits.ProposeAssetEnabledFrom = e.proposeAssetEnabledFrom.UnixNano()
+	}
+
+	event := events.NewNetworkLimitsEvent(ctx, &limits)
+	e.broker.Send(event)
 }

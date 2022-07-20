@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package faucet
 
 import (
@@ -33,6 +45,10 @@ var (
 
 	// ErrInvalidMintAmount is raised when the mint amount is too high.
 	ErrInvalidMintAmount = errors.New("mint amount is invalid")
+
+	HealthCheckResponse = struct {
+		Success bool `json:"success"`
+	}{true}
 )
 
 type Faucet struct {
@@ -106,7 +122,12 @@ func NewService(log *logging.Logger, vegaPaths paths.Paths, cfg Config, passphra
 	}
 
 	f.POST("/api/v1/mint", f.Mint)
+	f.GET("/api/v1/health", f.Health)
 	return f, nil
+}
+
+func (f *Faucet) Health(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	writeSuccess(w, HealthCheckResponse, http.StatusOK)
 }
 
 func (f *Faucet) Mint(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
