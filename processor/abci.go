@@ -534,7 +534,7 @@ func (app *App) LoadSnapshotChunk(req tmtypes.RequestLoadSnapshotChunk) tmtypes.
 	app.log.Debug("ABCI service LoadSnapshotChunk start")
 	raw, err := app.snapshot.LoadSnapshotChunk(req.Height, req.Format, req.Chunk)
 	if err != nil {
-		app.log.Error("failed to load snapshot chunk", logging.Error(err))
+		app.log.Error("failed to load snapshot chunk", logging.Error(err), logging.Uint64("height", req.Height))
 		return tmtypes.ResponseLoadSnapshotChunk{}
 	}
 	return tmtypes.ResponseLoadSnapshotChunk{
