@@ -129,8 +129,8 @@ type Topology struct {
 	cfg                  Config
 	wallets              NodeWallets
 	broker               Broker
+	timeService          TimeService
 	validatorPerformance ValidatorPerformance
-	currentTime          time.Time
 	multiSigTopology     MultiSigTopology
 
 	// vega pubkey to validator data
@@ -217,7 +217,7 @@ func (t *Topology) OnEpochEvent(ctx context.Context, epoch types.Epoch) {
 }
 
 func NewTopology(
-	log *logging.Logger, cfg Config, wallets NodeWallets, broker Broker, isValidatorSetup bool, cmd Commander, msTopology MultiSigTopology,
+	log *logging.Logger, cfg Config, wallets NodeWallets, broker Broker, isValidatorSetup bool, cmd Commander, msTopology MultiSigTopology, timeService TimeService,
 ) *Topology {
 	log = log.Named(namedLogger)
 	log.SetLevel(cfg.Level.Get())
@@ -227,6 +227,7 @@ func NewTopology(
 		cfg:                           cfg,
 		wallets:                       wallets,
 		broker:                        broker,
+		timeService:                   timeService,
 		validators:                    map[string]*valState{},
 		chainValidators:               []string{},
 		tss:                           &topologySnapshotState{changed: true},
@@ -413,10 +414,9 @@ func (t *Topology) BeginBlock(ctx context.Context, req abcitypes.RequestBeginBlo
 	t.mu.RLock()
 	defer t.mu.RUnlock()
 
-	t.currentTime = req.Header.Time
 	// resetting the seed every block, to both get some more unpredictability and still deterministic
 	// and play nicely with snapshot
-	t.rng = rand.New(rand.NewSource(t.currentTime.Unix()))
+	t.rng = rand.New(rand.NewSource(t.timeService.GetTimeNow().Unix()))
 
 	t.checkHeartbeat(ctx)
 	t.validatorPerformance.BeginBlock(ctx, hex.EncodeToString(req.Header.ProposerAddress))
