@@ -54,6 +54,7 @@ func (p *Proposal) ToProto() *vega.Proposal {
 		Reference:    p.Reference,
 		PartyId:      p.PartyID.String(),
 		State:        vega.Proposal_State(p.State),
+		Rationale:    p.Rationale.ProposalRationale,
 		Timestamp:    p.ProposalTime.UnixNano(),
 		Terms:        p.Terms.ProposalTerms,
 		Reason:       vega.ProposalError(p.Reason),
