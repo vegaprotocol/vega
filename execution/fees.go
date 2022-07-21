@@ -20,6 +20,8 @@ import (
 	"code.vegaprotocol.io/vega/types/num"
 )
 
+var ErrTimeWindowNotExpired = errors.New("time window has not expired")
+
 type FeeSplitter struct {
 	timeWindowStart time.Time
 	currentTime     time.Time
@@ -78,6 +80,17 @@ func (fs *FeeSplitter) MarketValueProxy(mvwl time.Duration, totalStakeU *num.Uin
 		return num.MaxD(totalStake, factor.Mul(tv))
 	}
 	return totalStake
+}
+
+func (fs *FeeSplitter) GetTradeVolume(mvwl time.Duration) (num.Decimal, error) {
+	awl := fs.activeWindowLength(mvwl)
+	if awl > 0 {
+		factor := num.DecimalFromInt64(mvwl.Nanoseconds()).Div(
+			num.DecimalFromInt64(awl.Nanoseconds()))
+		tv := num.DecimalFromUint(fs.tradeValue)
+		return factor.Mul(tv), nil
+	}
+	return num.DecimalZero(), ErrTimeWindowNotExpired
 }
 
 func (fs *FeeSplitter) AddTradeValue(v *num.Uint) {

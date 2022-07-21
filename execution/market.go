@@ -776,6 +776,9 @@ func (m *Market) updateMarketValueProxy() {
 	ts := m.liquidity.ProvisionsPerParty().TotalStake()
 	m.lastMarketValueProxy = m.feeSplitter.MarketValueProxy(
 		m.marketValueWindowLength, ts)
+	if tv, err := m.feeSplitter.GetTradeVolume(m.marketValueWindowLength); err == nil {
+		m.equityShares.WithTradeVol(tv)
+	}
 	m.equityShares.WithMVP(m.lastMarketValueProxy)
 	m.stateChanged = true
 }

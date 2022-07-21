@@ -36,6 +36,7 @@ type EquityShares struct {
 
 	totalVStake num.Decimal // Not needed in snapshot, we can reconstruct this from the data in snapshot already
 	totalPStake num.Decimal // same as total VStake -> not included in snapshot
+	pTradeVol   num.Decimal
 
 	// lps is a map of party id to lp (LiquidityProviders)
 	lps map[string]*lp
@@ -100,6 +101,21 @@ func (es *EquityShares) UpdateVirtualStake() {
 		es.totalVStake = es.totalVStake.Sub(v.vStake).Add(vStake)
 		v.vStake = vStake
 	}
+}
+
+func (es *EquityShares) WithTradeVol(tv num.Decimal) *EquityShares {
+	es.r = num.DecimalZero()
+	if !es.pTradeVol.IsZero() && !tv.IsZero() {
+		growth := tv.Sub(es.pTradeVol).Div(es.pTradeVol)
+		es.stateChanged = (es.stateChanged || !growth.Equals(es.r))
+		es.r = growth
+	}
+	mvp := tv.Div(es.totalPStake) // traded volume divided by physical stake == MVP
+	es.stateChanged = (es.stateChanged || !es.mvp.Equals(mvp) || !es.mvp.Equals(es.pMvp) || !tv.Equals(es.pTradeVol))
+	es.pTradeVol = tv
+	es.pMvp = es.mvp
+	es.mvp = mvp
+	return es
 }
 
 func (es *EquityShares) WithMVP(mvp num.Decimal) *EquityShares {
