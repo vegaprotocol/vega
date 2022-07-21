@@ -63,7 +63,10 @@ jobs:
           github-token: ${{secrets.GITHUB_TOKEN}}
           script: |
             console.log("Bot created PR!");
-            echo 'BOT_PR = true' >> $GITHUB_ENV
+      - name: 'Set bot PR to true'
+        id: set-bot
+        if: steps.bot-pr.outcome == 'success'
+        run: echo 'BOT_PR=true' >> $GITHUB_ENV
       - name: 'Check for linked issue'
         id: linked
         if: |
