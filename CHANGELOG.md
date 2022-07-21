@@ -18,6 +18,7 @@ The init command now also generate the configuration for tendermint, the flags `
 - [4655](https://github.com/vegaprotocol/vega/issues/4655) - Move Ethereum `RPC` endpoint configuration from `Nodewallet` section to `Ethereum` section
 
 ### 🛠 Improvements
+- [5589](https://github.com/vegaprotocol/vega/issues/5589) - Used custom version of Clef
 - [5541](https://github.com/vegaprotocol/vega/issues/5541) - Support permissions in wallets
 
 ### 🐛 Fixes
