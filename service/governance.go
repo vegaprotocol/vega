@@ -24,7 +24,8 @@ type ProposalStore interface {
 	Add(ctx context.Context, p entities.Proposal) error
 	GetByID(ctx context.Context, id string) (entities.Proposal, error)
 	GetByReference(ctx context.Context, ref string) (entities.Proposal, error)
-	Get(ctx context.Context, inState *entities.ProposalState, partyIDStr *string, proposalType *entities.ProposalType) ([]entities.Proposal, error)
+	Get(ctx context.Context, inState *entities.ProposalState, partyIDStr *string, proposalType *entities.ProposalType,
+		pagination entities.CursorPagination) ([]entities.Proposal, entities.PageInfo, error)
 }
 
 type VoteStore interface {
@@ -70,8 +71,9 @@ func (g *Governance) GetProposalByReference(ctx context.Context, ref string) (en
 	return g.pStore.GetByReference(ctx, ref)
 }
 
-func (g *Governance) GetProposals(ctx context.Context, inState *entities.ProposalState, partyID *string, proposalType *entities.ProposalType) ([]entities.Proposal, error) {
-	return g.pStore.Get(ctx, inState, partyID, proposalType)
+func (g *Governance) GetProposals(ctx context.Context, inState *entities.ProposalState, partyID *string, proposalType *entities.ProposalType,
+	pagination entities.CursorPagination) ([]entities.Proposal, entities.PageInfo, error) {
+	return g.pStore.Get(ctx, inState, partyID, proposalType, pagination)
 }
 
 func (g *Governance) ObserveProposals(ctx context.Context, retries int, partyID *string) (<-chan []entities.Proposal, uint64) {

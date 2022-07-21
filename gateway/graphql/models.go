@@ -1816,6 +1816,59 @@ func (e ProposalState) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
+// Various proposal types that are supported by Vega
+type ProposalType string
+
+const (
+	// Propose a new market
+	ProposalTypeNewMarket ProposalType = "NewMarket"
+	// Update an existing market
+	ProposalTypeUpdateMarket ProposalType = "UpdateMarket"
+	// Proposal to change Vega network parameters
+	ProposalTypeNetworkParameters ProposalType = "NetworkParameters"
+	// Proposal to add a new asset
+	ProposalTypeNewAsset ProposalType = "NewAsset"
+	// Proposal to create a new free form proposal
+	ProposalTypeNewFreeForm ProposalType = "NewFreeForm"
+)
+
+var AllProposalType = []ProposalType{
+	ProposalTypeNewMarket,
+	ProposalTypeUpdateMarket,
+	ProposalTypeNetworkParameters,
+	ProposalTypeNewAsset,
+	ProposalTypeNewFreeForm,
+}
+
+func (e ProposalType) IsValid() bool {
+	switch e {
+	case ProposalTypeNewMarket, ProposalTypeUpdateMarket, ProposalTypeNetworkParameters, ProposalTypeNewAsset, ProposalTypeNewFreeForm:
+		return true
+	}
+	return false
+}
+
+func (e ProposalType) String() string {
+	return string(e)
+}
+
+func (e *ProposalType) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = ProposalType(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid ProposalType", str)
+	}
+	return nil
+}
+
+func (e ProposalType) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
 // Whether the placer of an order is aiming to buy or sell on the market
 type Side string
 
