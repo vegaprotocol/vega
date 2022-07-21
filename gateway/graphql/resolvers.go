@@ -1451,50 +1451,62 @@ func (r *myPartyResolver) Accounts(ctx context.Context, party *types.Party,
 		return nil, errors.New("a party must be specified when querying accounts")
 	}
 	var (
-		mktid = ""
-		asst  = ""
-		accTy = types.AccountType_ACCOUNT_TYPE_UNSPECIFIED
-		err   error
+		marketIds    = []string{}
+		mktId        = ""
+		asst         = ""
+		accountTypes = []types.AccountType{}
+		accTy        = types.AccountType_ACCOUNT_TYPE_UNSPECIFIED
+		err          error
 	)
 
 	if marketID != nil {
-		mktid = *marketID
+		marketIds = []string{*marketID}
+		mktId = *marketID
 	}
+
 	if asset != nil {
 		asst = *asset
 	}
 	if accType != nil {
 		accTy = *accType
-		if err != nil ||
-			(accTy != types.AccountType_ACCOUNT_TYPE_GENERAL &&
-				accTy != types.AccountType_ACCOUNT_TYPE_MARGIN &&
-				accTy != types.AccountType_ACCOUNT_TYPE_LOCK_WITHDRAW &&
-				accTy != types.AccountType_ACCOUNT_TYPE_BOND) {
+		if accTy != types.AccountType_ACCOUNT_TYPE_GENERAL &&
+			accTy != types.AccountType_ACCOUNT_TYPE_MARGIN &&
+			accTy != types.AccountType_ACCOUNT_TYPE_LOCK_WITHDRAW &&
+			accTy != types.AccountType_ACCOUNT_TYPE_BOND {
 			return nil, fmt.Errorf("invalid account type for party %v", accType)
 		}
+		accountTypes = []types.AccountType{accTy}
 	}
-	req := protoapi.PartyAccountsRequest{
-		PartyId:  party.Id,
-		MarketId: mktid,
-		Asset:    asst,
-		Type:     accTy,
+
+	filter := v2.AccountFilter{
+		AssetId:      asst,
+		PartyIds:     []string{party.Id},
+		MarketIds:    marketIds,
+		AccountTypes: accountTypes,
 	}
-	res, err := r.tradingDataClient.PartyAccounts(ctx, &req)
+
+	req := v2.ListAccountsRequest{Filter: &filter}
+	res, err := r.tradingDataClientV2.ListAccounts(ctx, &req)
 	if err != nil {
 		r.log.Error("unable to get Party account",
 			logging.Error(err),
 			logging.String("party-id", party.Id),
-			logging.String("market-id", mktid),
+			logging.String("market-id", mktId),
 			logging.String("asset", asst),
 			logging.String("type", accTy.String()))
 		return nil, customErrorFromStatus(err)
 	}
 
-	if len(res.Accounts) > 0 {
-		return res.Accounts, nil
+	if len(res.Accounts.Edges) == 0 {
+		// mandatory return field in schema
+		return []*types.Account{}, nil
 	}
-	// mandatory return field in schema
-	return []*types.Account{}, nil
+
+	accounts := make([]*types.Account, len(res.Accounts.Edges))
+	for i, edge := range res.Accounts.Edges {
+		accounts[i] = edge.Account
+	}
+	return accounts, nil
 }
 
 func (r *myPartyResolver) Proposals(ctx context.Context, party *types.Party, inState *ProposalState) ([]*types.GovernanceData, error) {
@@ -2356,12 +2368,12 @@ func (r *mySubscriptionResolver) Rewards(ctx context.Context, assetID, party *st
 }
 
 func (r *mySubscriptionResolver) Margins(ctx context.Context, partyID string, marketID *string) (<-chan *types.MarginLevels, error) {
-	var mktid string
+	var marketIds string
 	if marketID != nil {
-		mktid = *marketID
+		marketIds = *marketID
 	}
 	req := &protoapi.MarginLevelsSubscribeRequest{
-		MarketId: mktid,
+		MarketId: marketIds,
 		PartyId:  partyID,
 	}
 	stream, err := r.tradingDataClient.MarginLevelsSubscribe(ctx, req)
@@ -2393,12 +2405,12 @@ func (r *mySubscriptionResolver) Margins(ctx context.Context, partyID string, ma
 }
 
 func (r *mySubscriptionResolver) MarketsData(ctx context.Context, marketID *string) (<-chan []*types.MarketData, error) {
-	var mktid string
+	var marketIds string
 	if marketID != nil {
-		mktid = *marketID
+		marketIds = *marketID
 	}
 	req := &v2.MarketsDataSubscribeRequest{
-		MarketId: mktid,
+		MarketId: marketIds,
 	}
 	stream, err := r.tradingDataClientV2.MarketsDataSubscribe(ctx, req)
 	if err != nil {
@@ -2429,12 +2441,12 @@ func (r *mySubscriptionResolver) MarketsData(ctx context.Context, marketID *stri
 }
 
 func (r *mySubscriptionResolver) MarketData(ctx context.Context, marketID *string) (<-chan *types.MarketData, error) {
-	var mktid string
+	var marketIds string
 	if marketID != nil {
-		mktid = *marketID
+		marketIds = *marketID
 	}
 	req := &protoapi.MarketsDataSubscribeRequest{
-		MarketId: mktid,
+		MarketId: marketIds,
 	}
 	stream, err := r.tradingDataClient.MarketsDataSubscribe(ctx, req)
 	if err != nil {
@@ -2484,12 +2496,12 @@ func (r *mySubscriptionResolver) Accounts(ctx context.Context, marketID *string,
 		ty = *typeArg
 	}
 
-	req := &protoapi.AccountsSubscribeRequest{
+	req := &v2.ObserveAccountsRequest{
 		MarketId: mkt,
 		PartyId:  pty,
 		Type:     ty,
 	}
-	stream, err := r.tradingDataClient.AccountsSubscribe(ctx, req)
+	stream, err := r.tradingDataClientV2.ObserveAccounts(ctx, req)
 	if err != nil {
 		return nil, customErrorFromStatus(err)
 	}
@@ -2969,10 +2981,10 @@ func (r *myAccountResolver) Balance(ctx context.Context, acc *types.Account) (st
 }
 
 func (r *myAccountResolver) Market(ctx context.Context, acc *types.Account) (*types.Market, error) {
-	if acc.Type == types.AccountType_ACCOUNT_TYPE_MARGIN || acc.Type == types.AccountType_ACCOUNT_TYPE_BOND {
-		return r.r.getMarketByID(ctx, acc.MarketId)
+	if acc.MarketId == "" {
+		return nil, nil
 	}
-	return nil, nil
+	return r.r.getMarketByID(ctx, acc.MarketId)
 }
 
 func (r *myAccountResolver) Asset(ctx context.Context, obj *types.Account) (*types.Asset, error) {

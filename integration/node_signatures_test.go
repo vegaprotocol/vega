@@ -21,8 +21,7 @@ func TestNodeSignatures(t *testing.T) {
 
 	for name, query := range queries {
 		t.Run(name, func(t *testing.T) {
-			var new, old struct{ NodeSignatures []NodeSignature }
-			assertGraphQLQueriesReturnSame(t, query, &new, &old)
+			assertGraphQLQueriesReturnSame[struct{ NodeSignatures []NodeSignature }](t, query)
 		})
 	}
 }

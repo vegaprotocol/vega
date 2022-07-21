@@ -19,6 +19,7 @@ import (
 
 	"code.vegaprotocol.io/data-node/entities"
 	"code.vegaprotocol.io/data-node/metrics"
+	v2 "code.vegaprotocol.io/protos/data-node/api/v2"
 	"code.vegaprotocol.io/protos/vega"
 	"github.com/georgysavva/scany/pgxscan"
 	"github.com/jackc/pgx/v4"
@@ -162,14 +163,18 @@ func (as *Accounts) Query(filter entities.AccountFilter) ([]entities.Account, er
 	return accs, nil
 }
 
-func (as *Accounts) QueryBalances(ctx context.Context, filter entities.AccountFilter, pagination entities.OffsetPagination) ([]entities.AccountBalance, error) {
-	query, args, err := filterAccountBalancesQuery(filter, pagination)
+func (as *Accounts) QueryBalancesV1(ctx context.Context, filter entities.AccountFilter, pagination entities.OffsetPagination) ([]entities.AccountBalance, error) {
+	query, args, err := filterAccountBalancesQuery(filter)
+
 	if err != nil {
 		return nil, fmt.Errorf("querying account balances: %w", err)
 	}
+
+	query, args = orderAndPaginateQuery(query, nil, pagination, args...)
+
 	accountBalances := make([]entities.AccountBalance, 0)
 
-	defer metrics.StartSQLQuery("Accounts", "QueryBalances")()
+	defer metrics.StartSQLQuery("Accounts", "QueryBalancesV1")()
 	rows, err := as.Connection.Query(ctx, query, args...)
 	defer rows.Close()
 
@@ -182,4 +187,53 @@ func (as *Accounts) QueryBalances(ctx context.Context, filter entities.AccountFi
 	}
 
 	return accountBalances, nil
+}
+
+func (as *Accounts) QueryBalances(ctx context.Context,
+	filter entities.AccountFilter,
+	pagination entities.CursorPagination,
+) ([]entities.AccountBalance, entities.PageInfo, error) {
+	query, args, err := filterAccountBalancesQuery(filter)
+	if err != nil {
+		return nil, entities.PageInfo{}, fmt.Errorf("querying account balances: %w", err)
+	}
+
+	query, args, err = paginateAccountsQuery(query, args, pagination)
+	if err != nil {
+		return nil, entities.PageInfo{}, fmt.Errorf("querying account balances: %w", err)
+	}
+
+	defer metrics.StartSQLQuery("Accounts", "QueryBalances")()
+	accountBalances := make([]entities.AccountBalance, 0)
+	rows, err := as.Connection.Query(ctx, query, args...)
+	defer rows.Close()
+
+	if err != nil {
+		return accountBalances, entities.PageInfo{}, fmt.Errorf("querying account balances: %w", err)
+	}
+
+	if err = pgxscan.ScanAll(&accountBalances, rows); err != nil {
+		return accountBalances, entities.PageInfo{}, fmt.Errorf("parsing account balances: %w", err)
+	}
+
+	pagedAccountBalances, pageInfo := entities.PageEntities[*v2.AccountEdge](accountBalances, pagination)
+	return pagedAccountBalances, pageInfo, nil
+}
+
+func paginateAccountsQuery(query string, args []interface{}, pagination entities.CursorPagination) (string, []interface{}, error) {
+	sorting, cmp, cursor := extractPaginationInfo(pagination)
+
+	ac := &entities.AccountCursor{}
+	if cursor != "" {
+		err := ac.Parse(cursor)
+		if err != nil {
+			return query, args, fmt.Errorf("parsing cursor: %w", err)
+		}
+	}
+
+	builders := []CursorQueryParameter{
+		NewCursorQueryParameter("id", sorting, cmp, ac.AccountID),
+	}
+	query, args = orderAndPaginateWithCursor(query, pagination, builders, args...)
+	return query, args, nil
 }

@@ -45,8 +45,9 @@ var (
 	tableNames = [...]string{
 		"ledger", "accounts", "parties", "assets", "blocks", "node_signatures",
 		"erc20_multisig_signer_events", "trades", "market_data", "orders_live", "orders_history",
-		"margin_levels", "current_margin_levels", "liquidity_provisions", "current_liquidity_provisions", "nodes", "ranking_scores", "reward_scores", "delegations", "rewards",
-		"nodes_announced",
+		"margin_levels", "current_margin_levels", "liquidity_provisions", "current_liquidity_provisions",
+		"nodes", "ranking_scores", "reward_scores", "delegations", "rewards", "nodes_announced",
+		"balances", "current_balances",
 	}
 
 	postgresServerTimeout = time.Second * 10

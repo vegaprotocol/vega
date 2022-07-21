@@ -85,6 +85,7 @@ var (
 	ErrMarketServiceGetDepth      = errors.New("failed to get market depth")
 	ErrMarketServiceGetMarketData = errors.New("failed to get market data")
 	// AccountService...
+	ErrAccountServiceListAccounts      = errors.New("failed to get accounts")
 	ErrAccountServiceGetMarketAccounts = errors.New("failed to get market accounts")
 	// AccountService...
 	ErrAccountServiceGetFeeInfrastructureAccounts = errors.New("failed to get fee infrastructure accounts")
@@ -177,6 +178,7 @@ var errorMap = map[string]int32{
 	ErrMissingWithdrawalID.Error():             80003,
 	ErrMissingDepositID.Error():                80004,
 	ErrMissingAssetID.Error():                  80005,
+	ErrAccountServiceListAccounts.Error():      80006,
 	// Blockchain client
 	ErrBlockchainBacklogLength.Error(): 90001,
 	ErrBlockchainNetworkInfo.Error():   90002,
