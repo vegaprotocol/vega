@@ -371,6 +371,10 @@ func InitializeScenario(s *godog.ScenarioContext) {
 	s.Step(`^debug market data for "([^"]*)"$`, func(mkt string) error {
 		return steps.DebugMarketData(execsetup.executionEngine, execsetup.log, mkt)
 	})
+	s.Step(`^debug all events$`, func() error {
+		steps.DebugAllEvents(execsetup.broker, execsetup.log)
+		return nil
+	})
 	s.Step(`^debug auction events$`, func() error {
 		steps.DebugAuctionEvents(execsetup.broker, execsetup.log)
 		return nil
