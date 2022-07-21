@@ -15,6 +15,7 @@ package validators
 import (
 	"context"
 	"encoding/base64"
+	"math/rand"
 	"sort"
 	"time"
 
@@ -300,6 +301,7 @@ func (t *Topology) restore(ctx context.Context, topology *types.Topology, p *typ
 	t.restorePendingEthereumKeyRotations(ctx, topology.PendingEthereumKeyRotations)
 	t.validatorPerformance.Deserialize(topology.ValidatorPerformance)
 	t.tss.serialised, err = proto.Marshal(p.IntoProto())
+	t.rng = rand.New(rand.NewSource(t.timeService.GetTimeNow().Unix()))
 	t.tss.changed = false
 	return err
 }
