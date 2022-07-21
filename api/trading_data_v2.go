@@ -28,6 +28,7 @@ import (
 	"code.vegaprotocol.io/data-node/metrics"
 	"code.vegaprotocol.io/data-node/service"
 	"code.vegaprotocol.io/data-node/vegatime"
+	"code.vegaprotocol.io/data-node/version"
 	v2 "code.vegaprotocol.io/protos/data-node/api/v2"
 	"code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/types/num"
@@ -126,6 +127,13 @@ func (t *tradingDataServiceV2) ObserveAccounts(req *v2.ObserveAccountsRequest,
 			Account: account.ToProto(),
 		})
 	})
+}
+
+func (t *tradingDataServiceV2) Info(ctx context.Context, _ *v2.InfoRequest) (*v2.InfoResponse, error) {
+	return &v2.InfoResponse{
+		Version:    version.Get(),
+		CommitHash: version.GetCommitHash(),
+	}, nil
 }
 
 func (t *tradingDataServiceV2) GetBalanceHistory(ctx context.Context, req *v2.GetBalanceHistoryRequest) (*v2.GetBalanceHistoryResponse, error) {

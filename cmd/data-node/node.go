@@ -18,6 +18,7 @@ import (
 	"code.vegaprotocol.io/data-node/cmd/data-node/node"
 	"code.vegaprotocol.io/data-node/config"
 	"code.vegaprotocol.io/data-node/logging"
+	"code.vegaprotocol.io/data-node/version"
 	"code.vegaprotocol.io/shared/paths"
 	"github.com/jessevdk/go-flags"
 )
@@ -52,8 +53,8 @@ func (cmd *NodeCmd) Execute(args []string) error {
 
 	return (&node.NodeCommand{
 		Log:         log,
-		Version:     CLIVersion,
-		VersionHash: CLIVersionHash,
+		Version:     version.Get(),
+		VersionHash: version.GetCommitHash(),
 	}).Run(
 		configWatcher,
 		vegaPaths,

@@ -12,8 +12,9 @@
 - [781](https://github.com/vegaprotocol/data-node/issues/781) - Add a summary table of current balances
 - [791](https://github.com/vegaprotocol/data-node/issues/791) - `v2` orders `api`
 - [816](https://github.com/vegaprotocol/data-node/issues/816) - `v2` accounts `api`
-- [801](https://github.com/vegaprotocol/data-node/issues/801) - Remove distinct select from hyper tables 
+- [801](https://github.com/vegaprotocol/data-node/issues/801) - Remove distinct select from hyper tables
 - [570](https://github.com/vegaprotocol/data-node/issues/570) - Add pagination for proposals with ordering of open proposals listed first
+- [795](https://github.com/vegaprotocol/data-node/issues/795) - Add node info endpoint
 
 ### 🐛 Fixes
 - [594](https://github.com/vegaprotocol/data-node/issues/594) - Fix returning proposal rationale
