@@ -73,8 +73,8 @@ func TestVotes(t *testing.T) {
 
 	party1 := addTestParty(t, partyStore, block1)
 	party2 := addTestParty(t, partyStore, block1)
-	prop1 := addTestProposal(t, propStore, party1, block1, entities.ProposalRationale{ProposalRationale: &vega.ProposalRationale{Url: "myurl1.com"}})
-	prop2 := addTestProposal(t, propStore, party1, block1, entities.ProposalRationale{ProposalRationale: &vega.ProposalRationale{Url: "myurl2.com"}})
+	prop1 := addTestProposal(t, propStore, generateID(), party1, generateID(), block1, entities.ProposalStateEnacted, entities.ProposalRationale{ProposalRationale: &vega.ProposalRationale{Url: "myurl1.com"}})
+	prop2 := addTestProposal(t, propStore, generateID(), party1, generateID(), block1, entities.ProposalStateEnacted, entities.ProposalRationale{ProposalRationale: &vega.ProposalRationale{Url: "myurl2.com"}})
 
 	party1ID := party1.ID.String()
 	prop1ID := prop1.ID.String()
@@ -146,7 +146,15 @@ func setupPaginationTestVotes(t *testing.T) (*sqlstore.Votes, entities.Party, []
 	for i := 0; i < 10; i++ {
 		blockTime = blockTime.Add(time.Second)
 		block = addTestBlockForTime(t, blockStore, blockTime)
-		prop := addTestProposal(t, propStore, party, block, entities.ProposalRationale{ProposalRationale: &vega.ProposalRationale{Url: fmt.Sprintf("myurl%02d.com", i+1)}})
+		prop := addTestProposal(t,
+			propStore,
+			generateID(),
+			party,
+			generateID(),
+			block,
+			entities.ProposalStateEnacted,
+			entities.ProposalRationale{ProposalRationale: &vega.ProposalRationale{Url: fmt.Sprintf("myurl%02d.com", i+1)}},
+		)
 
 		voteValue := entities.VoteValueYes
 		if rand.Intn(100)%2 == 0 {

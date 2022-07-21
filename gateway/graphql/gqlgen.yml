@@ -306,3 +306,7 @@ models:
     model: code.vegaprotocol.io/protos/data-node/api/v2.TransferEdge
   TransferConnection:
     model: code.vegaprotocol.io/protos/data-node/api/v2.TransferConnection
+  ProposalEdge:
+    model: code.vegaprotocol.io/protos/data-node/api/v2.GovernanceDataEdge
+  ProposalsConnection:
+    model: code.vegaprotocol.io/protos/data-node/api/v2.GovernanceDataConnection

@@ -54,18 +54,19 @@ func (r *myMarketResolver) LiquidityProvisionsConnection(
 	party *string,
 	pagination *v2.Pagination,
 ) (*v2.LiquidityProvisionsConnection, error) {
-	var pid string
-	if party != nil {
-		pid = *party
+	var marketID *string
+
+	if market != nil {
+		marketID = &market.Id
 	}
 
-	req := v2.GetLiquidityProvisionsRequest{
-		Party:      pid,
-		Market:     market.Id,
+	req := v2.ListLiquidityProvisionsRequest{
+		PartyId:    party,
+		MarketId:   marketID,
 		Pagination: pagination,
 	}
 
-	res, err := r.tradingDataClientV2.GetLiquidityProvisions(ctx, &req)
+	res, err := r.tradingDataClientV2.ListLiquidityProvisions(ctx, &req)
 	if err != nil {
 		r.log.Error("tradingData client", logging.Error(err))
 		return nil, customErrorFromStatus(err)

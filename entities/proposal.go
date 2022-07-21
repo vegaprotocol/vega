@@ -13,8 +13,11 @@
 package entities
 
 import (
+	"encoding/json"
+	"fmt"
 	"time"
 
+	v2 "code.vegaprotocol.io/protos/data-node/api/v2"
 	"code.vegaprotocol.io/protos/vega"
 	"google.golang.org/protobuf/encoding/protojson"
 )
@@ -63,6 +66,24 @@ func (p *Proposal) ToProto() *vega.Proposal {
 	return &pp
 }
 
+func (p Proposal) Cursor() *Cursor {
+	pc := ProposalCursor{
+		State:    p.State,
+		VegaTime: p.VegaTime,
+		ID:       p.ID.String(),
+	}
+	return NewCursor(pc.String())
+}
+
+func (p Proposal) ToProtoEdge(_ ...any) (*v2.GovernanceDataEdge, error) {
+	return &v2.GovernanceDataEdge{
+		Node: &vega.GovernanceData{
+			Proposal: p.ToProto(),
+		},
+		Cursor: p.Cursor().Encode(),
+	}, nil
+}
+
 func ProposalFromProto(pp *vega.Proposal) (Proposal, error) {
 	p := Proposal{
 		ID:           NewProposalID(pp.Id),
@@ -102,4 +123,25 @@ func (pt ProposalTerms) MarshalJSON() ([]byte, error) {
 func (pt *ProposalTerms) UnmarshalJSON(b []byte) error {
 	pt.ProposalTerms = &vega.ProposalTerms{}
 	return protojson.Unmarshal(b, pt)
+}
+
+type ProposalCursor struct {
+	State    ProposalState `json:"state"`
+	VegaTime time.Time     `json:"vega_time"`
+	ID       string        `json:"id"`
+}
+
+func (pc ProposalCursor) String() string {
+	bs, err := json.Marshal(pc)
+	if err != nil {
+		panic(fmt.Errorf("failed to marshal proposal cursor: %w", err))
+	}
+	return string(bs)
+}
+
+func (pc *ProposalCursor) Parse(cursorString string) error {
+	if cursorString == "" {
+		return nil
+	}
+	return json.Unmarshal([]byte(cursorString), pc)
 }

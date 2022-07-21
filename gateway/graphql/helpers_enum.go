@@ -15,6 +15,7 @@ package gql
 import (
 	"fmt"
 
+	v2 "code.vegaprotocol.io/protos/data-node/api/v2"
 	types "code.vegaprotocol.io/protos/vega"
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
@@ -399,6 +400,24 @@ func convertProposalStateToProto(x ProposalState) (types.Proposal_State, error) 
 	default:
 		err := fmt.Errorf("failed to convert ProposalState from GraphQL to Proto: %v", x)
 		return types.Proposal_STATE_UNSPECIFIED, err
+	}
+}
+
+// convertProposalStateToProto converts a GraphQL enum to a Proto enum
+func convertProposalTypeToProto(x ProposalType) v2.ListGovernanceDataRequest_Type {
+	switch x {
+	case ProposalTypeNewMarket:
+		return v2.ListGovernanceDataRequest_TYPE_NEW_MARKET
+	case ProposalTypeUpdateMarket:
+		return v2.ListGovernanceDataRequest_TYPE_UPDATE_MARKET
+	case ProposalTypeNetworkParameters:
+		return v2.ListGovernanceDataRequest_TYPE_NETWORK_PARAMETERS
+	case ProposalTypeNewAsset:
+		return v2.ListGovernanceDataRequest_TYPE_NEW_ASSET
+	case ProposalTypeNewFreeForm:
+		return v2.ListGovernanceDataRequest_TYPE_NEW_FREE_FORM
+	default:
+		return v2.ListGovernanceDataRequest_TYPE_ALL
 	}
 }
 
