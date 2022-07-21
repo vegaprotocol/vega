@@ -3,6 +3,7 @@ package cmd
 import (
 	"context"
 	"encoding/base64"
+	"encoding/hex"
 	"fmt"
 	"io"
 
@@ -201,15 +202,24 @@ func SendTx(w io.Writer, rf *RootFlags, req *SendTxRequest) error {
 	ctx, cancelFn := context.WithTimeout(context.Background(), ForwarderRequestTimeout)
 	defer cancelFn()
 
-	txHash, err := forwarder.SendTx(ctx, req.Tx, api.SubmitTransactionRequest_TYPE_ASYNC, -1)
+	resp, err := forwarder.SendTx(ctx, req.Tx, api.SubmitTransactionRequest_TYPE_ASYNC, -1)
 	if err != nil {
-		log.Error("Couldn't send transaction", zap.Error(err))
+		log.Error("couldn't send transaction", zap.Error(err))
 		return fmt.Errorf("couldn't send transaction: %w", err)
 	}
 
-	log.Info("transaction successfully sent", zap.String("hash", txHash))
+	if !resp.Success {
+		d, err := hex.DecodeString(resp.Data)
+		if err != nil {
+			log.Error("unable to decode resp error string")
+		}
+		log.Error("transaction failed", zap.String("err", string(d)), zap.Uint32("code", resp.Code))
+		return fmt.Errorf("transaction failed: %s", resp.Data)
+	}
+
+	log.Info("transaction successfully sent", zap.String("hash", resp.TxHash))
 	if rf.Output == flags.InteractiveOutput {
-		str.NextLine().CheckMark().Text("Transaction sent: ").SuccessText(txHash).NextLine()
+		str.NextLine().CheckMark().Text("Transaction sent: ").SuccessText(resp.TxHash).NextLine()
 	}
 
 	return nil

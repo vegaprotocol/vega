@@ -15,6 +15,7 @@ import (
 	api "code.vegaprotocol.io/protos/vega/api/v1"
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	vgrand "code.vegaprotocol.io/shared/libs/rand"
+	"code.vegaprotocol.io/vega/blockchain/abci"
 	"code.vegaprotocol.io/vega/wallet/crypto"
 	"code.vegaprotocol.io/vega/wallet/network"
 	"code.vegaprotocol.io/vega/wallet/service"
@@ -112,6 +113,7 @@ func TestService(t *testing.T) {
 	t.Run("Verifying anything with invalid request fails", testVerifyingAnyDataWithInvalidRequestFails)
 	t.Run("Requesting the chain id is successful", testGetNetworkChainIDSuccess)
 	t.Run("Requesting the chain id fails when node in available", testGetNetworkChainIDFailure)
+	t.Run("Signing transaction fails spam", testAcceptSigningTransactionFailsSpam)
 }
 
 func testServiceCreateWalletOK(t *testing.T) {
@@ -814,7 +816,8 @@ func testAcceptSigningTransactionSucceeds(t *testing.T) {
 	// setup
 	s.auth.EXPECT().VerifyToken(token).Times(1).Return(walletName, nil)
 	s.handler.EXPECT().SignTx(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(&commandspb.Transaction{}, nil)
-	s.nodeForward.EXPECT().SendTx(gomock.Any(), gomock.Any(), api.SubmitTransactionRequest_TYPE_ASYNC, gomock.Any()).Times(1)
+	s.nodeForward.EXPECT().SendTx(gomock.Any(), gomock.Any(), api.SubmitTransactionRequest_TYPE_ASYNC, gomock.Any()).Times(1).
+		Return(&api.SubmitTransactionResponse{Success: true}, nil)
 	s.nodeForward.EXPECT().LastBlockHeightAndHash(gomock.Any()).Times(1).Return(&api.LastBlockHeightResponse{
 		Height:              42,
 		Hash:                "0292041e2f0cf741894503fb3ead4cb817bca2375e543aa70f7c4d938157b5a6",
@@ -862,7 +865,8 @@ func testSigningTransactionWithPropagationSucceeds(t *testing.T) {
 	// setup
 	s.auth.EXPECT().VerifyToken(token).Times(1).Return(walletName, nil)
 	s.handler.EXPECT().SignTx(walletName, gomock.Any(), gomock.Any()).Times(1).Return(&commandspb.Transaction{}, nil)
-	s.nodeForward.EXPECT().SendTx(gomock.Any(), gomock.Any(), api.SubmitTransactionRequest_TYPE_ASYNC, gomock.Any()).Times(1)
+	s.nodeForward.EXPECT().SendTx(gomock.Any(), gomock.Any(), api.SubmitTransactionRequest_TYPE_ASYNC, gomock.Any()).Times(1).
+		Return(&api.SubmitTransactionResponse{Success: true}, nil)
 	s.nodeForward.EXPECT().LastBlockHeightAndHash(gomock.Any()).Times(1).Return(&api.LastBlockHeightResponse{
 		Height:              42,
 		Hash:                "0292041e2f0cf741894503fb3ead4cb817bca2375e543aa70f7c4d938157b5a6",
@@ -890,7 +894,8 @@ func testSigningTransactionWithFailedPropagationFails(t *testing.T) {
 	// setup
 	s.auth.EXPECT().VerifyToken(token).Times(1).Return(walletName, nil)
 	s.handler.EXPECT().SignTx(walletName, gomock.Any(), gomock.Any()).Times(1).Return(&commandspb.Transaction{}, nil)
-	s.nodeForward.EXPECT().SendTx(gomock.Any(), gomock.Any(), api.SubmitTransactionRequest_TYPE_ASYNC, gomock.Any()).Times(1).Return("", assert.AnError)
+	s.nodeForward.EXPECT().SendTx(gomock.Any(), gomock.Any(), api.SubmitTransactionRequest_TYPE_ASYNC, gomock.Any()).Times(1).
+		Return(nil, assert.AnError)
 	s.nodeForward.EXPECT().LastBlockHeightAndHash(gomock.Any()).Times(1).Return(&api.LastBlockHeightResponse{
 		Height:              42,
 		Hash:                "0292041e2f0cf741894503fb3ead4cb817bca2375e543aa70f7c4d938157b5a6",
@@ -1269,4 +1274,33 @@ func serveHTTP(t *testing.T, s *testService, req *http.Request) (int, []byte) {
 	}
 
 	return resp.StatusCode, body
+}
+
+func testAcceptSigningTransactionFailsSpam(t *testing.T) {
+	s := getTestService(t, "manual")
+	defer s.ctrl.Finish()
+
+	// given
+	walletName := vgrand.RandomStr(5)
+	token := vgrand.RandomStr(5)
+	headers := authHeaders(t, token)
+	pubKey := vgrand.RandomStr(5)
+	payload := fmt.Sprintf(`{"pubKey": "%s", "orderCancellation": {}}`, pubKey)
+
+	// setup
+	s.auth.EXPECT().VerifyToken(token).AnyTimes().Return(walletName, nil)
+	s.handler.EXPECT().SignTx(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().Return(&commandspb.Transaction{}, nil)
+	s.nodeForward.EXPECT().LastBlockHeightAndHash(gomock.Any()).AnyTimes().Return(&api.LastBlockHeightResponse{
+		Height:              42,
+		Hash:                "0292041e2f0cf741894503fb3ead4cb817bca2375e543aa70f7c4d938157b5a6",
+		SpamPowDifficulty:   2,
+		SpamPowHashFunction: "sha3_24_rounds",
+	}, 0, nil)
+	// when
+
+	s.nodeForward.EXPECT().SendTx(gomock.Any(), gomock.Any(), api.SubmitTransactionRequest_TYPE_ASYNC, gomock.Any()).Times(1).
+		Return(&api.SubmitTransactionResponse{Success: false, Code: abci.AbciSpamError}, nil)
+
+	statusCode, _ := serveHTTP(t, s, signTxRequest(t, payload, headers))
+	assert.Equal(t, http.StatusTooManyRequests, statusCode)
 }
