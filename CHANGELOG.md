@@ -15,7 +15,7 @@
 - [801](https://github.com/vegaprotocol/data-node/issues/801) - Remove distinct select from hyper tables 
 
 ### 🐛 Fixes
-- [](https://github.com/vegaprotocol/data-node/issues/xxx) -
+- [594](https://github.com/vegaprotocol/data-node/issues/594) - Fix returning proposal rationale
 
 ## 0.53.0
 
