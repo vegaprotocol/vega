@@ -1005,13 +1005,7 @@ func (s *Service) writeTxError(w http.ResponseWriter, r *api.SubmitTransactionRe
 		s.log.Error("unknown transaction code", zap.Uint32("code", r.Code))
 		code = http.StatusInternalServerError
 	}
-
-	errStr, err := hex.DecodeString(r.Data)
-	if err != nil {
-		s.log.Error("unable to decode transaction error string")
-	}
-
-	s.writeError(w, newErrorResponse(string(errStr)), code)
+	s.writeError(w, newErrorResponse(r.Data), code)
 }
 
 func (s *Service) writeError(w http.ResponseWriter, e error, status int) {

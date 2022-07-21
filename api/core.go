@@ -149,7 +149,7 @@ func (s *coreService) SubmitTransaction(ctx context.Context, req *protoapi.Submi
 	return &protoapi.SubmitTransactionResponse{
 		Success: txResult.Code == 0,
 		Code:    txResult.Code,
-		Data:    txResult.Data.String(),
+		Data:    string(txResult.Data.Bytes()),
 		Log:     txResult.Log,
 		Height:  0,
 		TxHash:  txResult.Hash.String(),
