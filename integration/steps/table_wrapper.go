@@ -20,7 +20,6 @@ import (
 	"time"
 
 	proto "code.vegaprotocol.io/protos/vega"
-	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
 	oraclesv1 "code.vegaprotocol.io/protos/vega/oracles/v1"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/types"
@@ -441,11 +440,12 @@ func (r RowWrapper) MustEventType(name string) events.Type {
 }
 
 func EventType(rawValue string) (events.Type, error) {
-	ty, ok := eventspb.BusEventType_value[rawValue]
+	ty, ok := events.TryFromString(rawValue)
 	if !ok {
 		return 0, fmt.Errorf("invalid event type: %v", rawValue)
 	}
-	return events.Type(ty), nil
+
+	return *ty, nil
 }
 
 func (r RowWrapper) MustOrderType(name string) types.OrderType {
