@@ -449,6 +449,13 @@ func (e *Engine) getCurrentPriceRanges(force bool) map[*bound]priceRange {
 		if !b.Active {
 			continue
 		}
+		if e.anyTriggerBreached() && len(e.pricesPast) > 0 {
+			triggerLookback := e.now.Add(time.Duration(-b.Trigger.Horizon) * time.Second)
+			// check if trigger not stale: newest reference price older than horizon lookback time
+			if (*e.mostRecentPriceTime()).Before(triggerLookback) {
+				continue
+			}
+		}
 		ref := e.getRefPrice(b.Trigger.Horizon, force)
 		var min, max num.Decimal
 
@@ -473,6 +480,26 @@ func (e *Engine) getCurrentPriceRanges(force bool) map[*bound]priceRange {
 	e.priceRangeCacheTime = e.now
 	e.stateChanged = true
 	return e.priceRangesCache
+}
+
+func (e *Engine) mostRecentPriceTime() *time.Time {
+	if len(e.pricesNow) > 0 {
+		return &e.now
+	}
+	n := len(e.pricesPast)
+	if n > 0 {
+		return &e.pricesPast[n-1].Time
+	}
+	return nil
+}
+
+func (e *Engine) anyTriggerBreached() bool {
+	for _, b := range e.bounds {
+		if !b.Active {
+			return true
+		}
+	}
+	return false
 }
 
 // clearStalePrices updates the pricesPast slice to hold only as many prices as implied by the horizon.
