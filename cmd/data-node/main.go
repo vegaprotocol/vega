@@ -21,14 +21,6 @@ import (
 	"github.com/jessevdk/go-flags"
 )
 
-var (
-	// VersionHash specifies the git commit used to build the application. See VERSION_HASH in Makefile for details.
-	CLIVersionHash = ""
-
-	// Version specifies the version used to build the application. See VERSION in Makefile for details.
-	CLIVersion = ""
-)
-
 // Subcommand is the signature of a sub command that can be registered.
 type Subcommand func(context.Context, *flags.Parser) error
 
@@ -57,6 +49,7 @@ func Main(ctx context.Context) error {
 		Gateway,
 		Node,
 		Version,
+		Postgres,
 	); err != nil {
 		fmt.Printf("%+v\n", err)
 		return err

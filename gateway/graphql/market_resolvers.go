@@ -48,6 +48,37 @@ func (r *myMarketResolver) LiquidityProvisions(
 	return res.LiquidityProvisions, nil
 }
 
+func (r *myMarketResolver) LiquidityProvisionsConnection(
+	ctx context.Context,
+	market *types.Market,
+	party *string,
+	pagination *v2.Pagination,
+) (*v2.LiquidityProvisionsConnection, error) {
+	var pid string
+	if party != nil {
+		pid = *party
+	}
+
+	var marketID string
+	if market != nil {
+		marketID = market.Id
+	}
+
+	req := v2.ListLiquidityProvisionsRequest{
+		PartyId:    &pid,
+		MarketId:   &marketID,
+		Pagination: pagination,
+	}
+
+	res, err := r.tradingDataClientV2.ListLiquidityProvisions(ctx, &req)
+	if err != nil {
+		r.log.Error("tradingData client", logging.Error(err))
+		return nil, customErrorFromStatus(err)
+	}
+
+	return res.LiquidityProvisions, nil
+}
+
 func (r *myMarketResolver) Data(ctx context.Context, market *types.Market) (*types.MarketData, error) {
 	req := protoapi.MarketDataByIDRequest{
 		MarketId: market.Id,
@@ -77,12 +108,12 @@ func (r *myMarketResolver) Orders(ctx context.Context, market *types.Market,
 }
 
 func (r *myMarketResolver) OrdersConnection(ctx context.Context, market *types.Market, pagination *v2.Pagination) (*v2.OrderConnection, error) {
-	req := v2.GetOrdersByMarketConnectionRequest{
-		MarketId:   market.Id,
+	req := v2.ListOrdersRequest{
+		MarketId:   &market.Id,
 		Pagination: pagination,
 	}
 
-	res, err := r.tradingDataClientV2.GetOrdersByMarketConnection(ctx, &req)
+	res, err := r.tradingDataClientV2.ListOrders(ctx, &req)
 	if err != nil {
 		r.log.Error("tradingData client", logging.Error(err))
 		return nil, customErrorFromStatus(err)
@@ -183,39 +214,43 @@ func (r *myMarketResolver) Candles(ctx context.Context, market *types.Market,
 
 // Accounts ...
 // if partyID specified get margin account for the given market
-// if nil return the insurance pool for the market
+// if nil return the insurance pool & Fee Liquidty accounts for the market
 func (r *myMarketResolver) Accounts(ctx context.Context, market *types.Market, partyID *string) ([]*types.Account, error) {
-	// get margin account for a party
+	filter := v2.AccountFilter{MarketIds: []string{market.Id}}
+	ptyID := ""
+
 	if partyID != nil {
-		req := protoapi.PartyAccountsRequest{
-			PartyId:  *partyID,
-			MarketId: market.Id,
-			Type:     types.AccountType_ACCOUNT_TYPE_MARGIN,
-			Asset:    "",
+		// get margin account for a party
+		ptyID = *partyID
+		filter.PartyIds = []string{ptyID}
+		filter.AccountTypes = []types.AccountType{types.AccountType_ACCOUNT_TYPE_MARGIN}
+	} else {
+		filter.AccountTypes = []types.AccountType{
+			types.AccountType_ACCOUNT_TYPE_INSURANCE,
+			types.AccountType_ACCOUNT_TYPE_FEES_LIQUIDITY,
 		}
-		res, err := r.tradingDataClient.PartyAccounts(ctx, &req)
-		if err != nil {
-			r.log.Error("unable to get PartyAccounts",
-				logging.Error(err),
-				logging.String("market-id", market.Id),
-				logging.String("party-id", *partyID))
-			return []*types.Account{}, customErrorFromStatus(err)
-		}
-		return res.Accounts, nil
 	}
-	// get accounts for the market
-	req := protoapi.MarketAccountsRequest{
-		MarketId: market.Id,
-		Asset:    "", // all assets
-	}
-	res, err := r.tradingDataClient.MarketAccounts(ctx, &req)
+
+	req := v2.ListAccountsRequest{Filter: &filter}
+
+	res, err := r.tradingDataClientV2.ListAccounts(ctx, &req)
 	if err != nil {
-		r.log.Error("unable to get MarketAccounts",
+		r.log.Error("unable to get market accounts",
 			logging.Error(err),
-			logging.String("market-id", market.Id))
+			logging.String("market-id", market.Id),
+			logging.String("party-id", ptyID))
 		return []*types.Account{}, customErrorFromStatus(err)
 	}
-	return res.Accounts, nil
+
+	if len(res.Accounts.Edges) == 0 {
+		return []*types.Account{}, nil
+	}
+
+	accounts := make([]*types.Account, len(res.Accounts.Edges))
+	for i, edge := range res.Accounts.Edges {
+		accounts[i] = edge.Account
+	}
+	return accounts, nil
 }
 
 func (r *myMarketResolver) DecimalPlaces(ctx context.Context, obj *types.Market) (int, error) {

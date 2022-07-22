@@ -111,11 +111,11 @@ func (od OracleData) Cursor() *Cursor {
 	}.String())
 }
 
-func (od OracleData) ToProtoEdge(_ ...any) *v2.OracleDataEdge {
+func (od OracleData) ToProtoEdge(_ ...any) (*v2.OracleDataEdge, error) {
 	return &v2.OracleDataEdge{
 		Node:   od.ToProto(),
 		Cursor: od.Cursor().Encode(),
-	}
+	}, nil
 }
 
 type OracleDataCursor struct {

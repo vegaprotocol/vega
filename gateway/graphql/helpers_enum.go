@@ -15,11 +15,28 @@ package gql
 import (
 	"fmt"
 
+	v2 "code.vegaprotocol.io/protos/data-node/api/v2"
 	types "code.vegaprotocol.io/protos/vega"
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
 	oraclesv1 "code.vegaprotocol.io/protos/vega/oracles/v1"
 )
+
+func convertAssetStatusFromProto(s types.Asset_Status) (AssetStatus, error) {
+	switch s {
+	case types.Asset_STATUS_PROPOSED:
+		return AssetStatusProposed, nil
+	case types.Asset_STATUS_REJECTED:
+		return AssetStatusRejected, nil
+	case types.Asset_STATUS_PENDING_LISTING:
+		return AssetStatusPendingListing, nil
+	case types.Asset_STATUS_ENABLED:
+		return AssetStatusEnabled, nil
+	default:
+		err := fmt.Errorf("failed to convert AssetStatus from Proto to GraphQL: %v", s)
+		return AssetStatus(""), err
+	}
+}
 
 func convertTransferStatusFromProto(x eventspb.Transfer_Status) (TransferStatus, error) {
 	switch x {
@@ -310,6 +327,8 @@ func convertMarketTradingModeFromProto(ms types.Market_TradingMode) (MarketTradi
 		return MarketTradingModeMonitoringAuction, nil
 	case types.Market_TRADING_MODE_CONTINUOUS:
 		return MarketTradingModeContinuous, nil
+	case types.Market_TRADING_MODE_NO_TRADING:
+		return MarketTradingModeNoTrading, nil
 	default:
 		err := fmt.Errorf("failed to convert MarketTradingMode from Proto to GraphQL: %v", ms)
 		return MarketTradingModeContinuous, err
@@ -381,6 +400,24 @@ func convertProposalStateToProto(x ProposalState) (types.Proposal_State, error) 
 	default:
 		err := fmt.Errorf("failed to convert ProposalState from GraphQL to Proto: %v", x)
 		return types.Proposal_STATE_UNSPECIFIED, err
+	}
+}
+
+// convertProposalStateToProto converts a GraphQL enum to a Proto enum
+func convertProposalTypeToProto(x ProposalType) v2.ListGovernanceDataRequest_Type {
+	switch x {
+	case ProposalTypeNewMarket:
+		return v2.ListGovernanceDataRequest_TYPE_NEW_MARKET
+	case ProposalTypeUpdateMarket:
+		return v2.ListGovernanceDataRequest_TYPE_UPDATE_MARKET
+	case ProposalTypeNetworkParameters:
+		return v2.ListGovernanceDataRequest_TYPE_NETWORK_PARAMETERS
+	case ProposalTypeNewAsset:
+		return v2.ListGovernanceDataRequest_TYPE_NEW_ASSET
+	case ProposalTypeNewFreeForm:
+		return v2.ListGovernanceDataRequest_TYPE_NEW_FREE_FORM
+	default:
+		return v2.ListGovernanceDataRequest_TYPE_ALL
 	}
 }
 
@@ -471,6 +508,14 @@ func convertProposalRejectionReasonFromProto(x types.ProposalError) (ProposalRej
 		return ProposalRejectionReasonParticipationThresholdNotReached, nil
 	case types.ProposalError_PROPOSAL_ERROR_INVALID_ASSET_DETAILS:
 		return ProposalRejectionReasonInvalidAssetDetails, nil
+	case types.ProposalError_PROPOSAL_ERROR_TOO_MANY_PRICE_MONITORING_TRIGGERS:
+		return ProposalRejectionReasonTooManyPriceMonitoringTriggers, nil
+	case types.ProposalError_PROPOSAL_ERROR_TOO_MANY_MARKET_DECIMAL_PLACES:
+		return ProposalRejectionReasonTooManyMarketDecimalPlaces, nil
+	case types.ProposalError_PROPOSAL_ERROR_INVALID_MARKET:
+		return ProposalRejectionReasonInvalidMarket, nil
+	case types.ProposalError_PROPOSAL_ERROR_INSUFFICIENT_EQUITY_LIKE_SHARE:
+		return ProposalRejectionReasonInsufficientEquityLikeShare, nil
 	default:
 		err := fmt.Errorf("failed to convert ProposalRejectionReason from Proto to GraphQL: %v", x)
 		return "", err

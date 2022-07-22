@@ -45,8 +45,9 @@ var (
 	tableNames = [...]string{
 		"ledger", "accounts", "parties", "assets", "blocks", "node_signatures",
 		"erc20_multisig_signer_events", "trades", "market_data", "orders_live", "orders_history",
-		"margin_levels", "liquidity_provisions", "nodes", "ranking_scores", "reward_scores", "delegations", "rewards",
-		"nodes_announced",
+		"margin_levels", "current_margin_levels", "liquidity_provisions", "current_liquidity_provisions",
+		"nodes", "ranking_scores", "reward_scores", "delegations", "rewards", "nodes_announced",
+		"balances", "current_balances",
 	}
 
 	postgresServerTimeout = time.Second * 10
@@ -126,15 +127,6 @@ func DeleteEverything() {
 			panic(fmt.Errorf("error truncating table: %s %w", table, err))
 		}
 	}
-}
-
-func connectionString(config sqlstore.ConnectionConfig) string {
-	return fmt.Sprintf("postgresql://%s:%s@%s:%d/%s",
-		config.Username,
-		config.Password,
-		config.Host,
-		config.Port,
-		config.Database)
 }
 
 // Generate a 256 bit pseudo-random hash ID based on the time

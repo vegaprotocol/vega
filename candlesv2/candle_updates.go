@@ -151,7 +151,7 @@ func (s *candleUpdates) getCandleUpdates(ctx context.Context, lastCandle *entiti
 		}
 	} else {
 		last := int32(1)
-		pagination, err := entities.NewCursorPagination(nil, nil, &last, nil)
+		pagination, err := entities.NewCursorPagination(nil, nil, &last, nil, false)
 		if err != nil {
 			return nil, err
 		}

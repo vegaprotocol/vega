@@ -284,6 +284,34 @@ func (m *TransferStatus) DecodeText(_ *pgtype.ConnInfo, src []byte) error {
 	return nil
 }
 
+type AssetStatus vega.Asset_Status
+
+const (
+	AssetStatusUnspecified    = AssetStatus(vega.Asset_STATUS_UNSPECIFIED)
+	AssetStatusProposed       = AssetStatus(vega.Asset_STATUS_PROPOSED)
+	AssetStatusRejected       = AssetStatus(vega.Asset_STATUS_REJECTED)
+	AssetStatusPendingListing = AssetStatus(vega.Asset_STATUS_PENDING_LISTING)
+	AssetStatusEnabled        = AssetStatus(vega.Asset_STATUS_ENABLED)
+)
+
+func (m AssetStatus) EncodeText(_ *pgtype.ConnInfo, buf []byte) ([]byte, error) {
+	mode, ok := vega.Asset_Status_name[int32(m)]
+	if !ok {
+		return buf, fmt.Errorf("unknown asset status: %s", mode)
+	}
+	return append(buf, []byte(mode)...), nil
+}
+
+func (m *AssetStatus) DecodeText(_ *pgtype.ConnInfo, src []byte) error {
+	val, ok := vega.Asset_Status_value[string(src)]
+	if !ok {
+		return fmt.Errorf("unknown asset status: %s", src)
+	}
+
+	*m = AssetStatus(val)
+	return nil
+}
+
 type MarketTradingMode vega.Market_TradingMode
 
 const (
@@ -292,6 +320,7 @@ const (
 	MarketTradingModeBatchAuction      = MarketTradingMode(vega.Market_TRADING_MODE_BATCH_AUCTION)
 	MarketTradingModeOpeningAuction    = MarketTradingMode(vega.Market_TRADING_MODE_OPENING_AUCTION)
 	MarketTradingModeMonitoringAuction = MarketTradingMode(vega.Market_TRADING_MODE_MONITORING_AUCTION)
+	MarketTradingModeNoTrading         = MarketTradingMode(vega.Market_TRADING_MODE_NO_TRADING)
 )
 
 func (m MarketTradingMode) EncodeText(_ *pgtype.ConnInfo, buf []byte) ([]byte, error) {
@@ -475,6 +504,7 @@ const (
 	ProposalErrorInsufficientEquityLikeShare      = ProposalError(vega.ProposalError_PROPOSAL_ERROR_INSUFFICIENT_EQUITY_LIKE_SHARE)
 	ProposalErrorInvalidMarket                    = ProposalError(vega.ProposalError_PROPOSAL_ERROR_INVALID_MARKET)
 	ProposalErrorTooManyMarketDecimalPlaces       = ProposalError(vega.ProposalError_PROPOSAL_ERROR_TOO_MANY_MARKET_DECIMAL_PLACES)
+	ProposalErrorTooManyPriceMonitoringTriggers   = ProposalError(vega.ProposalError_PROPOSAL_ERROR_TOO_MANY_PRICE_MONITORING_TRIGGERS)
 )
 
 func (s ProposalError) EncodeText(_ *pgtype.ConnInfo, buf []byte) ([]byte, error) {

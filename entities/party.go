@@ -42,9 +42,9 @@ func (p Party) Cursor() *Cursor {
 	return NewCursor(p.VegaTime.In(time.UTC).Format(time.RFC3339Nano))
 }
 
-func (p Party) ToProtoEdge(_ ...any) *v2.PartyEdge {
+func (p Party) ToProtoEdge(_ ...any) (*v2.PartyEdge, error) {
 	return &v2.PartyEdge{
 		Node:   p.ToProto(),
 		Cursor: p.Cursor().Encode(),
-	}
+	}, nil
 }

@@ -14,6 +14,7 @@ package integration_test
 
 import (
 	"context"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"io/ioutil"
@@ -31,6 +32,7 @@ import (
 	"code.vegaprotocol.io/data-node/cmd/data-node/node"
 	"code.vegaprotocol.io/data-node/config"
 	"code.vegaprotocol.io/data-node/config/encoding"
+	"code.vegaprotocol.io/data-node/fsutil"
 	"code.vegaprotocol.io/data-node/logging"
 	"code.vegaprotocol.io/shared/paths"
 	"github.com/google/go-cmp/cmp"
@@ -46,10 +48,11 @@ const (
 )
 
 var (
-	newClient               *graphql.Client
-	oldClient               *graphql.Client
+	client                  *graphql.Client
 	integrationTestsEnabled *bool = flag.Bool("integration", false, "run integration tests")
 	blockWhenDone                 = flag.Bool("block", false, "leave services running after tests are complete")
+	writeGolden             *bool = flag.Bool("golden", false, "write query results to 'golden' files for comparison")
+	goldenDir               string
 )
 
 func TestMain(m *testing.M) {
@@ -58,6 +61,17 @@ func TestMain(m *testing.M) {
 	if !*integrationTestsEnabled {
 		log.Print("Skipping integration tests. To enable pass -integration flag to 'go test'")
 		return
+	}
+
+	cwd, err := os.Getwd()
+	if err != nil {
+		panic("couldn't get working directory")
+	}
+
+	goldenDir = filepath.Join(cwd, "testdata", "golden")
+	err = fsutil.EnsureDir(goldenDir)
+	if err != nil {
+		panic("couldn't ensure golden data dir")
 	}
 
 	cfg, err := newTestConfig()
@@ -69,9 +83,8 @@ func TestMain(m *testing.M) {
 		log.Fatal("running test node: ", err)
 	}
 
-	newClient = graphql.NewClient(fmt.Sprintf("http://localhost:%v/query", cfg.Gateway.GraphQL.Port))
-	oldClient = graphql.NewClient(fmt.Sprintf("http://localhost:%v/query", cfg.Gateway.GraphQL.Port+cfg.API.LegacyAPIPortOffset))
-	if err := waitForEpoch(newClient, LastEpoch, PlaybackTimeout); err != nil {
+	client = graphql.NewClient(fmt.Sprintf("http://localhost:%v/query", cfg.Gateway.GraphQL.Port))
+	if err := waitForEpoch(client, LastEpoch, PlaybackTimeout); err != nil {
 		log.Fatal("problem piping event stream: ", err)
 	}
 
@@ -188,23 +201,48 @@ func removeDupVotes() cmp.Option {
 	})
 }
 
-func assertGraphQLQueriesReturnSame(t *testing.T, query string, oldResp, newResp interface{}) {
-	t.Helper()
-	req := graphql.NewRequest(query)
-	oldErr := oldClient.Run(context.Background(), req, &oldResp)
-	newErr := newClient.Run(context.Background(), req, &newResp)
-	require.Equal(t, oldErr, newErr)
-	compareResponses(t, oldResp, newResp)
+type queryDetails[T any] struct {
+	TestName string
+	Query    string
+	Result   T
+	Duration time.Duration
 }
 
-func assertGraphQLQueriesReturnSameIgnoreErrors(t *testing.T, query string, oldResp, newResp interface{}) {
+func assertGraphQLQueriesReturnSame[T any](t *testing.T, query string) {
 	t.Helper()
+
 	req := graphql.NewRequest(query)
+	var resp T
+	start := time.Now()
+	err := client.Run(context.Background(), req, &resp)
+	require.NoError(t, err)
+	elapsed := time.Since(start)
 
-	_ = oldClient.Run(context.Background(), req, &oldResp)
-	_ = newClient.Run(context.Background(), req, &newResp)
+	niceName := strings.Replace(t.Name(), "/", "_", -1)
+	goldenFile := filepath.Join(goldenDir, niceName)
 
-	compareResponses(t, oldResp, newResp)
+	if *writeGolden {
+		details := queryDetails[T]{
+			TestName: niceName,
+			Query:    query,
+			Result:   resp,
+			Duration: elapsed,
+		}
+		jsonBytes, err := json.Marshal(details)
+		require.NoError(t, err)
+
+		os.WriteFile(goldenFile, jsonBytes, 0644)
+	} else {
+		jsonBytes, err := os.ReadFile(goldenFile)
+		require.NoError(t, err, "No golden file for this test, generate one by running 'go test' with the -golden flag")
+
+		details := queryDetails[T]{}
+		err = json.Unmarshal(jsonBytes, &details)
+		require.NoError(t, err, "Unable to unmarshal golden file")
+
+		assert.Equal(t, details.Query, query, "GraphQL query string differs from recorded in the golden file, regenerate by running 'go test' with the -golden flag")
+		compareResponses(t, resp, details.Result)
+	}
 }
 
 func newTestConfig() (*config.Config, error) {
@@ -217,8 +255,6 @@ func newTestConfig() (*config.Config, error) {
 	cfg.Broker.UseEventFile = true
 	cfg.Broker.FileEventSourceConfig.File = filepath.Join(cwd, "testdata", "system_tests.evt")
 	cfg.Broker.FileEventSourceConfig.TimeBetweenBlocks = encoding.Duration{Duration: 0}
-	cfg.API.ExposeLegacyAPI = encoding.Bool(true)
-	cfg.API.LegacyAPIPortOffset = 10
 	cfg.API.WebUIEnabled = encoding.Bool(true)
 	cfg.API.Reflection = encoding.Bool(true)
 

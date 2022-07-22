@@ -86,46 +86,12 @@ models:
         resolver: true
       liquidityProvisions:
         resolver: true
-  PaginatedMarket:
-    model: code.vegaprotocol.io/protos/vega.Market
-    fields:
-      orders:
-        resolver: true
-      trades:
-        resolver: true
-      depth:
-        resolver: true
-      data:
-        resolver: true
-      candles:
-        resolver: true
-      accounts:
-        resolver: true
-      orderByReference:
-        resolver: true
-      liquidityProvisions:
-        resolver: true
   Party:
     model: code.vegaprotocol.io/protos/vega.Party
     fields:
       orders:
         resolver: true
       trades:
-        resolver: true
-      tradesPaged:
-        resolver: true
-      positions:
-        resolver: true
-      accounts:
-        resolver: true
-      margins:
-        resolver: true
-      delegations:
-        resolver: true
-  PaginatedParty:
-    model: code.vegaprotocol.io/protos/vega.Party
-    fields:
-      ordersPaged:
         resolver: true
       tradesPaged:
         resolver: true
@@ -207,6 +173,10 @@ models:
     model: code.vegaprotocol.io/protos/vega.MarginCalculator
   Vote:
     model: code.vegaprotocol.io/protos/vega.Vote
+  VoteConnection:
+    model: code.vegaprotocol.io/protos/data-node/api/v2.VoteConnection
+  VoteEdge:
+    model: code.vegaprotocol.io/protos/data-node/api/v2.VoteEdge
   MarketTimestamps:
     model: code.vegaprotocol.io/protos/vega.MarketTimestamps
   NodeData:
@@ -328,3 +298,19 @@ models:
     model: code.vegaprotocol.io/protos/data-node/api/v2.OracleDataEdge
   OracleDataConnection:
     model: code.vegaprotocol.io/protos/data-node/api/v2.OracleDataConnection
+  LiquidityProvisionsEdge:
+    model: code.vegaprotocol.io/protos/data-node/api/v2.LiquidityProvisionsEdge
+  LiquidityProvisionsConnection:
+    model: code.vegaprotocol.io/protos/data-node/api/v2.LiquidityProvisionsConnection
+  TransferEdge:
+    model: code.vegaprotocol.io/protos/data-node/api/v2.TransferEdge
+  TransferConnection:
+    model: code.vegaprotocol.io/protos/data-node/api/v2.TransferConnection
+  ProposalEdge:
+    model: code.vegaprotocol.io/protos/data-node/api/v2.GovernanceDataEdge
+  ProposalsConnection:
+    model: code.vegaprotocol.io/protos/data-node/api/v2.GovernanceDataConnection
+  DelegationEdge:
+    model: code.vegaprotocol.io/protos/data-node/api/v2.DelegationEdge
+  DelegationsConnection:
+    model: code.vegaprotocol.io/protos/data-node/api/v2.DelegationsConnection

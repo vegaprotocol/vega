@@ -117,11 +117,11 @@ func (p *Position) ToProto() *vega.Position {
 	}
 }
 
-func (p Position) ToProtoEdge(_ ...any) *v2.PositionEdge {
+func (p Position) ToProtoEdge(_ ...any) (*v2.PositionEdge, error) {
 	return &v2.PositionEdge{
 		Node:   p.ToProto(),
 		Cursor: p.Cursor().Encode(),
-	}
+	}, nil
 }
 
 func (p *Position) AverageEntryPriceUint() *num.Uint {
@@ -183,8 +183,8 @@ type PositionKey struct {
 
 func (p Position) Cursor() *Cursor {
 	pc := PositionCursor{
-		MarketID: p.MarketID,
-		PartyID:  p.PartyID,
+		MarketID: p.MarketID.String(),
+		PartyID:  p.PartyID.String(),
 		VegaTime: p.VegaTime,
 	}
 
@@ -220,8 +220,8 @@ func (p Position) Equal(q Position) bool {
 }
 
 type PositionCursor struct {
-	PartyID  PartyID   `json:"party_id"`
-	MarketID MarketID  `json:"market_id"`
+	PartyID  string    `json:"party_id"`
+	MarketID string    `json:"market_id"`
 	VegaTime time.Time `json:"vega_time"`
 }
 

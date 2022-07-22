@@ -18,6 +18,7 @@ import (
 
 	"code.vegaprotocol.io/data-node/entities"
 	"code.vegaprotocol.io/data-node/metrics"
+	v2 "code.vegaprotocol.io/protos/data-node/api/v2"
 	"github.com/georgysavva/scany/pgxscan"
 )
 
@@ -80,64 +81,102 @@ func (t *Transfers) Upsert(ctx context.Context, transfer *entities.Transfer) err
 	return nil
 }
 
-func (t *Transfers) GetTransfersFromParty(ctx context.Context, partyId entities.PartyID) ([]*entities.Transfer, error) {
+func (t *Transfers) GetTransfersToOrFromParty(ctx context.Context, partyId entities.PartyID, pagination entities.CursorPagination) ([]entities.Transfer,
+	entities.PageInfo, error) {
+	defer metrics.StartSQLQuery("Transfers", "GetTransfersToOrFromParty")()
+	transfers, pageInfo, err := t.getTransfers(ctx, pagination,
+		"where transfers_current.from_account_id  in (select id from accounts where accounts.party_id=$1)"+
+			" or transfers_current.to_account_id  in (select id from accounts where accounts.party_id=$1)", partyId)
+
+	if err != nil {
+		return nil, entities.PageInfo{}, fmt.Errorf("getting transfers to or from party:%w", err)
+	}
+
+	return transfers, pageInfo, nil
+}
+
+func (t *Transfers) GetTransfersFromParty(ctx context.Context, partyId entities.PartyID, pagination entities.CursorPagination) ([]entities.Transfer,
+	entities.PageInfo, error) {
 	defer metrics.StartSQLQuery("Transfers", "GetTransfersFromParty")()
-	transfers, err := t.getTransfers(ctx,
+	transfers, pageInfo, err := t.getTransfers(ctx, pagination,
 		"where transfers_current.from_account_id  in (select id from accounts where accounts.party_id=$1)", partyId)
 
 	if err != nil {
-		return nil, fmt.Errorf("getting transfers from party:%w", err)
+		return nil, entities.PageInfo{}, fmt.Errorf("getting transfers from party:%w", err)
 	}
 
-	return transfers, nil
+	return transfers, pageInfo, nil
 }
 
-func (t *Transfers) GetTransfersToParty(ctx context.Context, partyId entities.PartyID) ([]*entities.Transfer, error) {
+func (t *Transfers) GetTransfersToParty(ctx context.Context, partyId entities.PartyID, pagination entities.CursorPagination) ([]entities.Transfer, entities.PageInfo,
+	error) {
 	defer metrics.StartSQLQuery("Transfers", "GetTransfersToParty")()
-	transfers, err := t.getTransfers(ctx,
+	transfers, pageInfo, err := t.getTransfers(ctx, pagination,
 		"where transfers_current.to_account_id  in (select id from accounts where accounts.party_id=$1)", partyId)
 
 	if err != nil {
-		return nil, fmt.Errorf("getting transfers to party:%w", err)
+		return nil, entities.PageInfo{}, fmt.Errorf("getting transfers to party:%w", err)
 	}
 
-	return transfers, nil
+	return transfers, pageInfo, nil
 }
 
-func (t *Transfers) GetTransfersFromAccount(ctx context.Context, accountID int64) ([]*entities.Transfer, error) {
+func (t *Transfers) GetTransfersFromAccount(ctx context.Context, accountID int64, pagination entities.CursorPagination) ([]entities.Transfer,
+	entities.PageInfo, error) {
 	defer metrics.StartSQLQuery("Transfers", "GetTransfersFromAccount")()
-	transfers, err := t.getTransfers(ctx, "WHERE from_account_id = $1", accountID)
+	transfers, pageInfo, err := t.getTransfers(ctx, pagination, "WHERE from_account_id = $1", accountID)
 
 	if err != nil {
-		return nil, fmt.Errorf("getting transfers from account:%w", err)
+		return nil, entities.PageInfo{}, fmt.Errorf("getting transfers from account:%w", err)
 	}
 
-	return transfers, nil
+	return transfers, pageInfo, nil
 }
 
-func (t *Transfers) GetTransfersToAccount(ctx context.Context, accountID int64) ([]*entities.Transfer, error) {
+func (t *Transfers) GetTransfersToAccount(ctx context.Context, accountID int64, pagination entities.CursorPagination) ([]entities.Transfer,
+	entities.PageInfo, error) {
 	defer metrics.StartSQLQuery("Transfers", "GetTransfersToAccount")()
-	transfers, err := t.getTransfers(ctx, "WHERE to_account_id = $1", accountID)
+	transfers, pageInfo, err := t.getTransfers(ctx, pagination, "WHERE to_account_id = $1", accountID)
 
 	if err != nil {
-		return nil, fmt.Errorf("getting transfers to account:%w", err)
+		return nil, entities.PageInfo{}, fmt.Errorf("getting transfers to account:%w", err)
 	}
 
-	return transfers, nil
+	return transfers, pageInfo, nil
 }
 
-func (t *Transfers) GetAll(ctx context.Context) ([]*entities.Transfer, error) {
+func (t *Transfers) GetAll(ctx context.Context, pagination entities.CursorPagination) ([]entities.Transfer,
+	entities.PageInfo, error) {
 	defer metrics.StartSQLQuery("Transfers", "GetAll")()
-	return t.getTransfers(ctx, "")
+	return t.getTransfers(ctx, pagination, "")
 }
 
-func (t *Transfers) getTransfers(ctx context.Context, where string, args ...interface{}) ([]*entities.Transfer, error) {
-	var transfers []*entities.Transfer
+func (t *Transfers) getTransfers(ctx context.Context, pagination entities.CursorPagination, where string, args ...interface{}) ([]entities.Transfer,
+	entities.PageInfo, error) {
+	var pageInfo entities.PageInfo
+
+	sorting, cmp, cursor := extractPaginationInfo(pagination)
+
+	tc := &entities.TransferCursor{}
+	if err := tc.Parse(cursor); err != nil {
+		return nil, pageInfo, fmt.Errorf("could not parse cursor information: %w", err)
+	}
+
+	cursorParams := []CursorQueryParameter{
+		NewCursorQueryParameter("vega_time", sorting, cmp, tc.VegaTime),
+		NewCursorQueryParameter("id", sorting, cmp, entities.NewWithdrawalID(tc.ID)),
+	}
+
 	query := "select * from transfers_current " + where
+	query, args = orderAndPaginateWithCursor(query, pagination, cursorParams, args...)
+
+	var transfers []entities.Transfer
 	err := pgxscan.Select(ctx, t.Connection, &transfers, query, args...)
 	if err != nil {
-		return nil, fmt.Errorf("getting transfers:%w", err)
+		return nil, pageInfo, fmt.Errorf("getting transfers:%w", err)
 	}
 
-	return transfers, nil
+	transfers, pageInfo = entities.PageEntities[*v2.TransferEdge](transfers, pagination)
+
+	return transfers, pageInfo, nil
 }

@@ -36,12 +36,12 @@ func (r *rewardSummaryResolver) RewardsConnection(ctx context.Context, summary *
 		assetID = *asset
 	}
 
-	req := v2.GetRewardsRequest{
+	req := v2.ListRewardsRequest{
 		PartyId:    summary.PartyId,
 		AssetId:    assetID,
 		Pagination: pagination,
 	}
-	resp, err := r.tradingDataClientV2.GetRewards(ctx, &req)
+	resp, err := r.tradingDataClientV2.ListRewards(ctx, &req)
 	if err != nil {
 		return nil, fmt.Errorf("could not retrieve rewards information: %w", err)
 	}

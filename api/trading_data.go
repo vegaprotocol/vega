@@ -336,24 +336,24 @@ func (t *tradingDataService) Transfers(ctx context.Context, req *protoapi.Transf
 		return nil, apiError(codes.InvalidArgument, errors.New("request is for transfers to and from the same party"))
 	}
 
-	var transfers []*entities.Transfer
+	var transfers []entities.Transfer
 	var err error
 	if !req.IsFrom && !req.IsTo {
-		transfers, err = t.transferService.GetAll(ctx)
+		transfers, _, err = t.transferService.GetAll(ctx, entities.CursorPagination{})
 		if err != nil {
 			return nil, apiError(codes.Internal, err)
 		}
 	} else if req.IsFrom || req.IsTo {
 
 		if req.IsFrom {
-			transfers, err = t.transferService.GetTransfersFromParty(ctx, entities.PartyID{ID: entities.ID(req.Pubkey)})
+			transfers, _, err = t.transferService.GetTransfersFromParty(ctx, entities.PartyID{ID: entities.ID(req.Pubkey)}, entities.CursorPagination{})
 			if err != nil {
 				return nil, apiError(codes.Internal, err)
 			}
 		}
 
 		if req.IsTo {
-			transfers, err = t.transferService.GetTransfersToParty(ctx, entities.PartyID{ID: entities.ID(req.Pubkey)})
+			transfers, _, err = t.transferService.GetTransfersToParty(ctx, entities.PartyID{ID: entities.ID(req.Pubkey)}, entities.CursorPagination{})
 			if err != nil {
 				return nil, apiError(codes.Internal, err)
 			}
@@ -531,7 +531,8 @@ func (t *tradingDataService) GetProposals(ctx context.Context, req *protoapi.Get
 
 	inState := proposalState(req.SelectInState)
 
-	proposals, err := t.governanceService.GetProposals(ctx, inState, nil, nil)
+	proposals, _, err := t.governanceService.GetProposals(ctx, inState, nil, nil,
+		entities.CursorPagination{})
 	if err != nil {
 		return nil, apiError(codes.Internal, err)
 	}
@@ -551,7 +552,8 @@ func (t *tradingDataService) GetProposalsByParty(ctx context.Context,
 
 	inState := proposalState(req.SelectInState)
 
-	proposals, err := t.governanceService.GetProposals(ctx, inState, &req.PartyId, nil)
+	proposals, _, err := t.governanceService.GetProposals(ctx, inState, &req.PartyId, nil,
+		entities.CursorPagination{})
 	if err != nil {
 		return nil, apiError(codes.Internal, err)
 	}
@@ -625,7 +627,8 @@ func (t *tradingDataService) GetNewMarketProposals(ctx context.Context,
 	defer metrics.StartAPIRequestAndTimeGRPC("GetNewMarketProposals SQL")()
 
 	inState := proposalState(req.SelectInState)
-	proposals, err := t.governanceService.GetProposals(ctx, inState, nil, &entities.ProposalTypeNewMarket)
+	proposals, _, err := t.governanceService.GetProposals(ctx, inState, nil, &entities.ProposalTypeNewMarket,
+		entities.CursorPagination{})
 	if err != nil {
 		return nil, apiError(codes.Internal, err)
 	}
@@ -642,7 +645,8 @@ func (t *tradingDataService) GetUpdateMarketProposals(ctx context.Context,
 	defer metrics.StartAPIRequestAndTimeGRPC("GetUpdateMarketProposals SQL")()
 
 	inState := proposalState(req.SelectInState)
-	proposals, err := t.governanceService.GetProposals(ctx, inState, nil, &entities.ProposalTypeUpdateMarket)
+	proposals, _, err := t.governanceService.GetProposals(ctx, inState, nil, &entities.ProposalTypeUpdateMarket,
+		entities.CursorPagination{})
 	if err != nil {
 		return nil, apiError(codes.Internal, err)
 	}
@@ -660,7 +664,8 @@ func (t *tradingDataService) GetNetworkParametersProposals(ctx context.Context,
 
 	inState := proposalState(req.SelectInState)
 
-	proposals, err := t.governanceService.GetProposals(ctx, inState, nil, &entities.ProposalTypeUpdateNetworkParameter)
+	proposals, _, err := t.governanceService.GetProposals(ctx, inState, nil, &entities.ProposalTypeUpdateNetworkParameter,
+		entities.CursorPagination{})
 	if err != nil {
 		return nil, apiError(codes.Internal, err)
 	}
@@ -680,7 +685,8 @@ func (t *tradingDataService) GetNewAssetProposals(ctx context.Context,
 
 	inState := proposalState(req.SelectInState)
 
-	proposals, err := t.governanceService.GetProposals(ctx, inState, nil, &entities.ProposalTypeNewAsset)
+	proposals, _, err := t.governanceService.GetProposals(ctx, inState, nil, &entities.ProposalTypeNewAsset,
+		entities.CursorPagination{})
 	if err != nil {
 		return nil, apiError(codes.Internal, err)
 	}
@@ -700,7 +706,8 @@ func (t *tradingDataService) GetNewFreeformProposals(ctx context.Context,
 
 	inState := proposalState(req.SelectInState)
 
-	proposals, err := t.governanceService.GetProposals(ctx, inState, nil, &entities.ProposalTypeNewFreeform)
+	proposals, _, err := t.governanceService.GetProposals(ctx, inState, nil, &entities.ProposalTypeNewFreeform,
+		entities.CursorPagination{})
 	if err != nil {
 		return nil, apiError(codes.Internal, err)
 	}
@@ -867,7 +874,7 @@ func (t *tradingDataService) GetEpoch(ctx context.Context, req *protoapi.GetEpoc
 
 	protoEpoch := epoch.ToProto()
 
-	delegations, err := t.delegationService.Get(ctx, nil, nil, &epoch.ID, nil)
+	delegations, _, err := t.delegationService.Get(ctx, nil, nil, &epoch.ID, nil)
 	if err != nil {
 		return nil, apiError(codes.Internal, err)
 	}
@@ -930,7 +937,7 @@ func (t *tradingDataService) Delegations(ctx context.Context,
 		nodeID = &req.NodeId
 	}
 
-	delegations, err = t.delegationService.Get(ctx, partyID, nodeID, epochID, &p)
+	delegations, _, err = t.delegationService.Get(ctx, partyID, nodeID, epochID, &p)
 
 	if err != nil {
 		return nil, apiError(codes.Internal, err)
@@ -1226,7 +1233,7 @@ func (t *tradingDataService) OrderByID(ctx context.Context, req *protoapi.OrderB
 	}
 
 	version := int32(req.Version)
-	order, err := t.orderService.GetByOrderID(ctx, req.OrderId, &version)
+	order, err := t.orderService.GetOrder(ctx, req.OrderId, &version)
 	if err != nil {
 		return nil, ErrOrderNotFound
 	}
@@ -1271,7 +1278,7 @@ func (t *tradingDataService) OrderByMarketAndID(ctx context.Context,
 		return nil, ErrMissingOrderIDParameter
 	}
 
-	order, err := t.orderService.GetByOrderID(ctx, req.OrderId, nil)
+	order, err := t.orderService.GetOrder(ctx, req.OrderId, nil)
 	if err != nil {
 		return nil, ErrOrderNotFound
 	}
@@ -1415,13 +1422,13 @@ func (t *tradingDataService) PartyAccounts(ctx context.Context, req *protoapi.Pa
 	pagination := entities.OffsetPagination{}
 
 	filter := entities.AccountFilter{
-		Asset:        toAccountsFilterAsset(req.Asset),
-		Parties:      toAccountsFilterParties(req.PartyId),
+		AssetID:      toAccountsFilterAsset(req.Asset),
+		PartyIDs:     toAccountsFilterParties(req.PartyId),
 		AccountTypes: toAccountsFilterAccountTypes(req.Type),
-		Markets:      toAccountsFilterMarkets(req.MarketId),
+		MarketIDs:    toAccountsFilterMarkets(req.MarketId),
 	}
 
-	accountBalances, err := t.accountService.QueryBalances(ctx, filter, pagination)
+	accountBalances, err := t.accountService.QueryBalancesV1(ctx, filter, pagination)
 	if err != nil {
 		return nil, apiError(codes.Internal, ErrAccountServiceGetPartyAccounts, err)
 	}
@@ -1455,36 +1462,29 @@ func accountBalancesToProtoAccountList(accounts []entities.AccountBalance) []*ve
 	return accountsProto
 }
 
-func toAccountsFilterAsset(assetID string) entities.Asset {
-	asset := entities.Asset{}
-
-	if len(assetID) > 0 {
-		asset.ID = entities.NewAssetID(assetID)
-	}
-
-	return asset
+func toAccountsFilterAsset(assetID string) entities.AssetID {
+	return entities.NewAssetID(assetID)
 }
 
-func toAccountsFilterParties(partyIDs ...string) []entities.Party {
-	parties := make([]entities.Party, 0, len(partyIDs))
+func toAccountsFilterParties(partyIDs ...string) []entities.PartyID {
+	parties := make([]entities.PartyID, 0, len(partyIDs))
 	for _, idStr := range partyIDs {
 		if idStr == "" {
 			continue
 		}
-		party := entities.Party{ID: entities.NewPartyID(idStr)}
-		parties = append(parties, party)
+		parties = append(parties, entities.NewPartyID(idStr))
 	}
 
 	return parties
 }
 
-func toAccountsFilterMarkets(marketIDs ...string) []entities.Market {
-	markets := make([]entities.Market, 0, len(marketIDs))
+func toAccountsFilterMarkets(marketIDs ...string) []entities.MarketID {
+	markets := make([]entities.MarketID, 0, len(marketIDs))
 	for _, idStr := range marketIDs {
 		if idStr == "" {
 			continue
 		}
-		market := entities.Market{ID: entities.NewMarketID(idStr)}
+		market := entities.NewMarketID(idStr)
 		markets = append(markets, market)
 	}
 
@@ -1497,8 +1497,8 @@ func (t *tradingDataService) MarketAccounts(ctx context.Context,
 	defer metrics.StartAPIRequestAndTimeGRPC("MarketAccounts")()
 
 	filter := entities.AccountFilter{
-		Asset:   toAccountsFilterAsset(req.Asset),
-		Markets: toAccountsFilterMarkets(req.MarketId),
+		AssetID:   toAccountsFilterAsset(req.Asset),
+		MarketIDs: toAccountsFilterMarkets(req.MarketId),
 		AccountTypes: toAccountsFilterAccountTypes(
 			vega.AccountType_ACCOUNT_TYPE_INSURANCE,
 			vega.AccountType_ACCOUNT_TYPE_FEES_LIQUIDITY,
@@ -1507,7 +1507,7 @@ func (t *tradingDataService) MarketAccounts(ctx context.Context,
 
 	pagination := entities.OffsetPagination{}
 
-	accountBalances, err := t.accountService.QueryBalances(ctx, filter, pagination)
+	accountBalances, err := t.accountService.QueryBalancesV1(ctx, filter, pagination)
 	if err != nil {
 		return nil, apiError(codes.Internal, ErrAccountServiceGetMarketAccounts, err)
 	}
@@ -1523,14 +1523,14 @@ func (t *tradingDataService) FeeInfrastructureAccounts(ctx context.Context,
 	defer metrics.StartAPIRequestAndTimeGRPC("FeeInfrastructureAccounts")()
 
 	filter := entities.AccountFilter{
-		Asset: toAccountsFilterAsset(req.Asset),
+		AssetID: toAccountsFilterAsset(req.Asset),
 		AccountTypes: toAccountsFilterAccountTypes(
 			vega.AccountType_ACCOUNT_TYPE_FEES_INFRASTRUCTURE,
 		),
 	}
 	pagination := entities.OffsetPagination{}
 
-	accountBalances, err := t.accountService.QueryBalances(ctx, filter, pagination)
+	accountBalances, err := t.accountService.QueryBalancesV1(ctx, filter, pagination)
 	if err != nil {
 		return nil, apiError(codes.Internal, ErrAccountServiceGetFeeInfrastructureAccounts, err)
 	}
@@ -1544,14 +1544,14 @@ func (t *tradingDataService) GlobalRewardPoolAccounts(ctx context.Context,
 ) (*protoapi.GlobalRewardPoolAccountsResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("GloabRewardPoolAccounts")()
 	filter := entities.AccountFilter{
-		Asset: toAccountsFilterAsset(req.Asset),
+		AssetID: toAccountsFilterAsset(req.Asset),
 		AccountTypes: toAccountsFilterAccountTypes(
 			vega.AccountType_ACCOUNT_TYPE_GLOBAL_REWARD,
 		),
 	}
 	pagination := entities.OffsetPagination{}
 
-	accountBalances, err := t.accountService.QueryBalances(ctx, filter, pagination)
+	accountBalances, err := t.accountService.QueryBalancesV1(ctx, filter, pagination)
 	if err != nil {
 		return nil, apiError(codes.Internal, ErrAccountServiceGetGlobalRewardPoolAccounts, err)
 	}
@@ -2111,7 +2111,7 @@ func (t *tradingDataService) LiquidityProvisions(ctx context.Context, req *proto
 	partyID := entities.NewPartyID(req.Party)
 	marketID := entities.NewMarketID(req.Market)
 
-	lps, err := t.liquidityProvisionService.Get(ctx, partyID, marketID, entities.OffsetPagination{})
+	lps, _, err := t.liquidityProvisionService.Get(ctx, partyID, marketID, "", entities.OffsetPagination{})
 	if err != nil {
 		return nil, err
 	}

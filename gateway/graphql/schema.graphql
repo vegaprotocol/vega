@@ -264,24 +264,22 @@ type Query {
   markets("ID of the market" id: ID): [Market!]
 
   marketsConnection(
+    "Optional ID of a market"
     id: ID
+    "Optional pagination information"
     pagination: Pagination
   ): MarketConnection!
 
   "An instrument that is trading on the VEGA network"
   market("Optional ID of a market" id: ID!): Market
 
-  positionsByPartyConnection(
-    partyId: ID
-    marketId: ID!
-    pagination: Pagination
-  ): PositionConnection!
-
   "One or more entities that are trading on the VEGA network"
   parties("Optional ID of a party" id: ID): [Party!]
 
   partiesConnection(
+    "Optional ID of a party to retrieve"
     id: ID
+    "Optional pagination information"
     pagination: Pagination
   ): PartyConnection!
 
@@ -371,7 +369,17 @@ type Query {
   proposals(
     "Returns only proposals in the specified state. Leave out to get all proposals"
     inState: ProposalState
-  ): [Proposal!]
+  ): [Proposal!] @deprecated(reason: "Use proposalsConnection instead")
+
+  "All governance proposals in the VEGA network"
+  proposalsConnection(
+    "Optional type of proposal to retrieve data for"
+    proposalType: ProposalType
+    "Returns only proposals in the specified state. Leave out to get all proposals"
+    inState: ProposalState
+    "Optional Pagination information"
+    pagination: Pagination
+  ): ProposalsConnection!
 
   "A governance proposal located by either its id or reference. If both are set, id is used."
   proposal(
@@ -385,7 +393,7 @@ type Query {
   newMarketProposals(
     "Returns only proposals in the specified state. Leave out to get all proposals"
     inState: ProposalState
-  ): [Proposal!]
+  ): [Proposal!] @deprecated(reason: "Use proposalsConnection instead")
 
   "Governance proposals that aim to update existing markets"
   updateMarketProposals(
@@ -393,25 +401,25 @@ type Query {
     marketId: ID
     "Returns only proposals in the specified state. Leave out to get all proposals"
     inState: ProposalState
-  ): [Proposal!]
+  ): [Proposal!] @deprecated(reason: "Use proposalsConnection instead")
 
   "Governance proposals that aim to update Vega network parameters"
   networkParametersProposals(
     "Returns only proposals in the specified state. Leave out to get all proposals"
     inState: ProposalState
-  ): [Proposal!]
+  ): [Proposal!] @deprecated(reason: "Use proposalsConnection instead")
 
   "Governance proposals that aim to create new assets in Vega"
   newAssetProposals(
     "Returns only proposals in the specified state. Leave out to get all proposals"
     inState: ProposalState
-  ): [Proposal!]
+  ): [Proposal!] @deprecated(reason: "Use proposalsConnection instead")
 
   "Governance proposals that allows creation of free form proposals in Vega"
   newFreeformProposals(
     "Returns only proposals in the specified state. Leave out to get all proposals"
     inState: ProposalState
-  ): [Proposal!]
+  ): [Proposal!] @deprecated(reason: "Use proposalsConnection instead")
 
   "Return a list of aggregated node signature for a given resource ID"
   nodeSignatures(resourceId: ID!): [NodeSignature!]
@@ -483,7 +491,17 @@ type Query {
     isFrom: Boolean
     "is the pubkey in the receiving part of the transfer"
     isTo: Boolean
-  ): [Transfer!]
+  ): [Transfer!] @deprecated(reason: "Use transfersConnection instead")
+
+  "get a list of all transfers for a pubkey"
+  transfersConnection(
+    "the pubkey to look for"
+    pubkey: String
+    "direction of the transfer with respect to the pubkey"
+    direction: TransferDirection!
+    "Pagination information"
+    pagination: Pagination
+  ): TransferConnection!
 
   "get statistics about the vega node"
   statistics: Statistics!
@@ -686,7 +704,16 @@ type Epoch {
     "Pagination first element"
     first: Int
     "Pagination last element"
-    last: Int): [Delegation!]!
+    last: Int): [Delegation!]! @deprecated(reason: "Use delegationsConnection instead")
+
+  delegationsConnection(
+    # Optional party id to filter on
+    partyId: String
+    # Optional node id to filter on
+    nodeId: String
+    "Pagination information"
+   pagination: Pagination
+  ): DelegationsConnection!
 }
 
 type NodeData {
@@ -779,7 +806,12 @@ type Node {
     "Pagination first element"
     first: Int
     "Pagination last element"
-    last: Int): [Delegation!]
+    last: Int): [Delegation!] @deprecated(reason: "Use delegationsConnection instead")
+
+  delegationsConnection(
+    partyId: String,
+    pagination: Pagination
+  ): DelegationsConnection!
 
   "Reward scores for the current epoch for the validator"
   rewardScore: RewardScore
@@ -837,6 +869,17 @@ type Delegation {
   epoch: Int!
 }
 
+enum AssetStatus {
+  "Asset is proposed to be added to the network"
+  Proposed
+  "Asset has been rejected"
+  Rejected
+  "Asset is pending listing on the ethereum bridge"
+  PendingListing
+  "Asset can be used on the vega network"
+  Enabled
+}
+
 "Represents an asset in vega"
 type Asset {
   "The id of the asset"
@@ -860,12 +903,15 @@ type Asset {
   "The origin source of the asset (e.g: an erc20 asset)"
   source: AssetSource!
 
+  "The status of the asset in the vega network"
+  status: AssetStatus!
+
   "The infrastructure fee account for this asset"
   infrastructureFeeAccount: Account!
 
   "The global reward pool account for this asset"
   globalRewardPoolAccount: Account
-}
+  }
 
 "One of the possible asset sources"
 union AssetSource = BuiltinAsset | ERC20
@@ -1493,7 +1539,15 @@ type Market {
   liquidityProvisions(
     "An optional party id"
     party: String
-  ): [LiquidityProvision!]
+  ): [LiquidityProvision!] @deprecated(reason: "Use liquidityProvisionsConnection instead")
+
+  "The list of the liquidity provision commitment for this market"
+   liquidityProvisionsConnection(
+     "An optional party id"
+     party: String
+     "Pagination information"
+     pagination: Pagination
+  ): LiquidityProvisionsConnection!
 
   "timestamps for state changes in the market"
   marketTimestamps: MarketTimestamps!
@@ -1629,7 +1683,10 @@ type Party {
   ): [Account!]
 
   "Trading positions relating to a party"
-  positions: [Position!]
+  positions: [Position!] @deprecated(reason: "Use the 'positionsConnection' field instead")
+
+  "Trading positions relating to a party"
+  positionsConnection(market: ID, pagination: Pagination): PositionConnection!
 
   "marginLevels"
   margins(
@@ -1648,21 +1705,33 @@ type Party {
   proposals(
     "Select only proposals in the specified state. Leave out to get all proposals"
     inState: ProposalState
-  ): [Proposal]
+  ): [Proposal] @deprecated(reason: "Use proposalsConnection instead")
+
+  "All governance proposals in the VEGA network"
+  proposalsConnection(
+    "Optional type of proposal to retrieve data for"
+    proposalType: ProposalType
+    "Returns only proposals in the specified state. Leave out to get all proposals"
+    inState: ProposalState
+    "Optional Pagination information"
+    pagination: Pagination
+  ): ProposalsConnection!
 
   votes: [ProposalVote]
+
+  votesConnection(pagination: Pagination): ProposalVoteConnection!
 
   "The list of all withdrawals initiated by the party"
   withdrawals: [Withdrawal!] @deprecated(reason: "Use withdrawalsConnection instead")
 
   "The list of all withdrawals initiated by the party"
-  withdrawalsConnection: WithdrawalsConnection!
+  withdrawalsConnection(pagination: Pagination): WithdrawalsConnection!
 
   "The list of all deposits for a party by the party"
   deposits: [Deposit!] @deprecated(reason: "Use depositsConnection instead")
 
   "The list of all deposits for a party by the party"
-  depositsConnection: DepositsConnection!
+  depositsConnection(pagination: Pagination): DepositsConnection!
 
   "The list of the liquidity provision commitment from this party"
   liquidityProvisions(
@@ -1670,7 +1739,17 @@ type Party {
     market: String
     "An optional reference"
     reference: String
-  ): [LiquidityProvision!]
+  ): [LiquidityProvision!] @deprecated(reason: "Use liquidityProvisionsConnection instead")
+
+   "The list of the liquidity provision commitment for this party"
+     liquidityProvisionsConnection(
+       "An optional market id"
+       market: String
+       "An optional reference"
+       reference: String
+       "Pagination information"
+       pagination: Pagination
+    ): LiquidityProvisionsConnection!
 
   # All delegations for a party to a given node if node is specified, or all delegations if not
   delegations(
@@ -1681,7 +1760,14 @@ type Party {
     "Pagination first element"
     first: Int
     "Pagination last element"
-    last: Int): [Delegation!]
+    last: Int): [Delegation!] @deprecated(reason: "Use delegationsConnection instead")
+
+  delegationsConnection(
+    "Optional node"
+    nodeId: String
+    "Pagination information"
+    pagination: Pagination
+  ): DelegationsConnection!
 
   "The staking information for this Party"
   stake: PartyStake!
@@ -2189,6 +2275,14 @@ enum ProposalRejectionReason {
   ParticipationThresholdNotReached
   "Asset details are invalid"
   InvalidAssetDetails
+  "Too many price monitoring triggers specified in market"
+  TooManyPriceMonitoringTriggers
+  "Too many decimal places specified in market"
+  TooManyMarketDecimalPlaces
+  "The market is invalid"
+  InvalidMarket
+  "The proposal is rejected because the party do not have enough equity like share in the market"
+  InsufficientEquityLikeShare
 }
 
 "Reason for the order being rejected by the core node"
@@ -2384,6 +2478,9 @@ enum MarketTradingMode {
 
   "Auction triggered by price/liquidity monitoring"
   MonitoringAuction
+
+  "No trading allowed"
+  NoTrading
 }
 
 "Whether the placer of an order is aiming to buy or sell on the market"
@@ -2661,6 +2758,22 @@ type ProposalTerms {
 }
 
 """
+Various proposal types that are supported by Vega
+"""
+enum ProposalType {
+  "Propose a new market"
+  NewMarket
+  "Update an existing market"
+  UpdateMarket
+  "Proposal to change Vega network parameters"
+  NetworkParameters
+  "Proposal to add a new asset"
+  NewAsset
+  "Proposal to create a new free form proposal"
+  NewFreeForm
+}
+
+"""
 Various states a proposal can transition through:
 Open ->
 - Passed -> Enacted.
@@ -2755,7 +2868,6 @@ type Vote {
 type ProposalVote {
   "Cast vote"
   vote: Vote!
-
   "Proposal casting the vote on"
   proposalId: ID!
 }
@@ -3199,8 +3311,6 @@ type TradeEdge {
 }
 
 type TradeConnection {
-  "The total number of trades in this connection"
-  totalCount: Int!
   "The trade in this connection"
   edges: [TradeEdge!]!
   "The pagination information"
@@ -3213,8 +3323,6 @@ type PartyEdge {
 }
 
 type PartyConnection {
-  "The total number of parties in this connection"
-  totalCount: Int!
   "The parties in this connection"
   edges: [PartyEdge!]!
   "The pagination information"
@@ -3227,8 +3335,6 @@ type MarketEdge {
 }
 
 type MarketConnection {
-  "The total number of markets in this connection"
-  totalCount: Int!
   "The markets in this connection"
   edges: [MarketEdge!]!
   "The pagination information"
@@ -3241,8 +3347,6 @@ type OrderEdge {
 }
 
 type OrderConnection {
-  "The total number of orders in this connection"
-  totalCount: Int
   "The orders in this connection"
   edges: [OrderEdge!]
   "The pagination information"
@@ -3255,10 +3359,32 @@ type PositionEdge {
 }
 
 type PositionConnection {
-  "The total number of positions in this connection"
-  totalCount: Int
   "The positions in this connection"
   edges: [PositionEdge!]
+  "The pagination information"
+  pageInfo: PageInfo
+}
+
+type VoteEdge {
+  node: Vote!
+  cursor: String
+}
+
+type VoteConnection {
+  "The votes in this connection"
+  edges: [VoteEdge!]
+  "The pagination information"
+  pageInfo: PageInfo
+}
+
+type ProposalVoteEdge {
+  node: ProposalVote!
+  cursor: String
+}
+
+type ProposalVoteConnection {
+  "The proposal votes in this connection"
+  edges: [ProposalVoteEdge!]
   "The pagination information"
   pageInfo: PageInfo
 }
@@ -3269,8 +3395,6 @@ type MarginEdge {
 }
 
 type MarginConnection {
-  "The total number of margin levels in this connection"
-  totalCount: Int
   "The margin levels in this connection"
   edges: [MarginEdge!]
   "The pagination information"
@@ -3283,8 +3407,6 @@ type MarketDataEdge {
 }
 
 type MarketDataConnection {
-  "The total number of market data elements available with this connection"
-  totalCount: Int
   "The market data elements for the requested page"
   edges: [MarketDataEdge]
   "The pagination information"
@@ -3297,8 +3419,6 @@ type RewardEdge {
 }
 
 type RewardsConnection {
-  "The total number of reward data items available with this connection"
-  totalCount: Int
   "The rewards"
   edges: [RewardEdge]
   "The pagination information"
@@ -3334,8 +3454,6 @@ type CandleEdge {
 }
 
 type CandleDataConnection {
-  "The total number of candles available with this connection"
-  totalCount: Int
   "The candles"
   edges: [CandleEdge]
   "The pagination information"
@@ -3348,8 +3466,6 @@ type WithdrawalEdge {
 }
 
 type WithdrawalsConnection {
-  "The total number of withdrawals available with this connection"
-  totalCount: Int
   "The withdrawals"
   edges: [WithdrawalEdge]
   "The pagination information"
@@ -3362,8 +3478,6 @@ type DepositEdge {
 }
 
 type DepositsConnection {
-  "The total number of deposits available with this connection"
-  totalCount: Int
   "The deposits"
   edges: [DepositEdge]
   "The pagination information"
@@ -3376,8 +3490,6 @@ type AssetEdge {
 }
 
 type AssetsConnection {
-    "The total number of assets available with this connection"
-    totalCount: Int
     "The assets"
     edges: [AssetEdge]
     "The pagination information"
@@ -3392,8 +3504,6 @@ type OracleSpecEdge {
 }
 
 type OracleSpecsConnection {
-    "The total number of oracle specs available with this connection"
-    totalCount: Int!
     "The oracle specs"
     edges: [OracleSpecEdge]
     "The pagination information"
@@ -3408,10 +3518,61 @@ type OracleDataEdge {
 }
 
 type OracleDataConnection {
-    "The total number of oracle data items available with this connection"
-    totalCount: Int!
     "The oracle data"
     edges: [OracleDataEdge]
     "The pagination information"
     pageInfo: PageInfo!
+}
+
+type LiquidityProvisionsEdge {
+  node: LiquidityProvision!
+  cursor: String!
+}
+
+type LiquidityProvisionsConnection {
+    edges: [LiquidityProvisionsEdge]
+    pageInfo: PageInfo!
+}
+
+type TransferEdge {
+  node: Transfer!
+  cursor: String!
+}
+
+type TransferConnection {
+    edges: [TransferEdge]
+    pageInfo: PageInfo!
+}
+
+enum TransferDirection {
+  To
+  From
+  ToOrFrom
+}
+
+type ProposalEdge {
+  "The proposal data"
+  node: Proposal!
+  "Cursor identifying the proposal"
+  cursor: String!
+}
+
+type ProposalsConnection {
+    "List of proposals available for the connection"
+    edges: [ProposalEdge]
+    "Page information for the connection"
+    pageInfo: PageInfo!
+}
+type DelegationEdge {
+  "The delegation information"
+  node: Delegation!
+  "The cursor for the data item"
+  cursor: String!
+}
+
+type DelegationsConnection {
+  "The delegation information available on this connection"
+  edges: [DelegationEdge]
+  "The pagination information"
+  pageInfo: PageInfo!
 }

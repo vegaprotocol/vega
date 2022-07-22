@@ -16,32 +16,40 @@ create table chain
     onerow_check  bool PRIMARY KEY DEFAULT TRUE
 );
 
+create type asset_status_type as enum('STATUS_UNSPECIFIED', 'STATUS_PROPOSED', 'STATUS_REJECTED', 'STATUS_PENDING_LISTING', 'STATUS_ENABLED');
+
 create table assets
 (
-    id                  BYTEA NOT NULL PRIMARY KEY,
+    id                  BYTEA NOT NULL,
     name                TEXT NOT NULL,
     symbol              TEXT NOT NULL,
     total_supply        HUGEINT,
     decimals            INT,
-    quantum             INT,
+    quantum             HUGEINT,
     source              TEXT,
     erc20_contract      TEXT,
     lifetime_limit      HUGEINT NOT NULL,
     withdraw_threshold  HUGEINT NOT NULL,
-    vega_time           TIMESTAMP WITH TIME ZONE NOT NULL REFERENCES blocks (vega_time)
+    status		asset_status_type NOT NULL,
+    vega_time           TIMESTAMP WITH TIME ZONE NOT NULL REFERENCES blocks(vega_time),
+    PRIMARY KEY (id, vega_time)
+);
+
+CREATE VIEW assets_current AS (
+  SELECT DISTINCT ON (id) * FROM assets ORDER BY id, vega_time DESC
 );
 
 create table parties
 (
     id        BYTEA NOT NULL PRIMARY KEY,
-    vega_time TIMESTAMP WITH TIME ZONE REFERENCES blocks (vega_time)
+    vega_time TIMESTAMP WITH TIME ZONE REFERENCES blocks(vega_time)
 );
 
 create table accounts
 (
     id        SERIAL PRIMARY KEY,
     party_id  BYTEA,
-    asset_id  BYTEA                    NOT NULL REFERENCES assets (id),
+    asset_id  BYTEA  NOT NULL,
     market_id BYTEA,
     type      INT,
     vega_time TIMESTAMP WITH TIME ZONE NOT NULL REFERENCES blocks(vega_time),
@@ -60,6 +68,32 @@ create table balances
 
 select create_hypertable('balances', 'vega_time', chunk_time_interval => INTERVAL '1 day');
 create index on balances (vega_time, account_id);
+
+create table current_balances
+(
+    account_id INT                      NOT NULL,
+    vega_time  TIMESTAMP WITH TIME ZONE NOT NULL,
+    balance    HUGEINT           NOT NULL,
+
+    PRIMARY KEY(account_id)
+);
+
+-- +goose StatementBegin
+CREATE OR REPLACE FUNCTION update_current_balances()
+   RETURNS TRIGGER
+   LANGUAGE PLPGSQL AS
+$$
+    BEGIN
+    INSERT INTO current_balances(account_id, vega_time, balance) VALUES(NEW.account_id, NEW.vega_time, NEW.balance)
+      ON CONFLICT(account_id) DO UPDATE SET
+         balance=EXCLUDED.balance,
+         vega_time=EXCLUDED.vega_time;
+    RETURN NULL;
+    END;
+$$;
+-- +goose StatementEnd
+
+CREATE TRIGGER update_current_balances AFTER INSERT ON balances FOR EACH ROW EXECUTE function update_current_balances();
 
 CREATE MATERIALIZED VIEW conflated_balances
             WITH (timescaledb.continuous, timescaledb.materialized_only = true) AS
@@ -418,7 +452,7 @@ CREATE AGGREGATE public.last (anyelement) (
 );
 
 create type auction_trigger_type as enum('AUCTION_TRIGGER_UNSPECIFIED', 'AUCTION_TRIGGER_BATCH', 'AUCTION_TRIGGER_OPENING', 'AUCTION_TRIGGER_PRICE', 'AUCTION_TRIGGER_LIQUIDITY');
-create type market_trading_mode_type as enum('TRADING_MODE_UNSPECIFIED', 'TRADING_MODE_CONTINUOUS', 'TRADING_MODE_BATCH_AUCTION', 'TRADING_MODE_OPENING_AUCTION', 'TRADING_MODE_MONITORING_AUCTION');
+create type market_trading_mode_type as enum('TRADING_MODE_UNSPECIFIED', 'TRADING_MODE_CONTINUOUS', 'TRADING_MODE_BATCH_AUCTION', 'TRADING_MODE_OPENING_AUCTION', 'TRADING_MODE_MONITORING_AUCTION', 'TRADING_MODE_NO_TRADING');
 create type market_state_type as enum('STATE_UNSPECIFIED', 'STATE_PROPOSED', 'STATE_REJECTED', 'STATE_PENDING', 'STATE_CANCELLED', 'STATE_ACTIVE', 'STATE_SUSPENDED', 'STATE_CLOSED', 'STATE_TRADING_TERMINATED', 'STATE_SETTLED');
 
 create table market_data (
@@ -494,7 +528,8 @@ CREATE TABLE IF NOT EXISTS nodes_announced (
   node_id               BYTEA NOT NULL,
   epoch_seq             BIGINT NOT NULL,
   added                 BOOLEAN NOT NULL,
-  PRIMARY KEY(node_id, epoch_seq)
+  vega_time             TIMESTAMP WITH TIME ZONE NOT NULL,
+  PRIMARY KEY(node_id, epoch_seq, vega_time)
 );
 
 CREATE TYPE validator_node_status as enum(
@@ -540,7 +575,7 @@ CREATE TABLE IF NOT EXISTS reward_scores (
 
 CREATE TABLE rewards(
   party_id         BYTEA NOT NULL REFERENCES parties(id),
-  asset_id         BYTEA NOT NULL REFERENCES assets(id),
+  asset_id         BYTEA NOT NULL,
   market_id        BYTEA NOT NULL,
   reward_type      TEXT NOT NULL,
   epoch_id         BIGINT NOT NULL,
@@ -647,7 +682,7 @@ create view withdrawals_current as (
 );
 
 CREATE TYPE proposal_state AS enum('STATE_UNSPECIFIED', 'STATE_FAILED', 'STATE_OPEN', 'STATE_PASSED', 'STATE_REJECTED', 'STATE_DECLINED', 'STATE_ENACTED', 'STATE_WAITING_FOR_NODE_VOTE');
-CREATE TYPE proposal_error AS enum('PROPOSAL_ERROR_UNSPECIFIED', 'PROPOSAL_ERROR_CLOSE_TIME_TOO_SOON', 'PROPOSAL_ERROR_CLOSE_TIME_TOO_LATE', 'PROPOSAL_ERROR_ENACT_TIME_TOO_SOON', 'PROPOSAL_ERROR_ENACT_TIME_TOO_LATE', 'PROPOSAL_ERROR_INSUFFICIENT_TOKENS', 'PROPOSAL_ERROR_INVALID_INSTRUMENT_SECURITY', 'PROPOSAL_ERROR_NO_PRODUCT', 'PROPOSAL_ERROR_UNSUPPORTED_PRODUCT', 'PROPOSAL_ERROR_NO_TRADING_MODE', 'PROPOSAL_ERROR_UNSUPPORTED_TRADING_MODE', 'PROPOSAL_ERROR_NODE_VALIDATION_FAILED', 'PROPOSAL_ERROR_MISSING_BUILTIN_ASSET_FIELD', 'PROPOSAL_ERROR_MISSING_ERC20_CONTRACT_ADDRESS', 'PROPOSAL_ERROR_INVALID_ASSET', 'PROPOSAL_ERROR_INCOMPATIBLE_TIMESTAMPS', 'PROPOSAL_ERROR_NO_RISK_PARAMETERS', 'PROPOSAL_ERROR_NETWORK_PARAMETER_INVALID_KEY', 'PROPOSAL_ERROR_NETWORK_PARAMETER_INVALID_VALUE', 'PROPOSAL_ERROR_NETWORK_PARAMETER_VALIDATION_FAILED', 'PROPOSAL_ERROR_OPENING_AUCTION_DURATION_TOO_SMALL', 'PROPOSAL_ERROR_OPENING_AUCTION_DURATION_TOO_LARGE', 'PROPOSAL_ERROR_MARKET_MISSING_LIQUIDITY_COMMITMENT', 'PROPOSAL_ERROR_COULD_NOT_INSTANTIATE_MARKET', 'PROPOSAL_ERROR_INVALID_FUTURE_PRODUCT', 'PROPOSAL_ERROR_MISSING_COMMITMENT_AMOUNT', 'PROPOSAL_ERROR_INVALID_FEE_AMOUNT', 'PROPOSAL_ERROR_INVALID_SHAPE', 'PROPOSAL_ERROR_INVALID_RISK_PARAMETER', 'PROPOSAL_ERROR_MAJORITY_THRESHOLD_NOT_REACHED', 'PROPOSAL_ERROR_PARTICIPATION_THRESHOLD_NOT_REACHED', 'PROPOSAL_ERROR_INVALID_ASSET_DETAILS', 'PROPOSAL_ERROR_UNKNOWN_TYPE', 'PROPOSAL_ERROR_UNKNOWN_RISK_PARAMETER_TYPE', 'PROPOSAL_ERROR_INVALID_FREEFORM', 'PROPOSAL_ERROR_INSUFFICIENT_EQUITY_LIKE_SHARE', 'PROPOSAL_ERROR_INVALID_MARKET', 'PROPOSAL_ERROR_TOO_MANY_MARKET_DECIMAL_PLACES');
+CREATE TYPE proposal_error AS enum('PROPOSAL_ERROR_UNSPECIFIED', 'PROPOSAL_ERROR_CLOSE_TIME_TOO_SOON', 'PROPOSAL_ERROR_CLOSE_TIME_TOO_LATE', 'PROPOSAL_ERROR_ENACT_TIME_TOO_SOON', 'PROPOSAL_ERROR_ENACT_TIME_TOO_LATE', 'PROPOSAL_ERROR_INSUFFICIENT_TOKENS', 'PROPOSAL_ERROR_INVALID_INSTRUMENT_SECURITY', 'PROPOSAL_ERROR_NO_PRODUCT', 'PROPOSAL_ERROR_UNSUPPORTED_PRODUCT', 'PROPOSAL_ERROR_NO_TRADING_MODE', 'PROPOSAL_ERROR_UNSUPPORTED_TRADING_MODE', 'PROPOSAL_ERROR_NODE_VALIDATION_FAILED', 'PROPOSAL_ERROR_MISSING_BUILTIN_ASSET_FIELD', 'PROPOSAL_ERROR_MISSING_ERC20_CONTRACT_ADDRESS', 'PROPOSAL_ERROR_INVALID_ASSET', 'PROPOSAL_ERROR_INCOMPATIBLE_TIMESTAMPS', 'PROPOSAL_ERROR_NO_RISK_PARAMETERS', 'PROPOSAL_ERROR_NETWORK_PARAMETER_INVALID_KEY', 'PROPOSAL_ERROR_NETWORK_PARAMETER_INVALID_VALUE', 'PROPOSAL_ERROR_NETWORK_PARAMETER_VALIDATION_FAILED', 'PROPOSAL_ERROR_OPENING_AUCTION_DURATION_TOO_SMALL', 'PROPOSAL_ERROR_OPENING_AUCTION_DURATION_TOO_LARGE', 'PROPOSAL_ERROR_MARKET_MISSING_LIQUIDITY_COMMITMENT', 'PROPOSAL_ERROR_COULD_NOT_INSTANTIATE_MARKET', 'PROPOSAL_ERROR_INVALID_FUTURE_PRODUCT', 'PROPOSAL_ERROR_MISSING_COMMITMENT_AMOUNT', 'PROPOSAL_ERROR_INVALID_FEE_AMOUNT', 'PROPOSAL_ERROR_INVALID_SHAPE', 'PROPOSAL_ERROR_INVALID_RISK_PARAMETER', 'PROPOSAL_ERROR_MAJORITY_THRESHOLD_NOT_REACHED', 'PROPOSAL_ERROR_PARTICIPATION_THRESHOLD_NOT_REACHED', 'PROPOSAL_ERROR_INVALID_ASSET_DETAILS', 'PROPOSAL_ERROR_UNKNOWN_TYPE', 'PROPOSAL_ERROR_UNKNOWN_RISK_PARAMETER_TYPE', 'PROPOSAL_ERROR_INVALID_FREEFORM', 'PROPOSAL_ERROR_INSUFFICIENT_EQUITY_LIKE_SHARE', 'PROPOSAL_ERROR_INVALID_MARKET', 'PROPOSAL_ERROR_TOO_MANY_MARKET_DECIMAL_PLACES', 'PROPOSAL_ERROR_TOO_MANY_PRICE_MONITORING_TRIGGERS');
 CREATE TYPE vote_value AS enum('VALUE_UNSPECIFIED', 'VALUE_NO', 'VALUE_YES');
 
 
@@ -696,7 +731,54 @@ create table if not exists margin_levels (
 );
 
 select create_hypertable('margin_levels', 'vega_time', chunk_time_interval => INTERVAL '1 day');
-create index on margin_levels (account_id, vega_time);
+
+create table current_margin_levels
+(
+    account_id INT NOT NULL,
+    timestamp timestamp with time zone not null,
+    maintenance_margin HUGEINT,
+    search_level HUGEINT,
+    initial_margin HUGEINT,
+    collateral_release_level HUGEINT,
+    vega_time timestamp with time zone not null,
+
+    PRIMARY KEY(account_id)
+);
+
+-- +goose StatementBegin
+CREATE OR REPLACE FUNCTION update_current_margin_levels()
+   RETURNS TRIGGER
+   LANGUAGE PLPGSQL AS
+$$
+BEGIN
+INSERT INTO current_margin_levels(account_id,
+                                  timestamp,
+                                  maintenance_margin,
+                                  search_level,
+                                  initial_margin,
+                                  collateral_release_level,
+                                  vega_time) VALUES(NEW.account_id,
+                                                    NEW.timestamp,
+                                                    NEW.maintenance_margin,
+                                                    NEW.search_level,
+                                                    NEW.initial_margin,
+                                                    NEW.collateral_release_level,
+                                                    NEW.vega_time)
+    ON CONFLICT(account_id) DO UPDATE SET
+                                   timestamp=EXCLUDED.timestamp,
+                                   maintenance_margin=EXCLUDED.maintenance_margin,
+                                   search_level=EXCLUDED.search_level,
+                                   initial_margin=EXCLUDED.initial_margin,
+                                   collateral_release_level=EXCLUDED.collateral_release_level,
+                                   vega_time=EXCLUDED.vega_time;
+RETURN NULL;
+END;
+$$;
+-- +goose StatementEnd
+
+CREATE TRIGGER update_current_margin_levels AFTER INSERT ON margin_levels FOR EACH ROW EXECUTE function update_current_margin_levels();
+
+
 
 CREATE MATERIALIZED VIEW conflated_margin_levels
             WITH (timescaledb.continuous, timescaledb.materialized_only = true) AS
@@ -876,6 +958,79 @@ create table if not exists liquidity_provisions (
 
 select create_hypertable('liquidity_provisions', 'vega_time', chunk_time_interval => INTERVAL '1 day');
 
+
+create table current_liquidity_provisions
+(
+    id bytea not null,
+    party_id bytea,
+    created_at timestamp with time zone not null,
+    updated_at timestamp with time zone not null,
+    market_id bytea,
+    commitment_amount HUGEINT,
+    fee NUMERIC(1000, 16),
+    sells jsonb,
+    buys jsonb,
+    version bigint,
+    status liquidity_provision_status not null,
+    reference text,
+    vega_time timestamp with time zone not null,
+    primary key (id)
+);
+
+-- +goose StatementBegin
+CREATE OR REPLACE FUNCTION update_current_liquidity_provisions()
+   RETURNS TRIGGER
+   LANGUAGE PLPGSQL AS
+$$
+BEGIN
+INSERT INTO current_liquidity_provisions(id,
+                             party_id,
+                             created_at,
+                             updated_at,
+                             market_id,
+                             commitment_amount,
+                             fee,
+                             sells,
+                             buys,
+                             version,
+                             status,
+                             reference,
+                             vega_time
+                             ) VALUES(NEW.id,
+                                      NEW.party_id,
+                                      NEW.created_at,
+                                      NEW.updated_at,
+                                      NEW.market_id,
+                                      NEW.commitment_amount,
+                                      NEW.fee,
+                                      NEW.sells,
+                                      NEW.buys,
+                                      NEW.version,
+                                      NEW.status,
+                                      NEW.reference,
+                                      NEW.vega_time)
+    ON CONFLICT(id) DO UPDATE SET
+    party_id=EXCLUDED.party_id,
+   created_at=EXCLUDED.created_at,
+   updated_at=EXCLUDED.updated_at,
+   market_id=EXCLUDED.market_id,
+   commitment_amount=EXCLUDED.commitment_amount,
+   fee=EXCLUDED.fee,
+   sells=EXCLUDED.sells,
+   buys=EXCLUDED.buys,
+   version=EXCLUDED.version,
+   status=EXCLUDED.status,
+   reference=EXCLUDED.reference,
+   vega_time=EXCLUDED.vega_time;
+RETURN NULL;
+END;
+$$;
+-- +goose StatementEnd
+
+CREATE TRIGGER update_current_liquidity_provisions AFTER INSERT ON liquidity_provisions FOR EACH ROW EXECUTE function update_current_liquidity_provisions();
+
+
+
 CREATE TYPE transfer_type AS enum('OneOff','Recurring','Unknown');
 CREATE TYPE transfer_status AS enum('STATUS_UNSPECIFIED','STATUS_PENDING','STATUS_DONE','STATUS_REJECTED','STATUS_STOPPED','STATUS_CANCELLED');
 
@@ -894,8 +1049,8 @@ create table if not exists transfers (
          end_epoch       BIGINT,
          factor        NUMERIC(1000, 16) ,
          dispatch_metric INT,
-         dispatch_metric_asset bytea,
-         dispatch_markets bytea[],
+         dispatch_metric_asset TEXT,
+         dispatch_markets TEXT[],
          primary key (id, vega_time)
 );
 
@@ -991,6 +1146,9 @@ DROP TABLE IF EXISTS node_signatures;
 DROP TYPE IF EXISTS node_signature_kind;
 
 DROP TABLE IF EXISTS liquidity_provisions;
+DROP TRIGGER IF EXISTS update_current_liquidity_provisions ON liquidity_provisions;
+DROP FUNCTION IF EXISTS update_current_liquidity_provisions;
+DROP TABLE IF EXISTS current_liquidity_provisions;
 DROP TYPE IF EXISTS liquidity_provision_status;
 
 DROP VIEW IF EXISTS oracle_data_current;
@@ -1021,6 +1179,9 @@ DROP VIEW IF EXISTS orders_current_versions;
 
 drop table if exists risk_factors;
 drop table if exists margin_levels cascade;
+DROP TRIGGER IF EXISTS update_current_margin_levels ON margin_levels;
+DROP FUNCTION IF EXISTS update_current_margin_levels;
+DROP TABLE IF EXISTS current_margin_levels;
 
 drop view if exists deposits_current;
 DROP TABLE IF EXISTS deposits;
@@ -1066,12 +1227,17 @@ DROP TYPE IF EXISTS erc20_multisig_signer_event;
 
 DROP TABLE IF EXISTS ledger;
 DROP TABLE IF EXISTS balances cascade;
+DROP TRIGGER IF EXISTS update_current_balances ON balances;
+DROP FUNCTION IF EXISTS update_current_balances;
+DROP TABLE IF EXISTS current_balances;
+
 DROP TABLE IF EXISTS accounts;
 DROP TABLE IF EXISTS parties;
+DROP VIEW IF EXISTS assets_current;
 DROP TABLE IF EXISTS assets;
+DROP TYPE IF EXISTS asset_status_type;
 DROP TABLE IF EXISTS trades cascade;
 DROP TABLE IF EXISTS chain;
 DROP TABLE IF EXISTS blocks cascade;
 
 DROP DOMAIN IF EXISTS HUGEINT;
-

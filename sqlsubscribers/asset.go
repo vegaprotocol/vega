@@ -16,7 +16,6 @@ import (
 	"context"
 	"fmt"
 	"math"
-	"strconv"
 	"time"
 
 	"code.vegaprotocol.io/data-node/entities"
@@ -73,7 +72,7 @@ func (as *Asset) addAsset(ctx context.Context, va vega.Asset, vegaTime time.Time
 		return errors.Errorf("bad total supply '%v'", va.Details.TotalSupply)
 	}
 
-	quantum, err := strconv.Atoi(va.Details.Quantum)
+	quantum, err := decimal.NewFromString(va.Details.Quantum)
 	if err != nil {
 		return errors.Errorf("bad quantum '%v'", va.Details.Quantum)
 	}
@@ -122,6 +121,7 @@ func (as *Asset) addAsset(ctx context.Context, va vega.Asset, vegaTime time.Time
 		VegaTime:          vegaTime,
 		LifetimeLimit:     lifetimeLimit,
 		WithdrawThreshold: withdrawalThreshold,
+		Status:            entities.AssetStatus(va.Status),
 	}
 
 	return errors.WithStack(as.store.Add(ctx, asset))

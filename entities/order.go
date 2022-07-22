@@ -89,11 +89,11 @@ func (o Order) ToProto() *vega.Order {
 	return &vo
 }
 
-func (o Order) ToProtoEdge(_ ...any) *v2.OrderEdge {
+func (o Order) ToProtoEdge(_ ...any) (*v2.OrderEdge, error) {
 	return &v2.OrderEdge{
 		Node:   o.ToProto(),
 		Cursor: o.Cursor().Encode(),
-	}
+	}, nil
 }
 
 func OrderFromProto(po *vega.Order, seqNum uint64) (Order, error) {

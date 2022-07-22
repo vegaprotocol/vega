@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased (0.53.0)
+## Unreleased (0.54.0)
 
 ### 🚨 Breaking changes
 - [](https://github.com/vegaprotocol/data-node/issues/xxx) -
@@ -9,6 +9,21 @@
 - [](https://github.com/vegaprotocol/data-node/issues/xxx) -
 
 ### 🛠  Improvements
+- [781](https://github.com/vegaprotocol/data-node/issues/781) - Add a summary table of current balances
+- [791](https://github.com/vegaprotocol/data-node/issues/791) - `v2` orders `api`
+- [816](https://github.com/vegaprotocol/data-node/issues/816) - `v2` accounts `api`
+- [801](https://github.com/vegaprotocol/data-node/issues/801) - Remove distinct select from hyper tables
+- [570](https://github.com/vegaprotocol/data-node/issues/570) - Add pagination for proposals with ordering of open proposals listed first
+- [795](https://github.com/vegaprotocol/data-node/issues/795) - Add node info endpoint
+- [481](https://github.com/vegaprotocol/data-node/issues/481) - Add pagination for delegations
+
+### 🐛 Fixes
+- [594](https://github.com/vegaprotocol/data-node/issues/594) - Fix returning proposal rationale
+
+## 0.53.0
+
+### 🛠  Improvements
+- [572](https://github.com/vegaprotocol/data-node/issues/572) - Add cursor based pagination for votes requests
 - [561](https://github.com/vegaprotocol/data-node/issues/561) - Add cursor based pagination for positions requests
 - [565](https://github.com/vegaprotocol/data-node/issues/565) - Add cursor based pagination for candles data requests
 - [568](https://github.com/vegaprotocol/data-node/issues/568) - Add cursor based pagination for deposits requests
@@ -17,13 +32,20 @@
 - [576](https://github.com/vegaprotocol/data-node/issues/576) - Add cursor based pagination for assets requests
 - [571](https://github.com/vegaprotocol/data-node/issues/571) - Add cursor based pagination for Oracle Spec and Data requests
 - [733](https://github.com/vegaprotocol/data-node/issues/733) - Store chain info in database when using `SQL`
+- [744](https://github.com/vegaprotocol/data-node/issues/744) - Add command to launch embedded postgres `data-node postgres run`
 - [748](https://github.com/vegaprotocol/data-node/issues/748) - Add REST endpoint to list `OracleData`
 - [761](https://github.com/vegaprotocol/data-node/issues/761) - Delete all badger stores, `SQL` stores only from now
-
+- [566](https://github.com/vegaprotocol/data-node/issues/566) - Liquidity provision pagination
+- [779](https://github.com/vegaprotocol/data-node/issues/779) - Ordering of paginated query results from newest to oldest
+- [573](https://github.com/vegaprotocol/data-node/issues/573) - Transfers pagination and addition of `v2` transfers `API`
+- [781](https://github.com/vegaprotocol/data-node/issues/781) - Add a summary table of current balances
 
 ### 🐛 Fixes
 - [705](https://github.com/vegaprotocol/data-node/issues/705) - Market Depth returning incorrect book state
-- [730](https://github.com/vegaprotocol/data-node/issues/730) - Event bus subscriptions with party and market filter not working 
+- [730](https://github.com/vegaprotocol/data-node/issues/730) - Event bus subscriptions with party and market filter not working
+- [678](https://github.com/vegaprotocol/data-node/issues/678) - Add new trading mode variant
+- [776](https://github.com/vegaprotocol/data-node/issues/776) - Add support for missing proposal errors
+- [782](https://github.com/vegaprotocol/data-node/issues/782) - Support large integers for asset quantum
 
 ## 0.52.0
 

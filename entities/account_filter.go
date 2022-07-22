@@ -18,26 +18,26 @@ import (
 )
 
 type AccountFilter struct {
-	Asset        Asset
-	Parties      []Party
+	AssetID      AssetID
+	PartyIDs     []PartyID
 	AccountTypes []types.AccountType
-	Markets      []Market
+	MarketIDs    []MarketID
 }
 
 func AccountFilterFromProto(pbFilter *v2.AccountFilter) (AccountFilter, error) {
 	filter := AccountFilter{}
 	if pbFilter != nil {
 		if pbFilter.AssetId != "" {
-			filter.Asset.ID = NewAssetID(pbFilter.AssetId)
+			filter.AssetID = NewAssetID(pbFilter.AssetId)
 		}
 		for _, partyID := range pbFilter.PartyIds {
-			filter.Parties = append(filter.Parties, Party{ID: NewPartyID(partyID)})
+			filter.PartyIDs = append(filter.PartyIDs, NewPartyID(partyID))
 		}
 
 		filter.AccountTypes = append(filter.AccountTypes, pbFilter.AccountTypes...)
 
 		for _, marketID := range pbFilter.MarketIds {
-			filter.Markets = append(filter.Markets, Market{ID: NewMarketID(marketID)})
+			filter.MarketIDs = append(filter.MarketIDs, NewMarketID(marketID))
 		}
 	}
 	return filter, nil

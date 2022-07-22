@@ -19,7 +19,6 @@ import (
 
 	"code.vegaprotocol.io/data-node/entities"
 	"code.vegaprotocol.io/data-node/sqlstore"
-	v2 "code.vegaprotocol.io/protos/data-node/api/v2"
 	"code.vegaprotocol.io/protos/vega"
 	v1 "code.vegaprotocol.io/protos/vega/oracles/v1"
 	"github.com/georgysavva/scany/pgxscan"
@@ -330,6 +329,13 @@ func TestMarketsCursorPagination(t *testing.T) {
 	t.Run("Should return the last page when last limit is provided with first before cursor", testCursorPaginationReturnsLastPage)
 	t.Run("Should return the page specified by the first limit and after cursor", testCursorPaginationReturnsPageTraversingForward)
 	t.Run("Should return the page specified by the last limit and before cursor", testCursorPaginationReturnsPageTraversingBackward)
+
+	t.Run("Should return the market if Market ID is provided - newest first", testCursorPaginationReturnsTheSpecifiedMarketNewestFirst)
+	t.Run("Should return all markets if no market ID and no cursor is provided - newest first", testCursorPaginationReturnsAllMarketsNewestFirst)
+	t.Run("Should return the first page when first limit is provided with no after cursor - newest first", testCursorPaginationReturnsFirstPageNewestFirst)
+	t.Run("Should return the last page when last limit is provided with first before cursor - newest first", testCursorPaginationReturnsLastPageNewestFirst)
+	t.Run("Should return the page specified by the first limit and after cursor - newest first", testCursorPaginationReturnsPageTraversingForwardNewestFirst)
+	t.Run("Should return the page specified by the last limit and before cursor - newest first", testCursorPaginationReturnsPageTraversingBackwardNewestFirst)
 }
 
 func testCursorPaginationReturnsTheSpecifiedMarket(t *testing.T) {
@@ -338,27 +344,24 @@ func testCursorPaginationReturnsTheSpecifiedMarket(t *testing.T) {
 	defer cancel()
 	blockTimes := make(map[string]time.Time)
 	populateTestMarkets(ctx, t, bs, md, blockTimes)
-	cursor, err := entities.CursorPaginationFromProto(&v2.Pagination{
-		First:  nil,
-		After:  nil,
-		Last:   nil,
-		Before: nil,
-	})
-
+	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, false)
 	require.NoError(t, err)
 
-	markets, pageInfo, err := md.GetAllPaged(ctx, "c612300d", cursor)
+	got, pageInfo, err := md.GetAllPaged(ctx, "c612300d", pagination)
 	require.NoError(t, err)
-	assert.Equal(t, 1, len(markets))
-	assert.Equal(t, "c612300d", markets[0].ID.String())
-	assert.Equal(t, "GGG", markets[0].InstrumentID)
+	assert.Equal(t, 1, len(got))
+	assert.Equal(t, "c612300d", got[0].ID.String())
+	assert.Equal(t, "GGG", got[0].InstrumentID)
 
 	wantStartCursor := entities.NewCursor(blockTimes["c612300d"].UTC().Format(time.RFC3339Nano)).Encode()
 	wantEndCursor := entities.NewCursor(blockTimes["c612300d"].UTC().Format(time.RFC3339Nano)).Encode()
-	assert.False(t, pageInfo.HasNextPage)
-	assert.False(t, pageInfo.HasPreviousPage)
-	assert.Equal(t, wantStartCursor, pageInfo.StartCursor)
-	assert.Equal(t, wantEndCursor, pageInfo.EndCursor)
+
+	assert.Equal(t, entities.PageInfo{
+		HasNextPage:     false,
+		HasPreviousPage: false,
+		StartCursor:     wantStartCursor,
+		EndCursor:       wantEndCursor,
+	}, pageInfo)
 }
 
 func testCursorPaginationReturnsAllMarkets(t *testing.T) {
@@ -367,29 +370,26 @@ func testCursorPaginationReturnsAllMarkets(t *testing.T) {
 	defer cancel()
 	blockTimes := make(map[string]time.Time)
 	populateTestMarkets(ctx, t, bs, md, blockTimes)
-	cursor, err := entities.CursorPaginationFromProto(&v2.Pagination{
-		First:  nil,
-		After:  nil,
-		Last:   nil,
-		Before: nil,
-	})
 
+	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, false)
 	require.NoError(t, err)
 
-	markets, pageInfo, err := md.GetAllPaged(ctx, "", cursor)
+	got, pageInfo, err := md.GetAllPaged(ctx, "", pagination)
 	require.NoError(t, err)
-	assert.Equal(t, 10, len(markets))
-	assert.Equal(t, "02a16077", markets[0].ID.String())
-	assert.Equal(t, "fb1528a5", markets[9].ID.String())
-	assert.Equal(t, "AAA", markets[0].InstrumentID)
-	assert.Equal(t, "JJJ", markets[9].InstrumentID)
+	assert.Equal(t, 10, len(got))
+	assert.Equal(t, "02a16077", got[0].ID.String())
+	assert.Equal(t, "fb1528a5", got[9].ID.String())
+	assert.Equal(t, "AAA", got[0].InstrumentID)
+	assert.Equal(t, "JJJ", got[9].InstrumentID)
 
 	wantStartCursor := entities.NewCursor(blockTimes["02a16077"].UTC().Format(time.RFC3339Nano)).Encode()
 	wantEndCursor := entities.NewCursor(blockTimes["fb1528a5"].UTC().Format(time.RFC3339Nano)).Encode()
-	assert.False(t, pageInfo.HasNextPage)
-	assert.False(t, pageInfo.HasPreviousPage)
-	assert.Equal(t, wantStartCursor, pageInfo.StartCursor)
-	assert.Equal(t, wantEndCursor, pageInfo.EndCursor)
+	assert.Equal(t, entities.PageInfo{
+		HasNextPage:     false,
+		HasPreviousPage: false,
+		StartCursor:     wantStartCursor,
+		EndCursor:       wantEndCursor,
+	}, pageInfo)
 }
 
 func testCursorPaginationReturnsFirstPage(t *testing.T) {
@@ -399,30 +399,26 @@ func testCursorPaginationReturnsFirstPage(t *testing.T) {
 	blockTimes := make(map[string]time.Time)
 	populateTestMarkets(ctx, t, bs, md, blockTimes)
 	first := int32(3)
-	cursor, err := entities.CursorPaginationFromProto(&v2.Pagination{
-		First:  &first,
-		After:  nil,
-		Last:   nil,
-		Before: nil,
-	})
-
+	pagination, err := entities.NewCursorPagination(&first, nil, nil, nil, false)
 	require.NoError(t, err)
 
-	markets, pageInfo, err := md.GetAllPaged(ctx, "", cursor)
+	got, pageInfo, err := md.GetAllPaged(ctx, "", pagination)
 	require.NoError(t, err)
 
-	assert.Equal(t, 3, len(markets))
-	assert.Equal(t, "02a16077", markets[0].ID.String())
-	assert.Equal(t, "65be62cd", markets[2].ID.String())
-	assert.Equal(t, "AAA", markets[0].InstrumentID)
-	assert.Equal(t, "CCC", markets[2].InstrumentID)
+	assert.Equal(t, 3, len(got))
+	assert.Equal(t, "02a16077", got[0].ID.String())
+	assert.Equal(t, "65be62cd", got[2].ID.String())
+	assert.Equal(t, "AAA", got[0].InstrumentID)
+	assert.Equal(t, "CCC", got[2].InstrumentID)
 
 	wantStartCursor := entities.NewCursor(blockTimes["02a16077"].UTC().Format(time.RFC3339Nano)).Encode()
 	wantEndCursor := entities.NewCursor(blockTimes["65be62cd"].UTC().Format(time.RFC3339Nano)).Encode()
-	assert.True(t, pageInfo.HasNextPage)
-	assert.False(t, pageInfo.HasPreviousPage)
-	assert.Equal(t, wantStartCursor, pageInfo.StartCursor)
-	assert.Equal(t, wantEndCursor, pageInfo.EndCursor)
+	assert.Equal(t, entities.PageInfo{
+		HasNextPage:     true,
+		HasPreviousPage: false,
+		StartCursor:     wantStartCursor,
+		EndCursor:       wantEndCursor,
+	}, pageInfo)
 }
 
 func testCursorPaginationReturnsLastPage(t *testing.T) {
@@ -432,30 +428,26 @@ func testCursorPaginationReturnsLastPage(t *testing.T) {
 	blockTimes := make(map[string]time.Time)
 	populateTestMarkets(ctx, t, bs, md, blockTimes)
 	last := int32(3)
-	cursor, err := entities.CursorPaginationFromProto(&v2.Pagination{
-		First:  nil,
-		After:  nil,
-		Last:   &last,
-		Before: nil,
-	})
-
+	pagination, err := entities.NewCursorPagination(nil, nil, &last, nil, false)
 	require.NoError(t, err)
 
-	markets, pageInfo, err := md.GetAllPaged(ctx, "", cursor)
+	got, pageInfo, err := md.GetAllPaged(ctx, "", pagination)
 	require.NoError(t, err)
 
-	assert.Equal(t, 3, len(markets))
-	assert.Equal(t, "c8744329", markets[0].ID.String())
-	assert.Equal(t, "fb1528a5", markets[2].ID.String())
-	assert.Equal(t, "HHH", markets[0].InstrumentID)
-	assert.Equal(t, "JJJ", markets[2].InstrumentID)
+	assert.Equal(t, 3, len(got))
+	assert.Equal(t, "c8744329", got[0].ID.String())
+	assert.Equal(t, "fb1528a5", got[2].ID.String())
+	assert.Equal(t, "HHH", got[0].InstrumentID)
+	assert.Equal(t, "JJJ", got[2].InstrumentID)
 
 	wantStartCursor := entities.NewCursor(blockTimes["c8744329"].UTC().Format(time.RFC3339Nano)).Encode()
 	wantEndCursor := entities.NewCursor(blockTimes["fb1528a5"].UTC().Format(time.RFC3339Nano)).Encode()
-	assert.False(t, pageInfo.HasNextPage)
-	assert.True(t, pageInfo.HasPreviousPage)
-	assert.Equal(t, wantStartCursor, pageInfo.StartCursor)
-	assert.Equal(t, wantEndCursor, pageInfo.EndCursor)
+	assert.Equal(t, entities.PageInfo{
+		HasNextPage:     false,
+		HasPreviousPage: true,
+		StartCursor:     wantStartCursor,
+		EndCursor:       wantEndCursor,
+	}, pageInfo)
 }
 
 func testCursorPaginationReturnsPageTraversingForward(t *testing.T) {
@@ -466,30 +458,26 @@ func testCursorPaginationReturnsPageTraversingForward(t *testing.T) {
 	populateTestMarkets(ctx, t, bs, md, blockTimes)
 	first := int32(3)
 	after := entities.NewCursor(blockTimes["65be62cd"].Format(time.RFC3339Nano)).Encode()
-	cursor, err := entities.CursorPaginationFromProto(&v2.Pagination{
-		First:  &first,
-		After:  &after,
-		Last:   nil,
-		Before: nil,
-	})
-
+	pagination, err := entities.NewCursorPagination(&first, &after, nil, nil, false)
 	require.NoError(t, err)
 
-	markets, pageInfo, err := md.GetAllPaged(ctx, "", cursor)
+	got, pageInfo, err := md.GetAllPaged(ctx, "", pagination)
 	require.NoError(t, err)
 
-	assert.Equal(t, 3, len(markets))
-	assert.Equal(t, "7a797e0e", markets[0].ID.String())
-	assert.Equal(t, "b7c84b8e", markets[2].ID.String())
-	assert.Equal(t, "DDD", markets[0].InstrumentID)
-	assert.Equal(t, "FFF", markets[2].InstrumentID)
+	assert.Equal(t, 3, len(got))
+	assert.Equal(t, "7a797e0e", got[0].ID.String())
+	assert.Equal(t, "b7c84b8e", got[2].ID.String())
+	assert.Equal(t, "DDD", got[0].InstrumentID)
+	assert.Equal(t, "FFF", got[2].InstrumentID)
 
 	wantStartCursor := entities.NewCursor(blockTimes["7a797e0e"].UTC().Format(time.RFC3339Nano)).Encode()
 	wantEndCursor := entities.NewCursor(blockTimes["b7c84b8e"].UTC().Format(time.RFC3339Nano)).Encode()
-	assert.True(t, pageInfo.HasNextPage)
-	assert.True(t, pageInfo.HasPreviousPage)
-	assert.Equal(t, wantStartCursor, pageInfo.StartCursor)
-	assert.Equal(t, wantEndCursor, pageInfo.EndCursor)
+	assert.Equal(t, entities.PageInfo{
+		HasNextPage:     true,
+		HasPreviousPage: true,
+		StartCursor:     wantStartCursor,
+		EndCursor:       wantEndCursor,
+	}, pageInfo)
 }
 
 func testCursorPaginationReturnsPageTraversingBackward(t *testing.T) {
@@ -500,28 +488,196 @@ func testCursorPaginationReturnsPageTraversingBackward(t *testing.T) {
 	populateTestMarkets(ctx, t, bs, md, blockTimes)
 	last := int32(3)
 	before := entities.NewCursor(blockTimes["c8744329"].Format(time.RFC3339Nano)).Encode()
-	cursor, err := entities.CursorPaginationFromProto(&v2.Pagination{
-		First:  nil,
-		After:  nil,
-		Last:   &last,
-		Before: &before,
-	})
-
+	pagination, err := entities.NewCursorPagination(nil, nil, &last, &before, false)
 	require.NoError(t, err)
 
-	markets, pageInfo, err := md.GetAllPaged(ctx, "", cursor)
+	got, pageInfo, err := md.GetAllPaged(ctx, "", pagination)
 	require.NoError(t, err)
 
-	assert.Equal(t, 3, len(markets))
-	assert.Equal(t, "7bb2356e", markets[0].ID.String())
-	assert.Equal(t, "c612300d", markets[2].ID.String())
-	assert.Equal(t, "EEE", markets[0].InstrumentID)
-	assert.Equal(t, "GGG", markets[2].InstrumentID)
+	assert.Equal(t, 3, len(got))
+	assert.Equal(t, "7bb2356e", got[0].ID.String())
+	assert.Equal(t, "c612300d", got[2].ID.String())
+	assert.Equal(t, "EEE", got[0].InstrumentID)
+	assert.Equal(t, "GGG", got[2].InstrumentID)
 
 	wantStartCursor := entities.NewCursor(blockTimes["7bb2356e"].UTC().Format(time.RFC3339Nano)).Encode()
 	wantEndCursor := entities.NewCursor(blockTimes["c612300d"].UTC().Format(time.RFC3339Nano)).Encode()
-	assert.True(t, pageInfo.HasNextPage)
-	assert.True(t, pageInfo.HasPreviousPage)
-	assert.Equal(t, wantStartCursor, pageInfo.StartCursor)
-	assert.Equal(t, wantEndCursor, pageInfo.EndCursor)
+	assert.Equal(t, entities.PageInfo{
+		HasNextPage:     true,
+		HasPreviousPage: true,
+		StartCursor:     wantStartCursor,
+		EndCursor:       wantEndCursor,
+	}, pageInfo)
+}
+
+func testCursorPaginationReturnsTheSpecifiedMarketNewestFirst(t *testing.T) {
+	bs, md, _ := setupMarketsTest(t)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+	defer cancel()
+	blockTimes := make(map[string]time.Time)
+	populateTestMarkets(ctx, t, bs, md, blockTimes)
+	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, true)
+	require.NoError(t, err)
+
+	got, pageInfo, err := md.GetAllPaged(ctx, "c612300d", pagination)
+	require.NoError(t, err)
+	assert.Equal(t, 1, len(got))
+	assert.Equal(t, "c612300d", got[0].ID.String())
+	assert.Equal(t, "GGG", got[0].InstrumentID)
+
+	wantStartCursor := entities.NewCursor(blockTimes["c612300d"].UTC().Format(time.RFC3339Nano)).Encode()
+	wantEndCursor := entities.NewCursor(blockTimes["c612300d"].UTC().Format(time.RFC3339Nano)).Encode()
+
+	assert.Equal(t, entities.PageInfo{
+		HasNextPage:     false,
+		HasPreviousPage: false,
+		StartCursor:     wantStartCursor,
+		EndCursor:       wantEndCursor,
+	}, pageInfo)
+}
+
+func testCursorPaginationReturnsAllMarketsNewestFirst(t *testing.T) {
+	bs, md, _ := setupMarketsTest(t)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*60)
+	defer cancel()
+	blockTimes := make(map[string]time.Time)
+	populateTestMarkets(ctx, t, bs, md, blockTimes)
+
+	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, true)
+	require.NoError(t, err)
+
+	got, pageInfo, err := md.GetAllPaged(ctx, "", pagination)
+	require.NoError(t, err)
+	assert.Equal(t, 10, len(got))
+	assert.Equal(t, "fb1528a5", got[0].ID.String())
+	assert.Equal(t, "02a16077", got[9].ID.String())
+	assert.Equal(t, "JJJ", got[0].InstrumentID)
+	assert.Equal(t, "AAA", got[9].InstrumentID)
+
+	wantStartCursor := entities.NewCursor(blockTimes["fb1528a5"].UTC().Format(time.RFC3339Nano)).Encode()
+	wantEndCursor := entities.NewCursor(blockTimes["02a16077"].UTC().Format(time.RFC3339Nano)).Encode()
+	assert.Equal(t, entities.PageInfo{
+		HasNextPage:     false,
+		HasPreviousPage: false,
+		StartCursor:     wantStartCursor,
+		EndCursor:       wantEndCursor,
+	}, pageInfo)
+}
+
+func testCursorPaginationReturnsFirstPageNewestFirst(t *testing.T) {
+	bs, md, _ := setupMarketsTest(t)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*60)
+	defer cancel()
+	blockTimes := make(map[string]time.Time)
+	populateTestMarkets(ctx, t, bs, md, blockTimes)
+	first := int32(3)
+	pagination, err := entities.NewCursorPagination(&first, nil, nil, nil, true)
+	require.NoError(t, err)
+
+	got, pageInfo, err := md.GetAllPaged(ctx, "", pagination)
+	require.NoError(t, err)
+
+	assert.Equal(t, 3, len(got))
+	assert.Equal(t, "fb1528a5", got[0].ID.String())
+	assert.Equal(t, "c8744329", got[2].ID.String())
+	assert.Equal(t, "JJJ", got[0].InstrumentID)
+	assert.Equal(t, "HHH", got[2].InstrumentID)
+
+	wantStartCursor := entities.NewCursor(blockTimes["fb1528a5"].UTC().Format(time.RFC3339Nano)).Encode()
+	wantEndCursor := entities.NewCursor(blockTimes["c8744329"].UTC().Format(time.RFC3339Nano)).Encode()
+	assert.Equal(t, entities.PageInfo{
+		HasNextPage:     true,
+		HasPreviousPage: false,
+		StartCursor:     wantStartCursor,
+		EndCursor:       wantEndCursor,
+	}, pageInfo)
+}
+
+func testCursorPaginationReturnsLastPageNewestFirst(t *testing.T) {
+	bs, md, _ := setupMarketsTest(t)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*60)
+	defer cancel()
+	blockTimes := make(map[string]time.Time)
+	populateTestMarkets(ctx, t, bs, md, blockTimes)
+	last := int32(3)
+	pagination, err := entities.NewCursorPagination(nil, nil, &last, nil, true)
+	require.NoError(t, err)
+
+	got, pageInfo, err := md.GetAllPaged(ctx, "", pagination)
+	require.NoError(t, err)
+
+	assert.Equal(t, 3, len(got))
+	assert.Equal(t, "65be62cd", got[0].ID.String())
+	assert.Equal(t, "02a16077", got[2].ID.String())
+	assert.Equal(t, "CCC", got[0].InstrumentID)
+	assert.Equal(t, "AAA", got[2].InstrumentID)
+
+	wantStartCursor := entities.NewCursor(blockTimes["65be62cd"].UTC().Format(time.RFC3339Nano)).Encode()
+	wantEndCursor := entities.NewCursor(blockTimes["02a16077"].UTC().Format(time.RFC3339Nano)).Encode()
+	assert.Equal(t, entities.PageInfo{
+		HasNextPage:     false,
+		HasPreviousPage: true,
+		StartCursor:     wantStartCursor,
+		EndCursor:       wantEndCursor,
+	}, pageInfo)
+}
+
+func testCursorPaginationReturnsPageTraversingForwardNewestFirst(t *testing.T) {
+	bs, md, _ := setupMarketsTest(t)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*60)
+	defer cancel()
+	blockTimes := make(map[string]time.Time)
+	populateTestMarkets(ctx, t, bs, md, blockTimes)
+	first := int32(3)
+	after := entities.NewCursor(blockTimes["c8744329"].Format(time.RFC3339Nano)).Encode()
+	pagination, err := entities.NewCursorPagination(&first, &after, nil, nil, true)
+	require.NoError(t, err)
+
+	got, pageInfo, err := md.GetAllPaged(ctx, "", pagination)
+	require.NoError(t, err)
+
+	assert.Equal(t, 3, len(got))
+	assert.Equal(t, "c612300d", got[0].ID.String())
+	assert.Equal(t, "7bb2356e", got[2].ID.String())
+	assert.Equal(t, "GGG", got[0].InstrumentID)
+	assert.Equal(t, "EEE", got[2].InstrumentID)
+
+	wantStartCursor := entities.NewCursor(blockTimes["c612300d"].UTC().Format(time.RFC3339Nano)).Encode()
+	wantEndCursor := entities.NewCursor(blockTimes["7bb2356e"].UTC().Format(time.RFC3339Nano)).Encode()
+	assert.Equal(t, entities.PageInfo{
+		HasNextPage:     true,
+		HasPreviousPage: true,
+		StartCursor:     wantStartCursor,
+		EndCursor:       wantEndCursor,
+	}, pageInfo)
+}
+
+func testCursorPaginationReturnsPageTraversingBackwardNewestFirst(t *testing.T) {
+	bs, md, _ := setupMarketsTest(t)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*60)
+	defer cancel()
+	blockTimes := make(map[string]time.Time)
+	populateTestMarkets(ctx, t, bs, md, blockTimes)
+	last := int32(3)
+	before := entities.NewCursor(blockTimes["65be62cd"].Format(time.RFC3339Nano)).Encode()
+	pagination, err := entities.NewCursorPagination(nil, nil, &last, &before, true)
+	require.NoError(t, err)
+
+	got, pageInfo, err := md.GetAllPaged(ctx, "", pagination)
+	require.NoError(t, err)
+
+	assert.Equal(t, 3, len(got))
+	assert.Equal(t, "b7c84b8e", got[0].ID.String())
+	assert.Equal(t, "7a797e0e", got[2].ID.String())
+	assert.Equal(t, "FFF", got[0].InstrumentID)
+	assert.Equal(t, "DDD", got[2].InstrumentID)
+
+	wantStartCursor := entities.NewCursor(blockTimes["b7c84b8e"].UTC().Format(time.RFC3339Nano)).Encode()
+	wantEndCursor := entities.NewCursor(blockTimes["7a797e0e"].UTC().Format(time.RFC3339Nano)).Encode()
+	assert.Equal(t, entities.PageInfo{
+		HasNextPage:     true,
+		HasPreviousPage: true,
+		StartCursor:     wantStartCursor,
+		EndCursor:       wantEndCursor,
+	}, pageInfo)
 }

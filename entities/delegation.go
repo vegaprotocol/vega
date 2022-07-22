@@ -17,6 +17,7 @@ import (
 	"strconv"
 	"time"
 
+	v2 "code.vegaprotocol.io/protos/data-node/api/v2"
 	"code.vegaprotocol.io/protos/vega"
 	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
 	"github.com/shopspring/decimal"
@@ -43,6 +44,17 @@ func (d *Delegation) ToProto() *vega.Delegation {
 		Amount:   d.Amount.String(),
 	}
 	return &protoDelegation
+}
+
+func (d Delegation) Cursor() *Cursor {
+	return NewCursor(d.VegaTime.Format(time.RFC3339Nano))
+}
+
+func (d Delegation) ToProtoEdge(_ ...any) (*v2.DelegationEdge, error) {
+	return &v2.DelegationEdge{
+		Node:   d.ToProto(),
+		Cursor: d.Cursor().Encode(),
+	}, nil
 }
 
 func DelegationFromProto(pd *vega.Delegation) (Delegation, error) {

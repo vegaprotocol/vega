@@ -80,9 +80,6 @@ pipeline {
         }
 
         stage('Build') {
-            environment {
-                LDFLAGS      = "-X main.CLIVersion=${version} -X main.CLIVersionHash=${versionHash}"
-            }
             failFast true
             parallel {
                 stage('Linux') {
@@ -94,7 +91,7 @@ pipeline {
                     options { retry(3) }
                     steps {
                         sh label: 'Compile', script: '''
-                            go build -o "${OUTPUT}" -ldflags "${LDFLAGS}" ./cmd/data-node
+                            go build -o "${OUTPUT}" ./cmd/data-node
                         '''
                         sh label: 'Sanity check', script: '''
                             file ${OUTPUT}
@@ -111,7 +108,7 @@ pipeline {
                     options { retry(3) }
                     steps {
                         sh label: 'Compile', script: '''
-                            go build -o "${OUTPUT}" -ldflags "${LDFLAGS}" ./cmd/data-node
+                            go build -o "${OUTPUT}" ./cmd/data-node
                         '''
                         sh label: 'Sanity check', script: '''
                             file ${OUTPUT}
@@ -127,7 +124,7 @@ pipeline {
                     options { retry(3) }
                     steps {
                         sh label: 'Compile', script: '''
-                            go build -o "${OUTPUT}" -ldflags "${LDFLAGS}" ./cmd/data-node
+                            go build -o "${OUTPUT}" ./cmd/data-node
                         '''
                         sh label: 'Sanity check', script: '''
                             file ${OUTPUT}
@@ -295,6 +292,33 @@ pipeline {
                             color: "good",
                             message: ":docker: Data-Node » Published new docker image `${DOCKER_IMAGE_NAME_VERSIONED}` aka `${DOCKER_IMAGE_NAME_ALIAS}`",
                         )
+                    }
+                }
+
+                stage('development binary for vegacapsule') {
+                    when {
+                        branch 'develop'
+                    }
+                    environment {
+                        AWS_REGION = 'eu-west-2'
+                    }
+                    steps {
+                        script {
+                            vegaS3Ops = usernamePassword(
+                                credentialsId: 'vegacapsule-s3-operations',
+                                passwordVariable: 'AWS_ACCESS_KEY_ID',
+                                usernameVariable: 'AWS_SECRET_ACCESS_KEY'
+                            )
+                            bucketName = string(
+                                credentialsId: 'vegacapsule-s3-bucket-name',
+                                variable: 'VEGACAPSULE_S3_BUCKET_NAME'
+                            )
+                            withCredentials([vegaS3Ops, bucketName]) {
+                                sh label: 'Upload data-node to S3', script: '''
+                                    aws s3 cp ./cmd/data-node/data-node-linux-amd64 s3://''' + env.VEGACAPSULE_S3_BUCKET_NAME + '''/bin/linux-amd64-''' + versionHash + '''
+                                '''
+                            }
+                        }
                     }
                 }
 

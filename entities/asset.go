@@ -13,7 +13,6 @@
 package entities
 
 import (
-	"fmt"
 	"time"
 
 	v2 "code.vegaprotocol.io/protos/data-node/api/v2"
@@ -33,12 +32,13 @@ type Asset struct {
 	Symbol            string
 	TotalSupply       decimal.Decimal // Maybe num.Uint if we can figure out how to add support to pgx
 	Decimals          int
-	Quantum           int
+	Quantum           decimal.Decimal
 	Source            string
 	ERC20Contract     string
 	VegaTime          time.Time
 	LifetimeLimit     decimal.Decimal
 	WithdrawThreshold decimal.Decimal
+	Status            AssetStatus
 }
 
 func (a Asset) ToProto() *pb.Asset {
@@ -49,8 +49,9 @@ func (a Asset) ToProto() *pb.Asset {
 			Symbol:      a.Symbol,
 			TotalSupply: a.TotalSupply.BigInt().String(),
 			Decimals:    uint64(a.Decimals),
-			Quantum:     fmt.Sprintf("%d", a.Quantum),
+			Quantum:     a.Quantum.String(),
 		},
+		Status: pb.Asset_Status(a.Status),
 	}
 	if a.Source != "" {
 		pbAsset.Details.Source = &pb.AssetDetails_BuiltinAsset{
@@ -75,9 +76,9 @@ func (a Asset) Cursor() *Cursor {
 	return NewCursor(a.ID.String())
 }
 
-func (a Asset) ToProtoEdge(_ ...any) *v2.AssetEdge {
+func (a Asset) ToProtoEdge(_ ...any) (*v2.AssetEdge, error) {
 	return &v2.AssetEdge{
 		Node:   a.ToProto(),
 		Cursor: a.Cursor().Encode(),
-	}
+	}, nil
 }

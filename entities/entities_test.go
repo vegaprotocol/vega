@@ -50,12 +50,14 @@ func testPageEntitiesForwardHasNextAndPrevious(t *testing.T) {
 	first := int32(5)
 	afterTs := time.Unix(0, 1000000000000).UTC()
 	after := base64.StdEncoding.EncodeToString([]byte(afterTs.Format(time.RFC3339Nano)))
+	newestFirst := false
 	cursor, err := entities.CursorPaginationFromProto(
 		&v2.Pagination{
-			First:  &first,
-			After:  &after,
-			Last:   nil,
-			Before: nil,
+			First:       &first,
+			After:       &after,
+			Last:        nil,
+			Before:      nil,
+			NewestFirst: &newestFirst,
 		})
 	require.NoError(t, err)
 	gotPaged, gotInfo := entities.PageEntities[*v2.TradeEdge](trades, cursor)
@@ -79,12 +81,14 @@ func testPageEntitiesBackwardHasNextAndPrevious(t *testing.T) {
 	last := int32(5)
 	beforeTs := time.Unix(0, 1000006000000).UTC()
 	before := base64.StdEncoding.EncodeToString([]byte(beforeTs.Format(time.RFC3339Nano)))
+	newestFirst := false
 	cursor, err := entities.CursorPaginationFromProto(
 		&v2.Pagination{
-			First:  nil,
-			After:  nil,
-			Last:   &last,
-			Before: &before,
+			First:       nil,
+			After:       nil,
+			Last:        &last,
+			Before:      &before,
+			NewestFirst: &newestFirst,
 		})
 	require.NoError(t, err)
 	gotPaged, gotInfo := entities.PageEntities[*v2.TradeEdge](trades, cursor)
@@ -108,12 +112,14 @@ func testPagedEntitiesForwardHasPreviousButNoNext(t *testing.T) {
 	first := int32(5)
 	afterTs := time.Unix(0, 1000001000000).UTC()
 	after := base64.StdEncoding.EncodeToString([]byte(afterTs.Format(time.RFC3339Nano)))
+	newestFirst := false
 	cursor, err := entities.CursorPaginationFromProto(
 		&v2.Pagination{
-			First:  &first,
-			After:  &after,
-			Last:   nil,
-			Before: nil,
+			First:       &first,
+			After:       &after,
+			Last:        nil,
+			Before:      nil,
+			NewestFirst: &newestFirst,
 		})
 	require.NoError(t, err)
 	gotPaged, gotInfo := entities.PageEntities[*v2.TradeEdge](trades, cursor)
@@ -137,12 +143,14 @@ func testPagedEntitiesBackwardHasNextButNoPrevious(t *testing.T) {
 	last := int32(5)
 	beforeTs := time.Unix(0, 1000005000000).UTC()
 	before := base64.StdEncoding.EncodeToString([]byte(beforeTs.Format(time.RFC3339Nano)))
+	newestFirst := false
 	cursor, err := entities.CursorPaginationFromProto(
 		&v2.Pagination{
-			First:  nil,
-			After:  nil,
-			Last:   &last,
-			Before: &before,
+			First:       nil,
+			After:       nil,
+			Last:        &last,
+			Before:      &before,
+			NewestFirst: &newestFirst,
 		})
 	require.NoError(t, err)
 	gotPaged, gotInfo := entities.PageEntities[*v2.TradeEdge](trades, cursor)
@@ -164,12 +172,14 @@ func testPagedEntitiesBackwardHasNextButNoPrevious(t *testing.T) {
 func testPagedEntitiesForwardNoNextOrPreviousEqualLimit(t *testing.T) {
 	trades := getTradesForward(t, 0, 5) // 0, 0 return all entries
 	first := int32(5)
+	newestFirst := false
 	cursor, err := entities.CursorPaginationFromProto(
 		&v2.Pagination{
-			First:  &first,
-			After:  nil,
-			Last:   nil,
-			Before: nil,
+			First:       &first,
+			After:       nil,
+			Last:        nil,
+			Before:      nil,
+			NewestFirst: &newestFirst,
 		})
 	require.NoError(t, err)
 	gotPaged, gotInfo := entities.PageEntities[*v2.TradeEdge](trades, cursor)
@@ -191,12 +201,14 @@ func testPagedEntitiesForwardNoNextOrPreviousEqualLimit(t *testing.T) {
 func testPagedEntitiesBackwardNoNextOrPreviousEqualLimit(t *testing.T) {
 	trades := getTradesBackward(t, 0, 5) // 0, 0 return all entries
 	last := int32(5)
+	newestFirst := false
 	cursor, err := entities.CursorPaginationFromProto(
 		&v2.Pagination{
-			First:  nil,
-			After:  nil,
-			Last:   &last,
-			Before: nil,
+			First:       nil,
+			After:       nil,
+			Last:        &last,
+			Before:      nil,
+			NewestFirst: &newestFirst,
 		})
 	require.NoError(t, err)
 	gotPaged, gotInfo := entities.PageEntities[*v2.TradeEdge](trades, cursor)
@@ -218,12 +230,14 @@ func testPagedEntitiesBackwardNoNextOrPreviousEqualLimit(t *testing.T) {
 func testPagedEntitiesForwardNoNextOrPreviousLessThanLimit(t *testing.T) {
 	trades := getTradesForward(t, 0, 3) // 0, 0 return all entries
 	first := int32(5)
+	newestFirst := false
 	cursor, err := entities.CursorPaginationFromProto(
 		&v2.Pagination{
-			First:  &first,
-			After:  nil,
-			Last:   nil,
-			Before: nil,
+			First:       &first,
+			After:       nil,
+			Last:        nil,
+			Before:      nil,
+			NewestFirst: &newestFirst,
 		})
 	require.NoError(t, err)
 	gotPaged, gotInfo := entities.PageEntities[*v2.TradeEdge](trades, cursor)
@@ -245,12 +259,14 @@ func testPagedEntitiesForwardNoNextOrPreviousLessThanLimit(t *testing.T) {
 func testPagedEntitiesBackwardNoNextOrPreviousLessThanLimit(t *testing.T) {
 	trades := getTradesBackward(t, 0, 3) // 0, 0 return all entries
 	last := int32(5)
+	newestFirst := false
 	cursor, err := entities.CursorPaginationFromProto(
 		&v2.Pagination{
-			First:  nil,
-			After:  nil,
-			Last:   &last,
-			Before: nil,
+			First:       nil,
+			After:       nil,
+			Last:        &last,
+			Before:      nil,
+			NewestFirst: &newestFirst,
 		})
 	require.NoError(t, err)
 	gotPaged, gotInfo := entities.PageEntities[*v2.TradeEdge](trades, cursor)

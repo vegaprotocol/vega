@@ -40,8 +40,21 @@ func NewAssets(connectionSource *ConnectionSource) *Assets {
 func (as *Assets) Add(ctx context.Context, a entities.Asset) error {
 	defer metrics.StartSQLQuery("Assets", "Add")()
 	_, err := as.Connection.Exec(ctx,
-		`INSERT INTO assets(id, name, symbol, total_supply, decimals, quantum, source, erc20_contract, lifetime_limit, withdraw_threshold, vega_time)
-		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
+		`INSERT INTO assets(id, name, symbol, total_supply, decimals, quantum, source, erc20_contract, lifetime_limit, withdraw_threshold, vega_time, status)
+		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+         ON CONFLICT (id, vega_time) DO UPDATE SET
+            name = EXCLUDED.name,
+            symbol = EXCLUDED.symbol,
+            total_supply = EXCLUDED.total_supply,
+            decimals = EXCLUDED.decimals,
+            quantum = EXCLUDED.quantum,
+            source = EXCLUDED.source,
+            erc20_contract = EXCLUDED.erc20_contract,
+            lifetime_limit = EXCLUDED.lifetime_limit,
+            withdraw_threshold = EXCLUDED.withdraw_threshold,
+            vega_time = EXCLUDED.vega_time,
+            status = EXCLUDED.status
+            ;`,
 		a.ID,
 		a.Name,
 		a.Symbol,
@@ -52,8 +65,19 @@ func (as *Assets) Add(ctx context.Context, a entities.Asset) error {
 		a.ERC20Contract,
 		a.LifetimeLimit,
 		a.WithdrawThreshold,
-		a.VegaTime)
-	return err
+		a.VegaTime,
+		a.Status,
+	)
+	if err != nil {
+		return err
+	}
+
+	// delete cache
+	as.cacheLock.Lock()
+	defer as.cacheLock.Unlock()
+	delete(as.cache, a.ID.String())
+
+	return nil
 }
 
 func (as *Assets) GetByID(ctx context.Context, id string) (entities.Asset, error) {
@@ -68,8 +92,7 @@ func (as *Assets) GetByID(ctx context.Context, id string) (entities.Asset, error
 
 	defer metrics.StartSQLQuery("Assets", "GetByID")()
 	err := pgxscan.Get(ctx, as.Connection, &a,
-		`SELECT id, name, symbol, total_supply, decimals, quantum, source, erc20_contract, lifetime_limit, withdraw_threshold, vega_time
-		 FROM assets WHERE id=$1`,
+		getAssetQuery()+` WHERE id=$1`,
 		entities.NewAssetID(id))
 
 	if err == nil {
@@ -112,6 +135,5 @@ func (as *Assets) GetAllWithCursorPagination(ctx context.Context, pagination ent
 }
 
 func getAssetQuery() string {
-	return `SELECT id, name, symbol, total_supply, decimals, quantum, source, erc20_contract, lifetime_limit, withdraw_threshold, vega_time
-		FROM assets`
+	return `SELECT * FROM assets_current`
 }

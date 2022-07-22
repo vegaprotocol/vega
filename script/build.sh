@@ -60,16 +60,6 @@ check_golang_version() {
 	fi
 }
 
-
-set_version() {
-	version="${DRONE_TAG:-$(git describe --tags 2>/dev/null)}"
-	version_hash="$(echo "${CI_COMMIT_SHA:-$(git rev-parse HEAD)}" | cut -b1-8)"
-}
-
-set_ldflags() {
-	ldflags="-X main.CLIVersion=$version -X main.CLIVersionHash=$version_hash"
-}
-
 parse_args() {
 	# set defaults
 	action=""
@@ -87,7 +77,6 @@ parse_args() {
 		d)
 			gcflags="all=-N -l"
 			dbgsuffix="-dbg"
-			version="debug-$version"
 			;;
 		s)
 			suffix="$OPTARG"
@@ -232,9 +221,6 @@ run() {
 		help
 		exit 1
 	fi
-	set_version
-	set_ldflags
-	echo "Version: $version ($version_hash)"
 
 	set_go_flags default
 	case "$action" in
@@ -347,7 +333,7 @@ run() {
 				msgprefix="$target: go $action $o ..."
 				echo "$msgprefix"
 				rm -f "$o" "$log"
-				go build -v -ldflags "$ldflags" -gcflags "$gcflags" -o "$o" "./cmd/$app" 1>"$log" 2>&1
+				go build -v -gcflags "$gcflags" -o "$o" "./cmd/$app" 1>"$log" 2>&1
 				code="$?"
 				;;
 			install)
@@ -356,7 +342,7 @@ run() {
 				msgprefix="$target: go $action $app ..."
 				echo "$msgprefix"
 				rm -f "$log"
-				go install -v -ldflags "$ldflags" -gcflags "$gcflags" "./cmd/$app" 1>"$log" 2>&1
+				go install -v -gcflags "$gcflags" "./cmd/$app" 1>"$log" 2>&1
 				code="$?"
 				;;
 			esac

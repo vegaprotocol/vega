@@ -15,27 +15,36 @@ package gql
 import (
 	"context"
 
-	protoapi "code.vegaprotocol.io/protos/data-node/api/v1"
+	v2 "code.vegaprotocol.io/protos/data-node/api/v2"
 	types "code.vegaprotocol.io/protos/vega"
 )
 
 type myAssetResolver VegaResolverRoot
 
+func (r *myAssetResolver) Status(ctx context.Context, obj *types.Asset) (AssetStatus, error) {
+	return convertAssetStatusFromProto(obj.Status)
+}
+
 func (r *myAssetResolver) InfrastructureFeeAccount(ctx context.Context, obj *types.Asset) (*types.Account, error) {
 	if len(obj.Id) <= 0 {
 		return nil, ErrMissingIDOrReference
 	}
-	req := &protoapi.FeeInfrastructureAccountsRequest{
-		Asset: obj.Id,
+
+	req := &v2.ListAccountsRequest{
+		Filter: &v2.AccountFilter{
+			AssetId:      obj.Id,
+			AccountTypes: []types.AccountType{types.AccountType_ACCOUNT_TYPE_FEES_INFRASTRUCTURE},
+		},
 	}
-	res, err := r.tradingDataClient.FeeInfrastructureAccounts(ctx, req)
+
+	res, err := r.tradingDataClientV2.ListAccounts(ctx, req)
 	if err != nil {
 		return nil, err
 	}
 
 	var acc *types.Account
-	if len(res.Accounts) > 0 {
-		acc = res.Accounts[0]
+	if len(res.Accounts.Edges) > 0 {
+		acc = res.Accounts.Edges[0].Account
 	}
 
 	return acc, nil
@@ -45,17 +54,22 @@ func (r *myAssetResolver) GlobalRewardPoolAccount(ctx context.Context, obj *type
 	if len(obj.Id) <= 0 {
 		return nil, ErrMissingIDOrReference
 	}
-	req := &protoapi.GlobalRewardPoolAccountsRequest{
-		Asset: obj.Id,
+
+	req := &v2.ListAccountsRequest{
+		Filter: &v2.AccountFilter{
+			AssetId:      obj.Id,
+			AccountTypes: []types.AccountType{types.AccountType_ACCOUNT_TYPE_GLOBAL_REWARD},
+		},
 	}
-	res, err := r.tradingDataClient.GlobalRewardPoolAccounts(ctx, req)
+
+	res, err := r.tradingDataClientV2.ListAccounts(ctx, req)
 	if err != nil {
 		return nil, err
 	}
 
 	var acc *types.Account
-	if len(res.Accounts) > 0 {
-		acc = res.Accounts[0]
+	if len(res.Accounts.Edges) > 0 {
+		acc = res.Accounts.Edges[0].Account
 	}
 
 	return acc, nil
