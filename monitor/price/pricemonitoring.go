@@ -449,10 +449,18 @@ func (e *Engine) getCurrentPriceRanges(force bool) map[*bound]priceRange {
 		if !b.Active {
 			continue
 		}
-		if e.anyTriggerBreached() && len(e.pricesPast) > 0 {
+		if e.anyTriggerBreached() && len(e.pricesPast)+len(e.pricesNow) > 0 {
 			triggerLookback := e.now.Add(time.Duration(-b.Trigger.Horizon) * time.Second)
-			// check if trigger not stale: newest reference price older than horizon lookback time
-			if (*e.mostRecentPriceTime()).Before(triggerLookback) {
+			// check if trigger's not stale (newest reference price older than horizon lookback time)
+			var mostRecentObservation time.Time
+			if len(e.pricesNow) > 0 {
+				mostRecentObservation = e.now
+			} else {
+				x := e.pricesPast[len(e.pricesPast)-1]
+				mostRecentObservation = x.Time
+			}
+			if mostRecentObservation.Before(triggerLookback) {
+				b.Active = false
 				continue
 			}
 		}
@@ -480,17 +488,6 @@ func (e *Engine) getCurrentPriceRanges(force bool) map[*bound]priceRange {
 	e.priceRangeCacheTime = e.now
 	e.stateChanged = true
 	return e.priceRangesCache
-}
-
-func (e *Engine) mostRecentPriceTime() *time.Time {
-	if len(e.pricesNow) > 0 {
-		return &e.now
-	}
-	n := len(e.pricesPast)
-	if n > 0 {
-		return &e.pricesPast[n-1].Time
-	}
-	return nil
 }
 
 func (e *Engine) anyTriggerBreached() bool {
