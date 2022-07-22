@@ -451,7 +451,7 @@ func (n *NodeCommand) startBlockchainClients(_ []string) error {
 
 	if n.conf.Blockchain.ChainProvider != blockchain.ProviderNullChain {
 		var err error
-		n.ethClient, err = ethclient.Dial(n.ctx, n.conf.NodeWallet.ETH.Address)
+		n.ethClient, err = ethclient.Dial(n.ctx, n.conf.Ethereum)
 		if err != nil {
 			return fmt.Errorf("could not instantiate ethereum client: %w", err)
 		}

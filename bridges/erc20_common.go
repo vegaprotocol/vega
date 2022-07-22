@@ -16,6 +16,7 @@ import (
 	"encoding/hex"
 	"fmt"
 
+	"code.vegaprotocol.io/vega/nodewallets/eth/clef"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	ethcmn "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
@@ -23,6 +24,7 @@ import (
 
 type Signer interface {
 	Sign([]byte) ([]byte, error)
+	Algo() string
 }
 
 type SignaturePayload struct {
@@ -68,9 +70,17 @@ func packBufAndSubmitter(
 }
 
 func sign(signer Signer, msg []byte) (*SignaturePayload, error) {
-	// hash our message before signing it
-	hash := crypto.Keccak256(msg)
-	sig, err := signer.Sign(hash)
+	var sig []byte
+	var err error
+
+	if signer.Algo() == clef.ClefAlgoType {
+		sig, err = signer.Sign(msg)
+	} else {
+		// hash our message before signing it
+		hash := crypto.Keccak256(msg)
+		sig, err = signer.Sign(hash)
+	}
+
 	if err != nil {
 		return nil, fmt.Errorf("could not sign message with ethereum wallet: %w", err)
 	}

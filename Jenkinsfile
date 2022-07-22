@@ -1,3 +1,4 @@
+/* groovylint-disable DuplicateStringLiteral, LineLength, NestedBlockDepth */
 @Library('vega-shared-library') _
 
 /* properties of scmVars (example):
@@ -24,9 +25,6 @@ pipeline {
         string( name: 'DATA_NODE_BRANCH', defaultValue: '',
                 description: '''Git branch, tag or hash of the vegaprotocol/data-node repository.
                     e.g. "develop", "v0.44.0" or commit hash. Default empty: use latests published version.''')
-        string( name: 'VEGAWALLET_BRANCH', defaultValue: '',
-                description: '''Git branch, tag or hash of the vegaprotocol/vegawallet repository.
-                    e.g. "develop", "v0.9.0" or commit hash. Default empty: use latest published version.''')
         string( name: 'DEVOPS_INFRA_BRANCH', defaultValue: 'master',
                 description: 'Git branch, tag or hash of the vegaprotocol/devops-infra repository')
         string( name: 'VEGATOOLS_BRANCH', defaultValue: 'develop',
@@ -277,7 +275,6 @@ pipeline {
                             systemTestsCapsule ignoreFailure: !isPRBuild(),
                                 vegaCore: commitHash,
                                 dataNode: params.DATA_NODE_BRANCH,
-                                vegawallet: params.VEGAWALLET_BRANCH,
                                 vegatools: params.VEGATOOLS_BRANCH,
                                 systemTests: params.SYSTEM_TESTS_BRANCH,
                                 protos: params.PROTOS_BRANCH,
@@ -290,7 +287,6 @@ pipeline {
                             script {
                                 systemTestsCapsule vegaCore: commitHash,
                                     dataNode: params.DATA_NODE_BRANCH,
-                                    vegawallet: params.VEGAWALLET_BRANCH,
                                     devopsInfra: params.DEVOPS_INFRA_BRANCH,
                                     vegatools: params.VEGATOOLS_BRANCH,
                                     systemTests: params.SYSTEM_TESTS_BRANCH,
@@ -340,6 +336,36 @@ pipeline {
                                 color: "good",
                                 message: ":docker: Vega Core » Published new docker image `${DOCKER_IMAGE_VEGA_CORE_VERSIONED}` aka `${DOCKER_IMAGE_VEGA_CORE_ALIAS}`",
                             )
+                        }
+                    }
+                }
+
+                stage('development binary for vegacapsule') {
+                    when {
+                        branch 'develop'
+                    }
+                    environment {
+                        AWS_REGION = 'eu-west-2'
+                    }
+
+                    steps {
+                        dir('vega') {
+                            script {
+                                vegaS3Ops = usernamePassword(
+                                    credentialsId: 'vegacapsule-s3-operations',
+                                    passwordVariable: 'AWS_ACCESS_KEY_ID',
+                                    usernameVariable: 'AWS_SECRET_ACCESS_KEY'
+                                )
+                                bucketName = string(
+                                    credentialsId: 'vegacapsule-s3-bucket-name',
+                                    variable: 'VEGACAPSULE_S3_BUCKET_NAME'
+                                )
+                                withCredentials([vegaS3Ops, bucketName]) {
+                                    sh label: 'Upload vega binary to S3', script: '''
+                                        aws s3 cp ./cmd/vega/vega-linux-amd64 s3://''' + env.VEGACAPSULE_S3_BUCKET_NAME + '''/bin/vega-linux-amd64-''' + versionHash + '''
+                                    '''
+                                }
+                            }
                         }
                     }
                 }

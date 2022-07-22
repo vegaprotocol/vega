@@ -95,6 +95,8 @@ func testRemoveSigner(t *testing.T) {
 
 type testSigner struct{}
 
+func (s testSigner) Algo() string { return "ed25519" }
+
 func (s testSigner) Sign(msg []byte) ([]byte, error) {
 	priv, _ := hex.DecodeString(privKey)
 
