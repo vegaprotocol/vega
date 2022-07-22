@@ -8,7 +8,7 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
     And the price monitoring named "my-price-monitoring":
       | horizon | probability | auction extension |
       | 60      | 0.95        | 240               |
-      | 120     | 0.99        | 360               |
+      | 600     | 0.99        | 360               |
     And the log normal risk model named "my-log-normal-risk-model":
       | risk aversion | tau                    | mu | r     | sigma |
       | 0.000001      | 0.00011407711613050422 | 0  | 0.016 | 2.0   |
