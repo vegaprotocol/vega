@@ -118,44 +118,13 @@ func (c *Checkpoint) getAcceptedEvents() []*pbevents.StakeLinking {
 // from the block of the oldest non accepted / verified stake linking event
 // which should ensure that we haven't missed any.
 func (c *Checkpoint) getLastBlockSeen() uint64 {
-	var block uint64
-	for _, p := range c.stakeVerifier.pendingSDs {
-		if block == 0 {
-			block = p.BlockNumber
-			continue
-		}
-
-		if p.BlockNumber < block {
-			block = p.BlockNumber
-		}
-	}
-
-	for _, p := range c.stakeVerifier.pendingSRs {
-		if block == 0 {
-			block = p.BlockNumber
-			continue
-		}
-
-		if p.BlockNumber < block {
-			block = p.BlockNumber
-		}
+	if block := c.stakeVerifier.getLastBlockSeen(); block != 0 {
+		return block
 	}
 
 	// now if block is still 0, we use the accounting stuff to find
 	// the newest block verified then instead ...
-	if block == 0 {
-		for _, acc := range c.accounting.hashableAccounts {
-			if len(acc.Events) == 0 {
-				continue
-			}
-			height := acc.Events[len(acc.Events)-1].BlockHeight
-			if block < height {
-				block = height
-			}
-		}
-	}
-
-	return block
+	return c.accounting.getLastBlockSeen()
 }
 
 type key struct {

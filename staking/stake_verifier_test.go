@@ -39,6 +39,7 @@ type stakeVerifierTest struct {
 	ocv     *mocks.MockEthOnChainVerifier
 	witness *mocks.MockWitness
 	evtfwd  *mocks.MockEvtForwarder
+	evtSrc  *mocks.MockEthereumEventSource
 
 	onTick func(context.Context, time.Time)
 }
@@ -53,11 +54,12 @@ func getStakeVerifierTest(t *testing.T) *stakeVerifierTest {
 	ts := mocks.NewMockTimeService(ctrl)
 	witness := mocks.NewMockWitness(ctrl)
 	evtfwd := mocks.NewMockEvtForwarder(ctrl)
+	evtSrc := mocks.NewMockEthereumEventSource(ctrl)
 
 	accs := staking.NewAccounting(log, cfg, ts, broker, nil, evtfwd, witness, true)
 
 	svt := &stakeVerifierTest{
-		StakeVerifier: staking.NewStakeVerifier(log, cfg, accs, witness, ts, broker, ocv),
+		StakeVerifier: staking.NewStakeVerifier(log, cfg, accs, witness, ts, broker, ocv, evtSrc),
 		ctrl:          ctrl,
 		broker:        broker,
 		accs:          accs,
@@ -65,6 +67,7 @@ func getStakeVerifierTest(t *testing.T) *stakeVerifierTest {
 		tsvc:          ts,
 		witness:       witness,
 		evtfwd:        evtfwd,
+		evtSrc:        evtSrc,
 	}
 	svt.onTick = svt.StakeVerifier.OnTick
 
