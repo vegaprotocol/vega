@@ -161,7 +161,7 @@ func (n *Forwarder) CheckTx(ctx context.Context, tx *commandspb.Transaction, clt
 	return resp, err
 }
 
-func (n *Forwarder) SendTx(ctx context.Context, tx *commandspb.Transaction, ty api.SubmitTransactionRequest_Type, cltIdx int) (string, error) {
+func (n *Forwarder) SendTx(ctx context.Context, tx *commandspb.Transaction, ty api.SubmitTransactionRequest_Type, cltIdx int) (*api.SubmitTransactionResponse, error) {
 	req := api.SubmitTransactionRequest{
 		Tx:   tx,
 		Type: ty,
@@ -186,10 +186,10 @@ func (n *Forwarder) SendTx(ctx context.Context, tx *commandspb.Transaction, ty a
 		},
 		backoff.WithMaxRetries(backoff.NewExponentialBackOff(), n.nodeCfgs.Retries),
 	); err != nil {
-		return "", err
+		return resp, err
 	}
 
-	return resp.TxHash, nil
+	return resp, nil
 }
 
 func (n *Forwarder) handleSubmissionError(err error) error {

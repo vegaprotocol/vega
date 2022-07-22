@@ -36,3 +36,7 @@ func NewPrivKeySigner(hexPrivKey string) (*PrivKeySigner, error) {
 func (p *PrivKeySigner) Sign(hash []byte) ([]byte, error) {
 	return crypto.Sign(hash, p.privateKey)
 }
+
+func (p *PrivKeySigner) Algo() string {
+	return ""
+}

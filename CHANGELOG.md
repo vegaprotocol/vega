@@ -18,11 +18,14 @@ The init command now also generate the configuration for tendermint, the flags `
 - [4655](https://github.com/vegaprotocol/vega/issues/4655) - Move Ethereum `RPC` endpoint configuration from `Nodewallet` section to `Ethereum` section
 
 ### 🛠 Improvements
+- [5589](https://github.com/vegaprotocol/vega/issues/5589) - Used custom version of Clef
 - [5541](https://github.com/vegaprotocol/vega/issues/5541) - Support permissions in wallets
+- [5439](https://github.com/vegaprotocol/vega/issues/5439) - `vegwallet` returns better responses when a transaction fails
 
 ### 🐛 Fixes
 - [5571](https://github.com/vegaprotocol/vega/issues/5571) - Restore pending assets status correctly after snapshot restore
 - [5572](https://github.com/vegaprotocol/vega/issues/5572) - Add validation on `IDs` and public keys
+- [5598](https://github.com/vegaprotocol/vega/issues/5598) - Remove `currentTime` from topology engine to ease snapshot restoration
 
 ## 0.53.0
 

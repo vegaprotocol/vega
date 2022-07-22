@@ -38,35 +38,16 @@ func (c *LocalClient) SendTransactionAsync(ctx context.Context, bytes []byte) (*
 
 func (c *LocalClient) SendTransactionSync(ctx context.Context, bytes []byte) (*tmctypes.ResultBroadcastTx, error) {
 	// Fire off the transaction for consensus
-	res, err := c.node.BroadcastTxSync(ctx, bytes)
-	if err != nil {
-		return nil, err
-	} else if res.Code != 0 {
-		return res, newUserInputError(res.Code, string(res.Data))
-	}
-	return res, nil
+	return c.node.BroadcastTxSync(ctx, bytes)
 }
 
 func (c *LocalClient) SendTransactionCommit(ctx context.Context, bytes []byte) (*tmctypes.ResultBroadcastTxCommit, error) {
 	// Fire off the transaction for consensus
-	res, err := c.node.BroadcastTxCommit(ctx, bytes)
-	if err != nil {
-		return nil, err
-	} else if res.CheckTx.Code != 0 {
-		return res, newUserInputError(res.CheckTx.Code, string(res.CheckTx.Data))
-	}
-	return res, nil
+	return c.node.BroadcastTxCommit(ctx, bytes)
 }
 
 func (c *LocalClient) CheckTransaction(ctx context.Context, bytes []byte) (*tmctypes.ResultCheckTx, error) {
-	res, err := c.node.CheckTx(ctx, bytes)
-	if err != nil {
-		return nil, err
-	} else if !res.IsOK() {
-		return res, newUserInputError(res.Code, string(res.Data))
-	}
-
-	return res, nil
+	return c.node.CheckTx(ctx, bytes)
 }
 
 // GetGenesisTime retrieves the genesis time from the blockchain.

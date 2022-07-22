@@ -76,9 +76,10 @@ func (*DummyMultiSigTopology) ExcessSigners(addresses []string) bool {
 
 type testTop struct {
 	*validators.Topology
-	ctrl   *gomock.Controller
-	wallet *mocks.MockWallet
-	broker *bmocks.MockBroker
+	ctrl        *gomock.Controller
+	wallet      *mocks.MockWallet
+	broker      *bmocks.MockBroker
+	timeService *mocks.MockTimeService
 }
 
 func getTestTopologyWithNodeWallet(
@@ -87,16 +88,18 @@ func getTestTopologyWithNodeWallet(
 	t.Helper()
 
 	broker := bmocks.NewMockBroker(ctrl)
+	timeService := mocks.NewMockTimeService(ctrl)
 	broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
 	commander := mocks.NewMockCommander(gomock.NewController(t))
 
-	top := validators.NewTopology(logging.NewTestLogger(), validators.NewDefaultConfig(), nw, broker, true, commander, &DummyMultiSigTopology{})
+	top := validators.NewTopology(logging.NewTestLogger(), validators.NewDefaultConfig(), nw, broker, true, commander, &DummyMultiSigTopology{}, timeService)
 	return &testTop{
-		Topology: top,
-		ctrl:     ctrl,
-		wallet:   wallet,
-		broker:   broker,
+		Topology:    top,
+		ctrl:        ctrl,
+		wallet:      wallet,
+		broker:      broker,
+		timeService: timeService,
 	}
 }
 
@@ -439,8 +442,9 @@ func testAddNewNodeSendsValidatorUpdateEventToBroker(t *testing.T) {
 	}
 
 	broker := bmocks.NewMockBroker(ctrl)
+	timeService := mocks.NewMockTimeService(ctrl)
 	commander := mocks.NewMockCommander(gomock.NewController(t))
-	top := validators.NewTopology(logging.NewTestLogger(), validators.NewDefaultConfig(), nw, broker, true, commander, &DummyMultiSigTopology{})
+	top := validators.NewTopology(logging.NewTestLogger(), validators.NewDefaultConfig(), nw, broker, true, commander, &DummyMultiSigTopology{}, timeService)
 
 	ctx := context.Background()
 	nr := commandspb.AnnounceNode{
@@ -492,6 +496,7 @@ func TestValidatorTopologyKeyRotate(t *testing.T) {
 func testAddKeyRotateSuccess(t *testing.T) {
 	top := getTestTopWithDefaultValidator(t)
 	defer top.ctrl.Finish()
+	top.timeService.EXPECT().GetTimeNow().AnyTimes()
 
 	id := "vega-master-pubkey"
 	vegaPubKey := "vega-key"
@@ -521,6 +526,7 @@ func testAddKeyRotateSuccess(t *testing.T) {
 func testAddKeyRotateSuccessFailsOnNonExistingNode(t *testing.T) {
 	top := getTestTopWithDefaultValidator(t)
 	defer top.ctrl.Finish()
+	top.timeService.EXPECT().GetTimeNow().AnyTimes()
 
 	id := "vega-master-pubkey"
 	newVegaPubKey := "new-ega-key"
@@ -535,6 +541,7 @@ func testAddKeyRotateSuccessFailsOnNonExistingNode(t *testing.T) {
 func testAddKeyRotateSuccessFailsWhenTargetBlockHeightIsLessThenCurrentBlockHeight(t *testing.T) {
 	top := getTestTopWithDefaultValidator(t)
 	defer top.ctrl.Finish()
+	top.timeService.EXPECT().GetTimeNow().AnyTimes()
 
 	id := "vega-master-pubkey"
 	vegaPubKey := "vega-key"
@@ -557,6 +564,7 @@ func testAddKeyRotateSuccessFailsWhenTargetBlockHeightIsLessThenCurrentBlockHeig
 func testAddKeyRotateSuccessFailsWhenNewKeyIndexIsLessThenCurrentKeyIndex(t *testing.T) {
 	top := getTestTopWithDefaultValidator(t)
 	defer top.ctrl.Finish()
+	top.timeService.EXPECT().GetTimeNow().AnyTimes()
 
 	id := "vega-master-pubkey"
 	vegaPubKey := "vega-key"
@@ -581,6 +589,7 @@ func testAddKeyRotateSuccessFailsWhenNewKeyIndexIsLessThenCurrentKeyIndex(t *tes
 func testAddKeyRotateSuccessFailsWhenKeyRotationForNodeAlreadyExists(t *testing.T) {
 	top := getTestTopWithDefaultValidator(t)
 	defer top.ctrl.Finish()
+	top.timeService.EXPECT().GetTimeNow().AnyTimes()
 
 	id := "vega-master-pubkey"
 	vegaPubKey := "vega-key"
@@ -609,6 +618,7 @@ func testAddKeyRotateSuccessFailsWhenKeyRotationForNodeAlreadyExists(t *testing.
 func testAddKeyRotateSuccessFailsWhenCurrentPubKeyHashDoesNotMatch(t *testing.T) {
 	top := getTestTopWithDefaultValidator(t)
 	defer top.ctrl.Finish()
+	top.timeService.EXPECT().GetTimeNow().AnyTimes()
 
 	id := "vega-master-pubkey"
 	vegaPubKey := "vega-key"
@@ -645,6 +655,7 @@ func newKeyRotationSubmission(currentPubKey, newVegaPubKey string, keyIndex uint
 func testBeginBlockSuccess(t *testing.T) {
 	top := getTestTopWithDefaultValidator(t)
 	defer top.ctrl.Finish()
+	top.timeService.EXPECT().GetTimeNow().AnyTimes()
 
 	chainValidators := []string{"tm-pubkey-1", "tm-pubkey-2", "tm-pubkey-3", "tm-pubkey-4"}
 
@@ -717,6 +728,7 @@ func newCallback(times int) *Callback {
 func testBeginBlockNotifyKeyChange(t *testing.T) {
 	top := getTestTopWithDefaultValidator(t)
 	defer top.ctrl.Finish()
+	top.timeService.EXPECT().GetTimeNow().AnyTimes()
 
 	chainValidators := []string{"tm-pubkey-1", "tm-pubkey-2"}
 
