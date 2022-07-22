@@ -264,7 +264,9 @@ type Query {
   markets("ID of the market" id: ID): [Market!]
 
   marketsConnection(
+    "Optional ID of a market"
     id: ID
+    "Optional pagination information"
     pagination: Pagination
   ): MarketConnection!
 
@@ -275,7 +277,9 @@ type Query {
   parties("Optional ID of a party" id: ID): [Party!]
 
   partiesConnection(
+    "Optional ID of a party to retrieve"
     id: ID
+    "Optional pagination information"
     pagination: Pagination
   ): PartyConnection!
 
@@ -365,7 +369,17 @@ type Query {
   proposals(
     "Returns only proposals in the specified state. Leave out to get all proposals"
     inState: ProposalState
-  ): [Proposal!]
+  ): [Proposal!] @deprecated(reason: "Use proposalsConnection instead")
+
+  "All governance proposals in the VEGA network"
+  proposalsConnection(
+    "Optional type of proposal to retrieve data for"
+    proposalType: ProposalType
+    "Returns only proposals in the specified state. Leave out to get all proposals"
+    inState: ProposalState
+    "Optional Pagination information"
+    pagination: Pagination
+  ): ProposalsConnection!
 
   "A governance proposal located by either its id or reference. If both are set, id is used."
   proposal(
@@ -379,7 +393,7 @@ type Query {
   newMarketProposals(
     "Returns only proposals in the specified state. Leave out to get all proposals"
     inState: ProposalState
-  ): [Proposal!]
+  ): [Proposal!] @deprecated(reason: "Use proposalsConnection instead")
 
   "Governance proposals that aim to update existing markets"
   updateMarketProposals(
@@ -387,25 +401,25 @@ type Query {
     marketId: ID
     "Returns only proposals in the specified state. Leave out to get all proposals"
     inState: ProposalState
-  ): [Proposal!]
+  ): [Proposal!] @deprecated(reason: "Use proposalsConnection instead")
 
   "Governance proposals that aim to update Vega network parameters"
   networkParametersProposals(
     "Returns only proposals in the specified state. Leave out to get all proposals"
     inState: ProposalState
-  ): [Proposal!]
+  ): [Proposal!] @deprecated(reason: "Use proposalsConnection instead")
 
   "Governance proposals that aim to create new assets in Vega"
   newAssetProposals(
     "Returns only proposals in the specified state. Leave out to get all proposals"
     inState: ProposalState
-  ): [Proposal!]
+  ): [Proposal!] @deprecated(reason: "Use proposalsConnection instead")
 
   "Governance proposals that allows creation of free form proposals in Vega"
   newFreeformProposals(
     "Returns only proposals in the specified state. Leave out to get all proposals"
     inState: ProposalState
-  ): [Proposal!]
+  ): [Proposal!] @deprecated(reason: "Use proposalsConnection instead")
 
   "Return a list of aggregated node signature for a given resource ID"
   nodeSignatures(resourceId: ID!): [NodeSignature!]
@@ -1677,7 +1691,17 @@ type Party {
   proposals(
     "Select only proposals in the specified state. Leave out to get all proposals"
     inState: ProposalState
-  ): [Proposal]
+  ): [Proposal] @deprecated(reason: "Use proposalsConnection instead")
+
+  "All governance proposals in the VEGA network"
+  proposalsConnection(
+    "Optional type of proposal to retrieve data for"
+    proposalType: ProposalType
+    "Returns only proposals in the specified state. Leave out to get all proposals"
+    inState: ProposalState
+    "Optional Pagination information"
+    pagination: Pagination
+  ): ProposalsConnection!
 
   votes: [ProposalVote]
 
@@ -1687,13 +1711,13 @@ type Party {
   withdrawals: [Withdrawal!] @deprecated(reason: "Use withdrawalsConnection instead")
 
   "The list of all withdrawals initiated by the party"
-  withdrawalsConnection: WithdrawalsConnection!
+  withdrawalsConnection(pagination: Pagination): WithdrawalsConnection!
 
   "The list of all deposits for a party by the party"
   deposits: [Deposit!] @deprecated(reason: "Use depositsConnection instead")
 
   "The list of all deposits for a party by the party"
-  depositsConnection: DepositsConnection!
+  depositsConnection(pagination: Pagination): DepositsConnection!
 
   "The list of the liquidity provision commitment from this party"
   liquidityProvisions(
@@ -2713,6 +2737,22 @@ type ProposalTerms {
 }
 
 """
+Various proposal types that are supported by Vega
+"""
+enum ProposalType {
+  "Propose a new market"
+  NewMarket
+  "Update an existing market"
+  UpdateMarket
+  "Proposal to change Vega network parameters"
+  NetworkParameters
+  "Proposal to add a new asset"
+  NewAsset
+  "Proposal to create a new free form proposal"
+  NewFreeForm
+}
+
+"""
 Various states a proposal can transition through:
 Open ->
 - Passed -> Enacted.
@@ -3489,3 +3529,16 @@ enum TransferDirection {
   ToOrFrom
 }
 
+type ProposalEdge {
+  "The proposal data"
+  node: Proposal!
+  "Cursor identifying the proposal"
+  cursor: String!
+}
+
+type ProposalsConnection {
+    "List of proposals available for the connection"
+    edges: [ProposalEdge]
+    "Page information for the connection"
+    pageInfo: PageInfo!
+}

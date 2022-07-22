@@ -18,6 +18,7 @@ import (
 	"strconv"
 
 	protoapi "code.vegaprotocol.io/protos/data-node/api/v1"
+	v2 "code.vegaprotocol.io/protos/data-node/api/v2"
 	types "code.vegaprotocol.io/protos/vega"
 	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
 	oraclesv1 "code.vegaprotocol.io/protos/vega/oracles/v1"
@@ -160,6 +161,10 @@ func (s *ProposalState) ToOptionalProposalState() (*protoapi.OptionalProposalSta
 // IntoProtoValue ...
 func (s ProposalState) IntoProtoValue() (types.Proposal_State, error) {
 	return convertProposalStateToProto(s)
+}
+
+func (t *ProposalType) IntoProtoValue() v2.ListGovernanceDataRequest_Type {
+	return convertProposalTypeToProto(*t)
 }
 
 // ProposalVoteFromProto ...

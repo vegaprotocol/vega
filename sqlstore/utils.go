@@ -72,7 +72,6 @@ func orderAndPaginateQuery(query string, orderColumns []string, pagination entit
 func orderAndPaginateWithCursor(query string, pagination entities.CursorPagination, cursors CursorQueryParameters,
 	args ...interface{}) (string, []interface{},
 ) {
-	var limit int32
 	var order string
 
 	whereOrAnd := "WHERE"
@@ -87,17 +86,9 @@ func orderAndPaginateWithCursor(query string, pagination entities.CursorPaginati
 		query = fmt.Sprintf("%s %s %s", query, whereOrAnd, cursor)
 	}
 
-	if pagination.HasForward() && pagination.Forward.Limit != nil {
-		limit = *pagination.Forward.Limit + 1
-		if pagination.Forward.HasCursor() {
-			limit = *pagination.Forward.Limit + 2 // +2 to make sure we get the previous and next cursor
-		}
-	} else if pagination.HasBackward() && pagination.Backward.Limit != nil {
-		limit = *pagination.Backward.Limit + 1
-		if pagination.Backward.HasCursor() {
-			limit = *pagination.Backward.Limit + 2 // +2 to make sure we get the previous and next cursor
-		}
-	} else {
+	limit := calculateLimit(pagination)
+
+	if limit == 0 {
 		// return everything ordered by the cursor column ordered ascending
 		order = cursors.OrderBy()
 		query = fmt.Sprintf("%s ORDER BY %s", query, order)
@@ -109,6 +100,23 @@ func orderAndPaginateWithCursor(query string, pagination entities.CursorPaginati
 	query = fmt.Sprintf("%s LIMIT %d", query, limit)
 
 	return query, args
+}
+
+func calculateLimit(pagination entities.CursorPagination) int {
+	var limit int32
+	if pagination.HasForward() && pagination.Forward.Limit != nil {
+		limit = *pagination.Forward.Limit + 1
+		if pagination.Forward.HasCursor() {
+			limit = *pagination.Forward.Limit + 2 // +2 to make sure we get the previous and next cursor
+		}
+	} else if pagination.HasBackward() && pagination.Backward.Limit != nil {
+		limit = *pagination.Backward.Limit + 1
+		if pagination.Backward.HasCursor() {
+			limit = *pagination.Backward.Limit + 2 // +2 to make sure we get the previous and next cursor
+		}
+	}
+
+	return int(limit)
 }
 
 func extractPaginationInfo(pagination entities.CursorPagination) (Sorting, Compare, string) {

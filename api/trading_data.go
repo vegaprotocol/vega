@@ -531,7 +531,8 @@ func (t *tradingDataService) GetProposals(ctx context.Context, req *protoapi.Get
 
 	inState := proposalState(req.SelectInState)
 
-	proposals, err := t.governanceService.GetProposals(ctx, inState, nil, nil)
+	proposals, _, err := t.governanceService.GetProposals(ctx, inState, nil, nil,
+		entities.CursorPagination{})
 	if err != nil {
 		return nil, apiError(codes.Internal, err)
 	}
@@ -551,7 +552,8 @@ func (t *tradingDataService) GetProposalsByParty(ctx context.Context,
 
 	inState := proposalState(req.SelectInState)
 
-	proposals, err := t.governanceService.GetProposals(ctx, inState, &req.PartyId, nil)
+	proposals, _, err := t.governanceService.GetProposals(ctx, inState, &req.PartyId, nil,
+		entities.CursorPagination{})
 	if err != nil {
 		return nil, apiError(codes.Internal, err)
 	}
@@ -625,7 +627,8 @@ func (t *tradingDataService) GetNewMarketProposals(ctx context.Context,
 	defer metrics.StartAPIRequestAndTimeGRPC("GetNewMarketProposals SQL")()
 
 	inState := proposalState(req.SelectInState)
-	proposals, err := t.governanceService.GetProposals(ctx, inState, nil, &entities.ProposalTypeNewMarket)
+	proposals, _, err := t.governanceService.GetProposals(ctx, inState, nil, &entities.ProposalTypeNewMarket,
+		entities.CursorPagination{})
 	if err != nil {
 		return nil, apiError(codes.Internal, err)
 	}
@@ -642,7 +645,8 @@ func (t *tradingDataService) GetUpdateMarketProposals(ctx context.Context,
 	defer metrics.StartAPIRequestAndTimeGRPC("GetUpdateMarketProposals SQL")()
 
 	inState := proposalState(req.SelectInState)
-	proposals, err := t.governanceService.GetProposals(ctx, inState, nil, &entities.ProposalTypeUpdateMarket)
+	proposals, _, err := t.governanceService.GetProposals(ctx, inState, nil, &entities.ProposalTypeUpdateMarket,
+		entities.CursorPagination{})
 	if err != nil {
 		return nil, apiError(codes.Internal, err)
 	}
@@ -660,7 +664,8 @@ func (t *tradingDataService) GetNetworkParametersProposals(ctx context.Context,
 
 	inState := proposalState(req.SelectInState)
 
-	proposals, err := t.governanceService.GetProposals(ctx, inState, nil, &entities.ProposalTypeUpdateNetworkParameter)
+	proposals, _, err := t.governanceService.GetProposals(ctx, inState, nil, &entities.ProposalTypeUpdateNetworkParameter,
+		entities.CursorPagination{})
 	if err != nil {
 		return nil, apiError(codes.Internal, err)
 	}
@@ -680,7 +685,8 @@ func (t *tradingDataService) GetNewAssetProposals(ctx context.Context,
 
 	inState := proposalState(req.SelectInState)
 
-	proposals, err := t.governanceService.GetProposals(ctx, inState, nil, &entities.ProposalTypeNewAsset)
+	proposals, _, err := t.governanceService.GetProposals(ctx, inState, nil, &entities.ProposalTypeNewAsset,
+		entities.CursorPagination{})
 	if err != nil {
 		return nil, apiError(codes.Internal, err)
 	}
@@ -700,7 +706,8 @@ func (t *tradingDataService) GetNewFreeformProposals(ctx context.Context,
 
 	inState := proposalState(req.SelectInState)
 
-	proposals, err := t.governanceService.GetProposals(ctx, inState, nil, &entities.ProposalTypeNewFreeform)
+	proposals, _, err := t.governanceService.GetProposals(ctx, inState, nil, &entities.ProposalTypeNewFreeform,
+		entities.CursorPagination{})
 	if err != nil {
 		return nil, apiError(codes.Internal, err)
 	}

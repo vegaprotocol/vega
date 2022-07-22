@@ -734,11 +734,11 @@ func (r *myQueryResolver) AssetsConnection(ctx context.Context, id *string, pagi
 		assetID = *id
 	}
 
-	req := &v2.GetAssetsRequest{
+	req := &v2.ListAssetsRequest{
 		AssetId:    assetID,
 		Pagination: pagination,
 	}
-	resp, err := r.tradingDataClientV2.GetAssets(ctx, req)
+	resp, err := r.tradingDataClientV2.ListAssets(ctx, req)
 	if err != nil {
 		return nil, err
 	}
@@ -859,6 +859,11 @@ func (r *myQueryResolver) Proposals(ctx context.Context, inState *ProposalState)
 		return nil, err
 	}
 	return resp.Data, nil
+}
+
+func (r *myQueryResolver) ProposalsConnection(ctx context.Context, proposalType *ProposalType, inState *ProposalState,
+	pagination *v2.Pagination) (*v2.GovernanceDataConnection, error) {
+	return handleProposalsRequest(ctx, r.tradingDataClientV2, nil, nil, proposalType, inState, pagination)
 }
 
 func (r *myQueryResolver) Proposal(ctx context.Context, id *string, reference *string) (*types.GovernanceData, error) {
@@ -1158,12 +1163,12 @@ func (r *myPartyResolver) RewardsConnection(ctx context.Context, party *types.Pa
 		assetID = *asset
 	}
 
-	req := v2.GetRewardsRequest{
+	req := v2.ListRewardsRequest{
 		PartyId:    party.Id,
 		AssetId:    assetID,
 		Pagination: pagination,
 	}
-	resp, err := r.tradingDataClientV2.GetRewards(ctx, &req)
+	resp, err := r.tradingDataClientV2.ListRewards(ctx, &req)
 	if err != nil {
 		return nil, fmt.Errorf("could not retrieve rewards information: %w", err)
 	}
@@ -1241,24 +1246,19 @@ func (r *myPartyResolver) LiquidityProvisionsConnection(
 	market, ref *string,
 	pagination *v2.Pagination,
 ) (*v2.LiquidityProvisionsConnection, error) {
-	var mid string
-	if market != nil {
-		mid = *market
+	var pid *string
+	if party != nil {
+		pid = &party.Id
 	}
 
-	var refId string
-	if ref != nil {
-		refId = *ref
-	}
-
-	req := v2.GetLiquidityProvisionsRequest{
-		Party:      party.Id,
-		Market:     mid,
-		Reference:  refId,
+	req := v2.ListLiquidityProvisionsRequest{
+		PartyId:    pid,
+		MarketId:   market,
+		Reference:  ref,
 		Pagination: pagination,
 	}
 
-	res, err := r.tradingDataClientV2.GetLiquidityProvisions(ctx, &req)
+	res, err := r.tradingDataClientV2.ListLiquidityProvisions(ctx, &req)
 	if err != nil {
 		r.log.Error("tradingData client", logging.Error(err))
 		return nil, customErrorFromStatus(err)
@@ -1300,13 +1300,13 @@ func (r *myPartyResolver) MarginsConnection(ctx context.Context, party *types.Pa
 		market = *marketID
 	}
 
-	req := v2.GetMarginLevelsRequest{
+	req := v2.ListMarginLevelsRequest{
 		PartyId:    party.Id,
 		MarketId:   market,
 		Pagination: pagination,
 	}
 
-	res, err := r.tradingDataClientV2.GetMarginLevels(ctx, &req)
+	res, err := r.tradingDataClientV2.ListMarginLevels(ctx, &req)
 	if err != nil {
 		r.log.Error("tradingData client", logging.Error(err))
 		return nil, customErrorFromStatus(err)
@@ -1428,13 +1428,13 @@ func (r *myPartyResolver) PositionsConnection(ctx context.Context, party *types.
 		marketID = *market
 	}
 
-	req := v2.GetPositionsByPartyConnectionRequest{
+	req := v2.ListPositionsRequest{
 		PartyId:    partyID,
 		MarketId:   marketID,
 		Pagination: pagination,
 	}
 
-	res, err := r.tradingDataClientV2.GetPositionsByPartyConnection(ctx, &req)
+	res, err := r.tradingDataClientV2.ListPositions(ctx, &req)
 	if err != nil {
 		r.log.Error("tradingData client", logging.Error(err))
 		return nil, customErrorFromStatus(err)
@@ -1524,6 +1524,11 @@ func (r *myPartyResolver) Proposals(ctx context.Context, party *types.Party, inS
 	return resp.Data, nil
 }
 
+func (r *myPartyResolver) ProposalsConnection(ctx context.Context, party *types.Party, proposalType *ProposalType, inState *ProposalState,
+	pagination *v2.Pagination) (*v2.GovernanceDataConnection, error) {
+	return handleProposalsRequest(ctx, r.tradingDataClientV2, party, nil, proposalType, inState, pagination)
+}
+
 func (r *myPartyResolver) Withdrawals(ctx context.Context, party *types.Party) ([]*types.Withdrawal, error) {
 	res, err := r.tradingDataClient.Withdrawals(
 		ctx, &protoapi.WithdrawalsRequest{PartyId: party.Id},
@@ -1535,8 +1540,8 @@ func (r *myPartyResolver) Withdrawals(ctx context.Context, party *types.Party) (
 	return res.Withdrawals, nil
 }
 
-func (r *myPartyResolver) WithdrawalsConnection(ctx context.Context, party *types.Party) (*v2.WithdrawalsConnection, error) {
-	return handleWithdrawalsConnectionRequest(ctx, r.tradingDataClientV2, party)
+func (r *myPartyResolver) WithdrawalsConnection(ctx context.Context, party *types.Party, pagination *v2.Pagination) (*v2.WithdrawalsConnection, error) {
+	return handleWithdrawalsConnectionRequest(ctx, r.tradingDataClientV2, party, pagination)
 }
 
 func (r *myPartyResolver) Deposits(ctx context.Context, party *types.Party) ([]*types.Deposit, error) {
@@ -1550,8 +1555,8 @@ func (r *myPartyResolver) Deposits(ctx context.Context, party *types.Party) ([]*
 	return res.Deposits, nil
 }
 
-func (r *myPartyResolver) DepositsConnection(ctx context.Context, party *types.Party) (*v2.DepositsConnection, error) {
-	return handleDepositsConnectionRequest(ctx, r.tradingDataClientV2, party)
+func (r *myPartyResolver) DepositsConnection(ctx context.Context, party *types.Party, pagination *v2.Pagination) (*v2.DepositsConnection, error) {
+	return handleDepositsConnectionRequest(ctx, r.tradingDataClientV2, party, pagination)
 }
 
 func (r *myPartyResolver) Votes(ctx context.Context, party *types.Party) ([]*ProposalVote, error) {
@@ -2264,13 +2269,13 @@ func (r *myPositionResolver) Margins(ctx context.Context, obj *types.Position) (
 }
 
 func (r *myPositionResolver) MarginsConnection(ctx context.Context, pos *types.Position, pagination *v2.Pagination) (*v2.MarginConnection, error) {
-	req := v2.GetMarginLevelsRequest{
+	req := v2.ListMarginLevelsRequest{
 		PartyId:    pos.PartyId,
 		MarketId:   pos.MarketId,
 		Pagination: pagination,
 	}
 
-	res, err := r.tradingDataClientV2.GetMarginLevels(ctx, &req)
+	res, err := r.tradingDataClientV2.ListMarginLevels(ctx, &req)
 	if err != nil {
 		r.log.Error("tradingData client", logging.Error(err))
 		return nil, customErrorFromStatus(err)
@@ -3112,7 +3117,7 @@ func (r *myQueryResolver) MarketsConnection(ctx context.Context, id *string, pag
 		marketID = *id
 	}
 
-	resp, err := r.tradingDataClientV2.GetMarkets(ctx, &v2.GetMarketsRequest{
+	resp, err := r.tradingDataClientV2.ListMarkets(ctx, &v2.ListMarketsRequest{
 		MarketId:   marketID,
 		Pagination: pagination,
 	})
@@ -3128,7 +3133,7 @@ func (r *myQueryResolver) PartiesConnection(ctx context.Context, id *string, pag
 	if id != nil {
 		partyID = *id
 	}
-	resp, err := r.tradingDataClientV2.GetParties(ctx, &v2.GetPartiesRequest{
+	resp, err := r.tradingDataClientV2.ListParties(ctx, &v2.ListPartiesRequest{
 		PartyId:    partyID,
 		Pagination: pagination,
 	})
@@ -3184,14 +3189,14 @@ func handleCandleConnectionRequest(ctx context.Context, client TradingDataServic
 		return nil, fmt.Errorf("could not find candle for market %s and interval %s", mkt, interval)
 	}
 
-	req := v2.GetCandleDataRequest{
+	req := v2.ListCandleDataRequest{
 		CandleId:      candleID,
 		FromTimestamp: since.Unix(),
 		ToTimestamp:   to.Unix(),
 		Interval:      pInterval,
 		Pagination:    pagination,
 	}
-	resp, err := client.GetCandleData(ctx, &req)
+	resp, err := client.ListCandleData(ctx, &req)
 	if err != nil {
 		return nil, fmt.Errorf("could not retrieve candles for market %s: %w", mkt, err)
 	}
@@ -3199,20 +3204,60 @@ func handleCandleConnectionRequest(ctx context.Context, client TradingDataServic
 	return resp.Candles, nil
 }
 
-func handleWithdrawalsConnectionRequest(ctx context.Context, client TradingDataServiceClientV2, party *types.Party) (*v2.WithdrawalsConnection, error) {
-	req := v2.GetWithdrawalsRequest{PartyId: party.Id}
-	resp, err := client.GetWithdrawals(ctx, &req)
+func handleWithdrawalsConnectionRequest(ctx context.Context, client TradingDataServiceClientV2, party *types.Party,
+	pagination *v2.Pagination) (*v2.WithdrawalsConnection, error) {
+	req := v2.ListWithdrawalsRequest{PartyId: party.Id, Pagination: pagination}
+	resp, err := client.ListWithdrawals(ctx, &req)
 	if err != nil {
 		return nil, fmt.Errorf("could not retrieve withdrawals for party %s: %w", party.Id, err)
 	}
 	return resp.Withdrawals, nil
 }
 
-func handleDepositsConnectionRequest(ctx context.Context, client TradingDataServiceClientV2, party *types.Party) (*v2.DepositsConnection, error) {
-	req := v2.GetDepositsRequest{PartyId: party.Id}
-	resp, err := client.GetDeposits(ctx, &req)
+func handleDepositsConnectionRequest(ctx context.Context, client TradingDataServiceClientV2, party *types.Party,
+	pagination *v2.Pagination) (*v2.DepositsConnection, error) {
+	req := v2.ListDepositsRequest{PartyId: party.Id, Pagination: pagination}
+	resp, err := client.ListDeposits(ctx, &req)
 	if err != nil {
 		return nil, fmt.Errorf("could not retrieve deposits for party %s: %w", party.Id, err)
 	}
 	return resp.Deposits, nil
+}
+
+func handleProposalsRequest(ctx context.Context, client TradingDataServiceClientV2, party *types.Party, ref *string, inType *ProposalType,
+	inState *ProposalState, pagination *v2.Pagination) (*v2.GovernanceDataConnection, error) {
+
+	var partyID *string
+	var proposalState *types.Proposal_State
+	var proposalType *v2.ListGovernanceDataRequest_Type
+
+	if party != nil {
+		partyID = &party.Id
+	}
+
+	if inType != nil {
+		pType := inType.IntoProtoValue()
+		proposalType = &pType
+	}
+
+	if inState != nil {
+		state, err := inState.IntoProtoValue()
+		if err != nil {
+			return nil, err
+		}
+		proposalState = &state
+	}
+
+	req := v2.ListGovernanceDataRequest{
+		ProposerPartyId:   partyID,
+		ProposalReference: ref,
+		ProposalType:      proposalType,
+		ProposalState:     proposalState,
+		Pagination:        pagination,
+	}
+	resp, err := client.ListGovernanceData(ctx, &req)
+	if err != nil {
+		return nil, err
+	}
+	return resp.Connection, nil
 }
