@@ -41,7 +41,6 @@ import (
 	"code.vegaprotocol.io/vega/limits"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/metrics"
-	"code.vegaprotocol.io/vega/monitoring"
 	"code.vegaprotocol.io/vega/netparams"
 	"code.vegaprotocol.io/vega/nodewallets"
 	"code.vegaprotocol.io/vega/notary"
@@ -73,7 +72,6 @@ type Config struct {
 	Oracles           oracles.Config       `group:"Oracles" namespace:"oracles"`
 	Time              vegatime.Config      `group:"Time" namespace:"time"`
 	Epoch             epochtime.Config     `group:"Epoch" namespace:"epochtime"`
-	Monitoring        monitoring.Config    `group:"Monitoring" namespace:"monitoring"`
 	Metrics           metrics.Config       `group:"Metrics" namespace:"metrics"`
 	Governance        governance.Config    `group:"Governance" namespace:"governance"`
 	NodeWallet        nodewallets.Config   `group:"NodeWallet" namespace:"nodewallet"`
@@ -118,7 +116,6 @@ func NewDefaultConfig() Config {
 		Time:              vegatime.NewDefaultConfig(),
 		Epoch:             epochtime.NewDefaultConfig(),
 		Pprof:             pprof.NewDefaultConfig(),
-		Monitoring:        monitoring.NewDefaultConfig(),
 		Logging:           logging.NewDefaultConfig(),
 		Collateral:        collateral.NewDefaultConfig(),
 		Metrics:           metrics.NewDefaultConfig(),

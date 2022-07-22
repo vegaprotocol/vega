@@ -34,7 +34,6 @@ import (
 	"code.vegaprotocol.io/vega/libs/pprof"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/metrics"
-	"code.vegaprotocol.io/vega/monitoring"
 	"code.vegaprotocol.io/vega/nodewallets"
 	"code.vegaprotocol.io/vega/protocol"
 	"code.vegaprotocol.io/vega/stats"
@@ -81,8 +80,6 @@ type NodeCommand struct {
 	adminServer *admin.Server
 	coreService *coreapi.Service
 
-	statusChecker *monitoring.Status
-
 	protocolUpgrade <-chan string
 
 	tmNode *abci.TmNode
@@ -111,9 +108,6 @@ func (n *NodeCommand) Run(
 	if err := n.startBlockchainClients(args); err != nil {
 		return err
 	}
-
-	n.statusChecker = monitoring.New(n.Log, n.conf.Monitoring, n.blockchainClient)
-	n.statusChecker.OnChainDisconnect(n.cancel)
 
 	// TODO(): later we will want to select what version of the protocol
 	// to run, most likely via configuration, so we can use legacy or current
@@ -214,9 +208,6 @@ func (n *NodeCommand) Stop() error {
 	if n.blockchainServer != nil {
 		n.blockchainServer.Stop()
 	}
-	if n.statusChecker != nil {
-		n.statusChecker.Stop()
-	}
 	if n.proxyServer != nil {
 		n.proxyServer.Stop()
 	}
@@ -267,7 +258,6 @@ func (n *NodeCommand) startAPIs() error {
 		n.protocol.GetEventForwarder(),
 		n.protocol.GetTimeService(),
 		n.protocol.GetEventService(),
-		n.statusChecker,
 		n.protocol.GetPoW(),
 	)
 
@@ -279,7 +269,6 @@ func (n *NodeCommand) startAPIs() error {
 	// watch configs
 	n.confWatcher.OnConfigUpdate(
 		func(cfg config.Config) { n.grpcServer.ReloadConf(cfg.API) },
-		func(cfg config.Config) { n.statusChecker.ReloadConf(cfg.Monitoring) },
 	)
 
 	n.proxyServer = rest.NewProxyServer(n.Log, n.conf.API)
