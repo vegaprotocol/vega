@@ -54,15 +54,19 @@ func (r *myMarketResolver) LiquidityProvisionsConnection(
 	party *string,
 	pagination *v2.Pagination,
 ) (*v2.LiquidityProvisionsConnection, error) {
-	var marketID *string
+	var pid string
+	if party != nil {
+		pid = *party
+	}
 
+	var marketID string
 	if market != nil {
-		marketID = &market.Id
+		marketID = market.Id
 	}
 
 	req := v2.ListLiquidityProvisionsRequest{
-		PartyId:    party,
-		MarketId:   marketID,
+		PartyId:    &pid,
+		MarketId:   &marketID,
 		Pagination: pagination,
 	}
 

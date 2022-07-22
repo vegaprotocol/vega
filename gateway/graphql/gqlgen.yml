@@ -310,3 +310,7 @@ models:
     model: code.vegaprotocol.io/protos/data-node/api/v2.GovernanceDataEdge
   ProposalsConnection:
     model: code.vegaprotocol.io/protos/data-node/api/v2.GovernanceDataConnection
+  DelegationEdge:
+    model: code.vegaprotocol.io/protos/data-node/api/v2.DelegationEdge
+  DelegationsConnection:
+    model: code.vegaprotocol.io/protos/data-node/api/v2.DelegationsConnection

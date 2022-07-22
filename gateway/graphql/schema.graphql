@@ -704,7 +704,16 @@ type Epoch {
     "Pagination first element"
     first: Int
     "Pagination last element"
-    last: Int): [Delegation!]!
+    last: Int): [Delegation!]! @deprecated(reason: "Use delegationsConnection instead")
+
+  delegationsConnection(
+    # Optional party id to filter on
+    partyId: String
+    # Optional node id to filter on
+    nodeId: String
+    "Pagination information"
+   pagination: Pagination
+  ): DelegationsConnection!
 }
 
 type NodeData {
@@ -797,7 +806,12 @@ type Node {
     "Pagination first element"
     first: Int
     "Pagination last element"
-    last: Int): [Delegation!]
+    last: Int): [Delegation!] @deprecated(reason: "Use delegationsConnection instead")
+
+  delegationsConnection(
+    partyId: String,
+    pagination: Pagination
+  ): DelegationsConnection!
 
   "Reward scores for the current epoch for the validator"
   rewardScore: RewardScore
@@ -1746,7 +1760,14 @@ type Party {
     "Pagination first element"
     first: Int
     "Pagination last element"
-    last: Int): [Delegation!]
+    last: Int): [Delegation!] @deprecated(reason: "Use delegationsConnection instead")
+
+  delegationsConnection(
+    "Optional node"
+    nodeId: String
+    "Pagination information"
+    pagination: Pagination
+  ): DelegationsConnection!
 
   "The staking information for this Party"
   stake: PartyStake!
@@ -3541,4 +3562,17 @@ type ProposalsConnection {
     edges: [ProposalEdge]
     "Page information for the connection"
     pageInfo: PageInfo!
+}
+type DelegationEdge {
+  "The delegation information"
+  node: Delegation!
+  "The cursor for the data item"
+  cursor: String!
+}
+
+type DelegationsConnection {
+  "The delegation information available on this connection"
+  edges: [DelegationEdge]
+  "The pagination information"
+  pageInfo: PageInfo!
 }

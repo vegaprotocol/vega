@@ -14,11 +14,13 @@ package sqlstore
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 
 	"code.vegaprotocol.io/data-node/entities"
 	"code.vegaprotocol.io/data-node/metrics"
+	v2 "code.vegaprotocol.io/protos/data-node/api/v2"
 	"github.com/georgysavva/scany/pgxscan"
 )
 
@@ -59,10 +61,12 @@ func (ds *Delegations) Get(ctx context.Context,
 	partyIDHex *string,
 	nodeIDHex *string,
 	epochID *int64,
-	p *entities.OffsetPagination,
-) ([]entities.Delegation, error) {
+	pagination entities.Pagination,
+) ([]entities.Delegation, entities.PageInfo, error) {
 	query := `SELECT * from delegations_current`
 	args := []interface{}{}
+	var cursorParams []CursorQueryParameter
+	var pageInfo entities.PageInfo
 
 	conditions := []string{}
 
@@ -84,16 +88,40 @@ func (ds *Delegations) Get(ctx context.Context,
 		query = fmt.Sprintf("%s WHERE %s", query, strings.Join(conditions, " AND "))
 	}
 
-	if p != nil {
-		order_cols := []string{"epoch_id", "party_id", "node_id"}
-		query, args = orderAndPaginateQuery(query, order_cols, *p, args...)
-	}
-
 	defer metrics.StartSQLQuery("Delegations", "Get")()
 	delegations := []entities.Delegation{}
+	if pagination != nil {
+		switch p := pagination.(type) {
+		case *entities.OffsetPagination:
+			if p != nil {
+				order_cols := []string{"epoch_id", "party_id", "node_id"}
+				query, args = orderAndPaginateQuery(query, order_cols, *p, args...)
+			}
+		case entities.CursorPagination:
+			sorting, cmp, cursor := extractPaginationInfo(p)
+			cursorParams = append(cursorParams,
+				NewCursorQueryParameter("vega_time", sorting, cmp, cursor),
+			)
+			query, args = orderAndPaginateWithCursor(query, p, cursorParams, args...)
+
+			err := pgxscan.Select(ctx, ds.Connection, &delegations, query, args...)
+			if err != nil {
+				return nil, pageInfo, fmt.Errorf("querying delegations: %w", err)
+			}
+
+			delegations, pageInfo = entities.PageEntities[*v2.DelegationEdge](delegations, p)
+
+			return delegations, pageInfo, nil
+		default:
+			// invalid pagination type
+			return nil, pageInfo, errors.New("invalid cursor")
+		}
+	}
+
 	err := pgxscan.Select(ctx, ds.Connection, &delegations, query, args...)
 	if err != nil {
-		return nil, fmt.Errorf("querying delegations: %w", err)
+		return nil, pageInfo, fmt.Errorf("querying delegations: %w", err)
 	}
-	return delegations, nil
+
+	return delegations, pageInfo, nil
 }

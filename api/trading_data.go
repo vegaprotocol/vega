@@ -874,7 +874,7 @@ func (t *tradingDataService) GetEpoch(ctx context.Context, req *protoapi.GetEpoc
 
 	protoEpoch := epoch.ToProto()
 
-	delegations, err := t.delegationService.Get(ctx, nil, nil, &epoch.ID, nil)
+	delegations, _, err := t.delegationService.Get(ctx, nil, nil, &epoch.ID, nil)
 	if err != nil {
 		return nil, apiError(codes.Internal, err)
 	}
@@ -937,7 +937,7 @@ func (t *tradingDataService) Delegations(ctx context.Context,
 		nodeID = &req.NodeId
 	}
 
-	delegations, err = t.delegationService.Get(ctx, partyID, nodeID, epochID, &p)
+	delegations, _, err = t.delegationService.Get(ctx, partyID, nodeID, epochID, &p)
 
 	if err != nil {
 		return nil, apiError(codes.Internal, err)

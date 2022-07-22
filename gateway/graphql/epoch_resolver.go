@@ -17,6 +17,7 @@ import (
 	"strconv"
 
 	protoapi "code.vegaprotocol.io/protos/data-node/api/v1"
+	v2 "code.vegaprotocol.io/protos/data-node/api/v2"
 	proto "code.vegaprotocol.io/protos/vega"
 )
 
@@ -54,4 +55,15 @@ func (r *epochResolver) Delegations(
 	}
 
 	return resp.Delegations, nil
+}
+
+func (r *epochResolver) DelegationsConnection(ctx context.Context, epoch *proto.Epoch, partyID *string, nodeID *string, pagination *v2.Pagination) (*v2.DelegationsConnection, error) {
+	var epochID *string
+
+	if epoch != nil {
+		seq := strconv.FormatUint(epoch.Seq, 10)
+		epochID = &seq
+	}
+
+	return handleDelegationConnectionRequest(ctx, r.tradingDataClientV2, partyID, nodeID, epochID, pagination)
 }

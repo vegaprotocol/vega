@@ -17,6 +17,7 @@ import (
 	"fmt"
 
 	protoapi "code.vegaprotocol.io/protos/data-node/api/v1"
+	v2 "code.vegaprotocol.io/protos/data-node/api/v2"
 	proto "code.vegaprotocol.io/protos/vega"
 )
 
@@ -67,4 +68,12 @@ func (r *nodeResolver) RankingScore(ctx context.Context, obj *proto.Node) (proto
 
 func (r *nodeResolver) RewardScore(ctx context.Context, obj *proto.Node) (proto.RewardScore, error) {
 	return *obj.RewardScore, nil
+}
+
+func (r *nodeResolver) DelegationsConnection(ctx context.Context, node *proto.Node, partyID *string, pagination *v2.Pagination) (*v2.DelegationsConnection, error) {
+	var nodeID *string
+	if node == nil {
+		nodeID = &node.Id
+	}
+	return handleDelegationConnectionRequest(ctx, r.tradingDataClientV2, partyID, nodeID, nil, pagination)
 }

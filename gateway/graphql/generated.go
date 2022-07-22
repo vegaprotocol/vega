@@ -223,6 +223,16 @@ type ComplexityRoot struct {
 		Party  func(childComplexity int) int
 	}
 
+	DelegationEdge struct {
+		Cursor func(childComplexity int) int
+		Node   func(childComplexity int) int
+	}
+
+	DelegationsConnection struct {
+		Edges    func(childComplexity int) int
+		PageInfo func(childComplexity int) int
+	}
+
 	Deposit struct {
 		Amount            func(childComplexity int) int
 		Asset             func(childComplexity int) int
@@ -262,10 +272,11 @@ type ComplexityRoot struct {
 	}
 
 	Epoch struct {
-		Delegations func(childComplexity int, partyID *string, nodeID *string, skip *int, first *int, last *int) int
-		ID          func(childComplexity int) int
-		Timestamps  func(childComplexity int) int
-		Validators  func(childComplexity int) int
+		Delegations           func(childComplexity int, partyID *string, nodeID *string, skip *int, first *int, last *int) int
+		DelegationsConnection func(childComplexity int, partyID *string, nodeID *string, pagination *v2.Pagination) int
+		ID                    func(childComplexity int) int
+		Timestamps            func(childComplexity int) int
+		Validators            func(childComplexity int) int
 	}
 
 	EpochData struct {
@@ -624,23 +635,24 @@ type ComplexityRoot struct {
 	}
 
 	Node struct {
-		AvatarUrl         func(childComplexity int) int
-		Delegations       func(childComplexity int, partyID *string, skip *int, first *int, last *int) int
-		EpochData         func(childComplexity int) int
-		EthereumAdddress  func(childComplexity int) int
-		Id                func(childComplexity int) int
-		InfoUrl           func(childComplexity int) int
-		Location          func(childComplexity int) int
-		Name              func(childComplexity int) int
-		PendingStake      func(childComplexity int) int
-		PubKey            func(childComplexity int) int
-		RankingScore      func(childComplexity int) int
-		RewardScore       func(childComplexity int) int
-		StakedByDelegates func(childComplexity int) int
-		StakedByOperator  func(childComplexity int) int
-		StakedTotal       func(childComplexity int) int
-		Status            func(childComplexity int) int
-		TmPubKey          func(childComplexity int) int
+		AvatarUrl             func(childComplexity int) int
+		Delegations           func(childComplexity int, partyID *string, skip *int, first *int, last *int) int
+		DelegationsConnection func(childComplexity int, partyID *string, pagination *v2.Pagination) int
+		EpochData             func(childComplexity int) int
+		EthereumAdddress      func(childComplexity int) int
+		Id                    func(childComplexity int) int
+		InfoUrl               func(childComplexity int) int
+		Location              func(childComplexity int) int
+		Name                  func(childComplexity int) int
+		PendingStake          func(childComplexity int) int
+		PubKey                func(childComplexity int) int
+		RankingScore          func(childComplexity int) int
+		RewardScore           func(childComplexity int) int
+		StakedByDelegates     func(childComplexity int) int
+		StakedByOperator      func(childComplexity int) int
+		StakedTotal           func(childComplexity int) int
+		Status                func(childComplexity int) int
+		TmPubKey              func(childComplexity int) int
 	}
 
 	NodeData struct {
@@ -758,6 +770,7 @@ type ComplexityRoot struct {
 	Party struct {
 		Accounts                      func(childComplexity int, marketID *string, asset *string, typeArg *vega.AccountType) int
 		Delegations                   func(childComplexity int, nodeID *string, skip *int, first *int, last *int) int
+		DelegationsConnection         func(childComplexity int, nodeID *string, pagination *v2.Pagination) int
 		Deposits                      func(childComplexity int) int
 		DepositsConnection            func(childComplexity int, pagination *v2.Pagination) int
 		Id                            func(childComplexity int) int
@@ -1364,6 +1377,8 @@ type DepositResolver interface {
 }
 type EpochResolver interface {
 	ID(ctx context.Context, obj *vega.Epoch) (string, error)
+
+	DelegationsConnection(ctx context.Context, obj *vega.Epoch, partyID *string, nodeID *string, pagination *v2.Pagination) (*v2.DelegationsConnection, error)
 }
 type EpochTimestampsResolver interface {
 	Start(ctx context.Context, obj *vega.EpochTimestamps) (*string, error)
@@ -1499,6 +1514,8 @@ type NewMarketResolver interface {
 }
 type NodeResolver interface {
 	Status(ctx context.Context, obj *vega.Node) (NodeStatus, error)
+
+	DelegationsConnection(ctx context.Context, obj *vega.Node, partyID *string, pagination *v2.Pagination) (*v2.DelegationsConnection, error)
 }
 type NodeDataResolver interface {
 	Uptime(ctx context.Context, obj *vega.NodeData) (float64, error)
@@ -1562,6 +1579,7 @@ type PartyResolver interface {
 	LiquidityProvisions(ctx context.Context, obj *vega.Party, market *string, reference *string) ([]*vega.LiquidityProvision, error)
 	LiquidityProvisionsConnection(ctx context.Context, obj *vega.Party, market *string, reference *string, pagination *v2.Pagination) (*v2.LiquidityProvisionsConnection, error)
 	Delegations(ctx context.Context, obj *vega.Party, nodeID *string, skip *int, first *int, last *int) ([]*vega.Delegation, error)
+	DelegationsConnection(ctx context.Context, obj *vega.Party, nodeID *string, pagination *v2.Pagination) (*v2.DelegationsConnection, error)
 	Stake(ctx context.Context, obj *vega.Party) (*v12.PartyStakeResponse, error)
 	Rewards(ctx context.Context, obj *vega.Party, asset *string, skip *int, first *int, last *int) ([]*vega.Reward, error)
 	RewardsConnection(ctx context.Context, obj *vega.Party, asset *string, pagination *v2.Pagination) (*v2.RewardsConnection, error)
@@ -2267,6 +2285,34 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Delegation.Party(childComplexity), true
 
+	case "DelegationEdge.cursor":
+		if e.complexity.DelegationEdge.Cursor == nil {
+			break
+		}
+
+		return e.complexity.DelegationEdge.Cursor(childComplexity), true
+
+	case "DelegationEdge.node":
+		if e.complexity.DelegationEdge.Node == nil {
+			break
+		}
+
+		return e.complexity.DelegationEdge.Node(childComplexity), true
+
+	case "DelegationsConnection.edges":
+		if e.complexity.DelegationsConnection.Edges == nil {
+			break
+		}
+
+		return e.complexity.DelegationsConnection.Edges(childComplexity), true
+
+	case "DelegationsConnection.pageInfo":
+		if e.complexity.DelegationsConnection.PageInfo == nil {
+			break
+		}
+
+		return e.complexity.DelegationsConnection.PageInfo(childComplexity), true
+
 	case "Deposit.amount":
 		if e.complexity.Deposit.Amount == nil {
 			break
@@ -2418,6 +2464,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Epoch.Delegations(childComplexity, args["partyId"].(*string), args["nodeId"].(*string), args["skip"].(*int), args["first"].(*int), args["last"].(*int)), true
+
+	case "Epoch.delegationsConnection":
+		if e.complexity.Epoch.DelegationsConnection == nil {
+			break
+		}
+
+		args, err := ec.field_Epoch_delegationsConnection_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Epoch.DelegationsConnection(childComplexity, args["partyId"].(*string), args["nodeId"].(*string), args["pagination"].(*v2.Pagination)), true
 
 	case "Epoch.id":
 		if e.complexity.Epoch.ID == nil {
@@ -3986,6 +4044,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Node.Delegations(childComplexity, args["partyId"].(*string), args["skip"].(*int), args["first"].(*int), args["last"].(*int)), true
 
+	case "Node.delegationsConnection":
+		if e.complexity.Node.DelegationsConnection == nil {
+			break
+		}
+
+		args, err := ec.field_Node_delegationsConnection_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Node.DelegationsConnection(childComplexity, args["partyId"].(*string), args["pagination"].(*v2.Pagination)), true
+
 	case "Node.epochData":
 		if e.complexity.Node.EpochData == nil {
 			break
@@ -4572,6 +4642,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Party.Delegations(childComplexity, args["nodeId"].(*string), args["skip"].(*int), args["first"].(*int), args["last"].(*int)), true
+
+	case "Party.delegationsConnection":
+		if e.complexity.Party.DelegationsConnection == nil {
+			break
+		}
+
+		args, err := ec.field_Party_delegationsConnection_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Party.DelegationsConnection(childComplexity, args["nodeId"].(*string), args["pagination"].(*v2.Pagination)), true
 
 	case "Party.deposits":
 		if e.complexity.Party.Deposits == nil {
@@ -8087,7 +8169,16 @@ type Epoch {
     "Pagination first element"
     first: Int
     "Pagination last element"
-    last: Int): [Delegation!]!
+    last: Int): [Delegation!]! @deprecated(reason: "Use delegationsConnection instead")
+
+  delegationsConnection(
+    # Optional party id to filter on
+    partyId: String
+    # Optional node id to filter on
+    nodeId: String
+    "Pagination information"
+   pagination: Pagination
+  ): DelegationsConnection!
 }
 
 type NodeData {
@@ -8180,7 +8271,12 @@ type Node {
     "Pagination first element"
     first: Int
     "Pagination last element"
-    last: Int): [Delegation!]
+    last: Int): [Delegation!] @deprecated(reason: "Use delegationsConnection instead")
+
+  delegationsConnection(
+    partyId: String,
+    pagination: Pagination
+  ): DelegationsConnection!
 
   "Reward scores for the current epoch for the validator"
   rewardScore: RewardScore
@@ -9129,7 +9225,14 @@ type Party {
     "Pagination first element"
     first: Int
     "Pagination last element"
-    last: Int): [Delegation!]
+    last: Int): [Delegation!] @deprecated(reason: "Use delegationsConnection instead")
+
+  delegationsConnection(
+    "Optional node"
+    nodeId: String
+    "Pagination information"
+    pagination: Pagination
+  ): DelegationsConnection!
 
   "The staking information for this Party"
   stake: PartyStake!
@@ -10925,6 +11028,19 @@ type ProposalsConnection {
     "Page information for the connection"
     pageInfo: PageInfo!
 }
+type DelegationEdge {
+  "The delegation information"
+  node: Delegation!
+  "The cursor for the data item"
+  cursor: String!
+}
+
+type DelegationsConnection {
+  "The delegation information available on this connection"
+  edges: [DelegationEdge]
+  "The pagination information"
+  pageInfo: PageInfo!
+}
 `, BuiltIn: false},
 }
 var parsedSchema = gqlparser.MustLoadSchema(sources...)
@@ -10932,6 +11048,39 @@ var parsedSchema = gqlparser.MustLoadSchema(sources...)
 // endregion ************************** generated!.gotpl **************************
 
 // region    ***************************** args.gotpl *****************************
+
+func (ec *executionContext) field_Epoch_delegationsConnection_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *string
+	if tmp, ok := rawArgs["partyId"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("partyId"))
+		arg0, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["partyId"] = arg0
+	var arg1 *string
+	if tmp, ok := rawArgs["nodeId"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("nodeId"))
+		arg1, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["nodeId"] = arg1
+	var arg2 *v2.Pagination
+	if tmp, ok := rawArgs["pagination"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pagination"))
+		arg2, err = ec.unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPagination(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["pagination"] = arg2
+	return args, nil
+}
 
 func (ec *executionContext) field_Epoch_delegations_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
@@ -11215,6 +11364,30 @@ func (ec *executionContext) field_Market_trades_args(ctx context.Context, rawArg
 	return args, nil
 }
 
+func (ec *executionContext) field_Node_delegationsConnection_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *string
+	if tmp, ok := rawArgs["partyId"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("partyId"))
+		arg0, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["partyId"] = arg0
+	var arg1 *v2.Pagination
+	if tmp, ok := rawArgs["pagination"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pagination"))
+		arg1, err = ec.unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPagination(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["pagination"] = arg1
+	return args, nil
+}
+
 func (ec *executionContext) field_Node_delegations_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -11317,6 +11490,30 @@ func (ec *executionContext) field_Party_accounts_args(ctx context.Context, rawAr
 		}
 	}
 	args["type"] = arg2
+	return args, nil
+}
+
+func (ec *executionContext) field_Party_delegationsConnection_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *string
+	if tmp, ok := rawArgs["nodeId"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("nodeId"))
+		arg0, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["nodeId"] = arg0
+	var arg1 *v2.Pagination
+	if tmp, ok := rawArgs["pagination"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pagination"))
+		arg1, err = ec.unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPagination(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["pagination"] = arg1
 	return args, nil
 }
 
@@ -15388,6 +15585,143 @@ func (ec *executionContext) _Delegation_epoch(ctx context.Context, field graphql
 	return ec.marshalNInt2int(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _DelegationEdge_node(ctx context.Context, field graphql.CollectedField, obj *v2.DelegationEdge) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "DelegationEdge",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Node, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*vega.Delegation)
+	fc.Result = res
+	return ec.marshalNDelegation2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐDelegation(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _DelegationEdge_cursor(ctx context.Context, field graphql.CollectedField, obj *v2.DelegationEdge) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "DelegationEdge",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Cursor, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _DelegationsConnection_edges(ctx context.Context, field graphql.CollectedField, obj *v2.DelegationsConnection) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "DelegationsConnection",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Edges, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*v2.DelegationEdge)
+	fc.Result = res
+	return ec.marshalODelegationEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐDelegationEdge(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _DelegationsConnection_pageInfo(ctx context.Context, field graphql.CollectedField, obj *v2.DelegationsConnection) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "DelegationsConnection",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PageInfo, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*v2.PageInfo)
+	fc.Result = res
+	return ec.marshalNPageInfo2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPageInfo(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Deposit_id(ctx context.Context, field graphql.CollectedField, obj *vega.Deposit) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -16218,6 +16552,48 @@ func (ec *executionContext) _Epoch_delegations(ctx context.Context, field graphq
 	res := resTmp.([]*vega.Delegation)
 	fc.Result = res
 	return ec.marshalNDelegation2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐDelegationᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Epoch_delegationsConnection(ctx context.Context, field graphql.CollectedField, obj *vega.Epoch) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Epoch",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Epoch_delegationsConnection_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Epoch().DelegationsConnection(rctx, obj, args["partyId"].(*string), args["nodeId"].(*string), args["pagination"].(*v2.Pagination))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*v2.DelegationsConnection)
+	fc.Result = res
+	return ec.marshalNDelegationsConnection2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐDelegationsConnection(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _EpochData_total(ctx context.Context, field graphql.CollectedField, obj *vega.EpochData) (ret graphql.Marshaler) {
@@ -23975,6 +24351,48 @@ func (ec *executionContext) _Node_delegations(ctx context.Context, field graphql
 	return ec.marshalODelegation2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐDelegationᚄ(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Node_delegationsConnection(ctx context.Context, field graphql.CollectedField, obj *vega.Node) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Node",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Node_delegationsConnection_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Node().DelegationsConnection(rctx, obj, args["partyId"].(*string), args["pagination"].(*v2.Pagination))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*v2.DelegationsConnection)
+	fc.Result = res
+	return ec.marshalNDelegationsConnection2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐDelegationsConnection(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Node_rewardScore(ctx context.Context, field graphql.CollectedField, obj *vega.Node) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -27103,6 +27521,48 @@ func (ec *executionContext) _Party_delegations(ctx context.Context, field graphq
 	res := resTmp.([]*vega.Delegation)
 	fc.Result = res
 	return ec.marshalODelegation2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐDelegationᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Party_delegationsConnection(ctx context.Context, field graphql.CollectedField, obj *vega.Party) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Party",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Party_delegationsConnection_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Party().DelegationsConnection(rctx, obj, args["nodeId"].(*string), args["pagination"].(*v2.Pagination))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*v2.DelegationsConnection)
+	fc.Result = res
+	return ec.marshalNDelegationsConnection2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐDelegationsConnection(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Party_stake(ctx context.Context, field graphql.CollectedField, obj *vega.Party) (ret graphql.Marshaler) {
@@ -41494,6 +41954,85 @@ func (ec *executionContext) _Delegation(ctx context.Context, sel ast.SelectionSe
 	return out
 }
 
+var delegationEdgeImplementors = []string{"DelegationEdge"}
+
+func (ec *executionContext) _DelegationEdge(ctx context.Context, sel ast.SelectionSet, obj *v2.DelegationEdge) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, delegationEdgeImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("DelegationEdge")
+		case "node":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._DelegationEdge_node(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "cursor":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._DelegationEdge_cursor(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var delegationsConnectionImplementors = []string{"DelegationsConnection"}
+
+func (ec *executionContext) _DelegationsConnection(ctx context.Context, sel ast.SelectionSet, obj *v2.DelegationsConnection) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, delegationsConnectionImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("DelegationsConnection")
+		case "edges":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._DelegationsConnection_edges(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+		case "pageInfo":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._DelegationsConnection_pageInfo(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
 var depositImplementors = []string{"Deposit", "Event"}
 
 func (ec *executionContext) _Deposit(ctx context.Context, sel ast.SelectionSet, obj *vega.Deposit) graphql.Marshaler {
@@ -41915,6 +42454,26 @@ func (ec *executionContext) _Epoch(ctx context.Context, sel ast.SelectionSet, ob
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
+		case "delegationsConnection":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Epoch_delegationsConnection(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -45842,6 +46401,26 @@ func (ec *executionContext) _Node(ctx context.Context, sel ast.SelectionSet, obj
 
 			out.Values[i] = innerFunc(ctx)
 
+		case "delegationsConnection":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Node_delegationsConnection(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
 		case "rewardScore":
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Node_rewardScore(ctx, field, obj)
@@ -47431,6 +48010,26 @@ func (ec *executionContext) _Party(ctx context.Context, sel ast.SelectionSet, ob
 					}
 				}()
 				res = ec._Party_delegations(ctx, field, obj)
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "delegationsConnection":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Party_delegationsConnection(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
 				return res
 			}
 
@@ -54204,6 +54803,20 @@ func (ec *executionContext) marshalNDelegation2ᚖcodeᚗvegaprotocolᚗioᚋpro
 	return ec._Delegation(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalNDelegationsConnection2codeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐDelegationsConnection(ctx context.Context, sel ast.SelectionSet, v v2.DelegationsConnection) graphql.Marshaler {
+	return ec._DelegationsConnection(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNDelegationsConnection2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐDelegationsConnection(ctx context.Context, sel ast.SelectionSet, v *v2.DelegationsConnection) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._DelegationsConnection(ctx, sel, v)
+}
+
 func (ec *executionContext) marshalNDeposit2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐDeposit(ctx context.Context, sel ast.SelectionSet, v *vega.Deposit) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -56853,6 +57466,54 @@ func (ec *executionContext) marshalODelegation2ᚕᚖcodeᚗvegaprotocolᚗioᚋ
 	}
 
 	return ret
+}
+
+func (ec *executionContext) marshalODelegationEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐDelegationEdge(ctx context.Context, sel ast.SelectionSet, v []*v2.DelegationEdge) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalODelegationEdge2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐDelegationEdge(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	return ret
+}
+
+func (ec *executionContext) marshalODelegationEdge2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐDelegationEdge(ctx context.Context, sel ast.SelectionSet, v *v2.DelegationEdge) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._DelegationEdge(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalODeposit2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐDepositᚄ(ctx context.Context, sel ast.SelectionSet, v []*vega.Deposit) graphql.Marshaler {
