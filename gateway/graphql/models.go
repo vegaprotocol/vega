@@ -217,6 +217,15 @@ type MarketDataCommitments struct {
 	Buys []*vega.LiquidityOrderReference `json:"buys"`
 }
 
+type MarketDepthTrade struct {
+	// id of the trade for the given market (if available)
+	ID string `json:"id"`
+	// Price of the trade
+	Price string `json:"price"`
+	// Size of the trade
+	Size string `json:"size"`
+}
+
 type MarketEvent struct {
 	// the market ID
 	MarketID string `json:"marketId"`
@@ -234,6 +243,16 @@ type MarketTick struct {
 }
 
 func (MarketTick) IsEvent() {}
+
+// The equity like share of liquidity fee for each liquidity provider
+type ObservableLiquidityProviderFeeShare struct {
+	// The liquidity provider party id
+	PartyID string `json:"partyId"`
+	// The share own by this liquidity provider (float)
+	EquityLikeShare string `json:"equityLikeShare"`
+	// the average entry valuation of the liquidity provider for the market
+	AverageEntryValuation string `json:"averageEntryValuation"`
+}
 
 type OffsetPagination struct {
 	// Skip the number of records specified, default is 0

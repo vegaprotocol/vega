@@ -74,6 +74,9 @@ type ResolverRoot interface {
 	Node() NodeResolver
 	NodeData() NodeDataResolver
 	NodeSignature() NodeSignatureResolver
+	ObservableMarketData() ObservableMarketDataResolver
+	ObservableMarketDepth() ObservableMarketDepthResolver
+	ObservableMarketDepthUpdate() ObservableMarketDepthUpdateResolver
 	OneOffTransfer() OneOffTransferResolver
 	OracleData() OracleDataResolver
 	OracleSpec() OracleSpecResolver
@@ -558,6 +561,12 @@ type ComplexityRoot struct {
 		SequenceNumber func(childComplexity int) int
 	}
 
+	MarketDepthTrade struct {
+		ID    func(childComplexity int) int
+		Price func(childComplexity int) int
+		Size  func(childComplexity int) int
+	}
+
 	MarketDepthUpdate struct {
 		Buy                    func(childComplexity int) int
 		Market                 func(childComplexity int) int
@@ -667,6 +676,57 @@ type ComplexityRoot struct {
 		Id        func(childComplexity int) int
 		Kind      func(childComplexity int) int
 		Signature func(childComplexity int) int
+	}
+
+	ObservableLiquidityProviderFeeShare struct {
+		AverageEntryValuation func(childComplexity int) int
+		EquityLikeShare       func(childComplexity int) int
+		PartyID               func(childComplexity int) int
+	}
+
+	ObservableMarketData struct {
+		AuctionEnd                func(childComplexity int) int
+		AuctionStart              func(childComplexity int) int
+		BestBidPrice              func(childComplexity int) int
+		BestBidVolume             func(childComplexity int) int
+		BestOfferPrice            func(childComplexity int) int
+		BestOfferVolume           func(childComplexity int) int
+		BestStaticBidPrice        func(childComplexity int) int
+		BestStaticBidVolume       func(childComplexity int) int
+		BestStaticOfferPrice      func(childComplexity int) int
+		BestStaticOfferVolume     func(childComplexity int) int
+		ExtensionTrigger          func(childComplexity int) int
+		IndicativePrice           func(childComplexity int) int
+		IndicativeVolume          func(childComplexity int) int
+		LiquidityProviderFeeShare func(childComplexity int) int
+		MarkPrice                 func(childComplexity int) int
+		MarketID                  func(childComplexity int) int
+		MarketTradingMode         func(childComplexity int) int
+		MarketValueProxy          func(childComplexity int) int
+		MidPrice                  func(childComplexity int) int
+		OpenInterest              func(childComplexity int) int
+		PriceMonitoringBounds     func(childComplexity int) int
+		StaticMidPrice            func(childComplexity int) int
+		SuppliedStake             func(childComplexity int) int
+		TargetStake               func(childComplexity int) int
+		Timestamp                 func(childComplexity int) int
+		Trigger                   func(childComplexity int) int
+	}
+
+	ObservableMarketDepth struct {
+		Buy            func(childComplexity int) int
+		LastTrade      func(childComplexity int) int
+		MarketId       func(childComplexity int) int
+		Sell           func(childComplexity int) int
+		SequenceNumber func(childComplexity int) int
+	}
+
+	ObservableMarketDepthUpdate struct {
+		Buy                    func(childComplexity int) int
+		MarketId               func(childComplexity int) int
+		PreviousSequenceNumber func(childComplexity int) int
+		Sell                   func(childComplexity int) int
+		SequenceNumber         func(childComplexity int) int
 	}
 
 	OneOffTransfer struct {
@@ -1131,21 +1191,23 @@ type ComplexityRoot struct {
 	}
 
 	Subscription struct {
-		Accounts          func(childComplexity int, marketID *string, partyID *string, asset *string, typeArg *vega.AccountType) int
-		BusEvents         func(childComplexity int, types []BusEventType, marketID *string, partyID *string, batchSize int) int
-		Candles           func(childComplexity int, marketID string, interval Interval) int
-		Delegations       func(childComplexity int, party *string, nodeID *string) int
-		Margins           func(childComplexity int, partyID string, marketID *string) int
-		MarketData        func(childComplexity int, marketID *string) int
-		MarketDepth       func(childComplexity int, marketID string) int
-		MarketDepthUpdate func(childComplexity int, marketID string) int
-		MarketsData       func(childComplexity int, marketID *string) int
-		Orders            func(childComplexity int, marketID *string, partyID *string) int
-		Positions         func(childComplexity int, partyID *string, marketID *string) int
-		Proposals         func(childComplexity int, partyID *string) int
-		Rewards           func(childComplexity int, assetID *string, party *string) int
-		Trades            func(childComplexity int, marketID *string, partyID *string) int
-		Votes             func(childComplexity int, proposalID *string, partyID *string) int
+		Accounts           func(childComplexity int, marketID *string, partyID *string, asset *string, typeArg *vega.AccountType) int
+		BusEvents          func(childComplexity int, types []BusEventType, marketID *string, partyID *string, batchSize int) int
+		Candles            func(childComplexity int, marketID string, interval Interval) int
+		Delegations        func(childComplexity int, party *string, nodeID *string) int
+		Margins            func(childComplexity int, partyID string, marketID *string) int
+		MarketData         func(childComplexity int, marketID *string) int
+		MarketDepth        func(childComplexity int, marketID string) int
+		MarketDepthUpdate  func(childComplexity int, marketID string) int
+		MarketsData        func(childComplexity int, marketIds []string) int
+		MarketsDepth       func(childComplexity int, marketIds []string) int
+		MarketsDepthUpdate func(childComplexity int, marketIds []string) int
+		Orders             func(childComplexity int, marketID *string, partyID *string) int
+		Positions          func(childComplexity int, partyID *string, marketID *string) int
+		Proposals          func(childComplexity int, partyID *string) int
+		Rewards            func(childComplexity int, assetID *string, party *string) int
+		Trades             func(childComplexity int, marketID *string, partyID *string) int
+		Votes              func(childComplexity int, proposalID *string, partyID *string) int
 	}
 
 	TargetStakeParameters struct {
@@ -1524,6 +1586,39 @@ type NodeSignatureResolver interface {
 	Signature(ctx context.Context, obj *v13.NodeSignature) (*string, error)
 	Kind(ctx context.Context, obj *v13.NodeSignature) (*NodeSignatureKind, error)
 }
+type ObservableMarketDataResolver interface {
+	MarketID(ctx context.Context, obj *vega.MarketData) (string, error)
+
+	BestBidVolume(ctx context.Context, obj *vega.MarketData) (string, error)
+
+	BestOfferVolume(ctx context.Context, obj *vega.MarketData) (string, error)
+
+	BestStaticBidVolume(ctx context.Context, obj *vega.MarketData) (string, error)
+
+	BestStaticOfferVolume(ctx context.Context, obj *vega.MarketData) (string, error)
+
+	Timestamp(ctx context.Context, obj *vega.MarketData) (string, error)
+	OpenInterest(ctx context.Context, obj *vega.MarketData) (string, error)
+	AuctionEnd(ctx context.Context, obj *vega.MarketData) (*string, error)
+	AuctionStart(ctx context.Context, obj *vega.MarketData) (*string, error)
+
+	IndicativeVolume(ctx context.Context, obj *vega.MarketData) (string, error)
+	MarketTradingMode(ctx context.Context, obj *vega.MarketData) (MarketTradingMode, error)
+	Trigger(ctx context.Context, obj *vega.MarketData) (AuctionTrigger, error)
+	ExtensionTrigger(ctx context.Context, obj *vega.MarketData) (AuctionTrigger, error)
+
+	PriceMonitoringBounds(ctx context.Context, obj *vega.MarketData) ([]*PriceMonitoringBounds, error)
+
+	LiquidityProviderFeeShare(ctx context.Context, obj *vega.MarketData) ([]*ObservableLiquidityProviderFeeShare, error)
+}
+type ObservableMarketDepthResolver interface {
+	LastTrade(ctx context.Context, obj *vega.MarketDepth) (*MarketDepthTrade, error)
+	SequenceNumber(ctx context.Context, obj *vega.MarketDepth) (string, error)
+}
+type ObservableMarketDepthUpdateResolver interface {
+	SequenceNumber(ctx context.Context, obj *vega.MarketDepthUpdate) (string, error)
+	PreviousSequenceNumber(ctx context.Context, obj *vega.MarketDepthUpdate) (string, error)
+}
 type OneOffTransferResolver interface {
 	DeliverOn(ctx context.Context, obj *v1.OneOffTransfer) (*string, error)
 }
@@ -1748,7 +1843,9 @@ type SubscriptionResolver interface {
 	MarketDepthUpdate(ctx context.Context, marketID string) (<-chan *vega.MarketDepthUpdate, error)
 	Accounts(ctx context.Context, marketID *string, partyID *string, asset *string, typeArg *vega.AccountType) (<-chan *vega.Account, error)
 	MarketData(ctx context.Context, marketID *string) (<-chan *vega.MarketData, error)
-	MarketsData(ctx context.Context, marketID *string) (<-chan []*vega.MarketData, error)
+	MarketsDepth(ctx context.Context, marketIds []string) (<-chan []*vega.MarketDepth, error)
+	MarketsDepthUpdate(ctx context.Context, marketIds []string) (<-chan []*vega.MarketDepthUpdate, error)
+	MarketsData(ctx context.Context, marketIds []string) (<-chan []*vega.MarketData, error)
 	Margins(ctx context.Context, partyID string, marketID *string) (<-chan *vega.MarginLevels, error)
 	Proposals(ctx context.Context, partyID *string) (<-chan *vega.GovernanceData, error)
 	Votes(ctx context.Context, proposalID *string, partyID *string) (<-chan *ProposalVote, error)
@@ -3724,6 +3821,27 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.MarketDepth.SequenceNumber(childComplexity), true
 
+	case "MarketDepthTrade.id":
+		if e.complexity.MarketDepthTrade.ID == nil {
+			break
+		}
+
+		return e.complexity.MarketDepthTrade.ID(childComplexity), true
+
+	case "MarketDepthTrade.price":
+		if e.complexity.MarketDepthTrade.Price == nil {
+			break
+		}
+
+		return e.complexity.MarketDepthTrade.Price(childComplexity), true
+
+	case "MarketDepthTrade.size":
+		if e.complexity.MarketDepthTrade.Size == nil {
+			break
+		}
+
+		return e.complexity.MarketDepthTrade.Size(childComplexity), true
+
 	case "MarketDepthUpdate.buy":
 		if e.complexity.MarketDepthUpdate.Buy == nil {
 			break
@@ -4216,6 +4334,279 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.NodeSignature.Signature(childComplexity), true
+
+	case "ObservableLiquidityProviderFeeShare.averageEntryValuation":
+		if e.complexity.ObservableLiquidityProviderFeeShare.AverageEntryValuation == nil {
+			break
+		}
+
+		return e.complexity.ObservableLiquidityProviderFeeShare.AverageEntryValuation(childComplexity), true
+
+	case "ObservableLiquidityProviderFeeShare.equityLikeShare":
+		if e.complexity.ObservableLiquidityProviderFeeShare.EquityLikeShare == nil {
+			break
+		}
+
+		return e.complexity.ObservableLiquidityProviderFeeShare.EquityLikeShare(childComplexity), true
+
+	case "ObservableLiquidityProviderFeeShare.partyId":
+		if e.complexity.ObservableLiquidityProviderFeeShare.PartyID == nil {
+			break
+		}
+
+		return e.complexity.ObservableLiquidityProviderFeeShare.PartyID(childComplexity), true
+
+	case "ObservableMarketData.auctionEnd":
+		if e.complexity.ObservableMarketData.AuctionEnd == nil {
+			break
+		}
+
+		return e.complexity.ObservableMarketData.AuctionEnd(childComplexity), true
+
+	case "ObservableMarketData.auctionStart":
+		if e.complexity.ObservableMarketData.AuctionStart == nil {
+			break
+		}
+
+		return e.complexity.ObservableMarketData.AuctionStart(childComplexity), true
+
+	case "ObservableMarketData.bestBidPrice":
+		if e.complexity.ObservableMarketData.BestBidPrice == nil {
+			break
+		}
+
+		return e.complexity.ObservableMarketData.BestBidPrice(childComplexity), true
+
+	case "ObservableMarketData.bestBidVolume":
+		if e.complexity.ObservableMarketData.BestBidVolume == nil {
+			break
+		}
+
+		return e.complexity.ObservableMarketData.BestBidVolume(childComplexity), true
+
+	case "ObservableMarketData.bestOfferPrice":
+		if e.complexity.ObservableMarketData.BestOfferPrice == nil {
+			break
+		}
+
+		return e.complexity.ObservableMarketData.BestOfferPrice(childComplexity), true
+
+	case "ObservableMarketData.bestOfferVolume":
+		if e.complexity.ObservableMarketData.BestOfferVolume == nil {
+			break
+		}
+
+		return e.complexity.ObservableMarketData.BestOfferVolume(childComplexity), true
+
+	case "ObservableMarketData.bestStaticBidPrice":
+		if e.complexity.ObservableMarketData.BestStaticBidPrice == nil {
+			break
+		}
+
+		return e.complexity.ObservableMarketData.BestStaticBidPrice(childComplexity), true
+
+	case "ObservableMarketData.bestStaticBidVolume":
+		if e.complexity.ObservableMarketData.BestStaticBidVolume == nil {
+			break
+		}
+
+		return e.complexity.ObservableMarketData.BestStaticBidVolume(childComplexity), true
+
+	case "ObservableMarketData.bestStaticOfferPrice":
+		if e.complexity.ObservableMarketData.BestStaticOfferPrice == nil {
+			break
+		}
+
+		return e.complexity.ObservableMarketData.BestStaticOfferPrice(childComplexity), true
+
+	case "ObservableMarketData.bestStaticOfferVolume":
+		if e.complexity.ObservableMarketData.BestStaticOfferVolume == nil {
+			break
+		}
+
+		return e.complexity.ObservableMarketData.BestStaticOfferVolume(childComplexity), true
+
+	case "ObservableMarketData.extensionTrigger":
+		if e.complexity.ObservableMarketData.ExtensionTrigger == nil {
+			break
+		}
+
+		return e.complexity.ObservableMarketData.ExtensionTrigger(childComplexity), true
+
+	case "ObservableMarketData.indicativePrice":
+		if e.complexity.ObservableMarketData.IndicativePrice == nil {
+			break
+		}
+
+		return e.complexity.ObservableMarketData.IndicativePrice(childComplexity), true
+
+	case "ObservableMarketData.indicativeVolume":
+		if e.complexity.ObservableMarketData.IndicativeVolume == nil {
+			break
+		}
+
+		return e.complexity.ObservableMarketData.IndicativeVolume(childComplexity), true
+
+	case "ObservableMarketData.liquidityProviderFeeShare":
+		if e.complexity.ObservableMarketData.LiquidityProviderFeeShare == nil {
+			break
+		}
+
+		return e.complexity.ObservableMarketData.LiquidityProviderFeeShare(childComplexity), true
+
+	case "ObservableMarketData.markPrice":
+		if e.complexity.ObservableMarketData.MarkPrice == nil {
+			break
+		}
+
+		return e.complexity.ObservableMarketData.MarkPrice(childComplexity), true
+
+	case "ObservableMarketData.marketId":
+		if e.complexity.ObservableMarketData.MarketID == nil {
+			break
+		}
+
+		return e.complexity.ObservableMarketData.MarketID(childComplexity), true
+
+	case "ObservableMarketData.marketTradingMode":
+		if e.complexity.ObservableMarketData.MarketTradingMode == nil {
+			break
+		}
+
+		return e.complexity.ObservableMarketData.MarketTradingMode(childComplexity), true
+
+	case "ObservableMarketData.marketValueProxy":
+		if e.complexity.ObservableMarketData.MarketValueProxy == nil {
+			break
+		}
+
+		return e.complexity.ObservableMarketData.MarketValueProxy(childComplexity), true
+
+	case "ObservableMarketData.midPrice":
+		if e.complexity.ObservableMarketData.MidPrice == nil {
+			break
+		}
+
+		return e.complexity.ObservableMarketData.MidPrice(childComplexity), true
+
+	case "ObservableMarketData.openInterest":
+		if e.complexity.ObservableMarketData.OpenInterest == nil {
+			break
+		}
+
+		return e.complexity.ObservableMarketData.OpenInterest(childComplexity), true
+
+	case "ObservableMarketData.priceMonitoringBounds":
+		if e.complexity.ObservableMarketData.PriceMonitoringBounds == nil {
+			break
+		}
+
+		return e.complexity.ObservableMarketData.PriceMonitoringBounds(childComplexity), true
+
+	case "ObservableMarketData.staticMidPrice":
+		if e.complexity.ObservableMarketData.StaticMidPrice == nil {
+			break
+		}
+
+		return e.complexity.ObservableMarketData.StaticMidPrice(childComplexity), true
+
+	case "ObservableMarketData.suppliedStake":
+		if e.complexity.ObservableMarketData.SuppliedStake == nil {
+			break
+		}
+
+		return e.complexity.ObservableMarketData.SuppliedStake(childComplexity), true
+
+	case "ObservableMarketData.targetStake":
+		if e.complexity.ObservableMarketData.TargetStake == nil {
+			break
+		}
+
+		return e.complexity.ObservableMarketData.TargetStake(childComplexity), true
+
+	case "ObservableMarketData.timestamp":
+		if e.complexity.ObservableMarketData.Timestamp == nil {
+			break
+		}
+
+		return e.complexity.ObservableMarketData.Timestamp(childComplexity), true
+
+	case "ObservableMarketData.trigger":
+		if e.complexity.ObservableMarketData.Trigger == nil {
+			break
+		}
+
+		return e.complexity.ObservableMarketData.Trigger(childComplexity), true
+
+	case "ObservableMarketDepth.buy":
+		if e.complexity.ObservableMarketDepth.Buy == nil {
+			break
+		}
+
+		return e.complexity.ObservableMarketDepth.Buy(childComplexity), true
+
+	case "ObservableMarketDepth.lastTrade":
+		if e.complexity.ObservableMarketDepth.LastTrade == nil {
+			break
+		}
+
+		return e.complexity.ObservableMarketDepth.LastTrade(childComplexity), true
+
+	case "ObservableMarketDepth.marketId":
+		if e.complexity.ObservableMarketDepth.MarketId == nil {
+			break
+		}
+
+		return e.complexity.ObservableMarketDepth.MarketId(childComplexity), true
+
+	case "ObservableMarketDepth.sell":
+		if e.complexity.ObservableMarketDepth.Sell == nil {
+			break
+		}
+
+		return e.complexity.ObservableMarketDepth.Sell(childComplexity), true
+
+	case "ObservableMarketDepth.sequenceNumber":
+		if e.complexity.ObservableMarketDepth.SequenceNumber == nil {
+			break
+		}
+
+		return e.complexity.ObservableMarketDepth.SequenceNumber(childComplexity), true
+
+	case "ObservableMarketDepthUpdate.buy":
+		if e.complexity.ObservableMarketDepthUpdate.Buy == nil {
+			break
+		}
+
+		return e.complexity.ObservableMarketDepthUpdate.Buy(childComplexity), true
+
+	case "ObservableMarketDepthUpdate.marketId":
+		if e.complexity.ObservableMarketDepthUpdate.MarketId == nil {
+			break
+		}
+
+		return e.complexity.ObservableMarketDepthUpdate.MarketId(childComplexity), true
+
+	case "ObservableMarketDepthUpdate.previousSequenceNumber":
+		if e.complexity.ObservableMarketDepthUpdate.PreviousSequenceNumber == nil {
+			break
+		}
+
+		return e.complexity.ObservableMarketDepthUpdate.PreviousSequenceNumber(childComplexity), true
+
+	case "ObservableMarketDepthUpdate.sell":
+		if e.complexity.ObservableMarketDepthUpdate.Sell == nil {
+			break
+		}
+
+		return e.complexity.ObservableMarketDepthUpdate.Sell(childComplexity), true
+
+	case "ObservableMarketDepthUpdate.sequenceNumber":
+		if e.complexity.ObservableMarketDepthUpdate.SequenceNumber == nil {
+			break
+		}
+
+		return e.complexity.ObservableMarketDepthUpdate.SequenceNumber(childComplexity), true
 
 	case "OneOffTransfer.deliverOn":
 		if e.complexity.OneOffTransfer.DeliverOn == nil {
@@ -6678,7 +7069,31 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Subscription.MarketsData(childComplexity, args["marketId"].(*string)), true
+		return e.complexity.Subscription.MarketsData(childComplexity, args["marketIds"].([]string)), true
+
+	case "Subscription.marketsDepth":
+		if e.complexity.Subscription.MarketsDepth == nil {
+			break
+		}
+
+		args, err := ec.field_Subscription_marketsDepth_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Subscription.MarketsDepth(childComplexity, args["marketIds"].([]string)), true
+
+	case "Subscription.marketsDepthUpdate":
+		if e.complexity.Subscription.MarketsDepthUpdate == nil {
+			break
+		}
+
+		args, err := ec.field_Subscription_marketsDepthUpdate_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Subscription.MarketsDepthUpdate(childComplexity, args["marketIds"].([]string)), true
 
 	case "Subscription.orders":
 		if e.complexity.Subscription.Orders == nil {
@@ -7516,13 +7931,13 @@ type Subscription {
   marketDepth(
     "ID of the market we want to receive market depth updates for"
     marketId: ID!
-  ): MarketDepth!
+  ): MarketDepth! @deprecated(reason: "Use marketsDepth instead")
 
   "Subscribe to price level market depth updates"
   marketDepthUpdate(
     "ID of the market we want to receive market depth pricelevel updates for"
     marketId: ID!
-  ): MarketDepthUpdate!
+  ): MarketDepthUpdate! @deprecated(reason: "Use marketsDepthUpdate instead")
 
   "Subscribe to the accounts updates"
   accounts(
@@ -7540,13 +7955,25 @@ type Subscription {
   marketData(
     "id of the market we want to subscribe to the market data changes"
     marketId: ID
-  ): MarketData!
+  ): MarketData! @deprecated(reason: "Use marketsData instead")
 
-  "Subscribe to the mark price changes, but get multiple updates at once"
-  marketsData(
-    "id of the market we want to subscribe to the market data changes"
-    marketId: ID
-  ): [MarketData!]!
+  "Subscribe to the market depths update"
+    marketsDepth(
+      "ID of the market we want to receive market depth updates for"
+      marketIds: [ID!]!
+    ): [ObservableMarketDepth!]!
+
+    "Subscribe to price level market depth updates"
+    marketsDepthUpdate(
+      "ID of the market we want to receive market depth pricelevel updates for"
+      marketIds: [ID!]!
+    ): [ObservableMarketDepthUpdate!]!
+
+  "Subscribe to the mark price changes"
+    marketsData(
+      "id of the market we want to subscribe to the market data changes"
+      marketIds: [ID!]!
+    ): [ObservableMarketData!]!
 
   "Subscribe to the margin changes"
   margins(
@@ -7682,6 +8109,64 @@ type MarketData {
   liquidityProviderFeeShare: [LiquidityProviderFeeShare!]
 }
 
+"Live data of a Market"
+type ObservableMarketData {
+  "market id of the associated mark price"
+  marketId: String!
+  "the mark price (actually an unsigned int)"
+  markPrice: String!
+  "the highest price level on an order book for buy orders."
+  bestBidPrice: String!
+  "the aggregated volume being bid at the best bid price."
+  bestBidVolume: String!
+  "the lowest price level on an order book for offer orders."
+  bestOfferPrice: String!
+  "the aggregated volume being offered at the best offer price."
+  bestOfferVolume: String!
+  "the highest price level on an order book for buy orders not including pegged orders."
+  bestStaticBidPrice: String!
+  "the aggregated volume being offered at the best static bid price, excluding pegged orders"
+  bestStaticBidVolume: String!
+  "the lowest price level on an order book for offer orders not including pegged orders."
+  bestStaticOfferPrice: String!
+  "the aggregated volume being offered at the best static offer price, excluding pegged orders."
+  bestStaticOfferVolume: String!
+  "the arithmetic average of the best bid price and best offer price."
+  midPrice: String!
+  "the arithmetic average of the best static bid price and best static offer price"
+  staticMidPrice: String!
+  "RFC3339Nano time at which this market price was relevant"
+  timestamp: String!
+  "the sum of the size of all positions greater than 0."
+  openInterest: String!
+  "RFC3339Nano time at which the auction will stop (null if not in auction mode)"
+  auctionEnd: String
+  "RFC3339Nano time at which the next auction will start (null if none is scheduled)"
+  auctionStart: String
+  "indicative price if the auction ended now, 0 if not in auction mode"
+  indicativePrice: String!
+  "indicative volume if the auction ended now, 0 if not in auction mode"
+  indicativeVolume: String!
+  "what state the market is in (auction, continuous etc)"
+  marketTradingMode: MarketTradingMode!
+  "what triggered an auction (if an auction was started)"
+  trigger: AuctionTrigger!
+  "what extended the ongoing auction (if an auction was extended)"
+  extensionTrigger: AuctionTrigger!
+  "the amount of stake targeted for this market"
+  targetStake: String
+  "the supplied stake for the market"
+  suppliedStake: String
+  "A list of valid price ranges per associated trigger"
+  priceMonitoringBounds: [PriceMonitoringBounds!]
+  "the market value proxy"
+  marketValueProxy: String!
+  "the equity like share of liquidity fee for each liquidity provider"
+  liquidityProviderFeeShare: [ObservableLiquidityProviderFeeShare!]
+}
+
+
+
 "timestamps for when the market changes state"
 type MarketTimestamps {
   "Time when the market is first proposed"
@@ -7703,6 +8188,18 @@ type LiquidityProviderFeeShare {
   "the average entry valuation of the liquidity provider for the market"
   averageEntryValuation: String!
 }
+
+"The equity like share of liquidity fee for each liquidity provider"
+type ObservableLiquidityProviderFeeShare {
+  "The liquidity provider party id"
+  partyId: String!
+  "The share own by this liquidity provider (float)"
+  equityLikeShare: String!
+  "the average entry valuation of the liquidity provider for the market"
+  averageEntryValuation: String!
+}
+
+
 
 "The MM commitments for this market"
 type MarketDataCommitments {
@@ -9043,11 +9540,43 @@ type MarketDepth {
 }
 
 """
+Market Depth is a measure of the number of open buy and sell orders for a security or currency at different prices.
+The depth of market measure provides an indication of the liquidity and depth for the instrument.
+"""
+type ObservableMarketDepth {
+  "Market id"
+  marketId: String!
+
+  "Buy side price levels (if available)"
+  buy: [PriceLevel!]
+
+  "Sell side price levels (if available)"
+  sell: [PriceLevel!]
+
+  "Last trade for the given market (if available)"
+  lastTrade: MarketDepthTrade!
+
+  "Sequence number for the current snapshot of the market depth"
+  sequenceNumber: String!
+}
+
+type MarketDepthTrade {
+  "id of the trade for the given market (if available)"
+  id: String!
+
+  "Price of the trade"
+  price: String!
+
+  "Size of the trade"
+  size: String!
+}
+
+"""
 Market Depth Update is a delta to the current market depth which can be used to update the
 market depth structure to keep it correct
 """
 type MarketDepthUpdate {
-  "Market id"
+  "Market"
   market: Market!
 
   "Buy side price levels (if available)"
@@ -9062,6 +9591,28 @@ type MarketDepthUpdate {
   "Sequence number of the last update sent; useful for checking that no updates were missed."
   previousSequenceNumber: String!
 }
+
+"""
+Market Depth Update is a delta to the current market depth which can be used to update the
+market depth structure to keep it correct
+"""
+type ObservableMarketDepthUpdate {
+  "Market id"
+  marketId: String!
+
+  "Buy side price levels (if available)"
+  buy: [PriceLevel!]
+
+  "Sell side price levels (if available)"
+  sell: [PriceLevel!]
+
+  "Sequence number for the current snapshot of the market depth. It is always increasing but not monotonic."
+  sequenceNumber: String!
+
+  "Sequence number of the last update sent; useful for checking that no updates were missed."
+  previousSequenceNumber: String!
+}
+
 
 "Represents a price on either the buy or sell side and all the orders at that price"
 type PriceLevel {
@@ -13164,15 +13715,45 @@ func (ec *executionContext) field_Subscription_marketDepth_args(ctx context.Cont
 func (ec *executionContext) field_Subscription_marketsData_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 *string
-	if tmp, ok := rawArgs["marketId"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("marketId"))
-		arg0, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
+	var arg0 []string
+	if tmp, ok := rawArgs["marketIds"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("marketIds"))
+		arg0, err = ec.unmarshalNID2ᚕstringᚄ(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["marketId"] = arg0
+	args["marketIds"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Subscription_marketsDepthUpdate_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 []string
+	if tmp, ok := rawArgs["marketIds"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("marketIds"))
+		arg0, err = ec.unmarshalNID2ᚕstringᚄ(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["marketIds"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Subscription_marketsDepth_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 []string
+	if tmp, ok := rawArgs["marketIds"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("marketIds"))
+		arg0, err = ec.unmarshalNID2ᚕstringᚄ(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["marketIds"] = arg0
 	return args, nil
 }
 
@@ -22426,6 +23007,111 @@ func (ec *executionContext) _MarketDepth_sequenceNumber(ctx context.Context, fie
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _MarketDepthTrade_id(ctx context.Context, field graphql.CollectedField, obj *MarketDepthTrade) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "MarketDepthTrade",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _MarketDepthTrade_price(ctx context.Context, field graphql.CollectedField, obj *MarketDepthTrade) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "MarketDepthTrade",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Price, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _MarketDepthTrade_size(ctx context.Context, field graphql.CollectedField, obj *MarketDepthTrade) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "MarketDepthTrade",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Size, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _MarketDepthUpdate_market(ctx context.Context, field graphql.CollectedField, obj *vega.MarketDepthUpdate) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -24799,6 +25485,1341 @@ func (ec *executionContext) _NodeSignature_kind(ctx context.Context, field graph
 	res := resTmp.(*NodeSignatureKind)
 	fc.Result = res
 	return ec.marshalONodeSignatureKind2ᚖcodeᚗvegaprotocolᚗioᚋdataᚑnodeᚋgatewayᚋgraphqlᚐNodeSignatureKind(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ObservableLiquidityProviderFeeShare_partyId(ctx context.Context, field graphql.CollectedField, obj *ObservableLiquidityProviderFeeShare) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "ObservableLiquidityProviderFeeShare",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PartyID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ObservableLiquidityProviderFeeShare_equityLikeShare(ctx context.Context, field graphql.CollectedField, obj *ObservableLiquidityProviderFeeShare) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "ObservableLiquidityProviderFeeShare",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.EquityLikeShare, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ObservableLiquidityProviderFeeShare_averageEntryValuation(ctx context.Context, field graphql.CollectedField, obj *ObservableLiquidityProviderFeeShare) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "ObservableLiquidityProviderFeeShare",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.AverageEntryValuation, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ObservableMarketData_marketId(ctx context.Context, field graphql.CollectedField, obj *vega.MarketData) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "ObservableMarketData",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.ObservableMarketData().MarketID(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ObservableMarketData_markPrice(ctx context.Context, field graphql.CollectedField, obj *vega.MarketData) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "ObservableMarketData",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MarkPrice, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ObservableMarketData_bestBidPrice(ctx context.Context, field graphql.CollectedField, obj *vega.MarketData) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "ObservableMarketData",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.BestBidPrice, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ObservableMarketData_bestBidVolume(ctx context.Context, field graphql.CollectedField, obj *vega.MarketData) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "ObservableMarketData",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.ObservableMarketData().BestBidVolume(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ObservableMarketData_bestOfferPrice(ctx context.Context, field graphql.CollectedField, obj *vega.MarketData) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "ObservableMarketData",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.BestOfferPrice, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ObservableMarketData_bestOfferVolume(ctx context.Context, field graphql.CollectedField, obj *vega.MarketData) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "ObservableMarketData",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.ObservableMarketData().BestOfferVolume(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ObservableMarketData_bestStaticBidPrice(ctx context.Context, field graphql.CollectedField, obj *vega.MarketData) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "ObservableMarketData",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.BestStaticBidPrice, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ObservableMarketData_bestStaticBidVolume(ctx context.Context, field graphql.CollectedField, obj *vega.MarketData) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "ObservableMarketData",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.ObservableMarketData().BestStaticBidVolume(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ObservableMarketData_bestStaticOfferPrice(ctx context.Context, field graphql.CollectedField, obj *vega.MarketData) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "ObservableMarketData",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.BestStaticOfferPrice, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ObservableMarketData_bestStaticOfferVolume(ctx context.Context, field graphql.CollectedField, obj *vega.MarketData) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "ObservableMarketData",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.ObservableMarketData().BestStaticOfferVolume(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ObservableMarketData_midPrice(ctx context.Context, field graphql.CollectedField, obj *vega.MarketData) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "ObservableMarketData",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MidPrice, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ObservableMarketData_staticMidPrice(ctx context.Context, field graphql.CollectedField, obj *vega.MarketData) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "ObservableMarketData",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.StaticMidPrice, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ObservableMarketData_timestamp(ctx context.Context, field graphql.CollectedField, obj *vega.MarketData) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "ObservableMarketData",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.ObservableMarketData().Timestamp(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ObservableMarketData_openInterest(ctx context.Context, field graphql.CollectedField, obj *vega.MarketData) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "ObservableMarketData",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.ObservableMarketData().OpenInterest(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ObservableMarketData_auctionEnd(ctx context.Context, field graphql.CollectedField, obj *vega.MarketData) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "ObservableMarketData",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.ObservableMarketData().AuctionEnd(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ObservableMarketData_auctionStart(ctx context.Context, field graphql.CollectedField, obj *vega.MarketData) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "ObservableMarketData",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.ObservableMarketData().AuctionStart(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ObservableMarketData_indicativePrice(ctx context.Context, field graphql.CollectedField, obj *vega.MarketData) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "ObservableMarketData",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.IndicativePrice, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ObservableMarketData_indicativeVolume(ctx context.Context, field graphql.CollectedField, obj *vega.MarketData) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "ObservableMarketData",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.ObservableMarketData().IndicativeVolume(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ObservableMarketData_marketTradingMode(ctx context.Context, field graphql.CollectedField, obj *vega.MarketData) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "ObservableMarketData",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.ObservableMarketData().MarketTradingMode(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(MarketTradingMode)
+	fc.Result = res
+	return ec.marshalNMarketTradingMode2codeᚗvegaprotocolᚗioᚋdataᚑnodeᚋgatewayᚋgraphqlᚐMarketTradingMode(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ObservableMarketData_trigger(ctx context.Context, field graphql.CollectedField, obj *vega.MarketData) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "ObservableMarketData",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.ObservableMarketData().Trigger(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(AuctionTrigger)
+	fc.Result = res
+	return ec.marshalNAuctionTrigger2codeᚗvegaprotocolᚗioᚋdataᚑnodeᚋgatewayᚋgraphqlᚐAuctionTrigger(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ObservableMarketData_extensionTrigger(ctx context.Context, field graphql.CollectedField, obj *vega.MarketData) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "ObservableMarketData",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.ObservableMarketData().ExtensionTrigger(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(AuctionTrigger)
+	fc.Result = res
+	return ec.marshalNAuctionTrigger2codeᚗvegaprotocolᚗioᚋdataᚑnodeᚋgatewayᚋgraphqlᚐAuctionTrigger(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ObservableMarketData_targetStake(ctx context.Context, field graphql.CollectedField, obj *vega.MarketData) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "ObservableMarketData",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TargetStake, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalOString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ObservableMarketData_suppliedStake(ctx context.Context, field graphql.CollectedField, obj *vega.MarketData) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "ObservableMarketData",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.SuppliedStake, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalOString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ObservableMarketData_priceMonitoringBounds(ctx context.Context, field graphql.CollectedField, obj *vega.MarketData) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "ObservableMarketData",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.ObservableMarketData().PriceMonitoringBounds(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*PriceMonitoringBounds)
+	fc.Result = res
+	return ec.marshalOPriceMonitoringBounds2ᚕᚖcodeᚗvegaprotocolᚗioᚋdataᚑnodeᚋgatewayᚋgraphqlᚐPriceMonitoringBoundsᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ObservableMarketData_marketValueProxy(ctx context.Context, field graphql.CollectedField, obj *vega.MarketData) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "ObservableMarketData",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MarketValueProxy, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ObservableMarketData_liquidityProviderFeeShare(ctx context.Context, field graphql.CollectedField, obj *vega.MarketData) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "ObservableMarketData",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.ObservableMarketData().LiquidityProviderFeeShare(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*ObservableLiquidityProviderFeeShare)
+	fc.Result = res
+	return ec.marshalOObservableLiquidityProviderFeeShare2ᚕᚖcodeᚗvegaprotocolᚗioᚋdataᚑnodeᚋgatewayᚋgraphqlᚐObservableLiquidityProviderFeeShareᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ObservableMarketDepth_marketId(ctx context.Context, field graphql.CollectedField, obj *vega.MarketDepth) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "ObservableMarketDepth",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MarketId, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ObservableMarketDepth_buy(ctx context.Context, field graphql.CollectedField, obj *vega.MarketDepth) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "ObservableMarketDepth",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Buy, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*vega.PriceLevel)
+	fc.Result = res
+	return ec.marshalOPriceLevel2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐPriceLevelᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ObservableMarketDepth_sell(ctx context.Context, field graphql.CollectedField, obj *vega.MarketDepth) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "ObservableMarketDepth",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Sell, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*vega.PriceLevel)
+	fc.Result = res
+	return ec.marshalOPriceLevel2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐPriceLevelᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ObservableMarketDepth_lastTrade(ctx context.Context, field graphql.CollectedField, obj *vega.MarketDepth) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "ObservableMarketDepth",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.ObservableMarketDepth().LastTrade(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*MarketDepthTrade)
+	fc.Result = res
+	return ec.marshalNMarketDepthTrade2ᚖcodeᚗvegaprotocolᚗioᚋdataᚑnodeᚋgatewayᚋgraphqlᚐMarketDepthTrade(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ObservableMarketDepth_sequenceNumber(ctx context.Context, field graphql.CollectedField, obj *vega.MarketDepth) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "ObservableMarketDepth",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.ObservableMarketDepth().SequenceNumber(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ObservableMarketDepthUpdate_marketId(ctx context.Context, field graphql.CollectedField, obj *vega.MarketDepthUpdate) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "ObservableMarketDepthUpdate",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MarketId, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ObservableMarketDepthUpdate_buy(ctx context.Context, field graphql.CollectedField, obj *vega.MarketDepthUpdate) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "ObservableMarketDepthUpdate",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Buy, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*vega.PriceLevel)
+	fc.Result = res
+	return ec.marshalOPriceLevel2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐPriceLevelᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ObservableMarketDepthUpdate_sell(ctx context.Context, field graphql.CollectedField, obj *vega.MarketDepthUpdate) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "ObservableMarketDepthUpdate",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Sell, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*vega.PriceLevel)
+	fc.Result = res
+	return ec.marshalOPriceLevel2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐPriceLevelᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ObservableMarketDepthUpdate_sequenceNumber(ctx context.Context, field graphql.CollectedField, obj *vega.MarketDepthUpdate) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "ObservableMarketDepthUpdate",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.ObservableMarketDepthUpdate().SequenceNumber(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ObservableMarketDepthUpdate_previousSequenceNumber(ctx context.Context, field graphql.CollectedField, obj *vega.MarketDepthUpdate) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "ObservableMarketDepthUpdate",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.ObservableMarketDepthUpdate().PreviousSequenceNumber(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _OneOffTransfer_deliverOn(ctx context.Context, field graphql.CollectedField, obj *v1.OneOffTransfer) (ret graphql.Marshaler) {
@@ -35605,6 +37626,110 @@ func (ec *executionContext) _Subscription_marketData(ctx context.Context, field 
 	}
 }
 
+func (ec *executionContext) _Subscription_marketsDepth(ctx context.Context, field graphql.CollectedField) (ret func() graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = nil
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Subscription",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Subscription_marketsDepth_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return nil
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Subscription().MarketsDepth(rctx, args["marketIds"].([]string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return nil
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return nil
+	}
+	return func() graphql.Marshaler {
+		res, ok := <-resTmp.(<-chan []*vega.MarketDepth)
+		if !ok {
+			return nil
+		}
+		return graphql.WriterFunc(func(w io.Writer) {
+			w.Write([]byte{'{'})
+			graphql.MarshalString(field.Alias).MarshalGQL(w)
+			w.Write([]byte{':'})
+			ec.marshalNObservableMarketDepth2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐMarketDepthᚄ(ctx, field.Selections, res).MarshalGQL(w)
+			w.Write([]byte{'}'})
+		})
+	}
+}
+
+func (ec *executionContext) _Subscription_marketsDepthUpdate(ctx context.Context, field graphql.CollectedField) (ret func() graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = nil
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Subscription",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Subscription_marketsDepthUpdate_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return nil
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Subscription().MarketsDepthUpdate(rctx, args["marketIds"].([]string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return nil
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return nil
+	}
+	return func() graphql.Marshaler {
+		res, ok := <-resTmp.(<-chan []*vega.MarketDepthUpdate)
+		if !ok {
+			return nil
+		}
+		return graphql.WriterFunc(func(w io.Writer) {
+			w.Write([]byte{'{'})
+			graphql.MarshalString(field.Alias).MarshalGQL(w)
+			w.Write([]byte{':'})
+			ec.marshalNObservableMarketDepthUpdate2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐMarketDepthUpdateᚄ(ctx, field.Selections, res).MarshalGQL(w)
+			w.Write([]byte{'}'})
+		})
+	}
+}
+
 func (ec *executionContext) _Subscription_marketsData(ctx context.Context, field graphql.CollectedField) (ret func() graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -35630,7 +37755,7 @@ func (ec *executionContext) _Subscription_marketsData(ctx context.Context, field
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Subscription().MarketsData(rctx, args["marketId"].(*string))
+		return ec.resolvers.Subscription().MarketsData(rctx, args["marketIds"].([]string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -35651,7 +37776,7 @@ func (ec *executionContext) _Subscription_marketsData(ctx context.Context, field
 			w.Write([]byte{'{'})
 			graphql.MarshalString(field.Alias).MarshalGQL(w)
 			w.Write([]byte{':'})
-			ec.marshalNMarketData2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐMarketDataᚄ(ctx, field.Selections, res).MarshalGQL(w)
+			ec.marshalNObservableMarketData2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐMarketDataᚄ(ctx, field.Selections, res).MarshalGQL(w)
 			w.Write([]byte{'}'})
 		})
 	}
@@ -45442,6 +47567,57 @@ func (ec *executionContext) _MarketDepth(ctx context.Context, sel ast.SelectionS
 	return out
 }
 
+var marketDepthTradeImplementors = []string{"MarketDepthTrade"}
+
+func (ec *executionContext) _MarketDepthTrade(ctx context.Context, sel ast.SelectionSet, obj *MarketDepthTrade) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, marketDepthTradeImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("MarketDepthTrade")
+		case "id":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._MarketDepthTrade_id(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "price":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._MarketDepthTrade_price(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "size":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._MarketDepthTrade_size(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
 var marketDepthUpdateImplementors = []string{"MarketDepthUpdate"}
 
 func (ec *executionContext) _MarketDepthUpdate(ctx context.Context, sel ast.SelectionSet, obj *vega.MarketDepthUpdate) graphql.Marshaler {
@@ -46594,6 +48770,640 @@ func (ec *executionContext) _NodeSignature(ctx context.Context, sel ast.Selectio
 					}
 				}()
 				res = ec._NodeSignature_kind(ctx, field, obj)
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var observableLiquidityProviderFeeShareImplementors = []string{"ObservableLiquidityProviderFeeShare"}
+
+func (ec *executionContext) _ObservableLiquidityProviderFeeShare(ctx context.Context, sel ast.SelectionSet, obj *ObservableLiquidityProviderFeeShare) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, observableLiquidityProviderFeeShareImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("ObservableLiquidityProviderFeeShare")
+		case "partyId":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._ObservableLiquidityProviderFeeShare_partyId(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "equityLikeShare":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._ObservableLiquidityProviderFeeShare_equityLikeShare(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "averageEntryValuation":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._ObservableLiquidityProviderFeeShare_averageEntryValuation(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var observableMarketDataImplementors = []string{"ObservableMarketData"}
+
+func (ec *executionContext) _ObservableMarketData(ctx context.Context, sel ast.SelectionSet, obj *vega.MarketData) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, observableMarketDataImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("ObservableMarketData")
+		case "marketId":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._ObservableMarketData_marketId(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "markPrice":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._ObservableMarketData_markPrice(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "bestBidPrice":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._ObservableMarketData_bestBidPrice(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "bestBidVolume":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._ObservableMarketData_bestBidVolume(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "bestOfferPrice":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._ObservableMarketData_bestOfferPrice(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "bestOfferVolume":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._ObservableMarketData_bestOfferVolume(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "bestStaticBidPrice":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._ObservableMarketData_bestStaticBidPrice(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "bestStaticBidVolume":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._ObservableMarketData_bestStaticBidVolume(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "bestStaticOfferPrice":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._ObservableMarketData_bestStaticOfferPrice(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "bestStaticOfferVolume":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._ObservableMarketData_bestStaticOfferVolume(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "midPrice":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._ObservableMarketData_midPrice(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "staticMidPrice":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._ObservableMarketData_staticMidPrice(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "timestamp":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._ObservableMarketData_timestamp(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "openInterest":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._ObservableMarketData_openInterest(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "auctionEnd":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._ObservableMarketData_auctionEnd(ctx, field, obj)
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "auctionStart":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._ObservableMarketData_auctionStart(ctx, field, obj)
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "indicativePrice":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._ObservableMarketData_indicativePrice(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "indicativeVolume":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._ObservableMarketData_indicativeVolume(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "marketTradingMode":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._ObservableMarketData_marketTradingMode(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "trigger":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._ObservableMarketData_trigger(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "extensionTrigger":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._ObservableMarketData_extensionTrigger(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "targetStake":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._ObservableMarketData_targetStake(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+		case "suppliedStake":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._ObservableMarketData_suppliedStake(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+		case "priceMonitoringBounds":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._ObservableMarketData_priceMonitoringBounds(ctx, field, obj)
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "marketValueProxy":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._ObservableMarketData_marketValueProxy(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "liquidityProviderFeeShare":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._ObservableMarketData_liquidityProviderFeeShare(ctx, field, obj)
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var observableMarketDepthImplementors = []string{"ObservableMarketDepth"}
+
+func (ec *executionContext) _ObservableMarketDepth(ctx context.Context, sel ast.SelectionSet, obj *vega.MarketDepth) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, observableMarketDepthImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("ObservableMarketDepth")
+		case "marketId":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._ObservableMarketDepth_marketId(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "buy":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._ObservableMarketDepth_buy(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+		case "sell":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._ObservableMarketDepth_sell(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+		case "lastTrade":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._ObservableMarketDepth_lastTrade(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "sequenceNumber":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._ObservableMarketDepth_sequenceNumber(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var observableMarketDepthUpdateImplementors = []string{"ObservableMarketDepthUpdate"}
+
+func (ec *executionContext) _ObservableMarketDepthUpdate(ctx context.Context, sel ast.SelectionSet, obj *vega.MarketDepthUpdate) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, observableMarketDepthUpdateImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("ObservableMarketDepthUpdate")
+		case "marketId":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._ObservableMarketDepthUpdate_marketId(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "buy":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._ObservableMarketDepthUpdate_buy(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+		case "sell":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._ObservableMarketDepthUpdate_sell(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+		case "sequenceNumber":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._ObservableMarketDepthUpdate_sequenceNumber(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "previousSequenceNumber":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._ObservableMarketDepthUpdate_previousSequenceNumber(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
 				return res
 			}
 
@@ -52210,6 +55020,10 @@ func (ec *executionContext) _Subscription(ctx context.Context, sel ast.Selection
 		return ec._Subscription_accounts(ctx, fields[0])
 	case "marketData":
 		return ec._Subscription_marketData(ctx, fields[0])
+	case "marketsDepth":
+		return ec._Subscription_marketsDepth(ctx, fields[0])
+	case "marketsDepthUpdate":
+		return ec._Subscription_marketsDepthUpdate(ctx, fields[0])
 	case "marketsData":
 		return ec._Subscription_marketsData(ctx, fields[0])
 	case "margins":
@@ -54955,6 +57769,38 @@ func (ec *executionContext) marshalNID2string(ctx context.Context, sel ast.Selec
 	return res
 }
 
+func (ec *executionContext) unmarshalNID2ᚕstringᚄ(ctx context.Context, v interface{}) ([]string, error) {
+	var vSlice []interface{}
+	if v != nil {
+		vSlice = graphql.CoerceList(v)
+	}
+	var err error
+	res := make([]string, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNID2string(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalNID2ᚕstringᚄ(ctx context.Context, sel ast.SelectionSet, v []string) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	for i := range v {
+		ret[i] = ec.marshalNID2string(ctx, sel, v[i])
+	}
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
 func (ec *executionContext) marshalNInstrument2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐInstrument(ctx context.Context, sel ast.SelectionSet, v *vega.Instrument) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -55266,50 +58112,6 @@ func (ec *executionContext) marshalNMarketData2codeᚗvegaprotocolᚗioᚋprotos
 	return ec._MarketData(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNMarketData2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐMarketDataᚄ(ctx context.Context, sel ast.SelectionSet, v []*vega.MarketData) graphql.Marshaler {
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalNMarketData2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐMarketData(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
-
-	for _, e := range ret {
-		if e == graphql.Null {
-			return graphql.Null
-		}
-	}
-
-	return ret
-}
-
 func (ec *executionContext) marshalNMarketData2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐMarketData(ctx context.Context, sel ast.SelectionSet, v *vega.MarketData) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -55360,6 +58162,20 @@ func (ec *executionContext) marshalNMarketDepth2ᚖcodeᚗvegaprotocolᚗioᚋpr
 		return graphql.Null
 	}
 	return ec._MarketDepth(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNMarketDepthTrade2codeᚗvegaprotocolᚗioᚋdataᚑnodeᚋgatewayᚋgraphqlᚐMarketDepthTrade(ctx context.Context, sel ast.SelectionSet, v MarketDepthTrade) graphql.Marshaler {
+	return ec._MarketDepthTrade(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNMarketDepthTrade2ᚖcodeᚗvegaprotocolᚗioᚋdataᚑnodeᚋgatewayᚋgraphqlᚐMarketDepthTrade(ctx context.Context, sel ast.SelectionSet, v *MarketDepthTrade) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._MarketDepthTrade(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNMarketDepthUpdate2codeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐMarketDepthUpdate(ctx context.Context, sel ast.SelectionSet, v vega.MarketDepthUpdate) graphql.Marshaler {
@@ -55550,6 +58366,178 @@ func (ec *executionContext) unmarshalNNodeStatus2codeᚗvegaprotocolᚗioᚋdata
 
 func (ec *executionContext) marshalNNodeStatus2codeᚗvegaprotocolᚗioᚋdataᚑnodeᚋgatewayᚋgraphqlᚐNodeStatus(ctx context.Context, sel ast.SelectionSet, v NodeStatus) graphql.Marshaler {
 	return v
+}
+
+func (ec *executionContext) marshalNObservableLiquidityProviderFeeShare2ᚖcodeᚗvegaprotocolᚗioᚋdataᚑnodeᚋgatewayᚋgraphqlᚐObservableLiquidityProviderFeeShare(ctx context.Context, sel ast.SelectionSet, v *ObservableLiquidityProviderFeeShare) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._ObservableLiquidityProviderFeeShare(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNObservableMarketData2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐMarketDataᚄ(ctx context.Context, sel ast.SelectionSet, v []*vega.MarketData) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNObservableMarketData2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐMarketData(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNObservableMarketData2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐMarketData(ctx context.Context, sel ast.SelectionSet, v *vega.MarketData) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._ObservableMarketData(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNObservableMarketDepth2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐMarketDepthᚄ(ctx context.Context, sel ast.SelectionSet, v []*vega.MarketDepth) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNObservableMarketDepth2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐMarketDepth(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNObservableMarketDepth2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐMarketDepth(ctx context.Context, sel ast.SelectionSet, v *vega.MarketDepth) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._ObservableMarketDepth(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNObservableMarketDepthUpdate2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐMarketDepthUpdateᚄ(ctx context.Context, sel ast.SelectionSet, v []*vega.MarketDepthUpdate) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNObservableMarketDepthUpdate2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐMarketDepthUpdate(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNObservableMarketDepthUpdate2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐMarketDepthUpdate(ctx context.Context, sel ast.SelectionSet, v *vega.MarketDepthUpdate) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._ObservableMarketDepthUpdate(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNOracleData2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚋoraclesᚋv1ᚐOracleDataᚄ(ctx context.Context, sel ast.SelectionSet, v []*v11.OracleData) graphql.Marshaler {
@@ -58590,6 +61578,53 @@ func (ec *executionContext) marshalONodeSignatureKind2ᚖcodeᚗvegaprotocolᚗi
 		return graphql.Null
 	}
 	return v
+}
+
+func (ec *executionContext) marshalOObservableLiquidityProviderFeeShare2ᚕᚖcodeᚗvegaprotocolᚗioᚋdataᚑnodeᚋgatewayᚋgraphqlᚐObservableLiquidityProviderFeeShareᚄ(ctx context.Context, sel ast.SelectionSet, v []*ObservableLiquidityProviderFeeShare) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNObservableLiquidityProviderFeeShare2ᚖcodeᚗvegaprotocolᚗioᚋdataᚑnodeᚋgatewayᚋgraphqlᚐObservableLiquidityProviderFeeShare(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
 }
 
 func (ec *executionContext) unmarshalOOffsetPagination2ᚖcodeᚗvegaprotocolᚗioᚋdataᚑnodeᚋgatewayᚋgraphqlᚐOffsetPagination(ctx context.Context, v interface{}) (*OffsetPagination, error) {

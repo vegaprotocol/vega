@@ -16,6 +16,7 @@
 - [570](https://github.com/vegaprotocol/data-node/issues/570) - Add pagination for proposals with ordering of open proposals listed first
 - [795](https://github.com/vegaprotocol/data-node/issues/795) - Add node info endpoint
 - [481](https://github.com/vegaprotocol/data-node/issues/481) - Add pagination for delegations
+- [828](https://github.com/vegaprotocol/data-node/issues/828) - `v2` candles and market data `api`
 
 ### 🐛 Fixes
 - [594](https://github.com/vegaprotocol/data-node/issues/594) - Fix returning proposal rationale

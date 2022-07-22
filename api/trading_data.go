@@ -146,7 +146,7 @@ func (t *tradingDataService) MarketDepthSubscribe(
 	}
 
 	depthChan, ref := t.marketDepthService.ObserveDepth(
-		ctx, t.Config.StreamRetries, req.MarketId)
+		ctx, t.Config.StreamRetries, []string{req.MarketId})
 
 	if t.log.GetLevel() == logging.DebugLevel {
 		t.log.Debug("Depth subscriber - new rpc stream", logging.Uint64("ref", ref))
@@ -175,7 +175,7 @@ func (t *tradingDataService) MarketDepthUpdatesSubscribe(
 	}
 
 	depthChan, ref := t.marketDepthService.ObserveDepthUpdates(
-		ctx, t.Config.StreamRetries, req.MarketId)
+		ctx, t.Config.StreamRetries, []string{req.MarketId})
 
 	if t.log.GetLevel() == logging.DebugLevel {
 		t.log.Debug("Depth updates subscriber - new rpc stream", logging.Uint64("ref", ref))
@@ -1629,7 +1629,7 @@ func (t *tradingDataService) MarketsDataSubscribe(req *protoapi.MarketsDataSubsc
 	ctx, cancel := context.WithCancel(srv.Context())
 	defer cancel()
 
-	marketsDataChan, ref := t.marketDataService.ObserveMarketData(ctx, t.Config.StreamRetries, req.MarketId)
+	marketsDataChan, ref := t.marketDataService.ObserveMarketData(ctx, t.Config.StreamRetries, []string{req.MarketId})
 
 	if t.log.GetLevel() == logging.DebugLevel {
 		t.log.Debug("Markets data subscriber - new rpc stream", logging.Uint64("ref", ref))

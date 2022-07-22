@@ -119,10 +119,15 @@ func (m *MarketData) GetToDateByID(ctx context.Context, marketID string, end tim
 }
 
 func (m *MarketData) ObserveMarketData(
-	ctx context.Context, retries int, marketID string,
+	ctx context.Context, retries int, marketID []string,
 ) (<-chan []*entities.MarketData, uint64) {
+	markets := map[string]bool{}
+	for _, id := range marketID {
+		markets[id] = true
+	}
+
 	ch, ref := m.observer.Observe(ctx,
 		retries,
-		func(md *entities.MarketData) bool { return len(marketID) == 0 || marketID == md.Market.String() })
+		func(md *entities.MarketData) bool { return markets[md.Market.String()] })
 	return ch, ref
 }

@@ -68,6 +68,8 @@ type tradingDataServiceV2 struct {
 	governanceService         *service.Governance
 	transfersService          *service.Transfer
 	delegationService         *service.Delegation
+	marketService             *service.Markets
+	marketDepthService        *service.MarketDepth
 }
 
 func (t *tradingDataServiceV2) ListAccounts(ctx context.Context, req *v2.ListAccountsRequest) (*v2.ListAccountsResponse, error) {
@@ -194,6 +196,143 @@ func entityMarketDataListToProtoList(list []entities.MarketData) (*v2.MarketData
 	return &connection, nil
 }
 
+func (t *tradingDataServiceV2) ObserveMarketsDepth(req *v2.ObserveMarketsDepthRequest, srv v2.TradingDataService_ObserveMarketsDepthServer) error {
+	// Wrap context from the request into cancellable. We can close internal chan on error.
+	ctx, cancel := context.WithCancel(srv.Context())
+	defer cancel()
+
+	for _, marketId := range req.MarketIds {
+		if !t.marketExistsForId(ctx, marketId) {
+			return apiError(codes.InvalidArgument, ErrMalformedRequest, fmt.Errorf("no market found for id:%s", marketId))
+		}
+	}
+
+	depthChan, ref := t.marketDepthService.ObserveDepth(
+		ctx, t.config.StreamRetries, req.MarketIds)
+
+	if t.log.GetLevel() == logging.DebugLevel {
+		t.log.Debug("Depth subscriber - new rpc stream", logging.Uint64("ref", ref))
+	}
+
+	return observeBatch(ctx, t.log, "MarketDepth", depthChan, ref, func(tr []*vega.MarketDepth) error {
+		return srv.Send(&v2.ObserveMarketsDepthResponse{
+			MarketDepth: tr,
+		})
+	})
+
+}
+
+func (t *tradingDataServiceV2) ObserveMarketsDepthUpdates(req *v2.ObserveMarketsDepthUpdatesRequest, srv v2.TradingDataService_ObserveMarketsDepthUpdatesServer) error {
+	// Wrap context from the request into cancellable. We can close internal chan on error.
+	ctx, cancel := context.WithCancel(srv.Context())
+	defer cancel()
+
+	for _, marketId := range req.MarketIds {
+		if !t.marketExistsForId(ctx, marketId) {
+			return apiError(codes.InvalidArgument, ErrMalformedRequest, fmt.Errorf("no market found for id:%s", marketId))
+		}
+	}
+	depthChan, ref := t.marketDepthService.ObserveDepthUpdates(
+		ctx, t.config.StreamRetries, req.MarketIds)
+
+	if t.log.GetLevel() == logging.DebugLevel {
+		t.log.Debug("Depth updates subscriber - new rpc stream", logging.Uint64("ref", ref))
+	}
+
+	return observeBatch(ctx, t.log, "MarketDepthUpdate", depthChan, ref, func(tr []*vega.MarketDepthUpdate) error {
+		return srv.Send(&v2.ObserveMarketsDepthUpdatesResponse{
+			Update: tr,
+		})
+	})
+}
+
+func (t *tradingDataServiceV2) ObserveMarketsData(req *v2.ObserveMarketsDataRequest, srv v2.TradingDataService_ObserveMarketsDataServer) error {
+	// Wrap context from the request into cancellable. We can close internal chan on error.
+	ctx, cancel := context.WithCancel(srv.Context())
+	defer cancel()
+
+	for _, marketId := range req.MarketIds {
+		if !t.marketExistsForId(ctx, marketId) {
+			return apiError(codes.InvalidArgument, ErrMalformedRequest, fmt.Errorf("no market found for id:%s", marketId))
+		}
+	}
+
+	ch, ref := t.marketDataService.ObserveMarketData(ctx, t.config.StreamRetries, req.MarketIds)
+
+	return observeBatch(ctx, t.log, "MarketsData", ch, ref, func(marketData []*entities.MarketData) error {
+		out := make([]*vega.MarketData, 0, len(marketData))
+		for _, v := range marketData {
+			out = append(out, v.ToProto())
+		}
+		return srv.Send(&v2.ObserveMarketsDataResponse{MarketData: out})
+	})
+
+}
+
+// GetLatestMarketData returns the latest market data for a given market
+func (t *tradingDataServiceV2) GetLatestMarketData(ctx context.Context, req *v2.GetLatestMarketDataRequest) (*v2.GetLatestMarketDataResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("GetLatestMarketData")()
+
+	if !t.marketExistsForId(ctx, req.MarketId) {
+		return nil, apiError(codes.InvalidArgument, ErrMalformedRequest, fmt.Errorf("no market found for id:%s", req.MarketId))
+	}
+
+	md, err := t.marketDataService.GetMarketDataByID(ctx, req.MarketId)
+	if err != nil {
+		return nil, apiError(codes.Internal, ErrMarketServiceGetMarketData, err)
+	}
+	return &v2.GetLatestMarketDataResponse{
+		MarketData: md.ToProto(),
+	}, nil
+
+}
+
+// ListLatestMarketData returns the latest market data for every market
+func (t *tradingDataServiceV2) ListLatestMarketData(ctx context.Context, req *v2.ListLatestMarketDataRequest) (*v2.ListLatestMarketDataResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("ListLatestMarketData")()
+	mds, _ := t.marketDataService.GetMarketsData(ctx)
+
+	mdptrs := make([]*vega.MarketData, 0, len(mds))
+	for _, v := range mds {
+		mdptrs = append(mdptrs, v.ToProto())
+	}
+
+	return &v2.ListLatestMarketDataResponse{
+		MarketsData: mdptrs,
+	}, nil
+
+}
+
+// GetLatestMarketDepth returns the latest market depth for a given market
+func (t *tradingDataServiceV2) GetLatestMarketDepth(ctx context.Context, req *v2.GetLatestMarketDepthRequest) (*v2.GetLatestMarketDepthResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("GetLatestMarketDepth")()
+
+	var maxDepth uint64
+	if req.MaxDepth != nil {
+		maxDepth = *req.MaxDepth
+	}
+
+	depth := t.marketDepthService.GetMarketDepth(req.MarketId, maxDepth)
+
+	lastOne := entities.OffsetPagination{Skip: 0, Limit: 1, Descending: true}
+	ts, err := t.tradeService.GetByMarket(ctx, req.MarketId, lastOne)
+	if err != nil {
+		return nil, apiError(codes.Internal, ErrTradeServiceGetByMarket, err)
+	}
+
+	// Build market depth response, including last trade (if available)
+	resp := &v2.GetLatestMarketDepthResponse{
+		Buy:            depth.Buy,
+		MarketId:       depth.MarketId,
+		Sell:           depth.Sell,
+		SequenceNumber: depth.SequenceNumber,
+	}
+	if len(ts) > 0 {
+		resp.LastTrade = ts[0].ToProto()
+	}
+	return resp, nil
+}
+
 func (t *tradingDataServiceV2) GetMarketDataHistoryByID(ctx context.Context, req *v2.GetMarketDataHistoryByIDRequest) (*v2.GetMarketDataHistoryByIDResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("GetMarketDataHistoryV2")()
 	if t.marketDataService == nil {
@@ -313,26 +452,6 @@ func (t *tradingDataServiceV2) getMarketDataHistoryToDateByID(ctx context.Contex
 	return parseMarketDataResults(results)
 }
 
-// MarketsDataSubscribe opens a subscription to market data provided by the markets service.
-func (t *tradingDataServiceV2) MarketsDataSubscribe(req *v2.MarketsDataSubscribeRequest,
-	srv v2.TradingDataService_MarketsDataSubscribeServer,
-) error {
-
-	// Wrap context from the request into cancellable. We can close internal chan on error.
-	ctx, cancel := context.WithCancel(srv.Context())
-	defer cancel()
-
-	ch, ref := t.marketDataService.ObserveMarketData(ctx, t.config.StreamRetries, req.MarketId)
-
-	return observeBatch(ctx, t.log, "MarketsData", ch, ref, func(orders []*entities.MarketData) error {
-		out := make([]*vega.MarketData, 0, len(orders))
-		for _, v := range orders {
-			out = append(out, v.ToProto())
-		}
-		return srv.Send(&v2.MarketsDataSubscribeResponse{MarketData: out})
-	})
-}
-
 func (t *tradingDataServiceV2) GetNetworkLimits(ctx context.Context, req *v2.GetNetworkLimitsRequest) (*v2.GetNetworkLimitsResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("GetNetworkLimitsV2")()
 	if t.networkLimitsService == nil {
@@ -384,8 +503,8 @@ func (t *tradingDataServiceV2) ListCandleData(ctx context.Context, req *v2.ListC
 	return &v2.ListCandleDataResponse{Candles: &connection}, nil
 }
 
-// SubscribeToCandleData subscribes to candle updates for a given market and interval.  Interval must be a valid postgres interval value
-func (t *tradingDataServiceV2) SubscribeToCandleData(req *v2.SubscribeToCandleDataRequest, srv v2.TradingDataService_SubscribeToCandleDataServer) error {
+// ObserveCandleData subscribes to candle updates for a given market and interval.  Interval must be a valid postgres interval value
+func (t *tradingDataServiceV2) ObserveCandleData(req *v2.ObserveCandleDataRequest, srv v2.TradingDataService_ObserveCandleDataServer) error {
 
 	defer metrics.StartActiveSubscriptionCountGRPC("Candle")()
 
@@ -416,7 +535,7 @@ func (t *tradingDataServiceV2) SubscribeToCandleData(req *v2.SubscribeToCandleDa
 				return apiError(codes.Internal, ErrCandleServiceSubscribeToCandles, fmt.Errorf("channel closed"))
 			}
 
-			resp := &v2.SubscribeToCandleDataResponse{
+			resp := &v2.ObserveCandleDataResponse{
 				Candle: candle.ToV2CandleProto(),
 			}
 			if err = srv.Send(resp); err != nil {
@@ -434,10 +553,9 @@ func (t *tradingDataServiceV2) SubscribeToCandleData(req *v2.SubscribeToCandleDa
 	}
 }
 
-// GetCandlesForMarket gets all available intervals for a given market along with the corresponding candle id
-func (t *tradingDataServiceV2) GetCandlesForMarket(ctx context.Context, req *v2.GetCandlesForMarketRequest) (*v2.GetCandlesForMarketResponse, error) {
-	defer metrics.StartAPIRequestAndTimeGRPC("GetCandlesForMarketV2")()
-
+// ListCandleIntervals gets all available intervals for a given market along with the corresponding candle id
+func (t *tradingDataServiceV2) ListCandleIntervals(ctx context.Context, req *v2.ListCandleIntervalsRequest) (*v2.ListCandleIntervalsResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("ListCandleIntervals")()
 	if t.candleService == nil {
 		return nil, errors.New("sql candle service not available")
 	}
@@ -455,7 +573,7 @@ func (t *tradingDataServiceV2) GetCandlesForMarket(ctx context.Context, req *v2.
 		})
 	}
 
-	return &v2.GetCandlesForMarketResponse{
+	return &v2.ListCandleIntervalsResponse{
 		IntervalToCandleId: intervalToCandleIds,
 	}, nil
 }
@@ -1407,4 +1525,9 @@ func (t *tradingDataServiceV2) ListDelegations(ctx context.Context, in *v2.ListD
 	}
 
 	return resp, nil
+}
+
+func (t *tradingDataServiceV2) marketExistsForId(ctx context.Context, marketID string) bool {
+	_, err := t.marketsService.GetByID(ctx, marketID)
+	return err == nil
 }

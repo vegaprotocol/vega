@@ -25,7 +25,11 @@ models:
     model: code.vegaprotocol.io/protos/vega.PriceLevel
   MarketDepth:
     model: code.vegaprotocol.io/protos/vega.MarketDepth
+  ObservableMarketDepth:
+    model: code.vegaprotocol.io/protos/vega.MarketDepth
   MarketDepthUpdate:
+    model: code.vegaprotocol.io/protos/vega.MarketDepthUpdate
+  ObservableMarketDepthUpdate:
     model: code.vegaprotocol.io/protos/vega.MarketDepthUpdate
   Candle:
     model: code.vegaprotocol.io/protos/vega.Candle
@@ -34,6 +38,8 @@ models:
   Account:
     model: code.vegaprotocol.io/protos/vega.Account
   MarketData:
+    model: code.vegaprotocol.io/protos/vega.MarketData
+  ObservableMarketData:
     model: code.vegaprotocol.io/protos/vega.MarketData
   MarginLevels:
     model: code.vegaprotocol.io/protos/vega.MarginLevels
