@@ -97,6 +97,9 @@ func TestSVSnapshotDeposited(t *testing.T) {
 	require.Nil(t, err)
 	// Check its there by adding it again and checking for duplication error
 	require.ErrorIs(t, staking.ErrDuplicatedStakeDepositedEvent, snapSV.ProcessStakeDeposited(ctx, event))
+
+	snapSV.evtSrc.EXPECT().UpdateStakingStartingBlock(uint64(42)).Times(1)
+	snapSV.OnStateLoaded(ctx)
 }
 
 func TestSVSnapshotRemoved(t *testing.T) {

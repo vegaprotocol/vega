@@ -57,7 +57,7 @@ func New(
 	log.SetLevel(cfg.Level.Get())
 	accs := NewAccounting(log, cfg, ts, broker, ethClient, evtFwd, witness, isValidator)
 	ocv := NewOnChainVerifier(cfg, log, ethClient, ethCfns)
-	stakeV := NewStakeVerifier(log, cfg, accs, witness, ts, broker, ocv)
+	stakeV := NewStakeVerifier(log, cfg, accs, witness, ts, broker, ocv, ethEventSource)
 
 	_ = netp.Watch(netparams.WatchParam{
 		Param: netparams.BlockchainsEthereumConfig,
