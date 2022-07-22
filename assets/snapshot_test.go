@@ -64,7 +64,7 @@ func getEngineAndSnapshotEngine(t *testing.T) (*assetsTest, *snp.Engine) {
 	log := logging.NewTestLogger()
 	timeService := stubs.NewTimeStub()
 	timeService.SetTime(now)
-	statsData := stats.New(log, stats.NewDefaultConfig(), "", "")
+	statsData := stats.New(log, stats.NewDefaultConfig())
 	config := snp.NewDefaultConfig()
 	config.Storage = "memory"
 	snapshotEngine, _ := snp.New(context.Background(), &paths.DefaultPaths{}, config, log, timeService, statsData.Blockchain)
