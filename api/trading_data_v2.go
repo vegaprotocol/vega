@@ -863,7 +863,7 @@ func (t *tradingDataServiceV2) ListParties(ctx context.Context, in *v2.ListParti
 	return resp, nil
 }
 
-func (t *tradingDataServiceV2) GetMarginLevels(ctx context.Context, in *v2.ListMarginLevelsRequest) (*v2.ListMarginLevelsResponse, error) {
+func (t *tradingDataServiceV2) ListMarginLevels(ctx context.Context, in *v2.ListMarginLevelsRequest) (*v2.ListMarginLevelsResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("GetMarginLevelsV2")()
 
 	pagination, err := entities.CursorPaginationFromProto(in.Pagination)
@@ -972,7 +972,7 @@ func (t *tradingDataServiceV2) ListDeposits(ctx context.Context, req *v2.ListDep
 func makeEdges[T proto.Message, V entities.PagedEntity[T]](inputs []V, args ...any) ([]T, error) {
 	edges := make([]T, 0, len(inputs))
 	for _, input := range inputs {
-		edge, err := input.ToProtoEdge(args)
+		edge, err := input.ToProtoEdge(args...)
 		if err != nil {
 			return nil, fmt.Errorf("failed to make edge for %v: %w", input, err)
 		}
