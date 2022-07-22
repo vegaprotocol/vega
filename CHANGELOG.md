@@ -9,6 +9,7 @@
 - [](https://github.com/vegaprotocol/data-node/issues/xxx) -
 
 ### 🛠  Improvements
+- [819](https://github.com/vegaprotocol/data-node/issues/819) - Refactor `v2` trades `api`
 - [781](https://github.com/vegaprotocol/data-node/issues/781) - Add a summary table of current balances
 - [791](https://github.com/vegaprotocol/data-node/issues/791) - `v2` orders `api`
 - [816](https://github.com/vegaprotocol/data-node/issues/816) - `v2` accounts `api`
