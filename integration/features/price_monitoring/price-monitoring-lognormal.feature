@@ -6,12 +6,17 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
       | horizon | probability | auction extension |
       | 60      | 0.95        | 240               |
       | 600     | 0.99        | 360               |
+    And the price monitoring updated every "60" seconds named "my-price-monitoring-2":
+      | horizon | probability | auction extension |
+      | 60      | 0.95        | 240               |
+      | 120     | 0.99        | 360               |
     And the log normal risk model named "my-log-normal-risk-model":
       | risk aversion | tau                    | mu | r     | sigma |
       | 0.000001      | 0.00011407711613050422 | 0  | 0.016 | 2.0   |
     And the markets:
-      | id        | quote name | asset | risk model                    | margin calculator         | auction duration | fees         | price monitoring    | oracle config          |
-      | ETH/DEC20 | ETH        | ETH   | default-log-normal-risk-model | default-margin-calculator | 60               | default-none | my-price-monitoring | default-eth-for-future |
+      | id        | quote name | asset | risk model                    | margin calculator         | auction duration | fees         | price monitoring      | oracle config          |
+      | ETH/DEC20 | ETH        | ETH   | default-log-normal-risk-model | default-margin-calculator | 60               | default-none | my-price-monitoring   | default-eth-for-future |
+      | ETH/DEC21 | ETH        | ETH   | default-log-normal-risk-model | default-margin-calculator | 60               | default-none | my-price-monitoring-2 | default-eth-for-future |
     And the following network parameters are set:
       | name                           | value |
       | market.auction.minimumDuration | 60    |
@@ -406,3 +411,69 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
       | 1000000    | TRADING_MODE_CONTINUOUS | 60      | 994606    | 1005415   | 7434000      | 0              | 10            |
       | 1000000    | TRADING_MODE_CONTINUOUS | 600     | 977751    | 1022678   | 7434000      | 0              | 10            |
+
+  Scenario: Non-persistent order results in an auction (one trigger breached), orders placed during auction result in trade with indicative price outside the price monitoring bounds, but auction extension is longer than horizon of the 2nd trigger, hence it gets deactivated and auction concludes immediately. (0032-PRIM-009)
+    Given the parties deposit on asset's general account the following amount:
+      | party  | asset | amount       |
+      | party1 | ETH   | 10000000000  |
+      | party2 | ETH   | 10000000000  |
+      | aux    | ETH   | 100000000000 |
+      | aux2   | ETH   | 100000000000 |
+      | lpprov | ETH   | 100000000000 |
+
+    When the parties submit the following liquidity provision:
+      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
+      | lp1 | lpprov | ETH/DEC21 | 90000000          | 0.1 | buy  | BID              | 50         | 100    | submission |
+      | lp1 | lpprov | ETH/DEC21 | 90000000          | 0.1 | sell | ASK              | 50         | 100    | submission |
+
+    # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
+    When the parties place the following orders:
+      | party | market id | side | volume | price  | resulting trades | type       | tif     |
+      | aux   | ETH/DEC21 | buy  | 1      | 1      | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux   | ETH/DEC21 | sell | 1      | 200000 | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux2  | ETH/DEC21 | buy  | 1      | 110000 | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux   | ETH/DEC21 | sell | 1      | 110000 | 0                | TYPE_LIMIT | TIF_GTC |
+    Then the opening auction period ends for market "ETH/DEC21"
+    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC21"
+    And the mark price should be "110000" for the market "ETH/DEC21"
+
+    #T0 + 2 min (end of auction)
+    When time is updated to "2020-10-16T00:02:00Z"
+
+    Then the parties place the following orders:
+      | party  | market id | side | volume | price  | resulting trades | type       | tif     | reference |
+      | party1 | ETH/DEC21 | sell | 1      | 110000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
+      | party2 | ETH/DEC21 | buy  | 1      | 110000 | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
+
+    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC21"
+
+    And the mark price should be "110000" for the market "ETH/DEC21"
+
+    #T1 = T0 + 10s
+    When time is updated to "2020-10-16T00:02:10Z"
+
+    Then the parties place the following orders:
+      | party  | market id | side | volume | price  | resulting trades | type       | tif     | reference |
+      | party1 | ETH/DEC21 | sell | 1      | 111000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
+      | party2 | ETH/DEC21 | buy  | 1      | 111000 | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
+
+    And the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC21"
+
+    And the mark price should be "110000" for the market "ETH/DEC21"
+
+    #T1 + 04min00s (last second of the auction)
+    When time is updated to "2020-10-16T00:03:10Z"
+
+    Then the parties place the following orders:
+      | party  | market id | side | volume | price  | resulting trades | type       | tif     | reference |
+      | party1 | ETH/DEC21 | sell | 2      | 133000 | 0                | TYPE_LIMIT | TIF_GFA | ref-1     |
+      | party2 | ETH/DEC21 | buy  | 2      | 133000 | 0                | TYPE_LIMIT | TIF_GFA | ref-2     |
+
+    And the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC21"
+
+    #T1 + 04min01s (auction doesn't get extended due to 2nd trigger as it's now stale)
+    When time is updated to "2020-10-16T00:06:11Z"
+
+    Then the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC21"
+
+    And the mark price should be "133000" for the market "ETH/DEC21"
