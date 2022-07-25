@@ -27,6 +27,7 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
 
     Given the average block duration is "2"
 
+  @VirtStake
   Scenario: 001 1 LP joining at start, checking liquidity rewards over 3 periods, 1 period with no trades (0042-LIQF-001)
     # setup accounts
     Given the parties deposit on asset's general account the following amount:
@@ -158,6 +159,7 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
 
     And the accumulated liquidity fees should be "0" for the market "ETH/MAR22"
 
+  @VirtStake
   Scenario: 002 2 LPs joining at start, equal commitments (0042-LIQF-002)
 
     Given the parties deposit on asset's general account the following amount:
@@ -256,6 +258,7 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
       | market | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 16     | USD   |
       | market | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 16     | USD   |
 
+  @VirtStake
   Scenario: 003 2 LPs joining at start, unequal commitments (0042-LIQF-003)
 
     Given the parties deposit on asset's general account the following amount:
