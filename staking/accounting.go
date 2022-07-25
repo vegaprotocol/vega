@@ -218,6 +218,20 @@ func (a *Accounting) ProcessStakeTotalSupply(_ context.Context, evt *types.Stake
 	)
 }
 
+func (a *Accounting) getLastBlockSeen() uint64 {
+	var block uint64
+	for _, acc := range a.hashableAccounts {
+		if len(acc.Events) == 0 {
+			continue
+		}
+		height := acc.Events[len(acc.Events)-1].BlockHeight
+		if block < height {
+			block = height
+		}
+	}
+	return block
+}
+
 func (a *Accounting) onStakeTotalSupplyVerified(event interface{}, ok bool) {
 	if ok {
 		a.accState.changed = true

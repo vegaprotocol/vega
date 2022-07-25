@@ -72,7 +72,8 @@ type StakeVerifier struct {
 	timeService TimeService
 	broker      Broker
 
-	ocv EthOnChainVerifier
+	ocv            EthOnChainVerifier
+	ethEventSource EthereumEventSource
 
 	pendingSDs      []*pendingSD
 	pendingSRs      []*pendingSR
@@ -111,18 +112,20 @@ func NewStakeVerifier(
 
 	broker Broker,
 	onChainVerifier EthOnChainVerifier,
+	ethEventSource EthereumEventSource,
 ) (sv *StakeVerifier) {
 	log = log.Named("stake-verifier")
 	s := &StakeVerifier{
-		log:         log,
-		cfg:         cfg,
-		accs:        accs,
-		witness:     witness,
-		ocv:         onChainVerifier,
-		timeService: ts,
-		broker:      broker,
-		ids:         map[string]struct{}{},
-		hashes:      map[string]struct{}{},
+		log:            log,
+		cfg:            cfg,
+		accs:           accs,
+		witness:        witness,
+		ocv:            onChainVerifier,
+		timeService:    ts,
+		broker:         broker,
+		ethEventSource: ethEventSource,
+		ids:            map[string]struct{}{},
+		hashes:         map[string]struct{}{},
 		svss: &stakeVerifierSnapshotState{
 			changedDeposited: true,
 			changedRemoved:   true,
@@ -228,6 +231,33 @@ func (s *StakeVerifier) removePendingStakeRemoved(id string) error {
 		}
 	}
 	return ErrInvalidStakeRemovedEventID
+}
+
+func (s *StakeVerifier) getLastBlockSeen() uint64 {
+	var block uint64
+	for _, p := range s.pendingSDs {
+		if block == 0 {
+			block = p.BlockNumber
+			continue
+		}
+
+		if p.BlockNumber < block {
+			block = p.BlockNumber
+		}
+	}
+
+	for _, p := range s.pendingSRs {
+		if block == 0 {
+			block = p.BlockNumber
+			continue
+		}
+
+		if p.BlockNumber < block {
+			block = p.BlockNumber
+		}
+	}
+
+	return block
 }
 
 func (s *StakeVerifier) onEventVerified(event interface{}, ok bool) {
