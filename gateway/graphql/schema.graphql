@@ -554,7 +554,10 @@ type Query {
   nodeData: NodeData
 
   "all known network nodes"
-  nodes: [Node!]
+  nodes: [Node!] @deprecated(reason: "use nodesConnection instead")
+
+  "all known network nodes"
+  nodesConnection(pagination: Pagination): NodesConnection!
 
   "specific node in network"
   node("required id of node" id: String!): Node
@@ -774,7 +777,10 @@ type Epoch {
   timestamps: EpochTimestamps!
 
   "Validators that participated in this epoch"
-  validators: [Node!]!
+  validators: [Node!]! @deprecated(reason: "Use validatorsConnection instead")
+
+  "Validators that participated in this epoch"
+  validatorsConnection(pagination: Pagination): NodesConnection!
 
   delegations(
     # Optional party id to filter on
@@ -3710,5 +3716,19 @@ type DelegationsConnection {
   "The delegation information available on this connection"
   edges: [DelegationEdge]
   "The pagination information"
+  pageInfo: PageInfo!
+}
+
+type NodeEdge {
+  "The node"
+  node: Node!
+  "Cursor identifying the node"
+  cursor: String!
+}
+
+type NodesConnection {
+  "List of nodes available for the connection"
+  edges: [NodeEdge]
+  "Page information for the connection"
   pageInfo: PageInfo!
 }

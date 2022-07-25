@@ -320,3 +320,7 @@ models:
     model: code.vegaprotocol.io/protos/data-node/api/v2.DelegationEdge
   DelegationsConnection:
     model: code.vegaprotocol.io/protos/data-node/api/v2.DelegationsConnection
+  NodeEdge:
+    model: code.vegaprotocol.io/protos/data-node/api/v2.NodeEdge
+  NodesConnection:
+    model: code.vegaprotocol.io/protos/data-node/api/v2.NodesConnection

@@ -70,8 +70,8 @@ func TestDelegations(t *testing.T) {
 	ns := sqlstore.NewNode(connectionSource)
 	block := addTestBlock(t, bs)
 
-	node1 := addTestNode(t, ns, block)
-	node2 := addTestNode(t, ns, block)
+	node1 := addTestNode(t, ns, block, generateID())
+	node2 := addTestNode(t, ns, block, generateID())
 
 	node1ID := node1.ID.String()
 	node2ID := node2.ID.String()
@@ -637,8 +637,8 @@ func setupPaginatedDelegationsTests(t *testing.T) (*sqlstore.Delegations,
 	block := addTestBlockForTime(t, bs, blockTime)
 
 	nodes := []entities.Node{
-		addTestNode(t, ns, block),
-		addTestNode(t, ns, block),
+		addTestNode(t, ns, block, generateID()),
+		addTestNode(t, ns, block, generateID()),
 	}
 
 	parties := []entities.Party{

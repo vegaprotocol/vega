@@ -356,6 +356,8 @@ func (g *GRPCServer) Start(ctx context.Context, lis net.Listener) error {
 		delegationService:         g.delegationService,
 		marketService:             g.marketsService,
 		marketDepthService:        g.marketDepthService,
+		nodeService:               g.nodeService,
+		epochService:              g.epochService,
 	}
 
 	protoapi2.RegisterTradingDataServiceServer(g.srv, tradingDataSvcV2)

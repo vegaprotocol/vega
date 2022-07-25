@@ -16,6 +16,7 @@ import (
 	"strconv"
 	"time"
 
+	v2 "code.vegaprotocol.io/protos/data-node/api/v2"
 	"code.vegaprotocol.io/protos/vega"
 	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
 	"github.com/shopspring/decimal"
@@ -341,6 +342,17 @@ func (node *Node) ToProto() *vega.Node {
 	}
 
 	return res
+}
+
+func (node Node) Cursor() *Cursor {
+	return NewCursor(node.ID.String())
+}
+
+func (node Node) ToProtoEdge(_ ...any) (*v2.NodeEdge, error) {
+	return &v2.NodeEdge{
+		Node:   node.ToProto(),
+		Cursor: node.Cursor().Encode(),
+	}, nil
 }
 
 func (ed EpochData) MarshalJSON() ([]byte, error) {

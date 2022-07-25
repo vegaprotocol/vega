@@ -16,6 +16,7 @@ import (
 	"context"
 	"encoding/hex"
 	"fmt"
+	"math"
 	"strconv"
 	"strings"
 	"time"
@@ -70,6 +71,8 @@ type tradingDataServiceV2 struct {
 	delegationService         *service.Delegation
 	marketService             *service.Markets
 	marketDepthService        *service.MarketDepth
+	nodeService               *service.Node
+	epochService              *service.Epoch
 }
 
 func (t *tradingDataServiceV2) ListAccounts(ctx context.Context, req *v2.ListAccountsRequest) (*v2.ListAccountsResponse, error) {
@@ -1471,4 +1474,140 @@ func (t *tradingDataServiceV2) ListDelegations(ctx context.Context, in *v2.ListD
 func (t *tradingDataServiceV2) marketExistsForId(ctx context.Context, marketID string) bool {
 	_, err := t.marketsService.GetByID(ctx, marketID)
 	return err == nil
+}
+
+// GetNetworkData retrieve network data regarding the nodes of the network
+func (t *tradingDataServiceV2) GetNetworkData(ctx context.Context, _ *v2.GetNetworkDataRequest) (*v2.GetNetworkDataResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("GetNetworkDataV2")()
+
+	nodeData, err := t.nodeService.GetNodeData(ctx)
+	if err != nil {
+		return nil, apiError(codes.Internal, err)
+	}
+
+	return &v2.GetNetworkDataResponse{
+		NodeData: nodeData.ToProto(),
+	}, nil
+}
+
+// GetNode retrieves information about a given node
+func (t *tradingDataServiceV2) GetNode(ctx context.Context, req *v2.GetNodeRequest) (*v2.GetNodeResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("GetNodeV2")()
+
+	if req.GetId() == "" {
+		return nil, apiError(codes.InvalidArgument, errors.New("missing node ID parameter"))
+	}
+
+	epoch, err := t.epochService.GetCurrent(ctx)
+	if err != nil {
+		fmt.Printf("%v", err)
+		return nil, apiError(codes.Internal, err)
+	}
+
+	node, err := t.nodeService.GetNodeByID(ctx, req.GetId(), uint64(epoch.ID))
+	if err != nil {
+		fmt.Printf("%v", err)
+		return nil, apiError(codes.NotFound, err)
+	}
+
+	return &v2.GetNodeResponse{
+		Node: node.ToProto(),
+	}, nil
+}
+
+// ListNodes returns information about the nodes on the network
+func (t *tradingDataServiceV2) ListNodes(ctx context.Context, req *v2.ListNodesRequest) (*v2.ListNodesResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("ListNodesV2")()
+	var epoch entities.Epoch
+	var pagination entities.CursorPagination
+	var err error
+
+	if req == nil {
+		return nil, apiError(codes.InvalidArgument, errors.New("request is nil"))
+	}
+
+	if req.EpochSeq == nil || *req.EpochSeq > math.MaxInt64 {
+		epoch, err = t.epochService.GetCurrent(ctx)
+		if err != nil {
+			fmt.Printf("%v", err)
+			return nil, apiError(codes.Internal, err)
+		}
+	} else {
+		epochSeq := int64(*req.EpochSeq)
+		epoch, err = t.epochService.Get(ctx, epochSeq)
+	}
+
+	pagination, err = entities.CursorPaginationFromProto(req.Pagination)
+	if err != nil {
+		return nil, apiError(codes.InvalidArgument, fmt.Errorf("invalid pagination: %w", err))
+	}
+
+	nodes, pageInfo, err := t.nodeService.GetNodes(ctx, uint64(epoch.ID), pagination)
+	if err != nil {
+		fmt.Printf("%v", err)
+		return nil, apiError(codes.Internal, err)
+	}
+
+	edges, err := makeEdges[*v2.NodeEdge](nodes)
+	if err != nil {
+		return nil, apiError(codes.Internal, err)
+	}
+
+	nodesConnection := &v2.NodesConnection{
+		Edges:    edges,
+		PageInfo: pageInfo.ToProto(),
+	}
+
+	resp := &v2.ListNodesResponse{
+		Nodes: nodesConnection,
+	}
+
+	return resp, nil
+}
+
+// GetEpoch retrieves data for a specific epoch, if id omitted it gets the current epoch
+func (t *tradingDataServiceV2) GetEpoch(ctx context.Context, req *v2.GetEpochRequest) (*v2.GetEpochResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("GetEpochV2")()
+
+	var epoch entities.Epoch
+	var err error
+
+	if req.GetId() == 0 {
+		epoch, err = t.epochService.GetCurrent(ctx)
+	} else {
+		epoch, err = t.epochService.Get(ctx, int64(req.GetId()))
+	}
+
+	if err != nil {
+		return nil, apiError(codes.Internal, err)
+	}
+
+	protoEpoch := epoch.ToProto()
+
+	delegations, _, err := t.delegationService.Get(ctx, nil, nil, &epoch.ID, nil)
+	if err != nil {
+		return nil, apiError(codes.Internal, err)
+	}
+
+	protoDelegations := make([]*vega.Delegation, len(delegations))
+	for i, delegation := range delegations {
+		protoDelegations[i] = delegation.ToProto()
+	}
+	protoEpoch.Delegations = protoDelegations
+
+	nodes, _, err := t.nodeService.GetNodes(ctx, uint64(epoch.ID), entities.CursorPagination{})
+	if err != nil {
+		return nil, apiError(codes.Internal, err)
+	}
+
+	protoNodes := make([]*vega.Node, len(nodes))
+	for i, node := range nodes {
+		protoNodes[i] = node.ToProto()
+	}
+
+	protoEpoch.Validators = protoNodes
+
+	return &v2.GetEpochResponse{
+		Epoch: protoEpoch,
+	}, nil
 }
