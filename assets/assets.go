@@ -24,7 +24,6 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/nodewallets"
 	"code.vegaprotocol.io/vega/types"
-	"code.vegaprotocol.io/vega/vegatime"
 )
 
 var (
@@ -64,7 +63,6 @@ func New(
 	nw *nodewallets.NodeWallets,
 	ethClient erc20.ETHClient,
 	broker broker.BrokerI,
-	ts vegatime.TimeService,
 	isValidator bool,
 ) *Service {
 	log = log.Named(namedLogger)

@@ -67,6 +67,15 @@ func NewMarketActivityTracker(log *logging.Logger, epochEngine EpochEngine) *Mar
 	return mat
 }
 
+// GetProposer returns the proposer of the market or empty string if the market doesn't exist.
+func (mat *MarketActivityTracker) GetProposer(market string) string {
+	m, ok := mat.marketToTracker[market]
+	if ok {
+		return m.proposer
+	}
+	return ""
+}
+
 func (mat *MarketActivityTracker) SetEligibilityChecker(eligibilityChecker EligibilityChecker) {
 	mat.eligibilityChecker = eligibilityChecker
 }
