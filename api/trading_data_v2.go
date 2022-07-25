@@ -1528,13 +1528,14 @@ func (t *tradingDataServiceV2) ListNodes(ctx context.Context, req *v2.ListNodesR
 
 	if req.EpochSeq == nil || *req.EpochSeq > math.MaxInt64 {
 		epoch, err = t.epochService.GetCurrent(ctx)
-		if err != nil {
-			fmt.Printf("%v", err)
-			return nil, apiError(codes.Internal, err)
-		}
 	} else {
 		epochSeq := int64(*req.EpochSeq)
 		epoch, err = t.epochService.Get(ctx, epochSeq)
+	}
+
+	if err != nil {
+		fmt.Printf("%v", err)
+		return nil, apiError(codes.Internal, err)
 	}
 
 	pagination, err = entities.CursorPaginationFromProto(req.Pagination)
