@@ -58,6 +58,7 @@ func TestTopologyCheckpoint(t *testing.T) {
 func TestCheckPointLoading(t *testing.T) {
 	newTop := getTestTopWithDefaultValidator(t)
 	defer newTop.ctrl.Finish()
+	newTop.timeService.EXPECT().GetTimeNow().AnyTimes()
 
 	inFile := "testcp/20220411202622-135-812dab0eb11196b49fd716329feb50c243f645226460df760168215d73acf0dd.cp"
 	data, _ := ioutil.ReadFile(inFile)
@@ -73,6 +74,7 @@ func TestCheckPointLoading(t *testing.T) {
 func testTopologyCheckpointSuccess(t *testing.T) {
 	top := getTestTopWithDefaultValidator(t)
 	defer top.ctrl.Finish()
+	top.timeService.EXPECT().GetTimeNow().AnyTimes()
 
 	ctx := context.Background()
 	addNodes(top, 2)
@@ -135,6 +137,7 @@ func testTopologyCheckpointSuccess(t *testing.T) {
 func testTopologyCheckpointUsesRelativeBlockHeight(t *testing.T) {
 	top := getTestTopWithDefaultValidator(t)
 	defer top.ctrl.Finish()
+	top.timeService.EXPECT().GetTimeNow().AnyTimes()
 
 	ctx := context.Background()
 	addNodes(top, 2)
@@ -182,6 +185,7 @@ func testTopologyCheckpointUsesRelativeBlockHeight(t *testing.T) {
 
 	newTop := getTestTopWithDefaultValidator(t)
 	defer newTop.ctrl.Finish()
+	newTop.timeService.EXPECT().GetTimeNow().AnyTimes()
 
 	addNodes(newTop, 2)
 

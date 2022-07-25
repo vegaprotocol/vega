@@ -17,15 +17,23 @@ import (
 	walletpb "code.vegaprotocol.io/protos/vega/wallet/v1"
 	vgcrypto "code.vegaprotocol.io/shared/libs/crypto"
 	vgrand "code.vegaprotocol.io/shared/libs/rand"
+	"code.vegaprotocol.io/vega/version"
 	wcommands "code.vegaprotocol.io/vega/wallet/commands"
 	"code.vegaprotocol.io/vega/wallet/network"
-	"code.vegaprotocol.io/vega/wallet/version"
 	"code.vegaprotocol.io/vega/wallet/wallet"
 
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/julienschmidt/httprouter"
 	"github.com/rs/cors"
 	"go.uber.org/zap"
+)
+
+const (
+	TxnValidationFailure   uint32 = 51
+	TxnDecodingFailure     uint32 = 60
+	TxnInternalError       uint32 = 70
+	TxnUnknownCommandError uint32 = 80
+	TxnSpamError           uint32 = 89
 )
 
 type Service struct {
@@ -410,7 +418,7 @@ type Auth interface {
 // NodeForward ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/node_forward_mock.go -package mocks code.vegaprotocol.io/vega/wallet/service NodeForward
 type NodeForward interface {
-	SendTx(context.Context, *commandspb.Transaction, api.SubmitTransactionRequest_Type, int) (string, error)
+	SendTx(context.Context, *commandspb.Transaction, api.SubmitTransactionRequest_Type, int) (*api.SubmitTransactionResponse, error)
 	CheckTx(context.Context, *commandspb.Transaction, int) (*api.CheckTransactionResponse, error)
 	HealthCheck(context.Context) error
 	GetNetworkChainID(context.Context) (string, error)
@@ -856,7 +864,7 @@ func (s *Service) signTx(token string, w http.ResponseWriter, r *http.Request, _
 	}
 
 	sentAt := time.Now()
-	txHash, err := s.nodeForward.SendTx(r.Context(), tx, ty, cltIdx)
+	resp, err := s.nodeForward.SendTx(r.Context(), tx, ty, cltIdx)
 	if err != nil {
 		s.policy.Report(SentTransaction{
 			Tx:     tx,
@@ -868,8 +876,19 @@ func (s *Service) signTx(token string, w http.ResponseWriter, r *http.Request, _
 		return
 	}
 
+	if !resp.Success {
+		s.policy.Report(SentTransaction{
+			Tx:     tx,
+			TxID:   txID,
+			Error:  err,
+			SentAt: sentAt,
+		})
+		s.writeTxError(w, resp)
+		return
+	}
+
 	s.policy.Report(SentTransaction{
-		TxHash: txHash,
+		TxHash: resp.TxHash,
 		TxID:   txID,
 		Tx:     tx,
 		SentAt: sentAt,
@@ -882,7 +901,7 @@ func (s *Service) signTx(token string, w http.ResponseWriter, r *http.Request, _
 		TxID       string                  `json:"txId"`
 		Tx         *commandspb.Transaction `json:"tx"`
 	}{
-		TxHash:     txHash,
+		TxHash:     resp.TxHash,
 		ReceivedAt: receivedAt,
 		SentAt:     sentAt,
 		TxID:       txID,
@@ -892,8 +911,8 @@ func (s *Service) signTx(token string, w http.ResponseWriter, r *http.Request, _
 
 func (s *Service) Version(w http.ResponseWriter, _ *http.Request, _ httprouter.Params) {
 	res := VersionResponse{
-		Version:     version.Version,
-		VersionHash: version.GitHash,
+		Version:     version.Get(),
+		VersionHash: version.GetCommitHash(),
 	}
 
 	s.writeSuccess(w, res)
@@ -971,6 +990,22 @@ func (s *Service) writeForbiddenError(w http.ResponseWriter, e error) {
 
 func (s *Service) writeInternalError(w http.ResponseWriter, e error) {
 	s.writeError(w, newErrorResponse(e.Error()), http.StatusInternalServerError)
+}
+
+func (s *Service) writeTxError(w http.ResponseWriter, r *api.SubmitTransactionResponse) {
+	var code int
+	switch r.Code {
+	case TxnSpamError:
+		code = http.StatusTooManyRequests
+	case TxnUnknownCommandError, TxnValidationFailure, TxnDecodingFailure:
+		code = http.StatusBadRequest
+	case TxnInternalError:
+		code = http.StatusInternalServerError
+	default:
+		s.log.Error("unknown transaction code", zap.Uint32("code", r.Code))
+		code = http.StatusInternalServerError
+	}
+	s.writeError(w, newErrorResponse(r.Data), code)
 }
 
 func (s *Service) writeError(w http.ResponseWriter, e error, status int) {

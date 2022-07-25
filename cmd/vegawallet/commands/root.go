@@ -13,6 +13,7 @@ import (
 	"code.vegaprotocol.io/vega/wallet/version"
 
 	vgversion "code.vegaprotocol.io/shared/libs/version"
+	coreversion "code.vegaprotocol.io/vega/version"
 	"github.com/blang/semver/v4"
 	"github.com/spf13/cobra"
 )
@@ -41,7 +42,7 @@ func NewCmdRoot(w io.Writer) *cobra.Command {
 	vh := func() (*semver.Version, error) {
 		ctx, cancel := context.WithTimeout(context.Background(), requestTimeout)
 		defer cancel()
-		v, err := version.Check(vgversion.BuildGithubReleasesRequestFrom(ctx, version.ReleasesAPI), version.Version)
+		v, err := version.Check(vgversion.BuildGithubReleasesRequestFrom(ctx, version.ReleasesAPI), coreversion.Get())
 		if err != nil {
 			return nil, fmt.Errorf("couldn't check latest releases: %w", err)
 		}
@@ -78,7 +79,7 @@ func BuildCmdRoot(w io.Writer, vh CheckVersionHandler) *cobra.Command {
 			if !f.NoVersionCheck && f.Output == flags.InteractiveOutput {
 				p := printer.NewInteractivePrinter(w)
 				if version.IsUnreleased() {
-					p.Print(p.String().CrossMark().DangerText("You are running an unreleased version of the Vega wallet (").DangerText(version.Version).DangerText("). Use it at your own risk!").NextSection())
+					p.Print(p.String().CrossMark().DangerText("You are running an unreleased version of the Vega wallet (").DangerText(coreversion.Get()).DangerText("). Use it at your own risk!").NextSection())
 				}
 
 				v, err := vh()
@@ -89,7 +90,7 @@ func BuildCmdRoot(w io.Writer, vh CheckVersionHandler) *cobra.Command {
 
 				if v != nil {
 					str := p.String()
-					str.Text("Version ").SuccessText(v.String()).Text(" is available. Your current version is ").DangerText(version.Version).Text(".").NextLine()
+					str.Text("Version ").SuccessText(v.String()).Text(" is available. Your current version is ").DangerText(coreversion.Get()).Text(".").NextLine()
 					str.Text("Download the latest version at: ").Underline(vgversion.GetGithubReleaseURL(version.ReleasesURL, v)).NextSection()
 					p.Print(str)
 				}

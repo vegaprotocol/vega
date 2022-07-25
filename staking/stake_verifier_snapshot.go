@@ -40,6 +40,7 @@ type stakeVerifierSnapshotState struct {
 }
 
 func (s *StakeVerifier) serialisePendingSD() ([]byte, error) {
+	s.log.Info("serialising pending SD", logging.Int("n", len(s.pendingSDs)))
 	deposited := make([]*types.StakeDeposited, 0, len(s.pendingSDs))
 
 	for _, p := range s.pendingSDs {
@@ -55,6 +56,7 @@ func (s *StakeVerifier) serialisePendingSD() ([]byte, error) {
 }
 
 func (s *StakeVerifier) serialisePendingSR() ([]byte, error) {
+	s.log.Info("serialising pending SR", logging.Int("n", len(s.pendingSRs)))
 	removed := make([]*types.StakeRemoved, 0, len(s.pendingSRs))
 
 	for _, p := range s.pendingSRs {
@@ -66,6 +68,7 @@ func (s *StakeVerifier) serialisePendingSR() ([]byte, error) {
 			StakeVerifierRemoved: removed,
 		},
 	}
+
 	return proto.Marshal(pl.IntoProto())
 }
 
@@ -167,7 +170,28 @@ func (s *StakeVerifier) restorePendingSD(ctx context.Context, deposited []*types
 	s.svss.changedDeposited = false
 	s.svss.serialisedDeposited, err = proto.Marshal(p.IntoProto())
 	s.broker.SendBatch(evts)
+
+	// now populate "seen" map with finalised events from accounting
+	for _, acc := range s.accs.hashableAccounts {
+		for _, evt := range acc.Events {
+			sl := types.StakeLinkingFromProto(evt.IntoProto())
+			if !s.ensureNotDuplicate(sl.ID, sl.Hash()) {
+				s.log.Panic("finalised events unexpectedly pre-populated when restoring from snapshot")
+			}
+		}
+	}
+
 	return err
+}
+
+func (s *StakeVerifier) OnStateLoaded(ctx context.Context) error {
+	// tell the internal EEF where it got up to so we do not resend events we're already seen
+	lastBlockSeen := s.getLastBlockSeen()
+	if lastBlockSeen == 0 {
+		lastBlockSeen = s.accs.getLastBlockSeen()
+	}
+	s.ethEventSource.UpdateStakingStartingBlock(lastBlockSeen)
+	return nil
 }
 
 func (s *StakeVerifier) restorePendingSR(ctx context.Context, removed []*types.StakeRemoved, p *types.Payload) error {

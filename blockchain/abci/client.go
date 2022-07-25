@@ -55,45 +55,21 @@ func NewClient(addr string) (*Client, error) {
 
 func (c *Client) SendTransactionAsync(ctx context.Context, bytes []byte) (*tmctypes.ResultBroadcastTx, error) {
 	// Fire off the transaction for consensus
-	res, err := c.tmclt.BroadcastTxAsync(ctx, bytes)
-	if err != nil {
-		return res, err
-	}
-	return res, nil
+	return c.tmclt.BroadcastTxAsync(ctx, bytes)
 }
 
 func (c *Client) CheckTransaction(ctx context.Context, bytes []byte) (*tmctypes.ResultCheckTx, error) {
-	res, err := c.tmclt.CheckTx(ctx, bytes)
-	if err != nil {
-		return nil, err
-	} else if !res.IsOK() {
-		return res, newUserInputError(res.Code, string(res.Data))
-	}
-
-	return res, nil
+	return c.tmclt.CheckTx(ctx, bytes)
 }
 
 func (c *Client) SendTransactionSync(ctx context.Context, bytes []byte) (*tmctypes.ResultBroadcastTx, error) {
 	// Fire off the transaction for consensus
-	r, err := c.tmclt.BroadcastTxSync(ctx, bytes)
-	if err != nil {
-		return nil, err
-	} else if r.Code != 0 {
-		return r, newUserInputError(r.Code, string(r.Data))
-	}
-
-	return r, nil
+	return c.tmclt.BroadcastTxSync(ctx, bytes)
 }
 
 func (c *Client) SendTransactionCommit(ctx context.Context, bytes []byte) (*tmctypes.ResultBroadcastTxCommit, error) {
 	// Fire off the transaction for consensus
-	r, err := c.tmclt.BroadcastTxCommit(ctx, bytes)
-	if err != nil {
-		return nil, err
-	} else if r.CheckTx.Code != 0 {
-		return r, newUserInputError(r.CheckTx.Code, string(r.CheckTx.Data))
-	}
-	return r, nil
+	return c.tmclt.BroadcastTxCommit(ctx, bytes)
 }
 
 // GetGenesisTime retrieves the genesis time from the blockchain.
@@ -212,28 +188,4 @@ func (c *Client) Subscribe(ctx context.Context, fn func(tmctypes.ResultEvent) er
 
 func (c *Client) Start() error {
 	return nil // Nothing to do for this client type.
-}
-
-type userInputError struct {
-	code    uint32
-	details string
-}
-
-func newUserInputError(code uint32, details string) userInputError {
-	return userInputError{
-		code:    code,
-		details: details,
-	}
-}
-
-func (e userInputError) Code() uint32 {
-	return e.code
-}
-
-func (e userInputError) Details() string {
-	return e.details
-}
-
-func (e userInputError) Error() string {
-	return e.details
 }

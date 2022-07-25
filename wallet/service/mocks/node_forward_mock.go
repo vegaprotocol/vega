@@ -97,10 +97,10 @@ func (mr *MockNodeForwardMockRecorder) LastBlockHeightAndHash(arg0 interface{}) 
 }
 
 // SendTx mocks base method.
-func (m *MockNodeForward) SendTx(arg0 context.Context, arg1 *v10.Transaction, arg2 v1.SubmitTransactionRequest_Type, arg3 int) (string, error) {
+func (m *MockNodeForward) SendTx(arg0 context.Context, arg1 *v10.Transaction, arg2 v1.SubmitTransactionRequest_Type, arg3 int) (*v1.SubmitTransactionResponse, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SendTx", arg0, arg1, arg2, arg3)
-	ret0, _ := ret[0].(string)
+	ret0, _ := ret[0].(*v1.SubmitTransactionResponse)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
