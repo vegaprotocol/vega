@@ -42,7 +42,11 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
     And the mark price should be "100000" for the market "ETH/DEC20"
 
-    # why is supplied stake 0????? should it not be 90000000?
+    And the order book should have the following volumes for market "ETH/DEC20":
+      | side | price  | volume   |
+      | sell | 200000 | 901      |
+      | buy  | 1      | 180000001|
+      
     And the market data for the market "ETH/DEC20" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
       | 100000     | TRADING_MODE_CONTINUOUS | 60      | 99461     | 100541    | 74340        | 90000000       | 1             |
