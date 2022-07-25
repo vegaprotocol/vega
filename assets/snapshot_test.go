@@ -46,13 +46,11 @@ func testAssets(t *testing.T) *assetsTest {
 	conf := assets.NewDefaultConfig()
 	logger := logging.NewTestLogger()
 	ctrl := gomock.NewController(t)
-	ts := tmocks.NewMockTimeService(ctrl)
 	broker := bmocks.NewMockBrokerI(ctrl)
-	as := assets.New(logger, conf, nil, nil, broker, ts, true)
+	as := assets.New(logger, conf, nil, nil, broker, true)
 	return &assetsTest{
 		Service: as,
 		ctrl:    ctrl,
-		ts:      ts,
 		broker:  broker,
 	}
 }

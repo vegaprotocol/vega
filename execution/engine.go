@@ -280,8 +280,29 @@ func (e *Engine) SubmitMarketWithLiquidityProvision(ctx context.Context, marketC
 	lpID,
 	deterministicId string,
 ) error {
+	return e.submitOrRestoreMarketWithLiquidityProvision(ctx, marketConfig, lp, party, lpID, deterministicId, true)
+}
+
+// RestoreMarketWithLiquidityProvision is very similar to SubmitMarketWithLiquidityProvision without updating the market tracker as it is restored separately from checkpoint.
+func (e *Engine) RestoreMarketWithLiquidityProvision(ctx context.Context, marketConfig *types.Market, lp *types.LiquidityProvisionSubmission, lpID, deterministicId string) error {
+	proposer := e.marketActivityTracker.GetProposer(marketConfig.ID)
+	if len(proposer) == 0 {
+		return ErrMarketDoesNotExist
+	}
+	return e.submitOrRestoreMarketWithLiquidityProvision(ctx, marketConfig, lp, proposer, lpID, deterministicId, false)
+}
+
+func (e *Engine) submitOrRestoreMarketWithLiquidityProvision(ctx context.Context, marketConfig *types.Market, lp *types.LiquidityProvisionSubmission, party,
+	lpID,
+	deterministicId string,
+	isNewMarket bool,
+) error {
+	msg := "submit market with liquidity provision"
+	if !isNewMarket {
+		msg = "restore market with liquidity provision"
+	}
 	if e.log.IsDebug() {
-		e.log.Debug("submit market with liquidity provision",
+		e.log.Debug(msg,
 			logging.Market(*marketConfig),
 			logging.LiquidityProvisionSubmission(*lp),
 			logging.PartyID(party),
@@ -294,11 +315,14 @@ func (e *Engine) SubmitMarketWithLiquidityProvision(ctx context.Context, marketC
 	}
 
 	mkt := e.markets[marketConfig.ID]
-	asset, err := marketConfig.GetAsset()
-	if err != nil {
-		e.log.Panic("failed to get asset from market config", logging.String("market", mkt.GetID()), logging.String("error", err.Error()))
+
+	if isNewMarket {
+		asset, err := marketConfig.GetAsset()
+		if err != nil {
+			e.log.Panic("failed to get asset from market config", logging.String("market", mkt.GetID()), logging.String("error", err.Error()))
+		}
+		e.marketActivityTracker.MarketProposed(asset, marketConfig.ID, party)
 	}
-	e.marketActivityTracker.MarketProposed(asset, marketConfig.ID, party)
 
 	// publish market data anyway initially
 	e.publishNewMarketInfos(ctx, mkt)
@@ -312,21 +336,40 @@ func (e *Engine) SubmitMarketWithLiquidityProvision(ctx context.Context, marketC
 	return nil
 }
 
-// SubmitMarket will submit a new market configuration to the network.
+// SubmitMarket submits a new market configuration to the network.
 func (e *Engine) SubmitMarket(ctx context.Context, marketConfig *types.Market, proposer string) error {
+	return e.submitOrRestoreMarket(ctx, marketConfig, proposer, true)
+}
+
+// RestoreMarket restores a new market from proposal checkpoint.
+func (e *Engine) RestoreMarket(ctx context.Context, marketConfig *types.Market) error {
+	proposer := e.marketActivityTracker.GetProposer(marketConfig.ID)
+	if len(proposer) == 0 {
+		return ErrMarketDoesNotExist
+	}
+	return e.submitOrRestoreMarket(ctx, marketConfig, "", false)
+}
+
+func (e *Engine) submitOrRestoreMarket(ctx context.Context, marketConfig *types.Market, proposer string, isNewMarket bool) error {
 	if e.log.IsDebug() {
-		e.log.Debug("submit market", logging.Market(*marketConfig))
+		msg := "submit market"
+		if !isNewMarket {
+			msg = "restore market"
+		}
+		e.log.Debug(msg, logging.Market(*marketConfig))
 	}
 
 	if err := e.submitMarket(ctx, marketConfig); err != nil {
 		return err
 	}
 
-	asset, err := marketConfig.GetAsset()
-	if err != nil {
-		e.log.Panic("failed to get asset from market config", logging.String("market", marketConfig.ID), logging.String("error", err.Error()))
+	if isNewMarket {
+		asset, err := marketConfig.GetAsset()
+		if err != nil {
+			e.log.Panic("failed to get asset from market config", logging.String("market", marketConfig.ID), logging.String("error", err.Error()))
+		}
+		e.marketActivityTracker.MarketProposed(asset, marketConfig.ID, proposer)
 	}
-	e.marketActivityTracker.MarketProposed(asset, marketConfig.ID, proposer)
 
 	// keep state in pending, opening auction is triggered when proposal is enacted
 	mkt := e.markets[marketConfig.ID]

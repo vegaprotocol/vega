@@ -13,6 +13,7 @@
 package governance_test
 
 import (
+	"bytes"
 	"context"
 	"testing"
 	"time"
@@ -20,6 +21,8 @@ import (
 	vegapb "code.vegaprotocol.io/protos/vega"
 	checkpointpb "code.vegaprotocol.io/protos/vega/checkpoint/v1"
 	vgrand "code.vegaprotocol.io/shared/libs/rand"
+	"code.vegaprotocol.io/vega/assets"
+	"code.vegaprotocol.io/vega/assets/builtin"
 	"code.vegaprotocol.io/vega/governance"
 	"code.vegaprotocol.io/vega/libs/proto"
 	"code.vegaprotocol.io/vega/types"
@@ -104,7 +107,7 @@ func testCheckpointSuccess(t *testing.T) {
 	require.Empty(t, closed)
 	assert.Equal(t, proposal.ID, toBeEnacted[0].Proposal().ID)
 
-	// Now take the snapshot
+	// Now take the checkpoint
 	data, err = eng.Checkpoint()
 	require.NoError(t, err)
 	require.NotEmpty(t, data)
@@ -114,12 +117,21 @@ func testCheckpointSuccess(t *testing.T) {
 
 	eng2.broker.EXPECT().SendBatch(gomock.Any()).Times(1)
 
+	eng2.assets.EXPECT().Get(gomock.Any()).AnyTimes().DoAndReturn(func(id string) (*assets.Asset, error) {
+		ret := assets.NewAsset(builtin.New(id, &types.AssetDetails{}))
+		return ret, nil
+	})
+	eng2.assets.EXPECT().IsEnabled(gomock.Any()).Return(true).AnyTimes()
+	eng2.markets.EXPECT().RestoreMarketWithLiquidityProvision(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).Times(1)
+	eng2.markets.EXPECT().StartOpeningAuction(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
+
 	// Load checkpoint
 	require.NoError(t, eng2.Load(ctx, data))
 
-	enact, noClose := eng2.OnTick(ctx, afterEnactment)
-	require.Empty(t, noClose)
-	require.NotEmpty(t, enact)
+	// check that it matches what we took before in eng1
+	cp2, err := eng2.Checkpoint()
+	require.NoError(t, err)
+	require.True(t, bytes.Equal(cp2, data))
 
 	data = append(data, []byte("foo")...)
 	require.Error(t, eng2.Load(ctx, data))
