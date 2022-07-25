@@ -16,14 +16,15 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
       | name                           | value |
       | market.auction.minimumDuration | 60    |
 
+  @SupStake
   Scenario: Persistent order results in an auction (both triggers breached), no orders placed during auction, auction terminates with a trade from order that originally triggered the auction. (0032-PRIM-002, 0032-PRIM-005)
     Given the parties deposit on asset's general account the following amount:
-      | party  | asset | amount       |
-      | party1 | ETH   | 10000000000  |
-      | party2 | ETH   | 10000000000  |
-      | aux    | ETH   | 100000000000 |
-      | aux2   | ETH   | 100000000000 |
-      | lpprov | ETH   | 100000000000 |
+      | party  | asset | amount         |
+      | party1 | ETH   | 10000000000    |
+      | party2 | ETH   | 10000000000    |
+      | aux    | ETH   | 100000000000   |
+      | aux2   | ETH   | 100000000000   |
+      | lpprov | ETH   | 10000000000000 |
 
     When the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
@@ -44,8 +45,8 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
     # why is supplied stake 0????? should it not be 90000000?
     And the market data for the market "ETH/DEC20" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 100000     | TRADING_MODE_CONTINUOUS | 60      | 99461     | 100541    | 74340        | 0              | 1             |
-      | 100000     | TRADING_MODE_CONTINUOUS | 120     | 99000     | 101008    | 74340        | 0              | 1             |
+      | 100000     | TRADING_MODE_CONTINUOUS | 60      | 99461     | 100541    | 74340        | 90000000       | 1             |
+      | 100000     | TRADING_MODE_CONTINUOUS | 120     | 99000     | 101008    | 74340        | 90000000       | 1             |
 
     #T0 + 10 min
     When time is updated to "2020-10-16T00:10:00Z"
