@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package validators_test
 
 import (
@@ -10,7 +22,7 @@ import (
 
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	vgcrypto "code.vegaprotocol.io/shared/libs/crypto"
-	brokerMocks "code.vegaprotocol.io/vega/broker/mocks"
+	bmocks "code.vegaprotocol.io/vega/broker/mocks"
 	"code.vegaprotocol.io/vega/crypto"
 	"code.vegaprotocol.io/vega/events"
 	vgtesting "code.vegaprotocol.io/vega/libs/testing"
@@ -64,9 +76,10 @@ func (*DummyMultiSigTopology) ExcessSigners(addresses []string) bool {
 
 type testTop struct {
 	*validators.Topology
-	ctrl   *gomock.Controller
-	wallet *mocks.MockWallet
-	broker *brokerMocks.MockBroker
+	ctrl        *gomock.Controller
+	wallet      *mocks.MockWallet
+	broker      *bmocks.MockBroker
+	timeService *mocks.MockTimeService
 }
 
 func getTestTopologyWithNodeWallet(
@@ -74,17 +87,19 @@ func getTestTopologyWithNodeWallet(
 ) *testTop {
 	t.Helper()
 
-	broker := brokerMocks.NewMockBroker(ctrl)
+	broker := bmocks.NewMockBroker(ctrl)
+	timeService := mocks.NewMockTimeService(ctrl)
 	broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
 	commander := mocks.NewMockCommander(gomock.NewController(t))
 
-	top := validators.NewTopology(logging.NewTestLogger(), validators.NewDefaultConfig(), nw, broker, true, commander, &DummyMultiSigTopology{})
+	top := validators.NewTopology(logging.NewTestLogger(), validators.NewDefaultConfig(), nw, broker, true, commander, &DummyMultiSigTopology{}, timeService)
 	return &testTop{
-		Topology: top,
-		ctrl:     ctrl,
-		wallet:   wallet,
-		broker:   broker,
+		Topology:    top,
+		ctrl:        ctrl,
+		wallet:      wallet,
+		broker:      broker,
+		timeService: timeService,
 	}
 }
 
@@ -426,9 +441,10 @@ func testAddNewNodeSendsValidatorUpdateEventToBroker(t *testing.T) {
 		vega: wallet,
 	}
 
-	broker := brokerMocks.NewMockBroker(ctrl)
+	broker := bmocks.NewMockBroker(ctrl)
+	timeService := mocks.NewMockTimeService(ctrl)
 	commander := mocks.NewMockCommander(gomock.NewController(t))
-	top := validators.NewTopology(logging.NewTestLogger(), validators.NewDefaultConfig(), nw, broker, true, commander, &DummyMultiSigTopology{})
+	top := validators.NewTopology(logging.NewTestLogger(), validators.NewDefaultConfig(), nw, broker, true, commander, &DummyMultiSigTopology{}, timeService)
 
 	ctx := context.Background()
 	nr := commandspb.AnnounceNode{
@@ -480,6 +496,7 @@ func TestValidatorTopologyKeyRotate(t *testing.T) {
 func testAddKeyRotateSuccess(t *testing.T) {
 	top := getTestTopWithDefaultValidator(t)
 	defer top.ctrl.Finish()
+	top.timeService.EXPECT().GetTimeNow().AnyTimes()
 
 	id := "vega-master-pubkey"
 	vegaPubKey := "vega-key"
@@ -509,6 +526,7 @@ func testAddKeyRotateSuccess(t *testing.T) {
 func testAddKeyRotateSuccessFailsOnNonExistingNode(t *testing.T) {
 	top := getTestTopWithDefaultValidator(t)
 	defer top.ctrl.Finish()
+	top.timeService.EXPECT().GetTimeNow().AnyTimes()
 
 	id := "vega-master-pubkey"
 	newVegaPubKey := "new-ega-key"
@@ -523,6 +541,7 @@ func testAddKeyRotateSuccessFailsOnNonExistingNode(t *testing.T) {
 func testAddKeyRotateSuccessFailsWhenTargetBlockHeightIsLessThenCurrentBlockHeight(t *testing.T) {
 	top := getTestTopWithDefaultValidator(t)
 	defer top.ctrl.Finish()
+	top.timeService.EXPECT().GetTimeNow().AnyTimes()
 
 	id := "vega-master-pubkey"
 	vegaPubKey := "vega-key"
@@ -545,6 +564,7 @@ func testAddKeyRotateSuccessFailsWhenTargetBlockHeightIsLessThenCurrentBlockHeig
 func testAddKeyRotateSuccessFailsWhenNewKeyIndexIsLessThenCurrentKeyIndex(t *testing.T) {
 	top := getTestTopWithDefaultValidator(t)
 	defer top.ctrl.Finish()
+	top.timeService.EXPECT().GetTimeNow().AnyTimes()
 
 	id := "vega-master-pubkey"
 	vegaPubKey := "vega-key"
@@ -569,6 +589,7 @@ func testAddKeyRotateSuccessFailsWhenNewKeyIndexIsLessThenCurrentKeyIndex(t *tes
 func testAddKeyRotateSuccessFailsWhenKeyRotationForNodeAlreadyExists(t *testing.T) {
 	top := getTestTopWithDefaultValidator(t)
 	defer top.ctrl.Finish()
+	top.timeService.EXPECT().GetTimeNow().AnyTimes()
 
 	id := "vega-master-pubkey"
 	vegaPubKey := "vega-key"
@@ -597,6 +618,7 @@ func testAddKeyRotateSuccessFailsWhenKeyRotationForNodeAlreadyExists(t *testing.
 func testAddKeyRotateSuccessFailsWhenCurrentPubKeyHashDoesNotMatch(t *testing.T) {
 	top := getTestTopWithDefaultValidator(t)
 	defer top.ctrl.Finish()
+	top.timeService.EXPECT().GetTimeNow().AnyTimes()
 
 	id := "vega-master-pubkey"
 	vegaPubKey := "vega-key"
@@ -633,6 +655,7 @@ func newKeyRotationSubmission(currentPubKey, newVegaPubKey string, keyIndex uint
 func testBeginBlockSuccess(t *testing.T) {
 	top := getTestTopWithDefaultValidator(t)
 	defer top.ctrl.Finish()
+	top.timeService.EXPECT().GetTimeNow().AnyTimes()
 
 	chainValidators := []string{"tm-pubkey-1", "tm-pubkey-2", "tm-pubkey-3", "tm-pubkey-4"}
 
@@ -705,6 +728,7 @@ func newCallback(times int) *Callback {
 func testBeginBlockNotifyKeyChange(t *testing.T) {
 	top := getTestTopWithDefaultValidator(t)
 	defer top.ctrl.Finish()
+	top.timeService.EXPECT().GetTimeNow().AnyTimes()
 
 	chainValidators := []string{"tm-pubkey-1", "tm-pubkey-2"}
 

@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package main
 
 import (
@@ -12,14 +24,6 @@ import (
 	"code.vegaprotocol.io/vega/cmd/vega/nodewallet"
 	"code.vegaprotocol.io/vega/cmd/vega/paths"
 	"code.vegaprotocol.io/vega/config"
-)
-
-var (
-	// CLIVersionHash specifies the git commit used to build the application. See VERSION_HASH in Makefile for details.
-	CLIVersionHash = ""
-
-	// CLIVersion specifies the version used to build the application. See VERSION in Makefile for details.
-	CLIVersion = ""
 )
 
 // Subcommand is the signature of a sub command that can be registered.
@@ -46,7 +50,7 @@ func Main(ctx context.Context) error {
 	// special case for the tendermint subcommand, so we bypass the command line
 	if len(os.Args) >= 2 {
 		switch os.Args[1] {
-		case "tm":
+		case "tendermint", "tm":
 			return (&tmCmd{}).Execute(nil)
 		case "wallet":
 			return (&walletCmd{}).Execute(nil)
@@ -65,7 +69,7 @@ func Main(ctx context.Context) error {
 		Wallet,
 		Watch,
 		Tm,
-		Checkpoint,
+		Tendermint,
 		Query,
 		Bridge,
 		paths.Paths,
@@ -73,6 +77,7 @@ func Main(ctx context.Context) error {
 		SnapshotList,
 		AnnounceNode,
 		Start,
+		Node,
 	); err != nil {
 		_, _ = fmt.Fprintln(os.Stderr, err)
 		return err

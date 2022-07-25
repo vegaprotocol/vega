@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package matching
 
 import (
@@ -295,7 +307,7 @@ func TestExtractOrdersFullLevel(t *testing.T) {
 
 	assert.Len(t, side.levels, 2)
 
-	orders := side.ExtractOrders(num.NewUint(100), 3)
+	orders := side.ExtractOrders(num.NewUint(100), 3, true)
 	assert.Len(t, side.levels, 1)
 	assert.Len(t, orders, 3)
 	assert.EqualValues(t, 3, side.getOrderCount())
@@ -306,7 +318,7 @@ func TestExtractOrdersPartialLevel(t *testing.T) {
 
 	assert.Len(t, side.levels, 2)
 
-	orders := side.ExtractOrders(num.NewUint(100), 2)
+	orders := side.ExtractOrders(num.NewUint(100), 2, true)
 	assert.Len(t, side.levels, 2)
 	assert.Len(t, orders, 2)
 	assert.EqualValues(t, 4, side.getOrderCount())
@@ -317,7 +329,7 @@ func TestExtractOrdersCrossLevel(t *testing.T) {
 
 	assert.Len(t, side.levels, 2)
 
-	orders := side.ExtractOrders(num.NewUint(101), 5)
+	orders := side.ExtractOrders(num.NewUint(101), 5, true)
 	assert.Len(t, side.levels, 1)
 	assert.Len(t, orders, 5)
 	assert.EqualValues(t, 1, side.getOrderCount())
@@ -326,11 +338,11 @@ func TestExtractOrdersCrossLevel(t *testing.T) {
 func TestExtractOrdersWrongVolume(t *testing.T) {
 	// Attempt to extract more volume than we have on the book
 	side := getPopulatedTestSide(types.SideSell)
-	assert.Panics(t, func() { side.ExtractOrders(num.NewUint(101), 30) })
+	assert.Panics(t, func() { side.ExtractOrders(num.NewUint(101), 30, true) })
 
 	// Attempt to extract more than we have at this price level
 	side = getPopulatedTestSide(types.SideSell)
-	assert.Panics(t, func() { side.ExtractOrders(num.NewUint(100), 4) })
+	assert.Panics(t, func() { side.ExtractOrders(num.NewUint(100), 4, true) })
 }
 
 func TestBestStatic(t *testing.T) {
@@ -424,12 +436,21 @@ func TestFakeUncrossNormal(t *testing.T) {
 		Type:          types.OrderTypeMarket,
 	}
 
-	trades, err := buySide.fakeUncross(&order)
+	checkWashTrades := false
+	fakeTrades, err := buySide.fakeUncross(&order, checkWashTrades)
+	assert.Len(t, fakeTrades, 5)
+	assert.NoError(t, err)
+
+	trades, _, _, err := buySide.uncross(&order, checkWashTrades)
 	assert.Len(t, trades, 5)
 	assert.NoError(t, err)
+
+	for i := 0; i < len(trades); i++ {
+		assert.Equal(t, trades[i], fakeTrades[i])
+	}
 }
 
-func TestFakeUncrossSelfTrade(t *testing.T) {
+func TestFakeUncrossSelfTradeFOKMarketOrder(t *testing.T) {
 	buySide := getPopulatedTestSideWithPegs(types.SideBuy)
 
 	order := types.Order{
@@ -444,9 +465,71 @@ func TestFakeUncrossSelfTrade(t *testing.T) {
 		Type:          types.OrderTypeMarket,
 	}
 
-	trades, err := buySide.fakeUncross(&order)
+	checkWashTrades := false
+	fakeTrades, err1 := buySide.fakeUncross(&order, checkWashTrades)
+	assert.Len(t, fakeTrades, 0)
+	assert.Error(t, err1)
+
+	trades, _, _, err2 := buySide.uncross(&order, checkWashTrades)
 	assert.Len(t, trades, 0)
-	assert.Error(t, err)
+	assert.Error(t, err2)
+
+	assert.Equal(t, err1, err2)
+}
+
+func TestFakeUncrossSelfTradeNonFOKLimitOrder_DontCheckWashTrades(t *testing.T) {
+	buySide := getPopulatedTestSideWithPegs(types.SideBuy)
+
+	order := types.Order{
+		ID:            "Id",
+		Party:         "A",
+		Price:         num.NewUint(105),
+		OriginalPrice: num.NewUint(105),
+		Side:          types.SideSell,
+		Size:          5,
+		Remaining:     5,
+		TimeInForce:   types.OrderTimeInForceGTC,
+		Type:          types.OrderTypeLimit,
+	}
+
+	checkWashTrades := false
+	fakeTrades, err := buySide.fakeUncross(&order, checkWashTrades)
+	assert.Len(t, fakeTrades, 1)
+	assert.NoError(t, err)
+
+	trades, _, _, err := buySide.uncross(&order, checkWashTrades)
+	assert.Len(t, trades, 1)
+	assert.NoError(t, err)
+
+	assert.Equal(t, trades[0], fakeTrades[0])
+}
+
+func TestFakeUncrossSelfTradeNonFOKLimitOrder_CheckWashTrades(t *testing.T) {
+	buySide := getPopulatedTestSideWithPegs(types.SideBuy)
+
+	order := types.Order{
+		ID:            "Id",
+		Party:         "A",
+		Price:         num.NewUint(105),
+		OriginalPrice: num.NewUint(105),
+		Side:          types.SideSell,
+		Size:          5,
+		Remaining:     5,
+		TimeInForce:   types.OrderTimeInForceGTC,
+		Type:          types.OrderTypeLimit,
+	}
+
+	checkWashTrades := true
+	fakeTrades, err1 := buySide.fakeUncross(&order, checkWashTrades)
+	assert.Len(t, fakeTrades, 0)
+	assert.Error(t, err1)
+	assert.Equal(t, "party attempted to submit wash trade", err1.Error())
+
+	trades, _, _, err2 := buySide.uncross(&order, checkWashTrades)
+	assert.Len(t, trades, 0)
+	assert.Error(t, err2)
+	assert.Equal(t, "party attempted to submit wash trade", err2.Error())
+	assert.Equal(t, err1.Error(), err2.Error())
 }
 
 func TestFakeUncrossNotEnoughVolume(t *testing.T) {
@@ -463,7 +546,59 @@ func TestFakeUncrossNotEnoughVolume(t *testing.T) {
 		Type:          types.OrderTypeMarket,
 	}
 
-	trades, err := buySide.fakeUncross(&order)
+	checkWashTrades := false
+	fakeTrades, err := buySide.fakeUncross(&order, checkWashTrades)
+	assert.Len(t, fakeTrades, 0)
+	assert.NoError(t, err)
+
+	trades, _, _, err := buySide.uncross(&order, checkWashTrades)
 	assert.Len(t, trades, 0)
 	assert.NoError(t, err)
+}
+
+func TestFakeUncrossAuction(t *testing.T) {
+	buySide := getPopulatedTestSide(types.SideBuy)
+
+	order1 := &types.Order{
+		ID:            "Id",
+		Party:         "A",
+		Price:         num.NewUint(99),
+		OriginalPrice: num.NewUint(99),
+		Side:          types.SideSell,
+		Size:          3,
+		Remaining:     3,
+		TimeInForce:   types.OrderTimeInForceGTC,
+		Type:          types.OrderTypeLimit,
+	}
+
+	order2 := &types.Order{
+		ID:            "Id",
+		Party:         "B",
+		Price:         num.NewUint(99),
+		OriginalPrice: num.NewUint(99),
+		Side:          types.SideSell,
+		Size:          3,
+		Remaining:     3,
+		TimeInForce:   types.OrderTimeInForceGTC,
+		Type:          types.OrderTypeLimit,
+	}
+
+	orders := []*types.Order{order1, order2}
+
+	fakeTrades, err := buySide.fakeUncrossAuction(orders)
+	assert.Len(t, fakeTrades, 6)
+	assert.NoError(t, err)
+
+	trades := []*types.Trade{}
+	for _, order := range orders {
+		trds, _, _, err := buySide.uncross(order, false)
+		assert.NoError(t, err)
+		trades = append(trades, trds...)
+	}
+	assert.Len(t, trades, 6)
+	assert.NoError(t, err)
+
+	for i, tr := range trades {
+		assert.Equal(t, tr, fakeTrades[i])
+	}
 }

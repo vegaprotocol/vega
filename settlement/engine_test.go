@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package settlement_test
 
 import (
@@ -8,7 +20,7 @@ import (
 	"testing"
 	"time"
 
-	bmock "code.vegaprotocol.io/vega/broker/mocks"
+	bmocks "code.vegaprotocol.io/vega/broker/mocks"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/settlement"
@@ -26,7 +38,8 @@ type testEngine struct {
 	ctrl      *gomock.Controller
 	prod      *mocks.MockProduct
 	positions []*mocks.MockMarketPosition
-	broker    *bmock.MockBroker
+	tsvc      *mocks.MockTimeService
+	broker    *bmocks.MockBroker
 	market    string
 }
 
@@ -817,14 +830,17 @@ func getTestEngineWithFactor(t *testing.T, f float64) *testEngine {
 	ctrl := gomock.NewController(t)
 	conf := settlement.NewDefaultConfig()
 	prod := mocks.NewMockProduct(ctrl)
-	broker := bmock.NewMockBroker(ctrl)
+	tsvc := mocks.NewMockTimeService(ctrl)
+	tsvc.EXPECT().GetTimeNow().AnyTimes()
+	broker := bmocks.NewMockBroker(ctrl)
 	broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
 	market := "BTC/DEC19"
 	prod.EXPECT().GetAsset().AnyTimes().Do(func() string { return "BTC" })
 	return &testEngine{
-		Engine:    settlement.New(logging.NewTestLogger(), conf, prod, market, broker, num.NewDecimalFromFloat(f)),
+		Engine:    settlement.New(logging.NewTestLogger(), conf, prod, market, tsvc, broker, num.NewDecimalFromFloat(f)),
 		ctrl:      ctrl,
 		prod:      prod,
+		tsvc:      tsvc,
 		broker:    broker,
 		positions: nil,
 		market:    market,

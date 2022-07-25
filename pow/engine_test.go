@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package pow
 
 import (
@@ -52,163 +64,12 @@ func TestSpamPoWIncreasingDifficulty(t *testing.T) {
 	e := New(logging.NewTestLogger(), NewDefaultConfig(), &TestEpochEngine{})
 	e.UpdateSpamPoWIncreasingDifficulty(context.Background(), num.NewUint(1))
 	require.Equal(t, true, e.SpamPoWIncreasingDifficulty())
-
-	e.UpdateSpamPoWIncreasingDifficulty(context.Background(), num.Zero())
-	require.Equal(t, false, e.SpamPoWIncreasingDifficulty())
 }
 
-func TestIncreaseNumberOfBlocks(t *testing.T) {
+func TestUpdateNumberOfBlocks(t *testing.T) {
 	e := New(logging.NewTestLogger(), NewDefaultConfig(), &TestEpochEngine{})
 	e.UpdateSpamPoWNumberOfPastBlocks(context.Background(), num.NewUint(5))
-	e.currentBlock = 100
-	e.heightToTid[100] = []string{
-		"C4F57F3B29558F4FF004EA8F68D218A2464F6BAC3800E7DAF681E394D65BB915",
-	}
-	e.heightToTid[99] = []string{
-		"8B7488CC0CED49E33D0281C871A3242C4D6A64EDF0392B629A0D3CBEE6ECEBE2",
-		"F3BCD061A8B623569FA372D81BB4FA41CCCEA939EF40C47B6A72625A13768EA7",
-	}
-	e.heightToTid[98] = []string{
-		"916F09307A7DDAF53F87CC102235A77E0BA5503BAAFF5C14A35A8C93D49883C5",
-		"B6413228EEA5B3AD2FB93F8E1DBCFDE9417913A4AC22466C70DA2AEBAD3A66B6",
-		"C3B5372C2FDAE61C45A8C7C87452E9542338A79A08B38F8BD66383D11551FCBD",
-	}
-	e.heightToTid[97] = []string{
-		"E22CBC3D5CD9B38636621EAE3D3AFC3CF6F1021570E9B02CB388250DA0B473D8",
-		"06188E5E7B5E7DAD02C4FC513E13D5E87DFE543C67754531094940F46DD8CEF6",
-		"7ED74C389C4C4C7E53F4AF7559FEE627FCD070A1B9273B35116F4BC43265B8F5",
-		"C429C145E87BECEE6203D088E80FEDD10BB7716C894CEE191F650FAE517B5F0F",
-	}
-	e.heightToTid[96] = []string{
-		"158180D4206CD6EE875BBD376EF2509DF26C164232D5237D04398F96A5A6126A",
-		"B13B2B006DEAC952488EDCEB2A8D4FFB29A2A1D7FC251D22FB519B8EC530257B",
-		"93306D50C49881D456749DB48D4805CC161CDD567A361E5A7C9F94C1FCC5F3D3",
-		"F9D52D54C0D82939A2E95DA26AEA5AE5B677D63F98EC004A67B011FC08253012",
-		"2E289FB9CEF7234E2C08F34CCD66B330229067CE47E22F76EF0595B3ABA9968F",
-	}
-
-	for _, v := range e.heightToTid {
-		for _, tx := range v {
-			e.seenTid[tx] = struct{}{}
-		}
-	}
-
-	e.blockHeight[96%5] = 96
-	e.blockHeight[97%5] = 97
-	e.blockHeight[98%5] = 98
-	e.blockHeight[99%5] = 99
-	e.blockHeight[100%5] = 100
-
-	e.blockHash[96%5] = "A204DF39B63100C76EC831A843BF3C538FF54217DBA4B1409A3773507053EBB5"
-	e.blockHash[97%5] = "077723AB0705677EAA704130D403C21352F87A9AF0E9C4C8F85CC13245FEFED7"
-	e.blockHash[98%5] = "49B0DF0954A8C048554B1C65F4F5883C38640D101A11959EB651AE2065A80BBB"
-	e.blockHash[99%5] = "113EB390CBEB921433BDBA832CCDFD81AC4C77C3748A41B1AF08C96BC6C7BCD9"
-	e.blockHash[100%5] = "C692100485479CE9E1815B9E0A66D3596295A04DB42170CB4B61CFAE7332ADD8"
-
-	e.UpdateSpamPoWNumberOfPastBlocks(context.Background(), num.NewUint(10))
-	require.Equal(t, uint32(10), e.SpamPoWNumberOfPastBlocks())
-	require.Equal(t, 10, len(e.blockHash))
-	require.Equal(t, 10, len(e.blockHeight))
-	require.Equal(t, 5, len(e.heightToTid))
-	require.Equal(t, 15, len(e.seenTid))
-
-	require.Equal(t, uint64(100), e.blockHeight[0])
-	require.Equal(t, uint64(0), e.blockHeight[1])
-	require.Equal(t, uint64(0), e.blockHeight[2])
-	require.Equal(t, uint64(0), e.blockHeight[3])
-	require.Equal(t, uint64(0), e.blockHeight[4])
-	require.Equal(t, uint64(0), e.blockHeight[5])
-	require.Equal(t, uint64(96), e.blockHeight[6])
-	require.Equal(t, uint64(97), e.blockHeight[7])
-	require.Equal(t, uint64(98), e.blockHeight[8])
-	require.Equal(t, uint64(99), e.blockHeight[9])
-
-	require.Equal(t, "C692100485479CE9E1815B9E0A66D3596295A04DB42170CB4B61CFAE7332ADD8", e.blockHash[0])
-	require.Equal(t, "", e.blockHash[1])
-	require.Equal(t, "", e.blockHash[2])
-	require.Equal(t, "", e.blockHash[3])
-	require.Equal(t, "", e.blockHash[4])
-	require.Equal(t, "", e.blockHash[5])
-	require.Equal(t, "A204DF39B63100C76EC831A843BF3C538FF54217DBA4B1409A3773507053EBB5", e.blockHash[6])
-	require.Equal(t, "077723AB0705677EAA704130D403C21352F87A9AF0E9C4C8F85CC13245FEFED7", e.blockHash[7])
-	require.Equal(t, "49B0DF0954A8C048554B1C65F4F5883C38640D101A11959EB651AE2065A80BBB", e.blockHash[8])
-	require.Equal(t, "113EB390CBEB921433BDBA832CCDFD81AC4C77C3748A41B1AF08C96BC6C7BCD9", e.blockHash[9])
-
-	require.Equal(t, 1, len(e.heightToTid[100]))
-	require.Equal(t, 2, len(e.heightToTid[99]))
-	require.Equal(t, 3, len(e.heightToTid[98]))
-	require.Equal(t, 4, len(e.heightToTid[97]))
-	require.Equal(t, 5, len(e.heightToTid[96]))
-}
-
-func TestDecreaseNumberOfBlocks(t *testing.T) {
-	e := New(logging.NewTestLogger(), NewDefaultConfig(), &TestEpochEngine{})
-	e.UpdateSpamPoWNumberOfPastBlocks(context.Background(), num.NewUint(5))
-	e.currentBlock = 100
-	e.heightToTid[100] = []string{
-		"C4F57F3B29558F4FF004EA8F68D218A2464F6BAC3800E7DAF681E394D65BB915",
-	}
-	e.heightToTid[99] = []string{
-		"8B7488CC0CED49E33D0281C871A3242C4D6A64EDF0392B629A0D3CBEE6ECEBE2",
-		"F3BCD061A8B623569FA372D81BB4FA41CCCEA939EF40C47B6A72625A13768EA7",
-	}
-	e.heightToTid[98] = []string{
-		"916F09307A7DDAF53F87CC102235A77E0BA5503BAAFF5C14A35A8C93D49883C5",
-		"B6413228EEA5B3AD2FB93F8E1DBCFDE9417913A4AC22466C70DA2AEBAD3A66B6",
-		"C3B5372C2FDAE61C45A8C7C87452E9542338A79A08B38F8BD66383D11551FCBD",
-	}
-	e.heightToTid[97] = []string{
-		"E22CBC3D5CD9B38636621EAE3D3AFC3CF6F1021570E9B02CB388250DA0B473D8",
-		"06188E5E7B5E7DAD02C4FC513E13D5E87DFE543C67754531094940F46DD8CEF6",
-		"7ED74C389C4C4C7E53F4AF7559FEE627FCD070A1B9273B35116F4BC43265B8F5",
-		"C429C145E87BECEE6203D088E80FEDD10BB7716C894CEE191F650FAE517B5F0F",
-	}
-	e.heightToTid[96] = []string{
-		"158180D4206CD6EE875BBD376EF2509DF26C164232D5237D04398F96A5A6126A",
-		"B13B2B006DEAC952488EDCEB2A8D4FFB29A2A1D7FC251D22FB519B8EC530257B",
-		"93306D50C49881D456749DB48D4805CC161CDD567A361E5A7C9F94C1FCC5F3D3",
-		"F9D52D54C0D82939A2E95DA26AEA5AE5B677D63F98EC004A67B011FC08253012",
-		"2E289FB9CEF7234E2C08F34CCD66B330229067CE47E22F76EF0595B3ABA9968F",
-	}
-
-	for _, v := range e.heightToTid {
-		for _, tx := range v {
-			e.seenTid[tx] = struct{}{}
-		}
-	}
-
-	e.blockHeight[96%5] = 96
-	e.blockHeight[97%5] = 97
-	e.blockHeight[98%5] = 98
-	e.blockHeight[99%5] = 99
-	e.blockHeight[100%5] = 100
-
-	e.blockHash[96%5] = "A204DF39B63100C76EC831A843BF3C538FF54217DBA4B1409A3773507053EBB5"
-	e.blockHash[97%5] = "077723AB0705677EAA704130D403C21352F87A9AF0E9C4C8F85CC13245FEFED7"
-	e.blockHash[98%5] = "49B0DF0954A8C048554B1C65F4F5883C38640D101A11959EB651AE2065A80BBB"
-	e.blockHash[99%5] = "113EB390CBEB921433BDBA832CCDFD81AC4C77C3748A41B1AF08C96BC6C7BCD9"
-	e.blockHash[100%5] = "C692100485479CE9E1815B9E0A66D3596295A04DB42170CB4B61CFAE7332ADD8"
-
-	e.UpdateSpamPoWNumberOfPastBlocks(context.Background(), num.NewUint(3))
-
-	require.Equal(t, uint32(3), e.SpamPoWNumberOfPastBlocks())
-	require.Equal(t, 3, len(e.blockHash))
-	require.Equal(t, 3, len(e.blockHeight))
-	require.Equal(t, 3, len(e.heightToTid))
-	require.Equal(t, 6, len(e.seenTid))
-
-	require.Equal(t, uint64(99), e.blockHeight[0])
-	require.Equal(t, uint64(100), e.blockHeight[1])
-	require.Equal(t, uint64(98), e.blockHeight[2])
-
-	require.Equal(t, "113EB390CBEB921433BDBA832CCDFD81AC4C77C3748A41B1AF08C96BC6C7BCD9", e.blockHash[0])
-	require.Equal(t, "C692100485479CE9E1815B9E0A66D3596295A04DB42170CB4B61CFAE7332ADD8", e.blockHash[1])
-	require.Equal(t, "49B0DF0954A8C048554B1C65F4F5883C38640D101A11959EB651AE2065A80BBB", e.blockHash[2])
-	require.Equal(t, 1, len(e.heightToTid[100]))
-	require.Equal(t, 2, len(e.heightToTid[99]))
-	require.Equal(t, 3, len(e.heightToTid[98]))
-	require.Equal(t, 0, len(e.heightToTid[97]))
-	require.Equal(t, 0, len(e.heightToTid[96]))
+	require.Equal(t, uint32(5), e.SpamPoWNumberOfPastBlocks())
 }
 
 func TestCheckTx(t *testing.T) {
@@ -219,8 +80,8 @@ func TestCheckTx(t *testing.T) {
 	e.UpdateSpamPoWNumberOfTxPerBlock(context.Background(), num.NewUint(1))
 
 	e.currentBlock = 100
-	e.blockHeight[0] = 100
-	e.blockHash[0] = "113EB390CBEB921433BDBA832CCDFD81AC4C77C3748A41B1AF08C96BC6C7BCD9"
+	e.blockHeight[100] = 100
+	e.blockHash[100] = "113EB390CBEB921433BDBA832CCDFD81AC4C77C3748A41B1AF08C96BC6C7BCD9"
 	e.seenTid["49B0DF0954A8C048554B1C65F4F5883C38640D101A11959EB651AE2065A80BBB"] = struct{}{}
 	e.heightToTid[96] = []string{"49B0DF0954A8C048554B1C65F4F5883C38640D101A11959EB651AE2065A80BBB"}
 
@@ -246,8 +107,8 @@ func TestDeliverTx(t *testing.T) {
 	e.UpdateSpamPoWNumberOfTxPerBlock(context.Background(), num.NewUint(1))
 
 	e.currentBlock = 100
-	e.blockHeight[0] = 100
-	e.blockHash[0] = "113EB390CBEB921433BDBA832CCDFD81AC4C77C3748A41B1AF08C96BC6C7BCD9"
+	e.blockHeight[100] = 100
+	e.blockHash[100] = "113EB390CBEB921433BDBA832CCDFD81AC4C77C3748A41B1AF08C96BC6C7BCD9"
 
 	require.Equal(t, 0, len(e.seenTid))
 	require.Equal(t, 0, len(e.heightToTid))
@@ -280,12 +141,12 @@ func TestBeginBlock(t *testing.T) {
 	e.BeginBlock(102, "C692100485479CE9E1815B9E0A66D3596295A04DB42170CB4B61CFAE7332ADD8")
 
 	require.Equal(t, uint64(102), e.currentBlock)
-	require.Equal(t, uint64(100), e.blockHeight[1])
-	require.Equal(t, uint64(101), e.blockHeight[2])
-	require.Equal(t, uint64(102), e.blockHeight[0])
-	require.Equal(t, "2E7A16D9EF690F0D2BEED115FBA13BA2AAA16C8F971910AD88C72B9DB010C7D4", e.blockHash[1])
-	require.Equal(t, "113EB390CBEB921433BDBA832CCDFD81AC4C77C3748A41B1AF08C96BC6C7BCD9", e.blockHash[2])
-	require.Equal(t, "C692100485479CE9E1815B9E0A66D3596295A04DB42170CB4B61CFAE7332ADD8", e.blockHash[0])
+	require.Equal(t, uint64(100), e.blockHeight[100])
+	require.Equal(t, uint64(101), e.blockHeight[101])
+	require.Equal(t, uint64(102), e.blockHeight[102])
+	require.Equal(t, "2E7A16D9EF690F0D2BEED115FBA13BA2AAA16C8F971910AD88C72B9DB010C7D4", e.blockHash[100])
+	require.Equal(t, "113EB390CBEB921433BDBA832CCDFD81AC4C77C3748A41B1AF08C96BC6C7BCD9", e.blockHash[101])
+	require.Equal(t, "C692100485479CE9E1815B9E0A66D3596295A04DB42170CB4B61CFAE7332ADD8", e.blockHash[102])
 
 	// now add some transactions for block 100 before it goes off
 	e.DeliverTx(&testTx{txID: "1", party: crypto.RandomHash(), blockHeight: 100, powTxID: "94A9CB1532011081B013CCD8E6AAA832CAB1CBA603F0C5A093B14C4961E5E7F0", powNonce: 431336})
@@ -296,15 +157,12 @@ func TestBeginBlock(t *testing.T) {
 
 	e.BeginBlock(103, "2E289FB9CEF7234E2C08F34CCD66B330229067CE47E22F76EF0595B3ABA9968F")
 	require.Equal(t, uint64(103), e.currentBlock)
-	require.Equal(t, uint64(103), e.blockHeight[1])
-	require.Equal(t, uint64(101), e.blockHeight[2])
-	require.Equal(t, uint64(102), e.blockHeight[0])
-	require.Equal(t, "2E289FB9CEF7234E2C08F34CCD66B330229067CE47E22F76EF0595B3ABA9968F", e.blockHash[1])
-	require.Equal(t, "113EB390CBEB921433BDBA832CCDFD81AC4C77C3748A41B1AF08C96BC6C7BCD9", e.blockHash[2])
-	require.Equal(t, "C692100485479CE9E1815B9E0A66D3596295A04DB42170CB4B61CFAE7332ADD8", e.blockHash[0])
-
-	require.Equal(t, 0, len(e.seenTid))
-	require.Equal(t, 0, len(e.heightToTid))
+	require.Equal(t, uint64(103), e.blockHeight[103])
+	require.Equal(t, uint64(101), e.blockHeight[101])
+	require.Equal(t, uint64(102), e.blockHeight[102])
+	require.Equal(t, "2E289FB9CEF7234E2C08F34CCD66B330229067CE47E22F76EF0595B3ABA9968F", e.blockHash[103])
+	require.Equal(t, "113EB390CBEB921433BDBA832CCDFD81AC4C77C3748A41B1AF08C96BC6C7BCD9", e.blockHash[101])
+	require.Equal(t, "C692100485479CE9E1815B9E0A66D3596295A04DB42170CB4B61CFAE7332ADD8", e.blockHash[102])
 }
 
 func TestBan(t *testing.T) {

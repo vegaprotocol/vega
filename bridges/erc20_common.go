@@ -1,9 +1,22 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package bridges
 
 import (
 	"encoding/hex"
 	"fmt"
 
+	"code.vegaprotocol.io/vega/nodewallets/eth/clef"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	ethcmn "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
@@ -11,6 +24,7 @@ import (
 
 type Signer interface {
 	Sign([]byte) ([]byte, error)
+	Algo() string
 }
 
 type SignaturePayload struct {
@@ -56,9 +70,17 @@ func packBufAndSubmitter(
 }
 
 func sign(signer Signer, msg []byte) (*SignaturePayload, error) {
-	// hash our message before signing it
-	hash := crypto.Keccak256(msg)
-	sig, err := signer.Sign(hash)
+	var sig []byte
+	var err error
+
+	if signer.Algo() == clef.ClefAlgoType {
+		sig, err = signer.Sign(msg)
+	} else {
+		// hash our message before signing it
+		hash := crypto.Keccak256(msg)
+		sig, err = signer.Sign(hash)
+	}
+
 	if err != nil {
 		return nil, fmt.Errorf("could not sign message with ethereum wallet: %w", err)
 	}

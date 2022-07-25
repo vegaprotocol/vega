@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package validators_test
 
 import (
@@ -46,6 +58,7 @@ func TestTopologyCheckpoint(t *testing.T) {
 func TestCheckPointLoading(t *testing.T) {
 	newTop := getTestTopWithDefaultValidator(t)
 	defer newTop.ctrl.Finish()
+	newTop.timeService.EXPECT().GetTimeNow().AnyTimes()
 
 	inFile := "testcp/20220411202622-135-812dab0eb11196b49fd716329feb50c243f645226460df760168215d73acf0dd.cp"
 	data, _ := ioutil.ReadFile(inFile)
@@ -61,6 +74,7 @@ func TestCheckPointLoading(t *testing.T) {
 func testTopologyCheckpointSuccess(t *testing.T) {
 	top := getTestTopWithDefaultValidator(t)
 	defer top.ctrl.Finish()
+	top.timeService.EXPECT().GetTimeNow().AnyTimes()
 
 	ctx := context.Background()
 	addNodes(top, 2)
@@ -123,6 +137,7 @@ func testTopologyCheckpointSuccess(t *testing.T) {
 func testTopologyCheckpointUsesRelativeBlockHeight(t *testing.T) {
 	top := getTestTopWithDefaultValidator(t)
 	defer top.ctrl.Finish()
+	top.timeService.EXPECT().GetTimeNow().AnyTimes()
 
 	ctx := context.Background()
 	addNodes(top, 2)
@@ -170,6 +185,7 @@ func testTopologyCheckpointUsesRelativeBlockHeight(t *testing.T) {
 
 	newTop := getTestTopWithDefaultValidator(t)
 	defer newTop.ctrl.Finish()
+	newTop.timeService.EXPECT().GetTimeNow().AnyTimes()
 
 	addNodes(newTop, 2)
 

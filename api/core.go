@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package api
 
 import (
@@ -14,18 +26,18 @@ import (
 	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/evtforward"
+	"code.vegaprotocol.io/vega/libs/proto"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/metrics"
 	"code.vegaprotocol.io/vega/monitoring"
 	"code.vegaprotocol.io/vega/stats"
 	"code.vegaprotocol.io/vega/subscribers"
 	"code.vegaprotocol.io/vega/vegatime"
-	"code.vegaprotocol.io/vegawallet/crypto"
+	"code.vegaprotocol.io/vega/wallet/crypto"
 
-	"code.vegaprotocol.io/vega/libs/proto"
 	"github.com/pkg/errors"
 	"github.com/tendermint/tendermint/libs/bytes"
-	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
+	tmctypes "github.com/tendermint/tendermint/rpc/coretypes"
 	"google.golang.org/grpc/codes"
 )
 
@@ -94,6 +106,10 @@ func (s *coreService) LastBlockHeight(
 		s.log.Debug("block height requested, returning", logging.Uint64("block-height", blockHeight), logging.String("block hash", blockHash))
 	}
 
+	if !s.powParams.IsReady() {
+		return nil, errors.New("Failed to get last block height server is initialising")
+	}
+
 	return &protoapi.LastBlockHeightResponse{
 		Height:                      blockHeight,
 		Hash:                        blockHash,
@@ -127,35 +143,13 @@ func (s *coreService) SubmitTransaction(ctx context.Context, req *protoapi.Submi
 
 	txResult, err := s.blockchain.SubmitTransactionSync(ctx, req.Tx)
 	if err != nil {
-		// This is Tendermint's specific error signature
-		if _, ok := err.(interface {
-			Code() uint32
-			Details() string
-			Error() string
-		}); ok {
-			s.log.Debug("unable to submit transaction", logging.Error(err))
-			fullError := apiError(codes.InvalidArgument, err)
-			if txResult != nil {
-				return &protoapi.SubmitTransactionResponse{
-					Success: false,
-					Code:    txResult.Code,
-					Data:    txResult.Data.String(),
-					Log:     txResult.Log,
-					Height:  0,
-					TxHash:  txResult.Hash.String(),
-				}, fullError
-			}
-			return nil, fullError
-		}
-		s.log.Debug("unable to submit transaction", logging.Error(err))
-
 		return nil, apiError(codes.Internal, err)
 	}
 
 	return &protoapi.SubmitTransactionResponse{
-		Success: true,
+		Success: txResult.Code == 0,
 		Code:    txResult.Code,
-		Data:    txResult.Data.String(),
+		Data:    string(txResult.Data.Bytes()),
 		Log:     txResult.Log,
 		Height:  0,
 		TxHash:  txResult.Hash.String(),
@@ -172,25 +166,6 @@ func (s *coreService) CheckTransaction(ctx context.Context, req *protoapi.CheckT
 
 	checkResult, err := s.blockchain.CheckTransaction(ctx, req.Tx)
 	if err != nil {
-		if _, ok := err.(interface {
-			Code() uint32
-			Details() string
-			Error() string
-		}); ok {
-			s.log.Debug("unable to check transaction", logging.Error(err))
-			fullError := apiError(codes.InvalidArgument, err)
-			if checkResult != nil {
-				return &protoapi.CheckTransactionResponse{
-					Code:      checkResult.Code,
-					Success:   false,
-					GasWanted: checkResult.GasWanted,
-					GasUsed:   checkResult.GasUsed,
-				}, fullError
-			}
-			return nil, fullError
-		}
-		s.log.Debug("unable to check transaction", logging.Error(err))
-
 		return nil, apiError(codes.Internal, err)
 	}
 
@@ -212,25 +187,6 @@ func (s *coreService) CheckRawTransaction(ctx context.Context, req *protoapi.Che
 
 	checkResult, err := s.blockchain.CheckRawTransaction(ctx, req.Tx)
 	if err != nil {
-		if _, ok := err.(interface {
-			Code() uint32
-			Details() string
-			Error() string
-		}); ok {
-			s.log.Debug("unable to check raw transaction", logging.Error(err))
-			fullError := apiError(codes.InvalidArgument, err)
-			if checkResult != nil {
-				return &protoapi.CheckRawTransactionResponse{
-					Code:      checkResult.Code,
-					Success:   false,
-					GasWanted: checkResult.GasWanted,
-					GasUsed:   checkResult.GasUsed,
-				}, fullError
-			}
-			return nil, fullError
-		}
-		s.log.Debug("unable to check raw transaction", logging.Error(err))
-
 		return nil, apiError(codes.Internal, err)
 	}
 

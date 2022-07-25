@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package steps
 
 import (
@@ -150,6 +162,9 @@ func cmpPriceBounds(expect *MappedMD, got types.MarketData) []error {
 			if g.Trigger.Horizon == pmb.Trigger.Horizon {
 				bounds = g
 				match = pmb.MaxValidPrice.EQ(g.MaxValidPrice) && pmb.MinValidPrice.EQ(g.MinValidPrice)
+				if !pmb.ReferencePrice.IsZero() {
+					match = match && pmb.ReferencePrice.Equal(g.ReferencePrice)
+				}
 				break
 			}
 		}
@@ -158,12 +173,14 @@ func cmpPriceBounds(expect *MappedMD, got types.MarketData) []error {
 				errs = append(errs, fmt.Errorf("no price bound for horizon %d found", pmb.Trigger.Horizon))
 			} else {
 				errs = append(errs, fmt.Errorf(
-					"expected price bounds %d-%d for horizon %d, instead got %d-%d",
+					"expected price bounds %d-%d (ref price=%s) for horizon %d, instead got %d-%d (ref price=%s)",
 					pmb.MinValidPrice,
 					pmb.MaxValidPrice,
+					pmb.ReferencePrice.String(),
 					pmb.Trigger.Horizon,
 					bounds.MinValidPrice,
 					bounds.MaxValidPrice,
+					bounds.ReferencePrice.String(),
 				))
 			}
 		}
@@ -180,9 +197,16 @@ func getPriceBounds(data *godog.Table) (ret []*types.PriceMonitoringBounds) {
 		if !ok {
 			return nil
 		}
+
+		referencePrice := num.DecimalZero()
+		if row.HasColumn("ref price") {
+			referencePrice = row.Decimal("ref price")
+		}
+
 		expected := &types.PriceMonitoringBounds{
-			MinValidPrice: row.MustUint("min bound"),
-			MaxValidPrice: row.MustUint("max bound"),
+			MinValidPrice:  row.MustUint("min bound"),
+			MaxValidPrice:  row.MustUint("max bound"),
+			ReferencePrice: referencePrice,
 			Trigger: &types.PriceMonitoringTrigger{
 				Horizon: h,
 			},

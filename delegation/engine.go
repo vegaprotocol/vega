@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package delegation
 
 import (
@@ -42,7 +54,6 @@ var (
 //TimeService notifies the reward engine on time updates
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/time_service_mock.go -package mocks code.vegaprotocol.io/vega/rewards TimeService
 type TimeService interface {
-	NotifyOnTick(func(context.Context, time.Time))
 	GetTimeNow() time.Time
 }
 
@@ -124,9 +135,6 @@ func New(log *logging.Logger, config Config, broker Broker, topology ValidatorTo
 	// register for epoch notifications
 	epochEngine.NotifyOnEpoch(e.onEpochEvent, e.onEpochRestore)
 
-	// register for time tick updates
-	ts.NotifyOnTick(e.onChainTimeUpdate)
-
 	return e
 }
 
@@ -147,7 +155,7 @@ func (e *Engine) OnMinAmountChanged(ctx context.Context, minAmount num.Decimal) 
 }
 
 // every few blocks try to reconcile the association and nomination for the current and next epoch.
-func (e *Engine) onChainTimeUpdate(ctx context.Context, t time.Time) {
+func (e *Engine) OnTick(ctx context.Context, t time.Time) {
 	// if we've already done reconciliation (i.e. not first epoch) and it's been over <reconciliationIntervalSeconds> since, then reconcile.
 	if (e.lastReconciliation != time.Time{}) && t.Sub(e.lastReconciliation) >= reconciliationInterval {
 		// always reconcile the balance from the start of the epoch to the current time for simplicity
@@ -502,6 +510,7 @@ func (e *Engine) decreaseBalanceAndFireEvent(ctx context.Context, party, nodeID 
 			e.sendDelegatedBalanceEvent(ctx, party, nodeID, epoch, partyState.nodeToAmount[nodeID])
 		}
 		if cleanup && partyState.nodeToAmount[nodeID].IsZero() {
+			e.dss.changedActive = true
 			delete(partyState.nodeToAmount, nodeID)
 		}
 	}

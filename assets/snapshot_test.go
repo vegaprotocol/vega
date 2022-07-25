@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package assets_test
 
 import (
@@ -9,7 +21,7 @@ import (
 	snapshot "code.vegaprotocol.io/protos/vega/snapshot/v1"
 	"code.vegaprotocol.io/shared/paths"
 	"code.vegaprotocol.io/vega/assets"
-	"code.vegaprotocol.io/vega/assets/mocks"
+	bmocks "code.vegaprotocol.io/vega/broker/mocks"
 	"code.vegaprotocol.io/vega/integration/stubs"
 	vgcontext "code.vegaprotocol.io/vega/libs/context"
 	"code.vegaprotocol.io/vega/libs/proto"
@@ -17,29 +29,42 @@ import (
 	snp "code.vegaprotocol.io/vega/snapshot"
 	"code.vegaprotocol.io/vega/stats"
 	"code.vegaprotocol.io/vega/types"
+	tmocks "code.vegaprotocol.io/vega/vegatime/mocks"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
 )
 
-func testAssets(t *testing.T) *assets.Service {
+type assetsTest struct {
+	*assets.Service
+	ctrl   *gomock.Controller
+	ts     *tmocks.MockTimeService
+	broker *bmocks.MockBrokerI
+}
+
+func testAssets(t *testing.T) *assetsTest {
 	t.Helper()
 	conf := assets.NewDefaultConfig()
 	logger := logging.NewTestLogger()
 	ctrl := gomock.NewController(t)
-	ts := mocks.NewMockTimeService(ctrl)
-	ts.EXPECT().NotifyOnTick(gomock.Any()).Times(1)
-	as := assets.New(logger, conf, nil, nil, ts, true)
-	return as
+	ts := tmocks.NewMockTimeService(ctrl)
+	broker := bmocks.NewMockBrokerI(ctrl)
+	as := assets.New(logger, conf, nil, nil, broker, ts, true)
+	return &assetsTest{
+		Service: as,
+		ctrl:    ctrl,
+		ts:      ts,
+		broker:  broker,
+	}
 }
 
-func getEngineAndSnapshotEngine(t *testing.T) (*assets.Service, *snp.Engine) {
+func getEngineAndSnapshotEngine(t *testing.T) (*assetsTest, *snp.Engine) {
 	t.Helper()
 	as := testAssets(t)
 	now := time.Now()
 	log := logging.NewTestLogger()
 	timeService := stubs.NewTimeStub()
 	timeService.SetTime(now)
-	statsData := stats.New(log, stats.NewDefaultConfig(), "", "")
+	statsData := stats.New(log, stats.NewDefaultConfig())
 	config := snp.NewDefaultConfig()
 	config.Storage = "memory"
 	snapshotEngine, _ := snp.New(context.Background(), &paths.DefaultPaths{}, config, log, timeService, statsData.Blockchain)
@@ -54,25 +79,27 @@ func TestSnapshotRoundtripViaEngine(t *testing.T) {
 
 	as, snapshotEngine := getEngineAndSnapshotEngine(t)
 	defer snapshotEngine.Close()
+	defer as.ctrl.Finish()
+	as.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
-	_, err := as.NewAsset("asset1", &types.AssetDetails{
+	_, err := as.NewAsset(ctx, "asset1", &types.AssetDetails{
 		Source: &types.AssetDetailsBuiltinAsset{},
 	})
 	require.Nil(t, err)
-	err = as.Enable("asset1")
+	err = as.Enable(ctx, "asset1")
 	require.Nil(t, err)
-	_, err = as.NewAsset("asset2", &types.AssetDetails{
+	_, err = as.NewAsset(ctx, "asset2", &types.AssetDetails{
 		Source: &types.AssetDetailsBuiltinAsset{},
 	})
 	require.Nil(t, err)
-	err = as.Enable("asset2")
+	err = as.Enable(ctx, "asset2")
 	require.Nil(t, err)
 
-	_, err = as.NewAsset("asset3", &types.AssetDetails{
+	_, err = as.NewAsset(ctx, "asset3", &types.AssetDetails{
 		Source: &types.AssetDetailsBuiltinAsset{},
 	})
 	require.Nil(t, err)
-	_, err = as.NewAsset("asset4", &types.AssetDetails{
+	_, err = as.NewAsset(ctx, "asset4", &types.AssetDetails{
 		Source: &types.AssetDetailsBuiltinAsset{},
 	})
 	require.Nil(t, err)
@@ -84,22 +111,23 @@ func TestSnapshotRoundtripViaEngine(t *testing.T) {
 	snap1 := snaps[0]
 
 	asLoad, snapshotEngineLoad := getEngineAndSnapshotEngine(t)
+	asLoad.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 	snapshotEngineLoad.ReceiveSnapshot(snap1)
 	snapshotEngineLoad.ApplySnapshot(ctx)
 	snapshotEngineLoad.CheckLoaded()
 	defer snapshotEngineLoad.Close()
 
-	err = as.Enable("asset3")
+	err = as.Enable(ctx, "asset3")
 	require.Nil(t, err)
 
-	err = asLoad.Enable("asset3")
+	err = asLoad.Enable(ctx, "asset3")
 	require.Nil(t, err)
 
-	as.NewAsset("asset5", &types.AssetDetails{
+	as.NewAsset(ctx, "asset5", &types.AssetDetails{
 		Source: &types.AssetDetailsBuiltinAsset{},
 	})
 
-	asLoad.NewAsset("asset5", &types.AssetDetails{
+	asLoad.NewAsset(ctx, "asset5", &types.AssetDetails{
 		Source: &types.AssetDetailsBuiltinAsset{},
 	})
 
@@ -112,20 +140,25 @@ func TestSnapshotRoundtripViaEngine(t *testing.T) {
 
 // test round trip of active snapshot hash and serialisation.
 func TestActiveSnapshotRoundTrip(t *testing.T) {
+	ctx := vgcontext.WithTraceID(vgcontext.WithBlockHeight(context.Background(), 100), "0xDEADBEEF")
+	ctx = vgcontext.WithChainID(ctx, "chainid")
+
 	activeKey := (&types.PayloadActiveAssets{}).Key()
 	for i := 0; i < 10; i++ {
 		as := testAssets(t)
-		_, err := as.NewAsset("asset1", &types.AssetDetails{
+		as.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+
+		_, err := as.NewAsset(ctx, "asset1", &types.AssetDetails{
 			Source: &types.AssetDetailsBuiltinAsset{},
 		})
 		require.Nil(t, err)
-		err = as.Enable("asset1")
+		err = as.Enable(ctx, "asset1")
 		require.Nil(t, err)
-		_, err = as.NewAsset("asset2", &types.AssetDetails{
+		_, err = as.NewAsset(ctx, "asset2", &types.AssetDetails{
 			Source: &types.AssetDetailsBuiltinAsset{},
 		})
 		require.Nil(t, err)
-		err = as.Enable("asset2")
+		err = as.Enable(ctx, "asset2")
 		require.Nil(t, err)
 
 		// get the serialised state
@@ -147,23 +180,31 @@ func TestActiveSnapshotRoundTrip(t *testing.T) {
 		require.Nil(t, err)
 		statePostReload, _, _ := as.GetState(activeKey)
 		require.True(t, bytes.Equal(state, statePostReload))
+		as.ctrl.Finish()
 	}
 }
 
 // test round trip of active snapshot serialisation.
 func TestPendingSnapshotRoundTrip(t *testing.T) {
+	ctx := vgcontext.WithTraceID(vgcontext.WithBlockHeight(context.Background(), 100), "0xDEADBEEF")
+	ctx = vgcontext.WithChainID(ctx, "chainid")
 	pendingKey := (&types.PayloadPendingAssets{}).Key()
 
 	for i := 0; i < 10; i++ {
 		as := testAssets(t)
-		_, err := as.NewAsset("asset1", &types.AssetDetails{
+		as.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+
+		_, err := as.NewAsset(ctx, "asset1", &types.AssetDetails{
 			Source: &types.AssetDetailsBuiltinAsset{},
 		})
 		require.Nil(t, err)
-		_, err = as.NewAsset("asset2", &types.AssetDetails{
+		assetID2, err := as.NewAsset(ctx, "asset2", &types.AssetDetails{
 			Source: &types.AssetDetailsBuiltinAsset{},
 		})
 		require.Nil(t, err)
+
+		// set asset 2 as pending_listing
+		as.SetPendingListing(ctx, assetID2)
 
 		// get the serialised state
 		state, _, err := as.GetState(pendingKey)
@@ -183,5 +224,6 @@ func TestPendingSnapshotRoundTrip(t *testing.T) {
 		require.Nil(t, err)
 		statePostReload, _, _ := as.GetState(pendingKey)
 		require.True(t, bytes.Equal(state, statePostReload))
+		as.ctrl.Finish()
 	}
 }

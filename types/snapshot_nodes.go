@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package types
 
 import (
@@ -11,6 +23,7 @@ import (
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
 	snapshot "code.vegaprotocol.io/protos/vega/snapshot/v1"
+	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/types/num"
 )
 
@@ -66,11 +79,10 @@ type isPayload interface {
 type PayloadProofOfWork struct {
 	BlockHeight   []uint64
 	BlockHash     []string
-	SeenTx        map[string]struct{}
 	HeightToTx    map[uint64][]string
-	SeenTid       map[string]struct{}
 	HeightToTid   map[uint64][]string
 	BannedParties map[string]uint64
+	ActiveParams  []*snapshot.ProofOfWorkParams
 }
 
 type PayloadActiveAssets struct {
@@ -295,6 +307,7 @@ type ExecMarket struct {
 	LongRiskFactor             num.Decimal
 	RiskFactorConsensusReached bool
 	FeeSplitter                *FeeSplitter
+	SettlementPrice            *num.Uint
 }
 
 type PriceMonitor struct {
@@ -346,14 +359,15 @@ type KeyDecimalPair struct {
 }
 
 type AuctionState struct {
-	Mode        MarketTradingMode
-	DefaultMode MarketTradingMode
-	Trigger     AuctionTrigger
-	Begin       time.Time
-	End         *AuctionDuration
-	Start       bool
-	Stop        bool
-	Extension   AuctionTrigger
+	Mode               MarketTradingMode
+	DefaultMode        MarketTradingMode
+	Trigger            AuctionTrigger
+	Begin              time.Time
+	End                *AuctionDuration
+	Start              bool
+	Stop               bool
+	Extension          AuctionTrigger
+	ExtensionEventSent bool
 }
 
 type FeeSplitter struct {
@@ -382,6 +396,7 @@ type LimitState struct {
 
 type EquityShare struct {
 	Mvp                 num.Decimal
+	PMvp                num.Decimal
 	R                   num.Decimal
 	OpeningAuctionEnded bool
 	Lps                 []*EquityShareLP
@@ -1940,12 +1955,15 @@ func AssetActionFromProto(a *snapshot.AssetAction) *AssetAction {
 		TxIndex:     a.TxIndex,
 		Hash:        a.Hash,
 	}
+
 	if a.Erc20Deposit != nil {
 		erc20d, err := NewERC20DepositFromProto(a.Erc20Deposit)
 		if err == nil {
 			aa.Erc20D = erc20d
 		}
-	} else {
+	}
+
+	if a.BuiltinDeposit != nil {
 		builtind, err := NewBuiltinAssetDepositFromProto(a.BuiltinDeposit)
 		if err == nil {
 			aa.BuiltinD = builtind
@@ -2306,15 +2324,19 @@ func (m MatchingBook) IntoProto() *snapshot.MatchingBook {
 }
 
 func EquityShareFromProto(es *snapshot.EquityShare) *EquityShare {
-	var mvp, r num.Decimal
+	var mvp, r, pMvp num.Decimal
 	if len(es.Mvp) > 0 {
 		mvp, _ = num.DecimalFromString(es.Mvp)
 	}
 	if len(es.R) > 0 {
 		r, _ = num.DecimalFromString(es.R)
 	}
+	if len(es.PMvp) > 0 {
+		pMvp, _ = num.DecimalFromString(es.PMvp)
+	}
 	ret := EquityShare{
 		Mvp:                 mvp,
+		PMvp:                pMvp,
 		R:                   r,
 		OpeningAuctionEnded: es.OpeningAuctionEnded,
 		Lps:                 make([]*EquityShareLP, 0, len(es.Lps)),
@@ -2328,6 +2350,7 @@ func EquityShareFromProto(es *snapshot.EquityShare) *EquityShare {
 func (e EquityShare) IntoProto() *snapshot.EquityShare {
 	ret := snapshot.EquityShare{
 		Mvp:                 e.Mvp.String(),
+		PMvp:                e.PMvp.String(),
 		R:                   e.R.String(),
 		OpeningAuctionEnded: e.OpeningAuctionEnded,
 		Lps:                 make([]*snapshot.EquityShareLP, 0, len(e.Lps)),
@@ -2377,14 +2400,15 @@ func AuctionStateFromProto(as *snapshot.AuctionState) *AuctionState {
 		end = AuctionDurationFromProto(as.End)
 	}
 	return &AuctionState{
-		Mode:        as.Mode,
-		DefaultMode: as.DefaultMode,
-		Begin:       time.Unix(0, as.Begin).UTC(),
-		Trigger:     as.Trigger,
-		End:         end,
-		Start:       as.Start,
-		Stop:        as.Stop,
-		Extension:   as.Extension,
+		Mode:               as.Mode,
+		DefaultMode:        as.DefaultMode,
+		Begin:              time.Unix(0, as.Begin).UTC(),
+		Trigger:            as.Trigger,
+		End:                end,
+		Start:              as.Start,
+		Stop:               as.Stop,
+		Extension:          as.Extension,
+		ExtensionEventSent: as.ExtensionEventSent,
 	}
 }
 
@@ -2394,14 +2418,15 @@ func (a AuctionState) IntoProto() *snapshot.AuctionState {
 		end = a.End.IntoProto()
 	}
 	return &snapshot.AuctionState{
-		Mode:        a.Mode,
-		DefaultMode: a.DefaultMode,
-		Trigger:     a.Trigger,
-		Begin:       a.Begin.UnixNano(),
-		End:         end,
-		Start:       a.Start,
-		Stop:        a.Stop,
-		Extension:   a.Extension,
+		Mode:               a.Mode,
+		DefaultMode:        a.DefaultMode,
+		Trigger:            a.Trigger,
+		Begin:              a.Begin.UnixNano(),
+		End:                end,
+		Start:              a.Start,
+		Stop:               a.Stop,
+		Extension:          a.Extension,
+		ExtensionEventSent: a.ExtensionEventSent,
 	}
 }
 
@@ -2539,14 +2564,14 @@ func (cp CurrentPrice) IntoProto() *snapshot.CurrentPrice {
 func PastPriceFromProto(spp *snapshot.PastPrice) *PastPrice {
 	vwp, _ := num.DecimalFromString(spp.VolumeWeightedPrice)
 	return &PastPrice{
-		Time:                time.Unix(spp.Time, 0).UTC(),
+		Time:                time.Unix(0, spp.Time).UTC(),
 		VolumeWeightedPrice: vwp,
 	}
 }
 
 func (pp PastPrice) IntoProto() *snapshot.PastPrice {
 	return &snapshot.PastPrice{
-		Time:                pp.Time.Unix(),
+		Time:                pp.Time.UnixNano(),
 		VolumeWeightedPrice: pp.VolumeWeightedPrice.String(),
 	}
 }
@@ -2555,14 +2580,14 @@ func PriceMonitorFromProto(pm *snapshot.PriceMonitor) *PriceMonitor {
 	ret := PriceMonitor{
 		Initialised:                 pm.Initialised,
 		FPHorizons:                  make([]*KeyDecimalPair, 0, len(pm.FpHorizons)),
-		Now:                         time.Unix(pm.Now, 0).UTC(),
-		Update:                      time.Unix(pm.Update, 0).UTC(),
+		Now:                         time.Unix(0, pm.Now).UTC(),
+		Update:                      time.Unix(0, pm.Update).UTC(),
 		Bounds:                      make([]*PriceBound, 0, len(pm.Bounds)),
-		PriceRangeCacheTime:         time.Unix(pm.PriceRangeCacheTime, 0).UTC(),
+		PriceRangeCacheTime:         time.Unix(0, pm.PriceRangeCacheTime).UTC(),
 		PriceRangeCache:             make([]*PriceRangeCache, 0, len(pm.PriceRangeCache)),
 		PricesNow:                   make([]*CurrentPrice, 0, len(pm.PricesNow)),
 		PricesPast:                  make([]*PastPrice, 0, len(pm.PricesPast)),
-		RefPriceCacheTime:           time.Unix(pm.RefPriceCacheTime, 0).UTC(),
+		RefPriceCacheTime:           time.Unix(0, pm.RefPriceCacheTime).UTC(),
 		RefPriceCache:               make([]*KeyDecimalPair, 0, len(pm.RefPriceCache)),
 		PriceBoundsConsensusReached: pm.ConsensusReached,
 	}
@@ -2591,14 +2616,14 @@ func (p PriceMonitor) IntoProto() *snapshot.PriceMonitor {
 	ret := snapshot.PriceMonitor{
 		Initialised:         p.Initialised,
 		FpHorizons:          make([]*snapshot.DecimalMap, 0, len(p.FPHorizons)),
-		Now:                 p.Now.Unix(),
-		Update:              p.Update.Unix(),
+		Now:                 p.Now.UnixNano(),
+		Update:              p.Update.UnixNano(),
 		Bounds:              make([]*snapshot.PriceBound, 0, len(p.Bounds)),
-		PriceRangeCacheTime: p.PriceRangeCacheTime.Unix(),
+		PriceRangeCacheTime: p.PriceRangeCacheTime.UnixNano(),
 		PriceRangeCache:     make([]*snapshot.PriceRangeCache, 0, len(p.PriceRangeCache)),
 		PricesNow:           make([]*snapshot.CurrentPrice, 0, len(p.PricesNow)),
 		PricesPast:          make([]*snapshot.PastPrice, 0, len(p.PricesPast)),
-		RefPriceCacheTime:   p.RefPriceCacheTime.Unix(),
+		RefPriceCacheTime:   p.RefPriceCacheTime.UnixNano(),
 		RefPriceCache:       make([]*snapshot.DecimalMap, 0, len(p.RefPriceCache)),
 		ConsensusReached:    p.PriceBoundsConsensusReached,
 	}
@@ -2660,6 +2685,12 @@ func ExecMarketFromProto(em *snapshot.Market) *ExecMarket {
 	if len(em.LastMarketValueProxy) > 0 {
 		lastMVP, _ = num.DecimalFromString(em.LastMarketValueProxy)
 	}
+
+	var sp *num.Uint = nil
+	if em.SettlementPrice != "" {
+		sp, _ = num.UintFromString(em.SettlementPrice, 10)
+	}
+
 	ret := ExecMarket{
 		Market:                     MarketFromProto(em.Market),
 		PriceMonitor:               PriceMonitorFromProto(em.PriceMonitor),
@@ -2678,6 +2709,7 @@ func ExecMarketFromProto(em *snapshot.Market) *ExecMarket {
 		LongRiskFactor:             longRF,
 		RiskFactorConsensusReached: em.RiskFactorConsensusReached,
 		FeeSplitter:                FeeSplitterFromProto(em.FeeSplitter),
+		SettlementPrice:            sp,
 	}
 	for _, o := range em.PeggedOrders {
 		or, _ := OrderFromProto(o)
@@ -2691,6 +2723,11 @@ func ExecMarketFromProto(em *snapshot.Market) *ExecMarket {
 }
 
 func (e ExecMarket) IntoProto() *snapshot.Market {
+	sp := ""
+	if e.SettlementPrice != nil {
+		sp = e.SettlementPrice.String()
+	}
+
 	ret := snapshot.Market{
 		Market:                     e.Market.IntoProto(),
 		PriceMonitor:               e.PriceMonitor.IntoProto(),
@@ -2709,6 +2746,7 @@ func (e ExecMarket) IntoProto() *snapshot.Market {
 		RiskFactorLong:             e.LongRiskFactor.String(),
 		RiskFactorConsensusReached: e.RiskFactorConsensusReached,
 		FeeSplitter:                e.FeeSplitter.IntoProto(),
+		SettlementPrice:            sp,
 	}
 	for _, o := range e.PeggedOrders {
 		ret.PeggedOrders = append(ret.PeggedOrders, o.IntoProto())
@@ -3259,7 +3297,7 @@ func PayloadStakeVerifierRemovedFromProto(svd *snapshot.Payload_StakeVerifierRem
 
 	for _, pr := range svd.StakeVerifierRemoved.PendingRemoved {
 		removed := &StakeRemoved{
-			EthereumAddress: pr.EthereumAddress,
+			EthereumAddress: crypto.EthereumChecksumAddress(pr.EthereumAddress),
 			TxID:            pr.TxId,
 			LogIndex:        pr.LogIndex,
 			BlockNumber:     pr.BlockNumber,
@@ -3286,7 +3324,7 @@ func (p *PayloadStakeVerifierRemoved) IntoProto() *snapshot.Payload_StakeVerifie
 	for _, p := range p.StakeVerifierRemoved {
 		pending = append(pending,
 			&snapshot.StakeVerifierPending{
-				EthereumAddress: p.EthereumAddress,
+				EthereumAddress: crypto.EthereumChecksumAddress(p.EthereumAddress),
 				VegaPublicKey:   p.VegaPubKey,
 				Amount:          p.Amount.String(),
 				BlockTime:       p.BlockTime,
@@ -3323,7 +3361,7 @@ func PayloadStakeVerifierDepositedFromProto(svd *snapshot.Payload_StakeVerifierD
 
 	for _, pd := range svd.StakeVerifierDeposited.PendingDeposited {
 		deposit := &StakeDeposited{
-			EthereumAddress: pd.EthereumAddress,
+			EthereumAddress: crypto.EthereumChecksumAddress(pd.EthereumAddress),
 			TxID:            pd.TxId,
 			LogIndex:        pd.LogIndex,
 			BlockNumber:     pd.BlockNumber,
@@ -3350,7 +3388,7 @@ func (p *PayloadStakeVerifierDeposited) IntoProto() *snapshot.Payload_StakeVerif
 	for _, p := range p.StakeVerifierDeposited {
 		pending = append(pending,
 			&snapshot.StakeVerifierPending{
-				EthereumAddress: p.EthereumAddress,
+				EthereumAddress: crypto.EthereumChecksumAddress(p.EthereumAddress),
 				VegaPublicKey:   p.VegaPubKey,
 				Amount:          p.Amount.String(),
 				BlockTime:       p.BlockTime,
@@ -3468,7 +3506,8 @@ func (*PayloadFloatingPointConsensus) isPayload() {}
 
 func PayloadFloatingPointConsensusFromProto(t *snapshot.Payload_FloatingPointConsensus) *PayloadFloatingPointConsensus {
 	return &PayloadFloatingPointConsensus{
-		ConsensusData: t.FloatingPointConsensus.NextTimeTrigger,
+		ConsensusData:               t.FloatingPointConsensus.NextTimeTrigger,
+		StateVariablesInternalState: t.FloatingPointConsensus.StateVariables,
 	}
 }
 
@@ -3476,6 +3515,7 @@ func (p *PayloadFloatingPointConsensus) IntoProto() *snapshot.Payload_FloatingPo
 	return &snapshot.Payload_FloatingPointConsensus{
 		FloatingPointConsensus: &snapshot.FloatingPointConsensus{
 			NextTimeTrigger: p.ConsensusData,
+			StateVariables:  p.StateVariablesInternalState,
 		},
 	}
 }
@@ -3631,26 +3671,20 @@ func PayloadProofOfWorkFromProto(s *snapshot.Payload_ProofOfWork) *PayloadProofO
 	pow := &PayloadProofOfWork{
 		BlockHeight:   s.ProofOfWork.BlockHeight,
 		BlockHash:     s.ProofOfWork.BlockHash,
-		SeenTx:        make(map[string]struct{}, len(s.ProofOfWork.SeenTx)),
-		SeenTid:       make(map[string]struct{}, len(s.ProofOfWork.SeenTid)),
 		BannedParties: make(map[string]uint64, len(s.ProofOfWork.Banned)),
 		HeightToTx:    make(map[uint64][]string, len(s.ProofOfWork.TxAtHeight)),
 		HeightToTid:   make(map[uint64][]string, len(s.ProofOfWork.TidAtHeight)),
+		ActiveParams:  s.ProofOfWork.PowParams,
 	}
+
 	for _, bp := range s.ProofOfWork.Banned {
 		pow.BannedParties[bp.Party] = bp.UntilEpoch
 	}
 	for _, tah := range s.ProofOfWork.TxAtHeight {
 		pow.HeightToTx[tah.Height] = tah.Transactions
-		for _, t := range tah.Transactions {
-			pow.SeenTx[t] = struct{}{}
-		}
 	}
 	for _, tah := range s.ProofOfWork.TidAtHeight {
 		pow.HeightToTid[tah.Height] = tah.Transactions
-		for _, t := range tah.Transactions {
-			pow.SeenTid[t] = struct{}{}
-		}
 	}
 	return pow
 }
@@ -3680,6 +3714,7 @@ func (p *PayloadProofOfWork) IntoProto() *snapshot.Payload_ProofOfWork {
 			Banned:      banned,
 			TxAtHeight:  txAtHeight,
 			TidAtHeight: tidAtHeight,
+			PowParams:   p.ActiveParams,
 		},
 	}
 }

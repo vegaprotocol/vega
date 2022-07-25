@@ -1,9 +1,23 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package stats
 
 import (
 	"time"
 
 	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/vega/version"
+	tmversion "github.com/tendermint/tendermint/version"
 )
 
 // Stats ties together all other package level application stats types.
@@ -18,16 +32,17 @@ type Stats struct {
 }
 
 // New instantiates a new Stats.
-func New(log *logging.Logger, cfg Config, version string, versionHash string) *Stats {
+func New(log *logging.Logger, cfg Config) *Stats {
 	log = log.Named(namedLogger)
 	log.SetLevel(cfg.Level.Get())
 	return &Stats{
-		log:         log,
-		cfg:         cfg,
-		Blockchain:  &Blockchain{},
-		version:     version,
-		versionHash: versionHash,
-		uptime:      time.Now(),
+		log:          log,
+		cfg:          cfg,
+		Blockchain:   &Blockchain{},
+		version:      version.Get(),
+		versionHash:  version.GetCommitHash(),
+		chainVersion: tmversion.TMVersion,
+		uptime:       time.Now(),
 	}
 }
 
@@ -43,11 +58,6 @@ func (s *Stats) ReloadConf(cfg Config) {
 	}
 
 	s.cfg = cfg
-}
-
-// SetChainVersion sets the version of the chain in use by vega.
-func (s *Stats) SetChainVersion(v string) {
-	s.chainVersion = v
 }
 
 // GetChainVersion returns the version of the chain in use by vega.

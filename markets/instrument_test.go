@@ -1,9 +1,20 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package markets_test
 
 import (
 	"context"
 	"testing"
-	"time"
 
 	"code.vegaprotocol.io/vega/broker/mocks"
 	emock "code.vegaprotocol.io/vega/execution/mocks"
@@ -102,14 +113,13 @@ func newOracleEngine(t *testing.T) products.OracleEngine {
 	broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
 	ts := emock.NewMockTimeService(ctrl)
-	ts.EXPECT().NotifyOnTick(gomock.Any()).Times(1)
+	ts.EXPECT().GetTimeNow().AnyTimes()
 
 	return oracles.NewEngine(
 		logging.NewTestLogger(),
 		oracles.NewDefaultConfig(),
-		time.Now(),
-		broker,
 		ts,
+		broker,
 	)
 }
 

@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package oracles
 
 import (
@@ -11,52 +23,53 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 )
 
-// Broker no need to mock (use broker package mock).
+// Broker interface. Do not need to mock (use package broker/mock).
 type Broker interface {
 	Send(event events.Event)
 	SendBatch(events []events.Event)
 }
 
-// TimeService ...
+// TimeService interface.
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/time_service_mock.go -package mocks code.vegaprotocol.io/vega/oracles TimeService
 type TimeService interface {
-	NotifyOnTick(f func(context.Context, time.Time))
+	GetTimeNow() time.Time
 }
 
 // Engine is responsible for broadcasting the OracleData to products and risk
 // models interested in it.
 type Engine struct {
 	log           *logging.Logger
+	timeService   TimeService
 	broker        Broker
-	CurrentTime   time.Time
-	subscriptions specSubscriptions
+	subscriptions *specSubscriptions
 }
 
 // NewEngine creates a new oracle Engine.
 func NewEngine(
 	log *logging.Logger,
 	conf Config,
-	currentTime time.Time,
-	broker Broker,
 	ts TimeService,
+	broker Broker,
 ) *Engine {
 	log = log.Named(namedLogger)
 	log.SetLevel(conf.Level.Get())
 
 	e := &Engine{
 		log:           log,
+		timeService:   ts,
 		broker:        broker,
-		CurrentTime:   currentTime,
 		subscriptions: newSpecSubscriptions(),
 	}
 
-	ts.NotifyOnTick(e.UpdateCurrentTime)
 	return e
 }
 
-// UpdateCurrentTime listens to update of the current Vega time.
-func (e *Engine) UpdateCurrentTime(_ context.Context, ts time.Time) {
-	e.CurrentTime = ts
+// ListensToPubKeys checks if the public keys from provided OracleData are among the keys
+// current OracleSpecs listen to.
+func (e *Engine) ListensToPubKeys(data OracleData) bool {
+	return e.subscriptions.hasAnySubscribers(func(spec OracleSpec) bool {
+		return spec.MatchPubKeys(data)
+	})
 }
 
 // BroadcastData broadcasts data to products and risk models that are interested
@@ -100,17 +113,19 @@ func (e *Engine) BroadcastData(ctx context.Context, data OracleData) error {
 	return nil
 }
 
-// Subscribe registers a callback for a given OracleSpec that is call when an
+// Subscribe registers a callback for a given OracleSpec that is called when an
 // OracleData matches the spec.
 // It returns a SubscriptionID that is used to Unsubscribe.
 // If cb is nil, the method panics.
-func (e *Engine) Subscribe(ctx context.Context, spec OracleSpec, cb OnMatchedOracleData) SubscriptionID {
+func (e *Engine) Subscribe(ctx context.Context, spec OracleSpec, cb OnMatchedOracleData) (SubscriptionID, Unsubscriber) {
 	if cb == nil {
 		panic(fmt.Sprintf("a callback is required for spec %v", spec))
 	}
-	updatedSubscription := e.subscriptions.addSubscriber(spec, cb, e.CurrentTime)
+	updatedSubscription := e.subscriptions.addSubscriber(spec, cb, e.timeService.GetTimeNow())
 	e.sendNewOracleSpecSubscription(ctx, updatedSubscription)
-	return updatedSubscription.subscriptionID
+	return updatedSubscription.subscriptionID, func(ctx context.Context, id SubscriptionID) {
+		e.Unsubscribe(ctx, id)
+	}
 }
 
 // Unsubscribe unregisters the callback associated to the SubscriptionID.
@@ -162,7 +177,7 @@ func (e *Engine) sendMatchedOracleData(ctx context.Context, data OracleData, spe
 		PubKeys:        data.PubKeys,
 		Data:           payload,
 		MatchedSpecIds: ids,
-		BroadcastAt:    e.CurrentTime.UnixNano(),
+		BroadcastAt:    e.timeService.GetTimeNow().UnixNano(),
 	}
 	e.broker.Send(events.NewOracleDataEvent(ctx, dataProto))
 }

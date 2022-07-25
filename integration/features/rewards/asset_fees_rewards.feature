@@ -51,6 +51,12 @@ Feature: Fees reward calculations for a single asset, single market
       | aux2    | ETH   | 100000000 |
       | trader3 | ETH   | 10000     |
       | trader4 | ETH   | 10000     |
+      | lpprov  | ETH   | 100000000 |
+
+    When the parties submit the following liquidity provision:
+      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
+      | lp1 | lpprov | ETH/DEC21 | 90000             | 0.1 | buy  | BID              | 50         | 100    | submission |
+      | lp1 | lpprov | ETH/DEC21 | 90000             | 0.1 | sell | ASK              | 50         | 100    | submission |
 
     Then the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     |
@@ -95,7 +101,7 @@ Feature: Fees reward calculations for a single asset, single market
       | from    | to      | from account            | to account                       | market id | amount | asset |
       | trader4 | market  | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_MAKER          | ETH/DEC21 | 16     | ETH   |
       | trader4 |         | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_INFRASTRUCTURE |           | 7      | ETH   |
-      | trader4 | market  | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_LIQUIDITY      | ETH/DEC21 | 0      | ETH   |
+      | trader4 | market  | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_LIQUIDITY      | ETH/DEC21 | 301    | ETH   |
       | market  | trader3 | ACCOUNT_TYPE_FEES_MAKER | ACCOUNT_TYPE_GENERAL             | ETH/DEC21 | 16     | ETH   |
 
     # total_fee = infrastructure_fee + maker_fee + liquidity_fee = 7 + 16 + 0 = 23
@@ -104,19 +110,19 @@ Feature: Fees reward calculations for a single asset, single market
 
     Then the parties should have the following account balances:
       | party   | asset | market id | margin | general |
-      | trader3 | ETH   | ETH/DEC21 | 1089   | 8927    |
-      | trader4 | ETH   | ETH/DEC21 | 657    | 9320    |
+      | trader3 | ETH   | ETH/DEC21 | 1082   | 8934    |
+      | trader4 | ETH   | ETH/DEC21 | 715    | 8961    |
 
     And the accumulated infrastructure fees should be "7" for the asset "ETH"
-    And the accumulated liquidity fees should be "0" for the market "ETH/DEC21"
+    And the accumulated liquidity fees should be "301" for the market "ETH/DEC21"
 
     #complete the epoch for rewards to take place
     Then the network moves ahead "7" blocks
     # only trader3 received the maker fees so only they get the reward of 10k
     Then the parties should have the following account balances:
       | party   | asset | market id | margin | general |
-      | trader3 | ETH   | ETH/DEC21 | 1089   | 8927    |
-      | trader4 | ETH   | ETH/DEC21 | 657    | 9320    |
+      | trader3 | ETH   | ETH/DEC21 | 1082   | 8934    |
+      | trader4 | ETH   | ETH/DEC21 | 715    | 8961    |
 
     Then "trader3" should have general account balance of "10000" for asset "VEGA"
 
@@ -125,8 +131,8 @@ Feature: Fees reward calculations for a single asset, single market
     # expect no change to anyone
     Then the parties should have the following account balances:
       | party   | asset | market id | margin | general |
-      | trader3 | ETH   | ETH/DEC21 | 1089   | 8927    |
-      | trader4 | ETH   | ETH/DEC21 | 657    | 9320    |
+      | trader3 | ETH   | ETH/DEC21 | 1082   | 8934    |
+      | trader4 | ETH   | ETH/DEC21 | 715    | 8961    |
 
     Then "trader3" should have general account balance of "10000" for asset "VEGA"
   
@@ -165,6 +171,12 @@ Feature: Fees reward calculations for a single asset, single market
       | trader3a | ETH   | 10000     |
       | trader3b | ETH   | 10000     |
       | trader4  | ETH   | 10000     |
+      | lpprov   | ETH   | 100000000 |
+
+    When the parties submit the following liquidity provision:
+      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
+      | lp1 | lpprov | ETH/DEC21 | 90000             | 0.1 | buy  | BID              | 50         | 100    | submission |
+      | lp1 | lpprov | ETH/DEC21 | 90000             | 0.1 | sell | ASK              | 50         | 100    | submission |
 
     Then the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     |
@@ -220,7 +232,7 @@ Feature: Fees reward calculations for a single asset, single market
       | trader4 | market   | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_MAKER          | ETH/DEC21 | 11     | ETH   |
       | trader4 | market   | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_MAKER          | ETH/DEC21 | 6      | ETH   |
       | trader4 |          | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_INFRASTRUCTURE |           | 8      | ETH   |
-      | trader4 | market   | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_LIQUIDITY      | ETH/DEC21 | 0      | ETH   |
+      | trader4 | market   | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_LIQUIDITY      | ETH/DEC21 | 302    | ETH   |
       | market  | trader3a | ACCOUNT_TYPE_FEES_MAKER | ACCOUNT_TYPE_GENERAL             | ETH/DEC21 | 11     | ETH   |
       | market  | trader3b | ACCOUNT_TYPE_FEES_MAKER | ACCOUNT_TYPE_GENERAL             | ETH/DEC21 | 6      | ETH   |
 
@@ -231,21 +243,21 @@ Feature: Fees reward calculations for a single asset, single market
 
     Then the parties should have the following account balances:
       | party    | asset | market id | margin | general |
-      | trader3a | ETH   | ETH/DEC21 | 726    | 9285    |
-      | trader3b | ETH   | ETH/DEC21 | 363    | 9643    |
-      | trader4  | ETH   | ETH/DEC21 | 657    | 9318    |
+      | trader3a | ETH   | ETH/DEC21 | 721    | 9290    |
+      | trader3b | ETH   | ETH/DEC21 | 361    | 9645    |
+      | trader4  | ETH   | ETH/DEC21 | 715    | 8958    | 
 
     And the accumulated infrastructure fees should be "8" for the asset "ETH"
-    And the accumulated liquidity fees should be "0" for the market "ETH/DEC21"
+    And the accumulated liquidity fees should be "302" for the market "ETH/DEC21"
 
     #complete the epoch for rewards to take place
     Then the network moves ahead "7" blocks
     # only trader3 received the maker fees so only they get the reward of 10k
     Then the parties should have the following account balances:
       | party    | asset | market id | margin | general |
-      | trader3a | ETH   | ETH/DEC21 | 726    | 9285    | 
-      | trader3b | ETH   | ETH/DEC21 | 363    | 9643    | 
-      | trader4  | ETH   | ETH/DEC21 | 657    | 9318    | 
+      | trader3a | ETH   | ETH/DEC21 | 721    | 9290    |
+      | trader3b | ETH   | ETH/DEC21 | 361    | 9645    | 
+      | trader4  | ETH   | ETH/DEC21 | 715    | 8958    | 
 
     Then "trader3a" should have general account balance of "6470" for asset "VEGA"
     And "trader3b" should have general account balance of "3529" for asset "VEGA"
@@ -256,9 +268,9 @@ Feature: Fees reward calculations for a single asset, single market
     # expect no change to anyone
     Then the parties should have the following account balances:
       | party    | asset | market id | margin | general |
-      | trader3a | ETH   | ETH/DEC21 | 726    | 9285    | 
-      | trader3b | ETH   | ETH/DEC21 | 363    | 9643    | 
-      | trader4  | ETH   | ETH/DEC21 | 657    | 9318    | 
+      | trader3a | ETH   | ETH/DEC21 | 721    | 9290    |
+      | trader3b | ETH   | ETH/DEC21 | 361    | 9645    | 
+      | trader4  | ETH   | ETH/DEC21 | 715    | 8958    | 
 
   Scenario: Testing fees in continuous trading with two trades and one liquidity providers with 10 and 0 s liquidity fee distribution timestep - test maker fee received, taker fee paid and lp fees rewards
     When the following network parameters are set:
@@ -387,6 +399,7 @@ Feature: Fees reward calculations for a single asset, single market
     #complete the epoch for rewards to take place
     Then the network moves ahead "7" blocks
 
+    # Not sure why this transfer is gone now?
     And the following transfers should happen:
       | from   | to   | from account                | to account           | market id | amount | asset |
       | market | aux1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/DEC21 | 5      | ETH   |

@@ -1,10 +1,12 @@
 Feature: Set up a market, create indiciative price different to actual opening auction uncross price
 
   Background:
-
+    Given the simple risk model named "my-simple-risk-model":
+      | long | short | max move up | min move down | probability of trading |
+      | 0.1  | 0.1   | 2           | -3            | 0.2                    |
     Given the markets:
-      | id        | quote name | asset | risk model                  | margin calculator         | auction duration | fees         | price monitoring | oracle config          |
-      | ETH/DEC19 | BTC        | BTC   | default-simple-risk-model-4 | default-margin-calculator | 5                | default-none | default-basic    | default-eth-for-future |
+      | id        | quote name | asset | risk model           | margin calculator         | auction duration | fees         | price monitoring | oracle config          |
+      | ETH/DEC19 | BTC        | BTC   | my-simple-risk-model | default-margin-calculator | 5                | default-none | default-basic    | default-eth-for-future |
     And the following network parameters are set:
       | name                               | value |
       | market.auction.minimumDuration     | 5     |
@@ -21,6 +23,7 @@ Feature: Set up a market, create indiciative price different to actual opening a
       | party4 | BTC   | 100000000 |
       | party5 | BTC   | 100000000 |
       | party6 | BTC   | 100000000 |
+      | lpprov | BTC   | 100000000 |
 
     # Start market with some dead time
     When the network moves ahead "2" blocks
@@ -43,6 +46,10 @@ Feature: Set up a market, create indiciative price different to actual opening a
     Then the market data for the market "ETH/DEC19" should be:
       | trading mode                 |
       | TRADING_MODE_OPENING_AUCTION |
+    And the parties submit the following liquidity provision:
+      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
+      | lp1 | lpprov | ETH/DEC19 | 90000             | 0.1 | buy  | MID              | 50         | 100    | submission |
+      | lp1 | lpprov | ETH/DEC19 | 90000             | 0.1 | sell | MID              | 50         | 100    | submission |
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | party3 | ETH/DEC19 | buy  | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC | t3-b-1    |
@@ -96,7 +103,7 @@ Feature: Set up a market, create indiciative price different to actual opening a
       #| party1 | BTC   | ETH/DEC19 | 30241  | 0       |
     And the market data for the market "ETH/DEC19" should be:
       | mark price | trading mode            | horizon | min bound | max bound | ref price |
-      | 10000      | TRADING_MODE_CONTINUOUS | 5       | 9999      | 9999      | 10000     |
+      | 10000      | TRADING_MODE_CONTINUOUS | 5       | 9997      | 10002     | 10000     |
 
   @OpenIP
   Scenario: Same test as above, but without the initial indicative price/volume
@@ -107,6 +114,7 @@ Feature: Set up a market, create indiciative price different to actual opening a
       | party2 | BTC   | 100000000 |
       | party3 | BTC   | 100000000 |
       | party4 | BTC   | 100000000 |
+      | lpprov | BTC   | 100000000 |
 
     # Start opening auction with some dead time...
     When the network moves ahead "1" blocks
@@ -121,6 +129,10 @@ Feature: Set up a market, create indiciative price different to actual opening a
       | party2 | ETH/DEC19 | sell | 5      | 10001 | 0                | TYPE_LIMIT | TIF_GFA | t2-s-2    |
       | party1 | ETH/DEC19 | buy  | 4      | 3000  | 0                | TYPE_LIMIT | TIF_GFA | t1-b-3    |
       | party2 | ETH/DEC19 | sell | 3      | 3000  | 0                | TYPE_LIMIT | TIF_GFA | t2-s-3    |
+    And the parties submit the following liquidity provision:
+      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
+      | lp1 | lpprov | ETH/DEC19 | 90000             | 0.1 | buy  | MID              | 50         | 100    | submission |
+      | lp1 | lpprov | ETH/DEC19 | 90000             | 0.1 | sell | MID              | 50         | 100    | submission |
     Then the parties should have the following margin levels:
       | party  | market id | maintenance | search | initial | release |
       | party1 | ETH/DEC19 | 25200       | 27720  | 30240   | 65520   |
@@ -161,7 +173,7 @@ Feature: Set up a market, create indiciative price different to actual opening a
       #| party1 | BTC   | ETH/DEC19 | 30241  | 0       |
     And the market data for the market "ETH/DEC19" should be:
       | mark price | trading mode            | horizon | min bound | max bound | ref price |
-      | 10000      | TRADING_MODE_CONTINUOUS | 5       | 9999      | 9999      | 10000     |
+      | 10000      | TRADING_MODE_CONTINUOUS | 5       | 9997      | 10002     | 10000     |
 
   @OpenIPT
   Scenario: Simple test with different indicative price before auction uncross
@@ -174,6 +186,7 @@ Feature: Set up a market, create indiciative price different to actual opening a
       | party4 | BTC   | 100000000 |
       | party5 | BTC   | 100000000 |
       | party6 | BTC   | 100000000 |
+      | lpprov | BTC   | 100000000 |
 
     # Start market with some dead time
     When the network moves ahead "3" blocks
@@ -189,6 +202,10 @@ Feature: Set up a market, create indiciative price different to actual opening a
     Then the market data for the market "ETH/DEC19" should be:
       | trading mode                 |
       | TRADING_MODE_OPENING_AUCTION |
+    And the parties submit the following liquidity provision:
+      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
+      | lp1 | lpprov | ETH/DEC19 | 90000             | 0.1 | buy  | MID              | 50         | 100    | submission |
+      | lp1 | lpprov | ETH/DEC19 | 90000             | 0.1 | sell | MID              | 50         | 100    | submission |
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | party3 | ETH/DEC19 | buy  | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC | t3-b-1    |
@@ -241,8 +258,7 @@ Feature: Set up a market, create indiciative price different to actual opening a
       #| party1 | BTC   | ETH/DEC19 | 30241  | 0       |
     And the market data for the market "ETH/DEC19" should be:
       | mark price | trading mode            | horizon | min bound | max bound | ref price |
-      | 10000      | TRADING_MODE_CONTINUOUS | 5       | 9999      | 9999      | 10000     |
-
+      | 10000      | TRADING_MODE_CONTINUOUS | 5       | 9997      | 10002     | 10000     |
 
   @OpenIPO
   Scenario: Same again, but higher indicative price
@@ -255,6 +271,7 @@ Feature: Set up a market, create indiciative price different to actual opening a
       | party4 | BTC   | 100000000 |
       | party5 | BTC   | 100000000 |
       | party6 | BTC   | 100000000 |
+      | lpprov | BTC   | 100000000 |
 
     # Start market with some dead time
     When the network moves ahead "3" blocks
@@ -273,6 +290,10 @@ Feature: Set up a market, create indiciative price different to actual opening a
     And the parties cancel the following orders:
       | party  | reference |
       | party5 | t5-s-1    |
+    And the parties submit the following liquidity provision:
+      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
+      | lp1 | lpprov | ETH/DEC19 | 90000             | 0.1 | buy  | MID              | 50         | 100    | submission |
+      | lp1 | lpprov | ETH/DEC19 | 90000             | 0.1 | sell | MID              | 50         | 100    | submission |
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | party3 | ETH/DEC19 | buy  | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC | t3-b-1    |
@@ -328,5 +349,5 @@ Feature: Set up a market, create indiciative price different to actual opening a
       #| party1 | BTC   | ETH/DEC19 | 30241  | 0       |
     And the market data for the market "ETH/DEC19" should be:
       | mark price | trading mode            | horizon | min bound | max bound | ref price |
-      | 10000      | TRADING_MODE_CONTINUOUS | 5       | 9999      | 9999      | 10000     |
+      | 10000      | TRADING_MODE_CONTINUOUS | 5       | 9997      | 10002     | 10000     |
 

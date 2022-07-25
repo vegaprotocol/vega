@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package steps
 
 import (
@@ -41,9 +53,12 @@ func PartiesSubmitLiquidityProvision(exec Execution, table *godog.Table) error {
 
 	// var clp *types.LiquidityProvisionSubmission
 	// checkAmt := num.NewUint(50000000)
+	var errRow ErroneousRow
 	for _, r := range parseSubmitLiquidityProvisionTable(table) {
 		row := submitLiquidityProvisionRow{row: r}
-
+		if errRow == nil || row.ExpectError() {
+			errRow = row
+		}
 		id := row.ID()
 		ref := id
 
@@ -94,8 +109,10 @@ func PartiesSubmitLiquidityProvision(exec Execution, table *godog.Table) error {
 				Buys:             lp.Buys,
 				Reference:        lp.Reference,
 			}
-			if err := exec.AmendLiquidityProvision(context.Background(), lpa, party); err != nil {
-				return errAmendingLiquidityProvision(lpa, party, err)
+
+			err := exec.AmendLiquidityProvision(context.Background(), lpa, party)
+			if ceerr := checkExpectedError(errRow, err, errAmendingLiquidityProvision(lpa, party, err)); ceerr != nil {
+				return ceerr
 			}
 		} else if lp.LpType == "submission" {
 			sub := &types.LiquidityProvisionSubmission{
@@ -107,8 +124,17 @@ func PartiesSubmitLiquidityProvision(exec Execution, table *godog.Table) error {
 				Reference:        lp.Reference,
 			}
 			deterministicId := hex.EncodeToString(crypto.Hash([]byte(id + party + lp.MarketID)))
-			if err := exec.SubmitLiquidityProvision(context.Background(), sub, party, id, deterministicId); err != nil {
-				return errSubmittingLiquidityProvision(sub, party, id, err)
+			err := exec.SubmitLiquidityProvision(context.Background(), sub, party, id, deterministicId)
+			if ceerr := checkExpectedError(errRow, err, errSubmittingLiquidityProvision(sub, party, id, err)); ceerr != nil {
+				return ceerr
+			}
+		} else if lp.LpType == "cancellation" {
+			cancel := types.LiquidityProvisionCancellation{
+				MarketID: lp.MarketID,
+			}
+			err := exec.CancelLiquidityProvision(context.Background(), &cancel, party)
+			if ceerr := checkExpectedError(errRow, err, errCancelLiquidityProvision(party, lp.MarketID, err)); ceerr != nil {
+				return ceerr
 			}
 		}
 	}
@@ -141,6 +167,7 @@ func parseSubmitLiquidityProvisionTable(table *godog.Table) []RowWrapper {
 		"lp type",
 	}, []string{
 		"reference",
+		"error",
 	})
 }
 
@@ -190,4 +217,12 @@ func (r submitLiquidityProvisionRow) PeggedReference() types.PeggedReference {
 
 func (r submitLiquidityProvisionRow) Reference() string {
 	return r.row.Str("reference")
+}
+
+func (r submitLiquidityProvisionRow) Error() string {
+	return r.row.Str("error")
+}
+
+func (r submitLiquidityProvisionRow) ExpectError() bool {
+	return r.row.HasColumn("error")
 }

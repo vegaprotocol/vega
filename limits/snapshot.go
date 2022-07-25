@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package limits
 
 import (
@@ -26,7 +38,6 @@ func (e *Engine) serialiseLimits() ([]byte, error) {
 	pl := types.Payload{
 		Data: &types.PayloadLimitState{
 			LimitState: &types.LimitState{
-				BlockCount:               uint32(e.blockCount),
 				CanProposeMarket:         e.canProposeMarket,
 				CanProposeAsset:          e.canProposeAsset,
 				GenesisLoaded:            e.genesisLoaded,
@@ -46,7 +57,7 @@ func (e *Engine) serialise(k string) ([]byte, error) {
 		return nil, types.ErrSnapshotKeyDoesNotExist
 	}
 
-	if !e.lss.changed {
+	if !e.HasChanged(k) {
 		return e.lss.serialised, nil
 	}
 
@@ -73,7 +84,8 @@ func (e *Engine) Stopped() bool {
 }
 
 func (e *Engine) HasChanged(k string) bool {
-	return e.lss.changed
+	// return e.lss.changed
+	return true
 }
 
 func (e *Engine) GetState(k string) ([]byte, []types.StateProvider, error) {
@@ -95,7 +107,6 @@ func (e *Engine) LoadState(ctx context.Context, payload *types.Payload) ([]types
 }
 
 func (e *Engine) restoreLimits(ctx context.Context, l *types.LimitState, p *types.Payload) error {
-	e.blockCount = uint16(l.BlockCount)
 	e.canProposeAsset = l.CanProposeAsset
 	e.canProposeMarket = l.CanProposeMarket
 	e.genesisLoaded = l.GenesisLoaded
@@ -103,10 +114,6 @@ func (e *Engine) restoreLimits(ctx context.Context, l *types.LimitState, p *type
 	e.proposeAssetEnabled = l.ProposeAssetEnabled
 	e.proposeMarketEnabledFrom = l.ProposeMarketEnabledFrom
 	e.proposeAssetEnabledFrom = l.ProposeAssetEnabledFrom
-
-	if e.blockCount > e.bootstrapBlockCount {
-		e.bootstrapFinished = true
-	}
 
 	e.sendEvent(ctx)
 	var err error

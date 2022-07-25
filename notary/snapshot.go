@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package notary
 
 import (
@@ -28,11 +40,10 @@ func NewWithSnapshot(
 	top ValidatorTopology,
 	broker Broker,
 	cmd Commander,
-	tt TimeTicker,
 ) *SnapshotNotary {
 	log = log.Named(namedLogger)
 	return &SnapshotNotary{
-		Notary:  New(log, cfg, top, broker, cmd, tt),
+		Notary:  New(log, cfg, top, broker, cmd),
 		changed: true,
 	}
 }
@@ -75,7 +86,7 @@ func (n *SnapshotNotary) serialise(k string) ([]byte, error) {
 		return nil, types.ErrSnapshotKeyDoesNotExist
 	}
 
-	if !n.changed {
+	if !n.HasChanged(k) {
 		return n.serialised, nil
 	}
 
@@ -102,7 +113,8 @@ func (n *SnapshotNotary) Stopped() bool {
 }
 
 func (n *SnapshotNotary) HasChanged(k string) bool {
-	return n.changed
+	return true
+	// return n.changed
 }
 
 func (n *SnapshotNotary) GetState(k string) ([]byte, []types.StateProvider, error) {
@@ -161,6 +173,14 @@ func (n *SnapshotNotary) serialiseNotary() ([]byte, error) {
 	}
 
 	sort.SliceStable(sigs, func(i, j int) bool {
+		// sigs could be "" so we need to sort on ID as well
+		switch strings.Compare(sigs[i].ID, sigs[j].ID) {
+		case -1:
+			return true
+		case 1:
+			return false
+		}
+
 		return sigs[i].Sig < sigs[j].Sig
 	})
 

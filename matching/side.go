@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package matching
 
 import (
@@ -162,10 +174,10 @@ func (s *OrderBookSide) amendOrder(orderAmend *types.Order) (uint64, error) {
 	return reduceBy, nil
 }
 
-// ExtractOrders removes the orders from the top of the book until the volume amount is hit.
-func (s *OrderBookSide) ExtractOrders(price *num.Uint, volume uint64) []*types.Order {
+// ExtractOrders extracts the orders from the top of the book until the volume amount is hit,
+// if removeOrders is set to True then the relevant orders also get removed.
+func (s *OrderBookSide) ExtractOrders(price *num.Uint, volume uint64, removeOrders bool) []*types.Order {
 	extractedOrders := []*types.Order{}
-
 	var (
 		totalVolume uint64
 		checkPrice  func(*num.Uint) bool
@@ -183,7 +195,7 @@ func (s *OrderBookSide) ExtractOrders(price *num.Uint, volume uint64) []*types.O
 			// Check the price is good and the total volume will not be exceeded
 			if checkPrice(order.Price) && totalVolume+order.Remaining <= volume {
 				// Remove this order
-				extractedOrders = append(extractedOrders, order)
+				extractedOrders = append(extractedOrders, order.Clone())
 				totalVolume += order.Remaining
 				// Remove the order from the price level
 				toRemove++
@@ -199,14 +211,16 @@ func (s *OrderBookSide) ExtractOrders(price *num.Uint, volume uint64) []*types.O
 				break
 			}
 		}
-		for toRemove > 0 {
-			toRemove--
-			pricelevel.removeOrder(0)
-		}
-		// Erase this price level which will be at the end of the slice
-		if len(pricelevel.orders) == 0 {
-			s.levels[i] = nil
-			s.levels = s.levels[:len(s.levels)-1]
+
+		if removeOrders {
+			for ; toRemove > 0; toRemove-- {
+				pricelevel.removeOrder(0)
+			}
+			// Erase this price level which will be at the end of the slice
+			if len(pricelevel.orders) == 0 {
+				s.levels[i] = nil
+				s.levels = s.levels[:len(s.levels)-1]
+			}
 		}
 
 		// Check if we have done enough
@@ -321,7 +335,9 @@ func (s *OrderBookSide) GetVolume(price *num.Uint) (uint64, error) {
 	return priceLevel.volume, nil
 }
 
-func (s *OrderBookSide) fakeUncross(agg *types.Order) ([]*types.Trade, error) {
+// fakeUncross returns hypotehetical trades if the order book side were to be uncrossed with the agg order supplied,
+// checkWashTrades checks non-FOK orders for wash trades if set to true (FOK orders are always checked for wash trades).
+func (s *OrderBookSide) fakeUncross(agg *types.Order, checkWashTrades bool) ([]*types.Trade, error) {
 	var (
 		trades            []*types.Trade
 		totalVolumeToFill uint64
@@ -384,7 +400,7 @@ func (s *OrderBookSide) fakeUncross(agg *types.Order) ([]*types.Trade, error) {
 		if agg.Type != types.OrderTypeMarket && checkPrice(s.levels[idx].price) {
 			break
 		}
-		fake, ntrades, err = s.levels[idx].fakeUncross(fake)
+		fake, ntrades, err = s.levels[idx].fakeUncross(fake, checkWashTrades)
 		trades = append(trades, ntrades...)
 		// break if a wash trade is detected
 		if err != nil && err == ErrWashTrade {
@@ -394,9 +410,75 @@ func (s *OrderBookSide) fakeUncross(agg *types.Order) ([]*types.Trade, error) {
 		idx--
 	}
 
+	return trades, err
+}
+
+// fakeUncrossAuction returns hypotehetical trades if the order book side were to be uncrossed with the agg orders supplied, wash trades are allowed.
+func (s *OrderBookSide) fakeUncrossAuction(orders []*types.Order) ([]*types.Trade, error) {
+	// in here we iterate from the end, as it's easier to remove the
+	// price levels from the back of the slice instead of from the front
+	// also it will allow us to reduce allocations
+	nOrders := len(orders)
+	if nOrders == 0 {
+		return []*types.Trade{}, nil
+	}
+
+	checkPrice := func(levelPrice *num.Uint, order *types.Order) bool {
+		if order.Side == types.SideBuy {
+			return levelPrice.GT(order.Price)
+		}
+		return levelPrice.LT(order.Price)
+	}
+
+	var (
+		ntrades []*types.Trade
+		iOrder  = 0
+		trades  []*types.Trade
+		lvl     *PriceLevel
+		err     error
+	)
+
+	fake := orders[iOrder].Clone()
+	for idx := len(s.levels) - 1; idx >= 0; idx-- {
+		// clone price level
+		lvl = clonePriceLevel(s.levels[idx])
+		for lvl.volume > 0 {
+			// not a market order && buy side price is too low => continue
+			if fake.Type != types.OrderTypeMarket && checkPrice(lvl.price, fake) {
+				continue
+			}
+
+			_, ntrades, _, err = lvl.uncross(fake, false)
+			if err != nil {
+				return nil, err
+			}
+			trades = append(trades, ntrades...)
+			if fake.Remaining == 0 {
+				iOrder++
+				if iOrder >= nOrders {
+					return trades, nil
+				}
+				fake = orders[iOrder].Clone()
+			}
+		}
+	}
 	return trades, nil
 }
 
+func clonePriceLevel(lvl *PriceLevel) *PriceLevel {
+	orders := make([]*types.Order, 0, len(lvl.orders))
+	for _, o := range lvl.orders {
+		orders = append(orders, o.Clone())
+	}
+	return &PriceLevel{
+		price:  lvl.price.Clone(),
+		orders: orders,
+		volume: lvl.volume,
+	}
+}
+
+// uncross returns trades after order book side gets uncrossed with the agg order supplied,
+// checkWashTrades checks non-FOK orders for wash trades if set to true (FOK orders are always checked for wash trades).
 func (s *OrderBookSide) uncross(agg *types.Order, checkWashTrades bool) ([]*types.Trade, []*types.Order, *num.Uint, error) {
 	var (
 		trades            []*types.Trade

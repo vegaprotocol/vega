@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package staking
 
 import (
@@ -28,6 +40,7 @@ type stakeVerifierSnapshotState struct {
 }
 
 func (s *StakeVerifier) serialisePendingSD() ([]byte, error) {
+	s.log.Info("serialising pending SD", logging.Int("n", len(s.pendingSDs)))
 	deposited := make([]*types.StakeDeposited, 0, len(s.pendingSDs))
 
 	for _, p := range s.pendingSDs {
@@ -43,6 +56,7 @@ func (s *StakeVerifier) serialisePendingSD() ([]byte, error) {
 }
 
 func (s *StakeVerifier) serialisePendingSR() ([]byte, error) {
+	s.log.Info("serialising pending SR", logging.Int("n", len(s.pendingSRs)))
 	removed := make([]*types.StakeRemoved, 0, len(s.pendingSRs))
 
 	for _, p := range s.pendingSRs {
@@ -54,6 +68,7 @@ func (s *StakeVerifier) serialisePendingSR() ([]byte, error) {
 			StakeVerifierRemoved: removed,
 		},
 	}
+
 	return proto.Marshal(pl.IntoProto())
 }
 
@@ -98,14 +113,15 @@ func (s *StakeVerifier) Stopped() bool {
 }
 
 func (s *StakeVerifier) HasChanged(k string) bool {
-	switch k {
-	case depositedKey:
-		return s.svss.changedDeposited
-	case removedKey:
-		return s.svss.changedRemoved
-	default:
-		return false
-	}
+	// switch k {
+	// case depositedKey:
+	// 	return s.svss.changedDeposited
+	// case removedKey:
+	// 	return s.svss.changedRemoved
+	// default:
+	// 	return false
+	// }
+	return true
 }
 
 func (s *StakeVerifier) GetState(k string) ([]byte, []types.StateProvider, error) {
@@ -154,7 +170,28 @@ func (s *StakeVerifier) restorePendingSD(ctx context.Context, deposited []*types
 	s.svss.changedDeposited = false
 	s.svss.serialisedDeposited, err = proto.Marshal(p.IntoProto())
 	s.broker.SendBatch(evts)
+
+	// now populate "seen" map with finalised events from accounting
+	for _, acc := range s.accs.hashableAccounts {
+		for _, evt := range acc.Events {
+			sl := types.StakeLinkingFromProto(evt.IntoProto())
+			if !s.ensureNotDuplicate(sl.ID, sl.Hash()) {
+				s.log.Panic("finalised events unexpectedly pre-populated when restoring from snapshot")
+			}
+		}
+	}
+
 	return err
+}
+
+func (s *StakeVerifier) OnStateLoaded(ctx context.Context) error {
+	// tell the internal EEF where it got up to so we do not resend events we're already seen
+	lastBlockSeen := s.getLastBlockSeen()
+	if lastBlockSeen == 0 {
+		lastBlockSeen = s.accs.getLastBlockSeen()
+	}
+	s.ethEventSource.UpdateStakingStartingBlock(lastBlockSeen)
+	return nil
 }
 
 func (s *StakeVerifier) restorePendingSR(ctx context.Context, removed []*types.StakeRemoved, p *types.Payload) error {

@@ -17,7 +17,7 @@ Feature: Fees when amend trades
       | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 2                | fees-config-1 | price-monitoring | default-eth-for-future |
 
   @Fees
-  Scenario: Testing fees in continuous trading with one trade and no liquidity providers
+  Scenario: Testing fees in continuous trading with one trade
     # setup accounts
     Given the parties deposit on asset's general account the following amount:
       | party    | asset | amount    |
@@ -155,14 +155,19 @@ Feature: Fees when amend trades
       | aux2     | ETH   | 100000000 |
       | trader3a | ETH   | 10000     |
       | trader3b | ETH   | 10000     |
-      | trader4  | ETH   | 1250      |
+      | trader4  | ETH   | 1550      |
+      | lpprov   | ETH   | 100000000 |
 
-    And the parties place the following orders:
+    When the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     |
       | aux1  | ETH/DEC21 | buy  | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
       | aux2  | ETH/DEC21 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
       | aux1  | ETH/DEC21 | buy  | 1      | 920   | 0                | TYPE_LIMIT | TIF_GTC |
       | aux2  | ETH/DEC21 | sell | 1      | 1080  | 0                | TYPE_LIMIT | TIF_GTC |
+    And the parties submit the following liquidity provision:
+      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
+      | lp1 | lpprov | ETH/DEC21 | 90000             | 0.1 | buy  | BID              | 50         | 100    | submission |
+      | lp1 | lpprov | ETH/DEC21 | 90000             | 0.1 | sell | ASK              | 50         | 100    | submission |
 
     When the opening auction period ends for market "ETH/DEC21"
     Then the market data for the market "ETH/DEC21" should be:
@@ -212,9 +217,9 @@ Feature: Fees when amend trades
     # TODO: Check why margin doesn't go up after the trade WHEN the liquidity provision order gets included (seems to work fine without LP orders) (expecting first commented out values) but getting second value in other cases
     And the parties should have the following account balances:
       | party    | asset | market id | margin | general |
-      | trader3a | ETH   | ETH/DEC21 | 678    | 9333    |
+      | trader3a | ETH   | ETH/DEC21 | 699    | 9312    |
       | trader3b | ETH   | ETH/DEC21 | 339    | 9667    |
-      | trader4  | ETH   | ETH/DEC21 | 621    | 604     |
+      | trader4  | ETH   | ETH/DEC21 | 690    | 533     |
 
    # Placing second set of orders
     When the parties place the following orders:
@@ -224,8 +229,8 @@ Feature: Fees when amend trades
 
     Then the parties should have the following account balances:
       | party    | asset | market id | margin | general |
-      | trader3a | ETH   | ETH/DEC21 | 1159   | 8852    |
-      | trader4  | ETH   | ETH/DEC21 | 1102   | 123     |
+      | trader3a | ETH   | ETH/DEC21 | 1183   | 8828    |
+      | trader4  | ETH   | ETH/DEC21 | 1171   | 52      |
 
       # reducing size
     And the parties amend the following orders:
@@ -251,5 +256,5 @@ Feature: Fees when amend trades
 
     And the parties should have the following account balances:
       | party    | asset | market id | margin | general |
-      | trader3a | ETH   | ETH/DEC21 | 1344   | 8673    |
-      | trader4  | ETH   | ETH/DEC21 | 1108   | 109     |
+      | trader3a | ETH   | ETH/DEC21 | 1416   | 8601    |
+      | trader4  | ETH   | ETH/DEC21 | 1015   | 0       |

@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package governance_test
 
 import (
@@ -34,7 +46,7 @@ func testSubmittingProposalForNewMarketSucceeds(t *testing.T) {
 
 	// given
 	party := eng.newValidParty("a-valid-party", 123456789)
-	proposal := eng.newProposalForNewMarket(party.Id, time.Now())
+	proposal := eng.newProposalForNewMarket(party.Id, eng.tsvc.GetTimeNow())
 
 	// setup
 	eng.ensureAllAssetEnabled(t)
@@ -57,7 +69,7 @@ func testSubmittingDuplicatedProposalForNewMarketFails(t *testing.T) {
 
 	// given
 	party := vgrand.RandomStr(5)
-	proposal := eng.newProposalForNewMarket(party, time.Now())
+	proposal := eng.newProposalForNewMarket(party, eng.tsvc.GetTimeNow())
 
 	// setup
 	eng.ensureTokenBalanceForParty(t, party, 1000)
@@ -100,11 +112,10 @@ func testSubmittingProposalForNewMarketWithBadRiskParameterFails(t *testing.T) {
 	defer eng.ctrl.Finish()
 
 	// given
-	now := time.Now()
 	party := eng.newValidParty("a-valid-party", 1)
 	eng.ensureAllAssetEnabled(t)
 
-	proposal := eng.newProposalForNewMarket(party.Id, now)
+	proposal := eng.newProposalForNewMarket(party.Id, eng.tsvc.GetTimeNow())
 	proposal.Terms.GetNewMarket().Changes.RiskParameters = &types.NewMarketConfigurationLogNormal{
 		LogNormal: &types.LogNormalRiskModel{
 			Params: nil, // it's nil by zero value, but eh, let's show that's what we test
@@ -126,20 +137,21 @@ func testSubmittingProposalForNewMarketWithoutValidCommitmentFails(t *testing.T)
 	eng := getTestEngine(t)
 	defer eng.ctrl.Finish()
 
-	now := time.Now()
 	party := vgrand.RandomStr(5)
-	proposal := eng.newProposalForNewMarket(party, now)
+	proposal := eng.newProposalForNewMarket(party, eng.tsvc.GetTimeNow())
 
 	eng.ensureAllAssetEnabled(t)
 
-	// first we test with no commitment
+	// first we test with no commitment - this should not return an error
 	proposal.Terms.GetNewMarket().LiquidityCommitment = nil
 	eng.ensureTokenBalanceForParty(t, party, 1)
-	eng.expectRejectedProposalEvent(t, party, proposal.ID, types.ProposalErrorMarketMissingLiquidityCommitment)
+	eng.expectOpenProposalEvent(t, party, proposal.ID)
 	_, err := eng.submitProposal(t, proposal)
-	require.Error(t, err)
-	assert.Contains(t, err.Error(), "market proposal is missing liquidity commitment")
+	require.NoError(t, err)
+	// assert.Contains(t, err.Error(), "market proposal is missing liquidity commitment")
 
+	// ensure unique ID
+	proposal.ID += "2"
 	// Then no amount
 	proposal.Terms.GetNewMarket().LiquidityCommitment = newMarketLiquidityCommitment()
 	proposal.Terms.GetNewMarket().LiquidityCommitment.CommitmentAmount = num.Zero()
@@ -208,7 +220,7 @@ func testRejectingProposalForNewMarketSucceeds(t *testing.T) {
 
 	// given
 	party := vgrand.RandomStr(5)
-	proposal := eng.newProposalForNewMarket(party, time.Now())
+	proposal := eng.newProposalForNewMarket(party, eng.tsvc.GetTimeNow())
 
 	// setup
 	eng.ensureAllAssetEnabled(t)
@@ -247,7 +259,7 @@ func testVotingForNewMarketProposalSucceeds(t *testing.T) {
 
 	// given
 	proposer := vgrand.RandomStr(5)
-	proposal := eng.newProposalForNewMarket(proposer, time.Now())
+	proposal := eng.newProposalForNewMarket(proposer, eng.tsvc.GetTimeNow())
 
 	// setup
 	eng.ensureAllAssetEnabled(t)
@@ -284,7 +296,7 @@ func testVotingWithMajorityOfYesMakesNewMarketProposalPassed(t *testing.T) {
 
 	// when
 	proposer := vgrand.RandomStr(5)
-	proposal := eng.newProposalForNewMarket(proposer, time.Now())
+	proposal := eng.newProposalForNewMarket(proposer, eng.tsvc.GetTimeNow())
 
 	// setup
 	eng.ensureStakingAssetTotalSupply(t, 9)
@@ -326,7 +338,7 @@ func testVotingWithMajorityOfYesMakesNewMarketProposalPassed(t *testing.T) {
 	eng.expectTotalGovernanceTokenFromVoteEvents(t, "1", "7")
 
 	// when
-	eng.OnChainTimeUpdate(context.Background(), afterClosing)
+	eng.OnTick(context.Background(), afterClosing)
 
 	// given
 	voter2 := vgrand.RandomStr(5)
@@ -343,7 +355,7 @@ func testVotingWithMajorityOfYesMakesNewMarketProposalPassed(t *testing.T) {
 
 	// when
 	// no calculations, no state change, simply removed from governance engine
-	toBeEnacted, _ := eng.OnChainTimeUpdate(context.Background(), afterEnactment)
+	toBeEnacted, _ := eng.OnTick(context.Background(), afterEnactment)
 
 	// then
 	require.Len(t, toBeEnacted, 1)
@@ -362,9 +374,8 @@ func testVotingWithMajorityOfNoMakesNewMarketProposalDeclined(t *testing.T) {
 	defer eng.ctrl.Finish()
 
 	// given
-	now := time.Now()
 	proposer := vgrand.RandomStr(5)
-	proposal := eng.newProposalForNewMarket(proposer, now)
+	proposal := eng.newProposalForNewMarket(proposer, eng.tsvc.GetTimeNow())
 
 	// setup
 	eng.ensureAllAssetEnabled(t)
@@ -418,7 +429,7 @@ func testVotingWithMajorityOfNoMakesNewMarketProposalDeclined(t *testing.T) {
 	eng.expectTotalGovernanceTokenFromVoteEvents(t, "1", "100")
 
 	// when
-	_, voteClosed := eng.OnChainTimeUpdate(context.Background(), afterClosing)
+	_, voteClosed := eng.OnTick(context.Background(), afterClosing)
 
 	// then
 	require.Len(t, voteClosed, 1)
@@ -430,7 +441,7 @@ func testVotingWithMajorityOfNoMakesNewMarketProposalDeclined(t *testing.T) {
 	afterEnactment := time.Unix(proposal.Terms.EnactmentTimestamp, 0).Add(time.Second)
 
 	// when
-	toBeEnacted, _ := eng.OnChainTimeUpdate(context.Background(), afterEnactment)
+	toBeEnacted, _ := eng.OnTick(context.Background(), afterEnactment)
 
 	// then
 	assert.Empty(t, toBeEnacted)
@@ -441,9 +452,8 @@ func testVotingWithInsufficientParticipationMakesNewMarketProposalDeclined(t *te
 	defer eng.ctrl.Finish()
 
 	// given
-	now := time.Now()
 	proposer := vgrand.RandomStr(5)
-	proposal := eng.newProposalForNewMarket(proposer, now)
+	proposal := eng.newProposalForNewMarket(proposer, eng.tsvc.GetTimeNow())
 
 	// setup
 	eng.ensureAllAssetEnabled(t)
@@ -485,7 +495,7 @@ func testVotingWithInsufficientParticipationMakesNewMarketProposalDeclined(t *te
 	eng.expectTotalGovernanceTokenFromVoteEvents(t, "1", "100")
 
 	// when
-	_, voteClosed := eng.OnChainTimeUpdate(context.Background(), afterClosing)
+	_, voteClosed := eng.OnTick(context.Background(), afterClosing)
 
 	// then
 	require.Len(t, voteClosed, 1)
@@ -497,7 +507,7 @@ func testVotingWithInsufficientParticipationMakesNewMarketProposalDeclined(t *te
 	afterEnactment := time.Unix(proposal.Terms.EnactmentTimestamp, 0).Add(time.Second)
 
 	// when
-	toBeEnacted, _ := eng.OnChainTimeUpdate(context.Background(), afterEnactment)
+	toBeEnacted, _ := eng.OnTick(context.Background(), afterEnactment)
 
 	// then
 	assert.Empty(t, toBeEnacted)

@@ -19,6 +19,8 @@ Feature: Trader below initial margin, but above maintenance can submit an order 
       | party5    | ETH   | 10000000000000 |
       | auxiliary | ETH   | 100000000000   |
       | aux2      | ETH   | 100000000000   |
+      | auxiliary | ETH   | 100000000000   |
+      | lpprov    | ETH   | 10000000000000 |
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     Then the parties place the following orders:
@@ -27,6 +29,10 @@ Feature: Trader below initial margin, but above maintenance can submit an order 
       | auxiliary | ETH/DEC20 | sell | 1      | 200   | 0                | TYPE_LIMIT | TIF_GTC |
       | aux2      | ETH/DEC20 | buy  | 1      | 100   | 0                | TYPE_LIMIT | TIF_GTC |
       | auxiliary | ETH/DEC20 | sell | 1      | 100   | 0                | TYPE_LIMIT | TIF_GTC |
+    And the parties submit the following liquidity provision:
+      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
+      | lp1 | lpprov | ETH/DEC20 | 90000             | 0.1 | buy  | BID              | 50         | 100    | submission |
+      | lp1 | lpprov | ETH/DEC20 | 90000             | 0.1 | sell | ASK              | 50         | 100    | submission |
     Then the opening auction period ends for market "ETH/DEC20"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
     And the mark price should be "100" for the market "ETH/DEC20"
@@ -47,7 +53,7 @@ Feature: Trader below initial margin, but above maintenance can submit an order 
     Then the parties should have the following account balances:
       | party  | asset | market id | margin | general       |
       | party4 | ETH   | ETH/DEC20 | 132    | 9999999999868 |
-      | party5 | ETH   | ETH/DEC20 | 1320   | 9999999998680 |
+      | party5 | ETH   | ETH/DEC20 | 1320   | 9999999998580 |
       | party3 | ETH   | ETH/DEC20 | 1220   | 0             |
       # Value before uint stuff
       # | party4 | ETH   | ETH/DEC20 | 133    | 9999999999867 |
@@ -70,4 +76,4 @@ Feature: Trader below initial margin, but above maintenance can submit an order 
     ## as expected, but was able to close their position
     Then the parties should have the following account balances:
       | party  | asset | market id | margin | general |
-      | party3 | ETH   | ETH/DEC20 | 99     | 971     |
+      | party3 | ETH   | ETH/DEC20 | 99     | 913     |

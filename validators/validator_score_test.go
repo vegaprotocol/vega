@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package validators
 
 import (
@@ -6,7 +18,7 @@ import (
 	"testing"
 
 	v1 "code.vegaprotocol.io/protos/vega/snapshot/v1"
-	brokerMocks "code.vegaprotocol.io/vega/broker/mocks"
+	bmocks "code.vegaprotocol.io/vega/broker/mocks"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
@@ -464,12 +476,12 @@ func testGetMultisigScore(t *testing.T) {
 	// looking at the top 5 that gives node10 - node6
 	// out of those node 10,9,8,7 are in the multisig set
 	// node 6 is not so it gets a multisig score of 0
-	// all the other nodes are not on the multisig or are not required to be so their multisig score is 0.
-	require.Equal(t, "0", multisigScore["node1"].String())
-	require.Equal(t, "0", multisigScore["node2"].String())
-	require.Equal(t, "0", multisigScore["node3"].String())
-	require.Equal(t, "0", multisigScore["node4"].String())
-	require.Equal(t, "0", multisigScore["node5"].String())
+	// all the other nodes are not required to be so their multisig score is 1.
+	require.Equal(t, "1", multisigScore["node1"].String())
+	require.Equal(t, "1", multisigScore["node2"].String())
+	require.Equal(t, "1", multisigScore["node3"].String())
+	require.Equal(t, "1", multisigScore["node4"].String())
+	require.Equal(t, "1", multisigScore["node5"].String())
 	require.Equal(t, "0", multisigScore["node6"].String())
 	require.Equal(t, "1", multisigScore["node7"].String())
 	require.Equal(t, "1", multisigScore["node8"].String())
@@ -621,14 +633,14 @@ func testCalculateTMScores(t *testing.T) {
 	// sorted order is:
 	// node5, node4, node3, node10, node7, node9, node2, node6, node8, node1
 	// the net param is set to 7 so we're looking at the top 7 scores
-	require.Equal(t, "0", scoreData.MultisigScores["node1"].String())
+	require.Equal(t, "1", scoreData.MultisigScores["node1"].String())
 	require.Equal(t, "1", scoreData.MultisigScores["node2"].String())
 	require.Equal(t, "1", scoreData.MultisigScores["node3"].String())
 	require.Equal(t, "0", scoreData.MultisigScores["node4"].String())
 	require.Equal(t, "1", scoreData.MultisigScores["node5"].String())
-	require.Equal(t, "0", scoreData.MultisigScores["node6"].String())
+	require.Equal(t, "1", scoreData.MultisigScores["node6"].String())
 	require.Equal(t, "1", scoreData.MultisigScores["node7"].String())
-	require.Equal(t, "0", scoreData.MultisigScores["node8"].String())
+	require.Equal(t, "1", scoreData.MultisigScores["node8"].String())
 	require.Equal(t, "1", scoreData.MultisigScores["node9"].String())
 	require.Equal(t, "0", scoreData.MultisigScores["node10"].String())
 
@@ -638,9 +650,9 @@ func testCalculateTMScores(t *testing.T) {
 	require.Equal(t, "0.07272727273", scoreData.ValScores["node3"].StringFixed(11))
 	require.Equal(t, "0", scoreData.ValScores["node4"].String())
 	require.Equal(t, "0.14545454545", scoreData.ValScores["node5"].StringFixed(11))
-	require.Equal(t, "0", scoreData.ValScores["node6"].String())
+	require.Equal(t, "0.03272727272727273", scoreData.ValScores["node6"].String())
 	require.Equal(t, "0.07", scoreData.ValScores["node7"].StringFixed(2))
-	require.Equal(t, "0", scoreData.ValScores["node8"].String())
+	require.Equal(t, "0.02727272727272727", scoreData.ValScores["node8"].String())
 	require.Equal(t, "0.05727272727", scoreData.ValScores["node9"].StringFixed(11))
 	require.Equal(t, "0", scoreData.ValScores["node10"].String())
 
@@ -650,11 +662,11 @@ func testCalculateTMScores(t *testing.T) {
 	// node5 = 0.14545454545 / 0.3818181818 = 0.380952381
 	// node7 = 0.07 / 0.3818181818 = 0.1833333333
 	// node9 = 0.05727272727 / 0.3818181818 = 0.15
-	require.Equal(t, "0.09523809524", scoreData.NormalisedScores["node2"].StringFixed(11))
-	require.Equal(t, "0.19047619048", scoreData.NormalisedScores["node3"].StringFixed(11))
-	require.Equal(t, "0.38095238095", scoreData.NormalisedScores["node5"].StringFixed(11))
-	require.Equal(t, "0.18333333333", scoreData.NormalisedScores["node7"].StringFixed(11))
-	require.Equal(t, "0.15", scoreData.NormalisedScores["node9"].StringFixed(2))
+	require.Equal(t, "0.08230452675", scoreData.NormalisedScores["node2"].StringFixed(11))
+	require.Equal(t, "0.16460905350", scoreData.NormalisedScores["node3"].StringFixed(11))
+	require.Equal(t, "0.32921810700", scoreData.NormalisedScores["node5"].StringFixed(11))
+	require.Equal(t, "0.15843621399", scoreData.NormalisedScores["node7"].StringFixed(11))
+	require.Equal(t, "0.13", scoreData.NormalisedScores["node9"].StringFixed(2))
 
 	totalNormScore := num.DecimalZero()
 	for _, d := range scoreData.NormalisedScores {
@@ -900,7 +912,7 @@ func testGetRewardsScores(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	broker := brokerMocks.NewMockBroker(ctrl)
+	broker := bmocks.NewMockBroker(ctrl)
 	topology.broker = broker
 
 	var bEvents []events.Event
@@ -933,14 +945,14 @@ func testGetRewardsScores(t *testing.T) {
 
 	// tendermint
 	require.Equal(t, "0.00000000000", tmScores.NormalisedScores["node1"].StringFixed(11))
-	require.Equal(t, "0.09523809524", tmScores.NormalisedScores["node2"].StringFixed(11))
-	require.Equal(t, "0.19047619048", tmScores.NormalisedScores["node3"].StringFixed(11))
+	require.Equal(t, "0.08230452675", tmScores.NormalisedScores["node2"].StringFixed(11))
+	require.Equal(t, "0.16460905350", tmScores.NormalisedScores["node3"].StringFixed(11))
 	require.Equal(t, "0.00000000000", tmScores.NormalisedScores["node4"].StringFixed(11))
-	require.Equal(t, "0.38095238095", tmScores.NormalisedScores["node5"].StringFixed(11))
-	require.Equal(t, "0.00000000000", tmScores.NormalisedScores["node6"].StringFixed(11))
-	require.Equal(t, "0.18333333333", tmScores.NormalisedScores["node7"].StringFixed(11))
-	require.Equal(t, "0.00000000000", tmScores.NormalisedScores["node8"].StringFixed(11))
-	require.Equal(t, "0.15", tmScores.NormalisedScores["node9"].StringFixed(2))
+	require.Equal(t, "0.32921810700", tmScores.NormalisedScores["node5"].StringFixed(11))
+	require.Equal(t, "0.07407407407", tmScores.NormalisedScores["node6"].StringFixed(11))
+	require.Equal(t, "0.15843621399", tmScores.NormalisedScores["node7"].StringFixed(11))
+	require.Equal(t, "0.06172839506", tmScores.NormalisedScores["node8"].StringFixed(11))
+	require.Equal(t, "0.13", tmScores.NormalisedScores["node9"].StringFixed(2))
 	require.Equal(t, "0.00000000000", tmScores.NormalisedScores["node10"].StringFixed(11))
 
 	// ersatz
@@ -956,17 +968,16 @@ func testGetRewardsScores(t *testing.T) {
 	require.Equal(t, "0.1469387755", ezScores.NormalisedScores["node20"].StringFixed(10))
 
 	require.Equal(t, 20, len(bEvents))
-	verifyEvent(t, events.NewValidatorScore(context.Background(), "node1", "1", num.DecimalZero(), num.DecimalZero(), num.MustDecimalFromString("0.0909090909090909"), num.DecimalZero(), num.DecimalZero(), "tendermint"), bEvents[0].(*events.ValidatorScore))
+	verifyEvent(t, events.NewValidatorScore(context.Background(), "node1", "1", num.DecimalZero(), num.DecimalZero(), num.MustDecimalFromString("0.0909090909090909"), num.DecimalZero(), num.DecimalFromFloat(1), "tendermint"), bEvents[0].(*events.ValidatorScore))
 	verifyEvent(t, events.NewValidatorScore(context.Background(), "node10", "1", num.DecimalZero(), num.DecimalZero(), num.MustDecimalFromString("0.0727272727272727"), num.DecimalFromFloat(1), num.DecimalZero(), "tendermint"), bEvents[1].(*events.ValidatorScore))
-	verifyEvent(t, events.NewValidatorScore(context.Background(), "node2", "1", num.MustDecimalFromString("0.0363636363636364"), num.MustDecimalFromString("0.0952380952380953"), num.MustDecimalFromString("0.0454545454545455"), num.DecimalFromFloat(0.8), num.DecimalFromFloat(1), "tendermint"), bEvents[2].(*events.ValidatorScore))
-	verifyEvent(t, events.NewValidatorScore(context.Background(), "node3", "1", num.MustDecimalFromString("0.07272727272727272"), num.MustDecimalFromString("0.1904761904761905"), num.MustDecimalFromString("0.0909090909090909"), num.DecimalFromFloat(0.8), num.DecimalFromFloat(1), "tendermint"), bEvents[3].(*events.ValidatorScore))
+	verifyEvent(t, events.NewValidatorScore(context.Background(), "node2", "1", num.MustDecimalFromString("0.0363636363636364"), num.MustDecimalFromString("0.0823045267489713"), num.MustDecimalFromString("0.0454545454545455"), num.DecimalFromFloat(0.8), num.DecimalFromFloat(1), "tendermint"), bEvents[2].(*events.ValidatorScore))
+	verifyEvent(t, events.NewValidatorScore(context.Background(), "node3", "1", num.MustDecimalFromString("0.07272727272727272"), num.MustDecimalFromString("0.1646090534979424"), num.MustDecimalFromString("0.0909090909090909"), num.DecimalFromFloat(0.8), num.DecimalFromFloat(1), "tendermint"), bEvents[3].(*events.ValidatorScore))
 	verifyEvent(t, events.NewValidatorScore(context.Background(), "node4", "1", num.DecimalZero(), num.DecimalZero(), num.MustDecimalFromString("0.1363636363636364"), num.DecimalFromFloat(0.8), num.DecimalFromFloat(0), "tendermint"), bEvents[4].(*events.ValidatorScore))
-	verifyEvent(t, events.NewValidatorScore(context.Background(), "node5", "1", num.MustDecimalFromString("0.14545454545454544"), num.MustDecimalFromString("0.3809523809523809"), num.MustDecimalFromString("0.1818181818181818"), num.DecimalFromFloat(0.8), num.DecimalFromFloat(1), "tendermint"), bEvents[5].(*events.ValidatorScore))
-	verifyEvent(t, events.NewValidatorScore(context.Background(), "node6", "1", num.DecimalZero(), num.DecimalZero(), num.MustDecimalFromString("0.1090909090909091"), num.DecimalFromFloat(0.3), num.DecimalFromFloat(0), "tendermint"), bEvents[6].(*events.ValidatorScore))
-	verifyEvent(t, events.NewValidatorScore(context.Background(), "node7", "1", num.MustDecimalFromString("0.07"), num.MustDecimalFromString("0.1833333333333333"), num.MustDecimalFromString("0.1"), num.DecimalFromFloat(0.7), num.DecimalFromFloat(1), "tendermint"), bEvents[7].(*events.ValidatorScore))
-	verifyEvent(t, events.NewValidatorScore(context.Background(), "node8", "1", num.DecimalZero(), num.DecimalZero(), num.MustDecimalFromString("0.0909090909090909"), num.DecimalFromFloat(0.3), num.DecimalFromFloat(0), "tendermint"), bEvents[8].(*events.ValidatorScore))
-	verifyEvent(t, events.NewValidatorScore(context.Background(), "node9", "1", num.MustDecimalFromString("0.05727272727272726"), num.MustDecimalFromString("0.15"), num.MustDecimalFromString("0.0818181818181818"), num.DecimalFromFloat(0.7), num.DecimalFromFloat(1), "tendermint"), bEvents[9].(*events.ValidatorScore))
-
+	verifyEvent(t, events.NewValidatorScore(context.Background(), "node5", "1", num.MustDecimalFromString("0.14545454545454544"), num.MustDecimalFromString("0.3292181069958847"), num.MustDecimalFromString("0.1818181818181818"), num.DecimalFromFloat(0.8), num.DecimalFromFloat(1), "tendermint"), bEvents[5].(*events.ValidatorScore))
+	verifyEvent(t, events.NewValidatorScore(context.Background(), "node6", "1", num.MustDecimalFromString("0.03272727272727273"), num.MustDecimalFromString("0.0740740740740741"), num.MustDecimalFromString("0.1090909090909091"), num.DecimalFromFloat(0.3), num.DecimalFromFloat(1), "tendermint"), bEvents[6].(*events.ValidatorScore))
+	verifyEvent(t, events.NewValidatorScore(context.Background(), "node7", "1", num.MustDecimalFromString("0.07"), num.MustDecimalFromString("0.1584362139917695"), num.MustDecimalFromString("0.1"), num.DecimalFromFloat(0.7), num.DecimalFromFloat(1), "tendermint"), bEvents[7].(*events.ValidatorScore))
+	verifyEvent(t, events.NewValidatorScore(context.Background(), "node8", "1", num.MustDecimalFromString("0.02727272727272727"), num.MustDecimalFromString("0.0617283950617284"), num.MustDecimalFromString("0.0909090909090909"), num.DecimalFromFloat(0.3), num.DecimalFromFloat(1), "tendermint"), bEvents[8].(*events.ValidatorScore))
+	verifyEvent(t, events.NewValidatorScore(context.Background(), "node9", "1", num.MustDecimalFromString("0.05727272727272726"), num.MustDecimalFromString("0.1296296296296296"), num.MustDecimalFromString("0.0818181818181818"), num.DecimalFromFloat(0.7), num.DecimalFromFloat(1), "tendermint"), bEvents[9].(*events.ValidatorScore))
 	verifyEvent(t, events.NewValidatorScore(context.Background(), "node11", "1", num.DecimalZero(), num.DecimalZero(), num.MustDecimalFromString("0.0909090909090909"), num.DecimalZero(), num.DecimalFromFloat(1), "ersatz"), bEvents[10].(*events.ValidatorScore))
 	verifyEvent(t, events.NewValidatorScore(context.Background(), "node12", "1", num.MustDecimalFromString("0.00454545454545455"), num.MustDecimalFromString("0.0102040816326531"), num.MustDecimalFromString("0.0454545454545455"), num.DecimalFromFloat(0.1), num.DecimalFromFloat(1), "ersatz"), bEvents[11].(*events.ValidatorScore))
 	verifyEvent(t, events.NewValidatorScore(context.Background(), "node13", "1", num.MustDecimalFromString("0.01818181818181818"), num.MustDecimalFromString("0.0408163265306122"), num.MustDecimalFromString("0.0909090909090909"), num.DecimalFromFloat(0.2), num.DecimalFromFloat(1), "ersatz"), bEvents[12].(*events.ValidatorScore))

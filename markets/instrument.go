@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package markets
 
 import (
@@ -37,7 +49,7 @@ func NewTradableInstrument(ctx context.Context, log *logging.Logger, pti *types.
 }
 
 func (i *TradableInstrument) UpdateInstrument(ctx context.Context, log *logging.Logger, ti *types.TradableInstrument, oe products.OracleEngine) error {
-	i.Instrument.Unsubscribe(ctx, oe)
+	i.Instrument.Unsubscribe(ctx)
 
 	instrument, err := NewInstrument(ctx, log, ti.Instrument, oe)
 	if err != nil {
@@ -84,6 +96,6 @@ func NewInstrument(ctx context.Context, log *logging.Logger, pi *types.Instrumen
 	}, err
 }
 
-func (i *Instrument) Unsubscribe(ctx context.Context, oe products.OracleEngine) {
-	i.Product.Unsubscribe(ctx, oe)
+func (i *Instrument) Unsubscribe(ctx context.Context) {
+	i.Product.Unsubscribe(ctx)
 }

@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package types_test
 
 import (
@@ -9,19 +21,20 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+var testFilter1 = &v1.Filter{
+	Key: &v1.PropertyKey{
+		Name: "filter1",
+		Type: v1.PropertyKey_TYPE_STRING,
+	},
+	Conditions: []*v1.Condition{
+		{
+			Operator: v1.Condition_OPERATOR_EQUALS,
+			Value:    "true",
+		},
+	},
+}
+
 func TestMarketFromIntoProto(t *testing.T) {
-	filter1 := &v1.Filter{
-		Key: &v1.PropertyKey{
-			Name: "filter1",
-			Type: v1.PropertyKey_TYPE_STRING,
-		},
-		Conditions: []*v1.Condition{
-			{
-				Operator: v1.Condition_OPERATOR_EQUALS,
-				Value:    "true",
-			},
-		},
-	}
 	pMarket := &proto.Market{
 		Id: "foo",
 		TradableInstrument: &proto.TradableInstrument{
@@ -41,7 +54,7 @@ func TestMarketFromIntoProto(t *testing.T) {
 							CreatedAt: 0,
 							UpdatedAt: 1,
 							PubKeys:   []string{"pubkey"},
-							Filters:   []*v1.Filter{filter1},
+							Filters:   []*v1.Filter{testFilter1},
 							Status:    v1.OracleSpec_STATUS_ACTIVE,
 						},
 						OracleSpecForTradingTermination: &v1.OracleSpec{

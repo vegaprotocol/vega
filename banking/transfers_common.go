@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package banking
 
 import (
@@ -24,13 +36,14 @@ func (e *Engine) TransferFunds(
 	ctx context.Context,
 	transfer *types.TransferFunds,
 ) error {
+	now := e.timeService.GetTimeNow()
 	// add timestamps straight away
 	switch transfer.Kind {
 	case types.TransferCommandKindOneOff:
-		transfer.OneOff.Timestamp = e.currentTime
+		transfer.OneOff.Timestamp = now
 		return e.oneOffTransfer(ctx, transfer.OneOff)
 	case types.TransferCommandKindRecurring:
-		transfer.Recurring.Timestamp = e.currentTime
+		transfer.Recurring.Timestamp = now
 		return e.recurringTransfer(ctx, transfer.Recurring)
 	default:
 		return ErrUnsupportedTransferKind
@@ -78,7 +91,8 @@ func (e *Engine) processTransfer(
 	references := []string{reference}
 
 	// does the transfer needs to be finalized now?
-	if oneoff == nil || (oneoff.DeliverOn == nil || oneoff.DeliverOn.Before(e.currentTime)) {
+	now := e.timeService.GetTimeNow()
+	if oneoff == nil || (oneoff.DeliverOn == nil || oneoff.DeliverOn.Before(now)) {
 		transfers = append(transfers, toTransfer)
 		accountTypes = append(accountTypes, toAcc)
 		references = append(references, reference)

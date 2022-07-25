@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package execution
 
 import (
@@ -35,7 +47,7 @@ func NewMarketFromSnapshot(
 	liquidityConfig liquidity.Config,
 	collateralEngine MarketCollateral,
 	oracleEngine products.OracleEngine,
-	now time.Time,
+	timeService TimeService,
 	broker Broker,
 	stateVarEngine StateVarEngine,
 	assetDetails *assets.Asset,
@@ -67,8 +79,8 @@ func NewMarketFromSnapshot(
 		tradableInstrument.RiskModel,
 		book,
 		as,
+		timeService,
 		broker,
-		now.UnixNano(),
 		mkt.ID,
 		asset,
 		stateVarEngine,
@@ -82,6 +94,7 @@ func NewMarketFromSnapshot(
 		settlementConfig,
 		tradableInstrument.Instrument.Product,
 		mkt.ID,
+		timeService,
 		broker,
 		positionFactor,
 	)
@@ -103,16 +116,14 @@ func NewMarketFromSnapshot(
 	priceFactor := num.Zero().Exp(num.NewUint(10), num.NewUint(exp))
 	lMonitor := lmon.NewMonitor(tsCalc, mkt.LiquidityMonitoringParameters)
 
-	liqEngine := liquidity.NewSnapshotEngine(liquidityConfig, log, broker, tradableInstrument.RiskModel, pMonitor, asset, mkt.ID, stateVarEngine, mkt.TickSize(), priceFactor.Clone(), positionFactor)
-	// call on chain time update straight away, so
-	// the time in the engine is being updated at creation
-	liqEngine.OnChainTimeUpdate(ctx, now)
+	liqEngine := liquidity.NewSnapshotEngine(liquidityConfig, log, timeService, broker, tradableInstrument.RiskModel, pMonitor, asset, mkt.ID, stateVarEngine, mkt.TickSize(), priceFactor.Clone(), positionFactor)
 
+	now := timeService.GetTimeNow()
 	market := &Market{
 		log:                        log,
 		mkt:                        mkt,
 		closingAt:                  time.Unix(0, mkt.MarketTimestamps.Close),
-		currentTime:                now,
+		timeService:                timeService,
 		matching:                   book,
 		tradableInstrument:         tradableInstrument,
 		risk:                       riskEngine,
@@ -122,13 +133,13 @@ func NewMarketFromSnapshot(
 		broker:                     broker,
 		fee:                        feeEngine,
 		liquidity:                  liqEngine,
-		parties:                    map[string]struct{}{}, // parties will be restored on chain time update
+		parties:                    map[string]struct{}{}, // parties will be restored on PostRestore
 		lMonitor:                   lMonitor,
 		tsCalc:                     tsCalc,
 		feeSplitter:                NewFeeSplitterFromSnapshot(em.FeeSplitter, now),
 		as:                         as,
 		pMonitor:                   pMonitor,
-		peggedOrders:               NewPeggedOrdersFromSnapshot(em.PeggedOrders),
+		peggedOrders:               NewPeggedOrdersFromSnapshot(em.PeggedOrders, timeService),
 		expiringOrders:             NewExpiringOrdersFromState(em.ExpiringOrders),
 		equityShares:               NewEquitySharesFromSnapshot(em.EquityShare),
 		lastBestBidPrice:           em.LastBestBid.Clone(),
@@ -143,12 +154,18 @@ func NewMarketFromSnapshot(
 		marketActivityTracker:      marketActivityTracker,
 		positionFactor:             positionFactor,
 		stateVarEngine:             stateVarEngine,
+		settlementPriceInMarket:    em.SettlementPrice,
 	}
 
 	market.assetDP = uint32(assetDetails.DecimalPlaces())
 	market.tradableInstrument.Instrument.Product.NotifyOnTradingTerminated(market.tradingTerminated)
 	market.tradableInstrument.Instrument.Product.NotifyOnSettlementPrice(market.settlementPrice)
 	liqEngine.SetGetStaticPricesFunc(market.getBestStaticPricesDecimal)
+
+	if mkt.State == types.MarketStateSettled {
+		market.closed = true
+		stateVarEngine.UnregisterStateVariable(asset, mkt.ID)
+	}
 	return market, nil
 }
 
@@ -164,6 +181,10 @@ func (m *Market) changed() bool {
 
 func (m *Market) getState() *types.ExecMarket {
 	rf, _ := m.risk.GetRiskFactors()
+	var sp *num.Uint
+	if m.settlementPriceInMarket != nil {
+		sp = m.settlementPriceInMarket.Clone()
+	}
 	em := &types.ExecMarket{
 		Market:                     m.mkt.DeepClone(),
 		PriceMonitor:               m.pMonitor.GetState(),
@@ -182,6 +203,7 @@ func (m *Market) getState() *types.ExecMarket {
 		ShortRiskFactor:            rf.Short,
 		LongRiskFactor:             rf.Long,
 		FeeSplitter:                m.feeSplitter.GetState(),
+		SettlementPrice:            sp,
 	}
 
 	m.stateChanged = false

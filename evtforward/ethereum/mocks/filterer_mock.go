@@ -61,16 +61,16 @@ func (mr *MockFiltererMockRecorder) FilterCollateralEvents(arg0, arg1, arg2, arg
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FilterCollateralEvents", reflect.TypeOf((*MockFilterer)(nil).FilterCollateralEvents), arg0, arg1, arg2, arg3)
 }
 
-// FilterMultiSigControlEvents mocks base method.
-func (m *MockFilterer) FilterMultiSigControlEvents(arg0 context.Context, arg1, arg2 uint64, arg3 ethereum.OnEventFound) {
+// FilterMultisigControlEvents mocks base method.
+func (m *MockFilterer) FilterMultisigControlEvents(arg0 context.Context, arg1, arg2 uint64, arg3 ethereum.OnEventFound) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "FilterMultiSigControlEvents", arg0, arg1, arg2, arg3)
+	m.ctrl.Call(m, "FilterMultisigControlEvents", arg0, arg1, arg2, arg3)
 }
 
-// FilterMultiSigControlEvents indicates an expected call of FilterMultiSigControlEvents.
-func (mr *MockFiltererMockRecorder) FilterMultiSigControlEvents(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
+// FilterMultisigControlEvents indicates an expected call of FilterMultisigControlEvents.
+func (mr *MockFiltererMockRecorder) FilterMultisigControlEvents(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FilterMultiSigControlEvents", reflect.TypeOf((*MockFilterer)(nil).FilterMultiSigControlEvents), arg0, arg1, arg2, arg3)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FilterMultisigControlEvents", reflect.TypeOf((*MockFilterer)(nil).FilterMultisigControlEvents), arg0, arg1, arg2, arg3)
 }
 
 // FilterStakingEvents mocks base method.

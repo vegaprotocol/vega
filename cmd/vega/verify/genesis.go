@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package verify
 
 import (
@@ -37,7 +49,9 @@ type asset struct {
 			MaxFaucetAmountMint string `json:"max_faucet_amount_mint"`
 		} `json:"builtin_asset,omitempty"`
 		ERC20 *struct {
-			ContractAddress string `json:"contract_address"`
+			ContractAddress   string `json:"contract_address"`
+			LifetimeLimit     string `json:"lifetime_limit"`
+			WithdrawThreshold string `json:"withdraw_threshold"`
 		} `json:"erc20,omitempty"`
 	}
 }

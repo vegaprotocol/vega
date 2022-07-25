@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package execution_test
 
 import (
@@ -21,7 +33,7 @@ func TestIssue2876(t *testing.T) {
 	ctx := context.Background()
 	ctx = vegacontext.WithTraceID(ctx, vgcrypto.RandomHash())
 
-	tm.market.OnChainTimeUpdate(ctx, now)
+	tm.market.OnTick(ctx, now)
 
 	addAccountWithAmount(tm, "party-0", 100000000)
 	addAccountWithAmount(tm, "party-1", 100000000)
@@ -114,7 +126,8 @@ func TestIssue2876(t *testing.T) {
 	// this should end the opening auction
 	now = now.Add(31 * time.Second)
 
-	tm.market.OnChainTimeUpdate(ctx, now)
+	tm.now = now
+	tm.market.OnTick(ctx, now)
 
 	bondAccount, err = tm.collateralEngine.GetOrCreatePartyBondAccount(ctx, "party-2", tm.market.GetID(), tm.asset)
 	assert.NoError(t, err)

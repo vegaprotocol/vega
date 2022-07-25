@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package oracles
 
 import (
@@ -53,7 +65,7 @@ type filter struct {
 
 type condition func(string) (bool, error)
 
-// NewOracleSpec build an OracleSpec from a types.OracleSpec in a form that
+// NewOracleSpec builds an OracleSpec from a types.OracleSpec in a form that
 // suits the processing of the filters.
 func NewOracleSpec(originalSpec types.OracleSpec) (*OracleSpec, error) {
 	if len(originalSpec.PubKeys) == 0 {
@@ -132,6 +144,12 @@ func isInternalOracleData(data OracleData) bool {
 	return true
 }
 
+// MatchPubKeys tries to match the public keys from the provided OracleData object with the ones
+// present in the Spec.
+func (s *OracleSpec) MatchPubKeys(data OracleData) bool {
+	return containsRequiredPubKeys(data.PubKeys, s.pubKeys)
+}
+
 // MatchData indicates if a given OracleData matches the spec or not.
 func (s *OracleSpec) MatchData(data OracleData) (bool, error) {
 	// if the data contains the internal oracle timestamp key, and only that key,
@@ -157,8 +175,8 @@ func (s *OracleSpec) MatchData(data OracleData) (bool, error) {
 	return true, nil
 }
 
-// containsRequiredPubKeys verifies if all the public keys is the OracleData is
-// matches the keys authorized by the OracleSpec.
+// containsRequiredPubKeys verifies if all the public keys in the OracleData
+// are within the list of currently authorized by the OracleSpec.
 func containsRequiredPubKeys(dataPKs []string, authPks map[string]struct{}) bool {
 	for _, pk := range dataPKs {
 		if _, ok := authPks[pk]; !ok {

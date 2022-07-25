@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package netparams
 
 import (
@@ -61,7 +73,8 @@ func (s snapState) Namespace() types.SnapshotNamespace {
 }
 
 func (s *snapState) HasChanged(k string) bool {
-	return s.updated
+	return true
+	// return s.updated
 }
 
 func (s *snapState) hashState() error {
@@ -79,7 +92,7 @@ func (s *snapState) hashState() error {
 }
 
 func (s *snapState) GetState(_ string) ([]byte, error) {
-	if !s.updated {
+	if !s.HasChanged(s.t.Key()) {
 		return s.data, nil
 	}
 	if err := s.hashState(); err != nil {

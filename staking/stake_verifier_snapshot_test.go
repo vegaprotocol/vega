@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package staking_test
 
 import (
@@ -42,6 +54,7 @@ func TestSVSnapshotDeposited(t *testing.T) {
 	sv := getStakeVerifierTest(t)
 	defer sv.ctrl.Finish()
 
+	sv.tsvc.EXPECT().GetTimeNow().Times(1)
 	sv.broker.EXPECT().Send(gomock.Any()).Times(1)
 	sv.witness.EXPECT().StartCheck(gomock.Any(), gomock.Any(), gomock.Any()).Times(1)
 
@@ -84,6 +97,9 @@ func TestSVSnapshotDeposited(t *testing.T) {
 	require.Nil(t, err)
 	// Check its there by adding it again and checking for duplication error
 	require.ErrorIs(t, staking.ErrDuplicatedStakeDepositedEvent, snapSV.ProcessStakeDeposited(ctx, event))
+
+	snapSV.evtSrc.EXPECT().UpdateStakingStartingBlock(uint64(42)).Times(1)
+	snapSV.OnStateLoaded(ctx)
 }
 
 func TestSVSnapshotRemoved(t *testing.T) {
@@ -92,6 +108,7 @@ func TestSVSnapshotRemoved(t *testing.T) {
 	sv := getStakeVerifierTest(t)
 	defer sv.ctrl.Finish()
 
+	sv.tsvc.EXPECT().GetTimeNow().Times(1)
 	sv.broker.EXPECT().Send(gomock.Any()).Times(1)
 	sv.witness.EXPECT().StartCheck(gomock.Any(), gomock.Any(), gomock.Any()).Times(1)
 

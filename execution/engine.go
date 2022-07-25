@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package execution
 
 import (
@@ -34,13 +46,13 @@ var (
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/time_service_mock.go -package mocks code.vegaprotocol.io/vega/execution TimeService
 type TimeService interface {
 	GetTimeNow() time.Time
-	NotifyOnTick(f func(context.Context, time.Time))
 }
 
 // OracleEngine ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/oracle_engine_mock.go -package mocks code.vegaprotocol.io/vega/execution OracleEngine
 type OracleEngine interface {
-	Subscribe(context.Context, oracles.OracleSpec, oracles.OnMatchedOracleData) oracles.SubscriptionID
+	ListensToPubKeys(oracles.OracleData) bool
+	Subscribe(context.Context, oracles.OracleSpec, oracles.OnMatchedOracleData) (oracles.SubscriptionID, oracles.Unsubscriber)
 	Unsubscribe(context.Context, oracles.SubscriptionID)
 }
 
@@ -55,13 +67,12 @@ type Collateral interface {
 	MarketCollateral
 	AssetExists(string) bool
 	CreateMarketAccounts(context.Context, string, string) (string, string, error)
-	OnChainTimeUpdate(context.Context, time.Time)
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/state_var_engine_mock.go -package mocks code.vegaprotocol.io/vega/execution StateVarEngine
 type StateVarEngine interface {
 	RegisterStateVariable(asset, market, name string, converter statevar.Converter, startCalculation func(string, statevar.FinaliseCalculation), trigger []statevar.StateVarEventType, result func(context.Context, statevar.StateVariableResult) error) error
-	RemoveTimeTriggers(asset, market string)
+	UnregisterStateVariable(asset, market string)
 	NewEvent(asset, market string, eventType statevar.StateVarEventType)
 	ReadyForTimeTrigger(asset, mktID string)
 }
@@ -86,7 +97,7 @@ type Engine struct {
 	assets     Assets
 
 	broker                Broker
-	time                  TimeService
+	timeService           TimeService
 	stateVarEngine        StateVarEngine
 	marketActivityTracker *MarketActivityTracker
 
@@ -157,7 +168,7 @@ func NewEngine(
 		log:                   log,
 		Config:                executionConfig,
 		markets:               map[string]*Market{},
-		time:                  ts,
+		timeService:           ts,
 		collateral:            collateral,
 		assets:                assets,
 		broker:                broker,
@@ -167,9 +178,6 @@ func NewEngine(
 		stateVarEngine:        stateVarEngine,
 		marketActivityTracker: marketActivityTracker,
 	}
-
-	// Add time change event handler
-	e.time.NotifyOnTick(e.onChainTimeUpdate)
 
 	// set the eligibility for proposer bonus checker
 	e.marketActivityTracker.SetEligibilityChecker(e)
@@ -320,9 +328,8 @@ func (e *Engine) SubmitMarket(ctx context.Context, marketConfig *types.Market, p
 	}
 	e.marketActivityTracker.MarketProposed(asset, marketConfig.ID, proposer)
 
-	// here straight away we start the OPENING_AUCTION
+	// keep state in pending, opening auction is triggered when proposal is enacted
 	mkt := e.markets[marketConfig.ID]
-	_ = mkt.StartOpeningAuction(ctx)
 
 	e.publishNewMarketInfos(ctx, mkt)
 	return nil
@@ -363,7 +370,8 @@ func (e *Engine) submitMarket(ctx context.Context, marketConfig *types.Market) e
 	if len(marketConfig.ID) == 0 {
 		return ErrNoMarketID
 	}
-	now := e.time.GetTimeNow()
+
+	now := e.timeService.GetTimeNow()
 
 	// ensure the asset for this new market exists
 	asset, err := marketConfig.GetAsset()
@@ -399,7 +407,7 @@ func (e *Engine) submitMarket(ctx context.Context, marketConfig *types.Market) e
 		e.collateral,
 		e.oracle,
 		marketConfig,
-		now,
+		e.timeService,
 		e.broker,
 		mas,
 		e.stateVarEngine,
@@ -740,8 +748,8 @@ func (e *Engine) CancelLiquidityProvision(ctx context.Context, cancel *types.Liq
 	return mkt.CancelLiquidityProvision(ctx, cancel, party)
 }
 
-func (e *Engine) onChainTimeUpdate(ctx context.Context, t time.Time) {
-	timer := metrics.NewTimeCounter("-", "execution", "onChainTimeUpdate")
+func (e *Engine) OnTick(ctx context.Context, t time.Time) {
+	timer := metrics.NewTimeCounter("-", "execution", "OnTick")
 
 	evts := make([]events.Event, 0, len(e.marketsCpy))
 	for _, v := range e.marketsCpy {
@@ -751,19 +759,11 @@ func (e *Engine) onChainTimeUpdate(ctx context.Context, t time.Time) {
 
 	e.log.Debug("updating engine on new time update")
 
-	// update collateral
-	e.collateral.OnChainTimeUpdate(ctx, t)
-
-	// remove expired orders
-	// TODO(FIXME): this should be remove, and handled inside the market directly
-	// when call with the new time (see the next for loop)
-	e.removeExpiredOrders(ctx, t)
-
 	// notify markets of the time expiration
 	toDelete := []string{}
 	for _, mkt := range e.marketsCpy {
 		mkt := mkt
-		closing := mkt.OnChainTimeUpdate(ctx, t)
+		closing := mkt.OnTick(ctx, t)
 		if closing {
 			e.log.Info("market is closed, removing from execution engine",
 				logging.MarketID(mkt.GetID()))
@@ -773,25 +773,6 @@ func (e *Engine) onChainTimeUpdate(ctx context.Context, t time.Time) {
 
 	for _, id := range toDelete {
 		e.removeMarket(id)
-	}
-
-	timer.EngineTimeCounterAdd()
-}
-
-// Process any data updates (including state changes)
-// e.g. removing expired orders from matching engine.
-func (e *Engine) removeExpiredOrders(ctx context.Context, t time.Time) {
-	timer := metrics.NewTimeCounter("-", "execution", "removeExpiredOrders")
-	timeNow := t.UnixNano()
-	for _, mkt := range e.marketsCpy {
-		expired, err := mkt.RemoveExpiredOrders(ctx, timeNow)
-		if err != nil {
-			e.log.Error("unable to get remove expired orders",
-				logging.MarketID(mkt.GetID()),
-				logging.Error(err))
-		}
-
-		metrics.OrderGaugeAdd(-len(expired), mkt.GetID())
 	}
 
 	timer.EngineTimeCounterAdd()

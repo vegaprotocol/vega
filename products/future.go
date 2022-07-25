@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package products
 
 import (
@@ -32,14 +44,15 @@ type Future struct {
 	settlementPriceListener    func(context.Context, *num.Uint)
 }
 
-func (f *Future) Unsubscribe(ctx context.Context, oe OracleEngine) {
-	oe.Unsubscribe(ctx, f.oracle.settlementPriceSubscriptionID)
-	oe.Unsubscribe(ctx, f.oracle.tradingTerminatedSubscriptionID)
+func (f *Future) Unsubscribe(ctx context.Context) {
+	f.oracle.unsubscribe(ctx, f.oracle.settlementPriceSubscriptionID)
+	f.oracle.unsubscribe(ctx, f.oracle.tradingTerminatedSubscriptionID)
 }
 
 type oracle struct {
 	settlementPriceSubscriptionID   oracles.SubscriptionID
 	tradingTerminatedSubscriptionID oracles.SubscriptionID
+	unsubscribe                     oracles.Unsubscriber
 	binding                         oracleBinding
 	data                            oracleData
 	settlementPriceDecimals         uint32
@@ -73,10 +86,6 @@ func (f *Future) NotifyOnSettlementPrice(listener func(context.Context, *num.Uin
 
 func (f *Future) NotifyOnTradingTerminated(listener func(context.Context, bool)) {
 	f.tradingTerminationListener = listener
-}
-
-func (f *Future) SettlementPrice() (*num.Uint, error) {
-	return f.oracle.data.SettlementPrice()
 }
 
 func (f *Future) ScaleSettlementPriceToDecimalPlaces(price *num.Uint, dp uint32) (*num.Uint, error) {
@@ -238,7 +247,7 @@ func NewFuture(ctx context.Context, log *logging.Logger, f *types.Future, oe Ora
 		return nil, fmt.Errorf("invalid oracle spec binding for settlement price: %w", err)
 	}
 
-	future.oracle.settlementPriceSubscriptionID = oe.Subscribe(ctx, *oracleSpecForSettlementPrice, future.updateSettlementPrice)
+	future.oracle.settlementPriceSubscriptionID, future.oracle.unsubscribe = oe.Subscribe(ctx, *oracleSpecForSettlementPrice, future.updateSettlementPrice)
 
 	if log.IsDebug() {
 		log.Debug("future subscribed to oracle engine for settlement price",
@@ -269,7 +278,7 @@ func NewFuture(ctx context.Context, log *logging.Logger, f *types.Future, oe Ora
 		return nil, fmt.Errorf("invalid oracle spec binding for trading termination: %w", err)
 	}
 
-	future.oracle.tradingTerminatedSubscriptionID = oe.Subscribe(ctx, *oracleSpecForTerminatedMarket, tradingTerminationCb)
+	future.oracle.tradingTerminatedSubscriptionID, _ = oe.Subscribe(ctx, *oracleSpecForTerminatedMarket, tradingTerminationCb)
 
 	if log.IsDebug() {
 		log.Debug("future subscribed to oracle engine for market termination event",

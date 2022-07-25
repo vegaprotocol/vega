@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package erc20multisig_test
 
 import (
@@ -61,7 +73,7 @@ func TestMultisigTopologySheckpoint(t *testing.T) {
 		LogIndex:    11,
 		TxHash:      "0xacbde",
 		ID:          "someid",
-		Address:     "0x123456",
+		Address:     "0xe82EfC4187705655C9b484dFFA25f240e8A6B0BA",
 		Nonce:       "123",
 		BlockTime:   123456789,
 		Kind:        types.SignerEventKindAdded,
@@ -85,15 +97,15 @@ func TestMultisigTopologySheckpoint(t *testing.T) {
 	t.Run("ensure the signer list is updated", func(t *testing.T) {
 		signers := top.GetSigners()
 		assert.Len(t, signers, 1)
-		assert.Equal(t, "0x123456", signers[0])
+		assert.Equal(t, "0xe82EfC4187705655C9b484dFFA25f240e8A6B0BA", signers[0])
 	})
 
 	t.Run("check if our party IsSigner", func(t *testing.T) {
-		assert.True(t, top.IsSigner("0x123456"))
+		assert.True(t, top.IsSigner("0xe82EfC4187705655C9b484dFFA25f240e8A6B0BA"))
 	})
 
 	t.Run("check excess signers", func(t *testing.T) {
-		okAddresses := []string{"0x123456"}
+		okAddresses := []string{"0xe82EfC4187705655C9b484dFFA25f240e8A6B0BA"}
 		koAddresses := []string{}
 
 		assert.True(t, top.ExcessSigners(koAddresses))
@@ -123,7 +135,7 @@ func TestMultisigTopologySheckpoint(t *testing.T) {
 		LogIndex:    19,
 		TxHash:      "0xacbde3",
 		ID:          "someid3",
-		Address:     "0x1234564",
+		Address:     "0xa587765281c2514E899ecFFa9626b6254582a3bA",
 		Nonce:       "1239",
 		BlockTime:   133456789,
 		Kind:        types.SignerEventKindAdded,
@@ -161,5 +173,5 @@ func TestMultisigTopologySheckpoint(t *testing.T) {
 	assert.Equal(t, int(top2.GetThreshold()), 666)
 	signers := top2.GetSigners()
 	assert.Len(t, signers, 1)
-	assert.Equal(t, signers[0], "0x123456")
+	assert.Equal(t, signers[0], "0xe82EfC4187705655C9b484dFFA25f240e8A6B0BA")
 }

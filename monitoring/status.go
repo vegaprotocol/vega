@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package monitoring
 
 import (
@@ -10,7 +22,7 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/metrics"
 
-	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
+	tmctypes "github.com/tendermint/tendermint/rpc/coretypes"
 )
 
 // BlockchainClient ...
@@ -98,12 +110,6 @@ func (s *Status) OnChainDisconnect(f func()) {
 	s.blockchain.onChainDisconnect = f
 }
 
-// OnChainVersionObtained register a function to call back once the chain version
-// vega connected too is acquired.
-func (s *Status) OnChainVersionObtained(f func(string)) {
-	s.blockchain.OnChainVersionObtained(f)
-}
-
 // Stop the internal checker(s) from periodically calling their underlying providers
 // Note: currently the only way to start checking externally is to New up a new Status checker.
 func (s *Status) Stop() {
@@ -113,22 +119,6 @@ func (s *Status) Stop() {
 // ChainStatus will return the current chain status.
 func (s *Status) ChainStatus() types.ChainStatus {
 	return s.blockchain.Status()
-}
-
-// OnChainVersionObtained will register a list of function to call back once
-// the chain version is acquired.
-func (cs *ChainStatus) OnChainVersionObtained(f func(string)) {
-	cs.mu.Lock()
-	cs.callbacks = append(cs.callbacks, f)
-	cs.mu.Unlock()
-}
-
-func (cs *ChainStatus) notifyChainVersion(v string) {
-	cs.mu.Lock()
-	for _, f := range cs.callbacks {
-		f(v)
-	}
-	cs.mu.Unlock()
 }
 
 // Status returns the current status of the underlying Blockchain connection.
@@ -156,17 +146,6 @@ func (cs *ChainStatus) tick(status types.ChainStatus) types.ChainStatus {
 			// really connected, let's not change the status then
 			return status
 		}
-
-		if err = defaultChainVersion.Check(res.NodeInfo.Version); err != nil {
-			cs.log.Error("tendermint version error",
-				logging.Error(err),
-			)
-			cs.onChainDisconnect()
-		}
-		cs.log.Info("tendermint info",
-			logging.String("version", res.NodeInfo.Version),
-		)
-		cs.notifyChainVersion(res.NodeInfo.Version)
 
 		if res.SyncInfo.CatchingUp {
 			newStatus = types.ChainStatus_CHAIN_STATUS_REPLAYING

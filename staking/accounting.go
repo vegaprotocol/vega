@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package staking
 
 import (
@@ -9,7 +21,7 @@ import (
 
 	vgproto "code.vegaprotocol.io/protos/vega"
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
-	"code.vegaprotocol.io/vega/assets/erc20"
+	"code.vegaprotocol.io/vega/contracts/erc20"
 	"code.vegaprotocol.io/vega/events"
 	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/logging"
@@ -46,6 +58,7 @@ type Accounting struct {
 	log              *logging.Logger
 	ethClient        EthereumClientCaller
 	cfg              Config
+	timeService      TimeService
 	broker           Broker
 	accounts         map[string]*StakingAccount
 	hashableAccounts []*StakingAccount
@@ -62,7 +75,6 @@ type Accounting struct {
 	evtFwd                  EvtForwarder
 	witness                 Witness
 	pendingStakeTotalSupply *pendingStakeTotalSupply
-	currentTime             time.Time
 }
 
 type pendingStakeTotalSupply struct {
@@ -78,21 +90,19 @@ func (p *pendingStakeTotalSupply) Check() error { return p.check() }
 func NewAccounting(
 	log *logging.Logger,
 	cfg Config,
+	ts TimeService,
 	broker Broker,
 	ethClient EthereumClientCaller,
 	evtForward EvtForwarder,
 	witness Witness,
-	tt TimeTicker,
 	isValidator bool,
 ) (acc *Accounting) {
-	defer func() {
-		tt.NotifyOnTick(acc.onTick)
-	}()
 	log = log.Named("accounting")
 
 	return &Accounting{
 		log:                     log,
 		cfg:                     cfg,
+		timeService:             ts,
 		broker:                  broker,
 		ethClient:               ethClient,
 		accounts:                map[string]*StakingAccount{},
@@ -102,10 +112,6 @@ func NewAccounting(
 		witness:                 witness,
 		isValidator:             isValidator,
 	}
-}
-
-func (a *Accounting) onTick(_ context.Context, t time.Time) {
-	a.currentTime = t
 }
 
 func (a *Accounting) Hash() []byte {
@@ -208,8 +214,22 @@ func (a *Accounting) ProcessStakeTotalSupply(_ context.Context, evt *types.Stake
 	return a.witness.StartCheck(
 		a.pendingStakeTotalSupply,
 		a.onStakeTotalSupplyVerified,
-		a.currentTime.Add(timeTilCancel),
+		a.timeService.GetTimeNow().Add(timeTilCancel),
 	)
+}
+
+func (a *Accounting) getLastBlockSeen() uint64 {
+	var block uint64
+	for _, acc := range a.hashableAccounts {
+		if len(acc.Events) == 0 {
+			continue
+		}
+		height := acc.Events[len(acc.Events)-1].BlockHeight
+		if block < height {
+			block = height
+		}
+	}
+	return block
 }
 
 func (a *Accounting) onStakeTotalSupplyVerified(event interface{}, ok bool) {

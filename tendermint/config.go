@@ -1,6 +1,19 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package tendermint
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -28,15 +41,18 @@ func NewConfig(home string) *Config {
 }
 
 func (c *Config) PublicValidatorKey() (tmcrypto.PubKey, error) {
-	privValKeyFile := c.config.PrivValidatorKeyFile()
-	privValStateFile := c.config.PrivValidatorStateFile()
+	privValKeyFile := c.config.PrivValidator.KeyFile()
+	privValStateFile := c.config.PrivValidator.StateFile()
 	if !tmos.FileExists(privValKeyFile) {
 		return nil, fmt.Errorf("file \"%s\" not found", privValKeyFile)
 	}
 
-	pv := privval.LoadFilePV(privValKeyFile, privValStateFile)
+	pv, err := privval.LoadFilePV(privValKeyFile, privValStateFile)
+	if err != nil {
+		return nil, err
+	}
 
-	pubKey, err := pv.GetPubKey()
+	pubKey, err := pv.GetPubKey(context.Background())
 	if err != nil {
 		return nil, fmt.Errorf("can't get tendermint public key: %w", err)
 	}

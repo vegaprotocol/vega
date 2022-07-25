@@ -1,6 +1,19 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package matching
 
 import (
+	"context"
 	"time"
 
 	"code.vegaprotocol.io/vega/events"
@@ -21,6 +34,20 @@ func NewCachedOrderBook(
 		OrderBook: NewOrderBook(log, config, market, auction),
 		cache:     NewBookCache(),
 	}
+}
+
+func (b *CachedOrderBook) LoadState(ctx context.Context, payload *types.Payload) ([]types.StateProvider, error) {
+	providers, err := b.OrderBook.LoadState(ctx, payload)
+	if err != nil {
+		return providers, err
+	}
+
+	// when a market is restored we call `GetMarketData` which fills this cache based on an unrestored orderbook,
+	// now we have restored we need to recalculate.
+	b.log.Info("restoring orderbook cache for", logging.String("marketID", b.marketID))
+	b.cache.Invalidate()
+	b.GetIndicativePriceAndVolume()
+	return providers, err
 }
 
 func (b *CachedOrderBook) EnterAuction() []*types.Order {

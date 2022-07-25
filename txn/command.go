@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package txn
 
 // Command ...
@@ -37,8 +49,6 @@ const (
 	DelegateCommand Command = 0x4D
 	// UndelegateCommand ...
 	UndelegateCommand Command = 0x4E
-	// CheckpointRestoreCommand ...
-	CheckpointRestoreCommand Command = 0x4F
 	// RotateKeySubmissionCommand ...
 	RotateKeySubmissionCommand Command = 0x50
 	// StateVariableProposalCommand ...
@@ -70,7 +80,6 @@ var commandName = map[Command]string{
 	SubmitOracleDataCommand:            "Submit Oracle Data",
 	DelegateCommand:                    "Delegate",
 	UndelegateCommand:                  "Undelegate",
-	CheckpointRestoreCommand:           "Checkpoint Restore",
 	RotateKeySubmissionCommand:         "Key Rotate Submission",
 	StateVariableProposalCommand:       "State Variable Proposal",
 	TransferFundsCommand:               "Transfer Funds",
@@ -81,7 +90,7 @@ var commandName = map[Command]string{
 
 func (cmd Command) IsValidatorCommand() bool {
 	switch cmd {
-	case CheckpointRestoreCommand, NodeSignatureCommand, ChainEventCommand, NodeVoteCommand, ValidatorHeartbeatCommand, RotateKeySubmissionCommand, StateVariableProposalCommand, RotateEthereumKeySubmissionCommand:
+	case NodeSignatureCommand, ChainEventCommand, NodeVoteCommand, ValidatorHeartbeatCommand, RotateKeySubmissionCommand, StateVariableProposalCommand, RotateEthereumKeySubmissionCommand:
 		return true
 	default:
 		return false

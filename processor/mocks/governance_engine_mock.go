@@ -78,19 +78,19 @@ func (mr *MockGovernanceEngineMockRecorder) Hash() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Hash", reflect.TypeOf((*MockGovernanceEngine)(nil).Hash))
 }
 
-// OnChainTimeUpdate mocks base method.
-func (m *MockGovernanceEngine) OnChainTimeUpdate(arg0 context.Context, arg1 time.Time) ([]*governance.ToEnact, []*governance.VoteClosed) {
+// OnTick mocks base method.
+func (m *MockGovernanceEngine) OnTick(arg0 context.Context, arg1 time.Time) ([]*governance.ToEnact, []*governance.VoteClosed) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "OnChainTimeUpdate", arg0, arg1)
+	ret := m.ctrl.Call(m, "OnTick", arg0, arg1)
 	ret0, _ := ret[0].([]*governance.ToEnact)
 	ret1, _ := ret[1].([]*governance.VoteClosed)
 	return ret0, ret1
 }
 
-// OnChainTimeUpdate indicates an expected call of OnChainTimeUpdate.
-func (mr *MockGovernanceEngineMockRecorder) OnChainTimeUpdate(arg0, arg1 interface{}) *gomock.Call {
+// OnTick indicates an expected call of OnTick.
+func (mr *MockGovernanceEngineMockRecorder) OnTick(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OnChainTimeUpdate", reflect.TypeOf((*MockGovernanceEngine)(nil).OnChainTimeUpdate), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OnTick", reflect.TypeOf((*MockGovernanceEngine)(nil).OnTick), arg0, arg1)
 }
 
 // RejectProposal mocks base method.

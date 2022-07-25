@@ -1,6 +1,6 @@
 Feature: Fees calculations
 
-  Scenario: Testing fees in continuous trading with one trade and no liquidity providers
+  Scenario: Testing fees in continuous trading with one trade
 
     Given the fees configuration named "fees-config-1":
       | maker fee | infrastructure fee |
@@ -24,6 +24,7 @@ Feature: Fees calculations
       | aux2    | ETH   | 100000000 |
       | trader3 | ETH   | 10000     |
       | trader4 | ETH   | 10000     |
+      | lpprov  | ETH   | 10000000  |
 
     Then the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     |
@@ -31,6 +32,10 @@ Feature: Fees calculations
       | aux2  | ETH/DEC21 | sell | 1000   | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
       | aux1  | ETH/DEC21 | buy  | 100    | 900   | 0                | TYPE_LIMIT | TIF_GTC |
       | aux2  | ETH/DEC21 | sell | 100    | 1100  | 0                | TYPE_LIMIT | TIF_GTC |
+    And the parties submit the following liquidity provision:
+      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
+      | lp1 | lpprov | ETH/DEC21 | 90000             | 0.1 | buy  | BID              | 50         | 100    | submission |
+      | lp1 | lpprov | ETH/DEC21 | 90000             | 0.1 | sell | ASK              | 50         | 100    | submission |
 
     Then the opening auction period ends for market "ETH/DEC21"
     And the market data for the market "ETH/DEC21" should be:
@@ -68,7 +73,7 @@ Feature: Fees calculations
       | from    | to      | from account            | to account                       | market id | amount | asset |
       | trader4 | market  | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_MAKER          | ETH/DEC21 | 16     | ETH   |
       | trader4 |         | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_INFRASTRUCTURE |           | 7      | ETH   |
-      | trader4 | market  | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_LIQUIDITY      | ETH/DEC21 | 0      | ETH   |
+      | trader4 | market  | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_LIQUIDITY      | ETH/DEC21 | 301    | ETH   |
       | market  | trader3 | ACCOUNT_TYPE_FEES_MAKER | ACCOUNT_TYPE_GENERAL             | ETH/DEC21 | 16     | ETH   |  
     
     # total_fee = infrastructure_fee + maker_fee + liquidity_fee = 7 + 16 + 0 = 23
@@ -77,13 +82,13 @@ Feature: Fees calculations
 
     Then the parties should have the following account balances:
       | party   | asset | market id | margin | general |
-      | trader3 | ETH   | ETH/DEC21 | 1089   | 8927    |
-      | trader4 | ETH   | ETH/DEC21 | 657    | 9320    |
+      | trader3 | ETH   | ETH/DEC21 | 1082   | 8934    |
+      | trader4 | ETH   | ETH/DEC21 | 715    | 8961    |
 
     And the accumulated infrastructure fees should be "7" for the asset "ETH"
-    And the accumulated liquidity fees should be "0" for the market "ETH/DEC21"
+    And the accumulated liquidity fees should be "301" for the market "ETH/DEC21"
 
-  Scenario: Testing fees in continuous trading with two trades and no liquidity providers
+  Scenario: Testing fees in continuous trading with two trades
 
     Given the fees configuration named "fees-config-1":
       | maker fee | infrastructure fee |
@@ -108,13 +113,18 @@ Feature: Fees calculations
       | trader3a | ETH   | 10000     |
       | trader3b | ETH   | 10000     |
       | trader4  | ETH   | 10000     |
+      | lpprov   | ETH   | 100000000 |
 
-    Then the parties place the following orders:
+    When the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     |
       | aux1  | ETH/DEC21 | buy  | 100    | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
       | aux2  | ETH/DEC21 | sell | 100    | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
       | aux1  | ETH/DEC21 | buy  | 100    | 900   | 0                | TYPE_LIMIT | TIF_GTC |
       | aux2  | ETH/DEC21 | sell | 100    | 1100  | 0                | TYPE_LIMIT | TIF_GTC |
+    And the parties submit the following liquidity provision:
+      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
+      | lp1 | lpprov | ETH/DEC21 | 90000             | 0.1 | buy  | BID              | 50         | 100    | submission |
+      | lp1 | lpprov | ETH/DEC21 | 90000             | 0.1 | sell | ASK              | 50         | 100    | submission |
 
     Then the opening auction period ends for market "ETH/DEC21"
     And the market data for the market "ETH/DEC21" should be:
@@ -163,7 +173,7 @@ Feature: Fees calculations
       | trader4 | market   | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_MAKER          | ETH/DEC21 | 11     | ETH   |
       | trader4 | market   | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_MAKER          | ETH/DEC21 | 6      | ETH   |
       | trader4 |          | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_INFRASTRUCTURE |           | 8      | ETH   |
-      | trader4 | market   | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_LIQUIDITY      | ETH/DEC21 | 0      | ETH   |
+      | trader4 | market   | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_LIQUIDITY      | ETH/DEC21 | 302    | ETH   |
       | market  | trader3a | ACCOUNT_TYPE_FEES_MAKER | ACCOUNT_TYPE_GENERAL             | ETH/DEC21 | 11     | ETH   |
       | market  | trader3b | ACCOUNT_TYPE_FEES_MAKER | ACCOUNT_TYPE_GENERAL             | ETH/DEC21 | 6      | ETH   |  
 
@@ -174,12 +184,12 @@ Feature: Fees calculations
 
     Then the parties should have the following account balances:
       | party    | asset | market id | margin | general |
-      | trader3a | ETH   | ETH/DEC21 | 726    | 9285    |
-      | trader3b | ETH   | ETH/DEC21 | 363    | 9643    |
-      | trader4  | ETH   | ETH/DEC21 | 657    | 9318    |
+      | trader3a | ETH   | ETH/DEC21 | 721    | 9290    |
+      | trader3b | ETH   | ETH/DEC21 | 361    | 9645    |
+      | trader4  | ETH   | ETH/DEC21 | 715    | 8958    |
 
     And the accumulated infrastructure fees should be "8" for the asset "ETH"
-    And the accumulated liquidity fees should be "0" for the market "ETH/DEC21"
+    And the accumulated liquidity fees should be "302" for the market "ETH/DEC21"
 
   Scenario: Testing fees in continuous trading with two trades and one liquidity providers with 10 and 0 s liquidity fee distribution timestep
 
@@ -222,7 +232,7 @@ Feature: Fees calculations
     Given the parties submit the following liquidity provision:
       | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
       | lp1 | aux1  | ETH/DEC21 | 10000             | 0.001 | buy  | BID              | 1          | 10     | submission |
-      | lp1 | aux1  | ETH/DEC21 | 10000             | 0.001 | sell | ASK              | 1          | 10     | amendment  |
+      | lp1 | aux1  | ETH/DEC21 | 10000             | 0.001 | sell | ASK              | 1          | 10     | submission |
 
     Then the opening auction period ends for market "ETH/DEC21"
     And the market data for the market "ETH/DEC21" should be:
@@ -362,7 +372,8 @@ Feature: Fees calculations
       | aux2     | ETH   | 100000000 |
       | trader3a | ETH   | 10000     |
       | trader3b | ETH   | 10000     |
-      | trader4  | ETH   | 1250      |
+      | trader4  | ETH   | 1550      |
+      | lpprov   | ETH   | 100000000 |
 
     Then the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     |
@@ -370,6 +381,10 @@ Feature: Fees calculations
       | aux2  | ETH/DEC21 | sell | 100    | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
       | aux1  | ETH/DEC21 | buy  | 100    | 920   | 0                | TYPE_LIMIT | TIF_GTC |
       | aux2  | ETH/DEC21 | sell | 100    | 1080  | 0                | TYPE_LIMIT | TIF_GTC |
+    And the parties submit the following liquidity provision:
+      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
+      | lp1 | lpprov | ETH/DEC21 | 90000             | 0.1 | buy  | BID              | 50         | 100    | submission |
+      | lp1 | lpprov | ETH/DEC21 | 90000             | 0.1 | sell | ASK              | 50         | 100    | submission |
 
     Then the opening auction period ends for market "ETH/DEC21"
     And the market data for the market "ETH/DEC21" should be:
@@ -424,9 +439,9 @@ Feature: Fees calculations
     # TODO: Check why margin doesn't go up after the trade WHEN the liquidity provision order gets included (seems to work fine without LP orders) (expecting first commented out values) but getting second value in other cases
     Then the parties should have the following account balances:
       | party    | asset | market id | margin | general |
-      | trader3a | ETH   | ETH/DEC21 | 678    | 9333    |
+      | trader3a | ETH   | ETH/DEC21 | 699    | 9312    |
       | trader3b | ETH   | ETH/DEC21 | 339    | 9667    |
-      | trader4  | ETH   | ETH/DEC21 | 621    | 604     |
+      | trader4  | ETH   | ETH/DEC21 | 690    | 533     |
    
    # Placing second set of orders
     When the parties place the following orders:
@@ -436,8 +451,8 @@ Feature: Fees calculations
 
     Then the parties should have the following account balances:
       | party    | asset | market id | margin | general |
-      | trader3a | ETH   | ETH/DEC21 | 1159   | 8852    |
-      | trader4  | ETH   | ETH/DEC21 | 1102   | 123     |
+      | trader3a | ETH   | ETH/DEC21 | 1183   | 8828    |
+      | trader4  | ETH   | ETH/DEC21 | 1171   | 52      |
 
       # reducing size
     And the parties amend the following orders:
@@ -459,8 +474,8 @@ Feature: Fees calculations
 
     Then the parties should have the following account balances:
       | party    | asset | market id | margin | general |
-      | trader3a | ETH   | ETH/DEC21 | 1159   | 8852    |
-      | trader4  | ETH   | ETH/DEC21 | 1102   | 123     |
+      | trader3a | ETH   | ETH/DEC21 | 1183   | 8828    |
+      | trader4  | ETH   | ETH/DEC21 | 1171   | 52      |
 
   Scenario: Testing fees in continuous trading with insufficient balance in their general account but margin covers the fees
 
@@ -486,6 +501,7 @@ Feature: Fees calculations
       | aux2    | ETH   | 100000000 |
       | trader3 | ETH   | 10000000  |
       | trader4 | ETH   | 22086     |
+      | lpprov  | ETH   | 100000000 |
 
     Then the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     |
@@ -493,6 +509,10 @@ Feature: Fees calculations
       | aux2  | ETH/DEC21 | sell | 100    | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
       | aux1  | ETH/DEC21 | buy  | 100    | 920   | 0                | TYPE_LIMIT | TIF_GTC |
       | aux2  | ETH/DEC21 | sell | 100    | 1080  | 0                | TYPE_LIMIT | TIF_GTC |
+    And the parties submit the following liquidity provision:
+      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
+      | lp1 | lpprov | ETH/DEC21 | 90000000          | 0.1 | buy  | BID              | 50         | 100    | submission |
+      | lp1 | lpprov | ETH/DEC21 | 90000000          | 0.1 | sell | ASK              | 50         | 100    | submission |
 
     Then the opening auction period ends for market "ETH/DEC21"
     And the market data for the market "ETH/DEC21" should be:
@@ -566,6 +586,7 @@ Feature: Fees calculations
       | aux2    | ETH   | 100000000 |
       | trader3 | ETH   | 10000000  |
       | trader4 | ETH   | 214       |
+      | lpprov  | ETH   | 100000000 |
 
     Then the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     |
@@ -573,6 +594,10 @@ Feature: Fees calculations
       | aux2  | ETH/DEC21 | sell | 100    | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
       | aux1  | ETH/DEC21 | buy  | 100    | 920   | 0                | TYPE_LIMIT | TIF_GTC |
       | aux2  | ETH/DEC21 | sell | 100    | 1080  | 0                | TYPE_LIMIT | TIF_GTC |
+    And the parties submit the following liquidity provision:
+      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
+      | lp1 | lpprov | ETH/DEC21 | 90000000          | 0.1 | buy  | BID              | 50         | 100    | submission |
+      | lp1 | lpprov | ETH/DEC21 | 90000000          | 0.1 | sell | ASK              | 50         | 100    | submission |
 
     Then the opening auction period ends for market "ETH/DEC21"
     And the market data for the market "ETH/DEC21" should be:
@@ -1622,7 +1647,6 @@ Feature: Fees calculations
       | trader3a | ETH   | ETH/DEC21 | 3216   | 96834   |
       | trader4  | ETH   | ETH/DEC21 | 5506   | 94934   |
 
-
     And the liquidity fee factor should "0.001" for the market "ETH/DEC21"
     And the accumulated liquidity fees should be "30" for the market "ETH/DEC21"
 
@@ -1673,7 +1697,7 @@ Feature: Fees calculations
       | from   | to   | from account                | to account           | market id | amount | asset |
       | market | aux1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/DEC21 | 30     | ETH   |
 
-  Scenario: Testing fees when network parameters are changed (in continuous trading with one trade and no liquidity providers)
+  Scenario: Testing fees when network parameters are changed (in continuous trading with one trade)
   Description : Changing net params does change the fees being collected appropriately even if the market is already running
 
     Given the fees configuration named "fees-config-1":
@@ -1698,6 +1722,7 @@ Feature: Fees calculations
       | aux2    | ETH   | 100000000 |
       | trader3 | ETH   | 10000     |
       | trader4 | ETH   | 10000     |
+      | lpprov  | ETH   | 100000000 |
 
     Then the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     |
@@ -1705,6 +1730,10 @@ Feature: Fees calculations
       | aux2  | ETH/DEC21 | sell | 1000   | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
       | aux1  | ETH/DEC21 | buy  | 100    | 900   | 0                | TYPE_LIMIT | TIF_GTC |
       | aux2  | ETH/DEC21 | sell | 100    | 1100  | 0                | TYPE_LIMIT | TIF_GTC |
+    And the parties submit the following liquidity provision:
+      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
+      | lp1 | lpprov | ETH/DEC21 | 90000000          | 0.1 | buy  | BID              | 50         | 100    | submission |
+      | lp1 | lpprov | ETH/DEC21 | 90000000          | 0.1 | sell | ASK              | 50         | 100    | submission |
 
     Then the opening auction period ends for market "ETH/DEC21"
     And the market data for the market "ETH/DEC21" should be:

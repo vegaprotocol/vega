@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package assets
 
 import (
@@ -96,14 +108,15 @@ func (s *Service) serialise(k string) ([]byte, error) {
 }
 
 func (s *Service) HasChanged(k string) bool {
-	switch k {
-	case activeKey:
-		return s.ass.changedActive
-	case pendingKey:
-		return s.ass.changedPending
-	default:
-		return false
-	}
+	// switch k {
+	// case activeKey:
+	// 	return s.ass.changedActive
+	// case pendingKey:
+	// 	return s.ass.changedPending
+	// default:
+	// 	return false
+	// }
+	return true
 }
 
 func (s *Service) GetState(k string) ([]byte, []types.StateProvider, error) {
@@ -130,7 +143,7 @@ func (s *Service) restoreActive(ctx context.Context, active *types.ActiveAssets,
 	var err error
 	s.assets = map[string]*Asset{}
 	for _, p := range active.Assets {
-		if _, err = s.NewAsset(p.ID, p.Details); err != nil {
+		if _, err = s.NewAsset(ctx, p.ID, p.Details); err != nil {
 			return err
 		}
 
@@ -143,7 +156,7 @@ func (s *Service) restoreActive(ctx context.Context, active *types.ActiveAssets,
 			pa.SetValidNonValidator()
 		}
 
-		if err = s.Enable(p.ID); err != nil {
+		if err = s.Enable(ctx, p.ID); err != nil {
 			return err
 		}
 	}
@@ -157,10 +170,16 @@ func (s *Service) restorePending(ctx context.Context, pending *types.PendingAsse
 	var err error
 	s.pendingAssets = map[string]*Asset{}
 	for _, p := range pending.Assets {
-		if _, err = s.NewAsset(p.ID, p.Details); err != nil {
+		assetID, err := s.NewAsset(ctx, p.ID, p.Details)
+		if err != nil {
 			return err
 		}
+
+		if p.Status == types.AssetStatusPendingListing {
+			s.SetPendingListing(ctx, assetID)
+		}
 	}
+
 	s.ass.changedPending = false
 	s.ass.serialisedPending, err = proto.Marshal(p.IntoProto())
 

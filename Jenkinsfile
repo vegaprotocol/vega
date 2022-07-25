@@ -1,3 +1,4 @@
+/* groovylint-disable DuplicateStringLiteral, LineLength, NestedBlockDepth */
 @Library('vega-shared-library') _
 
 /* properties of scmVars (example):
@@ -24,9 +25,6 @@ pipeline {
         string( name: 'DATA_NODE_BRANCH', defaultValue: '',
                 description: '''Git branch, tag or hash of the vegaprotocol/data-node repository.
                     e.g. "develop", "v0.44.0" or commit hash. Default empty: use latests published version.''')
-        string( name: 'VEGAWALLET_BRANCH', defaultValue: '',
-                description: '''Git branch, tag or hash of the vegaprotocol/vegawallet repository.
-                    e.g. "develop", "v0.9.0" or commit hash. Default empty: use latest published version.''')
         string( name: 'DEVOPS_INFRA_BRANCH', defaultValue: 'master',
                 description: 'Git branch, tag or hash of the vegaprotocol/devops-infra repository')
         string( name: 'VEGATOOLS_BRANCH', defaultValue: 'develop',
@@ -83,9 +81,6 @@ pipeline {
         }
 
         stage('Compile') {
-            environment {
-                LDFLAGS      = "-X main.CLIVersion=${version} -X main.CLIVersionHash=${versionHash}"
-            }
             failFast true
             parallel {
                 stage('Linux build') {
@@ -98,7 +93,7 @@ pipeline {
                     steps {
                         dir('vega') {
                             sh label: 'Compile', script: '''
-                                go build -v -o "${OUTPUT}" -ldflags "${LDFLAGS}" ./cmd/vega
+                                go build -v -o "${OUTPUT}" ./cmd/vega
                             '''
                             sh label: 'Sanity check', script: '''
                                 file ${OUTPUT}
@@ -117,7 +112,7 @@ pipeline {
                     steps {
                         dir('vega') {
                             sh label: 'Compile', script: '''
-                                go build -v -o "${OUTPUT}" -ldflags "${LDFLAGS}" ./cmd/vega
+                                go build -v -o "${OUTPUT}" ./cmd/vega
                             '''
                             sh label: 'Sanity check', script: '''
                                 file ${OUTPUT}
@@ -135,7 +130,7 @@ pipeline {
                     steps {
                         dir('vega') {
                             sh label: 'Compile', script: '''
-                                go build -v -o "${OUTPUT}" -ldflags "${LDFLAGS}" ./cmd/vega
+                                go build -v -o "${OUTPUT}" ./cmd/vega
                             '''
                             sh label: 'Sanity check', script: '''
                                 file ${OUTPUT}
@@ -274,17 +269,16 @@ pipeline {
                         }
                     }
                 }
-                stage('LNL System Tests') {
+                stage('System Tests Network Smoke') {
                     steps {
                         script {
-                            systemTestsLNL ignoreFailure: !isPRBuild(),
+                            systemTestsCapsule ignoreFailure: !isPRBuild(),
                                 vegaCore: commitHash,
                                 dataNode: params.DATA_NODE_BRANCH,
-                                vegawallet: params.VEGAWALLET_BRANCH,
-                                devopsInfra: params.DEVOPS_INFRA_BRANCH,
                                 vegatools: params.VEGATOOLS_BRANCH,
                                 systemTests: params.SYSTEM_TESTS_BRANCH,
-                                protos: params.PROTOS_BRANCH
+                                protos: params.PROTOS_BRANCH,
+                                testMark: "network_infra_smoke"
                         }
                     }
                 }
@@ -293,7 +287,6 @@ pipeline {
                             script {
                                 systemTestsCapsule vegaCore: commitHash,
                                     dataNode: params.DATA_NODE_BRANCH,
-                                    vegawallet: params.VEGAWALLET_BRANCH,
                                     devopsInfra: params.DEVOPS_INFRA_BRANCH,
                                     vegatools: params.VEGATOOLS_BRANCH,
                                     systemTests: params.SYSTEM_TESTS_BRANCH,
@@ -347,6 +340,40 @@ pipeline {
                     }
                 }
 
+                stage('development binary for vegacapsule') {
+                    when {
+                        branch 'develop'
+                    }
+                    environment {
+                        AWS_REGION = 'eu-west-2'
+                    }
+
+                    steps {
+                        dir('vega') {
+                            script {
+                                vegaS3Ops = usernamePassword(
+                                    credentialsId: 'vegacapsule-s3-operations',
+                                    passwordVariable: 'AWS_ACCESS_KEY_ID',
+                                    usernameVariable: 'AWS_SECRET_ACCESS_KEY'
+                                )
+                                bucketName = string(
+                                    credentialsId: 'vegacapsule-s3-bucket-name',
+                                    variable: 'VEGACAPSULE_S3_BUCKET_NAME'
+                                )
+                                withCredentials([vegaS3Ops, bucketName]) {
+                                    try {
+                                        sh label: 'Upload vega binary to S3', script: '''
+                                            aws s3 cp ./cmd/vega/vega-linux-amd64 s3://''' + env.VEGACAPSULE_S3_BUCKET_NAME + '''/bin/vega-linux-amd64-''' + versionHash + '''
+                                        '''
+                                    } catch(err) {
+                                        print(err)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
                 stage('release to GitHub') {
                     when {
                         buildingTag()
@@ -361,7 +388,9 @@ pipeline {
                                 withGHCLI('credentialsId': 'github-vega-ci-bot-artifacts') {
                                     sh label: 'Upload artifacts', script: '''#!/bin/bash -e
                                         [[ $TAG_NAME =~ '-pre' ]] && prerelease='--prerelease' || prerelease=''
-                                        gh release create $TAG_NAME $prerelease ./cmd/vega/vega-*
+
+                                        gh release view $TAG_NAME && gh release upload $TAG_NAME ./cmd/vega/vega-* \
+                                            || gh release create $TAG_NAME $prerelease ./cmd/vega/vega-*
                                     '''
                                 }
                             }

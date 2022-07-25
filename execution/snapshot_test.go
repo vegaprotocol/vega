@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package execution_test
 
 import (
@@ -83,6 +95,53 @@ func TestSnapshotOraclesTerminatingMarketFromSnapshot(t *testing.T) {
 	require.Equal(t, types.MarketStateSettled, marketState2)
 
 	require.True(t, bytes.Equal(state, state2))
+}
+
+// TestSnapshotOraclesTerminatingMarketFromSnapshotAfterSettlementPrice sets up a market that gets the settlement price first.
+// Then a snapshot is taken and another node is restored from this snapshot. Finally trading termination data is received and both markets
+// are expected to get settled.
+func TestSnapshotOraclesTerminatingMarketFromSnapshotAfterSettlementPrice(t *testing.T) {
+	now := time.Now()
+	exec := getEngine(t, now)
+	err := exec.engine.SubmitMarket(context.Background(), newMarket("MarketID", "0xDEADBEEF"), "")
+	require.NoError(t, err)
+
+	// settlement price arrives first
+	exec.oracleEngine.BroadcastData(context.Background(), oracles.OracleData{
+		PubKeys: []string{"0xDEADBEEF"},
+		Data:    map[string]string{"prices.ETH.value": "100"},
+	})
+
+	// take a snapshot
+	state, _, _ := exec.engine.GetState("")
+
+	// load from the snapshot
+	exec2 := getEngine(t, now)
+	snap := &snapshot.Payload{}
+	proto.Unmarshal(state, snap)
+	_, _ = exec2.engine.LoadState(context.Background(), types.PayloadFromProto(snap))
+
+	// take a snapshot on the loaded engine
+	state2, _, _ := exec2.engine.GetState("")
+	require.True(t, bytes.Equal(state, state2))
+
+	// terminate the market to lead to settlement
+	exec.oracleEngine.BroadcastData(context.Background(), oracles.OracleData{
+		PubKeys: []string{"0xDEADBEEF"},
+		Data:    map[string]string{"trading.terminated": "true"},
+	})
+
+	exec2.oracleEngine.BroadcastData(context.Background(), oracles.OracleData{
+		PubKeys: []string{"0xDEADBEEF"},
+		Data:    map[string]string{"trading.terminated": "true"},
+	})
+
+	// take snapshot for both engines, and verify they're both settled
+	marketState1, _ := exec.engine.GetMarketState("MarketID")
+	marketState2, _ := exec2.engine.GetMarketState("MarketID")
+	require.Equal(t, marketState1, marketState2)
+	require.Equal(t, types.MarketStateSettled, marketState1)
+	require.Equal(t, types.MarketStateSettled, marketState2)
 }
 
 // TestLoadTerminatedMarketFromSnapshot terminates markets, loads them using the snapshot engine and then settles them successfully.
@@ -272,11 +331,10 @@ func getEngine(t *testing.T, now time.Time) *snapshotTestData {
 	broker := stubs.NewBrokerStub()
 	timeService := stubs.NewTimeStub()
 	timeService.SetTime(now)
-	currentTime := timeService.GetTimeNow()
-	collateralEngine := collateral.New(log, collateral.NewDefaultConfig(), broker, currentTime)
-	oracleEngine := oracles.NewEngine(log, oracles.NewDefaultConfig(), currentTime, broker, timeService)
+	collateralEngine := collateral.New(log, collateral.NewDefaultConfig(), timeService, broker)
+	oracleEngine := oracles.NewEngine(log, oracles.NewDefaultConfig(), timeService, broker)
 
-	epochEngine := epochtime.NewService(log, epochtime.NewDefaultConfig(), timeService, broker)
+	epochEngine := epochtime.NewService(log, epochtime.NewDefaultConfig(), broker)
 	marketActivityTracker := execution.NewMarketActivityTracker(logging.NewTestLogger(), epochEngine)
 
 	ethAsset := types.Asset{
@@ -300,7 +358,7 @@ func getEngine(t *testing.T, now time.Time) *snapshotTestData {
 		stubs.NewAssetStub(),
 	)
 
-	statsData := stats.New(log, stats.NewDefaultConfig(), "", "")
+	statsData := stats.New(log, stats.NewDefaultConfig())
 	config := snp.NewDefaultConfig()
 	config.Storage = "memory"
 	snapshotEngine, _ := snp.New(context.Background(), &paths.DefaultPaths{}, config, log, timeService, statsData.Blockchain)

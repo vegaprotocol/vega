@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 //lint:file-ignore SA5008 duplicated struct tags are ok for config
 
 package config
@@ -15,6 +27,7 @@ import (
 	"code.vegaprotocol.io/vega/blockchain"
 	"code.vegaprotocol.io/vega/broker"
 	"code.vegaprotocol.io/vega/checkpoint"
+	"code.vegaprotocol.io/vega/client/eth"
 	"code.vegaprotocol.io/vega/collateral"
 	cfgencoding "code.vegaprotocol.io/vega/config/encoding"
 	"code.vegaprotocol.io/vega/coreapi"
@@ -54,6 +67,7 @@ type Config struct {
 	Collateral        collateral.Config    `group:"Collateral" namespace:"collateral"`
 	CoreAPI           coreapi.Config       `group:"CoreAPI" namespace:"coreapi"`
 	Execution         execution.Config     `group:"Execution" namespace:"execution"`
+	Ethereum          eth.Config           `group:"Ethereum" namespace:"ethereum"`
 	Processor         processor.Config     `group:"Processor" namespace:"processor"`
 	Logging           logging.Config       `group:"Logging" namespace:"logging"`
 	Oracles           oracles.Config       `group:"Oracles" namespace:"oracles"`
@@ -98,6 +112,7 @@ func NewDefaultConfig() Config {
 		CoreAPI:           coreapi.NewDefaultConfig(),
 		Blockchain:        blockchain.NewDefaultConfig(),
 		Execution:         execution.NewDefaultConfig(),
+		Ethereum:          eth.NewDefaultConfig(),
 		Processor:         processor.NewDefaultConfig(),
 		Oracles:           oracles.NewDefaultConfig(),
 		Time:              vegatime.NewDefaultConfig(),

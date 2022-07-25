@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package execution
 
 import (
@@ -18,8 +30,9 @@ type lp struct {
 // https://github.com/vegaprotocol/product/blob/02af55e048a92a204e9ee7b7ae6b4475a198c7ff/specs/0042-setting-fees-and-rewarding-lps.md#calculating-liquidity-provider-equity-like-share
 type EquityShares struct {
 	// mvp is the MarketValueProxy
-	mvp num.Decimal
-	r   num.Decimal // market growth @TODO add this to snapshots
+	mvp  num.Decimal
+	pMvp num.Decimal // @TODO add to snapshot
+	r    num.Decimal
 
 	// lps is a map of party id to lp (LiquidityProviders)
 	lps map[string]*lp
@@ -32,6 +45,7 @@ type EquityShares struct {
 func NewEquityShares(mvp num.Decimal) *EquityShares {
 	return &EquityShares{
 		mvp:          mvp,
+		pMvp:         num.DecimalZero(),
 		r:            num.DecimalZero(),
 		lps:          map[string]*lp{},
 		stateChanged: true,
@@ -60,19 +74,43 @@ func (es *EquityShares) setOpeningAuctionAVG() {
 }
 
 func (es *EquityShares) UpdateVirtualStake() {
-	growth := num.NewDecimalFromFloat(1.0).Add(es.r)
-	for _, v := range es.lps {
-		v.vStake = num.MaxD(v.stake, growth.Mul(v.vStake))
+	// this isn't used if we have to set vStake to physical stake
+	growth := es.r
+	// if A(n) == 0 or A(n-1) == 0, vStake = physical stake
+	setPhysical := (es.mvp.IsZero() || es.pMvp.IsZero())
+	if !setPhysical {
+		growth = num.NewDecimalFromFloat(1.0).Add(growth)
 	}
-	es.stateChanged = true
+	for _, v := range es.lps {
+		// default to physical stake
+		vStake := v.stake
+		if !setPhysical {
+			// unless A(n) != 0 || A(n-1) != 0
+			// then set vStake = max(physical stake, ((r+1)*vStqake))
+			vStake = num.MaxD(v.stake, growth.Mul(v.vStake))
+		}
+		// if virtual stake doesn't change, then stateChanged shouldn't be toggled
+		es.stateChanged = (es.stateChanged || !vStake.Equals(v.vStake))
+		v.vStake = vStake
+	}
 }
 
 func (es *EquityShares) WithMVP(mvp num.Decimal) *EquityShares {
-	if !es.mvp.IsZero() {
-		es.r = mvp.Sub(es.mvp).Div(es.mvp)
+	// growth always defaults to 0
+	es.r = num.DecimalZero()
+	if !es.mvp.IsZero() && !mvp.IsZero() {
+		// Spec notation: r = (A(n) - A(n-1))/A(n-1)
+		growth := mvp.Sub(es.mvp).Div(es.mvp)
+		// toggle state changed if growth rate has changed
+		es.stateChanged = (es.stateChanged || !growth.Equals(es.r))
+		es.r = growth
 	}
+	// only flip state changed if growth rate and/or mvp has changed
+	// previous mvp can still change, so we need to check that, too
+	es.stateChanged = (es.stateChanged || !es.mvp.Equals(mvp) || !es.mvp.Equals(es.pMvp))
+	// pMvp would otherwise be A(n-2) -> update to A(n-1)
+	es.pMvp = es.mvp
 	es.mvp = mvp
-	es.stateChanged = true
 	return es
 }
 

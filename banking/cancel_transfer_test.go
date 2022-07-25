@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package banking_test
 
 import (
@@ -11,9 +23,9 @@ import (
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
-
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestCancelTransfer(t *testing.T) {
@@ -51,6 +63,7 @@ func TestCancelTransfer(t *testing.T) {
 
 	e.assets.EXPECT().Get(gomock.Any()).Times(2).Return(
 		assets.NewAsset(&mockAsset{num.DecimalFromFloat(1)}), nil)
+	e.tsvc.EXPECT().GetTimeNow().Times(2)
 	e.broker.EXPECT().Send(gomock.Any()).Times(1)
 	assert.NoError(t, e.TransferFunds(ctx, transfer))
 
@@ -126,12 +139,19 @@ func TestCancelTransfer(t *testing.T) {
 		})
 	})
 
+	// Get the state of transfers so hasChanged flag is false
+	key := (&types.PayloadBankingRecurringTransfers{}).Key()
+	_, _, err := e.GetState(key)
+	require.NoError(t, err)
+	// require.False(t, e.HasChanged(key))
+
 	assert.NoError(t,
 		e.CancelTransferFunds(ctx, &types.CancelTransferFunds{
 			TransferID: transferID,
 			Party:      partyID,
 		}),
 	)
+	// require.True(t, e.HasChanged(key))
 
 	// now we move in time, the recurring transfer was suppose to go
 	// 'til epoch 11, but it's not cancelled, and nothing should happen
@@ -150,6 +170,10 @@ func (m *mockAsset) Type() *types.Asset {
 		},
 	}
 }
+
+func (m *mockAsset) SetPendingListing() {}
+func (m *mockAsset) SetRejected()       {}
+func (m *mockAsset) SetEnabled()        {}
 
 func (m *mockAsset) GetAssetClass() common.AssetClass { return common.ERC20 }
 func (m *mockAsset) IsValid() bool                    { return true }

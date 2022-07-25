@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package snapshot
 
 import (
@@ -507,7 +519,7 @@ func (e *Engine) applySnap(ctx context.Context) error {
 	ctx = vegactx.WithTraceID(vegactx.WithBlockHeight(ctx, int64(e.app.Height)), e.app.Block)
 	ctx = vegactx.WithChainID(ctx, e.app.ChainID)
 	// we're done restoring, now save the snapshot locally, so we can provide it moving forwards
-	now := time.Unix(e.app.Time, 0)
+	now := time.Unix(0, e.app.Time)
 	// restore app state
 	e.timeService.SetTimeNow(ctx, now)
 	e.statsService.SetHeight(e.app.Height)
@@ -781,7 +793,7 @@ func (e *Engine) Snapshot(ctx context.Context) (b []byte, errlol error) {
 		appUpdate = true
 		e.app.Block = block
 	}
-	vNow := e.timeService.GetTimeNow().Unix()
+	vNow := e.timeService.GetTimeNow().UnixNano()
 	if e.app.Time != vNow {
 		e.app.Time = vNow
 		appUpdate = true
@@ -1046,6 +1058,10 @@ func (e *Engine) AddProviders(provs ...types.StateProvider) {
 }
 
 func (e *Engine) Close() error {
+	// we need to lock incase a snapshot-write is still happening when we try to close the DB
+	e.avlLock.Lock()
+	defer e.avlLock.Unlock()
+
 	// keeps linters happy for now
 	if e.pollCfunc != nil {
 		e.pollCfunc()

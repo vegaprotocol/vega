@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package price_test
 
 import (
@@ -101,9 +113,10 @@ func TestChangedState(t *testing.T) {
 
 	for i := 0; i < 10; i++ {
 		pm1.OnTimeUpdate(now)
-		err := pm1.CheckPrice(context.Background(), as, num.NewUint(uint64(100+i)), uint64(100+i), true)
+		p := []*types.Trade{{Price: num.NewUint(uint64(100 + i)), Size: uint64(100 + i)}}
+		b := pm1.CheckPrice(context.Background(), as, p, true)
 		now = now.Add(time.Minute * 1)
-		assert.NoError(t, err)
+		require.False(t, b)
 	}
 
 	// Check something has changed
@@ -131,4 +144,12 @@ func TestChangedState(t *testing.T) {
 	state2 := pm1.GetState()
 	assert.Len(t, state2.PricesNow, 1)
 	assert.Len(t, state2.PricesPast, 9)
+
+	asProto := state2.IntoProto()
+	state3 := types.PriceMonitorFromProto(asProto)
+	assert.Len(t, state3.PricesNow, 1)
+	assert.Len(t, state3.PricesPast, 9)
+	assert.Equal(t, state2.Now.UnixNano(), state3.Now.UnixNano())
+	assert.Equal(t, state2.Update.UnixNano(), state3.Update.UnixNano())
+	assert.Equal(t, state2.PricesPast[0].Time.UnixNano(), state3.PricesPast[0].Time.UnixNano())
 }

@@ -3,40 +3,49 @@ Feature: CASE-1: Trader submits long order that will trade - new formula & high 
 
   Background:
 
-    And the markets:
+    Given the markets:
       | id        | quote name | asset | risk model                | margin calculator                  | auction duration | fees         | price monitoring | oracle config          |
       | ETH/DEC19 | ETH        | ETH   | default-simple-risk-model | default-overkill-margin-calculator | 1                | default-none | default-none     | default-eth-for-future |
     And the following network parameters are set:
       | name                           | value |
       | market.auction.minimumDuration | 1     |
     And the parties deposit on asset's general account the following amount:
-      | party     | asset | amount     |
-      | party1    | ETH   | 1000000000 |
+      | party      | asset | amount     |
+      | party1     | ETH   | 1000000000 |
       | sellSideMM | ETH   | 1000000000 |
       | buySideMM  | ETH   | 1000000000 |
       | aux        | ETH   | 1000000000 |
       | aux2       | ETH   | 1000000000 |
+      | lpprov     | ETH   | 1000000000 |
+
+    When the parties submit the following liquidity provision:
+      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
+      | lp1 | lpprov | ETH/DEC19 | 900000000         | 0.1 | buy  | BID              | 50         | 10     | submission |
+      | lp1 | lpprov | ETH/DEC19 | 900000000         | 0.1 | sell | ASK              | 50         | 10     | submission |
         # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
-    Then the parties place the following orders:
-      | party | market id | side | volume | price    | resulting trades | type       | tif     |
+    And the parties place the following orders:
+      | party  | market id | side | volume | price    | resulting trades | type       | tif     |
       | aux    | ETH/DEC19 | buy  | 1      | 1        | 0                | TYPE_LIMIT | TIF_GTC |
       | aux    | ETH/DEC19 | sell | 1      | 20000000 | 0                | TYPE_LIMIT | TIF_GTC |
       | aux    | ETH/DEC19 | buy  | 1      | 10300000 | 0                | TYPE_LIMIT | TIF_GTC |
       | aux2   | ETH/DEC19 | sell | 1      | 10300000 | 0                | TYPE_LIMIT | TIF_GTC |
+    Then the market data for the market "ETH/DEC19" should be:
+      | target stake | supplied stake |
+      | 20600000     | 900000000      |
     Then the opening auction period ends for market "ETH/DEC19"
     And the mark price should be "10300000" for the market "ETH/DEC19"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
     
     # setting mark price
     And the parties place the following orders:
-      | party     | market id | side | volume | price    | resulting trades | type       | tif     | reference |
+      | party      | market id | side | volume | price    | resulting trades | type       | tif     | reference |
       | sellSideMM | ETH/DEC19 | sell | 1      | 10300000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | buySideMM  | ETH/DEC19 | buy  | 1      | 10300000 | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
 
     # setting order book
     And the parties place the following orders:
-      | party     | market id | side | volume | price    | resulting trades | type       | tif     | reference |
+      | party      | market id | side | volume | price    | resulting trades | type       | tif     | reference |
       | sellSideMM | ETH/DEC19 | sell | 100    | 25000000 | 0                | TYPE_LIMIT | TIF_GTC | _sell1    |
       | sellSideMM | ETH/DEC19 | sell | 11     | 14000000 | 0                | TYPE_LIMIT | TIF_GTC | _sell2    |
       | sellSideMM | ETH/DEC19 | sell | 2      | 11200000 | 0                | TYPE_LIMIT | TIF_GTC | _sell3    |

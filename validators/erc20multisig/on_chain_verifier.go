@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package erc20multisig
 
 import (
@@ -7,7 +19,7 @@ import (
 	"sync"
 	"time"
 
-	"code.vegaprotocol.io/vega/bridges/multisig"
+	multisig "code.vegaprotocol.io/vega/contracts/multisig_control"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
 
@@ -80,7 +92,7 @@ func (o *OnChainVerifier) CheckSignerEvent(event *types.SignerEvent) error {
 		)
 	}
 
-	filterer, err := multisig.NewMultiSigControlFilterer(
+	filterer, err := multisig.NewMultisigControlFilterer(
 		o.multiSigAddress,
 		o.ethClient,
 	)
@@ -116,7 +128,7 @@ func (o *OnChainVerifier) CheckThresholdSetEvent(
 		)
 	}
 
-	filterer, err := multisig.NewMultiSigControlFilterer(
+	filterer, err := multisig.NewMultisigControlFilterer(
 		o.multiSigAddress,
 		o.ethClient,
 	)
@@ -166,7 +178,7 @@ func (o *OnChainVerifier) CheckThresholdSetEvent(
 
 func (o *OnChainVerifier) filterSignerAdded(
 	ctx context.Context,
-	filterer *multisig.MultiSigControlFilterer,
+	filterer *multisig.MultisigControlFilterer,
 	event *types.SignerEvent,
 ) error {
 	iter, err := filterer.FilterSignerAdded(
@@ -206,7 +218,7 @@ func (o *OnChainVerifier) filterSignerAdded(
 
 func (o *OnChainVerifier) filterSignerRemoved(
 	ctx context.Context,
-	filterer *multisig.MultiSigControlFilterer,
+	filterer *multisig.MultisigControlFilterer,
 	event *types.SignerEvent,
 ) error {
 	iter, err := filterer.FilterSignerRemoved(

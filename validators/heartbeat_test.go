@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package validators
 
 import (
@@ -31,10 +43,12 @@ func TestRecordHeartbeatResult(t *testing.T) {
 func TestCheckAndExpireStaleHeartbeats(t *testing.T) {
 	top := getHBTestTopology(t)
 	top.epochSeq = 0
+	tt := &dummyTestTime{}
+	top.timeService = tt
 
 	now := time.Now()
 	nowPlus500 := now.Add(500 * time.Second)
-	top.currentTime = now
+	tt.now = now
 
 	// no next hash - means we're not awaiting a heartbeat, nothing expired
 	top.checkAndExpireStaleHeartbeats()
@@ -46,14 +60,14 @@ func TestCheckAndExpireStaleHeartbeats(t *testing.T) {
 	require.Equal(t, 0, top.validators["node1"].heartbeatTracker.blockIndex)
 
 	// still not enough time passed
-	top.currentTime = nowPlus500
+	tt.now = nowPlus500
 	top.validators["node1"].heartbeatTracker.expectedNextHash = "abcde"
 	top.validators["node1"].heartbeatTracker.expectedNexthashSince = now
 	top.checkAndExpireStaleHeartbeats()
 	require.Equal(t, 0, top.validators["node1"].heartbeatTracker.blockIndex)
 
 	// enough time passed - expect invalidation
-	top.currentTime = nowPlus500.Add(1 * time.Second)
+	tt.now = nowPlus500.Add(1 * time.Second)
 	top.validators["node1"].heartbeatTracker.expectedNextHash = "abcde"
 	top.validators["node1"].heartbeatTracker.expectedNexthashSince = now
 	top.checkAndExpireStaleHeartbeats()
@@ -133,6 +147,8 @@ func TestGetNodeRequiringHB(t *testing.T) {
 	now := time.Now()
 	top.epochSeq = 1
 
+	tt := &dummyTestTime{}
+	top.timeService = tt
 	// initialise all to be not require resend for now
 	for _, vs := range top.validators {
 		vs.heartbeatTracker.expectedNexthashSince = now.Add(500 * time.Second)
@@ -143,12 +159,12 @@ func TestGetNodeRequiringHB(t *testing.T) {
 	top.validators["node3"].data.FromEpoch = 2
 	top.validators["node3"].heartbeatTracker.expectedNexthashSince = now.Add(-300 * time.Second)
 
-	top.currentTime = now
+	tt.now = now
 	res := top.getNodesRequiringHB()
 	require.Equal(t, 0, len(res))
 
 	// move time by 801 seconds
-	top.currentTime = now.Add(801 * time.Second)
+	tt.now = now.Add(801 * time.Second)
 	res = top.getNodesRequiringHB()
 	require.Equal(t, 1, len(res))
 	require.Equal(t, "node2", res[0])
@@ -160,7 +176,7 @@ func TestGetNodeRequiringHB(t *testing.T) {
 	require.Equal(t, "node3", res[1])
 
 	// move time by 200 seconds
-	top.currentTime = now.Add(1001 * time.Second)
+	tt.now = now.Add(1001 * time.Second)
 	res = top.getNodesRequiringHB()
 	require.Equal(t, 3, len(res))
 	require.Equal(t, "node1", res[0])
@@ -170,6 +186,7 @@ func TestGetNodeRequiringHB(t *testing.T) {
 
 func getHBTestTopology(t *testing.T) *Topology {
 	t.Helper()
+
 	topology := &Topology{}
 	topology.validators = map[string]*valState{}
 	topology.OnEpochLengthUpdate(context.Background(), 100000*time.Second)
@@ -184,4 +201,12 @@ func getHBTestTopology(t *testing.T) *Topology {
 		}
 	}
 	return topology
+}
+
+type dummyTestTime struct {
+	now time.Time
+}
+
+func (tt *dummyTestTime) GetTimeNow() time.Time {
+	return tt.now
 }

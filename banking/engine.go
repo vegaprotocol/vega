@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package banking
 
 import (
@@ -43,7 +55,7 @@ var (
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/assets_mock.go -package mocks code.vegaprotocol.io/vega/banking Assets
 type Assets interface {
 	Get(assetID string) (*assets.Asset, error)
-	Enable(assetID string) error
+	Enable(ctx context.Context, assetID string) error
 }
 
 // Notary ...
@@ -80,7 +92,7 @@ type Witness interface {
 // TimeService provide the time of the vega node using the tm time
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/time_service_mock.go -package mocks code.vegaprotocol.io/vega/banking TimeService
 type TimeService interface {
-	NotifyOnTick(func(context.Context, time.Time))
+	GetTimeNow() time.Time
 }
 
 // Epochervice ...
@@ -110,14 +122,15 @@ const (
 var defaultValidationDuration = 2 * time.Hour
 
 type Engine struct {
-	cfg     Config
-	log     *logging.Logger
-	broker  broker.BrokerI
-	col     Collateral
-	witness Witness
-	notary  Notary
-	assets  Assets
-	top     Topology
+	cfg         Config
+	log         *logging.Logger
+	timeService TimeService
+	broker      broker.BrokerI
+	col         Collateral
+	witness     Witness
+	notary      Notary
+	assets      Assets
+	top         Topology
 
 	assetActs     map[string]*assetAction
 	seen          map[*snapshot.TxRef]struct{}
@@ -127,7 +140,6 @@ type Engine struct {
 	deposits      map[string]*types.Deposit
 
 	currentEpoch uint64
-	currentTime  time.Time
 	mu           sync.RWMutex
 	bss          *bankingSnapshotState
 
@@ -161,15 +173,15 @@ func New(
 	marketActivityTracker MarketActivityTracker,
 ) (e *Engine) {
 	defer func() {
-		tsvc.NotifyOnTick(e.OnTick)
 		epoch.NotifyOnEpoch(e.OnEpoch, e.OnEpochRestore)
 	}()
 	log = log.Named(namedLogger)
 	log.SetLevel(cfg.Level.Get())
 
-	e = &Engine{
+	return &Engine{
 		cfg:           cfg,
 		log:           log,
+		timeService:   tsvc,
 		broker:        broker,
 		col:           col,
 		witness:       witness,
@@ -196,7 +208,6 @@ func New(
 		minTransferQuantumMultiple: num.DecimalZero(),
 		marketActivityTracker:      marketActivityTracker,
 	}
-	return e
 }
 
 // ReloadConf updates the internal configuration.
@@ -226,11 +237,7 @@ func (e *Engine) OnEpoch(ctx context.Context, ep types.Epoch) {
 	}
 }
 
-func (e *Engine) OnTick(ctx context.Context, t time.Time) {
-	e.mu.Lock()
-	e.currentTime = t
-	e.mu.Unlock()
-
+func (e *Engine) OnTick(ctx context.Context, _ time.Time) {
 	assetActionKeys := make([]string, 0, len(e.assetActs))
 	for k := range e.assetActs {
 		assetActionKeys = append(assetActionKeys, k)
@@ -353,7 +360,7 @@ func (e *Engine) finalizeAssetList(ctx context.Context, assetID string) error {
 			logging.AssetID(assetID))
 		return nil
 	}
-	if err := e.assets.Enable(assetID); err != nil {
+	if err := e.assets.Enable(ctx, assetID); err != nil {
 		e.log.Error("unable to enable asset",
 			logging.Error(err),
 			logging.AssetID(assetID))
@@ -375,7 +382,7 @@ func (e *Engine) finalizeDeposit(ctx context.Context, d *types.Deposit) error {
 	}
 
 	d.Status = types.DepositStatusFinalized
-	d.CreditDate = e.currentTime.UnixNano()
+	d.CreditDate = e.timeService.GetTimeNow().UnixNano()
 	e.broker.Send(events.NewTransferResponse(ctx, []*types.TransferResponse{res}))
 	e.bss.changedDeposits = true
 	return nil
@@ -410,8 +417,10 @@ func (e *Engine) newWithdrawal(
 ) (w *types.Withdrawal, ref *big.Int) {
 	partyID = strings.TrimPrefix(partyID, "0x")
 	asset = strings.TrimPrefix(asset, "0x")
+	now := e.timeService.GetTimeNow()
+
 	// reference needs to be an int, deterministic for the contracts
-	ref = big.NewInt(0).Add(e.withdrawalCnt, big.NewInt(e.currentTime.Unix()))
+	ref = big.NewInt(0).Add(e.withdrawalCnt, big.NewInt(now.Unix()))
 	e.withdrawalCnt.Add(e.withdrawalCnt, big.NewInt(1))
 	w = &types.Withdrawal{
 		ID:             id,
@@ -421,7 +430,7 @@ func (e *Engine) newWithdrawal(
 		Amount:         amount,
 		ExpirationDate: expirationDate.Unix(),
 		Ext:            wext,
-		CreationDate:   e.currentTime.UnixNano(),
+		CreationDate:   now.UnixNano(),
 		Ref:            ref.String(),
 	}
 	e.bss.changedWithdrawals = true
@@ -443,7 +452,7 @@ func (e *Engine) newDeposit(
 		PartyID:      partyID,
 		Asset:        asset,
 		Amount:       amount,
-		CreationDate: e.currentTime.UnixNano(),
+		CreationDate: e.timeService.GetTimeNow().UnixNano(),
 		TxHash:       txHash,
 	}
 }

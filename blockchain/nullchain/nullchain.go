@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package nullchain
 
 import (
@@ -19,10 +31,9 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 
 	abci "github.com/tendermint/tendermint/abci/types"
-	"github.com/tendermint/tendermint/p2p"
 	"github.com/tendermint/tendermint/proto/tendermint/crypto"
 	"github.com/tendermint/tendermint/proto/tendermint/types"
-	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
+	tmctypes "github.com/tendermint/tendermint/rpc/coretypes"
 	tmtypes "github.com/tendermint/tendermint/types"
 )
 
@@ -287,8 +298,8 @@ func (n *NullBlockchain) GetChainID(context.Context) (string, error) {
 
 func (n *NullBlockchain) GetStatus(context.Context) (*tmctypes.ResultStatus, error) {
 	return &tmctypes.ResultStatus{
-		NodeInfo: p2p.DefaultNodeInfo{
-			Version: "0.34.12",
+		NodeInfo: tmtypes.NodeInfo{
+			Version: "0.35.8",
 		},
 		SyncInfo: tmctypes.SyncInfo{
 			CatchingUp: false,

@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package statevar
 
 import (
@@ -178,11 +190,6 @@ func (sv *StateVariable) eventTriggered(eventID string) error {
 	sv.state = StateVarConsensusStateCalculationStarted
 	sv.addEventLocked()
 
-	if !sv.top.IsValidator() {
-		sv.lock.Unlock()
-		return nil
-	}
-
 	sv.lock.Unlock()
 
 	// kickoff calculation
@@ -202,6 +209,13 @@ func (sv *StateVariable) CalculationFinished(eventID string, result statevar.Sta
 		sv.state = StateVarConsensusStateError
 		sv.addEventLocked()
 		sv.eventID = ""
+		sv.lock.Unlock()
+		return
+	}
+
+	if !sv.top.IsValidator() {
+		// if we're a non-validator we still need to do the calculation so that the snapshot will be in sync with
+		// a validators, but now we're here we do not need to actually send in our results.
 		sv.lock.Unlock()
 		return
 	}

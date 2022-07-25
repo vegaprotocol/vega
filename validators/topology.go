@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package validators
 
 import (
@@ -117,8 +129,8 @@ type Topology struct {
 	cfg                  Config
 	wallets              NodeWallets
 	broker               Broker
+	timeService          TimeService
 	validatorPerformance ValidatorPerformance
-	currentTime          time.Time
 	multiSigTopology     MultiSigTopology
 
 	// vega pubkey to validator data
@@ -176,7 +188,11 @@ func (t *Topology) OnEpochEvent(ctx context.Context, epoch types.Epoch) {
 	t.epochSeq = epoch.Seq
 	if epoch.Action == proto.EpochAction_EPOCH_ACTION_START {
 		t.newEpochStarted = true
-		t.rng = rand.New(rand.NewSource(epoch.StartTime.Unix()))
+		// this is needed because when we load a checkpoint on genesis t.rng is not initialised as it's done before calling beginBlock
+		// so we need to initialise the rng to something.
+		if t.rng == nil {
+			t.rng = rand.New(rand.NewSource(epoch.StartTime.Unix()))
+		}
 	}
 	// this is a workaround to the topology loaded from checkpoint before the epoch.
 	if t.checkpointLoaded {
@@ -201,7 +217,7 @@ func (t *Topology) OnEpochEvent(ctx context.Context, epoch types.Epoch) {
 }
 
 func NewTopology(
-	log *logging.Logger, cfg Config, wallets NodeWallets, broker Broker, isValidatorSetup bool, cmd Commander, msTopology MultiSigTopology,
+	log *logging.Logger, cfg Config, wallets NodeWallets, broker Broker, isValidatorSetup bool, cmd Commander, msTopology MultiSigTopology, timeService TimeService,
 ) *Topology {
 	log = log.Named(namedLogger)
 	log.SetLevel(cfg.Level.Get())
@@ -211,6 +227,7 @@ func NewTopology(
 		cfg:                           cfg,
 		wallets:                       wallets,
 		broker:                        broker,
+		timeService:                   timeService,
 		validators:                    map[string]*valState{},
 		chainValidators:               []string{},
 		tss:                           &topologySnapshotState{changed: true},
@@ -235,8 +252,7 @@ func (t *Topology) OnEpochLengthUpdate(ctx context.Context, l time.Duration) err
 	// set time between hearbeats to 1% of the epoch duration in seconds as blocks
 	// e.g. if epoch is 1 day = 86400 seconds (blocks) then time between hb becomes 864
 	// if epoch is 300 seconds then blocks becomes 50 (lower bound applied).
-	// if epoch is 5 seconds then blocks becomes 5 (lower bound applied).
-	blocks := int64(math.Max(l.Seconds()*0.01, math.Min(50.0, l.Seconds())))
+	blocks := int64(math.Max(l.Seconds()*0.01, 50.0))
 	t.timeBetweenHeartbeats = time.Duration(blocks * int64(time.Second))
 	t.timeToSendHeartbeat = time.Duration(blocks * int64(time.Second) / 2)
 	return nil
@@ -398,10 +414,9 @@ func (t *Topology) BeginBlock(ctx context.Context, req abcitypes.RequestBeginBlo
 	t.mu.RLock()
 	defer t.mu.RUnlock()
 
-	t.currentTime = req.Header.Time
 	// resetting the seed every block, to both get some more unpredictability and still deterministic
 	// and play nicely with snapshot
-	t.rng = rand.New(rand.NewSource(req.Header.Time.Unix()))
+	t.rng = rand.New(rand.NewSource(t.timeService.GetTimeNow().Unix()))
 
 	t.checkHeartbeat(ctx)
 	t.validatorPerformance.BeginBlock(ctx, hex.EncodeToString(req.Header.ProposerAddress))

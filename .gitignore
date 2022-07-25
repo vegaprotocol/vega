@@ -1,29 +1,40 @@
 # Vega specific entries
-build/
-bin/
-cmd/*/*-dbg
-cmd/vega/vega*
-cmd/vegabenchmark/vegabenchmark*
-cmd/examples/nullchain/nullchain*
-data/
+
+# Exclude platforms and tools related files
 .DS_Store
 .envrc
 .idea/
-*.iws
-.mypy_cache
-proto/*-re
+.vscode/**/*
+!.vscode/launch.json
+
+# Exclude binaries
+build/
+bin/
+*.exe
+vegawallet
+vega
+cmd/vegawallet/vegawallet*
+cmd/vegabenchmark/vegabenchmark*
+cmd/examples/nullchain/nullchain*
+#cmd/*/*-dbg
+
+# Exclude files related to tests
+integration.test
 .testCoverage.html
 .testCoverage.txt
 *.tmp
 tmp/
-*.log
-vendor/
-.vscode/**/*
-!.vscode/launch.json
+
+# Exclude files related to proto
+proto/*-re
 proto/**.orig
 *.pb.go-re
 gomock_reflect_*
-integration.test
+
+# Exclude other random
+data/
+*.iws
+.mypy_cache
+*.log
 *.patch
 .metals
-

@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package validators
 
 import (
@@ -65,7 +77,7 @@ func (t *Topology) RotateEthereumKey(
 	allValidators := t.validators.toNodeIDAdresses()
 
 	// we can emit remove validator signatures immediately
-	t.signatures.EmitRemoveValidatorsSignatures(ctx, toRemove, allValidators, t.currentTime, t.epochSeq)
+	t.signatures.EmitRemoveValidatorsSignatures(ctx, toRemove, allValidators, t.timeService.GetTimeNow(), t.epochSeq)
 
 	// schedule signature collection to future block
 	// those signature should be emitted after validator has rotated is key in node wallet
@@ -119,7 +131,7 @@ func (t *Topology) ethereumKeyRotationBeginBlockLocked(ctx context.Context) {
 		t.validators[r.NodeID] = data
 
 		toAdd := []NodeIDAddress{{NodeID: r.NodeID, EthAddress: r.NewAddress}}
-		t.signatures.EmitNewValidatorsSignatures(ctx, toAdd, t.currentTime, t.epochSeq)
+		t.signatures.EmitNewValidatorsSignatures(ctx, toAdd, t.timeService.GetTimeNow(), t.epochSeq)
 
 		t.broker.Send(events.NewEthereumKeyRotationEvent(
 			ctx,

@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package netparams
 
 import (
@@ -188,9 +200,9 @@ func (s *Store) dispatchUpdate(ctx context.Context, p string) error {
 	return err
 }
 
-// OnChainTimeUpdate is trigger once per blocks
+// OnTick is trigger once per blocks
 // we will send parameters update to watchers.
-func (s *Store) OnChainTimeUpdate(ctx context.Context, _ time.Time) {
+func (s *Store) OnTick(ctx context.Context, _ time.Time) {
 	if len(s.paramUpdates) <= 0 {
 		return
 	}

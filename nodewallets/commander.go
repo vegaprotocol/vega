@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package nodewallets
 
 import (
@@ -16,7 +28,7 @@ import (
 
 	"github.com/cenkalti/backoff"
 	"github.com/golang/protobuf/proto"
-	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
+	tmctypes "github.com/tendermint/tendermint/rpc/coretypes"
 )
 
 const (
@@ -178,14 +190,6 @@ func wrapPayloadIntoInputData(data *commandspb.InputData, cmd txn.Command, paylo
 			}
 		} else {
 			panic("failed to wrap to ChainEvent")
-		}
-	case txn.CheckpointRestoreCommand:
-		if underlyingCmd, ok := payload.(*commandspb.RestoreSnapshot); ok {
-			data.Command = &commandspb.InputData_RestoreSnapshotSubmission{
-				RestoreSnapshotSubmission: underlyingCmd,
-			}
-		} else {
-			panic("failed to wrap RestoreSnapshot")
 		}
 	case txn.StateVariableProposalCommand:
 		if underlyingCmd, ok := payload.(*commandspb.StateVariableProposal); ok {

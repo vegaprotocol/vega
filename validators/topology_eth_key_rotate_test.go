@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package validators_test
 
 import (
@@ -26,6 +38,7 @@ func TestTopologyEthereumKeyRotate(t *testing.T) {
 func testRotateEthereumKeySuccess(t *testing.T) {
 	top := getTestTopWithMockedSignatures(t)
 	defer top.ctrl.Finish()
+	top.timeService.EXPECT().GetTimeNow().AnyTimes()
 
 	nr := commandspb.AnnounceNode{
 		Id:              "vega-master-pubkey",
@@ -60,6 +73,7 @@ func testRotateEthereumKeySuccess(t *testing.T) {
 func testRotateEthereumKeyFailsOnNonExistingNode(t *testing.T) {
 	top := getTestTopWithDefaultValidator(t)
 	defer top.ctrl.Finish()
+	top.timeService.EXPECT().GetTimeNow().AnyTimes()
 
 	err := top.RotateEthereumKey(
 		context.Background(),
@@ -100,6 +114,7 @@ func testRotateEthereumKeyFailsWhenTargetBlockHeightIsLessThenCurrentBlockHeight
 func testRotateEthereumKeyFailsWhenCurrentAddressDoesNotMatch(t *testing.T) {
 	top := getTestTopWithDefaultValidator(t)
 	defer top.ctrl.Finish()
+	top.timeService.EXPECT().GetTimeNow().AnyTimes()
 
 	id := "vega-master-pubkey"
 
@@ -133,6 +148,7 @@ func newEthereumKeyRotationSubmission(currentAddr, newAddr string, targetBlock u
 func testEthereumKeyRotationBeginBlock(t *testing.T) {
 	top := getTestTopWithMockedSignatures(t)
 	defer top.ctrl.Finish()
+	top.timeService.EXPECT().GetTimeNow().AnyTimes()
 
 	chainValidators := []string{"tm-pubkey-1", "tm-pubkey-2", "tm-pubkey-3", "tm-pubkey-4"}
 

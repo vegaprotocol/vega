@@ -1,3 +1,15 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
 package rewards
 
 import (
@@ -6,11 +18,11 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/rewards/mocks"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
 
-	bmock "code.vegaprotocol.io/vega/broker/mocks"
+	bmocks "code.vegaprotocol.io/vega/broker/mocks"
+	vmock "code.vegaprotocol.io/vega/validators/mocks"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
 )
@@ -55,10 +67,10 @@ func testCalcRewardsZeroScores(t *testing.T) {
 func testCalcRewardsMaxPayoutRepsected(t *testing.T, maxPayout *num.Uint) {
 	delegatorShare, _ := num.DecimalFromString("0.3")
 	ctrl := gomock.NewController(t)
-	broker := bmock.NewMockBroker(ctrl)
+	broker := bmocks.NewMockBroker(ctrl)
 	broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
-	valPerformance := mocks.NewMockValidatorPerformance(ctrl)
-	valPerformance.EXPECT().ValidatorPerformanceScore(gomock.Any()).Return(num.DecimalFromFloat(1)).AnyTimes()
+	valPerformance := vmock.NewMockValidatorPerformance(ctrl)
+	valPerformance.EXPECT().ValidatorPerformanceScore(gomock.Any(), gomock.Any(), gomock.Any()).Return(num.DecimalFromFloat(1)).AnyTimes()
 
 	delegatorForVal1 := map[string]*num.Uint{}
 	delegatorForVal1["party1"] = num.NewUint(6000)
@@ -180,10 +192,10 @@ func testCalcRewardSmallMaxPayoutBreached(t *testing.T) {
 	}
 
 	ctrl := gomock.NewController(t)
-	broker := bmock.NewMockBroker(ctrl)
+	broker := bmocks.NewMockBroker(ctrl)
 	broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
-	valPerformance := mocks.NewMockValidatorPerformance(ctrl)
-	valPerformance.EXPECT().ValidatorPerformanceScore(gomock.Any()).Return(num.DecimalFromFloat(1)).AnyTimes()
+	valPerformance := vmock.NewMockValidatorPerformance(ctrl)
+	valPerformance.EXPECT().ValidatorPerformanceScore(gomock.Any(), gomock.Any(), gomock.Any()).Return(num.DecimalFromFloat(1)).AnyTimes()
 
 	validatorData := []*types.ValidatorData{validator1, validator2, validator3, validator4}
 	valScores := map[string]num.Decimal{"node1": num.DecimalFromFloat(0.2), "node2": num.DecimalFromFloat(0.4), "node3": num.DecimalFromFloat(0.4), "node4": num.DecimalZero()}
@@ -260,10 +272,10 @@ func testCalcRewardsMaxPayoutBreachedPartyCanTakeMore(t *testing.T) {
 	}
 
 	ctrl := gomock.NewController(t)
-	broker := bmock.NewMockBroker(ctrl)
+	broker := bmocks.NewMockBroker(ctrl)
 	broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
-	valPerformance := mocks.NewMockValidatorPerformance(ctrl)
-	valPerformance.EXPECT().ValidatorPerformanceScore(gomock.Any()).Return(num.DecimalFromFloat(1)).AnyTimes()
+	valPerformance := vmock.NewMockValidatorPerformance(ctrl)
+	valPerformance.EXPECT().ValidatorPerformanceScore(gomock.Any(), gomock.Any(), gomock.Any()).Return(num.DecimalFromFloat(1)).AnyTimes()
 
 	validatorData := []*types.ValidatorData{validator1, validator2, validator3, validator4}
 
@@ -353,10 +365,10 @@ func testEarlyStopCalcRewardsMaxPayoutBreachedPartyCanTakeMore(t *testing.T) {
 	}
 
 	ctrl := gomock.NewController(t)
-	broker := bmock.NewMockBroker(ctrl)
+	broker := bmocks.NewMockBroker(ctrl)
 	broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
-	valPerformance := mocks.NewMockValidatorPerformance(ctrl)
-	valPerformance.EXPECT().ValidatorPerformanceScore(gomock.Any()).Return(num.DecimalFromFloat(1)).AnyTimes()
+	valPerformance := vmock.NewMockValidatorPerformance(ctrl)
+	valPerformance.EXPECT().ValidatorPerformanceScore(gomock.Any(), gomock.Any(), gomock.Any()).Return(num.DecimalFromFloat(1)).AnyTimes()
 
 	validatorData := []*types.ValidatorData{validator1, validator2, validator3, validator4}
 	valScores := map[string]num.Decimal{"node1": num.DecimalFromFloat(0.25), "node2": num.DecimalFromFloat(0.5), "node3": num.DecimalFromFloat(0.25), "node4": num.DecimalZero()}
