@@ -24,7 +24,7 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
       | party2 | ETH   | 10000000000    |
       | aux    | ETH   | 100000000000   |
       | aux2   | ETH   | 100000000000   |
-      | lpprov | ETH   | 10000000000000 |
+      | lpprov | ETH   | 100000000000 |
 
     When the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
@@ -42,15 +42,18 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
     And the mark price should be "100000" for the market "ETH/DEC20"
 
-    And the order book should have the following volumes for market "ETH/DEC20":
-      | side | price  | volume   |
-      | sell | 200000 | 901      |
-      | buy  | 1      | 180000001|
-      
+    # And the order book should have the following volumes for market "ETH/DEC20":
+    #   | side | price  | volume   |
+    #   | sell | 200000 | 901      |
+    #   | buy  | 1      | 180000001|
+
     And the market data for the market "ETH/DEC20" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 100000     | TRADING_MODE_CONTINUOUS | 60      | 99461     | 100541    | 74340        | 90000000       | 1             |
-      | 100000     | TRADING_MODE_CONTINUOUS | 120     | 99000     | 101008    | 74340        | 90000000       | 1             |
+      | 100000     | TRADING_MODE_CONTINUOUS | 60      | 99461     | 100541    | 74340        | 0       | 1             |
+      | 100000     | TRADING_MODE_CONTINUOUS | 120     | 99000     | 101008    | 74340        | 0       | 1             |
+
+    And the accumulated infrastructure fees should be "0" for the asset "ETH"
+    And the accumulated liquidity fees should be "0" for the market "ETH/DEC20"
 
     #T0 + 10 min
     When time is updated to "2020-10-16T00:10:00Z"
@@ -60,9 +63,24 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
       | party1 | ETH/DEC20 | sell | 1      | 100000 | 0                | TYPE_LIMIT | TIF_GTC |
       | party2 | ETH/DEC20 | buy  | 1      | 100000 | 1                | TYPE_LIMIT | TIF_GTC |
 
-    And the mark price should be "100000" for the market "ETH/DEC20"
+    And the accumulated infrastructure fees should be "0" for the asset "ETH"
+    And the accumulated liquidity fees should be "0" for the market "ETH/DEC20"
 
+ And the market data for the market "ETH/DEC20" should be:
+      | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
+      | 100000     | TRADING_MODE_CONTINUOUS | 60      | 99461     | 100541    | 148680        | 0       | 2             |
+      | 100000     | TRADING_MODE_CONTINUOUS | 120     | 99000     | 101008    | 148680        | 0       | 2             |
+
+    And the order book should have the following volumes for market "ETH/DEC20":
+      | side | price  | volume   |
+      | sell | 200000 | 1        |
+      | buy  | 1      | 1        |
+
+    And the mark price should be "100000" for the market "ETH/DEC20"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
+
+    And the accumulated infrastructure fees should be "0" for the asset "ETH"
+    And the accumulated liquidity fees should be "0" for the market "ETH/DEC20"
 
     When the parties place the following orders:
       | party  | market id | side | volume | price  | resulting trades | type       | tif     | reference |
