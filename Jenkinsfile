@@ -361,9 +361,13 @@ pipeline {
                                     variable: 'VEGACAPSULE_S3_BUCKET_NAME'
                                 )
                                 withCredentials([vegaS3Ops, bucketName]) {
-                                    sh label: 'Upload vega binary to S3', script: '''
-                                        aws s3 cp ./cmd/vega/vega-linux-amd64 s3://''' + env.VEGACAPSULE_S3_BUCKET_NAME + '''/bin/vega-linux-amd64-''' + versionHash + '''
-                                    '''
+                                    try {
+                                        sh label: 'Upload vega binary to S3', script: '''
+                                            aws s3 cp ./cmd/vega/vega-linux-amd64 s3://''' + env.VEGACAPSULE_S3_BUCKET_NAME + '''/bin/vega-linux-amd64-''' + versionHash + '''
+                                        '''
+                                    catch(err) {
+                                        print(err)
+                                    }
                                 }
                             }
                         }
