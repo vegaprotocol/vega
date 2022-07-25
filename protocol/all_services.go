@@ -162,7 +162,7 @@ func newServices(
 	svcs.genesisHandler.OnGenesisTimeLoaded(svcs.timeService.SetTimeNow)
 
 	svcs.eventService = subscribers.NewService(svcs.broker)
-	svcs.assets = assets.New(svcs.log, svcs.conf.Assets, nodeWallets, svcs.ethClient, svcs.broker, svcs.timeService, svcs.conf.HaveEthClient())
+	svcs.assets = assets.New(svcs.log, svcs.conf.Assets, nodeWallets, svcs.ethClient, svcs.broker, svcs.conf.HaveEthClient())
 	svcs.collateral = collateral.New(svcs.log, svcs.conf.Collateral, svcs.timeService, svcs.broker)
 	svcs.oracle = oracles.NewEngine(svcs.log, svcs.conf.Oracles, svcs.timeService, svcs.broker)
 
