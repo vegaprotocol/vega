@@ -25,19 +25,19 @@ func (r *myAssetResolver) Status(ctx context.Context, obj *types.Asset) (AssetSt
 	return convertAssetStatusFromProto(obj.Status)
 }
 
-func (r *myAssetResolver) InfrastructureFeeAccount(ctx context.Context, obj *types.Asset) (*types.Account, error) {
-	if len(obj.Id) <= 0 {
+func listAssetAccounts(ctx context.Context, client TradingDataServiceClientV2, asset *types.Asset, accountType types.AccountType) (*types.Account, error) {
+	if asset == nil || len(asset.Id) <= 0 {
 		return nil, ErrMissingIDOrReference
 	}
 
 	req := &v2.ListAccountsRequest{
 		Filter: &v2.AccountFilter{
-			AssetId:      obj.Id,
-			AccountTypes: []types.AccountType{types.AccountType_ACCOUNT_TYPE_FEES_INFRASTRUCTURE},
+			AssetId:      asset.Id,
+			AccountTypes: []types.AccountType{accountType},
 		},
 	}
 
-	res, err := r.tradingDataClientV2.ListAccounts(ctx, req)
+	res, err := client.ListAccounts(ctx, req)
 	if err != nil {
 		return nil, err
 	}
@@ -50,29 +50,28 @@ func (r *myAssetResolver) InfrastructureFeeAccount(ctx context.Context, obj *typ
 	return acc, nil
 }
 
-func (r *myAssetResolver) GlobalRewardPoolAccount(ctx context.Context, obj *types.Asset) (*types.Account, error) {
-	if len(obj.Id) <= 0 {
-		return nil, ErrMissingIDOrReference
-	}
+func (r *myAssetResolver) InfrastructureFeeAccount(ctx context.Context, asset *types.Asset) (*types.Account, error) {
+	return listAssetAccounts(ctx, r.tradingDataClientV2, asset, types.AccountType_ACCOUNT_TYPE_FEES_INFRASTRUCTURE)
+}
 
-	req := &v2.ListAccountsRequest{
-		Filter: &v2.AccountFilter{
-			AssetId:      obj.Id,
-			AccountTypes: []types.AccountType{types.AccountType_ACCOUNT_TYPE_GLOBAL_REWARD},
-		},
-	}
+func (r *myAssetResolver) GlobalRewardPoolAccount(ctx context.Context, asset *types.Asset) (*types.Account, error) {
+	return listAssetAccounts(ctx, r.tradingDataClientV2, asset, types.AccountType_ACCOUNT_TYPE_GLOBAL_REWARD)
+}
 
-	res, err := r.tradingDataClientV2.ListAccounts(ctx, req)
-	if err != nil {
-		return nil, err
-	}
+func (r *myAssetResolver) TakerFeeRewardAccount(ctx context.Context, asset *types.Asset) (*types.Account, error) {
+	return listAssetAccounts(ctx, r.tradingDataClientV2, asset, types.AccountType_ACCOUNT_TYPE_REWARD_TAKER_PAID_FEES)
+}
 
-	var acc *types.Account
-	if len(res.Accounts.Edges) > 0 {
-		acc = res.Accounts.Edges[0].Account
-	}
+func (r *myAssetResolver) MakerFeeRewardAccount(ctx context.Context, asset *types.Asset) (*types.Account, error) {
+	return listAssetAccounts(ctx, r.tradingDataClientV2, asset, types.AccountType_ACCOUNT_TYPE_REWARD_MAKER_RECEIVED_FEES)
+}
 
-	return acc, nil
+func (r *myAssetResolver) LpFeeRewardAccount(ctx context.Context, asset *types.Asset) (*types.Account, error) {
+	return listAssetAccounts(ctx, r.tradingDataClientV2, asset, types.AccountType_ACCOUNT_TYPE_REWARD_LP_RECEIVED_FEES)
+}
+
+func (r *myAssetResolver) MarketProposerRewardAccount(ctx context.Context, asset *types.Asset) (*types.Account, error) {
+	return listAssetAccounts(ctx, r.tradingDataClientV2, asset, types.AccountType_ACCOUNT_TYPE_REWARD_MARKET_PROPOSERS)
 }
 
 func (r myAssetResolver) Name(ctx context.Context, obj *types.Asset) (string, error) {
