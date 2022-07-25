@@ -16,6 +16,8 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/vega/version"
+	tmversion "github.com/tendermint/tendermint/version"
 )
 
 // Stats ties together all other package level application stats types.
@@ -30,16 +32,17 @@ type Stats struct {
 }
 
 // New instantiates a new Stats.
-func New(log *logging.Logger, cfg Config, version string, versionHash string) *Stats {
+func New(log *logging.Logger, cfg Config) *Stats {
 	log = log.Named(namedLogger)
 	log.SetLevel(cfg.Level.Get())
 	return &Stats{
-		log:         log,
-		cfg:         cfg,
-		Blockchain:  &Blockchain{},
-		version:     version,
-		versionHash: versionHash,
-		uptime:      time.Now(),
+		log:          log,
+		cfg:          cfg,
+		Blockchain:   &Blockchain{},
+		version:      version.Get(),
+		versionHash:  version.GetCommitHash(),
+		chainVersion: tmversion.TMVersion,
+		uptime:       time.Now(),
 	}
 }
 
@@ -55,11 +58,6 @@ func (s *Stats) ReloadConf(cfg Config) {
 	}
 
 	s.cfg = cfg
-}
-
-// SetChainVersion sets the version of the chain in use by vega.
-func (s *Stats) SetChainVersion(v string) {
-	s.chainVersion = v
 }
 
 // GetChainVersion returns the version of the chain in use by vega.

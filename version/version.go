@@ -10,33 +10,36 @@
 // of this software will be governed by version 3 or later of the GNU General
 // Public License.
 
-package bridge
+package version
 
-import (
-	"crypto/ecdsa"
+import "runtime/debug"
 
-	"github.com/ethereum/go-ethereum/crypto"
+var (
+	cLIVersionHash = ""
+	cLIVersion     = "v0.54.0+dev"
 )
 
-type PrivKeySigner struct {
-	privateKey *ecdsa.PrivateKey
-}
+func init() {
+	info, _ := debug.ReadBuildInfo()
+	modified := false
 
-func NewPrivKeySigner(hexPrivKey string) (*PrivKeySigner, error) {
-	privateKey, err := crypto.HexToECDSA(hexPrivKey)
-	if err != nil {
-		return nil, err
+	for _, v := range info.Settings {
+		if v.Key == "vcs.revision" {
+			cLIVersionHash = v.Value
+		}
+		if v.Key == "vcs.modified" {
+			modified = true
+		}
 	}
-
-	return &PrivKeySigner{
-		privateKey: privateKey,
-	}, nil
+	if modified {
+		cLIVersionHash += "-modified"
+	}
 }
 
-func (p *PrivKeySigner) Sign(hash []byte) ([]byte, error) {
-	return crypto.Sign(hash, p.privateKey)
+func Get() string {
+	return cLIVersion
 }
 
-func (p *PrivKeySigner) Algo() string {
-	return ""
+func GetCommitHash() string {
+	return cLIVersionHash
 }

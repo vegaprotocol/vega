@@ -150,7 +150,7 @@ func TestSnapshotViaEngine(t *testing.T) {
 	log := logging.NewTestLogger()
 	timeService := stubs.NewTimeStub()
 	timeService.SetTime(now)
-	statsData := stats.New(log, stats.NewDefaultConfig(), "", "")
+	statsData := stats.New(log, stats.NewDefaultConfig())
 	config := snapshot.NewDefaultConfig()
 	config.Storage = "memory"
 	snap, _ := snapshot.New(context.Background(), &paths.DefaultPaths{}, config, log, timeService, statsData.Blockchain)

@@ -110,12 +110,13 @@ func (t *Topology) checkHeartbeat(ctx context.Context) {
 // checkAndExpireStaleHeartbeats checks if there is a validator with stale heartbeat and records the failure.
 func (t *Topology) checkAndExpireStaleHeartbeats() {
 	// if a node hasn't sent a heartbeat when they were expected, record the failure and reset their state.
+	now := t.timeService.GetTimeNow()
 	for _, v := range t.validators {
 		// if the time since we've expected the heartbeat is too big,
 		// we consider this validator invalid
 		// arbitrary 500 seconds duration for the validator to send a
 		// heartbeat, that's ~500 blocks a 1 block per sec
-		hbExpired := len(v.heartbeatTracker.expectedNextHash) > 0 && v.heartbeatTracker.expectedNexthashSince.Add(t.timeToSendHeartbeat).Before(t.currentTime)
+		hbExpired := len(v.heartbeatTracker.expectedNextHash) > 0 && v.heartbeatTracker.expectedNexthashSince.Add(t.timeToSendHeartbeat).Before(now)
 		if hbExpired {
 			v.heartbeatTracker.recordHeartbeatResult(false)
 		}
@@ -124,9 +125,10 @@ func (t *Topology) checkAndExpireStaleHeartbeats() {
 
 func (t *Topology) getNodesRequiringHB() []string {
 	validatorNeedResend := []string{}
+	now := t.timeService.GetTimeNow()
 	for k, vs := range t.validators {
 		if len(vs.heartbeatTracker.expectedNextHash) == 0 &&
-			vs.heartbeatTracker.expectedNexthashSince.Add(t.timeBetweenHeartbeats).Before(t.currentTime) &&
+			vs.heartbeatTracker.expectedNexthashSince.Add(t.timeBetweenHeartbeats).Before(now) &&
 			vs.data.FromEpoch <= t.epochSeq {
 			validatorNeedResend = append(validatorNeedResend, k)
 		}
@@ -150,7 +152,7 @@ func (t *Topology) checkHeartbeatWithBlockHash(ctx context.Context, bhash string
 
 	// time for another round
 	validator.heartbeatTracker.expectedNextHash = bhash
-	validator.heartbeatTracker.expectedNexthashSince = t.currentTime
+	validator.heartbeatTracker.expectedNexthashSince = t.timeService.GetTimeNow()
 
 	// now we figure out if we need to send a heartbeat now
 	if !t.isValidatorSetup || selectedValidator != t.SelfNodeID() {

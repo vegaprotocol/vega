@@ -76,9 +76,7 @@ func (cmd *StartCmd) Execute(args []string) error {
 	}
 
 	return (&node.NodeCommand{
-		Log:         log,
-		Version:     CLIVersion,
-		VersionHash: CLIVersionHash,
+		Log: log,
 	}).Run(
 		confWatcher,
 		vegaPaths,

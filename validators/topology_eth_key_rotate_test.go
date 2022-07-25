@@ -38,6 +38,7 @@ func TestTopologyEthereumKeyRotate(t *testing.T) {
 func testRotateEthereumKeySuccess(t *testing.T) {
 	top := getTestTopWithMockedSignatures(t)
 	defer top.ctrl.Finish()
+	top.timeService.EXPECT().GetTimeNow().AnyTimes()
 
 	nr := commandspb.AnnounceNode{
 		Id:              "vega-master-pubkey",
@@ -72,6 +73,7 @@ func testRotateEthereumKeySuccess(t *testing.T) {
 func testRotateEthereumKeyFailsOnNonExistingNode(t *testing.T) {
 	top := getTestTopWithDefaultValidator(t)
 	defer top.ctrl.Finish()
+	top.timeService.EXPECT().GetTimeNow().AnyTimes()
 
 	err := top.RotateEthereumKey(
 		context.Background(),
@@ -112,6 +114,7 @@ func testRotateEthereumKeyFailsWhenTargetBlockHeightIsLessThenCurrentBlockHeight
 func testRotateEthereumKeyFailsWhenCurrentAddressDoesNotMatch(t *testing.T) {
 	top := getTestTopWithDefaultValidator(t)
 	defer top.ctrl.Finish()
+	top.timeService.EXPECT().GetTimeNow().AnyTimes()
 
 	id := "vega-master-pubkey"
 
@@ -145,6 +148,7 @@ func newEthereumKeyRotationSubmission(currentAddr, newAddr string, targetBlock u
 func testEthereumKeyRotationBeginBlock(t *testing.T) {
 	top := getTestTopWithMockedSignatures(t)
 	defer top.ctrl.Finish()
+	top.timeService.EXPECT().GetTimeNow().AnyTimes()
 
 	chainValidators := []string{"tm-pubkey-1", "tm-pubkey-2", "tm-pubkey-3", "tm-pubkey-4"}
 

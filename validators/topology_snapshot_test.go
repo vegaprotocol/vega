@@ -50,6 +50,7 @@ func TestEmptySnapshot(t *testing.T) {
 func TestChangeOnValidatorPerfUpdate(t *testing.T) {
 	top := getTestTopology(t)
 	defer top.ctrl.Finish()
+	top.timeService.EXPECT().GetTimeNow().AnyTimes()
 
 	s, _, err := top.GetState(topKey)
 	assert.Nil(t, err)
@@ -65,8 +66,9 @@ func TestChangeOnValidatorPerfUpdate(t *testing.T) {
 
 func TestTopologySnapshot(t *testing.T) {
 	top := getTestTopWithDefaultValidator(t)
-	updateValidatorPerformanceToNonDefaultState(t, top.Topology)
 	defer top.ctrl.Finish()
+	top.timeService.EXPECT().GetTimeNow().AnyTimes()
+	updateValidatorPerformanceToNonDefaultState(t, top.Topology)
 
 	s1, _, err := top.GetState(topKey)
 	require.Nil(t, err)
@@ -139,6 +141,7 @@ func TestTopologySnapshot(t *testing.T) {
 
 	snapTop := getTestTopWithDefaultValidator(t)
 	defer snapTop.ctrl.Finish()
+	snapTop.timeService.EXPECT().GetTimeNow().AnyTimes()
 
 	ctx = vegactx.WithBlockHeight(ctx, 100)
 	_, err = snapTop.LoadState(ctx, types.PayloadFromProto(snap))
