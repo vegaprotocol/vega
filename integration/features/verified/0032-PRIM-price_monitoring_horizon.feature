@@ -23,7 +23,7 @@ Feature: 0032-PRIM-price-mornitoring, test horizon trigger.
     And the fees configuration named "fees-config-1":
       | maker fee | infrastructure fee |
       | 0.004     | 0.001              |
-    And the price monitoring updated every "1" seconds named "price-monitoring-1":
+    And the price monitoring named "price-monitoring-1":
       | horizon | probability | auction extension |
       | 3600    | 0.99        | 300               |
     And the markets:
@@ -101,7 +101,7 @@ Scenario: 002, horizon set to 360000 in price monitoring model.  0032-PRIM-001, 
     And the fees configuration named "fees-config-1":
       | maker fee | infrastructure fee |
       | 0.004     | 0.001              |
-    And the price monitoring updated every "1" seconds named "price-monitoring-1":
+    And the price monitoring named "price-monitoring-1":
       | horizon | probability | auction extension |
       | 360000    | 0.99        | 300               |
     And the markets:
@@ -181,7 +181,7 @@ Scenario: 003, horizon set to 360000 in price monitoring model.  0032-PRIM-001, 
     And the fees configuration named "fees-config-1":
       | maker fee | infrastructure fee |
       | 0.004     | 0.001              |
-    And the price monitoring updated every "1" seconds named "price-monitoring-1":
+    And the price monitoring named "price-monitoring-1":
       | horizon | probability | auction extension |
       | 360000  | 0.99        | 300               |
     And the markets:

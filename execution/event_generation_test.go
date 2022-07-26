@@ -43,7 +43,6 @@ func startMarketInAuction(t *testing.T, ctx context.Context, now *time.Time) *te
 				pmt,
 			},
 		},
-		UpdateFrequency: 600,
 	}
 
 	tm := getTestMarket(t, *now, pMonitorSettings, nil)

@@ -1,7 +1,7 @@
 Feature: Ensure price bounds are triggered as and when they should be, considering rounding and decimal places
 
   Background:
-    Given the price monitoring updated every "4" seconds named "st-price-monitoring":
+    Given the price monitoring named "st-price-monitoring":
       | horizon | probability | auction extension |
       | 5       | 0.95        | 10                |
     And the following assets are registered:

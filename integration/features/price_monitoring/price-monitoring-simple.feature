@@ -2,7 +2,7 @@ Feature: Price monitoring test using simple risk model
 
   Background:
     Given time is updated to "2020-10-16T00:00:00Z"
-    And the price monitoring updated every "60" seconds named "my-price-monitoring":
+    And the price monitoring named "my-price-monitoring":
       | horizon | probability | auction extension |
       | 60      | 0.95        | 240               |
       | 120     | 0.99        | 360               |

@@ -2,7 +2,7 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
 
   Background:
     Given time is updated to "2020-10-16T00:00:00Z"
-    And the price monitoring updated every "4" seconds named "my-price-monitoring":
+    And the price monitoring named "my-price-monitoring":
       | horizon | probability | auction extension |
       | 5       | 0.95        | 6                 |
       | 10      | 0.99        | 8                 |

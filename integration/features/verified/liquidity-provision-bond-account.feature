@@ -8,7 +8,7 @@ Feature: Replicate LP getting distressed during continuous trading, check if pen
     And the fees configuration named "fees-config-1":
       | maker fee | infrastructure fee |
       | 0.004     | 0.001              |
-    And the price monitoring updated every "1" seconds named "price-monitoring-1":
+    And the price monitoring named "price-monitoring-1":
       | horizon | probability | auction extension |
       | 1       | 0.99        | 300               |
     And the markets:

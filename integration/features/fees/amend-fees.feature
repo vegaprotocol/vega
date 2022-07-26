@@ -5,7 +5,7 @@ Feature: Fees when amend trades
     Given the fees configuration named "fees-config-1":
       | maker fee | infrastructure fee |
       | 0.005     | 0.002              |
-    And the price monitoring updated every "1000" seconds named "price-monitoring":
+    And the price monitoring named "price-monitoring":
       | horizon | probability | auction extension |
       | 1       | 0.99        | 3                 |
     And the simple risk model named "simple-risk-model-1":

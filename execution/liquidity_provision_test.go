@@ -47,7 +47,6 @@ func TestSubmit(t *testing.T) {
 		Parameters: &types.PriceMonitoringParameters{
 			Triggers: []*types.PriceMonitoringTrigger{},
 		},
-		UpdateFrequency: 0,
 	}
 	now := time.Unix(10, 0)
 	ctx := vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
@@ -194,7 +193,6 @@ func TestSubmit(t *testing.T) {
 			Parameters: &types.PriceMonitoringParameters{
 				Triggers: []*types.PriceMonitoringTrigger{},
 			},
-			UpdateFrequency: 0,
 		}
 		mktCfg := getMarket(pMonitorSettings, &types.AuctionDuration{
 			Duration: 10000,
@@ -455,7 +453,6 @@ func TestSubmit(t *testing.T) {
 					},
 				},
 			},
-			UpdateFrequency: 600,
 		}
 
 		tm := getTestMarket(t, now, pMonitorSettings, nil)
@@ -622,7 +619,6 @@ func TestSubmit(t *testing.T) {
 					},
 				},
 			},
-			UpdateFrequency: 600,
 		}
 
 		tm := getTestMarket(t, now, pMonitorSettings, &types.AuctionDuration{Duration: 10})
