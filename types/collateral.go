@@ -208,8 +208,6 @@ const (
 	// and are then matched with an incoming order to create a trade - These fees reward parties
 	// who provide the best priced liquidity that actually allows trading to take place.
 	AccountTypeFeesMaker AccountType = proto.AccountType_ACCOUNT_TYPE_FEES_MAKER
-	// This account is created to lock funds to be withdrawn by parties.
-	AccountTypeLockWithdraw AccountType = proto.AccountType_ACCOUNT_TYPE_LOCK_WITHDRAW
 	// This account is created to maintain liquidity providers funds commitments.
 	AccountTypeBond AccountType = proto.AccountType_ACCOUNT_TYPE_BOND
 	// External account represents an external source (deposit/withdrawal).
