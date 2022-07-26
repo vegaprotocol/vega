@@ -29,10 +29,11 @@ The init command now also generate the configuration for tendermint, the flags `
 - [5571](https://github.com/vegaprotocol/vega/issues/5571) - Restore pending assets status correctly after snapshot restore
 - [5572](https://github.com/vegaprotocol/vega/issues/5572) - Add validation on `IDs` and public keys
 - [5348](https://github.com/vegaprotocol/vega/issues/5348) - Restore markets from checkpoint proposal
-- [5279](https://github.com/vegaprotocol/vega/issues/5279) - Fix loading of proposals from checkpoint 
+- [5279](https://github.com/vegaprotocol/vega/issues/5279) - Fix loading of proposals from checkpoint
 - [5598](https://github.com/vegaprotocol/vega/issues/5598) - Remove `currentTime` from topology engine to ease snapshot restoration
 - [5609](https://github.com/vegaprotocol/vega/issues/5609) - Set event forwarder last seen height after snapshot restore
 - [5629](https://github.com/vegaprotocol/vega/issues/5629) - Fixes for loading voting power from checkpoint with non genesis validators
+- [5626](https://github.com/vegaprotocol/vega/issues/5626) - Update `protos`, remove optional types
 
 ## 0.53.0
 

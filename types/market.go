@@ -184,14 +184,6 @@ func (i InstrumentMetadata) DeepClone() *InstrumentMetadata {
 	return ret
 }
 
-type Timestamp struct {
-	Value int64
-}
-
-type Price struct {
-	Value *num.Uint
-}
-
 type AuctionDuration struct {
 	Duration int64
 	Volume   uint64
@@ -227,32 +219,6 @@ func (a AuctionDuration) DeepClone() *AuctionDuration {
 		Duration: a.Duration,
 		Volume:   a.Volume,
 	}
-}
-
-func (p Price) IntoProto() *proto.Price {
-	return &proto.Price{
-		Value: num.UintToString(p.Value),
-	}
-}
-
-func (p Price) String() string {
-	return fmt.Sprintf(
-		"value(%s)",
-		uintPointerToString(p.Value),
-	)
-}
-
-func (t Timestamp) IntoProto() *proto.Timestamp {
-	return &proto.Timestamp{
-		Value: t.Value,
-	}
-}
-
-func (t Timestamp) String() string {
-	return fmt.Sprintf(
-		"value(%v)",
-		t.Value,
-	)
 }
 
 type rmType int
@@ -818,3 +784,5 @@ type Tags []string
 func (t Tags) String() string {
 	return "[" + strings.Join(t, ", ") + "]"
 }
+
+func toPtr[T any](t T) *T { return &t }

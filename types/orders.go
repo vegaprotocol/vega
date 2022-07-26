@@ -63,18 +63,16 @@ func NewOrderAmendmentFromProto(p *commandspb.OrderAmendment) (*OrderAmendment, 
 		price, peggedOffset *num.Uint
 		exp                 *int64
 	)
-	if p.Price != nil {
-		if len(p.Price.Value) > 0 {
-			var overflowed bool
-			price, overflowed = num.UintFromString(p.Price.Value, 10)
-			if overflowed {
-				return nil, errors.New("invalid amount")
-			}
+	if p.Price != nil && len(*p.Price) > 0 {
+		var overflowed bool
+		price, overflowed = num.UintFromString(*p.Price, 10)
+		if overflowed {
+			return nil, errors.New("invalid amount")
 		}
 	}
+
 	if p.ExpiresAt != nil {
-		e := p.ExpiresAt.Value
-		exp = &e
+		exp = toPtr(*p.ExpiresAt)
 	}
 	if p.PeggedOffset != "" {
 		var overflowed bool
@@ -104,14 +102,10 @@ func (o OrderAmendment) IntoProto() *commandspb.OrderAmendment {
 		PeggedReference: o.PeggedReference,
 	}
 	if o.Price != nil {
-		r.Price = &proto.Price{
-			Value: num.UintToString(o.Price),
-		}
+		r.Price = toPtr(num.UintToString(o.Price))
 	}
 	if o.ExpiresAt != nil {
-		r.ExpiresAt = &proto.Timestamp{
-			Value: *o.ExpiresAt,
-		}
+		r.ExpiresAt = toPtr(*o.ExpiresAt)
 	}
 	if o.PeggedOffset != nil {
 		r.PeggedOffset = o.PeggedOffset.String()

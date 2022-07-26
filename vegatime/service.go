@@ -91,9 +91,7 @@ func (s *Svc) GetTimeNow() time.Time {
 func (s *Svc) NotifyOnTick(callbacks ...func(context.Context, time.Time)) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	for _, cb := range callbacks {
-		s.listeners = append(s.listeners, cb)
-	}
+	s.listeners = append(s.listeners, callbacks...)
 }
 
 // GetTimeLastBatch returns the previous vega time.

@@ -205,11 +205,9 @@ func (r *RecurringTransfer) IsValid() error {
 }
 
 func (t *RecurringTransfer) IntoEvent() *eventspb.Transfer {
-	var endEpoch *vegapb.Uint64Value
+	var endEpoch *uint64
 	if t.EndEpoch != nil {
-		endEpoch = &vegapb.Uint64Value{
-			Value: *t.EndEpoch,
-		}
+		endEpoch = toPtr(*t.EndEpoch)
 	}
 
 	return &eventspb.Transfer{
@@ -309,8 +307,8 @@ func newRecurringTransfer(base *TransferBase, tf *commandspb.Transfer) (*Transfe
 		return nil, err
 	}
 	var endEpoch *uint64
-	if tf.GetRecurring().GetEndEpoch() != nil {
-		ee := tf.GetRecurring().GetEndEpoch().GetValue()
+	if tf.GetRecurring().EndEpoch != nil {
+		ee := tf.GetRecurring().GetEndEpoch()
 		endEpoch = &ee
 	}
 
@@ -328,8 +326,8 @@ func newRecurringTransfer(base *TransferBase, tf *commandspb.Transfer) (*Transfe
 
 func RecurringTransferFromEvent(p *eventspb.Transfer) *RecurringTransfer {
 	var endEpoch *uint64
-	if p.GetRecurring().GetEndEpoch() != nil {
-		ee := p.GetRecurring().GetEndEpoch().GetValue()
+	if p.GetRecurring().EndEpoch != nil {
+		ee := p.GetRecurring().GetEndEpoch()
 		endEpoch = &ee
 	}
 

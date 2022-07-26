@@ -20,6 +20,7 @@ import (
 
 	"code.vegaprotocol.io/vega/integration/stubs"
 	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/types/num"
 )
 
 type OrderAmendmentError struct {
@@ -52,12 +53,12 @@ func PartiesAmendTheFollowingOrders(
 			TimeInForce: row.TimeInForce(),
 		}
 
-		if row.Price() != nil {
-			amend.Price = row.Price().Value
+		if p := row.Price(); p != nil {
+			amend.Price = p
 		}
 
-		if row.ExpirationDate() != nil {
-			amend.ExpiresAt = &row.ExpirationDate().Value
+		if t := row.ExpirationDate(); t != nil {
+			amend.ExpiresAt = t
 		}
 
 		_, err = exec.AmendOrder(context.Background(), &amend, o.PartyId)
@@ -94,8 +95,8 @@ func (r amendOrderRow) Reference() string {
 	return r.row.MustStr("reference")
 }
 
-func (r amendOrderRow) Price() *types.Price {
-	return r.row.MustPrice("price")
+func (r amendOrderRow) Price() *num.Uint {
+	return r.row.MaybeUint("price")
 }
 
 func (r amendOrderRow) SizeDelta() int64 {
@@ -106,7 +107,7 @@ func (r amendOrderRow) TimeInForce() types.OrderTimeInForce {
 	return r.row.MustTIF("tif")
 }
 
-func (r amendOrderRow) ExpirationDate() *types.Timestamp {
+func (r amendOrderRow) ExpirationDate() *int64 {
 	if !r.row.HasColumn("expiration date") {
 		return nil
 	}
@@ -116,7 +117,7 @@ func (r amendOrderRow) ExpirationDate() *types.Timestamp {
 		return nil
 	}
 
-	return &types.Timestamp{Value: timeNano}
+	return &timeNano
 }
 
 func (r amendOrderRow) Error() string {

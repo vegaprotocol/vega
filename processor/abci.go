@@ -1034,7 +1034,7 @@ func (app *App) DeliverCancelOrder(ctx context.Context, tx abci.Tx, deterministi
 	return nil
 }
 
-func (app *App) DeliverAmendOrder(ctx context.Context, tx abci.Tx, deterministicId string) error {
+func (app *App) DeliverAmendOrder(ctx context.Context, tx abci.Tx, deterministicId string) (errl error) {
 	order := &commandspb.OrderAmendment{}
 	if err := tx.Unmarshal(order); err != nil {
 		return err
