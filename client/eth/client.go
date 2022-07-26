@@ -40,7 +40,8 @@ var (
 var ContractHashes = map[string]string{
 	"staking":    "d66948e12817f8ae6ca94d56b43ca12e66416e7e9bc23bb09056957b25afc6bd",
 	"vesting":    "5278802577f4aca315b9524bfa78790f8f0fae08939ec58bc9e8f0ea40123b09",
-	"collateral": "6d201a69218822cac1990d960674d857a0e52aa7401694e86070e778365bc6c0",
+	"collateral": "1cd7f315188baf26f70c77a764df361c5d01bd365b109b96033b8755ee2b2750",
+	"multisig":   "5b7070e6159628455b38f5796e8d0dc08185aaaa1fb6073767c88552d396c6c2",
 }
 
 // ETHClient ...
@@ -109,6 +110,10 @@ func (c *Client) UpdateEthereumConfig(ethConfig *types.EthereumConfig) error {
 
 	if err := c.verifyCollateralContract(context.Background(), ethConfig); err != nil {
 		return fmt.Errorf("failed to verify collateral bridge contract: %w", err)
+	}
+
+	if err := c.verifyMultisigContract(context.Background(), ethConfig); err != nil {
+		return fmt.Errorf("failed to verify multisig control contract: %w", err)
 	}
 
 	c.ethConfig = ethConfig
@@ -195,5 +200,14 @@ func (c *Client) verifyCollateralContract(ctx context.Context, ethConfig *types.
 	if address := ethConfig.CollateralBridge(); address.HasAddress() {
 		return c.VerifyContract(ctx, address.Address(), ContractHashes["collateral"])
 	}
+
+	return nil
+}
+
+func (c *Client) verifyMultisigContract(ctx context.Context, ethConfig *types.EthereumConfig) error {
+	if address := ethConfig.MultiSigControl(); address.HasAddress() {
+		return c.VerifyContract(ctx, address.Address(), ContractHashes["multisig"])
+	}
+
 	return nil
 }
