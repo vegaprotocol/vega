@@ -2252,17 +2252,12 @@ func TestWithdrawalOK(t *testing.T) {
 	_, err := eng.CreatePartyMarginAccount(context.Background(), party, testMarketID, testMarketAsset)
 	assert.Nil(t, err)
 
-	call := 0
 	eng.broker.EXPECT().Send(gomock.Any()).Times(1).Do(func(evt events.Event) {
 		ae, ok := evt.(accEvt)
 		assert.True(t, ok)
 		acc := ae.Account()
 		if acc.Type == types.AccountTypeGeneral {
 			assert.Equal(t, 400, stringToInt(acc.Balance))
-		} else if acc.Type == types.AccountTypeLockWithdraw {
-			// once to create the lock account, once to set its balance to 100
-			assert.Equal(t, 100*call, stringToInt(acc.Balance))
-			call++
 		} else {
 			t.FailNow()
 		}
