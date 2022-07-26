@@ -63,8 +63,9 @@ func (fs *FeeSplitter) Elapsed() time.Duration {
 }
 
 func (fs *FeeSplitter) activeWindowLength(mvw time.Duration) time.Duration {
-	t := fs.Elapsed()
-	return t - num.MaxV(t-mvw, 0)
+	return num.MinV(fs.Elapsed(), mvw)
+	// t := fs.Elapsed()
+	// return t - num.MaxV(t-mvw, 0)
 }
 
 // MarketValueProxy returns the market value proxy according to the spec:
@@ -82,15 +83,8 @@ func (fs *FeeSplitter) MarketValueProxy(mvwl time.Duration, totalStakeU *num.Uin
 	return totalStake
 }
 
-func (fs *FeeSplitter) GetTradeVolume(mvwl time.Duration) (num.Decimal, error) {
-	awl := fs.activeWindowLength(mvwl)
-	if awl > 0 {
-		factor := num.DecimalFromInt64(mvwl.Nanoseconds()).Div(
-			num.DecimalFromInt64(awl.Nanoseconds()))
-		tv := num.DecimalFromUint(fs.tradeValue)
-		return factor.Mul(tv), nil
-	}
-	return num.DecimalZero(), ErrTimeWindowNotExpired
+func (fs *FeeSplitter) ActualTradeVoluem() num.Decimal {
+	return num.DecimalFromUint(fs.tradeValue)
 }
 
 func (fs *FeeSplitter) AddTradeValue(v *num.Uint) {

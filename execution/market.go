@@ -766,7 +766,10 @@ func (m *Market) OnTick(ctx context.Context, t time.Time) bool {
 func (m *Market) updateMarketValueProxy() {
 	// if windows length is reached, reset fee splitter
 	if mvwl := m.marketValueWindowLength; m.feeSplitter.Elapsed() > mvwl {
+		// get the trade volume at the end of the window
+		endTv := m.feeSplitter.ActualTradeVoluem()
 		m.feeSplitter.TimeWindowStart(m.timeService.GetTimeNow())
+		m.equityShares.UpdateTradeVol(endTv)
 		m.equityShares.UpdateVirtualStake() // this should always set the vStake >= physical stake?
 	}
 
@@ -776,10 +779,6 @@ func (m *Market) updateMarketValueProxy() {
 	ts := m.liquidity.ProvisionsPerParty().TotalStake()
 	m.lastMarketValueProxy = m.feeSplitter.MarketValueProxy(
 		m.marketValueWindowLength, ts)
-	if tv, err := m.feeSplitter.GetTradeVolume(m.marketValueWindowLength); err == nil {
-		m.equityShares.WithTradeVol(tv)
-	}
-	m.equityShares.WithMVP(m.lastMarketValueProxy)
 	m.stateChanged = true
 }
 

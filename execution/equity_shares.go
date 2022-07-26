@@ -67,7 +67,7 @@ func (es *EquityShares) OpeningAuctionEnded() {
 	}
 	es.openingAuctionEnded = true
 	es.stateChanged = true
-	es.setOpeningAuctionAVG()
+	es.setOpeningAuctionAVG() // really not sure if this is the right thing/place to do this
 }
 
 // we just the average entry valuation to the same value
@@ -103,14 +103,14 @@ func (es *EquityShares) UpdateVirtualStake() {
 	}
 }
 
-func (es *EquityShares) WithTradeVol(tv num.Decimal) *EquityShares {
+func (es *EquityShares) UpdateTradeVol(tv num.Decimal) *EquityShares {
 	es.r = num.DecimalZero()
 	if !es.pTradeVol.IsZero() && !tv.IsZero() {
 		growth := tv.Sub(es.pTradeVol).Div(es.pTradeVol)
 		es.stateChanged = (es.stateChanged || !growth.Equals(es.r))
 		es.r = growth
 	}
-	mvp := tv.Div(es.totalPStake) // traded volume divided by physical stake == MVP
+	mvp := tv.Div(es.totalPStake) // not really something we'd use, but essentially is the average LP value
 	es.stateChanged = (es.stateChanged || !es.mvp.Equals(mvp) || !es.mvp.Equals(es.pMvp) || !tv.Equals(es.pTradeVol))
 	es.pTradeVol = tv
 	es.pMvp = es.mvp
@@ -185,6 +185,7 @@ func (es *EquityShares) SetPartyStake(id string, newStakeU *num.Uint) {
 		es.totalVStake = es.totalVStake.Add(v.vStake)
 		es.totalPStake = es.totalPStake.Add(newStake)
 		v.stake = newStake
+		v.avg = v.vStake.Mul(es.totalPStake.Div(es.totalVStake))
 		return
 	}
 
@@ -193,12 +194,15 @@ func (es *EquityShares) SetPartyStake(id string, newStakeU *num.Uint) {
 	es.totalPStake = es.totalPStake.Sub(v.stake).Add(newStake)
 	v.vStake = v.vStake.Add(delta) // increase
 	v.stake = newStake
+	v.avg = v.vStake.Mul(es.totalPStake.Div(es.totalVStake))
 	// delta will allways be > 0 at this point
 	if es.openingAuctionEnded {
 		eq := es.mustEquity(id)
 		v.share = eq
+		// this average entry valuation is borked, mvp is now trade_value/p stake
+		// instead of trade value * factor || total stake
 		// v.avg = ((eq * v.avg) + (delta * es.mvp)) / (eq + v.stake)
-		v.avg = (eq.Mul(v.avg).Add(delta.Mul(es.mvp))).Div(eq.Add(v.stake))
+		// v.avg = (eq.Mul(v.avg).Add(delta.Mul(es.mvp))).Div(eq.Add(v.stake))
 	}
 }
 
