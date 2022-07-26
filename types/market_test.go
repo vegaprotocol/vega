@@ -117,7 +117,6 @@ func TestMarketFromIntoProto(t *testing.T) {
 					},
 				},
 			},
-			UpdateFrequency: 20,
 		},
 		LiquidityMonitoringParameters: &proto.LiquidityMonitoringParameters{
 			TargetStakeParameters: &proto.TargetStakeParameters{

@@ -2,7 +2,7 @@ Feature: Price monitoring test for issue 2668
 
   Background:
     Given time is updated to "2020-10-16T00:00:00Z"
-    And the price monitoring updated every "1" seconds named "my-price-monitoring":
+    And the price monitoring named "my-price-monitoring":
       | horizon | probability | auction extension |
       | 43200   | 0.9999999   | 300               |
     And the log normal risk model named "my-log-normal-risk-model":

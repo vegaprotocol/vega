@@ -5,7 +5,7 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
     And the following assets are registered:
       | id  | decimal places |
       | ETH | 5              |
-    And the price monitoring updated every "60" seconds named "my-price-monitoring":
+    And the price monitoring named "my-price-monitoring":
       | horizon | probability | auction extension |
       | 60      | 0.95        | 240               |
       | 120     | 0.99        | 360               |

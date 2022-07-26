@@ -21,12 +21,7 @@ import (
 	"code.vegaprotocol.io/vega/integration/steps/market"
 )
 
-func ThePriceMonitoring(config *market.Config, name string, rawUpdateFrequency string, table *godog.Table) error {
-	updateFrequency, err := I64(rawUpdateFrequency)
-	if err != nil {
-		panicW("update frequency", err)
-	}
-
+func ThePriceMonitoring(config *market.Config, name string, table *godog.Table) error {
 	rows := parsePriceMonitoringTable(table)
 	triggers := make([]*types.PriceMonitoringTrigger, 0, len(rows))
 	for _, r := range rows {
@@ -45,7 +40,6 @@ func ThePriceMonitoring(config *market.Config, name string, rawUpdateFrequency s
 			Parameters: &types.PriceMonitoringParameters{
 				Triggers: triggers,
 			},
-			UpdateFrequency: updateFrequency,
 		},
 	)
 }

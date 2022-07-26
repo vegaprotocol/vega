@@ -52,7 +52,6 @@ func createPriceMonitorDeps(t *testing.T, ctrl *gomock.Controller) (*mocks.MockR
 		Parameters: &types.PriceMonitoringParameters{
 			Triggers: []*types.PriceMonitoringTrigger{},
 		},
-		UpdateFrequency: 1,
 	}
 
 	auctionStateMock.EXPECT().IsFBA().Return(false).AnyTimes()

@@ -41,7 +41,6 @@ func TestEmptyParametersList(t *testing.T) {
 		Parameters: &types.PriceMonitoringParameters{
 			Triggers: []*types.PriceMonitoringTrigger{},
 		},
-		UpdateFrequency: 1,
 	}
 
 	auctionStateMock.EXPECT().IsFBA().Return(false).Times(4)
@@ -78,7 +77,6 @@ func TestErrorWithNilRiskModel(t *testing.T) {
 		Parameters: &proto.PriceMonitoringParameters{
 			Triggers: []*proto.PriceMonitoringTrigger{&t1, &t2},
 		},
-		UpdateFrequency: 600,
 	}
 	settings := types.PriceMonitoringSettingsFromProto(pSet)
 	ctrl := gomock.NewController(t)
@@ -99,7 +97,6 @@ func TestGetHorizonYearFractions(t *testing.T) {
 		Parameters: &proto.PriceMonitoringParameters{
 			Triggers: []*proto.PriceMonitoringTrigger{&t1, &t2},
 		},
-		UpdateFrequency: 600,
 	}
 	settings := types.PriceMonitoringSettingsFromProto(pSet)
 	statevar := mocks.NewMockStateVarEngine(ctrl)
@@ -129,7 +126,6 @@ func TestRecordPriceChange(t *testing.T) {
 		Parameters: &proto.PriceMonitoringParameters{
 			Triggers: []*proto.PriceMonitoringTrigger{&t1, &t2},
 		},
-		UpdateFrequency: 600,
 	}
 	settings := types.PriceMonitoringSettingsFromProto(pSet)
 
@@ -171,7 +167,6 @@ func TestCheckBoundViolationsWithinCurrentTimeWith2HorizonProbabilityPairs(t *te
 		Parameters: &proto.PriceMonitoringParameters{
 			Triggers: []*proto.PriceMonitoringTrigger{&t1, &t2},
 		},
-		UpdateFrequency: 600,
 	}
 	settings := types.PriceMonitoringSettingsFromProto(pSet)
 
@@ -544,12 +539,10 @@ func TestAuctionStartedAndEndendBy1Trigger(t *testing.T) {
 	now := time.Date(1993, 2, 2, 6, 0, 0, 1, time.UTC)
 	t1 := proto.PriceMonitoringTrigger{Horizon: 600, Probability: "0.95", AuctionExtension: 60}
 	t2 := proto.PriceMonitoringTrigger{Horizon: 600, Probability: "0.99", AuctionExtension: 120}
-	var boundUpdateFrequency int64 = 120
 	pSet := &proto.PriceMonitoringSettings{
 		Parameters: &proto.PriceMonitoringParameters{
 			Triggers: []*proto.PriceMonitoringTrigger{&t1, &t2},
 		},
-		UpdateFrequency: boundUpdateFrequency,
 	}
 	settings := types.PriceMonitoringSettingsFromProto(pSet)
 
@@ -614,12 +607,10 @@ func TestAuctionStartedAndEndendBy2Triggers(t *testing.T) {
 	now := time.Date(1993, 2, 2, 6, 0, 0, 1, time.UTC)
 	t1 := proto.PriceMonitoringTrigger{Horizon: 600, Probability: "0.95", AuctionExtension: 60}
 	t2 := proto.PriceMonitoringTrigger{Horizon: 600, Probability: "0.99", AuctionExtension: 120}
-	var boundUpdateFrequency int64 = 120
 	pSet := &proto.PriceMonitoringSettings{
 		Parameters: &proto.PriceMonitoringParameters{
 			Triggers: []*proto.PriceMonitoringTrigger{&t1, &t2},
 		},
-		UpdateFrequency: boundUpdateFrequency,
 	}
 	settings := types.PriceMonitoringSettingsFromProto(pSet)
 
@@ -677,12 +668,10 @@ func TestAuctionStartedAndEndendBy1TriggerAndExtendedBy2nd(t *testing.T) {
 	now := time.Date(1993, 2, 2, 6, 0, 0, 1, time.UTC)
 	t1 := proto.PriceMonitoringTrigger{Horizon: 600, Probability: "0.95", AuctionExtension: 60}
 	t2 := proto.PriceMonitoringTrigger{Horizon: 600, Probability: "0.99", AuctionExtension: 120}
-	var boundUpdateFrequency int64 = 120
 	pSet := &proto.PriceMonitoringSettings{
 		Parameters: &proto.PriceMonitoringParameters{
 			Triggers: []*proto.PriceMonitoringTrigger{&t1, &t2},
 		},
-		UpdateFrequency: boundUpdateFrequency,
 	}
 	settings := types.PriceMonitoringSettingsFromProto(pSet)
 	ctx := context.Background()
@@ -804,7 +793,6 @@ func TestMarketInOpeningAuction(t *testing.T) {
 		Parameters: &proto.PriceMonitoringParameters{
 			Triggers: []*proto.PriceMonitoringTrigger{&t1},
 		},
-		UpdateFrequency: 1,
 	}
 	settings := types.PriceMonitoringSettingsFromProto(pSet)
 
@@ -839,7 +827,6 @@ func TestMarketInGenericAuction(t *testing.T) {
 		Parameters: &proto.PriceMonitoringParameters{
 			Triggers: []*proto.PriceMonitoringTrigger{&t1},
 		},
-		UpdateFrequency: 1,
 	}
 	settings := types.PriceMonitoringSettingsFromProto(pSet)
 
@@ -904,7 +891,6 @@ func TestGetValidPriceRange_NoTriggers(t *testing.T) {
 		Parameters: &types.PriceMonitoringParameters{
 			Triggers: []*types.PriceMonitoringTrigger{},
 		},
-		UpdateFrequency: 1,
 	}
 
 	auctionStateMock.EXPECT().IsFBA().Return(false).Times(1)
@@ -946,7 +932,6 @@ func TestGetValidPriceRange_2triggers(t *testing.T) {
 		Parameters: &proto.PriceMonitoringParameters{
 			Triggers: []*proto.PriceMonitoringTrigger{&t1, &t2},
 		},
-		UpdateFrequency: 600,
 	}
 	settings := types.PriceMonitoringSettingsFromProto(pSet)
 

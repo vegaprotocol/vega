@@ -5,7 +5,7 @@ Feature: Fees calculations
     Given the fees configuration named "fees-config-1":
       | maker fee | infrastructure fee |
       | 0.005     | 0.002              |
-    And the price monitoring updated every "1000" seconds named "price-monitoring":
+    And the price monitoring named "price-monitoring":
       | horizon | probability | auction extension |
       | 1       | 0.99        | 3                 |
 
@@ -93,7 +93,7 @@ Feature: Fees calculations
     Given the fees configuration named "fees-config-1":
       | maker fee | infrastructure fee |
       | 0.005     | 0.002              |
-    And the price monitoring updated every "1000" seconds named "price-monitoring":
+    And the price monitoring named "price-monitoring":
       | horizon | probability | auction extension |
       | 1       | 0.99        | 3                 |
 
@@ -201,7 +201,7 @@ Feature: Fees calculations
     Given the fees configuration named "fees-config-1":
       | maker fee | infrastructure fee |
       | 0.005     | 0.002              |
-    And the price monitoring updated every "1000" seconds named "price-monitoring":
+    And the price monitoring named "price-monitoring":
       | horizon | probability | auction extension |
       | 1       | 0.99        | 3                 |
 
@@ -353,7 +353,7 @@ Feature: Fees calculations
     Given the fees configuration named "fees-config-1":
       | maker fee | infrastructure fee |
       | 0.005     | 0.002              |
-    And the price monitoring updated every "1000" seconds named "price-monitoring":
+    And the price monitoring named "price-monitoring":
       | horizon | probability | auction extension |
       | 1       | 0.99        | 3                 |
 
@@ -482,7 +482,7 @@ Feature: Fees calculations
     Given the fees configuration named "fees-config-1":
       | maker fee | infrastructure fee |
       | 0.005     | 0.002              |
-    And the price monitoring updated every "1000" seconds named "price-monitoring":
+    And the price monitoring named "price-monitoring":
       | horizon | probability | auction extension |
       | 1       | 0.99        | 3                 |
 
@@ -567,7 +567,7 @@ Feature: Fees calculations
     Given the fees configuration named "fees-config-1":
       | maker fee | infrastructure fee |
       | 0.005     | 0.002              |
-    And the price monitoring updated every "1000" seconds named "price-monitoring":
+    And the price monitoring named "price-monitoring":
       | horizon | probability | auction extension |
       | 1       | 0.99        | 3                 |
 
@@ -636,7 +636,7 @@ Feature: Fees calculations
     When the fees configuration named "fees-config-1":
       | maker fee | infrastructure fee |
       | 0.005     | 0.002              |
-    And the price monitoring updated every "1000" seconds named "price-monitoring":
+    And the price monitoring named "price-monitoring":
       | horizon | probability | auction extension |
       | 1       | 0.99        | 3                 |
 
@@ -733,7 +733,7 @@ Feature: Fees calculations
     And the fees configuration named "fees-config-1":
       | maker fee | infrastructure fee |
       | 0.005     | 0.002              |
-    And the price monitoring updated every "1" seconds named "price-monitoring-1":
+    And the price monitoring named "price-monitoring-1":
       | horizon | probability | auction extension |
       | 1       | 0.99        | 300               |
     And the simple risk model named "simple-risk-model-1":
@@ -881,7 +881,7 @@ Feature: Fees calculations
     And the fees configuration named "fees-config-1":
       | maker fee | infrastructure fee |
       | 0.005     | 0.002              |
-    And the price monitoring updated every "1" seconds named "price-monitoring-1":
+    And the price monitoring named "price-monitoring-1":
       | horizon | probability | auction extension |
       | 1       | 0.99        | 300               |
     And the simple risk model named "simple-risk-model-1":
@@ -984,7 +984,7 @@ Feature: Fees calculations
     And the fees configuration named "fees-config-1":
       | maker fee | infrastructure fee |
       | 0.005     | 0.002              |
-    And the price monitoring updated every "1" seconds named "price-monitoring-1":
+    And the price monitoring named "price-monitoring-1":
       | horizon | probability | auction extension |
       | 1       | 0.99        | 300               |
     And the simple risk model named "simple-risk-model-1":
@@ -1086,7 +1086,7 @@ Feature: Fees calculations
     And the fees configuration named "fees-config-1":
       | maker fee | infrastructure fee |
       | 0.005     | 2                  |
-    And the price monitoring updated every "1" seconds named "price-monitoring-1":
+    And the price monitoring named "price-monitoring-1":
       | horizon | probability | auction extension |
       | 1       | 0.99        | 300               |
     And the simple risk model named "simple-risk-model-1":
@@ -1189,7 +1189,7 @@ Feature: Fees calculations
     And the fees configuration named "fees-config-1":
       | maker fee | infrastructure fee |
       | 0.005     | 2                  |
-    And the price monitoring updated every "1" seconds named "price-monitoring-1":
+    And the price monitoring named "price-monitoring-1":
       | horizon | probability | auction extension |
       | 1       | 0.99        | 300               |
     And the simple risk model named "simple-risk-model-1":
@@ -1294,7 +1294,7 @@ Feature: Fees calculations
     And the fees configuration named "fees-config-1":
       | maker fee | infrastructure fee |
       | 0.005     | 2                  |
-    And the price monitoring updated every "1" seconds named "price-monitoring-1":
+    And the price monitoring named "price-monitoring-1":
       | horizon | probability | auction extension |
       | 1       | 0.99        | 300               |
     And the simple risk model named "simple-risk-model-1":
@@ -1593,7 +1593,7 @@ Feature: Fees calculations
     Given the fees configuration named "fees-config-1":
       | maker fee | infrastructure fee |
       | 0.005     | 0.002              |
-    And the price monitoring updated every "1000" seconds named "price-monitoring":
+    And the price monitoring named "price-monitoring":
       | horizon | probability | auction extension |
       | 1       | 0.99        | 3                 |
 
@@ -1703,7 +1703,7 @@ Feature: Fees calculations
     Given the fees configuration named "fees-config-1":
       | maker fee | infrastructure fee |
       | 0.005     | 0.002              |
-    And the price monitoring updated every "1000" seconds named "price-monitoring":
+    And the price monitoring named "price-monitoring":
       | horizon | probability | auction extension |
       | 1       | 0.99        | 3                 |
 
