@@ -24,7 +24,6 @@ import (
 	"code.vegaprotocol.io/vega/events"
 	vgcontext "code.vegaprotocol.io/vega/libs/context"
 	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/monitoring"
 	"code.vegaprotocol.io/vega/stats"
 	"code.vegaprotocol.io/vega/subscribers"
 	"code.vegaprotocol.io/vega/vegatime"
@@ -85,15 +84,14 @@ type ProofOfWorkParams interface {
 type GRPC struct {
 	Config
 
-	client        Blockchain
-	log           *logging.Logger
-	srv           *grpc.Server
-	stats         *stats.Stats
-	statusChecker *monitoring.Status
-	timesvc       *vegatime.Svc
-	evtfwd        EvtForwarder
-	evtService    EventService
-	powParams     ProofOfWorkParams
+	client     Blockchain
+	log        *logging.Logger
+	srv        *grpc.Server
+	stats      *stats.Stats
+	timesvc    *vegatime.Svc
+	evtfwd     EvtForwarder
+	evtService EventService
+	powParams  ProofOfWorkParams
 
 	// used in order to gracefully close streams
 	ctx   context.Context
@@ -113,7 +111,6 @@ func NewGRPC(
 	evtfwd EvtForwarder,
 	timeService *vegatime.Svc,
 	eventService *subscribers.Service,
-	statusChecker *monitoring.Status,
 	powParams ProofOfWorkParams,
 ) *GRPC {
 	// setup logger
@@ -122,17 +119,16 @@ func NewGRPC(
 	ctx, cfunc := context.WithCancel(context.Background())
 
 	return &GRPC{
-		log:           log,
-		Config:        config,
-		stats:         stats,
-		client:        client,
-		timesvc:       timeService,
-		statusChecker: statusChecker,
-		ctx:           ctx,
-		cfunc:         cfunc,
-		evtfwd:        evtfwd,
-		evtService:    eventService,
-		powParams:     powParams,
+		log:        log,
+		Config:     config,
+		stats:      stats,
+		client:     client,
+		timesvc:    timeService,
+		ctx:        ctx,
+		cfunc:      cfunc,
+		evtfwd:     evtfwd,
+		evtService: eventService,
+		powParams:  powParams,
 	}
 }
 
@@ -238,15 +234,14 @@ func (g *GRPC) Start() {
 	g.srv = grpc.NewServer(intercept)
 
 	coreSvc := &coreService{
-		log:           g.log,
-		conf:          g.Config,
-		blockchain:    g.client,
-		statusChecker: g.statusChecker,
-		timesvc:       g.timesvc,
-		stats:         g.stats,
-		evtForwarder:  g.evtfwd,
-		eventService:  g.evtService,
-		powParams:     g.powParams,
+		log:          g.log,
+		conf:         g.Config,
+		blockchain:   g.client,
+		timesvc:      g.timesvc,
+		stats:        g.stats,
+		evtForwarder: g.evtfwd,
+		eventService: g.evtService,
+		powParams:    g.powParams,
 	}
 	g.core = coreSvc
 	protoapi.RegisterCoreServiceServer(g.srv, coreSvc)

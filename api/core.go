@@ -21,6 +21,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	ptypes "code.vegaprotocol.io/protos/vega"
 	protoapi "code.vegaprotocol.io/protos/vega/api/v1"
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
@@ -29,7 +30,6 @@ import (
 	"code.vegaprotocol.io/vega/libs/proto"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/metrics"
-	"code.vegaprotocol.io/vega/monitoring"
 	"code.vegaprotocol.io/vega/stats"
 	"code.vegaprotocol.io/vega/subscribers"
 	"code.vegaprotocol.io/vega/vegatime"
@@ -52,9 +52,8 @@ type coreService struct {
 	log  *logging.Logger
 	conf Config
 
-	blockchain    Blockchain
-	stats         *stats.Stats
-	statusChecker *monitoring.Status
+	blockchain Blockchain
+	stats      *stats.Stats
 
 	svcMu        sync.RWMutex
 	evtForwarder EvtForwarder
@@ -313,7 +312,7 @@ func (s *coreService) Statistics(ctx context.Context, _ *protoapi.StatisticsRequ
 		AverageOrdersPerBlock: s.stats.Blockchain.AverageOrdersPerBatch(),
 		TradesPerSecond:       s.stats.Blockchain.TradesPerSecond(),
 		OrdersPerSecond:       s.stats.Blockchain.OrdersPerSecond(),
-		Status:                s.statusChecker.ChainStatus(),
+		Status:                ptypes.ChainStatus_CHAIN_STATUS_CONNECTED,
 		AppVersionHash:        s.stats.GetVersionHash(),
 		AppVersion:            s.stats.GetVersion(),
 		ChainVersion:          s.stats.GetChainVersion(),
