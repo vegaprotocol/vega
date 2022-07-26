@@ -116,9 +116,10 @@ type StateVarEngine interface {
 
 // Engine allows tracking price changes and verifying them against the theoretical levels implied by the RangeProvider (risk model).
 type Engine struct {
-	log         *logging.Logger
-	riskModel   RangeProvider
-	minDuration time.Duration
+	log          *logging.Logger
+	riskModel    RangeProvider
+	auctionState AuctionState
+	minDuration  time.Duration
 
 	initialised bool
 	fpHorizons  map[int64]num.Decimal
@@ -155,7 +156,7 @@ func (e *Engine) Initialised() bool {
 }
 
 // NewMonitor returns a new instance of PriceMonitoring.
-func NewMonitor(asset, mktID string, riskModel RangeProvider, settings *types.PriceMonitoringSettings, stateVarEngine StateVarEngine, log *logging.Logger) (*Engine, error) {
+func NewMonitor(asset, mktID string, riskModel RangeProvider, auctionState AuctionState, settings *types.PriceMonitoringSettings, stateVarEngine StateVarEngine, log *logging.Logger) (*Engine, error) {
 	if riskModel == nil {
 		return nil, ErrNilRangeProvider
 	}
@@ -168,6 +169,7 @@ func NewMonitor(asset, mktID string, riskModel RangeProvider, settings *types.Pr
 
 	e := &Engine{
 		riskModel:               riskModel,
+		auctionState:            auctionState,
 		fpHorizons:              horizons,
 		bounds:                  bounds,
 		stateChanged:            true,
@@ -449,7 +451,7 @@ func (e *Engine) getCurrentPriceRanges(force bool) map[*bound]priceRange {
 		if !b.Active {
 			continue
 		}
-		if e.anyTriggerBreached() && len(e.pricesPast)+len(e.pricesNow) > 0 {
+		if e.monitoringAuction() && len(e.pricesPast)+len(e.pricesNow) > 0 {
 			triggerLookback := e.now.Add(time.Duration(-b.Trigger.Horizon) * time.Second)
 			// check if trigger's not stale (newest reference price older than horizon lookback time)
 			var mostRecentObservation time.Time
@@ -490,13 +492,8 @@ func (e *Engine) getCurrentPriceRanges(force bool) map[*bound]priceRange {
 	return e.priceRangesCache
 }
 
-func (e *Engine) anyTriggerBreached() bool {
-	for _, b := range e.bounds {
-		if !b.Active {
-			return true
-		}
-	}
-	return false
+func (e *Engine) monitoringAuction() bool {
+	return e.auctionState.IsLiquidityAuction() || e.auctionState.IsPriceAuction()
 }
 
 // clearStalePrices updates the pricesPast slice to hold only as many prices as implied by the horizon.

@@ -371,7 +371,7 @@ func NewMarket(
 
 	tsCalc := liquiditytarget.NewSnapshotEngine(*mkt.LiquidityMonitoringParameters.TargetStakeParameters, positionEngine, mkt.ID, positionFactor)
 
-	pMonitor, err := price.NewMonitor(asset, mkt.ID, tradableInstrument.RiskModel, mkt.PriceMonitoringSettings, stateVarEngine, log)
+	pMonitor, err := price.NewMonitor(asset, mkt.ID, tradableInstrument.RiskModel, as, mkt.PriceMonitoringSettings, stateVarEngine, log)
 	if err != nil {
 		return nil, fmt.Errorf("unable to instantiate price monitoring engine: %w", err)
 	}
