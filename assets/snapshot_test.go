@@ -20,8 +20,6 @@ import (
 
 	snapshot "code.vegaprotocol.io/protos/vega/snapshot/v1"
 	"code.vegaprotocol.io/shared/paths"
-	"code.vegaprotocol.io/vega/assets"
-	bmocks "code.vegaprotocol.io/vega/broker/mocks"
 	"code.vegaprotocol.io/vega/integration/stubs"
 	vgcontext "code.vegaprotocol.io/vega/libs/context"
 	"code.vegaprotocol.io/vega/libs/proto"
@@ -34,20 +32,6 @@ import (
 )
 
 func getEngineAndSnapshotEngine(t *testing.T) (*testService, *snp.Engine) {
-	t.Helper()
-	conf := assets.NewDefaultConfig()
-	logger := logging.NewTestLogger()
-	ctrl := gomock.NewController(t)
-	broker := bmocks.NewMockBrokerI(ctrl)
-	as := assets.New(logger, conf, nil, nil, broker, true)
-	return &assetsTest{
-		Service: as,
-		ctrl:    ctrl,
-		broker:  broker,
-	}
-}
-
-func getEngineAndSnapshotEngine(t *testing.T) (*assetsTest, *snp.Engine) {
 	t.Helper()
 	as := getTestService(t)
 	now := time.Now()

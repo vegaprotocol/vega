@@ -13,7 +13,6 @@ import (
 	nwvega "code.vegaprotocol.io/vega/nodewallets/vega"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
-	tmocks "code.vegaprotocol.io/vega/vegatime/mocks"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
 )
@@ -62,14 +61,13 @@ func getTestService(t *testing.T) *testService {
 	conf := assets.NewDefaultConfig()
 	logger := logging.NewTestLogger()
 	ctrl := gomock.NewController(t)
-	ts := tmocks.NewMockTimeService(ctrl)
 	ethClient := erc20mocks.NewMockETHClient(ctrl)
 	broker := bmocks.NewMockBrokerI(ctrl)
 	nodeWallets := &nodewallets.NodeWallets{
 		Vega:     &nwvega.Wallet{},
 		Ethereum: &nweth.Wallet{},
 	}
-	service := assets.New(logger, conf, nodeWallets, ethClient, broker, ts, true)
+	service := assets.New(logger, conf, nodeWallets, ethClient, broker, true)
 	return &testService{
 		Service: service,
 		broker:  broker,
