@@ -45,16 +45,8 @@ func (t *Topology) Load(ctx context.Context, data []byte) error {
 		return err
 	}
 
-	votingPower := make(map[string]int64, len(t.validators))
-	for k := range t.validators {
-		votingPower[k] = 0
-	}
-	tmKey := make(map[string]string, len(t.validators))
-	for k, v := range t.validators {
-		tmKey[k] = v.data.TmPubKey
-	}
-
 	t.validators = make(map[string]*valState, len(ckp.ValidatorState))
+	nextValidators := []string{}
 	for _, node := range ckp.ValidatorState {
 		tmPubKey := node.ValidatorUpdate.TmPubKey
 		if node.ValidatorUpdate.NodeId == "bea9efaab0713c01f62712000f15b42929c4f76a10b9e4453566bd698cce8a29" {
@@ -87,18 +79,15 @@ func (t *Topology) Load(ctx context.Context, data []byte) error {
 			validatorPower: node.ValidatorPower,
 			rankingScore:   node.RankingScore,
 		}
-		votingPower[node.ValidatorUpdate.NodeId] = node.ValidatorPower
+		if t.validators[node.ValidatorUpdate.NodeId].validatorPower > 0 {
+			nextValidators = append(nextValidators, node.ValidatorUpdate.NodeId)
+		}
 		t.sendValidatorUpdateEvent(ctx, t.validators[node.ValidatorUpdate.NodeId].data, true)
 		t.checkpointLoaded = true
 	}
 
 	t.restoreCheckpointPendingKeyRotations(ckp.PendingKeyRotations)
 	t.restoreCheckpointPendingEthereumKeyRotations(ckp.PendingEthereumKeyRotations)
-
-	nextValidators := make([]string, 0, len(votingPower))
-	for k := range votingPower {
-		nextValidators = append(nextValidators, k)
-	}
 
 	sort.Strings(nextValidators)
 
@@ -107,15 +96,12 @@ func (t *Topology) Load(ctx context.Context, data []byte) error {
 	for _, v := range nextValidators {
 		// NB: if the validator set in the checkpoint doesn't match genesis, vd may be nil
 		vd := t.validators[v]
-		pubkey, err := base64.StdEncoding.DecodeString(tmKey[v])
+		pubkey, err := base64.StdEncoding.DecodeString(vd.data.TmPubKey)
 		if err != nil {
 			continue
 		}
 
-		if vd != nil {
-			vd.validatorPower = votingPower[v]
-		}
-		update := tmtypes.UpdateValidator(pubkey, votingPower[v], "")
+		update := tmtypes.UpdateValidator(pubkey, vd.validatorPower, "")
 		vUpdates = append(vUpdates, update)
 	}
 
