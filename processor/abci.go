@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"path/filepath"
 	"reflect"
+	"strings"
 	"time"
 
 	"code.vegaprotocol.io/protos/commands"
@@ -1363,7 +1364,8 @@ func (app *App) enactAssetUpdate(_ context.Context, prop *types.Proposal, update
 	if app.top.IsValidator() {
 		switch {
 		case asset.IsERC20():
-			nonce, err := num.UintFromHex("0x" + prop.ID)
+			// need to remove IDs
+			nonce, err := num.UintFromHex("0x" + strings.TrimLeft(prop.ID, "0"))
 			if err != nil {
 				app.log.Panic("couldn't generate nonce from proposal ID",
 					logging.AssetID(updatedAsset.ID),
