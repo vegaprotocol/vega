@@ -531,7 +531,6 @@ func TestDeployedCommitmentIsUndeployedWhenEnteringAuction(t *testing.T) {
 		Parameters: &types.PriceMonitoringParameters{
 			Triggers: []*types.PriceMonitoringTrigger{},
 		},
-		UpdateFrequency: 0,
 	}
 	mktCfg := getMarket(pMonitorSettings, &types.AuctionDuration{
 		Duration: 10000,
@@ -666,7 +665,6 @@ func TestDeployedCommitmentIsUndeployedWhenEnteringAuctionAndMarginCheckFailDuri
 		Parameters: &types.PriceMonitoringParameters{
 			Triggers: []*types.PriceMonitoringTrigger{},
 		},
-		UpdateFrequency: 0,
 	}
 	mktCfg := getMarket(pMonitorSettings, &types.AuctionDuration{
 		Duration: 10000,

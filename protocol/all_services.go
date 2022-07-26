@@ -43,7 +43,6 @@ import (
 	"code.vegaprotocol.io/vega/oracles"
 	"code.vegaprotocol.io/vega/oracles/adaptors"
 	oracleAdaptors "code.vegaprotocol.io/vega/oracles/adaptors"
-	"code.vegaprotocol.io/vega/plugins"
 	"code.vegaprotocol.io/vega/pow"
 	"code.vegaprotocol.io/vega/processor"
 	"code.vegaprotocol.io/vega/rewards"
@@ -105,13 +104,6 @@ type allServices struct {
 	banking              *banking.Engine
 	genesisHandler       *genesis.Handler
 
-	// plugins
-	settlePlugin     *plugins.Positions
-	notaryPlugin     *plugins.Notary
-	assetPlugin      *plugins.Asset
-	withdrawalPlugin *plugins.Withdrawal
-	depositPlugin    *plugins.Deposit
-
 	// staking
 	ethClient             *ethclient.Client
 	ethConfirmations      *ethclient.EthereumConfirmations
@@ -166,18 +158,11 @@ func newServices(
 		}
 	}
 
-	// plugins
-	svcs.settlePlugin = plugins.NewPositions(svcs.ctx)
-	svcs.notaryPlugin = plugins.NewNotary(svcs.ctx)
-	svcs.assetPlugin = plugins.NewAsset(svcs.ctx)
-	svcs.withdrawalPlugin = plugins.NewWithdrawal(svcs.ctx)
-	svcs.depositPlugin = plugins.NewDeposit(svcs.ctx)
-
 	svcs.genesisHandler = genesis.New(svcs.log, svcs.conf.Genesis)
 	svcs.genesisHandler.OnGenesisTimeLoaded(svcs.timeService.SetTimeNow)
 
 	svcs.eventService = subscribers.NewService(svcs.broker)
-	svcs.assets = assets.New(svcs.log, svcs.conf.Assets, nodeWallets, svcs.ethClient, svcs.broker, svcs.timeService, svcs.conf.HaveEthClient())
+	svcs.assets = assets.New(svcs.log, svcs.conf.Assets, nodeWallets, svcs.ethClient, svcs.broker, svcs.conf.HaveEthClient())
 	svcs.collateral = collateral.New(svcs.log, svcs.conf.Collateral, svcs.timeService, svcs.broker)
 	svcs.oracle = oracles.NewEngine(svcs.log, svcs.conf.Oracles, svcs.timeService, svcs.broker)
 

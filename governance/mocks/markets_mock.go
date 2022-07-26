@@ -5,6 +5,7 @@
 package mocks
 
 import (
+	context "context"
 	reflect "reflect"
 
 	types "code.vegaprotocol.io/vega/types"
@@ -77,4 +78,46 @@ func (m *MockMarkets) MarketExists(arg0 string) bool {
 func (mr *MockMarketsMockRecorder) MarketExists(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MarketExists", reflect.TypeOf((*MockMarkets)(nil).MarketExists), arg0)
+}
+
+// RestoreMarket mocks base method.
+func (m *MockMarkets) RestoreMarket(arg0 context.Context, arg1 *types.Market) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RestoreMarket", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// RestoreMarket indicates an expected call of RestoreMarket.
+func (mr *MockMarketsMockRecorder) RestoreMarket(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RestoreMarket", reflect.TypeOf((*MockMarkets)(nil).RestoreMarket), arg0, arg1)
+}
+
+// RestoreMarketWithLiquidityProvision mocks base method.
+func (m *MockMarkets) RestoreMarketWithLiquidityProvision(arg0 context.Context, arg1 *types.Market, arg2 *types.LiquidityProvisionSubmission, arg3, arg4 string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RestoreMarketWithLiquidityProvision", arg0, arg1, arg2, arg3, arg4)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// RestoreMarketWithLiquidityProvision indicates an expected call of RestoreMarketWithLiquidityProvision.
+func (mr *MockMarketsMockRecorder) RestoreMarketWithLiquidityProvision(arg0, arg1, arg2, arg3, arg4 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RestoreMarketWithLiquidityProvision", reflect.TypeOf((*MockMarkets)(nil).RestoreMarketWithLiquidityProvision), arg0, arg1, arg2, arg3, arg4)
+}
+
+// StartOpeningAuction mocks base method.
+func (m *MockMarkets) StartOpeningAuction(arg0 context.Context, arg1 string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "StartOpeningAuction", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// StartOpeningAuction indicates an expected call of StartOpeningAuction.
+func (mr *MockMarketsMockRecorder) StartOpeningAuction(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StartOpeningAuction", reflect.TypeOf((*MockMarkets)(nil).StartOpeningAuction), arg0, arg1)
 }

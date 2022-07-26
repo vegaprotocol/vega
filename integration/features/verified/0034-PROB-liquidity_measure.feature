@@ -16,7 +16,7 @@ Feature: Tests confirming probability of trading acceptance criteria (0038-OLIQ-
       | risk aversion | tau                    | mu | r     | sigma |
       | 0.001         | 0.00000190128526884174 | 0  | 0.016 | 2.5   |
 
-    And the price monitoring updated every "1" seconds named "price-monitoring-1":
+    And the price monitoring named "price-monitoring-1":
       | horizon | probability | auction extension |
       | 1       | 0.99999     | 300               |
     And the following assets are registered:
@@ -99,7 +99,7 @@ Feature: Tests confirming probability of trading acceptance criteria (0038-OLIQ-
     And the fees configuration named "fees-config-1":
       | maker fee | infrastructure fee |
       | 0.004     | 0.001              |
-    And the price monitoring updated every "1" seconds named "price-monitoring-2":
+    And the price monitoring named "price-monitoring-2":
       | horizon | probability | auction extension |
       | 43200   | 0.982       | 300               |
     And the markets:
@@ -231,7 +231,7 @@ Feature: Tests confirming probability of trading acceptance criteria (0038-OLIQ-
     And the fees configuration named "fees-config-1":
       | maker fee | infrastructure fee |
       | 0.004     | 0.001              |
-    And the price monitoring updated every "1" seconds named "price-monitoring-2":
+    And the price monitoring named "price-monitoring-2":
       | horizon | probability    | auction extension |
       | 43200   | 0.999999999999 | 300               |
     And the markets:

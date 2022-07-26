@@ -135,7 +135,6 @@ func buildMarketFromProposal(
 	scalingFactors := proto.ScalingFactors{}
 	_ = netp.GetJSONStruct(netparams.MarketMarginScalingFactors, &scalingFactors)
 	// get price monitoring parameters
-	pmUpdateFreq, _ := netp.GetDuration(netparams.MarketPriceMonitoringUpdateFrequency)
 	if definition.Changes.PriceMonitoringParameters == nil {
 		pmParams := &proto.PriceMonitoringParameters{}
 		_ = netp.GetJSONStruct(netparams.MarketPriceMonitoringDefaultParameters, pmParams)
@@ -187,8 +186,7 @@ func buildMarketFromProposal(
 			},
 		},
 		PriceMonitoringSettings: &types.PriceMonitoringSettings{
-			Parameters:      definition.Changes.PriceMonitoringParameters,
-			UpdateFrequency: int64(pmUpdateFreq.Seconds()),
+			Parameters: definition.Changes.PriceMonitoringParameters,
 		},
 		LiquidityMonitoringParameters: definition.Changes.LiquidityMonitoringParameters,
 	}

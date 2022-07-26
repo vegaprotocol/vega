@@ -22,8 +22,7 @@ import (
 )
 
 type PriceMonitoringSettings struct {
-	Parameters      *PriceMonitoringParameters
-	UpdateFrequency int64
+	Parameters *PriceMonitoringParameters
 }
 
 type PriceMonitoringParameters struct {
@@ -66,33 +65,25 @@ func (p PriceMonitoringSettings) IntoProto() *proto.PriceMonitoringSettings {
 		parameters = p.Parameters.IntoProto()
 	}
 	return &proto.PriceMonitoringSettings{
-		Parameters:      parameters,
-		UpdateFrequency: p.UpdateFrequency,
+		Parameters: parameters,
 	}
 }
 
 func (p PriceMonitoringSettings) DeepClone() *PriceMonitoringSettings {
 	return &PriceMonitoringSettings{
-		Parameters:      p.Parameters.DeepClone(),
-		UpdateFrequency: p.UpdateFrequency,
+		Parameters: p.Parameters.DeepClone(),
 	}
 }
 
 func (p PriceMonitoringSettings) String() string {
-	return fmt.Sprintf(
-		"parameters(%s) updateFrequency(%v)",
-		reflectPointerToString(p.Parameters),
-		p.UpdateFrequency,
-	)
+	return fmt.Sprintf("parameters(%s)", reflectPointerToString(p.Parameters))
 }
 
 func PriceMonitoringSettingsFromProto(pr *proto.PriceMonitoringSettings) *PriceMonitoringSettings {
 	if pr == nil {
 		return nil
 	}
-	p := PriceMonitoringSettings{
-		UpdateFrequency: pr.UpdateFrequency,
-	}
+	p := PriceMonitoringSettings{}
 	if pr.Parameters != nil {
 		p.Parameters = PriceMonitoringParametersFromProto(pr.Parameters)
 	}

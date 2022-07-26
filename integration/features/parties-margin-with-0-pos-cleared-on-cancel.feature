@@ -8,7 +8,7 @@ Feature: Close potential positions
       | 0.001         | 0.01 | 0  | 0.0   | 1.2   |
       #calculated risk factor long: 0.336895684; risk factor short: 0.4878731
 
-    And the price monitoring updated every "1" seconds named "price-monitoring-1":
+    And the price monitoring named "price-monitoring-1":
       | horizon | probability | auction extension |
       | 1       | 0.99999999  | 300               |
 

@@ -18,7 +18,7 @@ Feature: Test for issue 5460
     And the fees configuration named "fees-config-1":
       | maker fee | infrastructure fee |
       | 0.001     | 0.001              |
-    And the price monitoring updated every "1" seconds named "price-monitoring-1":
+    And the price monitoring named "price-monitoring-1":
       | horizon | probability | auction extension |
       | 43200   | 0.9999999   | 60                |
     And the markets:

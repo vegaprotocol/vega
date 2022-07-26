@@ -23,10 +23,10 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
     And the fees configuration named "fees-config-1":
       | maker fee | infrastructure fee |
       | 0.004     | 0.001              |
-    And the price monitoring updated every "1" seconds named "price-monitoring-1":
+    And the price monitoring named "price-monitoring-1":
       | horizon | probability | auction extension |
       | 1       | 0.99        | 300               |
-    And the price monitoring updated every "1" seconds named "price-monitoring-2":
+    And the price monitoring named "price-monitoring-2":
       | horizon | probability | auction extension |
       | 2       | 0.999995    | 200               |
       | 1       | 0.999999    | 300               |

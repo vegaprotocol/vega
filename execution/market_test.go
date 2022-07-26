@@ -88,7 +88,6 @@ var defaultPriceMonitorSettings = &types.PriceMonitoringSettings{
 			},
 		},
 	},
-	UpdateFrequency: 300,
 }
 
 type marketW struct {
@@ -394,7 +393,6 @@ func getTestMarket2WithDP(
 			Parameters: &types.PriceMonitoringParameters{
 				Triggers: []*types.PriceMonitoringTrigger{},
 			},
-			UpdateFrequency: 0,
 		}
 	}
 	require.NoError(t, err)
@@ -1279,7 +1277,6 @@ func TestTriggerByPriceNoTradesInAuction(t *testing.T) {
 				},
 			},
 		},
-		UpdateFrequency: 600,
 	}
 	initialPrice := uint64(600)
 	mmu, _ := num.UintFromDecimal(MAXMOVEUP)
@@ -1455,7 +1452,6 @@ func TestTriggerByPriceAuctionPriceInBounds(t *testing.T) {
 				},
 			},
 		},
-		UpdateFrequency: 600,
 	}
 	initialPrice := uint64(600)
 	deltaD := MAXMOVEUP
@@ -1722,7 +1718,6 @@ func TestTriggerByPriceAuctionPriceOutsideBounds(t *testing.T) {
 				},
 			},
 		},
-		UpdateFrequency: 600,
 	}
 	mmu, _ := num.UintFromDecimal(MAXMOVEUP)
 	initialPrice := uint64(600)
@@ -1961,7 +1956,6 @@ func TestTriggerByMarketOrder(t *testing.T) {
 				},
 			},
 		},
-		UpdateFrequency: 600,
 	}
 	mmu, _ := num.UintFromDecimal(MAXMOVEUP)
 	initialPrice := uint64(600)
@@ -2180,7 +2174,6 @@ func TestPriceMonitoringBoundsInGetMarketData(t *testing.T) {
 				t2,
 			},
 		},
-		UpdateFrequency: 600,
 	}
 	openEnd := now.Add(time.Duration(extension)*time.Second + time.Second)
 	// auctionEndTime := openEnd.Add(time.Duration(t1.AuctionExtension+t2.AuctionExtension) * time.Second)
@@ -3505,7 +3498,6 @@ func TestTriggerAfterOpeningAuction(t *testing.T) {
 				},
 			},
 		},
-		UpdateFrequency: 600,
 	}
 	mmu, _ := num.UintFromDecimal(MAXMOVEUP)
 	initialPrice := uint64(100)

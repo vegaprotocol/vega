@@ -11,7 +11,7 @@ Feature: Test closeout type 1: margin >= cost of closeout
       | search factor | initial factor | release factor | 
       | 2             | 2.5            | 3              | 
 
-    And the price monitoring updated every "1" seconds named "price-monitoring":
+    And the price monitoring named "price-monitoring":
       | horizon | probability | auction extension |
       | 100000     | 0.9999999     | 3                 |
 

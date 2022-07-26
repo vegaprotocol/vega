@@ -28,7 +28,6 @@ func TestPriceSettingsMapping(t *testing.T) {
 		Parameters: &proto.PriceMonitoringParameters{
 			Triggers: []*proto.PriceMonitoringTrigger{&t1, &t2},
 		},
-		UpdateFrequency: 600,
 	}
 	settings := types.PriceMonitoringSettingsFromProto(pSet)
 	require.Equal(t, len(pSet.Parameters.Triggers), len(settings.Parameters.Triggers))
