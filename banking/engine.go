@@ -55,7 +55,7 @@ var (
 type Assets interface {
 	Get(assetID string) (*assets.Asset, error)
 	Enable(ctx context.Context, assetID string) error
-	ApplyAssetUpdate(assetID string) error
+	ApplyAssetUpdate(ctx context.Context, assetID string) error
 }
 
 // Notary ...
@@ -380,7 +380,7 @@ func (e *Engine) finalizeAssetLimitsUpdated(ctx context.Context, assetID string)
 			logging.AssetID(assetID))
 		return nil
 	}
-	if err := e.assets.ApplyAssetUpdate(assetID); err != nil {
+	if err := e.assets.ApplyAssetUpdate(ctx, assetID); err != nil {
 		e.log.Error("couldn't apply asset update",
 			logging.Error(err),
 			logging.AssetID(assetID))

@@ -36,17 +36,17 @@ func (m *MockAssets) EXPECT() *MockAssetsMockRecorder {
 }
 
 // ApplyAssetUpdate mocks base method.
-func (m *MockAssets) ApplyAssetUpdate(arg0 string) error {
+func (m *MockAssets) ApplyAssetUpdate(arg0 context.Context, arg1 string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ApplyAssetUpdate", arg0)
+	ret := m.ctrl.Call(m, "ApplyAssetUpdate", arg0, arg1)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // ApplyAssetUpdate indicates an expected call of ApplyAssetUpdate.
-func (mr *MockAssetsMockRecorder) ApplyAssetUpdate(arg0 interface{}) *gomock.Call {
+func (mr *MockAssetsMockRecorder) ApplyAssetUpdate(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ApplyAssetUpdate", reflect.TypeOf((*MockAssets)(nil).ApplyAssetUpdate), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ApplyAssetUpdate", reflect.TypeOf((*MockAssets)(nil).ApplyAssetUpdate), arg0, arg1)
 }
 
 // Enable mocks base method.

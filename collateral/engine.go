@@ -302,7 +302,7 @@ func (e *Engine) PropagateAssetUpdate(ctx context.Context, asset types.Asset) er
 	}
 	e.enabledAssets[asset.ID] = asset
 	e.state.updateAsset(asset)
-	e.broker.Send(events.NewAssetEvent(ctx, asset))
+	// e.broker.Send(events.NewAssetEvent(ctx, asset))
 	return nil
 }
 

@@ -67,7 +67,7 @@ func (AssetStub) Enable(_ context.Context, assetID string) error {
 	return nil
 }
 
-func (a *AssetStub) ApplyAssetUpdate(assetID string) error {
+func (a *AssetStub) ApplyAssetUpdate(_ context.Context, assetID string) error {
 	return nil
 }
 

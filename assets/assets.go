@@ -262,7 +262,7 @@ func (s *Service) StageAssetUpdate(updatedAssetProto *types.Asset) error {
 	return nil
 }
 
-func (s *Service) ApplyAssetUpdate(assetID string) error {
+func (s *Service) ApplyAssetUpdate(ctx context.Context, assetID string) error {
 	s.pamu.Lock()
 	defer s.pamu.Unlock()
 
@@ -288,6 +288,7 @@ func (s *Service) ApplyAssetUpdate(assetID string) error {
 	delete(s.pendingAssetUpdates, assetID)
 	s.ass.changedActive = true
 	s.ass.changedPendingUpdates = true
+	s.broker.Send(events.NewAssetEvent(ctx, *updatedAsset.Type()))
 	return nil
 }
 
