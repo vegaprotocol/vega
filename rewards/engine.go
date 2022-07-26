@@ -20,6 +20,7 @@ import (
 
 	"code.vegaprotocol.io/vega/types/num"
 
+	proto "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
@@ -44,7 +45,7 @@ type MarketActivityTracker interface {
 	GetFeePartyScores(asset string, feeType types.TransferType) []*types.PartyContibutionScore
 }
 
-// EpochEngine notifies the reward engine at the end of an epoch.
+// TimeService notifies the reward engine at the end of an epoch.
 type EpochEngine interface {
 	NotifyOnEpoch(f func(context.Context, types.Epoch), r func(context.Context, types.Epoch))
 }
@@ -66,7 +67,6 @@ type Collateral interface {
 //TimeService notifies the reward engine on time updates
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/time_service_mock.go -package mocks code.vegaprotocol.io/vega/rewards TimeService
 type TimeService interface {
-	NotifyOnTick(func(context.Context, time.Time))
 	GetTimeNow() time.Time
 }
 
@@ -80,6 +80,7 @@ type Topology interface {
 type Engine struct {
 	log                   *logging.Logger
 	config                Config
+	timeService           TimeService
 	broker                Broker
 	topology              Topology
 	delegation            Delegation
@@ -90,7 +91,6 @@ type Engine struct {
 	newEpochStarted       bool // flag to signal new epoch so we can update the voting power at the end of the block
 	epochSeq              string
 	ersatzRewardFactor    num.Decimal
-	currentTime           time.Time
 }
 
 type globalRewardParams struct {
@@ -122,6 +122,7 @@ func New(log *logging.Logger, config Config, broker Broker, delegation Delegatio
 	e := &Engine{
 		config:                config,
 		log:                   log.Named(namedLogger),
+		timeService:           ts,
 		broker:                broker,
 		delegation:            delegation,
 		collateral:            collateral,
@@ -134,8 +135,6 @@ func New(log *logging.Logger, config Config, broker Broker, delegation Delegatio
 	// register for epoch end notifications
 	epochEngine.NotifyOnEpoch(e.OnEpochEvent, e.OnEpochRestore)
 
-	// register for time tick updates
-	ts.NotifyOnTick(e.onChainTimeUpdate)
 	return e
 }
 
@@ -187,12 +186,11 @@ func (e *Engine) UpdateDelegatorShareForStakingRewardScheme(ctx context.Context,
 	return nil
 }
 
-// whenever we have a time update, check if there are pending payouts ready to be sent.
-func (e *Engine) onChainTimeUpdate(ctx context.Context, t time.Time) {
+// Whenever we have a time update, update rand seeder cached value.
+func (e *Engine) OnTick(ctx context.Context, t time.Time) {
 	// resetting the seed every block, to both get some more unpredictability and still deterministic
 	// and play nicely with snapshot
 	e.rng = rand.New(rand.NewSource(t.Unix()))
-	e.currentTime = t
 }
 
 // OnEpochEvent calculates the reward amounts parties get for available reward schemes.
@@ -200,7 +198,7 @@ func (e *Engine) OnEpochEvent(ctx context.Context, epoch types.Epoch) {
 	e.log.Debug("OnEpochEvent")
 
 	// on new epoch update the epoch seq and update the epoch started flag
-	if (epoch.EndTime == time.Time{}) {
+	if epoch.Action == proto.EpochAction_EPOCH_ACTION_START {
 		e.epochSeq = num.NewUint(epoch.Seq).String()
 		e.newEpochStarted = true
 		return
@@ -282,6 +280,7 @@ func (e *Engine) calculateRewardPayouts(ctx context.Context, epoch types.Epoch) 
 		e.log.Info("Rewards: calculated normalised score for ersatz validator", logging.String("validator", node), logging.String("normalisedScore", score.String()))
 	}
 
+	now := e.timeService.GetTimeNow()
 	payouts := []*payout{}
 	for _, rewardType := range rewardAccountTypes {
 		accounts := e.collateral.GetRewardAccountsByType(rewardType)
@@ -303,9 +302,9 @@ func (e *Engine) calculateRewardPayouts(ctx context.Context, epoch types.Epoch) 
 				if po != nil && !po.totalReward.IsZero() && !po.totalReward.IsNegative() {
 					po.rewardType = rewardType
 					po.market = account.MarketID
-					po.timestamp = e.currentTime.UnixNano()
+					po.timestamp = now.UnixNano()
 					payouts = append(payouts, po)
-					e.emitEventsForPayout(ctx, e.currentTime, po)
+					e.emitEventsForPayout(ctx, now, po)
 					e.distributePayout(ctx, po)
 				}
 			}

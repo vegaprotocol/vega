@@ -37,7 +37,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/tendermint/tendermint/libs/bytes"
-	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
+	tmctypes "github.com/tendermint/tendermint/rpc/coretypes"
 	"google.golang.org/grpc/codes"
 )
 
@@ -143,35 +143,13 @@ func (s *coreService) SubmitTransaction(ctx context.Context, req *protoapi.Submi
 
 	txResult, err := s.blockchain.SubmitTransactionSync(ctx, req.Tx)
 	if err != nil {
-		// This is Tendermint's specific error signature
-		if _, ok := err.(interface {
-			Code() uint32
-			Details() string
-			Error() string
-		}); ok {
-			s.log.Debug("unable to submit transaction", logging.Error(err))
-			fullError := apiError(codes.InvalidArgument, err)
-			if txResult != nil {
-				return &protoapi.SubmitTransactionResponse{
-					Success: false,
-					Code:    txResult.Code,
-					Data:    txResult.Data.String(),
-					Log:     txResult.Log,
-					Height:  0,
-					TxHash:  txResult.Hash.String(),
-				}, fullError
-			}
-			return nil, fullError
-		}
-		s.log.Debug("unable to submit transaction", logging.Error(err))
-
 		return nil, apiError(codes.Internal, err)
 	}
 
 	return &protoapi.SubmitTransactionResponse{
-		Success: true,
+		Success: txResult.Code == 0,
 		Code:    txResult.Code,
-		Data:    txResult.Data.String(),
+		Data:    string(txResult.Data.Bytes()),
 		Log:     txResult.Log,
 		Height:  0,
 		TxHash:  txResult.Hash.String(),
@@ -188,25 +166,6 @@ func (s *coreService) CheckTransaction(ctx context.Context, req *protoapi.CheckT
 
 	checkResult, err := s.blockchain.CheckTransaction(ctx, req.Tx)
 	if err != nil {
-		if _, ok := err.(interface {
-			Code() uint32
-			Details() string
-			Error() string
-		}); ok {
-			s.log.Debug("unable to check transaction", logging.Error(err))
-			fullError := apiError(codes.InvalidArgument, err)
-			if checkResult != nil {
-				return &protoapi.CheckTransactionResponse{
-					Code:      checkResult.Code,
-					Success:   false,
-					GasWanted: checkResult.GasWanted,
-					GasUsed:   checkResult.GasUsed,
-				}, fullError
-			}
-			return nil, fullError
-		}
-		s.log.Debug("unable to check transaction", logging.Error(err))
-
 		return nil, apiError(codes.Internal, err)
 	}
 
@@ -228,25 +187,6 @@ func (s *coreService) CheckRawTransaction(ctx context.Context, req *protoapi.Che
 
 	checkResult, err := s.blockchain.CheckRawTransaction(ctx, req.Tx)
 	if err != nil {
-		if _, ok := err.(interface {
-			Code() uint32
-			Details() string
-			Error() string
-		}); ok {
-			s.log.Debug("unable to check raw transaction", logging.Error(err))
-			fullError := apiError(codes.InvalidArgument, err)
-			if checkResult != nil {
-				return &protoapi.CheckRawTransactionResponse{
-					Code:      checkResult.Code,
-					Success:   false,
-					GasWanted: checkResult.GasWanted,
-					GasUsed:   checkResult.GasUsed,
-				}, fullError
-			}
-			return nil, fullError
-		}
-		s.log.Debug("unable to check raw transaction", logging.Error(err))
-
 		return nil, apiError(codes.Internal, err)
 	}
 

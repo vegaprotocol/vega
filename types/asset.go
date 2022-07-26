@@ -31,11 +31,28 @@ var (
 	ErrInvalidAssetQuantumZero       = errors.New("invalid asset, quantum must not be zero")
 )
 
+type AssetStatus = proto.Asset_Status
+
+const (
+	// Default value, always invalid.
+	AssetStatusUnspecified AssetStatus = proto.Asset_STATUS_UNSPECIFIED
+	// Asset is proposed and under vote.
+	AssetStatusProposed AssetStatus = proto.Asset_STATUS_PROPOSED
+	// Asset has been rejected from governance.
+	AssetStatusRejected AssetStatus = proto.Asset_STATUS_REJECTED
+	// Asset is pending listing from the bridge.
+	AssetStatusPendingListing AssetStatus = proto.Asset_STATUS_PENDING_LISTING
+	// Asset is fully usable in the network.
+	AssetStatusEnabled AssetStatus = proto.Asset_STATUS_ENABLED
+)
+
 type Asset struct {
 	// Internal identifier of the asset
 	ID string
 	// Name of the asset (e.g: Great British Pound)
 	Details *AssetDetails
+	// Status of the asset
+	Status AssetStatus
 }
 
 type AssetDetails struct {
@@ -106,6 +123,7 @@ func (a Asset) IntoProto() *proto.Asset {
 	return &proto.Asset{
 		Id:      a.ID,
 		Details: details,
+		Status:  a.Status,
 	}
 }
 
@@ -123,6 +141,7 @@ func AssetFromProto(p *proto.Asset) (*Asset, error) {
 	return &Asset{
 		ID:      p.Id,
 		Details: details,
+		Status:  p.Status,
 	}, nil
 }
 

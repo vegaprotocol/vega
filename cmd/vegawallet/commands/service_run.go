@@ -148,8 +148,6 @@ func (f *RunServiceFlags) Validate() error {
 }
 
 func RunService(w io.Writer, rf *RootFlags, f *RunServiceFlags) error {
-	p := printer.NewInteractivePrinter(w)
-
 	store, err := wallets.InitialiseStore(rf.Home)
 	if err != nil {
 		return fmt.Errorf("couldn't initialise wallets store: %w", err)
@@ -219,6 +217,11 @@ func RunService(w io.Writer, rf *RootFlags, f *RunServiceFlags) error {
 
 	cliLog = cliLog.Named("command")
 
+	p := printer.NewInteractivePrinter(w)
+
+	p.Print(p.String().CheckMark().Text("Service logs located at: ").SuccessText(svcLogPath).NextLine())
+	p.Print(p.String().CheckMark().Text("CLI logs located at: ").SuccessText(cliLogPath).NextLine())
+
 	consentRequests := make(chan service.ConsentRequest, MaxConsentRequests)
 	defer close(consentRequests)
 	sentTransactions := make(chan service.SentTransaction)
@@ -229,9 +232,11 @@ func RunService(w io.Writer, rf *RootFlags, f *RunServiceFlags) error {
 		cliLog.Info("TTY detected")
 		if f.EnableAutomaticConsent {
 			cliLog.Info("Automatic consent enabled")
+			p.Print(p.String().WarningBangMark().WarningText("Automatic consent enabled").NextLine())
 			policy = service.NewAutomaticConsentPolicy()
 		} else {
 			cliLog.Info("Explicit consent enabled")
+			p.Print(p.String().CheckMark().Text("Explicit consent enabled").NextLine())
 			policy = service.NewExplicitConsentPolicy(ctx, consentRequests, sentTransactions)
 		}
 	} else {
@@ -251,22 +256,23 @@ func RunService(w io.Writer, rf *RootFlags, f *RunServiceFlags) error {
 
 	go func() {
 		defer cancel()
+		serviceHost := fmt.Sprintf("http://%v:%v", cfg.Host, cfg.Port)
+		p.Print(p.String().CheckMark().Text("Starting HTTP service at: ").SuccessText(serviceHost).NextLine())
+		cliLog.Info("starting HTTP service", zap.String("url", serviceHost))
 		if err := srv.Start(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-			cliLog.Error("Error while starting HTTP server", zap.Error(err))
+			cliLog.Error("failed to start HTTP server", zap.Error(err))
+			p.Print(p.String().DangerBangMark().Text("Failed to start HTTP server: ").DangerText(err.Error()).NextLine())
 		}
 	}()
 
-	serviceHost := fmt.Sprintf("http://%v:%v", cfg.Host, cfg.Port)
-	if !f.EnableAutomaticConsent {
-		p.CheckMark().Text("HTTP service started at: ").SuccessText(serviceHost).NextLine()
-	}
-	cliLog.Info(fmt.Sprintf("HTTP service started at: %s", serviceHost))
-
 	defer func() {
 		if err = srv.Stop(); err != nil {
-			cliLog.Error("Error while stopping HTTP server", zap.Error(err))
-			cliLog.Info("HTTP server stopped with success")
+			cliLog.Error("Failed to stop HTTP server", zap.Error(err))
+			p.Print(p.String().DangerBangMark().Text("HTTP service stopped with error: ").DangerText(err.Error()).NextLine())
+			return
 		}
+		cliLog.Info("HTTP server stopped with success")
+		p.Print(p.String().CheckMark().Text("HTTP service stopped").NextLine())
 	}()
 
 	var cs *proxy.Proxy
@@ -274,10 +280,12 @@ func RunService(w io.Writer, rf *RootFlags, f *RunServiceFlags) error {
 		cs = startConsole(cliLog, f, cfg, cancel, p)
 		defer func() {
 			if err = cs.Stop(); err != nil {
-				cliLog.Error("Error while stopping console proxy", zap.Error(err))
-			} else {
-				cliLog.Info("Console proxy stopped with success")
+				cliLog.Error("failed to stop console proxy", zap.Error(err))
+				p.Print(p.String().DangerBangMark().Text("Failed to stop console proxy: ").DangerText(err.Error()).NextLine())
+				return
 			}
+			cliLog.Info("Console proxy stopped with success")
+			p.Print(p.String().CheckMark().Text("Console proxy stopped").NextLine())
 		}()
 	}
 
@@ -286,18 +294,13 @@ func RunService(w io.Writer, rf *RootFlags, f *RunServiceFlags) error {
 		tokenDApp = startTokenDApp(cliLog, f, cfg, cancel, p)
 		defer func() {
 			if err = tokenDApp.Stop(); err != nil {
-				cliLog.Error("Error while stopping token dApp proxy", zap.Error(err))
-			} else {
-				cliLog.Info("Token dApp proxy stopped with success")
+				cliLog.Error("failed to stop token dApp proxy", zap.Error(err))
+				p.Print(p.String().DangerBangMark().Text("Failed to stop token dApp proxy: ").DangerText(err.Error()).NextLine())
+				return
 			}
+			cliLog.Info("Token dApp proxy stopped with success")
+			p.Print(p.String().CheckMark().Text("Token dApp proxy stopped").NextLine())
 		}()
-	}
-
-	if !f.EnableAutomaticConsent {
-		p.CheckMark().Text("Service logs located at: ").SuccessText(svcLogPath).NextLine()
-		p.CheckMark().Text("CLI logs located at: ").SuccessText(cliLogPath).NextLine()
-		p.CheckMark().SuccessText("Starting successful").NextSection()
-		p.NextLine()
 	}
 
 	waitSig(ctx, cancel, cliLog, consentRequests, sentTransactions, p)
@@ -324,22 +327,23 @@ func verifyNetworkConfig(cfg *network.Network, f *RunServiceFlags) error {
 
 func startConsole(log *zap.Logger, f *RunServiceFlags, cfg *network.Network, cancel context.CancelFunc, p *printer.InteractivePrinter) *proxy.Proxy {
 	cs := proxy.NewProxy(cfg.Console.LocalPort, cfg.Console.URL, cfg.API.GRPC.Hosts[0])
+	consoleLocalProxyURL := cs.GetLocalProxyURL()
 	go func() {
 		defer cancel()
+		p.Print(p.String().CheckMark().Text("Starting console proxy for ").Bold(cfg.Console.URL).Text(" at: ").SuccessText(consoleLocalProxyURL).NextLine())
+		log.Info("starting console proxy", zap.String("target-url", cfg.Console.URL), zap.String("proxy-url", consoleLocalProxyURL))
 		if err := cs.Start(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-			log.Error("error while starting the console proxy", zap.Error(err))
+			log.Error("Failed to start the console proxy", zap.Error(err))
+			p.Print(p.String().DangerBangMark().Text("Failed to start console proxy: ").DangerText(consoleLocalProxyURL).NextLine())
 		}
 	}()
 
-	consoleLocalHost := fmt.Sprintf("http://127.0.0.1:%v", cfg.Console.LocalPort)
-	if !f.EnableAutomaticConsent {
-		p.CheckMark().Text("Console proxy pointing to ").Bold(cfg.Console.URL).Text(" started at: ").SuccessText(consoleLocalHost).NextLine()
-	}
-	log.Info(fmt.Sprintf("console proxy pointing to %s started at: %s", cfg.Console.URL, consoleLocalHost))
-
 	if !f.NoBrowser {
-		if err := open.Run(cs.GetBrowserURL()); err != nil {
+		p.Print(p.String().CheckMark().Text("Opening browser for console proxy at: ").SuccessText(consoleLocalProxyURL).NextLine())
+		log.Info("opening browser for console proxy", zap.String("url", consoleLocalProxyURL))
+		if err := open.Run(consoleLocalProxyURL); err != nil {
 			log.Error("unable to open the application in the default browser", zap.Error(err))
+			p.Print(p.String().DangerBangMark().Text("Failed to open the browser for console proxy: ").DangerText(err.Error()).NextLine())
 		}
 	}
 
@@ -348,22 +352,24 @@ func startConsole(log *zap.Logger, f *RunServiceFlags, cfg *network.Network, can
 
 func startTokenDApp(log *zap.Logger, f *RunServiceFlags, cfg *network.Network, cancel context.CancelFunc, p *printer.InteractivePrinter) *proxy.Proxy {
 	tokenDApp := proxy.NewProxy(cfg.TokenDApp.LocalPort, cfg.TokenDApp.URL, cfg.API.GRPC.Hosts[0])
+	tokenDAppLocalProxyURL := tokenDApp.GetLocalProxyURL()
 	go func() {
 		defer cancel()
+		p.Print(p.String().CheckMark().Text("Starting token dApp proxy for ").Bold(cfg.TokenDApp.URL).Text(" at: ").SuccessText(tokenDAppLocalProxyURL).NextLine())
+		log.Info("starting token dApp proxy", zap.String("target-url", cfg.TokenDApp.URL), zap.String("proxy-url", tokenDAppLocalProxyURL))
+
 		if err := tokenDApp.Start(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-			log.Error("error while starting the token dApp proxy", zap.Error(err))
+			log.Error("failed to start the token dApp proxy", zap.Error(err))
+			p.Print(p.String().DangerBangMark().Text("Failed to start token dApp proxy: ").DangerText(tokenDAppLocalProxyURL).NextLine())
 		}
 	}()
 
-	tokenDAppLocalHost := fmt.Sprintf("http://127.0.0.1:%v", cfg.TokenDApp.LocalPort)
-	if !f.EnableAutomaticConsent {
-		p.CheckMark().Text("token dApp proxy pointing to ").Bold(cfg.TokenDApp.URL).Text(" started at: ").SuccessText(tokenDAppLocalHost).NextLine()
-	}
-	log.Info(fmt.Sprintf("token dApp proxy pointing to %s started at: %s", cfg.TokenDApp.URL, tokenDAppLocalHost))
-
 	if !f.NoBrowser {
-		if err := open.Run(tokenDApp.GetBrowserURL()); err != nil {
+		p.Print(p.String().CheckMark().Text("Opening browser for token dApp proxy at: ").SuccessText(tokenDAppLocalProxyURL).NextLine())
+		log.Info("opening browser for token dApp proxy", zap.String("url", tokenDAppLocalProxyURL))
+		if err := open.Run(tokenDAppLocalProxyURL); err != nil {
 			log.Error("unable to open the token dApp in the default browser", zap.Error(err))
+			p.Print(p.String().DangerBangMark().Text("Failed to open the browser for token dApp proxy: ").DangerText(err.Error()).NextLine())
 		}
 	}
 	return tokenDApp
@@ -418,28 +424,30 @@ func handleConsentRequests(ctx context.Context, log *zap.Logger, consentRequests
 				return err
 			}
 
-			p.BlueArrow().Text("New transaction received: ").NextLine()
-			p.InfoText(marshalledTx).NextLine()
+			str := p.String()
+			str.BlueArrow().Text("New transaction received: ").NextLine()
+			str.InfoText(marshalledTx).NextLine()
+			p.Print(str)
 
 			if flags.DoYouApproveTx() {
 				log.Info("user approved the signing of the transaction", zap.Any("transaction", marshalledTx))
 				consentRequest.Confirmation <- service.ConsentConfirmation{Decision: true}
-				p.CheckMark().SuccessText("Transaction approved").NextLine()
+				p.Print(p.String().CheckMark().SuccessText("Transaction approved").NextLine())
 
 				sentTx := <-sentTransactions
 				log.Info("transaction sent", zap.Any("ID", sentTx.TxID), zap.Any("hash", sentTx.TxHash))
 				if sentTx.Error != nil {
 					log.Error("transaction failed", zap.Any("transaction", marshalledTx))
-					p.BangMark().DangerText("Transaction failed").NextLine()
-					p.BangMark().DangerText("Error: ").DangerText(sentTx.Error.Error()).NextSection()
+					p.Print(p.String().DangerBangMark().DangerText("Transaction failed").NextLine())
+					p.Print(p.String().DangerBangMark().DangerText("Error: ").DangerText(sentTx.Error.Error()).NextSection())
 				} else {
 					log.Info("transaction sent", zap.Any("hash", sentTx.TxHash))
-					p.CheckMark().Text("Transaction with hash ").SuccessText(sentTx.TxHash).Text(" sent!").NextSection()
+					p.Print(p.String().CheckMark().Text("Transaction with hash ").SuccessText(sentTx.TxHash).Text(" sent!").NextSection())
 				}
 			} else {
 				log.Info("user rejected the signing of the transaction", zap.Any("transaction", marshalledTx))
 				consentRequest.Confirmation <- service.ConsentConfirmation{Decision: false}
-				p.BangMark().DangerText("Transaction rejected").NextSection()
+				p.Print(p.String().DangerBangMark().DangerText("Transaction rejected").NextSection())
 			}
 		}
 	}

@@ -129,7 +129,7 @@ func TestCheckpoint(t *testing.T) {
 	conf := collateral.NewDefaultConfig()
 	conf.Level = encoding.LogLevel{Level: logging.DebugLevel}
 	// system accounts created
-	loadEng := collateral.New(logging.NewTestLogger(), conf, eng.broker, time.Now())
+	loadEng := collateral.New(logging.NewTestLogger(), conf, eng.timeSvc, eng.broker)
 	enableGovernanceAsset(t, loadEng)
 
 	asset := types.Asset{
@@ -358,7 +358,7 @@ func testSnapshotRestore(t *testing.T) {
 	// we expect 2 batches of events to be sent
 
 	newEng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
-	newEng.broker.EXPECT().SendBatch(gomock.Any()).Times(3)
+	newEng.broker.EXPECT().SendBatch(gomock.Any()).Times(2)
 	for k, pl := range payloads {
 		state := data[k]
 		ptype := pl.IntoProto()
@@ -471,7 +471,7 @@ func TestSnapshotRoundtripViaEngine(t *testing.T) {
 		log := logging.NewTestLogger()
 		timeService := stubs.NewTimeStub()
 		timeService.SetTime(now)
-		statsData := stats.New(log, stats.NewDefaultConfig(), "", "")
+		statsData := stats.New(log, stats.NewDefaultConfig())
 		config := snp.NewDefaultConfig()
 		config.Storage = "memory"
 		snapshotEngine, _ := snp.New(context.Background(), &paths.DefaultPaths{}, config, log, timeService, statsData.Blockchain)

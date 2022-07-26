@@ -16,7 +16,7 @@ Feature: Tests confirming probability of trading acceptance criteria (0038-OLIQ-
       | risk aversion | tau                    | mu | r     | sigma |
       | 0.001         | 0.00000190128526884174 | 0  | 0.016 | 2.5   |
 
-    And the price monitoring updated every "1" seconds named "price-monitoring-1":
+    And the price monitoring named "price-monitoring-1":
       | horizon | probability | auction extension |
       | 1       | 0.99999     | 300               |
     And the following assets are registered:
@@ -32,16 +32,6 @@ Feature: Tests confirming probability of trading acceptance criteria (0038-OLIQ-
       | party2     | ETH   | 1000000000            |
       | party-lp-1 | ETH   | 100000000000000000000 |
       | party3     | ETH   | 100000000000          |
-
-    # Trigger an auction to set the mark price
-    When the parties place the following orders:
-      | party  | market id | side | volume | price      | resulting trades | type       | tif     | reference |
-      | party1 | ETH/DEC19 | buy  | 1      | 1199990000 | 0                | TYPE_LIMIT | TIF_GTC | party1-1  |
-      | party2 | ETH/DEC19 | sell | 1      | 1200010000 | 0                | TYPE_LIMIT | TIF_GTC | party2-1  |
-      | party1 | ETH/DEC19 | buy  | 1      | 1200000000 | 0                | TYPE_LIMIT | TIF_GFA | party1-2  |
-      | party2 | ETH/DEC19 | sell | 1      | 1200000000 | 0                | TYPE_LIMIT | TIF_GFA | party2-2  |
-    Then the opening auction period ends for market "ETH/DEC19"
-    And the mark price should be "1200000000" for the market "ETH/DEC19"
 
     And the parties submit the following liquidity provision:
       | id  | party      | market id | commitment amount | fee | side | pegged reference | proportion | offset | reference | lp type    |
@@ -64,9 +54,19 @@ Feature: Tests confirming probability of trading acceptance criteria (0038-OLIQ-
       | lp1 | party-lp-1 | ETH/DEC19 | 1000000000000      | 0.1 | sell | ASK              | 1          | 90000  | lp-1-ref  | amendment  |
       | lp1 | party-lp-1 | ETH/DEC19 | 1000000000000      | 0.1 | sell | ASK              | 1          | 100000 | lp-1-ref  | amendment  |
 
+    # Trigger an auction to set the mark price
+    When the parties place the following orders:
+      | party  | market id | side | volume | price      | resulting trades | type       | tif     | reference |
+      | party1 | ETH/DEC19 | buy  | 1      | 1199990000 | 0                | TYPE_LIMIT | TIF_GTC | party1-1  |
+      | party2 | ETH/DEC19 | sell | 1      | 1200010000 | 0                | TYPE_LIMIT | TIF_GTC | party2-1  |
+      | party1 | ETH/DEC19 | buy  | 1      | 1200000000 | 0                | TYPE_LIMIT | TIF_GFA | party1-2  |
+      | party2 | ETH/DEC19 | sell | 1      | 1200000000 | 0                | TYPE_LIMIT | TIF_GFA | party2-2  |
+    Then the opening auction period ends for market "ETH/DEC19"
+    And the mark price should be "1200000000" for the market "ETH/DEC19"
+
     Then the liquidity provisions should have the following states:
       | id  | party      | market    | commitment amount | status        |
-      | lp1 | party-lp-1 | ETH/DEC19 | 1000000000000      | STATUS_ACTIVE |
+      | lp1 | party-lp-1 | ETH/DEC19 | 1000000000000     | STATUS_ACTIVE |
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
 
@@ -99,7 +99,7 @@ Feature: Tests confirming probability of trading acceptance criteria (0038-OLIQ-
     And the fees configuration named "fees-config-1":
       | maker fee | infrastructure fee |
       | 0.004     | 0.001              |
-    And the price monitoring updated every "1" seconds named "price-monitoring-2":
+    And the price monitoring named "price-monitoring-2":
       | horizon | probability | auction extension |
       | 43200   | 0.982       | 300               |
     And the markets:
@@ -231,7 +231,7 @@ Feature: Tests confirming probability of trading acceptance criteria (0038-OLIQ-
     And the fees configuration named "fees-config-1":
       | maker fee | infrastructure fee |
       | 0.004     | 0.001              |
-    And the price monitoring updated every "1" seconds named "price-monitoring-2":
+    And the price monitoring named "price-monitoring-2":
       | horizon | probability    | auction extension |
       | 43200   | 0.999999999999 | 300               |
     And the markets:

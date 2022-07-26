@@ -54,7 +54,7 @@ func (m *Market) repricePeggedOrders(
 				// Failed to reprice, if we are parked we do nothing,
 				// if not parked we need to park
 				if order.Status != types.OrderStatusParked {
-					order.UpdatedAt = m.currentTime.UnixNano()
+					order.UpdatedAt = m.timeService.GetTimeNow().UnixNano()
 					order.Status = types.OrderStatusParked
 					order.Price = num.Zero()
 					order.OriginalPrice = nil

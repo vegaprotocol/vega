@@ -79,11 +79,24 @@ func New(
 		asset: &types.Asset{
 			ID:      id,
 			Details: asset,
+			Status:  types.AssetStatusProposed,
 		},
 		address:   source.ContractAddress,
 		wallet:    w,
 		ethClient: ethClient,
 	}, nil
+}
+
+func (e *ERC20) SetPendingListing() {
+	e.asset.Status = types.AssetStatusPendingListing
+}
+
+func (e *ERC20) SetRejected() {
+	e.asset.Status = types.AssetStatusRejected
+}
+
+func (e *ERC20) SetEnabled() {
+	e.asset.Status = types.AssetStatusEnabled
 }
 
 func (e *ERC20) ProtoAsset() *typespb.Asset {
@@ -158,7 +171,8 @@ func (e *ERC20) Validate() error {
 func (e *ERC20) SignBridgeListing() (msg []byte, sig []byte, err error) {
 	bridgeAddress := e.ethClient.CollateralBridgeAddress().Hex()
 	// use the asset ID converted into a uint256
-	nonce, err := num.UintFromHex("0x" + e.asset.ID)
+	// trim left all 0 as these makes for an invalid base16 numbers
+	nonce, err := num.UintFromHex("0x" + strings.TrimLeft(e.asset.ID, "0"))
 	if err != nil {
 		return nil, nil, err
 	}
@@ -205,7 +219,9 @@ func (e *ERC20) ValidateAssetList(w *types.ERC20AssetList, blockNumber, txIndex 
 
 	assetID := strings.TrimPrefix(w.VegaAssetID, "0x")
 	for iter.Next() {
-		if hex.EncodeToString(iter.Event.VegaAssetId[:]) == assetID {
+		if hex.EncodeToString(iter.Event.VegaAssetId[:]) == assetID &&
+			iter.Event.Raw.BlockNumber == blockNumber &&
+			uint64(iter.Event.Raw.Index) == txIndex {
 			event = iter.Event
 
 			break

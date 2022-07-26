@@ -152,13 +152,13 @@ func TestSnapshotRoundtripViaEngine(t *testing.T) {
 	testEngine.broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
 	setupDefaultDelegationState(testEngine, 10, 5)
 	now := testEngine.engine.lastReconciliation.Add(30 * time.Second)
-	testEngine.engine.onChainTimeUpdate(context.Background(), now)
+	testEngine.engine.OnTick(context.Background(), now)
 	testEngine.engine.ProcessEpochDelegations(context.Background(), types.Epoch{Seq: 0})
 
 	log := logging.NewTestLogger()
 	timeService := stubs.NewTimeStub()
 	timeService.SetTime(now)
-	statsData := stats.New(log, stats.NewDefaultConfig(), "", "")
+	statsData := stats.New(log, stats.NewDefaultConfig())
 	config := snp.NewDefaultConfig()
 	config.Storage = "memory"
 	snapshotEngine, _ := snp.New(context.Background(), &paths.DefaultPaths{}, config, log, timeService, statsData.Blockchain)
@@ -201,12 +201,12 @@ func TestSnapshotRoundtripViaEngine(t *testing.T) {
 	testEngine.engine.ProcessEpochDelegations(context.Background(), types.Epoch{Seq: 1})
 	testEngine.engine.UndelegateNow(context.Background(), "party1", "node1", num.NewUint(3))
 	testEngine.engine.UndelegateAtEndOfEpoch(context.Background(), "party1", "node1", num.NewUint(2))
-	testEngine.engine.onChainTimeUpdate(context.Background(), now.Add(30*time.Second))
+	testEngine.engine.OnTick(context.Background(), now.Add(30*time.Second))
 
 	testEngineLoad.engine.ProcessEpochDelegations(context.Background(), types.Epoch{Seq: 1})
 	testEngineLoad.engine.UndelegateNow(context.Background(), "party1", "node1", num.NewUint(3))
 	testEngineLoad.engine.UndelegateAtEndOfEpoch(context.Background(), "party1", "node1", num.NewUint(2))
-	testEngineLoad.engine.onChainTimeUpdate(context.Background(), now.Add(30*time.Second))
+	testEngineLoad.engine.OnTick(context.Background(), now.Add(30*time.Second))
 
 	// verify snapshot still matches
 	b, err = snapshotEngine.Snapshot(ctx)
@@ -230,7 +230,7 @@ func testLastReconTimeRoundTrip(t *testing.T) {
 	require.True(t, bytes.Equal(state, stateNoChange))
 
 	// advance 30 seconds
-	testEngine.engine.onChainTimeUpdate(context.Background(), testEngine.engine.lastReconciliation.Add(30*time.Second))
+	testEngine.engine.OnTick(context.Background(), testEngine.engine.lastReconciliation.Add(30*time.Second))
 	stateChanged, _, err := testEngine.engine.GetState(lastReconKey)
 	require.Nil(t, err)
 	require.False(t, bytes.Equal(state, stateChanged))
@@ -1947,7 +1947,6 @@ func getEngine(t *testing.T) *testEngine {
 	topology := newTestTopology()
 	ts := dmocks.NewMockTimeService(ctrl)
 
-	ts.EXPECT().NotifyOnTick(gomock.Any()).Times(1)
 	engine := New(logger, conf, broker, topology, stakingAccounts, &TestEpochEngine{}, ts)
 	engine.onEpochEvent(context.Background(), types.Epoch{Seq: 1, StartTime: time.Now()})
 	engine.OnMinAmountChanged(context.Background(), num.NewDecimalFromFloat(2))

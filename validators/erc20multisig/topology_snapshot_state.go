@@ -297,3 +297,9 @@ func (t *Topology) serialise(k string) ([]byte, error) {
 		return nil, types.ErrSnapshotKeyDoesNotExist
 	}
 }
+
+func (t *Topology) OnStateLoaded(ctx context.Context) error {
+	// tell the internal EEF where it got up to so we do not resend events we're already seen
+	t.ethEventSource.UpdateMultisigControlStartingBlock(t.getLastBlockSeen())
+	return nil
+}

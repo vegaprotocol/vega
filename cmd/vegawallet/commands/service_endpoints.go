@@ -22,6 +22,7 @@ const startupT = ` # Authentication
 
  # Network management
  - network:                 GET    {{.WalletServiceLocalAddress}}/api/v1/network
+ - network chainid:         GET    {{.WalletServiceLocalAddress}}/api/v1/network/chainid
 
  # Wallet management
  - create a wallet:         POST   {{.WalletServiceLocalAddress}}/api/v1/wallets
@@ -121,9 +122,12 @@ func ListEndpoints(w io.Writer, rf *RootFlags, f *ListEndpointsFlags) error {
 
 	serviceHost := fmt.Sprintf("http://%v:%v", cfg.Host, cfg.Port)
 
-	p.BlueArrow().InfoText("Available endpoints").NextLine()
+	str := p.String()
+	defer p.Print(str)
+
+	str.BlueArrow().InfoText("Available endpoints").NextLine()
 	printServiceEndpoints(serviceHost)
-	p.NextLine()
+	str.NextLine()
 
 	return nil
 }

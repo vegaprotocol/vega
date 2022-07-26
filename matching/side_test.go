@@ -555,3 +555,50 @@ func TestFakeUncrossNotEnoughVolume(t *testing.T) {
 	assert.Len(t, trades, 0)
 	assert.NoError(t, err)
 }
+
+func TestFakeUncrossAuction(t *testing.T) {
+	buySide := getPopulatedTestSide(types.SideBuy)
+
+	order1 := &types.Order{
+		ID:            "Id",
+		Party:         "A",
+		Price:         num.NewUint(99),
+		OriginalPrice: num.NewUint(99),
+		Side:          types.SideSell,
+		Size:          3,
+		Remaining:     3,
+		TimeInForce:   types.OrderTimeInForceGTC,
+		Type:          types.OrderTypeLimit,
+	}
+
+	order2 := &types.Order{
+		ID:            "Id",
+		Party:         "B",
+		Price:         num.NewUint(99),
+		OriginalPrice: num.NewUint(99),
+		Side:          types.SideSell,
+		Size:          3,
+		Remaining:     3,
+		TimeInForce:   types.OrderTimeInForceGTC,
+		Type:          types.OrderTypeLimit,
+	}
+
+	orders := []*types.Order{order1, order2}
+
+	fakeTrades, err := buySide.fakeUncrossAuction(orders)
+	assert.Len(t, fakeTrades, 6)
+	assert.NoError(t, err)
+
+	trades := []*types.Trade{}
+	for _, order := range orders {
+		trds, _, _, err := buySide.uncross(order, false)
+		assert.NoError(t, err)
+		trades = append(trades, trds...)
+	}
+	assert.Len(t, trades, 6)
+	assert.NoError(t, err)
+
+	for i, tr := range trades {
+		assert.Equal(t, tr, fakeTrades[i])
+	}
+}

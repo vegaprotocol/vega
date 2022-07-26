@@ -72,7 +72,7 @@ Scenario: Testing fees when network parameters are changed (in continuous tradin
     Given the fees configuration named "fees-config-1":
       | maker fee | infrastructure fee |
       | 0.005     | 0.002              |
-    And the price monitoring updated every "1000" seconds named "price-monitoring":
+    And the price monitoring named "price-monitoring":
       | horizon | probability | auction extension |
       | 1       | 0.99        | 3                 |
     
@@ -91,6 +91,12 @@ Scenario: Testing fees when network parameters are changed (in continuous tradin
       | aux2    | ETH   | 100000000  |
       | trader3 | ETH   |   10000    |
       | trader4 | ETH   |   10000    |
+      | lpprov  | ETH   | 1000000000 |
+
+    When the parties submit the following liquidity provision:
+      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
+      | lp1 | lpprov | ETH/DEC21 | 90000             | 0.1 | buy  | BID              | 50         | 100    | submission |
+      | lp1 | lpprov | ETH/DEC21 | 90000             | 0.1 | sell | ASK              | 50         | 100    | submission |
 
     Then the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     |
@@ -140,7 +146,7 @@ Scenario: Testing fees when network parameters are changed (in continuous tradin
       | from    | to      | from account            | to account                       | market id | amount | asset |
       | trader4 | market  | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_MAKER          | ETH/DEC21 |  151   | ETH   |
       | trader4 |         | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_INFRASTRUCTURE |           |  1503  | ETH   |
-      | trader4 | market  | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_LIQUIDITY      | ETH/DEC21 |   0    | ETH   |
+      | trader4 | market  | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_LIQUIDITY      | ETH/DEC21 |  301   | ETH   |
       | market  | trader3 | ACCOUNT_TYPE_FEES_MAKER | ACCOUNT_TYPE_GENERAL             | ETH/DEC21 |  151   | ETH   |  
     
     # total_fee = infrastructure_fee + maker_fee + liquidity_fee = 1503 + 151 + 0 = 1654
@@ -148,11 +154,11 @@ Scenario: Testing fees when network parameters are changed (in continuous tradin
     # Trader4 margin + general account balance = 10000 - 151 ( Maker fees) - 1503 (Infra fee) = 8346
     Then the parties should have the following account balances:
       | party   | asset | market id | margin | general |
-      | trader3 | ETH   | ETH/DEC21 | 1089   | 9062    | 
-      | trader4 | ETH   | ETH/DEC21 | 657    | 7689    | 
+      | trader3 | ETH   | ETH/DEC21 | 1082   | 9069    | 
+      | trader4 | ETH   | ETH/DEC21 | 715    | 7330    | 
       
     And the accumulated infrastructure fees should be "1503" for the asset "ETH"
-    And the accumulated liquidity fees should be "0" for the market "ETH/DEC21"
+    And the accumulated liquidity fees should be "301" for the market "ETH/DEC21"
     Then the network moves ahead "7" blocks 
 
     #verify validator score 

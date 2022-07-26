@@ -152,7 +152,7 @@ func (t *Topology) RecalcValidatorSet(ctx context.Context, epochSeq string, dele
 		}
 	}
 
-	t.signatures.EmitPromotionsSignatures(ctx, t.currentTime, t.epochSeq, currentState, newState)
+	t.signatures.EmitPromotionsSignatures(ctx, t.timeService.GetTimeNow(), t.epochSeq, currentState, newState)
 
 	// prepare and send the events
 	evts := make([]events.Event, 0, len(currentState))
@@ -296,6 +296,11 @@ func (t *Topology) applyPromotion(performanceScore, rankingScore map[string]num.
 		} else if rankingScore[vd.data.ID].IsPositive() {
 			waitingListValidators = append(waitingListValidators, vd)
 		}
+	}
+
+	// demoted tendermint validators are also ersatz so we need to add them
+	for _, id := range demotedFromTM {
+		ersatzValidators = append(ersatzValidators, t.validators[id])
 	}
 
 	// demote from ersatz to pending due to more ersatz than slots allowed

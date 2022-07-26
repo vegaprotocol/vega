@@ -19,7 +19,7 @@ import (
 	"time"
 
 	proto "code.vegaprotocol.io/protos/vega"
-	bmock "code.vegaprotocol.io/vega/broker/mocks"
+	bmocks "code.vegaprotocol.io/vega/broker/mocks"
 	"code.vegaprotocol.io/vega/config"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
@@ -45,7 +45,8 @@ type testEngine struct {
 	ctrl      *gomock.Controller
 	model     *mocks.MockModel
 	orderbook *mocks.MockOrderbook
-	broker    *bmock.MockBroker
+	tsvc      *mocks.MockTimeService
+	broker    *bmocks.MockBroker
 	as        *mocks.MockAuctionState
 }
 
@@ -102,20 +103,23 @@ func testMarginLevelsTS(t *testing.T) {
 		market:  "ETH/DEC19",
 	}
 
+	now := time.Now()
+	eng.tsvc.EXPECT().GetTimeNow().DoAndReturn(
+		func() time.Time {
+			return now
+		}).Times(1)
+
 	eng.orderbook.EXPECT().GetCloseoutPrice(gomock.Any(), gomock.Any()).Times(1).
 		DoAndReturn(func(volume uint64, side types.Side) (*num.Uint, error) {
 			return markPrice.Clone(), nil
 		})
 
 	eng.as.EXPECT().InAuction().AnyTimes().Return(false)
-	ts := time.Date(2018, time.January, 23, 0, 0, 0, 0, time.UTC)
-	eng.OnTimeUpdate(ts)
-
 	eng.broker.EXPECT().Send(gomock.Any()).Times(1).Do(func(e events.Event) {
 		mle, ok := e.(MLEvent)
 		assert.True(t, ok)
 		ml := mle.MarginLevels()
-		assert.Equal(t, ts.UnixNano(), ml.Timestamp)
+		assert.Equal(t, now.UnixNano(), ml.Timestamp)
 	})
 
 	evts := []events.Margin{evt}
@@ -143,6 +147,7 @@ func testMarginTopup(t *testing.T) {
 		general: 100000, // plenty of balance for the transfer anyway
 		market:  "ETH/DEC19",
 	}
+	eng.tsvc.EXPECT().GetTimeNow().Times(1)
 	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 	eng.as.EXPECT().InAuction().AnyTimes().Return(false)
 	eng.orderbook.EXPECT().GetCloseoutPrice(gomock.Any(), gomock.Any()).Times(1).
@@ -174,6 +179,7 @@ func testMarginTopupOnOrderFailInsufficientFunds(t *testing.T) {
 		general: 10,
 		market:  "ETH/DEC19",
 	}
+	eng.tsvc.EXPECT().GetTimeNow().Times(1)
 	eng.as.EXPECT().InAuction().AnyTimes().Return(false)
 	eng.orderbook.EXPECT().GetCloseoutPrice(gomock.Any(), gomock.Any()).Times(1).
 		DoAndReturn(func(volume uint64, side types.Side) (*num.Uint, error) {
@@ -200,6 +206,7 @@ func testMarginNoop(t *testing.T) {
 		general: 100000, // plenty of balance for the transfer anyway
 		market:  "ETH/DEC19",
 	}
+	eng.tsvc.EXPECT().GetTimeNow().Times(1)
 	eng.as.EXPECT().InAuction().AnyTimes().Return(false)
 	eng.orderbook.EXPECT().GetCloseoutPrice(gomock.Any(), gomock.Any()).Times(1).
 		DoAndReturn(func(volume uint64, side types.Side) (*num.Uint, error) {
@@ -226,8 +233,8 @@ func testMarginOverflow(t *testing.T) {
 		general: 100000, // plenty of balance for the transfer anyway
 		market:  "ETH/DEC19",
 	}
+	eng.tsvc.EXPECT().GetTimeNow().Times(1)
 	eng.as.EXPECT().InAuction().Times(1).Return(false)
-	// eng.as.EXPECT().InAuction().AnyTimes().Return(false)
 	eng.orderbook.EXPECT().GetCloseoutPrice(gomock.Any(), gomock.Any()).Times(1).
 		DoAndReturn(func(volume uint64, side types.Side) (*num.Uint, error) {
 			return markPrice.Clone(), nil
@@ -259,6 +266,7 @@ func testMarginOverflowAuctionEnd(t *testing.T) {
 		market:  "ETH/DEC19",
 	}
 	// we're still in auction...
+	eng.tsvc.EXPECT().GetTimeNow().Times(1)
 	eng.as.EXPECT().InAuction().Times(1).Return(true)
 	// but the auction is ending
 	eng.as.EXPECT().CanLeave().Times(1).Return(true)
@@ -319,8 +327,10 @@ func testMarginWithOrderInBook(t *testing.T) {
 	log := logging.NewTestLogger()
 	ctrl := gomock.NewController(t)
 	model := mocks.NewMockModel(ctrl)
-	broker := bmock.NewMockBroker(ctrl)
+	ts := mocks.NewMockTimeService(ctrl)
+	broker := bmocks.NewMockBroker(ctrl)
 	as := mocks.NewMockAuctionState(ctrl)
+	ts.EXPECT().GetTimeNow().Times(1)
 	broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
 	// instantiate the book then fill it with the orders
@@ -350,7 +360,7 @@ func testMarginWithOrderInBook(t *testing.T) {
 	statevar := mocks.NewMockStateVarEngine(ctrl)
 	statevar.EXPECT().RegisterStateVariable(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any())
 	statevar.EXPECT().NewEvent(gomock.Any(), gomock.Any(), gomock.Any())
-	testE := risk.NewEngine(log, conf.Execution.Risk, mc, model, book, as, broker, 0, "mktid", "ETH", statevar, num.DecimalFromInt64(1), false, nil)
+	testE := risk.NewEngine(log, conf.Execution.Risk, mc, model, book, as, ts, broker, "mktid", "ETH", statevar, num.DecimalFromInt64(1), false, nil)
 	evt := testMargin{
 		party:   "tx",
 		size:    10,
@@ -419,8 +429,10 @@ func testMarginWithOrderInBook2(t *testing.T) {
 	log := logging.NewTestLogger()
 	ctrl := gomock.NewController(t)
 	model := mocks.NewMockModel(ctrl)
-	broker := bmock.NewMockBroker(ctrl)
+	ts := mocks.NewMockTimeService(ctrl)
+	broker := bmocks.NewMockBroker(ctrl)
 	as := mocks.NewMockAuctionState(ctrl)
+	ts.EXPECT().GetTimeNow().Times(1)
 	broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
 	model.EXPECT().DefaultRiskFactors().Return(r).Times(1)
@@ -451,7 +463,7 @@ func testMarginWithOrderInBook2(t *testing.T) {
 	statevar := mocks.NewMockStateVarEngine(ctrl)
 	statevar.EXPECT().RegisterStateVariable(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any())
 	statevar.EXPECT().NewEvent(gomock.Any(), gomock.Any(), gomock.Any())
-	testE := risk.NewEngine(log, conf.Execution.Risk, mc, model, book, as, broker, 0, "mktid", "ETH", statevar, num.DecimalFromInt64(1), false, nil)
+	testE := risk.NewEngine(log, conf.Execution.Risk, mc, model, book, as, ts, broker, "mktid", "ETH", statevar, num.DecimalFromInt64(1), false, nil)
 	evt := testMargin{
 		party:   "tx",
 		size:    13,
@@ -524,8 +536,10 @@ func testMarginWithOrderInBookAfterParamsUpdate(t *testing.T) {
 	log := logging.NewTestLogger()
 	ctrl := gomock.NewController(t)
 	model := mocks.NewMockModel(ctrl)
-	broker := bmock.NewMockBroker(ctrl)
+	ts := mocks.NewMockTimeService(ctrl)
+	broker := bmocks.NewMockBroker(ctrl)
 	as := mocks.NewMockAuctionState(ctrl)
+	ts.EXPECT().GetTimeNow().Times(2)
 	broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
 	// instantiate the book then fill it with the orders
@@ -556,7 +570,7 @@ func testMarginWithOrderInBookAfterParamsUpdate(t *testing.T) {
 	statevarEngine.EXPECT().RegisterStateVariable(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any())
 	statevarEngine.EXPECT().NewEvent(gomock.Any(), gomock.Any(), gomock.Any())
 	asset := "ETH"
-	testE := risk.NewEngine(log, conf.Execution.Risk, mc, model, book, as, broker, 0, marketID, asset, statevarEngine, num.DecimalFromInt64(1), false, nil)
+	testE := risk.NewEngine(log, conf.Execution.Risk, mc, model, book, as, ts, broker, marketID, asset, statevarEngine, num.DecimalFromInt64(1), false, nil)
 
 	evt := testMargin{
 		party:   "tx",
@@ -632,7 +646,8 @@ func getTestEngine(t *testing.T, initialRisk *types.RiskFactor) *testEngine {
 	model := mocks.NewMockModel(ctrl)
 	conf := risk.NewDefaultConfig()
 	ob := mocks.NewMockOrderbook(ctrl)
-	broker := bmock.NewMockBroker(ctrl)
+	ts := mocks.NewMockTimeService(ctrl)
+	broker := bmocks.NewMockBroker(ctrl)
 	as := mocks.NewMockAuctionState(ctrl)
 	model.EXPECT().DefaultRiskFactors().Return(initialRisk).Times(1)
 	statevar := mocks.NewMockStateVarEngine(ctrl)
@@ -644,8 +659,8 @@ func getTestEngine(t *testing.T, initialRisk *types.RiskFactor) *testEngine {
 		model,
 		ob,
 		as,
+		ts,
 		broker,
-		0,
 		"mktid",
 		"ETH",
 		statevar,
@@ -659,6 +674,7 @@ func getTestEngine(t *testing.T, initialRisk *types.RiskFactor) *testEngine {
 		ctrl:      ctrl,
 		model:     model,
 		orderbook: ob,
+		tsvc:      ts,
 		broker:    broker,
 		as:        as,
 	}

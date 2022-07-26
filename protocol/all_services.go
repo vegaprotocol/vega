@@ -43,7 +43,6 @@ import (
 	"code.vegaprotocol.io/vega/oracles"
 	"code.vegaprotocol.io/vega/oracles/adaptors"
 	oracleAdaptors "code.vegaprotocol.io/vega/oracles/adaptors"
-	"code.vegaprotocol.io/vega/plugins"
 	"code.vegaprotocol.io/vega/pow"
 	"code.vegaprotocol.io/vega/processor"
 	"code.vegaprotocol.io/vega/rewards"
@@ -105,13 +104,6 @@ type allServices struct {
 	banking              *banking.Engine
 	genesisHandler       *genesis.Handler
 
-	// plugins
-	settlePlugin     *plugins.Positions
-	notaryPlugin     *plugins.Notary
-	assetPlugin      *plugins.Asset
-	withdrawalPlugin *plugins.Withdrawal
-	depositPlugin    *plugins.Deposit
-
 	// staking
 	ethClient             *ethclient.Client
 	ethConfirmations      *ethclient.EthereumConfirmations
@@ -154,7 +146,8 @@ func newServices(
 	}
 
 	svcs.timeService = vegatime.New(svcs.conf.Time, svcs.broker)
-	svcs.epochService = epochtime.NewService(svcs.log, svcs.conf.Epoch, svcs.timeService, svcs.broker)
+	svcs.epochService = epochtime.NewService(svcs.log, svcs.conf.Epoch, svcs.broker)
+
 	// if we are not a validator, no need to instantiate the commander
 	if svcs.conf.IsValidator() {
 		// we cannot pass the Chain dependency here (that's set by the blockchain)
@@ -165,27 +158,19 @@ func newServices(
 		}
 	}
 
-	// plugins
-	svcs.settlePlugin = plugins.NewPositions(svcs.ctx)
-	svcs.notaryPlugin = plugins.NewNotary(svcs.ctx)
-	svcs.assetPlugin = plugins.NewAsset(svcs.ctx)
-	svcs.withdrawalPlugin = plugins.NewWithdrawal(svcs.ctx)
-	svcs.depositPlugin = plugins.NewDeposit(svcs.ctx)
-
 	svcs.genesisHandler = genesis.New(svcs.log, svcs.conf.Genesis)
-
 	svcs.genesisHandler.OnGenesisTimeLoaded(svcs.timeService.SetTimeNow)
-	svcs.eventService = subscribers.NewService(svcs.broker)
 
-	now := svcs.timeService.GetTimeNow()
-	svcs.assets = assets.New(svcs.log, svcs.conf.Assets, nodeWallets, svcs.ethClient, svcs.timeService, svcs.conf.HaveEthClient())
-	svcs.collateral = collateral.New(svcs.log, svcs.conf.Collateral, svcs.broker, now)
-	svcs.oracle = oracles.NewEngine(svcs.log, svcs.conf.Oracles, now, svcs.broker, svcs.timeService)
+	svcs.eventService = subscribers.NewService(svcs.broker)
+	svcs.assets = assets.New(svcs.log, svcs.conf.Assets, nodeWallets, svcs.ethClient, svcs.broker, svcs.conf.HaveEthClient())
+	svcs.collateral = collateral.New(svcs.log, svcs.conf.Collateral, svcs.timeService, svcs.broker)
+	svcs.oracle = oracles.NewEngine(svcs.log, svcs.conf.Oracles, svcs.timeService, svcs.broker)
+
 	svcs.builtinOracle = oracles.NewBuiltinOracle(svcs.oracle, svcs.timeService)
 	svcs.oracleAdaptors = oracleAdaptors.New()
 
-	svcs.limits = limits.New(svcs.log, svcs.conf.Limits, svcs.broker)
-	svcs.timeService.NotifyOnTick(svcs.limits.OnTick)
+	svcs.limits = limits.New(svcs.log, svcs.conf.Limits, svcs.timeService, svcs.broker)
+
 	svcs.netParams = netparams.New(svcs.log, svcs.conf.NetworkParameters, svcs.broker)
 
 	svcs.erc20MultiSigTopology = erc20multisig.NewERC20MultisigTopology(
@@ -194,19 +179,15 @@ func newServices(
 
 	if svcs.conf.IsValidator() {
 		svcs.topology = validators.NewTopology(
-			svcs.log, svcs.conf.Validators, validators.WrapNodeWallets(nodeWallets), svcs.broker, svcs.conf.IsValidator(), svcs.commander, svcs.erc20MultiSigTopology)
+			svcs.log, svcs.conf.Validators, validators.WrapNodeWallets(nodeWallets), svcs.broker, svcs.conf.IsValidator(), svcs.commander, svcs.erc20MultiSigTopology, svcs.timeService)
 	} else {
-		svcs.topology = validators.NewTopology(svcs.log, svcs.conf.Validators, nil, svcs.broker, svcs.conf.IsValidator(), nil, svcs.erc20MultiSigTopology)
+		svcs.topology = validators.NewTopology(svcs.log, svcs.conf.Validators, nil, svcs.broker, svcs.conf.IsValidator(), nil, svcs.erc20MultiSigTopology, svcs.timeService)
 	}
 
 	svcs.witness = validators.NewWitness(svcs.log, svcs.conf.Validators, svcs.topology, svcs.commander, svcs.timeService)
 
 	// this is done to go around circular deps...
 	svcs.erc20MultiSigTopology.SetWitness(svcs.witness)
-
-	svcs.timeService.NotifyOnTick(svcs.erc20MultiSigTopology.OnTick)
-
-	svcs.timeService.NotifyOnTick(svcs.netParams.OnChainTimeUpdate)
 	svcs.eventForwarder = evtforward.New(svcs.log, svcs.conf.EvtForward, svcs.commander, svcs.timeService, svcs.topology)
 
 	if svcs.conf.HaveEthClient() {
@@ -219,11 +200,11 @@ func newServices(
 	svcs.erc20MultiSigTopology.SetEthereumEventSource(svcs.eventForwarderEngine)
 
 	svcs.stakingAccounts, svcs.stakeVerifier, svcs.stakeCheckpoint = staking.New(
-		svcs.log, svcs.conf.Staking, svcs.broker, svcs.timeService, svcs.witness, svcs.ethClient, svcs.netParams, svcs.eventForwarder, svcs.conf.HaveEthClient(), svcs.ethConfirmations, svcs.eventForwarderEngine,
+		svcs.log, svcs.conf.Staking, svcs.timeService, svcs.broker, svcs.witness, svcs.ethClient, svcs.netParams, svcs.eventForwarder, svcs.conf.HaveEthClient(), svcs.ethConfirmations, svcs.eventForwarderEngine,
 	)
 	svcs.epochService.NotifyOnEpoch(svcs.topology.OnEpochEvent, svcs.topology.OnEpochRestore)
 
-	svcs.statevar = statevar.New(svcs.log, svcs.conf.StateVar, svcs.broker, svcs.topology, svcs.commander, svcs.timeService)
+	svcs.statevar = statevar.New(svcs.log, svcs.conf.StateVar, svcs.broker, svcs.topology, svcs.commander)
 	svcs.marketActivityTracker = execution.NewMarketActivityTracker(svcs.log, svcs.epochService)
 
 	// instantiate the execution engine
@@ -235,22 +216,24 @@ func newServices(
 		// Use staking-loop to pretend a dummy builtin assets deposited with the faucet was staked
 		svcs.codec = &processor.NullBlockchainTxCodec{}
 		stakingLoop := nullchain.NewStakingLoop(svcs.collateral, svcs.assets)
-		svcs.governance = governance.NewEngine(svcs.log, svcs.conf.Governance, stakingLoop, svcs.broker, svcs.assets, svcs.witness, svcs.executionEngine, svcs.netParams, now)
+		svcs.governance = governance.NewEngine(svcs.log, svcs.conf.Governance, stakingLoop, svcs.timeService, svcs.broker, svcs.assets, svcs.witness, svcs.executionEngine, svcs.netParams)
 		svcs.delegation = delegation.New(svcs.log, svcs.conf.Delegation, svcs.broker, svcs.topology, stakingLoop, svcs.epochService, svcs.timeService)
 	} else {
 		svcs.codec = &processor.TxCodec{}
 		svcs.spam = spam.New(svcs.log, svcs.conf.Spam, svcs.epochService, svcs.stakingAccounts)
-		svcs.governance = governance.NewEngine(svcs.log, svcs.conf.Governance, svcs.stakingAccounts, svcs.broker, svcs.assets, svcs.witness, svcs.executionEngine, svcs.netParams, now)
+		svcs.governance = governance.NewEngine(svcs.log, svcs.conf.Governance, svcs.stakingAccounts, svcs.timeService, svcs.broker, svcs.assets, svcs.witness, svcs.executionEngine, svcs.netParams)
 		svcs.delegation = delegation.New(svcs.log, svcs.conf.Delegation, svcs.broker, svcs.topology, svcs.stakingAccounts, svcs.epochService, svcs.timeService)
 	}
 
-	svcs.notary = notary.NewWithSnapshot(svcs.log, svcs.conf.Notary, svcs.topology, svcs.broker, svcs.commander, svcs.timeService)
+	svcs.notary = notary.NewWithSnapshot(svcs.log, svcs.conf.Notary, svcs.topology, svcs.broker, svcs.commander)
+
 	// TODO(): this is not pretty
 	svcs.topology.SetNotary(svcs.notary)
 
 	svcs.banking = banking.New(svcs.log, svcs.conf.Banking, svcs.collateral, svcs.witness, svcs.timeService, svcs.assets, svcs.notary, svcs.broker, svcs.topology, svcs.epochService, svcs.marketActivityTracker)
-
 	svcs.rewards = rewards.New(svcs.log, svcs.conf.Rewards, svcs.broker, svcs.delegation, svcs.epochService, svcs.collateral, svcs.timeService, svcs.marketActivityTracker, svcs.topology)
+
+	svcs.registerTimeServiceCallbacks()
 
 	// checkpoint engine
 	svcs.checkpoint, err = checkpoint.New(svcs.log, svcs.conf.Checkpoint, svcs.assets, svcs.collateral, svcs.governance, svcs.netParams, svcs.delegation, svcs.epochService, svcs.topology, svcs.banking, svcs.stakeCheckpoint, svcs.erc20MultiSigTopology, svcs.marketActivityTracker)
@@ -339,6 +322,27 @@ func newServices(
 	}
 
 	return svcs, nil
+}
+
+func (svcs *allServices) registerTimeServiceCallbacks() {
+	svcs.timeService.NotifyOnTick(
+		svcs.epochService.OnTick,
+		svcs.builtinOracle.OnTick,
+
+		svcs.netParams.OnTick,
+		svcs.erc20MultiSigTopology.OnTick,
+		svcs.witness.OnTick,
+
+		svcs.eventForwarder.OnTick,
+		svcs.stakeVerifier.OnTick,
+		svcs.statevar.OnTick,
+		svcs.executionEngine.OnTick,
+		svcs.delegation.OnTick,
+		svcs.notary.OnTick,
+		svcs.banking.OnTick,
+		svcs.rewards.OnTick,
+		svcs.limits.OnTick,
+	)
 }
 
 func (svcs *allServices) Stop() {

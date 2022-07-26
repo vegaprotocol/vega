@@ -37,6 +37,7 @@ func TestValidatorSet(t *testing.T) {
 	t.Run("test the number of ersatz validators is reduced hence validators being demoted", testErsatzValidatorsNumberReduced)
 	t.Run("test the number of ersatz validators is greater than the number of current tm, promotion is available", testErsatzFreeSlotsPromotion)
 	t.Run("test swap of the best pending with the worst ersatz validators", testSwapBestPendingWithWorstErsatz)
+	t.Run("test swap of from ez to tendermint with slot reduction in ersatz", testSwapAndSlotChange)
 }
 
 func TestApplyPromotionAllThingsEqual(t *testing.T) {
@@ -313,7 +314,7 @@ func testUpdateMinimumRequireSelfStake(t *testing.T) {
 }
 
 func testAddForwarder(t *testing.T) {
-	topology := NewTopology(logging.NewLoggerFromConfig(logging.Config{}), NewDefaultConfig(), nil, nil, true, nil, &DummyMultiSigTopology{})
+	topology := NewTopology(logging.NewLoggerFromConfig(logging.Config{}), NewDefaultConfig(), nil, nil, true, nil, &DummyMultiSigTopology{}, &dummyTestTime{})
 	// add unknown forwarder
 	topology.AddForwarder("node1")
 	require.Equal(t, 0, len(topology.validators))
@@ -350,7 +351,7 @@ func testAddForwarder(t *testing.T) {
 }
 
 func testTendermintValidatorsNumberReduced(t *testing.T) {
-	topology := NewTopology(logging.NewLoggerFromConfig(logging.Config{}), NewDefaultConfig(), nil, nil, true, nil, &DummyMultiSigTopology{})
+	topology := NewTopology(logging.NewLoggerFromConfig(logging.Config{}), NewDefaultConfig(), nil, nil, true, nil, &DummyMultiSigTopology{}, &dummyTestTime{})
 	topology.numberOfTendermintValidators = 5
 	topology.rng = rand.New(rand.NewSource(100000))
 	topology.validators["node1"] = &valState{
@@ -448,7 +449,7 @@ func testTendermintValidatorsNumberReduced(t *testing.T) {
 }
 
 func testTendermintFreeSlotsPromotion(t *testing.T) {
-	topology := NewTopology(logging.NewLoggerFromConfig(logging.Config{}), NewDefaultConfig(), nil, nil, true, nil, &DummyMultiSigTopology{})
+	topology := NewTopology(logging.NewLoggerFromConfig(logging.Config{}), NewDefaultConfig(), nil, nil, true, nil, &DummyMultiSigTopology{}, &dummyTestTime{})
 	topology.numberOfTendermintValidators = 5
 	topology.numberOfErsatzValidators = 1
 	topology.validators["node1"] = &valState{
@@ -559,7 +560,7 @@ func testTendermintFreeSlotsPromotion(t *testing.T) {
 }
 
 func testSwapBestErsatzWithWorstTendermint(t *testing.T) {
-	topology := NewTopology(logging.NewLoggerFromConfig(logging.Config{}), NewDefaultConfig(), nil, nil, true, nil, &DummyMultiSigTopology{})
+	topology := NewTopology(logging.NewLoggerFromConfig(logging.Config{}), NewDefaultConfig(), nil, nil, true, nil, &DummyMultiSigTopology{}, &dummyTestTime{})
 	topology.numberOfTendermintValidators = 4
 	topology.numberOfErsatzValidators = 1
 	topology.validators["node1"] = &valState{
@@ -665,7 +666,7 @@ func testSwapBestErsatzWithWorstTendermint(t *testing.T) {
 }
 
 func testErsatzFreeSlotsPromotion(t *testing.T) {
-	topology := NewTopology(logging.NewLoggerFromConfig(logging.Config{}), NewDefaultConfig(), nil, nil, true, nil, &DummyMultiSigTopology{})
+	topology := NewTopology(logging.NewLoggerFromConfig(logging.Config{}), NewDefaultConfig(), nil, nil, true, nil, &DummyMultiSigTopology{}, &dummyTestTime{})
 	topology.numberOfTendermintValidators = 1
 	topology.numberOfErsatzValidators = 4
 
@@ -770,7 +771,7 @@ func testErsatzFreeSlotsPromotion(t *testing.T) {
 }
 
 func testSwapBestPendingWithWorstErsatz(t *testing.T) {
-	topology := NewTopology(logging.NewLoggerFromConfig(logging.Config{}), NewDefaultConfig(), nil, nil, true, nil, &DummyMultiSigTopology{})
+	topology := NewTopology(logging.NewLoggerFromConfig(logging.Config{}), NewDefaultConfig(), nil, nil, true, nil, &DummyMultiSigTopology{}, &dummyTestTime{})
 	topology.numberOfTendermintValidators = 1
 	topology.numberOfErsatzValidators = 2
 
@@ -875,7 +876,7 @@ func testSwapBestPendingWithWorstErsatz(t *testing.T) {
 }
 
 func testErsatzValidatorsNumberReduced(t *testing.T) {
-	topology := NewTopology(logging.NewLoggerFromConfig(logging.Config{}), NewDefaultConfig(), nil, nil, true, nil, &DummyMultiSigTopology{})
+	topology := NewTopology(logging.NewLoggerFromConfig(logging.Config{}), NewDefaultConfig(), nil, nil, true, nil, &DummyMultiSigTopology{}, &dummyTestTime{})
 	topology.numberOfTendermintValidators = 1
 	topology.validators["node1"] = &valState{
 		data: ValidatorData{
@@ -965,6 +966,110 @@ func testErsatzValidatorsNumberReduced(t *testing.T) {
 	require.Equal(t, int64(1001), topology.validators["node4"].statusChangeBlock)
 	require.Equal(t, "pending", ValidatorStatusToName[topology.validators["node5"].status])
 	require.Equal(t, int64(1001), topology.validators["node5"].statusChangeBlock)
+}
+
+func testSwapAndSlotChange(t *testing.T) {
+	topology := NewTopology(logging.NewLoggerFromConfig(logging.Config{}), NewDefaultConfig(), nil, nil, true, nil, &DummyMultiSigTopology{}, &dummyTestTime{})
+	topology.numberOfTendermintValidators = 4
+	topology.numberOfErsatzValidators = 2
+	topology.validators["node1"] = &valState{
+		data: ValidatorData{
+			ID:       "node1",
+			TmPubKey: "67g7+123M0kfMR35U7LLq09eEU1dVr6jHBEgEtPzkrs=",
+		},
+		blockAdded:        1,
+		statusChangeBlock: 900,
+		status:            ValidatorStatusTendermint,
+		heartbeatTracker:  &validatorHeartbeatTracker{},
+	}
+	topology.validators["node2"] = &valState{
+		data: ValidatorData{
+			ID:       "node2",
+			TmPubKey: "2w5hxsVqWFTV6/f0swyNVqOhY1vWI42MrfO0xkUqsiA=",
+		},
+		blockAdded:        1,
+		statusChangeBlock: 901,
+		status:            ValidatorStatusTendermint,
+		heartbeatTracker:  &validatorHeartbeatTracker{},
+	}
+	topology.validators["node3"] = &valState{
+		data: ValidatorData{
+			ID:       "node3",
+			TmPubKey: "QZNLWGlqoWv4J9lXqe0pkZQnCJuJbJfiJ50VOj/WsAs=",
+		},
+		blockAdded:       2,
+		status:           ValidatorStatusTendermint,
+		heartbeatTracker: &validatorHeartbeatTracker{},
+	}
+	topology.validators["node4"] = &valState{
+		data: ValidatorData{
+			ID:       "node4",
+			TmPubKey: "Lor28j7E369gLsU6Q9dW64yKPMn9XiD/IcS1XDXbPSQ=",
+		},
+		blockAdded:       3,
+		status:           ValidatorStatusTendermint,
+		heartbeatTracker: &validatorHeartbeatTracker{},
+	}
+	topology.validators["node5"] = &valState{
+		data: ValidatorData{
+			ID:       "node5",
+			TmPubKey: "pobW1cLYgsbQGGwbwiwVMqp15WuRzaVp3mn7z+g3ByM=",
+		},
+		blockAdded:       4,
+		status:           ValidatorStatusErsatz,
+		heartbeatTracker: &validatorHeartbeatTracker{},
+	}
+	topology.validators["node6"] = &valState{
+		data: ValidatorData{
+			ID:       "node5",
+			TmPubKey: "pobW1cLYgsbQGGwbwiwVMqp15WuRzaVp3mn7z+g3ByM=",
+		},
+		blockAdded:       4,
+		status:           ValidatorStatusErsatz,
+		heartbeatTracker: &validatorHeartbeatTracker{},
+	}
+
+	perfScore := map[string]num.Decimal{
+		"node1": decimalOne,
+		"node2": decimalOne,
+		"node3": decimalOne,
+		"node4": decimalOne,
+		"node5": decimalOne,
+		"node6": decimalOne,
+	}
+
+	ranking := map[string]num.Decimal{
+		"node1": num.DecimalFromFloat(0.1),
+		"node2": num.DecimalFromFloat(0.8),
+		"node3": num.DecimalFromFloat(0.8),
+		"node4": num.DecimalFromFloat(0.8),
+		"node5": num.DecimalFromFloat(0.8),
+		"node6": num.DecimalFromFloat(0.5),
+	}
+
+	delegations := []*types.ValidatorData{
+		{NodeID: "node1", SelfStake: num.NewUint(12000), StakeByDelegators: num.NewUint(10000)},
+		{NodeID: "node2", SelfStake: num.NewUint(10000), StakeByDelegators: num.NewUint(10000)},
+		{NodeID: "node3", SelfStake: num.NewUint(40000), StakeByDelegators: num.NewUint(10000)},
+		{NodeID: "node4", SelfStake: num.NewUint(20000), StakeByDelegators: num.NewUint(10000)},
+		{NodeID: "node5", SelfStake: num.NewUint(30000), StakeByDelegators: num.NewUint(10000)},
+		{NodeID: "node5", SelfStake: num.NewUint(30000), StakeByDelegators: num.NewUint(10000)},
+		{NodeID: "node6", SelfStake: num.NewUint(30000), StakeByDelegators: num.NewUint(10000)},
+	}
+	topology.rng = rand.New(rand.NewSource(1000))
+	// reduce the number of ersatz validators from 2 to 1
+	topology.currentBlockHeight = 1000
+	topology.numberOfErsatzValidators = 1
+	topology.applyPromotion(perfScore, ranking, delegations, types.StakeScoreParams{MinVal: num.DecimalFromFloat(2), CompLevel: num.DecimalFromFloat(1), OptimalStakeMultiplier: num.DecimalFromFloat(5)})
+
+	ezCount := 0
+	for _, v := range topology.validators {
+		if ValidatorStatusToName[v.status] == "ersatz" {
+			ezCount += 1
+		}
+	}
+
+	require.Equal(t, ezCount, topology.numberOfErsatzValidators)
 }
 
 type DummyMultiSigTopology struct{}

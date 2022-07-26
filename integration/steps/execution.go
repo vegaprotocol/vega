@@ -31,4 +31,5 @@ type Execution interface {
 	AmendLiquidityProvision(ctx context.Context, amendment *types.LiquidityProvisionAmendment, party string) error
 	CancelLiquidityProvision(ctx context.Context, cancel *types.LiquidityProvisionCancellation, party string) error
 	SubmitMarket(ctx context.Context, marketConfig *types.Market, proposer string) error
+	StartOpeningAuction(ctx context.Context, marketID string) error
 }

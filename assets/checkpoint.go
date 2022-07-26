@@ -36,7 +36,7 @@ func (s *Service) Checkpoint() ([]byte, error) {
 	return proto.Marshal(t)
 }
 
-func (s *Service) Load(_ context.Context, cp []byte) error {
+func (s *Service) Load(ctx context.Context, cp []byte) error {
 	data := &checkpoint.Assets{}
 	if err := proto.Unmarshal(cp, data); err != nil {
 		return err
@@ -65,7 +65,7 @@ func (s *Service) Load(_ context.Context, cp []byte) error {
 
 		// asset didn't match anything, we need to go through the process to add it.
 
-		id, err := s.NewAsset(a.Id, details)
+		id, err := s.NewAsset(ctx, a.Id, details)
 		if err != nil {
 			return err
 		}
@@ -77,7 +77,7 @@ func (s *Service) Load(_ context.Context, cp []byte) error {
 		} else {
 			pa.SetValidNonValidator()
 		}
-		if err := s.Enable(id); err != nil {
+		if err := s.Enable(ctx, id); err != nil {
 			return err
 		}
 	}

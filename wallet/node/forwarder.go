@@ -77,6 +77,29 @@ func (n *Forwarder) HealthCheck(ctx context.Context) error {
 	)
 }
 
+func (n *Forwarder) GetNetworkChainID(ctx context.Context) (string, error) {
+	chainID := ""
+	req := api.StatisticsRequest{}
+	err := backoff.Retry(
+		func() error {
+			clt := n.clts[n.nextClt()]
+			resp, err := clt.Statistics(ctx, &req)
+			if err != nil {
+				return err
+			}
+			chainID = resp.Statistics.ChainId
+			n.log.Debug("Response from Statistics", zap.String("chainID", chainID))
+			return nil
+		},
+		backoff.WithMaxRetries(backoff.NewExponentialBackOff(), n.nodeCfgs.Retries),
+	)
+	if err != nil {
+		n.log.Error("Couldn't get chainID", zap.Error(err))
+	}
+
+	return chainID, nil
+}
+
 // LastBlockHeightAndHash returns information about the last block from vega and the node it used to fetch it.
 func (n *Forwarder) LastBlockHeightAndHash(ctx context.Context) (*api.LastBlockHeightResponse, int, error) {
 	req := api.LastBlockHeightRequest{}
@@ -138,7 +161,7 @@ func (n *Forwarder) CheckTx(ctx context.Context, tx *commandspb.Transaction, clt
 	return resp, err
 }
 
-func (n *Forwarder) SendTx(ctx context.Context, tx *commandspb.Transaction, ty api.SubmitTransactionRequest_Type, cltIdx int) (string, error) {
+func (n *Forwarder) SendTx(ctx context.Context, tx *commandspb.Transaction, ty api.SubmitTransactionRequest_Type, cltIdx int) (*api.SubmitTransactionResponse, error) {
 	req := api.SubmitTransactionRequest{
 		Tx:   tx,
 		Type: ty,
@@ -163,10 +186,10 @@ func (n *Forwarder) SendTx(ctx context.Context, tx *commandspb.Transaction, ty a
 		},
 		backoff.WithMaxRetries(backoff.NewExponentialBackOff(), n.nodeCfgs.Retries),
 	); err != nil {
-		return "", err
+		return resp, err
 	}
 
-	return resp.TxHash, nil
+	return resp, nil
 }
 
 func (n *Forwarder) handleSubmissionError(err error) error {

@@ -10,12 +10,18 @@ Feature: CASE-3: Trader submits long order that will trade - new formula & zero 
       | name                           | value |
       | market.auction.minimumDuration | 1     |
     And the parties deposit on asset's general account the following amount:
-      | party     | asset | amount     |
-      | party1    | ETH   | 1000000000 |
+      | party      | asset | amount     |
+      | party1     | ETH   | 1000000000 |
       | sellSideMM | ETH   | 1000000000 |
       | buySideMM  | ETH   | 1000000000 |
       | aux        | ETH   | 1000000000 |
       | aux2       | ETH   | 1000000000 |
+      | lpprov     | ETH   | 1000000000 |
+
+    When the parties submit the following liquidity provision:
+      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
+      | lp1 | lpprov | ETH/DEC19 | 900000000         | 0.1 | buy  | BID              | 50         | 10     | submission |
+      | lp1 | lpprov | ETH/DEC19 | 900000000         | 0.1 | sell | ASK              | 50         | 10     | submission |
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     Then the parties place the following orders:

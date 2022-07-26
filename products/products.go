@@ -33,20 +33,21 @@ var (
 // OracleEngine ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/oracle_engine_mock.go -package mocks code.vegaprotocol.io/vega/products OracleEngine
 type OracleEngine interface {
-	Subscribe(context.Context, oracles.OracleSpec, oracles.OnMatchedOracleData) oracles.SubscriptionID
+	ListensToPubKeys(oracles.OracleData) bool
+	Subscribe(context.Context, oracles.OracleSpec, oracles.OnMatchedOracleData) (oracles.SubscriptionID, oracles.Unsubscriber)
 	Unsubscribe(context.Context, oracles.SubscriptionID)
 }
 
 // Product is the interface provided by all product in vega.
 type Product interface {
-	Settle(entryPrice *num.Uint, assetDecimals uint32, netFractionalPosition num.Decimal) (amt *types.FinancialAmount, neg bool, err error)
+	Settle(*num.Uint, uint32, num.Decimal) (amt *types.FinancialAmount, neg bool, err error)
 	Value(markPrice *num.Uint) (*num.Uint, error)
 	GetAsset() string
 	IsTradingTerminated() bool
 	ScaleSettlementPriceToDecimalPlaces(price *num.Uint, dp uint32) (*num.Uint, error)
 	NotifyOnTradingTerminated(listener func(context.Context, bool))
 	NotifyOnSettlementPrice(listener func(context.Context, *num.Uint))
-	Unsubscribe(context.Context, OracleEngine)
+	Unsubscribe(context.Context)
 }
 
 // New instance a new product from a Market framework product configuration.

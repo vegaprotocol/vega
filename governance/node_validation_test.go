@@ -13,6 +13,7 @@
 package governance_test
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -94,7 +95,7 @@ func testStartErrorNoNodeValidationRequired(t *testing.T) {
 		},
 	}
 
-	err := nv.Start(p)
+	err := nv.Start(context.Background(), p)
 	assert.EqualError(t, err, governance.ErrNoNodeValidationRequired.Error())
 }
 
@@ -111,11 +112,11 @@ func testStartErrorCheckProposalFailed(t *testing.T) {
 		},
 	}
 
-	err := nv.Start(p)
+	err := nv.Start(context.Background(), p)
 	assert.EqualError(t, err, governance.ErrProposalValidationTimestampInvalid.Error())
 
 	// now both are under required duration
 	p.Terms.ClosingTimestamp = 3
-	err = nv.Start(p)
+	err = nv.Start(context.Background(), p)
 	assert.EqualError(t, err, governance.ErrProposalValidationTimestampInvalid.Error())
 }

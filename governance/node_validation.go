@@ -13,6 +13,7 @@
 package governance
 
 import (
+	"context"
 	"encoding/binary"
 	"errors"
 	"fmt"
@@ -137,8 +138,8 @@ func (n *NodeValidation) removeProposal(id string) {
 	}
 }
 
-// OnChainTimeUpdate returns validated proposal by all nodes.
-func (n *NodeValidation) OnChainTimeUpdate(t time.Time) (accepted []*proposal, rejected []*proposal) {
+// OnTick returns validated proposal by all nodes.
+func (n *NodeValidation) OnTick(t time.Time) (accepted []*proposal, rejected []*proposal) {
 	n.currentTimestamp = t
 
 	toRemove := []string{} // id of proposals to remove
@@ -180,7 +181,7 @@ func (n *NodeValidation) IsNodeValidationRequired(p *types.Proposal) bool {
 }
 
 // Start the node validation of a proposal.
-func (n *NodeValidation) Start(p *types.Proposal) error {
+func (n *NodeValidation) Start(ctx context.Context, p *types.Proposal) error {
 	if !n.IsNodeValidationRequired(p) {
 		n.log.Error("no node validation required", logging.String("ref", p.ID))
 		return ErrNoNodeValidationRequired
@@ -194,7 +195,7 @@ func (n *NodeValidation) Start(p *types.Proposal) error {
 		return err
 	}
 
-	checker, err := n.getChecker(p)
+	checker, err := n.getChecker(ctx, p)
 	if err != nil {
 		return err
 	}
@@ -214,8 +215,8 @@ func (n *NodeValidation) Start(p *types.Proposal) error {
 		np, n.onResChecked, time.Unix(p.Terms.ValidationTimestamp, 0))
 }
 
-func (n *NodeValidation) restore(p *types.Proposal) error {
-	checker, err := n.getChecker(p)
+func (n *NodeValidation) restore(ctx context.Context, p *types.Proposal) error {
+	checker, err := n.getChecker(ctx, p)
 	if err != nil {
 		return err
 	}
@@ -236,10 +237,10 @@ func (n *NodeValidation) restore(p *types.Proposal) error {
 	return nil
 }
 
-func (n *NodeValidation) getChecker(p *types.Proposal) (func() error, error) {
+func (n *NodeValidation) getChecker(ctx context.Context, p *types.Proposal) (func() error, error) {
 	switch change := p.Terms.Change.(type) {
 	case *types.ProposalTermsNewAsset:
-		assetID, err := n.assets.NewAsset(p.ID,
+		assetID, err := n.assets.NewAsset(ctx, p.ID,
 			change.NewAsset.GetChanges())
 		if err != nil {
 			n.log.Error("unable to instantiate asset",

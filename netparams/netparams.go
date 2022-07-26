@@ -200,9 +200,9 @@ func (s *Store) dispatchUpdate(ctx context.Context, p string) error {
 	return err
 }
 
-// OnChainTimeUpdate is trigger once per blocks
+// OnTick is trigger once per blocks
 // we will send parameters update to watchers.
-func (s *Store) OnChainTimeUpdate(ctx context.Context, _ time.Time) {
+func (s *Store) OnTick(ctx context.Context, _ time.Time) {
 	if len(s.paramUpdates) <= 0 {
 		return
 	}
@@ -279,7 +279,8 @@ func (s *Store) updateBatch(ctx context.Context, params map[string]string) error
 	for k, v := range params {
 		svalue, ok := s.store[k]
 		if !ok {
-			return ErrUnknownKey
+			s.log.Warn("unknown network parameter read from checkpoint", logging.String("param", k))
+			continue
 		}
 		if err := svalue.Update(v); err != nil {
 			return fmt.Errorf("unable to update %s: %w", k, err)

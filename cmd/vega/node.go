@@ -14,6 +14,7 @@ package main
 
 import (
 	"context"
+	"errors"
 
 	"code.vegaprotocol.io/shared/paths"
 	"code.vegaprotocol.io/vega/cmd/vega/node"
@@ -24,10 +25,14 @@ import (
 )
 
 type StartCmd struct {
-	config.Passphrase `long:"nodewallet-passphrase-file"`
+	config.Passphrase `long:"nodewallet-passphrase-file" description:"A file contain the passphrase to decrypt the node wallet"`
 	config.VegaHomeFlag
-
 	config.Config
+
+	TendermintHome string `long:"tendermint-home" description:"Directory for tendermint config and data (default: $HOME/.tendermint)"`
+
+	Network    string `long:"network" description:"The network to start this node with"`
+	NetworkURL string `long:"network-url" description:"The URL to a genesis file to start this node with"`
 }
 
 var startCmd StartCmd
@@ -47,6 +52,10 @@ func (cmd *StartCmd) Execute(args []string) error {
 
 	vegaPaths := paths.New(cmd.VegaHome)
 
+	if len(cmd.Network) > 0 && len(cmd.NetworkURL) > 0 {
+		return errors.New("--network-url and --network cannot be set together")
+	}
+
 	confWatcher, err := config.NewWatcher(context.Background(), log, vegaPaths, config.Use(parseFlagOpt))
 	if err != nil {
 		return err
@@ -62,14 +71,19 @@ func (cmd *StartCmd) Execute(args []string) error {
 		}
 	}
 
+	if len(startCmd.TendermintHome) <= 0 {
+		startCmd.TendermintHome = "$HOME/.tendermint"
+	}
+
 	return (&node.NodeCommand{
-		Log:         log,
-		Version:     CLIVersion,
-		VersionHash: CLIVersionHash,
+		Log: log,
 	}).Run(
 		confWatcher,
 		vegaPaths,
 		pass,
+		cmd.TendermintHome,
+		cmd.NetworkURL,
+		cmd.Network,
 		args,
 	)
 }
@@ -78,7 +92,25 @@ func Start(ctx context.Context, parser *flags.Parser) error {
 	startCmd = StartCmd{
 		Config: config.NewDefaultConfig(),
 	}
-	cmd, err := parser.AddCommand("node", "Start a vega instance", "Runs a vega node as defined by the config files", &startCmd)
+	cmd, err := parser.AddCommand("start", "Start a vega instance", "Runs a vega node", &startCmd)
+	if err != nil {
+		return err
+	}
+
+	// Print nested groups under parent's name using `::` as the separator.
+	for _, parent := range cmd.Groups() {
+		for _, grp := range parent.Groups() {
+			grp.ShortDescription = parent.ShortDescription + "::" + grp.ShortDescription
+		}
+	}
+	return nil
+}
+
+func Node(ctx context.Context, parser *flags.Parser) error {
+	startCmd = StartCmd{
+		Config: config.NewDefaultConfig(),
+	}
+	cmd, err := parser.AddCommand("node", "deprecated, see vega start instead", "deprecated, use vega start instead", &startCmd)
 	if err != nil {
 		return err
 	}

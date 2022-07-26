@@ -8,7 +8,7 @@ Feature: Close potential positions
       | 0.001         | 0.01 | 0  | 0.0   | 1.2   |
       #calculated risk factor long: 0.336895684; risk factor short: 0.4878731
 
-    And the price monitoring updated every "1" seconds named "price-monitoring-1":
+    And the price monitoring named "price-monitoring-1":
       | horizon | probability | auction extension |
       | 1       | 0.99999999  | 300               |
 
@@ -35,6 +35,12 @@ Feature: Close potential positions
       | party3           | USD   | 30000      |
       | aux1             | USD   | 1000000000 |
       | aux2             | USD   | 1000000000 |
+      | lpprov           | USD   | 1000000000 |
+
+    When the parties submit the following liquidity provision:
+      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
+      | lp1 | lpprov | ETH/DEC19 | 90000             | 0.1 | buy  | BID              | 50         | 100    | submission |
+      | lp1 | lpprov | ETH/DEC19 | 90000             | 0.1 | sell | ASK              | 50         | 100    | submission |
      #And the cumulated balance for all accounts should be worth "4050075000"
 # setup order book
     When the parties place the following orders:

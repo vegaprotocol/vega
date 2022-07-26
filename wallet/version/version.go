@@ -2,29 +2,18 @@ package version
 
 import (
 	vgversion "code.vegaprotocol.io/shared/libs/version"
+	coreversion "code.vegaprotocol.io/vega/version"
 
 	"github.com/blang/semver/v4"
 )
 
 const (
-	ReleasesAPI        = "https://api.github.com/repos/vegaprotocol/vegawallet/releases"
-	ReleasesURL        = "https://github.com/vegaprotocol/vegawallet/releases"
-	defaultVersionHash = "unknown"
-	defaultVersion     = "v0.16.2+dev"
-)
-
-var (
-	// VersionHash specifies the git commit used to build the application.
-	// See VERSION_HASH in Makefile for details.
-	VersionHash = defaultVersionHash
-
-	// Version specifies the version used to build the application.
-	// See VERSION in Makefile for details.
-	Version = defaultVersion
+	ReleasesAPI = "https://api.github.com/repos/vegaprotocol/vega/releases"
+	ReleasesURL = "https://github.com/vegaprotocol/vega/releases"
 )
 
 func IsUnreleased() bool {
-	return vgversion.IsUnreleased(Version)
+	return vgversion.IsUnreleased(coreversion.Get())
 }
 
 type GetVersionResponse struct {
@@ -34,8 +23,8 @@ type GetVersionResponse struct {
 
 func GetVersionInfo() *GetVersionResponse {
 	return &GetVersionResponse{
-		Version: Version,
-		GitHash: VersionHash,
+		Version: coreversion.Get(),
+		GitHash: coreversion.GetCommitHash(),
 	}
 }
 

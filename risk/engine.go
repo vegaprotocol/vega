@@ -46,6 +46,12 @@ type AuctionState interface {
 	CanLeave() bool
 }
 
+// TimeService.
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/time_service_mock.go -package mocks code.vegaprotocol.io/vega/risk TimeService
+type TimeService interface {
+	GetTimeNow() time.Time
+}
+
 // Broker the event bus broker.
 type Broker interface {
 	Send(events.Event)
@@ -76,9 +82,9 @@ type Engine struct {
 	waiting                bool
 	ob                     Orderbook
 	as                     AuctionState
+	timeSvc                TimeService
 	broker                 Broker
 	riskFactorsInitialised bool
-	currTime               int64
 	mktID                  string
 	asset                  string
 	positionFactor         num.Decimal
@@ -91,8 +97,8 @@ func NewEngine(log *logging.Logger,
 	model Model,
 	ob Orderbook,
 	as AuctionState,
+	timeSvc TimeService,
 	broker Broker,
-	initialTime int64,
 	mktID string,
 	asset string,
 	stateVarEngine StateVarEngine,
@@ -113,8 +119,8 @@ func NewEngine(log *logging.Logger,
 		waiting:                false,
 		ob:                     ob,
 		as:                     as,
+		timeSvc:                timeSvc,
 		broker:                 broker,
-		currTime:               initialTime,
 		mktID:                  mktID,
 		asset:                  asset,
 		scalingFactorsUint:     sfUint,
@@ -150,10 +156,6 @@ func (e *Engine) UpdateModel(stateVarEngine StateVarEngine, calculator *types.Ma
 	e.factors = model.DefaultRiskFactors()
 	stateVarEngine.NewEvent(e.asset, e.mktID, statevar.StateVarEventTypeMarketUpdated)
 	e.model = model
-}
-
-func (e *Engine) OnTimeUpdate(t time.Time) {
-	e.currTime = t.UnixNano()
 }
 
 // ReloadConf update the internal configuration of the risk engine.
@@ -195,7 +197,7 @@ func (e *Engine) UpdateMarginAuction(ctx context.Context, evts []events.Margin, 
 
 		levels.Party = evt.Party()
 		levels.Asset = e.asset // This is assuming there's a single asset at play here
-		levels.Timestamp = e.currTime
+		levels.Timestamp = e.timeSvc.GetTimeNow().UnixNano()
 		levels.MarketID = e.mktID
 
 		curMargin := evt.MarginBalance()
@@ -254,7 +256,7 @@ func (e *Engine) UpdateMarginOnNewOrder(ctx context.Context, evt events.Margin, 
 	// update other fields for the margins
 	margins.Party = evt.Party()
 	margins.Asset = evt.Asset()
-	margins.Timestamp = e.currTime
+	margins.Timestamp = e.timeSvc.GetTimeNow().UnixNano()
 	margins.MarketID = e.mktID
 
 	curMarginBalance := evt.MarginBalance()
@@ -318,6 +320,8 @@ func (e *Engine) UpdateMarginsOnSettlement(
 	ctx context.Context, evts []events.Margin, markPrice *num.Uint,
 ) []events.Risk {
 	ret := make([]events.Risk, 0, len(evts))
+	now := e.timeSvc.GetTimeNow().UnixNano()
+
 	// var err error
 	// this will keep going until we've closed this channel
 	// this can be the result of an error, or being "finished"
@@ -343,7 +347,7 @@ func (e *Engine) UpdateMarginsOnSettlement(
 				Party:                  evt.Party(),
 				MarketID:               evt.MarketID(),
 				Asset:                  evt.Asset(),
-				Timestamp:              e.currTime,
+				Timestamp:              now,
 			}
 			e.broker.Send(events.NewMarginLevelsEvent(ctx, margins))
 			ret = append(ret, &marginChange{
@@ -366,7 +370,7 @@ func (e *Engine) UpdateMarginsOnSettlement(
 		}
 
 		// update other fields for the margins
-		margins.Timestamp = e.currTime
+		margins.Timestamp = now
 		margins.MarketID = e.mktID
 		margins.Party = evt.Party()
 		margins.Asset = evt.Asset()

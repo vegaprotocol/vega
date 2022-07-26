@@ -365,6 +365,16 @@ func TestGetOpenInterestGivenTrades(t *testing.T) {
 			},
 			ExpectedOI: 110,
 		},
+		{
+			// Same as above + wash trade -> should leave OI unchanged
+			ExistingPositions: []*types.Trade{},
+			Trades: []*types.Trade{
+				{Seller: "A", Buyer: "B", Size: 20, Price: num.Zero()},
+				{Seller: "A", Buyer: "C", Size: 30, Price: num.Zero()},
+				{Seller: "D", Buyer: "D", Size: 40, Price: num.Zero()},
+			},
+			ExpectedOI: 50,
+		},
 		// There at least 1 new party
 		{
 			// A: + 100 + 10, B: -100, C: -10 => OI: 110

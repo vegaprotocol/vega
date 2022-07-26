@@ -7,7 +7,6 @@ package mocks
 import (
 	context "context"
 	reflect "reflect"
-	time "time"
 
 	events "code.vegaprotocol.io/vega/events"
 	types "code.vegaprotocol.io/vega/types"
@@ -367,18 +366,6 @@ func (m *MockCollateral) MarkToMarket(arg0 context.Context, arg1 string, arg2 []
 func (mr *MockCollateralMockRecorder) MarkToMarket(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MarkToMarket", reflect.TypeOf((*MockCollateral)(nil).MarkToMarket), arg0, arg1, arg2, arg3)
-}
-
-// OnChainTimeUpdate mocks base method.
-func (m *MockCollateral) OnChainTimeUpdate(arg0 context.Context, arg1 time.Time) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "OnChainTimeUpdate", arg0, arg1)
-}
-
-// OnChainTimeUpdate indicates an expected call of OnChainTimeUpdate.
-func (mr *MockCollateralMockRecorder) OnChainTimeUpdate(arg0, arg1 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OnChainTimeUpdate", reflect.TypeOf((*MockCollateral)(nil).OnChainTimeUpdate), arg0, arg1)
 }
 
 // RemoveDistressed mocks base method.

@@ -68,12 +68,15 @@ func BuildCmdListWallets(w io.Writer, handler ListWalletsHandler, rf *RootFlags)
 func PrintListWalletsResponse(w io.Writer, resp *wallet.ListWalletsResponse) {
 	p := printer.NewInteractivePrinter(w)
 
+	str := p.String()
+	defer p.Print(str)
+
 	if len(resp.Wallets) == 0 {
-		p.InfoText("No wallet registered").NextLine()
+		str.InfoText("No wallet registered").NextLine()
 		return
 	}
 
 	for _, w := range resp.Wallets {
-		p.Text(fmt.Sprintf("- %s", w)).NextLine()
+		str.Text(fmt.Sprintf("- %s", w)).NextLine()
 	}
 }

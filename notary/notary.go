@@ -63,11 +63,6 @@ type Commander interface {
 	CommandSync(ctx context.Context, cmd txn.Command, payload proto.Message, f func(error), bo *backoff.ExponentialBackOff)
 }
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/time_ticker_mock.go -package mocks code.vegaprotocol.io/vega/notary TimeTicker
-type TimeTicker interface {
-	NotifyOnTick(func(context.Context, time.Time))
-}
-
 // Notary will aggregate all signatures of a node for
 // a specific Command
 // e.g: asset withdrawal, asset allowlisting, etc.
@@ -102,9 +97,7 @@ func New(
 	top ValidatorTopology,
 	broker Broker,
 	cmd Commander,
-	tt TimeTicker,
 ) (n *Notary) {
-	defer func() { tt.NotifyOnTick(n.onTick) }()
 	log.SetLevel(cfg.Level.Get())
 	log = log.Named(namedLogger)
 	return &Notary{
@@ -240,7 +233,7 @@ func (n *Notary) IsSigned(
 }
 
 // onTick is only use to trigger resending transaction.
-func (n *Notary) onTick(_ context.Context, t time.Time) {
+func (n *Notary) OnTick(_ context.Context, t time.Time) {
 	toRetry := n.retries.getRetries(t)
 	for k, v := range toRetry {
 		n.send(k.id, k.kind, v.signature)

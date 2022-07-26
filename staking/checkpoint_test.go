@@ -154,6 +154,7 @@ func (c *checkpointTest) setupAccounting(t *testing.T) {
 
 func (c *checkpointTest) setupStakeVerifier(t *testing.T) {
 	t.Helper()
+	c.sv.tsvc.EXPECT().GetTimeNow().Times(1)
 	c.sv.broker.EXPECT().Send(gomock.Any()).Times(1)
 	c.sv.witness.EXPECT().StartCheck(gomock.Any(), gomock.Any(), gomock.Any()).Times(1)
 

@@ -23,6 +23,7 @@ import (
 	"code.vegaprotocol.io/vega/types/num"
 )
 
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/market_activity_tracker_mock.go -package mocks code.vegaprotocol.io/vega/execution EpochEngine
 type EpochEngine interface {
 	NotifyOnEpoch(f func(context.Context, types.Epoch), r func(context.Context, types.Epoch))
 }
@@ -64,6 +65,15 @@ func NewMarketActivityTracker(log *logging.Logger, epochEngine EpochEngine) *Mar
 	}
 	epochEngine.NotifyOnEpoch(mat.onEpochEvent, mat.onEpochRestore)
 	return mat
+}
+
+// GetProposer returns the proposer of the market or empty string if the market doesn't exist.
+func (mat *MarketActivityTracker) GetProposer(market string) string {
+	m, ok := mat.marketToTracker[market]
+	if ok {
+		return m.proposer
+	}
+	return ""
 }
 
 func (mat *MarketActivityTracker) SetEligibilityChecker(eligibilityChecker EligibilityChecker) {

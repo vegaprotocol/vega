@@ -14,7 +14,7 @@ package blockchain
 
 type ChainServerImpl interface {
 	ReloadConf(cfg Config)
-	Stop()
+	Stop() error
 	Start() error
 }
 
@@ -36,8 +36,8 @@ func (s *Server) Start() error {
 }
 
 // Stop gracefully shutdowns down the blockchain provider's server.
-func (s *Server) Stop() {
-	s.srv.Stop()
+func (s *Server) Stop() error {
+	return s.srv.Stop()
 }
 
 func (s *Server) ReloadConf(cfg Config) {

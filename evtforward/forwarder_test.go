@@ -67,12 +67,6 @@ func getTestEvtFwd(t *testing.T) *testEvtFwd {
 
 	top.EXPECT().AllNodeIDs().Times(1).Return(testAllPubKeys)
 	top.EXPECT().SelfNodeID().AnyTimes().Return(testSelfVegaPubKey)
-	var cb func(context.Context, time.Time)
-	tim.EXPECT().NotifyOnTick(gomock.Any()).Do(func(f func(context.Context, time.Time)) {
-		cb = f
-	})
-
-	tim.EXPECT().GetTimeNow().Times(1).Return(initTime)
 
 	cfg := evtforward.NewDefaultConfig()
 	// add the pubkeys
@@ -87,7 +81,7 @@ func getTestEvtFwd(t *testing.T) *testEvtFwd {
 		time:      tim,
 		top:       top,
 		cmd:       cmd,
-		cb:        cb,
+		cb:        evtfwd.OnTick,
 	}
 }
 
@@ -117,6 +111,7 @@ func testForwardSuccessNodeIsForwarder(t *testing.T) {
 	evt := getTestChainEvent("some")
 	evtfwd.cmd.EXPECT().Command(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 	evtfwd.top.EXPECT().AllNodeIDs().Times(1).Return(testAllPubKeys)
+	evtfwd.time.EXPECT().GetTimeNow().AnyTimes()
 	// set the time so the hash match our current node
 	evtfwd.cb(context.Background(), time.Unix(3, 0))
 	err := evtfwd.Forward(context.Background(), evt, okEventEmitter)
@@ -129,6 +124,7 @@ func testForwardFailureDuplicateEvent(t *testing.T) {
 	evt := getTestChainEvent("some")
 	evtfwd.cmd.EXPECT().Command(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 	evtfwd.top.EXPECT().AllNodeIDs().Times(1).Return(testAllPubKeys)
+	evtfwd.time.EXPECT().GetTimeNow().AnyTimes()
 	// set the time so the hash match our current node
 	evtfwd.cb(context.Background(), time.Unix(12, 0))
 	err := evtfwd.Forward(context.Background(), evt, okEventEmitter)
@@ -232,7 +228,7 @@ func TestSnapshotRoundtripViaEngine(t *testing.T) {
 	log := logging.NewTestLogger()
 	timeService := stubs.NewTimeStub()
 	timeService.SetTime(now)
-	statsData := stats.New(log, stats.NewDefaultConfig(), "", "")
+	statsData := stats.New(log, stats.NewDefaultConfig())
 	config := snp.NewDefaultConfig()
 	config.Storage = "memory"
 	snapshotEngine, _ := snp.New(context.Background(), &paths.DefaultPaths{}, config, log, timeService, statsData.Blockchain)

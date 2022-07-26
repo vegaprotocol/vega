@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"net/http/httputil"
 
-	"code.vegaprotocol.io/vega/wallet/version"
+	coreversion "code.vegaprotocol.io/vega/version"
 )
 
 type Proxy struct {
@@ -19,9 +19,9 @@ func NewProxy(port int, consoleURL, nodeURL string) *Proxy {
 			req.Header.Set("Referer", nodeURL)
 			req.Header.Set(
 				"User-Agent",
-				fmt.Sprintf("%v VegaWallet/%v", req.Header.Get("User-Agent"), version.Version),
+				fmt.Sprintf("%v VegaWallet/%v", req.Header.Get("User-Agent"), coreversion.Get()),
 			)
-			req.Header.Set("X-Vega-Wallet-Version", version.Version)
+			req.Header.Set("X-Vega-Wallet-Version", coreversion.Get())
 
 			// To prevent IP spoofing, be sure to delete any pre-existing
 			// X-Forwarded-For header coming from the client
@@ -50,6 +50,6 @@ func (c *Proxy) Stop() error {
 	return c.server.Shutdown(context.Background())
 }
 
-func (c *Proxy) GetBrowserURL() string {
+func (c *Proxy) GetLocalProxyURL() string {
 	return fmt.Sprintf("http://%s", c.server.Addr)
 }

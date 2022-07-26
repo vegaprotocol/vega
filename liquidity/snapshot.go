@@ -60,6 +60,7 @@ type SnapshotEngine struct {
 
 func NewSnapshotEngine(config Config,
 	log *logging.Logger,
+	timeService TimeService,
 	broker Broker,
 	riskModel RiskModel,
 	priceMonitor PriceMonitor,
@@ -74,7 +75,7 @@ func NewSnapshotEngine(config Config,
 		// tickSize = 10^{market_dp} - used for calculating probabilities at offsets from the best bid/ask
 		// priceFactor = 10^{asset_dp} / 10^{market_dp} - used for scaling a price to the market
 		// positionFactor = 10^{position_dp} - used to scale sizes to the market position decimals
-		Engine: NewEngine(config, log, broker, riskModel, priceMonitor, asset, market, stateVarEngine, tickSize, priceFactor, positionFactor),
+		Engine: NewEngine(config, log, timeService, broker, riskModel, priceMonitor, asset, market, stateVarEngine, tickSize, priceFactor, positionFactor),
 		pl:     types.Payload{},
 		market: market,
 

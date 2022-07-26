@@ -110,11 +110,14 @@ func (f *ListKeysFlags) Validate() (*wallet.ListKeysRequest, error) {
 func PrintListKeysResponse(w io.Writer, resp *wallet.ListKeysResponse) {
 	p := printer.NewInteractivePrinter(w)
 
+	str := p.String()
+	defer p.Print(str)
+
 	for i, key := range resp.Keys {
 		if i != 0 {
-			p.NextLine()
+			str.NextLine()
 		}
-		p.Text("Name:       ").WarningText(key.Name).NextLine()
-		p.Text("Public key: ").WarningText(key.PublicKey).NextLine()
+		str.Text("Name:       ").WarningText(key.Name).NextLine()
+		str.Text("Public key: ").WarningText(key.PublicKey).NextLine()
 	}
 }

@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"context"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"io"
@@ -258,7 +259,7 @@ func SendCommand(w io.Writer, rf *RootFlags, req *SendCommandRequest) error {
 
 	p := printer.NewInteractivePrinter(w)
 	if rf.Output == flags.InteractiveOutput {
-		p.BlueArrow().InfoText("Logs").NextLine()
+		p.Print(p.String().BlueArrow().InfoText("Logs").NextLine())
 	}
 
 	ctx, cancelFn := context.WithTimeout(context.Background(), ForwarderRequestTimeout)
@@ -295,13 +296,22 @@ func SendCommand(w io.Writer, rf *RootFlags, req *SendCommandRequest) error {
 
 	log.Info("calculated proof of work for transaction", zap.String("signature", tx.Signature.Value))
 
-	txHash, err := forwarder.SendTx(ctx, tx, api.SubmitTransactionRequest_TYPE_ASYNC, cltIdx)
+	resp, err := forwarder.SendTx(ctx, tx, api.SubmitTransactionRequest_TYPE_ASYNC, cltIdx)
 	if err != nil {
 		log.Error("couldn't send transaction", zap.Error(err))
 		return fmt.Errorf("couldn't send transaction: %w", err)
 	}
 
-	log.Info("transaction successfully sent", zap.String("hash", txHash))
+	if !resp.Success {
+		d, err := hex.DecodeString(resp.Data)
+		if err != nil {
+			log.Error("unable to decode resp error string")
+		}
+		log.Error("transaction failed", zap.String("err", string(d)), zap.Uint32("code", resp.Code))
+		return fmt.Errorf("transaction failed: %s", string(d))
+	}
+
+	log.Info("transaction successfully sent", zap.String("hash", resp.TxHash))
 
 	return nil
 }

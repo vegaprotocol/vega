@@ -12,13 +12,19 @@ Feature: Test margins releases on position = 0
       | partyGuy | BTC   | 1000000000 |
       | party1   | BTC   | 1000000    |
       | party2   | BTC   | 1000000    |
-      | aux       | BTC   | 100000     |
+      | aux      | BTC   | 100000     |
+      | lpprov   | BTC   | 100000     |
+
+    When the parties submit the following liquidity provision:
+      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
+      | lp1 | lpprov | ETH/DEC19 | 90000             | 0.1 | buy  | BID              | 50         | 10     | submission |
+      | lp1 | lpprov | ETH/DEC19 | 90000             | 0.1 | sell | ASK              | 50         | 10     | submission |
 
    # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     Then the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     |
-      | aux    | ETH/DEC19 | buy  | 1      | 1     | 0                | TYPE_LIMIT | TIF_GTC |
-      | aux    | ETH/DEC19 | sell | 1      | 15001 | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux   | ETH/DEC19 | buy  | 1      | 1     | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux   | ETH/DEC19 | sell | 1      | 15001 | 0                | TYPE_LIMIT | TIF_GTC |
 
     # Trigger an auction to set the mark price
     When the parties place the following orders:
@@ -47,13 +53,19 @@ Feature: Test margins releases on position = 0
       | partyGuy | BTC   | 1000000000 |
       | party1   | BTC   | 1000000    |
       | party2   | BTC   | 1000000    |
-      | aux       | BTC   | 100000     |
+      | aux      | BTC   | 100000     |
+      | lpprov   | BTC   | 100000     |
+
+    When the parties submit the following liquidity provision:
+      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
+      | lp1 | lpprov | ETH/DEC19 | 90000             | 0.1 | buy  | BID              | 50         | 10     | submission |
+      | lp1 | lpprov | ETH/DEC19 | 90000             | 0.1 | sell | ASK              | 50         | 10     | submission |
 
    # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     Then the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     |
-      | aux    | ETH/DEC19 | buy  | 1      | 1     | 0                | TYPE_LIMIT | TIF_GTC |
-      | aux    | ETH/DEC19 | sell | 1      | 15001 | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux   | ETH/DEC19 | buy  | 1      | 1     | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux   | ETH/DEC19 | sell | 1      | 15001 | 0                | TYPE_LIMIT | TIF_GTC |
 
     # Trigger an auction to set the mark price
     When the parties place the following orders:
@@ -93,6 +105,12 @@ Feature: Test margins releases on position = 0
       | party1   | BTC   | 1000000    |
       | party2   | BTC   | 1000000    |
       | aux      | BTC   | 100000     |
+      | lpprov   | BTC   | 100000     |
+
+    When the parties submit the following liquidity provision:
+      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
+      | lp1 | lpprov | ETH/DEC19 | 90000             | 0.1 | buy  | BID              | 50         | 10     | submission |
+      | lp1 | lpprov | ETH/DEC19 | 90000             | 0.1 | sell | ASK              | 50         | 10     | submission |
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     Then the parties place the following orders:
@@ -136,13 +154,19 @@ Feature: Test margins releases on position = 0
       | partyGuy | BTC   | 1000000000 |
       | party1   | BTC   | 1000000    |
       | party2   | BTC   | 1000000    |
-      | aux       | BTC   | 100000     |
+      | aux      | BTC   | 100000     |
+      | lpprov   | BTC   | 100000     |
+
+    When the parties submit the following liquidity provision:
+      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
+      | lp1 | lpprov | ETH/DEC19 | 90000             | 0.1 | buy  | BID              | 50         | 10     | submission |
+      | lp1 | lpprov | ETH/DEC19 | 90000             | 0.1 | sell | ASK              | 50         | 10     | submission |
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     Then the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     |
-      | aux    | ETH/DEC19 | buy  | 1      | 1     | 0                | TYPE_LIMIT | TIF_GTC |
-      | aux    | ETH/DEC19 | sell | 1      | 15001 | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux   | ETH/DEC19 | buy  | 1      | 1     | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux   | ETH/DEC19 | sell | 1      | 15001 | 0                | TYPE_LIMIT | TIF_GTC |
 
     # Trigger an auction to set the mark price
     When the parties place the following orders:

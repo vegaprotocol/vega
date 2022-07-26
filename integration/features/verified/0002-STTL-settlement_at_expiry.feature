@@ -30,7 +30,7 @@ Feature: Test settlement at expiry
     And the fees configuration named "fees-config-1":
       | maker fee | infrastructure fee |
       | 0.005     | 0.02               |
-    And the price monitoring updated every "1" seconds named "price-monitoring-1":
+    And the price monitoring named "price-monitoring-1":
       | horizon | probability | auction extension |
       | 1       | 0.99        | 300               |
     And the simple risk model named "simple-risk-model-1":
@@ -48,6 +48,12 @@ Feature: Test settlement at expiry
       | party1 | ETH   | 10000  |
       | aux1   | ETH   | 100000 |
       | aux2   | ETH   | 100000 |
+      | lpprov | ETH   | 100000 |
+
+    When the parties submit the following liquidity provision:
+      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
+      | lp1 | lpprov | ETH/DEC19 | 90000             | 0.1 | buy  | BID              | 50         | 10     | submission |
+      | lp1 | lpprov | ETH/DEC19 | 90000             | 0.1 | sell | ASK              | 50         | 10     | submission |
 
     When the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
@@ -205,13 +211,16 @@ Feature: Test settlement at expiry
       | aux1     | ETH   | 100000    |
       | aux2     | ETH   | 100000    |
       | party-lp | ETH   | 100000000 |
+      | lpprov   | ETH   | 100000000 |
 
-    And the cumulated balance for all accounts should be worth "100236000"
+    And the cumulated balance for all accounts should be worth "200236000"
 
     And the parties submit the following liquidity provision:
       | id  | party    | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
       | lp1 | party-lp | ETH/DEC19 | 30000000          | 0   | buy  | BID              | 50         | 10     | submission |
       | lp1 | party-lp | ETH/DEC19 | 30000000          | 0   | sell | ASK              | 50         | 10     | amendment  |
+      | lp2 | lpprov   | ETH/DEC21 | 30000000          | 0   | buy  | BID              | 50         | 10     | submission |
+      | lp2 | lpprov   | ETH/DEC21 | 30000000          | 0   | sell | ASK              | 50         | 10     | submission |
 
     When the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
@@ -276,7 +285,7 @@ Feature: Test settlement at expiry
       | party2 | ETH/DEC19 | buy  | 1      | 1000  | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
       | party3 | ETH/DEC19 | buy  | 1      | 1000  | 1                | TYPE_LIMIT | TIF_GTC | ref-3     |
 
-    And the cumulated balance for all accounts should be worth "100236000"
+    And the cumulated balance for all accounts should be worth "200236000"
 
     # Close positions by aux parties
     When the parties place the following orders:
@@ -307,7 +316,7 @@ Feature: Test settlement at expiry
       | party2 | ETH   | ETH/DEC19 | 0      | 42      |
       | party3 | ETH   | ETH/DEC19 | 0      | 4042    |
 
-    And the cumulated balance for all accounts should be worth "100236000"
+    And the cumulated balance for all accounts should be worth "200236000"
     And the insurance pool balance should be "0" for the market "ETH/DEC19"
     And the insurance pool balance should be "0" for the market "ETH/DEC21"
     And the network treasury balance should be "20000" for the asset "ETH"

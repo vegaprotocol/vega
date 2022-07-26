@@ -32,7 +32,12 @@ func testSimpledScheduledTransfer(t *testing.T) {
 	e := getTestEngine(t)
 	defer e.ctrl.Finish()
 
-	// let's do a massive fee, easy to test
+	e.tsvc.EXPECT().GetTimeNow().DoAndReturn(
+		func() time.Time {
+			return time.Unix(10, 0)
+		}).Times(3)
+
+	// let's do a massive fee, easy to test.
 	e.OnTransferFeeFactorUpdate(context.Background(), num.NewDecimalFromFloat(1))
 	e.OnTick(context.Background(), time.Unix(10, 0))
 
@@ -98,14 +103,12 @@ func testSimpledScheduledTransfer(t *testing.T) {
 		})
 
 	e.broker.EXPECT().Send(gomock.Any()).Times(2)
-
 	assert.NoError(t, e.TransferFunds(ctx, transfer))
 
 	checkp, err := e.Checkpoint()
 	assert.NoError(t, err)
 
 	// now second step, we start a new engine, and load the checkpoint
-
 	e2 := getTestEngine(t)
 	defer e2.ctrl.Finish()
 
@@ -115,6 +118,11 @@ func testSimpledScheduledTransfer(t *testing.T) {
 
 	// then trigger the time update, and see the transfer
 	// assert the calculation of fees and transfer request are correct
+	e2.tsvc.EXPECT().GetTimeNow().DoAndReturn(
+		func() time.Time {
+			return time.Unix(12, 0)
+		}).Times(1)
+
 	e2.broker.EXPECT().Send(gomock.Any()).Times(1)
 	e2.col.EXPECT().TransferFunds(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(1).DoAndReturn(
 		func(ctx context.Context,

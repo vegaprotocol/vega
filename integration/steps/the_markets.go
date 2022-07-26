@@ -58,9 +58,11 @@ func TheMarkets(
 
 func submitMarkets(markets []types.Market, executionEngine Execution) error {
 	for i := range markets {
-		err := executionEngine.SubmitMarket(context.Background(), &markets[i], "proposerID")
-		if err != nil {
+		if err := executionEngine.SubmitMarket(context.Background(), &markets[i], "proposerID"); err != nil {
 			return fmt.Errorf("couldn't submit market(%s): %v", markets[i].ID, err)
+		}
+		if err := executionEngine.StartOpeningAuction(context.Background(), markets[i].ID); err != nil {
+			return fmt.Errorf("could not start opening auction for market %s: %v", markets[i].ID, err)
 		}
 	}
 	return nil

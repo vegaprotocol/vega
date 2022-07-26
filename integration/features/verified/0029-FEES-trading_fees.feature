@@ -5,7 +5,7 @@ Feature: Fees calculations
     Given the fees configuration named "fees-config-1":
       | maker fee | infrastructure fee |
       | 0.005     | 0.002              |
-    And the price monitoring updated every "1000" seconds named "price-monitoring":
+    And the price monitoring named "price-monitoring":
       | horizon | probability | auction extension |
       | 1       | 0.99        | 3                 |
 
@@ -24,6 +24,12 @@ Feature: Fees calculations
       | aux2    | ETH   | 100000000 |
       | trader3 | ETH   | 10000     |
       | trader4 | ETH   | 10000     |
+      | lpprov  | ETH   | 100000000 |
+
+    When the parties submit the following liquidity provision:
+      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
+      | lp1 | lpprov | ETH/DEC21 | 90000000          | 0.1 | buy  | BID              | 50         | 10     | submission |
+      | lp1 | lpprov | ETH/DEC21 | 90000000          | 0.1 | sell | ASK              | 50         | 10     | submission |
 
     Then the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     |
@@ -88,7 +94,7 @@ Feature: Fees calculations
     Given the fees configuration named "fees-config-1":
       | maker fee | infrastructure fee |
       | 0.005     | 0.002              |
-    And the price monitoring updated every "1000" seconds named "price-monitoring":
+    And the price monitoring named "price-monitoring":
       | horizon | probability | auction extension |
       | 1       | 0.99        | 3                 |
 
@@ -108,6 +114,12 @@ Feature: Fees calculations
       | trader3a | ETH   | 10000     |
       | trader3b | ETH   | 10000     |
       | trader4  | ETH   | 10000     |
+      | lpprov   | ETH   | 100000000 |
+
+    When the parties submit the following liquidity provision:
+      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
+      | lp1 | lpprov | ETH/DEC21 | 90000000          | 0.1 | buy  | BID              | 50         | 10     | submission |
+      | lp1 | lpprov | ETH/DEC21 | 90000000          | 0.1 | sell | ASK              | 50         | 10     | submission |
 
     Then the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     |
@@ -191,7 +203,7 @@ Feature: Fees calculations
     Given the fees configuration named "fees-config-1":
       | maker fee | infrastructure fee |
       | 0.005     | 0.002              |
-    And the price monitoring updated every "1000" seconds named "price-monitoring":
+    And the price monitoring named "price-monitoring":
       | horizon | probability | auction extension |
       | 1       | 0.99        | 3                 |
 
@@ -338,7 +350,7 @@ Feature: Fees calculations
     Given the fees configuration named "fees-config-1":
       | maker fee | infrastructure fee |
       | 0.005     | 0.002              |
-    And the price monitoring updated every "1000" seconds named "price-monitoring":
+    And the price monitoring named "price-monitoring":
       | horizon | probability | auction extension |
       | 1       | 0.99        | 3                 |
 
@@ -358,6 +370,12 @@ Feature: Fees calculations
       | trader3a | ETH   | 10000     |
       | trader3b | ETH   | 10000     |
       | trader4  | ETH   | 1250      |
+      | lpprov   | ETH   | 100000000 |
+
+    When the parties submit the following liquidity provision:
+      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
+      | lp1 | lpprov | ETH/DEC21 | 90000000          | 0.1 | buy  | BID              | 50         | 10     | submission |
+      | lp1 | lpprov | ETH/DEC21 | 90000000          | 0.1 | sell | ASK              | 50         | 10     | submission |
 
     Then the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     |
@@ -465,7 +483,7 @@ Feature: Fees calculations
     Given the fees configuration named "fees-config-1":
       | maker fee | infrastructure fee |
       | 0.005     | 0.002              |
-    And the price monitoring updated every "1000" seconds named "price-monitoring":
+    And the price monitoring named "price-monitoring":
       | horizon | probability | auction extension |
       | 1       | 0.99        | 3                 |
 
@@ -484,6 +502,12 @@ Feature: Fees calculations
       | aux2    | ETH   | 100000000 |
       | trader3 | ETH   | 10000000  |
       | trader4 | ETH   | 22086     |
+      | lpprov  | ETH   | 100000000 |
+
+    When the parties submit the following liquidity provision:
+      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
+      | lp1 | lpprov | ETH/DEC21 | 90000000          | 0.1 | buy  | BID              | 50         | 10     | submission |
+      | lp1 | lpprov | ETH/DEC21 | 90000000          | 0.1 | sell | ASK              | 50         | 10     | submission |
 
     Then the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     |
@@ -545,7 +569,7 @@ Feature: Fees calculations
       Given the fees configuration named "fees-config-1":
         | maker fee | infrastructure fee |
         | 0.005     | 0.002              |
-      And the price monitoring updated every "1000" seconds named "price-monitoring":
+      And the price monitoring named "price-monitoring":
         | horizon | probability | auction extension |
         | 1       | 0.99        | 3                 |
 
@@ -564,6 +588,12 @@ Feature: Fees calculations
         | aux2    | ETH   | 100000000 |
         | trader3 | ETH   | 10000000  |
         | trader4 | ETH   | 214       |
+        | lpprov  | ETH   | 100000000 |
+
+    When the parties submit the following liquidity provision:
+      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
+      | lp1 | lpprov | ETH/DEC21 | 90000000          | 0.1 | buy  | BID              | 50         | 10     | submission |
+      | lp1 | lpprov | ETH/DEC21 | 90000000          | 0.1 | sell | ASK              | 50         | 10     | submission |
 
       Then the parties place the following orders:
         | party | market id | side | volume | price | resulting trades | type       | tif     |
@@ -607,7 +637,7 @@ Feature: Fees calculations
     When the fees configuration named "fees-config-1":
       | maker fee | infrastructure fee |
       | 0.005     | 0.002              |
-    And the price monitoring updated every "1000" seconds named "price-monitoring":
+    And the price monitoring named "price-monitoring":
       | horizon | probability | auction extension |
       | 1       | 0.99        | 3                 |
 
@@ -704,7 +734,7 @@ Feature: Fees calculations
     And the fees configuration named "fees-config-1":
       | maker fee | infrastructure fee |
       | 0.005     | 0.002              |
-    And the price monitoring updated every "1" seconds named "price-monitoring-1":
+    And the price monitoring named "price-monitoring-1":
       | horizon | probability | auction extension |
       | 1       | 0.99        | 300               |
     And the simple risk model named "simple-risk-model-1":
@@ -848,7 +878,7 @@ Feature: Fees calculations
     And the fees configuration named "fees-config-1":
       | maker fee | infrastructure fee |
       | 0.005     | 0.002              |
-    And the price monitoring updated every "1" seconds named "price-monitoring-1":
+    And the price monitoring named "price-monitoring-1":
       | horizon | probability | auction extension |
       | 1       | 0.99        | 300               |
     And the simple risk model named "simple-risk-model-1":
@@ -948,7 +978,7 @@ Feature: Fees calculations
     And the fees configuration named "fees-config-1":
       | maker fee | infrastructure fee |
       | 0.005     | 0.002              |
-    And the price monitoring updated every "1" seconds named "price-monitoring-1":
+    And the price monitoring named "price-monitoring-1":
       | horizon | probability | auction extension |
       | 1       | 0.99        | 300               |
     And the simple risk model named "simple-risk-model-1":
@@ -1049,7 +1079,7 @@ Feature: Fees calculations
     And the fees configuration named "fees-config-1":
       | maker fee | infrastructure fee |
       | 0.005     | 2                  |
-    And the price monitoring updated every "1" seconds named "price-monitoring-1":
+    And the price monitoring named "price-monitoring-1":
       | horizon | probability | auction extension |
       | 1       | 0.99        | 300               |
     And the simple risk model named "simple-risk-model-1":
@@ -1149,7 +1179,7 @@ Feature: Fees calculations
     And the fees configuration named "fees-config-1":
       | maker fee | infrastructure fee |
       | 0.005     | 2                  |
-    And the price monitoring updated every "1" seconds named "price-monitoring-1":
+    And the price monitoring named "price-monitoring-1":
       | horizon | probability | auction extension |
       | 1       | 0.99        | 300               |
     And the simple risk model named "simple-risk-model-1":
@@ -1250,7 +1280,7 @@ Feature: Fees calculations
     And the fees configuration named "fees-config-1":
       | maker fee | infrastructure fee |
       | 0.005     | 2                  |
-    And the price monitoring updated every "1" seconds named "price-monitoring-1":
+    And the price monitoring named "price-monitoring-1":
       | horizon | probability | auction extension |
       | 1       | 0.99        | 300               |
     And the simple risk model named "simple-risk-model-1":
@@ -1541,7 +1571,7 @@ Feature: Fees calculations
     Given the fees configuration named "fees-config-1":
       | maker fee | infrastructure fee |
       | 0.005     | 0.002              |
-    And the price monitoring updated every "1000" seconds named "price-monitoring":
+    And the price monitoring named "price-monitoring":
       | horizon | probability | auction extension |
       | 1       | 0.99        | 3                 |
 
@@ -1665,7 +1695,7 @@ Feature: Fees calculations
     Given the fees configuration named "fees-config-1":
       | maker fee | infrastructure fee |
       | 0.005     | 0.002              |
-    And the price monitoring updated every "1000" seconds named "price-monitoring":
+    And the price monitoring named "price-monitoring":
       | horizon | probability | auction extension |
       | 1       | 0.99        | 3                 |
 
@@ -1684,6 +1714,12 @@ Feature: Fees calculations
       | aux2    | ETH   | 100000000 |
       | trader3 | ETH   | 10000     |
       | trader4 | ETH   | 10000     |
+      | lpprov  | ETH   | 100000000 |
+
+    When the parties submit the following liquidity provision:
+      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
+      | lp1 | lpprov | ETH/DEC21 | 90000000          | 0.1 | buy  | BID              | 50         | 10     | submission |
+      | lp1 | lpprov | ETH/DEC21 | 90000000          | 0.1 | sell | ASK              | 50         | 10     | submission |
 
     Then the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     |

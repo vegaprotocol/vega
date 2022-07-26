@@ -17,6 +17,7 @@ func DoYouApproveTx() bool {
 
 func YesOrNo(question string) bool {
 	reader := bufio.NewReader(os.Stdin)
+	defer fmt.Println()
 	for {
 		fmt.Print(question + " (y/n) ") //nolint:forbidigo
 

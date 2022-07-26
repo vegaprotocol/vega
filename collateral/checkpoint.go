@@ -41,6 +41,10 @@ func (e *Engine) Checkpoint() ([]byte, error) {
 	return ret, nil
 }
 
+var partyOverrideAlias = map[string]string{
+	systemOwner + types.AccountTypeGlobalReward.String(): systemOwner,
+}
+
 var partyOverrides = map[string]types.AccountType{
 	systemOwner: types.AccountTypeGlobalReward,
 	systemOwner + types.AccountTypeMakerFeeReward.String():       types.AccountTypeMakerFeeReward,
@@ -71,16 +75,22 @@ func (e *Engine) Load(ctx context.Context, data []byte) error {
 		if len(partyComponents) > 1 {
 			market = partyComponents[1]
 		}
+
+		if alias, aliasExists := partyOverrideAlias[owner]; aliasExists {
+			owner = alias
+		}
+
 		// for backward compatibility check both - after this is already out checkpoints will always have the type for global accounts
 		if tp, ok := partyOverrides[owner]; ok {
 			accID := e.accountID(market, systemOwner, balance.Asset, tp)
 			if _, ok := tradingRewardAccountTypes[tp]; ok {
 				e.GetOrCreateRewardAccount(ctx, balance.Asset, market, tp)
 			}
-			if _, err := e.GetAccountByID(accID); err != nil {
+			acc, err := e.GetAccountByID(accID)
+			if err != nil {
 				return err
 			}
-			e.UpdateBalance(ctx, accID, ub)
+			e.UpdateBalance(ctx, accID, num.Sum(ub, acc.Balance))
 			continue
 		}
 		accID := e.accountID(market, balance.Party, balance.Asset, types.AccountTypeGeneral)

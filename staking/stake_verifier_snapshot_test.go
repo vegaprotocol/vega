@@ -54,6 +54,7 @@ func TestSVSnapshotDeposited(t *testing.T) {
 	sv := getStakeVerifierTest(t)
 	defer sv.ctrl.Finish()
 
+	sv.tsvc.EXPECT().GetTimeNow().Times(1)
 	sv.broker.EXPECT().Send(gomock.Any()).Times(1)
 	sv.witness.EXPECT().StartCheck(gomock.Any(), gomock.Any(), gomock.Any()).Times(1)
 
@@ -96,6 +97,9 @@ func TestSVSnapshotDeposited(t *testing.T) {
 	require.Nil(t, err)
 	// Check its there by adding it again and checking for duplication error
 	require.ErrorIs(t, staking.ErrDuplicatedStakeDepositedEvent, snapSV.ProcessStakeDeposited(ctx, event))
+
+	snapSV.evtSrc.EXPECT().UpdateStakingStartingBlock(uint64(42)).Times(1)
+	snapSV.OnStateLoaded(ctx)
 }
 
 func TestSVSnapshotRemoved(t *testing.T) {
@@ -104,6 +108,7 @@ func TestSVSnapshotRemoved(t *testing.T) {
 	sv := getStakeVerifierTest(t)
 	defer sv.ctrl.Finish()
 
+	sv.tsvc.EXPECT().GetTimeNow().Times(1)
 	sv.broker.EXPECT().Send(gomock.Any()).Times(1)
 	sv.witness.EXPECT().StartCheck(gomock.Any(), gomock.Any(), gomock.Any()).Times(1)
 

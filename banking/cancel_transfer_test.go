@@ -23,7 +23,6 @@ import (
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
-
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -64,6 +63,7 @@ func TestCancelTransfer(t *testing.T) {
 
 	e.assets.EXPECT().Get(gomock.Any()).Times(2).Return(
 		assets.NewAsset(&mockAsset{num.DecimalFromFloat(1)}), nil)
+	e.tsvc.EXPECT().GetTimeNow().Times(2)
 	e.broker.EXPECT().Send(gomock.Any()).Times(1)
 	assert.NoError(t, e.TransferFunds(ctx, transfer))
 
@@ -170,6 +170,10 @@ func (m *mockAsset) Type() *types.Asset {
 		},
 	}
 }
+
+func (m *mockAsset) SetPendingListing() {}
+func (m *mockAsset) SetRejected()       {}
+func (m *mockAsset) SetEnabled()        {}
 
 func (m *mockAsset) GetAssetClass() common.AssetClass { return common.ERC20 }
 func (m *mockAsset) IsValid() bool                    { return true }

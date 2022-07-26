@@ -21,19 +21,20 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+var testFilter1 = &v1.Filter{
+	Key: &v1.PropertyKey{
+		Name: "filter1",
+		Type: v1.PropertyKey_TYPE_STRING,
+	},
+	Conditions: []*v1.Condition{
+		{
+			Operator: v1.Condition_OPERATOR_EQUALS,
+			Value:    "true",
+		},
+	},
+}
+
 func TestMarketFromIntoProto(t *testing.T) {
-	filter1 := &v1.Filter{
-		Key: &v1.PropertyKey{
-			Name: "filter1",
-			Type: v1.PropertyKey_TYPE_STRING,
-		},
-		Conditions: []*v1.Condition{
-			{
-				Operator: v1.Condition_OPERATOR_EQUALS,
-				Value:    "true",
-			},
-		},
-	}
 	pMarket := &proto.Market{
 		Id: "foo",
 		TradableInstrument: &proto.TradableInstrument{
@@ -53,7 +54,7 @@ func TestMarketFromIntoProto(t *testing.T) {
 							CreatedAt: 0,
 							UpdatedAt: 1,
 							PubKeys:   []string{"pubkey"},
-							Filters:   []*v1.Filter{filter1},
+							Filters:   []*v1.Filter{testFilter1},
 							Status:    v1.OracleSpec_STATUS_ACTIVE,
 						},
 						OracleSpecForTradingTermination: &v1.OracleSpec{
@@ -116,7 +117,6 @@ func TestMarketFromIntoProto(t *testing.T) {
 					},
 				},
 			},
-			UpdateFrequency: 20,
 		},
 		LiquidityMonitoringParameters: &proto.LiquidityMonitoringParameters{
 			TargetStakeParameters: &proto.TargetStakeParameters{

@@ -36,20 +36,6 @@ func (m *MockCheckpoint) EXPECT() *MockCheckpointMockRecorder {
 	return m.recorder
 }
 
-// AwaitingRestore mocks base method.
-func (m *MockCheckpoint) AwaitingRestore() bool {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AwaitingRestore")
-	ret0, _ := ret[0].(bool)
-	return ret0
-}
-
-// AwaitingRestore indicates an expected call of AwaitingRestore.
-func (mr *MockCheckpointMockRecorder) AwaitingRestore() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AwaitingRestore", reflect.TypeOf((*MockCheckpoint)(nil).AwaitingRestore))
-}
-
 // BalanceCheckpoint mocks base method.
 func (m *MockCheckpoint) BalanceCheckpoint(arg0 context.Context) (*types.CheckpointState, error) {
 	m.ctrl.T.Helper()
@@ -78,32 +64,4 @@ func (m *MockCheckpoint) Checkpoint(arg0 context.Context, arg1 time.Time) (*type
 func (mr *MockCheckpointMockRecorder) Checkpoint(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Checkpoint", reflect.TypeOf((*MockCheckpoint)(nil).Checkpoint), arg0, arg1)
-}
-
-// Load mocks base method.
-func (m *MockCheckpoint) Load(arg0 context.Context, arg1 *types.CheckpointState) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Load", arg0, arg1)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// Load indicates an expected call of Load.
-func (mr *MockCheckpointMockRecorder) Load(arg0, arg1 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Load", reflect.TypeOf((*MockCheckpoint)(nil).Load), arg0, arg1)
-}
-
-// ValidateCheckpoint mocks base method.
-func (m *MockCheckpoint) ValidateCheckpoint(arg0 *types.CheckpointState) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ValidateCheckpoint", arg0)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// ValidateCheckpoint indicates an expected call of ValidateCheckpoint.
-func (mr *MockCheckpointMockRecorder) ValidateCheckpoint(arg0 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ValidateCheckpoint", reflect.TypeOf((*MockCheckpoint)(nil).ValidateCheckpoint), arg0)
 }

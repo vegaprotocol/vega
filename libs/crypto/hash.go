@@ -15,6 +15,7 @@ package crypto
 import (
 	"crypto/rand"
 	"encoding/hex"
+	"fmt"
 
 	"golang.org/x/crypto/sha3"
 )
@@ -23,6 +24,26 @@ func Hash(key []byte) []byte {
 	hasher := sha3.New256()
 	hasher.Write(key)
 	return hasher.Sum(nil)
+}
+
+// HashHexStr hash a hex encoded string with sha3 256
+// returns an hex encoded string of the result.
+func HashHexStr(s string) string {
+	x, err := hex.DecodeString(s)
+	if err != nil {
+		panic(fmt.Sprintf("hex string required: %v", err))
+	}
+	hasher := sha3.New256()
+	hasher.Write(x)
+	return hex.EncodeToString(hasher.Sum(nil))
+}
+
+// HashStr hash a string (converts to bytes first)
+// returns an hex encoded string of the result.
+func HashStr(s string) string {
+	hasher := sha3.New256()
+	hasher.Write([]byte(s))
+	return hex.EncodeToString(hasher.Sum(nil))
 }
 
 func RandomHash() string {

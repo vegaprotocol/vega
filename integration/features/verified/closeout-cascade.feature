@@ -28,14 +28,19 @@ Feature: Closeout-cascades
       | auxiliary2   | BTC   | 1000000000000 |
       | trader2      | BTC   | 2000          |
       | trader3      | BTC   | 100           |
+      | lpprov       | BTC   | 1000000000000 |
 
-    Then the cumulated balance for all accounts should be worth "2000000002100"
+    Then the cumulated balance for all accounts should be worth "3000000002100"
 
+    When the parties submit the following liquidity provision:
+        | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
+        | lp1 | lpprov | ETH/DEC19 | 100000            | 0.001 | sell | ASK              | 100        | 55     | submission |
+        | lp1 | party0 | ETH/DEC19 | 100000            | 0.001 | buy  | BID              | 100        | -55    | submission |
   # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
   # trading happens at the end of the open auction period
     Then the parties place the following orders:
       | party     | market id | side | volume | price  | resulting trades| type       | tif     | reference |
-      | auxiliary2| ETH/DEC19 | buy  | 5      | 5      | 0               | TYPE_LIMIT | TIF_GTC | aux-b-5    |
+      | auxiliary2| ETH/DEC19 | buy  | 5      | 5      | 0               | TYPE_LIMIT | TIF_GTC | aux-b-5   |
       | auxiliary1| ETH/DEC19 | sell | 10     | 1000   | 0               | TYPE_LIMIT | TIF_GTC | aux-s-1000|
       | auxiliary2| ETH/DEC19 | buy  | 10     | 10     | 0               | TYPE_LIMIT | TIF_GTC | aux-b-1   |
       | auxiliary1| ETH/DEC19 | sell | 10     | 10     | 0               | TYPE_LIMIT | TIF_GTC | aux-s-1   |
@@ -44,7 +49,7 @@ Feature: Closeout-cascades
     Then the auction ends with a traded volume of "10" at a price of "10"
     And the mark price should be "10" for the market "ETH/DEC19"
 
-    And the cumulated balance for all accounts should be worth "2000000002100"
+    And the cumulated balance for all accounts should be worth "3000000002100"
 
     # setup trader2 position to be ready to takeover trader3's position once trader3 is closed out
     When the parties place the following orders:
@@ -59,7 +64,7 @@ Feature: Closeout-cascades
       | party   | asset | market id | margin   | general |
       | trader2 | BTC   | ETH/DEC19 | 100      | 1900    |
 
-    And the cumulated balance for all accounts should be worth "2000000002100"
+    And the cumulated balance for all accounts should be worth "3000000002100"
 
     # setup trader3 position and close it out
     When the parties place the following orders:
@@ -77,63 +82,63 @@ Feature: Closeout-cascades
     Then debug orders
     And the following trades should be executed:
       | buyer   | price | size | seller  |
-      | network |  50   | 50   | trader3 |
-      | trader2 |  50   | 50   | network |
+      | network |  100  | 50   | trader3 |
+      | lpprov  |  100  | 50   | network |
 
     And the mark price should be "100" for the market "ETH/DEC19"
 
-    And the cumulated balance for all accounts should be worth "2000000002100"
+    And the cumulated balance for all accounts should be worth "3000000002100"
 
     # check that trader3 is closed-out but trader2 is not
     And the parties should have the following margin levels:
       | party   | market id | maintenance | search | initial | release |
-      | trader2 | ETH/DEC19 | 5250        | 7875   | 10500   | 15750   |
+      | trader2 | ETH/DEC19 | 500         | 750    | 1000    | 1500    |
       | trader3 | ETH/DEC19 | 0           | 0      | 0       | 0       |
-     Then the parties should have the following profit and loss:
-      | party   | volume | unrealised pnl | realised pnl |
-      | trader2 | 50     | 2500           | -2400        |
-      | trader3 | 0      | 0              | -100         |
-
-    # check trader2 margin level, trader2 is not closed-out yet since new mark price is not updated
-    # eventhough  trader2 does not have enough margin
-    Then the parties should have the following account balances:
-      | party      | asset | market id | margin    | general      |
-      | trader2    | BTC   | ETH/DEC19 | 1100       | 1000           |
-      | trader3    | BTC   | ETH/DEC19 | 0         | 0            |
-      | auxiliary1 | BTC   | ETH/DEC19 | 109400    | 999999889700 |
-      | auxiliary2 | BTC   | ETH/DEC19 | 3200      | 999999997700 |
-
-    # setup new mark price, which is the same as when trader2 traded with network
-    Then the parties place the following orders:
-      | party     | market id | side | volume | price  | resulting trades| type       | tif     | reference |
-      | auxiliary2| ETH/DEC19 | buy  | 10     | 50     | 0               | TYPE_LIMIT | TIF_GTC | aux-b-1   |
-      | auxiliary1| ETH/DEC19 | sell | 10     | 50     | 1               | TYPE_LIMIT | TIF_GTC | aux-s-1   |
-
-    And the mark price should be "50" for the market "ETH/DEC19"
-
-    #trader2 got closed-out
-    Then the parties should have the following profit and loss:
-      | party   | volume | unrealised pnl | realised pnl |
-      | trader2 | 0      | 0              | -2000         |
-
-    And the parties should have the following margin levels:
-      | party   | market id | maintenance | search | initial | release |
-      | trader2 | ETH/DEC19 | 0           | 0      | 0       | 0       |
-
-    And the insurance pool balance should be "0" for the market "ETH/DEC19"
-
-    Then the parties should have the following profit and loss:
-      | party           | volume | unrealised pnl | realised pnl |
-      | trader2         | 0      |     0          | -2000         |
-      | trader3         | 0      |     0          | -100         |
-      | auxiliary1      | -70    |  2100          | -400        |
-      | auxiliary2      |  70    |  2400          | -2000        |
-
-    Then the order book should have the following volumes for market "ETH/DEC19":
-      | side | price    | volume |
-      | sell | 1000     | 10     |
-      | sell | 100      | 0      |
-      | sell | 50       | 0      |
-      | buy  | 50       | 0      |
-      | buy  | 10       | 0      |
-      | buy  | 5        | 5      |
+      #     Then the parties should have the following profit and loss:
+      #      | party   | volume | unrealised pnl | realised pnl |
+      #      | trader2 | 50     | 2500           | -2400        |
+      #      | trader3 | 0      | 0              | -100         |
+      #
+      #    # check trader2 margin level, trader2 is not closed-out yet since new mark price is not updated
+      #    # eventhough  trader2 does not have enough margin
+      #    Then the parties should have the following account balances:
+      #      | party      | asset | market id | margin    | general      |
+      #      | trader2    | BTC   | ETH/DEC19 | 1100      | 1000         |
+      #      | trader3    | BTC   | ETH/DEC19 | 0         | 0            |
+      #      | auxiliary1 | BTC   | ETH/DEC19 | 109400    | 999999889700 |
+      #      | auxiliary2 | BTC   | ETH/DEC19 | 3200      | 999999997700 |
+      #
+      #    # setup new mark price, which is the same as when trader2 traded with network
+      #    Then the parties place the following orders:
+      #      | party     | market id | side | volume | price  | resulting trades| type       | tif     | reference |
+      #      | auxiliary2| ETH/DEC19 | buy  | 10     | 50     | 0               | TYPE_LIMIT | TIF_GTC | aux-b-1   |
+      #      | auxiliary1| ETH/DEC19 | sell | 10     | 50     | 1               | TYPE_LIMIT | TIF_GTC | aux-s-1   |
+      #
+      #    And the mark price should be "50" for the market "ETH/DEC19"
+      #
+      #    #trader2 got closed-out
+      #    Then the parties should have the following profit and loss:
+      #      | party   | volume | unrealised pnl | realised pnl |
+      #      | trader2 | 0      | 0              | -2000        |
+      #
+      #    And the parties should have the following margin levels:
+      #      | party   | market id | maintenance | search | initial | release |
+      #      | trader2 | ETH/DEC19 | 0           | 0      | 0       | 0       |
+      #
+      #    And the insurance pool balance should be "0" for the market "ETH/DEC19"
+      #
+      #    Then the parties should have the following profit and loss:
+      #      | party           | volume | unrealised pnl | realised pnl |
+      #      | trader2         | 0      |     0          | -2000        |
+      #      | trader3         | 0      |     0          | -100         |
+      #      | auxiliary1      | -70    |  2100          | -400         |
+      #      | auxiliary2      |  70    |  2400          | -2000        |
+      #
+      #    Then the order book should have the following volumes for market "ETH/DEC19":
+      #      | side | price    | volume |
+      #      | sell | 1000     | 10     |
+      #      | sell | 100      | 0      |
+      #      | sell | 50       | 0      |
+      #      | buy  | 50       | 0      |
+      #      | buy  | 10       | 0      |
+      #      | buy  | 5        | 5      |

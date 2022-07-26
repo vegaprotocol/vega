@@ -18,8 +18,9 @@ import (
 	"testing"
 	"time"
 
-	bmock "code.vegaprotocol.io/vega/broker/mocks"
+	bmocks "code.vegaprotocol.io/vega/broker/mocks"
 	"code.vegaprotocol.io/vega/limits"
+	"code.vegaprotocol.io/vega/limits/mocks"
 	"code.vegaprotocol.io/vega/logging"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
@@ -34,10 +35,14 @@ func getLimitsTest(t *testing.T) *limitsTest {
 	t.Helper()
 	log := logging.NewTestLogger()
 	ctrl := gomock.NewController(t)
-	broker := bmock.NewMockBroker(ctrl)
+	broker := bmocks.NewMockBroker(ctrl)
 	broker.EXPECT().Send(gomock.Any()).AnyTimes()
+
+	timeSvc := mocks.NewMockTimeService(ctrl)
+	timeSvc.EXPECT().GetTimeNow().AnyTimes()
+
 	return &limitsTest{
-		Engine: limits.New(log, limits.NewDefaultConfig(), broker),
+		Engine: limits.New(log, limits.NewDefaultConfig(), timeSvc, broker),
 		log:    log,
 	}
 }
@@ -66,7 +71,6 @@ func TestLimits(t *testing.T) {
 	t.Run("test market disabled asset enbled", testMarketdisabledAssetenabled)
 	t.Run("proposal enabled with time reach becomes enabled", testDisabledUntilTimeIsReach)
 	t.Run("proposals disabled with time reach stay disabled", testStayDisabledIfTimeIsReachedButEnabledIsFalse)
-	t.Run("bootstrap finished enabled proposals", testBootstrapFinishedEnabledProposals)
 }
 
 func testEmptyGenesis(t *testing.T) {
@@ -75,15 +79,11 @@ func testEmptyGenesis(t *testing.T) {
 	assert.False(t, lmts.CanProposeAsset())
 	assert.False(t, lmts.CanProposeMarket())
 	assert.False(t, lmts.CanTrade())
-	assert.False(t, lmts.BootstrapFinished())
 }
 
 func testNilGenesis(t *testing.T) {
 	lmts := getLimitsTest(t)
 	lmts.loadGenesisState(t, nil)
-
-	// need to call onTick
-	lmts.OnTick(context.Background(), time.Unix(1000, 0))
 
 	assert.True(t, lmts.CanProposeAsset())
 	assert.True(t, lmts.CanProposeMarket())
@@ -93,9 +93,6 @@ func testNilGenesis(t *testing.T) {
 func testAllDisabled(t *testing.T) {
 	lmts := getLimitsTest(t)
 	lmts.loadGenesisState(t, &limits.GenesisState{})
-
-	// need to call onTick
-	lmts.OnTick(context.Background(), time.Unix(1000, 0))
 
 	assert.False(t, lmts.CanProposeAsset())
 	assert.False(t, lmts.CanProposeMarket())
@@ -109,9 +106,6 @@ func testAllEnabled(t *testing.T) {
 		ProposeMarketEnabled: true,
 	})
 
-	// need to call onTick
-	lmts.OnTick(context.Background(), time.Unix(1000, 0))
-
 	assert.True(t, lmts.CanProposeAsset())
 	assert.True(t, lmts.CanProposeMarket())
 	assert.True(t, lmts.CanTrade())
@@ -124,9 +118,6 @@ func testMarketEnabledAssetDisabled(t *testing.T) {
 		ProposeMarketEnabled: true,
 	})
 
-	// need to call onTick
-	lmts.OnTick(context.Background(), time.Unix(1000, 0))
-
 	assert.True(t, lmts.CanProposeMarket())
 	assert.False(t, lmts.CanProposeAsset())
 	assert.False(t, lmts.CanTrade())
@@ -138,9 +129,6 @@ func testMarketdisabledAssetenabled(t *testing.T) {
 		ProposeAssetEnabled:  true,
 		ProposeMarketEnabled: false,
 	})
-
-	// need to call onTick
-	lmts.OnTick(context.Background(), time.Unix(1000, 0))
 
 	assert.False(t, lmts.CanProposeMarket())
 	assert.True(t, lmts.CanProposeAsset())
@@ -195,42 +183,4 @@ func testStayDisabledIfTimeIsReachedButEnabledIsFalse(t *testing.T) {
 	assert.False(t, lmts.CanProposeMarket())
 	assert.False(t, lmts.CanProposeAsset())
 	assert.False(t, lmts.CanTrade())
-}
-
-func testBootstrapFinishedEnabledProposals(t *testing.T) {
-	lmts := getLimitsTest(t)
-	lmts.loadGenesisState(t, &limits.GenesisState{
-		ProposeAssetEnabled:  true,
-		ProposeMarketEnabled: true,
-		BootstrapBlockCount:  2,
-	})
-
-	lmts.OnLimitsProposeAssetEnabledFromUpdate(context.Background(), time.Unix(2000, 0).Format(time.RFC3339))
-	lmts.OnLimitsProposeMarketEnabledFromUpdate(context.Background(), time.Unix(2000, 0).Format(time.RFC3339))
-
-	// block count is 0 call on Tick once, it's should still
-	// be impossible to do anything, both boolean are OK
-	// and the time is OK
-	lmts.OnTick(context.Background(), time.Unix(3000, 0))
-
-	assert.False(t, lmts.CanProposeMarket())
-	assert.False(t, lmts.CanProposeAsset())
-	assert.False(t, lmts.CanTrade())
-	assert.False(t, lmts.BootstrapFinished())
-
-	// block 2, still fasle
-	lmts.OnTick(context.Background(), time.Unix(4000, 0))
-
-	assert.False(t, lmts.CanProposeMarket())
-	assert.False(t, lmts.CanProposeAsset())
-	assert.False(t, lmts.CanTrade())
-	assert.False(t, lmts.BootstrapFinished())
-
-	// block 3, OK
-	lmts.OnTick(context.Background(), time.Unix(5000, 0))
-
-	assert.True(t, lmts.CanProposeMarket())
-	assert.True(t, lmts.CanProposeAsset())
-	assert.True(t, lmts.CanTrade())
-	assert.True(t, lmts.BootstrapFinished())
 }

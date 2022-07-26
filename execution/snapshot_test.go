@@ -331,11 +331,10 @@ func getEngine(t *testing.T, now time.Time) *snapshotTestData {
 	broker := stubs.NewBrokerStub()
 	timeService := stubs.NewTimeStub()
 	timeService.SetTime(now)
-	currentTime := timeService.GetTimeNow()
-	collateralEngine := collateral.New(log, collateral.NewDefaultConfig(), broker, currentTime)
-	oracleEngine := oracles.NewEngine(log, oracles.NewDefaultConfig(), currentTime, broker, timeService)
+	collateralEngine := collateral.New(log, collateral.NewDefaultConfig(), timeService, broker)
+	oracleEngine := oracles.NewEngine(log, oracles.NewDefaultConfig(), timeService, broker)
 
-	epochEngine := epochtime.NewService(log, epochtime.NewDefaultConfig(), timeService, broker)
+	epochEngine := epochtime.NewService(log, epochtime.NewDefaultConfig(), broker)
 	marketActivityTracker := execution.NewMarketActivityTracker(logging.NewTestLogger(), epochEngine)
 
 	ethAsset := types.Asset{
@@ -359,7 +358,7 @@ func getEngine(t *testing.T, now time.Time) *snapshotTestData {
 		stubs.NewAssetStub(),
 	)
 
-	statsData := stats.New(log, stats.NewDefaultConfig(), "", "")
+	statsData := stats.New(log, stats.NewDefaultConfig())
 	config := snp.NewDefaultConfig()
 	config.Storage = "memory"
 	snapshotEngine, _ := snp.New(context.Background(), &paths.DefaultPaths{}, config, log, timeService, statsData.Blockchain)

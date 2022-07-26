@@ -52,7 +52,6 @@ func (e *Engine) restoreMarket(ctx context.Context, em *types.ExecMarket) (*Mark
 	if len(marketConfig.ID) == 0 {
 		return nil, ErrNoMarketID
 	}
-	now := e.time.GetTimeNow()
 
 	// ensure the asset for this new market exists
 	asset, err := marketConfig.GetAsset()
@@ -90,7 +89,7 @@ func (e *Engine) restoreMarket(ctx context.Context, em *types.ExecMarket) (*Mark
 		e.Config.Liquidity,
 		e.collateral,
 		e.oracle,
-		now,
+		e.timeService,
 		e.broker,
 		e.stateVarEngine,
 		ad,

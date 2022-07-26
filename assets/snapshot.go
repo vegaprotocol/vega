@@ -143,7 +143,7 @@ func (s *Service) restoreActive(ctx context.Context, active *types.ActiveAssets,
 	var err error
 	s.assets = map[string]*Asset{}
 	for _, p := range active.Assets {
-		if _, err = s.NewAsset(p.ID, p.Details); err != nil {
+		if _, err = s.NewAsset(ctx, p.ID, p.Details); err != nil {
 			return err
 		}
 
@@ -156,7 +156,7 @@ func (s *Service) restoreActive(ctx context.Context, active *types.ActiveAssets,
 			pa.SetValidNonValidator()
 		}
 
-		if err = s.Enable(p.ID); err != nil {
+		if err = s.Enable(ctx, p.ID); err != nil {
 			return err
 		}
 	}
@@ -170,10 +170,16 @@ func (s *Service) restorePending(ctx context.Context, pending *types.PendingAsse
 	var err error
 	s.pendingAssets = map[string]*Asset{}
 	for _, p := range pending.Assets {
-		if _, err = s.NewAsset(p.ID, p.Details); err != nil {
+		assetID, err := s.NewAsset(ctx, p.ID, p.Details)
+		if err != nil {
 			return err
 		}
+
+		if p.Status == types.AssetStatusPendingListing {
+			s.SetPendingListing(ctx, assetID)
+		}
 	}
+
 	s.ass.changedPending = false
 	s.ass.serialisedPending, err = proto.Marshal(p.IntoProto())
 

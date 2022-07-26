@@ -79,8 +79,7 @@ func (s *Store) GetWallet(name, passphrase string) (wallet.Wallet, error) {
 		Version uint32 `json:"version"`
 	}{}
 
-	err = json.Unmarshal(decBuf, versionedWallet)
-	if err != nil {
+	if err := json.Unmarshal(decBuf, versionedWallet); err != nil {
 		return nil, fmt.Errorf("couldn't unmarshal wallet verion: %w", err)
 	}
 
@@ -89,8 +88,7 @@ func (s *Store) GetWallet(name, passphrase string) (wallet.Wallet, error) {
 	}
 
 	w := &wallet.HDWallet{}
-	err = json.Unmarshal(decBuf, w)
-	if err != nil {
+	if err := json.Unmarshal(decBuf, w); err != nil {
 		return nil, fmt.Errorf("couldn't unmarshal wallet: %w", err)
 	}
 

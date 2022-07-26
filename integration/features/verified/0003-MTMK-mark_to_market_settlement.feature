@@ -15,16 +15,22 @@ Feature: Test mark to market settlement
       | party1 | ETH   | 10000  |
       | party2 | ETH   | 10000  |
       | party3 | ETH   | 10000  |
-      | aux     | ETH   | 100000 |
-      | aux2    | ETH   | 100000 |
+      | aux    | ETH   | 100000 |
+      | aux2   | ETH   | 100000 |
+      | lpprov | ETH   | 100000 |
+
+    When the parties submit the following liquidity provision:
+      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
+      | lp1 | lpprov | ETH/DEC19 | 90000             | 0.1 | buy  | BID              | 50         | 10     | submission |
+      | lp1 | lpprov | ETH/DEC19 | 90000             | 0.1 | sell | ASK              | 50         | 10     | submission |
 
      # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
-    When the parties place the following orders:
+    And the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     |
-      | aux    | ETH/DEC19 | buy  | 1      | 49    | 0                | TYPE_LIMIT | TIF_GTC |
-      | aux    | ETH/DEC19 | sell | 1      | 5001  | 0                | TYPE_LIMIT | TIF_GTC |
-      | aux2   | ETH/DEC19 | buy  | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
-      | aux    | ETH/DEC19 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux   | ETH/DEC19 | buy  | 1      | 49    | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux   | ETH/DEC19 | sell | 1      | 5001  | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux2  | ETH/DEC19 | buy  | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux   | ETH/DEC19 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
 
     Then the opening auction period ends for market "ETH/DEC19"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
@@ -60,7 +66,7 @@ Feature: Test mark to market settlement
       | from    | to     | from account        | to account              | market id | amount | asset |
       | party1 | market | ACCOUNT_TYPE_MARGIN | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC19 | 1000   | ETH   |
       | party1 | market | ACCOUNT_TYPE_MARGIN | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC19 | 1000   | ETH   |
-    And the cumulated balance for all accounts should be worth "230000"
+    And the cumulated balance for all accounts should be worth "330000"
     And the settlement account should have a balance of "0" for the market "ETH/DEC19"
 
   Scenario: If settlement amount > party’s margin account balance  and <= party's margin account balance + general account balance for the asset, he full balance of the party’s margin account is transferred to the market’s temporary settlement account the remainder, i.e. difference between the amount transferred from the margin account and the settlement amount, is transferred from the party’s general account for the asset to the market’s temporary settlement account (0003-MTMK-002, 0003-MTMK-005; 0003-MTMK-006; 0003-MTMK-008; 0003-MTMK-009)
@@ -69,16 +75,22 @@ Feature: Test mark to market settlement
       | party1 | ETH   | 10000  |
       | party2 | ETH   | 10000  |
       | party3 | ETH   | 10000  |
-      | aux     | ETH   | 100000 |
-      | aux2    | ETH   | 100000 |
+      | aux    | ETH   | 100000 |
+      | aux2   | ETH   | 100000 |
+      | lpprov | ETH   | 100000 |
+
+    When the parties submit the following liquidity provision:
+      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
+      | lp1 | lpprov | ETH/DEC19 | 90000             | 0.1 | buy  | BID              | 50         | 10     | submission |
+      | lp1 | lpprov | ETH/DEC19 | 90000             | 0.1 | sell | ASK              | 50         | 10     | submission |
 
      # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     When the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     |
-      | aux    | ETH/DEC19 | buy  | 1      | 999   | 0                | TYPE_LIMIT | TIF_GTC |
-      | aux    | ETH/DEC19 | sell | 1      | 5001  | 0                | TYPE_LIMIT | TIF_GTC |
-      | aux2   | ETH/DEC19 | buy  | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
-      | aux    | ETH/DEC19 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux   | ETH/DEC19 | buy  | 1      | 999   | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux   | ETH/DEC19 | sell | 1      | 5001  | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux2  | ETH/DEC19 | buy  | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux   | ETH/DEC19 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
 
     Then the opening auction period ends for market "ETH/DEC19"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
@@ -135,7 +147,7 @@ Feature: Test mark to market settlement
       | from    | to      | from account         | to account              | market id | amount | asset |
       | party3  | party3  | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_MARGIN     | ETH/DEC19 | 660    | ETH   |
       | aux2    | market  | ACCOUNT_TYPE_MARGIN  | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC19 | 4001   | ETH   |
-    And the cumulated balance for all accounts should be worth "230000"
+    And the cumulated balance for all accounts should be worth "330000"
 
   Scenario: If the mark price hasn’t changed, A party with no change in open position size has no transfers in or out of their margin account, A party with no change in open volume (0003-MTMK-010, 0003-MTMK-011, 0003-MTMK-012)
     Given the parties deposit on asset's general account the following amount:
@@ -143,16 +155,22 @@ Feature: Test mark to market settlement
       | party1 | ETH   | 10000  |
       | party2 | ETH   | 10000  |
       | party3 | ETH   | 10000  |
-      | aux     | ETH   | 100000 |
-      | aux2    | ETH   | 100000 |
+      | aux    | ETH   | 100000 |
+      | aux2   | ETH   | 100000 |
+      | lpprov | ETH   | 100000 |
+
+    When the parties submit the following liquidity provision:
+      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
+      | lp1 | lpprov | ETH/DEC19 | 90000             | 0.1 | buy  | BID              | 50         | 10     | submission |
+      | lp1 | lpprov | ETH/DEC19 | 90000             | 0.1 | sell | ASK              | 50         | 10     | submission |
 
      # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     When the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     |
-      | aux    | ETH/DEC19 | buy  | 1      | 999   | 0                | TYPE_LIMIT | TIF_GTC |
-      | aux    | ETH/DEC19 | sell | 1      | 5001  | 0                | TYPE_LIMIT | TIF_GTC |
-      | aux2   | ETH/DEC19 | buy  | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
-      | aux    | ETH/DEC19 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux   | ETH/DEC19 | buy  | 1      | 999   | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux   | ETH/DEC19 | sell | 1      | 5001  | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux2  | ETH/DEC19 | buy  | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux   | ETH/DEC19 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
 
     Then the opening auction period ends for market "ETH/DEC19"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
@@ -184,5 +202,5 @@ Feature: Test mark to market settlement
       | party1 | ETH   | ETH/DEC19 | 9842   | 158     |
       | party3 | ETH   | ETH/DEC19 | 132    | 9868    |
       | party2 | ETH   | ETH/DEC19 | 132    | 9868    |
-    And the cumulated balance for all accounts should be worth "230000"
+    And the cumulated balance for all accounts should be worth "330000"
     And the settlement account should have a balance of "0" for the market "ETH/DEC19"

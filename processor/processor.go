@@ -41,7 +41,7 @@ var (
 type TimeService interface {
 	GetTimeNow() time.Time
 	GetTimeLastBatch() time.Time
-	NotifyOnTick(f func(context.Context, time.Time))
+	NotifyOnTick(...func(context.Context, time.Time))
 	SetTimeNow(context.Context, time.Time)
 }
 
@@ -86,7 +86,7 @@ type GovernanceEngine interface {
 	SubmitProposal(context.Context, types.ProposalSubmission, string, string) (*governance.ToSubmit, error)
 	FinaliseEnactment(ctx context.Context, prop *types.Proposal)
 	AddVote(context.Context, types.VoteSubmission, string) error
-	OnChainTimeUpdate(context.Context, time.Time) ([]*governance.ToEnact, []*governance.VoteClosed)
+	OnTick(context.Context, time.Time) ([]*governance.ToEnact, []*governance.VoteClosed)
 	RejectProposal(context.Context, *types.Proposal, types.ProposalError, error) error
 	Hash() []byte
 }
@@ -127,7 +127,7 @@ type Stats interface {
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/assets_mock.go -package mocks code.vegaprotocol.io/vega/processor Assets
 type Assets interface {
-	NewAsset(ref string, assetSrc *types.AssetDetails) (string, error)
+	NewAsset(ctx context.Context, ref string, assetSrc *types.AssetDetails) (string, error)
 	Get(assetID string) (*assets.Asset, error)
 	IsEnabled(string) bool
 }
@@ -203,6 +203,7 @@ type Oracle struct {
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/oracles_engine_mock.go -package mocks code.vegaprotocol.io/vega/processor OraclesEngine
 type OraclesEngine interface {
 	BroadcastData(context.Context, oracles.OracleData) error
+	ListensToPubKeys(oracles.OracleData) bool
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/oracle_adaptors_mock.go -package mocks code.vegaprotocol.io/vega/processor OracleAdaptors
@@ -215,7 +216,6 @@ type Limits interface {
 	CanProposeMarket() bool
 	CanProposeAsset() bool
 	CanTrade() bool
-	BootstrapFinished() bool
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/stake_verifier_mock.go -package mocks code.vegaprotocol.io/vega/processor StakeVerifier

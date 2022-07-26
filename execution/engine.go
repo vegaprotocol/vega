@@ -46,13 +46,13 @@ var (
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/time_service_mock.go -package mocks code.vegaprotocol.io/vega/execution TimeService
 type TimeService interface {
 	GetTimeNow() time.Time
-	NotifyOnTick(f func(context.Context, time.Time))
 }
 
 // OracleEngine ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/oracle_engine_mock.go -package mocks code.vegaprotocol.io/vega/execution OracleEngine
 type OracleEngine interface {
-	Subscribe(context.Context, oracles.OracleSpec, oracles.OnMatchedOracleData) oracles.SubscriptionID
+	ListensToPubKeys(oracles.OracleData) bool
+	Subscribe(context.Context, oracles.OracleSpec, oracles.OnMatchedOracleData) (oracles.SubscriptionID, oracles.Unsubscriber)
 	Unsubscribe(context.Context, oracles.SubscriptionID)
 }
 
@@ -67,7 +67,6 @@ type Collateral interface {
 	MarketCollateral
 	AssetExists(string) bool
 	CreateMarketAccounts(context.Context, string, string) (string, string, error)
-	OnChainTimeUpdate(context.Context, time.Time)
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/state_var_engine_mock.go -package mocks code.vegaprotocol.io/vega/execution StateVarEngine
@@ -98,7 +97,7 @@ type Engine struct {
 	assets     Assets
 
 	broker                Broker
-	time                  TimeService
+	timeService           TimeService
 	stateVarEngine        StateVarEngine
 	marketActivityTracker *MarketActivityTracker
 
@@ -169,7 +168,7 @@ func NewEngine(
 		log:                   log,
 		Config:                executionConfig,
 		markets:               map[string]*Market{},
-		time:                  ts,
+		timeService:           ts,
 		collateral:            collateral,
 		assets:                assets,
 		broker:                broker,
@@ -179,9 +178,6 @@ func NewEngine(
 		stateVarEngine:        stateVarEngine,
 		marketActivityTracker: marketActivityTracker,
 	}
-
-	// Add time change event handler
-	e.time.NotifyOnTick(e.onChainTimeUpdate)
 
 	// set the eligibility for proposer bonus checker
 	e.marketActivityTracker.SetEligibilityChecker(e)
@@ -284,8 +280,29 @@ func (e *Engine) SubmitMarketWithLiquidityProvision(ctx context.Context, marketC
 	lpID,
 	deterministicId string,
 ) error {
+	return e.submitOrRestoreMarketWithLiquidityProvision(ctx, marketConfig, lp, party, lpID, deterministicId, true)
+}
+
+// RestoreMarketWithLiquidityProvision is very similar to SubmitMarketWithLiquidityProvision without updating the market tracker as it is restored separately from checkpoint.
+func (e *Engine) RestoreMarketWithLiquidityProvision(ctx context.Context, marketConfig *types.Market, lp *types.LiquidityProvisionSubmission, lpID, deterministicId string) error {
+	proposer := e.marketActivityTracker.GetProposer(marketConfig.ID)
+	if len(proposer) == 0 {
+		return ErrMarketDoesNotExist
+	}
+	return e.submitOrRestoreMarketWithLiquidityProvision(ctx, marketConfig, lp, proposer, lpID, deterministicId, false)
+}
+
+func (e *Engine) submitOrRestoreMarketWithLiquidityProvision(ctx context.Context, marketConfig *types.Market, lp *types.LiquidityProvisionSubmission, party,
+	lpID,
+	deterministicId string,
+	isNewMarket bool,
+) error {
+	msg := "submit market with liquidity provision"
+	if !isNewMarket {
+		msg = "restore market with liquidity provision"
+	}
 	if e.log.IsDebug() {
-		e.log.Debug("submit market with liquidity provision",
+		e.log.Debug(msg,
 			logging.Market(*marketConfig),
 			logging.LiquidityProvisionSubmission(*lp),
 			logging.PartyID(party),
@@ -298,11 +315,14 @@ func (e *Engine) SubmitMarketWithLiquidityProvision(ctx context.Context, marketC
 	}
 
 	mkt := e.markets[marketConfig.ID]
-	asset, err := marketConfig.GetAsset()
-	if err != nil {
-		e.log.Panic("failed to get asset from market config", logging.String("market", mkt.GetID()), logging.String("error", err.Error()))
+
+	if isNewMarket {
+		asset, err := marketConfig.GetAsset()
+		if err != nil {
+			e.log.Panic("failed to get asset from market config", logging.String("market", mkt.GetID()), logging.String("error", err.Error()))
+		}
+		e.marketActivityTracker.MarketProposed(asset, marketConfig.ID, party)
 	}
-	e.marketActivityTracker.MarketProposed(asset, marketConfig.ID, party)
 
 	// publish market data anyway initially
 	e.publishNewMarketInfos(ctx, mkt)
@@ -316,25 +336,43 @@ func (e *Engine) SubmitMarketWithLiquidityProvision(ctx context.Context, marketC
 	return nil
 }
 
-// SubmitMarket will submit a new market configuration to the network.
+// SubmitMarket submits a new market configuration to the network.
 func (e *Engine) SubmitMarket(ctx context.Context, marketConfig *types.Market, proposer string) error {
+	return e.submitOrRestoreMarket(ctx, marketConfig, proposer, true)
+}
+
+// RestoreMarket restores a new market from proposal checkpoint.
+func (e *Engine) RestoreMarket(ctx context.Context, marketConfig *types.Market) error {
+	proposer := e.marketActivityTracker.GetProposer(marketConfig.ID)
+	if len(proposer) == 0 {
+		return ErrMarketDoesNotExist
+	}
+	return e.submitOrRestoreMarket(ctx, marketConfig, "", false)
+}
+
+func (e *Engine) submitOrRestoreMarket(ctx context.Context, marketConfig *types.Market, proposer string, isNewMarket bool) error {
 	if e.log.IsDebug() {
-		e.log.Debug("submit market", logging.Market(*marketConfig))
+		msg := "submit market"
+		if !isNewMarket {
+			msg = "restore market"
+		}
+		e.log.Debug(msg, logging.Market(*marketConfig))
 	}
 
 	if err := e.submitMarket(ctx, marketConfig); err != nil {
 		return err
 	}
 
-	asset, err := marketConfig.GetAsset()
-	if err != nil {
-		e.log.Panic("failed to get asset from market config", logging.String("market", marketConfig.ID), logging.String("error", err.Error()))
+	if isNewMarket {
+		asset, err := marketConfig.GetAsset()
+		if err != nil {
+			e.log.Panic("failed to get asset from market config", logging.String("market", marketConfig.ID), logging.String("error", err.Error()))
+		}
+		e.marketActivityTracker.MarketProposed(asset, marketConfig.ID, proposer)
 	}
-	e.marketActivityTracker.MarketProposed(asset, marketConfig.ID, proposer)
 
-	// here straight away we start the OPENING_AUCTION
+	// keep state in pending, opening auction is triggered when proposal is enacted
 	mkt := e.markets[marketConfig.ID]
-	_ = mkt.StartOpeningAuction(ctx)
 
 	e.publishNewMarketInfos(ctx, mkt)
 	return nil
@@ -375,7 +413,8 @@ func (e *Engine) submitMarket(ctx context.Context, marketConfig *types.Market) e
 	if len(marketConfig.ID) == 0 {
 		return ErrNoMarketID
 	}
-	now := e.time.GetTimeNow()
+
+	now := e.timeService.GetTimeNow()
 
 	// ensure the asset for this new market exists
 	asset, err := marketConfig.GetAsset()
@@ -411,7 +450,7 @@ func (e *Engine) submitMarket(ctx context.Context, marketConfig *types.Market) e
 		e.collateral,
 		e.oracle,
 		marketConfig,
-		now,
+		e.timeService,
 		e.broker,
 		mas,
 		e.stateVarEngine,
@@ -752,8 +791,8 @@ func (e *Engine) CancelLiquidityProvision(ctx context.Context, cancel *types.Liq
 	return mkt.CancelLiquidityProvision(ctx, cancel, party)
 }
 
-func (e *Engine) onChainTimeUpdate(ctx context.Context, t time.Time) {
-	timer := metrics.NewTimeCounter("-", "execution", "onChainTimeUpdate")
+func (e *Engine) OnTick(ctx context.Context, t time.Time) {
+	timer := metrics.NewTimeCounter("-", "execution", "OnTick")
 
 	evts := make([]events.Event, 0, len(e.marketsCpy))
 	for _, v := range e.marketsCpy {
@@ -763,19 +802,11 @@ func (e *Engine) onChainTimeUpdate(ctx context.Context, t time.Time) {
 
 	e.log.Debug("updating engine on new time update")
 
-	// update collateral
-	e.collateral.OnChainTimeUpdate(ctx, t)
-
-	// remove expired orders
-	// TODO(FIXME): this should be remove, and handled inside the market directly
-	// when call with the new time (see the next for loop)
-	e.removeExpiredOrders(ctx, t)
-
 	// notify markets of the time expiration
 	toDelete := []string{}
 	for _, mkt := range e.marketsCpy {
 		mkt := mkt
-		closing := mkt.OnChainTimeUpdate(ctx, t)
+		closing := mkt.OnTick(ctx, t)
 		if closing {
 			e.log.Info("market is closed, removing from execution engine",
 				logging.MarketID(mkt.GetID()))
@@ -785,25 +816,6 @@ func (e *Engine) onChainTimeUpdate(ctx context.Context, t time.Time) {
 
 	for _, id := range toDelete {
 		e.removeMarket(id)
-	}
-
-	timer.EngineTimeCounterAdd()
-}
-
-// Process any data updates (including state changes)
-// e.g. removing expired orders from matching engine.
-func (e *Engine) removeExpiredOrders(ctx context.Context, t time.Time) {
-	timer := metrics.NewTimeCounter("-", "execution", "removeExpiredOrders")
-	timeNow := t.UnixNano()
-	for _, mkt := range e.marketsCpy {
-		expired, err := mkt.RemoveExpiredOrders(ctx, timeNow)
-		if err != nil {
-			e.log.Error("unable to get remove expired orders",
-				logging.MarketID(mkt.GetID()),
-				logging.Error(err))
-		}
-
-		metrics.OrderGaugeAdd(-len(expired), mkt.GetID())
 	}
 
 	timer.EngineTimeCounterAdd()

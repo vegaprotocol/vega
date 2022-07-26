@@ -16,6 +16,8 @@ import (
 	"context"
 	"fmt"
 
+	"code.vegaprotocol.io/vega/version"
+
 	"github.com/jessevdk/go-flags"
 )
 
@@ -31,10 +33,10 @@ func (cmd *VersionCmd) Execute(_ []string) error {
 
 var versionCmd VersionCmd
 
-func Version(ctx context.Context, parser *flags.Parser) error {
+func Version(_ context.Context, parser *flags.Parser) error {
 	versionCmd = VersionCmd{
-		version: CLIVersion,
-		hash:    CLIVersionHash,
+		version: version.Get(),
+		hash:    version.GetCommitHash(),
 	}
 
 	_, err := parser.AddCommand("version", "Show version info", "Show version info", &versionCmd)

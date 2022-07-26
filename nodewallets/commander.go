@@ -28,7 +28,7 @@ import (
 
 	"github.com/cenkalti/backoff"
 	"github.com/golang/protobuf/proto"
-	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
+	tmctypes "github.com/tendermint/tendermint/rpc/coretypes"
 )
 
 const (
@@ -190,14 +190,6 @@ func wrapPayloadIntoInputData(data *commandspb.InputData, cmd txn.Command, paylo
 			}
 		} else {
 			panic("failed to wrap to ChainEvent")
-		}
-	case txn.CheckpointRestoreCommand:
-		if underlyingCmd, ok := payload.(*commandspb.RestoreSnapshot); ok {
-			data.Command = &commandspb.InputData_RestoreSnapshotSubmission{
-				RestoreSnapshotSubmission: underlyingCmd,
-			}
-		} else {
-			panic("failed to wrap RestoreSnapshot")
 		}
 	case txn.StateVariableProposalCommand:
 		if underlyingCmd, ok := payload.(*commandspb.StateVariableProposal); ok {

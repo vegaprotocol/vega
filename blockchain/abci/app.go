@@ -17,6 +17,7 @@ import (
 
 	"code.vegaprotocol.io/vega/txn"
 	"code.vegaprotocol.io/vega/types"
+
 	lru "github.com/hashicorp/golang-lru"
 	abci "github.com/tendermint/tendermint/abci/types"
 )

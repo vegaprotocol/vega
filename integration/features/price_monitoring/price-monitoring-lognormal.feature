@@ -2,7 +2,7 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
 
   Background:
     Given time is updated to "2020-10-16T00:00:00Z"
-    And the price monitoring updated every "60" seconds named "my-price-monitoring":
+    And the price monitoring named "my-price-monitoring":
       | horizon | probability | auction extension |
       | 60      | 0.95        | 240               |
       | 120     | 0.99        | 360               |
@@ -23,6 +23,12 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
       | party2 | ETH   | 10000000000  |
       | aux    | ETH   | 100000000000 |
       | aux2   | ETH   | 100000000000 |
+      | lpprov | ETH   | 100000000000 |
+
+    When the parties submit the following liquidity provision:
+      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
+      | lp1 | lpprov | ETH/DEC20 | 90000000          | 0.1 | buy  | BID              | 50         | 100    | submission |
+      | lp1 | lpprov | ETH/DEC20 | 90000000          | 0.1 | sell | ASK              | 50         | 100    | submission |
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     When the parties place the following orders:
@@ -76,6 +82,12 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
       | party2 | ETH   | 10000000000  |
       | aux    | ETH   | 100000000000 |
       | aux2   | ETH   | 100000000000 |
+      | lpprov | ETH   | 100000000000 |
+
+    When the parties submit the following liquidity provision:
+      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
+      | lp1 | lpprov | ETH/DEC20 | 90000000          | 0.1 | buy  | BID              | 50         | 100    | submission |
+      | lp1 | lpprov | ETH/DEC20 | 90000000          | 0.1 | sell | ASK              | 50         | 100    | submission |
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     When the parties place the following orders:
@@ -134,6 +146,12 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
       | party2 | ETH   | 10000000000  |
       | aux    | ETH   | 100000000000 |
       | aux2   | ETH   | 100000000000 |
+      | lpprov | ETH   | 100000000000 |
+
+    When the parties submit the following liquidity provision:
+      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
+      | lp1 | lpprov | ETH/DEC20 | 90000000          | 0.1 | buy  | BID              | 50         | 100    | submission |
+      | lp1 | lpprov | ETH/DEC20 | 90000000          | 0.1 | sell | ASK              | 50         | 100    | submission |
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     When the parties place the following orders:
@@ -190,6 +208,12 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
       | party2 | ETH   | 10000000000  |
       | aux    | ETH   | 100000000000 |
       | aux2   | ETH   | 100000000000 |
+      | lpprov | ETH   | 100000000000 |
+
+    When the parties submit the following liquidity provision:
+      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
+      | lp1 | lpprov | ETH/DEC20 | 90000000          | 0.1 | buy  | BID              | 50         | 100    | submission |
+      | lp1 | lpprov | ETH/DEC20 | 90000000          | 0.1 | sell | ASK              | 50         | 100    | submission |
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     When the parties place the following orders:
@@ -232,6 +256,12 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
       | party2 | ETH   | 10000000000  |
       | aux    | ETH   | 100000000000 |
       | aux2   | ETH   | 100000000000 |
+      | lpprov | ETH   | 100000000000 |
+
+    When the parties submit the following liquidity provision:
+      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
+      | lp1 | lpprov | ETH/DEC20 | 90000000          | 0.1 | buy  | BID              | 50         | 100    | submission |
+      | lp1 | lpprov | ETH/DEC20 | 90000000          | 0.1 | sell | ASK              | 50         | 100    | submission |
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     When the parties place the following orders:
@@ -312,6 +342,12 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
       | party2 | ETH   | 10000000000  |
       | aux    | ETH   | 100000000000 |
       | aux2   | ETH   | 100000000000 |
+      | lpprov | ETH   | 100000000000 |
+
+    When the parties submit the following liquidity provision:
+      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
+      | lp1 | lpprov | ETH/DEC20 | 90000000          | 0.1 | buy  | BID              | 50         | 100    | submission |
+      | lp1 | lpprov | ETH/DEC20 | 90000000          | 0.1 | sell | ASK              | 50         | 100    | submission |
 
     When the parties place the following orders:
       | party | market id | side | volume | price   | resulting trades | type       | tif     |
@@ -332,8 +368,8 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
 
     And the market data for the market "ETH/DEC20" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 1000       | TRADING_MODE_CONTINUOUS | 60      | 995       | 1005      | 7434        | 0              | 10            |
-      | 1000       | TRADING_MODE_CONTINUOUS | 120     | 990       | 1010      | 7434        | 0              | 10            |
+      | 1000       | TRADING_MODE_CONTINUOUS | 60      | 995       | 1005      | 7434         | 90000000       | 10            |
+      | 1000       | TRADING_MODE_CONTINUOUS | 120     | 990       | 1010      | 7434         | 90000000       | 10            |
 
   Scenario: Start with low first indicative uncrossing price and much higher final auction price
     Given the parties deposit on asset's general account the following amount:
@@ -342,6 +378,12 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
       | party2 | ETH   | 10000000000  |
       | aux    | ETH   | 100000000000 |
       | aux2   | ETH   | 100000000000 |
+      | lpprov | ETH   | 100000000000 |
+
+    When the parties submit the following liquidity provision:
+      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
+      | lp1 | lpprov | ETH/DEC20 | 90000000          | 0.1 | buy  | BID              | 50         | 100    | submission |
+      | lp1 | lpprov | ETH/DEC20 | 90000000          | 0.1 | sell | ASK              | 50         | 100    | submission |
 
     When the parties place the following orders:
       | party | market id | side | volume | price   | resulting trades | type       | tif     |
