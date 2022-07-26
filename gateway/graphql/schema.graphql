@@ -1476,8 +1476,6 @@ type PriceMonitoringTrigger {
 type PriceMonitoringSettings {
   "Specified a set of PriceMonitoringParameters to be use for price monitoring purposes"
   parameters: PriceMonitoringParameters
-  "How often (in seconds) the price monitoring bounds should be updated"
-  updateFrequencySecs: Int!
 }
 
 "Range of valid prices and the associated price monitoring trigger"
@@ -2682,8 +2680,6 @@ enum AccountType {
   FeeLiquidity
   "Market maker fee account - holds fees paid to the passive side when a trade matches"
   FeeMaker
-  "LockWithdraw - and account use for party in the process of withdrawing funds"
-  LockWithdraw
   "Bond - an account use to maintain MM commitments"
   Bond
   "External - an account use to refer to external account"

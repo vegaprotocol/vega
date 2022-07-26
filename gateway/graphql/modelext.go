@@ -99,8 +99,7 @@ func PriceMonitoringSettingsFromProto(ppmst *types.PriceMonitoringSettings) (*Pr
 		return nil, err
 	}
 	return &PriceMonitoringSettings{
-		Parameters:          params,
-		UpdateFrequencySecs: int(ppmst.UpdateFrequency),
+		Parameters: params,
 	}, nil
 }
 

@@ -939,8 +939,7 @@ type ComplexityRoot struct {
 	}
 
 	PriceMonitoringSettings struct {
-		Parameters          func(childComplexity int) int
-		UpdateFrequencySecs func(childComplexity int) int
+		Parameters func(childComplexity int) int
 	}
 
 	PriceMonitoringTrigger struct {
@@ -5633,13 +5632,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.PriceMonitoringSettings.Parameters(childComplexity), true
 
-	case "PriceMonitoringSettings.updateFrequencySecs":
-		if e.complexity.PriceMonitoringSettings.UpdateFrequencySecs == nil {
-			break
-		}
-
-		return e.complexity.PriceMonitoringSettings.UpdateFrequencySecs(childComplexity), true
-
 	case "PriceMonitoringTrigger.auctionExtensionSecs":
 		if e.complexity.PriceMonitoringTrigger.AuctionExtensionSecs == nil {
 			break
@@ -9459,8 +9451,6 @@ type PriceMonitoringTrigger {
 type PriceMonitoringSettings {
   "Specified a set of PriceMonitoringParameters to be use for price monitoring purposes"
   parameters: PriceMonitoringParameters
-  "How often (in seconds) the price monitoring bounds should be updated"
-  updateFrequencySecs: Int!
 }
 
 "Range of valid prices and the associated price monitoring trigger"
@@ -10665,8 +10655,6 @@ enum AccountType {
   FeeLiquidity
   "Market maker fee account - holds fees paid to the passive side when a trade matches"
   FeeMaker
-  "LockWithdraw - and account use for party in the process of withdrawing funds"
-  LockWithdraw
   "Bond - an account use to maintain MM commitments"
   Bond
   "External - an account use to refer to external account"
@@ -31410,41 +31398,6 @@ func (ec *executionContext) _PriceMonitoringSettings_parameters(ctx context.Cont
 	res := resTmp.(*PriceMonitoringParameters)
 	fc.Result = res
 	return ec.marshalOPriceMonitoringParameters2ᚖcodeᚗvegaprotocolᚗioᚋdataᚑnodeᚋgatewayᚋgraphqlᚐPriceMonitoringParameters(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _PriceMonitoringSettings_updateFrequencySecs(ctx context.Context, field graphql.CollectedField, obj *PriceMonitoringSettings) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "PriceMonitoringSettings",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.UpdateFrequencySecs, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(int)
-	fc.Result = res
-	return ec.marshalNInt2int(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _PriceMonitoringTrigger_horizonSecs(ctx context.Context, field graphql.CollectedField, obj *PriceMonitoringTrigger) (ret graphql.Marshaler) {
@@ -52281,16 +52234,6 @@ func (ec *executionContext) _PriceMonitoringSettings(ctx context.Context, sel as
 
 			out.Values[i] = innerFunc(ctx)
 
-		case "updateFrequencySecs":
-			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._PriceMonitoringSettings_updateFrequencySecs(ctx, field, obj)
-			}
-
-			out.Values[i] = innerFunc(ctx)
-
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}

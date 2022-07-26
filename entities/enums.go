@@ -558,6 +558,7 @@ type NodeSignatureKind commandspb.NodeSignatureKind
 const (
 	NodeSignatureKindUnspecified          = NodeSignatureKind(commandspb.NodeSignatureKind_NODE_SIGNATURE_KIND_UNSPECIFIED)
 	NodeSignatureKindAsset                = NodeSignatureKind(commandspb.NodeSignatureKind_NODE_SIGNATURE_KIND_ASSET_NEW)
+	NodeSignatureKindAssetUpdate          = NodeSignatureKind(commandspb.NodeSignatureKind_NODE_SIGNATURE_KIND_ASSET_UPDATE)
 	NodeSignatureKindAssetWithdrawal      = NodeSignatureKind(commandspb.NodeSignatureKind_NODE_SIGNATURE_KIND_ASSET_WITHDRAWAL)
 	NodeSignatureKindMultisigSignerAdded  = NodeSignatureKind(commandspb.NodeSignatureKind_NODE_SIGNATURE_KIND_ERC20_MULTISIG_SIGNER_ADDED)
 	NodeSignatureKindMultisigSignerRemove = NodeSignatureKind(commandspb.NodeSignatureKind_NODE_SIGNATURE_KIND_ERC20_MULTISIG_SIGNER_REMOVED)
