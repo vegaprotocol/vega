@@ -57,7 +57,7 @@ func (r *recurringTransferResolver) StartEpoch(ctx context.Context, obj *eventsp
 
 func (r *recurringTransferResolver) EndEpoch(ctx context.Context, obj *eventspb.RecurringTransfer) (*int, error) {
 	if obj.EndEpoch != nil {
-		var i int = int(obj.EndEpoch.Value)
+		i := int(*obj.EndEpoch)
 		return &i, nil
 	}
 	return nil, nil

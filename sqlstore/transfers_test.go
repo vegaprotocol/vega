@@ -250,7 +250,7 @@ func testTransfers_GetFromAccountAndGetToAccount(t *testing.T) {
 		Timestamp:       block.VegaTime.UnixNano(),
 		Kind: &eventspb.Transfer_Recurring{Recurring: &eventspb.RecurringTransfer{
 			StartEpoch: 45,
-			EndEpoch:   &vega.Uint64Value{Value: 56},
+			EndEpoch:   toPtr(uint64(56)),
 			Factor:     "3.12",
 		}},
 	}
@@ -721,4 +721,8 @@ func addTransfers(ctx context.Context, t *testing.T, bs *sqlstore.Blocks, transf
 	}
 
 	return transfers
+}
+
+func toPtr[T any](t T) *T {
+	return &t
 }
