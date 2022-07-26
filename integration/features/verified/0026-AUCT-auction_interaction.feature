@@ -25,7 +25,7 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
       | 0.004     | 0.001              |
     And the price monitoring named "price-monitoring-1":
       | horizon | probability | auction extension |
-      | 1       | 0.99        | 300               |
+      | 100     | 0.99        | 300               |
     And the price monitoring named "price-monitoring-2":
       | horizon | probability | auction extension |
       | 2       | 0.999995    | 200               |
@@ -66,7 +66,7 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
     Then the auction ends with a traded volume of "10" at a price of "1000"
     And the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 1000       | TRADING_MODE_CONTINUOUS | 1       | 990       | 1010      | 1000         | 4000           | 10            |
+      | 1000       | TRADING_MODE_CONTINUOUS | 100     | 990       | 1010      | 1000         | 4000           | 10            |
 
     When the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
@@ -114,7 +114,7 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
     # target_stake = mark_price x max_oi x target_stake_scaling_factor x max(risk_factor_long, risk_factor_short) = 1000 x 10 x 1 x 0.1
     And the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 1000       | TRADING_MODE_CONTINUOUS | 1       | 990       | 1010      | 1000         | 10000          | 10            |
+      | 1000       | TRADING_MODE_CONTINUOUS | 100     | 990       | 1010      | 1000         | 10000          | 10            |
 
   Scenario: When trying to exit opening auction liquidity monitoring is triggered due to missing best bid, hence the opening auction gets extended (0026-AUCT-001, 0026-AUCT-005)
 
@@ -146,7 +146,7 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
 
     And the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 1000       | TRADING_MODE_CONTINUOUS | 1       | 990       | 1010      | 1000         | 10000          | 10            |
+      | 1000       | TRADING_MODE_CONTINUOUS | 100     | 990       | 1010      | 1000         | 10000          | 10            |
 
   Scenario: When trying to exit opening auction liquidity monitoring is triggered due to insufficient supplied stake  (0026-AUCT-001,0026-AUCT-004, 0026-AUCT-005)
 
@@ -213,7 +213,7 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
     Then the auction ends with a traded volume of "10" at a price of "1000"
     And the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 1000       | TRADING_MODE_CONTINUOUS | 1       | 990       | 1010      | 1000         | 1000           | 10            |
+      | 1000       | TRADING_MODE_CONTINUOUS | 100     | 990       | 1010      | 1000         | 1000           | 10            |
 
   Scenario: Once market is in continuous trading mode: post a persistent order that should trigger liquidity auction (not enough target stake), appropriate event is sent and market in TRADING_MODE_MONITORING_AUCTION (0026-AUCT-001, 0026-AUCT-005)
     Given the following network parameters are set:
@@ -240,7 +240,7 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
     Then the auction ends with a traded volume of "10" at a price of "1000"
     And the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 1000       | TRADING_MODE_CONTINUOUS | 1       | 990       | 1010      | 1000         | 1000           | 10            |
+      | 1000       | TRADING_MODE_CONTINUOUS | 100     | 990       | 1010      | 1000         | 1000           | 10            |
 
     Then the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
@@ -288,7 +288,7 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
     Then the auction ends with a traded volume of "10" at a price of "1000"
     And the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 1000       | TRADING_MODE_CONTINUOUS | 1       | 990       | 1010      | 1000         | 1000           | 10            |
+      | 1000       | TRADING_MODE_CONTINUOUS | 100     | 990       | 1010      | 1000         | 1000           | 10            |
 
     Then the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference | error                           |
@@ -321,7 +321,7 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
     Then the auction ends with a traded volume of "1" at a price of "1000"
     And the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 1000       | TRADING_MODE_CONTINUOUS | 1       | 990       | 1010      | 100          | 2000           | 1             |
+      | 1000       | TRADING_MODE_CONTINUOUS | 100     | 990       | 1010      | 100          | 2000           | 1             |
 
     Then the parties should have the following profit and loss:
       | party    | volume | unrealised pnl | realised pnl |
@@ -373,7 +373,7 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
     Then the auction ends with a traded volume of "10" at a price of "1000"
     And the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 1000       | TRADING_MODE_CONTINUOUS | 1       | 990       | 1010      | 1000         | 1000           | 10            |
+      | 1000       | TRADING_MODE_CONTINUOUS | 100     | 990       | 1010      | 1000         | 1000           | 10            |
 
     When the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference | error                                                       |
@@ -386,7 +386,7 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
     Then the network moves ahead "5" blocks
     And the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 1000       | TRADING_MODE_CONTINUOUS | 1       | 990       | 1010      | 1000         | 1000           | 10            |
+      | 1000       | TRADING_MODE_CONTINUOUS | 100     | 990       | 1010      | 1000         | 1000           | 10            |
 
   Scenario: Once market is in continuous trading mode: enter liquidity monitoring auction -> extend with price monitoring auction -> leave auction mode (0026-AUCT-001, 0068-MATC-033,0026-AUCT-005)
 
@@ -414,7 +414,7 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
     Then the auction ends with a traded volume of "10" at a price of "1000"
     And the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 1000       | TRADING_MODE_CONTINUOUS | 1       | 990       | 1010      | 1000         | 1000           | 10            |
+      | 1000       | TRADING_MODE_CONTINUOUS | 100     | 990       | 1010      | 1000         | 1000           | 10            |
 
     # If the order traded there'd be insufficient liquidity for the market to operate, hence the order doesn't trade
     # and the market enters a liquidity monitoring auction
@@ -425,7 +425,7 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
 
     Then the market data for the market "ETH/DEC21" should be:
       | trading mode                    | auction trigger           | horizon | min bound | max bound |
-      | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY | 1       | 990       | 1010      |
+      | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY | 100     | 990       | 1010      |
 
     When the network moves ahead "11" blocks
     Then the parties place the following orders:
@@ -460,7 +460,7 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
     When the network moves ahead "301" blocks
     Then the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            | auction trigger             | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 1020       | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 1       | 1010      | 1030      | 3060         | 4080           | 30            |
+      | 1020       | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 100     | 1010      | 1030      | 3060         | 4080           | 30            |
 
   Scenario: Once market is in continuous trading mode: enter liquidity monitoring auction -> extend with price monitoring auction -> extend with liquidity monitoring -> leave auction mode (0026-AUCT-001, 0068-MATC-033,0026-AUCT-005)
     Given the following network parameters are set:
@@ -487,7 +487,7 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
     Then the auction ends with a traded volume of "10" at a price of "1000"
     And the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 1000       | TRADING_MODE_CONTINUOUS | 1       | 990       | 1010      | 1000         | 1000           | 10            |
+      | 1000       | TRADING_MODE_CONTINUOUS | 100     | 990       | 1010      | 1000         | 1000           | 10            |
 
     When the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference   |
@@ -576,7 +576,7 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
     Then the auction ends with a traded volume of "10" at a price of "1000"
     And the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 1000       | TRADING_MODE_CONTINUOUS | 1       | 990       | 1010      | 1000         | 2000           | 10            |
+      | 1000       | TRADING_MODE_CONTINUOUS | 100     | 990       | 1010      | 1000         | 2000           | 10            |
 
     When the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
@@ -603,7 +603,7 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
     And the network moves ahead "1" blocks
     Then the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 1020       | TRADING_MODE_CONTINUOUS | 1       | 1010      | 1030      | 3060         | 4000           | 30            |
+      | 1020       | TRADING_MODE_CONTINUOUS | 100     | 1010      | 1030      | 3060         | 4000           | 30            |
 
   Scenario: Once market is in continuous trading mode: enter liquidity monitoring auction -> extend with price monitoring auction -> extend with liquidity auction -> leave auction mode (0026-AUCT-001, 0068-MATC-033, 0026-AUCT-005)
 
@@ -627,7 +627,7 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
     Then the auction ends with a traded volume of "10" at a price of "1000"
     And the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 1000       | TRADING_MODE_CONTINUOUS | 1       | 990       | 1010      | 1000         | 1000           | 10            |
+      | 1000       | TRADING_MODE_CONTINUOUS | 100     | 990       | 1010      | 1000         | 1000           | 10            |
 
     # Triggering liquidity monitoring auction
     When the parties place the following orders:

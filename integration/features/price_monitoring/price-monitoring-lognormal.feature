@@ -6,7 +6,7 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
       | horizon | probability | auction extension |
       | 60      | 0.95        | 240               |
       | 600     | 0.99        | 360               |
-    And the price monitoring updated every "60" seconds named "my-price-monitoring-2":
+    And the price monitoring named "my-price-monitoring-2":
       | horizon | probability | auction extension |
       | 60      | 0.95        | 240               |
       | 120     | 0.99        | 360               |
