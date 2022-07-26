@@ -30,7 +30,6 @@ const (
 	MarketTargetStakeScalingFactor                  = "market.stake.target.scalingFactor"
 	MarketValueWindowLength                         = "market.value.windowLength"
 	MarketPriceMonitoringDefaultParameters          = "market.monitor.price.defaultParameters"
-	MarketPriceMonitoringUpdateFrequency            = "market.monitor.price.updateFrequency"
 	MarketLiquidityProvisionShapesMaxSize           = "market.liquidityProvision.shapes.maxSize"
 	MarketMinLpStakeQuantumMultiple                 = "market.liquidityProvision.minLpStakeQuantumMultiple"
 
@@ -164,7 +163,6 @@ var AllKeys = map[string]struct{}{
 	MarketTargetStakeTimeWindow:                              {},
 	MarketTargetStakeScalingFactor:                           {},
 	MarketPriceMonitoringDefaultParameters:                   {},
-	MarketPriceMonitoringUpdateFrequency:                     {},
 	MarketMinLpStakeQuantumMultiple:                          {},
 	RewardAsset:                                              {},
 	GovernanceProposalMarketMinClose:                         {},
