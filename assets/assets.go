@@ -271,10 +271,6 @@ func (s *Service) ApplyAssetUpdate(ctx context.Context, assetID string) error {
 		return ErrAssetDoesNotExist
 	}
 
-	if !updatedAsset.IsValid() {
-		return ErrAssetInvalid
-	}
-
 	s.amu.Lock()
 	defer s.amu.Unlock()
 
@@ -285,6 +281,7 @@ func (s *Service) ApplyAssetUpdate(ctx context.Context, assetID string) error {
 	if err := currentAsset.Update(updatedAsset); err != nil {
 		s.log.Panic("couldn't update the asset", logging.Error(err))
 	}
+
 	delete(s.pendingAssetUpdates, assetID)
 	s.ass.changedActive = true
 	s.ass.changedPendingUpdates = true

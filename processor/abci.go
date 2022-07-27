@@ -1373,7 +1373,11 @@ func (app *App) enactAssetUpdate(_ context.Context, prop *types.Proposal, update
 				)
 			}
 			asset, _ := asset.ERC20()
-			_, signature, err = asset.SignSetAssetLimits(nonce)
+			_, signature, err = asset.SignSetAssetLimits(
+				nonce,
+				updatedAsset.Details.GetERC20().LifetimeLimit.Clone(),
+				updatedAsset.Details.GetERC20().WithdrawThreshold.Clone(),
+			)
 			if err != nil {
 				app.log.Panic("couldn't to sign transaction to set asset limits, is the node properly configured as a validator?",
 					logging.AssetID(updatedAsset.ID),

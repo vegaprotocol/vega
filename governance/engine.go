@@ -968,11 +968,10 @@ func (e *Engine) updatedAssetFromProposal(p *proposal) (*types.Asset, types.Prop
 		newAsset.Details.Source = &types.AssetDetailsErc20{
 			ERC20: &types.ERC20{
 				ContractAddress:   erc20.Address(),
-				LifetimeLimit:     src.ERC20Update.LifetimeLimit,
-				WithdrawThreshold: src.ERC20Update.WithdrawThreshold,
+				LifetimeLimit:     src.ERC20Update.LifetimeLimit.Clone(),
+				WithdrawThreshold: src.ERC20Update.WithdrawThreshold.Clone(),
 			},
 		}
-		fmt.Printf("UPDATING ASSET: %v\n", src.ERC20Update.String())
 	default:
 		return nil, types.ProposalErrorInvalidAsset, ErrUnsupportedAssetSourceType
 	}

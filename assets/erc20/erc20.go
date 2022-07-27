@@ -197,11 +197,10 @@ func (e *ERC20) SignListAsset() (msg []byte, sig []byte, err error) {
 	return bundle.Message, bundle.Signature, nil
 }
 
-func (e *ERC20) SignSetAssetLimits(nonce *num.Uint) (msg []byte, sig []byte, err error) {
+func (e *ERC20) SignSetAssetLimits(nonce *num.Uint, lifetimeLimit *num.Uint, withdrawThreshold *num.Uint) (msg []byte, sig []byte, err error) {
 	bridgeAddress := e.ethClient.CollateralBridgeAddress().Hex()
-	source := e.asset.Details.GetERC20()
 	bundle, err := bridges.NewERC20Logic(e.wallet, bridgeAddress).
-		SetAssetLimits(e.address, source.LifetimeLimit, source.WithdrawThreshold, nonce)
+		SetAssetLimits(e.address, lifetimeLimit, withdrawThreshold, nonce)
 	if err != nil {
 		return nil, nil, err
 	}
