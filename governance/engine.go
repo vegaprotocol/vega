@@ -972,6 +972,7 @@ func (e *Engine) updatedAssetFromProposal(p *proposal) (*types.Asset, types.Prop
 				WithdrawThreshold: src.ERC20Update.WithdrawThreshold,
 			},
 		}
+		fmt.Printf("UPDATING ASSET: %v\n", src.ERC20Update.String())
 	default:
 		return nil, types.ProposalErrorInvalidAsset, ErrUnsupportedAssetSourceType
 	}

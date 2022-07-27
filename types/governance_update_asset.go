@@ -60,7 +60,9 @@ func (a ProposalTermsUpdateAsset) DeepClone() proposalTerm {
 func NewUpdateAssetFromProto(p *vegapb.ProposalTerms_UpdateAsset) (*ProposalTermsUpdateAsset, error) {
 	var updateAsset *UpdateAsset
 	if p.UpdateAsset != nil {
-		updateAsset = &UpdateAsset{}
+		updateAsset = &UpdateAsset{
+			AssetID: p.UpdateAsset.GetAssetId(),
+		}
 
 		if p.UpdateAsset.Changes != nil {
 			var err error
