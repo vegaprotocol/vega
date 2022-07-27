@@ -49,7 +49,7 @@ func StrictParseTable(dt *godog.Table, required, optional []string) []RowWrapper
 		panic("A table is required.")
 	}
 
-	if len(required) != 0 {
+	if len(required)+len(optional) != 0 {
 		err := verifyTableIntegrity(required, optional, dt.Rows[0])
 		if err != nil {
 			panic(err)
