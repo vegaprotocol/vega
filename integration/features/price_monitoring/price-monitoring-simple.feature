@@ -358,8 +358,8 @@ Feature: Price monitoring test using simple risk model
     Then time is updated to "2020-10-16T00:22:11Z"
 
     Then the market data for the market "ETH/DEC20" should be:
-      | mark price | trading mode            | auction trigger             | extension trigger           | target stake | supplied stake | auction extension |
-      | 120        | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | AUCTION_TRIGGER_UNSPECIFIED | 660          | 660            | 0                 |  
+      | mark price | trading mode            | auction trigger             | extension trigger           | target stake | supplied stake |
+      | 120        | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | AUCTION_TRIGGER_UNSPECIFIED | 660          | 660            |
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
