@@ -60,6 +60,13 @@ func (t *Topology) RotateEthereumKey(
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
+	t.log.Debug("Adding Ethereum key rotation",
+		logging.String("nodeID", nodeID),
+		logging.Uint64("currentBlockHeight", currentBlockHeight),
+		logging.Uint64("targetBlock", kr.TargetBlock),
+		logging.String("newAddress", kr.NewAddress),
+	)
+
 	node, ok := t.validators[nodeID]
 	if !ok {
 		return fmt.Errorf("failed to rotate ethereum key for non existing validator %q", nodeID)
@@ -86,6 +93,13 @@ func (t *Topology) RotateEthereumKey(
 		NewAddress: kr.NewAddress,
 	})
 
+	t.log.Debug("Successfully added Ethereum key rotation to pending key rotations",
+		logging.String("nodeID", nodeID),
+		logging.Uint64("currentBlockHeight", currentBlockHeight),
+		logging.Uint64("targetBlock", kr.TargetBlock),
+		logging.String("newAddress", kr.NewAddress),
+	)
+
 	return nil
 }
 
@@ -111,13 +125,22 @@ func (t *Topology) GetPendingEthereumKeyRotation(blockHeight uint64, nodeID stri
 }
 
 func (t *Topology) ethereumKeyRotationBeginBlockLocked(ctx context.Context) {
+	t.log.Debug("Trying to apply pending Ethereum key rotations", logging.Uint64("currentBlockHeight", t.currentBlockHeight))
+
 	// key swaps should run in deterministic order
 	rotations := t.pendingEthKeyRotations.get(t.currentBlockHeight)
 	if len(rotations) == 0 {
 		return
 	}
 
+	t.log.Debug("Applying pending Ethereum key rotations", logging.Int("count", len(rotations)))
+
 	for _, r := range rotations {
+		t.log.Debug("Applying Ethereum key rotation",
+			logging.String("nodeID", r.NodeID),
+			logging.String("newAddress", r.NewAddress),
+		)
+
 		data, ok := t.validators[r.NodeID]
 		if !ok {
 			// this should actually happen if validator was removed due to poor performance
@@ -140,6 +163,12 @@ func (t *Topology) ethereumKeyRotationBeginBlockLocked(ctx context.Context) {
 			r.NewAddress,
 			t.currentBlockHeight,
 		))
+
+		t.log.Debug("Applied Ethereum key rotation",
+			logging.String("nodeID", r.NodeID),
+			logging.String("oldAddress", oldAddress),
+			logging.String("newAddress", r.NewAddress),
+		)
 	}
 
 	delete(t.pendingPubKeyRotations, t.currentBlockHeight)
