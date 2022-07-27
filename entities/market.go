@@ -257,7 +257,6 @@ func (s PriceMonitoringSettings) ToProto() *vega.PriceMonitoringSettings {
 		Parameters: &vega.PriceMonitoringParameters{
 			Triggers: triggers,
 		},
-		UpdateFrequency: 0,
 	}
 }
 
@@ -268,8 +267,7 @@ func priceMonitoringSettingsFromProto(pms *vega.PriceMonitoringSettings) (PriceM
 
 	parameters := priceMonitoringParametersFromProto(pms.Parameters)
 	return PriceMonitoringSettings{
-		Parameters:      &parameters,
-		UpdateFrequency: pms.UpdateFrequency,
+		Parameters: &parameters,
 	}, nil
 }
 

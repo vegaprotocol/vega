@@ -116,6 +116,26 @@ func (mr *MockTradingDataServiceClientV2MockRecorder) GetERC20MultiSigSignerRemo
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetERC20MultiSigSignerRemovedBundles", reflect.TypeOf((*MockTradingDataServiceClientV2)(nil).GetERC20MultiSigSignerRemovedBundles), varargs...)
 }
 
+// GetERC20SetAssetLimitsBundle mocks base method.
+func (m *MockTradingDataServiceClientV2) GetERC20SetAssetLimitsBundle(arg0 context.Context, arg1 *v2.GetERC20SetAssetLimitsBundleRequest, arg2 ...grpc.CallOption) (*v2.GetERC20SetAssetLimitsBundleResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "GetERC20SetAssetLimitsBundle", varargs...)
+	ret0, _ := ret[0].(*v2.GetERC20SetAssetLimitsBundleResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetERC20SetAssetLimitsBundle indicates an expected call of GetERC20SetAssetLimitsBundle.
+func (mr *MockTradingDataServiceClientV2MockRecorder) GetERC20SetAssetLimitsBundle(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetERC20SetAssetLimitsBundle", reflect.TypeOf((*MockTradingDataServiceClientV2)(nil).GetERC20SetAssetLimitsBundle), varargs...)
+}
+
 // GetEpoch mocks base method.
 func (m *MockTradingDataServiceClientV2) GetEpoch(arg0 context.Context, arg1 *v2.GetEpochRequest, arg2 ...grpc.CallOption) (*v2.GetEpochResponse, error) {
 	m.ctrl.T.Helper()

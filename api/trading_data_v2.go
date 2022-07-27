@@ -722,6 +722,82 @@ func (t *tradingDataServiceV2) GetERC20MultiSigSignerRemovedBundles(ctx context.
 	}, nil
 }
 
+func (t *tradingDataServiceV2) GetERC20SetAssetLimitsBundle(ctx context.Context, req *v2.GetERC20SetAssetLimitsBundleRequest) (*v2.GetERC20SetAssetLimitsBundleResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("GetERC20SetAssetLimitsBundleV2")()
+	if len(req.ProposalId) <= 0 {
+		return nil, ErrMissingAssetID
+	}
+
+	if t.governanceService == nil {
+		return nil, errors.New("sql asset store not available")
+	}
+
+	// first here we gonna get the proposal by its ID,
+	proposal, err := t.governanceService.GetProposalByID(ctx, req.ProposalId)
+	if err != nil {
+		return nil, apiError(codes.NotFound, err)
+	}
+
+	if proposal.Terms.GetUpdateAsset() == nil {
+		return nil, apiError(codes.InvalidArgument, errors.New("not an update asset proposal"))
+	}
+	if proposal.Terms.GetUpdateAsset().GetChanges().GetErc20() == nil {
+		return nil, apiError(codes.InvalidArgument, errors.New("not an update erc20 asset proposal"))
+
+	}
+
+	if t.notaryService == nil {
+		return nil, errors.New("sql notary store not available")
+	}
+
+	// then we get the signature and pack them altogether
+	signatures, err := t.notaryService.GetByResourceID(ctx, req.ProposalId)
+	if err != nil {
+		return nil, apiError(codes.Internal, err)
+	}
+
+	// now we pack them
+	pack := "0x"
+	for _, v := range signatures {
+		pack = fmt.Sprintf("%v%v", pack, hex.EncodeToString(v.Sig))
+	}
+
+	if t.assetService == nil {
+		return nil, errors.New("sql asset store not available")
+	}
+
+	// first here we gonna get the proposal by its ID,
+	asset, err := t.assetService.GetByID(ctx, proposal.Terms.GetUpdateAsset().AssetId)
+	if err != nil {
+		return nil, apiError(codes.NotFound, err)
+	}
+
+	var address string
+	if asset.ERC20Contract != "" {
+		address = asset.ERC20Contract
+	} else {
+		return nil, fmt.Errorf("invalid asset source")
+	}
+
+	if len(address) <= 0 {
+		return nil, fmt.Errorf("invalid erc20 token contract address")
+	}
+
+	nonce, err := num.UintFromHex("0x" + strings.TrimLeft(req.ProposalId, "0"))
+	if err != nil {
+		return nil, err
+	}
+
+	return &v2.GetERC20SetAssetLimitsBundleResponse{
+		AssetSource:   address,
+		Nonce:         nonce.String(),
+		VegaAssetId:   asset.ID.String(),
+		Signatures:    pack,
+		LifetimeLimit: proposal.Terms.GetUpdateAsset().GetChanges().GetErc20().LifetimeLimit,
+		Threshold:     proposal.Terms.GetUpdateAsset().GetChanges().GetErc20().WithdrawThreshold,
+	}, nil
+}
+
 func (t *tradingDataServiceV2) GetERC20ListAssetBundle(ctx context.Context, req *v2.GetERC20ListAssetBundleRequest) (*v2.GetERC20ListAssetBundleResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("GetERC20ListAssetBundleV2")()
 

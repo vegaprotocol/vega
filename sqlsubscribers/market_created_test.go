@@ -119,7 +119,6 @@ func getTestMarket() types.Market {
 					},
 				},
 			},
-			UpdateFrequency: 0,
 		},
 		LiquidityMonitoringParameters: &types.LiquidityMonitoringParameters{
 			TargetStakeParameters: &types.TargetStakeParameters{

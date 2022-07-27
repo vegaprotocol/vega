@@ -31,7 +31,6 @@ var accountTypeToName = map[vega.AccountType]string{
 	vega.AccountType_ACCOUNT_TYPE_FEES_INFRASTRUCTURE:        "FeeInfrastructure",
 	vega.AccountType_ACCOUNT_TYPE_FEES_LIQUIDITY:             "FeeLiquidity",
 	vega.AccountType_ACCOUNT_TYPE_FEES_MAKER:                 "FeeMaker",
-	vega.AccountType_ACCOUNT_TYPE_LOCK_WITHDRAW:              "LockWithdraw",
 	vega.AccountType_ACCOUNT_TYPE_BOND:                       "Bond",
 	vega.AccountType_ACCOUNT_TYPE_EXTERNAL:                   "External",
 	vega.AccountType_ACCOUNT_TYPE_GLOBAL_INSURANCE:           "GlobalInsurance",
@@ -52,7 +51,6 @@ var nameToAccountType = map[string]vega.AccountType{
 	"FeeInfrastructure":       vega.AccountType_ACCOUNT_TYPE_FEES_INFRASTRUCTURE,
 	"FeeLiquidity":            vega.AccountType_ACCOUNT_TYPE_FEES_LIQUIDITY,
 	"FeeMaker":                vega.AccountType_ACCOUNT_TYPE_FEES_MAKER,
-	"LockWithdraw":            vega.AccountType_ACCOUNT_TYPE_LOCK_WITHDRAW,
 	"Bond":                    vega.AccountType_ACCOUNT_TYPE_BOND,
 	"External":                vega.AccountType_ACCOUNT_TYPE_EXTERNAL,
 	"GlobalInsurance":         vega.AccountType_ACCOUNT_TYPE_GLOBAL_INSURANCE,
@@ -68,7 +66,7 @@ func MarshalAccountType(t vega.AccountType) graphql.ContextMarshaler {
 	f := func(ctx context.Context, w io.Writer) error {
 		s, ok := accountTypeToName[t]
 		if !ok {
-			return fmt.Errorf("Unknown account type %v", t)
+			return fmt.Errorf("unknown account type %v", t)
 		}
 
 		io.WriteString(w, strconv.Quote(s))
@@ -80,7 +78,7 @@ func MarshalAccountType(t vega.AccountType) graphql.ContextMarshaler {
 func UnmarshalAccountType(ctx context.Context, v interface{}) (vega.AccountType, error) {
 	s, ok := v.(string)
 	if !ok {
-		return vega.AccountType_ACCOUNT_TYPE_UNSPECIFIED, fmt.Errorf("Expected account type to be a string")
+		return vega.AccountType_ACCOUNT_TYPE_UNSPECIFIED, fmt.Errorf("expected account type to be a string")
 	}
 
 	var ty vega.AccountType

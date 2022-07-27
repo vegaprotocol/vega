@@ -1,4 +1,4 @@
-// Copyright (c) 2022 Gobalsky Labs Limited
+// (c) 2022 Gobalsky Labs Limited
 //
 // Use of this software is governed by the Business Source License included
 // in the LICENSE file and at https://www.mariadb.com/bsl11.
@@ -244,7 +244,6 @@ func getTestMarket() *vega.Market {
 					},
 				},
 			},
-			UpdateFrequency: 0,
 		},
 		LiquidityMonitoringParameters: &vega.LiquidityMonitoringParameters{
 			TargetStakeParameters: &vega.TargetStakeParameters{

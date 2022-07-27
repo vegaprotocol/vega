@@ -309,8 +309,6 @@ type PriceMonitoringParameters struct {
 type PriceMonitoringSettings struct {
 	// Specified a set of PriceMonitoringParameters to be use for price monitoring purposes
 	Parameters *PriceMonitoringParameters `json:"parameters"`
-	// How often (in seconds) the price monitoring bounds should be updated
-	UpdateFrequencySecs int `json:"updateFrequencySecs"`
 }
 
 // PriceMonitoringParameters holds together price projection horizon τ, probability level p, and auction extension duration
