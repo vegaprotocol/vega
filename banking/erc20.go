@@ -189,16 +189,14 @@ func (e *Engine) WithdrawERC20(
 		e.broker.Send(events.NewWithdrawalEvent(ctx, *w))
 		return ErrWrongAssetUsedForERC20Withdraw
 	} else if threshold := a.Type().Details.GetERC20().WithdrawThreshold; threshold != nil && threshold.NEQ(num.Zero()) {
+		// a delay will be applied on this withdrawal
 		if threshold.LT(amount) {
-			w.Status = types.WithdrawalStatusRejected
-			e.broker.Send(events.NewWithdrawalEvent(ctx, *w))
-			e.log.Debug("withdraw threshold breached",
+			e.log.Debug("withdraw threshold breached, delay will be applied",
 				logging.PartyID(party),
 				logging.BigUint("threshold", threshold),
 				logging.BigUint("amount", amount),
 				logging.AssetID(assetID),
 				logging.Error(err))
-			return fmt.Errorf("witdrawal threshold breached, requested(%d), threshold(%d)", amount, threshold)
 		}
 	}
 
