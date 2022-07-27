@@ -21,7 +21,6 @@ func DebugAllEvents(broker *stubs.BrokerStub, log *logging.Logger) {
 	log.Info("DUMPING EVENTS")
 	data := broker.GetAllEvents()
 	for _, a := range data {
-
 		log.Info(a.Type().String())
 	}
 }

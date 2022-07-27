@@ -75,7 +75,8 @@ func TheMarketDataShouldBe(engine Execution, mID string, data *godog.Table) erro
 		"market value proxy",
 		"average entry valuation",
 		"party",
-		"equity share"})
+		"equity share",
+	})
 
 	// create a copy (deep copy), override the values we've gotten with those from the table so we can compare the objects
 	expect := mappedMD(actual)

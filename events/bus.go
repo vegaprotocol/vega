@@ -371,7 +371,7 @@ func (t Type) String() string {
 	return s
 }
 
-// TryFromString tries to parse a raw string into an event type, false indicates that
+// TryFromString tries to parse a raw string into an event type, false indicates that.
 func TryFromString(s string) (*Type, bool) {
 	for k, v := range eventStrings {
 		if strings.EqualFold(s, v) {
@@ -379,7 +379,6 @@ func TryFromString(s string) (*Type, bool) {
 		}
 	}
 	return nil, false
-
 }
 
 // ProtoToInternal converts the proto message enum to our internal constants
