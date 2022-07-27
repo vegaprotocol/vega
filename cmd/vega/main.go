@@ -76,6 +76,7 @@ func Main(ctx context.Context) error {
 		UnsafeResetAll,
 		SnapshotList,
 		AnnounceNode,
+		ProposeProtocolUpgrade,
 		Start,
 		Node,
 	); err != nil {

@@ -158,6 +158,7 @@ var nodeOrder = []types.SnapshotNamespace{
 	types.MarketActivityTrackerSnapshot,
 	types.ERC20MultiSigTopologySnapshot,
 	types.PoWSnapshot,
+	types.ProtocolUpgradeSnapshot,
 }
 
 // New returns a new snapshot engine.
@@ -645,6 +646,15 @@ func (e *Engine) Snapshot(ctx context.Context) (b []byte, errlol error) {
 	}
 	// recent counter
 	e.current = e.interval
+	return e.snapshotNow(ctx, true)
+}
+
+// SnapshotNow takes a snapshot regardless of current block height as requested.
+func (e *Engine) SnapshotNow(ctx context.Context) (b []byte, errlol error) {
+	return e.snapshotNow(ctx, false)
+}
+
+func (e *Engine) snapshotNow(ctx context.Context, saveAsync bool) (b []byte, errlol error) {
 	defer metrics.StartSnapshot("all")()
 	e.avlLock.Lock()
 
@@ -821,15 +831,21 @@ func (e *Engine) Snapshot(ctx context.Context) (b []byte, errlol error) {
 		return e.lastSnapshotHash, nil
 	}
 
-	snapshot := e.avl.WorkingHash()
-	go func() {
+	save := func() {
 		if err := e.saveCurrentTree(); err != nil {
 			// If this fails we are screwed. The tree version is used to construct the root-hash so if we can't save it,
 			// the *next* snapshot we take will mismatch so we need to fail hard here.
 			e.log.Panic("failed to save snapshot to disk", logging.Error(err))
 		}
 		e.avlLock.Unlock()
-	}()
+	}
+
+	snapshot := e.avl.WorkingHash()
+	if saveAsync {
+		go save()
+	} else {
+		save()
+	}
 
 	e.log.Info("snapshot taken", logging.Int64("height", height), logging.String("hash", hex.EncodeToString(snapshot)))
 	return snapshot, nil

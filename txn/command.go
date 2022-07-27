@@ -61,6 +61,8 @@ const (
 	ValidatorHeartbeatCommand Command = 0x56
 	// RotateEthereumKeySubmissionCommand ...
 	RotateEthereumKeySubmissionCommand Command = 0x57
+	// ProtocolUpgradeCommand Command ...
+	ProtocolUpgradeCommand Command = 0x58
 )
 
 var commandName = map[Command]string{
@@ -86,6 +88,7 @@ var commandName = map[Command]string{
 	CancelTransferFundsCommand:         "Cancel Transfer Funds",
 	ValidatorHeartbeatCommand:          "Validator Heartbeat",
 	RotateEthereumKeySubmissionCommand: "Ethereum Key Rotate Submission",
+	ProtocolUpgradeCommand:             "Protocol Upgrade",
 }
 
 func (cmd Command) IsValidatorCommand() bool {
