@@ -5,7 +5,7 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
     And the price monitoring named "my-price-monitoring":
       | horizon | probability | auction extension |
       | 60      | 0.95        | 240               |
-      | 120     | 0.99        | 360               |
+      | 600     | 0.99        | 360               |
     And the log normal risk model named "my-log-normal-risk-model":
       | risk aversion | tau                    | mu | r     | sigma |
       | 0.000001      | 0.00011407711613050422 | 0  | 0.016 | 2.0   |
@@ -42,15 +42,10 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
     And the mark price should be "100000" for the market "ETH/DEC20"
 
-    # And the order book should have the following volumes for market "ETH/DEC20":
-    #   | side | price  | volume   |
-    #   | sell | 200000 | 901      |
-    #   | buy  | 1      | 180000001|
-
     And the market data for the market "ETH/DEC20" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
       | 100000     | TRADING_MODE_CONTINUOUS | 60      | 99461     | 100541    | 74340        | 0       | 1             |
-      | 100000     | TRADING_MODE_CONTINUOUS | 120     | 99000     | 101008    | 74340        | 0       | 1             |
+      | 100000     | TRADING_MODE_CONTINUOUS | 600     | 97776     | 102267    | 74340        | 0       | 1             |
 
     And the accumulated infrastructure fees should be "0" for the asset "ETH"
     And the accumulated liquidity fees should be "0" for the market "ETH/DEC20"
@@ -69,7 +64,7 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
  And the market data for the market "ETH/DEC20" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
       | 100000     | TRADING_MODE_CONTINUOUS | 60      | 99461     | 100541    | 148680        | 0       | 2             |
-      | 100000     | TRADING_MODE_CONTINUOUS | 120     | 99000     | 101008    | 148680        | 0       | 2             |
+      | 100000     | TRADING_MODE_CONTINUOUS | 600     | 97776     | 102267    | 148680        | 0       | 2             |
 
     And the order book should have the following volumes for market "ETH/DEC20":
       | side | price  | volume   |
@@ -146,11 +141,6 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
       | party2 | ETH/DEC20 | buy  | 1      | 111000 | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
     Then the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC20"
-
-    # And the market data for the market "ETH/DEC20" should be:
-    #   | mark price | trading mode                    | horizon | min bound | max bound | target stake | supplied stake | open interest |
-    #   | 100000     | TRADING_MODE_MONITORING_AUCTION | 60      | 99461     | 100541    | 247552        | 0              | 2             |
-    #   | 100000     | TRADING_MODE_MONITORING_AUCTION | 120     | 99000     | 101008    | 247552        | 0              | 2             |
 
     And the mark price should be "100000" for the market "ETH/DEC20"
 
@@ -403,7 +393,7 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
     And the market data for the market "ETH/DEC20" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
       | 1000       | TRADING_MODE_CONTINUOUS | 60      | 995       | 1005      | 7434         | 90000000       | 10            |
-      | 1000       | TRADING_MODE_CONTINUOUS | 120     | 990       | 1010      | 7434         | 90000000       | 10            |
+      | 1000       | TRADING_MODE_CONTINUOUS | 600     | 978       | 1022      | 7434         | 90000000       | 10            |
 
   Scenario: Start with low first indicative uncrossing price and much higher final auction price
     Given the parties deposit on asset's general account the following amount:
@@ -439,5 +429,4 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
     And the market data for the market "ETH/DEC20" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
       | 1000000    | TRADING_MODE_CONTINUOUS | 60      | 994606    | 1005415   | 7434000      | 0              | 10            |
-      | 1000000    | TRADING_MODE_CONTINUOUS | 120     | 989997    | 1010088   | 7434000      | 0              | 10            |
-
+      | 1000000    | TRADING_MODE_CONTINUOUS | 600     | 977751    | 1022678   | 7434000      | 0              | 10            |

@@ -395,6 +395,10 @@ func (t *Topology) IsValidatorVegaPubKey(pubkey string) (ok bool) {
 	return false
 }
 
+func (t *Topology) IsSelfTendermintValidator() bool {
+	return t.IsTendermintValidator(t.SelfVegaPubKey())
+}
+
 // IsValidatorVegaPubKey returns true if the given key is a Vega validator public key and the validators is of status Tendermint.
 func (t *Topology) IsTendermintValidator(pubkey string) (ok bool) {
 	t.mu.RLock()
@@ -407,6 +411,19 @@ func (t *Topology) IsTendermintValidator(pubkey string) (ok bool) {
 	}
 
 	return false
+}
+
+func (t *Topology) NumberOfTendermintValidators() uint {
+	t.mu.RLock()
+	defer t.mu.RUnlock()
+
+	count := uint(0)
+	for _, data := range t.validators {
+		if data.status == ValidatorStatusTendermint {
+			count++
+		}
+	}
+	return count
 }
 
 func (t *Topology) BeginBlock(ctx context.Context, req abcitypes.RequestBeginBlock) {

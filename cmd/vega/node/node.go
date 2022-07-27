@@ -273,8 +273,14 @@ func (n *NodeCommand) startAPIs() error {
 
 	n.proxyServer = rest.NewProxyServer(n.Log, n.conf.API)
 
-	if bool(n.conf.Admin.Server.Enabled) && n.conf.IsValidator() {
-		adminServer, err := admin.NewServer(n.Log, n.conf.Admin, n.vegaPaths, n.nodeWalletPassphrase, n.nodeWallets)
+	if n.conf.IsValidator() {
+		adminServer, err := admin.NewValidatorServer(n.Log, n.conf.Admin, n.vegaPaths, n.nodeWalletPassphrase, n.nodeWallets, n.protocol.GetProtocolUpgradeService())
+		if err != nil {
+			return err
+		}
+		n.adminServer = adminServer
+	} else {
+		adminServer, err := admin.NewNonValidatorServer(n.Log, n.conf.Admin, n.vegaPaths, n.protocol.GetProtocolUpgradeService())
 		if err != nil {
 			return err
 		}

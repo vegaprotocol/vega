@@ -5,7 +5,7 @@ Feature: Price monitoring test using simple risk model
     And the price monitoring named "my-price-monitoring":
       | horizon | probability | auction extension |
       | 60      | 0.95        | 240               |
-      | 120     | 0.99        | 360               |
+      | 600     | 0.99        | 360               |
     And the simple risk model named "my-simple-risk-model":
       | long | short | max move up | min move down | probability of trading |
       | 0.11 | 0.1   | 10          | 11            | 0.1                    |
@@ -334,7 +334,7 @@ Feature: Price monitoring test using simple risk model
     And the market data for the market "ETH/DEC20" should be:
       | horizon | min bound | max bound |
       | 60      | 95        | 114       |
-      | 120     | 95        | 114       |
+      | 600     | 99        | 119       |
 
     When the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |

@@ -5,7 +5,7 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
     And the price monitoring named "my-price-monitoring":
       | horizon | probability | auction extension |
       | 5       | 0.95        | 6                 |
-      | 10      | 0.99        | 8                 |
+      | 15      | 0.99        | 8                 |
     And the log normal risk model named "my-log-normal-risk-model":
       | risk aversion | tau                    | mu | r     | sigma |
       | 0.000001      | 0.00011407711613050422 | 0  | 0.016 | 2.0   |
@@ -59,7 +59,7 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
     And the market data for the market "ETH/DEC20" should be:
       | mark price | trading mode            | horizon | min bound | max bound |
       | 100000     | TRADING_MODE_CONTINUOUS | 5       | 99845     | 100156    |
-      | 100000     | TRADING_MODE_CONTINUOUS | 10      | 99711     | 100290    |
+      | 100000     | TRADING_MODE_CONTINUOUS | 15      | 99646     | 100355    |
 
     # We've left opening auction, cancel the orders we had to place on the book to allow for this to happen
     And the parties cancel the following orders:
@@ -86,8 +86,8 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
     # 2nd trigger breached with persistent order -> auction extended by 8s (total auction time no 14s).
     Then the parties place the following orders:
       | party  | market id | side | volume | price  | resulting trades | type       | tif     | reference |
-      | party1 | ETH/DEC20 | sell | 1      | 100291 | 0                | TYPE_LIMIT | TIF_GTC | ref-4     |
-      | party2 | ETH/DEC20 | buy  | 1      | 100291 | 0                | TYPE_LIMIT | TIF_GTC | ref-5     |
+      | party1 | ETH/DEC20 | sell | 1      | 100356 | 0                | TYPE_LIMIT | TIF_GTC | ref-4     |
+      | party2 | ETH/DEC20 | buy  | 1      | 100356 | 0                | TYPE_LIMIT | TIF_GTC | ref-5     |
 
     # T + 10s (last second of the auciton)
     Then time is updated to "2020-10-16T00:00:20Z"
@@ -99,7 +99,7 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
     # T + 1s (auction ended)
     Then time is updated to "2020-10-16T00:00:22Z"
 
-    And the mark price should be "100291" for the market "ETH/DEC20"
+    And the mark price should be "100356" for the market "ETH/DEC20"
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 

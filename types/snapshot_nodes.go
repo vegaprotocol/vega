@@ -280,6 +280,10 @@ type PayloadFutureState struct {
 	FutureState *FutureState
 }
 
+type PayloadProtocolUpgradeProposals struct {
+	Proposals *snapshot.ProtocolUpgradeProposals
+}
+
 type MatchingBook struct {
 	MarketID        string
 	Buy             []*Order
@@ -748,6 +752,8 @@ func PayloadFromProto(p *snapshot.Payload) *Payload {
 		ret.Data = PayloadERC20MultiSigTopologyVerifiedFromProto(dt)
 	case *snapshot.Payload_ProofOfWork:
 		ret.Data = PayloadProofOfWorkFromProto(dt)
+	case *snapshot.Payload_ProtocolUpgradeProposals:
+		ret.Data = PayloadProtocolUpgradeProposalFromProto(dt)
 	}
 
 	return ret
@@ -880,6 +886,8 @@ func (p Payload) IntoProto() *snapshot.Payload {
 	case *snapshot.Payload_Erc20MultisigTopologyVerified:
 		ret.Data = dt
 	case *snapshot.Payload_ProofOfWork:
+		ret.Data = dt
+	case *snapshot.Payload_ProtocolUpgradeProposals:
 		ret.Data = dt
 	}
 	return &ret
@@ -3792,6 +3800,30 @@ func (p *PayloadProofOfWork) Key() string {
 
 func (*PayloadProofOfWork) Namespace() SnapshotNamespace {
 	return PoWSnapshot
+}
+
+func PayloadProtocolUpgradeProposalFromProto(pup *snapshot.Payload_ProtocolUpgradeProposals) *PayloadProtocolUpgradeProposals {
+	return &PayloadProtocolUpgradeProposals{Proposals: pup.ProtocolUpgradeProposals}
+}
+
+func (p *PayloadProtocolUpgradeProposals) IntoProto() *snapshot.Payload_ProtocolUpgradeProposals {
+	return &snapshot.Payload_ProtocolUpgradeProposals{
+		ProtocolUpgradeProposals: p.Proposals,
+	}
+}
+
+func (p *PayloadProtocolUpgradeProposals) plToProto() interface{} {
+	return p.IntoProto()
+}
+
+func (p *PayloadProtocolUpgradeProposals) Key() string {
+	return "protocolUpgradeProposals"
+}
+
+func (*PayloadProtocolUpgradeProposals) isPayload() {}
+
+func (*PayloadProtocolUpgradeProposals) Namespace() SnapshotNamespace {
+	return ProtocolUpgradeSnapshot
 }
 
 // KeyFromPayload is useful in snapshot engine, used by the Payload type, too.

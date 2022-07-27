@@ -85,6 +85,7 @@ type PoWEngine interface {
 type Snapshot interface {
 	Info() ([]byte, int64)
 	Snapshot(ctx context.Context) ([]byte, error)
+	SnapshotNow(ctx context.Context) (b []byte, errlol error)
 	AddProviders(provs ...types.StateProvider)
 	CheckLoaded() (bool, error)
 	ClearAndInitialise() error
@@ -108,6 +109,14 @@ type BlockchainClient interface {
 	Validators(height *int64) ([]*tmtypesint.Validator, error)
 }
 
+type ProtocolUpgradeService interface {
+	BeginBlock(ctx context.Context, blockHeight uint64)
+	UpgradeProposal(ctx context.Context, pk string, upgradeBlockHeight uint64, vegaReleaseTag, dataNodeReleaseTag string) error
+	TimeForUpgrade() bool
+	GetUpgradeStatus() types.UpgradeStatus
+	SetReadyForUpgrade()
+}
+
 type App struct {
 	abci              *abci.App
 	currentTimestamp  time.Time
@@ -128,32 +137,33 @@ type App struct {
 	rates     *ratelimit.Rates
 
 	// service injection
-	assets                Assets
-	banking               Banking
-	broker                Broker
-	witness               Witness
-	evtfwd                EvtForwarder
-	exec                  ExecutionEngine
-	ghandler              *genesis.Handler
-	gov                   GovernanceEngine
-	notary                Notary
-	stats                 Stats
-	time                  TimeService
-	top                   ValidatorTopology
-	netp                  NetworkParameters
-	oracles               *Oracle
-	delegation            DelegationEngine
-	limits                Limits
-	stake                 StakeVerifier
-	stakingAccounts       StakingAccounts
-	checkpoint            Checkpoint
-	spam                  SpamEngine
-	pow                   PoWEngine
-	epoch                 EpochService
-	snapshot              Snapshot
-	stateVar              StateVarEngine
-	cpt                   abci.Tx
-	erc20MultiSigTopology ERC20MultiSigTopology
+	assets                 Assets
+	banking                Banking
+	broker                 Broker
+	witness                Witness
+	evtfwd                 EvtForwarder
+	exec                   ExecutionEngine
+	ghandler               *genesis.Handler
+	gov                    GovernanceEngine
+	notary                 Notary
+	stats                  Stats
+	time                   TimeService
+	top                    ValidatorTopology
+	netp                   NetworkParameters
+	oracles                *Oracle
+	delegation             DelegationEngine
+	limits                 Limits
+	stake                  StakeVerifier
+	stakingAccounts        StakingAccounts
+	checkpoint             Checkpoint
+	spam                   SpamEngine
+	pow                    PoWEngine
+	epoch                  EpochService
+	snapshot               Snapshot
+	stateVar               StateVarEngine
+	cpt                    abci.Tx
+	protocolUpgradeService ProtocolUpgradeService
+	erc20MultiSigTopology  ERC20MultiSigTopology
 
 	nilPow  bool
 	nilSpam bool
@@ -191,6 +201,7 @@ func NewApp(
 	blockchainClient BlockchainClient,
 	erc20MultiSigTopology ERC20MultiSigTopology,
 	version string, // we need the version for snapshot reload
+	protocolUpgradeService ProtocolUpgradeService,
 	codec abci.Codec,
 ) *App {
 	log = log.Named(namedLogger)
@@ -207,33 +218,34 @@ func NewApp(
 			config.Ratelimit.Requests,
 			config.Ratelimit.PerNBlocks,
 		),
-		assets:                assets,
-		banking:               banking,
-		broker:                broker,
-		witness:               witness,
-		evtfwd:                evtfwd,
-		exec:                  exec,
-		ghandler:              ghandler,
-		gov:                   gov,
-		notary:                notary,
-		stats:                 stats,
-		time:                  time,
-		top:                   top,
-		netp:                  netp,
-		oracles:               oracles,
-		delegation:            delegation,
-		limits:                limits,
-		stake:                 stake,
-		checkpoint:            checkpoint,
-		spam:                  spam,
-		pow:                   pow,
-		stakingAccounts:       stakingAccounts,
-		epoch:                 epoch,
-		snapshot:              snapshot,
-		stateVar:              stateVarEngine,
-		version:               version,
-		blockchainClient:      blockchainClient,
-		erc20MultiSigTopology: erc20MultiSigTopology,
+		assets:                 assets,
+		banking:                banking,
+		broker:                 broker,
+		witness:                witness,
+		evtfwd:                 evtfwd,
+		exec:                   exec,
+		ghandler:               ghandler,
+		gov:                    gov,
+		notary:                 notary,
+		stats:                  stats,
+		time:                   time,
+		top:                    top,
+		netp:                   netp,
+		oracles:                oracles,
+		delegation:             delegation,
+		limits:                 limits,
+		stake:                  stake,
+		checkpoint:             checkpoint,
+		spam:                   spam,
+		pow:                    pow,
+		stakingAccounts:        stakingAccounts,
+		epoch:                  epoch,
+		snapshot:               snapshot,
+		stateVar:               stateVarEngine,
+		version:                version,
+		blockchainClient:       blockchainClient,
+		erc20MultiSigTopology:  erc20MultiSigTopology,
+		protocolUpgradeService: protocolUpgradeService,
 	}
 
 	// setup handlers
@@ -260,9 +272,12 @@ func NewApp(
 		HandleCheckTx(txn.RotateKeySubmissionCommand, app.RequireValidatorMasterPubKey).
 		HandleCheckTx(txn.StateVariableProposalCommand, app.RequireValidatorPubKey).
 		HandleCheckTx(txn.ValidatorHeartbeatCommand, app.RequireValidatorPubKey).
-		HandleCheckTx(txn.RotateEthereumKeySubmissionCommand, app.RequireValidatorPubKey)
+		HandleCheckTx(txn.RotateEthereumKeySubmissionCommand, app.RequireValidatorPubKey).
+		HandleCheckTx(txn.ProtocolUpgradeCommand, app.RequireValidatorPubKey)
 
 	app.abci.
+		HandleDeliverTx(txn.ProtocolUpgradeCommand,
+			app.SendEventOnError(app.DeliverProtocolUpgradeCommand)).
 		HandleDeliverTx(txn.AnnounceNodeCommand,
 			app.SendEventOnError(app.DeliverAnnounceNode)).
 		HandleDeliverTx(txn.ValidatorHeartbeatCommand,
@@ -606,6 +621,14 @@ func (app *App) OnBeginBlock(req tmtypes.RequestBeginBlock) (ctx context.Context
 	app.log.Debug("entering begin block", logging.Time("at", time.Now()), logging.Uint64("height", uint64(req.Header.Height)))
 	defer func() { app.log.Debug("leaving begin block", logging.Time("at", time.Now())) }()
 
+	if app.protocolUpgradeService.GetUpgradeStatus().ReadyToUpgrade {
+		// wait until killed
+		for {
+			time.Sleep(1 * time.Second)
+			app.log.Info("application is ready for shutdown")
+		}
+	}
+
 	hash := hex.EncodeToString(req.Hash)
 	app.cBlock = hash
 
@@ -639,6 +662,7 @@ func (app *App) OnBeginBlock(req tmtypes.RequestBeginBlock) (ctx context.Context
 		logging.Int64("height", req.Header.GetHeight()),
 	)
 
+	app.protocolUpgradeService.BeginBlock(ctx, uint64(req.Header.Height))
 	app.top.BeginBlock(ctx, req)
 
 	return ctx, resp
@@ -651,7 +675,19 @@ func (app *App) OnCommit() (resp tmtypes.ResponseCommit) {
 	// call checkpoint _first_ so the snapshot contains the correct checkpoint state.
 	cpt, _ := app.checkpoint.Checkpoint(app.blockCtx, app.currentTimestamp)
 	t0 := time.Now()
-	snapHash, err := app.snapshot.Snapshot(app.blockCtx)
+
+	var snapHash []byte
+	var err error
+	// if there is an approved protocol upgrade proposal and the current block height is later than the proposal's block height then take a snapshot and wait to be killed by the process manager
+	if app.protocolUpgradeService.TimeForUpgrade() {
+		snapHash, err = app.snapshot.SnapshotNow(app.blockCtx)
+		if err == nil {
+			app.protocolUpgradeService.SetReadyForUpgrade()
+		}
+	} else {
+		snapHash, err = app.snapshot.Snapshot(app.blockCtx)
+	}
+
 	if err != nil {
 		app.log.Panic("Failed to create snapshot",
 			logging.Error(err))
@@ -694,7 +730,6 @@ func (app *App) OnCommit() (resp tmtypes.ResponseCommit) {
 	app.log.Debug("apphash calculated", logging.String("response-data", hex.EncodeToString(resp.Data)))
 	app.updateStats()
 	app.setBatchStats()
-
 	return resp
 }
 
@@ -881,6 +916,14 @@ func (app *App) RequireValidatorMasterPubKey(ctx context.Context, tx abci.Tx) er
 		return ErrNodeSignatureWithNonValidatorMasterKey
 	}
 	return nil
+}
+
+func (app *App) DeliverProtocolUpgradeCommand(ctx context.Context, tx abci.Tx) error {
+	pu := &commandspb.ProtocolUpgradeProposal{}
+	if err := tx.Unmarshal(pu); err != nil {
+		return err
+	}
+	return app.protocolUpgradeService.UpgradeProposal(ctx, tx.PubKeyHex(), pu.UpgradeBlockHeight, pu.VegaReleaseTag, pu.DataNodeReleaseTag)
 }
 
 func (app *App) DeliverAnnounceNode(ctx context.Context, tx abci.Tx) error {

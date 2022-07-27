@@ -9,7 +9,7 @@ Feature: Test mark to market settlement
       | name                           | value |
       | market.auction.minimumDuration | 1     |
 
-  Scenario: If settlement amount <= the party’s margin account balance entire settlement amount is transferred from party’s margin account to the market’s temporary settlement account (0003-MTMK-001)
+  Scenario: If settlement amount <= the party’s margin account balance entire settlement amount is transferred from party’s margin account to the market’s temporary settlement account (0003-MTMK-001); check the existence of parties' position record(0006-POSI-027)
     Given the parties deposit on asset's general account the following amount:
       | party  | asset | amount |
       | party1 | ETH   | 10000  |
@@ -44,6 +44,14 @@ Feature: Test mark to market settlement
       | party  | asset | market id | margin | general |
       | party1 | ETH   | ETH/DEC19 | 4921   | 5079    |
       | party2 | ETH   | ETH/DEC19 | 1273   | 8727    |
+
+    # party3 does not have position record exist since party3 does not have either an open position nor active order
+    Then the parties should have the following profit and loss:
+      | party    | volume | unrealised pnl | realised pnl |
+      | aux      | -1     | 0              | 0            |
+      | aux2     | 1      | 0              | 0            |
+      # | party3   | -1     | 0              | 0            |
+      
 
     And the settlement account should have a balance of "0" for the market "ETH/DEC19"
     When the parties place the following orders:
@@ -204,3 +212,4 @@ Feature: Test mark to market settlement
       | party2 | ETH   | ETH/DEC19 | 132    | 9868    |
     And the cumulated balance for all accounts should be worth "330000"
     And the settlement account should have a balance of "0" for the market "ETH/DEC19"
+

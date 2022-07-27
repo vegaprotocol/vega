@@ -32,18 +32,18 @@ import (
 func createPriceMonitor(t *testing.T, ctrl *gomock.Controller) *price.Engine {
 	t.Helper()
 
-	riskModel, settings := createPriceMonitorDeps(t, ctrl)
+	riskModel, auctionState, settings := createPriceMonitorDeps(t, ctrl)
 	statevar := mocks.NewMockStateVarEngine(ctrl)
 	statevar.EXPECT().RegisterStateVariable(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any())
 
-	pm, err := price.NewMonitor("asset", "market", riskModel, settings, statevar, logging.NewTestLogger())
+	pm, err := price.NewMonitor("asset", "market", riskModel, auctionState, settings, statevar, logging.NewTestLogger())
 	require.NoError(t, err)
 	require.NotNil(t, pm)
 
 	return pm
 }
 
-func createPriceMonitorDeps(t *testing.T, ctrl *gomock.Controller) (*mocks.MockRangeProvider, *types.PriceMonitoringSettings) {
+func createPriceMonitorDeps(t *testing.T, ctrl *gomock.Controller) (*mocks.MockRangeProvider, *mocks.MockAuctionState, *types.PriceMonitoringSettings) {
 	t.Helper()
 	riskModel := mocks.NewMockRangeProvider(ctrl)
 	auctionStateMock := mocks.NewMockAuctionState(ctrl)
@@ -57,7 +57,7 @@ func createPriceMonitorDeps(t *testing.T, ctrl *gomock.Controller) (*mocks.MockR
 	auctionStateMock.EXPECT().IsFBA().Return(false).AnyTimes()
 	auctionStateMock.EXPECT().InAuction().Return(false).AnyTimes()
 
-	return riskModel, settings
+	return riskModel, auctionStateMock, settings
 }
 
 func getHash(pe *price.Engine) []byte {
@@ -79,11 +79,11 @@ func TestEmpty(t *testing.T) {
 	state1 := pm1.GetState()
 
 	// Create a new market and restore into it
-	riskModel, settings := createPriceMonitorDeps(t, ctrl)
+	riskModel, auctionState, settings := createPriceMonitorDeps(t, ctrl)
 
 	statevar := mocks.NewMockStateVarEngine(ctrl)
 	statevar.EXPECT().RegisterStateVariable(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(1)
-	pm2, err := price.NewMonitorFromSnapshot("marketID", "assetID", state1, settings, riskModel, statevar, logging.NewTestLogger())
+	pm2, err := price.NewMonitorFromSnapshot("marketID", "assetID", state1, settings, riskModel, auctionState, statevar, logging.NewTestLogger())
 	require.NoError(t, err)
 	require.NotNil(t, pm2)
 
@@ -130,10 +130,10 @@ func TestChangedState(t *testing.T) {
 	assert.Len(t, state.PricesNow, 1)
 	assert.Len(t, state.PricesPast, 9)
 
-	riskModel, settings := createPriceMonitorDeps(t, ctrl)
+	riskModel, auctionState, settings := createPriceMonitorDeps(t, ctrl)
 	statevar := mocks.NewMockStateVarEngine(ctrl)
 	statevar.EXPECT().RegisterStateVariable(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(1)
-	pm2, err := price.NewMonitorFromSnapshot("marketID", "assetID", state, settings, riskModel, statevar, logging.NewTestLogger())
+	pm2, err := price.NewMonitorFromSnapshot("marketID", "assetID", state, settings, riskModel, auctionState, statevar, logging.NewTestLogger())
 	require.NoError(t, err)
 	require.NotNil(t, pm2)
 

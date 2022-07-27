@@ -99,7 +99,11 @@ func ChainIDFromContext(ctx context.Context) (string, error) {
 func TxHashFromContext(ctx context.Context) (string, error) {
 	cv := ctx.Value(txHashKey)
 	if cv == nil {
-		return "", ErrTxHashMissing
+		// if this is not happening in the context of a transaction, use the hash of the block
+		cv = ctx.Value(traceIDKey)
+		if cv == nil {
+			return "", ErrTxHashMissing
+		}
 	}
 	c, ok := cv.(string)
 	if !ok {

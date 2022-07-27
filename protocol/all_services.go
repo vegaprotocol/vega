@@ -45,6 +45,7 @@ import (
 	oracleAdaptors "code.vegaprotocol.io/vega/oracles/adaptors"
 	"code.vegaprotocol.io/vega/pow"
 	"code.vegaprotocol.io/vega/processor"
+	"code.vegaprotocol.io/vega/protocolupgrade"
 	"code.vegaprotocol.io/vega/rewards"
 	"code.vegaprotocol.io/vega/snapshot"
 	"code.vegaprotocol.io/vega/spam"
@@ -95,14 +96,15 @@ type allServices struct {
 	builtinOracle         *oracles.Builtin
 	codec                 abci.Codec
 
-	assets               *assets.Service
-	topology             *validators.Topology
-	notary               *notary.SnapshotNotary
-	eventForwarder       *evtforward.Forwarder
-	eventForwarderEngine EventForwarderEngine
-	witness              *validators.Witness
-	banking              *banking.Engine
-	genesisHandler       *genesis.Handler
+	assets                *assets.Service
+	topology              *validators.Topology
+	notary                *notary.SnapshotNotary
+	eventForwarder        *evtforward.Forwarder
+	eventForwarderEngine  EventForwarderEngine
+	witness               *validators.Witness
+	banking               *banking.Engine
+	genesisHandler        *genesis.Handler
+	protocolUpgradeEngine *protocolupgrade.Engine
 
 	// staking
 	ethClient             *ethclient.Client
@@ -184,6 +186,7 @@ func newServices(
 		svcs.topology = validators.NewTopology(svcs.log, svcs.conf.Validators, nil, svcs.broker, svcs.conf.IsValidator(), nil, svcs.erc20MultiSigTopology, svcs.timeService)
 	}
 
+	svcs.protocolUpgradeEngine = protocolupgrade.New(svcs.log, svcs.conf.ProtocolUpgrade, svcs.broker, svcs.topology)
 	svcs.witness = validators.NewWitness(svcs.log, svcs.conf.Validators, svcs.topology, svcs.commander, svcs.timeService)
 
 	// this is done to go around circular deps...
@@ -274,7 +277,8 @@ func newServices(
 	svcs.topology.NotifyOnKeyChange(svcs.delegation.ValidatorKeyChanged, svcs.stakingAccounts.ValidatorKeyChanged, svcs.governance.ValidatorKeyChanged)
 
 	svcs.snapshot.AddProviders(svcs.checkpoint, svcs.collateral, svcs.governance, svcs.delegation, svcs.netParams, svcs.epochService, svcs.assets, svcs.banking, svcs.witness,
-		svcs.notary, svcs.stakingAccounts, svcs.stakeVerifier, svcs.limits, svcs.topology, svcs.eventForwarder, svcs.executionEngine, svcs.marketActivityTracker, svcs.statevar, svcs.erc20MultiSigTopology)
+		svcs.notary, svcs.stakingAccounts, svcs.stakeVerifier, svcs.limits, svcs.topology, svcs.eventForwarder, svcs.executionEngine, svcs.marketActivityTracker, svcs.statevar,
+		svcs.erc20MultiSigTopology, svcs.protocolUpgradeEngine)
 
 	if svcs.spam != nil {
 		svcs.snapshot.AddProviders(svcs.spam)
@@ -420,6 +424,10 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 	}
 
 	watchers := []netparams.WatchParam{
+		{
+			Param:   netparams.ValidatorsVoteRequired,
+			Watcher: svcs.protocolUpgradeEngine.OnRequiredMajorityChanged,
+		},
 		{
 			Param:   netparams.ValidatorsEpochLength,
 			Watcher: svcs.topology.OnEpochLengthUpdate,
