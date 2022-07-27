@@ -78,7 +78,7 @@ func TestAssetERCDeepClone(t *testing.T) {
 			TotalSupply: num.NewUint(10000),
 			Decimals:    5,
 			Source: &types.AssetDetailsErc20{
-				Erc20: &types.ERC20{
+				ERC20: &types.ERC20{
 					ContractAddress: "Contact Address",
 				},
 			},
@@ -96,7 +96,7 @@ func TestAssetERCDeepClone(t *testing.T) {
 	a.Details.Decimals = 999
 
 	as := a.Details.Source.(*types.AssetDetailsErc20)
-	erc := as.Erc20
+	erc := as.ERC20
 	erc.ContractAddress = "Changed"
 
 	as2 := a2.Details.Source.(*proto.AssetDetails_Erc20)

@@ -20,8 +20,6 @@ import (
 
 	snapshot "code.vegaprotocol.io/protos/vega/snapshot/v1"
 	"code.vegaprotocol.io/shared/paths"
-	"code.vegaprotocol.io/vega/assets"
-	bmocks "code.vegaprotocol.io/vega/broker/mocks"
 	"code.vegaprotocol.io/vega/integration/stubs"
 	vgcontext "code.vegaprotocol.io/vega/libs/context"
 	"code.vegaprotocol.io/vega/libs/proto"
@@ -29,35 +27,13 @@ import (
 	snp "code.vegaprotocol.io/vega/snapshot"
 	"code.vegaprotocol.io/vega/stats"
 	"code.vegaprotocol.io/vega/types"
-	tmocks "code.vegaprotocol.io/vega/vegatime/mocks"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
 )
 
-type assetsTest struct {
-	*assets.Service
-	ctrl   *gomock.Controller
-	ts     *tmocks.MockTimeService
-	broker *bmocks.MockBrokerI
-}
-
-func testAssets(t *testing.T) *assetsTest {
+func getEngineAndSnapshotEngine(t *testing.T) (*testService, *snp.Engine) {
 	t.Helper()
-	conf := assets.NewDefaultConfig()
-	logger := logging.NewTestLogger()
-	ctrl := gomock.NewController(t)
-	broker := bmocks.NewMockBrokerI(ctrl)
-	as := assets.New(logger, conf, nil, nil, broker, true)
-	return &assetsTest{
-		Service: as,
-		ctrl:    ctrl,
-		broker:  broker,
-	}
-}
-
-func getEngineAndSnapshotEngine(t *testing.T) (*assetsTest, *snp.Engine) {
-	t.Helper()
-	as := testAssets(t)
+	as := getTestService(t)
 	now := time.Now()
 	log := logging.NewTestLogger()
 	timeService := stubs.NewTimeStub()
@@ -67,7 +43,7 @@ func getEngineAndSnapshotEngine(t *testing.T) (*assetsTest, *snp.Engine) {
 	config.Storage = "memory"
 	snapshotEngine, _ := snp.New(context.Background(), &paths.DefaultPaths{}, config, log, timeService, statsData.Blockchain)
 	snapshotEngine.AddProviders(as)
-	snapshotEngine.ClearAndInitialise()
+	require.NoError(t, snapshotEngine.ClearAndInitialise())
 	return as, snapshotEngine
 }
 
@@ -110,9 +86,10 @@ func TestSnapshotRoundtripViaEngine(t *testing.T) {
 
 	asLoad, snapshotEngineLoad := getEngineAndSnapshotEngine(t)
 	asLoad.broker.EXPECT().Send(gomock.Any()).AnyTimes()
-	snapshotEngineLoad.ReceiveSnapshot(snap1)
-	snapshotEngineLoad.ApplySnapshot(ctx)
-	snapshotEngineLoad.CheckLoaded()
+	require.NoError(t, snapshotEngineLoad.ReceiveSnapshot(snap1))
+	require.NoError(t, snapshotEngineLoad.ApplySnapshot(ctx))
+	_, err = snapshotEngineLoad.CheckLoaded()
+	require.NoError(t, err)
 	defer snapshotEngineLoad.Close()
 
 	err = as.Enable(ctx, "asset3")
@@ -121,13 +98,15 @@ func TestSnapshotRoundtripViaEngine(t *testing.T) {
 	err = asLoad.Enable(ctx, "asset3")
 	require.Nil(t, err)
 
-	as.NewAsset(ctx, "asset5", &types.AssetDetails{
+	_, err = as.NewAsset(ctx, "asset5", &types.AssetDetails{
 		Source: &types.AssetDetailsBuiltinAsset{},
 	})
+	require.NoError(t, err)
 
-	asLoad.NewAsset(ctx, "asset5", &types.AssetDetails{
+	_, err = asLoad.NewAsset(ctx, "asset5", &types.AssetDetails{
 		Source: &types.AssetDetailsBuiltinAsset{},
 	})
+	require.NoError(t, err)
 
 	b, err := snapshotEngine.Snapshot(ctx)
 	require.NoError(t, err)
@@ -143,7 +122,7 @@ func TestActiveSnapshotRoundTrip(t *testing.T) {
 
 	activeKey := (&types.PayloadActiveAssets{}).Key()
 	for i := 0; i < 10; i++ {
-		as := testAssets(t)
+		as := getTestService(t)
 		as.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
 		_, err := as.NewAsset(ctx, "asset1", &types.AssetDetails{
@@ -171,7 +150,7 @@ func TestActiveSnapshotRoundTrip(t *testing.T) {
 
 		// reload the state
 		var active snapshot.Payload
-		proto.Unmarshal(state, &active)
+		require.NoError(t, proto.Unmarshal(state, &active))
 		payload := types.PayloadFromProto(&active)
 
 		_, err = as.LoadState(context.Background(), payload)
@@ -189,7 +168,7 @@ func TestPendingSnapshotRoundTrip(t *testing.T) {
 	pendingKey := (&types.PayloadPendingAssets{}).Key()
 
 	for i := 0; i < 10; i++ {
-		as := testAssets(t)
+		as := getTestService(t)
 		as.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
 		_, err := as.NewAsset(ctx, "asset1", &types.AssetDetails{
@@ -202,7 +181,7 @@ func TestPendingSnapshotRoundTrip(t *testing.T) {
 		require.Nil(t, err)
 
 		// set asset 2 as pending_listing
-		as.SetPendingListing(ctx, assetID2)
+		require.NoError(t, as.SetPendingListing(ctx, assetID2))
 
 		// get the serialised state
 		state, _, err := as.GetState(pendingKey)
@@ -215,7 +194,7 @@ func TestPendingSnapshotRoundTrip(t *testing.T) {
 
 		// reload the state
 		var pending snapshot.Payload
-		proto.Unmarshal(state, &pending)
+		require.NoError(t, proto.Unmarshal(state, &pending))
 		payload := types.PayloadFromProto(&pending)
 
 		_, err = as.LoadState(context.Background(), payload)

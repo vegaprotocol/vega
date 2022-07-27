@@ -39,7 +39,8 @@ type ProposalParameters struct {
 type ToEnact struct {
 	p             *proposal
 	m             *ToEnactNewMarket
-	a             *types.Asset
+	newAsset      *types.Asset
+	updatedAsset  *types.Asset
 	n             *types.NetworkParameter
 	as            *types.AssetDetails
 	updatedMarket *types.Market
@@ -85,7 +86,7 @@ func (t *ToEnact) NewMarket() *ToEnactNewMarket {
 }
 
 func (t *ToEnact) NewAsset() *types.Asset {
-	return t.a
+	return t.newAsset
 }
 
 func (t *ToEnact) NewAssetDetails() *types.AssetDetails {
@@ -110,6 +111,14 @@ func (t *ToEnact) ProposalData() *proposal {
 
 func (t *ToEnact) Proposal() *types.Proposal {
 	return t.p.Proposal
+}
+
+func (t *ToEnact) IsUpdateAsset() bool {
+	return t.updatedAsset != nil
+}
+
+func (t *ToEnact) UpdateAsset() *types.Asset {
+	return t.updatedAsset
 }
 
 // ToSubmit wraps the proposal in a type that has a convenient interface

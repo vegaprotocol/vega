@@ -48,7 +48,6 @@ var (
 	ErrInvalidWithdrawalState                     = errors.New("invalid withdrawal state")
 	ErrNotMatchingWithdrawalForReference          = errors.New("invalid reference for withdrawal chain event")
 	ErrWithdrawalNotReady                         = errors.New("withdrawal not ready")
-	ErrNoGeneralAccountForAsset                   = errors.New("no general account for asset")
 	ErrNotEnoughFundsToTransfer                   = errors.New("not enough funds to transfer")
 )
 
@@ -56,6 +55,7 @@ var (
 type Assets interface {
 	Get(assetID string) (*assets.Asset, error)
 	Enable(ctx context.Context, assetID string) error
+	ApplyAssetUpdate(ctx context.Context, assetID string) error
 }
 
 // Notary ...
@@ -80,6 +80,7 @@ type Collateral interface {
 		feeTransfers []*types.Transfer,
 		feeTransfersAccountTypes []types.AccountType,
 	) ([]*types.TransferResponse, error)
+	PropagateAssetUpdate(ctx context.Context, asset types.Asset) error
 }
 
 // Witness provide foreign chain resources validations
@@ -347,6 +348,8 @@ func (e *Engine) finalizeAction(ctx context.Context, aa *assetAction) error {
 		return e.finalizeDeposit(ctx, dep)
 	case aa.IsERC20AssetList():
 		return e.finalizeAssetList(ctx, aa.erc20AL.VegaAssetID)
+	case aa.IsERC20AssetLimitsUpdated():
+		return e.finalizeAssetLimitsUpdated(ctx, aa.erc20AssetLimitsUpdated.VegaAssetID)
 	default:
 		return ErrUnknownAssetAction
 	}
@@ -367,6 +370,23 @@ func (e *Engine) finalizeAssetList(ctx context.Context, assetID string) error {
 		return err
 	}
 	return e.col.EnableAsset(ctx, *asset.ToAssetType())
+}
+
+func (e *Engine) finalizeAssetLimitsUpdated(ctx context.Context, assetID string) error {
+	asset, err := e.assets.Get(assetID)
+	if err != nil {
+		e.log.Error("invalid asset id used to finalise asset list",
+			logging.Error(err),
+			logging.AssetID(assetID))
+		return nil
+	}
+	if err := e.assets.ApplyAssetUpdate(ctx, assetID); err != nil {
+		e.log.Error("couldn't apply asset update",
+			logging.Error(err),
+			logging.AssetID(assetID))
+		return err
+	}
+	return e.col.PropagateAssetUpdate(ctx, *asset.ToAssetType())
 }
 
 func (e *Engine) finalizeDeposit(ctx context.Context, d *types.Deposit) error {

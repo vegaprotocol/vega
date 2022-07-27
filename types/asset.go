@@ -22,13 +22,15 @@ import (
 )
 
 var (
-	ErrMissingERC20ContractAddress   = errors.New("missing erc20 contract address")
-	ErrMissingBuiltinAssetField      = errors.New("missing builtin asset field")
-	ErrInvalidAssetNameEmpty         = errors.New("invalid asset, name must not be empty")
-	ErrInvalidAssetSymbolEmpty       = errors.New("invalid asset, symbol must not be empty")
-	ErrInvalidAssetDecimalPlacesZero = errors.New("invalid asset, decimal places must not be zero")
-	ErrInvalidAssetTotalSupplyZero   = errors.New("invalid asset, total supply must not be zero")
-	ErrInvalidAssetQuantumZero       = errors.New("invalid asset, quantum must not be zero")
+	ErrMissingERC20ContractAddress     = errors.New("missing erc20 contract address")
+	ErrMissingBuiltinAssetField        = errors.New("missing builtin asset field")
+	ErrInvalidAssetNameEmpty           = errors.New("invalid asset, name must not be empty")
+	ErrInvalidAssetSymbolEmpty         = errors.New("invalid asset, symbol must not be empty")
+	ErrInvalidAssetDecimalPlacesZero   = errors.New("invalid asset, decimal places must not be zero")
+	ErrInvalidAssetTotalSupplyZero     = errors.New("invalid asset, total supply must not be zero")
+	ErrInvalidAssetQuantumZero         = errors.New("invalid asset, quantum must not be zero")
+	ErrLifetimeLimitMustBePositive     = errors.New("lifetime limit must be positive")
+	ErrWithdrawThresholdMustBePositive = errors.New("withdraw threshold must be positive")
 )
 
 type AssetStatus = proto.Asset_Status
@@ -55,64 +57,12 @@ type Asset struct {
 	Status AssetStatus
 }
 
-type AssetDetails struct {
-	Name        string
-	Symbol      string
-	TotalSupply *num.Uint
-	Decimals    uint64
-	Quantum     num.Decimal
-	//	*AssetDetailsBuiltinAsset
-	//	*AssetDetailsErc20
-	Source isAssetDetails
-}
-
 type isAssetDetails interface {
 	isAssetDetails()
 	adIntoProto() interface{}
 	DeepClone() isAssetDetails
-	ValidateAssetSource() (ProposalError, error)
+	Validate() (ProposalError, error)
 	String() string
-}
-
-type AssetDetailsBuiltinAsset struct {
-	BuiltinAsset *BuiltinAsset
-}
-
-func (a AssetDetailsBuiltinAsset) String() string {
-	return fmt.Sprintf(
-		"builtinAsset(%s)",
-		reflectPointerToString(a.BuiltinAsset),
-	)
-}
-
-// BuiltinAsset is a Vega internal asset.
-type BuiltinAsset struct {
-	MaxFaucetAmountMint *num.Uint
-}
-
-func (a BuiltinAsset) String() string {
-	return fmt.Sprintf(
-		"maxFaucetAmountMint(%s)",
-		uintPointerToString(a.MaxFaucetAmountMint),
-	)
-}
-
-type AssetDetailsErc20 struct {
-	Erc20 *ERC20
-}
-
-func (a AssetDetailsErc20) String() string {
-	return fmt.Sprintf(
-		"erc20(%s)",
-		reflectPointerToString(a.Erc20),
-	)
-}
-
-// An ERC20 token based asset, living on the ethereum network.
-type ERC20 struct {
-	ContractAddress   string
-	LifetimeLimit     *num.Uint
-	WithdrawThreshold *num.Uint
 }
 
 func (a Asset) IntoProto() *proto.Asset {
@@ -125,6 +75,28 @@ func (a Asset) IntoProto() *proto.Asset {
 		Details: details,
 		Status:  a.Status,
 	}
+}
+
+func (a Asset) DeepClone() *Asset {
+	cpy := a
+	if a.Details == nil {
+		return &cpy
+	}
+	if a.Details.TotalSupply != nil {
+		cpy.Details.TotalSupply = a.Details.TotalSupply.Clone()
+	}
+	cpy.Details.Quantum = a.Details.Quantum
+	if a.Details.Source != nil {
+		cpy.Details.Source = a.Details.Source.DeepClone()
+	}
+	return &cpy
+}
+
+func (a Asset) GetAssetTotalSupply() *num.Uint {
+	if a.Details == nil || a.Details.TotalSupply == nil {
+		return num.Zero()
+	}
+	return a.Details.TotalSupply.Clone()
 }
 
 func AssetFromProto(p *proto.Asset) (*Asset, error) {
@@ -145,6 +117,17 @@ func AssetFromProto(p *proto.Asset) (*Asset, error) {
 	}, nil
 }
 
+type AssetDetails struct {
+	Name        string
+	Symbol      string
+	TotalSupply *num.Uint
+	Decimals    uint64
+	Quantum     num.Decimal
+	//	*AssetDetailsBuiltinAsset
+	//	*AssetDetailsErc20
+	Source isAssetDetails
+}
+
 func (a AssetDetails) String() string {
 	return fmt.Sprintf(
 		"name(%s) symbol(%s) quantum(%s) totalSupply(%s) decimals(%d) source(%s)",
@@ -155,6 +138,30 @@ func (a AssetDetails) String() string {
 		a.Decimals,
 		reflectPointerToString(a.Source),
 	)
+}
+
+func (a AssetDetails) Validate() (ProposalError, error) {
+	if len(a.Name) == 0 {
+		return ProposalErrorInvalidAssetDetails, ErrInvalidAssetNameEmpty
+	}
+
+	if len(a.Symbol) == 0 {
+		return ProposalErrorInvalidAssetDetails, ErrInvalidAssetSymbolEmpty
+	}
+
+	if a.Decimals == 0 {
+		return ProposalErrorInvalidAssetDetails, ErrInvalidAssetDecimalPlacesZero
+	}
+
+	if a.TotalSupply.IsZero() {
+		return ProposalErrorInvalidAssetDetails, ErrInvalidAssetTotalSupplyZero
+	}
+
+	if a.Quantum.IsZero() {
+		return ProposalErrorInvalidAssetDetails, ErrInvalidAssetQuantumZero
+	}
+
+	return ProposalErrorUnspecified, nil
 }
 
 func (a AssetDetails) IntoProto() *proto.AssetDetails {
@@ -176,6 +183,35 @@ func (a AssetDetails) IntoProto() *proto.AssetDetails {
 		r.Source = s
 	}
 	return r
+}
+
+func (a AssetDetails) GetERC20() *ERC20 {
+	switch s := a.Source.(type) {
+	case *AssetDetailsErc20:
+		return s.ERC20
+	default:
+		return nil
+	}
+}
+
+func (a AssetDetails) DeepClone() *AssetDetails {
+	var src isAssetDetails
+	if a.Source != nil {
+		src = a.Source.DeepClone()
+	}
+	cpy := &AssetDetails{
+		Name:     a.Name,
+		Symbol:   a.Symbol,
+		Decimals: a.Decimals,
+		Source:   src,
+	}
+	if a.TotalSupply != nil {
+		cpy.TotalSupply = a.TotalSupply.Clone()
+	} else {
+		cpy.TotalSupply = num.Zero()
+	}
+	cpy.Quantum = a.Quantum
+	return cpy
 }
 
 func AssetDetailsFromProto(p *proto.AssetDetails) (*AssetDetails, error) {
@@ -218,6 +254,17 @@ func AssetDetailsFromProto(p *proto.AssetDetails) (*AssetDetails, error) {
 	}, nil
 }
 
+type AssetDetailsBuiltinAsset struct {
+	BuiltinAsset *BuiltinAsset
+}
+
+func (a AssetDetailsBuiltinAsset) String() string {
+	return fmt.Sprintf(
+		"builtinAsset(%s)",
+		reflectPointerToString(a.BuiltinAsset),
+	)
+}
+
 func (a AssetDetailsBuiltinAsset) IntoProto() *proto.AssetDetails_BuiltinAsset {
 	p := &proto.AssetDetails_BuiltinAsset{
 		BuiltinAsset: &proto.BuiltinAsset{},
@@ -226,18 +273,6 @@ func (a AssetDetailsBuiltinAsset) IntoProto() *proto.AssetDetails_BuiltinAsset {
 		p.BuiltinAsset.MaxFaucetAmountMint = a.BuiltinAsset.MaxFaucetAmountMint.String()
 	}
 	return p
-}
-
-func AssetDetailsBuiltinFromProto(p *proto.AssetDetails_BuiltinAsset) *AssetDetailsBuiltinAsset {
-	if p.BuiltinAsset.MaxFaucetAmountMint != "" {
-		max, _ := num.UintFromString(p.BuiltinAsset.MaxFaucetAmountMint, 10)
-		return &AssetDetailsBuiltinAsset{
-			BuiltinAsset: &BuiltinAsset{
-				MaxFaucetAmountMint: max,
-			},
-		}
-	}
-	return &AssetDetailsBuiltinAsset{}
 }
 
 func (a AssetDetailsBuiltinAsset) adIntoProto() interface{} {
@@ -257,28 +292,91 @@ func (a AssetDetailsBuiltinAsset) DeepClone() isAssetDetails {
 	return &cpy
 }
 
+func (a AssetDetailsBuiltinAsset) Validate() (ProposalError, error) {
+	if a.BuiltinAsset.MaxFaucetAmountMint.IsZero() {
+		return ProposalErrorMissingBuiltinAssetField, ErrMissingBuiltinAssetField
+	}
+	return ProposalErrorUnspecified, nil
+}
+
+func AssetDetailsBuiltinFromProto(p *proto.AssetDetails_BuiltinAsset) *AssetDetailsBuiltinAsset {
+	if p.BuiltinAsset.MaxFaucetAmountMint != "" {
+		max, _ := num.UintFromString(p.BuiltinAsset.MaxFaucetAmountMint, 10)
+		return &AssetDetailsBuiltinAsset{
+			BuiltinAsset: &BuiltinAsset{
+				MaxFaucetAmountMint: max,
+			},
+		}
+	}
+	return &AssetDetailsBuiltinAsset{}
+}
+
+// BuiltinAsset is a Vega internal asset.
+type BuiltinAsset struct {
+	MaxFaucetAmountMint *num.Uint
+}
+
+func (a BuiltinAsset) String() string {
+	return fmt.Sprintf(
+		"maxFaucetAmountMint(%s)",
+		uintPointerToString(a.MaxFaucetAmountMint),
+	)
+}
+
+type AssetDetailsErc20 struct {
+	ERC20 *ERC20
+}
+
+func (a AssetDetailsErc20) String() string {
+	return fmt.Sprintf(
+		"erc20(%s)",
+		reflectPointerToString(a.ERC20),
+	)
+}
+
 func (a AssetDetailsErc20) IntoProto() *proto.AssetDetails_Erc20 {
 	lifetimeLimit := "0"
-	if a.Erc20.LifetimeLimit != nil {
-		lifetimeLimit = a.Erc20.LifetimeLimit.String()
+	if a.ERC20.LifetimeLimit != nil {
+		lifetimeLimit = a.ERC20.LifetimeLimit.String()
 	}
 	withdrawThreshold := "0"
-	if a.Erc20.WithdrawThreshold != nil {
-		withdrawThreshold = a.Erc20.WithdrawThreshold.String()
+	if a.ERC20.WithdrawThreshold != nil {
+		withdrawThreshold = a.ERC20.WithdrawThreshold.String()
 	}
 	return &proto.AssetDetails_Erc20{
 		Erc20: &proto.ERC20{
-			ContractAddress:   a.Erc20.ContractAddress,
+			ContractAddress:   a.ERC20.ContractAddress,
 			LifetimeLimit:     lifetimeLimit,
 			WithdrawThreshold: withdrawThreshold,
 		},
 	}
 }
 
-func (a AssetDetailsBuiltinAsset) ValidateAssetSource() (ProposalError, error) {
-	if a.BuiltinAsset.MaxFaucetAmountMint.IsZero() {
-		return ProposalErrorMissingBuiltinAssetField, ErrMissingBuiltinAssetField
+func (a AssetDetailsErc20) adIntoProto() interface{} {
+	return a.IntoProto()
+}
+
+func (AssetDetailsErc20) isAssetDetails() {}
+
+func (a AssetDetailsErc20) DeepClone() isAssetDetails {
+	if a.ERC20 == nil {
+		return &AssetDetailsErc20{}
 	}
+	return &AssetDetailsErc20{
+		ERC20: a.ERC20.DeepClone(),
+	}
+}
+
+func (a AssetDetailsErc20) Validate() (ProposalError, error) {
+	if len(a.ERC20.ContractAddress) <= 0 {
+		return ProposalErrorMissingErc20ContractAddress, ErrMissingERC20ContractAddress
+	}
+	// if a.ERC20.LifetimeLimit.EQ(num.Zero()) {
+	// 	return ProposalErrorInvalidAsset, ErrLifetimeLimitMustBePositive
+	// }
+	// if a.ERC20.WithdrawThreshold.EQ(num.Zero()) {
+	// 	return ProposalErrorInvalidAsset, ErrWithdrawThresholdMustBePositive
+	// }
 	return ProposalErrorUnspecified, nil
 }
 
@@ -301,7 +399,7 @@ func AssetDetailsERC20FromProto(p *proto.AssetDetails_Erc20) (*AssetDetailsErc20
 		}
 	}
 	return &AssetDetailsErc20{
-		Erc20: &ERC20{
+		ERC20: &ERC20{
 			ContractAddress:   crypto.EthereumChecksumAddress(p.Erc20.ContractAddress),
 			LifetimeLimit:     lifetimeLimit,
 			WithdrawThreshold: withdrawThreshold,
@@ -309,78 +407,11 @@ func AssetDetailsERC20FromProto(p *proto.AssetDetails_Erc20) (*AssetDetailsErc20
 	}, nil
 }
 
-func (a AssetDetailsErc20) adIntoProto() interface{} {
-	return a.IntoProto()
-}
-
-func (AssetDetailsErc20) isAssetDetails() {}
-
-func (a AssetDetailsErc20) DeepClone() isAssetDetails {
-	if a.Erc20 == nil {
-		return &AssetDetailsErc20{}
-	}
-	return &AssetDetailsErc20{
-		Erc20: a.Erc20.DeepClone(),
-	}
-}
-
-func (a AssetDetailsErc20) ValidateAssetSource() (ProposalError, error) {
-	if len(a.Erc20.ContractAddress) <= 0 {
-		return ProposalErrorMissingErc20ContractAddress, ErrMissingERC20ContractAddress
-	}
-	return ProposalErrorUnspecified, nil
-}
-
-// DeepClone returns a deep clone of a.
-func (a Asset) DeepClone() *Asset {
-	cpy := a
-	if a.Details == nil {
-		return &cpy
-	}
-	if a.Details.TotalSupply != nil {
-		cpy.Details.TotalSupply = a.Details.TotalSupply.Clone()
-	}
-	cpy.Details.Quantum = a.Details.Quantum
-	if a.Details.Source != nil {
-		cpy.Details.Source = a.Details.Source.DeepClone()
-	}
-	return &cpy
-}
-
-func (a Asset) GetAssetTotalSupply() *num.Uint {
-	if a.Details == nil || a.Details.TotalSupply == nil {
-		return num.Zero()
-	}
-	return a.Details.TotalSupply.Clone()
-}
-
-func (a AssetDetails) GetErc20() *ERC20 {
-	switch s := a.Source.(type) {
-	case *AssetDetailsErc20:
-		return s.Erc20
-	default:
-		return nil
-	}
-}
-
-func (a AssetDetails) DeepClone() *AssetDetails {
-	var src isAssetDetails
-	if a.Source != nil {
-		src = a.Source.DeepClone()
-	}
-	cpy := &AssetDetails{
-		Name:     a.Name,
-		Symbol:   a.Symbol,
-		Decimals: a.Decimals,
-		Source:   src,
-	}
-	if a.TotalSupply != nil {
-		cpy.TotalSupply = a.TotalSupply.Clone()
-	} else {
-		cpy.TotalSupply = num.Zero()
-	}
-	cpy.Quantum = a.Quantum
-	return cpy
+// An ERC20 token based asset, living on the ethereum network.
+type ERC20 struct {
+	ContractAddress   string
+	LifetimeLimit     *num.Uint
+	WithdrawThreshold *num.Uint
 }
 
 func (e ERC20) DeepClone() *ERC20 {
@@ -402,7 +433,9 @@ func (e ERC20) DeepClone() *ERC20 {
 
 func (e ERC20) String() string {
 	return fmt.Sprintf(
-		"contractAddress(%s)",
+		"contractAddress(%s) lifetimeLimit(%s) withdrawThreshold(%s)",
 		e.ContractAddress,
+		uintPointerToString(e.LifetimeLimit),
+		uintPointerToString(e.WithdrawThreshold),
 	)
 }

@@ -32,7 +32,7 @@ var (
 )
 
 func (e *Engine) EnableERC20(
-	ctx context.Context,
+	_ context.Context,
 	al *types.ERC20AssetList,
 	id string,
 	blockNumber, txIndex uint64,
@@ -55,6 +55,33 @@ func (e *Engine) EnableERC20(
 	}
 	e.assetActs[aa.id] = aa
 	e.bss.changedAssetActions = true
+	return e.witness.StartCheck(aa, e.onCheckDone, e.timeService.GetTimeNow().Add(defaultValidationDuration))
+}
+
+func (e *Engine) UpdateERC20(
+	_ context.Context,
+	event *types.ERC20AssetLimitsUpdated,
+	id string,
+	blockNumber, txIndex uint64,
+	txHash string,
+) error {
+	asset, err := e.assets.Get(event.VegaAssetID)
+	if err != nil {
+		e.log.Panic("couldn't retrieve the ERC20 asset",
+			logging.AssetID(event.VegaAssetID),
+		)
+	}
+
+	aa := &assetAction{
+		id:                      id,
+		state:                   pendingState,
+		erc20AssetLimitsUpdated: event,
+		asset:                   asset,
+		blockNumber:             blockNumber,
+		txIndex:                 txIndex,
+		hash:                    txHash,
+	}
+	e.assetActs[aa.id] = aa
 	return e.witness.StartCheck(aa, e.onCheckDone, e.timeService.GetTimeNow().Add(defaultValidationDuration))
 }
 
@@ -161,17 +188,15 @@ func (e *Engine) WithdrawERC20(
 		w.Status = types.WithdrawalStatusRejected
 		e.broker.Send(events.NewWithdrawalEvent(ctx, *w))
 		return ErrWrongAssetUsedForERC20Withdraw
-	} else if threshold := a.Type().Details.GetErc20().WithdrawThreshold; threshold != nil && threshold.NEQ(num.Zero()) {
+	} else if threshold := a.Type().Details.GetERC20().WithdrawThreshold; threshold != nil && threshold.NEQ(num.Zero()) {
+		// a delay will be applied on this withdrawal
 		if threshold.LT(amount) {
-			w.Status = types.WithdrawalStatusRejected
-			e.broker.Send(events.NewWithdrawalEvent(ctx, *w))
-			e.log.Debug("withdraw threshold breached",
+			e.log.Debug("withdraw threshold breached, delay will be applied",
 				logging.PartyID(party),
 				logging.BigUint("threshold", threshold),
 				logging.BigUint("amount", amount),
 				logging.AssetID(assetID),
 				logging.Error(err))
-			return fmt.Errorf("witdrawal threshold breached, requested(%d), threshold(%d)", amount, threshold)
 		}
 	}
 

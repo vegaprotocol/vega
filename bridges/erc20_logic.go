@@ -275,7 +275,6 @@ func (e ERC20Logic) SetAssetLimits(
 	})
 
 	ethTokenAddr := ethcmn.HexToAddress(tokenAddress)
-
 	buf, err := args.Pack([]interface{}{
 		ethTokenAddr,
 		lifetimeLimit.BigInt(),

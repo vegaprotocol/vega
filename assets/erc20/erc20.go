@@ -41,13 +41,15 @@ import (
 )
 
 var (
-	ErrUnableToFindDeposit        = errors.New("unable to find erc20 deposit event")
-	ErrUnableToFindWithdrawal     = errors.New("unable to find erc20 withdrawal event")
-	ErrUnableToFindERC20AssetList = errors.New("unable to find erc20 asset list event")
-	ErrMissingConfirmations       = errors.New("missing confirmation from ethereum")
-	ErrNotAnErc20Asset            = errors.New("not an erc20 asset")
+	ErrUnableToFindDeposit                 = errors.New("unable to find erc20 deposit event")
+	ErrUnableToFindWithdrawal              = errors.New("unable to find erc20 withdrawal event")
+	ErrUnableToFindERC20AssetList          = errors.New("unable to find erc20 asset list event")
+	ErrUnableToFindERC20AssetLimitsUpdated = errors.New("unable to find ERC20 asset limits updated event")
+	ErrMissingConfirmations                = errors.New("missing confirmation from ethereum")
+	ErrNotAnErc20Asset                     = errors.New("not an erc20 asset")
 )
 
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/eth_client_mock.go -package mocks code.vegaprotocol.io/vega/assets/erc20 ETHClient
 type ETHClient interface {
 	bind.ContractBackend
 	HeaderByNumber(context.Context, *big.Int) (*ethtypes.Header, error)
@@ -70,7 +72,7 @@ func New(
 	w *ethnw.Wallet,
 	ethClient ETHClient,
 ) (*ERC20, error) {
-	source := asset.GetErc20()
+	source := asset.GetERC20()
 	if source == nil {
 		return nil, ErrNotAnErc20Asset
 	}
@@ -97,6 +99,14 @@ func (e *ERC20) SetRejected() {
 
 func (e *ERC20) SetEnabled() {
 	e.asset.Status = types.AssetStatusEnabled
+}
+
+func (e *ERC20) Update(updatedAsset *types.Asset) {
+	e.asset = updatedAsset
+}
+
+func (e *ERC20) Address() string {
+	return e.address
 }
 
 func (e *ERC20) ProtoAsset() *typespb.Asset {
@@ -165,10 +175,10 @@ func (e *ERC20) Validate() error {
 	return nil
 }
 
-// SignBridgeListing create and sign the message to
+// SignListAsset create and sign the message to
 // be sent to the bridge to whitelist the asset
 // return the generated message and the signature for this message.
-func (e *ERC20) SignBridgeListing() (msg []byte, sig []byte, err error) {
+func (e *ERC20) SignListAsset() (msg []byte, sig []byte, err error) {
 	bridgeAddress := e.ethClient.CollateralBridgeAddress().Hex()
 	// use the asset ID converted into a uint256
 	// trim left all 0 as these makes for an invalid base16 numbers
@@ -177,9 +187,20 @@ func (e *ERC20) SignBridgeListing() (msg []byte, sig []byte, err error) {
 		return nil, nil, err
 	}
 
-	source := e.asset.Details.GetErc20()
+	source := e.asset.Details.GetERC20()
 	bundle, err := bridges.NewERC20Logic(e.wallet, bridgeAddress).
 		ListAsset(e.address, e.asset.ID, source.LifetimeLimit, source.WithdrawThreshold, nonce)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return bundle.Message, bundle.Signature, nil
+}
+
+func (e *ERC20) SignSetAssetLimits(nonce *num.Uint, lifetimeLimit *num.Uint, withdrawThreshold *num.Uint) (msg []byte, sig []byte, err error) {
+	bridgeAddress := e.ethClient.CollateralBridgeAddress().Hex()
+	bundle, err := bridges.NewERC20Logic(e.wallet, bridgeAddress).
+		SetAssetLimits(e.address, lifetimeLimit, withdrawThreshold, nonce)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -230,6 +251,57 @@ func (e *ERC20) ValidateAssetList(w *types.ERC20AssetList, blockNumber, txIndex 
 
 	if event == nil {
 		return ErrUnableToFindERC20AssetList
+	}
+
+	// now ensure we have enough confirmations
+	if err := e.checkConfirmations(event.Raw.BlockNumber); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (e *ERC20) ValidateAssetLimitsUpdated(update *types.ERC20AssetLimitsUpdated, blockNumber uint64, txIndex uint64) error {
+	bf, err := bridge.NewErc20BridgeLogicRestrictedFilterer(e.ethClient.CollateralBridgeAddress(), e.ethClient)
+	if err != nil {
+		return err
+	}
+
+	resp := "ok"
+	defer func() {
+		metrics.EthCallInc("validate_asset_limits_updated", e.asset.ID, resp)
+	}()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	iter, err := bf.FilterAssetLimitsUpdated(
+		&bind.FilterOpts{
+			Start:   blockNumber - 1,
+			Context: ctx,
+		},
+		[]ethcommon.Address{ethcommon.HexToAddress(e.address)},
+	)
+	if err != nil {
+		resp = getMaybeHTTPStatus(err)
+		return err
+	}
+
+	defer iter.Close()
+	var event *bridge.Erc20BridgeLogicRestrictedAssetLimitsUpdated
+	for iter.Next() {
+		eventLifetimeLimit, _ := num.UintFromBig(iter.Event.LifetimeLimit)
+		eventWithdrawThreshold, _ := num.UintFromBig(iter.Event.WithdrawThreshold)
+		if update.LifetimeLimits.EQ(eventLifetimeLimit) &&
+			update.WithdrawThreshold.EQ(eventWithdrawThreshold) &&
+			iter.Event.Raw.BlockNumber == blockNumber &&
+			uint64(iter.Event.Raw.Index) == txIndex {
+			event = iter.Event
+			break
+		}
+	}
+
+	if event == nil {
+		return ErrUnableToFindERC20AssetLimitsUpdated
 	}
 
 	// now ensure we have enough confirmations

@@ -128,6 +128,7 @@ type Stats interface {
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/assets_mock.go -package mocks code.vegaprotocol.io/vega/processor Assets
 type Assets interface {
 	NewAsset(ctx context.Context, ref string, assetSrc *types.AssetDetails) (string, error)
+	StageAssetUpdate(*types.Asset) error
 	Get(assetID string) (*assets.Asset, error)
 	IsEnabled(string) bool
 }
@@ -181,6 +182,7 @@ type Banking interface {
 	DepositBuiltinAsset(context.Context, *types.BuiltinAssetDeposit, string, uint64) error
 	WithdrawBuiltinAsset(context.Context, string, string, string, *num.Uint) error
 	EnableERC20(context.Context, *types.ERC20AssetList, string, uint64, uint64, string) error
+	UpdateERC20(context.Context, *types.ERC20AssetLimitsUpdated, string, uint64, uint64, string) error
 	DepositERC20(context.Context, *types.ERC20Deposit, string, uint64, uint64, string) error
 	WithdrawERC20(context.Context, string, string, string, *num.Uint, *types.Erc20WithdrawExt) error
 	ERC20WithdrawalEvent(context.Context, *types.ERC20Withdrawal, uint64, uint64, string) error

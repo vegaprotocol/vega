@@ -40,6 +40,8 @@ var (
 	ErrVoterInsufficientTokensAndEquityLikeShare = errors.New("vote requires tokens or equity-like share")
 	ErrVoterInsufficientTokens                   = errors.New("vote requires more tokens than the party has")
 	ErrUnsupportedProposalType                   = errors.New("unsupported proposal type")
+	ErrUnsupportedAssetSourceType                = errors.New("unsupported asset source type")
+	ErrExpectedERC20Asset                        = errors.New("expected an ERC20 asset but was not")
 )
 
 // Broker - event bus.
@@ -104,19 +106,21 @@ type NetParams interface {
 // Engine is the governance engine that handles proposal and vote lifecycle.
 type Engine struct {
 	Config
-	log     *logging.Logger
-	accs    StakingAccounts
-	markets Markets
-	// we store proposals in slice
-	// not as easy to access them directly, but by doing this we can keep
-	// them in order of arrival, which makes their processing deterministic
-	activeProposals        []*proposal
-	enactedProposals       []*proposal
+	log *logging.Logger
+
 	nodeProposalValidation *NodeValidation
+	accs                   StakingAccounts
+	markets                Markets
 	timeService            TimeService
 	broker                 Broker
 	assets                 Assets
 	netp                   NetParams
+
+	// we store proposals in slice
+	// not as easy to access them directly, but by doing this we can keep
+	// them in order of arrival, which makes their processing deterministic
+	activeProposals  []*proposal
+	enactedProposals []*proposal
 
 	// snapshot state
 	gss *governanceSnapshotState
@@ -239,10 +243,16 @@ func (e *Engine) preEnactProposal(ctx context.Context, p *proposal) (te *ToEnact
 		if err != nil {
 			return nil, types.ProposalErrorUnspecified, err
 		}
-		te.a = asset.Type()
+		te.newAsset = asset.Type()
 		// notify the asset engine that the proposal was passed
 		// and the asset is not pending for listing on the bridge
 		e.assets.SetPendingListing(ctx, p.ID)
+	case types.ProposalTermsTypeUpdateAsset:
+		asset, perr, err := e.updatedAssetFromProposal(p)
+		if err != nil {
+			return nil, perr, err
+		}
+		te.updatedAsset = asset
 	case types.ProposalTermsTypeNewFreeform:
 		te.f = &ToEnactFreeform{}
 	}
@@ -312,11 +322,12 @@ func (e *Engine) OnTick(ctx context.Context, t time.Time) ([]*ToEnact, []*VoteCl
 		if !proposal.IsOpen() && !proposal.IsPassed() {
 			toBeRemoved = append(toBeRemoved, proposal.ID)
 		} else if proposal.IsPassed() && (e.isAutoEnactableProposal(proposal.Proposal) || proposal.IsTimeToEnact(now)) {
-			enact, _, err := e.preEnactProposal(ctx, proposal)
+			enact, perr, err := e.preEnactProposal(ctx, proposal)
 			if err != nil {
 				e.broker.Send(events.NewProposalEvent(ctx, *proposal.Proposal))
 				e.log.Error("proposal enactment has failed",
 					logging.String("proposal-id", proposal.ID),
+					logging.String("proposal-error", perr.String()),
 					logging.Error(err))
 			} else {
 				toBeRemoved = append(toBeRemoved, proposal.ID)
@@ -562,6 +573,8 @@ func (e *Engine) getProposalParams(terms *types.ProposalTerms) (*ProposalParamet
 		return e.getUpdateMarketProposalParameters(), nil
 	case types.ProposalTermsTypeNewAsset:
 		return e.getNewAssetProposalParameters(), nil
+	case types.ProposalTermsTypeUpdateAsset:
+		return e.getUpdateAssetProposalParameters(), nil
 	case types.ProposalTermsTypeUpdateNetworkParameter:
 		return e.getUpdateNetworkParameterProposalParameters(), nil
 	case types.ProposalTermsTypeNewFreeform:
@@ -791,7 +804,9 @@ func (e *Engine) validateChange(terms *types.ProposalTerms) (types.ProposalError
 	case types.ProposalTermsTypeUpdateMarket:
 		return validateUpdateMarketChange(terms.GetUpdateMarket())
 	case types.ProposalTermsTypeNewAsset:
-		return validateNewAsset(terms.GetNewAsset().Changes)
+		return terms.GetNewAsset().Validate()
+	case types.ProposalTermsTypeUpdateAsset:
+		return terms.GetUpdateAsset().Validate()
 	case types.ProposalTermsTypeUpdateNetworkParameter:
 		return validateNetworkParameterUpdate(e.netp, terms.GetUpdateNetworkParameter().Changes)
 	default:
@@ -924,6 +939,44 @@ func (e *Engine) updatedMarketFromProposal(p *proposal) (*types.Market, types.Pr
 
 	previousAuctionDuration := time.Duration(existingMarket.OpeningAuction.Duration) * time.Second
 	return buildMarketFromProposal(existingMarket.ID, newMarket, e.netp, previousAuctionDuration)
+}
+
+func (e *Engine) updatedAssetFromProposal(p *proposal) (*types.Asset, types.ProposalError, error) {
+	a := p.Terms.GetUpdateAsset()
+	existingAsset, err := e.assets.Get(a.AssetID)
+	if err != nil {
+		return nil, types.ProposalErrorInvalidAsset, err
+	}
+
+	newAsset := &types.Asset{
+		ID: a.AssetID,
+		Details: &types.AssetDetails{
+			Name:        a.Changes.Name,
+			Symbol:      a.Changes.Symbol,
+			TotalSupply: a.Changes.TotalSupply,
+			Decimals:    a.Changes.Decimals,
+			Quantum:     a.Changes.Quantum,
+		},
+	}
+
+	switch src := a.Changes.Source.(type) {
+	case *types.AssetDetailsUpdateERC20:
+		erc20, ok := existingAsset.ERC20()
+		if !ok {
+			return nil, types.ProposalErrorInvalidAsset, ErrExpectedERC20Asset
+		}
+		newAsset.Details.Source = &types.AssetDetailsErc20{
+			ERC20: &types.ERC20{
+				ContractAddress:   erc20.Address(),
+				LifetimeLimit:     src.ERC20Update.LifetimeLimit.Clone(),
+				WithdrawThreshold: src.ERC20Update.WithdrawThreshold.Clone(),
+			},
+		}
+	default:
+		return nil, types.ProposalErrorInvalidAsset, ErrUnsupportedAssetSourceType
+	}
+
+	return newAsset, types.ProposalErrorUnspecified, nil
 }
 
 type proposal struct {

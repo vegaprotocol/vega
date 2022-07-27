@@ -555,6 +555,7 @@ type ERC20Event struct {
 	//	*ERC20EventAssetDelist
 	//	*ERC20EventDeposit
 	//	*ERC20EventWithdrawal
+	//	*ERC20EventAssetLimitsUpdated
 	Action erc20EventAction
 }
 
@@ -586,6 +587,9 @@ func NewERC20Event(p *vegapb.ERC20Event) (*ERC20Event, error) {
 		return &e, nil
 	case *vegapb.ERC20Event_Withdrawal:
 		e.Action = NewERC20EventWithdrawal(a)
+		return &e, nil
+	case *vegapb.ERC20Event_AssetLimitsUpdated:
+		e.Action = NewERC20EventAssetLimitsUpdated(a)
 		return &e, nil
 	default:
 		return nil, errors.New("unknown erc20 event type")
@@ -881,5 +885,75 @@ func (e ERC20Deposit) String() string {
 }
 
 func (e ERC20Deposit) GetVegaAssetID() string {
+	return e.VegaAssetID
+}
+
+type ERC20EventAssetLimitsUpdated struct {
+	AssetLimitsUpdated *ERC20AssetLimitsUpdated
+}
+
+func (ERC20EventAssetLimitsUpdated) isErc20EventAction() {}
+
+func (e ERC20EventAssetLimitsUpdated) oneOfProto() interface{} {
+	return e.AssetLimitsUpdated.IntoProto()
+}
+
+func (e ERC20EventAssetLimitsUpdated) String() string {
+	return fmt.Sprintf(
+		"assetLimitsUpdated(%s)",
+		reflectPointerToString(e.AssetLimitsUpdated),
+	)
+}
+
+func NewERC20EventAssetLimitsUpdated(p *vegapb.ERC20Event_AssetLimitsUpdated) *ERC20EventAssetLimitsUpdated {
+	return &ERC20EventAssetLimitsUpdated{
+		AssetLimitsUpdated: NewERC20AssetLimitsUpdatedFromProto(p.AssetLimitsUpdated),
+	}
+}
+
+func (e ERC20EventAssetLimitsUpdated) IntoProto() *vegapb.ERC20Event_AssetLimitsUpdated {
+	return &vegapb.ERC20Event_AssetLimitsUpdated{
+		AssetLimitsUpdated: e.AssetLimitsUpdated.IntoProto(),
+	}
+}
+
+type ERC20AssetLimitsUpdated struct {
+	VegaAssetID           string
+	SourceEthereumAddress string
+	LifetimeLimits        *num.Uint
+	WithdrawThreshold     *num.Uint
+}
+
+func NewERC20AssetLimitsUpdatedFromProto(p *vegapb.ERC20AssetLimitsUpdated) *ERC20AssetLimitsUpdated {
+	lifetimeLimits, _ := num.UintFromString(p.LifetimeLimits, 10)
+	withdrawThreshold, _ := num.UintFromString(p.WithdrawThreshold, 10)
+	return &ERC20AssetLimitsUpdated{
+		VegaAssetID:           p.VegaAssetId,
+		SourceEthereumAddress: p.SourceEthereumAddress,
+		LifetimeLimits:        lifetimeLimits,
+		WithdrawThreshold:     withdrawThreshold,
+	}
+}
+
+func (e ERC20AssetLimitsUpdated) IntoProto() *vegapb.ERC20AssetLimitsUpdated {
+	return &vegapb.ERC20AssetLimitsUpdated{
+		VegaAssetId:           e.VegaAssetID,
+		SourceEthereumAddress: e.SourceEthereumAddress,
+		LifetimeLimits:        num.UintToString(e.LifetimeLimits),
+		WithdrawThreshold:     num.UintToString(e.WithdrawThreshold),
+	}
+}
+
+func (e ERC20AssetLimitsUpdated) String() string {
+	return fmt.Sprintf(
+		"vegaAssetID(%s) sourceEthereumAddress(%s) lifetimeLimits(%s) withdrawThreshold(%s)",
+		e.VegaAssetID,
+		e.SourceEthereumAddress,
+		uintPointerToString(e.LifetimeLimits),
+		uintPointerToString(e.WithdrawThreshold),
+	)
+}
+
+func (e ERC20AssetLimitsUpdated) GetVegaAssetID() string {
 	return e.VegaAssetID
 }

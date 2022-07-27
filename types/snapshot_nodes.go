@@ -93,6 +93,10 @@ type PayloadPendingAssets struct {
 	PendingAssets *PendingAssets
 }
 
+type PayloadPendingAssetUpdates struct {
+	PendingAssetUpdates *PendingAssetUpdates
+}
+
 type PayloadBankingWithdrawals struct {
 	BankingWithdrawals *BankingWithdrawals
 }
@@ -422,6 +426,10 @@ type PendingAssets struct {
 	Assets []*Asset
 }
 
+type PendingAssetUpdates struct {
+	Assets []*Asset
+}
+
 type BankingWithdrawals struct {
 	Withdrawals []*RWithdrawal
 }
@@ -449,15 +457,16 @@ type BankingAssetActions struct {
 }
 
 type AssetAction struct {
-	ID          string
-	State       uint32
-	Asset       string
-	BlockNumber uint64
-	TxIndex     uint64
-	Hash        string
-	BuiltinD    *BuiltinAssetDeposit
-	Erc20D      *ERC20Deposit
-	Erc20AL     *ERC20AssetList
+	ID                      string
+	State                   uint32
+	Asset                   string
+	BlockNumber             uint64
+	TxIndex                 uint64
+	Hash                    string
+	BuiltinD                *BuiltinAssetDeposit
+	Erc20D                  *ERC20Deposit
+	Erc20AL                 *ERC20AssetList
+	ERC20AssetLimitsUpdated *ERC20AssetLimitsUpdated
 }
 
 type CPState struct {
@@ -651,6 +660,8 @@ func PayloadFromProto(p *snapshot.Payload) *Payload {
 		ret.Data = PayloadActiveAssetsFromProto(dt)
 	case *snapshot.Payload_PendingAssets:
 		ret.Data = PayloadPendingAssetsFromProto(dt)
+	case *snapshot.Payload_PendingAssetUpdates:
+		ret.Data = PayloadPendingAssetUpdatesFromProto(dt)
 	case *snapshot.Payload_BankingWithdrawals:
 		ret.Data = PayloadBankingWithdrawalsFromProto(dt)
 	case *snapshot.Payload_BankingDeposits:
@@ -781,6 +792,8 @@ func (p Payload) IntoProto() *snapshot.Payload {
 	case *snapshot.Payload_ActiveAssets:
 		ret.Data = dt
 	case *snapshot.Payload_PendingAssets:
+		ret.Data = dt
+	case *snapshot.Payload_PendingAssetUpdates:
 		ret.Data = dt
 	case *snapshot.Payload_BankingSeen:
 		ret.Data = dt
@@ -1118,6 +1131,56 @@ func (*PayloadPendingAssets) Key() string {
 
 func (*PayloadPendingAssets) Namespace() SnapshotNamespace {
 	return AssetsSnapshot
+}
+
+func PayloadPendingAssetUpdatesFromProto(ppa *snapshot.Payload_PendingAssetUpdates) *PayloadPendingAssetUpdates {
+	return &PayloadPendingAssetUpdates{
+		PendingAssetUpdates: PendingAssetUpdatesFromProto(ppa.PendingAssetUpdates),
+	}
+}
+
+func (p PayloadPendingAssetUpdates) IntoProto() *snapshot.Payload_PendingAssetUpdates {
+	return &snapshot.Payload_PendingAssetUpdates{
+		PendingAssetUpdates: p.PendingAssetUpdates.IntoProto(),
+	}
+}
+
+func (*PayloadPendingAssetUpdates) isPayload() {}
+
+func (p *PayloadPendingAssetUpdates) plToProto() interface{} {
+	return p.IntoProto()
+}
+
+func (*PayloadPendingAssetUpdates) Key() string {
+	return "pending_updates"
+}
+
+func (*PayloadPendingAssetUpdates) Namespace() SnapshotNamespace {
+	return AssetsSnapshot
+}
+
+func (a PendingAssetUpdates) IntoProto() *snapshot.PendingAssetUpdates {
+	ret := &snapshot.PendingAssetUpdates{
+		Assets: make([]*vega.Asset, 0, len(a.Assets)),
+	}
+	for _, a := range a.Assets {
+		ret.Assets = append(ret.Assets, a.IntoProto())
+	}
+	return ret
+}
+
+func PendingAssetUpdatesFromProto(aa *snapshot.PendingAssetUpdates) *PendingAssetUpdates {
+	ret := PendingAssetUpdates{
+		Assets: make([]*Asset, 0, len(aa.Assets)),
+	}
+	for _, a := range aa.Assets {
+		pa, err := AssetFromProto(a)
+		if err != nil {
+			panic(err)
+		}
+		ret.Assets = append(ret.Assets, pa)
+	}
+	return &ret
 }
 
 func PayloadBankingWithdrawalsFromProto(pbw *snapshot.Payload_BankingWithdrawals) *PayloadBankingWithdrawals {

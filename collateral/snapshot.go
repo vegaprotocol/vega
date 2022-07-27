@@ -168,6 +168,11 @@ func (a *accState) enableAsset(asset types.Asset) {
 	a.updatesAssets = true
 }
 
+func (a *accState) updateAsset(asset types.Asset) {
+	a.assets[asset.ID] = asset
+	a.updatesAssets = true
+}
+
 func (a *accState) updateAccs(accs []*types.Account) {
 	a.updatesAccounts = true
 	a.accPL.CollateralAccounts.Accounts = accs[:]

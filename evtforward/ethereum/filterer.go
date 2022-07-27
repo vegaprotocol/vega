@@ -38,15 +38,16 @@ import (
 const (
 	logFiltererLogger = "log-filterer"
 
-	eventAssetListed    = "Asset_Listed"
-	eventAssetRemoved   = "Asset_Removed"
-	eventAssetDeposited = "Asset_Deposited"
-	eventAssetWithdrawn = "Asset_Withdrawn"
-	eventStakeDeposited = "Stake_Deposited"
-	eventStakeRemoved   = "Stake_Removed"
-	eventSignerAdded    = "SignerAdded"
-	eventSignerRemoved  = "SignerRemoved"
-	eventThresholdSet   = "ThresholdSet"
+	eventAssetListed        = "Asset_Listed"
+	eventAssetRemoved       = "Asset_Removed"
+	eventAssetDeposited     = "Asset_Deposited"
+	eventAssetWithdrawn     = "Asset_Withdrawn"
+	eventStakeDeposited     = "Stake_Deposited"
+	eventStakeRemoved       = "Stake_Removed"
+	eventSignerAdded        = "SignerAdded"
+	eventSignerRemoved      = "SignerRemoved"
+	eventThresholdSet       = "ThresholdSet"
+	eventAssetLimitsUpdated = "Asset_Limits_Updated"
 )
 
 // Assets ...
@@ -265,6 +266,7 @@ func (f *LogFilterer) newCollateralBridgeQuery(startAt uint64, stopAt uint64) et
 			f.collateralBridgeABI.Events[eventAssetWithdrawn].ID,
 			f.collateralBridgeABI.Events[eventAssetListed].ID,
 			f.collateralBridgeABI.Events[eventAssetRemoved].ID,
+			f.collateralBridgeABI.Events[eventAssetLimitsUpdated].ID,
 		}},
 	}
 	return query
@@ -358,6 +360,14 @@ func (f *LogFilterer) toCollateralChainEvent(log ethtypes.Log) *types.ChainEvent
 		}
 		f.debugAssetRemoved(event)
 		return toERC20AssetDelist(event)
+	case f.collateralBridgeABI.Events[eventAssetLimitsUpdated].ID:
+		event, err := f.collateralBridgeFilterer.ParseAssetLimitsUpdated(log)
+		if err != nil {
+			f.log.Fatal("Couldn't parse AssetLimitsUpdated event", logging.Error(err))
+			return nil
+		}
+		f.debugAssetLimitsUpdated(event)
+		return f.toERC20AssetLimitsUpdated(event)
 	default:
 		f.log.Fatal("Unsupported Ethereum log event", logging.String("event-id", log.Topics[0].String()))
 		return nil
@@ -470,6 +480,35 @@ func toERC20AssetDelist(event *bridge.Erc20BridgeLogicRestrictedAssetRemoved) *c
 				Action: &vgproto.ERC20Event_AssetDelist{
 					AssetDelist: &vgproto.ERC20AssetDelist{
 						VegaAssetId: event.AssetSource.Hex(),
+					},
+				},
+			},
+		},
+	}
+}
+
+func (f *LogFilterer) debugAssetLimitsUpdated(event *bridge.Erc20BridgeLogicRestrictedAssetLimitsUpdated) {
+	if f.log.IsDebug() {
+		f.log.Debug("Found AssetLimitsUpdated event",
+			logging.String("bridge-address", f.collateralBridge.HexAddress()),
+			logging.String("asset-id", event.AssetSource.Hex()),
+		)
+	}
+}
+
+func (f *LogFilterer) toERC20AssetLimitsUpdated(event *bridge.Erc20BridgeLogicRestrictedAssetLimitsUpdated) *commandspb.ChainEvent {
+	return &commandspb.ChainEvent{
+		TxId: event.Raw.TxHash.Hex(),
+		Event: &commandspb.ChainEvent_Erc20{
+			Erc20: &vgproto.ERC20Event{
+				Index: uint64(event.Raw.Index),
+				Block: event.Raw.BlockNumber,
+				Action: &vgproto.ERC20Event_AssetLimitsUpdated{
+					AssetLimitsUpdated: &vgproto.ERC20AssetLimitsUpdated{
+						VegaAssetId:           f.assets.GetVegaIDFromEthereumAddress(event.AssetSource.Hex()),
+						SourceEthereumAddress: event.AssetSource.Hex(),
+						LifetimeLimits:        event.LifetimeLimit.String(),
+						WithdrawThreshold:     event.WithdrawThreshold.String(),
 					},
 				},
 			},

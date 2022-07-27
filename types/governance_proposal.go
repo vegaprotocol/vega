@@ -356,6 +356,8 @@ func (p ProposalTerms) IntoProto() *vegapb.ProposalTerms {
 		r.Change = ch
 	case *vegapb.ProposalTerms_NewAsset:
 		r.Change = ch
+	case *vegapb.ProposalTerms_UpdateAsset:
+		r.Change = ch
 	case *vegapb.ProposalTerms_NewFreeform:
 		r.Change = ch
 	}
@@ -382,6 +384,15 @@ func (p *ProposalTerms) GetNewAsset() *NewAsset {
 	switch c := p.Change.(type) {
 	case *ProposalTermsNewAsset:
 		return c.NewAsset
+	default:
+		return nil
+	}
+}
+
+func (p *ProposalTerms) GetUpdateAsset() *UpdateAsset {
+	switch c := p.Change.(type) {
+	case *ProposalTermsUpdateAsset:
+		return c.UpdateAsset
 	default:
 		return nil
 	}
@@ -438,6 +449,8 @@ func ProposalTermsFromProto(p *vegapb.ProposalTerms) (*ProposalTerms, error) {
 			change = NewUpdateNetworkParameterFromProto(ch)
 		case *vegapb.ProposalTerms_NewAsset:
 			change, err = NewNewAssetFromProto(ch)
+		case *vegapb.ProposalTerms_UpdateAsset:
+			change, err = NewUpdateAssetFromProto(ch)
 		case *vegapb.ProposalTerms_NewFreeform:
 			change = NewNewFreeformFromProto(ch)
 		}

@@ -36,8 +36,9 @@ type assetAction struct {
 	// all deposit related types
 	builtinD *types.BuiltinAssetDeposit
 	erc20D   *types.ERC20Deposit
+	erc20AL  *types.ERC20AssetList
 
-	erc20AL *types.ERC20AssetList
+	erc20AssetLimitsUpdated *types.ERC20AssetLimitsUpdated
 }
 
 func (t *assetAction) GetID() string {
@@ -52,6 +53,10 @@ func (t *assetAction) IsERC20Deposit() bool {
 	return t.erc20D != nil
 }
 
+func (t *assetAction) IsERC20AssetLimitsUpdated() bool {
+	return t.erc20AssetLimitsUpdated != nil
+}
+
 func (t *assetAction) IsERC20AssetList() bool {
 	return t.erc20AL != nil
 }
@@ -62,6 +67,10 @@ func (t *assetAction) BuiltinAssetDesposit() *types.BuiltinAssetDeposit {
 
 func (t *assetAction) ERC20Deposit() *types.ERC20Deposit {
 	return t.erc20D
+}
+
+func (t *assetAction) ERC20AssetLimitsUpdated() *types.ERC20AssetLimitsUpdated {
+	return t.erc20AssetLimitsUpdated
 }
 
 func (t *assetAction) ERC20AssetList() *types.ERC20AssetList {
@@ -76,6 +85,8 @@ func (t *assetAction) String() string {
 		return t.erc20D.String()
 	case t.IsERC20AssetList():
 		return t.erc20AL.String()
+	case t.IsERC20AssetLimitsUpdated():
+		return t.erc20AssetLimitsUpdated.String()
 	default:
 		return ""
 	}
@@ -89,6 +100,8 @@ func (t *assetAction) Check() error {
 		return t.checkERC20Deposit()
 	case t.IsERC20AssetList():
 		return t.checkERC20AssetList()
+	case t.IsERC20AssetLimitsUpdated():
+		return t.checkERC20AssetLimitsUpdated()
 	default:
 		return ErrUnknownAssetAction
 	}
@@ -108,6 +121,11 @@ func (t *assetAction) checkERC20AssetList() error {
 	return asset.ValidateAssetList(t.erc20AL, t.blockNumber, t.txIndex)
 }
 
+func (t *assetAction) checkERC20AssetLimitsUpdated() error {
+	asset, _ := t.asset.ERC20()
+	return asset.ValidateAssetLimitsUpdated(t.erc20AssetLimitsUpdated, t.blockNumber, t.txIndex)
+}
+
 func (t *assetAction) getRef() snapshot.TxRef {
 	switch {
 	case t.IsBuiltinAssetDeposit():
@@ -115,6 +133,8 @@ func (t *assetAction) getRef() snapshot.TxRef {
 	case t.IsERC20Deposit():
 		return snapshot.TxRef{Asset: string(common.ERC20), BlockNr: t.blockNumber, Hash: t.hash, LogIndex: t.txIndex}
 	case t.IsERC20AssetList():
+		return snapshot.TxRef{Asset: string(common.ERC20), BlockNr: t.blockNumber, Hash: t.hash, LogIndex: t.txIndex}
+	case t.IsERC20AssetLimitsUpdated():
 		return snapshot.TxRef{Asset: string(common.ERC20), BlockNr: t.blockNumber, Hash: t.hash, LogIndex: t.txIndex}
 	default:
 		return snapshot.TxRef{} // this is basically unreachable

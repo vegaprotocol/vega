@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"path/filepath"
 	"reflect"
+	"strings"
 	"time"
 
 	"code.vegaprotocol.io/protos/commands"
@@ -1337,6 +1338,8 @@ func (app *App) onTick(ctx context.Context, t time.Time) {
 			app.enactMarket(ctx, prop)
 		case toEnact.IsNewAsset():
 			app.enactAsset(ctx, prop, toEnact.NewAsset())
+		case toEnact.IsUpdateAsset():
+			app.enactAssetUpdate(ctx, prop, toEnact.UpdateAsset())
 		case toEnact.IsUpdateMarket():
 			app.enactUpdateMarket(ctx, prop, toEnact.UpdateMarket())
 		case toEnact.IsUpdateNetworkParameter():
@@ -1354,15 +1357,11 @@ func (app *App) onTick(ctx context.Context, t time.Time) {
 
 func (app *App) enactAsset(ctx context.Context, prop *types.Proposal, _ *types.Asset) {
 	prop.State = types.ProposalStateEnacted
-	// first check if this asset is real
 	asset, err := app.assets.Get(prop.ID)
 	if err != nil {
-		// this should not happen
-		app.log.Error("invalid asset is getting enacted",
-			logging.String("asset-id", prop.ID),
+		app.log.Panic("couldn't retrieve asset when enacting asset update",
+			logging.AssetID(prop.ID),
 			logging.Error(err))
-		prop.FailUnexpectedly(err)
-		return
 	}
 
 	// if this is a builtin asset nothing needs to be done, just start the asset
@@ -1370,34 +1369,77 @@ func (app *App) enactAsset(ctx context.Context, prop *types.Proposal, _ *types.A
 	if asset.IsBuiltinAsset() {
 		err = app.banking.EnableBuiltinAsset(ctx, asset.Type().ID)
 		if err != nil {
-			// this should not happen
-			app.log.Error("unable to get builtin asset enabled",
-				logging.String("asset-id", prop.ID),
+			app.log.Panic("unable to get builtin asset enabled",
+				logging.AssetID(prop.ID),
 				logging.Error(err))
-			prop.FailUnexpectedly(err)
 		}
 		return
 	}
 
 	var signature []byte
-	// only build a signature if we are a validator
 	if app.top.IsValidator() {
 		switch {
 		case asset.IsERC20():
 			asset, _ := asset.ERC20()
-			_, signature, err = asset.SignBridgeListing()
-		}
-		if err != nil {
-			// this cannot happen, if we have an issue, this means
-			// the node is not configured properly as a validator
-			app.log.Panic("unable to sign allowlisting transaction",
-				logging.String("asset-id", prop.ID),
-				logging.Error(err))
+			_, signature, err = asset.SignListAsset()
+			if err != nil {
+				app.log.Panic("couldn't to sign transaction to list asset, is the node properly configured as a validator?",
+					logging.AssetID(prop.ID),
+					logging.Error(err))
+			}
 		}
 	}
 
 	// then instruct the notary to start getting signature from validators
 	app.notary.StartAggregate(prop.ID, types.NodeSignatureKindAssetNew, signature)
+}
+
+func (app *App) enactAssetUpdate(_ context.Context, prop *types.Proposal, updatedAsset *types.Asset) {
+	asset, err := app.assets.Get(updatedAsset.ID)
+	if err != nil {
+		app.log.Panic("couldn't retrieve asset when enacting asset update",
+			logging.AssetID(updatedAsset.ID),
+			logging.Error(err))
+	}
+
+	var signature []byte
+	if app.top.IsValidator() {
+		switch {
+		case asset.IsERC20():
+			// need to remove IDs
+			nonce, err := num.UintFromHex("0x" + strings.TrimLeft(prop.ID, "0"))
+			if err != nil {
+				app.log.Panic("couldn't generate nonce from proposal ID",
+					logging.AssetID(updatedAsset.ID),
+					logging.ProposalID(prop.ID),
+					logging.Error(err),
+				)
+			}
+			asset, _ := asset.ERC20()
+			_, signature, err = asset.SignSetAssetLimits(
+				nonce,
+				updatedAsset.Details.GetERC20().LifetimeLimit.Clone(),
+				updatedAsset.Details.GetERC20().WithdrawThreshold.Clone(),
+			)
+			if err != nil {
+				app.log.Panic("couldn't to sign transaction to set asset limits, is the node properly configured as a validator?",
+					logging.AssetID(updatedAsset.ID),
+					logging.Error(err))
+			}
+		}
+	}
+
+	prop.State = types.ProposalStateEnacted
+
+	if err := app.assets.StageAssetUpdate(updatedAsset); err != nil {
+		app.log.Panic("couldn't stage the asset update",
+			logging.Error(err),
+			logging.AssetID(updatedAsset.ID),
+		)
+	}
+
+	// then instruct the notary to start getting signature from validators
+	app.notary.StartAggregate(prop.ID, types.NodeSignatureKindAssetUpdate, signature)
 }
 
 func (app *App) enactMarket(_ context.Context, prop *types.Proposal) {

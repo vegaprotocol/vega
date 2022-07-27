@@ -14,7 +14,6 @@ package assets
 
 import (
 	"context"
-	"errors"
 	"sort"
 
 	"code.vegaprotocol.io/vega/libs/proto"
@@ -22,22 +21,24 @@ import (
 )
 
 var (
-	activeKey  = (&types.PayloadActiveAssets{}).Key()
-	pendingKey = (&types.PayloadPendingAssets{}).Key()
+	activeKey         = (&types.PayloadActiveAssets{}).Key()
+	pendingKey        = (&types.PayloadPendingAssets{}).Key()
+	pendingUpdatesKey = (&types.PayloadPendingAssetUpdates{}).Key()
 
 	hashKeys = []string{
 		activeKey,
 		pendingKey,
+		pendingUpdatesKey,
 	}
-
-	ErrSnapshotKeyDoesNotExist = errors.New("unknown key for assets snapshot")
 )
 
 type assetsSnapshotState struct {
-	changedActive     bool
-	changedPending    bool
-	serialisedActive  []byte
-	serialisedPending []byte
+	changedActive            bool
+	changedPending           bool
+	changedPendingUpdates    bool
+	serialisedActive         []byte
+	serialisedPending        []byte
+	serialisedPendingUpdates []byte
 }
 
 func (s *Service) Namespace() types.SnapshotNamespace {
@@ -79,6 +80,20 @@ func (s *Service) serialisePending() ([]byte, error) {
 	return proto.Marshal(payload.IntoProto())
 }
 
+func (s *Service) serialisePendingUpdates() ([]byte, error) {
+	pendingUpdates := s.getPendingAssetUpdates()
+	sort.SliceStable(pendingUpdates, func(i, j int) bool { return pendingUpdates[i].ID < pendingUpdates[j].ID })
+	payload := types.Payload{
+		Data: &types.PayloadPendingAssetUpdates{
+			PendingAssetUpdates: &types.PendingAssetUpdates{
+				Assets: pendingUpdates,
+			},
+		},
+	}
+
+	return proto.Marshal(payload.IntoProto())
+}
+
 func (s *Service) serialiseK(k string, serialFunc func() ([]byte, error), dataField *[]byte, changedField *bool) ([]byte, error) {
 	if !s.HasChanged(k) {
 		if dataField == nil {
@@ -102,6 +117,8 @@ func (s *Service) serialise(k string) ([]byte, error) {
 		return s.serialiseK(k, s.serialiseActive, &s.ass.serialisedActive, &s.ass.changedActive)
 	case pendingKey:
 		return s.serialiseK(k, s.serialisePending, &s.ass.serialisedPending, &s.ass.changedPending)
+	case pendingUpdatesKey:
+		return s.serialiseK(k, s.serialisePendingUpdates, &s.ass.serialisedPendingUpdates, &s.ass.changedPendingUpdates)
 	default:
 		return nil, types.ErrSnapshotKeyDoesNotExist
 	}
@@ -112,6 +129,8 @@ func (s *Service) HasChanged(k string) bool {
 	// case activeKey:
 	// 	return s.ass.changedActive
 	// case pendingKey:
+	// 	return s.ass.changedPending
+	// case pendingUpdatesKey:
 	// 	return s.ass.changedPending
 	// default:
 	// 	return false
@@ -134,6 +153,8 @@ func (s *Service) LoadState(ctx context.Context, p *types.Payload) ([]types.Stat
 		return nil, s.restoreActive(ctx, pl.ActiveAssets, p)
 	case *types.PayloadPendingAssets:
 		return nil, s.restorePending(ctx, pl.PendingAssets, p)
+	case *types.PayloadPendingAssetUpdates:
+		return nil, s.restorePendingUpdates(ctx, pl.PendingAssetUpdates, p)
 	default:
 		return nil, types.ErrUnknownSnapshotType
 	}
@@ -182,6 +203,20 @@ func (s *Service) restorePending(ctx context.Context, pending *types.PendingAsse
 
 	s.ass.changedPending = false
 	s.ass.serialisedPending, err = proto.Marshal(p.IntoProto())
+
+	return err
+}
+
+func (s *Service) restorePendingUpdates(_ context.Context, pending *types.PendingAssetUpdates, p *types.Payload) error {
+	var err error
+	s.pendingAssetUpdates = map[string]*Asset{}
+	for _, p := range pending.Assets {
+		if err = s.StageAssetUpdate(p); err != nil {
+			return err
+		}
+	}
+	s.ass.changedPendingUpdates = false
+	s.ass.serialisedPendingUpdates, err = proto.Marshal(p.IntoProto())
 
 	return err
 }

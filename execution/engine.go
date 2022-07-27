@@ -1113,3 +1113,11 @@ func (e *Engine) GetEquityLikeShareForMarketAndParty(market, party string) (num.
 	}
 	return mkt.equityShares.SharesFromParty(party), true
 }
+
+func (e *Engine) GetAsset(assetID string) (types.Asset, bool) {
+	a, err := e.assets.Get(assetID)
+	if err != nil {
+		return types.Asset{}, false
+	}
+	return *a.ToAssetType(), true
+}
