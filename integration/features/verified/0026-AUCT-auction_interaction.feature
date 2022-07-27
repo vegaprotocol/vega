@@ -242,6 +242,8 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
       | 1000       | TRADING_MODE_CONTINUOUS | 100     | 990       | 1010      | 1000         | 1000           | 10            |
 
+    Then clear all events
+
     Then the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
       | party1 | ETH/DEC21 | buy  | 20     | 1010  | 0                | TYPE_LIMIT | TIF_GTC |
@@ -251,10 +253,18 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
       | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY | 3030         | 1000           | 10            |
 
     Then the following events should be emitted:
-      | type                   |
-      | BUS_EVENT_TYPE_AUCTION |
+      | type                               |
+      | PositionStateEvent                 |
+      | MarginLevelsEvent                  |
+      | AccountEvent                       |
+      | TransferResponses                  |
+      | LiquidityProvisionEvent            |
+      | OrderEvent                         |
+      | AuctionEvent                       |
+      | MarketUpdatedEvent                 |
+    And a total of "32" events should be emitted
 
-    And the parties submit the following liquidity provision:
+    Then the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type   |
       | lp1 | party0 | ETH/DEC21 | 10000             | 0.001 | buy  | BID              | 1          | 2      | amendment |
       | lp1 | party0 | ETH/DEC21 | 10000             | 0.001 | buy  | MID              | 2          | 1      | amendment |
