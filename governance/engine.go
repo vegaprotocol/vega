@@ -573,6 +573,8 @@ func (e *Engine) getProposalParams(terms *types.ProposalTerms) (*ProposalParamet
 		return e.getUpdateMarketProposalParameters(), nil
 	case types.ProposalTermsTypeNewAsset:
 		return e.getNewAssetProposalParameters(), nil
+	case types.ProposalTermsTypeUpdateAsset:
+		return e.getUpdateAssetProposalParameters(), nil
 	case types.ProposalTermsTypeUpdateNetworkParameter:
 		return e.getUpdateNetworkParameterProposalParameters(), nil
 	case types.ProposalTermsTypeNewFreeform:

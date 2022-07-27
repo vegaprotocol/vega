@@ -64,7 +64,7 @@ func NewUpdateAssetFromProto(p *vegapb.ProposalTerms_UpdateAsset) (*ProposalTerm
 
 		if p.UpdateAsset.Changes != nil {
 			var err error
-			updateAsset.Changes, err = AssetDetailsUpdateUpdateFromProto(p.UpdateAsset.Changes)
+			updateAsset.Changes, err = AssetDetailsUpdateFromProto(p.UpdateAsset.Changes)
 			if err != nil {
 				return nil, err
 			}
@@ -219,7 +219,7 @@ func (a AssetDetailsUpdate) Validate() (ProposalError, error) {
 	return a.Source.Validate()
 }
 
-func AssetDetailsUpdateUpdateFromProto(p *vegapb.AssetDetailsUpdate) (*AssetDetailsUpdate, error) {
+func AssetDetailsUpdateFromProto(p *vegapb.AssetDetailsUpdate) (*AssetDetailsUpdate, error) {
 	var (
 		src isAssetDetailsUpdate
 		err error
