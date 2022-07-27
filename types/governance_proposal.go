@@ -447,6 +447,8 @@ func ProposalTermsFromProto(p *vegapb.ProposalTerms) (*ProposalTerms, error) {
 			change = NewUpdateNetworkParameterFromProto(ch)
 		case *vegapb.ProposalTerms_NewAsset:
 			change, err = NewNewAssetFromProto(ch)
+		case *vegapb.ProposalTerms_UpdateAsset:
+			change, err = NewUpdateAssetFromProto(ch)
 		case *vegapb.ProposalTerms_NewFreeform:
 			change = NewNewFreeformFromProto(ch)
 		}
