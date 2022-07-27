@@ -275,9 +275,6 @@ func (e ERC20Logic) SetAssetLimits(
 	})
 
 	ethTokenAddr := ethcmn.HexToAddress(tokenAddress)
-
-	fmt.Printf("SIGN SET_ASSET_LIMITS: tokenAddr(%s), lifetimeLimit(%d), withdrawThreshold(%d), nonce(%d)\n", tokenAddress, lifetimeLimit.BigInt(), withdrawThreshold.BigInt(), nonce.BigInt())
-
 	buf, err := args.Pack([]interface{}{
 		ethTokenAddr,
 		lifetimeLimit.BigInt(),
