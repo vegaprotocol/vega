@@ -28,6 +28,7 @@ var (
 	hashKeys = []string{
 		activeKey,
 		pendingKey,
+		pendingUpdatesKey,
 	}
 )
 
