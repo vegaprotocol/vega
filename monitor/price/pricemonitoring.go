@@ -116,9 +116,10 @@ type StateVarEngine interface {
 
 // Engine allows tracking price changes and verifying them against the theoretical levels implied by the RangeProvider (risk model).
 type Engine struct {
-	log         *logging.Logger
-	riskModel   RangeProvider
-	minDuration time.Duration
+	log          *logging.Logger
+	riskModel    RangeProvider
+	auctionState AuctionState
+	minDuration  time.Duration
 
 	initialised bool
 	fpHorizons  map[int64]num.Decimal
@@ -155,7 +156,7 @@ func (e *Engine) Initialised() bool {
 }
 
 // NewMonitor returns a new instance of PriceMonitoring.
-func NewMonitor(asset, mktID string, riskModel RangeProvider, settings *types.PriceMonitoringSettings, stateVarEngine StateVarEngine, log *logging.Logger) (*Engine, error) {
+func NewMonitor(asset, mktID string, riskModel RangeProvider, auctionState AuctionState, settings *types.PriceMonitoringSettings, stateVarEngine StateVarEngine, log *logging.Logger) (*Engine, error) {
 	if riskModel == nil {
 		return nil, ErrNilRangeProvider
 	}
@@ -168,6 +169,7 @@ func NewMonitor(asset, mktID string, riskModel RangeProvider, settings *types.Pr
 
 	e := &Engine{
 		riskModel:               riskModel,
+		auctionState:            auctionState,
 		fpHorizons:              horizons,
 		bounds:                  bounds,
 		stateChanged:            true,
@@ -449,6 +451,21 @@ func (e *Engine) getCurrentPriceRanges(force bool) map[*bound]priceRange {
 		if !b.Active {
 			continue
 		}
+		if e.monitoringAuction() && len(e.pricesPast)+len(e.pricesNow) > 0 {
+			triggerLookback := e.now.Add(time.Duration(-b.Trigger.Horizon) * time.Second)
+			// check if trigger's not stale (newest reference price older than horizon lookback time)
+			var mostRecentObservation time.Time
+			if len(e.pricesNow) > 0 {
+				mostRecentObservation = e.now
+			} else {
+				x := e.pricesPast[len(e.pricesPast)-1]
+				mostRecentObservation = x.Time
+			}
+			if mostRecentObservation.Before(triggerLookback) {
+				b.Active = false
+				continue
+			}
+		}
 		ref := e.getRefPrice(b.Trigger.Horizon, force)
 		var min, max num.Decimal
 
@@ -473,6 +490,10 @@ func (e *Engine) getCurrentPriceRanges(force bool) map[*bound]priceRange {
 	e.priceRangeCacheTime = e.now
 	e.stateChanged = true
 	return e.priceRangesCache
+}
+
+func (e *Engine) monitoringAuction() bool {
+	return e.auctionState.IsLiquidityAuction() || e.auctionState.IsPriceAuction()
 }
 
 // clearStalePrices updates the pricesPast slice to hold only as many prices as implied by the horizon.
