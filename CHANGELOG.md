@@ -23,6 +23,7 @@ The init command now also generate the configuration for tendermint, the flags `
 - [5541](https://github.com/vegaprotocol/vega/issues/5541) - Support permissions in wallets
 - [5439](https://github.com/vegaprotocol/vega/issues/5439) - `vegwallet` returns better responses when a transaction fails
 - [5465](https://github.com/vegaprotocol/vega/issues/5465) - Verify `bytecode` of smart-contracts on startup
+- [5608](https://github.com/vegaprotocol/vega/issues/5608) - Ignore stale price monitoring trigger when market is already in auction
 
 ### 🐛 Fixes
 - [5571](https://github.com/vegaprotocol/vega/issues/5571) - Restore pending assets status correctly after snapshot restore

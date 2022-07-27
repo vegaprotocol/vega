@@ -27,6 +27,7 @@ func NewMonitorFromSnapshot(
 	pm *types.PriceMonitor,
 	settings *types.PriceMonitoringSettings,
 	riskModel RangeProvider,
+	auctionState AuctionState,
 	stateVarEngine StateVarEngine,
 	log *logging.Logger,
 ) (*Engine, error) {
@@ -41,6 +42,7 @@ func NewMonitorFromSnapshot(
 		market:              marketID,
 		log:                 log,
 		riskModel:           riskModel,
+		auctionState:        auctionState,
 		initialised:         pm.Initialised,
 		fpHorizons:          keyDecimalPairToMap(pm.FPHorizons),
 		now:                 pm.Now,
