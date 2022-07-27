@@ -958,7 +958,7 @@ func (e *Engine) updatedAssetFromProposal(p *proposal) (*types.Asset, types.Prop
 	}
 
 	switch src := a.Changes.Source.(type) {
-	case types.AssetDetailsUpdateERC20:
+	case *types.AssetDetailsUpdateERC20:
 		erc20, ok := existingAsset.ERC20()
 		if !ok {
 			return nil, types.ProposalErrorInvalidAsset, ErrExpectedERC20Asset
