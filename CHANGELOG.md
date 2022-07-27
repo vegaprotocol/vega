@@ -22,6 +22,7 @@ The init command now also generate the configuration for tendermint, the flags `
 - [5589](https://github.com/vegaprotocol/vega/issues/5589) - Used custom version of Clef
 - [5541](https://github.com/vegaprotocol/vega/issues/5541) - Support permissions in wallets
 - [5439](https://github.com/vegaprotocol/vega/issues/5439) - `vegwallet` returns better responses when a transaction fails
+- [5465](https://github.com/vegaprotocol/vega/issues/5465) - Verify `bytecode` of smart-contracts on startup
 
 ### 🐛 Fixes
 - [5571](https://github.com/vegaprotocol/vega/issues/5571) - Restore pending assets status correctly after snapshot restore
