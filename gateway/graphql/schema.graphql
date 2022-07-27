@@ -993,7 +993,16 @@ type Asset {
 
   "The global reward pool account for this asset"
   globalRewardPoolAccount: Account
-  }
+
+  "The taker fee reward account for this asset"
+  takerFeeRewardAccount: Account
+  "The maker fee reward account for this asset"
+  makerFeeRewardAccount: Account
+  "The liquidity provision reward account for this asset"
+  lpFeeRewardAccount: Account
+  "The market proposer reward account for this asset"
+  marketProposerRewardAccount: Account
+}
 
 "One of the possible asset sources"
 union AssetSource = BuiltinAsset | ERC20
