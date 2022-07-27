@@ -1313,6 +1313,7 @@ func (app *App) onTick(ctx context.Context, t time.Time) {
 }
 
 func (app *App) enactAsset(ctx context.Context, prop *types.Proposal, _ *types.Asset) {
+	prop.State = types.ProposalStateEnacted
 	asset, err := app.assets.Get(prop.ID)
 	if err != nil {
 		app.log.Panic("couldn't retrieve asset when enacting asset update",
@@ -1345,8 +1346,6 @@ func (app *App) enactAsset(ctx context.Context, prop *types.Proposal, _ *types.A
 			}
 		}
 	}
-
-	prop.State = types.ProposalStateEnacted
 
 	// then instruct the notary to start getting signature from validators
 	app.notary.StartAggregate(prop.ID, types.NodeSignatureKindAssetNew, signature)
