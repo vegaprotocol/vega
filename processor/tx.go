@@ -160,6 +160,8 @@ func (t Tx) Command() txn.Command {
 		return txn.ValidatorHeartbeatCommand
 	case *commandspb.InputData_EthereumKeyRotateSubmission:
 		return txn.RotateEthereumKeySubmissionCommand
+	case *commandspb.InputData_ProtocolUpgradeProposal:
+		return txn.ProtocolUpgradeCommand
 	default:
 		panic("unsupported command")
 	}
@@ -227,6 +229,8 @@ func (t Tx) GetCmd() interface{} {
 		return cmd.ValidatorHeartbeat
 	case *commandspb.InputData_EthereumKeyRotateSubmission:
 		return cmd.EthereumKeyRotateSubmission
+	case *commandspb.InputData_ProtocolUpgradeProposal:
+		return cmd.ProtocolUpgradeProposal
 	default:
 		return errors.New("unsupported command")
 	}
@@ -234,6 +238,12 @@ func (t Tx) GetCmd() interface{} {
 
 func (t Tx) Unmarshal(i interface{}) error {
 	switch cmd := t.inputData.Command.(type) {
+	case *commandspb.InputData_ProtocolUpgradeProposal:
+		underlyingCmd, ok := i.(*commandspb.ProtocolUpgradeProposal)
+		if !ok {
+			return errors.New("failed to unmarshall to ProtocolUpgradeProposal")
+		}
+		*underlyingCmd = *cmd.ProtocolUpgradeProposal
 	case *commandspb.InputData_OrderSubmission:
 		underlyingCmd, ok := i.(*commandspb.OrderSubmission)
 		if !ok {

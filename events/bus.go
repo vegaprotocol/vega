@@ -126,6 +126,7 @@ const (
 	ERC20MultiSigSignerRemovedEvent
 	PositionStateEvent
 	EthereumKeyRotationEvent
+	ProtocolUpgradeEvent
 )
 
 var (
@@ -186,6 +187,7 @@ var (
 		eventspb.BusEventType_BUS_EVENT_TYPE_ERC20_MULTI_SIG_SIGNER_REMOVED: ERC20MultiSigSignerRemovedEvent,
 		eventspb.BusEventType_BUS_EVENT_TYPE_POSITION_STATE:                 PositionStateEvent,
 		eventspb.BusEventType_BUS_EVENT_TYPE_ETHEREUM_KEY_ROTATION:          EthereumKeyRotationEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_PROTOCOL_UPGRADE_PROPOSAL:      ProtocolUpgradeEvent,
 
 		// If adding a type here, please also add it to data-node/broker/convert.go
 	}
@@ -238,6 +240,7 @@ var (
 		ERC20MultiSigSignerRemovedEvent: eventspb.BusEventType_BUS_EVENT_TYPE_ERC20_MULTI_SIG_SIGNER_REMOVED,
 		PositionStateEvent:              eventspb.BusEventType_BUS_EVENT_TYPE_POSITION_STATE,
 		EthereumKeyRotationEvent:        eventspb.BusEventType_BUS_EVENT_TYPE_ETHEREUM_KEY_ROTATION,
+		ProtocolUpgradeEvent:            eventspb.BusEventType_BUS_EVENT_TYPE_PROTOCOL_UPGRADE_PROPOSAL,
 	}
 
 	eventStrings = map[Type]string{
@@ -289,6 +292,7 @@ var (
 		ERC20MultiSigSignerRemovedEvent: "ERC20MultiSigSignerRemovedEvent",
 		PositionStateEvent:              "PositionStateEvent",
 		EthereumKeyRotationEvent:        "EthereumKeyRotationEvent",
+		ProtocolUpgradeEvent:            "ProtocolUpgradeEvent",
 	}
 )
 

@@ -151,6 +151,14 @@ func wrapPayloadIntoInputData(data *commandspb.InputData, cmd txn.Command, paylo
 	switch cmd {
 	case txn.SubmitOrderCommand, txn.CancelOrderCommand, txn.AmendOrderCommand, txn.VoteCommand, txn.WithdrawCommand, txn.LiquidityProvisionCommand, txn.ProposeCommand, txn.SubmitOracleDataCommand:
 		panic("command is not supported to be sent by a node.")
+	case txn.ProtocolUpgradeCommand:
+		if underlyingCmd, ok := payload.(*commandspb.ProtocolUpgradeProposal); ok {
+			data.Command = &commandspb.InputData_ProtocolUpgradeProposal{
+				ProtocolUpgradeProposal: underlyingCmd,
+			}
+		} else {
+			panic("failed to wrap to ProtocolUpgradeProposal")
+		}
 	case txn.AnnounceNodeCommand:
 		if underlyingCmd, ok := payload.(*commandspb.AnnounceNode); ok {
 			data.Command = &commandspb.InputData_AnnounceNode{

@@ -22,10 +22,16 @@ import (
 	"code.vegaprotocol.io/shared/paths"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/nodewallets"
+	"code.vegaprotocol.io/vega/types"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/rpc"
 	"github.com/gorilla/rpc/json"
 )
+
+type ProtocolUpgradeService interface {
+	// is vega core ready to be stopped and upgraded
+	GetUpgradeStatus() types.UpgradeStatus
+}
 
 // Server implement a socket server allowing to run simple RPC commands.
 type Server struct {
@@ -33,16 +39,36 @@ type Server struct {
 	cfg Config
 	srv *http.Server
 
-	nodeWallet *NodeWallet
+	nodeWallet             *NodeWallet
+	protocolUpgradeService ProtocolUpgradeAdminService
+}
+
+func NewNonValidatorServer(log *logging.Logger,
+	config Config,
+	vegaPaths paths.Paths,
+	protocolUpgradeService ProtocolUpgradeService,
+) (*Server, error) {
+	// setup logger
+	log = log.Named(namedLogger)
+	log.SetLevel(config.Level.Get())
+
+	return &Server{
+		log:                    log,
+		cfg:                    config,
+		nodeWallet:             nil,
+		srv:                    nil,
+		protocolUpgradeService: *NewProtocolUpgradeService(protocolUpgradeService),
+	}, nil
 }
 
 // NewServer returns a new instance of the RPC socket server.
-func NewServer(
+func NewValidatorServer(
 	log *logging.Logger,
 	config Config,
 	vegaPaths paths.Paths,
 	nodeWalletPassphrase string,
 	nodeWallets *nodewallets.NodeWallets,
+	protocolUpgradeService ProtocolUpgradeService,
 ) (*Server, error) {
 	// setup logger
 	log = log.Named(namedLogger)
@@ -54,10 +80,11 @@ func NewServer(
 	}
 
 	return &Server{
-		log:        log,
-		cfg:        config,
-		nodeWallet: nodeWallet,
-		srv:        nil,
+		log:                    log,
+		cfg:                    config,
+		nodeWallet:             nodeWallet,
+		srv:                    nil,
+		protocolUpgradeService: *NewProtocolUpgradeService(protocolUpgradeService),
 	}, nil
 }
 
@@ -89,7 +116,11 @@ func (s *Server) Start() {
 	rs.RegisterCodec(json.NewCodec(), "application/json")
 	rs.RegisterCodec(json.NewCodec(), "application/json;charset=UTF-8")
 
-	rs.RegisterService(s.nodeWallet, "")
+	if s.nodeWallet != nil {
+		rs.RegisterService(s.nodeWallet, "")
+	}
+	rs.RegisterService(s.protocolUpgradeService, "protocolupgrade")
+
 	r := mux.NewRouter()
 	r.Handle(s.cfg.Server.HttpPath, rs)
 

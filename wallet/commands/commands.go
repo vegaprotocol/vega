@@ -63,6 +63,8 @@ func CheckSubmitTransactionRequest(req *walletpb.SubmitTransactionRequest) comma
 		cmdErr = commands.CheckKeyRotateSubmission(cmd.KeyRotateSubmission)
 	case *walletpb.SubmitTransactionRequest_EthereumKeyRotateSubmission:
 		cmdErr = commands.CheckEthereumKeyRotateSubmission(cmd.EthereumKeyRotateSubmission)
+	case *walletpb.SubmitTransactionRequest_ProtocolUpgradeProposal:
+		cmdErr = commands.CheckProtocolUpgradeProposal(cmd.ProtocolUpgradeProposal)
 	default:
 		errs.AddForProperty("input_data.command", commands.ErrIsNotSupported)
 	}
@@ -161,6 +163,10 @@ func wrapRequestCommandIntoInputData(data *commandspb.InputData, req *walletpb.S
 	case *walletpb.SubmitTransactionRequest_EthereumKeyRotateSubmission:
 		data.Command = &commandspb.InputData_EthereumKeyRotateSubmission{
 			EthereumKeyRotateSubmission: req.GetEthereumKeyRotateSubmission(),
+		}
+	case *walletpb.SubmitTransactionRequest_ProtocolUpgradeProposal:
+		data.Command = &commandspb.InputData_ProtocolUpgradeProposal{
+			ProtocolUpgradeProposal: req.GetProtocolUpgradeProposal(),
 		}
 	default:
 		panic(fmt.Sprintf("command %v is not supported", cmd))
