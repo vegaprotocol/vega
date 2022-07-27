@@ -131,16 +131,20 @@ type ComplexityRoot struct {
 	}
 
 	Asset struct {
-		Decimals                 func(childComplexity int) int
-		GlobalRewardPoolAccount  func(childComplexity int) int
-		Id                       func(childComplexity int) int
-		InfrastructureFeeAccount func(childComplexity int) int
-		Name                     func(childComplexity int) int
-		Quantum                  func(childComplexity int) int
-		Source                   func(childComplexity int) int
-		Status                   func(childComplexity int) int
-		Symbol                   func(childComplexity int) int
-		TotalSupply              func(childComplexity int) int
+		Decimals                    func(childComplexity int) int
+		GlobalRewardPoolAccount     func(childComplexity int) int
+		Id                          func(childComplexity int) int
+		InfrastructureFeeAccount    func(childComplexity int) int
+		LpFeeRewardAccount          func(childComplexity int) int
+		MakerFeeRewardAccount       func(childComplexity int) int
+		MarketProposerRewardAccount func(childComplexity int) int
+		Name                        func(childComplexity int) int
+		Quantum                     func(childComplexity int) int
+		Source                      func(childComplexity int) int
+		Status                      func(childComplexity int) int
+		Symbol                      func(childComplexity int) int
+		TakerFeeRewardAccount       func(childComplexity int) int
+		TotalSupply                 func(childComplexity int) int
 	}
 
 	AssetEdge struct {
@@ -1414,6 +1418,10 @@ type AssetResolver interface {
 	Status(ctx context.Context, obj *vega.Asset) (AssetStatus, error)
 	InfrastructureFeeAccount(ctx context.Context, obj *vega.Asset) (*vega.Account, error)
 	GlobalRewardPoolAccount(ctx context.Context, obj *vega.Asset) (*vega.Account, error)
+	TakerFeeRewardAccount(ctx context.Context, obj *vega.Asset) (*vega.Account, error)
+	MakerFeeRewardAccount(ctx context.Context, obj *vega.Asset) (*vega.Account, error)
+	LpFeeRewardAccount(ctx context.Context, obj *vega.Asset) (*vega.Account, error)
+	MarketProposerRewardAccount(ctx context.Context, obj *vega.Asset) (*vega.Account, error)
 }
 type AuctionEventResolver interface {
 	AuctionStart(ctx context.Context, obj *v1.AuctionEvent) (string, error)
@@ -2047,6 +2055,27 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Asset.InfrastructureFeeAccount(childComplexity), true
 
+	case "Asset.lpFeeRewardAccount":
+		if e.complexity.Asset.LpFeeRewardAccount == nil {
+			break
+		}
+
+		return e.complexity.Asset.LpFeeRewardAccount(childComplexity), true
+
+	case "Asset.makerFeeRewardAccount":
+		if e.complexity.Asset.MakerFeeRewardAccount == nil {
+			break
+		}
+
+		return e.complexity.Asset.MakerFeeRewardAccount(childComplexity), true
+
+	case "Asset.marketProposerRewardAccount":
+		if e.complexity.Asset.MarketProposerRewardAccount == nil {
+			break
+		}
+
+		return e.complexity.Asset.MarketProposerRewardAccount(childComplexity), true
+
 	case "Asset.name":
 		if e.complexity.Asset.Name == nil {
 			break
@@ -2081,6 +2110,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Asset.Symbol(childComplexity), true
+
+	case "Asset.takerFeeRewardAccount":
+		if e.complexity.Asset.TakerFeeRewardAccount == nil {
+			break
+		}
+
+		return e.complexity.Asset.TakerFeeRewardAccount(childComplexity), true
 
 	case "Asset.totalSupply":
 		if e.complexity.Asset.TotalSupply == nil {
@@ -8946,7 +8982,16 @@ type Asset {
 
   "The global reward pool account for this asset"
   globalRewardPoolAccount: Account
-  }
+
+  "The taker fee reward account for this asset"
+  takerFeeRewardAccount: Account
+  "The maker fee reward account for this asset"
+  makerFeeRewardAccount: Account
+  "The liquidity provision reward account for this asset"
+  lpFeeRewardAccount: Account
+  "The market proposer reward account for this asset"
+  marketProposerRewardAccount: Account
+}
 
 "One of the possible asset sources"
 union AssetSource = BuiltinAsset | ERC20
@@ -14748,6 +14793,134 @@ func (ec *executionContext) _Asset_globalRewardPoolAccount(ctx context.Context, 
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return ec.resolvers.Asset().GlobalRewardPoolAccount(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*vega.Account)
+	fc.Result = res
+	return ec.marshalOAccount2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐAccount(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Asset_takerFeeRewardAccount(ctx context.Context, field graphql.CollectedField, obj *vega.Asset) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Asset",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Asset().TakerFeeRewardAccount(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*vega.Account)
+	fc.Result = res
+	return ec.marshalOAccount2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐAccount(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Asset_makerFeeRewardAccount(ctx context.Context, field graphql.CollectedField, obj *vega.Asset) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Asset",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Asset().MakerFeeRewardAccount(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*vega.Account)
+	fc.Result = res
+	return ec.marshalOAccount2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐAccount(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Asset_lpFeeRewardAccount(ctx context.Context, field graphql.CollectedField, obj *vega.Asset) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Asset",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Asset().LpFeeRewardAccount(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*vega.Account)
+	fc.Result = res
+	return ec.marshalOAccount2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐAccount(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Asset_marketProposerRewardAccount(ctx context.Context, field graphql.CollectedField, obj *vega.Asset) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Asset",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Asset().MarketProposerRewardAccount(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -43564,6 +43737,74 @@ func (ec *executionContext) _Asset(ctx context.Context, sel ast.SelectionSet, ob
 					}
 				}()
 				res = ec._Asset_globalRewardPoolAccount(ctx, field, obj)
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "takerFeeRewardAccount":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Asset_takerFeeRewardAccount(ctx, field, obj)
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "makerFeeRewardAccount":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Asset_makerFeeRewardAccount(ctx, field, obj)
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "lpFeeRewardAccount":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Asset_lpFeeRewardAccount(ctx, field, obj)
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "marketProposerRewardAccount":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Asset_marketProposerRewardAccount(ctx, field, obj)
 				return res
 			}
 

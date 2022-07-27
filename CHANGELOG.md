@@ -18,6 +18,7 @@
 - [795](https://github.com/vegaprotocol/data-node/issues/795) - Add node info endpoint
 - [481](https://github.com/vegaprotocol/data-node/issues/481) - Add pagination for delegations
 - [828](https://github.com/vegaprotocol/data-node/issues/828) - `v2` candles and market data `api`
+- [523](https://github.com/vegaprotocol/data-node/issues/523) - Added support for other account types in the `GraphQL` assets query
 - [827](https://github.com/vegaprotocol/data-node/issues/827) - `v2` nodes `api`
 
 ### 🐛 Fixes
