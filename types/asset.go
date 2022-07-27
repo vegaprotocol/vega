@@ -141,6 +141,10 @@ func (a AssetDetails) String() string {
 }
 
 func (a AssetDetails) Validate() (ProposalError, error) {
+	if len(a.Name) == 0 {
+		return ProposalErrorInvalidAssetDetails, ErrInvalidAssetNameEmpty
+	}
+
 	if len(a.Symbol) == 0 {
 		return ProposalErrorInvalidAssetDetails, ErrInvalidAssetSymbolEmpty
 	}
@@ -367,12 +371,12 @@ func (a AssetDetailsErc20) Validate() (ProposalError, error) {
 	if len(a.ERC20.ContractAddress) <= 0 {
 		return ProposalErrorMissingErc20ContractAddress, ErrMissingERC20ContractAddress
 	}
-	if a.ERC20.LifetimeLimit.EQ(num.Zero()) {
-		return ProposalErrorInvalidAsset, ErrLifetimeLimitMustBePositive
-	}
-	if a.ERC20.WithdrawThreshold.EQ(num.Zero()) {
-		return ProposalErrorInvalidAsset, ErrWithdrawThresholdMustBePositive
-	}
+	// if a.ERC20.LifetimeLimit.EQ(num.Zero()) {
+	// 	return ProposalErrorInvalidAsset, ErrLifetimeLimitMustBePositive
+	// }
+	// if a.ERC20.WithdrawThreshold.EQ(num.Zero()) {
+	// 	return ProposalErrorInvalidAsset, ErrWithdrawThresholdMustBePositive
+	// }
 	return ProposalErrorUnspecified, nil
 }
 
