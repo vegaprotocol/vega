@@ -949,7 +949,7 @@ func (r *myQueryResolver) NewFreeformProposals(ctx context.Context, inState *Pro
 }
 
 func (r *myQueryResolver) NodeData(ctx context.Context) (*types.NodeData, error) {
-	resp, err := r.tradingDataClient.GetNodeData(ctx, &protoapi.GetNodeDataRequest{})
+	resp, err := r.tradingDataClientV2.GetNetworkData(ctx, &v2.GetNetworkDataRequest{})
 	if err != nil {
 		return nil, err
 	}
@@ -966,8 +966,29 @@ func (r *myQueryResolver) Nodes(ctx context.Context) ([]*types.Node, error) {
 	return resp.Nodes, nil
 }
 
+func (r *myQueryResolver) NodesConnection(ctx context.Context, pagination *v2.Pagination) (*v2.NodesConnection, error) {
+	req := &v2.ListNodesRequest{
+		Pagination: pagination,
+	}
+	resp, err := r.tradingDataClientV2.ListNodes(ctx, req)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.Nodes, nil
+}
+
 func (r *myQueryResolver) Node(ctx context.Context, id string) (*types.Node, error) {
-	return r.r.getNodeByID(ctx, id)
+	resp, err := r.tradingDataClientV2.GetNode(ctx, &v2.GetNodeRequest{
+		Id: id,
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.Node, nil
 }
 
 func (r *myQueryResolver) KeyRotations(ctx context.Context, id *string) ([]*protoapi.KeyRotation, error) {
@@ -989,17 +1010,17 @@ func (r *myQueryResolver) KeyRotations(ctx context.Context, id *string) ([]*prot
 }
 
 func (r *myQueryResolver) Epoch(ctx context.Context, id *string) (*types.Epoch, error) {
-	var epochID uint64
+	var epochID *uint64
 	if id != nil {
 		parsedID, err := strconv.ParseUint(*id, 10, 64)
 		if err != nil {
 			return nil, err
 		}
 
-		epochID = parsedID
+		epochID = &parsedID
 	}
 
-	resp, err := r.tradingDataClient.GetEpoch(ctx, &protoapi.GetEpochRequest{Id: epochID})
+	resp, err := r.tradingDataClientV2.GetEpoch(ctx, &v2.GetEpochRequest{Id: epochID})
 	if err != nil {
 		return nil, err
 	}

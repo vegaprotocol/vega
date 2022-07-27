@@ -20,6 +20,7 @@ import (
 
 	"code.vegaprotocol.io/data-node/entities"
 	"code.vegaprotocol.io/data-node/metrics"
+	v2 "code.vegaprotocol.io/protos/data-node/api/v2"
 	"github.com/georgysavva/scany/pgxscan"
 )
 
@@ -248,9 +249,10 @@ func (store *Node) GetNodeData(ctx context.Context) (entities.NodeData, error) {
 	return nodeData, err
 }
 
-func (store *Node) GetNodes(ctx context.Context, epochSeq uint64) ([]entities.Node, error) {
+func (store *Node) GetNodes(ctx context.Context, epochSeq uint64, pagination entities.CursorPagination) ([]entities.Node, entities.PageInfo, error) {
 	defer metrics.StartSQLQuery("Node", "GetNodes")()
 	var nodes []entities.Node
+	var pageInfo entities.PageInfo
 
 	query := `WITH
 	current_delegations AS (
@@ -324,10 +326,25 @@ func (store *Node) GetNodes(ctx context.Context, epochSeq uint64) ([]entities.No
 		FROM join_event WHERE node_id = nodes.id
 		)
 	`
+	args := []interface{}{
+		epochSeq,
+	}
 
-	err := pgxscan.Select(ctx, store.pool, &nodes, query, epochSeq)
+	sorting, cmp, cursor := extractPaginationInfo(pagination)
 
-	return nodes, err
+	cursorParams := []CursorQueryParameter{
+		NewCursorQueryParameter("id", sorting, cmp, entities.NewNodeID(cursor)),
+	}
+
+	query, args = orderAndPaginateWithCursor(query, pagination, cursorParams, args...)
+
+	if err := pgxscan.Select(ctx, store.pool, &nodes, query, args...); err != nil {
+		return nil, pageInfo, fmt.Errorf("could not get nodes: %w", err)
+	}
+
+	nodes, pageInfo = entities.PageEntities[*v2.NodeEdge](nodes, pagination)
+
+	return nodes, pageInfo, nil
 }
 
 func (store *Node) GetNodeByID(ctx context.Context, nodeId string, epochSeq uint64) (entities.Node, error) {

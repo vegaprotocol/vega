@@ -284,6 +284,7 @@ type ComplexityRoot struct {
 		ID                    func(childComplexity int) int
 		Timestamps            func(childComplexity int) int
 		Validators            func(childComplexity int) int
+		ValidatorsConnection  func(childComplexity int, pagination *v2.Pagination) int
 	}
 
 	EpochData struct {
@@ -676,10 +677,20 @@ type ComplexityRoot struct {
 		ValidatingNodes func(childComplexity int) int
 	}
 
+	NodeEdge struct {
+		Cursor func(childComplexity int) int
+		Node   func(childComplexity int) int
+	}
+
 	NodeSignature struct {
 		Id        func(childComplexity int) int
 		Kind      func(childComplexity int) int
 		Signature func(childComplexity int) int
+	}
+
+	NodesConnection struct {
+		Edges    func(childComplexity int) int
+		PageInfo func(childComplexity int) int
 	}
 
 	ObservableLiquidityProviderFeeShare struct {
@@ -1036,6 +1047,7 @@ type ComplexityRoot struct {
 		NodeData                           func(childComplexity int) int
 		NodeSignatures                     func(childComplexity int, resourceID string) int
 		Nodes                              func(childComplexity int) int
+		NodesConnection                    func(childComplexity int, pagination *v2.Pagination) int
 		OracleData                         func(childComplexity int, pagination *OffsetPagination) int
 		OracleDataBySpec                   func(childComplexity int, oracleSpecID string, pagination *OffsetPagination) int
 		OracleDataBySpecConnection         func(childComplexity int, oracleSpecID string, pagination *v2.Pagination) int
@@ -1448,6 +1460,8 @@ type DepositResolver interface {
 type EpochResolver interface {
 	ID(ctx context.Context, obj *vega.Epoch) (string, error)
 
+	ValidatorsConnection(ctx context.Context, obj *vega.Epoch, pagination *v2.Pagination) (*v2.NodesConnection, error)
+
 	DelegationsConnection(ctx context.Context, obj *vega.Epoch, partyID *string, nodeID *string, pagination *v2.Pagination) (*v2.DelegationsConnection, error)
 }
 type EpochTimestampsResolver interface {
@@ -1766,6 +1780,7 @@ type QueryResolver interface {
 	NetworkParameters(ctx context.Context) ([]*vega.NetworkParameter, error)
 	NodeData(ctx context.Context) (*vega.NodeData, error)
 	Nodes(ctx context.Context) ([]*vega.Node, error)
+	NodesConnection(ctx context.Context, pagination *v2.Pagination) (*v2.NodesConnection, error)
 	Node(ctx context.Context, id string) (*vega.Node, error)
 	KeyRotations(ctx context.Context, id *string) ([]*v12.KeyRotation, error)
 	Epoch(ctx context.Context, id *string) (*vega.Epoch, error)
@@ -2630,6 +2645,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Epoch.Validators(childComplexity), true
+
+	case "Epoch.validatorsConnection":
+		if e.complexity.Epoch.ValidatorsConnection == nil {
+			break
+		}
+
+		args, err := ec.field_Epoch_validatorsConnection_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Epoch.ValidatorsConnection(childComplexity, args["pagination"].(*v2.Pagination)), true
 
 	case "EpochData.offline":
 		if e.complexity.EpochData.Offline == nil {
@@ -4350,6 +4377,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.NodeData.ValidatingNodes(childComplexity), true
 
+	case "NodeEdge.cursor":
+		if e.complexity.NodeEdge.Cursor == nil {
+			break
+		}
+
+		return e.complexity.NodeEdge.Cursor(childComplexity), true
+
+	case "NodeEdge.node":
+		if e.complexity.NodeEdge.Node == nil {
+			break
+		}
+
+		return e.complexity.NodeEdge.Node(childComplexity), true
+
 	case "NodeSignature.id":
 		if e.complexity.NodeSignature.Id == nil {
 			break
@@ -4370,6 +4411,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.NodeSignature.Signature(childComplexity), true
+
+	case "NodesConnection.edges":
+		if e.complexity.NodesConnection.Edges == nil {
+			break
+		}
+
+		return e.complexity.NodesConnection.Edges(childComplexity), true
+
+	case "NodesConnection.pageInfo":
+		if e.complexity.NodesConnection.PageInfo == nil {
+			break
+		}
+
+		return e.complexity.NodesConnection.PageInfo(childComplexity), true
 
 	case "ObservableLiquidityProviderFeeShare.averageEntryValuation":
 		if e.complexity.ObservableLiquidityProviderFeeShare.AverageEntryValuation == nil {
@@ -6127,6 +6182,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.Nodes(childComplexity), true
+
+	case "Query.nodesConnection":
+		if e.complexity.Query.NodesConnection == nil {
+			break
+		}
+
+		args, err := ec.field_Query_nodesConnection_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.NodesConnection(childComplexity, args["pagination"].(*v2.Pagination)), true
 
 	case "Query.oracleData":
 		if e.complexity.Query.OracleData == nil {
@@ -8470,7 +8537,10 @@ type Query {
   nodeData: NodeData
 
   "all known network nodes"
-  nodes: [Node!]
+  nodes: [Node!] @deprecated(reason: "use nodesConnection instead")
+
+  "all known network nodes"
+  nodesConnection(pagination: Pagination): NodesConnection!
 
   "specific node in network"
   node("required id of node" id: String!): Node
@@ -8690,7 +8760,10 @@ type Epoch {
   timestamps: EpochTimestamps!
 
   "Validators that participated in this epoch"
-  validators: [Node!]!
+  validators: [Node!]! @deprecated(reason: "Use validatorsConnection instead")
+
+  "Validators that participated in this epoch"
+  validatorsConnection(pagination: Pagination): NodesConnection!
 
   delegations(
     # Optional party id to filter on
@@ -11637,6 +11710,20 @@ type DelegationsConnection {
   "The pagination information"
   pageInfo: PageInfo!
 }
+
+type NodeEdge {
+  "The node"
+  node: Node!
+  "Cursor identifying the node"
+  cursor: String!
+}
+
+type NodesConnection {
+  "List of nodes available for the connection"
+  edges: [NodeEdge]
+  "Page information for the connection"
+  pageInfo: PageInfo!
+}
 `, BuiltIn: false},
 }
 var parsedSchema = gqlparser.MustLoadSchema(sources...)
@@ -11726,6 +11813,21 @@ func (ec *executionContext) field_Epoch_delegations_args(ctx context.Context, ra
 		}
 	}
 	args["last"] = arg4
+	return args, nil
+}
+
+func (ec *executionContext) field_Epoch_validatorsConnection_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *v2.Pagination
+	if tmp, ok := rawArgs["pagination"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pagination"))
+		arg0, err = ec.unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPagination(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["pagination"] = arg0
 	return args, nil
 }
 
@@ -13037,6 +13139,21 @@ func (ec *executionContext) field_Query_node_args(ctx context.Context, rawArgs m
 		}
 	}
 	args["id"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_nodesConnection_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *v2.Pagination
+	if tmp, ok := rawArgs["pagination"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pagination"))
+		arg0, err = ec.unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPagination(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["pagination"] = arg0
 	return args, nil
 }
 
@@ -17264,6 +17381,48 @@ func (ec *executionContext) _Epoch_validators(ctx context.Context, field graphql
 	res := resTmp.([]*vega.Node)
 	fc.Result = res
 	return ec.marshalNNode2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐNodeᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Epoch_validatorsConnection(ctx context.Context, field graphql.CollectedField, obj *vega.Epoch) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Epoch",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Epoch_validatorsConnection_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Epoch().ValidatorsConnection(rctx, obj, args["pagination"].(*v2.Pagination))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*v2.NodesConnection)
+	fc.Result = res
+	return ec.marshalNNodesConnection2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐNodesConnection(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Epoch_delegations(ctx context.Context, field graphql.CollectedField, obj *vega.Epoch) (ret graphql.Marshaler) {
@@ -25561,6 +25720,76 @@ func (ec *executionContext) _NodeData_uptime(ctx context.Context, field graphql.
 	return ec.marshalNFloat2float64(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _NodeEdge_node(ctx context.Context, field graphql.CollectedField, obj *v2.NodeEdge) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "NodeEdge",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Node, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*vega.Node)
+	fc.Result = res
+	return ec.marshalNNode2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐNode(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _NodeEdge_cursor(ctx context.Context, field graphql.CollectedField, obj *v2.NodeEdge) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "NodeEdge",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Cursor, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _NodeSignature_id(ctx context.Context, field graphql.CollectedField, obj *v13.NodeSignature) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -25658,6 +25887,73 @@ func (ec *executionContext) _NodeSignature_kind(ctx context.Context, field graph
 	res := resTmp.(*NodeSignatureKind)
 	fc.Result = res
 	return ec.marshalONodeSignatureKind2ᚖcodeᚗvegaprotocolᚗioᚋdataᚑnodeᚋgatewayᚋgraphqlᚐNodeSignatureKind(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _NodesConnection_edges(ctx context.Context, field graphql.CollectedField, obj *v2.NodesConnection) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "NodesConnection",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Edges, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*v2.NodeEdge)
+	fc.Result = res
+	return ec.marshalONodeEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐNodeEdge(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _NodesConnection_pageInfo(ctx context.Context, field graphql.CollectedField, obj *v2.NodesConnection) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "NodesConnection",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PageInfo, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*v2.PageInfo)
+	fc.Result = res
+	return ec.marshalNPageInfo2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPageInfo(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _ObservableLiquidityProviderFeeShare_partyId(ctx context.Context, field graphql.CollectedField, obj *ObservableLiquidityProviderFeeShare) (ret graphql.Marshaler) {
@@ -33928,6 +34224,48 @@ func (ec *executionContext) _Query_nodes(ctx context.Context, field graphql.Coll
 	res := resTmp.([]*vega.Node)
 	fc.Result = res
 	return ec.marshalONode2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐNodeᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_nodesConnection(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_nodesConnection_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().NodesConnection(rctx, args["pagination"].(*v2.Pagination))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*v2.NodesConnection)
+	fc.Result = res
+	return ec.marshalNNodesConnection2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐNodesConnection(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_node(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -44810,6 +45148,26 @@ func (ec *executionContext) _Epoch(ctx context.Context, sel ast.SelectionSet, ob
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
+		case "validatorsConnection":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Epoch_validatorsConnection(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
 		case "delegations":
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Epoch_delegations(ctx, field, obj)
@@ -48964,6 +49322,47 @@ func (ec *executionContext) _NodeData(ctx context.Context, sel ast.SelectionSet,
 	return out
 }
 
+var nodeEdgeImplementors = []string{"NodeEdge"}
+
+func (ec *executionContext) _NodeEdge(ctx context.Context, sel ast.SelectionSet, obj *v2.NodeEdge) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, nodeEdgeImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("NodeEdge")
+		case "node":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._NodeEdge_node(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "cursor":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._NodeEdge_cursor(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
 var nodeSignatureImplementors = []string{"NodeSignature", "Event"}
 
 func (ec *executionContext) _NodeSignature(ctx context.Context, sel ast.SelectionSet, obj *v13.NodeSignature) graphql.Marshaler {
@@ -49018,6 +49417,44 @@ func (ec *executionContext) _NodeSignature(ctx context.Context, sel ast.Selectio
 				return innerFunc(ctx)
 
 			})
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var nodesConnectionImplementors = []string{"NodesConnection"}
+
+func (ec *executionContext) _NodesConnection(ctx context.Context, sel ast.SelectionSet, obj *v2.NodesConnection) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, nodesConnectionImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("NodesConnection")
+		case "edges":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._NodesConnection_edges(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+		case "pageInfo":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._NodesConnection_pageInfo(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -53423,6 +53860,29 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_nodes(ctx, field)
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx, innerFunc)
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return rrm(innerCtx)
+			})
+		case "nodesConnection":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_nodesConnection(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
 				return res
 			}
 
@@ -58609,6 +59069,20 @@ func (ec *executionContext) marshalNNodeStatus2codeᚗvegaprotocolᚗioᚋdata�
 	return v
 }
 
+func (ec *executionContext) marshalNNodesConnection2codeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐNodesConnection(ctx context.Context, sel ast.SelectionSet, v v2.NodesConnection) graphql.Marshaler {
+	return ec._NodesConnection(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNNodesConnection2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐNodesConnection(ctx context.Context, sel ast.SelectionSet, v *v2.NodesConnection) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._NodesConnection(ctx, sel, v)
+}
+
 func (ec *executionContext) marshalNObservableLiquidityProviderFeeShare2ᚖcodeᚗvegaprotocolᚗioᚋdataᚑnodeᚋgatewayᚋgraphqlᚐObservableLiquidityProviderFeeShare(ctx context.Context, sel ast.SelectionSet, v *ObservableLiquidityProviderFeeShare) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -61756,6 +62230,54 @@ func (ec *executionContext) marshalONodeData2ᚖcodeᚗvegaprotocolᚗioᚋproto
 		return graphql.Null
 	}
 	return ec._NodeData(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalONodeEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐNodeEdge(ctx context.Context, sel ast.SelectionSet, v []*v2.NodeEdge) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalONodeEdge2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐNodeEdge(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	return ret
+}
+
+func (ec *executionContext) marshalONodeEdge2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐNodeEdge(ctx context.Context, sel ast.SelectionSet, v *v2.NodeEdge) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._NodeEdge(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalONodeSignature2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚋcommandsᚋv1ᚐNodeSignatureᚄ(ctx context.Context, sel ast.SelectionSet, v []*v13.NodeSignature) graphql.Marshaler {

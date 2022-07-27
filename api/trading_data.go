@@ -885,7 +885,7 @@ func (t *tradingDataService) GetEpoch(ctx context.Context, req *protoapi.GetEpoc
 	}
 	protoEpoch.Delegations = protoDelegations
 
-	nodes, err := t.nodeService.GetNodes(ctx, uint64(epoch.ID))
+	nodes, _, err := t.nodeService.GetNodes(ctx, uint64(epoch.ID), entities.CursorPagination{})
 	if err != nil {
 		return nil, apiError(codes.Internal, err)
 	}
@@ -2206,7 +2206,7 @@ func (t *tradingDataService) GetNodes(ctx context.Context, req *protoapi.GetNode
 		return nil, apiError(codes.Internal, err)
 	}
 
-	nodes, err := t.nodeService.GetNodes(ctx, uint64(epoch.ID))
+	nodes, _, err := t.nodeService.GetNodes(ctx, uint64(epoch.ID), entities.CursorPagination{})
 	if err != nil {
 		fmt.Printf("%v", err)
 		return nil, apiError(codes.Internal, err)

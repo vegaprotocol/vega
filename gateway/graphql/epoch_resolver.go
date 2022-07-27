@@ -56,6 +56,23 @@ func (r *epochResolver) Delegations(
 
 	return resp.Delegations, nil
 }
+func (r *epochResolver) ValidatorsConnection(ctx context.Context, epoch *proto.Epoch, pagination *v2.Pagination) (*v2.NodesConnection, error) {
+	var epochSeq *uint64
+	if epoch != nil {
+		epochSeq = &epoch.Seq
+	}
+
+	resp, err := r.tradingDataClientV2.ListNodes(ctx, &v2.ListNodesRequest{
+		EpochSeq:   epochSeq,
+		Pagination: pagination,
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.Nodes, err
+}
 
 func (r *epochResolver) DelegationsConnection(ctx context.Context, epoch *proto.Epoch, partyID *string, nodeID *string, pagination *v2.Pagination) (*v2.DelegationsConnection, error) {
 	var epochID *string
