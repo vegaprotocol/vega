@@ -29,12 +29,12 @@ func (a ProposalTermsUpdateAsset) String() string {
 }
 
 func (a ProposalTermsUpdateAsset) IntoProto() *vegapb.ProposalTerms_UpdateAsset {
-	var newAsset *vegapb.UpdateAsset
+	var updateAsset *vegapb.UpdateAsset
 	if a.UpdateAsset != nil {
-		newAsset = a.UpdateAsset.IntoProto()
+		updateAsset = a.UpdateAsset.IntoProto()
 	}
 	return &vegapb.ProposalTerms_UpdateAsset{
-		UpdateAsset: newAsset,
+		UpdateAsset: updateAsset,
 	}
 }
 
@@ -58,13 +58,13 @@ func (a ProposalTermsUpdateAsset) DeepClone() proposalTerm {
 }
 
 func NewUpdateAssetFromProto(p *vegapb.ProposalTerms_UpdateAsset) (*ProposalTermsUpdateAsset, error) {
-	var newAsset *UpdateAsset
+	var updateAsset *UpdateAsset
 	if p.UpdateAsset != nil {
-		newAsset = &UpdateAsset{}
+		updateAsset = &UpdateAsset{}
 
 		if p.UpdateAsset.Changes != nil {
 			var err error
-			newAsset.Changes, err = AssetDetailsUpdateUpdateFromProto(p.UpdateAsset.Changes)
+			updateAsset.Changes, err = AssetDetailsUpdateUpdateFromProto(p.UpdateAsset.Changes)
 			if err != nil {
 				return nil, err
 			}
@@ -72,7 +72,7 @@ func NewUpdateAssetFromProto(p *vegapb.ProposalTerms_UpdateAsset) (*ProposalTerm
 	}
 
 	return &ProposalTermsUpdateAsset{
-		UpdateAsset: newAsset,
+		UpdateAsset: updateAsset,
 	}, nil
 }
 

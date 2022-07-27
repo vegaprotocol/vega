@@ -356,6 +356,8 @@ func (p ProposalTerms) IntoProto() *vegapb.ProposalTerms {
 		r.Change = ch
 	case *vegapb.ProposalTerms_NewAsset:
 		r.Change = ch
+	case *vegapb.ProposalTerms_UpdateAsset:
+		r.Change = ch
 	case *vegapb.ProposalTerms_NewFreeform:
 		r.Change = ch
 	}

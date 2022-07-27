@@ -55,6 +55,16 @@ const (
 	GovernanceProposalAssetMinProposerBalance    = "governance.proposal.asset.minProposerBalance"
 	GovernanceProposalAssetMinVoterBalance       = "governance.proposal.asset.minVoterBalance"
 
+	// update asset proposal parameters.
+	GovernanceProposalUpdateAssetMinClose              = "governance.proposal.updateAsset.minClose"
+	GovernanceProposalUpdateAssetMaxClose              = "governance.proposal.updateAsset.maxClose"
+	GovernanceProposalUpdateAssetMinEnact              = "governance.proposal.updateAsset.minEnact"
+	GovernanceProposalUpdateAssetMaxEnact              = "governance.proposal.updateAsset.maxEnact"
+	GovernanceProposalUpdateAssetRequiredParticipation = "governance.proposal.updateAsset.requiredParticipation"
+	GovernanceProposalUpdateAssetRequiredMajority      = "governance.proposal.updateAsset.requiredMajority"
+	GovernanceProposalUpdateAssetMinProposerBalance    = "governance.proposal.updateAsset.minProposerBalance"
+	GovernanceProposalUpdateAssetMinVoterBalance       = "governance.proposal.updateAsset.minVoterBalance"
+
 	// updateMarket proposal parameters.
 	GovernanceProposalUpdateMarketMinClose                   = "governance.proposal.updateMarket.minClose"
 	GovernanceProposalUpdateMarketMaxClose                   = "governance.proposal.updateMarket.maxClose"
@@ -250,4 +260,12 @@ var AllKeys = map[string]struct{}{
 	SpamPoWIncreasingDifficulty:                              {},
 	LimitsProposeMarketEnabledFrom:                           {},
 	LimitsProposeAssetEnabledFrom:                            {},
+	GovernanceProposalUpdateAssetMinClose:                    {},
+	GovernanceProposalUpdateAssetMaxClose:                    {},
+	GovernanceProposalUpdateAssetMinEnact:                    {},
+	GovernanceProposalUpdateAssetMaxEnact:                    {},
+	GovernanceProposalUpdateAssetRequiredParticipation:       {},
+	GovernanceProposalUpdateAssetRequiredMajority:            {},
+	GovernanceProposalUpdateAssetMinProposerBalance:          {},
+	GovernanceProposalUpdateAssetMinVoterBalance:             {},
 }
