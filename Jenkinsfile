@@ -74,13 +74,18 @@ pipeline {
             options { retry(3) }
             steps {
                 dir('vega') {
-                    sh 'go mod download -x'
+                    sh '''#!/bin/bash -e
+                        go mod download -x
+                    '''
                 }
             }
         }
 
+        //
+        // Begin COMPILE
+        //
         stage('Compile') {
-            // failFast true
+            failFast true
             matrix {
                 axes {
                     axis {
@@ -114,7 +119,7 @@ pipeline {
                         steps {
                             sh 'printenv'
                             dir('vega') {
-                                sh label: 'Compile', script: """
+                                sh label: 'Compile', script: """#!/bin/bash -e
                                     go build -v \
                                         -o ../build-${GOOS}-${GOARCH}/ \
                                         ./cmd/vega \
@@ -124,16 +129,16 @@ pipeline {
                                 sh label: 'check for modifications', script: 'git diff'
                             }
                             dir("build-${GOOS}-${GOARCH}") {
-                                sh label: 'list files', script: '''
+                                sh label: 'list files', script: '''#!/bin/bash -e
                                     pwd
                                     ls -lah
                                 '''
-                                sh label: 'Sanity check', script: '''
+                                sh label: 'Sanity check', script: '''#!/bin/bash -e
                                     file *
                                 '''
                                 script {
                                     if ( GOOS == "linux" && GOARCH == "amd64" ) {
-                                        sh label: 'get version', script: '''
+                                        sh label: 'get version', script: '''#!/bin/bash -e
                                             ./vega version
                                             ./data-node version
                                             ./vegawallet version
@@ -146,33 +151,42 @@ pipeline {
                 }
             }
         }
+        //
+        // End COMPILE
+        //
 
-        // stage('Build docker image') {
-        //     environment {
-        //         LINUX_BINARY = './cmd/vega/vega-linux-amd64'
-        //     }
-        //     options { retry(3) }
-        //     steps {
-        //         dir('vega') {
-        //             sh label: 'Copy binary', script: '''#!/bin/bash -e
-        //                 mkdir -p docker/bin
-        //                 cp -a "${LINUX_BINARY}" "docker/bin/vega"
-        //             '''
-        //             // Note: This docker image is used by publish stage
-        //             withDockerRegistry([credentialsId: 'github-vega-ci-bot-artifacts', url: "https://ghcr.io"]) {
-        //                 sh label: 'Build docker image', script: '''
-        //                     docker build -t "${DOCKER_IMAGE_VEGA_CORE_LOCAL}" docker/
-        //                 '''
-        //             }
-        //             sh label: 'Cleanup', script: '''#!/bin/bash -e
-        //                 rm -rf docker/bin
-        //             '''
-        //             sh label: 'Sanity check', script: '''
-        //                 docker run --rm --entrypoint "" "${DOCKER_IMAGE_VEGA_CORE_LOCAL}" vega version
-        //             '''
-        //         }
-        //     }
-        // }
+        //
+        // Begin DOCKER
+        //
+        stage('Build docker image') {
+            matrix {
+                axes {
+                    axis {
+                        name 'APP'
+                        values 'vega', 'data-node', 'vegawallet'
+                    }
+                }
+                stages {
+                    stage('docker build') {
+                        steps {
+                            dir('vega') {
+                                // TODO: add --push to publish images
+                                sh """#!/bin/bash -e
+                                    docker buildx build \
+                                        --platform=linux/arm64,linux/amd64 \
+                                        -f docker/${APP}.dockerfile \
+                                        -t ${APP}:${DOCKER_IMAGE_TAG_LOCAL} \
+                                        .
+                                """
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        //
+        // End DOCKER
+        //
 
         // stage('Linters') {
         //     parallel {
