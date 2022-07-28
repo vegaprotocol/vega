@@ -17,11 +17,12 @@ import (
 	"os"
 	"path"
 
+	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/visor/config"
 	"code.vegaprotocol.io/vega/visor/utils"
 )
 
-func Init(homeFolder string) error {
+func Init(log *logging.Logger, homeFolder string) error {
 	homePath, err := utils.AbsPath(homeFolder)
 	if err != nil {
 		return fmt.Errorf("failed to get absolute path for %q: %w", homeFolder, err)
@@ -36,16 +37,19 @@ func Init(homeFolder string) error {
 		return fmt.Errorf("home folder %q already exists", homePath)
 	}
 
-	visorConf := config.DefaultVisorConfig(homePath)
+	visorConf := config.DefaultVisorConfig(log, homePath)
 
-	if err := initDefaultFolder(visorConf.UpgradeFolder(), "upgrade"); err != nil {
-		return err
-	}
-
+	log.Info("Initiating genesis folder")
 	if err := initDefaultFolder(visorConf.GenesisFolder(), "genesis"); err != nil {
 		return err
 	}
 
+	log.Info("Initiating upgrade folder")
+	if err := initDefaultFolder(visorConf.UpgradeFolder(), "upgrade"); err != nil {
+		return err
+	}
+
+	log.Info("Saving default config file")
 	if err := visorConf.WriteToFile(); err != nil {
 		return fmt.Errorf("failed to write config to file: %w", err)
 	}

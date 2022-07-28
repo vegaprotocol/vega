@@ -15,12 +15,12 @@ package config
 import (
 	"context"
 	"fmt"
-	"log"
 	"path"
 	"sync"
 	"time"
 
 	"code.vegaprotocol.io/shared/paths"
+	"code.vegaprotocol.io/vega/logging"
 	"github.com/fsnotify/fsnotify"
 	"golang.org/x/sync/errgroup"
 )
@@ -56,10 +56,12 @@ type VisorConfig struct {
 	configPath string
 	homePath   string
 	data       *VisorConfigFile
+	log        *logging.Logger
 }
 
-func DefaultVisorConfig(homePath string) *VisorConfig {
+func DefaultVisorConfig(log *logging.Logger, homePath string) *VisorConfig {
 	return &VisorConfig{
+		log:        log,
 		homePath:   homePath,
 		configPath: path.Join(homePath, configFileName),
 		data: &VisorConfigFile{
@@ -70,7 +72,7 @@ func DefaultVisorConfig(homePath string) *VisorConfig {
 	}
 }
 
-func NewVisorConfig(homePath string) (*VisorConfig, error) {
+func NewVisorConfig(log *logging.Logger, homePath string) (*VisorConfig, error) {
 	configPath := path.Join(homePath, configFileName)
 
 	dataFile, err := parseAndValidateVisorConfigFile(configPath)
@@ -82,14 +84,14 @@ func NewVisorConfig(homePath string) (*VisorConfig, error) {
 		configPath: configPath,
 		homePath:   homePath,
 		data:       dataFile,
+		log:        log,
 	}, nil
 }
 
 func (pc *VisorConfig) reload() error {
-	log.Println("reloading config")
+	pc.log.Info("Reloading config")
 	dataFile, err := parseAndValidateVisorConfigFile(pc.configPath)
 	if err != nil {
-		log.Println("reloading config err: ", err)
 		return fmt.Errorf("failed to parse config: %w", err)
 	}
 
@@ -99,7 +101,7 @@ func (pc *VisorConfig) reload() error {
 	pc.data.RestartsDelaySeconds = dataFile.RestartsDelaySeconds
 	pc.mut.Unlock()
 
-	log.Println("reloading config success")
+	pc.log.Info("Reloading config success")
 
 	return nil
 }

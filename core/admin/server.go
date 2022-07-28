@@ -117,9 +117,13 @@ func (s *Server) Start() {
 	rs.RegisterCodec(json.NewCodec(), "application/json;charset=UTF-8")
 
 	if s.nodeWallet != nil {
-		rs.RegisterService(s.nodeWallet, "")
+		if err := rs.RegisterService(s.nodeWallet, ""); err != nil {
+			logger.Panic("Failed to register node wallet service", logging.Error(err))
+		}
 	}
-	rs.RegisterService(s.protocolUpgradeService, "protocolupgrade")
+	if err := rs.RegisterService(s.protocolUpgradeService, "protocolupgrade"); err != nil {
+		logger.Panic("Failed to register protocol upgrade service", logging.Error(err))
+	}
 
 	r := mux.NewRouter()
 	r.Handle(s.cfg.Server.HttpPath, rs)

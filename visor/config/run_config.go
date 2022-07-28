@@ -23,10 +23,15 @@ type BinaryConfig struct {
 	Args []string `toml:"args"`
 }
 
+type RPCConfig struct {
+	SocketPath string `toml:"socketPath"`
+	HttpPath   string `toml:"httpPath"`
+}
+
 type RunConfig struct {
-	Name       string         `toml:"name"`
-	RCPAddress string         `toml:"rpcAddress"`
-	Binaries   []BinaryConfig `toml:"binaries"`
+	Name     string         `toml:"name"`
+	RCP      RPCConfig      `toml:"rpc"`
+	Binaries []BinaryConfig `toml:"binaries"`
 }
 
 func ExampleRunConfig(name string) *RunConfig {

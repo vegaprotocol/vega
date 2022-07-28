@@ -15,7 +15,9 @@ package main
 import (
 	"fmt"
 
+	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/visor"
+	"code.vegaprotocol.io/vega/visor/client"
 	"github.com/spf13/cobra"
 )
 
@@ -30,7 +32,7 @@ func init() {
 
 var runCmd = &cobra.Command{
 	Use:          "run",
-	Short:        "Runs visor.",
+	Short:        "Runs visor",
 	SilenceUsage: false,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		homePath, err := cmd.Flags().GetString(homeFlagName)
@@ -38,7 +40,9 @@ var runCmd = &cobra.Command{
 			return err
 		}
 
-		runner, err := visor.NewVisor(cmd.Context(), homePath)
+		log := logging.NewDevLogger()
+
+		runner, err := visor.NewVisor(cmd.Context(), log, client.NewClientFactory(log), homePath)
 		if err != nil {
 			return fmt.Errorf("failed to create new runner: %w", err)
 		}

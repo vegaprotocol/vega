@@ -15,13 +15,13 @@ package visor
 import (
 	"context"
 	"fmt"
-	"log"
 	"os"
 	"os/exec"
 	"path"
 	"sync"
 	"syscall"
 
+	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/visor/config"
 	"code.vegaprotocol.io/vega/visor/utils"
 
@@ -32,12 +32,14 @@ type BinariesRunner struct {
 	mut        sync.RWMutex
 	running    map[string]*exec.Cmd
 	binsFolder string
+	log        *logging.Logger
 }
 
-func NewBinariesRunner(binsFolder string) *BinariesRunner {
+func NewBinariesRunner(log *logging.Logger, binsFolder string) *BinariesRunner {
 	return &BinariesRunner{
 		binsFolder: binsFolder,
 		running:    map[string]*exec.Cmd{},
+		log:        log,
 	}
 }
 
@@ -56,6 +58,11 @@ func (r *BinariesRunner) Run(ctx context.Context, binaries []config.BinaryConfig
 			cmd.Stdout = os.Stdout
 			cmd.Stderr = os.Stderr
 
+			r.log.Debug("Starting binary",
+				logging.String("binaryPath", binPath),
+				logging.Strings("args", bin.Args),
+			)
+
 			if err := cmd.Start(); err != nil {
 				return fmt.Errorf("failed to execute binary %s %v: %w", binPath, bin.Args, err)
 			}
@@ -67,9 +74,13 @@ func (r *BinariesRunner) Run(ctx context.Context, binaries []config.BinaryConfig
 					return
 				}
 
-				log.Printf("killing binary %s %v", binPath, bin.Args)
+				r.log.Debug("Killing binary", logging.String("binaryPath", binPath))
+
 				if err := cmd.Process.Kill(); err != nil {
-					log.Printf("failed to kill binary %s %v: %s", binPath, bin.Args, err)
+					r.log.Debug("Failed to kill binary",
+						logging.String("binaryPath", binPath),
+						logging.Error(err),
+					)
 				}
 			}()
 
@@ -111,7 +122,10 @@ func (r *BinariesRunner) signal(signal syscall.Signal) error {
 	for _, c := range r.running {
 		err = c.Process.Signal(signal)
 		if err != nil {
-			log.Printf("failed to signal running binary %s: %s", c.Path, err)
+			r.log.Error("Failed to signal running binary",
+				logging.String("binaryPath", c.Path),
+				logging.Error(err),
+			)
 		}
 	}
 

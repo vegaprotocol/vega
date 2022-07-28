@@ -13,6 +13,7 @@
 package main
 
 import (
+	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/visor"
 	"github.com/spf13/cobra"
 )
@@ -26,7 +27,7 @@ func init() {
 
 var initCmd = &cobra.Command{
 	Use:          "init",
-	Short:        "Initiates home folder for visor.",
+	Short:        "Initiates home folder for visor",
 	SilenceUsage: false,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		homePath, err := cmd.Flags().GetString(homeFlagName)
@@ -34,6 +35,8 @@ var initCmd = &cobra.Command{
 			return err
 		}
 
-		return visor.Init(homePath)
+		log := logging.NewDevLogger()
+
+		return visor.Init(log, homePath)
 	},
 }
