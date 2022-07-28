@@ -9,7 +9,7 @@ Feature: Test mark to market settlement
       | name                           | value |
       | market.auction.minimumDuration | 1     |
 
-  Scenario: If settlement amount <= the party’s margin account balance entire settlement amount is transferred from party’s margin account to the market’s temporary settlement account (0003-MTMK-001); check the existence of parties' position record(0006-POSI-027); check long and short position(0006-POSI-008; 0006-POSI-009;)
+  Scenario: If settlement amount <= the party’s margin account balance entire settlement amount is transferred from party’s margin account to the market’s temporary settlement account (0003-MTMK-001); check the existence of parties' position record(0006-POSI-027); check long and short position(0006-POSI-009;)
     Given the parties deposit on asset's general account the following amount:
       | party  | asset | amount |
       | party1 | ETH   | 10000  |
@@ -103,36 +103,7 @@ Feature: Test mark to market settlement
       | party2   | 1      | 0              | 0            |
       | party3   | 1      | -1000          | 0            |
 
-    And the market data for the market "ETH/DEC19" should be:
-      | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 1000       | TRADING_MODE_CONTINUOUS |         |           |           | 3300         | 9000           | 3             |
-
-    Then the parties should have the following account balances:
-      | party  | asset | market id | margin | general |
-      | aux    | ETH   | ETH/DEC19 | 732    | 99268   |
-      | aux3   | ETH   | ETH/DEC19 | 264    | 99636   |
-
-    When the parties place the following orders:
-      | party  | market id | side | volume | price | resulting trades | type       | tif     |
-      | aux    | ETH/DEC19 | buy  | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
-      | aux3   | ETH/DEC19 | sell | 2      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
-
-    And the market data for the market "ETH/DEC19" should be:
-      | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 1000       | TRADING_MODE_CONTINUOUS |         |           |           | 3300         | 9000           | 3             |
-
-     Then the parties should have the following profit and loss:
-      | party    | volume | unrealised pnl | realised pnl |
-      | aux      | -1     | 0              | 0            |
-      #aux closed short position: AC 0006-POSI-008
-      | aux2     | 0      | 0              | 0            |
-      #aux3 opened long position
-      | aux3     | 1      | 0              | 0            |
-      | party1   | -2     | 1000           | 0            |
-      | party2   | 1      | 0              | 0            |
-      | party3   | 1      | -1000          | 0            |
-
-  Scenario: If settlement amount > party’s margin account balance and <= party's margin account balance + general account balance for the asset, he full balance of the party’s margin account is transferred to the market’s temporary settlement account the remainder, i.e. difference between the amount transferred from the margin account and the settlement amount, is transferred from the party’s general account for the asset to the market’s temporary settlement account (0003-MTMK-002, 0003-MTMK-005; 0003-MTMK-006; 0003-MTMK-008; 0003-MTMK-009)
+  Scenario: If settlement amount > party’s margin account balance and <= party's margin account balance + general account balance for the asset, he full balance of the party’s margin account is transferred to the market’s temporary settlement account the remainder, i.e. difference between the amount transferred from the margin account and the settlement amount, is transferred from the party’s general account for the asset to the market’s temporary settlement account (0003-MTMK-002, 0003-MTMK-005; 0003-MTMK-006; 0003-MTMK-009)
     Given the parties deposit on asset's general account the following amount:
       | party  | asset | amount |
       | party1 | ETH   | 10000  |
