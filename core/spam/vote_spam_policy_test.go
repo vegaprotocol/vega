@@ -18,13 +18,13 @@ import (
 	"testing"
 
 	snapshot "code.vegaprotocol.io/protos/vega/snapshot/v1"
-	"code.vegaprotocol.io/vega/libs/proto"
+	"code.vegaprotocol.io/vega/core/libs/proto"
 	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/netparams"
-	"code.vegaprotocol.io/vega/spam"
-	"code.vegaprotocol.io/vega/txn"
-	"code.vegaprotocol.io/vega/types"
-	"code.vegaprotocol.io/vega/types/num"
+	"code.vegaprotocol.io/vega/core/netparams"
+	"code.vegaprotocol.io/vega/core/spam"
+	"code.vegaprotocol.io/vega/core/txn"
+	"code.vegaprotocol.io/vega/core/types"
+	"code.vegaprotocol.io/vega/core/types/num"
 	"github.com/stretchr/testify/require"
 )
 

@@ -18,11 +18,11 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/types"
-	"code.vegaprotocol.io/vega/types/num"
+	"code.vegaprotocol.io/vega/core/types"
+	"code.vegaprotocol.io/vega/core/types/num"
 
-	bmocks "code.vegaprotocol.io/vega/broker/mocks"
-	vmock "code.vegaprotocol.io/vega/validators/mocks"
+	bmocks "code.vegaprotocol.io/vega/core/broker/mocks"
+	vmock "code.vegaprotocol.io/vega/core/validators/mocks"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
 )

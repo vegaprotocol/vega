@@ -18,9 +18,9 @@ import (
 	"math/big"
 	"testing"
 
-	"code.vegaprotocol.io/vega/client/eth"
-	"code.vegaprotocol.io/vega/client/eth/mocks"
-	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
+	"code.vegaprotocol.io/vega/core/client/eth"
+	"code.vegaprotocol.io/vega/core/client/eth/mocks"
+	vgcrypto "code.vegaprotocol.io/vega/core/libs/crypto"
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"

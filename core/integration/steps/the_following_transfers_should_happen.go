@@ -18,8 +18,8 @@ import (
 	"github.com/cucumber/godog"
 
 	types "code.vegaprotocol.io/protos/vega"
-	"code.vegaprotocol.io/vega/events"
-	"code.vegaprotocol.io/vega/integration/stubs"
+	"code.vegaprotocol.io/vega/core/events"
+	"code.vegaprotocol.io/vega/core/integration/stubs"
 )
 
 func TheFollowingTransfersShouldHappen(

@@ -18,8 +18,8 @@ import (
 	"sync"
 
 	apipb "code.vegaprotocol.io/protos/vega/api/v1"
-	"code.vegaprotocol.io/vega/broker"
-	"code.vegaprotocol.io/vega/coreapi/services"
+	"code.vegaprotocol.io/vega/core/broker"
+	"code.vegaprotocol.io/vega/core/coreapi/services"
 	"code.vegaprotocol.io/vega/logging"
 )
 

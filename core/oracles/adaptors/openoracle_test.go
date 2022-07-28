@@ -17,9 +17,9 @@ import (
 	"encoding/json"
 	"testing"
 
-	"code.vegaprotocol.io/vega/crypto"
-	"code.vegaprotocol.io/vega/oracles"
-	"code.vegaprotocol.io/vega/oracles/adaptors"
+	"code.vegaprotocol.io/vega/core/crypto"
+	"code.vegaprotocol.io/vega/core/oracles"
+	"code.vegaprotocol.io/vega/core/oracles/adaptors"
 
 	"code.vegaprotocol.io/oracles-relay/openoracle"
 	"github.com/stretchr/testify/assert"

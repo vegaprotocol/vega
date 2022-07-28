@@ -19,7 +19,7 @@ import (
 	"strings"
 
 	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/types/num"
+	"code.vegaprotocol.io/vega/core/types/num"
 
 	"github.com/tendermint/tendermint/crypto/sr25519"
 )

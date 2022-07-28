@@ -16,11 +16,11 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/shared/libs/crypto"
-	"code.vegaprotocol.io/vega/types"
-	"code.vegaprotocol.io/vega/types/num"
+	"code.vegaprotocol.io/vega/core/types"
+	"code.vegaprotocol.io/vega/core/types/num"
 
 	proto "code.vegaprotocol.io/protos/vega"
-	"code.vegaprotocol.io/vega/netparams/checks"
+	"code.vegaprotocol.io/vega/core/netparams/checks"
 )
 
 const (

@@ -18,7 +18,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"code.vegaprotocol.io/vega/processor/ratelimit"
+	"code.vegaprotocol.io/vega/core/processor/ratelimit"
 )
 
 // runN executes the given `fn` func, `n` times.

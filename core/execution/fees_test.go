@@ -16,8 +16,8 @@ import (
 	"testing"
 	"time"
 
-	"code.vegaprotocol.io/vega/execution"
-	"code.vegaprotocol.io/vega/types/num"
+	"code.vegaprotocol.io/vega/core/execution"
+	"code.vegaprotocol.io/vega/core/types/num"
 
 	"github.com/stretchr/testify/require"
 )

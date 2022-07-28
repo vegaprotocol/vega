@@ -13,7 +13,7 @@
 package price
 
 import (
-	"code.vegaprotocol.io/vega/types/num"
+	"code.vegaprotocol.io/vega/core/types/num"
 )
 
 func (e *Engine) UpdateTestFactors(down, up []num.Decimal) {

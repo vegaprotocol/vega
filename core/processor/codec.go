@@ -13,7 +13,7 @@
 package processor
 
 import (
-	"code.vegaprotocol.io/vega/blockchain/abci"
+	"code.vegaprotocol.io/vega/core/blockchain/abci"
 )
 
 type TxCodec struct{}

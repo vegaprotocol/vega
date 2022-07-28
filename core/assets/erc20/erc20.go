@@ -24,15 +24,15 @@ import (
 	"time"
 
 	typespb "code.vegaprotocol.io/protos/vega"
-	"code.vegaprotocol.io/vega/assets/common"
-	"code.vegaprotocol.io/vega/bridges"
-	"code.vegaprotocol.io/vega/contracts/erc20"
-	bridge "code.vegaprotocol.io/vega/contracts/erc20_bridge_logic_restricted"
-	vgerrors "code.vegaprotocol.io/vega/libs/errors"
-	"code.vegaprotocol.io/vega/metrics"
-	ethnw "code.vegaprotocol.io/vega/nodewallets/eth"
-	"code.vegaprotocol.io/vega/types"
-	"code.vegaprotocol.io/vega/types/num"
+	"code.vegaprotocol.io/vega/core/assets/common"
+	"code.vegaprotocol.io/vega/core/bridges"
+	"code.vegaprotocol.io/vega/core/contracts/erc20"
+	bridge "code.vegaprotocol.io/vega/core/contracts/erc20_bridge_logic_restricted"
+	vgerrors "code.vegaprotocol.io/vega/core/libs/errors"
+	"code.vegaprotocol.io/vega/core/metrics"
+	ethnw "code.vegaprotocol.io/vega/core/nodewallets/eth"
+	"code.vegaprotocol.io/vega/core/types"
+	"code.vegaprotocol.io/vega/core/types/num"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	ethcommon "github.com/ethereum/go-ethereum/common"
@@ -49,7 +49,7 @@ var (
 	ErrNotAnErc20Asset                     = errors.New("not an erc20 asset")
 )
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/eth_client_mock.go -package mocks code.vegaprotocol.io/vega/assets/erc20 ETHClient
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/eth_client_mock.go -package mocks code.vegaprotocol.io/vega/core/assets/erc20 ETHClient
 type ETHClient interface {
 	bind.ContractBackend
 	HeaderByNumber(context.Context, *big.Int) (*ethtypes.Header, error)

@@ -16,7 +16,7 @@ import (
 	"fmt"
 	"strings"
 
-	"code.vegaprotocol.io/vega/oracles"
+	"code.vegaprotocol.io/vega/core/oracles"
 )
 
 func CheckForInternalOracle(data map[string]string) error {

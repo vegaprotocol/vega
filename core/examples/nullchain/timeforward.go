@@ -21,7 +21,7 @@ import (
 	"net/http"
 	"time"
 
-	config "code.vegaprotocol.io/vega/examples/nullchain/config"
+	config "code.vegaprotocol.io/vega/core/examples/nullchain/config"
 )
 
 var ErrTimeForward = errors.New("time forward failed")

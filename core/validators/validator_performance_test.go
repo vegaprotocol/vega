@@ -18,8 +18,8 @@ import (
 	"testing"
 
 	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/types/num"
-	"code.vegaprotocol.io/vega/validators"
+	"code.vegaprotocol.io/vega/core/types/num"
+	"code.vegaprotocol.io/vega/core/validators"
 	"github.com/stretchr/testify/require"
 )
 

@@ -15,10 +15,10 @@ package assets
 import (
 	"errors"
 
-	"code.vegaprotocol.io/vega/assets/builtin"
-	"code.vegaprotocol.io/vega/assets/common"
-	"code.vegaprotocol.io/vega/assets/erc20"
-	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/core/assets/builtin"
+	"code.vegaprotocol.io/vega/core/assets/common"
+	"code.vegaprotocol.io/vega/core/assets/erc20"
+	"code.vegaprotocol.io/vega/core/types"
 )
 
 var ErrUpdatingAssetWithDifferentTypeOfAsset = errors.New("updating asset with different type of asset")

@@ -22,8 +22,8 @@ import (
 	"sync"
 	"time"
 
-	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
-	"code.vegaprotocol.io/vega/types"
+	vgcrypto "code.vegaprotocol.io/vega/core/libs/crypto"
+	"code.vegaprotocol.io/vega/core/types"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	ethcommon "github.com/ethereum/go-ethereum/common"
@@ -45,7 +45,7 @@ var ContractHashes = map[string]string{
 }
 
 // ETHClient ...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/eth_client_mock.go -package mocks code.vegaprotocol.io/vega/client/eth ETHClient
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/eth_client_mock.go -package mocks code.vegaprotocol.io/vega/core/client/eth ETHClient
 type ETHClient interface {
 	bind.ContractBackend
 	ChainID(context.Context) (*big.Int, error)

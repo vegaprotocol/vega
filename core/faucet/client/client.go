@@ -23,7 +23,7 @@ import (
 	"path"
 	"time"
 
-	"code.vegaprotocol.io/vega/faucet"
+	"code.vegaprotocol.io/vega/core/faucet"
 )
 
 const (

@@ -17,8 +17,8 @@ import (
 	"fmt"
 
 	"code.vegaprotocol.io/protos/vega"
-	"code.vegaprotocol.io/vega/integration/stubs"
-	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/core/integration/stubs"
+	"code.vegaprotocol.io/vega/core/types"
 
 	"github.com/cucumber/godog"
 )

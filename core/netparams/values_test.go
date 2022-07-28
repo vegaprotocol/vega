@@ -17,7 +17,7 @@ import (
 	"testing"
 
 	types "code.vegaprotocol.io/protos/vega"
-	"code.vegaprotocol.io/vega/netparams"
+	"code.vegaprotocol.io/vega/core/netparams"
 	"github.com/stretchr/testify/assert"
 )
 

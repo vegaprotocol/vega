@@ -19,11 +19,11 @@ import (
 	"github.com/cucumber/godog"
 
 	proto "code.vegaprotocol.io/protos/vega"
-	"code.vegaprotocol.io/vega/collateral"
-	"code.vegaprotocol.io/vega/integration/steps/market"
-	"code.vegaprotocol.io/vega/netparams"
-	"code.vegaprotocol.io/vega/types"
-	"code.vegaprotocol.io/vega/types/num"
+	"code.vegaprotocol.io/vega/core/collateral"
+	"code.vegaprotocol.io/vega/core/integration/steps/market"
+	"code.vegaprotocol.io/vega/core/netparams"
+	"code.vegaprotocol.io/vega/core/types"
+	"code.vegaprotocol.io/vega/core/types/num"
 )
 
 func TheMarkets(

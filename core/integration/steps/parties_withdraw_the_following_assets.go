@@ -16,8 +16,8 @@ import (
 	"context"
 	"fmt"
 
-	"code.vegaprotocol.io/vega/collateral"
-	"code.vegaprotocol.io/vega/types/num"
+	"code.vegaprotocol.io/vega/core/collateral"
+	"code.vegaprotocol.io/vega/core/types/num"
 	"github.com/cucumber/godog"
 )
 

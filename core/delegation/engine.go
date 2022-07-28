@@ -19,12 +19,12 @@ import (
 	"sort"
 	"time"
 
-	"code.vegaprotocol.io/vega/events"
-	"code.vegaprotocol.io/vega/libs/crypto"
+	"code.vegaprotocol.io/vega/core/events"
+	"code.vegaprotocol.io/vega/core/libs/crypto"
 	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/types"
-	"code.vegaprotocol.io/vega/types/num"
-	"code.vegaprotocol.io/vega/validators"
+	"code.vegaprotocol.io/vega/core/types"
+	"code.vegaprotocol.io/vega/core/types/num"
+	"code.vegaprotocol.io/vega/core/validators"
 )
 
 var minRatioForAutoDelegation, _ = num.DecimalFromString("0.95")
@@ -52,7 +52,7 @@ var (
 )
 
 //TimeService notifies the reward engine on time updates
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/time_service_mock.go -package mocks code.vegaprotocol.io/vega/rewards TimeService
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/time_service_mock.go -package mocks code.vegaprotocol.io/vega/core/rewards TimeService
 type TimeService interface {
 	GetTimeNow() time.Time
 }

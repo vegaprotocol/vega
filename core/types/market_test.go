@@ -17,7 +17,7 @@ import (
 
 	proto "code.vegaprotocol.io/protos/vega"
 	v1 "code.vegaprotocol.io/protos/vega/oracles/v1"
-	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/core/types"
 	"github.com/stretchr/testify/require"
 )
 

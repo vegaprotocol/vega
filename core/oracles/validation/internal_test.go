@@ -15,7 +15,7 @@ package validation_test
 import (
 	"testing"
 
-	"code.vegaprotocol.io/vega/oracles/validation"
+	"code.vegaprotocol.io/vega/core/oracles/validation"
 	"github.com/stretchr/testify/require"
 )
 

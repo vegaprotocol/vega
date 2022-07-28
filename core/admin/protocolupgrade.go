@@ -3,7 +3,7 @@ package admin
 import (
 	"net/http"
 
-	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/core/types"
 )
 
 type ReadyForUpgradeArgs struct{}

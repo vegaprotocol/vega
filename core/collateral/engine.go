@@ -20,11 +20,11 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/protos/vega"
-	"code.vegaprotocol.io/vega/events"
-	"code.vegaprotocol.io/vega/libs/crypto"
+	"code.vegaprotocol.io/vega/core/events"
+	"code.vegaprotocol.io/vega/core/libs/crypto"
 	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/types"
-	"code.vegaprotocol.io/vega/types/num"
+	"code.vegaprotocol.io/vega/core/types"
+	"code.vegaprotocol.io/vega/core/types/num"
 
 	"github.com/pkg/errors"
 )
@@ -75,7 +75,7 @@ type Broker interface {
 }
 
 // TimeService provide the time of the vega node.
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/time_service_mock.go -package mocks code.vegaprotocol.io/vega/collateral TimeService
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/time_service_mock.go -package mocks code.vegaprotocol.io/vega/core/collateral TimeService
 type TimeService interface {
 	GetTimeNow() time.Time
 }

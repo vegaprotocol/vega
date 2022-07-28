@@ -15,7 +15,7 @@ package execution
 import (
 	"sort"
 
-	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/core/types"
 )
 
 func NewEquitySharesFromSnapshot(state *types.EquityShare) *EquityShares {

@@ -17,7 +17,7 @@ import (
 	"fmt"
 
 	types "code.vegaprotocol.io/protos/vega"
-	"code.vegaprotocol.io/vega/integration/steps/market/defaults"
+	"code.vegaprotocol.io/vega/core/integration/steps/market/defaults"
 
 	"github.com/jinzhu/copier"
 )

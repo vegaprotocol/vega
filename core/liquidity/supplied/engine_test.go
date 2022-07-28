@@ -15,13 +15,13 @@ package supplied_test
 import (
 	"testing"
 
-	"code.vegaprotocol.io/vega/integration/stubs"
-	"code.vegaprotocol.io/vega/liquidity/supplied"
-	"code.vegaprotocol.io/vega/liquidity/supplied/mocks"
+	"code.vegaprotocol.io/vega/core/integration/stubs"
+	"code.vegaprotocol.io/vega/core/liquidity/supplied"
+	"code.vegaprotocol.io/vega/core/liquidity/supplied/mocks"
 	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/types"
-	"code.vegaprotocol.io/vega/types/num"
-	"code.vegaprotocol.io/vega/types/statevar"
+	"code.vegaprotocol.io/vega/core/types"
+	"code.vegaprotocol.io/vega/core/types/num"
+	"code.vegaprotocol.io/vega/core/types/statevar"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"

@@ -19,7 +19,7 @@ import (
 	"strconv"
 
 	protoapi "code.vegaprotocol.io/protos/vega/api/v1"
-	"code.vegaprotocol.io/vega/api"
+	"code.vegaprotocol.io/vega/core/api"
 	"code.vegaprotocol.io/vega/logging"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"

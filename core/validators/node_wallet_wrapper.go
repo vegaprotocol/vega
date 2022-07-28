@@ -13,10 +13,10 @@
 package validators
 
 import (
-	"code.vegaprotocol.io/vega/nodewallets"
+	"code.vegaprotocol.io/vega/core/nodewallets"
 )
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/node_wallet_mock.go -package mocks code.vegaprotocol.io/vega/validators NodeWallets
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/node_wallet_mock.go -package mocks code.vegaprotocol.io/vega/core/validators NodeWallets
 type NodeWallets interface {
 	GetVega() Wallet
 	GetTendermintPubkey() string

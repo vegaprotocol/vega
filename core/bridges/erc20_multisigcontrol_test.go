@@ -17,8 +17,8 @@ import (
 	"encoding/hex"
 	"testing"
 
-	"code.vegaprotocol.io/vega/bridges"
-	"code.vegaprotocol.io/vega/types/num"
+	"code.vegaprotocol.io/vega/core/bridges"
+	"code.vegaprotocol.io/vega/core/types/num"
 
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/stretchr/testify/assert"

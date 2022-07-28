@@ -20,13 +20,13 @@ import (
 	"strings"
 	"time"
 
-	"code.vegaprotocol.io/vega/events"
+	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/txn"
-	"code.vegaprotocol.io/vega/types"
-	"code.vegaprotocol.io/vega/types/num"
-	"code.vegaprotocol.io/vega/types/statevar"
-	"code.vegaprotocol.io/vega/validators"
+	"code.vegaprotocol.io/vega/core/txn"
+	"code.vegaprotocol.io/vega/core/types"
+	"code.vegaprotocol.io/vega/core/types/num"
+	"code.vegaprotocol.io/vega/core/types/statevar"
+	"code.vegaprotocol.io/vega/core/validators"
 
 	"github.com/cenkalti/backoff"
 	"github.com/golang/protobuf/proto"
@@ -39,7 +39,7 @@ var (
 	chars               = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
 )
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/commander_mock.go -package mocks code.vegaprotocol.io/vega/statevar Commander
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/commander_mock.go -package mocks code.vegaprotocol.io/vega/core/statevar Commander
 type Commander interface {
 	Command(ctx context.Context, cmd txn.Command, payload proto.Message, f func(error), bo *backoff.ExponentialBackOff)
 }
@@ -50,7 +50,7 @@ type Broker interface {
 }
 
 // Topology the topology service.
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/topology_mock.go -package mocks code.vegaprotocol.io/vega/statevar Topology
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/topology_mock.go -package mocks code.vegaprotocol.io/vega/core/statevar Topology
 type Topology interface {
 	IsValidatorVegaPubKey(node string) bool
 	AllNodeIDs() []string

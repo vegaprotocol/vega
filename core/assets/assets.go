@@ -18,13 +18,13 @@ import (
 	"fmt"
 	"sync"
 
-	"code.vegaprotocol.io/vega/assets/builtin"
-	"code.vegaprotocol.io/vega/assets/erc20"
-	"code.vegaprotocol.io/vega/broker"
-	"code.vegaprotocol.io/vega/events"
+	"code.vegaprotocol.io/vega/core/assets/builtin"
+	"code.vegaprotocol.io/vega/core/assets/erc20"
+	"code.vegaprotocol.io/vega/core/broker"
+	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/nodewallets"
-	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/core/nodewallets"
+	"code.vegaprotocol.io/vega/core/types"
 )
 
 var (

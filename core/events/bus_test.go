@@ -17,8 +17,8 @@ import (
 	"testing"
 	"time"
 
-	"code.vegaprotocol.io/vega/events"
-	vgcontext "code.vegaprotocol.io/vega/libs/context"
+	"code.vegaprotocol.io/vega/core/events"
+	vgcontext "code.vegaprotocol.io/vega/core/libs/context"
 
 	"github.com/stretchr/testify/assert"
 )

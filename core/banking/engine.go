@@ -24,13 +24,13 @@ import (
 
 	proto "code.vegaprotocol.io/protos/vega"
 	snapshot "code.vegaprotocol.io/protos/vega/snapshot/v1"
-	"code.vegaprotocol.io/vega/assets"
-	"code.vegaprotocol.io/vega/broker"
-	"code.vegaprotocol.io/vega/events"
+	"code.vegaprotocol.io/vega/core/assets"
+	"code.vegaprotocol.io/vega/core/broker"
+	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/types"
-	"code.vegaprotocol.io/vega/types/num"
-	"code.vegaprotocol.io/vega/validators"
+	"code.vegaprotocol.io/vega/core/types"
+	"code.vegaprotocol.io/vega/core/types/num"
+	"code.vegaprotocol.io/vega/core/validators"
 )
 
 const (
@@ -51,7 +51,7 @@ var (
 	ErrNotEnoughFundsToTransfer                   = errors.New("not enough funds to transfer")
 )
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/assets_mock.go -package mocks code.vegaprotocol.io/vega/banking Assets
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/assets_mock.go -package mocks code.vegaprotocol.io/vega/core/banking Assets
 type Assets interface {
 	Get(assetID string) (*assets.Asset, error)
 	Enable(ctx context.Context, assetID string) error
@@ -59,7 +59,7 @@ type Assets interface {
 }
 
 // Notary ...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/notary_mock.go -package mocks code.vegaprotocol.io/vega/banking Notary
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/notary_mock.go -package mocks code.vegaprotocol.io/vega/core/banking Notary
 type Notary interface {
 	StartAggregate(resID string, kind types.NodeSignatureKind, signature []byte)
 	IsSigned(ctx context.Context, id string, kind types.NodeSignatureKind) ([]types.NodeSignature, bool)
@@ -67,7 +67,7 @@ type Notary interface {
 }
 
 // Collateral engine
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/collateral_mock.go -package mocks code.vegaprotocol.io/vega/banking Collateral
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/collateral_mock.go -package mocks code.vegaprotocol.io/vega/core/banking Collateral
 type Collateral interface {
 	Deposit(ctx context.Context, party, asset string, amount *num.Uint) (*types.TransferResponse, error)
 	Withdraw(ctx context.Context, party, asset string, amount *num.Uint) (*types.TransferResponse, error)
@@ -84,31 +84,31 @@ type Collateral interface {
 }
 
 // Witness provide foreign chain resources validations
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/witness_mock.go -package mocks code.vegaprotocol.io/vega/banking Witness
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/witness_mock.go -package mocks code.vegaprotocol.io/vega/core/banking Witness
 type Witness interface {
 	StartCheck(validators.Resource, func(interface{}, bool), time.Time) error
 	RestoreResource(validators.Resource, func(interface{}, bool)) error
 }
 
 // TimeService provide the time of the vega node using the tm time
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/time_service_mock.go -package mocks code.vegaprotocol.io/vega/banking TimeService
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/time_service_mock.go -package mocks code.vegaprotocol.io/vega/core/banking TimeService
 type TimeService interface {
 	GetTimeNow() time.Time
 }
 
 // Epochervice ...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/epoch_service_mock.go -package mocks code.vegaprotocol.io/vega/banking EpochService
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/epoch_service_mock.go -package mocks code.vegaprotocol.io/vega/core/banking EpochService
 type EpochService interface {
 	NotifyOnEpoch(f func(context.Context, types.Epoch), r func(context.Context, types.Epoch))
 }
 
 // Topology ...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/topology_mock.go -package mocks code.vegaprotocol.io/vega/banking Topology
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/topology_mock.go -package mocks code.vegaprotocol.io/vega/core/banking Topology
 type Topology interface {
 	IsValidator() bool
 }
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/market_activity_tracker_mock.go -package mocks code.vegaprotocol.io/vega/banking MarketActivityTracker
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/market_activity_tracker_mock.go -package mocks code.vegaprotocol.io/vega/core/banking MarketActivityTracker
 type MarketActivityTracker interface {
 	GetMarketScores(asset string, markets []string, dispatchMetric proto.DispatchMetric) []*types.MarketContributionScore
 	GetMarketsWithEligibleProposer(asset string, markets []string) []*types.MarketContributionScore

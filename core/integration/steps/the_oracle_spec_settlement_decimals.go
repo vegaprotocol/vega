@@ -15,7 +15,7 @@ package steps
 import (
 	"strconv"
 
-	"code.vegaprotocol.io/vega/integration/steps/market"
+	"code.vegaprotocol.io/vega/core/integration/steps/market"
 )
 
 func OracleSpecSettlementPriceDecimals(config *market.Config, name string, settlementDP string) error {

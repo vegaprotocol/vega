@@ -15,10 +15,10 @@ package risk
 import (
 	"errors"
 
-	"code.vegaprotocol.io/vega/risk/models"
-	"code.vegaprotocol.io/vega/types/num"
+	"code.vegaprotocol.io/vega/core/risk/models"
+	"code.vegaprotocol.io/vega/core/types/num"
 
-	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/core/types"
 )
 
 var (
@@ -29,7 +29,7 @@ var (
 )
 
 // Model represents a risk model interface
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/risk_model_mock.go -package mocks code.vegaprotocol.io/vega/risk Model
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/risk_model_mock.go -package mocks code.vegaprotocol.io/vega/core/risk Model
 type Model interface {
 	CalculateRiskFactors() *types.RiskFactor
 	DefaultRiskFactors() *types.RiskFactor

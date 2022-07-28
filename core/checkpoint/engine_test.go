@@ -21,11 +21,11 @@ import (
 	"testing"
 	"time"
 
-	"code.vegaprotocol.io/vega/checkpoint"
-	"code.vegaprotocol.io/vega/checkpoint/mocks"
-	"code.vegaprotocol.io/vega/libs/proto"
+	"code.vegaprotocol.io/vega/core/checkpoint"
+	"code.vegaprotocol.io/vega/core/checkpoint/mocks"
+	"code.vegaprotocol.io/vega/core/libs/proto"
 	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/core/types"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"

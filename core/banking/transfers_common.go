@@ -16,10 +16,10 @@ import (
 	"context"
 	"fmt"
 
-	"code.vegaprotocol.io/vega/assets"
+	"code.vegaprotocol.io/vega/core/assets"
 	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/types"
-	"code.vegaprotocol.io/vega/types/num"
+	"code.vegaprotocol.io/vega/core/types"
+	"code.vegaprotocol.io/vega/core/types/num"
 )
 
 func (e *Engine) OnTransferFeeFactorUpdate(ctx context.Context, f num.Decimal) error {

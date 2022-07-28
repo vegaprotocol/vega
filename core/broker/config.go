@@ -15,7 +15,7 @@ package broker
 import (
 	"time"
 
-	"code.vegaprotocol.io/vega/config/encoding"
+	"code.vegaprotocol.io/vega/core/config/encoding"
 	"code.vegaprotocol.io/vega/logging"
 )
 

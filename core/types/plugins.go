@@ -14,7 +14,7 @@ package types
 
 import (
 	proto "code.vegaprotocol.io/protos/vega"
-	"code.vegaprotocol.io/vega/types/num"
+	"code.vegaprotocol.io/vega/core/types/num"
 )
 
 type Position struct {

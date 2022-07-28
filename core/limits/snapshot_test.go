@@ -17,8 +17,8 @@ import (
 	"context"
 	"testing"
 
-	"code.vegaprotocol.io/vega/limits"
-	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/core/limits"
+	"code.vegaprotocol.io/vega/core/types"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

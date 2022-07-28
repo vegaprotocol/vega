@@ -16,7 +16,7 @@ import (
 	"fmt"
 	"sort"
 
-	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/core/types"
 
 	"github.com/cosmos/iavl"
 	"github.com/syndtr/goleveldb/leveldb/opt"

@@ -16,7 +16,7 @@ import (
 	"testing"
 
 	proto "code.vegaprotocol.io/protos/vega"
-	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/core/types"
 	"github.com/stretchr/testify/require"
 )
 

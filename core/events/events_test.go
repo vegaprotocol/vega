@@ -17,13 +17,13 @@ import (
 	"testing"
 
 	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
-	"code.vegaprotocol.io/vega/events"
-	vgcontext "code.vegaprotocol.io/vega/libs/context"
-	"code.vegaprotocol.io/vega/types/num"
+	"code.vegaprotocol.io/vega/core/events"
+	vgcontext "code.vegaprotocol.io/vega/core/libs/context"
+	"code.vegaprotocol.io/vega/core/types/num"
 
 	"github.com/stretchr/testify/assert"
 
-	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/core/types"
 )
 
 func TestEventCtxIsSet(t *testing.T) {

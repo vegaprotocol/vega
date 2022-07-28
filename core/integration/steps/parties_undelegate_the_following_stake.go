@@ -17,8 +17,8 @@ import (
 
 	"github.com/cucumber/godog"
 
-	"code.vegaprotocol.io/vega/delegation"
-	"code.vegaprotocol.io/vega/types/num"
+	"code.vegaprotocol.io/vega/core/delegation"
+	"code.vegaprotocol.io/vega/core/types/num"
 )
 
 func PartiesUndelegateTheFollowingStake(

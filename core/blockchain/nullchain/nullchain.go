@@ -27,7 +27,7 @@ import (
 	vgcrypto "code.vegaprotocol.io/shared/libs/crypto"
 	vgfs "code.vegaprotocol.io/shared/libs/fs"
 	vgrand "code.vegaprotocol.io/shared/libs/rand"
-	"code.vegaprotocol.io/vega/blockchain"
+	"code.vegaprotocol.io/vega/core/blockchain"
 	"code.vegaprotocol.io/vega/logging"
 
 	abci "github.com/tendermint/tendermint/abci/types"
@@ -44,7 +44,7 @@ var (
 	ErrGenesisFileRequired = errors.New("--blockchain.nullchain.genesis-file is required")
 )
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/application_service_mock.go -package mocks code.vegaprotocol.io/vega/blockchain/nullchain ApplicationService
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/application_service_mock.go -package mocks code.vegaprotocol.io/vega/core/blockchain/nullchain ApplicationService
 type ApplicationService interface {
 	InitChain(res abci.RequestInitChain) (resp abci.ResponseInitChain)
 	BeginBlock(req abci.RequestBeginBlock) (resp abci.ResponseBeginBlock)

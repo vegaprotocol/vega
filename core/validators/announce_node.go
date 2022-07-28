@@ -19,7 +19,7 @@ import (
 	"fmt"
 
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
-	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
+	vgcrypto "code.vegaprotocol.io/vega/core/libs/crypto"
 	"github.com/ethereum/go-ethereum/crypto"
 )
 

@@ -18,8 +18,8 @@ import (
 	"testing"
 
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
-	"code.vegaprotocol.io/vega/validators"
-	"code.vegaprotocol.io/vega/validators/mocks"
+	"code.vegaprotocol.io/vega/core/validators"
+	"code.vegaprotocol.io/vega/core/validators/mocks"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

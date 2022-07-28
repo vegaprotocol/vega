@@ -15,7 +15,7 @@ package steps
 import (
 	"context"
 
-	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/core/types"
 )
 
 // the interface for execution engine. The execution engine itself will be wrapped

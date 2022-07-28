@@ -18,11 +18,11 @@ import (
 	"time"
 
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
-	bmocks "code.vegaprotocol.io/vega/broker/mocks"
+	bmocks "code.vegaprotocol.io/vega/core/broker/mocks"
 	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/notary"
-	"code.vegaprotocol.io/vega/notary/mocks"
-	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/core/notary"
+	"code.vegaprotocol.io/vega/core/notary/mocks"
+	"code.vegaprotocol.io/vega/core/types"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"

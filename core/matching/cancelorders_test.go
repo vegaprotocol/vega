@@ -15,9 +15,9 @@ package matching
 import (
 	"testing"
 
-	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
-	"code.vegaprotocol.io/vega/types"
-	"code.vegaprotocol.io/vega/types/num"
+	vgcrypto "code.vegaprotocol.io/vega/core/libs/crypto"
+	"code.vegaprotocol.io/vega/core/types"
+	"code.vegaprotocol.io/vega/core/types/num"
 
 	"github.com/stretchr/testify/assert"
 )

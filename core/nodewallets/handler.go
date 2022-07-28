@@ -18,8 +18,8 @@ import (
 	"path/filepath"
 
 	"code.vegaprotocol.io/shared/paths"
-	"code.vegaprotocol.io/vega/nodewallets/registry"
-	"code.vegaprotocol.io/vega/nodewallets/vega"
+	"code.vegaprotocol.io/vega/core/nodewallets/registry"
+	"code.vegaprotocol.io/vega/core/nodewallets/vega"
 )
 
 var (

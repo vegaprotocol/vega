@@ -16,7 +16,7 @@ import (
 	"context"
 	"strconv"
 
-	"code.vegaprotocol.io/vega/oracles"
+	"code.vegaprotocol.io/vega/core/oracles"
 )
 
 func (f *Future) SetSettlementPrice(ctx context.Context, priceName string, settlementPrice uint64) {

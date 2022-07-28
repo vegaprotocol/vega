@@ -19,8 +19,8 @@ import (
 	"strings"
 
 	oraclespb "code.vegaprotocol.io/protos/vega/oracles/v1"
-	"code.vegaprotocol.io/vega/types"
-	"code.vegaprotocol.io/vega/types/num"
+	"code.vegaprotocol.io/vega/core/types"
+	"code.vegaprotocol.io/vega/core/types/num"
 )
 
 var (

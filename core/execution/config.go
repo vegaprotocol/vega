@@ -13,14 +13,14 @@
 package execution
 
 import (
-	"code.vegaprotocol.io/vega/config/encoding"
-	"code.vegaprotocol.io/vega/fee"
-	"code.vegaprotocol.io/vega/liquidity"
+	"code.vegaprotocol.io/vega/core/config/encoding"
+	"code.vegaprotocol.io/vega/core/fee"
+	"code.vegaprotocol.io/vega/core/liquidity"
 	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/matching"
-	"code.vegaprotocol.io/vega/positions"
-	"code.vegaprotocol.io/vega/risk"
-	"code.vegaprotocol.io/vega/settlement"
+	"code.vegaprotocol.io/vega/core/matching"
+	"code.vegaprotocol.io/vega/core/positions"
+	"code.vegaprotocol.io/vega/core/risk"
+	"code.vegaprotocol.io/vega/core/settlement"
 )
 
 const (

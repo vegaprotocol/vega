@@ -17,13 +17,13 @@ import (
 	"encoding/hex"
 	"sync"
 
-	"code.vegaprotocol.io/vega/netparams"
+	"code.vegaprotocol.io/vega/core/netparams"
 
-	"code.vegaprotocol.io/vega/blockchain/abci"
+	"code.vegaprotocol.io/vega/core/blockchain/abci"
 	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/txn"
-	"code.vegaprotocol.io/vega/types"
-	"code.vegaprotocol.io/vega/types/num"
+	"code.vegaprotocol.io/vega/core/txn"
+	"code.vegaprotocol.io/vega/core/types"
+	"code.vegaprotocol.io/vega/core/types/num"
 )
 
 var increaseFactor = num.NewUint(2)

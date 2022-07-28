@@ -15,11 +15,11 @@ package core_test
 import (
 	"context"
 
-	"code.vegaprotocol.io/vega/events"
-	"code.vegaprotocol.io/vega/execution"
-	"code.vegaprotocol.io/vega/integration/stubs"
-	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
-	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/core/events"
+	"code.vegaprotocol.io/vega/core/execution"
+	"code.vegaprotocol.io/vega/core/integration/stubs"
+	vgcrypto "code.vegaprotocol.io/vega/core/libs/crypto"
+	"code.vegaprotocol.io/vega/core/types"
 )
 
 // embeds the execution engine. Just forwards the calls and creates the TxErr events

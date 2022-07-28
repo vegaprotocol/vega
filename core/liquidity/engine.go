@@ -19,13 +19,13 @@ import (
 	"sort"
 	"time"
 
-	"code.vegaprotocol.io/vega/events"
-	"code.vegaprotocol.io/vega/liquidity/supplied"
+	"code.vegaprotocol.io/vega/core/events"
+	"code.vegaprotocol.io/vega/core/liquidity/supplied"
 	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/risk"
-	"code.vegaprotocol.io/vega/types"
-	"code.vegaprotocol.io/vega/types/num"
-	"code.vegaprotocol.io/vega/types/statevar"
+	"code.vegaprotocol.io/vega/core/risk"
+	"code.vegaprotocol.io/vega/core/types"
+	"code.vegaprotocol.io/vega/core/types/num"
+	"code.vegaprotocol.io/vega/core/types/statevar"
 )
 
 var (
@@ -35,7 +35,7 @@ var (
 	ErrEmptyShape                      = errors.New("liquidity provision contains an empty shape")
 )
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/liquidity RiskModel,PriceMonitor,IDGen
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/core/liquidity RiskModel,PriceMonitor,IDGen
 
 // Broker - event bus (no mocks needed).
 type Broker interface {
@@ -44,7 +44,7 @@ type Broker interface {
 }
 
 // TimeService provide the time of the vega node using the tm time.
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/time_service_mock.go -package mocks code.vegaprotocol.io/vega/liquidity TimeService
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/time_service_mock.go -package mocks code.vegaprotocol.io/vega/core/liquidity TimeService
 type TimeService interface {
 	GetTimeNow() time.Time
 }

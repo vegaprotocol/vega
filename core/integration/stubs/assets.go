@@ -16,10 +16,10 @@ import (
 	"context"
 	"errors"
 
-	"code.vegaprotocol.io/vega/assets"
-	"code.vegaprotocol.io/vega/assets/common"
-	"code.vegaprotocol.io/vega/types"
-	"code.vegaprotocol.io/vega/types/num"
+	"code.vegaprotocol.io/vega/core/assets"
+	"code.vegaprotocol.io/vega/core/assets/common"
+	"code.vegaprotocol.io/vega/core/types"
+	"code.vegaprotocol.io/vega/core/types/num"
 )
 
 type AssetStub struct {

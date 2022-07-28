@@ -16,10 +16,10 @@ import (
 	"context"
 	"fmt"
 
-	"code.vegaprotocol.io/vega/broker"
+	"code.vegaprotocol.io/vega/core/broker"
 	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/netparams"
-	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/core/netparams"
+	"code.vegaprotocol.io/vega/core/types"
 )
 
 func NewERC20MultisigTopology(

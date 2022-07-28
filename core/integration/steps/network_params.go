@@ -18,7 +18,7 @@ import (
 
 	"github.com/cucumber/godog"
 
-	"code.vegaprotocol.io/vega/netparams"
+	"code.vegaprotocol.io/vega/core/netparams"
 )
 
 func TheFollowingNetworkParametersAreSet(netParams *netparams.Store, table *godog.Table) error {

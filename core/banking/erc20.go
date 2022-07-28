@@ -19,11 +19,11 @@ import (
 	"math/big"
 	"time"
 
-	"code.vegaprotocol.io/vega/assets/erc20"
-	"code.vegaprotocol.io/vega/events"
+	"code.vegaprotocol.io/vega/core/assets/erc20"
+	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/types"
-	"code.vegaprotocol.io/vega/types/num"
+	"code.vegaprotocol.io/vega/core/types"
+	"code.vegaprotocol.io/vega/core/types/num"
 )
 
 var (

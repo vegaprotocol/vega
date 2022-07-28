@@ -17,13 +17,13 @@ import (
 	"testing"
 	"time"
 
-	"code.vegaprotocol.io/vega/types/num"
+	"code.vegaprotocol.io/vega/core/types/num"
 
-	bmocks "code.vegaprotocol.io/vega/broker/mocks"
-	"code.vegaprotocol.io/vega/collateral"
+	bmocks "code.vegaprotocol.io/vega/core/broker/mocks"
+	"code.vegaprotocol.io/vega/core/collateral"
 	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/rewards/mocks"
-	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/core/rewards/mocks"
+	"code.vegaprotocol.io/vega/core/types"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
 )

@@ -19,16 +19,16 @@ import (
 	"fmt"
 
 	snapshot "code.vegaprotocol.io/protos/vega/snapshot/v1"
-	"code.vegaprotocol.io/vega/libs/crypto"
+	"code.vegaprotocol.io/vega/core/libs/crypto"
 
-	"code.vegaprotocol.io/vega/libs/proto"
+	"code.vegaprotocol.io/vega/core/libs/proto"
 	"github.com/cosmos/iavl"
 	tmtypes "github.com/tendermint/tendermint/abci/types"
 )
 
 // StateProvider - not a huge fan of this interface being here, but it ensures that the state providers
 // don't have to import the snapshot package
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/state_provider_mock.go -package mocks code.vegaprotocol.io/vega/types StateProvider
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/state_provider_mock.go -package mocks code.vegaprotocol.io/vega/core/types StateProvider
 type StateProvider interface {
 	Namespace() SnapshotNamespace
 	Keys() []string
@@ -43,7 +43,7 @@ type StateProvider interface {
 // PostRestore is basically a StateProvider which, after the full core state is restored, expects a callback to finalise the state restore
 // Note that the order in which the calls to this OnStateLoaded functions are called is not pre-defined. As such, this method should only be used
 // for engine internals (upkeep, essentially)
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/restore_state_provider_mock.go -package mocks code.vegaprotocol.io/vega/types PostRestore
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/restore_state_provider_mock.go -package mocks code.vegaprotocol.io/vega/core/types PostRestore
 type PostRestore interface {
 	StateProvider
 	OnStateLoaded(ctx context.Context) error

@@ -19,7 +19,7 @@ import (
 	"time"
 
 	oraclespb "code.vegaprotocol.io/protos/vega/oracles/v1"
-	"code.vegaprotocol.io/vega/events"
+	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/logging"
 )
 
@@ -30,7 +30,7 @@ type Broker interface {
 }
 
 // TimeService interface.
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/time_service_mock.go -package mocks code.vegaprotocol.io/vega/oracles TimeService
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/time_service_mock.go -package mocks code.vegaprotocol.io/vega/core/oracles TimeService
 type TimeService interface {
 	GetTimeNow() time.Time
 }

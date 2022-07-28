@@ -17,10 +17,10 @@ import (
 	"strings"
 	"time"
 
-	vgcontext "code.vegaprotocol.io/vega/libs/context"
-	vghttp "code.vegaprotocol.io/vega/libs/http"
+	vgcontext "code.vegaprotocol.io/vega/core/libs/context"
+	vghttp "code.vegaprotocol.io/vega/core/libs/http"
 	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/metrics"
+	"code.vegaprotocol.io/vega/core/metrics"
 )
 
 // RemoteAddrMiddleware is a middleware adding to the current request context the

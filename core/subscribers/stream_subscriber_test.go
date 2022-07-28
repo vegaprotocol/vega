@@ -22,9 +22,9 @@ import (
 
 	types "code.vegaprotocol.io/protos/vega"
 	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
-	"code.vegaprotocol.io/vega/events"
-	"code.vegaprotocol.io/vega/subscribers"
-	dtypes "code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/core/events"
+	"code.vegaprotocol.io/vega/core/subscribers"
+	dtypes "code.vegaprotocol.io/vega/core/types"
 
 	"github.com/stretchr/testify/assert"
 )

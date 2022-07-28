@@ -16,15 +16,15 @@ import (
 	"context"
 	"testing"
 
-	"code.vegaprotocol.io/vega/broker/mocks"
-	emock "code.vegaprotocol.io/vega/execution/mocks"
+	"code.vegaprotocol.io/vega/core/broker/mocks"
+	emock "code.vegaprotocol.io/vega/core/execution/mocks"
 	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/markets"
-	"code.vegaprotocol.io/vega/oracles"
+	"code.vegaprotocol.io/vega/core/markets"
+	"code.vegaprotocol.io/vega/core/oracles"
 
 	oraclespb "code.vegaprotocol.io/protos/vega/oracles/v1"
-	"code.vegaprotocol.io/vega/products"
-	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/core/products"
+	"code.vegaprotocol.io/vega/core/types"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"

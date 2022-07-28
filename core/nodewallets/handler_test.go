@@ -20,8 +20,8 @@ import (
 
 	vgrand "code.vegaprotocol.io/shared/libs/rand"
 	"code.vegaprotocol.io/shared/paths"
-	vgtesting "code.vegaprotocol.io/vega/libs/testing"
-	"code.vegaprotocol.io/vega/nodewallets"
+	vgtesting "code.vegaprotocol.io/vega/core/libs/testing"
+	"code.vegaprotocol.io/vega/core/nodewallets"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

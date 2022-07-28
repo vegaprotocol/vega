@@ -18,16 +18,16 @@ import (
 	"sync"
 	"time"
 
-	"code.vegaprotocol.io/vega/events"
+	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/metrics"
-	"code.vegaprotocol.io/vega/products"
-	"code.vegaprotocol.io/vega/types"
-	"code.vegaprotocol.io/vega/types/num"
+	"code.vegaprotocol.io/vega/core/metrics"
+	"code.vegaprotocol.io/vega/core/products"
+	"code.vegaprotocol.io/vega/core/types"
+	"code.vegaprotocol.io/vega/core/types/num"
 )
 
 // MarketPosition ...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/market_position_mock.go -package mocks code.vegaprotocol.io/vega/settlement MarketPosition
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/market_position_mock.go -package mocks code.vegaprotocol.io/vega/core/settlement MarketPosition
 type MarketPosition interface {
 	Party() string
 	Size() int64
@@ -40,14 +40,14 @@ type MarketPosition interface {
 }
 
 // Product ...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/settlement_product_mock.go -package mocks code.vegaprotocol.io/vega/settlement Product
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/settlement_product_mock.go -package mocks code.vegaprotocol.io/vega/core/settlement Product
 type Product interface {
 	Settle(*num.Uint, uint32, num.Decimal) (*types.FinancialAmount, bool, error)
 	GetAsset() string
 }
 
 // TimeService.
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/time_service_mock.go -package mocks code.vegaprotocol.io/vega/settlement TimeService
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/time_service_mock.go -package mocks code.vegaprotocol.io/vega/core/settlement TimeService
 type TimeService interface {
 	GetTimeNow() time.Time
 }

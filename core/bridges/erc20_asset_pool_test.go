@@ -15,8 +15,8 @@ package bridges_test
 import (
 	"testing"
 
-	"code.vegaprotocol.io/vega/bridges"
-	"code.vegaprotocol.io/vega/types/num"
+	"code.vegaprotocol.io/vega/core/bridges"
+	"code.vegaprotocol.io/vega/core/types/num"
 
 	"github.com/stretchr/testify/assert"
 )

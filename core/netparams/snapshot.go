@@ -17,9 +17,9 @@ import (
 	"fmt"
 	"sort"
 
-	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/core/types"
 
-	"code.vegaprotocol.io/vega/libs/proto"
+	"code.vegaprotocol.io/vega/core/libs/proto"
 )
 
 type snapState struct {

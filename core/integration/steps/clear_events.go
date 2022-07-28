@@ -12,7 +12,7 @@
 
 package steps
 
-import "code.vegaprotocol.io/vega/integration/stubs"
+import "code.vegaprotocol.io/vega/core/integration/stubs"
 
 func ClearAllEvents(broker *stubs.BrokerStub) {
 	broker.ClearAllEvents()

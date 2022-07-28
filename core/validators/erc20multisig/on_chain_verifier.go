@@ -19,9 +19,9 @@ import (
 	"sync"
 	"time"
 
-	multisig "code.vegaprotocol.io/vega/contracts/multisig_control"
+	multisig "code.vegaprotocol.io/vega/core/contracts/multisig_control"
 	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/core/types"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	ethcmn "github.com/ethereum/go-ethereum/common"
@@ -37,7 +37,7 @@ type EthereumClient interface {
 	bind.ContractFilterer
 }
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/eth_confirmations_mock.go -package mocks code.vegaprotocol.io/vega/validators/erc20multisig EthConfirmations
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/eth_confirmations_mock.go -package mocks code.vegaprotocol.io/vega/core/validators/erc20multisig EthConfirmations
 type EthConfirmations interface {
 	Check(uint64) error
 }

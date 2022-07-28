@@ -16,8 +16,8 @@ import (
 	"context"
 	"time"
 
-	"code.vegaprotocol.io/vega/types"
-	"code.vegaprotocol.io/vega/types/num"
+	"code.vegaprotocol.io/vega/core/types"
+	"code.vegaprotocol.io/vega/core/types/num"
 )
 
 // UpdateRiskFactorsForTest is a hack for setting the risk factors for tests directly rather than through the consensus engine.

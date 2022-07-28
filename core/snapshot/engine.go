@@ -27,11 +27,11 @@ import (
 	"code.vegaprotocol.io/shared/libs/crypto"
 	vgfs "code.vegaprotocol.io/shared/libs/fs"
 	"code.vegaprotocol.io/shared/paths"
-	vegactx "code.vegaprotocol.io/vega/libs/context"
-	"code.vegaprotocol.io/vega/libs/proto"
+	vegactx "code.vegaprotocol.io/vega/core/libs/context"
+	"code.vegaprotocol.io/vega/core/libs/proto"
 	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/metrics"
-	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/core/metrics"
+	"code.vegaprotocol.io/vega/core/types"
 	"github.com/cosmos/iavl"
 	"github.com/tendermint/tendermint/libs/strings"
 	db "github.com/tendermint/tm-db"
@@ -70,13 +70,13 @@ type StateProviderT interface {
 	LoadState(ctx context.Context, pl *types.Payload) ([]types.StateProvider, error)
 }
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/time_mock.go -package mocks code.vegaprotocol.io/vega/snapshot TimeService
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/time_mock.go -package mocks code.vegaprotocol.io/vega/core/snapshot TimeService
 type TimeService interface {
 	GetTimeNow() time.Time
 	SetTimeNow(context.Context, time.Time)
 }
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/stats_mock.go -package mocks code.vegaprotocol.io/vega/snapshot StatsService
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/stats_mock.go -package mocks code.vegaprotocol.io/vega/core/snapshot StatsService
 type StatsService interface {
 	SetHeight(uint64)
 }

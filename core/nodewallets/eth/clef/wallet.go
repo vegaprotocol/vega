@@ -18,8 +18,8 @@ import (
 	"sync"
 	"time"
 
-	"code.vegaprotocol.io/vega/crypto"
-	"code.vegaprotocol.io/vega/nodewallets/registry"
+	"code.vegaprotocol.io/vega/core/crypto"
+	"code.vegaprotocol.io/vega/core/nodewallets/registry"
 	"github.com/ethereum/go-ethereum/accounts"
 	ethcommon "github.com/ethereum/go-ethereum/common"
 
@@ -32,7 +32,7 @@ const (
 	ClefAlgoType            = "clef"
 )
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/rpc_client_mock.go -package mocks code.vegaprotocol.io/vega/nodewallets/eth/clef Client
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/rpc_client_mock.go -package mocks code.vegaprotocol.io/vega/core/nodewallets/eth/clef Client
 type Client interface {
 	CallContext(ctx context.Context, result interface{}, method string, args ...interface{}) error
 	Close()

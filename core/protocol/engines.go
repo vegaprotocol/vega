@@ -13,9 +13,9 @@
 package protocol
 
 import (
-	"code.vegaprotocol.io/vega/evtforward"
-	evtfwdeth "code.vegaprotocol.io/vega/evtforward/ethereum"
-	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/core/evtforward"
+	evtfwdeth "code.vegaprotocol.io/vega/core/evtforward/ethereum"
+	"code.vegaprotocol.io/vega/core/types"
 )
 
 type EventForwarderEngine interface {

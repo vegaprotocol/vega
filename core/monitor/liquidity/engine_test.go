@@ -16,10 +16,10 @@ import (
 	"testing"
 	"time"
 
-	"code.vegaprotocol.io/vega/monitor/liquidity"
-	"code.vegaprotocol.io/vega/monitor/liquidity/mocks"
-	"code.vegaprotocol.io/vega/types"
-	"code.vegaprotocol.io/vega/types/num"
+	"code.vegaprotocol.io/vega/core/monitor/liquidity"
+	"code.vegaprotocol.io/vega/core/monitor/liquidity/mocks"
+	"code.vegaprotocol.io/vega/core/types"
+	"code.vegaprotocol.io/vega/core/types/num"
 	"github.com/golang/mock/gomock"
 )
 

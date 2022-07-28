@@ -18,14 +18,14 @@ import (
 	"fmt"
 	"sort"
 
-	"code.vegaprotocol.io/vega/idgeneration"
+	"code.vegaprotocol.io/vega/core/idgeneration"
 
-	"code.vegaprotocol.io/vega/events"
-	"code.vegaprotocol.io/vega/liquidity"
+	"code.vegaprotocol.io/vega/core/events"
+	"code.vegaprotocol.io/vega/core/liquidity"
 	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/positions"
-	"code.vegaprotocol.io/vega/types"
-	"code.vegaprotocol.io/vega/types/num"
+	"code.vegaprotocol.io/vega/core/positions"
+	"code.vegaprotocol.io/vega/core/types"
+	"code.vegaprotocol.io/vega/core/types/num"
 )
 
 var ErrCommitmentAmountTooLow = errors.New("commitment amount is too low")

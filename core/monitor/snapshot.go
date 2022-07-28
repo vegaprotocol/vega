@@ -13,7 +13,7 @@
 package monitor
 
 import (
-	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/core/types"
 )
 
 func NewAuctionStateFromSnapshot(mkt *types.Market, as *types.AuctionState) *AuctionState {

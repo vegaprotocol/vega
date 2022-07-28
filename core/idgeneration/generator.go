@@ -15,7 +15,7 @@ package idgeneration
 import (
 	"encoding/hex"
 
-	"code.vegaprotocol.io/vega/libs/crypto"
+	"code.vegaprotocol.io/vega/core/libs/crypto"
 )
 
 // idGenerator no mutex required, markets work deterministically, and sequentially.

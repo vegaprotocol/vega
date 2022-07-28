@@ -18,8 +18,8 @@ import (
 
 	vegapb "code.vegaprotocol.io/protos/vega"
 	coreapipb "code.vegaprotocol.io/protos/vega/api/v1"
-	"code.vegaprotocol.io/vega/events"
-	"code.vegaprotocol.io/vega/subscribers"
+	"code.vegaprotocol.io/vega/core/events"
+	"code.vegaprotocol.io/vega/core/subscribers"
 )
 
 type accountE interface {

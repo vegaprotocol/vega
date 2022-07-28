@@ -17,10 +17,10 @@ import (
 	"testing"
 	"time"
 
-	mbroker "code.vegaprotocol.io/vega/broker/mocks"
-	"code.vegaprotocol.io/vega/epochtime"
+	mbroker "code.vegaprotocol.io/vega/core/broker/mocks"
+	"code.vegaprotocol.io/vega/core/epochtime"
 	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/core/types"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"

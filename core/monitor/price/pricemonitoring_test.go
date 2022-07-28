@@ -19,10 +19,10 @@ import (
 
 	proto "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/monitor/price"
-	"code.vegaprotocol.io/vega/monitor/price/mocks"
-	"code.vegaprotocol.io/vega/types"
-	"code.vegaprotocol.io/vega/types/num"
+	"code.vegaprotocol.io/vega/core/monitor/price"
+	"code.vegaprotocol.io/vega/core/monitor/price/mocks"
+	"code.vegaprotocol.io/vega/core/types"
+	"code.vegaprotocol.io/vega/core/types/num"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"

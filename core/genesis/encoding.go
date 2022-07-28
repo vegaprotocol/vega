@@ -13,12 +13,12 @@
 package genesis
 
 import (
-	"code.vegaprotocol.io/vega/assets"
-	"code.vegaprotocol.io/vega/blockchain/abci"
-	"code.vegaprotocol.io/vega/checkpoint"
-	"code.vegaprotocol.io/vega/limits"
-	"code.vegaprotocol.io/vega/netparams"
-	"code.vegaprotocol.io/vega/validators"
+	"code.vegaprotocol.io/vega/core/assets"
+	"code.vegaprotocol.io/vega/core/blockchain/abci"
+	"code.vegaprotocol.io/vega/core/checkpoint"
+	"code.vegaprotocol.io/vega/core/limits"
+	"code.vegaprotocol.io/vega/core/netparams"
+	"code.vegaprotocol.io/vega/core/validators"
 )
 
 type GenesisState struct {

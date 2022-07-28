@@ -17,8 +17,8 @@ import (
 	"os"
 	"testing"
 
-	"code.vegaprotocol.io/vega/integration/steps"
-	"code.vegaprotocol.io/vega/types/num"
+	"code.vegaprotocol.io/vega/core/integration/steps"
+	"code.vegaprotocol.io/vega/core/types/num"
 
 	"github.com/cucumber/godog"
 	"github.com/cucumber/godog/colors"

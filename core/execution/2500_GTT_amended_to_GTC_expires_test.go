@@ -17,11 +17,11 @@ import (
 	"testing"
 	"time"
 
-	"code.vegaprotocol.io/vega/events"
-	vegacontext "code.vegaprotocol.io/vega/libs/context"
-	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
+	"code.vegaprotocol.io/vega/core/events"
+	vegacontext "code.vegaprotocol.io/vega/core/libs/context"
+	vgcrypto "code.vegaprotocol.io/vega/core/libs/crypto"
 
-	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/core/types"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

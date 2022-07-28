@@ -3,7 +3,7 @@ package abci
 import (
 	"fmt"
 
-	"code.vegaprotocol.io/vega/blockchain"
+	"code.vegaprotocol.io/vega/core/blockchain"
 	"code.vegaprotocol.io/vega/logging"
 
 	"github.com/spf13/viper"

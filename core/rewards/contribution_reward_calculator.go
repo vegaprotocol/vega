@@ -15,8 +15,8 @@ package rewards
 import (
 	"time"
 
-	"code.vegaprotocol.io/vega/types"
-	"code.vegaprotocol.io/vega/types/num"
+	"code.vegaprotocol.io/vega/core/types"
+	"code.vegaprotocol.io/vega/core/types/num"
 )
 
 // calculateRewardsByContribution calculates the reward based on the fee contribution (whether paid or received) of the parties in the asset.

@@ -17,13 +17,13 @@ import (
 	"testing"
 	"time"
 
-	vegacontext "code.vegaprotocol.io/vega/libs/context"
-	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
+	vegacontext "code.vegaprotocol.io/vega/core/libs/context"
+	vgcrypto "code.vegaprotocol.io/vega/core/libs/crypto"
 
 	vegapb "code.vegaprotocol.io/protos/vega"
-	"code.vegaprotocol.io/vega/events"
-	"code.vegaprotocol.io/vega/types"
-	"code.vegaprotocol.io/vega/types/num"
+	"code.vegaprotocol.io/vega/core/events"
+	"code.vegaprotocol.io/vega/core/types"
+	"code.vegaprotocol.io/vega/core/types/num"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

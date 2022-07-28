@@ -12,7 +12,7 @@
 
 package ethereum
 
-import "code.vegaprotocol.io/vega/config/encoding"
+import "code.vegaprotocol.io/vega/core/config/encoding"
 
 type Config struct {
 	// Level specifies the logging level of the Ethereum implementation of the

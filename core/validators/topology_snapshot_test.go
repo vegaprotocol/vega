@@ -18,17 +18,17 @@ import (
 	"encoding/hex"
 	"testing"
 
-	"code.vegaprotocol.io/vega/validators"
+	"code.vegaprotocol.io/vega/core/validators"
 
 	abcitypes "github.com/tendermint/tendermint/abci/types"
 	types1 "github.com/tendermint/tendermint/proto/tendermint/types"
 
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	snapshot "code.vegaprotocol.io/protos/vega/snapshot/v1"
-	vegactx "code.vegaprotocol.io/vega/libs/context"
-	"code.vegaprotocol.io/vega/types"
+	vegactx "code.vegaprotocol.io/vega/core/libs/context"
+	"code.vegaprotocol.io/vega/core/types"
 
-	"code.vegaprotocol.io/vega/libs/proto"
+	"code.vegaprotocol.io/vega/core/libs/proto"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

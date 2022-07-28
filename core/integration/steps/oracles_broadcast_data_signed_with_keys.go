@@ -18,7 +18,7 @@ import (
 
 	"github.com/cucumber/godog"
 
-	"code.vegaprotocol.io/vega/oracles"
+	"code.vegaprotocol.io/vega/core/oracles"
 )
 
 func OraclesBroadcastDataSignedWithKeys(

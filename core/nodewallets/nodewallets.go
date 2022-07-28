@@ -15,8 +15,8 @@ package nodewallets
 import (
 	"errors"
 
-	"code.vegaprotocol.io/vega/nodewallets/eth"
-	"code.vegaprotocol.io/vega/nodewallets/vega"
+	"code.vegaprotocol.io/vega/core/nodewallets/eth"
+	"code.vegaprotocol.io/vega/core/nodewallets/vega"
 )
 
 var (

@@ -19,11 +19,11 @@ import (
 	"sync"
 	"time"
 
-	"code.vegaprotocol.io/vega/broker"
-	"code.vegaprotocol.io/vega/events"
+	"code.vegaprotocol.io/vega/core/broker"
+	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/types"
-	"code.vegaprotocol.io/vega/validators"
+	"code.vegaprotocol.io/vega/core/types"
+	"code.vegaprotocol.io/vega/core/validators"
 )
 
 const (
@@ -37,19 +37,19 @@ var (
 )
 
 // Witness provide foreign chain resources validations
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/witness_mock.go -package mocks code.vegaprotocol.io/vega/validators/erc20multisig Witness
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/witness_mock.go -package mocks code.vegaprotocol.io/vega/core/validators/erc20multisig Witness
 type Witness interface {
 	StartCheck(validators.Resource, func(interface{}, bool), time.Time) error
 	RestoreResource(validators.Resource, func(interface{}, bool)) error
 }
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/multisig_on_chain_verifier_mock.go -package mocks code.vegaprotocol.io/vega/validators/erc20multisig MultiSigOnChainVerifier
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/multisig_on_chain_verifier_mock.go -package mocks code.vegaprotocol.io/vega/core/validators/erc20multisig MultiSigOnChainVerifier
 type MultiSigOnChainVerifier interface {
 	CheckSignerEvent(*types.SignerEvent) error
 	CheckThresholdSetEvent(*types.SignerThresholdSetEvent) error
 }
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/ethereum_event_source_mock.go -package mocks code.vegaprotocol.io/vega/validators/erc20multisig EthereumEventSource
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/ethereum_event_source_mock.go -package mocks code.vegaprotocol.io/vega/core/validators/erc20multisig EthereumEventSource
 type EthereumEventSource interface {
 	UpdateMultisigControlStartingBlock(uint64)
 }

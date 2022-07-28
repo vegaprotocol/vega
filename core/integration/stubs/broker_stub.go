@@ -20,8 +20,8 @@ import (
 	proto "code.vegaprotocol.io/protos/vega"
 	types "code.vegaprotocol.io/protos/vega"
 	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
-	"code.vegaprotocol.io/vega/broker"
-	"code.vegaprotocol.io/vega/events"
+	"code.vegaprotocol.io/vega/core/broker"
+	"code.vegaprotocol.io/vega/core/events"
 )
 
 type AssetParty struct {

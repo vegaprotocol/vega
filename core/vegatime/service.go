@@ -17,10 +17,10 @@ import (
 	"sync"
 	"time"
 
-	"code.vegaprotocol.io/vega/events"
+	"code.vegaprotocol.io/vega/core/events"
 )
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/time_service_mock.go -package mocks code.vegaprotocol.io/vega/vegatime TimeService
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/time_service_mock.go -package mocks code.vegaprotocol.io/vega/core/vegatime TimeService
 type TimeService interface {
 	GetTimeNow() time.Time
 	NotifyOnTick(...func(context.Context, time.Time))

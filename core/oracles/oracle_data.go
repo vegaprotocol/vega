@@ -16,7 +16,7 @@ import (
 	"fmt"
 
 	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/types/num"
+	"code.vegaprotocol.io/vega/core/types/num"
 
 	"go.uber.org/zap"
 )

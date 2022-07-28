@@ -20,9 +20,9 @@ import (
 	"time"
 
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
-	"code.vegaprotocol.io/vega/crypto"
-	"code.vegaprotocol.io/vega/oracles"
-	"code.vegaprotocol.io/vega/oracles/adaptors"
+	"code.vegaprotocol.io/vega/core/crypto"
+	"code.vegaprotocol.io/vega/core/oracles"
+	"code.vegaprotocol.io/vega/core/oracles/adaptors"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

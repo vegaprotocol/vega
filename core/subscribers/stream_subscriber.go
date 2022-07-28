@@ -17,7 +17,7 @@ import (
 	"sync"
 
 	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
-	"code.vegaprotocol.io/vega/events"
+	"code.vegaprotocol.io/vega/core/events"
 )
 
 type EventFilter func(events.Event) bool

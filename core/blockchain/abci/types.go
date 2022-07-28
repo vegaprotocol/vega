@@ -15,7 +15,7 @@ package abci
 import (
 	"context"
 
-	"code.vegaprotocol.io/vega/txn"
+	"code.vegaprotocol.io/vega/core/txn"
 	"github.com/tendermint/tendermint/abci/types"
 )
 

@@ -18,11 +18,11 @@ import (
 
 	oraclespb "code.vegaprotocol.io/protos/vega/oracles/v1"
 	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/oracles"
-	"code.vegaprotocol.io/vega/products"
-	"code.vegaprotocol.io/vega/products/mocks"
-	"code.vegaprotocol.io/vega/types"
-	"code.vegaprotocol.io/vega/types/num"
+	"code.vegaprotocol.io/vega/core/oracles"
+	"code.vegaprotocol.io/vega/core/products"
+	"code.vegaprotocol.io/vega/core/products/mocks"
+	"code.vegaprotocol.io/vega/core/types"
+	"code.vegaprotocol.io/vega/core/types/num"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
 )

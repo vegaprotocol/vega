@@ -20,11 +20,11 @@ import (
 	"code.vegaprotocol.io/protos/commands"
 	api "code.vegaprotocol.io/protos/vega/api/v1"
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
-	"code.vegaprotocol.io/vega/blockchain"
-	vgproto "code.vegaprotocol.io/vega/libs/proto"
+	"code.vegaprotocol.io/vega/core/blockchain"
+	vgproto "code.vegaprotocol.io/vega/core/libs/proto"
 	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/nodewallets/vega"
-	"code.vegaprotocol.io/vega/txn"
+	"code.vegaprotocol.io/vega/core/nodewallets/vega"
+	"code.vegaprotocol.io/vega/core/txn"
 
 	"github.com/cenkalti/backoff"
 	"github.com/golang/protobuf/proto"
@@ -35,13 +35,13 @@ const (
 	commanderNamedLogger = "commander"
 )
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/chain_mock.go -package mocks code.vegaprotocol.io/vega/nodewallets Chain
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/chain_mock.go -package mocks code.vegaprotocol.io/vega/core/nodewallets Chain
 type Chain interface {
 	SubmitTransactionSync(ctx context.Context, tx *commandspb.Transaction) (*tmctypes.ResultBroadcastTx, error)
 	SubmitTransactionAsync(ctx context.Context, tx *commandspb.Transaction) (*tmctypes.ResultBroadcastTx, error)
 }
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/blockchain_stats_mock.go -package mocks code.vegaprotocol.io/vega/nodewallets BlockchainStats
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/blockchain_stats_mock.go -package mocks code.vegaprotocol.io/vega/core/nodewallets BlockchainStats
 type BlockchainStats interface {
 	Height() uint64
 }

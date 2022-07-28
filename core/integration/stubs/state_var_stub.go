@@ -19,7 +19,7 @@ import (
 	"strconv"
 	"time"
 
-	"code.vegaprotocol.io/vega/types/statevar"
+	"code.vegaprotocol.io/vega/core/types/statevar"
 )
 
 var chars = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")

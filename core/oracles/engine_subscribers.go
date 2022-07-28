@@ -18,7 +18,7 @@ import (
 	"sync"
 	"time"
 
-	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/core/types"
 )
 
 // OnMatchedOracleData describes the callback function used to received.

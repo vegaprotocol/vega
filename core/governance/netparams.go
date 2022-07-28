@@ -15,8 +15,8 @@ package governance
 import (
 	"errors"
 
-	"code.vegaprotocol.io/vega/netparams"
-	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/core/netparams"
+	"code.vegaprotocol.io/vega/core/types"
 )
 
 var (

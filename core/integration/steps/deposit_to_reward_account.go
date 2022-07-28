@@ -17,8 +17,8 @@ import (
 
 	"github.com/cucumber/godog"
 
-	"code.vegaprotocol.io/vega/collateral"
-	"code.vegaprotocol.io/vega/types/num"
+	"code.vegaprotocol.io/vega/core/collateral"
+	"code.vegaprotocol.io/vega/core/types/num"
 )
 
 func DepositToRewardAccount(

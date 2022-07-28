@@ -18,7 +18,7 @@ import (
 	"time"
 
 	proto "code.vegaprotocol.io/protos/vega"
-	"code.vegaprotocol.io/vega/types/num"
+	"code.vegaprotocol.io/vega/core/types/num"
 )
 
 type Order struct {
@@ -367,7 +367,7 @@ func (t *Trade) IntoProto() *proto.Trade {
 	}
 }
 
-func (t *Trade) String() string {
+func (t Trade) String() string {
 	return fmt.Sprintf(
 		"ID(%s) marketID(%s) price(%s) marketPrice(%s) size(%v) buyer(%s) seller(%s) aggressor(%s) buyOrder(%s) sellOrder(%s) timestamp(%v) type(%s) buyerAuctionBatch(%v) sellerAuctionBatch(%v) buyerFee(%s) sellerFee(%s)",
 		t.ID,

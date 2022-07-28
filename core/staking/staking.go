@@ -18,8 +18,8 @@ import (
 	"math/big"
 
 	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/netparams"
-	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/core/netparams"
+	"code.vegaprotocol.io/vega/core/types"
 
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 )
@@ -30,12 +30,12 @@ type AllEthereumClient interface {
 	EthereumClientCaller
 }
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/ethereum_client_confirmations_mock.go -package mocks code.vegaprotocol.io/vega/staking EthereumClientConfirmations
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/ethereum_client_confirmations_mock.go -package mocks code.vegaprotocol.io/vega/core/staking EthereumClientConfirmations
 type EthereumClientConfirmations interface {
 	HeaderByNumber(context.Context, *big.Int) (*ethtypes.Header, error)
 }
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/ethereum_event_source_mock.go -package mocks code.vegaprotocol.io/vega/staking EthereumEventSource
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/ethereum_event_source_mock.go -package mocks code.vegaprotocol.io/vega/core/staking EthereumEventSource
 type EthereumEventSource interface {
 	UpdateStakingStartingBlock(uint64)
 }

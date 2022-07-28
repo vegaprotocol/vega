@@ -17,9 +17,9 @@ import (
 	"testing"
 	"time"
 
-	"code.vegaprotocol.io/vega/client/eth"
-	localMocks "code.vegaprotocol.io/vega/client/eth/mocks"
-	"code.vegaprotocol.io/vega/staking/mocks"
+	"code.vegaprotocol.io/vega/core/client/eth"
+	localMocks "code.vegaprotocol.io/vega/core/client/eth/mocks"
+	"code.vegaprotocol.io/vega/core/staking/mocks"
 
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/golang/mock/gomock"

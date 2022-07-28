@@ -18,10 +18,10 @@ import (
 	"fmt"
 
 	proto "code.vegaprotocol.io/protos/vega"
-	"code.vegaprotocol.io/vega/assets"
-	"code.vegaprotocol.io/vega/blockchain"
+	"code.vegaprotocol.io/vega/core/assets"
+	"code.vegaprotocol.io/vega/core/blockchain"
 	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/core/types"
 	"github.com/cenkalti/backoff"
 )
 

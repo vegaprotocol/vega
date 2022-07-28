@@ -21,12 +21,12 @@ import (
 
 	vgproto "code.vegaprotocol.io/protos/vega"
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
-	"code.vegaprotocol.io/vega/contracts/erc20"
-	"code.vegaprotocol.io/vega/events"
-	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
+	"code.vegaprotocol.io/vega/core/contracts/erc20"
+	"code.vegaprotocol.io/vega/core/events"
+	vgcrypto "code.vegaprotocol.io/vega/core/libs/crypto"
 	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/types"
-	"code.vegaprotocol.io/vega/types/num"
+	"code.vegaprotocol.io/vega/core/types"
+	"code.vegaprotocol.io/vega/core/types/num"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	ethcmn "github.com/ethereum/go-ethereum/common"
@@ -49,7 +49,7 @@ type EthereumClientCaller interface {
 }
 
 // EvtForwarder forwarder information to the tendermint chain to be agreed on by validators
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/evt_forwarder_mock.go -package mocks code.vegaprotocol.io/vega/staking EvtForwarder
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/evt_forwarder_mock.go -package mocks code.vegaprotocol.io/vega/core/staking EvtForwarder
 type EvtForwarder interface {
 	ForwardFromSelf(evt *commandspb.ChainEvent)
 }

@@ -17,9 +17,9 @@ import (
 	"os"
 
 	"code.vegaprotocol.io/shared/paths"
-	"code.vegaprotocol.io/vega/config/encoding"
+	"code.vegaprotocol.io/vega/core/config/encoding"
 	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/core/types"
 )
 
 const (

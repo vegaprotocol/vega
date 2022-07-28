@@ -17,7 +17,7 @@ import (
 	"errors"
 
 	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/core/types"
 )
 
 var ErrMissingWithdrawERC20Ext = errors.New("missing withdraw submission erc20 ext")

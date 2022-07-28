@@ -16,9 +16,9 @@ import (
 	"errors"
 
 	snapshot "code.vegaprotocol.io/protos/vega/snapshot/v1"
-	"code.vegaprotocol.io/vega/assets"
-	"code.vegaprotocol.io/vega/assets/common"
-	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/core/assets"
+	"code.vegaprotocol.io/vega/core/assets/common"
+	"code.vegaprotocol.io/vega/core/types"
 )
 
 var ErrUnknownAssetAction = errors.New("unknown asset action")

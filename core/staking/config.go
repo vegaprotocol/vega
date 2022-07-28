@@ -13,7 +13,7 @@
 package staking
 
 import (
-	"code.vegaprotocol.io/vega/config/encoding"
+	"code.vegaprotocol.io/vega/core/config/encoding"
 	"code.vegaprotocol.io/vega/logging"
 )
 

@@ -17,10 +17,10 @@ import (
 	"path/filepath"
 
 	"code.vegaprotocol.io/shared/paths"
-	"code.vegaprotocol.io/vega/nodewallets/eth"
-	"code.vegaprotocol.io/vega/nodewallets/eth/clef"
-	"code.vegaprotocol.io/vega/nodewallets/eth/keystore"
-	"code.vegaprotocol.io/vega/nodewallets/registry"
+	"code.vegaprotocol.io/vega/core/nodewallets/eth"
+	"code.vegaprotocol.io/vega/core/nodewallets/eth/clef"
+	"code.vegaprotocol.io/vega/core/nodewallets/eth/keystore"
+	"code.vegaprotocol.io/vega/core/nodewallets/registry"
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/rpc"
 )

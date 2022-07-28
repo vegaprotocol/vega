@@ -15,7 +15,7 @@ package steps
 import (
 	"fmt"
 
-	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/core/types"
 )
 
 func TheOpenInterestShouldBeForTheMarket(engine Execution, marketID string, wantOpenInterest string) error {

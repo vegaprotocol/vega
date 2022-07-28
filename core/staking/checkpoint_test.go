@@ -18,12 +18,12 @@ import (
 	"testing"
 
 	checkpoint "code.vegaprotocol.io/protos/vega/checkpoint/v1"
-	"code.vegaprotocol.io/vega/libs/proto"
+	"code.vegaprotocol.io/vega/core/libs/proto"
 	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/staking"
-	"code.vegaprotocol.io/vega/staking/mocks"
-	"code.vegaprotocol.io/vega/types"
-	"code.vegaprotocol.io/vega/types/num"
+	"code.vegaprotocol.io/vega/core/staking"
+	"code.vegaprotocol.io/vega/core/staking/mocks"
+	"code.vegaprotocol.io/vega/core/types"
+	"code.vegaprotocol.io/vega/core/types/num"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"

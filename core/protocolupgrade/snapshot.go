@@ -19,7 +19,7 @@ import (
 
 	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
 	snappb "code.vegaprotocol.io/protos/vega/snapshot/v1"
-	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/core/types"
 	"github.com/golang/protobuf/proto"
 )
 

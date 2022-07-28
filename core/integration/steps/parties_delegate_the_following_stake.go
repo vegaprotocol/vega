@@ -15,10 +15,10 @@ package steps
 import (
 	"context"
 
-	"code.vegaprotocol.io/vega/types/num"
+	"code.vegaprotocol.io/vega/core/types/num"
 	"github.com/cucumber/godog"
 
-	"code.vegaprotocol.io/vega/delegation"
+	"code.vegaprotocol.io/vega/core/delegation"
 )
 
 func PartiesDelegateTheFollowingStake(

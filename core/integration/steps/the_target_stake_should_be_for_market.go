@@ -15,7 +15,7 @@ package steps
 import (
 	"fmt"
 
-	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/core/types"
 )
 
 func TheTargetStakeShouldBeForMarket(engine Execution, marketID string, wantTargetStake string) error {

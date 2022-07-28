@@ -17,8 +17,8 @@ import (
 	"strconv"
 	"time"
 
-	"code.vegaprotocol.io/vega/integration/helpers"
-	"code.vegaprotocol.io/vega/integration/stubs"
+	"code.vegaprotocol.io/vega/core/integration/helpers"
+	"code.vegaprotocol.io/vega/core/integration/stubs"
 )
 
 type EpochService interface {

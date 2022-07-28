@@ -15,7 +15,7 @@ package idgeneration_test
 import (
 	"testing"
 
-	"code.vegaprotocol.io/vega/idgeneration"
+	"code.vegaprotocol.io/vega/core/idgeneration"
 	"github.com/stretchr/testify/assert"
 )
 

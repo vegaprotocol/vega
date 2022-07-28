@@ -16,8 +16,8 @@ import (
 	"errors"
 	"strings"
 
-	"code.vegaprotocol.io/vega/examples/nullchain/config"
-	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/core/examples/nullchain/config"
+	"code.vegaprotocol.io/vega/core/types"
 
 	"code.vegaprotocol.io/protos/vega"
 )

@@ -18,7 +18,7 @@ import (
 	"testing"
 	"time"
 
-	bmocks "code.vegaprotocol.io/vega/broker/mocks"
+	bmocks "code.vegaprotocol.io/vega/core/broker/mocks"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
 )

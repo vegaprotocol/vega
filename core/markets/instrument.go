@@ -17,9 +17,9 @@ import (
 	"fmt"
 
 	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/products"
-	"code.vegaprotocol.io/vega/risk"
-	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/core/products"
+	"code.vegaprotocol.io/vega/core/risk"
+	"code.vegaprotocol.io/vega/core/types"
 )
 
 // TradableInstrument represent an instrument to be trade in a market.

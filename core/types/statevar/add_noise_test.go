@@ -18,9 +18,9 @@ package statevar_test
 import (
 	"testing"
 
-	"code.vegaprotocol.io/vega/statevar"
-	"code.vegaprotocol.io/vega/types/num"
-	types "code.vegaprotocol.io/vega/types/statevar"
+	"code.vegaprotocol.io/vega/core/statevar"
+	"code.vegaprotocol.io/vega/core/types/num"
+	types "code.vegaprotocol.io/vega/core/types/statevar"
 	"github.com/stretchr/testify/require"
 )
 

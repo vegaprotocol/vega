@@ -15,7 +15,7 @@ package steps
 import (
 	"fmt"
 
-	"code.vegaprotocol.io/vega/integration/stubs"
+	"code.vegaprotocol.io/vega/core/integration/stubs"
 	"code.vegaprotocol.io/vega/logging"
 )
 

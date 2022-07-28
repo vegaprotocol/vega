@@ -14,7 +14,7 @@ package supplied
 
 import (
 	snapshotpb "code.vegaprotocol.io/protos/vega/snapshot/v1"
-	"code.vegaprotocol.io/vega/types/num"
+	"code.vegaprotocol.io/vega/core/types/num"
 )
 
 func (e *Engine) HasUpdates() bool {

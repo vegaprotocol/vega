@@ -21,11 +21,11 @@ import (
 
 	vgfs "code.vegaprotocol.io/shared/libs/fs"
 	vgrand "code.vegaprotocol.io/shared/libs/rand"
-	"code.vegaprotocol.io/vega/blockchain"
+	"code.vegaprotocol.io/vega/core/blockchain"
 
-	"code.vegaprotocol.io/vega/blockchain/nullchain"
-	"code.vegaprotocol.io/vega/blockchain/nullchain/mocks"
-	"code.vegaprotocol.io/vega/config/encoding"
+	"code.vegaprotocol.io/vega/core/blockchain/nullchain"
+	"code.vegaprotocol.io/vega/core/blockchain/nullchain/mocks"
+	"code.vegaprotocol.io/vega/core/config/encoding"
 	"code.vegaprotocol.io/vega/logging"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"

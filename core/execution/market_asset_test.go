@@ -13,9 +13,9 @@
 package execution_test
 
 import (
-	"code.vegaprotocol.io/vega/assets"
-	"code.vegaprotocol.io/vega/assets/common"
-	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/core/assets"
+	"code.vegaprotocol.io/vega/core/assets/common"
+	"code.vegaprotocol.io/vega/core/types"
 )
 
 type isAssetStub struct {

@@ -20,14 +20,14 @@ import (
 	"sync"
 	"time"
 
-	"code.vegaprotocol.io/vega/libs/proto"
+	"code.vegaprotocol.io/vega/core/libs/proto"
 	mangos "go.nanomsg.org/mangos/v3"
 	"go.nanomsg.org/mangos/v3/protocol"
 	"go.nanomsg.org/mangos/v3/protocol/push"
 	_ "go.nanomsg.org/mangos/v3/transport/inproc"
 	_ "go.nanomsg.org/mangos/v3/transport/tcp"
 
-	"code.vegaprotocol.io/vega/events"
+	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/logging"
 )
 

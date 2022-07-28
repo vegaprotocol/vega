@@ -18,7 +18,7 @@ import (
 	"time"
 
 	vgrand "code.vegaprotocol.io/shared/libs/rand"
-	"code.vegaprotocol.io/vega/governance"
+	"code.vegaprotocol.io/vega/core/governance"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

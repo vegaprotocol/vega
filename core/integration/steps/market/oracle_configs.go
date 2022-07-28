@@ -21,7 +21,7 @@ import (
 
 	types "code.vegaprotocol.io/protos/vega"
 	oraclesv1 "code.vegaprotocol.io/protos/vega/oracles/v1"
-	"code.vegaprotocol.io/vega/integration/steps/market/defaults"
+	"code.vegaprotocol.io/vega/core/integration/steps/market/defaults"
 )
 
 var (

@@ -15,7 +15,7 @@ package stubs
 import (
 	"context"
 
-	"code.vegaprotocol.io/vega/txn"
+	"code.vegaprotocol.io/vega/core/txn"
 	"github.com/cenkalti/backoff"
 	"github.com/golang/protobuf/proto"
 )

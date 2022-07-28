@@ -19,10 +19,10 @@ import (
 	"time"
 
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
-	"code.vegaprotocol.io/vega/crypto"
+	"code.vegaprotocol.io/vega/core/crypto"
 	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/validators"
-	"code.vegaprotocol.io/vega/validators/mocks"
+	"code.vegaprotocol.io/vega/core/validators"
+	"code.vegaprotocol.io/vega/core/validators/mocks"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"

@@ -17,12 +17,12 @@ import (
 	"testing"
 	"time"
 
-	bmocks "code.vegaprotocol.io/vega/broker/mocks"
+	bmocks "code.vegaprotocol.io/vega/core/broker/mocks"
 	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/types"
-	"code.vegaprotocol.io/vega/validators"
-	"code.vegaprotocol.io/vega/validators/erc20multisig"
-	"code.vegaprotocol.io/vega/validators/erc20multisig/mocks"
+	"code.vegaprotocol.io/vega/core/types"
+	"code.vegaprotocol.io/vega/core/validators"
+	"code.vegaprotocol.io/vega/core/validators/erc20multisig"
+	"code.vegaprotocol.io/vega/core/validators/erc20multisig/mocks"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"

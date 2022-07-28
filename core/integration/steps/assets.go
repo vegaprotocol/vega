@@ -13,7 +13,7 @@
 package steps
 
 import (
-	"code.vegaprotocol.io/vega/integration/stubs"
+	"code.vegaprotocol.io/vega/core/integration/stubs"
 
 	"github.com/cucumber/godog"
 )

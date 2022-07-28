@@ -12,7 +12,7 @@
 
 package market
 
-import "code.vegaprotocol.io/vega/integration/steps/market/defaults"
+import "code.vegaprotocol.io/vega/core/integration/steps/market/defaults"
 
 type Config struct {
 	RiskModels        *riskModels

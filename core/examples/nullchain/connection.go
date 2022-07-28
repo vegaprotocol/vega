@@ -16,7 +16,7 @@ import (
 	"context"
 	"time"
 
-	config "code.vegaprotocol.io/vega/examples/nullchain/config"
+	config "code.vegaprotocol.io/vega/core/examples/nullchain/config"
 	"github.com/pkg/errors"
 
 	datanode "code.vegaprotocol.io/protos/data-node/api/v1"

@@ -21,11 +21,11 @@ import (
 
 	vgproto "code.vegaprotocol.io/protos/vega"
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
-	bridge "code.vegaprotocol.io/vega/contracts/erc20_bridge_logic_restricted"
-	multisig "code.vegaprotocol.io/vega/contracts/multisig_control"
+	bridge "code.vegaprotocol.io/vega/core/contracts/erc20_bridge_logic_restricted"
+	multisig "code.vegaprotocol.io/vega/core/contracts/multisig_control"
 	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/staking"
-	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/core/staking"
+	"code.vegaprotocol.io/vega/core/types"
 
 	"github.com/cenkalti/backoff"
 	eth "github.com/ethereum/go-ethereum"
@@ -51,7 +51,7 @@ const (
 )
 
 // Assets ...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/assets_mock.go -package mocks code.vegaprotocol.io/vega/evtforward/ethereum Assets
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/assets_mock.go -package mocks code.vegaprotocol.io/vega/core/evtforward/ethereum Assets
 type Assets interface {
 	GetVegaIDFromEthereumAddress(string) string
 }

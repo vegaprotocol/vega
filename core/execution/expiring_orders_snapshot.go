@@ -13,7 +13,7 @@
 package execution
 
 import (
-	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/core/types"
 
 	"github.com/google/btree"
 )

@@ -15,9 +15,9 @@ package matching_test
 import (
 	"testing"
 
-	"code.vegaprotocol.io/vega/matching"
-	"code.vegaprotocol.io/vega/types"
-	"code.vegaprotocol.io/vega/types/num"
+	"code.vegaprotocol.io/vega/core/matching"
+	"code.vegaprotocol.io/vega/core/types"
+	"code.vegaprotocol.io/vega/core/types/num"
 	"github.com/stretchr/testify/assert"
 )
 

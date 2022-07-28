@@ -15,8 +15,8 @@ package abci
 import (
 	"context"
 
-	"code.vegaprotocol.io/vega/txn"
-	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/core/txn"
+	"code.vegaprotocol.io/vega/core/types"
 
 	lru "github.com/hashicorp/golang-lru"
 	abci "github.com/tendermint/tendermint/abci/types"

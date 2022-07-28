@@ -28,11 +28,11 @@ import (
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	v1 "code.vegaprotocol.io/protos/vega/snapshot/v1"
 	vgcrypto "code.vegaprotocol.io/shared/libs/crypto"
-	"code.vegaprotocol.io/vega/crypto"
-	"code.vegaprotocol.io/vega/events"
+	"code.vegaprotocol.io/vega/core/crypto"
+	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/types"
-	"code.vegaprotocol.io/vega/types/num"
+	"code.vegaprotocol.io/vega/core/types"
+	"code.vegaprotocol.io/vega/core/types/num"
 	abcitypes "github.com/tendermint/tendermint/abci/types"
 )
 
@@ -47,7 +47,7 @@ type Broker interface {
 	SendBatch(events []events.Event)
 }
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/wallet_mock.go -package mocks code.vegaprotocol.io/vega/validators Wallet
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/wallet_mock.go -package mocks code.vegaprotocol.io/vega/core/validators Wallet
 type Wallet interface {
 	PubKey() crypto.PublicKey
 	ID() crypto.PublicKey
@@ -59,7 +59,7 @@ type MultiSigTopology interface {
 	ExcessSigners(addresses []string) bool
 }
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/val_performance_mock.go -package mocks code.vegaprotocol.io/vega/validators ValidatorPerformance
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/val_performance_mock.go -package mocks code.vegaprotocol.io/vega/core/validators ValidatorPerformance
 type ValidatorPerformance interface {
 	ValidatorPerformanceScore(address string, votingPower, totalPower int64) num.Decimal
 	BeginBlock(ctx context.Context, proposer string)
@@ -69,7 +69,7 @@ type ValidatorPerformance interface {
 }
 
 // Notary ...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/notary_mock.go -package mocks code.vegaprotocol.io/vega/validators Notary
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/notary_mock.go -package mocks code.vegaprotocol.io/vega/core/validators Notary
 type Notary interface {
 	StartAggregate(resID string, kind types.NodeSignatureKind, signature []byte)
 	IsSigned(ctx context.Context, id string, kind types.NodeSignatureKind) ([]types.NodeSignature, bool)

@@ -16,8 +16,8 @@ import (
 	"errors"
 	"time"
 
-	"code.vegaprotocol.io/vega/types"
-	"code.vegaprotocol.io/vega/types/num"
+	"code.vegaprotocol.io/vega/core/types"
+	"code.vegaprotocol.io/vega/core/types/num"
 )
 
 var (
@@ -54,7 +54,7 @@ type timestampedOI struct {
 	OI   uint64
 }
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/open_interest_calculator_mock.go -package mocks code.vegaprotocol.io/vega/liquidity/target OpenInterestCalculator
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/open_interest_calculator_mock.go -package mocks code.vegaprotocol.io/vega/core/liquidity/target OpenInterestCalculator
 type OpenInterestCalculator interface {
 	GetOpenInterestGivenTrades(trades []*types.Trade) uint64
 }

@@ -17,9 +17,9 @@ import (
 	"fmt"
 	"testing"
 
-	"code.vegaprotocol.io/vega/nodewallets/eth/clef"
-	"code.vegaprotocol.io/vega/nodewallets/eth/clef/mocks"
-	"code.vegaprotocol.io/vega/nodewallets/registry"
+	"code.vegaprotocol.io/vega/core/nodewallets/eth/clef"
+	"code.vegaprotocol.io/vega/core/nodewallets/eth/clef/mocks"
+	"code.vegaprotocol.io/vega/core/nodewallets/registry"
 	ethCommon "github.com/ethereum/go-ethereum/common"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"

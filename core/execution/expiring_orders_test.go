@@ -15,7 +15,7 @@ package execution_test
 import (
 	"testing"
 
-	"code.vegaprotocol.io/vega/execution"
+	"code.vegaprotocol.io/vega/core/execution"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
