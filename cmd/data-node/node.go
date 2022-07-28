@@ -15,10 +15,10 @@ package main
 import (
 	"context"
 
-	"code.vegaprotocol.io/data-node/cmd/data-node/node"
-	"code.vegaprotocol.io/data-node/datanode/config"
-	"code.vegaprotocol.io/data-node/logging"
-	"code.vegaprotocol.io/data-node/version"
+	"code.vegaprotocol.io/vega/cmd/data-node/node"
+	"code.vegaprotocol.io/vega/datanode/config"
+	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/vega/version"
 	"code.vegaprotocol.io/shared/paths"
 	"github.com/jessevdk/go-flags"
 )

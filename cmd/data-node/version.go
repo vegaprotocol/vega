@@ -16,7 +16,7 @@ import (
 	"context"
 	"fmt"
 
-	"code.vegaprotocol.io/data-node/version"
+	"code.vegaprotocol.io/vega/version"
 	"github.com/jessevdk/go-flags"
 )
 

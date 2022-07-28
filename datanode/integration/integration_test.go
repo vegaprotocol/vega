@@ -29,12 +29,12 @@ import (
 	"testing"
 	"time"
 
-	"code.vegaprotocol.io/data-node/cmd/data-node/node"
+	"code.vegaprotocol.io/shared/paths"
+	"code.vegaprotocol.io/vega/cmd/data-node/node"
 	"code.vegaprotocol.io/vega/datanode/config"
 	"code.vegaprotocol.io/vega/datanode/config/encoding"
 	"code.vegaprotocol.io/vega/datanode/fsutil"
 	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/shared/paths"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"

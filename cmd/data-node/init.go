@@ -16,8 +16,8 @@ import (
 	"context"
 	"fmt"
 
-	"code.vegaprotocol.io/data-node/datanode/config"
-	"code.vegaprotocol.io/data-node/logging"
+	"code.vegaprotocol.io/vega/datanode/config"
+	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/shared/paths"
 
 	"github.com/jessevdk/go-flags"

@@ -15,7 +15,7 @@ package node
 import (
 	"strings"
 
-	"code.vegaprotocol.io/data-node/logging"
+	"code.vegaprotocol.io/vega/logging"
 
 	"github.com/pkg/errors"
 )

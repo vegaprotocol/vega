@@ -23,14 +23,14 @@ import (
 	"testing"
 	"time"
 
-	vgtesting "code.vegaprotocol.io/vega/datanode/libs/testing"
 	types "code.vegaprotocol.io/protos/vega"
 	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
 	"code.vegaprotocol.io/vega/core/broker"
 	"code.vegaprotocol.io/vega/core/broker/mocks"
 	"code.vegaprotocol.io/vega/core/events"
 	vgcontext "code.vegaprotocol.io/vega/core/libs/context"
-	"code.vegaprotocol.io/vega/core/logging"
+	vgtesting "code.vegaprotocol.io/vega/datanode/libs/testing"
+	"code.vegaprotocol.io/vega/logging"
 	"go.nanomsg.org/mangos/v3/protocol/pull"
 
 	"github.com/golang/mock/gomock"
