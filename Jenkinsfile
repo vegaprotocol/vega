@@ -121,6 +121,7 @@ pipeline {
                                         ./cmd/data-node \
                                         ./cmd/vegawallet
                                 """
+                                sh label: 'check for modifications', script: 'git diff'
                             }
                             dir("build-${GOOS}-${GOARCH}") {
                                 sh label: 'list files', script: '''
