@@ -19,13 +19,13 @@ import (
 	"testing"
 	"time"
 
+	"code.vegaprotocol.io/vega/core/events"
+	vgcontext "code.vegaprotocol.io/vega/core/libs/context"
+	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/datanode/broker"
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
 	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/core/events"
-	vgcontext "code.vegaprotocol.io/vega/core/libs/context"
-	"code.vegaprotocol.io/vega/core/types"
 	"github.com/pkg/errors"
 
 	"github.com/stretchr/testify/assert"

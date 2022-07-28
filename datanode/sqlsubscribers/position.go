@@ -16,11 +16,11 @@ import (
 	"context"
 	"sync"
 
+	"code.vegaprotocol.io/vega/core/events"
+	"code.vegaprotocol.io/vega/core/types/num"
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
 	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/core/events"
-	"code.vegaprotocol.io/vega/core/types/num"
 	"github.com/pkg/errors"
 )
 

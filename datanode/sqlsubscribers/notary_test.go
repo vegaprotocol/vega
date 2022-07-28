@@ -16,12 +16,12 @@ import (
 	"context"
 	"testing"
 
-	"code.vegaprotocol.io/vega/datanode/sqlsubscribers"
-	"code.vegaprotocol.io/vega/datanode/sqlsubscribers/mocks"
-	"code.vegaprotocol.io/vega/logging"
 	v1 "code.vegaprotocol.io/protos/vega/commands/v1"
 	oraclespb "code.vegaprotocol.io/protos/vega/oracles/v1"
 	"code.vegaprotocol.io/vega/core/events"
+	"code.vegaprotocol.io/vega/datanode/sqlsubscribers"
+	"code.vegaprotocol.io/vega/datanode/sqlsubscribers/mocks"
+	"code.vegaprotocol.io/vega/logging"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
 )

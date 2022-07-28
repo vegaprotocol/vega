@@ -18,10 +18,10 @@ import (
 	"os"
 	"testing"
 
-	"code.vegaprotocol.io/vega/datanode/broker"
 	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/types"
+	"code.vegaprotocol.io/vega/datanode/broker"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/stretchr/testify/assert"

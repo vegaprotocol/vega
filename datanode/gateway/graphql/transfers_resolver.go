@@ -17,9 +17,9 @@ import (
 	"errors"
 	"fmt"
 
-	"code.vegaprotocol.io/vega/datanode/vegatime"
 	"code.vegaprotocol.io/protos/vega"
 	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
+	"code.vegaprotocol.io/vega/datanode/vegatime"
 )
 
 var ErrUnsupportedTransferKind = errors.New("unsupported transfer kind")

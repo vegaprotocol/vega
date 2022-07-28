@@ -15,8 +15,8 @@ package gql
 import (
 	"context"
 
-	"code.vegaprotocol.io/vega/datanode/vegatime"
 	proto "code.vegaprotocol.io/protos/vega"
+	"code.vegaprotocol.io/vega/datanode/vegatime"
 )
 
 type marketTimestampsResolver VegaResolverRoot

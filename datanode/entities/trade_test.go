@@ -16,8 +16,8 @@ import (
 	"testing"
 	"time"
 
-	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/protos/vega"
+	"code.vegaprotocol.io/vega/datanode/entities"
 
 	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/assert"

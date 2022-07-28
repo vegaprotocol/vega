@@ -8,8 +8,8 @@ import (
 	context "context"
 	reflect "reflect"
 
-	broker "code.vegaprotocol.io/vega/datanode/broker"
 	events "code.vegaprotocol.io/vega/core/events"
+	broker "code.vegaprotocol.io/vega/datanode/broker"
 	gomock "github.com/golang/mock/gomock"
 )
 

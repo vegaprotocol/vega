@@ -15,10 +15,10 @@ package service
 import (
 	"context"
 
+	"code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/utils"
 	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/protos/vega"
 )
 
 type AccountStore interface {

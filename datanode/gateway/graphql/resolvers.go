@@ -23,9 +23,6 @@ import (
 
 	"google.golang.org/grpc"
 
-	"code.vegaprotocol.io/vega/datanode/gateway"
-	"code.vegaprotocol.io/vega/datanode/vegatime"
-	"code.vegaprotocol.io/vega/logging"
 	protoapi "code.vegaprotocol.io/protos/data-node/api/v1"
 	v2 "code.vegaprotocol.io/protos/data-node/api/v2"
 	types "code.vegaprotocol.io/protos/vega"
@@ -33,6 +30,9 @@ import (
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
 	oraclespb "code.vegaprotocol.io/protos/vega/oracles/v1"
+	"code.vegaprotocol.io/vega/datanode/gateway"
+	"code.vegaprotocol.io/vega/datanode/vegatime"
+	"code.vegaprotocol.io/vega/logging"
 )
 
 var (

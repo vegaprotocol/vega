@@ -18,9 +18,9 @@ import (
 	"testing"
 	"time"
 
+	"code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
-	"code.vegaprotocol.io/protos/vega"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/stretchr/testify/assert"

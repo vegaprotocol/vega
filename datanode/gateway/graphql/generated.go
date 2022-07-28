@@ -12,7 +12,6 @@ import (
 	"sync"
 	"sync/atomic"
 
-	"code.vegaprotocol.io/vega/datanode/gateway/graphql/marshallers"
 	v12 "code.vegaprotocol.io/protos/data-node/api/v1"
 	"code.vegaprotocol.io/protos/data-node/api/v2"
 	"code.vegaprotocol.io/protos/vega"
@@ -20,6 +19,7 @@ import (
 	v13 "code.vegaprotocol.io/protos/vega/commands/v1"
 	"code.vegaprotocol.io/protos/vega/events/v1"
 	v11 "code.vegaprotocol.io/protos/vega/oracles/v1"
+	"code.vegaprotocol.io/vega/datanode/gateway/graphql/marshallers"
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/99designs/gqlgen/graphql/introspection"
 	gqlparser "github.com/vektah/gqlparser/v2"

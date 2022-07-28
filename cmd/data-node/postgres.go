@@ -19,9 +19,9 @@ import (
 	"os/signal"
 	"syscall"
 
+	"code.vegaprotocol.io/shared/paths"
 	"code.vegaprotocol.io/vega/datanode/config"
 	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/shared/paths"
 	embeddedpostgres "github.com/fergusstrange/embedded-postgres"
 	"github.com/jessevdk/go-flags"
 )

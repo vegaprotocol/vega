@@ -15,10 +15,10 @@ package gql
 import (
 	"context"
 
-	"code.vegaprotocol.io/vega/datanode/vegatime"
 	protoapi "code.vegaprotocol.io/protos/data-node/api/v1"
 	v2 "code.vegaprotocol.io/protos/data-node/api/v2"
 	v1 "code.vegaprotocol.io/protos/vega/oracles/v1"
+	"code.vegaprotocol.io/vega/datanode/vegatime"
 )
 
 type oracleSpecResolver VegaResolverRoot

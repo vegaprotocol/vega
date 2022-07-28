@@ -16,8 +16,8 @@ import (
 	"context"
 	"time"
 
-	"code.vegaprotocol.io/vega/datanode/vegatime"
 	types "code.vegaprotocol.io/protos/vega"
+	"code.vegaprotocol.io/vega/datanode/vegatime"
 )
 
 type myWithdrawalResolver VegaResolverRoot

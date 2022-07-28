@@ -19,9 +19,9 @@ import (
 	"strings"
 	"time"
 
+	v2 "code.vegaprotocol.io/protos/data-node/api/v2"
 	"code.vegaprotocol.io/vega/datanode/candlesv2"
 	"code.vegaprotocol.io/vega/datanode/metrics"
-	v2 "code.vegaprotocol.io/protos/data-node/api/v2"
 
 	"github.com/shopspring/decimal"
 

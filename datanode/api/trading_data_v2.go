@@ -21,6 +21,9 @@ import (
 	"strings"
 	"time"
 
+	v2 "code.vegaprotocol.io/protos/data-node/api/v2"
+	"code.vegaprotocol.io/protos/vega"
+	"code.vegaprotocol.io/vega/core/types/num"
 	"code.vegaprotocol.io/vega/datanode/candlesv2"
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/metrics"
@@ -28,9 +31,6 @@ import (
 	"code.vegaprotocol.io/vega/datanode/vegatime"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/version"
-	v2 "code.vegaprotocol.io/protos/data-node/api/v2"
-	"code.vegaprotocol.io/protos/vega"
-	"code.vegaprotocol.io/vega/core/types/num"
 
 	"github.com/pkg/errors"
 	"google.golang.org/grpc/codes"

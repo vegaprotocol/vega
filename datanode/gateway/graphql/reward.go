@@ -16,8 +16,8 @@ import (
 	"context"
 	"fmt"
 
-	"code.vegaprotocol.io/vega/datanode/vegatime"
 	"code.vegaprotocol.io/protos/vega"
+	"code.vegaprotocol.io/vega/datanode/vegatime"
 )
 
 type rewardResolver VegaResolverRoot

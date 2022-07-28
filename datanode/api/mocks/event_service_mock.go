@@ -8,9 +8,9 @@ import (
 	context "context"
 	reflect "reflect"
 
-	subscribers "code.vegaprotocol.io/vega/datanode/subscribers"
 	v1 "code.vegaprotocol.io/protos/vega/events/v1"
 	events "code.vegaprotocol.io/vega/core/events"
+	subscribers "code.vegaprotocol.io/vega/datanode/subscribers"
 	gomock "github.com/golang/mock/gomock"
 )
 
