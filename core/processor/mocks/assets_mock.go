@@ -79,3 +79,17 @@ func (mr *MockAssetsMockRecorder) NewAsset(arg0, arg1, arg2 interface{}) *gomock
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NewAsset", reflect.TypeOf((*MockAssets)(nil).NewAsset), arg0, arg1, arg2)
 }
+
+// StageAssetUpdate mocks base method.
+func (m *MockAssets) StageAssetUpdate(arg0 *types.Asset) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "StageAssetUpdate", arg0)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// StageAssetUpdate indicates an expected call of StageAssetUpdate.
+func (mr *MockAssetsMockRecorder) StageAssetUpdate(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StageAssetUpdate", reflect.TypeOf((*MockAssets)(nil).StageAssetUpdate), arg0)
+}

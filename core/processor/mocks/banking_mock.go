@@ -134,6 +134,20 @@ func (mr *MockBankingMockRecorder) TransferFunds(arg0, arg1 interface{}) *gomock
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TransferFunds", reflect.TypeOf((*MockBanking)(nil).TransferFunds), arg0, arg1)
 }
 
+// UpdateERC20 mocks base method.
+func (m *MockBanking) UpdateERC20(arg0 context.Context, arg1 *types.ERC20AssetLimitsUpdated, arg2 string, arg3, arg4 uint64, arg5 string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateERC20", arg0, arg1, arg2, arg3, arg4, arg5)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateERC20 indicates an expected call of UpdateERC20.
+func (mr *MockBankingMockRecorder) UpdateERC20(arg0, arg1, arg2, arg3, arg4, arg5 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateERC20", reflect.TypeOf((*MockBanking)(nil).UpdateERC20), arg0, arg1, arg2, arg3, arg4, arg5)
+}
+
 // WithdrawBuiltinAsset mocks base method.
 func (m *MockBanking) WithdrawBuiltinAsset(arg0 context.Context, arg1, arg2, arg3 string, arg4 *num.Uint) error {
 	m.ctrl.T.Helper()
