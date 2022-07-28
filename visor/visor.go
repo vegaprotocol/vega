@@ -20,17 +20,26 @@ import (
 	"path"
 	"time"
 
+	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/visor/config"
 	"code.vegaprotocol.io/vega/visor/utils"
 )
 
-const upgradeApiCallTickerDuration = time.Second * 2
+const (
+	upgradeApiCallTickerDuration = time.Second * 5
+	maxUpgradeStatusErrs         = 10
+)
 
-type Visor struct {
-	conf *config.VisorConfig
+type AdminClient interface {
+	UpgradeStatus(ctx context.Context) (*types.UpgradeStatus, error)
 }
 
-func NewVisor(ctx context.Context, homePath string) (*Visor, error) {
+type Visor struct {
+	conf   *config.VisorConfig
+	client AdminClient
+}
+
+func NewVisor(ctx context.Context, client AdminClient, homePath string) (*Visor, error) {
 	homePath, err := utils.AbsPath(homePath)
 	if err != nil {
 		return nil, err
@@ -61,7 +70,8 @@ func NewVisor(ctx context.Context, homePath string) (*Visor, error) {
 	}
 
 	r := &Visor{
-		conf: visorConf,
+		conf:   visorConf,
+		client: client,
 	}
 
 	go r.watchForConfigUpdates(ctx)
@@ -94,18 +104,19 @@ func (r *Visor) Run(ctx context.Context) error {
 
 		upgradeTicker.Reset(upgradeApiCallTickerDuration)
 
+		numOfUpgradeStatusErrs := 0
 		maxNumRestarts := r.conf.MaxNumberOfRestarts()
 		restartsDelay := time.Second * time.Duration(r.conf.RestartsDelaySeconds())
 
 		binRunner := NewBinariesRunner(r.conf.CurrentFolder())
-		errs := binRunner.Run(ctx, runConf.Binaries)
+		binErrs := binRunner.Run(ctx, runConf.Binaries)
 
 	CheckLoop:
 		for {
 			select {
 			case <-ctx.Done():
 				return ctx.Err()
-			case err := <-errs:
+			case err := <-binErrs:
 				log.Printf("binaries executions has failed: %s", err)
 
 				if numOfRestarts >= maxNumRestarts {
@@ -120,13 +131,17 @@ func (r *Visor) Run(ctx context.Context) error {
 
 				break CheckLoop
 			case <-upgradeTicker.C: // TODO fail to process if the upgrade check is failing for a long time
-				upStatus, err := UpgradeStatus(runConf.RCPAddress)
+				upStatus, err := r.client.UpgradeStatus(ctx)
 				if err != nil {
-					log.Printf("failed to fetch update: %s", err)
-					continue
+					if numOfUpgradeStatusErrs > maxUpgradeStatusErrs {
+						return fmt.Errorf("failed to upgrade status for maximum amount of %d times: %w", maxUpgradeStatusErrs, err)
+					}
+
+					log.Printf("failed to get Upgrade Status from Vega: %s", err)
+					numOfUpgradeStatusErrs++
 				}
 
-				if !upStatus.Result.ReadyToUpgrade {
+				if !upStatus.ReadyToUpgrade {
 					continue
 				}
 
@@ -139,13 +154,15 @@ func (r *Visor) Run(ctx context.Context) error {
 
 				log.Printf(
 					"starting upgrade to Vega %q and Data Node %q",
-					upStatus.Result.AcceptedReleaseInfo.VegaReleaseTag,
-					upStatus.Result.AcceptedReleaseInfo.DatanodeReleaseTag,
+					upStatus.AcceptedReleaseInfo.VegaReleaseTag,
+					upStatus.AcceptedReleaseInfo.DatanodeReleaseTag,
 				)
 
-				if err := setCurrentFolder(r.conf.GenesisFolder(), r.conf.CurrentFolder()); err != nil {
+				if err := setCurrentFolder(r.conf.UpgradeFolder(), r.conf.CurrentFolder()); err != nil {
 					return fmt.Errorf("failed to set current folder to %q: %w", r.conf.CurrentFolder(), err)
 				}
+
+				numOfRestarts = 0
 
 				break CheckLoop
 			}

@@ -40,7 +40,7 @@ type Server struct {
 	srv *http.Server
 
 	nodeWallet             *NodeWallet
-	protocolUpgradeService ProtocolUpgradeAdminService
+	protocolUpgradeService *ProtocolUpgradeAdminService
 }
 
 func NewNonValidatorServer(log *logging.Logger,
@@ -57,7 +57,7 @@ func NewNonValidatorServer(log *logging.Logger,
 		cfg:                    config,
 		nodeWallet:             nil,
 		srv:                    nil,
-		protocolUpgradeService: *NewProtocolUpgradeService(protocolUpgradeService),
+		protocolUpgradeService: NewProtocolUpgradeService(protocolUpgradeService),
 	}, nil
 }
 
@@ -84,7 +84,7 @@ func NewValidatorServer(
 		cfg:                    config,
 		nodeWallet:             nodeWallet,
 		srv:                    nil,
-		protocolUpgradeService: *NewProtocolUpgradeService(protocolUpgradeService),
+		protocolUpgradeService: NewProtocolUpgradeService(protocolUpgradeService),
 	}, nil
 }
 
