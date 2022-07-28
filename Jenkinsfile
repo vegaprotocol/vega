@@ -92,6 +92,18 @@ pipeline {
                         values 'amd64', 'arm64'
                     }
                 }
+                excludes {
+                    exclude {
+                        axis {
+                            name 'GOOS'
+                            values 'windows'
+                        }
+                        axis {
+                            name 'GOARCH'
+                            values 'arm64'
+                        }
+                    }
+                }
                 stages {
                     stage('Build') {
                         environment {
@@ -104,13 +116,16 @@ pipeline {
                             dir('vega') {
                                 sh label: 'Compile', script: """
                                     go build -v \
-                                        -o '../build-${GOOS}-${GOARCH}/' \
+                                        -o ../build-${GOOS}-${GOARCH}/ \
                                         ./cmd/vega \
                                         ./cmd/data-node \
                                         ./cmd/vegawallet
                                 """
                             }
+                            sh 'ls -lah'
                             dir("build-${GOOS}-${GOARCH}") {
+                                sh 'pwd'
+                                sh 'ls -lah'
                                 sh label: 'Sanity check', script: '''
                                     file vega
                                     file data-node
