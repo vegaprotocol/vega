@@ -122,14 +122,16 @@ pipeline {
                                         ./cmd/vegawallet
                                 """
                             }
-                            sh 'ls -lah'
                             dir("build-${GOOS}-${GOARCH}") {
-                                sh 'pwd'
-                                sh 'ls -lah'
                                 sh label: 'Sanity check', script: '''
-                                    file vega
-                                    file data-node
-                                    file vegawallet
+                                    pwd
+                                    ls -lah
+                                    file *
+                                    if [ "$GOOS" == "linux" ] && [ "$GOARCH" == "amd64" ]; then
+                                        vega version
+                                        data-node version
+                                        vegawallet version
+                                    fi
                                 '''
                             }
                         }
