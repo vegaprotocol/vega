@@ -16,9 +16,9 @@ import (
 	"fmt"
 
 	"code.vegaprotocol.io/shared/paths"
-	"code.vegaprotocol.io/vega/config"
+	"code.vegaprotocol.io/vega/core/config"
 	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/nodewallets"
+	"code.vegaprotocol.io/vega/core/nodewallets"
 
 	"github.com/jessevdk/go-flags"
 )
