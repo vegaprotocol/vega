@@ -15,7 +15,6 @@ import (
 	api "code.vegaprotocol.io/protos/vega/api/v1"
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	vgrand "code.vegaprotocol.io/shared/libs/rand"
-	"code.vegaprotocol.io/vega/blockchain/abci"
 	"code.vegaprotocol.io/vega/wallet/crypto"
 	"code.vegaprotocol.io/vega/wallet/network"
 	"code.vegaprotocol.io/vega/wallet/service"
@@ -1299,7 +1298,7 @@ func testAcceptSigningTransactionFailsSpam(t *testing.T) {
 	// when
 
 	s.nodeForward.EXPECT().SendTx(gomock.Any(), gomock.Any(), api.SubmitTransactionRequest_TYPE_ASYNC, gomock.Any()).Times(1).
-		Return(&api.SubmitTransactionResponse{Success: false, Code: abci.AbciSpamError}, nil)
+		Return(&api.SubmitTransactionResponse{Success: false, Code: 89}, nil)
 
 	statusCode, _ := serveHTTP(t, s, signTxRequest(t, payload, headers))
 	assert.Equal(t, http.StatusTooManyRequests, statusCode)

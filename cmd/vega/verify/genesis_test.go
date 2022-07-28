@@ -18,10 +18,10 @@ import (
 	"path/filepath"
 	"testing"
 
-	"code.vegaprotocol.io/vega/assets"
 	"code.vegaprotocol.io/vega/cmd/vega/verify"
-	"code.vegaprotocol.io/vega/genesis"
-	"code.vegaprotocol.io/vega/validators"
+	"code.vegaprotocol.io/vega/core/assets"
+	"code.vegaprotocol.io/vega/core/genesis"
+	"code.vegaprotocol.io/vega/core/validators"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

@@ -263,7 +263,7 @@ pipeline {
                 stage('vega/integration tests') {
                     options { retry(3) }
                     steps {
-                        dir('vega/integration') {
+                        dir('vega/core/integration') {
                             sh 'godog build -o integration.test && ./integration.test --format=junit:vega-integration-report.xml'
                             junit checksName: 'Integration Tests', testResults: 'vega-integration-report.xml'
                         }

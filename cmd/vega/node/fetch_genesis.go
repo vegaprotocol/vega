@@ -19,7 +19,7 @@ import (
 	"net/http"
 	"time"
 
-	"code.vegaprotocol.io/vega/genesis"
+	"code.vegaprotocol.io/vega/core/genesis"
 	tmtypes "github.com/tendermint/tendermint/types"
 )
 

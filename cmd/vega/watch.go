@@ -18,7 +18,7 @@ import (
 	"errors"
 	"fmt"
 
-	"code.vegaprotocol.io/vega/blockchain/abci"
+	"code.vegaprotocol.io/vega/core/blockchain/abci"
 	"github.com/jessevdk/go-flags"
 	tmctypes "github.com/tendermint/tendermint/rpc/coretypes"
 )

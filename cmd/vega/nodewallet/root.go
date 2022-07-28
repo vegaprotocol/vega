@@ -15,9 +15,9 @@ package nodewallet
 import (
 	"context"
 
-	"code.vegaprotocol.io/vega/admin"
-	"code.vegaprotocol.io/vega/config"
-	"code.vegaprotocol.io/vega/nodewallets"
+	"code.vegaprotocol.io/vega/core/admin"
+	"code.vegaprotocol.io/vega/core/config"
+	"code.vegaprotocol.io/vega/core/nodewallets"
 
 	"github.com/fatih/color"
 	"github.com/jessevdk/go-flags"

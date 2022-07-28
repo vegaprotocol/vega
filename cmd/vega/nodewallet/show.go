@@ -16,10 +16,10 @@ import (
 	vgjson "code.vegaprotocol.io/shared/libs/json"
 	"code.vegaprotocol.io/shared/paths"
 
-	"code.vegaprotocol.io/vega/config"
+	"code.vegaprotocol.io/vega/core/config"
+	"code.vegaprotocol.io/vega/core/nodewallets"
+	"code.vegaprotocol.io/vega/core/nodewallets/registry"
 	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/nodewallets"
-	"code.vegaprotocol.io/vega/nodewallets/registry"
 
 	"github.com/jessevdk/go-flags"
 )
