@@ -25,6 +25,7 @@ The init command now also generate the configuration for tendermint, the flags `
 - [5465](https://github.com/vegaprotocol/vega/issues/5465) - Verify `bytecode` of smart-contracts on startup
 - [5608](https://github.com/vegaprotocol/vega/issues/5608) - Ignore stale price monitoring trigger when market is already in auction
 - [5639](https://github.com/vegaprotocol/vega/issues/5639) - Move all core code in the core directory
+- [5613](https://github.com/vegaprotocol/vega/issues/5613) - Import the `datanode` in the vega repo
 
 ### 🐛 Fixes
 - [5571](https://github.com/vegaprotocol/vega/issues/5571) - Restore pending assets status correctly after snapshot restore
