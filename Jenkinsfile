@@ -93,7 +93,7 @@ pipeline {
                     }
                 }
                 stages {
-                    stage("${GOOS}-${GOARCH}") {
+                    stage('Build') {
                         environment {
                             GOOS         = "${GOOS}"
                             GOARCH       = "${GOARCH}"
