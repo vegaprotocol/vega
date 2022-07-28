@@ -151,4 +151,4 @@ Debugging the application locally is also possible with [Delve](./DEBUG_WITH_DLV
 
 The vega core (i.e. the core directory) is licensed under the BSL 1.1, also included in this repository in the LICENSE.VEGA file.
 The vega datanode (i.e. the datanode directory) is licensed under the BSL 1.1, also included in this repository in the LICENSE.DATANODE file.
-All code outisde of the core and datanode directories is licensed under the MIT, also included in this repository in the LICENSE.MIT file.
+All code outside of the core and datanode directories is licensed under the MIT, also included in this repository in the LICENSE.MIT file.
