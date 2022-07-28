@@ -16,7 +16,7 @@ import (
 	"encoding/hex"
 	"time"
 
-	"code.vegaprotocol.io/vega/events"
+	"code.vegaprotocol.io/vega/core/events"
 	"github.com/pkg/errors"
 )
 

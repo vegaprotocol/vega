@@ -15,7 +15,7 @@ package gql
 import (
 	"context"
 
-	"code.vegaprotocol.io/data-node/datanode/vegatime"
+	"code.vegaprotocol.io/vega/datanode/vegatime"
 	types "code.vegaprotocol.io/protos/vega"
 	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
 )

@@ -16,8 +16,8 @@ import (
 	"context"
 	"fmt"
 
-	"code.vegaprotocol.io/data-node/datanode/entities"
-	"code.vegaprotocol.io/data-node/datanode/metrics"
+	"code.vegaprotocol.io/vega/datanode/entities"
+	"code.vegaprotocol.io/vega/datanode/metrics"
 	v2 "code.vegaprotocol.io/protos/data-node/api/v2"
 	"github.com/georgysavva/scany/pgxscan"
 )

@@ -15,7 +15,7 @@ package gql
 import (
 	"context"
 
-	"code.vegaprotocol.io/data-node/logging"
+	"code.vegaprotocol.io/vega/logging"
 	protoapi "code.vegaprotocol.io/protos/data-node/api/v1"
 	types "code.vegaprotocol.io/protos/vega"
 )

@@ -14,7 +14,7 @@ models:
       - github.com/99designs/gqlgen/graphql.Int
       - github.com/99designs/gqlgen/graphql.Int64
       - github.com/99designs/gqlgen/graphql.Int32
-      - code.vegaprotocol.io/data-node/datanode/gateway/graphql/marshallers.Uint32
+      - code.vegaprotocol.io/vega/datanode/gateway/graphql/marshallers.Uint32
   Order:
     model: code.vegaprotocol.io/protos/vega.Order
   PaginatedOrder:
@@ -219,15 +219,15 @@ models:
     model: code.vegaprotocol.io/protos/vega/api/v1.Statistics
   AccountType:
     model:
-      - code.vegaprotocol.io/data-node/datanode/gateway/graphql/marshallers.AccountType
+      - code.vegaprotocol.io/vega/datanode/gateway/graphql/marshallers.AccountType
   AccountField:
-    model: code.vegaprotocol.io/data-node/datanode/gateway/graphql/marshallers.AccountField
+    model: code.vegaprotocol.io/vega/datanode/gateway/graphql/marshallers.AccountField
   AccountFilter:
     model: code.vegaprotocol.io/protos/data-node/api/v2.AccountFilter
   AggregatedBalance:
     model: code.vegaprotocol.io/protos/data-node/api/v2.AggregatedBalance
   Timestamp:
-    model: code.vegaprotocol.io/data-node/datanode/gateway/graphql/marshallers.Timestamp
+    model: code.vegaprotocol.io/vega/datanode/gateway/graphql/marshallers.Timestamp
   NetworkLimits:
     model: code.vegaprotocol.io/protos/vega.NetworkLimits
   RankingScore:

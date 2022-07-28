@@ -16,7 +16,7 @@ import (
 	"context"
 
 	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
-	"code.vegaprotocol.io/vega/events"
+	"code.vegaprotocol.io/vega/core/events"
 )
 
 func toEvent(ctx context.Context, be *eventspb.BusEvent) events.Event {

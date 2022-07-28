@@ -16,13 +16,13 @@ import (
 	"context"
 	"fmt"
 
-	"code.vegaprotocol.io/data-node/datanode/entities"
-	"code.vegaprotocol.io/data-node/datanode/utils"
-	"code.vegaprotocol.io/data-node/logging"
+	"code.vegaprotocol.io/vega/datanode/entities"
+	"code.vegaprotocol.io/vega/datanode/utils"
+	"code.vegaprotocol.io/vega/logging"
 	lru "github.com/hashicorp/golang-lru"
 )
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/position_mock.go -package mocks code.vegaprotocol.io/data-node/datanode/service PositionStore
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/position_mock.go -package mocks code.vegaprotocol.io/vega/datanode/service PositionStore
 type PositionStore interface {
 	Flush(ctx context.Context) ([]entities.Position, error)
 	Add(ctx context.Context, p entities.Position) error

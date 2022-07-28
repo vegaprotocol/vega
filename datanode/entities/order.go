@@ -22,7 +22,7 @@ import (
 
 	v2 "code.vegaprotocol.io/protos/data-node/api/v2"
 	"code.vegaprotocol.io/protos/vega"
-	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/core/types"
 )
 
 type OrderID struct{ ID }

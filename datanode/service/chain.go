@@ -17,11 +17,11 @@ import (
 	"errors"
 	"sync"
 
-	"code.vegaprotocol.io/data-node/datanode/entities"
-	"code.vegaprotocol.io/data-node/logging"
+	"code.vegaprotocol.io/vega/datanode/entities"
+	"code.vegaprotocol.io/vega/logging"
 )
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/chain_mock.go -package mocks code.vegaprotocol.io/data-node/datanode/service ChainStore
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/chain_mock.go -package mocks code.vegaprotocol.io/vega/datanode/service ChainStore
 type ChainStore interface {
 	Get(context.Context) (entities.Chain, error)
 	Set(context.Context, entities.Chain) error

@@ -15,8 +15,8 @@ package broker
 import (
 	"time"
 
-	"code.vegaprotocol.io/data-node/datanode/config/encoding"
-	"code.vegaprotocol.io/data-node/logging"
+	"code.vegaprotocol.io/vega/datanode/config/encoding"
+	"code.vegaprotocol.io/vega/logging"
 )
 
 const namedLogger = "broker"

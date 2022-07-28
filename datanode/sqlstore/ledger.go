@@ -15,8 +15,8 @@ package sqlstore
 import (
 	"context"
 
-	"code.vegaprotocol.io/data-node/datanode/entities"
-	"code.vegaprotocol.io/data-node/datanode/metrics"
+	"code.vegaprotocol.io/vega/datanode/entities"
+	"code.vegaprotocol.io/vega/datanode/metrics"
 	"github.com/georgysavva/scany/pgxscan"
 )
 

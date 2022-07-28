@@ -21,7 +21,7 @@ import (
 	"time"
 
 	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
-	"code.vegaprotocol.io/vega/events"
+	"code.vegaprotocol.io/vega/core/events"
 
 	"github.com/golang/protobuf/proto"
 )

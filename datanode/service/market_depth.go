@@ -17,15 +17,15 @@ import (
 	"sync"
 	"time"
 
-	"code.vegaprotocol.io/data-node/datanode/entities"
-	"code.vegaprotocol.io/data-node/datanode/utils"
-	"code.vegaprotocol.io/data-node/logging"
+	"code.vegaprotocol.io/vega/datanode/entities"
+	"code.vegaprotocol.io/vega/datanode/utils"
+	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/protos/vega"
-	"code.vegaprotocol.io/vega/types"
-	"code.vegaprotocol.io/vega/types/num"
+	"code.vegaprotocol.io/vega/core/types"
+	"code.vegaprotocol.io/vega/core/types/num"
 )
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/market_depth_mock.go -package mocks code.vegaprotocol.io/data-node/datanode/service OrderStore
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/market_depth_mock.go -package mocks code.vegaprotocol.io/vega/datanode/service OrderStore
 type OrderStore interface {
 	GetLiveOrders(ctx context.Context) ([]entities.Order, error)
 }

@@ -16,7 +16,7 @@ import (
 	"fmt"
 	"path/filepath"
 
-	"code.vegaprotocol.io/data-node/logging"
+	"code.vegaprotocol.io/vega/logging"
 )
 
 func NewEventSource(config Config, log *logging.Logger) (eventSource, error) {

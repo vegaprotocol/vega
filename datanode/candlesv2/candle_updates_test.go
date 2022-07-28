@@ -17,15 +17,15 @@ import (
 	"testing"
 	"time"
 
-	"code.vegaprotocol.io/data-node/datanode/candlesv2"
-	"code.vegaprotocol.io/data-node/datanode/entities"
+	"code.vegaprotocol.io/vega/datanode/candlesv2"
+	"code.vegaprotocol.io/vega/datanode/entities"
 
 	"github.com/shopspring/decimal"
 
 	"github.com/stretchr/testify/assert"
 
-	"code.vegaprotocol.io/data-node/datanode/config/encoding"
-	"code.vegaprotocol.io/data-node/logging"
+	"code.vegaprotocol.io/vega/datanode/config/encoding"
+	"code.vegaprotocol.io/vega/logging"
 )
 
 type testCandleSource struct {

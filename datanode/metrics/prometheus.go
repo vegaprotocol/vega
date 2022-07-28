@@ -18,7 +18,7 @@ import (
 	"net/http"
 	"time"
 
-	"code.vegaprotocol.io/vega/events"
+	"code.vegaprotocol.io/vega/core/events"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"

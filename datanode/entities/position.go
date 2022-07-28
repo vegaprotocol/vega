@@ -20,8 +20,8 @@ import (
 	v2 "code.vegaprotocol.io/protos/data-node/api/v2"
 
 	"code.vegaprotocol.io/protos/vega"
-	"code.vegaprotocol.io/vega/events"
-	"code.vegaprotocol.io/vega/types/num"
+	"code.vegaprotocol.io/vega/core/events"
+	"code.vegaprotocol.io/vega/core/types/num"
 	"github.com/shopspring/decimal"
 )
 

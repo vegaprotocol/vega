@@ -17,8 +17,8 @@ import (
 	"testing"
 	"time"
 
-	"code.vegaprotocol.io/data-node/datanode/entities"
-	"code.vegaprotocol.io/data-node/datanode/sqlstore"
+	"code.vegaprotocol.io/vega/datanode/entities"
+	"code.vegaprotocol.io/vega/datanode/sqlstore"
 	v1 "code.vegaprotocol.io/protos/vega/commands/v1"
 	"github.com/jackc/pgx/v4"
 	"github.com/stretchr/testify/assert"

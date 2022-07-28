@@ -16,7 +16,7 @@ import (
 	"context"
 	"sync"
 
-	"code.vegaprotocol.io/vega/events"
+	"code.vegaprotocol.io/vega/core/events"
 )
 
 // fanOutEventSource: an event source to fan out an event stream, it is told in advance the number of subscribers to

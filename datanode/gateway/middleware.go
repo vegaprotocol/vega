@@ -17,10 +17,10 @@ import (
 	"strings"
 	"time"
 
-	"code.vegaprotocol.io/data-node/datanode/contextutil"
-	vhttp "code.vegaprotocol.io/data-node/datanode/http"
-	"code.vegaprotocol.io/data-node/datanode/metrics"
-	"code.vegaprotocol.io/data-node/logging"
+	"code.vegaprotocol.io/vega/datanode/contextutil"
+	vhttp "code.vegaprotocol.io/vega/datanode/http"
+	"code.vegaprotocol.io/vega/datanode/metrics"
+	"code.vegaprotocol.io/vega/logging"
 )
 
 // RemoteAddrMiddleware is a middleware adding to the current request context the

@@ -15,10 +15,10 @@ package sqlsubscribers
 import (
 	"context"
 
-	"code.vegaprotocol.io/data-node/datanode/entities"
-	"code.vegaprotocol.io/data-node/logging"
-	"code.vegaprotocol.io/vega/events"
-	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/datanode/entities"
+	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/vega/core/events"
+	"code.vegaprotocol.io/vega/core/types"
 	"github.com/pkg/errors"
 )
 

@@ -17,9 +17,9 @@ import (
 	"fmt"
 	"testing"
 
-	"code.vegaprotocol.io/data-node/datanode/broker"
-	"code.vegaprotocol.io/vega/events"
-	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/datanode/broker"
+	"code.vegaprotocol.io/vega/core/events"
+	"code.vegaprotocol.io/vega/core/types"
 
 	"github.com/stretchr/testify/assert"
 )

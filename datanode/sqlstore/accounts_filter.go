@@ -15,7 +15,7 @@ package sqlstore
 import (
 	"fmt"
 
-	"code.vegaprotocol.io/data-node/datanode/entities"
+	"code.vegaprotocol.io/vega/datanode/entities"
 )
 
 // Return an SQL query string and corresponding bind arguments to return rows

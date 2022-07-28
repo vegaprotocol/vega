@@ -13,8 +13,8 @@
 package service
 
 import (
-	"code.vegaprotocol.io/data-node/datanode/config/encoding"
-	"code.vegaprotocol.io/data-node/logging"
+	"code.vegaprotocol.io/vega/datanode/config/encoding"
+	"code.vegaprotocol.io/vega/logging"
 )
 
 // Config represent the configuration of the candle package

@@ -19,8 +19,8 @@ import (
 	"sync/atomic"
 	"time"
 
-	"code.vegaprotocol.io/data-node/datanode/contextutil"
-	"code.vegaprotocol.io/data-node/logging"
+	"code.vegaprotocol.io/vega/datanode/contextutil"
+	"code.vegaprotocol.io/vega/logging"
 )
 
 type subscriber[T any] struct {

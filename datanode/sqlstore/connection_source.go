@@ -17,14 +17,14 @@ import (
 	"fmt"
 	"strconv"
 
-	"code.vegaprotocol.io/data-node/logging"
+	"code.vegaprotocol.io/vega/logging"
+
 	"github.com/jackc/pgconn"
 	"github.com/jackc/pgtype"
+	shopspring "github.com/jackc/pgtype/ext/shopspring-numeric"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
-
-	shopspring "github.com/jackc/pgtype/ext/shopspring-numeric"
 )
 
 type Connection interface {

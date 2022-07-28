@@ -30,10 +30,10 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/data-node/cmd/data-node/node"
-	"code.vegaprotocol.io/data-node/datanode/config"
-	"code.vegaprotocol.io/data-node/datanode/config/encoding"
-	"code.vegaprotocol.io/data-node/datanode/fsutil"
-	"code.vegaprotocol.io/data-node/logging"
+	"code.vegaprotocol.io/vega/datanode/config"
+	"code.vegaprotocol.io/vega/datanode/config/encoding"
+	"code.vegaprotocol.io/vega/datanode/fsutil"
+	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/shared/paths"
 
 	"github.com/google/go-cmp/cmp"

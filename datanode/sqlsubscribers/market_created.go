@@ -15,10 +15,10 @@ package sqlsubscribers
 import (
 	"context"
 
-	"code.vegaprotocol.io/data-node/datanode/entities"
-	"code.vegaprotocol.io/data-node/logging"
+	"code.vegaprotocol.io/vega/datanode/entities"
+	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/protos/vega"
-	"code.vegaprotocol.io/vega/events"
+	"code.vegaprotocol.io/vega/core/events"
 	"github.com/pkg/errors"
 )
 
@@ -27,7 +27,7 @@ type MarketCreatedEvent interface {
 	Market() vega.Market
 }
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/markets_mock.go -package mocks code.vegaprotocol.io/data-node/datanode/sqlsubscribers MarketsStore
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/markets_mock.go -package mocks code.vegaprotocol.io/vega/datanode/sqlsubscribers MarketsStore
 type MarketsStore interface {
 	Upsert(context.Context, *entities.Market) error
 }

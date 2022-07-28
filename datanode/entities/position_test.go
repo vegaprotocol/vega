@@ -19,9 +19,9 @@ import (
 	"context"
 	"testing"
 
-	"code.vegaprotocol.io/data-node/datanode/entities"
-	"code.vegaprotocol.io/vega/events"
-	"code.vegaprotocol.io/vega/types/num"
+	"code.vegaprotocol.io/vega/datanode/entities"
+	"code.vegaprotocol.io/vega/core/events"
+	"code.vegaprotocol.io/vega/core/types/num"
 
 	"github.com/stretchr/testify/assert"
 )

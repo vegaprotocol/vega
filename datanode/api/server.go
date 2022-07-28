@@ -20,13 +20,13 @@ import (
 	"strconv"
 	"time"
 
-	"code.vegaprotocol.io/data-node/datanode/candlesv2"
-	"code.vegaprotocol.io/data-node/datanode/service"
-	"code.vegaprotocol.io/data-node/datanode/subscribers"
-	"code.vegaprotocol.io/vega/events"
+	"code.vegaprotocol.io/vega/datanode/candlesv2"
+	"code.vegaprotocol.io/vega/datanode/service"
+	"code.vegaprotocol.io/vega/datanode/subscribers"
+	"code.vegaprotocol.io/vega/core/events"
 
-	"code.vegaprotocol.io/data-node/datanode/contextutil"
-	"code.vegaprotocol.io/data-node/logging"
+	"code.vegaprotocol.io/vega/datanode/contextutil"
+	"code.vegaprotocol.io/vega/logging"
 	"github.com/fullstorydev/grpcui/standalone"
 	"golang.org/x/sync/errgroup"
 
@@ -42,7 +42,7 @@ import (
 )
 
 // EventService ...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/event_service_mock.go -package mocks code.vegaprotocol.io/data-node/datanode/api EventService
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/event_service_mock.go -package mocks code.vegaprotocol.io/vega/datanode/api EventService
 type EventService interface {
 	ObserveEvents(ctx context.Context, retries int, eTypes []events.Type, batchSize int, filters ...subscribers.EventFilter) (<-chan []*eventspb.BusEvent, chan<- int)
 }

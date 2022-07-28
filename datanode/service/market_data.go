@@ -18,12 +18,12 @@ import (
 	"sync"
 	"time"
 
-	"code.vegaprotocol.io/data-node/datanode/entities"
-	"code.vegaprotocol.io/data-node/datanode/utils"
-	"code.vegaprotocol.io/data-node/logging"
+	"code.vegaprotocol.io/vega/datanode/entities"
+	"code.vegaprotocol.io/vega/datanode/utils"
+	"code.vegaprotocol.io/vega/logging"
 )
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/market_data_mock.go -package mocks code.vegaprotocol.io/data-node/datanode/service MarketDataStore
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/market_data_mock.go -package mocks code.vegaprotocol.io/vega/datanode/service MarketDataStore
 type MarketDataStore interface {
 	Add(data *entities.MarketData) error
 	Flush(ctx context.Context) ([]*entities.MarketData, error)

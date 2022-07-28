@@ -15,10 +15,10 @@ package sqlsubscribers
 import (
 	"context"
 
-	"code.vegaprotocol.io/data-node/datanode/entities"
-	"code.vegaprotocol.io/data-node/logging"
+	"code.vegaprotocol.io/vega/datanode/entities"
+	"code.vegaprotocol.io/vega/logging"
 	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
-	"code.vegaprotocol.io/vega/events"
+	"code.vegaprotocol.io/vega/core/events"
 	"github.com/pkg/errors"
 )
 
@@ -32,7 +32,7 @@ type ERC20MultiSigSignerRemovedEvent interface {
 	Proto() eventspb.ERC20MultiSigSignerRemoved
 }
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/withdrawals_mock.go -package mocks code.vegaprotocol.io/data-node/datanode/sqlsubscribers WithdrawalStore
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/withdrawals_mock.go -package mocks code.vegaprotocol.io/vega/datanode/sqlsubscribers WithdrawalStore
 type ERC20MultiSigSignerEventStore interface {
 	Add(ctx context.Context, e *entities.ERC20MultiSigSignerEvent) error
 }

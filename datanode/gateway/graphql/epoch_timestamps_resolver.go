@@ -16,7 +16,7 @@ import (
 	"context"
 	"time"
 
-	"code.vegaprotocol.io/data-node/datanode/vegatime"
+	"code.vegaprotocol.io/vega/datanode/vegatime"
 	proto "code.vegaprotocol.io/protos/vega"
 )
 

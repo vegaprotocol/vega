@@ -16,7 +16,7 @@ import (
 	"time"
 
 	v2 "code.vegaprotocol.io/protos/data-node/api/v2"
-	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/core/types"
 )
 
 type PartyID struct{ ID }

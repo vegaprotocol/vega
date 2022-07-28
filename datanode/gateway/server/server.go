@@ -15,10 +15,10 @@ package server
 import (
 	"context"
 
-	"code.vegaprotocol.io/data-node/datanode/gateway"
-	gql "code.vegaprotocol.io/data-node/datanode/gateway/graphql"
-	"code.vegaprotocol.io/data-node/datanode/gateway/rest"
-	"code.vegaprotocol.io/data-node/logging"
+	"code.vegaprotocol.io/vega/datanode/gateway"
+	gql "code.vegaprotocol.io/vega/datanode/gateway/graphql"
+	"code.vegaprotocol.io/vega/datanode/gateway/rest"
+	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/shared/paths"
 	"golang.org/x/sync/errgroup"
 )

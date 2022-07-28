@@ -19,7 +19,7 @@ import (
 	"sync"
 	"time"
 
-	"code.vegaprotocol.io/data-node/datanode/config/encoding"
+	"code.vegaprotocol.io/vega/datanode/config/encoding"
 )
 
 type RateLimitConfig struct {

@@ -18,7 +18,7 @@ import (
 	"fmt"
 	"io"
 
-	"code.vegaprotocol.io/data-node/logging"
+	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/shared/paths"
 	embeddedpostgres "github.com/fergusstrange/embedded-postgres"
 	"github.com/jackc/pgx/v4/stdlib"

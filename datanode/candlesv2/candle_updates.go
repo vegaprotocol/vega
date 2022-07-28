@@ -18,8 +18,8 @@ import (
 	"sync/atomic"
 	"time"
 
-	"code.vegaprotocol.io/data-node/datanode/entities"
-	"code.vegaprotocol.io/data-node/logging"
+	"code.vegaprotocol.io/vega/datanode/entities"
+	"code.vegaprotocol.io/vega/logging"
 )
 
 type candleSource interface {
