@@ -100,10 +100,11 @@ pipeline {
                         }
                         options { retry(3) }
                         steps {
+                            sh 'printenv'
                             dir('vega') {
                                 sh label: 'Compile', script: """
                                     go build -v \
-                                        -o '../build-${GOOS}-${GOARCH}' \
+                                        -o '../build-${GOOS}-${GOARCH}/' \
                                         ./cmd/vega \
                                         ./cmd/data-node \
                                         ./cmd/vegawallet
