@@ -123,16 +123,22 @@ pipeline {
                                 """
                             }
                             dir("build-${GOOS}-${GOARCH}") {
-                                sh label: 'Sanity check', script: '''
+                                sh label: 'list files', script: '''
                                     pwd
                                     ls -lah
-                                    file *
-                                    if [ "$GOOS" == "linux" ] && [ "$GOARCH" == "amd64" ]; then
-                                        vega version
-                                        data-node version
-                                        vegawallet version
-                                    fi
                                 '''
+                                sh label: 'Sanity check', script: '''
+                                    file *
+                                '''
+                                script {
+                                    if ( GOOS == "linux" && GOARCH == "amd64" ) {
+                                        sh label: 'get version', script '''
+                                            vega version
+                                            data-node version
+                                            vegawallet version
+                                        '''
+                                    }
+                                }
                             }
                         }
                     }
