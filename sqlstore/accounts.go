@@ -206,11 +206,10 @@ func (as *Accounts) QueryBalances(ctx context.Context,
 	defer metrics.StartSQLQuery("Accounts", "QueryBalances")()
 	accountBalances := make([]entities.AccountBalance, 0)
 	rows, err := as.Connection.Query(ctx, query, args...)
-	defer rows.Close()
-
 	if err != nil {
 		return accountBalances, entities.PageInfo{}, fmt.Errorf("querying account balances: %w", err)
 	}
+	defer rows.Close()
 
 	if err = pgxscan.ScanAll(&accountBalances, rows); err != nil {
 		return accountBalances, entities.PageInfo{}, fmt.Errorf("parsing account balances: %w", err)

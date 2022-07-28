@@ -237,8 +237,7 @@ func priceMonitoringParametersFromProto(pmp *vega.PriceMonitoringParameters) Pri
 }
 
 type PriceMonitoringSettings struct {
-	Parameters      *PriceMonitoringParameters `json:"priceMonitoringParameters,omitempty"`
-	UpdateFrequency int64                      `json:"updateFrequency,omitempty"`
+	Parameters *PriceMonitoringParameters `json:"priceMonitoringParameters,omitempty"`
 }
 
 func (s PriceMonitoringSettings) ToProto() *vega.PriceMonitoringSettings {

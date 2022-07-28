@@ -20,7 +20,7 @@ import (
 	"github.com/jackc/pgtype"
 )
 
-var ErrInvalidID = errors.New("Not a valid hex ID (or well known exception)")
+var ErrInvalidID = errors.New("not a valid hex ID (or well known exception)")
 
 type ID string
 

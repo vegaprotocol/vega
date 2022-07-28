@@ -98,7 +98,8 @@ func (t *Transfer) ToProto(accountSource AccountSource) (*eventspb.Transfer, err
 		}
 
 		if t.EndEpoch != nil {
-			recurringTransfer.EndEpoch = &vega.Uint64Value{Value: *t.EndEpoch}
+			endEpoch := *t.EndEpoch
+			recurringTransfer.EndEpoch = &endEpoch
 		}
 
 		proto.Kind = &eventspb.Transfer_Recurring{Recurring: recurringTransfer}
@@ -176,7 +177,8 @@ func TransferFromProto(ctx context.Context, t *eventspb.Transfer, vegaTime time.
 		}
 
 		if v.Recurring.EndEpoch != nil {
-			transfer.EndEpoch = &v.Recurring.EndEpoch.Value
+			endEpoch := *v.Recurring.EndEpoch
+			transfer.EndEpoch = &endEpoch
 		}
 		factor, err := decimal.NewFromString(v.Recurring.Factor)
 		if err != nil {
