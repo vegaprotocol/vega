@@ -91,30 +91,30 @@ pipeline {
                         name 'GOARCH'
                         values 'amd64', 'arm64'
                     }
-                    stages {
-                        stage("${GOOS}-${GOARCH}") {
-                            environment {
-                                GOOS         = "${GOOS}"
-                                GOARCH       = "${GOARCH}"
+                }
+                stages {
+                    stage("${GOOS}-${GOARCH}") {
+                        environment {
+                            GOOS         = "${GOOS}"
+                            GOARCH       = "${GOARCH}"
+                        }
+                        options { retry(3) }
+                        steps {
+                            dir('vega') {
+                                sh label: 'Compile', script: """
+                                    go build -v \
+                                        -o '../build-${GOOS}-${GOARCH}' \
+                                        ./cmd/vega \
+                                        ./cmd/data-node \
+                                        ./cmd/vegawallet
+                                """
                             }
-                            options { retry(3) }
-                            steps {
-                                dir('vega') {
-                                    sh label: 'Compile', script: """
-                                        go build -v \
-                                            -o '../build-${GOOS}-${GOARCH}' \
-                                            ./cmd/vega \
-                                            ./cmd/data-node \
-                                            ./cmd/vegawallet
-                                    """
-                                }
-                                dir("build-${GOOS}-${GOARCH}") {
-                                    sh label: 'Sanity check', script: '''
-                                        file vega
-                                        file data-node
-                                        file vegawallet
-                                    '''
-                                }
+                            dir("build-${GOOS}-${GOARCH}") {
+                                sh label: 'Sanity check', script: '''
+                                    file vega
+                                    file data-node
+                                    file vegawallet
+                                '''
                             }
                         }
                     }
