@@ -30,7 +30,7 @@ type CoreServiceClient interface {
 	protoapi.CoreServiceClient
 }
 
-// core service acts as a proxy to the trading service in core node
+// core service acts as a proxy to the trading service in core node.
 type coreProxyService struct {
 	protoapi.UnimplementedCoreServiceServer
 	log  *logging.Logger
@@ -76,7 +76,8 @@ func (t *coreProxyService) Statistics(ctx context.Context, req *protoapi.Statist
 }
 
 func (t *coreProxyService) ObserveEventBus(
-	stream protoapi.CoreService_ObserveEventBusServer) error {
+	stream protoapi.CoreService_ObserveEventBusServer,
+) error {
 	defer metrics.StartActiveSubscriptionCountGRPC("EventBus")()
 	return t.eventObserver.ObserveEventBus(stream)
 }

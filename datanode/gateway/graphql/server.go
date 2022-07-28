@@ -44,7 +44,7 @@ const (
 	namedLogger = "gateway.gql"
 )
 
-// GraphServer is the graphql server
+// GraphServer is the graphql server.
 type GraphServer struct {
 	gateway.Config
 
@@ -57,7 +57,7 @@ type GraphServer struct {
 	srv                 *http.Server
 }
 
-// New returns a new instance of the grapqhl server
+// New returns a new instance of the grapqhl server.
 func New(
 	log *logging.Logger,
 	config gateway.Config,
@@ -92,7 +92,7 @@ func New(
 	}, nil
 }
 
-// ReloadConf update the internal configuration of the graphql server
+// ReloadConf update the internal configuration of the graphql server.
 func (g *GraphServer) ReloadConf(cfg gateway.Config) {
 	g.log.Info("reloading configuration")
 	if g.log.GetLevel() != cfg.Level.Get() {
@@ -108,11 +108,11 @@ func (g *GraphServer) ReloadConf(cfg gateway.Config) {
 	g.Config = cfg
 }
 
-// Start start the server in order receive http request
+// Start start the server in order receive http request.
 func (g *GraphServer) Start() error {
 	// <--- cors support - configure for production
 	corz := cors.AllowAll()
-	var up = websocket.Upgrader{
+	up := websocket.Upgrader{
 		ReadBufferSize:  1024,
 		WriteBufferSize: 1024,
 		CheckOrigin: func(r *http.Request) bool {
@@ -134,7 +134,7 @@ func (g *GraphServer) Start() error {
 		g.tradingDataClient,
 		g.tradingDataClientV2,
 	)
-	var config = Config{
+	config := Config{
 		Resolvers: resolverRoot,
 	}
 
@@ -219,7 +219,7 @@ func (g *GraphServer) Start() error {
 	return nil
 }
 
-// Stop will close the http server gracefully
+// Stop will close the http server gracefully.
 func (g *GraphServer) Stop() {
 	if g.srv != nil {
 		g.log.Info("Stopping GraphQL based API")

@@ -49,7 +49,7 @@ func NewCandles(ctx context.Context, connectionSource *ConnectionSource, config 
 	}
 }
 
-// GetCandleDataForTimeSpan gets the candles for a given interval, from and to are optional
+// GetCandleDataForTimeSpan gets the candles for a given interval, from and to are optional.
 func (cs *Candles) GetCandleDataForTimeSpan(ctx context.Context, candleId string, from *time.Time, to *time.Time,
 	p entities.CursorPagination) ([]entities.Candle, entities.PageInfo, error,
 ) {
@@ -110,7 +110,7 @@ func (cs *Candles) GetCandleDataForTimeSpan(ctx context.Context, candleId string
 	return pagedCandles, pageInfo, nil
 }
 
-// GetCandlesForMarket returns a map of existing intervals to candle ids for the given market
+// GetCandlesForMarket returns a map of existing intervals to candle ids for the given market.
 func (cs *Candles) GetCandlesForMarket(ctx context.Context, market string) (map[string]string, error) {
 	intervalToView, err := cs.getIntervalToView(ctx)
 	if err != nil {

@@ -60,7 +60,8 @@ func (od *OracleData) GetOracleDataBySpecID(ctx context.Context, id string, pagi
 }
 
 func getOracleDataBySpecIDOffsetPagination(ctx context.Context, conn Connection, id string, pagination entities.OffsetPagination) (
-	[]entities.OracleData, entities.PageInfo, error) {
+	[]entities.OracleData, entities.PageInfo, error,
+) {
 	specID := entities.NewSpecID(id)
 	var bindVars []interface{}
 	var pageInfo entities.PageInfo
@@ -78,7 +79,8 @@ func getOracleDataBySpecIDOffsetPagination(ctx context.Context, conn Connection,
 }
 
 func getOracleDataBySpecIDCursorPagination(ctx context.Context, conn Connection, id string, pagination entities.CursorPagination) (
-	[]entities.OracleData, entities.PageInfo, error) {
+	[]entities.OracleData, entities.PageInfo, error,
+) {
 	var oracleData []entities.OracleData
 	var pageInfo entities.PageInfo
 	var bindVars []interface{}
@@ -125,8 +127,8 @@ func (od *OracleData) ListOracleData(ctx context.Context, pagination entities.Pa
 }
 
 func listOracleDataOffsetPagination(ctx context.Context, conn Connection, pagination entities.OffsetPagination) (
-	[]entities.OracleData, entities.PageInfo, error) {
-
+	[]entities.OracleData, entities.PageInfo, error,
+) {
 	var data []entities.OracleData
 	var pageInfo entities.PageInfo
 
@@ -141,8 +143,8 @@ order by vega_time desc, matched_spec_id`, selectOracleData())
 }
 
 func listOracleDataCursorPagination(ctx context.Context, conn Connection, pagination entities.CursorPagination) (
-	[]entities.OracleData, entities.PageInfo, error) {
-
+	[]entities.OracleData, entities.PageInfo, error,
+) {
 	var data []entities.OracleData
 	var pageInfo entities.PageInfo
 

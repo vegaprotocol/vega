@@ -84,7 +84,7 @@ func (bs *Blocks) GetAtHeight(ctx context.Context, height int64) (entities.Block
 	return block, err
 }
 
-// GetLastBlock return the last block or ErrNoLastBlock if no block is found
+// GetLastBlock return the last block or ErrNoLastBlock if no block is found.
 func (bs *Blocks) GetLastBlock(ctx context.Context) (entities.Block, error) {
 	bs.mu.Lock()
 	defer bs.mu.Unlock()
@@ -108,7 +108,6 @@ func (bs *Blocks) GetLastBlock(ctx context.Context) (entities.Block, error) {
 
 	bs.lastBlock = block
 	return *block, nil
-
 }
 
 func (bs *Blocks) setLastBlock(b entities.Block) {

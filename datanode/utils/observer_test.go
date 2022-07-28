@@ -128,7 +128,7 @@ func TestCancel(t *testing.T) {
 
 /******************************************** Helpers ********************************************/
 
-// pump launches a goroutine to notify an observer, 10 time a second
+// pump launches a goroutine to notify an observer, 10 time a second.
 func pump(o *utils.Observer[int]) context.CancelFunc {
 	ctx, cancel := context.WithCancel(context.Background())
 
@@ -146,7 +146,7 @@ func pump(o *utils.Observer[int]) context.CancelFunc {
 	return cancel
 }
 
-// dump launches a goroutine that reads from a channel and discards the data
+// dump launches a goroutine that reads from a channel and discards the data.
 func dump(ch <-chan []int) context.CancelFunc {
 	// A goroutine read it out again
 	ctx, cancel := context.WithCancel(context.Background())

@@ -402,7 +402,7 @@ func (l *gooseLogger) Println(v ...interface{}) {
 }
 
 func (l *gooseLogger) Printf(format string, v ...interface{}) {
-	//l.Logger.WithOptions(zap.AddCallerSkip(2))
+	// l.Logger.WithOptions(zap.AddCallerSkip(2))
 	l.Infof(strings.TrimSpace(format), v...)
 }
 

@@ -73,7 +73,7 @@ func (bs *Balances) Add(b entities.AccountBalance) error {
 // Time  Balance    Party
 // 1     1          x
 // 2     11         x
-// 3     100        y
+// 3     100        y.
 //
 func (bs *Balances) Query(filter entities.AccountFilter, groupBy []entities.AccountField) (*[]entities.AggregatedBalance, error) {
 	assetsQuery, args, err := filterAccountsQuery(filter)

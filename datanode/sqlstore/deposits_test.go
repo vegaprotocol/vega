@@ -335,6 +335,7 @@ func getTestDeposit(id, party, asset, amount, txHash string, ts int64) *vega.Dep
 }
 
 func addDeposits(ctx context.Context, t *testing.T, bs *sqlstore.Blocks, ds *sqlstore.Deposits) []entities.Deposit {
+	t.Helper()
 	vegaTime := time.Now().Truncate(time.Microsecond)
 	amount := int64(1000)
 	deposits := make([]entities.Deposit, 0, 10)

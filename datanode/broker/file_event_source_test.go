@@ -70,7 +70,6 @@ func writeEventsToFile(events []*eventspb.BusEvent, path string) error {
 	}
 
 	sizeBytes := make([]byte, 4)
-
 	for _, e := range events {
 		size := uint32(proto.Size(e))
 		protoBytes, err := proto.Marshal(e)
@@ -79,7 +78,8 @@ func writeEventsToFile(events []*eventspb.BusEvent, path string) error {
 		}
 
 		binary.BigEndian.PutUint32(sizeBytes, size)
-		allBytes := append(sizeBytes, protoBytes...)
+		allBytes := append([]byte{}, sizeBytes...)
+		allBytes = append(allBytes, protoBytes...)
 		file.Write(allBytes)
 	}
 

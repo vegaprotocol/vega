@@ -47,7 +47,7 @@ type EventService interface {
 	ObserveEvents(ctx context.Context, retries int, eTypes []events.Type, batchSize int, filters ...subscribers.EventFilter) (<-chan []*eventspb.BusEvent, chan<- int)
 }
 
-// GRPCServer represent the grpc api provided by the vega node
+// GRPCServer represent the grpc api provided by the vega node.
 type GRPCServer struct {
 	Config
 	log                   *logging.Logger
@@ -97,7 +97,7 @@ type GRPCServer struct {
 	cfunc context.CancelFunc
 }
 
-// NewGRPCServer create a new instance of the GPRC api for the vega node
+// NewGRPCServer create a new instance of the GPRC api for the vega node.
 func NewGRPCServer(
 	log *logging.Logger,
 	config Config,
@@ -189,7 +189,7 @@ func NewGRPCServer(
 	}
 }
 
-// ReloadConf update the internal configuration of the GRPC server
+// ReloadConf update the internal configuration of the GRPC server.
 func (g *GRPCServer) ReloadConf(cfg Config) {
 	g.log.Info("reloading configuration")
 	if g.log.GetLevel() != cfg.Level.Get() {

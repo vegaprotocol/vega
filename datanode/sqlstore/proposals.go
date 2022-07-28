@@ -93,7 +93,8 @@ func (ps *Proposals) GetByReference(ctx context.Context, ref string) (entities.P
 }
 
 func getOpenStateProposalsQuery(inState *entities.ProposalState, conditions []string, pagination entities.CursorPagination,
-	sorting Sorting, cmp Compare, pc *entities.ProposalCursor, pageForward bool, args ...interface{}) (string, []interface{}) {
+	sorting Sorting, cmp Compare, pc *entities.ProposalCursor, pageForward bool, args ...interface{},
+) (string, []interface{}) {
 	// if we're querying for a specific state and it's not the Open state,
 	// or if we are paging forward and the current state is not the open state
 	// then we do not need to query for any open state proposals
@@ -134,7 +135,8 @@ func getOpenStateProposalsQuery(inState *entities.ProposalState, conditions []st
 }
 
 func getOtherStateProposalsQuery(inState *entities.ProposalState, conditions []string, pagination entities.CursorPagination,
-	sorting Sorting, cmp Compare, pc *entities.ProposalCursor, pageForward bool, args ...interface{}) (string, []interface{}) {
+	sorting Sorting, cmp Compare, pc *entities.ProposalCursor, pageForward bool, args ...interface{},
+) (string, []interface{}) {
 	// if we're filtering for state and the state is open,
 	// or we're paging forward, and the cursor has reached the open proposals
 	// then we don't need to return any non-open proposal results
@@ -183,7 +185,6 @@ func (ps *Proposals) Get(ctx context.Context,
 	proposalType *entities.ProposalType,
 	pagination entities.CursorPagination,
 ) ([]entities.Proposal, entities.PageInfo, error) {
-
 	// This one is a bit tricky because we want all the open proposals listed at the top, sorted by date
 	// then other proposals in date order regardless of state.
 

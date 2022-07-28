@@ -224,6 +224,7 @@ func TestNodePagination(t *testing.T) {
 }
 
 func addPaginationTestNodes(t *testing.T, ns *sqlstore.Node) (nodes []entities.Node) {
+	t.Helper()
 	blockTime := time.Now().Add(-time.Hour)
 	bs := sqlstore.NewBlocks(connectionSource)
 
@@ -257,7 +258,7 @@ func addPaginationTestNodes(t *testing.T, ns *sqlstore.Node) (nodes []entities.N
 	addNodeAnnounced(t, ns, nodes[8].ID, true, 1, nodes[8].VegaTime)
 	addNodeAnnounced(t, ns, nodes[9].ID, true, 1, nodes[9].VegaTime)
 
-	return
+	return nodes
 }
 
 func testNodePaginationNoPagination(t *testing.T) {

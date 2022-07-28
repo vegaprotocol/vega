@@ -109,7 +109,8 @@ func (as *Assets) GetAll(ctx context.Context) ([]entities.Asset, error) {
 }
 
 func (as *Assets) GetAllWithCursorPagination(ctx context.Context, pagination entities.CursorPagination) (
-	[]entities.Asset, entities.PageInfo, error) {
+	[]entities.Asset, entities.PageInfo, error,
+) {
 	var assets []entities.Asset
 	var pageInfo entities.PageInfo
 	var args []interface{}

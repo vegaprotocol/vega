@@ -250,6 +250,7 @@ func TestOracleSpec_GetSpecsWithCursorPagination(t *testing.T) {
 }
 
 func createOracleSpecPaginationTestData(t *testing.T, ctx context.Context, bs *sqlstore.Blocks, os *sqlstore.OracleSpec) []entities.OracleSpec {
+	t.Helper()
 	specs := make([]entities.OracleSpec, 0, 10)
 
 	block := addTestBlockForTime(t, bs, time.Now().Truncate(time.Second))

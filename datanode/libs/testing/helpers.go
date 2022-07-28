@@ -32,7 +32,7 @@ func NewVegaPaths() (paths.Paths, func()) {
 	return paths.New(path), func() { _ = os.RemoveAll(path) }
 }
 
-// ProtosEq is a gomock matcher for comparing messages for equality
+// ProtosEq is a gomock matcher for comparing messages for equality.
 func ProtosEq(message proto.Message) ProtoMatcher {
 	return ProtoMatcher{message}
 }
@@ -57,7 +57,7 @@ type tHelper interface {
 	Helper()
 }
 
-// AssertProtoEqual is a testing assertion that two protos are the same
+// AssertProtoEqual is a testing assertion that two protos are the same.
 func AssertProtoEqual(t assert.TestingT, expected, actual proto.Message, msgAndArgs ...interface{}) bool {
 	if h, ok := t.(tHelper); ok {
 		h.Helper()
@@ -70,5 +70,4 @@ func AssertProtoEqual(t assert.TestingT, expected, actual proto.Message, msgAndA
 	}
 
 	return true
-
 }

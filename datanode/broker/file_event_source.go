@@ -139,7 +139,6 @@ func sendBlock(ctx context.Context, out chan<- events.Event, batch []*eventspb.B
 		case <-ctx.Done():
 			return ctx.Err()
 		}
-
 	}
 	return nil
 }

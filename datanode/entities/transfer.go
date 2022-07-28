@@ -55,7 +55,6 @@ type Transfer struct {
 }
 
 func (t *Transfer) ToProto(accountSource AccountSource) (*eventspb.Transfer, error) {
-
 	fromAcc, err := accountSource.GetByID(t.FromAccountId)
 	if err != nil {
 		return nil, fmt.Errorf("getting from account for transfer proto:%w", err)
@@ -92,7 +91,7 @@ func (t *Transfer) ToProto(accountSource AccountSource) (*eventspb.Transfer, err
 		if t.DispatchMetricAsset != nil {
 			recurringTransfer.DispatchStrategy = &vega.DispatchStrategy{
 				AssetForMetric: *t.DispatchMetricAsset,
-				Metric:         vega.DispatchMetric(*t.DispatchMetric),
+				Metric:         *t.DispatchMetric,
 				Markets:        t.DispatchMarkets,
 			}
 		}
@@ -112,7 +111,6 @@ func (t *Transfer) ToProto(accountSource AccountSource) (*eventspb.Transfer, err
 }
 
 func TransferFromProto(ctx context.Context, t *eventspb.Transfer, vegaTime time.Time, accountSource AccountSource) (*Transfer, error) {
-
 	fromAcc := Account{
 		ID:       0,
 		PartyID:  PartyID{ID(t.From)},
@@ -122,7 +120,6 @@ func TransferFromProto(ctx context.Context, t *eventspb.Transfer, vegaTime time.
 	}
 
 	err := accountSource.Obtain(ctx, &fromAcc)
-
 	if err != nil {
 		return nil, fmt.Errorf("obtaining from account id for transfer:%w", err)
 	}

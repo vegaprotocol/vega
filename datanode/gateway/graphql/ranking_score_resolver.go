@@ -19,8 +19,10 @@ import (
 	proto "code.vegaprotocol.io/protos/vega"
 )
 
-type rankingScoreResolver VegaResolverRoot
-type rewardScoreResolver VegaResolverRoot
+type (
+	rankingScoreResolver VegaResolverRoot
+	rewardScoreResolver  VegaResolverRoot
+)
 
 func convertValidatorStatusFromProto(status proto.ValidatorNodeStatus) string {
 	if status == proto.ValidatorNodeStatus_VALIDATOR_NODE_STATUS_ERSATZ {

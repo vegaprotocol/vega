@@ -17,27 +17,32 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 )
 
-type Asset struct{ *sqlstore.Assets }
-type Block struct{ *sqlstore.Blocks }
-type Party struct{ *sqlstore.Parties }
-type NetworkLimits struct{ *sqlstore.NetworkLimits }
-type Epoch struct{ *sqlstore.Epochs }
-type Deposit struct{ *sqlstore.Deposits }
-type Withdrawal struct{ *sqlstore.Withdrawals }
-type RiskFactor struct{ *sqlstore.RiskFactors }
-type NetworkParameter struct{ *sqlstore.NetworkParameters }
-type Checkpoint struct{ *sqlstore.Checkpoints }
-type OracleSpec struct{ *sqlstore.OracleSpec }
-type OracleData struct{ *sqlstore.OracleData }
-type LiquidityProvision struct{ *sqlstore.LiquidityProvision }
-type Transfer struct{ *sqlstore.Transfers }
-type StakeLinking struct{ *sqlstore.StakeLinking }
-type Notary struct{ *sqlstore.Notary }
-type MultiSig struct {
-	*sqlstore.ERC20MultiSigSignerEvent
-}
-type KeyRotations struct{ *sqlstore.KeyRotations }
-type Node struct{ *sqlstore.Node }
+type (
+	Asset              struct{ *sqlstore.Assets }
+	Block              struct{ *sqlstore.Blocks }
+	Party              struct{ *sqlstore.Parties }
+	NetworkLimits      struct{ *sqlstore.NetworkLimits }
+	Epoch              struct{ *sqlstore.Epochs }
+	Deposit            struct{ *sqlstore.Deposits }
+	Withdrawal         struct{ *sqlstore.Withdrawals }
+	RiskFactor         struct{ *sqlstore.RiskFactors }
+	NetworkParameter   struct{ *sqlstore.NetworkParameters }
+	Checkpoint         struct{ *sqlstore.Checkpoints }
+	OracleSpec         struct{ *sqlstore.OracleSpec }
+	OracleData         struct{ *sqlstore.OracleData }
+	LiquidityProvision struct{ *sqlstore.LiquidityProvision }
+	Transfer           struct{ *sqlstore.Transfers }
+	StakeLinking       struct{ *sqlstore.StakeLinking }
+	Notary             struct{ *sqlstore.Notary }
+	MultiSig           struct {
+		*sqlstore.ERC20MultiSigSignerEvent
+	}
+)
+
+type (
+	KeyRotations struct{ *sqlstore.KeyRotations }
+	Node         struct{ *sqlstore.Node }
+)
 
 func NewAsset(store *sqlstore.Assets, log *logging.Logger) *Asset {
 	return &Asset{Assets: store}

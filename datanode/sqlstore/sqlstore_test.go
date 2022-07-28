@@ -129,7 +129,7 @@ func DeleteEverything() {
 	}
 }
 
-// Generate a 256 bit pseudo-random hash ID based on the time
+// Generate a 256 bit pseudo-random hash ID based on the time.
 func generateID() string {
 	currentTime := time.Now().UnixNano()
 	currentTimeString := strconv.FormatInt(currentTime, 10)

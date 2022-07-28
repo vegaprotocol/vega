@@ -31,7 +31,8 @@ type LedgerEntry struct {
 
 var LedgerEntryColumns = []string{
 	"account_from_id", "account_to_id", "quantity",
-	"vega_time", "transfer_time", "reference", "type"}
+	"vega_time", "transfer_time", "reference", "type",
+}
 
 func (le LedgerEntry) ToRow() []any {
 	return []any{
@@ -41,5 +42,6 @@ func (le LedgerEntry) ToRow() []any {
 		le.VegaTime,
 		le.TransferTime,
 		le.Reference,
-		le.Type}
+		le.Type,
+	}
 }

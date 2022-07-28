@@ -20,7 +20,7 @@ import (
 )
 
 // fanOutEventSource: an event source to fan out an event stream, it is told in advance the number of subscribers to
-// expect and only starts publishing events once that number of subscriptions has been received
+// expect and only starts publishing events once that number of subscriptions has been received.
 type fanOutEventSource struct {
 	source                 eventSource
 	sendChannelBufferSize  int
@@ -45,7 +45,6 @@ func (e *fanOutEventSource) Listen() error {
 	defer e.mutex.Unlock()
 
 	if !e.listening {
-
 		err := e.source.Listen()
 		if err != nil {
 			return err
@@ -112,5 +111,4 @@ func (e *fanOutEventSource) sendEvents(ctx context.Context) {
 	default:
 		// Do nothing, continue
 	}
-
 }

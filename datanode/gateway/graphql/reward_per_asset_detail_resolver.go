@@ -12,7 +12,7 @@
 
 package gql
 
-// TODO: This resolver is depricated in favour of RewardSummary; delete once front end has switched over
+// TODO: This resolver is depricated in favour of RewardSummary; delete once front end has switched over.
 import (
 	"context"
 	"math"

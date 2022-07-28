@@ -23,7 +23,8 @@ import (
 type updateMarketConfigurationResolver VegaResolverRoot
 
 func (r *updateMarketConfigurationResolver) Instrument(ctx context.Context,
-	obj *vega.UpdateMarketConfiguration) (*UpdateInstrumentConfiguration, error) {
+	obj *vega.UpdateMarketConfiguration,
+) (*UpdateInstrumentConfiguration, error) {
 	if obj == nil {
 		return nil, errors.New("no market configuration update provided")
 	}
@@ -52,7 +53,8 @@ func (r *updateMarketConfigurationResolver) Instrument(ctx context.Context,
 }
 
 func (r *updateMarketConfigurationResolver) PriceMonitoringParameters(ctx context.Context,
-	obj *vega.UpdateMarketConfiguration) (*PriceMonitoringParameters, error) {
+	obj *vega.UpdateMarketConfiguration,
+) (*PriceMonitoringParameters, error) {
 	if obj == nil {
 		return nil, errors.New("no market configuration update provided")
 	}
@@ -83,7 +85,8 @@ func (r *updateMarketConfigurationResolver) PriceMonitoringParameters(ctx contex
 }
 
 func (r *updateMarketConfigurationResolver) LiquidityMonitoringParameters(ctx context.Context,
-	obj *vega.UpdateMarketConfiguration) (*LiquidityMonitoringParameters, error) {
+	obj *vega.UpdateMarketConfiguration,
+) (*LiquidityMonitoringParameters, error) {
 	if obj == nil {
 		return nil, errors.New("no market configuration update provided")
 	}
@@ -102,7 +105,8 @@ func (r *updateMarketConfigurationResolver) LiquidityMonitoringParameters(ctx co
 }
 
 func (r *updateMarketConfigurationResolver) RiskParameters(ctx context.Context,
-	obj *vega.UpdateMarketConfiguration) (UpdateMarketRiskParameters, error) {
+	obj *vega.UpdateMarketConfiguration,
+) (UpdateMarketRiskParameters, error) {
 	if obj == nil {
 		return nil, errors.New("no market configuration update provided")
 	}

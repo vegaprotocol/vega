@@ -247,6 +247,7 @@ type testResolver struct {
 }
 
 func buildTestResolverRoot(t *testing.T) *testResolver {
+	t.Helper()
 	ctrl := gomock.NewController(t)
 	log := logging.NewTestLogger()
 	conf := gateway.NewDefaultConfig()

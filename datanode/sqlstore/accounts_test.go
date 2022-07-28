@@ -30,6 +30,7 @@ func addTestAccount(t *testing.T,
 	asset entities.Asset,
 	block entities.Block,
 ) entities.Account {
+	t.Helper()
 	account := entities.Account{
 		PartyID:  party.ID,
 		AssetID:  asset.ID,

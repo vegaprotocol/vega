@@ -43,8 +43,10 @@ type ConnectionSource struct {
 	log        *logging.Logger
 }
 
-type transactionContextKey struct{}
-type connectionContextKey struct{}
+type (
+	transactionContextKey struct{}
+	connectionContextKey  struct{}
+)
 
 func NewTransactionalConnectionSource(log *logging.Logger, conf ConnectionConfig) (*ConnectionSource, error) {
 	poolConfig, err := conf.GetPoolConfig()

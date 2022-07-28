@@ -24,6 +24,7 @@ import (
 )
 
 func headerNotPresent(t *testing.T, x *httptest.ResponseRecorder, key string) {
+	t.Helper()
 	res := x.Result()
 	h, found := res.Header[key]
 	if found || len(h) > 0 {
@@ -32,6 +33,7 @@ func headerNotPresent(t *testing.T, x *httptest.ResponseRecorder, key string) {
 }
 
 func headerPresent(t *testing.T, x *httptest.ResponseRecorder, key string, expected []string) {
+	t.Helper()
 	res := x.Result()
 	h, found := res.Header[key]
 	if !found || len(h) == 0 {

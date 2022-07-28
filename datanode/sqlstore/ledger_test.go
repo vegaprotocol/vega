@@ -29,6 +29,7 @@ func addTestLedgerEntry(t *testing.T, ledger *sqlstore.Ledger,
 	accountTo entities.Account,
 	block entities.Block,
 ) entities.LedgerEntry {
+	t.Helper()
 	ledgerEntry := entities.LedgerEntry{
 		AccountFromID: accountFrom.ID,
 		AccountToID:   accountTo.ID,

@@ -87,6 +87,7 @@ func (md *MarketDepth) ToProto(limit uint64) *vega.MarketDepth {
 		SequenceNumber: md.SequenceNumber,
 	}
 }
+
 func (md *MarketDepth) AddOrderUpdate(order *types.Order) {
 	// Do we know about this order already?
 	originalOrder := md.orderExists(order.ID)
@@ -249,7 +250,7 @@ func (md *MarketDepth) removePriceLevel(order *types.Order) {
 	}
 }
 
-// Returns the min of 2 uint64s
+// Returns the min of 2 uint64s.
 func min(x, y uint64) uint64 {
 	if y < x {
 		return y

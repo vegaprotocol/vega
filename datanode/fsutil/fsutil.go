@@ -19,16 +19,16 @@ import (
 )
 
 const (
-	dirPerms = 0700
+	dirPerms = 0o700
 )
 
 // PathNotFound represent an error when a fd cannot be found
-// on the user filesystem
+// on the user filesystem.
 type PathNotFound struct {
 	path string
 }
 
-// Error return an human readable formating of the error
+// Error return an human readable formating of the error.
 func (err *PathNotFound) Error() string {
 	return fmt.Sprintf("not found: %s", err.path)
 }
@@ -37,7 +37,7 @@ func (err *PathNotFound) Error() string {
 // binary is in /usr/bin/ -> look for /etc/vega/config.toml
 // binary is in /usr/local/vega/bin/ -> look for /usr/local/vega/etc/config.toml
 // binary is in /usr/local/bin/ -> look for /usr/local/etc/vega/config.toml
-// otherwise, look for $HOME/.vega/config.toml
+// otherwise, look for $HOME/.vega/config.toml.
 func DefaultVegaDir() string {
 	ex, err := os.Executable()
 	if err != nil {
@@ -80,7 +80,7 @@ func PathExists(path string) (bool, error) {
 	return false, err
 }
 
-// FileExists similar to PathExists, but ensures the path is to a file, not a directory
+// FileExists similar to PathExists, but ensures the path is to a file, not a directory.
 func FileExists(path string) (bool, error) {
 	fs, err := os.Stat(path)
 	if err == nil {

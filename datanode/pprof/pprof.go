@@ -19,7 +19,7 @@ import (
 
 	// import pprof globally because it's used to init the package
 	// and this comment is mostly here as well in order to make
-	// golint very many much happy
+	// golint very many much happy.
 	_ "net/http/pprof"
 	"os"
 	"path/filepath"
@@ -40,7 +40,7 @@ const (
 	namedLogger = "pprof"
 )
 
-// Config represent the configuration of the pprof package
+// Config represent the configuration of the pprof package.
 type Config struct {
 	Level       encoding.LogLevel `long:"level"`
 	Enabled     bool              `long:"enabled"`
@@ -57,7 +57,7 @@ type Config struct {
 	WriteEvery encoding.Duration `long:"write-every"  description:"write pprof files at this interval; if 0 only write on shutdown"`
 }
 
-// Pprofhandler is handling pprof profile management
+// Pprofhandler is handling pprof profile management.
 type Pprofhandler struct {
 	Config
 
@@ -68,7 +68,7 @@ type Pprofhandler struct {
 	cpuprofilePath string
 }
 
-// NewDefaultConfig create a new default configuration for the pprof handler
+// NewDefaultConfig create a new default configuration for the pprof handler.
 func NewDefaultConfig() Config {
 	return Config{
 		Level:                encoding.LogLevel{Level: logging.InfoLevel},
@@ -81,7 +81,7 @@ func NewDefaultConfig() Config {
 	}
 }
 
-// New creates a new pprof handler
+// New creates a new pprof handler.
 func New(log *logging.Logger, config Config) (*Pprofhandler, error) {
 	// setup logger
 	log = log.Named(namedLogger)
@@ -163,7 +163,7 @@ func (p *Pprofhandler) startProfiling() error {
 	return nil
 }
 
-// ReloadConf update the configuration of the pprof package
+// ReloadConf update the configuration of the pprof package.
 func (p *Pprofhandler) ReloadConf(cfg Config) {
 	p.log.Info("reloading configuration")
 	if p.log.GetLevel() != cfg.Level.Get() {
@@ -180,7 +180,7 @@ func (p *Pprofhandler) ReloadConf(cfg Config) {
 	runtime.SetMutexProfileFraction(cfg.MutexProfileFraction)
 }
 
-// Stop is meant to be use to stop the pprof profile, should be use with defer probably
+// Stop is meant to be use to stop the pprof profile, should be use with defer probably.
 func (p *Pprofhandler) Stop() error {
 	close(p.stop)
 	<-p.done

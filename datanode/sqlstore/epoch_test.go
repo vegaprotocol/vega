@@ -30,6 +30,7 @@ func addTestEpoch(t *testing.T, es *sqlstore.Epochs,
 	endTime *time.Time,
 	block entities.Block,
 ) entities.Epoch {
+	t.Helper()
 	r := entities.Epoch{
 		ID:         epochID,
 		StartTime:  startTime,

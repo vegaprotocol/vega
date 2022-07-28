@@ -35,6 +35,7 @@ func addTestReward(t *testing.T, rs *sqlstore.Rewards,
 	timestamp time.Time,
 	block entities.Block,
 ) entities.Reward {
+	t.Helper()
 	r := entities.Reward{
 		PartyID:        party.ID,
 		AssetID:        asset.ID,
@@ -160,6 +161,7 @@ func setupRewardsTest(t *testing.T) (*sqlstore.Blocks, *sqlstore.Rewards, *sqlst
 }
 
 func populateTestRewards(ctx context.Context, t *testing.T, bs *sqlstore.Blocks, ps *sqlstore.Parties, as *sqlstore.Assets, rs *sqlstore.Rewards) {
+	t.Helper()
 	partyID := entities.NewPartyID("89C701D1AE2819263E45538D0B25022988BC2508A02C654462D22E0AFB626A7D")
 	assetID := entities.NewAssetID("8AA92225C32ADB54E527FCB1AEE2930CBADB4DF6F068AB2C2D667EB057EF00FA")
 

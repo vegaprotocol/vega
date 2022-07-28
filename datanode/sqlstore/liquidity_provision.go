@@ -68,12 +68,11 @@ func (lp *LiquidityProvision) Get(ctx context.Context, partyID entities.PartyID,
 	default:
 		return lp.getWithOffsetPagination(ctx, partyID, marketID, reference, entities.OffsetPagination{})
 	}
-
 }
 
 func (lp *LiquidityProvision) getWithCursorPagination(ctx context.Context, partyID entities.PartyID, marketID entities.MarketID,
-	reference string, pagination entities.CursorPagination) ([]entities.LiquidityProvision, entities.PageInfo, error) {
-
+	reference string, pagination entities.CursorPagination,
+) ([]entities.LiquidityProvision, entities.PageInfo, error) {
 	query, bindVars := lp.buildLiquidityProvisionsSelect(partyID, marketID, reference)
 
 	sorting, cmp, cursor := extractPaginationInfo(pagination)
@@ -102,12 +101,12 @@ func (lp *LiquidityProvision) getWithCursorPagination(ctx context.Context, party
 
 	pagedLiquidityProvisions, pageInfo := entities.PageEntities[*v2.LiquidityProvisionsEdge](liquidityProvisions, pagination)
 	return pagedLiquidityProvisions, pageInfo, nil
-
 }
 
 func (lp *LiquidityProvision) getWithOffsetPagination(ctx context.Context, partyID entities.PartyID, marketID entities.MarketID,
 	reference string, pagination entities.OffsetPagination) ([]entities.LiquidityProvision,
-	entities.PageInfo, error) {
+	entities.PageInfo, error,
+) {
 	var bindVars []interface{}
 	var pageInfo entities.PageInfo
 
@@ -123,7 +122,8 @@ func (lp *LiquidityProvision) getWithOffsetPagination(ctx context.Context, party
 }
 
 func (lp *LiquidityProvision) buildLiquidityProvisionsSelect(partyID entities.PartyID, marketID entities.MarketID,
-	reference string) (string, []interface{}) {
+	reference string,
+) (string, []interface{}) {
 	var bindVars []interface{}
 
 	selectSql := fmt.Sprintf(`select %s

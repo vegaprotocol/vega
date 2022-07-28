@@ -23,7 +23,7 @@ import (
 // this is simply emitted as a hierarchical label e.g. 'api.grpc'.
 const namedLogger = "candlesV2"
 
-// Config represent the configuration of the candle v2 package
+// Config represent the configuration of the candle v2 package.
 type Config struct {
 	Level         encoding.LogLevel   `long:"log-level"`
 	CandleStore   CandleStoreConfig   `group:"CandleStore" namespace:"candlestore"`

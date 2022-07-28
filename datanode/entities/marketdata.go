@@ -26,7 +26,7 @@ import (
 
 var ErrMarketDataIntegerOverflow = errors.New("integer overflow encountered when converting market data for persistence")
 
-// MarketData represents a market data record that is stored in the SQL database
+// MarketData represents a market data record that is stored in the SQL database.
 type MarketData struct {
 	// Mark price, as an integer, for example `123456` is a correctly
 	// formatted price of `1.23456` assuming market configured to 5 decimal places

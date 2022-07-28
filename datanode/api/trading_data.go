@@ -107,7 +107,6 @@ func (t *tradingDataService) TransferResponsesSubscribe(
 // MarketDepth provides the order book for a given market, and also returns the most recent trade
 // for the given market.
 func (t *tradingDataService) MarketDepth(ctx context.Context, req *protoapi.MarketDepthRequest) (*protoapi.MarketDepthResponse, error) {
-
 	// Query market depth statistics
 	depth := t.marketDepthService.GetMarketDepth(req.MarketId, req.MaxDepth)
 
@@ -135,7 +134,6 @@ func (t *tradingDataService) MarketDepthSubscribe(
 	req *protoapi.MarketDepthSubscribeRequest,
 	srv protoapi.TradingDataService_MarketDepthSubscribeServer,
 ) error {
-
 	// Wrap context from the request into cancellable. We can close internal chan on error.
 	ctx, cancel := context.WithCancel(srv.Context())
 	defer cancel()
@@ -164,7 +162,6 @@ func (t *tradingDataService) MarketDepthUpdatesSubscribe(
 	req *protoapi.MarketDepthUpdatesSubscribeRequest,
 	srv protoapi.TradingDataService_MarketDepthUpdatesSubscribeServer,
 ) error {
-
 	// Wrap context from the request into cancellable. We can close internal chan on error.
 	ctx, cancel := context.WithCancel(srv.Context())
 	defer cancel()
@@ -188,7 +185,7 @@ func (t *tradingDataService) MarketDepthUpdatesSubscribe(
 	})
 }
 
-/****************************** Positions **************************************/
+/****************************** Positions *************************************.*/
 func (t *tradingDataService) PositionsByParty(ctx context.Context, request *protoapi.PositionsByPartyRequest) (*protoapi.PositionsByPartyResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("PositionsByParty SQL")()
 
@@ -231,7 +228,6 @@ func (t *tradingDataService) PositionsSubscribe(
 	req *protoapi.PositionsSubscribeRequest,
 	srv protoapi.TradingDataService_PositionsSubscribeServer,
 ) error {
-
 	// Wrap context from the request into cancellable. We can close internal chan on error.
 	ctx, cancel := context.WithCancel(srv.Context())
 	defer cancel()
@@ -247,10 +243,9 @@ func (t *tradingDataService) PositionsSubscribe(
 			Position: position.ToProto(),
 		})
 	})
-
 }
 
-/****************************** Parties **************************************/
+/****************************** Parties *************************************.*/
 func (t *tradingDataService) Parties(ctx context.Context, _ *protoapi.PartiesRequest) (*protoapi.PartiesResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("Parties SQL")()
 	parties, err := t.partyService.GetAll(ctx)
@@ -346,7 +341,6 @@ func (t *tradingDataService) Transfers(ctx context.Context, req *protoapi.Transf
 			return nil, apiError(codes.Internal, err)
 		}
 	} else if req.IsFrom || req.IsTo {
-
 		if req.IsFrom {
 			transfers, _, err = t.transferService.GetTransfersFromParty(ctx, entities.PartyID{ID: entities.ID(req.Pubkey)}, entities.CursorPagination{})
 			if err != nil {
@@ -430,7 +424,7 @@ func (t *tradingDataService) Candles(ctx context.Context,
 			fmt.Errorf("failed to get candles for interval:%w", err))
 	}
 
-	var protoCandles []*vega.Candle
+	protoCandles := make([]*vega.Candle, 0, len(candles))
 	for _, candle := range candles {
 		proto, err := candle.ToV1CandleProto(request.Interval)
 		if err != nil {
@@ -776,7 +770,6 @@ func (t *tradingDataService) ObserveGovernance(
 	_ *protoapi.ObserveGovernanceRequest,
 	stream protoapi.TradingDataService_ObserveGovernanceServer,
 ) error {
-
 	ctx, cfunc := context.WithCancel(stream.Context())
 	defer cfunc()
 	if t.log.GetLevel() == logging.DebugLevel {
@@ -799,7 +792,6 @@ func (t *tradingDataService) ObservePartyProposals(
 	in *protoapi.ObservePartyProposalsRequest,
 	stream protoapi.TradingDataService_ObservePartyProposalsServer,
 ) error {
-
 	ctx, cfunc := context.WithCancel(stream.Context())
 	defer cfunc()
 	if t.log.GetLevel() == logging.DebugLevel {
@@ -822,7 +814,6 @@ func (t *tradingDataService) ObservePartyVotes(
 	in *protoapi.ObservePartyVotesRequest,
 	stream protoapi.TradingDataService_ObservePartyVotesServer,
 ) error {
-
 	ctx, cfunc := context.WithCancel(stream.Context())
 	defer cfunc()
 	if t.log.GetLevel() == logging.DebugLevel {
@@ -841,7 +832,6 @@ func (t *tradingDataService) ObserveProposalVotes(
 	in *protoapi.ObserveProposalVotesRequest,
 	stream protoapi.TradingDataService_ObserveProposalVotesServer,
 ) error {
-
 	ctx, cfunc := context.WithCancel(stream.Context())
 	defer cfunc()
 	if t.log.GetLevel() == logging.DebugLevel {
@@ -959,7 +949,6 @@ func (t *tradingDataService) ObserveDelegations(
 	req *protoapi.ObserveDelegationsRequest,
 	stream protoapi.TradingDataService_ObserveDelegationsServer,
 ) error {
-
 	ctx, cfunc := context.WithCancel(stream.Context())
 	defer cfunc()
 	if t.log.GetLevel() == logging.DebugLevel {
@@ -1043,7 +1032,6 @@ func (t *tradingDataService) GetRewardSummaries(ctx context.Context,
 func (t *tradingDataService) ObserveRewards(req *protoapi.ObserveRewardsRequest,
 	stream protoapi.TradingDataService_ObserveRewardsServer,
 ) error {
-
 	ctx, cfunc := context.WithCancel(stream.Context())
 	defer cfunc()
 	if t.log.GetLevel() == logging.DebugLevel {
@@ -1161,14 +1149,11 @@ func (t *tradingDataService) LastTrade(ctx context.Context,
 func (t *tradingDataService) TradesSubscribe(req *protoapi.TradesSubscribeRequest,
 	srv protoapi.TradingDataService_TradesSubscribeServer,
 ) error {
-
 	// Wrap context from the request into cancellable. We can close internal chan on error.
 	ctx, cancel := context.WithCancel(srv.Context())
 	defer cancel()
 
-	var (
-		marketID, partyID *string
-	)
+	var marketID, partyID *string
 	if len(req.MarketId) > 0 {
 		marketID = &req.MarketId
 	}
@@ -1203,9 +1188,7 @@ func (t *tradingDataService) OrdersSubscribe(
 	ctx, cancel := context.WithCancel(srv.Context())
 	defer cancel()
 
-	var (
-		marketID, partyID *string
-	)
+	var marketID, partyID *string
 
 	if len(req.MarketId) > 0 {
 		marketID = &req.MarketId
@@ -1244,7 +1227,7 @@ func (t *tradingDataService) OrderByID(ctx context.Context, req *protoapi.OrderB
 	return resp, nil
 }
 
-// OrderVersionsByID returns all versions of the order by its orderID
+// OrderVersionsByID returns all versions of the order by its orderID.
 func (t *tradingDataService) OrderVersionsByID(
 	ctx context.Context,
 	in *protoapi.OrderVersionsByIDRequest,
@@ -1565,7 +1548,6 @@ func (t *tradingDataService) GlobalRewardPoolAccounts(ctx context.Context,
 func (t *tradingDataService) AccountsSubscribe(req *protoapi.AccountsSubscribeRequest,
 	srv protoapi.TradingDataService_AccountsSubscribeServer,
 ) error {
-
 	// Wrap context from the request into cancellable. We can close internal chan on error.
 	ctx, cancel := context.WithCancel(srv.Context())
 	defer cancel()
@@ -1733,7 +1715,6 @@ func (t *tradingDataService) Deposits(ctx context.Context, req *protoapi.Deposit
 /****************************** Market Data **************************************/
 
 func (t *tradingDataService) MarginLevelsSubscribe(req *protoapi.MarginLevelsSubscribeRequest, srv protoapi.TradingDataService_MarginLevelsSubscribeServer) error {
-
 	// Wrap context from the request into cancellable. We can close internal chan on error.
 	ctx, cancel := context.WithCancel(srv.Context())
 	defer cancel()
@@ -2206,13 +2187,11 @@ func (t *tradingDataService) GetNodes(ctx context.Context, req *protoapi.GetNode
 
 	epoch, err := t.epochService.GetCurrent(ctx)
 	if err != nil {
-		fmt.Printf("%v", err)
 		return nil, apiError(codes.Internal, err)
 	}
 
 	nodes, _, err := t.nodeService.GetNodes(ctx, uint64(epoch.ID), entities.CursorPagination{})
 	if err != nil {
-		fmt.Printf("%v", err)
 		return nil, apiError(codes.Internal, err)
 	}
 
@@ -2235,13 +2214,11 @@ func (t *tradingDataService) GetNodeByID(ctx context.Context, req *protoapi.GetN
 
 	epoch, err := t.epochService.GetCurrent(ctx)
 	if err != nil {
-		fmt.Printf("%v", err)
 		return nil, apiError(codes.Internal, err)
 	}
 
 	node, err := t.nodeService.GetNodeByID(ctx, req.GetId(), uint64(epoch.ID))
 	if err != nil {
-		fmt.Printf("%v", err)
 		return nil, apiError(codes.NotFound, err)
 	}
 
@@ -2270,8 +2247,8 @@ func (t tradingDataEventBusServer) Send(data []*eventspb.BusEvent) error {
 }
 
 func (t *tradingDataService) ObserveEventBus(
-	stream protoapi.TradingDataService_ObserveEventBusServer) error {
-
+	stream protoapi.TradingDataService_ObserveEventBusServer,
+) error {
 	server := tradingDataEventBusServer{stream}
 	eventService := t.eventService
 

@@ -55,7 +55,7 @@ func (md *MarketData) Add(data *entities.MarketData) error {
 }
 
 func (md *MarketData) Flush(ctx context.Context) ([]*entities.MarketData, error) {
-	var rows [][]interface{}
+	rows := make([][]interface{}, 0, len(md.marketData))
 	for _, data := range md.marketData {
 		rows = append(rows, []interface{}{
 			data.SyntheticTime, data.VegaTime, data.SeqNum,

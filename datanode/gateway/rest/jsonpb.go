@@ -24,7 +24,7 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 )
 
-// JSONPb is a runtime.Marshaler which marshals/unmarshals into/from
+// JSONPb is a runtime.Marshaler which marshals/unmarshals into/from.
 type JSONPb jsonpb.Marshaler
 
 // ContentType always returns "application/json".

@@ -83,7 +83,6 @@ func (s *candleUpdates) run(ctx context.Context) {
 				}
 
 				s.sendCandles(candles, subscriptions)
-
 			} else {
 				lastCandle = nil
 			}
@@ -111,7 +110,7 @@ func closeAllSubscriptions(subscribers map[string]chan entities.Candle) {
 	}
 }
 
-// Subscribe returns a unique subscription id and channel on which updates will be sent
+// Subscribe returns a unique subscription id and channel on which updates will be sent.
 func (s *candleUpdates) Subscribe() (string, <-chan entities.Candle) {
 	out := make(chan entities.Candle, s.config.CandleUpdatesStreamBufferSize)
 

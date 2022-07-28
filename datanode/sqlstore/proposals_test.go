@@ -28,6 +28,7 @@ import (
 )
 
 func addTestProposal(t *testing.T, ps *sqlstore.Proposals, id string, party entities.Party, reference string, block entities.Block, state entities.ProposalState, rationale entities.ProposalRationale) entities.Proposal {
+	t.Helper()
 	terms := entities.ProposalTerms{ProposalTerms: &vega.ProposalTerms{}}
 	p := entities.Proposal{
 		ID:           entities.NewProposalID(id),
@@ -346,7 +347,6 @@ func testProposalCursorPaginationNoPaginationNewestFirst(t *testing.T) {
 		StartCursor:     proposals[18].Cursor().Encode(),
 		EndCursor:       proposals[3].Cursor().Encode(),
 	}, pageInfo)
-
 }
 
 func testProposalCursorPaginationWithFirstNewestFirst(t *testing.T) {
@@ -374,7 +374,6 @@ func testProposalCursorPaginationWithFirstNewestFirst(t *testing.T) {
 		StartCursor:     proposals[18].Cursor().Encode(),
 		EndCursor:       proposals[12].Cursor().Encode(),
 	}, pageInfo)
-
 }
 
 func testProposalCursorPaginationWithFirstAndAfterNewestFirst(t *testing.T) {
@@ -408,7 +407,6 @@ func testProposalCursorPaginationWithFirstAndAfterNewestFirst(t *testing.T) {
 		StartCursor:     proposals[2].Cursor().Encode(),
 		EndCursor:       proposals[17].Cursor().Encode(),
 	}, pageInfo)
-
 }
 
 func testProposalCursorPaginationWithLastNewestFirst(t *testing.T) {
@@ -436,7 +434,6 @@ func testProposalCursorPaginationWithLastNewestFirst(t *testing.T) {
 		StartCursor:     proposals[4].Cursor().Encode(),
 		EndCursor:       proposals[3].Cursor().Encode(),
 	}, pageInfo)
-
 }
 
 func testProposalCursorPaginationWithLastAndBeforeNewestFirst(t *testing.T) {
@@ -862,6 +859,7 @@ func testProposalCursorPaginationGivenState(t *testing.T) {
 }
 
 func createPaginationTestProposals(t *testing.T, pps *sqlstore.Proposals) ([]entities.Proposal, []entities.Party) {
+	t.Helper()
 	ps := sqlstore.NewParties(connectionSource)
 	bs := sqlstore.NewBlocks(connectionSource)
 

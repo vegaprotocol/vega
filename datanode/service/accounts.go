@@ -94,7 +94,8 @@ func (a *Account) QueryAggregatedBalances(filter entities.AccountFilter, groupBy
 }
 
 func (a *Account) ObserveAccountBalances(ctx context.Context, retries int, marketID string,
-	partyID string, asset string, ty vega.AccountType) (accountCh <-chan []entities.AccountBalance, ref uint64) {
+	partyID string, asset string, ty vega.AccountType,
+) (accountCh <-chan []entities.AccountBalance, ref uint64) {
 	ch, ref := a.bObserver.Observe(ctx,
 		retries,
 		func(ab entities.AccountBalance) bool {

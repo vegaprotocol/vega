@@ -29,7 +29,7 @@ func (pk *VegaPublicKey) Bytes() ([]byte, error) {
 
 	bytes, err := hex.DecodeString(strPK)
 	if err != nil {
-		return nil, fmt.Errorf("decoding '%v': %w", string(pk.String()), ErrInvalidID)
+		return nil, fmt.Errorf("decoding '%v': %w", pk.String(), ErrInvalidID)
 	}
 	return bytes, nil
 }
@@ -65,7 +65,7 @@ func (pk *TendermintPublicKey) Bytes() ([]byte, error) {
 
 	bytes, err := base64.StdEncoding.DecodeString(strPK)
 	if err != nil {
-		return nil, fmt.Errorf("decoding '%v': %w", string(pk.String()), ErrInvalidID)
+		return nil, fmt.Errorf("decoding '%v': %w", pk.String(), ErrInvalidID)
 	}
 	return bytes, nil
 }
@@ -100,12 +100,12 @@ func (addr *EthereumAddress) Bytes() ([]byte, error) {
 	strAddr := addr.String()
 
 	if !strings.HasPrefix(strAddr, "0x") {
-		return nil, fmt.Errorf("invalid '%v': %w", string(addr.String()), ErrInvalidID)
+		return nil, fmt.Errorf("invalid '%v': %w", addr.String(), ErrInvalidID)
 	}
 
 	bytes, err := hex.DecodeString(strAddr[2:])
 	if err != nil {
-		return nil, fmt.Errorf("decoding '%v': %w", string(addr.String()), ErrInvalidID)
+		return nil, fmt.Errorf("decoding '%v': %w", addr.String(), ErrInvalidID)
 	}
 	return bytes, nil
 }
@@ -134,7 +134,7 @@ func (addr *EthereumAddress) DecodeBinary(ci *pgtype.ConnInfo, src []byte) error
 	return nil
 }
 
-// NanosToPostgresTimestamp postgres stores timestamps in microsecond resolution
+// NanosToPostgresTimestamp postgres stores timestamps in microsecond resolution.
 func NanosToPostgresTimestamp(nanos int64) time.Time {
 	return time.Unix(0, nanos).Truncate(time.Microsecond)
 }

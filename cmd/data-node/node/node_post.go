@@ -54,7 +54,7 @@ func (l *NodeCommand) persistentPost(_ []string) error {
 	return nil
 }
 
-// Error - implement the error interface on the errStack type
+// Error - implement the error interface on the errStack type.
 func (e errStack) Error() string {
 	s := make([]string, 0, len(e))
 	for _, err := range e {

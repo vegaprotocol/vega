@@ -65,7 +65,7 @@ func (id *ID) Bytes() ([]byte, error) {
 
 	bytes, err := hex.DecodeString(strID)
 	if err != nil {
-		return nil, fmt.Errorf("decoding '%v': %w", string(id.String()), ErrInvalidID)
+		return nil, fmt.Errorf("decoding '%v': %w", id.String(), ErrInvalidID)
 	}
 	return bytes, nil
 }

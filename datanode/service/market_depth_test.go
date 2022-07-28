@@ -29,6 +29,7 @@ import (
 )
 
 func getTestMDS(t *testing.T, ctx context.Context, ack bool) *service.MarketDepth {
+	t.Helper()
 	return service.NewMarketDepth(nil, logging.NewTestLogger())
 }
 

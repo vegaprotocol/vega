@@ -25,5 +25,4 @@ func TestAccounts(t *testing.T) {
 	t.Run("AssetRewardAccounts", func(t *testing.T) {
 		assertGraphQLQueriesReturnSame[struct{ Assets []Asset }](t, queries["AssetRewardAccounts"])
 	})
-
 }

@@ -118,8 +118,8 @@ func newTestCandleConfig(bufferSize int) candlesv2.Config {
 	conf := candlesv2.NewDefaultConfig()
 	conf.CandleUpdates = candlesv2.CandleUpdatesConfig{
 		CandleUpdatesStreamBufferSize: bufferSize,
-		CandleUpdatesStreamInterval:   encoding.Duration{Duration: time.Duration(1 * time.Microsecond)},
-		CandlesFetchTimeout:           encoding.Duration{Duration: time.Duration(2 * time.Minute)},
+		CandleUpdatesStreamInterval:   encoding.Duration{Duration: 1 * time.Microsecond},
+		CandlesFetchTimeout:           encoding.Duration{Duration: 2 * time.Minute},
 	}
 
 	return conf

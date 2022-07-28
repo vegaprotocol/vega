@@ -61,7 +61,6 @@ func NewMarketData(store MarketDataStore, log *logging.Logger) *MarketData {
 }
 
 func (md *MarketData) consume(event MarketDataEvent) error {
-
 	var record *entities.MarketData
 	var err error
 	mdProto := event.MarketData()

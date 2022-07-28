@@ -38,7 +38,7 @@ func NewTrades(connectionSource *ConnectionSource) *Trades {
 }
 
 func (ts *Trades) Flush(ctx context.Context) ([]*entities.Trade, error) {
-	var rows [][]interface{}
+	rows := make([][]interface{}, 0, len(ts.trades))
 	for _, t := range ts.trades {
 		rows = append(rows, []interface{}{
 			t.SyntheticTime,
@@ -103,8 +103,8 @@ func (ts *Trades) List(ctx context.Context,
 	marketID entities.MarketID,
 	partyID entities.PartyID,
 	orderID entities.OrderID,
-	pagination entities.CursorPagination) ([]entities.Trade, entities.PageInfo, error) {
-
+	pagination entities.CursorPagination,
+) ([]entities.Trade, entities.PageInfo, error) {
 	args := []interface{}{}
 
 	conditions := []string{}

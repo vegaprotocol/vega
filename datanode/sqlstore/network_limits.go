@@ -30,7 +30,7 @@ func NewNetworkLimits(connectionSource *ConnectionSource) *NetworkLimits {
 
 // Add inserts a row into the network limits table. If a row with the same vega time
 // exists, that row is updated instead. (i.e. there are multiple updates of the limits
-// in one block, does occur)
+// in one block, does occur).
 func (nl *NetworkLimits) Add(ctx context.Context, limits entities.NetworkLimits) error {
 	defer metrics.StartSQLQuery("NetworkLimits", "Add")()
 	_, err := nl.Connection.Exec(ctx, `
@@ -70,7 +70,7 @@ func (nl *NetworkLimits) Add(ctx context.Context, limits entities.NetworkLimits)
 	return err
 }
 
-// GetLatest returns the most recent network limits
+// GetLatest returns the most recent network limits.
 func (nl *NetworkLimits) GetLatest(ctx context.Context) (entities.NetworkLimits, error) {
 	networkLimits := entities.NetworkLimits{}
 	defer metrics.StartSQLQuery("NetworkLimits", "GetLatest")()

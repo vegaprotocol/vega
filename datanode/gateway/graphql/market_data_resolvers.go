@@ -14,7 +14,7 @@ import (
 	"google.golang.org/grpc"
 )
 
-// MarketDepth returns the market depth resolver
+// MarketDepth returns the market depth resolver.
 func (r *VegaResolverRoot) MarketDepth() MarketDepthResolver {
 	return (*myMarketDepthResolver)(r)
 }
@@ -23,7 +23,7 @@ func (r *VegaResolverRoot) ObservableMarketDepth() ObservableMarketDepthResolver
 	return (*myObservableMarketDepthResolver)(r)
 }
 
-// MarketDepthUpdate returns the market depth update resolver
+// MarketDepthUpdate returns the market depth update resolver.
 func (r *VegaResolverRoot) MarketDepthUpdate() MarketDepthUpdateResolver {
 	return (*myMarketDepthUpdateResolver)(r)
 }
@@ -32,7 +32,7 @@ func (r *VegaResolverRoot) ObservableMarketDepthUpdate() ObservableMarketDepthUp
 	return (*myObservableMarketDepthUpdateResolver)(r)
 }
 
-// MarketData returns the market data resolver
+// MarketData returns the market data resolver.
 func (r *VegaResolverRoot) MarketData() MarketDataResolver {
 	return (*myMarketDataResolver)(r)
 }
@@ -154,7 +154,6 @@ func (r *myMarketDataResolver) Commitments(ctx context.Context, m *types.MarketD
 func (r *myMarketDataResolver) PriceMonitoringBounds(ctx context.Context, obj *types.MarketData) ([]*PriceMonitoringBounds, error) {
 	ret := make([]*PriceMonitoringBounds, 0, len(obj.PriceMonitoringBounds))
 	for _, b := range obj.PriceMonitoringBounds {
-
 		probability, err := strconv.ParseFloat(b.Trigger.Probability, 64)
 		if err != nil {
 			return nil, err
@@ -184,7 +183,7 @@ func (r *myMarketDataResolver) Trigger(_ context.Context, m *types.MarketData) (
 	return convertAuctionTriggerFromProto(m.Trigger)
 }
 
-// ExtensionTrigger same as Trigger
+// ExtensionTrigger same as Trigger.
 func (r *myMarketDataResolver) ExtensionTrigger(_ context.Context, m *types.MarketData) (AuctionTrigger, error) {
 	return convertAuctionTriggerFromProto(m.ExtensionTrigger)
 }
@@ -292,7 +291,7 @@ func (r *myObservableMarketDataResolver) Trigger(ctx context.Context, m *types.M
 	return (*myMarketDataResolver)(r).Trigger(ctx, m)
 }
 
-// ExtensionTrigger same as Trigger
+// ExtensionTrigger same as Trigger.
 func (r *myObservableMarketDataResolver) ExtensionTrigger(ctx context.Context, m *types.MarketData) (AuctionTrigger, error) {
 	return (*myMarketDataResolver)(r).ExtensionTrigger(ctx, m)
 }

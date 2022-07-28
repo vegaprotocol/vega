@@ -23,7 +23,7 @@ import (
 // this is simply emitted as a hierarchical label e.g. 'api.grpc'.
 const namedLogger = "api.grpc"
 
-// Config represents the configuration of the api package
+// Config represents the configuration of the api package.
 type Config struct {
 	Level            encoding.LogLevel `long:"log-level"`
 	Timeout          encoding.Duration `long:"timeout"`

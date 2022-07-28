@@ -37,14 +37,14 @@ var (
 	ErrNilRiskModel = errors.New("nil risk model")
 	// ErrInvalidChange ...
 	ErrInvalidChange = errors.New("nil update market, new market and update network")
-	// ErrNilAssetSource returned when an asset source is not specified at creation
+	// ErrNilAssetSource returned when an asset source is not specified at creation.
 	ErrNilAssetSource = errors.New("nil asset source")
-	// ErrUnimplementedAssetSource returned when an asset source specified at creation is not recognised
+	// ErrUnimplementedAssetSource returned when an asset source specified at creation is not recognised.
 	ErrUnimplementedAssetSource = errors.New("unimplemented asset source")
 	// ErrMultipleProposalChangesSpecified is raised when multiple proposal changes are set
-	// (non-null) for a singe proposal terms
+	// (non-null) for a singe proposal terms.
 	ErrMultipleProposalChangesSpecified = errors.New("multiple proposal changes specified")
-	// ErrMultipleAssetSourcesSpecified is raised when multiple asset source are specified
+	// ErrMultipleAssetSourcesSpecified is raised when multiple asset source are specified.
 	ErrMultipleAssetSourcesSpecified = errors.New("multiple asset sources specified")
 	// ErrNilPriceMonitoringParameters ...
 	ErrNilPriceMonitoringParameters = errors.New("nil price monitoring parameters")
@@ -57,7 +57,6 @@ type MarketLogEvent interface {
 
 func PriceMonitoringTriggerFromProto(ppmt *types.PriceMonitoringTrigger) (*PriceMonitoringTrigger, error) {
 	probability, err := strconv.ParseFloat(ppmt.Probability, 64)
-
 	if err != nil {
 		return nil, err
 	}

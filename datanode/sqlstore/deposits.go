@@ -74,7 +74,8 @@ func (d *Deposits) GetByID(ctx context.Context, depositID string) (entities.Depo
 }
 
 func (d *Deposits) GetByParty(ctx context.Context, party string, openOnly bool, pagination entities.Pagination) (
-	[]entities.Deposit, entities.PageInfo, error) {
+	[]entities.Deposit, entities.PageInfo, error,
+) {
 	switch p := pagination.(type) {
 	case entities.OffsetPagination:
 		return d.getByPartyOffsetPagination(ctx, party, openOnly, p)
@@ -86,7 +87,8 @@ func (d *Deposits) GetByParty(ctx context.Context, party string, openOnly bool, 
 }
 
 func (d *Deposits) getByPartyOffsetPagination(ctx context.Context, party string, openOnly bool,
-	pagination entities.OffsetPagination) ([]entities.Deposit, entities.PageInfo, error) {
+	pagination entities.OffsetPagination,
+) ([]entities.Deposit, entities.PageInfo, error) {
 	var deposits []entities.Deposit
 	var pageInfo entities.PageInfo
 
@@ -108,7 +110,8 @@ func (d *Deposits) getByPartyOffsetPagination(ctx context.Context, party string,
 }
 
 func (d *Deposits) getByPartyCursorPagination(ctx context.Context, party string, openOnly bool,
-	pagination entities.CursorPagination) ([]entities.Deposit, entities.PageInfo, error) {
+	pagination entities.CursorPagination,
+) ([]entities.Deposit, entities.PageInfo, error) {
 	var deposits []entities.Deposit
 	var pageInfo entities.PageInfo
 

@@ -13,10 +13,9 @@
 package entities
 
 import (
+	"encoding/json"
 	"fmt"
 	"time"
-
-	"encoding/json"
 
 	v2 "code.vegaprotocol.io/protos/data-node/api/v2"
 	"code.vegaprotocol.io/protos/vega"
@@ -149,13 +148,15 @@ func (lp LiquidityProvision) Key() LiquidityProvisionKey {
 var LiquidityProvisionColumns = []string{
 	"id", "party_id", "created_at", "updated_at", "market_id",
 	"commitment_amount", "fee", "sells", "buys", "version",
-	"status", "reference", "vega_time"}
+	"status", "reference", "vega_time",
+}
 
 func (lp LiquidityProvision) ToRow() []interface{} {
 	return []interface{}{
 		lp.ID, lp.PartyID, lp.CreatedAt, lp.UpdatedAt, lp.MarketID,
 		lp.CommitmentAmount, lp.Fee, lp.Sells, lp.Buys, lp.Version,
-		lp.Status, lp.Reference, lp.VegaTime}
+		lp.Status, lp.Reference, lp.VegaTime,
+	}
 }
 
 func (lp LiquidityProvision) Cursor() *Cursor {

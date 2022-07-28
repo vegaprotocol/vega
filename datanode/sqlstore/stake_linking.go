@@ -80,7 +80,8 @@ func (s *StakeLinking) GetStake(ctx context.Context, partyID entities.PartyID,
 }
 
 func (s *StakeLinking) getStakeWithOffsetPagination(ctx context.Context, partyID entities.PartyID, pagination entities.OffsetPagination) (
-	*num.Uint, []entities.StakeLinking, entities.PageInfo, error) {
+	*num.Uint, []entities.StakeLinking, entities.PageInfo, error,
+) {
 	var links []entities.StakeLinking
 	var pageInfo entities.PageInfo
 	// get the links from the database
@@ -106,7 +107,8 @@ func (s *StakeLinking) getStakeWithOffsetPagination(ctx context.Context, partyID
 }
 
 func (s *StakeLinking) getStakeWithCursorPagination(ctx context.Context, partyID entities.PartyID, pagination entities.CursorPagination) (
-	*num.Uint, []entities.StakeLinking, entities.PageInfo, error) {
+	*num.Uint, []entities.StakeLinking, entities.PageInfo, error,
+) {
 	var links []entities.StakeLinking
 	var pageInfo entities.PageInfo
 	// get the links from the database

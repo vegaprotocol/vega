@@ -79,7 +79,8 @@ func (os *OracleSpec) GetSpecs(ctx context.Context, pagination entities.OffsetPa
 }
 
 func (os *OracleSpec) GetSpecsWithCursorPagination(ctx context.Context, specID string, pagination entities.CursorPagination) (
-	[]entities.OracleSpec, entities.PageInfo, error) {
+	[]entities.OracleSpec, entities.PageInfo, error,
+) {
 	if specID != "" {
 		return os.getSingleSpecWithPageInfo(ctx, specID)
 	}
@@ -102,7 +103,8 @@ func (os *OracleSpec) getSingleSpecWithPageInfo(ctx context.Context, specID stri
 }
 
 func (os *OracleSpec) getSpecsWithPageInfo(ctx context.Context, pagination entities.CursorPagination) (
-	[]entities.OracleSpec, entities.PageInfo, error) {
+	[]entities.OracleSpec, entities.PageInfo, error,
+) {
 	var specs []entities.OracleSpec
 	var pageInfo entities.PageInfo
 

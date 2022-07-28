@@ -25,6 +25,7 @@ import (
 )
 
 func addTestParty(t *testing.T, ps *sqlstore.Parties, block entities.Block) entities.Party {
+	t.Helper()
 	party := entities.Party{
 		ID:       entities.NewPartyID(generateID()),
 		VegaTime: &block.VegaTime,
@@ -83,6 +84,7 @@ func setupPartyTest(t *testing.T) (*sqlstore.Blocks, *sqlstore.Parties, sqlstore
 	config.ConnectionConfig.Port = testDBPort
 
 	return bs, pt, config, func(t *testing.T) {
+		t.Helper()
 		DeleteEverything()
 	}
 }

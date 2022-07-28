@@ -59,5 +59,4 @@ func TestLiquidityProvisionDuplicate_Push(t *testing.T) {
 
 	subscriber.Push(context.Background(), events.NewLiquidityProvisionEvent(context.Background(), &types.LiquidityProvision{Version: 1}))
 	subscriber.Flush(context.Background())
-
 }

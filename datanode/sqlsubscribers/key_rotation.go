@@ -56,7 +56,6 @@ func (kr *KeyRotation) Push(ctx context.Context, evt events.Event) error {
 func (kr *KeyRotation) consume(ctx context.Context, event KeyRotationEvent) error {
 	key_rotation := event.KeyRotation()
 	record, err := entities.KeyRotationFromProto(&key_rotation, kr.vegaTime)
-
 	if err != nil {
 		return errors.Wrap(err, "converting key rotation proto to database entity failed")
 	}

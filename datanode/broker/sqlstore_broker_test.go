@@ -34,7 +34,6 @@ import (
 var logger = logging.NewTestLogger()
 
 func TestBrokerShutsDownOnErrorFromErrorChannelWhenInRecovery(t *testing.T) {
-
 	s1 := newTestSqlBrokerSubscriber(events.AssetEvent)
 
 	tes, sb := createTestBroker(newTestTransactionManager(), newTestBlockStore(), s1)
@@ -65,7 +64,6 @@ func TestBrokerShutsDownOnErrorFromErrorChannelWhenInRecovery(t *testing.T) {
 }
 
 func TestBrokerShutsDownOnErrorFromErrorChannel(t *testing.T) {
-
 	s1 := newTestSqlBrokerSubscriber(events.AssetEvent)
 
 	tes, sb := createTestBroker(newTestTransactionManager(), newTestBlockStore(), s1)
@@ -90,7 +88,6 @@ func TestBrokerShutsDownOnErrorFromErrorChannel(t *testing.T) {
 }
 
 func TestBrokerShutsDownOnErrorWhenInRecovery(t *testing.T) {
-
 	s1 := newTestSqlBrokerSubscriber(events.AssetEvent)
 
 	tes, sb := createTestBroker(newTestTransactionManager(), newTestBlockStore(), s1)
@@ -123,7 +120,6 @@ func TestBrokerShutsDownOnErrorWhenInRecovery(t *testing.T) {
 }
 
 func TestBrokerShutsDownOnError(t *testing.T) {
-
 	s1 := newTestSqlBrokerSubscriber(events.AssetEvent)
 	errorSubscriber := &errorTestSqlBrokerSubscriber{s1}
 
@@ -149,7 +145,6 @@ func TestBrokerShutsDownOnError(t *testing.T) {
 }
 
 func TestBrokerShutsDownWhenContextCancelledWhenInRecovery(t *testing.T) {
-
 	s1 := newTestSqlBrokerSubscriber(events.AssetEvent)
 
 	timeEventSource := newTimeEventSource()
@@ -183,7 +178,6 @@ func TestBrokerShutsDownWhenContextCancelledWhenInRecovery(t *testing.T) {
 }
 
 func TestBrokerShutsDownWhenContextCancelled(t *testing.T) {
-
 	s1 := newTestSqlBrokerSubscriber(events.AssetEvent)
 	tes, sb := createTestBroker(newTestTransactionManager(), newTestBlockStore(), s1)
 	ctx, cancel := context.WithCancel(context.Background())
@@ -254,11 +248,9 @@ func TestBlocksSentBeforeStartedAtBlockAreIgnored(t *testing.T) {
 	tes.eventsCh <- events.NewAssetEvent(context.Background(), types.Asset{ID: "a3"})
 
 	assert.Equal(t, events.NewAssetEvent(context.Background(), types.Asset{ID: "a3"}), <-s1.receivedCh)
-
 }
 
 func TestTimeUpdateWithTooHighHeightCauseFailure(t *testing.T) {
-
 	s1 := newTestSqlBrokerSubscriber(events.AssetEvent)
 
 	timeEventSource := newTimeEventSource()
@@ -287,12 +279,13 @@ func TestTimeUpdateWithTooHighHeightCauseFailure(t *testing.T) {
 	tes.eventsCh <- timeEvent4
 
 	assert.NotNil(t, <-errCh)
-
 }
 
 func TestSqlBrokerSubscriberCallbacks(t *testing.T) {
-	s1 := testSqlBrokerSubscriber{eventType: events.AssetEvent, receivedCh: make(chan events.Event, 1),
-		vegaTimeCh: make(chan time.Time, 0), flushCh: make(chan bool, 0)}
+	s1 := testSqlBrokerSubscriber{
+		eventType: events.AssetEvent, receivedCh: make(chan events.Event, 1),
+		vegaTimeCh: make(chan time.Time, 0), flushCh: make(chan bool, 0),
+	}
 
 	transactionManager := newTestTransactionManager()
 	transactionManager.withTransactionCalls = make(chan bool, 0)
@@ -363,7 +356,6 @@ func TestSqlBrokerSubscriberCallbacks(t *testing.T) {
 	}
 
 	assert.Equal(t, expectedBlock, <-blockStore.blocks)
-
 }
 
 func TestSqlBrokerEventDistribution(t *testing.T) {

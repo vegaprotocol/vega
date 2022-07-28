@@ -64,6 +64,7 @@ type testBlockSource struct {
 }
 
 func (bs *testBlockSource) getNextBlock(t *testing.T) entities.Block {
+	t.Helper()
 	bs.blockTime = bs.blockTime.Add(1 * time.Second)
 	return addTestBlockForTime(t, bs.blockStore, bs.blockTime)
 }

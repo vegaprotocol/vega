@@ -22,7 +22,8 @@ import (
 )
 
 func observe[T any](ctx context.Context, log *logging.Logger, eventType string, eventsInChan <-chan []T,
-	ref any, send func(T) error) error {
+	ref any, send func(T) error,
+) error {
 	defer metrics.StartActiveSubscriptionCountGRPC(eventType)()
 
 	publishedEventStatTicker := time.NewTicker(time.Second)
@@ -66,7 +67,8 @@ func observe[T any](ctx context.Context, log *logging.Logger, eventType string, 
 
 func observeBatch[T any](ctx context.Context, log *logging.Logger, eventType string,
 	eventsInChan <-chan []T, ref any,
-	send func([]T) error) error {
+	send func([]T) error,
+) error {
 	defer metrics.StartActiveSubscriptionCountGRPC(eventType)()
 
 	publishedEventStatTicker := time.NewTicker(time.Second)

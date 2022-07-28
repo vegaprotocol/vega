@@ -62,7 +62,7 @@ func (os *Orders) Add(o entities.Order) error {
 	return nil
 }
 
-// GetAll returns all updates to all orders (including changes to orders that don't increment the version number)
+// GetAll returns all updates to all orders (including changes to orders that don't increment the version number).
 func (os *Orders) GetAll(ctx context.Context) ([]entities.Order, error) {
 	defer metrics.StartSQLQuery("Orders", "GetAll")()
 	orders := []entities.Order{}
@@ -71,7 +71,7 @@ func (os *Orders) GetAll(ctx context.Context) ([]entities.Order, error) {
 	return orders, err
 }
 
-// GetByOrderId returns the last update of the order with the given ID
+// GetByOrderId returns the last update of the order with the given ID.
 func (os *Orders) GetOrder(ctx context.Context, orderIdStr string, version *int32) (entities.Order, error) {
 	var err error
 	order := entities.Order{}
@@ -88,7 +88,7 @@ func (os *Orders) GetOrder(ctx context.Context, orderIdStr string, version *int3
 	return order, err
 }
 
-// GetByMarket returns the last update of the all the orders in a particular market
+// GetByMarket returns the last update of the all the orders in a particular market.
 func (os *Orders) GetByMarket(ctx context.Context, marketIdStr string, p entities.OffsetPagination) ([]entities.Order, error) {
 	defer metrics.StartSQLQuery("Orders", "GetByMarket")()
 	marketId := entities.NewMarketID(marketIdStr)
@@ -98,7 +98,7 @@ func (os *Orders) GetByMarket(ctx context.Context, marketIdStr string, p entitie
 	return os.queryOrders(ctx, query, args, &p)
 }
 
-// GetByParty returns the last update of the all the orders in a particular party
+// GetByParty returns the last update of the all the orders in a particular party.
 func (os *Orders) GetByParty(ctx context.Context, partyIdStr string, p entities.OffsetPagination) ([]entities.Order, error) {
 	defer metrics.StartSQLQuery("Orders", "GetByParty")()
 	partyId := entities.NewPartyID(partyIdStr)
@@ -108,7 +108,7 @@ func (os *Orders) GetByParty(ctx context.Context, partyIdStr string, p entities.
 	return os.queryOrders(ctx, query, args, &p)
 }
 
-// GetByReference returns the last update of orders with the specified user-suppled reference
+// GetByReference returns the last update of orders with the specified user-suppled reference.
 func (os *Orders) GetByReference(ctx context.Context, reference string, p entities.OffsetPagination) ([]entities.Order, error) {
 	defer metrics.StartSQLQuery("Orders", "GetByReference")()
 	query := fmt.Sprintf(`SELECT %s from orders_current WHERE reference=$1`, sqlOrderColumns)
@@ -116,7 +116,7 @@ func (os *Orders) GetByReference(ctx context.Context, reference string, p entiti
 	return os.queryOrders(ctx, query, args, &p)
 }
 
-// GetByReference returns the last update of orders with the specified user-suppled reference
+// GetByReference returns the last update of orders with the specified user-suppled reference.
 func (os *Orders) GetByReferencePaged(ctx context.Context, reference string, p entities.CursorPagination) ([]entities.Order, entities.PageInfo, error) {
 	return os.ListOrders(ctx, nil, nil, &reference, p)
 }
@@ -131,7 +131,7 @@ func (os *Orders) GetAllVersionsByOrderID(ctx context.Context, id string, p enti
 }
 
 // GetLiveOrders fetches all currently live orders so the market depth data can be rebuilt
-// from the orders data in the database
+// from the orders data in the database.
 func (os *Orders) GetLiveOrders(ctx context.Context) ([]entities.Order, error) {
 	defer metrics.StartSQLQuery("Orders", "GetLiveOrders")()
 	query := fmt.Sprintf(`select %s from orders_current
@@ -209,7 +209,6 @@ func paginateOrderQuery(query string, args []interface{}, p entities.OffsetPagin
 }
 
 func (os *Orders) ListOrders(ctx context.Context, party *string, market *string, reference *string, p entities.CursorPagination) ([]entities.Order, entities.PageInfo, error) {
-
 	var filters []filter
 	if party != nil {
 		filters = append(filters, filter{"party_id", entities.NewPartyID(*party)})
@@ -248,7 +247,6 @@ type filter struct {
 }
 
 func buildWhereClause(filters ...filter) (string, []any) {
-
 	whereBuilder := strings.Builder{}
 	var args []any
 	filterNum := 0

@@ -25,6 +25,7 @@ import (
 )
 
 func addCheckpoint(t *testing.T, ns *sqlstore.Checkpoints, hash, blockHash string, blockHeight int64, block entities.Block) entities.Checkpoint {
+	t.Helper()
 	c := entities.Checkpoint{
 		Hash:        hash,
 		BlockHash:   blockHash,

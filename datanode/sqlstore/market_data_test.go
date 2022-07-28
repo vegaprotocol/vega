@@ -765,6 +765,7 @@ func setupMarketData(t *testing.T) (*sqlstore.MarketData, error) {
 }
 
 func mustParseDecimal(t *testing.T, value string) decimal.Decimal {
+	t.Helper()
 	d, err := decimal.NewFromString(value)
 	if err != nil {
 		t.Fatalf("could not parse decimal value: %s", err)
@@ -774,6 +775,7 @@ func mustParseDecimal(t *testing.T, value string) decimal.Decimal {
 }
 
 func mustParseTimestamp(t *testing.T, value string) time.Time {
+	t.Helper()
 	const dbDateFormat = "2006-01-02 15:04:05.999999 -07:00"
 	ts, err := time.Parse(dbDateFormat, value)
 	if err != nil {
@@ -784,6 +786,7 @@ func mustParseTimestamp(t *testing.T, value string) time.Time {
 }
 
 func mustParseInt64(t *testing.T, value string) int64 {
+	t.Helper()
 	i, err := strconv.ParseInt(value, 10, 64)
 	if err != nil {
 		t.Fatalf("could not parse int64: %s", err)
@@ -793,6 +796,7 @@ func mustParseInt64(t *testing.T, value string) int64 {
 }
 
 func mustParsePriceMonitoringBounds(t *testing.T, value string) []*entities.PriceMonitoringBound {
+	t.Helper()
 	if strings.ToLower(value) == "null" {
 		return nil
 	}
@@ -808,6 +812,7 @@ func mustParsePriceMonitoringBounds(t *testing.T, value string) []*entities.Pric
 }
 
 func mustParseLiquidity(t *testing.T, value string) []*entities.LiquidityProviderFeeShare {
+	t.Helper()
 	if strings.ToLower(value) == "null" {
 		return nil
 	}

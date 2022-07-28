@@ -72,7 +72,8 @@ func (g *Governance) GetProposalByReference(ctx context.Context, ref string) (en
 }
 
 func (g *Governance) GetProposals(ctx context.Context, inState *entities.ProposalState, partyID *string, proposalType *entities.ProposalType,
-	pagination entities.CursorPagination) ([]entities.Proposal, entities.PageInfo, error) {
+	pagination entities.CursorPagination,
+) ([]entities.Proposal, entities.PageInfo, error) {
 	return g.pStore.Get(ctx, inState, partyID, proposalType, pagination)
 }
 

@@ -106,5 +106,4 @@ func TestCacheError(t *testing.T) {
 	fetched, err = svc.GetByMarketAndParty(ctx, market1ID, party1ID)
 	assert.ErrorIs(t, notFoundErr, err)
 	assert.Equal(t, entities.Position{}, fetched)
-
 }

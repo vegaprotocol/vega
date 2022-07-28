@@ -48,7 +48,8 @@ func NewMarginLevels(store MarginLevelsStore, accountSource AccountSource, log *
 		accountSource: accountSource,
 		log:           log,
 		eventDeduplicator: NewEventDeduplicator[int64, *vega.MarginLevels](func(ctx context.Context,
-			ml *vega.MarginLevels, vegaTime time.Time) (int64, error) {
+			ml *vega.MarginLevels, vegaTime time.Time,
+		) (int64, error) {
 			a, err := entities.GetAccountFromMarginLevel(ctx, ml, accountSource, vegaTime)
 			if err != nil {
 				return 0, err
@@ -77,7 +78,6 @@ func (ml *MarginLevels) Push(ctx context.Context, evt events.Event) error {
 }
 
 func (ml *MarginLevels) flush(ctx context.Context) error {
-
 	updates := ml.eventDeduplicator.Flush()
 	for _, update := range updates {
 		entity, err := entities.MarginLevelsFromProto(ctx, update, ml.accountSource, ml.vegaTime)
@@ -88,7 +88,6 @@ func (ml *MarginLevels) flush(ctx context.Context) error {
 		if err != nil {
 			return errors.Wrap(err, "add margin level to store")
 		}
-
 	}
 
 	err := ml.store.Flush(ctx)

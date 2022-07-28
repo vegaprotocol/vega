@@ -25,6 +25,7 @@ import (
 )
 
 func addNetParam(t *testing.T, ns *sqlstore.NetworkParameters, key, value string, block entities.Block) entities.NetworkParameter {
+	t.Helper()
 	p := entities.NetworkParameter{
 		Key:      key,
 		Value:    value,

@@ -120,11 +120,9 @@ func testTransfers_GetTransferToOrFromParty(t *testing.T) {
 
 	retrievedTransferProto, _ = retrieved[1].ToProto(accounts)
 	assert.Equal(t, sourceTransferProto2, retrievedTransferProto)
-
 }
 
 func testTransfers_GetTransfersByParty(t *testing.T) {
-
 	defer DeleteEverything()
 
 	now := time.Now()
@@ -280,7 +278,6 @@ func testTransfers_GetFromAccountAndGetToAccount(t *testing.T) {
 	assert.Equal(t, 1, len(retrieved))
 	retrievedTransferProto, _ = retrieved[0].ToProto(accounts)
 	assert.Equal(t, sourceTransferProto2, retrievedTransferProto)
-
 }
 
 func testTransfers_UpdatesInDifferentBlocks(t *testing.T) {
@@ -338,7 +335,6 @@ func testTransfers_UpdatesInDifferentBlocks(t *testing.T) {
 	assert.Equal(t, 1, len(retrieved))
 	retrievedTransferProto, _ := retrieved[0].ToProto(accounts)
 	assert.Equal(t, sourceTransferProto, retrievedTransferProto)
-
 }
 
 func testTransfers_UpdateInSameBlock(t *testing.T) {
@@ -395,7 +391,6 @@ func testTransfers_UpdateInSameBlock(t *testing.T) {
 	assert.Equal(t, 1, len(retrieved))
 	retrievedTransferProto, _ := retrieved[0].ToProto(accounts)
 	assert.Equal(t, sourceTransferProto, retrievedTransferProto)
-
 }
 
 func testTransfers_AddAndRetrieveOneOffTransfer(t *testing.T) {
@@ -434,7 +429,6 @@ func testTransfers_AddAndRetrieveOneOffTransfer(t *testing.T) {
 	assert.Equal(t, 1, len(retrieved))
 	retrievedTransferProto, _ := retrieved[0].ToProto(accounts)
 	assert.Equal(t, sourceTransferProto, retrievedTransferProto)
-
 }
 
 func testTransfers_AddAndRetrieveRecurringTransfer(t *testing.T) {
@@ -476,10 +470,10 @@ func testTransfers_AddAndRetrieveRecurringTransfer(t *testing.T) {
 	assert.Equal(t, 1, len(retrieved))
 	retrievedTransferProto, _ := retrieved[0].ToProto(accounts)
 	assert.Equal(t, sourceTransferProto, retrievedTransferProto)
-
 }
 
 func getTestBlock(t *testing.T, testTime time.Time) entities.Block {
+	t.Helper()
 	blocks := sqlstore.NewBlocks(connectionSource)
 	vegaTime := time.UnixMicro(testTime.UnixMicro())
 	block := addTestBlockForTime(t, blocks, vegaTime)
@@ -487,8 +481,9 @@ func getTestBlock(t *testing.T, testTime time.Time) entities.Block {
 }
 
 func getTestAccounts(t *testing.T, accounts *sqlstore.Accounts, block entities.Block) (accountFrom entities.Account,
-	accountTo entities.Account) {
-
+	accountTo entities.Account,
+) {
+	t.Helper()
 	assets := sqlstore.NewAssets(connectionSource)
 
 	testAssetId := entities.AssetID{ID: entities.ID(generateID())}
@@ -532,7 +527,7 @@ func getTestAccounts(t *testing.T, accounts *sqlstore.Accounts, block entities.B
 		t.Fatalf("failed to obtain to account:%s", err)
 	}
 
-	return
+	return accountFrom, accountTo
 }
 
 func testTransferPaginationNoPagination(t *testing.T) {
@@ -683,7 +678,7 @@ func testTransferPaginationLastBefore(t *testing.T) {
 }
 
 func addTransfers(ctx context.Context, t *testing.T, bs *sqlstore.Blocks, transferStore *sqlstore.Transfers) []entities.Transfer {
-
+	t.Helper()
 	vegaTime := time.Now().Truncate(time.Microsecond)
 	block := addTestBlockForTime(t, bs, vegaTime)
 	accounts := sqlstore.NewAccounts(connectionSource)
@@ -717,7 +712,6 @@ func addTransfers(ctx context.Context, t *testing.T, bs *sqlstore.Blocks, transf
 		err := transferStore.Upsert(ctx, &transfer)
 		require.NoError(t, err)
 		transfers = append(transfers, transfer)
-
 	}
 
 	return transfers

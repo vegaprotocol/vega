@@ -80,7 +80,6 @@ func TestCandlesPagination(t *testing.T) {
 
 	candles, _, err := candleStore.GetCandleDataForTimeSpan(context.Background(), candleId, nil,
 		nil, pagination)
-
 	if err != nil {
 		t.Fatalf("failed to get candles with pagination:%s", err)
 	}
@@ -202,10 +201,11 @@ func TestCandlesGetForDifferentIntervalAndTimeBounds(t *testing.T) {
 func testInterval(t *testing.T, tradeDataStartTime time.Time, fromTime *time.Time, toTime *time.Time, candleStore *sqlstore.Candles, interval string,
 	intervalSeconds int,
 ) {
+	t.Helper()
 	intervalDur := time.Duration(intervalSeconds) * time.Second
 
 	pagination, _ := entities.NewCursorPagination(nil, nil, nil, nil, false)
-	//entities.OffsetPagination{}
+	// entities.OffsetPagination{}
 	_, candleId, _ := candleStore.GetCandleIdForIntervalAndMarket(context.Background(), interval, testMarket)
 	candles, _, err := candleStore.GetCandleDataForTimeSpan(context.Background(), candleId, fromTime,
 		toTime, pagination)
@@ -240,7 +240,7 @@ func testInterval(t *testing.T, tradeDataStartTime time.Time, fromTime *time.Tim
 
 	assert.Equal(t, expectedNumCandles, len(candles))
 
-	blocksPerInterval := int(intervalSeconds) / blockIntervalSeconds
+	blocksPerInterval := intervalSeconds / blockIntervalSeconds
 
 	skippedTrades := int(candlesStartTime.Sub(tradeDataStartTime).Seconds()/blockIntervalSeconds) * tradesPerBlock
 
@@ -273,6 +273,7 @@ func createCandle(periodStart time.Time, lastUpdate time.Time, open int, close i
 func insertCandlesTestData(t *testing.T, tradeStore *sqlstore.Trades, startTime time.Time, numBlocks int,
 	tradePerBlock int, startPrice int, priceIncrement int, size int, blockIntervalDur time.Duration,
 ) {
+	t.Helper()
 	bs := sqlstore.NewBlocks(connectionSource)
 
 	var blocks []entities.Block
@@ -296,11 +297,13 @@ func insertCandlesTestData(t *testing.T, tradeStore *sqlstore.Trades, startTime 
 }
 
 func insertTestTrade(t *testing.T, tradeStore *sqlstore.Trades, price int, size int, block entities.Block, seqNum int) *entities.Trade {
+	t.Helper()
 	trade := createTestTrade(t, price, size, block, seqNum)
 	return insertTrade(t, tradeStore, trade)
 }
 
 func insertTrade(t *testing.T, tradeStore *sqlstore.Trades, trade *entities.Trade) *entities.Trade {
+	t.Helper()
 	err := tradeStore.Add(trade)
 	tradeStore.Flush(context.Background())
 	if err != nil {
@@ -311,6 +314,7 @@ func insertTrade(t *testing.T, tradeStore *sqlstore.Trades, trade *entities.Trad
 }
 
 func createTestTrade(t *testing.T, price int, size int, block entities.Block, seqNum int) *entities.Trade {
+	t.Helper()
 	proto := &types.Trade{
 		Type:      types.Trade_TYPE_DEFAULT,
 		Id:        generateID(),

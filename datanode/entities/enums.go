@@ -251,7 +251,7 @@ func (m *TransferType) DecodeText(_ *pgtype.ConnInfo, src []byte) error {
 		val = Recurring
 	}
 
-	*m = TransferType(val)
+	*m = val
 	return nil
 }
 

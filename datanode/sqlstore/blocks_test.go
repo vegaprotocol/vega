@@ -24,10 +24,12 @@ import (
 )
 
 func addTestBlock(t *testing.T, bs *sqlstore.Blocks) entities.Block {
+	t.Helper()
 	return addTestBlockForTime(t, bs, time.Now())
 }
 
 func addTestBlockForTime(t *testing.T, bs *sqlstore.Blocks, vegaTime time.Time) entities.Block {
+	t.Helper()
 	// Make a block
 	hash, err := hex.DecodeString("deadbeef")
 	assert.NoError(t, err)

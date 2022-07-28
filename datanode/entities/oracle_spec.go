@@ -32,8 +32,10 @@ func NewSpecID(id string) SpecID {
 	}
 }
 
-type PublicKey = []byte
-type PublicKeys = []PublicKey
+type (
+	PublicKey  = []byte
+	PublicKeys = []PublicKey
+)
 
 type OracleSpec struct {
 	ID         SpecID

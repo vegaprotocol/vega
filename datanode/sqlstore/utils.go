@@ -33,7 +33,7 @@ func nextBindVar(args *[]interface{}, value interface{}) string {
 }
 
 // orderAndPaginateQuery is a helper function to simplify adding ordering and pagination statements to the end of a query
-// with the appropriate binding variables amd returns the query string and list of arguments to pass to the query execution handler
+// with the appropriate binding variables amd returns the query string and list of arguments to pass to the query execution handler.
 func orderAndPaginateQuery(query string, orderColumns []string, pagination entities.OffsetPagination, args ...interface{}) (string, []interface{}) {
 	ordering := "ASC"
 

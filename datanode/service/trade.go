@@ -60,7 +60,8 @@ func (t *Trade) List(ctx context.Context,
 	marketID entities.MarketID,
 	partyID entities.PartyID,
 	orderID entities.OrderID,
-	pagination entities.CursorPagination) ([]entities.Trade, entities.PageInfo, error) {
+	pagination entities.CursorPagination,
+) ([]entities.Trade, entities.PageInfo, error) {
 	return t.store.List(ctx, marketID, partyID, orderID, pagination)
 }
 

@@ -11,7 +11,8 @@ import (
 )
 
 func handleCandleConnectionRequest(ctx context.Context, client TradingDataServiceClientV2, market *types.Market, sinceRaw string, toRaw *string,
-	interval Interval, pagination *v2.Pagination) (*v2.CandleDataConnection, error) {
+	interval Interval, pagination *v2.Pagination,
+) (*v2.CandleDataConnection, error) {
 	pInterval, err := convertIntervalToProto(interval)
 	if err != nil {
 		return nil, fmt.Errorf("could not convert interval: %w", err)
@@ -37,7 +38,6 @@ func handleCandleConnectionRequest(ctx context.Context, client TradingDataServic
 
 	candlesForMktReq := v2.ListCandleIntervalsRequest{MarketId: mkt}
 	candlesForMktResp, err := client.ListCandleIntervals(ctx, &candlesForMktReq)
-
 	if err != nil {
 		return nil, fmt.Errorf("could not retrieve candles for market %s: %w", mkt, err)
 	}
@@ -71,7 +71,8 @@ func handleCandleConnectionRequest(ctx context.Context, client TradingDataServic
 }
 
 func handleWithdrawalsConnectionRequest(ctx context.Context, client TradingDataServiceClientV2, party *types.Party,
-	pagination *v2.Pagination) (*v2.WithdrawalsConnection, error) {
+	pagination *v2.Pagination,
+) (*v2.WithdrawalsConnection, error) {
 	req := v2.ListWithdrawalsRequest{PartyId: party.Id, Pagination: pagination}
 	resp, err := client.ListWithdrawals(ctx, &req)
 	if err != nil {
@@ -81,7 +82,8 @@ func handleWithdrawalsConnectionRequest(ctx context.Context, client TradingDataS
 }
 
 func handleDepositsConnectionRequest(ctx context.Context, client TradingDataServiceClientV2, party *types.Party,
-	pagination *v2.Pagination) (*v2.DepositsConnection, error) {
+	pagination *v2.Pagination,
+) (*v2.DepositsConnection, error) {
 	req := v2.ListDepositsRequest{PartyId: party.Id, Pagination: pagination}
 	resp, err := client.ListDeposits(ctx, &req)
 	if err != nil {
@@ -91,8 +93,8 @@ func handleDepositsConnectionRequest(ctx context.Context, client TradingDataServ
 }
 
 func handleProposalsRequest(ctx context.Context, client TradingDataServiceClientV2, party *types.Party, ref *string, inType *ProposalType,
-	inState *ProposalState, pagination *v2.Pagination) (*v2.GovernanceDataConnection, error) {
-
+	inState *ProposalState, pagination *v2.Pagination,
+) (*v2.GovernanceDataConnection, error) {
 	var partyID *string
 	var proposalState *types.Proposal_State
 	var proposalType *v2.ListGovernanceDataRequest_Type
@@ -127,8 +129,10 @@ func handleProposalsRequest(ctx context.Context, client TradingDataServiceClient
 	}
 	return resp.Connection, nil
 }
+
 func handleDelegationConnectionRequest(ctx context.Context, client TradingDataServiceClientV2,
-	partyID, nodeID, epochID *string, pagination *v2.Pagination) (*v2.DelegationsConnection, error) {
+	partyID, nodeID, epochID *string, pagination *v2.Pagination,
+) (*v2.DelegationsConnection, error) {
 	req := v2.ListDelegationsRequest{
 		PartyId:    partyID,
 		NodeId:     nodeID,

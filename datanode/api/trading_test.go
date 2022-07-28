@@ -51,6 +51,7 @@ type GRPCServer interface {
 }
 
 func waitForNode(t *testing.T, ctx context.Context, conn *grpc.ClientConn) {
+	t.Helper()
 	const maxSleep = 2000 // milliseconds
 
 	c := protoapi.NewTradingDataServiceClient(conn)
@@ -84,6 +85,7 @@ func getTestGRPCServer(
 	mockCoreServiceClient *mocks.MockCoreServiceClient,
 	err error,
 ) {
+	t.Helper()
 	_, cleanupFn := vgtesting.NewVegaPaths()
 
 	conf := config.NewDefaultConfig()
@@ -213,7 +215,7 @@ func getTestGRPCServer(
 		waitForNode(t, ctx, conn)
 	}
 
-	return
+	return tidy, conn, mockCoreServiceClient, err
 }
 
 func TestSubmitTransaction(t *testing.T) {

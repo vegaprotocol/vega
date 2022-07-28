@@ -35,6 +35,7 @@ func addTestVote(t *testing.T, vs *sqlstore.Votes,
 	value entities.VoteValue,
 	block entities.Block,
 ) entities.Vote {
+	t.Helper()
 	r := entities.Vote{
 		PartyID:                     party.ID,
 		ProposalID:                  proposal.ID,
@@ -130,6 +131,7 @@ func TestVotes(t *testing.T) {
 }
 
 func setupPaginationTestVotes(t *testing.T) (*sqlstore.Votes, entities.Party, []entities.Vote) {
+	t.Helper()
 	votes := make([]entities.Vote, 0, 10)
 
 	partyStore := sqlstore.NewParties(connectionSource)

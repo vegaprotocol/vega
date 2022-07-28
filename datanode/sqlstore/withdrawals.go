@@ -86,7 +86,8 @@ func (w *Withdrawals) GetByID(ctx context.Context, withdrawalID string) (entitie
 }
 
 func (w *Withdrawals) GetByParty(ctx context.Context, partyID string, openOnly bool, pagination entities.Pagination) (
-	[]entities.Withdrawal, entities.PageInfo, error) {
+	[]entities.Withdrawal, entities.PageInfo, error,
+) {
 	switch p := pagination.(type) {
 	case entities.OffsetPagination:
 		return w.getByPartyOffset(ctx, partyID, openOnly, p)
@@ -98,7 +99,8 @@ func (w *Withdrawals) GetByParty(ctx context.Context, partyID string, openOnly b
 }
 
 func (w *Withdrawals) getByPartyOffset(ctx context.Context, partyID string, openOnly bool,
-	pagination entities.OffsetPagination) ([]entities.Withdrawal, entities.PageInfo, error) {
+	pagination entities.OffsetPagination,
+) ([]entities.Withdrawal, entities.PageInfo, error) {
 	var withdrawals []entities.Withdrawal
 	var pageInfo entities.PageInfo
 	var args []interface{}
@@ -113,11 +115,11 @@ func (w *Withdrawals) getByPartyOffset(ctx context.Context, partyID string, open
 	}
 
 	return withdrawals, pageInfo, nil
-
 }
 
 func (w *Withdrawals) getByPartyCursor(ctx context.Context, partyID string, openOnly bool,
-	pagination entities.CursorPagination) ([]entities.Withdrawal, entities.PageInfo, error) {
+	pagination entities.CursorPagination,
+) ([]entities.Withdrawal, entities.PageInfo, error) {
 	var withdrawals []entities.Withdrawal
 	var pageInfo entities.PageInfo
 

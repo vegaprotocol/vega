@@ -186,7 +186,7 @@ func (l *NodeCommand) setupStoresSQL() error {
 	return nil
 }
 
-// we've already set everything up WRT arguments etc... just bootstrap the node
+// we've already set everything up WRT arguments etc... just bootstrap the node.
 func (l *NodeCommand) preRun(_ []string) (err error) {
 	// ensure that context is cancelled if we return an error here
 	defer func() {

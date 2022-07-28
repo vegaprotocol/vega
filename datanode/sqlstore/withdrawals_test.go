@@ -341,6 +341,7 @@ func getTestWithdrawal(id, party, asset, amount, txHash string, ts time.Time) *v
 }
 
 func addWithdrawals(ctx context.Context, t *testing.T, bs *sqlstore.Blocks, ws *sqlstore.Withdrawals) []entities.Withdrawal {
+	t.Helper()
 	vegaTime := time.Now().Truncate(time.Microsecond)
 	amount := int64(1000)
 	withdrawals := make([]entities.Withdrawal, 0, 10)

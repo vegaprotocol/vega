@@ -214,7 +214,7 @@ func (r *myMarketResolver) Candles(ctx context.Context, market *types.Market,
 
 // Accounts ...
 // if partyID specified get margin account for the given market
-// if nil return the insurance pool & Fee Liquidty accounts for the market
+// if nil return the insurance pool & Fee Liquidty accounts for the market.
 func (r *myMarketResolver) Accounts(ctx context.Context, market *types.Market, partyID *string) ([]*types.Account, error) {
 	filter := v2.AccountFilter{MarketIds: []string{market.Id}}
 	ptyID := ""
@@ -319,6 +319,7 @@ func (r *myMarketResolver) RiskFactors(ctx context.Context, obj *types.Market) (
 }
 
 func (r *myMarketResolver) CandlesConnection(ctx context.Context, market *types.Market, sinceRaw string, toRaw *string,
-	interval Interval, pagination *v2.Pagination) (*v2.CandleDataConnection, error) {
+	interval Interval, pagination *v2.Pagination,
+) (*v2.CandleDataConnection, error) {
 	return handleCandleConnectionRequest(ctx, r.tradingDataClientV2, market, sinceRaw, toRaw, interval, pagination)
 }

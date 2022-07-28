@@ -36,13 +36,13 @@ import (
 )
 
 var (
-	// ErrMissingIDOrReference is returned when neither id nor reference has been supplied in the query
+	// ErrMissingIDOrReference is returned when neither id nor reference has been supplied in the query.
 	ErrMissingIDOrReference = errors.New("missing id or reference")
-	// ErrMissingNodeID is returned when no node id has been supplied in the query
+	// ErrMissingNodeID is returned when no node id has been supplied in the query.
 	ErrMissingNodeID = errors.New("missing node id")
-	// ErrInvalidVotesSubscription is returned if neither proposal ID nor party ID is specified
+	// ErrInvalidVotesSubscription is returned if neither proposal ID nor party ID is specified.
 	ErrInvalidVotesSubscription = errors.New("invalid subscription, either proposal or party ID required")
-	// ErrInvalidProposal is returned when invalid governance data is received by proposal resolver
+	// ErrInvalidProposal is returned when invalid governance data is received by proposal resolver.
 	ErrInvalidProposal = errors.New("invalid proposal")
 )
 
@@ -63,7 +63,7 @@ type TradingDataServiceClientV2 interface {
 	v2.TradingDataServiceClient
 }
 
-// VegaResolverRoot is the root resolver for all graphql types
+// VegaResolverRoot is the root resolver for all graphql types.
 type VegaResolverRoot struct {
 	gateway.Config
 
@@ -74,7 +74,7 @@ type VegaResolverRoot struct {
 	r                   allResolver
 }
 
-// NewResolverRoot instantiate a graphql root resolver
+// NewResolverRoot instantiate a graphql root resolver.
 func NewResolverRoot(
 	log *logging.Logger,
 	config gateway.Config,
@@ -92,12 +92,12 @@ func NewResolverRoot(
 	}
 }
 
-// Query returns the query resolver
+// Query returns the query resolver.
 func (r *VegaResolverRoot) Query() QueryResolver {
 	return (*myQueryResolver)(r)
 }
 
-// Candle returns the candles resolver
+// Candle returns the candles resolver.
 func (r *VegaResolverRoot) Candle() CandleResolver {
 	return (*myCandleResolver)(r)
 }
@@ -106,52 +106,52 @@ func (r *VegaResolverRoot) CandleNode() CandleNodeResolver {
 	return (*myCandleNodeResolver)(r)
 }
 
-// MarginLevels returns the market levels resolver
+// MarginLevels returns the market levels resolver.
 func (r *VegaResolverRoot) MarginLevels() MarginLevelsResolver {
 	return (*myMarginLevelsResolver)(r)
 }
 
-// PriceLevel returns the price levels resolver
+// PriceLevel returns the price levels resolver.
 func (r *VegaResolverRoot) PriceLevel() PriceLevelResolver {
 	return (*myPriceLevelResolver)(r)
 }
 
-// Market returns the markets resolver
+// Market returns the markets resolver.
 func (r *VegaResolverRoot) Market() MarketResolver {
 	return (*myMarketResolver)(r)
 }
 
-// Order returns the order resolver
+// Order returns the order resolver.
 func (r *VegaResolverRoot) Order() OrderResolver {
 	return (*myOrderResolver)(r)
 }
 
-// Trade returns the trades resolver
+// Trade returns the trades resolver.
 func (r *VegaResolverRoot) Trade() TradeResolver {
 	return (*myTradeResolver)(r)
 }
 
-// Position returns the positions resolver
+// Position returns the positions resolver.
 func (r *VegaResolverRoot) Position() PositionResolver {
 	return (*myPositionResolver)(r)
 }
 
-// Party returns the parties resolver
+// Party returns the parties resolver.
 func (r *VegaResolverRoot) Party() PartyResolver {
 	return (*myPartyResolver)(r)
 }
 
-// Subscription returns the subscriptions resolver
+// Subscription returns the subscriptions resolver.
 func (r *VegaResolverRoot) Subscription() SubscriptionResolver {
 	return (*mySubscriptionResolver)(r)
 }
 
-// Account returns the accounts resolver
+// Account returns the accounts resolver.
 func (r *VegaResolverRoot) Account() AccountResolver {
 	return (*myAccountResolver)(r)
 }
 
-// Proposal returns the proposal resolver
+// Proposal returns the proposal resolver.
 func (r *VegaResolverRoot) Proposal() ProposalResolver {
 	return (*proposalResolver)(r)
 }
@@ -296,7 +296,7 @@ func (r *VegaResolverRoot) EpochTimestamps() EpochTimestampsResolver {
 	return (*epochTimestampsResolver)(r)
 }
 
-// TODO: RewardPerAssetDetail is deprecated, remove once front end has caught up
+// TODO: RewardPerAssetDetail is deprecated, remove once front end has caught up.
 func (r *VegaResolverRoot) RewardPerAssetDetail() RewardPerAssetDetailResolver {
 	return (*rewardPerAssetDetailResolver)(r)
 }
@@ -425,8 +425,8 @@ func (r *myQueryResolver) Transfers(
 }
 
 func (r *myQueryResolver) TransfersConnection(ctx context.Context, pubkey *string, direction TransferDirection,
-	pagination *v2.Pagination) (*v2.TransferConnection, error) {
-
+	pagination *v2.Pagination,
+) (*v2.TransferConnection, error) {
 	var transferDirection v2.TransferDirection
 	switch direction {
 	case TransferDirectionFrom:
@@ -442,13 +442,11 @@ func (r *myQueryResolver) TransfersConnection(ctx context.Context, pubkey *strin
 		Direction:  transferDirection,
 		Pagination: pagination,
 	})
-
 	if err != nil {
 		return nil, err
 	}
 
 	return res.Transfers, nil
-
 }
 
 func (r *myQueryResolver) LastBlockHeight(ctx context.Context) (string, error) {
@@ -482,7 +480,6 @@ func (r *myQueryResolver) OracleSpecsConnection(ctx context.Context, pagination 
 		Pagination: pagination,
 	}
 	res, err := r.tradingDataClientV2.ListOracleSpecs(ctx, &req)
-
 	if err != nil {
 		return nil, err
 	}
@@ -502,7 +499,8 @@ func (r *myQueryResolver) OracleSpec(ctx context.Context, id string) (*oraclespb
 }
 
 func (r *myQueryResolver) OracleDataBySpec(ctx context.Context, id string,
-	pagination *OffsetPagination) ([]*oraclespb.OracleData, error) {
+	pagination *OffsetPagination,
+) ([]*oraclespb.OracleData, error) {
 	paginationProto, err := pagination.ToProto()
 	if err != nil {
 		return nil, fmt.Errorf("invalid pagination object: %w", err)
@@ -522,7 +520,8 @@ func (r *myQueryResolver) OracleDataBySpec(ctx context.Context, id string,
 }
 
 func (r *myQueryResolver) OracleDataBySpecConnection(ctx context.Context, oracleSpecID string,
-	pagination *v2.Pagination) (*v2.OracleDataConnection, error) {
+	pagination *v2.Pagination,
+) (*v2.OracleDataConnection, error) {
 	var specID *string
 	if oracleSpecID != "" {
 		specID = &oracleSpecID
@@ -846,7 +845,8 @@ func (r *myQueryResolver) Proposals(ctx context.Context, inState *ProposalState)
 }
 
 func (r *myQueryResolver) ProposalsConnection(ctx context.Context, proposalType *ProposalType, inState *ProposalState,
-	pagination *v2.Pagination) (*v2.GovernanceDataConnection, error) {
+	pagination *v2.Pagination,
+) (*v2.GovernanceDataConnection, error) {
 	return handleProposalsRequest(ctx, r.tradingDataClientV2, nil, nil, proposalType, inState, pagination)
 }
 
@@ -970,7 +970,6 @@ func (r *myQueryResolver) NodesConnection(ctx context.Context, pagination *v2.Pa
 		Pagination: pagination,
 	}
 	resp, err := r.tradingDataClientV2.ListNodes(ctx, req)
-
 	if err != nil {
 		return nil, err
 	}
@@ -982,7 +981,6 @@ func (r *myQueryResolver) Node(ctx context.Context, id string) (*types.Node, err
 	resp, err := r.tradingDataClientV2.GetNode(ctx, &v2.GetNodeRequest{
 		Id: id,
 	})
-
 	if err != nil {
 		return nil, err
 	}
@@ -1085,7 +1083,7 @@ func (r *myNodeSignatureResolver) Kind(ctx context.Context, obj *commandspb.Node
 
 type myPartyResolver VegaResolverRoot
 
-// func makePagination(skip, first, last *int) *protoapi.Pagination {
+// func makePagination(skip, first, last *int) *protoapi.Pagination {.
 func makePagination(skip, first, last *int) *protoapi.Pagination {
 	var (
 		offset, limit uint64
@@ -1128,7 +1126,7 @@ func makeApiV2Pagination(skip, first, last *int) *v2.OffsetPagination {
 	}
 }
 
-// TODO: RewardDetails have been depricated, remove once front end catches up
+// TODO: RewardDetails have been depricated, remove once front end catches up.
 func (r *myPartyResolver) RewardDetails(
 	ctx context.Context,
 	party *types.Party,
@@ -1450,7 +1448,6 @@ func (r *myPartyResolver) PositionsConnection(ctx context.Context, party *types.
 	}
 
 	return res.Positions, nil
-
 }
 
 func (r *myPartyResolver) Accounts(ctx context.Context, party *types.Party,
@@ -1533,7 +1530,8 @@ func (r *myPartyResolver) Proposals(ctx context.Context, party *types.Party, inS
 }
 
 func (r *myPartyResolver) ProposalsConnection(ctx context.Context, party *types.Party, proposalType *ProposalType, inState *ProposalState,
-	pagination *v2.Pagination) (*v2.GovernanceDataConnection, error) {
+	pagination *v2.Pagination,
+) (*v2.GovernanceDataConnection, error) {
 	return handleProposalsRequest(ctx, r.tradingDataClientV2, party, nil, proposalType, inState, pagination)
 }
 

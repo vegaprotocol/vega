@@ -171,7 +171,7 @@ func (m *MarketDepth) AddOrder(order *types.Order, vegaTime time.Time, sequenceN
 	md.SequenceNumber = m.sequenceNumber
 }
 
-// GetMarketDepth builds up the structure to be sent out to any market depth listeners
+// GetMarketDepth builds up the structure to be sent out to any market depth listeners.
 func (m *MarketDepth) GetMarketDepth(market string, limit uint64) *types.MarketDepth {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
@@ -187,7 +187,6 @@ func (m *MarketDepth) GetMarketDepth(market string, limit uint64) *types.MarketD
 	}
 
 	return md.ToProto(limit)
-
 }
 
 func (m *MarketDepth) ObserveDepth(ctx context.Context, retries int, marketIds []string) (<-chan []*types.MarketDepth, uint64) {
@@ -226,7 +225,7 @@ func (m *MarketDepth) GetAllOrders(market string) map[string]*types.Order {
 	return nil
 }
 
-// GetOrderCount returns the number of live orders for the given market
+// GetOrderCount returns the number of live orders for the given market.
 func (m *MarketDepth) GetOrderCount(market string) int64 {
 	var liveOrders int64
 	var bookOrders uint64
@@ -250,7 +249,7 @@ func (m *MarketDepth) GetOrderCount(market string) int64 {
 	return 0
 }
 
-// GetVolumeAtPrice returns the order volume at the given price level
+// GetVolumeAtPrice returns the order volume at the given price level.
 func (m *MarketDepth) GetVolumeAtPrice(market string, side types.Side, price uint64) uint64 {
 	md := m.marketDepths[market]
 	if md != nil {
@@ -263,7 +262,7 @@ func (m *MarketDepth) GetVolumeAtPrice(market string, side types.Side, price uin
 	return 0
 }
 
-// GetTotalVolume returns the total volume in the order book
+// GetTotalVolume returns the total volume in the order book.
 func (m *MarketDepth) GetTotalVolume(market string) int64 {
 	var volume int64
 	md := m.marketDepths[market]
@@ -280,7 +279,7 @@ func (m *MarketDepth) GetTotalVolume(market string) int64 {
 	return 0
 }
 
-// GetOrderCountAtPrice returns the number of orders at the given price level
+// GetOrderCountAtPrice returns the number of orders at the given price level.
 func (m *MarketDepth) GetOrderCountAtPrice(market string, side types.Side, price uint64) uint64 {
 	md := m.marketDepths[market]
 	if md != nil {
@@ -293,12 +292,12 @@ func (m *MarketDepth) GetOrderCountAtPrice(market string, side types.Side, price
 	return 0
 }
 
-// GetPriceLevels returns the number of non empty price levels
+// GetPriceLevels returns the number of non empty price levels.
 func (m *MarketDepth) GetPriceLevels(market string) int {
 	return m.GetBuyPriceLevels(market) + m.GetSellPriceLevels(market)
 }
 
-// GetBestBidPrice returns the highest bid price in the book
+// GetBestBidPrice returns the highest bid price in the book.
 func (m *MarketDepth) GetBestBidPrice(market string) *num.Uint {
 	md := m.marketDepths[market]
 	if md != nil {
@@ -309,7 +308,7 @@ func (m *MarketDepth) GetBestBidPrice(market string) *num.Uint {
 	return num.Zero()
 }
 
-// GetBestAskPrice returns the highest bid price in the book
+// GetBestAskPrice returns the highest bid price in the book.
 func (m *MarketDepth) GetBestAskPrice(market string) *num.Uint {
 	md := m.marketDepths[market]
 	if md != nil {
@@ -320,7 +319,7 @@ func (m *MarketDepth) GetBestAskPrice(market string) *num.Uint {
 	return num.Zero()
 }
 
-// GetBuyPriceLevels returns the number of non empty buy price levels
+// GetBuyPriceLevels returns the number of non empty buy price levels.
 func (m *MarketDepth) GetBuyPriceLevels(market string) int {
 	md := m.marketDepths[market]
 	if md != nil {
@@ -329,7 +328,7 @@ func (m *MarketDepth) GetBuyPriceLevels(market string) int {
 	return 0
 }
 
-// GetSellPriceLevels returns the number of non empty sell price levels
+// GetSellPriceLevels returns the number of non empty sell price levels.
 func (m *MarketDepth) GetSellPriceLevels(market string) int {
 	md := m.marketDepths[market]
 	if md != nil {

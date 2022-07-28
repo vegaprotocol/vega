@@ -483,7 +483,7 @@ func testLiquidityProvisionPaginationLastBefore(t *testing.T) {
 }
 
 func addLiquidityProvisions(ctx context.Context, t *testing.T, bs *sqlstore.Blocks, lpstore *sqlstore.LiquidityProvision) []entities.LiquidityProvision {
-
+	t.Helper()
 	vegaTime := time.Now().Truncate(time.Microsecond)
 	amount := int64(1000)
 	lps := make([]entities.LiquidityProvision, 0, 10)
@@ -491,7 +491,6 @@ func addLiquidityProvisions(ctx context.Context, t *testing.T, bs *sqlstore.Bloc
 		addTestBlockForTime(t, bs, vegaTime)
 
 		lp := &vega.LiquidityProvision{
-
 			Id:               fmt.Sprintf("deadbeef%02d", i+1),
 			PartyId:          "deadbaad",
 			CreatedAt:        vegaTime.UnixNano(),

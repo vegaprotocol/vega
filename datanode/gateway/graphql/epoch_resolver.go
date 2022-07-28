@@ -36,7 +36,6 @@ func (r *epochResolver) Delegations(
 	nodeID *string,
 	skip, first, last *int,
 ) ([]*proto.Delegation, error) {
-
 	req := &protoapi.DelegationsRequest{
 		Pagination: makePagination(skip, first, last),
 	}
@@ -56,6 +55,7 @@ func (r *epochResolver) Delegations(
 
 	return resp.Delegations, nil
 }
+
 func (r *epochResolver) ValidatorsConnection(ctx context.Context, epoch *proto.Epoch, pagination *v2.Pagination) (*v2.NodesConnection, error) {
 	var epochSeq *uint64
 	if epoch != nil {
@@ -66,7 +66,6 @@ func (r *epochResolver) ValidatorsConnection(ctx context.Context, epoch *proto.E
 		EpochSeq:   epochSeq,
 		Pagination: pagination,
 	})
-
 	if err != nil {
 		return nil, err
 	}

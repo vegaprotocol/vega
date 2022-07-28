@@ -136,7 +136,6 @@ func (s socketServer) Receive(ctx context.Context) (<-chan events.Event, <-chan 
 		}
 
 		return nil
-
 	})
 
 	eg.Go(func() error {

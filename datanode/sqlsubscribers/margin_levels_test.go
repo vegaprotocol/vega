@@ -49,7 +49,6 @@ func TestMarginLevelsDuplicate_Push(t *testing.T) {
 
 	subscriber.Push(context.Background(), events.NewMarginLevelsEvent(context.Background(), types.MarginLevels{InitialMargin: num.NewUint(6)}))
 	subscriber.Flush(context.Background())
-
 }
 
 func TestMarginLevels_Push(t *testing.T) {

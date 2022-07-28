@@ -23,7 +23,8 @@ import (
 
 func TestEventDeduplicator_Flush(t *testing.T) {
 	edd := NewEventDeduplicator[string, *vega.LiquidityProvision](func(ctx context.Context,
-		lp *vega.LiquidityProvision, vegaTime time.Time) (string, error) {
+		lp *vega.LiquidityProvision, vegaTime time.Time,
+	) (string, error) {
 		return lp.Id, nil
 	})
 

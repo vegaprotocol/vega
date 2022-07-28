@@ -166,21 +166,27 @@ type marketPosition struct {
 func (mp marketPosition) Buy() int64 {
 	return mp.buy
 }
+
 func (mp marketPosition) Sell() int64 {
 	return mp.sell
 }
+
 func (mp marketPosition) Party() string {
 	return mp.party
 }
+
 func (mp marketPosition) Size() int64 {
 	return mp.size
 }
+
 func (mp marketPosition) Price() *num.Uint {
 	return mp.price
 }
+
 func (mp marketPosition) VWBuy() *num.Uint {
 	return mp.vwBuy
 }
+
 func (mp marketPosition) VWSell() *num.Uint {
 	return mp.vwSell
 }

@@ -27,6 +27,7 @@ import (
 )
 
 func addTestBalance(t *testing.T, store *sqlstore.Balances, block entities.Block, acc entities.Account, balance int64) {
+	t.Helper()
 	bal := entities.AccountBalance{
 		Account:  &acc,
 		VegaTime: block.VegaTime,
@@ -39,7 +40,9 @@ func addTestBalance(t *testing.T, store *sqlstore.Balances, block entities.Block
 
 func assertBalanceCorrect(t *testing.T,
 	expected_blocks []int, expected_bals []int64,
-	blocks []entities.Block, bals []entities.AggregatedBalance) {
+	blocks []entities.Block, bals []entities.AggregatedBalance,
+) {
+	t.Helper()
 	assert.Len(t, bals, len(expected_blocks))
 	for i := 0; i < len(expected_blocks); i++ {
 		assert.Equal(t, blocks[expected_blocks[i]].VegaTime, (bals)[i].VegaTime)

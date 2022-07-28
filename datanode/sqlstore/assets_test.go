@@ -28,6 +28,7 @@ import (
 var testAssetCount int = 0
 
 func addTestAsset(t *testing.T, as *sqlstore.Assets, block entities.Block, idPrefix ...string) entities.Asset {
+	t.Helper()
 	// Make an asset
 	testAssetCount += 1
 	totalSupply, _ := decimal.NewFromString("1000000000000000000001")
@@ -95,6 +96,7 @@ func TestAsset(t *testing.T) {
 }
 
 func setupAssetPaginationTest(t *testing.T) (*sqlstore.Assets, []entities.Asset) {
+	t.Helper()
 	bs := sqlstore.NewBlocks(connectionSource)
 	block := addTestBlock(t, bs)
 

@@ -32,6 +32,7 @@ func addTestDelegation(t *testing.T, ds *sqlstore.Delegations,
 	epochID int64,
 	block entities.Block,
 ) entities.Delegation {
+	t.Helper()
 	r := entities.Delegation{
 		PartyID:  party.ID,
 		NodeID:   node.ID,
@@ -298,7 +299,6 @@ func testDelegationPaginationNoFilterNoPaginationNewestFirst(t *testing.T) {
 		StartCursor:     delegations[0].Cursor().Encode(),
 		EndCursor:       delegations[19].Cursor().Encode(),
 	}, pageInfo)
-
 }
 
 func testDelegationPaginationNoFilterFirstPageNewestFirst(t *testing.T) {
@@ -623,7 +623,8 @@ func testDelegationPaginationPartyNodeFilterLastBeforePage(t *testing.T) {
 }
 
 func setupPaginatedDelegationsTests(t *testing.T) (*sqlstore.Delegations,
-	[]entities.Delegation, []entities.Party, []entities.Node) {
+	[]entities.Delegation, []entities.Party, []entities.Node,
+) {
 	t.Helper()
 
 	ps := sqlstore.NewParties(connectionSource)

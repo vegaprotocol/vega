@@ -80,7 +80,7 @@ func (oe *OrderEventWithVegaTime) GetOrder() *vega.Order {
 }
 
 // Broker - the base broker type
-// perhaps we can extend this to embed into type-specific brokers
+// perhaps we can extend this to embed into type-specific brokers.
 type Broker struct {
 	ctx   context.Context
 	mu    sync.RWMutex
@@ -99,9 +99,10 @@ type Broker struct {
 	vegaTime    time.Time
 }
 
-// New creates a new base broker
+// New creates a new base broker.
 func New(ctx context.Context, log *logging.Logger, config Config, chainInfo ChainInfoI,
-	eventsource eventSource) (*Broker, error) {
+	eventsource eventSource,
+) (*Broker, error) {
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
 
@@ -238,12 +239,12 @@ func (b *Broker) startSending(t events.Type, evt events.Event) {
 	}(ch, t)
 }
 
-// Send sends an event to all subscribers
+// Send sends an event to all subscribers.
 func (b *Broker) Send(event events.Event) {
 	b.startSending(event.Type(), event)
 }
 
-// simplified version for better performance - unfortunately, we'll still need to copy the map
+// simplified version for better performance - unfortunately, we'll still need to copy the map.
 func (b *Broker) getSubsByType(t events.Type, sv int) (map[int]*subscription, int) {
 	// we add the entire ALL map to type-specific maps, so if set, we can return this map directly
 	if sv != 0 && sv == b.smVer {
@@ -263,7 +264,7 @@ func (b *Broker) getSubsByType(t events.Type, sv int) (map[int]*subscription, in
 	return cpy, b.smVer
 }
 
-// Subscribe registers a new subscriber, returning the key
+// Subscribe registers a new subscriber, returning the key.
 func (b *Broker) Subscribe(s Subscriber) int {
 	b.mu.Lock()
 	k := b.subscribe(s)
@@ -329,7 +330,7 @@ func (b *Broker) subscribe(s Subscriber) int {
 }
 
 // Unsubscribe removes subscriber from broker
-// this does not change the state of the subscriber
+// this does not change the state of the subscriber.
 func (b *Broker) Unsubscribe(k int) {
 	b.mu.Lock()
 	b.rmSubs(k)

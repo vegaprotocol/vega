@@ -108,7 +108,6 @@ func observeEventBus(log *logging.Logger, config Config, eventBusServer eventBus
 	if req.BatchSize > 0 {
 		err := observeEventsWithAck(ctx, log, eventBusServer, req.BatchSize, ch, bCh)
 		return err
-
 	}
 	err = observeEvents(ctx, log, eventBusServer, ch)
 	return err
@@ -215,7 +214,7 @@ func recvEventRequest(
 	}
 }
 
-// this needs to be greater than the highest eventspb.BusEvent event type
+// this needs to be greater than the highest eventspb.BusEvent event type.
 const maxEventTypeOrdinal = 299
 
 type eventStats struct {

@@ -47,5 +47,4 @@ func TestRewardFromProto(t *testing.T) {
 	assert.InDelta(t, 3.14, reward.PercentOfTotal, 0.001)
 	fmt.Printf("%v - %v\n", now, reward.VegaTime)
 	assert.True(t, vegaTime.Equal(reward.VegaTime))
-
 }

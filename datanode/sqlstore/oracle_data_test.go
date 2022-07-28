@@ -221,6 +221,7 @@ func getTestOracleData() []*oraclespb.OracleData {
 }
 
 func getTestPaginationOracleData(t *testing.T, ctx context.Context, bs *sqlstore.Blocks, ds *sqlstore.OracleData) []entities.OracleData {
+	t.Helper()
 	protoData := getTestOracleData()
 	data := make([]entities.OracleData, 0, len(protoData))
 

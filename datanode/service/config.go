@@ -17,7 +17,7 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 )
 
-// Config represent the configuration of the candle package
+// Config represent the configuration of the candle package.
 type Config struct {
 	Level encoding.LogLevel `long:"log-level"`
 }

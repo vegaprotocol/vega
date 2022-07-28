@@ -48,7 +48,7 @@ type BlockStore interface {
 	GetLastBlock(ctx context.Context) (entities.Block, error)
 }
 
-// sqlStoreBroker : push events to each subscriber with a single go routine across all types
+// sqlStoreBroker : push events to each subscriber with a single go routine across all types.
 type sqlStoreBroker struct {
 	config             Config
 	log                *logging.Logger
@@ -106,13 +106,11 @@ func (b *sqlStoreBroker) Receive(ctx context.Context) error {
 			return err
 		}
 	}
-
 }
 
 // waitForFirstBlock processes all events until a new block is encountered and returns the new block. A 'new' block is one for which
 // events have not already been processed by this datanode.
 func (b *sqlStoreBroker) waitForFirstBlock(ctx context.Context, errCh <-chan error, receiveCh <-chan events.Event) (*entities.Block, error) {
-
 	lastProcessedBlock, err := b.blockStore.GetLastBlock(ctx)
 
 	if err == nil {
@@ -151,7 +149,6 @@ func (b *sqlStoreBroker) waitForFirstBlock(ctx context.Context, errCh <-chan err
 			}
 		}
 	}
-
 }
 
 // processBlock processes all events in the current block up to the next time update.  The next time block is returned when processing of the block is done.
@@ -212,7 +209,6 @@ func (b *sqlStoreBroker) processBlock(ctx context.Context, dbContext context.Con
 			metrics.EventCounterInc(e.Type().String())
 			blockTimer.startTimer()
 			if e.Type() == events.TimeUpdate {
-
 				timeUpdate := e.(entities.TimeUpdateEvent)
 
 				err = b.flushAllSubscribers(blockCtx)
@@ -263,7 +259,6 @@ func (b *sqlStoreBroker) addBlock(ctx context.Context, block *entities.Block) er
 }
 
 func (b *sqlStoreBroker) handleEvent(ctx context.Context, e events.Event) error {
-
 	if err := checkChainID(b.chainInfo, e.ChainID()); err != nil {
 		return err
 	}

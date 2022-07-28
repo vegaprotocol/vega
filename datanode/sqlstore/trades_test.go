@@ -49,6 +49,7 @@ func TestStorage_GetTradesByOrderId(t *testing.T) {
 }
 
 func GetTradesByOrderIdAndMarket(t *testing.T, market *string) {
+	t.Helper()
 	defer DeleteEverything()
 
 	tradeStore := sqlstore.NewTrades(connectionSource)
@@ -74,6 +75,7 @@ func TestStorage_GetTradesByPartyWithPagination(t *testing.T) {
 }
 
 func GetTradesByPartyAndMarketWithPagination(t *testing.T, market *string) {
+	t.Helper()
 	ctx := context.Background()
 	defer DeleteEverything()
 
@@ -165,6 +167,7 @@ func TestStorage_GetTradesByMarketWithPagination(t *testing.T) {
 }
 
 func insertTestData(t *testing.T, tradeStore *sqlstore.Trades) {
+	t.Helper()
 	bs := sqlstore.NewBlocks(connectionSource)
 	now := time.Now()
 	block1 := addTestBlockForTime(t, bs, now)
@@ -874,7 +877,7 @@ func testTradesCursorPaginationByPartyAndMarketWithCursorBackward(t *testing.T) 
 	assert.Equal(t, "65be62cd", got[1].ID.String())
 }
 
-// Newest First
+// Newest First.
 func testTradesCursorPaginationByMarketNoCursorNewestFirst(t *testing.T) {
 	bs, ts, _, teardown := setupTradesTest(t)
 	t.Logf("DB Port: %d", testDBPort)

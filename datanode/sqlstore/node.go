@@ -78,7 +78,7 @@ func (store *Node) UpsertNode(ctx context.Context, node *entities.Node) error {
 	return err
 }
 
-// AddNodeAnnoucedEvent store data about which epoch a particular node was added or removed from the roster of alidators
+// AddNodeAnnoucedEvent store data about which epoch a particular node was added or removed from the roster of alidators.
 func (store *Node) AddNodeAnnoucedEvent(ctx context.Context, nodeID entities.NodeID, vegatime time.Time, aux *entities.ValidatorUpdateAux) error {
 	defer metrics.StartSQLQuery("Node", "AddNodeAnnoucedEvent")()
 	_, err := store.pool.Exec(ctx, `

@@ -232,7 +232,7 @@ func assertGraphQLQueriesReturnSame[T any](t *testing.T, query string) {
 		jsonBytes, err := json.Marshal(details)
 		require.NoError(t, err)
 
-		os.WriteFile(goldenFile, jsonBytes, 0644)
+		os.WriteFile(goldenFile, jsonBytes, 0o644)
 	} else {
 		jsonBytes, err := os.ReadFile(goldenFile)
 		require.NoError(t, err, "No golden file for this test, generate one by running 'go test' with the -golden flag")

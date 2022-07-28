@@ -19,7 +19,7 @@ import (
 )
 
 // AccountField is an enumeration of the properties of an account
-// which can be used for grouping and sorting
+// which can be used for grouping and sorting.
 type AccountField int64
 
 const (

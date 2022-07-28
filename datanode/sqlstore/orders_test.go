@@ -30,6 +30,7 @@ func addTestOrder(t *testing.T, os *sqlstore.Orders, id entities.OrderID, block 
 	side types.Side, timeInForce types.OrderTimeInForce, orderType types.OrderType, status types.OrderStatus,
 	price, size, remaining int64, seqNum uint64, version int32,
 ) entities.Order {
+	t.Helper()
 	order := entities.Order{
 		ID:              id,
 		MarketID:        market.ID,
@@ -257,6 +258,7 @@ func generateParties(t *testing.T, numParties int, block entities.Block, ps *sql
 }
 
 func addTestMarket(t *testing.T, ms *sqlstore.Markets, block entities.Block) entities.Market {
+	t.Helper()
 	market := entities.Market{
 		ID:       entities.NewMarketID(generateID()),
 		VegaTime: block.VegaTime,
@@ -269,7 +271,7 @@ func addTestMarket(t *testing.T, ms *sqlstore.Markets, block entities.Block) ent
 
 func generateMarkets(t *testing.T, numMarkets int, block entities.Block, ms *sqlstore.Markets) []entities.Market {
 	t.Helper()
-	markets := make([]entities.Market, numMarkets, numMarkets)
+	markets := make([]entities.Market, numMarkets)
 	for i := 0; i < numMarkets; i++ {
 		markets[i] = addTestMarket(t, ms, block)
 	}
@@ -289,6 +291,7 @@ func generateOrderIDs(t *testing.T, numIDs int) []entities.OrderID {
 func generateTestOrders(t *testing.T, blocks []entities.Block, parties []entities.Party,
 	markets []entities.Market, orderIDs []entities.OrderID, os *sqlstore.Orders,
 ) []entities.Order {
+	t.Helper()
 	// define the orders we're going to insert
 	testOrders := []struct {
 		id          entities.OrderID

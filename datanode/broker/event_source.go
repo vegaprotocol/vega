@@ -23,7 +23,6 @@ func NewEventSource(config Config, log *logging.Logger) (eventSource, error) {
 	var eventsource eventSource
 	var err error
 	if config.UseEventFile {
-
 		absPath, err := filepath.Abs(config.FileEventSourceConfig.File)
 		if err != nil {
 			return nil, fmt.Errorf("unable to determine absolute path of file %s: %w", config.FileEventSourceConfig.File, err)
@@ -36,7 +35,6 @@ func NewEventSource(config Config, log *logging.Logger) (eventSource, error) {
 		if err != nil {
 			return nil, fmt.Errorf("failed to create file event source:%w", err)
 		}
-
 	} else {
 		eventsource, err = newSocketServer(log, &config)
 		if err != nil {
