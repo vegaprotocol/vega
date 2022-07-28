@@ -220,6 +220,17 @@ func (r RowWrapper) MustUint(name string) *num.Uint {
 	return value
 }
 
+func (r RowWrapper) MaybeUint(name string) *num.Uint {
+	if !r.HasColumn(name) {
+		return nil
+	}
+	u := r.MustUint(name)
+	if u.IsZero() {
+		return nil
+	}
+	return u
+}
+
 func (r RowWrapper) Uint(name string) *num.Uint {
 	value, err := Uint(r.values[name])
 	panicW(name, err)
@@ -647,19 +658,6 @@ func AccountID(marketID, partyID, asset string, ty types.AccountType) string {
 	ln += len(asset)
 	idBuf[ln] = byte(ty + 48)
 	return string(idBuf[:ln+1])
-}
-
-func (r RowWrapper) MustPrice(name string) *types.Price {
-	n := r.MustUint(name)
-	// nil instead of zero value of Price is expected by APIs
-	if n.IsZero() {
-		return nil
-	}
-	return Price(n)
-}
-
-func Price(n *num.Uint) *types.Price {
-	return &types.Price{Value: n}
 }
 
 func (r RowWrapper) MustDuration(name string) time.Duration {
