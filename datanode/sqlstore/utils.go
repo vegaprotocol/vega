@@ -17,7 +17,7 @@ import (
 	"strconv"
 	"strings"
 
-	"code.vegaprotocol.io/data-node/entities"
+	"code.vegaprotocol.io/data-node/datanode/entities"
 )
 
 // A handy little helper function for building queries. Appends 'value'

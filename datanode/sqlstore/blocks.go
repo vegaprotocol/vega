@@ -19,8 +19,8 @@ import (
 	"sync"
 	"time"
 
-	"code.vegaprotocol.io/data-node/entities"
-	"code.vegaprotocol.io/data-node/metrics"
+	"code.vegaprotocol.io/data-node/datanode/entities"
+	"code.vegaprotocol.io/data-node/datanode/metrics"
 	"github.com/georgysavva/scany/pgxscan"
 	"github.com/jackc/pgx/v4"
 )

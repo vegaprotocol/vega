@@ -17,10 +17,10 @@ import (
 	"errors"
 	"testing"
 
-	"code.vegaprotocol.io/data-node/entities"
+	"code.vegaprotocol.io/data-node/datanode/entities"
 	"code.vegaprotocol.io/data-node/logging"
-	"code.vegaprotocol.io/data-node/service"
-	"code.vegaprotocol.io/data-node/service/mocks"
+	"code.vegaprotocol.io/data-node/datanode/service"
+	"code.vegaprotocol.io/data-node/datanode/service/mocks"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 )

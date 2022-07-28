@@ -15,7 +15,7 @@ package gql
 import (
 	"context"
 
-	"code.vegaprotocol.io/data-node/vegatime"
+	"code.vegaprotocol.io/data-node/datanode/vegatime"
 	proto "code.vegaprotocol.io/protos/vega"
 )
 

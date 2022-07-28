@@ -22,7 +22,7 @@ import (
 	logObserver "go.uber.org/zap/zaptest/observer"
 
 	"code.vegaprotocol.io/data-node/logging"
-	"code.vegaprotocol.io/data-node/utils"
+	"code.vegaprotocol.io/data-node/datanode/utils"
 )
 
 func newRecordedLogger() (*logging.Logger, *logObserver.ObservedLogs) {

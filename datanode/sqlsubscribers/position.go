@@ -16,9 +16,9 @@ import (
 	"context"
 	"sync"
 
-	"code.vegaprotocol.io/data-node/entities"
+	"code.vegaprotocol.io/data-node/datanode/entities"
 	"code.vegaprotocol.io/data-node/logging"
-	"code.vegaprotocol.io/data-node/sqlstore"
+	"code.vegaprotocol.io/data-node/datanode/sqlstore"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/types/num"
 	"github.com/pkg/errors"
@@ -48,7 +48,7 @@ type settleDistressed interface {
 	Margin() *num.Uint
 }
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/positions_mock.go -package mocks code.vegaprotocol.io/data-node/sqlsubscribers PositionStore
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/positions_mock.go -package mocks code.vegaprotocol.io/data-node/datanode/sqlsubscribers PositionStore
 type PositionStore interface {
 	Add(context.Context, entities.Position) error
 	GetByMarket(ctx context.Context, marketID entities.MarketID) ([]entities.Position, error)

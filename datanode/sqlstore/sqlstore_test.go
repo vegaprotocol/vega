@@ -28,7 +28,7 @@ import (
 	uuid "github.com/satori/go.uuid"
 
 	"code.vegaprotocol.io/data-node/logging"
-	"code.vegaprotocol.io/data-node/sqlstore"
+	"code.vegaprotocol.io/data-node/datanode/sqlstore"
 	"github.com/cenkalti/backoff/v4"
 	embeddedpostgres "github.com/fergusstrange/embedded-postgres"
 	"github.com/jackc/pgx/v4"

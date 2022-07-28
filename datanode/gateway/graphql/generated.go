@@ -12,7 +12,7 @@ import (
 	"sync"
 	"sync/atomic"
 
-	"code.vegaprotocol.io/data-node/gateway/graphql/marshallers"
+	"code.vegaprotocol.io/data-node/datanode/gateway/graphql/marshallers"
 	v12 "code.vegaprotocol.io/protos/data-node/api/v1"
 	"code.vegaprotocol.io/protos/data-node/api/v2"
 	"code.vegaprotocol.io/protos/vega"

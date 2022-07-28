@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"code.vegaprotocol.io/data-node/vegatime"
+	"code.vegaprotocol.io/data-node/datanode/vegatime"
 	v2 "code.vegaprotocol.io/protos/data-node/api/v2"
 	types "code.vegaprotocol.io/protos/vega"
 )

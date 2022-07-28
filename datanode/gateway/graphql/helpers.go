@@ -19,7 +19,7 @@ import (
 	"github.com/vektah/gqlparser/v2/gqlerror"
 	"google.golang.org/grpc/status"
 
-	"code.vegaprotocol.io/data-node/vegatime"
+	"code.vegaprotocol.io/data-node/datanode/vegatime"
 	types "code.vegaprotocol.io/protos/vega"
 )
 

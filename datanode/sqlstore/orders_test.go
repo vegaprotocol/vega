@@ -18,9 +18,9 @@ import (
 	"testing"
 	"time"
 
-	"code.vegaprotocol.io/data-node/entities"
+	"code.vegaprotocol.io/data-node/datanode/entities"
 	"code.vegaprotocol.io/data-node/logging"
-	"code.vegaprotocol.io/data-node/sqlstore"
+	"code.vegaprotocol.io/data-node/datanode/sqlstore"
 	"code.vegaprotocol.io/vega/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

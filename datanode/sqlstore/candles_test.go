@@ -19,7 +19,7 @@ import (
 	"testing"
 	"time"
 
-	"code.vegaprotocol.io/data-node/candlesv2"
+	"code.vegaprotocol.io/data-node/datanode/candlesv2"
 	"github.com/stretchr/testify/require"
 
 	types "code.vegaprotocol.io/protos/vega"
@@ -27,8 +27,8 @@ import (
 	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/assert"
 
-	"code.vegaprotocol.io/data-node/entities"
-	"code.vegaprotocol.io/data-node/sqlstore"
+	"code.vegaprotocol.io/data-node/datanode/entities"
+	"code.vegaprotocol.io/data-node/datanode/sqlstore"
 )
 
 const (

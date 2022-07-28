@@ -27,8 +27,8 @@ import (
 	"testing"
 	"time"
 
-	"code.vegaprotocol.io/data-node/entities"
-	"code.vegaprotocol.io/data-node/sqlstore"
+	"code.vegaprotocol.io/data-node/datanode/entities"
+	"code.vegaprotocol.io/data-node/datanode/sqlstore"
 	"github.com/jackc/pgx/v4"
 	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/assert"

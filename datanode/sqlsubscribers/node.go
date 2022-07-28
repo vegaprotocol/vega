@@ -16,7 +16,7 @@ import (
 	"context"
 	"time"
 
-	"code.vegaprotocol.io/data-node/entities"
+	"code.vegaprotocol.io/data-node/datanode/entities"
 	"code.vegaprotocol.io/data-node/logging"
 	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
 	"code.vegaprotocol.io/vega/events"
@@ -38,7 +38,7 @@ type ValidatorRewardScoreEvent interface {
 	ValidatorScoreEvent() eventspb.ValidatorScoreEvent
 }
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/node_mock.go -package mocks code.vegaprotocol.io/data-node/sqlsubscribers NodeStore
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/node_mock.go -package mocks code.vegaprotocol.io/data-node/datanode/sqlsubscribers NodeStore
 type NodeStore interface {
 	UpsertNode(context.Context, *entities.Node) error
 	UpsertRanking(context.Context, *entities.RankingScore, *entities.RankingScoreAux) error

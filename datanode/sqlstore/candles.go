@@ -19,13 +19,13 @@ import (
 	"strings"
 	"time"
 
-	"code.vegaprotocol.io/data-node/candlesv2"
-	"code.vegaprotocol.io/data-node/metrics"
+	"code.vegaprotocol.io/data-node/datanode/candlesv2"
+	"code.vegaprotocol.io/data-node/datanode/metrics"
 	v2 "code.vegaprotocol.io/protos/data-node/api/v2"
 
 	"github.com/shopspring/decimal"
 
-	"code.vegaprotocol.io/data-node/entities"
+	"code.vegaprotocol.io/data-node/datanode/entities"
 	"github.com/georgysavva/scany/pgxscan"
 )
 

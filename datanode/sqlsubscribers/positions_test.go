@@ -19,10 +19,10 @@ import (
 	"context"
 	"testing"
 
-	"code.vegaprotocol.io/data-node/entities"
+	"code.vegaprotocol.io/data-node/datanode/entities"
 	"code.vegaprotocol.io/data-node/logging"
-	"code.vegaprotocol.io/data-node/sqlsubscribers"
-	"code.vegaprotocol.io/data-node/sqlsubscribers/mocks"
+	"code.vegaprotocol.io/data-node/datanode/sqlsubscribers"
+	"code.vegaprotocol.io/data-node/datanode/sqlsubscribers/mocks"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/types/num"
 

@@ -15,7 +15,7 @@ package sqlsubscribers
 import (
 	"context"
 
-	"code.vegaprotocol.io/data-node/entities"
+	"code.vegaprotocol.io/data-node/datanode/entities"
 	"code.vegaprotocol.io/data-node/logging"
 	oraclespb "code.vegaprotocol.io/protos/vega/oracles/v1"
 	"code.vegaprotocol.io/vega/events"
@@ -27,7 +27,7 @@ type OracleDataEvent interface {
 	OracleData() oraclespb.OracleData
 }
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/oracle_data_mock.go -package mocks code.vegaprotocol.io/data-node/sqlsubscribers OracleDataStore
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/oracle_data_mock.go -package mocks code.vegaprotocol.io/data-node/datanode/sqlsubscribers OracleDataStore
 type OracleDataStore interface {
 	Add(context.Context, *entities.OracleData) error
 }

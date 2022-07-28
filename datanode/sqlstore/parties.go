@@ -19,8 +19,8 @@ import (
 	v2 "code.vegaprotocol.io/protos/data-node/api/v2"
 	"github.com/pkg/errors"
 
-	"code.vegaprotocol.io/data-node/entities"
-	"code.vegaprotocol.io/data-node/metrics"
+	"code.vegaprotocol.io/data-node/datanode/entities"
+	"code.vegaprotocol.io/data-node/datanode/metrics"
 	"github.com/georgysavva/scany/pgxscan"
 )
 

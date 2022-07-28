@@ -14,7 +14,7 @@ package service
 
 import (
 	"code.vegaprotocol.io/data-node/logging"
-	"code.vegaprotocol.io/data-node/sqlstore"
+	"code.vegaprotocol.io/data-node/datanode/sqlstore"
 )
 
 type Asset struct{ *sqlstore.Assets }

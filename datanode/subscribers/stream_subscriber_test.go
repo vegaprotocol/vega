@@ -20,7 +20,7 @@ import (
 	"sync"
 	"testing"
 
-	"code.vegaprotocol.io/data-node/subscribers"
+	"code.vegaprotocol.io/data-node/datanode/subscribers"
 	types "code.vegaprotocol.io/protos/vega"
 	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
 	"code.vegaprotocol.io/vega/events"

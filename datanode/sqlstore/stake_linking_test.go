@@ -18,8 +18,8 @@ import (
 	"testing"
 	"time"
 
-	"code.vegaprotocol.io/data-node/entities"
-	"code.vegaprotocol.io/data-node/sqlstore"
+	"code.vegaprotocol.io/data-node/datanode/entities"
+	"code.vegaprotocol.io/data-node/datanode/sqlstore"
 	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
 	"code.vegaprotocol.io/vega/types/num"
 	"github.com/jackc/pgx/v4"

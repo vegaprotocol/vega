@@ -19,10 +19,10 @@ import (
 	"testing"
 	"time"
 
-	"code.vegaprotocol.io/data-node/broker"
-	"code.vegaprotocol.io/data-node/entities"
+	"code.vegaprotocol.io/data-node/datanode/broker"
+	"code.vegaprotocol.io/data-node/datanode/entities"
 	"code.vegaprotocol.io/data-node/logging"
-	"code.vegaprotocol.io/data-node/sqlstore"
+	"code.vegaprotocol.io/data-node/datanode/sqlstore"
 	"code.vegaprotocol.io/vega/events"
 	vgcontext "code.vegaprotocol.io/vega/libs/context"
 	"code.vegaprotocol.io/vega/types"

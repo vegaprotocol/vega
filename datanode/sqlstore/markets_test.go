@@ -17,8 +17,8 @@ import (
 	"testing"
 	"time"
 
-	"code.vegaprotocol.io/data-node/entities"
-	"code.vegaprotocol.io/data-node/sqlstore"
+	"code.vegaprotocol.io/data-node/datanode/entities"
+	"code.vegaprotocol.io/data-node/datanode/sqlstore"
 	"code.vegaprotocol.io/protos/vega"
 	v1 "code.vegaprotocol.io/protos/vega/oracles/v1"
 	"github.com/georgysavva/scany/pgxscan"

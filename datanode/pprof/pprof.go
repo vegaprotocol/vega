@@ -26,8 +26,8 @@ import (
 	"runtime"
 	"runtime/pprof"
 
-	"code.vegaprotocol.io/data-node/config/encoding"
-	"code.vegaprotocol.io/data-node/fsutil"
+	"code.vegaprotocol.io/data-node/datanode/config/encoding"
+	"code.vegaprotocol.io/data-node/datanode/fsutil"
 	"code.vegaprotocol.io/data-node/logging"
 )
 

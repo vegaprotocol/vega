@@ -15,7 +15,7 @@ package sqlsubscribers
 import (
 	"context"
 
-	"code.vegaprotocol.io/data-node/entities"
+	"code.vegaprotocol.io/data-node/datanode/entities"
 	"code.vegaprotocol.io/data-node/logging"
 	"code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/events"
@@ -27,7 +27,7 @@ type RiskFactorEvent interface {
 	RiskFactor() vega.RiskFactor
 }
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/risk_factor_mock.go -package mocks code.vegaprotocol.io/data-node/sqlsubscribers RiskFactorStore
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/risk_factor_mock.go -package mocks code.vegaprotocol.io/data-node/datanode/sqlsubscribers RiskFactorStore
 type RiskFactorStore interface {
 	Upsert(context.Context, *entities.RiskFactor) error
 }

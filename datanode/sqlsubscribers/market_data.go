@@ -16,7 +16,7 @@ import (
 	"context"
 	"time"
 
-	"code.vegaprotocol.io/data-node/entities"
+	"code.vegaprotocol.io/data-node/datanode/entities"
 	"code.vegaprotocol.io/data-node/logging"
 	types "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/events"
@@ -28,7 +28,7 @@ type MarketDataEvent interface {
 	MarketData() types.MarketData
 }
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/market_data_mock.go -package mocks code.vegaprotocol.io/data-node/sqlsubscribers MarketDataStore
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/market_data_mock.go -package mocks code.vegaprotocol.io/data-node/datanode/sqlsubscribers MarketDataStore
 type MarketDataStore interface {
 	Add(*entities.MarketData) error
 	Flush(context.Context) error

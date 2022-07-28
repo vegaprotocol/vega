@@ -15,7 +15,7 @@ package sqlstore
 import (
 	"fmt"
 
-	"code.vegaprotocol.io/data-node/config/encoding"
+	"code.vegaprotocol.io/data-node/datanode/config/encoding"
 	"code.vegaprotocol.io/data-node/logging"
 	"github.com/jackc/pgx/v4/pgxpool"
 )

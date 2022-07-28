@@ -15,7 +15,7 @@ package sqlsubscribers
 import (
 	"context"
 
-	"code.vegaprotocol.io/data-node/entities"
+	"code.vegaprotocol.io/data-node/datanode/entities"
 	"code.vegaprotocol.io/data-node/logging"
 	"code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/events"
@@ -27,7 +27,7 @@ type WithdrawalEvent interface {
 	Withdrawal() vega.Withdrawal
 }
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/withdrawals_mock.go -package mocks code.vegaprotocol.io/data-node/sqlsubscribers WithdrawalStore
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/withdrawals_mock.go -package mocks code.vegaprotocol.io/data-node/datanode/sqlsubscribers WithdrawalStore
 type WithdrawalStore interface {
 	Upsert(context.Context, *entities.Withdrawal) error
 }

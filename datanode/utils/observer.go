@@ -19,7 +19,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"code.vegaprotocol.io/data-node/contextutil"
+	"code.vegaprotocol.io/data-node/datanode/contextutil"
 	"code.vegaprotocol.io/data-node/logging"
 )
 

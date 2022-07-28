@@ -15,7 +15,7 @@ package sqlsubscribers
 import (
 	"context"
 
-	"code.vegaprotocol.io/data-node/entities"
+	"code.vegaprotocol.io/data-node/datanode/entities"
 	"code.vegaprotocol.io/data-node/logging"
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	"code.vegaprotocol.io/vega/events"
@@ -30,7 +30,7 @@ type NodeSignatureEvent interface {
 	NodeSignature() commandspb.NodeSignature
 }
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/notary_mock.go -package mocks code.vegaprotocol.io/data-node/sqlsubscribers NotaryStore
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/notary_mock.go -package mocks code.vegaprotocol.io/data-node/datanode/sqlsubscribers NotaryStore
 type NotaryStore interface {
 	Add(context.Context, *entities.NodeSignature) error
 }

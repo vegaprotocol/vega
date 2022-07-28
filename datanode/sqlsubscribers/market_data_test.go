@@ -17,7 +17,7 @@ import (
 	"testing"
 
 	"code.vegaprotocol.io/data-node/logging"
-	"code.vegaprotocol.io/data-node/sqlsubscribers/mocks"
+	"code.vegaprotocol.io/data-node/datanode/sqlsubscribers/mocks"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/types"
 	"github.com/golang/mock/gomock"

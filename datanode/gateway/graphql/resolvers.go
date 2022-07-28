@@ -23,9 +23,9 @@ import (
 
 	"google.golang.org/grpc"
 
-	"code.vegaprotocol.io/data-node/gateway"
+	"code.vegaprotocol.io/data-node/datanode/gateway"
 	"code.vegaprotocol.io/data-node/logging"
-	"code.vegaprotocol.io/data-node/vegatime"
+	"code.vegaprotocol.io/data-node/datanode/vegatime"
 	protoapi "code.vegaprotocol.io/protos/data-node/api/v1"
 	v2 "code.vegaprotocol.io/protos/data-node/api/v2"
 	types "code.vegaprotocol.io/protos/vega"
@@ -47,18 +47,18 @@ var (
 )
 
 // CoreProxyServiceClient ...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/core_service_client_mock.go -package mocks code.vegaprotocol.io/data-node/gateway/graphql CoreProxyServiceClient
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/core_service_client_mock.go -package mocks code.vegaprotocol.io/data-node/datanode/gateway/graphql CoreProxyServiceClient
 type CoreProxyServiceClient interface {
 	vegaprotoapi.CoreServiceClient
 }
 
 // TradingDataServiceClient ...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/trading_data_service_client_mock.go -package mocks code.vegaprotocol.io/data-node/gateway/graphql TradingDataServiceClient
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/trading_data_service_client_mock.go -package mocks code.vegaprotocol.io/data-node/datanode/gateway/graphql TradingDataServiceClient
 type TradingDataServiceClient interface {
 	protoapi.TradingDataServiceClient
 }
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/trading_data_service_client_v2_mock.go -package mocks code.vegaprotocol.io/data-node/gateway/graphql TradingDataServiceClientV2
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/trading_data_service_client_v2_mock.go -package mocks code.vegaprotocol.io/data-node/datanode/gateway/graphql TradingDataServiceClientV2
 type TradingDataServiceClientV2 interface {
 	v2.TradingDataServiceClient
 }

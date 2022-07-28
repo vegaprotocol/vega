@@ -16,7 +16,7 @@ import (
 	"context"
 	"time"
 
-	"code.vegaprotocol.io/data-node/entities"
+	"code.vegaprotocol.io/data-node/datanode/entities"
 	"code.vegaprotocol.io/data-node/logging"
 	"code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/events"
@@ -28,7 +28,7 @@ type MarginLevelsEvent interface {
 	MarginLevels() vega.MarginLevels
 }
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/margin_levels_mock.go -package mocks code.vegaprotocol.io/data-node/sqlsubscribers MarginLevelsStore
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/margin_levels_mock.go -package mocks code.vegaprotocol.io/data-node/datanode/sqlsubscribers MarginLevelsStore
 type MarginLevelsStore interface {
 	Add(entities.MarginLevels) error
 	Flush(context.Context) error

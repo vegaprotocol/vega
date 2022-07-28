@@ -16,7 +16,7 @@ import (
 	"context"
 	"time"
 
-	"code.vegaprotocol.io/data-node/entities"
+	"code.vegaprotocol.io/data-node/datanode/entities"
 	"code.vegaprotocol.io/data-node/logging"
 	"code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/events"
@@ -28,7 +28,7 @@ type LiquidityProvisionEvent interface {
 	LiquidityProvision() *vega.LiquidityProvision
 }
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/liquidity_provision_mock.go -package mocks code.vegaprotocol.io/data-node/sqlsubscribers LiquidityProvisionStore
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/liquidity_provision_mock.go -package mocks code.vegaprotocol.io/data-node/datanode/sqlsubscribers LiquidityProvisionStore
 type LiquidityProvisionStore interface {
 	Upsert(context.Context, entities.LiquidityProvision) error
 	Flush(ctx context.Context) error

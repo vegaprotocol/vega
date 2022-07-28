@@ -17,9 +17,9 @@ import (
 	"errors"
 	"testing"
 
-	"code.vegaprotocol.io/data-node/gateway"
-	gql "code.vegaprotocol.io/data-node/gateway/graphql"
-	"code.vegaprotocol.io/data-node/gateway/graphql/mocks"
+	"code.vegaprotocol.io/data-node/datanode/gateway"
+	gql "code.vegaprotocol.io/data-node/datanode/gateway/graphql"
+	"code.vegaprotocol.io/data-node/datanode/gateway/graphql/mocks"
 	"code.vegaprotocol.io/data-node/logging"
 	protoapi "code.vegaprotocol.io/protos/data-node/api/v1"
 	types "code.vegaprotocol.io/protos/vega"

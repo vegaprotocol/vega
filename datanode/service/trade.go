@@ -15,9 +15,9 @@ package service
 import (
 	"context"
 
-	"code.vegaprotocol.io/data-node/entities"
+	"code.vegaprotocol.io/data-node/datanode/entities"
 	"code.vegaprotocol.io/data-node/logging"
-	"code.vegaprotocol.io/data-node/utils"
+	"code.vegaprotocol.io/data-node/datanode/utils"
 )
 
 type tradeStore interface {

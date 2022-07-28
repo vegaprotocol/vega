@@ -17,7 +17,7 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/data-node/logging"
-	"code.vegaprotocol.io/data-node/metrics"
+	"code.vegaprotocol.io/data-node/datanode/metrics"
 	protoapi "code.vegaprotocol.io/protos/vega/api/v1"
 	"github.com/pkg/errors"
 )
@@ -25,7 +25,7 @@ import (
 const defaultRequestTimeout = time.Second * 5
 
 // CoreServiceClient ...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/core_service_client_mock.go -package mocks code.vegaprotocol.io/data-node/api CoreServiceClient
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/core_service_client_mock.go -package mocks code.vegaprotocol.io/data-node/datanode/api CoreServiceClient
 type CoreServiceClient interface {
 	protoapi.CoreServiceClient
 }

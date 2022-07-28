@@ -23,7 +23,7 @@ import (
 	"testing"
 	"time"
 
-	vgtesting "code.vegaprotocol.io/data-node/libs/testing"
+	vgtesting "code.vegaprotocol.io/data-node/datanode/libs/testing"
 	types "code.vegaprotocol.io/protos/vega"
 	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
 	"code.vegaprotocol.io/vega/broker"

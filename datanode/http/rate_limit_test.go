@@ -17,8 +17,8 @@ import (
 	"testing"
 	"time"
 
-	"code.vegaprotocol.io/data-node/config/encoding"
-	vhttp "code.vegaprotocol.io/data-node/http"
+	"code.vegaprotocol.io/data-node/datanode/config/encoding"
+	vhttp "code.vegaprotocol.io/data-node/datanode/http"
 
 	"github.com/stretchr/testify/assert"
 )

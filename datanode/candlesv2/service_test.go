@@ -17,9 +17,9 @@ import (
 	"testing"
 	"time"
 
-	"code.vegaprotocol.io/data-node/candlesv2"
-	"code.vegaprotocol.io/data-node/candlesv2/mocks"
-	"code.vegaprotocol.io/data-node/entities"
+	"code.vegaprotocol.io/data-node/datanode/candlesv2"
+	"code.vegaprotocol.io/data-node/datanode/candlesv2/mocks"
+	"code.vegaprotocol.io/data-node/datanode/entities"
 	"code.vegaprotocol.io/data-node/logging"
 
 	"github.com/golang/mock/gomock"

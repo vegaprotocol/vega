@@ -15,7 +15,7 @@ package sqlsubscribers
 import (
 	"context"
 
-	"code.vegaprotocol.io/data-node/entities"
+	"code.vegaprotocol.io/data-node/datanode/entities"
 	"code.vegaprotocol.io/data-node/logging"
 	oraclespb "code.vegaprotocol.io/protos/vega/oracles/v1"
 	"code.vegaprotocol.io/vega/events"
@@ -27,7 +27,7 @@ type OracleSpecEvent interface {
 	OracleSpec() oraclespb.OracleSpec
 }
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/oracle_spec_mock.go -package mocks code.vegaprotocol.io/data-node/sqlsubscribers OracleSpecStore
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/oracle_spec_mock.go -package mocks code.vegaprotocol.io/data-node/datanode/sqlsubscribers OracleSpecStore
 type OracleSpecStore interface {
 	Upsert(context.Context, *entities.OracleSpec) error
 }

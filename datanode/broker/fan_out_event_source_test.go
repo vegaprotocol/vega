@@ -17,7 +17,7 @@ import (
 	"fmt"
 	"testing"
 
-	"code.vegaprotocol.io/data-node/broker"
+	"code.vegaprotocol.io/data-node/datanode/broker"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/types"
 

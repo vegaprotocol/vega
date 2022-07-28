@@ -18,10 +18,10 @@ import (
 	"reflect"
 	"time"
 
-	"code.vegaprotocol.io/data-node/entities"
+	"code.vegaprotocol.io/data-node/datanode/entities"
 	"code.vegaprotocol.io/data-node/logging"
-	"code.vegaprotocol.io/data-node/metrics"
-	"code.vegaprotocol.io/data-node/sqlstore"
+	"code.vegaprotocol.io/data-node/datanode/metrics"
+	"code.vegaprotocol.io/data-node/datanode/sqlstore"
 	"code.vegaprotocol.io/vega/events"
 	"github.com/pkg/errors"
 )

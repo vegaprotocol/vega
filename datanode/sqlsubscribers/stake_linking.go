@@ -15,7 +15,7 @@ package sqlsubscribers
 import (
 	"context"
 
-	"code.vegaprotocol.io/data-node/entities"
+	"code.vegaprotocol.io/data-node/datanode/entities"
 	"code.vegaprotocol.io/data-node/logging"
 	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
 	"code.vegaprotocol.io/vega/events"
@@ -27,7 +27,7 @@ type StakeLinkingEvent interface {
 	StakeLinking() eventspb.StakeLinking
 }
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/stake_linking_mock.go -package mocks code.vegaprotocol.io/data-node/sqlsubscribers StakeLinkingStore
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/stake_linking_mock.go -package mocks code.vegaprotocol.io/data-node/datanode/sqlsubscribers StakeLinkingStore
 type StakeLinkingStore interface {
 	Upsert(ctx context.Context, linking *entities.StakeLinking) error
 }

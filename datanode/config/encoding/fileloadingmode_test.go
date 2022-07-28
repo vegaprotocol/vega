@@ -15,7 +15,7 @@ package encoding_test
 import (
 	"testing"
 
-	"code.vegaprotocol.io/data-node/config/encoding"
+	"code.vegaprotocol.io/data-node/datanode/config/encoding"
 
 	"github.com/dgraph-io/badger/v2/options"
 	"github.com/stretchr/testify/assert"

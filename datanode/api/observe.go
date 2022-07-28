@@ -17,7 +17,7 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/data-node/logging"
-	"code.vegaprotocol.io/data-node/metrics"
+	"code.vegaprotocol.io/data-node/datanode/metrics"
 	"google.golang.org/grpc/codes"
 )
 

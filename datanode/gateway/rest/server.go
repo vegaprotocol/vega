@@ -19,7 +19,7 @@ import (
 	"net/http"
 	"strconv"
 
-	"code.vegaprotocol.io/data-node/gateway"
+	"code.vegaprotocol.io/data-node/datanode/gateway"
 	"code.vegaprotocol.io/data-node/logging"
 	protoapi "code.vegaprotocol.io/protos/data-node/api/v1"
 	protoapiv2 "code.vegaprotocol.io/protos/data-node/api/v2"

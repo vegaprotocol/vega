@@ -15,7 +15,7 @@ package sqlsubscribers
 import (
 	"context"
 
-	"code.vegaprotocol.io/data-node/entities"
+	"code.vegaprotocol.io/data-node/datanode/entities"
 	"code.vegaprotocol.io/data-node/logging"
 	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
 	"code.vegaprotocol.io/vega/events"
@@ -27,7 +27,7 @@ type KeyRotationEvent interface {
 	KeyRotation() eventspb.KeyRotation
 }
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/key_rotation_mock.go -package mocks code.vegaprotocol.io/data-node/sqlsubscribers KeyRotationStore
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/key_rotation_mock.go -package mocks code.vegaprotocol.io/data-node/datanode/sqlsubscribers KeyRotationStore
 type KeyRotationStore interface {
 	Upsert(context.Context, *entities.KeyRotation) error
 }

@@ -17,13 +17,13 @@ import (
 	"fmt"
 	"sync"
 
-	"code.vegaprotocol.io/data-node/entities"
+	"code.vegaprotocol.io/data-node/datanode/entities"
 	"code.vegaprotocol.io/data-node/logging"
 )
 
 var nilPagination = entities.OffsetPagination{}
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/market_mock.go -package mocks code.vegaprotocol.io/data-node/service MarketStore
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/market_mock.go -package mocks code.vegaprotocol.io/data-node/datanode/service MarketStore
 type MarketStore interface {
 	Upsert(ctx context.Context, market *entities.Market) error
 	GetByID(ctx context.Context, marketID string) (entities.Market, error)

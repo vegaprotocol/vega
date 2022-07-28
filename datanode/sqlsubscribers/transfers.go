@@ -15,7 +15,7 @@ package sqlsubscribers
 import (
 	"context"
 
-	"code.vegaprotocol.io/data-node/entities"
+	"code.vegaprotocol.io/data-node/datanode/entities"
 	"code.vegaprotocol.io/data-node/logging"
 	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
 	"code.vegaprotocol.io/vega/events"
@@ -27,12 +27,12 @@ type TransferEvent interface {
 	TransferFunds() eventspb.Transfer
 }
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/transfer_store_mock.go -package mocks code.vegaprotocol.io/data-node/sqlsubscribers TransferStore
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/transfer_store_mock.go -package mocks code.vegaprotocol.io/data-node/datanode/sqlsubscribers TransferStore
 type TransferStore interface {
 	Upsert(ctx context.Context, transfer *entities.Transfer) error
 }
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/transfer_store_mock.go -package mocks code.vegaprotocol.io/data-node/sqlsubscribers AccountSource
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/transfer_store_mock.go -package mocks code.vegaprotocol.io/data-node/datanode/sqlsubscribers AccountSource
 type AccountSource interface {
 	Obtain(ctx context.Context, a *entities.Account) error
 	GetByID(id int64) (entities.Account, error)

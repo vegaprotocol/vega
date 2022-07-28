@@ -15,7 +15,7 @@ package metrics
 import (
 	"time"
 
-	"code.vegaprotocol.io/data-node/config/encoding"
+	"code.vegaprotocol.io/data-node/datanode/config/encoding"
 	"code.vegaprotocol.io/data-node/logging"
 )
 
