@@ -1,0 +1,1 @@
+{"TestName":"TestEpochs_SpecificEpoch","Query":"{ epoch(id:\"10\") { id timestamps{ start, expiry, end } } }","Result":{"Epoch":{"ID":"10","Timestamps":{"Start":"2022-03-24T14:17:54Z","End":"2022-03-24T14:18:01Z","Expiry":"2022-03-24T14:17:59Z"},"Delegations":null}},"Duration":7393585}

@@ -1,0 +1,326 @@
+---
+schema: schema.graphql
+exec:
+  filename: generated.go
+model:
+  filename: models.go
+
+models:
+  String:
+    model:
+      - github.com/99designs/gqlgen/graphql.ID
+  Int:
+    model:
+      - github.com/99designs/gqlgen/graphql.Int
+      - github.com/99designs/gqlgen/graphql.Int64
+      - github.com/99designs/gqlgen/graphql.Int32
+      - code.vegaprotocol.io/data-node/datanode/gateway/graphql/marshallers.Uint32
+  Order:
+    model: code.vegaprotocol.io/protos/vega.Order
+  PaginatedOrder:
+    model: code.vegaprotocol.io/protos/vega.Order
+  Trade:
+    model: code.vegaprotocol.io/protos/vega.Trade
+  PriceLevel:
+    model: code.vegaprotocol.io/protos/vega.PriceLevel
+  MarketDepth:
+    model: code.vegaprotocol.io/protos/vega.MarketDepth
+  ObservableMarketDepth:
+    model: code.vegaprotocol.io/protos/vega.MarketDepth
+  MarketDepthUpdate:
+    model: code.vegaprotocol.io/protos/vega.MarketDepthUpdate
+  ObservableMarketDepthUpdate:
+    model: code.vegaprotocol.io/protos/vega.MarketDepthUpdate
+  Candle:
+    model: code.vegaprotocol.io/protos/vega.Candle
+  Position:
+    model: code.vegaprotocol.io/protos/vega.Position
+  Account:
+    model: code.vegaprotocol.io/protos/vega.Account
+  MarketData:
+    model: code.vegaprotocol.io/protos/vega.MarketData
+  ObservableMarketData:
+    model: code.vegaprotocol.io/protos/vega.MarketData
+  MarginLevels:
+    model: code.vegaprotocol.io/protos/vega.MarginLevels
+  NodeSignature:
+    model: code.vegaprotocol.io/protos/vega/commands/v1.NodeSignature
+  ProposalEvent:
+    model: code.vegaprotocol.io/protos/vega.Proposal
+  RiskFactor:
+    model: code.vegaprotocol.io/protos/vega.RiskFactor
+  NetworkParameter:
+    model: code.vegaprotocol.io/protos/vega.NetworkParameter
+  LiquidityOrder:
+    model: code.vegaprotocol.io/protos/vega.LiquidityOrder
+  LiquidityProvision:
+    model: code.vegaprotocol.io/protos/vega.LiquidityProvision
+  LiquidityOrderReference:
+    model: code.vegaprotocol.io/protos/vega.LiquidityOrderReference
+  Future:
+    model: code.vegaprotocol.io/protos/vega.Future
+  TradableInstrument:
+    model: code.vegaprotocol.io/protos/vega.TradableInstrument
+  SimpleRiskModel:
+    model: code.vegaprotocol.io/protos/vega.SimpleRiskModel
+  SimpleRiskModelParams:
+    model: code.vegaprotocol.io/protos/vega.SimpleModelParams
+  LogNormalRiskModel:
+    model: code.vegaprotocol.io/protos/vega.LogNormalRiskModel
+  LogNormalModelParams:
+    model: code.vegaprotocol.io/protos/vega.LogNormalModelParams
+  Instrument:
+    model: code.vegaprotocol.io/protos/vega.Instrument
+  InstrumentMetadata:
+    model: code.vegaprotocol.io/protos/vega.InstrumentMetadata
+  Market:
+    model: code.vegaprotocol.io/protos/vega.Market
+    fields:
+      orders:
+        resolver: true
+      trades:
+        resolver: true
+      depth:
+        resolver: true
+      data:
+        resolver: true
+      candles:
+        resolver: true
+      accounts:
+        resolver: true
+      orderByReference:
+        resolver: true
+      liquidityProvisions:
+        resolver: true
+  Party:
+    model: code.vegaprotocol.io/protos/vega.Party
+    fields:
+      orders:
+        resolver: true
+      trades:
+        resolver: true
+      tradesPaged:
+        resolver: true
+      positions:
+        resolver: true
+      accounts:
+        resolver: true
+      margins:
+        resolver: true
+      delegations:
+        resolver: true
+  Proposal:
+    model: code.vegaprotocol.io/protos/vega.GovernanceData
+    fields:
+      votes:
+        resolver: true
+  ProposalRationale:
+    model: code.vegaprotocol.io/protos/vega.ProposalRationale
+  ProposalTerms:
+    model: code.vegaprotocol.io/protos/vega.ProposalTerms
+  NewMarket:
+    model: code.vegaprotocol.io/protos/vega.NewMarket
+  NewMarketCommitment:
+    model: code.vegaprotocol.io/protos/vega.NewMarketCommitment
+  NewAsset:
+    model: code.vegaprotocol.io/protos/vega.NewAsset
+  NewFreeform:
+    model: code.vegaprotocol.io/protos/vega.NewFreeform
+  UpdateMarket:
+    model: code.vegaprotocol.io/protos/vega.UpdateMarket
+  UpdateNetworkParameter:
+    model: code.vegaprotocol.io/protos/vega.UpdateNetworkParameter
+  InstrumentConfiguration:
+    model: code.vegaprotocol.io/protos/vega.InstrumentConfiguration
+  FutureProduct:
+    model: code.vegaprotocol.io/protos/vega.FutureProduct
+  Asset:
+    model: code.vegaprotocol.io/protos/vega.Asset
+    fields:
+      infrastructureFeeAccount:
+        resolver: true
+  Deposit:
+    model: code.vegaprotocol.io/protos/vega.Deposit
+  Withdrawal:
+    model: code.vegaprotocol.io/protos/vega.Withdrawal
+    fields:
+      txHash:
+        resolver: true
+  PeggedOrder:
+    model: code.vegaprotocol.io/protos/vega.PeggedOrder
+  OracleSpecToFutureBinding:
+    model: code.vegaprotocol.io/protos/vega.OracleSpecToFutureBinding
+  OracleSpecConfiguration:
+    model: code.vegaprotocol.io/protos/vega/oracles/v1.OracleSpecConfiguration
+  OracleSpec:
+    model: code.vegaprotocol.io/protos/vega/oracles/v1.OracleSpec
+  Filter:
+    model: code.vegaprotocol.io/protos/vega/oracles/v1.Filter
+  PropertyKey:
+    model: code.vegaprotocol.io/protos/vega/oracles/v1.PropertyKey
+  Condition:
+    model: code.vegaprotocol.io/protos/vega/oracles/v1.Condition
+  OracleData:
+    model: code.vegaprotocol.io/protos/vega/oracles/v1.OracleData
+    fields:
+      broadcastAt:
+        resolver: true
+  Property:
+    model: code.vegaprotocol.io/protos/vega/oracles/v1.Property
+  AuctionEvent:
+    model: code.vegaprotocol.io/protos/vega/events/v1.AuctionEvent
+  FeeFactors:
+    model: code.vegaprotocol.io/protos/vega.FeeFactors
+  Fees:
+    model: code.vegaprotocol.io/protos/vega.Fees
+  ScalingFactors:
+    model: code.vegaprotocol.io/protos/vega.ScalingFactors
+  MarginCalculator:
+    model: code.vegaprotocol.io/protos/vega.MarginCalculator
+  Vote:
+    model: code.vegaprotocol.io/protos/vega.Vote
+  VoteConnection:
+    model: code.vegaprotocol.io/protos/data-node/api/v2.VoteConnection
+  VoteEdge:
+    model: code.vegaprotocol.io/protos/data-node/api/v2.VoteEdge
+  MarketTimestamps:
+    model: code.vegaprotocol.io/protos/vega.MarketTimestamps
+  NodeData:
+    model: code.vegaprotocol.io/protos/vega.NodeData
+  EpochData:
+    model: code.vegaprotocol.io/protos/vega.EpochData
+  Delegation:
+    model: code.vegaprotocol.io/protos/vega.Delegation
+  Node:
+    model: code.vegaprotocol.io/protos/vega.Node
+  Epoch:
+    model: code.vegaprotocol.io/protos/vega.Epoch
+  EpochTimestamps:
+    model: code.vegaprotocol.io/protos/vega.EpochTimestamps
+  RewardPerAssetDetail:   # TODO: Depricated, remove once front end has caught up
+    model: code.vegaprotocol.io/protos/vega.RewardSummary
+  Reward:
+    model: code.vegaprotocol.io/protos/vega.Reward
+  RewardSummary:
+    model: code.vegaprotocol.io/protos/vega.RewardSummary
+  StakeLinking:
+    model: code.vegaprotocol.io/protos/vega/events/v1.StakeLinking
+  PartyStake:
+    model: code.vegaprotocol.io/protos/data-node/api/v1.PartyStakeResponse
+  KeyRotation:
+    model: code.vegaprotocol.io/protos/data-node/api/v1.KeyRotation
+  Transfer:
+    model: code.vegaprotocol.io/protos/vega/events/v1.Transfer
+  OneOffTransfer:
+    model: code.vegaprotocol.io/protos/vega/events/v1.OneOffTransfer
+  RecurringTransfer:
+    model: code.vegaprotocol.io/protos/vega/events/v1.RecurringTransfer
+  Statistics:
+    model: code.vegaprotocol.io/protos/vega/api/v1.Statistics
+  AccountType:
+    model:
+      - code.vegaprotocol.io/data-node/datanode/gateway/graphql/marshallers.AccountType
+  AccountField:
+    model: code.vegaprotocol.io/data-node/datanode/gateway/graphql/marshallers.AccountField
+  AccountFilter:
+    model: code.vegaprotocol.io/protos/data-node/api/v2.AccountFilter
+  AggregatedBalance:
+    model: code.vegaprotocol.io/protos/data-node/api/v2.AggregatedBalance
+  Timestamp:
+    model: code.vegaprotocol.io/data-node/datanode/gateway/graphql/marshallers.Timestamp
+  NetworkLimits:
+    model: code.vegaprotocol.io/protos/vega.NetworkLimits
+  RankingScore:
+    model: code.vegaprotocol.io/protos/vega.RankingScore
+  RewardScore:
+    model: code.vegaprotocol.io/protos/vega.RewardScore
+  UpdateMarketConfiguration:
+    model: code.vegaprotocol.io/protos/vega.UpdateMarketConfiguration
+  UpdateMarketSimpleRiskModel:
+    model: code.vegaprotocol.io/protos/vega.UpdateMarketConfiguration_Simple
+  UpdateMarketLogNormalRiskModel:
+    model: code.vegaprotocol.io/protos/vega.UpdateMarketConfiguration_LogNormal
+  UpdateFutureProduct:
+    model: code.vegaprotocol.io/protos/vega.UpdateFutureProduct
+  TradeConnection:
+    model: code.vegaprotocol.io/protos/data-node/api/v2.TradeConnection
+  TradeEdge:
+    model: code.vegaprotocol.io/protos/data-node/api/v2.TradeEdge
+  PageInfo:
+    model: code.vegaprotocol.io/protos/data-node/api/v2.PageInfo
+  MarketConnection:
+    model: code.vegaprotocol.io/protos/data-node/api/v2.MarketConnection
+  MarketEdge:
+    model: code.vegaprotocol.io/protos/data-node/api/v2.MarketEdge
+  PositionConnection:
+    model: code.vegaprotocol.io/protos/data-node/api/v2.PositionConnection
+  PositionEdge:
+    model: code.vegaprotocol.io/protos/data-node/api/v2.PositionEdge
+  PartyConnection:
+    model: code.vegaprotocol.io/protos/data-node/api/v2.PartyConnection
+  PartyEdge:
+    model: code.vegaprotocol.io/protos/data-node/api/v2.PartyEdge
+  Pagination:
+    model: code.vegaprotocol.io/protos/data-node/api/v2.Pagination
+  OrderEdge:
+    model: code.vegaprotocol.io/protos/data-node/api/v2.OrderEdge
+  OrderConnection:
+    model: code.vegaprotocol.io/protos/data-node/api/v2.OrderConnection
+  MarginEdge:
+    model: code.vegaprotocol.io/protos/data-node/api/v2.MarginEdge
+  MarginConnection:
+    model: code.vegaprotocol.io/protos/data-node/api/v2.MarginConnection
+  MarketDataEdge:
+    model: code.vegaprotocol.io/protos/data-node/api/v2.MarketDataEdge
+  MarketDataConnection:
+    model: code.vegaprotocol.io/protos/data-node/api/v2.MarketDataConnection
+  RewardEdge:
+    model: code.vegaprotocol.io/protos/data-node/api/v2.RewardEdge
+  RewardsConnection:
+    model: code.vegaprotocol.io/protos/data-node/api/v2.RewardsConnection
+  CandleNode:
+    model: code.vegaprotocol.io/protos/data-node/api/v2.Candle
+  CandleEdge:
+    model: code.vegaprotocol.io/protos/data-node/api/v2.CandleEdge
+  CandleDataConnection:
+    model: code.vegaprotocol.io/protos/data-node/api/v2.CandleDataConnection
+  DepositEdge:
+    model: code.vegaprotocol.io/protos/data-node/api/v2.DepositEdge
+  DepositsConnection:
+    model: code.vegaprotocol.io/protos/data-node/api/v2.DepositsConnection
+  WithdrawalEdge:
+    model: code.vegaprotocol.io/protos/data-node/api/v2.WithdrawalEdge
+  WithdrawalsConnection:
+    model: code.vegaprotocol.io/protos/data-node/api/v2.WithdrawalsConnection
+  AssetEdge:
+    model: code.vegaprotocol.io/protos/data-node/api/v2.AssetEdge
+  AssetsConnection:
+    model: code.vegaprotocol.io/protos/data-node/api/v2.AssetsConnection
+  OracleSpecEdge:
+    model: code.vegaprotocol.io/protos/data-node/api/v2.OracleSpecEdge
+  OracleSpecsConnection:
+    model: code.vegaprotocol.io/protos/data-node/api/v2.OracleSpecsConnection
+  OracleDataEdge:
+    model: code.vegaprotocol.io/protos/data-node/api/v2.OracleDataEdge
+  OracleDataConnection:
+    model: code.vegaprotocol.io/protos/data-node/api/v2.OracleDataConnection
+  LiquidityProvisionsEdge:
+    model: code.vegaprotocol.io/protos/data-node/api/v2.LiquidityProvisionsEdge
+  LiquidityProvisionsConnection:
+    model: code.vegaprotocol.io/protos/data-node/api/v2.LiquidityProvisionsConnection
+  TransferEdge:
+    model: code.vegaprotocol.io/protos/data-node/api/v2.TransferEdge
+  TransferConnection:
+    model: code.vegaprotocol.io/protos/data-node/api/v2.TransferConnection
+  ProposalEdge:
+    model: code.vegaprotocol.io/protos/data-node/api/v2.GovernanceDataEdge
+  ProposalsConnection:
+    model: code.vegaprotocol.io/protos/data-node/api/v2.GovernanceDataConnection
+  DelegationEdge:
+    model: code.vegaprotocol.io/protos/data-node/api/v2.DelegationEdge
+  DelegationsConnection:
+    model: code.vegaprotocol.io/protos/data-node/api/v2.DelegationsConnection
+  NodeEdge:
+    model: code.vegaprotocol.io/protos/data-node/api/v2.NodeEdge
+  NodesConnection:
+    model: code.vegaprotocol.io/protos/data-node/api/v2.NodesConnection
