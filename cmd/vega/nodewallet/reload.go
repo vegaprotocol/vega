@@ -20,9 +20,9 @@ import (
 	vgjson "code.vegaprotocol.io/shared/libs/json"
 	"code.vegaprotocol.io/shared/paths"
 
-	"code.vegaprotocol.io/vega/admin"
-	"code.vegaprotocol.io/vega/config"
-	vgfmt "code.vegaprotocol.io/vega/libs/fmt"
+	"code.vegaprotocol.io/vega/core/admin"
+	"code.vegaprotocol.io/vega/core/config"
+	vgfmt "code.vegaprotocol.io/vega/core/libs/fmt"
 	"code.vegaprotocol.io/vega/logging"
 
 	"github.com/jessevdk/go-flags"

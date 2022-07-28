@@ -23,7 +23,7 @@ import (
 	"code.vegaprotocol.io/vega/cmd/vega/genesis"
 	"code.vegaprotocol.io/vega/cmd/vega/nodewallet"
 	"code.vegaprotocol.io/vega/cmd/vega/paths"
-	"code.vegaprotocol.io/vega/config"
+	"code.vegaprotocol.io/vega/core/config"
 )
 
 // Subcommand is the signature of a sub command that can be registered.

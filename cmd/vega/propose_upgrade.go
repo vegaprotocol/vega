@@ -20,9 +20,9 @@ import (
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	vgcrypto "code.vegaprotocol.io/shared/libs/crypto"
 	"code.vegaprotocol.io/shared/paths"
-	"code.vegaprotocol.io/vega/config"
+	"code.vegaprotocol.io/vega/core/config"
+	"code.vegaprotocol.io/vega/core/txn"
 	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/txn"
 
 	"github.com/blang/semver"
 	"github.com/jessevdk/go-flags"

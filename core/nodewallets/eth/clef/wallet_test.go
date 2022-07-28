@@ -1,0 +1,209 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE.VEGA file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
+package clef_test
+
+import (
+	"context"
+	"fmt"
+	"testing"
+
+	"code.vegaprotocol.io/vega/core/nodewallets/eth/clef"
+	"code.vegaprotocol.io/vega/core/nodewallets/eth/clef/mocks"
+	"code.vegaprotocol.io/vega/core/nodewallets/registry"
+	ethCommon "github.com/ethereum/go-ethereum/common"
+	"github.com/golang/mock/gomock"
+	"github.com/stretchr/testify/assert"
+)
+
+var testAddress = ethCommon.HexToAddress("0x1Ff482D42D1237258A1686102Fa4ba925C23Bc42")
+
+func TestNewWallet(t *testing.T) {
+	t.Run("Success", testNewWalletSuccess)
+	t.Run("Returns an error if account is not found", testNewWalletAccountNotFound)
+	t.Run("Returns an error on RPC call failure", testNewWalletRPCError)
+}
+
+func testNewWalletSuccess(t *testing.T) {
+	a := assert.New(t)
+
+	ctrl := gomock.NewController(t)
+	clientMock := mocks.NewMockClient(ctrl)
+
+	clientMock.EXPECT().
+		CallContext(gomock.Any(), gomock.Any(), "account_list", gomock.Any()).
+		Times(1).
+		DoAndReturn(func(_ context.Context, accs *[]ethCommon.Address, s string, _ ...interface{}) error {
+			*accs = append(*accs, testAddress)
+
+			return nil
+		})
+
+	wallet, err := clef.NewWallet(clientMock, "http://127.0.0.1:8580", testAddress)
+	a.NoError(err)
+	a.NotNil(wallet)
+}
+
+func testNewWalletAccountNotFound(t *testing.T) {
+	a := assert.New(t)
+
+	ctrl := gomock.NewController(t)
+	clientMock := mocks.NewMockClient(ctrl)
+
+	clientMock.EXPECT().
+		CallContext(gomock.Any(), gomock.Any(), "account_list", gomock.Any()).
+		Times(1).
+		Return(nil)
+
+	wallet, err := clef.NewWallet(clientMock, "http://127.0.0.1:8580", testAddress)
+	a.EqualError(err, "account not found: wallet does not contain account \"0x1fF482d42D1237258a1686102FA4bA925c23bc42\"")
+	a.Nil(wallet)
+}
+
+func testNewWalletRPCError(t *testing.T) {
+	a := assert.New(t)
+
+	ctrl := gomock.NewController(t)
+	clientMock := mocks.NewMockClient(ctrl)
+
+	clientMock.EXPECT().
+		CallContext(gomock.Any(), gomock.Any(), "account_list", gomock.Any()).
+		Times(1).
+		Return(fmt.Errorf("something went wrong"))
+
+	wallet, err := clef.NewWallet(clientMock, "http://127.0.0.1:8580", testAddress)
+	a.EqualError(err, "account not found: failed to list accounts: failed to call client: something went wrong")
+	a.Nil(wallet)
+}
+
+func TestGenerateNewWallet(t *testing.T) {
+	t.Run("Success", testGenerateNewWalletSuccess)
+	t.Run("Returns an error on RPC call failure", testGenerateRPCError)
+}
+
+func testGenerateNewWalletSuccess(t *testing.T) {
+	a := assert.New(t)
+
+	ctrl := gomock.NewController(t)
+	clientMock := mocks.NewMockClient(ctrl)
+
+	clientMock.EXPECT().
+		CallContext(gomock.Any(), gomock.Any(), "account_new", gomock.Any()).
+		Times(1).
+		DoAndReturn(func(_ context.Context, addr *string, _ interface{}, _ ...interface{}) error {
+			*addr = testAddress.String()
+
+			return nil
+		})
+
+	wallet, err := clef.GenerateNewWallet(clientMock, "http://127.0.0.1:8580")
+	a.NoError(err)
+	a.NotNil(wallet)
+}
+
+func testGenerateRPCError(t *testing.T) {
+	a := assert.New(t)
+
+	ctrl := gomock.NewController(t)
+	clientMock := mocks.NewMockClient(ctrl)
+
+	clientMock.EXPECT().
+		CallContext(gomock.Any(), gomock.Any(), "account_new", gomock.Any()).
+		Times(1).
+		Return(fmt.Errorf("something went wrong"))
+
+	wallet, err := clef.GenerateNewWallet(clientMock, "http://127.0.0.1:8580")
+	a.EqualError(err, "failed to generate account: failed to call client: something went wrong")
+	a.Nil(wallet)
+}
+
+func TestVersion(t *testing.T) {
+	t.Run("Success", testVersionSuccess)
+}
+
+func testVersionSuccess(t *testing.T) {
+	a := assert.New(t)
+
+	ctrl := gomock.NewController(t)
+	clientMock := mocks.NewMockClient(ctrl)
+
+	testVersion := "v1.0.1"
+
+	clientMock.EXPECT().
+		CallContext(gomock.Any(), gomock.Any(), "account_list", gomock.Any()).
+		Times(1).
+		DoAndReturn(func(_ interface{}, accs *[]ethCommon.Address, _ interface{}, _ ...interface{}) error {
+			*accs = append(*accs, testAddress)
+
+			return nil
+		})
+
+	clientMock.EXPECT().
+		CallContext(gomock.Any(), gomock.Any(), "account_version", gomock.Any()).
+		Times(1).
+		DoAndReturn(func(_ context.Context, version *string, _ interface{}, _ ...interface{}) error {
+			*version = testVersion
+
+			return nil
+		})
+
+	wallet, err := clef.NewWallet(clientMock, "http://127.0.0.1:8580", testAddress)
+	a.NoError(err)
+	a.NotNil(wallet)
+
+	v, err := wallet.Version()
+	a.NoError(err)
+	a.Equal(testVersion, v)
+}
+
+func TestReloadWallet(t *testing.T) {
+	t.Run("Success", testReloadWalletSuccess)
+}
+
+func testReloadWalletSuccess(t *testing.T) {
+	a := assert.New(t)
+
+	ctrl := gomock.NewController(t)
+	clientMock := mocks.NewMockClient(ctrl)
+
+	reloadedAddress := ethCommon.HexToAddress("0x6d573e92918124496ffefb0f273846ddb23a48c5")
+
+	var mockedCallTimes int
+	clientMock.EXPECT().
+		CallContext(gomock.Any(), gomock.Any(), "account_list", gomock.Any()).
+		Times(2).
+		DoAndReturn(func(_ context.Context, accs *[]ethCommon.Address, s string, _ ...interface{}) error {
+			if mockedCallTimes == 0 {
+				*accs = append(*accs, testAddress)
+			}
+			*accs = append(*accs, reloadedAddress)
+
+			mockedCallTimes++
+
+			return nil
+		})
+
+	clefAddr := "http://127.0.0.1:8580"
+	wallet, err := clef.NewWallet(clientMock, clefAddr, testAddress)
+	a.NoError(err)
+	a.NotNil(wallet)
+	a.Equal(testAddress.Hex(), wallet.PubKey().Hex())
+
+	// reload key
+	wallet.Reload(registry.EthereumClefWallet{
+		Name:           wallet.Name(),
+		AccountAddress: reloadedAddress.Hex(),
+		ClefAddress:    clefAddr,
+	})
+
+	a.Equal(reloadedAddress.Hex(), wallet.PubKey().Hex())
+}
