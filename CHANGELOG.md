@@ -33,6 +33,7 @@ The init command now also generate the configuration for tendermint, the flags `
 - [5598](https://github.com/vegaprotocol/vega/issues/5598) - Remove `currentTime` from topology engine to ease snapshot restoration
 - [5609](https://github.com/vegaprotocol/vega/issues/5609) - Set event forwarder last seen height after snapshot restore
 - [5629](https://github.com/vegaprotocol/vega/issues/5629) - Fixes for loading voting power from checkpoint with non genesis validators
+- [5358](https://github.com/vegaprotocol/vega/issues/5358) - Fix equity like shares calculations to match spreadsheet
 
 ## 0.53.0
 

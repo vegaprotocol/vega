@@ -34,6 +34,9 @@ type EquityShares struct {
 	pMvp num.Decimal // @TODO add to snapshot
 	r    num.Decimal
 
+	totalVStake num.Decimal // Not needed in snapshot, we can reconstruct this from the data in snapshot already
+	totalPStake num.Decimal // same as total VStake -> not included in snapshot
+
 	// lps is a map of party id to lp (LiquidityProviders)
 	lps map[string]*lp
 
@@ -47,6 +50,8 @@ func NewEquityShares(mvp num.Decimal) *EquityShares {
 		mvp:          mvp,
 		pMvp:         num.DecimalZero(),
 		r:            num.DecimalZero(),
+		totalVStake:  num.DecimalZero(),
+		totalPStake:  num.DecimalZero(),
 		lps:          map[string]*lp{},
 		stateChanged: true,
 	}
@@ -122,6 +127,11 @@ func (es *EquityShares) SetPartyStake(id string, newStakeU *num.Uint) {
 
 	v, found := es.lps[id]
 	if newStakeU == nil || newStakeU.IsZero() {
+		if found {
+			// remove vStake from total
+			es.totalVStake = es.totalVStake.Sub(v.vStake)
+			es.totalPStake = es.totalPStake.Sub(v.stake)
+		}
 		delete(es.lps, id)
 		es.stateChanged = (es.stateChanged || found)
 		return
@@ -141,13 +151,21 @@ func (es *EquityShares) SetPartyStake(id string, newStakeU *num.Uint) {
 			avg:    avg,
 			vStake: newStake,
 		}
+		es.totalVStake = es.totalVStake.Add(newStake)
+		es.totalPStake = es.totalPStake.Add(newStake)
 		return
 	}
 
 	delta := newStake.Sub(v.stake)
 	if newStake.LessThanOrEqual(v.stake) {
 		// vStake * (newStake/oldStake)
+		// remove old value from totals
+		es.totalVStake = es.totalVStake.Sub(v.vStake)
+		es.totalPStake = es.totalPStake.Sub(v.stake)
 		v.vStake = v.vStake.Mul(newStake.Div(v.stake))
+		// add new values back to totals
+		es.totalVStake = es.totalVStake.Add(v.vStake)
+		es.totalPStake = es.totalPStake.Add(newStake)
 		v.stake = newStake
 		return
 	}
@@ -158,6 +176,9 @@ func (es *EquityShares) SetPartyStake(id string, newStakeU *num.Uint) {
 		// v.avg = ((eq * v.avg) + (delta * es.mvp)) / (eq + v.stake)
 		v.avg = (eq.Mul(v.avg).Add(delta.Mul(es.mvp))).Div(eq.Add(v.stake))
 	}
+	// update totals
+	es.totalVStake = es.totalVStake.Add(delta)
+	es.totalPStake = es.totalPStake.Sub(v.stake).Add(newStake)
 	v.vStake = v.vStake.Add(delta) // increase
 	v.stake = newStake
 }
@@ -165,7 +186,12 @@ func (es *EquityShares) SetPartyStake(id string, newStakeU *num.Uint) {
 // AvgEntryValuation returns the Average Entry Valuation for a given party.
 func (es *EquityShares) AvgEntryValuation(id string) num.Decimal {
 	if v, ok := es.lps[id]; ok {
-		es.stateChanged = true
+		// calculate average
+		avg := v.vStake.Mul(es.totalPStake.Div(es.totalVStake))
+		if !avg.Equal(v.avg) {
+			v.avg = avg
+			e.stateChanged = true
+		}
 		return v.avg
 	}
 	return num.DecimalZero()
@@ -186,7 +212,11 @@ func (es *EquityShares) mustEquity(party string) num.Decimal {
 // Returns an error if the party has no stake.
 func (es *EquityShares) equity(id string) (num.Decimal, error) {
 	if v, ok := es.lps[id]; ok {
-		return (v.vStake.Mul(es.mvp)).Div(v.avg), nil
+		// avoid division by zero, if total vStake is zero, then v.vStake has to be zero
+		if es.totalVStake.IsZero() {
+			return num.DecimalZero(), nil
+		}
+		return v.vStake.Div(es.totalVStake), nil
 	}
 
 	return num.DecimalZero(), fmt.Errorf("party %s has no stake", id)
@@ -199,61 +229,26 @@ func (es *EquityShares) AllShares() map[string]num.Decimal {
 
 // SharesFromParty returns the equity-like shares of a given party on the market.
 func (es *EquityShares) SharesFromParty(party string) num.Decimal {
-	totalEquity := num.DecimalZero()
-	partyELS := num.DecimalZero()
-	for id := range es.lps {
-		eq, err := es.equity(id)
-		if err != nil {
-			// since equity(id) returns an error when the party does not exist
-			// getting an error here means we are doing something wrong cause
-			// it should never happen unless `.equity()` behavior changes.
-			panic(err)
-		}
-		if id == party {
-			partyELS = eq
-		}
-		totalEquity = totalEquity.Add(eq)
+	eq, err := es.equity(id)
+	if err != nil {
+		panic(err)
 	}
-
-	if partyELS.Equal(num.DecimalZero()) || totalEquity.Equal(num.DecimalZero()) {
-		return num.DecimalZero()
-	}
-
-	return partyELS.Div(totalEquity)
+	return eq
 }
 
 // SharesExcept returns the ratio of equity for each party on the market, except
 // the ones listed in parameter.
 func (es *EquityShares) SharesExcept(except map[string]struct{}) map[string]num.Decimal {
-	// Calculate the equity for each party and the totalEquity (the sum of all
-	// the equities)
-	var totalEquity num.Decimal
-	shares := map[string]num.Decimal{}
+	shares := make(map[string]num.Decimal, len(es.lps)-len(except))
 	for id := range es.lps {
-		// If the party is not one of the deployed parties, we just skip.
 		if _, ok := except[id]; ok {
 			continue
 		}
 		eq, err := es.equity(id)
 		if err != nil {
-			// since equity(id) returns an error when the party does not exist
-			// getting an error here means we are doing something wrong cause
-			// it should never happen unless `.equity()` behavior changes.
 			panic(err)
 		}
 		shares[id] = eq
-		totalEquity = totalEquity.Add(eq)
 	}
-
-	for id, eq := range shares {
-		eqshare := eq.Div(totalEquity)
-		shares[id] = eqshare
-		es.lps[id].share = eqshare
-	}
-
-	if len(shares) > 0 {
-		es.stateChanged = true
-	}
-
 	return shares
 }
