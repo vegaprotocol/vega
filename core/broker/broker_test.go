@@ -28,7 +28,7 @@ import (
 	"code.vegaprotocol.io/vega/core/broker"
 	"code.vegaprotocol.io/vega/core/broker/mocks"
 	"code.vegaprotocol.io/vega/core/events"
-	vgcontext "code.vegaprotocol.io/vega/core/libs/context"
+	vgcontext "code.vegaprotocol.io/vega/libs/context"
 	"code.vegaprotocol.io/vega/logging"
 	"go.nanomsg.org/mangos/v3/protocol/pull"
 

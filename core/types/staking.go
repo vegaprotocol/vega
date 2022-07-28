@@ -20,8 +20,8 @@ import (
 
 	vgproto "code.vegaprotocol.io/protos/vega"
 	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
-	"code.vegaprotocol.io/vega/core/libs/crypto"
 	"code.vegaprotocol.io/vega/core/types/num"
+	"code.vegaprotocol.io/vega/libs/crypto"
 )
 
 type StakeLinkingType = eventspb.StakeLinking_Type

@@ -20,7 +20,7 @@ import (
 	"sync"
 	"time"
 
-	"code.vegaprotocol.io/vega/core/libs/proto"
+	"code.vegaprotocol.io/vega/libs/proto"
 	mangos "go.nanomsg.org/mangos/v3"
 	"go.nanomsg.org/mangos/v3/protocol"
 	"go.nanomsg.org/mangos/v3/protocol/push"

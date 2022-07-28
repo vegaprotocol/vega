@@ -17,14 +17,14 @@ import (
 	"testing"
 	"time"
 
-	vegactx "code.vegaprotocol.io/vega/core/libs/context"
 	"code.vegaprotocol.io/vega/core/snapshot"
 	"code.vegaprotocol.io/vega/core/snapshot/mocks"
 	"code.vegaprotocol.io/vega/core/types"
 	tmocks "code.vegaprotocol.io/vega/core/types/mocks"
+	vegactx "code.vegaprotocol.io/vega/libs/context"
 	"code.vegaprotocol.io/vega/logging"
 
-	"code.vegaprotocol.io/vega/core/libs/proto"
+	"code.vegaprotocol.io/vega/libs/proto"
 	"github.com/cosmos/iavl"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"

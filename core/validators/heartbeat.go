@@ -21,8 +21,8 @@ import (
 	"time"
 
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
-	vgcontext "code.vegaprotocol.io/vega/core/libs/context"
 	"code.vegaprotocol.io/vega/core/txn"
+	vgcontext "code.vegaprotocol.io/vega/libs/context"
 	"code.vegaprotocol.io/vega/logging"
 
 	"github.com/cenkalti/backoff"

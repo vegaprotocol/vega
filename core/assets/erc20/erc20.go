@@ -28,11 +28,11 @@ import (
 	"code.vegaprotocol.io/vega/core/bridges"
 	"code.vegaprotocol.io/vega/core/contracts/erc20"
 	bridge "code.vegaprotocol.io/vega/core/contracts/erc20_bridge_logic_restricted"
-	vgerrors "code.vegaprotocol.io/vega/core/libs/errors"
 	"code.vegaprotocol.io/vega/core/metrics"
 	ethnw "code.vegaprotocol.io/vega/core/nodewallets/eth"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/core/types/num"
+	vgerrors "code.vegaprotocol.io/vega/libs/errors"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	ethcommon "github.com/ethereum/go-ethereum/common"

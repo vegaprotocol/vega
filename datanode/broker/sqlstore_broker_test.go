@@ -20,11 +20,11 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/core/events"
-	vgcontext "code.vegaprotocol.io/vega/core/libs/context"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/datanode/broker"
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
+	vgcontext "code.vegaprotocol.io/vega/libs/context"
 	"code.vegaprotocol.io/vega/logging"
 	"github.com/pkg/errors"
 

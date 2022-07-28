@@ -31,11 +31,11 @@ import (
 	ethclient "code.vegaprotocol.io/vega/core/client/eth"
 	"code.vegaprotocol.io/vega/core/config"
 	"code.vegaprotocol.io/vega/core/coreapi"
-	"code.vegaprotocol.io/vega/core/libs/pprof"
 	"code.vegaprotocol.io/vega/core/metrics"
 	"code.vegaprotocol.io/vega/core/nodewallets"
 	"code.vegaprotocol.io/vega/core/protocol"
 	"code.vegaprotocol.io/vega/core/stats"
+	"code.vegaprotocol.io/vega/libs/pprof"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/version"
 

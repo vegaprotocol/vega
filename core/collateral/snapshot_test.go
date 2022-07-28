@@ -28,9 +28,9 @@ import (
 	"code.vegaprotocol.io/vega/core/types/num"
 	"code.vegaprotocol.io/vega/logging"
 
-	vgcontext "code.vegaprotocol.io/vega/core/libs/context"
-	"code.vegaprotocol.io/vega/core/libs/proto"
 	snp "code.vegaprotocol.io/vega/core/snapshot"
+	vgcontext "code.vegaprotocol.io/vega/libs/context"
+	"code.vegaprotocol.io/vega/libs/proto"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

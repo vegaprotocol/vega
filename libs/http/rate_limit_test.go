@@ -1,7 +1,7 @@
 // Copyright (c) 2022 Gobalsky Labs Limited
 //
 // Use of this software is governed by the Business Source License included
-// in the LICENSE.DATANODE file and at https://www.mariadb.com/bsl11.
+// in the LICENSE.VEGA file and at https://www.mariadb.com/bsl11.
 //
 // Change Date: 18 months from the later of the date of the first publicly
 // available Distribution of this version of the repository, and 25 June 2022.
@@ -17,17 +17,17 @@ import (
 	"testing"
 	"time"
 
-	"code.vegaprotocol.io/vega/datanode/config/encoding"
-	vhttp "code.vegaprotocol.io/vega/datanode/http"
+	"code.vegaprotocol.io/vega/core/config/encoding"
+	vghttp "code.vegaprotocol.io/vega/libs/http"
 
 	"github.com/stretchr/testify/assert"
 )
 
 func TestRateLimit(t *testing.T) {
 	ctx := context.Background()
-	rl, err := vhttp.NewRateLimit(
+	rl, err := vghttp.NewRateLimit(
 		ctx,
-		vhttp.RateLimitConfig{
+		vghttp.RateLimitConfig{
 			CoolDown:  encoding.Duration{Duration: 1 * time.Minute},
 			AllowList: []string{"1.2.3.4/32", "2.3.4.252/30", "fe80::/10"},
 		},
@@ -46,11 +46,6 @@ func TestRateLimit(t *testing.T) {
 		err = rl.NewRequest("someprefix", "2.2.2.2")
 		assert.NoError(t, err)
 		err = rl.NewRequest("someprefix", "2.2.2.2")
-		assert.Error(t, err)
-
-		err = rl.NewRequest("someprefix", "1a2b::abcd")
-		assert.NoError(t, err)
-		err = rl.NewRequest("someprefix", "1a2b::abcd")
 		assert.Error(t, err)
 	}
 }
