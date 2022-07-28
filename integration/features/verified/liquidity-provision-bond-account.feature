@@ -21,7 +21,7 @@ Feature: Replicate LP getting distressed during continuous trading, check if pen
       | party2 | USD   | 100000000 |
       | party3 | USD   | 100000000 |
 
-   Scenario: 001, LP gets distressed during continuous trading, 0044-LIQM-002, No DPD setting
+   Scenario: 001, LP gets distressed during continuous trading, 0044-LIME-002, No DPD setting
 
    Given the following network parameters are set:
       | name                                          | value |
@@ -178,7 +178,7 @@ Feature: Replicate LP getting distressed during continuous trading, check if pen
 #The sell LP order was updated to sell 90@1020 (potential short becoming 105@(15000+91800)/105 (≃1017.1). The margin requirement drops, but the release level remains above the margin balance. Because the margin requirement when the sell order for 15@1000 was submitted caused the margin balance to go up to 500000, we didn't release any of the balance later on. The initial margin level dropped down to 448170, but the release level was higher than the margin account balance still.
 #The upshot is that seemingly, we transferred too much to the margin account, because briefly (between placing the new order and repricing the LP orders), that was the balance required.
 
-Scenario: 002, LP gets slashed twice during continuous trading, 0044-LIQM-002, No DPD setting
+Scenario: 002, LP gets slashed twice during continuous trading, 0044-LIME-002, No DPD setting
 
    Given the following network parameters are set:
       | name                                          | value |
