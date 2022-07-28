@@ -9,14 +9,15 @@ Feature: Test mark to market settlement
       | name                           | value |
       | market.auction.minimumDuration | 1     |
 
-  Scenario: If settlement amount <= the party’s margin account balance entire settlement amount is transferred from party’s margin account to the market’s temporary settlement account (0003-MTMK-001); check the existence of parties' position record(0006-POSI-027)
+  Scenario: If settlement amount <= the party’s margin account balance entire settlement amount is transferred from party’s margin account to the market’s temporary settlement account (0003-MTMK-001); check the existence of parties' position record(0006-POSI-027); check long and short position(0006-POSI-008; 0006-POSI-009;)
     Given the parties deposit on asset's general account the following amount:
       | party  | asset | amount |
       | party1 | ETH   | 10000  |
       | party2 | ETH   | 10000  |
-      | party3 | ETH   | 10000  |
+      | party3 | ETH   | 10000  | 
       | aux    | ETH   | 100000 |
-      | aux2   | ETH   | 100000 |
+      | aux2   | ETH   | 100000 | 
+      | aux3   | ETH   | 100000 | 
       | lpprov | ETH   | 100000 |
 
     When the parties submit the following liquidity provision:
@@ -27,8 +28,8 @@ Feature: Test mark to market settlement
      # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     And the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     |
-      | aux   | ETH/DEC19 | buy  | 1      | 49    | 0                | TYPE_LIMIT | TIF_GTC |
-      | aux   | ETH/DEC19 | sell | 1      | 5001  | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux   | ETH/DEC19 | buy  | 5      | 49    | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux   | ETH/DEC19 | sell | 5      | 5001  | 0                | TYPE_LIMIT | TIF_GTC |
       | aux2  | ETH/DEC19 | buy  | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
       | aux   | ETH/DEC19 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
 
@@ -38,7 +39,7 @@ Feature: Test mark to market settlement
 
     When the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
-      | party1 | ETH/DEC19 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party1 | ETH/DEC19 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |  
       | party2 | ETH/DEC19 | buy  | 1      | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
     Then the parties should have the following account balances:
       | party  | asset | market id | margin | general |
@@ -50,9 +51,10 @@ Feature: Test mark to market settlement
       | party    | volume | unrealised pnl | realised pnl |
       | aux      | -1     | 0              | 0            |
       | aux2     | 1      | 0              | 0            |
+      | party1   | -1     | 0              | 0            |
+      | party2   | 1      | 0              | 0            |
       # | party3   | -1     | 0              | 0            |
       
-
     And the settlement account should have a balance of "0" for the market "ETH/DEC19"
     When the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
@@ -74,10 +76,50 @@ Feature: Test mark to market settlement
       | from    | to     | from account        | to account              | market id | amount | asset |
       | party1 | market | ACCOUNT_TYPE_MARGIN | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC19 | 1000   | ETH   |
       | party1 | market | ACCOUNT_TYPE_MARGIN | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC19 | 1000   | ETH   |
-    And the cumulated balance for all accounts should be worth "330000"
+    And the cumulated balance for all accounts should be worth "430000"
     And the settlement account should have a balance of "0" for the market "ETH/DEC19"
 
-  Scenario: If settlement amount > party’s margin account balance  and <= party's margin account balance + general account balance for the asset, he full balance of the party’s margin account is transferred to the market’s temporary settlement account the remainder, i.e. difference between the amount transferred from the margin account and the settlement amount, is transferred from the party’s general account for the asset to the market’s temporary settlement account (0003-MTMK-002, 0003-MTMK-005; 0003-MTMK-006; 0003-MTMK-008; 0003-MTMK-009)
+    Then the parties should have the following profit and loss:
+      | party    | volume | unrealised pnl | realised pnl |
+      | aux      | -1     | -1000          | 0            |
+      | aux2     | 1      | 1000           | 0            |
+      | party1   | -2     | -1000          | 0            |
+      | party2   | 1      | 1000           | 0            |
+      | party3   | 1      | 0              | 0            |
+
+    When the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     |
+      | aux2   | ETH/DEC19 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux3   | ETH/DEC19 | buy  | 2      | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
+
+    Then the parties should have the following profit and loss:
+      | party    | volume | unrealised pnl | realised pnl |
+      | aux      | -1     | 0              | 0            |
+      #aux2 closed long position: AC 0006-POSI-009
+      | aux2     | 0      | 0              | 0            |
+      #aux3 opened short position
+      | aux3     | 1      | 0              | 0            |
+      | party1   | -2     | 1000           | 0            |
+      | party2   | 1      | 0              | 0            |
+      | party3   | 1      | -1000          | 0            |
+
+     When the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     |
+      | aux    | ETH/DEC19 | buy  | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux3   | ETH/DEC19 | sell | 2      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+
+     Then the parties should have the following profit and loss:
+      | party    | volume | unrealised pnl | realised pnl |
+      | aux      | -1     | 0              | 0            |
+      #aux closed short position: AC 0006-POSI-008
+      | aux2     | 0      | 0              | 0            |
+      #aux3 opened long position
+      | aux3     | 1      | 0              | 0            |
+      | party1   | -2     | 1000           | 0            |
+      | party2   | 1      | 0              | 0            |
+      | party3   | 1      | -1000          | 0            |
+
+  Scenario: If settlement amount > party’s margin account balance and <= party's margin account balance + general account balance for the asset, he full balance of the party’s margin account is transferred to the market’s temporary settlement account the remainder, i.e. difference between the amount transferred from the margin account and the settlement amount, is transferred from the party’s general account for the asset to the market’s temporary settlement account (0003-MTMK-002, 0003-MTMK-005; 0003-MTMK-006; 0003-MTMK-008; 0003-MTMK-009)
     Given the parties deposit on asset's general account the following amount:
       | party  | asset | amount |
       | party1 | ETH   | 10000  |
@@ -212,4 +254,5 @@ Feature: Test mark to market settlement
       | party2 | ETH   | ETH/DEC19 | 132    | 9868    |
     And the cumulated balance for all accounts should be worth "330000"
     And the settlement account should have a balance of "0" for the market "ETH/DEC19"
+
 
