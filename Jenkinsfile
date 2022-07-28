@@ -313,10 +313,14 @@ pipeline {
                                 credentialsId: 'vegacapsule-s3-bucket-name',
                                 variable: 'VEGACAPSULE_S3_BUCKET_NAME'
                             )
-                            withCredentials([vegaS3Ops, bucketName]) {
-                                sh label: 'Upload data-node to S3', script: '''
-                                    aws s3 cp ./cmd/data-node/data-node-linux-amd64 s3://''' + env.VEGACAPSULE_S3_BUCKET_NAME + '''/bin/linux-amd64-''' + versionHash + '''
-                                '''
+                            try {
+                                withCredentials([vegaS3Ops, bucketName]) {
+                                    sh label: 'Upload data-node to S3', script: '''
+                                        aws s3 cp ./cmd/data-node/data-node-linux-amd64 s3://''' + env.VEGACAPSULE_S3_BUCKET_NAME + '''/bin/linux-amd64-''' + versionHash + '''
+                                    '''
+                                }
+                            } catch(err) {
+                                print(err)
                             }
                         }
                     }
