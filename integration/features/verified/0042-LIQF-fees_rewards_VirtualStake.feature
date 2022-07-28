@@ -430,12 +430,8 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
 
     And the liquidity provider fee shares for the market "ETH/MAR22" should be:
       | party | equity like share    | average entry valuation |
-      #| lp1   | 0.7267441860465116   | 5000                    |
-      #| lp2   | 0.2732558139534884   | 1880                    |
-      #| lp1   |    | 0                       |
-      #| lp2   |    | 0                       |
       | lp1   | 0.7267441860465116   | 5000                    |
-      | lp2   | 0.2732558139534884   | 1880.00000000000001     |
+      | lp2   | 0.2732558139534884   | 1880                    |
 
     Then time is updated to "2019-11-30T10:22:10Z"
     #week6

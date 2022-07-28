@@ -68,6 +68,9 @@ func (es *EquityShares) OpeningAuctionEnded() {
 	es.openingAuctionEnded = true
 	es.stateChanged = true
 	es.setOpeningAuctionAVG() // really not sure if this is the right thing/place to do this
+	// just make sure that we zero out these values
+	es.pMvp = num.DecimalZero()
+	es.r = num.DecimalZero()
 }
 
 // we just the average entry valuation to the same value
@@ -80,41 +83,45 @@ func (es *EquityShares) setOpeningAuctionAVG() {
 }
 
 func (es *EquityShares) UpdateVirtualStake() {
-	// this isn't used if we have to set vStake to physical stake
-	growth := es.r
 	// if A(n) == 0 or A(n-1) == 0, vStake = physical stake
-	setPhysical := (es.mvp.IsZero() || es.pMvp.IsZero())
-	if !setPhysical {
-		growth = num.NewDecimalFromFloat(1.0).Add(growth)
-	}
-	for _, v := range es.lps {
-		// default to physical stake
-		vStake := v.stake
-		if !setPhysical {
-			// unless A(n) != 0 || A(n-1) != 0
-			// then set vStake = max(physical stake, ((r+1)*vStqake))
-			vStake = num.MaxD(v.stake, growth.Mul(v.vStake))
+	if es.mvp.IsZero() || es.pMvp.IsZero() {
+		for _, v := range es.lps {
+			es.totalVStake = es.totalVStake.Sub(v.vStake).Add(v.stake)
+			v.vStake = v.stake
+			v.avg = v.vStake // pStake and vStake should be identical here, so average == vStake * (pStake/pStake) or vStake * 1
+			// v.avg = v.vStake.Mul(es.totalPStake.Div(es.totalVStake))
 		}
+		es.stateChanged = true
+		return
+	}
+	// this isn't used if we have to set vStake to physical stake
+	growth := es.r.Add(num.NewDecimalFromFloat(1.0))
+	for _, v := range es.lps {
+		// set vStake = max(physical stake, ((r+1)*vStake))
+		vStake := num.MaxD(v.stake, growth.Mul(v.vStake))
 		// if virtual stake doesn't change, then stateChanged shouldn't be toggled
 		es.stateChanged = (es.stateChanged || !vStake.Equals(v.vStake))
 		// update total
 		es.totalVStake = es.totalVStake.Sub(v.vStake).Add(vStake)
 		v.vStake = vStake
+		// this is probably not correct, we probably need to update vStake across all LP's first
+		// then recalculate the avg entry val
+		v.avg = v.vStake.Mul(es.totalPStake.Div(es.totalVStake))
 	}
 }
 
-func (es *EquityShares) UpdateTradeVol(tv num.Decimal) *EquityShares {
-	es.r = num.DecimalZero()
-	if !es.pTradeVol.IsZero() && !tv.IsZero() {
-		growth := tv.Sub(es.pTradeVol).Div(es.pTradeVol)
+func (es *EquityShares) AvgTradeVol(avg num.Decimal) *EquityShares {
+	if !es.mvp.IsZero() && !avg.IsZero() {
+		growth := avg.Sub(es.mvp).Div(es.mvp)
 		es.stateChanged = (es.stateChanged || !growth.Equals(es.r))
 		es.r = growth
+	} else {
+		es.r = num.DecimalZero()
+		es.stateChanged = true // better to be safe than sorry
 	}
-	mvp := tv.Div(es.totalPStake) // not really something we'd use, but essentially is the average LP value
-	es.stateChanged = (es.stateChanged || !es.mvp.Equals(mvp) || !es.mvp.Equals(es.pMvp) || !tv.Equals(es.pTradeVol))
-	es.pTradeVol = tv
+	es.stateChanged = (es.stateChanged || !avg.Equals(es.mvp) || !es.pMvp.Equals(es.mvp))
 	es.pMvp = es.mvp
-	es.mvp = mvp
+	es.mvp = avg
 	return es
 }
 
@@ -202,6 +209,7 @@ func (es *EquityShares) SetPartyStake(id string, newStakeU *num.Uint) {
 		// this average entry valuation is borked, mvp is now trade_value/p stake
 		// instead of trade value * factor || total stake
 		// v.avg = ((eq * v.avg) + (delta * es.mvp)) / (eq + v.stake)
+		// this doesn't match the spreadsheet at all...
 		// v.avg = (eq.Mul(v.avg).Add(delta.Mul(es.mvp))).Div(eq.Add(v.stake))
 	}
 }
