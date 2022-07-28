@@ -17,8 +17,8 @@ import (
 	"sync"
 
 	"code.vegaprotocol.io/data-node/datanode/entities"
-	"code.vegaprotocol.io/data-node/logging"
 	"code.vegaprotocol.io/data-node/datanode/sqlstore"
+	"code.vegaprotocol.io/data-node/logging"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/types/num"
 	"github.com/pkg/errors"

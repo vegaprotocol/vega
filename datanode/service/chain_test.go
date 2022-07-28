@@ -18,9 +18,9 @@ import (
 	"testing"
 
 	"code.vegaprotocol.io/data-node/datanode/entities"
-	"code.vegaprotocol.io/data-node/logging"
 	"code.vegaprotocol.io/data-node/datanode/service"
 	"code.vegaprotocol.io/data-node/datanode/service/mocks"
+	"code.vegaprotocol.io/data-node/logging"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 )

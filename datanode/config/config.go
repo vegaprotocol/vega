@@ -25,10 +25,10 @@ import (
 	"code.vegaprotocol.io/data-node/datanode/broker"
 	"code.vegaprotocol.io/data-node/datanode/config/encoding"
 	"code.vegaprotocol.io/data-node/datanode/gateway"
-	"code.vegaprotocol.io/data-node/logging"
 	"code.vegaprotocol.io/data-node/datanode/metrics"
 	"code.vegaprotocol.io/data-node/datanode/pprof"
 	"code.vegaprotocol.io/data-node/datanode/sqlstore"
+	"code.vegaprotocol.io/data-node/logging"
 	vgfs "code.vegaprotocol.io/shared/libs/fs"
 	"code.vegaprotocol.io/shared/paths"
 )

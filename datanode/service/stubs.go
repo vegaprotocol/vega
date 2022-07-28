@@ -13,8 +13,8 @@
 package service
 
 import (
-	"code.vegaprotocol.io/data-node/logging"
 	"code.vegaprotocol.io/data-node/datanode/sqlstore"
+	"code.vegaprotocol.io/data-node/logging"
 )
 
 type Asset struct{ *sqlstore.Assets }

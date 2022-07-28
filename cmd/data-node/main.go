@@ -17,7 +17,7 @@ import (
 	"fmt"
 	"os"
 
-	"code.vegaprotocol.io/data-node/config"
+	"code.vegaprotocol.io/data-node/datanode/config"
 	"github.com/jessevdk/go-flags"
 )
 

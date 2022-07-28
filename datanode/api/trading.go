@@ -16,8 +16,8 @@ import (
 	"context"
 	"time"
 
-	"code.vegaprotocol.io/data-node/logging"
 	"code.vegaprotocol.io/data-node/datanode/metrics"
+	"code.vegaprotocol.io/data-node/logging"
 	protoapi "code.vegaprotocol.io/protos/vega/api/v1"
 	"github.com/pkg/errors"
 )

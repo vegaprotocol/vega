@@ -16,9 +16,9 @@ import (
 	"context"
 	"testing"
 
-	"code.vegaprotocol.io/data-node/logging"
 	"code.vegaprotocol.io/data-node/datanode/sqlsubscribers"
 	"code.vegaprotocol.io/data-node/datanode/sqlsubscribers/mocks"
+	"code.vegaprotocol.io/data-node/logging"
 	oraclespb "code.vegaprotocol.io/protos/vega/oracles/v1"
 	"code.vegaprotocol.io/vega/events"
 	"github.com/golang/mock/gomock"

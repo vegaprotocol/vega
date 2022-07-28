@@ -16,7 +16,7 @@ import (
 	"context"
 	"fmt"
 
-	"code.vegaprotocol.io/data-node/config"
+	"code.vegaprotocol.io/data-node/datanode/config"
 	"code.vegaprotocol.io/data-node/logging"
 	"code.vegaprotocol.io/shared/paths"
 

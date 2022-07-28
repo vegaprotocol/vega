@@ -19,8 +19,8 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/data-node/datanode/entities"
-	"code.vegaprotocol.io/data-node/logging"
 	"code.vegaprotocol.io/data-node/datanode/utils"
+	"code.vegaprotocol.io/data-node/logging"
 )
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/market_data_mock.go -package mocks code.vegaprotocol.io/data-node/datanode/service MarketDataStore

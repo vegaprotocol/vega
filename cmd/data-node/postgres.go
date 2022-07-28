@@ -19,7 +19,7 @@ import (
 	"os/signal"
 	"syscall"
 
-	"code.vegaprotocol.io/data-node/config"
+	"code.vegaprotocol.io/data-node/datanode/config"
 	"code.vegaprotocol.io/data-node/logging"
 	"code.vegaprotocol.io/shared/paths"
 	embeddedpostgres "github.com/fergusstrange/embedded-postgres"

@@ -16,9 +16,9 @@ import (
 	"context"
 	"time"
 
-	"code.vegaprotocol.io/data-node/logging"
 	"code.vegaprotocol.io/data-node/datanode/metrics"
 	"code.vegaprotocol.io/data-node/datanode/subscribers"
+	"code.vegaprotocol.io/data-node/logging"
 	protoapi "code.vegaprotocol.io/protos/vega/api/v1"
 	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
 	"code.vegaprotocol.io/vega/events"

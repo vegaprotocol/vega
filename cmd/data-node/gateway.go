@@ -20,9 +20,9 @@ import (
 	"os/signal"
 	"syscall"
 
-	"code.vegaprotocol.io/data-node/config"
-	"code.vegaprotocol.io/data-node/gateway"
-	"code.vegaprotocol.io/data-node/gateway/server"
+	"code.vegaprotocol.io/data-node/datanode/config"
+	"code.vegaprotocol.io/data-node/datanode/gateway"
+	"code.vegaprotocol.io/data-node/datanode/gateway/server"
 	"code.vegaprotocol.io/data-node/logging"
 	"code.vegaprotocol.io/shared/paths"
 	"golang.org/x/sync/errgroup"

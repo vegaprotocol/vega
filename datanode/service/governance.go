@@ -16,8 +16,8 @@ import (
 	"context"
 
 	"code.vegaprotocol.io/data-node/datanode/entities"
-	"code.vegaprotocol.io/data-node/logging"
 	"code.vegaprotocol.io/data-node/datanode/utils"
+	"code.vegaprotocol.io/data-node/logging"
 )
 
 type ProposalStore interface {

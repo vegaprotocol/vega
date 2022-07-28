@@ -19,8 +19,8 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/data-node/datanode/entities"
-	"code.vegaprotocol.io/data-node/logging"
 	"code.vegaprotocol.io/data-node/datanode/metrics"
+	"code.vegaprotocol.io/data-node/logging"
 	v2 "code.vegaprotocol.io/protos/data-node/api/v2"
 	"github.com/georgysavva/scany/pgxscan"
 	"github.com/jackc/pgx/v4"

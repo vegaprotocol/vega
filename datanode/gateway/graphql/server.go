@@ -24,8 +24,8 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/data-node/datanode/gateway"
-	"code.vegaprotocol.io/data-node/logging"
 	"code.vegaprotocol.io/data-node/datanode/metrics"
+	"code.vegaprotocol.io/data-node/logging"
 	protoapi "code.vegaprotocol.io/protos/data-node/api/v1"
 	v2 "code.vegaprotocol.io/protos/data-node/api/v2"
 	vegaprotoapi "code.vegaprotocol.io/protos/vega/api/v1"

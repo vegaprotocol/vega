@@ -20,9 +20,9 @@ import (
 	"strconv"
 
 	"code.vegaprotocol.io/data-node/datanode/candlesv2"
-	"code.vegaprotocol.io/data-node/logging"
 	"code.vegaprotocol.io/data-node/datanode/service"
 	"code.vegaprotocol.io/data-node/datanode/vegatime"
+	"code.vegaprotocol.io/data-node/logging"
 	pbtypes "code.vegaprotocol.io/protos/vega"
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	eventspb "code.vegaprotocol.io/protos/vega/events/v1"

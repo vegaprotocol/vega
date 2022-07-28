@@ -17,8 +17,8 @@ import (
 	"fmt"
 
 	"code.vegaprotocol.io/data-node/datanode/entities"
-	"code.vegaprotocol.io/data-node/logging"
 	"code.vegaprotocol.io/data-node/datanode/utils"
+	"code.vegaprotocol.io/data-node/logging"
 	lru "github.com/hashicorp/golang-lru"
 )
 

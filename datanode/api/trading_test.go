@@ -27,9 +27,9 @@ import (
 	"code.vegaprotocol.io/data-node/datanode/broker"
 	"code.vegaprotocol.io/data-node/datanode/config"
 	vgtesting "code.vegaprotocol.io/data-node/datanode/libs/testing"
-	"code.vegaprotocol.io/data-node/logging"
 	"code.vegaprotocol.io/data-node/datanode/sqlstore"
 	"code.vegaprotocol.io/data-node/datanode/subscribers"
+	"code.vegaprotocol.io/data-node/logging"
 	"github.com/golang/protobuf/proto"
 
 	protoapi "code.vegaprotocol.io/protos/data-node/api/v1"
