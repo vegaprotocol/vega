@@ -24,6 +24,7 @@ cmd/vegawallet
 clef
 codegen
 cyclomatic
+datanode
 datestamps
 datetime
 denylist
@@ -63,6 +64,8 @@ Kanban
 lifecycle
 linters
 LICENSE.MIT
+LICENSE.VEGA
+LICENSE.DATANODE
 MacOSX
 mainnet
 MarkToMarket
