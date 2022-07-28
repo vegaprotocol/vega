@@ -358,6 +358,10 @@ func (g *GRPCServer) Start(ctx context.Context, lis net.Listener) error {
 		marketDepthService:        g.marketDepthService,
 		nodeService:               g.nodeService,
 		epochService:              g.epochService,
+		riskFactorService:         g.riskFactorService,
+		networkParameterService:   g.networkParameterService,
+		checkpointService:         g.checkpointService,
+		stakeLinkingService:       g.stakeLinkingService,
 	}
 
 	protoapi2.RegisterTradingDataServiceServer(g.srv, tradingDataSvcV2)

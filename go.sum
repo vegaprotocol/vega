@@ -61,8 +61,8 @@ cloud.google.com/go/storage v1.6.0/go.mod h1:N7U0C8pVQ/+NIKOBQyamJIeKQKkZ+mxpohl
 cloud.google.com/go/storage v1.8.0/go.mod h1:Wv1Oy7z6Yz3DshWRJFhqM/UCfaWIRTdp0RXyy7KQOVs=
 cloud.google.com/go/storage v1.10.0/go.mod h1:FLPqc6j+Ki4BU591ie1oL6qBQGu2Bl/tZ9ullr3+Kg0=
 cloud.google.com/go/storage v1.14.0/go.mod h1:GrKmX003DSIwi9o29oFT7YDnHYwZoctc3fOKtUw0Xmo=
-code.vegaprotocol.io/protos v0.53.1-0.20220726141629-15212132873d h1:mqFUJB9FTY1yF1JAjBC1NVlJaS6VeYeQ4qtaLV+gsYw=
-code.vegaprotocol.io/protos v0.53.1-0.20220726141629-15212132873d/go.mod h1:w0qUn/OS658H8GvZ4kDUkdG4txItw4ypOnBrKAO4PfY=
+code.vegaprotocol.io/protos v0.53.1-0.20220727163030-0b2c5b20b0d4 h1:nPqBkjuD/EC6c6AuKMqcz0nWxb5/oTy1n4S7y4CM5Qo=
+code.vegaprotocol.io/protos v0.53.1-0.20220727163030-0b2c5b20b0d4/go.mod h1:w0qUn/OS658H8GvZ4kDUkdG4txItw4ypOnBrKAO4PfY=
 code.vegaprotocol.io/shared v0.0.0-20220614080106-5c97205b0d92 h1:BjS0uyoTUFgbBNY3clzSj0fDA1rAPLsV5dNMwfpvSNg=
 code.vegaprotocol.io/shared v0.0.0-20220614080106-5c97205b0d92/go.mod h1:pNHKwqRDkotUN0s6jErl7Eb2EpZa2HAf03lyPMTCUT0=
 code.vegaprotocol.io/vega v0.53.1-0.20220727143926-827e47ddf01d h1:n17Q+pBW2QAa6VAtrBjxmkvpQMJQljZpHTjytec1jlg=

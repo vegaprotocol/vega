@@ -308,14 +308,16 @@ func (t *tradingDataService) GetVegaTime(ctx context.Context, _ *protoapi.GetVeg
 /****************************** Checkpoints **************************************/
 
 func (t *tradingDataService) Checkpoints(ctx context.Context, _ *protoapi.CheckpointsRequest) (*protoapi.CheckpointsResponse, error) {
-	checkpoints, err := t.checkpointService.GetAll(ctx)
+	checkpoints, _, err := t.checkpointService.GetAll(ctx, entities.CursorPagination{
+		NewestFirst: true,
+	})
 	if err != nil {
 		return nil, err
 	}
 
 	out := make([]*protoapi.Checkpoint, len(checkpoints))
 	for i, cp := range checkpoints {
-		out[i] = cp.ToProto()
+		out[i] = cp.ToV1Proto()
 	}
 
 	return &protoapi.CheckpointsResponse{
@@ -378,7 +380,7 @@ func (t *tradingDataService) Transfers(ctx context.Context, req *protoapi.Transf
 
 func (t *tradingDataService) NetworkParameters(ctx context.Context, req *protoapi.NetworkParametersRequest) (*protoapi.NetworkParametersResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("NetworkParameters SQL")()
-	nps, err := t.networkParameterService.GetAll(ctx)
+	nps, _, err := t.networkParameterService.GetAll(ctx, entities.CursorPagination{})
 	if err != nil {
 		return nil, apiError(codes.Internal, err)
 	}
@@ -2131,7 +2133,10 @@ func (t *tradingDataService) PartyStake(ctx context.Context, req *protoapi.Party
 
 	partyID := entities.NewPartyID(req.Party)
 
-	stake, stakeLinkings := t.stakeLinkingService.GetStake(ctx, partyID, entities.OffsetPagination{})
+	stake, stakeLinkings, _, err := t.stakeLinkingService.GetStake(ctx, partyID, entities.OffsetPagination{})
+	if err != nil {
+		return nil, apiError(codes.Internal, fmt.Errorf("retrieving party stake linkings: %w", err))
+	}
 	outStakeLinkings := make([]*eventspb.StakeLinking, 0, len(stakeLinkings))
 	for _, v := range stakeLinkings {
 		outStakeLinkings = append(outStakeLinkings, v.ToProto())

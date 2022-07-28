@@ -14,9 +14,11 @@ package sqlstore
 
 import (
 	"context"
+	"fmt"
 
 	"code.vegaprotocol.io/data-node/entities"
 	"code.vegaprotocol.io/data-node/metrics"
+	v2 "code.vegaprotocol.io/protos/data-node/api/v2"
 	"github.com/georgysavva/scany/pgxscan"
 )
 
@@ -46,10 +48,30 @@ func (ps *NetworkParameters) Add(ctx context.Context, r entities.NetworkParamete
 	return err
 }
 
-func (np *NetworkParameters) GetAll(ctx context.Context) ([]entities.NetworkParameter, error) {
+func (np *NetworkParameters) GetAll(ctx context.Context, pagination entities.CursorPagination) ([]entities.NetworkParameter, entities.PageInfo, error) {
 	defer metrics.StartSQLQuery("NetworkParameters", "GetAll")()
+	var pageInfo entities.PageInfo
+
+	// we are ordering by key so we aren't going to change the sort order for newest first
+	// therefore we just set it to default to false in case it's true in the request
+	if pagination.NewestFirst {
+		pagination.NewestFirst = false
+	}
+	sorting, cmp, cursor := extractPaginationInfo(pagination)
+
+	cursorParams := []CursorQueryParameter{
+		NewCursorQueryParameter("key", sorting, cmp, cursor),
+	}
+
 	var nps []entities.NetworkParameter
-	query := `SELECT DISTINCT ON (key) * FROM network_parameters ORDER BY key, vega_time DESC`
-	err := pgxscan.Select(ctx, np.Connection, &nps, query)
-	return nps, err
+	var args []interface{}
+	query := `SELECT * FROM network_parameters_current`
+	query, args = orderAndPaginateWithCursor(query, pagination, cursorParams, args...)
+
+	if err := pgxscan.Select(ctx, np.Connection, &nps, query, args...); err != nil {
+		return nil, pageInfo, fmt.Errorf("could not get network parameters: %w", err)
+	}
+
+	nps, pageInfo = entities.PageEntities[*v2.NetworkParameterEdge](nps, pagination)
+	return nps, pageInfo, nil
 }

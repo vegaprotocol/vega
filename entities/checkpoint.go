@@ -13,9 +13,11 @@
 package entities
 
 import (
+	"strconv"
 	"time"
 
 	protoapi "code.vegaprotocol.io/protos/data-node/api/v1"
+	v2 "code.vegaprotocol.io/protos/data-node/api/v2"
 	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
 )
 
@@ -26,13 +28,33 @@ type Checkpoint struct {
 	VegaTime    time.Time
 }
 
-func (cp *Checkpoint) ToProto() *protoapi.Checkpoint {
+func (cp *Checkpoint) ToV1Proto() *protoapi.Checkpoint {
 	pcp := protoapi.Checkpoint{
 		Hash:      cp.Hash,
 		BlockHash: cp.BlockHash,
 		AtBlock:   uint64(cp.BlockHeight),
 	}
 	return &pcp
+}
+
+func (cp *Checkpoint) ToProto() *v2.Checkpoint {
+	pcp := v2.Checkpoint{
+		Hash:      cp.Hash,
+		BlockHash: cp.BlockHash,
+		AtBlock:   uint64(cp.BlockHeight),
+	}
+	return &pcp
+}
+
+func (cp Checkpoint) Cursor() *Cursor {
+	return NewCursor(strconv.FormatInt(cp.BlockHeight, 10))
+}
+
+func (cp Checkpoint) ToProtoEdge(_ ...any) (*v2.CheckpointEdge, error) {
+	return &v2.CheckpointEdge{
+		Node:   cp.ToProto(),
+		Cursor: cp.Cursor().Encode(),
+	}, nil
 }
 
 func CheckpointFromProto(cpe *eventspb.CheckpointEvent) (Checkpoint, error) {

@@ -20,6 +20,7 @@ import (
 	"code.vegaprotocol.io/data-node/entities"
 	"code.vegaprotocol.io/data-node/logging"
 	"code.vegaprotocol.io/data-node/metrics"
+	v2 "code.vegaprotocol.io/protos/data-node/api/v2"
 	"code.vegaprotocol.io/vega/types/num"
 	"github.com/georgysavva/scany/pgxscan"
 	"github.com/shopspring/decimal"
@@ -66,16 +67,26 @@ set
 }
 
 func (s *StakeLinking) GetStake(ctx context.Context, partyID entities.PartyID,
-	pagination entities.OffsetPagination,
-) (*num.Uint, []entities.StakeLinking) {
-	var links []entities.StakeLinking
-	var bindVars []interface{}
-	// get the links from the database
-	query := fmt.Sprintf(`select %s
-from stake_linking_current
-where party_id=%s`, sqlStakeLinkingColumns, nextBindVar(&bindVars, partyID))
+	p entities.Pagination,
+) (*num.Uint, []entities.StakeLinking, entities.PageInfo, error) {
+	switch pagination := p.(type) {
+	case entities.OffsetPagination:
+		return s.getStakeWithOffsetPagination(ctx, partyID, pagination)
+	case entities.CursorPagination:
+		return s.getStakeWithCursorPagination(ctx, partyID, pagination)
+	default:
+		return nil, nil, entities.PageInfo{}, errors.New("invalid pagination provided")
+	}
+}
 
+func (s *StakeLinking) getStakeWithOffsetPagination(ctx context.Context, partyID entities.PartyID, pagination entities.OffsetPagination) (
+	*num.Uint, []entities.StakeLinking, entities.PageInfo, error) {
+	var links []entities.StakeLinking
+	var pageInfo entities.PageInfo
+	// get the links from the database
+	query, bindVars := getStakeLinkingQuery(partyID)
 	query, bindVars = orderAndPaginateQuery(query, nil, pagination, bindVars...)
+
 	var bal *num.Uint
 	var err error
 
@@ -83,15 +94,65 @@ where party_id=%s`, sqlStakeLinkingColumns, nextBindVar(&bindVars, partyID))
 	err = pgxscan.Select(ctx, s.Connection, &links, query, bindVars...)
 	if err != nil {
 		s.log.Errorf("could not retrieve links", logging.Error(err))
-		return bal, nil
+		return bal, nil, pageInfo, err
 	}
 
 	bal, err = s.calculateBalance(ctx, partyID)
 	if err != nil {
 		s.log.Errorf("cannot calculate balance", logging.Error(err))
-		return num.Zero(), nil
+		return num.Zero(), nil, pageInfo, err
 	}
-	return bal, links
+	return bal, links, pageInfo, nil
+}
+
+func (s *StakeLinking) getStakeWithCursorPagination(ctx context.Context, partyID entities.PartyID, pagination entities.CursorPagination) (
+	*num.Uint, []entities.StakeLinking, entities.PageInfo, error) {
+	var links []entities.StakeLinking
+	var pageInfo entities.PageInfo
+	// get the links from the database
+	query, bindVars := getStakeLinkingQuery(partyID)
+
+	sorting, cmp, cursor := extractPaginationInfo(pagination)
+	sc := &entities.StakeLinkingCursor{}
+	err := sc.Parse(cursor)
+	if err != nil {
+		return nil, nil, pageInfo, fmt.Errorf("could not parse pagination: %w", err)
+	}
+
+	cursorParams := []CursorQueryParameter{
+		NewCursorQueryParameter("vega_time", sorting, cmp, sc.VegaTime),
+		NewCursorQueryParameter("id", sorting, cmp, entities.NewStakeLinkingID(sc.ID)),
+	}
+
+	query, bindVars = orderAndPaginateWithCursor(query, pagination, cursorParams, bindVars...)
+	defer metrics.StartSQLQuery("StakeLinking", "GetStake")()
+
+	var bal *num.Uint
+
+	err = pgxscan.Select(ctx, s.Connection, &links, query, bindVars...)
+	if err != nil {
+		s.log.Errorf("could not retrieve links", logging.Error(err))
+		return bal, nil, pageInfo, err
+	}
+
+	links, pageInfo = entities.PageEntities[*v2.StakeLinkingEdge](links, pagination)
+
+	bal, err = s.calculateBalance(ctx, partyID)
+	if err != nil {
+		s.log.Errorf("cannot calculate balance", logging.Error(err))
+		return num.Zero(), nil, pageInfo, err
+	}
+	return bal, links, pageInfo, nil
+}
+
+func getStakeLinkingQuery(partyID entities.PartyID) (string, []interface{}) {
+	var bindVars []interface{}
+
+	query := fmt.Sprintf(`select %s
+from stake_linking_current
+where party_id=%s`, sqlStakeLinkingColumns, nextBindVar(&bindVars, partyID))
+
+	return query, bindVars
 }
 
 func (s *StakeLinking) calculateBalance(ctx context.Context, partyID entities.PartyID) (*num.Uint, error) {

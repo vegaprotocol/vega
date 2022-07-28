@@ -48,12 +48,16 @@ func (o oracleSpecResolver) Data(ctx context.Context, obj *v1.OracleSpec) ([]*v1
 }
 
 func (o oracleSpecResolver) DataConnection(ctx context.Context, spec *v1.OracleSpec, pagination *v2.Pagination) (*v2.OracleDataConnection, error) {
-	req := v2.GetOracleDataConnectionRequest{
-		SpecId:     spec.Id,
-		Pagination: pagination,
+	var specID *string
+	if spec != nil && spec.Id != "" {
+		specID = &spec.Id
+	}
+	req := v2.ListOracleDataRequest{
+		OracleSpecId: specID,
+		Pagination:   pagination,
 	}
 
-	resp, err := o.tradingDataClientV2.GetOracleDataConnection(ctx, &req)
+	resp, err := o.tradingDataClientV2.ListOracleData(ctx, &req)
 	if err != nil {
 		return nil, err
 	}

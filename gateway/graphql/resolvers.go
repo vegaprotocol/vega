@@ -478,10 +478,10 @@ func (r *myQueryResolver) OracleSpecs(ctx context.Context, pagination *OffsetPag
 }
 
 func (r *myQueryResolver) OracleSpecsConnection(ctx context.Context, pagination *v2.Pagination) (*v2.OracleSpecsConnection, error) {
-	req := v2.GetOracleSpecsConnectionRequest{
+	req := v2.ListOracleSpecsRequest{
 		Pagination: pagination,
 	}
-	res, err := r.tradingDataClientV2.GetOracleSpecsConnection(ctx, &req)
+	res, err := r.tradingDataClientV2.ListOracleSpecs(ctx, &req)
 
 	if err != nil {
 		return nil, err
@@ -523,12 +523,16 @@ func (r *myQueryResolver) OracleDataBySpec(ctx context.Context, id string,
 
 func (r *myQueryResolver) OracleDataBySpecConnection(ctx context.Context, oracleSpecID string,
 	pagination *v2.Pagination) (*v2.OracleDataConnection, error) {
-	req := v2.GetOracleDataConnectionRequest{
-		SpecId:     oracleSpecID,
-		Pagination: pagination,
+	var specID *string
+	if oracleSpecID != "" {
+		specID = &oracleSpecID
+	}
+	req := v2.ListOracleDataRequest{
+		OracleSpecId: specID,
+		Pagination:   pagination,
 	}
 
-	resp, err := r.tradingDataClientV2.GetOracleDataConnection(ctx, &req)
+	resp, err := r.tradingDataClientV2.ListOracleData(ctx, &req)
 	if err != nil {
 		return nil, err
 	}
@@ -555,11 +559,11 @@ func (r *myQueryResolver) OracleData(ctx context.Context, pagination *OffsetPagi
 }
 
 func (r *myQueryResolver) OracleDataConnection(ctx context.Context, pagination *v2.Pagination) (*v2.OracleDataConnection, error) {
-	req := v2.GetOracleDataConnectionRequest{
+	req := v2.ListOracleDataRequest{
 		Pagination: pagination,
 	}
 
-	resp, err := r.tradingDataClientV2.GetOracleDataConnection(ctx, &req)
+	resp, err := r.tradingDataClientV2.ListOracleData(ctx, &req)
 	if err != nil {
 		return nil, err
 	}
@@ -714,13 +718,8 @@ func (r *myQueryResolver) Assets(ctx context.Context) ([]*types.Asset, error) {
 }
 
 func (r *myQueryResolver) AssetsConnection(ctx context.Context, id *string, pagination *v2.Pagination) (*v2.AssetsConnection, error) {
-	assetID := ""
-	if id != nil {
-		assetID = *id
-	}
-
 	req := &v2.ListAssetsRequest{
-		AssetId:    assetID,
+		AssetId:    id,
 		Pagination: pagination,
 	}
 	resp, err := r.tradingDataClientV2.ListAssets(ctx, req)

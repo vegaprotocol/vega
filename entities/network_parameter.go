@@ -15,6 +15,7 @@ package entities
 import (
 	"time"
 
+	v2 "code.vegaprotocol.io/protos/data-node/api/v2"
 	"code.vegaprotocol.io/protos/vega"
 )
 
@@ -30,6 +31,17 @@ func (np *NetworkParameter) ToProto() *vega.NetworkParameter {
 		Value: np.Value,
 	}
 	return &pnp
+}
+
+func (np NetworkParameter) Cursor() *Cursor {
+	return NewCursor(np.Key)
+}
+
+func (np NetworkParameter) ToProtoEdge(_ ...any) (*v2.NetworkParameterEdge, error) {
+	return &v2.NetworkParameterEdge{
+		Node:   np.ToProto(),
+		Cursor: np.Cursor().Encode(),
+	}, nil
 }
 
 func NetworkParameterFromProto(pnp *vega.NetworkParameter) (NetworkParameter, error) {

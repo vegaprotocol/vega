@@ -13,10 +13,12 @@
 package entities
 
 import (
+	"encoding/json"
 	"fmt"
 	"math"
 	"time"
 
+	v2 "code.vegaprotocol.io/protos/data-node/api/v2"
 	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
 	"github.com/shopspring/decimal"
 )
@@ -89,4 +91,40 @@ func (s *StakeLinking) ToProto() *eventspb.StakeLinking {
 		LogIndex:        uint64(s.LogIndex),
 		EthereumAddress: s.EthereumAddress,
 	}
+}
+
+func (s StakeLinking) Cursor() *Cursor {
+	cursor := StakeLinkingCursor{
+		VegaTime: s.VegaTime,
+		ID:       s.ID.String(),
+	}
+	return NewCursor(cursor.String())
+}
+
+func (s StakeLinking) ToProtoEdge(_ ...any) (*v2.StakeLinkingEdge, error) {
+	return &v2.StakeLinkingEdge{
+		Node:   s.ToProto(),
+		Cursor: s.Cursor().Encode(),
+	}, nil
+}
+
+type StakeLinkingCursor struct {
+	VegaTime time.Time `json:"vegaTime"`
+	ID       string    `json:"id"`
+}
+
+func (s StakeLinkingCursor) String() string {
+	bs, err := json.Marshal(s)
+	if err != nil {
+		panic(fmt.Errorf("could not serialize StakeLinkingCursor: %w", err))
+	}
+	return string(bs)
+}
+
+func (s *StakeLinkingCursor) Parse(cursorString string) error {
+	if cursorString == "" {
+		return nil
+	}
+
+	return json.Unmarshal([]byte(cursorString), s)
 }
