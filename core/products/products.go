@@ -16,10 +16,10 @@ import (
 	"context"
 	"errors"
 
-	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/core/oracles"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/core/types/num"
+	"code.vegaprotocol.io/vega/logging"
 )
 
 var (

@@ -14,8 +14,8 @@ package processor
 
 import (
 	"code.vegaprotocol.io/vega/core/config/encoding"
-	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/core/processor/ratelimit"
+	"code.vegaprotocol.io/vega/logging"
 )
 
 const (

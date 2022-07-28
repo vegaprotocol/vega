@@ -26,8 +26,8 @@ import (
 	vgrand "code.vegaprotocol.io/shared/libs/rand"
 	"code.vegaprotocol.io/shared/paths"
 	vghttp "code.vegaprotocol.io/vega/core/libs/http"
-	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/core/types/num"
+	"code.vegaprotocol.io/vega/logging"
 
 	"code.vegaprotocol.io/vega/core/libs/proto"
 	"github.com/cenkalti/backoff"

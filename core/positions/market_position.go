@@ -15,9 +15,9 @@ package positions
 import (
 	"fmt"
 
-	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/core/types/num"
+	"code.vegaprotocol.io/vega/logging"
 )
 
 // MarketPosition represents the position of a party inside a market.

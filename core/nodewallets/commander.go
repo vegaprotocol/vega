@@ -22,9 +22,9 @@ import (
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	"code.vegaprotocol.io/vega/core/blockchain"
 	vgproto "code.vegaprotocol.io/vega/core/libs/proto"
-	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/core/nodewallets/vega"
 	"code.vegaprotocol.io/vega/core/txn"
+	"code.vegaprotocol.io/vega/logging"
 
 	"github.com/cenkalti/backoff"
 	"github.com/golang/protobuf/proto"

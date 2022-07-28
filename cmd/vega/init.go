@@ -23,8 +23,8 @@ import (
 	"code.vegaprotocol.io/shared/paths"
 	"code.vegaprotocol.io/vega/core/config"
 	"code.vegaprotocol.io/vega/core/config/encoding"
-	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/core/nodewallets/registry"
+	"code.vegaprotocol.io/vega/logging"
 
 	"github.com/jessevdk/go-flags"
 	tmcfg "github.com/tendermint/tendermint/config"

@@ -16,8 +16,8 @@ import (
 	"fmt"
 
 	"code.vegaprotocol.io/vega/core/evtforward/ethereum"
-	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/core/types"
+	"code.vegaprotocol.io/vega/logging"
 )
 
 const (

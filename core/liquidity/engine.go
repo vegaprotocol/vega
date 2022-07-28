@@ -21,11 +21,11 @@ import (
 
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/liquidity/supplied"
-	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/core/risk"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/core/types/num"
 	"code.vegaprotocol.io/vega/core/types/statevar"
+	"code.vegaprotocol.io/vega/logging"
 )
 
 var (

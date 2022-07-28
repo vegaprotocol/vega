@@ -17,9 +17,9 @@ import (
 	"fmt"
 	"math/big"
 
-	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/core/netparams"
 	"code.vegaprotocol.io/vega/core/types"
+	"code.vegaprotocol.io/vega/logging"
 
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 )

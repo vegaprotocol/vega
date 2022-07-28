@@ -15,8 +15,8 @@ package spam
 import (
 	"context"
 
-	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/core/types"
+	"code.vegaprotocol.io/vega/logging"
 )
 
 func (e *Engine) Namespace() types.SnapshotNamespace {

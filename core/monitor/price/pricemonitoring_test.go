@@ -18,11 +18,11 @@ import (
 	"time"
 
 	proto "code.vegaprotocol.io/protos/vega"
-	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/core/monitor/price"
 	"code.vegaprotocol.io/vega/core/monitor/price/mocks"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/core/types/num"
+	"code.vegaprotocol.io/vega/logging"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"

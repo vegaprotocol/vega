@@ -29,12 +29,12 @@ import (
 	vgcontext "code.vegaprotocol.io/vega/core/libs/context"
 	"code.vegaprotocol.io/vega/core/libs/crypto"
 	"code.vegaprotocol.io/vega/core/libs/proto"
-	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/core/oracles"
 	snp "code.vegaprotocol.io/vega/core/snapshot"
 	"code.vegaprotocol.io/vega/core/stats"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/core/types/num"
+	"code.vegaprotocol.io/vega/logging"
 	"github.com/stretchr/testify/require"
 )
 

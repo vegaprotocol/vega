@@ -23,11 +23,11 @@ import (
 	"code.vegaprotocol.io/vega/core/assets"
 	"code.vegaprotocol.io/vega/core/events"
 	vgcrypto "code.vegaprotocol.io/vega/core/libs/crypto"
-	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/core/netparams"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/core/types/num"
 	"code.vegaprotocol.io/vega/core/validators"
+	"code.vegaprotocol.io/vega/logging"
 	"github.com/pkg/errors"
 )
 

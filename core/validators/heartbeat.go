@@ -22,8 +22,8 @@ import (
 
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	vgcontext "code.vegaprotocol.io/vega/core/libs/context"
-	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/core/txn"
+	"code.vegaprotocol.io/vega/logging"
 
 	"github.com/cenkalti/backoff"
 	ecrypto "github.com/ethereum/go-ethereum/crypto"

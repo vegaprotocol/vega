@@ -33,10 +33,10 @@ import (
 	"code.vegaprotocol.io/vega/core/governance/mocks"
 	"code.vegaprotocol.io/vega/core/libs/proto"
 	vgtesting "code.vegaprotocol.io/vega/core/libs/testing"
-	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/core/netparams"
 	"code.vegaprotocol.io/vega/core/nodewallets"
 	"code.vegaprotocol.io/vega/core/types"
+	"code.vegaprotocol.io/vega/logging"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
 )

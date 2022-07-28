@@ -18,11 +18,11 @@ import (
 	"time"
 
 	vegactx "code.vegaprotocol.io/vega/core/libs/context"
-	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/core/snapshot"
 	"code.vegaprotocol.io/vega/core/snapshot/mocks"
 	"code.vegaprotocol.io/vega/core/types"
 	tmocks "code.vegaprotocol.io/vega/core/types/mocks"
+	"code.vegaprotocol.io/vega/logging"
 
 	"code.vegaprotocol.io/vega/core/libs/proto"
 	"github.com/cosmos/iavl"

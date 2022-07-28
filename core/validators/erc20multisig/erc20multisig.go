@@ -17,9 +17,9 @@ import (
 	"fmt"
 
 	"code.vegaprotocol.io/vega/core/broker"
-	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/core/netparams"
 	"code.vegaprotocol.io/vega/core/types"
+	"code.vegaprotocol.io/vega/logging"
 )
 
 func NewERC20MultisigTopology(

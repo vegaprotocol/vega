@@ -39,7 +39,6 @@ import (
 	"code.vegaprotocol.io/vega/core/governance"
 	"code.vegaprotocol.io/vega/core/libs/pprof"
 	"code.vegaprotocol.io/vega/core/limits"
-	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/core/metrics"
 	"code.vegaprotocol.io/vega/core/netparams"
 	"code.vegaprotocol.io/vega/core/nodewallets"
@@ -57,6 +56,7 @@ import (
 	"code.vegaprotocol.io/vega/core/validators"
 	"code.vegaprotocol.io/vega/core/validators/erc20multisig"
 	"code.vegaprotocol.io/vega/core/vegatime"
+	"code.vegaprotocol.io/vega/logging"
 )
 
 // Config ties together all other application configuration types.

@@ -20,9 +20,9 @@ import (
 	checkpointpb "code.vegaprotocol.io/protos/vega/checkpoint/v1"
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/execution"
-	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/core/netparams"
 	"code.vegaprotocol.io/vega/core/types"
+	"code.vegaprotocol.io/vega/logging"
 
 	"code.vegaprotocol.io/vega/core/libs/crypto"
 	vgcrypto "code.vegaprotocol.io/vega/core/libs/crypto"

@@ -18,9 +18,9 @@ import (
 
 	"code.vegaprotocol.io/vega/core/broker/mocks"
 	emock "code.vegaprotocol.io/vega/core/execution/mocks"
-	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/core/markets"
 	"code.vegaprotocol.io/vega/core/oracles"
+	"code.vegaprotocol.io/vega/logging"
 
 	oraclespb "code.vegaprotocol.io/protos/vega/oracles/v1"
 	"code.vegaprotocol.io/vega/core/products"

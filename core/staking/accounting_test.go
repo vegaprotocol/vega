@@ -19,11 +19,11 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/core/broker/mocks"
-	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/core/staking"
 	smocks "code.vegaprotocol.io/vega/core/staking/mocks"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/core/types/num"
+	"code.vegaprotocol.io/vega/logging"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"

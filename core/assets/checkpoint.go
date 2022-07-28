@@ -19,8 +19,8 @@ import (
 
 	checkpoint "code.vegaprotocol.io/protos/vega/checkpoint/v1"
 	vgcrypto "code.vegaprotocol.io/vega/core/libs/crypto"
-	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/core/types"
+	"code.vegaprotocol.io/vega/logging"
 
 	"code.vegaprotocol.io/vega/core/libs/proto"
 )

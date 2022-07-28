@@ -16,9 +16,9 @@ import (
 	"math/rand"
 	"sort"
 
-	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/core/types/num"
+	"code.vegaprotocol.io/vega/logging"
 )
 
 var minThresholdDelegatorReward, _ = num.DecimalFromString("0.001")

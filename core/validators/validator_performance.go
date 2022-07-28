@@ -18,8 +18,8 @@ import (
 	"encoding/hex"
 	"strings"
 
-	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/core/types/num"
+	"code.vegaprotocol.io/vega/logging"
 
 	"github.com/tendermint/tendermint/crypto/sr25519"
 )

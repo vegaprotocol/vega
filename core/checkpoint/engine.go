@@ -22,8 +22,8 @@ import (
 	"time"
 
 	vegactx "code.vegaprotocol.io/vega/core/libs/context"
-	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/core/types"
+	"code.vegaprotocol.io/vega/logging"
 )
 
 var (

@@ -32,7 +32,6 @@ import (
 	"code.vegaprotocol.io/vega/core/libs/crypto"
 	"code.vegaprotocol.io/vega/core/liquidity"
 	liquiditytarget "code.vegaprotocol.io/vega/core/liquidity/target"
-	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/core/markets"
 	"code.vegaprotocol.io/vega/core/matching"
 	"code.vegaprotocol.io/vega/core/metrics"
@@ -46,6 +45,7 @@ import (
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/core/types/num"
 	"code.vegaprotocol.io/vega/core/types/statevar"
+	"code.vegaprotocol.io/vega/logging"
 
 	"code.vegaprotocol.io/vega/core/libs/proto"
 )

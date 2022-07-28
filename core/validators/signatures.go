@@ -22,9 +22,9 @@ import (
 	"code.vegaprotocol.io/vega/core/bridges"
 	"code.vegaprotocol.io/vega/core/events"
 	vgcrypto "code.vegaprotocol.io/vega/core/libs/crypto"
-	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/core/types/num"
+	"code.vegaprotocol.io/vega/logging"
 )
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/signatures_mock.go -package mocks code.vegaprotocol.io/vega/core/validators Signatures

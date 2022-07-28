@@ -29,10 +29,10 @@ import (
 	"code.vegaprotocol.io/vega/core/blockchain/abci"
 	"code.vegaprotocol.io/vega/core/config"
 	"code.vegaprotocol.io/vega/core/libs/crypto"
-	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/core/nodewallets"
 	"code.vegaprotocol.io/vega/core/txn"
 	"code.vegaprotocol.io/vega/core/validators"
+	"code.vegaprotocol.io/vega/logging"
 	"google.golang.org/grpc"
 
 	"github.com/jessevdk/go-flags"

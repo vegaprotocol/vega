@@ -19,8 +19,8 @@ import (
 
 	"code.vegaprotocol.io/vega/core/governance"
 	"code.vegaprotocol.io/vega/core/governance/mocks"
-	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/core/types"
+	"code.vegaprotocol.io/vega/logging"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"

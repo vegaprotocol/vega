@@ -18,9 +18,9 @@ import (
 
 	vgjson "code.vegaprotocol.io/shared/libs/json"
 	"code.vegaprotocol.io/vega/core/events"
-	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/core/netparams"
 	"code.vegaprotocol.io/vega/core/types/num"
+	"code.vegaprotocol.io/vega/logging"
 )
 
 // These types are copies of the ones in the engines that read the genesis file appstate

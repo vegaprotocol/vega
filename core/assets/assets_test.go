@@ -7,12 +7,12 @@ import (
 	"code.vegaprotocol.io/vega/core/assets"
 	erc20mocks "code.vegaprotocol.io/vega/core/assets/erc20/mocks"
 	bmocks "code.vegaprotocol.io/vega/core/broker/mocks"
-	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/core/nodewallets"
 	nweth "code.vegaprotocol.io/vega/core/nodewallets/eth"
 	nwvega "code.vegaprotocol.io/vega/core/nodewallets/vega"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/core/types/num"
+	"code.vegaprotocol.io/vega/logging"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
 )

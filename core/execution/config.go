@@ -16,11 +16,11 @@ import (
 	"code.vegaprotocol.io/vega/core/config/encoding"
 	"code.vegaprotocol.io/vega/core/fee"
 	"code.vegaprotocol.io/vega/core/liquidity"
-	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/core/matching"
 	"code.vegaprotocol.io/vega/core/positions"
 	"code.vegaprotocol.io/vega/core/risk"
 	"code.vegaprotocol.io/vega/core/settlement"
+	"code.vegaprotocol.io/vega/logging"
 )
 
 const (

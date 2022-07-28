@@ -17,9 +17,9 @@ import (
 	"testing"
 	"time"
 
-	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/core/types/num"
+	"code.vegaprotocol.io/vega/logging"
 
 	bmocks "code.vegaprotocol.io/vega/core/broker/mocks"
 	vmock "code.vegaprotocol.io/vega/core/validators/mocks"

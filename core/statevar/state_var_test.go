@@ -21,11 +21,11 @@ import (
 
 	bmocks "code.vegaprotocol.io/vega/core/broker/mocks"
 	"code.vegaprotocol.io/vega/core/events"
-	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/core/statevar"
 	"code.vegaprotocol.io/vega/core/statevar/mocks"
 	"code.vegaprotocol.io/vega/core/types/num"
 	types "code.vegaprotocol.io/vega/core/types/statevar"
+	"code.vegaprotocol.io/vega/logging"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
 )

@@ -16,11 +16,11 @@ import (
 	"context"
 	"errors"
 
-	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/core/risk"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/core/types/num"
 	"code.vegaprotocol.io/vega/core/types/statevar"
+	"code.vegaprotocol.io/vega/logging"
 )
 
 // ErrNoValidOrders informs that there weren't any valid orders to cover the liquidity obligation with.

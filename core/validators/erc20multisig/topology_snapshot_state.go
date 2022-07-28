@@ -18,8 +18,8 @@ import (
 
 	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
 	snapshotpb "code.vegaprotocol.io/protos/vega/snapshot/v1"
-	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/core/types"
+	"code.vegaprotocol.io/vega/logging"
 
 	"code.vegaprotocol.io/vega/core/libs/proto"
 )

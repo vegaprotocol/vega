@@ -23,10 +23,10 @@ import (
 	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
 	"code.vegaprotocol.io/vega/core/events"
 	vgcontext "code.vegaprotocol.io/vega/core/libs/context"
-	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/core/stats"
 	"code.vegaprotocol.io/vega/core/subscribers"
 	"code.vegaprotocol.io/vega/core/vegatime"
+	"code.vegaprotocol.io/vega/logging"
 
 	tmctypes "github.com/tendermint/tendermint/rpc/coretypes"
 	"google.golang.org/grpc"

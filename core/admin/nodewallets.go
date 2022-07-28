@@ -18,9 +18,9 @@ import (
 
 	"code.vegaprotocol.io/shared/paths"
 	"code.vegaprotocol.io/vega/core/crypto"
-	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/core/nodewallets"
 	"code.vegaprotocol.io/vega/core/nodewallets/registry"
+	"code.vegaprotocol.io/vega/logging"
 )
 
 type wallet interface {

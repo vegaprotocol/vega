@@ -24,9 +24,9 @@ import (
 	"code.vegaprotocol.io/vega/core/collateral/mocks"
 	"code.vegaprotocol.io/vega/core/config/encoding"
 	"code.vegaprotocol.io/vega/core/events"
-	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/core/types/num"
+	"code.vegaprotocol.io/vega/logging"
 
 	"github.com/golang/mock/gomock"
 	"github.com/pkg/errors"

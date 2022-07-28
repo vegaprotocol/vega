@@ -20,8 +20,8 @@ import (
 	"time"
 
 	multisig "code.vegaprotocol.io/vega/core/contracts/multisig_control"
-	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/core/types"
+	"code.vegaprotocol.io/vega/logging"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	ethcmn "github.com/ethereum/go-ethereum/common"

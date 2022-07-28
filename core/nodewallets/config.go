@@ -14,8 +14,8 @@ package nodewallets
 
 import (
 	"code.vegaprotocol.io/vega/core/config/encoding"
-	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/core/nodewallets/eth"
+	"code.vegaprotocol.io/vega/logging"
 )
 
 type Config struct {
