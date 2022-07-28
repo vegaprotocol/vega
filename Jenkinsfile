@@ -158,6 +158,13 @@ pipeline {
         //
         // Begin DOCKER
         //
+        stage('Setup docker buildx') {
+            steps {
+                sh '''#!/bin/bash -e
+                    docker buildx create --use
+                '''
+            }
+        }
         stage('Build docker image') {
             matrix {
                 axes {
