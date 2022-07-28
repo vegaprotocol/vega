@@ -17,7 +17,11 @@ test: ## Run unit tests
 
 .PHONY: integrationtest
 integrationtest: ## run integration tests, showing ledger movements and full scenario output
-	go test -v ./integration/... --godog.format=pretty
+	go test -v ./core/integration/... --godog.format=pretty
+
+.PHONY: gqlgen
+gqlgen:
+	cd datanode/gateway/graphql && go run github.com/99designs/gqlgen --config=gqlgen.yml
 
 .PHONY: race
 race: ## Run data race detector
