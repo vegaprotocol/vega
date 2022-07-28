@@ -25,11 +25,11 @@ import (
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	vgrand "code.vegaprotocol.io/shared/libs/rand"
 	"code.vegaprotocol.io/shared/paths"
-	vghttp "code.vegaprotocol.io/vega/core/libs/http"
 	"code.vegaprotocol.io/vega/core/types/num"
+	vghttp "code.vegaprotocol.io/vega/libs/http"
 	"code.vegaprotocol.io/vega/logging"
 
-	"code.vegaprotocol.io/vega/core/libs/proto"
+	"code.vegaprotocol.io/vega/libs/proto"
 	"github.com/cenkalti/backoff"
 	"github.com/julienschmidt/httprouter"
 	"github.com/rs/cors"

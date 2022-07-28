@@ -17,8 +17,8 @@ import (
 	"encoding/hex"
 
 	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
-	vgcontext "code.vegaprotocol.io/vega/core/libs/context"
 	"code.vegaprotocol.io/vega/core/types"
+	vgcontext "code.vegaprotocol.io/vega/libs/context"
 )
 
 type Checkpoint struct {

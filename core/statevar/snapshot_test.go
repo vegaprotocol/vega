@@ -18,9 +18,9 @@ import (
 	"testing"
 
 	snapshotpb "code.vegaprotocol.io/protos/vega/snapshot/v1"
-	"code.vegaprotocol.io/vega/core/libs/proto"
 	gtypes "code.vegaprotocol.io/vega/core/types"
 	types "code.vegaprotocol.io/vega/core/types/statevar"
+	"code.vegaprotocol.io/vega/libs/proto"
 	"github.com/stretchr/testify/require"
 )
 

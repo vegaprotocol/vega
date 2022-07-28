@@ -22,7 +22,7 @@ import (
 	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
 	"code.vegaprotocol.io/vega/core/types"
 
-	"code.vegaprotocol.io/vega/core/libs/proto"
+	"code.vegaprotocol.io/vega/libs/proto"
 	tmtypes "github.com/tendermint/tendermint/abci/types"
 )
 

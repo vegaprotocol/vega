@@ -19,7 +19,7 @@ import (
 
 	vgproto "code.vegaprotocol.io/protos/vega"
 	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
-	"code.vegaprotocol.io/vega/core/libs/crypto"
+	"code.vegaprotocol.io/vega/libs/crypto"
 )
 
 type SignerEventKind = eventspb.ERC20MultiSigSignerEvent_Type
