@@ -145,63 +145,6 @@ pipeline {
                     }
                 }
             }
-            // parallel {
-            //     stage('Linux build') {
-            //         environment {
-            //             GOOS         = 'linux'
-            //             GOARCH       = 'amd64'
-            //             OUTPUT       = './cmd/vega/vega-linux-amd64'
-            //         }
-            //         options { retry(3) }
-            //         steps {
-            //             dir('vega') {
-            //                 sh label: 'Compile', script: '''
-            //                     go build -v -o "${OUTPUT}" ./cmd/vega
-            //                 '''
-            //                 sh label: 'Sanity check', script: '''
-            //                     file ${OUTPUT}
-            //                     ${OUTPUT} version
-            //                 '''
-            //             }
-            //         }
-            //     }
-            //     stage('MacOS build') {
-            //         environment {
-            //             GOOS         = 'darwin'
-            //             GOARCH       = 'amd64'
-            //             OUTPUT       = './cmd/vega/vega-darwin-amd64'
-            //         }
-            //         options { retry(3) }
-            //         steps {
-            //             dir('vega') {
-            //                 sh label: 'Compile', script: '''
-            //                     go build -v -o "${OUTPUT}" ./cmd/vega
-            //                 '''
-            //                 sh label: 'Sanity check', script: '''
-            //                     file ${OUTPUT}
-            //                 '''
-            //             }
-            //         }
-            //     }
-            //     stage('Windows build') {
-            //         environment {
-            //             GOOS         = 'windows'
-            //             GOARCH       = 'amd64'
-            //             OUTPUT       = './cmd/vega/vega-windows-amd64'
-            //         }
-            //         options { retry(3) }
-            //         steps {
-            //             dir('vega') {
-            //                 sh label: 'Compile', script: '''
-            //                     go build -v -o "${OUTPUT}" ./cmd/vega
-            //                 '''
-            //                 sh label: 'Sanity check', script: '''
-            //                     file ${OUTPUT}
-            //                 '''
-            //             }
-            //         }
-            //     }
-            // }
         }
 
         // stage('Build docker image') {
