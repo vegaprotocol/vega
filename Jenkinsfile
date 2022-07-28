@@ -132,7 +132,7 @@ pipeline {
                                 '''
                                 script {
                                     if ( GOOS == "linux" && GOARCH == "amd64" ) {
-                                        sh label: 'get version', script '''
+                                        sh label: 'get version', script: '''
                                             vega version
                                             data-node version
                                             vegawallet version
