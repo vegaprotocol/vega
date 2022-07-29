@@ -15,7 +15,7 @@ package execution
 import (
 	"fmt"
 
-	"code.vegaprotocol.io/vega/core/types/num"
+	"code.vegaprotocol.io/vega/libs/num"
 )
 
 // lp holds LiquidityProvider stake and avg values.

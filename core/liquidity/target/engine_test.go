@@ -19,7 +19,7 @@ import (
 	"code.vegaprotocol.io/vega/core/liquidity/target"
 	"code.vegaprotocol.io/vega/core/liquidity/target/mocks"
 	"code.vegaprotocol.io/vega/core/types"
-	"code.vegaprotocol.io/vega/core/types/num"
+	"code.vegaprotocol.io/vega/libs/num"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/golang/mock/gomock"

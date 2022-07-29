@@ -19,7 +19,7 @@ import (
 	"code.vegaprotocol.io/protos/vega"
 	proto "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/core/types"
-	"code.vegaprotocol.io/vega/core/types/num"
+	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
 )
 

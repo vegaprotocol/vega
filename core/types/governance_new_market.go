@@ -18,7 +18,7 @@ import (
 	"strings"
 
 	vegapb "code.vegaprotocol.io/protos/vega"
-	"code.vegaprotocol.io/vega/core/types/num"
+	"code.vegaprotocol.io/vega/libs/num"
 )
 
 var ErrInvalidCommitmentAmount = errors.New("invalid commitment amount")

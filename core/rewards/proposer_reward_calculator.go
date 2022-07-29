@@ -16,7 +16,7 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/core/types"
-	"code.vegaprotocol.io/vega/core/types/num"
+	"code.vegaprotocol.io/vega/libs/num"
 )
 
 // calculateRewardForProposers calculates the reward given to proposers of markets that crossed the trading threshold for the first time.

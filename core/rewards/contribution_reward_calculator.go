@@ -16,7 +16,7 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/core/types"
-	"code.vegaprotocol.io/vega/core/types/num"
+	"code.vegaprotocol.io/vega/libs/num"
 )
 
 // calculateRewardsByContribution calculates the reward based on the fee contribution (whether paid or received) of the parties in the asset.

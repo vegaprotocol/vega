@@ -22,7 +22,7 @@ import (
 	"strconv"
 	"time"
 
-	"code.vegaprotocol.io/vega/core/types/num"
+	"code.vegaprotocol.io/vega/libs/num"
 	validators "github.com/mwitkow/go-proto-validators"
 )
 

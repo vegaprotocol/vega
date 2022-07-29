@@ -16,8 +16,8 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/core/types"
-	"code.vegaprotocol.io/vega/core/types/num"
 	"code.vegaprotocol.io/vega/libs/crypto"
+	"code.vegaprotocol.io/vega/libs/num"
 
 	proto "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/core/netparams/checks"

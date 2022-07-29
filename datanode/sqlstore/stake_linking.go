@@ -18,9 +18,9 @@ import (
 	"fmt"
 
 	v2 "code.vegaprotocol.io/protos/data-node/api/v2"
-	"code.vegaprotocol.io/vega/core/types/num"
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/metrics"
+	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
 	"github.com/georgysavva/scany/pgxscan"
 	"github.com/shopspring/decimal"
