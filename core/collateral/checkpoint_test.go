@@ -39,7 +39,7 @@ func checkpointTestEngine(t *testing.T) *collateral.Engine {
 			Quantum:     num.DecimalZero(),
 			Source: &types.AssetDetailsBuiltinAsset{
 				BuiltinAsset: &types.BuiltinAsset{
-					MaxFaucetAmountMint: num.Zero(),
+					MaxFaucetAmountMint: num.UintZero(),
 				},
 			},
 		},

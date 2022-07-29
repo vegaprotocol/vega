@@ -113,7 +113,7 @@ func NewMarketFromSnapshot(
 	}
 
 	exp := assetDetails.DecimalPlaces() - mkt.DecimalPlaces
-	priceFactor := num.Zero().Exp(num.NewUint(10), num.NewUint(exp))
+	priceFactor := num.UintZero().Exp(num.NewUint(10), num.NewUint(exp))
 	lMonitor := lmon.NewMonitor(tsCalc, mkt.LiquidityMonitoringParameters)
 
 	liqEngine := liquidity.NewSnapshotEngine(liquidityConfig, log, timeService, broker, tradableInstrument.RiskModel, pMonitor, asset, mkt.ID, stateVarEngine, mkt.TickSize(), priceFactor.Clone(), positionFactor)

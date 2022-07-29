@@ -58,7 +58,7 @@ func TestNetworkOrder_ValidAveragedPrice(t *testing.T) {
 
 	var (
 		totalSize                 uint64
-		totalPrice, expectedPrice = num.Zero(), num.NewUint(0)
+		totalPrice, expectedPrice = num.UintZero(), num.NewUint(0)
 	)
 	for _, v := range orders {
 		v := v
@@ -67,7 +67,7 @@ func TestNetworkOrder_ValidAveragedPrice(t *testing.T) {
 		// totalPrice += v.Price * v.Size
 		totalPrice.Add(
 			totalPrice,
-			num.Zero().Mul(v.Price, num.NewUint(v.Size)),
+			num.UintZero().Mul(v.Price, num.NewUint(v.Size)),
 		)
 		totalSize += v.Size
 	}
@@ -82,8 +82,8 @@ func TestNetworkOrder_ValidAveragedPrice(t *testing.T) {
 		Status:        types.OrderStatusActive,
 		Party:         "network",
 		Side:          types.SideSell,
-		Price:         num.Zero(),
-		OriginalPrice: num.Zero(),
+		Price:         num.UintZero(),
+		OriginalPrice: num.UintZero(),
 		CreatedAt:     0,
 		TimeInForce:   types.OrderTimeInForceFOK,
 		Type:          types.OrderTypeNetwork,

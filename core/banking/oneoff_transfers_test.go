@@ -197,7 +197,7 @@ func testOneOffTransferInvalidTransfers(t *testing.T) {
 		e.broker.EXPECT().Send(gomock.Any()).Times(1)
 		baseCpy = transferBase
 		transfer.OneOff.TransferBase = &baseCpy
-		transfer.OneOff.Amount = num.Zero()
+		transfer.OneOff.Amount = num.UintZero()
 		assert.EqualError(t,
 			e.TransferFunds(ctx, &transfer),
 			types.ErrCannotTransferZeroFunds.Error(),

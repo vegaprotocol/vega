@@ -94,7 +94,7 @@ func (a Asset) DeepClone() *Asset {
 
 func (a Asset) GetAssetTotalSupply() *num.Uint {
 	if a.Details == nil || a.Details.TotalSupply == nil {
-		return num.Zero()
+		return num.UintZero()
 	}
 	return a.Details.TotalSupply.Clone()
 }
@@ -208,7 +208,7 @@ func (a AssetDetails) DeepClone() *AssetDetails {
 	if a.TotalSupply != nil {
 		cpy.TotalSupply = a.TotalSupply.Clone()
 	} else {
-		cpy.TotalSupply = num.Zero()
+		cpy.TotalSupply = num.UintZero()
 	}
 	cpy.Quantum = a.Quantum
 	return cpy
@@ -228,7 +228,7 @@ func AssetDetailsFromProto(p *proto.AssetDetails) (*AssetDetails, error) {
 	case *proto.AssetDetails_BuiltinAsset:
 		src = AssetDetailsBuiltinFromProto(st)
 	}
-	total := num.Zero()
+	total := num.UintZero()
 	min := num.DecimalZero()
 	if len(p.TotalSupply) > 0 {
 		var overflow bool
@@ -382,8 +382,8 @@ func (a AssetDetailsErc20) Validate() (ProposalError, error) {
 
 func AssetDetailsERC20FromProto(p *proto.AssetDetails_Erc20) (*AssetDetailsErc20, error) {
 	var (
-		lifetimeLimit     = num.Zero()
-		withdrawThreshold = num.Zero()
+		lifetimeLimit     = num.UintZero()
+		withdrawThreshold = num.UintZero()
 		overflow          bool
 	)
 	if len(p.Erc20.LifetimeLimit) > 0 {
@@ -421,12 +421,12 @@ func (e ERC20) DeepClone() *ERC20 {
 	if e.LifetimeLimit != nil {
 		cpy.LifetimeLimit = e.LifetimeLimit.Clone()
 	} else {
-		cpy.LifetimeLimit = num.Zero()
+		cpy.LifetimeLimit = num.UintZero()
 	}
 	if e.WithdrawThreshold != nil {
 		cpy.WithdrawThreshold = e.WithdrawThreshold.Clone()
 	} else {
-		cpy.WithdrawThreshold = num.Zero()
+		cpy.WithdrawThreshold = num.UintZero()
 	}
 	return cpy
 }

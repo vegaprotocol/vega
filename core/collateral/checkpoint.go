@@ -136,7 +136,7 @@ func (e *Engine) getCheckpointBalances() []*checkpoint.AssetBalance {
 			}
 			balance, ok := assets[acc.Asset]
 			if !ok {
-				balance = num.Zero()
+				balance = num.UintZero()
 				assets[acc.Asset] = balance
 			}
 			balance.AddSum(acc.Balance)

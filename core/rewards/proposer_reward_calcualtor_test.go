@@ -23,7 +23,7 @@ import (
 
 func TestProposerBonusCalculator(t *testing.T) {
 	now := time.Now()
-	require.Nil(t, calculateRewardForProposers("1", "asset", "123456", types.AccountTypeMarketProposerReward, num.Zero(), []string{"mememe"}, now))
+	require.Nil(t, calculateRewardForProposers("1", "asset", "123456", types.AccountTypeMarketProposerReward, num.UintZero(), []string{"mememe"}, now))
 	require.Nil(t, calculateRewardForProposers("1", "asset", "123456", types.AccountTypeMarketProposerReward, num.NewUint(10000), []string{}, now))
 
 	po := calculateRewardForProposers("1", "asset", "123456", types.AccountTypeMarketProposerReward, num.NewUint(9000), []string{"p1", "p2", "p3"}, now)

@@ -210,11 +210,11 @@ func (e *Engine) UpdateMarginAuction(ctx context.Context, evts []events.Margin, 
 		if curMargin.GTE(levels.InitialMargin) {
 			continue
 		}
-		minAmount := num.Zero()
+		minAmount := num.UintZero()
 		if levels.MaintenanceMargin.GT(curMargin) {
 			minAmount.Sub(levels.MaintenanceMargin, curMargin)
 		}
-		amt := num.Zero().Sub(levels.InitialMargin, curMargin) // we know curBalace is less than initial
+		amt := num.UintZero().Sub(levels.InitialMargin, curMargin) // we know curBalace is less than initial
 		t := &types.Transfer{
 			Owner: evt.Party(),
 			Type:  types.TransferTypeMarginLow,
@@ -275,7 +275,7 @@ func (e *Engine) UpdateMarginOnNewOrder(ctx context.Context, evt events.Margin, 
 		return nil, nil, nil
 	}
 
-	minAmount := num.Zero()
+	minAmount := num.UintZero()
 	if margins.MaintenanceMargin.GT(curMarginBalance) {
 		minAmount.Sub(margins.MaintenanceMargin, curMarginBalance)
 	}
@@ -286,7 +286,7 @@ func (e *Engine) UpdateMarginOnNewOrder(ctx context.Context, evt events.Margin, 
 		Type:  types.TransferTypeMarginLow,
 		Amount: &types.FinancialAmount{
 			Asset:  evt.Asset(),
-			Amount: num.Zero().Sub(margins.InitialMargin, curMarginBalance),
+			Amount: num.UintZero().Sub(margins.InitialMargin, curMarginBalance),
 		},
 		MinAmount: minAmount, // minimal amount == maintenance
 	}
@@ -340,10 +340,10 @@ func (e *Engine) UpdateMarginsOnSettlement(
 				MinAmount: amt.Clone(),
 			}
 			margins := types.MarginLevels{
-				MaintenanceMargin:      num.Zero(),
-				SearchLevel:            num.Zero(),
-				InitialMargin:          num.Zero(),
-				CollateralReleaseLevel: num.Zero(),
+				MaintenanceMargin:      num.UintZero(),
+				SearchLevel:            num.UintZero(),
+				InitialMargin:          num.UintZero(),
+				CollateralReleaseLevel: num.UintZero(),
 				Party:                  evt.Party(),
 				MarketID:               evt.MarketID(),
 				Asset:                  evt.Asset(),
@@ -392,7 +392,7 @@ func (e *Engine) UpdateMarginsOnSettlement(
 		}
 
 		var trnsfr *types.Transfer
-		minAmount := num.Zero()
+		minAmount := num.UintZero()
 		// case 2 -> not enough margin
 		if curMargin.LT(margins.SearchLevel) {
 			// first calculate minimal amount, which will be specified in the case we are under
@@ -408,7 +408,7 @@ func (e *Engine) UpdateMarginsOnSettlement(
 				Type:  types.TransferTypeMarginLow,
 				Amount: &types.FinancialAmount{
 					Asset:  evt.Asset(),
-					Amount: num.Zero().Sub(margins.InitialMargin, curMargin),
+					Amount: num.UintZero().Sub(margins.InitialMargin, curMargin),
 				},
 				MinAmount: minAmount,
 			}
@@ -418,7 +418,7 @@ func (e *Engine) UpdateMarginsOnSettlement(
 				Type:  types.TransferTypeMarginHigh,
 				Amount: &types.FinancialAmount{
 					Asset:  evt.Asset(),
-					Amount: num.Zero().Sub(curMargin, margins.InitialMargin),
+					Amount: num.UintZero().Sub(curMargin, margins.InitialMargin),
 				},
 				MinAmount: minAmount,
 			}

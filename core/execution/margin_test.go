@@ -265,7 +265,7 @@ func TestPartialFillMargins(t *testing.T) {
 		Party:       party3,
 		MarketID:    tm.market.GetID(),
 		Size:        1,
-		Price:       num.Zero(),
+		Price:       num.UintZero(),
 		Remaining:   1,
 		CreatedAt:   now.UnixNano(),
 		Reference:   "party3-buy-order",

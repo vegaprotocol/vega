@@ -89,7 +89,7 @@ func TestPositionSpecSuite(t *testing.T) {
 			}, 1, num.DecimalFromFloat(1)),
 			expect: expect{
 				OpenVolume:        0,
-				AverageEntryPrice: num.Zero(),
+				AverageEntryPrice: num.UintZero(),
 				UnrealisedPNL:     num.NewDecimalFromFloat(0),
 				RealisedPNL:       num.NewDecimalFromFloat(5000),
 			},
@@ -165,7 +165,7 @@ func TestPositionSpecSuite(t *testing.T) {
 			}, 1, num.DecimalFromFloat(1)),
 			expect: expect{
 				OpenVolume:        0,
-				AverageEntryPrice: num.Zero(),
+				AverageEntryPrice: num.UintZero(),
 				UnrealisedPNL:     num.NewDecimalFromFloat(0),
 				RealisedPNL:       num.NewDecimalFromFloat(-5000),
 			},
@@ -234,7 +234,7 @@ func TestPositionSpecSuite(t *testing.T) {
 			}, 1, num.DecimalFromFloat(1)),
 			expect: expect{
 				OpenVolume:        0,
-				AverageEntryPrice: num.Zero(),
+				AverageEntryPrice: num.UintZero(),
 				UnrealisedPNL:     num.NewDecimalFromFloat(0),
 				RealisedPNL:       num.NewDecimalFromFloat(8750),
 			},
@@ -257,7 +257,7 @@ func TestPositionSpecSuite(t *testing.T) {
 			}, 1, num.DecimalFromFloat(1)),
 			expect: expect{
 				OpenVolume:        0,
-				AverageEntryPrice: num.Zero(),
+				AverageEntryPrice: num.UintZero(),
 				UnrealisedPNL:     num.NewDecimalFromFloat(0),
 				RealisedPNL:       num.NewDecimalFromFloat(8750),
 			},
@@ -280,7 +280,7 @@ func TestPositionSpecSuite(t *testing.T) {
 			}, 1, num.DecimalFromFloat(1)),
 			expect: expect{
 				OpenVolume:        0,
-				AverageEntryPrice: num.Zero(),
+				AverageEntryPrice: num.UintZero(),
 				UnrealisedPNL:     num.NewDecimalFromFloat(0),
 				RealisedPNL:       num.NewDecimalFromFloat(-2500),
 			},
@@ -303,7 +303,7 @@ func TestPositionSpecSuite(t *testing.T) {
 			}, 1, num.DecimalFromFloat(1)),
 			expect: expect{
 				OpenVolume:        0,
-				AverageEntryPrice: num.Zero(),
+				AverageEntryPrice: num.UintZero(),
 				UnrealisedPNL:     num.NewDecimalFromFloat(0),
 				RealisedPNL:       num.NewDecimalFromFloat(3750),
 			},
@@ -425,7 +425,7 @@ func TestPositionSpecSuite(t *testing.T) {
 			}, 1, num.DecimalFromFloat(1)),
 			expect: expect{
 				OpenVolume:        0,
-				AverageEntryPrice: num.Zero(),
+				AverageEntryPrice: num.UintZero(),
 				UnrealisedPNL:     num.NewDecimalFromFloat(0),
 				RealisedPNL:       num.NewDecimalFromFloat(-116),
 			},

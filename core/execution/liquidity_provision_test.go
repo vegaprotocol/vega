@@ -2655,7 +2655,7 @@ func TestAmend(t *testing.T) {
 		lpa = &types.LiquidityProvisionAmendment{
 			Fee:              num.DecimalZero(),
 			MarketID:         lps.MarketID,
-			CommitmentAmount: num.Zero(),
+			CommitmentAmount: num.UintZero(),
 			Buys:             nil,
 			Sells:            nil,
 		}
@@ -2667,7 +2667,7 @@ func TestAmend(t *testing.T) {
 		lpa = &types.LiquidityProvisionAmendment{
 			Fee:              num.DecimalZero(),
 			MarketID:         lps.MarketID,
-			CommitmentAmount: num.Zero(),
+			CommitmentAmount: num.UintZero(),
 			Buys:             []*types.LiquidityOrder{},
 			Sells:            []*types.LiquidityOrder{},
 		}

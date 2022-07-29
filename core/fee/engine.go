@@ -105,9 +105,9 @@ func (e *Engine) CalculateForContinuousMode(
 
 	var (
 		aggressor, maker             string
-		totalFeeAmount               = num.Zero()
-		totalInfrastructureFeeAmount = num.Zero()
-		totalLiquidityFeeAmount      = num.Zero()
+		totalFeeAmount               = num.UintZero()
+		totalInfrastructureFeeAmount = num.UintZero()
+		totalLiquidityFeeAmount      = num.UintZero()
 		// we allocate the len of the trades + 2
 		// len(trade) = number of makerFee + 1 infra fee + 1 liquidity fee
 		transfers     = make([]*types.Transfer, 0, (len(trades)*2)+2)
@@ -173,7 +173,7 @@ func (e *Engine) CalculateForContinuousMode(
 	})
 
 	return &feesTransfer{
-		totalFeesAmountsPerParty: map[string]*num.Uint{aggressor: totalFeeAmount, maker: num.Zero()},
+		totalFeesAmountsPerParty: map[string]*num.Uint{aggressor: totalFeeAmount, maker: num.UintZero()},
 		transfers:                append(transfers, transfersRecv...),
 	}, nil
 }
@@ -408,7 +408,7 @@ func (e *Engine) BuildLiquidityFeeDistributionTransfer(shares map[string]num.Dec
 
 	for key := range shares {
 		keys = append(keys, key)
-		ft.totalFeesAmountsPerParty[key] = num.Zero()
+		ft.totalFeesAmountsPerParty[key] = num.UintZero()
 	}
 	sort.Strings(keys)
 
@@ -522,7 +522,7 @@ func (e *Engine) calculateAuctionModeFees(trade *types.Trade) *types.Fee {
 	inf, _ := num.UintFromDecimal(fee.InfrastructureFee.ToDecimal().Div(two).Ceil())
 	lf, _ := num.UintFromDecimal(fee.LiquidityFee.ToDecimal().Div(two).Ceil())
 	return &types.Fee{
-		MakerFee:          num.Zero(),
+		MakerFee:          num.UintZero(),
 		InfrastructureFee: inf,
 		LiquidityFee:      lf,
 	}

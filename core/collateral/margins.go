@@ -44,7 +44,7 @@ func (n marginUpdate) MarketID() string {
 
 func (n marginUpdate) MarginBalance() *num.Uint {
 	if n.margin == nil {
-		return num.Zero()
+		return num.UintZero()
 	}
 	return n.margin.Balance.Clone()
 }
@@ -56,7 +56,7 @@ func (n marginUpdate) MarginBalance() *num.Uint {
 // TODO(): maybe rename this method into AvailableBalance
 // at some point if it makes senses overall the codebase.
 func (n marginUpdate) GeneralBalance() *num.Uint {
-	gen, bond := num.Zero(), num.Zero()
+	gen, bond := num.UintZero(), num.UintZero()
 	if n.general != nil && n.general.Balance != nil {
 		gen = n.general.Balance
 	}
@@ -73,7 +73,7 @@ func (n marginUpdate) MarginShortFall() *num.Uint {
 // BondBalance - returns nil if no bond account is present, *num.Uint otherwise.
 func (n marginUpdate) BondBalance() *num.Uint {
 	if n.bond == nil {
-		return num.Zero()
+		return num.UintZero()
 	}
 	return n.bond.Balance.Clone()
 }

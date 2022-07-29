@@ -202,7 +202,7 @@ func (e *Engine) GetHorizonYearFractions() []num.Decimal {
 
 // GetValidPriceRange returns the range of prices that won't trigger the price monitoring auction.
 func (e *Engine) GetValidPriceRange() (num.WrappedDecimal, num.WrappedDecimal) {
-	min := num.NewWrappedDecimal(num.Zero(), num.DecimalZero())
+	min := num.NewWrappedDecimal(num.UintZero(), num.DecimalZero())
 	m := num.MaxUint()
 	max := num.NewWrappedDecimal(m, m.ToDecimal())
 	for _, pr := range e.getCurrentPriceRanges(false) {
@@ -214,7 +214,7 @@ func (e *Engine) GetValidPriceRange() (num.WrappedDecimal, num.WrappedDecimal) {
 		}
 	}
 	if min.Original().LessThan(num.DecimalZero()) {
-		min = num.NewWrappedDecimal(num.Zero(), num.DecimalZero())
+		min = num.NewWrappedDecimal(num.UintZero(), num.DecimalZero())
 	}
 	return min, max
 }
@@ -393,7 +393,7 @@ func (e *Engine) recordTimeChange(now time.Time) {
 	}
 
 	if len(e.pricesNow) > 0 {
-		totalWeightedPrice, totalVol := num.Zero(), num.Zero()
+		totalWeightedPrice, totalVol := num.UintZero(), num.UintZero()
 		for _, x := range e.pricesNow {
 			v := num.NewUint(x.Volume)
 			totalVol.AddSum(v)

@@ -127,7 +127,7 @@ func testKeyRotated(t *testing.T) {
 	require.Nil(t, err)
 	require.Equal(t, balance, newBalance)
 	oldBalance, err := acc.GetAvailableBalance(testParty)
-	require.Equal(t, oldBalance, num.Zero())
+	require.Equal(t, oldBalance, num.UintZero())
 	require.ErrorIs(t, err, staking.ErrNoBalanceForParty)
 }
 
@@ -137,13 +137,13 @@ func testPartyDontExists(t *testing.T) {
 
 	balance, err := acc.GetAvailableBalance("nope")
 	assert.EqualError(t, err, staking.ErrNoBalanceForParty.Error())
-	assert.Equal(t, num.Zero(), balance)
+	assert.Equal(t, num.UintZero(), balance)
 	balance, err = acc.GetAvailableBalanceAt("nope", time.Unix(10, 0))
 	assert.EqualError(t, err, staking.ErrNoBalanceForParty.Error())
-	assert.Equal(t, num.Zero(), balance)
+	assert.Equal(t, num.UintZero(), balance)
 	balance, err = acc.GetAvailableBalanceInRange("nope", time.Unix(10, 0), time.Unix(20, 0))
 	assert.EqualError(t, err, staking.ErrNoBalanceForParty.Error())
-	assert.Equal(t, num.Zero(), balance)
+	assert.Equal(t, num.UintZero(), balance)
 }
 
 func testAccountingGetAvailableBalanceInRange(t *testing.T) {

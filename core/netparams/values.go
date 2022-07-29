@@ -37,7 +37,7 @@ func (b *baseValue) ToInt() (int64, error) {
 }
 
 func (b *baseValue) ToUint() (*num.Uint, error) {
-	return num.Zero(), errors.New("not an uint value")
+	return num.UintZero(), errors.New("not an uint value")
 }
 
 func (b *baseValue) ToBool() (bool, error) {
@@ -924,7 +924,7 @@ func NewUint(rules ...UintRule) *Uint {
 	return &Uint{
 		baseValue: &baseValue{},
 		rules:     rules,
-		value:     num.Zero(),
+		value:     num.UintZero(),
 	}
 }
 

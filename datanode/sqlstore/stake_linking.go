@@ -44,7 +44,7 @@ func NewStakeLinking(connectionSource *ConnectionSource) *StakeLinking {
 func (s *StakeLinking) Upsert(ctx context.Context, stake *entities.StakeLinking) error {
 	defer metrics.StartSQLQuery("StakeLinking", "Upsert")()
 	query := fmt.Sprintf(`insert into stake_linking (%s)
-values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) 
+values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
 on conflict (id, vega_time) do update
 set
 	stake_linking_type=EXCLUDED.stake_linking_type,
@@ -101,7 +101,7 @@ func (s *StakeLinking) getStakeWithOffsetPagination(ctx context.Context, partyID
 	bal, err = s.calculateBalance(ctx, partyID)
 	if err != nil {
 		s.log.Errorf("cannot calculate balance", logging.Error(err))
-		return num.Zero(), nil, pageInfo, err
+		return num.UintZero(), nil, pageInfo, err
 	}
 	return bal, links, pageInfo, nil
 }
@@ -142,7 +142,7 @@ func (s *StakeLinking) getStakeWithCursorPagination(ctx context.Context, partyID
 	bal, err = s.calculateBalance(ctx, partyID)
 	if err != nil {
 		s.log.Errorf("cannot calculate balance", logging.Error(err))
-		return num.Zero(), nil, pageInfo, err
+		return num.UintZero(), nil, pageInfo, err
 	}
 	return bal, links, pageInfo, nil
 }
@@ -158,7 +158,7 @@ where party_id=%s`, sqlStakeLinkingColumns, nextBindVar(&bindVars, partyID))
 }
 
 func (s *StakeLinking) calculateBalance(ctx context.Context, partyID entities.PartyID) (*num.Uint, error) {
-	bal := num.Zero()
+	bal := num.UintZero()
 	var bindVars []interface{}
 
 	query := fmt.Sprintf(`select coalesce(sum(CASE stake_linking_type
@@ -183,7 +183,7 @@ WHERE party_id = %s
 
 	var overflowed bool
 	if bal, overflowed = num.UintFromDecimal(currentBalance); overflowed {
-		return num.Zero(), fmt.Errorf("current balance is invalid: %s", currentBalance.String())
+		return num.UintZero(), fmt.Errorf("current balance is invalid: %s", currentBalance.String())
 	}
 
 	return bal, nil

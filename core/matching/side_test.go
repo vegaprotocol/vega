@@ -427,8 +427,8 @@ func TestFakeUncrossNormal(t *testing.T) {
 
 	order := types.Order{
 		ID:            "Id",
-		Price:         num.Zero(),
-		OriginalPrice: num.Zero(),
+		Price:         num.UintZero(),
+		OriginalPrice: num.UintZero(),
 		Side:          types.SideSell,
 		Size:          5,
 		Remaining:     5,
@@ -456,8 +456,8 @@ func TestFakeUncrossSelfTradeFOKMarketOrder(t *testing.T) {
 	order := types.Order{
 		ID:            "Id",
 		Party:         "A",
-		Price:         num.Zero(),
-		OriginalPrice: num.Zero(),
+		Price:         num.UintZero(),
+		OriginalPrice: num.UintZero(),
 		Side:          types.SideSell,
 		Size:          5,
 		Remaining:     5,
@@ -537,8 +537,8 @@ func TestFakeUncrossNotEnoughVolume(t *testing.T) {
 
 	order := types.Order{
 		ID:            "Id",
-		Price:         num.Zero(),
-		OriginalPrice: num.Zero(),
+		Price:         num.UintZero(),
+		OriginalPrice: num.UintZero(),
 		Side:          types.SideSell,
 		Size:          7,
 		Remaining:     7,

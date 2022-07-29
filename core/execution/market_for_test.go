@@ -119,7 +119,7 @@ func (m *Market) GetBondAccountBalance(ctx context.Context, partyID, marketID, a
 	if err == nil {
 		return bondAccount.Balance
 	}
-	return num.Zero()
+	return num.UintZero()
 }
 
 // Returns the amount of assets in the general account.
@@ -128,7 +128,7 @@ func (m *Market) GetGeneralAccountBalance(partyID, asset string) *num.Uint {
 	if err == nil {
 		return generalAccount.Balance
 	}
-	return num.Zero()
+	return num.UintZero()
 }
 
 // Returns the amount of assets in the margin account.
@@ -137,7 +137,7 @@ func (m *Market) GetMarginAccountBalance(partyID, marketID, asset string) *num.U
 	if err == nil {
 		return marginAccount.Balance
 	}
-	return num.Zero()
+	return num.UintZero()
 }
 
 // Get the total assets for a party.

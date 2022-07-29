@@ -133,7 +133,7 @@ func (p *PartiesStake) consume() {
 			partyAccount, ok := p.stakingPerParty[evt.Party]
 			if !ok {
 				partyAccount = &stakingAccount{
-					currentStakeAvailable: num.Zero(),
+					currentStakeAvailable: num.UintZero(),
 					links:                 []eventspb.StakeLinking{},
 				}
 				p.stakingPerParty[evt.Party] = partyAccount
@@ -160,7 +160,7 @@ func (p *PartiesStake) computeCurrentBalance(pacc *stakingAccount) {
 	sort.SliceStable(pacc.links, func(i, j int) bool {
 		return pacc.links[i].Ts < pacc.links[j].Ts
 	})
-	balance := num.Zero()
+	balance := num.UintZero()
 	for _, link := range pacc.links {
 		if link.Status == eventspb.StakeLinking_STATUS_PENDING || link.Status == eventspb.StakeLinking_STATUS_REJECTED {
 			// ignore

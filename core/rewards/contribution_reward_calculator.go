@@ -28,7 +28,7 @@ func calculateRewardsByContribution(epochSeq, asset, accountID string, rewardTyp
 		timestamp:     timestamp.Unix(),
 		partyToAmount: map[string]*num.Uint{},
 	}
-	total := num.Zero()
+	total := num.UintZero()
 	rewardBalance := balance.ToDecimal()
 	for _, p := range participation {
 		partyReward, _ := num.UintFromDecimal(rewardBalance.Mul(p.Score))

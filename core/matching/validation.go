@@ -26,7 +26,7 @@ const (
 
 func (b OrderBook) validateOrder(orderMessage *types.Order) (err error) {
 	if orderMessage.Price == nil {
-		orderMessage.Price = num.Zero()
+		orderMessage.Price = num.UintZero()
 	}
 	if orderMessage.MarketID != b.marketID {
 		b.log.Error("Market ID mismatch",

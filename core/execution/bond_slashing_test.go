@@ -43,7 +43,7 @@ func setMarkPrice(t *testing.T, mkt *testMarket, duration *types.AuctionDuration
 			MarketID:    mkt.market.GetID(),
 			Party:       parties[0],
 			Side:        types.SideBuy,
-			Price:       num.Zero().Sub(mPrice, delta),
+			Price:       num.UintZero().Sub(mPrice, delta),
 			Size:        1,
 			Remaining:   1,
 			TimeInForce: types.OrderTimeInForceGTC,
@@ -241,13 +241,13 @@ func TestRejectLiquidityProvisionWithInsufficientFundsForInitialMargin(t *testin
 	bondAcc, err := tm.collateralEngine.GetOrCreatePartyBondAccount(ctx, mainParty, tm.mktCfg.ID, asset)
 	require.NoError(t, err)
 	require.NotNil(t, bondAcc)
-	require.Equal(t, num.Zero(), bondAcc.Balance)
+	require.Equal(t, num.UintZero(), bondAcc.Balance)
 
 	insurancePoolAccID := fmt.Sprintf("%s*%s1", tm.market.GetID(), asset)
 	insurancePool, err := tm.collateralEngine.GetAccountByID(insurancePoolAccID)
 	require.NoError(t, err)
 	require.NotNil(t, insurancePool)
-	require.Equal(t, num.Zero(), insurancePool.Balance)
+	require.Equal(t, num.UintZero(), insurancePool.Balance)
 
 	// TODO: JEREMY: funds are staying in margin ACCOUNT, let's
 	// fix that latert.
@@ -255,7 +255,7 @@ func TestRejectLiquidityProvisionWithInsufficientFundsForInitialMargin(t *testin
 	require.NoError(t, err)
 	require.NotNil(t, marginAcc)
 
-	exp := num.Zero().Sub(num.NewUint(mainPartyInitialDeposit), marginAcc.Balance)
+	exp := num.UintZero().Sub(num.NewUint(mainPartyInitialDeposit), marginAcc.Balance)
 	genAcc, err := tm.collateralEngine.GetAccountByID(mainPartyGenAccID)
 	require.NoError(t, err)
 	require.NotNil(t, genAcc)
@@ -327,13 +327,13 @@ func TestCloseoutLPWhenCannotCoverMargin(t *testing.T) {
 	genAcc, err := tm.collateralEngine.GetAccountByID(mainPartyGenAccID)
 	require.NoError(t, err)
 	require.NotNil(t, genAcc)
-	require.Equal(t, genAcc.Balance, num.Zero())
+	require.Equal(t, genAcc.Balance, num.UintZero())
 
 	insurancePoolAccID := fmt.Sprintf("%s*%s1", tm.market.GetID(), asset)
 	insurancePool, err := tm.collateralEngine.GetAccountByID(insurancePoolAccID)
 	require.NoError(t, err)
 	insurancePoolBalanceBeforeLPCloseout := insurancePool.Balance.Clone()
-	require.Equal(t, num.Zero(), insurancePoolBalanceBeforeLPCloseout)
+	require.Equal(t, num.UintZero(), insurancePoolBalanceBeforeLPCloseout)
 
 	orderBuyAux1 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "party2-buy-order-1", types.SideBuy, auxParty1, orderSell1.Size+1, orderSell1.Price.Uint64())
 	confirmationBuyAux1, err := tm.market.SubmitOrder(ctx, orderBuyAux1)
@@ -346,12 +346,12 @@ func TestCloseoutLPWhenCannotCoverMargin(t *testing.T) {
 	genAcc, err = tm.collateralEngine.GetAccountByID(mainPartyGenAccID)
 	require.NoError(t, err)
 	require.NotNil(t, genAcc)
-	require.Equal(t, num.Zero(), genAcc.Balance)
+	require.Equal(t, num.UintZero(), genAcc.Balance)
 
 	bondAcc, err = tm.collateralEngine.GetOrCreatePartyBondAccount(ctx, mainParty, tm.mktCfg.ID, asset)
 	require.NoError(t, err)
 	require.NotNil(t, bondAcc)
-	require.Equal(t, num.Zero(), bondAcc.Balance)
+	require.Equal(t, num.UintZero(), bondAcc.Balance)
 
 	insurancePool, err = tm.collateralEngine.GetAccountByID(insurancePoolAccID)
 	require.NoError(t, err)
@@ -422,7 +422,7 @@ func TestBondAccountNotUsedForMarginShortageWhenEnoughMoneyInGeneral(t *testing.
 	insurancePool, err := tm.collateralEngine.GetAccountByID(insurancePoolAccID)
 	require.NoError(t, err)
 	insurancePoolBalanceBeforeMarketMove := insurancePool.Balance.Clone()
-	require.Equal(t, num.Zero(), insurancePoolBalanceBeforeMarketMove)
+	require.Equal(t, num.UintZero(), insurancePoolBalanceBeforeMarketMove)
 
 	orderBuyAux1 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "party2-buy-order-1", types.SideBuy, auxParty1, orderSell1.Size+1, orderSell1.Price.Uint64())
 	confirmationBuyAux1, err := tm.market.SubmitOrder(ctx, orderBuyAux1)
@@ -433,7 +433,7 @@ func TestBondAccountNotUsedForMarginShortageWhenEnoughMoneyInGeneral(t *testing.
 	genAcc, err := tm.collateralEngine.GetAccountByID(mainPartyGenAccID)
 	require.NoError(t, err)
 	require.NotNil(t, genAcc)
-	require.Equal(t, num.Zero(), genAcc.Balance)
+	require.Equal(t, num.UintZero(), genAcc.Balance)
 
 	bondAcc, err = tm.collateralEngine.GetOrCreatePartyBondAccount(ctx, mainParty, tm.mktCfg.ID, asset)
 	require.NoError(t, err)
@@ -445,7 +445,7 @@ func TestBondAccountNotUsedForMarginShortageWhenEnoughMoneyInGeneral(t *testing.
 
 	require.NoError(t, err)
 	require.NotNil(t, insurancePool)
-	require.Equal(t, num.Zero(), insurancePoolBalanceAfterMarketMove)
+	require.Equal(t, num.UintZero(), insurancePoolBalanceAfterMarketMove)
 }
 
 func TestBondAccountUsedForMarginShortage_PenaltyPaidFromBondAccount(t *testing.T) {
@@ -531,7 +531,7 @@ func TestBondAccountUsedForMarginShortage_PenaltyPaidFromBondAccount(t *testing.
 	insurancePool, err := tm.collateralEngine.GetAccountByID(insurancePoolAccID)
 	require.NoError(t, err)
 	insurancePoolBalanceBeforeMarketMove := insurancePool.Balance.Clone()
-	require.Equal(t, num.Zero(), insurancePoolBalanceBeforeMarketMove)
+	require.Equal(t, num.UintZero(), insurancePoolBalanceBeforeMarketMove)
 
 	orderBuyAux1 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "party2-buy-order-1", types.SideBuy, auxParty1, orderSell1.Size+1, orderSell1.Price.Uint64())
 	confirmationBuyAux1, err := tm.market.SubmitOrder(ctx, orderBuyAux1)
@@ -564,9 +564,9 @@ func TestBondAccountUsedForMarginShortage_PenaltyPaidFromBondAccount(t *testing.
 	require.NotNil(t, insurancePool)
 	require.True(t, insurancePoolBalanceAfterMarketMove.GT(insurancePoolBalanceBeforeMarketMove))
 
-	genAccBalanceChange, gNeg := num.Zero().Delta(genAccBalanceAfterMarketMove, genAccBalanceBeforeMarketMove)
-	marginAccBalanceChange, mNeg := num.Zero().Delta(marginAccBalanceAfterMarketMove, marginAccBalanceBeforeMarketMove)
-	insurancePoolBalanceChange, iNeg := num.Zero().Delta(insurancePoolBalanceAfterMarketMove, insurancePoolBalanceBeforeMarketMove)
+	genAccBalanceChange, gNeg := num.UintZero().Delta(genAccBalanceAfterMarketMove, genAccBalanceBeforeMarketMove)
+	marginAccBalanceChange, mNeg := num.UintZero().Delta(marginAccBalanceAfterMarketMove, marginAccBalanceBeforeMarketMove)
+	insurancePoolBalanceChange, iNeg := num.UintZero().Delta(insurancePoolBalanceAfterMarketMove, insurancePoolBalanceBeforeMarketMove)
 	// assume all positive
 	expBB := num.Sum(bondAccBalanceBeforeMarketMove, genAccBalanceChange, marginAccBalanceChange, insurancePoolBalanceChange)
 	if gNeg {
@@ -756,7 +756,7 @@ func TestBondAccountUsedForMarginShortagePenaltyNotPaidOnTransitionFromAuction(t
 	require.NoError(t, err)
 	require.NotNil(t, genAcc)
 	require.False(t, genAcc.Balance.IsZero())
-	require.Equal(t, genAcc.Balance, num.Zero().Sub(genAccBalanceBeforeLPSubmission, lp.CommitmentAmount))
+	require.Equal(t, genAcc.Balance, num.UintZero().Sub(genAccBalanceBeforeLPSubmission, lp.CommitmentAmount))
 
 	bondAcc, err := tm.collateralEngine.GetOrCreatePartyBondAccount(ctx, mainParty, tm.mktCfg.ID, asset)
 	require.NoError(t, err)

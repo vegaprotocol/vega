@@ -3375,7 +3375,7 @@ func PayloadStakeVerifierRemovedFromProto(svd *snapshot.Payload_StakeVerifierRem
 			ID:              pr.Id,
 			VegaPubKey:      pr.VegaPublicKey,
 			BlockTime:       pr.BlockTime,
-			Amount:          num.Zero(),
+			Amount:          num.UintZero(),
 		}
 
 		if len(pr.Amount) > 0 {
@@ -3439,7 +3439,7 @@ func PayloadStakeVerifierDepositedFromProto(svd *snapshot.Payload_StakeVerifierD
 			ID:              pd.Id,
 			VegaPubKey:      pd.VegaPublicKey,
 			BlockTime:       pd.BlockTime,
-			Amount:          num.Zero(),
+			Amount:          num.UintZero(),
 		}
 
 		if len(pd.Amount) > 0 {

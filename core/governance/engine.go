@@ -707,7 +707,7 @@ func (e *Engine) AddVote(ctx context.Context, cmd types.VoteSubmission, party st
 		ProposalID:                  cmd.ProposalID,
 		Value:                       cmd.Value,
 		Timestamp:                   e.timeService.GetTimeNow().UnixNano(),
-		TotalGovernanceTokenBalance: num.Zero(),
+		TotalGovernanceTokenBalance: num.UintZero(),
 		TotalGovernanceTokenWeight:  num.DecimalZero(),
 		TotalEquityLikeShareWeight:  num.DecimalZero(),
 	}
@@ -1108,7 +1108,7 @@ func (p *proposal) computeVoteStateUsingEquityLikeShare(params *ProposalParamete
 }
 
 func (p *proposal) countTokens(votes map[string]*types.Vote, accounts StakingAccounts) *num.Uint {
-	tally := num.Zero()
+	tally := num.UintZero()
 	for _, v := range votes {
 		v.TotalGovernanceTokenBalance = getTokensBalance(accounts, v.PartyID)
 		tally.AddSum(v.TotalGovernanceTokenBalance)

@@ -25,14 +25,14 @@ var minThresholdDelegatorReward, _ = num.DecimalFromString("0.001")
 
 // distribute rewards for a given asset account with the given settings of delegation and reward constraints.
 func calculateRewardsByStake(epochSeq, asset, accountID string, rewardBalance *num.Uint, valScore map[string]num.Decimal, validatorDelegation []*types.ValidatorData, delegatorShare num.Decimal, maxPayout, minStakePerValidator *num.Uint, rng *rand.Rand, log *logging.Logger) *payout {
-	minLeftOverForDistribution := num.Zero()
+	minLeftOverForDistribution := num.UintZero()
 	if !maxPayout.IsZero() {
 		minLeftOverForDistribution, _ = num.UintFromDecimal(minThresholdDelegatorReward.Mul(maxPayout.ToDecimal()))
 	}
 
 	// if there is no reward to give, return no payout
 	rewards := map[string]*num.Uint{}
-	totalRewardPayout := num.Zero()
+	totalRewardPayout := num.UintZero()
 	reward := rewardBalance.Clone()
 	if reward.IsZero() {
 		return &payout{
@@ -75,20 +75,20 @@ func calculateRewardsByStake(epochSeq, asset, accountID string, rewardBalance *n
 		// check how much reward the validator can accept with the cap per participant
 		rewardForNode, ok := rewards[vd.NodeID]
 		if !ok {
-			rewardForNode = num.Zero()
+			rewardForNode = num.UintZero()
 		}
 		// if there is no cap just add the total payout for the validator
 		if maxPayout.IsZero() {
-			rewards[vd.PubKey] = num.Zero().Add(rewardForNode, amountToKeepByValidator)
+			rewards[vd.PubKey] = num.UintZero().Add(rewardForNode, amountToKeepByValidator)
 			totalRewardPayout.AddSum(amountToKeepByValidator)
 		} else {
-			balanceWithPayout := num.Zero().Add(rewardForNode, amountToKeepByValidator)
+			balanceWithPayout := num.UintZero().Add(rewardForNode, amountToKeepByValidator)
 			if balanceWithPayout.LTE(maxPayout) {
 				rewards[vd.PubKey] = balanceWithPayout
 				totalRewardPayout.AddSum(amountToKeepByValidator)
 			} else {
 				rewards[vd.PubKey] = maxPayout
-				totalRewardPayout.AddSum(num.Zero().Sub(maxPayout, rewardForNode))
+				totalRewardPayout.AddSum(num.UintZero().Sub(maxPayout, rewardForNode))
 			}
 		}
 
@@ -132,12 +132,12 @@ func calculateRewardsByStake(epochSeq, asset, accountID string, rewardBalance *n
 		for {
 			log.Info("Reward remaining to distribute to delegators", logging.String("epoch", epochSeq), logging.String("remainingRewardForDelegators", remainingRewardForDelegators.String()))
 
-			totalAwardedThisRound := num.Zero()
+			totalAwardedThisRound := num.UintZero()
 			for _, party := range sortedParties {
 				// check if the party has already rewards from other validators or previous rounds (this epoch)
 				rewardForParty, ok := rewards[party]
 				if !ok {
-					rewardForParty = num.Zero()
+					rewardForParty = num.UintZero()
 				}
 
 				delegatorWeight := delegatorWeights[party]
@@ -145,17 +145,17 @@ func calculateRewardsByStake(epochSeq, asset, accountID string, rewardBalance *n
 				if maxPayout.IsZero() {
 					totalAwardedThisRound.AddSum(rewardAsUint)
 					totalRewardPayout.AddSum(rewardAsUint)
-					rewards[party] = num.Zero().Add(rewardForParty, rewardAsUint)
+					rewards[party] = num.UintZero().Add(rewardForParty, rewardAsUint)
 				} else {
-					balanceWithPayout := num.Zero().Add(rewardForParty, rewardAsUint)
+					balanceWithPayout := num.UintZero().Add(rewardForParty, rewardAsUint)
 					if balanceWithPayout.LTE(maxPayout) {
 						rewards[party] = balanceWithPayout
 						totalAwardedThisRound.AddSum(rewardAsUint)
 						totalRewardPayout.AddSum(rewardAsUint)
 					} else {
 						rewards[party] = maxPayout
-						totalAwardedThisRound.AddSum(num.Zero().Sub(maxPayout, rewardForParty))
-						totalRewardPayout.AddSum(num.Zero().Sub(maxPayout, rewardForParty))
+						totalAwardedThisRound.AddSum(num.UintZero().Sub(maxPayout, rewardForParty))
+						totalRewardPayout.AddSum(num.UintZero().Sub(maxPayout, rewardForParty))
 					}
 				}
 			}
@@ -164,7 +164,7 @@ func calculateRewardsByStake(epochSeq, asset, accountID string, rewardBalance *n
 			// if we finished a round without distributing anything, we should stop
 			// if this is the final round, stop
 			// if the left over is too small for retrying to distribute, stop
-			remainingRewardForDelegators = num.Zero().Sub(remainingRewardForDelegators, totalAwardedThisRound)
+			remainingRewardForDelegators = num.UintZero().Sub(remainingRewardForDelegators, totalAwardedThisRound)
 			if roundsRemaining == 0 || remainingRewardForDelegators.LT(minLeftOverForDistribution) || totalAwardedThisRound.IsZero() {
 				break
 			}

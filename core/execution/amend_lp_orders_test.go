@@ -518,7 +518,7 @@ func TestCancelUndeployedCommitmentDuringAuction(t *testing.T) {
 	t.Run("bond account is updated with the new commitment", func(t *testing.T) {
 		acc, err := tm.collateralEngine.GetPartyBondAccount(tm.market.GetID(), lpparty, tm.asset)
 		assert.NoError(t, err)
-		assert.Equal(t, num.Zero(), acc.Balance)
+		assert.Equal(t, num.UintZero(), acc.Balance)
 	})
 }
 

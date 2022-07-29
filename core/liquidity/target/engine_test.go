@@ -63,7 +63,7 @@ func TestGetTargetStake_NoRecordedOpenInterest(t *testing.T) {
 
 	targetStake, _ := engine.GetTargetStake(rf, now, num.NewUint(123))
 
-	require.Equal(t, num.Zero(), targetStake)
+	require.Equal(t, num.UintZero(), targetStake)
 }
 
 func TestGetTargetStake_VerifyFormula(t *testing.T) {

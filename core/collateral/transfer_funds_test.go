@@ -40,7 +40,7 @@ func testDistributeScheduleFunds(t *testing.T) {
 
 	e.broker.EXPECT().Send(gomock.Any()).Times(1)
 	pendingTransfersAcc := e.GetPendingTransfersAccount(testMarketAsset)
-	assert.Equal(t, pendingTransfersAcc.Balance, num.Zero())
+	assert.Equal(t, pendingTransfersAcc.Balance, num.UintZero())
 
 	err := e.UpdateBalance(context.Background(), pendingTransfersAcc.ID, initialBalance)
 	assert.Nil(t, err)
@@ -83,7 +83,7 @@ func testDistributeScheduleFunds(t *testing.T) {
 
 	pendingTransfersAcc = e.GetPendingTransfersAccount(testMarketAsset)
 	assert.NoError(t, err)
-	assert.Equal(t, pendingTransfersAcc.Balance, num.Zero())
+	assert.Equal(t, pendingTransfersAcc.Balance, num.UintZero())
 }
 
 func testTakeFromGeneralDoNotDistribute(t *testing.T) {
@@ -151,7 +151,7 @@ func testTakeFromGeneralDoNotDistribute(t *testing.T) {
 	// ensure balances now
 	acc1, err := e.GetPartyGeneralAccount(party1, testMarketAsset)
 	assert.NoError(t, err)
-	assert.Equal(t, acc1.Balance, num.Zero())
+	assert.Equal(t, acc1.Balance, num.UintZero())
 
 	pendingTransfersAcc := e.GetPendingTransfersAccount(testMarketAsset)
 	assert.NoError(t, err)
@@ -235,7 +235,7 @@ func testTransferFundsFromGeneralToGeneral(t *testing.T) {
 	// ensure balances now
 	acc1, err := e.GetPartyGeneralAccount(party1, testMarketAsset)
 	assert.NoError(t, err)
-	assert.Equal(t, acc1.Balance, num.Zero())
+	assert.Equal(t, acc1.Balance, num.UintZero())
 
 	acc2, err := e.GetPartyGeneralAccount(party2, testMarketAsset)
 	assert.NoError(t, err)
@@ -243,7 +243,7 @@ func testTransferFundsFromGeneralToGeneral(t *testing.T) {
 
 	pendingTransfersAcc := e.GetPendingTransfersAccount(testMarketAsset)
 	assert.NoError(t, err)
-	assert.Equal(t, pendingTransfersAcc.Balance, num.Zero())
+	assert.Equal(t, pendingTransfersAcc.Balance, num.UintZero())
 }
 
 func testTransferFundsFromGeneralToRewardPool(t *testing.T) {
@@ -322,7 +322,7 @@ func testTransferFundsFromGeneralToRewardPool(t *testing.T) {
 	// ensure balances now
 	acc1, err := e.GetPartyGeneralAccount(party1, testMarketAsset)
 	assert.NoError(t, err)
-	assert.Equal(t, acc1.Balance, num.Zero())
+	assert.Equal(t, acc1.Balance, num.UintZero())
 
 	rewardAcc, err := e.GetGlobalRewardAccount(testMarketAsset)
 	assert.NoError(t, err)
@@ -330,7 +330,7 @@ func testTransferFundsFromGeneralToRewardPool(t *testing.T) {
 
 	pendingTransfersAcc := e.GetPendingTransfersAccount(testMarketAsset)
 	assert.NoError(t, err)
-	assert.Equal(t, pendingTransfersAcc.Balance, num.Zero())
+	assert.Equal(t, pendingTransfersAcc.Balance, num.UintZero())
 }
 
 func testInvalidNumberOfParameters(t *testing.T) {

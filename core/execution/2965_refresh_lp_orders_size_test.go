@@ -98,7 +98,7 @@ func TestRefreshLiquidityProvisionOrdersSizes(t *testing.T) {
 		tpl.New(types.Order{
 			Size:        20,
 			Remaining:   20,
-			Price:       num.Zero().Sub(num.NewUint(5000), partyB.pegOffset), // 4000
+			Price:       num.UintZero().Sub(num.NewUint(5000), partyB.pegOffset), // 4000
 			Side:        types.SideSell,
 			Party:       "party-1",
 			TimeInForce: types.OrderTimeInForceGFA,

@@ -71,7 +71,7 @@ func NewSignatures(
 	s := &ERC20Signatures{
 		log:              log,
 		notary:           notary,
-		lastNonce:        num.Zero(),
+		lastNonce:        num.UintZero(),
 		broker:           broker,
 		isValidatorSetup: isValidatorSetup,
 	}

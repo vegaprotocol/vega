@@ -230,7 +230,7 @@ func testRegisterOrderSuccessful(t *testing.T) {
 		Side:      types.SideBuy,
 		Size:      uint64(buysize),
 		Remaining: uint64(buysize),
-		Price:     num.Zero(),
+		Price:     num.UintZero(),
 	}
 	pos := e.RegisterOrder(context.TODO(), &orderBuy)
 	assert.Equal(t, buysize, pos.Buy())
@@ -246,7 +246,7 @@ func testRegisterOrderSuccessful(t *testing.T) {
 		Side:      types.SideSell,
 		Size:      uint64(sellsize),
 		Remaining: uint64(sellsize),
-		Price:     num.Zero(),
+		Price:     num.UintZero(),
 	}
 	pos = e.RegisterOrder(context.TODO(), &orderSell)
 	assert.Equal(t, buysize, pos.Buy())
@@ -270,7 +270,7 @@ func testUnregisterOrderSuccessful(t *testing.T) {
 		Side:      types.SideBuy,
 		Size:      uint64(buysize),
 		Remaining: uint64(buysize),
-		Price:     num.Zero(),
+		Price:     num.UintZero(),
 	}
 	pos := e.RegisterOrder(context.TODO(), &orderBuy)
 	assert.Equal(t, buysize, pos.Buy())
@@ -283,7 +283,7 @@ func testUnregisterOrderSuccessful(t *testing.T) {
 		Side:      types.SideSell,
 		Size:      uint64(sellsize),
 		Remaining: uint64(sellsize),
-		Price:     num.Zero(),
+		Price:     num.UintZero(),
 	}
 	pos = e.RegisterOrder(context.TODO(), &orderSell)
 	assert.Zero(t, pos.Buy())
@@ -301,7 +301,7 @@ func testUnregisterOrderUnsuccessful(t *testing.T) {
 		Side:      types.SideBuy,
 		Size:      uint64(999),
 		Remaining: uint64(999),
-		Price:     num.Zero(),
+		Price:     num.UintZero(),
 	}
 	require.Panics(t, func() {
 		_ = e.UnregisterOrder(context.TODO(), &orderBuy)
@@ -331,37 +331,37 @@ func TestGetOpenInterestGivenTrades(t *testing.T) {
 		// Both parties already have positions
 		{ // A: + 100, B: -100 => OI: 100
 			ExistingPositions: []*types.Trade{
-				{Seller: "B", Buyer: "A", Size: 100, Price: num.Zero()},
+				{Seller: "B", Buyer: "A", Size: 100, Price: num.UintZero()},
 			},
 			ExpectedOI: 100,
 		},
 		{ // A: + 100 - 10, B: -100 + 10=> OI: 90
 			ExistingPositions: []*types.Trade{
-				{Seller: "B", Buyer: "A", Size: 100, Price: num.Zero()},
+				{Seller: "B", Buyer: "A", Size: 100, Price: num.UintZero()},
 			},
 			Trades: []*types.Trade{
-				{Seller: "A", Buyer: "B", Size: 10, Price: num.Zero()},
+				{Seller: "A", Buyer: "B", Size: 10, Price: num.UintZero()},
 			},
 			ExpectedOI: 90,
 		},
 		{
 			// A: + 100 + 10, B: -100 - 10 => OI: 110
 			ExistingPositions: []*types.Trade{
-				{Seller: "B", Buyer: "A", Size: 100, Price: num.Zero()},
+				{Seller: "B", Buyer: "A", Size: 100, Price: num.UintZero()},
 			},
 			Trades: []*types.Trade{
-				{Seller: "B", Buyer: "A", Size: 10, Price: num.Zero()},
+				{Seller: "B", Buyer: "A", Size: 10, Price: num.UintZero()},
 			},
 			ExpectedOI: 110,
 		},
 		{
 			// Same as above + wash trade -> should leave OI unchanged
 			ExistingPositions: []*types.Trade{
-				{Seller: "B", Buyer: "A", Size: 100, Price: num.Zero()},
+				{Seller: "B", Buyer: "A", Size: 100, Price: num.UintZero()},
 			},
 			Trades: []*types.Trade{
-				{Seller: "B", Buyer: "A", Size: 10, Price: num.Zero()},
-				{Seller: "A", Buyer: "A", Size: 13, Price: num.Zero()},
+				{Seller: "B", Buyer: "A", Size: 10, Price: num.UintZero()},
+				{Seller: "A", Buyer: "A", Size: 13, Price: num.UintZero()},
 			},
 			ExpectedOI: 110,
 		},
@@ -369,9 +369,9 @@ func TestGetOpenInterestGivenTrades(t *testing.T) {
 			// Same as above + wash trade -> should leave OI unchanged
 			ExistingPositions: []*types.Trade{},
 			Trades: []*types.Trade{
-				{Seller: "A", Buyer: "B", Size: 20, Price: num.Zero()},
-				{Seller: "A", Buyer: "C", Size: 30, Price: num.Zero()},
-				{Seller: "D", Buyer: "D", Size: 40, Price: num.Zero()},
+				{Seller: "A", Buyer: "B", Size: 20, Price: num.UintZero()},
+				{Seller: "A", Buyer: "C", Size: 30, Price: num.UintZero()},
+				{Seller: "D", Buyer: "D", Size: 40, Price: num.UintZero()},
 			},
 			ExpectedOI: 50,
 		},
@@ -379,20 +379,20 @@ func TestGetOpenInterestGivenTrades(t *testing.T) {
 		{
 			// A: + 100 + 10, B: -100, C: -10 => OI: 110
 			ExistingPositions: []*types.Trade{
-				{Seller: "B", Buyer: "A", Size: 100, Price: num.Zero()},
+				{Seller: "B", Buyer: "A", Size: 100, Price: num.UintZero()},
 			},
 			Trades: []*types.Trade{
-				{Seller: "C", Buyer: "A", Size: 10, Price: num.Zero()},
+				{Seller: "C", Buyer: "A", Size: 10, Price: num.UintZero()},
 			},
 			ExpectedOI: 110,
 		},
 		{
 			// A: + 100 - 10, B: -100, C: +10 => OI: 100
 			ExistingPositions: []*types.Trade{
-				{Seller: "B", Buyer: "A", Size: 100, Price: num.Zero()},
+				{Seller: "B", Buyer: "A", Size: 100, Price: num.UintZero()},
 			},
 			Trades: []*types.Trade{
-				{Seller: "A", Buyer: "C", Size: 10, Price: num.Zero()},
+				{Seller: "A", Buyer: "C", Size: 10, Price: num.UintZero()},
 			},
 			ExpectedOI: 100,
 		},
@@ -400,156 +400,156 @@ func TestGetOpenInterestGivenTrades(t *testing.T) {
 		{
 			// C: +10, D:-10 => OI: 10
 			Trades: []*types.Trade{
-				{Seller: "D", Buyer: "C", Size: 10, Price: num.Zero()},
+				{Seller: "D", Buyer: "C", Size: 10, Price: num.UintZero()},
 			},
 			ExpectedOI: 10,
 		},
 		{
 			ExistingPositions: []*types.Trade{
-				{Seller: "C", Buyer: "A", Size: 100, Price: num.Zero()},
-				{Seller: "C", Buyer: "B", Size: 100, Price: num.Zero()},
+				{Seller: "C", Buyer: "A", Size: 100, Price: num.UintZero()},
+				{Seller: "C", Buyer: "B", Size: 100, Price: num.UintZero()},
 			},
 			Trades: []*types.Trade{
-				{Seller: "B", Buyer: "A", Size: 5, Price: num.Zero()},
+				{Seller: "B", Buyer: "A", Size: 5, Price: num.UintZero()},
 			},
 			ExpectedOI: 200,
 		},
 		{
 			ExistingPositions: []*types.Trade{
-				{Seller: "C", Buyer: "A", Size: 100, Price: num.Zero()},
-				{Seller: "C", Buyer: "B", Size: 100, Price: num.Zero()},
+				{Seller: "C", Buyer: "A", Size: 100, Price: num.UintZero()},
+				{Seller: "C", Buyer: "B", Size: 100, Price: num.UintZero()},
 			},
 			Trades: []*types.Trade{
-				{Seller: "A", Buyer: "B", Size: 5, Price: num.Zero()},
+				{Seller: "A", Buyer: "B", Size: 5, Price: num.UintZero()},
 			},
 			ExpectedOI: 200,
 		},
 		{
 			ExistingPositions: []*types.Trade{
-				{Seller: "C", Buyer: "A", Size: 100, Price: num.Zero()},
-				{Seller: "C", Buyer: "B", Size: 100, Price: num.Zero()},
+				{Seller: "C", Buyer: "A", Size: 100, Price: num.UintZero()},
+				{Seller: "C", Buyer: "B", Size: 100, Price: num.UintZero()},
 			},
 			Trades: []*types.Trade{
-				{Seller: "C", Buyer: "B", Size: 5, Price: num.Zero()},
+				{Seller: "C", Buyer: "B", Size: 5, Price: num.UintZero()},
 			},
 			ExpectedOI: 205,
 		},
 		{
 			ExistingPositions: []*types.Trade{
-				{Seller: "C", Buyer: "A", Size: 100, Price: num.Zero()},
-				{Seller: "C", Buyer: "B", Size: 100, Price: num.Zero()},
+				{Seller: "C", Buyer: "A", Size: 100, Price: num.UintZero()},
+				{Seller: "C", Buyer: "B", Size: 100, Price: num.UintZero()},
 			},
 			Trades: []*types.Trade{
-				{Seller: "B", Buyer: "C", Size: 5, Price: num.Zero()},
+				{Seller: "B", Buyer: "C", Size: 5, Price: num.UintZero()},
 			},
 			ExpectedOI: 195,
 		},
 		{
 			ExistingPositions: []*types.Trade{
-				{Seller: "C", Buyer: "A", Size: 100, Price: num.Zero()},
-				{Seller: "C", Buyer: "B", Size: 100, Price: num.Zero()},
+				{Seller: "C", Buyer: "A", Size: 100, Price: num.UintZero()},
+				{Seller: "C", Buyer: "B", Size: 100, Price: num.UintZero()},
 			},
 			Trades: []*types.Trade{
-				{Seller: "D", Buyer: "C", Size: 500, Price: num.Zero()},
+				{Seller: "D", Buyer: "C", Size: 500, Price: num.UintZero()},
 			},
 			ExpectedOI: 500,
 		},
 		{
 			ExistingPositions: []*types.Trade{
-				{Seller: "C", Buyer: "A", Size: 100, Price: num.Zero()},
-				{Seller: "C", Buyer: "B", Size: 100, Price: num.Zero()},
+				{Seller: "C", Buyer: "A", Size: 100, Price: num.UintZero()},
+				{Seller: "C", Buyer: "B", Size: 100, Price: num.UintZero()},
 			},
 			Trades: []*types.Trade{
-				{Seller: "D", Buyer: "C", Size: 5, Price: num.Zero()},
+				{Seller: "D", Buyer: "C", Size: 5, Price: num.UintZero()},
 			},
 			ExpectedOI: 200,
 		},
 		{
 			ExistingPositions: []*types.Trade{
-				{Seller: "C", Buyer: "A", Size: 10, Price: num.Zero()},
-				{Seller: "C", Buyer: "B", Size: 100, Price: num.Zero()},
+				{Seller: "C", Buyer: "A", Size: 10, Price: num.UintZero()},
+				{Seller: "C", Buyer: "B", Size: 100, Price: num.UintZero()},
 			},
 			Trades: []*types.Trade{
-				{Seller: "A", Buyer: "B", Size: 5, Price: num.Zero()},
+				{Seller: "A", Buyer: "B", Size: 5, Price: num.UintZero()},
 			},
 			ExpectedOI: 110,
 		},
 		{
 			ExistingPositions: []*types.Trade{
-				{Seller: "C", Buyer: "A", Size: 10, Price: num.Zero()},
-				{Seller: "C", Buyer: "B", Size: 100, Price: num.Zero()},
+				{Seller: "C", Buyer: "A", Size: 10, Price: num.UintZero()},
+				{Seller: "C", Buyer: "B", Size: 100, Price: num.UintZero()},
 			},
 			Trades: []*types.Trade{
-				{Seller: "B", Buyer: "A", Size: 5, Price: num.Zero()},
+				{Seller: "B", Buyer: "A", Size: 5, Price: num.UintZero()},
 			},
 			ExpectedOI: 110,
 		},
 		{
 			ExistingPositions: []*types.Trade{
-				{Seller: "C", Buyer: "A", Size: 10, Price: num.Zero()},
-				{Seller: "C", Buyer: "B", Size: 100, Price: num.Zero()},
+				{Seller: "C", Buyer: "A", Size: 10, Price: num.UintZero()},
+				{Seller: "C", Buyer: "B", Size: 100, Price: num.UintZero()},
 			},
 			Trades: []*types.Trade{
-				{Seller: "A", Buyer: "B", Size: 200, Price: num.Zero()},
+				{Seller: "A", Buyer: "B", Size: 200, Price: num.UintZero()},
 			},
 			ExpectedOI: 300,
 		},
 		{
 			ExistingPositions: []*types.Trade{
-				{Seller: "A", Buyer: "C", Size: 100, Price: num.Zero()},
-				{Seller: "C", Buyer: "B", Size: 300, Price: num.Zero()},
+				{Seller: "A", Buyer: "C", Size: 100, Price: num.UintZero()},
+				{Seller: "C", Buyer: "B", Size: 300, Price: num.UintZero()},
 			},
 			Trades: []*types.Trade{
-				{Seller: "B", Buyer: "A", Size: 100, Price: num.Zero()},
-				{Seller: "B", Buyer: "A", Size: 100, Price: num.Zero()},
-				{Seller: "B", Buyer: "A", Size: 100, Price: num.Zero()},
-				{Seller: "B", Buyer: "A", Size: 100, Price: num.Zero()},
+				{Seller: "B", Buyer: "A", Size: 100, Price: num.UintZero()},
+				{Seller: "B", Buyer: "A", Size: 100, Price: num.UintZero()},
+				{Seller: "B", Buyer: "A", Size: 100, Price: num.UintZero()},
+				{Seller: "B", Buyer: "A", Size: 100, Price: num.UintZero()},
 			},
 			ExpectedOI: 300,
 		},
 		{
 			ExistingPositions: []*types.Trade{
-				{Seller: "A", Buyer: "C", Size: 100, Price: num.Zero()},
-				{Seller: "C", Buyer: "B", Size: 300, Price: num.Zero()},
+				{Seller: "A", Buyer: "C", Size: 100, Price: num.UintZero()},
+				{Seller: "C", Buyer: "B", Size: 300, Price: num.UintZero()},
 			},
 			Trades: []*types.Trade{
-				{Seller: "B", Buyer: "A", Size: 100, Price: num.Zero()},
-				{Seller: "B", Buyer: "A", Size: 100, Price: num.Zero()},
-				{Seller: "B", Buyer: "A", Size: 100, Price: num.Zero()},
-				{Seller: "B", Buyer: "A", Size: 100, Price: num.Zero()},
-				{Seller: "B", Buyer: "A", Size: 100, Price: num.Zero()},
+				{Seller: "B", Buyer: "A", Size: 100, Price: num.UintZero()},
+				{Seller: "B", Buyer: "A", Size: 100, Price: num.UintZero()},
+				{Seller: "B", Buyer: "A", Size: 100, Price: num.UintZero()},
+				{Seller: "B", Buyer: "A", Size: 100, Price: num.UintZero()},
+				{Seller: "B", Buyer: "A", Size: 100, Price: num.UintZero()},
 			},
 			ExpectedOI: 400,
 		},
 		{
 			ExistingPositions: []*types.Trade{
-				{Seller: "A", Buyer: "C", Size: 100, Price: num.Zero()},
-				{Seller: "C", Buyer: "B", Size: 300, Price: num.Zero()},
+				{Seller: "A", Buyer: "C", Size: 100, Price: num.UintZero()},
+				{Seller: "C", Buyer: "B", Size: 300, Price: num.UintZero()},
 			},
 			Trades: []*types.Trade{
-				{Seller: "B", Buyer: "A", Size: 100, Price: num.Zero()},
-				{Seller: "B", Buyer: "A", Size: 100, Price: num.Zero()},
-				{Seller: "B", Buyer: "A", Size: 100, Price: num.Zero()},
-				{Seller: "B", Buyer: "A", Size: 100, Price: num.Zero()},
-				{Seller: "A", Buyer: "B", Size: 100, Price: num.Zero()},
-				{Seller: "B", Buyer: "A", Size: 100, Price: num.Zero()},
-				{Seller: "B", Buyer: "A", Size: 100, Price: num.Zero()},
+				{Seller: "B", Buyer: "A", Size: 100, Price: num.UintZero()},
+				{Seller: "B", Buyer: "A", Size: 100, Price: num.UintZero()},
+				{Seller: "B", Buyer: "A", Size: 100, Price: num.UintZero()},
+				{Seller: "B", Buyer: "A", Size: 100, Price: num.UintZero()},
+				{Seller: "A", Buyer: "B", Size: 100, Price: num.UintZero()},
+				{Seller: "B", Buyer: "A", Size: 100, Price: num.UintZero()},
+				{Seller: "B", Buyer: "A", Size: 100, Price: num.UintZero()},
 			},
 			ExpectedOI: 400,
 		},
 		{
 			ExistingPositions: []*types.Trade{
-				{Seller: "A", Buyer: "C", Size: 100, Price: num.Zero()},
-				{Seller: "C", Buyer: "B", Size: 300, Price: num.Zero()},
+				{Seller: "A", Buyer: "C", Size: 100, Price: num.UintZero()},
+				{Seller: "C", Buyer: "B", Size: 300, Price: num.UintZero()},
 			},
 			Trades: []*types.Trade{
-				{Seller: "B", Buyer: "A", Size: 100, Price: num.Zero()},
-				{Seller: "B", Buyer: "A", Size: 100, Price: num.Zero()},
-				{Seller: "B", Buyer: "A", Size: 100, Price: num.Zero()},
-				{Seller: "B", Buyer: "A", Size: 100, Price: num.Zero()},
-				{Seller: "A", Buyer: "C", Size: 100, Price: num.Zero()},
-				{Seller: "D", Buyer: "A", Size: 100, Price: num.Zero()},
-				{Seller: "B", Buyer: "A", Size: 100, Price: num.Zero()},
+				{Seller: "B", Buyer: "A", Size: 100, Price: num.UintZero()},
+				{Seller: "B", Buyer: "A", Size: 100, Price: num.UintZero()},
+				{Seller: "B", Buyer: "A", Size: 100, Price: num.UintZero()},
+				{Seller: "B", Buyer: "A", Size: 100, Price: num.UintZero()},
+				{Seller: "A", Buyer: "C", Size: 100, Price: num.UintZero()},
+				{Seller: "D", Buyer: "A", Size: 100, Price: num.UintZero()},
+				{Seller: "B", Buyer: "A", Size: 100, Price: num.UintZero()},
 			},
 			ExpectedOI: 400,
 		},
@@ -610,11 +610,11 @@ func (m mp) Price() *num.Uint {
 func (m mp) ClearPotentials() {}
 
 func (m mp) VWBuy() *num.Uint {
-	return num.Zero()
+	return num.UintZero()
 }
 
 func (m mp) VWSell() *num.Uint {
-	return num.Zero()
+	return num.UintZero()
 }
 
 func TestHash(t *testing.T) {
@@ -625,28 +625,28 @@ func TestHash(t *testing.T) {
 			Side:      types.SideBuy,
 			Size:      uint64(100),
 			Remaining: uint64(100),
-			Price:     num.Zero(),
+			Price:     num.UintZero(),
 		},
 		{
 			Party:     "test_party_2",
 			Side:      types.SideBuy,
 			Size:      uint64(200),
 			Remaining: uint64(200),
-			Price:     num.Zero(),
+			Price:     num.UintZero(),
 		},
 		{
 			Party:     "test_party_3",
 			Side:      types.SideBuy,
 			Size:      uint64(300),
 			Remaining: uint64(300),
-			Price:     num.Zero(),
+			Price:     num.UintZero(),
 		},
 		{
 			Party:     "test_party_1",
 			Side:      types.SideSell,
 			Size:      uint64(1000),
 			Remaining: uint64(1000),
-			Price:     num.Zero(),
+			Price:     num.UintZero(),
 		},
 	}
 

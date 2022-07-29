@@ -307,17 +307,17 @@ func testWithinMarket(t *testing.T) {
 		"LiquidityFeeAccount should be empty after a fee distribution")
 
 	// exp = originalBalance*(2/3)
-	exp := num.Zero().Mul(num.NewUint(2), originalBalance)
+	exp := num.UintZero().Mul(num.NewUint(2), originalBalance)
 	exp = exp.Div(exp, num.NewUint(3))
-	actual := num.Zero().Sub(esm.PartyGeneralAccount("party1").Balance, party1Balance)
+	actual := num.UintZero().Sub(esm.PartyGeneralAccount("party1").Balance, party1Balance)
 	assert.True(t,
 		exp.EQ(actual),
 		"party1 should get 2/3 of the fees (got %s expected %s)", actual.String(), exp.String(),
 	)
 
 	// exp = originalBalance*(1/3)
-	exp = num.Zero().Div(originalBalance, num.NewUint(3))
-	actual = num.Zero().Sub(esm.PartyGeneralAccount("party2").Balance, party2Balance)
+	exp = num.UintZero().Div(originalBalance, num.NewUint(3))
+	actual = num.UintZero().Sub(esm.PartyGeneralAccount("party2").Balance, party2Balance)
 	assert.True(t,
 		exp.EQ(actual),
 		"party2 should get 2/3 of the fees (got %s expected %s)", actual.String(), exp.String(),

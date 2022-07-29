@@ -316,7 +316,7 @@ type BuiltinAssetDeposit struct {
 }
 
 func NewBuiltinAssetDepositFromProto(p *vegapb.BuiltinAssetDeposit) (*BuiltinAssetDeposit, error) {
-	amount := num.Zero()
+	amount := num.UintZero()
 	if len(p.Amount) > 0 {
 		var overflowed bool
 		amount, overflowed = num.UintFromString(p.Amount, 10)
@@ -362,7 +362,7 @@ type BuiltinAssetWithdrawal struct {
 }
 
 func NewBuiltinAssetWithdrawalFromProto(p *vegapb.BuiltinAssetWithdrawal) (*BuiltinAssetWithdrawal, error) {
-	amount := num.Zero()
+	amount := num.UintZero()
 	if len(p.Amount) > 0 {
 		var overflowed bool
 		amount, overflowed = num.UintFromString(p.Amount, 10)

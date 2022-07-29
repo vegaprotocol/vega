@@ -22,7 +22,7 @@ import (
 )
 
 func TestCalculateRewardsByContribution(t *testing.T) {
-	require.Nil(t, calculateRewardsByContribution("1", "ETH", "FROM_ACCOUNT", types.AccountTypeMakerFeeReward, num.Zero(), []*types.PartyContibutionScore{{Party: "party1", Score: num.DecimalFromFloat(0.2)}, {Party: "party2", Score: num.DecimalFromFloat(0.8)}}, time.Now()))
+	require.Nil(t, calculateRewardsByContribution("1", "ETH", "FROM_ACCOUNT", types.AccountTypeMakerFeeReward, num.UintZero(), []*types.PartyContibutionScore{{Party: "party1", Score: num.DecimalFromFloat(0.2)}, {Party: "party2", Score: num.DecimalFromFloat(0.8)}}, time.Now()))
 	require.Nil(t, calculateRewardsByContribution("1", "ETH", "FROM_ACCOUNT", types.AccountTypeMakerFeeReward, num.NewUint(1000), []*types.PartyContibutionScore{}, time.Now()))
 
 	po := calculateRewardsByContribution("1", "ETH", "FROM_ACCOUNT", types.AccountTypeMakerFeeReward, num.NewUint(1000), []*types.PartyContibutionScore{{Party: "party1", Score: num.DecimalFromFloat(0.2)}, {Party: "party2", Score: num.DecimalFromFloat(0.8)}}, time.Now())

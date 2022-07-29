@@ -265,7 +265,7 @@ func TestCheckBoundViolationsWithinCurrentTimeWith2HorizonProbabilityPairs(t *te
 	require.False(t, b)
 
 	auctionStateMock.EXPECT().StartPriceAuction(now, &end).Times(1)
-	cPrice = num.Sum(currentPrice, num.Zero().Sub(maxUp2, one)) // max price bound is now floored, so sub 1 to stay below second price bound
+	cPrice = num.Sum(currentPrice, num.UintZero().Sub(maxUp2, one)) // max price bound is now floored, so sub 1 to stay below second price bound
 	cp6 := []*types.Trade{{Price: cPrice, Size: 1}}
 	b = pm.CheckPrice(context.TODO(), auctionStateMock, cp6, true)
 	require.False(t, b)

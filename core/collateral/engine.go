@@ -226,7 +226,7 @@ func (e *Engine) EnableAsset(ctx context.Context, asset types.Asset) error {
 			ID:       infraFeeID,
 			Asset:    asset.ID,
 			Owner:    systemOwner,
-			Balance:  num.Zero(),
+			Balance:  num.UintZero(),
 			MarketID: noMarket,
 			Type:     types.AccountTypeFeesInfrastructure,
 		}
@@ -240,7 +240,7 @@ func (e *Engine) EnableAsset(ctx context.Context, asset types.Asset) error {
 			ID:       externalID,
 			Asset:    asset.ID,
 			Owner:    systemOwner,
-			Balance:  num.Zero(),
+			Balance:  num.UintZero(),
 			MarketID: noMarket,
 			Type:     types.AccountTypeExternal,
 		}
@@ -263,7 +263,7 @@ func (e *Engine) EnableAsset(ctx context.Context, asset types.Asset) error {
 				ID:       rewardID,
 				Asset:    asset.ID,
 				Owner:    systemOwner,
-				Balance:  num.Zero(),
+				Balance:  num.UintZero(),
 				MarketID: noMarket,
 				Type:     rewardAccountType,
 			}
@@ -280,7 +280,7 @@ func (e *Engine) EnableAsset(ctx context.Context, asset types.Asset) error {
 			ID:       pendingTransfersID,
 			Asset:    asset.ID,
 			Owner:    systemOwner,
-			Balance:  num.Zero(),
+			Balance:  num.UintZero(),
 			MarketID: noMarket,
 			Type:     types.AccountTypePendingTransfers,
 		}
@@ -568,8 +568,8 @@ func (e *Engine) FinalSettlement(ctx context.Context, marketID string, transfers
 	var (
 		winidx               int
 		expectCollected      num.Decimal
-		expCollected         = num.Zero()
-		totalAmountCollected = num.Zero()
+		expCollected         = num.UintZero()
+		totalAmountCollected = num.UintZero()
 	)
 
 	now := e.timeService.GetTimeNow().UnixNano()
@@ -620,7 +620,7 @@ func (e *Engine) FinalSettlement(ctx context.Context, marketID string, transfers
 			)
 			return nil, err
 		}
-		amountCollected := num.Zero()
+		amountCollected := num.UintZero()
 
 		for _, bal := range res.Balances {
 			amountCollected.AddSum(bal.Balance)
@@ -777,7 +777,7 @@ func (e *Engine) MarkToMarket(ctx context.Context, marketID string, transfers []
 	var (
 		winidx          int
 		expectCollected num.Decimal
-		expCollected    = num.Zero()
+		expCollected    = num.UintZero()
 	)
 
 	// create batch of events
@@ -847,7 +847,7 @@ func (e *Engine) MarkToMarket(ctx context.Context, marketID string, transfers []
 			return nil, nil, err
 		}
 
-		amountCollected := num.Zero()
+		amountCollected := num.UintZero()
 		// // update the to accounts now
 		for _, bal := range res.Balances {
 			amountCollected.AddSum(bal.Balance)
@@ -1039,7 +1039,7 @@ func (e *Engine) GetPartyMargin(pos events.MarketPosition, asset, marketID strin
 		bond:            bondAcc,
 		asset:           asset,
 		marketID:        marketID,
-		marginShortFall: num.Zero(),
+		marginShortFall: num.UintZero(),
 	}, nil
 }
 
@@ -1061,7 +1061,7 @@ func (e *Engine) MarginUpdate(ctx context.Context, marketID string, updates []ev
 			MarketPosition:  update,
 			asset:           update.Asset(),
 			marketID:        update.MarketID(),
-			marginShortFall: num.Zero(),
+			marginShortFall: num.UintZero(),
 		}
 
 		req, err := e.getTransferRequest(ctx, transfer, settle, nil, mevt)
@@ -1145,7 +1145,7 @@ func (e *Engine) RollbackMarginUpdateOnOrder(ctx context.Context, marketID strin
 			general,
 		},
 		Amount:    transfer.Amount.Amount.Clone(),
-		MinAmount: num.Zero(),
+		MinAmount: num.UintZero(),
 		Asset:     assetID,
 		Reference: transfer.Type.String(),
 	}
@@ -1286,7 +1286,7 @@ func (e *Engine) MarginUpdateOnOrder(ctx context.Context, marketID string, updat
 		MarketPosition:  update,
 		asset:           update.Asset(),
 		marketID:        update.MarketID(),
-		marginShortFall: num.Zero(),
+		marginShortFall: num.UintZero(),
 	}
 
 	req, err := e.getTransferRequest(ctx, transfer, settle, nil, &mevt)
@@ -1691,7 +1691,7 @@ func (e *Engine) getTransferRequest(ctx context.Context, p *types.Transfer, sett
 			settle,
 		}
 		req.Amount = p.Amount.Amount.Clone()
-		req.MinAmount = num.Zero() // default value, but keep it here explicitly
+		req.MinAmount = num.UintZero() // default value, but keep it here explicitly
 		// losses are collected first from the margin account, then the general account, and finally
 		// taken out of the insurance pool. Network party will only have insurance pool available
 		if mEvt.bond != nil {
@@ -1716,7 +1716,7 @@ func (e *Engine) getTransferRequest(ctx context.Context, p *types.Transfer, sett
 		}
 	case types.TransferTypeWin, types.TransferTypeMTMWin:
 		req.Amount = p.Amount.Amount.Clone()
-		req.MinAmount = num.Zero() // default value, but keep it here explicitly
+		req.MinAmount = num.UintZero() // default value, but keep it here explicitly
 		// the insurance pool in the Req.FromAccountAccount is not used ATM (losses should fully cover wins
 		// or the insurance pool has already been drained).
 		if p.Owner == types.NetworkParty {
@@ -1816,7 +1816,7 @@ func (e *Engine) getLedgerEntries(ctx context.Context, req *types.TransferReques
 	for _, t := range req.ToAccount {
 		ret.Balances = append(ret.Balances, &types.TransferBalance{
 			Account: t,
-			Balance: num.Zero(),
+			Balance: num.UintZero(),
 		})
 	}
 	amount := req.Amount
@@ -1824,9 +1824,9 @@ func (e *Engine) getLedgerEntries(ctx context.Context, req *types.TransferReques
 	for _, acc := range req.FromAccount {
 		// give each to account an equal share
 		nToAccounts := num.NewUint(uint64(len(req.ToAccount)))
-		parts := num.Zero().Div(amount, nToAccounts)
+		parts := num.UintZero().Div(amount, nToAccounts)
 		// add remaining pennies to last ledger movement
-		remainder := num.Zero().Mod(amount, nToAccounts)
+		remainder := num.UintZero().Mod(amount, nToAccounts)
 		var (
 			to *types.TransferBalance
 			lm *types.LedgerEntry
@@ -2029,7 +2029,7 @@ func (e *Engine) ClearMarket(ctx context.Context, mktID, asset string, parties [
 	// redistribute the remaining funds in the market insurance account between other markets insurance accounts and global insurance account
 	marketInsuranceID := e.accountID(mktID, "", asset, types.AccountTypeInsurance)
 	marketInsuranceAcc, ok := e.accs[marketInsuranceID]
-	if !ok || marketInsuranceAcc.Balance.EQ(num.Zero()) {
+	if !ok || marketInsuranceAcc.Balance.EQ(num.UintZero()) {
 		// if there's no market insurance account or it has no balance, nothing to do here
 		return resps, nil
 	}
@@ -2077,7 +2077,7 @@ func (e *Engine) CanCoverBond(market, party, asset string, amount *num.Uint) boo
 		noMarket, party, asset, types.AccountTypeGeneral,
 	)
 
-	availableBalance := num.Zero()
+	availableBalance := num.UintZero()
 
 	bondAcc, ok := e.accs[bondID]
 	if ok {
@@ -2130,7 +2130,7 @@ func (e *Engine) CreatePartyBondAccount(ctx context.Context, partyID, marketID, 
 			ID:       bondID,
 			Asset:    asset,
 			MarketID: marketID,
-			Balance:  num.Zero(),
+			Balance:  num.UintZero(),
 			Owner:    partyID,
 			Type:     types.AccountTypeBond,
 		}
@@ -2167,7 +2167,7 @@ func (e *Engine) CreatePartyMarginAccount(ctx context.Context, partyID, marketID
 			ID:       marginID,
 			Asset:    asset,
 			MarketID: marketID,
-			Balance:  num.Zero(),
+			Balance:  num.UintZero(),
 			Owner:    partyID,
 			Type:     types.AccountTypeMargin,
 		}
@@ -2210,7 +2210,7 @@ func (e *Engine) CreatePartyGeneralAccount(ctx context.Context, partyID, asset s
 			ID:       generalID,
 			Asset:    asset,
 			MarketID: noMarket,
-			Balance:  num.Zero(),
+			Balance:  num.UintZero(),
 			Owner:    partyID,
 			Type:     types.AccountTypeGeneral,
 		}
@@ -2361,7 +2361,7 @@ func (e *Engine) CreateMarketAccounts(ctx context.Context, marketID, asset strin
 			ID:       insuranceID,
 			Asset:    asset,
 			Owner:    systemOwner,
-			Balance:  num.Zero(),
+			Balance:  num.UintZero(),
 			MarketID: marketID,
 			Type:     types.AccountTypeInsurance,
 		}
@@ -2376,7 +2376,7 @@ func (e *Engine) CreateMarketAccounts(ctx context.Context, marketID, asset strin
 			ID:       settleID,
 			Asset:    asset,
 			Owner:    systemOwner,
-			Balance:  num.Zero(),
+			Balance:  num.UintZero(),
 			MarketID: marketID,
 			Type:     types.AccountTypeSettlement,
 		}
@@ -2393,7 +2393,7 @@ func (e *Engine) CreateMarketAccounts(ctx context.Context, marketID, asset strin
 			ID:       liquidityFeeID,
 			Asset:    asset,
 			Owner:    systemOwner,
-			Balance:  num.Zero(),
+			Balance:  num.UintZero(),
 			MarketID: marketID,
 			Type:     types.AccountTypeFeesLiquidity,
 		}
@@ -2408,7 +2408,7 @@ func (e *Engine) CreateMarketAccounts(ctx context.Context, marketID, asset strin
 			ID:       makerFeeID,
 			Asset:    asset,
 			Owner:    systemOwner,
-			Balance:  num.Zero(),
+			Balance:  num.UintZero(),
 			MarketID: marketID,
 			Type:     types.AccountTypeFeesMaker,
 		}
@@ -2658,7 +2658,7 @@ func (e *Engine) GetOrCreateRewardAccount(ctx context.Context, asset string, mar
 			ID:       rewardID,
 			Asset:    asset,
 			Owner:    systemOwner,
-			Balance:  num.Zero(),
+			Balance:  num.UintZero(),
 			MarketID: market,
 			Type:     rewardAcccountType,
 		}

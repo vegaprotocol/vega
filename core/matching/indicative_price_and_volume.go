@@ -49,11 +49,11 @@ type ipvVolume struct {
 func NewIndicativePriceAndVolume(log *logging.Logger, buy, sell *OrderBookSide) *IndicativePriceAndVolume {
 	bestBid, _, err := buy.BestPriceAndVolume()
 	if err != nil {
-		bestBid = num.Zero()
+		bestBid = num.UintZero()
 	}
 	bestAsk, _, err := sell.BestPriceAndVolume()
 	if err != nil {
-		bestAsk = num.Zero()
+		bestAsk = num.UintZero()
 	}
 
 	ipv := IndicativePriceAndVolume{

@@ -136,8 +136,8 @@ func (f *Fee) String() string {
 // NewFee returns a new fee object, with all fields initialised.
 func NewFee() *Fee {
 	return &Fee{
-		MakerFee:          num.Zero(),
-		InfrastructureFee: num.Zero(),
-		LiquidityFee:      num.Zero(),
+		MakerFee:          num.UintZero(),
+		InfrastructureFee: num.UintZero(),
+		LiquidityFee:      num.UintZero(),
 	}
 }

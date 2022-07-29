@@ -69,7 +69,7 @@ func (o Order) Clone() *Order {
 	if o.Price != nil {
 		cpy.Price = o.Price.Clone()
 	} else {
-		cpy.Price = num.Zero()
+		cpy.Price = num.UintZero()
 	}
 	// this isn't really needed, to original order is about to be replaced, or the original price is getting reassinged
 	// but in case something goes wrong, we don't want a pointer to this field in 2 places
@@ -159,7 +159,7 @@ func OrderFromProto(o *proto.Order) (*Order, error) {
 			return nil, err
 		}
 	}
-	price := num.Zero()
+	price := num.UintZero()
 	if len(o.Price) > 0 {
 		var overflowed bool
 		price, overflowed = num.UintFromString(o.Price, 10)
@@ -292,7 +292,7 @@ func (o *OrderConfirmation) IntoProto() *proto.OrderConfirmation {
 }
 
 func (o OrderConfirmation) TradedValue() *num.Uint {
-	total := num.Zero()
+	total := num.UintZero()
 	for _, t := range o.Trades {
 		size := num.NewUint(t.Size)
 		total.AddSum(size.Mul(size, t.Price))

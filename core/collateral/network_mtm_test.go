@@ -62,7 +62,7 @@ func testMTMWithNetworkNoLossSoc(t *testing.T) {
 	assert.Nil(t, err)
 
 	eng.broker.EXPECT().Send(gomock.Any()).Times(1)
-	err = eng.Engine.UpdateBalance(context.Background(), marginMoneyParty, num.Zero().Mul(num.NewUint(5), price))
+	err = eng.Engine.UpdateBalance(context.Background(), marginMoneyParty, num.UintZero().Mul(num.NewUint(5), price))
 	assert.Nil(t, err)
 
 	pos := []*types.Transfer{
@@ -146,7 +146,7 @@ func testMTMWithNetworkLossSoc(t *testing.T) {
 	eng.broker.EXPECT().Send(gomock.Any()).Times(1)
 	insurancePool, err := eng.GetMarketInsurancePoolAccount(testMarketID, testMarketAsset)
 	assert.Nil(t, err)
-	err = eng.UpdateBalance(context.Background(), insurancePool.ID, num.Zero().Div(price, num.NewUint(2)))
+	err = eng.UpdateBalance(context.Background(), insurancePool.ID, num.UintZero().Div(price, num.NewUint(2)))
 	assert.Nil(t, err)
 
 	// create party accounts
@@ -164,7 +164,7 @@ func testMTMWithNetworkLossSoc(t *testing.T) {
 	assert.Nil(t, err)
 
 	eng.broker.EXPECT().Send(gomock.Any()).Times(1)
-	err = eng.Engine.UpdateBalance(context.Background(), marginMoneyParty, num.Zero().Mul(num.NewUint(5), price))
+	err = eng.Engine.UpdateBalance(context.Background(), marginMoneyParty, num.UintZero().Mul(num.NewUint(5), price))
 	assert.Nil(t, err)
 
 	pos := []*types.Transfer{
@@ -230,7 +230,7 @@ func testMTMWithNetworkLossSoc(t *testing.T) {
 				require.Equal(t, types.AccountTypeSettlement, to.Type)
 				found = true
 				require.False(t, tr.Amount.EQ(price)) // there wasn't enough balance to pay the full MTM share
-				require.True(t, tr.Amount.EQ(num.Zero().Div(price, num.NewUint(2))))
+				require.True(t, tr.Amount.EQ(num.UintZero().Div(price, num.NewUint(2))))
 				break
 			}
 		}

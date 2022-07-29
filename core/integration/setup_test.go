@@ -147,7 +147,7 @@ func newExecutionTestSetup() *executionTestSetup {
 
 	marketActivityTracker := execution.NewMarketActivityTracker(execsetup.log, execsetup.epochEngine)
 	commander := stubs.NewCommanderStub()
-	execsetup.netDeposits = num.Zero()
+	execsetup.netDeposits = num.UintZero()
 	execsetup.witness = validators.NewWitness(execsetup.log, validators.NewDefaultConfig(), execsetup.topology, commander, execsetup.timeService)
 
 	execsetup.ntry = notary.NewWithSnapshot(execsetup.log, notary.NewDefaultConfig(), execsetup.topology, execsetup.broker, commander)

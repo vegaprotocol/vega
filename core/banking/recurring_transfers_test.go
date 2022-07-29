@@ -533,7 +533,7 @@ func testRecurringTransferInvalidTransfers(t *testing.T) {
 		e.broker.EXPECT().Send(gomock.Any()).Times(1)
 		baseCpy = transferBase
 		transfer.Recurring.TransferBase = &baseCpy
-		transfer.Recurring.Amount = num.Zero()
+		transfer.Recurring.Amount = num.UintZero()
 		assert.EqualError(t,
 			e.TransferFunds(ctx, &transfer),
 			types.ErrCannotTransferZeroFunds.Error(),

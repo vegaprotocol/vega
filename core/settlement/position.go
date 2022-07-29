@@ -109,9 +109,9 @@ func (n npos) Price() *num.Uint {
 }
 
 func (npos) VWBuy() *num.Uint {
-	return num.Zero()
+	return num.UintZero()
 }
 
 func (npos) VWSell() *num.Uint {
-	return num.Zero()
+	return num.UintZero()
 }

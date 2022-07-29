@@ -340,11 +340,11 @@ func (s *Store) GetUint(key string) (*num.Uint, error) {
 	defer s.mu.RUnlock()
 	svalue, ok := s.store[key]
 	if !ok {
-		return num.Zero(), ErrUnknownKey
+		return num.UintZero(), ErrUnknownKey
 	}
 	v, err := svalue.ToUint()
 	if err != nil {
-		return num.Zero(), err
+		return num.UintZero(), err
 	}
 	return v.Clone(), nil
 }

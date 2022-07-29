@@ -32,7 +32,7 @@ func calculateRewardForProposers(epochSeq, asset, accountID string, rewardType t
 		timestamp:     timestamp.Unix(),
 		partyToAmount: map[string]*num.Uint{},
 	}
-	total := num.Zero()
+	total := num.UintZero()
 	rewardBalance := balance.ToDecimal()
 	proposerBonus := rewardBalance.Div(num.DecimalFromInt64(int64(len(proposers))))
 	for _, p := range proposers {

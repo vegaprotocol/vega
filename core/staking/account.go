@@ -40,7 +40,7 @@ type StakingAccount struct {
 func NewStakingAccount(party string) *StakingAccount {
 	return &StakingAccount{
 		Party:   party,
-		Balance: num.Zero(),
+		Balance: num.UintZero(),
 		Events:  []*types.StakeLinking{},
 	}
 }
@@ -100,7 +100,7 @@ func (s *StakingAccount) GetAvailableBalanceInRange(from, to time.Time) (*num.Ui
 	// first compute the balance before the from time.
 	balance, err := s.GetAvailableBalanceAt(from)
 	if err != nil {
-		return num.Zero(), err
+		return num.UintZero(), err
 	}
 
 	minBalance := balance.Clone()
@@ -121,7 +121,7 @@ func (s *StakingAccount) GetAvailableBalanceInRange(from, to time.Time) (*num.Ui
 				balance.AddSum(evt.Amount)
 			case types.StakeLinkingTypeRemoved:
 				if balance.LT(evt.Amount) {
-					return num.Zero(), ErrNegativeBalance
+					return num.UintZero(), ErrNegativeBalance
 				}
 				balance.Sub(balance, evt.Amount)
 				minBalance = num.Min(balance, minBalance)
@@ -168,7 +168,7 @@ func (s *StakingAccount) insertSorted(evt *types.StakeLinking) {
 type timeFilter func(*types.StakeLinking) bool
 
 func (s *StakingAccount) calculateBalance(f timeFilter) (*num.Uint, error) {
-	balance := num.Zero()
+	balance := num.UintZero()
 	for _, evt := range s.Events {
 		if f(evt) {
 			switch evt.Type {
@@ -176,7 +176,7 @@ func (s *StakingAccount) calculateBalance(f timeFilter) (*num.Uint, error) {
 				balance.Add(balance, evt.Amount)
 			case types.StakeLinkingTypeRemoved:
 				if balance.LT(evt.Amount) {
-					return num.Zero(), ErrNegativeBalance
+					return num.UintZero(), ErrNegativeBalance
 				}
 				balance.Sub(balance, evt.Amount)
 			}

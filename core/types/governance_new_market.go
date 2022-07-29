@@ -540,7 +540,7 @@ func (n NewMarketCommitment) DeepClone() *NewMarketCommitment {
 	if n.CommitmentAmount != nil {
 		cpy.CommitmentAmount = n.CommitmentAmount.Clone()
 	} else {
-		cpy.CommitmentAmount = num.Zero()
+		cpy.CommitmentAmount = num.UintZero()
 	}
 	for _, s := range n.Sells {
 		cpy.Sells = append(cpy.Sells, s.DeepClone())

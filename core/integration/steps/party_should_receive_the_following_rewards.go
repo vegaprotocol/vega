@@ -31,7 +31,7 @@ func PartiesShouldReceiveTheFollowingReward(
 	for _, r := range parseRewardsTable(table) {
 		row := rewardRow{row: r}
 
-		actualReward := num.Zero().String()
+		actualReward := num.UintZero().String()
 		if reward, ok := rewards[stubs.AssetParty{Asset: row.Asset(), Party: row.Party()}]; ok {
 			actualReward = reward.Amount.String()
 		}

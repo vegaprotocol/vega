@@ -103,7 +103,7 @@ var (
 	// ErrCannotRepriceDuringAuction.
 	ErrCannotRepriceDuringAuction = errors.New("cannot reprice during auction")
 
-	one = num.One()
+	one = num.UintOne()
 )
 
 // PriceMonitor interface to handle price monitoring/auction triggers
@@ -423,10 +423,10 @@ func NewMarket(
 		expiringOrders:            NewExpiringOrders(),
 		feeSplitter:               NewFeeSplitter(),
 		equityShares:              NewEquityShares(num.DecimalZero()),
-		lastBestAskPrice:          num.Zero(),
-		lastMidSellPrice:          num.Zero(),
-		lastMidBuyPrice:           num.Zero(),
-		lastBestBidPrice:          num.Zero(),
+		lastBestAskPrice:          num.UintZero(),
+		lastMidSellPrice:          num.UintZero(),
+		lastMidBuyPrice:           num.UintZero(),
+		lastBestBidPrice:          num.UintZero(),
 		stateChanged:              true,
 		stateVarEngine:            stateVarEngine,
 		marketActivityTracker:     marketActivityTracker,
@@ -521,7 +521,7 @@ func (m *Market) GetMarketData() types.MarketData {
 	bestStaticOfferPrice, bestStaticOfferVolume, _ := m.getBestStaticAskPriceAndVolume()
 
 	// Auction related values
-	indicativePrice := num.Zero()
+	indicativePrice := num.UintZero()
 	indicativeVolume := uint64(0)
 	var auctionStart, auctionEnd int64
 	if m.as.InAuction() {
@@ -536,12 +536,12 @@ func (m *Market) GetMarketData() types.MarketData {
 
 	// If we do not have one of the best_* prices, leave the mid price as zero
 	two := num.NewUint(2)
-	midPrice := num.Zero()
+	midPrice := num.UintZero()
 	if !bestBidPrice.IsZero() && !bestOfferPrice.IsZero() {
 		midPrice = midPrice.Div(num.Sum(bestBidPrice, bestOfferPrice), two)
 	}
 
-	staticMidPrice := num.Zero()
+	staticMidPrice := num.UintZero()
 	if !bestStaticBidPrice.IsZero() && !bestStaticOfferPrice.IsZero() {
 		staticMidPrice = staticMidPrice.Div(num.Sum(bestStaticBidPrice, bestStaticOfferPrice), two)
 	}
@@ -865,7 +865,7 @@ func (m *Market) unregisterAndReject(ctx context.Context, order *types.Order, er
 
 func (m *Market) getNewPeggedPrice(order *types.Order) (*num.Uint, error) {
 	if m.as.InAuction() {
-		return num.Zero(), ErrCannotRepriceDuringAuction
+		return num.UintZero(), ErrCannotRepriceDuringAuction
 	}
 
 	var (
@@ -882,19 +882,19 @@ func (m *Market) getNewPeggedPrice(order *types.Order) (*num.Uint, error) {
 		price, err = m.getBestStaticAskPrice()
 	}
 	if err != nil {
-		return num.Zero(), ErrUnableToReprice
+		return num.UintZero(), ErrUnableToReprice
 	}
 
-	offset := num.Zero().Mul(order.PeggedOrder.Offset, m.priceFactor)
+	offset := num.UintZero().Mul(order.PeggedOrder.Offset, m.priceFactor)
 	if order.Side == types.SideSell {
 		return price.AddSum(offset), nil
 	}
 
 	if price.LTE(offset) {
-		return num.Zero(), ErrUnableToReprice
+		return num.UintZero(), ErrUnableToReprice
 	}
 
-	return num.Zero().Sub(price, offset), nil
+	return num.UintZero().Sub(price, offset), nil
 }
 
 // Reprice a pegged order. This only updates the price on the order.
@@ -1031,7 +1031,7 @@ func (m *Market) leaveAuction(ctx context.Context, now time.Time) {
 	// in case any party is distressed (Which shouldn't be possible)
 	// we'll fall back to the a network order at the new mark price (mid-price)
 	cmp := m.getCurrentMarkPrice()
-	mcmp := num.Zero().Div(cmp, m.priceFactor) // create the market representation of the price
+	mcmp := num.UintZero().Div(cmp, m.priceFactor) // create the market representation of the price
 	m.confirmMTM(ctx, &types.Order{
 		ID:            m.idgen.NextID(),
 		Price:         cmp,
@@ -1851,7 +1851,7 @@ func (m *Market) resolveClosedOutParties(ctx context.Context, distressedMarginEv
 		Reference:   fmt.Sprintf("LS-%s", o.ID), // liquidity sourcing, reference the order which caused the problem
 		TimeInForce: types.OrderTimeInForceFOK,  // this is an all-or-nothing order, so TIME_IN_FORCE == FOK
 		Type:        types.OrderTypeNetwork,
-		Price:       num.Zero(),
+		Price:       num.UintZero(),
 	}
 	no.Size = no.Remaining
 
@@ -2041,7 +2041,7 @@ func (m *Market) zeroOutNetwork(ctx context.Context, parties []events.MarketPosi
 
 	// ensure an original price is set
 	if settleOrder.OriginalPrice == nil {
-		settleOrder.OriginalPrice = num.Zero().Div(settleOrder.Price, m.priceFactor)
+		settleOrder.OriginalPrice = num.UintZero().Div(settleOrder.Price, m.priceFactor)
 	}
 	marketID := m.GetID()
 	now := m.timeService.GetTimeNow().UnixNano()
@@ -2907,8 +2907,8 @@ func (m *Market) orderAmendInPlace(originalOrder, amendOrder *types.Order) (*typ
 
 func (m *Market) orderAmendWhenParked(originalOrder, amendOrder *types.Order) *types.OrderConfirmation {
 	amendOrder.Status = types.OrderStatusParked
-	amendOrder.Price = num.Zero()
-	amendOrder.OriginalPrice = num.Zero()
+	amendOrder.Price = num.UintZero()
+	amendOrder.OriginalPrice = num.UintZero()
 	m.peggedOrders.Amend(amendOrder)
 
 	return &types.OrderConfirmation{
@@ -3018,13 +3018,13 @@ func (m *Market) getBestStaticPricesDecimal() (bid, ask num.Decimal, err error) 
 func (m *Market) getStaticMidPrice(side types.Side) (*num.Uint, error) {
 	bid, err := m.matching.GetBestStaticBidPrice()
 	if err != nil {
-		return num.Zero(), err
+		return num.UintZero(), err
 	}
 	ask, err := m.matching.GetBestStaticAskPrice()
 	if err != nil {
-		return num.Zero(), err
+		return num.UintZero(), err
 	}
-	mid := num.Zero()
+	mid := num.UintZero()
 	one := num.NewUint(1)
 	two := num.Sum(one, one)
 	one.Mul(one, m.priceFactor)
@@ -3077,7 +3077,7 @@ func (m *Market) getTheoreticalTargetStake() *num.Uint {
 	if err != nil {
 		logging.Error(err)
 		m.log.Debug("unable to get risk factors, can't calculate target")
-		return num.Zero()
+		return num.UintZero()
 	}
 
 	// Ignoring the error as GetTheoreticalTargetStake handles trades==nil and len(trades)==0
@@ -3092,7 +3092,7 @@ func (m *Market) getTargetStake() *num.Uint {
 	if err != nil {
 		logging.Error(err)
 		m.log.Debug("unable to get risk factors, can't calculate target")
-		return num.Zero()
+		return num.UintZero()
 	}
 	return m.tsCalc.GetTargetStake(*rf, m.timeService.GetTimeNow(), m.getCurrentMarkPrice())
 }

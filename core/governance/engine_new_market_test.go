@@ -154,7 +154,7 @@ func testSubmittingProposalForNewMarketWithoutValidCommitmentFails(t *testing.T)
 	proposal.ID += "2"
 	// Then no amount
 	proposal.Terms.GetNewMarket().LiquidityCommitment = newMarketLiquidityCommitment()
-	proposal.Terms.GetNewMarket().LiquidityCommitment.CommitmentAmount = num.Zero()
+	proposal.Terms.GetNewMarket().LiquidityCommitment.CommitmentAmount = num.UintZero()
 	eng.ensureTokenBalanceForParty(t, party, 1)
 	eng.expectRejectedProposalEvent(t, party, proposal.ID, types.ProposalErrorMissingCommitmentAmount)
 	_, err = eng.submitProposal(t, proposal)
