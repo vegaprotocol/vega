@@ -9,7 +9,7 @@ import (
 	reflect "reflect"
 
 	types "code.vegaprotocol.io/vega/core/types"
-	num "code.vegaprotocol.io/vega/core/types/num"
+	num "code.vegaprotocol.io/vega/libs/num"
 	gomock "github.com/golang/mock/gomock"
 )
 

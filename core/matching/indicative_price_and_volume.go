@@ -16,7 +16,7 @@ import (
 	"sort"
 
 	"code.vegaprotocol.io/vega/core/types"
-	"code.vegaprotocol.io/vega/core/types/num"
+	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
 )
 
@@ -49,11 +49,11 @@ type ipvVolume struct {
 func NewIndicativePriceAndVolume(log *logging.Logger, buy, sell *OrderBookSide) *IndicativePriceAndVolume {
 	bestBid, _, err := buy.BestPriceAndVolume()
 	if err != nil {
-		bestBid = num.Zero()
+		bestBid = num.UintZero()
 	}
 	bestAsk, _, err := sell.BestPriceAndVolume()
 	if err != nil {
-		bestAsk = num.Zero()
+		bestAsk = num.UintZero()
 	}
 
 	ipv := IndicativePriceAndVolume{

@@ -3,7 +3,7 @@ package tests_test
 import (
 	"testing"
 
-	vgrand "code.vegaprotocol.io/shared/libs/rand"
+	vgrand "code.vegaprotocol.io/vega/libs/rand"
 	"github.com/stretchr/testify/require"
 )
 

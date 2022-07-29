@@ -15,7 +15,7 @@ package oracles
 import (
 	"fmt"
 
-	"code.vegaprotocol.io/vega/core/types/num"
+	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
 
 	"go.uber.org/zap"

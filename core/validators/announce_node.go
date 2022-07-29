@@ -20,6 +20,8 @@ import (
 
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
+	signatures "code.vegaprotocol.io/vega/libs/crypto/signature"
+
 	"github.com/ethereum/go-ethereum/crypto"
 )
 
@@ -69,7 +71,7 @@ func VerifyAnnounceNode(an *commandspb.AnnounceNode) error {
 	if err != nil {
 		return err
 	}
-	if err := vgcrypto.VerifyVegaSignature(buf, vegas, vegaPubKey); err != nil {
+	if err := signatures.VerifyVegaSignature(buf, vegas, vegaPubKey); err != nil {
 		return err
 	}
 
@@ -78,7 +80,7 @@ func VerifyAnnounceNode(an *commandspb.AnnounceNode) error {
 		return err
 	}
 
-	if err := vgcrypto.VerifyEthereumSignature(buf, eths, an.EthereumAddress); err != nil {
+	if err := signatures.VerifyEthereumSignature(buf, eths, an.EthereumAddress); err != nil {
 		return err
 	}
 

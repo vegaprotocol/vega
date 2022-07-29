@@ -19,8 +19,8 @@ import (
 	vegapb "code.vegaprotocol.io/protos/vega"
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
-	vgcrypto "code.vegaprotocol.io/vega/core/crypto"
-	"code.vegaprotocol.io/vega/core/types/num"
+	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
+	"code.vegaprotocol.io/vega/libs/num"
 )
 
 type TransferStatus = eventspb.Transfer_Status

@@ -24,10 +24,10 @@ import (
 	"sync"
 	"time"
 
-	vgcrypto "code.vegaprotocol.io/shared/libs/crypto"
-	vgfs "code.vegaprotocol.io/shared/libs/fs"
-	vgrand "code.vegaprotocol.io/shared/libs/rand"
 	"code.vegaprotocol.io/vega/core/blockchain"
+	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
+	vgfs "code.vegaprotocol.io/vega/libs/fs"
+	vgrand "code.vegaprotocol.io/vega/libs/rand"
 	"code.vegaprotocol.io/vega/logging"
 
 	abci "github.com/tendermint/tendermint/abci/types"

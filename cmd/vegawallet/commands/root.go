@@ -12,7 +12,7 @@ import (
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/printer"
 	"code.vegaprotocol.io/vega/wallet/version"
 
-	vgversion "code.vegaprotocol.io/shared/libs/version"
+	vgversion "code.vegaprotocol.io/vega/libs/version"
 	coreversion "code.vegaprotocol.io/vega/version"
 	"github.com/blang/semver/v4"
 	"github.com/spf13/cobra"

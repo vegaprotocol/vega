@@ -9,7 +9,7 @@ import (
 	reflect "reflect"
 
 	v1 "code.vegaprotocol.io/protos/vega/commands/v1"
-	crypto "code.vegaprotocol.io/vega/core/crypto"
+	crypto "code.vegaprotocol.io/vega/libs/crypto"
 	gomock "github.com/golang/mock/gomock"
 )
 

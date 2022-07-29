@@ -21,7 +21,7 @@ import (
 	"code.vegaprotocol.io/vega/core/liquidity"
 	"code.vegaprotocol.io/vega/core/metrics"
 	"code.vegaprotocol.io/vega/core/types"
-	"code.vegaprotocol.io/vega/core/types/num"
+	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
 )
 
@@ -56,7 +56,7 @@ func (m *Market) repricePeggedOrders(
 				if order.Status != types.OrderStatusParked {
 					order.UpdatedAt = m.timeService.GetTimeNow().UnixNano()
 					order.Status = types.OrderStatusParked
-					order.Price = num.Zero()
+					order.Price = num.UintZero()
 					order.OriginalPrice = nil
 					m.broker.Send(events.NewOrderEvent(ctx, order))
 					parked = append(parked, order)

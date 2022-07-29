@@ -23,7 +23,7 @@ import (
 	proto "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/types"
-	"code.vegaprotocol.io/vega/core/types/num"
+	"code.vegaprotocol.io/vega/libs/num"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -518,7 +518,7 @@ func TestCancelUndeployedCommitmentDuringAuction(t *testing.T) {
 	t.Run("bond account is updated with the new commitment", func(t *testing.T) {
 		acc, err := tm.collateralEngine.GetPartyBondAccount(tm.market.GetID(), lpparty, tm.asset)
 		assert.NoError(t, err)
-		assert.Equal(t, num.Zero(), acc.Balance)
+		assert.Equal(t, num.UintZero(), acc.Balance)
 	})
 }
 

@@ -22,9 +22,6 @@ import (
 
 	api "code.vegaprotocol.io/protos/vega/api/v1"
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
-	vgcrypto "code.vegaprotocol.io/shared/libs/crypto"
-	vgjson "code.vegaprotocol.io/shared/libs/json"
-	"code.vegaprotocol.io/shared/paths"
 	"code.vegaprotocol.io/vega/core/blockchain"
 	"code.vegaprotocol.io/vega/core/blockchain/abci"
 	"code.vegaprotocol.io/vega/core/config"
@@ -32,7 +29,10 @@ import (
 	"code.vegaprotocol.io/vega/core/txn"
 	"code.vegaprotocol.io/vega/core/validators"
 	"code.vegaprotocol.io/vega/libs/crypto"
+	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
+	vgjson "code.vegaprotocol.io/vega/libs/json"
 	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/vega/paths"
 	"google.golang.org/grpc"
 
 	"github.com/jessevdk/go-flags"

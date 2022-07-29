@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	vegapb "code.vegaprotocol.io/protos/vega"
-	"code.vegaprotocol.io/vega/core/types/num"
+	"code.vegaprotocol.io/vega/libs/num"
 )
 
 var (
@@ -187,7 +187,7 @@ func (a AssetDetailsUpdate) DeepClone() *AssetDetailsUpdate {
 	if a.TotalSupply != nil {
 		cpy.TotalSupply = a.TotalSupply.Clone()
 	} else {
-		cpy.TotalSupply = num.Zero()
+		cpy.TotalSupply = num.UintZero()
 	}
 	cpy.Quantum = a.Quantum
 	return cpy
@@ -233,7 +233,7 @@ func AssetDetailsUpdateFromProto(p *vegapb.AssetDetailsUpdate) (*AssetDetailsUpd
 			return nil, err
 		}
 	}
-	total := num.Zero()
+	total := num.UintZero()
 	if len(p.TotalSupply) > 0 {
 		var overflow bool
 		total, overflow = num.UintFromString(p.TotalSupply, 10)
@@ -313,11 +313,11 @@ func (a AssetDetailsUpdateERC20) IntoProto() *vegapb.AssetDetailsUpdate_Erc20 {
 }
 
 func (a AssetDetailsUpdateERC20) Validate() (ProposalError, error) {
-	if a.ERC20Update.LifetimeLimit.EQ(num.Zero()) {
+	if a.ERC20Update.LifetimeLimit.EQ(num.UintZero()) {
 		return ProposalErrorInvalidAsset, ErrLifetimeLimitMustBePositive
 	}
 
-	if a.ERC20Update.WithdrawThreshold.EQ(num.Zero()) {
+	if a.ERC20Update.WithdrawThreshold.EQ(num.UintZero()) {
 		return ProposalErrorInvalidAsset, ErrWithdrawThresholdMustBePositive
 	}
 
@@ -326,8 +326,8 @@ func (a AssetDetailsUpdateERC20) Validate() (ProposalError, error) {
 
 func AssetDetailsUpdateERC20FromProto(p *vegapb.AssetDetailsUpdate_Erc20) (*AssetDetailsUpdateERC20, error) {
 	var (
-		lifetimeLimit     = num.Zero()
-		withdrawThreshold = num.Zero()
+		lifetimeLimit     = num.UintZero()
+		withdrawThreshold = num.UintZero()
 		overflow          bool
 	)
 	if len(p.Erc20.LifetimeLimit) > 0 {
@@ -335,7 +335,7 @@ func AssetDetailsUpdateERC20FromProto(p *vegapb.AssetDetailsUpdate_Erc20) (*Asse
 		if overflow {
 			return nil, ErrInvalidLifetimeLimit
 		}
-		if lifetimeLimit.EQ(num.Zero()) {
+		if lifetimeLimit.EQ(num.UintZero()) {
 			return nil, ErrLifetimeLimitMustBePositive
 		}
 	}
@@ -344,7 +344,7 @@ func AssetDetailsUpdateERC20FromProto(p *vegapb.AssetDetailsUpdate_Erc20) (*Asse
 		if overflow {
 			return nil, ErrInvalidWithdrawThreshold
 		}
-		if withdrawThreshold.EQ(num.Zero()) {
+		if withdrawThreshold.EQ(num.UintZero()) {
 			return nil, ErrWithdrawThresholdMustBePositive
 		}
 	}
@@ -367,13 +367,13 @@ func (e ERC20Update) DeepClone() *ERC20Update {
 	if e.LifetimeLimit != nil {
 		cpy.LifetimeLimit = e.LifetimeLimit.Clone()
 	} else {
-		cpy.LifetimeLimit = num.Zero()
+		cpy.LifetimeLimit = num.UintZero()
 	}
 
 	if e.WithdrawThreshold != nil {
 		cpy.WithdrawThreshold = e.WithdrawThreshold.Clone()
 	} else {
-		cpy.WithdrawThreshold = num.Zero()
+		cpy.WithdrawThreshold = num.UintZero()
 	}
 
 	return cpy

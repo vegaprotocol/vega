@@ -15,7 +15,7 @@ package num_test
 import (
 	"testing"
 
-	"code.vegaprotocol.io/vega/core/types/num"
+	"code.vegaprotocol.io/vega/libs/num"
 
 	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/require"

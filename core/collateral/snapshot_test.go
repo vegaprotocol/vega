@@ -19,14 +19,14 @@ import (
 	"testing"
 	"time"
 
-	"code.vegaprotocol.io/shared/paths"
 	"code.vegaprotocol.io/vega/core/collateral"
 	"code.vegaprotocol.io/vega/core/config/encoding"
 	"code.vegaprotocol.io/vega/core/integration/stubs"
 	"code.vegaprotocol.io/vega/core/stats"
 	"code.vegaprotocol.io/vega/core/types"
-	"code.vegaprotocol.io/vega/core/types/num"
+	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/vega/paths"
 
 	snp "code.vegaprotocol.io/vega/core/snapshot"
 	vgcontext "code.vegaprotocol.io/vega/libs/context"

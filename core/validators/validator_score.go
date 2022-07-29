@@ -19,7 +19,7 @@ import (
 
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/types"
-	"code.vegaprotocol.io/vega/core/types/num"
+	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
 )
 
@@ -31,7 +31,7 @@ type valScore struct {
 // getStakeScore returns a score for the validator based on their relative score of the total score.
 // No anti-whaling is applied.
 func getStakeScore(delegationState []*types.ValidatorData, minimumStake *num.Uint) map[string]num.Decimal {
-	totalStake := num.Zero()
+	totalStake := num.UintZero()
 	for _, ds := range delegationState {
 		totalStake.AddSum(num.Sum(ds.SelfStake, ds.StakeByDelegators))
 	}
@@ -261,7 +261,7 @@ func (t *Topology) calculateErsatzScores(delegationState []*types.ValidatorData)
 	ezScores := &types.ScoreData{}
 	ev := map[string]num.Decimal{}
 	evStake := map[string]*num.Uint{}
-	evTotal := num.Zero()
+	evTotal := num.UintZero()
 	evDelegation := []*types.ValidatorData{}
 
 	// split the delegation into tendermint and ersatz and count their respective totals
@@ -314,7 +314,7 @@ func (t *Topology) calculateErsatzScores(delegationState []*types.ValidatorData)
 // CalcDelegation extracts the delegation of the validator set from the delegation state slice and returns the total delegation.
 func CalcDelegation(validators map[string]struct{}, delegationState []*types.ValidatorData) ([]*types.ValidatorData, num.Decimal) {
 	tv := map[string]num.Decimal{}
-	tvTotal := num.Zero()
+	tvTotal := num.UintZero()
 	tvDelegation := []*types.ValidatorData{}
 
 	// split the delegation into tendermint and ersatz and count their respective totals

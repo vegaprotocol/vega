@@ -15,8 +15,8 @@ package adaptors
 import (
 	"fmt"
 
-	"code.vegaprotocol.io/vega/core/crypto"
 	"code.vegaprotocol.io/vega/core/oracles"
+	"code.vegaprotocol.io/vega/libs/crypto"
 
 	"code.vegaprotocol.io/oracles-relay/openoracle"
 )

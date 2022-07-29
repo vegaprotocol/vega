@@ -3,9 +3,9 @@ package cmd_test
 import (
 	"testing"
 
-	vgrand "code.vegaprotocol.io/shared/libs/rand"
 	cmd "code.vegaprotocol.io/vega/cmd/vegawallet/commands"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/flags"
+	vgrand "code.vegaprotocol.io/vega/libs/rand"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

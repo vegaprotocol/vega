@@ -21,7 +21,7 @@ import (
 	"code.vegaprotocol.io/vega/core/banking"
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/types"
-	"code.vegaprotocol.io/vega/core/types/num"
+	"code.vegaprotocol.io/vega/libs/num"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 )
@@ -533,7 +533,7 @@ func testRecurringTransferInvalidTransfers(t *testing.T) {
 		e.broker.EXPECT().Send(gomock.Any()).Times(1)
 		baseCpy = transferBase
 		transfer.Recurring.TransferBase = &baseCpy
-		transfer.Recurring.Amount = num.Zero()
+		transfer.Recurring.Amount = num.UintZero()
 		assert.EqualError(t,
 			e.TransferFunds(ctx, &transfer),
 			types.ErrCannotTransferZeroFunds.Error(),

@@ -24,7 +24,7 @@ import (
 	"code.vegaprotocol.io/vega/core/liquidity"
 	"code.vegaprotocol.io/vega/core/positions"
 	"code.vegaprotocol.io/vega/core/types"
-	"code.vegaprotocol.io/vega/core/types/num"
+	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
 )
 
@@ -104,7 +104,7 @@ func (m *Market) SubmitLiquidityProvision(
 
 	// now we calculate the amount that needs to be moved into the account
 
-	amount, neg := num.Zero().Delta(sub.CommitmentAmount, bondAcc.Balance)
+	amount, neg := num.UintZero().Delta(sub.CommitmentAmount, bondAcc.Balance)
 	ty := types.TransferTypeBondLow
 	if neg {
 		ty = types.TransferTypeBondHigh
@@ -308,7 +308,7 @@ func (m *Market) AmendLiquidityProvision(ctx context.Context, lpa *types.Liquidi
 
 		// now if the stake surplus is > than the change we are OK
 		surplus := supplied.Sub(supplied, m.getTargetStake())
-		diff := num.Zero().Sub(lp.CommitmentAmount, lpa.CommitmentAmount)
+		diff := num.UintZero().Sub(lp.CommitmentAmount, lpa.CommitmentAmount)
 		if surplus.LT(diff) {
 			return ErrNotEnoughStake
 		}
@@ -668,7 +668,7 @@ func (m *Market) rollBackMargin(
 		return nil
 	}
 
-	amount := num.Zero().Sub(marginAcc.Balance, initialMargin)
+	amount := num.UintZero().Sub(marginAcc.Balance, initialMargin)
 	// now create the rollback to transfer
 	transfer := types.Transfer{
 		Owner: party,
@@ -702,7 +702,7 @@ func (m *Market) repriceLiquidityOrder(
 	po *types.PeggedOrder, side types.Side,
 ) (*num.Uint, *types.PeggedOrder, error) {
 	if m.as.InAuction() {
-		return num.Zero(), nil, ErrCannotRepriceDuringAuction
+		return num.UintZero(), nil, ErrCannotRepriceDuringAuction
 	}
 
 	var (
@@ -719,17 +719,17 @@ func (m *Market) repriceLiquidityOrder(
 		price, err = m.getBestStaticAskPrice()
 	}
 	if err != nil {
-		return num.Zero(), nil, ErrUnableToReprice
+		return num.UintZero(), nil, ErrUnableToReprice
 	}
 	return m.adjustPriceRange(po, side, price)
 }
 
 func (m *Market) scaleOffsetAsset(offset *num.Uint) *num.Uint {
-	return num.Zero().Mul(offset, m.priceFactor)
+	return num.UintZero().Mul(offset, m.priceFactor)
 }
 
 func (m *Market) scaleOffsetToMarket(offset *num.Uint) *num.Uint {
-	return num.Zero().Div(offset, m.priceFactor)
+	return num.UintZero().Div(offset, m.priceFactor)
 }
 
 func (m *Market) adjustPriceRange(po *types.PeggedOrder, side types.Side, price *num.Uint) (p *num.Uint, _ *types.PeggedOrder, _ error) {
@@ -779,11 +779,11 @@ func (m *Market) adjustPriceRange(po *types.PeggedOrder, side types.Side, price 
 			// bestAsk/Mid
 			switch po.Reference {
 			case types.PeggedReferenceBestAsk:
-				po.Offset = num.Zero()
+				po.Offset = num.UintZero()
 			case types.PeggedReferenceMid:
 				po.Offset.SetUint64(1)
 				if m.as.InAuction() {
-					po.Offset = num.Zero()
+					po.Offset = num.UintZero()
 				}
 			}
 			// ensure the offset takes into account the decimal places
@@ -797,7 +797,7 @@ func (m *Market) adjustPriceRange(po *types.PeggedOrder, side types.Side, price 
 		if price.LT(maxP) {
 			// this is the case where maxPrice is > to price,
 			// then we need to adapt the offset
-			po.Offset = m.scaleOffsetToMarket(num.Zero().Sub(maxP, price))
+			po.Offset = m.scaleOffsetToMarket(num.UintZero().Sub(maxP, price))
 			// and our price is the maxPrice
 			return maxP, po, nil
 		}
@@ -808,11 +808,11 @@ func (m *Market) adjustPriceRange(po *types.PeggedOrder, side types.Side, price 
 		// and the offset to 0 or 1 dependingof the reference.
 		switch po.Reference {
 		case types.PeggedReferenceBestAsk:
-			po.Offset = num.Zero()
+			po.Offset = num.UintZero()
 		case types.PeggedReferenceMid:
 			po.Offset.SetUint64(1)
 			if m.as.InAuction() {
-				po.Offset = num.Zero()
+				po.Offset = num.UintZero()
 			}
 		}
 		return num.Sum(price, m.scaleOffsetAsset(po.Offset)), po, nil
@@ -822,7 +822,7 @@ func (m *Market) adjustPriceRange(po *types.PeggedOrder, side types.Side, price 
 	// first the case where we are sure to be able to price
 	offset := m.scaleOffsetAsset(po.Offset)
 	if price.GT(offset) {
-		basePrice := num.Zero().Sub(price, offset)
+		basePrice := num.UintZero().Sub(price, offset)
 
 		// this is the case where our price is correct
 		// at this point our basePrice should not be 0
@@ -840,11 +840,11 @@ func (m *Market) adjustPriceRange(po *types.PeggedOrder, side types.Side, price 
 			// at bestBid/Mid
 			switch po.Reference {
 			case types.PeggedReferenceBestBid:
-				po.Offset = num.Zero()
+				po.Offset = num.UintZero()
 			case types.PeggedReferenceMid:
 				po.Offset.SetUint64(1)
 				if m.as.InAuction() {
-					po.Offset = num.Zero()
+					po.Offset = num.UintZero()
 				}
 			}
 			return price.Sub(price, m.scaleOffsetAsset(po.Offset)), po, nil
@@ -866,11 +866,11 @@ func (m *Market) adjustPriceRange(po *types.PeggedOrder, side types.Side, price 
 		// so it's safe to have a 1 offset
 		switch po.Reference {
 		case types.PeggedReferenceBestBid:
-			po.Offset = num.Zero()
+			po.Offset = num.UintZero()
 		case types.PeggedReferenceMid:
 			po.Offset.SetUint64(1)
 			if m.as.InAuction() {
-				po.Offset = num.Zero()
+				po.Offset = num.UintZero()
 			}
 		}
 		return price.Sub(price, m.scaleOffsetAsset(po.Offset)), po, nil
@@ -885,7 +885,7 @@ func (m *Market) adjustPriceRange(po *types.PeggedOrder, side types.Side, price 
 		// for using minPrice
 		switch po.Reference {
 		case types.PeggedReferenceBestBid:
-			po.Offset = num.Zero()
+			po.Offset = num.UintZero()
 		case types.PeggedReferenceMid:
 			po.Offset.SetUint64(1)
 		}
@@ -893,7 +893,7 @@ func (m *Market) adjustPriceRange(po *types.PeggedOrder, side types.Side, price 
 	}
 
 	// this is the last case where we can use the minPrice
-	off := num.Zero().Sub(price, minP)
+	off := num.UintZero().Sub(price, minP)
 	po.Offset = m.scaleOffsetToMarket(off)
 	return price.Sub(price, off), po, nil
 }
@@ -1265,7 +1265,7 @@ func (m *Market) ensureLiquidityProvisionBond(
 	}
 
 	// build our transfer to be sent to collateral
-	amount, neg := num.Zero().Delta(sub.CommitmentAmount, bondAcc.Balance)
+	amount, neg := num.UintZero().Delta(sub.CommitmentAmount, bondAcc.Balance)
 	ty := types.TransferTypeBondLow
 	if neg {
 		ty = types.TransferTypeBondHigh

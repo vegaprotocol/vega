@@ -19,7 +19,7 @@ import (
 
 	checkpoint "code.vegaprotocol.io/protos/vega/checkpoint/v1"
 	"code.vegaprotocol.io/vega/core/types"
-	"code.vegaprotocol.io/vega/core/types/num"
+	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/libs/proto"
 	"code.vegaprotocol.io/vega/logging"
 )
@@ -136,7 +136,7 @@ func (e *Engine) getCheckpointBalances() []*checkpoint.AssetBalance {
 			}
 			balance, ok := assets[acc.Asset]
 			if !ok {
-				balance = num.Zero()
+				balance = num.UintZero()
 				assets[acc.Asset] = balance
 			}
 			balance.AddSum(acc.Balance)

@@ -22,8 +22,8 @@ import (
 	"code.vegaprotocol.io/vega/core/bridges"
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/types"
-	"code.vegaprotocol.io/vega/core/types/num"
 	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
+	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
 )
 
@@ -71,7 +71,7 @@ func NewSignatures(
 	s := &ERC20Signatures{
 		log:              log,
 		notary:           notary,
-		lastNonce:        num.Zero(),
+		lastNonce:        num.UintZero(),
 		broker:           broker,
 		isValidatorSetup: isValidatorSetup,
 	}

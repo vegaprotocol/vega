@@ -21,7 +21,7 @@ import (
 	snapshot "code.vegaprotocol.io/protos/vega/snapshot/v1"
 
 	"code.vegaprotocol.io/vega/core/types"
-	"code.vegaprotocol.io/vega/core/types/num"
+	"code.vegaprotocol.io/vega/libs/num"
 
 	"code.vegaprotocol.io/vega/libs/proto"
 )
@@ -152,9 +152,9 @@ func marketTrackerFromProto(data *checkpoint.MarketActivityTracker) *marketTrack
 		makerFees:      map[string]*num.Uint{},
 		takerFees:      map[string]*num.Uint{},
 		lpFees:         map[string]*num.Uint{},
-		totalMakerFees: num.Zero(),
-		totalTakerFees: num.Zero(),
-		totalLPFees:    num.Zero(),
+		totalMakerFees: num.UintZero(),
+		totalTakerFees: num.UintZero(),
+		totalLPFees:    num.UintZero(),
 		valueTraded:    valueTrades,
 		proposer:       data.Proposer,
 		proposersPaid:  data.BonusPaid,
