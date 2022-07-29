@@ -4,10 +4,10 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
-
-	vgrand "code.vegaprotocol.io/shared/libs/rand"
+	vgrand "code.vegaprotocol.io/vega/libs/rand"
 	"code.vegaprotocol.io/vega/paths"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestCachePaths(t *testing.T) {
@@ -18,8 +18,8 @@ func TestCachePaths(t *testing.T) {
 func testCachePathsJoiningCachePathAsCachePathSucceeds(t *testing.T) {
 	// given
 	rootCachePath := paths.DataNodeCacheHome
-	pathElem1:= vgrand.RandomStr(5)
-	pathElem2:= vgrand.RandomStr(5)
+	pathElem1 := vgrand.RandomStr(5)
+	pathElem2 := vgrand.RandomStr(5)
 
 	// when
 	builtPath := paths.JoinCachePath(rootCachePath, pathElem1, pathElem2)
@@ -31,8 +31,8 @@ func testCachePathsJoiningCachePathAsCachePathSucceeds(t *testing.T) {
 func testCachePathsJoiningCachePathAsStringSucceeds(t *testing.T) {
 	// given
 	rootCachePath := paths.DataNodeCacheHome
-	pathElem1:= vgrand.RandomStr(5)
-	pathElem2:= vgrand.RandomStr(5)
+	pathElem1 := vgrand.RandomStr(5)
+	pathElem2 := vgrand.RandomStr(5)
 
 	// when
 	builtPath := paths.JoinCachePath(rootCachePath, pathElem1, pathElem2)
@@ -49,8 +49,8 @@ func TestConfigPaths(t *testing.T) {
 func testConfigPathsJoiningConfigPathAsConfigPathSucceeds(t *testing.T) {
 	// given
 	rootConfigPath := paths.NodeConfigHome
-	pathElem1:= vgrand.RandomStr(5)
-	pathElem2:= vgrand.RandomStr(5)
+	pathElem1 := vgrand.RandomStr(5)
+	pathElem2 := vgrand.RandomStr(5)
 
 	// when
 	builtPath := paths.JoinConfigPath(rootConfigPath, pathElem1, pathElem2)
@@ -62,8 +62,8 @@ func testConfigPathsJoiningConfigPathAsConfigPathSucceeds(t *testing.T) {
 func testConfigPathsJoiningConfigPathAsStringSucceeds(t *testing.T) {
 	// given
 	rootConfigPath := paths.NodeConfigHome
-	pathElem1:= vgrand.RandomStr(5)
-	pathElem2:= vgrand.RandomStr(5)
+	pathElem1 := vgrand.RandomStr(5)
+	pathElem2 := vgrand.RandomStr(5)
 
 	// when
 	builtPath := paths.JoinConfigPath(rootConfigPath, pathElem1, pathElem2)
@@ -71,7 +71,6 @@ func testConfigPathsJoiningConfigPathAsStringSucceeds(t *testing.T) {
 	// then
 	assert.Equal(t, paths.ConfigPath(filepath.Join("node", pathElem1, pathElem2)), builtPath)
 }
-
 
 func TestDataPaths(t *testing.T) {
 	t.Run("Joining data path as DataPath succeeds", testDataPathsJoiningDataPathAsDataPathSucceeds)
@@ -81,8 +80,8 @@ func TestDataPaths(t *testing.T) {
 func testDataPathsJoiningDataPathAsDataPathSucceeds(t *testing.T) {
 	// given
 	rootDataPath := paths.NodeDataHome
-	pathElem1:= vgrand.RandomStr(5)
-	pathElem2:= vgrand.RandomStr(5)
+	pathElem1 := vgrand.RandomStr(5)
+	pathElem2 := vgrand.RandomStr(5)
 
 	// when
 	builtPath := paths.JoinDataPath(rootDataPath, pathElem1, pathElem2)
@@ -94,8 +93,8 @@ func testDataPathsJoiningDataPathAsDataPathSucceeds(t *testing.T) {
 func testDataPathsJoiningDataPathAsStringSucceeds(t *testing.T) {
 	// given
 	rootDataPath := paths.NodeDataHome
-	pathElem1:= vgrand.RandomStr(5)
-	pathElem2:= vgrand.RandomStr(5)
+	pathElem1 := vgrand.RandomStr(5)
+	pathElem2 := vgrand.RandomStr(5)
 
 	// when
 	builtPath := paths.JoinDataPath(rootDataPath, pathElem1, pathElem2)
@@ -112,8 +111,8 @@ func TestStatePaths(t *testing.T) {
 func testStatePathsJoiningStatePathAsStatePathSucceeds(t *testing.T) {
 	// given
 	rootStatePath := paths.NodeStateHome
-	pathElem1:= vgrand.RandomStr(5)
-	pathElem2:= vgrand.RandomStr(5)
+	pathElem1 := vgrand.RandomStr(5)
+	pathElem2 := vgrand.RandomStr(5)
 
 	// when
 	builtPath := paths.JoinStatePath(rootStatePath, pathElem1, pathElem2)
@@ -125,8 +124,8 @@ func testStatePathsJoiningStatePathAsStatePathSucceeds(t *testing.T) {
 func testStatePathsJoiningStatePathAsStringSucceeds(t *testing.T) {
 	// given
 	rootStatePath := paths.NodeStateHome
-	pathElem1:= vgrand.RandomStr(5)
-	pathElem2:= vgrand.RandomStr(5)
+	pathElem1 := vgrand.RandomStr(5)
+	pathElem2 := vgrand.RandomStr(5)
 
 	// when
 	builtPath := paths.JoinStatePath(rootStatePath, pathElem1, pathElem2)

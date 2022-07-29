@@ -11,7 +11,7 @@ import (
 	"syscall"
 
 	vgterm "code.vegaprotocol.io/vega/libs/term"
-	vglog "code.vegaprotocol.io/shared/libs/zap"
+	vglog "code.vegaprotocol.io/vega/libs/zap"
 	"code.vegaprotocol.io/vega/paths"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/cli"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/flags"

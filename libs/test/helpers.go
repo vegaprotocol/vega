@@ -3,7 +3,7 @@ package test
 import (
 	"path/filepath"
 
-	vgrand "code.vegaprotocol.io/shared/libs/rand"
+	vgrand "code.vegaprotocol.io/vega/libs/rand"
 )
 
 func RandomPath() string {
