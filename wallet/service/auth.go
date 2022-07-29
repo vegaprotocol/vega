@@ -11,8 +11,8 @@ import (
 	"sync"
 	"time"
 
-	vgcrypto "code.vegaprotocol.io/shared/libs/crypto"
-	vgrand "code.vegaprotocol.io/shared/libs/rand"
+	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
+	vgrand "code.vegaprotocol.io/vega/libs/rand"
 
 	"github.com/dgrijalva/jwt-go/v4"
 	"github.com/julienschmidt/httprouter"

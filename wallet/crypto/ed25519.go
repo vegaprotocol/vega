@@ -3,7 +3,7 @@ package crypto
 import (
 	"crypto"
 
-	vgcrypto "code.vegaprotocol.io/shared/libs/crypto"
+	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
 
 	"github.com/oasisprotocol/curve25519-voi/primitives/ed25519"
 )

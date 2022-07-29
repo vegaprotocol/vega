@@ -1,7 +1,7 @@
 package version
 
 import (
-	vgversion "code.vegaprotocol.io/shared/libs/version"
+	vgversion "code.vegaprotocol.io/vega/libs/version"
 	coreversion "code.vegaprotocol.io/vega/version"
 
 	"github.com/blang/semver/v4"

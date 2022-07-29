@@ -16,7 +16,6 @@ import (
 	"context"
 	"fmt"
 
-	"code.vegaprotocol.io/shared/paths"
 	"code.vegaprotocol.io/vega/core/assets"
 	"code.vegaprotocol.io/vega/core/banking"
 	"code.vegaprotocol.io/vega/core/blockchain"
@@ -57,6 +56,7 @@ import (
 	"code.vegaprotocol.io/vega/core/validators/erc20multisig"
 	"code.vegaprotocol.io/vega/core/vegatime"
 	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/vega/paths"
 )
 
 type allServices struct {

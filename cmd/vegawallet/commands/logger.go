@@ -5,8 +5,8 @@ import (
 	"os"
 	"time"
 
-	"code.vegaprotocol.io/shared/paths"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/flags"
+	"code.vegaprotocol.io/vega/paths"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )

@@ -20,11 +20,11 @@ import (
 	"os/signal"
 	"syscall"
 
-	"code.vegaprotocol.io/shared/paths"
 	"code.vegaprotocol.io/vega/datanode/config"
 	"code.vegaprotocol.io/vega/datanode/gateway"
 	"code.vegaprotocol.io/vega/datanode/gateway/server"
 	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/vega/paths"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/jessevdk/go-flags"

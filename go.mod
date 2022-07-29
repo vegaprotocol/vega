@@ -6,7 +6,6 @@ require (
 	code.vegaprotocol.io/oracles-relay v0.0.0-20210201140234-f047e1bf6df3
 	code.vegaprotocol.io/protos v0.53.1-0.20220728102859-02ab6d8a0804
 	code.vegaprotocol.io/quant v0.2.5
-	code.vegaprotocol.io/shared v0.0.0-20220614080106-5c97205b0d92
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/cenkalti/backoff v2.2.1+incompatible
 	github.com/cosmos/iavl v0.15.3
@@ -47,6 +46,8 @@ require (
 
 require (
 	github.com/99designs/gqlgen v0.16.0
+	github.com/BurntSushi/toml v1.1.0
+	github.com/adrg/xdg v0.4.0
 	github.com/blang/semver/v4 v4.0.0
 	github.com/cenkalti/backoff/v4 v4.1.3
 	github.com/cucumber/messages-go/v16 v16.0.1
@@ -75,9 +76,7 @@ require (
 )
 
 require (
-	github.com/BurntSushi/toml v1.1.0 // indirect
 	github.com/DataDog/zstd v1.4.1 // indirect
-	github.com/adrg/xdg v0.4.0 // indirect
 	github.com/agnivade/levenshtein v1.1.0 // indirect
 	github.com/armon/go-radix v1.0.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect

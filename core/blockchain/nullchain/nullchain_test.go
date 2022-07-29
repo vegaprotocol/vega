@@ -19,9 +19,9 @@ import (
 	"testing"
 	"time"
 
-	vgfs "code.vegaprotocol.io/shared/libs/fs"
-	vgrand "code.vegaprotocol.io/shared/libs/rand"
 	"code.vegaprotocol.io/vega/core/blockchain"
+	vgfs "code.vegaprotocol.io/vega/libs/fs"
+	vgrand "code.vegaprotocol.io/vega/libs/rand"
 
 	"code.vegaprotocol.io/vega/core/blockchain/nullchain"
 	"code.vegaprotocol.io/vega/core/blockchain/nullchain/mocks"

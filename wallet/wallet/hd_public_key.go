@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	vgcrypto "code.vegaprotocol.io/shared/libs/crypto"
+	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
 )
 
 type HDPublicKey struct {

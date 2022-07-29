@@ -15,7 +15,6 @@ package protocol
 import (
 	"context"
 
-	"code.vegaprotocol.io/shared/paths"
 	"code.vegaprotocol.io/vega/core/api"
 	"code.vegaprotocol.io/vega/core/blockchain"
 	"code.vegaprotocol.io/vega/core/broker"
@@ -29,6 +28,7 @@ import (
 	"code.vegaprotocol.io/vega/core/subscribers"
 	"code.vegaprotocol.io/vega/core/vegatime"
 	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/vega/paths"
 	"github.com/blang/semver"
 )
 

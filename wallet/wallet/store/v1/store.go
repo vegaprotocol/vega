@@ -8,8 +8,8 @@ import (
 	"path/filepath"
 	"sort"
 
-	vgcrypto "code.vegaprotocol.io/shared/libs/crypto"
-	vgfs "code.vegaprotocol.io/shared/libs/fs"
+	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
+	vgfs "code.vegaprotocol.io/vega/libs/fs"
 	"code.vegaprotocol.io/vega/wallet/wallet"
 )
 

@@ -19,10 +19,10 @@ import (
 	"sync"
 
 	"code.vegaprotocol.io/protos/vega"
-	"code.vegaprotocol.io/shared/libs/crypto"
 	"code.vegaprotocol.io/vega/core/blockchain/abci"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/core/types/num"
+	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/logging"
 )
 

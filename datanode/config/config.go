@@ -21,8 +21,6 @@ import (
 	"code.vegaprotocol.io/vega/datanode/candlesv2"
 	"code.vegaprotocol.io/vega/datanode/service"
 
-	vgfs "code.vegaprotocol.io/shared/libs/fs"
-	"code.vegaprotocol.io/shared/paths"
 	"code.vegaprotocol.io/vega/datanode/api"
 	"code.vegaprotocol.io/vega/datanode/broker"
 	"code.vegaprotocol.io/vega/datanode/config/encoding"
@@ -30,7 +28,9 @@ import (
 	"code.vegaprotocol.io/vega/datanode/metrics"
 	"code.vegaprotocol.io/vega/datanode/pprof"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
+	vgfs "code.vegaprotocol.io/vega/libs/fs"
 	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/vega/paths"
 )
 
 // Config ties together all other application configuration types.

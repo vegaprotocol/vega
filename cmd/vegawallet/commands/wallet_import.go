@@ -7,10 +7,10 @@ import (
 	"strconv"
 	"strings"
 
-	vgfs "code.vegaprotocol.io/shared/libs/fs"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/cli"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/flags"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/printer"
+	vgfs "code.vegaprotocol.io/vega/libs/fs"
 	"code.vegaprotocol.io/vega/wallet/wallet"
 	"code.vegaprotocol.io/vega/wallet/wallets"
 	"github.com/spf13/cobra"

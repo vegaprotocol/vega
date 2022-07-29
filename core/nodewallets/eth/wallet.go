@@ -13,8 +13,8 @@
 package eth
 
 import (
-	"code.vegaprotocol.io/vega/core/crypto"
 	"code.vegaprotocol.io/vega/core/nodewallets/registry"
+	"code.vegaprotocol.io/vega/libs/crypto"
 )
 
 type wallet interface {
